@@ -132,7 +132,7 @@ bool DelegatedFrameHost::HasSavedFrame() const {
 
 void DelegatedFrameHost::WasHidden(HiddenCause cause) {
   tab_switch_time_recorder_.TabWasHidden();
-#if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
   // Ignore if the native window was occluded.
   // Windows needs the frame host to display tab previews.
   if (cause == HiddenCause::kOccluded)

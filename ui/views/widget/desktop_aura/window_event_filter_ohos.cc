@@ -32,6 +32,8 @@
 #include "base/logging.h"
 #include "ohos/adapter/device_info/device_info.h"
 #include "ui/aura/client/aura_constants.h"
+#include "ui/aura/window.h"
+#include "ui/aura/window_delegate.h"
 #include "ui/events/event_constants.h"
 #include "ui/events/event_target.h"
 #include "ui/events/types/event_type.h"
@@ -41,8 +43,8 @@
 namespace views {
 
 //kTouchSlop is Minimum distance for touch events
-const float kTouchSlop = 15.05;
-const float kSlidingEffectiveThresholdSquare = kTouchSlop * kTouchSlop;
+constexpr float kTouchSlop = 15.05;
+constexpr float kSlidingEffectiveThresholdSquare = kTouchSlop * kTouchSlop;
 
 WindowEventFilterOhos::WindowEventFilterOhos(
     DesktopWindowTreeHostPlatform* desktop_window_tree_host,
@@ -99,8 +101,19 @@ bool WindowEventFilterOhos::HandleTouchEventWithHitTest(int hit_test,
 void WindowEventFilterOhos::OnClickedCaption(ui::MouseEvent* event,
                                              int previous_click_component) {
   if (event->IsLeftMouseButton()) {
-      if (ohos::adapter::device_info::DeviceInfo::SdkApi() >=
-          ohos::adapter::device_info::SDK_VERSION_14) {
+    // Refer to WindowEventFilterLinux for handling double-click title bar.
+    if (event->flags() & ui::EF_IS_DOUBLE_CLICK) {
+      click_component_ = HTNOWHERE;
+      if (previous_click_component == HTCAPTION) {
+        auto* content_window = desktop_window_tree_host_->GetContentWindow();
+        MaybeToggleMaximizedState(content_window);
+        event->SetHandled();
+      }
+      return;
+    }
+
+    if (ohos::adapter::device_info::DeviceInfo::SdkApi() >=
+        ohos::adapter::device_info::SDK_VERSION_14) {
       if (event->type() == ui::EventType::kMousePressed) {
         is_dragging_ = true;
       } else if (event->type() == ui::EventType::kMouseReleased) {
@@ -193,6 +206,42 @@ bool WindowEventFilterOhos::IsWithinDistance(const gfx::Point& press_location,
   float distance = dx * dx + dy * dy;
   //distance is sliding effective threshold
   return distance > kSlidingEffectiveThresholdSquare;
+}
+
+void WindowEventFilterOhos::MaybeToggleMaximizedState(aura::Window* window) {
+  if (!(window->GetProperty(aura::client::kResizeBehaviorKey) &
+        aura::client::kResizeBehaviorCanMaximize)) {
+    return;
+  }
+
+  if (desktop_window_tree_host_->IsMaximized()) {
+    desktop_window_tree_host_->Restore();
+  } else {
+    desktop_window_tree_host_->Maximize();
+  }
+}
+
+void WindowEventFilterOhos::OnGestureEvent(ui::GestureEvent* event) {
+  auto* window = static_cast<aura::Window*>(event->target());
+  int hit_test_code =
+      window->delegate()
+          ? window->delegate()->GetNonClientComponent(event->location())
+          : HTNOWHERE;
+
+  // Double tap to maximize.
+  if (event->type() == ui::EventType::kGestureTap) {
+    int previous_click_component = click_component_;
+    click_component_ = hit_test_code;
+
+    if (click_component_ == HTCAPTION &&
+        click_component_ == previous_click_component &&
+        event->details().tap_count() == 2) {
+      MaybeToggleMaximizedState(window);
+      click_component_ = HTNOWHERE;
+      event->StopPropagation();
+    }
+    return;
+  }
 }
 
 }  // namespace views

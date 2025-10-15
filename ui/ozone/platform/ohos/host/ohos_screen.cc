@@ -149,7 +149,7 @@ void OhosScreen::RemoveObserver(display::DisplayObserver* observer) {
   display_list_.RemoveObserver(observer);
 }
 
-void OhosScreen::ConvertDisplay(ohos::adapter::OhosDisplay& ohos_display,
+bool OhosScreen::ConvertDisplay(ohos::adapter::OhosDisplay& ohos_display,
                                 display::Display& dst_display) {
   dst_display.set_id(ohos_display.id);
 
@@ -169,6 +169,11 @@ void OhosScreen::ConvertDisplay(ohos::adapter::OhosDisplay& ohos_display,
   dst_display.set_work_area(
       gfx::ScaleToEnclosingRect(work_area_in_pixels,
                                 1.0f / ohos_display.scaled_density));
+  if (dst_display.id() < 0 || dst_display.work_area().IsEmpty()) {
+    LOG(ERROR) << "OhosScreen::ConvertDisplay display is invalid, display id: " << dst_display.id()
+               << ", display work area is empty: " << dst_display.work_area().IsEmpty();
+    return false;
+  }
 
   dst_display.set_label(ohos_display.name);
 
@@ -191,6 +196,8 @@ void OhosScreen::ConvertDisplay(ohos::adapter::OhosDisplay& ohos_display,
 
   dst_display.set_display_frequency(ohos_display.refresh_rate);
   dst_display.set_is_monochrome(false);
+
+  return true;
 }
 
 void OhosScreen::FetchDisplays(display::DisplayList& displays) {
@@ -199,8 +206,7 @@ void OhosScreen::FetchDisplays(display::DisplayList& displays) {
 
   auto& screenAdapter = ohos::adapter::ScreenAdapter::GetInstance();
   screenAdapter.GetDefaultDisplay(ohos_display);
-  if (ohos_display.id >= 0) {
-    ConvertDisplay(ohos_display, dst_display);
+  if (ConvertDisplay(ohos_display, dst_display)) {
     device_scale_factor_ = dst_display.device_scale_factor();
     display::SetInternalDisplayIds({ohos_display.id});
     displays.AddOrUpdateDisplay(dst_display,
@@ -210,7 +216,9 @@ void OhosScreen::FetchDisplays(display::DisplayList& displays) {
   std::vector<ohos::adapter::OhosDisplay> ohosdisplays;
   screenAdapter.GetAllDisplays(ohosdisplays);
   for (auto iterator : ohosdisplays) {
-    ConvertDisplay(iterator, dst_display);
+    if (!ConvertDisplay(iterator, dst_display)) {
+      continue;
+    }
     displays.AddOrUpdateDisplay(dst_display,
                                 display::DisplayList::Type::NOT_PRIMARY);
   }
@@ -253,6 +261,8 @@ void OhosScreen::OnDisplayEventCallback(
 
 void OhosScreen::OnDisplayEvent(
     const std::string& event, int32_t display_id) {
+  LOG(INFO) << "OhosScreen::OnDisplayEvent, display event: " << event
+            << " displayId: " << display_id;
   if (event == "add" || event == "change") {
     display::DisplayList list;
     FetchDisplays(list);

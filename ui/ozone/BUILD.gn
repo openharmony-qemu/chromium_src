@@ -43,6 +43,7 @@ if (ozone_platform_ohos) {
   if (is_ohos) {
     ozone_platforms += [ "ohos" ]
     ozone_platform_deps += [ "platform/ohos" ]
+    ozone_platform_test_deps += [ "platform/ohos:ohos_window_unittests" ]
     ozone_platform_ui_test_support_deps += [ "platform/ohos:test_support" ]
   } else {
     ozone_platforms += [ "headless" ]
@@ -123,6 +124,8 @@ component("ozone_base") {
     "public/platform_user_input_monitor.cc",
     "public/platform_user_input_monitor.h",
     "public/platform_utils.h",
+    "public/platform_window_manager.cc",
+    "public/platform_window_manager.h",
     "public/platform_window_surface.h",
     "public/surface_factory_ozone.cc",
     "public/surface_factory_ozone.h",

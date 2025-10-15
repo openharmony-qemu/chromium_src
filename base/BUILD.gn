@@ -2486,6 +2486,18 @@ component("base") {
       ]
     }
 
+    if (is_ohos) {
+      # add hitrace interceptor for ohos
+      sources += [
+        "trace_event/ohos_fix_buffer.cc",
+        "trace_event/ohos_fix_buffer.h",
+        "trace_event/ohos_hitrace_adapter.h",
+        "trace_event/ohos_hitrace_adapter_impl.cc",
+        "trace_event/ohos_hitrace_interceptor.cc",
+        "trace_event/ohos_hitrace_interceptor.h",
+      ]
+    }
+
     if (use_partition_alloc_as_malloc) {
       sources += [
         "trace_event/address_space_dump_provider.cc",

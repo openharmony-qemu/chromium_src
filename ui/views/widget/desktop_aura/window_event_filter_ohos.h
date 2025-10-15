@@ -37,6 +37,10 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/views/views_export.h"
 
+namespace aura {
+class Window;
+}  // namespace aura
+
 namespace ui {
 class LocatedEvent;
 class WmMoveResizeHandler;
@@ -74,6 +78,11 @@ class VIEWS_EXPORT WindowEventFilterOhos : public ui::EventHandler {
   // _NET_WM_MOVERESIZE message is sent.
   void MaybeDispatchHostWindowDragMovement(int hittest,
                                            ui::LocatedEvent* event);
+
+  void MaybeToggleMaximizedState(aura::Window* window);
+
+  // ui::EventHandler overrides:
+  void OnGestureEvent(ui::GestureEvent* event) override;
 
   const raw_ptr<DesktopWindowTreeHostPlatform> desktop_window_tree_host_;
 

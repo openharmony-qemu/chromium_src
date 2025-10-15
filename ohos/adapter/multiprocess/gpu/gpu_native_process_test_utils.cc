@@ -140,7 +140,6 @@ int OH_NativeWindow_NativeWindowHandleOpt(NativeWindow* window,
                                    va_arg(args, int));
       break;
     case GET_FORMAT:
-    case GET_USAGE:
     case GET_STRIDE:
     case GET_SWAP_INTERVAL:
     case GET_TIMEOUT:
@@ -151,7 +150,6 @@ int OH_NativeWindow_NativeWindowHandleOpt(NativeWindow* window,
                               va_arg(args, int*));
       break;
     case SET_FORMAT:
-    case SET_USAGE:
     case SET_STRIDE:
     case SET_SWAP_INTERVAL:
     case SET_TIMEOUT:
@@ -159,6 +157,14 @@ int OH_NativeWindow_NativeWindowHandleOpt(NativeWindow* window,
     case SET_TRANSFORM:
     case SET_SOURCE_TYPE:
       ret = api->SetInt32Attr(window, NativeWindowActionToAttr(op_code),
+                              va_arg(args, int));
+      break;
+    case GET_USAGE:
+      ret = api->GetInt64Attr(window, NativeWindowActionToAttr(op_code),
+                              va_arg(args, int*));
+      break;
+    case SET_USAGE:
+      ret = api->SetInt64Attr(window, NativeWindowActionToAttr(op_code),
                               va_arg(args, int));
       break;
     case GET_APP_FRAMEWORK_TYPE:

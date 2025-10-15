@@ -39,6 +39,7 @@
 namespace ohos::adapter::file_select_picker {
 
 using FileSelectedCallback = std::function<void(const std::string&)>;
+using ContinueDwonloadConfirmCallback = std::function<void(const bool)>;
 
 struct SelectFileDialogParams {
   bool multi_files;
@@ -64,6 +65,7 @@ class ADAPTER_EXPORT_API FileSelectPicker {
                             FileSelectedCallback);
   void ShowFilePickerDirDialog(bool file_access_persist, FileSelectedCallback);
   void ShowSaveAsDialog(const SaveAsDialogParams& params, FileSelectedCallback);
+  void ShowInstallationPackageDialog(ContinueDwonloadConfirmCallback);
 
  private:
 };

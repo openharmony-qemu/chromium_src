@@ -38,7 +38,7 @@
 
 namespace ohos::adapter::device {
 
-struct ScanResult {
+struct ADAPTER_EXPORT_API ScanResult {
   std::string device_id;
   int32_t rssi;
   uint8_t* data;

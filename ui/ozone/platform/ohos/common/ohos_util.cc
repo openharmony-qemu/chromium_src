@@ -52,7 +52,7 @@ void* GetWindow(std::string& window_id) {
 
 void* GetWindowFromWidget(gfx::AcceleratedWidget widget_id) {
   DCHECK(widget_id);
-  std::string window_id("browser");
+  std::string window_id(kWindowPrefix);
   window_id += std::to_string(widget_id);
   return ui::util::GetWindow(window_id);
 }
@@ -76,5 +76,5 @@ gfx::AcceleratedWidget ConvertWindowIdToWidgetId(std::string& window_id) {
   return std::stoi(windowIdString);
 }
 
-}  // namespace util {
+}  // namespace util
 }  // namespace ui

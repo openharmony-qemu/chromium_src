@@ -41,6 +41,7 @@
 #include "ui/gfx/native_widget_types.h"
 #include "ui/gfx/geometry/point.h"
 #include "ui/ozone/platform/ohos/host/ohos_window_observer.h"
+#include "ui/ozone/public/platform_window_manager.h"
 #include "ui/ozone/public/surface_factory_ozone.h"
 
 namespace ui {
@@ -49,7 +50,8 @@ class OhosWindow;
 
 using namespace ohos::adapter::xcomponent;
 
-class OhosWindowManager : public WindowStatusListener {
+class OhosWindowManager : public WindowStatusListener,
+                          public PlatformWindowManager {
  public:
   OhosWindowManager();
 
@@ -66,6 +68,9 @@ class OhosWindowManager : public WindowStatusListener {
 
   void AddObserver(OhosWindowObserver* observer);
   void RemoveObserver(OhosWindowObserver* observer);
+
+  // call when window receive close event and before window close
+  void PrepareCloseWindow(gfx::AcceleratedWidget widget, OhosWindow* window);
 
   // Register a new window. Returns the window id.
   int32_t AddWindow(gfx::AcceleratedWidget widget, OhosWindow* window);

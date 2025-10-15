@@ -64,6 +64,7 @@ const int kDefaultHeight = 1;
 const std::string kBookmarkFormatString = "chromium/x-bookmark-entries";
 const std::string kWebCustomFormatString = "chromium/x-web-custom-data";
 const std::string kWebImageDragFolder = "dragdrop";
+constexpr int kHalfDivisor = 2;
 }
 
 OhosDragManager::OhosDragManager(PlatformWindowDelegate* delegate,
@@ -184,7 +185,7 @@ void OhosDragManager::UpdateDrag(const gfx::Point& window_point) {
   last_point_ = local_point_in_dip;
   if (!notified_enter_) {
     auto data = std::make_unique<OSExchangeData>(source_provider_->Clone());
-    drop_handler->OnDragEnter(local_point_in_dip, suggested_operations, 
+    drop_handler->OnDragEnter(local_point_in_dip, suggested_operations,
                               current_modifier_);
     drop_handler->OnDragDataAvailable(std::move(data));
     notified_enter_ = true;
@@ -196,7 +197,6 @@ void OhosDragManager::UpdateDrag(const gfx::Point& window_point) {
 
 void OhosDragManager::DragEnter(const OhosDropData& drop_data,
                                 gfx::PointF screen_point) {
-  LOG(INFO) << "[OhosDrag]" << __FUNCTION__;
   WmDropHandler* drop_handler = ui::GetWmDropHandler(*platform_window_);
   if (!drop_handler) {
     LOG(ERROR) << "[OhosDrag] execute drag enter fail,no drop handler";
@@ -216,7 +216,6 @@ void OhosDragManager::DragEnter(const OhosDropData& drop_data,
 
 void OhosDragManager::OnDrop(const OhosDropData& drop_data,
                              gfx::PointF screen_point) {
-  LOG(INFO) << "[OhosDrag]" << __FUNCTION__;
   WmDropHandler* drop_handler = ui::GetWmDropHandler(*platform_window_);
   if (!drop_handler) {
     LOG(ERROR) << "[OhosDrag] execute drop fail,no drop handler";
@@ -228,8 +227,6 @@ void OhosDragManager::OnDrop(const OhosDropData& drop_data,
   data_ = std::make_unique<ui::OSExchangeData>(std::move(provider));
   HandleDropData(drop_data, data_->provider());
   int suggested_operations = allowed_drag_operations_;
-  drop_handler->OnDragEnter(last_point_, suggested_operations,
-                            current_modifier_);
   drop_handler->OnDragDataAvailable(std::move(data_));
   drop_handler->OnDragMotion(last_point_, suggested_operations,
                              current_modifier_);
@@ -241,8 +238,7 @@ void OhosDragManager::OnDrop(const OhosDropData& drop_data,
 }
 
 void OhosDragManager::DragLeave() {
-  LOG(INFO) << "[OhosDrag]" << __FUNCTION__;
-  WmDropHandler* drop_handler = GetWmDropHandler(*platform_window_);
+  WmDropHandler* drop_handler = ui::GetWmDropHandler(*platform_window_);
   if (!drop_handler) {
     LOG(ERROR) << "[OhosDrag] drag leave fail,no drop handler";
     return;
@@ -255,7 +251,6 @@ void OhosDragManager::DragLeave() {
 }
 
 void OhosDragManager::DragEnd() {
-  LOG(INFO) << "[OhosDrag]" << __FUNCTION__ << ",is_drag_end_:" << is_drag_end_;
   if (is_drag_end_) {
     return;
   }
@@ -281,55 +276,31 @@ void OhosDragManager::DragEnd() {
   }
 }
 
-std::vector<FileInfo> OhosDragManager::DecodeFileName(
-    const std::vector<std::string>& file_paths) {
-  std::vector<FileInfo> file_names;
-  for (const std::string& file_path : file_paths) {
-    url::RawCanonOutputW<kMaxUriDecodeLen> unescaped_path;
-    url::DecodeURLEscapeSequences(file_path.c_str(),
-                                  url::DecodeURLMode::kUTF8OrIsomorphic,
-                                  &unescaped_path);
-    std::string decode_file_path = base::UTF16ToUTF8(
-        std::u16string_view(unescaped_path.data(), unescaped_path.length()));
-    file_names.emplace_back(base::FilePath(FILE_PATH_LITERAL(decode_file_path)),
-                            base::FilePath());
-  }
-  return file_names;
-}
-
 void OhosDragManager::HandleDropData(
     const OhosDropData& drop_data,
     OSExchangeDataProvider& provider) {
   if (!drop_data.basicData.text.empty()) {
-    LOG(INFO) << "[OhosDrag]" << __FUNCTION__
-              << ",text-length:" << drop_data.basicData.text.length();
     provider.SetString(base::UTF8ToUTF16(drop_data.basicData.text));
   }
   if (!drop_data.basicData.url.empty()) {
-    LOG(INFO) << "[OhosDrag]" << __FUNCTION__
-              << ", url-length:" << drop_data.basicData.url.length();
-    LOG(INFO) << "[OhosDrag]" << __FUNCTION__
-              << ", urlTitle-length:" << drop_data.basicData.urlTitle.length();
     GURL url = GURL(drop_data.basicData.url);
     provider.SetURL(url, base::UTF8ToUTF16(drop_data.basicData.urlTitle));
   }
   if (!drop_data.basicData.html.empty()) {
-    LOG(INFO) << "[OhosDrag]" << __FUNCTION__
-              << ", html-length:" << drop_data.basicData.html.length();
     GURL base_url;
     provider.SetHtml(base::UTF8ToUTF16(drop_data.basicData.html), base_url);
   }
   if (!drop_data.filePaths.empty()) {
-    LOG(INFO) << "[OhosDrag]" << __FUNCTION__
-              << ", filePaths-size:" << drop_data.filePaths.size();
-    std::vector<FileInfo> file_names = DecodeFileName(drop_data.filePaths);
-    provider.SetFilenames(std::move(file_names));
+    std::vector<FileInfo> file_names;
+    for (const std::string& file_path : drop_data.filePaths) {
+      file_names.emplace_back(base::FilePath(FILE_PATH_LITERAL(file_path)),
+                              base::FilePath());
+    }
+    provider.SetFilenames(file_names);
     ohos::adapter::DragDropOhosAdapter::GetInstance()
         .SetDraggedExtensionFileName(file_names.front().path.value());
   }
   if (drop_data.basicData.bookmarkData.size() > 0) {
-    LOG(INFO) << "[OhosDrag]" << __FUNCTION__
-              << ", bookmarkData-length:" << drop_data.basicData.bookmarkData.size();
     base::Pickle pickle = base::Pickle::WithData((
         base::span(reinterpret_cast<const uint8_t*>(drop_data.basicData.bookmarkData.data()),
                    drop_data.basicData.bookmarkData.size())));
@@ -338,8 +309,6 @@ void OhosDragManager::HandleDropData(
         std::move(pickle));
   }
   if (drop_data.basicData.webCustomData.size() > 0) {
-    LOG(INFO) << "[OhosDrag]" << __FUNCTION__
-              << ", webCustomData-length:" << drop_data.basicData.webCustomData.size();
     base::Pickle pickle = base::Pickle::WithData((
         base::span(reinterpret_cast<const uint8_t*>(drop_data.basicData.webCustomData.data()),
                    drop_data.basicData.webCustomData.size())));
@@ -387,6 +356,11 @@ void OhosDragManager::HandleWebImageFilePath(
       file_contents.has_value()) {
     base::FilePath folder_path;
     base::PathService::Get(base::DIR_TEMP, &folder_path);
+    if (folder_path.empty()) {
+      LOG(ERROR) << "[OhosDrag]" << __FUNCTION__
+                 << ", folder_path get fail";
+      return;
+    }
     folder_path = folder_path.Append(kWebImageDragFolder);
     if (base::DirectoryExists(folder_path)) {
       if (!base::IsDirectoryEmpty(folder_path)) {
@@ -394,14 +368,16 @@ void OhosDragManager::HandleWebImageFilePath(
       }
     }
     base::CreateDirectory(folder_path);
+    if (!base::DirectoryExists(folder_path)) {
+      LOG(ERROR) << "[OhosDrag]" << __FUNCTION__
+                 << ", folder_path create fail";
+      return;
+    }
 
     base::FilePath file_path(folder_path);
     file_path = file_path.Append(file_contents->filename);
     if (base::WriteFile(file_path, file_contents->file_contents)) {
       drag_param->webImageFilePath = file_path.value().c_str();
-      LOG(INFO) << "[OhosDrag]" << __FUNCTION__
-                << ", webImageFilePath-length:"
-                << drag_param->webImageFilePath.length();
     } else {
       LOG(ERROR) << "[OhosDrag]drag image file write fail";
     }
@@ -420,8 +396,6 @@ void OhosDragManager::HandlePickleData(
     size_t length = bookmark_pickle.value().size();
     drag_param->basicData.bookmarkData =
         std::vector<uint8_t>(pickle_data, pickle_data + length);
-    LOG(INFO) << "[OhosDrag]" << __FUNCTION__
-              << ", bookmarkData-length:" << length;
   }
 
   const ui::ClipboardFormatType& web_custom_type =
@@ -433,8 +407,6 @@ void OhosDragManager::HandlePickleData(
     size_t length = web_custom_pickle.value().size();
     drag_param->basicData.webCustomData =
         std::vector<uint8_t>(pickle_data, pickle_data + length);
-    LOG(INFO) << "[OhosDrag]" << __FUNCTION__
-              << ", webCustomData-length:" << length;
   }
 }
 
@@ -465,15 +437,21 @@ void OhosDragManager::HandlePixelMapData(
   drag_param->pixelMapBuffer = std::move(buff);
   drag_param->pixelMapWidth = width;
   drag_param->pixelMapHeight = height;
-  LOG(INFO) << "[OhosDrag]" << __FUNCTION__ << ", pixelMapWidth:" << width
-            << ",pixelMapHeight:" << height;
 
   gfx::Vector2d drag_image_offset = data.provider().GetDragImageOffset();
-  drag_param->pixelMapTouchX = drag_image_offset.x();
-  drag_param->pixelMapTouchY = drag_image_offset.y();
-  LOG(INFO) << "[OhosDrag]" << __FUNCTION__
-            << ", pixelMapTouchX:" << drag_param->pixelMapTouchX
-            << ",pixelMapTouchY:" << drag_param->pixelMapTouchY;
+  int image_offset_x = drag_image_offset.x();
+  int image_offset_y = drag_image_offset.y();
+  // When the drag_image_offset data is abnormal, need to reposition the distance
+  // based on the width and height of the drag image,
+  // Move the mouse to the middle of the drag image.
+  if (image_offset_x < 0 || image_offset_x > width) {
+    image_offset_x = width / kHalfDivisor;
+  }
+  if (image_offset_y < 0 || image_offset_y > height) {
+    image_offset_y = height / kHalfDivisor;
+  }
+  drag_param->pixelMapTouchX = image_offset_x;
+  drag_param->pixelMapTouchY = image_offset_y;
 }
 
 }  // namespace ui

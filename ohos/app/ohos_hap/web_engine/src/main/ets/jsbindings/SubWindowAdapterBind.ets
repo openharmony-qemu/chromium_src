@@ -38,7 +38,7 @@ function implSubWindowAdapter(): SubWindowAdapter {
 
 function createSubWindow(
   param: NewWindowParam,
-  callback: (ready: boolean, id: string) => void) {
+  callback: (id: string) => void) {
   implSubWindowAdapter().createSubWindow(param, callback)
 }
 

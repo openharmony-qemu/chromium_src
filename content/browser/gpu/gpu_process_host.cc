@@ -326,6 +326,9 @@ static const char* const kSwitchNames[] = {
     switches::kLacrosUseChromeosProtectedMedia,
     switches::kLacrosUseChromeosProtectedAv1,
 #endif
+#if BUILDFLAG(IS_OHOS)
+    switches::kOhosTrace,
+#endif
 };
 
 // These values are persisted to logs. Entries should not be renumbered and

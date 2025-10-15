@@ -60,7 +60,7 @@ constexpr float kMouseMoveLimitDistance = 0.01;
 
 constexpr int32_t kTouchpadScrollFingerCount = 2;
 constexpr int32_t kMicrosecondsUnit = 1000;
-constexpr int32_t kSimulateTouchEventId = 0;;
+constexpr int32_t kSimulateTouchEventId = 0;
 
 const static std::unordered_map<OH_NativeXComponent_KeyCode,
                                 OH_NativeXComponent_KeyCode>
@@ -112,6 +112,15 @@ void DragMoveEventCallback(const int32_t widget_id,
 void SendWindowMouseEventForTabDragCallback(
     const int32_t widget_id,
     Input_MouseEvent* window_mouse_event);
+
+void UpdateKeyFlagsByOhKeyState(EventFlags& key_flags);
+void UpdateKeyPressedState(EventFlags& key_flags,
+                           const int32_t key_code_left,
+                           const int32_t key_code_right,
+                           const EventFlags event_flag);
+void UpdateSwitchState(EventFlags& key_flags,
+                       const int32_t key_code,
+                       const EventFlags event_flag);
 
 OhosEventSource::OhosEventSource(OhosWindowManager* window_manager,
                                  OhosWindowDragManager* window_drag_manager)
@@ -167,7 +176,7 @@ void OhosEventSource::OnMouseMoveEvent(
   if (pointer_location_.IsWithinDistance(original_location, kMouseMoveLimitDistance)) {
     return;
   }
-  if (mouse_event.screenX != 0 && mouse_event.screenY != 0) {
+  if (mouse_event.screenX != 0 || mouse_event.screenY != 0) {
     // xcomponent BUG may send error data: screenX and screenY both 0
     cursor_screen_point_.SetPoint(mouse_event.screenX, mouse_event.screenY);
   }
@@ -196,7 +205,8 @@ void OhosEventSource::SetTargetAndDispatchEvent(
 void OhosEventSource::OnMouseEvent(
     const gfx::AcceleratedWidget widget_id,
     const OH_NativeXComponent_MouseEvent& mouse_event,
-    const int32_t display_id) {
+    const int32_t display_id,
+    const EventFlags key_flags) {
   EventType type = EventType::kMousePressed;
   gfx::PointF original_pointer_location = pointer_location_;
   pointer_location_.SetPoint(mouse_event.x, mouse_event.y);
@@ -235,7 +245,7 @@ void OhosEventSource::OnMouseEvent(
   pointer_flags_ = type == EventType::kMousePressed
                        ? (pointer_flags_ | changed_button)
                        : (pointer_flags_ & ~changed_button);
-  UpdateKeyFlagsByOhKeyState();
+  UpdateKeyFlags(key_flags);
   EventFlags flags = pointer_flags_ | changed_button | key_flags_;
   MouseEvent event(type, pointer_location_, original_pointer_location,
                    EventTimeForNow(), flags, changed_button);
@@ -350,7 +360,6 @@ void OhosEventSource::OnPanEvent(
     const PanAction action,
     const gfx::AcceleratedWidget widget_id,
     const PanEvent& ohos_event) {
-  UpdateKeyFlagsByOhKeyState();
   EventFlags event_flags = pointer_flags_ | key_flags_;
   // Set EF_PRECISION_SCROLLING_DELTA only for events originating from touchpad
   // devices.
@@ -414,13 +423,14 @@ void OhosEventSource::OnPinchEvent(
     SetTargetAndDispatchEvent(widget_id, pinch_event);
 }
 
-void OhosEventSource::UpdateKeyFlags() {
-  key_flags_ = EF_NONE;
+void OhosEventSource::UpdateKeyFlags(const EventFlags& key_flags) {
+  key_flags_ = key_flags;
 }
 
-void OhosEventSource::UpdateKeyPressedState(const int32_t key_code_left,
-                                            const int32_t key_code_right,
-                                            const int event_flag) {
+void UpdateKeyPressedState(EventFlags& key_flags,
+                           const int32_t key_code_left,
+                           const int32_t key_code_right,
+                           const int event_flag) {
   Input_KeyState* keyState_left = OH_Input_CreateKeyState();
   Input_KeyState* keyState_right = OH_Input_CreateKeyState();
   OH_Input_SetKeyCode(keyState_left, key_code_left);
@@ -429,30 +439,34 @@ void OhosEventSource::UpdateKeyPressedState(const int32_t key_code_left,
   OH_Input_GetKeyState(keyState_right);
   if (KEY_PRESSED == OH_Input_GetKeyPressed(keyState_left) ||
       KEY_PRESSED == OH_Input_GetKeyPressed(keyState_right)) {
-    key_flags_ = static_cast<int>(key_flags_) | event_flag;
+    key_flags = static_cast<int>(key_flags) | event_flag;
   }
   OH_Input_DestroyKeyState(&keyState_left);
   OH_Input_DestroyKeyState(&keyState_right);
 }
-void OhosEventSource::UpdateSwitchState(const int32_t key_code,
-                                        const int event_flag) {
+void UpdateSwitchState(EventFlags& key_flags,
+                       const int32_t key_code,
+                       const int event_flag) {
   Input_KeyState* keyState = OH_Input_CreateKeyState();
   OH_Input_SetKeyCode(keyState, key_code);
   OH_Input_GetKeyState(keyState);
   if (KEY_SWITCH_ON == OH_Input_GetKeySwitch(keyState)) {
-    key_flags_ = static_cast<int>(key_flags_) | event_flag;
+    key_flags = static_cast<int>(key_flags) | event_flag;
   }
   OH_Input_DestroyKeyState(&keyState);
 }
-void OhosEventSource::UpdateKeyFlagsByOhKeyState() {
-  key_flags_ = EF_NONE;
-  UpdateKeyPressedState(KEYCODE_ALT_LEFT, KEYCODE_ALT_RIGHT, EF_ALT_DOWN);
-  UpdateKeyPressedState(KEYCODE_SHIFT_LEFT, KEYCODE_SHIFT_RIGHT, EF_SHIFT_DOWN);
-  UpdateKeyPressedState(KEYCODE_CTRL_LEFT, KEYCODE_CTRL_RIGHT, EF_CONTROL_DOWN);
-  UpdateKeyPressedState(KEYCODE_META_LEFT, KEYCODE_META_RIGHT, EF_COMMAND_DOWN);
-  UpdateSwitchState(KEYCODE_CAPS_LOCK, EF_CAPS_LOCK_ON);
-  UpdateSwitchState(KEYCODE_SCROLL_LOCK, EF_SCROLL_LOCK_ON);
-  UpdateSwitchState(KEYCODE_NUM_LOCK, EF_NUM_LOCK_ON);
+void UpdateKeyFlagsByOhKeyState(EventFlags& key_flags) {
+  UpdateKeyPressedState(key_flags, KEYCODE_ALT_LEFT, KEYCODE_ALT_RIGHT,
+                        EF_ALT_DOWN);
+  UpdateKeyPressedState(key_flags, KEYCODE_SHIFT_LEFT, KEYCODE_SHIFT_RIGHT,
+                        EF_SHIFT_DOWN);
+  UpdateKeyPressedState(key_flags, KEYCODE_CTRL_LEFT, KEYCODE_CTRL_RIGHT,
+                        EF_CONTROL_DOWN);
+  UpdateKeyPressedState(key_flags, KEYCODE_META_LEFT, KEYCODE_META_RIGHT,
+                        EF_COMMAND_DOWN);
+  UpdateSwitchState(key_flags, KEYCODE_CAPS_LOCK, EF_CAPS_LOCK_ON);
+  UpdateSwitchState(key_flags, KEYCODE_SCROLL_LOCK, EF_SCROLL_LOCK_ON);
+  UpdateSwitchState(key_flags, KEYCODE_NUM_LOCK, EF_NUM_LOCK_ON);
 }
 
 gfx::Point OhosEventSource::GetCursorScreenPoint() {
@@ -545,7 +559,8 @@ void OhosEventSource::ShiftWindowEvent(
 void OhosEventSource::SendWindowMouseEventForTabDrag(
     const gfx::AcceleratedWidget widget_id,
     std::shared_ptr<OH_NativeXComponent_MouseEvent> xcomponent_mouse_event,
-    const int32_t display_id) {
+    const int32_t display_id,
+    const EventFlags key_flags) {
   if (xcomponent_mouse_event == nullptr) {
     LOG(ERROR) << "[OhosTabDrag] " << __FUNCTION__
                << ", xcomponent_mouse_event is null";
@@ -569,7 +584,7 @@ void OhosEventSource::SendWindowMouseEventForTabDrag(
           << widget_id;
       EndTabDragging();
     }
-    OnMouseEvent(widget_id, *xcomponent_mouse_event, display_id);
+    OnMouseEvent(widget_id, *xcomponent_mouse_event, display_id, key_flags);
   }
 }
 
@@ -595,9 +610,15 @@ void MouseEventCallback(const int32_t widget_id,
                 << ",action:" << static_cast<int>(mouse_event.action);
     return;
   }
+
+  EventFlags key_flags = EF_NONE;
+  if (mouse_event.action != OH_NATIVEXCOMPONENT_MOUSE_MOVE) {
+    UpdateKeyFlagsByOhKeyState(key_flags);
+  }
   auto task = base::BindOnce(
       [](const int32_t widget_id,
-         const OH_NativeXComponent_MouseEvent& mouse_event) {
+         const OH_NativeXComponent_MouseEvent& mouse_event,
+         const EventFlags key_flags) {
         auto* event_source = PlatformEventSource::GetInstance();
         if (event_source == nullptr) {
           LOG(WARNING)
@@ -605,11 +626,13 @@ void MouseEventCallback(const int32_t widget_id,
               << "register mouse event callback before even source created";
           return;
         }
-        int64_t default_display_id = display::Screen::GetScreen()->GetPrimaryDisplay().id();
+        int64_t default_display_id =
+            display::Screen::GetScreen()->GetPrimaryDisplay().id();
         reinterpret_cast<OhosEventSource*>(event_source)
-            ->OnMouseEvent(widget_id, mouse_event, static_cast<int32_t>(default_display_id));
+            ->OnMouseEvent(widget_id, mouse_event,
+                           static_cast<int32_t>(default_display_id), key_flags);
       },
-      widget_id, mouse_event);
+      widget_id, mouse_event, key_flags);
   base::TaskRunnerOHOS::GetUIThreadTaskRunner()->PostTask(FROM_HERE,
                                                           std::move(task));
   OhosEventFilter::GetInstance().RefreshMouseEvent(widget_id, mouse_event);
@@ -647,16 +670,18 @@ void KeyEventCallback(const int32_t widget_id,
     return;
   }
 
+  EventFlags key_flags = EF_NONE;
+  UpdateKeyFlagsByOhKeyState(key_flags);
   auto task = base::BindOnce(
       [](const int32_t widget_id, OH_NativeXComponent_KeyCode key,
-         const EventType event_type) {
+         const EventType event_type, EventFlags key_flags) {
         auto* event_source = reinterpret_cast<OhosEventSource*>(
             PlatformEventSource::GetInstance());
         if (event_source == nullptr) {
           LOG(WARNING) << "[multiinput] get event source failed";
           return;
         }
-        event_source->UpdateKeyFlagsByOhKeyState();
+        event_source->UpdateKeyFlags(key_flags);
         key = GetKeyWithNumLockOFF(key, event_source->GetKeyFlags());
         DomCode dom_code = KeycodeConverter::NativeKeycodeToDomCode(key);
         DomKey dom_key;
@@ -674,7 +699,7 @@ void KeyEventCallback(const int32_t widget_id,
                        event_source->GetKeyFlags(), dom_key, EventTimeForNow());
         event_source->OnKeyEvent(widget_id, event);
       },
-      widget_id, key, type);
+      widget_id, key, type, key_flags);
   base::TaskRunnerOHOS::GetUIThreadTaskRunner()->PostTask(FROM_HERE, std::move(task));
 }
 
@@ -869,9 +894,9 @@ OH_NativeXComponent_MouseEventAction ConvertMouseEventActionFromWindowMouseEvent
       mouse_event_action = OH_NATIVEXCOMPONENT_MOUSE_RELEASE;
       break;
     default:
-      DLOG(INFO) << "ConvertMouseEventActionFromWindowMouseEvent "
-                    "window_mouse_action is not useful:"
-                 << window_mouse_action;
+      LOG(WARNING) << "ConvertMouseEventActionFromWindowMouseEvent "
+                      "window_mouse_action is not useful:"
+                   << window_mouse_action;
       break;
   }
   return mouse_event_action;
@@ -889,9 +914,9 @@ OH_NativeXComponent_MouseEventButton ConvertMouseEventButtonFromWindowMouseEvent
       mouse_event_button = OH_NATIVEXCOMPONENT_RIGHT_BUTTON;
       break;
     default:
-      DLOG(INFO) << "ConvertMouseEventButtonFromWindowMouseEvent mouse_button is "
-                    "not useful:"
-                 << window_mouse_button;
+      LOG(WARNING) << "ConvertMouseEventButtonFromWindowMouseEvent mouse_button is "
+                      "not useful:"
+                   << window_mouse_button;
       break;
   }
   return mouse_event_button;
@@ -900,15 +925,17 @@ OH_NativeXComponent_MouseEventButton ConvertMouseEventButtonFromWindowMouseEvent
 void ConvertWindowMouseEventToXcomponentEvent(
     Input_MouseEvent* window_mouse_event,
     std::shared_ptr<OH_NativeXComponent_MouseEvent> xcomponent_mouse_event) {
+  WindowEventFilterAdapter& window_event_filter_adapter =
+      WindowEventFilterAdapter::GetInstance();
   int32_t window_mouse_action =
-      WindowEventFilterAdapter::GetWindowMouseEventAction(window_mouse_event);
+      window_event_filter_adapter.GetWindowMouseEventAction(window_mouse_event);
   int32_t display_x =
-      WindowEventFilterAdapter::GetWindowMouseEventDisplayX(window_mouse_event);
+      window_event_filter_adapter.GetWindowMouseEventDisplayX(window_mouse_event);
   int32_t display_y =
-      WindowEventFilterAdapter::GetWindowMouseEventDisplayY(window_mouse_event);
+      window_event_filter_adapter.GetWindowMouseEventDisplayY(window_mouse_event);
   int32_t window_mouse_button =
-      WindowEventFilterAdapter::GetWindowMouseEventButton(window_mouse_event);
-  int64_t action_time = WindowEventFilterAdapter::GetWindowMouseEventActionTime(
+      window_event_filter_adapter.GetWindowMouseEventButton(window_mouse_event);
+  int64_t action_time = window_event_filter_adapter.GetWindowMouseEventActionTime(
       window_mouse_event);
   xcomponent_mouse_event->action =
       ConvertMouseEventActionFromWindowMouseEvent(window_mouse_action);
@@ -943,12 +970,19 @@ void SendWindowMouseEventForTabDragCallback(
   }
   OhosEventFilter::GetInstance().RefreshMouseEvent(widget_id,
                                                    *xcomponent_mouse_event);
-  int32_t display_id = WindowEventFilterAdapter::GetWindowMouseEventDisplayId(
-      window_mouse_event);
+  int32_t display_id =
+      WindowEventFilterAdapter::GetInstance().GetWindowMouseEventDisplayId(
+          window_mouse_event);
+
+  EventFlags key_flags = EF_NONE;
+  if (xcomponent_mouse_event->action != OH_NATIVEXCOMPONENT_MOUSE_MOVE) {
+    UpdateKeyFlagsByOhKeyState(key_flags);
+  }
   auto task = base::BindOnce(
       [](const int32_t widget_id,
          const std::shared_ptr<OH_NativeXComponent_MouseEvent>
-             xcomponent_mouse_event, int32_t display_id) {
+             xcomponent_mouse_event,
+         int32_t display_id, EventFlags key_flags) {
         auto* event_source = PlatformEventSource::GetInstance();
         if (event_source == nullptr) {
           LOG(WARNING) << "[OhosTabDrag]register "
@@ -957,9 +991,10 @@ void SendWindowMouseEventForTabDragCallback(
           return;
         }
         reinterpret_cast<OhosEventSource*>(event_source)
-            ->SendWindowMouseEventForTabDrag(widget_id, xcomponent_mouse_event, display_id);
+            ->SendWindowMouseEventForTabDrag(widget_id, xcomponent_mouse_event,
+                                             display_id, key_flags);
       },
-      widget_id, std::move(xcomponent_mouse_event), display_id);
+      widget_id, std::move(xcomponent_mouse_event), display_id, key_flags);
   base::TaskRunnerOHOS::GetUIThreadTaskRunner()->PostTask(FROM_HERE,
                                                           std::move(task));
 }

@@ -38,9 +38,11 @@ import LogUtil from '../utils/LogUtil';
 import { AbilityManager } from '../common/AbilityManager';
 import LogMethod from '../common/LogDecorator';
 import { StartOptions } from '@kit.AbilityKit';
-import { NewWindowParam, PointCoordinate, WindowBound } from '../interface/CommonInterface';
+import { NewWindowParam, PointCoordinate, WindowBound, kAbilityMap } from '../interface/CommonInterface';
 import LaunchHelper from '../utils/LaunchHelper';
 import { ContextAdapter } from './ContextAdapter';
+import { DeviceInfoAdapter } from "../adapter/DeviceInfoAdapter";
+import { NativeThemeAdapter } from './NativeThemeAdapter';
 
 const TAG: string = 'AppWindow';
 
@@ -52,14 +54,20 @@ export class AppWindowAdapter extends BaseAdapter {
                         bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_METADATA;
   private queryWindowNum: number = 10;                      
   private ctxAdapter: ContextAdapter;
+  private deviceInfoAdapter: DeviceInfoAdapter;
+  private themeAdapter: NativeThemeAdapter;
 
   constructor(
     @inject(AbilityManager) abilityManager: AbilityManager,
-    @inject(ContextAdapter) ctxAdapter: ContextAdapter
+    @inject(ContextAdapter) ctxAdapter: ContextAdapter,
+    @inject(DeviceInfoAdapter) deviceInfoAdapter: DeviceInfoAdapter,
+    @inject(NativeThemeAdapter) themeAdapter: NativeThemeAdapter
   ) {
     super();
     this.abilityManager = abilityManager;
     this.ctxAdapter = ctxAdapter;
+    this.deviceInfoAdapter = deviceInfoAdapter;
+    this.themeAdapter = themeAdapter;
 
     try {
       bundleManager.getBundleInfoForSelf(this.bundleFlags).then((data) => {
@@ -77,12 +85,16 @@ export class AppWindowAdapter extends BaseAdapter {
     return this.abilityManager.getProxy(id)?.getWindow();
   }
 
+  private backgroundColor(useDarkMode: boolean): string {
+    if (useDarkMode || this.themeAdapter.isDarkMode()) {
+      return NativeThemeAdapter.DARK_BACKGROUND_COLOR;
+    }
+    return NativeThemeAdapter.LIGHT_BACKGROUND_COLOR;
+  }
+
   @LogMethod
   createWindow(param: NewWindowParam) {
-    let abilityName: string = "EntryAbility";
-    if (param.is_stateless) {
-      abilityName = "StatelessAbility";
-    }
+    let abilityName: string = kAbilityMap.get(param.ability_type) ?? 'EntryAbility';
     const want: Want = {
       bundleName: this.bundleName,
       abilityName: abilityName,
@@ -91,7 +103,8 @@ export class AppWindowAdapter extends BaseAdapter {
         'hideTitleBar': param.hide_title_bar,
         'useDarkMode': param.use_dark_mode,
         'titleButtonVisible': param.caption_button_visible,
-        instanceKey: param.window_id
+        instanceKey: param.window_id,
+        'webappWindow': param.app_id
       }
     };
 
@@ -103,7 +116,8 @@ export class AppWindowAdapter extends BaseAdapter {
       windowLeft: param.bounds.left - xComBorder,
       windowTop: param.bounds.top - xComTop,
       windowWidth: param.bounds.width + xComBorder + xComBorder,
-      windowHeight: param.bounds.height + xComBorder + xComTop
+      windowHeight: param.bounds.height + xComBorder + xComTop,
+      startWindowBackgroundColor: this.backgroundColor(param.use_dark_mode),
     }
     LaunchHelper.LaunchWithOptions(this.ctxAdapter.getActiveContext(), want, options);
   }
@@ -141,6 +155,10 @@ export class AppWindowAdapter extends BaseAdapter {
       return;
     }
 
+    if (this.deviceInfoAdapter.isNormalWindowMode()) {
+      this.abilityManager.getProxy(id)?.updateAvoidAreaStatus(true);
+    }
+
     if (deviceInfo.sdkApiVersion >= 14) {
       windowClass.maximize(window.MaximizePresentation.ENTER_IMMERSIVE_DISABLE_TITLE_AND_DOCK_HOVER)
         .catch((err: BusinessError) => {
@@ -155,9 +173,7 @@ export class AppWindowAdapter extends BaseAdapter {
   }
 
   @LogMethod
-  setBounds(id: number,
-            bounds: WindowBound,
-            callback: () => void) {
+  setBounds(id: number, bounds: WindowBound) {
     let windowClass = this.getWindow(id);
     if (!windowClass) {
       LogUtil.error(TAG, 'Failed to obtain the main window.');
@@ -173,16 +189,24 @@ export class AppWindowAdapter extends BaseAdapter {
     bounds.height = bounds.height + xComBorder + xComTop;
 
     try {
-      windowClass.moveWindowToAsync(bounds.left, bounds.top)
-        .then(() => {
-          windowClass?.resizeAsync(bounds.width, bounds.height)
-            .catch((err: BusinessError) => {
-              LogUtil.error(TAG, 'Failed to change the window size. Cause:' + JSON.stringify(err));
-              callback && callback();
-            });
-        }).catch((err: BusinessError) => {
-        LogUtil.error(TAG, 'Failed to move the window. Cause:' + JSON.stringify(err));
-      });
+      if (windowClass.getWindowStatus() !== window.WindowStatusType.MAXIMIZE &&
+        windowClass.getWindowStatus() !== window.WindowStatusType.FULL_SCREEN) {
+        windowClass.moveWindowToAsync(bounds.left, bounds.top)
+          .then(() => {
+            if (windowClass?.getWindowStatus() !== window.WindowStatusType.MAXIMIZE &&
+              windowClass?.getWindowStatus() !== window.WindowStatusType.FULL_SCREEN) {
+              windowClass?.resizeAsync(bounds.width, bounds.height)
+                .catch((err: BusinessError) => {
+                  LogUtil.error(TAG,
+                    'Failed to change the window size. Cause:' + JSON.stringify(err) + ' window status:' +
+                    windowClass?.getWindowStatus());
+                });
+            }
+          }).catch((err: BusinessError) => {
+          LogUtil.error(TAG, 'Failed to move the window. Cause:' + JSON.stringify(err) + ' window status:' +
+          windowClass?.getWindowStatus());
+        });
+      }
     } catch (exception) {
       LogUtil.error(TAG, 'move the window exception. Cause:' + JSON.stringify(exception));
     }
@@ -251,6 +275,10 @@ export class AppWindowAdapter extends BaseAdapter {
       }).catch((err: BusinessError) => {
         LogUtil.error(TAG, 'Failed to maximize the window. Cause:' + JSON.stringify(err));
       });
+
+      if (!this.deviceInfoAdapter.isPcMode()) {
+        this.abilityManager.getProxy(id)?.updateAvoidAreaStatus(false);
+      }
     } catch (exception) {
       LogUtil.error(TAG, 'maximize the window exception. Cause:' + JSON.stringify(exception));
     }

@@ -34,6 +34,7 @@ component("dev_config") {
   ]
 
   deps = [
+    "//ohos/adapter/file_picker:file_picker",
     "//third_party/jsoncpp",
   ]
 }

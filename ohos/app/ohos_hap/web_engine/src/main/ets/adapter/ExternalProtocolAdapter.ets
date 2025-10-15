@@ -48,7 +48,8 @@ export class ExternalProtocolAdapter extends BaseAdapter {
   openExternal(urlStr: string) {
     const want: Want = {
       flags: wantConstant.Flags.FLAG_START_WITHOUT_TIPS,
-      uri: urlStr
+      uri: urlStr,
+      action: "ohos.want.action.viewData"
     }
     LaunchHelper.Launch(this.ctxAdapter.getActiveContext(), want);
   }

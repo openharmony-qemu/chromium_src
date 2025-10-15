@@ -45,6 +45,12 @@ struct WindowRect {
   int32_t height;
 };
 
+enum class AbilityType {
+  kEntryAbility,
+  kStatelessAbility,
+  kTaskManagerAbility,
+};
+
 struct NewWindowParam {
  public:
   std::string parent_id;
@@ -54,8 +60,9 @@ struct NewWindowParam {
   bool hide_title_bar;
   bool use_floating_window;
   bool use_dark_mode;
-  bool is_stateless;
   bool caption_button_visible;
+  AbilityType ability_type;
+  std::string app_id;
 };
 
 struct PointCoordinate {
@@ -72,6 +79,13 @@ enum class WindowInitType {
   kTooltip,
   kDrag,
   kBubble,
+};
+
+struct WindowLimits {
+  int max_width;
+  int max_height;
+  int min_width;
+  int min_height;
 };
 
 class ADAPTER_EXPORT_API WindowInitParameter {
@@ -105,10 +119,13 @@ public:
   bool use_dark_mode = false;
   // The requested window id may be changed.
   std::string window_id;
-  // Tells whether to the window with stateless ability.
-  bool is_stateless = false;
 
   bool caption_button_visible = true;
+
+  AbilityType ability_type = AbilityType::kEntryAbility;
+
+  // Tells the browser load is webapp.
+  std::string_view app_id = "";
 };
 
 }  // namespace ohos::adapter::window

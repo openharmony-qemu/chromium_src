@@ -147,6 +147,12 @@ bool BookmarkCodec::Decode(const base::Value::Dict& value,
   // reassign IDs.
   if (!ids_valid_ || computed_checksum_ != stored_checksum_) {
     maximum_id_ = max_already_assigned_id;
+#if BUILDFLAG(IS_OHOS)
+    LOG(WARNING)
+        << "Bookmark checksums differ or some IDs were missing/not unique"
+        << ", checksum equal: " << (computed_checksum_ == stored_checksum_)
+        << ", ids_valid_: " << ids_valid_;
+#endif
     ReassignIDs(bb_node, other_folder_node, mobile_folder_node);
   }
   *max_id = maximum_id_ + 1;

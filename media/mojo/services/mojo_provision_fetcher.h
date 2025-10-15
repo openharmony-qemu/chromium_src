@@ -31,6 +31,12 @@ class MEDIA_MOJO_EXPORT MojoProvisionFetcher final : public ProvisionFetcher {
                 const std::string& request_data,
                 ResponseCB response_cb) final;
 
+#if BUILDFLAG(ENABLE_WISEPLAY)
+  void RetrieveWiseplayCertificate(const GURL& default_url,
+                                   const std::string& request_data,
+                                   ResponseCB response_cb) final;
+#endif // BUILDFLAG(ENABLE_WISEPLAY)
+
  private:
   // Callback for mojo::Remote<mojom::ProvisionFetcher>::Retrieve().
   void OnResponse(ResponseCB response_cb,

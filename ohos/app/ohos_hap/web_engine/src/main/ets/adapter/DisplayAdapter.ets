@@ -81,6 +81,9 @@ export class DisplayAdapter extends BaseAdapter {
           baseDisplay: displayClass,
           availArea: availArea,
         }
+        LogUtil.info(DisplayAdapter.TAG,
+          'getDefaultDisplay, displayId: ' + displayClass.id +
+          ', AvailArea.width: ' + availArea.width + ', height: '+ availArea.height);
         callback(completeDisplay);
       }).catch((err: BusinessError) => {
         LogUtil.error(DisplayAdapter.TAG, `Failed to get the available area in this display.
@@ -115,6 +118,12 @@ export class DisplayAdapter extends BaseAdapter {
                 baseDisplay: baseDisplay,
                 availArea: availAreas[index] }
               ) as CompleteDisplay);
+            for (let i = 0; i < completeDisplays.length; i++) {
+              LogUtil.info(DisplayAdapter.TAG,
+                'getAllDisplays, displayId: ' + completeDisplays[i].id +
+                ', AvailArea.width: ' +completeDisplays[i].availArea?.width +
+                ', height:'+ completeDisplays[i].availArea?.height);
+            }
             callback(completeDisplays, completeDisplays.length);
           })
           .catch((err: BusinessError) => {

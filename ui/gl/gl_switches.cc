@@ -4,6 +4,8 @@
 
 #include "ui/gl/gl_switches.h"
 
+#include "base/base_switches.h"
+#include "base/command_line.h"
 #include "build/build_config.h"
 #include "ui/gl/gl_display_manager.h"
 
@@ -353,6 +355,9 @@ BASE_FEATURE(kOHOSEnablePartialSwap,
              base::FEATURE_ENABLED_BY_DEFAULT);
 
 bool IsOHOSEnablePartialSwap() {
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(switches::KDisablePartialSwap)) {
+    return false;
+  }
   return base::FeatureList::IsEnabled(kOHOSEnablePartialSwap);
 }
 #endif  // BUILDFLAG(IS_OHOS)

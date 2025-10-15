@@ -94,6 +94,25 @@ void DesktopWindowTreeHostOhos::AddAdditionalInitProperties(
   }
   properties->background_color =
       GetWidget()->GetColorProvider()->GetColor(target_color);
+  properties->app_id = params.app_id;
+  properties->using_system_floating_window = params.using_system_floating_window;
+  properties->use_dark_mode = params.use_dark_mode;
+  properties->caption_button_visible = params.caption_button_visible;
+  properties->pip_controller = params.pip_controller;
+
+  if (params.using_system_floating_window && params.pip_parent &&
+      params.pip_parent->GetHost()) {
+    properties->pip_parent_widget =
+        params.pip_parent->GetHost()->GetAcceleratedWidget();
+  }
+
+  if (params.name == "ScreenCaptureNotificationUIViews") {
+    properties->ability_type = AbilityType::kStatelessAbility;
+  } else if (params.name == "TaskManagerView") {
+    properties->ability_type = AbilityType::kTaskManagerAbility;
+  } else {
+    properties->ability_type = AbilityType::kEntryAbility;
+  }
 }
 
 void DesktopWindowTreeHostOhos::DispatchEvent(ui::Event* event) {
@@ -174,27 +193,6 @@ DesktopWindowTreeHost* DesktopWindowTreeHost::Create(
     DesktopNativeWidgetAura* desktop_native_widget_aura) {
   return new DesktopWindowTreeHostOhos(native_widget_delegate,
                                        desktop_native_widget_aura);
-}
-
-void DesktopWindowTreeHostOhos::SetVisiblebyOcclusionState(
-    aura::Window::OcclusionState state) {
-  if (occlusion_state_ == state) {
-    return;
-  }
-  occlusion_state_ = state;
-  // Notify egl surface.
-  if (state == aura::Window::OcclusionState::OCCLUDED ||
-      state == aura::Window::OcclusionState::HIDDEN) {
-    SetVisibleOHOS(false);
-  } else {
-    SetVisibleOHOS(true);
-  }
-}
-
-void DesktopWindowTreeHostOhos::OnOcclusionStateChanged(
-    ui::PlatformWindowOcclusionState occlusion_state) {
-  WindowTreeHostPlatform::OnOcclusionStateChanged(occlusion_state);
-  SetVisiblebyOcclusionState(GetNativeWindowOcclusionState());
 }
 
 }  // namespace views

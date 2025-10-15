@@ -42,6 +42,7 @@ export class ContextAdapter extends BaseAdapter {
     private abilityManager: AbilityManager;
     private context: Context;
     private activeWindow: string = '';
+    private lastActiveUIAbility: string = '';
 
     constructor(
         @inject(AbilityManager) abilityManager: AbilityManager,
@@ -60,10 +61,15 @@ export class ContextAdapter extends BaseAdapter {
     public setActiveWindow(activeWindow: string) {
         LogUtil.info(TAG, 'set current active window:' + activeWindow);
         this.activeWindow = activeWindow;
+        let webProxy = this.abilityManager.getProxy(activeWindow);
+        if (webProxy && webProxy.isUIAbility()) {
+            LogUtil.info(TAG, 'set last active UI ability: ' + activeWindow);
+            this.lastActiveUIAbility = activeWindow;
+        }
     }
 
     public getActiveContext(): Context | undefined {
-        let activeProxy = this.abilityManager.getProxy(this.activeWindow);
+        let activeProxy = this.getActiveProxy();
         if (!activeProxy) {
             LogUtil.error(TAG, 'no active window context');
         }
@@ -72,10 +78,21 @@ export class ContextAdapter extends BaseAdapter {
 
     public getActiveProxy(): WebProxy {
         let activeProxy = this.abilityManager.getProxy(this.activeWindow);
-        if (!activeProxy) {
-            LogUtil.error(TAG, 'no active window');
-            return new FakeWebProxy()
+        if (activeProxy) {
+            return activeProxy;
         }
-        return activeProxy;
+
+        activeProxy = this.abilityManager.getProxy(this.lastActiveUIAbility);
+        if (activeProxy) {
+            return activeProxy;
+        }
+        LogUtil.error(TAG, 'No active proxy. use default proxy');
+
+        if (this.abilityManager.getProxyCount() > 0) {
+            return this.abilityManager.getProxyList()[0];
+        } else {
+            LogUtil.error(TAG, 'No proxy can be used');
+            return new FakeWebProxy();
+        }
     }
 }

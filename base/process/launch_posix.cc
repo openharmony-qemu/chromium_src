@@ -228,12 +228,16 @@ Process LaunchProcessWithNativeSpawn(const CommandLine& cmdline,
   int pid = -1;
   if (options.is_gpu_process) {
     pid = child_process_starter.StartGpuProcess(argv, fd_id_remap);
-  } else {
+  } else if (options.is_isolated_process) {
     pid = child_process_starter.StartIsolateChildProcess(argv,
                                                          fd_id_remap,
                                                          options.process_entry_point);
+  } else {
+    pid = child_process_starter.StartNormalChildProcess(argv,
+                                                        fd_id_remap,
+                                                        options.process_entry_point);
   }
-
+  
   if (pid < 0) {
     RAW_LOG(ERROR, "start child process failed");
     return Process();

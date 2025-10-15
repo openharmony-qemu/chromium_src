@@ -125,7 +125,7 @@ void BrowserAccessibilityManagerOHOS::FireBlinkEvent(
 }
 
 void BrowserAccessibilityManagerOHOS::RegisterAccessibilityEventListener(
-    std::shared_ptr<NWebAccessibilityEventCallback>
+    std::shared_ptr<AccessibilityEventCallback>
         accessibility_event_listener) {
   accessibility_event_listener_ = accessibility_event_listener;
 }

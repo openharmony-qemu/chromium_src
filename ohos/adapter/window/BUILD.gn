@@ -37,6 +37,8 @@ component("window") {
     "sub_window_adapter.cc",
     "window_common.h",
     "window_common.cc",
+    "pip_window_adapter.h",
+    "pip_window_adapter.cc",
   ]
 
   deps = [ "//third_party/aki:aki_jsbind" ]

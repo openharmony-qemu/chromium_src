@@ -62,7 +62,11 @@ class CONTENT_EXPORT AudioOutputStreamBroker final : public AudioStreamBroker {
   SEQUENCE_CHECKER(owning_sequence_);
 
   const std::string output_device_id_;
+#if BUILDFLAG(IS_OHOS)
+  media::AudioParameters params_;
+#else
   const media::AudioParameters params_;
+#endif
   const base::UnguessableToken group_id_;
 
   // Set while CreateStream() has been called, but not StreamCreated().

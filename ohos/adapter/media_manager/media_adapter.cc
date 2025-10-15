@@ -35,6 +35,7 @@
 #include <thread>
 
 #include "ohos/adapter/aki_hook/aki_hook.h"
+#include "ohos/adapter/common/logging.h"
 
 namespace ohos {
 namespace adapter {
@@ -118,6 +119,15 @@ void MediaAdapter::InitImageReceiver() {
   if (insert) {
     insert->Invoke<void>();
   }
+}
+ 
+int32_t MediaAdapter::GetCameraOrientation() {
+  auto insert = ohos::adapter::GetJSFunction("mediaAdapter.getCameraOrientation");
+  if (insert) {
+    return insert->Invoke<int32_t>();
+  }
+  LOGE("GetJSFunction mediaAdapter.getCameraOrientation failed");
+  return 0;
 }
 }  // namespace adapter
 }  // namespace ohos

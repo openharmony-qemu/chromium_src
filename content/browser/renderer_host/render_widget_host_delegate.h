@@ -366,6 +366,8 @@ class CONTENT_EXPORT RenderWidgetHostDelegate {
   // Notifies when an input event is ignored.
   virtual void OnInputIgnored(const blink::WebInputEvent& event) {}
 
+  virtual bool IsWebApp();
+
  protected:
   virtual ~RenderWidgetHostDelegate() {}
 };

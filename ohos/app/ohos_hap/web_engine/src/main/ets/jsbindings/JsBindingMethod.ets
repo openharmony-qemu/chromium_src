@@ -66,6 +66,7 @@ import { ShapeDetectionAdapterBind } from '../jsbindings/ShapeDetectionAdapterBi
 import { SpeechAdapterBind } from '../jsbindings/SpeechAdapterBind';
 import { SubWindowAdapterBind } from '../jsbindings/SubWindowAdapterBind';
 import { SystemFloatingWindowAdapterBind } from './SystemFloatingWindowAdapterBind';
+import { WebAppAdapterBind } from './WebAppAdapterBind';
 
 export class JsBindingMethod {
   static bind() {
@@ -108,5 +109,6 @@ export class JsBindingMethod {
     SpeechAdapterBind.bind();
     SubWindowAdapterBind.bind();
     SystemFloatingWindowAdapterBind.bind();
+    WebAppAdapterBind.bind();
   }
 }

@@ -848,6 +848,13 @@ class CONTENT_EXPORT WebContentsDelegate {
   GetBackForwardTransitionFallbackUXConfig();
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(IS_OHOS)
+  virtual void NotifyShowBeforeUnloadConfirmDialog() {}
+  
+  // For built-in webapp
+  virtual bool IsWebApp();
+#endif  // BUILDFLAG(IS_OHOS)
+
  protected:
   virtual ~WebContentsDelegate();
 

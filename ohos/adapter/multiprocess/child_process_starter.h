@@ -56,6 +56,10 @@ class ADAPTER_EXPORT_API ChildProcessStarter {
   int StartGpuProcess(const std::vector<std::string>& command,
                       const std::vector<std::pair<int, int>>& fds);
 
+  int StartNormalChildProcess(const std::vector<std::string>& command,
+                               const std::vector<std::pair<int, int>>& fds,
+                               const std::string& entry_point = "");
+
  private:
   int StartChildProcess(std::function<void(StartCallbackFunc)> startFunc,
                         const std::vector<std::string>& command,

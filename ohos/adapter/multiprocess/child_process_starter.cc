@@ -116,7 +116,7 @@ int ChildProcessStarter::StartIsolateChildProcess(
 #if defined(ENABLE_START_ISOLATE_PROCESS)
   TRACE_EVENT_0("ChildProcessStarter::StartIsolateChildProcess");
   if (IsStartNativeChildProcessAvailable()) {
-    return IsolateProcessHelper::StartChildProcess(command, fds, entry_point);
+    return IsolateProcessHelper::StartChildProcess(command, fds, entry_point, true);
   } else {
     LOGW("fallback to StartLegacyChildProcess");
     return StartLegacyChildProcess(command, fds);
@@ -145,4 +145,21 @@ int ChildProcessStarter::StartGpuProcess(
   return StartChildProcess(start_func, commands, fds);
 }
 
+int ChildProcessStarter::StartNormalChildProcess(
+    const std::vector<std::string>& command,
+    const std::vector<std::pair<int, int>>& fds,
+    const std::string& entry_point) {
+#if defined(ENABLE_START_ISOLATE_PROCESS)
+  TRACE_EVENT_0("ChildProcessStarter::StartNormalpocess");
+  if (IsStartNativeChildProcessAvailable()) {
+    return IsolateProcessHelper::StartChildProcess(command, fds, entry_point, false);
+  } else {
+    LOGW("fallback to StartLegacyChildProcess");
+    return StartLegacyChildProcess(command, fds);
+  }
+#else
+  LOGW("fallback to StartLegacyChildProcess");
+  return StartLegacyChildProcess(command, fds);
+#endif
+    }
 }  // namespace ohos::adapter::multiprocess

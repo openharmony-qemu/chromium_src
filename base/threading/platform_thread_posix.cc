@@ -50,7 +50,7 @@
 #endif
 
 #if BUILDFLAG(IS_OHOS)
-#include "qos/qos.h"
+#include <qos/qos.h>
 #endif
 
 namespace base {
@@ -407,6 +407,18 @@ void SetCurrentThreadTypeImpl(ThreadType thread_type,
 #if BUILDFLAG(IS_NACL)
   NOTIMPLEMENTED();
 #else
+
+#if BUILDFLAG(IS_OHOS)
+  const QoS_Level level = internal::ThreadTypeToQosLevel(thread_type);
+  const auto current_tid = PlatformThread::CurrentId();
+  if (OH_QoS_SetThreadQoS(level) != 0) {
+    LOG(ERROR) << "Failed to set thread qos. thread (" << current_tid << ")";
+  } else {
+    LOG(INFO) << "SetCurrentThread thread (" << current_tid << ") to "
+              << (int)level;
+  }
+#endif
+
   if (internal::SetCurrentThreadTypeForPlatform(thread_type, pump_type_hint))
     return;
 
@@ -422,17 +434,6 @@ void SetCurrentThreadTypeImpl(ThreadType thread_type,
               << PlatformThread::CurrentId() << ") to " << nice_setting;
   }
 #endif  // BUILDFLAG(IS_NACL)
-
-#if BUILDFLAG(IS_OHOS)
-  const QoS_Level level = internal::ThreadTypeToQosLevel(thread_type);
-  const auto current_tid = PlatformThread::CurrentId();
-  if (OH_QoS_SetThreadQoS(level) != 0) {
-    LOG(ERROR) << "Failed to set thread qos. thread (" << current_tid << ")";
-  } else {
-    LOG(INFO) << "SetCurrentThread thread (" << current_tid << ") to "
-              << (int)level;
-  }
-#endif
 }
 
 }  // namespace internal

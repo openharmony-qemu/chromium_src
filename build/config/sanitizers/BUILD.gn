@@ -315,8 +315,10 @@ config("common_sanitizer_flags") {
 
     # Allow non-default toolchains to enable sanitizers in toolchain_args even
     # in official builds.
-    assert(current_toolchain != default_toolchain || !is_official_build,
-           "sanitizers not supported in official builds")
+    if (!is_ohos) {
+      assert(current_toolchain != default_toolchain || !is_official_build,
+             "sanitizers not supported in official builds")
+    }
 
     cflags += [
       # Column info in debug data confuses Visual Studio's debugger, so don't
@@ -334,6 +336,12 @@ config("asan_flags") {
   rustflags = []
   if (is_asan) {
     cflags += [ "-fsanitize=address" ]
+    if (is_ohos) {
+      cflags += [
+        "-fno-omit-frame-pointer",
+        "-fsanitize-recover=address"
+      ]
+    }
     rustflags += [ "-Zsanitizer=address" ]
     if (!is_win && !is_apple && !is_fuchsia) {
       # TODO(crbug.com/1459233, crbug.com/1462248): This causes asan

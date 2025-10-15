@@ -29,8 +29,6 @@
 
 #include "ui/ozone/platform/ohos/test/ohos_ozone_ui_controls_test_helper.h"
 
-#include "ohos/adapter/xcomponent/adapter/window_adapter.h"
-#include "ohos/adapter/xcomponent/xcomponent_manager.h"
 #include "ui/aura/window_tree_host.h"
 #include "ui/events/base_event_utils.h"
 #include "ui/events/event.h"
@@ -45,6 +43,9 @@
 #include "ui/ozone/platform/ohos/host/ohos_event_source.h"
 
 namespace ui {
+// Mask of the buttons currently down.
+// just set it to 1 for test on the ohos platform
+constexpr unsigned kButtonDownMask = 1;
 
 OhosOzoneUIControlsTestHelper::OhosOzoneUIControlsTestHelper() = default;
 OhosOzoneUIControlsTestHelper::~OhosOzoneUIControlsTestHelper() = default;
@@ -56,7 +57,7 @@ bool OhosOzoneUIControlsTestHelper::SupportsScreenCoordinates() const {
 }
 
 unsigned OhosOzoneUIControlsTestHelper::ButtonDownMask() const {
-  return 1;
+  return kButtonDownMask;
 }
 
 void OhosOzoneUIControlsTestHelper::SendKeyEvents(gfx::AcceleratedWidget widget,

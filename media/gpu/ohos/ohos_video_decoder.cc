@@ -48,6 +48,7 @@
 #include "media/base/decoder_buffer.h"
 #include "media/base/media_log.h"
 #include "media/base/media_switches.h"
+#include "media/base/ohos/ohos_media_codec_util.h"
 #include "media/base/ohos/ohos_media_decoder_bridge_impl.h"
 #include "media/base/scoped_async_trace.h"
 #include "media/base/status.h"
@@ -58,6 +59,8 @@
 #include "media/base/video_frame.h"
 #include "media/gpu/ohos/codec_allocator.h"
 #include "media/media_buildflags.h"
+
+using media::OhosMediaCodecUtil;
 
 namespace media {
 namespace {
@@ -75,15 +78,25 @@ bool IsSurfaceControlEnabled(const gpu::GpuFeatureInfo& info) {
 
 std::vector<SupportedVideoDecoderConfig> GetSupportedConfigsInternal() {
   std::vector<SupportedVideoDecoderConfig> supported_configs;
-  supported_configs.emplace_back(H264PROFILE_MIN, H264PROFILE_MAX,
-                                 gfx::Size(0, 0), gfx::Size(3840, 2160), true,
-                                 false);
-  supported_configs.emplace_back(H264PROFILE_MIN, H264PROFILE_MAX,
-                                 gfx::Size(0, 0), gfx::Size(2160, 3840), true,
-                                 false);
-  supported_configs.emplace_back(HEVCPROFILE_MIN, HEVCPROFILE_MAX,
-                                 gfx::Size(0, 0), gfx::Size(3840, 2160), true,
-                                 false);
+
+  std::optional<SupportedVideoDecoderConfig> avc_supported_video_decoder_config =
+      OhosMediaCodecUtil::GetAVCSupportedConfig();
+  if (avc_supported_video_decoder_config.has_value()) {
+    supported_configs.emplace_back(avc_supported_video_decoder_config.value());
+  }
+
+  std::optional<SupportedVideoDecoderConfig> hevc_supported_video_decoder_config =
+      OhosMediaCodecUtil::GetHEVCSupportedConfig();
+  if (hevc_supported_video_decoder_config.has_value()) {
+    supported_configs.emplace_back(hevc_supported_video_decoder_config.value());
+  }
+
+  std::optional<SupportedVideoDecoderConfig> vvc_supported_video_decoder_config =
+      OhosMediaCodecUtil::GetVVCSupportedConfig();
+  if (vvc_supported_video_decoder_config.has_value()) {
+    supported_configs.emplace_back(vvc_supported_video_decoder_config.value());
+  }
+
   return supported_configs;
 }
 
@@ -144,7 +157,21 @@ void OhosVideoDecoder::DestroyAsync(std::unique_ptr<OhosVideoDecoder> decoder) {
   DCHECK(decoder);
   auto* self = decoder.release();
 
+  if (self == nullptr) {
+    LOG(ERROR) << __func__ << " [WiseplayDrm] decoder is nullptr";
+    return;
+  }
+
   self->weak_factory_.InvalidateWeakPtrs();
+
+#if BUILDFLAG(ENABLE_WISEPLAY)
+  if (self->ohos_crypto_context_) {
+    // Cancel previously registered callback (if any).
+    self->event_cb_registration_.reset();
+    self->ohos_crypto_context_->SetOHOSMediaCryptoReadyCB(base::NullCallback());
+    self->ohos_crypto_context_ = nullptr;
+  }
+#endif  // BUILDFLAG(ENABLE_WISEPLAY)
 
   if (self->reset_cb_) {
     std::move(self->reset_cb_).Run();
@@ -163,18 +190,19 @@ void OhosVideoDecoder::Initialize(const VideoDecoderConfig& config,
                                   const WaitingCB& waiting_cb) {
   DCHECK(output_cb);
   DCHECK(waiting_cb);
-
   const bool first_init = !decoder_config_.IsValidConfig();
   DVLOG(1) << (first_init ? "Initializing" : "Reinitializing")
              << " config: " << config.AsHumanReadableString();
 
   if (!config.IsValidConfig()) {
+    LOG(WARNING) << __FUNCTION__ << " [WiseplayDRM] config invalid.";
     base::BindPostTaskToCurrentDefault(std::move(init_cb))
         .Run(DecoderStatus::Codes::kUnsupportedConfig);
     return;
   }
 
   if (!first_init && decoder_config_.codec() != config.codec()) {
+    LOG(WARNING) << __FUNCTION__ << " [WiseplayDRM] duplicate init.";
     base::BindPostTaskToCurrentDefault(std::move(init_cb))
         .Run(DecoderStatus::Codes::kCantChangeCodec);
     return;
@@ -183,17 +211,105 @@ void OhosVideoDecoder::Initialize(const VideoDecoderConfig& config,
   decoder_config_ = config;
   output_cb_ = output_cb;
   waiting_cb_ = waiting_cb;
-  base::BindPostTaskToCurrentDefault(std::move(init_cb))
-      .Run(DecoderStatus::Codes::kOk);
 
   const int width = decoder_config_.coded_size().width();
+#if BUILDFLAG(ENABLE_WISEPLAY)
+  if (first_init && cdm_context && cdm_context->GetOhosMediaCryptoContext()) {
+    last_width_ = width;
+    SetCdm(cdm_context, std::move(init_cb));
+    return;
+  }
+  if (config.is_encrypted() && media_key_session_ == nullptr) {
+    base::BindPostTaskToCurrentDefault(std::move(init_cb))
+        .Run(DecoderStatus::Codes::kUnsupportedEncryptionMode);
+    return;
+  }
+#else
   if (first_init) {
     last_width_ = width;
   }
+#endif  // BUILDFLAG(ENABLE_WISEPLAY)
+  base::BindPostTaskToCurrentDefault(std::move(init_cb))
+      .Run(DecoderStatus::Codes::kOk);
 }
 
+#if BUILDFLAG(ENABLE_WISEPLAY)
+void OhosVideoDecoder::SetCdm(CdmContext* cdm_context, InitCB init_cb) {
+  TRACE_EVENT0("media", "OhosVideoDecoder::SetCdm");
+  if (!cdm_context) {
+    LOG(WARNING) << __FUNCTION__ << " [WiseplayDRM] OhosVideoDecoder::SetCdm No CDM provided";
+    base::BindPostTaskToCurrentDefault(std::move(init_cb)).Run(DecoderStatus::Codes::kFailed);
+    return;
+  }
+
+  ohos_crypto_context_ = cdm_context->GetOhosMediaCryptoContext();
+
+  event_cb_registration_ = cdm_context->RegisterEventCB(base::BindRepeating(
+      &OhosVideoDecoder::OnCdmContextEvent, weak_factory_.GetWeakPtr()));
+
+  ohos_crypto_context_->SetOHOSMediaCryptoReadyCB(
+      base::BindPostTaskToCurrentDefault(
+          base::BindOnce(&OhosVideoDecoder::OnMediaCryptoReady,
+                         weak_factory_.GetWeakPtr(), std::move(init_cb))));
+}
+
+void OhosVideoDecoder::OnMediaCryptoReady(
+    InitCB init_cb,
+    void* media_key_session,
+    bool requires_secure_video_codec) {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  DVLOG(1) << __func__
+           << ": requires_secure_video_codec = " << requires_secure_video_codec;
+
+  DCHECK(state_ == State::kInitializing);
+  DCHECK(media_key_session);
+
+  if (media_key_session == nullptr) {
+    ohos_crypto_context_->SetOHOSMediaCryptoReadyCB(base::NullCallback());
+    ohos_crypto_context_ = nullptr;
+    media_key_session_ = nullptr;
+    requires_secure_codec_ = requires_secure_video_codec;
+    if (codec_ &&
+        !codec_->SetDecryptionConfig(nullptr, requires_secure_video_codec)) {
+      LOG(ERROR)
+          << "OhosVideoDecoder::OnMediaCryptoReady set decryt nullptr fail";
+    }
+    if (decoder_config_.is_encrypted()) {
+      LOG(ERROR)
+          << "OhosVideoDecoder::OnMediaCryptoReady can't play encrypted stream";
+      EnterTerminalState(State::kError, "MediaCrypto is not available");
+      std::move(init_cb).Run(DecoderStatus::Codes::kUnsupportedEncryptionMode);
+      return;
+    }
+
+    // MediaCrypto is not available, but the stream is clear. So we can still
+    // play the current stream. But if we switch to an encrypted stream playback
+    // will fail.
+    std::move(init_cb).Run(DecoderStatus::Codes::kOk);
+    return;
+  }
+
+  media_key_session_ = std::move(media_key_session);
+  requires_secure_codec_ = requires_secure_video_codec;
+
+  // Signal success, and create the codec lazily on the first decode.
+  if (!init_cb.is_null()) {
+    std::move(init_cb).Run(DecoderStatus::Codes::kOk);
+  }
+}
+
+void OhosVideoDecoder::OnCdmContextEvent(CdmContext::Event event) {
+  LOG(INFO) << "OhosVideoDecoder::OnCdmContextEvent enter";
+  if (event != CdmContext::Event::kHasAdditionalUsableKey) {
+    return;
+  }
+
+  waiting_for_key_ = false;
+  PumpCodec();
+}
+#endif  // BUILDFLAG(ENABLE_WISEPLAY)
+
 void OhosVideoDecoder::StartLazyInit() {
-  LOG(INFO) << "OhosVideoDecoder::StartLazyInit";
   TRACE_EVENT0("media", "OhosVideoDecoder::StartLazyInit");
   lazy_init_pending_ = false;
   video_frame_factory_->Initialize(
@@ -205,6 +321,7 @@ void OhosVideoDecoder::OnVideoFrameFactoryInitialized(
     scoped_refptr<gpu::NativeImageTextureOwner> texture_owner) {
   TRACE_EVENT0("media", "OhosVideoDecoder::OnVideoFrameFactoryInitialized");
   if (!texture_owner) {
+    LOG(WARNING) << __FUNCTION__ << " [WiseplayDRM] no texture owner: " << texture_owner;
     EnterTerminalState(State::kError, "Could not allocated TextureOwner");
     return;
   }
@@ -243,14 +360,13 @@ void OhosVideoDecoder::TransitionToTargetSurface() {
 }
 
 void OhosVideoDecoder::CreateCodec() {
-  LOG(INFO) << "OhosVideoDecoder::CreateCodec";
   DCHECK(!codec_);
   DCHECK(target_surface_bundle_);
   DCHECK_EQ(state_, State::kRunning);
 
   auto config = std::make_unique<VideoBridgeCodecConfig>();
   if (!config) {
-    LOG(ERROR) << "OhosVideoDecoder::CreateCodec config is null";
+    LOG(ERROR) << __FUNCTION__ << " [WiseplayDRM] config is null";
     return;
   }
 
@@ -258,7 +374,9 @@ void OhosVideoDecoder::CreateCodec() {
   config->on_buffers_available_cb =
       base::BindPostTaskToCurrentDefault(base::BindRepeating(
           &OhosVideoDecoder::PumpCodec, weak_factory_.GetWeakPtr()));
-
+#if BUILDFLAG(ENABLE_WISEPLAY)
+  config->media_key_session = std::move(media_key_session_);
+#endif  // BUILDFLAG(ENABLE_WISEPLAY)
   video_frame_factory_->SetSurfaceBundle(target_surface_bundle_);
   codec_allocator_->CreateMediaCodecAsync(
       base::BindOnce(&OhosVideoDecoder::OnCodecConfiguredInternal,
@@ -273,7 +391,6 @@ void OhosVideoDecoder::OnCodecConfiguredInternal(
     CodecAllocator* codec_allocator,
     scoped_refptr<CodecSurfaceBundle> surface_bundle,
     std::unique_ptr<MediaCodecDecoderBridgeImpl> codec) {
-  LOG(INFO) << "OhosVideoDecoder::OnCodecConfiguredInternal";
   if (!weak_this) {
     if (codec) {
       codec_allocator->ReleaseMediaCodec(
@@ -291,12 +408,11 @@ void OhosVideoDecoder::OnCodecConfiguredInternal(
 void OhosVideoDecoder::OnCodecConfigured(
     scoped_refptr<CodecSurfaceBundle> surface_bundle,
     std::unique_ptr<MediaCodecDecoderBridgeImpl> codec) {
-  LOG(INFO) << "OhosVideoDecoder::OnCodecConfigured";
   DCHECK(!codec_);
   DCHECK_EQ(state_, State::kRunning);
 
   if (!codec) {
-    LOG(ERROR) << "OhosVideoDecoder::OnCodecConfigured codec is null";
+    LOG(ERROR) << __FUNCTION__ << " [WiseplayDRM] codec is null";
     EnterTerminalState(State::kError, "Unable to allocate codec");
     return;
   }
@@ -306,7 +422,12 @@ void OhosVideoDecoder::OnCodecConfigured(
   decoderFormat.height = decoder_config_.coded_size().height();
   codec->ConfigureBridgeDecoder(decoderFormat,
                                 base::SequencedTaskRunner::GetCurrentDefault());
-  codec->SetBridgeOutputSurface(surface_bundle->GetOHOSNativeWindow());
+  if (codec->SetBridgeOutputSurface(surface_bundle->GetOHOSNativeWindow()) ==
+      DecoderAdapterCode::DECODER_ERROR) {
+    LOG(ERROR) << __FUNCTION__ << " [WiseplayDRM] SetBridgeOutputSurface failed:Unable to initialize codec.";
+    EnterTerminalState(State::kError, "Unable to initialize codec");
+    return;
+  }
   codec->PrepareBridgeDecoder();
   codec->StartBridgeDecoder();
   codec_ = std::make_unique<CodecWrapper>(
@@ -323,7 +444,7 @@ void OhosVideoDecoder::OnCodecConfigured(
 void OhosVideoDecoder::Decode(scoped_refptr<DecoderBuffer> buffer,
                               DecodeCB decode_cb) {
   if (!buffer) {
-    LOG(ERROR) << "OhosVideoDecoder::Decode buffer is null";
+    LOG(ERROR) << "[WiseplayDRM] OhosVideoDecoder::Decode buffer is null";
     std::move(decode_cb).Run(DecoderStatus::Codes::kFailed);
     return;
   }
@@ -371,10 +492,18 @@ void OhosVideoDecoder::PumpCodec() {
 }
 
 bool OhosVideoDecoder::QueueInput() {
-  if (!codec_ || codec_->IsDrained()) {
-    LOG(ERROR) << "OhosVideoDecoder::QueueInput codec_ is null";
+  if (!codec_) {
+    LOG(ERROR) << __func__ << "[WiseplayDRM] codec_ is null";
     return false;
   }
+
+#if BUILDFLAG(ENABLE_WISEPLAY)
+  if (waiting_for_key_) {
+    LOG(INFO) << __func__ << "[WiseplayDRM]  wait for key";
+    return false;
+  }
+#endif  // BUILDFLAG(ENABLE_WISEPLAY)
+
   if (codec_->IsDrained() || deferred_flush_pending_) {
     if (!codec_->HasUnreleasedOutputBuffers() && !pending_decodes_.empty()) {
       FlushCodec();
@@ -394,15 +523,22 @@ bool OhosVideoDecoder::QueueInput() {
   switch (status) {
     case CodecWrapper::QueueStatus::kOk:
       break;
+#if BUILDFLAG(ENABLE_WISEPLAY)
+    case CodecWrapper::QueueStatus::kNoKey:
+      // Retry when a key is added.
+      waiting_for_key_ = true;
+      waiting_cb_.Run(WaitingReason::kNoDecryptionKey);
+      return false;
+#endif  // BUILDFLAG(ENABLE_WISEPLAY)
     case CodecWrapper::QueueStatus::kTryAgainLater:
       return false;
     case CodecWrapper::QueueStatus::kError:
+    default:
       EnterTerminalState(State::kError, "QueueInputBuffer failed");
       return false;
   }
 
   if (pending_decode.buffer->end_of_stream()) {
-    LOG(INFO) << "OhosVideoDecoder::QueueInput EOS";
     DCHECK(!eos_decode_cb_);
     eos_decode_cb_ = std::move(pending_decode.decode_cb);
   } else {
@@ -414,9 +550,16 @@ bool OhosVideoDecoder::QueueInput() {
 
 bool OhosVideoDecoder::DequeueOutput() {
   if (!codec_ || codec_->IsDrained()) {
-    LOG(ERROR) << "OhosVideoDecoder::DequeueOutput failed";
+    LOG(ERROR) << "[WiseplayDRM] OhosVideoDecoder::DequeueOutput failed";
     return false;
   }
+
+#if BUILDFLAG(ENABLE_WISEPLAY)
+  if (waiting_for_key_) {
+    LOG(ERROR) << "[WiseplayDRM] OhosVideoDecoder::DequeueOutput failed";
+    return false;
+  }
+#endif  // BUILDFLAG(ENABLE_WISEPLAY)
 
   base::TimeDelta presentation_time;
   bool eos = false;
@@ -444,7 +587,7 @@ bool OhosVideoDecoder::DequeueOutput() {
     if (drain_type_) {
       OnCodecDrained();
     }
-    LOG(ERROR) << "OhosVideoDecoder::DequeueOutput is drained";
+    LOG(ERROR) << " [WiseplayDRM] OhosVideoDecoder::DequeueOutput is drained";
     return false;
   }
 
@@ -462,11 +605,12 @@ bool OhosVideoDecoder::DequeueOutput() {
       ScopedAsyncTrace::CreateIfEnabled("OhosVideoDecoder::CreateVideoFrame");
 
   if (!is_surface_control_enabled_) {
+    LOG(WARNING) << __FUNCTION__ << " [WiseplayDRM] is_surface_control_enabled_ not enabled."
+                 << "Calling OhosVideoDecoder::PumpCodec() later.";
     output_buffer->set_render_cb(
         base::BindPostTaskToCurrentDefault(base::BindOnce(
             &OhosVideoDecoder::PumpCodec, weak_factory_.GetWeakPtr())));
   }
-
   video_frame_factory_->CreateVideoFrame(
       std::move(output_buffer), presentation_time,
       decoder_config_.aspect_ratio().GetNaturalSize(visible_rect),
@@ -498,7 +642,6 @@ void OhosVideoDecoder::ForwardVideoFrame(
 }
 
 void OhosVideoDecoder::Reset(base::OnceClosure closure) {
-  LOG(INFO) << "OhosVideoDecoder::Reset";
   DCHECK(!reset_cb_);
   reset_generation_++;
   reset_cb_ = std::move(closure);
@@ -507,7 +650,6 @@ void OhosVideoDecoder::Reset(base::OnceClosure closure) {
 }
 
 void OhosVideoDecoder::StartDrainingCodec(DrainType drain_type) {
-  LOG(INFO) << "OhosVideoDecoder::StartDrainingCodec";
   TRACE_EVENT0("media", "OhosVideoDecoder::StartDrainingCodec");
   DCHECK(pending_decodes_.empty());
   drain_type_ = drain_type;
@@ -532,7 +674,6 @@ void OhosVideoDecoder::StartDrainingCodec(DrainType drain_type) {
 }
 
 void OhosVideoDecoder::OnCodecDrained() {
-  LOG(INFO) << "OhosVideoDecoder::OnCodecDrained";
   TRACE_EVENT0("media", "OhosVideoDecoder::OnCodecDrained");
   DrainType drain_type = *drain_type_;
   drain_type_.reset();
@@ -551,7 +692,6 @@ void OhosVideoDecoder::OnCodecDrained() {
 }
 
 void OhosVideoDecoder::EnterTerminalState(State state, const char* reason) {
-  LOG(INFO) << "OhosVideoDecoder::EnterTerminalState";
   state_ = state;
   DCHECK(InTerminalState());
 
@@ -570,12 +710,10 @@ void OhosVideoDecoder::EnterTerminalState(State state, const char* reason) {
 }
 
 bool OhosVideoDecoder::InTerminalState() {
-  LOG(INFO) << "OhosVideoDecoder::InTerminalState";
   return state_ == State::kSurfaceDestroyed || state_ == State::kError;
 }
 
 void OhosVideoDecoder::CancelPendingDecodes(DecoderStatus status) {
-  LOG(INFO) << "OhosVideoDecoder::CancelPendingDecodes";
   for (auto& pending_decode : pending_decodes_) {
     std::move(pending_decode.decode_cb).Run(status);
   }
@@ -586,7 +724,6 @@ void OhosVideoDecoder::CancelPendingDecodes(DecoderStatus status) {
 }
 
 void OhosVideoDecoder::ReleaseCodec() {
-  LOG(INFO) << "OhosVideoDecoder::ReleaseCodec";
   if (!codec_) {
     return;
   }

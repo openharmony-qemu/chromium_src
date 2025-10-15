@@ -1046,6 +1046,7 @@ class CONTENT_EXPORT WebContentsImpl
       base::OnceCallback<void(const SkBitmap&)> callback) override;
 
   // RenderWidgetHostDelegate --------------------------------------------------
+  bool IsWebApp() override;
 
   void SetTopControlsShownRatio(RenderWidgetHostImpl* render_widget_host,
                                 float ratio) override;

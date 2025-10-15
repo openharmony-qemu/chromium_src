@@ -128,7 +128,8 @@ class GPU_IPC_SERVICE_EXPORT GpuChannelSharedImageInterface
   scoped_refptr<ClientSharedImage> CreateSharedImageForOhosVideo(
       const gfx::Size& size,
       const gfx::ColorSpace& color_space,
-      scoped_refptr<StreamTextureSharedImageInterface> image);
+      scoped_refptr<StreamTextureSharedImageInterface> image,
+      scoped_refptr<RefCountedLock> drdc_lock);
 #endif
 
   SequenceId sequence() { return sequence_; }

@@ -330,6 +330,8 @@ void BrowserChildProcessHostImpl::LaunchWithoutExtraCommandLineSwitches(
 #if BUILDFLAG(IS_OHOS)
       switches::kBundleInstallationDir,
       switches::KDisableOcclusionFeature,
+      switches::KDisablePartialSwap,
+      switches::kOhosTrace,
 #endif
   };
   cmd_line->CopySwitchesFrom(browser_command_line, kForwardSwitches);

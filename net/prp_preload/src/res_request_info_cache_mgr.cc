@@ -178,7 +178,7 @@ void ResReqInfoCacheMgr::OnEntryLoadedCallback(const std::string& entry_content)
 }
 
 void ResReqInfoCacheMgr::CheckFlush() {
-  if (!is_start_) {
+  if (disk_cache_ == nullptr || !is_start_) {
     LOG(INFO) << "PRPPreload.ResReqInfoCacheMgr::CheckFlush no need to flush" << url_;
     return;
   }

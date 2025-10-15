@@ -171,6 +171,12 @@ BASE_FEATURE(kBrokerFileOperationsOnDiskCacheInNetworkService,
              "BrokerFileOperationsOnDiskCacheInNetworkService",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
+// Allows the decision to bypass redirect checks to be made based on the
+// specific request.
+BASE_FEATURE(kBypassRedirectChecksPerRequest,
+             "BypassRedirectChecksPerRequest",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+
 // When enabled, mouse user activation will be verified by the browser side.
 BASE_FEATURE(kBrowserVerifiedUserActivationMouse,
              "BrowserVerifiedUserActivationMouse",

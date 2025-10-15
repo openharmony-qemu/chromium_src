@@ -198,13 +198,14 @@ void VideoFrameFactoryImpl::CreateVideoFrame_OnImageReady(
 
   auto codec_image_holder = std::move(record.codec_image_holder);
 
-  auto frame = VideoFrame::WrapMappableSharedImage(
-      std::move(record.shared_image), gpu::SyncToken(),
-      VideoFrame::ReleaseMailboxAndGpuMemoryBufferCB(),
+  scoped_refptr<VideoFrame> frame = VideoFrame::WrapSharedImage(
+      pixel_format, std::move(record.shared_image), gpu::SyncToken(),
+      VideoFrame::ReleaseMailboxCB(), frame_info.coded_size,
       frame_info.visible_rect, natural_size, timestamp);
 
   DVLOG(3) << "CreateVideoFrame_OnImageReady frame id : "
            << frame->unique_id();
+  frame->set_ycbcr_info(frame_info.ycbcr_info);
   frame->set_color_space(color_space);
 
   if (!frame) {

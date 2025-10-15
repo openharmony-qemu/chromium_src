@@ -43,7 +43,7 @@
 
 namespace ui {
 
-OhosWindowManager::OhosWindowManager() {
+OhosWindowManager::OhosWindowManager() : PlatformWindowManager() {
   WindowAdapter::GetInstance().RegistWindowStatus(this);
 }
 
@@ -52,16 +52,16 @@ OhosWindowManager::~OhosWindowManager() {
 }
 
 void OhosWindowManager::OnWindowAdd(const WindowInfo& info) {
-  auto ohosWindow = windows_.Lookup(info.widgetId);
-  if (ohosWindow != nullptr) {
-    ohosWindow->OnSurfaceCreated();
+  auto ohos_window = windows_.Lookup(info.widget_id);
+  if (ohos_window != nullptr) {
+    ohos_window->OnSurfaceCreated();
   }
 }
 
 void OhosWindowManager::OnWindowRemove(const WindowInfo& info) {
-  auto ohosWindow = windows_.Lookup(info.widgetId);
-  if (ohosWindow != nullptr) {
-    ohosWindow->OnSurfaceDestoryed();
+  auto ohos_window = windows_.Lookup(info.widget_id);
+  if (ohos_window != nullptr) {
+    ohos_window->OnSurfaceDestoryed();
   }
 }
 
@@ -71,6 +71,13 @@ void OhosWindowManager::AddObserver(OhosWindowObserver* observer) {
 
 void OhosWindowManager::RemoveObserver(OhosWindowObserver* observer) {
   observers_.RemoveObserver(observer);
+}
+
+void OhosWindowManager::PrepareCloseWindow(gfx::AcceleratedWidget widget,
+                                           OhosWindow* window) {
+  for (OhosWindowObserver& observer : observers_) {
+    observer.OnWindowCloseEvent(window);
+  }
 }
 
 int32_t OhosWindowManager::AddWindow(gfx::AcceleratedWidget widget,
@@ -224,15 +231,15 @@ void OhosWindowManager::SetPointerFocusedWindow(
 }
 
 bool OhosWindowManager::IsWindowAtLast() {
-  int topWindowCount = 0;
+  int top_window_count = 0;
   for (base::IDMap<OhosWindow*>::iterator iter(&windows_);
        !iter.IsAtEnd(); iter.Advance()) {
     OhosWindow* window = iter.GetCurrentValue();
     if (window->AsOhosToplevelWindow()) {
-      topWindowCount++;
+      top_window_count++;
     }
   }
-  return topWindowCount == 1;
+  return top_window_count == 1;
 }
 
 }  // namespace ui

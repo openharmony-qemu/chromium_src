@@ -78,11 +78,11 @@ enum class AccessibilityEventType : int32_t {
   UNKNOWN,
 };
 
-class NWebAccessibilityEventCallback {
+class AccessibilityEventCallback {
  public:
-  NWebAccessibilityEventCallback() = default;
+  AccessibilityEventCallback() = default;
 
-  virtual ~NWebAccessibilityEventCallback() = default;
+  virtual ~AccessibilityEventCallback() = default;
   virtual void OnAccessibilityEvent(int64_t accessibility_id,
                                     uint32_t event_type) = 0;
 };
@@ -117,7 +117,7 @@ class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
   static int64_t GenerateAccessibilityId();
 
   void RegisterAccessibilityEventListener(
-      std::shared_ptr<NWebAccessibilityEventCallback>
+      std::shared_ptr<AccessibilityEventCallback>
           accessibility_event_listener);
 
   void SetLastHoverId(int64_t id) { last_hover_id_ = id; }
@@ -156,7 +156,7 @@ private:
 
   int64_t accessibility_focus_id_ = -1;
 
-  std::shared_ptr<NWebAccessibilityEventCallback> accessibility_event_listener_;
+  std::shared_ptr<AccessibilityEventCallback> accessibility_event_listener_;
 };
 }  // namespace content
 

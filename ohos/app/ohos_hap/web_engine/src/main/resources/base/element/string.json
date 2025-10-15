@@ -67,6 +67,26 @@
     {
       "name": "dialog_cancel_button",
       "value": "cancel"
+    },
+    {
+      "name": "go_to_app_gallery",
+      "value": "Go to the app gallery to search"
+    },
+    {
+      "name": "download",
+      "value": "Download"
+    },
+    {
+      "name": "still_download",
+      "value": "Still want to download"
+    },
+    {
+      "name": "installation_not_supported",
+      "value": "Installation of this format file is not supported"
+    },
+    {
+      "name": "add_failed_tip",
+      "value": "Add failed"
     }
   ]
 }

@@ -74,6 +74,8 @@ class VIEWS_EXPORT DesktopWindowTreeHostPlatform
  
 #if BUILDFLAG(IS_OHOS)
   void SetSurfaceId(uint64_t surface_id) override;
+
+  void OnFullscreenSwitched(bool is_enter_fullscreen) override;
 #endif
 
   std::unique_ptr<corewm::Tooltip> CreateTooltip() override;
@@ -215,10 +217,6 @@ class VIEWS_EXPORT DesktopWindowTreeHostPlatform
   const Widget* GetWidget() const;
 
   void ScheduleRelayout();
-
-#if BUILDFLAG(IS_OHOS)
-  void SetVisibleOHOS(bool visible);
-#endif
 
  private:
   FRIEND_TEST_ALL_PREFIXES(DesktopWindowTreeHostPlatformTest,

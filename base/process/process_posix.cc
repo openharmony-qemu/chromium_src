@@ -291,6 +291,10 @@ void Process::Close() {
 
 #if !BUILDFLAG(IS_IOS)
 bool Process::Terminate(int exit_code, bool wait) const {
+#if BUILDFLAG(IS_OHOS)
+  LOG(INFO) << "process terminate pid:" << process_ << " code:" << exit_code
+            << " wait:" << wait;
+#endif
   // exit_code isn't supportable.
   DCHECK(IsValid());
   CHECK_GT(process_, 0);

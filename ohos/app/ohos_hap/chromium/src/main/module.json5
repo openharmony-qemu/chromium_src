@@ -6,7 +6,8 @@
     "description": "$string:module_desc",
     "mainElement": "EntryAbility",
     "deviceTypes": [
-      "2in1"
+      "2in1",
+      "tablet"
     ],
     "deliveryWithInstall": true,
     "installationFree": false,
@@ -55,7 +56,6 @@
             ]
           }
         ],
-        "process": ':browser'
       },
       {
         "name": "BrowserAbility",
@@ -92,7 +92,6 @@
             ]
           }
         ],
-        "process": ':browser'
       },
       {
         "name": "StatelessAbility",
@@ -104,15 +103,24 @@
         "launchType": "specified",
         "removeMissionAfterTerminate": true,
         "exported": true,
-        "process": ':browser'
-      }
+      },
+      {
+        "name": "TaskManagerAbility",
+        "srcEntry": "./ets/entryability/TaskManagerAbility.ets",
+        "description": "$string:TaskManagerAbility_desc",
+        "label": "$string:TaskManagerAbility_label",
+        "startWindowIcon": "$media:app_icon",
+        "startWindowBackground": "$color:start_window_background",
+        "launchType": "specified",
+        "removeMissionAfterTerminate": true,
+        "exported": true,
+       }
     ],
     "extensionAbilities": [
       {
         "name": "BrowserEmbeddedAbility",
         "srcEntry": "./ets/extensionAbility/BrowserEmbeddedAbility.ets",
         "type": "embeddedUI",
-        "process": ':browser'
       }
     ]
   }

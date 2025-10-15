@@ -1,48 +1,28 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+import AbilityConstant from '@ohos.app.ability.AbilityConstant';
+import CheckEmptyUtils from '../utils/CheckEmptyUtils';
+import Inject from '../common/InjectModule';
 import LogUtil from '../utils/LogUtil';
 import window from '@ohos.window';
 import Want from '@ohos.app.ability.Want';
-import AbilityConstant from '@ohos.app.ability.AbilityConstant';
-import { NativeThemeAdapter } from '../adapter/NativeThemeAdapter';
+
 import { AbilityManager } from '../common/AbilityManager';
+import { AppLifecycleAdapter } from '../adapter/AppLifecycleAdapter';
+import { BrowserCloseResponse, CaptionButtonRect, WindowBound, WindowLimits, IWebAppInfo } from '../interface/CommonInterface';
+import { BusinessError, deviceInfo, settings } from '@kit.BasicServicesKit';
+import { CommandType, ConfigData, WebStatus } from '../common/Constants';
 import { Configuration } from '@ohos.app.ability.Configuration';
-import Inject from '../common/InjectModule';
-import { BrowserCloseResponse, CaptionButtonRect, WindowBound } from '../interface/CommonInterface';
-import CheckEmptyUtils from '../utils/CheckEmptyUtils';
+import { common, ConfigurationConstant } from '@kit.AbilityKit';
+import { DeviceInfoAdapter } from '../adapter/DeviceInfoAdapter';
 import { DisplayAdapter } from  '../adapter/DisplayAdapter';
-import { WebBaseAbility } from './WebBaseAbility';
-import { deviceInfo } from '@kit.BasicServicesKit';
 import { PermissionManagerAdapter } from '../adapter/PermissionManagerAdapter';
-import { ConfigurationConstant } from '@kit.AbilityKit';
-import { ConfigData } from '../common/Constants';
+import { WebBaseAbility } from './WebBaseAbility';
+import lazy { GlobalThisHelper } from '../utils/GlobalThisHelper';
+import { promptAction } from '@kit.ArkUI';
+import { image } from '@kit.ImageKit';
+import { kvManager, KVStoreInterface } from '../utils/KVStore';
 
 const TAG: string = 'WebAbility';
 
@@ -52,19 +32,60 @@ export class WebAbility extends WebBaseAbility {
   private static MAXIMUM_NUM_OF_SLEEP_CYCLES = 250;
   private abilityManager: AbilityManager | undefined = undefined;
   private displayAdapter : DisplayAdapter | undefined = undefined;
-  private nativeThemeAdapter: NativeThemeAdapter | undefined = undefined;
-
+  private deviceInfoAdapter: DeviceInfoAdapter | undefined = undefined;
+  private appLifecycleAdapter: AppLifecycleAdapter | undefined = undefined;
+ 
   onConfigurationUpdate(config: Configuration) {
     this.displayAdapter?.onSystemFontSizeChange(config.fontSizeScale);
   }
 
+  private async getWebappInfo() : Promise<IWebAppInfo | undefined> {
+    const appIdPrefix = "--app-id=";
+    let key = this.appId.startsWith(appIdPrefix) ? this.appId.substring(appIdPrefix.length) : this.appId;
+    const kvStore: KVStoreInterface | undefined = await kvManager.getKVStore('webapp');
+    const webappInfo: string | undefined = await kvStore?.getData(key);
+    if (!webappInfo) {
+      return Promise.resolve(undefined);
+    }
+    return Promise.resolve(JSON.parse(webappInfo));
+  }
+ 
+  private async updateWebAppIcon() {
+    const webAppInfo = await this.getWebappInfo();
+    const icon = webAppInfo?.icon;
+    const label = webAppInfo?.label;
+    const openAsWindow = webAppInfo?.openAsWindow;
+ 
+    if (icon && label && openAsWindow) {
+      const imageSource = image.createImageSource(icon);
+      if (!imageSource) {
+        LogUtil.error(TAG, 'imageSource invaild');
+        return;
+      }
+ 
+      try {
+        const pixelMap: image.PixelMap = await imageSource.createPixelMap();
+        await this.context.setAbilityInstanceInfo(label, pixelMap);
+      } catch (err) {
+        LogUtil.error(TAG, `setAbilityInstanceInfo failed, code is ${err.code}, message is ${err.message}`);
+      }
+    }
+  }
+ 
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam) {
     super.onCreate(want, launchParam);
+    kvManager.init(this.context);
+    this.updateWebAppIcon();
 
     this.abilityManager = Inject.get(AbilityManager);
-    this.nativeThemeAdapter = Inject.get(NativeThemeAdapter);
     this.displayAdapter = Inject.get(DisplayAdapter);
     Inject.get(PermissionManagerAdapter).initPermissions();
+    this.deviceInfoAdapter = Inject.get(DeviceInfoAdapter);
+    this.appLifecycleAdapter = Inject.get(AppLifecycleAdapter);
+    if (this.appLifecycleAdapter?.getWebStatus() === WebStatus.kDestroy) {
+      LogUtil.warn(TAG, 'app already exit and close this window widget_id:' + this.xcomponentId);
+      this.closeWindow()
+    }
   }
 
   onWindowStageCreate(windowStage: window.WindowStage) {
@@ -113,11 +134,20 @@ export class WebAbility extends WebBaseAbility {
         data.on("windowRectChange", (option) => {
           const prop = data.getWindowProperties();
           const rect = option.rect;
+          let statusBarHeight = 0;
+          if (this.deviceInfoAdapter?.isNormalWindowMode()) {
+            statusBarHeight = data.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM).topRect.height;
+            //The current system has a timing issue where the drawableRect lags in updating during mode switching.
+            //Here, when switching to normal mode, the drawableRect is set to 0 
+            //to temporarily maintain normal performance until the issue is resolved.
+            prop.drawableRect.height = prop.drawableRect.height + prop.drawableRect.top;
+            prop.drawableRect.top = 0;
+          }
           let windowBound: window.Rect = {
             left: rect.left + prop.drawableRect.left,
-            top: rect.top + prop.drawableRect.top,
+            top: rect.top + prop.drawableRect.top + statusBarHeight,
             width: rect.width - prop.drawableRect.left - prop.drawableRect.left,
-            height: rect.height - prop.drawableRect.left - prop.drawableRect.top,
+            height: rect.height - prop.drawableRect.left - prop.drawableRect.top - statusBarHeight,
           };
           this.nativeContext.OnWindowRectChange(this.xcomponentId,
             windowBound,
@@ -142,12 +172,42 @@ export class WebAbility extends WebBaseAbility {
       } catch (exception) {
         LogUtil.error(TAG, 'Failed to register callback: ' + JSON.stringify(exception));
       }
+      
+      try {
+        data.on('keyboardHeightChange', (height) => {
+          this.nativeContext.OnKeyboardHeightChange(this.xcomponentId, height);
+        });
+      } catch (exception) {
+        LogUtil.error(TAG, 'Failed to listener for keyboard height changes: ' + JSON.stringify(exception));
+      }
+      
+    });
+
+    try {
+        windowStage.on("windowStageEvent", (event) => {
+          if (event === window.WindowStageEventType.ACTIVE) {
+            if (!GlobalThisHelper.isWebappWindow(this.xcomponentId)) {
+              GlobalThisHelper.pushActiveBrowserId(this.xcomponentId);
+            }
+          }
+        });
+    } catch (exception) {
+        LogUtil.error(TAG, 'Failed to register windowStageEvent callback: ' + JSON.stringify(exception));
+    }
+ 
+    this.getWebappInfo()
+    .then((info) => {
+      if (info?.openAsWindow) {
+        GlobalThisHelper.addWindowTypeRec(this.xcomponentId, this.appId);
+      }
     });
 
     const para: Record<string, Object> = {
       'xcomponentId': this.xcomponentId,
       'startUri': this.startUri,
-      'window': windowStage.getMainWindowSync()
+      'appId': this.appId,
+      'window': windowStage.getMainWindowSync(),
+      'useDarkMode': this.needDarkMode(),
     };
     let storage: LocalStorage = new LocalStorage(para);
     windowStage.loadContent(this.getContentPath(), storage, (err, data) => {
@@ -161,7 +221,7 @@ export class WebAbility extends WebBaseAbility {
       window.setWindowDecorVisible(!this.hideTitleBar);
       if (!this.titleButtonVisible) {
         window.setWindowTitleButtonVisible(false, false, false);
-      } else if (this.useDarkMode) {
+      } else if (this.useDarkMode && deviceInfo.deviceType === '2in1') {
         let buttonStyle: window.DecorButtonStyle = {
           colorMode: ConfigurationConstant.ColorMode.COLOR_MODE_DARK
         };
@@ -186,6 +246,27 @@ export class WebAbility extends WebBaseAbility {
       if (deviceInfo.sdkApiVersion >= 15) {
         this.nativeContext.RegisterWindowEventFilter(window.getWindowProperties().id);
       }
+
+      let isPCStatus = settings.getValueSync(this.context, 'isSystemModePc', '', settings.domainName.USER_PROPERTY);
+      if (deviceInfo.deviceType === 'tablet' && isPCStatus !== 'true') {
+        this.onPadWindowStageCreate(window, storage);
+      }
+
+      try {
+        if (this.xcomponentId === ConfigData.DEFAULT_WINDOW_ID) {
+          let windowLimits = this.getWindow()?.getWindowLimits();
+          let uiContext = window.getUIContext();
+          let limits: WindowLimits = {
+            maxHeight: Math.ceil(uiContext.px2vp(windowLimits?.maxHeight ?? 0)),
+            maxWidth: Math.ceil(uiContext.px2vp(windowLimits?.maxWidth ?? 0)),
+            minHeight: Math.ceil(uiContext.px2vp(windowLimits?.minHeight ?? 0)),
+            minWidth: Math.ceil(uiContext.px2vp(windowLimits?.minWidth ?? 0))
+          }
+          this.nativeContext.SetSystemWindowLimits(limits);
+        }
+      } catch (exception) {
+        LogUtil.error(TAG, 'Failed to get window limits or get ui context:' + JSON.stringify(exception));
+      }
     });
   }
 
@@ -200,15 +281,59 @@ export class WebAbility extends WebBaseAbility {
     }
     // Main window is destroyed, release UI related resources
     this.abilityManager?.removeProxy(this.xcomponentId);
+    GlobalThisHelper.delWindowTypeRec(this.xcomponentId);
+    GlobalThisHelper.delActiveBrowserId(this.xcomponentId);
   }
 
   onNewWant(want: Want, launchParam: AbilityConstant.LaunchParam): void {
-    if (want["uri"] !== undefined && want["uri"] !== '') {
-      let uri = want['uri'] as string;
-      this.nativeContext.startNewWindow(uri.replace("file://docs/", "file:///"), false);
-    }else if (want.parameters && want.parameters['openInNewWindow'] === true) {
-      this.nativeContext.startNewWindow(want['uri'] as string, false);
+    const params = want?.parameters;    
+    let uriNotNull = want["uri"] !== undefined && want["uri"] !== '';
+    if (want!== undefined && want !== null) {
+      LogUtil.info(TAG, 'onNewWant begin, want: ' +
+        'bundleName: ' + JSON.stringify(want.bundleName) +
+        ', abilityName: ' + JSON.stringify(want.abilityName) +
+        ', deviceId: ' + JSON.stringify(want.deviceId) +
+        ', uri not null: ' + JSON.stringify(uriNotNull) +
+        ', type: ' + JSON.stringify(want.type) +
+        ', flags: ' + JSON.stringify(want.flags) +
+        ', action: ' + JSON.stringify(want.action) +
+        ', parameters: ' + JSON.stringify(want.parameters) +
+        ', entities: ' + JSON.stringify(want.entities) +
+        ', moduleName: ' + JSON.stringify(want.moduleName) +
+        ', LaunchParam: ' + JSON.stringify(launchParam));
     }
+    if (uriNotNull) {
+      let uri = want['uri'] as string;
+      this.openNewWindow(uri.replace("file://docs/", "file:///"), false);
+    } else if (params !== undefined && params["appId"] !== undefined) {
+      LogUtil.info(TAG, 'else if params !== undefined');
+      let appId = params["appId"] as string;
+      LogUtil.info(TAG, 'let appId: ' + appId);
+      let xcomponentId = GlobalThisHelper.getWebappWindow(appId);
+      LogUtil.info(TAG, 'get xcomponentId: ' + xcomponentId);
+      if (xcomponentId !== '') {
+        LogUtil.info(TAG, 'xcomponentId !== \'\'');
+        return;
+      } else {
+        LogUtil.info(TAG, 'xcomponentId is empty');
+        let windowClass = this.abilityManager?.getProxy(this.xcomponentId)?.getWindow();
+        let show = windowClass?.isWindowShowing();
+        LogUtil.info(TAG, `${this.xcomponentId} isWindowShowing: ${show}`);
+        if (!show) {
+          windowClass?.minimize()
+          .catch((err: BusinessError) => {
+            LogUtil.error(TAG, 'Failed to minimize the window. Cause: ' + JSON.stringify(err));
+          });
+        }
+        this.openNewWindow(appId, true);
+        LogUtil.info(TAG, 'this.openNewWindow(appId, true), appId: ' + appId);
+      }
+    } else if(GlobalThisHelper.getLastActiveBrowserId() === undefined) {
+      LogUtil.info(TAG, 'GlobalThisHelper.getLastActiveBrowserId() begin');
+      this.openNewWindow(this.startUri, false);
+      LogUtil.info(TAG, 'GlobalThisHelper.getLastActiveBrowserId() end, this.startUri: ' + this.startUri);
+    }
+    LogUtil.info(TAG, 'end call onNewWant func');
   }
 
   onPrepareToTerminate(): boolean {
@@ -242,7 +367,8 @@ export class WebAbility extends WebBaseAbility {
     while (true) {
       await this.sleep(WebAbility.SLEEP_INTERVAL_MS);
       let response = this.nativeContext.GetBrowserCloseResponse(id);
-      if (response === BrowserCloseResponse.kClosed || response === BrowserCloseResponse.kClosedAnyway) {
+      if (this.appLifecycleAdapter?.getWebStatus() === WebStatus.kDestroy || 
+        response === BrowserCloseResponse.kClosed || response === BrowserCloseResponse.kClosedAnyway) {
         break;
       }
     }
@@ -250,7 +376,7 @@ export class WebAbility extends WebBaseAbility {
       while (true) {
         await this.sleep(WebAbility.SLEEP_INTERVAL_MS);
         let destroyed = this.nativeContext.BrowserDestroyed();
-        if (destroyed) {
+        if (this.appLifecycleAdapter?.getWebStatus() === WebStatus.kDestroy || destroyed) {
           break;
         }
       }
@@ -262,8 +388,63 @@ export class WebAbility extends WebBaseAbility {
     if (!CheckEmptyUtils.isEmpty(this.xcomponentId)) {
       return false;
     }
-    this.nativeContext.startNewWindow(this.startUri, false);
+    this.openNewWindow(this.startUri, false);
     this.closeWindow();
     return true;
+  }
+
+  private onPadWindowStageCreate(windowClass: window.Window, storage: LocalStorage) {
+    // During window initialization, it is not in full-screen state, so the input is false.
+    // Here set the status bar avoidance and hides the navigation bar.
+    this.updateAvoidAreaStatus(false);
+
+    let avoidArea = windowClass.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
+    let statusBarHeight = avoidArea.topRect.height;
+    storage.setOrCreate('statusBarHeight', statusBarHeight);
+
+    const context: Context = getContext(this);
+    this.deviceInfoAdapter?.registerDeviceModeChange(context);
+
+    windowClass.on('avoidAreaChange', (data) => {
+      if (data.type !== window.AvoidAreaType.TYPE_SYSTEM) {
+        return;
+      }
+
+      let statusBarHeight = data.area.topRect.height;
+      storage.setOrCreate('statusBarHeight', statusBarHeight);
+      LogUtil.info(TAG, 'Avoidarea changes,statusBarHeight:' + statusBarHeight);
+
+      if(!this.deviceInfoAdapter?.isNormalWindowMode()) {
+        return;
+      }
+
+      let prop = windowClass.getWindowProperties();
+      //The current system has a timing issue where the drawableRect lags in updating during mode switching.
+      //Here, when switching to normal mode, the drawableRect is set to 0 
+      //to temporarily maintain normal performance until the issue is resolved.
+      prop.drawableRect.height = prop.drawableRect.height + prop.drawableRect.top;
+      prop.drawableRect.top = 0;
+         
+      let windowBound: window.Rect = {
+        left: prop.windowRect.left + prop.drawableRect.left,
+        top: prop.windowRect.top + prop.drawableRect.top + statusBarHeight,
+        width: prop.drawableRect.width,
+        height: prop.drawableRect.height - statusBarHeight,
+      };
+      this.nativeContext.OnWindowRectChange(this.xcomponentId, windowBound, 0);
+    });
+  }
+
+  private openNewWindow(open_url: string, is_webapp: boolean) {
+    this.nativeContext.ExecuteCommand(CommandType.kNewWindow, { url: open_url, is_webapp: is_webapp });
+  }
+
+  private needDarkMode(): boolean {
+    let context = this.getWindowContext() as common.UIAbilityContext;
+    let currentColorMode: ConfigurationConstant.ColorMode | undefined = context.config.colorMode;
+    if (!currentColorMode) {
+      LogUtil.warn(TAG, 'Can not get current color mode from window: ' + this.xcomponentId);
+    }
+    return this.useDarkMode || currentColorMode === ConfigurationConstant.ColorMode.COLOR_MODE_DARK;
   }
 };

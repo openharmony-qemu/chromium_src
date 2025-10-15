@@ -43,10 +43,12 @@ class ResParallelPreloadCtrler : public base::RefCounted<ResParallelPreloadCtrle
                            base::WeakPtr<net::URLRequestContext> url_request_context,
                            const scoped_refptr<base::SingleThreadTaskRunner>& sth_task_runner,
                            const scoped_refptr<base::SingleThreadTaskRunner>& net_task_runner,
-                           const scoped_refptr<DiskCacheBackendFactory>& disk_cache_backend_factory,
                            const RPPCtrlerTimeoutCB& timeout_cb);
   ~ResParallelPreloadCtrler() = default;
  
+  static void InitDiskCacheBackendFactory(const base::FilePath& cache_path);
+  bool Init(const scoped_refptr<base::SingleThreadTaskRunner>& net_task_runner,
+            base::WeakPtr<net::URLRequestContext> url_request_context);
   void Start();
   void Stop();
   void UpdateResRequestInfo(const std::shared_ptr<PRRequestInfo>& info);

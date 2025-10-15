@@ -105,6 +105,7 @@ class DEVICE_BLUETOOTH_EXPORT BluetoothAdapterOhos
  private:
   void ClassicDeviceAdded(const std::string& address);
   void OnBluetoothChanged(int32_t bluetooth_state);
+  void InitializeReply(base::OnceClosure callback, int32_t bluetooth_state);
 
   bool is_powered_{false};
   bool is_initialized_{false};

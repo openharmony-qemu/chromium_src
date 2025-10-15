@@ -37,6 +37,7 @@
 #include "base/logging.h"
 #include "base/memory/ptr_util.h"
 #include "base/ohos/task_scheduler/task_runner_ohos.h"
+#include "base/task/thread_pool.h"
 #include "device/bluetooth/bluetooth_common.h"
 #include "device/bluetooth/bluetooth_discovery_session.h"
 #include "device/bluetooth/bluetooth_discovery_session_outcome.h"
@@ -75,7 +76,14 @@ BluetoothAdapterOhos::~BluetoothAdapterOhos() {
 }
 
 void BluetoothAdapterOhos::Initialize(base::OnceClosure callback) {
-  NotifyBluetoothChanged(BluetoothOhos::GetBluetoothState());
+  base::ThreadPool::PostTaskAndReplyWithResult(FROM_HERE,
+      {base::MayBlock()},
+      base::BindOnce(BluetoothOhos::GetBluetoothState),
+      base::BindOnce(&BluetoothAdapterOhos::InitializeReply, weak_ptr_factory_.GetWeakPtr(), std::move(callback)));
+}
+
+void BluetoothAdapterOhos::InitializeReply(base::OnceClosure callback, int32_t bluetooth_state) {
+  NotifyBluetoothChanged(bluetooth_state);
   // start monitor bluetooth state
   BluetoothOhos::StartBluetoothStateMonitor(
       std::bind(&BluetoothAdapterOhos::NotifyBluetoothChanged,

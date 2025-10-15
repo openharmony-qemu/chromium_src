@@ -139,7 +139,7 @@ void OnWindowEvent(const std::string& xcomponent_id,
 
 void OnWindowVisibilityChange(const std::string& xcomponent_id,
                               bool window_visible) {
-  if (WindowAdapter::GetInstance().GetOcclusionFeature()) {
+  if (WindowAdapter::GetInstance().IsDisableOcclusionFeature()) {
     return;
   }
   TRACE_EVENT_1("OnWindowVisibilityChange", "widget_id", xcomponent_id);
@@ -147,6 +147,11 @@ void OnWindowVisibilityChange(const std::string& xcomponent_id,
                                         : WindowEventType::WINDOW_OCCLUDED;
   auto event = std::make_shared<WindowEvent>(type);
   WindowAdapter::GetInstance().NotifyWindowEvent(xcomponent_id, event);
+}
+
+void OnKeyboardHeightChange(const std::string& xcomponent_id, int32_t height) {
+  TRACE_EVENT_1("OnKeyboardHeightChange", "height", height);
+  WindowAdapter::GetInstance().NotifyKeyboardHeightEvent(xcomponent_id, height);
 }
 
 void OnCaptionButtonRectChange(const std::string& xcomponent_id,
@@ -160,6 +165,24 @@ void OnCaptionButtonRectChange(const std::string& xcomponent_id,
   WindowAdapter::GetInstance().NotifyWindowEvent(xcomponent_id, event);
 }
 
+void SetSystemWindowLimits(const aki::Value window_limits) {
+  WindowLimits limits;
+  limits.max_width = window_limits["maxWidth"].As<int>();
+  limits.max_height = window_limits["maxHeight"].As<int>();
+  limits.min_width = window_limits["minWidth"].As<int>();
+  limits.min_height = window_limits["minHeight"].As<int>();
+  WindowAdapter::GetInstance().SetSystemWindowLimits(limits);
+}
+
+void OnDeviceModeChange(const std::string& xcomponent_id,
+                        ChangeEventType type) {
+  TRACE_EVENT_1("OnDeviceInfoChange", "widget_id", xcomponent_id);
+
+  auto event = std::make_shared<DeviceInfoChangeEvent>();
+  event->change_event_type_ = type;
+  WindowAdapter::GetInstance().NotifyWindowEvent(xcomponent_id, event);
+}
+
 JSBIND_GLOBAL() {
   JSBIND_FUNCTION(OnWindowInitSize);
   JSBIND_FUNCTION(OnWindowStatusChange);
@@ -168,7 +191,10 @@ JSBIND_GLOBAL() {
   JSBIND_FUNCTION(OnWindowSizeChange);
   JSBIND_FUNCTION(OnWindowEvent);
   JSBIND_FUNCTION(OnWindowVisibilityChange);
+  JSBIND_FUNCTION(OnKeyboardHeightChange);
   JSBIND_FUNCTION(OnCaptionButtonRectChange);
+  JSBIND_FUNCTION(SetSystemWindowLimits);
+  JSBIND_FUNCTION(OnDeviceModeChange);
 }
 
 }  // namespace ohos::adapter::xcomponent

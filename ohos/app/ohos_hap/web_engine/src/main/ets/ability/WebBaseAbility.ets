@@ -34,7 +34,7 @@ import Want from '@ohos.app.ability.Want';
 import AbilityConstant from '@ohos.app.ability.AbilityConstant';
 import JsBindingUtils from '../utils/JsBindingUtils';
 import { NativeContext } from '../interface/CommonInterface';
-import { ConfigData, ContextType } from '../common/Constants';
+import { CommandType, ConfigData, ContextType } from '../common/Constants';
 import CheckEmptyUtils from '../utils/CheckEmptyUtils';
 import { WebProxy } from '../interface/WebProxy';
 import { common } from '@kit.AbilityKit';
@@ -53,6 +53,7 @@ export class WebBaseAbility extends UIAbility implements WebProxy {
   protected useDarkMode: boolean = false;
   protected isStateless: boolean = false;
   protected titleButtonVisible: boolean = true;
+  protected appId: string = '';
 
   private initParameters(want: Want) {
     if (want && want.parameters) {
@@ -65,11 +66,14 @@ export class WebBaseAbility extends UIAbility implements WebProxy {
       if (want.parameters["useDarkMode"] !== undefined) {
         this.useDarkMode = want.parameters['useDarkMode'] as boolean;
       }
-      if (want.parameters["isStateless"] !== undefined) {
-        this.isStateless = want.parameters['isStateless'] as boolean;
-      }
       if (want.parameters["titleButtonVisible"] !== undefined) {
         this.titleButtonVisible = want.parameters['titleButtonVisible'] as boolean;
+      }
+      if (want.parameters["appId"] !== undefined) {
+        this.appId = want.parameters['appId'] as string;
+      }
+      if (want.parameters["webappWindow"] !== undefined && want.parameters["webappWindow"] !== '') {
+        this.appId = "--app-id=" + want.parameters['webappWindow'] as string;
       }
     }
 
@@ -89,7 +93,8 @@ export class WebBaseAbility extends UIAbility implements WebProxy {
 
     if (CheckEmptyUtils.isEmpty(this.xcomponentId)) {
       LogUtil.info(TAG, 'onCreate, Allocate xcomponent id');
-      this.xcomponentId = ConfigData.WINDOW_PREFIX + this.nativeContext.AllocateWidgetId();
+      let widgetId = this.nativeContext.ExecuteCommand(CommandType.kGetWidget, {}).widget_Id;
+      this.xcomponentId = ConfigData.WINDOW_PREFIX + widgetId;
     }
   }
 
@@ -149,5 +154,34 @@ export class WebBaseAbility extends UIAbility implements WebProxy {
 
   getOriginWindowId(): number {
     return this.originWindowId;
+  }
+
+  public updateAvoidAreaStatus(isFullScreen: boolean) {
+    let windowClass = this.getWindow();
+
+    // Set window to full screen.
+    windowClass?.setWindowLayoutFullScreen(true).then(() => {
+      LogUtil.info(TAG, 'Succeeded in setting the window layout to full-screen mode.');
+    }).catch((err: BusinessError) => {
+      LogUtil.error(TAG, 'Failed to set the window layout to full-screen mode. Cause:' + JSON.stringify(err));
+    });
+
+    // Hide the navigation bar here.
+    windowClass?.setSpecificSystemBarEnabled('navigationIndicator', false).then(() => {
+      LogUtil.info(TAG, 'Succeeded in setting the navigation indicator to be invisible.');
+    }).catch((err: BusinessError) => {
+      LogUtil.error(TAG, `Failed to set the navigation indicator to be invisible. Code is ${err.code}, message is ${err.message}`);
+    });
+
+    // The top status bar is set up to be hidden when in full-screen mode and displayed when maximized.
+    windowClass?.setSpecificSystemBarEnabled('status', !isFullScreen).then(() => {
+      LogUtil.info(TAG, 'Succeeded in setting the status bar to be invisible.');
+    }).catch((err: BusinessError) => {
+      LogUtil.error(TAG, `Failed to set the status bar to be invisible. Code is ${err.code}, message is ${err.message}`);
+    });
+  }
+
+  isUIAbility(): boolean {
+    return true;
   }
 };

@@ -35,12 +35,14 @@
 #include "ui/base/ime/input_method_base.h"
 #include "ui/base/ime/text_input_client.h"
 #include "ui/gfx/geometry/rect.h"
+#include "ui/gfx/native_widget_types.h"
 
 namespace ui {
 class COMPONENT_EXPORT(UI_BASE_IME_OHOS) InputMethodOHOS
     : public InputMethodBase {
  public:
-  explicit InputMethodOHOS(ImeKeyEventDispatcher* ime_key_event_dispatcher);
+  explicit InputMethodOHOS(ImeKeyEventDispatcher* ime_key_event_dispatcher,
+                           gfx::AcceleratedWidget widget);
   ~InputMethodOHOS() override;
 
   InputMethodOHOS(InputMethodOHOS&) = delete;
@@ -70,14 +72,21 @@ class COMPONENT_EXPORT(UI_BASE_IME_OHOS) InputMethodOHOS
   void UpdateAttributeTask();
   void SetVirtualKeyboardVisibilityTask(bool should_show);
   void UpdateCursorTask(const gfx::Rect& rect);
+  gfx::AcceleratedWidget GetWidgetId() const;
 
  private:
   float GetPixelRatio(const gfx::Rect& rect);
+  gfx::PointF GetLogicalPointF(const gfx::Point& point);
+  void RegistKeyboardHeightEvent();
+  void UnRegistKeyboardHeightEvent();
+  void SetVirtualKeyboardBoundsTask(int32_t keyboard_height);
 
  private:
   TextInputType text_input_type_ = ui::TEXT_INPUT_TYPE_NONE;
   gfx::Rect focus_rect_;
   bool is_attach_ = false;
+  gfx::AcceleratedWidget widget_id_;
+
   base::WeakPtrFactory<InputMethodOHOS> weak_ptr_factory_{this};
 };
 }  // namespace ui

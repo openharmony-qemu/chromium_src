@@ -27,6 +27,7 @@
 #include "media/base/video_codecs.h"
 #include "media/media_buildflags.h"
 #include "media/mojo/buildflags.h"
+#include "third_party/wiseplay/cdm/buildflags.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "content/browser/media/key_system_support_android.h"
@@ -37,6 +38,10 @@
 #include "content/browser/gpu/gpu_data_manager_impl.h"
 #include "content/browser/media/key_system_support_win.h"
 #include "gpu/config/gpu_driver_bug_workaround_type.h"
+#endif
+
+#if BUILDFLAG(ENABLE_WISEPLAY)
+#include "content/browser/media/key_system_support_ohos.h"
 #endif
 
 namespace content {
@@ -562,6 +567,8 @@ void CdmRegistryImpl::LazyInitializeCapability(
   }
 #elif BUILDFLAG(IS_ANDROID)
   GetAndroidCdmCapability(key_system, robustness, std::move(cdm_capability_cb));
+#elif BUILDFLAG(ENABLE_WISEPLAY)
+  GetOHOSCdmCapability(key_system, robustness, std::move(cdm_capability_cb));
 #else
   std::move(cdm_capability_cb).Run(std::nullopt);
 #endif

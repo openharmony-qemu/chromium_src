@@ -43,12 +43,12 @@ CertManagerAdapter& CertManagerAdapter::GetInstance() {
 
 CertManagerAdapter::CertInfoList CertManagerAdapter::ListCertsInfo() {
   TRACE_EVENT_0("CertManagerAdapter::ListCertsInfo");
-  std::promise<bool> promise;
-  CertInfoList cert_infos;
+  auto promise = std::make_shared<std::promise<bool>>();
+  auto cert_infos = std::make_shared<CertInfoList>();
   std::function<void(aki::Value, int32_t)> callback =
-      [&](aki::Value ohos_cert_infos, int32_t cert_count) -> void {
+      [promise, cert_infos, this](aki::Value ohos_cert_infos, int32_t cert_count) -> void {
     if (!ohos_cert_infos.IsArray()) {
-      promise.set_value(true);
+      promise->set_value(true);
       return;
     }
 
@@ -56,24 +56,23 @@ CertManagerAdapter::CertInfoList CertManagerAdapter::ListCertsInfo() {
       OhosCertInfo cert_info;
       ConvertCertInfo(ohos_cert_infos[i], &cert_info);
       cert_info.type = CertType::USER_CERT;
-      cert_infos.push_back(cert_info);
+      cert_infos->push_back(cert_info);
     }
-    promise.set_value(true);
+    promise->set_value(true);
   };
 
   auto func = ohos::adapter::GetJSFunction(
       "CertManagerAdapter.GetAllPrivateCertificates");
   if (func) {
     func->Invoke<void>(callback);
-    auto future = promise.get_future();
+    auto future = promise->get_future();
     auto status = future.wait_for(std::chrono::seconds(kListCertsInfoWaitTime));
     if (status == std::future_status::timeout) {
       LOGE("CertManagerAdapter.ListCertsInfo Wait timeout");
-      return cert_infos;
+      return *cert_infos;
     }
-    future.get();
   }
-  return cert_infos;
+  return *cert_infos;
 }
 
 int CertManagerAdapter::InstallPersonalCert(std::shared_ptr<char[]> cert_data,
@@ -81,16 +80,16 @@ int CertManagerAdapter::InstallPersonalCert(std::shared_ptr<char[]> cert_data,
                                             const std::string& cert_pass,
                                             const std::string& alias) {
   TRACE_EVENT_0("CertManagerAdapter::InstallPersonalCert");
-  std::promise<int32_t> promise;
+  auto promise = std::make_shared<std::promise<int32_t>>();
   std::function<void(int32_t)> callback =
-      [&promise](int32_t ret_value) -> void { promise.set_value(ret_value); };
+      [promise](int32_t ret_value) -> void { promise->set_value(ret_value); };
 
   auto func =
       ohos::adapter::GetJSFunction("CertManagerAdapter.InstallPersonalCert");
   if (func) {
     aki::ArrayBuffer certArrayBuffer((uint8_t*)cert_data.get(), cert_len);
     func->Invoke<void>(std::move(certArrayBuffer), cert_pass, alias, callback);
-    auto future = promise.get_future();
+    auto future = promise->get_future();
     auto status = future.wait_for(std::chrono::seconds(3));
     if (status == std::future_status::timeout) {
       LOGE("CertManagerAdapter.InstallPersonalCert Wait timeout");

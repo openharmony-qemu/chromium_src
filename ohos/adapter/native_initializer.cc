@@ -32,15 +32,15 @@
 #include <napi/native_api.h>
 
 #include "ohos/adapter/aki_hook/aki_hook.h"
-#include "ohos/adapter/browser/browser_init.h"
 #include "ohos/adapter/common/constants.h"
 #include "ohos/adapter/common/logging.h"
 #include "ohos/adapter/common/trace.h"
 #include "ohos/adapter/life_cycle/lifecycle_init.h"
 #include "ohos/adapter/media_manager/media_init.h"
+#include "ohos/adapter/multiprocess/child_process_starter.h"
+#include "ohos/adapter/task_runner/main_thread_task_runner.h"
 #include "ohos/adapter/web_entry/web_entry_init.h"
 #include "ohos/adapter/xcomponent/xcomponent_manager.h"
-#include "ohos/adapter/multiprocess/child_process_starter.h"
 EXTERN_C_START
 static napi_value GetNativeContextByType(napi_env env,
                                          napi_value exports,
@@ -50,8 +50,9 @@ static napi_value GetNativeContextByType(napi_env env,
     case ProcessType::kMainProcess: {
       ohos::adapter::web_entry::Register(env, exports);
       ohos::adapter::life_cycle::Register(env, exports);
-      ohos::adapter::browseradapter::Register(env, exports);
       ohos::adapter::media::Register(env, exports);
+      ohos::adapter::taskRunner::MainThreadTaskRunner::GetInstance().Initialize(
+          env);
       aki::JSBind::BindSymbols(env, exports);
       aki::Binding::SetScopedEnv(env);
       break;
@@ -129,7 +130,8 @@ static napi_value Initialize(napi_env env, napi_value exports) {
   // register the relevant interfaces for drawing.
   //
   // Triggered when libadapter.so is loaded.
-  ohos::adapter::xcomponent::XComponentManager::GetInstance()->Initialize(env, exports);
+  ohos::adapter::xcomponent::XComponentManager::GetInstance()->Initialize(
+      env, exports);
   return exports;
 }
 EXTERN_C_END

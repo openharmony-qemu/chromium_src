@@ -39,12 +39,15 @@ namespace {
 std::atomic<bool> g_trace_enabled = false;
 const std::string kChromiumTracingStart = "chromium_tracing_start";
 const std::string kChromiumTracingStop = "chromium_tracing_stop";
+const std::string kChromiumUpdateConfig = "chromium_update_config";
 const int32_t kChromiumTracingStartCode = 0;
 const int32_t kChromiumTracingStopCode = 1;
+const int32_t kChromiumUpdateConfigCode = 2;
 
 const std::map<std::string, int32_t> kEventCodeMap = {
     {kChromiumTracingStart, kChromiumTracingStartCode},
     {kChromiumTracingStop, kChromiumTracingStopCode},
+    {kChromiumUpdateConfig, kChromiumUpdateConfigCode}
 };
 
 }  // namespace
@@ -70,11 +73,13 @@ void TracingAdapter::RegisterTracingCallback(TraceControllerCallback callback) {
             callback(kEventCodeMap.at(kChromiumTracingStart), data.data_string);
           } else if (data.event == kChromiumTracingStop) {
             callback(kEventCodeMap.at(kChromiumTracingStop), data.data_string);
+          } else if (data.event == kChromiumUpdateConfig) {
+            callback(kEventCodeMap.at(kChromiumUpdateConfig), data.data_string);
           }
         }
       });
   common_event::Subscriber::Instance().Subscribe(
-      {kChromiumTracingStart, kChromiumTracingStop});
+      {kChromiumTracingStart, kChromiumTracingStop, kChromiumUpdateConfig});
 }
 
 void TracingAdapter::UnregisterTracingCallback() {

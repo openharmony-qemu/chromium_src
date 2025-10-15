@@ -19,6 +19,7 @@
 #include "ui/ozone/public/platform_menu_utils.h"
 #include "ui/ozone/public/platform_screen.h"
 #include "ui/ozone/public/platform_user_input_monitor.h"
+#include "ui/ozone/public/platform_window_manager.h"
 
 namespace ui {
 
@@ -181,6 +182,12 @@ OzonePlatform::GetPlatformUserInputMonitor(
     const scoped_refptr<base::SingleThreadTaskRunner>& io_task_runner) {
   return {};
 }
+
+#if BUILDFLAG(IS_OHOS)
+PlatformWindowManager* OzonePlatform::GetPlatformWindowManager() {
+  return nullptr;
+}
+#endif
 
 void OzonePlatform::PostCreateMainMessageLoop(
     base::OnceCallback<void()> shutdown_cb,

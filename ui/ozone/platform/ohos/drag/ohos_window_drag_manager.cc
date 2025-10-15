@@ -30,6 +30,8 @@
 #include "ui/ozone/platform/ohos/drag/ohos_window_drag_manager.h"
 
 #include "base/logging.h"
+#include "ohos/adapter/context/context_adapter.h"
+#include "ohos/adapter/device_info/device_info.h"
 #include "ohos/adapter/window/app_window_adapter.h"
 #include "ohos/adapter/xcomponent/event/window_event_filter_adapter.h"
 
@@ -48,11 +50,6 @@ void OhosWindowDragManager::ShiftWindowEvent(const int32_t source_id,
                                              const int32_t target_id) {
   shift_event_source_window_id_ = source_id;
   shift_event_target_window_id_ = target_id;
-  LOG(INFO) << "[OhosTabDrag] ShiftWindowEvent, "
-               "shift_event_source_window_id_:"
-            << shift_event_source_window_id_
-            << ", shift_event_target_window_id_:"
-            << shift_event_target_window_id_;
   WindowEventFilterAdapter::GetInstance().SetDraggingTabWidgetId(target_id);
   WindowEventFilterAdapter::GetInstance().CacheShiftEventWindowIds(source_id, target_id);
   bool result =

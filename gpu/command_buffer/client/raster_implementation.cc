@@ -105,6 +105,9 @@ BASE_FEATURE(kDisableErrorHandlingForReadback,
 
 const uint32_t kMaxTransferCacheEntrySizeForTransferBuffer = 1024;
 const size_t kMaxImmediateDeletedPaintCachePaths = 1024;
+#if BUILDFLAG(IS_OHOS)
+const int kQueueMaxSize = 100;
+#endif
 
 class ScopedSharedMemoryPtr {
  public:
@@ -1681,6 +1684,13 @@ void RasterImplementation::ReadbackYUVPixelsAsync(
                "|output_rect| width and height must be divisible by 2");
     return;
   }
+
+#if BUILDFLAG(IS_OHOS)
+  if (yuv_request_queue_.size() > kQueueMaxSize) {
+    TRACE_EVENT_INSTANT0("gpu", "No push request to enqueue", TRACE_EVENT_SCOPE_THREAD);
+    return;
+  }
+#endif
 
   auto y_offset = static_cast<GLuint>(base::bits::AlignUp(
       sizeof(cmds::ReadbackYUVImagePixelsINTERNALImmediate::Result),

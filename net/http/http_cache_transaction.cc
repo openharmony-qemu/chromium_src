@@ -1070,9 +1070,6 @@ int HttpCache::Transaction::DoLoop(int result) {
     read_buf_ = nullptr;  // Release the buffer before invoking the callback.
     std::move(callback_).Run(rv);
   }
-#if BUILDFLAG(IS_OHOS)
-  LOG(WARNING) << "next state is " << next_state_ << "error code is " << rv;
-#endif
   return rv;
 }
 

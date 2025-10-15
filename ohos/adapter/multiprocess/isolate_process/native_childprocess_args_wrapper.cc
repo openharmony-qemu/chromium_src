@@ -97,7 +97,7 @@ void NativeChildProcessArgsWrapper::Parse(
 
 void NativeChildProcessArgsWrapper::Free(NativeChildProcess_Args& args) {
   if (args.entryParams != nullptr) {
-    delete (args.entryParams);
+    delete[] (args.entryParams);
     args.entryParams = nullptr;
   }
 

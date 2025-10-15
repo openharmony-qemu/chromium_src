@@ -26,6 +26,9 @@ void V8Test::SetUp() {
   // Multiple gin unittests are by default run in the same process. Since some
   // tests set non-default V8 flags, we thus cannot freeze flags after V8
   // initialization.
+#if BUILDFLAG(IS_OHOS)
+  v8::V8::SetFlagsFromString("--track-gc-object-stats");
+#endif
   v8::V8::SetFlagsFromString("--no-freeze-flags-after-init");
 
 #ifdef V8_USE_EXTERNAL_STARTUP_DATA

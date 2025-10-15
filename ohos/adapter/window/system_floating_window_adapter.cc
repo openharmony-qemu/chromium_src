@@ -60,14 +60,14 @@ void SystemFloatingWindowAdapter::Close(int32_t id) {
 
 void SystemFloatingWindowAdapter::SetBounds(int32_t id,
                                             const WindowRect& rect) {
-  std::promise<bool> promise;
-  std::function<void(bool)> on_completed = [&promise](bool successful) -> void {
-    promise.set_value(successful);
+  auto promise = std::make_shared<std::promise<bool>>();
+  std::function<void(bool)> on_completed = [promise](bool successful) -> void {
+    promise->set_value(successful);
   };
   auto jsFunc = ohos::adapter::GetJSFunction("SystemFloatingWindow.SetBounds");
   if (jsFunc) {
     jsFunc->Invoke<void>(id, rect, on_completed);
-    auto future = promise.get_future();
+    auto future = promise->get_future();
     auto status = future.wait_for(std::chrono::seconds(3));
     if (status == std::future_status::timeout) {
       LOGE("SystemFloatingWindow.SetBounds timeout");

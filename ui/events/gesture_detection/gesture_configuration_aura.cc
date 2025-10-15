@@ -18,6 +18,10 @@ constexpr bool kDoubleTapAuraSupport = true;
 constexpr bool kDoubleTapAuraSupport = false;
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
+#if BUILDFLAG(IS_OHOS)
+constexpr int kSpanSlotOHOS = 60;
+#endif
+
 class GestureConfigurationAura : public GestureConfiguration {
  public:
   GestureConfigurationAura(const GestureConfigurationAura&) = delete;
@@ -60,7 +64,11 @@ class GestureConfigurationAura : public GestureConfiguration {
             ? 5
             : 0);
     set_velocity_tracker_strategy(VelocityTracker::Strategy::LSQ2_RESTRICTED);
+#if BUILDFLAG(IS_OHOS)
+    set_span_slop(kSpanSlotOHOS);
+#else
     set_span_slop(max_touch_move_in_pixels_for_click() * 2);
+#endif
     set_swipe_enabled(true);
     set_two_finger_tap_enabled(true);
     set_fling_touchpad_tap_suppression_enabled(true);

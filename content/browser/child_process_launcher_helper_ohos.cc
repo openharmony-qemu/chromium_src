@@ -87,6 +87,7 @@ bool ChildProcessLauncherHelper::BeforeLaunchOnLauncherThread(
     if (GetProcessType() == switches::kRendererProcess) {
       const int sandbox_fd = SandboxHostLinux::GetInstance()->GetChildSocket();
       options->fds_to_remap.emplace_back(sandbox_fd, GetSandboxFD());
+      options->is_isolated_process = true;
     }
 
     options->environment = delegate_->GetEnvironment();
@@ -144,6 +145,8 @@ ChildProcessTerminationInfo ChildProcessLauncherHelper::GetTerminationInfo(
 // static
 bool ChildProcessLauncherHelper::TerminateProcess(const base::Process& process,
                                                   int exit_code) {
+  LOG(INFO) << "ChildProcessLauncherHelper terminate pid:" << process.Pid()
+            << " code:" << exit_code;
   return process.Terminate(exit_code, false);
 }
 

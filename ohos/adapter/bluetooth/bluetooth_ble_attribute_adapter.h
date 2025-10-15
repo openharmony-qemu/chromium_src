@@ -39,13 +39,13 @@
 
 namespace ohos::adapter::device {
 
-struct ServiceInfo {
+struct ADAPTER_EXPORT_API ServiceInfo {
   std::string identifier;
   std::string device_id;
   std::string service_uuid;
   bool is_primary;
 };
-struct DescriptorInfo {
+struct ADAPTER_EXPORT_API DescriptorInfo {
   std::string identifier;
   std::string device_id;
   std::string service_uuid;
@@ -53,7 +53,7 @@ struct DescriptorInfo {
   std::string descriptor_uuid;
 };
 
-struct CharacteristicInfo {
+struct ADAPTER_EXPORT_API CharacteristicInfo {
   std::string identifier;
   std::string device_id;
   std::string service_uuid;

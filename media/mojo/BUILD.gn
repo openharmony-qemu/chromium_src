@@ -6,6 +6,7 @@ import("//build/buildflag_header.gni")
 import("//build/config/cast.gni")
 import("//media/media_options.gni")
 import("//testing/test.gni")
+import("//third_party/wiseplay/cdm/wiseplay.gni")
 
 buildflag_header("buildflags") {
   header = "buildflags.h"
@@ -55,6 +56,7 @@ buildflag_header("buildflags") {
     "ENABLE_MOJO_VIDEO_DECODER=$enable_mojo_video_decoder",
     "ENABLE_MOJO_MEDIA_IN_BROWSER_PROCESS=$enable_mojo_media_in_browser_process",
     "ENABLE_MOJO_MEDIA_IN_GPU_PROCESS=$enable_mojo_media_in_gpu_process",
+    "ENABLE_WISEPLAY=$enable_wiseplay",
   ]
 }
 

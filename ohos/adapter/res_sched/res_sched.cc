@@ -78,6 +78,10 @@ void ResSchedManager::ForceWebSlideNormal(WebSlideParam param) {
   std::unordered_map<std::string, std::string> event_param = {
       {"pid", std::to_string(pid)}, {"bundleName", bundle_name_}};
   manager::ResApiWrapper::GetInstance().invokeApi(
-      kResTypeWebSlideNormal, static_cast<int64_t>(param), event_param);
+      kResTypeWebSlideScroll, static_cast<int64_t>(param), event_param);
+}
+
+const std::string& ResSchedManager::bundle_name() {
+  return bundle_name_;
 }
 }  // namespace ohos::adapter::res_sched

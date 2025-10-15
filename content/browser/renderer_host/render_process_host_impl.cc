@@ -3489,6 +3489,7 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
       switches::kBundleInstallationDir,
       switches::KDisableBlinkFeatures,
       switches::kEnabledAdvancedSecurityMode,
+      switches::kOhosTrace,
 #endif
   };
   renderer_cmd->CopySwitchesFrom(browser_cmd, kSwitchNames);

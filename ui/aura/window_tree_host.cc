@@ -392,9 +392,6 @@ void WindowTreeHost::SetNativeWindowOcclusionState(
   auto occluded_region = video_capture_count_for_occlusion_tracking_ > 0
                              ? SkRegion()
                              : raw_occluded_region;
-
-  TRACE_EVENT1("ui", "WindowTreeHost::SetNativeWindowOcclusionState", "state",
-               static_cast<int>(state));
   if (occlusion_state_ == state && occluded_region_ == occluded_region) {
     return;
   }

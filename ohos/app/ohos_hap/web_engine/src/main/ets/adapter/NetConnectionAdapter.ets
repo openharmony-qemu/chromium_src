@@ -43,98 +43,11 @@ const TAG: string = 'net';
 
 @injectable()
 export class NetConnectionAdapter extends BaseAdapter {
-  private netCon: connection.NetConnection | undefined = undefined;
-  private registered: boolean = false;
-
-  private subscribeInfo: CommonEventManager.CommonEventSubscribeInfo = {
-    events: [CommonEventManager.Support.COMMON_EVENT_CONNECTIVITY_CHANGE]
-  };
-  private subscriber: CommonEventManager.CommonEventSubscriber | undefined = undefined;  
   private ctxAdapter: ContextAdapter;
 
   constructor(@inject(ContextAdapter) ctxAdapter: ContextAdapter) {
     super();
     this.ctxAdapter = ctxAdapter;
-  }
-
-  private getNetConnect(): connection.NetConnection {
-    if (!this.netCon) {
-      this.netCon = connection.createNetConnection();
-    }
-    if (!this.registered) {
-      this.netCon.register((error: BusinessError) => {
-        if (error) {
-          LogUtil.error(TAG, `register error: ${JSON.stringify(error)}.`);
-        }
-      });
-      this.registered = true;
-    }
-    return this.netCon;
-  }
-
-  @LogMethod
-  netAvailable(callback: Function): void {
-    this.getNetConnect().on('netAvailable', () => {
-      callback();
-    });
-  }
-
-  @LogMethod
-  netCapabilitiesChange(callback: Function): void {
-    this.getNetConnect().on('netCapabilitiesChange', (data: connection.NetCapabilityInfo) => {
-      const bearerTypes: number[] = data.netCap.bearerTypes;
-      const type = bearerTypes.length > 0 ? bearerTypes[0] : 0;
-      callback(type, 0);
-    });
-  }
-
-  @LogMethod
-  netConnectionPropertiesChange(callback: Function): void {
-    try {
-      this.getNetConnect().on('netConnectionPropertiesChange', () => {
-        callback();
-      });
-    } catch (err) {
-      LogUtil.error(TAG, `netConnectionPropertiesChange error: ${JSON.stringify(err)}.`);
-    }
-    try {
-      CommonEventManager.createSubscriber(this.subscribeInfo,
-        (err: BusinessError, sub: CommonEventManager.CommonEventSubscriber) => {
-          if (err) {
-            LogUtil.error(TAG, `createSubscriber error: ${JSON.stringify(err)}.`);
-            return;
-          }
-          this.subscriber = sub;
-          CommonEventManager.subscribe(this.subscriber, () => {
-            callback();
-          });
-        });
-    } catch (err) {
-      LogUtil.error(TAG, `createSubscriber error: ${JSON.stringify(err)}.`);
-    }
-  }
-
-  @LogMethod
-  netUnavailable(callback: Function): void {
-    this.getNetConnect().on('netUnavailable', () => {
-      callback();
-    });
-  }
-
-  @LogMethod
-  netLost(callback: Function): void {
-    this.getNetConnect().on('netLost', () => {
-      callback();
-    });
-  }
-
-  @LogMethod
-  unregisterAll(): void {
-    this.getNetConnect().unregister((error: BusinessError) => {
-      if (error) {
-        LogUtil.error(TAG, `unregister error: ${JSON.stringify(error)}.`);
-      }
-    });
   }
 
   @LogMethod

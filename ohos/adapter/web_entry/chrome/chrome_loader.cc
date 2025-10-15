@@ -84,7 +84,6 @@ const std::vector<std::string> ChromeMainLoader::GetEntryArgs() {
       "--ozone-dump-file=/data/storage/el2/base/cache/",
       "--no-zygote",
       "--user-data-dir=/data/storage/el2/base/files/",
-      "--log-net-log",
       "--force-renderer-accessibility=basic",
   };
   ohos::adapter::device_info::DeviceType device_type =

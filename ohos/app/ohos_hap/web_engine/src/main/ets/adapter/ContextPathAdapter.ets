@@ -102,6 +102,7 @@ export class ContextPathAdapter extends BaseAdapter {
     return userDir;
   }
 
+  @LogMethod
   getAppDownloadDir(callback: (downloadDirPath: string) => void) {
     let context = getContext(this) as common.Context;
     const documentViewPicker = new picker.DocumentViewPicker(context);

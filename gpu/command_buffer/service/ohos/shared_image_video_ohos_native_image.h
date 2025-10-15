@@ -56,7 +56,8 @@ class GPU_GLES2_EXPORT SharedImageVideoOhosNativeImage
       GrSurfaceOrigin surface_origin,
       SkAlphaType alpha_type,
       scoped_refptr<StreamTextureSharedImageInterface> stream_texture_sii,
-      scoped_refptr<SharedContextState> shared_context_state);
+      scoped_refptr<SharedContextState> shared_context_state,
+      scoped_refptr<RefCountedLock> drdc_lock);
 
   ~SharedImageVideoOhosNativeImage() override;
 

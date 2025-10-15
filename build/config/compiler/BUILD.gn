@@ -407,6 +407,9 @@ config("compiler") {
     ]
   }
 
+  if (target_os == "ohos") {
+    cflags += [ "-Wno-missing-template-arg-list-after-template-kw" ]
+  }
   # Non-Apple Posix and Fuchsia compiler flags setup.
   # -----------------------------------
   if ((is_posix && !is_apple) || is_fuchsia) {

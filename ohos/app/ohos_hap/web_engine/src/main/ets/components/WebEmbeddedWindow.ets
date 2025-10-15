@@ -30,7 +30,7 @@
 import { NativeContext, WindowBound } from '../interface/CommonInterface';
 import lazy { DragDropAdapter } from '../adapter/DragDropAdapter';
 import LogUtil from '../utils/LogUtil';
-import { ConfigData, ContextType, PanAction } from '../common/Constants';
+import { CommandType, ConfigData, ContextType, PanAction } from '../common/Constants';
 import Inject from '../common/InjectModule';
 import JsBindingUtils from '../utils/JsBindingUtils';
 import { MultiInputAdapter } from '../adapter/MultiInputAdapter';
@@ -43,6 +43,7 @@ export struct WebEmbeddedWindow {
   @LocalStorageLink('xcomponentId') xComponentId: string = '';
   @LocalStorageLink('startUri') startUri: string = '';
   @LocalStorageLink('session') session: UIExtensionContentSession | undefined = undefined;
+  @LocalStorageLink('userData') userData: string = '';  
   private LIBRARY_NAME: string = 'adapter';
   private XCOMPONENT_NAME: string = 'xcomponent';
   private MODULE_NAME: string = this.xComponentId + ':' + this.XCOMPONENT_NAME;
@@ -126,7 +127,12 @@ export struct WebEmbeddedWindow {
           let vec_args = this.buildArgs();
           this.nativeContext.runBrowser(vec_args);
         } else {
-          this.nativeContext.startNewWindow(this.startUri, true);
+          this.nativeContext.ExecuteCommand(
+            CommandType.kNewWidget,
+            {
+              url: this.startUri,
+              user_data: this.userData,
+            });
         }
       })
       .id(this.XCOMPONENT_NAME)
@@ -160,14 +166,12 @@ export struct WebEmbeddedWindow {
   }
 
   private buildArgs(): string[] {
-    const override_ua = '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' +
-      'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36';
     let default_uri = '';
     if (this.startUri.length !== 0) {
       default_uri = this.startUri;
     }
     let resDir = '--bundle-installation-dir=' + getContext().resourceDir;
-    let vec_args = [override_ua, resDir, default_uri];
+    let vec_args = [resDir, default_uri];
     return vec_args;
   }
 }

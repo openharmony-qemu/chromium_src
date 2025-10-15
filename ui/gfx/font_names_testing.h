@@ -28,7 +28,7 @@ inline constexpr char kTestFontName[] = "Arimo";
 #elif BUILDFLAG(IS_ANDROID)
 inline constexpr char kTestFontName[] = "sans-serif";
 #elif BUILDFLAG(IS_OHOS)
-inline constexpr char kTestFontName[] = "HarmonyOS-Sans";
+inline constexpr char kTestFontName[] = "HarmonyOS Sans";
 #else
 inline constexpr char kTestFontName[] = "Arial";
 #endif
@@ -40,7 +40,7 @@ inline constexpr char kSymbolFontName[] = "monospace";
 #elif BUILDFLAG(IS_WIN)
 inline constexpr char kSymbolFontName[] = "Segoe UI Symbol";
 #elif BUILDFLAG(IS_OHOS)
-inline constexpr char kSymbolFontName[] = "HarmonyOS-Sans";
+inline constexpr char kSymbolFontName[] = "HarmonyOS Sans";
 #else
 inline constexpr char kSymbolFontName[] = "Symbol";
 #endif
@@ -54,7 +54,7 @@ inline constexpr char kCJKFontName[] = "Heiti SC";
 #elif BUILDFLAG(IS_IOS)
 inline constexpr char kCJKFontName[] = "PingFang SC";
 #elif BUILDFLAG(IS_OHOS)
-inline constexpr char kCJKFontName[] = "HarmonyOS-Sans";
+inline constexpr char kCJKFontName[] = "HarmonyOS Sans";
 #else
 inline constexpr char kCJKFontName[] = "SimSun";
 #endif

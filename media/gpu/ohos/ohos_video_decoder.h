@@ -49,7 +49,9 @@
 #include "media/gpu/ohos/codec_allocator.h"
 #include "media/gpu/ohos/codec_wrapper.h"
 #include "media/gpu/ohos/video_frame_factory.h"
+#include "media/base/ohos/ohos_media_crypto_context.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
+#include "third_party/wiseplay/cdm/buildflags.h"
 
 namespace media {
 
@@ -105,7 +107,12 @@ class MEDIA_GPU_EXPORT OhosVideoDecoder final
   bool NeedsBitstreamConversion() const override;
   bool CanReadWithoutStalling() const override;
   int GetMaxDecodeRequests() const override;
-
+#if BUILDFLAG(ENABLE_WISEPLAY)
+  void SetCdm(CdmContext* cdm_context, InitCB init_cb);
+  void OnMediaCryptoReady(InitCB init_cb, void* session, bool requires_secure_video_codec);
+  void OnCdmContextEvent(CdmContext::Event event);
+  bool SupportsDecryption() const override { return true; }
+#endif  // BUILDFLAG(ENABLE_WISEPLAY)
  private:
   OhosVideoDecoder(const gpu::GpuPreferences& gpu_preferences,
                    const gpu::GpuFeatureInfo& gpu_feature_info,
@@ -197,6 +204,19 @@ class MEDIA_GPU_EXPORT OhosVideoDecoder final
   bool deferred_reallocation_pending_ = false;
 
   int last_width_ = 0;
+
+#if BUILDFLAG(ENABLE_WISEPLAY)
+  bool requires_secure_codec_ = false;
+
+  // ohos cdm object
+  raw_ptr<OhosMediaCryptoContext> ohos_crypto_context_ = nullptr;
+
+  void* media_key_session_ = nullptr;
+
+  std::unique_ptr<CallbackRegistration> event_cb_registration_;
+
+  bool waiting_for_key_;
+#endif  // BUILDFLAG(ENABLE_WISEPLAY)
 
   base::WeakPtrFactory<OhosVideoDecoder> weak_factory_{this};
   base::WeakPtrFactory<OhosVideoDecoder> codec_allocator_weak_factory_{this};

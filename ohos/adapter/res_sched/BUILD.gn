@@ -29,6 +29,8 @@ import("//build/config/ohos/config.gni")
  
 component("res_sched") {
   sources = [
+    "manager/background_manager_api_wrapper.h",
+    "manager/background_manager_api_wrapper.cc",
     "manager/throttle_manager.h",
     "manager/throttle_manager.cc",
     "manager/res_api_wrapper.h",

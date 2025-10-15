@@ -76,8 +76,9 @@ JSBIND_CLASS(NewWindowParam) {
   JSBIND_PROPERTY(init_color_argb);
   JSBIND_PROPERTY(hide_title_bar);
   JSBIND_PROPERTY(use_dark_mode);
-  JSBIND_PROPERTY(is_stateless);
   JSBIND_PROPERTY(caption_button_visible);
+  JSBIND_PROPERTY(ability_type);
+  JSBIND_PROPERTY(app_id);
 }
 
 JSBIND_CLASS(PointCoordinate) {

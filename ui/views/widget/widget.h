@@ -42,6 +42,12 @@ namespace base {
 class TimeDelta;
 }
 
+#if BUILDFLAG(IS_OHOS)
+namespace content {
+class VideoPictureInPictureWindowController;
+}
+#endif
+
 namespace gfx {
 class Insets;
 class Point;
@@ -460,13 +466,12 @@ class VIEWS_EXPORT Widget : public internal::NativeWidgetDelegate,
 #endif
 
 #if BUILDFLAG(IS_OHOS)
+    raw_ptr<content::VideoPictureInPictureWindowController> pip_controller = nullptr;
+    gfx::NativeWindow pip_parent;
     bool using_system_floating_window = false;
     bool use_dark_mode = false;
     bool caption_button_visible = true;
-
-    // The value `true` indicates that the newly created window does not inherit the size of the current window.
-    // This parameter can be used in scenarios such as WebRTC notification window.
-    bool is_stateless = false;
+    std::string app_id;
 #endif
 
     // Directly sets the NativeTheme used by the Widget. Providing the

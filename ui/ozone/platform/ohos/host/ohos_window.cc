@@ -152,6 +152,7 @@ void OhosWindow::OnSurfaceCreated() {
 void OhosWindow::OnSurfaceDestoryed() {
   auto task = base::BindOnce([](base::WeakPtr<OhosWindow> window) {
         if (window) {
+          LOG(INFO) << "OhosWindow on surface destroyed call window on close request";
           window->delegate()->OnCloseRequest();
         }
       },

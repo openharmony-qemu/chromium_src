@@ -41,13 +41,13 @@ export struct WebSubWindow {
   @LocalStorageLink('subWindowParams') params: IParams = {
     id: '',
     size: [0, 0], // [width, height]
-    callback: (ready: boolean, id: string) => {
+    callback: (id: string) => {
     },
     initColorRgb: '#ffffff',
   };
   private xComponentId: string = this.params.id;
   private LIBRARY_NAME: string = 'adapter';
-  private callback: (ready: boolean, id: string) => void = this.params.callback;
+  private callback: (id: string) => void = this.params.callback;
   private XCOMPONENT_NAME: string = 'subXcomponent';
   private MODULE_NAME: string = this.xComponentId + ':' + this.XCOMPONENT_NAME;
   private dragDropAdapter: DragDropAdapter = Inject.get(DragDropAdapter);
@@ -115,7 +115,7 @@ export struct WebSubWindow {
       })
       .onLoad(() => {
         LogUtil.info(WebSubWindow.TAG, 'onLoad xComponentId:' + this.xComponentId);
-        this.callback(true, this.xComponentId);
+        this.callback(this.xComponentId);
       })
       .id(this.XCOMPONENT_NAME)
   }

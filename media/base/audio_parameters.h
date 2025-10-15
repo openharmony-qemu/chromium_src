@@ -355,6 +355,18 @@ class MEDIA_SHMEM_EXPORT AudioParameters {
   void set_effects(int effects) { effects_ = effects; }
   int effects() const { return effects_; }
 
+#if BUILDFLAG(IS_OHOS)
+  void set_render_process_id(int render_process_id) {
+    render_process_id_ = render_process_id;
+  }
+  int render_process_id() const { return render_process_id_; }
+
+  void set_render_frame_id(int render_frame_id) {
+    render_frame_id_ = render_frame_id;
+  }
+  int render_frame_id() const { return render_frame_id_; }
+#endif
+
   void set_mic_positions(const std::vector<Point>& mic_positions) {
     mic_positions_ = mic_positions;
   }
@@ -378,6 +390,11 @@ class MEDIA_SHMEM_EXPORT AudioParameters {
   int sample_rate_;                            // Sampling frequency/rate.
   int frames_per_buffer_;                      // Number of frames in a buffer.
   int effects_;  // Bitmask using PlatformEffectsMask.
+
+#if BUILDFLAG(IS_OHOS)
+  int render_process_id_;
+  int render_frame_id_;
+#endif
 
   // Microphone positions using Cartesian coordinates:
   // x: the horizontal dimension, with positive to the right from the camera's

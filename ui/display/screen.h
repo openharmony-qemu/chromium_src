@@ -225,7 +225,7 @@ class DISPLAY_EXPORT Screen {
   virtual gfx::NativeWindow GetLocalProcessWindowAtPoint(
       const gfx::Point& point,
       const std::set<gfx::NativeWindow>& ignore,
-      const int32_t display_id) = 0;
+      const int32_t display_id);
 #endif
 
  protected:

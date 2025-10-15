@@ -107,6 +107,8 @@ class GpuSharedImageVideoFactory
 
   THREAD_CHECKER(thread_checker_);
 
+  bool is_vulkan_ = false;
+
   base::WeakPtrFactory<GpuSharedImageVideoFactory> weak_factory_{this};
 };
 

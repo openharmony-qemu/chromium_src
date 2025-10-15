@@ -250,6 +250,10 @@ bool AudioParameters::Equals(const AudioParameters& other) const {
          channel_layout() == other.channel_layout() &&
          channels() == other.channels() &&
          frames_per_buffer_ == other.frames_per_buffer() &&
+#if BUILDFLAG(IS_OHOS)
+         render_process_id_ == other.render_process_id() &&
+         render_frame_id_ == other.render_frame_id() &&
+#endif
          effects_ == other.effects() && mic_positions_ == other.mic_positions_;
 }
 

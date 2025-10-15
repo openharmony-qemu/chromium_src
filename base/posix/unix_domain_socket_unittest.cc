@@ -100,7 +100,11 @@ TEST(UnixDomainSocketTest, SendRecvMsgAvoidsSIGPIPE) {
   Pickle request;
   ASSERT_EQ(
       -1, UnixDomainSocket::SendRecvMsg(fds[1], nullptr, 0U, nullptr, request));
+#if BUILDFLAG(IS_OHOS)
+  ASSERT_EQ(ECONNREFUSED, errno);
+#else
   ASSERT_EQ(EPIPE, errno);
+#endif
   // Restore the SIGPIPE handler.
   ASSERT_EQ(0, sigaction(SIGPIPE, &oldact, nullptr));
 }

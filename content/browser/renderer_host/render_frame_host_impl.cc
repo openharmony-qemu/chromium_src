@@ -4674,6 +4674,10 @@ void RenderFrameHostImpl::DidNavigate(
     // unique ids within the WebContents.
     ax_unique_ids_.clear();
   }
+
+  if (GetRenderWidgetHost()->IsWebApp()) {
+    GetAssociatedLocalFrame()->SetWebApp(true);
+  }
 }
 
 void RenderFrameHostImpl::SetLastCommittedOrigin(

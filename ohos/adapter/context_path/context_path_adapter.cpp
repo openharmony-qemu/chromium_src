@@ -75,14 +75,22 @@ std::string GetUserDownloadDir() {
 }
  
 std::string GetAppDownloadDir() {
-  std::promise<std::string> promise;
-  std::function<void(std::string)> download_dir = [&promise](std::string ret) {
-    promise.set_value(ret);
-  };
   if (auto getDirFunc = ohos::adapter::GetJSFunction(
       "ContextPathAdapter.GetAppDownloadDir")) {
+    auto promise = std::make_shared<std::promise<std::string>>();
+    auto future = promise->get_future();
+    std::function<void(std::string)> download_dir = [promise](std::string ret) {
+      promise->set_value(ret);
+    };
+
     getDirFunc->Invoke<void>(download_dir);
-    return promise.get_future().get();
+    auto status = future.wait_for(std::chrono::seconds(1));
+    if (status == std::future_status::timeout) {
+      LOGE("GetAppDownloadDir timed out.");
+      return "";
+    } else {
+      return future.get();
+    }
   }
   LOGE(
       "ContextPathAdapter get ContextPathAdapter.GetAppDownloadDir js "

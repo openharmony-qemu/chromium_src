@@ -30,9 +30,10 @@
 #ifndef UI_OZONE_PLATFORM_OHOS_GL_SURFACE_EGL_READBACK_OHOS_H_
 #define UI_OZONE_PLATFORM_OHOS_GL_SURFACE_EGL_READBACK_OHOS_H_
 
+#include <native_window/external_window.h>
+
 #include "base/memory/raw_ptr.h"
 #include "ui/ozone/common/gl_surface_egl_readback.h"
-#include "native_window/external_window.h"
 
 namespace ui {
 

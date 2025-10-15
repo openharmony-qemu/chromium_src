@@ -6,6 +6,7 @@
 
 #include "build/build_config.h"
 #include "media/base/callback_registry.h"
+#include "third_party/wiseplay/cdm/buildflags.h"
 
 namespace media {
 
@@ -43,6 +44,12 @@ CdmContext::GetMediaFoundationCdmProxy() {
 
 #if BUILDFLAG(IS_ANDROID)
 MediaCryptoContext* CdmContext::GetMediaCryptoContext() {
+  return nullptr;
+}
+#endif
+
+#if BUILDFLAG(ENABLE_WISEPLAY)
+OhosMediaCryptoContext* CdmContext::GetOhosMediaCryptoContext() {
   return nullptr;
 }
 #endif

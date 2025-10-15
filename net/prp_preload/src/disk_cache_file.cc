@@ -81,8 +81,17 @@ int DiskCacheEntry::OpenCallback(int rv) {
   auto callback = base::BindOnce(&DiskCacheEntry::OnEntryOpenComplete,
                                  weak_ptr_factory_.GetWeakPtr());
 
+   if (cache_ == nullptr) {
+    LOG(WARNING) << __FUNCTION__ << ", cache_ is nullptr";
+    return rv;
+  }
+  disk_cache::Backend* backend = cache_->Backend();
+  if (backend == nullptr) {
+    LOG(WARNING) << __FUNCTION__ << ", backend is nullptr";
+    return net::ERR_FAILED;
+  }
   disk_cache::EntryResult create_result =
-      cache_->Backend()->OpenOrCreateEntry(url_, net::HIGHEST, std::move(callback));
+      backend->OpenOrCreateEntry(url_, net::HIGHEST, std::move(callback));
   rv = create_result.net_error();
   if (rv != net::ERR_IO_PENDING) {
     entry_ = create_result.ReleaseEntry();
@@ -92,7 +101,9 @@ int DiskCacheEntry::OpenCallback(int rv) {
 
 int DiskCacheEntry::WriteCallback(int rv) {
   if (rv != net::OK) {
-    cache_->EntryWriteComplete(this);
+    if (cache_ != nullptr) {
+      cache_->EntryWriteComplete(this);
+    }
     return rv;
   }
 
@@ -104,7 +115,9 @@ int DiskCacheEntry::WriteCallback(int rv) {
 }
 
 int DiskCacheEntry::IOComplete(int rv) {
-  cache_->EntryWriteComplete(this);
+  if (cache_ != nullptr) {
+    cache_->EntryWriteComplete(this);
+  }
   return rv;
 }
 
@@ -161,8 +174,17 @@ int DiskCacheReadHelper::OpenCallback(int rv) {
   auto callback = base::BindOnce(&DiskCacheReadHelper::OnEntryOpenComplete,
                                  weak_ptr_factory_.GetWeakPtr());
 
+  if (cache_ == nullptr) {
+    LOG(WARNING) << __FUNCTION__ << ", cache_ is nullptr";
+    return rv;
+  }
+  disk_cache::Backend* backend = cache_->Backend();
+  if (backend == nullptr) {
+    LOG(WARNING) << __FUNCTION__ << ", backend is nullptr";
+    return net::ERR_FAILED;
+  }
   disk_cache::EntryResult result =
-      cache_->Backend()->OpenEntry(url_, net::HIGHEST, std::move(callback));
+      backend->OpenOrCreateEntry(url_, net::HIGHEST, std::move(callback));
   rv = result.net_error();
   if (rv != net::ERR_IO_PENDING)
     entry_ = result.ReleaseEntry();  // may be nullptr
@@ -172,7 +194,9 @@ int DiskCacheReadHelper::OpenCallback(int rv) {
 int DiskCacheReadHelper::ReadCallback(int rv) {
   if (rv != net::OK) {
     LOG(ERROR) << "PRPPreload.DiskCacheReadHelper::ReadCallback load cache entry failed: " << rv;
-    cache_->EntryReadComplete();
+    if (cache_ != nullptr) {
+      cache_->EntryReadComplete();
+    }
     return rv;
   }
 
@@ -188,7 +212,9 @@ int DiskCacheReadHelper::IOComplete(int rv) {
     entry_loaded_cb_.Run(std::string(buf_->data(), buf_->size()));
   }
 
-  cache_->EntryReadComplete();
+  if (cache_ != nullptr) {
+    cache_->EntryReadComplete();
+  }
   return rv;
 }
 
@@ -198,7 +224,7 @@ DiskCacheFile::DiskCacheFile(const scoped_refptr<DiskCacheBackendFactory>& disk_
     disk_cache_backend_factory_(disk_cache_backend_factory), url_(url), entry_loaded_cb_(entry_loaded_cb) {}
 
 void DiskCacheFile::StoreInfoAsync(const std::string& entry_content) {
-  if (!disk_cache_backend_factory_->WaitInitedTimeout()) {
+  if (!disk_cache_backend_factory_ || !disk_cache_backend_factory_->WaitInitedTimeout()) {
     LOG(ERROR) << "PRPPreload.DiskCacheFile::StoreInfoAsync backend not ready";
     return;
   }
@@ -207,7 +233,7 @@ void DiskCacheFile::StoreInfoAsync(const std::string& entry_content) {
 }
 
 void DiskCacheFile::LoadInfoAsync() {
-  if (!disk_cache_backend_factory_->WaitInitedTimeout()) {
+  if (!disk_cache_backend_factory_ || !disk_cache_backend_factory_->WaitInitedTimeout()) {
     LOG(INFO) << "PRPPreload.DiskCacheFile::LoadInfoAsync already load";
     return;
   }

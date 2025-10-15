@@ -515,6 +515,7 @@ NET_EXPORT BASE_DECLARE_FEATURE(kAddressTrackerLinuxIsProxied);
 
 #if BUILDFLAG(IS_OHOS)
 NET_EXPORT BASE_DECLARE_FEATURE(kEnableNetworkPreload);
+NET_EXPORT BASE_DECLARE_FEATURE(kEnableOmniboxPre);
 #endif  // BUILDFLAG(IS_OHOS)
 
 // Enables binding of cookies to the port that originally set them by default.

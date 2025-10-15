@@ -190,6 +190,10 @@
 #include "content/browser/font_unique_name_lookup/font_unique_name_lookup_ohos.h"
 #endif
 
+#if BUILDFLAG(ENABLE_WISEPLAY)
+#include "media/base/ohos/ohos_media_drm_bridge_client.h"
+#endif
+
 #if BUILDFLAG(IS_MAC)
 #include "base/apple/scoped_nsautorelease_pool.h"
 #include "content/browser/renderer_host/browser_compositor_view_mac.h"
@@ -812,7 +816,7 @@ int BrowserMainLoop::PreCreateThreads() {
   }
 #endif
 
-#if BUILDFLAG(ENABLE_LIBRARY_CDMS)
+#if BUILDFLAG(ENABLE_LIBRARY_CDMS) || BUILDFLAG(ENABLE_WISEPLAY)
   // Prior to any processing happening on the IO thread, we create the
   // CDM service as it is predominantly used from the IO thread. This must
   // be called on the main thread since it involves file path checks.
@@ -1487,6 +1491,10 @@ void BrowserMainLoop::PostCreateThreadsImpl() {
     FontUniqueNameLookup::GetInstance();
   }
 #endif  // BUILDFLAG(IS_OHOS)
+
+#if BUILDFLAG(ENABLE_WISEPLAY)
+  media::SetMediaDrmBridgeClient(GetContentClient()->GetOhosMediaDrmBridgeClient());
+#endif
 
 #if defined(ENABLE_IPC_FUZZER)
   SetFileUrlPathAliasForIpcFuzzer();

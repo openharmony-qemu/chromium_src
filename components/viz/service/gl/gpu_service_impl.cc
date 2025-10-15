@@ -176,11 +176,13 @@ bool PreInitializeLogHandler(int severity,
                              int line,
                              size_t message_start,
                              const std::string& message);
+#if !BUILDFLAG(IS_OHOS)
 bool PostInitializeLogHandler(int severity,
                               const char* file,
                               int line,
                               size_t message_start,
                               const std::string& message);
+#endif
 
 // Class which manages LOG() message forwarding before and after GpuServiceImpl
 // InitializeWithHost(). Prior to initialize, log messages are deferred and kept
@@ -246,7 +248,11 @@ class LogMessageManager {
     for (auto& log : deferred_messages_)
       RouteMessage(log.severity, std::move(log.header), std::move(log.message));
     deferred_messages_.clear();
+    #if BUILDFLAG(IS_OHOS)
+    logging::SetLogMessageHandler(nullptr);
+    #else
     logging::SetLogMessageHandler(PostInitializeLogHandler);
+    #endif
   }
 
   // Called when it's no longer safe to invoke |log_callback_|.
@@ -279,6 +285,7 @@ bool PreInitializeLogHandler(int severity,
   return false;
 }
 
+#if !BUILDFLAG(IS_OHOS)
 bool PostInitializeLogHandler(int severity,
                               const char* file,
                               int line,
@@ -289,6 +296,7 @@ bool PostInitializeLogHandler(int severity,
                                        message.substr(message_start));
   return false;
 }
+#endif
 
 bool IsAcceleratedJpegDecodeSupported() {
 #if BUILDFLAG(IS_CHROMEOS_ASH)

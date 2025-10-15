@@ -67,6 +67,15 @@ void FileSelectPicker::ShowSaveAsDialog(const SaveAsDialogParams& params,
   }
 }
 
+void FileSelectPicker::ShowInstallationPackageDialog(
+    ContinueDwonloadConfirmCallback callback) {
+  auto func = ohos::adapter::GetJSFunction(
+      "FilePickerAdapter.ShowInstallationPackageDialog");
+  if (func) {
+    func->Invoke<void>(callback);
+  }
+}
+
 JSBIND_CLASS(SelectFileDialogParams) {
   JSBIND_CONSTRUCTOR<>();
   JSBIND_PROPERTY(multi_files);

@@ -81,6 +81,7 @@ source_set("filters") {
     "//media/video",
     "//net",
     "//third_party/libyuv",
+    "//third_party/wiseplay/cdm:buildflags", 
     "//ui/gfx/geometry:geometry",
   ]
 

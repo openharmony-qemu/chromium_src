@@ -91,8 +91,8 @@ void ScreenAdapter::GetDefaultDisplay(OhosDisplay& ohos_display) {
 void ScreenAdapter::GetAllDisplays(std::vector<OhosDisplay>& ohos_displays) {
   std::promise<bool> promise;
   std::function<void(aki::Value, int32_t)> callback =
-    [&](aki::Value complete_display, int32_t len) {
-    if (!complete_display.IsArray()) {
+    [&](aki::Value complete_displays, int32_t len) {
+    if (!complete_displays.IsArray()) {
       LOGE("[Display]GetAllDisplays input param err, displays is not array.");
       promise.set_value(false);
       return;
@@ -100,7 +100,7 @@ void ScreenAdapter::GetAllDisplays(std::vector<OhosDisplay>& ohos_displays) {
 
     for (int32_t i = 0; i < len; i++) {
       OhosDisplay ohos_display;
-      ConvertDisplay(complete_display[i], ohos_display);
+      ConvertDisplay(complete_displays[i], ohos_display);
       ohos_displays.push_back(ohos_display);
     }
 

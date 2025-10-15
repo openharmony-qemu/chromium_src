@@ -53,10 +53,6 @@ class VIEWS_EXPORT DesktopWindowTreeHostOhos
 
   ~DesktopWindowTreeHostOhos() override;
 
-  void OnOcclusionStateChanged(ui::PlatformWindowOcclusionState occlusion_state) override;
-
-  void SetVisiblebyOcclusionState(aura::Window::OcclusionState state);
-
  protected:
   // Overridden from DesktopWindowTreeHost:
   void OnNativeWidgetCreated(const Widget::InitParams& params) override;
@@ -82,9 +78,6 @@ class VIEWS_EXPORT DesktopWindowTreeHostOhos
   // other consumer handled them.
   std::unique_ptr<WindowEventFilterOhos> non_client_window_event_filter_;
   base::WeakPtrFactory<DesktopWindowTreeHostOhos> weak_factory_{this};
-
-  // Keeps track of the occlusion state of the host
-  aura::Window::OcclusionState occlusion_state_ = aura::Window::OcclusionState::UNKNOWN;
 };
 
 }  // namespace views

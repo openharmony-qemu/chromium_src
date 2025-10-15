@@ -27,6 +27,18 @@ void MojoProvisionFetcher::Retrieve(const GURL& default_url,
                      weak_factory_.GetWeakPtr(), std::move(response_cb)));
 }
 
+#if BUILDFLAG(ENABLE_WISEPLAY)
+void MojoProvisionFetcher::RetrieveWiseplayCertificate(
+    const GURL& default_url,
+    const std::string& request_data,
+    ResponseCB response_cb) {
+  provision_fetcher_->RetrieveWiseplayCertificate(
+      default_url, request_data,
+      base::BindOnce(&MojoProvisionFetcher::OnResponse,
+                     weak_factory_.GetWeakPtr(), std::move(response_cb)));
+}
+#endif // BUILDFLAG(ENABLE_WISEPLAY)
+
 void MojoProvisionFetcher::OnResponse(ResponseCB response_cb,
                                       bool success,
                                       const std::string& response) {

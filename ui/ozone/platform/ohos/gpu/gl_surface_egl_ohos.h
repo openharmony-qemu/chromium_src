@@ -52,7 +52,7 @@ class NativeViewGLSurfaceEGLOhos : public NativeViewGLSurfaceEGL {
               bool has_alpha) override;
 
  private:
-  ~NativeViewGLSurfaceEGLOhos() = default;
+  ~NativeViewGLSurfaceEGLOhos() override = default;
 };
 
 }  // namespace gl

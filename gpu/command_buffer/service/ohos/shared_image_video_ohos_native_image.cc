@@ -54,13 +54,14 @@ SharedImageVideoOhosNativeImage::SharedImageVideoOhosNativeImage(
     GrSurfaceOrigin surface_origin,
     SkAlphaType alpha_type,
     scoped_refptr<StreamTextureSharedImageInterface> stream_texture_sii,
-    scoped_refptr<SharedContextState> context_state)
+    scoped_refptr<SharedContextState> context_state,
+    scoped_refptr<RefCountedLock> drdc_lock)
     : SharedImageVideoOhos(mailbox,
                            size,
                            color_space,
                            surface_origin,
                            alpha_type,
-                           /*is_thread_safe=*/false),
+                           !!drdc_lock),
       stream_texture_sii_(std::move(stream_texture_sii)),
       context_state_(std::move(context_state)),
       gpu_main_task_runner_(base::SingleThreadTaskRunner::GetCurrentDefault()) {

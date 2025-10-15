@@ -78,6 +78,10 @@
 #include "content/browser/hyphenation/hyphenation_impl.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "content/browser/font_unique_name_lookup/font_unique_name_lookup_service.h"
+#endif
+
 namespace content {
 
 namespace {
@@ -204,7 +208,7 @@ void RenderProcessHostImpl::RegisterMojoInterfaces() {
       base::BindRepeating(&hyphenation::HyphenationImpl::Create),
       hyphenation::HyphenationImpl::GetTaskRunner());
 #endif
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   if (base::FeatureList::IsEnabled(features::kFontSrcLocalMatching)) {
     registry->AddInterface(
         base::BindRepeating(&FontUniqueNameLookupService::Create),

@@ -98,6 +98,7 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
   bool override_and_trap = false;
   switch (sysno) {
 #if defined(__arm__) || defined(__aarch64__)
+    case __NR_perf_event_open:
     case __NR_setsockopt:
     case __NR_socket:
     case __NR_bind:

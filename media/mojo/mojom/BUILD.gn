@@ -4,6 +4,7 @@
 
 import("//media/media_options.gni")
 import("//mojo/public/tools/bindings/mojom.gni")
+import("//third_party/wiseplay/cdm/wiseplay.gni")
 
 mojom("mojom") {
   generate_java = true
@@ -109,6 +110,11 @@ mojom("mojom") {
   }
 
   enabled_features = []
+
+  if(defined(enable_wiseplay) && enable_wiseplay){
+    enabled_features += [ "enable_wiseplay" ]
+  }
+
   if (is_linux || is_chromeos) {
     enabled_features += [ "is_linux_or_chromeos" ]
   }

@@ -186,6 +186,10 @@ const char kSchedulerBoostUrgent[] = "scheduler-boost-urgent";
 const char kBundleInstallationDir[] = "bundle-installation-dir";
 const char KDisableBlinkFeatures[] = "disable-blink-features";
 const char KDisableOcclusionFeature[] = "disable-occlusion-feature";
+const char KDisablePartialSwap[] = "disable-partial-swap";
+const char kDisablePagePolicy[] = "disable-page-policy";
+// indicate long tracing mode if present
+const char kOhosTrace[] = "ohos-trace";
 #endif
 
 }  // namespace switches

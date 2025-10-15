@@ -29,6 +29,11 @@ TerminationStatus GetTerminationStatusImpl(ProcessHandle handle,
   int status = 0;
   const pid_t result = HANDLE_EINTR(waitpid(handle, &status,
                                             can_block ? 0 : WNOHANG));
+#if BUILDFLAG(IS_OHOS)
+  LOG(INFO) << "get ermination status impl can_blook:" << can_block
+            << " pid:" << handle << " result:" << result << "status:" << status;
+#endif
+
   if (result == -1) {
     DPLOG(ERROR) << "waitpid(" << handle << ")";
     *exit_code = 0;

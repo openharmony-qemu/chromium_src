@@ -427,7 +427,7 @@ TEST(PlatformThreadTest, SetCurrentThreadTypeTest) {
 #if BUILDFLAG(IS_APPLE)
   TestPriorityResultingFromThreadType(ThreadType::kResourceEfficient,
                                       ThreadPriorityForTest::kUtility);
-#elif BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX)
+#elif BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
   TestPriorityResultingFromThreadType(
       ThreadType::kResourceEfficient,
       ThreadPriorityForTest::kResourceEfficient);

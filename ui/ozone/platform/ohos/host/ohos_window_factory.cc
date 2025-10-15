@@ -30,10 +30,12 @@
 #include <memory>
 
 #include "base/logging.h"
+#include "ohos/adapter/context/context_adapter.h"
 #include "ui/gfx/native_widget_types.h"
 #include "ui/ozone/platform/ohos/host/ohos_fake_window.h"
 #include "ui/ozone/platform/ohos/host/ohos_popup.h"
 #include "ui/ozone/platform/ohos/host/ohos_toplevel_window.h"
+#include "ui/ozone/platform/ohos/host/ohos_toplevel_pad_window.h"
 #include "ui/ozone/platform/ohos/host/ohos_window.h"
 #include "ui/ozone/platform/ohos/host/ohos_window_manager.h"
 #include "ui/platform_window/platform_window_init_properties.h"
@@ -59,7 +61,11 @@ std::unique_ptr<OhosWindow> OhosWindow::Create(
       }
       break;
     case PlatformWindowType::kWindow:
-      window = std::make_unique<OhosToplevelWindow>(delegate, manager);
+      if (ohos::adapter::ContextAdapter::GetInstance().IsPcMode()) {
+        window = std::make_unique<OhosToplevelWindow>(delegate, manager);
+      } else {
+        window = std::make_unique<OhosToplevelPadWindow>(delegate, manager);
+      }
       break;
     default:
       window = std::make_unique<OhosFakeWindow>(delegate, manager);

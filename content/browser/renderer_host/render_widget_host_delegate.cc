@@ -180,4 +180,8 @@ bool RenderWidgetHostDelegate::ShouldDoLearning() {
   return true;
 }
 
+bool RenderWidgetHostDelegate::IsWebApp() {
+  return false;
+}
+
 }  // namespace content

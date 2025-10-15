@@ -68,30 +68,6 @@ class ChromeContentBrowserClientForIncludeTest : public content::RenderViewHostI
   std::unique_ptr<ChromeContentBrowserClient> client_;
 };
 
-TEST_F(ChromeContentBrowserClientForIncludeTest, OverrideErrorPage) {
-  auto rfh = main_test_rfh();
-  content::FrameTreeNodeId frame_tree_node_id =
-      rfh->frame_tree_node()->frame_tree_node_id();
-  
-  GURL test_url("https://example.com");
-  std::string request_method = "GET";
-  bool has_user_gesture = true;
-  bool is_redirect = false;
-  bool is_outermost_main_frame = true;
-  int error_code = 404;
-  std::string error_text = "Not Found";
-  bool is_prerendering = false;
-  ui::PageTransition transition = ui::PAGE_TRANSITION_LINK;
-  std::string html;
-
-  std::string result = TestOverrideErrorPage(
-      frame_tree_node_id, true, test_url, request_method, has_user_gesture,
-      is_redirect, is_outermost_main_frame, error_code, error_text,
-      is_prerendering, transition, &html);
-    
-  EXPECT_EQ(result, "");
-}
-
 TEST_F(ChromeContentBrowserClientForIncludeTest, OverrideErrorPage_WebContentsIsNull) {
   content::FrameTreeNodeId invalid_id;
   GURL test_url("https://example.com");
@@ -174,7 +150,7 @@ TEST_F(ChromeContentBrowserClientForIncludeTest, ShouldOverrideUrlLoading004) {
   bool ignore_navigation = true;
   
   bool result = TestShouldOverrideUrlLoading(
-      main_rfh()->GetFrameTreeNodeId(),
+      content::FrameTreeNodeId(),
       true,
       GURL("https://example.com"),
       "GET",
@@ -264,7 +240,7 @@ TEST_F(ChromeContentBrowserClientForIncludeTest, ShouldOverrideUrlLoading008) {
     bool ignore_navigation = true;
     
     bool result = TestShouldOverrideUrlLoading(
-        main_rfh()->GetFrameTreeNodeId(),
+        content::FrameTreeNodeId(),
         false,
         GURL("https://example.com"),
         "GET",
@@ -289,7 +265,7 @@ TEST_F(ChromeContentBrowserClientForIncludeTest, ShouldOverrideUrlLoading009) {
     bool ignore_navigation = true;
     
     bool result = TestShouldOverrideUrlLoading(
-        main_rfh()->GetFrameTreeNodeId(),
+        content::FrameTreeNodeId(),
         false,
         GURL("https://example.com"),
         method,

@@ -165,7 +165,7 @@ bool MediaControlPopupMenuElementUtils::IsOverflowMenuPopup() const {
 
 Element* MediaControlPopupMenuElementUtils::ShouldPlaybackSpeedButton() {
   if (element->GetMediaControls().ShouldShowVideoControlsHM()) {
-    return &element->GetMediaControls().mediaControlsImplUtils_.Playback_Speed_Button();
+    return &element->GetMediaControls().mediaControlsImplUtils_->Playback_Speed_Button();
   }
 }
 

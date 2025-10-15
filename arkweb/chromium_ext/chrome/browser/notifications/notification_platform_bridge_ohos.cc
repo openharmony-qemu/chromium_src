@@ -81,12 +81,12 @@ void* __real_malloc(size_t);
 
 namespace {
 
-base::NoDestructor<std::map<std::string, std::unique_ptr<ProfileNotification>>> g_profile_notifications_;
+base::NoDestructor<std::map<std::string, std::unique_ptr<ProfileNotification>>> g_profile_notifications;
 
 ProfileNotification* FindProfileNotification(
     const std::string& id) {
-  auto iter = (*g_profile_notifications_).find(id);
-  if (iter == (*g_profile_notifications_).end()) {
+  auto iter = (*g_profile_notifications).find(id);
+  if (iter == (*g_profile_notifications).end()) {
     return nullptr;
   }
 
@@ -95,8 +95,8 @@ ProfileNotification* FindProfileNotification(
 
 void AddProfileNotification(const std::string& id,
     std::unique_ptr<ProfileNotification> profile_notification) {
-  DCHECK((*g_profile_notifications_).find(id) == (*g_profile_notifications_).end());
-  (*g_profile_notifications_)[id] = std::move(profile_notification);
+  DCHECK((*g_profile_notifications).find(id) == (*g_profile_notifications).end());
+  (*g_profile_notifications)[id] = std::move(profile_notification);
 }
 
 void Add(const std::string& id, const message_center::Notification& notification,
@@ -109,11 +109,11 @@ void Add(const std::string& id, const message_center::Notification& notification
 
 void RemoveProfileNotification(
     const std::string& notification_id) {
-  auto it = (*g_profile_notifications_).find(notification_id);
-  if (it == (*g_profile_notifications_).end()) {
+  auto it = (*g_profile_notifications).find(notification_id);
+  if (it == (*g_profile_notifications).end()) {
     return;
   }
-  (*g_profile_notifications_).erase(it);
+  (*g_profile_notifications).erase(it);
 }
 
 bool CancelById(
@@ -122,8 +122,8 @@ bool CancelById(
   std::string profile_notification_id =
       ProfileNotification::GetProfileNotificationId(id, profile_id);
 
-  auto iter = (*g_profile_notifications_).find(profile_notification_id);
-  if (iter == (*g_profile_notifications_).end()) {
+  auto iter = (*g_profile_notifications).find(profile_notification_id);
+  if (iter == (*g_profile_notifications).end()) {
     return false;
   }
 
@@ -413,8 +413,11 @@ void NotificationPlatformBridgeOhos::OnShowed(const std::string id) {
     return;
   }
 
-  const message_center::Notification& notification = FindProfileNotification(id)->notification();
+  const message_center::Notification& notification = profile_notification->notification();
   PassThroughDelegate* delegate = static_cast<PassThroughDelegate*>(notification.delegate());
+  if (!delegate) {
+    return;
+  } 
   NotificationHandler* handler = NotificationDisplayServiceImpl::GetForProfile(delegate->GetProfile())
       ->GetNotificationHandler(delegate->GetNotificationType());
   if (handler) {
@@ -430,11 +433,12 @@ void NotificationPlatformBridgeOhos::OnClosed(const std::string id) {
     return;
   }
 
-  const message_center::Notification& notification = FindProfileNotification(id)->notification();
+  const message_center::Notification& notification = profile_notification->notification();
   PassThroughDelegate* delegate = static_cast<PassThroughDelegate*>(notification.delegate());
-  delegate->Close(true);
-
-  CancelById(id, ProfileNotification::GetProfileID(delegate->GetProfile()));
+  if (delegate) {
+    delegate->Close(true);
+    CancelById(id, ProfileNotification::GetProfileID(delegate->GetProfile()));
+  }
 }
 
 void NotificationPlatformBridgeOhos::OnClicked(const std::string id, int buttonIndex) {
@@ -446,11 +450,13 @@ void NotificationPlatformBridgeOhos::OnClicked(const std::string id, int buttonI
     return;
   }
 
-  const message_center::Notification& notification = FindProfileNotification(id)->notification();
+  const message_center::Notification& notification = profile_notification->notification();
   PassThroughDelegate* delegate = static_cast<PassThroughDelegate*>(notification.delegate());
-  if (buttonIndex >= 0) {
-    delegate->Click(buttonIndex, std::nullopt);
-  } else {
-    delegate->Click(std::nullopt, std::nullopt);
+  if (delegate) {
+    if (buttonIndex >= 0) {
+      delegate->Click(buttonIndex, std::nullopt);
+    } else {
+      delegate->Click(std::nullopt, std::nullopt);
+    }
   }
 }

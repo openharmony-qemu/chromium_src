@@ -965,6 +965,44 @@ void NWebHandlerDelegate::OnFrameCreated(CefRefPtr<CefBrowser> browser,
 
   dispatcher_.OnFrameCreated(frameInfo);
 }
+
+void NWebHandlerDelegate::OnFrameDetached(CefRefPtr<CefBrowser> browser,
+                                          CefRefPtr<CefFrame> frame) {
+  LOG(DEBUG) << "NWebHandlerDelegate::OnFrameDetached";
+  if (!frame || !browser) {
+    LOG(ERROR) << "OnFrameDetached failed, frame or browser is invalid";
+    return;
+  }
+
+  std::string frameRoutingId = frame->GetIdentifier().ToString();
+  int childId = 0;
+  std::string parentRoutingId;
+  int parentChildId = 0;
+  FrameInfos frameInfo;
+
+  if (!frame->IsMain()) {
+    CefRefPtr<CefFrame> parent = frame->GetParent();
+    if (parent) {
+      parentRoutingId = parent->GetIdentifier().ToString();
+      if (parent->GetBrowser() && parent->GetBrowser()->GetHost()) {
+        parentChildId = parent->GetBrowser()->GetHost()->GetIdentifier();
+      }
+      frameInfo.parentId = std::to_string(parentChildId) + "_" + parentRoutingId;
+    }
+  } else {
+    frameInfo.parentId.clear();
+  }
+
+  if (browser->GetHost()) {
+    childId = browser->GetHost()->GetIdentifier();
+  } else {
+    LOG(ERROR) << "OnFrameDetached browser getHost failed.";
+    return;
+  }
+  frameInfo.id = std::to_string(childId) + "_" + frameRoutingId;
+
+  dispatcher_.OnFrameDetached(frameInfo);
+}
 #endif
 /* CefFrameHandler methods end */
 

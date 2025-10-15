@@ -621,7 +621,12 @@ class JavaScriptInFramesResultCallbackImpl : public CefJavaScriptResultCallback 
   void OnJavaScriptExeResult(CefRefPtr<CefValue> result) override {
     if (callback_ != nullptr) {
       JavaScriptValue value;
-      ConvertCefValueToJavaScriptValue(result, &value);
+      if (error_description_.empty()) {
+        ConvertCefValueToJavaScriptValue(result, &value);
+      } else {
+        value.type = JavaScriptDataType::STRING;
+        value.stringValue = error_description_;
+      }
 
       nweb_ex::proto::JavaScriptValue pb_value;
       NwebExtensionJavaScriptTypesUtils::ExtensionWebValueClassToPb(value, pb_value);
@@ -638,7 +643,12 @@ class JavaScriptInFramesResultCallbackImpl : public CefJavaScriptResultCallback 
     }
   }
 
+  void SetErrorDescription(const std::string& description) override {
+    error_description_ = description;
+  } 
+
  private:
+  std::string error_description_;
   OnReceiveValueCallback callback_ = nullptr;
   int32_t callback_id_ = 0;
   uint32_t nweb_id_ = 0;

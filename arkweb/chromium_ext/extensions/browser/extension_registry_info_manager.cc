@@ -461,6 +461,9 @@ void ExtensionRegistryInfoManager::BrowserNotifier::PopulateAllSyncInfo() {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   ManagementPolicy* management_policy =
       extensions::ExtensionSystem::Get(browser_context_)->management_policy();
+  if (!management_policy) {
+    return;
+  }
   loaded_info_.info.extensionId = extension_.id();
   loaded_info_.info.mustRemainInstalled =
       management_policy->MustRemainInstalled(&extension_, nullptr);

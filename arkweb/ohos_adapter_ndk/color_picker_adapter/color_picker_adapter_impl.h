@@ -28,11 +28,15 @@ class ColorPickerAdapterImpl : public ColorPickerAdapter {
 
   void StartColorPicker(double x,
                         double y,
-                        ColorPickerCallback color_picker_callback);
+                        ColorPickerCallback color_picker_callback) override;
   void StartColorPickerWithColorValue(
       double x,
       double y,
-      ColorPickerCallback color_picker_callback);
+      ColorPickerCallback color_picker_callback) override;
+  void StartColorPickerInternal(double x,
+                                double y,
+                                ColorPickerCallback color_picker_callback,
+                                std::string func_name) override;
 
   static CallbackSharedWrapper<ColorPickerCallback> callback_wrapper_;
 

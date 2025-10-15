@@ -27,6 +27,9 @@ const std::string COLOR_PICKER_SO_PATH =
 const std::string COLOR_PICKER_SO_PATH =
     "/system/lib/ndk/libcolorpicker_ndk.z.so";
 #endif
+const std::string FUNC_NAME = "HMS_GCP_StartColorPicker";
+const std::string FUNC_WITH_VALUE_NAME =
+    "HMS_GCP_StartColorPickerWithColorValue";
 
 ColorPickerAdapterImpl::ColorPickerAdapterImpl() {
   library_handle_ = dlopen(COLOR_PICKER_SO_PATH.c_str(), RTLD_LAZY);
@@ -59,32 +62,26 @@ void ColorPickerAdapterImpl::StartColorPicker(
     double x,
     double y,
     ColorPickerCallback color_picker_callback) {
-  HMS_GCP_StartColorPicker start_color_picker_func = nullptr;
-  if (!library_handle_ ||
-      !(start_color_picker_func = reinterpret_cast<HMS_GCP_StartColorPicker>(
-            dlsym(library_handle_, "HMS_GCP_StartColorPicker")))) {
-    WVLOG_E("ColorPickerAdapterImpl::StartColorPicker failed");
-    color_picker_callback(false, 0);  // Notify failure
-    return;
-  }
-  if (callback_index_ > 0) {
-    callback_wrapper_.Clear(callback_index_);
-  }
-  callback_index_ = callback_wrapper_.AddCallback(
-      std::make_shared<ColorPickerCallback>(color_picker_callback));
-  start_color_picker_func(x, y, ColorPickerNotify,
-                          reinterpret_cast<void*>(callback_index_));
+  StartColorPickerInternal(x, y, color_picker_callback, FUNC_NAME);
 }
+
 void ColorPickerAdapterImpl::StartColorPickerWithColorValue(
     double x,
     double y,
     ColorPickerCallback color_picker_callback) {
+  StartColorPickerInternal(x, y, color_picker_callback, FUNC_WITH_VALUE_NAME);
+}
+
+void ColorPickerAdapterImpl::StartColorPickerInternal(
+    double x,
+    double y,
+    ColorPickerCallback color_picker_callback,
+    std::string func_name) {
   HMS_GCP_StartColorPicker start_color_picker_func = nullptr;
   if (!library_handle_ ||
-      !(start_color_picker_func =
-            reinterpret_cast<HMS_GCP_StartColorPicker>(dlsym(
-                library_handle_, "HMS_GCP_StartColorPickerWithColorValue")))) {
-    WVLOG_E("ColorPickerAdapterImpl::StartColorPickerWithColorValue failed");
+      !(start_color_picker_func = reinterpret_cast<HMS_GCP_StartColorPicker>(
+            dlsym(library_handle_, func_name.c_str())))) {
+    WVLOG_E("ColorPickerAdapterImpl::StartColorPicker failed");
     color_picker_callback(false, 0);  // Notify failure
     return;
   }

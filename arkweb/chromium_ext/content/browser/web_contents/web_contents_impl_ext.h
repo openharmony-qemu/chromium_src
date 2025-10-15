@@ -167,6 +167,7 @@ class WebContentsImplExt : public WebContentsImpl {
 #if BUILDFLAG(ARKWEB_MENU)
   void MouseSelectMenuShow(bool show) override;
   void ChangeVisibilityOfQuickMenu() override;
+  bool IsQuickMenuShow() override;
 #endif
 
 #if BUILDFLAG(ARKWEB_AI)

@@ -3920,6 +3920,13 @@ void NWebHandlerDelegate::ChangeVisibilityOfQuickMenu() {
     nweb_handler_->ChangeVisibilityOfQuickMenu();
   }
 }
+
+bool NWebHandlerDelegate::IsQuickMenuShow() {
+  if (nweb_handler_) {
+    nweb_handler_->IsQuickMenuShow();
+  }
+  return false;
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_AI)

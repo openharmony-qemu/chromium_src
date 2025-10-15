@@ -26,6 +26,10 @@ using namespace testing;
 
 class NWebCookieManagerImplTestAccessor {
  public:
+  static void SetDelegate(std::shared_ptr<NWebCookieManagerImpl> manager, 
+                          std::shared_ptr<NWebCookieManagerDelegate> delegate) {
+    manager->delegate_ = delegate;
+  }
   static std::shared_ptr<void> GetDelegate(std::shared_ptr<NWebCookieManagerImpl> manager) {
     return std::static_pointer_cast<void>(manager->delegate_);
   }
@@ -88,15 +92,38 @@ TEST_F(NWebCookieManagerImplTest, IsAcceptCookieAllowed_DelegateIsNull) {
   EXPECT_FALSE(cookie_manager_->IsAcceptCookieAllowed());
 }
 
+TEST_F(NWebCookieManagerImplTest, IsAcceptCookieAllowed_DelegateReturnsTrue) {
+  ASSERT_NE(nullptr, cookie_manager_);
+  auto mock_delegate = std::make_shared<NiceMock<MockNWebCookieManagerDelegate>>();
+  NWebCookieManagerImplTestAccessor::SetDelegate(cookie_manager_, mock_delegate);
+  EXPECT_CALL(*mock_delegate, IsAcceptCookieAllowed()).WillOnce(Return(true));
+  EXPECT_TRUE(cookie_manager_->IsAcceptCookieAllowed());
+}
+
 TEST_F(NWebCookieManagerImplTest, PutAcceptCookieEnabled_DelegateIsNull) {
   cookie_manager_->delegate_.reset();
   cookie_manager_->PutAcceptCookieEnabled(true);
   EXPECT_EQ(NWebCookieManagerImplTestAccessor::GetDelegate(cookie_manager_), nullptr);
 }
 
+TEST_F(NWebCookieManagerImplTest, PutAcceptCookieEnabled_DelegateIsNotNull) {
+  auto mock_delegate = std::make_shared<NiceMock<MockNWebCookieManagerDelegate>>();
+  NWebCookieManagerImplTestAccessor::SetDelegate(cookie_manager_, mock_delegate);
+  EXPECT_CALL(*mock_delegate, PutAcceptCookieEnabled(true)).Times(1);
+  EXPECT_NO_FATAL_FAILURE(cookie_manager_->PutAcceptCookieEnabled(true));
+  EXPECT_NE(NWebCookieManagerImplTestAccessor::GetDelegate(cookie_manager_), nullptr);
+}
+
 TEST_F(NWebCookieManagerImplTest, IsThirdPartyCookieAllowed_DelegateIsNull) {
   cookie_manager_->delegate_.reset();
   EXPECT_FALSE(cookie_manager_->IsThirdPartyCookieAllowed());
+}
+
+TEST_F(NWebCookieManagerImplTest, IsThirdPartyCookieAllowed_DelegateIsNotNull) {
+  auto mock_delegate = std::make_shared<NiceMock<MockNWebCookieManagerDelegate>>();
+  NWebCookieManagerImplTestAccessor::SetDelegate(cookie_manager_, mock_delegate);
+  EXPECT_CALL(*mock_delegate, IsThirdPartyCookieAllowed()).WillOnce(Return(true));
+  EXPECT_TRUE(cookie_manager_->IsThirdPartyCookieAllowed());
 }
 
 TEST_F(NWebCookieManagerImplTest, PutAcceptThirdPartyCookieEnabled_DelegateIsNull) {
@@ -105,15 +132,38 @@ TEST_F(NWebCookieManagerImplTest, PutAcceptThirdPartyCookieEnabled_DelegateIsNul
   EXPECT_EQ(NWebCookieManagerImplTestAccessor::GetDelegate(cookie_manager_), nullptr);
 }
 
+TEST_F(NWebCookieManagerImplTest, PutAcceptThirdPartyCookieEnabled_DelegateIsNotNull) {
+  auto mock_delegate = std::make_shared<NiceMock<MockNWebCookieManagerDelegate>>();
+  NWebCookieManagerImplTestAccessor::SetDelegate(cookie_manager_, mock_delegate);
+  EXPECT_CALL(*mock_delegate, PutAcceptThirdPartyCookieEnabled(true)).Times(1);
+  EXPECT_NO_FATAL_FAILURE(cookie_manager_->PutAcceptThirdPartyCookieEnabled(true));
+  EXPECT_NE(NWebCookieManagerImplTestAccessor::GetDelegate(cookie_manager_), nullptr);
+}
+
 TEST_F(NWebCookieManagerImplTest, IsFileURLSchemeCookiesAllowed_DelegateIsNull) {
   cookie_manager_->delegate_.reset();
   EXPECT_FALSE(cookie_manager_->IsFileURLSchemeCookiesAllowed());
+}
+
+TEST_F(NWebCookieManagerImplTest, IsFileURLSchemeCookiesAllowed_DelegateIsNotNull) {
+  auto mock_delegate = std::make_shared<NiceMock<MockNWebCookieManagerDelegate>>();
+  NWebCookieManagerImplTestAccessor::SetDelegate(cookie_manager_, mock_delegate);
+  EXPECT_CALL(*mock_delegate, IsFileURLSchemeCookiesAllowed()).WillOnce(Return(true));
+  EXPECT_TRUE(cookie_manager_->IsFileURLSchemeCookiesAllowed());
 }
 
 TEST_F(NWebCookieManagerImplTest, PutAcceptFileURLSchemeCookiesEnabled_DelegateIsNull) {
   cookie_manager_->delegate_.reset();
   cookie_manager_->PutAcceptFileURLSchemeCookiesEnabled(true);
   EXPECT_EQ(NWebCookieManagerImplTestAccessor::GetDelegate(cookie_manager_), nullptr);
+}
+
+TEST_F(NWebCookieManagerImplTest, PutAcceptFileURLSchemeCookiesEnabled_DelegateIsNotNull) {
+  auto mock_delegate = std::make_shared<NiceMock<MockNWebCookieManagerDelegate>>();
+  NWebCookieManagerImplTestAccessor::SetDelegate(cookie_manager_, mock_delegate);
+  EXPECT_CALL(*mock_delegate, PutAcceptFileURLSchemeCookiesEnabled(true)).Times(1);
+  EXPECT_NO_FATAL_FAILURE(cookie_manager_->PutAcceptFileURLSchemeCookiesEnabled(true));
+  EXPECT_NE(NWebCookieManagerImplTestAccessor::GetDelegate(cookie_manager_), nullptr);
 }
 
 TEST_F(NWebCookieManagerImplTest, ConfigCookie_DelegateIsNull) {
@@ -123,6 +173,20 @@ TEST_F(NWebCookieManagerImplTest, ConfigCookie_DelegateIsNull) {
   EXPECT_EQ(NWebCookieManagerImplTestAccessor::GetDelegate(cookie_manager_), nullptr);
 }
 
+TEST_F(NWebCookieManagerImplTest, ConfigCookie_DelegateIsNotNull) {
+  auto mock_delegate = std::make_shared<NiceMock<MockNWebCookieManagerDelegate>>();
+  NWebCookieManagerImplTestAccessor::SetDelegate(cookie_manager_, mock_delegate);
+  auto callback = std::make_shared<TestNWebLongValueCallback>();
+  EXPECT_CALL(*mock_delegate, 
+              ConfigCookie(::testing::StrEq("http://example.com"), 
+                           ::testing::StrEq("cookie=value"), 
+                           false, 
+                           false, 
+                           ::testing::Eq(std::static_pointer_cast<NWebLongValueCallback>(callback)))).Times(1);
+  EXPECT_NO_FATAL_FAILURE(cookie_manager_->ConfigCookie("http://example.com", "cookie=value", callback));
+  EXPECT_NE(NWebCookieManagerImplTestAccessor::GetDelegate(cookie_manager_), nullptr);
+}
+
 TEST_F(NWebCookieManagerImplTest, SetCookie_WithCallback_DelegateIsNull) {
   cookie_manager_->delegate_.reset();
   auto callback = std::make_shared<TestNWebBoolValueCallback>();
@@ -130,10 +194,29 @@ TEST_F(NWebCookieManagerImplTest, SetCookie_WithCallback_DelegateIsNull) {
   EXPECT_EQ(NWebCookieManagerImplTestAccessor::GetDelegate(cookie_manager_), nullptr);
 }
 
+TEST_F(NWebCookieManagerImplTest, SetCookie_WithCallback_DelegateIsNotNull) {
+  auto mock_delegate = std::make_shared<NiceMock<MockNWebCookieManagerDelegate>>();
+  NWebCookieManagerImplTestAccessor::SetDelegate(cookie_manager_, mock_delegate);
+  auto callback = std::make_shared<TestNWebBoolValueCallback>();
+  EXPECT_CALL(*mock_delegate, 
+              SetCookie(::testing::StrEq("http://example.com"), 
+                        ::testing::StrEq("cookie=value"), 
+                        ::testing::Eq(std::static_pointer_cast<NWebBoolValueCallback>(callback)))).Times(1);
+  EXPECT_NO_FATAL_FAILURE(cookie_manager_->SetCookie("http://example.com", "cookie=value", callback));
+  EXPECT_NE(NWebCookieManagerImplTestAccessor::GetDelegate(cookie_manager_), nullptr);
+}
+
 TEST_F(NWebCookieManagerImplTest, SetCookie_WithIncognitoMode_DelegateIsNull) {
   cookie_manager_->delegate_.reset();
   EXPECT_EQ(NWEB_ERR, cookie_manager_->SetCookie("http://example.com", "cookie=value", true));
   EXPECT_EQ(NWEB_ERR, cookie_manager_->SetCookie("http://example.com", "cookie=value", false));
+}
+
+TEST_F(NWebCookieManagerImplTest, SetCookie_WithIncognitoMode_DelegateIsNotNull) {
+  auto mock_delegate = std::make_shared<NiceMock<MockNWebCookieManagerDelegate>>();
+  NWebCookieManagerImplTestAccessor::SetDelegate(cookie_manager_, mock_delegate);
+  EXPECT_CALL(*mock_delegate, SetCookie(_, _, _, _)).WillOnce(Return(NWEB_OK));
+  EXPECT_EQ(NWEB_OK, cookie_manager_->SetCookie("http://example.com", "cookie=value", true));
 }
 
 TEST_F(NWebCookieManagerImplTest, SetCookieWithHttpOnly_DelegateIsNull) {
@@ -149,6 +232,16 @@ TEST_F(NWebCookieManagerImplTest, ReturnCookie_WithCallback_DelegateIsNull) {
   EXPECT_EQ(NWebCookieManagerImplTestAccessor::GetDelegate(cookie_manager_), nullptr);
 }
 
+TEST_F(NWebCookieManagerImplTest, ReturnCookie_WithCallback_DelegateIsNotNull) {
+  auto mock_delegate = std::make_shared<NiceMock<MockNWebCookieManagerDelegate>>();
+  NWebCookieManagerImplTestAccessor::SetDelegate(cookie_manager_, mock_delegate);
+  auto callback = std::make_shared<TestNWebStringValueCallback>();
+  EXPECT_CALL(*mock_delegate, ReturnCookie(::testing::StrEq("http://example.com"), false,
+              ::testing::Eq(std::static_pointer_cast<NWebStringValueCallback>(callback)))).Times(1);
+  EXPECT_NO_FATAL_FAILURE(cookie_manager_->ReturnCookie("http://example.com", callback));
+  EXPECT_NE(NWebCookieManagerImplTestAccessor::GetDelegate(cookie_manager_), nullptr);
+}
+
 TEST_F(NWebCookieManagerImplTest, ReturnCookie_WithIncognitoMode_DelegateIsNull) {
   cookie_manager_->delegate_.reset();
   bool is_valid = true;
@@ -156,6 +249,16 @@ TEST_F(NWebCookieManagerImplTest, ReturnCookie_WithIncognitoMode_DelegateIsNull)
   EXPECT_EQ("", result1);
   std::string result2 = cookie_manager_->ReturnCookie("http://example.com", is_valid, false);
   EXPECT_EQ("", result2);
+}
+
+TEST_F(NWebCookieManagerImplTest, ReturnCookie_WithIncognitoMode_DelegateIsNotNull) {
+  auto mock_delegate = std::make_shared<NiceMock<MockNWebCookieManagerDelegate>>();
+  NWebCookieManagerImplTestAccessor::SetDelegate(cookie_manager_, mock_delegate);
+  bool is_valid = false;
+  EXPECT_CALL(*mock_delegate, ReturnCookie(::testing::Matcher<const std::string&>(_), ::testing::Matcher<bool&>(_),
+              ::testing::Matcher<bool>(_))).WillOnce(DoAll(SetArgReferee<1>(true), Return("cookie1=value1")));
+  EXPECT_EQ("cookie1=value1", cookie_manager_->ReturnCookie("http://example.com", is_valid, true));
+  EXPECT_TRUE(is_valid);
 }
 
 TEST_F(NWebCookieManagerImplTest, ReturnCookieWithHttpOnly_DelegateIsNull) {
@@ -174,10 +277,27 @@ TEST_F(NWebCookieManagerImplTest, ExistCookies_WithCallback_DelegateIsNull) {
   EXPECT_EQ(NWebCookieManagerImplTestAccessor::GetDelegate(cookie_manager_), nullptr);
 }
 
+TEST_F(NWebCookieManagerImplTest, ExistCookies_WithCallback_DelegateIsNotNull) {
+  auto mock_delegate = std::make_shared<NiceMock<MockNWebCookieManagerDelegate>>();
+  NWebCookieManagerImplTestAccessor::SetDelegate(cookie_manager_, mock_delegate);
+
+  auto callback = std::make_shared<TestNWebBoolValueCallback>();
+  EXPECT_CALL(*mock_delegate, ExistCookies(::testing::Matcher<std::shared_ptr<NWebBoolValueCallback>>(_))).Times(1);
+  EXPECT_NO_FATAL_FAILURE(cookie_manager_->ExistCookies(callback));
+  EXPECT_NE(NWebCookieManagerImplTestAccessor::GetDelegate(cookie_manager_), nullptr);
+}
+
 TEST_F(NWebCookieManagerImplTest, ExistCookies_WithIncognitoMode_DelegateIsNull) {
   cookie_manager_->delegate_.reset();
   EXPECT_FALSE(cookie_manager_->ExistCookies(true));
   EXPECT_FALSE(cookie_manager_->ExistCookies(false));
+}
+
+TEST_F(NWebCookieManagerImplTest, ExistCookies_WithIncognitoMode_DelegateIsNotNull) {
+  auto mock_delegate = std::make_shared<NiceMock<MockNWebCookieManagerDelegate>>();
+  NWebCookieManagerImplTestAccessor::SetDelegate(cookie_manager_, mock_delegate);
+  EXPECT_CALL(*mock_delegate, ExistCookies(::testing::Matcher<bool>(_))).WillOnce(Return(true));
+  EXPECT_TRUE(cookie_manager_->ExistCookies(true));
 }
 
 TEST_F(NWebCookieManagerImplTest, Store_WithCallback_DelegateIsNull) {
@@ -187,9 +307,26 @@ TEST_F(NWebCookieManagerImplTest, Store_WithCallback_DelegateIsNull) {
   EXPECT_EQ(NWebCookieManagerImplTestAccessor::GetDelegate(cookie_manager_), nullptr);
 }
 
+TEST_F(NWebCookieManagerImplTest, Store_WithCallback_DelegateIsNotNull) {
+  auto mock_delegate = std::make_shared<NiceMock<MockNWebCookieManagerDelegate>>();
+  NWebCookieManagerImplTestAccessor::SetDelegate(cookie_manager_, mock_delegate);
+  auto callback = std::make_shared<TestNWebBoolValueCallback>();
+  EXPECT_CALL(*mock_delegate, Store(::testing::Eq(std::static_pointer_cast<NWebBoolValueCallback>(callback))))
+              .Times(1);
+  EXPECT_NO_FATAL_FAILURE(cookie_manager_->Store(callback));
+  EXPECT_NE(NWebCookieManagerImplTestAccessor::GetDelegate(cookie_manager_), nullptr);
+}
+
 TEST_F(NWebCookieManagerImplTest, Store_WithoutParams_DelegateIsNull) {
   cookie_manager_->delegate_.reset();
   EXPECT_FALSE(cookie_manager_->Store());
+}
+
+TEST_F(NWebCookieManagerImplTest, Store_WithoutParams_DelegateIsNotNull) {
+  auto mock_delegate = std::make_shared<NiceMock<MockNWebCookieManagerDelegate>>();
+  NWebCookieManagerImplTestAccessor::SetDelegate(cookie_manager_, mock_delegate);
+  EXPECT_CALL(*mock_delegate, Store()).WillOnce(Return(true));
+  EXPECT_TRUE(cookie_manager_->Store());
 }
 
 TEST_F(NWebCookieManagerImplTest, DeleteSessionCookies_DelegateIsNull) {
@@ -199,11 +336,31 @@ TEST_F(NWebCookieManagerImplTest, DeleteSessionCookies_DelegateIsNull) {
   EXPECT_EQ(NWebCookieManagerImplTestAccessor::GetDelegate(cookie_manager_), nullptr);
 }
 
+TEST_F(NWebCookieManagerImplTest, DeleteSessionCookies_DelegateIsNotNull) {
+  auto mock_delegate = std::make_shared<NiceMock<MockNWebCookieManagerDelegate>>();
+  NWebCookieManagerImplTestAccessor::SetDelegate(cookie_manager_, mock_delegate);
+  auto callback = std::make_shared<TestNWebBoolValueCallback>();
+  EXPECT_CALL(*mock_delegate,
+              DeleteSessionCookies(::testing::Eq(std::static_pointer_cast<NWebBoolValueCallback>(callback))))
+              .Times(1);
+  EXPECT_NO_FATAL_FAILURE(cookie_manager_->DeleteSessionCookies(callback));
+  EXPECT_NE(NWebCookieManagerImplTestAccessor::GetDelegate(cookie_manager_), nullptr);
+}
+
 TEST_F(NWebCookieManagerImplTest, DeleteCookieEntirely_DelegateIsNull) {
   cookie_manager_->delegate_.reset();
   auto callback = std::make_shared<TestNWebBoolValueCallback>();
   cookie_manager_->DeleteCookieEntirely(callback, true);
   EXPECT_EQ(NWebCookieManagerImplTestAccessor::GetDelegate(cookie_manager_), nullptr);
+}
+
+TEST_F(NWebCookieManagerImplTest, DeleteCookieEntirely_DelegateIsNotNull) {
+  auto mock_delegate = std::make_shared<NiceMock<MockNWebCookieManagerDelegate>>();
+  NWebCookieManagerImplTestAccessor::SetDelegate(cookie_manager_, mock_delegate);
+  auto callback = std::make_shared<TestNWebBoolValueCallback>();
+  EXPECT_CALL(*mock_delegate, DeleteCookieEntirely(::testing::_, true)).Times(1);
+  EXPECT_NO_FATAL_FAILURE(cookie_manager_->DeleteCookieEntirely(callback, true));
+  EXPECT_NE(NWebCookieManagerImplTestAccessor::GetDelegate(cookie_manager_), nullptr);
 }
 
 TEST_F(NWebCookieManagerImplTest, GetCookieAsync_DelegateIsNull) {
@@ -213,10 +370,27 @@ TEST_F(NWebCookieManagerImplTest, GetCookieAsync_DelegateIsNull) {
   EXPECT_EQ(NWebCookieManagerImplTestAccessor::GetDelegate(cookie_manager_), nullptr);
 }
 
+TEST_F(NWebCookieManagerImplTest, GetCookieAsync_DelegateIsNotNull) {
+  auto mock_delegate = std::make_shared<NiceMock<MockNWebCookieManagerDelegate>>();
+  NWebCookieManagerImplTestAccessor::SetDelegate(cookie_manager_, mock_delegate);
+  auto callback = std::make_shared<TestNWebStringValueCallback>();
+  EXPECT_CALL(*mock_delegate, ReturnCookie(::testing::StrEq("http://example.com"), true,
+              ::testing::Eq(std::static_pointer_cast<NWebStringValueCallback>(callback)))).Times(1);
+  EXPECT_NO_FATAL_FAILURE(cookie_manager_->GetCookieAsync("http://example.com", true, callback));
+  EXPECT_NE(NWebCookieManagerImplTestAccessor::GetDelegate(cookie_manager_), nullptr);
+}
+
 TEST_F(NWebCookieManagerImplTest, SetCookieSync_DelegateIsNull) {
   cookie_manager_->delegate_.reset();
   EXPECT_EQ(NWEB_ERR, cookie_manager_->SetCookieSync("http://example.com", "cookie=value", true, true));
   EXPECT_EQ(NWEB_ERR, cookie_manager_->SetCookieSync("http://example.com", "cookie=value", false, false));
+}
+
+TEST_F(NWebCookieManagerImplTest, SetCookieSync_DelegateIsNotNull) {
+  auto mock_delegate = std::make_shared<NiceMock<MockNWebCookieManagerDelegate>>();
+  NWebCookieManagerImplTestAccessor::SetDelegate(cookie_manager_, mock_delegate);
+  EXPECT_CALL(*mock_delegate, SetCookie(_, _, _, _)).WillOnce(Return(NWEB_OK));
+  EXPECT_EQ(NWEB_OK, cookie_manager_->SetCookieSync("http://example.com", "cookie=value", true, true));
 }
 
 TEST_F(NWebCookieManagerImplTest, SetCookieAsync_DelegateIsNull) {
@@ -225,4 +399,13 @@ TEST_F(NWebCookieManagerImplTest, SetCookieAsync_DelegateIsNull) {
   cookie_manager_->SetCookieAsync("http://example.com", "cookie=value", true, true, callback);
   cookie_manager_->SetCookieAsync("http://example.com", "cookie=value", false, false, callback);
   EXPECT_EQ(NWebCookieManagerImplTestAccessor::GetDelegate(cookie_manager_), nullptr);
+}
+
+TEST_F(NWebCookieManagerImplTest, SetCookieAsync_DelegateIsNotNull) {
+  auto mock_delegate = std::make_shared<NiceMock<MockNWebCookieManagerDelegate>>();
+  NWebCookieManagerImplTestAccessor::SetDelegate(cookie_manager_, mock_delegate);
+  auto callback = std::make_shared<TestNWebLongValueCallback>();
+  EXPECT_CALL(*mock_delegate, ConfigCookie(::testing::_, ::testing::_, true, true, ::testing::_)).Times(1);
+  EXPECT_NO_FATAL_FAILURE(cookie_manager_->SetCookieAsync("http://example.com", "cookie=value", true, true, callback));
+  EXPECT_NE(NWebCookieManagerImplTestAccessor::GetDelegate(cookie_manager_), nullptr);
 }

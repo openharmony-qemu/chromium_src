@@ -703,6 +703,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   void HideHandleAndQuickMenuIfNecessary(bool hide) override;
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
   void ChangeVisibilityOfQuickMenu() override;
+  bool IsQuickMenuShow() override;
 #endif
 #if BUILDFLAG(ARKWEB_AI)
   bool CloseImageOverlaySelection() override;

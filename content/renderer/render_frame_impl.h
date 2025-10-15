@@ -477,6 +477,7 @@ class CONTENT_EXPORT RenderFrameImpl
 #if BUILDFLAG(ARKWEB_MENU)
   void MouseSelectMenuShow(bool show) override;
   void ChangeVisibilityOfQuickMenu() override;
+  void HideQuickMenu() override;
 #endif
 
   // blink::mojom::AutoplayConfigurationClient implementation:

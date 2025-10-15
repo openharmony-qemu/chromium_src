@@ -34,6 +34,7 @@ class RenderFrameHostDelegateExt {
 #if BUILDFLAG(ARKWEB_MENU)
   virtual void MouseSelectMenuShow(bool show) {}
   virtual void ChangeVisibilityOfQuickMenu() {}
+  virtual bool IsQuickMenuShow() { return false; }
 #endif
 
 #if BUILDFLAG(ARKWEB_AI)

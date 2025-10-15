@@ -41,6 +41,10 @@
 #include "ohos_nweb/src/nweb_common.h"
 #include "ui/gfx/image/image_skia_operations.h"
 
+#if BUILDFLAG(ARKWEB_TEST)
+#include "extension_registry_info_manager_test.h"
+#endif
+
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "extensions/browser/extension_util.h"
 #include "extensions/common/manifest_handlers/incognito_info.h"
@@ -49,9 +53,9 @@
 #endif
 
 namespace extensions {
-
+#ifndef BUILDFLAG(ARKWEB_TEST)
 namespace {
-
+#endif
 enum LoadPhase {
   kStartInitialLoad,
   kEndInitialLoad,
@@ -303,7 +307,9 @@ void GetManifestSettingsOverridesInfo(const Extension& extension,
     }
   }
 }
+#ifndef BUILDFLAG(ARKWEB_TEST)
 }
+#endif
 
 ExtensionRegistryInfoManager::BrowserNotifier::BrowserNotifier(
     const Extension& extension,

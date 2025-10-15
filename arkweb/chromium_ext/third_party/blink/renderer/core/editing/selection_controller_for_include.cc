@@ -177,7 +177,7 @@ bool SelectionController::HandleGestureTapIfSelectionExist(
   } else if (web_local_frame && web_local_frame->Client()) {
     LOG(INFO)
         << "Tap within the selected range to change visibility of quick menu";
-    web_local_frame->Client()->AsWebLocalFrameClientExt()->ChangeVisibilityOfQuickMenu();
+    web_local_frame->Client()->AsWebLocalFrameClientExt()->HideQuickMenu();
     ret = true;
   }
   if (mouse_menu_show_) {

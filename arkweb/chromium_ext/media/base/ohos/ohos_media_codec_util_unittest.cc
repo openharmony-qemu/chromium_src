@@ -215,6 +215,10 @@ class MockOhosAdapterHelper : public OHOS::NWeb::OhosAdapterHelper {
               CreateScreenlockManagerAdapter,
               (),
               (override));
+  MOCK_METHOD(std::unique_ptr<NetEventAdapter>,
+              CreateNetEventAdapter,
+              (),
+              (override));
   static MockOhosAdapterHelper& GetInstance() {
     static MockOhosAdapterHelper instance;
     return instance;

@@ -128,7 +128,7 @@ OhosHttpsUpgradesInterceptor::MaybeCreateInterceptor(content::FrameTreeNodeId fr
     return nullptr;
   }
   auto* https_helper = OhosHttpsUpgradesHelper::FromWebContents(web_contents);
-  if (!https_helper || !(https_helper->is_arkweb_https_upgrades_enable())) {
+  if (!https_helper || !(https_helper->should_upgrade_to_https())) {
     return nullptr;
   }
   return std::make_unique<OhosHttpsUpgradesInterceptor>(frame_tree_node_id);
@@ -211,7 +211,7 @@ void OhosHttpsUpgradesInterceptor::MaybeCreateLoader(
     // Chrome shows the HTTP interstitial before navigation to them.
     // Potentially, these could fast-fail instead and skip directly to the
     // interstitial.
-    if (!https_helper || !(https_helper->is_arkweb_https_upgrades_enable())) {
+    if (!https_helper || !(https_helper->should_upgrade_to_https())) {
       std::move(callback).Run({});
       return;
     }
@@ -347,9 +347,8 @@ void OhosHttpsUpgradesInterceptor::MaybeCreateLoaderOnHstsQueryCompleted(
   // navigations to HTTPS, with HTTPS-First Mode additionally enabling the
   // HTTP interstitial on fallback.
   if (!base::FeatureList::IsEnabled(features::kHttpsUpgrades) &&
-      (!https_helper || !(https_helper->is_arkweb_https_upgrades_enable()))) {
+      (!https_helper || !(https_helper->should_upgrade_to_https()))) {
     std::move(callback).Run({});
-
     return;
   }
 

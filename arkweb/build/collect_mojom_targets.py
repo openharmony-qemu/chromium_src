@@ -20,6 +20,7 @@ import json
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+
 def find_metadata_files(search_root):
     try:
         result = subprocess.run(
@@ -33,7 +34,8 @@ def find_metadata_files(search_root):
     except subprocess.CalledProcessError as e:
         print(f"Error finding metadata files: {e}")
         return []
-    
+
+ 
 def extract_mojom_labels_from_file(file_path):
     labels = []
     try:
@@ -43,7 +45,7 @@ def extract_mojom_labels_from_file(file_path):
                 data = json.loads(content)
                 if isinstance(data, dict):
                     for key, value in data.items():
-                        if key == "labels":
+                        if key == "label":
                             if isinstance(value, str) and value.startswith("//") and "mojom" in value:
                                 labels.append(value)
                             elif isinstance(value, list):
@@ -59,6 +61,7 @@ def extract_mojom_labels_from_file(file_path):
         print(f"Error reading {file_path}: {e}")
     return labels
 
+
 def collect_all_mojom_labels(metadata_files, max_worker=8):
     all_labels = set()
     with ThreadPoolExecutor(max_workers=max_worker) as executor:
@@ -68,13 +71,15 @@ def collect_all_mojom_labels(metadata_files, max_worker=8):
             all_labels.update(labels)
     return sorted(all_labels)
 
+
 def write_gni_file(output_path, mojom_labels):
     with open(output_path, 'w', encoding='utf-8') as f:
-        f.write("mojom_labels = [\n")
+        f.write("mojom_targets = [\n")
         for label in mojom_labels:
             f.write(f"  \"{label}\",\n")
         f.write("]\n")
-        
+
+
 def main():
     parser = argparse.ArgumentParser(description='Collect Mojom labels from metadata files.')
     parser.add_argument('--search-root', required=True, help='Root directory to search for metadata files.')
@@ -90,7 +95,7 @@ def main():
     
     write_gni_file(args.output, mojom_labels)
     print(f"GN file written to {args.output}")
-    
+
 if __name__ == "__main__":
     main()
     

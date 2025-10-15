@@ -1829,7 +1829,7 @@ template("mojom") {
       visibility = output_visibility + [
                      ":$output_target_name",
                      ":${target_name}_mojolpm",
-                     "//:mojo_pre"
+                     "//arkweb/build:mojo_pre"
                    ]
       if (defined(invoker.testonly)) {
         testonly = invoker.testonly

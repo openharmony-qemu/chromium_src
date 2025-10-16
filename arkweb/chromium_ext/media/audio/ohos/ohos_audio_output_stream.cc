@@ -52,6 +52,7 @@ OHOSAudioOutputStream::~OHOSAudioOutputStream() {
     callback_index_ = 0;
   }
   isDestroyed_.store(true);
+  weak_factory_.InvalidateWeakPtrs();
   {
     // Ensure that OnWriteData can exit quickly and does not block the destructor.
     base::AutoLock lock(lock_);
@@ -169,6 +170,7 @@ void OHOSAudioOutputStream::OnSuspend() {
     LOG(ERROR) << "OHOSAudioOutputStream::OnSuspend parameters_ is not valid.";
     return;
   }
+  AudioParameters parameters = parameters_;
   if (!running_) {
     LOG(ERROR) << "The playback is stopped. Exit OnSuspend.";
     return;
@@ -181,13 +183,8 @@ void OHOSAudioOutputStream::OnSuspend() {
       LOG(INFO) << "main task runner is nullptr";
       return;
     }
-    auto suspendFunc = [](base::WeakPtr<OHOSAudioOutputStream> self) {
-      if (self && self->parameters_.IsValid()) {
-        OHOSAudioFocusController::OnSuspend(self->parameters_);
-      }
-    };
     main_task_runner_->PostTask(
-        FROM_HERE, base::BindOnce(suspendFunc, weak_factory_.GetWeakPtr()));
+        FROM_HERE, base::BindOnce(&OHOSAudioFocusController::OnSuspend, parameters));
     isSuspended_ = true;
     // After stopping playback, it is necessary to continue obtaining audio
     // data, which will trigger the pause action of the render process.

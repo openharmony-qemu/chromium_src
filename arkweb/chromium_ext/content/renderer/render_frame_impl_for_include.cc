@@ -31,6 +31,12 @@ blink::WebNativeBridge* RenderFrameImpl::CreateWebNativeBridge(
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+bool RenderFrameImpl::IsOffscreen() {
+  return is_offscreen_;
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 gfx::RectF RenderFrameImpl::ElementBoundsInWindow(
     const blink::WebElement& element) {

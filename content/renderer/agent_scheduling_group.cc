@@ -336,7 +336,11 @@ blink::WebView* AgentSchedulingGroup::CreateWebView(
               mojom::ViewWidgetType::kFencedFrame,
           std::move(params->replication_state),
           params->devtools_main_frame_token,
-          std::move(params->main_frame->get_local_params()), base_url);
+          std::move(params->main_frame->get_local_params()),
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+          params->is_offscreen,
+#endif
+          base_url);
       break;
     }
     case mojom::CreateMainFrameUnion::Tag::kProvisionalLocalParams: {

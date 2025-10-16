@@ -1620,6 +1620,9 @@ RenderFrameImpl* RenderFrameImpl::CreateMainFrame(
     blink::mojom::FrameReplicationStatePtr replication_state,
     const base::UnguessableToken& devtools_frame_token,
     mojom::CreateLocalMainFrameParamsPtr params,
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    bool is_offscreen,
+#endif
     const blink::WebURL& base_url) {
   // A main frame RenderFrame must have a RenderWidget.
   DCHECK_NE(MSG_ROUTING_NONE, params->widget_params->routing_id);
@@ -1629,6 +1632,11 @@ RenderFrameImpl* RenderFrameImpl::CreateMainFrame(
       std::move(params->frame),
       std::move(params->associated_interface_provider_remote),
       devtools_frame_token, is_for_nested_main_frame);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (render_frame) {
+    render_frame->is_offscreen_ = is_offscreen;
+  }
+#endif
 
   WebLocalFrame* web_frame = WebLocalFrame::CreateMainFrame(
       web_view, render_frame, render_frame->blink_interface_registry_.get(),

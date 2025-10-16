@@ -556,6 +556,10 @@ mojom("mojo_bindings") {
     enabled_features += [ "arkweb_pdf" ]
   }
 
+  if (arkweb_arkweb_extensions) {
+    enabled_features += [ "arkweb_arkweb_extensions" ]
+  }
+
   if (arkweb_renderer_anr_dump) {
     enabled_features += ["arkweb_renderer_anr_dump"]
   }

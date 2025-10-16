@@ -61,6 +61,10 @@ class PasswordAutofillAgentExt : public PasswordAutofillAgent {
   void AutofillSurfaceClosed(bool show_virtual_keyboard) override;
 
   bool IsPasswordAutofill(const blink::WebInputElement& input_element);
+
+  bool OhosCheckPasswordInfoExists(const blink::WebInputElement& element, 
+                                   UseFallbackData use_fallback_data);
+
   bool OhosFindPasswordInfoForElement(const blink::WebInputElement& element,
                                       UseFallbackData use_fallback_data,
                                       blink::WebInputElement* username_element,

@@ -129,7 +129,6 @@
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
 #include "ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_browser_reader_mode_config.h"
-#include "base/strings/safe_sprintf.h"
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_GET_ZOOM_LEVEL)

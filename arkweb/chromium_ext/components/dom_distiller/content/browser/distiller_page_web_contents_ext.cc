@@ -39,6 +39,7 @@ namespace dom_distiller {
 constexpr int kNetErrorCode = -1;
 constexpr base::TimeDelta kDistillTimeout = base::Seconds(10);
 constexpr base::TimeDelta kLoadAndDistillTimeout = base::Seconds(30);
+constexpr std::string kSharedRenderProcessToken = "0xAAAAAA";
 
 std::unique_ptr<content::WebContents>
     DistillerPageWebContentsExt::resident_web_contents_ = nullptr;
@@ -161,8 +162,8 @@ void DistillerPageWebContentsExt::DidFinishLoad(
 
 void DistillerPageWebContentsExt::AbortDistill() {
   LOG(INFO) << __func__ << " [Distiller]";
-  if (source_page_handle_ && source_page_handle_->web_contents()) {
-    content::WebContentsObserver::Observe(nullptr);
+  content::WebContentsObserver::Observe(nullptr);
+  if (!is_source_webcontents_ && source_page_handle_ && source_page_handle_->web_contents()) {
     source_page_handle_->web_contents()->Stop();
   }
 }
@@ -186,6 +187,10 @@ void DistillerPageWebContentsExt::OnWebContentsDistillationFailed(
   OnWebContentsDistillationDone(
       GURL(), base::TimeTicks(),
       dom_distiller::proto::json::DomDistillerResult::WriteToValue(result));
+}
+
+void DistillerPageWebContentsExt::UpdateWebContentCreateParam(content::WebContents::CreateParams& param) {
+  param.shared_render_process_token = kSharedRenderProcessToken;
 }
 
 void DistillerPageWebContentsExt::DidFinishNavigation(

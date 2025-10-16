@@ -505,8 +505,18 @@ void MediaCodecDecoderAdapterImpl::OnInputBufferAvailable(uint32_t index, OH_AVB
         WVLOG_E("callback is NULL.");
         return;
     }
-
-    if (buffer == nullptr || OH_AVBuffer_GetAddr(buffer) == nullptr) {
+    if (buffer == nullptr) {
+        WVLOG_E("buffer is NULL.");
+        return;
+    }
+    uint8_t *addr = OH_AVBuffer_GetAddr(buffer);
+    int32_t bufferSize = OH_AVBuffer_GetCapacity(buffer);
+    if (addr == nullptr) {
+        WVLOG_E("addr is NULL.");
+        return;
+    }
+    if (bufferSize <= 0) {
+        WVLOG_E("bufferSize[%{public}d] error.", bufferSize);
         return;
     }
 
@@ -521,8 +531,8 @@ void MediaCodecDecoderAdapterImpl::OnInputBufferAvailable(uint32_t index, OH_AVB
         bufferMap_[index] = buffer;
     }
 
-    ohosBuffer->SetAddr(OH_AVBuffer_GetAddr(buffer));
-    ohosBuffer->SetBufferSize(OH_AVBuffer_GetCapacity(buffer));
+    ohosBuffer->SetAddr(addr);
+    ohosBuffer->SetBufferSize(bufferSize);
     callback_->OnNeedInputData(index, ohosBuffer);
 }
 

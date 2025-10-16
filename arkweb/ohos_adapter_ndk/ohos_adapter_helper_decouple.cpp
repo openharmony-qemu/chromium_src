@@ -84,6 +84,7 @@
 #include "arkweb/ohos_adapter_ndk/access_token_adapter/access_token_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/graphic_adapter/native_window_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/multimodalinputnew_adapter/mmi_new_adapter_impl.h"
+#include "color_picker_adapter/color_picker_adapter_impl.h"
 #include "pasteboard_adapter/include/pasteboard_client_adapter_impl.h"
 
 #include "arkweb/ohos_adapter_ndk/display_manager_adapter/native_display_manager_adapter_impl.h"
@@ -200,6 +201,11 @@ ArkOhosAdapterHelperWrapper::GetOhosWebDataBaseAdapterInstance() {
 
 NWeb::PasteBoardClientAdapter& ArkOhosAdapterHelperWrapper::GetPasteBoard() {
   static PasteBoardClientAdapterImpl instance;
+  return instance;
+}
+
+NWeb::ColorPickerAdapter& ArkOhosAdapterHelperWrapper::GetColorPickerAdapter() {
+  static ColorPickerAdapterImpl instance;
   return instance;
 }
 

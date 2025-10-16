@@ -984,17 +984,19 @@ void NWebRenderHandler::OpenEyeDropper(CefRefPtr<CefBrowser> browser) {
   view_port_height +=
       view_port_height > 0 ? browser->GetHost()->GetTopControlsOffset() : 0;
 
-  OhosAdapterHelper::GetInstance().GetColorPickerAdapter().StartColorPicker(
-      position.first + screen_x_ * screen_info_.display_ratio,
-      position.second +
-          (view_port_height + screen_y_) * screen_info_.display_ratio,
-      [browser](bool success, uint32_t color) {
-        if (browser && browser->GetHost()) {
-          LOG(INFO) << "OnEyeDropperResult, success == " << success
-                    << ", color == " << color;
-          browser->GetHost()->OnEyeDropperResult(success, color);
-        }
-      });
+  OhosAdapterHelper::GetInstance()
+      .GetColorPickerAdapter()
+      .StartColorPickerWithColorValue(
+          position.first + screen_x_ * screen_info_.display_ratio,
+          position.second +
+              (view_port_height + screen_y_) * screen_info_.display_ratio,
+          [browser](bool success, uint32_t color) {
+            if (browser && browser->GetHost()) {
+              LOG(INFO) << "OnEyeDropperResult, success == " << success
+                        << ", color == " << color;
+              browser->GetHost()->OnEyeDropperResult(success, color);
+            }
+          });
 }
 
 std::shared_ptr<NWebTouchHandleState> NWebRenderHandler::GetTouchHandleState(

@@ -135,8 +135,7 @@ void CaptivePortalService::DetectCaptivePortal() {
     return;
 
   base::TimeDelta time_until_next_check = backoff_entry_->GetTimeUntilRelease();
-  LOG(INFO) << __func__ << " xuefu this:" << this
-            << " time_until_next_check:" << time_until_next_check;
+
   // Start asynchronously.
   state_ = STATE_TIMER_RUNNING;
   check_captive_portal_timer_.Start(

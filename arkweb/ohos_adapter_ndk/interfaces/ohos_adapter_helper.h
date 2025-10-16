@@ -90,8 +90,6 @@ public:
 
     virtual PasteBoardClientAdapter& GetPasteBoard() = 0;
 
-    virtual ColorPickerAdapter& GetColorPickerAdapter() = 0;
-
     virtual std::unique_ptr<AudioRendererAdapter> CreateAudioRendererAdapter() = 0;
 
     virtual std::unique_ptr<AudioCapturerAdapter> CreateAudioCapturerAdapter() = 0;
@@ -184,6 +182,8 @@ public:
     virtual std::unique_ptr<NetConfigAdapter> GetNetConfigAdapter() = 0;
 
     virtual std::unique_ptr<NetEventAdapter> CreateNetEventAdapter() = 0;
+
+    virtual ColorPickerAdapter& GetColorPickerAdapter() = 0;
 };
 
 } // namespace OHOS::NWeb

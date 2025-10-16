@@ -30,7 +30,7 @@
 #include "nweb_mouse_event_result_impl.h"
 #include "nweb_touch_handle_hot_zone_impl.h"
 #include "nweb_touch_handle_state_impl.h"
-#include "ohos_adapter_helper.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
 #include "res_sched_client_adapter.h"
 #include "third_party/bounds_checking_function/include/securec.h"
 #if BUILDFLAG(ARKWEB_DRAG_DROP)

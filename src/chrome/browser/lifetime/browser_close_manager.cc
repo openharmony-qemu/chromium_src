@@ -168,15 +168,10 @@ void BrowserCloseManager::CloseBrowsers() {
   }
 #endif
 
-  // Make a copy of the BrowserList to simplify the case where we need to
-  // destroy a Browser during the loop.
-  std::vector<Browser*> browser_list_copy;
-  base::ranges::copy(*BrowserList::GetInstance(),
-                     std::back_inserter(browser_list_copy));
-
-  bool ignore_unload_handlers = browser_shutdown::ShouldIgnoreUnloadHandlers();
-
-  for (auto* browser : browser_list_copy) {
+  BrowserList::GetInstance()->ForEachCurrentAndNewBrowser([](Browser* browser) {
+    bool ignore_unload_handlers =
+        browser_shutdown::ShouldIgnoreUnloadHandlers();
+    browser->set_force_skip_warning_user_on_close(ignore_unload_handlers);
     browser->window()->Close();
     if (ignore_unload_handlers) {
       // This path is hit during logoff/power-down. It could be the case that
@@ -191,7 +186,7 @@ void BrowserCloseManager::CloseBrowsers() {
       // Destroying the browser should have removed it from the browser list.
       DCHECK(!base::Contains(*BrowserList::GetInstance(), browser));
     }
-  }
+  });
 
 #if BUILDFLAG(ENABLE_CHROME_NOTIFICATIONS)
   NotificationUIManager* notification_manager =

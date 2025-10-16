@@ -11838,6 +11838,8 @@ VirtualObject* MaglevGraphBuilder::CreateVirtualObject(
   ValueNode** slots = zone()->AllocateArray<ValueNode*>(slot_count);
   VirtualObject* vobject = NodeBase::New<VirtualObject>(
       zone(), 0, map, NewObjectId(), slot_count, slots);
+  std::fill_n(slots, slot_count,
+              GetRootConstant(RootIndex::kOnePointerFillerMap));
   return vobject;
 }
 
@@ -12074,7 +12076,7 @@ VirtualObject* MaglevGraphBuilder::CreateJSStringIterator(compiler::MapRef map,
 
 InlinedAllocation* MaglevGraphBuilder::ExtendOrReallocateCurrentAllocationBlock(
     AllocationType allocation_type, VirtualObject* vobject) {
-  DCHECK_LT(vobject->size(), kMaxRegularHeapObjectSize);
+  DCHECK_LE(vobject->size(), kMaxRegularHeapObjectSize);
   if (!current_allocation_block_ ||
       current_allocation_block_->allocation_type() != allocation_type ||
       !v8_flags.inline_new ||

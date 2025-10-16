@@ -2633,6 +2633,10 @@
       status: "stable",
     },
     {
+      name: "MaskDeserializationTimeForCrossOriginMessages",
+      status: "stable",
+    },
+    {
       name:"MeasureMemory",
       status:"stable",
     },

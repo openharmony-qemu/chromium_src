@@ -44,6 +44,14 @@ IdentityGetProfileUserInfoFunction::~IdentityGetProfileUserInfoFunction() =
     default;
 
 ExtensionFunction::ResponseAction IdentityGetProfileUserInfoFunction::Run() {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  api::identity::ProfileUserInfo empty_profile_user_info;
+  empty_profile_user_info.email = "";
+  empty_profile_user_info.id = "";
+  base::Value empty_infos(empty_profile_user_info.ToValue());
+  return RespondNow(WithArguments(std::move(empty_infos)));
+#endif
+
   if (browser_context()->IsOffTheRecord()) {
     return RespondNow(Error(identity_constants::kOffTheRecord));
   }

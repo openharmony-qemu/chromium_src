@@ -58,7 +58,9 @@ class ScrollbarThemeAuraButtonOverride final : public ScrollbarThemeAura {
   using ScrollbarThemeAura::NinePatchTrackAndButtonsAperture;
   using ScrollbarThemeAura::NinePatchTrackAndButtonsCanvasSize;
   using ScrollbarThemeAura::PaintTrackBackgroundAndButtons;
+  using ScrollbarThemeAura::ThumbColor;
   using ScrollbarThemeAura::UsesNinePatchTrackAndButtonsResource;
+  using ScrollbarThemeAura::UsesSolidColorThumb;
 
  private:
   bool has_scrollbar_buttons_;
@@ -421,6 +423,22 @@ TEST_P(ScrollbarThemeAuraTest, TestPaintInvalidationsWhenNinePatchScaled) {
   TestSetFrameRect(*scrollbar, scrollbar->FrameRect(),
                    /*thumb_expectation=*/false,
                    /*track_and_buttons_expectation=*/false);
+}
+ 
+TEST_P(ScrollbarThemeAuraTest, ThumbColorAfterDispose) {
+  ScrollbarThemeAuraButtonOverride theme;
+  ASSERT_TRUE(theme.UsesSolidColorThumb());
+  MockScrollableArea* mock_scrollable_area = CreateMockScrollableArea();
+  Scrollbar* scrollbar = Scrollbar::CreateForTesting(
+      mock_scrollable_area, kHorizontalScrollbar, &theme);
+  EXPECT_CALL(*mock_scrollable_area, UsedColorSchemeScrollbars());
+  // scrollbar->GetColorProvider() is always nullptr because the scrollable
+  // area is not associated with a Page, so ThumbColor() always returns the
+  // fallback color, which is case that this test is testing.
+  EXPECT_EQ(SkColors::kRed, theme.ThumbColor(*scrollbar));
+  mock_scrollable_area->Dispose();
+  EXPECT_CALL(*mock_scrollable_area, UsedColorSchemeScrollbars());
+  EXPECT_EQ(SkColors::kRed, theme.ThumbColor(*scrollbar));
 }
 
 INSTANTIATE_TEST_SUITE_P(All,

@@ -789,6 +789,7 @@ void MediaSessionImpl::SetAudioFocusGroupId(
 }
 
 void MediaSessionImpl::StartDucking() {
+  should_unduck_on_focus_gained_ = false;
   if (is_ducking_)
     return;
   is_ducking_ = true;
@@ -797,6 +798,7 @@ void MediaSessionImpl::StartDucking() {
 }
 
 void MediaSessionImpl::StopDucking() {
+  should_unduck_on_focus_gained_ = true;
   if (!is_ducking_)
     return;
   is_ducking_ = false;
@@ -895,8 +897,9 @@ void MediaSessionImpl::OnImageDownloadComplete(
 }
 
 void MediaSessionImpl::OnSystemAudioFocusRequested(bool result) {
-  if (result)
+  if (result && should_unduck_on_focus_gained_) {
     StopDucking();
+  }
 }
 
 void MediaSessionImpl::OnSuspendInternal(SuspendType suspend_type,
@@ -1008,6 +1011,8 @@ AudioFocusDelegate::AudioFocusResult MediaSessionImpl::RequestSystemAudioFocus(
   // |kGainTransient| is not used in MediaSessionImpl.
   DCHECK_NE(media_session::mojom::AudioFocusType::kGainTransient,
             audio_focus_type);
+
+  should_unduck_on_focus_gained_ = true;
 
   AudioFocusDelegate::AudioFocusResult result =
       delegate_->RequestAudioFocus(audio_focus_type);

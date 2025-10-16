@@ -238,7 +238,7 @@ extern bool g_siteIsolationMode;
 #include "extensions/browser/extension_system.h"
 #include "nweb_extension_action_cef_delegate.h"
 #include "chrome/browser/extensions/api/debugger/extension_dev_tools_infobar_delegate.h"
-#include "arkweb/chromium_ext/extensions/browser/extension_key_service.h"
+#include "arkweb/chromium_ext/components/crx_file/crx_key_service.h"
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_USERAGENT)
@@ -458,6 +458,16 @@ static void PerformCrxInstallationV2(const std::string& file_path,
         HandleExtensionInstallResult(callback, error, extension_id);
       }, callback, installer));
   installer->InstallCrx(base::FilePath(file_path));
+}
+
+static void HandleExtensionUninstallResult(
+    OnExtensionUninstallCallback callback,
+    bool success,
+    const std::string& message) {
+  if (!callback) {
+    return;
+  }
+  callback(success, message.c_str());
 }
 
 #endif
@@ -4228,7 +4238,60 @@ void NWebImpl::SetPublisherKeys(const std::vector<std::vector<uint8_t>>& keys) {
     return;
   }
   LOG(INFO) << "NWebImpl::SetPublisherKeys";
-  extensions::ExtensionKeyService::GetInstance()->SetPublisherKeys(keys);
+  crx_file::CrxKeyService::GetInstance()->SetPublisherKeys(keys);
+}
+
+void NWebImpl::UninstallExtension(const std::string& eid,
+                                  OnExtensionUninstallCallback callback) {
+  WVLOG_I("NWebImpl::UninstallExtension %{public}s", eid.c_str());
+
+  if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
+    content::GetUIThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(&NWebImpl::UninstallExtension, eid, callback));
+    return;
+  }
+
+  if (eid.empty()) {
+    HandleExtensionUninstallResult(callback, false, "Invalid extension id");
+    return;
+  }
+
+  content::BrowserContext* browser_context = NWebImplGetGlobalBrowserContext();
+  if (!browser_context) {
+    HandleExtensionUninstallResult(callback, false, "Browser context not available");
+    return;
+  }
+
+  const extensions::Extension* current_extension =
+      extensions::ExtensionRegistry::Get(browser_context)
+          ->GetExtensionById(eid, extensions::ExtensionRegistry::EVERYTHING);
+
+  if (!current_extension) {
+    HandleExtensionUninstallResult(callback, true, "");
+    return;
+  }
+
+  auto* service =
+      extensions::ExtensionSystem::Get(browser_context)->extension_service();
+
+  if (!service) {
+    HandleExtensionUninstallResult(callback, false, "Extension service not available");
+    return;
+  }
+
+  std::u16string error;
+  const bool ok = service->UninstallExtension(
+      eid, extensions::UNINSTALL_REASON_INTERNAL_MANAGEMENT, &error);
+
+  if (!ok) {
+    const std::string err =
+        error.empty() ? "Uninstall failed" : base::UTF16ToUTF8(error);
+    HandleExtensionUninstallResult(callback, false, err);
+    return;
+  }
+
+  HandleExtensionUninstallResult(callback, true, "");
 }
 
 // static

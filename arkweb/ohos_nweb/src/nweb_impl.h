@@ -939,6 +939,8 @@ class NWebImpl : public NWeb {
       const std::string& file_path,
       const NWebExtensionInstallProperties& options,
       OnExtensionInstallCallback callback);
+  static void UninstallExtension(const std::string& extension_id,
+                                 OnExtensionUninstallCallback callback);
   static void SetPublisherKeys(const std::vector<std::vector<uint8_t>>& keys);
   static void WebExtensionSetForbidDisplayInSettings(
     const std::set<std::string>& extension_ids);

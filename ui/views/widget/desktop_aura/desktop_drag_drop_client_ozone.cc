@@ -239,10 +239,6 @@ void DesktopDragDropClientOzone::RemoveObserver(
 void DesktopDragDropClientOzone::OnDragEnter(const gfx::PointF& location,
                                              int operations,
                                              int modifiers) {
-#if BUILDFLAG(IS_OHOS)
-  // |delegate_| need reset when drop enter
-  delegate_ = nullptr;
-#endif
   // Cache received values and wait for |data_to_drop_| to be delivered through
   // OnDragDataAvailable and then propagate drag events to `drag_drop_delegate_`
   // TODO(nickdiego): Check if delegates does/should really require drag data.

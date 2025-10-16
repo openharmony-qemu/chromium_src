@@ -59,6 +59,11 @@ VideoCaptureDeviceFactoryOHOS::~VideoCaptureDeviceFactoryOHOS() {
 
 VideoCaptureErrorOrDevice VideoCaptureDeviceFactoryOHOS::CreateDevice(
     const VideoCaptureDeviceDescriptor& device_descriptor) {
+  if (device_descriptor.capture_api == VideoCaptureApi::UNKNOWN) {
+    LOG(ERROR) << __FUNCTION__ << "CreateDevice failed, unknown capture api";
+    return VideoCaptureErrorOrDevice(
+        VideoCaptureError::kVideoCaptureSystemDeviceIdNotFound);
+  }
   LOG(INFO) << "VideoCaptureDeviceFactoryOHOS::CreateDevice id:"
             << device_descriptor.device_id;
   DCHECK(thread_checker_.CalledOnValidThread());

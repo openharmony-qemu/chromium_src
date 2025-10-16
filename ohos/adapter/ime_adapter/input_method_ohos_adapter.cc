@@ -40,10 +40,10 @@ InputMethodOHOSAdapter& InputMethodOHOSAdapter::GetInstance() {
 void InputMethodOHOSAdapter::AttachTextInput(IMFAdapterTextConfig textConfig,
                                              int32_t requestKeyboardReason) {
   if (auto insert = ohos::adapter::GetJSFunction("IMFAdapter.AttachTextInput")) {
-    std::promise<bool> insert_promise;
-    auto future = insert_promise.get_future();
-    std::function<void(bool)> callback = [&insert_promise](bool successful) {
-      insert_promise.set_value(successful);
+    auto insert_promise = std::make_shared<std::promise<bool>>();
+    auto future = insert_promise->get_future();
+    std::function<void(bool)> callback = [insert_promise](bool successful) {
+      insert_promise->set_value(successful);
     };
     insert->Invoke<void>(textConfig, requestKeyboardReason, callback);
     auto status = future.wait_for(std::chrono::seconds(3));
@@ -87,48 +87,6 @@ void InputMethodOHOSAdapter::UpdateAttribute(
   }
 }
 
-void InputMethodOHOSAdapter::RegisterInsertTextCallback(
-    InsertTextCallback callback) {
-  if (callback != nullptr) {
-    insertTextCallback_ = callback;
-  }
-}
-
-void InputMethodOHOSAdapter::RegisterDeleteBackwardCallback(
-    DeleteBackCallback callback) {
-  if (callback != nullptr) {
-    deleteBackCallback_ = callback;
-  }
-}
-
-void InputMethodOHOSAdapter::RegisterDeleteForwardCallback(
-    DeleteForwardCallback callback) {
-  if (callback != nullptr) {
-    deleteForwardCallback_ = callback;
-  }
-}
-
-void InputMethodOHOSAdapter::RegisterSendEnterKeyEventCallback(
-    SendEnterKeyEventCallback callback) {
-  if (callback != nullptr) {
-    sendEnterKeyEventCallback_ = callback;
-  }
-}
-
-void InputMethodOHOSAdapter::RegisterExitFullscreenEventCallback(
-    ExitFullscreenEventCallback callback) {
-  if (callback != nullptr) {
-    exitFullscreeEventCallback_ = callback;
-  }
-}
-
-void InputMethodOHOSAdapter::RegisterMoveCursorCallback(
-    MoveCursorCallback callback) {
-  if (callback != nullptr) {
-    moveCursorCallback_ = callback;
-  }
-}
-
 void InputMethodOHOSAdapter::NotifyCursorUpdate(
     const IMFAdapterCursorInfo cursorInfo) {
   if (auto func = ohos::adapter::GetJSFunction("IMFAdapter.CursorUpdate")) {
@@ -137,46 +95,64 @@ void InputMethodOHOSAdapter::NotifyCursorUpdate(
 }
 
 void InputMethodOHOSAdapter::ExitFullscreenEvent() {
-  if (exitFullscreeEventCallback_ != nullptr) {
-    exitFullscreeEventCallback_();
+  if (delegate_ != nullptr) {
+    delegate_->ExitFullscreenEvent();
+  }
+}
+
+void InputMethodOHOSAdapter::InsertTextCallback(const std::string& text) {
+  if (delegate_ != nullptr) {
+    delegate_->InsertText(text);
   }
 }
 
 void InsertTextCallback(const std::string& text) {
-  if (InputMethodOHOSAdapter::GetInstance().GetInsertTextCallbcak() !=
-      nullptr) {
-    InputMethodOHOSAdapter::GetInstance().GetInsertTextCallbcak()(text);
+  ohos::adapter::InputMethodOHOSAdapter::GetInstance().InsertTextCallback(text);
+}
+
+void InputMethodOHOSAdapter::DeleteBackCallback(int32_t length) {
+  if (delegate_ != nullptr) {
+    delegate_->DeleteBackward(length);
   }
 }
 
 void DeleteBackCallback(int32_t length) {
-  if (InputMethodOHOSAdapter::GetInstance().GetDeleteBackCallbcak() !=
-      nullptr) {
-    InputMethodOHOSAdapter::GetInstance().GetDeleteBackCallbcak()(length);
+  ohos::adapter::InputMethodOHOSAdapter::GetInstance().DeleteBackCallback(length);
+}
+
+void InputMethodOHOSAdapter::DeleteForwardCallback(int32_t length) {
+  if (delegate_ != nullptr) {
+   delegate_->DeleteForward(length);
   }
 }
 
 void DeleteForwardCallback(int32_t length) {
-  if (InputMethodOHOSAdapter::GetInstance().GetDeleteForwardCallbcak() !=
-      nullptr) {
-    InputMethodOHOSAdapter::GetInstance().GetDeleteForwardCallbcak()(length);
+  ohos::adapter::InputMethodOHOSAdapter::GetInstance().DeleteForwardCallback(length);
+}
+
+void InputMethodOHOSAdapter::SendEnterKeyEventCallback() {
+  if (delegate_ != nullptr) {
+    delegate_->SendEnterKeyEvent();
   }
 }
 
 void SendEnterKeyEventCallback() {
-  if (InputMethodOHOSAdapter::GetInstance().GetSendEnterKeyEventCallbcak() !=
-      nullptr) {
-    InputMethodOHOSAdapter::GetInstance().GetSendEnterKeyEventCallbcak()();
+  ohos::adapter::InputMethodOHOSAdapter::GetInstance().SendEnterKeyEventCallback();
+}
+
+void InputMethodOHOSAdapter::MoveCursorCallback(const int direction) {
+  if (delegate_ != nullptr) {
+    delegate_->MoveCursor(direction);
   }
 }
 
 void MoveCursorCallback(const aki::Value direction) {
-  int inputDirection = direction.As<int>();
-  if (InputMethodOHOSAdapter::GetInstance().GetMoveCursorCallbcak() !=
-      nullptr) {
-    InputMethodOHOSAdapter::GetInstance().GetMoveCursorCallbcak()(
-        inputDirection);
-  }
+  int input_direction = direction.As<int>();
+  ohos::adapter::InputMethodOHOSAdapter::GetInstance().MoveCursorCallback(input_direction);
+}
+
+void InputMethodOHOSAdapter::Register(Delegate* delegate) {
+  delegate_ = delegate;
 }
 
 JSBIND_CLASS(IMFAdapterTextConfig) {

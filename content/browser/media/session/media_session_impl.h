@@ -490,6 +490,9 @@ class MediaSessionImpl : public MediaSession,
   // is constantly reporting visibility.
   void GetVisibility(GetVisibilityCallback get_visibility_callback) override;
 
+#if BUILDFLAG(IS_OHOS)
+  bool IsActiveSession() override;
+#endif
   // Returns the device ID for the audio output device being used by all of the
   // normal players. If the players are not all using the same audio output
   // device, the id of the default device will be returned.

@@ -36,38 +36,28 @@
 #include "ohos/adapter/accessibility/accessibility_delegate_ohos_registry.h"
 #include "ohos/adapter/aki_hook/aki_hook.h"
 #include "ohos/adapter/common/logging.h"
-#include "ohos/adapter/common/shared_library.h"
 #include "ohos/adapter/device_info/device_info.h"
 
 namespace ohos::adapter::accessibility {
 
-common::SharedLibrary native_accessibility_lib("ace_ndk.z");
-
 __attribute__((no_sanitize("cfi", "cfi-icall")))
-int32_t AccessibilityProviderRegisterCallback(
-    const char* instance_id,
-    ArkUI_AccessibilityProvider* provider,
-    AccessibilityProviderCallbacks* callbacks) {
-  using NativeAccessibilityForProviderFunc =
-      int32_t(const char*, ArkUI_AccessibilityProvider*,
-              AccessibilityProviderCallbacks*);
+AccessibilityAdapter::AccessibilityAdapter()
+    : native_accessibility_lib_("ace_ndk.z") {
+  if (!native_accessibility_lib_.IsLoaded()) {
+    LOGE(
+        "AccessibilityAdapter::AccessibilityAdapter native_accessibility_lib_ "
+        "load fail");
+    return;
+  }
 
-  if (!native_accessibility_lib.IsLoaded()) {
+  if (!native_accessibility_lib_.LoadFunction(
+      &accessibility_provider_register_callback_fn_,
+      "OH_ArkUI_AccessibilityProviderRegisterCallbackWithInstance")) {
     LOGE(
-        "AccessibilityProviderRegisterCallback native_accessibility_lib Load "
-        "fail");
-    return -1;
+        "AccessibilityAdapter::AccessibilityAdapter get "
+        "OH_ArkUI_AccessibilityProviderRegisterCallbackWithInstance failed");
+    return;
   }
-  auto fn =
-      native_accessibility_lib.GetFunction<NativeAccessibilityForProviderFunc>(
-          "OH_ArkUI_AccessibilityProviderRegisterCallbackWithInstance");
-  if (fn == nullptr) {
-    LOGE(
-        "AccessibilityProviderRegisterCallback get "
-        "OH_ArkUI_AccessibilityProviderRegisterCallbackWithInstance fail");
-    return -1;
-  }
-  return fn(instance_id, provider, callbacks);
 }
 
 AccessibilityAdapter& AccessibilityAdapter::GetInstance() {
@@ -92,6 +82,7 @@ void AccessibilityAdapter::ShutDown() {
   }
 }
 
+__attribute__((no_sanitize("cfi", "cfi-icall")))
 void AccessibilityAdapter::Initialize(OH_NativeXComponent* native_xcomponent,
                                       std::string& id) {
   int32_t ret = OH_NativeXComponent_GetNativeAccessibilityProvider(
@@ -110,12 +101,20 @@ void AccessibilityAdapter::Initialize(OH_NativeXComponent* native_xcomponent,
       ExecuteAccessibilityAction,        ClearFocusedFocusAccessibilityNode,
       GetAccessibilityNodeCursorPosition};
 
-  ret = AccessibilityProviderRegisterCallback(
+  if (accessibility_provider_register_callback_fn_ == nullptr) {
+    LOGE(
+        "AccessibilityAdapter::Initialize "
+        "OH_ArkUI_AccessibilityProviderRegisterCallbackWithInstance was not "
+        "loaded correctly");
+    return;
+  }
+
+  ret = accessibility_provider_register_callback_fn_(
       id.c_str(), provider_, &accessibility_provider_callbacks_);
   if (ret != 0) {
     LOGE(
         "AccessibilityAdapter::Initialize "
-        "AccessibilityProviderRegisterCallback run fail, instance_id: "
+        "accessibility_provider_register_callback_fn_ run fail, instance_id: "
         "%{public}s, ret: %{public}d",
         id.c_str(), ret);
     return;

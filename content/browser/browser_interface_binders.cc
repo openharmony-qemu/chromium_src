@@ -981,7 +981,8 @@ void PopulateFrameBinders(RenderFrameHostImpl* host, mojo::BinderMap* map) {
       &RenderFrameHostImpl::BindMediaInterfaceFactoryReceiver,
       base::Unretained(host)));
 
-#if BUILDFLAG(ENABLE_LIBRARY_CDMS) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ENABLE_LIBRARY_CDMS) || BUILDFLAG(IS_WIN) || \
+    BUILDFLAG(IS_ANDROID) || BUILDFLAG(ENABLE_WISEPLAY)
   map->Add<media::mojom::KeySystemSupport>(
       base::BindRepeating(&RenderFrameHostImpl::BindKeySystemSupportReceiver,
                           base::Unretained(host)));

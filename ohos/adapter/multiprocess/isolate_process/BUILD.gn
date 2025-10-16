@@ -28,6 +28,7 @@
 import("//build/config/ohos/config.gni")
 
 component("isolate_process") {
+  defines = []
   sources = [
     "isolate_process_helper.cc",
     "isolate_process_helper.h",
@@ -38,6 +39,10 @@ component("isolate_process") {
     "native_childprocess_interface.cc",
     "native_childprocess_interface.h",
   ]
+
+  if(isolated_level == 1){
+    defines += [ "SUPPORT_ISOLATED_MODE" ]
+  }
 
   deps = [ "//ohos/adapter/multiprocess/command_line:command_line" ]
 

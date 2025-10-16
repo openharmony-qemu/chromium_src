@@ -38,7 +38,9 @@
 #include "build/build_config.h"
 #include "media/capture/video/blob_utils.h"
 #include "media/capture/video/ohos/ohos_capture_delegate.h"
+#include "ohos/adapter/media_manager/media_adapter.h"
 #include "third_party/libyuv/include/libyuv.h"
+#include "ui/display/screen.h"
 #include "video_capture_common_ohos.h"
 
 #include "ohos/adapter/media_manager/media_adapter.h"
@@ -314,13 +316,45 @@ void OHOSCaptureDelegate::Resume() {
 void OHOSCaptureDelegate::OnBufferAvailable(uint8_t* data, size_t data_size) {
   DCHECK(capture_task_runner_->BelongsToCurrentThread());
   const base::TimeTicks now = base::TimeTicks::Now();
+  int32_t rotation = 0;
+  int32_t cameraOrientation =
+      ohos::adapter::MediaAdapter::GetInstance().GetCameraOrientation();
+  if (display::Screen::GetScreen() && cameraOrientation != 0) {
+    display::Screen* screen = display::Screen::GetScreen();
+    display::Display primary_display = screen->GetPrimaryDisplay();
+    switch (primary_display.rotation()) {
+      case display::Display::Rotation::ROTATE_0:
+        if (device_descriptor_.facing == MEDIA_VIDEO_FACING_ENVIRONMENT) {
+          rotation = 90;
+        } else {
+          rotation = 270;
+        }
+        break;
+      case display::Display::Rotation::ROTATE_90:
+        rotation = 180;
+        break;
+      case display::Display::Rotation::ROTATE_180:
+        if (device_descriptor_.facing == MEDIA_VIDEO_FACING_ENVIRONMENT) {
+          rotation = 270;
+        } else {
+          rotation = 90;
+        }
+        break;
+      case display::Display::Rotation::ROTATE_270:
+        rotation = 0;
+        break;
+      default:
+        LOG(ERROR) << "set rotation failed";
+        break;
+    }
+  }
   if (first_ref_time_.is_null()) {
     first_ref_time_ = now;
   }
   if (client_ != nullptr) {
     client_->OnIncomingCapturedData(
         data, data_size, capture_format_, gfx::ColorSpace(),
-        0 /* clockwise rotation */, false /* flip_y */, now,
+        rotation /* clockwise rotation */, false /* flip_y */, now,
         now - first_ref_time_, std::nullopt);
 
     while (!take_photo_callbacks_.empty()) {

@@ -75,6 +75,7 @@ source_set("cdm") {
     "//media/base",
     "//media/formats",
     "//third_party/boringssl",
+    "//third_party/wiseplay/cdm:buildflags",
     "//ui/gfx/geometry",
     "//url",
   ]

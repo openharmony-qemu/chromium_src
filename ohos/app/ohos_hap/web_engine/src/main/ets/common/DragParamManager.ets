@@ -118,6 +118,13 @@ export class DragParamManager {
     let dragDataHtml: UDC.HTML|undefined = undefined;
     let dragDataText: UDC.PlainText|undefined = undefined;
     let dragDataHyperlink: UDC.Hyperlink|undefined = undefined;
+    if (dragParams.webImageFilePath) {
+      LogUtil.info(TAG, `handleDragRecords webImageFilePath-length:${dragParams.webImageFilePath.length}`);
+      let image: UDC.Image | undefined = this.handleImageDragUri(dragParams.webImageFilePath);
+      if (image) {
+        dragContents.push(image);
+      }
+    }
     if (dragParams.text) {
       LogUtil.info(TAG, `handleDragRecords text-length:${dragParams.text.length}`);
       dragDataText = new UDC.PlainText();
@@ -154,13 +161,6 @@ export class DragParamManager {
         dragContents.push(dragDataHyperlink);
       }
     }
-    if (dragParams.webImageFilePath) {
-      LogUtil.info(TAG, `handleDragRecords webImageFilePath-length:${dragParams.webImageFilePath.length}`);
-      let image: UDC.Image | undefined = this.handleImageDragUri(dragParams.webImageFilePath);
-      if (image) {
-        dragContents.push(image);
-      }
-    }
     if (dragParams.bookmarkBuffer.byteLength > 0) {
       LogUtil.info(TAG, `handleDragRecords bookmarkBuffer-length:${dragParams.bookmarkBuffer.byteLength}`);
       let record = new unifiedDataChannel.ApplicationDefinedRecord();
@@ -195,7 +195,10 @@ export class DragParamManager {
     this.dragData = undefined;
     let dragContents:(uniformDataStruct.PlainText |uniformDataStruct.HTML |uniformDataStruct.Hyperlink
                     |uniformDataStruct.FileUri |CustomDragData)[] = [];
-
+    let imageUds = this.handleWebImageForEntries(dragParams);
+    if (imageUds) {
+      dragContents.push(imageUds);
+    }
     let plainText = this.handleTextDragDataForEntries(dragParams);
     if (plainText) {
       dragContents.push(plainText);
@@ -207,11 +210,6 @@ export class DragParamManager {
     let hyperlinkUds = this.handleHyperlinkDragDataForEntries(dragParams);
     if (hyperlinkUds) {
       dragContents.push(hyperlinkUds);
-    }
-    let imageUds = this.handleWebImageForEntries(dragParams);
-    if (imageUds) {
-      LogUtil.info(TAG, `handleDragDataForEntries webImageFilePath-length:${dragParams.webImageFilePath.length}`);
-      dragContents.push(imageUds);
     }
     let bookmarkStruct = this.handleBookmarkDragDataForEntries(dragParams);
     if (bookmarkStruct) {

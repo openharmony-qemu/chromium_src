@@ -45,10 +45,15 @@
 #include "services/service_manager/public/cpp/binder_registry.h"
 #include "services/viz/privileged/mojom/gl/gpu_service.mojom.h"
 #include "third_party/skia/include/core/SkGraphics.h"
+#include "third_party/wiseplay/cdm/buildflags.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "media/base/android/media_drm_bridge_client.h"
 #include "media/mojo/clients/mojo_android_overlay.h"
+#endif
+
+#if BUILDFLAG(ENABLE_WISEPLAY)
+#include "media/base/ohos/ohos_media_drm_bridge_client.h"
 #endif
 
 #if BUILDFLAG(IS_CHROMEOS_ASH)
@@ -156,6 +161,13 @@ void GpuChildThread::Init(const base::TimeTicks& process_start_time) {
   if (!in_process_gpu()) {
     media::SetMediaDrmBridgeClient(
         GetContentClient()->GetMediaDrmBridgeClient());
+  }
+#endif
+
+#if BUILDFLAG(ENABLE_WISEPLAY)
+  if (!in_process_gpu()) {
+    media::SetMediaDrmBridgeClient(
+        GetContentClient()->GetOhosMediaDrmBridgeClient());
   }
 #endif
 

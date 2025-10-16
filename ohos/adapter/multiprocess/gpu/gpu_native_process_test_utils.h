@@ -80,6 +80,8 @@ class NativeApi {
                                 int height) = 0;
   virtual int GetInt32Attr(NativeWindow* window, int type, int* val) = 0;
   virtual int SetInt32Attr(NativeWindow* window, int type, int val) = 0;
+  virtual int GetInt64Attr(NativeWindow* window, int type, int* val) = 0;
+  virtual int SetInt64Attr(NativeWindow* window, int type, int val) = 0;
   virtual int GetStringAttr(NativeWindow* window, int type, char* str) = 0;
   virtual int SetStringAttr(NativeWindow* window, int type, char* str) = 0;
   virtual int MockNativeWindowWriteToParcel(NativeWindow* window,
@@ -103,6 +105,8 @@ class NativeMockApi : public NativeApi {
   MOCK_METHOD4(SetBufferGeometry, int(NativeWindow*, int, int, int));
   MOCK_METHOD3(GetInt32Attr, int(NativeWindow*, int, int*));
   MOCK_METHOD3(SetInt32Attr, int(NativeWindow*, int, int));
+  MOCK_METHOD3(GetInt64Attr, int(NativeWindow*, int, int*));
+  MOCK_METHOD3(SetInt64Attr, int(NativeWindow*, int, int));
   MOCK_METHOD3(GetStringAttr, int(NativeWindow*, int, char*));
   MOCK_METHOD3(SetStringAttr, int(NativeWindow*, int, char*));
   MOCK_METHOD2(MockNativeWindowWriteToParcel, int(NativeWindow*, OHIPCParcel*));

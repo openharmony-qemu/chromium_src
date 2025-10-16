@@ -235,7 +235,7 @@ bool CursorManager::ShouldHideCursorOnKeyEvent(
 
 bool CursorManager::ShouldHideCursorOnTouchEvent(
     const ui::TouchEvent& event) const {
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
   return true;
 #else
   // Linux Aura does not hide the cursor on touch by default.

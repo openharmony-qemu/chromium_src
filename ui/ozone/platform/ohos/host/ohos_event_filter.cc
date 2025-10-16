@@ -37,7 +37,7 @@ namespace ui {
 
 // Interval: microseconds
 constexpr int64_t kDragTabMouseFilterTime = 15 * 1000 * 1000;
-constexpr int64_t kMouseEventFilterTime = 50 * 1000 * 1000;
+constexpr int64_t kMouseEventFilterTime = 5 * 1000 * 1000;
 
 OhosEventFilter& OhosEventFilter::GetInstance() {
   static OhosEventFilter event_filter;

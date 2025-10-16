@@ -8419,6 +8419,9 @@ void WebContentsImpl::RunBeforeUnloadConfirm(
     std::move(callback).Run(false, true, std::u16string());
     return;
   }
+#if BUILDFLAG(IS_OHOS)
+  delegate_->NotifyShowBeforeUnloadConfirmDialog();
+#endif
 
   is_showing_before_unload_dialog_ = true;
 
@@ -11581,4 +11584,9 @@ void WebContentsImpl::SetPartitionedPopinOpenerOnNewWindowIfNeeded(
   opened_partitioned_popin_ = new_window->GetWeakPtr();
 }
 
+bool WebContentsImpl::IsWebApp() {
+  if (delegate_)
+    return delegate_->IsWebApp();
+  return false;
+}
 }  // namespace content

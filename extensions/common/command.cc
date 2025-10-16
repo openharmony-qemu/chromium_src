@@ -65,6 +65,7 @@ ui::Accelerator ParseImpl(std::string_view accelerator,
       platform_key != values::kKeybindingPlatformMac &&
       platform_key != values::kKeybindingPlatformChromeOs &&
       platform_key != values::kKeybindingPlatformLinux &&
+      platform_key != values::kKeybindingPlatformOHOS &&
       platform_key != values::kKeybindingPlatformDefault) {
     *error = ErrorUtils::FormatErrorMessageUTF16(
         errors::kInvalidKeyBindingUnknownPlatform, base::NumberToString(index),

@@ -179,6 +179,9 @@ void MotionEventAura::UpdateCachedAction(const TouchEvent& touch) {
       break;
     case EventType::kTouchMoved:
       set_action(Action::MOVE);
+#if BUILDFLAG(IS_OHOS)
+      set_action_index(GetIndexFromId(touch.pointer_details().id));
+#endif
       break;
     default:
       NOTREACHED();

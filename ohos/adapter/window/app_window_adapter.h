@@ -50,9 +50,7 @@ class ADAPTER_EXPORT_API AppWindowAdapter {
   void Hide(int32_t id);
   void Activate(int32_t id);
   void SetFullscreen(int32_t id);
-  void SetBounds(int32_t id,
-                 const WindowRect& rect,
-                 ChangeSizeCallback callback);
+  void SetBounds(int32_t id, const WindowRect& rect);
   void SetEnabled(bool enabled, int32_t id);
   void Maximize(int32_t id);
   void UnMaximize(int32_t id);

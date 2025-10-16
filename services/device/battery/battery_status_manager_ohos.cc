@@ -27,6 +27,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+
 #include "services/device/battery/battery_status_manager_ohos.h"
 
 #include <memory>

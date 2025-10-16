@@ -1661,6 +1661,11 @@ void WebContentsViewAura::PerformDropCallback(
   }
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+  // Refresh the drop data when perform dropping
+  PrepareDropData(drop_context.drop_data.get(), *(drop_context.data.get()));
+#endif
+
   MaybeLetDelegateProcessDrop(std::move(drop_context));
 }
 

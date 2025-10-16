@@ -1004,6 +1004,13 @@ sql::InitStatus FaviconDatabase::OpenDatabase(sql::Database* db,
   if (!db_.has_error_callback()) {
     db->set_error_callback(base::BindRepeating(&DatabaseErrorCallback, db));
   }
+
+#if BUILDFLAG(IS_OHOS)
+  bool file_exists = base::PathExists(db_name);
+  LOG(INFO) << "FaviconDatabase file exists: " << file_exists
+            << ", file_path: " << db_name;
+#endif
+
   if (!db->Open(db_name))
     return sql::INIT_FAILURE;
   db->Preload();

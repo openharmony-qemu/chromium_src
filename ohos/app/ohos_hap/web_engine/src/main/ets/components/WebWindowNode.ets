@@ -125,14 +125,12 @@ class WindowNodeController extends NodeController {
   }
 
   private buildArgs(): string[] {
-    const override_ua = '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' +
-      'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36';
     let default_uri = '';
     if (this.config.uri.length !== 0) {
       default_uri = this.config.uri;
     }
     let resDir = '--bundle-installation-dir=' + getContext().resourceDir;
-    let vec_args = [override_ua, resDir, default_uri];
+    let vec_args = [resDir, default_uri];
     return vec_args;
   }
 }

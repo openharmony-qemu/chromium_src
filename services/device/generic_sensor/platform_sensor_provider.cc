@@ -30,6 +30,8 @@
 #include "services/device/generic_sensor/platform_sensor_provider_chromeos.h"
 #elif BUILDFLAG(IS_LINUX) && defined(USE_UDEV)
 #include "services/device/generic_sensor/platform_sensor_provider_linux.h"
+#elif BUILDFLAG(IS_OHOS)
+#include "services/device/generic_sensor/platform_sensor_provider_ohos.h"
 #endif
 
 namespace device {
@@ -78,6 +80,8 @@ std::unique_ptr<PlatformSensorProvider> PlatformSensorProvider::Create() {
   return std::make_unique<PlatformSensorProviderChromeOS>();
 #elif BUILDFLAG(IS_LINUX) && defined(USE_UDEV)
   return std::make_unique<PlatformSensorProviderLinux>();
+#elif BUILDFLAG(IS_OHOS)
+  return std::make_unique<PlatformSensorProviderOhos>();
 #else
   return nullptr;
 #endif

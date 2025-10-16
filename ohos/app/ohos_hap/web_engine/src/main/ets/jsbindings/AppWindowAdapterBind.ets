@@ -56,10 +56,8 @@ function setFullscreen(id: number) {
   implAppWindowAdapter().setFullscreen(id);
 }
 
-function setBounds(id: number,
-                   bounds: WindowBound,
-                   callback: () => void) {
-  implAppWindowAdapter().setBounds(id, bounds, callback);
+function setBounds(id: number, bounds: WindowBound) {
+  implAppWindowAdapter().setBounds(id, bounds);
 }
 
 function setEnabled(enable: boolean, id: number) {

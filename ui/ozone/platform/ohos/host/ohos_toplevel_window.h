@@ -83,15 +83,25 @@ class OhosToplevelWindow : public OhosWindow,
 
   void StartWindowMovingWithOffset(const float offset_x, const float offset_y);
 
+ protected:
+  virtual void OnWindowEvent(std::shared_ptr<XCEvent> event);
+  virtual void SetWindowState(PlatformWindowState new_state, bool isTrigger = true);
+  
+  // Contains the previous state of the window.
+  PlatformWindowState previous_state_ = PlatformWindowState::kUnknown;
+ 
+  // Contains the previous state of the window before enter fullscreen.
+  PlatformWindowState previous_enter_fullscreen_state_ = PlatformWindowState::kUnknown;
+
+    // Contains the previous state of the window before enter minimize.
+  PlatformWindowState previous_enter_minimize_state_ = PlatformWindowState::kUnknown;
+
  private:
   void OnFocusEvent();
   void OnBlurEvent();
-  void OnWindowEvent(std::shared_ptr<XCEvent> event);
-  void OnWindowRectChangeEvent(std::shared_ptr<XCEvent> event);
   void OnWindowStatusChangeEvent(std::shared_ptr<XCEvent> event);
+  void OnWindowRectChangeEvent(std::shared_ptr<XCEvent> event);
   void OnWindowCaptionButtonRectChangeEvent(std::shared_ptr<XCEvent> event);
-
-  void UnMaximize();
 
   void UpdateMinAndMaxSize();
   absl::optional<gfx::Size> GetMinimumSizeForOhosWindow();
@@ -110,7 +120,6 @@ class OhosToplevelWindow : public OhosWindow,
     return !IsMaximized() && !IsMinimized() && !IsFullscreen();
   }
 
-  void SetWindowState(PlatformWindowState new_state, bool isTrigger = true);
   void TriggerStateChanges();
   void UpdateStateChanges();
   void UpdateBoundsChanges(int top, int left, int width, int height);
@@ -120,16 +129,6 @@ class OhosToplevelWindow : public OhosWindow,
   bool HasInitDone() override;
 
   void CloseInternal();
-
-  // Contains the previous state of the window.
-  PlatformWindowState previous_state_ = PlatformWindowState::kUnknown;
-  // Contains the state should restore to.
-  PlatformWindowState restore_state_ = PlatformWindowState::kUnknown;
-
-  // Contains the previous state of the window before enter fullscreen.
-  PlatformWindowState previous_enter_fullscreen_state_ = PlatformWindowState::kUnknown;
-  // Contains the previous state of the window before enter minimize.
-  PlatformWindowState previous_enter_minimize_state_ = PlatformWindowState::kUnknown;
 
   bool use_native_frame_ = false;
 
@@ -157,8 +156,9 @@ class OhosToplevelWindow : public OhosWindow,
   // So we set this flag to true to represent split screen state.
   bool is_split_screen_ = false;
   bool use_dark_mode_ = false;
-  bool is_stateless_ = false;
   bool caption_button_visible_ = true;
+  AbilityType ability_type_ = AbilityType::kEntryAbility;
+  std::string app_id_;
 };
 
 }  // namespace ui

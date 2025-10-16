@@ -27,6 +27,7 @@ import("//services/device/public/cpp/compute_pressure/buildflags.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//third_party/blink/public/public_features.gni")
 import("//tools/ipc_fuzzer/ipc_fuzzer.gni")
+import("//third_party/wiseplay/cdm/wiseplay.gni")
 
 if (is_mac) {
   import("//content/public/app/mac_helpers.gni")
@@ -44,9 +45,9 @@ if (is_android) {
       "//content/test:*",
     ]
     deps = [
-      "//third_party/rust/font_types/v0_7:lib",
-      "//third_party/rust/read_fonts/v0_23:lib",
-      "//third_party/rust/skrifa/v0_24:lib",
+      "//third_party/rust/font_types/v0_8:lib",
+      "//third_party/rust/read_fonts/v0_25:lib",
+      "//third_party/rust/skrifa/v0_26:lib",
     ]
   }
 }
@@ -285,6 +286,7 @@ source_set("browser") {
     "//third_party/snappy",
     "//third_party/sqlite",
     "//third_party/webrtc_overrides:webrtc_component",
+    "//third_party/wiseplay/cdm:buildflags", 
     "//third_party/zlib",
     "//tools/v8_context_snapshot:buildflags",
     "//ui/accessibility",
@@ -2463,6 +2465,13 @@ source_set("browser") {
       "sandbox_ipc_linux.cc",
       "sandbox_ipc_linux.h",
     ]
+
+    if(enable_wiseplay) {
+      sources += [
+        "media/key_system_support_ohos.cc",
+        "media/key_system_support_ohos.h",
+      ]
+    }
 
     deps += [
       "//components/printing/common",

@@ -254,6 +254,8 @@ class COMPONENT_EXPORT(UI_BASE_IME) TextInputClient {
   virtual RequestKeyboardReason GetRequestKeyboardReason() const {
     return RequestKeyboardReason::REQUEST_KEYBOARD_REASON_OTHER;
   }
+
+  virtual gfx::Rect GetToplevelWindowBounds() const;
 #endif
 
   // Document content operations ----------------------------------------------

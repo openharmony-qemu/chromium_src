@@ -54,14 +54,6 @@ void PRParallelPreloadMgrImpl::Init(
   }
   bool inited = false;
   if (is_inited_.compare_exchange_strong(inited, true)) {
-    disk_cache_backend_factory_ = base::WrapRefCounted(new (std::nothrow) DiskCacheBackendFactory());
-    if (disk_cache_backend_factory_ == nullptr) {
-      is_inited_.store(false);
-      LOG(ERROR) << "PRPPreload.PRParallelPreloadMgrImpl::Init failed no mem";
-      return;
-    }
-    disk_cache_backend_factory_->CreateBackend(cache_path);
-
     sth_task_runner_ = base::ThreadPool::CreateSingleThreadTaskRunner(
       {base::TaskPriority::USER_VISIBLE}, base::SingleThreadTaskRunnerThreadMode::DEDICATED);
     if (sth_task_runner_ == nullptr) {
@@ -69,6 +61,9 @@ void PRParallelPreloadMgrImpl::Init(
       LOG(ERROR) << "PRPPreload.PRParallelPreloadMgrImpl::Init failed";
       return;
     }
+    sth_task_runner_->PostTask(
+        FROM_HERE,
+        base::BindOnce(&ResParallelPreloadCtrler::InitDiskCacheBackendFactory, std::move(cache_path)));
     net_task_runner_ = net_task_runner;
   }
 }
@@ -97,12 +92,16 @@ void PRParallelPreloadMgrImpl::StartMainPage(
     return;
   }
 
-  scoped_refptr<ResParallelPreloadCtrler> rp_preload_ctrler = base::WrapRefCounted(
-      new (std::nothrow) ResParallelPreloadCtrler(url, network_anonymization_key, url_request_context,
-          sth_task_runner_, net_task_runner_, disk_cache_backend_factory_,
-          base::BindRepeating(&PRParallelPreloadMgrImpl::OnRPPCtrlerTimeout, base::Unretained(this))));
-  if (rp_preload_ctrler == nullptr) {
-    LOG(ERROR) << "PRPPreload.PRParallelPreloadMgrImpl::StartMainPage new ResParallelPreloadCtrler failed";
+  scoped_refptr<ResParallelPreloadCtrler> rp_preload_ctrler =
+      base::WrapRefCounted(new (std::nothrow) ResParallelPreloadCtrler(
+          url, network_anonymization_key, url_request_context, sth_task_runner_,
+          net_task_runner_,
+          base::BindRepeating(&PRParallelPreloadMgrImpl::OnRPPCtrlerTimeout,
+                              base::Unretained(this))));
+  if (rp_preload_ctrler == nullptr ||
+      !rp_preload_ctrler->Init(net_task_runner_, url_request_context)) {
+    LOG(ERROR) << "PRPPreload.PRParallelPreloadMgrImpl::StartMainPage new "
+                  "ResParallelPreloadCtrler failed";
     return;
   }
 

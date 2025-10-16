@@ -79,6 +79,7 @@ target(link_target_type, "gpu_sources") {
     "//services/webnn/public/mojom",
     "//skia",
     "//third_party/angle:angle_gpu_info_util",
+    "//third_party/wiseplay/cdm:buildflags", 
     "//ui/gfx/ipc",
     "//ui/gl",
     "//ui/gl/init",

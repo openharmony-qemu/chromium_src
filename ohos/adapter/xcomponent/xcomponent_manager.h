@@ -70,7 +70,6 @@ class ADAPTER_EXPORT_API XComponentManager final : public XComponentDelegate {
                                   std::shared_ptr<InputEventCallBack> callback);
   std::string CreateWindow(const WindowInitParameter& param);
   std::string GetCreatingWindow() { return creating_window_; }
-  void RequestLayout(const std::string& id);
   std::string GetActivateWindow() const { return activate_window_; }
 
   // XComponentDelegate
@@ -85,7 +84,6 @@ class ADAPTER_EXPORT_API XComponentManager final : public XComponentDelegate {
   std::string CreateSubWindow(const NewWindowParam& param);
   void SetActivateWindow(const std::string& id);
 
-  static XComponentManager* manager_;
   std::unordered_map<std::string, std::shared_ptr<XComponentImpl>> render_map_;
   std::unordered_map<std::string, std::promise<bool>> window_status_;
   std::queue<std::string> reuse_window_;

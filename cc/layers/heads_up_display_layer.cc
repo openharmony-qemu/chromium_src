@@ -25,8 +25,8 @@ HeadsUpDisplayLayer::HeadsUpDisplayLayer()
 #else
     // For OH, here should use system's font family.
     : typeface_(
-      skia::MakeTypefaceFromName("HarmonyOS-Sans-Regular", SkFontStyle())) {
-  #endif
+      skia::MakeTypefaceFromName("HarmonyOS Sans", SkFontStyle())) {
+#endif
   if (!typeface_.Read(*this)) {
     typeface_.Write(*this) =
         skia::MakeTypefaceFromName("monospace", SkFontStyle::Bold());

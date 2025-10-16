@@ -39,8 +39,17 @@ import { uniformTypeDescriptor } from '@kit.ArkData';
 import { ContextAdapter } from './ContextAdapter';
 import { PermissionManagerAdapter } from './PermissionManagerAdapter';
 import { SaveAsDialogParams, SelectFileDialogParams } from '../interface/CommonInterface';
+import { promptAction } from '@kit.ArkUI';
+import LaunchHelper from '../utils/LaunchHelper';
+import { Want } from '@kit.AbilityKit';
 
 const TAG: string = "FilePicker";
+
+enum MenuItem {
+  kOpenAppGallery = 0,
+  kContinueDownload,
+  kCancel,
+}
 
 @injectable()
 export class FilePickerAdapter extends BaseAdapter {
@@ -134,42 +143,63 @@ export class FilePickerAdapter extends BaseAdapter {
       LogUtil.error(TAG, `save failed with err: ${JSON.stringify(err)}`);
     });
   }
+ 
+  @LogMethod
+  showInstallationPackageDialog(callback: (continue_download: boolean) => void) {
+    try {
+      promptAction.showDialog({
+        title: $r('app.string.download'),
+        message: $r('app.string.installation_not_supported'),
+        buttons: [
+          {
+            text: $r('app.string.go_to_app_gallery'),
+            color: '#FF0A59F7',
+            primary: true
+          },
+          {
+            text: $r('app.string.still_download'),
+            color: '#000000'
+          },
+          {
+            text: $r('app.string.dialog_cancel_button'),
+            color: '#000000'
+          }
+        ],
+      }).then(data => {
+        try {
+          if (data.index == MenuItem.kOpenAppGallery) {
+            const want: Want = {
+              bundleName: 'com.huawei.hmsapp.appgallery',
+              abilityName: 'MainAbility',
+              moduleName: 'entry'
+            }
+            LaunchHelper.Launch(this.ctxAdapter.getActiveContext(), want);
+          }
+          if (data.index != MenuItem.kContinueDownload) {
+            callback(false);
+          } else {
+            callback(true);
+          }
+        } catch (err) {
+          callback(false);
+          LogUtil.error(TAG, `fail ro open AppGallery with err : ${JSON.stringify(err)}`);
+        }
+      }).catch((err: Error) => {
+        LogUtil.error(TAG, `showDialog failed, caused by:${JSON.stringify(err)}`);
+        callback(true);
+      });
+    } catch (err) {
+      callback(true);
+      LogUtil.error(TAG, `openDialog failed, caused by:${JSON.stringify(err)}`);
+    }
+  }
 
   private dirFilter(docs: string[]): string[] {
     let copy: string[] = [];
     docs.forEach((path) => {
       // Convert to uri get systeam path
       let uri = new fileUri.FileUri(path);
-      if (uri.authority === 'media') {
-        let file: fs.File | undefined;
-        let copyFile: fs.File | undefined;
-        try {
-          let filePath = this.ctxAdapter.getContext().tempDir;
-          file = fs.openSync(path, fs.OpenMode.READ_ONLY);
-          copyFile = fs.openSync(filePath + '/' + uri.name, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
-          fs.copyFileSync(file.fd, copyFile.fd);
-          copy.push(filePath + '/' + uri.name);
-        } catch (err) {
-          LogUtil.error(TAG, `copy failed: ${JSON.stringify(err)}`);
-        } finally {
-          try {
-            if (file) {
-              fs.closeSync(file);
-            }
-          } catch (err) {
-            LogUtil.error(TAG, `close file failed: ${JSON.stringify(err)}`);
-          }
-          try {
-            if (copyFile) {
-              fs.closeSync(copyFile);
-            }
-          } catch (err) {
-            LogUtil.error(TAG, `close copyFile failed: ${JSON.stringify(err)}`);
-          }
-        }
-      } else {
-        copy.push(uri.path);
-      }
+      copy.push(uri.path);
     });
     return copy;
   }

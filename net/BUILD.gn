@@ -1274,7 +1274,8 @@ component("net") {
     ]
 
     libs = [
-      "net_connection"
+      "net_connection",
+      "ohcommonevent"
     ]
   }
 

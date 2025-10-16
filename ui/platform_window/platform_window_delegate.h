@@ -202,6 +202,8 @@ class COMPONENT_EXPORT(PLATFORM_WINDOW) PlatformWindowDelegate {
 
 #if BUILDFLAG(IS_OHOS)
   virtual void SetSurfaceId(uint64_t surface_id) = 0;
+
+  virtual void OnFullscreenSwitched(bool is_enter_fullscreen);
 #endif
 
   // Requests size constraints for the PlatformWindow in DIP.

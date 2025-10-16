@@ -124,6 +124,8 @@ void GpuSharedImageVideoFactory::Initialize(
     return;
   }
 
+  is_vulkan_ = shared_context->GrContextIsVulkan();
+
   auto scoped_current = std::make_unique<ui::ScopedMakeCurrent>(
       shared_context->context(), shared_context->surface());
   if (!shared_context->IsCurrent(nullptr)) {
@@ -145,25 +147,32 @@ void GpuSharedImageVideoFactory::CreateImage(
   if (!stub_) {
     return;
   }
- 
+
   auto codec_image =
       base::MakeRefCounted<CodecImage>(spec.coded_size, drdc_lock);
- 
   TRACE_EVENT0("media", "GpuSharedImageVideoFactory::CreateVideoFrame");
- 
+
   scoped_refptr<gpu::GpuChannelSharedImageInterface>
       gpu_channel_shared_image_interface =
           stub_->channel()->shared_image_stub()->shared_image_interface();
   scoped_refptr<gpu::ClientSharedImage> shared_image =
       gpu_channel_shared_image_interface->CreateSharedImageForOhosVideo(
-          spec.coded_size, spec.color_space, codec_image);
+          spec.coded_size, spec.color_space, codec_image, drdc_lock);
+
   if (!shared_image) {
     return;
   }
 
   SharedImageVideoProvider::ImageRecord record;
   record.shared_image = std::move(shared_image);
-  record.is_vulkan = false;
+  record.release_cb = base::BindOnce(
+      [](scoped_refptr<gpu::ClientSharedImage> image,
+         const gpu::SyncToken& sync_token) {
+        image->UpdateDestructionSyncToken(sync_token);
+      },
+      record.shared_image);
+  record.is_vulkan = is_vulkan_;
+
   // Since |codec_image|'s ref holders can be destroyed by stub destruction,
   // we create a ref to it for the MaybeRenderEarlyManager.  This is a hack;
   // we should not be sending the CodecImage at all.  The
@@ -171,7 +180,7 @@ void GpuSharedImageVideoFactory::CreateImage(
   // to be used by CodecImage, and non-GL things, to hold the output buffer,
   // etc.
   record.codec_image_holder = base::MakeRefCounted<CodecImageHolder>(
-      base::SequencedTaskRunner::GetCurrentDefault(), std::move(codec_image));
+      base::SequencedTaskRunner::GetCurrentDefault(), std::move(codec_image), std::move(drdc_lock));
 
   std::move(image_ready_cb).Run(std::move(record));
 }
@@ -205,7 +214,7 @@ bool GpuSharedImageVideoFactory::CreateImageInternal(
   }
   auto shared_image = gpu::SharedImageVideoOhos::Create(
       mailbox, coded_size, spec.color_space, kTopLeft_GrSurfaceOrigin,
-      kPremul_SkAlphaType, std::move(image), std::move(shared_context));
+      kPremul_SkAlphaType, std::move(image), std::move(shared_context), drdc_lock);
   DCHECK(stub_->channel()->gpu_channel_manager()->shared_image_manager());
   stub_->channel()->shared_image_stub()->factory()->RegisterBacking(
       std::move(shared_image));

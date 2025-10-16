@@ -44,9 +44,9 @@
         "name": "ohos.permission.CAMERA",
         "reason": "$string:camera",
       },
-      {
-        "name": "ohos.permission.PRINT"
-      },
+//      {
+//        "name": "ohos.permission.PRINT"
+//      },
       {
         "name": "ohos.permission.READ_PASTEBOARD",
         "reason": "$string:access_pasteboard",
@@ -78,6 +78,15 @@
       },
       {
         "name": "ohos.permission.kernel.DISABLE_CODE_MEMORY_PROTECTION"
+      },
+      {
+        "name": "ohos.permission.ACCELEROMETER"
+      },
+      {
+        "name": "ohos.permission.GYROSCOPE"
+      },
+      {
+        "name": "ohos.permission.SET_ABILITY_INSTANCE_INFO"
       }
     ],
     "definePermissions": [

@@ -22,6 +22,7 @@
 #include "media/base/decoder_buffer.h"
 #include "media/base/media_log.h"
 #include "media/base/timestamp_constants.h"
+#include "third_party/wiseplay/cdm/buildflags.h"
 
 namespace media {
 
@@ -39,7 +40,11 @@ DecryptingAudioDecoder::DecryptingAudioDecoder(
     : task_runner_(task_runner), media_log_(media_log) {}
 
 bool DecryptingAudioDecoder::SupportsDecryption() const {
+#if BUILDFLAG(ENABLE_WISEPLAY)
+  return false;
+#else
   return true;
+#endif  // BUILDFLAG(ENABLE_WISEPLAY)
 }
 
 AudioDecoderType DecryptingAudioDecoder::GetDecoderType() const {
@@ -63,7 +68,6 @@ void DecryptingAudioDecoder::Initialize(const AudioDecoderConfig& config,
     std::move(init_cb_).Run(DecoderStatus::Codes::kUnsupportedEncryptionMode);
     return;
   }
-
   if (!config.is_encrypted() && !support_clear_content_) {
     std::move(init_cb_).Run(DecoderStatus::Codes::kUnsupportedEncryptionMode);
     return;

@@ -29,17 +29,17 @@
 
 #include "ui/ozone/platform/ohos/host/ohos_canvas_surface.h"
 
-#include <ace/xcomponent/native_interface_xcomponent.h>
 #include <cstddef>
 #include <cstdint>
+#include <sys/mman.h>
+
+#include <ace/xcomponent/native_interface_xcomponent.h>
 #include <napi/native_api.h>
 #include <native_buffer/native_buffer.h>
 #include <native_image/native_image.h>
 #include <native_window/external_window.h>
-#include <sys/mman.h>
 
 #include "base/task/thread_pool.h"
-#include "include/core/SkSurface.h"
 #include "skia/ext/legacy_display_globals.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -53,6 +53,8 @@
 #include "ui/ozone/platform/ohos/common/ohos_util.h"
 #include "ui/ozone/public/gl_ozone.h"
 #include "ui/ozone/public/surface_ozone_canvas.h"
+
+#include "include/core/SkSurface.h"
 
 namespace ui {
 void OhosCanvasSurface::ResizeCanvas(const gfx::Size& viewport_size,
@@ -128,6 +130,11 @@ void OhosCanvasSurface::PresentCanvas(const gfx::Rect& damage) {
  
   BufferHandle* bufferHandle =
       OH_NativeWindow_GetBufferHandleFromNative(nativeWindowBuffer);
+  if (!bufferHandle) {
+    LOG(ERROR) << "OhosCanvasSurface::PresentCanvas bufferHandle is null";
+    OH_NativeWindow_NativeObjectUnreference(nativeWindowBuffer);
+    return;
+  }
   auto* mappedAddr =
       mmap(bufferHandle->virAddr, bufferHandle->size, PROT_READ | PROT_WRITE,
            MAP_SHARED, bufferHandle->fd, 0);

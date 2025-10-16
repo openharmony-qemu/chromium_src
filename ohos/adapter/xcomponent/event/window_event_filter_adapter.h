@@ -64,32 +64,19 @@ class ADAPTER_EXPORT_API WindowEventFilterAdapter {
   void CacheShiftEventWindowIds(const int32_t source_id,
                                 const int32_t target_id);
   int32_t GetTargetWindowIdAfterShiftEvent(int32_t origin_window_id);
-  void InitMouseEventFunction();
-  static common::SharedLibrary window_manager_lib;
-  static GetMouseEventActionFunc* get_mouse_event_action_func;
-  static GetMouseEventDisplayXFunc* get_mouse_event_display_x_func;
-  static GetMouseEventDisplayYFunc* get_mouse_event_display_y_func;
-  static GetMouseEventButtonFunc* get_mouse_event_button_func;
-  static GetMouseEventActionTimeFunc* get_mouse_event_action_time_func;
-  static GetMouseEventWindowIdFunc* get_mouse_event_window_id_func;
-  static GetMouseEventDisplayIdFunc* get_mouse_event_display_id_func;
+  bool LoadAllEventFunctions();
+  int32_t GetWindowMouseEventAction(Input_MouseEvent* window_mouse_event);
+  int32_t GetWindowMouseEventDisplayX(Input_MouseEvent* window_mouse_event);
+  int32_t GetWindowMouseEventDisplayY(Input_MouseEvent* window_mouse_event);
+  int32_t GetWindowMouseEventButton(Input_MouseEvent* window_mouse_event);
+  int64_t GetWindowMouseEventActionTime(Input_MouseEvent* window_mouse_event);
+  int32_t GetWindowMouseEventWindowId(Input_MouseEvent* window_mouse_event);
+  int32_t GetWindowMouseEventDisplayId(Input_MouseEvent* window_mouse_event);
+  void RegisterWindowEventFilterForWindow(int32_t origin_window_id);
+  void UnRegisterWindowEventFilterForWindow(int32_t origin_window_id);
 
   static void RegisterWindowEventFilter(int32_t origin_window_id);
   static void ClearWindowEventFilter(int32_t origin_window_id);
-  static int32_t GetWindowMouseEventAction(
-      Input_MouseEvent* window_mouse_event);
-  static int32_t GetWindowMouseEventDisplayX(
-      Input_MouseEvent* window_mouse_event);
-  static int32_t GetWindowMouseEventDisplayY(
-      Input_MouseEvent* window_mouse_event);
-  static int32_t GetWindowMouseEventButton(
-      Input_MouseEvent* window_mouse_event);
-  static int64_t GetWindowMouseEventActionTime(
-      Input_MouseEvent* window_mouse_event);
-  static int32_t GetWindowMouseEventWindowId(
-      Input_MouseEvent* window_mouse_event);
-  static int32_t GetWindowMouseEventDisplayId(
-      Input_MouseEvent* window_mouse_event);
 
   std::atomic<int32_t> tab_dragging_widget_id_;
  private:
@@ -103,6 +90,16 @@ class ADAPTER_EXPORT_API WindowEventFilterAdapter {
   int32_t source_origin_window_id_;
   int32_t target_origin_window_id_;
   std::shared_mutex window_event_mutext_;
+  common::SharedLibrary window_manager_lib_;
+  RegisterMouseEventFilterFunc* register_mouse_event_filter_func_;
+  UnRegisterMouseEventFilterFunc* un_register_mouse_event_filter_func_;
+  GetMouseEventActionFunc* get_mouse_event_action_func_;
+  GetMouseEventDisplayXFunc* get_mouse_event_display_x_func_;
+  GetMouseEventDisplayYFunc* get_mouse_event_display_y_func_;
+  GetMouseEventButtonFunc* get_mouse_event_button_func_;
+  GetMouseEventActionTimeFunc* get_mouse_event_action_time_func_;
+  GetMouseEventWindowIdFunc* get_mouse_event_window_id_func_;
+  GetMouseEventDisplayIdFunc* get_mouse_event_display_id_func_;
 };
 
 }  // namespace ohos::adapter::window

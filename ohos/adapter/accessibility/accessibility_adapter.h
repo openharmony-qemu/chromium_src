@@ -35,6 +35,7 @@
 
 #include <string>
 
+#include "ohos/adapter/common/shared_library.h"
 #include "ohos/adapter/export.h"
 
 namespace ohos::adapter::accessibility {
@@ -43,49 +44,6 @@ using NativeElementList = ArkUI_AccessibilityElementInfoList*;
 using NativeElement = ArkUI_AccessibilityElementInfo*;
 
 class NativeElementWrapper {};
-
-// After the release of API level 15, remove the struct definition here and use
-// the struct type declared in the oh header file.
-struct AccessibilityProviderCallbacks {
-  int32_t (*findAccessibilityNodeInfosById)(const char* instanceId,
-                                            int64_t elementId,
-                                            ArkUI_AccessibilitySearchMode mode,
-                                            int32_t requestId,
-                                            NativeElementList elementList);
-
-  int32_t (*findAccessibilityNodeInfosByText)(const char* instanceId,
-                                              int64_t elementId,
-                                              const char* text,
-                                              int32_t requestId,
-                                              NativeElementList elementList);
-
-  int32_t (*findFocusedAccessibilityNode)(
-      const char* instanceId,
-      int64_t elementId,
-      ArkUI_AccessibilityFocusType focusType,
-      int32_t requestId,
-      NativeElement elementInfo);
-
-  int32_t (*findNextFocusAccessibilityNode)(
-      const char* instanceId,
-      int64_t elementId,
-      ArkUI_AccessibilityFocusMoveDirection direction,
-      int32_t requestId,
-      NativeElement elementInfo);
-
-  int32_t (*executeAccessibilityAction)(
-      const char* instanceId,
-      int64_t elementId,
-      ArkUI_Accessibility_ActionType action,
-      ArkUI_AccessibilityActionArguments* actionArguments,
-      int32_t requestId);
-
-  int32_t (*clearFocusedFocusAccessibilityNode)(const char* instanceId);
-  int32_t (*getAccessibilityNodeCursorPosition)(const char* instanceId,
-                                                int64_t elementId,
-                                                int32_t requestId,
-                                                int32_t* index);
-};
 
 class ADAPTER_EXPORT_API AccessibilityAdapter {
  public:
@@ -145,11 +103,19 @@ class ADAPTER_EXPORT_API AccessibilityAdapter {
                                                     int32_t* index);
 
  private:
-  AccessibilityAdapter() = default;
+  AccessibilityAdapter();
   ~AccessibilityAdapter() = default;
 
-  ArkUI_AccessibilityProvider* provider_;
-  AccessibilityProviderCallbacks accessibility_provider_callbacks_;
+  ArkUI_AccessibilityProvider* provider_ = nullptr;
+  ArkUI_AccessibilityProviderCallbacksWithInstance
+      accessibility_provider_callbacks_;
+  common::SharedLibrary native_accessibility_lib_;
+  using NativeAccessibilityForProviderFunc =
+      int32_t(const char*,
+              ArkUI_AccessibilityProvider*,
+              ArkUI_AccessibilityProviderCallbacksWithInstance*);
+  NativeAccessibilityForProviderFunc*
+      accessibility_provider_register_callback_fn_ = nullptr;
 };
 
 }  // namespace ohos::adapter::accessibility

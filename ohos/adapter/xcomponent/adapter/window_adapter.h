@@ -48,12 +48,13 @@ using WindowType = void*;
 using WindowIdType = std::string;
 using WindowWidgetType = int32_t;
 using namespace ohos::adapter::window;
+using WindowKeyboardHeightCallBack = std::function<void(int32_t, int32_t)>;
 
 class WindowInfo {
  public:
   WindowType window;
-  WindowIdType windowId;
-  WindowWidgetType widgetId;
+  WindowIdType window_id;
+  WindowWidgetType widget_id;
   bool initialized = false;
 };
 
@@ -66,6 +67,30 @@ class ADAPTER_EXPORT_API WindowStatusListener {
   virtual void OnWindowRemove(const WindowInfo& info) = 0;
 };
 
+class ADAPTER_EXPORT_API WindowCachedEventQueue {
+ public:
+  void AddCacheEventToQueue(std::shared_ptr<Event> event);
+  std::vector<std::shared_ptr<Event>> GetCachedEvent() {
+    return cached_events_;
+  }
+ 
+ private:
+  std::vector<std::shared_ptr<Event>> cached_events_;
+  // first WINDOW_OCCLUDED event will not cached
+  // when window is creating
+  bool first_occluded_event_received_ = false;
+};
+
+class ADAPTER_EXPORT_API WindowCachedEventDispatcher {
+ public:
+  void SaveCacheEvent(WindowWidgetType widget_id, std::shared_ptr<Event> event);
+  void DispatchCachedEvent(WindowWidgetType widget_id, WindowEventCallBack& callback);
+ 
+ private:
+  std::unordered_map<WindowWidgetType, std::unique_ptr<WindowCachedEventQueue>>
+      cached_event_map_;
+};
+
 class ADAPTER_EXPORT_API WindowAdapter {
  public:
   static WindowAdapter& GetInstance();
@@ -75,18 +100,21 @@ class ADAPTER_EXPORT_API WindowAdapter {
   WindowIdType GetWindowId(const WindowWidgetType index);
   void AddWindow(WindowIdType index, WindowType window);
   void RemoveWindow(WindowIdType index);
-  void SetWindowWidget(WindowType window, WindowWidgetType widgetId);
+  void SetWindowWidget(WindowType window, WindowWidgetType widget_id);
   void RegistWindowEvent(WindowWidgetType id,
                          WindowEventCallBack callback);
   void UnregistWindowEvent(WindowWidgetType id);
   void RegistWindowStatus(WindowStatusListener*);
-  void NotifyWindowEvent(WindowWidgetType id, std::shared_ptr<Event>);
-  void NotifyWindowEvent(WindowType window, std::shared_ptr<Event>);
-  void NotifyWindowEvent(WindowIdType windowId, std::shared_ptr<Event>);
-  void TryReissueEvent(WindowWidgetType widgetId, WindowEventCallBack callback);
-  void TryStoreEvent(WindowWidgetType widgetId, std::shared_ptr<Event> event);
+  void NotifyWindowEvent(WindowIdType window_id, std::shared_ptr<Event>);
   WindowWidgetType NextWindowWidgetId();
+  WindowWidgetType PeekNextWindowWidgetId();
   WindowWidgetType GetWindowWidgetId();
+
+  void RegistKeyboardHeightEvent(WindowWidgetType id,
+                                 WindowKeyboardHeightCallBack callback);
+  void UnRegistKeyboardHeightEvent(WindowWidgetType widget_id);
+  void NotifyKeyboardHeightEvent(WindowWidgetType id, int32_t height);
+  void NotifyKeyboardHeightEvent(WindowIdType window_id, int32_t height);
 
   CrossProcessSyncResult SyncWindowToGpuProcess();
 
@@ -96,12 +124,14 @@ class ADAPTER_EXPORT_API WindowAdapter {
   void SetInitialState(const WindowStatusType state);
   WindowRect GetWindowBounds() const { return window_bounds_; }
   WindowRect GetContentBounds() const { return content_bounds_; }
+  void SetSystemWindowLimits(WindowLimits window_limits);
+  WindowLimits GetSystemWindowLimits() const;
 
-  void OnWindowInitDone(WindowWidgetType widgetId);
-  bool WindowHasInit(WindowWidgetType widgetId);
+  void OnWindowInitDone(WindowWidgetType widget_id);
+  bool WindowHasInit(WindowWidgetType widget_id);
 
   void DisableOcclusionFeature() { disable_occlusion_feature_ = true; }
-  bool GetOcclusionFeature() { return disable_occlusion_feature_; }
+  bool IsDisableOcclusionFeature() { return disable_occlusion_feature_; }
 
  private:
   WindowAdapter() = default;
@@ -113,19 +143,25 @@ class ADAPTER_EXPORT_API WindowAdapter {
   std::mutex windows_mutex_;
   std::unordered_map<WindowWidgetType, WindowEventCallBack>
       windowEventCallbacks_;
-  std::atomic<WindowWidgetType> nextWindowId_ = 0;
-  WindowStatusListener* windowStatusObserver_ = nullptr;
+  std::atomic<WindowWidgetType> next_window_id_ = 0;
+  WindowStatusListener* window_status_observer_ = nullptr;
   std::unordered_map<WindowIdType, WindowInfo> windows_;
+
+  std::mutex keyboard_height_mutex_;
+  std::unordered_map<WindowWidgetType, WindowKeyboardHeightCallBack>
+      window_keyboard_height_callbacks_;
 
   WindowRect window_bounds_;
   WindowRect content_bounds_;
   WindowRect initial_bounds_;
   WindowStatusType initial_state_;
+  WindowLimits system_window_limits_;  // in vp
 
   std::unordered_map<WindowWidgetType, std::shared_ptr<Event>>
     event_map_;
 
   bool disable_occlusion_feature_ = false;
+  WindowCachedEventDispatcher cached_event_dispatcher_;
 };
 
 }  // namespace ohos::adapter::xcomponent

@@ -35,7 +35,6 @@ namespace ohos::adapter::multiprocess {
 
 static NativeWindowOperation nativeWindowGetInt32Ops[] = {
     GET_FORMAT,
-    GET_USAGE,
     GET_STRIDE,
     GET_SWAP_INTERVAL,
     GET_TIMEOUT,
@@ -46,13 +45,20 @@ static NativeWindowOperation nativeWindowGetInt32Ops[] = {
 
 static NativeWindowOperation nativeWindowSetInt32Ops[] = {
     SET_FORMAT,
-    SET_USAGE,
     SET_STRIDE,
     SET_SWAP_INTERVAL,
     SET_TIMEOUT,
     SET_COLOR_GAMUT,
     SET_TRANSFORM,
     SET_SOURCE_TYPE
+};
+
+static NativeWindowOperation nativeWindowGetInt64Ops[] = {
+    GET_USAGE
+};
+
+static NativeWindowOperation nativeWindowSetInt64Ops[] = {
+    SET_USAGE
 };
 
 static int WriteInt32AttrToParcel(NativeWindowOperation op,
@@ -95,6 +101,46 @@ static int ReadInt32AttrFromParcel(NativeWindowOperation op,
   return 0;
 }
 
+static int WriteInt64AttrToParcel(NativeWindowOperation op,
+                                  void* window,
+                                  OHIPCParcel* data_parcel) {
+  int64_t val;
+  int ret =
+      OH_NativeWindow_NativeWindowHandleOpt((OHNativeWindow*)window, op, &val);
+  if (ret != 0) {
+    LOGE("Native window %{public}d error: %{public}d", op, ret);
+    return OH_IPC_PARCEL_WRITE_ERROR;
+  }
+  ret = OH_IPCParcel_WriteInt64(data_parcel, val);
+  if (ret != OH_IPC_SUCCESS) {
+    LOGE("Native window write %{public}d into parcel error: %{public}d", op,
+         ret);
+    return ret;
+  }
+
+  return 0;
+}
+
+static int ReadInt64AttrFromParcel(NativeWindowOperation op,
+                                   void* window,
+                                   const OHIPCParcel* data_parcel) {
+  int64_t val;
+  int ret = OH_IPCParcel_ReadInt64(data_parcel, &val);
+  if (ret != OH_IPC_SUCCESS) {
+    LOGE("Native window read %{public}d from parcel error: %{public}d", op,
+         ret);
+    return OH_IPC_PARCEL_READ_ERROR;
+  }
+
+  ret = OH_NativeWindow_NativeWindowHandleOpt((OHNativeWindow*)window, op, val);
+  if (ret != 0) {
+    LOGE("Native window %{public}d error: %{public}d", op, ret);
+    return ret;
+  }
+
+  return 0;
+}
+
 int NativeWindowAttrToParcel(void* window, OHIPCParcel* data_parcel) {
   int32_t height;
   int32_t width;
@@ -118,6 +164,11 @@ int NativeWindowAttrToParcel(void* window, OHIPCParcel* data_parcel) {
 
   for (NativeWindowOperation op : nativeWindowGetInt32Ops) {
     if (WriteInt32AttrToParcel(op, window, data_parcel) != 0) {
+      return OH_IPC_PARCEL_WRITE_ERROR;
+    }
+  }
+  for (NativeWindowOperation op : nativeWindowGetInt64Ops) {
+    if (WriteInt64AttrToParcel(op, window, data_parcel) != 0) {
       return OH_IPC_PARCEL_WRITE_ERROR;
     }
   }
@@ -164,6 +215,11 @@ int NativeWindowAttrFromParcel(const OHIPCParcel* data_parcel, void* window) {
 
   for (NativeWindowOperation op : nativeWindowSetInt32Ops) {
     if (ReadInt32AttrFromParcel(op, window, data_parcel) != 0) {
+      return OH_IPC_PARCEL_READ_ERROR;
+    }
+  }
+  for (NativeWindowOperation op : nativeWindowSetInt64Ops) {
+    if (ReadInt64AttrFromParcel(op, window, data_parcel) != 0) {
       return OH_IPC_PARCEL_READ_ERROR;
     }
   }

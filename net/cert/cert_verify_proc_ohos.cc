@@ -795,8 +795,6 @@ CertVerifyProcOHOS::CertVerifyProcOHOS(
     bool enable_cache)
     : CertVerifyProc(std::move(crl_set)),
       cert_net_fetcher_(std::move(cert_net_fetcher)) {
-  if (!std::move(cert_net_fetcher)) {
-  }
   inner_ = std::make_unique<VerifyProcOHOSInner>(enable_cache);
 }
 

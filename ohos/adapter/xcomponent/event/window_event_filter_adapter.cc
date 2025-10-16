@@ -37,79 +37,60 @@
 #include "ohos/adapter/xcomponent/xcomponent_manager.h"
 
 namespace ohos::adapter::window {
-common::SharedLibrary WindowEventFilterAdapter::window_manager_lib("native_window_manager");
-GetMouseEventActionFunc* WindowEventFilterAdapter::get_mouse_event_action_func = nullptr;
-GetMouseEventDisplayXFunc* WindowEventFilterAdapter::get_mouse_event_display_x_func = nullptr;
-GetMouseEventDisplayYFunc* WindowEventFilterAdapter::get_mouse_event_display_y_func = nullptr;
-GetMouseEventButtonFunc* WindowEventFilterAdapter::get_mouse_event_button_func = nullptr;
-GetMouseEventActionTimeFunc* WindowEventFilterAdapter::get_mouse_event_action_time_func = nullptr;
-GetMouseEventWindowIdFunc* WindowEventFilterAdapter::get_mouse_event_window_id_func = nullptr;
-GetMouseEventDisplayIdFunc* WindowEventFilterAdapter::get_mouse_event_display_id_func = nullptr;
 
 WindowEventFilterAdapter& WindowEventFilterAdapter::GetInstance() {
   static WindowEventFilterAdapter instance;
   return instance;
 }
-WindowEventFilterAdapter::WindowEventFilterAdapter(): tab_dragging_widget_id_(-1) {
-  if (!can_filter_window_mouse_event_ && window_manager_lib.IsLoaded() &&
+WindowEventFilterAdapter::WindowEventFilterAdapter()
+    : tab_dragging_widget_id_(-1),
+      window_manager_lib_("native_window_manager") {
+  if (!can_filter_window_mouse_event_ &&
       device_info::DeviceInfo::SdkApi() >= device_info::SDK_VERSION_15) {
-    InitMouseEventFunction();
-  }
-}
-
-void WindowEventFilterAdapter::InitMouseEventFunction() {
-    get_mouse_event_action_func =
-        window_manager_lib.GetFunction<GetMouseEventActionFunc>("OH_Input_GetMouseEventAction");
-    if (!get_mouse_event_action_func) {
-      LOGW("WindowEventFilterAdapter::WindowEventFilterAdapter get_mouse_event_action_func fail");
+    if (!window_manager_lib_.IsLoaded()) {
+      LOGE("[OhosTabDrag] native_window_manager library load fail");
       return;
     }
-    get_mouse_event_display_x_func =
-        window_manager_lib.GetFunction<GetMouseEventDisplayXFunc>("OH_Input_GetMouseEventDisplayX");
-    if (!get_mouse_event_display_x_func) {
-      LOGW("WindowEventFilterAdapter::WindowEventFilterAdapter get_mouse_event_display_x_func fail");
-      return;
-    }
-    get_mouse_event_display_y_func =
-        window_manager_lib.GetFunction<GetMouseEventDisplayYFunc>("OH_Input_GetMouseEventDisplayY");
-    if (!get_mouse_event_display_y_func) {
-      LOGW("WindowEventFilterAdapter::WindowEventFilterAdapter get_mouse_event_display_y_func fail");
-      return;
-    }
-    get_mouse_event_button_func =
-        window_manager_lib.GetFunction<GetMouseEventButtonFunc>("OH_Input_GetMouseEventButton");
-    if (!get_mouse_event_button_func) {
-      LOGW("WindowEventFilterAdapter::WindowEventFilterAdapter get_mouse_event_button_func fail");
-      return;
-    }
-    get_mouse_event_action_time_func =
-        window_manager_lib.GetFunction<GetMouseEventActionTimeFunc>("OH_Input_GetMouseEventActionTime");
-    if (!get_mouse_event_action_time_func) {
-      LOGW("WindowEventFilterAdapter::WindowEventFilterAdapter get_mouse_event_action_time_func fail");
-      return;
-    }
-    get_mouse_event_window_id_func =
-        window_manager_lib.GetFunction<GetMouseEventWindowIdFunc>("OH_Input_GetMouseEventWindowId");
-    if (!get_mouse_event_window_id_func) {
-      LOGW("WindowEventFilterAdapter::WindowEventFilterAdapter get_mouse_event_window_id_func fail");
-      return;
-    }
-    get_mouse_event_display_id_func =
-        window_manager_lib.GetFunction<GetMouseEventDisplayIdFunc>("OH_Input_GetMouseEventDisplayId");
-    if (!get_mouse_event_display_id_func) {
-      LOGW("WindowEventFilter::WindowEventFilter get_mouse_event_display_id_func fail");
+    if (!LoadAllEventFunctions()) {
+      LOGE("[OhosTabDrag] LoadAllEventFunctions fail!");
       return;
     }
     can_filter_window_mouse_event_ = true;
+  }
+}
+
+bool WindowEventFilterAdapter::LoadAllEventFunctions() {
+  return window_manager_lib_.LoadFunction(&get_mouse_event_action_func_,
+                                          "OH_Input_GetMouseEventAction") &&
+         window_manager_lib_.LoadFunction(&get_mouse_event_display_x_func_,
+                                          "OH_Input_GetMouseEventDisplayX") &&
+         window_manager_lib_.LoadFunction(&get_mouse_event_display_y_func_,
+                                          "OH_Input_GetMouseEventDisplayY") &&
+         window_manager_lib_.LoadFunction(&get_mouse_event_button_func_,
+                                          "OH_Input_GetMouseEventButton") &&
+         window_manager_lib_.LoadFunction(&get_mouse_event_action_time_func_,
+                                          "OH_Input_GetMouseEventActionTime") &&
+         window_manager_lib_.LoadFunction(&get_mouse_event_window_id_func_,
+                                          "OH_Input_GetMouseEventWindowId") &&
+         window_manager_lib_.LoadFunction(&get_mouse_event_display_id_func_,
+                                          "OH_Input_GetMouseEventDisplayId") &&
+         window_manager_lib_.LoadFunction(
+             &register_mouse_event_filter_func_,
+             "OH_NativeWindowManager_RegisterMouseEventFilter") &&
+         window_manager_lib_.LoadFunction(
+             &un_register_mouse_event_filter_func_,
+             "OH_NativeWindowManager_UnregisterMouseEventFilter");
 }
 
 WindowEventFilterAdapter::~WindowEventFilterAdapter() {
-  WindowEventFilterAdapter::get_mouse_event_action_func = nullptr;
-  WindowEventFilterAdapter::get_mouse_event_display_x_func = nullptr;
-  WindowEventFilterAdapter::get_mouse_event_display_y_func = nullptr;
-  WindowEventFilterAdapter::get_mouse_event_button_func = nullptr;
-  WindowEventFilterAdapter::get_mouse_event_action_time_func = nullptr;
-  WindowEventFilterAdapter::get_mouse_event_window_id_func = nullptr;
+  get_mouse_event_action_func_ = nullptr;
+  get_mouse_event_display_x_func_ = nullptr;
+  get_mouse_event_display_y_func_ = nullptr;
+  get_mouse_event_button_func_ = nullptr;
+  get_mouse_event_action_time_func_ = nullptr;
+  get_mouse_event_window_id_func_ = nullptr;
+  register_mouse_event_filter_func_ = nullptr;
+  un_register_mouse_event_filter_func_ = nullptr;
 }
 
 void WindowEventFilterAdapter::SendMouseEventForTabDrag(
@@ -194,7 +175,7 @@ static bool FilterMouseEvent(Input_MouseEvent* mouse_event) {
   // sent to the UI thread of Chromium.
   if (window_event_filter.IsTabDragging()) {
     int32_t origin_window_id =
-        WindowEventFilterAdapter::GetWindowMouseEventWindowId(mouse_event);
+        window_event_filter.GetWindowMouseEventWindowId(mouse_event);
     int32_t widget_id =
         window_event_filter.GetTargetWindowIdAfterShiftEvent(
             origin_window_id);
@@ -209,128 +190,139 @@ static bool FilterMouseEvent(Input_MouseEvent* mouse_event) {
 
 __attribute__((no_sanitize("cfi", "cfi-icall")))
 void RegisterWindowEventFilter(int32_t origin_window_id) {
-  if (!WindowEventFilterAdapter::window_manager_lib.IsLoaded()) {
+  WindowEventFilterAdapter& window_event_filter =
+      WindowEventFilterAdapter::GetInstance();
+  if (!window_event_filter.CanFilterWindowMouseEvent()) {
     LOGE(
         "[OhosTabDrag]WindowEventFilterAdapter::RegisterWindowEventFilter"
         " window_manager_lib is not loaded.");
     return;
   }
-  auto register_mouse_event_filter_func =
-      WindowEventFilterAdapter::window_manager_lib
-          .GetFunction<RegisterMouseEventFilterFunc>(
-              "OH_NativeWindowManager_RegisterMouseEventFilter");
-  if (!register_mouse_event_filter_func) {
-    LOGW(
-        "[OhosTabDrag]WindowEventFilterAdapter::RegisterWindowEventFilter get "
-        "register_mouse_event_filter_func fail");
-    return;
-  }
-  auto result =
-      register_mouse_event_filter_func(origin_window_id, FilterMouseEvent);
-  LOGI(
-      "[OhosTabDrag]WindowEventFilterAdapter::RegisterWindowEventFilter, "
-      "window_id:%{public}d, "
-      "result:%{public}d",
-      origin_window_id, result);
+  window_event_filter.RegisterWindowEventFilterForWindow(origin_window_id);
 }
 
 __attribute__((no_sanitize("cfi", "cfi-icall")))
 void ClearWindowEventFilter(int32_t origin_window_id) {
-  if (!WindowEventFilterAdapter::window_manager_lib.IsLoaded()) {
+  WindowEventFilterAdapter& window_event_filter =
+      WindowEventFilterAdapter::GetInstance();
+  if (!window_event_filter.CanFilterWindowMouseEvent()) {
     LOGE(
         "[OhosTabDrag]WindowEventFilterAdapter::ClearWindowEventFilter "
         " window_manager_lib is not loaded.");
     return;
   }
-  auto un_register_mouse_event_filter_func =
-      WindowEventFilterAdapter::window_manager_lib
-          .GetFunction<UnRegisterMouseEventFilterFunc>(
-              "OH_NativeWindowManager_UnregisterMouseEventFilter");
-  if (!un_register_mouse_event_filter_func) {
-    LOGW(
-        "[OhosTabDrag]WindowEventFilterAdapter::ClearWindowEventFilter get "
-        "un_register_mouse_event_filter_func fail");
-    return;
-  }
-  auto result = un_register_mouse_event_filter_func(origin_window_id);
-  LOGI(
-      "[OhosTabDrag]WindowEventFilterAdapter::ClearWindowEventFilter, "
-      "window_id:%{public}d, "
-      "result:%{public}d",
-      origin_window_id, result);
+  window_event_filter.UnRegisterWindowEventFilterForWindow(origin_window_id);
 }
 
 __attribute__((no_sanitize("cfi", "cfi-icall")))
 int32_t WindowEventFilterAdapter::GetWindowMouseEventAction(
     Input_MouseEvent* window_mouse_event) {
-  if (get_mouse_event_action_func == nullptr) {
+  if (get_mouse_event_action_func_ == nullptr) {
     LOGE(
         "[OhosTabDrag]WindowEventFilterAdapter::GetWindowMouseEventAction fail");
     return 0;
   }
-  return get_mouse_event_action_func(window_mouse_event);
+  return get_mouse_event_action_func_(window_mouse_event);
 }
 
 __attribute__((no_sanitize("cfi", "cfi-icall")))
 int32_t WindowEventFilterAdapter::GetWindowMouseEventDisplayX(
     Input_MouseEvent* window_mouse_event) {
-  if (get_mouse_event_display_x_func == nullptr) {
+  if (get_mouse_event_display_x_func_ == nullptr) {
     LOGE(
         "[OhosTabDrag]WindowEventFilterAdapter::GetWindowMouseEventDisplayX "
         "fail");
     return 0;
   }
-  return get_mouse_event_display_x_func(window_mouse_event);
+  return get_mouse_event_display_x_func_(window_mouse_event);
 }
 
 __attribute__((no_sanitize("cfi", "cfi-icall")))
 int32_t WindowEventFilterAdapter::GetWindowMouseEventDisplayY(
     Input_MouseEvent* window_mouse_event) {
-  if (get_mouse_event_display_y_func == nullptr) {
+  if (get_mouse_event_display_y_func_ == nullptr) {
     LOGE(
         "[OhosTabDrag]WindowEventFilterAdapter::GetWindowMouseEventDisplayY fail");
     return 0;
   }
-  return get_mouse_event_display_y_func(window_mouse_event);
+  return get_mouse_event_display_y_func_(window_mouse_event);
 }
 
 __attribute__((no_sanitize("cfi", "cfi-icall")))
 int32_t WindowEventFilterAdapter::GetWindowMouseEventButton(
     Input_MouseEvent* window_mouse_event) {
-  if (get_mouse_event_button_func == nullptr) {
+  if (get_mouse_event_button_func_ == nullptr) {
     LOGE(
         "[OhosTabDrag]WindowEventFilterAdapter::GetWindowMouseEventButton fail");
     return 0;
   }
-  return get_mouse_event_button_func(window_mouse_event);
+  return get_mouse_event_button_func_(window_mouse_event);
 }
 
 __attribute__((no_sanitize("cfi", "cfi-icall")))
 int64_t WindowEventFilterAdapter::GetWindowMouseEventActionTime(
     Input_MouseEvent* window_mouse_event) {
-  if (get_mouse_event_action_time_func == nullptr) {
+  if (get_mouse_event_action_time_func_ == nullptr) {
     LOGE(
         "[OhosTabDrag]WindowEventFilterAdapter::GetWindowMouseEventActionTime fail");
     return 0;
   }
-  return get_mouse_event_action_time_func(window_mouse_event);
+  return get_mouse_event_action_time_func_(window_mouse_event);
 }
 
 __attribute__((no_sanitize("cfi", "cfi-icall")))
 int32_t WindowEventFilterAdapter::GetWindowMouseEventWindowId(
     Input_MouseEvent* window_mouse_event) {
-  if (get_mouse_event_window_id_func == nullptr) {
+  if (get_mouse_event_window_id_func_ == nullptr) {
     LOGE(
         "[OhosTabDrag]WindowEventFilterAdapter::GetWindowMouseEventWindowId fail");
     return 0;
   }
-  return get_mouse_event_window_id_func(window_mouse_event);
+  return get_mouse_event_window_id_func_(window_mouse_event);
 }
 
 __attribute__((no_sanitize("cfi", "cfi-icall")))
 int32_t WindowEventFilterAdapter::GetWindowMouseEventDisplayId(
     Input_MouseEvent* window_mouse_event) {
-  return get_mouse_event_display_id_func(window_mouse_event);
+  if (get_mouse_event_display_id_func_ == nullptr) {
+    LOGE(
+        "[OhosTabDrag]WindowEventFilterAdapter::GetWindowMouseEventDisplayId fail");
+    return -1;
+  }
+  return get_mouse_event_display_id_func_(window_mouse_event);
+}
+
+__attribute__((no_sanitize("cfi", "cfi-icall")))
+void WindowEventFilterAdapter::RegisterWindowEventFilterForWindow(
+    int32_t origin_window_id) {
+  if (!register_mouse_event_filter_func_) {
+    LOGW(
+        "[OhosTabDrag]WindowEventFilterAdapter::RegisterWindowEventFilterForWindow "
+        "register_mouse_event_filter_func_ is null");
+    return;
+  }
+  auto result =
+      register_mouse_event_filter_func_(origin_window_id, FilterMouseEvent);
+  LOGI(
+      "[OhosTabDrag]WindowEventFilterAdapter::RegisterWindowEventFilterForWindow, "
+      "window_id:%{public}d, result:%{public}d",
+      origin_window_id, result);
+}
+
+__attribute__((no_sanitize("cfi", "cfi-icall")))
+void WindowEventFilterAdapter::UnRegisterWindowEventFilterForWindow(
+    int32_t origin_window_id) {
+  if (!un_register_mouse_event_filter_func_) {
+    LOGW(
+        "[OhosTabDrag]WindowEventFilterAdapter::UnRegisterWindowEventFilterForWindow "
+        "un_register_mouse_event_filter_func_ is null");
+    return;
+  }
+  auto result = un_register_mouse_event_filter_func_(origin_window_id);
+  LOGI(
+      "[OhosTabDrag]WindowEventFilterAdapter::UnRegisterWindowEventFilterForWindow, "
+      "window_id:%{public}d, result:%{public}d",
+      origin_window_id, result);
 }
 
 JSBIND_GLOBAL() {

@@ -90,6 +90,7 @@ component("gpu") {
   ]
   deps = [
     "//third_party/libyuv",
+    "//third_party/wiseplay/cdm:buildflags", 
     "//ui/base",
     "//ui/display/types",
     "//ui/gl",

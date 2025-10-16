@@ -72,10 +72,11 @@ std::unique_ptr<SharedImageVideoOhos> SharedImageVideoOhos::Create(
     GrSurfaceOrigin surface_origin,
     SkAlphaType alpha_type,
     scoped_refptr<StreamTextureSharedImageInterface> stream_texture_sii,
-    scoped_refptr<SharedContextState> context_state) {
+    scoped_refptr<SharedContextState> context_state,
+    scoped_refptr<RefCountedLock> drdc_lock) {
   return std::make_unique<SharedImageVideoOhosNativeImage>(
       mailbox, size, color_space, surface_origin, alpha_type,
-      std::move(stream_texture_sii), std::move(context_state));
+      std::move(stream_texture_sii), std::move(context_state), drdc_lock);
 }
 
 std::unique_ptr<AbstractTextureOHOS>

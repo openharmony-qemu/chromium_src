@@ -30,11 +30,9 @@
 #include "ohos/adapter/common/shared_library.h"
 
 #include <dlfcn.h>
-#include <hilog/log.h>
 
 namespace ohos::adapter::common {
 
-const unsigned int LOG_PRINT_DOMAIN = 0xFF00;
 
 SharedLibrary::NativeHandleType SharedLibrary::open(const char* path) noexcept {
   return dlopen(path, RTLD_NOW | RTLD_GLOBAL);
@@ -82,8 +80,7 @@ SharedLibrary::SharedLibrary(const char* dir_path, const char* lib_name) {
   }
   handle_ = open((final_path + final_name).c_str());
   if (handle_ == nullptr) {
-    OH_LOG_Print(LOG_APP, LOG_ERROR, LOG_PRINT_DOMAIN, "SharedLibrary",
-                 "error= %{public}s", GetErrorInfo().c_str());
+    LOGE("SharedLibrary, error= %{public}s", GetErrorInfo().c_str());
   }
 }
 

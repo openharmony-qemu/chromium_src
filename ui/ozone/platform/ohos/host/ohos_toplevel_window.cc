@@ -80,11 +80,8 @@ void OhosToplevelWindow::Close() {
 
   CloseInternal();
 
+  gfx::AcceleratedWidget widget_id = GetWidget();
   OhosWindow::Close();
-
-  ohos::adapter::BrowserAdapter::GetInstance().SetBrowserCloseResponse(
-      GetWidget(),
-      ohos::adapter::BrowserCloseResponse::kClosed);
 }
 
 bool OhosToplevelWindow::IsVisible() const {
@@ -115,32 +112,12 @@ void OhosToplevelWindow::Maximize() {
   SetWindowState(PlatformWindowState::kMaximized);
 }
 
-void OhosToplevelWindow::UnMaximize() {
-  SetWindowState(PlatformWindowState::kNormal);
-}
-
 void OhosToplevelWindow::Minimize() {
   SetWindowState(PlatformWindowState::kMinimized);
 }
 
 void OhosToplevelWindow::Restore() {
-  switch (restore_state_) {
-    case PlatformWindowState::kFullScreen:
-      SetWindowState(PlatformWindowState::kFullScreen, false);
-      break;
-    case PlatformWindowState::kMaximized:
-      SetWindowState(PlatformWindowState::kMaximized, false);
-      break;
-    case PlatformWindowState::kMinimized:
-      Minimize();
-      break;
-    case PlatformWindowState::kNormal:
-      SetWindowState(PlatformWindowState::kNormal, IsMaximized());
-      break;
-    default:
-      LOG(ERROR) << "Restore not handle status:"
-                 << static_cast<int32_t>(previous_state_);
-  }
+  SetWindowState(PlatformWindowState::kNormal);
 }
 
 PlatformWindowState OhosToplevelWindow::GetPlatformWindowState() const {
@@ -207,22 +184,15 @@ void OhosToplevelWindow::SetBoundsInPixels(const gfx::Rect& bounds) {
 
   previous_bounds_in_pixels_ = bounds_in_pixels_;
   bounds_in_pixels_ = new_bounds_in_pixels;
-  SetWindowState(PlatformWindowState::kNormal, false);
 
   WindowRect rect{bounds_in_pixels_.x(),
                   bounds_in_pixels_.y(),
                   bounds_in_pixels_.width(),
                   bounds_in_pixels_.height()};
-  auto callback = [this]() {
-    XComponentManager::GetInstance()->RequestLayout(GetWindowUniqueId());
-  };
   if (use_floating_window_) {
-    SystemFloatingWindowAdapter::GetInstance().SetBounds(GetWidget(),
-                                                         rect);
+    SystemFloatingWindowAdapter::GetInstance().SetBounds(GetWidget(), rect);
   } else {
-    AppWindowAdapter::GetInstance().SetBounds(GetWidget(),
-                                              rect,
-                                              callback);
+    AppWindowAdapter::GetInstance().SetBounds(GetWidget(), rect);
   }
   Applied(previous_bounds_in_pixels_, bounds_in_pixels_);
 }
@@ -233,8 +203,9 @@ void OhosToplevelWindow::OnInitialize(
   activatable_ = properties.activatable;
   use_floating_window_ = properties.using_system_floating_window;
   use_dark_mode_ = properties.use_dark_mode;
-  is_stateless_ = properties.is_stateless;
   caption_button_visible_ = properties.caption_button_visible;
+  ability_type_ = properties.ability_type;
+  app_id_ = properties.app_id;
 }
 
 bool OhosToplevelWindow::OnCreateWindow(WindowInitParameter param) {
@@ -314,13 +285,6 @@ void OhosToplevelWindow::SetWindowState(PlatformWindowState new_state,
     previous_enter_minimize_state_ = state_;
   }
 
-  if (new_state != PlatformWindowState::kMinimized &&
-      state_ != PlatformWindowState::kMinimized &&
-      !is_split_screen_) {
-    // We should not change restore state while entering or leaving minimize and
-    // split screen state.
-    restore_state_ = state_;
-  }
   previous_state_ = state_;
   state_ = new_state;
 
@@ -400,8 +364,9 @@ WindowInitParameter OhosToplevelWindow::BuildWindowInitParameter() {
   parameter.use_floating_window = use_floating_window_;
   parameter.window_id = GetWindowUniqueId();
   parameter.use_dark_mode = use_dark_mode_;
-  parameter.is_stateless = is_stateless_;
   parameter.caption_button_visible = caption_button_visible_;
+  parameter.ability_type = ability_type_;
+  parameter.app_id = app_id_;
   return parameter;
 }
 
@@ -462,19 +427,14 @@ void OhosToplevelWindow::OnBlurEvent() {
   }
 
   SetFocus(false);
-  auto* event_source = reinterpret_cast<OhosEventSource*>(
-      PlatformEventSource::GetInstance());
-  if (event_source) {
-    event_source->UpdateKeyFlags();
-  }
   Deactivate();
 }
 
 void OhosToplevelWindow::OnWindowEvent(std::shared_ptr<XCEvent> event) {
   auto window_event = static_pointer_cast<WindowEvent>(event);
-  auto window_event_type = window_event->window_event_type_;
+  auto window_type = window_event->window_event_type_;
 
-  switch (window_event_type) {
+  switch (window_type) {
     case WindowEventType::WINDOW_SHOWN:
       if (state_ == PlatformWindowState::kMinimized) {
         SetWindowState(previous_enter_minimize_state_, false);
@@ -492,6 +452,7 @@ void OhosToplevelWindow::OnWindowEvent(std::shared_ptr<XCEvent> event) {
         ui::PlatformWindowOcclusionState::kVisible);
       break;
     case WindowEventType::WINDOW_CLOSE:
+      window_manager()->PrepareCloseWindow(GetWidget(), this);
       delegate()->OnCloseRequest();
       break;
     default:
@@ -538,6 +499,9 @@ void OhosToplevelWindow::OnWindowRectChangeEvent(std::shared_ptr<XCEvent> event)
       if (reason == RectChangeReason::RECOVER) {
         handle = true;
         new_state = PlatformWindowState::kNormal;
+      } else if (reason == RectChangeReason::MAXIMIZE) {
+        // Double-click the title bar to enter the branch.
+        restored_bounds_in_pixels_ = previous_bounds_in_pixels_;
       }
       break;
     case PlatformWindowState::kFullScreen: {
@@ -599,7 +563,7 @@ void OhosToplevelWindow::DispatchHostWindowDragMovement(
       pointer_window_location_in_pixels_.set_y(
           static_cast<int>(relative_y * restored_bounds_in_pixels_.height()));
       bounds.set_size(restored_bounds_in_pixels_.size());
-      UnMaximize();
+      Restore();
     } else if (pointer_location_in_px.x() != -1 &&
               pointer_location_in_px.y() != -1) {
       // Save the mouse position within the window;

@@ -38,9 +38,23 @@
 #include "media/gpu/ohos/direct_shared_image_video_provider.h"
 #include "media/gpu/ohos/ohos_video_decoder.h"
 #include "media/gpu/ohos/video_frame_factory_impl.h"
+
+#if BUILDFLAG(ENABLE_WISEPLAY)
+#include "media/filters/ohos/ohos_audio_decoder.h"
+#include "media/base/ohos/ohos_cdm_factory.h"
+#include "media/mojo/services/ohos_mojo_util.h"
+#endif
+
+#include "media/mojo/mojom/media_drm_storage.mojom.h"
 #include "media/mojo/mojom/provision_fetcher.mojom.h"
 #include "media/mojo/services/mojo_media_drm_storage.h"
 #include "media/mojo/services/mojo_provision_fetcher.h"
+
+#if BUILDFLAG(ENABLE_WISEPLAY)
+using media::ohos_mojo_util::CreateMediaDrmStorage;
+using media::ohos_mojo_util::CreateProvisionFetcher;
+#endif
+
 namespace media {
 
 class GpuMojoMediaClientOHOS final : public GpuMojoMediaClient {
@@ -51,7 +65,7 @@ class GpuMojoMediaClientOHOS final : public GpuMojoMediaClient {
 
  protected:
   std::unique_ptr<VideoDecoder> CreatePlatformVideoDecoder(
-    VideoDecoderTraits& traits) {
+    VideoDecoderTraits& traits) final {
   LOG(INFO) << "CreatePlatformVideoDecoder";
   scoped_refptr<gpu::RefCountedLock> ref_counted_lock;
   ref_counted_lock = base::MakeRefCounted<gpu::RefCountedLock>();
@@ -85,6 +99,33 @@ class GpuMojoMediaClientOHOS final : public GpuMojoMediaClient {
   VideoDecoderType GetPlatformDecoderImplementationType() final {
     return VideoDecoderType::kOHOS;
   }
+
+  // Not support platform audio decoder in ohos now.
+std::unique_ptr<AudioDecoder> CreatePlatformAudioDecoder(
+    scoped_refptr<base::SequencedTaskRunner> task_runner,
+    std::unique_ptr<MediaLog> media_log) final {
+  #if BUILDFLAG(ENABLE_WISEPLAY)
+    return std::make_unique<OhosAudioDecoder>(std::move(task_runner));
+  #else
+    return nullptr;
+  #endif
+}
+
+std::unique_ptr<AudioEncoder> CreatePlatformAudioEncoder(
+    scoped_refptr<base::SequencedTaskRunner> task_runner) final {
+  return nullptr;
+}
+
+std::unique_ptr<CdmFactory> CreatePlatformCdmFactory(
+    mojom::FrameInterfaceFactory* frame_interfaces) final {
+#if BUILDFLAG(ENABLE_WISEPLAY)
+  return std::make_unique<OhosCdmFactory>(
+      base::BindRepeating(&CreateProvisionFetcher, frame_interfaces),
+      base::BindRepeating(&CreateMediaDrmStorage, frame_interfaces));
+#else
+  return nullptr;
+#endif  // BUILDFLAG(ENABLE_WISEPLAY)
+}
 };
 
 std::unique_ptr<GpuMojoMediaClient> CreateGpuMediaService(

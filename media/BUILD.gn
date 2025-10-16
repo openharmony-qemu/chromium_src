@@ -77,6 +77,13 @@ buildflag_header("media_buildflags") {
       "ENABLE_CDM_STORAGE_ID=$enable_cdm_storage_id",
     ]
   }
+
+  if (is_ohos) {
+    flags += [ 
+      "OHOS_ENABLE_MEDIA_ROUTER=$ohos_enable_media_router" ,
+      "ENABLE_OHOS_MEDIA_DRM_STORAGE=true",
+    ]
+  }
 }
 
 if (proprietary_codecs && media_use_ffmpeg) {

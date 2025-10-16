@@ -15,6 +15,7 @@
 #include "base/ranges/algorithm.h"
 #include "base/task/single_thread_task_runner.h"
 #include "build/build_config.h"
+#include "chrome/app/chrome_command_ids.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "ui/aura/client/aura_constants.h"
 #include "ui/aura/client/drag_drop_client.h"
@@ -176,13 +177,6 @@ ui::PlatformWindowInitProperties ConvertWidgetInitParamsToInitProperties(
 
 #if BUILDFLAG(IS_FUCHSIA)
   properties.enable_keyboard = true;
-#endif
-
-#if BUILDFLAG(IS_OHOS)
-  properties.using_system_floating_window = params.using_system_floating_window;
-  properties.use_dark_mode = params.use_dark_mode;
-  properties.is_stateless = params.is_stateless;
-  properties.caption_button_visible = params.caption_button_visible;
 #endif
 
   return properties;
@@ -957,13 +951,7 @@ void DesktopWindowTreeHostPlatform::OnWindowStateChanged(
     if (is_minimized) {
       SetVisible(false);
     } else {
-#if BUILDFLAG(IS_OHOS)
-      if (GetNativeWindowOcclusionState() == aura::Window::OcclusionState::VISIBLE) {
-        SetVisible(true);
-      }
-#else
       SetVisible(true);
-#endif
     }
   }
 
@@ -1013,6 +1001,14 @@ void DesktopWindowTreeHostPlatform::OnActivationChanged(bool active) {
 #if BUILDFLAG(IS_OHOS)
 void DesktopWindowTreeHostPlatform::SetSurfaceId(uint64_t surface_id) {
   aura::WindowTreeHostPlatform::SetSurfaceId(surface_id);
+}
+
+void DesktopWindowTreeHostPlatform::OnFullscreenSwitched(bool is_enter_fullscreen) {
+  if (GetWidget()->IsFullscreen() == is_enter_fullscreen) {
+    return;
+  }
+  GetWidget()->ExecuteCommand(IDC_FULLSCREEN);
+  OnFullscreenStateChanged();
 }
 #endif
 
@@ -1134,12 +1130,6 @@ void DesktopWindowTreeHostPlatform::SetVisible(bool visible) {
 
   native_widget_delegate_->OnNativeWidgetVisibilityChanged(visible);
 }
-
-#if BUILDFLAG(IS_OHOS)
-void DesktopWindowTreeHostPlatform::SetVisibleOHOS(bool visible) {
-  SetVisible(visible);
-}
-#endif
 
 void DesktopWindowTreeHostPlatform::AddAdditionalInitProperties(
     const Widget::InitParams& params,

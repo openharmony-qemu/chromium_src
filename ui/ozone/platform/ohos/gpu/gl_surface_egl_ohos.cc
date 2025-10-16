@@ -29,6 +29,8 @@
 
 #include "ui/ozone/platform/ohos/gpu/gl_surface_egl_ohos.h"
 
+#include <native_window/external_window.h>
+
 #include "base/logging.h"
 #include "base/memory/raw_ptr.h"
 #include "base/trace_event/trace_event.h"
@@ -37,7 +39,6 @@
 #include "ui/gl/gl_display.h"
 #include "ui/gl/gl_surface.h"
 #include "ui/gl/gl_surface_egl.h"
-#include "native_window/external_window.h"
 
 namespace gl {
 

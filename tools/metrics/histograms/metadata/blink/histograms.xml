@@ -3028,6 +3028,17 @@ chromium-metrics-reviews@google.com.
   </summary>
 </histogram>
 
+<histogram name="Blink.LinkHeader.LoadLinksFromHeaderMode"
+    enum="LoadLinksFromHeaderMode" expires_after="2025-08-09">
+  <owner>tnak@chromium.org</owner>
+  <owner>chrome-loading@google.com</owner>
+  <summary>
+    Counts usage of Link header in HTTP responces to subresource fetches. This
+    histogram are recorded when a HTTP responce with Link headers is received.
+    For details, see PreloadHelper::LoadLinksFromHeader().
+  </summary>
+</histogram>
+
 <histogram name="Blink.LCPP.DeferUnusedPreload.DeferredResourceCount"
     units="count" expires_after="2025-04-13">
   <owner>sisidovski@chromium.org</owner>

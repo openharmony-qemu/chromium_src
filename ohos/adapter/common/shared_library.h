@@ -32,6 +32,7 @@
 
 #include <memory>
 #include <string>
+#include "ohos/adapter/common/logging.h"
 
 namespace ohos::adapter::common {
 
@@ -93,6 +94,25 @@ class SharedLibrary {
   T& GetVariable(const std::string& symbol_name) const {
     return GetVariable<T>(symbol_name.c_str());
   }
+
+  template <typename T>
+  bool LoadFunction(T** func,
+                    const std::string& func_name) {
+    if (func == nullptr) {
+      LOGE("SharedLibrary, Invalid input param, func is nullptr");
+      return false;
+    }
+  
+    T* temp_func = GetFunction<T>(func_name);
+    if (temp_func == nullptr) {
+      LOGE("SharedLibrary, Failed to get function pointer for %{public}s",
+           func_name.c_str());
+      return false;
+    }
+    *func = temp_func;
+    return true;
+  }
+
 
   bool HasSymbol(const char* symbol_name) const noexcept;
 

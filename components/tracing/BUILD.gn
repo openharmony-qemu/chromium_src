@@ -52,6 +52,13 @@ component("startup_tracing") {
     ]
   }
 
+  if (is_ohos) {
+    sources += [
+      "common/hitrace_export_ohos.cc",
+      "common/hitrace_export_ohos.h",
+    ]
+  }
+
   defines = [ "TRACING_IMPLEMENTATION" ]
 
   deps = [

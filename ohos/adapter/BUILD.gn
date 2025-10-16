@@ -49,6 +49,7 @@ if (is_ohos) {
       "//ohos/adapter/browser:browser_adapter",
       "//ohos/adapter/cert_manager:cert_manager",
       "//ohos/adapter/context_path:context_path_adapter",
+      "//ohos/adapter/context:context_adapter",
       "//ohos/adapter/cursor:cursor",
       "//ohos/adapter/default_application:default_application",
       "//ohos/adapter/dev_config:dev_config",
@@ -81,7 +82,9 @@ if (is_ohos) {
       "//ohos/adapter/screenlock_monitor:screenlock_monitor",
       "//ohos/adapter/shape_detection:shape_detection_adapter",
       "//ohos/adapter/speech:speech_adapter",
+      "//ohos/adapter/task_runner:task_runner",
       "//ohos/adapter/tracing:tracing",
+      "//ohos/adapter/web_app:web_app",
       "//ohos/adapter/web_entry:web_entry",
       "//ohos/adapter/xcomponent:xcomponent",
     ]

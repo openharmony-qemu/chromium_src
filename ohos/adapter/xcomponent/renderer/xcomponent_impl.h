@@ -50,7 +50,6 @@ class XComponentImpl {
   std::string GetId() { return id_; }
   XComponentType GetType() { return type_; }
   void SetWidget(int32_t widget_id) { widget_id_ = widget_id; }
-  void SetInitialBounds(int32_t initial_width, int32_t initial_height);
   int32_t GetWidget() const { return widget_id_; }
   void RegisterInputEventCallBack(std::shared_ptr<InputEventCallBack> callback);
   void Initialize(OH_NativeXComponent* component,
@@ -85,7 +84,6 @@ class XComponentImpl {
   void OnSurfaceChanged();
   void OnSurfaceDestroyed();
 
-  void RequestLayout();
   void SendWindowMouseEventForTabDrag(Input_MouseEvent* window_mouse_event);
  private:
   OH_NativeXComponent* instance_ = nullptr;

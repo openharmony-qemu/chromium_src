@@ -41,7 +41,11 @@ namespace internal {
 namespace {
 
 constexpr EnvironmentParams kForegroundPoolEnvironmentParams{
-    "Foreground", base::ThreadType::kDefault};
+#if BUILDFLAG(IS_OHOS)
+    "Foreground", base::ThreadType::kDisplayCritical};
+#else
+     "Foreground", base::ThreadType::kDefault};
+#endif  // BUILDFLAG(IS_OHOS)
 
 constexpr EnvironmentParams kUtilityPoolEnvironmentParams{
     "Utility", base::ThreadType::kUtility};

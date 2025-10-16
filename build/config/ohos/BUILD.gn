@@ -115,7 +115,6 @@ config("compiler") {
   if (use_musl) {
     cflags += [ "--target=$abi_target" ]
     include_dirs = [
-      "$ohos_toolchain_root/include/c++/v1",
       "$ohos_sysroot/usr/include",
       "$ohos_sysroot/usr/include/$abi_target",
     ]
@@ -173,7 +172,7 @@ config("runtime_library") {
       libclang_rt_file = "$ohos_toolchain_root/lib/clang/current/lib/arm-linux-ohos/libclang_rt.builtins.a"
 
       if (is_asan) {
-        libasan_file = "$ohos_toolchain_root/lib/clang/current/lib/arm-linux-ohos/libclang_rt.asan.so"
+        libasan_file = "$ohos_toolchain_root/lib/clang/current/lib/arm-linux-ohos/libclang_rt.asan.a"
         libs += [ rebase_path(libasan_file) ]
       }
       if (using_sanitizer) {
@@ -201,7 +200,7 @@ config("runtime_library") {
       libclang_rt_file = "$ohos_toolchain_root/lib/clang/$llvm_version/lib/aarch64-linux-ohos/libclang_rt.builtins.a"
 
       if (is_asan) {
-        libasan_file = "$ohos_toolchain_root/lib/clang/$llvm_version/lib/aarch64-linux-ohos/libclang_rt.asan.so"
+        libasan_file = "$ohos_toolchain_root/lib/clang/$llvm_version/lib/aarch64-linux-ohos/libclang_rt.asan.a"
         libs += [ rebase_path(libasan_file) ]
       }
     }

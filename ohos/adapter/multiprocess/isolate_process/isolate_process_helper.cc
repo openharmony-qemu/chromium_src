@@ -42,7 +42,8 @@ static constexpr const char* kDefaultEntryPoint = "libadapter.so:IsolateMain";
 int32_t IsolateProcessHelper::StartChildProcess(
     const std::vector<std::string>& command,
     const std::vector<std::pair<int, int>>& fds,
-    const std::string& entry_point) {
+    const std::string& entry_point,
+    bool is_isolated_process) {
   TRACE_EVENT_0("IsolateProcessHelper::StartChildProcess");
 
   int32_t pid = -1;
@@ -53,9 +54,19 @@ int32_t IsolateProcessHelper::StartChildProcess(
   NativeChildProcess_Args args =
       NativeChildProcessArgsWrapper::Build(command_line, fds);
 
-  NativeChildProcess_Options options = {
-      .isolationMode = NCP_ISOLATION_MODE_NORMAL,
+  NativeChildProcess_Options options {
+    .isolationMode = NCP_ISOLATION_MODE_NORMAL
   };
+ 
+#if defined(SUPPORT_ISOLATED_MODE)
+  if (is_isolated_process) {
+    options.isolationMode = NCP_ISOLATION_MODE_ISOLATED;
+  }
+#else
+  if (is_isolated_process) {
+    LOGW("Isolation mode requested but not supported");
+  }
+#endif
 
   std::vector<std::string> fd_strs;
   auto entry_point_str = entry_point.empty() ? kDefaultEntryPoint : entry_point;

@@ -35,6 +35,7 @@
 #include <string>
 #include <vector>
 
+#include "base/logging.h"
 #include "base/debug/crash_logging.h"
 #include "base/functional/bind.h"
 #include "base/memory/ptr_util.h"
@@ -73,7 +74,9 @@ class CodecWrapperImpl : public base::RefCountedThreadSafe<CodecWrapperImpl> {
       bool* end_of_stream,
       std::unique_ptr<CodecOutputBuffer>* codec_buffer);
   bool ReleaseCodecOutputBuffer(int64_t id, bool render);
-
+#if BUILDFLAG(ENABLE_WISEPLAY)
+  bool SetDecryptionConfig(void *session, bool is_secure);
+#endif  // BUILDFLAG(ENABLE_WISEPLAY)
  private:
   enum class State {
     kError,
@@ -131,6 +134,11 @@ CodecOutputBuffer::~CodecOutputBuffer() {
 bool CodecOutputBuffer::ReleaseToSurface() {
   was_rendered_ = true;
   auto result = codec_->ReleaseCodecOutputBuffer(id_, true);
+#if BUILDFLAG(ENABLE_WISEPLAY)
+  if (render_cb_) {
+    std::move(render_cb_).Run();
+  }
+#endif  // BUILDFLAG(ENABLE_WISEPLAY)
   return result;
 }
 
@@ -233,9 +241,11 @@ CodecWrapperImpl::QueueStatus CodecWrapperImpl::QueueInputBuffer(
     return QueueStatus::kOk;
   }
   DecoderAdapterCode status;
-
+  const DecryptConfig* decrypt_config = buffer.decrypt_config();
   status = codec_->QueueInputBuffer(buffer.data(), buffer.size(),
-                                    buffer.timestamp().ToInternalValue());
+                                    buffer.timestamp().ToInternalValue(),
+                                    decrypt_config);
+
   switch (status) {
     case DecoderAdapterCode::DECODER_OK:
       state_ = State::kRunning;
@@ -245,6 +255,10 @@ CodecWrapperImpl::QueueStatus CodecWrapperImpl::QueueInputBuffer(
       return QueueStatus::kError;
     case DecoderAdapterCode::DECODER_RETRY:
       return QueueStatus::kTryAgainLater;
+    case DecoderAdapterCode::DECODER_DECRYPT_FAILED_NO_KEY:
+      LOG(WARNING) << __func__
+                   << "[WiseplayDRM] DecoderAdapterCode::DECODER_DECRYPT_FAILED_NO_KEY";
+      return QueueStatus::kNoKey;
     default:
       NOTREACHED();
       return QueueStatus::kError;
@@ -276,6 +290,7 @@ CodecWrapperImpl::DequeueStatus CodecWrapperImpl::DequeueOutputBuffer(
     switch (status) {
       case DecoderAdapterCode::DECODER_OK: {
         if (eos) {
+          LOG(WARNING) << __FUNCTION__ << " [WiseplayDRM] End of stream. eos: " << eos;
           state_ = State::kDrained;
           codec_->ReleaseOutputBuffer(index, false);
           if (end_of_stream) {
@@ -286,7 +301,6 @@ CodecWrapperImpl::DequeueStatus CodecWrapperImpl::DequeueOutputBuffer(
 
         int64_t buffer_id = next_buffer_id_++;
         buffer_ids_[buffer_id] = index;
-
         DecoderFormat format;
         auto result = codec_->GetOutputFormatBridgeDecoder(format);
         DVLOG(3) << "CodecWrapperImpl::DequeueOutputBuffer "
@@ -316,6 +330,13 @@ CodecWrapperImpl::DequeueStatus CodecWrapperImpl::DequeueOutputBuffer(
         state_ = State::kError;
         return DequeueStatus::kError;
       }
+      case DecoderAdapterCode::DECODER_DECRYPT_FAILED_NO_KEY:
+        LOG(ERROR) << __func__
+                   << " [WiseplayDRM] Status should not exit in "
+                      "DequeueOutputBuffer, status: "
+                   << static_cast<int>(status);
+        state_ = State::kError;
+        return DequeueStatus::kError;
     }
   }
 
@@ -364,15 +385,29 @@ bool CodecWrapperImpl::ReleaseCodecOutputBuffer(int64_t id, bool render) {
   DVLOG(3) << __func__ << " id=" << id << " render=" << render
            << " valid=" << valid;
   if (!valid) {
+    LOG(WARNING) << __FUNCTION__ << " [WiseplayDRM] buffer id not found.";
     return false;
   }
 
   int index = buffer_it->second;
   codec_->ReleaseOutputBuffer(index, render);
   buffer_ids_.erase(buffer_it);
+#if BUILDFLAG(ENABLE_WISEPLAY)
+  if (output_buffer_release_cb_) {
+    output_buffer_release_cb_.Run(state_ == State::kDrained ||
+                                  state_ == State::kDraining ||
+                                  buffer_ids_.empty());
+  }
+#endif  // BUILDFLAG(ENABLE_WISEPLAY)
   return true;
 }
 
+#if BUILDFLAG(ENABLE_WISEPLAY)
+bool CodecWrapperImpl::SetDecryptionConfig(void* session, bool is_secure) {
+  auto status = codec_->SetDecryptionConfig(session, is_secure);
+  return status == DecoderAdapterCode::DECODER_OK;
+}
+#endif  // BUILDFLAG(ENABLE_WISEPLAY)
 CodecWrapper::CodecWrapper(
     CodecSurfacePair codec_surface_pair,
     OutputReleasedCB output_buffer_release_cb,
@@ -435,4 +470,10 @@ scoped_refptr<CodecSurfaceBundle> CodecWrapper::SurfaceBundle() {
   return impl_->SurfaceBundle();
 }
 
+#if BUILDFLAG(ENABLE_WISEPLAY)
+bool CodecWrapper::SetDecryptionConfig(void* session, bool isSecure) {
+  LOG(INFO) << __func__;
+  return impl_->SetDecryptionConfig(session, isSecure);
+}
+#endif  // BUILDFLAG(ENABLE_WISEPLAY)
 }  // namespace media

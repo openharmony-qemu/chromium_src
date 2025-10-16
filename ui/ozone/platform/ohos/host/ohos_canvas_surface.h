@@ -30,15 +30,17 @@
 #ifndef UI_OZONE_PLATFORM_OHOS_HOST_OHOS_CANVAS_SURFACE_H_
 #define UI_OZONE_PLATFORM_OHOS_HOST_OHOS_CANVAS_SURFACE_H_
 
+#include <native_window/external_window.h>
+
 #include "base/files/file_util.h"
 #include "base/task/thread_pool.h"
-#include "include/core/SkSurface.h"
-#include "native_window/external_window.h"
 #include "ui/gfx/codec/png_codec.h"
 #include "ui/gl/gl_surface.h"
 #include "ui/ozone/public/gl_ozone.h"
 #include "ui/ozone/public/surface_factory_ozone.h"
 #include "ui/ozone/public/surface_ozone_canvas.h"
+
+#include "include/core/SkSurface.h"
 
 namespace ui {
 class OhosCanvasSurface : public ui::SurfaceOzoneCanvas {
@@ -57,10 +59,10 @@ class OhosCanvasSurface : public ui::SurfaceOzoneCanvas {
   OHNativeWindow* window_;
   uint32_t width_;
   uint32_t height_;
-  void CopyAndFlushBuffer (SkPixmap skia_pixmap,
-                           BufferHandle* bufferHandle,
-                           OHNativeWindowBuffer* nativeWindowBuffer,
-                           int fenceFd);
+  void CopyAndFlushBuffer(SkPixmap skia_pixmap,
+                          BufferHandle* bufferHandle,
+                          OHNativeWindowBuffer* nativeWindowBuffer,
+                          int fenceFd);
 };
 }  // namespace ui
 

@@ -32,7 +32,7 @@ import window from '@ohos.window';
 import Want from '@ohos.app.ability.Want';
 import JsBindingUtils from '../utils/JsBindingUtils';
 import { NativeContext } from '../interface/CommonInterface';
-import { ConfigData, ContextType } from '../common/Constants';
+import { CommandType, ConfigData, ContextType } from '../common/Constants';
 import CheckEmptyUtils from '../utils/CheckEmptyUtils';
 import { WebProxy } from '../interface/WebProxy';
 import { common, EmbeddedUIExtensionAbility, UIExtensionContentSession } from '@kit.AbilityKit';
@@ -45,6 +45,7 @@ export class WebBaseExtensionAbility extends EmbeddedUIExtensionAbility implemen
   protected startUri: string = '';
   protected hostModuleId: number = 0; // Host module id
   protected hostModuleType: number = 0; // Host module type, Ability or SubWindow
+  protected userData: string = ''; // Host module specified
   protected session: UIExtensionContentSession | undefined = undefined;
   protected nativeContext: NativeContext =
     JsBindingUtils.getNativeContext(ContextType.kMainProcess);
@@ -61,6 +62,9 @@ export class WebBaseExtensionAbility extends EmbeddedUIExtensionAbility implemen
       if (want.parameters['hostModuleType'] !== undefined) {
         this.hostModuleType = want.parameters['hostModuleType'] as number;
       }
+      if (want.parameters['userData'] !== undefined) {
+        this.userData = want.parameters['userData'] as string;
+      }
     }
 
     if (want.uri) {
@@ -75,7 +79,8 @@ export class WebBaseExtensionAbility extends EmbeddedUIExtensionAbility implemen
 
     if (CheckEmptyUtils.isEmpty(this.xcomponentId)) {
       LogUtil.info(TAG, 'onCreate, Allocate xcomponent id');
-      this.xcomponentId = ConfigData.WINDOW_PREFIX + this.nativeContext.AllocateWidgetId();
+      let widgetId = this.nativeContext.ExecuteCommand(CommandType.kGetWidget, {}).widget_Id;
+      this.xcomponentId = ConfigData.WINDOW_PREFIX + widgetId;
     }
 
     this.session = session;
@@ -132,5 +137,11 @@ export class WebBaseExtensionAbility extends EmbeddedUIExtensionAbility implemen
 
   getOriginWindowId(): number {
     return -1;
+  }
+
+  updateAvoidAreaStatus(isFullScreen: boolean) {}
+
+  isUIAbility(): boolean {
+    return false;
   }
 };

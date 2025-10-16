@@ -96,12 +96,17 @@ enum IMFAdapterDirection {
 
 class ADAPTER_EXPORT_API InputMethodOHOSAdapter {
  public:
-  using InsertTextCallback = std::function<void(const std::string&)>;
-  using DeleteBackCallback = std::function<void(int32_t)>;
-  using DeleteForwardCallback = std::function<void(int32_t)>;
-  using SendEnterKeyEventCallback = std::function<void()>;
-  using ExitFullscreenEventCallback = std::function<void()>;
-  using MoveCursorCallback = std::function<void(int)>;
+  // Handles text insertion, deletion, and cursor movement
+  // Processes enter key events and exit full screen
+  class Delegate {
+    public:
+      virtual void InsertText(const std::string& text) = 0;
+      virtual void DeleteBackward(int32_t length) = 0;
+      virtual void DeleteForward(int32_t length) = 0;
+      virtual void SendEnterKeyEvent() = 0;
+      virtual void MoveCursor(int direction) = 0;
+      virtual void ExitFullscreenEvent() = 0;
+  };
   static InputMethodOHOSAdapter& GetInstance();
   virtual ~InputMethodOHOSAdapter() = default;
   void AttachTextInput(IMFAdapterTextConfig textConfig,
@@ -111,33 +116,15 @@ class ADAPTER_EXPORT_API InputMethodOHOSAdapter {
   void UpdateAttribute(IMFAdapterInputAttribute inputAttribute);
   void ShowTextInput(int32_t requestKeyboardReason);
   void ExitFullscreenEvent();
-  InsertTextCallback GetInsertTextCallbcak() { return insertTextCallback_; }
-  DeleteBackCallback GetDeleteBackCallbcak() { return deleteBackCallback_; }
-  DeleteForwardCallback GetDeleteForwardCallbcak() {
-    return deleteForwardCallback_;
-  }
-  SendEnterKeyEventCallback GetSendEnterKeyEventCallbcak() {
-    return sendEnterKeyEventCallback_;
-  }
-  ExitFullscreenEventCallback GetExitFullscreenEventCallback() {
-    return exitFullscreeEventCallback_;
-  }
-  MoveCursorCallback GetMoveCursorCallbcak() { return moveCursorCallback_; }
-  void RegisterSendEnterKeyEventCallback(SendEnterKeyEventCallback callback);
-  void RegisterInsertTextCallback(InsertTextCallback callback);
-  void RegisterDeleteForwardCallback(DeleteForwardCallback callback);
-  void RegisterDeleteBackwardCallback(DeleteBackCallback callback);
-  void RegisterMoveCursorCallback(MoveCursorCallback callback);
-  void RegisterExitFullscreenEventCallback(ExitFullscreenEventCallback callback);
   void NotifyCursorUpdate(const IMFAdapterCursorInfo cursorInfo);
-
+  void InsertTextCallback(const std::string& text);
+  void DeleteBackCallback(int32_t length);
+  void DeleteForwardCallback(int32_t length);
+  void SendEnterKeyEventCallback();
+  void MoveCursorCallback(const int direction);
+  void Register(Delegate* delegate_);
  private:
-  InsertTextCallback insertTextCallback_;
-  DeleteBackCallback deleteBackCallback_;
-  DeleteForwardCallback deleteForwardCallback_;
-  SendEnterKeyEventCallback sendEnterKeyEventCallback_;
-  ExitFullscreenEventCallback exitFullscreeEventCallback_;
-  MoveCursorCallback moveCursorCallback_;
+  Delegate* delegate_;
 };
 }  // namespace adapter
 }  // namespace ohos

@@ -48,7 +48,8 @@ enum EventType : int32_t {
   ET_WINDOW_CHANGE = 4,
   ET_WINDOW_RECT_CHANGE = 5,
   ET_WINDOW_STATUS_CHANGE = 6,
-  ET_WINDOW_CAPTION_BUTTON_RECT_CHANGE = 7
+  ET_WINDOW_CAPTION_BUTTON_RECT_CHANGE = 7,
+  ET_DEVICE_MODE_CHANGED = 8
 };
 
 enum class WindowEventType {
@@ -79,6 +80,11 @@ enum class RectChangeReason {
   DRAG,
   DRAG_START,
   DRAG_END
+};
+
+enum class ChangeEventType {
+  CHANGE_TO_NORMAL_MODE = 0,
+  CHANGE_TO_FREE_MODE
 };
 
 class ADAPTER_EXPORT_API Event {
@@ -149,6 +155,14 @@ class ADAPTER_EXPORT_API WindowCaptionButtonRectChangeEvent : public Event {
   int right = 0;
   uint64_t width = 0;
   uint64_t height = 0;
+};
+
+class ADAPTER_EXPORT_API DeviceInfoChangeEvent : public Event {
+ public:
+  explicit DeviceInfoChangeEvent()
+    : Event(EventType::ET_DEVICE_MODE_CHANGED) {}
+  std::string ToString() override;
+  ChangeEventType change_event_type_;
 };
 
 std::string WindowEventToString(WindowEventType eventType);

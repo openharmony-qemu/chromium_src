@@ -1420,6 +1420,10 @@ SqliteResultCode Database::ExecuteAndReturnResultCode(
 
     // Stop if compiling the SQL statement fails.
     if (sqlite_result_code != SqliteResultCode::kOk) {
+#if BUILDFLAG(IS_OHOS)
+    LOG(ERROR) << "Database::Execute, sql result: "
+               << static_cast<int>(sqlite_result_code) << ", sql: " << sql;
+#endif
       DCHECK_NE(sqlite_result_code, SqliteResultCode::kDone)
           << "sqlite3_prepare_v3() returned unexpected non-error result code";
       DCHECK_NE(sqlite_result_code, SqliteResultCode::kRow)
@@ -1968,6 +1972,11 @@ bool Database::OpenInternal(const std::string& db_file_path) {
     MaybeReportErrorDuringOpen(sqlite_result_code);
     OnSqliteError(ToSqliteErrorCode(sqlite_result_code), nullptr,
                   "-- sqlite3_open_v2()");
+#if BUILDFLAG(IS_OHOS)
+    LOG(ERROR) << "sqlite DB open failed, file: " << db_file_path
+               << ", sqlite_result_code: "
+               << static_cast<int>(sqlite_result_code);
+#endif
     return false;
   }
 

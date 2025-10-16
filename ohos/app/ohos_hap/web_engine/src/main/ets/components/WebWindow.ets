@@ -36,13 +36,17 @@ import JsBindingUtils from '../utils/JsBindingUtils';
 import { MultiInputAdapter } from '../adapter/MultiInputAdapter';
 import { DragParamManager } from '../common/DragParamManager';
 import { window } from '@kit.ArkUI';
+import { NativeThemeAdapter } from '../adapter/NativeThemeAdapter'
 
 @Component
 export struct WebWindow {
   private static TAG: string = 'WebWindow';
   @LocalStorageLink('xcomponentId') xComponentId: string = '';
   @LocalStorageLink('startUri') startUri: string = '';
+  @LocalStorageLink('appId') appId: string = '';
   @LocalStorageLink('window') window: window.Window | undefined = undefined;
+  @LocalStorageLink('statusBarHeight') statusBarHeight: number = 0;
+  @LocalStorageLink('useDarkMode') useDarkMode: boolean = false;
   private LIBRARY_NAME: string = 'adapter';
   private XCOMPONENT_NAME: string = 'xcomponent';
   private MODULE_NAME: string = this.xComponentId + ':' + this.XCOMPONENT_NAME;
@@ -50,7 +54,8 @@ export struct WebWindow {
   private nativeContext: NativeContext = JsBindingUtils.getNativeContext(ContextType.kMainProcess);
   private multiInputAdapter: MultiInputAdapter = Inject.get(MultiInputAdapter);
   private dragParamManager = Inject.get(DragParamManager);
-  @State private bgColor: Color = Color.Transparent;
+  @State private bgColor: Color | string =
+    this.useDarkMode ? NativeThemeAdapter.DARK_BACKGROUND_COLOR : NativeThemeAdapter.LIGHT_BACKGROUND_COLOR;
 
   aboutToAppear(): void {
     this.dragParamManager.addDragContextData({
@@ -99,6 +104,12 @@ export struct WebWindow {
             this.multiInputAdapter.OnPinchEvent("end", this.xComponentId, event);
           })
       )
+      .gesture(
+        GestureGroup(GestureMode.Exclusive,
+          TapGesture({ count: 2})
+            .onAction(() => {})
+        )
+      )
       .onDragEnter((event?: DragEvent) => {
         LogUtil.info(WebWindow.TAG, 'OhosDrag WebWindow onDragEnter xComponentId:' + this.xComponentId);
         this.dragDropAdapter.dragEnterData(this.xComponentId, (event as DragEvent).getSummary());
@@ -108,7 +119,9 @@ export struct WebWindow {
         let windowY = event?.getWindowY();
         windowX = vp2px(windowX);
         windowY = vp2px(windowY);
-        this.dragDropAdapter.dragMove(this.xComponentId, windowX, windowY);
+        this.dragDropAdapter.dragMove(this.xComponentId,
+                                      windowX,
+                                      windowY - this.statusBarHeight);
       })
       .onDragLeave(() => {
         LogUtil.info(WebWindow.TAG, 'OhosDrag WebWindow onDragLeave xComponentId:' + this.xComponentId);
@@ -153,9 +166,9 @@ export struct WebWindow {
 
       let drawableRect: WindowBound = {
         left: prop.drawableRect.left,
-        top: prop.drawableRect.top,
+        top: prop.drawableRect.top + this.statusBarHeight,
         width: prop.drawableRect.width,
-        height: prop.drawableRect.height
+        height: prop.drawableRect.height - this.statusBarHeight
       }
 
       this.nativeContext.OnWindowInitSize(windowRect, drawableRect);
@@ -168,14 +181,12 @@ export struct WebWindow {
   }
 
   private buildArgs(): string[] {
-    const override_ua = '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' +
-      'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36';
     let default_uri = '';
     if (this.startUri.length !== 0) {
       default_uri = this.startUri;
     }
     let resDir = '--bundle-installation-dir=' + getContext().resourceDir;
-    let vec_args = [override_ua, resDir, default_uri];
+    let vec_args = [resDir, default_uri, this.appId];
     return vec_args;
   }
 }

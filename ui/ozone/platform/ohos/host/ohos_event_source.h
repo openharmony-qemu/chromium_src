@@ -62,7 +62,8 @@ class OhosEventSource : public PlatformEventSource,
 
   void OnMouseEvent(const gfx::AcceleratedWidget widget_id,
                     const OH_NativeXComponent_MouseEvent& mouse_event,
-                    const int32_t display_id);
+                    const int32_t display_id,
+                    const EventFlags key_flags);
   void OnMouseHoverEvent(const gfx::AcceleratedWidget widget_id, const bool is_hover);
   void OnPanEvent(const PanAction action,
                   const gfx::AcceleratedWidget widget_id,
@@ -84,14 +85,9 @@ class OhosEventSource : public PlatformEventSource,
   void OnDragMoveEvent(const gfx::AcceleratedWidget widget_id,
                        const float window_x,
                        const float window_y);
-  EventFlags GetKeyFlags() { return key_flags_; }
 
-  void UpdateKeyPressedState(const int32_t key_code_left,
-                             const int32_t key_code_right,
-                             const int event_flag);
-  void UpdateSwitchState(const int32_t key_code, const int event_flag);
-  void UpdateKeyFlags();
-  void UpdateKeyFlagsByOhKeyState();
+  EventFlags GetKeyFlags() { return key_flags_; }
+  void UpdateKeyFlags(const EventFlags& key_flags);
 
   // OhosWindowObserver
   void OnWindowAdded(OhosWindow* window) override;
@@ -105,7 +101,8 @@ class OhosEventSource : public PlatformEventSource,
   void SendWindowMouseEventForTabDrag(
       const gfx::AcceleratedWidget widget_id,
       std::shared_ptr<OH_NativeXComponent_MouseEvent> window_mouse_event,
-      const int32_t display_id);
+      const int32_t display_id,
+      const EventFlags key_flags);
   void EndTabDragging();
 
  protected:

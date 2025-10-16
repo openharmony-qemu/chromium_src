@@ -4083,4 +4083,7 @@ void RenderWidgetHostImpl::CompositorMetricRecorder::TryToRecordMetrics() {
   }
 }
 
+bool RenderWidgetHostImpl::IsWebApp() {
+  return delegate_->IsWebApp();
+}
 }  // namespace content

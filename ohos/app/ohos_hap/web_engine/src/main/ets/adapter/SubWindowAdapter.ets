@@ -65,7 +65,7 @@ export class SubWindowAdapter extends BaseAdapter {
 
   @LogMethod
   createSubWindow(param: NewWindowParam,
-    callback: (ready: boolean, id: string) => void) {
+    callback: (id: string) => void) {
     let parentId = param.parent_id
     let fixedBounds = this.adjustBounds(parentId, param.bounds);
     const reusableWindow =
@@ -84,7 +84,7 @@ export class SubWindowAdapter extends BaseAdapter {
             LogUtil.error(TAG, 'Failed to reuseSubWindow: ' + reusableWindow.id + ',err:' + JSON.stringify(err));
             return;
           });
-        callback(true, reusableWindow.id);
+        callback(reusableWindow.id);
         return;
       } catch (e) {
         LogUtil.error(TAG,'reuseSubWindow error' + reusableWindow.id);

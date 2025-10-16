@@ -131,6 +131,21 @@ std::string RectChangeReasonToString(RectChangeReason reason) {
   return name + WithEnumValue(static_cast<int>(reason));
 }
 
+std::string ChangeEventToString(ChangeEventType changeType) {
+  std::string name;
+  switch (changeType) {
+    case ChangeEventType::CHANGE_TO_NORMAL_MODE:
+      name = "CHANGE_TO_NORMAL_MODE";
+      break;
+    case ChangeEventType::CHANGE_TO_FREE_MODE:
+      name = "CHANGE_TO_FREE_MODE";
+      break;
+    default:
+      name = "UNKNOWN_EVENT";
+  }
+  return name + WithEnumValue(static_cast<int>(changeType));
+}
+
 std::string Event::ToString() {
   std::ostringstream oss;
   oss << "Event(type: " << static_cast<int>(type_) << ")";
@@ -174,6 +189,12 @@ std::string WindowCaptionButtonRectChangeEvent::ToString() {
   std::ostringstream oss;
   oss << "WindowCaptionButtonRectChangeEvent(pos: (" << right << ", " << top <<
       "), size: (" << width << "X" << height << "))";
+  return oss.str();
+}
+
+std::string DeviceInfoChangeEvent::ToString() {
+  std::ostringstream oss;
+  oss << "DeviceInfoChangeEvent(mode: " << ChangeEventToString(change_event_type_) << ")";
   return oss.str();
 }
 }  // namespace ohos::adapter::xcomponent

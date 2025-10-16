@@ -67,6 +67,9 @@ extern const char kSchedulerBoostUrgent[];
 extern const char kBundleInstallationDir[];
 extern const char KDisableBlinkFeatures[];
 extern const char KDisableOcclusionFeature[];
+extern const char KDisablePartialSwap[];
+extern const char kDisablePagePolicy[];
+extern const char kOhosTrace[];
 #endif
 }  // namespace switches
 

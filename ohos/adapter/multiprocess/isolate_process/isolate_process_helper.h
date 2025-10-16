@@ -38,7 +38,8 @@ class IsolateProcessHelper {
  public:
   static int32_t StartChildProcess(const std::vector<std::string>& command,
                                    const std::vector<std::pair<int, int>>& fds,
-                                   const std::string& entry_point = "");
+                                   const std::string& entry_point = "",
+                                   bool is_isolated_process = false);
 };
 }  // namespace ohos::adapter::multiprocess
 

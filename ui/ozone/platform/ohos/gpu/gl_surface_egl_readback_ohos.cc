@@ -31,6 +31,7 @@
 
 #include <cstring>
 #include <sys/mman.h>
+
 #include "base/logging.h"
 #include "ohos/adapter/xcomponent/adapter/window_adapter.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
@@ -44,10 +45,7 @@ GLSurfaceEglReadbackOhos::GLSurfaceEglReadbackOhos(gl::GLDisplayEGL* display,
     : GLSurfaceEglReadback(display), window_(window) {}
 
 bool GLSurfaceEglReadbackOhos::Initialize(gl::GLSurfaceFormat format) {
-  if (!GLSurfaceEglReadback::Initialize(format)) {
-    return false;
-  }
-  return true;
+  return GLSurfaceEglReadback::Initialize(format);
 }
 
 void GLSurfaceEglReadbackOhos::Destroy() {
@@ -118,7 +116,6 @@ bool GLSurfaceEglReadbackOhos::CopyPixelsAndFlush(OHNativeWindow* native_window,
 }
 
 bool GLSurfaceEglReadbackOhos::HandlePixels(uint8_t* pixels) {
-  LOG(INFO) << "use angle swiftshader";
   if (pixels == nullptr) {
     LOG(ERROR) << "pixels == nullptr";
     return false;

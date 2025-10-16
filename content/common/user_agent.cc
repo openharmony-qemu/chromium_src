@@ -76,7 +76,7 @@ std::string GetUnifiedPlatform() {
 #elif BUILDFLAG(IS_LINUX)
   return "X11; Linux x86_64";
 #elif BUILDFLAG(IS_OHOS)
-  return "OHOS; OHOS x86_64";
+  return "PC; OpenHarmony 5.0";
 #elif BUILDFLAG(IS_IOS)
   if (ui::GetDeviceFormFactor() == ui::DEVICE_FORM_FACTOR_TABLET) {
     return "iPad; CPU iPad OS 14_0 like Mac OS X";

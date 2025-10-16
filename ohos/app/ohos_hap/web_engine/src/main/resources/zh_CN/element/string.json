@@ -63,6 +63,26 @@
     {
       "name": "dialog_cancel_button",
       "value": "取消"
+    },
+    {
+      "name": "go_to_app_gallery",
+      "value": "前往应用市场搜索"
+    },
+    {
+      "name": "download",
+      "value": "下载"
+    },
+    {
+      "name": "still_download",
+      "value": "仍要下载"
+    },
+    {
+      "name": "installation_not_supported",
+      "value": "不支持安装此格式文件"
+    },
+    {
+      "name": "add_failed_tip",
+      "value": "添加失败"
     }
   ]
 }

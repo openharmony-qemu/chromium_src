@@ -40,6 +40,18 @@ void ProvisionFetcherImpl::Retrieve(const GURL& default_url,
                      weak_factory_.GetWeakPtr(), std::move(callback)));
 }
 
+#if BUILDFLAG(ENABLE_WISEPLAY)
+void ProvisionFetcherImpl::RetrieveWiseplayCertificate(
+    const GURL& default_url,
+    const std::string& request_data,
+    RetrieveCallback callback) {
+  provision_fetcher_->RetrieveWiseplayCertificate(
+      default_url, request_data,
+      base::BindOnce(&ProvisionFetcherImpl::OnResponse,
+                     weak_factory_.GetWeakPtr(), std::move(callback)));
+}
+#endif // BUILDFLAG(ENABLE_WISEPLAY)
+
 void ProvisionFetcherImpl::OnResponse(RetrieveCallback callback,
                                       bool success,
                                       const std::string& response) {

@@ -50,7 +50,6 @@ class OhosWholeScreenMoveLoop : public ui::PlatformEventDispatcher {
   OhosWholeScreenMoveLoop& operator=(const OhosWholeScreenMoveLoop&) = delete;
   ~OhosWholeScreenMoveLoop() override;
 
-  // ui:::PlatformEventDispatcher:
   bool CanDispatchEvent(const ui::PlatformEvent& event) override;
   uint32_t DispatchEvent(const ui::PlatformEvent& event) override;
 
@@ -66,8 +65,9 @@ class OhosWholeScreenMoveLoop : public ui::PlatformEventDispatcher {
   bool canceled_;
   base::OnceClosure quit_closure_;
   std::unique_ptr<ui::ScopedEventDispatcher> nested_dispatcher_;
-  base::WeakPtrFactory<OhosWholeScreenMoveLoop> weak_factory_{this};
   bool grabbed_pointer_;
+
+  base::WeakPtrFactory<OhosWholeScreenMoveLoop> weak_factory_{this};
 };
 
 }  // namespace ui

@@ -458,4 +458,8 @@ WebContentsDelegate::GetBackForwardTransitionFallbackUXConfig() {
 }
 #endif  // BUILDFLAG(IS_ANDROID)
 
+bool WebContentsDelegate::IsWebApp() {
+  return false;
+}
+
 }  // namespace content

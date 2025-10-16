@@ -6,6 +6,8 @@
 
 #include <string_view>
 
+#include "ui/gfx/geometry/rect.h"
+
 namespace ui {
 
 TextInputClient::~TextInputClient() {
@@ -49,5 +51,11 @@ ui::TextInputClient::EditingContext TextInputClient::GetTextEditingContext() {
   return {};
 }
 #endif
+
+#if BUILDFLAG(IS_OHOS)
+gfx::Rect TextInputClient::GetToplevelWindowBounds() const {
+  return gfx::Rect();
+}
+#endif  // BUILDFLAG(IS_OHOS)
 
 }  // namespace ui

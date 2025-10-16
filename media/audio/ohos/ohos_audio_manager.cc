@@ -42,9 +42,9 @@ namespace media {
 constexpr int kDefaultSampleRate = 48000;
 constexpr int kMinimumOutputBufferSize = 2048;
 constexpr int kMinimumInputBufferSize = 960;
-const char kAudioDefaultDeviceId[] = "defaultId";
-const char AUDIO_DEFAULT_DEVICE_NAME[] = "(default)";
-static const char AUDIO_MANAGER_NAME[] = "OHOS";
+constexpr char kAudioDefaultDeviceId[] = "defaultId";
+constexpr char kAudioDefaultDeviceName[] = "(default)";
+constexpr char kAudioManagerName[] = "OHOS";
 
 std::unique_ptr<AudioManager> CreateAudioManager(
     std::unique_ptr<AudioThread> audio_thread,
@@ -72,7 +72,7 @@ void OHOSAudioManager::GetAudioOutputDeviceNames(
     AudioDeviceNames* device_names) {
   AudioDeviceName device_name;
   device_name.unique_id = std::string(kAudioDefaultDeviceId);
-  device_name.device_name = std::string(AUDIO_DEFAULT_DEVICE_NAME);
+  device_name.device_name = std::string(kAudioDefaultDeviceName);
   device_names->push_front(device_name);
 }
 
@@ -80,12 +80,12 @@ void OHOSAudioManager::GetAudioInputDeviceNames(
     AudioDeviceNames* device_names) {
   AudioDeviceName device_name;
   device_name.unique_id = std::string(kAudioDefaultDeviceId);
-  device_name.device_name = std::string(AUDIO_DEFAULT_DEVICE_NAME);
+  device_name.device_name = std::string(kAudioDefaultDeviceName);
   device_names->push_front(device_name);
 }
 
 const char* OHOSAudioManager::GetName() {
-  return AUDIO_MANAGER_NAME;
+  return kAudioManagerName;
 }
 
 // Implementation of AudioManagerBase.

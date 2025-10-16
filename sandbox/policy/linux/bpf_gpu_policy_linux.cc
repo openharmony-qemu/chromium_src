@@ -79,6 +79,8 @@ ResultExpr GpuProcessPolicy::EvaluateSyscall(int sysno) const {
     case __NR_getdents64:
     case __NR_ioctl:
 #if BUILDFLAG(IS_OHOS)
+    case __NR_fchmod:
+    case __NR_unlinkat:
     case __NR_openat:
     case __NR_faccessat:
     case __NR_newfstatat:

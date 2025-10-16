@@ -76,7 +76,7 @@ class OhosScreen : public PlatformScreen {
       const int32_t display_id) const override;
 
  private:
-  void ConvertDisplay(ohos::adapter::OhosDisplay& ohos_display,
+  bool ConvertDisplay(ohos::adapter::OhosDisplay& ohos_display,
                       display::Display& dst_display);
   void FetchDisplays(display::DisplayList& displays);
   void RegisterDisplayMonitor();

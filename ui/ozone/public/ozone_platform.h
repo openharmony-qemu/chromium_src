@@ -48,6 +48,10 @@ class PlatformUtils;
 class SurfaceFactoryOzone;
 class SystemInputInjector;
 
+#if BUILDFLAG(IS_OHOS)
+class PlatformWindowManager;
+#endif
+
 struct PlatformWindowInitProperties;
 
 // Base class for Ozone platform implementations.
@@ -379,6 +383,10 @@ class COMPONENT_EXPORT(OZONE) OzonePlatform {
       const scoped_refptr<base::SingleThreadTaskRunner>& io_task_runner);
 
   virtual void DumpState(std::ostream& out) const {}
+
+#if BUILDFLAG(IS_OHOS)
+  virtual PlatformWindowManager* GetPlatformWindowManager();
+#endif
 
  protected:
   bool has_initialized_ui() const { return initialized_ui_; }

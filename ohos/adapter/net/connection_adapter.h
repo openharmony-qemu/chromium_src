@@ -93,31 +93,6 @@ enum class ADAPTER_EXPORT_API NetConnectionSubtype {
 };
 
 class ADAPTER_EXPORT_API NetConnectionCallback {
-public:
-  virtual int32_t NetAvailable() = 0;
-  virtual int32_t NetCapabilitiesChange(
-    const NetConnectionType& netConnectType,
-    const NetConnectionSubtype& netConnectSubtype) = 0;
-  virtual int32_t NetConnectionPropertiesChange() = 0;
-  virtual int32_t NetUnavailable() = 0;
-  virtual int32_t NetLost() = 0;
-};
-
-class ADAPTER_EXPORT_API NetConnectionAdapter {
-public:
-  NetConnectionAdapter() = default;
-  virtual ~NetConnectionAdapter() = default;
-  virtual int32_t RegisterNetConnectionCallback(std::shared_ptr<NetConnectionCallback> netConnCallback);
-  virtual int32_t UnregisterNetConnectionCallback(std::shared_ptr<NetConnectionCallback> netConnCallback);
-};
-
-class ADAPTER_EXPORT_API NetConnectionAdapterHelper {
-public:
-  static NetConnectionAdapterHelper& GetInstance();
-  virtual ~NetConnectionAdapterHelper() = default;
-  std::unique_ptr<NetConnectionAdapter> CreateNetConnectionAdapter();
-private:
-  NetConnectionAdapterHelper() = default;
 };
 
 template <typename nativeType, typename OhosType>

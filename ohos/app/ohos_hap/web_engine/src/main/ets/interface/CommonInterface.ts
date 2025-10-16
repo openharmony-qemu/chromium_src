@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 import type image from '@ohos.multimedia.image';
 import type inputMethod from '@ohos.inputMethod';
@@ -58,14 +33,31 @@ export class JSBind {
   bindFunction: (name: string, func: Function) => number;
 }
 
+export interface CommandParameter {
+  url?: string;
+  user_data?: string;
+  is_sync?: boolean;
+  is_webapp?: boolean;
+}
+ 
+export interface CommandResult {
+  ret_code: number;
+  widget_Id: number;
+  last_widget_Id: number;
+}
+
+export interface WindowLimits {
+  maxHeight: number;
+  maxWidth: number;
+  minHeight: number;
+  minWidth: number;
+}
+
 export interface NativeContext {
   runBrowser: (vec_args: string[]) => void;
   BrowserDestroyed: () => boolean;
   runOtherProcessType: (processType: number) => void;
   registerLifecycle: () => void;
-  startNewWindow: (startUri: string, force_open: boolean) => void;
-  GetLastActiveWidgetId: () => number;
-  AllocateWidgetId: () => number;
   readImageFromReceiver: (receiver: image.ImageReceiver) => image.Image;
   JSBind: JSBind;
   OnPanEventCB: (action: number, id: string, event: GestureEvent) => void;
@@ -90,24 +82,46 @@ export interface NativeContext {
   OnWindowSizeChange: (id: string, event: WindowBound) => void;
   OnWindowEvent: (id: string, event: number) => void;
   OnWindowVisibilityChange: (id: string, visible: boolean) => void;
+  OnKeyboardHeightChange: (id: string, height: number) => void;
   OnNotificationClickCallback: (id: number) => void;
   OnNotificationCloseCallback: (id: number) => void;
   OnNotificationButtonClickCallback: (id: number, buttonIndex) => void;
   OnDisplayChangeCallback: (even: string, id: number) => void;
   PowerMonitor: PowerMonitor;
+  ExecuteCommand: (id: number, param: CommandParameter) => CommandResult;  
   GetBrowserCloseResponse: (id: number) => BrowserCloseResponse;
+  GetAppCloseResponse: () => BrowserCloseResponse;
   RegisterWindowEventFilter: (origin_window_id: number) => void;
   ClearWindowEventFilter: (origin_window_id: number) => void;
   OnCaptionButtonRectChange: (id: string, event: CaptionButtonRect) => void;
+  UpdateWindowDeviceModeSwitchCB: (mode: DeviceMode) => void;
+  SetSystemWindowLimits: (windowLimits: WindowLimits) => void;
+  OnDeviceModeChange: (id: string, event: ChangeEventType) => void;
 }
 
 export interface IParams {
-  callback: (ready: boolean, id: string) => void,
+  callback: (id: string) => void,
   id: string,
   size: number[], // [width, height]
   initColorRgb: string,
 }
 
+export enum ChangeEventType {
+  CHANGE_TO_NORMAL_MODE = 0,
+  CHANGE_TO_FREE_MODE
+ };
+
+export enum AbilityType {
+  kEntryAbility = 0,
+  kStatelessAbility,
+  kTaskManagerAbility,
+};
+
+export const kAbilityMap = new Map<AbilityType, string>([
+  [AbilityType.kEntryAbility, 'EntryAbility'],
+  [AbilityType.kStatelessAbility, 'StatelessAbility'],
+  [AbilityType.kTaskManagerAbility, 'TaskManagerAbility']
+])
 export interface OhosDragParamToJs {
   text: string;
   url: string;
@@ -268,8 +282,9 @@ export interface NewWindowParam {
   init_color_argb: string,
   hide_title_bar: boolean,
   use_dark_mode: boolean,
-  is_stateless: boolean,
-  caption_button_visible: boolean
+  caption_button_visible: boolean,
+  ability_type: AbilityType,
+  app_id: string
 }
 
 export interface ISubWindowInfo {
@@ -279,11 +294,26 @@ export interface ISubWindowInfo {
   localStorage: LocalStorage,
 }
 
+export interface DesktopShortcut {
+  shortcutId: string;
+  label: string;
+  foregroundIconPath: string;
+  backgroundIconPath: string;
+  openAsWindow: boolean;
+}
+
 export interface SelectFileDialogParams {
   multi_files: boolean,
   extensions: Array<Array<string>>,
   descriptions: Array<string>,
   include_all_files: boolean
+}
+
+export interface IWebAppInfo {
+  openAsWindow: boolean;
+  label: string;
+  icon: string;
+  appId: string;
 }
 
 export interface SaveAsDialogParams {
@@ -308,3 +338,9 @@ export enum BrowserCloseResponse {
   kCloseCancelled,
   kClosedAnyway,
 }
+
+export enum DeviceMode {
+  kPcMode = 0,
+  kNormalWindowMode,
+  kFreeWindowsMode,
+};

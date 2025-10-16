@@ -56,7 +56,7 @@ ResApiWrapper& ResApiWrapper::GetInstance() {
 
 __attribute__((no_sanitize("cfi", "cfi-icall"))) ResApiWrapper::ResApiWrapper()
     : ressched_client_dll_("/system/lib64/platformsdk/",
-                           "libressched_client.z") {
+                           "ressched_client.z") {
   fn = reinterpret_cast<ReportFunc>(
       ressched_client_dll_.GetSymbol("ReportData"));
   if (!fn) {

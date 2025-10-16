@@ -75,12 +75,10 @@ void AppWindowAdapter::SetFullscreen(int32_t id) {
   }
 }
 
-void AppWindowAdapter::SetBounds(int32_t id,
-                                 const WindowRect& rect,
-                                 ChangeSizeCallback callback) {
+void AppWindowAdapter::SetBounds(int32_t id, const WindowRect& rect) {
   auto jsFunc = ohos::adapter::GetJSFunction("AppWindow.SetBounds");
   if (jsFunc) {
-    jsFunc->Invoke<void>(id, rect, callback);
+    jsFunc->Invoke<void>(id, rect);
   }
 }
 

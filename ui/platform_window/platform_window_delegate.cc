@@ -70,6 +70,8 @@ void PlatformWindowDelegate::OnWindowTiledStateChanged(
 
 #if BUILDFLAG(IS_OHOS)
 void PlatformWindowDelegate::OnFullscreenStateChanged() {}
+
+void PlatformWindowDelegate::OnFullscreenSwitched(bool is_enter_fullscreen) {}
 #endif
 
 std::optional<gfx::Size> PlatformWindowDelegate::GetMinimumSizeForWindow()

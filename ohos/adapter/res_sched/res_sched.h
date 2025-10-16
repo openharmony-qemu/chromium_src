@@ -59,9 +59,9 @@ using DebounceManager = manager::DebounceManager;
 class ADAPTER_EXPORT_API ResSchedManager {
  public:
   /**
-   * number of web slide normal reportData enum number
+   * number of web slide scroll reportData enum number
    */
-  static constexpr const uint32_t kResTypeWebSlideNormal = 29u;
+  static constexpr const uint32_t kResTypeWebSlideScroll = 127u;
   static constexpr const TimeMicro64 kWebSlideThrottleTime = MillSeconds(100);
   /** WebSlideNormal param */
   enum WebSlideParam : int64_t {
@@ -84,6 +84,11 @@ class ADAPTER_EXPORT_API ResSchedManager {
    * force to trigger the web slide normal regardless of throttle
    */
   void ForceWebSlideNormal(WebSlideParam param);
+
+  /**
+   * retrive the bundle name
+   */
+  const std::string& bundle_name();
 
  private:
   ThrottleManager web_slide_move_throttle_{kWebSlideThrottleTime};

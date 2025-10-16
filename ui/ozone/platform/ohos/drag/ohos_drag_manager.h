@@ -124,14 +124,13 @@ class OhosDragManager : public WmDragHandler,
   const raw_ptr<PlatformWindow> platform_window_;
   raw_ptr<OhosDragManager::Delegate> drag_delegate_ = nullptr;
   std::unique_ptr<ui::OSExchangeData> data_;
-  base::WeakPtrFactory<OhosDragManager> weak_factory_{this};
+
   bool is_drag_source_ = false;
   base::OnceClosure quit_closure_;
   gfx::PointF last_point_;
   int current_modifier_;
   bool is_drag_end_ = true;
 
-  std::vector<FileInfo> DecodeFileName(const std::vector<std::string>& file_paths);
   void HandleDropData(const OhosDropData& drop_data,
                       OSExchangeDataProvider& provider);
   void PrepareDragParamForStartDrag(const OSExchangeData& data,
@@ -144,6 +143,8 @@ class OhosDragManager : public WmDragHandler,
                            std::shared_ptr<OhosStartDragParam> drag_param);
   void HandlePixelMapData(const OSExchangeData& data,
                           std::shared_ptr<OhosStartDragParam> drag_param);
+
+  base::WeakPtrFactory<OhosDragManager> weak_factory_{this};
 };
 }  // namespace ui
 

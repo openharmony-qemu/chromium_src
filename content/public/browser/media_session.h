@@ -152,6 +152,12 @@ class MediaSession : public media_session::mojom::MediaSession {
   // visibility is computed by the |MediaVideoVisibilityTracker|.
   void GetVisibility(GetVisibilityCallback callback) override = 0;
 
+#if BUILDFLAG(IS_OHOS)
+  static base::WeakPtr<content::MediaSession> Get(int render_process_id,
+                                                  int render_frame_id);
+
+  virtual bool IsActiveSession() = 0;
+#endif
  protected:
   MediaSession() = default;
 };

@@ -382,6 +382,9 @@ struct BASE_EXPORT LaunchOptions {
 
   // gpu process startup requires special handling to establish IPC channel
   bool is_gpu_process = false;
+
+  // isolated process startup requires special handling to establish IPC channel
+  bool is_isolated_process = false;
 #endif  // BUILDFLAG(IS_OHOS)
 };
 

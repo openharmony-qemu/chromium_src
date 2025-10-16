@@ -46,27 +46,24 @@ SubWindowAdapter& SubWindowAdapter::GetInstance() {
 
 std::string SubWindowAdapter::Create(const NewWindowParam& param) {
   TRACE_EVENT_0("SubWindowAdapter::Create");
-  std::promise<bool> promise;
-  std::string create_id;
-  std::function<void(bool, const std::string&)> callback =
-      [&](bool ready, const std::string& reply_id) {
-        create_id = reply_id;
-        promise.set_value(ready);
+  auto promise = std::make_shared<std::promise<std::string>>();
+  std::function<void(const std::string&)> callback =
+      [promise](const std::string& reply_id) {
+        promise->set_value(reply_id);
       };
 
   if (auto func = ohos::adapter::GetJSFunction("SubWindow.Create")) {
     func->Invoke<void>(param, callback);
-    auto future = promise.get_future();
+    auto future = promise->get_future();
     auto status = future.wait_for(std::chrono::seconds(3));
     if (status == std::future_status::timeout) {
       LOGE("SubWindowAdapter::Create timeout");
-      return create_id;
+      return "";
     }
-    future.get();
-    return create_id;
+    return future.get();
   }
   LOGE("SubWindowAdapter::Create error");
-  return create_id;
+  return "";
 }
 
 void SubWindowAdapter::Cancel(const std::string& id) {

@@ -48,10 +48,15 @@ function showSaveAsDocumentViewPicker(params: SaveAsDialogParams, callback: (pat
   implFilePickerAdapter().showSaveAsDocumentViewPicker(params, callback);
 }
 
+function showInstallationPackageDialog(callback: (continue_download: boolean) => void) {
+  implFilePickerAdapter().showInstallationPackageDialog(callback);
+}
+ 
 export class FilePickerAdapterBind {
   static bind() {
     JsBindingUtils.bindFunction("FilePickerAdapter.ShowDocumentViewPicker", showDocumentViewPicker);
     JsBindingUtils.bindFunction("FilePickerAdapter.ShowDirDocumentViewPicker", showDirDocumentViewPicker);
     JsBindingUtils.bindFunction("FilePickerAdapter.ShowSaveAsDocumentViewPicker", showSaveAsDocumentViewPicker);
+    JsBindingUtils.bindFunction("FilePickerAdapter.ShowInstallationPackageDialog", showInstallationPackageDialog);
   }
 }

@@ -27,6 +27,14 @@
     {
       "name": "StatelessAbility_label",
       "value": "StatelessAbility"
+    },
+    {
+      "name": "TaskManagerAbility_desc",
+      "value": "TaskManagerAbility"
+    },
+    {
+      "name": "TaskManagerAbility_label",
+      "value": "TaskManagerAbility"
     }
   ]
 }

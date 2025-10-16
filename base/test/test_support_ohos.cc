@@ -88,7 +88,6 @@ void RegisterPathProviderForOhosTest() {
   InitPathProvider(DIR_GEN_TEST_DATA_ROOT);
   InitPathProvider(DIR_CACHE);
   InitPathProvider(DIR_USER_DESKTOP);
-  InitPathProvider(DIR_SRC_TEST_DATA_ROOT);
   InitPathProvider(DIR_MODULE);
 }
 

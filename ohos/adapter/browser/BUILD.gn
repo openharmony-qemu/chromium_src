@@ -31,8 +31,6 @@ component("browser_adapter") {
   sources = [
     "browser_adapter.cc",
     "browser_adapter.h",
-    "browser_init.cc",
-    "browser_init.h",
   ]
 
   deps = [ "//third_party/aki:aki_jsbind" ]

@@ -32,6 +32,10 @@ source_set("test_support") {
 
   public_deps = [ "//base/test:test_support" ]
 
+  if (is_ohos) {
+    deps += [ "//components:components_tests_pak" ]
+  }
+
   if (is_ios) {
     sources += [
       "ios_components_test_initializer.cc",

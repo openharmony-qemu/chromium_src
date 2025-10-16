@@ -51,6 +51,7 @@ using namespace ohos::adapter::xcomponent;
 
 class OhosPopup;
 class OhosToplevelWindow;
+class OhosPipWindow;
 class OhosWindowManager;
 
 class OhosWindow : public PlatformWindow,
@@ -83,6 +84,9 @@ class OhosWindow : public PlatformWindow,
       PlatformWindowDelegate* delegate,
       OhosWindowManager* manager,
       PlatformWindowInitProperties properties);
+
+  // Initializes the OhosWindow with supplied properties.
+  virtual bool Initialize(PlatformWindowInitProperties properties);
 
   void set_parent_window(OhosWindow* parent_window) {
     parent_window_ = parent_window;
@@ -197,9 +201,6 @@ class OhosWindow : public PlatformWindow,
   PlatformWindowState state_ = PlatformWindowState::kUnknown;
 
  private:
-  // Initializes the OhosWindow with supplied properties.
-  virtual bool Initialize(PlatformWindowInitProperties properties);
-
   uint32_t DispatchEventToDelegate(const PlatformEvent& native_event);
 
   // Additional initialization of derived classes.
@@ -238,14 +239,14 @@ class OhosWindow : public PlatformWindow,
   PlatformWindowType type_ = PlatformWindowType::kWindow;
 
   scoped_refptr<base::SingleThreadTaskRunner> ui_task_runner_;
-  
-  base::WeakPtrFactory<OhosWindow> weak_ptr_factory_{this};
 
   // The current cursor bitmap
   scoped_refptr<BitmapCursor> cursor_;
 
   bool has_focus_ = false;
   bool has_pointer_focus_ = false;
+
+  base::WeakPtrFactory<OhosWindow> weak_ptr_factory_{this};
 };
 
 }  // namespace ui

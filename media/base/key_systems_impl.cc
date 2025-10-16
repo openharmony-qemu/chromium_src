@@ -24,7 +24,11 @@
 #include "media/base/mime_util.h"
 #include "media/cdm/clear_key_cdm_common.h"
 #include "media/media_buildflags.h"
+#include "third_party/wiseplay/cdm/buildflags.h"
 #include "third_party/widevine/cdm/widevine_cdm_common.h"
+#if BUILDFLAG(ENABLE_WISEPLAY)
+#include "third_party/wiseplay/cdm/wiseplay_cdm_common.h"
+#endif // BUILDFLAG(ENABLE_WISEPLAY)
 
 namespace media {
 
@@ -214,6 +218,12 @@ class ClearKeyKeySystemInfo : public KeySystemInfo {
 static bool IsPotentiallySupportedKeySystem(const std::string& key_system) {
   if (key_system == kWidevineKeySystem)
     return true;
+
+#if BUILDFLAG(ENABLE_WISEPLAY)
+  if (key_system == kWisePlayKeySystem) {
+    return true;
+  }
+#endif
 
   if (key_system == kClearKeyKeySystem) {
     return true;

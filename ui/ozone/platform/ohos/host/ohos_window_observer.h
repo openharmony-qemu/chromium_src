@@ -45,6 +45,9 @@ class OhosWindowObserver : public base::CheckedObserver {
   // Called when |window| has been removed.
   virtual void OnWindowRemoved(OhosWindow* window);
 
+  // Called when |window| receive window close event.
+  virtual void OnWindowCloseEvent(OhosWindow* window);
+
  protected:
   ~OhosWindowObserver() override;
 };

@@ -37,4 +37,6 @@ void OhosWindowObserver::OnWindowAdded(OhosWindow* window) {}
 
 void OhosWindowObserver::OnWindowRemoved(OhosWindow* window) {}
 
+void OhosWindowObserver::OnWindowCloseEvent(OhosWindow* window) {}
+
 }  // namespace ui

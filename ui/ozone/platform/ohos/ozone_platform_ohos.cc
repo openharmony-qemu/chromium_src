@@ -51,6 +51,7 @@
 #include "ui/ozone/public/gpu_platform_support_host.h"
 #include "ui/ozone/public/input_controller.h"
 #include "ui/ozone/public/ozone_platform.h"
+#include "ui/ozone/public/platform_window_manager.h"
 #include "ui/ozone/public/surface_ozone_canvas.h"
 #include "ui/ozone/public/system_input_injector.h"
 #include "ui/platform_window/platform_window_init_properties.h"
@@ -107,7 +108,7 @@ class OzonePlatformOhos : public OzonePlatform {
   std::unique_ptr<InputMethod> CreateInputMethod(
       ImeKeyEventDispatcher* ime_key_event_dispatcher,
       gfx::AcceleratedWidget widget) override {
-    return std::make_unique<InputMethodOHOS>(ime_key_event_dispatcher);
+    return std::make_unique<InputMethodOHOS>(ime_key_event_dispatcher, widget);
   }
 
   bool InitializeUI(const InitParams& params) override {
@@ -155,11 +156,13 @@ class OzonePlatformOhos : public OzonePlatform {
       case PlatformKeyboardHookTypes::kModifier:
         return std::make_unique<BaseKeyboardHook>(std::move(dom_codes),
                                                   std::move(callback));
-      case PlatformKeyboardHookTypes::kMedia:
-        return nullptr;
       default:
         return nullptr;
     }
+  }
+
+  PlatformWindowManager* GetPlatformWindowManager() override {
+    return window_manager_.get();
   }
 
  private:

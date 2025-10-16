@@ -10,6 +10,7 @@
 
 #include "media/base/media_export.h"
 #include "media/base/status.h"
+#include "third_party/wiseplay/cdm/buildflags.h"
 
 namespace media {
 
@@ -28,7 +29,13 @@ enum class AudioDecoderType : int {
   kPassthroughDTS = 9,   // Passthrough DTS audio
 
   // Keep this at the end and equal to the last entry.
+#if BUILDFLAG(ENABLE_WISEPLAY)
+  kOhos = 10,
+  kMaxValue = kOhos,
+#else
+  // Keep this at the end and equal to the last entry.
   kMaxValue = kPassthroughDTS,
+#endif
 };
 
 // List of known VideoDecoder implementations; recorded to UKM, always add new

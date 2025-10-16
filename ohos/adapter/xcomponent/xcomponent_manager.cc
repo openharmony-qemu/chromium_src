@@ -50,18 +50,16 @@ NewWindowParam ConvertWindowInitParamsToNewParams(
   newParam.hide_title_bar = param.hide_title_bar;
   newParam.use_floating_window = param.use_floating_window;
   newParam.use_dark_mode = param.use_dark_mode;
-  newParam.is_stateless = param.is_stateless;
   newParam.caption_button_visible = param.caption_button_visible;
+  newParam.ability_type = param.ability_type;
+  newParam.app_id = std::string(param.app_id);
   return newParam;
 }
 }
 
-XComponentManager* XComponentManager::manager_ = nullptr;
 XComponentManager* XComponentManager::GetInstance() {
-  if (manager_ == nullptr) {
-    manager_ = new XComponentManager();
-  }
-  return manager_;
+  static XComponentManager instance;
+  return &instance;
 }
 
 XComponentManager::~XComponentManager() {
@@ -203,15 +201,6 @@ std::string XComponentManager::CreateMainWindow(const NewWindowParam& param) {
 
 std::string XComponentManager::CreateSubWindow(const NewWindowParam& param) {
   return SubWindowAdapter::GetInstance().Create(param);
-}
-
-void XComponentManager::RequestLayout(const std::string& id) {
-  auto render = GetXComponent(id);
-  if (!render) {
-    LOGE("not found render id:%{public}s", id.c_str());
-    return;
-  }
-  render->RequestLayout();
 }
 
 void XComponentManager::OnActivationChanged(const std::string& id, bool active) {

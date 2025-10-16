@@ -471,8 +471,8 @@ class PLATFORM_EXPORT InputHandlerProxy : public cc::InputHandlerClient,
   // `GestureScrollUpdate` using the prediction.
   cc::InputHandlerClient::ScrollEventDispatchMode scroll_event_dispatch_mode_ =
       cc::InputHandlerClient::ScrollEventDispatchMode::kEnqueueScrollEvents;
-  double scroll_deadline_ratio_ = 0.333;
 
+  double scroll_deadline_ratio_ = 0.333;
 };
 
 }  // namespace blink

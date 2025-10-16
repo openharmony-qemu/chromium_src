@@ -769,7 +769,7 @@ void SkCanvas::internalDrawDeviceWithFilter(SkDevice* src,
                 if (!localToSrc.invert(&srcToLocal)) {
                     return;
                 }
-                srcToLayer = skif::LayerSpace<SkMatrix>((mapping.layerMatrix()*srcToLocal).asM33());
+                srcToLayer = skif::LayerSpace<SkMatrix>((mapping.layerMatrix()*srcToLocal).asM33());;
             } // Else no input is needed which can happen if a backdrop filter that doesn't use src
         } else {
             // Trust the caller that no input was required, but keep the calculated mapping

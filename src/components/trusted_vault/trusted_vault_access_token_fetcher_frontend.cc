@@ -16,7 +16,6 @@ namespace trusted_vault {
 namespace {
 const char kCryptAuthOAuth2Scope[] =
     "https://www.googleapis.com/auth/cryptauth";
-
 void FulfillPendingRequests(
     std::vector<TrustedVaultAccessTokenFetcher::TokenCallback> pending_requests,
     TrustedVaultAccessTokenFetcher::AccessTokenInfoOrError

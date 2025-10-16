@@ -11,8 +11,8 @@
 
 #include "base/containers/flat_set.h"
 #include "base/functional/callback_forward.h"
-#include "base/functional/function_ref.h"
 #include "base/lazy_instance.h"
+#include "base/functional/function_ref.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/raw_ref.h"
 #include "base/memory/stack_allocated.h"

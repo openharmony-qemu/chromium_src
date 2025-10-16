@@ -2693,7 +2693,6 @@ bool ServiceWorkerVersion::MaybeTimeoutRequest(
   inflight_requests_.Remove(info.id);
 
   std::move(error_callback).Run(blink::ServiceWorkerStatusCode::kErrorTimeout);
-  inflight_requests_.Remove(info.id);
   return true;
 }
 

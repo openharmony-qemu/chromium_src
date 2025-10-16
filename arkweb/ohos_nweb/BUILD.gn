@@ -252,6 +252,10 @@ component("cef_nweb") {
       "src/cef_delegate/nweb_extension_top_sites_cef_delegate.h",
     ]
 
+    deps += [
+      "//components/crx_file",
+    ]
+
     if (defined(arkweb_autolayout) && arkweb_autolayout) {
       sources += [
         "src/cef_delegate/nweb_autolayout.cc",

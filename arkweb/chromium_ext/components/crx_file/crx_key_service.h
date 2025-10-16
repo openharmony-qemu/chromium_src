@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef EXTENSIONS_BROWSER_EXTENSION_KEY_SERVICE_H_
-#define EXTENSIONS_BROWSER_EXTENSION_KEY_SERVICE_H_
+#ifndef CRX_FILE_CRX_KEY_SERVICE_H_
+#define CRX_FILE_CRX_KEY_SERVICE_H_
 
 #include <cstdint>
 #include <vector>
@@ -22,21 +22,21 @@
 #include "base/no_destructor.h"
 #include "base/synchronization/lock.h"
 
-namespace extensions {
+namespace crx_file {
 
-class ExtensionKeyService {
+class CrxKeyService {
  public:
-  static ExtensionKeyService* GetInstance();
+  static CrxKeyService* GetInstance();
 
   void SetPublisherKeys(const std::vector<std::vector<uint8_t>>& keys);
   std::vector<uint8_t> GetCrx2PublicKey();
   std::vector<std::vector<uint8_t>> GetCrx3PublicKeyHashes();
 
  private:
-  friend class base::NoDestructor<ExtensionKeyService>;
+  friend class base::NoDestructor<CrxKeyService>;
 
-  ExtensionKeyService();
-  ~ExtensionKeyService();
+  CrxKeyService();
+  ~CrxKeyService();
 
   void LoadDefaultKeys();
 
@@ -45,6 +45,6 @@ class ExtensionKeyService {
   std::vector<std::vector<uint8_t>> crx3_public_key_hashes_;
 };
 
-}  // namespace extensions
+}  // namespace crx_file
 
-#endif  // EXTENSIONS_BROWSER_EXTENSION_KEY_SERVICE_H_
+#endif  // CRX_FILE_CRX_KEY_SERVICE_H_

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "extensions/browser/extension_key_service.h"
+#include "components/crx_file/crx_key_service.h"
 
 #include "base/base64.h"
 #include "base/logging.h"
@@ -21,41 +21,26 @@
 #include "base/strings/string_number_conversions.h"
 #include "base/synchronization/lock.h"
 #include "crypto/sha2.h"
-#include "extensions/common/constants.h"
 
-namespace extensions {
+namespace crx_file {
 
-std::string BytesToHex(const std::vector<uint8_t>& bytes) {
-  return base::HexEncode(bytes.data(), bytes.size());
-}
-
-ExtensionKeyService* ExtensionKeyService::GetInstance() {
-  static base::NoDestructor<ExtensionKeyService> instance;
+CrxKeyService* CrxKeyService::GetInstance() {
+  static base::NoDestructor<CrxKeyService> instance;
   return instance.get();
 }
 
-ExtensionKeyService::ExtensionKeyService() {
+CrxKeyService::CrxKeyService() {
   LoadDefaultKeys();
 }
 
-ExtensionKeyService::~ExtensionKeyService() = default;
+CrxKeyService::~CrxKeyService() = default;
 
-void ExtensionKeyService::LoadDefaultKeys() {
+void CrxKeyService::LoadDefaultKeys() {
   crx2_public_key_.clear();
   crx3_public_key_hashes_.clear();
-
-  crx2_public_key_ =
-      std::vector<uint8_t>(extensions::kWebstoreSignaturesPublicKey,
-                           extensions::kWebstoreSignaturesPublicKey +
-                               extensions::kWebstoreSignaturesPublicKeySize);
-
-  auto hash_array =
-      crypto::SHA256Hash(base::as_bytes(base::make_span(crx2_public_key_)));
-  std::vector<uint8_t> hash_vector(hash_array.begin(), hash_array.end());
-  crx3_public_key_hashes_.push_back(hash_vector);
 }
 
-void ExtensionKeyService::SetPublisherKeys(
+void CrxKeyService::SetPublisherKeys(
     const std::vector<std::vector<uint8_t>>& keys) {
   base::AutoLock lock(lock_);
   crx2_public_key_.clear();
@@ -76,15 +61,14 @@ void ExtensionKeyService::SetPublisherKeys(
   }
 }
 
-std::vector<uint8_t> ExtensionKeyService::GetCrx2PublicKey() {
+std::vector<uint8_t> CrxKeyService::GetCrx2PublicKey() {
   base::AutoLock lock(lock_);
   return crx2_public_key_;
 }
 
-std::vector<std::vector<uint8_t>>
-ExtensionKeyService::GetCrx3PublicKeyHashes() {
+std::vector<std::vector<uint8_t>> CrxKeyService::GetCrx3PublicKeyHashes() {
   base::AutoLock lock(lock_);
   return crx3_public_key_hashes_;
 }
 
-}  // namespace extensions
+}  // namespace crx_file

@@ -167,4 +167,6 @@ typedef void (*OnExtensionInstallCallback)(int code,
                                            const char* message,
                                            const char* extension_id);
 
+typedef void (*OnExtensionUninstallCallback)(bool success, const char* message);
+
 #endif  // OHOS_NWEB_SRC_NWEB_EXTENSION_MANAGER_CALLBACK_H_

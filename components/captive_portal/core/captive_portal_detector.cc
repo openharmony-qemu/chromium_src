@@ -61,7 +61,6 @@ void CaptivePortalDetector::StartProbe(
   resource_request->url = url;
   probe_url_ = url;
 
-  LOG(INFO) << __func__ << " xuefu this:" << this << " url:" << url;
   // Can't safely use net::LOAD_DISABLE_CERT_NETWORK_FETCHES here,
   // since then the connection may be reused without checking the cert.
   resource_request->load_flags = net::LOAD_BYPASS_CACHE;
@@ -131,7 +130,6 @@ void CaptivePortalDetector::OnSimpleLoaderCompleteInternal(
   if (results.result != captive_portal::RESULT_INTERNET_CONNECTED &&
       probe_url_ != fallback_probe_url) {
     state_ = State::kProbe;
-    LOG(INFO) << __func__ << " xuefu retry start probe this:" << this;
     StartProbe(kTrafficAnnotation, fallback_probe_url);
     return;
   }
@@ -153,10 +151,10 @@ void CaptivePortalDetector::GetCaptivePortalResultFromResponse(
   results->landing_url = url;
   results->content_length = content_length;
 
-  LOG(INFO) << __func__ << " xuefu Getting captive portal result"
-            << " response code: " << results->response_code
-            << " content_length: " << results->content_length.value_or(-1)
-            << " landing_url: " << results->landing_url;
+  VLOG(1) << "Getting captive portal result"
+          << " response code: " << results->response_code
+          << " content_length: " << results->content_length.value_or(-1)
+          << " landing_url: " << results->landing_url;
 
   // If there's a network error of some sort when fetching a file via HTTP,
   // there may be a networking problem, rather than a captive portal.

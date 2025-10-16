@@ -52,7 +52,6 @@ OHOSAudioOutputStream::~OHOSAudioOutputStream() {
     callback_index_ = 0;
   }
   isDestroyed_.store(true);
-  weak_factory_.InvalidateWeakPtrs();
   {
     // Ensure that OnWriteData can exit quickly and does not block the destructor.
     base::AutoLock lock(lock_);

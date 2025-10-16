@@ -117,10 +117,17 @@ class CaptivePortalTabReloader {
   // Called on certificate errors, which often indicate a captive portal.
   void OnSSLCertError(const net::SSLInfo& ssl_info);
 
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  void StartCheckForCaptivePortal();
+  State state() const { return state_; }
+#endif
+
  protected:
   // The following functions are used only when testing:
 
+#if !BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
   State state() const { return state_; }
+#endif
 
   content::WebContents* web_contents() { return web_contents_; }
 

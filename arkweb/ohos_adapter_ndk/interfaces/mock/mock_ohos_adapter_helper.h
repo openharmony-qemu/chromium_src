@@ -75,6 +75,7 @@ public:
     MOCK_METHOD(std::unique_ptr<ScreenlockManagerAdapter>, CreateScreenlockManagerAdapter, (), (override));
     MOCK_METHOD(std::unique_ptr<CertManagerAdapter>, GetCertManagerAdapter, (), (override));
     MOCK_METHOD(std::unique_ptr<NetConfigAdapter>, GetNetConfigAdapter, (), (override));
+    MOCK_METHOD(std::unique_ptr<NetEventAdapter>, CreateNetEventAdapter, (), (override));
 };
 
 } // namespace OHOS::NWeb

@@ -168,7 +168,7 @@ bool MediaControlsImplUtils::ShouldShowPlaybackSpeedButtonExt(HTMLMediaElement& 
 }
 
 void MediaControlsImplUtils::UpdateOverflowMenuWantedExt(
-    std::pair<MediaControlElementBase*, bool>(&row_elements)[kRowElementsCount]) const {
+    std::pair<MediaControlElementBase*, bool>(&row_elements)[kRowElementsCount]) {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   if (ShouldShowVideoControlsHM()) {
     row_elements[kPlaybackSpeedIndexToRowColumns].second = true;
@@ -583,9 +583,9 @@ void MediaControlsImplUtils::CreateExt(
 // LCOV_EXCL_START
 bool MediaControlsImplUtils::PopulatePanelExtVideoAssistant() {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  if (media_controls_impl_ &&
-      media_controls_impl_->mediaControlsImplUtils_.ShouldShowVideoControlsHM()) {
-    media_controls_impl_->mediaControlsImplUtils_.PopulatePanelHM();
+  if (media_controls_impl_ && media_controls_impl_->mediaControlsImplUtils_ &&
+      media_controls_impl_->mediaControlsImplUtils_->ShouldShowVideoControlsHM()) {
+    media_controls_impl_->mediaControlsImplUtils_->PopulatePanelHM();
     return true;
   }
 #endif
@@ -616,9 +616,5 @@ void MediaControlsImplUtils::ScrubbingTimerFiredExt() {
   }
 }
 // LCOV_EXCL_STOP
-
-void MediaControlsImplUtils::Trace(Visitor* visitor) const {
-  visitor->Trace(media_controls_impl_);
-}
 
 } // namespace blink

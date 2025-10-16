@@ -135,6 +135,8 @@ component("adapter_ndk") {
     "window_manager_adapter/window_manager_adapter_impl.h",
     "window_manager_adapter/window_manager_adapter_impl.cpp",
     "ndk_callback_wrapper/callback_shared_wrapper.h",
+    "net_event_adapter/net_event_adapter_impl.h",
+    "net_event_adapter/net_event_adapter_impl.cpp",
   ]
 
   include_dirs = [

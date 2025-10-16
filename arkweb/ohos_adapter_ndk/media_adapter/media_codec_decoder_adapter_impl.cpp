@@ -516,7 +516,7 @@ void MediaCodecDecoderAdapterImpl::OnInputBufferAvailable(uint32_t index, OH_AVB
         return;
     }
     if (bufferSize <= 0) {
-        WVLOG_E("bufferSize <= 0.");
+        WVLOG_E("bufferSize[%{public}d] error.", bufferSize);
         return;
     }
 

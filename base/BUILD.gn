@@ -3718,21 +3718,15 @@ test("base_unittests") {
     sources += arkweb_content_browser_dfx_unittests_sources
     if (arkweb_test) {
       configs += [
-        "//arkweb/chromium_ext:arkweb_base_unittest_config",
         "//ohos_glue:ohos_glue_config",
-        "//arkweb/chromium_ext:arkweb_base_oh_ndk_config",
-        "//arkweb/chromium_ext:arkweb_base_pasteboard_config",
       ]
       sources += [
-        "//arkweb/chromium_ext/base/ohos/ltpo/src/mock_sys_info_util_ext.cc",
         "//arkweb/ohos_adapter_ndk/ndk_version.cc",
       ]
     }
     sources += arkweb_ohos_adapter_ndk_unittests_sources
     sources += arkweb_content_browser_accessibility_resources
     sources += arkweb_media_codec_decoder_adapter_impl_unittest_sources
-    sources += ["//arkweb/ohos_adapter_ndk/mock_ndk_api/src/mock_ndk_api.cc"]
-    configs += ["//arkweb/chromium_ext:arkweb_ohos_adapter_unittest_config"]
 
     public_deps = [
       "//ui/accessibility:test_support",
@@ -4394,6 +4388,11 @@ test("base_unittests") {
     include_dirs = [
       "//third_party/ohos_ndk/includes/ohos_adapter",
     ]
+  }
+
+  if (arkweb_test) {
+    deps += [ "//arkweb/ohos_adapter_ndk/mock_ndk_api:mock_base_ohos" ]
+    deps += [ "//arkweb/ohos_adapter_ndk/mock_ndk_api:mock_ndk" ]
   }
 }
 

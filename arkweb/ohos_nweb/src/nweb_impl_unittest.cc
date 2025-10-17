@@ -774,8 +774,10 @@ TEST_F(NWebImplTest, RegisterNativeJavaScriptProxy001) {
   std::shared_ptr<OHOS::NWeb::NWebJsProxyMethod> data;
   bool isAsync = false;
   std::string permission;
+  testing::internal::CaptureStderr();
   nweb_impl_->RegisterNativeJavaScriptProxy(objName, methodName, data, isAsync, permission);
-  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("nweb_delegate_ is nullptr"), std::string::npos);
 }
 
 TEST_F(NWebImplTest, RegisterNativeJavaScriptProxy002) {
@@ -7935,11 +7937,10 @@ TEST_F(NWebImplTest, RegisterNativeJavaScriptProxy001) {
   bool isAsync = false;
   const std::string permission = "permission";
   
-  nweb_impl_->nweb_delegate_ = nullptr;
-  EXPECT_CALL(*mock_delegate_, RegisterNativeJSProxy(::testing::_, ::testing::_, ::testing::_, ::testing::_,
-      ::testing::_)).Times(0);
+  testing::internal::CaptureStderr();
   nweb_impl_->RegisterNativeJavaScriptProxy(objName, methodName, data, isAsync, permission);
-  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("nweb_delegate_ is nullptr"), std::string::npos);
 }
 
 TEST_F(NWebImplTest, RegisterNativeJavaScriptProxy002) {

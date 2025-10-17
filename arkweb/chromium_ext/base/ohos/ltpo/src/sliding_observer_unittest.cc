@@ -24,7 +24,7 @@
 #include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
 #include "arkweb/ohos_adapter_ndk/interfaces/mock/mock_ohos_adapter_helper.h"
 #include "arkweb/ohos_adapter_ndk/interfaces/mock/mock_system_properties_adapter.h"
-#include "mock_sys_info_util_ext.h"
+#include "arkweb/ohos_adapter_ndk/mock_ndk_api/include/mock_sys_info_util_ext.h"
 using namespace OHOS::NWeb;
 
 namespace {
@@ -802,14 +802,14 @@ TEST(SlidingObserverTest, SetIsPdf002) {
 }
 
 TEST(SlidingObserverTest, SetIsPdf003) {
-  SysInfoUtilsMock::isPcDevice = true;
+  SysInfoUtilsMock::mockIsPcDevice = true;
   auto& mock = SysInfoUtilsMock::GetInstance();
   EXPECT_CALL(mock, IsPcDevice()).WillOnce(testing::Return(true));
   SlidingObserver observer;
   observer.use_pdf_rate_ = true;
   observer.SetIsPdf(true);
   EXPECT_FALSE(observer.use_pdf_rate_);
-  SysInfoUtilsMock::isPcDevice = false;
+  SysInfoUtilsMock::mockIsPcDevice = false;
 }
 
 TEST(SlidingObserverTest, StopFling001) {

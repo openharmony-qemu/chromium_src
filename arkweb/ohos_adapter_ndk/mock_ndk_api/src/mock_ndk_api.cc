@@ -230,6 +230,14 @@ int32_t __wrap_OH_NativeBuffer_FromNativeWindowBuffer(OHNativeWindowBuffer* nati
          __real_OH_NativeBuffer_FromNativeWindowBuffer(nativeWindowBuffer, buffer);
 }
 
+std::function<BufferHandle* (OHNativeWindowBuffer *buffer)>
+    g_mock_OH_NativeWindow_GetBufferHandleFromNative;
+BufferHandle* __wrap_OH_NativeWindow_GetBufferHandleFromNative(OHNativeWindowBuffer *buffer) {
+  return g_mock_OH_NativeWindow_GetBufferHandleFromNative ?
+         g_mock_OH_NativeWindow_GetBufferHandleFromNative(buffer) :
+         __real_OH_NativeWindow_GetBufferHandleFromNative(buffer);
+}
+
 #ifdef __cplusplus
 }
 #endif

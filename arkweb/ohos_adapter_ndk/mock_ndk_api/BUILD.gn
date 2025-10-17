@@ -1,0 +1,214 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+config("mock_ndk_api_config") {
+  #arkweb_base_unittest_config
+  ldflags = [ 
+    "-Wl,--wrap=OH_Input_CreateDeviceInfo",
+    "-Wl,--wrap=OH_Input_GetDeviceIds",
+    "-Wl,--wrap=OH_NetConn_GetDefaultHttpProxy",
+    "-Wl,--wrap=OH_CommonEvent_GetEventFromRcvData",
+    "-Wl,--wrap=OH_Telephony_GetDefaultCellularDataSlotId",
+    "-Wl,--wrap=OH_Telephony_GetNetworkStateForSlot",
+    "-Wl,--wrap=OH_NetConn_RegisterDefaultNetConnCallback",
+    "-Wl,--wrap=OH_NetConn_UnregisterNetConnCallback",
+    "-Wl,--wrap=OH_NetConn_GetConnectionProperties",
+    "-Wl,--wrap=OH_NetConn_GetDefaultNet",
+    "-Wl,--wrap=OH_NetConn_GetAllNets",
+    "-Wl,--wrap=OH_NetConn_GetNetCapabilities",
+    "-Wl,--wrap=OH_NetConn_RegisterAppHttpProxyCallback",
+  ]
+
+  ldflags += [
+    "-Wl,--wrap=OH_Sensor_GetInfos",
+    "-Wl,--wrap=OH_Sensor_CreateInfos",
+    "-Wl,--wrap=OH_Sensor_DestroyInfos",
+    "-Wl,--wrap=OH_SensorInfo_GetType",
+    "-Wl,--wrap=OH_SensorInfo_GetMinSamplingInterval",
+    "-Wl,--wrap=OH_SensorInfo_GetMaxSamplingInterval",
+    "-Wl,--wrap=OH_Sensor_CreateSubscriber",
+    "-Wl,--wrap=OH_SensorSubscriber_SetCallback",
+    "-Wl,--wrap=OH_Sensor_CreateSubscriptionId",
+    "-Wl,--wrap=OH_SensorSubscriptionId_SetType",
+    "-Wl,--wrap=OH_Sensor_CreateSubscriptionAttribute",
+    "-Wl,--wrap=OH_SensorSubscriptionAttribute_SetSamplingInterval",
+    "-Wl,--wrap=OH_Sensor_Subscribe",
+    "-Wl,--wrap=OH_Sensor_Unsubscribe",
+    "-Wl,--wrap=OH_Sensor_DestroySubscriber",
+    "-Wl,--wrap=OH_Sensor_DestroySubscriptionId",
+    "-Wl,--wrap=OH_Sensor_DestroySubscriptionAttribute",
+    "-Wl,--wrap=OH_SensorEvent_GetType",
+    "-Wl,--wrap=OH_SensorEvent_GetData",
+    "-Wl,--wrap=OH_SensorEvent_GetTimestamp",
+  ]
+
+  ldflags += [
+    "-Wl,--wrap=OH_NativeVSync_Create",
+    "-Wl,--wrap=OH_NativeVSync_GetPeriod",
+    "-Wl,--wrap=OH_NativeVSync_RequestFrame",
+    "-Wl,--wrap=OH_NativeWindow_CreateNativeWindow",
+    "-Wl,--wrap=OH_NativeWindow_NativeObjectReference",
+    "-Wl,--wrap=OH_NativeWindow_NativeObjectUnreference",
+    "-Wl,--wrap=OH_NativeWindow_NativeWindowRequestBuffer",
+    "-Wl,--wrap=OH_NativeWindow_NativeWindowAbortBuffer",
+    "-Wl,--wrap=OH_TimeService_GetTimeZone",
+    "-Wl,--wrap=OH_CommonEvent_CreateSubscribeInfo",
+    "-Wl,--wrap=OH_CommonEvent_CreateSubscriber",
+    "-Wl,--wrap=OH_CommonEvent_Subscribe",
+    "-Wl,--wrap=OH_CommonEvent_DestroySubscribeInfo",
+    "-Wl,--wrap=OH_CommonEvent_DestroySubscriber",
+    "-Wl,--wrap=OH_CommonEvent_UnSubscribe",
+    "-Wl,--wrap=OH_NativeImage_AcquireNativeWindowBuffer",
+    "-Wl,--wrap=OH_NativeBuffer_FromNativeWindowBuffer",
+    "-Wl,--wrap=OH_NativeWindow_GetBufferHandleFromNative",
+  ]
+  #arkweb_codec_decoder_adapter_unittest_config
+  ldflags += [
+    "-Wl,--wrap=OH_VideoDecoder_Destroy",
+    "-Wl,--wrap=OH_VideoDecoder_CreateByMime",
+    "-Wl,--wrap=OH_VideoDecoder_CreateByName",
+    "-Wl,--wrap=OH_AVFormat_Create",
+    "-Wl,--wrap=OH_VideoDecoder_Configure",
+    "-Wl,--wrap=OH_VideoDecoder_SetSurface",
+    "-Wl,--wrap=OH_NativeWindow_NativeWindowHandleOpt",
+    "-Wl,--wrap=OH_VideoDecoder_Prepare",
+    "-Wl,--wrap=OH_VideoDecoder_Start",
+    "-Wl,--wrap=OH_VideoDecoder_Stop",
+    "-Wl,--wrap=OH_VideoDecoder_Flush",
+    "-Wl,--wrap=OH_VideoDecoder_Reset",
+    "-Wl,--wrap=OH_AVBuffer_SetBufferAttr",
+    "-Wl,--wrap=OH_VideoDecoder_PushInputBuffer",
+    "-Wl,--wrap=OH_VideoDecoder_GetOutputDescription",
+    "-Wl,--wrap=OH_VideoDecoder_RenderOutputBuffer",
+    "-Wl,--wrap=OH_VideoDecoder_RegisterCallback",
+    "-Wl,--wrap=OH_AVBuffer_GetBufferAttr",
+    "-Wl,--wrap=OH_AVCencInfo_SetAlgorithm",
+    "-Wl,--wrap=OH_AVCencInfo_SetSubsampleInfo",
+    "-Wl,--wrap=OH_AVCencInfo_SetMode",
+    "-Wl,--wrap=OH_VideoDecoder_SetDecryptionConfig",
+    "-Wl,--wrap=OH_AVCencInfo_Create",
+    "-Wl,--wrap=OH_AVCencInfo_SetAVBuffer",
+    "-Wl,--wrap=OH_AVCencInfo_Destroy",
+  ]
+  #arkweb_ohos_adapter_unittest_config
+  ldflags += [
+    "-Wl,--wrap=OH_NativeBundle_GetMainElementName",
+    "-Wl,--wrap=OH_AVMetadataBuilder_Create",
+    "-Wl,--wrap=OH_AVMetadataBuilder_SetAssetId",
+    "-Wl,--wrap=OH_AVMetadataBuilder_GenerateAVMetadata",
+    "-Wl,--wrap=OH_AVMetadata_Destroy",
+    "-Wl,--wrap=OH_AVMetadataBuilder_Destroy",
+    "-Wl,--wrap=OH_AVSession_Create",
+    "-Wl,--wrap=OH_AVSession_Destroy",
+    "-Wl,--wrap=OH_AVSession_Activate",
+    "-Wl,--wrap=OH_AVSession_Deactivate",
+    "-Wl,--wrap=OH_AVSession_RegisterCommandCallback",
+    "-Wl,--wrap=OH_AVSession_RegisterSeekCallback",
+    "-Wl,--wrap=OH_AVMetadataBuilder_SetTitle",
+    "-Wl,--wrap=OH_AVMetadataBuilder_SetArtist",
+    "-Wl,--wrap=OH_AVMetadataBuilder_SetAlbum",
+    "-Wl,--wrap=OH_AVMetadataBuilder_SetDuration",
+    "-Wl,--wrap=OH_AVSession_SetPlaybackState",
+    "-Wl,--wrap=OH_AVSession_SetAVMetadata",
+    "-Wl,--wrap=OH_AVSession_SetPlaybackPosition",
+    "-Wl,--wrap=OH_AVMetadataBuilder_SetMediaImageUri",
+  ]
+  #arkweb_base_oh_ndk_config
+  ldflags += [
+    "-Wl,--wrap=OH_FileUri_GetPathFromUri", 
+    "-Wl,--wrap=OH_FileUri_GetFileName",
+    "-Wl,--wrap=OH_CommonEvent_CreateSubscribeInfo",
+    "-Wl,--wrap=OH_CommonEvent_CreateSubscriber",
+    "-Wl,--wrap=OH_CommonEvent_Subscribe",
+    "-Wl,--wrap=OH_BatteryInfo_GetCapacity",
+    "-Wl,--wrap=OH_BatteryInfo_GetPluggedType",
+    "-Wl,--wrap=OH_AudioCapturer_Start",
+    "-Wl,--wrap=OH_AudioCapturer_Stop",
+    "-Wl,--wrap=OH_AudioCapturer_Release",
+    "-Wl,--wrap=OH_AudioCapturer_GetFrameSizeInCallback",
+    "-Wl,--wrap=OH_AudioCapturer_GetTimestamp",
+    "-Wl,--wrap=OH_AudioStreamBuilder_Create",
+    "-Wl,--wrap=OH_AudioStreamBuilder_SetSamplingRate",
+    "-Wl,--wrap=OH_AudioStreamBuilder_Destroy",
+    "-Wl,--wrap=OH_AudioStreamBuilder_SetSampleFormat",
+    "-Wl,--wrap=OH_AudioStreamBuilder_SetEncodingType",
+    "-Wl,--wrap=OH_AudioStreamBuilder_SetChannelCount",
+    "-Wl,--wrap=OH_AudioStreamBuilder_SetCapturerInfo",
+    "-Wl,--wrap=OH_AudioStreamBuilder_SetLatencyMode",
+    "-Wl,--wrap=OH_AudioStreamBuilder_SetCapturerCallback",
+    "-Wl,--wrap=OH_AudioStreamBuilder_GenerateCapturer",
+    "-Wl,--wrap=OH_CommonEvent_UnSubscribe",
+    "-Wl,--wrap=OH_CommonEvent_GetParametersFromRcvData",
+    "-Wl,--wrap=OH_CommonEvent_HasKeyInParameters",
+    "-Wl,--wrap=OH_CommonEvent_GetIntFromParameters",
+    "-Wl,--wrap=OH_CommonEvent_GetCodeFromRcvData",
+  ]
+
+  #arkweb_base_pasteboard_config
+  ldflags += [
+    "-Wl,--wrap=OH_Pasteboard_GetDataParams_Create",
+    "-Wl,--wrap=OH_AbilityRuntime_ApplicationContextGetCacheDir",
+    "-Wl,--wrap=OH_Pasteboard_GetDataParams_SetProgressIndicator",
+    "-Wl,--wrap=OH_Pasteboard_GetDataParams_SetDestUri",
+    "-Wl,--wrap=OH_Pasteboard_GetDataParams_SetFileConflictOptions",
+    "-Wl,--wrap=OH_Pasteboard_GetDataWithProgress",
+    "-Wl,--wrap=OH_Pasteboard_HasData",
+    "-Wl,--wrap=OH_Pasteboard_GetDataParams_Destroy",
+    "-Wl,--wrap=OH_UdmfData_GetRecords",
+    "-Wl,--wrap=OH_UdmfData_IsLocal",
+  ]  
+}
+config("mock_base_ohos_config") {
+  ldflags = [ 
+    "-Wl,--wrap=OsVersion",
+    "-Wl,--wrap=CompatibleDeviceType",
+    "-Wl,--wrap=IsMobileDevice",
+    "-Wl,--wrap=IsTabletDevice",
+    "-Wl,--wrap=IsPcDevice",
+    "-Wl,--wrap=BaseOsName",
+    "-Wl,--wrap=MajorVersion",
+    "-Wl,--wrap=SeniorVersion",
+  ]
+  ldflags += [ "-Wl,--wrap=ComputeLanguageByRegion" ]
+}
+
+source_set("mock_base_ohos") {
+  testonly = true
+  sources = [
+    "src/mock_language_api.cc",
+    "src/mock_sys_info_util_ext.cc"
+  ]
+  public_configs = [ ":mock_base_ohos_config" ]
+ deps = [
+   "//third_party/googletest:gtest",
+   "//third_party/googletest:gmock",
+ ]
+}
+
+source_set("mock_ndk") {
+  testonly = true
+  sources = [
+    "src/mock_ndk_api.cc",
+    "src/mock_ndk_api_new.cc",
+    "src/mock_codec_decoder_adapter.cpp"
+  ]
+
+  deps = ["//arkweb/ohos_adapter_ndk:adapter_ndk_gen"]
+  deps += [
+    "//third_party/googletest:gtest",
+    "//third_party/googletest:gmock",
+  ]
+  public_configs = [ ":mock_ndk_api_config" ]
+}
+
+

@@ -739,7 +739,6 @@ source_set("unit_tests") {
     sources += arkweb_media_gpu_unittest_sources
     sources += arkweb_media_filters_ohos_unittest_sources
     sources += arkweb_media_third_party_unittest_sources
-    sources += arkweb_media_adapter_mock_sources
     if (arkweb_enable_cdm) {
       sources += arkweb_cdm_unittest_sources
     }

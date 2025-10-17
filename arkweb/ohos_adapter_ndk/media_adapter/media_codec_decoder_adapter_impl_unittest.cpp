@@ -29,7 +29,7 @@
 #include <multimedia/player_framework/native_avcapability.h>
 #include <native_buffer/native_buffer.h>
 #include <multimedia/player_framework/native_cencinfo.h>
-#include "mock_codec_decoder_adapter.h"
+#include "arkweb/ohos_adapter_ndk/mock_ndk_api/include/mock_codec_decoder_adapter.h"
 
 using namespace testing;
 using namespace std;

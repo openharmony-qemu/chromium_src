@@ -23,7 +23,7 @@
 #include <database/udmf/udmf_meta.h>
 #include <database/pasteboard/oh_pasteboard_err_code.h>
 #include "ohos_sdk/openharmony/native/sysroot/usr/include/AbilityKit/ability_runtime/ability_runtime_common.h"
-
+#include "arkweb/ohos_adapter_ndk/mock_ndk_api/include/mock_ndk_api_new.h"
 #define private public
 #include "arkweb/ohos_adapter_ndk/pasteboard_adapter/include/pasteboard_client_adapter_impl.h"
 #undef private
@@ -31,7 +31,7 @@
 using namespace testing;
 using testing::_;
 using testing::Return;
-
+using namespace MockNdkApi;
 
 namespace OHOS::NWeb {
 const int RESULT_OK = 0;
@@ -181,52 +181,6 @@ public:
     void OnPasteboardChanged() override {}
 };
 
-class MockOHOSFunction {
-public:
- static MockOHOSFunction& GetInstance() {
-    static MockOHOSFunction instance;
-    return instance;
- }
-
- MOCK_METHOD(Pasteboard_GetDataParams*, OH_Pasteboard_GetDataParams_Create, ());
- MOCK_METHOD(AbilityRuntime_ErrorCode, OH_AbilityRuntime_ApplicationContextGetCacheDir,
-            (char* buffer, int32_t bufferSize, int32_t* writeLength));
- MOCK_METHOD(void, OH_Pasteboard_GetDataParams_SetProgressIndicator,
-            (Pasteboard_GetDataParams* params, Pasteboard_ProgressIndicator progressIndicator));
- MOCK_METHOD(void, OH_Pasteboard_GetDataParams_SetDestUri,
-            (Pasteboard_GetDataParams* params, const char* destUri, uint32_t destUriLen));
- MOCK_METHOD(void, OH_Pasteboard_GetDataParams_SetFileConflictOptions,
-            (Pasteboard_GetDataParams* params, Pasteboard_FileConflictOptions option));
- MOCK_METHOD(OH_UdmfData*, OH_Pasteboard_GetDataWithProgress,
-            (OH_Pasteboard* pasteboard, Pasteboard_GetDataParams* params, int* status));
- MOCK_METHOD(bool, OH_Pasteboard_HasData, (OH_Pasteboard* pasteboard));
- MOCK_METHOD(void, OH_Pasteboard_GetDataParams_Destroy, (Pasteboard_GetDataParams* params));
- MOCK_METHOD(OH_UdmfRecord**, OH_UdmfData_GetRecords, (OH_UdmfData* pThis, unsigned int* count));
- MOCK_METHOD(bool, OH_UdmfData_IsLocal, (OH_UdmfData* data));
-
-static bool pasteboard_GetDataParams_Create;
-static bool abilityRuntime_ApplicationContextGetCacheDir;
-static bool pasteboard_GetDataParams_SetProgressIndicator;
-static bool pasteboard_GetDataParams_SetDestUri;
-static bool pasteboard_GetDataParams_SetFileConflictOptions;
-static bool pasteboard_GetDataWithProgress;
-static bool pasteboard_HasData;
-static bool pasteboard_GetDataParams_Destroy;
-static bool udmfData_GetRecords;
-static bool udmfData_IsLocal;
-};
-
-bool MockOHOSFunction::pasteboard_GetDataParams_Create = false;
-bool MockOHOSFunction::abilityRuntime_ApplicationContextGetCacheDir = false;
-bool MockOHOSFunction::pasteboard_GetDataParams_SetProgressIndicator = false;
-bool MockOHOSFunction::pasteboard_GetDataParams_SetDestUri = false;
-bool MockOHOSFunction::pasteboard_GetDataParams_SetFileConflictOptions = false;
-bool MockOHOSFunction::pasteboard_GetDataWithProgress = false;
-bool MockOHOSFunction::pasteboard_HasData = false;
-bool MockOHOSFunction::pasteboard_GetDataParams_Destroy = false;
-bool MockOHOSFunction::udmfData_GetRecords = false;
-bool MockOHOSFunction::udmfData_IsLocal = false;
-
 void SetMockState(bool status) {
     MockOHOSFunction::pasteboard_GetDataParams_Create = status;
     MockOHOSFunction::abilityRuntime_ApplicationContextGetCacheDir = status;
@@ -239,115 +193,6 @@ void SetMockState(bool status) {
     MockOHOSFunction::udmfData_GetRecords = status;
     MockOHOSFunction::udmfData_IsLocal = status;
 }
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-Pasteboard_GetDataParams* __real_OH_Pasteboard_GetDataParams_Create();
-Pasteboard_GetDataParams* __wrap_OH_Pasteboard_GetDataParams_Create() {
-    if (MockOHOSFunction::pasteboard_GetDataParams_Create) {
-        return MockOHOSFunction::GetInstance().OH_Pasteboard_GetDataParams_Create();
-    } else {
-        return __real_OH_Pasteboard_GetDataParams_Create();
-    }
-}
-
-AbilityRuntime_ErrorCode __real_OH_AbilityRuntime_ApplicationContextGetCacheDir(char* buffer,
-    int32_t bufferSize, int32_t* writeLength);
-AbilityRuntime_ErrorCode __wrap_OH_AbilityRuntime_ApplicationContextGetCacheDir(char* buffer,
-    int32_t bufferSize, int32_t* writeLength) {
-    if (MockOHOSFunction::abilityRuntime_ApplicationContextGetCacheDir) {
-        return MockOHOSFunction::GetInstance().OH_AbilityRuntime_ApplicationContextGetCacheDir(
-            buffer, bufferSize, writeLength);
-    } else {
-        return __real_OH_AbilityRuntime_ApplicationContextGetCacheDir(buffer, bufferSize, writeLength);
-    }
-}
-
-void __real_OH_Pasteboard_GetDataParams_SetProgressIndicator(Pasteboard_GetDataParams* params,
-    Pasteboard_ProgressIndicator progressIndicator);
-void __wrap_OH_Pasteboard_GetDataParams_SetProgressIndicator(Pasteboard_GetDataParams* params,
-    Pasteboard_ProgressIndicator progressIndicator) {
-    if (MockOHOSFunction::pasteboard_GetDataParams_SetProgressIndicator) {
-        return MockOHOSFunction::GetInstance().OH_Pasteboard_GetDataParams_SetProgressIndicator(params,
-            progressIndicator);
-    } else {
-        return __real_OH_Pasteboard_GetDataParams_SetProgressIndicator(params, progressIndicator);
-    }
-}
-
-void __real_OH_Pasteboard_GetDataParams_SetDestUri(Pasteboard_GetDataParams* params,
-    const char* destUri, uint32_t destUriLen);
-void __wrap_OH_Pasteboard_GetDataParams_SetDestUri(Pasteboard_GetDataParams* params,
-    const char* destUri, uint32_t destUriLen) {
-    if (MockOHOSFunction::pasteboard_GetDataParams_SetDestUri) {
-        return MockOHOSFunction::GetInstance().OH_Pasteboard_GetDataParams_SetDestUri(params, destUri, destUriLen);
-    } else {
-       return  __real_OH_Pasteboard_GetDataParams_SetDestUri(params, destUri, destUriLen);
-    }
-}
-
-void __real_OH_Pasteboard_GetDataParams_SetFileConflictOptions(Pasteboard_GetDataParams* params,
-    Pasteboard_FileConflictOptions option);
-void __wrap_OH_Pasteboard_GetDataParams_SetFileConflictOptions(Pasteboard_GetDataParams* params,
-    Pasteboard_FileConflictOptions option) {
-    if (MockOHOSFunction::pasteboard_GetDataParams_SetFileConflictOptions) {
-        return MockOHOSFunction::GetInstance().OH_Pasteboard_GetDataParams_SetFileConflictOptions(params, option);
-    } else {
-        return __real_OH_Pasteboard_GetDataParams_SetFileConflictOptions(params, option);
-    }
-}
-
-OH_UdmfData* __real_OH_Pasteboard_GetDataWithProgress(OH_Pasteboard* pasteboard,
-    Pasteboard_GetDataParams* params, int* status);
-OH_UdmfData* __wrap_OH_Pasteboard_GetDataWithProgress(OH_Pasteboard* pasteboard,
-    Pasteboard_GetDataParams* params, int* status) {
-    if (MockOHOSFunction::pasteboard_GetDataWithProgress) {
-        return MockOHOSFunction::GetInstance().OH_Pasteboard_GetDataWithProgress(pasteboard, params, status);
-    } else {
-        return __real_OH_Pasteboard_GetDataWithProgress(pasteboard, params, status);
-    }
-}
-
-bool __real_OH_Pasteboard_HasData(OH_Pasteboard* pasteboard);
-bool __wrap_OH_Pasteboard_HasData(OH_Pasteboard* pasteboard) {
-    if (MockOHOSFunction::pasteboard_HasData) {
-        return MockOHOSFunction::GetInstance().OH_Pasteboard_HasData(pasteboard);
-    } else {
-        return __real_OH_Pasteboard_HasData(pasteboard);
-    }
-}
-
-void __real_OH_Pasteboard_GetDataParams_Destroy(Pasteboard_GetDataParams* params);
-void __wrap_OH_Pasteboard_GetDataParams_Destroy(Pasteboard_GetDataParams* params) {
-    if (MockOHOSFunction::pasteboard_GetDataParams_Destroy) {
-        return MockOHOSFunction::GetInstance().OH_Pasteboard_GetDataParams_Destroy(params);
-    } else {
-        return __real_OH_Pasteboard_GetDataParams_Destroy(params);
-    }
-}
-
-OH_UdmfRecord** __real_OH_UdmfData_GetRecords(OH_UdmfData* pThis, unsigned int* count);
-OH_UdmfRecord** __wrap_OH_UdmfData_GetRecords(OH_UdmfData* pThis, unsigned int* count) {
-    if (MockOHOSFunction::udmfData_GetRecords) {
-        return MockOHOSFunction::GetInstance().OH_UdmfData_GetRecords(pThis, count);
-    } else {
-        return __real_OH_UdmfData_GetRecords(pThis, count);
-    }
-}
-
-bool __real_OH_UdmfData_IsLocal(OH_UdmfData* data);
-bool __wrap_OH_UdmfData_IsLocal(OH_UdmfData* data) {
-    if (MockOHOSFunction::udmfData_IsLocal) {
-        return MockOHOSFunction::GetInstance().OH_UdmfData_IsLocal(data);
-    } else {
-        return __real_OH_UdmfData_IsLocal(data);
-    }
-}
-
-#ifdef __cplusplus
-}
-#endif
 
 TEST_F(PasteboardClientAdapterImplTest, SetAndGetHtmlText)
 {
@@ -633,13 +478,14 @@ TEST_F(PasteboardClientAdapterImplTest, PasteDataNull)
     PasteBoardClientAdapterImpl::GetInstance().Clear();
     std::shared_ptr<PasteboardObserverAdapter> observer = std::make_shared<MockPasteboardObserver>();
     int32_t id = PasteBoardClientAdapterImpl::GetInstance().AddPasteboardChangedObserver(observer);
-    EXPECT_EQ(id, 0);
+    EXPECT_NE(id, -1);
 
     PasteBoardClientAdapterImpl::GetInstance().pasteboard_ = OH_Pasteboard_Create();
-    id = PasteBoardClientAdapterImpl::GetInstance().AddPasteboardChangedObserver(observer);
-    EXPECT_EQ(id, 1);
+    int32_t newId = PasteBoardClientAdapterImpl::GetInstance().AddPasteboardChangedObserver(observer);
+    EXPECT_EQ(id, newId - 1);
     PasteBoardClientAdapterImpl::GetInstance().pasteboard_ = nullptr;
     PasteBoardClientAdapterImpl::GetInstance().RemovePasteboardChangedObserver(id);
+    PasteBoardClientAdapterImpl::GetInstance().RemovePasteboardChangedObserver(newId);
 }
 
 TEST_F(PasteboardClientAdapterImplTest, ReleaseMemory)

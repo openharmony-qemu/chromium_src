@@ -25,55 +25,19 @@
 #include "arkweb/chromium_ext/content/browser/renderer_host/arkweb_render_process_host_impl_utils.h"
 #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #include "content/public/test/mock_render_process_host.h"
-
-namespace base {
-namespace ohos {
-
-static bool compute_language_by_region_for_test = false;
-
-class LanguageMock {
- public:
-  static LanguageMock& getInstance() { 
-    static LanguageMock instance;
-    return instance; 
-  } 
-  MOCK_METHOD(std::string, ComputeLanguageByRegionMock, (), ());
- private:
-  LanguageMock() = default;
-};
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-std::string __real_ComputeLanguageByRegion();
-
-std::string __wrap_ComputeLanguageByRegion() {
-  if (compute_language_by_region_for_test) {
-    return LanguageMock::getInstance().ComputeLanguageByRegionMock();
-  } else {
-    return __real_ComputeLanguageByRegion();
-  }
-}
-
-#ifdef __cplusplus
-}
-#endif
-
-}
-}
-
+#include "arkweb/ohos_adapter_ndk/mock_ndk_api/include/mock_base_ohos_api.h"
 namespace content {
 class WebContentsImplUtilsTest : public RenderViewHostImplTestHarness {
  public:
   void SetUp() override {
     RenderViewHostImplTestHarness::SetUp();
-    base::ohos::compute_language_by_region_for_test = true;
+    SET_MOCK_KEY_TRUE(base::ohos::LanguageMock,ComputeLanguageByRegion);
     utils_ = std::make_unique<WebContentsImplUtils>(contents());
   }
 
   void TearDown() override {
     utils_.reset();
+    SET_MOCK_KEY_FALSE(base::ohos::LanguageMock,ComputeLanguageByRegion);
     RenderViewHostImplTestHarness::TearDown();
   }
 
@@ -112,8 +76,8 @@ TEST_F(WebContentsImplUtilsTest, UpdateRenderAcceptLanguageIfNeed_NoLangSwitch) 
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
   command_line->RemoveSwitch(::switches::kLang);
 
-  auto& mock = base::ohos::LanguageMock::getInstance();
-  EXPECT_CALL(mock, ComputeLanguageByRegionMock()).Times(0);
+  auto& mock = base::ohos::LanguageMock::GetInstance();
+  EXPECT_CALL(mock, ComputeLanguageByRegion()).Times(0);
 
   utils_->UpdateRenderAcceptLanguageIfNeed("en-US");
 }
@@ -123,8 +87,8 @@ TEST_F(WebContentsImplUtilsTest, UpdateRenderAcceptLanguageIfNeed_WithLangSwitch
   command_line->AppendSwitchASCII(::switches::kLang, "en-US");
   std::string origin_accept_language = "zh-CN";
   SetAcceptLanguage(origin_accept_language);
-  auto& mock = base::ohos::LanguageMock::getInstance();
-  EXPECT_CALL(mock, ComputeLanguageByRegionMock()).WillOnce(testing::Return(""));
+  auto& mock = base::ohos::LanguageMock::GetInstance();
+  EXPECT_CALL(mock, ComputeLanguageByRegion()).WillOnce(testing::Return(""));
   std::string old_accept_language = "zh-CN";
   utils_->UpdateRenderAcceptLanguageIfNeed(old_accept_language);
   EXPECT_TRUE(GetAcceptLanguage() == origin_accept_language);
@@ -135,8 +99,8 @@ TEST_F(WebContentsImplUtilsTest, UpdateRenderAcceptLanguageIfNeed_WithLangSwitch
   command_line->AppendSwitchASCII(::switches::kLang, "en");
   std::string origin_accept_language = "zh-CN";
   SetAcceptLanguage(origin_accept_language);
-  auto& mock = base::ohos::LanguageMock::getInstance();
-  EXPECT_CALL(mock, ComputeLanguageByRegionMock()).WillOnce(testing::Return(""));
+  auto& mock = base::ohos::LanguageMock::GetInstance();
+  EXPECT_CALL(mock, ComputeLanguageByRegion()).WillOnce(testing::Return(""));
   std::string old_accept_language = "zh-CN";
   utils_->UpdateRenderAcceptLanguageIfNeed(old_accept_language);
   EXPECT_TRUE(GetAcceptLanguage() == origin_accept_language);
@@ -147,8 +111,8 @@ TEST_F(WebContentsImplUtilsTest, UpdateRenderAcceptLanguageIfNeed_HasRegion_Same
   command_line->AppendSwitchASCII(::switches::kLang, "en-US");
   std::string origin_accept_language = "zh-CN";
   SetAcceptLanguage(origin_accept_language);
-  auto& mock = base::ohos::LanguageMock::getInstance();
-  EXPECT_CALL(mock, ComputeLanguageByRegionMock()).WillOnce(testing::Return("en-US"));
+  auto& mock = base::ohos::LanguageMock::GetInstance();
+  EXPECT_CALL(mock, ComputeLanguageByRegion()).WillOnce(testing::Return("en-US"));
   std::string old_accept_language = "en-US";
   utils_->UpdateRenderAcceptLanguageIfNeed(old_accept_language);
   EXPECT_TRUE(GetAcceptLanguage() == origin_accept_language);
@@ -159,8 +123,8 @@ TEST_F(WebContentsImplUtilsTest, UpdateRenderAcceptLanguageIfNeed_HasRegion_Curr
   command_line->AppendSwitchASCII(::switches::kLang, "en-US");
   std::string origin_accept_language = "zh-CN";
   SetAcceptLanguage(origin_accept_language);
-  auto& mock = base::ohos::LanguageMock::getInstance();
-  EXPECT_CALL(mock, ComputeLanguageByRegionMock()).WillOnce(testing::Return("en-US"));
+  auto& mock = base::ohos::LanguageMock::GetInstance();
+  EXPECT_CALL(mock, ComputeLanguageByRegion()).WillOnce(testing::Return("en-US"));
   std::string old_accept_language = "zh-CN";
   utils_->UpdateRenderAcceptLanguageIfNeed(old_accept_language);
   EXPECT_NE(GetAcceptLanguage(), origin_accept_language);

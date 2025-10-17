@@ -166,6 +166,7 @@ class OhosAdapterHelperMock : public OhosAdapterHelper {
   MOCK_METHOD(std::unique_ptr<CertManagerAdapter>, GetCertManagerAdapter, (), (override));
   MOCK_METHOD(std::unique_ptr<NetConfigAdapter>, GetNetConfigAdapter, (), (override));
   MOCK_METHOD(std::unique_ptr<NetEventAdapter>, CreateNetEventAdapter, (), (override));
+  MOCK_METHOD(ColorPickerAdapter &, GetColorPickerAdapter, (), (override));
 };
 
 class CameraSurfaceBufferAdapterMock : public CameraSurfaceBufferAdapter {

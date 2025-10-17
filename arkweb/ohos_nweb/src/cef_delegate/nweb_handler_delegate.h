@@ -1030,6 +1030,11 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   void ClearSnapshot();
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  std::string OnRewriteUrlForNavigation(const std::string& original_url,
+                                        const std::string& referrer) override;
+#endif
+
  private:
 #if BUILDFLAG(ARKWEB_JSPROXY)
   enum class JsRunTime{Start = 0, End = 1, HEAD_READY};

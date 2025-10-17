@@ -5413,4 +5413,19 @@ bool NWebHandlerDelegate::OnStartBackgroundTask(int32_t type,
       type, message, web_app_client_extension_listener_->nweb_id);
 }
 #endif  // RKWEB_PERFORMANCE_PERSISTENT_TASK
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+std::string NWebHandlerDelegate::OnRewriteUrlForNavigation(const std::string& original_url,
+                                                           const std::string& referrer) {
+  if (!CefCurrentlyOn(TID_UI)) {
+    return "";
+  }
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (IsNativeApiEnable()) {
+    return dispatcher_.OnRewriteUrlForNavigation(original_url.c_str(), referrer.c_str());
+  }
+#endif  // ARKWEB_NWEB_EX
+  return "";
+}
+#endif
 }  // namespace OHOS::NWeb

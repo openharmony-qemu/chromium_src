@@ -205,6 +205,7 @@ extern bool g_siteIsolationMode;
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
 #include "cef/ohos_cef_ext/libcef/browser/net/extra_headers_throttle.h"
+#include "cef/ohos_cef_ext/libcef/browser/net/ohos_url_rewrite_controller.h"
 #endif
 
 #ifdef OHOS_WEB_LTPO
@@ -7078,3 +7079,9 @@ void NWebImpl::StopFling() {
   }
   nweb_delegate_->StopFling();
 }
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+void NWebImpl::EnableRewriteUrlForNavigation(bool enable) {
+  OhosUrlRewriteController::EnableRewriteUrl(enable);
+}
+#endif

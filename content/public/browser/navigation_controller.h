@@ -55,6 +55,9 @@ class BrowserContext;
 class NavigationEntry;
 class RenderFrameHost;
 class NavigationHandle;
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+class NavigationControllerDelegate;
+#endif
 struct OpenURLParams;
 
 // A NavigationController manages session history, i.e., a back-forward list
@@ -149,7 +152,11 @@ class NavigationController {
       bool is_renderer_initiated,
       const std::string& extra_headers,
       BrowserContext* browser_context,
-      scoped_refptr<network::SharedURLLoaderFactory> blob_url_loader_factory);
+      scoped_refptr<network::SharedURLLoaderFactory> blob_url_loader_factory
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      , NavigationControllerDelegate* delegate = nullptr
+#endif
+      );
 
   // Extra optional parameters for LoadURLWithParams.
   struct CONTENT_EXPORT LoadURLParams {

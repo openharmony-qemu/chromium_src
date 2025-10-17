@@ -387,6 +387,10 @@ class MockOhosAdapterHelper : public OhosAdapterHelper {
               CreateNetEventAdapter,
               (),
               (override));
+  MOCK_METHOD(ColorPickerAdapter&,
+              GetColorPickerAdapter,
+              (),
+              (override));
   static MockOhosAdapterHelper& GetInstance() {
     static MockOhosAdapterHelper instance;
     return instance;

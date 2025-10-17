@@ -184,12 +184,26 @@ bool TouchSelectionControllerExt::IsContinuousEvent(const PreTouchInfo& first_do
 void TouchSelectionControllerExt::SetTouchNumsForHandle(const MotionEvent& event) {
   int32_t continuous_touch_nums = GetTouchNums(event);
   if (insertion_handle_) {
+    if (insertion_handle_->AsTouchHandleExt()) {
+      insertion_handle_->AsTouchHandleExt()->SetEdge(start_.edge_start(),
+                                                     start_.edge_end());
+    }
     insertion_handle_->SetTouchNums(continuous_touch_nums);
   }
-  if(start_selection_handle_)
+  if(start_selection_handle_) {
+    if (start_selection_handle_->AsTouchHandleExt()) {
+      start_selection_handle_->AsTouchHandleExt()->SetEdge(start_.edge_start(),
+                                                           start_.edge_end());
+    }
     start_selection_handle_->SetTouchNums(continuous_touch_nums);
-  if(end_selection_handle_)
+  }
+  if(end_selection_handle_) {
+    if (end_selection_handle_->AsTouchHandleExt()) {
+      end_selection_handle_->AsTouchHandleExt()->SetEdge(end_.edge_start(),
+                                                         end_.edge_end());
+    }
     end_selection_handle_->SetTouchNums(continuous_touch_nums);
+  }
 }
 #endif
 }  // namespace ui

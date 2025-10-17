@@ -944,17 +944,6 @@ class NWebImpl : public NWeb {
   static void SetPublisherKeys(const std::vector<std::vector<uint8_t>>& keys);
   static void WebExtensionSetForbidDisplayInSettings(
     const std::set<std::string>& extension_ids);
-  //old version
-  void WebExtensionTabCreated(int tab_id);
-  void WebExtensionTabUpdated(
-      int tab_id,
-      const std::vector<std::string>& changed_property_names,
-      const std::string& url);
-  void WebExtensionTabUpdated(
-      int tab_id,
-      const std::vector<std::string>& changed_property_names,
-      std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo);
-  // new version
   void WebExtensionTabRemoved(int tab_id, bool isWindowClosing, int windowId);
   void WebExtensionTabUpdated(
       int tab_id,

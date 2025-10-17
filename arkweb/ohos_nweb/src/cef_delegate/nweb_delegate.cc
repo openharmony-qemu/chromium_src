@@ -5568,56 +5568,6 @@ void NWebDelegate::DisallowSandboxFileAccessFromFileUrl(bool disallow) {
 #endif  // BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-void NWebDelegate::WebExtensionTabCreated(int tab_id) {
-  LOG(INFO) << "WebExtensionTabCreated:" << tab_id;
-  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
-    LOG(ERROR) << "WebExtensionTabCreated failed, get browser failed";
-    return;
-  }
-
-  return GetBrowser()->ExtensionSetTabId(tab_id);
-}
-
-void NWebDelegate::WebExtensionTabUpdated(
-    int tab_id,
-    const std::vector<std::string>& changed_property_names,
-    const std::string& url) {
-  LOG(INFO) << "WebExtensionTabUpdated:" << tab_id;
-  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
-    LOG(ERROR) << "WebExtensionTabUpdated failed, get browser failed";
-    return;
-  }
-
-  GetBrowser()->ExtensionSetTabId(tab_id);
-
-  std::vector<CefString> changed_properties;
-  std::for_each(changed_property_names.begin(), changed_property_names.end(),
-                [&changed_properties](const std::string& name) {
-                  changed_properties.emplace_back(CefString(name));
-                });
-  return GetBrowser()->GetHost()->WebExtensionTabUpdated(
-      tab_id, changed_properties, url);
-}
-
-void NWebDelegate::WebExtensionTabUpdated(int tab_id,
-    const std::vector<std::string>& changed_property_names,
-    std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo) {
-  LOG(INFO) << "WebExtensionTabUpdated:" << tab_id;
-  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
-    LOG(ERROR) << "WebExtensionTabUpdated failed, get browser failed";
-    return;
-  }
-  GetBrowser()->ExtensionSetTabId(tab_id);
- 
-  std::vector<CefString> changed_properties;
-  std::for_each(changed_property_names.begin(), changed_property_names.end(),
-      [&changed_properties] (const std::string& name) {
-    changed_properties.emplace_back(CefString(name));
-  });
-  return GetBrowser()->GetHost()->WebExtensionTabUpdated(
-      tab_id, changed_properties, std::move(changeInfo));
-}
-
 void NWebDelegate::WebExtensionTabRemoved(int tab_id,
   bool isWindowClosing, int windowId) {
   LOG(INFO) << "WebExtensionTabRemoved:" << tab_id;

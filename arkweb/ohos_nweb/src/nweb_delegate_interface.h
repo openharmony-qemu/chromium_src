@@ -754,15 +754,6 @@ class NWebDelegateInterface
 #endif  // BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  virtual void WebExtensionTabCreated(int tab_id) = 0;
-  virtual void WebExtensionTabUpdated(
-      int tab_id,
-      const std::vector<std::string>& changed_property_names,
-      const std::string& url) = 0;
-  virtual void WebExtensionTabUpdated(
-      int tab_id,
-      const std::vector<std::string>& changed_property_names,
-      std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo) = 0;
   virtual void WebExtensionTabRemoved(
       int tab_id,
       bool isWindowClosing,

@@ -6205,65 +6205,7 @@ TEST_F(NWebImplTest, GetUsageScenario002) {
 #endif // BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-TEST_F(NWebImplTest, WebExtensionTabCreated001) {
-  int tab_id = 0;
-  nweb_impl_->nweb_delegate_ = nullptr;
-  EXPECT_CALL(*mock_delegate_, WebExtensionTabCreated(tab_id)).Times(0);
-  nweb_impl_->WebExtensionTabCreated(tab_id);
-  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
-}
-
-TEST_F(NWebImplTest, WebExtensionTabCreated002) {
-  int tab_id = 0;
-  nweb_impl_->nweb_delegate_ = mock_delegate_;
-  EXPECT_CALL(*mock_delegate_, WebExtensionTabCreated(tab_id)).Times(1);
-  nweb_impl_->WebExtensionTabCreated(tab_id);
-  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
-}
-
 TEST_F(NWebImplTest, WebExtensionTabUpdated001) {
-  int tab_id = 0;
-  const std::vector<std::string> changed_property_names = {"Default", "IncludeSensitive", "Everything"};
-  const std::string url = "test";
-  nweb_impl_->nweb_delegate_ = nullptr;
-  EXPECT_CALL(*mock_delegate_, WebExtensionTabUpdated(tab_id, changed_property_names, url)).Times(0);
-  nweb_impl_->WebExtensionTabUpdated(tab_id, changed_property_names, url);
-  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
-}
-
-TEST_F(NWebImplTest, WebExtensionTabUpdated002) {
-  int tab_id = 0;
-  const std::vector<std::string> changed_property_names = {"Default", "IncludeSensitive", "Everything"};
-  const std::string url = "test";
-  nweb_impl_->nweb_delegate_ = mock_delegate_;
-  EXPECT_CALL(*mock_delegate_, WebExtensionTabUpdated(tab_id, changed_property_names, url)).Times(1);
-  nweb_impl_->WebExtensionTabUpdated(tab_id, changed_property_names, url);
-  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
-}
-
-TEST_F(NWebImplTest, WebExtensionTabUpdated003) {
-  int tab_id = 0;
-  const std::vector<std::string> changed_property_names = {"Default", "IncludeSensitive", "Everything"};
-  std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo = std::make_unique<NWebExtensionTabChangeInfo>();
-  nweb_impl_->nweb_delegate_ = nullptr;
-  EXPECT_CALL(*mock_delegate_, WebExtensionTabUpdated(tab_id, changed_property_names,
-      ::testing::A<std::unique_ptr<NWebExtensionTabChangeInfo>>())).Times(0);
-  nweb_impl_->WebExtensionTabUpdated(tab_id, changed_property_names, std::move(changeInfo));
-  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
-}
-
-TEST_F(NWebImplTest, WebExtensionTabUpdated004) {
-  int tab_id = 0;
-  const std::vector<std::string> changed_property_names = {"Default", "IncludeSensitive", "Everything"};
-  std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo = std::make_unique<NWebExtensionTabChangeInfo>();
-  nweb_impl_->nweb_delegate_ = mock_delegate_;
-  EXPECT_CALL(*mock_delegate_, WebExtensionTabUpdated(tab_id, changed_property_names,
-      ::testing::A<std::unique_ptr<NWebExtensionTabChangeInfo>>())).Times(1);
-  nweb_impl_->WebExtensionTabUpdated(tab_id, changed_property_names, std::move(changeInfo));
-  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
-}
-
-TEST_F(NWebImplTest, WebExtensionTabUpdated005) {
   int tab_id = 0;
   std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo = std::make_unique<NWebExtensionTabChangeInfo>();
   std::unique_ptr<NWebExtensionTab> tab = std::make_unique<NWebExtensionTab>();
@@ -6275,7 +6217,7 @@ TEST_F(NWebImplTest, WebExtensionTabUpdated005) {
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
 }
 
-TEST_F(NWebImplTest, WebExtensionTabUpdated006) {
+TEST_F(NWebImplTest, WebExtensionTabUpdated002) {
   int tab_id = 0;
   std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo = std::make_unique<NWebExtensionTabChangeInfo>();
   std::unique_ptr<NWebExtensionTab> tab = std::make_unique<NWebExtensionTab>();

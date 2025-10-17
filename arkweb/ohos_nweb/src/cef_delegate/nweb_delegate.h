@@ -766,15 +766,6 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 #endif
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  void WebExtensionTabCreated(int tab_id) override;
-  void WebExtensionTabUpdated(
-      int tab_id,
-      const std::vector<std::string>& changed_property_names,
-      const std::string& url) override;
-  void WebExtensionTabUpdated(
-      int tab_id,
-      const std::vector<std::string>& changed_property_names,
-      std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo) override;
   void WebExtensionTabRemoved(
       int tab_id,
       bool isWindowClosing,

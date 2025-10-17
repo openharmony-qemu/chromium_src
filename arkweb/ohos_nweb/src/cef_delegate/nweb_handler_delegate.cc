@@ -1245,6 +1245,14 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
       }
     }
 #endif // ARKWEB_EX_SCREEN_CAPTURE
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(
+        ::switches::kEnableNwebEx) && base::ohos::IsPcDevice()) {
+      if (main_browser_ && main_browser_->GetHost()) {
+        main_browser_->GetHost()->WebExtensionRegisterZoomObserver();
+      }
+    }
+#endif // ARKWEB_ARKWEB_EXTENSIONS
     return;
   }
 #endif  // BUILDFLAG(ARKWEB_MULTI_WINDOW)
@@ -1277,6 +1285,14 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
     }
   }
 #endif  // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(
+      ::switches::kEnableNwebEx) && base::ohos::IsPcDevice()) {
+    if (main_browser_ && main_browser_->GetHost()) {
+      main_browser_->GetHost()->WebExtensionRegisterZoomObserver();
+    }
+  }
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 bool NWebHandlerDelegate::DoClose(CefRefPtr<CefBrowser> browser) {
@@ -1297,6 +1313,14 @@ bool NWebHandlerDelegate::DoClose(CefRefPtr<CefBrowser> browser) {
                              pip_child_id_, pip_frame_routing_id_, 0, 0);
     }
   }
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(
+      ::switches::kEnableNwebEx) && base::ohos::IsPcDevice()) {
+    if (main_browser_ && main_browser_->GetHost()) {
+      main_browser_->GetHost()->WebExtensionUnregisterZoomObserver();
+    }
+  }
+#endif // ARKWEB_ARKWEB_EXTENSIONS
   // Closing the main window requires special handling. See the DoClose()
   // documentation in the CEF header for a detailed destription of this
   // process.

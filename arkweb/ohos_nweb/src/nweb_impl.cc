@@ -6207,33 +6207,6 @@ int32_t NWebImpl::GetUsageScenario() {
 #endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-void NWebImpl::WebExtensionTabCreated(int tab_id) {
-  if (nweb_delegate_ == nullptr) {
-    return;
-  }
-  nweb_delegate_->WebExtensionTabCreated(tab_id);
-}
-
-void NWebImpl::WebExtensionTabUpdated(
-    int tab_id,
-    const std::vector<std::string>& changed_property_names,
-    const std::string& url) {
-  if (nweb_delegate_ == nullptr) {
-    return;
-  }
-  nweb_delegate_->WebExtensionTabUpdated(tab_id, changed_property_names, url);
-}
-
-void NWebImpl::WebExtensionTabUpdated(
-    int tab_id,
-    const std::vector<std::string>& changed_property_names,
-    std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo) {
-  if (nweb_delegate_ == nullptr) {
-    return;
-  }
-  nweb_delegate_->WebExtensionTabUpdated(tab_id, changed_property_names, std::move(changeInfo));
-}
-
 void NWebImpl::WebExtensionTabRemoved(int tab_id, bool isWindowClosing, int windowId) {
   if (nweb_delegate_ == nullptr) {
     return;

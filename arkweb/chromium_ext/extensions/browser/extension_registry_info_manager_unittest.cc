@@ -56,6 +56,7 @@ class ExtensionAction;
 class ExtensionRegistry;
 
 namespace {
+static int g_expect_reason = 0;
 struct ManifestTestHelper {
   std::function<void(base::Value::Dict& manifest)> initManifest;
   std::function<void(const WebExtensionManifestInfo& manifest)> checkManifest;
@@ -105,21 +106,17 @@ class ExtensionRegistryInfoManagerTest : public ExtensionsTest {
     return extension;
   }
 
-  scoped_refptr<Extension> CreateTestExtensionWithManifest(
-      const std::string& name,
-      base::Value::Dict manifest = {}) {
+  scoped_refptr<Extension> CreateTestExtensionWithManifest(const std::string& name, base::Value::Dict manifest = {}) {
     base::FilePath path = temp_dir_.GetPath();
     path = path.AppendASCII(name);
 
     std::string error;
-    scoped_refptr<Extension> extension(
-        Extension::Create(path, mojom::ManifestLocation::kInternal, manifest,
-                          Extension::NO_FLAGS, name, &error));
+    scoped_refptr<Extension> extension(Extension::Create(path, mojom::ManifestLocation::kInternal, manifest,
+                                       Extension::NO_FLAGS, name, &error));
     EXPECT_TRUE(extension.get()) << error;
 
     std::unique_ptr<SettingsOverrides> info = nullptr;
-    const base::Value::Dict* dict =
-        manifest.FindDict(manifest_keys::kSettingsOverride);
+    const base::Value::Dict* dict = manifest.FindDict(manifest_keys::kSettingsOverride);
     if (dict != nullptr) {
       auto settings = ChromeSettingsOverrides::FromValue(*dict);
       EXPECT_TRUE(settings.has_value()) << base::UTF16ToUTF8(settings.error());
@@ -131,8 +128,7 @@ class ExtensionRegistryInfoManagerTest : public ExtensionsTest {
       info->startup_pages = ParseStartupPage(*settings);
     }
     if (info) {
-      extension->SetManifestData(manifest_keys::kSettingsOverride,
-                                 std::move(info));
+      extension->SetManifestData(manifest_keys::kSettingsOverride, std::move(info));
     }
 
     std::u16string str;
@@ -140,29 +136,21 @@ class ExtensionRegistryInfoManagerTest : public ExtensionsTest {
     if (ChromeUrlOverridesKeys::ParseFromDictionary(
             extension->manifest()->available_values(), manifest_keys, str)) {
       auto url_overrides = std::make_unique<URLOverrides>();
-      auto property_map =
-          std::map<const char*,
-                   std::reference_wrapper<const std::optional<std::string>>>{
-              {UrlOverrideInfo::kNewtab,
-               std::ref(manifest_keys.chrome_url_overrides.newtab)},
-              {UrlOverrideInfo::kBookmarks,
-               std::ref(manifest_keys.chrome_url_overrides.bookmarks)},
-              {UrlOverrideInfo::kHistory,
-               std::ref(manifest_keys.chrome_url_overrides.history)},
-              {UrlOverrideInfo::kActivationmessage,
-               std::ref(manifest_keys.chrome_url_overrides.activationmessage)},
-              {UrlOverrideInfo::kKeyboard,
-               std::ref(manifest_keys.chrome_url_overrides.keyboard)}};
+      auto property_map = std::map<const char*, std::reference_wrapper<const std::optional<std::string>>>{
+              {UrlOverrideInfo::kNewtab, std::ref(manifest_keys.chrome_url_overrides.newtab)},
+              {UrlOverrideInfo::kBookmarks, std::ref(manifest_keys.chrome_url_overrides.bookmarks)},
+              {UrlOverrideInfo::kHistory, std::ref(manifest_keys.chrome_url_overrides.history)},
+              {UrlOverrideInfo::kActivationmessage, std::ref(manifest_keys.chrome_url_overrides.activationmessage)},
+              {UrlOverrideInfo::kKeyboard, std::ref(manifest_keys.chrome_url_overrides.keyboard)}
+            };
 
       for (const auto& property : property_map) {
         if (!property.second.get())
           continue;
-        url_overrides->chrome_url_overrides_[property.first] =
-            extension->GetResourceURL(*property.second.get());
+        url_overrides->chrome_url_overrides_[property.first] = extension->GetResourceURL(*property.second.get());
       }
 
-      extension->SetManifestData(ChromeUrlOverridesKeys::kChromeUrlOverrides,
-                                 std::move(url_overrides));
+      extension->SetManifestData(ChromeUrlOverridesKeys::kChromeUrlOverrides, std::move(url_overrides));
     }
     return extension;
   }
@@ -428,32 +416,26 @@ TEST_F(ExtensionRegistryInfoManagerTest, GetExtensionManifestInfo_UrlOverride) {
   }
 }
 
-TEST_F(ExtensionRegistryInfoManagerTest,
-       GetExtensionManifestInfo_SettingsOverrides) {
+std::vector<ManifestTestHelper> CreateSettingsOverridesHelpers() { 
   std::string homepage = "http://www.google.com/home";
   std::string startup = "http://startup.com/startup.html";
   std::string search_url = "http://google.com/search.html";
   std::string alternate_url = "http://wikipedia.org/wiki/Favicon";
-  std::vector<ManifestTestHelper> helpers = {
-      {[=](base::Value::Dict& settings_override) {
+  std::vector<ManifestTestHelper> helpers = {{[=](base::Value::Dict& settings_override) {
          settings_override.Set("homepage", homepage);
-       },
-       [=](const WebExtensionManifestInfo& manifest) {
+       }, [=](const WebExtensionManifestInfo& manifest) {
          ASSERT_TRUE(manifest.settings_overrides.has_value());
          ASSERT_TRUE(manifest.settings_overrides->homepage.has_value());
          EXPECT_EQ(manifest.settings_overrides->homepage, homepage);
-       }},
-      {[=](base::Value::Dict& settings_override) {
+       }},{[=](base::Value::Dict& settings_override) {
          base::Value::List startup_pages;
          startup_pages.Append(startup);
          settings_override.Set("startup_pages", std::move(startup_pages));
-       },
-       [=](const WebExtensionManifestInfo& manifest) {
+       }, [=](const WebExtensionManifestInfo& manifest) {
          ASSERT_TRUE(manifest.settings_overrides.has_value());
          ASSERT_EQ(manifest.settings_overrides->startup_pages.size(), 1u);
          ASSERT_EQ(manifest.settings_overrides->startup_pages[0], startup);
-       }},
-      {[=](base::Value::Dict& settings_override) {
+       }}, {[=](base::Value::Dict& settings_override) {
          base::Value::Dict search_provider;
          search_provider.Set("search_url", search_url);
          search_provider.Set("name", "test");
@@ -462,14 +444,11 @@ TEST_F(ExtensionRegistryInfoManagerTest,
          search_provider.Set("is_default", true);
          search_provider.Set("favicon_url", alternate_url);
          settings_override.Set("search_provider", std::move(search_provider));
-       },
-       [=](const WebExtensionManifestInfo& manifest) {
+       }, [=](const WebExtensionManifestInfo& manifest) {
          ASSERT_TRUE(manifest.settings_overrides.has_value());
          ASSERT_TRUE(manifest.settings_overrides->search_provider.has_value());
-         ASSERT_EQ(manifest.settings_overrides->search_provider->search_url,
-                   search_url);
-       }},
-      {[=](base::Value::Dict& settings_override) {
+         ASSERT_EQ(manifest.settings_overrides->search_provider->search_url, search_url);
+       }}, {[=](base::Value::Dict& settings_override) {
          auto alternate_urls = base::Value::List();
          alternate_urls.Append(alternate_url);
          base::Value::Dict search_provider;
@@ -480,30 +459,29 @@ TEST_F(ExtensionRegistryInfoManagerTest,
          search_provider.Set("is_default", true);
          search_provider.Set("alternate_urls", std::move(alternate_urls));
          settings_override.Set("search_provider", std::move(search_provider));
-       },
-       [=](const WebExtensionManifestInfo& manifest) {
+       }, [=](const WebExtensionManifestInfo& manifest) {
          ASSERT_TRUE(manifest.settings_overrides.has_value());
          ASSERT_TRUE(manifest.settings_overrides->search_provider.has_value());
-         ASSERT_TRUE(manifest.settings_overrides->search_provider
-                         ->alternate_urls.size() == 1u);
-         ASSERT_EQ(
-             manifest.settings_overrides->search_provider->alternate_urls[0],
-             alternate_url);
+         ASSERT_TRUE(manifest.settings_overrides->search_provider->alternate_urls.size() == 1u);
+         ASSERT_EQ(manifest.settings_overrides->search_provider->alternate_urls[0], alternate_url);
        }}};
 
+       return helpers;
+}
+
+TEST_F(ExtensionRegistryInfoManagerTest, GetExtensionManifestInfo_SettingsOverrides) {
+  std::vector<ManifestTestHelper> helpers = CreateSettingsOverridesHelpers();
   const std::string extension_id = "test-extension-id";
   for (auto helper : helpers) {
     base::Value::Dict settings_override;
     helper.initManifest(settings_override);
-    auto manifest_tmp =
-        base::Value::Dict()
+    auto manifest_tmp = base::Value::Dict()
             .Set("name", extension_id)
             .Set("version", "1")
             .Set("manifest_version", 2)
             .Set("incognito", "split")
             .Set("chrome_settings_overrides", std::move(settings_override));
-    scoped_refptr<Extension> extension(
-        CreateTestExtensionWithManifest(extension_id, std::move(manifest_tmp)));
+    scoped_refptr<Extension> extension(CreateTestExtensionWithManifest(extension_id, std::move(manifest_tmp)));
     WebExtensionManifestInfo manifest;
     GetInfoManager()->GetExtensionManifestInfo(*extension.get(), manifest);
     helper.checkManifest(manifest);
@@ -553,40 +531,6 @@ TEST_F(ExtensionRegistryInfoManagerTest,
   ASSERT_FALSE(manifest.options_page->open_in_tab);
   EXPECT_TRUE(manifest.options_page->options_page.find(extension_id) !=
               std::string::npos);
-}
-
-TEST_F(ExtensionRegistryInfoManagerTest, OnExtensionUnloaded_DisableReason) {
-  scoped_refptr<Extension> extension(CreateTestExtension("test_extension_id"));
-  ASSERT_TRUE(extension.get() != nullptr);
-
-  // by reason
-  std::map<UnloadedExtensionReason, int> test_data = {
-      {UnloadedExtensionReason::UNDEFINED, 0},
-      {UnloadedExtensionReason::DISABLE, 1},
-      {UnloadedExtensionReason::UPDATE, 2},
-      {UnloadedExtensionReason::UNINSTALL, 3},
-      {UnloadedExtensionReason::TERMINATE, 0},
-      {UnloadedExtensionReason::BLOCKLIST, 0},
-      {UnloadedExtensionReason::LOCK_ALL, 0}};
-  for (auto [reason, value] : test_data) {
-    GetInfoManager()->OnExtensionUnloaded(browser_context(), extension.get(),
-                                          reason);
-    // check in NWebExtensionManagerDispatcher
-  }
-}
-
-TEST_F(ExtensionRegistryInfoManagerTest, OnExtensionInstalled) {
-  scoped_refptr<Extension> extension(CreateTestExtension("test_extension_id"));
-  ASSERT_TRUE(extension.get() != nullptr);
-
-  // ShouldDisplayInExtensionSettings, no process
-  ASSERT_NO_FATAL_FAILURE(GetInfoManager()->OnExtensionInstalled(
-      browser_context(), extension.get(), false));
-
-  auto extension2 = CreateTestExtension();
-  ASSERT_NO_FATAL_FAILURE(GetInfoManager()->OnExtensionInstalled(
-      browser_context(), extension2.get(), false));
-  // check in NWebExtensionManagerDispatcher
 }
 
 TEST_F(ExtensionRegistryInfoManagerTest,

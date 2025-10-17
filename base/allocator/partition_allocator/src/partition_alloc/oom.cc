@@ -5,6 +5,7 @@
 #include "arkweb/build/features/features.h"
 #if BUILDFLAG(ARKWEB_CRASHPAD)
 #include "unistd.h"
+#include <stdlib.h>
 #endif
 #include "partition_alloc/oom.h"
 
@@ -16,6 +17,10 @@
 
 #if PA_BUILDFLAG(IS_WIN)
 #include <windows.h>
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+extern "C" __attribute__((weak) )void set_fatal_message(const char *msg);
+#endif
 
 #include <array>
 #include <cstdlib>
@@ -36,6 +41,10 @@ namespace internal {
   g_oom_size = size;
   size_t tmp_size = size;
   internal::base::debug::Alias(&tmp_size);
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  set_fatal_message("OutOfMemoryError");
+  abort();
+#endif
 #if PA_BUILDFLAG(IS_WIN)
   // Create an exception vector with:
   // [0] the size of the allocation, in bytes

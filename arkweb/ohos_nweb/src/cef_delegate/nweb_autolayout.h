@@ -35,6 +35,8 @@
 #include "base/values.h"
 #include "base/time/time.h"
 
+class NwebAutolayoutTest;
+
 namespace OHOS::NWeb {
 
 struct WhitelistEntry {
@@ -104,6 +106,7 @@ private:
 
 
 class NwebAutolayout {
+ friend class ::NwebAutolayoutTest;
  public: 
   NwebAutolayout(const NwebAutolayout&) = delete;
   NwebAutolayout& operator=(const NwebAutolayout&) = delete;
@@ -115,7 +118,7 @@ class NwebAutolayout {
 
   NwebAutolayout();
 
- private:
+ protected:
   void Initialize();
   bool Parse(const base::Value& root);
   bool ParseToplevelConfig(const base::Value::Dict& root_dict);

@@ -237,12 +237,19 @@ void HwVideoNativeBufferGLOwner::ReleaseRefOnImageLocked(
   }
 
   TRACE_EVENT1("base", "HwVideoNativeBufferGLOwner::ReleaseRefOnImageLocked", "fd", image_ref.release_fence_fd.get());
+  int return_code = 0;
   if (image_ref.release_fence_fd.is_valid()) {
-    loader_->ReleaseNativeWindowBuffer(
+    return_code = loader_->ReleaseNativeWindowBuffer(
         image->rawbuffer, std::move(image_ref.release_fence_fd.release()));
   } else {
-    loader_->ReleaseNativeWindowBuffer(
+    return_code = loader_->ReleaseNativeWindowBuffer(
         image->rawbuffer, -1);
+  }
+
+  if (return_code != 0) {
+    LOG(WARNING) << "An error occured while releasing the native buffer";
+    OHOS::NWeb::WindowAdapterNdkImpl::GetInstance()
+        .NativeWindowUnRef(image->rawbuffer);
   }
 
   image_refs_.erase(it);

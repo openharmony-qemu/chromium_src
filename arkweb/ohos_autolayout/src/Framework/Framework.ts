@@ -15,7 +15,7 @@ import IntelliLayout from './IntelligentLayout';
 import IntelligentLayout from './IntelligentLayout';
 import { LayoutConstraintMetrics } from '../Framework/Common/LayoutConstraintDetector';
 import { SpecificStyleCache } from './Common/Style/Common/CacheStyleGetter';
-import { CCMConfig } from './Common/CCMConfig';
+import { CCMConfig, CheckRuleStateResult } from './Common/CCMConfig';
 import { Main } from '../Main';
 import Constant from './Common/Constant';
 
@@ -24,6 +24,25 @@ export default class Framework {
     static stopFlag: boolean = false;
 
     static startTime: number;
+   private static layoutLockCount: number = 0;
+
+    static lockLayout(): void {
+        Framework.layoutLockCount++;
+        Log.info(`Layout上锁:${Framework.layoutLockCount}`, Framework.TAG);
+    }
+
+    static unLockLayout(): void {
+       Framework.layoutLockCount--;
+        if (Framework.layoutLockCount < 0) {
+           Log.e(`Layout解锁数量错误: ${Framework.layoutLockCount}`, Framework.TAG);
+        }
+        Log.info(`Layout解锁: ${Framework.layoutLockCount}`, Framework.TAG);
+    }
+
+   private static isLayoutLocked(): boolean {
+        Log.info('Layout解锁', Framework.TAG);
+        return Framework.layoutLockCount > 0;
+   }
 
     private static isAvailable(): boolean {
         if (Framework.stopFlag) {
@@ -44,12 +63,6 @@ export default class Framework {
 
         if (!Framework.needRunTask()) {
             ObserverHandler.postTask();
-            return false;
-        }
-
-        if (IntelligentLayout.operation_state === 1) {
-            return false;
-        } else if (IntelligentLayout.operation_state === 2) {
             return false;
         }
 
@@ -76,20 +89,26 @@ export default class Framework {
     }
 
     static mainTask(): void {
-        Log.info('执行mainTask', Framework.TAG);
+        Log.info('进入 mainTask', Framework.TAG);
         if (!Framework.taskinit()) {
             return;
         }
-        if (!CCMConfig.getInstance().checkRule()) {
+        if (CCMConfig.getInstance().checkRule() === CheckRuleStateResult.outOfWhiteList) {
             Log.d(`检查不通过 - Appid: ${CCMConfig.getInstance().getAppID()}, Page: ${CCMConfig.getInstance().getPage()}`, Framework.TAG);
             Main.stop();
             return;
+        } else if (CCMConfig.getInstance().checkRule() === CheckRuleStateResult.initial) {
+            Log.info('初始状态, 不检查', Framework.TAG);
+            return;
         }
-        IntelliLayout.intelligentLayout(document.body);
+        if (!Framework.isLayoutLocked()) {
+            IntelliLayout.intelligentLayout(document.body);
 
-        // flush新计算的样式，触发回流重绘
-        StyleSetter.flushAllStyles();
-        Cached.clearStyleCache();
+            // flush新计算的样式，触发回流重绘
+            StyleSetter.flushAllStyles();
+            Cached.clearStyleCache();
+        }
+        Log.info('离开 mainTask', Framework.TAG);
     }
 
     static recoverStyle(): void { 
@@ -110,6 +129,9 @@ export default class Framework {
         CSSSheetManage.reInit();
         IntelligentLayout.reInit();
         ObserverHandler.reInit();
+        Framework.layoutLockCount = 0;
+        Framework.stopFlag = false;
+        Framework.startTime = 0;
     }
 
     static configReady(): void {

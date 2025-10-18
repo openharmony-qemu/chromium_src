@@ -85,15 +85,22 @@ export class PopupDecisionTree {
     private static getCloseButtons(rootNode: HTMLElement, allNodes: HTMLElement[]): HTMLElement[] {
 
         const tmpCloseButtons: HTMLElement[] = allNodes.filter(node => {
+            if (!rootNode.contains(node)) {
+                return false;
+            }
+
             const classList = node.classList ? Array.from(node.classList).join(' ').toLowerCase() : '';
             const style = window.getComputedStyle(node);
-            const bgImage = style.backgroundImage.toLowerCase();
-            const url = style.backgroundImage;
-            return rootNode.contains(node) &&
-                    (CCMConfig.getInstance().getcloseButtonPattern()?.some(kw => classList.includes(kw) || bgImage.includes(kw)) ||
-                    CCMConfig.getInstance().getcloseButtonPattern()?.some(kw => url.includes(kw)) || 
-                    (node.tagName === 'IMG' && CCMConfig.getInstance().getcloseButtonPattern()?.some(kw => (node as HTMLImageElement).src.includes(kw))));
-        })
+            const bgImage = style.backgroundImage?.toLowerCase?.() ?? '';
+            const url = style.backgroundImage ?? '';
+            const patterns = CCMConfig.getInstance().getcloseButtonPattern() ?? [];
+
+            const matchByClassOrBg = patterns.some(kw => classList.includes(kw) || bgImage.includes(kw));
+            const matchByUrl = !matchByClassOrBg && patterns.some(kw => url.includes(kw));
+            const matchByImgSrc = node.tagName === 'IMG' && patterns.some(kw => (node as HTMLImageElement).src.includes(kw));
+
+            return matchByClassOrBg || matchByUrl || matchByImgSrc;
+        });
 
         // 过滤被其他节点包含的节点
         let closeButtons: HTMLElement[] = this.filterContainedNodes(tmpCloseButtons);
@@ -445,20 +452,20 @@ export class PopupDecisionTree {
         const contentNode = popupInfo.content_node;
         // 复用通用的模态条件检查逻辑。
         const isNodeModal = PopupDecisionTree.judgeModalConditions(rootNode, contentNode);
+        const hasChildren = contentNode.children.length > 0;
 
-        if (contentNode.children.length === 0 || isNodeModal) {
+        if (!hasChildren) {
             return isNodeModal;
         }
-    
-        // 如果节点本身不满足，则检查其所有子节点是否存在满足条件的。
-        if (!isNodeModal) {
-            
-            return Array.from(contentNode.children).some(child => 
-                PopupDecisionTree.judgeModalConditions(rootNode, child as HTMLElement)
-            );
+
+        if (isNodeModal) {
+            return true;
         }
-        
-        return true;
+
+        // 如果节点本身不满足，则检查其所有子节点是否存在满足条件的。
+        return Array.from(contentNode.children).some(child =>
+            PopupDecisionTree.judgeModalConditions(rootNode, child as HTMLElement)
+        );
     }
 
     /**

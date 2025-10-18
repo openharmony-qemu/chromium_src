@@ -277,12 +277,9 @@ export class CCMConfig {
    * case 3：获取appid和page，检查结果在白名单内，下次无需检查
    * @returns 如果找到匹配的规则，则返回 true，否则返回 false。
    */
-  public checkRule(): boolean {
-    if(this.checkRuleStateResult === CheckRuleStateResult.inWhiteList) {
-      return true;
-    }
-    if(this.checkRuleStateResult === CheckRuleStateResult.outOfWhiteList) {
-      return false;
+  public checkRule(): CheckRuleStateResult {
+    if(this.checkRuleStateResult !== CheckRuleStateResult.initial) {
+        return this.checkRuleStateResult;
     }
     // 要检查的App ID。
     // @ts-ignore
@@ -293,8 +290,9 @@ export class CCMConfig {
     if(idAsString && idAsString !== '' && pg && pg !== '') {
       this.appId = idAsString;
       this.page = pg;
-    } else{
-      return false;
+    } else {
+      Log.info('未能获取Appid和page，周期性监听', Tag.ccmConfig);
+      return CheckRuleStateResult.initial;
     }
 
     // 遍历所有规则
@@ -311,10 +309,10 @@ export class CCMConfig {
       if (isIdMatch && isPgMatch) {
         // 立即返回 true，因为已经找到了一个匹配项
         this.checkRuleStateResult = CheckRuleStateResult.inWhiteList;
-        return true;
+        return this.checkRuleStateResult;
       }
     }
     this.checkRuleStateResult = CheckRuleStateResult.outOfWhiteList;
-    return false;
+    return this.checkRuleStateResult;
   }
 }

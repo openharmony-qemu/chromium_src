@@ -39,6 +39,19 @@ export default class Log {
         : LogLevel.DEBUG;
 
     /**
+     * 格式化时间戳为 HH:MM:SS.mmm 格式
+     * @returns 格式化后的时间字符串
+     */
+    private static formatTimestamp(): string {
+        const now = new Date();
+       const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
+        return `${hours}:${minutes}:${seconds}.${milliseconds}`;
+    }
+
+    /**
      * 设置日志级别
      * @param level 日志级别
      */
@@ -60,8 +73,9 @@ export default class Log {
     static d(msg: string, tag?: string): void {
         if (__DEV__) {
             if (Log.currentLevel <= LogLevel.DEBUG) {
+                const timestamp = Log.formatTimestamp();
                 const prefix = tag ? `[${tag}]` : '[DEBUG]';
-                console.log(`${prefix} ${msg}`);
+                console.log(`[${timestamp}] ${prefix} ${msg}`);
             }
         }
     }
@@ -72,9 +86,11 @@ export default class Log {
     static debug(ele: HTMLElement | null | undefined, msg: string, tag?: string): void {
         if (__DEV__) {
             if (Log.currentLevel <= LogLevel.DEBUG) {
+                const timestamp = Log.formatTimestamp();
                 const prefix = tag ? `[${tag}]` : '[DEBUG]';
                 const eleInfo = ele ? `${ele.tagName}.${ele.className || 'no-class'}` : 'null';
                 console.log(`${prefix} [${eleInfo}] ${msg}`);
+                console.log(`[${timestamp}] ${prefix} [${eleInfo}] ${msg}`);
             }
         }
     }
@@ -86,9 +102,10 @@ export default class Log {
     static i(ele: HTMLElement | null | undefined, log: string, tag?: string): void {
         if (__DEV__) {
             if (Log.currentLevel <= LogLevel.INFO) {
+                const timestamp = Log.formatTimestamp();
                 const prefix = tag ? `[${tag}]` : '[INFO]';
                 const eleInfo = ele ? `${ele.tagName}.${ele.className || 'no-class'}` : 'null';
-                console.info(`${prefix} [${eleInfo}] ${log}`);
+                console.info(`[${timestamp}] ${prefix} [${eleInfo}] ${log}`);
             }
         }
     }
@@ -99,8 +116,9 @@ export default class Log {
     static info(msg: string, tag?: string): void {
         if (__DEV__) {
             if (Log.currentLevel <= LogLevel.INFO) {
+                const timestamp = Log.formatTimestamp();
                 const prefix = tag ? `[${tag}]` : '[INFO]';
-                console.info(`${prefix} ${msg}`);
+                console.info(`[${timestamp}] ${prefix} ${msg}`);
             }
         }
     }
@@ -110,8 +128,9 @@ export default class Log {
      */
     static w(msg: string, tag?: string): void {
         if (Log.currentLevel <= LogLevel.WARN) {
+            const timestamp = Log.formatTimestamp();
             const prefix = tag ? `[${tag}]` : '[WARN]';
-            console.warn(`${prefix} ${msg}`);
+            console.warn(`[${timestamp}] ${prefix} ${msg}`);
         }
     }
 
@@ -120,9 +139,10 @@ export default class Log {
      */
     static warn(ele: HTMLElement | null | undefined, msg: string, tag?: string): void {
         if (Log.currentLevel <= LogLevel.WARN) {
+            const timestamp = Log.formatTimestamp();
             const prefix = tag ? `[${tag}]` : '[WARN]';
             const eleInfo = ele ? `${ele.tagName}.${ele.className || 'no-class'}` : 'null';
-            console.warn(`${prefix} [${eleInfo}] ${msg}`);
+            console.warn(`[${timestamp}] ${prefix} [${eleInfo}] ${msg}`);
         }
     }
 
@@ -131,8 +151,9 @@ export default class Log {
      */
     static e(msg: string, tag?: string, error?: Error): void {
         if (Log.currentLevel <= LogLevel.ERROR) {
+            const timestamp = Log.formatTimestamp();
             const prefix = tag ? `[${tag}]` : '[ERROR]';
-            console.error(`${prefix} ${msg}`, error || '');
+            console.error(`[${timestamp}] ${prefix} ${msg}`, error || '');
         }
     }
 
@@ -141,9 +162,10 @@ export default class Log {
      */
     static error(ele: HTMLElement | null | undefined, msg: string, tag?: string, error?: Error): void {
         if (Log.currentLevel <= LogLevel.ERROR) {
+            const timestamp = Log.formatTimestamp();
             const prefix = tag ? `[${tag}]` : '[ERROR]';
             const eleInfo = ele ? `${ele.tagName}.${ele.className || 'no-class'}` : 'null';
-            console.error(`${prefix} [${eleInfo}] ${msg}`, error || '');
+            console.error(`[${timestamp}] ${prefix} [${eleInfo}] ${msg}`, error || '');
         }
     }
 
@@ -177,60 +199,9 @@ export default class Log {
         }
     }
 
-    static consoleLog(tag: string, ...args: any[]): void {
-        if (__DEV__) {
-            console.info(`[${tag}]`, ...args);
-        }
-    }
-
-    static markWithColor(tag: string, color: string, ...elements: HTMLElement[]): void {
-        if (__DEV__) {
-            Log.d(`markWithColor - tag: ${tag}, color: ${color}, elements: ${elements.length}`, Tag.visual);
-        }
-    }
-
     static checkState(position?: string): void {
         if (__DEV__) {
             Log.d(`checkState - position: ${position}`, Tag.state);
-        }
-    }
-
-    static checkFeatureCache(ele: HTMLElement, key: string, cache: string): void {
-        if (__DEV__) {
-            Log.debug(ele, `checkFeatureCache - key: ${key}, cache: ${cache}`, Tag.cache);
-        }
-    }
-
-    static printStyle(ele: HTMLElement, key: string, value: string, tag: string): void {
-        if (__DEV__) {
-            Log.debug(ele, `style - ${key}: ${value}`, tag);
-        }
-    }
-
-    /**
-     * @deprecated 使用 Log.info(msg, Tag.component) 代替
-     */
-    static printComInfo(msg: string): void {
-        if (__DEV__) {
-            Log.info(msg, Tag.component);
-        }
-    }
-
-    /**
-     * @deprecated 使用 Log.info(msg, Tag.node) 代替
-     */
-    static printNodeInfo(msg: string): void {
-        if (__DEV__) {
-            Log.info(msg, Tag.node);
-        }
-    }
-
-    /**
-     * @deprecated 使用 Log.d(msg, Tag.debug) 代替
-     */
-    static printDebugMsg(msg: string): void {
-        if (__DEV__) {
-            Log.d(msg, Tag.debug);
         }
     }
 }

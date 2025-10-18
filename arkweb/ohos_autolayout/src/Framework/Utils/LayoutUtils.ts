@@ -34,38 +34,6 @@ type StackingContextInfo = {
 }
 
 export default class LayoutUtils{
-    private static hasInitFontSizeMediQuery = false;
-
-    // 硬编码宽高的节点缓存
-    private static hardSizeNodeCache = new Map<HTMLElement, Map<string,string>>();
-    
-    /**
-     * 检查从指定元素到结束元素的路径上是否满足跨行条件。
-     * 
-     * 该方法会遍历从 `element` 到 `endElement` 的元素路径，检查每个元素的 `display` 样式属性。
-     * 如果在遍历过程中遇到 `display` 为 `flex` 且子节点数量大于 2 的元素，或者遇到 `display` 既不是 `block` 也不是 `flex` 的元素，则认为不满足跨行条件，返回 `false`。
-     * 如果成功遍历到 `endElement` 且未遇到上述不符合条件的元素，则认为满足跨行条件，返回 `true`。
-     * 
-     * @static
-     * @param {HTMLElement} element - 起始 HTML 元素，作为遍历的起点。
-     * @param {HTMLElement} endElement - 结束 HTML 元素，作为遍历的终点。
-     * @returns {boolean} - 如果从 `element` 到 `endElement` 的路径满足跨行条件，返回 `true`；否则返回 `false`。
-     */
-    static isCrossRow(element: HTMLElement,endElement: HTMLElement): boolean {
-        let ele = element;
-        while(ele !== endElement) {
-            const display = window.getComputedStyle(ele).display;
-            if(display === 'flex'&& ele.childNodes.length > 2) {
-                return false;
-            }
-            if(! ['block', 'flex'].includes(display) ) {
-                return false; 
-            }
-            ele = ele.parentElement;
-        }
-        return true;
-    }
-
     /**
      * 验证一个元素的某个样式属性是否被显式定义过。
      * 警告：此函数会遍历页面所有样式规则，可能导致性能问题，请谨慎使用。
@@ -201,28 +169,38 @@ export default class LayoutUtils{
         if (!(node instanceof HTMLElement)) {
             return false;
         }
-        const root = popupInfo.root_node;
-        const { top, bottom, left, right } = node.getBoundingClientRect();
-        const topInt = Math.floor(top);
-        const bottomInt = Math.floor(bottom);
-        const leftInt = Math.floor(left);
-        const rightInt = Math.floor(right);
+        // 1. 获取视口尺寸
+        const viewportHeight = window.innerHeight;
 
-        const visualHeight = window.innerHeight - popupInfo.stickyTop_height - popupInfo.stickyBottom_height;
+        // 2. 获取元素的边界框（相对于视口）
+       const rect = node.getBoundingClientRect();
+ 
+        // 3. 获取计算后的样式
+        const style = window.getComputedStyle(node);
+        const borderTop = parseFloat(style.borderTopWidth);
+        const borderBottom = parseFloat(style.borderBottomWidth);
+        const paddingTop = parseFloat(style.paddingTop);
+        const paddingBottom = parseFloat(style.paddingBottom);
+ 
+        // 4. 计算内容框（Content Box）在视口中的坐标
+        const contentTop = rect.top + borderTop + paddingTop;
+        const contentBottom = rect.bottom - borderBottom - paddingBottom;
 
-        if ((topInt < 0 || bottomInt > visualHeight || leftInt < 0 || rightInt > window.innerWidth) && Utils.isElementVisible(node, root)) {
-            Log.d(`find truncate node: ${node.className}`);
-            return true;
+        // 边界情况处理：如果元素的padding和border过大，可能导致内容区尺寸为0或负数
+        // 在这种情况下，我们认为其内容没有“空间”被截断
+        if (contentTop >= contentBottom) {
+            return false;
         }
-        if (node.tagName === 'IMG') {
-            const isHidden = getComputedStyle(node).visibility === 'hidden';
-            const parentNode = node.parentElement;
-            const height = parseInt(getComputedStyle(parentNode).height);
-            if (isHidden && parentNode && height < parentNode.scrollHeight) {
-                parentNode.style.minHeight = parentNode.scrollHeight.toString();
-            }
+        // 5. 比较内容框与视口的边界
+        const isTopTruncated = Math.round(contentTop) < 0;
+           const isBottomTruncated = Math.round(contentBottom) > viewportHeight;
+        if(isTopTruncated) {
+            Log.d(`节点 ${node.className} top截断: contentTop(${contentTop}), viewportHeight(${viewportHeight})`, Tag.layoutUtils);
         }
-        return false;
+        if(isBottomTruncated) {
+            Log.d(`节点 ${node.className} bottom截断: contentBottom(${contentBottom}), viewportHeight(${viewportHeight})`, Tag.layoutUtils);
+        }
+        return isTopTruncated || isBottomTruncated;
     }
 
     /**
@@ -251,14 +229,9 @@ export default class LayoutUtils{
         const needRelayoutTags = [
             null,
             LayoutValue.ZOOM_PARENT,
-            LayoutValue.ONE_LINE,
-            LayoutValue.WATERFALL,
-            LayoutValue.ASIDE_BAR,
             LayoutValue.HEADER,
             LayoutValue.BOTTOM,
-            LayoutValue.SCROLL_LIST,
             LayoutValue.VERTICAL_GRID,
-            LayoutValue.SWIPER,
         ];
         return needRelayoutTags.includes(layoutOfHw);
     }
@@ -401,6 +374,9 @@ export default class LayoutUtils{
      * @returns 
      */
     static isBottomCloseButtonOverlap(popup: PopupInfo): boolean {
+        if (!popup || !popup.root_node) {
+            return false;
+        }
         // 查找所有可能的关闭按钮
         const closeElements = popup.root_node.querySelectorAll('[class*="close"]');
         if (closeElements.length !== 1) {

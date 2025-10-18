@@ -1,0 +1,14 @@
+# Copyright 2025 The Chromium Authors
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+static_library("browser") {
+  sources = [
+    "content_walletable_pass_ingestion_controller.cc",
+    "content_walletable_pass_ingestion_controller.h",
+  ]
+  deps = [
+    "//components/wallet/core/browser",
+    "//content/public/browser",
+  ]
+}

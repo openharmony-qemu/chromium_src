@@ -19,7 +19,7 @@
 #include <windows.h>
 
 #if BUILDFLAG(ARKWEB_CRASHPAD)
-extern "C" __attribute__((weak) )void set_fatal_message(const char *msg);
+#include "info/fatal_message.h"
 #endif
 
 #include <array>

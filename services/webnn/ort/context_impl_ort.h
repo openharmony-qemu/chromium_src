@@ -1,0 +1,90 @@
+// Copyright 2025 The Chromium Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+#ifndef SERVICES_WEBNN_ORT_CONTEXT_IMPL_ORT_H_
+#define SERVICES_WEBNN_ORT_CONTEXT_IMPL_ORT_H_
+
+#include "base/memory/scoped_refptr.h"
+#include "mojo/public/cpp/bindings/pending_associated_receiver.h"
+#include "services/webnn/ort/environment.h"
+#include "services/webnn/ort/ort_session_options.h"
+#include "services/webnn/ort/scoped_ort_types.h"
+#include "services/webnn/public/cpp/webnn_types.h"
+#include "services/webnn/webnn_context_impl.h"
+
+namespace webnn {
+
+class WebNNConstantOperand;
+
+namespace ort {
+
+// `ContextImplOrt` is created by `WebNNContextProviderImpl` and responsible
+// for creating a `GraphImplOrt` which uses ONNX Runtime for inference.
+class ContextImplOrt final : public WebNNContextImpl {
+ public:
+  ContextImplOrt(mojo::PendingAssociatedReceiver<mojom::WebNNContext> receiver,
+                 WebNNContextProviderImpl* context_provider,
+                 const EpWorkarounds& ep_workarounds,
+                 mojom::CreateContextOptionsPtr options,
+                 scoped_refptr<Environment> env,
+                 gpu::CommandBufferId command_buffer_id,
+                 std::unique_ptr<ScopedSequence> sequence,
+                 scoped_refptr<gpu::SchedulerTaskRunner> task_runner);
+
+  ContextImplOrt(const WebNNContextImpl&) = delete;
+  ContextImplOrt& operator=(const ContextImplOrt&) = delete;
+
+
+  // WebNNContextImpl:
+  base::WeakPtr<WebNNContextImpl> AsWeakPtr() override;
+
+  static ContextProperties GetContextProperties(bool resample2d_limit_to_nchw);
+
+  scoped_refptr<Environment> env() const { return env_; }
+
+  scoped_refptr<SessionOptions> session_options() const {
+    return session_options_;
+  }
+
+  bool is_external_data_supported() const {
+    return is_external_data_supported_;
+  }
+
+ private:
+  ~ContextImplOrt() override;
+
+  void CreateGraphImpl(
+      mojo::PendingAssociatedReceiver<mojom::WebNNGraph> receiver,
+      mojom::GraphInfoPtr graph_info,
+      WebNNGraphImpl::ComputeResourceInfo compute_resource_info,
+      base::flat_map<OperandId, std::unique_ptr<WebNNConstantOperand>>
+          constant_operands,
+      base::flat_map<OperandId, WebNNTensorImpl*> constant_tensor_operands,
+      CreateGraphImplCallback callback) override;
+
+  base::expected<scoped_refptr<WebNNTensorImpl>, mojom::ErrorPtr>
+  CreateTensorImpl(mojo::PendingAssociatedReceiver<mojom::WebNNTensor> receiver,
+                   mojom::TensorInfoPtr tensor_info) override;
+
+  base::expected<scoped_refptr<WebNNTensorImpl>, mojom::ErrorPtr>
+  CreateTensorFromMailboxImpl(
+      mojo::PendingAssociatedReceiver<mojom::WebNNTensor> receiver,
+      mojom::TensorInfoPtr tensor_info,
+      gpu::Mailbox mailbox) override;
+
+  scoped_refptr<Environment> env_;
+
+  // The session options are shared among all the sessions created by this
+  // context.
+  scoped_refptr<SessionOptions> session_options_;
+
+  const bool is_external_data_supported_;
+
+  base::WeakPtrFactory<ContextImplOrt> weak_factory_{this};
+};
+
+}  // namespace ort
+}  // namespace webnn
+
+#endif  // SERVICES_WEBNN_ORT_CONTEXT_IMPL_ORT_H_

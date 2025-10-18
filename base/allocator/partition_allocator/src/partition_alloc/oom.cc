@@ -19,7 +19,7 @@
 #include <windows.h>
 
 #if BUILDFLAG(ARKWEB_CRASHPAD)
-#include "info/fatal_message.h"
+#include "ohos_sdk/openharmony/native/sysroot/usr/include/info/fatal_message.h"
 #endif
 
 #include <array>

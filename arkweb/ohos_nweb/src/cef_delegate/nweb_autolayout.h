@@ -115,7 +115,7 @@ class NwebAutolayout {
 
   NwebAutolayout();
 
- private:
+ protected:
   void Initialize();
   bool Parse(const base::Value& root);
   bool ParseToplevelConfig(const base::Value::Dict& root_dict);

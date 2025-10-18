@@ -32,7 +32,7 @@ export class PopupWindowRelayout extends AComponent {
     private truncateBkgImgNodes: HTMLElement[] = [];    // 背景图被截断的节点（但是rect没有在视口内被截断）
     private popupInfo: PopupInfo;
     private bottomNode: HTMLElement = null;
-    private originalStyles = new Map<HTMLElement, any>();
+    private originalStyles: Map<HTMLElement, any> = new Map<HTMLElement, any>();
     private relayoutTimes: number = 0;
     private needLayoutConstraintNodes = new Set<HTMLElement>();
     private layoutConstraintResult: LayoutConstraintMetrics = null;
@@ -825,9 +825,9 @@ export class PopupWindowRelayout extends AComponent {
                 if (container.clientWidth > 0 && container.clientHeight > 0) {
                     StyleSetter.setStyle(child as HTMLElement, Constant.max_width, '100%');
                 }
-                if (Utils.hasButton(child)) {
+                if (Utils.hasButton(child as HTMLElement)) {
                     // 写进默认生效样式
-                    const selfStyle = window.getComputedStyle(child);
+                    const selfStyle = window.getComputedStyle(child as HTMLElement);
                     const width = selfStyle.width;
                     StyleSetter.setStyle(child as HTMLElement, 'width', width);
                 }

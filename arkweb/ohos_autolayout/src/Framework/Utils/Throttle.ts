@@ -9,7 +9,7 @@ import Tag from '../../Debug/Tag';
  * - 高频状态更新的性能优化
  */
 export default class Throttle {
-    private static readonly TAG = Tag.framework;
+    private static readonly TAG = Tag.throttle;
     private static readonly MIN_TIMEOUT = 10; // 最小节流时间 10ms
     
     private taskCount = 0;          // 待执行任务计数

@@ -81,6 +81,8 @@ module.exports = merge(common, {
                             'console.debug',
                             'Log.d',
                             'Log.i',
+                            'Log.info',
+                            'Log.debug',
                             // 不删除: console.warn, console.error
                         ],
                     },

@@ -720,6 +720,12 @@ source_set("unittests") {
     "//cef:libcef_static",
   ]
 
+  if (defined(arkweb_autolayout) && arkweb_autolayout) {
+    sources += [
+        "src/cef_delegate/nweb_autolayout_unittest.cc",
+    ]
+  }
+
   if (enable_arkweb) {
     deps += [ "//arkweb/build/features" ]
   }

@@ -1,0 +1,31 @@
+diff --git chrome/browser/BUILD.gn chrome/browser/BUILD.gn
+index 51efc0986c4b5bebec651fb731b3401681fbcb07..918d36726e88179c21ba4b40b68187d07d2159a7 100644
+--- chrome/browser/BUILD.gn
++++ chrome/browser/BUILD.gn
+@@ -11,6 +11,7 @@ import("//build/config/compiler/pgo/pgo.gni")
+ import("//build/config/features.gni")
+ import("//build/config/python.gni")
+ import("//build/config/ui.gni")
++import("//cef/libcef/features/features.gni")
+ import("//chrome/browser/buildflags.gni")
+ import("//chrome/browser/downgrade/buildflags.gni")
+ import("//chrome/common/features.gni")
+@@ -1886,6 +1887,7 @@ static_library("browser") {
+     "//build/config/compiler:compiler_buildflags",
+     "//build/config/linux/dbus:buildflags",
+     "//cc",
++    "//cef/libcef/features:buildflags",
+     "//chrome:extra_resources",
+     "//chrome:resources",
+     "//chrome:strings",
+@@ -2679,6 +2681,10 @@ static_library("browser") {
+     sources += [ "net/net_error_diagnostics_dialog_stub.cc" ]
+   }
+ 
++  if (enable_cef) {
++    configs += [ "//cef/libcef/features:config" ]
++  }
++
+   if (is_android) {
+     sources += [
+       "accessibility/accessibility_prefs/android/accessibility_prefs_controller.cc",

@@ -27,6 +27,7 @@ class OHOSAudioOutputStream;
 class OHOSAudioOutputCallback {
 public:
     OHOSAudioOutputCallback(
+        const scoped_refptr<base::SingleThreadTaskRunner>& task_runner,
         base::WeakPtr<OHOSAudioOutputStream> audio_output_stream);
 
     void AudioRendererOnWriteData(void* buffer, int32_t length);
@@ -38,6 +39,7 @@ public:
     void AudioRendererOutputDeviceChangeCallback(OH_AudioStream_DeviceChangeReason reason);
 
 private:
+    scoped_refptr<base::SingleThreadTaskRunner> task_runner_,
     base::WeakPtr<OHOSAudioOutputStream> audio_output_stream_;
 };
 

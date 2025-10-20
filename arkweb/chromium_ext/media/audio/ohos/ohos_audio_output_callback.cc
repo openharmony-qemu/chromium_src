@@ -19,21 +19,25 @@
 namespace media {
 
 OHOSAudioOutputCallback::OHOSAudioOutputCallback(
+    const scoped_refptr<base::SingleThreadTaskRunner>& task_runner,
     base::WeakPtr<OHOSAudioOutputStream> audio_output_stream)
-    : audio_output_stream_(audio_output_stream) {
+    : task_runner_(task_runner), audio_output_stream_(audio_output_stream) {
     DCHECK(audio_output_stream_);
 }
 
 void OHOSAudioOutputCallback::AudioRendererOnWriteData(void* buffer, int32_t length) {
-    if (buffer && audio_output_stream_) {
-        audio_output_stream_->OnWriteData(buffer, length);
-        audio_output_stream_->SetUpAudioSilentState();
+    if (buffer && task_runner_) {
+        task_runner_->PostTask(
+            FROM_HERE, base::BindOnce(&OHOSAudioOutputStream::OnWriteData, audio_output_stream_, buffer, length));
+        task_runner_->PostTask(
+            FROM_HERE, base::BindOnce(&OHOSAudioOutputStream::SetUpAudioSilentState, audio_output_stream_));
     }
 }
 
 void OHOSAudioOutputCallback::AudioRendererOnError(OH_AudioStream_Result error) {
     if (audio_output_stream_) {
-        audio_output_stream_->ReportError();
+        task_runner_->PostTask(
+            FROM_HERE, base::BindOnce(&OHOSAudioOutputStream::ReportError, audio_output_stream_));
     }
 }
 
@@ -41,18 +45,21 @@ void OHOSAudioOutputCallback::AudioRendererOnInterruptEvent(OH_AudioInterrupt_Hi
     if (audio_output_stream_) {
         switch (hint) {
             case OH_AudioInterrupt_Hint::AUDIOSTREAM_INTERRUPT_HINT_PAUSE:
-                audio_output_stream_->OnSuspend();
+                task_runner_->PostTask(
+                    FROM_HERE, base::BindOnce(&OHOSAudioOutputStream::OnSuspend, audio_output_stream_));
                 break;
             case OH_AudioInterrupt_Hint::AUDIOSTREAM_INTERRUPT_HINT_STOP:
-                audio_output_stream_->OnSuspend();
+                task_runner_->PostTask(
+                    FROM_HERE, base::BindOnce(&OHOSAudioOutputStream::OnSuspend, audio_output_stream_));
                 break;
             case OH_AudioInterrupt_Hint::AUDIOSTREAM_INTERRUPT_HINT_RESUME:
-                audio_output_stream_->OnResume();
+                task_runner_->PostTask(
+                    FROM_HERE, base::BindOnce(&OHOSAudioOutputStream::OnResume, audio_output_stream_));
                 break;
             default:
                 LOG(ERROR) << "audio renderer interrupt hint not foud, code:" << hint;
                 break;
-        }        
+        }
     }
 }
 
@@ -60,7 +67,8 @@ void OHOSAudioOutputCallback::AudioRendererOutputDeviceChangeCallback(OH_AudioSt
     if (audio_output_stream_) {
         switch (reason) {
         case OH_AudioStream_DeviceChangeReason::REASON_OLD_DEVICE_UNAVAILABLE:
-            audio_output_stream_->OldDeviceUnavailable();
+            task_runner_->PostTask(
+                    FROM_HERE, base::BindOnce(&OHOSAudioOutputStream::OldDeviceUnavailable, audio_output_stream_));
             break;
         default:
             LOG(ERROR) << "AudioRendererOutputDeviceChangeCallback reason not foud, reason:" << reason;

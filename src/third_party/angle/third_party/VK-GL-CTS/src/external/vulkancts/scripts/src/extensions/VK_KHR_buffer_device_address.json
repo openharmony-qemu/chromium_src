@@ -1,0 +1,18 @@
+{
+    "register_extension": {
+        "type": "device",
+        "core": "0.1.2.0"
+    },
+    "mandatory_features": {
+        "VkPhysicalDeviceBufferDeviceAddressFeaturesKHR": [
+            {
+                "features": [
+                    "bufferDeviceAddress"
+                ],
+                "requirements": [
+                    "VK_KHR_buffer_device_address"
+                ]
+            }
+        ]
+    }
+}

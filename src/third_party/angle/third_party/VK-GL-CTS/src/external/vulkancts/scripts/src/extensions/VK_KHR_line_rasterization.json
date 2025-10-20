@@ -1,0 +1,27 @@
+{
+    "register_extension": {
+        "type": "device",
+        "core": "0.1.4.0"
+    },
+    "mandatory_features": {
+        "VkPhysicalDeviceLineRasterizationFeaturesKHR": [
+            {
+                "features": [
+                    "rectangularLines",
+                    "bresenhamLines",
+                    "smoothLines",
+                    "stippledRectangularLines",
+                    "stippledBresenhamLines",
+                    "stippledSmoothLines"
+                ],
+                "requirements": [
+                    "VK_KHR_line_rasterization"
+                ],
+                "mandatory_variant": [
+                    "vulkan",
+                    "vulkansc"
+                ]
+            }
+        ]
+    }
+}

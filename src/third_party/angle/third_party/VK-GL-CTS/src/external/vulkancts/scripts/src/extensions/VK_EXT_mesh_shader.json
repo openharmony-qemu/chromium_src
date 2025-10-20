@@ -1,0 +1,30 @@
+{
+    "register_extension": {
+        "type": "device",
+        "core": ""
+    },
+    "mandatory_features": {
+        "VkPhysicalDeviceMeshShaderFeaturesEXT": [
+            {
+                "features": [
+                    "taskShader",
+                    "meshShader"
+                ],
+                "requirements": [
+                    "VK_EXT_mesh_shader"
+                ]
+            }
+        ],
+        "VkPhysicalDeviceFragmentShadingRateFeaturesKHR": [
+            {
+                "features": [
+                    "primitiveFragmentShadingRate"
+                ],
+                "requirements": [
+                    "VK_EXT_mesh_shader",
+                    "VK_KHR_fragment_shading_rate+VkPhysicalDeviceMeshShaderFeaturesEXT::primitiveFragmentShadingRateMeshShader"
+                ]
+            }
+        ]
+    }
+}

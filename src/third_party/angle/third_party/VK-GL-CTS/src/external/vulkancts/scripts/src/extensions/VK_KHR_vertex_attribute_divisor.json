@@ -1,0 +1,22 @@
+{
+    "register_extension": {
+        "type": "device",
+        "core": "0.1.4.0"
+    },
+    "mandatory_features": {
+        "VkPhysicalDeviceVertexAttributeDivisorFeaturesKHR": [
+            {
+                "features": [
+                    "vertexAttributeInstanceRateDivisor"
+                ],
+                "requirements": [
+                    "VK_KHR_vertex_attribute_divisor"
+                ],
+                "mandatory_variant": [
+                    "vulkan",
+                    "vulkansc"
+                ]
+            }
+        ]
+    }
+}

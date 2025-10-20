@@ -1,0 +1,66 @@
+{
+    "register_extension": {
+        "type": "device",
+        "core": ""
+    },
+    "mandatory_features": {
+        "VkPhysicalDeviceFeatures": [
+            {
+                "features": [
+                    "tessellationShader"
+                ],
+                "requirements": [
+                    "VK_EXT_extended_dynamic_state3",
+                    "VkPhysicalDeviceExtendedDynamicState3FeaturesEXT::extendedDynamicState3TessellationDomainOrigin"
+                ]
+            },
+            {
+                "features": [
+                    "depthClamp"
+                ],
+                "requirements": [
+                    "VK_EXT_extended_dynamic_state3",
+                    "VkPhysicalDeviceExtendedDynamicState3FeaturesEXT::extendedDynamicState3DepthClampEnable"
+                ]
+            },
+            {
+                "features": [
+                    "fillModeNonSolid"
+                ],
+                "requirements": [
+                    "VK_EXT_extended_dynamic_state3",
+                    "VkPhysicalDeviceExtendedDynamicState3FeaturesEXT::extendedDynamicState3PolygonMode"
+                ]
+            },
+            {
+                "features": [
+                    "alphaToOne"
+                ],
+                "requirements": [
+                    "VK_EXT_extended_dynamic_state3",
+                    "VkPhysicalDeviceExtendedDynamicState3FeaturesEXT::extendedDynamicState3AlphaToOneEnable"
+                ]
+            },
+            {
+                "features": [
+                    "logicOp"
+                ],
+                "requirements": [
+                    "VK_EXT_extended_dynamic_state3",
+                    "VkPhysicalDeviceExtendedDynamicState3FeaturesEXT::extendedDynamicState3LogicOpEnable"
+                ]
+            }
+        ],
+        "VkPhysicalDeviceTransformFeedbackFeaturesEXT": [
+            {
+                "features": [
+                    "geometryStreams"
+                ],
+                "requirements": [
+                    "VK_EXT_extended_dynamic_state3",
+                    "VK_EXT_transform_feedback+VkPhysicalDeviceExtendedDynamicState3FeaturesEXT::extendedDynamicState3RasterizationStream"
+                ]
+            }
+        ]
+    }
+}

@@ -1,0 +1,18 @@
+{
+    "register_extension": {
+        "type": "device",
+        "core": "0.1.2.0"
+    },
+    "mandatory_features": {
+        "VkPhysicalDeviceTimelineSemaphoreFeaturesKHR": [
+            {
+                "features": [
+                    "timelineSemaphore"
+                ],
+                "requirements": [
+                    "VK_KHR_timeline_semaphore"
+                ]
+            }
+        ]
+    }
+}

@@ -1,0 +1,47 @@
+{
+    "register_extension": {
+        "type": "device",
+        "core": ""
+    },
+    "mandatory_features": {
+        "VkPhysicalDeviceAccelerationStructureFeaturesKHR": [
+            {
+                "features": [
+                    "accelerationStructure"
+                ],
+                "requirements": [
+                    "VK_KHR_acceleration_structure"
+                ]
+            },
+            {
+                "features": [
+                    "descriptorBindingAccelerationStructureUpdateAfterBind"
+                ],
+                "requirements": [
+                    "VK_KHR_acceleration_structure"
+                ]
+            }
+        ],
+        "VkPhysicalDeviceBufferDeviceAddressFeatures": [
+            {
+                "features": [
+                    "bufferDeviceAddress"
+                ],
+                "requirements": [
+                    "VK_KHR_acceleration_structure"
+                ]
+            }
+        ],
+        "VkPhysicalDeviceVulkan12Features": [
+            {
+                "features": [
+                    "descriptorIndexing"
+                ],
+                "requirements": [
+                    "VK_KHR_acceleration_structure",
+                    "VK_VERSION_1_2"
+                ]
+            }
+        ]
+    }
+}

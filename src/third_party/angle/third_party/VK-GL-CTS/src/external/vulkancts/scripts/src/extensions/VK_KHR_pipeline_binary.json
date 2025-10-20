@@ -1,0 +1,18 @@
+{
+    "register_extension": {
+        "type": "device",
+        "core": ""
+    },
+    "mandatory_features": {
+        "VkPhysicalDevicePipelineBinaryFeaturesKHR": [
+            {
+                "features": [
+                    "pipelineBinaries"
+                ],
+                "requirements": [
+                    "VK_KHR_pipeline_binary"
+                ]
+            }
+        ]
+    }
+}

@@ -1,5 +1,0 @@
-include_rules = [
-  "+components/tab_groups",
-  "+ui/gfx",
-  "+ui/views",
-]

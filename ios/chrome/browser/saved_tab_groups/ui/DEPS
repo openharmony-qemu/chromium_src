@@ -1,4 +1,0 @@
-include_rules = [
-  "+ios/chrome/browser/share_kit/model",
-  "+ios/chrome/browser/tab_switcher/ui_bundled/tab_grid/tab_groups",
-]

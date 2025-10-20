@@ -1,6 +1,0 @@
-include_rules = [
-  # go/keep-sorted start
-  "+components/keyed_service/core",
-  "+components/optimization_guide",
-  # go/keep-sorted end
-]

@@ -1,0 +1,21 @@
+Package: login
+Source: shadow
+Version: 1:4.8.1-1
+Architecture: amd64
+Essential: yes
+Maintainer: Shadow package maintainers <pkg-shadow-devel@lists.alioth.debian.org>
+Installed-Size: 2335
+Pre-Depends: libaudit1 (>= 1:2.2.1), libc6 (>= 2.14), libcrypt1 (>= 1:4.1.0), libpam0g (>= 0.99.7.1), libpam-runtime, libpam-modules (>= 1.1.8-1)
+Conflicts: amavisd-new (<< 2.3.3-8), backupninja (<< 0.9.3-5), echolot (<< 2.1.8-4), gnunet (<< 0.7.0c-2), python-4suite (<< 0.99cvs20060405-1)
+Breaks: util-linux (<< 2.32-0.2~)
+Replaces: manpages-de (<< 0.5-3), manpages-tr (<< 1.0.5), manpages-zh (<< 1.5.1-1)
+Section: admin
+Priority: required
+Multi-Arch: foreign
+Homepage: https://github.com/shadow-maint/shadow
+Description: system login tools
+ This package provides some required infrastructure for logins and for
+ changing effective user or group IDs, including:
+  * login, the program that invokes a user shell on a virtual terminal;
+  * nologin, a dummy shell for disabled user accounts;
+  * su, a basic tool for executing commands as root or another user.

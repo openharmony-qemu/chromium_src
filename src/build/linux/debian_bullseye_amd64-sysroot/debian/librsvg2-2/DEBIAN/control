@@ -1,0 +1,19 @@
+Package: librsvg2-2
+Source: librsvg
+Version: 2.50.3+dfsg-1+deb11u1
+Architecture: amd64
+Maintainer: Debian GNOME Maintainers <pkg-gnome-maintainers@lists.alioth.debian.org>
+Installed-Size: 10323
+Depends: libc6 (>= 2.29), libcairo-gobject2 (>= 1.10.0), libcairo2 (>= 1.15.12), libgcc-s1 (>= 4.2), libgdk-pixbuf-2.0-0 (>= 2.27.1), libglib2.0-0 (>= 2.50.0), libpango-1.0-0 (>= 1.38.0), libpangocairo-1.0-0 (>= 1.38.0), libxml2 (>= 2.9.0)
+Recommends: librsvg2-common
+Suggests: librsvg2-bin
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: https://wiki.gnome.org/Projects/LibRsvg
+Description: SAX-based renderer library for SVG files (runtime)
+ The rsvg library is an efficient renderer for Scalable Vector Graphics
+ (SVG) pictures.
+ .
+ This package contains the runtime library, necessary to run
+ applications using librsvg.

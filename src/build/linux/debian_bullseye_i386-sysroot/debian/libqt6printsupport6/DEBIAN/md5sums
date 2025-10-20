@@ -1,0 +1,5 @@
+17983c34f4217f63a97ec67f77fe2838  usr/lib/i386-linux-gnu/libQt6PrintSupport.so.6.4.2
+a43fe8b8b4d8c8fcac66d149394075ec  usr/lib/i386-linux-gnu/qt6/plugins/printsupport/libcupsprintersupport.so
+31b7263503d651300686bd538bd5b287  usr/share/doc/libqt6printsupport6/changelog.Debian.gz
+b34cdcf90ff7d9a4e75b63828abdb651  usr/share/doc/libqt6printsupport6/copyright
+aac30f4c1f4298628a313843830a8f64  usr/share/lintian/overrides/libqt6printsupport6

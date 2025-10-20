@@ -1,0 +1,22 @@
+Package: libsensors-config
+Source: lm-sensors
+Version: 1:3.6.0-7
+Architecture: all
+Maintainer: Aurelien Jarno <aurel32@debian.org>
+Installed-Size: 51
+Suggests: lm-sensors
+Breaks: libsensors4
+Replaces: libsensors4
+Section: utils
+Priority: optional
+Multi-Arch: foreign
+Homepage: https://hwmon.wiki.kernel.org/lm_sensors
+Description: lm-sensors configuration files
+ Lm-sensors is a hardware health monitoring package for Linux. It allows you
+ to access information from temperature, voltage, and fan speed sensors. It
+ works with most newer systems.
+ .
+ This library is only functional with a Linux kernel, it is provided on
+ non-Linux systems for portability reasons only.
+ .
+ This package contains the configuration files.

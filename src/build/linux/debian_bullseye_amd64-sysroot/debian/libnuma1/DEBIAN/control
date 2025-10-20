@@ -1,0 +1,14 @@
+Package: libnuma1
+Source: numactl (2.0.12-1)
+Version: 2.0.12-1+b1
+Architecture: amd64
+Maintainer: Ian Wienand <ianw@debian.org>
+Installed-Size: 78
+Depends: libc6 (>= 2.14)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: https://github.com/numactl/numactl
+Description: Libraries for controlling NUMA policy
+ Library to control specific NUMA (Non-Uniform Memory Architecture)
+ scheduling or memory placement policies.

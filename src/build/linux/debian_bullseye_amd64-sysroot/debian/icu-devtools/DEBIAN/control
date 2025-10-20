@@ -1,0 +1,18 @@
+Package: icu-devtools
+Source: icu
+Version: 67.1-7
+Architecture: amd64
+Maintainer: Laszlo Boszormenyi (GCS) <gcs@debian.org>
+Installed-Size: 680
+Depends: libc6 (>= 2.14), libgcc-s1 (>= 3.0), libicu67 (>= 67.1-1~), libstdc++6 (>= 5.2)
+Breaks: icu-tools (<< 67.1~rc-1~), libicu-dev (<< 67.1-7)
+Replaces: icu-tools (<< 67.1~rc-1~), libicu-dev (<< 67.1-7)
+Section: libdevel
+Priority: optional
+Multi-Arch: foreign
+Homepage: http://www.icu-project.org
+Description: Development utilities for International Components for Unicode
+ ICU is a C++ and C library that provides robust and full-featured
+ Unicode and locale support. This package contains programs used to
+ manipulate data files found in the ICU sources and is a dependency of
+ libicu-dev.  End users would generally not need to install this package.

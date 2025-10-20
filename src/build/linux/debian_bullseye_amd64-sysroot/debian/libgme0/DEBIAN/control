@@ -1,0 +1,26 @@
+Package: libgme0
+Source: game-music-emu
+Version: 0.6.3-2
+Architecture: amd64
+Maintainer: Sebastian Dröge <slomo@debian.org>
+Installed-Size: 330
+Depends: libc6 (>= 2.29), libgcc-s1 (>= 3.0), libstdc++6 (>= 4.1.1), zlib1g (>= 1:1.1.4)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: https://bitbucket.org/mpyne/game-music-emu/wiki/Home
+Description: Playback library for video game music files - shared library
+ game-music-emu is a collection of video game music file emulators that
+ support the following formats and systems:
+  * AY        ZX Spectrum/Amstrad CPC
+  * GBS       Nintendo Game Boy
+  * GYM       Sega Genesis/Mega Drive
+  * HES       NEC TurboGrafx-16/PC Engine
+  * KSS       MSX Home Computer/other Z80 systems (doesn't support FM sound)
+  * NSF/NSFE  Nintendo NES/Famicom (with VRC 6, Namco 106, and FME-7 sound)
+  * SAP       Atari systems using POKEY sound chip
+  * SPC       Super Nintendo/Super Famicom
+  * VGM/VGZ   Sega Master System/Mark III, Sega Genesis/Mega Drive,BBC Micro
+ .
+ This package contains the shared libraries necessary to run programs
+ using libgme.

@@ -1,0 +1,18 @@
+Package: libcryptsetup12
+Source: cryptsetup
+Version: 2:2.3.7-1+deb11u1
+Architecture: amd64
+Maintainer: Debian Cryptsetup Team <pkg-cryptsetup-devel@alioth-lists.debian.net>
+Installed-Size: 565
+Depends: libargon2-1 (>= 0~20171227), libblkid1 (>= 2.24.2), libc6 (>= 2.25), libdevmapper1.02.1 (>= 2:1.02.97), libjson-c5 (>= 0.15), libssl1.1 (>= 1.1.0), libuuid1 (>= 2.16)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: https://gitlab.com/cryptsetup/cryptsetup
+Description: disk encryption support - shared library
+ Cryptsetup provides an interface for configuring encryption on block
+ devices (such as /home or swap partitions), using the Linux kernel
+ device mapper target dm-crypt. It features integrated Linux Unified Key
+ Setup (LUKS) support.
+ .
+ This package provides the libcryptsetup shared library.

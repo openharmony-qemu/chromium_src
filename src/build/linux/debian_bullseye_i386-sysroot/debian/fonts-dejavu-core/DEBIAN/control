@@ -1,0 +1,23 @@
+Package: fonts-dejavu-core
+Source: fonts-dejavu
+Version: 2.37-2
+Architecture: all
+Maintainer: Debian Fonts Task Force <debian-fonts@lists.debian.org>
+Installed-Size: 2954
+Section: fonts
+Priority: optional
+Multi-Arch: foreign
+Homepage: https://dejavu-fonts.github.io/
+Description: Vera font family derivate with additional characters
+ DejaVu provides an expanded version of the Vera font family aiming for
+ quality and broader Unicode coverage while retaining the original Vera
+ style. DejaVu currently works towards conformance with the Multilingual
+ European Standards (MES-1 and MES-2) for Unicode coverage. The DejaVu
+ fonts provide serif, sans and monospaced variants.
+ .
+ This package only contains the sans, sans-bold, serif, serif-bold,
+ mono and mono-bold variants. For additional variants, see the
+ fonts-dejavu-extra package.
+ .
+ DejaVu fonts are intended for use on low-resolution devices (mainly
+ computer screens) but can be used in printing as well.

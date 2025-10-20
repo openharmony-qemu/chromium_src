@@ -1,0 +1,17 @@
+Package: gir1.2-colord-1.0
+Source: colord
+Version: 1.4.5-3
+Architecture: amd64
+Maintainer: Christopher James Halse Rogers <raof@ubuntu.com>
+Installed-Size: 114
+Depends: gir1.2-glib-2.0, libcolord2 (>= 1.4.5)
+Section: introspection
+Priority: optional
+Multi-Arch: same
+Homepage: http://www.freedesktop.org/software/colord/
+Description: GObject introspection data for the colord library
+ This package contains introspection data for libcolord, a gobject-based
+ convenience library for programs to interact with the colord system daemon.
+ .
+ It can be used by packages using the GIRepository format to generate
+ dynamic bindings.

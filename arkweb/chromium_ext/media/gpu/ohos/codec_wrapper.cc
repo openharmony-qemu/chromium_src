@@ -292,7 +292,7 @@ CodecWrapperImpl::DequeueStatus CodecWrapperImpl::DequeueOutputBuffer(
         }
 
         int64_t buffer_id = next_buffer_id_++;
-        buffer_ids_[buffer_id] = index;
+        buffer_ids_[buffer_id] = static_cast<int>(index);
 
         OHOS::NWeb::DecoderFormat format;
         auto result = codec_->GetOutputFormatBridgeDecoder(format);

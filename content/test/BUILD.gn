@@ -2983,12 +2983,16 @@ test("content_unittests") {
     sources += [ 
       "../../arkweb/chromium_ext/content/browser/accessibility/browser_accessibility_manager_ohos_unittest.cc",
     ]
+    sources += [ "../../arkweb/chromium_ext/content/browser/renderer_host/arkweb_render_process_host_impl_utils_unittest.cc" ]
+    sources += [ "../../arkweb/chromium_ext/base/ohos/ltpo/src/mock_sys_info_util_ext.cc" ]
+    sources += [ "../../arkweb/ohos_adapter_ndk/mock_ndk_api/src/mock_ndk_api.cc" ]
     sources += arkweb_content_browser_test_sources
     configs += [ "//arkweb/chromium_ext:content_browser_config" ]
   }
 
   if (arkweb_test) {
     sources += arkweb_content_browser_unittests_sources
+    configs += [ "//arkweb/chromium_ext:arkweb_base_unittest_config" ]
   }
   if (is_mac) {
     sources += [

@@ -574,6 +574,10 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (float x, float y, int32_t duration),
               (override));
   MOCK_METHOD(void,
+              StopFling,
+              (),
+              (override));
+  MOCK_METHOD(void,
               ScrollByWithAnime,
               (float delta_x, float delta_y, int32_t duration),
               (override));
@@ -1056,19 +1060,6 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(void, OnFoldStatusChanged, (FoldStatus foldstatus), (override));
 #endif
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  MOCK_METHOD(void, WebExtensionTabCreated, (int tab_id), (override));
-  MOCK_METHOD(void,
-              WebExtensionTabUpdated,
-              (int tab_id,
-               const std::vector<std::string>& changed_property_names,
-               const std::string& url),
-              (override));
-  MOCK_METHOD(void,
-              WebExtensionTabUpdated,
-              (int tab_id,
-               const std::vector<std::string>& changed_property_names,
-               std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo),
-              (override));
   MOCK_METHOD(void,
               WebExtensionTabCreated,
               (std::unique_ptr<NWebExtensionTab> tab),

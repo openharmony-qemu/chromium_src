@@ -31,6 +31,12 @@ blink::WebNativeBridge* RenderFrameImpl::CreateWebNativeBridge(
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+bool RenderFrameImpl::IsOffscreen() {
+  return is_offscreen_;
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 gfx::RectF RenderFrameImpl::ElementBoundsInWindow(
     const blink::WebElement& element) {
@@ -108,6 +114,12 @@ void RenderFrameImpl::MouseSelectMenuShow(bool show) {
 void RenderFrameImpl::ChangeVisibilityOfQuickMenu() {
   if (GetFrameHost()) {
     GetFrameHost()->ChangeVisibilityOfQuickMenu();
+  }
+}
+
+void RenderFrameImpl::HideQuickMenu() {
+  if (GetFrameHost()) {
+    GetFrameHost()->HideQuickMenu();
   }
 }
 #endif

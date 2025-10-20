@@ -21,6 +21,10 @@ if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {
   import("//arkweb/ohos_nweb_ex/build/features/features.gni")
 }
 
+if (defined(is_arkweb_ext) && is_arkweb_ext) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
+
 # For feature flags internal to content. See content/public/common:features
 # for feature flags that clients of contents need to know about.
 buildflag_header("buildflags") {
@@ -550,6 +554,10 @@ mojom("mojo_bindings") {
 
   if (arkweb_pdf) {
     enabled_features += [ "arkweb_pdf" ]
+  }
+
+  if (arkweb_arkweb_extensions) {
+    enabled_features += [ "arkweb_arkweb_extensions" ]
   }
 
   if (arkweb_renderer_anr_dump) {

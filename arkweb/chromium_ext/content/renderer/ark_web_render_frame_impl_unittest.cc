@@ -92,6 +92,7 @@ class MockFrameHostForArkWeb : public mojom::FrameHost {
   MOCK_METHOD(void, DidStopLoading, ());
   MOCK_METHOD(void, MouseSelectMenuShow, (bool show));
   MOCK_METHOD(void, ChangeVisibilityOfQuickMenu, ());
+  MOCK_METHOD(void, HideQuickMenu, ());
   MOCK_METHOD(void, OnClearContextMenu, ());
   MOCK_METHOD(void, CloseImageOverlaySelection, ());
   MOCK_METHOD(void, OnPdfScrollAtBottom, (const std::string& url));

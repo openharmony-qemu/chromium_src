@@ -16,16 +16,20 @@
 #define THIRD_PARTY_BLINK_RENDERER_CORE_HTML_MEDIA_ELEMENT_UTILS_H_
 
 #include "third_party/blink/public/platform/web_string.h"
-#include "third_party/blink/renderer/core/html/media/html_media_element.h"
+#include "third_party/blink/renderer/platform/heap/garbage_collected.h"
+#include "third_party/blink/renderer/platform/heap/member.h"
 
 namespace blink {
+class HTMLMediaElement;
 
  class HTMLMediaElementUtils {
  public:
     enum class PlayState { kPause = 0, kPlay, kWaiting, kPlaying };
     WebString GetTitle() const;
-    raw_ptr<HTMLMediaElement> htmlMediaElement_ = nullptr;
-    HTMLMediaElementUtils(HTMLMediaElement* element);
+    DISALLOW_NEW();
+    void Trace(Visitor* visitor) const;
+    Member<HTMLMediaElement> htmlMediaElement_ = nullptr;
+    explicit HTMLMediaElementUtils(HTMLMediaElement* element);
 
     #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
     class Recorder {

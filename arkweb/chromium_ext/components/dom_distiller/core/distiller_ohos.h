@@ -26,6 +26,9 @@
 #include "components/dom_distiller/core/distiller_url_fetcher.h"
 #include "components/dom_distiller/core/proto/distilled_article.pb.h"
 #include "url/gurl.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace dom_distiller {
 class DistillerImpl;

@@ -69,14 +69,11 @@ struct RunJavaScriptParam;
 #include "capi/nweb_extension_context_menus_callback.h"
 #include "capi/web_extension_tab_items.h"
 #include "ohos_nweb/src/capi/nweb_context_menus_on_clicked_data.h"
+#include "ohos_nweb/src/capi/web_extension_install_crx_items.h"
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "ohos_nweb_ex/core/extension/nweb_app_client_extension_dispatcher.h"
-#endif
-
-#if BUILDFLAG(ARKWEB_SAFEBROWSING)
-#include "components/prefs/pref_service.h"
 #endif
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
@@ -561,7 +558,6 @@ class NWebImpl : public NWeb {
                                      int policy,
                                      const std::string& mappingType,
                                      const std::string& url);
-  static void OnGlobalConfigResult(const std::string& path, PrefService* localState);
 #endif  // BUILDFLAG(ARKWEB_SAFEBROWSING)
 
 #if BUILDFLAG(IS_OHOS)
@@ -939,17 +935,15 @@ class NWebImpl : public NWeb {
   static std::string GetExtensionVersion(const std::string& extension_id);
   static void InstallExtensionFile(const std::string& file_path,
                                    OnExtensionInstallCallback callback);
-  //old version
-  void WebExtensionTabCreated(int tab_id);
-  void WebExtensionTabUpdated(
-      int tab_id,
-      const std::vector<std::string>& changed_property_names,
-      const std::string& url);
-  void WebExtensionTabUpdated(
-      int tab_id,
-      const std::vector<std::string>& changed_property_names,
-      std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo);
-  // new version
+  static void InstallExtensionFileV2(
+      const std::string& file_path,
+      const NWebExtensionInstallProperties& options,
+      OnExtensionInstallCallback callback);
+  static void UninstallExtension(const std::string& extension_id,
+                                 OnExtensionUninstallCallback callback);
+  static void SetPublisherKeys(const std::vector<std::vector<uint8_t>>& keys);
+  static void WebExtensionSetForbidDisplayInSettings(
+    const std::set<std::string>& extension_ids);
   void WebExtensionTabRemoved(int tab_id, bool isWindowClosing, int windowId);
   void WebExtensionTabUpdated(
       int tab_id,
@@ -1144,6 +1138,7 @@ class NWebImpl : public NWeb {
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   static void EnablePrivateNetworkAccess(bool enable);
   static bool IsPrivateNetworkAccessEnabled();
+  static void EnableRewriteUrlForNavigation(bool enable);
 #endif
 #if BUILDFLAG(ARKWEB_BGTASK)
   void OnBrowserForeground() override;

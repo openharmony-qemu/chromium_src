@@ -40,7 +40,6 @@ class NetConnectionCallbackImpl : public NetConnectionCallback {
 };
 
 int32_t NetConnectionCallbackImpl::NetAvailable() {
-  NOTIMPLEMENTED();
   return 0;
 }
 

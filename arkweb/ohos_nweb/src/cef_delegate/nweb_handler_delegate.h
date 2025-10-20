@@ -703,6 +703,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   void HideHandleAndQuickMenuIfNecessary(bool hide) override;
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
   void ChangeVisibilityOfQuickMenu() override;
+  bool IsQuickMenuShow() override;
 #endif
 #if BUILDFLAG(ARKWEB_AI)
   bool CloseImageOverlaySelection() override;
@@ -756,6 +757,8 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   void OnFrameCreated(CefRefPtr<CefBrowser> browser,
                       CefRefPtr<CefFrame> frame) override;
+  void OnFrameDetached(CefRefPtr<CefBrowser> browser,
+                       CefRefPtr<CefFrame> frame) override;
 #endif
   /* CefFrameHandler methods end */
 
@@ -1025,6 +1028,11 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   void SetBlanklessLoadingKey(uint64_t blankless_key);
   void ClearSnapshot();
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  std::string OnRewriteUrlForNavigation(const std::string& original_url,
+                                        const std::string& referrer) override;
 #endif
 
  private:

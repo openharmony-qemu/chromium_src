@@ -221,6 +221,9 @@ class CONTENT_EXPORT RenderFrameImpl
       blink::mojom::FrameReplicationStatePtr replication_state,
       const base::UnguessableToken& devtools_frame_token,
       mojom::CreateLocalMainFrameParamsPtr params,
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      bool is_offscreen,
+#endif
       const blink::WebURL& base_url);
 
   // Creates a new RenderFrame with |routing_id|. If |previous_frame_token| is
@@ -477,6 +480,7 @@ class CONTENT_EXPORT RenderFrameImpl
 #if BUILDFLAG(ARKWEB_MENU)
   void MouseSelectMenuShow(bool show) override;
   void ChangeVisibilityOfQuickMenu() override;
+  void HideQuickMenu() override;
 #endif
 
   // blink::mojom::AutoplayConfigurationClient implementation:
@@ -924,6 +928,9 @@ class CONTENT_EXPORT RenderFrameImpl
   bool web_view_test_mode = false;
   blink::WebView* web_view_test = nullptr;
   void SetWebViewForTest(blink::WebView* web_view);
+#endif
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  bool IsOffscreen();
 #endif
 
  protected:
@@ -1767,6 +1774,9 @@ class CONTENT_EXPORT RenderFrameImpl
 
 #if BUILDFLAG(ARKWEB_USERAGENT)
   bool viewport_meta_enabled_{false};
+#endif
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  bool is_offscreen_{false};
 #endif
   raw_ptr<RenderFrameImplUtils> implUtils;
   

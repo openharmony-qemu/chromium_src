@@ -575,7 +575,7 @@ void MediaControlsImplUtils::CreateExt(
     MediaControlsImpl* controls, HTMLMediaElement& media_element) {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   if (controls) {
-    controls->SetClass("rtl", media_element.html_media_element_utils_->IsRTL());
+    controls->SetClass("rtl", media_element.html_media_element_utils_.IsRTL());
   }
 #endif
 }

@@ -15,18 +15,6 @@
 
 #include "arkweb/chromium_ext/components/download/public/common/arkweb_download_utils_ext.h"
 
-#include "arkweb/build/features/features.h"
-#include "base/files/file_util.h"
-#include "base/format_macros.h"
-#include "base/i18n/file_util_icu.h"
-#include "base/metrics/field_trial_params.h"
-#include "base/numerics/safe_conversions.h"
-#include "base/rand_util.h"
-#include "base/strings/string_number_conversions.h"
-#include "base/strings/stringprintf.h"
-#include "base/strings/utf_string_conversions.h"
-#include "build/build_config.h"
-
 namespace download {
 
 namespace {

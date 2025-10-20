@@ -29,7 +29,7 @@ MediaControlEnteredFullscreenTitleDisplayElement::
 }
 
 void MediaControlEnteredFullscreenTitleDisplayElement::UpdateTitle() {
-  SetTitle(MediaElement().html_media_element_utils_->GetTitle());
+  SetTitle(MediaElement().html_media_element_utils_.GetTitle());
 }
 
 void MediaControlEnteredFullscreenTitleDisplayElement::SetTitle(

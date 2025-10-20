@@ -252,6 +252,7 @@ declare_args() {
   arkweb_blank_prop_config = true
   arkweb_autolayout = true
   enable_mojom_gni = false
+  arkweb_ext_https_upgrades=false
 }
 
 # Features enabled in mojom bindings.

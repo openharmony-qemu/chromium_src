@@ -16,7 +16,9 @@
 #ifndef CONTENT_PUBLIC_BROWSER_RENDER_PROCESS_HOST_OHOS_H_
 #define CONTENT_PUBLIC_BROWSER_RENDER_PROCESS_HOST_OHOS_H_
 
-#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
 namespace nweb_ex {

@@ -16,6 +16,7 @@
 #ifndef OHOS_NWEB_SRC_NWEB_EXTENSION_MANAGER_CALLBACK_H_
 #define OHOS_NWEB_SRC_NWEB_EXTENSION_MANAGER_CALLBACK_H_
 
+#include <set>
 #include <stddef.h>
 #include <string>
 #include <map>
@@ -147,6 +148,10 @@ struct WebExtensionInfoV2 {
   std::optional<double> install_time;
 };
 
+struct WebExtensionForbidDisplayParams {
+  std::set<std::string> extension_ids;
+};
+
 typedef void (*OnWebExtensionLoadedFun)(const WebExtensionInfo& load_info);
 typedef void (*OnWebExtensionUnLoadedFun)(std::string extension_id);
 typedef void (*OnWebExtensionOpenUrlFun)(std::string url);
@@ -161,5 +166,7 @@ struct NWebExtensionManagerCallBack {
 typedef void (*OnExtensionInstallCallback)(int code,
                                            const char* message,
                                            const char* extension_id);
+
+typedef void (*OnExtensionUninstallCallback)(bool success, const char* message);
 
 #endif  // OHOS_NWEB_SRC_NWEB_EXTENSION_MANAGER_CALLBACK_H_

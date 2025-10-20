@@ -16,7 +16,9 @@
 #ifndef CONTENT_PUBLIC_BROWSER_RENDER_FRAME_HOST_OHOS_H_
 #define CONTENT_PUBLIC_BROWSER_RENDER_FRAME_HOST_OHOS_H_
 
-#include "arkweb/build/features/features.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace content {
 class RenderFrameHostOhos {

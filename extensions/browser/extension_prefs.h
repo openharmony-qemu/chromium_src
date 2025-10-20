@@ -741,6 +741,12 @@ class ExtensionPrefs : public KeyedService {
 
   static const char kFakeObsoletePrefForTesting[];
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void SetNotDisplayInSettings(const ExtensionId& extension_id,
+                               bool not_display);
+  bool IsNotDisplayInSettings(const ExtensionId& extension_id) const;
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
+
  private:
   friend class ExtensionPrefsBlocklistedExtensions;  // Unit test.
   friend class ExtensionPrefsComponentExtension;     // Unit test.

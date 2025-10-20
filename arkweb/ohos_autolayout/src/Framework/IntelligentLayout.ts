@@ -1,12 +1,13 @@
 import { AComponent } from './Common/base/AComponent';
-import Logger from './Common/Logger';
-import Utils from './Common/Utils';
-import { PopWindow } from './PopWindow/PopWindow';
-import { PopupWindow } from './Popup/PopupWindow';
+import Utils from './Utils/Utils';
+import { PopupWindowRelayout } from './Popup/PopupWindowRelayout';
+import { PopupWindowDetector } from './Popup/PopupWindowDetector';
 import { PopupInfo } from './Popup/PopupInfo';
+import Log from '../Debug/Log';
+import Tag from '../Debug/Tag';
 
 export default class IntelligentLayout {
-    static TAG = 'IntelligentLayout';
+    static TAG = Tag.intelligentLayout;
     static ComponentMap = new Map<HTMLElement, AComponent>();
 
     // 布局参数硬编码的节点缓存
@@ -52,12 +53,12 @@ export default class IntelligentLayout {
      * 响应开启重布局的按钮事件，局部刷新节点
      */
     public static relayoutForPopWin(): void {
-        Logger.printComInfo(`relayoutForPopWin run`);
+        Log.info('relayoutForPopWin run', IntelligentLayout.TAG);
         let popupInfo: PopupInfo = null;
         if (this.popWindowMap.size > 0) {
             popupInfo = this.popWindowMap.keys().next().value;
         } else {
-            popupInfo = PopupWindow.findPopups(document.body);
+            popupInfo = PopupWindowDetector.findPopups(document.body);
         }
 
         if (popupInfo != null) {
@@ -66,7 +67,7 @@ export default class IntelligentLayout {
     }
     
     public static intelligentLayout(root: HTMLElement): void {
-        Logger.printComInfo(`intelligentLayout run`);
+        Log.info('intelligentLayout run', IntelligentLayout.TAG);
 
         this.rootNode = root;
         let popupInfo: PopupInfo = null;
@@ -75,12 +76,11 @@ export default class IntelligentLayout {
             // @ts-ignore
             window.popupInfo = popupInfo;
         } else {
-            popupInfo = PopupWindow.findPopups(root);
+            popupInfo = PopupWindowDetector.findPopups(root);
             // @ts-ignore
             window.popupInfo = popupInfo;
         }
-        // @ts-ignore
-        console.log('intelligentLayout: print popupInfo root_node className = ' + window.popupInfo?.root_node?.className);
+        Log.d(`popupInfo root_node: ${popupInfo?.root_node?.className}`, IntelligentLayout.TAG);
 
         if (popupInfo != null) {
             this.calculateForPopWin(popupInfo);
@@ -89,7 +89,7 @@ export default class IntelligentLayout {
 
     public static recoverPopwinStyle(): void {
         if (this.popWindowMap.size > 0) {
-            const component:PopWindow = this.popWindowMap.values().next().value;
+            const component:PopupWindowRelayout = this.popWindowMap.values().next().value;
             component.restoreStyles();
         }
         this.popWindowMap.clear();
@@ -104,9 +104,9 @@ export default class IntelligentLayout {
         });
     }
 
-    private static calculateForPopWin(popupInfo: PopupInfo): void {
-        Logger.printDebugMsg(`calculate for popWindow ${popupInfo?.root_node?.className} `);
-        const component:AComponent = this.popWindowMap.has(popupInfo) ? this.popWindowMap.get(popupInfo) : new PopWindow(popupInfo);
+    static calculateForPopWin(popupInfo: PopupInfo): void {
+        Log.d(`calculate for popWindow ${popupInfo?.root_node?.className}`, IntelligentLayout.TAG);
+        const component:AComponent = this.popWindowMap.has(popupInfo) ? this.popWindowMap.get(popupInfo) : new PopupWindowRelayout(popupInfo);
         if (component && component.isDirty()) {
             component.intelligenceLayout();
             // 清除标记

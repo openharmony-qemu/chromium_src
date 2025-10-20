@@ -1587,7 +1587,11 @@ Navigator::GetNavigationEntryForRendererInitiatedNavigation(
               true /* is_renderer_initiated */,
               std::string() /* extra_headers */,
               controller_.GetBrowserContext(),
-              nullptr /* blob_url_loader_factory */, rewrite_virtual_urls));
+              nullptr /* blob_url_loader_factory */, rewrite_virtual_urls
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+              , controller_.delegate()
+#endif
+              ));
 
   entry->set_reload_type(NavigationRequest::NavigationTypeToReloadType(
       common_params.navigation_type));

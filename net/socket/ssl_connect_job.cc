@@ -378,6 +378,10 @@ int SSLConnectJob::DoSSLConnect() {
       *common_connect_job_params()->ignore_certificate_errors;
   ssl_config.network_anonymization_key = params_->network_anonymization_key();
 
+#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
+  ssl_config.disable_sha1_server_signatures = disable_legacy_crypto_with_fallback_;
+#endif
+
   if (ssl_client_context()->config().ech_enabled) {
     if (ech_retry_configs_) {
       ssl_config.ech_config_list = *ech_retry_configs_;

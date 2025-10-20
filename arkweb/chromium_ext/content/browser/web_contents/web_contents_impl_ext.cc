@@ -510,6 +510,13 @@ void WebContentsImplExt::ChangeVisibilityOfQuickMenu() {
     render_view_host_delegate_view_->ChangeVisibilityOfQuickMenu();
   }
 }
+
+bool WebContentsImplExt::IsQuickMenuShow() {
+  if (render_view_host_delegate_view_) {
+    render_view_host_delegate_view_->IsQuickMenuShow();
+  }
+  return false;
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_AI)
@@ -905,6 +912,20 @@ void WebContentsImplExt::SetCustomUA(std::string custom_user_agent) {
 std::string WebContentsImplExt::GetCustomUA() {
   return custom_user_agent_;
 }
+
+bool WebContentsImplExt::isSameUserAgent(
+    const blink::UserAgentOverride& ua_override) {
+  if (GetUserAgentOverride() == ua_override) {
+    return true;
+  }
+
+  if (!ua_override.ua_string_override.empty() &&
+      !net::HttpUtil::IsValidHeaderValue(ua_override.ua_string_override)) {
+    return true;
+  }
+  return false;
+}
+
 #endif
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
 void WebContentsImplExt::OneShotMediaPlayerStopped() {
@@ -1202,4 +1223,20 @@ bool WebContentsImplExt::OnStartBackgroundTask(int32_t type,
 }
 #endif  // ARKWEB_PERFORMANCE_PERSISTENT_TASK
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+std::string WebContentsImplExt::OnRewriteUrlForNavigation(const std::string& original_url,
+                                                          const std::string& referrer) {
+  if (delegate_) {
+    return delegate_->OnRewriteUrlForNavigation(original_url, referrer);
+  } else {
+    LOG(ERROR) << "WebContentsImplExt::OnRewriteUrlForNavigation delegate_ is nullptr";
+    return "";
+  }
+}
+
+std::string WebContentsImplExt::NotifyNavigationRewriteUrl(const std::string& original_url,
+                                                           const std::string& referrer) {
+  return OnRewriteUrlForNavigation(original_url, referrer);
+}
+#endif
 }  // namespace content

@@ -1,7 +1,9 @@
 import { PopupInfo } from '../Popup/PopupInfo';
 import Constant from './Constant';
 import {DetectorInst, LayoutMetrics} from './DetectorInst';
-import LayoutUtils from './LayoutUtils';
+import LayoutUtils from '../Utils/LayoutUtils';
+import Log from '../../Debug/Log';
+import Tag from '../../Debug/Tag';
 
 // 布局约束指标检测结果接口
 export interface LayoutConstraintMetrics {
@@ -19,7 +21,7 @@ export class LayoutConstraintMetricsDetector {
     public static detectLayoutConstraintMetrics(popupInfo: PopupInfo, rootNodes: Set<HTMLElement>): LayoutConstraintMetrics {        
         // 确保根节点列表有效
         if (!rootNodes || rootNodes.size === 0) {
-            console.error('无效的根节点列表');
+            Log.e('无效的根节点列表', Tag.layoutConstraintDetector);
             return this.createErrorReport('无效的根节点列表');
         }
 
@@ -33,14 +35,14 @@ export class LayoutConstraintMetricsDetector {
         for (const rootNode of rootNodes) {
             // 确保单个根节点有效
             if (!rootNode || !(rootNode instanceof HTMLElement)) {
-                console.error('无效的根节点:', rootNode);
+                Log.e(`无效的根节点: ${rootNode}`, Tag.layoutConstraintDetector);
                 continue;
             }
 
             const layoutMap = this.collectLayoutMetrics(rootNode);
             // 确保根节点布局数据存在
             if (!layoutMap.has(rootNode)) {
-                console.warn('根节点布局数据缺失，重新获取');
+                Log.w('根节点布局数据缺失，重新获取', Tag.layoutConstraintDetector);
                 this.addRootNodeMetrics(rootNode, layoutMap);
             }
             
@@ -179,7 +181,7 @@ export class LayoutConstraintMetricsDetector {
         // 确保获取根节点指标
         const rootMetrics = layoutMap.get(rootNode);
         if (!rootMetrics) {
-            console.error('无法获取根节点布局指标');
+            Log.e('无法获取根节点布局指标', Tag.layoutConstraintDetector);
             reportLines.push('### 安全区域间隙检测\n❌ 错误: 无法获取根节点布局指标');
             return { left: 0, top: 0, right: 0, bottom: 0 };
         }

@@ -32,6 +32,7 @@
 #include "extensions/browser/extension_icon_placeholder.h"
 #include "extensions/browser/extension_registry.h"
 #include "extensions/browser/extension_system.h"
+#include "extensions/browser/install_prefs_helper.h"
 #include "extensions/browser/ui_util.h"
 #include "extensions/browser/management_policy.h"
 #include "extensions/browser/unloaded_extension_reason.h"
@@ -41,6 +42,10 @@
 #include "ohos_nweb/src/nweb_common.h"
 #include "ui/gfx/image/image_skia_operations.h"
 
+#if BUILDFLAG(ARKWEB_TEST)
+#include "extension_registry_info_manager_test.h"
+#endif
+
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "extensions/browser/extension_util.h"
 #include "extensions/common/manifest_handlers/incognito_info.h"
@@ -49,9 +54,9 @@
 #endif
 
 namespace extensions {
-
+#ifndef BUILDFLAG(ARKWEB_TEST)
 namespace {
-
+#endif
 enum LoadPhase {
   kStartInitialLoad,
   kEndInitialLoad,
@@ -265,45 +270,88 @@ void GetManifestUrlOverrideInfo(const Extension& extension,
     }
   }
 }
- 
-void GetManifestSettingsOverridesInfo(const Extension& extension,
-                                      WebExtensionManifestInfo& manifest) {
-  const SettingsOverrides* settings = SettingsOverrides::Get(&extension);
-  if (settings) {
-    manifest.settings_overrides.emplace(
-        WebExtensionManifestSettingsOverrides());
-    if (settings->homepage) {
-      manifest.settings_overrides->homepage = settings->homepage->spec();
-    }
-    if (!settings->startup_pages.empty()) {
-      for (const auto& page : settings->startup_pages) {
-        manifest.settings_overrides->startup_pages.emplace_back(page.spec());
+
+// Same process as in SubstituteInstallParam() in settings_overrides_api.cc.
+std::string SubstituteInstallParam(Profile* profile,
+                                   const Extension& extension,
+                                   std::string str) {
+  std::string install_parameter;
+  auto prefs = ExtensionPrefs::Get(profile);
+  if (prefs) {
+    install_parameter = GetInstallParam(prefs, extension.id());
+  }
+  base::ReplaceSubstringsAfterOffset(&str, 0, "__PARAM__", install_parameter);
+  return str;
+}
+
+WebExtensionManifestSearchProvider GetSearchProvider(
+    Profile* profile,
+    const Extension& extension,
+    const SettingsOverrides* settings) {
+  WebExtensionManifestSearchProvider searcher;
+
+  searcher.name = settings->search_engine->name;
+  searcher.keyword = settings->search_engine->keyword;
+  if (settings->search_engine->favicon_url) {
+    searcher.favicon_url = SubstituteInstallParam(
+        profile, extension, settings->search_engine->favicon_url.value());
+  }
+  searcher.search_url = SubstituteInstallParam(
+      profile, extension, settings->search_engine->search_url);
+  searcher.encoding = settings->search_engine->encoding;
+  if (settings->search_engine->suggest_url) {
+    searcher.suggest_url = SubstituteInstallParam(
+        profile, extension, settings->search_engine->suggest_url.value());
+  }
+  if (settings->search_engine->image_url) {
+    searcher.image_url = SubstituteInstallParam(
+        profile, extension, settings->search_engine->image_url.value());
+  }
+  searcher.search_url_post_params =
+      settings->search_engine->search_url_post_params;
+  searcher.suggest_url_post_params =
+      settings->search_engine->suggest_url_post_params;
+  searcher.image_url_post_params =
+      settings->search_engine->image_url_post_params;
+  if (settings->search_engine->alternate_urls) {
+    for (const auto& url : *settings->search_engine->alternate_urls) {
+      if (!url.empty()) {
+        searcher.alternate_urls.push_back(
+            SubstituteInstallParam(profile, extension, url));
       }
     }
-    if (settings->search_engine) {
-      WebExtensionManifestSearchProvider searcher;
-      searcher.name = settings->search_engine->name;
-      searcher.keyword = settings->search_engine->keyword;
-      searcher.favicon_url = settings->search_engine->favicon_url;
-      searcher.search_url = settings->search_engine->search_url;
-      searcher.encoding = settings->search_engine->encoding;
-      searcher.suggest_url = settings->search_engine->suggest_url;
-      searcher.image_url = settings->search_engine->image_url;
-      searcher.search_url_post_params =
-          settings->search_engine->search_url_post_params;
-      searcher.suggest_url_post_params =
-          settings->search_engine->suggest_url_post_params;
-      searcher.image_url_post_params =
-          settings->search_engine->image_url_post_params;
-      if (settings->search_engine->alternate_urls)
-        searcher.alternate_urls = *settings->search_engine->alternate_urls;
-      searcher.prepopulated_id = settings->search_engine->prepopulated_id;
-      searcher.is_default = settings->search_engine->is_default;
-      manifest.settings_overrides->search_provider.emplace(std::move(searcher));
+  }
+  searcher.prepopulated_id = settings->search_engine->prepopulated_id;
+  searcher.is_default = settings->search_engine->is_default;
+  return searcher;
+}
+
+void GetManifestSettingsOverridesInfo(Profile* profile,
+                                      const Extension& extension,
+                                      WebExtensionManifestInfo& manifest) {
+  const SettingsOverrides* settings = SettingsOverrides::Get(&extension);
+  if (!settings)
+    return;
+
+  manifest.settings_overrides.emplace();
+  if (settings->homepage) {
+    manifest.settings_overrides->homepage =
+        SubstituteInstallParam(profile, extension, settings->homepage->spec());
+  }
+  if (!settings->startup_pages.empty()) {
+    for (const auto& page : settings->startup_pages) {
+      manifest.settings_overrides->startup_pages.emplace_back(
+          SubstituteInstallParam(profile, extension, page.spec()));
     }
   }
+  if (settings->search_engine) {
+    manifest.settings_overrides->search_provider.emplace(
+        GetSearchProvider(profile, extension, settings));
+  }
 }
+#ifndef BUILDFLAG(ARKWEB_TEST)
 }
+#endif
 
 ExtensionRegistryInfoManager::BrowserNotifier::BrowserNotifier(
     const Extension& extension,
@@ -601,7 +649,8 @@ void ExtensionRegistryInfoManager::GetExtensionManifestInfo(
   if (homepage_url.is_valid()) {
     manifest.homepage_url = homepage_url.spec();
   }
-  GetManifestSettingsOverridesInfo(extension, manifest);
+  GetManifestSettingsOverridesInfo(
+      Profile::FromBrowserContext(browser_context_), extension, manifest);
   GetManifestUrlOverrideInfo(extension, manifest);
   manifest.options_page = GetManifestOptionsPageInfo(extension);
 #if BUILDFLAG(ARKWEB_NWEB_EX)

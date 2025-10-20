@@ -130,4 +130,12 @@ void NWebCoreValue::CheckType(NWebHapValue::Type type) {
   }
 }
 
+std::string NWebCoreValue::GetErrorDescription() {
+    return error_description_;
+}
+
+void NWebCoreValue::SetErrorDescription(const std::string& description) {
+    error_description_ = description;
+}
+
 }  // namespace OHOS::NWeb

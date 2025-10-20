@@ -167,6 +167,7 @@ class WebContentsImplExt : public WebContentsImpl {
 #if BUILDFLAG(ARKWEB_MENU)
   void MouseSelectMenuShow(bool show) override;
   void ChangeVisibilityOfQuickMenu() override;
+  bool IsQuickMenuShow() override;
 #endif
 
 #if BUILDFLAG(ARKWEB_AI)
@@ -253,6 +254,7 @@ class WebContentsImplExt : public WebContentsImpl {
 #if BUILDFLAG(ARKWEB_USERAGENT)
   void SetCustomUA(std::string custom_user_agent) override;
   std::string GetCustomUA() override;
+  bool isSameUserAgent(const blink::UserAgentOverride& ua_override);
 #endif
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
   void OneShotMediaPlayerStopped() override;
@@ -318,6 +320,14 @@ class WebContentsImplExt : public WebContentsImpl {
                            const std::string& distillable_page_url,
                            const std::string& title) override;
 #endif // ARKWEB_READER_MODE
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  std::string OnRewriteUrlForNavigation(const std::string& original_url,
+                                        const std::string& referrer) override;
+
+  std::string NotifyNavigationRewriteUrl(const std::string& original_url,
+                                         const std::string& referrer) override;
+#endif
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 friend class WebContentsImpl;

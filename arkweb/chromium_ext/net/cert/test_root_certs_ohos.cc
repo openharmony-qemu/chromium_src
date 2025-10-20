@@ -11,13 +11,11 @@
 #include "third_party/boringssl/src/include/openssl/x509.h"
 
 namespace net {
+namespace {
+const char kUserCaBasePath[] = "/data/certificates/user_cacerts/test/";
+}
 base::FilePath GetTmpCertDir() {
-  base::FilePath test_cert_dir;
-  if (!base::GetCurrentDirectory(&test_cert_dir) || test_cert_dir.empty()) {
-    return base::FilePath();
-  }
-  const std::string net_test_tmp_dir = "tmp/net_test_tmp_dir";
-  test_cert_dir = test_cert_dir.Append(net_test_tmp_dir);
+  base::FilePath test_cert_dir(kUserCaBasePath);
   if (!base::DirectoryExists(test_cert_dir) &&
       !base::CreateDirectory(test_cert_dir)) {
     return base::FilePath();
@@ -48,12 +46,7 @@ bool TestRootCerts::AddImpl(X509Certificate* certificate) {
 
 void TestRootCerts::ClearImpl() {
 #if defined(NET_UNITTESTS_OHOS_ENABLE)
-  base::FilePath test_cert_dir;
-  if (!base::GetCurrentDirectory(&test_cert_dir) || test_cert_dir.empty()) {
-    return;
-  }
-  const std::string net_test_tmp_dir = "tmp/net_test_tmp_dir";
-  test_cert_dir = test_cert_dir.Append(net_test_tmp_dir);
+  base::FilePath test_cert_dir = GetTmpCertDir();
   if (base::DirectoryExists(test_cert_dir)) {
     base::DeletePathRecursively(test_cert_dir);
   }

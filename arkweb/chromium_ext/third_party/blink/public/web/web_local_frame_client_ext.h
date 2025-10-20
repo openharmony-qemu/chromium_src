@@ -42,6 +42,7 @@ class BLINK_EXPORT WebLocalFrameClientExt : public WebLocalFrameClient {
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
   virtual void MouseSelectMenuShow(bool show) {}
   virtual void ChangeVisibilityOfQuickMenu() {}
+  virtual void HideQuickMenu() {}
 #endif
 
 #if BUILDFLAG(ARKWEB_AI)

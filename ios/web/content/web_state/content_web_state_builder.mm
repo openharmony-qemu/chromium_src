@@ -41,7 +41,11 @@ void ExtractContentSessionStorage(ContentWebState* web_state,
             /* initiator_origin= */ std::nullopt,
             /* initiator_base_url= */ std::nullopt, ui::PAGE_TRANSITION_RELOAD,
             /* is_renderer_initiated= */ false, std::string(), browser_context,
-            /* blob_url_loader_factory= */ nullptr);
+            /* blob_url_loader_factory= */ nullptr
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+            , controller.delegate()
+#endif
+            );
     new_entry->SetOriginalRequestURL(navigation_item_storage.URL);
     if (navigation_item_storage.URL.SchemeIsHTTPOrHTTPS()) {
       new_entry->SetURL(navigation_item_storage.URL);

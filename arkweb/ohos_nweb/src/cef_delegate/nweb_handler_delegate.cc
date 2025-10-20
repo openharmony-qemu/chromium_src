@@ -965,6 +965,44 @@ void NWebHandlerDelegate::OnFrameCreated(CefRefPtr<CefBrowser> browser,
 
   dispatcher_.OnFrameCreated(frameInfo);
 }
+
+void NWebHandlerDelegate::OnFrameDetached(CefRefPtr<CefBrowser> browser,
+                                          CefRefPtr<CefFrame> frame) {
+  LOG(DEBUG) << "NWebHandlerDelegate::OnFrameDetached";
+  if (!frame || !browser) {
+    LOG(ERROR) << "OnFrameDetached failed, frame or browser is invalid";
+    return;
+  }
+
+  std::string frameRoutingId = frame->GetIdentifier().ToString();
+  int childId = 0;
+  std::string parentRoutingId;
+  int parentChildId = 0;
+  FrameInfos frameInfo;
+
+  if (!frame->IsMain()) {
+    CefRefPtr<CefFrame> parent = frame->GetParent();
+    if (parent) {
+      parentRoutingId = parent->GetIdentifier().ToString();
+      if (parent->GetBrowser() && parent->GetBrowser()->GetHost()) {
+        parentChildId = parent->GetBrowser()->GetHost()->GetIdentifier();
+      }
+      frameInfo.parentId = std::to_string(parentChildId) + "_" + parentRoutingId;
+    }
+  } else {
+    frameInfo.parentId.clear();
+  }
+
+  if (browser->GetHost()) {
+    childId = browser->GetHost()->GetIdentifier();
+  } else {
+    LOG(ERROR) << "OnFrameDetached browser getHost failed.";
+    return;
+  }
+  frameInfo.id = std::to_string(childId) + "_" + frameRoutingId;
+
+  dispatcher_.OnFrameDetached(frameInfo);
+}
 #endif
 /* CefFrameHandler methods end */
 
@@ -1207,6 +1245,14 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
       }
     }
 #endif // ARKWEB_EX_SCREEN_CAPTURE
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(
+        ::switches::kEnableNwebEx) && base::ohos::IsPcDevice()) {
+      if (main_browser_ && main_browser_->GetHost()) {
+        main_browser_->GetHost()->WebExtensionRegisterZoomObserver();
+      }
+    }
+#endif // ARKWEB_ARKWEB_EXTENSIONS
     return;
   }
 #endif  // BUILDFLAG(ARKWEB_MULTI_WINDOW)
@@ -1239,6 +1285,14 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
     }
   }
 #endif  // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(
+      ::switches::kEnableNwebEx) && base::ohos::IsPcDevice()) {
+    if (main_browser_ && main_browser_->GetHost()) {
+      main_browser_->GetHost()->WebExtensionRegisterZoomObserver();
+    }
+  }
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 bool NWebHandlerDelegate::DoClose(CefRefPtr<CefBrowser> browser) {
@@ -1259,6 +1313,14 @@ bool NWebHandlerDelegate::DoClose(CefRefPtr<CefBrowser> browser) {
                              pip_child_id_, pip_frame_routing_id_, 0, 0);
     }
   }
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(
+      ::switches::kEnableNwebEx) && base::ohos::IsPcDevice()) {
+    if (main_browser_ && main_browser_->GetHost()) {
+      main_browser_->GetHost()->WebExtensionUnregisterZoomObserver();
+    }
+  }
+#endif // ARKWEB_ARKWEB_EXTENSIONS
   // Closing the main window requires special handling. See the DoClose()
   // documentation in the CEF header for a detailed destription of this
   // process.
@@ -3920,6 +3982,13 @@ void NWebHandlerDelegate::ChangeVisibilityOfQuickMenu() {
     nweb_handler_->ChangeVisibilityOfQuickMenu();
   }
 }
+
+bool NWebHandlerDelegate::IsQuickMenuShow() {
+  if (nweb_handler_) {
+    nweb_handler_->IsQuickMenuShow();
+  }
+  return false;
+}
 #endif
 
 #if BUILDFLAG(ARKWEB_AI)
@@ -5292,7 +5361,7 @@ bool NWebHandlerDelegate::IsShowHandle() {
 void NWebHandlerDelegate::OnIsPageDistillable(int page_type,
                                             const std::string& distillable_page_url, const std::string& title) {
   LOG(INFO) << "NWebHandlerDelegate::OnIsPageDistillable page_type:" << page_type
-            << " distillablePageUrl:" << distillable_page_url.c_str() << " title:" << title.c_str();
+            << " title:" << title.c_str();
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   if (IsNativeApiEnable()) {
     dispatcher_.OnIsPageDistillable(page_type, distillable_page_url.c_str(), title.c_str());
@@ -5344,4 +5413,19 @@ bool NWebHandlerDelegate::OnStartBackgroundTask(int32_t type,
       type, message, web_app_client_extension_listener_->nweb_id);
 }
 #endif  // RKWEB_PERFORMANCE_PERSISTENT_TASK
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+std::string NWebHandlerDelegate::OnRewriteUrlForNavigation(const std::string& original_url,
+                                                           const std::string& referrer) {
+  if (!CefCurrentlyOn(TID_UI)) {
+    return "";
+  }
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (IsNativeApiEnable()) {
+    return dispatcher_.OnRewriteUrlForNavigation(original_url.c_str(), referrer.c_str());
+  }
+#endif  // ARKWEB_NWEB_EX
+  return "";
+}
+#endif
 }  // namespace OHOS::NWeb

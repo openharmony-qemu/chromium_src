@@ -54,6 +54,7 @@ class DistillerPageWebContentsExt : public DistillerPageWebContents {
   void DidFinishNavigation(
       content::NavigationHandle* navigation_handle) override;
   void OnWebContentsDistillationFailed(const std::string& error_message);
+  void UpdateWebContentCreateParam(content::WebContents::CreateParams& param);
 
 #if BUILDFLAG(ARKWEB_USERAGENT)
   void DidStartNavigation(content::NavigationHandle* navigation_handle) override;

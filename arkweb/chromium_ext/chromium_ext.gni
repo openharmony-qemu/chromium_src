@@ -83,6 +83,10 @@ arkweb_services_network_sources = [
   "//arkweb/chromium_ext/services/network/arkweb_network_service_ext.h",
 ]
 
+arkweb_services_network_unittest_sources = [
+  "//arkweb/chromium_ext/services/network/arkweb_network_service_ext_unittest.cc",
+]
+
 arkweb_power_save_blocker_source = [
   "//arkweb/chromium_ext/service/device/wake_lock/power_save_blocker/power_save_blocker_ohos.cc"
 ]
@@ -872,6 +876,7 @@ arkweb_third_party_blink_renderer_core_unittest_sources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/core/page/drag_image_ext_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/scroll/scrollbar_theme_utils_uinttest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_popup_menu_element_utils_unittest.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/platform/loader/fetch/url_loader/resource_request_sender_ext_unittest.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/media_controls_impl_utils_unittest.cc",
 ]
 
@@ -1204,6 +1209,8 @@ arkweb_content_browser_test_sources = [
   "//arkweb/chromium_ext/content/browser/web_contents/web_contents_impl_utils_unittest.cc",
   "//arkweb/chromium_ext/content/browser/arkweb_child_process_launcher_helper_utils_unittests.cc",
   "//arkweb/chromium_ext/content/browser/display_cutout/display_cutout_host_ohos_unittest.cc",
+  "//arkweb/chromium_ext/chrome/browser/extensions/system_display/display_info_provider_ohos_unittest.cc",
+  "//arkweb/chromium_ext/chrome/browser/chrome_content_browser_client_for_include_unittest.cc",
 ]
 
 arkweb_fuzzer_test_sources = [
@@ -1321,6 +1328,7 @@ arkweb_ohos_adapter_ndk_unittests_sources = [
   "//arkweb/chromium_ext/ohos_test/unittest/devices/arkweb_device_data_manager_utils_unittest.cc",
   "//arkweb/ohos_adapter_ndk/sensor_adapter/sensor_adapter_impl_unittest.cc",
   "//arkweb/ohos_adapter_ndk/ndk_version_unittest.cc",
+  "//arkweb/ohos_adapter_ndk/ohos_adapter_helper_decouple_unittest.cpp",
 ]
 
 arkweb_components_viz_common_frame_sinks_copy_output_result_sources = [
@@ -1391,4 +1399,9 @@ arkweb_components_crashpad_ohos_unittest = [
 
 arkweb_components_performance_manager_graph_test_sources = [
   "//arkweb/chromium_ext/components/performance_manager/graph/page_node_impl_for_include_unittest.cc"
+]
+
+arkweb_components_captive_portal_content_sources = [
+  "//arkweb/chromium_ext/components/captive_portal/content/captive_portal_tab_helper_ohos.cc",
+  "//arkweb/chromium_ext/components/captive_portal/content/captive_portal_tab_helper_ohos.h",
 ]

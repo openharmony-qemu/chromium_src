@@ -134,6 +134,7 @@ static const double kZoomLevelToFactorRatio = 1.2;
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)
 const int NWebPlaybackState_NONE = 0;
 #endif
+const int kErrorDescriptionMaxLen = 2048;
 
 static const int kDefaultWebNativeProxy = -2;
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
@@ -320,12 +321,14 @@ class JavaScriptResultCallbackImpl : public CefJavaScriptResultCallback {
     auto data =
         std::make_shared<OHOS::NWeb::NWebCoreValue>(NWebHapValue::Type::NONE);
     AddNWebValueCefV2(result, data);
+    data->SetErrorDescription(error_description_);
     if (callback_) {
       callback_->OnReceiveValueV2(data);
       if (ArkWebGetErrno() != RESULT_OK) {
         auto data2 =
             std::make_shared<OHOS::NWeb::NWebMessage>(NWebValue::Type::NONE);
         ConvertCefValueToNWebMessage(result, data2);
+        data2->SetErrorDescription(error_description_);
         callback_->OnReceiveValue(data2);
       }
     }
@@ -349,7 +352,13 @@ class JavaScriptResultCallbackImpl : public CefJavaScriptResultCallback {
     }
   }
 
+  void SetErrorDescription(const std::string& description) override {
+    error_description_ = "Not support type: <" +
+        description.substr(0, kErrorDescriptionMaxLen) + ">";
+  }
+
  private:
+  std::string error_description_;
   std::shared_ptr<NWebMessageValueCallback> callback_;
   uint32_t callbackId_;
   std::shared_ptr<NWebDelegateInterface> nwebDelegate_;
@@ -612,7 +621,12 @@ class JavaScriptInFramesResultCallbackImpl : public CefJavaScriptResultCallback 
   void OnJavaScriptExeResult(CefRefPtr<CefValue> result) override {
     if (callback_ != nullptr) {
       JavaScriptValue value;
-      ConvertCefValueToJavaScriptValue(result, &value);
+      if (error_description_.empty()) {
+        ConvertCefValueToJavaScriptValue(result, &value);
+      } else {
+        value.type = JavaScriptDataType::STRING;
+        value.stringValue = error_description_;
+      }
 
       nweb_ex::proto::JavaScriptValue pb_value;
       NwebExtensionJavaScriptTypesUtils::ExtensionWebValueClassToPb(value, pb_value);
@@ -629,7 +643,12 @@ class JavaScriptInFramesResultCallbackImpl : public CefJavaScriptResultCallback 
     }
   }
 
+  void SetErrorDescription(const std::string& description) override {
+    error_description_ = description;
+  } 
+
  private:
+  std::string error_description_;
   OnReceiveValueCallback callback_ = nullptr;
   int32_t callback_id_ = 0;
   uint32_t nweb_id_ = 0;
@@ -5549,56 +5568,6 @@ void NWebDelegate::DisallowSandboxFileAccessFromFileUrl(bool disallow) {
 #endif  // BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)
 
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-void NWebDelegate::WebExtensionTabCreated(int tab_id) {
-  LOG(INFO) << "WebExtensionTabCreated:" << tab_id;
-  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
-    LOG(ERROR) << "WebExtensionTabCreated failed, get browser failed";
-    return;
-  }
-
-  return GetBrowser()->ExtensionSetTabId(tab_id);
-}
-
-void NWebDelegate::WebExtensionTabUpdated(
-    int tab_id,
-    const std::vector<std::string>& changed_property_names,
-    const std::string& url) {
-  LOG(INFO) << "WebExtensionTabUpdated:" << tab_id;
-  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
-    LOG(ERROR) << "WebExtensionTabUpdated failed, get browser failed";
-    return;
-  }
-
-  GetBrowser()->ExtensionSetTabId(tab_id);
-
-  std::vector<CefString> changed_properties;
-  std::for_each(changed_property_names.begin(), changed_property_names.end(),
-                [&changed_properties](const std::string& name) {
-                  changed_properties.emplace_back(CefString(name));
-                });
-  return GetBrowser()->GetHost()->WebExtensionTabUpdated(
-      tab_id, changed_properties, url);
-}
-
-void NWebDelegate::WebExtensionTabUpdated(int tab_id,
-    const std::vector<std::string>& changed_property_names,
-    std::unique_ptr<NWebExtensionTabChangeInfo> changeInfo) {
-  LOG(INFO) << "WebExtensionTabUpdated:" << tab_id;
-  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
-    LOG(ERROR) << "WebExtensionTabUpdated failed, get browser failed";
-    return;
-  }
-  GetBrowser()->ExtensionSetTabId(tab_id);
- 
-  std::vector<CefString> changed_properties;
-  std::for_each(changed_property_names.begin(), changed_property_names.end(),
-      [&changed_properties] (const std::string& name) {
-    changed_properties.emplace_back(CefString(name));
-  });
-  return GetBrowser()->GetHost()->WebExtensionTabUpdated(
-      tab_id, changed_properties, std::move(changeInfo));
-}
-
 void NWebDelegate::WebExtensionTabRemoved(int tab_id,
   bool isWindowClosing, int windowId) {
   LOG(INFO) << "WebExtensionTabRemoved:" << tab_id;

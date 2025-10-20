@@ -21,6 +21,7 @@
 #include "third_party/blink/public/web/web_local_frame.h"
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
+#include "arkweb/chromium_ext/third_party/blink/platform/web_distillability_match.h"
 #include "arkweb/chromium_ext/third_party/blink/public/mojom/dom_distiller/reader_mode_config.mojom.h"
 #include "base/strings/stringprintf.h"
 #include "third_party/blink/public/platform/platform.h"

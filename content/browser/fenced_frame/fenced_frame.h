@@ -91,6 +91,9 @@ class CONTENT_EXPORT FencedFrame : public blink::mojom::FencedFrameOwnerHost,
   void ActivateAndShowRepostFormWarningDialog() override;
   bool ShouldPreserveAbortedURLs() override;
   void UpdateOverridingUserAgent() override;
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  std::string NotifyNavigationRewriteUrl(const std::string& original_url, const std::string& referrer) override;
+#endif
 
   const raw_ptr<WebContentsImpl> web_contents_;
 

@@ -18,6 +18,7 @@ namespace blink {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 void MediaControlOverflowMenuListElement::Trace(Visitor* visitor) const {
   visitor->Trace(split_line_item_);
+  visitor->Trace(elementUtils_);
   MediaControlPopupMenuElement::Trace(visitor);
 }
 

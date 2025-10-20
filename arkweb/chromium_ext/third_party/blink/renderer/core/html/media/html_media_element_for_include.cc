@@ -292,11 +292,11 @@ void HTMLMediaElement::OnLayerBoundsChange(const gfx::Rect& bounds) {
   if (has_notified_playing_) {
     has_been_seen_playing_once_ = !video_rect_.IsEmpty();
   }
-  html_media_element_utils_->UpdateVideoAssistantAttributes();
+  html_media_element_utils_.UpdateVideoAssistantAttributes();
 }
 
 void HTMLMediaElement::OnPageVisibilityChanged() {
-  html_media_element_utils_->UpdateVideoAssistantAttributes();
+  html_media_element_utils_.UpdateVideoAssistantAttributes();
 }
 
 void HTMLMediaElement::NotifyVideoPlayingInternal() {
@@ -332,7 +332,7 @@ HTMLMediaElement::CollectMediaInfoAttributesForVAST() {
   }
   auto mediaInfoAttr = media::mojom::blink::MediaInfoForVAST::New();
   mediaInfoAttr->id = WTF::String::FromUTF8(GetIdAttribute().Utf8());
-  mediaInfoAttr->title = WTF::String::FromUTF8(html_media_element_utils_->GetTitle().Utf8());
+  mediaInfoAttr->title = WTF::String::FromUTF8(html_media_element_utils_.GetTitle().Utf8());
   mediaInfoAttr->duration = duration();
   mediaInfoAttr->volume = volume();
   mediaInfoAttr->current_time = media_player->CurrentTime();
@@ -367,7 +367,7 @@ void HTMLMediaElement::OnNotifyVideoPlayingTimerFired(TimerBase*) {
   LOG(INFO) << "OnNotifyVideoPlayingTimerFired";
   has_notified_playing_ = true;
   if (IsHTMLVideoElement()) {
-    auto attributes = html_media_element_utils_->CollectVideoAttributesForVAST();
+    auto attributes = html_media_element_utils_.CollectVideoAttributesForVAST();
     if (!has_been_seen_playing_once_) {
       has_been_seen_playing_once_ = !video_rect_.IsEmpty();
     }

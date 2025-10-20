@@ -121,6 +121,9 @@ void DistillerPageWebContents::CreateNewWebContents(const GURL& url) {
   // Create new WebContents to use for distilling the content.
   content::WebContents::CreateParams create_params(browser_context_);
   create_params.initially_hidden = true;
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  if (AsExt()) AsExt()->UpdateWebContentCreateParam(create_params);
+#endif // ARKWEB_READER_MODE
   std::unique_ptr<content::WebContents> web_contents =
       content::WebContents::Create(create_params);
   DCHECK(web_contents);

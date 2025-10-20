@@ -1,5 +1,7 @@
 import { PopupInfo } from './PopupInfo';
 import { PredictionResult } from './PredictionResult';
+import Log from '../../Debug/Log';
+import Tag from '../../Debug/Tag';
 
 // 定义模型参数的类型
 interface ModelParameters {
@@ -95,7 +97,7 @@ export class PopupRecog {
                 // 添加到线性组合中
                 linearCombination += modelParameters.coefficients[i] * scaledValue;
             } else {
-                console.warn(`预处理后的特征 '${featureName}' 是 undefined 或 NaN。返回非弹窗预测。`);
+                Log.w(`预处理后的特征 '${featureName}' 是 undefined 或 NaN，返回非弹窗预测`, Tag.popupRecog);
                 // 如果关键特征缺失，我们可以断定它不是弹窗。
                 return { prediction: 0, probability: 0 };
             }

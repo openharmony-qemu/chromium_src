@@ -1,0 +1,22 @@
+{
+    "register_extension": {
+        "type": "device",
+        "core": "0.1.4.0"
+    },
+    "mandatory_features": {
+        "VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR": [
+            {
+                "features": [
+                    "globalPriorityQuery"
+                ],
+                "requirements": [
+                    "VK_KHR_global_priority"
+                ],
+                "mandatory_variant": [
+                    "vulkan",
+                    "vulkansc"
+                ]
+            }
+        ]
+    }
+}

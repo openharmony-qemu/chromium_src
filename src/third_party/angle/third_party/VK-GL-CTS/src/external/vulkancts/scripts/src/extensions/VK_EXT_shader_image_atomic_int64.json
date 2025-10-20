@@ -1,0 +1,36 @@
+{
+    "register_extension": {
+        "type": "device",
+        "core": ""
+    },
+    "mandatory_features": {
+        "VkPhysicalDeviceFeatures": [
+            {
+                "features": [
+                    "shaderInt64"
+                ],
+                "requirements": [
+                    "VK_EXT_shader_image_atomic_int64"
+                ],
+                "mandatory_variant": [
+                    "vulkan",
+                    "vulkansc"
+                ]
+            }
+        ],
+        "VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT": [
+            {
+                "features": [
+                    "shaderImageInt64Atomics"
+                ],
+                "requirements": [
+                    "VK_EXT_shader_image_atomic_int64"
+                ],
+                "mandatory_variant": [
+                    "vulkan",
+                    "vulkansc"
+                ]
+            }
+        ]
+    }
+}

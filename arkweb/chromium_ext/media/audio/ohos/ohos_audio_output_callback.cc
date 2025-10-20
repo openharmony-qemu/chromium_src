@@ -35,14 +35,14 @@ void OHOSAudioOutputCallback::AudioRendererOnWriteData(void* buffer, int32_t len
 }
 
 void OHOSAudioOutputCallback::AudioRendererOnError(OH_AudioStream_Result error) {
-    if (audio_output_stream_) {
+    if (task_runner_) {
         task_runner_->PostTask(
             FROM_HERE, base::BindOnce(&OHOSAudioOutputStream::ReportError, audio_output_stream_));
     }
 }
 
 void OHOSAudioOutputCallback::AudioRendererOnInterruptEvent(OH_AudioInterrupt_Hint hint) {
-    if (audio_output_stream_) {
+    if (task_runner_) {
         switch (hint) {
             case OH_AudioInterrupt_Hint::AUDIOSTREAM_INTERRUPT_HINT_PAUSE:
                 task_runner_->PostTask(
@@ -64,7 +64,7 @@ void OHOSAudioOutputCallback::AudioRendererOnInterruptEvent(OH_AudioInterrupt_Hi
 }
 
 void OHOSAudioOutputCallback::AudioRendererOutputDeviceChangeCallback(OH_AudioStream_DeviceChangeReason reason) {
-    if (audio_output_stream_) {
+    if (task_runner_) {
         switch (reason) {
         case OH_AudioStream_DeviceChangeReason::REASON_OLD_DEVICE_UNAVAILABLE:
             task_runner_->PostTask(

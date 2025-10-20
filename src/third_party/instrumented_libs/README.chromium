@@ -1,0 +1,11 @@
+Name: instrumented_libraries
+URL: https://releases.ubuntu.com/focal/
+Version: 20.04.6
+Revision: DEPS
+Security Critical: no
+Shipped: no
+License: n/a
+
+Description:
+Scripts which can download and build several third party libraries
+using different instrumentation tools (MemorySanitizer, etc.).

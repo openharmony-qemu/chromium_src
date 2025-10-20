@@ -1,0 +1,2 @@
+../lib/clang/21/share/asan_ignorelist.txt
+../lib/clang/21/share/cfi_ignorelist.txt

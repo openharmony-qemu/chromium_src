@@ -1,0 +1,16 @@
+Package: binutils-common
+Source: binutils
+Version: 2.35.2-2
+Architecture: amd64
+Maintainer: Matthias Klose <doko@debian.org>
+Installed-Size: 13897
+Breaks: binutils (<< 2.29.1-3.1~)
+Replaces: binutils (<< 2.29.1-3.1~)
+Section: devel
+Priority: optional
+Multi-Arch: same
+Homepage: https://www.gnu.org/software/binutils/
+Description: Common files for the GNU assembler, linker and binary utilities
+ This package contains the localization files used by binutils packages for
+ various target architectures and parts of the binutils documentation. It is
+ not useful on its own.

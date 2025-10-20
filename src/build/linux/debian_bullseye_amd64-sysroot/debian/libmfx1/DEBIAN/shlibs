@@ -1,0 +1,3 @@
+libmfx-tracer 1 libmfx1 (>= 21.1.0)
+libmfx 1 libmfx1 (>= 21.1.0)
+libmfxhw64 1 libmfx1 (>= 21.1.0)

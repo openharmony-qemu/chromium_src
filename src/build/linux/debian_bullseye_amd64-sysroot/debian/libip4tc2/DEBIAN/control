@@ -1,0 +1,22 @@
+Package: libip4tc2
+Source: iptables
+Version: 1.8.7-1
+Architecture: amd64
+Maintainer: Debian Netfilter Packaging Team <pkg-netfilter-team@lists.alioth.debian.org>
+Installed-Size: 81
+Depends: libc6 (>= 2.28)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: https://www.netfilter.org/
+Description: netfilter libip4tc library
+ The iptables/xtables framework has been replaced by nftables. You should
+ consider migrating now.
+ .
+ This package contains the user-space iptables (IPv4) C library from the
+ Netfilter xtables framework.
+ .
+ iptables IPv4 ruleset ADT and kernel interface.
+ .
+ This library has been considered private for years (and still is), in the
+ sense of changing symbols and backward compatibility not guaranteed.

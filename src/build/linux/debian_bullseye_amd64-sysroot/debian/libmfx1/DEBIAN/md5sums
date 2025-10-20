@@ -1,0 +1,14 @@
+0bcf29599e48226e8f46e8e8e3b4bc5b  usr/lib/x86_64-linux-gnu/libmfx-tracer.so.1.34
+3d59c8f14c0453f1ef01678d9fc03194  usr/lib/x86_64-linux-gnu/libmfx.so.1.34
+8d290b499b9bb430d0663491572ddc55  usr/lib/x86_64-linux-gnu/libmfxhw64.so.1.34
+40776999562cc4aca23e831811f1b60f  usr/lib/x86_64-linux-gnu/mfx/libmfx_h264la_hw64.so
+7b6c99d69eb2b8af6304a5eeb6e045d4  usr/lib/x86_64-linux-gnu/mfx/libmfx_hevc_fei_hw64.so
+d8821f3c7234c9fe02d6925cf132b141  usr/lib/x86_64-linux-gnu/mfx/libmfx_hevcd_hw64.so
+b296dd2f185d3c9b0416424cb40b5fb6  usr/lib/x86_64-linux-gnu/mfx/libmfx_hevce_hw64.so
+5b8e6491d6bb26063636098b7e887210  usr/lib/x86_64-linux-gnu/mfx/libmfx_vp8d_hw64.so
+70ba533b180d737d7138f5022e2f1b3c  usr/lib/x86_64-linux-gnu/mfx/libmfx_vp9d_hw64.so
+001dba7bc51956929662aacfed5c4932  usr/lib/x86_64-linux-gnu/mfx/libmfx_vp9e_hw64.so
+d4b903fc267b3f8f40813a0e68d4ebce  usr/share/doc/libmfx1/changelog.Debian.gz
+190a551b21be97f09e111eb2757ef8cf  usr/share/doc/libmfx1/changelog.gz
+9c68b1df344c56c58920123bd019f9ac  usr/share/doc/libmfx1/copyright
+a26422b4b1cdbaf156da158d8bc06e7f  usr/share/mfx/plugins.cfg

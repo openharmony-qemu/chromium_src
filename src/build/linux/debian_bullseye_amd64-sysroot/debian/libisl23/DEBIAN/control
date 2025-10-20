@@ -1,0 +1,22 @@
+Package: libisl23
+Source: isl
+Version: 0.23-1
+Architecture: amd64
+Maintainer: Debian GCC Maintainers <debian-gcc@lists.debian.org>
+Installed-Size: 2253
+Depends: libc6 (>= 2.14), libgmp10
+Breaks: libisl-dbg (<< 0.19)
+Replaces: libisl-dbg (<< 0.19)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: http://isl.gforge.inria.fr/
+Description: manipulating sets and relations of integer points bounded by linear constraints
+ isl is a library for manipulating sets and relations of integer points
+ bounded by linear constraints. Supported operations on sets include
+ intersection, union, set difference, emptiness check, convex hull,
+ (integer) affine hull, integer projection, and computing the lexicographic
+ minimum using parametric integer programming. It also includes an ILP solver
+ based on generalized basis reduction.
+ .
+ This package contains the runtime library.

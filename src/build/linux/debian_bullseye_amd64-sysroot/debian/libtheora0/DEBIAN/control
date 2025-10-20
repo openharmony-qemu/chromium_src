@@ -1,0 +1,16 @@
+Package: libtheora0
+Source: libtheora
+Version: 1.1.1+dfsg.1-15
+Architecture: amd64
+Maintainer: Debian Multimedia Maintainers <debian-multimedia@lists.debian.org>
+Installed-Size: 707
+Depends: libc6 (>= 2.14), libcairo2 (>= 1.2.4), libogg0 (>= 1.1.0)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: https://www.theora.org/
+Description: Theora Video Compression Codec
+ Theora is an open video codec being developed by the Xiph.org Foundation as
+ part of their Ogg project. Theora is originally derived from On2's VP3 codec,
+ and has improved on it significantly with the merging of code from the
+ Thusnelda branch.

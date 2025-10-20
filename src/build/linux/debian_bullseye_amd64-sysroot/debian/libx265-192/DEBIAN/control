@@ -1,0 +1,16 @@
+Package: libx265-192
+Source: x265
+Version: 3.4-2
+Architecture: amd64
+Maintainer: Debian Multimedia Maintainers <debian-multimedia@lists.debian.org>
+Installed-Size: 15981
+Depends: libc6 (>= 2.15), libnuma1 (>= 2.0.11), libstdc++6 (>= 4.1.1)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: http://x265.org
+Description: H.265/HEVC video stream encoder (shared library)
+ libx265 is an encoding library for creating H.265/High Efficiency Video Coding
+ (HEVC) video streams.
+ .
+ This package contains the shared library.

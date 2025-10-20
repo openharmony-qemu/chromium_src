@@ -1,0 +1,19 @@
+Package: ncurses-bin
+Source: ncurses
+Version: 6.2+20201114-2+deb11u2
+Architecture: amd64
+Essential: yes
+Maintainer: Craig Small <csmall@debian.org>
+Installed-Size: 646
+Pre-Depends: libc6 (>= 2.14), libtinfo6 (>= 6.2+20200912), libtinfo6 (<< 6.3~)
+Section: utils
+Priority: required
+Multi-Arch: foreign
+Homepage: https://invisible-island.net/ncurses/
+Description: terminal-related programs and man pages
+ The ncurses library routines are a terminal-independent method of
+ updating character screens with reasonable optimization.
+ .
+ This package contains the programs used for manipulating the terminfo
+ database and individual terminfo entries, as well as some programs for
+ resetting terminals and such.

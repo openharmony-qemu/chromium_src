@@ -1,0 +1,14 @@
+Package: libwebrtc-audio-processing1
+Source: webrtc-audio-processing (0.3-1)
+Version: 0.3-1+b1
+Architecture: amd64
+Maintainer: Pulseaudio maintenance team <pkg-pulseaudio-devel@lists.alioth.debian.org>
+Installed-Size: 710
+Depends: libc6 (>= 2.27), libgcc1 (>= 1:4.0), libstdc++6 (>= 5.2)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: http://freedesktop.org/software/pulseaudio/webrtc-audio-processing/
+Description: AudioProcessing module from the WebRTC project.
+ Audio processing library (echo-cancellation, gain control etc) around the
+ AudioProcessing module from the WebRTC project

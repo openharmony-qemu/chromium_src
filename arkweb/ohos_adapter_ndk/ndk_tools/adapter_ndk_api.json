@@ -406,7 +406,8 @@
             ]
         },
         "includes": [
-            "native_vsync/graphic_error_code.h"
+            "native_vsync/graphic_error_code.h",
+            "native_vsync/native_vsync.h"
         ]
     },
     "ffrt": {

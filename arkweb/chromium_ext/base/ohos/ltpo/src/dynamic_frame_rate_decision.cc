@@ -179,11 +179,7 @@ void DynamicFrameRateDecision::SetHasTouchPointImpl(bool has_touch_point) {
   }
   LOG(DEBUG) << "SetHasTouchPoint " << has_touch_point;
   has_touch_point_ = has_touch_point;
-  if (has_touch_point_) {
-    UpdateFramePreferredRate();
-  } else {
-    SetMaxFrameRateThreeSec();
-  }
+  UpdateFramePreferredRate();
 }
 
 void DynamicFrameRateDecision::SetLTPOStrategy(int32_t strategy) {

@@ -37,6 +37,11 @@ const std::string FACTORY_LEVEL_DEFAULT = "1";
 
 const std::string PROP_RENDER_DUMP = "web.render.dump";
 const std::string PROP_DEBUG_TRACE = "web.debug.trace";
+const std::string WEB_SCROLL_NUM = "web.scroll.num";
+const std::string WEB_SCROLL_MIN = "web.scroll.min";
+const std::string WEB_SCROLL_MAX = "web.scroll.max";
+const std::string WEB_SCROLL_FPS = "web.scroll.fps";
+const std::string WEB_LTPO_STRATEGY = "web.ltpo.strategy";
 const int MAX_SIZE_OF_MAP = 2; // Currently, only 2 instructions need to be registered
 const int VERSION_SIZE = 4;
 const int DOT_SIZE = 3;
@@ -128,6 +133,7 @@ SystemPropertiesAdapterImpl::SystemPropertiesAdapterImpl()
 {
     InitPreferences();
     AddAllSysPropWatchers();
+    InitParam();
     std::string osFullName = OH_GetOSFullName();
     if (osFullName.empty()) {
         WVLOG_E("get os full name failed");
@@ -204,6 +210,28 @@ void SystemPropertiesAdapterImpl::InitPreferences()
     }
     WVLOG_D("open preferences, bundle name %{public}s", bundleName);
     // If necessary, initialize the configuration here.
+}
+
+void SystemPropertiesAdapterImpl::InitParam()
+{
+    SetIntParameter(WEB_LTPO_STRATEGY.c_str(), static_cast<int>(LTPOStrategy::ALL));
+
+    const int NUM = 3;
+    int param[NUM][NUM] = {
+        {77, -1, 120},  // (70, max)->120fps
+        {25, 77, 90},   // (25, 70)->90fps
+        {0, 25, 60}     // (0, 25)->60fps
+    };
+
+    SetIntParameter(WEB_SCROLL_NUM.c_str(), NUM);
+    for (uint32_t i = 0; i < NUM; i++) {
+        std::string minKey = WEB_SCROLL_MIN + std::to_string(i);
+        SetIntParameter(minKey.c_str(), param[i][0]);
+        std::string maxKey = WEB_SCROLL_MAX + std::to_string(i);
+        SetIntParameter(maxKey.c_str(), param[i][1]);
+        std::string fpsKey = WEB_SCROLL_FPS + std::to_string(i);
+        SetIntParameter(fpsKey.c_str(), param[i][2]);
+    }    
 }
 
 bool SystemPropertiesAdapterImpl::GetResourceUseHapPathEnable()
@@ -560,6 +588,26 @@ int SystemPropertiesAdapterImpl::GetIntParameter(const char *key, int defaultVal
     return value;
 }
 
+void SystemPropertiesAdapterImpl::SetIntParameter(const char *key, const int value)
+{
+    if (preferences_ == nullptr) {
+        WVLOG_E("preferences is null");
+        return;
+    }
+
+    if (key == nullptr) {
+        WVLOG_E("param is nullptr");
+        return;
+    }
+
+    int ret = OH_Preferences_SetInt(preferences_, key, value);
+    if (ret != PREFERENCES_OK) {
+        WVLOG_E("failed to set int, ret %{public}d", ret);
+        return;
+    }
+    WVLOG_D("set int param, key:%{public}s, value:%{public}d", key, value);
+}
+
 std::string SystemPropertiesAdapterImpl::GetStringParameter(const char *key, std::string defaultValue)
 {
     if (preferences_ == nullptr) {
@@ -631,12 +679,23 @@ int32_t SystemPropertiesAdapterImpl::GetIntParameter(const std::string& key, int
 
 std::vector<FrameRateSetting> SystemPropertiesAdapterImpl::GetLTPOConfig(const std::string& settingName)
 {
-#ifdef WEBVIEW_ONLY
-    return NWebConfigHelper::Instance().GetPerfConfig(settingName);
-#else
     std::vector<FrameRateSetting> vector;
+
+    int32_t num = GetIntParameter(WEB_SCROLL_NUM.c_str(), 0);
+    if (num <= 0) {
+        return vector;
+    }
+
+    for (uint32_t i = 0; i < num; i++) {
+        std::string minKey = WEB_SCROLL_MIN + std::to_string(i);
+        int32_t min = GetIntParameter(minKey.c_str(), 0);
+        std::string maxKey = WEB_SCROLL_MAX + std::to_string(i);
+        int32_t max = GetIntParameter(maxKey.c_str(), 0);
+        std::string fpsKey = WEB_SCROLL_FPS + std::to_string(i);
+        int32_t fps = GetIntParameter(fpsKey.c_str(), 0);
+        vector.push_back({min, max, fps});
+    }
     return vector;
-#endif
 }
 
 bool SystemPropertiesAdapterImpl::IsLTPODynamicApp(const std::string& bundleName)
@@ -650,11 +709,7 @@ bool SystemPropertiesAdapterImpl::IsLTPODynamicApp(const std::string& bundleName
 
 int32_t SystemPropertiesAdapterImpl::GetLTPOStrategy()
 {
-#ifdef WEBVIEW_ONLY
-    return NWebConfigHelper::Instance().GetLTPOStrategy();
-#else
-    return 0;
-#endif
+    return GetIntParameter(WEB_LTPO_STRATEGY.c_str(), static_cast<int>(LTPOStrategy::DISABLED));
 }
 
 std::string SystemPropertiesAdapterImpl::GetVulkanStatus()

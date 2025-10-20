@@ -438,9 +438,10 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
 #if BUILDFLAG(ARKWEB_PDF)
   gfx::Rect GetAvailableArea() override;
   void UpdateClientClippedSelectionBoundsForPDF(gfx::Rect& clipped_selection_bounds) override;
-  void SetIsTouching(bool isTouching) override;
-  
+  void SetIsTouching(bool is_touching) override;
+  void ResetResponsePendingInputEvent() override;
 #endif
+
   // PdfAccessibilityActionHandler:
   void EnableAccessibility() override;
   void HandleAccessibilityAction(
@@ -732,7 +733,7 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
 #if BUILDFLAG(ARKWEB_PDF)
   void ForceSelectionChanged();
   void RefreshMenuWithTouchAndScroll();
-  void SetIsScrolling(bool isScrolling);
+  void SetIsScrolling(bool is_scrolling);
   void SetScrollStoppedAfterDelay();
 
   // Used for cancelable delayed task in `UpdateScroll()`.
@@ -969,9 +970,9 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
   bool scroll_at_bottom_status_ = false;
   gfx::Rect current_left_;
   gfx::Rect current_right_;
-  bool isTouching_ = false;
-  bool isScrolling_ = false;
-  bool isPinching_ = false;
+  bool is_touching_ = false;
+  bool is_scrolling_ = false;
+  bool is_pinching_ = false;
 
   // Used for cancelable delayed task in `UpdateScroll()`.
   const scoped_refptr<base::SequencedTaskRunner> task_runner_;

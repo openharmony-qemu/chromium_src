@@ -99,6 +99,7 @@ class PDFDocumentHelper
 #if BUILDFLAG(ARKWEB_PDF)
   void UpdateClientClippedSelectionBoundsForPDF(const gfx::Rect& clipped_selection_bounds) override;
   void HideHandleAndQuickMenuForPDF(bool hide_handles) override;
+  void ResetResponsePendingInputEvent() override;
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
  private:

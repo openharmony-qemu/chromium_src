@@ -1078,7 +1078,10 @@ class PDFiumEngine : public DocumentLoader::Client, public IFSDK_PAUSE {
 
 #if BUILDFLAG(ARKWEB_PDF)
   // Whether PDF is searching for results.
-  bool isFindingResult_ = false;
+  bool is_finding_result_ = false;
+
+  // Whether PDF selection range is moved.
+  bool range_moved_ = false;
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
   // Pending progressive paints.

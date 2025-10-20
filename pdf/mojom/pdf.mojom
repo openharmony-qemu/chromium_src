@@ -76,5 +76,8 @@ interface PdfHost {
 
   [EnableIf=arkweb_pdf]
   HideHandleAndQuickMenuForPDF(bool hide_handles);
+
+  [EnableIf=arkweb_pdf]
+  ResetResponsePendingInputEvent();
   // #endif
 };

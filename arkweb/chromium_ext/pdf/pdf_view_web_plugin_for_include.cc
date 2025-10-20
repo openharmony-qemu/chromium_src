@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-
 namespace chrome_pdf {
 
 namespace {
@@ -97,7 +96,7 @@ void PdfViewWebPlugin::UpdateClientClippedSelectionBoundsForPDF(gfx::Rect& clipp
 }
 
 void PdfViewWebPlugin::RefreshMenuWithTouchAndScroll() {
-  if (!isTouching_ && !isScrolling_) {
+  if (!is_touching_ && !is_scrolling_) {
     pdf_host_->HideHandleAndQuickMenuForPDF(false);
   } else {
     pdf_host_->HideHandleAndQuickMenuForPDF(true);
@@ -122,15 +121,15 @@ void PdfViewWebPlugin::ForceSelectionChanged() {
     PrepareAndSetAccessibilityViewportInfo();
 }
 
-void PdfViewWebPlugin::SetIsTouching(bool isTouching) {
-  isTouching_ = isTouching;
+void PdfViewWebPlugin::SetIsTouching(bool is_touching) {
+  is_touching_ = is_touching;
   RefreshMenuWithTouchAndScroll();
 }
 
-void PdfViewWebPlugin::SetIsScrolling(bool isScrolling) {
-  isScrolling_ = isScrolling;
+void PdfViewWebPlugin::SetIsScrolling(bool is_scrolling) {
+  is_scrolling_ = is_scrolling;
   RefreshMenuWithTouchAndScroll();
-  if (!isScrolling_) {
+  if (!is_scrolling_) {
     paint_manager_.DoPaintAtScrollStopped();
   }
 }
@@ -154,6 +153,10 @@ void PdfViewWebPlugin::SetScrollStoppedAfterDelay() {
     FROM_HERE,
     base::BindOnce(&PdfViewWebPlugin::SetIsScrolling, weak_factory_.GetWeakPtr(), false),
     kPDFScrollDelay);
+}
+
+void PdfViewWebPlugin::ResetResponsePendingInputEvent() {
+  pdf_host_->ResetResponsePendingInputEvent();
 }
 #endif  // BUILDFLAG(ARKWEB_PDF)
 

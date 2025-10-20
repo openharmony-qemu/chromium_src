@@ -600,7 +600,8 @@ PDFiumEngine::~PDFiumEngine() {
   find_results_.clear();
   selection_.clear();
 #if BUILDFLAG(ARKWEB_PDF)
-  isFindingResult_ = false;
+  is_finding_result_ = false;
+  range_moved_ = false;
 #endif  // BUILDFLAG(ARKWEB_PDF)
 #if BUILDFLAG(ENABLE_PDF_INK2)
   ink_stroke_objects_map_.clear();
@@ -1006,7 +1007,8 @@ void PDFiumEngine::ClearTextSelection() {
   SelectionChangeInvalidator selection_invalidator(this);
   selection_.clear();
 #if BUILDFLAG(ARKWEB_PDF)
-  isFindingResult_ = false;
+  is_finding_result_ = false;
+  range_moved_ = false;
 #endif  // BUILDFLAG(ARKWEB_PDF)
 }
 
@@ -1344,7 +1346,8 @@ bool PDFiumEngine::OnLeftMouseDown(const blink::WebMouseEvent& event) {
       std::make_unique<SelectionChangeInvalidator>(this);
   selection_.clear();
 #if BUILDFLAG(ARKWEB_PDF)
-  isFindingResult_ = false;
+  is_finding_result_ = false;
+  range_moved_ = false;
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
   int page_index = -1;
@@ -2132,7 +2135,7 @@ bool PDFiumEngine::SelectFindResult(bool forward) {
     return false;
 
 #if BUILDFLAG(ARKWEB_PDF)
-  isFindingResult_ = true;
+  is_finding_result_ = true;
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
   SelectionChangeInvalidator selection_invalidator(this);
@@ -2165,6 +2168,9 @@ bool PDFiumEngine::SelectFindResult(bool forward) {
   // paint then.
   selection_.clear();
   selection_.push_back(find_results_[current_find_index_.value()]);
+#if BUILDFLAG(ARKWEB_PDF)
+  range_moved_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   // If the result is not in view, scroll to it.
   gfx::Rect visible_rect = GetVisibleRect();
@@ -2199,7 +2205,8 @@ void PDFiumEngine::StopFind() {
   selection_.clear();
   selecting_ = false;
 #if BUILDFLAG(ARKWEB_PDF)
-  isFindingResult_ = false;
+  is_finding_result_ = false;
+  range_moved_ = false;
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
   find_results_.clear();
@@ -2451,7 +2458,8 @@ void PDFiumEngine::SelectAll() {
     }
   }
 #if BUILDFLAG(ARKWEB_PDF)
-  isFindingResult_ = false;
+  is_finding_result_ = false;
+  range_moved_ = false;
 #endif  // BUILDFLAG(ARKWEB_PDF)
 }
 
@@ -2681,7 +2689,7 @@ void PDFiumEngine::HandleLongPress(const blink::WebTouchEvent& event) {
   DCHECK_GT(event.touches_length, 0u);
 
 #if BUILDFLAG(ARKWEB_PDF)
-  isFindingResult_ = false;
+  is_finding_result_ = false;
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
   // Send a fake mouse down to trigger the multi-click selection code.
@@ -2745,7 +2753,8 @@ void PDFiumEngine::AppendBlankPages(size_t num_pages) {
   selection_.clear();
   pending_pages_.clear();
 #if BUILDFLAG(ARKWEB_PDF)
-  isFindingResult_ = false;
+  is_finding_result_ = false;
+  range_moved_ = false;
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
   // Delete all pages except the first one.
@@ -3801,7 +3810,7 @@ void PDFiumEngine::OnSelectionPositionChanged() {
   gfx::Rect clipped_selection_bounds(0, 0, 0, 0);
   // When searching for results, do not calculate the selection position to
   // hide the menu and handles.
-  if (!isFindingResult_) {
+  if (!is_finding_result_) {
     OnSelectionPositionChangedForPDF(left, right, clipped_selection_bounds, selection_);
   }
 #else
@@ -3955,7 +3964,8 @@ void PDFiumEngine::SetSelection(const PageCharacterIndex& selection_start_index,
   SelectionChangeInvalidator selection_invalidator(this);
   selection_.clear();
 #if BUILDFLAG(ARKWEB_PDF)
-  isFindingResult_ = false;
+  is_finding_result_ = false;
+  range_moved_ = false;
 #endif  // BUILDFLAG(ARKWEB_PDF)
   PageCharacterIndex sel_start_index = selection_start_index;
   PageCharacterIndex sel_end_index = selection_end_index;
@@ -4112,7 +4122,11 @@ void PDFiumEngine::MoveRangeSelectionExtent(const gfx::Point& extent) {
   selection_.clear();
   selection_.push_back(PDFiumRange(pages_[page_index].get(), char_index, 0));
 #if BUILDFLAG(ARKWEB_PDF)
-  isFindingResult_ = false;
+  is_finding_result_ = false;
+  if (!range_moved_) {
+    range_moved_ = true;
+    client_->ResetResponsePendingInputEvent();
+  }
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
   // This should always succeeed because the range selection base should have

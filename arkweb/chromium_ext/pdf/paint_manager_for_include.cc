@@ -13,12 +13,7 @@
  * limitations under the License.
  */
 
-
 namespace chrome_pdf {
-
-namespace {
-
-}  // namespace
 
 #if BUILDFLAG(ARKWEB_PDF)
 void PaintManager::DoPaintAtScrollStopped() {

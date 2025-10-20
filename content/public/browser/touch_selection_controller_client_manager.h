@@ -81,10 +81,9 @@ class CONTENT_EXPORT TouchSelectionControllerClientManager {
 #if BUILDFLAG(ARKWEB_PDF)
   // Update the client clipped selection bounds in arkweb.
   virtual void UpdateClientClippedSelectionBounds(const gfx::Rect& clipped_selection_bounds) {}
-
   virtual void HideHandleAndQuickMenuIfNecessary(bool hide_handles) {}
-
   virtual void ConvertClientClippedSelectionBounds(gfx::Rect& clipped_selection_bounds) {}
+  virtual void ResetResponsePendingInputEvent() {}
 #endif  // BUILDFLAG(ARKWEB_PDF)
 };
 

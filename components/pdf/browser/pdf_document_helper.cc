@@ -165,6 +165,20 @@ void PDFDocumentHelper::HideHandleAndQuickMenuForPDF(bool hide_handles) {
   touch_selection_controller_client_manager_->
     HideHandleAndQuickMenuIfNecessary(hide_handles);
 }
+
+void PDFDocumentHelper::ResetResponsePendingInputEvent() {
+  if (!touch_selection_controller_client_manager_) {
+    InitTouchSelectionClientManager();
+  }
+
+  if (!touch_selection_controller_client_manager_) {
+    LOG(ERROR) << __func__ << ", PDF touch_selection_controller_client_manager_ is null.";
+    return;
+  }
+  
+  touch_selection_controller_client_manager_->
+    ResetResponsePendingInputEvent();
+}
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
 void PDFDocumentHelper::SetPluginCanSave(bool can_save) {

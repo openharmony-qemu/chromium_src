@@ -110,7 +110,7 @@ void OH_WebMessage_FuzzTest(FuzzedDataProvider* fdp) {
   webMessageType = ARKWEB_STRING;
   OH_WebMessage_SetType(messagePtr, webMessageType);
   OH_WebMessage_GetType(messagePtr);
-  OH_WebMessage_SetData(messagePtr, data, dataSize);
+  OH_WebMessage_SetData(messagePtr, data, dataSize + 1);
   OH_WebMessage_GetData(messagePtr, &dataLength);
   OH_WebMessage_PostMessage(&webMessagePort, webTag.c_str(), messagePtr);
   OH_WebMessage_Close(&webMessagePort, webTag.c_str());

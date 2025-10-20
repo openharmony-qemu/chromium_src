@@ -710,7 +710,7 @@ void OH_AudioBufferAdapterImpl::InitAudioBufferAdapterImpl(OH_AVBuffer* avBuffer
     }
     OH_AVBuffer_GetBufferAttr(avBuffer, &info);
     // avBuffer will be released soon, we must copy in local
-    length_ = static_cast<uint32_t>(OH_AVBuffer_GetCapacity(avBuffer));
+    length_ = static_cast<int32_t>(OH_AVBuffer_GetCapacity(avBuffer));
     if (length_ <= 0) {
         WVLOG_E("audio buffer size = %{public}d is illegal", length_);
         return;

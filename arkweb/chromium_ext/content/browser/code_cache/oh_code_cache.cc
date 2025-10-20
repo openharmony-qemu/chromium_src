@@ -497,10 +497,10 @@ bool InputStream::Read(net::IOBuffer* dest,
                        ReadCallback callback) {
   TRACE_EVENT0("net", "InputStream::Read");
   bool has_data = false;
-  int transfer_size = 0;
+  size_t transfer_size = 0;
   if (offset_ < data_.length()) {
     transfer_size =
-        std::min(length, static_cast<int>(data_.length() - offset_));
+        std::min(static_cast<size_t>(length), static_cast<size_t>(data_.length() - offset_));
     if (memcpy_s(dest->data(), static_cast<size_t>(length),
                  data_.c_str() + offset_, transfer_size) != EOK) {
       LOG(WARNING) << "InputStream::Read memcpy failed";

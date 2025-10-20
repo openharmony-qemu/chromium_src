@@ -1,0 +1,214 @@
+// Copyright 2025 The Chromium Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+#ifndef CHROME_BROWSER_ACTOR_ACTOR_KEYED_SERVICE_H_
+#define CHROME_BROWSER_ACTOR_ACTOR_KEYED_SERVICE_H_
+
+#include <memory>
+#include <vector>
+
+#include "base/compiler_specific.h"
+#include "base/functional/callback.h"
+#include "base/memory/raw_ptr.h"
+#include "base/memory/weak_ptr.h"
+#include "base/types/expected.h"
+#include "chrome/browser/actor/actor_task.h"
+#include "chrome/browser/actor/aggregated_journal.h"
+#include "chrome/browser/actor/task_id.h"
+#include "chrome/browser/page_content_annotations/multi_source_page_context_fetcher.h"
+#include "chrome/common/actor_webui.mojom.h"
+#include "chrome/common/buildflags.h"
+#include "components/keyed_service/core/keyed_service.h"
+#include "components/optimization_guide/proto/features/actions_data.pb.h"
+#include "components/optimization_guide/proto/features/model_prototyping.pb.h"
+#include "components/password_manager/core/browser/actor_login/actor_login_types.h"
+#include "components/tabs/public/tab_interface.h"
+#include "url/gurl.h"
+
+class Profile;
+
+namespace content {
+class BrowserContext;
+}  // namespace content
+
+namespace actor {
+namespace ui {
+class ActorUiStateManagerInterface;
+}
+
+class ToolRequest;
+
+// This class owns all ActorTasks for a given profile. ActorTasks are kept in
+// memory until the process is destroyed.
+class ActorKeyedService : public KeyedService {
+ public:
+  explicit ActorKeyedService(Profile* profile);
+  ActorKeyedService(const ActorKeyedService&) = delete;
+  ActorKeyedService& operator=(const ActorKeyedService&) = delete;
+  ~ActorKeyedService() override;
+
+  // Convenience method, may return nullptr.
+  static ActorKeyedService* Get(content::BrowserContext* context);
+
+  // TODO(crbug.com/428014205): Create a mock ActorKeyedService for testing so
+  // we can remove this function.
+  void SetActorUiStateManagerForTesting(
+      std::unique_ptr<ui::ActorUiStateManagerInterface> ausm);
+
+  // Starts tracking an existing task. Returns the new task ID.
+  TaskId AddActiveTask(std::unique_ptr<ActorTask> task);
+
+  const std::map<TaskId, const ActorTask*> GetActiveTasks() const;
+  const std::map<TaskId, const ActorTask*> GetInactiveTasks() const;
+
+  std::vector<TaskId> FindTaskIdsInActive(
+      const base::RepeatingCallback<bool(const ActorTask&)>& predicate) const;
+  std::vector<TaskId> FindTaskIdsInInactive(
+      const base::RepeatingCallback<bool(const ActorTask&)>& predicate) const;
+
+  // Stop and clear all active and inactive tasks for testing only.
+  void ResetForTesting();
+
+  // Starts a new task with an execution engine and returns the new task's id.
+  TaskId CreateTask();
+
+  // Executes the given ToolRequest actions using the execution engine for the
+  // given task id.
+  using PerformActionsCallback = base::OnceCallback<void(
+      mojom::ActionResultCode /*result_code*/,
+      std::optional<size_t> /*index_of_failing_action*/,
+      std::vector<ActionResultWithLatencyInfo> /* action_results */)>;
+  void PerformActions(TaskId task_id,
+                      std::vector<std::unique_ptr<ToolRequest>>&& actions,
+                      PerformActionsCallback callback);
+
+  // TODO(crbug.com/411462297): DEPRECATED - to be replaced with PerformActions.
+  // Executes an actor action.
+  void ExecuteAction(
+      TaskId task_id,
+      std::vector<std::unique_ptr<ToolRequest>>&& actions,
+      base::OnceCallback<void(optimization_guide::proto::BrowserActionResult)>
+          callback);
+
+  // Stops a task by its ID, `success` determines if the task was finished
+  // successfully or ended early.
+  void StopTask(TaskId task_id, bool success);
+
+  // Returns the task with the given ID. Returns nullptr if the task does not
+  // exist.
+  ActorTask* GetTask(TaskId task_id);
+
+  // The associated journal for the associated profile.
+  AggregatedJournal& GetJournal() LIFETIME_BOUND { return journal_; }
+
+  // The associated ActorUiStateManager for the associated profile.
+  ui::ActorUiStateManagerInterface* GetActorUiStateManager();
+
+  // Returns an acting task on provided `tab`. A null TaskId is returned if no
+  // task is acting on `tab`.
+  TaskId IsAnyTaskActingOnTab(const tabs::TabInterface& tab) const;
+  Profile* GetProfile();
+
+  using TabObservationResult = base::expected<
+      std::unique_ptr<page_content_annotations::FetchPageContextResult>,
+      std::string>;
+
+  // Request a TabObservation be generated from the given tab.
+  void RequestTabObservation(
+      tabs::TabInterface& tab,
+      TaskId task_id,
+      base::OnceCallback<void(TabObservationResult)> callback);
+
+  using TaskStateChangedCallback =
+      base::RepeatingCallback<void(const ActorTask&)>;
+  base::CallbackListSubscription AddTaskStateChangedCallback(
+      TaskStateChangedCallback callback);
+
+  void NotifyTaskStateChanged(const ActorTask& task);
+
+  // Allows the subscribers to get notified when a credential selection prompt
+  // is requested.
+  using CredentialSelectedCallback = base::RepeatingCallback<void(
+      webui::mojom::SelectCredentialDialogResponsePtr)>;
+  using RequestToShowCredentialSelectionDialogSubscriberCallback =
+      base::RepeatingCallback<void(TaskId,
+                                   const std::vector<actor_login::Credential>&,
+                                   CredentialSelectedCallback)>;
+  base::CallbackListSubscription
+  AddRequestToShowCredentialSelectionDialogSubscriberCallback(
+      RequestToShowCredentialSelectionDialogSubscriberCallback callback);
+
+  // Notifies the subscribers that a credential selection prompt is requested
+  // for the given task.
+  void NotifyRequestToShowCredentialSelectionDialog(
+      TaskId task_id,
+      const std::vector<actor_login::Credential>& credentials);
+
+  // Callback for when a credential is selected.
+  void OnCredentialSelected(
+      TaskId request_task_id,
+      webui::mojom::SelectCredentialDialogResponsePtr response);
+
+  // Returns the acting task for web_contents. Returns nullptr if acting task
+  // does not exist.
+  const ActorTask* GetActingActorTaskForWebContents(
+      content::WebContents* web_contents);
+
+  base::WeakPtr<ActorKeyedService> GetWeakPtr();
+
+ private:
+  // Called when the actor coordinator has finished an action which required
+  // task creation.
+  void OnActionFinished(
+      base::OnceCallback<void(optimization_guide::proto::BrowserActionResult)>
+          callback,
+      TaskId task_id,
+      actor::mojom::ActionResultPtr action_result,
+      std::optional<size_t> index_of_failed_action,
+      std::vector<ActionResultWithLatencyInfo> action_results);
+
+  // The callback used for ExecutorEngine::Act.
+  void OnActionsFinished(
+      PerformActionsCallback callback,
+      actor::mojom::ActionResultPtr action_result,
+      std::optional<size_t> index_of_failed_action,
+      std::vector<ActionResultWithLatencyInfo> action_results);
+
+  void ConvertToBrowserActionResult(
+      base::OnceCallback<void(optimization_guide::proto::BrowserActionResult)>
+          callback,
+      TaskId task_id,
+      int32_t tab_id,
+      const GURL& url,
+      actor::mojom::ActionResultPtr action_result,
+      std::vector<ActionResultWithLatencyInfo> action_results,
+      TabObservationResult context_result);
+
+  // Needs to be declared before the tasks, as they will indirectly have a
+  // reference to it. This ensures the correct destruction order.
+  std::unique_ptr<ui::ActorUiStateManagerInterface> actor_ui_state_manager_;
+
+  std::map<TaskId, std::unique_ptr<ActorTask>> active_tasks_;
+  // Stores completed tasks. May want to add cancelled tasks in the future.
+  std::map<TaskId, std::unique_ptr<ActorTask>> inactive_tasks_;
+
+  TaskId::Generator next_task_id_;
+
+  AggregatedJournal journal_;
+
+  base::RepeatingCallbackList<void(const ActorTask&)>
+      tab_state_change_callback_list_;
+
+  base::RepeatingCallbackList<
+      RequestToShowCredentialSelectionDialogSubscriberCallback::RunType>
+      request_to_show_credential_selection_dialog_callback_list_;
+
+  // Owns this.
+  raw_ptr<Profile> profile_;
+
+  base::WeakPtrFactory<ActorKeyedService> weak_ptr_factory_{this};
+};
+
+}  // namespace actor
+#endif  // CHROME_BROWSER_ACTOR_ACTOR_KEYED_SERVICE_H_

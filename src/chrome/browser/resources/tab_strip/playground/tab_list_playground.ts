@@ -1,0 +1,337 @@
+// Copyright 2025 The Chromium Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+import '/strings.m.js';
+import '../tab.js';
+import '../tab_group.js';
+
+import {TabStripService} from '/tab_strip_api/tab_strip_api.mojom-webui.js';
+import type {TabsSnapshot, TabStripServiceRemote} from '/tab_strip_api/tab_strip_api.mojom-webui.js';
+import type {Container, Data, Tab, TabCreatedContainer, TabGroup} from '/tab_strip_api/tab_strip_api_data_model.mojom-webui.js';
+import type {OnDataChangedEvent, OnTabGroupCreatedEvent, OnTabMovedEvent, OnTabsClosedEvent, OnTabsCreatedEvent} from '/tab_strip_api/tab_strip_api_events.mojom-webui.js';
+import type {NodeId, Position} from '/tab_strip_api/tab_strip_api_types.mojom-webui.js';
+import {TabStripObservation} from '/tab_strip_api/tab_strip_observation.js';
+import {CustomElement} from 'chrome://resources/js/custom_element.js';
+
+import {TabGroupElement} from '../tab_group.js';
+import {Color as TabGroupColor} from '../tab_group_types.mojom-webui.js';
+import {getTemplate} from '../tab_list.html.js';
+import type {TabGroupVisualData} from '../tab_strip.mojom-webui.js';
+
+import {TabElement} from './tab_playground.js';
+
+export class TabListPlaygroundElement extends CustomElement {
+  animationPromises: Promise<void>;
+  private pinnedTabsElement_: HTMLElement;
+  private unpinnedTabsElement_: HTMLElement;
+  private tabStripService_: TabStripServiceRemote;
+  private tabStripObservation_: TabStripObservation;
+
+  static override get template() {
+    return getTemplate();
+  }
+
+  constructor() {
+    super();
+    this.animationPromises = Promise.resolve();
+    this.pinnedTabsElement_ = this.getRequiredElement('#pinnedTabs');
+    this.unpinnedTabsElement_ = this.getRequiredElement('#unpinnedTabs');
+    this.tabStripService_ = TabStripService.getRemote();
+    this.tabStripObservation_ = new TabStripObservation();
+  }
+
+  getIndexOfTab(tabElement: TabElement): number {
+    return Array.prototype.indexOf.call(this.$all('tabstrip-tab'), tabElement);
+  }
+
+  placeElement(
+      element: HTMLElement, index: number, pinned: boolean,
+      groupId: string|null|undefined) {
+    console.info(`Placing element at index: ${index}, Pinned: ${
+        pinned}, GroupId: ${groupId}`);
+    element.remove();
+
+    let targetParent: HTMLElement;
+    if (element instanceof TabElement) {
+      if (pinned) {
+        targetParent = this.pinnedTabsElement_;
+      } else if (groupId) {
+        targetParent = this.findOrCreateTabGroupElement_(groupId);
+      } else {
+        targetParent = this.unpinnedTabsElement_;
+      }
+    } else {
+      // TabGroupElements can only be in the unpinned container.
+      targetParent = this.unpinnedTabsElement_;
+    }
+    const childAtIndex = targetParent.childNodes[index];
+    if (childAtIndex) {
+      targetParent.insertBefore(element, childAtIndex);
+    } else {
+      targetParent.appendChild(element);
+    }
+  }
+
+  shouldPreventDrag(isDraggingTab: boolean): boolean {
+    if (isDraggingTab) {
+      // Do not allow dragging a tab if there's only 1 tab.
+      return this.$all('tabstrip-tab').length === 1;
+    } else {
+      // Do not allow dragging the tab group with no others outside of the tab
+      // group. In this case there is only 1 pinned and unpinned top level
+      // element, which is the dragging tab group itself.
+      return (this.pinnedTabsElement_.childElementCount +
+              this.unpinnedTabsElement_.childElementCount) === 1;
+    }
+  }
+
+  connectedCallback() {
+    this.fetchAndUpdateTabs_();
+
+    this.tabStripObservation_.onTabsCreated.addListener(
+        this.onTabsCreated_.bind(this));
+    this.tabStripObservation_.onTabsClosed.addListener(
+        this.onTabsClosed_.bind(this));
+    this.tabStripObservation_.onDataChanged.addListener(
+        this.onDataChanged_.bind(this));
+    this.tabStripObservation_.onTabMoved.addListener(
+        this.onTabMoved_.bind(this));
+    this.tabStripObservation_.onTabGroupCreated.addListener(
+        this.onTabGroupCreated_.bind(this));
+  }
+
+  private addAnimationPromise_(promise: Promise<void>) {
+    this.animationPromises = this.animationPromises.then(() => promise);
+  }
+
+  disconnectedCallback() {}
+
+  private onTabsCreated_(tabsCreatedEvent: OnTabsCreatedEvent) {
+    const tabsCreated: TabCreatedContainer[] = tabsCreatedEvent.tabs;
+    tabsCreated.forEach((container) => {
+      const tab = container.tab;
+      const tabElement = this.createTabElement_(tab, false);
+      const position: Position = container.position;
+      this.placeElement(
+          tabElement, position.index, false, null /* parent id */);
+    });
+  }
+
+  private onTabsClosed_(onTabsClosedEvent: OnTabsClosedEvent) {
+    const tabsClosed = onTabsClosedEvent.tabs;
+    tabsClosed.forEach((tabId: NodeId) => {
+      const element = this.findNodeElement_(tabId);
+      if (element instanceof TabElement) {
+        this.addAnimationPromise_(element.slideOut());
+      }
+    });
+  }
+
+  private onDataChanged_(onDataChangedEvent: OnDataChangedEvent) {
+    const data = onDataChangedEvent.data;
+    if (data.tab) {
+      const tab = data.tab;
+      const element = this.findNodeElement_(tab.id);
+      if (element instanceof TabElement) {
+        element.tab = tab;
+      }
+    } else if (data.tabGroup) {
+      const tabGroup = data.tabGroup;
+      if (tabGroup) {
+        this.findOrCreateTabGroupElement_(tabGroup.id)
+            .updateVisuals(this.toTabGroupVisualData_(tabGroup));
+      }
+    }
+  }
+
+  private onTabMoved_(event: OnTabMovedEvent) {
+    console.info('onTabMoved_', event);
+    const element = this.findNodeElement_(event.id);
+    if (!element) {
+      console.error('Moved element not found:', event.id);
+      return;
+    }
+
+    // For now, assume a tab cannot be moved into the pinned area.
+    this.placeElement(element, event.to.index, false, event.to.parentId);
+  }
+
+  private onTabGroupCreated_(event: OnTabGroupCreatedEvent) {
+    console.info('onTabGroupCreated_', event);
+    // Intentionally not creating a TabGroupElement here. The TabGroupElement
+    // will be created when a tab is added to the group in onTabMoved_, which
+    // is fired after this event.
+  }
+
+  private createTabElement_(tab: Tab, isPinned: boolean): TabElement {
+    const tabElement = new TabElement();
+    tabElement.tab = tab;
+    tabElement.isPinned = isPinned;
+    tabElement.setAttribute('data-node-id', tab.id);
+    tabElement.dragEndHandler =
+        (draggedElement: TabElement, x: number, y: number) => {
+          if (!Number.isFinite(x) || !Number.isFinite(y)) {
+            console.warn('Drag ended with non-finite coordinates. Cancelling.');
+            // TODO: Restore the tab to its original position visually.
+            return;
+          }
+          draggedElement.style.display = 'none';
+          const dropTarget =
+              this.shadowRoot!.elementFromPoint(x, y) as HTMLElement;
+          draggedElement.style.display = '';
+
+          if (!dropTarget) {
+            console.info('Failed to find a drop target');
+            return;
+          }
+
+          let targetParent = dropTarget;
+          if (dropTarget.matches('tabstrip-tab-playground')) {
+            targetParent = dropTarget.parentElement!;
+          }
+
+          let parentId: string|null = null;
+          if (targetParent.matches('tabstrip-tab-group')) {
+            parentId = targetParent.getAttribute('data-node-id');
+          }
+
+          let targetIdx = 0;
+          for (const child of targetParent.children) {
+            if (x < child.getBoundingClientRect().x) {
+              break;
+            }
+            if (child !== draggedElement) {
+              targetIdx++;
+            }
+          }
+
+          // TODO(crbug.com/412709271): Set the correct parent id.
+          this.tabStripService_.moveTab(
+              tab.id, {parentId: parentId, index: targetIdx});
+        };
+    return tabElement;
+  }
+
+  private findNodeElement_(nodeId: string): HTMLElement|null {
+    if (!nodeId) {
+      return null;
+    }
+    return this.shadowRoot!.querySelector<HTMLElement>(
+        `[data-node-id="${nodeId}"]`);
+  }
+
+  private clearChildren_(element: HTMLElement) {
+    while (element.firstChild) {
+      element.removeChild(element.firstChild);
+    }
+  }
+
+  private fetchAndUpdateTabs_() {
+    this.tabStripService_.getTabs().then((tabsSnapshot: TabsSnapshot) => {
+      // Bind the observer stream from the snapshot to the callback router
+      if (tabsSnapshot.stream && (tabsSnapshot.stream as any).handle) {
+        this.tabStripObservation_.bind((tabsSnapshot.stream as any).handle);
+        console.info('Bound TabsObserver stream to callback router.');
+      } else {
+        console.error('Can not bind');
+      }
+
+      this.clearChildren_(this.pinnedTabsElement_);
+      this.clearChildren_(this.unpinnedTabsElement_);
+
+      const processContainer =
+          (container: Container, parentIsPinned: boolean) => {
+            if (!container || !container.data) {
+              return;
+            }
+            const data: Data = container.data;
+            let isPinned = parentIsPinned;
+            let groupId: string|null = null;
+
+            // Determine the current node's type and update state accordingly.
+            if (data.pinnedTabs) {
+              isPinned = true;
+            } else if (data.tabGroup) {
+              groupId = data.tabGroup.id;
+            } else if (data.tab) {
+              const newTab = data.tab;
+              let element = this.findNodeElement_(newTab.id);
+              if (element instanceof TabElement) {
+                element.tab = newTab;
+                element.isPinned = isPinned;
+              } else if (!element) {
+                element = this.createTabElement_(newTab, isPinned);
+              }
+              // The index is determined by its position in the parent's
+              // children array. This part of the logic needs to be handled by
+              // the parent loop.
+            }
+
+            // Recursively process all children of the current node.
+            if (container.children) {
+              container.children.forEach(
+                  (childNode: Container, index: number) => {
+                    if (childNode.data.tab) {
+                      // If the child is a tab, place it.
+                      const tabElement =
+                          this.createTabElement_(childNode.data.tab, isPinned);
+                      this.placeElement(tabElement, index, isPinned, groupId);
+                    } else {
+                      // If the child is another collection, recurse.
+                      processContainer(childNode, isPinned);
+                    }
+                  });
+            }
+          };
+      if (tabsSnapshot.tabStrip) {
+        processContainer(tabsSnapshot.tabStrip, false);
+      } else {
+        console.info('invalid tab_strip');
+      }
+    });
+  }
+
+  private createTabGroupElement_(nodeId: string): TabGroupElement {
+    const tabGroupElement = new TabGroupElement();
+    tabGroupElement.setAttribute('data-node-id', nodeId);
+    this.unpinnedTabsElement_.appendChild(tabGroupElement);
+    return tabGroupElement;
+  }
+
+  private findOrCreateTabGroupElement_(groupId: string): TabGroupElement {
+    let tabGroupElement = this.findNodeElement_(groupId);
+    if (!tabGroupElement) {
+      tabGroupElement = this.createTabGroupElement_(groupId);
+    }
+    return tabGroupElement as TabGroupElement;
+  }
+
+  private toTabGroupVisualData_(group: TabGroup): TabGroupVisualData {
+    const colorMap = new Map<TabGroupColor, string>([
+      [TabGroupColor.kGrey, '128, 128, 128'],
+      [TabGroupColor.kBlue, '0, 0, 255'],
+      [TabGroupColor.kRed, '255, 0, 0'],
+      [TabGroupColor.kYellow, '255, 255, 0'],
+      [TabGroupColor.kGreen, '0, 128, 0'],
+      [TabGroupColor.kPink, '255, 192, 203'],
+      [TabGroupColor.kPurple, '128, 0, 128'],
+      [TabGroupColor.kCyan, '0, 255, 255'],
+      [TabGroupColor.kOrange, '255, 165, 0'],
+   ]);
+
+    return {
+      title: group.data.title,
+      color: colorMap.get(group.data.color)!,
+      textColor: '255, 255, 255' /*white*/,
+    };
+  }
+}
+
+declare global {
+  interface HTMLElementTagNameMap {
+    'tabstrip-playground-tab-list': TabListPlaygroundElement;
+  }
+}
+
+customElements.define('tabstrip-playground-tab-list', TabListPlaygroundElement);

@@ -1,0 +1,45 @@
+diff --git DEPS DEPS
+index 2808e703171a72159b91f40e8c4c22d47c48889e..e8bd72d0ab2a506c59704d6fb18a59820379d098 100644
+--- DEPS
++++ DEPS
+@@ -4237,6 +4237,7 @@ hooks = [
+     # Update LASTCHANGE.
+     'name': 'lastchange',
+     'pattern': '.',
++    'condition': 'not source_tarball',
+     'action': ['python3', 'src/build/util/lastchange.py',
+                '-o', 'src/build/util/LASTCHANGE'],
+   },
+@@ -4244,7 +4245,7 @@ hooks = [
+     # Update lastchange_commit_position.h (only for CrOS).
+     'name': 'lastchange_commit_position_cros',
+     'pattern': '.',
+-    'condition': 'checkout_chromeos',
++    'condition': 'checkout_chromeos and not source_tarball',
+     'action': ['python3', 'src/build/util/lastchange.py',
+                '-m', 'CHROMIUM',
+                '--commit-position-header',
+@@ -4254,6 +4255,7 @@ hooks = [
+     # Update GPU lists version string (for gpu/config).
+     'name': 'gpu_lists_version',
+     'pattern': '.',
++    'condition': 'not source_tarball',
+     'action': ['python3', 'src/build/util/lastchange.py',
+                '-m', 'GPU_LISTS_VERSION',
+                '--revision-id-only',
+@@ -4263,6 +4265,7 @@ hooks = [
+     # Update skia_commit_hash.h.
+     'name': 'lastchange_skia',
+     'pattern': '.',
++    'condition': 'not source_tarball',
+     'action': ['python3', 'src/build/util/lastchange.py',
+                '-m', 'SKIA_COMMIT_HASH',
+                '-s', 'src/third_party/skia',
+@@ -4272,6 +4275,7 @@ hooks = [
+     # Update dawn_version.h.
+     'name': 'lastchange_dawn',
+     'pattern': '.',
++    'condition': 'not source_tarball',
+     'action': ['python3', 'src/build/util/lastchange.py',
+                '-s', 'src/third_party/dawn',
+                '--revision', 'src/gpu/webgpu/DAWN_VERSION'],

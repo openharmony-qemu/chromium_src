@@ -401,7 +401,7 @@ void ArkWebNetworkServiceExt::SetSocketIdleTimeout(int32_t timeout) {
   for (NetworkContext* network_context : network_contexts_) {
     net::URLRequestContext* url_request_context =
         network_context->url_request_context();
-    if (url_request_context) {
+    if (url_request_context && url_request_context->AsURLRequestContextExt()) {
       url_request_context->AsURLRequestContextExt()->SetSocketIdleTimeout(
           timeout);
     }

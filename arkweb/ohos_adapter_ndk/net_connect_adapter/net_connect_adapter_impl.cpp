@@ -122,6 +122,10 @@ void NetConnectAdapterImpl::InitNetConnCallback(NetConn_NetConnCallback *netConn
         }
     };
     netConnCallback->onNetLost = [](NetConn_NetHandle *netHandle) {
+        if (netHandle == nullptr) {
+            WVLOG_E("NetConnCallback enter, onNetLost, netHandle is nullptr.");
+            return;
+        }
         WVLOG_I("NetConnCallback enter, NetLost, net id = %{public}d.", netHandle->netId);
         std::lock_guard<std::mutex> lock(mutex_);
         for (auto it = netConnCallbackMap_.begin(); it != netConnCallbackMap_.end(); it++) {
@@ -140,6 +144,10 @@ void NetConnectAdapterImpl::InitNetConnCallback(NetConn_NetConnCallback *netConn
         }
     };
     netConnCallback->onNetBlockStatusChange = [](NetConn_NetHandle *netHandle, bool blocked) {
+        if (netHandle == nullptr) {
+            WVLOG_E("NetConnCallback enter, onNetBlockStatusChange, netHandle is nullptr.");
+            return;
+        }
         WVLOG_I("NetConnCallback enter, NetBlockStatusChange, net id = %{public}d, blocked = %{public}d.",
             netHandle->netId, blocked);
     };

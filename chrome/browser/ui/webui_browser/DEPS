@@ -1,3 +1,0 @@
-include_rules = [
-    "+components/guest_contents/browser",
-]

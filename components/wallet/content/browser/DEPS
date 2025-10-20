@@ -1,5 +1,0 @@
-include_rules = [
-  # go/keep-sorted start
-  "+components/optimization_guide",
-  # go/keep-sorted end
-]

@@ -1,3 +1,0 @@
-include_rules = [
-  "+ios/chrome/browser/app_store_bundle/model",
-]

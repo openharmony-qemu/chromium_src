@@ -1,0 +1,5 @@
+#!/bin/sh
+
+# https://crbug.com/1441023
+exec "$0.chromium" -XX:+PerfDisableSharedMem "$@"
+

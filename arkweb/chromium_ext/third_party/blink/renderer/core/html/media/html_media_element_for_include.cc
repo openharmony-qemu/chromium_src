@@ -327,8 +327,9 @@ void HTMLMediaElement::NotifyVideoDestroyed() {
 }
 
 #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
-std::string HTMLMediaElement::AddErrorCodeToMessage(WebMediaPlayer::NetworkState state,
-                                               const String& error) {
+std::string HTMLMediaElement::AddErrorCodeToMessage(
+    WebMediaPlayer::NetworkState state,
+    const String& error) {
   StringBuilder builder;
   int net_error_code = 0;
   media::PipelineStatus pipeline_status = media::PIPELINE_OK;
@@ -360,7 +361,6 @@ void HTMLMediaElement::ReportMediaLoadingErrorMessage(
 
   ReportWebMediaPlayErrorInfo(
       error_type, error, AddErrorCodeToMessage(error, builder.ToString()));
-
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(ERROR) << "Media loadding failed message: "
                       << AddErrorCodeToMessage(error, builder.ToString());

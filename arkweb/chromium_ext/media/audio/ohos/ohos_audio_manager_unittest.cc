@@ -206,10 +206,6 @@ class MockOhosAdapterHelper : public OHOS::NWeb::OhosAdapterHelper {
               CreateScreenlockManagerAdapter,
               (),
               (override));
-  MOCK_METHOD(ColorPickerAdapter&,
-              GetColorPickerAdapter,
-              (),
-              (override));
   static MockOhosAdapterHelper& GetInstance() {
     static MockOhosAdapterHelper instance;
     return instance;

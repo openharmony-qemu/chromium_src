@@ -1198,6 +1198,16 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(int32_t, GetHeight, (), (override));
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  MOCK_METHOD(void,
+              SetBlankScreenDetectionConfig,
+              (bool enable,
+               const std::vector& detectionTiming,
+               const std::vector<int32_t>& detectionMethods,
+               int32_t contentfulNodesCountThreshold),
+              (override));
+#endif
+
 #if BUILDFLAG(ARKWEB_MENU)
   MOCK_METHOD(void, UpdateSingleHandleVisible, (bool isVisible), (override));
   MOCK_METHOD(void,
@@ -1226,13 +1236,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
     DistillCallback callback), (override));
   MOCK_METHOD(void, AbortDistill, (), (override));
 #endif // ARKWEB_READER_MODE
-#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
-  virtual void SetBlankScreenDetectionConfig(
-      bool enable,
-      const std::vector& detectionTiming,
-      const std::vector<int32_t>& detectionMethods,
-      int32_t contentfulNodesCountThreshold) = 0;
-#endif
+
 #if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
   MOCK_METHOD(int,
               LoadUrlWithParams,

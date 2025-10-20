@@ -33,6 +33,10 @@
 #include "third_party/blink/renderer/core/frame/visual_viewport.h"
 #endif  // ARKWEB_VIDEO_ASSISTANT
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+#include "arkweb/ohos_nweb/src/sysevent/event_reporter.h"
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
 namespace blink {
 namespace {
 extern std::string GetFormatFromType(std::string type);
@@ -322,7 +326,47 @@ void HTMLMediaElement::NotifyVideoDestroyed() {
   }
 }
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+std::string HTMLMediaElement::AddErrorCodeToMessage(WebMediaPlayer::NetworkState state,
+                                               const String& error) {
+  StringBuilder builder;
+  int net_error_code = 0;
+  media::PipelineStatus pipeline_status = media::PIPELINE_OK;
+  if (GetWebMediaPlayer()) {
+    pipeline_status = GetWebMediaPlayer()->GetPipelineStatus();
+    net_error_code = GetWebMediaPlayer()->GetWebURLErrorReason();
+  }
 
+  builder.AppendFormat(
+      "[internal_error:pipeline:%d,blink:%d,net_error_code:%d]",
+      pipeline_status.code(), state, net_error_code);
+  builder.Append(error);
+  return builder.ToString().Utf8();
+}
+
+void HTMLMediaElement::ReportMediaLoadingErrorMessage(
+    const std::string& error_type,
+    WebMediaPlayer::NetworkState error,
+    const String& message,
+    bool is_message_not_clear) {
+  StringBuilder builder;
+  if (!is_message_not_clear) {
+    builder.Append(message);
+  } else {
+    builder.Append((error == WebMediaPlayer::kNetworkStateFormatError
+                       ? "Format error"
+                       : "Network error"));
+  }
+
+  ReportWebMediaPlayErrorInfo(
+      error_type, error, AddErrorCodeToMessage(error, builder.ToString()));
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(ERROR) << "Media loadding failed message: "
+                      << AddErrorCodeToMessage(error, builder.ToString());
+#endif // ARKWEB_LOGGER_REPORT
+}
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
 media::mojom::blink::MediaInfoForVASTPtr
 HTMLMediaElement::CollectMediaInfoAttributesForVAST() {

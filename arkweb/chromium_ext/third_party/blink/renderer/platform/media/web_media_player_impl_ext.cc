@@ -340,6 +340,24 @@ int64_t WebMediaPlayerImplExt::GetPlayedTime() {
   total_play_time_ = 0;
   return played_time;
 }
+
+void WebMediaPlayerImplExt::SetPipelineStatus(media::PipelineStatusCodes status) {
+  DCHECK(main_task_runner_->BelongsToCurrentThread());
+  pipeline_status_ = status;
+}
+
+media::PipelineStatusCodes WebMediaPlayerImplExt::GetPipelineStatus() const {
+  DCHECK(main_task_runner_->BelongsToCurrentThread());
+  return pipeline_status_;
+}
+
+void WebMediaPlayerImplExt::OnWebURLError(int reason) {
+  web_url_error_reason_ = reason;
+}
+
+int WebMediaPlayerImplExt::GetWebURLErrorReason() const {
+  return web_url_error_reason_;
+}
 #endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)

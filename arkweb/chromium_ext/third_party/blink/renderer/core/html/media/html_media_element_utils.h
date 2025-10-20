@@ -31,7 +31,7 @@ class HTMLMediaElement;
     Member<HTMLMediaElement> htmlMediaElement_ = nullptr;
     explicit HTMLMediaElementUtils(HTMLMediaElement* element);
 
-    #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
     class Recorder {
         public:
         void SetThreshold(base::TimeDelta threshold);
@@ -48,7 +48,7 @@ class HTMLMediaElement;
     };
     Recorder played_time_recorder_;
     Recorder freeze_time_recorder_;
-    #endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
     void ScheduleNamedEventUtils(const AtomicString& event_name);
     void ResetMediaPlayerAndMediaSourceUtils();

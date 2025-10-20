@@ -42,7 +42,8 @@
 
 namespace media {
 namespace {
-constexpr int DEFAULT_DRM_VIDEO_ERROR_CODE = 0;
+const int kDrmVideoErrorCode = 0;
+const int kVideoDecoderErrorCode = 1;
 
 void OutputBufferReleased(base::RepeatingClosure pump_cb, bool has_work) {
   if (!has_work) {
@@ -444,11 +445,11 @@ void OhosVideoDecoder::Decode(scoped_refptr<DecoderBuffer> buffer,
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
     if (!ohos_crypto_context_) {
       std::string errorType = "drm video play error";
-      int errorCode = DEFAULT_DRM_VIDEO_ERROR_CODE;
+      int errorCode = kDrmVideoErrorCode;
       std::string errorDesc = "OhosVideoDecoder::Decode buffer is null";
       ReportWebMediaPlayErrorInfo(errorType, errorCode, errorDesc);
     }
-#endif
+#endif // ARKWEB_REPORT_SYS_EVENT
     std::move(decode_cb).Run(DecoderStatus::Codes::kFailed);
     return;
   }
@@ -457,11 +458,11 @@ void OhosVideoDecoder::Decode(scoped_refptr<DecoderBuffer> buffer,
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
     if (!ohos_crypto_context_) {
       std::string errorType = "drm video play error";
-      int errorCode = DEFAULT_DRM_VIDEO_ERROR_CODE;
+      int errorCode = kDrmVideoErrorCode;
       std::string errorDesc = "OhosVideoDecoder::Decode state_ is error";
       ReportWebMediaPlayErrorInfo(errorType, errorCode, errorDesc);
     }
-#endif
+#endif // ARKWEB_REPORT_SYS_EVENT
     std::move(decode_cb).Run(DecoderStatus::Codes::kFailed);
     return;
   }
@@ -495,11 +496,11 @@ void OhosVideoDecoder::FlushCodec() {
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
     if (!ohos_crypto_context_) {
       std::string errorType = "drm video play error";
-      int errorCode = DEFAULT_DRM_VIDEO_ERROR_CODE;
+      int errorCode = kDrmVideoErrorCode;
       std::string errorDesc = "Codec flush failed";
       ReportWebMediaPlayErrorInfo(errorType, errorCode, errorDesc);
     }
-#endif
+#endif // ARKWEB_REPORT_SYS_EVENT
     EnterTerminalState(State::kError, "Codec flush failed");
   }
 }
@@ -711,6 +712,14 @@ void OhosVideoDecoder::EnterTerminalState(State state, const char* reason) {
   LOG(INFO) << "OhosVideoDecoder::EnterTerminalState reason: " << reason;
   state_ = state;
   DCHECK(InTerminalState());
+
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  ReportWebMediaPlayErrorInfo("Video Decoder Error", kVideoDecoderErrorCode, reason);
+#endif // ARKWEB_REPORT_SYS_EVENT
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(ERROR) << "Video decoding failed message: " << reason;
+#endif // ARKWEB_LOGGER_REPORT
 
   // Cancel pending codec creation.
   codec_allocator_weak_factory_.InvalidateWeakPtrs();

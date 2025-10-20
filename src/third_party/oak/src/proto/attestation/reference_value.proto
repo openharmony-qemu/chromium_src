@@ -1,0 +1,312 @@
+
+//
+// Copyright 2023 The Project Oak Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package oak.attestation.v1;
+
+import "proto/attestation/tcb_version.proto";
+import "proto/digest.proto";
+
+option go_package = "proto/oak/attestation/v1";
+option java_multiple_files = true;
+option java_package = "com.google.oak.attestation.v1";
+
+message SkipVerification {}
+
+enum KeyType {
+  // A verifying key without a defined type is invalid.
+  KEY_TYPE_UNDEFINED = 0;
+
+  // An ECDSA key with curve P-256 and SHA2_256 hashing.
+  // An overview of key formats can be found at
+  // https://www.iana.org/assignments/cose/cose.xhtml#algorithms.
+  KEY_TYPE_ECDSA_P256_SHA256 = 1;
+}
+
+message VerifyingKey {
+  // The type of the verifying key.
+  KeyType type = 1;
+
+  // To distinguish between keys in a key set. The ID is unique within a
+  // key set.
+  uint32 key_id = 2;
+
+  // The key serialized in raw format. The key type is needed to interpret
+  // the contents.
+  bytes raw = 3;
+}
+
+// Set of keys currently needed for verification. Will contain one element
+// most of the time, but there may be more during key rotation/revocation.
+// To revoke a key, simply add a new one, allow a grace period, and then
+// don’t pass the old key here.
+message VerifyingKeySet {
+  repeated VerifyingKey keys = 1;
+}
+
+// Reference values that control how the endorsement is verified.
+message VerifyingKeyReferenceValue {
+  // Nothing set is an error, need to have something set. An empty key set
+  // inside reference values is invalid.
+  oneof type {
+    // Deliberately disables verification: it will pass this check rather
+    // than error out.
+    SkipVerification skip = 1;
+
+    // Default case: verify with this key set. This also requires that the
+    // instance in question is present and signed.
+    VerifyingKeySet verify = 2;
+  }
+}
+
+// Specifies a list of claim types. Claims are assertions about artifacts
+// made by the endorsing entity. An overview of the claims maintained by
+// Oak can be found at https://project-oak.github.io/oak/tr/claims.
+message ClaimReferenceValue {
+  repeated string claim_types = 1;
+}
+
+// Verifies the transparency log entry, including signatures and the digest.
+message EndorsementReferenceValue {
+  // The endorser's public verifying key for signature verification. The
+  // attestation verification requires that all endorsements need to be
+  // signed, therefore this cannot be empty.
+  //
+  // Field will be deprecated in the future. For standalone endorsement
+  // verification, use `endorser` field instead.
+  bytes endorser_public_key = 1;
+
+  // Rekor's public verifying key for log entry verification. Needs to be
+  // set when a log entry is present that should be verified. If it is not set,
+  // then log entry verification is skipped.
+  //
+  // Field will be deprecated in the future. For standalone endorsement
+  // verification, use `rekor` field instead.
+  bytes rekor_public_key = 2;
+
+  // Verifies the endorsement. Since the signed endorsement is required to
+  // be present, this cannot be skipped as part of this message. (It may
+  // still be possible to skip the endorsement verification entirely, but
+  // elsewhere.
+  VerifyingKeySet endorser = 3;
+
+  // Claims that are required to be present in the endorsement.
+  ClaimReferenceValue required_claims = 4;
+
+  // Verifies the Rekor log entry, if present and requested.
+  VerifyingKeyReferenceValue rekor = 5;
+}
+
+message BinaryReferenceValue {
+  oneof type {
+    // Deliberately skips a verification step, rather than failing. For example:
+    //     root_layer { stage0 { skip {} } }
+    // will skip the verification, contrasting
+    //     root_layer { stage0 {} }
+    // which will make the verification fail.
+    SkipVerification skip = 1;
+
+    // Verifies the endorsement of the underlying binary.
+    EndorsementReferenceValue endorsement = 2;
+
+    // Explicitly verifies digests if the client has them.
+    Digests digests = 3;
+  }
+}
+
+// Similar to the `Digests` message, but allows to specify digests for the
+// split components of the bzImage separately.
+message KernelDigests {
+  // Contains admissible digests for the kernel image part of the kernel.
+  Digests image = 2;
+
+  // Contains admissible digests for the setup data part of the kernel.
+  Digests setup_data = 3;
+}
+
+// Follows the lines of `BinaryReferenceValue`, but provides a custom proto
+// to facilitate the digest matching.
+message KernelBinaryReferenceValue {
+  oneof type {
+    SkipVerification skip = 1;
+    EndorsementReferenceValue endorsement = 2;
+    KernelDigests digests = 3;
+  }
+}
+
+// Reference value for a file including its digests.
+message FileReferenceValue {
+  // Allowable digests for the file.
+  Digests digests = 1;
+
+  // Absolute path to the file in question, or just the file name. Relative
+  // paths are not supported.
+  string path = 2;
+}
+
+// Verifies that a particular string is equal to at least one of the specified
+// ones. No checks are performed if this is empty.
+message StringReferenceValue {
+  // Use TextReferenceValue instead.
+  option deprecated = true;
+
+  repeated string values = 1;
+}
+
+message Regex {
+  string value = 1;
+}
+
+// A match in at least one value is considered a success. At least one value
+// must be specified, otherwise verification fails.
+message StringLiterals {
+  repeated string value = 1;
+}
+
+message RegexReferenceValue {
+  // Use TextReferenceValue instead.
+  option deprecated = true;
+
+  oneof type {
+    SkipVerification skip = 1;
+    Regex regex = 2;
+  }
+}
+
+// Reference value to match text via endorsement, or directly via constants
+// or a regular expression.
+message TextReferenceValue {
+  oneof type {
+    SkipVerification skip = 1;
+    EndorsementReferenceValue endorsement = 4;
+    Regex regex = 2;
+    StringLiterals string_literals = 3;
+  }
+}
+
+message RootLayerReferenceValues {
+  // Switches between AMD SEV-SNP and Intel TDX based on TeePlatform value.
+  // Verification is skipped when not running in a TEE.
+  AmdSevReferenceValues amd_sev = 1;
+  IntelTdxReferenceValues intel_tdx = 2;
+  // When insecure is set no verification of the TEE platform is performed. This
+  // can be used when not running in a TEE or when the client is agnostic about
+  // the platform and doesn't care about the hardware verification.
+  InsecureReferenceValues insecure = 3;
+}
+
+message AmdSevReferenceValues {
+  // Minimum accepted versions of all TCB components.
+  TcbVersion min_tcb_version = 5;
+
+  // If true, will skip the check that the TEE is not in debug mode.
+  bool allow_debug = 3;
+
+  // Verifies the stage0 binary implicitly contained in the root layer.
+  BinaryReferenceValue stage0 = 4;
+}
+
+message IntelTdxReferenceValues {}
+
+message InsecureReferenceValues {}
+
+// Verifies that the field contains at least one of the given digests.
+// No checks are performed if this is empty. A match in at least one
+// digest is considered a success.
+message Digests {
+  repeated RawDigest digests = 1;
+}
+
+// Reference values of the kernel layer, as measured by stage0.
+message KernelLayerReferenceValues {
+  // Verifies the kernel based on endorsement.
+  KernelBinaryReferenceValue kernel = 1;
+
+  // Verifies the kernel command line, i.e. the parameters passed to the
+  // kernel on boot.
+  TextReferenceValue kernel_cmd_line_text = 9;
+
+  // Fields are deprecated and kept only for backwards compatibility. They are
+  // not being used by the verifier. Remove ASAP.
+  BinaryReferenceValue kernel_setup_data = 3 [deprecated = true];
+  BinaryReferenceValue kernel_image = 7 [deprecated = true];
+  RegexReferenceValue kernel_cmd_line_regex = 8 [deprecated = true];
+  BinaryReferenceValue kernel_cmd_line = 2 [deprecated = true];
+
+  // Verifies the stage1 binary if running as Oak Containers.
+  BinaryReferenceValue init_ram_fs = 4;
+
+  BinaryReferenceValue memory_map = 5;
+
+  BinaryReferenceValue acpi = 6;
+}
+
+message SystemLayerReferenceValues {
+  // Verifies the system image binary based on endorsement.
+  BinaryReferenceValue system_image = 1;
+}
+
+// Represents an application running under Oak Restricted Kernel.
+message ApplicationLayerReferenceValues {
+  // Verifies the application binary based on endorsement.
+  BinaryReferenceValue binary = 1;
+
+  // Verifies configuration with respect to the application binary.
+  BinaryReferenceValue configuration = 2;
+}
+
+message ContainerLayerReferenceValues {
+  // Verifies the container binary based on endorsement.
+  BinaryReferenceValue binary = 1;
+
+  // Verifies configuration with respect to the container binary.
+  BinaryReferenceValue configuration = 2;
+}
+
+// Represents digest of an event.
+message EventReferenceValues {
+  BinaryReferenceValue event = 1;
+}
+
+message OakRestrictedKernelReferenceValues {
+  RootLayerReferenceValues root_layer = 1;
+  KernelLayerReferenceValues kernel_layer = 2;
+  ApplicationLayerReferenceValues application_layer = 3;
+}
+
+message OakContainersReferenceValues {
+  RootLayerReferenceValues root_layer = 1;
+  KernelLayerReferenceValues kernel_layer = 2;
+  SystemLayerReferenceValues system_layer = 3;
+  ContainerLayerReferenceValues container_layer = 4;
+}
+
+message CBReferenceValues {
+  RootLayerReferenceValues root_layer = 1;
+  EventReferenceValues kernel_layer = 2;
+  EventReferenceValues system_layer = 3;
+  EventReferenceValues application_layer = 4;
+}
+
+message ReferenceValues {
+  oneof type {
+    OakRestrictedKernelReferenceValues oak_restricted_kernel = 1;
+    OakContainersReferenceValues oak_containers = 2;
+    CBReferenceValues cb = 3;
+  }
+}

@@ -650,6 +650,8 @@ class NWebHandlerDelegate : public ArkWebClientExt,
       const std::vector<CefDateTimeSuggestion>& suggestion,
       CefRefPtr<CefDateTimeChooserCallback> callback) override;
   void OnDateTimeChooserClose() override;
+  void OnColorChooserShow(uint32_t initial_color,
+                          CefRefPtr<CefColorChooserCallback> callback) override;
 #endif  // #if BUILDFLAG(ARKWEB_CSS_INPUT_TIME)
   /* CefDialogHandler method end */
 

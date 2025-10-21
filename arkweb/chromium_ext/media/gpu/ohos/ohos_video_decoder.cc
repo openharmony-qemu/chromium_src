@@ -442,7 +442,7 @@ void OhosVideoDecoder::Decode(scoped_refptr<DecoderBuffer> buffer,
   if (!buffer) {
     LOG(ERROR) << "OhosVideoDecoder::Decode buffer is null";
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
-    if (!ohos_crypto_context_) {
+    if (ohos_crypto_context_) {
       std::string errorType = "drm video play error";
       int errorCode = DEFAULT_DRM_VIDEO_ERROR_CODE;
       std::string errorDesc = "OhosVideoDecoder::Decode buffer is null";
@@ -455,7 +455,7 @@ void OhosVideoDecoder::Decode(scoped_refptr<DecoderBuffer> buffer,
   LOG(DEBUG) << "OhosVideoDecoder::Decode: " << buffer->AsHumanReadableString();
   if (state_ == State::kError) {
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
-    if (!ohos_crypto_context_) {
+    if (ohos_crypto_context_) {
       std::string errorType = "drm video play error";
       int errorCode = DEFAULT_DRM_VIDEO_ERROR_CODE;
       std::string errorDesc = "OhosVideoDecoder::Decode state_ is error";
@@ -493,7 +493,7 @@ void OhosVideoDecoder::FlushCodec() {
 
   if (!codec_->Flush()) {
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
-    if (!ohos_crypto_context_) {
+  if (ohos_crypto_context_) {
       std::string errorType = "drm video play error";
       int errorCode = DEFAULT_DRM_VIDEO_ERROR_CODE;
       std::string errorDesc = "Codec flush failed";

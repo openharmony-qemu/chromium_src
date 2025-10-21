@@ -171,6 +171,7 @@ class OHOSAudioOutputStreamTest : public content::RenderViewHostTestHarness {
  protected:
   AudioParameters params_;
   std::unique_ptr<OHOSAudioOutputStream> stream_;
+  scoped_refptr<MockSingleThreadTaskRunner> task_runner_
 };
 
 TEST_F(OHOSAudioOutputStreamTest, Open001) {

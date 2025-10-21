@@ -157,7 +157,7 @@ void ArkwebRenderProcessHostImplExt::UpdateReaderModeConfig(
   const nweb_ex::BrowserReaderModeContentMetaDataConfig& metaData = reader_mode_config_data->content_config.meta_data;
   config->must_have_catalog = metaData.must_have_catalog;
   config->must_have_prev_and_next = metaData.must_have_prev_and_next;
-  config->minimum_content_length = metaData.minimum_content_length;
+  config->minimum_content_length = metaData.minimum_content_length < 0 ? 0 : metaData.minimum_content_length;
 
   LOG(INFO) << "RenderProcessHostImpl::UpdateReaderModeConfig config enable " << config->reader_mode_enabled
             << " must_have_catalog:" << config->must_have_catalog

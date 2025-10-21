@@ -69,7 +69,7 @@ class DistillerPageWebContentsExt : public DistillerPageWebContents {
   bool IsForDistillerPage() override;
   void DistillTimeout();
 
-  DistillOptions distill_options_;
+  DistillOptions distill_options_{};
   std::unique_ptr<base::OneShotTimer> distiller_timer_;
   bool distill_finished_{false};
   base::TimeDelta distiller_timeout_;

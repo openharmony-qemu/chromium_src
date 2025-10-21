@@ -768,6 +768,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   uint32_t GetNWebId();
 
   void SetWindowId(uint32_t window_id) { window_id_ = window_id; }
+  uint32_t GetWindowId() override { return window_id_; }
 
 #if BUILDFLAG(ARKWEB_BFCACHE)
   void UpdateFavicon(CefRefPtr<CefBrowser> browser) override;

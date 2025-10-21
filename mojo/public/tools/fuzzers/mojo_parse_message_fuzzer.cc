@@ -42,7 +42,12 @@ void FuzzMessage(const uint8_t* data, size_t size, base::RunLoop* run) {
 // ThreadPool, because Mojo messages must be sent and processed from
 // TaskRunners.
 struct Environment {
-  Environment() : main_thread_task_executor(base::MessagePumpType::UI) {
+#ifndef OHOS_FUZZ_COMPILE_ERROR_FIX
+  base::MessagePumpType testType = base::MessagePumpType::DEFAULT;
+#else
+  base::MessagePumpType testType = base::MessagePumpType::UI;
+#endif
+  Environment() : main_thread_task_executor(testType) {
     base::ThreadPoolInstance::CreateAndStartWithDefaultParams(
         "MojoParseMessageFuzzerProcess");
     mojo::core::Init();

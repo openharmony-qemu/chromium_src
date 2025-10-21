@@ -164,6 +164,10 @@ gfx::Rect PaintLayerScrollableAreaExt::RectForHorizontalScrollbar() const {
   borderRadiusBottomRight = borderRadiusBottomRight > scroll_corner.width()
                                 ? borderRadiusBottomRight
                                 : 0.0f;
+  if (layer_ && !layer_->IsRootLayer()) {
+    borderRadiusBottomLeft = 0.0f;
+    borderRadiusBottomRight = 0.0f;
+  }
   if (rectWidth > rectHeight) {
     // Horizontal scrollbar rect
     return gfx::Rect(
@@ -258,6 +262,10 @@ gfx::Rect PaintLayerScrollableAreaExt::RectForVerticalScrollbar() const {
   borderRadiusBottomRight = borderRadiusBottomRight > scroll_corner.height()
                                 ? borderRadiusBottomRight
                                 : 0.0f;
+  if (layer_ && !layer_->IsRootLayer()) {
+    borderRadiusTopRight = 0.0f;
+    borderRadiusBottomRight = 0.0f;
+  }
   if (rectWidth > rectHeight) {
     // Horizontal scrollbar rect
     return gfx::Rect(

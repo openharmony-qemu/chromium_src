@@ -221,11 +221,17 @@ public:
 #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
   int64_t GetFreezeTime() const override;
   int64_t GetPlayedTime() override;
+  void SetPipelineStatus(media::PipelineStatusCodes status);
+  media::PipelineStatusCodes GetPipelineStatus() const override;
+  void OnWebURLError(int reason);
+  int GetWebURLErrorReason() const override;
 #endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
 #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
   int64_t start_play_time_ = 0;
   int64_t total_play_time_ = 0;
+  media::PipelineStatusCodes pipeline_status_ = media::PIPELINE_OK;
+  int web_url_error_reason_ = 0;
 #endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
   base::WeakPtr<WebMediaPlayerImplExt> weak_this_;

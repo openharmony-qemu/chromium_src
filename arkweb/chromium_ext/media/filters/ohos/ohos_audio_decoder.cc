@@ -519,13 +519,15 @@ void OHOSAudioDecoder::Decode(scoped_refptr<DecoderBuffer> buffer, DecodeCB deco
   LOG(DEBUG) << "OHOSAudioDecoder::Decode loop start success";
 }
 
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
 void OHOSAudioDecoder::ReportDrmAudioPlayErrorInfo(const std::string& errorDesc) {
-  if (!ohos_crypto_context_) {
+  if (ohos_crypto_context_) {
       std::string errorType = "drm audio play error";
       int errorCode = DEFAULT_DRM_AUDIO_ERROR_CODE;
       ReportWebMediaPlayErrorInfo(errorType, errorCode, errorDesc);
   }
 }
+#endif
 
 void OHOSAudioDecoder::Reset(base::OnceClosure closure) {
   LOG(INFO) << "OHOSAudioDecoder::Reset";

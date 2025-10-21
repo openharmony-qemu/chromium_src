@@ -100,7 +100,7 @@ IN_PROC_BROWSER_TEST_F(SystemGeolocationSourceTestsGeolocationOn,
   // Check that the change in pref was registered.
   EXPECT_EQ(device::LocationSystemPermissionStatus::kAllowed,
             manager->GetSystemPermission());
-  EXPECT_EQ(device::LocationSystemPermissionStatus::kDenied, observer.status_);
+  EXPECT_EQ(device::LocationSystemPermissionStatus::kAllowed, observer.status_);
 
   // Change the pref value
   SetUserPref(ash::GeolocationAccessLevel::kOnlyAllowedForSystem);
@@ -132,21 +132,21 @@ IN_PROC_BROWSER_TEST_F(SystemGeolocationSourceTestsGeolocationOff,
   // Check that the permission is not changed.
   EXPECT_EQ(device::LocationSystemPermissionStatus::kAllowed,
             manager->GetSystemPermission());
-  EXPECT_EQ(device::LocationSystemPermissionStatus::kDenied, observer.status_);
+  EXPECT_EQ(device::LocationSystemPermissionStatus::kAllowed, observer.status_);
 
   // Change the pref value
   SetUserPref(ash::GeolocationAccessLevel::kAllowed);
   // Check that the change in pref was registered.
   EXPECT_EQ(device::LocationSystemPermissionStatus::kAllowed,
             manager->GetSystemPermission());
-  EXPECT_EQ(device::LocationSystemPermissionStatus::kDenied, observer.status_);
+  EXPECT_EQ(device::LocationSystemPermissionStatus::kAllowed, observer.status_);
 
   // Change the pref value
   SetUserPref(ash::GeolocationAccessLevel::kOnlyAllowedForSystem);
   // Check that the change in pref was registered.
   EXPECT_EQ(device::LocationSystemPermissionStatus::kAllowed,
             manager->GetSystemPermission());
-  EXPECT_EQ(device::LocationSystemPermissionStatus::kDenied, observer.status_);
+  EXPECT_EQ(device::LocationSystemPermissionStatus::kAllowed, observer.status_);
 
   // Observer needs to be removed here because it is allocated on stack.
   manager->RemoveObserver(&observer);

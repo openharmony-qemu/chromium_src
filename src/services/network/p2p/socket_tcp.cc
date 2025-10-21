@@ -157,7 +157,7 @@ bool P2PSocketTcpBase::OnOpen() {
   if (!DoSendSocketCreateMsg())
     return false;
 
-  return DoRead();
+  return DoRead()
 }
 
 bool P2PSocketTcpBase::DoSendSocketCreateMsg() {

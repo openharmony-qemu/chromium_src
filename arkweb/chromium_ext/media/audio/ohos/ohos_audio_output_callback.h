@@ -39,7 +39,7 @@ public:
     void AudioRendererOutputDeviceChangeCallback(OH_AudioStream_DeviceChangeReason reason);
 
 private:
-    scoped_refptr<base::SingleThreadTaskRunner> task_runner_,
+    scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
     base::WeakPtr<OHOSAudioOutputStream> audio_output_stream_;
 };
 

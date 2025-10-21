@@ -31,14 +31,9 @@ bool GetDefaultUserDataDirectory(base::FilePath* result) {
 
 void GetUserCacheDirectory(const base::FilePath& profile_dir,
                            base::FilePath* result) {
-  *result = profile_dir;
-  base::FilePath cache_dir;
-  if (!base::PathService::Get(base::DIR_CACHE, &cache_dir)) {
-    return;
+  if (!base::PathService::Get(base::DIR_CACHE, result)) {
+    *result = profile_dir;
   }
-
-  cache_dir = cache_dir.Append(profile_dir.BaseName());
-  *result = cache_dir;
 }
 
 bool GetUserDocumentsDirectory(base::FilePath* result) {

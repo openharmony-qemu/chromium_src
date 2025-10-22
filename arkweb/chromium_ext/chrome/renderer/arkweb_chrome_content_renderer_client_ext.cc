@@ -285,6 +285,12 @@
 #include "components/js_injection/renderer/js_communication.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_NOTIFICATION)
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#include "third_party/blink/public/platform/web_runtime_features.h"
+#endif // ARKWEB_NOTIFICATION
+
 ArkWebChromeContentRendererClientExt::ArkWebChromeContentRendererClientExt()
     : ChromeContentRendererClient() {}
 

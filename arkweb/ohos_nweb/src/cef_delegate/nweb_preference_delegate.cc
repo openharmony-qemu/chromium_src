@@ -379,11 +379,16 @@ void NWebPreferenceDelegate::SetBorderRadiusFromWeb(
     double borderRadiusBottomLeft,
     double borderRadiusBottomRight)
 {
-  border_radius_top_left_ = borderRadiusTopLeft;
-  border_radius_top_right_ = borderRadiusTopRight;
-  border_radius_bottom_left_ = borderRadiusBottomLeft;
-  border_radius_bottom_right_ = borderRadiusBottomRight;
-  WebPreferencesChanged();
+  if ((border_radius_top_left_ != borderRadiusTopLeft) ||
+      (border_radius_top_right_ != borderRadiusTopRight) ||
+      (border_radius_bottom_left_ != borderRadiusBottomLeft) ||
+      (border_radius_bottom_right_ != borderRadiusBottomRight)) {
+    border_radius_top_left_ = borderRadiusTopLeft;
+    border_radius_top_right_ = borderRadiusTopRight;
+    border_radius_bottom_left_ = borderRadiusBottomLeft;
+    border_radius_bottom_right_ = borderRadiusBottomRight;
+    WebPreferencesChanged();
+  }
 }
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
 

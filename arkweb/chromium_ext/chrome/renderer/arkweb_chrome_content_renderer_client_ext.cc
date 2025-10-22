@@ -523,3 +523,17 @@ void ArkWebChromeContentRendererClientExt::TriggerUserElementHidingInFrame(
   selectors.reset();
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_NOTIFICATION)
+void ArkWebChromeContentRendererClientExt::PostIOThreadCreated(
+    base::SingleThreadTaskRunner* io_thread_task_runner) {
+  // same as 114 AlloyContentRendererClient::PostIOThreadCreated
+  if (!(*base::CommandLine::ForCurrentProcess()).HasSwitch(
+      switches::kEnableNwebEx)) {
+    blink::WebRuntimeFeatures::EnableNotifications(false);
+    blink::WebRuntimeFeatures::EnablePushMessaging(false);
+  }
+ 
+  ChromeContentRendererClient::PostIOThreadCreated(io_thread_task_runner);
+}
+#endif // ARKWEB_NOTIFICATION

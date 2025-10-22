@@ -93,6 +93,11 @@ class ArkWebChromeContentRendererClientExt
 
   void TriggerUserElementHidingInFrame(int routing_id) override;
 #endif
+
+#if BUILDFLAG(ARKWEB_NOTIFICATION)
+  void PostIOThreadCreated(
+      base::SingleThreadTaskRunner* io_thread_task_runner) override;
+#endif // ARKWEB_NOTIFICATION
 };
 
 #endif  // CHROME_RENDERER_ARKWEB_CHROME_CONTENT_RENDERER_CLIENT_EXT_H_

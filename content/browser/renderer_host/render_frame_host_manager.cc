@@ -1212,6 +1212,7 @@ void RenderFrameHostManager::UnloadOldFrame(
 #if BUILDFLAG(ARKWEB_USERAGENT)
     if (old_render_frame_host->GetUserAgentDifferentFromNavigatingFrame()) {
       can_store = false;
+      old_render_frame_host->SetUserAgentDifferentFromNavigatingFrame(false);
     }
 #endif  // BUILDFLAG(ARKWEB_USERAGENT)
     if (can_store) {

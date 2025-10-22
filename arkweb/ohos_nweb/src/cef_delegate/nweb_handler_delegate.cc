@@ -1253,6 +1253,14 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
       }
     }
 #endif // ARKWEB_ARKWEB_EXTENSIONS
+
+#if BUILDFLAG(IS_ARKWEB)
+    if (main_browser_ && main_browser_->GetHost()) {
+      LOG(DEBUG) << "NWebHandlerDelegate::OnAfterCreated, is_arkweb_applinking_enabled_: "
+                  << is_arkweb_applinking_enabled_;
+      main_browser_->GetHost()->EnableAppLinking(is_arkweb_applinking_enabled_);
+    }
+#endif
     return;
   }
 #endif  // BUILDFLAG(ARKWEB_MULTI_WINDOW)
@@ -1448,6 +1456,14 @@ void NWebHandlerDelegate::SavaArkJSFunctionForPopup(
     javascript_async_permission_map_[object_id] = permission;
   }
 }
+
+#if BUILDFLAG(IS_ARKWEB)
+void NWebHandlerDelegate::SaveEnableAppLinking(bool enable) {
+  LOG(DEBUG) << "NWebHandlerDelegate::SaveEnableAppLinking, enable: " << enable;
+  is_arkweb_applinking_enabled_ = enable;
+  return;
+}
+#endif
 
 bool NWebHandlerDelegate::OnPreBeforePopup(
     CefRefPtr<CefBrowser> browser,

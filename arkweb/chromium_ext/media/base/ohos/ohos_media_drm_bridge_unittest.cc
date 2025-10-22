@@ -69,6 +69,10 @@ class MockOHOSMediaCryptoContext : public OHOSMediaCryptoContext {
               ReleaseInnerResource,
               (),
               (override));
+  MOCK_METHOD(std::vector<uint8_t>,
+              GetUUID,
+              (),
+              (override));
 };
 
 class MockProvisionFetcher : public ProvisionFetcher {

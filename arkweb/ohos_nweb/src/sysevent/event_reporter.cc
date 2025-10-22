@@ -17,6 +17,7 @@
 
 #include "oh_web_performance_timing.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#include "base/logging.h"
 
 using OHOS::NWeb::HiSysEventAdapter;
 using OHOS::NWeb::OhosAdapterHelper;
@@ -61,6 +62,25 @@ constexpr char OPEN_PRIVATE_STATUS[] = "OPEN_PRIVATE_STATUS";
 // For page download error info
 constexpr char PAGE_DOWNLOAD_ERROR[] = "PAGE_DOWNLOAD_ERROR";
 constexpr char DOWNLOAD_ID[] = "DOWNLOAD_ID";
+
+// For media behavior info
+constexpr char DRM_ENCRYPTED_PLAYBACK[] = "DRM_ENCRYPTED_PLAYBACK";
+constexpr char MEDIA_TYPE[] = "MEDIA_TYPE";
+constexpr char DRM_SYSTEM[] = "DRM_SYSTEM";
+constexpr char ENCRYPTION_ALGORITHM[] = "ENCRYPTION_ALGORITHM";
+
+constexpr char VIDEO_ENCODE_FORMAT[] = "VIDEO_ENCODE_FORMAT";
+constexpr char ENCODE_FORMAT[] = "ENCODE_FORMAT";
+
+constexpr char FFMPEG_CODEC_OPERATION[] = "FFMPEG_CODEC_OPERATION";
+constexpr char CODEC_TYPE[] = "CODEC_TYPE";
+constexpr char FORMAT[] = "FORMAT";
+
+constexpr char AUDIO_HARDWARE_DECODE[] = "AUDIO_HARDWARE_DECODE";
+constexpr char CODEC_FORMAT[] = "CODEC_FORMAT";
+
+constexpr char PICTURE_DECODE[] = "PICTURE_DECODE";
+constexpr char PICTURE_TYPE[] = "PICTURE_TYPE";
 
 // For audio/video error info
 constexpr char AUDIO_PLAY_ERROR[] = "AUDIO_PLAY_ERROR";
@@ -318,6 +338,41 @@ void ReportSiteIsolationMode(const std::string site_isolation_status) {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       SITE_ISOLATION_MODE, HiSysEventAdapter::EventType::BEHAVIOR,
       {SITE_ISOLATION_STATUS, site_isolation_status});
+}
+
+void ReportDrmEncryptedPlayback(const std::string& mediaType,
+                                const std::string& drmSystem,
+                                const std::string& encryptedAlgo) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      DRM_ENCRYPTED_PLAYBACK, HiSysEventAdapter::EventType::BEHAVIOR,
+      {MEDIA_TYPE, mediaType,
+       DRM_SYSTEM, drmSystem,
+       ENCRYPTION_ALGORITHM, encryptedAlgo});
+}
+
+void ReportVideoEncodeFormat(const std::string& encodeFormat) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      VIDEO_ENCODE_FORMAT, HiSysEventAdapter::EventType::BEHAVIOR,
+      {ENCODE_FORMAT, encodeFormat});
+}
+
+void ReportFfmpegCodecOperation(const std::string& codecType, const std::string& format) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      FFMPEG_CODEC_OPERATION, HiSysEventAdapter::EventType::BEHAVIOR,
+      {CODEC_TYPE, codecType,
+       FORMAT, format});
+}
+
+void ReportAudioHardwareDecode(const std::string& codecFormat) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      AUDIO_HARDWARE_DECODE, HiSysEventAdapter::EventType::BEHAVIOR,
+      {CODEC_FORMAT, codecFormat});
+}
+
+void ReportPictureDecode(const std::string& pictureType) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      PICTURE_DECODE, HiSysEventAdapter::EventType::BEHAVIOR,
+      {PICTURE_TYPE, pictureType});
 }
 
 void ReportRendererMem(const std::string& type,

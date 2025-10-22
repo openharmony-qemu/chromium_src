@@ -23,6 +23,7 @@
 #include "media/base/video_frame.h"
 #include "media/base/video_util.h"
 #include "media/video/video_encoder_info.h"
+#include "ohos_nweb/src/sysevent/event_reporter.h"
 #include "third_party/libvpx/source/libvpx/vpx/vp8cx.h"
 #include "third_party/libyuv/include/libyuv/convert.h"
 
@@ -548,7 +549,9 @@ void VpxVideoEncoder::Initialize(VideoCodecProfile profile,
     info.is_hardware_accelerated = false;
     BindCallbackToCurrentLoopIfNeeded(std::move(info_cb)).Run(info);
   }
-
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  ReportFfmpegCodecOperation("encode", is_vp9 ? "vp9" : "vp8");
+#endif
   std::move(done_cb).Run(EncoderStatus::Codes::kOk);
 }
 

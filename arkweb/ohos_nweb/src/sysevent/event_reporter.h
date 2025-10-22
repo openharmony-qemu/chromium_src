@@ -83,6 +83,18 @@ void ReportSlideJankStats(int64_t startTime,
 
 void ReportSiteIsolationMode(const std::string site_isolation_status);
 
+void ReportDrmEncryptedPlayback(const std::string& mediaType,
+                                const std::string& drmSystem,
+                                const std::string& encryptedAlgo);
+
+void ReportVideoEncodeFormat(const std::string& encodeFormat);
+
+void ReportFfmpegCodecOperation(const std::string& codecType, const std::string& format);
+
+void ReportAudioHardwareDecode(const std::string& codecFormat);
+
+void ReportPictureDecode(const std::string& pictureType);
+
 void ReportRendererMem(const std::string& type,
                        const std::string& pid,
                        const std::string& rss,

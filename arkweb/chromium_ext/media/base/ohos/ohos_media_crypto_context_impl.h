@@ -30,6 +30,8 @@ class MEDIA_EXPORT OHOSMediaCryptoContextImpl final
 #if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
   void ReleaseInnerResource() override;
 #endif
+  
+  std::vector<uint8_t> GetUUID() override;
  private:
   const raw_ptr<OHOSMediaDrmBridge> media_drm_bridge_;
 };

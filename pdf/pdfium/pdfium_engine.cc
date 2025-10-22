@@ -2510,6 +2510,13 @@ base::Value::Dict PDFiumEngine::TraverseBookmarks(FPDF_BOOKMARK bookmark,
       /*check_expected_size=*/true);
   dict.Set("title", title);
 
+#if BUILDFLAG(ARKWEB_PDF)
+  std::string bookmark_id = GenerateBookmarkId();
+  dict.Set("id", bookmark_id);
+  if (bookmark) {
+    bookmark_store_[bookmark_id] = bookmark;
+  }
+#else
   FPDF_DEST dest = FPDFBookmark_GetDest(doc(), bookmark);
   // Some bookmarks don't have a page to select.
   if (dest) {
@@ -2538,6 +2545,7 @@ base::Value::Dict PDFiumEngine::TraverseBookmarks(FPDF_BOOKMARK bookmark,
     if (!uri.empty() && base::IsStringUTF8AllowingNoncharacters(uri))
       dict.Set("uri", uri);
   }
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   base::Value::List children;
 

@@ -837,6 +837,11 @@ class NWebHandlerDelegate : public ArkWebClientExt,
       const std::vector<std::string>& async_method_list,
       const int32_t object_id,
       const std::string& permission);
+
+#if BUILDFLAG(IS_ARKWEB)
+  void SaveEnableAppLinking(bool enable);
+#endif
+
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
   bool IsDragEnter() const { return is_drag_enter_; }
   void SetDragEnter(bool enter) { is_drag_enter_ = enter; }
@@ -1052,6 +1057,10 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 
   CefRefPtr<CefBrowser> main_browser_ = nullptr;
   bool is_closing_ = false;
+
+#if BUILDFLAG(IS_ARKWEB)
+  bool is_arkweb_applinking_enabled_ = true;
+#endif
 
   std::shared_ptr<NWebPreferenceDelegate> preference_delegate_ = nullptr;
   CefRefPtr<NWebRenderHandler> render_handler_ = nullptr;

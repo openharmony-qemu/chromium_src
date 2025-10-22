@@ -5775,6 +5775,11 @@ bool NWebDelegate::IsMixedContentAutoUpgradesEnabled() {
 #if BUILDFLAG(IS_ARKWEB)
 void NWebDelegate::EnableAppLinking(bool enable) {
   LOG(DEBUG) << "NWebDelegate::EnableAppLinking, enable: " << enable;
+  if (handler_delegate_) {
+    LOG(DEBUG) << "NWebDelegate::EnableAppLinking popup case, enable: " << enable;
+    handler_delegate_->SaveEnableAppLinking(enable);
+  }
+
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
     LOG(ERROR) << "can not get browser ,can not set applinking";
     return;

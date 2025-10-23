@@ -53,6 +53,7 @@
 #include "third_party/blink/public/common/tokens/tokens.h"
 #include "third_party/blink/public/mojom/dom_storage/dom_storage.mojom.h"
 #include "third_party/blink/public/mojom/frame/remote_frame.mojom.h"
+#include "arkweb/build/features/features.h"
 
 namespace leveldb_proto {
 class ProtoDatabaseProvider;
@@ -347,6 +348,10 @@ class CONTENT_EXPORT StoragePartitionImpl
                              int net_error,
                              const net::SSLInfo& ssl_info,
                              bool fatal,
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+                             const GURL& origin_url,
+                             const std::string& referrer,
+#endif
                              OnSSLCertificateErrorCallback response) override;
   void OnCertificateRequested(
       const std::optional<base::UnguessableToken>& window_id,

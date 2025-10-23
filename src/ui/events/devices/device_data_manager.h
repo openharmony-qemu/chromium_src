@@ -22,6 +22,7 @@
 
 namespace ui {
 
+class ArkWebDeviceDataManagerUtils;
 class DeviceDataManagerTest;
 class InputDeviceEventObserver;
 
@@ -79,6 +80,7 @@ class EVENTS_DEVICES_EXPORT DeviceDataManager
   // and is hard to replace for tests that require a fresh one.
   void ResetDeviceListsForTest();
 
+  ArkWebDeviceDataManagerUtils* GetArkWebDeviceDataManagerUtils();
  protected:
   DeviceDataManager();
 
@@ -103,6 +105,7 @@ class EVENTS_DEVICES_EXPORT DeviceDataManager
  private:
   friend class DeviceDataManagerTest;
   friend class DeviceDataManagerTestApi;
+  friend class ArkWebDeviceDataManagerUtils;
 
   void ClearTouchDeviceAssociations();
   void UpdateTouchInfoFromTransform(
@@ -139,6 +142,7 @@ class EVENTS_DEVICES_EXPORT DeviceDataManager
 
   // Contains touchscreen device info for each device mapped by device ID.
   base::flat_map<int, TouchDeviceTransform> touch_map_;
+  std::unique_ptr<ArkWebDeviceDataManagerUtils> arkweb_device_data_manager_utils_;
 };
 
 }  // namespace ui

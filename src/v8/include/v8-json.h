@@ -20,7 +20,7 @@ class String;
 /**
  * A JSON Parser and Stringifier.
  */
-class V8_EXPORT JSON {
+class V8_EXPORT JSVM_EXPORT JSON {
  public:
   /**
    * Tries to parse the string |json_string| and returns it as value if

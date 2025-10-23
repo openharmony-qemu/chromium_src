@@ -21,7 +21,13 @@
 #include "third_party/blink/renderer/modules/media_controls/media_controls_impl.h"
 #include "third_party/blink/renderer/platform/text/platform_locale.h"
 #include "ui/strings/grit/ax_strings.h"
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "ohos_nweb_ex/overrides/ui/strings/grit/ohos_ex_ui_strings.h"
+#endif // IS_ARKWEB_EXT
+#endif
 
+#define IDS_OHOS_MEDIA_OVERFLOW_MENU_DOWNLOAD 62075
 namespace blink {
 
 MediaControlDownloadButtonElement::MediaControlDownloadButtonElement(
@@ -54,6 +60,11 @@ bool MediaControlDownloadButtonElement::ShouldDisplayDownloadButton() const {
 }
 
 int MediaControlDownloadButtonElement::GetOverflowStringId() const {
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (GetMediaControls().ShouldShowVideoControlsHM()) {
+    return IDS_OHOS_MEDIA_OVERFLOW_MENU_DOWNLOAD;
+  }
+#endif
   return IDS_MEDIA_OVERFLOW_MENU_DOWNLOAD;
 }
 

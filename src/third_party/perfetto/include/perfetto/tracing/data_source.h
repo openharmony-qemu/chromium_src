@@ -44,6 +44,8 @@
 
 #include "protos/perfetto/trace/trace_packet.pbzero.h"
 
+#include "build/build_config.h"
+
 // DEPRECATED: Instead of using this macro, prefer specifying symbol linkage
 // attributes explicitly using the `_WITH_ATTRS` macro variants (e.g.,
 // PERFETTO_DECLARE_DATA_SOURCE_STATIC_MEMBERS_WITH_ATTRS). This avoids
@@ -249,8 +251,9 @@ struct DataSourceHelper {
 template <typename DerivedDataSource,
           typename DataSourceTraits = DefaultDataSourceTraits>
 class DataSource : public DataSourceBase {
-  struct DefaultTracePointTraits;
   using Helper = DataSourceHelper<DerivedDataSource, DataSourceTraits>;
+ private:
+    struct DefaultTracePointTraits;
 
  public:
   // The BufferExhaustedPolicy to use for TraceWriters of this DataSource.
@@ -412,9 +415,17 @@ class DataSource : public DataSourceBase {
     // - |instances| is re-read with an acquire barrier below if this succeeds.
     // - The code between this point and the acquire-load is based on static
     //    storage which has indefinite lifetime.
+#if BUILDFLAG(IS_ARKWEB)
+    auto activeInstances = Traits::GetActiveInstances(trace_point_data);
+    if (activeInstances == nullptr) {
+        PERFETTO_ELOG("CallIfEnabled GetActiveInstances nullptr");
+        return;
+    }
+    uint32_t instances = activeInstances->load(std::memory_order_relaxed);
+#else
     uint32_t instances = Traits::GetActiveInstances(trace_point_data)
                              ->load(std::memory_order_relaxed);
-
+#endif
     // This is the tracing fast-path. Bail out immediately if tracing is not
     // enabled (or tracing is enabled but not for this data source).
     if (PERFETTO_LIKELY(!instances))

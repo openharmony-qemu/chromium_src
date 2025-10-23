@@ -74,6 +74,7 @@
 #include "src/sksl/ir/SkSLVariable.h"
 #include "src/sksl/ir/SkSLVariableReference.h"
 #include "src/sksl/spirv.h"
+#include "arkweb/build/features/features.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -1984,6 +1985,9 @@ void GLSLCodeGenerator::writeInputVars() {
 
 bool GLSLCodeGenerator::generateCode() {
     this->writeHeader();
+#if BUILDFLAG(ARKWEB_SKIA_CACHE)
+    this->writeLine("// GL_EXTENSION_SKIA_CACHE");
+#endif
     OutputStream* rawOut = fOut;
     StringStream body;
     fOut = &body;

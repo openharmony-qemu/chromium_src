@@ -393,7 +393,10 @@ class PLATFORM_EXPORT MainThreadSchedulerImpl
   }
 
   virtual void PerformMicrotaskCheckpoint();
-
+#if BUILDFLAG(ARKWEB_SUSPEND_ALL_TIMERS)
+  void PauseTimersForOHOSWebView() override;
+  void ResumeTimersForOHOSWebView() override;
+#endif
  private:
   friend class WebRenderWidgetSchedulingState;
   friend class MainThreadMetricsHelper;

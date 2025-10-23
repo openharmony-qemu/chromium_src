@@ -29,6 +29,7 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/ptr_util.h"
 #include "base/memory/raw_ptr.h"
 #include "third_party/blink/renderer/platform/graphics/image_frame_generator.h"
@@ -74,9 +75,12 @@ class MockImageDecoder : public ImageDecoder {
       : ImageDecoder(kAlphaPremultiplied,
                      ImageDecoder::kDefaultBitDepth,
                      ColorBehavior::kTransformToSRGB,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
                      cc::AuxImage::kDefault,
+#endif
                      ImageDecoder::kNoDecodedImageByteLimit),
-        client_(client) {}
+        client_(client) {
+  }
 
   ~MockImageDecoder() override { client_->DecoderBeingDestroyed(); }
 

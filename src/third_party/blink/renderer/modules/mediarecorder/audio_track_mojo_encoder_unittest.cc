@@ -6,6 +6,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/heap_array.h"
 #include "base/functional/bind.h"
 #include "base/notreached.h"
@@ -141,6 +142,15 @@ class TestInterfaceFactory final : public media::mojom::InterfaceFactory {
       mojo::PendingReceiver<media::mojom::Renderer> receiver) override {
     NOTREACHED();
   }
+#else
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void CreateMediaPlayerRenderer(
+      mojo::PendingRemote<media::mojom::MediaPlayerRendererClientExtension>
+          client_extension_remote,
+      mojo::PendingReceiver<media::mojom::Renderer> receiver,
+      mojo::PendingReceiver<media::mojom::MediaPlayerRendererExtension>
+          renderer_extension_receiver) override {}
+#endif
 #endif  // BUILDFLAG(IS_ANDROID)
   void CreateCdm(const media::CdmConfig& cdm_config,
                  CreateCdmCallback callback) override {
@@ -158,6 +168,17 @@ class TestInterfaceFactory final : public media::mojom::InterfaceFactory {
     NOTREACHED();
   }
 #endif  // BUILDFLAG(IS_WIN)
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void CreateCustomMediaPlayerRenderer(
+      ::mojo::PendingRemote<
+          ::media::mojom::CustomMediaPlayerRendererClientExtension>
+          client_extension,
+      ::mojo::PendingReceiver<::media::mojom::Renderer> renderer,
+      ::mojo::PendingReceiver<::media::mojom::MediaPlayerRendererExtension>
+          renderer_extension,
+      int32_t player_id) override{};
+#endif  // ARKWEB_UNITTESTS
 
  private:
   TestAudioEncoder audio_encoder_;

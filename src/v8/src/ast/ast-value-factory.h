@@ -73,6 +73,9 @@ class AstRawString final : public ZoneObject {
 
   // Access the physical representation:
   bool is_one_byte() const { return is_one_byte_; }
+#ifdef OHOS_JS_ENGINE
+  bool is_base_std_builtin_name() const { return is_base_std_builtin_name_; }
+#endif
   int byte_length() const { return literal_bytes_.length(); }
   const unsigned char* raw_data() const { return literal_bytes_.begin(); }
 
@@ -127,6 +130,21 @@ class AstRawString final : public ZoneObject {
 #endif
   }
 
+#ifdef OHOS_JS_ENGINE
+  // used for with scope to use the fast path during the
+  // variable proxy of parsing. base std variable names:
+  // Object,Array,Boolean,Symbol,String,Number.
+  template <typename FactoryT>
+  inline bool is_base_std_builtin_name(Handle<String> str, FactoryT* factory) {
+    return *str == *factory->Object_string() ||
+           *str == *factory->Array_string() ||
+           *str == *factory->Boolean_string() ||
+           *str == *factory->Symbol_string() ||
+           *str == *factory->String_string() ||
+           *str == *factory->Number_string();
+  }
+#endif
+
   union {
     AstRawString* next_;
     IndirectHandle<String> string_;
@@ -135,6 +153,9 @@ class AstRawString final : public ZoneObject {
   base::Vector<const uint8_t> literal_bytes_;  // Memory owned by Zone.
   uint32_t raw_hash_field_;
   bool is_one_byte_;
+#ifdef OHOS_JS_ENGINE
+  bool is_base_std_builtin_name_ = false;
+#endif
 #ifdef DEBUG
   // (Debug-only:) Verify the object life-cylce: Some functions may only be
   // called after internalization (that is, after a v8::internal::String has

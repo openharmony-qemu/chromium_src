@@ -73,6 +73,13 @@
 #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
 #include "third_party/blink/renderer/platform/web_test_support.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/media/html_video_element_ext.cc"
+#endif
+#if BUILDFLAG(ARKWEB_PIP)
+#include "content/browser/media/media_web_contents_observer.h"
+#endif
+
 namespace blink {
 
 namespace {
@@ -220,6 +227,9 @@ void HTMLVideoElement::ParseAttribute(
     // it. Only create an ImageLoader if a non-empty URL is seen.
     if (image_loader_ || !poster_image_url.IsEmpty()) {
       UpdatePosterImage();
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+      video_poster_ = FastGetAttribute(html_names::kPosterAttr).GetString();
+#endif  // ARKWEB_MEDIA_AVSESSION
     }
     // Notify the player when the poster image URL changes.
     if (GetWebMediaPlayer()) {
@@ -501,6 +511,13 @@ void HTMLVideoElement::DidEnterFullscreen() {
       GetWebMediaPlayer()->EnteredFullscreen();
     GetWebMediaPlayer()->OnDisplayTypeChanged(GetDisplayType());
   }
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  FullscreenChanged(true);
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  html_media_element_utils_.EnterFullScreenOverlay();
+#endif
 }
 
 void HTMLVideoElement::DidExitFullscreen() {
@@ -515,6 +532,13 @@ void HTMLVideoElement::DidExitFullscreen() {
       !FastHasAttribute(html_names::kPlaysinlineAttr)) {
     pause();
   }
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  FullscreenChanged(false);
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  html_media_element_utils_.FullscreenChangedOverlay(false);
+#endif
 }
 
 void HTMLVideoElement::DidMoveToNewDocument(Document& old_document) {
@@ -746,6 +770,15 @@ void HTMLVideoElement::OnPictureInPictureStateChange() {
       .OnPictureInPictureStateChange();
 }
 
+#if BUILDFLAG(ARKWEB_PIP)
+void HTMLVideoElement::UpdatePictureInPictureSurface() {
+  if (pip_active_) {
+    OnPictureInPictureStateChanged(
+        content::PIP_STATE_ENTER, videoWidth(), videoHeight());
+  }
+}
+#endif
+
 void HTMLVideoElement::OnEnteredPictureInPicture() {
   if (!picture_in_picture_interstitial_) {
     picture_in_picture_interstitial_ =
@@ -761,6 +794,9 @@ void HTMLVideoElement::OnEnteredPictureInPicture() {
 
   DCHECK(GetWebMediaPlayer());
   GetWebMediaPlayer()->OnDisplayTypeChanged(GetDisplayType());
+#if BUILDFLAG(ARKWEB_PIP)
+  pip_active_ = true;
+#endif
 }
 
 void HTMLVideoElement::OnExitedPictureInPicture() {
@@ -768,7 +804,9 @@ void HTMLVideoElement::OnExitedPictureInPicture() {
     picture_in_picture_interstitial_->Hide();
 
   PseudoStateChanged(CSSSelector::kPseudoPictureInPicture);
-
+#if BUILDFLAG(ARKWEB_PIP)
+  pip_active_ = false;
+#endif
   if (GetWebMediaPlayer())
     GetWebMediaPlayer()->OnDisplayTypeChanged(GetDisplayType());
 }

@@ -46,7 +46,7 @@ action("process_json") {
     args += [ "win" ]
   } else if (is_mac) {
     args += [ "macosx" ]
-  } else if (is_android) {
+  } else if (is_android || is_ohos) {
     args += [ "android" ]
   } else if (is_chromeos) {
     args += [ "chromeos" ]
@@ -112,6 +112,8 @@ component("config") {
     "gpu_feature_type.h",
     "gpu_finch_features.cc",
     "gpu_finch_features.h",
+    "//arkweb/chromium_ext/gpu/config/gpu_finch_features_ext.cc",
+    "//arkweb/chromium_ext/gpu/config/gpu_finch_features_ext.h",
     "gpu_info.cc",
     "gpu_info.h",
     "gpu_info_collector.cc",
@@ -209,10 +211,10 @@ component("config") {
   if (is_ios) {
     sources += [ "gpu_info_collector_ios.mm" ]
   }
-  if (is_linux || is_chromeos) {
+  if (is_linux || is_chromeos || is_ohos) {
     sources += [ "gpu_info_collector_linux.cc" ]
   }
-  if (is_linux || is_chromeos || is_apple || is_fuchsia || is_android) {
+  if (is_linux || is_chromeos || is_apple || is_fuchsia || is_android || is_ohos) {
     deps += [ "//third_party/angle:angle_gpu_info_util" ]
   }
   if (use_ozone) {

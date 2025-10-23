@@ -91,6 +91,9 @@ class BuildFlags : public base::ContextualClass<BuildFlags> {
 #else
     build_flags_["V8_ENABLE_DRUMBRAKE"] = false;
 #endif
+#ifdef OHOS_JS_ENGINE
+    build_flags_["OHOS_JS_ENGINE"] = true;
+#endif
   }
   static bool GetFlag(const std::string& name, const char* production) {
     auto it = Get().build_flags_.find(name);

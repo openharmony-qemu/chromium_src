@@ -122,6 +122,7 @@ class PLATFORM_EXPORT ParkableStringManager : public RAILModeObserver {
  private:
   friend class ParkableString;
   friend class ParkableStringImpl;
+  friend class ParkableStringUtils;
 
   scoped_refptr<ParkableStringImpl> Add(
       scoped_refptr<StringImpl>&&,

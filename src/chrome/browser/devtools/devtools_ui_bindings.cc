@@ -2465,7 +2465,12 @@ void DevToolsUIBindings::AddDevToolsExtensionsToClient() {
     }
     GURL url =
         extensions::chrome_manifest_urls::GetDevToolsPage(extension.get());
-    const bool is_extension_url = url.SchemeIs(extensions::kExtensionScheme) &&
+    const bool is_extension_url =
+        (url.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+         || url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+             ) &&
                                   url.host_piece() == extension->id();
     CHECK(is_extension_url || url.SchemeIsHTTPOrHTTPS());
 

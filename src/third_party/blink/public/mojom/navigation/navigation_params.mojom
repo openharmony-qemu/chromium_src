@@ -314,6 +314,13 @@ struct CommonNavigationParams {
   // Indicates the request destination.
   network.mojom.RequestDestination request_destination =
       network.mojom.RequestDestination.kEmpty;
+
+  // Additional HTTP request headers.
+  [EnableIf=arkweb_network_base]
+  string headers;
+
+  [EnableIf=arkweb_error_page]
+  bool is_override_error_page = false;
 };
 
 // Provided by the browser -----------------------------------------------------
@@ -482,7 +489,7 @@ struct CommitNavigationParams {
   // implementing LoadDataWithBaseUrl API method to circumvent the restriction
   // on the GURL max length in the IPC layer. Short data: URLs can still be
   // passed in the |CommonNavigationParams::url| field.
-  [EnableIf=is_android]
+  // [EnableIf=is_android_or_ohos]
   string data_url_as_string;
 
   // Whether this navigation was browser initiated.
@@ -669,6 +676,10 @@ struct CommitNavigationParams {
   // as the old Document when it is committed in the renderer.
   viz.mojom.LocalSurfaceId? local_surface_id;
 
+  // #if BUILDFLAG(ARKWEB_ADBLOCK)
+  [EnableIf=arkweb_adblock]
+  bool site_adblock_enabled = false;
+  // #endif
   // Map of permission statuses at commit time.
   // Note: the permission statues will be only used as initial states of
   // `CachedPermissionStatus` in renderer side.

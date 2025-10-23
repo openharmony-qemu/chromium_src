@@ -323,6 +323,10 @@ class ExtensionGalleriesHost {
     if (!StorageInfo::IsRemovableDevice(device_id))
       return std::string();
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)    
+    if (!StorageMonitor::GetInstance())
+      return std::string();
+#endif
     return StorageMonitor::GetInstance()->GetTransientIdForDeviceId(device_id);
   }
 
@@ -582,12 +586,25 @@ class MediaFileSystemRegistry::MediaFileSystemContextImpl
 // Constructor in 'private' section because depends on private class definition.
 MediaFileSystemRegistry::MediaFileSystemRegistry()
     : file_system_context_(new MediaFileSystemContextImpl) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (StorageMonitor::GetInstance()) {
+    StorageMonitor::GetInstance()->AddObserver(this);
+  }
+#else
   StorageMonitor::GetInstance()->AddObserver(this);
+#endif
 }
 
 MediaFileSystemRegistry::~MediaFileSystemRegistry() {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (StorageMonitor::GetInstance()) {
   DCHECK(StorageMonitor::GetInstance());
   StorageMonitor::GetInstance()->RemoveObserver(this);
+}
+#else
+  DCHECK(StorageMonitor::GetInstance());
+  StorageMonitor::GetInstance()->RemoveObserver(this);
+#endif
 }
 
 void MediaFileSystemRegistry::OnPermissionRemoved(

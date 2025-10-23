@@ -362,7 +362,11 @@ TEST_F(FederatedAuthDisconnectRequestTest, Success) {
                                       OriginFromString(kProviderUrl), _));
   EXPECT_CALL(*api_permission_delegate_,
               GetApiPermissionStatus(OriginFromString(kRpUrl)))
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+      .WillOnce(Return(content::FederatedIdentityApiPermissionContextDelegate::PermissionStatus::GRANTED));
+#else
       .WillOnce(Return(PermissionStatus::GRANTED));
+#endif
 
   RunDisconnectTest(config, DisconnectStatus::kSuccess);
   EXPECT_TRUE(DidFetchAllEndpoints());
@@ -400,7 +404,11 @@ TEST_F(FederatedAuthDisconnectRequestTest,
       .WillOnce(Return(true));
   EXPECT_CALL(*api_permission_delegate_,
               GetApiPermissionStatus(OriginFromString(kRpUrl)))
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+      .WillOnce(Return(content::FederatedIdentityApiPermissionContextDelegate::PermissionStatus::GRANTED));
+#else
       .WillOnce(Return(PermissionStatus::GRANTED));
+#endif
 
   EXPECT_CALL(*permission_delegate_,
               RevokeSharingPermission(OriginFromString(kRpUrl),
@@ -424,7 +432,11 @@ TEST_F(FederatedAuthDisconnectRequestTest, SameSiteIframe) {
   Config config = kValidConfig;
   EXPECT_CALL(*api_permission_delegate_,
               GetApiPermissionStatus(OriginFromString(kRpUrl)))
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+      .WillOnce(Return(content::FederatedIdentityApiPermissionContextDelegate::PermissionStatus::GRANTED));
+#else
       .WillOnce(Return(PermissionStatus::GRANTED));
+#endif
   EXPECT_CALL(*permission_delegate_,
               HasSharingPermission(OriginFromString(kSameSiteIframeUrl),
                                    OriginFromString(kRpUrl),
@@ -455,7 +467,11 @@ TEST_F(FederatedAuthDisconnectRequestTest, CrossSiteIframe) {
               ->AppendChild("cross_site_iframe"));
   EXPECT_CALL(*api_permission_delegate_,
               GetApiPermissionStatus(OriginFromString(kRpUrl)))
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+      .WillOnce(Return(content::FederatedIdentityApiPermissionContextDelegate::PermissionStatus::GRANTED));
+#else
       .WillOnce(Return(PermissionStatus::GRANTED));
+#endif
   EXPECT_CALL(*permission_delegate_,
               HasSharingPermission(OriginFromString(kCrossSiteIframeUrl),
                                    OriginFromString(kRpUrl),
@@ -480,7 +496,11 @@ TEST_F(FederatedAuthDisconnectRequestTest, NoAccountToDisconnect) {
   Config config = kValidConfig;
   EXPECT_CALL(*api_permission_delegate_,
               GetApiPermissionStatus(OriginFromString(kRpUrl)))
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+      .WillOnce(Return(content::FederatedIdentityApiPermissionContextDelegate::PermissionStatus::GRANTED));
+#else
       .WillOnce(Return(PermissionStatus::GRANTED));
+#endif
   EXPECT_CALL(
       *permission_delegate_,
       HasSharingPermission(OriginFromString(kRpUrl), OriginFromString(kRpUrl),
@@ -500,7 +520,11 @@ TEST_F(FederatedAuthDisconnectRequestTest, DisabledInSettings) {
   Config config = kValidConfig;
   EXPECT_CALL(*api_permission_delegate_,
               GetApiPermissionStatus(OriginFromString(kRpUrl)))
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+      .WillOnce(Return(content::FederatedIdentityApiPermissionContextDelegate::PermissionStatus::BLOCKED_SETTINGS));
+#else
       .WillOnce(Return(PermissionStatus::BLOCKED_SETTINGS));
+#endif
 
   RunDisconnectTest(config, DisconnectStatus::kError);
   EXPECT_FALSE(DidFetchAnyEndpoint());
@@ -515,7 +539,11 @@ TEST_F(FederatedAuthDisconnectRequestTest, DisabledInFlags) {
   Config config = kValidConfig;
   EXPECT_CALL(*api_permission_delegate_,
               GetApiPermissionStatus(OriginFromString(kRpUrl)))
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+      .WillOnce(Return(content::FederatedIdentityApiPermissionContextDelegate::PermissionStatus::BLOCKED_VARIATIONS));
+#else
       .WillOnce(Return(PermissionStatus::BLOCKED_VARIATIONS));
+#endif
 
   RunDisconnectTest(config, DisconnectStatus::kError);
   EXPECT_FALSE(DidFetchAnyEndpoint());
@@ -532,7 +560,11 @@ TEST_F(FederatedAuthDisconnectRequestTest, SuccessDespiteEmbargo) {
   Config config = kValidConfig;
   EXPECT_CALL(*api_permission_delegate_,
               GetApiPermissionStatus(OriginFromString(kRpUrl)))
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+      .WillOnce(Return(content::FederatedIdentityApiPermissionContextDelegate::PermissionStatus::BLOCKED_EMBARGO));
+#else
       .WillOnce(Return(PermissionStatus::BLOCKED_EMBARGO));
+#endif
   EXPECT_CALL(
       *permission_delegate_,
       HasSharingPermission(OriginFromString(kRpUrl), OriginFromString(kRpUrl),

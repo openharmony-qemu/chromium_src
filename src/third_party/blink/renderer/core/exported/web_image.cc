@@ -33,6 +33,7 @@
 #include <algorithm>
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/scoped_refptr.h"
 #include "third_party/blink/public/mojom/css/preferred_color_scheme.mojom-blink.h"
 #include "third_party/blink/public/platform/platform.h"
@@ -44,15 +45,27 @@
 #include "third_party/skia/include/core/SkImage.h"
 #include "ui/gfx/geometry/size.h"
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif
 namespace blink {
 
 SkBitmap WebImage::FromData(const WebData& data,
                             const gfx::Size& desired_size) {
   const bool data_complete = true;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (String("image") != "image") {
+    StringImpl::InitStatics();
+  }
+#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   std::unique_ptr<ImageDecoder> decoder(ImageDecoder::Create(
       data, data_complete, ImageDecoder::kAlphaPremultiplied,
       ImageDecoder::kDefaultBitDepth, ColorBehavior::kIgnore,
-      cc::AuxImage::kDefault, Platform::GetMaxDecodedImageBytes()));
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      cc::AuxImage::kDefault,
+#endif
+      Platform::GetMaxDecodedImageBytes()));
   if (!decoder || !decoder->IsSizeAvailable())
     return {};
 
@@ -97,8 +110,14 @@ SkBitmap WebImage::FromData(const WebData& data,
   return bitmap;
 }
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+SkBitmap WebImage::DecodeSVG(const WebData& data,
+                             const gfx::Size& desired_size,
+                             bool is_favicon) {
+#else
 SkBitmap WebImage::DecodeSVG(const WebData& data,
                              const gfx::Size& desired_size) {
+#endif
   scoped_refptr<SVGImage> svg_image = SVGImage::Create(nullptr);
   const bool data_complete = true;
   Image::SizeAvailability size_available =
@@ -117,6 +136,14 @@ SkBitmap WebImage::DecodeSVG(const WebData& data,
     container_size = SVGImageForContainer::ConcreteObjectSize(
         *svg_image, nullptr, gfx::SizeF());
   }
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (container_size.IsEmpty() &&
+      is_favicon &&
+      base::CommandLine::ForCurrentProcess()->HasSwitch(::switches::kEnableNwebEx)) {
+    static constexpr gfx::SizeF kDefaultFaviconSize = gfx::SizeF(64, 64);
+    container_size = kDefaultFaviconSize;
+  }
+#endif
   // TODO(chrishtr): perhaps the downloaded image should be decoded in dark
   // mode if the preferred color scheme is dark.
   scoped_refptr<Image> svg_container =
@@ -137,7 +164,10 @@ std::vector<SkBitmap> WebImage::FramesFromData(const WebData& data) {
   std::unique_ptr<ImageDecoder> decoder(ImageDecoder::Create(
       data, data_complete, ImageDecoder::kAlphaPremultiplied,
       ImageDecoder::kDefaultBitDepth, ColorBehavior::kIgnore,
-      cc::AuxImage::kDefault, Platform::GetMaxDecodedImageBytes()));
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      cc::AuxImage::kDefault,
+#endif
+      Platform::GetMaxDecodedImageBytes()));
   if (!decoder || !decoder->IsSizeAvailable())
     return {};
 
@@ -171,7 +201,10 @@ std::vector<WebImage::AnimationFrame> WebImage::AnimationFromData(
   std::unique_ptr<ImageDecoder> decoder(ImageDecoder::Create(
       data, data_complete, ImageDecoder::kAlphaPremultiplied,
       ImageDecoder::kDefaultBitDepth, ColorBehavior::kIgnore,
-      cc::AuxImage::kDefault, Platform::GetMaxDecodedImageBytes()));
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      cc::AuxImage::kDefault,
+#endif
+      Platform::GetMaxDecodedImageBytes()));
   if (!decoder || !decoder->IsSizeAvailable() || decoder->FrameCount() == 0)
     return {};
 

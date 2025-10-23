@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifdef V8_RUNTIME_CALL_STATS
+#if defined(V8_RUNTIME_CALL_STATS) || defined(HITRACE_RUNTIME_CALL_STATS)
 
 #include "src/logging/runtime-call-stats.h"
 
@@ -11,6 +11,12 @@
 #include "src/flags/flags.h"
 #include "src/tracing/tracing-category-observer.h"
 #include "src/utils/ostreams.h"
+
+#ifdef HITRACE_RUNTIME_CALL_STATS
+#include "ohos_sdk/openharmony/native/sysroot/usr/include/hitrace/trace.h"
+#include <string.h>
+#include <cstring>
+#endif
 
 namespace v8 {
 namespace internal {
@@ -204,19 +210,53 @@ void RuntimeCallStats::Enter(RuntimeCallTimer* timer,
   DCHECK(IsCalledOnTheSameThread());
   RuntimeCallCounter* counter = GetCounter(counter_id);
   DCHECK_NOT_NULL(counter->name());
+#ifdef V8_RUNTIME_CALL_STATS
   timer->Start(counter, current_timer());
+#endif
+
+#if defined(HITRACE_RUNTIME_CALL_STATS) && !defined(V8_RUNTIME_CALL_STATS)
+  if (V8_UNLIKELY(v8::internal::rcs_enable)) {
+    const char* name = counter->name();
+    char trace_name[100];
+    if (strstr(name, "Callback") != nullptr) {
+      std::strcpy(trace_name, "RCS_SCOPE_BLINK_");
+    } else {
+      std::strcpy(trace_name, "RCS_SCOPE_");
+    }
+    std::strcat(trace_name, name);
+#ifdef OSOHOS
+    OH_HiTrace_StartTrace(trace_name);
+#endif
+  }
+#endif
+
+#ifdef V8_RUNTIME_CALL_STATS
   current_timer_.SetValue(timer);
   current_counter_.SetValue(counter);
+#endif
 }
 
 void RuntimeCallStats::Leave(RuntimeCallTimer* timer) {
   DCHECK(IsCalledOnTheSameThread());
+#ifdef V8_RUNTIME_CALL_STATS
   RuntimeCallTimer* stack_top = current_timer();
   if (stack_top == nullptr) return;  // Missing timer is a result of Reset().
   CHECK(stack_top == timer);
+#endif
+
+#if defined(HITRACE_RUNTIME_CALL_STATS) && !defined(V8_RUNTIME_CALL_STATS)
+  if (V8_UNLIKELY(v8::internal::rcs_enable)) {
+#ifdef OSOHOS
+    OH_HiTrace_FinishTrace();
+#endif
+  }
+#endif
+
+#ifdef V8_RUNTIME_CALL_STATS
   current_timer_.SetValue(timer->Stop());
   RuntimeCallTimer* cur_timer = current_timer();
   current_counter_.SetValue(cur_timer ? cur_timer->counter() : nullptr);
+#endif
 }
 
 void RuntimeCallStats::Add(RuntimeCallStats* other) {

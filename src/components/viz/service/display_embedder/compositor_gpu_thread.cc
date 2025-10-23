@@ -31,8 +31,8 @@
 #include "gpu/vulkan/vulkan_implementation.h"
 #endif
 
-#if BUILDFLAG(SKIA_USE_DAWN)
-#include "gpu/command_buffer/service/dawn_context_provider.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/components/viz/service/display_embedder/compositor_gpu_thread_utils.h"
 #endif
 
 namespace viz {
@@ -109,6 +109,9 @@ CompositorGpuThread::CompositorGpuThread(
       weak_ptr_factory_(this) {}
 
 CompositorGpuThread::~CompositorGpuThread() {
+#if BUILDFLAG(IS_ARKWEB)
+  CompositorGpuThreadUtils::CompositorGpuThreadDestruct(this);
+#endif
   base::Thread::Stop();
 }
 
@@ -235,6 +238,9 @@ bool CompositorGpuThread::Initialize() {
   // Wait until thread is started and Init() is executed in order to return
   // updated |init_succeeded_|.
   WaitUntilThreadStarted();
+#if BUILDFLAG(IS_ARKWEB)
+  CompositorGpuThreadUtils::CompositorGptThreadInitializeUtils(this);
+#endif
   return init_succeeded_;
 }
 

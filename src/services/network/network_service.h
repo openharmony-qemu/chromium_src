@@ -86,6 +86,10 @@ class NetLogProxySink;
 class NetworkContext;
 class NetworkService;
 class SCTAuditingCache;
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) \
+    || BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK) || BUILDFLAG(ARKWEB_CUSTOM_DNS)
+class ArkWebNetworkServiceExt;
+#endif
 
 class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkService
     : public mojom::NetworkService {
@@ -102,6 +106,13 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkService
   NetworkService& operator=(const NetworkService&) = delete;
 
   ~NetworkService() override;
+
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) \
+    || BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK) || BUILDFLAG(ARKWEB_CUSTOM_DNS)
+  virtual ArkWebNetworkServiceExt* AsArkWebNetworkServiceExt() {
+    return nullptr;
+  }
+#endif
 
   // Allows late binding if the mojo receiver wasn't specified in the
   // constructor.
@@ -399,6 +410,10 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkService
   static NetworkService* GetNetworkServiceForTesting();
 
  private:
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) \
+    || BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK) || BUILDFLAG(ARKWEB_CUSTOM_DNS)
+  friend class ArkWebNetworkServiceExt;
+#endif
   class DelayedDohProbeActivator;
 
   void InitMockNetworkChangeNotifierForTesting();
@@ -542,6 +557,10 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkService
   // leaking stale listeners between tests.
   std::unique_ptr<net::NetworkChangeNotifier> mock_network_change_notifier_;
 
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+  int timeout_override_ = 0;
+  net::handles::NetworkHandle network_for_dns_{net::handles::kInvalidNetworkHandle};
+#endif
 #if BUILDFLAG(IS_LINUX)
   mojo::Remote<mojom::GssapiLibraryLoadObserver> gssapi_library_load_observer_;
 #endif  // BUILDFLAG(IS_LINUX)
@@ -553,5 +572,10 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkService
 };
 
 }  // namespace network
+
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) \
+    || BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK) || BUILDFLAG(ARKWEB_CUSTOM_DNS)
+#include "arkweb/chromium_ext/services/network/arkweb_network_service_ext.h"
+#endif
 
 #endif  // SERVICES_NETWORK_NETWORK_SERVICE_H_

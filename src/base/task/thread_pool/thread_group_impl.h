@@ -89,6 +89,10 @@ class BASE_EXPORT ThreadGroupImpl : public ThreadGroup {
   size_t NumberOfIdleWorkersLockRequiredForTesting() const
       EXCLUSIVE_LOCKS_REQUIRED(lock_) override;
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/base/task/thread_pool/thread_group_impl_for_include.cc"
+#endif
+
  private:
   class ScopedCommandsExecutor;
   class WorkerDelegate;
@@ -127,6 +131,11 @@ class BASE_EXPORT ThreadGroupImpl : public ThreadGroup {
 
   bool IsOnIdleSetLockRequired(WorkerThread* worker) const
       EXCLUSIVE_LOCKS_REQUIRED(lock_);
+
+#if BUILDFLAG(IS_ARKWEB)
+  std::vector<scoped_refptr<base::internal::WorkerThread>> create_workers_ GUARDED_BY(lock_);
+  std::vector<PlatformThreadId> destroy_workers_ids_ GUARDED_BY(lock_);
+#endif
 
   size_t worker_sequence_num_ GUARDED_BY(lock_) = 0;
 

@@ -8,6 +8,9 @@
 #include <atomic>
 #include <limits>
 #include <utility>
+#ifdef USING_OHOS_WEB
+#include <random>
+#endif
 
 #include "src/base/bits.h"
 #include "src/base/lazy-instance.h"
@@ -140,6 +143,30 @@ bool CodeRange::InitReservation(v8::PageAllocator* page_allocator,
 
     VirtualMemoryCage candidate_cage;
 
+#ifdef USING_OHOS_WEB
+    const int kAllocationTries = 128;
+    Address preferred_begin = RoundDown(preferred_region.begin(), kPageSize);
+    Address preferred_end =
+        RoundDown(preferred_region.end() - requested, kPageSize);
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<size_t> dist(preferred_begin, preferred_end);
+    for (int i = 0; i < kAllocationTries; i++) {
+      params.requested_start_hint = RoundDown(dist(gen), kPageSize);
+      TRACE("=== Attempt #%d, hint=%p\n", i,
+            reinterpret_cast<void*>(params.requested_start_hint));
+      if (candidate_cage.InitReservation(params)) {
+        TRACE("=== Attempt #%d (%p): [%p, %p)\n", i,
+              reinterpret_cast<void*>(params.requested_start_hint),
+              reinterpret_cast<void*>(candidate_cage.region().begin()),
+              reinterpret_cast<void*>(candidate_cage.region().end()));
+        // Allocation succeeded, check if it's in the preferred range.
+        if (preferred_region.contains(candidate_cage.region())) break;
+        // This allocation is not the one we are searhing for.
+        candidate_cage.Free();
+      }
+    }
+#else
     // Try to allocate code range at the end of preferred region, by going
     // towards the start in steps.
     const int kAllocationTries = 16;
@@ -163,6 +190,7 @@ bool CodeRange::InitReservation(v8::PageAllocator* page_allocator,
       if (step == 0) break;
       params.requested_start_hint -= step;
     }
+#endif
     if (candidate_cage.IsReserved()) {
       *static_cast<VirtualMemoryCage*>(this) = std::move(candidate_cage);
     }

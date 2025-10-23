@@ -117,8 +117,14 @@ class BLINK_PLATFORM_EXPORT ResourceRequestSender {
       CodeCacheHost* code_cache_host,
       base::OnceCallback<void(mojom::blink::RendererEvictionReason)>
           evict_from_bfcache_callback,
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+      base::RepeatingCallback<void(size_t)>
+          did_buffer_load_while_in_bfcache_callback,
+      bool is_sync_mode);
+#else
       base::RepeatingCallback<void(size_t)>
           did_buffer_load_while_in_bfcache_callback);
+#endif
 
   // Cancels the current request and `request_info_` will be released.
   virtual void Cancel(scoped_refptr<base::SequencedTaskRunner> task_runner);
@@ -148,6 +154,12 @@ class BLINK_PLATFORM_EXPORT ResourceRequestSender {
       std::optional<mojo_base::BigBuffer> cached_metadata,
       base::TimeTicks response_ipc_arrival_time);
 
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  virtual void OnTransferDataWithSharedMemory(
+      base::ReadOnlySharedMemoryRegion region,
+      uint64_t buffer_size);
+#endif
+
   // Called when a redirect occurs.
   virtual void OnReceivedRedirect(
       const net::RedirectInfo& redirect_info,
@@ -171,6 +183,10 @@ class BLINK_PLATFORM_EXPORT ResourceRequestSender {
                            resource_load_info_notifier_wrapper);
 
     ~PendingRequestInfo();
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+    int request_id_;
+#endif
 
     scoped_refptr<ResourceRequestClient> client;
     network::mojom::RequestDestination request_destination;

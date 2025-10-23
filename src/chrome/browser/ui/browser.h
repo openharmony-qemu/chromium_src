@@ -394,6 +394,11 @@ class Browser : public TabStripModelObserver,
 
   ~Browser() override;
 
+#if BUILDFLAG(IS_OHOS)
+  void NewWindowTask(std::string url);
+  void NewWindow(std::string url);
+#endif
+
   // Set overrides for the initial window bounds and maximized state.
   void set_override_bounds(const gfx::Rect& bounds) {
     override_bounds_ = bounds;
@@ -995,10 +1000,14 @@ class Browser : public TabStripModelObserver,
                           const std::string& frame_name,
                           const GURL& target_url,
                           content::WebContents* new_contents) override;
-  void RendererUnresponsive(
-      content::WebContents* source,
+  void RendererUnresponsive(content::WebContents* source,
       content::RenderWidgetHost* render_widget_host,
-      base::RepeatingClosure hang_monitor_restarter) override;
+                            base::RepeatingClosure hang_monitor_restarter
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+                            ,
+                            content::RendererIsUnresponsiveReason
+#endif
+                            ) override;
   void RendererResponsive(
       content::WebContents* source,
       content::RenderWidgetHost* render_widget_host) override;

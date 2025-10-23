@@ -9,6 +9,10 @@
 #include "components/sync/model/proxy_data_type_controller_delegate.h"
 #include "testing/gmock/include/gmock/gmock.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace password_manager {
 
 class MockPasswordStoreInterface : public PasswordStoreInterface {
@@ -36,6 +40,9 @@ class MockPasswordStoreInterface : public PasswordStoreInterface {
               UpdateLoginWithPrimaryKey,
               (const PasswordForm&, const PasswordForm&, base::OnceClosure),
               (override));
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+  MOCK_METHOD(void, UpdateLoginDisplayName, (const PasswordForm&), (override));
+#endif
   MOCK_METHOD(void,
               RemoveLogin,
               (const base::Location&, const PasswordForm&),

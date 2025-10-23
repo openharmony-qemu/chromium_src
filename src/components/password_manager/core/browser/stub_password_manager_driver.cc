@@ -112,5 +112,4 @@ gfx::RectF StubPasswordManagerDriver::TransformToRootCoordinates(
 base::WeakPtr<PasswordManagerDriver> StubPasswordManagerDriver::AsWeakPtr() {
   return weak_ptr_factory_.GetWeakPtr();
 }
-
 }  // namespace password_manager

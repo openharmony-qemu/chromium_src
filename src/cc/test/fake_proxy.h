@@ -26,6 +26,9 @@ class FakeProxy : public Proxy {
   void SetLayerTreeHost(LayerTreeHost* host);
 
   bool IsStarted() const override;
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void SetPinchSmoothMode(bool isEnable) override {}
+#endif
   void SetLayerTreeFrameSink(
       LayerTreeFrameSink* layer_tree_frame_sink) override {}
   void ReleaseLayerTreeFrameSink() override {}

@@ -36,7 +36,12 @@ CreateContentBrowserURLLoaderThrottles(
     const base::RepeatingCallback<WebContents*()>& wc_getter,
     NavigationUIData* navigation_ui_data,
     FrameTreeNodeId frame_tree_node_id,
-    std::optional<int64_t> navigation_id);
+    std::optional<int64_t> navigation_id
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+,
+    bool is_prerendering = false
+#endif
+    );
 
 // Wrapper around `ContentBrowserClient::CreateURLLoaderThrottlesForKeepAlive()`
 // which inserts additional content specific throttles for handling fetch

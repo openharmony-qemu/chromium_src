@@ -13,6 +13,7 @@
 #include "src/gpu/ganesh/vk/GrVkGpu.h"
 #include "src/gpu/ganesh/vk/GrVkUtil.h"
 #include "src/gpu/vk/VulkanUtilsPriv.h"
+#include "vulkan_ohos.h"
 
 GrVkSamplerYcbcrConversion* GrVkSamplerYcbcrConversion::Create(
         GrVkGpu* gpu, const skgpu::VulkanYcbcrConversionInfo& info) {
@@ -33,6 +34,16 @@ GrVkSamplerYcbcrConversion* GrVkSamplerYcbcrConversion::Create(
         externalFormat.pNext = nullptr;
         externalFormat.externalFormat = info.fExternalFormat;
         SkASSERT(ycbcrCreateInfo.pNext == nullptr);
+        ycbcrCreateInfo.pNext = &externalFormat;
+    }
+#elif SK_BUILD_FOR_OHOS
+    VkExternalFormatOHOS externalFormat;
+    if (info.fExternalFormat) {
+        // Format must not be specified for external images.
+        SkASSERT(info.fFormat == VK_FORMAT_UNDEFINED);
+        externalFormat.sType = VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_OHOS;
+        externalFormat.pNext = nullptr;
+        externalFormat.externalFormat = info.fExternalFormat;
         ycbcrCreateInfo.pNext = &externalFormat;
     }
 #else

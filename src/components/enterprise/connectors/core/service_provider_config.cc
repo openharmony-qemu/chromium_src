@@ -8,6 +8,7 @@
 #include <iterator>
 #include <string_view>
 
+#include "arkweb/build/features/features.h"
 #include "base/json/json_reader.h"
 
 namespace enterprise_connectors {
@@ -88,7 +89,11 @@ constexpr AnalysisConfig kTrellixAnalysisConfig = {
 };
 
 constexpr ReportingConfig kGoogleReportingConfig = {
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    .url = "https://x.x.x",
+#else
     .url = "https://chromereporting-pa.googleapis.com/v1/events",
+#endif
 };
 
 }  // namespace

@@ -12,6 +12,10 @@
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/native_widget_types.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace content {
 
 class BackForwardTransitionAnimationManager;
@@ -121,6 +125,14 @@ class CONTENT_EXPORT WebContentsView {
   // `features::kBackForwardTransitions` is enabled for the supported platform.
   virtual BackForwardTransitionAnimationManager*
   GetBackForwardTransitionAnimationManager() = 0;
+
+#if BUILDFLAG(ARKWEB_PULL_TO_REFRESH)
+  virtual void DidStopRefresh() {}
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+  virtual void UpdateBrowserControlsHeight(int, bool) {}
+#endif
 
   // Reset the above animation manager.
   virtual void DestroyBackForwardTransitionAnimationManager() = 0;

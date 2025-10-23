@@ -60,6 +60,11 @@
 #include "services/device/public/mojom/input_service.mojom.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+#include "arkweb/chromium_ext/services/device/public/mojom/res_sched_report.mojom.h"
+#include "arkweb/chromium_ext/services/device/public/mojom/sysprop_render_observer.mojom.h"
+#endif  // BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+
 namespace base {
 class SingleThreadTaskRunner;
 }
@@ -89,6 +94,11 @@ class PowerMonitorMessageBroadcaster;
 class PublicIpAddressLocationNotifier;
 class SensorProviderImpl;
 class TimeZoneMonitor;
+
+#if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+class ResSchedReport;
+class SysPropRenderObserver;
+#endif  // BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
 
 // NOTE: See the comments on the definitions of PublicIpAddressLocationNotifier,
 // |WakeLockContextCallback|, |CustomLocationProviderCallback| and
@@ -216,6 +226,14 @@ class DeviceService : public mojom::DeviceService {
       mojo::PendingReceiver<mojom::PublicIpAddressGeolocationProvider> receiver)
       override;
 
+#if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+  void BindResSchedReport(
+      mojo::PendingReceiver<mojom::ResSchedReport> receiver) override;
+
+  void BindSysPropRenderObserver(
+      mojo::PendingReceiver<mojom::SysPropRenderObserver> receiver) override;
+#endif  // BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+
   void BindScreenOrientationListener(
       mojo::PendingReceiver<mojom::ScreenOrientationListener> receiver)
       override;
@@ -243,6 +261,10 @@ class DeviceService : public mojom::DeviceService {
       power_monitor_message_broadcaster_;
   std::unique_ptr<PublicIpAddressGeolocationProvider>
       public_ip_address_geolocation_provider_;
+#if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+  std::unique_ptr<ResSchedReport> res_sched_report_;
+  std::unique_ptr<SysPropRenderObserver> sysprop_render_;
+#endif  // BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
   std::unique_ptr<SensorProviderImpl> sensor_provider_;
   std::unique_ptr<TimeZoneMonitor> time_zone_monitor_;
   std::unique_ptr<usb::DeviceManagerImpl> usb_device_manager_;

@@ -28,7 +28,7 @@ declare_args() {
   # ffmpeg targets. This helps linux chromium packagers that swap out our
   # ffmpeg.so with their own. See discussion here
   # https://groups.google.com/a/chromium.org/forum/#!msg/chromium-packagers/R5rcZXWxBEQ/B6k0zzmJbvcJ
-  is_component_ffmpeg = is_component_build
+  is_component_ffmpeg = true || is_component_build
 
   # Set to true to force the use of ffmpeg's stdatomic fallback code. This code
   # is unsafe and does not implement atomics properly. https://crbug.com/161723.
@@ -63,8 +63,10 @@ if (current_cpu == "x86") {
 os_config = current_os
 if ((is_linux || is_chromeos) && is_msan) {
   os_config = "linux-noasm"
-} else if (is_chromeos || is_fuchsia) {
+} else if (is_chromeos || is_fuchsia || is_ohos) {
   os_config = "linux"
 } else if (is_win && !is_clang) {
   os_config = "win-msvc"
+} else if (is_arkweb && !use_musl) {
+  os_config = "linux"
 }

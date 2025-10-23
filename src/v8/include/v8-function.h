@@ -24,7 +24,7 @@ class UnboundScript;
 /**
  * A JavaScript function object (ECMA-262, 15.3).
  */
-class V8_EXPORT Function : public Object {
+class V8_EXPORT JSVM_EXPORT Function : public Object {
  public:
   /**
    * Create a function in the current execution context

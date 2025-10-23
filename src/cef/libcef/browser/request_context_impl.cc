@@ -3,7 +3,9 @@
 // can be found in the LICENSE file.
 
 #include "cef/libcef/browser/request_context_impl.h"
+#include "cef/ohos_cef_ext/libcef/browser/arkweb_request_context_impl_ext.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/atomic_sequence_num.h"
 #include "base/logging.h"
 #include "base/strings/stringprintf.h"
@@ -25,12 +27,18 @@
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/child_process_host.h"
 #include "content/public/browser/ssl_host_state_delegate.h"
+#include "libcef/browser/alloy/alloy_client_cert_lookup_table.h"
+#include "libcef/browser/net_service/cookie_manager_impl_ext.h"
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "mojo/public/cpp/bindings/remote.h"
+#include "net/cert/cert_database.h"
 #include "net/dns/host_resolver.h"
 #include "services/network/public/cpp/resolve_host_client_base.h"
 #include "services/network/public/mojom/clear_data_filter.mojom.h"
 #include "services/network/public/mojom/network_context.mojom.h"
+#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
+#include "cef/ohos_cef_ext/libcef/browser/net_database/cef_incognito_data_base_impl.h"
+#endif
 
 using content::BrowserThread;
 
@@ -188,7 +196,11 @@ CefRequestContextImpl::CreateGlobalRequestContext(
   config.is_global = true;
   config.settings = settings;
   CefRefPtr<CefRequestContextImpl> impl =
+#if BUILDFLAG(IS_ARKWEB)
+      new ArkWebRequestContextImplExt(std::move(config));
+#else
       new CefRequestContextImpl(std::move(config));
+#endif
   impl->Initialize();
   return impl;
 }
@@ -196,7 +208,12 @@ CefRequestContextImpl::CreateGlobalRequestContext(
 // static
 CefRefPtr<CefRequestContextImpl>
 CefRequestContextImpl::GetOrCreateForRequestContext(
-    CefRefPtr<CefRequestContext> request_context) {
+    CefRefPtr<CefRequestContext> request_context
+#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
+    ,
+    bool incognito_mode
+#endif
+) {
   if (request_context.get()) {
     // Use the context from the provided CefRequestContext.
     return static_cast<CefRequestContextImpl*>(request_context.get());
@@ -205,6 +222,9 @@ CefRequestContextImpl::GetOrCreateForRequestContext(
   // Use the global context.
   Config config;
   config.is_global = true;
+#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
+  config.incognito_mode = incognito_mode;
+#endif
   return CefRequestContextImpl::GetOrCreateRequestContext(std::move(config));
 }
 
@@ -264,6 +284,13 @@ void CefRequestContextImpl::ExecuteWhenBrowserContextInitialized(
         base::BindOnce(
             &CefRequestContextImpl::ExecuteWhenBrowserContextInitialized, this,
             std::move(callback)));
+    return;
+  }
+  LOG(INFO) << "CefRequestContextImpl::ExecuteWhenBrowserContextInitialized, "
+               "not on ui";
+
+  if (!browser_context()) {
+    LOG(ERROR) << "browser_context is nullptr";
     return;
   }
 
@@ -736,13 +763,25 @@ CefRequestContextImpl::GetOrCreateRequestContext(Config&& config) {
 
   if (config.is_global ||
       (config.other && config.other->IsGlobal() && !config.handler)) {
+#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
+    return config.incognito_mode
+               ? static_cast<CefRequestContextImpl*>(
+                     CefAppManager::Get()->GetGlobalOTRRequestContext().get())
+               : static_cast<CefRequestContextImpl*>(
+                     CefAppManager::Get()->GetGlobalRequestContext().get());
+#else
     // Return the singleton global context.
     return static_cast<CefRequestContextImpl*>(
         CefAppManager::Get()->GetGlobalRequestContext().get());
+#endif
   }
 
   CefRefPtr<CefRequestContextImpl> context =
+#if BUILDFLAG(IS_ARKWEB)
+      new ArkWebRequestContextImplExt(std::move(config));
+#else
       new CefRequestContextImpl(std::move(config));
+#endif
 
   // Initialize ASAP so that any tasks blocked on initialization will execute.
   if (CEF_CURRENTLY_ON_UIT()) {

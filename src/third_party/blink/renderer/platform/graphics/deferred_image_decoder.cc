@@ -29,10 +29,13 @@
 #include <optional>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "base/logging.h"
 #include "base/memory/ptr_util.h"
+#include "base/metrics/histogram_macros.h"
 #include "base/time/time.h"
+#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "third_party/blink/public/common/features.h"
 #include "third_party/blink/public/platform/platform.h"
 #include "third_party/blink/renderer/platform/graphics/decoding_image_generator.h"
@@ -48,6 +51,41 @@
 #include "ui/gfx/geometry/skia_conversions.h"
 
 namespace blink {
+
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+namespace {
+
+// Do not rename entries or reuse numeric values to ensure the histogram is
+// consistent over time.
+enum class IncrementalDecodePerImageType {
+  kJpegIncrementalNeeded = 0,
+  kJpegAllDataReceivedInitially = 1,
+  kWebPIncrementalNeeded = 2,
+  kWebPAllDataReceivedInitially = 3,
+  kMaxValue = kWebPAllDataReceivedInitially,
+};
+
+void ReportIncrementalDecodeNeeded(bool all_data_received,
+                                   const String& image_type) {
+  DCHECK(IsMainThread());
+  absl::optional<IncrementalDecodePerImageType> status;
+  if (image_type == "jpg") {
+    status = all_data_received
+                 ? IncrementalDecodePerImageType::kJpegAllDataReceivedInitially
+                 : IncrementalDecodePerImageType::kJpegIncrementalNeeded;
+  } else if (image_type == "webp") {
+    status = all_data_received
+                 ? IncrementalDecodePerImageType::kWebPAllDataReceivedInitially
+                 : IncrementalDecodePerImageType::kWebPIncrementalNeeded;
+  }
+  if (status) {
+    UMA_HISTOGRAM_ENUMERATION("Blink.ImageDecoders.IncrementalDecodeNeeded",
+                              *status);
+  }
+}
+
+}  // namespace
+#endif
 
 struct DeferredFrameData {
   DISALLOW_NEW();
@@ -69,9 +107,12 @@ std::unique_ptr<DeferredImageDecoder> DeferredImageDecoder::Create(
     bool data_complete,
     ImageDecoder::AlphaOption alpha_option,
     ColorBehavior color_behavior) {
-  std::unique_ptr<ImageDecoder> metadata_decoder = ImageDecoder::Create(
-      data, data_complete, alpha_option, ImageDecoder::kDefaultBitDepth,
-      color_behavior, cc::AuxImage::kDefault,
+  std::unique_ptr<ImageDecoder> metadata_decoder =
+      ImageDecoder::Create(data, data_complete, alpha_option,
+                           ImageDecoder::kDefaultBitDepth, color_behavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+                           cc::AuxImage::kDefault,
+#endif
       Platform::GetMaxDecodedImageBytes());
   if (!metadata_decoder)
     return nullptr;
@@ -143,9 +184,18 @@ sk_sp<PaintImageGenerator> DeferredImageDecoder::CreateGenerator() {
     frames[i].duration = FrameDurationAtIndex(i);
   }
 
+  // Report UMA about whether incremental decoding is done for JPEG/WebP images.
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  const String image_type = FilenameExtension();
+#endif
   if (!first_decoding_generator_created_) {
     DCHECK(!incremental_decode_needed_.has_value());
     incremental_decode_needed_ = !all_data_received_;
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+    if (image_type == "jpg" || image_type == "webp") {
+      ReportIncrementalDecodeNeeded(all_data_received_, image_type);
+    }
+#endif
   }
   DCHECK(incremental_decode_needed_.has_value());
 
@@ -162,6 +212,14 @@ sk_sp<PaintImageGenerator> DeferredImageDecoder::CreateGenerator() {
   DCHECK(image_metadata_);
   image_metadata_->all_data_received_prior_to_decode =
       !incremental_decode_needed_.value();
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  if (image_type == "heif") {
+    // Heif image only supports hardware decode now. We need to trigger the task
+    // by updating all_data_received_prior_to_decode flag even if it is not the
+    // first decoding and the task can only trigger when all data is received.
+    image_metadata_->all_data_received_prior_to_decode = all_data_received_;
+  }
+#endif
 
   auto generator = DecodingImageGenerator::Create(
       frame_generator_, info, std::move(segment_reader), std::move(frames),
@@ -351,7 +409,10 @@ void DeferredImageDecoder::ActivateLazyDecoding() {
       gfx::SizeToSkISize(metadata_decoder_->DecodedSize());
   frame_generator_ = ImageFrameGenerator::Create(
       decoded_size, !is_single_frame, metadata_decoder_->GetColorBehavior(),
-      cc::AuxImage::kDefault, metadata_decoder_->GetSupportedDecodeSizes());
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      cc::AuxImage::kDefault,
+#endif
+      metadata_decoder_->GetSupportedDecodeSizes());
 }
 
 void DeferredImageDecoder::ActivateLazyGainmapDecoding() {
@@ -379,7 +440,10 @@ void DeferredImageDecoder::ActivateLazyGainmapDecoding() {
   auto gainmap_metadata_decoder = ImageDecoder::Create(
       gainmap->data, all_data_received_, ImageDecoder::kAlphaNotPremultiplied,
       ImageDecoder::kDefaultBitDepth, ColorBehavior::kIgnore,
-      cc::AuxImage::kGainmap, Platform::GetMaxDecodedImageBytes());
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      cc::AuxImage::kGainmap,
+#endif
+      Platform::GetMaxDecodedImageBytes());
   if (!gainmap_metadata_decoder) {
     DLOG(ERROR) << "Failed to create gainmap image decoder.";
     might_have_gainmap_ = false;
@@ -397,7 +461,10 @@ void DeferredImageDecoder::ActivateLazyGainmapDecoding() {
   // Create the result frame generator and metadata.
   gainmap->frame_generator = ImageFrameGenerator::Create(
       gfx::SizeToSkISize(gainmap_metadata_decoder->DecodedSize()),
-      kIsMultiFrame, ColorBehavior::kIgnore, cc::AuxImage::kGainmap,
+      kIsMultiFrame, ColorBehavior::kIgnore,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      cc::AuxImage::kGainmap,
+#endif
       gainmap_metadata_decoder->GetSupportedDecodeSizes());
 
   // Populate metadata and save to the `gainmap_` member.

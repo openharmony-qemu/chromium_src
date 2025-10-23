@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "gpu/ipc/common/gpu_memory_buffer_support.h"
+#include "arkweb/build/features/features.h"
 
 #include <inttypes.h>
 
@@ -83,6 +84,8 @@ bool GpuMemoryBufferSupport::IsNativeGpuMemoryBufferConfigurationSupported(
       return false;
   }
   NOTREACHED();
+#elif BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+  return false;
 #elif BUILDFLAG(IS_ANDROID)
   if (!base::AndroidHardwareBufferCompat::IsSupportAvailable()) {
     return false;

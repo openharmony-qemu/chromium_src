@@ -8,16 +8,22 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/callback_list.h"
 #include "base/observer_list.h"
 #include "cef/libcef/browser/frame_host_impl.h"
 #include "content/public/browser/web_contents_delegate.h"
 #include "content/public/browser/web_contents_observer.h"
 
+#if BUILDFLAG(ARKWEB_FAVICON)
+#include "ohos_cef_ext/libcef/browser/arkweb_icon_helper_ext.h"
+#endif  // BUILDFLAG(ARKWEB_FAVICON)
+
 class CefBrowser;
 class CefBrowserInfo;
 class CefBrowserPlatformDelegate;
 class CefClient;
+class ArkWebBrowserContentsDelegateExt;
 
 // Flags that represent which states have changed.
 enum class CefBrowserContentsState : uint8_t {
@@ -48,6 +54,20 @@ constexpr inline CefBrowserContentsState operator|(
 class CefBrowserContentsDelegate : public content::WebContentsDelegate,
                                    public content::WebContentsObserver {
  public:
+  virtual ArkWebBrowserContentsDelegateExt*
+  AsArkWebBrowserContentsDelegateExt() {
+    return nullptr;
+  }
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  virtual void OnRefreshAccessedHistoryEx(CefRefPtr<CefFrame> frame,
+                                          const GURL& url,
+                                          bool isReload,
+                                          bool isMainFrame) {}
+
+  void DidStartLoading() override {
+    need_report_title_when_stop_loading_ = true;
+  }
+#endif
   using State = CefBrowserContentsState;
 
   // Interface to implement for observers that wish to be informed of changes
@@ -154,8 +174,10 @@ class CefBrowserContentsDelegate : public content::WebContentsDelegate,
   // Accessors for state information. Changes will be signaled to
   // Observer::OnStateChanged.
   bool is_loading() const { return is_loading_; }
+#if !BUILDFLAG(ARKWEB_NETWORK_BASE)
   bool can_go_back() const { return can_go_back_; }
   bool can_go_forward() const { return can_go_forward_; }
+#endif
   bool has_document() const { return has_document_; }
   bool is_fullscreen() const { return is_fullscreen_; }
   CefRefPtr<CefFrameHostImpl> focused_frame() const { return focused_frame_; }
@@ -164,10 +186,19 @@ class CefBrowserContentsDelegate : public content::WebContentsDelegate,
   // TODO(cef): Make this private if/when possible.
   bool OnSetFocus(cef_focus_source_t source);
 
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+  friend class ArkWebBrowserContentsDelegateExt;
+#endif  // BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  virtual bool HandleUserKeyEvent(const input::NativeWebKeyboardEvent& event) = 0;
+#endif
+
  private:
   CefRefPtr<CefClient> client() const;
   CefRefPtr<CefBrowser> browser() const;
   CefBrowserPlatformDelegate* platform_delegate() const;
+  friend class ArkWebBrowserContentsDelegateExt;
 
   // Helpers for executing client callbacks.
   void OnAddressChange(const GURL& url);
@@ -177,16 +208,22 @@ class CefBrowserContentsDelegate : public content::WebContentsDelegate,
                  const GURL& url,
                  int http_status_code);
   void OnLoadError(CefRefPtr<CefFrame> frame, const GURL& url, int error_code);
-  void OnTitleChange(const std::u16string& title);
-  void OnFullscreenModeChange(bool fullscreen);
+  void OnTitleChange(const std::u16string& title, bool isRealTitle);
+  void OnFullscreenModeChange(bool fullscreen
+#if BUILDFLAG(ARKWEB_MEDIA)
+                              ,
+                              const CefSize& video_natural_size
+#endif  // BUILDFLAG(ARKWEB_MEDIA)
+  );
 
   void OnStateChanged(State state_changed);
 
   scoped_refptr<CefBrowserInfo> browser_info_;
-
   bool is_loading_ = false;
+#if !BUILDFLAG(ARKWEB_NETWORK_BASE)
   bool can_go_back_ = false;
   bool can_go_forward_ = false;
+#endif
   bool has_document_ = false;
   bool is_fullscreen_ = false;
 
@@ -201,6 +238,17 @@ class CefBrowserContentsDelegate : public content::WebContentsDelegate,
 
   // True if the focus is currently on an editable field on the page.
   bool focus_on_editable_field_ = false;
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  std::string last_did_finish_load_url_;
+  bool need_report_title_when_stop_loading_ = false;
+#endif
+#if BUILDFLAG(ARKWEB_FAVICON)
+  // Store web site icon.
+  CefRefPtr<IconHelper> icon_helper_;
+#endif  // BUILDFLAG(ARKWEB_FAVICON)
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+  base::WeakPtrFactory<CefBrowserContentsDelegate> weak_factory_{this};
+#endif
 };
 
 #endif  // CEF_LIBCEF_BROWSER_BROWSER_CONTENTS_DELEGATE_H_

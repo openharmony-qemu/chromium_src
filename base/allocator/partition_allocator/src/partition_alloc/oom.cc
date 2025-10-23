@@ -4,8 +4,8 @@
 
 #include "arkweb/build/features/features.h"
 #if BUILDFLAG(ARKWEB_CRASHPAD)
-#include "unistd.h"
 #include <stdlib.h>
+#include "unistd.h"
 #endif
 #include "partition_alloc/oom.h"
 
@@ -19,7 +19,7 @@
 #include <windows.h>
 
 #if BUILDFLAG(ARKWEB_CRASHPAD)
-#include "ohos_sdk/openharmony/native/sysroot/usr/include/info/fatal_message.h"
+extern "C" __attribute__((weak))void set_fatal_message(const char *msg);
 #endif
 
 #include <array>

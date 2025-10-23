@@ -76,7 +76,7 @@ describe('ResizeObserver', () => {
         jest.useFakeTimers();
         
         // 重置初始化标志
-        ResizeObserver['init'] = false;
+        ResizeObserver.init = false;
         
         // 重置 Main.initFlag
         Main.initFlag = true;
@@ -94,7 +94,7 @@ describe('ResizeObserver', () => {
 
             ResizeObserver.init_();
 
-            expect(ResizeObserver['init']).toBe(true);
+            expect(ResizeObserver.init).toBe(true);
             expect(addEventListenerSpy).toHaveBeenCalledWith('resize', expect.any(Function));
         });
 
@@ -177,7 +177,7 @@ describe('ResizeObserver', () => {
             ResizeObserver.init_();
             ResizeObserver.removeListener();
 
-            expect(ResizeObserver['init']).toBe(false);
+            expect(ResizeObserver.init).toBe(false);
             expect(removeEventListenerSpy).toHaveBeenCalledWith('resize', expect.any(Function));
         });
 

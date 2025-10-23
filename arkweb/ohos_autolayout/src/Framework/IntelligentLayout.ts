@@ -30,11 +30,12 @@ export default class IntelligentLayout {
     
     public static intelligentLayout(root: HTMLElement): void {
         Log.info('进入 intelligentLayout', IntelligentLayout.TAG);
+
         let popupInfo = IntelligentLayout.popWindowMap.size > 0?
-           IntelligentLayout.popWindowMap.keys().next().value : 
+            IntelligentLayout.popWindowMap.keys().next().value : 
             PopupWindowDetector.findPopups(root);
-            Log.d(`popupInfo root_node: ${popupInfo?.root_node?.className}`, IntelligentLayout.TAG);
-    
+        Log.d(`popupInfo root_node: ${popupInfo?.root_node?.className}`, IntelligentLayout.TAG);
+
         if (popupInfo != null) {
             IntelligentLayout.calculateForPopWin(popupInfo);
         }
@@ -42,13 +43,13 @@ export default class IntelligentLayout {
     }
 
     public static recoverPopwinStyle(): void {
-        if (IntelligentLayout.popWindowMap.size > 0) {
-            const component:PopupWindowRelayout = IntelligentLayout.popWindowMap.values().next().value;
-            component.restoreStyles();
+        for (const component of IntelligentLayout.popWindowMap.values()) {
+            if (component instanceof PopupWindowRelayout) {
+                component.restoreStyles(); 
+            }
         }
         IntelligentLayout.popWindowMap.clear();
     }
-
 
     public static removePopwinCache(node: HTMLElement): boolean {
         let hasValidChange:boolean = false;
@@ -82,8 +83,8 @@ export default class IntelligentLayout {
     // 新增节点是某个组件下的节点，标记这个组件为脏，下一次布局的时候，只需要布局这个组件就可以了
     static markDirty(item: HTMLElement): void {
         if(!item || Utils.shouldSkip(item)) {
-                return;
-            }
+            return;
+        }
 
         // 节点变化，就重新刷新界面
         for (const [info, comp] of IntelligentLayout.popWindowMap.entries()) {
@@ -92,8 +93,8 @@ export default class IntelligentLayout {
 	    }
             if(info && info.root_node && comp && info.root_node.contains(item)) {
                 comp.setDirty(true);
-                }
-        }
+            }
+        }                
     }
 
     static reInit(): void {

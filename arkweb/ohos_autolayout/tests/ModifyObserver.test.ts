@@ -5,6 +5,13 @@ import StyleCleaner from '../src/Framework/Common/Style/Setter/StyleCleaner';
 import Utils from '../src/Framework/Common/Utils/Utils';
 import Constant from '../src/Framework/Common/Constant';
 
+// 1. 定义 Mock MutationObserver 的接口
+interface MockMutationObserver {
+  observe: jest.Mock;
+  disconnect: jest.Mock;
+  takeRecords: jest.Mock;
+}
+
 jest.mock('../src/Debug/Log', () => ({
   __esModule: true,
   default: {
@@ -57,7 +64,7 @@ jest.useFakeTimers();
 
 // Mock MutationObserver globally
 const mockMutationObserver = jest.fn();
-global.MutationObserver = mockMutationObserver as any;
+global.MutationObserver = mockMutationObserver;
 
 // Mock queueMicrotask globally - 放在这里确保在模块导入时就生效
 const microtasksGlobal: (() => void)[] = [];
@@ -109,9 +116,9 @@ const createMutationRecord = (options: {
 describe('ModifyObserver', () => {
   let mutationCallback: MutationCallback;
   let microtasks: (() => void)[] = microtasksGlobal; // 引用全局的 microtasks
-  let observer: any;
+  let observer: MockMutationObserver;
 
-  const runMicrotasks = () => {
+  const runMicrotasks = (): void => {
     while (microtasks.length > 0) {
       const task = microtasks.shift();
       task?.();
@@ -135,9 +142,11 @@ describe('ModifyObserver', () => {
     (global.queueMicrotask as jest.Mock).mockClear();
 
     // 重置 ModifyObserver 内部状态
-    (ModifyObserver as any).modifyObserver = null;
-    (ModifyObserver as any).pendingRecords = [];
-    (ModifyObserver as any).scheduledWork = false;
+    ModifyObserver.modifyObserver = null;
+    // @ts-ignore
+    ModifyObserver.pendingRecords = [];
+    // @ts-ignore
+    ModifyObserver.scheduledWork = false;
 
     // 初始化 MutationObserver mock
     observer = {
@@ -181,22 +190,25 @@ describe('ModifyObserver', () => {
 
     it('should disconnect existing observer on reInit', () => {
       ModifyObserver.reInit();
-      const oldObserver = (ModifyObserver as any).modifyObserver;
+      const oldObserver = ModifyObserver.modifyObserver;
       ModifyObserver.reInit();
       expect(oldObserver.disconnect).toHaveBeenCalled();
     });
 
     it('should disconnect the observer and clear pending records on disconnect', () => {
       ModifyObserver.reInit();
-      const obs = (ModifyObserver as any).modifyObserver;
-      (ModifyObserver as any).pendingRecords = [createMutationRecord({ type: 'childList' })];
+      const obs = ModifyObserver.modifyObserver;
+      // @ts-ignore
+      ModifyObserver.pendingRecords = [createMutationRecord({ type: 'childList' })];
       
       ModifyObserver.disconnect();
 
       expect(obs.disconnect).toHaveBeenCalled();
-      expect((ModifyObserver as any).modifyObserver).toBeNull();
-      expect((ModifyObserver as any).pendingRecords).toEqual([]);
-      expect((ModifyObserver as any).scheduledWork).toBe(false);
+      expect(ModifyObserver.modifyObserver).toBeNull();
+      // @ts-ignore
+      expect(ModifyObserver.pendingRecords).toEqual([]);
+      // @ts-ignore
+      expect(ModifyObserver.scheduledWork).toBe(false);
     });
   });
 
@@ -211,8 +223,10 @@ describe('ModifyObserver', () => {
       
       mutationCallback(records, observer);
 
-      expect((ModifyObserver as any).pendingRecords).toEqual(records);
-      expect((ModifyObserver as any).scheduledWork).toBe(true);
+      // @ts-ignore
+      expect(ModifyObserver.pendingRecords).toEqual(records);
+      // @ts-ignore
+      expect(ModifyObserver.scheduledWork).toBe(true);
       expect(microtasks.length).toBe(1);
     });
 
@@ -751,15 +765,18 @@ describe('ModifyObserver', () => {
 
         // First mutation
         mutationCallback(records, observer);
-        expect((ModifyObserver as any).scheduledWork).toBe(true);
+        // @ts-ignore
+        expect(ModifyObserver.scheduledWork).toBe(true);
         
         // Process microtask
         runMicrotasks();
-        expect((ModifyObserver as any).scheduledWork).toBe(false);
+        // @ts-ignore
+        expect(ModifyObserver.scheduledWork).toBe(false);
         
         // Second mutation should be able to schedule again
         mutationCallback(records, observer);
-        expect((ModifyObserver as any).scheduledWork).toBe(true);
+        // @ts-ignore
+        expect(ModifyObserver.scheduledWork).toBe(true);
       });
 
       it('should snapshot and clear pending records during processing', () => {
@@ -775,11 +792,13 @@ describe('ModifyObserver', () => {
 
         // Add records
         mutationCallback(records, observer);
-        expect((ModifyObserver as any).pendingRecords.length).toBe(1);
+        // @ts-ignore
+        expect(ModifyObserver.pendingRecords.length).toBe(1);
         
         // Process should clear pending records
         runMicrotasks();
-        expect((ModifyObserver as any).pendingRecords.length).toBe(0);
+        // @ts-ignore
+        expect(ModifyObserver.pendingRecords.length).toBe(0);
       });
     });
   });
@@ -793,7 +812,7 @@ describe('ModifyObserver', () => {
       it('should handle null observer gracefully in disconnect', () => {
         // First disconnect normally
         ModifyObserver.disconnect();
-        expect((ModifyObserver as any).modifyObserver).toBeNull();
+        expect(ModifyObserver.modifyObserver).toBeNull();
         
         // Second disconnect should not throw
         expect(() => ModifyObserver.disconnect()).not.toThrow();
@@ -802,7 +821,7 @@ describe('ModifyObserver', () => {
       it('should handle records with null targets', () => {
         const records = [createMutationRecord({
           type: 'attributes',
-          target: null as any,
+          target: null,
           attributeName: 'class',
           addedNodes: [],
           removedNodes: []
@@ -1013,7 +1032,8 @@ describe('ModifyObserver', () => {
         const hiddenDiv = document.createElement('div');
         hiddenDiv.style.display = 'none';
         
-        const result = (ModifyObserver as any).handleElementChange(hiddenDiv);
+        // @ts-ignore
+        const result = ModifyObserver.handleElementChange(hiddenDiv);
         expect(result).toBe(false);
       });
 
@@ -1022,7 +1042,8 @@ describe('ModifyObserver', () => {
         ignoredDiv.style.display = 'block';
         (Utils.ignoreEle as jest.Mock).mockReturnValue(true);
         
-        const result = (ModifyObserver as any).handleElementChange(ignoredDiv);
+        // @ts-ignore
+        const result = ModifyObserver.handleElementChange(ignoredDiv);
         expect(result).toBe(false);
       });
 
@@ -1031,7 +1052,8 @@ describe('ModifyObserver', () => {
         validDiv.style.display = 'block';
         (Utils.ignoreEle as jest.Mock).mockReturnValue(false);
         
-        const result = (ModifyObserver as any).handleElementChange(validDiv);
+        // @ts-ignore
+        const result = ModifyObserver.handleElementChange(validDiv);
         expect(result).toBe(true);
       });
     });
@@ -1041,7 +1063,8 @@ describe('ModifyObserver', () => {
         const removedNode = document.createElement('div');
         const parentNode = document.createElement('div');
         
-        (ModifyObserver as any).handleRemove(removedNode, parentNode);
+        // @ts-ignore
+        ModifyObserver.handleRemove(removedNode, parentNode);
         
         expect(IntelligentLayout.removePopwinCache).toHaveBeenCalledWith(removedNode);
         expect(StyleCleaner.resetEle).toHaveBeenCalledWith(removedNode, true);
@@ -1057,7 +1080,8 @@ describe('ModifyObserver', () => {
           configurable: true
         });
         
-        const duration = (ModifyObserver as any).getDurationFromElement(element);
+        // @ts-ignore
+        const duration = ModifyObserver.getDurationFromElement(element);
         expect(duration).toBe(800);
       });
 
@@ -1068,7 +1092,8 @@ describe('ModifyObserver', () => {
           configurable: true
         });
         
-        const duration = (ModifyObserver as any).getDurationFromElement(element);
+        // @ts-ignore
+        const duration = ModifyObserver.getDurationFromElement(element);
         expect(duration).toBe(900);
       });
 
@@ -1079,7 +1104,8 @@ describe('ModifyObserver', () => {
           configurable: true
         });
         
-        const duration = (ModifyObserver as any).getDurationFromElement(element);
+        // @ts-ignore
+        const duration = ModifyObserver.getDurationFromElement(element);
         expect(duration).toBe(0);
       });
     });
@@ -1087,7 +1113,8 @@ describe('ModifyObserver', () => {
     describe('calculateAnimationDuration', () => {
       it('should return 0 for empty node set', () => {
         const emptySet = new Set<HTMLElement>();
-        const duration = (ModifyObserver as any).calculateAnimationDuration(emptySet);
+        // @ts-ignore
+        const duration = ModifyObserver.calculateAnimationDuration(emptySet);
         expect(duration).toBe(0);
       });
 
@@ -1105,7 +1132,8 @@ describe('ModifyObserver', () => {
           configurable: true
         });
         
-        const duration = (ModifyObserver as any).calculateAnimationDuration(nodeSet);
+        // @ts-ignore
+        const duration = ModifyObserver.calculateAnimationDuration(nodeSet);
         expect(duration).toBe(700); // Max of 300ms and 700ms
       });
     });
@@ -1161,9 +1189,10 @@ describe('ModifyObserver', () => {
       });
 
       it('should handle records with invalid node types', () => {
-        const invalidNode = { nodeType: 999 } as any; // Invalid node type
+        const invalidNode = { nodeType: 999 }; // Invalid node type
         const records = [createMutationRecord({
           type: 'childList',
+          // @ts-ignore
           addedNodes: [invalidNode],
           removedNodes: []
         })];
@@ -1212,16 +1241,17 @@ describe('ModifyObserver', () => {
         })];
 
         mutationCallback(records, observer);
-        expect((ModifyObserver as any).scheduledWork).toBe(true);
+        // @ts-ignore
+        expect(ModifyObserver.scheduledWork).toBe(true);
 
         // ReInit while microtask is pending
-        const oldObserver = (ModifyObserver as any).modifyObserver;
+        const oldObserver = ModifyObserver.modifyObserver;
         ModifyObserver.reInit();
 
         expect(oldObserver.disconnect).toHaveBeenCalled();
         // After reInit, the observer should be a new instance
-        expect((ModifyObserver as any).modifyObserver).toBeDefined();
-        expect((ModifyObserver as any).modifyObserver).not.toBeNull();
+        expect(ModifyObserver.modifyObserver).toBeDefined();
+        expect(ModifyObserver.modifyObserver).not.toBeNull();
       });
 
       it('should handle simultaneous add and remove of same element type', () => {

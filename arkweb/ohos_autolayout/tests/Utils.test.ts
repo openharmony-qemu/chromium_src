@@ -33,11 +33,21 @@ describe('Utils Module', () => {
     });
     
     (CacheStyleGetter.computedStyle as jest.Mock).mockImplementation((ele: HTMLElement, prop: string) => {
-      if (prop === 'display') return 'block';
-      if (prop === 'visibility') return 'visible';
-      if (prop === 'opacity') return '1';
-      if (prop === 'padding-top') return '0px';
-      if (prop === 'padding-bottom') return '0px';
+      if (prop === 'display') {
+        return 'block';
+      }
+      if (prop === 'visibility') {
+        return 'visible';
+      }
+      if (prop === 'opacity') {
+        return '1';
+      }
+      if (prop === 'padding-top') {
+        return '0px';
+      }
+      if (prop === 'padding-bottom') {
+        return '0px';
+      }
       return '';
     });
     
@@ -276,8 +286,12 @@ describe('Utils Module', () => {
     test('should return true for visibility hidden', () => {
       const div = document.createElement('div');
       (CacheStyleGetter.computedStyle as jest.Mock).mockImplementation((ele, prop) => {
-        if (prop === 'display') return 'block';
-        if (prop === 'visibility') return 'hidden';
+        if (prop === 'display') {
+          return 'block';
+        }
+        if (prop === 'visibility') {
+          return 'hidden';
+        }
         return '';
       });
       
@@ -288,9 +302,15 @@ describe('Utils Module', () => {
     test('should return true for opacity 0', () => {
       const div = document.createElement('div');
       (CacheStyleGetter.computedStyle as jest.Mock).mockImplementation((ele, prop) => {
-        if (prop === 'display') return 'block';
-        if (prop === 'visibility') return 'visible';
-        if (prop === 'opacity') return '0';
+        if (prop === 'display') {
+          return 'block';
+        }
+        if (prop === 'visibility') {
+          return 'visible';
+        }
+        if (prop === 'opacity') {
+          return '0';
+        }
         return '';
       });
       
@@ -301,9 +321,15 @@ describe('Utils Module', () => {
     test('should return false for visible element', () => {
       const div = document.createElement('div');
       (CacheStyleGetter.computedStyle as jest.Mock).mockImplementation((ele, prop) => {
-        if (prop === 'display') return 'block';
-        if (prop === 'visibility') return 'visible';
-        if (prop === 'opacity') return '1';
+        if (prop === 'display') {
+          return 'block';
+        }
+        if (prop === 'visibility') {
+          return 'visible';
+        }
+        if (prop === 'opacity') {
+          return '1';
+        }
         return '';
       });
       
@@ -340,7 +366,7 @@ describe('Utils Module', () => {
 
   describe('isEmptyText', () => {
     test('should return true for null', () => {
-      const result = Utils.isEmptyText(null as any);
+      const result = Utils.isEmptyText(null);
       expect(result).toBe(true);
     });
 
@@ -404,8 +430,12 @@ describe('Utils Module', () => {
     test('should return false when both paddings exist', () => {
       const div = document.createElement('div');
       (CacheStyleGetter.computedStyle as jest.Mock).mockImplementation((ele, prop) => {
-        if (prop === 'padding-top') return '10px';
-        if (prop === 'padding-bottom') return '10px';
+        if (prop === 'padding-top') {
+          return '10px';
+        }
+        if (prop === 'padding-bottom') {
+          return '10px';
+        }
         return '0px';
       });
       
@@ -444,7 +474,9 @@ describe('Utils Module', () => {
     test('should detect element with display:none', () => {
       const div = document.createElement('div');
       (CacheStyleGetter.computedStyle as jest.Mock).mockImplementation((ele, prop) => {
-        if (prop === 'display') return 'none';
+        if (prop === 'display') {
+          return 'none';
+        }
         return '';
       });
       
@@ -455,8 +487,12 @@ describe('Utils Module', () => {
     test('should detect element with visibility:hidden', () => {
       const div = document.createElement('div');
       (CacheStyleGetter.computedStyle as jest.Mock).mockImplementation((ele, prop) => {
-        if (prop === 'display') return 'block';
-        if (prop === 'visibility') return 'hidden';
+        if (prop === 'display') {
+          return 'block';
+        }
+        if (prop === 'visibility') {
+          return 'hidden';
+        }
         return '';
       });
       
@@ -467,9 +503,15 @@ describe('Utils Module', () => {
     test('should detect element with opacity:0', () => {
       const div = document.createElement('div');
       (CacheStyleGetter.computedStyle as jest.Mock).mockImplementation((ele, prop) => {
-        if (prop === 'display') return 'block';
-        if (prop === 'visibility') return 'visible';
-        if (prop === 'opacity') return '0';
+        if (prop === 'display') {
+          return 'block';
+        }
+        if (prop === 'visibility') {
+          return 'visible';
+        }
+        if (prop === 'opacity') {
+          return '0';
+        }
         return '';
       });
       
@@ -480,9 +522,15 @@ describe('Utils Module', () => {
     test('should return false for visible element with all properties visible', () => {
       const div = document.createElement('div');
       (CacheStyleGetter.computedStyle as jest.Mock).mockImplementation((ele, prop) => {
-        if (prop === 'display') return 'block';
-        if (prop === 'visibility') return 'visible';
-        if (prop === 'opacity') return '1';
+        if (prop === 'display') {
+          return 'block';
+        }
+        if (prop === 'visibility') {
+          return 'visible';
+        }
+        if (prop === 'opacity') {
+          return '1';
+        }
         return '';
       });
       
@@ -779,8 +827,12 @@ describe('Utils Module', () => {
     test('should return false when both paddings exist', () => {
       const div = document.createElement('div');
       (CacheStyleGetter.computedStyle as jest.Mock).mockImplementation((ele, prop) => {
-        if (prop === 'padding-top') return '10px';
-        if (prop === 'padding-bottom') return '10px';
+        if (prop === 'padding-top') {
+          return '10px';
+        }
+        if (prop === 'padding-bottom') {
+          return '10px';
+        }
         return '0px';
       });
       (CacheStyleGetter.offsetH as jest.Mock).mockReturnValue(20);
@@ -792,8 +844,12 @@ describe('Utils Module', () => {
     test('should return true when element height matches padding height', () => {
       const div = document.createElement('div');
       (CacheStyleGetter.computedStyle as jest.Mock).mockImplementation((ele, prop) => {
-        if (prop === 'padding-top') return '15px';
-        if (prop === 'padding-bottom') return '0px';
+        if (prop === 'padding-top') {
+          return '15px';
+        }
+        if (prop === 'padding-bottom') {
+          return '0px';
+        }
         return '0px';
       });
       (CacheStyleGetter.offsetH as jest.Mock).mockReturnValue(15);
@@ -805,8 +861,12 @@ describe('Utils Module', () => {
     test('should return false when element height does not match padding height', () => {
       const div = document.createElement('div');
       (CacheStyleGetter.computedStyle as jest.Mock).mockImplementation((ele, prop) => {
-        if (prop === 'padding-top') return '15px';
-        if (prop === 'padding-bottom') return '0px';
+        if (prop === 'padding-top') {
+          return '15px';
+        }
+        if (prop === 'padding-bottom') {
+          return '0px';
+        }
         return '0px';
       });
       (CacheStyleGetter.offsetH as jest.Mock).mockReturnValue(20); // Different from padding
@@ -818,8 +878,12 @@ describe('Utils Module', () => {
     test('should handle bottom padding correctly', () => {
       const div = document.createElement('div');
       (CacheStyleGetter.computedStyle as jest.Mock).mockImplementation((ele, prop) => {
-        if (prop === 'padding-top') return '0px';
-        if (prop === 'padding-bottom') return '25px';
+        if (prop === 'padding-top') {
+          return '0px';
+        }
+        if (prop === 'padding-bottom') {
+          return '25px';
+        }
         return '0px';
       });
       (CacheStyleGetter.offsetH as jest.Mock).mockReturnValue(25);

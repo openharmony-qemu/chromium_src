@@ -429,9 +429,9 @@ export class PopupDecisionTree {
         }
         
         const rect = closeElements[0].getBoundingClientRect();
-        const isTypicalCenterCloseButton = closeElements.length === 1 
-                                        && rect.height < window.innerHeight * Constant.maxCloseButtonSizeRatio 
-                                        && rect.bottom > window.innerHeight * Constant.bottomCloseButtonRatio;                               
+        const isTypicalCenterCloseButton = closeElements.length === 1 && 
+            rect.height < window.innerHeight * Constant.maxCloseButtonSizeRatio &&
+            rect.bottom > window.innerHeight * Constant.bottomCloseButtonRatio;                               
         return isTypicalCenterCloseButton; 
     }
 
@@ -584,10 +584,10 @@ export class PopupDecisionTree {
     static specialBottomCondition(rootNode: HTMLElement, contentNode: HTMLElement): boolean {
         const style = window.getComputedStyle(contentNode);
         const rootStyle = window.getComputedStyle(rootNode);
-        return (style.flexDirection === 'column' && (style.justifyContent === 'flex-end' || style.justifyContent === 'end'))
-               || (style.flexDirection === 'row' && (style.alignItems === 'flex-end' || style.alignItems === 'end')) 
-               || (rootStyle.flexDirection === 'column' && (rootStyle.justifyContent === 'flex-end' || rootStyle.justifyContent === 'end')) 
-               || (rootStyle.flexDirection === 'row' && (rootStyle.alignItems === 'flex-end' || rootStyle.alignItems === 'end'))
+        return (style.flexDirection === 'column' && (style.justifyContent === 'flex-end' || style.justifyContent === 'end')) ||
+            (style.flexDirection === 'row' && (style.alignItems === 'flex-end' || style.alignItems === 'end')) ||
+            (rootStyle.flexDirection === 'column' && (rootStyle.justifyContent === 'flex-end' || rootStyle.justifyContent === 'end')) ||
+            (rootStyle.flexDirection === 'row' && (rootStyle.alignItems === 'flex-end' || rootStyle.alignItems === 'end'))
     }
 
     /**
@@ -597,8 +597,8 @@ export class PopupDecisionTree {
      */
     static specialCenterCondition(contentNode: HTMLElement): boolean {
         const style = window.getComputedStyle(contentNode);
-        return (style.flexDirection === 'row' && style.alignItems === 'center')
-               || (style.flexDirection === 'column' && style.justifyContent === 'center');
+        return (style.flexDirection === 'row' && style.alignItems === 'center') ||
+            (style.flexDirection === 'column' && style.justifyContent === 'center');
     }
 
     // 校验满宽条件，允许存在偏差discrepancy
@@ -612,9 +612,9 @@ export class PopupDecisionTree {
         }
         
         // boxSizing = content-box
-        if (isNaN(parseFloat(paddingLeft)) || isNaN(parseFloat(paddingRight)) 
-            || isNaN(parseFloat(borderLeft)) || isNaN(parseFloat(borderRight)) 
-            || boxSizing !== 'content-box') {
+        if (isNaN(parseFloat(paddingLeft)) || isNaN(parseFloat(paddingRight)) ||
+            isNaN(parseFloat(borderLeft)) || isNaN(parseFloat(borderRight)) ||
+            boxSizing !== 'content-box') {
             return false;
         }
         return Math.abs(parseFloat(width) + parseFloat(paddingLeft) + parseFloat(paddingRight) - window.innerWidth) < discrepancy;

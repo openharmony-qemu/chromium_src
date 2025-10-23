@@ -79,9 +79,9 @@ describe('ComponentType Enum', () => {
     });
 
     test('should be accessible by key', () => {
-      expect(ComponentType['TabBar']).toBe('tab-bar');
-      expect(ComponentType['List']).toBe('list');
-      expect(ComponentType['Unknown']).toBe('unknown');
+      expect(ComponentType.TabBar).toBe('tab-bar');
+      expect(ComponentType.List).toBe('list');
+      expect(ComponentType.Unknown).toBe('unknown');
     });
   });
 

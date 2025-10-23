@@ -26,14 +26,20 @@ class DOMFactory {
   } = {}): HTMLElement {
     const element = document.createElement(tag);
     
-    if (options.className) element.className = options.className;
-    if (options.style) Object.assign(element.style, options.style);
+    if (options.className) {
+      element.className = options.className;
+    }
+    if (options.style) {
+      Object.assign(element.style, options.style);
+    }
     if (options.attributes) {
       Object.entries(options.attributes).forEach(([key, value]) => {
         element.setAttribute(key, value);
       });
     }
-    if (options.dataset) Object.assign(element.dataset, options.dataset);
+    if (options.dataset) {
+      Object.assign(element.dataset, options.dataset);
+    }
     
     return element;
   }
@@ -53,7 +59,7 @@ class DOMFactory {
     } as DOMRect;
   }
   
-  static cleanup() {
+  static cleanup():void {
     // Remove all test elements from DOM
     document.querySelectorAll('[data-test]').forEach(el => el.remove());
     // Clear document body children added during tests
@@ -124,7 +130,7 @@ describe('Framework Utils Module', () => {
     test('zIndexToNumber should parse values correctly', () => {
       // Test all cases in one test to reduce overhead
       expect(Utils.zIndexToNumber('')).toBe(0);
-      expect(Utils.zIndexToNumber(null as any)).toBe(0);
+      expect(Utils.zIndexToNumber(null)).toBe(0);
       expect(Utils.zIndexToNumber('auto')).toBe(0);
       expect(Utils.zIndexToNumber('10')).toBe(10);
       expect(Utils.zIndexToNumber('-5')).toBe(-5);
@@ -133,7 +139,7 @@ describe('Framework Utils Module', () => {
     });
 
     test('getElementDepth should calculate nesting correctly', () => {
-      expect(Utils.getElementDepth(null as any)).toBe(0);
+      expect(Utils.getElementDepth(null)).toBe(0);
       
       const root = DOMFactory.createElement('div', { dataset: { test: 'true' } });
       const child1 = DOMFactory.createElement('div');
@@ -150,7 +156,7 @@ describe('Framework Utils Module', () => {
     });
 
     test('isPureText should identify text content correctly', () => {
-      const textNode = document.createTextNode('Hello') as any;
+      const textNode = document.createTextNode('Hello');
       // Note: nodeType is read-only, so we test with actual text nodes
       
       const divWithText = DOMFactory.createElement('div');
@@ -162,6 +168,7 @@ describe('Framework Utils Module', () => {
       
       const emptyDiv = DOMFactory.createElement('div');
       
+      // @ts-ignore
       expect(Utils.isPureText(textNode)).toBe(true);
       expect(Utils.isPureText(divWithText)).toBe(true);
       expect(Utils.isPureText(divWithElements)).toBe(false);
@@ -248,7 +255,7 @@ describe('Framework Utils Module', () => {
       
       cases.forEach(({ rect, expected, description }) => {
         if (rect === null) {
-          expect(Utils.isElementInViewport(null as any)).toBe(expected);
+          expect(Utils.isElementInViewport(null)).toBe(expected);
         } else {
           const div = DOMFactory.createElement('div', { dataset: { test: 'true' } });
           jest.spyOn(div, 'getBoundingClientRect').mockReturnValue(
@@ -269,7 +276,7 @@ describe('Framework Utils Module', () => {
       
       cases.forEach(({ rect, expected, expectedApprox, description }) => {
         if (rect === null) {
-          expect(Utils.getScreenAreaRatio(null as any)).toBe(expected);
+          expect(Utils.getScreenAreaRatio(null)).toBe(expected);
         } else {
           const div = DOMFactory.createElement('div', { dataset: { test: 'true' } });
           jest.spyOn(div, 'getBoundingClientRect').mockReturnValue(
@@ -298,7 +305,7 @@ describe('Framework Utils Module', () => {
       
       testCases.forEach(({ props, expected }) => {
         if (props === null) {
-          expect(Utils.visualFilter(null as any)).toBe(expected);
+          expect(Utils.visualFilter(null)).toBe(expected);
         } else {
           const div = DOMFactory.createElement('div', { 
             style: props.style,
@@ -329,7 +336,8 @@ describe('Framework Utils Module', () => {
       ];
       
       cases.forEach(([color, expected]) => {
-        expect(Utils.isColorTransparent(color as any)).toBe(expected);
+        // @ts-ignore
+        expect(Utils.isColorTransparent(color)).toBe(expected);
       });
     });
 
@@ -343,7 +351,8 @@ describe('Framework Utils Module', () => {
       ];
       
       cases.forEach(([color, expected]) => {
-        expect(Utils.isColorSemiTransparent(color as any)).toBe(expected);
+        // @ts-ignore
+        expect(Utils.isColorSemiTransparent(color)).toBe(expected);
       });
     });
 
@@ -373,7 +382,8 @@ describe('Framework Utils Module', () => {
       ];
       
       mockStyles.forEach(({ style, expected }) => {
-        expect(Utils.isBackgroundSemiTransparent(style as any)).toBe(expected);
+        // @ts-ignore
+        expect(Utils.isBackgroundSemiTransparent(style)).toBe(expected);
       });
     });
   });
@@ -406,7 +416,7 @@ describe('Framework Utils Module', () => {
     });
 
     test('getValidChildNodeLength should count valid children', () => {
-      expect(Utils.getValidChildNodeLength(null as any)).toBe(0);
+      expect(Utils.getValidChildNodeLength(null)).toBe(0);
       
       const parent = DOMFactory.createElement('div', { dataset: { test: 'true' } });
       expect(Utils.getValidChildNodeLength(parent)).toBe(0);
@@ -439,9 +449,10 @@ describe('Framework Utils Module', () => {
       (LayoutUtils.canBeRelayout as jest.Mock).mockReturnValue(true);
       (extUtils.isInvisibleElement as jest.Mock).mockReturnValue(false);
       
-      expect(Utils.shouldSkip(null as any)).toBe(true);
+      expect(Utils.shouldSkip(null)).toBe(true);
       
-      const textNode = document.createTextNode('Hello') as any;
+      const textNode = document.createTextNode('Hello');
+      // @ts-ignore
       expect(Utils.shouldSkip(textNode)).toBe(true);
       
       const div = DOMFactory.createElement('div', { dataset: { test: 'true' } });
@@ -465,7 +476,7 @@ describe('Framework Utils Module', () => {
   // Group 6: Complex Element Analysis Tests
   describe('Complex Element Analysis', () => {
     test('getSwiperIndicator should find unique indicators', () => {
-      expect(Utils.getSwiperIndicator(null as any)).toBe(null);
+      expect(Utils.getSwiperIndicator(null)).toBe(null);
       
       const emptyDiv = DOMFactory.createElement('div', { dataset: { test: 'true' } });
       expect(Utils.getSwiperIndicator(emptyDiv)).toBe(null);
@@ -489,7 +500,7 @@ describe('Framework Utils Module', () => {
     });
 
     test('getVisibleSiblings should filter and return visible siblings', () => {
-      expect(Utils.getVisibleSiblings(null as any)).toEqual([]);
+      expect(Utils.getVisibleSiblings(null)).toEqual([]);
       
       const orphanDiv = DOMFactory.createElement('div');
       expect(Utils.getVisibleSiblings(orphanDiv)).toEqual([]);
@@ -568,10 +579,11 @@ describe('Framework Utils Module', () => {
       
       // Test isElementVisible
       const root = DOMFactory.createElement('div', { dataset: { test: 'true' } });
-      expect(Utils.isElementVisible(null as any, root)).toBe(false);
+      expect(Utils.isElementVisible(null, root)).toBe(false);
       
       const textNode = document.createTextNode('text');
-      expect(Utils.isElementVisible(textNode as any, root)).toBe(false);
+      // @ts-ignore
+      expect(Utils.isElementVisible(textNode, root)).toBe(false);
       
       // Test pruneCommonAncestorsInTree
       const candidates = new Map<HTMLElement, boolean>();

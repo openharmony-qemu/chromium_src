@@ -44,7 +44,7 @@ export default class Log {
      */
     private static formatTimestamp(): string {
         const now = new Date();
-       const hours = String(now.getHours()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
         const minutes = String(now.getMinutes()).padStart(2, '0');
         const seconds = String(now.getSeconds()).padStart(2, '0');
         const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
@@ -89,7 +89,6 @@ export default class Log {
                 const timestamp = Log.formatTimestamp();
                 const prefix = tag ? `[${tag}]` : '[DEBUG]';
                 const eleInfo = ele ? `${ele.tagName}.${ele.className || 'no-class'}` : 'null';
-                console.log(`${prefix} [${eleInfo}] ${msg}`);
                 console.log(`[${timestamp}] ${prefix} [${eleInfo}] ${msg}`);
             }
         }

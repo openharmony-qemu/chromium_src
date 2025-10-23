@@ -26,8 +26,10 @@ describe('Cached Module', () => {
     jest.clearAllMocks();
     
     // Reset cached values
-    (Cached as any).bodyCache = undefined;
-    (Cached as any).documentCache = undefined;
+    // @ts-ignore
+    Cached.bodyCache = undefined;
+    // @ts-ignore
+    Cached.documentCache = undefined;
   });
 
   describe('body_', () => {
@@ -139,25 +141,29 @@ describe('Cached Module', () => {
     test('should clear body cache', () => {
       // First cache the value
       Cached.body_();
-      expect((Cached as any).bodyCache).toBeDefined();
+      // @ts-ignore
+      expect(Cached.bodyCache).toBeDefined();
       
       // Clear cache
       Cached.clearAllCache();
       
       // Cache should be undefined
-      expect((Cached as any).bodyCache).toBeUndefined();
+      // @ts-ignore
+      expect(Cached.bodyCache).toBeUndefined();
     });
 
     test('should clear documentElement cache', () => {
       // First cache the value
       Cached.documentElement_();
-      expect((Cached as any).documentCache).toBeDefined();
+      // @ts-ignore
+      expect(Cached.documentCache).toBeDefined();
       
       // Clear cache
       Cached.clearAllCache();
       
       // Cache should be undefined
-      expect((Cached as any).documentCache).toBeUndefined();
+      // @ts-ignore
+      expect(Cached.documentCache).toBeUndefined();
     });
 
     test('should allow re-caching after clearAllCache', () => {
@@ -200,8 +206,10 @@ describe('Cached Module', () => {
       const doc = Cached.documentElement_();
       
       expect(body).not.toBe(doc);
-      expect((Cached as any).bodyCache).toBe(body);
-      expect((Cached as any).documentCache).toBe(doc);
+      // @ts-ignore
+      expect(Cached.bodyCache).toBe(body);
+      // @ts-ignore
+      expect(Cached.documentCache).toBe(doc);
     });
 
     test('should not affect one cache when clearing the other conceptually', () => {
@@ -209,8 +217,10 @@ describe('Cached Module', () => {
       Cached.documentElement_();
       
       // There's no method to clear only one cache, but we test the isolation
-      const bodyCache = (Cached as any).bodyCache;
-      const docCache = (Cached as any).documentCache;
+      // @ts-ignore
+      const bodyCache = Cached.bodyCache;
+      // @ts-ignore
+      const docCache = Cached.documentCache;
       
       expect(bodyCache).toBeDefined();
       expect(docCache).toBeDefined();

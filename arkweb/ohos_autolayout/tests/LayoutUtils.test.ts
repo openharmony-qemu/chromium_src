@@ -156,7 +156,7 @@ describe('LayoutUtils - Comprehensive Tests', () => {
     });
 
     // Mock getComputedStyle for consistent testing
-    window.getComputedStyle = (elt, pseudoElt) => {
+    window.getComputedStyle = (elt, pseudoElt): CSSStyleDeclaration  => {
       const style = originalGetComputedStyle(elt, pseudoElt);
       if (elt === document.documentElement) {
         return { ...style, fontSize: '16px' } as CSSStyleDeclaration;
@@ -198,7 +198,7 @@ describe('LayoutUtils - Comprehensive Tests', () => {
       // Mock a cross-domain stylesheet scenario
       const originalStyleSheets = document.styleSheets;
       const mockStyleSheet = {
-        get cssRules() {
+        get cssRules(): void {
           throw new Error('SecurityError: CORS');
         },
         href: 'https://external.com/style.css'
@@ -266,7 +266,8 @@ describe('LayoutUtils - Comprehensive Tests', () => {
 
     it('should return false for non-HTMLElement', () => {
       const textNode = document.createTextNode('text');
-      expect(LayoutUtils.isNodeTruncated(textNode as any, mockPopupInfo)).toBe(false);
+      // @ts-ignore
+      expect(LayoutUtils.isNodeTruncated(textNode, mockPopupInfo)).toBe(false);
     });
 
     it('should return true for top-truncated node', () => {
@@ -336,7 +337,8 @@ describe('LayoutUtils - Comprehensive Tests', () => {
   describe('checkIfBackgroundImgTruncated', () => {
     it('should return false for non-HTMLElement', () => {
       const textNode = document.createTextNode('text');
-      expect(LayoutUtils.checkIfBackgroundImgTruncated(textNode as any)).toBe(false);
+      // @ts-ignore
+      expect(LayoutUtils.checkIfBackgroundImgTruncated(textNode)).toBe(false);
     });
 
     it('should return true for node with background-size: cover', () => {
@@ -453,7 +455,8 @@ describe('LayoutUtils - Comprehensive Tests', () => {
   describe('findParentWithEqualChildren', () => {
     it('should return null for non-element nodes', () => {
       const textNode = document.createTextNode('text');
-      expect(LayoutUtils.findParentWithEqualChildren(textNode as any)).toBe(null);
+      // @ts-ignore
+      expect(LayoutUtils.findParentWithEqualChildren(textNode)).toBe(null);
     });
 
     it('should return null for hidden elements', () => {
@@ -555,8 +558,8 @@ describe('LayoutUtils - Comprehensive Tests', () => {
     it('should return null for invalid inputs', () => {
       expect(LayoutUtils.analyzeComputedBoxShadow('')).toBe(null);
       expect(LayoutUtils.analyzeComputedBoxShadow('none')).toBe(null);
-      expect(LayoutUtils.analyzeComputedBoxShadow(null as any)).toBe(null);
-      expect(LayoutUtils.analyzeComputedBoxShadow(undefined as any)).toBe(null);
+      expect(LayoutUtils.analyzeComputedBoxShadow(null)).toBe(null);
+      expect(LayoutUtils.analyzeComputedBoxShadow(undefined)).toBe(null);
     });
 
     it('should return false for box-shadow without proper color', () => {
@@ -1048,7 +1051,7 @@ describe('LayoutUtils - Comprehensive Tests', () => {
       // Mock stylesheet that throws error on access
       const originalStyleSheets = document.styleSheets;
       const mockSheet = {
-        get cssRules() {
+        get cssRules(): void {
           throw new Error('SecurityError');
         },
         href: 'external.css'

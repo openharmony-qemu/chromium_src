@@ -21,7 +21,8 @@ describe('DetectorInst Class', () => {
   afterEach(() => {
     document.body.removeChild(testElement);
     // Reset singleton instance for testing
-    (DetectorInst as any).instance = null;
+    // @ts-ignore
+    DetectorInst.instance = null;
   });
 
   describe('Static constants', () => {
@@ -176,7 +177,8 @@ describe('DetectorInst Class', () => {
     test('should record position for root element', () => {
       detectorInst.recordOriginalPosition(testElement);
       
-      const state = (detectorInst as any).originalLayoutState;
+      // @ts-ignore
+      const state = detectorInst.originalLayoutState;
       expect(state).not.toBeNull();
       expect(state.metrics).toBeInstanceOf(Map);
       expect(state.metrics.has(testElement)).toBe(true);
@@ -185,7 +187,8 @@ describe('DetectorInst Class', () => {
     test('should record screen size', () => {
       detectorInst.recordOriginalPosition(testElement);
       
-      const state = (detectorInst as any).originalLayoutState;
+      // @ts-ignore
+      const state = detectorInst.originalLayoutState;
       expect(state.screenSize).toBeDefined();
       expect(state.screenSize.width).toBe(window.innerWidth);
       expect(state.screenSize.height).toBe(window.innerHeight);
@@ -199,18 +202,21 @@ describe('DetectorInst Class', () => {
       
       detectorInst.recordOriginalPosition(testElement);
       
-      const state = (detectorInst as any).originalLayoutState;
+      // @ts-ignore
+      const state = detectorInst.originalLayoutState;
       expect(state.metrics.has(child1)).toBe(true);
       expect(state.metrics.has(child2)).toBe(true);
     });
 
     test('should not re-record if already recorded', () => {
       detectorInst.recordOriginalPosition(testElement);
-      const firstState = (detectorInst as any).originalLayoutState;
+      // @ts-ignore
+      const firstState = detectorInst.originalLayoutState;
       
       // Try to record again
       detectorInst.recordOriginalPosition(testElement);
-      const secondState = (detectorInst as any).originalLayoutState;
+      // @ts-ignore
+      const secondState = detectorInst.originalLayoutState;
       
       expect(firstState).toBe(secondState);
     });
@@ -221,7 +227,8 @@ describe('DetectorInst Class', () => {
       
       detectorInst.recordOriginalPosition(testElement);
       
-      const state = (detectorInst as any).originalLayoutState;
+      // @ts-ignore
+      const state = detectorInst.originalLayoutState;
       const rootMetrics = state.metrics.get(testElement);
       const childMetrics = state.metrics.get(child);
       
@@ -242,7 +249,8 @@ describe('DetectorInst Class', () => {
       
       detectorInst.recordOriginalPosition(testElement);
       
-      const state = (detectorInst as any).originalLayoutState;
+      // @ts-ignore
+      const state = detectorInst.originalLayoutState;
       expect(state.metrics.has(level1)).toBe(true);
       expect(state.metrics.has(level2)).toBe(true);
       expect(state.metrics.has(level3)).toBe(true);
@@ -254,7 +262,8 @@ describe('DetectorInst Class', () => {
       
       detectorInst.recordOriginalPosition(emptyElement);
       
-      const state = (detectorInst as any).originalLayoutState;
+      // @ts-ignore
+      const state = detectorInst.originalLayoutState;
       expect(state.metrics.has(emptyElement)).toBe(true);
       
       document.body.removeChild(emptyElement);
@@ -300,7 +309,8 @@ describe('DetectorInst Class', () => {
       instance1.recordOriginalPosition(testElement);
       
       // Reset to test second element
-      (DetectorInst as any).instance = null;
+      // @ts-ignore
+      DetectorInst.instance = null;
       const instance2 = DetectorInst.getInstance();
       instance2.recordOriginalPosition(element2);
       
@@ -313,7 +323,8 @@ describe('DetectorInst Class', () => {
       const newChild = document.createElement('span');
       testElement.appendChild(newChild);
       
-      const state = (detectorInst as any).originalLayoutState;
+      // @ts-ignore
+      const state = detectorInst.originalLayoutState;
       // New child should not be in the recorded state
       expect(state.metrics.has(newChild)).toBe(false);
     });
@@ -343,7 +354,8 @@ describe('DetectorInst Class', () => {
       
       // Record position
       instance.recordOriginalPosition(testElement);
-      const state = (instance as any).originalLayoutState;
+      // @ts-ignore
+      const state = instance.originalLayoutState;
       expect(state).not.toBeNull();
     });
   });

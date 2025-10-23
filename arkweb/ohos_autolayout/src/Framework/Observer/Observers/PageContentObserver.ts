@@ -11,11 +11,10 @@
  */
 
 import Log from '../../../Debug/Log';
-import Tag from '../../../Debug/Tag';
 import ObserverHandler from '../ObserverHandler';
 
 export default class PageContentObserver {
-    private static readonly TAG = Tag.pageContentObserver;
+    private static readonly TAG = 'PageContentObserver';
     private static contentReady: boolean = false;  // 页面内容是否已就绪
     private static observer: MutationObserver | null = null;  // 内容变化观察器
     private static readonly MIN_NODE_THRESHOLD = 9;  // 最小节点数阈值
@@ -108,52 +107,52 @@ export default class PageContentObserver {
         }
 
         // 统计有效节点数量
-        let meaningfulNodeCount = 0;
-
-        // 递归检查节点
-        const checkNode = (node: Element): void => {
-            // 跳过隐藏元素
-            if (node instanceof HTMLElement) {
-                const style = getComputedStyle(node);
-                if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
-                    return;
-                }
-            }
-
-            // 有意义的节点类型
-            const meaningfulTags = [
-                'DIV', 'P', 'SPAN', 'A', 'IMG', 'BUTTON', 'INPUT', 
-                'TEXTAREA', 'UL', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6',
-                'SECTION', 'ARTICLE', 'NAV', 'HEADER', 'FOOTER', 'MAIN'
-            ];
-            
-            if (meaningfulTags.includes(node.tagName)) {
-                meaningfulNodeCount++;
-                
-                // 提前退出优化：如果已经超过阈值，不需要继续统计
-                if (meaningfulNodeCount > PageContentObserver.MIN_NODE_THRESHOLD) {
-                    return;
-                }
-            }
-
-            // 递归检查子节点（限制数量，避免性能问题）
-            if (node.children.length > 0 && meaningfulNodeCount <= PageContentObserver.MIN_NODE_THRESHOLD) {
-                const maxChildren = Math.min(node.children.length, PageContentObserver.MAX_CHECK_CHILDREN);
-                for (let i = 0; i < maxChildren; i++) {
-                    checkNode(node.children[i]);
-                    if (meaningfulNodeCount > PageContentObserver.MIN_NODE_THRESHOLD) {
-                        break;
-                    }
-                }
-            }
-        };
-
-        checkNode(body);
+        let meaningfulNodeCount = PageContentObserver.checkMeaningfulNodeRecursive(body);
         
         const hasContent = meaningfulNodeCount > PageContentObserver.MIN_NODE_THRESHOLD;
         Log.d(`页面节点统计: ${meaningfulNodeCount} 个有效节点, 阈值: ${PageContentObserver.MIN_NODE_THRESHOLD}, 判断: ${hasContent ? '有内容' : '无内容'}`, PageContentObserver.TAG);
         
         return hasContent;
+    }
+
+     // 递归检查节点
+     private static checkMeaningfulNodeRecursive(node: Element): number {
+        let meaningfulNodeCount = 0;
+        // 跳过隐藏元素
+        if (node instanceof HTMLElement) {
+            const style = getComputedStyle(node);
+            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+                return meaningfulNodeCount;
+            }
+        }
+
+        // 有意义的节点类型
+        const meaningfulTags = [
+            'DIV', 'P', 'SPAN', 'A', 'IMG', 'BUTTON', 'INPUT', 
+            'TEXTAREA', 'UL', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6',
+            'SECTION', 'ARTICLE', 'NAV', 'HEADER', 'FOOTER', 'MAIN'
+        ];
+        
+        if (meaningfulTags.includes(node.tagName)) {
+            meaningfulNodeCount++;
+            
+            // 提前退出优化：如果已经超过阈值，不需要继续统计
+            if (meaningfulNodeCount > PageContentObserver.MIN_NODE_THRESHOLD) {
+                return meaningfulNodeCount;
+            }
+        }
+
+        // 递归检查子节点（限制数量，避免性能问题）
+        if (node.children.length > 0 && meaningfulNodeCount <= PageContentObserver.MIN_NODE_THRESHOLD) {
+            const maxChildren = Math.min(node.children.length, PageContentObserver.MAX_CHECK_CHILDREN);
+            for (let i = 0; i < maxChildren; i++) {
+                meaningfulNodeCount += PageContentObserver.checkMeaningfulNodeRecursive(node.children[i]);
+                if (meaningfulNodeCount > PageContentObserver.MIN_NODE_THRESHOLD) {
+                    break;
+                }
+            }
+        }
+        return meaningfulNodeCount;
     }
 
     /**

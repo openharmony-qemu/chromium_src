@@ -31,9 +31,10 @@ describe('PopupDecisionTreeType Enum', () => {
     });
 
     test('should allow accessing by string key', () => {
-      expect(PopupDecisionTreeType['Center']).toBe(1);
-      expect(PopupDecisionTreeType['Center_Button_Overlap']).toBe(2);
-      expect(PopupDecisionTreeType['Bottom']).toBe(3);
+      // @ts-ignore
+      expect(PopupDecisionTreeType.Center).toBe(1);
+      expect(PopupDecisionTreeType.Center_Button_Overlap).toBe(2);
+      expect(PopupDecisionTreeType.Bottom).toBe(3);
     });
 
     test('should have sequential numeric values', () => {

@@ -2,13 +2,12 @@ import { LayoutKey, LayoutValue } from '../Common/Constant';
 import Log from '../../Debug/Log';
 import Tag from '../../Debug/Tag';
 import Store from '../Common/Utils/Store';
-import Utils from './Utils';
 import Constant from '../Common/Constant';
-import { BoxShadow } from '../Common/BoxShaodw';
+import { BoxShadow } from '../Common/BoxShadow';
 import { PopupInfo } from '../Popup/PopupInfo';
 import { PopupDecisionTreeType } from '../Popup/PopupDecisionTreeType';
 
-interface VisualBoundingRect {
+export interface VisualBoundingRect {
     left: number;
     top: number;
     right: number;
@@ -17,15 +16,6 @@ interface VisualBoundingRect {
     height: number;
     offsetY: number;
     scrollElement: HTMLElement | null; // 明确声明 scrollElement 的类型
-}
-
-interface BoundingState {
-    minX: number;
-    minY: number;
-    maxX: number;
-    maxY: number;
-    offsetY: number;
-    scrollElement: HTMLElement | null;
 }
 
 type StackingContextInfo = {
@@ -51,7 +41,6 @@ export default class LayoutUtils{
         if (inlineValue && this.convertToPxUnits(inlineValue) === computedValue) {
             return true;
         }
- 
         // 2. 遍历所有样式表 (性能开销巨大)
         const sheetCheckResult = this.findStyleInSheets(element, cssProperty, computedValue);
         if (sheetCheckResult.isFound) {

@@ -10,7 +10,6 @@ export default class Tag {
     static resizeObserver = 'ResizeObserver';
     static modifyObserver = 'ModifyObserver';
     static pageContentObserver = 'PageContentObserver';
-    static transitionEndObserver = 'TransitionEndObserver';
     static throttle = 'Throttle';
     
     // Popup 相关

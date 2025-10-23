@@ -24,7 +24,7 @@ export default class Framework {
     static stopFlag: boolean = false;
 
     static startTime: number;
-   private static layoutLockCount: number = 0;
+    private static layoutLockCount: number = 0;
 
     static lockLayout(): void {
         Framework.layoutLockCount++;
@@ -32,17 +32,17 @@ export default class Framework {
     }
 
     static unLockLayout(): void {
-       Framework.layoutLockCount--;
+        Framework.layoutLockCount--;
         if (Framework.layoutLockCount < 0) {
-           Log.e(`Layout解锁数量错误: ${Framework.layoutLockCount}`, Framework.TAG);
+            Log.e(`Layout解锁数量错误: ${Framework.layoutLockCount}`, Framework.TAG);
         }
         Log.info(`Layout解锁: ${Framework.layoutLockCount}`, Framework.TAG);
     }
 
-   private static isLayoutLocked(): boolean {
-        Log.info('Layout解锁', Framework.TAG);
+    private static isLayoutLocked(): boolean {
+        Log.info('检查Layout是否锁定', Framework.TAG);
         return Framework.layoutLockCount > 0;
-   }
+    }
 
     private static isAvailable(): boolean {
         if (Framework.stopFlag) {
@@ -72,7 +72,7 @@ export default class Framework {
         if (!PageContentObserver.isContentReady()) {
             Log.info('[Framework] 页面内容未就绪（骨架屏/白屏），启动响应式监听', Framework.TAG);
             PageContentObserver.startObserving();
-            
+
             const metrics: LayoutConstraintMetrics = {
                 resultCode: -1,
                 errorMsg: '页面内容未就绪，等待内容加载',
@@ -81,7 +81,7 @@ export default class Framework {
             };
             // @ts-ignore
             window.layoutConstraintResult = metrics;
-            
+
             return false;
         }
 
@@ -93,8 +93,10 @@ export default class Framework {
         if (!Framework.taskinit()) {
             return;
         }
+
         if (CCMConfig.getInstance().checkRule() === CheckRuleStateResult.outOfWhiteList) {
-            Log.d(`检查不通过 - Appid: ${CCMConfig.getInstance().getAppID()}, Page: ${CCMConfig.getInstance().getPage()}`, Framework.TAG);
+            Log.w('检查不通过:Appid:' + CCMConfig.getInstance().getAppID() +
+                ', Page:' + CCMConfig.getInstance().getPage(), Framework.TAG);
             Main.stop();
             return;
         } else if (CCMConfig.getInstance().checkRule() === CheckRuleStateResult.initial) {
@@ -102,6 +104,7 @@ export default class Framework {
             return;
         }
         if (!Framework.isLayoutLocked()) {
+            Log.info('MainTask 执行重布局', Framework.TAG);
             IntelliLayout.intelligentLayout(document.body);
 
             // flush新计算的样式，触发回流重绘
@@ -111,7 +114,7 @@ export default class Framework {
         Log.info('离开 mainTask', Framework.TAG);
     }
 
-    static recoverStyle(): void { 
+    static recoverStyle(): void {
         IntelliLayout.recoverPopwinStyle();
     }
 
@@ -171,7 +174,7 @@ export default class Framework {
                 }
 
                 Log.i(link, `sheet: ${link.sheet}`, this.TAG);
-                if (link.href ?.startsWith('http') && !link.sheet) {
+                if (link.href?.startsWith('http') && !link.sheet) {
                     return false;
                 }
             }

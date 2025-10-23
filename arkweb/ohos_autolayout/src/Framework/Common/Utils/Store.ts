@@ -18,7 +18,7 @@ export default class Store {
         }
         tempMap.set(ele, value);
 
-        // Log.showValue(ele, key, value);
+        Log.showValue(ele, key, value);
 
         // 这段代码移动到其他模块会导致循环引用
         Store.saveOriginHeight(ele, key);

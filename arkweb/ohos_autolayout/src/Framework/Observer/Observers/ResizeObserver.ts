@@ -21,7 +21,7 @@ export default class ResizeObserver {
         Log.d('addEventListener', ResizeObserver.TAG);
         window.addEventListener(Constant.resize, ResizeObserver.resizeCallback);
     }
-    
+
     private static resizeCallback(): void {
         Log.d('resizeCallback', ResizeObserver.TAG);
         if (Main.initFlag) {
@@ -36,13 +36,13 @@ export default class ResizeObserver {
         if (!WaitSystemReady.hasBodyReady) {
             return;
         }
-        Framework.headReadyTask();
-        ObserverHandler.updateObserver();
-        Log.checkState('after updateObserver');
-        CSSSheetManage.updateState();
-        
-        Log.d('try to postTask', ResizeObserver.TAG);
         setTimeout(()=>{
+            Framework.headReadyTask();
+            ObserverHandler.updateObserver();
+            Log.checkState('after updateObserver');
+            CSSSheetManage.updateState();
+            
+            Log.d('try to postTask', ResizeObserver.TAG);
             ObserverHandler.postTask();
         }, 100);
     }

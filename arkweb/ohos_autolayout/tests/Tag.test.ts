@@ -29,10 +29,6 @@ describe('Tag Module', () => {
       expect(Tag.pageContentObserver).toBe('PageContentObserver');
     });
 
-    test('should have transitionEndObserver tag', () => {
-      expect(Tag.transitionEndObserver).toBe('TransitionEndObserver');
-    });
-
     test('should have throttle tag', () => {
       expect(Tag.throttle).toBe('Throttle');
     });

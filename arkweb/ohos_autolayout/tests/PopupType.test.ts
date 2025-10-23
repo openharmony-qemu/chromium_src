@@ -37,10 +37,10 @@ describe('PopupType Enum', () => {
     });
 
     test('should allow accessing by string key', () => {
-      expect(PopupType['A']).toBe(1);
-      expect(PopupType['B']).toBe(2);
-      expect(PopupType['C']).toBe(3);
-      expect(PopupType['Unknown']).toBe(20);
+      expect(PopupType.A).toBe(1);
+      expect(PopupType.B).toBe(2);
+      expect(PopupType.C).toBe(3);
+      expect(PopupType.Unknown).toBe(20);
     });
   });
 

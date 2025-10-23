@@ -3,6 +3,7 @@ import Log from '../../Debug/Log';
 import Constant from '../Common/Constant';
 import Utils from '../Utils/Utils';
 import LayoutUtils from '../Utils/LayoutUtils';
+import { VisualBoundingRect } from '../Utils/LayoutUtils';
 import { AComponent } from '../Common/base/AComponent';
 import { DetectorInst } from '../Common/DetectorInst';
 import { LayoutConstraintMetricsDetector, LayoutConstraintMetrics } from '../Common/LayoutConstraintDetector';
@@ -12,14 +13,14 @@ import { PopupDecisionTreeType } from './PopupDecisionTreeType';
 import { PopupDecisionTree } from './PopupDecisionTree';
 import { CCMConfig } from '../Common/CCMConfig';
 import StyleCleaner from '../Common/Style/Setter/StyleCleaner';
- 
+
 interface BoundingRect {
     top: number,
     left: number,
     bottom: number,
     right: number
 }
- 
+
 /**
  * 弹窗
  * 输入为一个popupInfo
@@ -32,9 +33,8 @@ export class PopupWindowRelayout extends AComponent {
     private truncateBkgImgNodes: HTMLElement[] = [];    // 背景图被截断的节点（但是rect没有在视口内被截断）
     private popupInfo: PopupInfo;
     private bottomNode: HTMLElement = null;
-    private originalStyles: Map<HTMLElement, any> = new Map<HTMLElement, any>();
-    private relayoutTimes: number = 0;
-    private needLayoutConstraintNodes = new Set<HTMLElement>();
+    private needRestoreStyleNodes: Set<HTMLElement> = new Set<HTMLElement>;
+    private needLayoutConstraintNodes: Set<HTMLElement> = new Set<HTMLElement>();
     private layoutConstraintResult: LayoutConstraintMetrics = null;
     private visualHeight: number = window.innerHeight;
     private isCloseButtonTruncatedByScroll = false;
@@ -42,48 +42,39 @@ export class PopupWindowRelayout extends AComponent {
     private equivalentMask: HTMLElement;
     private minScaleFactor = CCMConfig.getInstance().getMinScaleFactor() / 100;
     private scaleAnimationDuration = CCMConfig.getInstance().getScaleAnimationDuration();
- 
+
     resetStyle(): void {
         throw new Error('Method not implemented.');
     }
- 
+
     constructor(popupInfo: PopupInfo) {
         super(popupInfo.root_node);
         this.popupInfo = popupInfo;
     }
- 
+
     printTree(color: boolean = false): void { }
- 
+
     static recognize(root: HTMLElement): boolean {
         return true;
     }
- 
+
     public intelligenceLayout(): void {
         if (this.mComponent === null) {
             return;
         }
- 
+
         this.visualHeight = window.innerHeight - this.popupInfo.stickyBottom_height - this.popupInfo.stickyTop_height;
- 
+
         Log.d(`intelligenceLayout for popWin: ${this.mComponent.className}}, window.innerWidth = ${window.innerWidth}, time = ${new Date()}`);
         this.relayout();
     }
- 
-    async relayout(): Promise<void> {
+
+    private relayout():void {
         const allNodes = this.traverseTree(this.mComponent, []);
- 
-        // 先将所有flex布局的子节点都设置flex-shrink:0，避免控件缩放导致的子节点高度压缩问题，也为了更好的计算高度。
-        if (this.relayoutTimes === 0) {
-            // 首次触发重布局，先解除所有flex压缩子节点的设定。其他逻辑下一次重布局执行
-            this.fixFlexShrink(this.mComponent);
-            StyleSetter.flushAllStyles();
-            await this.forceLayoutUpdate(1);
-        }
-        this.relayoutTimes++;
- 
+
         // step1: 计算被截断的节点
         this.findTruncateNodes(allNodes);
- 
+
         if (this.truncateNodes.length === 0) {
             Log.d(`no truncateNodes found.`);
             let metrics: LayoutConstraintMetrics = {
@@ -96,37 +87,37 @@ export class PopupWindowRelayout extends AComponent {
             window.layoutConstraintResult = metrics;
             return;
         }
- 
+
         // step2: 判断弹窗决策树类型
         this.popupDecisionTreeType = PopupDecisionTree.judgePopupDecisionTreeType(allNodes, this.popupInfo);
- 
+
         // step3: 恢复背景图片被截断的节点
         if (this.truncateBkgImgNodes.length !== 0) {
             this.resetTruncateBkgImgNodes();
         }
- 
+
         // step4: 计算缩放系数
         this.calScale();
         DetectorInst.getInstance().recordOriginalPosition(this.popupInfo.content_node);
- 
+
         if (this.scale > 1) {
             Log.d(`scale > 1, skip.`);
             return;
         }
- 
+
         // step5: 应用缩放系数
         this.resetByScale();
- 
+
         // step6: 修复按钮重合
         if (this.popupDecisionTreeType === PopupDecisionTreeType.Center_Button_Overlap) {
             this.fixButtonOverlap();
         }
- 
+
         StyleSetter.flushAllStyles();
         // step7: 自验证算法
         this.getLayoutConstraintReport();
     }
- 
+
     /**
      * 获取给定节点的最上层子节点（或节点集合）
      * @param {HTMLElement} parentNode - 父节点
@@ -143,7 +134,7 @@ export class PopupWindowRelayout extends AComponent {
                     parseFloat(style.opacity) === 1 &&
                     !Utils.isBackgroundSemiTransparent(style)
             });
- 
+
         if (children.length === 0) {
             return [];
         }
@@ -159,25 +150,25 @@ export class PopupWindowRelayout extends AComponent {
                 maskZIndex = parseInt(maskZIndex, 10);
             }
         }
- 
+
         // 计算每个子节点的 z-index 权重
         const weightedChildren = children.map(child => {
             const style = window.getComputedStyle(child);
             let zIndex: string | number = style.zIndex;
- 
+
             // 处理 z-index: auto（按 DOM 顺序，后出现的权重更高）
             if (zIndex === 'auto') {
                 zIndex = 0; // auto 默认权重为 0，但 DOM 顺序会影响最终比较
             } else {
                 zIndex = parseInt(zIndex, 10);
             }
- 
+
             return { element: child as HTMLElement, zIndex: zIndex, domOrder: children.indexOf(child) };
         });
- 
+
         // 筛选出比 mask 节点 z-index 更大的节点（至少等于）
         const filteredChildren = weightedChildren.filter(child => child.zIndex >= maskZIndex);
- 
+
         // 按 z-index 降序 + DOM 顺序升序排序
         filteredChildren.sort((a, b) => {
             if (a.zIndex !== b.zIndex) {
@@ -186,14 +177,14 @@ export class PopupWindowRelayout extends AComponent {
                 return b.domOrder - a.domOrder; // DOM 顺序靠后的在前
             }
         });
- 
+
         // 提取元素
         const topmostChildren = filteredChildren.map(child => child.element);
- 
+
         Log.d('getTopmostChildren: print topmostChildren size = ' + topmostChildren.length);
         return topmostChildren;
     }
- 
+
     /**
     * 过滤 grandChildren，移除 translateY 超过屏幕高度的元素
     * @param {HTMLElement[]} grandChildren - 需要过滤的 grandChildren 数组
@@ -207,7 +198,7 @@ export class PopupWindowRelayout extends AComponent {
             return Math.abs(translateY) <= window.innerHeight;
         });
     }
- 
+
     /**
      * 计算缩放系数
      * step1：获取所有被截断节点同层节点（兄弟节点），统计他们所有的子孙节点rect区域
@@ -217,7 +208,7 @@ export class PopupWindowRelayout extends AComponent {
      */
     private calScale(): void {
         this.truncateNodes.forEach(truncateNode => {
-            Log.d('tangcd print truncateNode classname = ' + truncateNode ?.className);
+            Log.d('tangcd print truncateNode classname = ' + truncateNode.className);
             let rect = truncateNode.getBoundingClientRect();
             this.minTop = Math.min(this.minTop, rect.top);
             if (rect.bottom > this.maxBottom) {
@@ -230,7 +221,7 @@ export class PopupWindowRelayout extends AComponent {
             } else {
                 tmpNode = truncateNode.parentElement;
             }
- 
+
             const treeWalker = document.createTreeWalker(
                 tmpNode,
                 NodeFilter.SHOW_ELEMENT,  // 或 NodeFilter.SHOW_ELEMENT 只获取元素节点
@@ -241,23 +232,23 @@ export class PopupWindowRelayout extends AComponent {
                         }
                         // 如果是一个可以滚动的列表，则子元素不纳入缩放系数的计算
                         const style = window.getComputedStyle(node.parentElement);
- 
+
                         const overflowY = style.overflowY;
                         const isScrollableY = (overflowY === 'scroll' || overflowY === 'auto');
- 
+
                         // 检查内容是否溢出
                         const hasVerticalScroll = node.parentElement.scrollHeight > node.parentElement.clientHeight;
- 
+
                         // 综合考虑
                         if (isScrollableY && hasVerticalScroll) {
                             return NodeFilter.FILTER_REJECT;
                         }
- 
+
                         return NodeFilter.FILTER_ACCEPT;
                     }
                 }
             );
- 
+
             let currentNode = treeWalker.nextNode() as HTMLElement;
             while (currentNode) {
                 let childTop = currentNode.getBoundingClientRect().top;
@@ -270,14 +261,14 @@ export class PopupWindowRelayout extends AComponent {
                 currentNode = treeWalker.nextNode() as HTMLElement;
             }
         })
- 
+
         let oriHeight = this.maxBottom - this.minTop;
         let screenHeight = this.visualHeight;
         this.scale = (screenHeight * 0.7) / oriHeight;
         this.scale = Math.max(this.scale, this.minScaleFactor);
-        Log.d(`PopWindow智能布局: calcScale = ${this.scale}, bottomNode: ${this.bottomNode ?.className}`);
+        Log.d(`PopWindow智能布局: calcScale = ${this.scale}, bottomNode: ${this.bottomNode.className}`);
     }
- 
+
     /**
      * 缩放处理，具有以下规则约束：
      * 1、对弹窗根节点下，除mask节点之外的所有节点进行缩放（父节点缩放，子节点会继承），具体实施如下：
@@ -328,7 +319,7 @@ export class PopupWindowRelayout extends AComponent {
             }
         }
     }
- 
+
     private scaleChildForTypeB(child: HTMLElement, topNodes: HTMLElement[]): void {
         if (this.popupDecisionTreeType === PopupDecisionTreeType.Bottom) {
             this.scaleByTransform(child, this.scale, false, topNodes, false, []);
@@ -338,7 +329,7 @@ export class PopupWindowRelayout extends AComponent {
         }
         Log.d(`resetByScale for type B: ${child.className}`);
     }
- 
+
     private scaleGrandChildrenForTypeB(child: HTMLElement, topNodes: HTMLElement[]): void {
         const grandChildren = this.getValidGrandChildren(Array.from(child.children) as HTMLElement[]);
         for (let i = 0; i < grandChildren.length; i++) {
@@ -352,7 +343,7 @@ export class PopupWindowRelayout extends AComponent {
             Log.d(`resetByScale for type B: ${grandchild.className}`);
         }
     }
- 
+
     private scaleChildForTypeC(childStyle: CSSStyleDeclaration, isFixedOrAbsolute: boolean,
         isZeroSize: boolean, child: HTMLElement, topNodes: HTMLElement[]): void {
         if (childStyle && isFixedOrAbsolute && isZeroSize) {
@@ -368,7 +359,7 @@ export class PopupWindowRelayout extends AComponent {
             Log.d(`resetByScale for type C: ${child.className}`);
         }
     }
- 
+
     /**
     * 满足以下条件，mask向上追溯。
     * 1、mask和root不是一个节点
@@ -391,20 +382,19 @@ export class PopupWindowRelayout extends AComponent {
         }
         return equivalentMask;
     }
- 
+
     /**
      * 修复图片内容被截断的场景
      */
     private resetTruncateBkgImgNodes(): void {
         this.truncateBkgImgNodes.forEach((node: HTMLElement) => {
             if (node !== this.popupInfo.mask_node) {
-                this.saveOriginalStyles(node);
                 StyleSetter.setStyle(node, Constant.background_size, `contain`);
+                this.needRestoreStyleNodes.add(node);
             }
         });
     }
- 
- 
+
     /**
      * 递归地将节点及其所有父节点的 overflow 属性设置为 visible。
      * @param {HTMLElement} node - 需要处理的节点。
@@ -413,13 +403,13 @@ export class PopupWindowRelayout extends AComponent {
         while (node && node !== document.documentElement) {
             const style = window.getComputedStyle(node);
             if (style.overflow !== 'visible') {
-                this.saveOriginalStyles(node);
                 StyleSetter.setStyle(node, Constant.overflow, 'visible');
+                this.needRestoreStyleNodes.add(node);
             }
             node = node.parentElement;
         }
     }
- 
+
     /**
     * 如果截断节点包含关闭按钮，并且是滚动条，
     * 按照规则，应该让内容完全显示，方便点击关闭按钮
@@ -431,14 +421,14 @@ export class PopupWindowRelayout extends AComponent {
             const parentStyle = window.getComputedStyle(truncateNode.parentElement);
             const overflowY = parentStyle.overflowY;
             if (Utils.hasCloseButton(truncateNode) && (overflowY === 'auto' || overflowY === 'scroll')) {
-                this.saveOriginalStyles(truncateNode.parentElement);
-                StyleSetter.setStyle(truncateNode.parentElement, 'overflow', 'visible');
+                StyleSetter.setStyle(truncateNode.parentElement, Constant.overflow, 'visible');
                 this.isCloseButtonTruncatedByScroll = true;
                 this.makeAllOverflowVisible(truncateNode.parentElement);
+                this.needRestoreStyleNodes.add(truncateNode.parentElement);
             }
         })
     }
- 
+
     /**
      * 查找弹窗根节点下被截断的节点
      * 对于被截断节点，如果兄弟节点也是被截断则保留，子节点不予保留
@@ -453,13 +443,13 @@ export class PopupWindowRelayout extends AComponent {
         this.truncateBkgImgNodes = allNodes.filter(node => {
             return LayoutUtils.checkIfBackgroundImgTruncated(node);
         });
- 
+
         this.handleScrollbar(tmpTruncateNodes);
- 
+
         // 2. 过滤被其他节点包含的节点
         this.truncateNodes = this.filterContainedNodes(tmpTruncateNodes);
     }
- 
+
     /**
      * 遍历节点树，收集所有节点
      * @param {Node} node - 当前节点
@@ -475,7 +465,7 @@ export class PopupWindowRelayout extends AComponent {
         }
         return result;
     }
- 
+
     private async getLayoutConstraintReport(): Promise<void> {
         if (this.needLayoutConstraintNodes.size === 0) {
             Log.d('no report needed, because there is no relayout nodes');
@@ -487,25 +477,26 @@ export class PopupWindowRelayout extends AComponent {
             this.restoreStyles();
             Log.d(`resultCode: ${this.layoutConstraintResult.resultCode}, need to restore`);
         }
+        this.needLayoutConstraintNodes.clear();
         // @ts-ignore
         window.layoutConstraintResult = this.layoutConstraintResult;
     }
- 
+
     /**
      * 强制布局更新
      */
     private async forceLayoutUpdate(rafCount = 1): Promise<void> {
         // 返回一个在下一动画帧开始时解析的 Promise
         const nextFrame = (): Promise<number> => new Promise(resolve => requestAnimationFrame(resolve));
- 
+
         if (rafCount <= 0) {
             return;
         }
- 
+
         // 第一次更新比较特殊，只等待一帧
         await nextFrame();
         void document.body.offsetHeight;
- 
+
         // 从第二次更新开始，每次都需要等待两帧
         for (let i = 1; i < rafCount; i++) {
             await nextFrame();
@@ -513,15 +504,15 @@ export class PopupWindowRelayout extends AComponent {
             void document.body.offsetHeight;
         }
     }
- 
+
     private filterContainedNodes(nodes: HTMLElement[]): HTMLElement[] {
         const elementSet = new Set(nodes);
         const result: HTMLElement[] = [];
- 
+
         for (const element of nodes) {
             let parent = element.parentElement;
             let isContained = false;
- 
+
             // 检查所有祖先是否在原始集合中
             while (parent !== null) {
                 if (elementSet.has(parent)) {
@@ -530,46 +521,46 @@ export class PopupWindowRelayout extends AComponent {
                 }
                 parent = parent.parentElement;
             }
- 
+
             if (!isContained) {
                 result.push(element);
             }
         }
         return result;
     }
- 
+
     private calculateGroupCenter(elements: HTMLElement, brotherNodes: HTMLElement[]): { centerX: number, centerY: number } {
         if (!elements) {
             return { centerX: 0, centerY: 0 };
         }
- 
+
         const parent = elements.parentNode;
         if (!parent) {
             return { centerX: 0, centerY: 0 };
         }
- 
+
         // 过滤掉宽度和高度为0的子节点
         const validElements = brotherNodes.filter(el => {
             const rect = el.getBoundingClientRect();
             return rect.width > 0 && rect.height > 0;
         });
- 
+
         // 获取所有元素的getBoundingClientRect
         const rects = validElements.map(el => el.getBoundingClientRect());
- 
+
         // 计算包围所有元素的总矩形
         const minTop = Math.min(...rects.map(r => r.top));
         const maxBottom = Math.max(...rects.map(r => r.bottom));
         const minLeft = Math.min(...rects.map(r => r.left));
         const maxRight = Math.max(...rects.map(r => r.right));
- 
+
         // 计算中心点
         const centerX = minLeft + (maxRight - minLeft) / 2;
         const centerY = minTop + (maxBottom - minTop) / 2;
- 
+
         return { centerX, centerY };
     }
- 
+
     /**
      * 缩放有两种场景：
      * 1、通过transform scale底部缩放
@@ -590,8 +581,7 @@ export class PopupWindowRelayout extends AComponent {
         const style = window.getComputedStyle(element);
         const rect = LayoutUtils.getVisualBoundingRect(element, this.isCloseButtonTruncatedByScroll, this.popupDecisionTreeType);
     
-        // 2. 保存样式并准备布局约束
-        this.saveOriginalStyles(element);
+        // 2. 记录进行了布局约束的节点，用于后续布局约束计算
         this.needLayoutConstraintNodes.add(element);
     
         // 3. 提炼核心计算逻辑
@@ -629,8 +619,8 @@ export class PopupWindowRelayout extends AComponent {
             } else {
                 // 此处保留了对滚动容器的样式设置，因为它属于前置处理的一部分
                 const maxHeightVh = ((window.innerHeight - scrollElementRect.top) / window.innerHeight) * 100;
-                this.saveOriginalStyles(rect.scrollElement);
                 StyleSetter.setStyle(rect.scrollElement, Constant.max_height, `${maxHeightVh}vh`);
+                this.needRestoreStyleNodes.add(rect.scrollElement);
             }
         }
     
@@ -648,7 +638,7 @@ export class PopupWindowRelayout extends AComponent {
     /**
      * 核心计算函数：根据弹窗类型计算垂直方向的偏移量 (offsetY)
      */
-    private _calculateOffsetY(element: HTMLElement, rect: any, newScale: number,
+    private _calculateOffsetY(element: HTMLElement, rect: VisualBoundingRect, newScale: number,
         groupInfo: { hasBrother: boolean, brotherNodes: HTMLElement[], hasGrandChild: boolean, grandChildNodes: HTMLElement[] }): number {
         let offsetY = 0;
         const visualCenterY = rect.top + rect.height / 2;
@@ -707,13 +697,14 @@ export class PopupWindowRelayout extends AComponent {
         // 确保 transform 生效
         if (style.display === 'inline') {
             StyleSetter.setStyle(element, Constant.display, 'block');
+            this.needRestoreStyleNodes.add(element);
         }
     
         // 重置子节点的 bottom 样式
         for (let child of element.children) {
             if ((child as HTMLElement).style.bottom !== '' && (child as HTMLElement).style.bottom !== 'auto') {
-                this.saveOriginalStyles(child as HTMLElement);
                 StyleSetter.setStyle(child as HTMLElement, Constant.bottom, 'unset');
+                this.needRestoreStyleNodes.add(child as HTMLElement);
             }
         }
     
@@ -725,13 +716,14 @@ export class PopupWindowRelayout extends AComponent {
      * 应用最终的 transform 和 transition 样式
      */
     private _applyTransform(element: HTMLElement, style: CSSStyleDeclaration, offsetY: number, newScale: number): void {
-        const currentTransform = style.transform === 'none' ? '' : style.transform;
+        const currentTransform = style.transform === Constant.none ? '' : style.transform;
         const offsetX = 0; // offsetX 在原逻辑中始终为0
     
         StyleSetter.setStyle(element, Constant.transform, `${currentTransform} translate(${offsetX}px, ${offsetY}px) scale(${newScale})`);
         StyleSetter.setStyle(element, Constant.transition, `all ${this.scaleAnimationDuration}ms ease-in`);
+        this.needRestoreStyleNodes.add(element);
     }
- 
+
     /**
      * 确保给定元素的所有子元素宽度不为0，如果子元素宽度为0，则将其设置为100%。
      * 
@@ -743,7 +735,7 @@ export class PopupWindowRelayout extends AComponent {
      */
     private adjustChildWidths(element: HTMLElement): void {
         const elementStyle = window.getComputedStyle(element);
- 
+
         // 检查父元素的宽度
         if (parseFloat(elementStyle.width) === 0) {
             // 如果父元素宽度为0，则直接返回
@@ -755,89 +747,71 @@ export class PopupWindowRelayout extends AComponent {
         for (let i = 0; i < children.length; i++) {
             const child = children[i] as HTMLElement;;
             const childStyle = window.getComputedStyle(child);
- 
+
             // 检查子节点的宽度
             if (parseFloat(childStyle.width) === 0) {
                 // 如果宽度为0，则设置为100%
-                this.saveOriginalStyles(child);
                 StyleSetter.setStyle(child, Constant.width, Constant.num100percent);
+                this.needRestoreStyleNodes.add(child);
             }
         }
     }
- 
-    // 保存样式的方法
-    private saveOriginalStyles(node: HTMLElement): void {
-        // 只保存一次，避免覆盖
-        if (!this.originalStyles.has(node)) {
-            const computedStyle = window.getComputedStyle(node);
-            this.originalStyles.set(node, {
-                transform: computedStyle.transform,
-                transition: computedStyle.transition,
-                width: computedStyle.width,
-                max_width: computedStyle.maxWidth,
-                max_height: computedStyle.maxHeight,
-                bottom: computedStyle.bottom,
-                background_size: computedStyle.backgroundSize,
-                overflow: computedStyle.overflow,
-                flex_shrink: computedStyle.flexShrink,
-                display: computedStyle.display,
-            });
-        }
-    }
- 
+
     // 恢复样式
     public restoreStyles(): void {
         Log.d('恢复原始样式');
- 
-        this.originalStyles.forEach((style, node) => {
+
+        this.needRestoreStyleNodes.forEach((style, node) => {
             StyleCleaner.removeAllStyle(node);
         });
         StyleSetter.flushAllStyles();
-        this.originalStyles.clear();
+        this.needRestoreStyleNodes.clear();
     }
- 
-    private fixFlexShrink(node: HTMLElement): void {
+
+    public fixFlexShrink(node: HTMLElement): void {
         // 查找所有flex容器
         const flexContainers = [];
- 
+
         // 检查根节点
-        if (window.getComputedStyle(this.mComponent).display.includes('flex')) {
+        if (window.getComputedStyle(this.mComponent).display.includes(Constant.flex)) {
             flexContainers.push(this.mComponent);
         }
- 
+
         // 检查所有子节点
         this.mComponent.querySelectorAll('*').forEach(element => {
-            if (window.getComputedStyle(element).display.includes('flex')) {
+            if (window.getComputedStyle(element).display.includes(Constant.flex)) {
                 flexContainers.push(element);
             }
         });
- 
+
         // 设置所有子节点的flex-shrink: 0
         let totalProcessed = 0;
- 
+
         flexContainers.forEach(container => {
             Array.from(container.children).forEach(child => {
-                this.saveOriginalStyles(child as HTMLElement);
-                if (getComputedStyle(container).flexDirection == 'column') {
+                if (getComputedStyle(container).flexDirection === Constant.column) {
                     StyleSetter.setStyle(child as HTMLElement, Constant.flex_shrink, '0');
+                    this.needRestoreStyleNodes.add(child as HTMLElement);
                 }
                 // 检查父容器的尺寸
                 if (container.clientWidth > 0 && container.clientHeight > 0) {
                     StyleSetter.setStyle(child as HTMLElement, Constant.max_width, '100%');
+                    this.needRestoreStyleNodes.add(child as HTMLElement);
                 }
                 if (Utils.hasButton(child as HTMLElement)) {
                     // 写进默认生效样式
                     const selfStyle = window.getComputedStyle(child as HTMLElement);
                     const width = selfStyle.width;
-                    StyleSetter.setStyle(child as HTMLElement, 'width', width);
+                    StyleSetter.setStyle(child as HTMLElement, Constant.width, width);
+                    this.needRestoreStyleNodes.add(child as HTMLElement);
                 }
                 totalProcessed++;
             });
         });
- 
+
         Log.d(`fix ${flexContainers.length} flex contaner, ${totalProcessed} child elements`);
     }
- 
+
     /**
      * 修复closebutton和弹窗主体重叠的场景。
      * 判定规则：
@@ -858,12 +832,9 @@ export class PopupWindowRelayout extends AComponent {
         Log.d('ther is a close button to be fixed.');
         const closeButton = closeElements[0] as HTMLElement;
         const buttonStyle = getComputedStyle(closeButton);
-        // 保存节点的原始样式并刷新needLayoutConstraintNodes
-        this.saveOriginalStyles(closeButton);
+        // 刷新needLayoutConstraintNodes
         this.needLayoutConstraintNodes.add(closeButton);
- 
-        const currentTransform = buttonStyle.transform === 'none' ? '' : buttonStyle.transform;
- 
+        const currentTransform = buttonStyle.transform === Constant.none ? '' : buttonStyle.transform;
         let translateY: number = 0;
         const buttonTop = closeButton.getBoundingClientRect().top;
         const bottomNodeStyle = getComputedStyle(this.bottomNode);
@@ -874,9 +845,10 @@ export class PopupWindowRelayout extends AComponent {
             translateY = bottomNodeBottom - buttonTop;
         }
         translateY /= this.scale;
- 
+
         let newStyle = `${currentTransform} translate(0px, ${translateY}px)`;
         StyleSetter.setStyle(closeButton, Constant.transform, newStyle);
         StyleSetter.setStyle(closeButton, Constant.transition, `all ${this.scaleAnimationDuration}ms ease-in`);
+        this.needRestoreStyleNodes.add(closeButton);
     }
 }

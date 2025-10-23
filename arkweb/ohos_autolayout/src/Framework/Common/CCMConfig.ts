@@ -279,7 +279,7 @@ export class CCMConfig {
    */
   public checkRule(): CheckRuleStateResult {
     if(this.checkRuleStateResult !== CheckRuleStateResult.initial) {
-        return this.checkRuleStateResult;
+      return this.checkRuleStateResult;
     }
     // 要检查的App ID。
     // @ts-ignore

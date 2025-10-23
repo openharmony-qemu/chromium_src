@@ -79,6 +79,8 @@ module.exports = merge(common, {
                             'console.log',
                             'console.info',
                             'console.debug',
+                            'Log.debug',
+                            'Log.info',
                             'Log.d',
                             'Log.i',
                             'Log.info',

@@ -17,10 +17,12 @@ namespace chrome_pdf {
 
 namespace {
 
+#if BUILDFLAG(ARKWEB_PDF)
 // The minimum scale level allowed.
 constexpr double kMinScale = 0.001f;
 
 constexpr base::TimeDelta kPDFScrollDelay = base::Milliseconds(100);
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
 }  // namespace
 
@@ -157,6 +159,15 @@ void PdfViewWebPlugin::SetScrollStoppedAfterDelay() {
 
 void PdfViewWebPlugin::ResetResponsePendingInputEvent() {
   pdf_host_->ResetResponsePendingInputEvent();
+}
+
+void PdfViewWebPlugin::HandleClickBookmarkMessage(const base::Value::Dict& message) {
+  const std::string* nullableId = message.FindString("id");
+  if (!nullableId || nullableId->empty() || nullableId->length() > 255) {
+    LOG(ERROR) << "Invalid bookmark ID received";
+    return;
+  }
+  engine_->OnClickBookmark(*nullableId);
 }
 #endif  // BUILDFLAG(ARKWEB_PDF)
 

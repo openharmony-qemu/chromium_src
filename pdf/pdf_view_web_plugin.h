@@ -577,6 +577,9 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
   void HandleSetTwoUpViewMessage(const base::Value::Dict& message);
   void HandleStopScrollingMessage(const base::Value::Dict& message);
   void HandleViewportMessage(const base::Value::Dict& message);
+#if BUILDFLAG(ARKWEB_PDF)
+  void HandleClickBookmarkMessage(const base::Value::Dict& message);
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   void SaveToBuffer(SaveRequestType request_type, const std::string& token);
   void SaveToFile(const std::string& token);

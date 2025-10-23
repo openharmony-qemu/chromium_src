@@ -221,6 +221,9 @@ class PDFiumEngine : public DocumentLoader::Client, public IFSDK_PAUSE {
   void SetReadOnly(bool read_only);
   void SetDocumentLayout(DocumentLayout::PageSpread page_spread);
   void DisplayAnnotations(bool display);
+#if BUILDFLAG(ARKWEB_PDF)
+  void OnClickBookmark(const std::string& bookmarkId);
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   // Returns the text contained on the given page. The caller is responsible for
   // passing a valid `page_index`.
@@ -918,6 +921,11 @@ class PDFiumEngine : public DocumentLoader::Client, public IFSDK_PAUSE {
   void OnOcrDisconnected();
 #endif
 
+#if BUILDFLAG(ARKWEB_PDF)
+  // Converts a page position (e.g. the location of a bookmark) to a screen position.
+  gfx::PointF ConverPageToScreen(int page_index, gfx::PointF point);
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
   const raw_ptr<PDFiumEngineClient> client_;
 
   // The current document layout.
@@ -1208,6 +1216,13 @@ class PDFiumEngine : public DocumentLoader::Client, public IFSDK_PAUSE {
   // function. This allows those weak pointers to be invalidated during
   // StopFind(), and keeps the invalidation separated from `weak_factory_`.
   base::WeakPtrFactory<PDFiumEngine> find_weak_factory_{this};
+
+#if BUILDFLAG(ARKWEB_PDF)
+  std::map<std::string, FPDF_BOOKMARK> bookmark_store_;
+
+  // Used for generating the bookmark ID.
+  static std::atomic<uint64_t> g_bookmark_id_;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 };
 
 }  // namespace chrome_pdf

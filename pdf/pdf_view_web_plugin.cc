@@ -1656,6 +1656,9 @@ void PdfViewWebPlugin::OnMessage(const base::Value::Dict& message) {
           {"setTwoUpView", &PdfViewWebPlugin::HandleSetTwoUpViewMessage},
           {"stopScrolling", &PdfViewWebPlugin::HandleStopScrollingMessage},
           {"viewport", &PdfViewWebPlugin::HandleViewportMessage},
+#if BUILDFLAG(ARKWEB_PDF)
+          {"clickBookmark", &PdfViewWebPlugin::HandleClickBookmarkMessage},
+#endif  // BUILDFLAG(ARKWEB_PDF)
       });
 
   MessageHandler handler = kMessageHandlers.at(*message.FindString("type"));

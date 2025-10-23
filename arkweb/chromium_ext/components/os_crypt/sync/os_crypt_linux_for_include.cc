@@ -235,6 +235,10 @@ bool OSCryptImpl::DecryptStringForMigrate(const std::string& ciphertext,
   base::UmaHistogramBoolean(kMetricDecryptedWithEmptyKey, false);
   return false;
 }
+
+void OSCryptImpl::SetMigrationCountCurrent(const int& count) {
+  migration_count_current_ = count;
+}
 #endif
 
 // LCOV_EXCL_START
@@ -255,7 +259,7 @@ crypto::SymmetricKey* OSCryptImpl::GetPasswordV10ForMigrate() {
 #if BUILDFLAG(ARKWEB_TEST)
   int count = 1;
 #else
-  int count = g_browser_process->local_state()->GetInteger(browser_prefs::kMigrationCount);
+  int count = migration_count_current_;
 #endif
   if (!is_password_migrate_cached_ || migration_count_ < count) {
     migration_count_ = count;

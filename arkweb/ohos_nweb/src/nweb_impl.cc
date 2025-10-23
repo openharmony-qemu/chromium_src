@@ -283,6 +283,7 @@ extern bool g_siteIsolationMode;
 #include "chrome/browser/browser_process.h"
 #include "cef/libcef/browser/prefs/browser_prefs.h"
 #include "components/prefs/pref_service.h"
+#include "components/os_crypt/sync/os_crypt.h"
 #endif
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
@@ -972,6 +973,7 @@ void MigratePasswordsToPasswordVault() {
   if (migrateReady == true && migrateVault == false && IsFlagFileExist == true) {
     int count = g_browser_process->local_state()->GetInteger(browser_prefs::kMigrationCount);
     LOG(INFO) << "[Autofill] migration count:" << count;
+    OSCryptImpl::GetInstance()->SetMigrationCountCurrent(count + 1);
     g_browser_process->local_state()->SetInteger(browser_prefs::kMigrationCount, count + 1);
     g_browser_process->local_state()->CommitPendingWrite();
     if (count <= kMigrationBase || (count % kMigrationBase == 0 && count <= kMigrationMaxCount)) {

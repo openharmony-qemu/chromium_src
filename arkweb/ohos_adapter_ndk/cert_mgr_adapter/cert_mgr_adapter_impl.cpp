@@ -15,6 +15,7 @@
 
 #include <vector>
 #include <cstring>
+#include <string>
 #include <string.h>
 #include <dlfcn.h>
 #include <netdb.h>
@@ -29,7 +30,7 @@
 #include "arkweb/ohos_nweb/src/nweb_hilog.h"
 #include "base/files/file_path.h"
  
-#include "arkweb/ohos_nweb_ex/third_party/securec/include/securec.h"
+#include "third_party/bounds_checking_function/include/securec.h"
 #include "third_party/boringssl/src/include/openssl/ssl.h"
 
 #include <network/netstack/net_ssl/net_ssl_c.h>

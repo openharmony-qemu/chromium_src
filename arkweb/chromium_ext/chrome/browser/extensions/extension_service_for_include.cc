@@ -38,11 +38,19 @@ void NotifyOnInstalledExtensionsLoaded() {
 
 void ExtensionService::SetForbidDisplayInSettings(
     const ExtensionIdSet& extension_ids) {
-  ExtensionIdSet no_longer_forbid = base::STLSetDifference<ExtensionIdSet>(
-      forbid_display_in_settings_, extension_ids);
-  ExtensionIdSet newly_forbid = base::STLSetDifference<ExtensionIdSet>(
-      extension_ids, forbid_display_in_settings_);
+  ExtensionIdSet valid_ids;
+  for (const auto& id : extension_ids) {
+    if (crx_file::id_util::IdIsValid(id)) {
+      valid_ids.insert(id);
+    } else {
+      LOG(ERROR) << "Invalid extension_id: " << id;
+    }
+  }
 
+  ExtensionIdSet no_longer_forbid = base::STLSetDifference<ExtensionIdSet>(
+      forbid_display_in_settings_, valid_ids);
+  ExtensionIdSet newly_forbid = base::STLSetDifference<ExtensionIdSet>(
+      valid_ids, forbid_display_in_settings_);
   for (const ExtensionId& id : no_longer_forbid) {
     forbid_display_in_settings_.erase(id);
     extension_prefs_->SetNotDisplayInSettings(id, false);

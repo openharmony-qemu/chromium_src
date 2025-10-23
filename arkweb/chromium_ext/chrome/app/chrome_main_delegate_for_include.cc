@@ -14,12 +14,10 @@
 */
 
 static bool SetUserDataDirForArkweb(const base::FilePath& user_data_dir) {
-  static const std::string web_data_tag("cache/web");
 
   base::FilePath cache_web_data_dir;
-  if (!user_data_dir.empty() &&
-      user_data_dir.MaybeAsASCII().find(web_data_tag) == std::string::npos) {
-    cache_web_data_dir = user_data_dir.Append(web_data_tag);
+  if (!user_data_dir.empty()) {
+    cache_web_data_dir = user_data_dir;
   }
 
   const bool cache_web_directory_valid =

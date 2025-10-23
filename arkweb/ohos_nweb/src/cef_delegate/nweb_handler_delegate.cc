@@ -60,6 +60,7 @@
 #include "nweb_js_http_auth_result_impl.h"
 #include "nweb_js_ssl_error_result_impl.h"
 #include "nweb_js_ssl_select_cert_result_impl.h"
+#include "nweb_js_verify_pin_result_impl.h"
 #include "nweb_key_event_impl.h"
 #include "nweb_largest_contentful_paint_details_impl.h"
 #include "nweb_load_committed_details_impl.h"
@@ -2151,6 +2152,20 @@ bool NWebHandlerDelegate::OnSelectClientCertificate(
   if (nweb_handler_ != nullptr) {
     return nweb_handler_->OnSslSelectCertRequestByJS(
         js_result, host, port, key_types_str, principals_str);
+  }
+  return false;
+}
+
+bool NWebHandlerDelegate::OnVerifyPin(
+      const std::string& identity,
+      CefRefPtr<CefVerifyPinCallback> callback) {
+  LOG(INFO) << "NWebHandlerDelegate::OnVerifyPin";
+  CEF_REQUIRE_IO_THREAD();
+ 
+  std::shared_ptr<NWebJSVerifyPinResultImpl> js_result =
+      std::make_shared<NWebJSVerifyPinResultImpl>(callback);
+  if (nweb_handler_ != nullptr) {
+    return nweb_handler_->OnVerifyPinRequestByJS(js_result, identity);
   }
   return false;
 }

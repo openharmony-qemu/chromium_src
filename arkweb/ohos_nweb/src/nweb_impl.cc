@@ -4269,7 +4269,8 @@ void NWebImpl::UninstallExtension(const std::string& eid,
           ->GetExtensionById(eid, extensions::ExtensionRegistry::EVERYTHING);
 
   if (!current_extension) {
-    HandleExtensionUninstallResult(callback, true, "");
+    std::string msg = std::string("Failed to find extension with id: ") + eid;
+    HandleExtensionUninstallResult(callback, false, msg);
     return;
   }
 

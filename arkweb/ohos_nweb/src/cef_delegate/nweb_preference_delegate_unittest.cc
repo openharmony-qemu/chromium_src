@@ -473,7 +473,25 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
 
   bool GetPrintBackground() override { return false; }
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   void SetScrollable(bool enable, int scrollType) override {}
+
+  void SetImeShow(bool visible) override {}
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+  void EnableAppLinking(bool enable) override {}
+
+  bool IsAppLinkingEnabled() const override {}
+#endif
+
+  void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
+                                     bool recursive, IsolatedWorld world,
+                                     CefRefPtr<CefJavaScriptResultCallback> callback) override {}
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void GetFocusedFrameInfo(int32_t& frame_id, CefString& frame_url) override {}
+#endif
 
   void StartCamera() override {}
 
@@ -656,7 +674,7 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
                                   int current,
                                   bool animate) override {}
   void UpdateBrowserControlsHeight(int height, bool animate) override {}
-  void PrefetchPage(CefString& url, CefString& additionalHttpHeaders) override {
+  void PrefetchPage(const OHOS::NWeb::PrefetchOptions& prefetch_options) override {
   }
   void ReloadOriginalUrl() override {}
   bool CanStoreWebArchive() override { return false; }
@@ -665,6 +683,7 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
   void SetForceEnableZoom(bool forceEnableZoom) override {}
   bool GetForceEnableZoom() override { return false; }
   int GetNWebId() override { return 0; }
+  bool JudgeTextInputState() override { return false; }
   bool GetSavePasswordAutomatically() override { return false; }
   void SetSavePasswordAutomatically(bool enable) override {}
   void SaveOrUpdatePassword(bool is_update) override {}
@@ -691,6 +710,7 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
   void ShowFreeCopyMenu() override {}
   bool ShouldShowFreeCopyMenu() override { return false; }
   void EnableSafeBrowsingDetection(bool enable, bool strictMode) override {}
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   int InsertBackForwardEntry(int index, const CefString& url) override {
     return 0;
   }
@@ -698,6 +718,7 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
     return 0;
   }
   void ClearForwardList() override {}
+#endif
   void ExtensionSetTabId(int tab_id) override {}
   int ExtensionGetTabId() override { return 0; }
   uint32_t GetAcceleratedWidget(bool isPopup) override { return 0; }
@@ -710,6 +731,7 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
               bool newSession) override {}
   void SetFocusOnWeb() override {}
   void UpdateSecurityLayer(bool isNeedSecurityLayer) override {}
+  void UpdateTextFieldStatus(bool isShowKeyboard, bool isAttachIME) override {}
   CefString GetCustomUserAgent() override { return CefString(); }
   void GetLastHitData(int& type, CefString& extra_data) override {}
   std::string GetSelectedTextFromContextParam() override { return ""; }
@@ -762,8 +784,10 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
   void CancelAllPrerendering() override {}
   void CreateWebPrintDocumentAdapterV2(const CefString& jobName,
                                        void** adapter) override {}
+#if BUILDFLAG(ARKWEB_BGTASK)                                       
   void OnBrowserForeground() override {}
   void OnBrowserBackground() override {}
+#endif
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
   void Distill(const std::string& guid, const DistillOptions& distill_options,
@@ -971,6 +995,13 @@ class MockPreferenceCefBrowser : public CefBrowser, public CefBrowserHost {
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   int PrerenderPage(const CefString& url, const CefString& additional_headers) override { return 0; };
   void CancelAllPrerendering() override { };
+#endif
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  void SetBlankScreenDetectionConfig(
+      bool enable,
+      const std::vector<double>& detectionTiming,
+      const std::vector<int32_t>& detectionMethods,
+      int32_t contentfulNodesCountThreshold) override {}
 #endif
   CefBrowserSettings settings_;
   std::unique_ptr<CefBrowserContentsDelegate> contents_delegate_;

@@ -295,7 +295,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   void SetWebPreferences(const CefBrowserSettings& browser_settings) override {}
 
-  void PutUserAgent(const CefString& ua) override {}
+  void PutUserAgent(const CefString& ua, bool from_app) override {}
 
   CefString DefaultUserAgent() override { return CefString(); }
 
@@ -473,8 +473,11 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   bool GetPrintBackground() override { return false; }
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   void SetScrollable(bool enable, int scrollType) override {}
 
+  void SetImeShow(bool visible) override {}
+#endif
   void StartCamera() override {}
 
   void StopCamera() override {}
@@ -656,7 +659,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
                                   int current,
                                   bool animate) override {}
   void UpdateBrowserControlsHeight(int height, bool animate) override {}
-  void PrefetchPage(CefString& url, CefString& additionalHttpHeaders) override {
+  void PrefetchPage(const OHOS::NWeb::PrefetchOptions& prefetch_options) override {
   }
   void ReloadOriginalUrl() override {}
   bool CanStoreWebArchive() override { return false; }
@@ -664,6 +667,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   bool ShouldShowLoadingUI() override { return false; }
   void SetForceEnableZoom(bool forceEnableZoom) override {}
   bool GetForceEnableZoom() override { return false; }
+  bool JudgeTextInputState() override { return false; }
   int GetNWebId() override { return 0; }
   bool GetSavePasswordAutomatically() override { return false; }
   void SetSavePasswordAutomatically(bool enable) override {}
@@ -692,6 +696,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void ShowFreeCopyMenu() override {}
   bool ShouldShowFreeCopyMenu() override { return false; }
   void EnableSafeBrowsingDetection(bool enable, bool strictMode) override {}
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   int InsertBackForwardEntry(int index, const CefString& url) override {
     return 0;
   }
@@ -699,6 +704,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
     return 0;
   }
   void ClearForwardList() override {}
+#endif
   void ExtensionSetTabId(int tab_id) override {}
   int ExtensionGetTabId() override { return 0; }
   uint32_t GetAcceleratedWidget(bool isPopup) { return 0; }
@@ -710,6 +716,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
               (override));
   void SetFocusOnWeb() override {}
   void UpdateSecurityLayer(bool isNeedSecurityLayer) override {}
+  void UpdateTextFieldStatus(bool isShowKeyboard, bool isAttachIME) override {}
   CefString GetCustomUserAgent() override { return CefString(); }
   void GetLastHitData(int& type, CefString& extra_data) override {}
   std::string GetSelectedTextFromContextParam() override { return ""; }
@@ -744,8 +751,10 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
     return nullptr;
   }
 
+#if BUILDFLAG(ARKWEB_BGTASK)
   void OnBrowserForeground() override {}
   void OnBrowserBackground() override {}
+#endif
 
   void RunJavaScriptInFrames(
       const std::string& jsString,
@@ -775,12 +784,8 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   void SetMediaResumeFromBFCachePage(bool resume) override {}
-  void PrefetchPage(const OHOS::NWeb::PrefetchOptions& prefetch_options) override {}
-  void GetImageForContextNode(CefRefPtr<CefFrame> frame, int command_id) override {}
   void SetHasComposition(bool has_composition) override {}
   bool GetHasComposition() override { return false; }
-  void PutUserAgent(const CefString& ua, bool from_app) override {}
-  void SetImeShow(bool visible) override {}
   void SetEnableCustomVideoPlayer(bool flag) override {}
   void EnableAppLinking(bool enable) override {}
   bool IsAppLinkingEnabled() const override { return false; }

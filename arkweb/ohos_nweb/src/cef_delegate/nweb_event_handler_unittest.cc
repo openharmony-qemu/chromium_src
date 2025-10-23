@@ -297,7 +297,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   bool GetWebDebuggingAccess() override { return false; }
 
-  void GetImageForContextNode(CefRefPtr<CefFrame> frame, int command_id) override {}
+  void GetImageForContextNode(int command_id) override {}
 
   void GetImageFromCache(const CefString& url, int command_id) override {}
 
@@ -693,7 +693,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
                                   int current,
                                   bool animate) override {}
   void UpdateBrowserControlsHeight(int height, bool animate) override {}
-  void PrefetchPage(CefString& url, CefString& additionalHttpHeaders) override {
+  void PrefetchPage(const OHOS::NWeb::PrefetchOptions& prefetch_options) override {
   }
   void ReloadOriginalUrl() override {}
   bool CanStoreWebArchive() override { return false; }
@@ -701,6 +701,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   bool ShouldShowLoadingUI() override { return false; }
   void SetForceEnableZoom(bool forceEnableZoom) override {}
   bool GetForceEnableZoom() override { return false; }
+  bool JudgeTextInputState() override { return false; }
   int GetNWebId() override { return 0; }
   bool GetSavePasswordAutomatically() override { return false; }
   void SetSavePasswordAutomatically(bool enable) override {}
@@ -733,6 +734,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void FindEx(const CefString &searchText, bool forward, bool matchCase, bool findNext, bool newSession) override {}
   void SetFocusOnWeb() override {}
   void UpdateSecurityLayer(bool isNeedSecurityLayer) override {}
+  void UpdateTextFieldStatus(bool isShowKeyboard, bool isAttachIME) override {}
   void SetHasComposition(bool has_composition) override {}
   bool GetHasComposition() override {}
   CefString GetCustomUserAgent() override { return CefString(); }
@@ -765,11 +767,9 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 #endif
   CefRefPtr<CefFrame> GetFrameByIdentifier(
       const CefString& identifier) override {  return nullptr; }
-#if BUILDFLAG(ARKWEB_NWEB_EX)
   void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
                              bool recursive, IsolatedWorld world,
                              CefRefPtr<CefJavaScriptResultCallback> callback) override {}
-#endif
 #if BUILDFLAG(ARKWEB_BGTASK)
   void OnBrowserForeground() override {}
   void OnBrowserBackground() override {}
@@ -798,16 +798,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void EnableHttpsUpgrades(bool enable) override {}
 #endif
 #if BUILDFLAG(ARKWEB_UNITTESTS)
-  void SetMediaResumeFromBFCachePage(bool resume) override {}
-  void PrefetchPage(const OHOS::NWeb::PrefetchOptions& prefetch_options) override {}
-  void GetImageForContextNode(CefRefPtr<CefFrame> frame, int command_id) override {}
-  void SetHasComposition(bool has_composition) override {}
-  bool GetHasComposition() override { return false; }
-  void PutUserAgent(const CefString& ua, bool from_app) override {}
   void SetImeShow(bool visible) override {}
-  void SetEnableCustomVideoPlayer(bool flag) override {}
-  void EnableAppLinking(bool enable) override {}
-  bool IsAppLinkingEnabled() const override { return false; }
 #endif // ARKWEB_UNITTESTS
 };
 
@@ -854,7 +845,7 @@ class MockCefBrowser : public ArkWebBrowserExt {
                                   int current,
                                   bool animate) override {}
   void UpdateBrowserControlsHeight(int height, bool animate) override {}
-  void PrefetchPage(CefString& url, CefString& additionalHttpHeaders) override {
+  void PrefetchPage(const OHOS::NWeb::PrefetchOptions& prefetch_options) override {
   }
   void ReloadOriginalUrl() override {}
   bool CanStoreWebArchive() override { return false; }

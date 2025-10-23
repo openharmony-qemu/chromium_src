@@ -16,7 +16,6 @@
 #include <vector>
 #include <cstring>
 #include <string>
-#include <string.h>
 #include <dlfcn.h>
 #include <netdb.h>
 #include <huks/native_huks_api.h>
@@ -358,7 +357,9 @@ int32_t CertManagerAdapterImpl::GetUkeyCert(const std::string& identity, uint8_t
         return ret;
     }
     
-    if (!(credList.credential) || credList.credential[0].credData.size == 0 || credList.credential[0].credData.data == nullptr) {
+    if (!(credList.credential) ||
+        credList.credential[0].credData.size == 0 ||
+        credList.credential[0].credData.data == nullptr) {
         WVLOG_E("GetUkeyCert, Invalid credential data");
         certManagerFreeUkeyCertificate(&credList);
         return ret;
@@ -387,8 +388,7 @@ int32_t CertManagerAdapterImpl::OpenUKeyRemoteHandle(const std::string& identity
             .uint32Param = OH_HUKS_KEY_CLASS_EXTENSION
         }
     };
-    struct OH_Huks_Result result;
-    result = InitExtParamSet(&paramSet, signParams, sizeof(signParams) / sizeof(OH_Huks_Param));
+    struct OH_Huks_Result result = InitExtParamSet(&paramSet, signParams, sizeof(signParams) / sizeof(OH_Huks_Param));
     if (result.errorCode != OH_HUKS_SUCCESS) {
         WVLOG_E("OpenUKeyRemoteHandle, init param set failed, errorCode = %{public}d ", result.errorCode);
         return result.errorCode;
@@ -397,12 +397,14 @@ int32_t CertManagerAdapterImpl::OpenUKeyRemoteHandle(const std::string& identity
     OHHuksOpenRemoteHandle huksOpenRemoteHandle = GetOHHuksOpenRemoteHandle();
     if (!huksOpenRemoteHandle) {
         WVLOG_E("OH_Huks_OpenRemoteHandle does not exist");
+        huksFreeExtParamSet(&paramSet);
         return -1;
     }
  
     OHHuksFreeExtParamSet huksFreeExtParamSet = GetOHHuksFreeExtParamSet();
     if (!huksFreeExtParamSet) {
         WVLOG_E("OH_Huks_FreeExtParamSet does not exist");
+        huksFreeExtParamSet(&paramSet);
         return -1;
     }
  
@@ -430,8 +432,7 @@ int32_t CertManagerAdapterImpl::CloseUKeyRemoteHandle(const std::string& identit
             .uint32Param = OH_HUKS_KEY_CLASS_EXTENSION
         }
     };
-    struct OH_Huks_Result result;
-    result = InitExtParamSet(&paramSet, signParams, sizeof(signParams) / sizeof(OH_Huks_Param));
+    struct OH_Huks_Result result = InitExtParamSet(&paramSet, signParams, sizeof(signParams) / sizeof(OH_Huks_Param));
     if (result.errorCode != OH_HUKS_SUCCESS) {
         WVLOG_E("CloseUKeyRemoteHandle, init param set failed, errorCode = %{public}d ", result.errorCode);
         return result.errorCode;
@@ -440,12 +441,14 @@ int32_t CertManagerAdapterImpl::CloseUKeyRemoteHandle(const std::string& identit
     OHHuksCloseRemoteHandle huksCloseRemoteHandle = GetOHHuksCloseRemoteHandle();
     if (!huksCloseRemoteHandle) {
         WVLOG_E("OH_Huks_CloseRemoteHandle does not exist");
+        huksFreeExtParamSet(&paramSet);
         return -1;
     }
  
     OHHuksFreeExtParamSet huksFreeExtParamSet = GetOHHuksFreeExtParamSet();
     if (!huksFreeExtParamSet) {
         WVLOG_E("OH_Huks_FreeExtParamSet does not exist");
+        huksFreeExtParamSet(&paramSet);
         return -1;
     }
  
@@ -473,8 +476,7 @@ int32_t CertManagerAdapterImpl::GetUkeyPinAuthState(const std::string& uri, bool
             .uint32Param = OH_HUKS_KEY_CLASS_EXTENSION
         }
     };
-    struct OH_Huks_Result result;
-    result = InitExtParamSet(&paramSet, signParams, sizeof(signParams) / sizeof(OH_Huks_Param));
+    struct OH_Huks_Result result = InitExtParamSet(&paramSet, signParams, sizeof(signParams) / sizeof(OH_Huks_Param));
     if (result.errorCode != OH_HUKS_SUCCESS) {
         WVLOG_E("GetUkeyPinAuthState, init param set failed, errorCode = %{public}d ", result.errorCode);
         return result.errorCode;
@@ -483,12 +485,14 @@ int32_t CertManagerAdapterImpl::GetUkeyPinAuthState(const std::string& uri, bool
     OHHuksGetUkeyPinAuthState huksGetUkeyPinAuthState = GetOHHuksGetUkeyPinAuthState();
     if (!huksGetUkeyPinAuthState) {
         WVLOG_E("OH_Huks_GetUkeyPinAuthState does not exist");
+        huksFreeExtParamSet(&paramSet);
         return -1;
     }
  
     OHHuksFreeExtParamSet huksFreeExtParamSet = GetOHHuksFreeExtParamSet();
     if (!huksFreeExtParamSet) {
         WVLOG_E("OH_Huks_FreeExtParamSet does not exist");
+        huksFreeExtParamSet(&paramSet);
         return -1;
     }
  
@@ -540,8 +544,7 @@ int32_t CertManagerAdapterImpl::SignUsingHuks(const std::string& identity, const
             .uint32Param = OH_HUKS_KEY_CLASS_EXTENSION
         }
     };
-    struct OH_Huks_Result result;
-    result = InitParamSet(&paramSet, signParams, sizeof(signParams) / sizeof(OH_Huks_Param));
+    struct OH_Huks_Result result = InitParamSet(&paramSet, signParams, sizeof(signParams) / sizeof(OH_Huks_Param));
     if (result.errorCode != OH_HUKS_SUCCESS) {
         WVLOG_E("SignHuks, init param set failed, errorCode = %{public}d ", result.errorCode);
         return result.errorCode;

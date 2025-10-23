@@ -53,12 +53,15 @@ extern "C" {
  * @return {@link OH_CM_ErrorCode#OH_CM_SUCCESS} 0 - The operation is successful.
  *         {@link OH_CM_ErrorCode#OH_CM_HAS_NO_PERMISSION} 201 - Permission verification failed.
  *         {@link OH_CM_ErrorCode#OH_CM_CAPABILITY_NOT_SUPPORTED} 801 - Capability not supported.
- *         {@link OH_CM_ErrorCode#OH_CM_PARAMETER_VALIDATION_FAILED} 17500011 - Indicates that the input parameters validation failed.
+ *         {@link OH_CM_ErrorCode#OH_CM_PARAMETER_VALIDATION_FAILED} 17500011 - Indicates that the
+ *    input parameters validation failed.
  *    for example, the parameter format is incorrect or the value range is invalid.
- *         {@link OH_CM_ErrorCode#OH_CM_INNER_FAILURE} 17500001 - Internal error. Possible causes: 1. IPC communication failed; 
- *    2. Memory operation error; 3. File operation error.
+ *         {@link OH_CM_ErrorCode#OH_CM_INNER_FAILURE} 17500001 - Internal error. Possible causes:
+ *         1. IPC communication failed; 
+ *         2. Memory operation error; 3. File operation error.
  *         {@link OH_CM_ErrorCode#OH_CM_NOT_FOUND} 17500002 - Indicates that the certificate does not exist.
- *         {@link OH_CM_ErrorCode#OH_CM_ACCESS_UKEY_SERVICE_FAILED} 17500010 - Indicates that access USB key service failed.
+ *         {@link OH_CM_ErrorCode#OH_CM_ACCESS_UKEY_SERVICE_FAILED} 17500010 - Indicates that
+ *         access USB key service failed.
  * @permission ohos.permission.ACCESS_CERT_MANAGER
  * @since 22
  */
@@ -72,9 +75,11 @@ int32_t OH_CertManager_GetUkeyCertificate(const OH_CM_Blob *ukeyCertIndex,
  * @param certificate Indicates the detail information of private certificate.
  * @return {@link OH_CM_ErrorCode#OH_CM_SUCCESS} 0 - The operation is successful.
  *         {@link OH_CM_ErrorCode#OH_CM_HAS_NO_PERMISSION} 201 - Permission verification failed.
- *         {@link OH_CM_ErrorCode#OH_CM_PARAMETER_VALIDATION_FAILED} 17500011 - Indicates that the input parameters validation failed.
- *    for example, the parameter format is incorrect or the value range is invalid.
- *         {@link OH_CM_ErrorCode#OH_CM_INNER_FAILURE} 17500001 - Internal error. Possible causes: 1. IPC communication failed; 
+ *         {@link OH_CM_ErrorCode#OH_CM_PARAMETER_VALIDATION_FAILED} 17500011 - Indicates that the
+ *   input parameters validation failed.
+ *   for example, the parameter format is incorrect or the value range is invalid.
+ *         {@link OH_CM_ErrorCode#OH_CM_INNER_FAILURE} 17500001 - Internal error. Possible causes:
+ *    1. IPC communication failed; 
  *    2. Memory operation error; 3. File operation error.
  *         {@link OH_CM_ErrorCode#OH_CM_NOT_FOUND} 17500002 - Indicates that the certificate does not exist.
  * @permission ohos.permission.ACCESS_CERT_MANAGER
@@ -89,9 +94,11 @@ int32_t OH_CertManager_GetPrivateCertificate(const OH_CM_Blob *keyUri, OH_CM_Cre
  * @param certificate Indicates the detail information of public certificate.
  * @return {@link OH_CM_ErrorCode#OH_CM_SUCCESS} 0 - The operation is successful.
  *         {@link OH_CM_ErrorCode#OH_CM_HAS_NO_PERMISSION} 201 - Permission verification failed.
- *         {@link OH_CM_ErrorCode#OH_CM_PARAMETER_VALIDATION_FAILED} 17500011 - Indicates that the input parameters validation failed.
+ *         {@link OH_CM_ErrorCode#OH_CM_PARAMETER_VALIDATION_FAILED} 17500011 - Indicates that the
+ *    input parameters validation failed.
  *    for example, the parameter format is incorrect or the value range is invalid.
- *         {@link OH_CM_ErrorCode#OH_CM_INNER_FAILURE} 17500001 - Internal error. Possible causes: 1. IPC communication failed; 
+ *         {@link OH_CM_ErrorCode#OH_CM_INNER_FAILURE} 17500001 - Internal error. Possible causes:
+ *    1. IPC communication failed; 
  *    2. Memory operation error; 3. File operation error.
  *         {@link OH_CM_ErrorCode#OH_CM_NOT_FOUND} 17500002 - Indicates that the certificate does not exist.
  *         {@link OH_CM_ErrorCode#OH_CM_NO_AUTHORIZATION} 17500005 - The application is not authorized by the user.

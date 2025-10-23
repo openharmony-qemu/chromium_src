@@ -61,7 +61,10 @@ struct OH_Huks_Result  OH_Huks_CloseRemoteHandle(
 // PIN码认证
 struct OH_Huks_Result OH_Huks_AuthUkeyPin(const struct OH_Huks_Blob *resourceId,
     const struct OH_Huks_ExternalCryptoParamSet *paramSetIn, uint32_t *retryCount);
-struct OH_Huks_Result OH_Huks_GetUkeyPinAuthState(const struct OH_Huks_Blob *index, const struct OH_Huks_ExternalCryptoParamSet *paramSetIn, bool *stateOut);
+struct OH_Huks_Result OH_Huks_GetUkeyPinAuthState(
+    const struct OH_Huks_Blob *index,
+    const struct OH_Huks_ExternalCryptoParamSet *paramSetIn,
+    bool *stateOut);
 struct OH_Huks_Result OH_Huks_ClearPinAuthState(const struct OH_Huks_Blob *resourceId);
  
 // 签名验签

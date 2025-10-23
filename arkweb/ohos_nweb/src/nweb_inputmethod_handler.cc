@@ -347,7 +347,7 @@ void NWebInputMethodHandler::HandleSecurityLayerHandlerOnUI() {
 }
 // LCOV_EXCL_STOP
 
-void NWebInputMethodHandler::UpdateTextFieldStatus() {
+void NWebInputMethodHandler::UpdateTextFieldStatus(bool isImeShowKeyboard, bool isTextInputfocus) {
   if (browser_ == nullptr) {
     return;
   }
@@ -358,11 +358,11 @@ void NWebInputMethodHandler::UpdateTextFieldStatus() {
   }
 
   CefRefPtr<CefTask> task = new InputMethodTask(base::BindOnce(
-      &NWebInputMethodHandler::UpdateTextFieldStatusHandlerOnUI, this));
+      &NWebInputMethodHandler::UpdateTextFieldStatusHandlerOnUI, this, isImeShowKeyboard, isTextInputfocus));
   host->PostTaskToUIThread(task);
 }
 
-void NWebInputMethodHandler::UpdateTextFieldStatusHandlerOnUI() {
+void NWebInputMethodHandler::UpdateTextFieldStatusHandlerOnUI(bool isImeShowKeyboard, bool isTextInputfocus) {
   if (browser_ == nullptr) {
     return;
   }
@@ -370,7 +370,7 @@ void NWebInputMethodHandler::UpdateTextFieldStatusHandlerOnUI() {
   if (host == nullptr) {
     return;
   }
-  host->UpdateTextFieldStatus(NeedKeyboardShow(), isAttachSuccess_);
+  host->UpdateTextFieldStatus(isImeShowKeyboard, isTextInputfocus);
 }
 
 void NWebInputMethodHandler::ComputeEditorInfo(InputInfo inputInfo,
@@ -852,6 +852,7 @@ void NWebInputMethodHandler::SetIMEStatusOnUI(bool status) {
     isManualCloseKeyboard_ = false;
   }
   ime_shown_ = status;
+  UpdateTextFieldStatus(status, status);
 }
 
 // LCOV_EXCL_START

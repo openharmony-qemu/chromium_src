@@ -334,6 +334,8 @@ double CefValueImpl::GetDouble() {
   return ret_value;
 }
 
+#include "cef/ohos_cef_ext/libcef/common/values_impl_for_include.cc"
+
 CefString CefValueImpl::GetString() {
   base::AutoLock lock_scope(lock_);
 

@@ -12,7 +12,7 @@
 
 // Implementation of the CefCookieManager interface. May be created on any
 // thread.
-class CefCookieManagerImpl : public CefCookieManager {
+class CefCookieManagerImpl : virtual public CefCookieManager {
  public:
   CefCookieManagerImpl();
 
@@ -25,19 +25,36 @@ class CefCookieManagerImpl : public CefCookieManager {
                   CefRefPtr<CefCompletionCallback> callback);
 
   // CefCookieManager methods.
-  bool VisitAllCookies(CefRefPtr<CefCookieVisitor> visitor) override;
+  bool VisitAllCookies(CefRefPtr<CefCookieVisitor> visitor,
+                       bool is_sync) override;
   bool VisitUrlCookies(const CefString& url,
                        bool includeHttpOnly,
-                       CefRefPtr<CefCookieVisitor> visitor) override;
+                       CefRefPtr<CefCookieVisitor> visitor,
+                       bool is_sync,
+                       bool is_from_ndk) override;
   bool SetCookie(const CefString& url,
                  const CefCookie& cookie,
-                 CefRefPtr<CefSetCookieCallback> callback) override;
+                 CefRefPtr<CefSetCookieCallback> callback,
+                 bool is_sync,
+                 const CefString& str_cookie,
+                 bool includeHttpOnly) override;
   bool DeleteCookies(const CefString& url,
                      const CefString& cookie_name,
-                     CefRefPtr<CefDeleteCookiesCallback> callback) override;
+#if BUILDFLAG(IS_ARKWEB)
+                     bool is_session,
+#endif
+                     CefRefPtr<CefDeleteCookiesCallback> callback,
+                     bool is_sync) override;
   bool FlushStore(CefRefPtr<CefCompletionCallback> callback) override;
 
+#if BUILDFLAG(IS_ARKWEB)
+  const CefBrowserContext::Getter& GetBrowserContextGetter() {
+    return browser_context_getter_;
+  }
+#endif
+
  private:
+  friend class CefCookieManagerImplExt;
   bool VisitAllCookiesInternal(CefRefPtr<CefCookieVisitor> visitor);
   bool VisitUrlCookiesInternal(const GURL& url,
                                bool includeHttpOnly,
@@ -55,7 +72,6 @@ class CefCookieManagerImpl : public CefCookieManager {
   void StoreOrTriggerInitCallback(base::OnceClosure callback);
 
   bool ValidContext() const;
-
   // Only accessed on the UI thread. Will be non-null after Initialize().
   CefBrowserContext::Getter browser_context_getter_;
 

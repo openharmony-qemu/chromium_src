@@ -279,6 +279,21 @@ class CefLifeSpanHandler : public virtual CefBaseRefCounted {
   ///
   /*--cef()--*/
   virtual void OnBeforeClose(CefRefPtr<CefBrowser> browser) {}
+
+#if BUILDFLAG(IS_OHOS)
+  ///
+  /// Called on the UI thread before a new popup browser is created
+  ///
+  /*--cef(optional_param=target_url)--*/
+  virtual bool OnPreBeforePopup(CefRefPtr<CefBrowser> browser,
+                                CefRefPtr<CefFrame> frame,
+                                const CefString& target_url,
+                                WindowOpenDisposition target_disposition,
+                                bool user_gesture,
+                                CefRefPtr<CefCallback> callback) {
+    return true;
+  }
+#endif  // BUILDFLAG(IS_OHOS)
 };
 
 #endif  // CEF_INCLUDE_CEF_LIFE_SPAN_HANDLER_H_

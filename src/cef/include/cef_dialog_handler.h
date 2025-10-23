@@ -41,6 +41,7 @@
 #include "include/cef_base.h"
 #include "include/cef_browser.h"
 
+class CefDialogHandlerExt;
 ///
 /// Callback interface for asynchronous continuation of file dialog requests.
 ///
@@ -91,9 +92,6 @@ class CefDialogHandler : public virtual CefBaseRefCounted {
   /// return false. If this method returns false it may be called an additional
   /// time for the same dialog (both before and after MIME type expansion).
   ///
-  /*--cef(optional_param=title,optional_param=default_file_path,
-          optional_param=accept_filters,optional_param=accept_extensions,
-          optional_param=accept_descriptions)--*/
   virtual bool OnFileDialog(CefRefPtr<CefBrowser> browser,
                             FileDialogMode mode,
                             const CefString& title,
@@ -101,9 +99,32 @@ class CefDialogHandler : public virtual CefBaseRefCounted {
                             const std::vector<CefString>& accept_filters,
                             const std::vector<CefString>& accept_extensions,
                             const std::vector<CefString>& accept_descriptions,
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+                            bool capture,
+                            const std::vector<CefString>& mime_filters,
+#endif
                             CefRefPtr<CefFileDialogCallback> callback) {
     return false;
   }
+
+  virtual CefRefPtr<CefDialogHandlerExt> AsArkDialogHandler() {
+    return nullptr;
+  }
+
+  ///
+  /// Handles the BeforeUnload event.
+  ///
+  /*--cef()--*/
+  virtual void OnBeforeUnloadFired(CefRefPtr<CefBrowser> browser,
+                                   bool proceed) {}
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  ///
+  /// Share file.
+  ///
+  virtual void OnShareFile(const std::string& file_path,
+                           const std::string& utd_type_id) {}
+#endif
 };
 
 #endif  // CEF_INCLUDE_CEF_DIALOG_HANDLER_H_

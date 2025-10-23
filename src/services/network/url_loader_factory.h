@@ -26,6 +26,7 @@ namespace network {
 
 class NetworkContext;
 class ResourceSchedulerClient;
+class URLLoaderFactoryUtils;
 
 namespace cors {
 class CorsURLLoaderFactory;
@@ -50,6 +51,10 @@ class URLLoader;
 class URLLoaderFactory : public mojom::URLLoaderFactory,
                          public URLLoaderContext {
  public:
+  friend class URLLoaderFactoryUtils;
+
+  std::unique_ptr<URLLoaderFactoryUtils> factoryUtils_;
+
   // NOTE: |context| must outlive this instance.
   URLLoaderFactory(
       NetworkContext* context,

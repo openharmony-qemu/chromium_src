@@ -209,6 +209,10 @@ void ScrollbarThemeOverlay::PaintThumb(GraphicsContext& context,
     canvas->scale(-1, 1);
   }
 
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  scrollbar_thumb.scrollbar_color = scrollbar.GetScrollBarColor();
+#endif  // ARKWEB_SCROLLBAR
+
   blink::WebThemeEngine::ExtraParams params(scrollbar_thumb);
 
   mojom::blink::ColorScheme color_scheme = scrollbar.UsedColorScheme();

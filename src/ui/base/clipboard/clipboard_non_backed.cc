@@ -438,7 +438,9 @@ class ClipboardDataBuilder {
   static ClipboardData* current_data_;
 };
 
+#if !BUILDFLAG(ARKWEB_ASAN)
 ClipboardData* ClipboardDataBuilder::current_data_ = nullptr;
+#endif // BUILDFLAG(ARKWEB_ASAN)
 
 // static
 ClipboardNonBacked* ClipboardNonBacked::GetForCurrentThread() {

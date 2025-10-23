@@ -65,6 +65,10 @@ const char* BackingTypeToString(SharedImageBackingType type) {
       return "DXGISwapChain";
     case SharedImageBackingType::kWrappedGraphiteTexture:
       return "WrappedGraphiteTexture";
+#if BUILDFLAG(ARKWEB_VULKAN)
+    case SharedImageBackingType::kOHOSNativeBuffer:
+      return "OHOSNativeBuffer";
+#endif
   }
   NOTREACHED();
 }

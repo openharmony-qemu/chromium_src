@@ -51,7 +51,11 @@ namespace {
 
 // TODO(crbug.com/40490789): Make this a proper resource.
 constexpr char kFullPageMimeHandlerViewHTML[] =
-    "<!doctype html><html><body style='height: 100%%; width: 100%%; overflow: "
+    "<!doctype html><html>"
+#if BUILDFLAG(ARKWEB_PDF)
+    "<head><meta name='viewport' content='width=device-width'></head>"
+#endif
+    "<body style='height: 100%%; width: 100%%; overflow: "
     "hidden; margin:0px; background-color: rgb(%d, %d, %d);'><embed "
     "name='%s' "
     "style='position:absolute; left: 0; top: 0;'width='100%%' height='100%%'"

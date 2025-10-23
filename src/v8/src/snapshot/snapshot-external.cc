@@ -20,7 +20,7 @@ namespace internal {
 
 static base::LazyMutex external_startup_data_mutex = LAZY_MUTEX_INITIALIZER;
 static v8::StartupData external_startup_blob = {nullptr, 0};
-#ifdef V8_TARGET_OS_ANDROID
+#if defined(V8_TARGET_OS_ANDROID) || defined(V8_TARGET_OS_OHOS)
 static bool external_startup_checksum_verified = false;
 #endif
 
@@ -32,13 +32,13 @@ void SetSnapshotFromFile(StartupData* snapshot_blob) {
   DCHECK(!external_startup_blob.data);
   DCHECK(Snapshot::SnapshotIsValid(snapshot_blob));
   external_startup_blob = *snapshot_blob;
-#ifdef V8_TARGET_OS_ANDROID
+  #if defined(V8_TARGET_OS_ANDROID) || defined(V8_TARGET_OS_OHOS)
   external_startup_checksum_verified = false;
 #endif
 }
 
 bool Snapshot::ShouldVerifyChecksum(const v8::StartupData* data) {
-#ifdef V8_TARGET_OS_ANDROID
+  #if defined(V8_TARGET_OS_ANDROID) || defined(V8_TARGET_OS_OHOS)
   base::MutexGuard lock_guard(external_startup_data_mutex.Pointer());
   if (data != &external_startup_blob) {
     return v8_flags.verify_snapshot_checksum;

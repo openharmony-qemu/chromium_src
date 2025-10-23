@@ -16,6 +16,7 @@
 #include "cc/raster/tile_task.h"
 #include "cc/tiles/image_decode_cache_utils.h"
 #include "cc/tiles/tile_priority.h"
+#include "arkweb/build/features/features.h"
 
 namespace cc {
 
@@ -84,6 +85,10 @@ class CC_EXPORT ImageDecodeCache {
         return ScopedImageType::kBmp;
       case ImageType::kGIF:
         return ScopedImageType::kGif;
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      case ImageType::kHEIF:
+        return ScopedImageType::kHeif;
+#endif
       case ImageType::kICO:
         return ScopedImageType::kIco;
       case ImageType::kJPEG:

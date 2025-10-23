@@ -84,5 +84,9 @@ void FakeDistiller::RunDistillerCallbackInternal(
   std::move(article_callback_).Run(std::move(proto));
 }
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+void FakeDistiller::AbortDistill() {}
+#endif // ARKWEB_READER_MODE
+
 }  // namespace test
 }  // namespace dom_distiller

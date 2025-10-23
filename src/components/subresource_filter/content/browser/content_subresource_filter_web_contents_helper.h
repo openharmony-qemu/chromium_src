@@ -94,6 +94,10 @@ class ContentSubresourceFilterWebContentsHelper
   void WillDestroyThrottleManager(
       ContentSubresourceFilterThrottleManager* throttle_manager);
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  void CreateThrottleManager(content::NavigationHandle* navigation_handle);
+#endif
+
  protected:
   // content::WebContentsObserver:
   void RenderFrameDeleted(content::RenderFrameHost* frame_host) override;

@@ -257,6 +257,11 @@ class PLATFORM_EXPORT ResourceFetcher
   void ScheduleWarnUnusedPreloads(
       base::OnceCallback<void(Vector<KURL> unused_preloads)> callback);
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  void UpdateAllowPreloadRecord(bool allow) { allow_preload_record_ = allow; }
+  void SetMainUrl(const KURL& url) { main_url_ = url; }
+#endif
+
   MHTMLArchive* Archive() const { return archive_.Get(); }
 
   // Set the deferring state of each loader owned by this ResourceFetcher. This
@@ -724,6 +729,11 @@ class PLATFORM_EXPORT ResourceFetcher
       defer_unused_preload_preloaded_reason_for_testing_;
   features::LcppDeferUnusedPreloadExcludedResourceType
       defer_unused_preload_excluded_resource_type_for_testing_;
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  bool allow_preload_record_ = true;
+  KURL main_url_;
+#endif
 };
 
 class ResourceCacheValidationSuppressor {

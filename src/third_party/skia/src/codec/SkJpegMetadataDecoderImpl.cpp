@@ -7,6 +7,7 @@
 
 #include "src/codec/SkJpegMetadataDecoderImpl.h"
 
+#include "arkweb/build/features/features.h"
 #include "include/core/SkData.h"
 #include "include/private/base/SkTemplates.h"
 #include "src/codec/SkCodecPriv.h"
@@ -188,6 +189,9 @@ bool SkJpegMetadataDecoderImpl::findGainmapImage(SkJpegSourceMgr* sourceMgr,
     // Determine if a support ISO 21496-1 gain map version is present in the base image.
     bool isoGainmapPresent =
             SkGainmapInfo::ParseVersion(getISOGainmapMetadata(/*copyData=*/false).get());
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+    isoGainmapPresent = false;
+#endif
 
     // Determine if Adobe HDR gain map is indicated in the base image.
     bool adobeGainmapPresent = xmp && xmp->getGainmapInfoAdobe(nullptr);

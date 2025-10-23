@@ -52,8 +52,7 @@ void BrowserWindowPropertyManager::UpdateWindowProperties() {
 
 #if BUILDFLAG(ENABLE_CEF)
   if (browser->cef_delegate() &&
-        (browser->is_type_picture_in_picture() ||
-         browser->is_type_devtools()) &&
+      (browser->is_type_picture_in_picture() || browser->is_type_devtools()) &&
         browser->cef_delegate()->HasViewsHostedOpener()) {
     // Don't create a separate taskbar group.
     return;

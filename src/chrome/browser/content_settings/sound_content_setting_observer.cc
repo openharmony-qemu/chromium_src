@@ -88,7 +88,9 @@ void SoundContentSettingObserver::ReadyToCommitNavigation(
 }
 
 void SoundContentSettingObserver::PrimaryPageChanged(content::Page& page) {
+#if !BUILDFLAG(ARKWEB_MEDIA_MUTE_AUDIO)
   MuteOrUnmuteIfNecessary();
+#endif
   logged_site_muted_ukm_ = false;
 }
 

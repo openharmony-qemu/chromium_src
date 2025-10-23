@@ -78,6 +78,7 @@
 #include "third_party/blink/renderer/platform/wtf/forward.h"
 #include "third_party/blink/renderer/platform/wtf/vector.h"
 #include "v8/include/v8.h"
+#include "third_party/blink/renderer/core/frame/local_frame_client_ext.h"
 
 namespace network {
 class SharedURLLoaderFactory;
@@ -122,7 +123,8 @@ namespace scheduler {
 class TaskAttributionId;
 }  // namespace scheduler
 
-class CORE_EXPORT LocalFrameClient : public FrameClient {
+class CORE_EXPORT LocalFrameClient : public FrameClient,
+                                     public LocalFrameClientExt {
  public:
   ~LocalFrameClient() override = default;
 

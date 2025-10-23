@@ -10,6 +10,10 @@
 #include "third_party/blink/public/platform/browser_interface_broker_proxy.h"
 #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/instrumentation/resource_coordinator/document_resource_coordinator_utils.h"
+#endif
+
 namespace blink {
 
 // static
@@ -26,6 +30,9 @@ DocumentResourceCoordinator::DocumentResourceCoordinator(
     const BrowserInterfaceBrokerProxy& interface_broker) {
   interface_broker.GetInterface(service_.BindNewPipeAndPassReceiver());
   DCHECK(service_);
+#if BUILDFLAG(IS_ARKWEB)
+  coordinator_utils_ = std::make_unique<DocumentResourceCoordinatorUtils>(this);
+#endif
 }
 
 DocumentResourceCoordinator::~DocumentResourceCoordinator() = default;

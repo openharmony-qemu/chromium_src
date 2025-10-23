@@ -88,9 +88,11 @@ void SubresourceFilterComponentInstallerPolicy::ComponentReady(
       install_dir.Append(subresource_filter::kUnindexedRulesetLicenseFileName);
   subresource_filter::RulesetService* ruleset_service =
       g_browser_process->subresource_filter_ruleset_service();
+#if !BUILDFLAG(ARKWEB_ADBLOCK)
   if (ruleset_service) {
     ruleset_service->IndexAndStoreAndPublishRulesetIfNeeded(ruleset_info);
   }
+#endif
 }
 
 // Called during startup and installation before ComponentReady().

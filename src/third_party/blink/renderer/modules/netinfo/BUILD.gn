@@ -9,4 +9,9 @@ blink_modules_sources("netinfo") {
     "network_information.cc",
     "network_information.h",
   ]
+  if (defined(is_arkweb) && is_arkweb) {
+    deps = [
+      "//base:base_static",
+    ]
+  }
 }

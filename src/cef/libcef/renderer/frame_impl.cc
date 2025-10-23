@@ -4,6 +4,7 @@
 
 #include "cef/libcef/renderer/frame_impl.h"
 
+#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 
 // Enable deprecation warnings on Windows. See http://crbug.com/585142.
@@ -17,7 +18,6 @@
 #endif
 #endif
 
-#include "base/strings/string_number_conversions.h"
 #include "base/strings/stringprintf.h"
 #include "base/strings/utf_string_conversions.h"
 #include "cef/include/cef_urlrequest.h"
@@ -49,20 +49,20 @@
 #include "third_party/blink/public/web/web_view.h"
 #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "libcef/common/arkweb_request_impl_ext.h"
+#endif
+
 namespace {
 
 // Maximum number of times to retry the browser connection.
 constexpr size_t kConnectionRetryMaxCt = 3U;
 
-// Length of time to wait before initiating a browser connection retry. The
-// short value is optimized for navigation-related disconnects (time delta
-// between CefFrameImpl::OnDisconnect and CefFrameHostImpl::MaybeReAttach) which
-// should take << 10ms in normal circumstances (reasonably fast machine, limited
-// redirects). The long value is optimized for slower machines or navigations
-// with many redirects to reduce overall failure rates. See related comments in
-// CefFrameImpl::OnDisconnect.
-constexpr auto kConnectionRetryDelayShort = base::Milliseconds(25);
-constexpr auto kConnectionRetryDelayLong = base::Seconds(3);
+// Length of time to wait before initiating a browser connection retry.
+constexpr auto kConnectionRetryDelay = base::Seconds(1);
+
+// Length of time to wait for the browser connection ACK before timing out.
+constexpr auto kConnectionTimeout = base::Seconds(10);
 
 std::string GetDebugString(blink::WebLocalFrame* frame) {
   return "frame " + render_frame_util::GetIdentifier(frame);
@@ -149,7 +149,11 @@ void CefFrameImpl::LoadRequest(CefRefPtr<CefRequest> request) {
   }
 
   auto params = cef::mojom::RequestParams::New();
+#if BUILDFLAG(IS_ARKWEB)
+  request->AsArkWebRequestExt()->Get(params);
+#else
   static_cast<CefRequestImpl*>(request.get())->Get(params);
+#endif
   LoadRequest(std::move(params));
 }
 
@@ -316,23 +320,20 @@ void CefFrameImpl::SendProcessMessage(CefProcessId target_process,
   }
 }
 
+void CefFrameImpl::OnAttached() {
+  // Called indirectly from RenderFrameCreated.
+  ConnectBrowserFrame(ConnectReason::RENDER_FRAME_CREATED);
+}
+
 void CefFrameImpl::OnWasShown() {
-  if (browser_connection_state_ == ConnectionState::DISCONNECTED &&
-      did_commit_provisional_load_) {
-    // Reconnect a frame that has exited the bfcache. We ignore temporary
-    // frames that have never called DidCommitProvisionalLoad.
+  if (browser_connection_state_ == ConnectionState::DISCONNECTED) {
+    // Reconnect a frame that has exited the bfcache.
     ConnectBrowserFrame(ConnectReason::WAS_SHOWN);
   }
 }
 
 void CefFrameImpl::OnDidCommitProvisionalLoad() {
   did_commit_provisional_load_ = true;
-  if (browser_connection_state_ == ConnectionState::DISCONNECTED) {
-    // Connect after RenderFrameImpl::DidCommitNavigation has potentially
-    // reset the BrowserInterfaceBroker in the browser process. See related
-    // comments in OnDisconnect.
-    ConnectBrowserFrame(ConnectReason::DID_COMMIT);
-  }
   MaybeInitializeScriptContext();
 }
 
@@ -429,7 +430,7 @@ void CefFrameImpl::OnDetached() {
   browser_->FrameDetached(frame_);
   frame_ = nullptr;
 
-  OnDisconnect(DisconnectReason::DETACHED, 0, std::string(), MOJO_RESULT_OK);
+  OnDisconnect(DisconnectReason::DETACHED, std::string());
 
   browser_ = nullptr;
 
@@ -475,8 +476,8 @@ void CefFrameImpl::ConnectBrowserFrame(ConnectReason reason) {
   if (VLOG_IS_ON(1)) {
     std::string reason_str;
     switch (reason) {
-      case ConnectReason::DID_COMMIT:
-        reason_str = "DID_COMMIT";
+      case ConnectReason::RENDER_FRAME_CREATED:
+        reason_str = "RENDER_FRAME_CREATED";
         break;
       case ConnectReason::WAS_SHOWN:
         reason_str = "WAS_SHOWN";
@@ -486,19 +487,17 @@ void CefFrameImpl::ConnectBrowserFrame(ConnectReason reason) {
             "RETRY %zu/%zu", browser_connect_retry_ct_, kConnectionRetryMaxCt);
         break;
     }
-    DVLOG(1) << __func__ << ": " << frame_debug_str_
-             << " connection request (reason=" << reason_str << ")";
+    VLOG(1) << frame_debug_str_ << " connection request (reason=" << reason_str
+            << ")";
   }
-
-  browser_connect_timer_.Stop();
 
   // Don't attempt to connect an invalid or bfcache'd frame. If a bfcache'd
   // frame returns to active status a reconnect will be triggered via
   // OnWasShown().
   if (!frame_ || attach_denied_ || blink_glue::IsInBackForwardCache(frame_)) {
     browser_connection_state_ = ConnectionState::DISCONNECTED;
-    DVLOG(1) << __func__ << ": " << frame_debug_str_
-             << " connection retry canceled (reason="
+    browser_connect_timer_.Stop();
+    VLOG(1) << frame_debug_str_ << " connection retry canceled (reason="
              << (frame_ ? (attach_denied_ ? "ATTACH_DENIED" : "BFCACHED")
                         : "INVALID")
              << ")";
@@ -506,6 +505,8 @@ void CefFrameImpl::ConnectBrowserFrame(ConnectReason reason) {
   }
 
   browser_connection_state_ = ConnectionState::CONNECTION_PENDING;
+  browser_connect_timer_.Start(FROM_HERE, kConnectionTimeout, this,
+                               &CefFrameImpl::OnBrowserFrameTimeout);
 
   auto& browser_frame = GetBrowserFrame(/*expect_acked=*/false);
   CHECK(browser_frame);
@@ -520,7 +521,7 @@ void CefFrameImpl::ConnectBrowserFrame(ConnectReason reason) {
   // connection.
   browser_frame->FrameAttached(receiver_.BindNewPipeAndPassRemote(),
                                reattached);
-  receiver_.set_disconnect_with_reason_and_result_handler(
+  receiver_.set_disconnect_with_reason_handler(
       base::BindOnce(&CefFrameImpl::OnRenderFrameDisconnect, this));
 }
 
@@ -535,40 +536,44 @@ const mojo::Remote<cef::mojom::BrowserFrame>& CefFrameImpl::GetBrowserFrame(
       // Triggers creation of a CefBrowserFrame in the browser process.
       render_frame->GetBrowserInterfaceBroker().GetInterface(
           browser_frame_.BindNewPipeAndPassReceiver());
-      browser_frame_.set_disconnect_with_reason_and_result_handler(
+      browser_frame_.set_disconnect_with_reason_handler(
           base::BindOnce(&CefFrameImpl::OnBrowserFrameDisconnect, this));
     }
   }
   return browser_frame_;
 }
 
+void CefFrameImpl::OnBrowserFrameTimeout() {
+  LOG(ERROR) << frame_debug_str_ << " connection timeout";
+  OnDisconnect(DisconnectReason::CONNECT_TIMEOUT, std::string());
+}
+
 void CefFrameImpl::OnBrowserFrameDisconnect(uint32_t custom_reason,
-                                            const std::string& description,
-                                            MojoResult error_result) {
-  OnDisconnect(DisconnectReason::BROWSER_FRAME_DISCONNECT, custom_reason,
-               description, error_result);
+                                            const std::string& description) {
+  OnDisconnect(DisconnectReason::BROWSER_FRAME_DISCONNECT, description);
 }
 
 void CefFrameImpl::OnRenderFrameDisconnect(uint32_t custom_reason,
-                                           const std::string& description,
-                                           MojoResult error_result) {
-  OnDisconnect(DisconnectReason::RENDER_FRAME_DISCONNECT, custom_reason,
-               description, error_result);
+                                           const std::string& description) {
+  OnDisconnect(DisconnectReason::RENDER_FRAME_DISCONNECT, description);
 }
 
 // static
 std::string CefFrameImpl::GetDisconnectDebugString(
     ConnectionState connection_state,
     bool frame_is_valid,
-    bool frame_is_main,
     DisconnectReason reason,
-    uint32_t custom_reason,
-    const std::string& description,
-    MojoResult error_result) {
+    const std::string& description) {
   std::string reason_str;
   switch (reason) {
     case DisconnectReason::DETACHED:
       reason_str = "DETACHED";
+      break;
+    case DisconnectReason::BROWSER_FRAME_DETACHED:
+      reason_str = "BROWSER_FRAME_DETACHED";
+      break;
+    case DisconnectReason::CONNECT_TIMEOUT:
+      reason_str = "CONNECT_TIMEOUT";
       break;
     case DisconnectReason::RENDER_FRAME_DISCONNECT:
       reason_str = "RENDER_FRAME_DISCONNECT";
@@ -596,32 +601,17 @@ std::string CefFrameImpl::GetDisconnectDebugString(
 
   if (!frame_is_valid) {
     state_str += ", FRAME_INVALID";
-  } else if (frame_is_main) {
-    state_str += ", MAIN_FRAME";
-  } else {
-    state_str += ", SUB_FRAME";
-  }
-
-  if (custom_reason !=
-      static_cast<uint32_t>(frame_util::ResetReason::kNoReason)) {
-    state_str += ", custom_reason=" + base::NumberToString(custom_reason);
   }
 
   if (!description.empty()) {
-    state_str += ", description=" + description;
-  }
-
-  if (error_result != MOJO_RESULT_OK) {
-    state_str += ", error_result=" + base::NumberToString(error_result);
+    state_str += ", " + description;
   }
 
   return "(reason=" + reason_str + ", current_state=" + state_str + ")";
 }
 
 void CefFrameImpl::OnDisconnect(DisconnectReason reason,
-                                uint32_t custom_reason,
-                                const std::string& description,
-                                MojoResult error_result) {
+                                const std::string& description) {
   // Ignore multiple calls in close proximity (which may occur if both
   // |browser_frame_| and |receiver_| disconnect). |frame_| will be nullptr
   // when called from/after OnDetached().
@@ -630,108 +620,50 @@ void CefFrameImpl::OnDisconnect(DisconnectReason reason,
     return;
   }
 
-  // Ignore additional calls if we're already disconnected. DETACHED,
-  // RENDER_FRAME_DISCONNECT and/or BROWSER_FRAME_DISCONNECT may arrive in any
-  // order.
-  if (browser_connection_state_ == ConnectionState::DISCONNECTED) {
+  if (attach_denied_) {
+    VLOG(1) << frame_debug_str_ << " connection attach denied";
     return;
   }
 
   const auto connection_state = browser_connection_state_;
   const bool frame_is_valid = !!frame_;
-  const bool frame_is_main = frame_ && frame_->IsOutermostMainFrame();
-  DVLOG(1) << __func__ << ": " << frame_debug_str_ << " disconnected "
-           << GetDisconnectDebugString(connection_state, frame_is_valid,
-                                       frame_is_main, reason, custom_reason,
-                                       description, error_result);
+  VLOG(1) << frame_debug_str_ << " disconnected "
+          << GetDisconnectDebugString(connection_state, frame_is_valid, reason,
+                                      description);
 
   browser_frame_.reset();
   receiver_.reset();
   browser_connection_state_ = ConnectionState::DISCONNECTED;
+  browser_connect_timer_.Stop();
 
-  // True if the frame was previously bound/connected and then intentionally
-  // detached (Receiver::ResetWithReason called) from the browser process side.
-  const bool connected_and_intentionally_detached =
-      (reason == DisconnectReason::BROWSER_FRAME_DISCONNECT ||
-       reason == DisconnectReason::RENDER_FRAME_DISCONNECT) &&
-      custom_reason !=
-          static_cast<uint32_t>(frame_util::ResetReason::kNoReason);
-
-  // Don't retry if the frame is invalid or if the browser process has
+  // Only retry if the frame is still valid and the browser process has not
   // intentionally detached.
-  if (!frame_ || attach_denied_ || connected_and_intentionally_detached) {
-    return;
-  }
-
-  // True if the connection was closed (binding declined) from the browser
-  // process side. This can occur during navigation or if a matching
-  // RenderFrameHost is not currently available (like for bfcache'd frames).
-  // When navigating there is a race in the browser process between
-  // BrowserInterfaceBrokerImpl::GetInterface and RenderFrameHostImpl::
-  // DidCommitNavigation. The connection will be closed if the GetInterface call
-  // from the renderer is still in-flight when DidCommitNavigation calls
-  // |broker_receiver_.reset()|. If, however, the GetInterface call arrives
-  // first (BrowserInterfaceBrokerImpl::GetInterface called and the
-  // PendingReceiver bound) then the binding will be successful and remain
-  // connected until the connection is closed for some other reason (like the
-  // Receiver being reset or the renderer process terminating).
-  const bool connection_binding_declined =
-      (reason == DisconnectReason::BROWSER_FRAME_DISCONNECT ||
-       reason == DisconnectReason::RENDER_FRAME_DISCONNECT) &&
-      error_result == MOJO_RESULT_FAILED_PRECONDITION;
-
+  if (frame_ && reason != DisconnectReason::BROWSER_FRAME_DETACHED) {
   if (browser_connect_retry_ct_++ < kConnectionRetryMaxCt) {
-    DVLOG(1) << __func__ << ": " << frame_debug_str_
-             << " connection retry scheduled (" << browser_connect_retry_ct_
-             << "/" << kConnectionRetryMaxCt << ")";
-    if (!browser_connect_retry_log_.empty()) {
-      browser_connect_retry_log_ += "; ";
-    }
-    browser_connect_retry_log_ += GetDisconnectDebugString(
-        connection_state, frame_is_valid, frame_is_main, reason, custom_reason,
-        description, error_result);
+      VLOG(1) << frame_debug_str_ << " connection retry scheduled";
 
-    // Use a shorter delay for the first retry attempt after the browser process
-    // intentionally declines the connection. This will improve load performance
-    // in normal circumstances (reasonably fast machine and navigations with
-    // limited redirects).
-    const auto retry_delay =
-        connection_binding_declined && browser_connect_retry_ct_ == 1
-            ? kConnectionRetryDelayShort
-            : kConnectionRetryDelayLong;
-
-    // Retry after a delay in case the frame is currently navigating or entering
-    // the bfcache. In the navigation case the retry will likely succeed. In the
-    // bfcache case the status may not be updated immediately, so we allow the
-    // reconnect timer to trigger and then check the status in
-    // ConnectBrowserFrame() instead.
+      // Retry after a delay in case the frame is currently navigating, being
+      // destroyed, or entering the bfcache. In the navigation case the retry
+      // will likely succeed. In the destruction case the retry will be
+      // ignored/canceled due to OnDetached(). In the bfcache case the status
+      // may not be updated immediately, so we allow the reconnect timer to
+      // trigger and check the status in ConnectBrowserFrame() instead.
     browser_connection_state_ = ConnectionState::RECONNECT_PENDING;
     browser_connect_timer_.Start(
-        FROM_HERE, retry_delay,
+          FROM_HERE, kConnectionRetryDelay,
         base::BindOnce(&CefFrameImpl::ConnectBrowserFrame, this,
                        ConnectReason::RETRY));
-    return;
-  }
-
-  DVLOG(1) << __func__ << ": " << frame_debug_str_
-           << " connection retry limit exceeded";
-
-  // Don't crash on retry failures in cases where the browser process has
-  // intentionally declined the connection and we have never been previously
-  // connected. Also don't crash for sub-frame connection failures as those are
-  // less likely to be important functionally. We still crash for other main
-  // frame connection errors or in cases where a previously connected main frame
-  // was disconnected without first being intentionally deleted or detached.
-  const bool ignore_retry_failure =
-      (connection_binding_declined && !ever_connected_) || !frame_is_main;
-
+    } else {
   // Trigger a crash in official builds.
-  LOG_IF(FATAL, !ignore_retry_failure)
-      << frame_debug_str_ << " connection retry failed "
+#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
+      LOG(ERROR) << frame_debug_str_ << " connection retry failed "
+#else
+      LOG(FATAL) << frame_debug_str_ << " connection retry failed "
+#endif  // BUILDFLAG(ARKWEB_BUGFIX_CRASH)
       << GetDisconnectDebugString(connection_state, frame_is_valid,
-                                  frame_is_main, reason, custom_reason,
-                                  description, error_result)
-      << ", prior disconnects: " << browser_connect_retry_log_;
+                                             reason, description);
+    }
+  }
 }
 
 void CefFrameImpl::SendToBrowserFrame(const std::string& function_name,
@@ -788,10 +720,7 @@ void CefFrameImpl::FrameAttachedAck(bool allow) {
   CHECK_EQ(ConnectionState::CONNECTION_PENDING, browser_connection_state_);
   browser_connection_state_ = ConnectionState::CONNECTION_ACKED;
   browser_connect_retry_ct_ = 0;
-  browser_connect_retry_log_.clear();
-
-  DVLOG(1) << __func__ << ": " << frame_debug_str_
-           << " connection acked allow=" << allow;
+  browser_connect_timer_.Stop();
 
   if (!allow) {
     // This will be followed by a connection disconnect from the browser side.
@@ -802,8 +731,6 @@ void CefFrameImpl::FrameAttachedAck(bool allow) {
     return;
   }
 
-  ever_connected_ = true;
-
   auto& browser_frame = GetBrowserFrame();
   CHECK(browser_frame);
 
@@ -811,6 +738,12 @@ void CefFrameImpl::FrameAttachedAck(bool allow) {
     std::move(queued_browser_actions_.front().second).Run(browser_frame);
     queued_browser_actions_.pop();
   }
+}
+
+void CefFrameImpl::FrameDetached() {
+  // Sent from the browser process in response to CefFrameHostImpl::Detach().
+  CHECK_EQ(ConnectionState::CONNECTION_ACKED, browser_connection_state_);
+  OnDisconnect(DisconnectReason::BROWSER_FRAME_DETACHED, std::string());
 }
 
 void CefFrameImpl::SendMessage(const std::string& name,
@@ -929,6 +862,45 @@ void CefFrameImpl::ContextLifecycleStateChanged(
     browser_->OnEnterBFCache();
   }
 }
+
+
+#if defined(OHOS_INPUT_EVENTS)
+void CefFrameImpl::SetFocusByPosition(float x, float y, cef::mojom::RenderFrame::SetFocusByPositionCallback callback) {
+  LOG(INFO) << "SetFocusByPosition in cef frame";
+  bool isEditable = false;
+  auto render_frame = content::RenderFrame::FromWebFrame(frame_);
+  if (!render_frame) {
+    LOG(ERROR) << "render_frame NULL";
+    std::move(callback).Run(isEditable);
+    return;
+  }
+  if (!render_frame->IsMainFrame()) {
+    LOG(ERROR) << "IsMainFrame false";
+    std::move(callback).Run(isEditable);
+    return;
+  }
+  blink::WebView* webview = render_frame->GetWebView();
+  if (!webview) {
+    LOG(ERROR) << "webview is NULL";
+    std::move(callback).Run(isEditable);
+    return;
+  }
+  const blink::WebHitTestResult result = webview->HitTestResultForTap(gfx::Point(x, y), gfx::Size(1, 1));
+  if (result.IsContentEditable() && result.GetNode().IsElementNode()) {
+    isEditable = true;
+    const blink::WebElement webElement = result.GetNode().To<blink::WebElement>();
+    if (!webElement.Focused() && webElement.IsFocusable()) {
+      std::move(callback).Run(isEditable);
+      LOG(INFO) << "can focus and do Focus";
+      // focus must be async so as not to block the thread
+      blink_glue::PenTouchInputFocus(result.GetNode());
+      return;
+    }
+  }
+  std::move(callback).Run(isEditable);
+  LOG(INFO) << "SetFocusByPosition cef frame done. isEditable:" << (isEditable ? "true" : "false");
+}
+#endif // defined(OHOS_INPUT_EVENTS)
 
 // Enable deprecation warnings on Windows. See http://crbug.com/585142.
 #if BUILDFLAG(IS_WIN)

@@ -9,6 +9,10 @@ if (is_android) {
   import("//build/config/android/rules.gni")
 }
 
+if (is_arkweb) {
+  import("//arkweb/build/features/features.gni")
+}
+
 blink_modules_sources("media_controls") {
   sources = [
     "elements/media_control_animated_arrow_container_element.cc",
@@ -103,6 +107,11 @@ blink_modules_sources("media_controls") {
     "media_controls_text_track_manager.h",
   ]
 
+  if (arkweb_media) {
+    import("//arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/arkweb_blink_renderer_modules_media_controls_ext.gni")
+    sources += arkweb_blink_renderer_modules_media_controls_sources
+  }
+
   deps = [
     ":media_controls_resources",
     "//services/service_manager/public/cpp",
@@ -113,6 +122,10 @@ blink_modules_sources("media_controls") {
     "//third_party/blink/renderer/modules/screen_orientation",
     "//ui/strings",
   ]
+
+  if (enable_arkweb_ext) {
+    deps += [ "//ohos_nweb_ex/overrides/ui/strings" ]
+  }
 }
 
 grit("media_controls_resources") {

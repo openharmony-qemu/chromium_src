@@ -86,6 +86,11 @@ class CefMainRunner final {
   void BeforeUIThreadInitialize();
   void BeforeUIThreadShutdown();
 
+#if BUILDFLAG(IS_ARKWEB)
+  // parse pixel ratio from command_line.
+  static void ParsePixelRatio(const base::CommandLine& command_line);
+#endif
+
   const bool multi_threaded_message_loop_;
   const bool external_message_pump_;
 

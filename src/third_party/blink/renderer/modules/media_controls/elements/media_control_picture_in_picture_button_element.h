@@ -6,7 +6,6 @@
 #define THIRD_PARTY_BLINK_RENDERER_MODULES_MEDIA_CONTROLS_ELEMENTS_MEDIA_CONTROL_PICTURE_IN_PICTURE_BUTTON_ELEMENT_H_
 
 #include "third_party/blink/renderer/modules/media_controls/elements/media_control_input_element.h"
-
 namespace blink {
 
 class Event;

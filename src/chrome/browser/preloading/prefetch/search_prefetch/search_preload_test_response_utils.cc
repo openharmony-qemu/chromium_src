@@ -89,44 +89,6 @@ void SearchPreloadDeferrableResponse::SendResponse(
 SearchPreloadResponseController::SearchPreloadResponseController() = default;
 SearchPreloadResponseController::~SearchPreloadResponseController() = default;
 
-class SearchPreloadResponseController::DelayedResponseTask {
- public:
-  DelayedResponseTask(
-      const scoped_refptr<base::SingleThreadTaskRunner>& task_runner,
-      base::OnceClosure response_closure)
-      : task_runner_(task_runner),
-        response_closure_(std::move(response_closure)) {}
-
-  ~DelayedResponseTask() = default;
-
-  // Makes this movable to run the task out of lock's scope.
-  DelayedResponseTask(DelayedResponseTask&& task)
-      : task_runner_(task.task_runner_),
-        response_closure_(std::move(task.response_closure_)) {}
-  DelayedResponseTask& operator=(DelayedResponseTask&& task) {
-    if (this != &task) {
-      task_runner_ = task.task_runner_;
-      response_closure_ = std::move(task.response_closure_);
-    }
-    return *this;
-  }
-
-  void Run() {
-    ASSERT_TRUE(
-        content::BrowserThread::CurrentlyOn(content::BrowserThread::UI));
-    task_runner_->PostTask(FROM_HERE, std::move(response_closure_));
-  }
-
- private:
-  // Task runner of the thread on which a service server is running.
-  scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
-
-  // Closure for making response dispatching controllable. The closure should
-  // be executed on the thread that the server is running on, as it sends
-  // network response.
-  base::OnceClosure response_closure_;
-};
-
 void SearchPreloadResponseController::AddDelayedResponseTask(
     const scoped_refptr<base::SingleThreadTaskRunner>& task_runner,
     base::OnceClosure response_closure) {

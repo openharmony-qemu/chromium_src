@@ -29,7 +29,7 @@ class Uint32;
 /**
  * The superclass of all JavaScript values and objects.
  */
-class V8_EXPORT Value : public Data {
+class V8_EXPORT JSVM_EXPORT Value : public Data {
  public:
   /**
    * Returns true if this value is the undefined value.  See ECMA-262

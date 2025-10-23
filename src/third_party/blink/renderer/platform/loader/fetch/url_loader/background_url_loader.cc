@@ -338,6 +338,7 @@ class BackgroundURLLoader::Context
           &Context::OnReceivedResponse, context_, std::move(head),
           std::move(body), std::move(cached_metadata)));
     }
+
     void OnTransferSizeUpdated(int transfer_size_diff) override {
       CHECK(background_task_runner_->RunsTasksInCurrentSequence());
       if (waiting_for_background_response_processor_) {
@@ -382,6 +383,11 @@ class BackgroundURLLoader::Context
     }
 
    private:
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+    void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region,
+                                        uint64_t buffer_size) override{}
+#endif
+
     scoped_refptr<Context> context_;
     const scoped_refptr<base::SequencedTaskRunner> background_task_runner_;
     std::unique_ptr<BackgroundResponseProcessor> background_response_processor_;
@@ -452,7 +458,11 @@ class BackgroundURLLoader::Context
             : nullptr,
         base::BindOnce(&Context::EvictFromBackForwardCacheOnBackground, this),
         base::BindRepeating(
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+            &Context::DidBufferLoadWhileInBackForwardCacheOnBackground, this), false);
+#else
             &Context::DidBufferLoadWhileInBackForwardCacheOnBackground, this));
+#endif
   }
 
   void CancelOnBackground() {
@@ -773,11 +783,17 @@ void BackgroundURLLoader::LoadAsynchronously(
         resource_load_info_notifier_wrapper,
     CodeCacheHost* code_cache_host,
     URLLoaderClient* client) {
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  LOG(DEBUG) << "intercept URLLoader::LoadAsynchronously+++";
+#endif
   bool should_use_code_cache_host = !!code_cache_host;
   context_->Start(std::move(request), std::move(top_frame_origin),
                   no_mime_sniffing,
                   std::move(resource_load_info_notifier_wrapper),
                   should_use_code_cache_host, client);
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  LOG(DEBUG) << "intercept URLLoader::LoadAsynchronously---";
+#endif
 }
 
 void BackgroundURLLoader::Freeze(LoaderFreezeMode mode) {

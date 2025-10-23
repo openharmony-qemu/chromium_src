@@ -49,10 +49,16 @@ class DistillabilityDriver
   DistillabilityDriver(const DistillabilityDriver&) = delete;
   DistillabilityDriver& operator=(const DistillabilityDriver&) = delete;
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  void DidStartNavigation(content::NavigationHandle* navigation_handle) override;
+  void DidRedirectNavigation(content::NavigationHandle* navigation_handle) override;
+#endif // ARKWEB_READER_MODE
+
  private:
   explicit DistillabilityDriver(content::WebContents* web_contents);
   friend class content::WebContentsUserData<DistillabilityDriver>;
   friend class DistillabilityServiceImpl;
+  friend class DistillabilityServiceImplExt;
 
   void OnDistillability(const DistillabilityResult& result);
 

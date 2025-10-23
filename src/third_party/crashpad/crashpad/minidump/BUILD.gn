@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import("../build/crashpad_buildconfig.gni")
+import("//arkweb/build/features/features.gni")
 
 crashpad_static_library("minidump") {
   sources = [

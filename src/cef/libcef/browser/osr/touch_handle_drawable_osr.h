@@ -14,7 +14,9 @@
 #include "ui/touch_selection/ui_touch_selection_export.h"
 
 class CefRenderWidgetHostViewOSR;
-
+#if BUILDFLAG(IS_ARKWEB)
+class ArkWebCefTouchHandleDrawableOSRExt;
+#endif
 // Copied from TouchHandleDrawableAura.
 class CefTouchHandleDrawableOSR : public ui::TouchHandleDrawable {
  public:
@@ -23,7 +25,12 @@ class CefTouchHandleDrawableOSR : public ui::TouchHandleDrawable {
   CefTouchHandleDrawableOSR(const CefTouchHandleDrawableOSR&) = delete;
   CefTouchHandleDrawableOSR& operator=(const CefTouchHandleDrawableOSR&) =
       delete;
-
+ #if BUILDFLAG(IS_ARKWEB)
+  virtual ArkWebCefTouchHandleDrawableOSRExt* AsArkWebCefTouchHandleDrawableOSRExt() {
+    return nullptr;
+  }
+  friend class ArkWebCefTouchHandleDrawableOSRExt;
+#endif  // BUILDFLAG(IS_ARKWEB)
  private:
   // TouchHandleDrawable:
   void SetEnabled(bool enabled) override;
@@ -34,6 +41,10 @@ class CefTouchHandleDrawableOSR : public ui::TouchHandleDrawable {
   void SetAlpha(float alpha) override;
   gfx::RectF GetVisibleBounds() const override;
   float GetDrawableHorizontalPaddingRatio() const override;
+
+#if BUILDFLAG(ARKWEB_MENU)
+  void SetEdge(const gfx::PointF& top, const gfx::PointF& bottom) override {}
+#endif  // BUILDFLAG(ARKWEB_MENU)
 
   // Pass the current touch handle state to the CefRenderHandler.
   void TouchHandleStateChanged(const CefTouchHandleState& state);
@@ -53,6 +64,9 @@ class CefTouchHandleDrawableOSR : public ui::TouchHandleDrawable {
 
   // Handle bounds relative to the focal position.
   gfx::RectF relative_bounds_ = gfx::RectF(0.0F, 0.0F, 24.0F, 24.0F);
-};
 
+};
+#if BUILDFLAG(IS_ARKWEB)
+#include "cef/ohos_cef_ext/libcef/browser/arkweb_touch_handle_drawable_osr_ext.h"
+#endif
 #endif

@@ -4,6 +4,10 @@
 
 import("//build/config/features.gni")
 
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
 assert(use_blink)
 
 static_library("browser") {
@@ -23,6 +27,8 @@ static_library("browser") {
     "uma_helper.cc",
     "uma_helper.h",
   ]
+
+  sources += arkweb_components_dom_distiller_content_browser_sources
 
   public_deps = [
     "//components/dom_distiller/core",

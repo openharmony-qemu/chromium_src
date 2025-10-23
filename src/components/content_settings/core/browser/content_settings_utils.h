@@ -46,6 +46,9 @@ class MapValueIterator {
 const char kChromeDevToolsScheme[] = "devtools";
 const char kChromeUIScheme[] = "chrome";
 const char kExtensionScheme[] = "chrome-extension";
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+const char kArkwebExtensionScheme[] = "arkweb-extension";
+#endif
 const char kChromeUIUntrustedScheme[] = "chrome-untrusted";
 
 std::string ContentSettingToString(ContentSetting setting);

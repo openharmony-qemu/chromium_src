@@ -23,6 +23,18 @@ void TestURLLoaderNetworkObserver::FlushReceivers() {
   receivers_.FlushForTesting();
 }
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+void TestURLLoaderNetworkObserver::OnSSLCertificateError(
+    const GURL& url,
+    int net_error,
+    const net::SSLInfo& ssl_info,
+    bool fatal,
+    const ::GURL& origin_url,
+    const std::string& referrer,
+    OnSSLCertificateErrorCallback response) {
+  std::move(response).Run(ignore_certificate_errors_ ? net::OK : net_error);
+}
+#else
 void TestURLLoaderNetworkObserver::OnSSLCertificateError(
     const GURL& url,
     int net_error,
@@ -31,6 +43,7 @@ void TestURLLoaderNetworkObserver::OnSSLCertificateError(
     OnSSLCertificateErrorCallback response) {
   std::move(response).Run(ignore_certificate_errors_ ? net::OK : net_error);
 }
+#endif
 
 void TestURLLoaderNetworkObserver::OnCertificateRequested(
     const std::optional<base::UnguessableToken>& window_id,

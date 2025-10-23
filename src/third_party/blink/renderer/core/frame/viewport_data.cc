@@ -19,6 +19,10 @@
 #include "third_party/blink/renderer/core/page/viewport_description.h"
 #include "ui/base/ime/mojom/virtual_keyboard_types.mojom-blink.h"
 
+#if BUILDFLAG(ARKWEB_VIEWPORT)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
+
 namespace blink {
 
 ViewportData::ViewportData(Document& document)
@@ -93,6 +97,20 @@ void ViewportData::UpdateViewportDescription() {
   // defined from the layout meta tag.
   mojom::ViewportFit current_viewport_fit =
       GetViewportDescription().GetViewportFit();
+
+#if BUILDFLAG(ARKWEB_VIEWPORT)
+  bool viewport_meta_enabled =
+      document_->GetSettings() &&
+      document_->GetSettings()->GetViewportMetaEnabled();
+  // when the viewport_meta is disabled, but needs to parse viewport-fit to
+  // expand the safe area
+  if (legacy_viewport_description_.type !=
+          ViewportDescription::kUserAgentStyleSheet &&
+          !viewport_meta_enabled &&
+          (base::ohos::IsTabletDevice() || base::ohos::IsPcDevice())) {
+      current_viewport_fit = legacy_viewport_description_.GetViewportFit();
+  }
+#endif
 
   // If we are forcing to expand into the display cutout then we should override
   // the viewport fit value.

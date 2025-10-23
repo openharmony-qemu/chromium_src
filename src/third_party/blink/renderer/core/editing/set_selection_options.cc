@@ -81,4 +81,20 @@ SetSelectionOptions::Builder& SetSelectionOptions::Builder::SetIsDirectional(
   data_.is_directional_ = new_value;
   return *this;
 }
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+SetSelectionOptions::Builder& SetSelectionOptions::Builder::SetIsSelectAll(
+    bool new_value) {
+  data_.is_select_all_ = new_value;
+  return *this;
+}
+#endif  // ARKWEB_CLIPBOARD
+
+#if BUILDFLAG(ARKWEB_FOCUS)
+SetSelectionOptions::Builder& SetSelectionOptions::Builder::SetSkipFocusCheck(
+    bool new_value) {
+  data_.is_skip_focus_check_ = new_value;
+  return *this;
+}
+#endif
 }  // namespace blink

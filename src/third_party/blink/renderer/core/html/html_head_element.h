@@ -36,6 +36,10 @@ class CORE_EXPORT HTMLHeadElement final : public HTMLElement {
   explicit HTMLHeadElement(Document&);
 
   bool HasNonInBodyInsertionMode() const override { return true; }
+
+#if BUILDFLAG(ARKWEB_JSPROXY)
+  void RunScriptsAtHeadElementAvailable();
+#endif
 };
 
 }  // namespace blink

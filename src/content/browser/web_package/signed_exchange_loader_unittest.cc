@@ -65,6 +65,10 @@ class SignedExchangeLoaderTest : public testing::Test {
                  void(int64_t, int64_t, base::OnceCallback<void()> callback));
     MOCK_METHOD1(OnTransferSizeUpdated, void(int32_t));
     MOCK_METHOD1(OnComplete, void(const network::URLLoaderCompletionStatus&));
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+    MOCK_METHOD2(OnTransferDataWithSharedMemory,
+                 void(::base::ReadOnlySharedMemoryRegion, uint64_t));
+#endif
 
    private:
     mojo::Receiver<network::mojom::URLLoaderClient> loader_client_receiver_;

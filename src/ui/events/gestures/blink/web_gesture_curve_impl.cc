@@ -5,6 +5,9 @@
 #include "ui/events/gestures/blink/web_gesture_curve_impl.h"
 
 #include <limits.h>
+#include <list>
+#include <tuple>
+#include <sstream>
 
 #include <utility>
 
@@ -15,6 +18,14 @@
 #include "ui/events/gestures/fling_curve.h"
 #include "ui/events/gestures/physics_based_fling_curve.h"
 #include "ui/events/mobile_scroller.h"
+#include "arkweb/chromium_ext/ui/gl/events/native_scroller_ohos.h"
+#include "arkweb/build/features/features.h"
+
+#if BUILDFLAG(ARKWEB_FLING)
+#include "base/system/sys_info.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#include "arkweb/chromium_ext/ui/events/gestures/blink/native_scroller_ohos_device_source_util.h"
+#endif  // BUILDFLAG(ARKWEB_FLING)
 
 using blink::WebGestureCurve;
 
@@ -32,6 +43,24 @@ std::unique_ptr<GestureCurve> CreateDefaultPlatformCurve(
     return std::make_unique<FixedVelocityCurve>(initial_velocity,
                                                 base::TimeTicks());
   }
+#if BUILDFLAG(ARKWEB_FLING)
+  bool use_native_fling_curve = false;
+  #ifdef USE_NATIVE_FLING_CURVE
+  if (!OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetBoolParameter(
+      "web.instructionOptimize.enable", 0)) {
+    use_native_fling_curve = true;
+  }
+  #endif
+    if (use_native_fling_curve && !base::SysInfo::IsLowEndDevice() &&
+      (std::abs(initial_velocity.y()) > std::abs(initial_velocity.x()))) {
+    auto scroller = std::make_unique<NativeScrollerOhos>();
+    scroller->Fling(0, 0, initial_velocity.x(), initial_velocity.y(), INT_MIN,
+                    static_cast<float>(INT_MAX), INT_MIN,
+                    static_cast<float>(INT_MAX), base::TimeTicks(),
+                    ohos_gesture::ConvertNativeScrollerDeviceSource(device_source));
+    return std::move(scroller);
+  }
+#endif  // ARKWEB_FLING
 
 #ifdef USE_MOBILE_FLING_CURVE
   use_mobile_fling_curve = true;
@@ -120,6 +149,11 @@ bool WebGestureCurveImpl::Advance(double time,
   gfx::Vector2dF offset;
   bool still_active =
       curve_->ComputeScrollOffset(time_ticks, &offset, &out_current_velocity);
+
+#if BUILDFLAG(ARKWEB_FLING)
+  // dump curve
+  LOG(DEBUG) << "WebGestureCurveImpl::Advance DUMP_FLING_CURVE time = " << time << " offset = " << offset.y() << " velocity = " << out_current_velocity.y();
+#endif // ARKWEB_FLING
 
   out_delta_to_scroll = offset - last_offset_;
   last_offset_ = offset;

@@ -250,7 +250,11 @@ std::u16string MediaRouteStarter::GetPresentationRequestSourceName() const {
   const url::Origin frame_origin = GetFrameOrigin();
   // Presentation URLs are only possible on https: and other secure contexts,
   // so we can omit http/https schemes here.
-  return frame_origin.scheme() == extensions::kExtensionScheme
+  return (frame_origin.scheme() == extensions::kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+          || frame_origin.scheme() == extensions::kArkwebExtensionScheme
+#endif
+          )
              ? base::UTF8ToUTF16(GetExtensionName(
                    frame_origin.GetURL(),
                    extensions::ExtensionRegistry::Get(GetBrowserContext())))

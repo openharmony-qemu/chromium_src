@@ -519,7 +519,15 @@ bool MixedContentChecker::ShouldBlockFetch(
       // way to disable blocking Mixed Content with an IP address.
       allowed = !strict_mode;
 #else
+#if BUILDFLAG(ARKWEB_MIXED_CONTENT)
+      if (settings->GetAllowRunningOfInsecureContent()) {
+        allowed = !strict_mode;
+      } else {
+        allowed = !strict_mode && !GURL(url).HostIsIPAddress();
+      };
+#else
       allowed = !strict_mode && !GURL(url).HostIsIPAddress();
+#endif
 #endif  // (BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_LINUX)) &&
         // BUILDFLAG(ENABLE_CAST_RECEIVER)
 

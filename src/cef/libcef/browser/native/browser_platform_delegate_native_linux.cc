@@ -26,6 +26,11 @@
 #include "ui/views/widget/desktop_aura/desktop_window_tree_host_linux.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS) && !defined(COMPONENT_BUILD)
+#include "ui/events/keycodes/keyboard_code_conversion_x.h"
+#include "ui/events/keycodes/keyboard_code_conversion_xkb.h"
+#endif
+
 CefBrowserPlatformDelegateNativeLinux::CefBrowserPlatformDelegateNativeLinux(
     const CefWindowInfo& window_info,
     SkColor background_color)
@@ -252,6 +257,10 @@ ui::KeyEvent CefBrowserPlatformDelegateNativeLinux::TranslateUiKeyEvent(
   int keysym = ui::XKeysymForWindowsKeyCode(
       key_code, !!(key_event.modifiers & EVENTFLAG_SHIFT_DOWN));
   char16_t character = ui::GetUnicodeCharacterFromXKeySym(keysym);
+#elif BUILDFLAG(ARKWEB_INPUT_EVENTS) && !defined(COMPONENT_BUILD)
+  int keysym = ui::XKeysymForWindowsKeyCode(
+      key_code, !!(key_event.modifiers & EVENTFLAG_SHIFT_DOWN), key_event.modifiers & EVENTFLAG_CAPS_LOCK_ON);
+  char16_t character = ui::GetUnicodeCharacterFromXKeySym(keysym);
 #else
   char16_t character = key_event.character;
 #endif
@@ -276,7 +285,7 @@ ui::KeyEvent CefBrowserPlatformDelegateNativeLinux::TranslateUiKeyEvent(
       DCHECK(false);
   }
 
-#if BUILDFLAG(IS_OZONE_X11)
+#if BUILDFLAG(IS_OZONE_X11) || (BUILDFLAG(ARKWEB_INPUT_EVENTS) && !defined(COMPONENT_BUILD))
   ui::DomKey dom_key = ui::XKeySymToDomKey(keysym, character);
 #else
   ui::DomKey dom_key = ui::DomKey::NONE;

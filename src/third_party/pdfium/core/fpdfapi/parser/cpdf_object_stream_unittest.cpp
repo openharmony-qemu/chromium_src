@@ -209,7 +209,7 @@ TEST(ObjectStreamTest, StreamDictOffsetTooBig) {
   auto dict = pdfium::MakeRetain<CPDF_Dictionary>();
   dict->SetNewFor<CPDF_Name>("Type", "ObjStm");
   dict->SetNewFor<CPDF_Number>("N", 3);
-  static constexpr int kTooBigOffset = std::size(kNormalStreamContent);
+  constexpr int kTooBigOffset = std::size(kNormalStreamContent);
   dict->SetNewFor<CPDF_Number>("First", kTooBigOffset);
 
   ByteStringView contents_view(kNormalStreamContent);

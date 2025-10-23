@@ -10,6 +10,7 @@
 #include "media/audio/audio_manager_base.h"
 #include "media/audio/fake_audio_input_stream.h"
 #include "media/audio/fake_audio_output_stream.h"
+#include "arkweb/build/features/features.h"
 
 namespace media {
 
@@ -51,6 +52,12 @@ class MEDIA_EXPORT FakeAudioManager : public AudioManagerBase {
   AudioParameters GetPreferredOutputStreamParameters(
       const std::string& output_device_id,
       const AudioParameters& input_params) override;
+
+
+#if BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_WEBRTC)
+  AudioParameters GetPreferredInputStreamParameters(
+      const std::string& input_device_id) override {}
+#endif  // BUILDFLAG(ARKWEB_WEBRTC)
 };
 
 }  // namespace media

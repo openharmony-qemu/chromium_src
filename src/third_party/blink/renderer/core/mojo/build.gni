@@ -14,3 +14,10 @@ blink_core_sources_mojo = [
   "test/mojo_interface_request_event.cc",
   "test/mojo_interface_request_event.h",
 ]
+
+if (is_arkweb) {
+  blink_core_sources_mojo += [
+    "//arkweb/chromium_ext/third_party/blink/renderer/core/mojo/ark_web_mojo.cc",
+    "//arkweb/chromium_ext/third_party/blink/renderer/core/mojo/ark_web_mojo.h",
+  ]
+}

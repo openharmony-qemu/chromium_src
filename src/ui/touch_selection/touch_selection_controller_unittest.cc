@@ -6,11 +6,15 @@
 
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ui/events/test/motion_event_test_utils.h"
 #include "ui/touch_selection/touch_selection_controller_test_api.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/ui/touch_selection/touch_selection_controller_ext.h"
+#endif
 
 using testing::ElementsAre;
 using testing::IsEmpty;
@@ -48,6 +52,9 @@ class MockTouchHandleDrawable : public TouchHandleDrawable {
                              : gfx::RectF(-1000, -1000, 0, 0);
   }
   float GetDrawableHorizontalPaddingRatio() const override { return 0; }
+
+  void SetEdge(const gfx::PointF& top, const gfx::PointF& bottom) override {
+  }
 
  private:
   raw_ptr<bool> intersects_rect_;
@@ -117,7 +124,11 @@ class TouchSelectionControllerTest : public testing::Test,
   void DidScroll() override {}
 
   void InitializeControllerWithConfig(TouchSelectionController::Config config) {
+#if BUILDFLAG(ARKWEB_MENU)
+    controller_ = std::make_unique<TouchSelectionControllerExt>(this, config);
+#else
     controller_ = std::make_unique<TouchSelectionController>(this, config);
+#endif
   }
 
   void StartTouchEventSequence() {

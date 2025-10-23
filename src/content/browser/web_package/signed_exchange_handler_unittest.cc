@@ -56,6 +56,9 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/blink/public/common/web_package/web_package_request_matcher.h"
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "arkweb/chromium_ext/services/network/arkweb_network_context_ext.h"
+#endif
 
 using testing::_;
 using testing::DoAll;
@@ -341,7 +344,11 @@ class SignedExchangeHandlerTest
   void CreateSignedExchangeHandler(
       std::unique_ptr<net::URLRequestContext> context) {
     url_request_context_ = std::move(context);
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+    network_context_ = std::make_unique<network::ArkWebNetworkContextExt>(
+#else
     network_context_ = std::make_unique<network::NetworkContext>(
+#endif
         nullptr, network_context_remote_.BindNewPipeAndPassReceiver(),
         url_request_context_.get(),
         /*cors_exempt_header_list=*/std::vector<std::string>());
@@ -428,7 +435,11 @@ class SignedExchangeHandlerTest
   TestBrowserClient browser_client_;
   raw_ptr<ContentBrowserClient> original_client_;
   std::unique_ptr<net::URLRequestContext> url_request_context_;
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  std::unique_ptr<network::ArkWebNetworkContextExt> network_context_;
+#else
   std::unique_ptr<network::NetworkContext> network_context_;
+#endif
   mojo::Remote<network::mojom::NetworkContext> network_context_remote_;
   const url::Origin request_initiator_;
   std::unique_ptr<SignedExchangeCertificateChain::IgnoreErrorsSPKIList>

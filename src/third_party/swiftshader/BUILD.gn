@@ -19,6 +19,12 @@ config("swiftshader_config") {
   defines = []
   asmflags = []
 
+  if (current_cpu == "arm") {
+    include_dirs = [
+      "//third_party/swiftshader/third_party/llvm-subzero/build/Linux/include",
+    ]
+  }
+
   if (is_clang) {
     cflags += [ "-Wno-shadow" ]
   }

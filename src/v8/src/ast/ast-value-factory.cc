@@ -65,7 +65,15 @@ void AstRawString::Internalize(IsolateT* isolate) {
     set_string(isolate->factory()->empty_string());
   } else if (is_one_byte()) {
     OneByteStringKey key(raw_hash_field_, literal_bytes_);
+#ifdef OHOS_JS_ENGINE
+    Handle<String> str = isolate->factory()->InternalizeStringWithKey(&key);
+    if (is_base_std_builtin_name(str, isolate->factory())) {
+      is_base_std_builtin_name_ = true;
+    };
+    set_string(str);
+#else
     set_string(isolate->factory()->InternalizeStringWithKey(&key));
+#endif
   } else {
     TwoByteStringKey key(raw_hash_field_,
                          base::Vector<const uint16_t>::cast(literal_bytes_));

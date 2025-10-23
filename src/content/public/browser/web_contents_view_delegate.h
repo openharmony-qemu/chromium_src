@@ -7,6 +7,8 @@
 
 #include "build/build_config.h"
 
+#include "arkweb/build/features/features.h"
+
 #if defined(__OBJC__)
 #if BUILDFLAG(IS_MAC)
 #import <Cocoa/Cocoa.h>
@@ -58,6 +60,10 @@ class CONTENT_EXPORT WebContentsViewDelegate {
   // see https://crbug.com/1257907#c14).
   virtual void ShowContextMenu(RenderFrameHost& render_frame_host,
                                const ContextMenuParams& params);
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  virtual void ClearContextMenu() {}
+#endif // BUILDFLAG(ARKWEB_DRAG_DROP)
 
   // Dismiss the context menu if one exists.
   virtual void DismissContextMenu();

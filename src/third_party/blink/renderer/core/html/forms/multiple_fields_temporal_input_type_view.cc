@@ -59,6 +59,9 @@
 #include "third_party/blink/renderer/platform/text/platform_locale.h"
 #include "third_party/blink/renderer/platform/wtf/date_math.h"
 #include "ui/base/ui_base_features.h"
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#include "arkweb/build/features/features.h"
+#endif
 
 namespace blink {
 
@@ -475,6 +478,12 @@ void MultipleFieldsTemporalInputTypeView::HandleFocusInEvent(
 }
 
 void MultipleFieldsTemporalInputTypeView::ForwardEvent(Event& event) {
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  if (event.type() == event_type_names::kDOMFocusOut) {
+    Blur();
+    return;
+  }
+#endif
   if (SpinButtonElement* element = GetSpinButtonElement()) {
     element->ForwardEvent(event);
     if (event.DefaultHandled())

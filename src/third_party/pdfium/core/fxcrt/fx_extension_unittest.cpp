@@ -11,10 +11,7 @@
 #include <limits>
 
 #include "core/fxcrt/compiler_specific.h"
-#include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
-
-using testing::ElementsAre;
 
 TEST(fxcrt, FXSYSIsLowerASCII) {
   EXPECT_TRUE(FXSYS_IsLowerASCII('a'));
@@ -84,53 +81,53 @@ TEST(fxcrt, FXSYSIsDecimalDigit) {
 }
 
 TEST(fxcrt, FXSYSIntToTwoHexChars) {
-  char buf[2] = {0};
+  char buf[3] = {0};
   FXSYS_IntToTwoHexChars(0x0, buf);
-  EXPECT_THAT(buf, ElementsAre('0', '0'));
+  EXPECT_STREQ("00", buf);
   FXSYS_IntToTwoHexChars(0x9, buf);
-  EXPECT_THAT(buf, ElementsAre('0', '9'));
+  EXPECT_STREQ("09", buf);
   FXSYS_IntToTwoHexChars(0xA, buf);
-  EXPECT_THAT(buf, ElementsAre('0', 'A'));
+  EXPECT_STREQ("0A", buf);
   FXSYS_IntToTwoHexChars(0x8C, buf);
-  EXPECT_THAT(buf, ElementsAre('8', 'C'));
+  EXPECT_STREQ("8C", buf);
   FXSYS_IntToTwoHexChars(0xBE, buf);
-  EXPECT_THAT(buf, ElementsAre('B', 'E'));
+  EXPECT_STREQ("BE", buf);
   FXSYS_IntToTwoHexChars(0xD0, buf);
-  EXPECT_THAT(buf, ElementsAre('D', '0'));
+  EXPECT_STREQ("D0", buf);
   FXSYS_IntToTwoHexChars(0xFF, buf);
-  EXPECT_THAT(buf, ElementsAre('F', 'F'));
+  EXPECT_STREQ("FF", buf);
 }
 
 TEST(fxcrt, FXSYSIntToFourHexChars) {
-  char buf[4] = {0};
+  char buf[5] = {0};
   FXSYS_IntToFourHexChars(0x0, buf);
-  EXPECT_THAT(buf, ElementsAre('0', '0', '0', '0'));
+  EXPECT_STREQ("0000", buf);
   FXSYS_IntToFourHexChars(0xA23, buf);
-  EXPECT_THAT(buf, ElementsAre('0', 'A', '2', '3'));
+  EXPECT_STREQ("0A23", buf);
   FXSYS_IntToFourHexChars(0xB701, buf);
-  EXPECT_THAT(buf, ElementsAre('B', '7', '0', '1'));
+  EXPECT_STREQ("B701", buf);
   FXSYS_IntToFourHexChars(0xFFFF, buf);
-  EXPECT_THAT(buf, ElementsAre('F', 'F', 'F', 'F'));
+  EXPECT_STREQ("FFFF", buf);
 }
 
 TEST(fxcrt, FXSYSToUTF16BE) {
-  char buf[8] = {0};
+  char buf[9] = {0};
   // Test U+0000 to U+D7FF and U+E000 to U+FFFF
-  pdfium::span<const char> result = FXSYS_ToUTF16BE(0x0, buf);
-  EXPECT_THAT(result, ElementsAre('0', '0', '0', '0'));
-  result = FXSYS_ToUTF16BE(0xD7FF, buf);
-  EXPECT_THAT(result, ElementsAre('D', '7', 'F', 'F'));
-  result = FXSYS_ToUTF16BE(0xE000, buf);
-  EXPECT_THAT(result, ElementsAre('E', '0', '0', '0'));
-  result = FXSYS_ToUTF16BE(0xFFFF, buf);
-  EXPECT_THAT(result, ElementsAre('F', 'F', 'F', 'F'));
+  EXPECT_EQ(4U, FXSYS_ToUTF16BE(0x0, buf));
+  EXPECT_STREQ("0000", buf);
+  EXPECT_EQ(4U, FXSYS_ToUTF16BE(0xD7FF, buf));
+  EXPECT_STREQ("D7FF", buf);
+  EXPECT_EQ(4U, FXSYS_ToUTF16BE(0xE000, buf));
+  EXPECT_STREQ("E000", buf);
+  EXPECT_EQ(4U, FXSYS_ToUTF16BE(0xFFFF, buf));
+  EXPECT_STREQ("FFFF", buf);
   // Test U+10000 to U+10FFFF
-  result = FXSYS_ToUTF16BE(0x10000, buf);
-  EXPECT_THAT(result, ElementsAre('D', '8', '0', '0', 'D', 'C', '0', '0'));
-  result = FXSYS_ToUTF16BE(0x10FFFF, buf);
-  EXPECT_THAT(result, ElementsAre('D', 'B', 'F', 'F', 'D', 'F', 'F', 'F'));
-  result = FXSYS_ToUTF16BE(0x2003E, buf);
-  EXPECT_THAT(result, ElementsAre('D', '8', '4', '0', 'D', 'C', '3', 'E'));
+  EXPECT_EQ(8U, FXSYS_ToUTF16BE(0x10000, buf));
+  EXPECT_STREQ("D800DC00", buf);
+  EXPECT_EQ(8U, FXSYS_ToUTF16BE(0x10FFFF, buf));
+  EXPECT_STREQ("DBFFDFFF", buf);
+  EXPECT_EQ(8U, FXSYS_ToUTF16BE(0x2003E, buf));
+  EXPECT_STREQ("D840DC3E", buf);
 }
 
 TEST(fxcrt, FXSYSwcstof) {

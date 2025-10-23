@@ -13,16 +13,14 @@
 #include "content/public/browser/web_contents.h"
 #include "content/public/browser/web_contents_observer.h"
 #include "mojo/public/cpp/bindings/self_owned_receiver.h"
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+#include "cef/ohos_cef_ext/libcef/browser/browser_frame_cc_for_include.cc"
+#endif
 
 CefBrowserFrame::CefBrowserFrame(
     content::RenderFrameHost* render_frame_host,
     mojo::PendingReceiver<cef::mojom::BrowserFrame> receiver)
-    : CefFrameServiceBase(render_frame_host, std::move(receiver)) {
-  DVLOG(1) << __func__ << ": frame "
-           << frame_util::GetFrameDebugString(
-                  render_frame_host->GetGlobalFrameToken())
-           << " bound";
-}
+    : FrameServiceBase(render_frame_host, std::move(receiver)) {}
 
 CefBrowserFrame::~CefBrowserFrame() = default;
 
@@ -67,15 +65,13 @@ void CefBrowserFrame::FrameAttached(
   if (auto host = GetFrameHost(/*prefer_speculative=*/true, &is_excluded)) {
     host->FrameAttached(std::move(render_frame), reattached);
   } else if (is_excluded) {
-    DVLOG(1) << __func__ << ": frame "
+    VLOG(1) << "frame "
              << frame_util::GetFrameDebugString(
                     render_frame_host()->GetGlobalFrameToken())
              << " attach denied";
     mojo::Remote<cef::mojom::RenderFrame> render_frame_remote;
     render_frame_remote.Bind(std::move(render_frame));
     render_frame_remote->FrameAttachedAck(/*allow=*/false);
-    render_frame_remote.ResetWithReason(
-        static_cast<uint32_t>(frame_util::ResetReason::kExcluded), "Excluded");
   }
 }
 

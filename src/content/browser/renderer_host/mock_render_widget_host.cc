@@ -51,6 +51,7 @@ std::unique_ptr<MockRenderWidgetHost> MockRenderWidgetHost::Create(
 
 input::RenderInputRouter* MockRenderWidgetHost::GetRenderInputRouter() {
   return render_input_router_.get();
+
 }
 
 void MockRenderWidgetHost::NotifyNewContentRenderingTimeoutForTesting() {
@@ -79,6 +80,7 @@ MockRenderWidgetHost::MockRenderWidgetHost(
                            /*renderer_initiated_creation=*/false,
                            std::make_unique<FrameTokenMessageQueue>()) {
   SetupMockRenderInputRouter();
+
   mojo::AssociatedRemote<blink::mojom::WidgetHost> blink_widget_host;
   BindWidgetInterfaces(
       blink_widget_host.BindNewEndpointAndPassDedicatedReceiver(),

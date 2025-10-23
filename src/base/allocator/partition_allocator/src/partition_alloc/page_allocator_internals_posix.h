@@ -27,8 +27,10 @@
 #include "partition_alloc/partition_alloc_base/posix/eintr_wrapper.h"
 #include "partition_alloc/partition_alloc_check.h"
 #include "partition_alloc/thread_isolation/thread_isolation.h"
+#include "arkweb/build/features/features.h"
 
-#if PA_BUILDFLAG(IS_ANDROID) || PA_BUILDFLAG(IS_LINUX)
+
+#if PA_BUILDFLAG(IS_ANDROID) || PA_BUILDFLAG(IS_LINUX) || BUILDFLAG(ARKWEB_PER_DFX)
 #include <sys/prctl.h>
 #endif
 
@@ -42,9 +44,9 @@
 
 namespace partition_alloc::internal {
 
-#if defined(LINUX_NAME_REGION)
+
 void NameRegion(void* start, size_t length, PageTag page_tag);
-#endif  // defined(LINUX_NAME_REGION)
+
 
 #if PA_BUILDFLAG(IS_APPLE)
 // Tests whether the version of macOS supports the MAP_JIT flag and if the
@@ -105,7 +107,7 @@ uintptr_t SystemAllocPagesInternal(uintptr_t hint,
     ret = nullptr;
   }
 
-#if defined(LINUX_NAME_REGION)
+#if defined(LINUX_NAME_REGION) || BUILDFLAG(ARKWEB_PER_DFX)
   if (ret) {
     NameRegion(ret, length, page_tag);
   }

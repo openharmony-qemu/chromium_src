@@ -910,7 +910,7 @@ source_set("sources") {
       "vulkan/external_semaphore/SemaphoreServiceImplementation.h",
     ]
 
-    if (is_android || is_linux || is_chromeos) {
+    if (is_android || is_linux || is_chromeos || is_ohos) {
       sources += [
         "vulkan/external_semaphore/SemaphoreServiceImplementationFD.cpp",
         "vulkan/external_semaphore/SemaphoreServiceImplementationFD.h",
@@ -920,7 +920,7 @@ source_set("sources") {
           "vulkan/external_memory/MemoryServiceImplementationAHardwareBuffer.cpp",
           "vulkan/external_memory/MemoryServiceImplementationAHardwareBuffer.h",
         ]
-      } else if (is_linux || is_chromeos) {
+      } else if (is_linux || is_chromeos || is_ohos) {
         sources += [
           "vulkan/external_memory/MemoryServiceImplementationDmaBuf.cpp",
           "vulkan/external_memory/MemoryServiceImplementationDmaBuf.h",

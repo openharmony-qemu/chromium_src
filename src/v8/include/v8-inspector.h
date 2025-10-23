@@ -74,7 +74,7 @@ class V8_EXPORT StringView {
   };
 };
 
-class V8_EXPORT StringBuffer {
+class V8_EXPORT JSVM_EXPORT StringBuffer {
  public:
   virtual ~StringBuffer() = default;
   virtual StringView string() const = 0;
@@ -353,7 +353,7 @@ struct V8_EXPORT V8StackTraceId {
   std::unique_ptr<StringBuffer> ToString();
 };
 
-class V8_EXPORT V8Inspector {
+class V8_EXPORT JSVM_EXPORT V8Inspector {
  public:
   static std::unique_ptr<V8Inspector> create(v8::Isolate*, V8InspectorClient*);
   virtual ~V8Inspector() = default;

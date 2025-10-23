@@ -32,6 +32,10 @@
 #include "third_party/blink/renderer/core/settings_base.h"
 #include "third_party/blink/renderer/platform/fonts/generic_font_family_settings.h"
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+#include "third_party/blink/public/platform/web_string.h"
+#endif
+
 namespace blink {
 
 class CORE_EXPORT Settings : public SettingsBase {
@@ -57,8 +61,16 @@ class CORE_EXPORT Settings : public SettingsBase {
 
   void SetPreferCompositingToLCDTextForTesting(bool enabled);
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/frame/setting_for_include_public.h"
+#endif
+
  private:
   GenericFontFamilySettings generic_font_family_settings_;
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/frame/setting_for_include_private.h"
+#endif
 };
 
 }  // namespace blink

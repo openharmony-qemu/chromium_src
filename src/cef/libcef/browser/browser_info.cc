@@ -17,6 +17,10 @@
 #include "content/public/browser/render_process_host.h"
 #include "ipc/ipc_message.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "cef/ohos_cef_ext/libcef/browser/browser_info_for_include.cc"
+#endif
+
 CefBrowserInfo::FrameInfo::~FrameInfo() {
 #if DCHECK_IS_ON()
   if (frame_ && !IsCurrentMainFrame()) {
@@ -129,9 +133,6 @@ void CefBrowserInfo::MaybeCreateFrame(content::RenderFrameHost* host) {
     return;
   }
 
-  DVLOG(1) << __func__ << ": "
-           << frame_util::GetFrameDebugString(host->GetGlobalFrameToken());
-
   const auto global_id = host->GetGlobalId();
   const bool is_main_frame = (host->GetParent() == nullptr);
 
@@ -147,6 +148,10 @@ void CefBrowserInfo::MaybeCreateFrame(content::RenderFrameHost* host) {
                                    ->render_manager()
                                    ->current_frame_host() != host);
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  bool is_prerendering = CefBrowserInfo::IsPrerendering(host);
+#endif
+
   NotificationStateLock lock_scope(this);
   DCHECK(browser_);
 
@@ -161,15 +166,26 @@ void CefBrowserInfo::MaybeCreateFrame(content::RenderFrameHost* host) {
 #endif
 
     // Update the associated RFH, which may have changed.
-    info->frame_->MaybeAttach(this, host);
+    info->frame_->MaybeReAttach(this, host, /*require_detached=*/false);
 
-    if (info->is_speculative_ && !is_speculative) {
+    if (info->is_speculative_ && !is_speculative
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+&&
+        !is_prerendering
+#endif
+      ) {
       // Upgrade the frame info from speculative to non-speculative.
       if (info->is_main_frame_) {
         // Set the main frame object.
         SetMainFrame(browser_, info->frame_);
       }
       info->is_speculative_ = false;
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+        ::switches::kEnableNwebEx)) {
+        info->is_prerendering_ = false;
+      }
+#endif
     }
     return;
   }
@@ -178,11 +194,22 @@ void CefBrowserInfo::MaybeCreateFrame(content::RenderFrameHost* host) {
   frame_info->global_id_ = global_id;
   frame_info->is_main_frame_ = is_main_frame;
   frame_info->is_speculative_ = is_speculative;
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+    ::switches::kEnableNwebEx)) {
+    frame_info->is_prerendering_ = is_prerendering;
+  }
+#endif
 
   // Create a new frame object.
-  frame_info->frame_ = new CefFrameHostImpl(this, host);
+  frame_info->frame_ = new ArkwebFrameHostExtImpl(this, host);
   MaybeNotifyFrameCreated(frame_info->frame_);
-  if (is_main_frame && !is_speculative) {
+  if (is_main_frame && !is_speculative
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+&&
+      !is_prerendering
+#endif
+      ) {
     SetMainFrame(browser_, frame_info->frame_);
   }
 
@@ -209,20 +236,17 @@ void CefBrowserInfo::FrameHostStateChanged(
     content::RenderFrameHost::LifecycleState new_state) {
   CEF_REQUIRE_UIT();
 
-  DVLOG(1) << __func__ << ": "
-           << frame_util::GetFrameDebugString(host->GetGlobalFrameToken());
-
   if ((old_state == content::RenderFrameHost::LifecycleState::kPrerendering ||
        old_state ==
            content::RenderFrameHost::LifecycleState::kInBackForwardCache) &&
       new_state == content::RenderFrameHost::LifecycleState::kActive) {
     if (auto frame = GetFrameForHost(host)) {
       // Update the associated RFH, which may have changed.
-      frame->MaybeAttach(this, host);
+      frame->MaybeReAttach(this, host, /*require_detached=*/true);
 
       if (frame->IsMain()) {
-        NotificationStateLock lock_scope(this);
         // Update the main frame object.
+        NotificationStateLock lock_scope(this);
         SetMainFrame(browser_, frame);
       }
 
@@ -255,9 +279,6 @@ void CefBrowserInfo::FrameHostStateChanged(
 void CefBrowserInfo::RemoveFrame(content::RenderFrameHost* host) {
   CEF_REQUIRE_UIT();
 
-  DVLOG(1) << __func__ << ": "
-           << frame_util::GetFrameDebugString(host->GetGlobalFrameToken());
-
   NotificationStateLock lock_scope(this);
 
   const auto global_id = host->GetGlobalId();
@@ -270,12 +291,21 @@ void CefBrowserInfo::RemoveFrame(content::RenderFrameHost* host) {
 
   browser_->request_context()->OnRenderFrameDeleted(global_id,
                                                     frame_info->is_main_frame_);
-
+#if BUILDFLAG(IS_ARKWEB)
+  if (frame_info->is_speculative_) {
+    last_delete_speculative_rfh_id_ = global_id;
+  }
+#endif
   // Remove from the lookup maps.
   frame_id_map_.erase(it);
 
   {
     auto it2 = frame_token_to_id_map_.find(host->GetGlobalFrameToken());
+#if BUILDFLAG(IS_ARKWEB)
+    if (frame_info->is_speculative_) {
+      last_delete_speculative_rfh_token_ = host->GetGlobalFrameToken();
+    }
+#endif
     DCHECK(it2 != frame_token_to_id_map_.end());
     frame_token_to_id_map_.erase(it2);
   }
@@ -288,16 +318,11 @@ void CefBrowserInfo::RemoveFrame(content::RenderFrameHost* host) {
     const auto& other_frame_info = *it2;
     if (other_frame_info->frame_) {
       const bool is_current_main_frame = other_frame_info->IsCurrentMainFrame();
-      const auto [frame_detached, frame_destroyed] =
-          other_frame_info->frame_->Detach(
+      if (other_frame_info->frame_->Detach(
               CefFrameHostImpl::DetachReason::RENDER_FRAME_DELETED,
-              is_current_main_frame);
-      if (frame_detached) {
-        MaybeNotifyFrameDetached(browser_, other_frame_info->frame_);
-      }
-      if (frame_destroyed) {
+              is_current_main_frame)) {
         DCHECK(!is_current_main_frame);
-        MaybeNotifyFrameDestroyed(browser_, other_frame_info->frame_);
+        MaybeNotifyFrameDetached(browser_, other_frame_info->frame_);
       }
     }
 
@@ -323,7 +348,7 @@ CefRefPtr<CefFrameHostImpl> CefBrowserInfo::CreateTempSubFrame(
     parent = GetMainFrame();
   }
   // Intentionally not notifying for temporary frames.
-  return new CefFrameHostImpl(this, parent->frame_token());
+  return new ArkwebFrameHostExtImpl(this, parent->frame_token());
 }
 
 CefRefPtr<CefFrameHostImpl> CefBrowserInfo::GetFrameForHost(
@@ -350,6 +375,13 @@ CefRefPtr<CefFrameHostImpl> CefBrowserInfo::GetFrameForGlobalId(
   const auto it = frame_id_map_.find(global_id);
   if (it != frame_id_map_.end()) {
     const auto info = it->second;
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      ::switches::kEnableNwebEx) && info->is_prerendering_) {
+      prefer_speculative = info->is_prerendering_;
+    }
+#endif
 
     if (info->is_speculative_ && !prefer_speculative) {
       if (info->is_main_frame_ && main_frame_) {
@@ -489,20 +521,12 @@ void CefBrowserInfo::SetMainFrame(CefRefPtr<CefBrowserHostBase> browser,
     return;
   }
 
-  DVLOG(1) << __func__ << ": "
-           << (frame ? frame->GetIdentifier().ToString() : "null");
-
   CefRefPtr<CefFrameHostImpl> old_frame;
   if (main_frame_) {
     old_frame = main_frame_;
-    const auto [frame_detached, frame_destroyed] =
-        old_frame->Detach(CefFrameHostImpl::DetachReason::NEW_MAIN_FRAME,
-                          /*is_current_main_frame=*/false);
-    if (frame_detached) {
+    if (old_frame->Detach(CefFrameHostImpl::DetachReason::NEW_MAIN_FRAME,
+                          /*is_current_main_frame=*/false)) {
       MaybeNotifyFrameDetached(browser, old_frame);
-    }
-    if (frame_destroyed) {
-      MaybeNotifyFrameDestroyed(browser, old_frame);
     }
   }
 
@@ -547,24 +571,6 @@ void CefBrowserInfo::MaybeNotifyFrameDetached(
 }
 
 // Passing in |browser| here because |browser_| may already be cleared.
-void CefBrowserInfo::MaybeNotifyFrameDestroyed(
-    CefRefPtr<CefBrowserHostBase> browser,
-    CefRefPtr<CefFrameHostImpl> frame) {
-  CEF_REQUIRE_UIT();
-
-  // Never notify for temporary objects.
-  DCHECK(!frame->is_temporary());
-
-  MaybeExecuteFrameNotification(base::BindOnce(
-      [](CefRefPtr<CefBrowserHostBase> browser,
-         CefRefPtr<CefFrameHostImpl> frame,
-         CefRefPtr<CefFrameHandler> handler) {
-        handler->OnFrameDestroyed(browser, frame);
-      },
-      browser, frame));
-}
-
-// Passing in |browser| here because |browser_| may already be cleared.
 void CefBrowserInfo::MaybeNotifyMainFrameChanged(
     CefRefPtr<CefBrowserHostBase> browser,
     CefRefPtr<CefFrameHostImpl> old_frame,
@@ -601,13 +607,13 @@ void CefBrowserInfo::RemoveAllFrames(
   // Explicitly Detach everything.
   for (auto& info : frame_info_set_) {
     if (info->frame_) {
-      [[maybe_unused]] const auto [frame_detached, frame_destroyed] =
-          info->frame_->Detach(
+      const bool is_current_main_frame = info->IsCurrentMainFrame();
+      if (info->frame_->Detach(
               CefFrameHostImpl::DetachReason::BROWSER_DESTROYED,
-              info->IsCurrentMainFrame());
-      // Shouldn't need to trigger any notifications at this point.
-      DCHECK(!frame_detached);
-      DCHECK(!frame_destroyed);
+              is_current_main_frame)) {
+        DCHECK(!is_current_main_frame);
+        MaybeNotifyFrameDetached(old_browser, info->frame_);
+      }
     }
   }
 

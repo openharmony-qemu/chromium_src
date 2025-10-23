@@ -139,6 +139,7 @@ std::string GetAllowlistedExtensionID() {
 }  // namespace
 
 ExtensionFunction::ResponseAction TabCaptureCaptureFunction::Run() {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   std::optional<api::tab_capture::Capture::Params> params =
       TabCapture::Capture::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
@@ -211,17 +212,25 @@ ExtensionFunction::ResponseAction TabCaptureCaptureFunction::Run() {
   // custom JS bindings can be found here:
   // chrome/renderer/resources/extensions/tab_capture_custom_bindings.js
   return RespondNow(WithArguments(params->options.ToValue()));
+#else
+  return RespondNow(NoArguments());
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 ExtensionFunction::ResponseAction TabCaptureGetCapturedTabsFunction::Run() {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   TabCaptureRegistry* registry = TabCaptureRegistry::Get(browser_context());
   base::Value::List list;
   if (registry)
     registry->GetCapturedTabs(extension()->id(), &list);
   return RespondNow(WithArguments(std::move(list)));
+#else
+  return RespondNow(NoArguments());
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 ExtensionFunction::ResponseAction TabCaptureGetMediaStreamIdFunction::Run() {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   std::optional<api::tab_capture::GetMediaStreamId::Params> params =
       TabCapture::GetMediaStreamId::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
@@ -321,6 +330,9 @@ ExtensionFunction::ResponseAction TabCaptureGetMediaStreamIdFunction::Run() {
   }
 
   return RespondNow(WithArguments(device_id));
+#else
+  return RespondNow(NoArguments());
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 }  // namespace extensions

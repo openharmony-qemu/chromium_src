@@ -73,6 +73,7 @@ class CefValueImpl : public CefValue {
   int GetInt() override;
   double GetDouble() override;
   CefString GetString() override;
+  std::string GetStdString() override;
   CefRefPtr<CefBinaryValue> GetBinary() override;
   CefRefPtr<CefDictionaryValue> GetDictionary() override;
   CefRefPtr<CefListValue> GetList() override;
@@ -81,6 +82,7 @@ class CefValueImpl : public CefValue {
   bool SetInt(int value) override;
   bool SetDouble(double value) override;
   bool SetString(const CefString& value) override;
+  bool SetStdString(const std::string& value) override;
   bool SetBinary(CefRefPtr<CefBinaryValue> value) override;
   bool SetDictionary(CefRefPtr<CefDictionaryValue> value) override;
   bool SetList(CefRefPtr<CefListValue> value) override;

@@ -787,4 +787,12 @@ void MultiBufferDataSource::UpdateBufferSizes() {
   reader_->SetPreload(preload_high, preload);
 }
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+void MultiBufferDataSource::SetMediaWebURLErrorCB(MediaWebURLErrorCB callback) {
+  if (url_data_) {
+    url_data_->SetMediaWebURLErrorCB(callback);
+  }
+}
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
 }  // namespace blink

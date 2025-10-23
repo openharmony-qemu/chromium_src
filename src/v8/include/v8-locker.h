@@ -106,7 +106,7 @@ class V8_EXPORT Unlocker {
   internal::Isolate* isolate_;
 };
 
-class V8_EXPORT Locker {
+class V8_EXPORT JSVM_EXPORT Locker {
  public:
   /**
    * Initialize Locker for a given Isolate.

@@ -8,15 +8,29 @@
 #include <memory>
 #include <string>
 
+#include "arkweb/build/features/features.h"
+
 class PrefRegistrySimple;
 class Profile;
 
 namespace browser_prefs {
 
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+extern const char kMigratePasswordsReady[];
+extern const char kMigratePasswordsToPasswordVault[];
+extern const char kMigrationCount[];
+extern const char kMigrationDataBackupCompletion[];
+extern const char kMigrationQueryAssetfailure[];
+#endif
+
 // Register preferences specific to CEF.
 // Called from chrome/browser/prefs/browser_prefs.cc
 void RegisterLocalStatePrefs(PrefRegistrySimple* registry);
 void RegisterProfilePrefs(PrefRegistrySimple* registry);
+
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+void RegisterMigratePasswordsPrefs(PrefRegistrySimple* registry);
+#endif
 
 // Returns the value for populating the accept-language HTTP request header.
 // |browser_context| and/or |browser| may be nullptr. If |expand| is true then

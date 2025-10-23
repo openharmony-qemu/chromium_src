@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//mojo/public/tools/bindings/mojom.gni")
+import("//build/config/features.gni")
 
 mojom("mojom") {
   sources = [
@@ -16,4 +17,9 @@ mojom("mojom") {
     "//ui/gfx/geometry/mojom",
     "//url/mojom:url_mojom_gurl",
   ]
+
+  enabled_features = []
+  if (is_arkweb) {
+    enabled_features += [ "arkweb_password_autofill" ]
+  }
 }

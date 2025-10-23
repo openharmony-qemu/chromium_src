@@ -79,6 +79,7 @@ EnterpriseManaged g_is_enterprise_managed_for_testing =
 // CaptivePortalBlockingPage to be invoked when the user has pressed the
 // connect button.
 void OpenLoginPage(content::WebContents* web_contents) {
+#if !BUILDFLAG(IS_OHOS)
 #if !BUILDFLAG(ENABLE_CAPTIVE_PORTAL_DETECTION)
   // OpenLoginTabForWebContents() is not available on Android (the only
   // platform on which captive portal detection is not enabled). Simply open
@@ -93,6 +94,9 @@ void OpenLoginPage(content::WebContents* web_contents) {
   ChromeSecurityBlockingPageFactory::OpenLoginTabForWebContents(web_contents,
                                                                 true);
 #endif  // !BUILDFLAG(ENABLE_CAPTIVE_PORTAL_DETECTION)
+#else
+  LOG(ERROR) << "OpenLoginPage TODO for OS_OHOS";
+#endif
 }
 
 std::unique_ptr<ContentMetricsHelper> CreateMetricsHelperAndStartRecording(

@@ -194,7 +194,11 @@ class HttpCacheDataCounterTest : public testing::Test {
     context_params->http_cache_enabled = true;
     context_params->file_paths->http_cache_directory = cache_dir_.GetPath();
 
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+    network_context_ = std::make_unique<ArkWebNetworkContextExt>(
+#else
     network_context_ = std::make_unique<NetworkContext>(
+#endif
         network_service_.get(),
         network_context_remote_.BindNewPipeAndPassReceiver(),
         std::move(context_params));
@@ -244,7 +248,11 @@ TEST(HttpCacheDataCounterTestNoCache, BeSensible) {
   mojom::NetworkContextParamsPtr context_params = CreateContextParams();
   context_params->http_cache_enabled = false;
 
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+  network_context = std::make_unique<ArkWebNetworkContextExt>(
+#else
   network_context = std::make_unique<NetworkContext>(
+#endif
       network_service.get(),
       network_context_remote.BindNewPipeAndPassReceiver(),
       std::move(context_params));

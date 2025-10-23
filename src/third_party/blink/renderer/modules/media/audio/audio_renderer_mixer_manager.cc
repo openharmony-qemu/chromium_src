@@ -179,8 +179,13 @@ AudioRendererMixer* AudioRendererMixerManager::GetMixer(
     DVLOG(1) << "Not reusing mixer with errors: " << it->second.mixer;
 
     // Move bad mixers out of the reuse map.
+#if defined(__clang__) && (__clang_major__ < 17)
+    dead_mixers_.emplace_back(AudioRendererMixerReference{
+        std::move(it->second.mixer), it->second.ref_count});
+#else
     dead_mixers_.emplace_back(std::move(it->second.mixer),
                               it->second.ref_count);
+#endif
     mixers_.erase(it);
   }
 
@@ -226,7 +231,13 @@ void AudioRendererMixerManager::ReturnMixer(AudioRendererMixer* mixer) {
     }
   } else if (dead_it == dead_mixers_.end() && mixer_ref.mixer->HasSinkError()) {
     // Move bad mixers out of the reuse map.
+
+#if defined(__clang__) && (__clang_major__ < 17)
+    dead_mixers_.emplace_back(AudioRendererMixerReference{
+        std::move(mixer_ref.mixer), mixer_ref.ref_count});
+#else
     dead_mixers_.emplace_back(std::move(mixer_ref.mixer), mixer_ref.ref_count);
+#endif
     mixers_.erase(it);
   }
 }

@@ -141,7 +141,11 @@ void DebuggeeFromDebuggerSession(Debuggee& dst, const DebuggerSession& src) {
 #if BUILDFLAG(ENABLE_PDF)
 // Returns whether `url` is the URL for the built-in PDF extension.
 bool IsPdfExtensionUrl(const GURL& url) {
-  return url.scheme() == kExtensionScheme &&
+  return (url.scheme() == kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+          || url.scheme() == kArkwebExtensionScheme
+#endif
+          ) &&
          url.host() == extension_misc::kPdfExtensionId;
 }
 #endif  // BUILDFLAG(ENABLE_PDF)

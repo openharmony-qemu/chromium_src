@@ -1797,10 +1797,9 @@ class CORE_EXPORT Document : public ContainerNode,
   static void SetForceSynchronousParsingForTesting(bool);
   static bool ForceSynchronousParsingForTesting();
 
-#if DCHECK_IS_ON()
+#if DCHECK_IS_ON() || BUILDFLAG(IS_ARKWEB)
   void IncrementNodeCount() { node_count_++; }
   void DecrementNodeCount() {
-    DCHECK_GT(node_count_, 0);
     node_count_--;
   }
 #endif  // DCHECK_IS_ON()
@@ -2969,7 +2968,7 @@ class CORE_EXPORT Document : public ContainerNode,
 
   Member<IntersectionObserverController> intersection_observer_controller_;
 
-#if DCHECK_IS_ON()
+#if DCHECK_IS_ON() || BUILDFLAG(IS_ARKWEB)
   int node_count_ = 0;
 #endif
 

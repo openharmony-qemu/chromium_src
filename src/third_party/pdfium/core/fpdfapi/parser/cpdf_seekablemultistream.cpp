@@ -72,9 +72,9 @@ bool CPDF_SeekableMultiStream::IsEOF() {
 }
 
 bool CPDF_SeekableMultiStream::Flush() {
-  NOTREACHED();
+  NOTREACHED_NORETURN();
 }
 
 bool CPDF_SeekableMultiStream::WriteBlock(pdfium::span<const uint8_t> buffer) {
-  NOTREACHED();
+  NOTREACHED_NORETURN();
 }

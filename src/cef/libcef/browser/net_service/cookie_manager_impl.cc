@@ -143,8 +143,9 @@ void CefCookieManagerImpl::Initialize(
   RunAsyncCompletionOnUIThread(callback);
 }
 
-bool CefCookieManagerImpl::VisitAllCookies(
-    CefRefPtr<CefCookieVisitor> visitor) {
+// current implemention will use cookie_manager_impl_ext.cc
+bool CefCookieManagerImpl::VisitAllCookies(CefRefPtr<CefCookieVisitor> visitor,
+                                           bool is_sync) {
   if (!visitor.get()) {
     return false;
   }
@@ -159,10 +160,11 @@ bool CefCookieManagerImpl::VisitAllCookies(
   return VisitAllCookiesInternal(visitor);
 }
 
-bool CefCookieManagerImpl::VisitUrlCookies(
-    const CefString& url,
+bool CefCookieManagerImpl::VisitUrlCookies(const CefString& url,
     bool includeHttpOnly,
-    CefRefPtr<CefCookieVisitor> visitor) {
+                                           CefRefPtr<CefCookieVisitor> visitor,
+                                           bool is_sync,
+                                           bool is_from_ndk) {
   if (!visitor.get()) {
     return false;
   }
@@ -184,7 +186,10 @@ bool CefCookieManagerImpl::VisitUrlCookies(
 
 bool CefCookieManagerImpl::SetCookie(const CefString& url,
                                      const CefCookie& cookie,
-                                     CefRefPtr<CefSetCookieCallback> callback) {
+                                     CefRefPtr<CefSetCookieCallback> callback,
+                                     bool is_sync,
+                                     const CefString& str_cookie,
+                                     bool includeHttpOnly) {
   GURL gurl = GURL(url.ToString());
   if (!gurl.is_valid()) {
     return false;
@@ -203,7 +208,11 @@ bool CefCookieManagerImpl::SetCookie(const CefString& url,
 bool CefCookieManagerImpl::DeleteCookies(
     const CefString& url,
     const CefString& cookie_name,
-    CefRefPtr<CefDeleteCookiesCallback> callback) {
+#if BUILDFLAG(IS_OHOS)
+    bool is_session,
+#endif
+    CefRefPtr<CefDeleteCookiesCallback> callback,
+    bool is_sync) {
   // Empty URLs are allowed but not invalid URLs.
   GURL gurl = GURL(url.ToString());
   if (!gurl.is_empty() && !gurl.is_valid()) {
@@ -404,5 +413,19 @@ bool CefCookieManagerImpl::ValidContext() const {
 CefRefPtr<CefCookieManager> CefCookieManager::GetGlobalManager(
     CefRefPtr<CefCompletionCallback> callback) {
   CefRefPtr<CefRequestContext> context = CefRequestContext::GetGlobalContext();
+#if !BUILDFLAG(ARKWEB_COOKIE)
   return context ? context->GetCookieManager(callback) : nullptr;
+#else
+  return context ? context->GetCookieManagerExt(false, callback) : nullptr;
+#endif
+}
+
+// static
+CefRefPtr<CefCookieManager> CefCookieManager::GetGlobalIncognitoManager(
+    CefRefPtr<CefCompletionCallback> callback) {
+#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
+  CefRefPtr<CefRequestContext> context =
+      CefRequestContext::GetGlobalOTRContext();
+  return context ? context->GetCookieManagerExt(true, callback) : nullptr;
+#endif
 }

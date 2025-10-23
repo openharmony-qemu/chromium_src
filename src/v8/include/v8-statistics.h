@@ -137,7 +137,7 @@ class V8_EXPORT SharedMemoryStatistics {
  * Instances of this class can be passed to v8::Isolate::GetHeapStatistics to
  * get heap statistics from V8.
  */
-class V8_EXPORT HeapStatistics {
+class V8_EXPORT JSVM_EXPORT HeapStatistics {
  public:
   HeapStatistics();
   size_t total_heap_size() { return total_heap_size_; }

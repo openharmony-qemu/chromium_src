@@ -52,6 +52,10 @@ class CefIOThreadState : public base::RefCountedThreadSafe<
 
   ~CefIOThreadState();
 
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  void InitOnIOThread();
+#endif // BUILDFLAG(ARKWEB_DEVTOOLS)
+
   // Map IDs to CefRequestContextHandler objects.
   CefRequestContextHandlerMap handler_map_;
 

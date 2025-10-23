@@ -16,7 +16,7 @@ class Context;
 /**
  * An instance of the built-in RegExp constructor (ECMA-262, 15.10).
  */
-class V8_EXPORT RegExp : public Object {
+class V8_EXPORT JSVM_EXPORT RegExp : public Object {
  public:
   /**
    * Regular expression flag bits. They can be or'ed to enable a set

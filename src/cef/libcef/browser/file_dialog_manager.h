@@ -22,6 +22,9 @@ class FileSelectListener;
 
 class CefBrowserHostBase;
 class CefSelectFileDialogListener;
+#if BUILDFLAG(IS_ARKWEB)
+class ArkwebFileDialogManagerUtils;
+#endif
 
 class CefFileDialogManager {
  public:
@@ -31,6 +34,10 @@ class CefFileDialogManager {
   CefFileDialogManager& operator=(const CefFileDialogManager&) = delete;
 
   ~CefFileDialogManager();
+
+#if BUILDFLAG(IS_ARKWEB)
+  friend class ArkwebFileDialogManagerUtils;
+#endif
 
   // Delete the runner to free any platform constructs.
   void Destroy();
@@ -66,12 +73,21 @@ class CefFileDialogManager {
                      const ui::SelectFileDialog::FileTypeInfo* file_types,
                      int file_type_index,
                      const base::FilePath::StringType& default_extension,
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+                     gfx::NativeWindow owning_window,
+                     std::vector<std::u16string> accept_types,
+                     bool use_media_capture);
+#else
                      gfx::NativeWindow owning_window);
+#endif
 
   // Must be called when the |listener| passed to RunSelectFile is destroyed.
   void SelectFileListenerDestroyed(ui::SelectFileDialog::Listener* listener);
 
  private:
+#if BUILDFLAG(IS_ARKWEB)
+  std::unique_ptr<ArkwebFileDialogManagerUtils> arkweb_browser_info_manager_utils_;
+#endif
   using Extensions = std::vector<std::vector<base::FilePath::StringType>>;
   using Descriptions = std::vector<std::u16string>;
   [[nodiscard]] RunFileChooserCallback MaybeRunDelegate(

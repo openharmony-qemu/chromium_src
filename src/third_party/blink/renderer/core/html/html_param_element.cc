@@ -26,6 +26,9 @@
 #include "third_party/blink/renderer/core/dom/document.h"
 #include "third_party/blink/renderer/core/html/html_document.h"
 #include "third_party/blink/renderer/core/html_names.h"
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/html_param_element_for_include.cc"
+#endif
 
 namespace blink {
 

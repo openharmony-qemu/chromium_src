@@ -161,6 +161,14 @@ class CefBrowserProcessHandler : public virtual CefBaseRefCounted {
   GetDefaultRequestContextHandler() {
     return nullptr;
   }
+
+  ///
+  /// Called on the browser process UI thread immediately after the CEF context
+  /// has been initialized to register scheme for incognito mode.
+  /// IS_OHOS extended
+  ///
+  /*--cef()--*/
+  virtual void OnContextInitializedForIncognitoMode() {}
 };
 
 #endif  // CEF_INCLUDE_CEF_BROWSER_PROCESS_HANDLER_H_

@@ -180,7 +180,13 @@ std::string TabCaptureRegistry::AddRequest(
     std::optional<int> restrict_to_render_frame_id) {
   std::string device_id;
   LiveRequest* const request = FindRequest(target_contents);
-
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+  LOG(WARNING) << "[webrtc_logging] tab capture registry failed";
+  if (request != nullptr) {
+    KillRequest(request);
+  }
+  return device_id;
+#endif
   // Currently, we do not allow multiple active captures for same tab.
   if (request != nullptr) {
     if (request->capture_state() == tab_capture::TabCaptureState::kPending ||

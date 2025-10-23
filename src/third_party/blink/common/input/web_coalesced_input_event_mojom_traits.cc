@@ -9,6 +9,9 @@
 #include "base/containers/contains.h"
 #include "base/strings/string_util.h"
 #include "base/time/time.h"
+#if BUILDFLAG(ARKWEB_FIT_CONTENT)
+#include "build/build_config.h"
+#endif
 #include "mojo/public/cpp/base/time_mojom_traits.h"
 #include "third_party/blink/public/common/input/web_gesture_event.h"
 #include "third_party/blink/public/common/input/web_keyboard_event.h"
@@ -156,6 +159,9 @@ bool StructTraits<blink::mojom::EventDataView,
           break;
         case blink::WebInputEvent::Type::kGestureShortPress:
         case blink::WebInputEvent::Type::kGestureLongPress:
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+        case blink::WebInputEvent::Type::kGestureDragLongPress:
+#endif
         case blink::WebInputEvent::Type::kGestureLongTap:
           gesture_event->data.long_press.width =
               gesture_data->contact_size->width();
@@ -301,6 +307,9 @@ bool StructTraits<blink::mojom::EventDataView,
     touch_event->moved_beyond_slop_region =
         touch_data->moved_beyond_slop_region;
     touch_event->hovering = touch_data->hovering;
+#if BUILDFLAG(ARKWEB_FIT_CONTENT)
+    touch_event->is_fit_content = touch_data->is_fit_content;
+#endif
     touch_event->touch_start_or_first_touch_move =
         touch_data->touch_start_or_first_move;
     touch_event->unique_touch_event_id = touch_data->unique_touch_event_id;
@@ -466,6 +475,9 @@ StructTraits<blink::mojom::EventDataView,
       break;
     case blink::WebInputEvent::Type::kGestureShortPress:
     case blink::WebInputEvent::Type::kGestureLongPress:
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    case blink::WebInputEvent::Type::kGestureDragLongPress:
+#endif
     case blink::WebInputEvent::Type::kGestureLongTap:
       gesture_data->contact_size =
           gfx::Size(gesture_event->data.long_press.width,
@@ -543,6 +555,9 @@ StructTraits<blink::mojom::EventDataView,
   auto touch_data = blink::mojom::TouchData::New(
       touch_event->dispatch_type, touch_event->moved_beyond_slop_region,
       touch_event->touch_start_or_first_touch_move, touch_event->hovering,
+#if BUILDFLAG(ARKWEB_FIT_CONTENT)
+      touch_event->is_fit_content,
+#endif
       touch_event->unique_touch_event_id,
       std::vector<blink::mojom::TouchPointPtr>());
   for (unsigned i = 0; i < touch_event->touches_length; ++i) {

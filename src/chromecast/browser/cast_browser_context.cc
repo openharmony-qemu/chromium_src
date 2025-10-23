@@ -7,6 +7,10 @@
 #include <memory>
 #include <utility>
 
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
+#include "base/logging.h"
+#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
+
 #include "base/command_line.h"
 #include "base/files/file_util.h"
 #include "base/path_service.h"
@@ -29,8 +33,12 @@ const void* const kDownloadManagerDelegateKey = &kDownloadManagerDelegateKey;
 }  // namespace
 
 CastBrowserContext::CastBrowserContext() {
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
+  LOG(INFO) << "CastBrowserContext SetBrowserProfileType, context : " << this;
+#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
   profile_metrics::SetBrowserProfileType(
       this, profile_metrics::BrowserProfileType::kRegular);
+
   InitWhileIOAllowed();
   simple_factory_key_ =
       std::make_unique<SimpleFactoryKey>(GetPath(), IsOffTheRecord());

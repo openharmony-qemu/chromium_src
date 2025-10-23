@@ -7,13 +7,18 @@
 #include <errno.h>
 #include <sys/stat.h>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/command_line.h"
 #include "base/files/file_util.h"
+#include "base/logging.h"
 #include "content/public/common/content_features.h"
 #include "content/public/common/content_switches.h"
 #include "sandbox/policy/sandbox.h"
 #include "sandbox/policy/sandbox_type.h"
+#include "arkweb/chromium_ext/sandbox/seccomp-bpf-helpers/seccomp_starter_ohos.h"
+#include "arkweb/chromium_ext/sandbox/seccomp-bpf-helpers/baseline_policy_ohos.h"
+#include <unistd.h>
 
 namespace content {
 
@@ -34,6 +39,20 @@ bool RendererMainPlatformDelegate::EnableSandbox() {
   // https://chromium.googlesource.com/chromium/src/+/main/docs/linux/suid_sandbox.md
   //
   // Anything else is started in InitializeSandbox().
+#if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+#if defined(__arm__) || defined(__aarch64__)
+  LOG(INFO) << "EnableSandbox is triggered now, commands related to binder are removed.";
+  sandbox::SeccompStarterOhos starter;
+  starter.set_policy(std::make_unique<sandbox::BaselinePolicyOhos>());
+  starter.StartSandbox();
+  if (starter.status() == sandbox::SeccompSandboxStatus::ENGAGED) {
+    return true;
+  }
+  return false;
+#else
+  return true;
+#endif
+#else
   sandbox::policy::SandboxLinux::Options options;
   sandbox::policy::Sandbox::Initialize(
       sandbox::policy::SandboxTypeFromCommandLine(
@@ -67,6 +86,7 @@ bool RendererMainPlatformDelegate::EnableSandbox() {
 #endif  // __x86_64__
 
   return true;
+#endif  // BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
 }
 
 }  // namespace content

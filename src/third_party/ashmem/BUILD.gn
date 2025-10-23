@@ -2,8 +2,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-assert(is_android)
+assert(is_android || is_ohos)
 
+if (is_android) {
 source_set("ashmem") {
   sources = [
     "ashmem-dev.c",
@@ -11,4 +12,15 @@ source_set("ashmem") {
   ]
 
   configs -= [ "//build/config/android:default_orderfile_instrumentation" ]
+}
+} else if(is_ohos) {
+  source_set("ashmem") {
+    sources = [
+      "//arkweb/chromium_ext/third_party/ashmem/ohos_ashmem.cc",
+      "ashmem.h",
+    ]
+    include_dirs = [
+      "//third_party/ashmem"
+    ]
+  }
 }

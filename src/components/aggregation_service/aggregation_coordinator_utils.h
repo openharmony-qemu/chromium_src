@@ -8,16 +8,24 @@
 #include <string_view>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "url/origin.h"
 
 namespace aggregation_service {
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+inline constexpr std::string_view kDefaultAggregationCoordinatorAwsCloud =
+    "https://x.x.x.x";
+inline constexpr std::string_view kDefaultAggregationCoordinatorGcpCloud =
+    "https://x.x.x.x";
+#else
 inline constexpr std::string_view kDefaultAggregationCoordinatorAwsCloud =
     "https://publickeyservice.msmt.aws.privacysandboxservices.com";
 
 inline constexpr std::string_view kDefaultAggregationCoordinatorGcpCloud =
     "https://publickeyservice.msmt.gcp.privacysandboxservices.com";
+#endif
 
 COMPONENT_EXPORT(AGGREGATION_SERVICE)
 url::Origin GetDefaultAggregationCoordinatorOrigin();

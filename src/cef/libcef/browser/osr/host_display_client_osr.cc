@@ -8,6 +8,7 @@
 
 #include "base/memory/raw_ptr.h"
 #include "base/memory/shared_memory_mapping.h"
+#include "base/trace_event/trace_event.h"
 #include "cef/libcef/browser/osr/render_widget_host_view_osr.h"
 #include "components/viz/common/resources/resource_sizes.h"
 #include "mojo/public/cpp/system/platform_handle.h"
@@ -20,6 +21,10 @@
 
 #if BUILDFLAG(IS_WIN)
 #include "skia/ext/skia_utils_win.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+#include "cef/ohos_cef_ext/include/arkweb_render_handler_ext.h"
 #endif
 
 class CefLayeredWindowUpdaterOSR : public viz::mojom::LayeredWindowUpdater {
@@ -112,7 +117,13 @@ void CefLayeredWindowUpdaterOSR::Draw(const gfx::Rect& damage_rect,
 CefHostDisplayClientOSR::CefHostDisplayClientOSR(
     CefRenderWidgetHostViewOSR* const view,
     gfx::AcceleratedWidget widget)
-    : viz::HostDisplayClient(widget), view_(view) {}
+    : viz::HostDisplayClient(widget), view_(view) {
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+  if (view_) {
+    browser_impl_ = view_->browser_impl();
+  }
+#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+}
 
 CefHostDisplayClientOSR::~CefHostDisplayClientOSR() = default;
 
@@ -149,3 +160,17 @@ void CefHostDisplayClientOSR::CreateLayeredWindowUpdater(
 void CefHostDisplayClientOSR::DidCompleteSwapWithNewSize(
     const gfx::Size& size) {}
 #endif
+
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+void CefHostDisplayClientOSR::DidCompleteSwapWithNewSizeOHOS(
+    const gfx::Size& size) {
+  TRACE_EVENT1("cef", "CefHostDisplayClientOSR::DidCompleteSwapWithNewSize",
+               "size", size.ToString());
+  if (browser_impl_ && browser_impl_->GetClient()) {
+    auto render_handler = browser_impl_->GetClient()->GetRenderHandler();
+    if (render_handler) {
+      render_handler->OnCompleteSwapWithNewSize();
+    }
+  }
+}
+#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)

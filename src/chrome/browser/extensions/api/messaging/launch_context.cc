@@ -140,6 +140,7 @@ LaunchContext::BackgroundLaunchResult LaunchContext::LaunchInBackground(
     return BackgroundLaunchResult(NativeProcessLauncher::RESULT_INVALID_NAME);
   }
 
+#if !BUILDFLAG(IS_OHOS)
   std::string error_message;
   base::FilePath manifest_path =
       FindManifest(native_host_name, allow_user_level_hosts, error_message);
@@ -261,11 +262,19 @@ LaunchContext::BackgroundLaunchResult LaunchContext::LaunchInBackground(
         {"--", switches::kNativeMessagingConnectId, "=", connect_id}));
   }
 
+#endif // !BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_OHOS)
+  if (auto state = LaunchConnectNative(native_host_name, origin)) {
+    return BackgroundLaunchResult(*std::move(state));
+  }
+  return BackgroundLaunchResult(NativeProcessLauncher::RESULT_FAILED_TO_START);
+#else
   if (auto state = LaunchNativeProcess(
           command_line, native_hosts_executables_launch_directly)) {
     return BackgroundLaunchResult(*std::move(state));
   }
   return BackgroundLaunchResult(NativeProcessLauncher::RESULT_FAILED_TO_START);
+#endif
 }
 
 // static

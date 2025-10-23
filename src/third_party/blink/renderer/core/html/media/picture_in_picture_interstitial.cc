@@ -25,7 +25,9 @@ constexpr base::TimeDelta kPictureInPictureStyleChangeTransitionDuration =
     base::Milliseconds(200);
 constexpr base::TimeDelta kPictureInPictureHiddenAnimationSeconds =
     base::Milliseconds(300);
-
+#if BUILDFLAG(ARKWEB_PIP)
+constexpr double kPictureInPictureOpacity = 0.99;
+#endif
 }  // namespace
 
 namespace blink {
@@ -162,8 +164,13 @@ void PictureInPictureInterstitial::ToggleInterstitialTimerFired(TimerBase*) {
   interstitial_timer_.Stop();
   if (should_be_visible_) {
     SetInlineStyleProperty(CSSPropertyID::kBackgroundColor, CSSValueID::kBlack);
+#if BUILDFLAG(ARKWEB_PIP)
+    SetInlineStyleProperty(CSSPropertyID::kOpacity, kPictureInPictureOpacity,
+                           CSSPrimitiveValue::UnitType::kNumber);
+#else
     SetInlineStyleProperty(CSSPropertyID::kOpacity, 1,
                            CSSPrimitiveValue::UnitType::kNumber);
+#endif
   } else {
     SetInlineStyleProperty(CSSPropertyID::kDisplay, CSSValueID::kNone);
   }

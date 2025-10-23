@@ -118,7 +118,7 @@ base::FilePath SelectFileDialog::GetShortenedFilePath(
   return path.DirName().Append(file_string).AddExtension(extension);
 }
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_FILE_UPLOAD)
 // These are overridden by Android's SelectFileDialog subclass.
 void SelectFileDialog::SetAcceptTypes(std::vector<std::u16string> types) {}
 void SelectFileDialog::SetUseMediaCapture(bool use_media_capture) {}

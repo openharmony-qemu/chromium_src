@@ -147,6 +147,9 @@ source_set("fxcrt") {
     "../../:pdfium_strict_config",
     "../../:pdfium_noshorten_config",
   ]
+  if (is_ohos) {
+    configs += [ "//build/config/ohos:compiler" ]
+  }
   deps = [ "//third_party/fast_float" ]
   public_deps = [
     "../../:freetype_common",

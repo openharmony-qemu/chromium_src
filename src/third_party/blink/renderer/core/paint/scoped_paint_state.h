@@ -13,6 +13,8 @@
 #include "third_party/blink/renderer/core/paint/paint_info.h"
 #include "third_party/blink/renderer/platform/graphics/paint/scoped_paint_chunk_properties.h"
 
+#include "arkweb/build/features/features.h"
+
 namespace blink {
 
 // Adjusts paint chunk properties, cull rect of the input PaintInfo and finds
@@ -112,6 +114,9 @@ class ScopedBoxContentsPaintState : public ScopedPaintState {
   }
 
  private:
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  bool IsEllipisTextOverFlowInSelection(const LayoutBox&);
+#endif
   void AdjustForBoxContents(const LayoutBox&);
   std::optional<MobileFriendlinessChecker::IgnoreBeyondViewportScope>
       mf_ignore_scope_;

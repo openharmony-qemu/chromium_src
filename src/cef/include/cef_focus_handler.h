@@ -38,6 +38,7 @@
 #define CEF_INCLUDE_CEF_FOCUS_HANDLER_H_
 #pragma once
 
+#include "arkweb/build/features/features.h"
 #include "include/cef_base.h"
 #include "include/cef_browser.h"
 #include "include/cef_dom.h"
@@ -76,6 +77,14 @@ class CefFocusHandler : public virtual CefBaseRefCounted {
   ///
   /*--cef()--*/
   virtual void OnGotFocus(CefRefPtr<CefBrowser> browser) {}
+
+#if BUILDFLAG(ARKWEB_MULTI_WINDOW)
+  ///
+  /// Notify the web activated by window.open.
+  ///
+  /*--cef()--*/
+  virtual void OnActivateContent() {}
+#endif
 };
 
 #endif  // CEF_INCLUDE_CEF_FOCUS_HANDLER_H_

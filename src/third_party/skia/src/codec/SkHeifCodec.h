@@ -15,11 +15,20 @@
 #include "include/private/base/SkTemplates.h"
 #include "src/codec/SkFrameHolder.h"
 #include "src/codec/SkSwizzler.h"
+#include "arkweb/build/features/features.h"
 
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+#if __has_include("arkweb/chromium_ext/third_party/skia/src/codec/SkHeifDecoderAPIOhos.h")
+    #include "arkweb/chromium_ext/third_party/skia/src/codec/SkHeifDecoderAPIOhos.h"
+#else
+    #include "src/codec/SkStubHeifDecoderAPI.h"
+#endif
+#else
 #if __has_include("HeifDecoderAPI.h")
     #include "HeifDecoderAPI.h"
 #else
     #include "src/codec/SkStubHeifDecoderAPI.h"
+#endif
 #endif
 
 class SkHeifCodec : public SkCodec {
@@ -67,7 +76,13 @@ private:
      * Creates an instance of the decoder
      * Called only by NewFromStream
      */
-    SkHeifCodec(SkEncodedInfo&&, HeifDecoder*, SkEncodedOrigin, bool animation,
+    SkHeifCodec(SkEncodedInfo&&,
+        HeifDecoder*,
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+        HeifFrameInfo,
+#endif
+        SkEncodedOrigin,
+        bool animation,
             SkEncodedImageFormat);
 
     void initializeSwizzler(const SkImageInfo& dstInfo, const Options& options);

@@ -54,7 +54,9 @@ void CefTouchHandleDrawableOSR::SetOrientation(
   }
 
   orientation_ = orientation;
-
+#if BUILDFLAG(ARKWEB_MENU)
+  AsArkWebCefTouchHandleDrawableOSRExt()->UpdateVisiableBounds();
+#else
   CefSize size;
   auto browser = rwhv_->browser_impl();
   auto handler = browser->GetClient()->GetRenderHandler();
@@ -78,6 +80,7 @@ void CefTouchHandleDrawableOSR::SetOrientation(
   touch_handle_state.mirror_vertical = mirror_vertical;
   touch_handle_state.mirror_horizontal = mirror_horizontal;
   TouchHandleStateChanged(touch_handle_state);
+#endif
 }
 
 void CefTouchHandleDrawableOSR::SetOrigin(const gfx::PointF& position) {
@@ -87,12 +90,6 @@ void CefTouchHandleDrawableOSR::SetOrigin(const gfx::PointF& position) {
 
   origin_position_ = position;
 
-  CefTouchHandleState touch_handle_state;
-  touch_handle_state.touch_handle_id = id_;
-  touch_handle_state.flags = CEF_THS_FLAG_ORIGIN;
-  touch_handle_state.origin = {static_cast<int>(std::round(position.x())),
-                               static_cast<int>(std::round(position.y()))};
-  TouchHandleStateChanged(touch_handle_state);
 }
 
 void CefTouchHandleDrawableOSR::SetAlpha(float alpha) {
@@ -102,20 +99,12 @@ void CefTouchHandleDrawableOSR::SetAlpha(float alpha) {
 
   alpha_ = alpha;
 
-  CefTouchHandleState touch_handle_state;
-  touch_handle_state.touch_handle_id = id_;
-  touch_handle_state.flags = CEF_THS_FLAG_ALPHA;
-  touch_handle_state.alpha = alpha_;
-  TouchHandleStateChanged(touch_handle_state);
 }
 
 gfx::RectF CefTouchHandleDrawableOSR::GetVisibleBounds() const {
   gfx::RectF bounds = relative_bounds_;
   bounds.Offset(origin_position_.x(), origin_position_.y());
-  bounds.Inset(gfx::InsetsF::TLBR(
-      kSelectionHandlePadding,
-      kSelectionHandlePadding + kSelectionHandleVerticalVisualOffset,
-      kSelectionHandlePadding, kSelectionHandlePadding));
+
   return bounds;
 }
 

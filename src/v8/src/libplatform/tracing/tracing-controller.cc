@@ -10,6 +10,7 @@
 #include "src/base/atomicops.h"
 #include "src/base/platform/mutex.h"
 #include "src/base/platform/time.h"
+#include "src/tracing/trace-event.h"
 
 #ifdef V8_USE_PERFETTO
 #include "perfetto/ext/trace_processor/export_json.h"
@@ -218,6 +219,7 @@ void TracingController::StartTracing(TraceConfig* trace_config) {
     o->OnTraceEnabled();
   }
 #endif
+  TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.runtime"), "V8.StartTracing");
 }
 
 void TracingController::StopTracing() {

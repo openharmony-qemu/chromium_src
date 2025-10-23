@@ -51,6 +51,10 @@
 #include "include/cef_unresponsive_process_callback.h"
 #include "include/cef_x509_certificate.h"
 
+class CefSelectClientCertificateCallbackExt;
+class CefOpenAppLinkCallback;
+class CefRequestHandlerExt;
+
 ///
 /// Callback interface used to select a client certificate for authentication.
 ///
@@ -62,7 +66,12 @@ class CefSelectClientCertificateCallback : public virtual CefBaseRefCounted {
   /// NULL value means that no client certificate should be used.
   ///
   /*--cef(optional_param=cert)--*/
-  virtual void Select(CefRefPtr<CefX509Certificate> cert) = 0;
+  virtual void Select(CefRefPtr<CefX509Certificate> cert) {}
+
+  virtual CefRefPtr<CefSelectClientCertificateCallbackExt>
+  AsCefSelectClientCertificateCallbackExt() {
+    return nullptr;
+  }
 };
 
 ///
@@ -205,6 +214,7 @@ class CefRequestHandler : public virtual CefBaseRefCounted {
   /// list of certificates to choose from; this list has already been pruned by
   /// Chromium so that it only contains certificates from issuers that the
   /// server trusts.
+  /// IS_OHOS extended
   ///
   /*--cef()--*/
   virtual bool OnSelectClientCertificate(
@@ -278,6 +288,12 @@ class CefRequestHandler : public virtual CefBaseRefCounted {
   ///
   /*--cef()--*/
   virtual void OnDocumentAvailableInMainFrame(CefRefPtr<CefBrowser> browser) {}
+
+  virtual CefRefPtr<CefRequestHandlerExt> AsCefRequestHandlerExt() {
+    return nullptr;
+  }
 };
+
+#include "ohos_cef_ext/include/cef_request_handler_ext.h"
 
 #endif  // CEF_INCLUDE_CEF_REQUEST_HANDLER_H_

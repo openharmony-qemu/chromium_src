@@ -87,7 +87,9 @@ inline int WorldToIndex(const DOMWrapperWorld& world) {
     return 1;
   } else {
     LOG(FATAL) << "Unknown DOMWrapperWorld";
+    __builtin_unreachable();
   }
+  __builtin_unreachable();
 }
 
 using InstallPropsPerContext =

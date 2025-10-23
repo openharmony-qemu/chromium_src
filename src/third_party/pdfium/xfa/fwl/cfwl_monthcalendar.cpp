@@ -53,7 +53,7 @@ WideString GetAbbreviatedDayOfWeek(int day) {
     case 6:
       return WideString::FromASCII("Sat");
     default:
-      NOTREACHED();
+      NOTREACHED_NORETURN();
   }
 }
 
@@ -84,7 +84,7 @@ WideString GetMonth(int month) {
     case 11:
       return WideString::FromASCII("December");
     default:
-      NOTREACHED();
+      NOTREACHED_NORETURN();
   }
 }
 

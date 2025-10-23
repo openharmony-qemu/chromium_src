@@ -192,6 +192,12 @@ bool RenderFrameMetadataObserverImpl::ShouldSendRenderFrameMetadata(
       rfm1.local_surface_id != rfm2.local_surface_id ||
       rfm2.new_vertical_scroll_direction !=
           viz::VerticalScrollDirection::kNull ||
+#if BUILDFLAG(IS_ARKWEB)
+      rfm1.root_layer_size != rfm2.root_layer_size ||
+#endif
+#if BUILDFLAG(ARKWEB_MENU)
+      rfm1.clipped_selection_bounds != rfm2.clipped_selection_bounds ||
+#endif
       (rfm2.primary_main_frame_item_sequence_number !=
            cc::RenderFrameMetadata::kInvalidItemSequenceNumber &&
        rfm1.primary_main_frame_item_sequence_number !=

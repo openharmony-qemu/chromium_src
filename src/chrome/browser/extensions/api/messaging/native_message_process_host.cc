@@ -33,6 +33,7 @@
 #include "net/base/io_buffer.h"
 #include "net/base/net_errors.h"
 #include "url/gurl.h"
+#include "arkweb/ohos_nweb/src/cef_delegate/nweb_extension_connect_native.h"
 
 namespace {
 
@@ -84,6 +85,12 @@ NativeMessageProcessHost::~NativeMessageProcessHost() {
   DCHECK(task_runner_->BelongsToCurrentThread());
 
   if (process_.IsValid()) {
+#if BUILDFLAG(IS_OHOS)
+    LOG(INFO) << "NativeMessageProcessHost::~NativeMessageProcessHost(), native_host_name_: "
+              << native_host_name_ << ", source_extension_id: "
+              << source_extension_id_ << ", pid: "<< process_.Pid();
+    OHOS::NWeb::NWebConnectNativeManager::GetInstance()->DisconnectNative(process_.Pid());
+#endif
 // Kill the host process if necessary to make sure we don't leave zombies.
 // TODO(crbug.com/41367359): On OSX EnsureProcessTerminated() may
 // block, so we have to post a task on the blocking pool.

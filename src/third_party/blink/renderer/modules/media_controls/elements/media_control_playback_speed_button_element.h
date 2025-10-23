@@ -18,6 +18,9 @@ class MODULES_EXPORT MediaControlPlaybackSpeedButtonElement final
  public:
   explicit MediaControlPlaybackSpeedButtonElement(MediaControlsImpl&);
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void RefreshPlaybackSpeedButton();
+#endif
   // MediaControlInputElement overrides.
   bool WillRespondToMouseClickEvents() override;
   int GetOverflowStringId() const override;

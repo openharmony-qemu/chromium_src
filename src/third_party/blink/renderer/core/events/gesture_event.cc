@@ -50,6 +50,11 @@ GestureEvent* GestureEvent::Create(AbstractView* view,
     case WebInputEvent::Type::kGestureLongPress:
       event_type = event_type_names::kGesturelongpress;
       break;
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    case WebInputEvent::Type::kGestureDragLongPress:
+      event_type = event_type_names::kGesturedraglongpress;
+      break;
+#endif
     case WebInputEvent::Type::kGestureFlingStart:
       event_type = event_type_names::kGestureflingstart;
       break;

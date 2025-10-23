@@ -62,6 +62,10 @@ class CORE_EXPORT LargestContentfulPaintCalculator final
 
   void Trace(Visitor* visitor) const;
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void SetForBlankless();
+#endif
+
  private:
   friend class LargestContentfulPaintCalculatorTest;
 
@@ -90,6 +94,9 @@ class CORE_EXPORT LargestContentfulPaintCalculator final
   // and is not reported anywhere (neither to metrics, nor to the web exposed
   // API).
   LargestContentfulPaintDetails latest_lcp_details_;
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  bool is_for_blankless_only_ = false;
+#endif
 };
 
 }  // namespace blink

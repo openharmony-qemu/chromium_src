@@ -30,6 +30,7 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_DOM_DOCUMENT_INIT_H_
 #define THIRD_PARTY_BLINK_RENDERER_CORE_DOM_DOCUMENT_INIT_H_
 
+#include "arkweb/build/features/features.h"
 #include "base/dcheck_is_on.h"
 #include "base/uuid.h"
 #include "services/metrics/public/cpp/ukm_source_id.h"

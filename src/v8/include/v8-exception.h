@@ -29,7 +29,7 @@ class ThreadLocalTop;
  * Create new error objects by calling the corresponding error object
  * constructor with the message.
  */
-class V8_EXPORT Exception {
+class V8_EXPORT JSVM_EXPORT Exception {
  public:
   static Local<Value> RangeError(Local<String> message,
                                  Local<Value> options = {});
@@ -135,7 +135,7 @@ using ExceptionPropagationCallback =
 /**
  * An external exception handler.
  */
-class V8_EXPORT TryCatch {
+class V8_EXPORT JSVM_EXPORT TryCatch {
  public:
   /**
    * Creates a new try/catch block and registers it with v8.  Note that

@@ -21,6 +21,9 @@ std::set<std::string> GetSchemesBypassingSecureContextCheck() {
   std::set<std::string> schemes;
 #if BUILDFLAG(ENABLE_EXTENSIONS)
   schemes.insert(extensions::kExtensionScheme);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  schemes.insert(extensions::kArkwebExtensionScheme);
+#endif
 #endif
   return schemes;
 }

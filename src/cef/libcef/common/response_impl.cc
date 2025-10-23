@@ -119,6 +119,13 @@ void CefResponseImpl::SetHeaderByName(const CefString& name,
   std::string nameLower = name;
   HttpHeaderUtils::MakeASCIILower(&nameLower);
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (!overwrite) {
+    header_map_.insert(std::make_pair(name, value));
+    return;
+  }
+#endif
+
   // There may be multiple values, so remove any first.
   for (auto it = header_map_.begin(); it != header_map_.end();) {
     if (base::EqualsCaseInsensitiveASCII(it->first.ToString(), nameLower)) {

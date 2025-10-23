@@ -37,6 +37,7 @@ mojom("mojo_bindings") {
   sources = [
     "no_state_prefetch_canceler.mojom",
     "render_frame_prerender_messages.mojom",
+    "prerender_canceler.mojom",
   ]
   deps = [ "//url/mojom:url_mojom_gurl" ]
 }

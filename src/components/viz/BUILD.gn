@@ -5,6 +5,7 @@
 import("//build/config/ui.gni")
 import("//components/viz/viz.gni")
 import("//testing/test.gni")
+import("//arkweb/build/features/features.gni")
 
 if (is_ios && (skia_use_dawn || skia_use_metal)) {
   bundle_data("unit_tests_filter_bundle_data") {
@@ -21,6 +22,18 @@ viz_test("viz_unittests") {
   use_xvfb = use_xvfb_in_this_config
 
   sources = [ "test/run_all_unittests.cc" ]
+
+  if (arkweb_unittests) {
+    include_dirs = ohos_src_includes
+    sources += [
+      "//ohos_nweb/src/sysevent/event_reporter.cc",
+      "//arkweb/chromium_ext/content/renderer/host_proxy.cc",
+      "//arkweb/chromium_ext/content/renderer/host_proxy.h",
+      "//arkweb/chromium_ext/content/renderer/render_remote_proxy_ohos.cc",
+      "//arkweb/chromium_ext/content/renderer/render_remote_proxy_ohos.h",
+    ]
+  }
+
   deps = [
     "//base",
     "//base/test:test_support",
@@ -33,6 +46,14 @@ viz_test("viz_unittests") {
     "//components/viz/test:unit_tests",
     "//mojo/core/embedder",
   ]
+
+  if (arkweb_unittests) {
+    deps += [
+      "//content/public/common",
+      "//components/subresource_filter/content/browser",
+      "//cef:libcef_static",
+    ]
+  }
 
   data = [ "//components/test/data/viz/" ]
 

@@ -10,6 +10,9 @@
   <release seq="1">
     <includes>
       <include name="IDR_CEF_LICENSE_TXT" file="..\..\LICENSE.txt" type="BINDATA" />
+      <include name="IDR_CEF_LOG_NET_EXPORT_HTML" file=".\net_export\ohos_net_export.html" flattenhtml="true" type="BINDATA" />
+      <include name="IDR_CEF_LOG_NET_EXPORT_CSS" file=".\net_export\ohos_net_export.css" type="BINDATA" />
+      <include name="IDR_CEF_LOG_NET_EXPORT_JS" file=".\net_export\ohos_net_export.js" flattenhtml="true" type="BINDATA" />
     </includes>
   </release>
 </grit>

@@ -38,7 +38,7 @@ ScopedFPDFPageObject CreateBlackTriangle() {
 }  // namespace
 
 TEST_F(FPDFEditPathEmbedderTest, VerifyCorrectColoursReturned) {
-  static constexpr int kObjectCount = 256;
+  constexpr int kObjectCount = 256;
   CreateEmptyDocument();
   FPDF_PAGE page = FPDFPage_New(document(), 0, 612, 792);
 

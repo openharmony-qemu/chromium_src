@@ -30,7 +30,7 @@ ScopedResState::ScopedResState() {
 }
 
 ScopedResState::~ScopedResState() {
-#if !BUILDFLAG(IS_OPENBSD) && !BUILDFLAG(IS_FUCHSIA)
+#if !BUILDFLAG(IS_OPENBSD) && !BUILDFLAG(IS_FUCHSIA) && !BUILDFLAG(IS_OHOS)
 
   // Prefer res_ndestroy where available.
 #if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_FREEBSD)

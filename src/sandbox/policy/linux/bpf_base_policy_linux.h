@@ -17,6 +17,10 @@
 #include "sandbox/linux/seccomp-bpf-helpers/baseline_policy_android.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "arkweb/chromium_ext/sandbox/seccomp-bpf-helpers/baseline_policy_ohos.h"
+#endif
+
 namespace sandbox::policy {
 
 // The "baseline" BPF policy. Any other seccomp-bpf policy should inherit
@@ -25,7 +29,7 @@ namespace sandbox::policy {
 // as a "kernel attack surface reduction" layer, it's implementation-defined.
 class SANDBOX_POLICY_EXPORT BPFBasePolicy : public bpf_dsl::Policy {
  public:
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
   BPFBasePolicy();
 #elif BUILDFLAG(IS_ANDROID)
   explicit BPFBasePolicy(const BaselinePolicyAndroid::RuntimeOptions& options);
@@ -47,7 +51,11 @@ class SANDBOX_POLICY_EXPORT BPFBasePolicy : public bpf_dsl::Policy {
 
  private:
   // Compose the BaselinePolicy from sandbox/.
+#if BUILDFLAG(IS_OHOS)
+  std::unique_ptr<BaselinePolicyOhos> baseline_policy_;
+#else
   std::unique_ptr<BaselinePolicy> baseline_policy_;
+#endif
 };
 
 }  // namespace sandbox::policy

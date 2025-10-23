@@ -45,6 +45,10 @@ class FakeDistiller : public Distiller {
                    DistillationFinishedCallback article_callback,
                    const DistillationUpdateCallback& page_callback) override;
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  void AbortDistill() override;
+#endif // ARKWEB_READER_MODE
+
   void RunDistillerCallback(std::unique_ptr<DistilledArticleProto> proto);
   void RunDistillerUpdateCallback(const ArticleDistillationUpdate& update);
 

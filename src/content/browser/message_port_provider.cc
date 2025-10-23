@@ -77,6 +77,8 @@ void MessagePortProvider::PostMessageToFrame(
                              std::vector<blink::MessagePortDescriptor>());
 }
 
+#include "arkweb/chromium_ext/content/browser/message_port_provider_for_include.cc"
+
 #if BUILDFLAG(IS_ANDROID)
 void MessagePortProvider::PostMessageToFrame(
     Page& page,

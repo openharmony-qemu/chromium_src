@@ -7,6 +7,7 @@
 
 #include "third_party/blink/public/common/common_export.h"
 
+#include "arkweb/chromium_ext/third_party/blink/public/common/context_menu_data/context_menu_params_builder_utils.h"
 namespace blink {
 
 struct UntrustworthyContextMenuParams;

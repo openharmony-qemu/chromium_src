@@ -126,6 +126,11 @@ void FileChooser::DidChooseFiles(mojom::blink::FileChooserResultPtr result) {
 void FileChooser::DidCloseChooser() {
   // Close the remote explicitly to avoid this function to be called again as a
   // disconnect handler.
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+  if (!file_chooser_) {
+    return;
+  }
+#endif
   file_chooser_.reset();
 
   // Some cleanup for OpenFileChooser() path.

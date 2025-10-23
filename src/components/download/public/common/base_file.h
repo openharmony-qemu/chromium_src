@@ -31,7 +31,18 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace download {
+
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+void InitializeFile(base::File* file, const base::FilePath& file_path);
+
+#endif
+class ArkWebBaseFileExt;
+
 
 // File being downloaded and saved to disk. This is a base class
 // for DownloadFile and SaveFile, which keep more state information. BaseFile
@@ -40,6 +51,9 @@ namespace download {
 // Detach().
 class COMPONENTS_DOWNLOAD_EXPORT BaseFile {
  public:
+  friend class ArkWebBaseFileExt;
+  virtual ArkWebBaseFileExt* AsArkWebBaseFileExt() { return nullptr; }
+
   // Given a source and a referrer, determines the "safest" URL that can be used
   // to determine the authority of the download source. Returns an empty URL if
   // no HTTP/S URL can be determined for the <|source_url|, |referrer_url|>
@@ -54,7 +68,11 @@ class COMPONENTS_DOWNLOAD_EXPORT BaseFile {
   BaseFile(const BaseFile&) = delete;
   BaseFile& operator=(const BaseFile&) = delete;
 
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+  virtual ~BaseFile();
+#else
   ~BaseFile();
+#endif
 
   // Returns DOWNLOAD_INTERRUPT_REASON_NONE on success, or a
   // DownloadInterruptReason on failure. Upon success, the file at |full_path()|
@@ -318,5 +336,9 @@ class COMPONENTS_DOWNLOAD_EXPORT BaseFile {
 };
 
 }  // namespace download
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/components/download/public/common/arkweb_base_file_ext.h"
+#endif
 
 #endif  // COMPONENTS_DOWNLOAD_PUBLIC_COMMON_BASE_FILE_H_

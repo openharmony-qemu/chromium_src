@@ -155,6 +155,10 @@ class CORE_EXPORT FrameLoader final {
   void DispatchDocumentElementAvailable();
   void RunScriptsAtDocumentElementAvailable();
 
+#if BUILDFLAG(ARKWEB_JSPROXY)
+  void RunScriptsAtHeadElementAvailable();
+#endif
+
   // See content/browser/renderer_host/sandbox_flags.md
   // This contains the sandbox flags to commit for new documents.
   // - For main documents, it contains the sandbox inherited from the opener.

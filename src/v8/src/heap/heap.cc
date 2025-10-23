@@ -2734,6 +2734,7 @@ void Heap::CallGCPrologueCallbacks(GCType gc_type, GCCallbackFlags flags,
   GCCallbacksScope scope(this);
   if (scope.CheckReenter()) {
     RCS_SCOPE(isolate(), RuntimeCallCounterId::kGCPrologueCallback);
+    HITRACE_RCS_SCOPE(isolate(), RuntimeCallCounterId::kGCPrologueCallback);
     TRACE_GC(tracer(), scope_id);
     HandleScope handle_scope(isolate());
     gc_prologue_callbacks_.Invoke(gc_type, flags);
@@ -2747,6 +2748,7 @@ void Heap::CallGCEpilogueCallbacks(GCType gc_type, GCCallbackFlags flags,
   GCCallbacksScope scope(this);
   if (scope.CheckReenter()) {
     RCS_SCOPE(isolate(), RuntimeCallCounterId::kGCEpilogueCallback);
+    HITRACE_RCS_SCOPE(isolate(), RuntimeCallCounterId::kGCEpilogueCallback);
     TRACE_GC(tracer(), scope_id);
     HandleScope handle_scope(isolate());
     gc_epilogue_callbacks_.Invoke(gc_type, flags);

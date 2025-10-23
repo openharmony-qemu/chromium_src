@@ -153,7 +153,7 @@ TEST_F(HyphenationTest, MapLocale) {
 TEST_F(HyphenationTest, HyphenLocations) {
   scoped_refptr<Hyphenation> hyphenation =
       GetHyphenation(AtomicString("en-us"));
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   // Hyphenation is available only for Android M MR1 or later.
   if (!hyphenation)
     return;
@@ -207,7 +207,7 @@ TEST_F(HyphenationTest, WordToHyphenate) {
 TEST_F(HyphenationTest, LeadingSpaces) {
   scoped_refptr<Hyphenation> hyphenation =
       GetHyphenation(AtomicString("en-us"));
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   // Hyphenation is available only for Android M MR1 or later.
   if (!hyphenation)
     return;
@@ -232,7 +232,7 @@ TEST_F(HyphenationTest, LeadingSpaces) {
 TEST_F(HyphenationTest, NonLetters) {
   scoped_refptr<Hyphenation> hyphenation =
       GetHyphenation(AtomicString("en-us"));
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   // Hyphenation is available only for Android M MR1 or later.
   if (!hyphenation)
     return;
@@ -250,7 +250,7 @@ TEST_F(HyphenationTest, NonLetters) {
 TEST_F(HyphenationTest, English) {
   scoped_refptr<Hyphenation> hyphenation =
       GetHyphenation(AtomicString("en-us"));
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   // Hyphenation is available only for Android M MR1 or later.
   if (!hyphenation)
     return;
@@ -265,7 +265,7 @@ TEST_F(HyphenationTest, English) {
 TEST_F(HyphenationTest, German) {
   scoped_refptr<Hyphenation> hyphenation =
       GetHyphenation(AtomicString("de-1996"));
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   // Hyphenation is available only for Android M MR1 or later.
   if (!hyphenation)
     return;

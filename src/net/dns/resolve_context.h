@@ -25,6 +25,10 @@
 #include "net/dns/dns_config.h"
 #include "net/dns/public/secure_dns_mode.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace net {
 
 class ClassicDnsServerIterator;
@@ -230,6 +234,14 @@ class NET_EXPORT_PRIVATE ResolveContext : public base::CheckedObserver {
     return weak_ptr_factory_.GetWeakPtr();
   }
 
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  void SetHttpsDnsFallbackEnabled(bool value) {
+    is_https_dns_fallback_enabled_ = value;
+  }
+
+  bool IsHttpsDnsFallbackEnabled() { return is_https_dns_fallback_enabled_; }
+#endif
+
  private:
   friend DohDnsServerIterator;
   friend ClassicDnsServerIterator;
@@ -302,6 +314,10 @@ class NET_EXPORT_PRIVATE ResolveContext : public base::CheckedObserver {
 
   static bool ServerStatsToDohAvailability(const ServerStats& stats);
 
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  void NotifyDohStatsInit();
+#endif
+
   // Emit histograms indicating the current state of all configured DoH
   // providers (for use in determining whether DoH auto-upgrade was successful).
   void EmitDohAutoupgradeSuccessMetrics();
@@ -342,6 +358,10 @@ class NET_EXPORT_PRIVATE ResolveContext : public base::CheckedObserver {
   const IsolationInfo isolation_info_;
 
   base::OneShotTimer doh_autoupgrade_success_metric_timer_;
+
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  bool is_https_dns_fallback_enabled_{false};
+#endif
 
   base::WeakPtrFactory<ResolveContext> weak_ptr_factory_{this};
 };

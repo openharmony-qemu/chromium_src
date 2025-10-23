@@ -276,8 +276,12 @@ std::u16string GetManagedUiWebUILabel(Profile* profile) {
 
   switch (GetManagementStringType(profile)) {
     case BROWSER_MANAGED:
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      return l10n_util::GetStringFUTF16(IDS_MANAGED_WITH_HYPERLINK, u"#");
+#else
       return l10n_util::GetStringFUTF16(IDS_MANAGED_WITH_HYPERLINK,
                                         chrome::kChromeUIManagementURL16);
+#endif
     case BROWSER_MANAGED_BY:
       return l10n_util::GetStringFUTF16(IDS_MANAGED_BY_WITH_HYPERLINK,
                                         chrome::kChromeUIManagementURL16,

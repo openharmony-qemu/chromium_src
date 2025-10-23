@@ -44,6 +44,7 @@
 #include "include/cef_render_process_handler.h"
 #include "include/cef_resource_bundle_handler.h"
 #include "include/cef_scheme.h"
+#include "ohos_cef_ext/include/arkweb_app_ext.h"
 
 class CefApp;
 
@@ -246,6 +247,9 @@ class CefApp : public virtual CefBaseRefCounted {
   virtual CefRefPtr<CefRenderProcessHandler> GetRenderProcessHandler() {
     return nullptr;
   }
+#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
+  virtual bool IsIncognitoMode() { return false; }
+#endif
 };
 
 #endif  // CEF_INCLUDE_CEF_APP_H_

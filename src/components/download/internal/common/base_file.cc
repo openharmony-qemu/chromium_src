@@ -74,6 +74,7 @@ class FileErrorData : public base::trace_event::ConvertableToTraceFormat {
   int os_error_;
   DownloadInterruptReason interrupt_reason_;
 };
+}  // namespace
 
 void InitializeFile(base::File* file, const base::FilePath& file_path) {
 #if BUILDFLAG(IS_ANDROID)
@@ -95,6 +96,7 @@ void InitializeFile(base::File* file, const base::FilePath& file_path) {
           base::File::FLAG_WIN_SHARE_DELETE);
 }
 
+namespace {
 void DeleteFileWrapper(const base::FilePath& file_path) {
 #if BUILDFLAG(IS_ANDROID)
   if (file_path.IsContentUri()) {
@@ -131,10 +133,22 @@ DownloadInterruptReason BaseFile::Initialize(
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   DCHECK(!detached_);
 
+#if BUILDFLAG(ARKWEB_DOWNLOAD)
+  base::FilePath save_directory =
+      AsArkWebBaseFileExt()->GetSaveDirectory(default_directory);
+#endif
+
   if (full_path.empty()) {
     base::FilePath temp_file;
-    if ((default_directory.empty() ||
-         !base::CreateTemporaryFileInDir(default_directory, &temp_file)) &&
+    if ((
+#if BUILDFLAG(ARKWEB_DOWNLOAD)
+            save_directory.empty() ||
+            !base::CreateTemporaryFileInDir(save_directory, &temp_file)
+#else
+            default_directory.empty() ||
+            !base::CreateTemporaryFileInDir(default_directory, &temp_file)
+#endif
+                ) &&
         !base::CreateTemporaryFile(&temp_file)) {
       return LogInterruptReason("Unable to create", 0,
                                 DOWNLOAD_INTERRUPT_REASON_FILE_FAILED);

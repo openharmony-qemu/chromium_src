@@ -13,6 +13,9 @@
 
 class CefBrowserHostBase;
 class CefDevToolsController;
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+class CefDevToolsFrontend;
+#endif // BUILDFLAG(ARKWEB_DEVTOOLS)
 
 namespace content {
 class WebContents;
@@ -46,12 +49,24 @@ class CefDevToolsProtocolManager {
   void InitializeRegistrationOnUIThread(
       CefRefPtr<CefRegistration> registration);
 
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  void ShowDevToolsWith(
+      CefRefPtr<ArkWebBrowserHostExt> frontend_browser,
+      CefRefPtr<CefDevToolsMessageHandlerDelegate> devtools_message_handler,
+      const CefPoint& inspect_element_at);
+#endif // BUILDFLAG(ARKWEB_DEVTOOLS)
+
  private:
   bool EnsureController();
 
   const raw_ptr<CefBrowserHostBase> inspected_browser_;
 
   std::unique_ptr<CefDevToolsController> devtools_controller_;
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  void OnFrontEndDestroyed();
+  raw_ptr<CefDevToolsFrontend> devtools_frontend_ = nullptr;
+  base::WeakPtrFactory<CefDevToolsProtocolManager> weak_ptr_factory_{this};
+#endif // BUILDFLAG(ARKWEB_DEVTOOLS)
 };
 
 #endif  // CEF_LIBCEF_BROWSER_DEVTOOLS_DEVTOOLS_PROTOCOL_MANAGER_H_

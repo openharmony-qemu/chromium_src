@@ -87,7 +87,11 @@ void OnConsentReceived(content::BrowserContext* browser_context,
     return;
   }
 
-  DCHECK_EQ(origin.scheme(), kExtensionScheme);
+  DCHECK(origin.scheme() == kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+         || origin.scheme() == kArkwebExtensionScheme
+#endif
+  );
   scoped_refptr<storage::FileSystemContext> file_system_context =
       util::GetStoragePartitionForExtensionId(origin.host(), browser_context)
           ->GetFileSystemContext();

@@ -23,7 +23,7 @@ struct TracingFlags {
   static V8_EXPORT_PRIVATE std::atomic_uint ic_stats;
   static V8_EXPORT_PRIVATE std::atomic_uint zone_stats;
 
-#ifdef V8_RUNTIME_CALL_STATS
+#if defined(V8_RUNTIME_CALL_STATS) || defined(HITRACE_RUNTIME_CALL_STATS)
   static bool is_runtime_stats_enabled() {
     return runtime_stats.load(std::memory_order_relaxed) != 0;
   }

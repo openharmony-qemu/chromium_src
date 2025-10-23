@@ -106,7 +106,7 @@ TEST_F(CrashReporterBreadcrumbObserverTest, MAYBE_ProductDataOverflow) {
 
   // Confirm that the total length of the breadcrumbs crash string is
   // |breadcrumbs::kMaxDataLength|.
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
   // Linux uses Breakpad, which breaks the crash key value up into chunks of 127
   // characters each, named <crash key>__1, <crash key>__2, etc. These must be
   // summed to determine the total length of the breadcrumbs crash string.
@@ -127,7 +127,7 @@ TEST_F(CrashReporterBreadcrumbObserverTest, MAYBE_ProductDataOverflow) {
 #else
   EXPECT_EQ(breadcrumbs::kMaxDataLength,
             GetBreadcrumbsCrashKeyValue().length());
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 }
 
 // Tests that breadcrumb events logged to multiple BreadcrumbManagerKeyedService

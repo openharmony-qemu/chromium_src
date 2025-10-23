@@ -172,6 +172,10 @@ void ServiceWorkerNewScriptFetcher::OnComplete(
     // Do not continue with further script processing, but let the |callback_|
     // hang. This renderer process would be killed soon anyways.
     return;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  } else {
+    LOG(INFO) << "OnComplete, status.error_code=" << status.error_code;
+#endif
   }
   std::move(callback_).Run(/*main_script_load_params=*/nullptr);
 }

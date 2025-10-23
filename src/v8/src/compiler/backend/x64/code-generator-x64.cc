@@ -2291,6 +2291,13 @@ CodeGenerator::CodeGenResult CodeGenerator::AssembleArchInstruction(
       __ AllocateStackSpace(kDoubleSize);
       unwinding_info_writer_.MaybeIncreaseBaseOffsetAt(__ pc_offset(),
                                                        kDoubleSize);
+#ifdef OHOS_JS_ENGINE
+      // Pre operation on st(0) and st(1) to avoid nan result on x86 emulator
+      __ fldz();
+      __ fldz();
+      __ fstp(1);
+      __ fstp_d(Operand(rsp, 0));
+#endif
       // Move values to st(0) and st(1).
       __ Movsd(Operand(rsp, 0), i.InputDoubleRegister(1));
       __ fld_d(Operand(rsp, 0));

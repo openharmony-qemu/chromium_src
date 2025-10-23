@@ -121,6 +121,10 @@ class PLATFORM_EXPORT MultiBufferDataSource
 
   bool cancel_on_defer_for_testing() const { return cancel_on_defer_; }
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  void SetMediaWebURLErrorCB(MediaWebURLErrorCB callback);
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
  protected:
   void OnRedirected(const scoped_refptr<UrlData>& new_destination);
 

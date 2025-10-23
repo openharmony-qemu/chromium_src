@@ -15,6 +15,7 @@
 #include "gin/public/isolate_holder.h"
 #include "gin/public/v8_platform.h"
 #include "v8/include/v8-callbacks.h"
+#include "arkweb/build/features/features.h"
 
 #if defined(V8_USE_EXTERNAL_STARTUP_DATA)
 #include "gin/public/v8_snapshot_file_type.h"
@@ -45,6 +46,10 @@ class GIN_EXPORT V8Initializer {
   // Load V8 snapshot from default resources, if they are available.
   static void LoadV8Snapshot(
       V8SnapshotFileType snapshot_file_type = V8SnapshotFileType::kDefault);
+
+#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
+  static int LoadV8SnapshotFromFileByHap(V8SnapshotFileType snapshot_file_type);
+#endif
 
   // Load V8 snapshot from user provided file.
   // The region argument, if non-zero, specifies the portions

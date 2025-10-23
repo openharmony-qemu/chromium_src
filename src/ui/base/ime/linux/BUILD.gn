@@ -4,7 +4,7 @@
 
 import("//build/config/linux/pangocairo/pangocairo.gni")
 
-assert(is_linux)
+assert(is_linux || is_ohos)
 
 component("linux") {
   output_name = "ui_base_ime_linux"

@@ -61,13 +61,11 @@ class BrowserFrameMac : public views::NativeWidgetMac,
       Browser* browser,
       int32_t command,
       remote_cocoa::mojom::ValidateUserInterfaceItemResult* result);
-  static bool WillExecuteCommand(
-      Browser* browser,
+  static bool WillExecuteCommand(Browser* browser,
       int32_t command,
       WindowOpenDisposition window_open_disposition,
       bool is_before_first_responder);
-  static bool ExecuteCommand(
-      Browser* browser,
+  static bool ExecuteCommand(Browser* browser,
       int32_t command,
       WindowOpenDisposition window_open_disposition,
       bool is_before_first_responder);

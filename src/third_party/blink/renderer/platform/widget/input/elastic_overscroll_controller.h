@@ -44,6 +44,9 @@ struct InputHandlerScrollResult;
 }  // namespace cc
 
 namespace blink {
+#if BUILDFLAG(IS_ARKWEB)
+  class ElasticOverscrollControllerUtils;
+#endif
 // This serves as a base class for handling overscroll. Most of the basic
 // overscroll functionality is contained in this class. The customization
 // details like the stretch distance, the bounce animations etc will be
@@ -189,6 +192,13 @@ class PLATFORM_EXPORT ElasticOverscrollController {
 
   bool received_overscroll_update_;
   cc::OverscrollBehavior overscroll_behavior_;
+
+#if BUILDFLAG(IS_ARKWEB)
+ public:
+  friend class ElasticOverscrollControllerUtils;
+  raw_ptr<ElasticOverscrollControllerUtils> elastic_overscroll_controller_utils_;
+  ElasticOverscrollControllerUtils* GetUtils() { return elastic_overscroll_controller_utils_; }
+#endif
 };
 
 }  // namespace blink

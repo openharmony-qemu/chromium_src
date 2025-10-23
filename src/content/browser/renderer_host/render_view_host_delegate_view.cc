@@ -4,7 +4,12 @@
 
 #include "content/browser/renderer_host/render_view_host_delegate_view.h"
 
+#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace content {
 
@@ -15,7 +20,11 @@ content::RenderViewHostDelegateView::GetOverscrollRefreshHandler() const {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+int RenderViewHostDelegateView::GetTopControlsHeight() {
+#else
 int RenderViewHostDelegateView::GetTopControlsHeight() const {
+#endif
   return 0;
 }
 
@@ -47,5 +56,4 @@ bool RenderViewHostDelegateView::OnlyExpandTopControlsAtPageTop() const {
 void RenderViewHostDelegateView::GestureEventAck(
     const blink::WebGestureEvent& event,
     blink::mojom::InputEventResultState ack_result) {}
-
 }  //  namespace content

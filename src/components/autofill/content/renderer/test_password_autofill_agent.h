@@ -8,8 +8,11 @@
 #include "components/autofill/content/renderer/password_autofill_agent.h"
 
 namespace autofill {
-
+#if BUILDFLAG(ARKWEB_TEST)
+class TestPasswordAutofillAgent : public PasswordAutofillAgentExt {
+#else
 class TestPasswordAutofillAgent : public PasswordAutofillAgent {
+#endif
  public:
   TestPasswordAutofillAgent(content::RenderFrame* render_frame,
                             blink::AssociatedInterfaceRegistry* registry);

@@ -45,6 +45,7 @@
 #include "include/cef_browser.h"
 #include "include/cef_drag_data.h"
 
+class ArkWebRenderHandlerExt;
 ///
 /// Implement this interface to handle events when window rendering is disabled.
 /// The methods of this class will be called on the UI thread.
@@ -57,6 +58,10 @@ class CefRenderHandler : public virtual CefBaseRefCounted {
   typedef cef_paint_element_type_t PaintElementType;
   typedef std::vector<CefRect> RectList;
   typedef cef_text_input_mode_t TextInputMode;
+
+  virtual CefRefPtr<ArkWebRenderHandlerExt> AsArkWebRenderHandler() {
+    return nullptr;
+  }
 
   ///
   /// Return the handler for accessibility notifications. If no handler is
@@ -259,6 +264,17 @@ class CefRenderHandler : public virtual CefBaseRefCounted {
   /*--cef()--*/
   virtual void OnVirtualKeyboardRequested(CefRefPtr<CefBrowser> browser,
                                           TextInputMode input_mode) {}
+
+  ///
+  /// Called when touch selection is updated. The client is responsible for
+  /// rendering the touch handles.
+  ///
+  /*--cef()--*/
+  virtual void OnTouchSelectionChanged(
+      const CefTouchHandleState& insert_handle,
+      const CefTouchHandleState& start_selection_handle,
+      const CefTouchHandleState& end_selection_handle,
+      bool need_report) {}
 };
 
 #endif  // CEF_INCLUDE_CEF_RENDER_HANDLER_H_

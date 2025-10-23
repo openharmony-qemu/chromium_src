@@ -141,6 +141,7 @@ Thread::Affinity Thread::Affinity::all(
     Allocator* allocator /* = Allocator::Default */) {
   Thread::Affinity affinity(allocator);
 
+#if !defined(OSOHOS)
 #if defined(_WIN32)
   const auto& groups = getProcessorGroups();
   for (size_t groupIdx = 0; groupIdx < groups.count; groupIdx++) {
@@ -182,6 +183,7 @@ Thread::Affinity Thread::Affinity::all(
   static_assert(!supported,
                 "marl::Thread::Affinity::supported is true, but "
                 "Thread::Affinity::all() is not implemented for this platform");
+#endif
 #endif
 
   return affinity;
@@ -397,6 +399,7 @@ class Thread::Impl {
       return;
     }
 
+#if !defined(OSOHOS)
 #if defined(__linux__) && !defined(__ANDROID__) && !defined(__BIONIC__)
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
@@ -416,6 +419,7 @@ class Thread::Impl {
 #else
     MARL_ASSERT(!marl::Thread::Affinity::supported,
                 "Attempting to use thread affinity on a unsupported platform");
+#endif
 #endif
   }
 };

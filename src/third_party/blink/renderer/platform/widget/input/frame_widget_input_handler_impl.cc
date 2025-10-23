@@ -19,6 +19,10 @@
 #include "third_party/blink/renderer/platform/widget/widget_base.h"
 #include "third_party/blink/renderer/platform/widget/widget_base_client.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/widget/input/frame_widget_input_handler_impl_for_include.cc"
+#endif
+
 namespace blink {
 
 FrameWidgetInputHandlerImpl::FrameWidgetInputHandlerImpl(

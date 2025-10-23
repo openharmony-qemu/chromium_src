@@ -42,6 +42,8 @@
 #include "include/cef_browser.h"
 #include "include/cef_frame.h"
 
+class ArkWebLoadHandlerExt;
+
 ///
 /// Implement this interface to handle events related to browser load status.
 /// The methods of this class will be called on the browser process UI thread or
@@ -81,6 +83,7 @@ class CefLoadHandler : public virtual CefBaseRefCounted {
   /*--cef()--*/
   virtual void OnLoadStart(CefRefPtr<CefBrowser> browser,
                            CefRefPtr<CefFrame> frame,
+                           const CefString& url,
                            TransitionType transition_type) {}
 
   ///
@@ -112,6 +115,12 @@ class CefLoadHandler : public virtual CefBaseRefCounted {
                            ErrorCode errorCode,
                            const CefString& errorText,
                            const CefString& failedUrl) {}
+
+  virtual CefRefPtr<ArkWebLoadHandlerExt> AsArkWebLoadHandlerExt() {
+    return nullptr;
+  }
 };
+
+#include "ohos_cef_ext/include/arkweb_load_handler_ext.h"
 
 #endif  // CEF_INCLUDE_CEF_LOAD_HANDLER_H_

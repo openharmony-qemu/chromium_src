@@ -8,6 +8,10 @@
 #include "src/codegen/cpu-features.h"
 #include "src/execution/simulator.h"
 
+#ifdef OHOS_JS_ENGINE
+#include "../../../arkweb/chromium_ext/v8/trace.h"
+#endif
+
 namespace v8 {
 namespace internal {
 
@@ -17,6 +21,9 @@ void FlushInstructionCache(void* start, size_t size) {
 
   TRACE_EVENT2(TRACE_DISABLED_BY_DEFAULT("v8.compile"), "FlushInstructionCache",
                "start", start, "size", size);
+#ifdef OHOS_JS_ENGINE
+  auto trace = HiTrace("RCS_v8.compile_FlushInstructionCache");
+#endif
 
 #if defined(USE_SIMULATOR)
   base::MutexGuard lock_guard(Simulator::i_cache_mutex());

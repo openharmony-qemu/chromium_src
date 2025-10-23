@@ -31,10 +31,16 @@ class NET_EXPORT ProxyConfigWithAnnotation {
   }
 
   const ProxyConfig& value() const { return value_; }
-
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void set_pref_proxy_mode(int pref_proxy_mode) { pref_proxy_mode_ = pref_proxy_mode; }
+  int pref_proxy_mode() const { return pref_proxy_mode_; }
+#endif // ARKWEB_ARKWEB_EXTENSIONS
  private:
   ProxyConfig value_;
   MutableNetworkTrafficAnnotationTag traffic_annotation_;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  int pref_proxy_mode_ = -1;
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 };
 
 }  // namespace net

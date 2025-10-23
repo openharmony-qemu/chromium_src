@@ -70,7 +70,7 @@ mojom::ResultCode PrintingContextLinux::UseDefaultSettings() {
   ResetSettings();
 
 #if BUILDFLAG(IS_LINUX)
-  if (!ui::PrintingContextLinuxDelegate::instance())
+  if (!ui::PrintingContextLinuxDelegate::instance()) {
     return mojom::ResultCode::kSuccess;
 
   if (!print_dialog_)
@@ -86,7 +86,7 @@ mojom::ResultCode PrintingContextLinux::UseDefaultSettings() {
 
 gfx::Size PrintingContextLinux::GetPdfPaperSizeDeviceUnits() {
 #if BUILDFLAG(IS_LINUX)
-  if (ui::PrintingContextLinuxDelegate::instance())
+  if (ui::PrintingContextLinuxDelegate::instance()) {
     return ui::PrintingContextLinuxDelegate::instance()->GetPdfPaperSize(this);
 #endif
 
@@ -99,12 +99,8 @@ mojom::ResultCode PrintingContextLinux::UpdatePrinterSettings(
   DCHECK(!in_print_job_);
 
 #if BUILDFLAG(IS_LINUX)
-  if (!ui::PrintingContextLinuxDelegate::instance())
+  if (!ui::PrintingContextLinuxDelegate::instance()) {
     return mojom::ResultCode::kSuccess;
-
-  if (!print_dialog_)
-    print_dialog_ = ui::PrintingContextLinuxDelegate::instance()->CreatePrintDialog(this);
-
   if (print_dialog_) {
     // PrintDialogGtk::UpdateSettings() calls InitWithSettings() so settings_ will
     // remain non-null after this line.

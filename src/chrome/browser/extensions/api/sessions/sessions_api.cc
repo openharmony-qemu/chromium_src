@@ -150,12 +150,15 @@ api::sessions::Session CreateSessionModelHelper(
   return session_struct;
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 bool is_window_entry(const sessions::tab_restore::Entry& entry) {
   return entry.type == sessions::tab_restore::Type::WINDOW;
 }
+#endif
 
 }  // namespace
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 api::tabs::Tab SessionsGetRecentlyClosedFunction::CreateTabModel(
     const sessions::tab_restore::Tab& tab,
     bool active) {
@@ -257,6 +260,7 @@ ExtensionFunction::ResponseAction SessionsGetRecentlyClosedFunction::Run() {
 
   return RespondNow(ArgumentList(GetRecentlyClosed::Results::Create(result)));
 }
+#endif  // !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 
 api::tabs::Tab SessionsGetDevicesFunction::CreateTabModel(
     const std::string& session_tag,
@@ -409,6 +413,7 @@ api::sessions::Device SessionsGetDevicesFunction::CreateDeviceModel(
 }
 
 ExtensionFunction::ResponseAction SessionsGetDevicesFunction::Run() {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   sync_sessions::SessionSyncService* service =
       SessionSyncServiceFactory::GetInstance()->GetForProfile(
           Profile::FromBrowserContext(browser_context()));
@@ -439,8 +444,12 @@ ExtensionFunction::ResponseAction SessionsGetDevicesFunction::Run() {
   }
 
   return RespondNow(ArgumentList(GetDevices::Results::Create(result)));
+#else
+  return RespondNow(NoArguments());
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 ExtensionFunction::ResponseValue SessionsRestoreFunction::GetRestoredTabResult(
     content::WebContents* contents) {
   ExtensionTabUtil::ScrubTabBehavior scrub_tab_behavior =
@@ -636,6 +645,7 @@ SessionsEventRouter::SessionsEventRouter(Profile* profile)
     tab_restore_service_->AddObserver(this);
   }
 }
+#endif  // !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 
 SessionsEventRouter::~SessionsEventRouter() {
   if (tab_restore_service_)

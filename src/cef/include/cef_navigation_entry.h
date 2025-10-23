@@ -116,6 +116,18 @@ class CefNavigationEntry : public virtual CefBaseRefCounted {
   ///
   /*--cef()--*/
   virtual CefRefPtr<CefSSLStatus> GetSSLStatus() = 0;
+
+#if BUILDFLAG(IS_OHOS)
+  ///
+  /// Return favicon for this navigation entry.
+  ///
+  /*--cef()--*/
+  virtual bool GetFavicon(void** pixel_data,
+                          int& color_type,
+                          int& alpha_type,
+                          int& pixel_width,
+                          int& pixel_height) = 0;
+#endif  // BUILDFLAG(IS_OHOS)
 };
 
 #endif  // CEF_INCLUDE_CEF_NAVIGATION_ENTRY_H_

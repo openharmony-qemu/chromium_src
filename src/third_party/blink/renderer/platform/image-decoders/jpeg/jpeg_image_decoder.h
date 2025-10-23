@@ -28,6 +28,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/platform/image-decoders/image_decoder.h"
 
 namespace blink {
@@ -38,7 +39,9 @@ class PLATFORM_EXPORT JPEGImageDecoder final : public ImageDecoder {
  public:
   JPEGImageDecoder(AlphaOption,
                    ColorBehavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
                    cc::AuxImage,
+#endif
                    wtf_size_t max_decoded_bytes,
                    wtf_size_t offset = 0);
   JPEGImageDecoder(const JPEGImageDecoder&) = delete;

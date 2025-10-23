@@ -99,7 +99,7 @@ void XMLCALL xml_structured_error_callback(void* userData,
   impl->AppendError(ss.str());
 }
 
-CefString xmlCharToString(const xmlChar* xmlStr, bool free) {
+CefString xmlCharToString(const xmlChar* xmlStr, bool isFree) {
   if (!xmlStr) {
     return CefString();
   }
@@ -107,7 +107,7 @@ CefString xmlCharToString(const xmlChar* xmlStr, bool free) {
   const char* str = reinterpret_cast<const char*>(xmlStr);
   CefString wstr = std::string(str);
 
-  if (free) {
+  if (isFree) {
     xmlFree(const_cast<xmlChar*>(xmlStr));
   }
 

@@ -47,12 +47,18 @@ bool StructTraits<
   out->root_overflow_y_hidden = data.root_overflow_y_hidden();
   out->has_transparent_background = data.has_transparent_background();
 #endif
+#if BUILDFLAG(IS_ARKWEB)
+  out->root_overflow_y_hidden = data.root_overflow_y_hidden();
+#endif
   return data.ReadRootScrollOffset(&out->root_scroll_offset) &&
          data.ReadSelection(&out->selection) &&
          data.ReadDelegatedInkMetadata(&out->delegated_ink_metadata) &&
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS) || BUILDFLAG(IS_ARKWEB)
          data.ReadScrollableViewportSize(&out->scrollable_viewport_size) &&
          data.ReadRootLayerSize(&out->root_layer_size) &&
+#endif
+#if BUILDFLAG(ARKWEB_MENU)
+         data.ReadClippedSelectionBounds(&out->clipped_selection_bounds) &&
 #endif
          data.ReadViewportSizeInPixels(&out->viewport_size_in_pixels) &&
          data.ReadLocalSurfaceId(&out->local_surface_id) &&

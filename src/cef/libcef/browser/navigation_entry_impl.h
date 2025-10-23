@@ -33,6 +33,13 @@ class CefNavigationEntryImpl
   CefBaseTime GetCompletionTime() override;
   int GetHttpStatusCode() override;
   CefRefPtr<CefSSLStatus> GetSSLStatus() override;
+#if BUILDFLAG(ARKWEB_NAVIGATION)
+  bool GetFavicon(void** pixel_data,
+                  int& color_type,
+                  int& alpha_type,
+                  int& pixel_width,
+                  int& pixel_height) override;
+#endif  // BUILDFLAG(ARKWEB_NAVIGATION)
 };
 
 #endif  // CEF_LIBCEF_BROWSER_NAVIGATION_ENTRY_IMPL_H_

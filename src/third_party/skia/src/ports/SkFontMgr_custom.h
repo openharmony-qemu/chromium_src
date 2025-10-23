@@ -133,6 +133,9 @@ protected:
     sk_sp<SkTypeface> onMakeFromFile(const char path[], int ttcIndex) const override;
     sk_sp<SkTypeface> onLegacyMakeTypeface(const char familyName[], SkFontStyle style) const override;
 
+#if BUILDFLAG(ARKWEB_THEME_FONT)
+    void onInvalidateThemeFont(int fd) override {}
+#endif
 private:
     Families fFamilies;
     sk_sp<SkFontStyleSet> fDefaultFamily;

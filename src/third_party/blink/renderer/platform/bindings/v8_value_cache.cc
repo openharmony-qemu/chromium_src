@@ -142,11 +142,13 @@ v8::Local<v8::String> StringCache::V8ExternalString(v8::Isolate* isolate,
   if (!string_impl->length())
     return v8::String::Empty(isolate);
 
+#if !BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
   StringCacheMapTraits::MapType::PersistentValueReference cached_v8_string =
       string_cache_.GetReference(string_impl);
   if (!cached_v8_string.IsEmpty()) {
     return cached_v8_string.NewLocal(isolate);
   }
+#endif
 
   return CreateStringAndInsertIntoCache(isolate, string_impl);
 }
@@ -220,11 +222,13 @@ v8::Local<v8::String> StringCache::CreateStringAndInsertIntoCache(
 
   v8::UniquePersistent<v8::String> wrapper(isolate, new_string);
 
+#if !BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
   string_impl->AddRef();
   // ParkableStringImpl objects are not cache in |string_cache_| or
   // |last_string_impl_|.
   ParkableStringCacheMapTraits::MapType::PersistentValueReference unused;
   parkable_string_cache_.Set(string_impl, std::move(wrapper), &unused);
+#endif
 
   return new_string;
 }

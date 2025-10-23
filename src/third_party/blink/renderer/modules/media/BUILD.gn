@@ -11,6 +11,8 @@ blink_modules_sources("media") {
     "audio/audio_output_ipc_factory.cc",
     "audio/audio_renderer_mixer.cc",
     "audio/audio_renderer_mixer.h",
+    "../../../../../arkweb/chromium_ext/third_party/blink/renderer/modules/media/audio/audio_renderer_mixer_utils.cc",
+    "../../../../../arkweb/chromium_ext/third_party/blink/renderer/modules/media/audio/audio_renderer_mixer_utils.h",
     "audio/audio_renderer_mixer_input.cc",
     "audio/audio_renderer_mixer_input.h",
     "audio/audio_renderer_mixer_manager.cc",

@@ -6,6 +6,7 @@
 #define COMPONENTS_UKM_SCHEME_CONSTANTS_H_
 
 #include "base/component_export.h"
+#include "base/feature_list.h"
 
 namespace ukm {
 
@@ -20,7 +21,9 @@ extern const char kChromeUIScheme[];
 // kExtensionScheme is defined in extensions which also isn't available here.
 COMPONENT_EXPORT(UKM_RECORDER)
 extern const char kExtensionScheme[];
-
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+extern const char kArkwebExtensionScheme[];
+#endif
 }  // namespace ukm
 
 #endif  // COMPONENTS_UKM_SCHEME_CONSTANTS_H_

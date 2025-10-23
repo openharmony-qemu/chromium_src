@@ -153,6 +153,12 @@ class PrefetchTestURLLoaderClient : public network::mojom::URLLoaderClient,
 
   void OnDataComplete() override;
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void OnTransferDataWithSharedMemory(
+        ::base::ReadOnlySharedMemoryRegion region,
+        uint64_t buffer_size) override;
+#endif
+
   mojo::Remote<network::mojom::URLLoader> remote_;
   mojo::Receiver<network::mojom::URLLoaderClient> receiver_{this};
 

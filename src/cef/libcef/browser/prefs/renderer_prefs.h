@@ -8,7 +8,13 @@
 
 #include <string>
 
+#include "arkweb/build/features/features.h"
+
 #include "cef/include/internal/cef_types_wrappers.h"
+
+#if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
+#include "content/public/browser/web_contents.h"
+#endif
 
 namespace blink::web_pref {
 struct WebPreferences;
@@ -24,6 +30,11 @@ void SetDefaultPrefs(blink::web_pref::WebPreferences& web);
 // Set preferences based on CefBrowserSettings.
 void SetCefPrefs(const CefBrowserSettings& cef,
                  blink::web_pref::WebPreferences& web);
+
+#if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
+void SetJsDefaultContent(content::WebContents* web_contents,
+                         blink::web_pref::WebPreferences& web);
+#endif
 
 }  // namespace renderer_prefs
 

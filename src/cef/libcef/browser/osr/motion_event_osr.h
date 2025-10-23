@@ -39,10 +39,21 @@ class CefMotionEventOSR : public ui::MotionEventGeneric {
   void MarkUnchangedTouchPointsAsStationary(blink::WebTouchEvent* event,
                                             const CefTouchEvent& cef_event);
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  bool FromOverlay() const override { return from_overlay_; }
+  void SetFromOverlay(bool from_overlay) override {
+    from_overlay_ = from_overlay;
+  }
+#endif  // #if BUILDFLAG(ARKWEB_CLIPBOARD)
+
  private:
   // Chromium can't cope with touch ids >31, so let's map the incoming
   // ids to a safe range.
   int id_map_[blink::WebTouchEvent::kTouchesLengthCap];
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  bool from_overlay_ = false;
+#endif  // #if BUILDFLAG(ARKWEB_CLIPBOARD)
 
   int LookupId(int id);
   int AddId(int id);

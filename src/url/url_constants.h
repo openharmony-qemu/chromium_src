@@ -7,6 +7,9 @@
 
 #include <stddef.h>
 
+#include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/url/ohos/log_utils.h"
+
 namespace url {
 
 inline constexpr char kAboutBlankURL[] = "about:blank";
@@ -61,6 +64,10 @@ inline constexpr char16_t kWsScheme16[] = u"ws";
 inline constexpr char kWssScheme[] = "wss";
 inline constexpr char16_t kWssScheme16[] = u"wss";
 
+#if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
+inline constexpr char kResourcesScheme[] = "resource";
+inline constexpr char16_t kResourcesScheme16[] = u"resource";
+#endif
 // Used to separate a standard scheme and the hostname: "://".
 inline constexpr char kStandardSchemeSeparator[] = "://";
 inline constexpr char16_t kStandardSchemeSeparator16[] = u"://";
@@ -68,6 +75,22 @@ inline constexpr char16_t kStandardSchemeSeparator16[] = u"://";
 // Max GURL length passed between processes. See url::mojom::kMaxURLChars, which
 // has the same value, for more details.
 inline constexpr size_t kMaxURLChars = 2 * 1024 * 1024;
+
+#if BUILDFLAG(IS_ARKWEB)
+inline constexpr char kDatashareScheme[] = "datashare";
+inline constexpr char kDataabilityScheme[] = "dataability";
+#endif // IS_ARKWEB
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+const char kArkwebScheme[] = "arkweb";
+const char16_t kArkwebScheme16[] = u"arkweb";
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+inline constexpr char kToAppParam[] = "to_app";
+inline constexpr char kChannelParam[] = "channel";
+inline constexpr char kChannelIdParam[] = "channelid";
+#endif
 
 }  // namespace url
 

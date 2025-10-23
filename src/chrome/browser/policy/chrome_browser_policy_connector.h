@@ -128,9 +128,10 @@ class ChromeBrowserPolicyConnector : public BrowserPolicyConnector {
 
   // Enable platform policy support with the specified retrieval |id|. Support
   // is disabled by default, and if |id| is empty.
-  // On Windows, this is a registry key like "SOFTWARE\\Policies\\Google\\Chrome".
-  // On MacOS, this is a bundle ID like "com.google.Chrome".
-  // On Linux, this is a directory path like "/etc/opt/chrome/policies".
+  // On Windows, this is a registry key like
+  // "SOFTWARE\\Policies\\Google\\Chrome". On MacOS, this is a bundle ID like
+  // "com.google.Chrome". On Linux, this is a directory path like
+  // "/etc/opt/chrome/policies".
   static void EnablePlatformPolicySupport(const std::string& id);
 
   // Platform-specific retrieval of the policy ID value.

@@ -8,6 +8,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "arkweb/build/features/features.h"
 #include "base/compiler_specific.h"
 #include "base/memory/memory_pressure_listener.h"
 #include "components/web_cache/public/mojom/web_cache.mojom.h"
@@ -43,6 +44,16 @@ class WebCacheImpl : public mojom::WebCache {
   // If |on_navigation| is true, the clearing is delayed until the next
   // navigation event.
   void ClearCache(bool on_navigation) override;
+
+#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
+  // mojom::WebCache methods:
+  // Add resource into MemoryCache
+  void AddResourceToCache(const std::string& url,
+                          const std::string& origin,
+                          const std::vector<uint8_t>& resource,
+                          const base::flat_map<std::string, std::string>& response_headers,
+                          const uint64_t type) override;
+#endif
 
   // Records status regarding the sequence of navigation event and
   // ClearCache(true) call, to ensure delayed 'clear cache' command always

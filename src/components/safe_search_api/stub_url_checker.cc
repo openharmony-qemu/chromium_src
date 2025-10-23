@@ -6,6 +6,7 @@
 
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/json/json_writer.h"
 #include "base/values.h"
 #include "components/safe_search_api/safe_search/safe_search_url_checker_client.h"
@@ -21,7 +22,11 @@ namespace safe_search_api {
 namespace {
 
 constexpr char kSafeSearchApiUrl[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://xxx";
+#else
     "https://safesearch.googleapis.com/v1:classify";
+#endif
 
 std::string BuildResponse(bool is_porn) {
   base::Value::Dict dict;

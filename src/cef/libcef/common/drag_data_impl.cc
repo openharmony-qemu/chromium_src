@@ -171,12 +171,24 @@ void CefDragDataImpl::SetLinkMetadata(const CefString& data) {
 void CefDragDataImpl::SetFragmentText(const CefString& text) {
   base::AutoLock lock_scope(lock_);
   CHECK_READONLY_RETURN_VOID();
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  if (text.empty()) {
+    data_.text.reset();
+    return;
+  }
+#endif
   data_.text = text.ToString16();
 }
 
 void CefDragDataImpl::SetFragmentHtml(const CefString& fragment) {
   base::AutoLock lock_scope(lock_);
   CHECK_READONLY_RETURN_VOID();
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  if (fragment.empty()) {
+    data_.html.reset();
+    return;
+  }
+#endif
   data_.html = fragment.ToString16();
 }
 
@@ -202,6 +214,16 @@ void CefDragDataImpl::AddFile(const CefString& path,
   data_.filenames.emplace_back(base::FilePath(path),
                                base::FilePath(display_name));
 }
+
+// #if BUILDFLAG(IS_OHOS)
+size_t CefDragDataImpl::GetImageFileSize() {
+  base::AutoLock lock_scope(lock_);
+  if (data_.file_contents.empty()) {
+    return 0;
+  }
+  return data_.file_contents.size();
+}
+// #endif
 
 void CefDragDataImpl::ClearFilenames() {
   base::AutoLock lock_scope(lock_);
@@ -231,3 +253,9 @@ bool CefDragDataImpl::HasImage() {
   base::AutoLock lock_scope(lock_);
   return image_ ? true : false;
 }
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+bool CefDragDataImpl::IsImageFileContents() {
+  return data_.IsImageFileContents();
+}
+#endif

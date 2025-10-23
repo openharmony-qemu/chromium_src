@@ -105,6 +105,20 @@ need to be translated for each locale.-->
     <output filename="cef_strings_vi.pak" type="data_package" lang="vi" />
     <output filename="cef_strings_zh-CN.pak" type="data_package" lang="zh-CN" />
     <output filename="cef_strings_zh-TW.pak" type="data_package" lang="zh-TW" />
+    <!-- <if expr="pp_ifdef('arkweb_i18n')"> -->
+      <output filename="cef_strings_bo-CN.pak" type="data_package" lang="bo-CN" />
+      <output filename="cef_strings_ug.pak" type="data_package" lang="ug" />
+      <output filename="cef_strings_zh-HK.pak" type="data_package" lang="zh-HK" />
+    <!-- </if> -->
+    <if expr="is_ohos">
+      <output filename="cef_strings_ka.pak" type="data_package" lang="ka" />
+      <output filename="cef_strings_mk.pak" type="data_package" lang="mk" />
+      <output filename="cef_strings_my.pak" type="data_package" lang="my" />
+      <output filename="cef_strings_be.pak" type="data_package" lang="be" />
+      <output filename="cef_strings_kk.pak" type="data_package" lang="kk" />
+      <output filename="cef_strings_km.pak" type="data_package" lang="km" />
+      <output filename="cef_strings_uz.pak" type="data_package" lang="uz" />
+    </if>
     <if expr="enable_pseudolocales">
       <output filename="cef_strings_ar-XB.pak" type="data_package" lang="ar-XB" />
       <output filename="cef_strings_en-XA.pak" type="data_package" lang="en-XA" />

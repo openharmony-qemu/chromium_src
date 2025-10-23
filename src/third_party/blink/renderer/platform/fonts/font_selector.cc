@@ -4,6 +4,10 @@
 
 #include "third_party/blink/renderer/platform/fonts/font_selector.h"
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/css/css_utils.h"
+#endif
 #include "build/build_config.h"
 #include "third_party/blink/public/mojom/use_counter/metrics/web_feature.mojom-blink.h"
 #include "third_party/blink/renderer/platform/fonts/alternate_font_family.h"
@@ -85,7 +89,11 @@ AtomicString FontSelector::FamilyNameFromSettings(
     return settings.Fixed(script);
   if (generic_family_name == font_family_names::kWebkitStandard)
     return settings.Standard(script);
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+  if ((generic_family_name == font_family_names::kMath) && !Cssutils::IsMathFormulaDisabledMode()) {
+#else 
   if (generic_family_name == font_family_names::kMath) {
+#endif
     return settings.Math(script);
   }
 #endif  // BUILDFLAG(IS_ANDROID)

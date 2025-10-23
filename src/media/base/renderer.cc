@@ -31,6 +31,16 @@ std::string GetRendererName(RendererType renderer_type) {
       return "EmbedderDefined";
     case RendererType::kTest:
       return "Media Renderer Implementation For Testing";
+#if BUILDFLAG(ARKWEB_MEDIA)|| BUILDFLAG(ARKWEB_MEDIA_HLS)
+    case RendererType::kNative:
+      return "Native";
+    case RendererType::kOHOSMediaPlayer:
+      return "OHOSMediaPlayerRenderer";
+#endif
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+    case RendererType::kOHOSCustomMediaPlayer:
+      return "OHOSCustomMediaPlayerRednerer";
+#endif // BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   }
 }
 

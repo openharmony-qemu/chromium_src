@@ -96,8 +96,8 @@ class StartupBrowserCreator {
 
   // Registers a callback that will be executed each time
   // ProcessCommandLineAlreadyRunning is called.
-  using ProcessCommandLineCallback = base::RepeatingCallback<bool(
-      const base::CommandLine& command_line,
+  using ProcessCommandLineCallback =
+      base::RepeatingCallback<bool(const base::CommandLine& command_line,
       const base::FilePath& cur_dir)>;
   static void RegisterProcessCommandLineCallback(ProcessCommandLineCallback cb);
 

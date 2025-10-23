@@ -16,6 +16,10 @@
 #include "net/dns/dns_hosts.h"
 #include "net/dns/public/dns_config_overrides.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace url {
 
 class SchemeHostPort;
@@ -44,6 +48,11 @@ class NET_EXPORT DnsClient {
   // transactions and DoH probe runners. If false, secure transactions and DoH
   // probe runners should not be created.
   virtual bool CanUseSecureDnsTransactions() const = 0;
+
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  virtual bool CanUseSecureDnsFallbackTransactions(
+      ResolveContext* context) const = 0;
+#endif
 
   // Returns true if the DnsClient is able and allowed to make insecure DNS
   // transactions. If false, insecure transactions should not be created. Will

@@ -34,6 +34,9 @@ std::unique_ptr<InterceptedRequestHandler> CreateInterceptedRequestHandler(
     int render_process_id,
     bool is_navigation,
     bool is_download,
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    const net::IsolationInfo& isolation_info,
+#endif
     const url::Origin& request_initiator);
 
 // Create an InterceptedRequestHandler that will delegate to a
@@ -43,6 +46,9 @@ std::unique_ptr<InterceptedRequestHandler> CreateInterceptedRequestHandler(
     content::WebContents::Getter web_contents_getter,
     content::FrameTreeNodeId frame_tree_node_id,
     const network::ResourceRequest& request,
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    const net::IsolationInfo& isolation_info,
+#endif
     const base::RepeatingClosure& unhandled_request_callback);
 
 }  // namespace net_service

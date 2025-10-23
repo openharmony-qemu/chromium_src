@@ -25,6 +25,10 @@
 #include "third_party/blink/renderer/platform/mojo/heap_mojo_remote.h"
 #include "third_party/blink/renderer/platform/weborigin/kurl.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 #if BUILDFLAG(IS_MAC)
 #include "third_party/blink/public/mojom/input/text_input_host.mojom-blink.h"
 #endif
@@ -53,6 +57,10 @@ class LocalFrameMojoHandler
       public mojom::blink::FullscreenVideoElementHandler,
       public mojom::blink::DevicePostureClient {
  public:
+#if BUILDFLAG(IS_ARKWEB)
+  friend class ArkWebLocalFrameMojoHandlerExt;
+#endif
+
   explicit LocalFrameMojoHandler(blink::LocalFrame& frame);
   void Trace(Visitor* visitor) const;
 
@@ -334,5 +342,9 @@ class ActiveURLMessageFilter : public mojo::MessageFilter {
 };
 
 }  // namespace blink
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/frame/arkweb_local_frame_mojo_handler_ext.h"
+#endif
 
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_FRAME_LOCAL_FRAME_MOJO_HANDLER_H_

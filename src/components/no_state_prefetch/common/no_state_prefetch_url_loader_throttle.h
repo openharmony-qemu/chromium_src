@@ -5,12 +5,15 @@
 #ifndef COMPONENTS_NO_STATE_PREFETCH_COMMON_NO_STATE_PREFETCH_URL_LOADER_THROTTLE_H_
 #define COMPONENTS_NO_STATE_PREFETCH_COMMON_NO_STATE_PREFETCH_URL_LOADER_THROTTLE_H_
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback.h"
 #include "base/timer/timer.h"
 #include "components/no_state_prefetch/common/no_state_prefetch_canceler.mojom.h"
 #include "net/base/request_priority.h"
 #include "services/network/public/mojom/fetch_api.mojom-shared.h"
 #include "third_party/blink/public/common/loader/url_loader_throttle.h"
+#include "components/no_state_prefetch/browser/no_state_prefetch_contents.h"
+#include "components/no_state_prefetch/common/prerender_canceler.mojom.h"
 
 namespace prerender {
 
@@ -18,7 +21,12 @@ class NoStatePrefetchURLLoaderThrottle : public blink::URLLoaderThrottle {
  public:
   explicit NoStatePrefetchURLLoaderThrottle(
       mojo::PendingRemote<prerender::mojom::NoStatePrefetchCanceler> canceler);
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+  NoStatePrefetchURLLoaderThrottle(
+      const std::string& histogram_prefix,
+      mojo::PendingRemote<prerender::mojom::NoStatePrefetchCanceler> canceler);
   ~NoStatePrefetchURLLoaderThrottle() override;
+#endif
 
   void set_destruction_closure(base::OnceClosure closure) {
     destruction_closure_ = std::move(closure);
@@ -39,6 +47,8 @@ class NoStatePrefetchURLLoaderThrottle : public blink::URLLoaderThrottle {
       net::HttpRequestHeaders* modified_cors_exempt_headers) override;
 
   void OnTimedOut();
+
+  std::string histogram_prefix_;
 
   bool deferred_ = false;
   network::mojom::RequestDestination request_destination_;

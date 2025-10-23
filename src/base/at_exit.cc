@@ -56,7 +56,8 @@ void AtExitManager::RegisterCallback(AtExitCallbackType func, void* param) {
 // static
 void AtExitManager::RegisterTask(base::OnceClosure task) {
   if (!g_top_manager) {
-    NOTREACHED() << "Tried to RegisterCallback without an AtExitManager";
+    // NOTREACHED() << "Tried to RegisterCallback without an AtExitManager";
+    return;
   }
 
   AutoLock lock(g_top_manager->lock_);

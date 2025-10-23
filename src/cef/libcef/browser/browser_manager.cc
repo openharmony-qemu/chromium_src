@@ -11,6 +11,9 @@
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/self_owned_receiver.h"
 #include "services/service_manager/public/cpp/binder_registry.h"
+#if BUILDFLAG(ARKWEB_PDF)
+#include "arkweb/chromium_ext/content/browser/web_contents/web_contents_impl_utils.h"
+#endif
 
 CefBrowserManager::CefBrowserManager(int render_process_id)
     : render_process_id_(render_process_id) {}
@@ -53,6 +56,12 @@ void CefBrowserManager::GetNewRenderThreadInfo(
 void CefBrowserManager::GetNewBrowserInfo(
     const blink::LocalFrameToken& render_frame_token,
     cef::mojom::BrowserManager::GetNewBrowserInfoCallback callback) {
+#if BUILDFLAG(ARKWEB_PDF)
+  if (content::WebContentsImplUtils::is_pdf_static) {
+    LOG(INFO) << "pdf load not use OnGetNewBrowserInfo due to long time consumption";
+    return;
+  }
+#endif
   CefBrowserInfoManager::GetInstance()->OnGetNewBrowserInfo(
       content::GlobalRenderFrameHostToken(render_process_id_,
                                           render_frame_token),

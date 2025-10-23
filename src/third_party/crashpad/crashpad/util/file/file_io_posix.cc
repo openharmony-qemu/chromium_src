@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <limits>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/files/file_path.h"
 #include "base/logging.h"
@@ -154,7 +155,7 @@ FileHandle LoggingOpenFileForWrite(const base::FilePath& path,
   return fd;
 }
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_CRASHPAD)
 FileHandle LoggingOpenMemoryFileForReadAndWrite(const base::FilePath& name) {
   DCHECK(name.value().find('/') == std::string::npos);
 

@@ -236,7 +236,19 @@ int QuicHttpStream::ReadResponseBody(IOBuffer* buf,
   }
 
   if (rv < 0) {
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    {
+      int result = MapStreamError(rv);
+      if (result == ERR_QUIC_PROTOCOL_ERROR) {
+        LOG_FEEDBACK(INFO) << "ReadResponseBody return "
+                           << ERR_QUIC_PROTOCOL_ERROR << ", next_state_ "
+                           << static_cast<int>(next_state_);
+      }
+      return result;
+    }
+#else
     return MapStreamError(rv);
+#endif
   }
 
   return HandleReadComplete(rv);

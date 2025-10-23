@@ -111,6 +111,13 @@ class BLINK_EXPORT WebDocumentLoader {
   // Allows the embedder to set and return the service worker provider
   // associated with the data source. The provider may provide the service
   // worker that controls the resource loading from this data source.
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  virtual WebDocumentSubresourceFilter* GetWebSubresourceFilter() = 0;
+  virtual void SetWebUserSubresourceFilter(WebDocumentSubresourceFilter*) = 0;
+  virtual WebDocumentSubresourceFilter* GetWebUserSubresourceFilter() = 0;
+#endif
+
   virtual void SetServiceWorkerNetworkProvider(
       std::unique_ptr<WebServiceWorkerNetworkProvider>) = 0;
   virtual WebServiceWorkerNetworkProvider*

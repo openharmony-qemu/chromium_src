@@ -11,6 +11,10 @@
 
 #include "build/build_config.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "url/third_party/mozilla/url_parse.h"
+#endif
+
 class GURL;
 
 namespace gfx {
@@ -143,5 +147,9 @@ void SplitHost(const GURL& url,
                std::u16string* url_subdomain);
 
 }  // namespace url_formatter
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/chromium_ext/components/url_formatter/arkweb_elide_url_ext.h"
+#endif
 
 #endif  // COMPONENTS_URL_FORMATTER_ELIDE_URL_H_

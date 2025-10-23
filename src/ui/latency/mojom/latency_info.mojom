@@ -53,4 +53,6 @@ struct LatencyInfo {
   int64 gesture_scroll_id;
   // optional: only valid on Touch events.
   int64 touch_trace_id;
+  [EnableIf=arkweb_same_layer]
+  bool is_stop_propagation;
 };

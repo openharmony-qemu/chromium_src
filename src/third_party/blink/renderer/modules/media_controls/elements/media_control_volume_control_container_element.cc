@@ -9,6 +9,9 @@
 #include "third_party/blink/renderer/modules/media_controls/elements/media_control_consts.h"
 #include "third_party/blink/renderer/modules/media_controls/elements/media_control_elements_helper.h"
 #include "third_party/blink/renderer/modules/media_controls/media_controls_impl.h"
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#include "base/ohos/sys_info_utils_ext.h"
+#endif // ARKWEB_VIDEO_ASSISTANT
 
 namespace blink {
 
@@ -17,9 +20,15 @@ MediaControlVolumeControlContainerElement::
     : MediaControlDivElement(media_controls) {
   SetShadowPseudoId(
       AtomicString("-webkit-media-controls-volume-control-container"));
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+    if (!GetMediaControls().ShouldShowVideoControlsHM() || base::ohos::IsPcDevice()) {
+#endif
   MediaControlElementsHelper::CreateDiv(
       AtomicString("-webkit-media-controls-volume-control-hover-background"),
       this);
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+    }
+#endif
 
   CloseContainer();
 }

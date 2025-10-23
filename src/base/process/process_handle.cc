@@ -8,6 +8,9 @@
 
 #include <ostream>
 
+#include "build/build_config.h"
+#include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/base/process/process_handle_posix_ex.h"
 #include "base/check.h"
 #include "build/build_config.h"
 
@@ -27,10 +30,14 @@ UniqueProcId GetUniqueIdForProcess() {
   // into it.
   return (g_pid_outside_of_namespace != kNullProcessId)
              ? UniqueProcId(g_pid_outside_of_namespace)
+#if BUILDFLAG(ARKWEB_USE_UNIQUE_RENDERER_PROCESS_ID)
+             : UniqueProcId(GetCurrentRealPid());
+#else
              : UniqueProcId(GetCurrentProcId());
+#endif
 }
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX) || BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
 
 void InitUniqueIdForProcessInPidNamespace(ProcessId pid_outside_of_namespace) {
   DCHECK(pid_outside_of_namespace != kNullProcessId);

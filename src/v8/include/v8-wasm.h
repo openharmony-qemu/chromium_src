@@ -40,7 +40,7 @@ struct OwnedBuffer {
 
 // Wrapper around a compiled WebAssembly module, which is potentially shared by
 // different WasmModuleObjects.
-class V8_EXPORT CompiledWasmModule {
+class V8_EXPORT JSVM_EXPORT CompiledWasmModule {
  public:
   /**
    * Serialize the compiled module. The serialized data does not include the
@@ -87,8 +87,17 @@ class V8_EXPORT WasmMemoryObject : public Object {
   static void CheckCast(Value* object);
 };
 
+#ifdef OHOS_JS_ENGINE
+// All the tiers of Wasm execution.
+enum class WasmExecutionTier : int8_t {
+  kNone,
+  kLiftoff,
+  kTurbofan,
+};
+#endif
+
 // An instance of WebAssembly.Module.
-class V8_EXPORT WasmModuleObject : public Object {
+class V8_EXPORT JSVM_EXPORT WasmModuleObject : public Object {
  public:
   WasmModuleObject() = delete;
 
@@ -105,6 +114,20 @@ class V8_EXPORT WasmModuleObject : public Object {
    */
   CompiledWasmModule GetCompiledModule();
 
+#ifdef OHOS_JS_ENGINE
+  /**
+   * Compile a Wasm function of the specified index with the specified tier.
+   */
+  bool CompileFunction(Isolate* isolate, uint32_t function_index,
+                       WasmExecutionTier tier);
+
+  /**
+   * Deserialize or compile Wasm module.
+   */
+  static MaybeLocal<WasmModuleObject> DeserializeOrCompile(
+      Isolate* isolate, MemorySpan<const uint8_t> wire_bytes,
+      MemorySpan<const uint8_t> wasm_cache, bool& cacheRejected);
+#endif
   /**
    * Compile a Wasm module from the provided uncompiled bytes.
    */

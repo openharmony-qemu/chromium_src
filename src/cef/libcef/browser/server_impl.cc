@@ -6,6 +6,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/format_macros.h"
 #include "base/functional/bind.h"
 #include "base/memory/ptr_util.h"
@@ -22,6 +23,10 @@
 #include "net/socket/server_socket.h"
 #include "net/socket/tcp_server_socket.h"
 #include "net/traffic_annotation/network_traffic_annotation.h"
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "libcef/common/arkweb_request_impl_ext.h"
+#endif
 
 #define CEF_CURRENTLY_ON_HT() CurrentlyOnHandlerThread()
 #define CEF_REQUIRE_HT() DCHECK(CEF_CURRENTLY_ON_HT())
@@ -87,7 +92,11 @@ CefRefPtr<CefRequest> CreateRequest(const std::string& address,
     }
   }
 
+#if BUILDFLAG(IS_ARKWEB)
+  CefRefPtr<CefRequestImpl> request = new ArkWebRequestImplExt();
+#else
   CefRefPtr<CefRequestImpl> request = new CefRequestImpl();
+#endif
   request->Set((is_websocket ? "ws://" : "http://") + address + info.path,
                info.method, post_data, header_map);
   if (!referer.empty()) {

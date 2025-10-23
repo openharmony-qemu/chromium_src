@@ -32,6 +32,9 @@ class VIZ_SERVICE_EXPORT DisplayDamageTracker : public SurfaceObserver {
     virtual void OnDisplayDamaged(SurfaceId surface_id) = 0;
     virtual void OnRootFrameMissing(bool missing) = 0;
     virtual void OnPendingSurfacesChanged() = 0;
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+    virtual void ReenableSwapCheck(const SurfaceId& surface_id, int width, int height) = 0;
+#endif // ARKWEB_MAXIMIZE_RESIZE
   };
 
   DisplayDamageTracker(SurfaceManager* surface_manager,
@@ -94,7 +97,9 @@ class VIZ_SERVICE_EXPORT DisplayDamageTracker : public SurfaceObserver {
                         HandleInteraction handle_interaction) override;
   void OnSurfaceDamageExpected(const SurfaceId& surface_id,
                                const BeginFrameArgs& args) override;
-
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  void ReenableSwapCheck(const SurfaceId& surface_id, int width, int height) override;
+#endif // ARKWEB_MAXIMIZE_RESIZE
  protected:
   struct SurfaceBeginFrameState {
     BeginFrameArgs last_args;

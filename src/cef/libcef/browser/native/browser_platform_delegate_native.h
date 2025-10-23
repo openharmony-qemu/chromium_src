@@ -49,7 +49,10 @@ class CefBrowserPlatformDelegateNative
       const CefMouseEvent& mouse_event,
       int deltaX,
       int deltaY) const = 0;
-
+#if BUILDFLAG(ARKWEB_TOUCHPAD_FLING)
+  virtual blink::WebGestureEvent TranslateTouchpadFlingEvent(
+      const CefMouseEvent& mouse_event) const = 0;
+#endif
   const CefWindowInfo& window_info() const { return window_info_; }
 
  protected:

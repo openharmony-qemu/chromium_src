@@ -17,5 +17,4 @@ namespace ui {
 #undef DOM_CODE_DECLARATION
 
 }  // namespace ui
-
 #endif  // UI_EVENTS_KEYCODES_DOM_DOM_CODE_H_

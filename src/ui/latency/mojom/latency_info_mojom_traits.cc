@@ -53,6 +53,15 @@ StructTraits<ui::mojom::LatencyInfoDataView, ui::LatencyInfo>::touch_trace_id(
   return info.touch_trace_id();
 }
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+// static
+bool
+StructTraits<ui::mojom::LatencyInfoDataView, ui::LatencyInfo>::is_stop_propagation(
+    const ui::LatencyInfo& info) {
+  return info.is_stop_propagation();
+}
+#endif
+
 // static
 bool StructTraits<ui::mojom::LatencyInfoDataView, ui::LatencyInfo>::Read(
     ui::mojom::LatencyInfoDataView data,
@@ -65,7 +74,9 @@ bool StructTraits<ui::mojom::LatencyInfoDataView, ui::LatencyInfo>::Read(
   out->terminated_ = data.terminated();
   out->gesture_scroll_id_ = data.gesture_scroll_id();
   out->touch_trace_id_ = data.touch_trace_id();
-
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  out->is_stop_propagation_ = data.is_stop_propagation();
+#endif
   return true;
 }
 

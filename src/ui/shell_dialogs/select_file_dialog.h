@@ -16,6 +16,7 @@
 #include "ui/gfx/native_widget_types.h"
 #include "ui/shell_dialogs/base_shell_dialog.h"
 #include "ui/shell_dialogs/shell_dialogs_export.h"
+#include "arkweb/build/features/features.h"
 
 class GURL;
 
@@ -144,6 +145,11 @@ class SHELL_DIALOGS_EXPORT SelectFileDialog
     // visible.
     bool keep_extension_visible = false;
 
+#if BUILDFLAG(IS_OHOS)
+    // Whether to persist read-write authorization
+    bool file_access_persist = false;
+#endif
+
     // Specifies which type of paths the caller can handle.
     enum AllowedPaths {
       // Any type of path, whether on a local/native volume or a remote/virtual
@@ -168,7 +174,7 @@ class SHELL_DIALOGS_EXPORT SelectFileDialog
   // selection dialog will fail to open if the file name exceeds 255 characters.
   static base::FilePath GetShortenedFilePath(const base::FilePath& path);
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_FILE_UPLOAD)
   // Set the list of acceptable MIME types for the file picker; this will apply
   // to any subsequent SelectFile() calls.
   virtual void SetAcceptTypes(std::vector<std::u16string> types);

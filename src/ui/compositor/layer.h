@@ -12,6 +12,12 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+#include "build/build_config.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+#include "base/auto_reset.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/memory/weak_ptr.h"
@@ -28,7 +34,6 @@
 #include "ui/compositor/layer_type.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/image/image_skia.h"
-
 namespace cc {
 class Layer;
 class MirrorLayer;
@@ -608,6 +613,10 @@ class COMPOSITOR_EXPORT Layer : public LayerAnimationDelegate,
   // set to stretch to fill bounds.
   void SetSurfaceSize(gfx::Size surface_size_in_dip);
 
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+  void SetTopControlsHeight(int height) { top_controls_height_ = height; }
+#endif
+
   base::WeakPtr<Layer> AsWeakPtr();
 
   bool ContainsMirrorForTest(Layer* mirror) const;
@@ -878,6 +887,15 @@ class COMPOSITOR_EXPORT Layer : public LayerAnimationDelegate,
   // If the value == 0, means we should not perform trilinear filtering on the
   // layer.
   unsigned trilinear_filtering_request_;
+
+  // TODO(crbug.com/40786876): temporary while tracking down crash.
+  bool in_send_damaged_rects_ = false;
+  bool sending_damaged_rects_for_descendants_ = false;
+  bool no_mutation_ = false;  // CHECK on Add/SetMakeLayer if true.
+
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+  int top_controls_height_ = 0;
+#endif
 
   base::WeakPtrFactory<Layer> weak_ptr_factory_{this};
 };

@@ -41,6 +41,11 @@ TEST_F(GLOOBAttribTest, DrawUsingOOBMatrixAttrib) {
     return;
   }
 
+#if BUILDFLAG(IS_OHOS)
+  // TODO: ohos cannot use vulkan so that cannot enable use_passthrough_cmd_decoder
+  // mac/linux/windows both enable use_passthrough_cmd_decoder,so this test direct return.
+  return;
+#else
   const char kVertexShader[] =
       "attribute mat3 attrib;\n"
       "varying vec4 color;\n"
@@ -96,6 +101,7 @@ TEST_F(GLOOBAttribTest, DrawUsingOOBMatrixAttrib) {
   glDrawArrays(GL_TRIANGLES, 0, 1000);
   expected = GL_NO_ERROR;
   EXPECT_EQ(expected, glGetError());
+#endif
 }
 
 }  // anonymous namespace

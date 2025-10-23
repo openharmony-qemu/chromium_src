@@ -588,6 +588,19 @@ ServiceImageTransferCacheEntry::ServiceImageTransferCacheEntry(
 ServiceImageTransferCacheEntry& ServiceImageTransferCacheEntry::operator=(
     ServiceImageTransferCacheEntry&& other) = default;
 
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+bool ServiceImageTransferCacheEntry::BuildFromRGBAHardwareDecodedImage(
+    GrDirectContext* context,
+    std::vector<sk_sp<SkImage>> plane_images,
+    size_t buffer_byte_size) {
+  gr_context_ = context;
+  image_ = std::move(plane_images[0]);
+  size_ = buffer_byte_size;
+
+  return true;
+}
+#endif
+
 bool ServiceImageTransferCacheEntry::BuildFromHardwareDecodedImage(
     GrDirectContext* gr_context,
     std::vector<sk_sp<SkImage>> plane_images,

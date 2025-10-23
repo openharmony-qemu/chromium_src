@@ -44,7 +44,7 @@ static size_t GetUsableSize(void* mem) {
 static size_t GetUsableSize(void* mem) {
   return malloc_size(mem);
 }
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_GWP_ASAN)
 #include <malloc.h>
 static size_t GetUsableSize(void* mem) {
   return malloc_usable_size(mem);

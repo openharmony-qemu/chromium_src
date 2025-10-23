@@ -136,6 +136,9 @@ CefCrashReportUploadThread::FilterParameters(const ParameterMap& parameters) {
 
 bool CefCrashReportUploadThread::UploadsEnabled() const {
   Settings* const settings = database_->GetSettings();
+  if (settings == nullptr) {
+	  return false;
+  }
   bool uploads_enabled;
   return !url_.empty() && settings->GetUploadsEnabled(&uploads_enabled) &&
          uploads_enabled;
@@ -155,6 +158,9 @@ bool CefCrashReportUploadThread::BackoffPending() const {
   }
 
   Settings* const settings = database_->GetSettings();
+  if (settings == nullptr) {
+	  return false;
+  }
 
   time_t next_upload_time;
   if (settings->GetNextUploadAttemptTime(&next_upload_time) &&
@@ -186,6 +192,9 @@ void CefCrashReportUploadThread::IncreaseBackoff() {
       sizeof(kBackoffSchedule) / sizeof(kBackoffSchedule[0]);
 
   Settings* settings = database_->GetSettings();
+  if (settings == nullptr) {
+	  return;
+  }
 
   int backoff_step = 0;
   if (settings->GetBackoffStep(&backoff_step) && backoff_step < 0) {
@@ -215,6 +224,9 @@ void CefCrashReportUploadThread::ResetBackoff() {
   }
 
   Settings* settings = database_->GetSettings();
+  if (settings == nullptr) {
+	  return;
+  }
   settings->SetBackoffStep(0);
   settings->SetNextUploadAttemptTime(0);
 }

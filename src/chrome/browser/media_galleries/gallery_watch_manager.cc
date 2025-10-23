@@ -204,6 +204,10 @@ GalleryWatchManager::~GalleryWatchManager() {
   weak_factory_.InvalidateWeakPtrs();
 
   if (storage_monitor_observed_) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    if (!storage_monitor::StorageMonitor::GetInstance())
+      return;
+#endif
     DCHECK(storage_monitor::StorageMonitor::GetInstance());
     storage_monitor::StorageMonitor::GetInstance()->RemoveObserver(this);
   }
@@ -286,6 +290,10 @@ void GalleryWatchManager::AddWatch(BrowserContext* browser_context,
 
   if (!storage_monitor_observed_) {
     storage_monitor_observed_ = true;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    if (!storage_monitor::StorageMonitor::GetInstance())
+      return;
+#endif
     storage_monitor::StorageMonitor::GetInstance()->AddObserver(this);
   }
 

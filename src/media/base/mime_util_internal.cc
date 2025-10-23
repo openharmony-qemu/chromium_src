@@ -406,17 +406,17 @@ void MimeUtil::AddSupportedMediaFormats() {
   video_3gpp_codecs.emplace(H264);
   AddContainerWithCodecs("video/3gpp", video_3gpp_codecs);
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ENABLE_HLS_DEMUXER)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
   bool can_play_hls = false;
 #endif
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA_HLS)
   can_play_hls = true;
 #endif
 #if BUILDFLAG(ENABLE_HLS_DEMUXER)
   can_play_hls |= base::FeatureList::IsEnabled(kBuiltInHlsPlayer);
 #endif
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ENABLE_HLS_DEMUXER)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
   if (can_play_hls) {
     // HTTP Live Streaming (HLS).
     CodecSet hls_codecs{H264,
@@ -435,6 +435,16 @@ void MimeUtil::AddSupportedMediaFormats() {
     AddContainerWithCodecs("audio/x-mpegurl", hls_codecs);
   }
 #endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ENABLE_HLS_DEMUXER)
+
+#if BUILDFLAG(ARKWEB_MEDIA)
+  if (base::FeatureList::IsEnabled(kCanPlayHls)) {
+    CodecSet hls_codecs{H264,
+                        MP3,
+                        MPEG4_AAC};
+    AddContainerWithCodecs("application/x-mpegurl", hls_codecs);
+  }
+#endif
+
 #endif  // BUILDFLAG(USE_PROPRIETARY_CODECS)
 }
 

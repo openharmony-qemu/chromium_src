@@ -43,6 +43,10 @@ bool CefSchemeRegistrarImpl::AddCustomScheme(const CefString& scheme_name,
   const bool is_cors_enabled = options & CEF_SCHEME_OPTION_CORS_ENABLED;
   const bool is_csp_bypassing = options & CEF_SCHEME_OPTION_CSP_BYPASSING;
   const bool is_fetch_enabled = options & CEF_SCHEME_OPTION_FETCH_ENABLED;
+#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
+  const bool is_code_cache_enabled =
+      options & CEF_SCHEME_OPTION_CODE_CACHE_ENABLED;
+#endif
 
   // The |is_display_isolated| value is excluded here because it's registered
   // with Blink only.
@@ -64,10 +68,23 @@ bool CefSchemeRegistrarImpl::AddCustomScheme(const CefString& scheme_name,
   if (is_csp_bypassing) {
     schemes_.csp_bypassing_schemes.push_back(scheme);
   }
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  schemes_.custom_schemes.push_back(scheme);
+#endif  // BUILDFLAG(ARKWEB_NETWORK_LOAD)
 
-  CefSchemeInfo scheme_info = {
-      scheme,    is_standard,     is_local,         is_display_isolated,
-      is_secure, is_cors_enabled, is_csp_bypassing, is_fetch_enabled};
+  CefSchemeInfo scheme_info = {scheme,
+                               is_standard,
+                               is_local,
+                               is_display_isolated,
+                               is_secure,
+                               is_cors_enabled,
+                               is_csp_bypassing,
+                               is_fetch_enabled
+#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
+                               ,
+                               is_code_cache_enabled
+#endif
+  };
   CefAppManager::Get()->AddCustomScheme(&scheme_info);
 
   return true;
@@ -81,4 +98,7 @@ void CefSchemeRegistrarImpl::GetSchemes(
   AppendArray(schemes_.secure_schemes, &schemes->secure_schemes);
   AppendArray(schemes_.cors_enabled_schemes, &schemes->cors_enabled_schemes);
   AppendArray(schemes_.csp_bypassing_schemes, &schemes->csp_bypassing_schemes);
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  AppendArray(schemes_.custom_schemes, &schemes->custom_schemes);
+#endif  // BUILDFLAG(ARKWEB_NETWORK_LOAD)
 }

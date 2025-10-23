@@ -135,6 +135,11 @@ void MediaControlTimelineElement::DefaultEventHandler(Event& event) {
 
   RenderBarSegments();
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  bool is_end_scrubbing_event = false;
+  bool is_used_custom_video_player = MediaElement().IsUsedCustomVideoPlayer();
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+
   if (BeginScrubbingEvent(event)) {
     Platform::Current()->RecordAction(
         UserMetricsAction("Media.Controls.ScrubbingBegin"));
@@ -145,6 +150,10 @@ void MediaControlTimelineElement::DefaultEventHandler(Event& event) {
         UserMetricsAction("Media.Controls.ScrubbingEnd"));
     is_scrubbing_ = false;
     GetMediaControls().EndScrubbing();
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+    is_end_scrubbing_event = true;
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
   }
 
   if (event.type() == event_type_names::kFocus)
@@ -167,9 +176,26 @@ void MediaControlTimelineElement::DefaultEventHandler(Event& event) {
     double position =
         max(0.0, fmin(1.0, touch->clientX() / TrackWidth() * ZoomFactor()));
     SetPosition(position * MediaElement().duration());
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  } else if ((event.type() != event_type_names::kInput) &&
+             (!is_end_scrubbing_event || !is_used_custom_video_player)) {
+#else
   } else if (event.type() != event_type_names::kInput) {
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
     return;
   }
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  if (is_end_scrubbing_event) {
+    if (is_used_custom_video_player) {
+      if (MediaElement().seekable()->Contain(seek_time_)) {
+        MediaElement().setCurrentTime(seek_time_);
+      }
+      seek_time_ = -1.0;
+    }
+    return;
+  }
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
   double time = Value().ToDouble();
   double duration = MediaElement().duration();
@@ -181,8 +207,17 @@ void MediaControlTimelineElement::DefaultEventHandler(Event& event) {
 
   // FIXME: This will need to take the timeline offset into consideration
   // once that concept is supported, see https://crbug.com/312699
-  if (MediaElement().seekable()->Contain(time))
+  if (MediaElement().seekable()->Contain(time)) {
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+    if (is_used_custom_video_player) {
+      seek_time_ = time;
+    } else {
     MediaElement().setCurrentTime(time);
+    }
+#else
+    MediaElement().setCurrentTime(time);
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+  }
 
   // Provide immediate feedback (without waiting for media to seek) to make it
   // easier for user to seek to a precise time.
@@ -347,6 +382,14 @@ bool MediaControlTimelineElement::EndScrubbingEvent(Event& event) {
       is_touching_ = false;
       return true;
     }
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+    if (GetMediaControls().ShouldShowVideoControlsHM()) {
+      if (event.type() == event_type_names::kPointerout) {
+        is_touching_ = false;
+        return true;
+      }
+    }
+#endif
   } else if (event.type() == event_type_names::kPointerup ||
              event.type() == event_type_names::kPointercancel) {
     return IsValidPointerEvent(event);

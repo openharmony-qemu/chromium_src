@@ -37,8 +37,7 @@ class CefDevToolsWindowRunner final {
   CefDevToolsWindowRunner() = default;
 
   CefDevToolsWindowRunner(const CefDevToolsWindowRunner&) = delete;
-  CefDevToolsWindowRunner& operator=(const CefDevToolsWindowRunner&) =
-      delete;
+  CefDevToolsWindowRunner& operator=(const CefDevToolsWindowRunner&) = delete;
 
   void ShowDevTools(CefBrowserHostBase* opener,
                     std::unique_ptr<CefShowDevToolsParams> params);

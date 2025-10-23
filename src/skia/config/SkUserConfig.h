@@ -71,10 +71,17 @@ SK_API void SkDebugf_FileLine(const char* file,
                                           ...);
 
 #if !defined(ANDROID)   // On Android, we use the skia default settings.
+#if defined(SK_CPU_LENDIAN)  // on OHOS, B and R will exchange.
+#define SK_A32_SHIFT    24
+#define SK_B32_SHIFT    16
+#define SK_G32_SHIFT    8
+#define SK_R32_SHIFT    0
+#else
 #define SK_A32_SHIFT    24
 #define SK_R32_SHIFT    16
 #define SK_G32_SHIFT    8
 #define SK_B32_SHIFT    0
+#endif
 #endif
 
 #if defined(SK_BUILD_FOR_MAC)

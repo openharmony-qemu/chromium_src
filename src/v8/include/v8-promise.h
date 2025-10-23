@@ -21,7 +21,7 @@ class Context;
 /**
  * An instance of the built-in Promise constructor (ES6 draft).
  */
-class V8_EXPORT Promise : public Object {
+class V8_EXPORT JSVM_EXPORT Promise : public Object {
  public:
   /**
    * State of the promise. Each value corresponds to one of the possible values

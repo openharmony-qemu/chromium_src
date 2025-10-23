@@ -31,15 +31,19 @@ class WebLocalFrame;
 class GURL;
 
 class CefBrowserImpl;
+class ArkwebFrameExtImpl;
 
 // Implementation of CefFrame. CefFrameImpl objects are owned by the
 // CefBrowerImpl and will be detached when the browser is notified that the
 // associated renderer WebFrame will close.
 class CefFrameImpl
-    : public CefFrame,
+    : public virtual CefFrame,
       public cef::mojom::RenderFrame,
       public blink_glue::CefExecutionContextLifecycleStateObserver {
  public:
+#if BUILDFLAG(IS_ARKWEB)
+  friend class ArkwebFrameExtImpl;
+#endif
   CefFrameImpl(CefBrowserImpl* browser, blink::WebLocalFrame* frame);
 
   CefFrameImpl(const CefFrameImpl&) = delete;
@@ -81,6 +85,7 @@ class CefFrameImpl
                           CefRefPtr<CefProcessMessage> message) override;
 
   // Forwarded from CefRenderFrameObserver.
+  void OnAttached();
   void OnWasShown();
   void OnDidCommitProvisionalLoad();
   void OnDidFinishLoad();
@@ -89,6 +94,30 @@ class CefFrameImpl
   void OnDetached();
 
   blink::WebLocalFrame* web_frame() const { return frame_; }
+  void LoadRequest(cef::mojom::RequestParamsPtr params) override;
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  virtual bool ShouldOverrideUrlLoading(const CefString& url,
+                                        const CefString& request_method,
+                                        bool user_gesture,
+                                        bool is_redirect,
+                                        bool is_outermost_main_frame) {}
+#endif
+
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+  virtual std::string OverrideErrorPage(const CefString& url,
+                                        const CefString& request_method,
+                                        bool user_gesture,
+                                        bool is_redirect,
+                                        bool is_outermost_main_frame,
+                                        int error_code,
+                                        const CefString& error_text) {}
+#endif
+
+#if defined(OHOS_INPUT_EVENTS)
+  void SetFocusByPosition(float x, float y,
+      cef::mojom::RenderFrame::SetFocusByPositionCallback callback) override;
+#endif // defined(OHOS_INPUT_EVENTS)
 
  private:
   // Called for draggable region changes due to navigation. This is in addition
@@ -104,7 +133,7 @@ class CefFrameImpl
                            LocalFrameAction action);
 
   enum class ConnectReason {
-    DID_COMMIT,
+    RENDER_FRAME_CREATED,
     WAS_SHOWN,
     RETRY,
   };
@@ -116,17 +145,20 @@ class CefFrameImpl
   using BrowserFrameType = mojo::Remote<cef::mojom::BrowserFrame>;
   const BrowserFrameType& GetBrowserFrame(bool expect_acked = true);
 
+  // Called if the BrowserFrame connection attempt times out.
+  void OnBrowserFrameTimeout();
+
   // Called if the BrowserFrame connection is disconnected.
   void OnBrowserFrameDisconnect(uint32_t custom_reason,
-                                const std::string& description,
-                                MojoResult error_result);
+                                const std::string& description);
   // Called if the RenderFrame connection is disconnected.
   void OnRenderFrameDisconnect(uint32_t custom_reason,
-                               const std::string& description,
-                               MojoResult error_result);
+                               const std::string& description);
 
   enum class DisconnectReason {
     DETACHED,
+    BROWSER_FRAME_DETACHED,
+    CONNECT_TIMEOUT,
     RENDER_FRAME_DISCONNECT,
     BROWSER_FRAME_DISCONNECT,
   };
@@ -134,10 +166,7 @@ class CefFrameImpl
   // Called if/when a disconnect occurs. This may occur due to frame navigation,
   // destruction, or insertion into the bfcache (when the browser-side frame
   // representation is destroyed and closes the connection).
-  void OnDisconnect(DisconnectReason reason,
-                    uint32_t custom_reason,
-                    const std::string& description,
-                    MojoResult error_result);
+  void OnDisconnect(DisconnectReason reason, const std::string& description);
 
   // Send an action to the remote BrowserFrame. This will queue the action if
   // the remote frame is not yet attached.
@@ -149,6 +178,7 @@ class CefFrameImpl
 
   // cef::mojom::RenderFrame methods:
   void FrameAttachedAck(bool allow) override;
+  void FrameDetached() override;
   void SendMessage(const std::string& name,
                    base::Value::List arguments) override;
   void SendSharedMemoryRegion(const std::string& name,
@@ -161,7 +191,6 @@ class CefFrameImpl
   void SendJavaScript(const std::u16string& jsCode,
                       const std::string& scriptUrl,
                       int32_t startLine) override;
-  void LoadRequest(cef::mojom::RequestParamsPtr params) override;
   void DidStopLoading() override;
   void MoveOrResizeStarted() override;
 
@@ -183,10 +212,6 @@ class CefFrameImpl
 
   // Number of times that browser reconnect has been attempted.
   size_t browser_connect_retry_ct_ = 0;
-  // Log of reasons why the reconnect failed.
-  std::string browser_connect_retry_log_;
-
-  bool ever_connected_ = false;
 
   // Current browser connection state.
   enum class ConnectionState {
@@ -198,11 +223,8 @@ class CefFrameImpl
 
   static std::string GetDisconnectDebugString(ConnectionState connection_state,
                                               bool frame_is_valid,
-                                              bool frame_is_main,
                                               DisconnectReason reason,
-                                              uint32_t custom_reason,
-                                              const std::string& description,
-                                              MojoResult error_result);
+                                              const std::string& description);
 
   base::OneShotTimer browser_connect_timer_;
 

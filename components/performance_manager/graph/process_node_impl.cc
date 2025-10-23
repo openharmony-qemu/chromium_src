@@ -113,7 +113,9 @@ void ProcessNodeImpl::SetMainThreadTaskLoadIsLow(
     bool main_thread_task_load_is_low) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   DCHECK_EQ(process_type_, content::PROCESS_TYPE_RENDERER);
-
+  if (!weak_factory_.HasWeakPtrs()) {
+    return;
+  }
   main_thread_task_load_is_low_.SetAndMaybeNotify(this,
                                                   main_thread_task_load_is_low);
 }

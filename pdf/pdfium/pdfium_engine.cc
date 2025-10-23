@@ -21,10 +21,6 @@
 #include <utility>
 
 #include "arkweb/build/features/features.h"
-#if BUILDFLAG(ARKWEB_PDF)
-#include "base/logging.h"
-#include "arkweb/chromium_ext/pdf/pdfium/pdfium_engine_for_include.cc"
-#endif
 #include "base/auto_reset.h"
 #include "base/check_op.h"
 #include "base/containers/contains.h"
@@ -119,6 +115,12 @@
 #include "pdf/pdfium/pdfium_font_win.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_PDF)
+#include "base/logging.h"
+#include "arkweb/chromium_ext/pdf/pdfium/pdfium_engine_for_include.cc"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
+
 using printing::ConvertUnit;
 using printing::ConvertUnitFloat;
 using printing::kPixelsPerInch;
@@ -167,7 +169,16 @@ constexpr base::TimeDelta kMaxProgressivePaintTime = base::Milliseconds(300);
 // process.
 constexpr base::TimeDelta kMaxInitialProgressivePaintTime =
     base::Milliseconds(250);
-
+#if BUILDFLAG(ARKWEB_PDF)
+constexpr char PDF_LONG_PRESS_EVENT[] = "PDF_LONG_PRESS_EVENT";
+constexpr char LONG_PRESSED[] = "LONG_PRESSED";
+constexpr char PDF_ENCRYPTED_DOCUMENT[] = "PDF_ENCRYPTED_DOCUMENT";
+constexpr char DOCUMENT_ENCRYPTED[] = "DOCUMENT_ENCRYPTED";
+constexpr char PDF_FIRST_PAINT_TIME[] = "PDF_FIRST_PAINT_TIME";
+constexpr char FIRST_PAINT_TIME[] = "FIRST_PAINT_TIME";
+constexpr char PDF_PAINT_VISIBLE_PAGES_TAME[] = "PDF_PAINT_VISIBLE_PAGES_TAME";
+constexpr char PAINT_VISIBLE_PAGES_TAME[] = "PAINT_VISIBLE_PAGES_TAME";
+#endif
 FontMappingMode g_font_mapping_mode = FontMappingMode::kNoMapping;
 
 template <class S>
@@ -698,6 +709,15 @@ void PDFiumEngine::Paint(const gfx::Rect& rect,
     first_paint_metric_reported_ = true;
     base::UmaHistogramMediumTimes("PDF.FirstPaintTime",
                                   begin_time - engine_creation_time_);
+#if BUILDFLAG(ARKWEB_PDF)
+    int64_t firstPaintTime =
+        (begin_time - engine_creation_time_).ToInternalValue();
+    OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .GetHiSysEventAdapterInstance()
+        .Write(PDF_FIRST_PAINT_TIME,
+               OHOS::NWeb::HiSysEventAdapter::EventType::BEHAVIOR,
+               {FIRST_PAINT_TIME, std::to_string(firstPaintTime)});
+#endif
   }
 
   for (size_t i = 0; i < visible_pages_.size(); ++i) {
@@ -768,6 +788,15 @@ void PDFiumEngine::Paint(const gfx::Rect& rect,
 
   base::UmaHistogramMediumTimes("PDF.RenderAndPaintVisiblePagesTime",
                                 base::TimeTicks::Now() - begin_time);
+#if BUILDFLAG(ARKWEB_PDF)
+  int64_t paintVisiblePagesTime =
+      (base::TimeTicks::Now() - begin_time).ToInternalValue();
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .GetHiSysEventAdapterInstance()
+      .Write(PDF_PAINT_VISIBLE_PAGES_TAME,
+             OHOS::NWeb::HiSysEventAdapter::EventType::BEHAVIOR,
+             {PAINT_VISIBLE_PAGES_TAME, std::to_string(paintVisiblePagesTime)});
+#endif
 }
 
 void PDFiumEngine::PostPaint() {
@@ -2698,7 +2727,13 @@ void PDFiumEngine::HandleLongPress(const blink::WebTouchEvent& event) {
   mouse_event.button = blink::WebPointerProperties::Button::kLeft;
   mouse_event.click_count = 2;
   mouse_event.SetPositionInWidget(event.touches[0].PositionInWidget());
-
+#if BUILDFLAG(ARKWEB_PDF)
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .GetHiSysEventAdapterInstance()
+      .Write(PDF_LONG_PRESS_EVENT,
+             OHOS::NWeb::HiSysEventAdapter::EventType::BEHAVIOR,
+             {LONG_PRESSED, "true"});
+#endif
   OnMouseDown(mouse_event);
 }
 
@@ -2814,10 +2849,24 @@ void PDFiumEngine::LoadDocument() {
     ContinueLoadingDocument(std::string());
     return;
   }
+#if BUILDFLAG(ARKWEB_PDF)
+  if (needs_password) {
+    GetPasswordAndLoad();
+    OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .GetHiSysEventAdapterInstance()
+        .Write(PDF_ENCRYPTED_DOCUMENT,
+               OHOS::NWeb::HiSysEventAdapter::EventType::BEHAVIOR,
+               {DOCUMENT_ENCRYPTED, "true"});
+
+  } else {
+    client_->DocumentLoadFailed();
+  }
+#else
   if (needs_password)
     GetPasswordAndLoad();
   else
     client_->DocumentLoadFailed();
+#endif
 }
 
 bool PDFiumEngine::TryLoadingDoc(const std::string& password,

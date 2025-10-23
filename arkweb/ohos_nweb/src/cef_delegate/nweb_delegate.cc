@@ -18,6 +18,7 @@
 #include <thread>
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
 #include "nweb_accessibility_utils.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 #endif
 #include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #include "arkweb/chromium_ext/url/ohos/log_utils.h"
@@ -139,6 +140,10 @@ const int kErrorDescriptionMaxLen = 2048;
 static const int kDefaultWebNativeProxy = -2;
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
 static const int64_t kRootAccessibilityId = 1;
+constexpr char WEB_A11Y_ENABLED_STATISTICS[] = "WEB_A11Y_ENABLED_STATISTICS";
+constexpr char WEB_A11Y_ENABLED[] = "WEB_A11Y_ENABLED";
+constexpr char WEB_A11Y_EXECUTE_ACTION_TYPE[] = "WEB_A11Y_EXECUTE_ACTION_TYPE";
+constexpr char WEB_A11Y_ACTION_TYPE[] = "WEB_A11Y_ACTION_TYPE";
 #endif
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
@@ -4464,6 +4469,11 @@ void NWebDelegate::SetAccessibilityState(cef_state_t accessibilityState) {
   if (accessibility_state_ != (accessibilityState == STATE_ENABLED)) {
     accessibility_state_ = (accessibilityState == STATE_ENABLED);
     GetBrowser()->GetHost()->SetAccessibilityState(accessibilityState);
+    OHOS::NWeb::OhosAdapterHelper::GetInstance()
+        .GetHiSysEventAdapterInstance()
+        .Write(WEB_A11Y_ENABLED_STATISTICS,
+               OHOS::NWeb::HiSysEventAdapter::EventType::BEHAVIOR,
+               {WEB_A11Y_ENABLED, (accessibility_state_ ? "true" : "false")});
   }
 }
 
@@ -4485,6 +4495,12 @@ bool NWebDelegate::ExecuteAction(
   AceAction aceAction = static_cast<AceAction>(action);
   LOG(INFO) << "ExecuteAction accessibilityId is " << accessibilityId
             << ", action is " << action;
+  // The range of AceAction is 0-30, and it can be converted.
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .GetHiSysEventAdapterInstance()
+      .Write(WEB_A11Y_EXECUTE_ACTION_TYPE,
+          OHOS::NWeb::HiSysEventAdapter::EventType::BEHAVIOR,
+          {WEB_A11Y_ACTION_TYPE, std::to_string(static_cast<int8_t>(action))});
 
   switch (aceAction) {
     case AceAction::ACTION_CLICK:

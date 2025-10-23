@@ -8,9 +8,18 @@
 
 #include "base/metrics/histogram_functions.h"
 #include "pdf/document_metadata.h"
-
+#if BUILDFLAG(ARKWEB_PDF)
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
 namespace chrome_pdf {
-
+#if BUILDFLAG(ARKWEB_PDF)
+constexpr char PDF_VERSION[] = "PDF_VERSION";
+constexpr char VERSION[] = "VERSION";
+constexpr char PDF_PAGE_COUNT[] = "PDF_PAGE_COUNT";
+constexpr char PAGE_COUNT[] = "PAGE_COUNT";
+constexpr char PDF_HAS_ATTACHMENT[] = "PDF_HAS_ATTACHMENT";
+constexpr char HAS_ATTACHMENT[] = "HAS_ATTACHMENT";
+#endif
 namespace {
 
 // These values are persisted to logs. Entries should not be renumbered and
@@ -34,6 +43,23 @@ void MetricsHandler::RecordDocumentMetrics(const DocumentMetadata& metadata) {
   base::UmaHistogramEnumeration(
       "PDF.HasAttachment", metadata.has_attachments ? PdfHasAttachment::kYes
                                                     : PdfHasAttachment::kNo);
+#if BUILDFLAG(ARKWEB_PDF)
+  // The range of PdfVersion is 0-10, and it can be converted.
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .GetHiSysEventAdapterInstance()
+      .Write(PDF_VERSION, OHOS::NWeb::HiSysEventAdapter::EventType::BEHAVIOR,
+             {VERSION, std::to_string(static_cast<int8_t>(metadata.version))});
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .GetHiSysEventAdapterInstance()
+      .Write(PDF_PAGE_COUNT, OHOS::NWeb::HiSysEventAdapter::EventType::BEHAVIOR,
+             {PAGE_COUNT,
+              std::to_string(static_cast<uint32_t>(metadata.page_count))});
+  OHOS::NWeb::OhosAdapterHelper::GetInstance()
+      .GetHiSysEventAdapterInstance()
+      .Write(PDF_HAS_ATTACHMENT,
+             OHOS::NWeb::HiSysEventAdapter::EventType::BEHAVIOR,
+             {HAS_ATTACHMENT, (metadata.has_attachments ? "true" : "false")});
+#endif
   base::UmaHistogramEnumeration("PDF.FormType", metadata.form_type);
 }
 

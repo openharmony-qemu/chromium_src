@@ -534,6 +534,125 @@ TEST_F(NWebImplTest, GetExtensionVersion002) {
   std::string extension_id = "1";
   EXPECT_EQ(nweb_impl_->GetExtensionVersion(extension_id), "");
 }
+
+TEST_F(NWebImplTest, OnAlertDialogByJS001) {
+  std::string extensionId = "123456";
+  std::string url = "//xxxx:xxx/yyy/sss.html";
+  std::string message = "test";
+  bool suppress_message = false;
+  nweb_impl_->OnAlertDialogByJS(extensionId, url, message, nullptr,
+                                suppress_message);
+  EXPECT_EQ(nweb_impl_->on_off_screen_alert_callback_, nullptr);
+}
+
+void OffscreenDocumentAlertCallback(const char* extensionId,
+                                    const char* url,
+                                    const char* message,
+                                    const int requestId) {}
+
+TEST_F(NWebImplTest, OnAlertDialogByJS002) {
+  std::string extensionId = "123456";
+  std::string url = "//xxxx:xxx/yyy/sss.html";
+  std::string message = "test";
+  bool suppress_message = true;
+  nweb_impl_->on_off_screen_alert_callback_ = OffscreenDocumentAlertCallback;
+  nweb_impl_->OnAlertDialogByJS(extensionId, url, message, nullptr,
+                                suppress_message);
+  EXPECT_EQ(suppress_message, false);
+}
+
+TEST_F(NWebImplTest, OnConfirmDialogByJS001) {
+  std::string extensionId = "123456";
+  std::string url = "//xxxx:xxx/yyy/sss.html";
+  std::string message = "test";
+  bool suppress_message = false;
+  nweb_impl_->OnConfirmDialogByJS(extensionId, url, message, nullptr,
+                                  suppress_message);
+  EXPECT_EQ(nweb_impl_->on_off_screen_confirm_callback_, nullptr);
+}
+
+void OffscreenDocumentConfirmCallback(const char* extensionId,
+                                      const char* url,
+                                      const char* message,
+                                      const int requestId) {}
+
+TEST_F(NWebImplTest, OnConfirmDialogByJS002) {
+  std::string extensionId = "123456";
+  std::string url = "//xxxx:xxx/yyy/sss.html";
+  std::string message = "test";
+  bool suppress_message = true;
+  nweb_impl_->on_off_screen_confirm_callback_ =
+      OffscreenDocumentConfirmCallback;
+  nweb_impl_->OnConfirmDialogByJS(extensionId, url, message, nullptr,
+                                  suppress_message);
+  EXPECT_EQ(suppress_message, false);
+}
+
+TEST_F(NWebImplTest, OnPromptDialogByJS001) {
+  std::string extensionId = "123456";
+  std::string url = "//xxxx:xxx/yyy/sss.html";
+  std::string message = "test";
+  std::string value = "input";
+  bool suppress_message = false;
+  nweb_impl_->OnPromptDialogByJS(extensionId, url, message, value, nullptr,
+                                 suppress_message);
+  EXPECT_EQ(nweb_impl_->on_off_screen_prompt_callback_, nullptr);
+}
+
+void OffscreenDocumentConfirmCallback(const char* extensionId,
+                                      const char* url,
+                                      const char* message,
+                                      const char* value,
+                                      const int requestId) {}
+
+TEST_F(NWebImplTest, OnPromptDialogByJS002) {
+  std::string extensionId = "123456";
+  std::string url = "//xxxx:xxx/yyy/sss.html";
+  std::string message = "test";
+  std::string value = "input";
+  bool suppress_message = true;
+  nweb_impl_->on_off_screen_prompt_callback_ = OffscreenDocumentConfirmCallback;
+  nweb_impl_->OnPromptDialogByJS(extensionId, url, message, value, nullptr,
+                                 suppress_message);
+  EXPECT_EQ(suppress_message, false);
+}
+
+TEST_F(NWebImplTest, SetOnOffscreenDocumentAlertCallback001) {
+  nweb_impl_->SetOnOffscreenDocumentAlertCallback(nullptr);
+  EXPECT_EQ(nweb_impl_->on_off_screen_alert_callback_, nullptr);
+}
+
+TEST_F(NWebImplTest, SetOnOffscreenDocumentConfirmCallback001) {
+  nweb_impl_->SetOnOffscreenDocumentConfirmCallback(nullptr);
+  EXPECT_EQ(nweb_impl_->on_off_screen_confirm_callback_, nullptr);
+}
+
+TEST_F(NWebImplTest, SetOnOffscreenDocumentPromptCallback001) {
+  nweb_impl_->SetOnOffscreenDocumentPromptCallback(nullptr);
+  EXPECT_EQ(nweb_impl_->on_off_screen_prompt_callback_, nullptr);
+}
+
+TEST_F(NWebImplTest, AlertHandle001) {
+  int requestId = 0;
+  nweb_impl_->AlertHandle(requestId);
+  EXPECT_EQ(nweb_impl_->on_off_screen_alert_callback_, nullptr);
+}
+
+TEST_F(NWebImplTest, ConfirmHandle001) {
+  bool type = false;
+  int requestId = 0;
+  nweb_impl_->ConfirmHandle(type, requestId);
+  EXPECT_EQ(nweb_impl_->on_off_screen_confirm_callback_, nullptr);
+}
+
+TEST_F(NWebImplTest, PromptHandle001) {
+  bool type = false;
+  std::string value = "input";
+  int requestId = 0;
+  nweb_impl_->PromptHandle(type, value, requestId);
+  EXPECT_EQ(nweb_impl_->on_off_screen_prompt_callback_, nullptr);
+}
+
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)

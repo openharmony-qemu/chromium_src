@@ -113,7 +113,7 @@ class ArkwebDisplayUtils {
 #endif  // ARKWEB_MAXIMIZE_RESIZE
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-  GpuServiceImpl* gpu_service_impl_ {nullptr};
+  raw_ptr<GpuServiceImpl> gpu_service_impl_ {nullptr};
   uint32_t client_id_ = 0;
 #endif
   base::WeakPtrFactory<ArkwebDisplayUtils> weak_factory_{this};

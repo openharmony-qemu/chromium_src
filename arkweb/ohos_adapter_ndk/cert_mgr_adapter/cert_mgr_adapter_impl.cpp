@@ -65,113 +65,56 @@ using OHHuksCloseRemoteHandle = struct OH_Huks_Result (*)(const struct OH_Huks_B
 using OHHuksGetUkeyPinAuthState = struct OH_Huks_Result (*)(const struct OH_Huks_Blob *index,
                                                             const struct OH_Huks_ExternalCryptoParamSet *paramSetIn,
                                                             bool *stateOut);
+
+OHCertManagerGetUkeyCertificate certManagerGetUkeyCertificate = nullptr;
+OHCertManagerFreeUkeyCertificate certManagerFreeUkeyCertificate = nullptr;
+OHHuksInitExtParamSet huksInitExtParamSet = nullptr;
+OHHuksAddExtParams huksAddExtParams = nullptr;
+OHHuksBuildExtParamSet huksBuildExtParamSet = nullptr;
+OHHuksFreeExtParamSet huksFreeExtParamSet = nullptr;
+OHHuksOpenRemoteHandle huksOpenRemoteHandle = nullptr;
+OHHuksCloseRemoteHandle huksCloseRemoteHandle = nullptr;
+OHHuksGetUkeyPinAuthState huksGetUkeyPinAuthState = nullptr;
  
-OHCertManagerGetUkeyCertificate GetOHCertManagerGetUkeyCertificate() {
+void InitDlopenFun() {
+  static std::once_flag initFlag;
+std::call_once(initFlag, [](){
 #if defined(ARCH_CPU_ARM64)
-  base::FilePath file("system/lib64/libcm_ndk.z.so");
+  base::FilePath cmFile("system/lib64/libcm_ndk.z.so");
 #else
-  base::FilePath file("system/lib/libcm_ndk.z.so");
+  base::FilePath cmFile("system/lib/libcm_ndk.z.so");
 #endif
-  void* dl = dlopen(file.value().c_str(), RTLD_NOW);
-  return dl == nullptr ? nullptr
-                       : reinterpret_cast<OHCertManagerGetUkeyCertificate>(dlsym(
-                             dl, "OH_CertManager_GetUkeyCertificate"));
-}
- 
-OHCertManagerFreeUkeyCertificate GetOHCertManagerFreeUkeyCertificate() {
+  void* dl = dlopen(cmFile.value().c_str(), RTLD_NOW);
+  if (dl) {
+    certManagerGetUkeyCertificate = reinterpret_cast<OHCertManagerGetUkeyCertificate>(dlsym(
+                                                        dl, "OH_CertManager_GetUkeyCertificate"));
+    certManagerFreeUkeyCertificate = reinterpret_cast<OHCertManagerFreeUkeyCertificate>(dlsym(
+                                                        dl, "OH_CertManager_FreeUkeyCertificate"));
+  }
+
 #if defined(ARCH_CPU_ARM64)
-  base::FilePath file("system/lib64/libcm_ndk.z.so");
+  base::FilePath huksFile("system/lib64/libhuks_external_ndk.z.so");
 #else
-  base::FilePath file("system/lib/libcm_ndk.z.so");
+  base::FilePath huksFile("system/lib/libhuks_external_ndk.z.so");
 #endif
-  void* dl = dlopen(file.value().c_str(), RTLD_NOW);
-  return dl == nullptr ? nullptr
-                       : reinterpret_cast<OHCertManagerFreeUkeyCertificate>(dlsym(
-                             dl, "OH_CertManager_FreeUkeyCertificate"));
-}
- 
-OHHuksInitExtParamSet GetOHHuksInitExtParamSet() {
-#if defined(ARCH_CPU_ARM64)
-  base::FilePath file("system/lib64/libhuks_external_ndk.z.so");
-#else
-  base::FilePath file("system/lib/libhuks_external_ndk.z.so");
-#endif
-  void* dl = dlopen(file.value().c_str(), RTLD_NOW);
-  return dl == nullptr ? nullptr
-                       : reinterpret_cast<OHHuksInitExtParamSet>(dlsym(
-                             dl, "OH_Huks_InitExtParamSet"));
-}
- 
-OHHuksAddExtParams GetOHHuksAddExtParams() {
-#if defined(ARCH_CPU_ARM64)
-  base::FilePath file("system/lib64/libhuks_external_ndk.z.so");
-#else
-  base::FilePath file("system/lib/libhuks_external_ndk.z.so");
-#endif
-  void* dl = dlopen(file.value().c_str(), RTLD_NOW);
-  return dl == nullptr ? nullptr
-                       : reinterpret_cast<OHHuksAddExtParams>(dlsym(
-                             dl, "OH_Huks_AddExtParams"));
-}
- 
-OHHuksBuildExtParamSet GetOHHuksBuildExtParamSet() {
-#if defined(ARCH_CPU_ARM64)
-  base::FilePath file("system/lib64/libhuks_external_ndk.z.so");
-#else
-  base::FilePath file("system/lib/libhuks_external_ndk.z.so");
-#endif
-  void* dl = dlopen(file.value().c_str(), RTLD_NOW);
-  return dl == nullptr ? nullptr
-                       : reinterpret_cast<OHHuksBuildExtParamSet>(dlsym(
-                             dl, "OH_Huks_BuildExtParamSet"));
-}
- 
-OHHuksFreeExtParamSet GetOHHuksFreeExtParamSet() {
-#if defined(ARCH_CPU_ARM64)
-  base::FilePath file("system/lib64/libhuks_external_ndk.z.so");
-#else
-  base::FilePath file("system/lib/libhuks_external_ndk.z.so");
-#endif
-  void* dl = dlopen(file.value().c_str(), RTLD_NOW);
-  return dl == nullptr ? nullptr
-                       : reinterpret_cast<OHHuksFreeExtParamSet>(dlsym(
-                             dl, "OH_Huks_FreeExtParamSet"));
-}
- 
-OHHuksOpenRemoteHandle GetOHHuksOpenRemoteHandle() {
-#if defined(ARCH_CPU_ARM64)
-  base::FilePath file("system/lib64/libhuks_external_ndk.z.so");
-#else
-  base::FilePath file("system/lib/libhuks_external_ndk.z.so");
-#endif
-  void* dl = dlopen(file.value().c_str(), RTLD_NOW);
-  return dl == nullptr ? nullptr
-                       : reinterpret_cast<OHHuksOpenRemoteHandle>(dlsym(
-                             dl, "OH_Huks_OpenRemoteHandle"));
-}
- 
-OHHuksCloseRemoteHandle GetOHHuksCloseRemoteHandle() {
-#if defined(ARCH_CPU_ARM64)
-  base::FilePath file("system/lib64/libhuks_external_ndk.z.so");
-#else
-  base::FilePath file("system/lib/libhuks_external_ndk.z.so");
-#endif
-  void* dl = dlopen(file.value().c_str(), RTLD_NOW);
-  return dl == nullptr ? nullptr
-                       : reinterpret_cast<OHHuksCloseRemoteHandle>(dlsym(
-                             dl, "OH_Huks_CloseRemoteHandle"));
-}
- 
-OHHuksGetUkeyPinAuthState GetOHHuksGetUkeyPinAuthState() {
-#if defined(ARCH_CPU_ARM64)
-  base::FilePath file("system/lib64/libhuks_external_ndk.z.so");
-#else
-  base::FilePath file("system/lib/libhuks_external_ndk.z.so");
-#endif
-  void* dl = dlopen(file.value().c_str(), RTLD_NOW);
-  return dl == nullptr ? nullptr
-                       : reinterpret_cast<OHHuksGetUkeyPinAuthState>(dlsym(
-                             dl, "OH_Huks_GetUkeyPinAuthState"));
+  dl = dlopen(huksFile.value().c_str(), RTLD_NOW);
+  if (dl) {
+    huksInitExtParamSet = reinterpret_cast<OHHuksInitExtParamSet>(dlsym(
+                                                        dl, "OH_Huks_InitExtParamSet"));
+    huksAddExtParams = reinterpret_cast<OHHuksAddExtParams>(dlsym(
+                                                        dl, "OH_Huks_AddExtParams"));
+    huksBuildExtParamSet = reinterpret_cast<OHHuksBuildExtParamSet>(dlsym(
+                                                        dl, "OH_Huks_BuildExtParamSet"));
+    huksFreeExtParamSet = reinterpret_cast<OHHuksFreeExtParamSet>(dlsym(
+                                                        dl, "OH_Huks_FreeExtParamSet"));
+    huksOpenRemoteHandle = reinterpret_cast<OHHuksOpenRemoteHandle>(dlsym(
+                                                        dl, "OH_Huks_OpenRemoteHandle"));
+    huksCloseRemoteHandle = reinterpret_cast<OHHuksCloseRemoteHandle>(dlsym(
+                                                        dl, "OH_Huks_CloseRemoteHandle"));
+    huksGetUkeyPinAuthState = reinterpret_cast<OHHuksGetUkeyPinAuthState>(dlsym(
+                                                        dl, "OH_Huks_GetUkeyPinAuthState"));
+  }
+});
 }
  
 OH_Huks_Result InitParamSet(
@@ -278,6 +221,10 @@ bool GetHuksSignatureSpec(uint16_t algorithm, HuksSignatureSpec& result)
             return false;
     }
 }
+}
+
+CertManagerAdapterImpl::CertManagerAdapterImpl() {
+    InitDlopenFun();
 }
 
 uint32_t CertManagerAdapterImpl::GetCertMaxSize()

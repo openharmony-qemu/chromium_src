@@ -754,6 +754,9 @@ class NWebHandlerDelegate : public ArkWebClientExt,
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   void OnFrameCreated(CefRefPtr<CefBrowser> browser,
                       CefRefPtr<CefFrame> frame) override;
+
+  void OnFrameDetached(CefRefPtr<CefBrowser> browser,
+                       CefRefPtr<CefFrame> frame) override;
 #endif
   /* CefFrameHandler methods end */
 

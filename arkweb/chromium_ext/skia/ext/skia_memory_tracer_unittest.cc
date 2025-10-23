@@ -18,6 +18,7 @@
 #undef private
 
 namespace skia {
+constexpr uint32_t MEMUNIT_RATE = 1024;
 
 class SkiaMemoryTracerTest : public testing::Test {
 protected:
@@ -141,5 +142,83 @@ TEST_F(SkiaMemoryTracerTest, test020) {
     EXPECT_TRUE(tracer.shouldDumpWrappedObjects());
 }
 
+TEST_F(SkiaMemoryTracerTest, test021) {
+    SkiaMemoryTracer tracer(resourceMap_, false);
+    tracer.currentValues_.emplace("purgeable_size",
+        SkiaMemoryTracer::TraceValue("bytes", 1));
+    tracer.ProcessPurgeableSize();
+    EXPECT_NE(tracer.purgeableSize_.count, 0);
+}
+
+TEST_F(SkiaMemoryTracerTest, test022) {
+    SkiaMemoryTracer tracer(resourceMap_, false);
+    std::string result = tracer.ProcessType();
+    EXPECT_EQ(result, "");
+    SkiaMemoryTracer tracer1(resourceMap_, true);
+    result = tracer1.ProcessType();
+    EXPECT_EQ(result, "Other");
+    tracer1.currentValues_.emplace("type",
+        SkiaMemoryTracer::TraceValue("bytes", 1));
+    result = tracer1.ProcessType();
+    EXPECT_EQ(result, "bytes");
+}
+
+TEST_F(SkiaMemoryTracerTest, test023) {
+    SkiaMemoryTracer tracer(resourceMap_, false);
+    tracer.categoryKey_ = "category_key";
+    tracer.currentElement_.clear();
+    auto result1 = tracer.ProcessResourceName();
+    tracer.currentValues_.emplace("category_key",
+        SkiaMemoryTracer::TraceValue("bytes", 1));
+    auto result2 = tracer.ProcessResourceName();
+    EXPECT_NE(result1, result2);
+}
+
+TEST_F(SkiaMemoryTracerTest, test024) {
+    SkiaMemoryTracer tracer(resourceMap_, false);
+    const char* resourceName = "resource_name";
+    std::string key = "key";
+    tracer.currentValues_.emplace("size",
+        SkiaMemoryTracer::TraceValue("bytes", 1));
+    std::unordered_map<std::string, SkiaMemoryTracer::TraceValue> values;
+    values.emplace(key,
+        SkiaMemoryTracer::TraceValue("KB", 1));
+    tracer.results_.emplace("resource_name", values);
+    tracer.ProcessResults(resourceName, key);
+    values.clear();
+    values.emplace(key,
+        SkiaMemoryTracer::TraceValue("bytes", 1));
+    tracer.results_.clear();
+    tracer.results_.emplace("resource_name", values);
+    tracer.ProcessResults(resourceName, key);
+    auto result = tracer.results_.find(resourceName);
+    auto& resourceValues = result->second;
+    auto typeResult = resourceValues.find(key);
+    EXPECT_NE(typeResult->second.count, 1);
+}
+
+TEST_F(SkiaMemoryTracerTest, test025) {
+    SkiaMemoryTracer tracer(resourceMap_, false);
+    SkiaMemoryTracer::TraceValue value{"bytes", MEMUNIT_RATE * MEMUNIT_RATE};
+    auto result = tracer.ConvertToMB(value);
+    EXPECT_EQ(result, 1);
+    value.units = "KB";
+    result = tracer.ConvertToMB(value);
+    EXPECT_EQ(result, MEMUNIT_RATE);
+    value.units = "MB";
+    result = tracer.ConvertToMB(value);
+    EXPECT_EQ(result, MEMUNIT_RATE * MEMUNIT_RATE);
+}
+
+TEST_F(SkiaMemoryTracerTest, test026) {
+    SkiaMemoryTracer tracer(resourceMap_, true);
+    tracer.currentElement_ = "size";
+    tracer.categoryKey_ = "size";
+    tracer.currentValues_.emplace("size",
+        SkiaMemoryTracer::TraceValue("bytes", 1));
+    tracer.ProcessElement();
+    EXPECT_TRUE(tracer.currentElement_.empty());
+    EXPECT_TRUE(tracer.currentValues_.empty());
+}
 
 } // namespace skia

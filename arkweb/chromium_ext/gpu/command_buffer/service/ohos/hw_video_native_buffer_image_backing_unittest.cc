@@ -45,6 +45,7 @@
 #include "third_party/dawn/include/dawn/dawn_proc.h"
 #include "third_party/skia/include/gpu/ganesh/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/ganesh/GrBackendSemaphore.h"
+#include "third_party/skia/include/gpu/MutableTextureState.h"
 #include "ui/gl/gl_bindings.h"
 #include "ui/gl/gl_context.h"
 #include "ui/gl/gl_surface.h"
@@ -53,6 +54,7 @@
 #include "ui/gl/test/gl_surface_test_support.h"
 #include "ui/gl/test/gl_test_support.h"
 #include "gpu/config/gpu_finch_features.h"
+#include <sys/eventfd.h>
 
 using namespace gpu;
 using testing::_;
@@ -231,5 +233,42 @@ TEST_F(HwVideoNativeBufferImageBackingTest, GLTextureVideoImageRepresentation_Be
         .WillOnce(Return(testing::ByMove(std::move(mock_native_buffer))));
     bool result = representation->BeginAccess(GL_SHARED_IMAGE_ACCESS_MODE_READ_CHROMIUM);
     EXPECT_TRUE(result);
+}
+
+TEST_F(HwVideoNativeBufferImageBackingTest, GLTextureVideoImageRepresentation_BeginAccess_Success002)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .WillOnce(Return(true));
+    SharedImageManager manager;
+    std::unique_ptr<GLTextureImageRepresentation> representation =
+        backing_->ProduceGLTexture(&manager, tracker_.get());
+    int efd = eventfd(1, 0);
+    ASSERT_NE(efd, -1);
+    auto mock_native_buffer = std::make_unique<MockScopedNativeBufferFenceSync>(
+        ScopedNativeBufferHandle(),
+        base::ScopedFD(efd)
+    );
+    EXPECT_CALL(*stream_texture_sii_, GetNativeBuffer())
+        .WillOnce(Return(testing::ByMove(std::move(mock_native_buffer))));
+    bool result = representation->BeginAccess(GL_SHARED_IMAGE_ACCESS_MODE_READ_CHROMIUM);
+    EXPECT_TRUE(result);
+}
+
+TEST_F(HwVideoNativeBufferImageBackingTest, BeginReadAccess_Fail)
+{
+    EXPECT_CALL(*stream_texture_sii_, HasTextureOwner())
+        .WillOnce(Return(true));
+    SharedImageManager manager;
+    std::unique_ptr<SkiaGaneshImageRepresentation> representation =
+        backing_->ProduceSkiaGanesh(&manager, tracker_.get(), context_state_);
+    EXPECT_NE(representation, nullptr);
+    std::vector<GrBackendSemaphore> begin_semaphores;
+    std::vector<GrBackendSemaphore> end_semaphores;
+    std::unique_ptr<skgpu::MutableTextureState> end_state;
+    EXPECT_CALL(*stream_texture_sii_, GetNativeBuffer())
+        .WillOnce(Return(nullptr));
+    auto result = representation->BeginReadAccess(
+        &begin_semaphores, &end_semaphores, &end_state);
+    EXPECT_TRUE(result.empty());
 }
 }  // namespace gpu

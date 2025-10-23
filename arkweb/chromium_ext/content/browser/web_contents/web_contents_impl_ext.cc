@@ -1174,6 +1174,10 @@ void WebContentsImplExt::OnIsPageDistillable(int page_type,
     delegate_->OnIsPageDistillable(page_type, distillable_page_url, title);
   }
 }
+
+bool WebContentsImplExt::IsDistillerPageWebContents() {
+  return SharedRenderProcessToken() == "0xAAAAAA";
+}
 #endif // ARKWEB_READER_MODE
 
 #if BUILDFLAG(ARKWEB_BGTASK)

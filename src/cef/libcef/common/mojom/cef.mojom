@@ -13,7 +13,10 @@ import "third_party/blink/public/mojom/loader/referrer.mojom";
 import "third_party/blink/public/mojom/tokens/tokens.mojom";
 import "ui/gfx/geometry/mojom/geometry.mojom";
 import "url/mojom/url.mojom";
+import "mojo/public/mojom/base/time.mojom";
 
+[EnableIf=arkweb_clipboard]
+import "skia/public/mojom/bitmap.mojom";
 // Structure passed to UpdateDraggableRegions().
 struct DraggableRegionEntry {
   gfx.mojom.Rect bounds;
@@ -48,11 +51,39 @@ struct RequestParams {
   network.mojom.URLRequestBody? upload_data;
 };
 
+[EnableIf=is_ohos]
+struct HitEventParams {
+  float x;
+  float y;
+  int32 width;
+  int32 height;
+};
+ 
+[EnableIf=is_ohos]
+struct HitDataParams {
+  int32 type;
+  string extra_data_for_type;
+  mojo_base.mojom.String16 href;
+  mojo_base.mojom.String16 anchor_text;
+  url.mojom.Url img_src;
+};
+
+[EnableIf=arkweb_clipboard]
+struct GetImageForContextNodeParams {
+  int32 width;
+  int32 height;
+  string image_extension;
+  skia.mojom.BitmapN32 image;
+};
+
 // Interface for communicating with a frame in the renderer process.
 interface RenderFrame {
   // Browser process has received the FrameAttached() message.
   // |allow| will be false if we don't want to attach the frame.
   FrameAttachedAck(bool allow);
+
+  // Browser process has intentionally detached.
+  FrameDetached();
 
   // Send a message to the render process.
   SendMessage(string name, mojo_base.mojom.ListValue arguments);
@@ -82,6 +113,87 @@ interface RenderFrame {
   // Move or resize of the renderer's containing window has started. Used on
   // Windows and Linux with the Alloy runtime.
   MoveOrResizeStarted();
+
+  [EnableIf=is_ohos]
+  SendHitEvent(HitEventParams params);
+
+  [EnableIf=is_arkweb]
+  PutZoomingForTextFactor(float factor);
+
+  [EnableIf=arkweb_media]
+  GetImagesWithResponse() => (bool response);
+
+  [EnableIf=arkweb_input_events]
+  SetInitialScale(float initialScale);
+
+  [EnableIf=arkweb_terminate_render]
+  TerminateRenderProcess();
+
+  [EnableIf=arkweb_input_events]
+  ScrollToWithAnime(float x, float y, int32 duration);
+
+  [EnableIf=arkweb_input_events]
+  ScrollByWithAnime(float delta_x, float delta_y, int32 duration);
+
+  [EnableIf=arkweb_scrollbar]
+  UpdatePixelRatio(float ratio);
+
+  [EnableIf=arkweb_performance_scheduling]
+  SetIsFling(bool is_fling);
+
+// Adjusts the javascript 'online' property value.
+  [EnableIf=arkweb_network_conninfo]
+  SetJsOnlineProperty(bool network_up);
+  
+  [EnableIf=is_arkweb]
+  SetScrollable(bool enable);
+
+  [EnableIf=is_ohos]
+  UpdateDrawRect();
+   
+// #if defined(OHOS_INPUT_EVENTS)
+  [EnableIf=is_ohos]
+  ScrollTo(float x, float y);
+ 
+  [EnableIf=is_ohos]
+  ScrollBy(float delta_x, float delta_y);
+ 
+  [EnableIf=is_ohos]
+  SlideScroll(float vx, float vy);
+ 
+  [EnableIf=is_ohos]
+  ZoomBy(float delta, float width, float height);
+ 
+  [EnableIf=arkweb_input_events, Sync]
+  GetHitData() => (int32 type, string extra_data);
+
+  [EnableIf=arkweb_input_events, Sync]
+  SetFocusByPosition(float x, float y) => (bool isEditable);
+
+  [EnableIf=arkweb_clipboard]
+  GetImageForContextNode(int32 command_id);
+// #endif  // defined(OHOS_INPUT_EVENTS)
+
+  [EnableIf=is_arkweb]
+  ScrollPageUpDown(bool is_up, bool move_half, float view_height);
+
+  [EnableIf=arkweb_get_scroll_offset, Sync]
+  GetScrollOffset() => (float offset_x, float offset_y);
+
+  [EnableIf=is_arkweb]
+  SetOverscrollMode(int32 mode);
+
+  [EnableIf=arkweb_optimize_parser_budget]
+  SetOptimizeParserBudgetEnabled(bool enable);
+
+  [EnableIf=arkweb_get_scroll_offset, Sync]
+  GetOverScrollOffset() => (float offset_x, float offset_y);
+
+  [EnableIf=arkweb_network_base]
+  RemoveCache();
+
+  [EnableIf=arkweb_blank_optimize]
+  SendBlanklessKeyToRenderFrame(uint32 nweb_id, uint64 blankless_key, uint64 frame_sink_id, int64 pref_hash);
 };
 
 // Interface for communicating with a frame in the browser process.
@@ -98,6 +210,32 @@ interface BrowserFrame {
 
   // Draggable regions have updated.
   UpdateDraggableRegions(array<DraggableRegionEntry>? regions);
+
+  [EnableIf=arkweb_clipboard]
+  OnGetImageForContextNode(GetImageForContextNodeParams params, int32 command_id);
+  
+  [EnableIf=arkweb_clipboard]
+  OnGetImageForContextNodeNull(int32 command_id);
+
+  // Give the application a chance to decide whether to override loading the url.
+  [EnableIf=is_arkweb, Sync]
+  ShouldOverrideUrlLoading(string url,
+                           string request_method,
+                           bool user_gesture,
+                           bool is_redirect,
+                           bool is_outermost_main_frame) => (bool result);
+
+  [EnableIf=is_ohos]
+  UpdateHitTestData(int32 type, string extra_data);
+
+  [EnableIf=arkweb_error_page, Sync]
+  OverrideErrorPage(string url,
+                    string request_method,
+                    bool user_gesture,
+                    bool is_redirect,
+                    bool is_outermost_main_frame,
+                    int32 error_code,
+                    string error_text) => (string result);
 };
 
 struct CrossOriginWhiteListEntry {
@@ -125,6 +263,14 @@ struct NewBrowserInfo {
   bool is_excluded;
   NewBrowserConfig? config;
   mojo_base.mojom.DictionaryValue? extra_info;
+};
+
+[EnableIf=arkweb_resource_interception]
+interface ReportManager {
+  ReportKeyThread(int32 status, int32 process_id, int32 thread_id, int32 role);
+  AddRtg(array<int32> tids);
+  FetchBegin();
+  FetchEnd();
 };
 
 // Interface for communicating with browser management in the browser process.

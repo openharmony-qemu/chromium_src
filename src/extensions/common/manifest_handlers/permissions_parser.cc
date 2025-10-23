@@ -60,7 +60,11 @@ bool CanSpecifyHostPermission(const Extension* extension,
                               const URLPattern& pattern,
                               const APIPermissionSet& permissions) {
   if (!pattern.match_all_urls() &&
-      pattern.MatchesScheme(content::kChromeUIScheme)) {
+      (pattern.MatchesScheme(content::kChromeUIScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+       || pattern.MatchesScheme(content::kArkWebUIScheme)
+#endif
+           )) {
     URLPatternSet chrome_scheme_hosts =
         ExtensionsClient::Get()->GetPermittedChromeSchemeHosts(extension,
                                                                permissions);
@@ -161,6 +165,9 @@ void ParseHostPermissions(Extension* extension,
       }
 
       if (pattern.scheme() != content::kChromeUIScheme &&
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+          pattern.scheme() != content::kArkWebUIScheme &&
+#endif
           !all_urls_includes_chrome_urls) {
         // Keep chrome:// in allowed schemes only if it's explicitly requested
         // or been granted by extension ID. If the extensions_on_chrome_urls

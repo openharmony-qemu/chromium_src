@@ -10,6 +10,7 @@
 #include <memory>
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/raw_ptr_exclusion.h"
 #include "base/memory/scoped_refptr.h"
@@ -103,7 +104,12 @@ enum class SharedImageBackingType {
   kDCompSurface = 16,
   kDXGISwapChain = 17,
   kWrappedGraphiteTexture = 18,
+#if BUILDFLAG(ARKWEB_VULKAN)
+  kOHOSNativeBuffer = 19,
+  kMaxValue = kOHOSNativeBuffer
+#else
   kMaxValue = kWrappedGraphiteTexture
+#endif
 };
 
 #if BUILDFLAG(IS_WIN)

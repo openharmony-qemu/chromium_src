@@ -118,6 +118,10 @@
 #include "third_party/blink/renderer/modules/remote_objects/remote_object_gateway_impl.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+#include "third_party/blink/renderer/core/loader/native_loader.h"
+#endif
+
 namespace blink {
 namespace {
 
@@ -351,6 +355,16 @@ std::unique_ptr<WebMediaPlayer> ModulesInitializer::CreateWebMediaPlayer(
       frame_widget->GetLayerTreeSettings(),
       base::ThreadPool::CreateTaskRunner(base::TaskTraits{}));
 }
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+std::unique_ptr<WebNativeBridge> ModulesInitializer::CreateWebNativeBridge(
+    WebLocalFrameClient* web_frame_client,
+    NativeLoader& html_native_element,
+    WebNativeClient* web_native_client) const {
+  return base::WrapUnique(
+      web_frame_client->AsWebLocalFrameClientExt()->CreateWebNativeBridge(web_native_client));
+}
+#endif
 
 RemotePlaybackClient* ModulesInitializer::CreateRemotePlaybackClient(
     HTMLMediaElement& html_media_element) const {

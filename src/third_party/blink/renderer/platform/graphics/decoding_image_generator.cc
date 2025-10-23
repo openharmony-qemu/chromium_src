@@ -29,6 +29,7 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/heap_array.h"
 #include "third_party/blink/public/platform/platform.h"
 #include "third_party/blink/renderer/platform/graphics/image_frame_generator.h"
@@ -71,7 +72,10 @@ DecodingImageGenerator::CreateAsSkImageGenerator(sk_sp<SkData> data) {
   std::unique_ptr<ImageDecoder> decoder = ImageDecoder::Create(
       segment_reader, data_complete, ImageDecoder::kAlphaPremultiplied,
       ImageDecoder::kDefaultBitDepth, ColorBehavior::kTag,
-      cc::AuxImage::kDefault, Platform::GetMaxDecodedImageBytes());
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      cc::AuxImage::kDefault,
+#endif
+      Platform::GetMaxDecodedImageBytes());
   if (!decoder || !decoder->IsSizeAvailable())
     return nullptr;
 
@@ -80,9 +84,12 @@ DecodingImageGenerator::CreateAsSkImageGenerator(sk_sp<SkData> data) {
       SkImageInfo::MakeN32(size.width(), size.height(), kPremul_SkAlphaType,
                            decoder->ColorSpaceForSkImages());
 
-  scoped_refptr<ImageFrameGenerator> frame = ImageFrameGenerator::Create(
-      SkISize::Make(size.width(), size.height()), false,
-      decoder->GetColorBehavior(), cc::AuxImage::kDefault,
+  scoped_refptr<ImageFrameGenerator> frame =
+      ImageFrameGenerator::Create(SkISize::Make(size.width(), size.height()),
+                                  false, decoder->GetColorBehavior(),
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+                                  cc::AuxImage::kDefault,
+#endif
       decoder->GetSupportedDecodeSizes());
   if (!frame)
     return nullptr;

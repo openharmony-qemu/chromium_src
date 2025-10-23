@@ -354,9 +354,17 @@ std::unique_ptr<Call> PeerConnectionFactory::CreateCall_w(
   FieldTrialParameter<DataRate> min_bandwidth("min",
                                               DataRate::KilobitsPerSec(30));
   FieldTrialParameter<DataRate> start_bandwidth("start",
+#if BUILDFLAG(ARKWEB_MEDIA)
+                                                DataRate::KilobitsPerSec(2000));
+#else
                                                 DataRate::KilobitsPerSec(300));
+#endif
   FieldTrialParameter<DataRate> max_bandwidth("max",
+#if BUILDFLAG(ARKWEB_MEDIA)
+                                              DataRate::KilobitsPerSec(4000));
+#else
                                               DataRate::KilobitsPerSec(2000));
+#endif
   ParseFieldTrial({&min_bandwidth, &start_bandwidth, &max_bandwidth},
                   env.field_trials().Lookup("WebRTC-PcFactoryDefaultBitrates"));
 

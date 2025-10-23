@@ -228,6 +228,23 @@ bool IsResourceLoadAllowed(PreloadHelper::LoadLinksFromHeaderMode mode,
   }
 }
 
+bool IsSubresourceLoad(PreloadHelper::LoadLinksFromHeaderMode mode) {
+  switch (mode) {
+    case PreloadHelper::LoadLinksFromHeaderMode::kDocumentBeforeCommit:
+    case PreloadHelper::LoadLinksFromHeaderMode::
+        kDocumentAfterCommitWithoutViewport:
+    case PreloadHelper::LoadLinksFromHeaderMode::
+        kDocumentAfterCommitWithViewport:
+    case PreloadHelper::LoadLinksFromHeaderMode::kDocumentAfterLoadCompleted:
+      return false;
+    case PreloadHelper::LoadLinksFromHeaderMode::kSubresourceFromMemoryCache:
+    case PreloadHelper::LoadLinksFromHeaderMode::kSubresourceNotFromMemoryCache:
+      return true;
+    default:
+      NOTREACHED();
+  }
+}
+
 bool IsCompressionDictionaryLoadAllowed(
     PreloadHelper::LoadLinksFromHeaderMode mode) {
   // Document header can trigger dictionary load after the page load completes.
@@ -248,23 +265,6 @@ bool IsCompressionDictionaryLoadAllowed(
       return false;
     case PreloadHelper::LoadLinksFromHeaderMode::kSubresourceNotFromMemoryCache:
       return true;
-  }
-}
-
-bool IsSubresourceLoad(PreloadHelper::LoadLinksFromHeaderMode mode) {
-  switch (mode) {
-    case PreloadHelper::LoadLinksFromHeaderMode::kDocumentBeforeCommit:
-    case PreloadHelper::LoadLinksFromHeaderMode::
-        kDocumentAfterCommitWithoutViewport:
-    case PreloadHelper::LoadLinksFromHeaderMode::
-        kDocumentAfterCommitWithViewport:
-    case PreloadHelper::LoadLinksFromHeaderMode::kDocumentAfterLoadCompleted:
-      return false;
-    case PreloadHelper::LoadLinksFromHeaderMode::kSubresourceFromMemoryCache:
-    case PreloadHelper::LoadLinksFromHeaderMode::kSubresourceNotFromMemoryCache:
-      return true;
-    default:
-      NOTREACHED();
   }
 }
 

@@ -13,6 +13,10 @@ import("//services/screen_ai/buildflags/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//third_party/webrtc/webrtc.gni")
 import("//tools/ipc_fuzzer/ipc_fuzzer.gni")
+import("//arkweb/build/features/features.gni")
+if (enable_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
 
 if (is_component_build) {
   link_target_type = "source_set"
@@ -30,6 +34,15 @@ target(link_target_type, "renderer") {
     "//content/public/renderer:renderer_sources",
     "//media/mojo/clients:unit_tests",
   ]
+
+  if (use_libfuzzer) {
+    configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
+    configs += [ "//build/config/gcc:symbol_visibility_default" ]
+  }
+
+  if(arkweb_unittests){
+    visibility += ["//gpu:gpu_unittests",]
+  }
 
   sources = [
     "accessibility/annotations/ax_annotator.h",
@@ -323,6 +336,29 @@ target(link_target_type, "renderer") {
   ]
   allow_circular_includes_from = []
 
+  if (is_arkweb) {
+    include_dirs = ohos_src_includes
+
+    deps += [
+      "//ohos_glue:ohos_adapter_glue_source",
+      "//base:base_static",
+    ]
+
+    if (arkweb_crashpad) {
+      deps += [
+        "//arkweb/chromium_ext/content/browser/dfx:memory_monitor_render",
+        "//arkweb/chromium_ext/content/browser/dfx:appfreeze_monitor",
+      ]
+    }
+
+    sources += arkweb_content_renderer_sources
+    sources += arkweb_content_render_sources
+
+    sources += [
+      "renderer_main_platform_delegate_linux.cc",
+    ]
+  }
+
   if (is_android) {
     deps += [
       # Used by Android WebView only.
@@ -408,7 +444,7 @@ target(link_target_type, "renderer") {
     deps += [ "//third_party:freetype_buildflags" ]
   }
 
-  if (is_linux || is_chromeos || is_android) {
+  if (is_linux || is_chromeos || is_android || is_ohos) {
     deps += [ "//sandbox:sandbox_buildflags" ]
   }
 
@@ -458,7 +494,7 @@ group("for_content_tests") {
     "//content/web_test:web_test_renderer_public_deps",
   ]
 
-  if (!is_component_build) {
+  if (!is_component_build || arkweb_test) {
     public_deps = [ ":renderer" ]
   }
 }

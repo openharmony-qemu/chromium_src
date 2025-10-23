@@ -5,6 +5,10 @@
 import("//build/config/features.gni")
 import("//mojo/public/tools/bindings/mojom.gni")
 
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
 # On android, BatteryManager mojo interface is implemented directly in Java.
 if (!is_android) {
   source_set("battery") {
@@ -66,6 +70,11 @@ if (!is_android) {
         "CoreFoundation.framework",
         "IOKit.framework",
       ]
+    } else if (is_arkweb) {
+      deps += [
+        "//ohos/adapter:adapter",
+      ]
+      sources += arkweb_battery_sources
     } else {
       sources += [ "battery_status_manager_default.cc" ]
     }

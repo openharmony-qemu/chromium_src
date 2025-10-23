@@ -9,6 +9,13 @@
 import("//build/config/linux/gtk/gtk.gni")
 import("//build/config/ui.gni")
 import("../../webrtc.gni")
+if (is_ohos) {
+  import("//build/config/ohos/config.gni")
+}
+
+if(is_arkweb) {
+  import("//arkweb/build/features/features.gni")
+}
 
 use_desktop_capture_differ_sse2 = current_cpu == "x86" || current_cpu == "x64"
 
@@ -416,7 +423,46 @@ rtc_library("desktop_capture") {
     ]
   }
 
-  if (!is_win && !is_mac && !rtc_use_x11_extensions && !rtc_use_pipewire &&
+  if (is_ohos) {
+    sources += [
+      "mouse_cursor_monitor_null.cc",
+      "ohos/capturer_event_callback.h",
+      "ohos/desktop_capture_frame.cc",
+      "ohos/desktop_capture_frame.h",
+      "ohos/native_frame.cc",
+      "ohos/native_frame.h",
+      "ohos/window_capturer_notify.cc",
+      "ohos/window_capturer_notify.h",
+    ]
+    libs = [
+      "native_avscreen_capture",
+      "native_buffer",
+      "native_media_core",
+    ]
+    deps += [ "//ohos/adapter" ]
+  }
+
+  if(is_arkweb) {
+    deps += [ "//arkweb/build/features" ]
+  }
+
+  if(arkweb_webrtc) {
+    import("//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/ohos/arkweb_third_party_webrtc_modules_desktop_capture_ohos_ext.gni")
+    import("//arkweb/chromium_ext/third_party/webrtc/modules/desktop_capture/arkweb_third_party_webrtc_modules_desktop_capture_ext.gni")
+    sources += arkweb_third_party_webrtc_modules_desktop_capture_ohos_sources
+    sources += arkweb_third_party_webrtc_modules_desktop_capture_sources
+
+    include_dirs = ohos_src_includes
+    #libs += [ "nweb_ohos_adapter.z" ]
+    #libs += ["ohcamera"]
+    deps += [ "//ohos/adapter" ]
+
+    cflags_cc = [
+      "-Wno-exit-time-destructors"
+    ]
+  }
+
+  if (!is_ohos && !is_win && !is_mac && !rtc_use_x11_extensions && !rtc_use_pipewire &&
       !is_fuchsia) {
     sources += [
       "mouse_cursor_monitor_null.cc",

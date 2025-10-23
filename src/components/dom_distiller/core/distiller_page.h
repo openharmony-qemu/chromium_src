@@ -15,6 +15,8 @@
 #include "ui/gfx/geometry/size.h"
 #include "url/gurl.h"
 
+#include "arkweb/chromium_ext/components/dom_distiller/core/distiller_page_ohos.h"
+
 namespace dom_distiller {
 
 class SourcePageHandle {
@@ -27,7 +29,7 @@ class SourcePageHandle {
 // following the state transitions described along with the class's states.
 // Constructing a DistillerPage should be cheap, as some of the instances can be
 // thrown away without ever being used.
-class DistillerPage {
+class DistillerPage : public DistillerPageOhos {
  public:
   using DistillerPageCallback = base::OnceCallback<void(
       std::unique_ptr<proto::DomDistillerResult> distilled_page,

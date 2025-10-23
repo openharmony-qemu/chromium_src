@@ -7,6 +7,9 @@
 #include "chrome/browser/extensions/api/downloads/downloads_api.h"
 #include "chrome/common/extensions/api/downloads.h"
 #include "chrome/common/extensions/api/downloads_internal.h"
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "cef/ohos_cef_ext/libcef/browser/extensions/api/downloads/download_api_ext_router.h"
+#endif
 
 namespace extensions {
 
@@ -28,12 +31,21 @@ DownloadsInternalDetermineFilenameFunction::Run() {
   EXTENSION_FUNCTION_VALIDATE(args()[1].is_string());
   const std::string& filename = args()[1].GetString();
   std::string error;
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   bool result = ExtensionDownloadsEventRouter::DetermineFilename(
       browser_context(), include_incognito_information(), extension()->id(),
       params->download_id, base::FilePath::FromUTF8Unsafe(filename),
       extensions::api::downloads::ParseFilenameConflictAction(
           params->conflict_action),
       &error);
+#else
+  bool result = ExtensionDownloadsEventRouterEx::DetermineFilename(
+      {browser_context(), include_incognito_information(), extension()->id(),
+       params->download_id, base::FilePath::FromUTF8Unsafe(filename),
+       extensions::api::downloads::ParseFilenameConflictAction(
+           params->conflict_action),
+       &error});
+#endif
   return RespondNow(result ? NoArguments() : Error(error));
 }
 

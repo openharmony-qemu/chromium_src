@@ -265,7 +265,12 @@ void ChromeBrowserDelegate::SetAsDelegate(content::WebContents* web_contents,
 
   auto request_context_impl =
       CefRequestContextImpl::GetOrCreateForRequestContext(
-          create_params_.request_context);
+          create_params_.request_context
+#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
+          ,
+          create_params_.settings.incognito_mode
+#endif
+      );
 
   CreateBrowserHost(browser_, web_contents, create_params_.settings,
                     create_params_.client, std::move(platform_delegate),

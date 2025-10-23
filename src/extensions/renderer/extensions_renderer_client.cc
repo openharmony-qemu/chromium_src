@@ -232,20 +232,36 @@ void ExtensionsRendererClient::WillSendRequest(
     GURL* new_url) {
   std::string extension_id;
   if (initiator_origin &&
-      initiator_origin->scheme() == extensions::kExtensionScheme) {
+      (initiator_origin->scheme() == extensions::kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+       || initiator_origin->scheme() == extensions::kArkwebExtensionScheme
+#endif
+       )) {
     extension_id = initiator_origin->host();
   } else {
-    if (site_for_cookies.scheme() == extensions::kExtensionScheme) {
+    if (site_for_cookies.scheme() == extensions::kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+        || site_for_cookies.scheme() == extensions::kArkwebExtensionScheme
+#endif
+    ) {
       extension_id = site_for_cookies.registrable_domain();
     }
   }
 
   // The rest of this method is only concerned with extensions URLs.
-  if (!target_url.ProtocolIs(extensions::kExtensionScheme)) {
+  if (!target_url.ProtocolIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && !target_url.ProtocolIs(extensions::kArkwebExtensionScheme)
+#endif
+  ) {
     return;
   }
 
-  if (target_url.ProtocolIs(extensions::kExtensionScheme) &&
+  if ((target_url.ProtocolIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      || target_url.ProtocolIs(extensions::kArkwebExtensionScheme)
+#endif
+  ) &&
       !resource_request_policy_->CanRequestResource(
           upstream_url, target_url, frame, transition_type, initiator_origin)) {
     *new_url = GURL(kExtensionInvalidRequestURL);

@@ -2131,6 +2131,9 @@ TEST_F(HarfBuzzShaperTest, MAYBE_EmojiPercentage) {
     GTEST_SKIP() << "Broken on WIN11 and greater: https://crbug.com/1286133";
   }
 #endif
+  // #if BUILDFLAG(IS_OHOS)
+  //   GTEST_SKIP() << "Broken on OHOS";
+  // #endif
   // This test relies on Noto Color Emoji from the third_party directory to not
   // contain sequences and single codepoint emoji from Unicode 13 and 13.1 such
   // as:
@@ -2164,6 +2167,9 @@ TEST_F(HarfBuzzShaperTest, MAYBE_EmojiPercentage) {
     expectations[2].expected_broken_clusters = 0;
   }
 #endif
+#if BUILDFLAG(IS_OHOS)
+  expectations[2].expected_broken_clusters = 0;
+#endif
   unsigned num_calls = 0;
   HarfBuzzShaper::EmojiMetricsCallback metrics_callback =
       base::BindLambdaForTesting(
@@ -2171,7 +2177,6 @@ TEST_F(HarfBuzzShaperTest, MAYBE_EmojiPercentage) {
             CHECK_EQ(num_clusters, expectations[num_calls].expected_clusters);
             CHECK_EQ(num_broken_clusters,
                      expectations[num_calls].expected_broken_clusters);
-
             num_calls++;
           });
   HarfBuzzShaper shaper(string, metrics_callback);

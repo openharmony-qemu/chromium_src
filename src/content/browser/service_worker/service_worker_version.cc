@@ -585,6 +585,10 @@ void ServiceWorkerVersion::StartWorker(ServiceWorkerMetrics::EventType purpose,
     return;
   }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  LOG(INFO) << "Try to start service worker...";
+#endif
+
   // Ensure the live registration during starting worker so that the worker can
   // get associated with it in
   // ServiceWorkerHost::CompleteStartWorkerPreparation.
@@ -2423,8 +2427,15 @@ void ServiceWorkerVersion::StartWorkerInternal() {
       outside_fetch_client_settings_object_.Clone();
 
   ContentBrowserClient* browser_client = GetContentClient()->browser();
+
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  params->user_agent =
+      browser_client->GetUAStringForHost(params->script_url.host());
+#else
   params->user_agent = browser_client->GetUserAgentBasedOnPolicy(
       context_->wrapper()->browser_context());
+#endif
+
   params->ua_metadata = browser_client->GetUserAgentMetadata();
   params->is_installed = IsInstalled(status_);
   params->script_url_to_skip_throttling = updated_script_url_;

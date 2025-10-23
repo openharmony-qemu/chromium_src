@@ -8,6 +8,7 @@
 #include <optional>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/files/file_util.h"
 #include "base/run_loop.h"
 #include "build/build_config.h"
@@ -132,6 +133,17 @@ class FakeInterfaceFactory : public media::mojom::InterfaceFactory {
   void CreateAudioEncoder(
       mojo::PendingReceiver<media::mojom::AudioEncoder> receiver) override {}
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void CreateCustomMediaPlayerRenderer(
+      mojo::PendingRemote<
+          media::mojom::CustomMediaPlayerRendererClientExtension>
+          client_extension,
+      mojo::PendingReceiver<media::mojom::Renderer> renderer,
+      mojo::PendingReceiver<media::mojom::MediaPlayerRendererExtension>
+          renderer_extension,
+      int32_t player_id) override {}
+#endif  // ARKWEB_UNITTESTS
+
   // Stub out other mojom::InterfaceFactory interfaces.
   void CreateVideoDecoder(
       mojo::PendingReceiver<media::mojom::VideoDecoder> receiver,
@@ -173,6 +185,15 @@ class FakeInterfaceFactory : public media::mojom::InterfaceFactory {
           ::media::mojom::MediaFoundationRendererClientExtension>
           client_extension_remote) override {}
 #endif  // BUILDFLAG(IS_WIN)
+
+#if BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(IS_OHOS)
+  void CreateMediaPlayerRenderer(
+      ::mojo::PendingRemote<::media::mojom::MediaPlayerRendererClientExtension>
+          client_extension,
+      ::mojo::PendingReceiver<::media::mojom::Renderer> renderer,
+      ::mojo::PendingReceiver<::media::mojom::MediaPlayerRendererExtension>
+          renderer_extension) override {}
+#endif  // BUILDFLAG(IS_OHOS)
 
  private:
   FakeMojoMediaClient mojo_media_client_;

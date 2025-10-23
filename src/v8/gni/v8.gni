@@ -160,6 +160,8 @@ declare_args() {
   # Add fuzzilli fuzzer support.
   v8_fuzzilli = false
 
+  v8_component_build = false
+
   # Enable FuzzTest
   v8_enable_fuzztest = !build_with_v8_embedder &&
                        !(defined(build_with_node) && build_with_node) &&
@@ -254,7 +256,7 @@ if (v8_enable_backtrace == "") {
 
 # Chromium is configured to use the perfetto client library, v8 should also
 # use perfetto for tracing.
-if (build_with_chromium) {
+if (build_with_chromium && !v8_component_build) {
   v8_use_perfetto = true
 }
 

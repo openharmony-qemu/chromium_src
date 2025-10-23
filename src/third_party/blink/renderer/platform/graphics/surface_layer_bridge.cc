@@ -18,6 +18,10 @@
 #include "third_party/blink/renderer/platform/wtf/functional.h"
 #include "ui/gfx/geometry/size.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/graphics/surface_layer_bridge_for_include.cc"
+#endif
+
 namespace blink {
 
 SurfaceLayerBridge::SurfaceLayerBridge(

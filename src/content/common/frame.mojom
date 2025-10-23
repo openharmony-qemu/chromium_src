@@ -65,6 +65,7 @@ import "ui/gfx/geometry/mojom/geometry.mojom";
 import "url/mojom/origin.mojom";
 import "url/mojom/scheme_host_port.mojom";
 import "url/mojom/url.mojom";
+import "mojo/public/mojom/base/values.mojom";
 
 // A View (i.e. a "main frame") can be created for a few different cases, these
 // values are used to specify which it is.
@@ -122,6 +123,9 @@ struct CreateViewParams {
 
   // Whether the `blink::WebView` should initially be hidden.
   bool hidden;
+
+  [EnableIf=arkweb_arkweb_extensions]
+  bool is_offscreen;
 
   // Prerender2: This field is set iff the blink::WebView is for a prerendering
   // page.
@@ -545,6 +549,22 @@ interface Frame {
       map<blink.mojom.FrameToken, mojo_base.mojom.FilePath>
           frame_token_map, bool save_with_empty_url,
           pending_remote<FrameHTMLSerializerHandler> handler_remote);
+
+  // #if BUILDFLAG(ARKWEB_ADBLOCK)
+  [EnableIf=arkweb_adblock]
+  OnUpdateAdBlockEnabledToRender(bool site_adblock_enabled);
+  // #endif
+
+  [EnableIf=arkweb_javascript_bridge]
+  AddNamedObject(string name,
+                        int32 object_id,
+                        mojo_base.mojom.ListValue async_method_list,
+                        bool need_update);
+
+  // #if BUILDFLAG(ARKWEB_DFX_TRACING)
+  [EnableIf=arkweb_dfx_tracing]
+  SendCommitNavigationTime(int64 start_time);
+  // #endif
 };
 
 // Implemented by the frame (e.g. renderer processes).
@@ -753,6 +773,10 @@ interface FrameHost {
   [Sync] CreateNewWindow(CreateNewWindowParams params)
       => (CreateNewWindowStatus status, CreateNewWindowReply? reply);
 
+  [EnableIf=arkweb_multi_window, Sync]
+  GetCreateNewWindow(url.mojom.Url target_url, ui.mojom.WindowOpenDisposition disposition, bool allow_popup)
+      => (CreateNewWindowStatus status);
+
   // Asynchronously creates a child frame. A blink.mojom.LocalFrameToken must
   // be allocated first by calling
   // `RenderMessageFilter::GenerateSingleFrameRoutingInfo`. Each of these
@@ -898,4 +922,38 @@ interface FrameHost {
 
   // Called when the renderer is done loading a frame.
   DidStopLoading();
+
+  // #if BUILDFLAG(ARKWEB_MENU)
+  [EnableIf=arkweb_menu]
+  MouseSelectMenuShow(bool show);
+  // #endif ARKWEB_MENU
+
+  // #if BUILDFLAG(ARKWEB_MENU)
+  [EnableIf=arkweb_menu]
+  ChangeVisibilityOfQuickMenu();
+
+  [EnableIf=arkweb_menu]
+  HideQuickMenu();
+  // #endif ARKWEB_MENU
+
+  // #if BUILDFLAG(ARKWEB_DRAG_DROP)
+  [EnableIf=arkweb_drag_drop]
+  OnClearContextMenu();
+  // #endif
+
+  // #if BUILDFLAG(ARKWEB_AI)
+  [EnableIf=arkweb_ai]
+  CloseImageOverlaySelection();
+  // #endif
+
+  // #if BUILDFLAG(ARKWEB_PDF)
+  [EnableIf=arkweb_pdf]
+  OnPdfScrollAtBottom(string url);
+  // #endif
+
+  // #if BUILDFLAG(ARKWEB_PDF)
+  [EnableIf=arkweb_pdf]
+  OnPdfLoadEvent(int32 result, string url);
+  // #endif
+
 };

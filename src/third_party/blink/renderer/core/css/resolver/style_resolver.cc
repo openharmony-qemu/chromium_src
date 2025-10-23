@@ -32,6 +32,7 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/adapters.h"
 #include "base/memory/stack_allocated.h"
 #include "base/types/optional_util.h"
@@ -137,6 +138,9 @@
 #include "third_party/blink/renderer/platform/wtf/text/atomic_string.h"
 #include "third_party/blink/renderer/platform/wtf/text/atomic_string_hash.h"
 #include "third_party/blink/renderer/platform/wtf/text/string_builder.h"
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/css/css_utils.h"
+#endif
 
 namespace blink {
 
@@ -1429,8 +1433,11 @@ const ComputedStyle* StyleResolver::ResolveStyle(
       GetDocument().GetTextLinkColors().SetTextColor(
           state.StyleBuilder().GetCurrentColor());
     }
-
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+    if (IsA<MathMLElement>(element) && !Cssutils::IsMathFormulaDisabledMode()) {
+#else
     if (IsA<MathMLElement>(element)) {
+#endif
       ApplyMathMLCustomStyleProperties(element, state);
     }
   } else if (IsHighlightPseudoElement(style_request.pseudo_id)) {

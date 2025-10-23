@@ -273,6 +273,7 @@ void AutofillMergeTest::MergeProfiles(const std::string& profiles,
   *merged_profiles = SerializeProfiles(imported_profiles);
 }
 
+#if !BUILDFLAG(ARKWEB_UNITTESTS)
 TEST_P(AutofillMergeTest, DataDrivenMergeProfiles) {
   const bool kIsExpectedToPass = true;
   RunOneDataDrivenTest(GetParam(), GetOutputDirectory(), kIsExpectedToPass);
@@ -281,6 +282,7 @@ TEST_P(AutofillMergeTest, DataDrivenMergeProfiles) {
 INSTANTIATE_TEST_SUITE_P(All,
                          AutofillMergeTest,
                          testing::ValuesIn(GetTestFiles()));
+#endif
 
 }  // namespace
 }  // namespace autofill

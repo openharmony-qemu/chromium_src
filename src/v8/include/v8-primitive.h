@@ -32,7 +32,7 @@ class V8_EXPORT Primitive : public Value {};
  * A primitive boolean value (ECMA-262, 4.3.14).  Either the true
  * or false value.
  */
-class V8_EXPORT Boolean : public Primitive {
+class V8_EXPORT JSVM_EXPORT Boolean : public Primitive {
  public:
   bool Value() const;
   V8_INLINE static Boolean* Cast(v8::Data* data) {
@@ -55,7 +55,7 @@ class V8_EXPORT Boolean : public Primitive {
  * This is passed back to the embedder as part of
  * HostImportModuleDynamicallyCallback for module loading.
  */
-class V8_EXPORT PrimitiveArray : public Data {
+class V8_EXPORT JSVM_EXPORT PrimitiveArray : public Data {
  public:
   static Local<PrimitiveArray> New(Isolate* isolate, int length);
   int Length() const;
@@ -121,7 +121,7 @@ enum class NewStringType {
 /**
  * A JavaScript string value (ECMA-262, 4.3.17).
  */
-class V8_EXPORT String : public Name {
+class V8_EXPORT JSVM_EXPORT String : public Name {
  public:
   static constexpr int kMaxLength =
       internal::kApiSystemPointerSize == 4 ? (1 << 28) - 16 : (1 << 29) - 24;
@@ -775,7 +775,7 @@ class V8_EXPORT ExternalResourceVisitor {
 /**
  * A JavaScript symbol (ECMA-262 edition 6)
  */
-class V8_EXPORT Symbol : public Name {
+class V8_EXPORT JSVM_EXPORT Symbol : public Name {
  public:
   /**
    * Returns the description string of the symbol, or undefined if none.
@@ -845,7 +845,7 @@ class V8_EXPORT Numeric : public Primitive {
 /**
  * A JavaScript number value (ECMA-262, 4.3.20)
  */
-class V8_EXPORT Number : public Numeric {
+class V8_EXPORT JSVM_EXPORT Number : public Numeric {
  public:
   double Value() const;
   static Local<Number> New(Isolate* isolate, double value);
@@ -879,7 +879,7 @@ class V8_EXPORT Number : public Numeric {
 /**
  * A JavaScript value representing a signed integer.
  */
-class V8_EXPORT Integer : public Number {
+class V8_EXPORT JSVM_EXPORT Integer : public Number {
  public:
   static Local<Integer> New(Isolate* isolate, int32_t value);
   static Local<Integer> NewFromUnsigned(Isolate* isolate, uint32_t value);
@@ -899,7 +899,7 @@ class V8_EXPORT Integer : public Number {
 /**
  * A JavaScript value representing a 32-bit signed integer.
  */
-class V8_EXPORT Int32 : public Integer {
+class V8_EXPORT JSVM_EXPORT Int32 : public Integer {
  public:
   int32_t Value() const;
   V8_INLINE static Int32* Cast(v8::Data* data) {
@@ -917,7 +917,7 @@ class V8_EXPORT Int32 : public Integer {
 /**
  * A JavaScript value representing a 32-bit unsigned integer.
  */
-class V8_EXPORT Uint32 : public Integer {
+class V8_EXPORT JSVM_EXPORT Uint32 : public Integer {
  public:
   uint32_t Value() const;
   V8_INLINE static Uint32* Cast(v8::Data* data) {
@@ -935,7 +935,7 @@ class V8_EXPORT Uint32 : public Integer {
 /**
  * A JavaScript BigInt value (https://tc39.github.io/proposal-bigint)
  */
-class V8_EXPORT BigInt : public Numeric {
+class V8_EXPORT JSVM_EXPORT BigInt : public Numeric {
  public:
   static Local<BigInt> New(Isolate* isolate, int64_t value);
   static Local<BigInt> NewFromUnsigned(Isolate* isolate, uint64_t value);

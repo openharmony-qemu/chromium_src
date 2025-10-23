@@ -9,6 +9,24 @@
 namespace page_load_metrics {
 
 mojom::PageLoadTimingPtr CreatePageLoadTiming() {
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+  return mojom::PageLoadTiming::New(
+      base::Time(), std::optional<base::TimeDelta>(),
+      std::optional<base::TimeDelta>(), std::optional<base::TimeDelta>(),
+      std::optional<base::TimeDelta>(), std::optional<base::TimeDelta>(),
+      std::optional<base::TimeDelta>(), std::optional<base::TimeDelta>(),
+      mojom::DocumentTiming::New(), mojom::InteractiveTiming::New(),
+      mojom::PaintTiming::New(std::nullopt, std::nullopt, std::nullopt,
+                              std::nullopt,
+                              CreateLargestContentfulPaintTiming(),
+                              CreateLargestContentfulPaintTiming(),
+                              std::nullopt, std::nullopt),
+      mojom::ParseTiming::New(), mojom::DomainLookupTiming::New(),
+      std::vector<mojo::StructPtr<mojom::BackForwardCacheTiming>>{},
+      std::optional<base::TimeDelta>(), std::optional<base::TimeDelta>(),
+      std::optional<base::TimeDelta>(), std::optional<base::TimeDelta>(),
+      std::optional<base::TimeDelta>());
+#else
   return mojom::PageLoadTiming::New(
       base::Time(), std::optional<base::TimeDelta>(),
       std::optional<base::TimeDelta>(), std::optional<base::TimeDelta>(),
@@ -22,6 +40,7 @@ mojom::PageLoadTimingPtr CreatePageLoadTiming() {
       std::optional<base::TimeDelta>(), std::optional<base::TimeDelta>(),
       std::optional<base::TimeDelta>(), std::optional<base::TimeDelta>(),
       std::optional<base::TimeDelta>());
+#endif
 }
 
 mojom::LargestContentfulPaintTimingPtr CreateLargestContentfulPaintTiming() {

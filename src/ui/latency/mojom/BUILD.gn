@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//mojo/public/tools/bindings/mojom.gni")
+import("//arkweb/build/features/features.gni")
 
 component("shared_mojom_traits") {
   output_name = "latency_shared_mojom_traits"
@@ -48,6 +49,12 @@ mojom("mojom") {
   # Generate WebUI bindings in TypeScript and legacy bindings in JS (for Blink)
   webui_module_path = "chrome://resources/mojo/ui/latency/mojom"
   generate_legacy_js_bindings = true
+
+  enabled_features = []
+
+  if (arkweb_same_layer) {
+    enabled_features += [ "arkweb_same_layer" ]
+  }
 }
 
 mojom("test_interfaces") {

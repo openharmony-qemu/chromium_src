@@ -87,7 +87,11 @@ class UsbPinnedNotificationTest : public DevicePinnedNotificationTestBase {
 #if BUILDFLAG(ENABLE_EXTENSIONS)
     std::vector<std::string> extension_names;
     for (const auto& [origin, connection_count, name] : sorted_origin_items) {
-      CHECK(origin.scheme() == extensions::kExtensionScheme);
+      CHECK(origin.scheme() == extensions::kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+            || origin.scheme() == extensions::kArkwebExtensionScheme
+#endif
+      );
       extension_names.push_back(name);
     }
     CHECK(!extension_names.empty());

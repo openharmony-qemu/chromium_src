@@ -21,6 +21,8 @@
 #include <cstdint>
 #include <memory>
 
+#include "arkweb/build/features/features.h"
+
 class GrBackendSemaphore;
 class GrBackendTexture;
 class GrRecordingContext;
@@ -161,6 +163,51 @@ SK_API sk_sp<SkSurface> WrapPixels(const SkImageInfo& imageInfo,
 */
 class SK_API SkSurface : public SkRefCnt {
 public:
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    /** Allocates raster SkSurface. SkCanvas returned by SkSurface draws directly into pixels.
+        Allocates and zeroes pixel memory. Pixel memory size is imageInfo.height() times
+        rowBytes, or times imageInfo.minRowBytes() if rowBytes is zero.
+        Pixel memory is deleted when SkSurface is deleted.
+
+        SkSurface is returned if all parameters are valid.
+        Valid parameters include:
+        info dimensions are greater than zero;
+        info contains SkColorType and SkAlphaType supported by raster surface;
+        rowBytes is large enough to contain info width pixels of SkColorType, or is zero.
+
+        If rowBytes is zero, a suitable value will be chosen internally.
+
+        @param imageInfo     width, height, SkColorType, SkAlphaType, SkColorSpace,
+                             of raster surface; width and height must be greater than zero
+        @param rowBytes      interval from one SkSurface row to the next; may be zero
+        @param surfaceProps  LCD striping orientation and setting for device independent fonts;
+                             may be nullptr
+        @return              SkSurface if all parameters are valid; otherwise, nullptr
+    */
+    static sk_sp<SkSurface> MakeRaster(const SkImageInfo& imageInfo, size_t rowBytes,
+                                       const SkSurfaceProps* surfaceProps);
+
+    /** Allocates raster SkSurface. SkCanvas returned by SkSurface draws directly into pixels.
+        Allocates and zeroes pixel memory. Pixel memory size is imageInfo.height() times
+        imageInfo.minRowBytes().
+        Pixel memory is deleted when SkSurface is deleted.
+
+        SkSurface is returned if all parameters are valid.
+        Valid parameters include:
+        info dimensions are greater than zero;
+        info contains SkColorType and SkAlphaType supported by raster surface.
+
+        @param imageInfo  width, height, SkColorType, SkAlphaType, SkColorSpace,
+                          of raster surface; width and height must be greater than zero
+        @param props      LCD striping orientation and setting for device independent fonts;
+                          may be nullptr
+        @return           SkSurface if all parameters are valid; otherwise, nullptr
+    */
+    static sk_sp<SkSurface> MakeRaster(const SkImageInfo& imageInfo,
+                                       const SkSurfaceProps* props = nullptr) {
+        return MakeRaster(imageInfo, 0, props);
+    }
+#endif
     /** Is this surface compatible with the provided characterization?
 
         This method can be used to determine if an existing SkSurface is a viable destination

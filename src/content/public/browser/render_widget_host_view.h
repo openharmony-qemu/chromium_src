@@ -8,6 +8,7 @@
 #include <optional>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/flat_map.h"
 #include "base/containers/flat_set.h"
 #include "build/build_config.h"
@@ -21,6 +22,10 @@
 #include "ui/gfx/geometry/point_conversions.h"
 #include "ui/gfx/native_widget_types.h"
 #include "ui/gfx/range/range.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 #if BUILDFLAG(IS_MAC)
 #include "third_party/blink/public/mojom/webshare/webshare.mojom.h"
@@ -122,6 +127,11 @@ class CONTENT_EXPORT RenderWidgetHostView {
   // It is not legal to call Hide() multiple times in a row.
   virtual void Show() = 0;
   virtual void Hide() = 0;
+
+#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
+  virtual void EvictFrameBackBuffers() {}
+  virtual bool GetScrollable() = 0;
+#endif
 
   // Whether the view is showing.
   virtual bool IsShowing() = 0;
@@ -312,6 +322,10 @@ class CONTENT_EXPORT RenderWidgetHostView {
 
   // Returns true if this widget is a HTML popup, e.g. a <select> menu.
   virtual bool IsHTMLFormPopup() const = 0;
+
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS) || BUILDFLAG(ARKWEB_EX_TOPCONTROLS)
+  virtual int GetTopControlsOffset() const {return 0;}
+#endif
 };
 
 }  // namespace content

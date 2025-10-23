@@ -232,7 +232,7 @@ using SandboxedPointer_t = Address;
 #ifdef V8_ENABLE_SANDBOX
 
 // Size of the sandbox, excluding the guard regions surrounding it.
-#if defined(V8_TARGET_OS_ANDROID)
+#if defined(V8_TARGET_OS_ANDROID) || defined(V8_TARGET_OS_OHOS)
 // On Android, most 64-bit devices seem to be configured with only 39 bits of
 // virtual address space for userspace. As such, limit the sandbox to 128GB (a
 // quarter of the total available address space).
@@ -305,11 +305,11 @@ static_assert(1ULL << (64 - kBoundedSizeShift) ==
               "The maximum size of a BoundedSize must be synchronized with the "
               "kMaxSafeBufferSizeForSandbox");
 
-#endif  // V8_ENABLE_SANDBOX
+#endif  // V8_TARGET_OS_ANDROID || V8_TARGET_OS_OHOS
 
 #ifdef V8_COMPRESS_POINTERS
 
-#ifdef V8_TARGET_OS_ANDROID
+#if defined(V8_TARGET_OS_ANDROID) || defined(V8_TARGET_OS_OHOS)
 // The size of the virtual memory reservation for an external pointer table.
 // This determines the maximum number of entries in a table. Using a maximum
 // size allows omitting bounds checks on table accesses if the indices are
@@ -325,7 +325,7 @@ constexpr uint32_t kExternalPointerIndexShift = 7;
 #else
 constexpr size_t kExternalPointerTableReservationSize = 512 * MB;
 constexpr uint32_t kExternalPointerIndexShift = 6;
-#endif  // V8_TARGET_OS_ANDROID
+#endif  // V8_TARGET_OS_ANDROID || V8_TARGET_OS_OHOS
 
 // The maximum number of entries in an external pointer table.
 constexpr int kExternalPointerTableEntrySize = 8;

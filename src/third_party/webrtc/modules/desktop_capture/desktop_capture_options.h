@@ -28,6 +28,7 @@
 #endif
 
 #include "modules/desktop_capture/full_screen_window_detector.h"
+#include "arkweb/build/features/features.h"
 
 namespace webrtc {
 
@@ -240,6 +241,17 @@ class RTC_EXPORT DesktopCaptureOptions {
     return pipewire_use_damage_region_;
   }
 #endif
+#if defined(WEBRTC_OHOS)
+  bool allow_sync_capturer() const { return allow_sync_capturer_; }
+  void set_allow_sync_capturer(bool allow) { allow_sync_capturer_ = allow; }
+#endif
+
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+  bool get_picker_show() const { return is_picker_show_; }
+  void set_picker_show(bool is_picker_show) { is_picker_show_ = is_picker_show; }
+  int get_nweb_id() const { return nweb_id_; }
+  void set_nweb_id(int nweb_id) { nweb_id_ = nweb_id; }
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 
  private:
 #if defined(WEBRTC_USE_X11)
@@ -286,6 +298,14 @@ class RTC_EXPORT DesktopCaptureOptions {
   uint32_t width_ = 0;
   uint32_t height_ = 0;
 #endif
+#if defined(WEBRTC_OHOS)
+  bool allow_sync_capturer_ = false;
+#endif
+
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+  bool is_picker_show_ = false;
+  int nweb_id_ = 0;
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 };
 
 }  // namespace webrtc

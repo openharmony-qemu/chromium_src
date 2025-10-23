@@ -32,7 +32,11 @@ class MotionEvent;
 blink::WebTouchEvent CreateWebTouchEventFromMotionEvent(
     const MotionEvent& event,
     bool may_cause_scrolling,
-    bool hovering);
+    bool hovering
+#if BUILDFLAG(ARKWEB_FIT_CONTENT)
+    , int32_t is_fit_content = 0
+#endif
+    );
 
 blink::WebGestureEvent CreateWebGestureEvent(const GestureEventDetails& details,
                                              base::TimeTicks timestamp,

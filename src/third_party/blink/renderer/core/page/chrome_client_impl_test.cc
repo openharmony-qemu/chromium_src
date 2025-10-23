@@ -523,4 +523,8 @@ TEST_F(AutofillChromeClientTest, NotificationsOfJavaScriptChangesDuringFill) {
               ::testing::ElementsAre("select", "autofilled_select"));
 }
 
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/page/chrome_client_impl_ext_unittest.cc"
+#endif
+
 }  // namespace blink

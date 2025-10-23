@@ -6,7 +6,9 @@
 #ifndef CEF_LIBCEF_BROWSER_OSR_WEB_CONTENTS_VIEW_OSR_H_
 #define CEF_LIBCEF_BROWSER_OSR_WEB_CONTENTS_VIEW_OSR_H_
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
+#include "cef/ohos_cef_ext/libcef/browser/osr/arkweb_render_widget_host_view_osr_ext.h"
 #include "content/browser/renderer_host/render_view_host_delegate_view.h"
 #include "content/browser/web_contents/web_contents_view.h"
 #include "third_party/skia/include/core/SkColor.h"
@@ -16,8 +18,9 @@ class WebContents;
 }  // namespace content
 
 class AlloyBrowserHostImpl;
-class CefRenderWidgetHostViewOSR;
+class ArkWebRenderWidgetHostViewOSRExt;
 class CefTouchSelectionControllerClientOSR;
+class ArkWebCefWebContentsViewOSRExt;
 
 // An implementation of WebContentsView for off-screen rendering.
 class CefWebContentsViewOSR : public content::WebContentsView,
@@ -31,6 +34,8 @@ class CefWebContentsViewOSR : public content::WebContentsView,
   CefWebContentsViewOSR& operator=(const CefWebContentsViewOSR&) = delete;
 
   ~CefWebContentsViewOSR() override;
+
+  virtual ArkWebCefWebContentsViewOSRExt *AsArkWebCefWebContentsViewOSRExt() { return nullptr; }
 
   void WebContentsCreated(content::WebContents* web_contents);
   content::WebContents* web_contents() const { return web_contents_; }
@@ -64,7 +69,6 @@ class CefWebContentsViewOSR : public content::WebContentsView,
   GetBackForwardTransitionAnimationManager() override {
     return nullptr;
   }
-  void DestroyBackForwardTransitionAnimationManager() override {}
 
 #if BUILDFLAG(IS_MAC)
   bool CloseTabAfterEventTrackingIfNeeded() override { return false; }
@@ -73,6 +77,7 @@ class CefWebContentsViewOSR : public content::WebContentsView,
   // RenderViewHostDelegateView methods.
   void ShowContextMenu(content::RenderFrameHost& render_frame_host,
                        const content::ContextMenuParams& params) override;
+
   void StartDragging(const content::DropData& drop_data,
                      const url::Origin& source_origin,
                      blink::DragOperationsMask allowed_ops,
@@ -88,8 +93,12 @@ class CefWebContentsViewOSR : public content::WebContentsView,
   void TakeFocus(bool reverse) override;
   void FullscreenStateChanged(bool is_fullscreen) override {}
 
+  void DestroyBackForwardTransitionAnimationManager() override {}
+
  private:
-  CefRenderWidgetHostViewOSR* GetView() const;
+  friend ArkWebCefWebContentsViewOSRExt;
+
+  ArkWebRenderWidgetHostViewOSRExt* GetView() const;
   AlloyBrowserHostImpl* GetBrowser() const;
   CefTouchSelectionControllerClientOSR* GetSelectionControllerClient() const;
 
@@ -97,7 +106,15 @@ class CefWebContentsViewOSR : public content::WebContentsView,
   const bool use_shared_texture_;
   const bool use_external_begin_frame_;
 
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+  int top_controls_height_ = 0;
+#endif
+
   raw_ptr<content::WebContents> web_contents_ = nullptr;
 };
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "cef/ohos_cef_ext/libcef/browser/osr/arkweb_web_contents_view_osr_ext.h"
+#endif
 
 #endif  // CEF_LIBCEF_BROWSER_OSR_WEB_CONTENTS_VIEW_OSR_H_

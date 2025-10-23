@@ -164,6 +164,7 @@ class COMPONENT_EXPORT(OS_CRYPT) OSCryptImpl {
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
   // Decrypt string for migrating passwords to password vault.
   bool DecryptStringForMigrate(const std::string& ciphertext, std::string* plaintext);
+  void SetMigrationCountCurrent(const int& count);
 #endif
 
 #if BUILDFLAG(IS_WIN)
@@ -287,6 +288,7 @@ class COMPONENT_EXPORT(OS_CRYPT) OSCryptImpl {
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
   bool is_password_migrate_cached_ = false;
   int migration_count_ = 0;
+  int migration_count_current_ = 0;
 #endif
 
   // Returns a cached. Is thread-safe for ota password loss.

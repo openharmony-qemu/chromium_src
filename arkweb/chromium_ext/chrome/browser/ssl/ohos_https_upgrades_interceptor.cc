@@ -168,12 +168,6 @@ void OhosHttpsUpgradesInterceptor::MaybeCreateLoader(
   }
   auto* https_helper = OhosHttpsUpgradesHelper::FromWebContents(web_contents);
 
-  StatefulSSLHostStateDelegate* state =
-      static_cast<StatefulSSLHostStateDelegate*>(
-          profile->GetSSLHostStateDelegate());
-  auto* storage_partition =
-      web_contents->GetPrimaryMainFrame()->GetStoragePartition();
-
   // Exclude HTTPS URLs.
   if (tentative_resource_request.url.SchemeIs(url::kHttpsScheme)) {
     std::move(callback).Run({});
@@ -222,6 +216,11 @@ void OhosHttpsUpgradesInterceptor::MaybeCreateLoader(
   // allowlist those http:// connections instead.
   // TODO(crbug.com/363205521): Consider whether we want to allowlist captive
   // portal hostnames.
+  StatefulSSLHostStateDelegate* state =
+      static_cast<StatefulSSLHostStateDelegate*>(
+          profile->GetSSLHostStateDelegate());
+  auto* storage_partition =
+      web_contents->GetPrimaryMainFrame()->GetStoragePartition();
   if (ShouldExcludeNavigationFromUpgrades(frame_tree_node_id_)) {
     if (state) {
       state->AllowHttpForHost(tentative_resource_request.url.host(),
@@ -277,7 +276,6 @@ void OhosHttpsUpgradesInterceptor::MaybeCreateLoaderOnHstsQueryCompleted(
       Profile::FromBrowserContext(web_contents->GetBrowserContext());
   HttpsOnlyModeTabHelper* tab_helper =
       HttpsOnlyModeTabHelper::FromWebContents(web_contents);
-  auto* https_helper = OhosHttpsUpgradesHelper::FromWebContents(web_contents);
   CHECK(profile);
   CHECK(tab_helper);
 
@@ -346,6 +344,7 @@ void OhosHttpsUpgradesInterceptor::MaybeCreateLoaderOnHstsQueryCompleted(
   // Both HTTPS-First Mode and HTTPS-Upgrades are forms of upgrading all HTTP
   // navigations to HTTPS, with HTTPS-First Mode additionally enabling the
   // HTTP interstitial on fallback.
+  auto* https_helper = OhosHttpsUpgradesHelper::FromWebContents(web_contents);
   if (!base::FeatureList::IsEnabled(features::kHttpsUpgrades) &&
       (!https_helper || !(https_helper->is_arkweb_https_upgrades_enable()))) {
     std::move(callback).Run({});

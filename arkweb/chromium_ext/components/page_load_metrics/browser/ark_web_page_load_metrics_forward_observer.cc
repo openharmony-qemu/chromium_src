@@ -21,9 +21,7 @@ namespace page_load_metrics {
 void PageLoadMetricsForwardObserver::
     OnFirstContentfulPaintAfterBackForwardCacheRestoreInPage(
         const mojom::BackForwardCacheTiming& timing,
-        size_t index) {
-  NOTREACHED() << "Not supported.";
-}
+        size_t index) {}
 #endif
 
 }  // namespace page_load_metrics

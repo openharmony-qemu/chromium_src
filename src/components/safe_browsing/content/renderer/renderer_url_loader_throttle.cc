@@ -227,7 +227,6 @@ void RendererURLLoaderThrottle::
 void RendererURLLoaderThrottle::MaybeSendExtensionWebRequestData(
     network::ResourceRequest* request) {
   BindExtensionWebRequestReporterPipeIfDetached();
-
   // Skip if request destination isn't HTTP/HTTPS (ex. extension scheme).
   if (!request->url.SchemeIsHTTPOrHTTPS()) {
     return;

@@ -57,6 +57,10 @@ class MockOHOSMediaCryptoContext : public OHOSMediaCryptoContext {
               (),
               (override));
 #endif
+  MOCK_METHOD(std::vector<uint8_t>,
+              GetUUID,
+              (),
+              (override));
 };
 
 class OHOSMediaCryptoContextImplTest : public ::testing::Test {

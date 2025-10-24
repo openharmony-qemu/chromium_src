@@ -312,6 +312,8 @@ class OHOSAudioDecoder : public AudioDecoder,
 
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
   void ReportDrmAudioPlayErrorInfo(const std::string& errorDesc);
+
+  void ReportDrmEncryptedPlaybackInfo(const DecryptConfig* decrypt_config);
 #endif
 
  private:
@@ -378,6 +380,8 @@ class OHOSAudioDecoder : public AudioDecoder,
   base::RepeatingTimer io_timer_;
 
   bool audio_decoder_created_ = false;
+
+  bool is_reported = false;
 
   base::WeakPtrFactory<OHOSAudioDecoder> weak_factory_{this};
 };

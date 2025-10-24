@@ -49,4 +49,7 @@ void OHOSMediaCryptoContextImpl::ReleaseInnerResource() {
 }
 #endif
 
+std::vector<uint8_t> OHOSMediaCryptoContextImpl::GetUUID() {
+  return media_drm_bridge_ ? media_drm_bridge_->GetSchemeUUID() : std::vector<uint8_t>{};
+}
 }  // namespace media

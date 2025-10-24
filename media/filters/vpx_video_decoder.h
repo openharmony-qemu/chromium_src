@@ -73,6 +73,8 @@ class MEDIA_EXPORT VpxVideoDecoder : public OffloadableVideoDecoder {
 
   void CloseDecoder();
 
+  std::string VideoCodecToString(VideoCodec videoCodec);
+
   // Try to decode |buffer| into |video_frame|. Return true if all decoding
   // succeeded. Note that decoding can succeed and still |video_frame| be
   // nullptr if there has been a partial decoding.

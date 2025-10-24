@@ -226,6 +226,10 @@ void OHOSAudioDecoder::Initialize(const AudioDecoderConfig& config,
       .Run(DecoderStatus::Codes::kUnsupportedCodec);
     return;
   }
+
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  ReportAudioHardwareDecode(mime_type_);
+#endif
   LOG(INFO) << "OHOSAudioDecoder::Initialize mime type: " << mime_type_;
 
   PrepareParameters(config);
@@ -522,10 +526,38 @@ void OHOSAudioDecoder::Decode(scoped_refptr<DecoderBuffer> buffer, DecodeCB deco
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
 void OHOSAudioDecoder::ReportDrmAudioPlayErrorInfo(const std::string& errorDesc) {
   if (ohos_crypto_context_) {
-      std::string errorType = "drm audio play error";
-      int errorCode = DEFAULT_DRM_AUDIO_ERROR_CODE;
-      ReportWebMediaPlayErrorInfo(errorType, errorCode, errorDesc);
+    std::string errorType = "drm audio play error";
+    int errorCode = DEFAULT_DRM_AUDIO_ERROR_CODE;
+    ReportWebMediaPlayErrorInfo(errorType, errorCode, errorDesc);
   }
+}
+
+void OHOSAudioDecoder::ReportDrmEncryptedPlaybackInfo(const DecryptConfig* decrypt_config) {
+  if (is_reported) {
+    return;
+  }
+  std::string encryptedAlgo = "";
+  std::string drmSystem = "";
+  switch (decrypt_config->encryption_scheme()) {
+    case EncryptionScheme::kCenc:
+      encryptedAlgo = "DRM_ALG_CENC_AES_CTR";
+      break;
+    case EncryptionScheme::kCbcs:
+      encryptedAlgo = "DRM_ALG_CENC_AES_CBC";
+      break;
+    default:
+      encryptedAlgo = "DRM_ALG_CENC_UNENCRYPTED";
+  }
+  if (ohos_crypto_context_) {
+    std::vector<uint8_t> schemeUUID = ohos_crypto_context_->GetUUID();
+    static const char hex_chars[] = "0123456789abcdef";
+    for (uint8_t byte : schemeUUID) {
+      drmSystem += hex_chars[byte >> 4];    // 高4位
+      drmSystem += hex_chars[byte & 0x0F];  // 低4位
+    }
+  }
+  ReportDrmEncryptedPlayback("audio", drmSystem, encryptedAlgo);
+  is_reported = true;
 }
 #endif
 
@@ -662,6 +694,9 @@ OHOSAudioDecoderLoop::InputData OHOSAudioDecoder::ProvideInputData() {
 
     const DecryptConfig* decrypt_config = decoder_buffer->decrypt_config();
     if (decrypt_config) {
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+      ReportDrmEncryptedPlaybackInfo(decrypt_config);
+#endif
       SetCencInfoToInputData(data, decrypt_config);
     }
 

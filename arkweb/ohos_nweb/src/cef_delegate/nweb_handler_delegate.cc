@@ -3862,7 +3862,7 @@ bool NWebHandlerDelegate::OnContextMenuCommand(
   if ((command_id == MENU_ID_IMAGE_COPY) && (browser != nullptr) &&
       (browser->GetHost() != nullptr)) {
     image_cache_src_url_ = params->GetSourceUrl();
-    browser->GetHost()->GetImageForContextNode(frame, MENU_ID_IMAGE_COPY);
+    browser->GetHost()->GetImageForContextNode(MENU_ID_IMAGE_COPY);
     return true;
   }
   return false;

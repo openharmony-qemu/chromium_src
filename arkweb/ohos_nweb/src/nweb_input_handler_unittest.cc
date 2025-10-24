@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "capi/nweb_download_delegate_callback.h"
+#include "mock_nweb_delegate.h"
 #define private public
 #include "arkweb/build/features/features.h"
 #include "arkweb/ohos_nweb/src/capi/nweb_devtools_message_handler.h"

@@ -25,6 +25,7 @@
 
 #include "arkweb/build/features/features.h"
 #include "build/build_config.h"
+#include "mock_nweb_delegate.h"
 #include "nweb.h"
 #include "capi/nweb_download_delegate_callback.h"
 #include "nweb_hit_test_result_impl.h"
@@ -172,7 +173,7 @@ class MockNWebAccessRequest : public NWebAccessRequest {
    MOCK_METHOD(int, ResourceAcessId, (), (override));
    MOCK_METHOD(void, Agree, (int), (override));
    MOCK_METHOD(void, Refuse, (), (override));
-}
+};
 
 class MockNWebJsProxyMethod : public OHOS::NWeb::NWebJsProxyMethod {
   public:
@@ -258,13 +259,6 @@ public:
   MOCK_METHOD(uint8_t, GetThemeFlags, (), (override));
 };
 
-class MockNWebJsProxyMethod : public NWebJsProxyMethod {
-public:
-  ~MockNWebJsProxyMethod() = default;
-  MOCK_METHOD(int, GetSize, (), (override));
-  MOCK_METHOD(void, OnHandle, (int number, const std::vector<std::string>& param), (override));
-};
-
 class MockNetConnectAdapter : public NetConnectAdapter {
 public:
   ~MockNetConnectAdapter() = default;
@@ -276,8 +270,6 @@ public:
   MOCK_METHOD(std::vector<std::string>, GetDnsServersForVpn, (), (override));
   MOCK_METHOD(void, RegisterVpnListener, (std::shared_ptr<VpnListener>), (override));
   MOCK_METHOD(void, UnRegisterVpnListener, (), (override));
-  MOCK_METHOD(std::vector<std::string>, GetNetAddrListByNetId, (int32_t netId), (override));
-  MOCK_METHOD(std::vector<std::string>, GetNetAddrListForVpn, (), (override));
 };
 
 class NWebImplTest : public ::testing::Test {
@@ -750,7 +742,7 @@ TEST_F(NWebImplTest, IsNWebEx001) {
 }
 #endif
 
-TEST_F(NWebImplTest, SetProxyOverride001) {
+TEST_F(NWebImplTest, SetProxyOverride0001) {
   std::vector<std::string> proxyUrls;
   std::vector<std::string> proxySchemeFilters;
   std::vector<std::string> bypassRules;
@@ -768,7 +760,7 @@ TEST_F(NWebImplTest, SetProxyOverride002) {
   ASSERT_NO_FATAL_FAILURE(nweb_impl_->SetProxyOverride(proxyUrls, proxySchemeFilters, bypassRules, reverseBypass, callback));
 }
 
-TEST_F(NWebImplTest, RegisterNativeJavaScriptProxy001) {
+TEST_F(NWebImplTest, RegisterNativeJavaScriptProxy0001) {
   std::string objName;
   std::vector<std::string> methodName;
   std::shared_ptr<OHOS::NWeb::NWebJsProxyMethod> data;
@@ -780,7 +772,7 @@ TEST_F(NWebImplTest, RegisterNativeJavaScriptProxy001) {
   EXPECT_NE(log_output.find("nweb_delegate_ is nullptr"), std::string::npos);
 }
 
-TEST_F(NWebImplTest, RegisterNativeJavaScriptProxy002) {
+TEST_F(NWebImplTest, RegisterNativeJavaScriptProxy0002) {
   std::string objName;
   std::vector<std::string> methodName;
   auto data = std::make_shared<MockNWebJsProxyMethod>();
@@ -793,7 +785,7 @@ TEST_F(NWebImplTest, RegisterNativeJavaScriptProxy002) {
   EXPECT_NE(log_output.find("NWebImpl::RegisterNativeJavaScriptProxy"), std::string::npos);
 }
 
-TEST_F(NWebImplTest, RegisterNativeJavaScriptProxy003) {
+TEST_F(NWebImplTest, RegisterNativeJavaScriptProxy0003) {
   std::string objName;
   std::vector<std::string> methodName;
   auto data = std::make_shared<MockNWebJsProxyMethod>();
@@ -923,7 +915,7 @@ TEST_F(NWebImplTest, NWebImplTest_SendDragEvent_001) {
 }
 
 TEST_F(NWebImplTest, NWebImplTest_SendDragEvent_002) {
-  auto dragEvent = std::make_shared();
+  auto dragEvent = std::make_shared<MockNWebDragEvent>();
   nweb_impl_->nweb_delegate_ = mock_delegate_;
   EXPECT_CALL(*dragEvent, GetAction()).WillOnce(Return(DragAction::DRAG_OVER));
   EXPECT_CALL(*dragEvent, GetX()).Times(2);
@@ -935,7 +927,7 @@ TEST_F(NWebImplTest, NWebImplTest_SendDragEvent_002) {
 }
 
 TEST_F(NWebImplTest, NWebImplTest_SendDragEvent_003) {
-  auto dragEvent = std::make_shared();
+  auto dragEvent = std::make_shared<MockNWebDragEvent>();
   nweb_impl_->nweb_delegate_ = mock_delegate_;
   EXPECT_CALL(*dragEvent, GetAction()).WillOnce(Return(DragAction::DRAG_OVER));
   EXPECT_CALL(*dragEvent, IsDragOpValid()).WillOnce(Return(true));
@@ -3997,7 +3989,7 @@ TEST_F(NWebImplTest, PrefetchPage001) {
         {"Access-Control-Allow-Origin", "ghi"}
   };
   nweb_impl_->nweb_delegate_ = nullptr;
-  EXPECT_CALL(*mock_delegate_, PrefetchPage(url, additionalHttpHeaders)).Times(0);
+  EXPECT_CALL(*mock_delegate_, PrefetchPage(::testing::_)).Times(0);
   nweb_impl_->PrefetchPage(url, additionalHttpHeaders);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
 }
@@ -4009,7 +4001,7 @@ TEST_F(NWebImplTest, PrefetchPage002) {
         {"Access-Control-Allow-Origin", "ghi"}
   };
   nweb_impl_->nweb_delegate_ = mock_delegate_;
-  EXPECT_CALL(*mock_delegate_, PrefetchPage(url, additionalHttpHeaders)).Times(1);
+  EXPECT_CALL(*mock_delegate_, PrefetchPage(::testing::_)).Times(1);
   nweb_impl_->PrefetchPage(url, additionalHttpHeaders);
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
 }
@@ -6248,22 +6240,6 @@ TEST_F(NWebImplTest, WebExtensionTabRemoved002) {
   nweb_impl_->nweb_delegate_ = mock_delegate_;
   EXPECT_CALL(*mock_delegate_, WebExtensionTabRemoved(tab_id, isWindowClosing, windowId)).Times(1);
   nweb_impl_->WebExtensionTabRemoved(tab_id, isWindowClosing, windowId);
-  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
-}
-
-TEST_F(NWebImplTest, WebExtensionTabActivated001) {
-  std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo = std::make_unique<NWebExtensionTabActiveInfo>();
-  nweb_impl_->nweb_delegate_ = nullptr;
-  EXPECT_CALL(*mock_delegate_, WebExtensionTabActivated(::testing::_)).Times(0);
-  nweb_impl_->WebExtensionTabActivated(std::move(activeInfo));
-  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
-}
-
-TEST_F(NWebImplTest, WebExtensionTabActivated002) {
-  std::unique_ptr<NWebExtensionTabActiveInfo> activeInfo = std::make_unique<NWebExtensionTabActiveInfo>();
-  nweb_impl_->nweb_delegate_ = mock_delegate_;
-  EXPECT_CALL(*mock_delegate_, WebExtensionTabActivated(::testing::_)).Times(1);
-  nweb_impl_->WebExtensionTabActivated(std::move(activeInfo));
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
 }
 

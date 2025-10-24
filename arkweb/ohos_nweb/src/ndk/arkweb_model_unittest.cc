@@ -1257,7 +1257,7 @@ TEST_F(ArkWebModelTest, OH_WebMessage_SetData_006) {
 TEST_F(ArkWebModelTest, OH_WebMessage_SetData_008) {
   ArkWeb_WebMessagePtr message = nullptr;
   void* data = nullptr;
-  size_t dataLength = 4294967296;
+  size_t dataLength = 4294967295;
   EXPECT_NO_FATAL_FAILURE(OH_WebMessage_SetData(message, data, dataLength));
 }
 

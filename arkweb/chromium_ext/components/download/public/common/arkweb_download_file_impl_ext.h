@@ -52,10 +52,9 @@
 
 #include "base/functional/callback_forward.h"
 
-class DownloadFileImpl;
-
 namespace download {
 
+class DownloadFileImpl;
 class DownloadDestinationObserver;
 
 class COMPONENTS_DOWNLOAD_EXPORT ArkWebDownloadFileImplExt

@@ -209,7 +209,7 @@ void ArkWebDownloadFileImplExt::StopDownloadJobTimer() {
 }
 
 void ArkWebDownloadFileImplExt::ResetDownloadJobTimer() {
-  if (download_job_timer_ && download_job_timer_->IsRunning()) {
+  if (download_job_timer_) {
     download_job_timer_.reset();
   }
 }

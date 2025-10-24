@@ -376,11 +376,7 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
 void OHOSAudioOutputStream::Stop() {
   LOG(INFO) << "OHOSAudioOutputStream::Stop. [hash: " << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";
   base::AutoLock lock(lock_);
-  if (main_task_runner_) {
-    main_task_runner_->PostTask(
-        FROM_HERE, base::BindOnce(&OHOSAudioOutputStream::StopTimer,
-                                  weak_factory_.GetWeakPtr()));
-  }
+  StopTimer();
   running_ = false;
   auto it = std::find(OHOSAudioOutputStream::audioParameterSet_.begin(),
                       OHOSAudioOutputStream::audioParameterSet_.end(), parameters_);

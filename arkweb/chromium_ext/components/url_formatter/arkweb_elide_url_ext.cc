@@ -84,18 +84,14 @@ UrlType GetInputTypeForScheme(const std::string& scheme) {
        base::EqualsCaseInsensitiveASCII(scheme, url::kFileSystemScheme) ||
        base::EqualsCaseInsensitiveASCII(scheme, url::kJavaScriptScheme) ||
        base::EqualsCaseInsensitiveASCII(scheme, url::kResourcesScheme) ||
-       base::EqualsCaseInsensitiveASCII(scheme, url::kArkwebScheme))) {
+       base::EqualsCaseInsensitiveASCII(scheme, url::kArkwebScheme) ||
+       base::EqualsCaseInsensitiveASCII(scheme, url::kDataabilityScheme))) {
     return UrlType::URL;
   }
 
   if (base::IsStringASCII(scheme) &&
       url::IsStandard(scheme.c_str(),
                       url::Component(0, static_cast<int>(scheme.length())))) {
-    return UrlType::URL;
-  }
-
-  if (base::IsStringASCII(scheme) &&
-      base::EqualsCaseInsensitiveASCII(scheme, url::kDataabilityScheme)) {
     return UrlType::URL;
   }
 

@@ -683,7 +683,6 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
   void SetForceEnableZoom(bool forceEnableZoom) override {}
   bool GetForceEnableZoom() override { return false; }
   int GetNWebId() override { return 0; }
-  bool JudgeTextInputState() override { return false; }
   bool GetSavePasswordAutomatically() override { return false; }
   void SetSavePasswordAutomatically(bool enable) override {}
   void SaveOrUpdatePassword(bool is_update) override {}

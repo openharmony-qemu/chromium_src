@@ -145,25 +145,21 @@ OH_Huks_Result InitExtParamSet(
 {
     OH_Huks_Result ret;
     ret.errorCode = -1;
-    OHHuksInitExtParamSet huksInitExtParamSet = GetOHHuksInitExtParamSet();
     if (!huksInitExtParamSet) {
         WVLOG_E("OH_Huks_InitExtParamSet does not exist");
         return ret;
     }
  
-    OHHuksAddExtParams huksAddExtParams = GetOHHuksAddExtParams();
     if (!huksAddExtParams) {
         WVLOG_E("OH_Huks_AddExtParams does not exist");
         return ret;
     }
  
-    OHHuksBuildExtParamSet huksBuildExtParamSet = GetOHHuksBuildExtParamSet();
     if (!huksBuildExtParamSet) {
         WVLOG_E("OH_Huks_BuildExtParamSet does not exist");
         return ret;
     }
  
-    OHHuksFreeExtParamSet huksFreeExtParamSet = GetOHHuksFreeExtParamSet();
     if (!huksFreeExtParamSet) {
         WVLOG_E("OH_Huks_FreeExtParamSet does not exist");
         return ret;

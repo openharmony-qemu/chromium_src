@@ -19,7 +19,7 @@
 #include "cef_delegate/nweb_inputmethod_client.h"
 #include "condition_variable"
 #define private public
-#include "arkweb/chromium_ext/base/ohos/ltpo/src/mock_sys_info_util_ext.h"
+#include "arkweb/ohos_adapter_ndk/mock_ndk_api/include/mock_base_ohos_api.h"
 #include "base/ohos/sys_info_utils_ext.h"
 #include "cef_devtools_message_handler_delegate.h"
 #include "cef_client.h"
@@ -1818,6 +1818,7 @@ TEST_F(NWebInputMethodHandlerTest, SendEnterKeyEventOnUI_002) {
 }
 
 TEST_F(NWebInputMethodHandlerTest, SendEnterKeyEventOnUI_003) {
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = true;
   CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
   testing::Mock::AllowLeak(mockHost.get());
   std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
@@ -1835,9 +1836,11 @@ TEST_F(NWebInputMethodHandlerTest, SendEnterKeyEventOnUI_003) {
 	::testing::AtLeast(1)).WillRepeatedly(testing::Return(false));
   enterKeyType = static_cast<int32_t>(IMFAdapterEnterKeyType::UNSPECIFIED);
   inputmethod_handler_->SendEnterKeyEventOnUI(enterKeyType);
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = false;
 }
 
 TEST_F(NWebInputMethodHandlerTest, SendEnterKeyEventOnUI_004) {
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = true;
   CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
   testing::Mock::AllowLeak(mockHost.get());
   std::unique_ptr<MockCefBrowser> mock_browser = std::make_unique<MockCefBrowser>(mockHost);
@@ -1865,6 +1868,7 @@ TEST_F(NWebInputMethodHandlerTest, SendEnterKeyEventOnUI_004) {
   inputmethod_handler_->input_flags_ |= CEF_TEXT_INPUT_FLAG_HAS_BEEN_PASSWORD;
   enterKeyType = static_cast<int32_t>(IMFAdapterEnterKeyType::PREVIOUS);
   inputmethod_handler_->SendEnterKeyEventOnUI(enterKeyType);
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = false;
 }
 
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
@@ -3101,6 +3105,7 @@ TEST_F(NWebInputMethodHandlerTest, TextInputActionToIMFAdapter) {
   inputInfo.input_action = CEF_TEXT_INPUT_ACTION_SEND;
   result = inputmethod_handler_->TextInputActionToIMFAdapter(inputInfo);
   EXPECT_EQ(result, IMFAdapterEnterKeyType::SEND);
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = false;
 }
 
 TEST_F(NWebInputMethodHandlerTest, TextInputTypeToIMFAdapter) {

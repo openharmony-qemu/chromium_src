@@ -272,9 +272,23 @@ TEST_F(NativeImageAdapterImplTest, NativeImageAdapterImplTest_011)
     adapter->GetNativeWindowBufferSize(windowBuffer, nullptr, nullptr);
     adapter->GetNativeWindowBufferSize(windowBuffer, &width, nullptr);
     adapter->GetNativeWindowBufferSize(windowBuffer, nullptr, &height);
+    g_mock_OH_NativeWindow_GetBufferHandleFromNative = [](OHNativeWindowBuffer* nativeWindowBuffer) {
+        return nullptr;
+    };
     adapter->GetNativeWindowBufferSize(windowBuffer, &width, &height);
-    delete[] reinterpret_cast<uint8_t*>(windowBuffer);
     EXPECT_EQ(width, static_cast<uint32_t>(0));
     EXPECT_EQ(height, static_cast<uint32_t>(0));
+
+    BufferHandle handle;
+    handle.width = 1;
+    handle.height = 1;
+    g_mock_OH_NativeWindow_GetBufferHandleFromNative = [&handle](OHNativeWindowBuffer* nativeWindowBuffer) {
+        return &handle;
+    };
+    adapter->GetNativeWindowBufferSize(windowBuffer, &width, &height);
+    EXPECT_EQ(width, handle.width);
+    EXPECT_EQ(height, handle.height);
+    g_mock_OH_NativeWindow_GetBufferHandleFromNative = nullptr;
+    delete[] reinterpret_cast<uint8_t*>(windowBuffer);
 }
 } // namespace OHOS::NWeb

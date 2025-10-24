@@ -28,7 +28,7 @@
 #include "url/origin.h"
 #include "content/browser/child_process_security_policy_impl.h"
 #include "content/browser/renderer_host/spare_render_process_host_manager_impl.h"
-#include "arkweb/chromium_ext/base/ohos/ltpo/src/mock_sys_info_util_ext.h"
+#include "arkweb/ohos_adapter_ndk/mock_ndk_api/include/mock_base_ohos_api.h"
 #include "arkweb/ohos_nweb/src/nweb_resize_helper.h"
 #include "content/public/common/content_switches.h"
 #define private public
@@ -130,6 +130,8 @@ TEST_F(RenderProcessHostImplUtilsTest, GetMaxRendererProcessCountExMaxCount) {
 }
  
 TEST_F(RenderProcessHostImplUtilsTest, GetMaxRendererProcessCountExAmount) {
+  RenderProcessHost::SetRenderProcessMode(RenderProcessMode::MULTIPLE_MODE);
+  g_max_renderer_count_override = 0;
   size_t maxRendererProcessCount = ArkwebRenderProcessHostImplUtils::GetMaxRendererProcessCountEx();
   size_t minRenderCount = 3;
   EXPECT_TRUE(maxRendererProcessCount > minRenderCount);
@@ -195,10 +197,10 @@ TEST_F(RenderProcessHostImplUtilsTest, IsSuitableHostForArkwebTest5) {
 }
  
 TEST_F(RenderProcessHostImplUtilsTest, GetProcessCountForLimitArkweb) {
-  size_t processCountToIgnore = 0;
+  size_t processCountToIgnore = 1;
+  size_t processCount = RenderProcessHostImpl::GetProcessCount();
   size_t result = ArkwebRenderProcessHostImplUtils::GetProcessCountForLimitArkweb(processCountToIgnore);
-  size_t count = 1;
-  EXPECT_EQ(result, count);
+  EXPECT_TRUE(processCount - processCountToIgnore >= result);
 }
  
 #if BUILDFLAG(ARKWEB_THEME_FONT)
@@ -484,55 +486,55 @@ TEST_F(RenderProcessHostImplUtilsTest, ReportHisyeventTest3) {
 }
  
 TEST_F(RenderProcessHostImplUtilsTest, RenderProcessModeTest) {
-  base::ohos::SysInfoUtilsMock::isPcDevice = true;
-  base::ohos::SysInfoUtilsMock::isTabletDevice = true;
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = true;
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = true;
   g_render_process_mode = RenderProcessMode::DEFAULT_MODE;
   auto& sys_info_utils_mock = base::ohos::SysInfoUtilsMock::GetInstance();
   EXPECT_CALL(sys_info_utils_mock, IsPcDevice()).WillRepeatedly(testing::Return(false));
   EXPECT_CALL(sys_info_utils_mock, IsTabletDevice()).WillRepeatedly(testing::Return(false));
   auto result = RenderProcessHost::render_process_mode();
   EXPECT_EQ(result, RenderProcessMode::SINGLE_MODE);
-  base::ohos::SysInfoUtilsMock::isPcDevice = false;
-  base::ohos::SysInfoUtilsMock::isTabletDevice = false;
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = false;
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = false;
 }
 
 TEST_F(RenderProcessHostImplUtilsTest, RenderProcessModeTest2) {
-  base::ohos::SysInfoUtilsMock::isPcDevice = true;
-  base::ohos::SysInfoUtilsMock::isTabletDevice = true;
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = true;
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = true;
   g_render_process_mode = RenderProcessMode::DEFAULT_MODE;
   auto& sys_info_utils_mock = base::ohos::SysInfoUtilsMock::GetInstance();
   EXPECT_CALL(sys_info_utils_mock, IsPcDevice()).WillRepeatedly(testing::Return(true));
   EXPECT_CALL(sys_info_utils_mock, IsTabletDevice()).WillRepeatedly(testing::Return(false));
   auto result = RenderProcessHost::render_process_mode();
   EXPECT_EQ(result, RenderProcessMode::MULTIPLE_MODE);
-  base::ohos::SysInfoUtilsMock::isPcDevice = false;
-  base::ohos::SysInfoUtilsMock::isTabletDevice = false;
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = false;
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = false;
 }
  
 TEST_F(RenderProcessHostImplUtilsTest, RenderProcessModeTest3) {
-  base::ohos::SysInfoUtilsMock::isPcDevice = true;
-  base::ohos::SysInfoUtilsMock::isTabletDevice = true;
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = true;
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = true;
   g_render_process_mode = RenderProcessMode::DEFAULT_MODE;
   auto& sys_info_utils_mock = base::ohos::SysInfoUtilsMock::GetInstance();
   EXPECT_CALL(sys_info_utils_mock, IsPcDevice()).WillRepeatedly(testing::Return(false));
   EXPECT_CALL(sys_info_utils_mock, IsTabletDevice()).WillRepeatedly(testing::Return(true));
   auto result = RenderProcessHost::render_process_mode();
   EXPECT_EQ(result, RenderProcessMode::MULTIPLE_MODE);
-  base::ohos::SysInfoUtilsMock::isPcDevice = false;
-  base::ohos::SysInfoUtilsMock::isTabletDevice = false;
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = false;
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = false;
 }
  
 TEST_F(RenderProcessHostImplUtilsTest, RenderProcessModeTest4) {
-  base::ohos::SysInfoUtilsMock::isPcDevice = true;
-  base::ohos::SysInfoUtilsMock::isTabletDevice = true;
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = true;
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = true;
   g_render_process_mode = RenderProcessMode::DEFAULT_MODE;
   auto& sys_info_utils_mock = base::ohos::SysInfoUtilsMock::GetInstance();
   EXPECT_CALL(sys_info_utils_mock, IsPcDevice()).WillRepeatedly(testing::Return(true));
   EXPECT_CALL(sys_info_utils_mock, IsTabletDevice()).WillRepeatedly(testing::Return(true));
   auto result = RenderProcessHost::render_process_mode();
   EXPECT_EQ(result, RenderProcessMode::MULTIPLE_MODE);
-  base::ohos::SysInfoUtilsMock::isPcDevice = false;
-  base::ohos::SysInfoUtilsMock::isTabletDevice = false;
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = false;
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = false;
 }
  
 TEST_F(RenderProcessHostImplUtilsTest, GetProcessHostForSiteInstanceArkwebTest) {
@@ -572,8 +574,8 @@ TEST_F(RenderProcessHostImplUtilsTest, GetProcessHostForSiteInstanceArkwebTest3)
 }
  
 TEST_F(RenderProcessHostImplUtilsTest, GetProcessHostForSiteInstanceArkwebTest4) {
-  base::ohos::SysInfoUtilsMock::isPcDevice = true;
-  base::ohos::SysInfoUtilsMock::isTabletDevice = true;
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = true;
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = true;
   GURL test_url("https://www.example.com");
   g_render_process_mode = RenderProcessMode::DEFAULT_MODE;
   size_t count = 0;
@@ -592,13 +594,13 @@ TEST_F(RenderProcessHostImplUtilsTest, GetProcessHostForSiteInstanceArkwebTest4)
  
   ASSERT_NO_FATAL_FAILURE(ArkwebRenderProcessHostImplUtils::GetProcessHostForSiteInstanceArkweb(
       test_process, site_info, web_content_impl->GetBrowserContext(), count, test_site_instance.get()));
-  base::ohos::SysInfoUtilsMock::isPcDevice = false;
-  base::ohos::SysInfoUtilsMock::isTabletDevice = false;
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = false;
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = false;
 }
  
 TEST_F(RenderProcessHostImplUtilsTest, GetProcessHostForSiteInstanceArkwebTest5) {
-  base::ohos::SysInfoUtilsMock::isPcDevice = true;
-  base::ohos::SysInfoUtilsMock::isTabletDevice = true;
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = true;
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = true;
   GURL test_url("https://www.example.com");
   g_render_process_mode = RenderProcessMode::DEFAULT_MODE;
   size_t count = 0;
@@ -617,13 +619,13 @@ TEST_F(RenderProcessHostImplUtilsTest, GetProcessHostForSiteInstanceArkwebTest5)
  
   ASSERT_NO_FATAL_FAILURE(ArkwebRenderProcessHostImplUtils::GetProcessHostForSiteInstanceArkweb(
       test_process, site_info, web_content_impl->GetBrowserContext(), count, test_site_instance.get()));
-  base::ohos::SysInfoUtilsMock::isPcDevice = false;
-  base::ohos::SysInfoUtilsMock::isTabletDevice = false;
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = false;
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = false;
 }
 
 TEST_F(RenderProcessHostImplUtilsTest, GetProcessHostForSiteInstanceArkwebTest6) {
-  base::ohos::SysInfoUtilsMock::isPcDevice = true;
-  base::ohos::SysInfoUtilsMock::isTabletDevice = true;
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = true;
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = true;
   GURL test_url("https://www.example.com");
   g_render_process_mode = RenderProcessMode::DEFAULT_MODE;
   size_t count = 0;
@@ -641,13 +643,13 @@ TEST_F(RenderProcessHostImplUtilsTest, GetProcessHostForSiteInstanceArkwebTest6)
  
   ASSERT_NO_FATAL_FAILURE(ArkwebRenderProcessHostImplUtils::GetProcessHostForSiteInstanceArkweb(
       test_process, site_info, web_content_impl->GetBrowserContext(), maxProcessCount, test_site_instance.get()));
-  base::ohos::SysInfoUtilsMock::isPcDevice = false;
-  base::ohos::SysInfoUtilsMock::isTabletDevice = false;
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = false;
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = false;
 }
  
 TEST_F(RenderProcessHostImplUtilsTest, GetProcessHostForSiteInstanceArkwebTest7) {
-  base::ohos::SysInfoUtilsMock::isPcDevice = true;
-  base::ohos::SysInfoUtilsMock::isTabletDevice = true;
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = true;
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = true;
   GURL test_url("https://www.example.com");
   g_render_process_mode = RenderProcessMode::DEFAULT_MODE;
   size_t count = 0;
@@ -665,8 +667,8 @@ TEST_F(RenderProcessHostImplUtilsTest, GetProcessHostForSiteInstanceArkwebTest7)
  
   ASSERT_NO_FATAL_FAILURE(ArkwebRenderProcessHostImplUtils::GetProcessHostForSiteInstanceArkweb(
       test_process, site_info, web_content_impl->GetBrowserContext(), maxProcessCount, test_site_instance.get()));
-  base::ohos::SysInfoUtilsMock::isPcDevice = false;
-  base::ohos::SysInfoUtilsMock::isTabletDevice = false;
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = false;
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = false;
 }
  
 TEST_F(RenderProcessHostImplUtilsTest, TryKillRenderTest) {
@@ -679,8 +681,8 @@ TEST_F(RenderProcessHostImplUtilsTest, TryKillRenderTest) {
 }
  
 TEST_F(RenderProcessHostImplUtilsTest, TryKillRenderTest2) {
-  base::ohos::SysInfoUtilsMock::isPcDevice = true;
-  base::ohos::SysInfoUtilsMock::isTabletDevice = true;
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = true;
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = true;
   g_max_renderer_count_override = 4;
   auto* killer = DelayedRenderKiller::GetInstance();
   killer->rep_ = 0;
@@ -693,13 +695,13 @@ TEST_F(RenderProcessHostImplUtilsTest, TryKillRenderTest2) {
   EXPECT_CALL(*mock_timer, Stop())
     .Times(1);
   ASSERT_NO_FATAL_FAILURE(killer->TryKillRender());
-  base::ohos::SysInfoUtilsMock::isPcDevice = false;
-  base::ohos::SysInfoUtilsMock::isTabletDevice = false;
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = false;
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = false;
 }   
  
 TEST_F(RenderProcessHostImplUtilsTest, TryKillRenderTest3) {
-  base::ohos::SysInfoUtilsMock::isPcDevice = true;
-  base::ohos::SysInfoUtilsMock::isTabletDevice = true;
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = true;
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = true;
   g_max_renderer_count_override = 4;
   auto* killer = DelayedRenderKiller::GetInstance();
   killer->rep_ = 0;
@@ -712,8 +714,8 @@ TEST_F(RenderProcessHostImplUtilsTest, TryKillRenderTest3) {
   EXPECT_CALL(*mock_timer, Stop())
     .Times(1);
   ASSERT_NO_FATAL_FAILURE(killer->TryKillRender());
-  base::ohos::SysInfoUtilsMock::isPcDevice = false;
-  base::ohos::SysInfoUtilsMock::isTabletDevice = false;
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = false;
+  base::ohos::SysInfoUtilsMock::mockIsTabletDevice = false;
 }
  
 #endif

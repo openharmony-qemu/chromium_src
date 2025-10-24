@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "mock_codec_decoder_adapter.h"
+#include "arkweb/ohos_adapter_ndk/mock_ndk_api/include/mock_codec_decoder_adapter.h"
 
 namespace OHOS {
 namespace NWeb {

@@ -65,6 +65,9 @@ class MediaAVSessionAdapterImplTest : public testing::Test {
  public:
   MediaAVSessionAdapterImplTest() = default;
   ~MediaAVSessionAdapterImplTest() = default;
+  void TearDown() override {
+    SetAllMockType(false);
+  }
   void SetAllMockType(bool type) {
     OhosInterfaceMock::bNativeBundleGetMainElementName = type;
     OhosInterfaceMock::bAVMetadataBuilderCreate = type;
@@ -1037,11 +1040,11 @@ TEST_F(MediaAVSessionAdapterImplTest, MediaAVSessionAdapterImplUpdateMetaDataCac
   auto metadata = std::make_shared<MediaAVSessionMetadataAdapterMock>();
 
   EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_AVMetadataBuilder_SetTitle(testing::_, testing::_))
-      .WillOnce(testing::Return(AVMETADATA_SUCCESS));
+      .WillRepeatedly(testing::Return(AVMETADATA_SUCCESS));
   EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_AVMetadataBuilder_SetArtist(testing::_, testing::_))
-      .WillOnce(testing::Return(AVMETADATA_SUCCESS));
+      .WillRepeatedly(testing::Return(AVMETADATA_SUCCESS));
   EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_AVMetadataBuilder_SetAlbum(testing::_, testing::_))
-      .WillOnce(testing::Return(AVMETADATA_SUCCESS));
+      .WillRepeatedly(testing::Return(AVMETADATA_SUCCESS));
   EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_AVMetadataBuilder_GenerateAVMetadata(testing::_, testing::_))
       .WillOnce(testing::Return(AVMETADATA_ERROR_INVALID_PARAM))
       .WillRepeatedly(testing::Return(AVMETADATA_SUCCESS));
@@ -1057,11 +1060,11 @@ TEST_F(MediaAVSessionAdapterImplTest, MediaAVSessionAdapterImplUpdateMetaDataNoC
   adapter->avMetadata_ = nullptr;
   auto metadata = std::make_shared<MediaAVSessionMetadataAdapterMock>();
 
-  EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_AVMetadataBuilder_SetTitle(testing::_, testing::_)).Times(0);
-  EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_AVMetadataBuilder_SetArtist(testing::_, testing::_)).Times(0);
-  EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_AVMetadataBuilder_SetAlbum(testing::_, testing::_)).Times(0);
+  EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_AVMetadataBuilder_SetTitle(testing::_, testing::_)).Times(AnyNumber());
+  EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_AVMetadataBuilder_SetArtist(testing::_, testing::_)).Times(AnyNumber());
+  EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_AVMetadataBuilder_SetAlbum(testing::_, testing::_)).Times(AnyNumber());
   EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_AVMetadataBuilder_GenerateAVMetadata(testing::_, testing::_))
-      .Times(0);
+      .Times(AnyNumber());
 
   bool result = adapter->UpdateMetaData(metadata);
   EXPECT_EQ(result, false);

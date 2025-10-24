@@ -14,7 +14,7 @@
  */
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include "base/ohos/sys_info_utils_ext.h"
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
 namespace base::ohos {
@@ -33,14 +33,14 @@ public:
   MOCK_METHOD(int32_t, MajorVersion, (), ());
   MOCK_METHOD(int32_t, SeniorVersion, (), ());
 
-  static bool osVersion;
-  static bool compatibleDeviceType;
-  static bool isMobileDevice;
-  static bool isTabletDevice;
-  static bool isPcDevice;
-  static bool baseOsName;
-  static bool majorVersion;
-  static bool seniorVersion;
+  static bool mockOsVersion;
+  static bool mockCompatibleDeviceType;
+  static bool mockIsMobileDevice;
+  static bool mockIsTabletDevice;
+  static bool mockIsPcDevice;
+  static bool mockBaseOsName;
+  static bool mockMajorVersion;
+  static bool mockSeniorVersion;
 };
 
 #ifdef __cplusplus

@@ -22,6 +22,7 @@
 #include <unordered_map>
 #include <BasicServicesKit/oh_commonevent.h>
 #include <BasicServicesKit/oh_commonevent_support.h>
+#include <BasicServicesKit/ohbattery_info.h>
 #include <BasicServicesKit/time_service.h>
 #include <network/netmanager/net_connection_type.h>
 #include <network/netmanager/net_connection.h>
@@ -40,7 +41,6 @@
 #include <native_vsync/native_vsync.h>
 #include <native_window/external_window.h>
 #include <native_image/native_image.h>
-#include <BasicServicesKit/ohbattery_info.h>
 
 namespace MockNdkApi {
 
@@ -191,6 +191,11 @@ int32_t __real_OH_NativeBuffer_FromNativeWindowBuffer(OHNativeWindowBuffer* nati
     OH_NativeBuffer **buffer);
 int32_t __wrap_OH_NativeBuffer_FromNativeWindowBuffer(OHNativeWindowBuffer* nativeWindowBuffer,
     OH_NativeBuffer **buffer);
+
+extern std::function<BufferHandle* (OHNativeWindowBuffer *buffer)>
+    g_mock_OH_NativeWindow_GetBufferHandleFromNative;
+BufferHandle* __real_OH_NativeWindow_GetBufferHandleFromNative(OHNativeWindowBuffer *buffer);
+BufferHandle* __wrap_OH_NativeWindow_GetBufferHandleFromNative(OHNativeWindowBuffer *buffer);    
 
 #ifdef __cplusplus
 }
@@ -475,20 +480,11 @@ extern int32_t (*__real_OH_SensorEvent_GetType)(Sensor_Event*, Sensor_Type*);
 extern int32_t (*__real_OH_SensorEvent_GetData)(Sensor_Event*, float**, uint32_t*);
 extern int32_t (*__real_OH_SensorEvent_GetTimestamp)(Sensor_Event*, int64_t*);
 
-#ifdef __cplusplus
-}
-#endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-void __real_OH_CommonEvent_DestroySubscribeInfo(CommonEvent_SubscribeInfo* info);
-void __real_OH_CommonEvent_DestroySubscriber(CommonEvent_Subscriber* subscriber);
 const CommonEvent_Parameters * __real_OH_CommonEvent_GetParametersFromRcvData(const CommonEvent_RcvData *rcvData);
 bool __real_OH_CommonEvent_HasKeyInParameters(const CommonEvent_Parameters *para, const char *key);
 int __real_OH_CommonEvent_GetIntFromParameters(const CommonEvent_Parameters *para, const char *key, int defaultValue);
 int32_t __real_OH_CommonEvent_GetCodeFromRcvData(const CommonEvent_RcvData* rcvData);
-int32_t __real_OH_BatteryInfo_GetCapacity();
+int32_t __real_OH_BatteryInfo_GetCapacity();	
 BatteryInfo_BatteryPluggedType __real_OH_BatteryInfo_GetPluggedType();
 
 #ifdef __cplusplus

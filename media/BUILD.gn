@@ -263,7 +263,6 @@ test("media_unittests") {
   # The test needs OPUS_FIXED_POINT conditional define.
   configs += [
     "//third_party/opus:opus_config",
-    "//arkweb/chromium_ext:arkweb_codec_decoder_adapter_unittest_config",
   ]
 
   if (is_ios) {
@@ -277,6 +276,9 @@ test("media_unittests") {
       "//components/subresource_filter/content/browser:browser",
       "//cef:libcef_static",
     ]
+  }
+  if (arkweb_test) {
+    deps += [ "//arkweb/ohos_adapter_ndk/mock_ndk_api:mock_ndk" ]
   }
 }
 

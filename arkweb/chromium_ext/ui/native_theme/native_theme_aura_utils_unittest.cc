@@ -21,7 +21,7 @@
 #include "base/containers/flat_map.h"
 #define private public
 #define protected public
-#include "arkweb/chromium_ext/base/ohos/mock_sys_info_utils_ext.h"
+#include "arkweb/ohos_adapter_ndk/mock_ndk_api/include/mock_sys_info_util_ext.h"
 #include "arkweb/chromium_ext/ui/native_theme/native_theme_aura_utils.h"
 #include "cc/paint/record_paint_canvas.h"
 #include "ui/native_theme/native_theme.h"
@@ -149,8 +149,9 @@ TEST_F(NativeThemeAuraUtilsTest, GetNinePatchAperture_001) {
 }
 
 TEST_F(NativeThemeAuraUtilsTest, PCDeviceTest_001) {
-  auto& system_properties_mock = base::ohos::SystemPropertiesMock::getInstance();
-  EXPECT_CALL(system_properties_mock, IsPcDeviceMock())
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = true;
+  auto& system_properties_mock = base::ohos::SysInfoUtilsMock::GetInstance();
+  EXPECT_CALL(system_properties_mock, IsPcDevice())
       .WillOnce(Return(true))
       .WillRepeatedly(Return(true));
 
@@ -171,5 +172,6 @@ TEST_F(NativeThemeAuraUtilsTest, PCDeviceTest_001) {
   part = NativeTheme::kScrollbarVerticalThumb;
   native_theme_aura_utils_->PaintOverlayScrollbarThumb(
       &canvas, rect, scrollbar_color, part, thumb_color, fill_flags);
+  base::ohos::SysInfoUtilsMock::mockIsPcDevice = false;      
 }
 }  // namespace ui

@@ -13,25 +13,25 @@
  * limitations under the License.
  */
 
-#include "mock_sys_info_util_ext.h"
+#include "arkweb/ohos_adapter_ndk/mock_ndk_api/include/mock_sys_info_util_ext.h"
 
 namespace base::ohos {
 
-bool SysInfoUtilsMock::osVersion = false;
-bool SysInfoUtilsMock::compatibleDeviceType = false;
-bool SysInfoUtilsMock::isMobileDevice = false;
-bool SysInfoUtilsMock::isTabletDevice = false;
-bool SysInfoUtilsMock::isPcDevice = false;
-bool SysInfoUtilsMock::baseOsName = false;
-bool SysInfoUtilsMock::majorVersion = false;
-bool SysInfoUtilsMock::seniorVersion = false;
+bool SysInfoUtilsMock::mockOsVersion = false;
+bool SysInfoUtilsMock::mockCompatibleDeviceType = false;
+bool SysInfoUtilsMock::mockIsMobileDevice = false;
+bool SysInfoUtilsMock::mockIsTabletDevice = false;
+bool SysInfoUtilsMock::mockIsPcDevice = false;
+bool SysInfoUtilsMock::mockBaseOsName = false;
+bool SysInfoUtilsMock::mockMajorVersion = false;
+bool SysInfoUtilsMock::mockSeniorVersion = false;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 std::string __wrap_OsVersion() {
-  if (SysInfoUtilsMock::osVersion == true) {
+  if (SysInfoUtilsMock::mockOsVersion == true) {
     return SysInfoUtilsMock::GetInstance().OsVersion();
   } else {
     return __real_OsVersion();
@@ -39,7 +39,7 @@ std::string __wrap_OsVersion() {
 }
 
 std::string __wrap_CompatibleDeviceType() {
-  if (SysInfoUtilsMock::compatibleDeviceType == true) {
+  if (SysInfoUtilsMock::mockCompatibleDeviceType == true) {
     return SysInfoUtilsMock::GetInstance().CompatibleDeviceType();
   } else {
     return __real_CompatibleDeviceType();
@@ -47,7 +47,7 @@ std::string __wrap_CompatibleDeviceType() {
 }
 
 bool __wrap_IsMobileDevice() {
-  if (SysInfoUtilsMock::isMobileDevice == true) {
+  if (SysInfoUtilsMock::mockIsMobileDevice == true) {
     return SysInfoUtilsMock::GetInstance().IsMobileDevice();
   } else {
     return __real_IsMobileDevice();
@@ -55,7 +55,7 @@ bool __wrap_IsMobileDevice() {
 }
 
 bool __wrap_IsTabletDevice() {
-  if (SysInfoUtilsMock::isTabletDevice == true) {
+  if (SysInfoUtilsMock::mockIsTabletDevice == true) {
     return SysInfoUtilsMock::GetInstance().IsTabletDevice();
   } else {
     return __real_IsTabletDevice();
@@ -63,7 +63,7 @@ bool __wrap_IsTabletDevice() {
 }
 
 bool __wrap_IsPcDevice() {
-  if (SysInfoUtilsMock::isPcDevice == true) {
+  if (SysInfoUtilsMock::mockIsPcDevice == true) {
     return SysInfoUtilsMock::GetInstance().IsPcDevice();
   } else {
     return __real_IsPcDevice();
@@ -71,7 +71,7 @@ bool __wrap_IsPcDevice() {
 }
 
 std::string __wrap_BaseOsName() {
-  if (SysInfoUtilsMock::baseOsName == true) {
+  if (SysInfoUtilsMock::mockBaseOsName == true) {
     return SysInfoUtilsMock::GetInstance().BaseOsName();
   } else {
     return __real_BaseOsName();
@@ -79,7 +79,7 @@ std::string __wrap_BaseOsName() {
 }
 
 int32_t __wrap_MajorVersion() {
-  if (SysInfoUtilsMock::majorVersion == true) {
+  if (SysInfoUtilsMock::mockMajorVersion == true) {
     return SysInfoUtilsMock::GetInstance().MajorVersion();
   } else {
     return __real_MajorVersion();
@@ -87,7 +87,7 @@ int32_t __wrap_MajorVersion() {
 }
 
 int32_t __wrap_SeniorVersion() {
-  if (SysInfoUtilsMock::seniorVersion == true) {
+  if (SysInfoUtilsMock::mockSeniorVersion == true) {
     return SysInfoUtilsMock::GetInstance().SeniorVersion();
   } else {
     return __real_SeniorVersion();
@@ -96,4 +96,4 @@ int32_t __wrap_SeniorVersion() {
 #ifdef __cplusplus
 }
 #endif
-} // namespace base::ohos
+}  // namespace base::ohos

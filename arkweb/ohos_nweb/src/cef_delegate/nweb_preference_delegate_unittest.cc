@@ -713,6 +713,7 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
   CefString GetCustomUserAgent() override { return CefString(); }
   void GetLastHitData(int& type, CefString& extra_data) override {}
   std::string GetSelectedTextFromContextParam() override { return ""; }
+  bool JudgeTextInputState() override { return true; }
   void SetNeedsReload(bool needs_reload) override {}
   void SetOptimizeParserBudgetEnabled(bool enable) override {}
   void OnDestroyImageAnalyzerOverlay() override {}

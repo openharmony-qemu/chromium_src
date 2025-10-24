@@ -29,6 +29,7 @@ void ExtensionPrefs::SetNotDisplayInSettings(const ExtensionId& extension_id,
                                              bool not_display) {
   UpdateExtensionPref(extension_id, kPrefNotDisplayInSettings,
                       base::Value(not_display));
+  prefs_->CommitPendingWrite();
 }
 
 bool ExtensionPrefs::IsNotDisplayInSettings(

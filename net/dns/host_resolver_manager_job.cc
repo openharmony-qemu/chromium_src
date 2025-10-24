@@ -670,7 +670,9 @@ void HostResolverManager::Job::OnSystemTaskComplete(
                                        addr_list.dns_aliases().end());
 
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-  AsArkWebHostResolverManagerJobExt()->CheckDnsFallBackTask(net_error);
+  if (AsArkWebHostResolverManagerJobExt()->CheckDnsFallBackTask(net_error)) {
+    return;
+  }
 #endif
 
   // Source unknown because the system resolver could have gotten it from a

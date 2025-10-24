@@ -168,7 +168,7 @@ class DnsConfigServiceOhos::ConfigReader : public SerialWorker {
     void DoWork() override {
       dns_config_.emplace();
       dns_config_->unhandled_options = false;
-#if !defined(COMPONENT_BUILD) && defined(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+#if !defined(COMPONENT_BUILD) && BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
       std::vector<std::string> servers = NetworkChangeNotifier::GetDnsServers();
 #else
       std::vector<std::string> servers;

@@ -18,14 +18,14 @@
 #if PA_BUILDFLAG(IS_WIN)
 #include <windows.h>
 
-#if BUILDFLAG(ARKWEB_CRASHPAD)
-extern "C" __attribute__((weak))void set_fatal_message(const char *msg);
-#endif
-
 #include <array>
 #include <cstdlib>
 #include <limits>
 #endif  // PA_BUILDFLAG(IS_WIN)
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+extern "C" __attribute__((weak))void set_fatal_message(const char *msg);
+#endif
 
 namespace partition_alloc {
 

@@ -114,7 +114,6 @@ class RendererURLLoaderThrottle : public blink::URLLoaderThrottle {
   mojo::Remote<mojom::ExtensionWebRequestReporter>
       extension_web_request_reporter_;
   mojo::PendingRemote<mojom::ExtensionWebRequestReporter>
-      mojo::PendingRemote<mojom::ExtensionWebRequestReporter>
       pending_extension_web_request_reporter_;
   // Tracks if the request originated from an extension, used during redirects
   // to send web request data to the telemetry service.

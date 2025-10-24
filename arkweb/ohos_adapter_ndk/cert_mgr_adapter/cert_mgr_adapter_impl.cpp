@@ -339,12 +339,10 @@ int32_t CertManagerAdapterImpl::GetUkeyCert(const std::string& identity, uint8_t
     OH_CM_UkeyInfo info = {OH_CM_CERT_PURPOSE_SIGN};
     OH_CM_CredentialDetailList credList = {0, nullptr};
  
-    OHCertManagerGetUkeyCertificate certManagerGetUkeyCertificate = GetOHCertManagerGetUkeyCertificate();
     if (!certManagerGetUkeyCertificate) {
         WVLOG_E("OH_CertManager_GetUkeyCertificate does not exist");
         return -1;
     }
-    OHCertManagerFreeUkeyCertificate certManagerFreeUkeyCertificate = GetOHCertManagerFreeUkeyCertificate();
     if (!certManagerFreeUkeyCertificate) {
         WVLOG_E("OH_CertManager_FreeUkeyCertificate does not exist");
         return -1;
@@ -394,14 +392,12 @@ int32_t CertManagerAdapterImpl::OpenUKeyRemoteHandle(const std::string& identity
         return result.errorCode;
     }
  
-    OHHuksOpenRemoteHandle huksOpenRemoteHandle = GetOHHuksOpenRemoteHandle();
     if (!huksOpenRemoteHandle) {
         WVLOG_E("OH_Huks_OpenRemoteHandle does not exist");
         huksFreeExtParamSet(&paramSet);
         return -1;
     }
  
-    OHHuksFreeExtParamSet huksFreeExtParamSet = GetOHHuksFreeExtParamSet();
     if (!huksFreeExtParamSet) {
         WVLOG_E("OH_Huks_FreeExtParamSet does not exist");
         huksFreeExtParamSet(&paramSet);
@@ -438,14 +434,12 @@ int32_t CertManagerAdapterImpl::CloseUKeyRemoteHandle(const std::string& identit
         return result.errorCode;
     }
  
-    OHHuksCloseRemoteHandle huksCloseRemoteHandle = GetOHHuksCloseRemoteHandle();
     if (!huksCloseRemoteHandle) {
         WVLOG_E("OH_Huks_CloseRemoteHandle does not exist");
         huksFreeExtParamSet(&paramSet);
         return -1;
     }
  
-    OHHuksFreeExtParamSet huksFreeExtParamSet = GetOHHuksFreeExtParamSet();
     if (!huksFreeExtParamSet) {
         WVLOG_E("OH_Huks_FreeExtParamSet does not exist");
         huksFreeExtParamSet(&paramSet);
@@ -482,14 +476,12 @@ int32_t CertManagerAdapterImpl::GetUkeyPinAuthState(const std::string& uri, bool
         return result.errorCode;
     }
  
-    OHHuksGetUkeyPinAuthState huksGetUkeyPinAuthState = GetOHHuksGetUkeyPinAuthState();
     if (!huksGetUkeyPinAuthState) {
         WVLOG_E("OH_Huks_GetUkeyPinAuthState does not exist");
         huksFreeExtParamSet(&paramSet);
         return -1;
     }
  
-    OHHuksFreeExtParamSet huksFreeExtParamSet = GetOHHuksFreeExtParamSet();
     if (!huksFreeExtParamSet) {
         WVLOG_E("OH_Huks_FreeExtParamSet does not exist");
         huksFreeExtParamSet(&paramSet);

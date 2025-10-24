@@ -418,7 +418,7 @@ bool PerformAIAFetchAndAddResultToVector(
     bssl::ParsedCertificateList* cert_list) {
   GURL url(uri);
   if (!url.is_valid()) {
-    LOG(ERROR) << "PerformAIAFetchAndAddResultToVector: URL is invalied";
+    LOG(ERROR) << "PerformAIAFetchAndAddResultToVector: URL is invalid";
     return false;
   }
 
@@ -678,10 +678,7 @@ bool VerifyFromOhosTrustManager(const std::vector<std::string>& cert_bytes,
 CertVerifyProcOHOS::CertVerifyProcOHOS(
     scoped_refptr<CertNetFetcher> cert_net_fetcher)
     : CertVerifyProc(CRLSet::BuiltinCRLSet()),
-      cert_net_fetcher_(std::move(cert_net_fetcher)) {
-  if (!std::move(cert_net_fetcher)) {
-  }
-}
+      cert_net_fetcher_(std::move(cert_net_fetcher)) {}
 
 CertVerifyProcOHOS::~CertVerifyProcOHOS() {}
 

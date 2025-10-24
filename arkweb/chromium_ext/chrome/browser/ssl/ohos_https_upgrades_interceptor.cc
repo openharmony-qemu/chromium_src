@@ -96,7 +96,6 @@ net::RedirectInfo SetupRedirect(
   return redirect_info;
 }
 
-
 }  // namespace
 
 using RequestHandler = OhosHttpsUpgradesInterceptor::RequestHandler;

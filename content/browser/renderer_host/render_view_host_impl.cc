@@ -116,7 +116,7 @@
 #include "content/browser/host_zoom_map_impl.h"
 #endif
 
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && !defined(COMPONENT_BUILD)
 #include "extensions/browser/view_type_utils.h"
 #endif
 
@@ -622,7 +622,7 @@ bool RenderViewHostImpl::CreateRenderView(
             .AsMojom();
   }
 
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && !defined(COMPONENT_BUILD)
   params->is_offscreen =
       extensions::GetViewType(WebContents::FromRenderFrameHost(main_rfh)) ==
       extensions::mojom::ViewType::kOffscreenDocument;

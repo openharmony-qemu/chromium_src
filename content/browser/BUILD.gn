@@ -2436,6 +2436,12 @@ source_set("browser") {
     ]
   }
 
+  if (arkweb_arkweb_extensions && !is_component_build) {
+    deps += [
+      "//extensions/common:mojom",
+    ]
+  }
+
   if (arkweb_webrtc) {
     import("//arkweb/chromium_ext/content/browser/renderer_host/media/arkweb_content_browser_renderer_host_media.gni")
     sources += arkweb_content_browser_renderer_host_media_sources

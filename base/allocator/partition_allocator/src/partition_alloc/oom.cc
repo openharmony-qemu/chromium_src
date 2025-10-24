@@ -42,7 +42,7 @@ namespace internal {
   size_t tmp_size = size;
   internal::base::debug::Alias(&tmp_size);
 #if BUILDFLAG(ARKWEB_CRASHPAD)
-  //set_fatal_message("OutOfMemoryError");
+  set_fatal_message("OutOfMemoryError");
   abort();
 #endif
 #if PA_BUILDFLAG(IS_WIN)

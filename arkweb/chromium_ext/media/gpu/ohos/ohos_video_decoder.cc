@@ -322,7 +322,10 @@ bool OhosVideoDecoder::SurfaceTransitionPending() {
 void OhosVideoDecoder::TransitionToTargetSurface() {
   LOG(INFO) << "OhosVideoDecoder::TransitionToTargetSurface";
   DCHECK(SurfaceTransitionPending());
-
+  if (!codec_) {
+    LOG(ERROR) << "OhosVideoDecoder::TransitionToTargetSurface, codec is nullptr";
+    return;
+  }
   if (!codec_->SetSurface(target_surface_bundle_)) {
     video_frame_factory_->SetSurfaceBundle(nullptr);
     EnterTerminalState(State::kError, "Could not switch codec output surface");

@@ -510,6 +510,7 @@ void DownloadTargetDeterminer::ReserveVirtualPathDone(
     switch (result) {
       case download::PathValidationResult::SUCCESS:
         break;
+
       case download::PathValidationResult::SAME_AS_SOURCE:
         ScheduleCallbackAndDeleteSelf(
             download::DOWNLOAD_INTERRUPT_REASON_FILE_SAME_AS_SOURCE);

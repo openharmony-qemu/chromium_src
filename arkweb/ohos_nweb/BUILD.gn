@@ -730,6 +730,10 @@ source_set("unittests") {
     deps += [ "//arkweb/build/features" ]
   }
 
+  if (arkweb_test) {
+    deps += [ "//arkweb/ohos_adapter_ndk/mock_ndk_api:mock_base_ohos" ]
+  }
+  
   if (enable_arkweb_ext) {
     deps += [ "//arkweb/ohos_nweb_ex/build/features" ]
     sources += [ "//arkweb/ohos_nweb_ex/core/web_screencapturer_unittest.cc" ]

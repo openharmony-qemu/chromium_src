@@ -93,7 +93,7 @@ class OHOSAudioOutputStreamTest : public content::RenderViewHostTestHarness {
     stream_ = std::make_unique<OHOSAudioOutputStream>(nullptr, params_, false);
     ASSERT_NE(stream_, nullptr);
     task_runner_ = base::MakeRefCounted<MockSingleThreadTaskRunner>();
-    base::SingleThreadTaskRunner::CurrentDefaultHandle sttcd1(task_runner_);
+    base::SingleThreadTaskRunner::CurrentDefaultHandle sttcd(task_runner_);
   }
 
   content::MediaSessionImpl* GetMediaSession() {

@@ -540,15 +540,15 @@ class CefPdfValueCallbackImpl : public CefPdfValueCallback {
       base::ThreadPool::PostTask(
           FROM_HERE, {base::MayBlock(), base::TaskPriority::HIGHEST},
           base::BindOnce(
-              [](CefPdfValueCallbackImpl* self,
-                 std::shared_ptr<std::string> data) {
-                self->CallbackOnReceiveThread(std::move(data));
+              [](base::WeakPtr<CefPdfValueCallbackImpl> self, std::shared_ptr<std::string> data) {
+                  self->CallbackOnReceiveThread(std::move(data));
               },
-              base::Unretained(this), std::move(pdf_data)));
+              weak_factory_.GetWeakPtr(), std::move(pdf_data)));
     }
   }
 
  private:
+  base::WeakPtrFactory<CefPdfValueCallbackImpl> weak_factory_{this};
   std::shared_ptr<NWebArrayBufferValueCallback> callback_;
   uint32_t callback_id_;
   std::weak_ptr<NWebDelegateInterface> weak_nweb_delegate_;

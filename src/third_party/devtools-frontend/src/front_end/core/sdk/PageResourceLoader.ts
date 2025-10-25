@@ -292,7 +292,7 @@ export class PageResourceLoader extends Common.ObjectWrapper.ObjectWrapper<Event
       throw new Error('Invalid initiator');
     }
 
-    let failureReason: string|null = null;
+    const failureReason: string|null = null;
     if (this.#loadOverride) {
       return this.#loadOverride(url);
     }
@@ -318,7 +318,14 @@ export class PageResourceLoader extends Common.ObjectWrapper.ObjectWrapper<Event
       } catch (e) {
         if (e instanceof Error) {
           Host.userMetrics.developerResourceLoaded(Host.UserMetrics.DeveloperResourceLoaded.LOAD_THROUGH_PAGE_FAILURE);
-          failureReason = e.message;
+          if (e.message.includes('CSP violation')) {
+            return {
+              success: false,
+              content: '',
+              errorDescription:
+                  {statusCode: 0, netError: undefined, netErrorName: undefined, message: e.message, urlValid: undefined}
+            };
+          }
         }
       }
       Host.userMetrics.developerResourceLoaded(Host.UserMetrics.DeveloperResourceLoaded.LOAD_THROUGH_PAGE_FALLBACK);

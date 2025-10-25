@@ -36,6 +36,8 @@ class NWebJSSslSelectCertResultImpl : public NWebJSSslSelectCertResult {
 
   void Cancel() override;
 
+  void Confirm(const std::string& identity, int32_t type) override;
+
  private:
   CefRefPtr<CefSelectClientCertificateCallback> callback_;
 };

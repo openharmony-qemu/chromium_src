@@ -426,6 +426,10 @@ class NWebHandlerDelegate : public ArkWebClientExt,
       const X509CertificateList& certificates,
       CefRefPtr<CefSelectClientCertificateCallback> callback) override;
 
+  bool OnVerifyPin(
+      const std::string& identity,
+      CefRefPtr<CefVerifyPinCallback> callback) override;
+
   CefRefPtr<CefResourceRequestHandler> GetResourceRequestHandler(
       CefRefPtr<CefBrowser> browser,
       CefRefPtr<CefFrame> frame,

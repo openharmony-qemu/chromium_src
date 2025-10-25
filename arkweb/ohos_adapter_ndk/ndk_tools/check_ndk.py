@@ -21,7 +21,7 @@ class ApiParse:
     def check(self):
         result = subprocess.run('nm -CD libarkweb_engine.so  | grep OH_ | grep " U "',
                                 shell=True, capture_output=True, text=True, check=True)
-        ndk_symbols = set([symbol.strip()[2:]for symbol in result.stdout.strip().split("\n")])
+        ndk_symbols = set([symbol.strip()[2:].split('@')[0] for symbol in result.stdout.strip().split("\n")])
         check_result = "\n".join(list(ndk_symbols - self.api_names))
         if check_result:
             raise ValueError(f'The following NDK interfaces are not defined in the JSON file:\n{check_result}')

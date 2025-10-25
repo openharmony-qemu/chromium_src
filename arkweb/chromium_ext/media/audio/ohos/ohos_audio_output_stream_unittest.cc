@@ -93,7 +93,7 @@ class OHOSAudioOutputStreamTest : public content::RenderViewHostTestHarness {
         ChannelLayoutConfig::FromLayout<CHANNEL_LAYOUT_MONO>(), 8000, 160);
     stream_ = std::make_unique<OHOSAudioOutputStream>(nullptr, params_, false);
     ASSERT_NE(stream_, nullptr);
-    task_runner_ = base::MakeRefCounted<MockSingleThreadTaskRunner>();
+    task_runner_ = base::MakeRefCounted<base::SingleThreadTaskRunner>();
     base::SingleThreadTaskRunner::CurrentDefaultHandle sttcd(task_runner_);
   }
 
@@ -172,7 +172,7 @@ class OHOSAudioOutputStreamTest : public content::RenderViewHostTestHarness {
  protected:
   AudioParameters params_;
   std::unique_ptr<OHOSAudioOutputStream> stream_;
-  scoped_refptr<MockSingleThreadTaskRunner> task_runner_;
+  scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
 };
 
 TEST_F(OHOSAudioOutputStreamTest, Open001) {

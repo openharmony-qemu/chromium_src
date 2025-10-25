@@ -309,7 +309,9 @@ class OHOSAudioDecoder : public AudioDecoder,
 
   void WaitingForLicence();
 
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
   void ReportDrmAudioPlayErrorInfo(const std::string& errorDesc);
+#endif
 
  private:
   std::string mime_type_;

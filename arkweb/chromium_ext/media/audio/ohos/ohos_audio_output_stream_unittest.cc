@@ -22,6 +22,7 @@
 
 #include "base/test/task_environment.h"
 #include "base/test/test_mock_time_task_runner.h"
+#include "base/test/test_simple_task_runner.h"
 #include "content/browser/media/session/media_session_impl.h"
 #include "content/browser/media/session/mock_media_session_player_observer.h"
 #include "content/browser/scheduler/browser_io_thread_delegate.h"

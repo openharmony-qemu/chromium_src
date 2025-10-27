@@ -150,6 +150,8 @@ class ArkOhosAdapterHelperWrapper : public NWeb::OhosAdapterHelper {
 
   std::unique_ptr<NWeb::NetConfigAdapter> GetNetConfigAdapter() override;
 
+  std::unique_ptr<NWeb::BackgroundTaskAdapter> CreateBackgroundTaskAdapter() override;
+
  private:
   ArkWebRefPtr<ArkOhosAdapterHelper> ctocpp_;
 };

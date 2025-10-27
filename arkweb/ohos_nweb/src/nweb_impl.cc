@@ -963,6 +963,10 @@ void MigratePasswordsToPasswordVault() {
     LOG(INFO) << "[Autofill] cache_path is empty.";
     return;
   }
+  if (!g_browser_process->local_state()) {
+    LOG(INFO) << "[Autofill] g_browser_process->local_state() is null.";
+    return;
+  }
   base::FilePath flagFile = cache_path.Append(FILE_PATH_LITERAL(kMigrateKeyFlagFile));
   bool IsFlagFileExist = base::PathExists(flagFile);
   bool migrateReady = g_browser_process->local_state()->GetBoolean(browser_prefs::kMigratePasswordsReady);

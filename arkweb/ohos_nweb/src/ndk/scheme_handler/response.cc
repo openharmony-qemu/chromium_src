@@ -39,7 +39,7 @@ void ArkWeb_Response_::GetUrl(char** url) const {
   }
 
   std::string cef_url = cef_response->GetURL().ToString();
-  const int length = cef_url.length();
+  const uint32_t length = cef_url.length();
   *url = new char[length + 1];
   if (!(*url)) {
     LOG(ERROR) << "GetUrl url is nullptr.";
@@ -105,7 +105,7 @@ void ArkWeb_Response_::GetStatusText(char** status_text) const {
   }
 
   std::string cef_status_text = cef_response->GetStatusText().ToString();
-  const int length = cef_status_text.length();
+  const uint32_t length = cef_status_text.length();
   *status_text = new char[length + 1];
   if (!(*status_text)) {
     LOG(ERROR) << "GetStatusText status_text is nullptr.";
@@ -135,7 +135,7 @@ void ArkWeb_Response_::GetMimeType(char** mime_type) const {
   }
 
   std::string cef_mime_type = cef_response->GetMimeType().ToString();
-  const int length = cef_mime_type.length();
+  const uint32_t length = cef_mime_type.length();
   *mime_type = new char[length + 1];
   if (!(*mime_type)) {
     LOG(ERROR) << "GetMimeType mime_type is nullptr.";
@@ -165,7 +165,7 @@ void ArkWeb_Response_::GetCharset(char** charset) const {
   }
 
   std::string cef_charset = cef_response->GetCharset().ToString();
-  const int length = cef_charset.length();
+  const uint32_t length = cef_charset.length();
   *charset = new char[length + 1];
   if (!(*charset)) {
     LOG(ERROR) << "GetCharset charset is nullptr.";
@@ -197,7 +197,7 @@ void ArkWeb_Response_::GetHeaderByName(const char* name, char** value) const {
   }
 
   std::string cef_value = cef_response->GetHeaderByName(name).ToString();
-  const int length = cef_value.length();
+  const uint32_t length = cef_value.length();
   *value = new char[length + 1];
   if (!(*value)) {
     LOG(ERROR) << "GetHeaderByName value is nullptr.";

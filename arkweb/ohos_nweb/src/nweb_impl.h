@@ -726,7 +726,7 @@ class NWebImpl : public NWeb {
   void PutWebDownloadDelegateCallback(
       std::shared_ptr<NWebDownloadDelegateCallback>);
   void StartDownload(const char* url);
-  void ResumeDownload(std::shared_ptr<NWebDownloadItem>);
+  void ResumeDownload(std::shared_ptr<NWebDownloadItem> web_download);
   void StopFling() override;
   static void ResumeDownloadStatic(
       std::shared_ptr<NWebDownloadItem> download_item);

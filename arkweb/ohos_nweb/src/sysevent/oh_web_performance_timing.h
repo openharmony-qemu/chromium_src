@@ -6,7 +6,7 @@
 #ifndef OH_WEB_PERFORMANCE_TIMING_H_
 #define OH_WEB_PERFORMANCE_TIMING_H_
 
-#include <stdint.h>
+#include <cstdint>
 
 struct OhWebPerformanceTiming {
   OhWebPerformanceTiming() = default;

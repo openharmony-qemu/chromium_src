@@ -16,7 +16,7 @@
 #ifndef OHOS_NWEB_SRC_NWEB_DOWNLOAD_DELEGATE_CALLBACK_H_
 #define OHOS_NWEB_SRC_NWEB_DOWNLOAD_DELEGATE_CALLBACK_H_
 
-#include <stddef.h>
+#include <cstddef>
 
 #include "cef/include/cef_base.h"
 #include "cef/include/cef_download_handler.h"

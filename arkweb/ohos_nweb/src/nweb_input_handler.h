@@ -28,7 +28,7 @@ class NWebInputHandler {
   static std::shared_ptr<NWebInputHandler> Create(
       std::shared_ptr<NWebDelegateInterface> nweb_delegate);
 
-  NWebInputHandler(std::shared_ptr<NWebDelegateInterface> nweb_delegate);
+  explicit NWebInputHandler(std::shared_ptr<NWebDelegateInterface> nweb_delegate);
   ~NWebInputHandler() = default;
 
   bool Init();

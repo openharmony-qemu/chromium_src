@@ -84,6 +84,10 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
       int32_t contentfulNodesCountThreshold) override {}
 #endif
 
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  void GetOverScrollOffsetValue(float* offset_x, float* offset_y) override {}
+#endif
+
   CefRefPtr<CefClient> GetClient() override { return nullptr; }
 
   CefRefPtr<CefRequestContext> GetRequestContext() override { return nullptr; }

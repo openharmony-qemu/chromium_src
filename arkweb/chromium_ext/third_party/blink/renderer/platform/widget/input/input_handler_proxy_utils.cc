@@ -1317,6 +1317,14 @@ gfx::Vector2dF InputHandlerProxyUtils::GetOverScrollOffset() {
   }
   return proxy_->elastic_overscroll_controller_->GetUtils()->GetOverScrollOffset();
 }
+
+void InputHandlerProxyUtils::SetClientForElasticOverScrollController() {
+  if (proxy_ && proxy_->elastic_overscroll_controller_ &&
+      proxy_->elastic_overscroll_controller_->GetUtils()) {
+    proxy_->elastic_overscroll_controller_->GetUtils()
+        ->SetInputHandlerProxyClient(proxy_->client_);
+  }
+}
 #endif
 // LCOV_EXCL_STOP
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)

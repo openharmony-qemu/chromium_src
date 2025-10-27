@@ -41,6 +41,7 @@ OHOSAudioOutputStream::OHOSAudioOutputStream(OHOSAudioManager* manager,
   time_per_buffer_ = AudioTimestampHelper::FramesToTime(parameters_.frames_per_buffer(),
                                                         parameters_.sample_rate());
   main_task_runner_ = content::GetUIThreadTaskRunner({});
+  audio_task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
   audioResumeInterval_ = OHOSAudioFocusController::GetAudioResumeInterval(parameters_);
 }
 
@@ -187,7 +188,7 @@ void OHOSAudioOutputStream::OnSuspend() {
     isSuspended_ = true;
     // After stopping playback, it is necessary to continue obtaining audio
     // data, which will trigger the pause action of the render process.
-    main_task_runner_->PostTask(
+    audio_task_runner_->PostTask(
         FROM_HERE, base::BindOnce(&OHOSAudioOutputStream::PumpSamples,
                                   weak_factory_.GetWeakPtr()));
   } else {
@@ -357,11 +358,7 @@ void OHOSAudioOutputStream::Stop() {
   LOG(INFO) << "OHOSAudioOutputStream::Stop. [hash: "
             << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";
   base::AutoLock lock(lock_);
-  if (main_task_runner_) {
-    main_task_runner_->PostTask(
-        FROM_HERE, base::BindOnce(&OHOSAudioOutputStream::StopTimer,
-                                  weak_factory_.GetWeakPtr()));
-  }
+  StopTimer();
   running_ = false;
   if (!audio_renderer_) {
     LOG(ERROR) << "OHOSAudioOutputStream::Stop. audio_renderer_ is nullptr";

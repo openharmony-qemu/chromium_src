@@ -161,6 +161,8 @@ class OHOSAudioOutputStream : public AudioOutputStream {
 
   scoped_refptr<base::SingleThreadTaskRunner> main_task_runner_;
 
+  scoped_refptr<base::SingleThreadTaskRunner> audio_task_runner_;
+
   bool audioExclusive_ = false;
 
   bool isSilentMode_ = false;

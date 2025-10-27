@@ -1196,6 +1196,9 @@ bool PasswordManager::IsAutomaticSavePromptAvailable(
     if (logger) {
       logger->LogMessage(Logger::STRING_NO_PROVISIONAL_SAVE_MANAGER);
     }
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+    LOG(WARNING) << "[PasswordSave] AutomaticSave prompt is not available";
+#endif
     return false;
   }
 
@@ -1252,6 +1255,9 @@ void PasswordManager::OnPasswordFormsRendered(
   }
 
   if (!IsAutomaticSavePromptAvailable()) {
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+    LOG(WARNING) << "[PasswordSave] Automatic save prompt is not available.";
+#endif
     return;
   }
 
@@ -1261,6 +1267,10 @@ void PasswordManager::OnPasswordFormsRendered(
   // found etc. after a login attempt, we do not save the credentials.
   if (client_->WasLastNavigationHTTPError()) {
     OnLoginFailed(logger.get());
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+    LOG(WARNING)
+        << "[PasswordSave] Password not saved owing to server http error.";
+#endif
     return;
   }
 

@@ -181,6 +181,9 @@ LikelyFormFilling SendFillInformationToRenderer(
   WaitForUsernameReason wait_for_username_reason =
       WaitForUsernameReason::kDontWait;
   if (client->IsOffTheRecord()) {
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+    LOG(INFO) << "[passwordSave] current tab is incognito";
+#endif
     wait_for_username_reason = WaitForUsernameReason::kIncognitoMode;
 #if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
   } else if (client->GetPasswordFeatureManager()

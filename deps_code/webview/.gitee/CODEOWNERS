@@ -1,0 +1,254 @@
+[api files]
+ohos_interface/include/ @zhangyanchuan @defeng2020 @fredranking @leezheng_hz @yjone @liuyaoming
+
+[glue files]
+ohos_interface/ohos_glue/ @zhangyanchuan @defeng2020 @fredranking @leezheng_hz @yjone @liuyaoming
+
+[config files]
+ohos_interface/BUILD.gn @zhangyanchuan
+ohos_interface/.gitignore @zhangyanchuan
+
+[OpenHarmony adapter]
+interfaces/kits/cj/ @arkwebbuild
+
+[media]
+ohos_adapter/audio_adapter/ @d0ub1eh
+ohos_adapter/camera_adapter/ @d0ub1eh
+ohos_adapter/media_adapter/ @d0ub1eh
+ohos_adapter/ohos_image_adapter/ @d0ub1eh
+ohos_adapter/screen_capture_adapter/ @d0ub1eh
+test/fuzztest/ohosadapter/audio_adapter/ @d0ub1eh
+test/fuzztest/ohosadapter/camera_adapter/ @d0ub1eh
+test/fuzztest/ohosadapter/interfaces/createaudiorender_fuzzer/ @d0ub1eh
+test/fuzztest/ohosadapter/interfaces/createaudiosystem_fuzzer/ @d0ub1eh
+test/fuzztest/ohosadapter/interfaces/createmmiadapter_fuzzer/ @d0ub1eh
+test/fuzztest/ohosadapter/interfaces/createpowerclient_fuzzer/ @d0ub1eh
+test/fuzztest/ohosadapter/media_adapter/ @d0ub1eh
+test/fuzztest/ohosadapter/nativeImage_fuzzer/ @d0ub1eh
+test/fuzztest/ohosadapter/ohosimagedecoderadapterimpl_fuzzer/ @d0ub1eh
+test/unittest/audio_adapter_impl_test/ @d0ub1eh
+test/unittest/ohos_adapter/camera_adapter_impl_test/ @d0ub1eh
+test/unittest/ohos_adapter/date_time_adapter_impl_test/ @d0ub1eh
+test/unittest/ohos_adapter/media_adapter_test/ @d0ub1eh
+test/unittest/ohos_adapter/ohos_image_adapter/ @d0ub1eh
+test/unittest/ohos_adapter/screen_capture_adapter_impl_test/ @d0ub1eh
+interfaces/kits/napi/webviewcontroller/napi_native_media_player.cpp @d0ub1eh
+interfaces/kits/napi/webviewcontroller/napi_native_media_player.h @d0ub1eh
+interfaces/kits/napi/webviewcontroller/native_media_player_impl.cpp @d0ub1eh
+interfaces/kits/napi/webviewcontroller/native_media_player_impl.h @d0ub1eh
+interfaces/kits/napi/webviewcontroller/webview_createpdf_execute_callback.cpp @d0ub1eh
+interfaces/kits/napi/webviewcontroller/webview_createpdf_execute_callback.h @d0ub1eh
+interfaces/kits/napi/webviewcontroller/webview_hasimage_callback.cpp @d0ub1eh
+interfaces/kits/napi/webviewcontroller/webview_hasimage_callback.h @d0ub1eh
+
+[DFX]
+ohos_adapter/hiviewdfx_adapter/ @chenbushan
+test/fuzztest/ohos_nweb/hisysevent_fuzzer/ @chenbushan
+test/unittest/ohos_adapter/hiviewdfx_adapter_test/ @chenbushan
+ohos_nweb/src/nweb_crashpad_handler_main.cpp @chenbushan
+ohos_nweb/src/nweb_hisysevent.cpp @chenbushan
+
+[framework]
+interfaces/kits/napi/ @cloud_nine999
+interfaces/kits/napi/common/ @cloud_nine999
+interfaces/kits/napi/webviewcontroller/ @cloud_nine999
+ohos_wrapper/ @cloud_nine999
+ohos_nweb/etc/ @cloud_nine999
+ohos_nweb/src/ @cloud_nine999
+ohos_interface/ @cloud_nine999
+ohos_adapter/ @cloud_nine999
+ohos_adapter/event_handler_adapter/ @cloud_nine999
+ohos_adapter/ohos_adapter_helper/ @cloud_nine999
+ohos_adapter/system_properties_adapter/ @cloud_nine999
+test/fuzztest/ @cloud_nine999
+test/fuzztest/ohosadapter/ @cloud_nine999
+test/fuzztest/ohosadapter/interfaces/ @cloud_nine999
+test/fuzztest/ohosadapter/systemproperties_fuzzer/ @cloud_nine999
+test/fuzztest/ohos_nweb/ @cloud_nine999
+test/fuzztest/ohos_nweb/napi_fuzzer/ @cloud_nine999
+test/fuzztest/ohos_nweb/nwebhelper_fuzzer/ @cloud_nine999
+test/unittest/ @cloud_nine999
+test/unittest/common/ @cloud_nine999
+test/unittest/napi_common_test/ @cloud_nine999
+test/unittest/nweb_config_helper_Test/ @cloud_nine999
+test/unittest/nweb_value_test/ @cloud_nine999
+test/unittest/ohos_adapter_helper/ @cloud_nine999
+test/unittest/ohos_adapter/ @cloud_nine999
+test/unittest/ohos_adapter/event_handler_adapter_test/ @cloud_nine999
+test/unittest/ohos_adapter/system_properties_adapter/ @cloud_nine999
+interfaces/native/arkweb_error_code.h @cloud_nine999
+interfaces/native/arkweb_interface.cpp @cloud_nine999
+interfaces/native/arkweb_interface.h @cloud_nine999
+interfaces/native/arkweb_type.h @cloud_nine999
+interfaces/native/BUILD.gn @cloud_nine999
+interfaces/native/libohweb.ndk.json @cloud_nine999
+interfaces/native/native_arkweb_utils.cpp @cloud_nine999
+interfaces/native/native_arkweb_utils.h @cloud_nine999
+interfaces/kits/napi/webviewcontroller/napi_webview_controller.cpp @cloud_nine999
+interfaces/kits/napi/webviewcontroller/napi_webview_controller.h @cloud_nine999
+interfaces/kits/napi/webviewcontroller/web_controller.cpp @cloud_nine999
+interfaces/kits/napi/webviewcontroller/web_controller.h @cloud_nine999
+
+[security]
+ohos_adapter/aafwk_adapter @zhushengle
+ohos_adapter/access_token_adapter @zhushengle
+ohos_adapter/inputmethodframework_adapter @zhushengle
+ohos_adapter/keystore_adapter @zhushengle
+ohos_adapter/multimodalinput_adapter @zhushengle
+ohos_adapter/ohos_init_web_adapter @zhushengle
+test/fuzztest/ohosadapter/aafwk_adapter @zhushengle
+test/fuzztest/ohosadapter/accesstoken_fuzzer @zhushengle
+test/fuzztest/ohosadapter/interfaces/createaafwk_fuzzer @zhushengle
+test/fuzztest/ohosadapter/keystore_adapter @zhushengle
+test/fuzztest/ohosadapter/multimodalinput_adapter @zhushengle
+test/fuzztest/ohosadapter/setandgetrunwebinitcallback_fuzzer @zhushengle
+test/fuzztest/ohos_nweb/getnweb_fuzzer @zhushengle
+test/fuzztest/ohos_nweb/initandrun_fuzzer @zhushengle
+test/fuzztest/ohos_nweb/loadlib_fuzzer @zhushengle
+test/unittest/aafwk_app_client_adapter @zhushengle
+test/unittest/mmi_adapter @zhushengle
+test/unittest/ohos_adapter/access_token_adapter_test @zhushengle
+test/unittest/ohos_adapter/imf_adapter_test @zhushengle
+test/unittest/ohos_adapter/keystore_adapter_impl_test @zhushengle
+test/unittest/ohos_adapter/ohos_init_web_adapter @zhushengle
+ohos_nweb/src/nweb_config_helper.cpp @zhushengle
+
+[effect]
+deps_code/webview/interfaces/kits/napi/webfunction/ @spruceovo
+deps_code/webview/ohos_adapter/pasteboard_adapter/ @spruceovo
+deps_code/webview/test/fuzztest/deps_code/webview/test/fuzztest/ontouchmove_fuzzer/ @spruceovo
+deps_code/webview/test/fuzztest/deps_code/webview/test/fuzztest/ontouchpress_fuzzer/ @spruceovo
+deps_code/webview/test/fuzztest/deps_code/webview/test/fuzztest/ontouchrelease_fuzzer/ @spruceovo
+deps_code/webview/test/fuzztest/deps_code/webview/test/fuzztest/zoom_fuzzer/ @spruceovo
+deps_code/webview/test/fuzztest/ohosadapter/eventhandler_fuzzer/ @spruceovo
+deps_code/webview/test/fuzztest/ohosadapter/interfaces/creategetpasteboard_fuzzer/ @spruceovo
+deps_code/webview/test/fuzztest/ohosadapter/pasteboard_adapter/ @spruceovo
+deps_code/webview/test/unittest/nweb_helper_test/ @spruceovo
+deps_code/webview/test/unittest/pasteboard_adapter/ @spruceovo
+deps_code/webview/ohos_nweb/src/nweb_helper.cpp @spruceovo
+
+[synthesis]
+ohos_adapter/date_time_format_adapter/ @jerrywangxmu
+ohos_adapter/graphic_adapter/ @jerrywangxmu
+ohos_adapter/ohos_native_buffer_adapter/ @jerrywangxmu
+test/fuzztest/deps_code/webview/test/fuzztest/nativebufferadapter_fuzzer/ @jerrywangxmu
+test/fuzztest/ohosadapter/datetimeformatadapter_fuzzer/ @jerrywangxmu
+test/fuzztest/ohosadapter/graphic_adapter/ @jerrywangxmu
+test/fuzztest/ohos_nweb/flushbuffer_fuzzer/ @jerrywangxmu
+test/fuzztest/ohos_nweb/requestbuffer_fuzzer/ @jerrywangxmu
+test/unittest/nweb_surface_adapter_test/ @jerrywangxmu
+test/unittest/ohos_adapter/graphic_adapter_test/ @jerrywangxmu
+test/unittest/ohos_adapter/native_buffer_adapter_test/ @jerrywangxmu
+ohos_nweb/src/nweb_enhance_surface_adapter.cpp @jerrywangxmu
+ohos_nweb/src/nweb_surface_adapter.cpp @jerrywangxmu
+
+[engine]
+ohos_adapter/display_manager_adapter/ @yp99ustc
+ohos_adapter/drawing_text_adapter/ @yp99ustc
+test/fuzztest/deps_code/webview/test/fuzztest/drawingtextadapter_fuzzer/ @yp99ustc
+test/fuzztest/deps_code/webview/test/fuzztest/putbackgroundcolor_fuzzer/ @yp99ustc
+test/fuzztest/ohosadapter/display_adapter/ @yp99ustc
+test/fuzztest/ohosadapter/interfaces/createdisplaymgr_fuzzer/ @yp99ustc
+test/fuzztest/ohos_nweb/copyframe_fuzzer/ @yp99ustc
+test/unittest/display_manager_adapter_impl_test/ @yp99ustc
+test/unittest/ohos_adapter/drawing_text_adapter_test/ @yp99ustc
+
+[performance]
+ohos_adapter/background_task_adapter/ @yjone
+ohos_adapter/flowbuffer_adapter/ @yjone
+ohos_adapter/res_sched_adapter/ @yjone
+ohos_adapter/soc_perf_adapter/ @yjone
+test/fuzztest/ohosadapter/ashmemcreate_fuzzer/ @yjone
+test/fuzztest/ohosadapter/backgroundtaskimpl_fuzzer/ @yjone
+test/fuzztest/ohosadapter/flowbufferadapter_fuzzer/ @yjone
+test/fuzztest/ohosadapter/interfaces/createsocperclient_fuzzer/ @yjone
+test/fuzztest/ohosadapter/resschedadapter_fuzzer/ @yjone
+test/fuzztest/ohosadapter/soc_perf_adapter/ @yjone
+test/unittest/soc_perf_adapter_test/ @yjone
+test/unittest/ohos_adapter/background_tesk_impl_test/ @yjone
+test/unittest/ohos_adapter/flowbuffer_adapter_impl_test/ @yjone
+test/unittest/ohos_adapter/res_sched_adapter_impl_test/ @yjone
+
+[peripherals]
+ohos_adapter/battery_mgr_adapter/ @zhang-yinglie
+ohos_adapter/location_adapter/ @zhang-yinglie
+ohos_adapter/power_mgr_adapter/ @zhang-yinglie
+ohos_adapter/print_manager_adapter/ @zhang-yinglie
+ohos_adapter/sensor_adapter/ @zhang-yinglie
+test/fuzztest/ohosadapter/battery_adapter/ @zhang-yinglie
+test/fuzztest/ohosadapter/location_adapter/ @zhang-yinglie
+test/fuzztest/ohosadapter/power_mgr_adapter/ @zhang-yinglie
+test/fuzztest/ohosadapter/printmanager_fuzzer/ @zhang-yinglie
+test/fuzztest/ohosadapter/sensoradapter_fuzzer/ @zhang-yinglie
+test/unittest/battery_mgr_adapter_impl/ @zhang-yinglie
+test/unittest/power_mgr_client_adapter_impl_test/ @zhang-yinglie
+test/unittest/ohos_adapter/location_callback_adapter_test/ @zhang-yinglie
+test/unittest/ohos_adapter/location_proxy_adapter_test/ @zhang-yinglie
+test/unittest/ohos_adapter/permission_data_base_adapter_test/ @zhang-yinglie
+test/unittest/ohos_adapter/print_manager_adapter_impl_test/ @zhang-yinglie
+test/unittest/ohos_adapter/sensor_adapter_impl_test/ @zhang-yinglie
+
+[web]
+deps_code/webview/interfaces/native/ @ohpi
+deps_code/webview/interfaces/kits/napi/protos/ @ohpi
+deps_code/webview/interfaces/kits/napi/proxycontroller/ @ohpi
+deps_code/webview/interfaces/kits/napi/web_net_error_code/ @ohpi
+deps_code/webview/interfaces/kits/napi/webadsblockmanager/ @ohpi
+deps_code/webview/interfaces/kits/napi/webasynccontroller/ @ohpi
+deps_code/webview/interfaces/kits/napi/webcookiemanager/ @ohpi
+deps_code/webview/interfaces/kits/napi/js/ @ohpi
+deps_code/webview/sa/ @ohpi
+deps_code/webview/ohos_adapter/cert_mgr_adapter/ @ohpi
+deps_code/webview/ohos_adapter/enterprise_device_managerment_adapter/ @ohpi
+deps_code/webview/ohos_adapter/net_connect_adapter/ @ohpi
+deps_code/webview/ohos_adapter/net_proxy_adapter/ @ohpi
+deps_code/webview/ohos_adapter/migration_adapter/ @ohpi
+deps_code/webview/test/fuzztest/deps_code/webview/test/fuzztest/cannavigatebackorforward_fuzzer/ @ohpi
+deps_code/webview/test/fuzztest/deps_code/webview/test/fuzztest/executejavascriptcode_fuzzer/ @ohpi
+deps_code/webview/test/fuzztest/deps_code/webview/test/fuzztest/executejavascript_fuzzer/ @ohpi
+deps_code/webview/test/fuzztest/deps_code/webview/test/fuzztest/load_fuzzer/ @ohpi
+deps_code/webview/test/fuzztest/deps_code/webview/test/fuzztest/loadurl_fuzzer/ @ohpi
+deps_code/webview/test/fuzztest/deps_code/webview/test/fuzztest/loadwithdataandbaseurl_fuzzer/ @ohpi
+deps_code/webview/test/fuzztest/deps_code/webview/test/fuzztest/loadwithdata_fuzzer/ @ohpi
+deps_code/webview/test/fuzztest/deps_code/webview/test/fuzztest/registerarkjsfunction_fuzzer/ @ohpi
+deps_code/webview/test/fuzztest/ohosadapter/cert_mgr_adapter/ @ohpi
+deps_code/webview/test/fuzztest/ohosadapter/certmgr_fuzzer/ @ohpi
+deps_code/webview/test/fuzztest/ohosadapter/enterprisedevicemanagementadapter_fuzzer/ @ohpi
+deps_code/webview/test/fuzztest/ohosadapter/interfaces/createnetconnect_fuzzer/ @ohpi
+deps_code/webview/test/fuzztest/ohos_nweb/getcookiemanager_fuzzer/ @ohpi
+deps_code/webview/test/fuzztest/ohos_nweb/selectcertrequest_fuzzer/ @ohpi
+deps_code/webview/test/fuzztest/ohos_nweb/sethttpdns_fuzzer/ @ohpi
+deps_code/webview/test/unittest/app_fwk_update_client/ @ohpi
+deps_code/webview/test/unittest/napi_web_cookie_manager_test/ @ohpi
+deps_code/webview/test/unittest/net_connect_adapter_impl_test/ @ohpi
+deps_code/webview/test/unittest/net_connect_adapter_test/ @ohpi
+deps_code/webview/test/unittest/net_connect_callbacl_impl_test/ @ohpi
+deps_code/webview/test/unittest/ohos_adapter/cert_mgr_adapter_test/ @ohpi
+deps_code/webview/test/unittest/ohos_adapter/enterprise_device_impl_test/ @ohpi
+deps_code/webview/test/unittest/ohos_adapter/net_proxy_adapter_test/ @ohpi
+deps_code/webview/interfaces/kits/napi/webviewcontroller/webview_javascript_result_callback.cpp @ohpi
+deps_code/webview/interfaces/kits/napi/webviewcontroller/webview_javascript_result_callback.h @ohpi
+deps_code/webview/interfaces/native/arkweb_net_error_list.h @ohpi
+deps_code/webview/interfaces/native/arkweb_scheme_handler.cpp @ohpi
+deps_code/webview/interfaces/native/arkweb_scheme_handler.h @ohpi
+deps_code/webview/interfaces/native/native_interface_arkweb.cpp @ohpi
+deps_code/webview/interfaces/native/native_interface_arkweb.h @ohpi
+deps_code/webview/interfaces/native/native_javascript_execute_callback.cpp @ohpi
+deps_code/webview/interfaces/native/native_javascript_execute_callback.h @ohpi
+deps_code/webview/interfaces/kits/napi/webviewcontroller/back_forward_cache_options.cpp @ohpi
+deps_code/webview/interfaces/kits/napi/webviewcontroller/napi_back_forward_cache_options.cpp @ohpi
+deps_code/webview/interfaces/kits/napi/webviewcontroller/napi_back_forward_cache_options.h @ohpi
+deps_code/webview/interfaces/kits/napi/webviewcontroller/napi_web_download_delegate.cpp @ohpi
+deps_code/webview/interfaces/kits/napi/webviewcontroller/napi_web_download_delegate.h @ohpi
+deps_code/webview/interfaces/kits/napi/webviewcontroller/napi_web_scheme_handler_request.cpp @ohpi
+deps_code/webview/interfaces/kits/napi/webviewcontroller/napi_web_scheme_handler_request.h @ohpi
+deps_code/webview/interfaces/kits/napi/webviewcontroller/web_download_delegate.cpp @ohpi
+deps_code/webview/interfaces/kits/napi/webviewcontroller/web_download_delegate.h @ohpi
+deps_code/webview/interfaces/kits/napi/webviewcontroller/web_download_item.cpp @ohpi
+deps_code/webview/interfaces/kits/napi/webviewcontroller/web_download_item.h @ohpi
+deps_code/webview/interfaces/kits/napi/webviewcontroller/web_download_manager.cpp @ohpi
+deps_code/webview/interfaces/kits/napi/webviewcontroller/web_download_manager.h @ohpi
+deps_code/webview/interfaces/kits/napi/webviewcontroller/web_scheme_handler_request.cpp @ohpi
+deps_code/webview/interfaces/kits/napi/webviewcontroller/web_scheme_handler_request.h @ohpi
+deps_code/webview/interfaces/kits/napi/webviewcontroller/webview_javascript_execute_callback.cpp @ohpi
+deps_code/webview/interfaces/kits/napi/webviewcontroller/webview_javascript_execute_callback.h @ohpi

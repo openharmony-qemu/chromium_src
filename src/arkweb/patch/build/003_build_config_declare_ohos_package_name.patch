@@ -1,0 +1,12 @@
+diff --git a/build/config/ohos/packages.gni b/build/config/ohos/packages.gni
+new file mode 100755
+index 000000000..3e32daa28
+--- /dev/null
++++ b/build/config/ohos/packages.gni
+@@ -0,0 +1,6 @@
++if (is_ohos) {
++  declare_args() {
++    # default package name
++    ohos_package_name = "com.huawei.hmos.arkwebcore"
++  }
++}

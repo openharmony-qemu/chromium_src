@@ -257,5 +257,11 @@ src/chrome/test/data/xr/webvr_info/samples/media/textures/vr_bench_man.mp4 filte
 .git/lfs/objects/90/db/90db568422dabee25ddee7c27f7bf91d73c8abbb3e40548cf304561be89c0e39 filter=lfs diff=lfs merge=lfs -text
 .git/lfs/objects/b9/94/b99437b4595434d4a73bf3aabc82a72b19d22e7f73a2b990bd82ef7b69810810 filter=lfs diff=lfs merge=lfs -text
 .git/lfs/objects/26/ca/26ca41e9ed4679d12339a836096c97166dedea7fae5587f61b1a2fcc46464a41 filter=lfs diff=lfs merge=lfs -text
+src/ohos_sdk/ets-linux-x64-5.1.0.107-Release.zip filter=lfs diff=lfs merge=lfs -text
+src/ohos_sdk/previewer-linux-x64-5.1.0.107-Release.zip filter=lfs diff=lfs merge=lfs -text
+src/ohos_sdk/toolchains-linux-x64-5.1.0.107-Release.zip filter=lfs diff=lfs merge=lfs -text
+src/ohos_sdk/llvm-linux-x86_64_stripped.tar.gz filter=lfs diff=lfs merge=lfs -text
+src/ohos_sdk/js-linux-x64-5.1.0.107-Release.zip filter=lfs diff=lfs merge=lfs -text
+src/ohos_sdk/native-linux-x64-5.1.0.107-Release.zip filter=lfs diff=lfs merge=lfs -text
 /ohos_ndk/toolchains/llvm/bin/clang-12 filter=lfs diff=lfs merge=lfs -text
 /ohos_ndk/toolchains/llvm/lib/liblldb.so.12.0.1 filter=lfs diff=lfs merge=lfs -text

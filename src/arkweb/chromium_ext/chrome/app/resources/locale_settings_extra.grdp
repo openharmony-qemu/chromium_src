@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<grit-part>
+  <!-- <if expr="pp_ifdef('arkweb_i18n')"> -->
+    <output filename="platform_locale_settings_bo-CN.pak" type="data_package" lang="bo-CN" />
+    <output filename="platform_locale_settings_ug.pak" type="data_package" lang="ug" />
+    <output filename="platform_locale_settings_zh-HK.pak" type="data_package" lang="zh-HK" />
+  <!-- </if> -->
+  <if expr="is_ohos">
+    <output filename="platform_locale_settings_ka.pak" type="data_package" lang="ka" />
+    <output filename="platform_locale_settings_mk.pak" type="data_package" lang="mk" />
+    <output filename="platform_locale_settings_my.pak" type="data_package" lang="my" />
+    <output filename="platform_locale_settings_be.pak" type="data_package" lang="be" />
+    <output filename="platform_locale_settings_kk.pak" type="data_package" lang="kk" />
+    <output filename="platform_locale_settings_km.pak" type="data_package" lang="km" />
+    <output filename="platform_locale_settings_uz.pak" type="data_package" lang="uz" />
+  </if>
+</grit-part>

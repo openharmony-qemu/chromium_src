@@ -1,0 +1,1 @@
+"use strict";const s="win32"===process.platform,e=null==process.env.MSYSTEM?"":process.env.MSYSTEM,o=s&&!/^MINGW(32|64)$/.test(e)&&"cygwin"!==process.env.TERM;exports.isWindows=s,exports.isWindowsShell=o;

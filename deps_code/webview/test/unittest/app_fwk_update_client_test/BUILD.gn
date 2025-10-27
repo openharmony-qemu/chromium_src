@@ -1,0 +1,118 @@
+# Copyright (c) 2024 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//base/web/webview/web_aafwk.gni")
+import("//build/test.gni")
+import("../../../config.gni")
+
+module_output_path = "webview/webview"
+
+config("module_private_config") {
+  visibility = [ ":*" ]
+
+  include_dirs = [
+    "$webview_path/sa/include",
+    "$webview_path/ohos_nweb/include",
+    "${target_gen_dir}/../../../sa",
+  ]
+}
+
+ohos_unittest("app_fwk_update_client_test") {
+  module_out_path = module_output_path
+  sources = [ "app_fwk_update_client_test.cpp" ]
+  sources += [
+    "${target_gen_dir}/../../../sa/app_fwk_update/app_fwk_update_service_proxy.cpp",
+    "${target_gen_dir}/../../../sa/app_fwk_update/app_fwk_update_service_stub.cpp",
+    "${webview_path}/sa/app_fwk_update/src/app_fwk_update_client.cpp",
+    "${webview_path}/sa/app_fwk_update/src/app_fwk_update_load_callback.cpp",
+    "${webview_path}/sa/app_fwk_update/src/app_fwk_update_service.cpp",
+  ]
+  configs = [ ":module_private_config" ]
+
+  deps = [
+    "${webview_path}/sa/app_fwk_update:app_fwk_update_service",
+    "${webview_path}/sa/app_fwk_update:app_fwk_update_service_interface",
+  ]
+
+  external_deps = [
+    "ability_base:want",
+    "ability_base:zuri",
+    "ability_runtime:ability_manager",
+    "ability_runtime:napi_common",
+    "appspawn:appspawn_client",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "common_event_service:cesfwk_core",
+    "common_event_service:cesfwk_innerkits",
+    "eventhandler:libeventhandler",
+    "googletest:gmock_main",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "hitrace:hitrace_meter",
+    "init:libbeget_proxy",
+    "init:libbegetutil",
+    "ipc:ipc_core",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+}
+
+ohos_unittest("app_fwk_update_service_test") {
+  module_out_path = module_output_path
+  sources = [ "app_fwk_update_service_test.cpp" ]
+  sources += [
+    "${target_gen_dir}/../../../sa/app_fwk_update/app_fwk_update_service_proxy.cpp",
+    "${target_gen_dir}/../../../sa/app_fwk_update/app_fwk_update_service_stub.cpp",
+    "${webview_path}/sa/app_fwk_update/src/app_fwk_update_client.cpp",
+    "${webview_path}/sa/app_fwk_update/src/app_fwk_update_load_callback.cpp",
+    "${webview_path}/sa/app_fwk_update/src/app_fwk_update_service.cpp",
+  ]
+  configs = [ ":module_private_config" ]
+
+  deps = [
+    "${webview_path}/sa/app_fwk_update:app_fwk_update_service",
+    "${webview_path}/sa/app_fwk_update:app_fwk_update_service_interface",
+  ]
+
+  external_deps = [
+    "ability_base:want",
+    "ability_base:zuri",
+    "ability_runtime:ability_manager",
+    "ability_runtime:napi_common",
+    "appspawn:appspawn_client",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "common_event_service:cesfwk_core",
+    "common_event_service:cesfwk_innerkits",
+    "eventhandler:libeventhandler",
+    "googletest:gmock_main",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "hitrace:hitrace_meter",
+    "init:libbeget_proxy",
+    "init:libbegetutil",
+    "ipc:ipc_core",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+}
+
+group("unittest") {
+  testonly = true
+  deps = [
+    ":app_fwk_update_client_test",
+    ":app_fwk_update_service_test",
+  ]
+}

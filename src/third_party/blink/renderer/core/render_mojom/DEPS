@@ -1,0 +1,4 @@
+include_rules = [
+    "+services/device/public/mojom/res_sched_report.mojom-blink.h",
+    "+services/device/public/mojom/sysprop_render_observer.mojom-blink.h",
+]

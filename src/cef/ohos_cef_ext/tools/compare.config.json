@@ -1,0 +1,23 @@
+{
+  "COMPARE_DIR": [
+    {
+      "name": "libcef",
+      "repo": "https://szv-open.codehub.huawei.com/innersource/shanhai/wutong/oh-chromium/chromium_cef.git",
+      "branch": "chromium_132.0.6789.0",
+      "commitid": "08f44405155cd96d4fd1be79204f0499c6aaaec4",
+      "targetdir": "../chromium_cef",
+      "local": "src/cef/libcef,src/cef/include",
+      "dir": "../chromium_cef/libcef,../chromium_cef/include"
+    },
+    {
+      "name": "trunk",
+      "repo": "https://szv-open.codehub.huawei.com/OSCDev/pc/chromium_trunk.git",
+      "branch": "master-arkweb",
+      "commitid": "72495de601b665998375afc8f184b317c16daf7f",
+      "cherry-pick": "4de6fcb9eb8c69e8aed40cba0c24a92e9e0c81a0,4d34aeb6867a8f6a91b4acbaee3a73eb7b809629,1b494a16d372ded83ad0acf6d0c754774175d4ab",
+      "targetdir": "../chromium_trunk",
+      "local": "src/base,src/chrome,src/components,src/content,src/gpu,src/v8,src/gin,src/gpu,src/media,src/mojo,src/net,src/services,src/skia,src/sandbox,src/storage,src/ui,src/ipc,src/third_party/blink,src/third_party/crashpad,src/third_party/skia,src/third_party/tflite,src/third_party/sqlite",
+      "dir": "../chromium_trunk/src/base,../chromium_trunk/src/chrome,../chromium_trunk/src/components,../chromium_trunk/src/content,../chromium_trunk/src/gpu,../chromium_trunk/src/v8,../chromium_trunk/src/gin,../chromium_trunk/src/gpu,../chromium_trunk/src/media,../chromium_trunk/src/mojo,../chromium_trunk/src/net,../chromium_trunk/src/services,../chromium_trunk/src/skia,../chromium_trunk/src/sandbox,../chromium_trunk/src/storage,../chromium_trunk/src/ui,../chromium_trunk/src/ipc,../chromium_trunk/src/third_party/blink,../chromium_trunk/src/third_party/crashpad,../chromium_trunk/src/third_party/skia,../chromium_trunk/src/third_party/tflite,../chromium_trunk/src/third_party/sqlite"
+    }
+  ]
+}

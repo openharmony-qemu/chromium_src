@@ -1,0 +1,1 @@
+"use strict";Object.defineProperty(exports,"__esModule",{value:!0}),exports.defaultInstallOptions=void 0,exports.defaultInstallOptions={save:!1,saveDev:!1,saveProd:!1,prod:!1,link:!0};

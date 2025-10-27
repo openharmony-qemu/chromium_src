@@ -1,0 +1,7 @@
+*
+
+!BUILD.gn
+!/include/
+!/ohos_glue/
+!/include/**/*
+!ohos_glue/**/*

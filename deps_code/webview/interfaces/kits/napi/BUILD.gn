@@ -1,0 +1,204 @@
+# Copyright (c) 2022 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+
+config("web_public_config") {
+  visibility = [ ":*" ]
+  include_dirs = [
+    "../nativecommon",
+    "common",
+    "proxycontroller",
+    "webadsblockmanager",
+    "webasynccontroller",
+    "webcookiemanager",
+    "webdatabase",
+    "webfunction",
+    "webstorage",
+    "webviewcontroller",
+    "web_native_messaging_extension_manager",
+    "$target_gen_dir/protos",
+    "../../native",
+    "../../../ohos_adapter/ohos_resource_adapter/include",
+    "../../../ohos_adapter/system_properties_adapter/include",
+    "../../../sa/web_native_messaging/client",
+    "../../../sa/web_native_messaging/common"
+  ]
+}
+
+ohos_shared_library("webview_napi") {
+  if (target_cpu == "arm64") {
+    branch_protector_ret = "pac_ret"
+  }
+
+  public_configs = [ ":web_public_config" ]
+
+  sources = [
+    "$target_gen_dir/protos/web_download.pb.cc",
+    "$target_gen_dir/protos/web_download.pb.h",
+    "common/business_error.cpp",
+    "common/napi_parse_utils.cpp",
+    "common/napi_webview_native_module.cpp",
+    "common/nweb_message_ext.cpp",
+    "proxycontroller/napi_proxy_config.cpp",
+    "proxycontroller/napi_proxy_config.h",
+    "proxycontroller/napi_proxy_controller.cpp",
+    "proxycontroller/napi_proxy_controller.h",
+    "proxycontroller/napi_proxy_rule.cpp",
+    "proxycontroller/napi_proxy_rule.h",
+    "proxycontroller/proxy_config.cpp",
+    "proxycontroller/proxy_config.h",
+    "proxycontroller/proxy_rule.cpp",
+    "proxycontroller/proxy_rule.h",
+    "webadsblockmanager/napi_web_adsblock_manager.cpp",
+    "webasynccontroller/napi_web_async_controller.cpp",
+    "webcookiemanager/napi_web_cookie_manager.cpp",
+    "webdatabase/napi_geolocation_permission.cpp",
+    "webdatabase/napi_web_data_base.cpp",
+    "webfunction/napi_webview_function.cpp",
+    "webfunction/webview_web_inited_callback.cpp",
+    "webstorage/napi_web_storage.cpp",
+    "webviewcontroller/napi_back_forward_cache_options.cpp",
+    "webviewcontroller/napi_back_forward_cache_options.h",
+    "webviewcontroller/napi_prefetch_options.cpp",
+    "webviewcontroller/napi_prefetch_options.h",
+    "webviewcontroller/napi_native_media_player.cpp",
+    "webviewcontroller/napi_native_media_player.h",
+    "webviewcontroller/napi_web_download_delegate.cpp",
+    "webviewcontroller/napi_web_download_delegate.h",
+    "webviewcontroller/napi_web_download_item.cpp",
+    "webviewcontroller/napi_web_download_item.h",
+    "webviewcontroller/napi_web_download_manager.cpp",
+    "webviewcontroller/napi_web_download_manager.h",
+    "webviewcontroller/napi_web_scheme_handler_request.cpp",
+    "webviewcontroller/napi_web_scheme_handler_request.h",
+    "webviewcontroller/napi_webview_controller.cpp",
+    "webviewcontroller/native_media_player_impl.cpp",
+    "webviewcontroller/native_media_player_impl.h",
+    "webviewcontroller/web_download_delegate.cpp",
+    "webviewcontroller/web_download_delegate.h",
+    "webviewcontroller/web_download_item.cpp",
+    "webviewcontroller/web_download_item.h",
+    "webviewcontroller/web_download_manager.cpp",
+    "webviewcontroller/web_download_manager.h",
+    "webviewcontroller/web_scheme_handler_request.cpp",
+    "webviewcontroller/web_scheme_handler_request.h",
+    "webviewcontroller/webview_controller.cpp",
+    "webviewcontroller/webview_createpdf_execute_callback.cpp",
+    "webviewcontroller/webview_hasimage_callback.cpp",
+    "webviewcontroller/webview_javascript_execute_callback.cpp",
+    "webviewcontroller/webview_javascript_result_callback.cpp",
+  ]
+
+  use_exceptions = true
+
+  external_deps = [
+    "ability_base:extractortool",
+    "ability_runtime:app_context",
+    "ace_engine:ace_container_scope",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "common_event_service:cesfwk_innerkits",
+    "hilog:libhilog",
+    "image_framework:image",
+    "image_framework:image_native",
+    "init:libbegetutil",
+    "ipc:ipc_core",
+    "napi:ace_napi",
+    "protobuf:protobuf_lite",
+    "samgr:samgr_proxy",
+    "window_manager:libwm",
+  ]
+
+  deps = [
+    "../nativecommon:webview_common",
+    "../../../arkweb_utils:libarkweb_utils",
+    "../../../ohos_adapter:nweb_ohos_adapter",
+    "../../../ohos_nweb:libnweb",
+    "../../native:ohweb",
+    "js:js_export",
+    "protos:proto_gen",
+    "../../../ohos_glue:ohos_base_glue_source",
+    "//base/web/webview/arkweb_utils:libarkweb_utils"
+  ]
+
+  relative_install_dir = "module/web"
+
+  part_name = "webview"
+  subsystem_name = "web"
+}
+
+ohos_shared_library("neterrorlist_napi") {
+  if (target_cpu == "arm64") {
+    branch_protector_ret = "pac_ret"
+  }
+
+  public_configs = [ ":web_public_config" ]
+
+  sources = [
+    "web_net_error_code/napi_web_net_errorcode.cpp",
+    "web_net_error_code/napi_web_net_errorcode_module.cpp",
+  ]
+
+  external_deps = [ "napi:ace_napi" ]
+
+  relative_install_dir = "module/web"
+
+  part_name = "webview"
+  subsystem_name = "web"
+}
+
+ohos_shared_library("webnativemessagingextensionmanager_napi") {
+  if (target_cpu == "arm64") {
+    branch_protector_ret = "pac_ret"
+  }
+
+  public_configs = [ ":web_public_config" ]
+
+  sources = [
+    "common/business_error.cpp",
+    "common/napi_parse_utils.cpp",
+    "common/napi_extension_manager_init.cpp",
+    "web_native_messaging_extension_manager/napi_web_native_messaging_extension_manager.cpp",
+    "../../../sa/web_native_messaging/common/web_native_messaging_common.cpp"
+  ]
+
+  use_exceptions = true
+
+  external_deps = [
+    "ability_runtime:abilitykit_native",
+    "ability_runtime:ability_context_native",
+    "ability_runtime:app_context",
+    "ability_runtime:napi_base_context",
+    "ability_runtime:napi_common",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "ipc:ipc_core",
+    "napi:ace_napi",
+  ]
+
+  deps = [
+    "../nativecommon:webview_common",
+    "../../../arkweb_utils:libarkweb_utils",
+    "../../../ohos_adapter:nweb_ohos_adapter",
+    "../../../ohos_nweb:libnweb",
+    "../../../sa/web_native_messaging:web_native_messaging_kit",
+    "../../native:ohweb",
+  ]
+
+  relative_install_dir = "module/web"
+
+  part_name = "webview"
+  subsystem_name = "web"
+}

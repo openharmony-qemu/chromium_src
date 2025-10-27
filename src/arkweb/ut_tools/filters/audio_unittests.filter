@@ -1,0 +1,14 @@
+#4 tests failed:
+-AudioOutputDeviceTest.GetOutputDeviceInfoAsync_Error
+-Base/AudioOutputTest.OpenAndClose/0
+-Base/AudioOutputTest.StopBeforeStart/0
+-Base/AudioOutputTest.VolumeControl/0
+#2 tests crashed:
+-Base/AudioOutputTest.Play200HzTone/0
+-Base/AudioOutputTest.StopTwice/0
+#added by chromium_trunk20240515
+#2 tests crashed:
+-AudioManagerTest.EnumerateInputDevices
+-AudioManagerTest.EnumerateOutputDevices
+#1 tests timeout:
+-Base/AudioOutputTest.GetAndClose/0

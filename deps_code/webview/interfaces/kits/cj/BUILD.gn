@@ -1,0 +1,112 @@
+# Copyright (c) 2022 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+
+config("cj_web_public_config") {
+  visibility = [ ":*" ]
+  include_dirs = [
+    "include",
+    "$target_gen_dir/../napi/protos",
+    "../../native",
+  ]
+}
+
+ohos_shared_library("cj_webview_ffi") {
+  branch_protector_ret = "pac_ret"
+
+  public_configs = [ ":cj_web_public_config" ]
+
+  if (!defined(defines)) {
+    defines = []
+  }
+
+  if (product_name != "ohos-sdk") {
+    sources = [
+      "$target_gen_dir/../napi/protos/web_download.pb.cc",
+      "$target_gen_dir/../napi/protos/web_download.pb.h",
+      "src/geolocation_permission.cpp",
+      "src/geolocation_permission_ffi.cpp",
+      "src/nweb_message_ext.cpp",
+      "src/web_cookie_manager.cpp",
+      "src/web_cookie_manager_ffi.cpp",
+      "src/web_data_base.cpp",
+      "src/web_data_base_ffi.cpp",
+      "src/web_download_delegate_impl.cpp",
+      "src/web_download_ffi.cpp",
+      "src/web_download_item_impl.cpp",
+      "src/web_download_manager_impl.cpp",
+      "src/web_native_media_player.cpp",
+      "src/web_runtime_delegate.cpp",
+      "src/web_scheme_handler_request_impl.cpp",
+      "src/web_scheme_handler_response_ffi.cpp",
+      "src/web_scheme_handler_response_impl.cpp",
+      "src/web_storage.cpp",
+      "src/web_storage_ffi.cpp",
+      "src/webview_adsblock_ffi_impl.cpp",
+      "src/webview_adsblock_manager.cpp",
+      "src/webview_controller_impl.cpp",
+      "src/webview_ffi.cpp",
+      "src/webview_function.cpp",
+      "src/webview_hasimage_callback.cpp",
+      "src/webview_javascript_execute_callback.cpp",
+      "src/webview_javascript_result_callback.cpp",
+      "src/webview_media_ffi_impl.cpp",
+      "src/webview_message_ffi.cpp",
+      "src/webview_scheme_ffi_impl.cpp",
+      "src/webview_utils.cpp",
+    ]
+
+    deps = [
+      "../../../ohos_adapter:nweb_ohos_adapter",
+      "../../../ohos_glue:ohos_base_glue_source",
+      "../../../ohos_nweb:libnweb",
+      "../../native:ohweb",
+      "../napi/protos:proto_gen",
+    ]
+
+    external_deps = [
+      "ability_base:extractortool",
+      "ability_runtime:app_context",
+      "bundle_framework:appexecfwk_core",
+      "c_utils:utils",
+      "common_event_service:cesfwk_innerkits",
+      "hilog:libhilog",
+      "image_framework:cj_image_ffi",
+      "image_framework:image",
+      "image_framework:image_native",
+      "init:libbegetutil",
+      "ipc:ipc_core",
+      "napi:ace_napi",
+      "napi:cj_bind_ffi",
+      "napi:cj_bind_native",
+      "protobuf:protobuf_lite",
+      "samgr:samgr_proxy",
+    ]
+  } else {
+    defines += [ "PREVIEWER" ]
+    sources = [ "src/webview_mock.cpp" ]
+    external_deps = [ "napi:cj_bind_ffi" ]
+  }
+
+  if (current_os == "ohos") {
+    defines += [ "OHOS_PLATFORM" ]
+  }
+
+  if (current_os == "mingw") {
+    defines += [ "WINDOWS_PLATFORM" ]
+  }
+  innerapi_tags = [ "platformsdk" ]
+  part_name = "webview"
+  subsystem_name = "web"
+}

@@ -119,7 +119,7 @@ export default class IntelligentLayout {
         }                
     }
 
-    static resetAllPopWindows() {
+    static resetAllPopWindows(): void {
         Log.d('========== 重置所有弹窗状态并取消异步任务 ==========', IntelligentLayout.TAG);
         
         for (const [popupInfo, component] of IntelligentLayout.popWindowMap.entries()) {

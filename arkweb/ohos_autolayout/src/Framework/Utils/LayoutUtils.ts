@@ -35,26 +35,40 @@ export default class LayoutUtils{
      * @returns {boolean} 如果样式被显式定义或符合特定布局规则，则返回 true。
      */
     private static hasExplicitlyDefinedStyle(element: HTMLElement, cssProperty: 'top' | 'bottom', computedValue: string, computedPosition: string): boolean {
+        Log.d(`========== 检测显式样式定义 ==========`, Tag.layoutUtils);
+        Log.d(`检查元素: ${element.className || element.tagName}, 属性: ${cssProperty}, 计算值: ${computedValue}`, Tag.layoutUtils);
+        
         // 1. 检查内联样式 (最快)
         // 使用 bracket notation (方括号) 来动态访问属性
         const inlineValue = element.style[cssProperty];
         if (inlineValue && this.convertToPxUnits(inlineValue) === computedValue) {
+            Log.d(`✅ 在内联样式中找到匹配: ${inlineValue}`, Tag.layoutUtils);
             return true;
         }
+        
         // 2. 遍历所有样式表 (性能开销巨大)
+        Log.d(`🔍 开始遍历样式表...`, Tag.layoutUtils);
         const sheetCheckResult = this.findStyleInSheets(element, cssProperty, computedValue);
         if (sheetCheckResult.isFound) {
+            Log.d(`✅ 在样式表中找到匹配`, Tag.layoutUtils);
             return true;
         }
        
         if (!sheetCheckResult.crossDomainSheetEncountered) {
+            Log.d(`❌ 未找到显式定义`, Tag.layoutUtils);
             return false;
         }
+        
+        Log.d(`⚠️ 遇到跨域样式表，尝试位置计算`, Tag.layoutUtils);
         const rect = element.getBoundingClientRect();
         if (cssProperty === 'top') {
-            return Math.abs(rect[cssProperty] - parseFloat(computedValue)) < Constant.discrepancy;
+            const result = Math.abs(rect[cssProperty] - parseFloat(computedValue)) < Constant.discrepancy;
+            Log.d(`${result ? '✅' : '❌'} top位置匹配结果: rect.top=${rect.top}, 差异=${Math.abs(rect[cssProperty] - parseFloat(computedValue))}`, Tag.layoutUtils);
+            return result;
         }
-        return Math.abs(rect[cssProperty] - window.innerHeight) < Constant.discrepancy;
+        const result = Math.abs(rect[cssProperty] - window.innerHeight) < Constant.discrepancy;
+        Log.d(`${result ? '✅' : '❌'} bottom位置匹配结果: rect.bottom=${rect.bottom}, 差异=${Math.abs(rect[cssProperty] - window.innerHeight)}`, Tag.layoutUtils);
+        return result;
     }
 
     /**
@@ -64,6 +78,7 @@ export default class LayoutUtils{
     private static findStyleInSheets(element: HTMLElement, cssProperty: string, computedValue: string):
         { isFound: boolean; crossDomainSheetEncountered: boolean } {
         let crossDomainSheetEncountered = false;
+        Log.d(`📄 遍历样式表数量: ${document.styleSheets.length}`, Tag.layoutUtils);
 
         // 主函数职责：遍历样式表，调用处理器，并聚合结果。嵌套深度只有 1。
         for (const sheet of document.styleSheets) {
@@ -75,11 +90,13 @@ export default class LayoutUtils{
 
             if (result.isFound) {
                 // 一旦找到，就可以提前返回最终结果
+                Log.d(`✅ 在样式表中找到匹配规则`, Tag.layoutUtils);
                 return { isFound: true, crossDomainSheetEncountered };
             }
         }
 
         // 遍历完所有样式表都未找到
+        Log.d(`❌ 遍历完所有样式表未找到匹配, 跨域遇到: ${crossDomainSheetEncountered}`, Tag.layoutUtils);
         return { isFound: false, crossDomainSheetEncountered };
     }
 
@@ -158,6 +175,10 @@ export default class LayoutUtils{
         if (!(node instanceof HTMLElement)) {
             return false;
         }
+        
+        Log.d(`========== 检测节点截断 ==========`, Tag.layoutUtils);
+        Log.d(`节点: ${node.className || node.tagName}`, Tag.layoutUtils);
+        
         // 1. 获取视口尺寸
         const viewportHeight = window.innerHeight;
 
@@ -175,21 +196,27 @@ export default class LayoutUtils{
         const contentTop = rect.top + borderTop + paddingTop;
         const contentBottom = rect.bottom - borderBottom - paddingBottom;
 
+        Log.d(`视口高度: ${viewportHeight}, 内容区: top=${contentTop}, bottom=${contentBottom}`, Tag.layoutUtils);
+
         // 边界情况处理：如果元素的padding和border过大，可能导致内容区尺寸为0或负数
-        // 在这种情况下，我们认为其内容没有“空间”被截断
+        // 在这种情况下，我们认为其内容没有"空间"被截断
         if (contentTop >= contentBottom) {
+            Log.d(`⚠️ 内容区尺寸无效 (contentTop >= contentBottom)`, Tag.layoutUtils);
             return false;
         }
         // 5. 比较内容框与视口的边界
         const isTopTruncated = Math.round(contentTop) < 0;
            const isBottomTruncated = Math.round(contentBottom) > viewportHeight;
         if(isTopTruncated) {
-            Log.d(`节点 ${node.className} top截断: contentTop(${contentTop}), viewportHeight(${viewportHeight})`, Tag.layoutUtils);
+            Log.d(`✂️ 节点 ${node.className} top截断: contentTop(${contentTop}), viewportHeight(${viewportHeight})`, Tag.layoutUtils);
         }
         if(isBottomTruncated) {
-            Log.d(`节点 ${node.className} bottom截断: contentBottom(${contentBottom}), viewportHeight(${viewportHeight})`, Tag.layoutUtils);
+            Log.d(`✂️ 节点 ${node.className} bottom截断: contentBottom(${contentBottom}), viewportHeight(${viewportHeight})`, Tag.layoutUtils);
         }
-        return isTopTruncated || isBottomTruncated;
+        
+        const result = isTopTruncated || isBottomTruncated;
+        Log.d(`${result ? '✂️ 存在截断' : '✅ 无截断'}`, Tag.layoutUtils);
+        return result;
     }
 
     /**
@@ -201,10 +228,11 @@ export default class LayoutUtils{
             return false;
         }
         let computedStyle = getComputedStyle(node);
-        if (computedStyle.backgroundImage !== 'none' && computedStyle.backgroundSize === 'cover') {
-            return true;
+        const hasCoverBg = computedStyle.backgroundImage !== 'none' && computedStyle.backgroundSize === 'cover';
+        if (hasCoverBg) {
+            Log.d(`🖼️ 节点 ${node.className || node.tagName} 包含cover背景图`, Tag.layoutUtils);
         }
-        return false;
+        return hasCoverBg;
     }
 
     static getWidthAsPx(element:HTMLElement, prop:string): string {
@@ -278,6 +306,7 @@ export default class LayoutUtils{
         
             // 检查是否存在重复尺寸
             if ([...sizeMap.values()].some(count => count >= 2)) {
+                Log.d(`✅ 找到包含相同尺寸子元素的父节点: ${root.className || root.tagName}, 可见子元素数: ${visibleChildren.length}`, Tag.layoutUtils);
                 return root;
             }
         }
@@ -304,8 +333,11 @@ export default class LayoutUtils{
      * @returns {false | true} 如果遮罩是非全屏的，返回false，是全屏的返回true。
      */
     static analyzeComputedBoxShadow( computedBoxShadow: string): boolean {
+        Log.d(`========== 分析box-shadow ==========`, Tag.layoutUtils);
+        
         // 过滤无效输入
         if (!computedBoxShadow || typeof computedBoxShadow !== 'string' || computedBoxShadow === 'none' || computedBoxShadow === '') {
+            Log.d(`❌ 无效的box-shadow值: ${computedBoxShadow}`, Tag.layoutUtils);
             return null;
         }
 
@@ -314,6 +346,7 @@ export default class LayoutUtils{
         const colorMatch = computedBoxShadow.match(colorRegex);
 
         if (!colorMatch) {
+            Log.d(`❌ 未找到颜色值`, Tag.layoutUtils);
             return null; // 未找到颜色值，无法解析
         }
 
@@ -325,6 +358,7 @@ export default class LayoutUtils{
         
         // 正常的阴影至少应包含2个数值（X和Y偏移）
         if (numericParts.length < 2) {
+            Log.d(`❌ 数值部分不足: ${numericParts.length}`, Tag.layoutUtils);
             return null;
         }
 
@@ -337,11 +371,14 @@ export default class LayoutUtils{
             color: color,
         };
 
+        Log.d(`解析结果: offsetX=${analysis.offsetX}, offsetY=${analysis.offsetY}, blur=${analysis.blurRadius}, spread=${analysis.spreadRadius}, color=${color}`, Tag.layoutUtils);
+
         // --- 核心判断逻辑 ---
         const spreadPx = parseFloat(analysis.spreadRadius);
+        const maxViewport = Math.max(window.innerWidth, window.innerHeight);
         
         // 判断条件：扩展半径是否大于等于视口宽高中的最大值
-        const isSpreadLargeEnough = spreadPx >= Math.max(window.innerWidth, window.innerHeight);
+        const isSpreadLargeEnough = spreadPx >= maxViewport;
 
         // 综合判断
         const isMask =
@@ -350,6 +387,7 @@ export default class LayoutUtils{
             (analysis.blurRadius).trim().startsWith('0') &&
             isSpreadLargeEnough;
 
+        Log.d(`${isMask ? '🎭 是全屏遮罩' : '❌ 非全屏遮罩'} (spread=${spreadPx}px, 视口max=${maxViewport}px)`, Tag.layoutUtils);
         return isMask;
     }
 
@@ -363,37 +401,53 @@ export default class LayoutUtils{
      * @returns 
      */
     static isBottomCloseButtonOverlap(popup: PopupInfo): boolean {
+        Log.d(`========== 检测底部关闭按钮重叠 ==========`, Tag.layoutUtils);
+        
         if (!popup || !popup.root_node) {
+            Log.d(`❌ 无效的popup信息`, Tag.layoutUtils);
             return false;
         }
         // 查找所有可能的关闭按钮
         const closeElements = popup.root_node.querySelectorAll('[class*="close"]');
+        Log.d(`找到候选关闭按钮数量: ${closeElements.length}`, Tag.layoutUtils);
+        
         if (closeElements.length !== 1) {
+            Log.d(`❌ 关闭按钮数量不为1`, Tag.layoutUtils);
             return false;
         }
         const closeButton = closeElements[0] as HTMLElement;
         const closeBtnStyle = getComputedStyle(closeButton);
         const closeBtnRect = closeButton.getBoundingClientRect();
+        
+        Log.d(`关闭按钮样式: position=${closeBtnStyle.position}, bottom=${closeBtnStyle.bottom}`, Tag.layoutUtils);
+        
         if (this.isCloseButton(closeButton)) {
             // 如果是绝对布局，且bottom为负，则说明这个组件会溢出父布局，判断它和父布局是否完全脱离（是否重叠）
             if (closeBtnStyle.position === 'absolute' && parseFloat(closeBtnStyle.bottom) < 0) {
                 const buttonTop = closeBtnRect.top;
                 const parentTop = closeButton.parentElement.getBoundingClientRect().top;
                 const parentBottom = closeButton.parentElement.getBoundingClientRect().bottom;
+                
+                Log.d(`位置信息: buttonTop=${buttonTop}, parentTop=${parentTop}, parentBottom=${parentBottom}`, Tag.layoutUtils);
+                
                 if (buttonTop < parentBottom && buttonTop > (parentTop + parentBottom) / 2) {
+                    Log.d(`⚠️ 检测到底部关闭按钮重叠`, Tag.layoutUtils);
                     return true;
                 }
             }
         }
         
+        Log.d(`✅ 无底部关闭按钮重叠`, Tag.layoutUtils);
         return false;
     }
 
     static isCloseButton(element: HTMLElement): boolean {
         const closeBtnStyle = getComputedStyle(element);
+        const hasBackgroundUrl = closeBtnStyle.background.includes('url');
+        const isButtonRole = element.getAttribute('role') === 'button';
 
-        if (closeBtnStyle.background.includes('url') || element.getAttribute('role') === 'button') {
-            Log.d('this is a close button');
+        if (hasBackgroundUrl || isButtonRole) {
+            Log.d(`✅ 确认为关闭按钮: 背景图=${hasBackgroundUrl}, role=button ${isButtonRole}`, Tag.layoutUtils);
             return true;
         }
         return false;
@@ -425,7 +479,10 @@ export default class LayoutUtils{
      * @returns 
      */
     static getVisualBoundingRectForAll(element: HTMLElement): {top: number ; bottom: number} | null {
+        Log.d(`========== 获取全部子元素可视边界 ==========`, Tag.layoutUtils);
+        
         if (!element || typeof element.getBoundingClientRect !== 'function') {
+            Log.d(`❌ 无效的元素`, Tag.layoutUtils);
             return null;
         }
         const parentRect = element.getBoundingClientRect();
@@ -433,6 +490,7 @@ export default class LayoutUtils{
         // 1. 初始化边界：以父元素自身的边界为起点
         let minTop = parentRect.top;
         let maxBottom = parentRect.bottom;
+        let nodeCount = 0;
     
         const treeWalker = document.createTreeWalker(
             element,
@@ -467,10 +525,12 @@ export default class LayoutUtils{
             let childBottom = currentNode.getBoundingClientRect().bottom;
             minTop = Math.min(minTop, childTop);
             maxBottom = Math.max(maxBottom, childBottom);
+            nodeCount++;
 
             currentNode = treeWalker.nextNode() as HTMLElement;
           }
 
+        Log.d(`遍历节点数: ${nodeCount}, 最终边界: top=${minTop}, bottom=${maxBottom}`, Tag.layoutUtils);
         return {
             top: minTop,
             bottom: maxBottom
@@ -487,7 +547,11 @@ export default class LayoutUtils{
          */
     static getVisualBoundingRect(element: HTMLElement, isCloseButtonTruncatedByScroll: boolean,
         popupDecisionTreeType: PopupDecisionTreeType): VisualBoundingRect {
+        Log.d(`========== 获取可视边界矩形 ==========`, Tag.layoutUtils);
+        Log.d(`元素: ${element.className || element.tagName}, 关闭按钮被滚动截断: ${isCloseButtonTruncatedByScroll}, 决策树类型: ${popupDecisionTreeType}`, Tag.layoutUtils);
+        
         if (!element || typeof element.getBoundingClientRect !== 'function') {
+            Log.d(`❌ 无效的元素`, Tag.layoutUtils);
             return null;
         }
 
@@ -506,28 +570,35 @@ export default class LayoutUtils{
             minY = parentRect.top;
             maxX = parentRect.right;
             maxY = parentRect.bottom;
+            Log.d(`父元素边界: left=${minX}, top=${minY}, right=${maxX}, bottom=${maxY}`, Tag.layoutUtils);
         }
 
         /**
-         * 辅助函数：处理带有滚动条的元素
+         * 处理带有滚动条的元素
          * @param el 当前元素
          */
         const handleScrollableElement = (el: HTMLElement): void => {
             scrollElement = el;
+            Log.d(`📜 发现滚动元素: ${el.className || el.tagName}`, Tag.layoutUtils);
+            
             if (!isCloseButtonTruncatedByScroll) {
                 return;
             }
             
             const scrollDiff = el.scrollHeight - el.getBoundingClientRect().height;
+            Log.d(`滚动差值: ${scrollDiff}`, Tag.layoutUtils);
+            
             if (popupDecisionTreeType === PopupDecisionTreeType.Bottom) {
                 offsetY -= scrollDiff;
+                Log.d(`底部弹窗偏移: offsetY=${offsetY}`, Tag.layoutUtils);
             } else if (popupDecisionTreeType === PopupDecisionTreeType.Center || popupDecisionTreeType === PopupDecisionTreeType.Center_Button_Overlap) {
                 offsetY -= scrollDiff / 2;
+                Log.d(`居中弹窗偏移: offsetY=${offsetY}`, Tag.layoutUtils);
             }
         };
 
         /**
-         * 辅助函数：为可见元素更新边界
+         * 为可见元素更新边界
          * @param el 当前元素
          */
         const updateBoundsForVisibleElement = (el: HTMLElement): void => {
@@ -589,6 +660,10 @@ export default class LayoutUtils{
         if (parentRect.height !== 0 && parentRect.width !== 0) {
             offsetY += (minY - parentRect.top + (height - parentRect.height) / 2);
         }
+
+        Log.d(`最终边界: left=${minX}, top=${minY}, right=${maxX}, bottom=${maxY}`, Tag.layoutUtils);
+        Log.d(`尺寸: width=${width}, height=${height}, offsetY=${offsetY}`, Tag.layoutUtils);
+        Log.d(`滚动元素: ${scrollElement ? (scrollElement.className || scrollElement.tagName) : '无'}`, Tag.layoutUtils);
 
         return {
             left: minX,
@@ -688,12 +763,17 @@ export default class LayoutUtils{
      * @returns 1: nodeA在上, -1: nodeB在上, 0: 同一层级或无法比较
      */
     static compareZIndex(nodeA: HTMLElement, nodeB: HTMLElement): number{
+        Log.d(`========== 比较z-index层级 ==========`, Tag.layoutUtils);
+        
         if (nodeA === nodeB) {
+            Log.d(`✅ 相同节点`, Tag.layoutUtils);
             return 0;
         }
 
         const chainA = LayoutUtils.getStackingContextChain(nodeA);
         const chainB = LayoutUtils.getStackingContextChain(nodeB);
+        
+        Log.d(`节点A层叠链长度: ${chainA.length}, 节点B层叠链长度: ${chainB.length}`, Tag.layoutUtils);
         
         // 找到第一个不同的层叠上下文祖先
         let i = 0;
@@ -703,7 +783,9 @@ export default class LayoutUtils{
             
             if (ctxA.element !== ctxB.element) {
                 // 比较这两个兄弟层叠上下文的z-index
-                return ctxA.zIndex > ctxB.zIndex ? 1 : -1;
+                const result = ctxA.zIndex > ctxB.zIndex ? 1 : -1;
+                Log.d(`${result === 1 ? '🔼 节点A在上' : '🔽 节点B在上'} (zA=${ctxA.zIndex}, zB=${ctxB.zIndex})`, Tag.layoutUtils);
+                return result;
             }
             
             // 如果是同一个层叠上下文，继续向叶子节点比较
@@ -712,13 +794,17 @@ export default class LayoutUtils{
         
         // 如果到达这里，说明在同一个层叠上下文中
         // 比较它们在DOM中的顺序（后来者居上）
+        Log.d(`同一层叠上下文，比较DOM顺序`, Tag.layoutUtils);
         const position = nodeA.compareDocumentPosition(nodeB);
         if (position & Node.DOCUMENT_POSITION_FOLLOWING) {
+            Log.d(`🔽 节点B在上 (B在A后面)`, Tag.layoutUtils);
             return -1; // B在A后面，B在上
         } else if (position & Node.DOCUMENT_POSITION_PRECEDING) {
+            Log.d(`🔼 节点A在上 (A在B后面)`, Tag.layoutUtils);
             return 1; // A在B后面，A在上
         }
         
+        Log.d(`⚠️ 无法比较`, Tag.layoutUtils);
         return 0;
     }
 }

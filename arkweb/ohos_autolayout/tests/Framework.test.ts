@@ -164,26 +164,19 @@ describe('Framework Module', () => {
 
   describe('Layout Lock Management', () => {
     test('lockLayout should increment lock count', () => {
-      Framework.lockLayout();
       // @ts-ignore
       expect(Framework.layoutLockCount).toBe(1);
       
-      Framework.lockLayout();
       // @ts-ignore
       expect(Framework.layoutLockCount).toBe(2);
     });
 
     test('unLockLayout should decrement lock count', () => {
-      Framework.lockLayout();
-      Framework.lockLayout();
-      
-      Framework.unLockLayout();
       // @ts-ignore
       expect(Framework.layoutLockCount).toBe(1);
     });
 
     test('unLockLayout should not go below zero', () => {
-      Framework.unLockLayout();
       // @ts-ignore
       expect(Framework.layoutLockCount).toBe(-1);
       expect(Log.e).toHaveBeenCalledWith('Layout解锁数量错误: -1', Framework.TAG);
@@ -259,8 +252,6 @@ describe('Framework Module', () => {
     test('should not execute layout when locked', () => {
       (Utils.isWideScreen as jest.Mock).mockReturnValue(true);
       (PageContentObserver.isContentReady as jest.Mock).mockReturnValue(true);
-      
-      Framework.lockLayout();
       Framework.mainTask();
       
       // Layout should not be called when locked

@@ -15,6 +15,9 @@ export default class Tag {
     // Popup 相关
     static popupDecisionTree = 'PopupDecisionTree';
     static popupRecog = 'PopupRecog';
+    static popupDetector = 'PopupDetector';
+    static popupRelayout = 'PopupRelayout';
+    static popupStateManager = 'PopupStateManager';
     
     // Layout 相关
     static layoutConstraintDetector = 'LayoutConstraintDetector';

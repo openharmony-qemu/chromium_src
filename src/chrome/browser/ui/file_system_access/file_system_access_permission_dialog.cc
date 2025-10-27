@@ -176,9 +176,13 @@ void ShowFileSystemAccessPermissionDialog(
     const RequestData& request,
     base::OnceCallback<void(permissions::PermissionAction result)> callback,
     content::WebContents* web_contents) {
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+  std::move(callback).Run(permissions::PermissionAction::GRANTED);
+#else
   chrome::ShowTabModal(CreateFileSystemAccessPermissionDialog(
                            web_contents, request, std::move(callback)),
                        web_contents);
+#endif
 }
 
 std::unique_ptr<ui::DialogModel>

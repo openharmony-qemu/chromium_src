@@ -45,6 +45,8 @@
 #include "third_party/skia/include/core/SkFontMgr.h"
 #include "third_party/skia/include/core/SkTypeface.h"
 
+#include "arkweb/build/features/features.h"
+
 namespace blink {
 
 namespace {

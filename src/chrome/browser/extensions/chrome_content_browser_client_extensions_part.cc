@@ -114,7 +114,11 @@ const GURL* g_allow_service_worker_unregistration_scope = nullptr;
 
 const Extension* GetEnabledExtensionFromSiteURL(BrowserContext* context,
                                                 const GURL& site_url) {
-  if (!site_url.SchemeIs(kExtensionScheme))
+  if (!site_url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && !site_url.SchemeIs(kArkwebExtensionScheme)
+#endif
+  )
     return nullptr;
 
   ExtensionRegistry* registry = ExtensionRegistry::Get(context);
@@ -167,7 +171,11 @@ const Extension* GetServiceWorkerBasedExtensionForScope(
     const GURL& scope,
     BrowserContext* browser_context) {
   // We only care about extension urls.
-  if (!scope.SchemeIs(kExtensionScheme)) {
+  if (!scope.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && !scope.SchemeIs(kArkwebExtensionScheme)
+#endif
+  ) {
     return nullptr;
   }
 
@@ -250,7 +258,11 @@ GURL ChromeContentBrowserClientExtensionsPart::GetEffectiveURL(
   // hosting a disabled extension URL from incorrectly getting reused after
   // re-enabling the extension, which would lead to renderer kills
   // (https://crbug.com/1197360).
-  if (url.SchemeIs(kExtensionScheme) &&
+  if ((url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+       || url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+           ) &&
       !registry->enabled_extensions().GetExtensionOrAppByURL(url)) {
     return GURL(extensions::kExtensionInvalidRequestURL);
   }
@@ -328,7 +340,11 @@ bool ChromeContentBrowserClientExtensionsPart::ShouldUseSpareRenderProcessHost(
   // command-line flag (switches::kExtensionProcess) to the renderer process
   // when it launches. A spare process is launched earlier, before it is known
   // which navigation will use it, so it lacks this flag.
-  return !site_url.SchemeIs(kExtensionScheme);
+  return !site_url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+         && !site_url.SchemeIs(kArkwebExtensionScheme)
+#endif
+      ;
 }
 
 // static
@@ -615,7 +631,11 @@ bool ChromeContentBrowserClientExtensionsPart::AllowServiceWorker(
     const GURL& script_url,
     content::BrowserContext* context) {
   // We only care about extension urls.
-  if (!first_party_url.SchemeIs(kExtensionScheme))
+  if (!first_party_url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && !first_party_url.SchemeIs(kArkwebExtensionScheme)
+#endif
+  )
     return true;
 
   const Extension* extension = ExtensionRegistry::Get(context)
@@ -874,6 +894,9 @@ void ChromeContentBrowserClientExtensionsPart::
     GetAdditionalAllowedSchemesForFileSystem(
         std::vector<std::string>* additional_allowed_schemes) {
   additional_allowed_schemes->push_back(kExtensionScheme);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  additional_allowed_schemes->push_back(kArkwebExtensionScheme);
+#endif
 }
 
 void ChromeContentBrowserClientExtensionsPart::GetURLRequestAutoMountHandlers(

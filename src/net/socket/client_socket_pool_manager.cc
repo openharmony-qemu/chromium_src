@@ -129,10 +129,17 @@ int InitSocketPoolHelper(
       !!(request_load_flags & LOAD_DISABLE_CERT_NETWORK_FETCHES);
   ClientSocketPool::GroupId connection_group(
       std::move(endpoint), privacy_mode, std::move(network_anonymization_key),
-      secure_dns_policy, disable_cert_network_fetches);
+      secure_dns_policy, disable_cert_network_fetches
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+      ,
+      secure_dns_only
+#endif
+  );
   scoped_refptr<ClientSocketPool::SocketParams> socket_params =
       CreateSocketParams(connection_group, allowed_bad_certs);
-
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  socket_params->SetFromPreload(from_preload);
+#endif
   ClientSocketPool* pool =
       session->GetSocketPool(socket_pool_type, proxy_info.proxy_chain());
   ClientSocketPool::RespectLimits respect_limits =

@@ -55,6 +55,10 @@ namespace {
 // this.
 constexpr int kScrollbarThicknessForWebTests = 15;
 
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+constexpr int kScrollbarForceThicknessForWeb = 16;
+#endif
+
 // While the theme does not have specific values for scrollbar-width: thin
 // we just use a fixed 2/3 ratio of the default value.
 constexpr float kAutoProportion = 1.f;
@@ -168,6 +172,13 @@ int ScrollbarThemeAura::ScrollbarThickness(
   gfx::Size scrollbar_size =
       WebThemeEngineHelper::GetNativeThemeEngine()->GetSize(
           WebThemeEngine::kPartScrollbarVerticalTrack);
+
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  float ratio = base::ohos::GetPixelRatio();
+  if (!OverlayScrollbarsEnabled()) {
+    return kScrollbarForceThicknessForWeb * ratio;
+  }
+#endif
 
   return scrollbar_size.width() * Proportion(scrollbar_width) * scale_from_dip;
 }

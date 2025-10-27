@@ -133,8 +133,9 @@ BrowserFrame::BrowserFrame(BrowserView* browser_view)
   set_is_secondary_widget(false);
   // Don't focus anything on creation, selecting a tab will set the focus.
   set_focus_on_creation(false);
-  if (browser_view)
+  if (browser_view) {
     SetBrowserView(browser_view);
+}
 }
 
 void BrowserFrame::SetBrowserView(BrowserView* browser_view) {
@@ -187,7 +188,11 @@ void BrowserFrame::InitBrowserFrame() {
 
   if (native_browser_frame_->ShouldRestorePreviousBrowserWidgetState()) {
     if (browser->is_type_normal() || browser->is_type_devtools() ||
-        browser->is_type_app()) {
+        browser->is_type_app()
+#if BUILDFLAG(IS_OHOS)
+        || browser->is_type_popup()
+#endif
+    ) {
       // Typed panel/popup can only return a size once the widget has been
       // created.
       // DevTools counts as a popup, but DevToolsWindow::CreateDevToolsBrowser
@@ -211,6 +216,12 @@ void BrowserFrame::InitBrowserFrame() {
       }
     }
   }
+#if BUILDFLAG(IS_OHOS)
+  if (browser->is_type_popup()) {
+    params.bounds.set_height(params.bounds.height() +
+                             GetLayoutConstant(LOCATION_BAR_HEIGHT));
+  }
+#endif
 
   Init(std::move(params));
 
@@ -334,8 +345,9 @@ BrowserNonClientFrameView* BrowserFrame::GetFrameView() const {
 }
 
 bool BrowserFrame::UseCustomFrame() const {
-  if (!native_browser_frame_)
+  if (!native_browser_frame_) {
     return true;
+  }
   return native_browser_frame_->UseCustomFrame();
 }
 
@@ -360,21 +372,24 @@ void BrowserFrame::GetWindowPlacement(
 
 content::KeyboardEventProcessingResult BrowserFrame::PreHandleKeyboardEvent(
     const input::NativeWebKeyboardEvent& event) {
-  if (!native_browser_frame_)
+  if (!native_browser_frame_) {
     return content::KeyboardEventProcessingResult::NOT_HANDLED;
+  }
   return native_browser_frame_->PreHandleKeyboardEvent(event);
 }
 
 bool BrowserFrame::HandleKeyboardEvent(
     const input::NativeWebKeyboardEvent& event) {
-  if (!native_browser_frame_)
+  if (!native_browser_frame_) {
     return false;
+  }
   return native_browser_frame_->HandleKeyboardEvent(event);
 }
 
 void BrowserFrame::OnBrowserViewInitViewsComplete() {
-  if (!browser_frame_view_)
+  if (!browser_frame_view_) {
     return;
+  }
   browser_frame_view_->OnBrowserViewInitViewsComplete();
 }
 
@@ -474,8 +489,9 @@ ui::ColorProviderKey::ThemeInitializerSupplier* BrowserFrame::GetCustomTheme()
 }
 
 void BrowserFrame::OnNativeWidgetWorkspaceChanged() {
-  if (!browser_view_)
+  if (!browser_view_) {
     return;
+  }
   chrome::SaveWindowWorkspace(browser_view_->browser(), GetWorkspace());
   chrome::SaveWindowVisibleOnAllWorkspaces(browser_view_->browser(),
                                            IsVisibleOnAllWorkspaces());

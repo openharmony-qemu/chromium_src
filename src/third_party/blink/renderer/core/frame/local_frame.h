@@ -100,6 +100,10 @@
 #include "ui/gfx/geometry/transform.h"
 #include "ui/gfx/image/image_skia.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace base {
 class SingleThreadTaskRunner;
 }
@@ -169,6 +173,9 @@ class WebPrescientNetworking;
 class URLLoader;
 struct BlinkTransferableMessage;
 struct WebScriptSource;
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+class BlankScreenDetector;
+#endif
 
 namespace v8_compile_hints {
 class V8LocalCompileHintsProducer;
@@ -198,6 +205,9 @@ class CORE_EXPORT LocalFrame final
       public BackForwardCacheLoaderHelperImpl::Delegate,
       public Supplementable<LocalFrame> {
  public:
+#if BUILDFLAG(IS_ARKWEB)
+  friend class LocalFrameUtil;
+#endif
   // Returns the LocalFrame instance for the given |frame_token|.
   static LocalFrame* FromFrameToken(const LocalFrameToken& frame_token);
 
@@ -273,6 +283,18 @@ class CORE_EXPORT LocalFrame final
 
   void DidChangeThemeColor(bool update_theme_color_cache);
   void DidChangeBackgroundColor(SkColor4f background_color, bool color_adjust);
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  void OnDetectedBlankScreen(const WTF::String &url,
+                             int32_t blankScreenReason,
+                             int32_t detectedContentfulNodesCount);
+
+  std::shared_ptr<BlankScreenDetector> GetBlankScreenDetector(bool force = false);
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  void NotifyContextMenuWillShow();
+#endif
 
   // Returns false if detaching child frames reentrantly detached `this`.
   bool DetachChildren();
@@ -634,6 +656,15 @@ class CORE_EXPORT LocalFrame final
   // This is used to check if a script tagged as an ad is currently on the v8
   // stack.
   bool IsAdScriptInStack() const;
+
+#if BUILDFLAG(IS_ARKWEB)
+  bool scale_limits_max_changed_ = false;
+  bool scale_limits_min_changed_ = false;
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  std::shared_ptr<BlankScreenDetector> blank_screen_detector_ = nullptr;
+#endif
 
   // The evidence for or against a frame being an ad. `std::nullopt` if not yet
   // set or if the frame is a subfiltering root frame (outermost main frame) as

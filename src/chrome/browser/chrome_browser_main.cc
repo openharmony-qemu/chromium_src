@@ -462,7 +462,7 @@ void ProcessSingletonNotificationCallbackImpl(
     GoogleUpdateSettings::SetLastRunTime();
   }
 }
-#endif  // BUILDFLAG(ENABLE_PROCESS_SINGLETON)
+#endif  // BUILDFLAG(ENABLE_PROCESS_SINGLETON) || BUILDFLAG(ARKWEB_TEST)
 
 #if !BUILDFLAG(IS_ANDROID)
 bool ShouldInstallSodaDuringPostProfileInit(
@@ -712,7 +712,11 @@ int ChromeBrowserMainParts::PreEarlyInitialization() {
 
   // Create BrowserProcess in PreEarlyInitialization() so that we can load
   // field trials (and all it depends upon).
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  browser_process_ = std::make_unique<BrowserProcessImplExt>(startup_data_);
+#else
   browser_process_ = std::make_unique<BrowserProcessImpl>(startup_data_);
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
   startup_data_->CreateProfilePrefService();
@@ -782,7 +786,7 @@ void ChromeBrowserMainParts::PreCreateMainMessageLoop() {
 void ChromeBrowserMainParts::PostCreateMainMessageLoop() {
   TRACE_EVENT0("startup", "ChromeBrowserMainParts::PostCreateMainMessageLoop");
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
   // Initialize the upgrade detector here after `ChromeBrowserMainPartsAsh`
   // has had a chance to connect the DBus services.
   UpgradeDetector::GetInstance()->Init();
@@ -1123,7 +1127,7 @@ void ChromeBrowserMainParts::PostCreateThreads() {
                      sampling_profiler::ProfilerThreadType::kIo));
 // Sampling multiple threads might cause overhead on Android and we don't want
 // to enable it unless the data is needed.
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
   // We pass in CreateCoreUnwindersFactory here since it lives in the chrome/
   // layer while TracingSamplerProfiler is outside of chrome/.
   content::GetIOThreadTaskRunner({})->PostTask(
@@ -1172,6 +1176,14 @@ int ChromeBrowserMainParts::PreMainMessageLoopRun() {
   for (auto& chrome_extra_part : chrome_extra_parts_)
     chrome_extra_part->PreMainMessageLoopRun();
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  if (g_browser_process) {
+    g_browser_process->subresource_filter_ruleset_service();
+    g_browser_process->AsBrowserProcessImplExt()
+        ->subresource_filter_user_ruleset_service();
+  }
+#endif
+
   return result_code_;
 }
 
@@ -1189,8 +1201,11 @@ int ChromeBrowserMainParts::PreMainMessageLoopRun() {
 void ChromeBrowserMainParts::PreProfileInit() {
   TRACE_EVENT0("startup", "ChromeBrowserMainParts::PreProfileInit");
 
+#if !BUILDFLAG(IS_OHOS)
+  // TODO:OHOS
   media::AudioManager::SetGlobalAppName(
       l10n_util::GetStringUTF8(IDS_SHORT_PRODUCT_NAME));
+#endif
 
   for (auto& chrome_extra_part : chrome_extra_parts_)
     chrome_extra_part->PreProfileInit();
@@ -2023,4 +2038,4 @@ bool ChromeBrowserMainParts::ProcessSingletonNotificationCallback(
       FROM_HERE, base::BindOnce(&ProcessSingletonNotificationCallbackImpl,
                                 std::move(command_line), current_directory));
 }
-#endif  // BUILDFLAG(ENABLE_PROCESS_SINGLETON)
+#endif  // BUILDFLAG(ENABLE_PROCESS_SINGLETON) || BUILDFLAG(ARKWEB_TEST)

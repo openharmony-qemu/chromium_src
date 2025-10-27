@@ -52,6 +52,12 @@ base::ScopedFD CreateValidLookingBufferHandle() {
       .PassPlatformHandle()
       .fd;
 }
+#elif BUILDFLAG(IS_OHOS)
+base::ScopedFD CreateValidLookingBufferHandle() {
+  return base::UnsafeSharedMemoryRegion::TakeHandleForSerialization(
+             base::UnsafeSharedMemoryRegion::Create(1024))
+      .PassPlatformHandle();
+}
 #elif BUILDFLAG(IS_FUCHSIA)
 zx::vmo CreateValidLookingBufferHandle() {
   return base::UnsafeSharedMemoryRegion::TakeHandleForSerialization(

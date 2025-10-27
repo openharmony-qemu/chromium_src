@@ -5,6 +5,9 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_BINDINGS_CORE_V8_ACTIVE_SCRIPT_WRAPPABLE_CREATION_KEY_H_
 #define THIRD_PARTY_BLINK_RENDERER_BINDINGS_CORE_V8_ACTIVE_SCRIPT_WRAPPABLE_CREATION_KEY_H_
 
+#include "arkweb/build/features/features.h"
+#include "build/build_config.h"
+
 namespace blink {
 
 // Creation key needed to instantiate ActiveScriptWrappable objects.

@@ -138,6 +138,9 @@ bool FontDescription::operator==(const FontDescription& other) const {
          size_adjust_ == other.size_adjust_ &&
          letter_spacing_ == other.letter_spacing_ &&
          word_spacing_ == other.word_spacing_ &&
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+         fixed_font_size_ == other.fixed_font_size_ &&
+#endif
          font_selection_request_ == other.font_selection_request_ &&
          fields_as_unsigned_.parts[0] == other.fields_as_unsigned_.parts[0] &&
          fields_as_unsigned_.parts[1] == other.fields_as_unsigned_.parts[1] &&

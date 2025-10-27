@@ -128,6 +128,14 @@
 #include "content/browser/gpu/ca_transaction_gpu_coordinator.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+#include "content/browser/renderer_host/render_process_host_impl.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
+#endif
+
 namespace content {
 
 base::subtle::Atomic32 GpuProcessHost::gpu_crash_count_ = 0;
@@ -758,6 +766,14 @@ GpuProcessHost::~GpuProcessHost() {
   }
 #endif
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+  if (in_process_gpu_thread_)
+    OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(
+        OHOS::NWeb::ResSchedStatusAdapter::THREAD_DESTROYED,
+        base::GetCurrentRealPid(), in_process_gpu_thread_->GetThreadRealId(),
+        OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+#endif
+
   // This is only called on the UI thread so no race against the constructor
   // for another GpuProcessHost.
   if (g_gpu_process_hosts[kind_] == this)
@@ -903,6 +919,12 @@ bool GpuProcessHost::Init() {
 #endif
     options.thread_type = base::ThreadType::kDisplayCritical;
     in_process_gpu_thread_->StartWithOptions(std::move(options));
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+    OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(
+        OHOS::NWeb::ResSchedStatusAdapter::THREAD_CREATED,
+        base::GetCurrentRealPid(), in_process_gpu_thread_->GetThreadRealId(),
+        OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+#endif
   } else if (!LaunchGpuProcess()) {
     return false;
   }
@@ -934,6 +956,12 @@ bool GpuProcessHost::Init() {
   ca_transaction_gpu_coordinator_ = CATransactionGPUCoordinator::Create(this);
 #endif
 
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+  if (gpu_crash_count_ != 0) {
+    ArkwebRenderProcessHostImplUtils::Refresh();
+  }
+#endif
+
   return true;
 }
 
@@ -960,14 +988,26 @@ void GpuProcessHost::OnProcessLaunched() {
   }
 }
 
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+const std::string process_type = "gpu";
+#endif
+
 void GpuProcessHost::OnProcessLaunchFailed(int error_code) {
   LOG(ERROR) << "GPU process launch failed: error_code=" << error_code;
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  std::string error_msg = "gpu process launch failed, error code:" + std::to_string(error_code);
+  crashpad::CrashpadDfx::ProcessCrashReport(process_type, "", "", error_msg);
+#endif
   RecordProcessCrash();
 }
 
 void GpuProcessHost::OnProcessCrashed(int exit_code) {
   // Record crash before doing anything that could start a new GPU process.
   LOG(ERROR) << "GPU process exited unexpectedly: exit_code=" << exit_code;
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  std::string error_msg = "gpu crashed, error code:" + std::to_string(exit_code);
+  crashpad::CrashpadDfx::ProcessCrashReport(process_type, "", "", error_msg);
+#endif
   RecordProcessCrash();
   gpu_host_->OnProcessCrashed();
   SendOutstandingReplies();
@@ -1392,6 +1432,8 @@ int GpuProcessHost::GetFallbackCrashLimit() const {
 #elif BUILDFLAG(IS_CHROMEOS)
   // Chrome OS does not use software compositing and fallback crashes the
   // browser process. So use larger maximum crash count limit.
+  return 6;
+#elif BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
   return 6;
 #else
   // Maximum number of times the GPU process can crash before we try something

@@ -143,6 +143,14 @@
 #include "src/utils/identity-map.h"
 #include "src/utils/version.h"
 
+#ifdef OHOS_JS_ENGINE
+#include "../../../arkweb/chromium_ext/v8/trace.h"
+#endif
+
+#ifdef V8_ENABLE_OHOS_PERF_JIT
+#include "../../../arkweb/chromium_ext/v8/parse-jitcode.h"
+#endif
+
 #if V8_ENABLE_WEBASSEMBLY
 #include "src/debug/debug-wasm-objects.h"
 #include "src/trap-handler/trap-handler.h"
@@ -2406,6 +2414,9 @@ MaybeLocal<UnboundScript> ScriptCompiler::CompileUnboundInternal(
 
   i::DirectHandle<i::SharedFunctionInfo> result;
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"), "V8.CompileScript");
+#ifdef OHOS_JS_ENGINE
+  auto trace = HiTrace("RCS_v8.compile_V8.CompileScript");
+#endif
   i::ScriptDetails script_details = GetScriptDetails(
       i_isolate, source->resource_name, source->resource_line_offset,
       source->resource_column_offset, source->source_map_url,
@@ -2498,6 +2509,71 @@ MaybeLocal<Module> ScriptCompiler::CompileModule(
   i::Isolate* i_isolate = reinterpret_cast<i::Isolate*>(v8_isolate);
   return ToApiHandle<Module>(i_isolate->factory()->NewSourceTextModule(shared));
 }
+
+#ifdef OHOS_JS_ENGINE
+MaybeLocal<WasmModuleObject> WasmModuleObject::DeserializeOrCompile(
+    Isolate* v8_isolate, MemorySpan<const uint8_t> wire_bytes,
+    MemorySpan<const uint8_t> wasm_cache_data, bool& cacheRejected) {
+#if V8_ENABLE_WEBASSEMBLY
+  i::Isolate* i_isolate = reinterpret_cast<i::Isolate*>(v8_isolate);
+  i::MaybeHandle<i::WasmModuleObject> maybe_module =
+      i::wasm::DeserializeNativeModule(
+          i_isolate,
+          base::Vector<const uint8_t>(wasm_cache_data.data(),
+                                      wasm_cache_data.size()),
+          base::Vector<const uint8_t>(wire_bytes.data(), wire_bytes.size()),
+          i::wasm::CompileTimeImports(),
+          {});
+  cacheRejected = maybe_module.is_null();
+  if (!cacheRejected) {
+    // Deserialize successfully
+    return Utils::ToLocal(maybe_module.ToHandleChecked());
+  }
+  return Compile(v8_isolate, wire_bytes);
+#else
+  Utils::ApiCheck(false, "WasmModuleObject::DeserializeOrCompile",
+                  "WebAssembly support is not enabled");
+  UNREACHABLE();
+#endif  // V8_ENABLE_WEBASSEMBLY
+}
+
+bool WasmModuleObject::CompileFunction(Isolate* v8_isolate,
+                                       uint32_t function_index,
+                                       WasmExecutionTier tier) {
+#if V8_ENABLE_WEBASSEMBLY
+  i::Isolate* i_isolate = reinterpret_cast<i::Isolate*>(v8_isolate);
+  auto module = i::Cast<i::WasmModuleObject>(Utils::OpenDirectHandle(this));
+  auto* native_module = module->native_module();
+  uint32_t num_imported_functions = native_module->num_imported_functions();
+  uint32_t num_functions = native_module->num_functions();
+  // Check function index out of range.
+  if (function_index < num_imported_functions || function_index >= num_functions) {
+    return false;
+  }
+
+  // Update the static_assert once i::wasm::ExecutionTier changed.
+  static_assert(static_cast<uint8_t>(v8::WasmExecutionTier::kNone) ==
+                static_cast<uint8_t>(i::wasm::ExecutionTier::kNone));
+  static_assert(static_cast<uint8_t>(v8::WasmExecutionTier::kLiftoff) ==
+                static_cast<uint8_t>(i::wasm::ExecutionTier::kLiftoff));
+  static_assert(static_cast<uint8_t>(v8::WasmExecutionTier::kTurbofan) ==
+                static_cast<uint8_t>(i::wasm::ExecutionTier::kTurbofan));
+  auto executionTier =
+      static_cast<i::wasm::ExecutionTier>(static_cast<uint8_t>(tier));
+  i::wasm::GetWasmEngine()->CompileFunction(i_isolate->counters(),
+                                            module->native_module(),
+                                            function_index, executionTier);
+  if (native_module->compilation_state()->failed()) {
+    return false;
+  }
+  return true;
+#else
+  Utils::ApiCheck(false, "WasmModuleObject::CompileFunction",
+                  "WebAssembly support is not enabled");
+  UNREACHABLE();
+#endif  // V8_ENABLE_WEBASSEMBLY
+}
+#endif
 
 // static
 V8_WARN_UNUSED_RESULT MaybeLocal<Function> ScriptCompiler::CompileFunction(
@@ -6417,6 +6493,8 @@ bool v8::Object::CheckGlobalWrappable(v8::Isolate* isolate,
 void v8::V8::InitializePlatform(Platform* platform) {
   i::V8::InitializePlatform(platform);
 }
+
+#include "../../../arkweb/chromium_ext/v8/src/api/api-for-include.cc"
 
 void v8::V8::DisposePlatform() { i::V8::DisposePlatform(); }
 
@@ -12248,6 +12326,7 @@ void InvokeAccessorGetterCallback(
   // Leaving JavaScript.
   i::Isolate* i_isolate = reinterpret_cast<i::Isolate*>(info.GetIsolate());
   RCS_SCOPE(i_isolate, RuntimeCallCounterId::kAccessorGetterCallback);
+  HITRACE_RCS_SCOPE(i_isolate, RuntimeCallCounterId::kAccessorGetterCallback);
 
   v8::AccessorNameGetterCallback getter;
   {
@@ -12287,6 +12366,7 @@ inline void InvokeFunctionCallback(
     const v8::FunctionCallbackInfo<v8::Value>& info, CallApiCallbackMode mode) {
   i::Isolate* i_isolate = reinterpret_cast<i::Isolate*>(info.GetIsolate());
   RCS_SCOPE(i_isolate, RuntimeCallCounterId::kFunctionCallback);
+  HITRACE_RCS_SCOPE(i_isolate, RuntimeCallCounterId::kFunctionCallback);
 
   Tagged<FunctionTemplateInfo> fti = GetTargetFunctionTemplateInfo(info);
   v8::FunctionCallback callback =

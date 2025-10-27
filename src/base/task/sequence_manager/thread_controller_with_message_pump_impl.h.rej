@@ -1,0 +1,15 @@
+--- thread_controller_with_message_pump_impl.h	2025-10-20 19:52:46.704789336 +0800
++++ thread_controller_with_message_pump_impl.h	2025-10-16 15:54:55.340895268 +0800
+@@ -72,11 +72,11 @@
+   void RemoveNestingObserver(RunLoop::NestingObserver* observer) override;
+   void SetTaskExecutionAllowedInNativeNestedLoop(bool allowed) override;
+   bool IsTaskExecutionAllowed() const override;
+   MessagePump* GetBoundMessagePump() const override;
+   void PrioritizeYieldingToNative(base::TimeTicks prioritize_until) override;
+-#if BUILDFLAG(IS_IOS) || BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_IOS) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
+   void AttachToMessagePump() override;
+ #endif
+ #if BUILDFLAG(IS_IOS)
+   void DetachFromMessagePump() override;
+ #endif

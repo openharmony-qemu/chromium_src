@@ -105,6 +105,10 @@ class VIZ_SERVICE_EXPORT SkiaOutputSurfaceDependency {
 
   // This returns true if CompositorGpuThread(aka DrDc thread) is enabled.
   virtual bool IsUsingCompositorGpuThread() = 0;
+
+#if BUILDFLAG(ARKWEB_D_VSYNC)
+  virtual bool GetIsScroll() = 0;
+#endif
 };
 
 }  // namespace viz

@@ -1,0 +1,121 @@
+--- media_controls_impl.cc	2025-10-20 19:53:00.778206380 +0800
++++ media_controls_impl.cc	2025-10-16 16:07:39.835265291 +0800
+@@ -30,11 +30,10 @@
+ #endif
+ 
+ #include "third_party/blink/renderer/modules/media_controls/media_controls_impl.h"
+ 
+ #include "base/auto_reset.h"
+-#include "media/base/media_switches.h"
+ #include "third_party/blink/public/platform/platform.h"
+ #include "third_party/blink/public/platform/task_type.h"
+ #include "third_party/blink/public/platform/user_metrics_action.h"
+ #include "third_party/blink/renderer/bindings/core/v8/v8_mutation_observer_init.h"
+ #include "third_party/blink/renderer/core/css/css_property_value_set.h"
+@@ -112,10 +117,15 @@
+ #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
+ #include "third_party/blink/renderer/platform/text/platform_locale.h"
+ #include "third_party/blink/renderer/platform/web_test_support.h"
+ #include "ui/gfx/geometry/size.h"
+ 
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++#include "arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/media_controls_impl_for_include.cc"
++#include "base/ohos/sys_info_utils_ext.h"
++#endif // ARKWEB_VIDEO_ASSISTANT
++
+ namespace blink {
+ 
+ namespace {
+ 
+ // (2px left border + 6px left padding + 56px button + 6px right padding + 2px
+@@ -632,11 +657,11 @@
+   text_track_list_ =
+       MakeGarbageCollected<MediaControlTextTrackListElement>(*this);
+   ParserAppendChild(text_track_list_);
+ 
+   playback_speed_list_ =
+-      MakeGarbageCollected<MediaControlPlaybackSpeedListElement>(*this);
++      MakeGarbageCollected<MediaControlPlaybackSpeedListElementExt>(*this);
+   ParserAppendChild(playback_speed_list_);
+ 
+   overflow_list_ =
+       MakeGarbageCollected<MediaControlOverflowMenuListElement>(*this);
+   ParserAppendChild(overflow_list_);
+@@ -672,30 +709,47 @@
+           MakeGarbageCollected<MediaControlToggleClosedCaptionsButtonElement>(
+               *this)));
+   overflow_list_->ParserAppendChild(
+       playback_speed_button_->CreateOverflowElement(
+           MakeGarbageCollected<MediaControlPlaybackSpeedButtonElement>(*this)));
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++  if (!ShouldShowVideoControlsHM()) {
++#endif
+   if (picture_in_picture_button_) {
+     overflow_list_->ParserAppendChild(
+         picture_in_picture_button_->CreateOverflowElement(
+             MakeGarbageCollected<MediaControlPictureInPictureButtonElement>(
+                 *this)));
+   }
+-
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++  }
++#endif
+   // Set the default CSS classes.
+   UpdateCSSClassFromState();
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++  if (ShouldShowVideoControlsHM() && mediaControlsImplUtils_) {
++    mediaControlsImplUtils_->UpdateDeviceCSSClassExt();
++  }
++#endif // ARKWEB_VIDEO_ASSISTANT
+ }
+ 
+ void MediaControlsImpl::PopulatePanel() {
++  if (mediaControlsImplUtils_->PopulatePanelExtVideoAssistant()) {
++    return;
++  }
+   // Clear the panels.
+   panel_->setInnerHTML("");
+   if (media_button_panel_)
+     media_button_panel_->setInnerHTML("");
+ 
+   Element* button_panel = panel_;
+   if (ShouldShowVideoControls()) {
++#if BUILDFLAG(ARKWEB_MEDIA)
++    mediaControlsImplUtils_->PopulatePanelExt();
++#else
+     MaybeParserAppendChild(panel_, scrubbing_message_);
++#endif
+     if (display_cutout_fullscreen_button_)
+       panel_->ParserAppendChild(display_cutout_fullscreen_button_);
+ 
+     MaybeParserAppendChild(panel_, overlay_play_button_);
+     panel_->ParserAppendChild(media_button_panel_);
+@@ -1378,10 +1491,11 @@
+       std::make_pair(cast_button_.Get(), false),
+       std::make_pair(download_button_.Get(), false),
+       std::make_pair(toggle_closed_captions_button_.Get(), false),
+       std::make_pair(playback_speed_button_.Get(), false),
+   };
++  mediaControlsImplUtils_->UpdateOverflowMenuWantedExt(row_elements);
+ 
+   // These are the elements in order of priority that take up vertical room.
+   MediaControlElementBase* column_elements[] = {
+       media_button_panel_.Get(), timeline_.Get(),
+   };
+@@ -2285,10 +2464,16 @@
+ 
+   if (PlaybackSpeedListIsWanted())
+     TogglePlaybackSpeedList();
+ }
+ 
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++void MediaControlsImpl::HidePlaybackSpeedList() {
++  playback_speed_list_->SetIsWanted(false);
++}
++#endif
++
+ void MediaControlsImpl::VolumeSliderWantedTimerFired(TimerBase*) {
+   volume_slider_->OpenSlider();
+   volume_control_container_->OpenContainer();
+ }
+ 

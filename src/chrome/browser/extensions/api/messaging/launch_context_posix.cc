@@ -18,6 +18,7 @@
 #include "build/chromeos_buildflags.h"
 #include "chrome/common/chrome_paths.h"
 #include "net/base/file_stream.h"
+#include "arkweb/ohos_nweb/src/cef_delegate/nweb_extension_connect_native.h"
 
 namespace extensions {
 
@@ -108,6 +109,48 @@ std::optional<LaunchContext::ProcessState> LaunchContext::LaunchNativeProcess(
   return ProcessState(std::move(local_process), std::move(read_pipe_read_fd),
                       std::move(write_pipe_write_fd));
 }
+#if BUILDFLAG(IS_OHOS)
+std::optional<LaunchContext::ProcessState> LaunchContext::LaunchConnectNative(
+                      const std::string& native_host_name, const GURL& origin) {
+  LOG(INFO) << "LaunchContext::LaunchConnectNative Process native_host_name: " 
+            << native_host_name << " origin: " << origin;
+           
+  base::LaunchOptions options;
+
+  int read_pipe_fds[2] = {0};
+  if (HANDLE_EINTR(pipe(read_pipe_fds)) != 0) {
+    LOG(ERROR) << "Bad read pipe";
+    return std::nullopt;
+  }
+  base::ScopedFD read_pipe_read_fd(read_pipe_fds[0]);
+  base::ScopedFD read_pipe_write_fd(read_pipe_fds[1]);
+  options.fds_to_remap.push_back(
+      std::make_pair(read_pipe_write_fd.get(), STDOUT_FILENO));
+
+  int write_pipe_fds[2] = {0};
+  if (HANDLE_EINTR(pipe(write_pipe_fds)) != 0) {
+    LOG(ERROR) << "Bad write pipe";
+    return std::nullopt;
+  }
+  base::ScopedFD write_pipe_read_fd(write_pipe_fds[0]);
+  base::ScopedFD write_pipe_write_fd(write_pipe_fds[1]);
+  options.fds_to_remap.push_back(
+      std::make_pair(write_pipe_read_fd.get(), STDIN_FILENO));
+
+  std::string origin_string = origin.spec();
+  base::Process local_process = OHOS::NWeb::NWebConnectNativeManager::GetInstance()->
+                                    LaunchConnectNative(native_host_name, origin_string, 
+                                    write_pipe_read_fd.get(), read_pipe_write_fd.get());
+  write_pipe_read_fd.reset();
+  read_pipe_write_fd.reset();
+  if (!local_process.IsValid()) {
+    LOG(ERROR) << "Error LaunchContext::LaunchConnectNative launching process";
+    return std::nullopt;
+  }
+  return ProcessState(std::move(local_process), std::move(read_pipe_read_fd),
+                      std::move(write_pipe_write_fd));
+}
+#endif
 
 void LaunchContext::ConnectPipes(base::ScopedPlatformFile read_file,
                                  base::ScopedPlatformFile write_file) {

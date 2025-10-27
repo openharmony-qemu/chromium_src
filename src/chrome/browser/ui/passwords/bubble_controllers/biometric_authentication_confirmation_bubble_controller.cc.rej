@@ -1,0 +1,16 @@
+--- biometric_authentication_confirmation_bubble_controller.cc	2025-10-20 19:52:50.788849377 +0800
++++ biometric_authentication_confirmation_bubble_controller.cc	2025-10-16 15:57:01.597547122 +0800
+@@ -42,10 +42,13 @@
+   return l10n_util::GetStringUTF16(
+       IDS_PASSWORD_MANAGER_BIOMETRIC_AUTHENTICATION_CONFIRMATION_TITLE_WIN);
+ #elif BUILDFLAG(IS_CHROMEOS_ASH)
+   return l10n_util::GetStringUTF16(
+       IDS_PASSWORD_MANAGER_BIOMETRIC_AUTHENTICATION_CONFIRMATION_TITLE_CHROMEOS);
++#elif BUILDFLAG(IS_OHOS)
++  return l10n_util::GetStringUTF16(
++      IDS_PASSWORD_MANAGER_BIOMETRIC_AUTHENTICATION_CONFIRMATION_TITLE_OHOS);
+ #else
+   NOTIMPLEMENTED();
+ #endif
+ }
+ 

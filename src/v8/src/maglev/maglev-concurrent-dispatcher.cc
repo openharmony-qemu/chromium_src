@@ -25,6 +25,10 @@
 #include "src/utils/identity-map.h"
 #include "src/utils/locked-queue-inl.h"
 
+#ifdef OHOS_JS_ENGINE
+#include "../../../arkweb/chromium_ext/v8/trace.h"
+#endif
+
 namespace v8 {
 namespace internal {
 
@@ -283,6 +287,9 @@ class MaglevConcurrentDispatcher::JobTask final : public v8::JobTask {
             TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT);
         RCS_SCOPE(&local_isolate,
                   RuntimeCallCounterId::kOptimizeBackgroundMaglev);
+#ifdef OHOS_JS_ENGINE
+        auto trace = HiTrace("RCS_v8.compile_V8.MaglevBackground");
+#endif
         CompilationJob::Status status =
             job->ExecuteJob(local_isolate.runtime_call_stats(), &local_isolate);
         if (status == CompilationJob::SUCCEEDED) {
@@ -299,6 +306,9 @@ class MaglevConcurrentDispatcher::JobTask final : public v8::JobTask {
         TRACE_EVENT_WITH_FLOW0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                                "V8.MaglevDestructBackground", job->trace_id(),
                                TRACE_EVENT_FLAG_FLOW_IN);
+#ifdef OHOS_JS_ENGINE
+        auto trace = HiTrace("RCS_v8.compile_V8.MaglevDestructBackground");
+#endif
         UnparkedScope unparked_scope(&local_isolate);
         job.reset();
       } else {
@@ -372,6 +382,9 @@ void MaglevConcurrentDispatcher::FinalizeFinishedJobs() {
         job->trace_id(), TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT);
     RCS_SCOPE(isolate_,
               RuntimeCallCounterId::kOptimizeConcurrentFinalizeMaglev);
+#ifdef OHOS_JS_ENGINE
+    auto trace = HiTrace("RCS_v8.compile_V8.MaglevConcurrentFinalize");
+#endif
     Compiler::FinalizeMaglevCompilationJob(job.get(), isolate_);
     job->DisposeOnMainThread(isolate_);
     if (v8_flags.maglev_destroy_on_background) {
@@ -383,6 +396,9 @@ void MaglevConcurrentDispatcher::FinalizeFinishedJobs() {
       TRACE_EVENT_WITH_FLOW0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                              "V8.MaglevDestruct", job->trace_id(),
                              TRACE_EVENT_FLAG_FLOW_IN);
+#ifdef OHOS_JS_ENGINE
+      auto trace = HiTrace("RCS_v8.compile_V8.MaglevDestruct");
+#endif
       job.reset();
     }
   }

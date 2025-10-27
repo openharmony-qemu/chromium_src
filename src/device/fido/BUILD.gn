@@ -321,6 +321,10 @@ component("fido") {
         "//dbus",
       ]
     }
+
+    if (defined(arkweb_fido) && arkweb_fido) {
+      sources += arkweb_device_fido_ext_sources
+    }
   }
 }
 

@@ -37,16 +37,28 @@ class ChromeBrowserMainExtraPartsCef : public ChromeBrowserMainExtraParts {
       const {
     return user_blocking_task_runner_;
   }
-
+#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
+  CefRefPtr<CefRequestContextImpl> off_the_record_request_context() const {
+    return global_otr_request_context_;
+  }
+#endif
  private:
+#if BUILDFLAG(ARKWEB_COOKIE)
+  void PreProfileInit() override;
+#endif
   // ChromeBrowserMainExtraParts overrides.
   void PostProfileInit(Profile* profile, bool is_initial_profile) override;
   void PostBrowserStart() override;
+#if BUILDFLAG(ARKWEB_ENCRYPT)
+  void PostCreateMainMessageLoop() override;
+#endif
   void PreMainMessageLoopRun() override;
   void ToolkitInitialized() override;
 
   CefRefPtr<CefRequestContextImpl> global_request_context_;
-
+#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
+  CefRefPtr<CefRequestContextImpl> global_otr_request_context_;
+#endif
   // Blocking task runners exposed via CefTaskRunner. For consistency with
   // previous named thread behavior always execute all pending tasks before
   // shutdown (e.g. to make sure critical data is saved to disk).

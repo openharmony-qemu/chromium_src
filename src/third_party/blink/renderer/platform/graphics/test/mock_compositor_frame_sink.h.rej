@@ -1,0 +1,20 @@
+--- mock_compositor_frame_sink.h	2025-10-20 19:53:01.202201169 +0800
++++ mock_compositor_frame_sink.h	2025-10-16 16:07:40.107641629 +0800
+@@ -71,11 +72,16 @@
+   MOCK_METHOD1(InitializeCompositorFrameSinkType,
+                void(viz::mojom::CompositorFrameSinkType));
+   MOCK_METHOD1(BindLayerContext,
+                void(viz::mojom::blink::PendingLayerContextPtr));
+   MOCK_METHOD1(SetThreads, void(const WTF::Vector<viz::Thread>&));
+-
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  void ReportKeyThreadIds(const WTF::Vector<int32_t>& thread_ids,
++                          int32_t process_id,
++                          bool is_created) override {}
++  void OnSetBypassVsyncCondition(int32_t condition) override {}
++#endif
+  private:
+   mojo::Receiver<viz::mojom::blink::CompositorFrameSink> receiver_{this};
+ };
+ 
+ }  // namespace blink

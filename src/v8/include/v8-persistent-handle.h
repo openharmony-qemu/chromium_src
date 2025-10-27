@@ -24,16 +24,18 @@ class PersistentValueMap;
 class Value;
 
 namespace api_internal {
-V8_EXPORT internal::Address* Eternalize(v8::Isolate* isolate, Value* handle);
+V8_EXPORT JSVM_EXPORT internal::Address* Eternalize(v8::Isolate* isolate,
+                                                    Value* handle);
 V8_EXPORT internal::Address* CopyGlobalReference(internal::Address* from);
-V8_EXPORT void DisposeGlobal(internal::Address* global_handle);
-V8_EXPORT void MakeWeak(internal::Address** location_addr);
-V8_EXPORT void* ClearWeak(internal::Address* location);
+V8_EXPORT JSVM_EXPORT void DisposeGlobal(internal::Address* global_handle);
+V8_EXPORT JSVM_EXPORT void MakeWeak(internal::Address** location_addr);
+V8_EXPORT JSVM_EXPORT void* ClearWeak(internal::Address* location);
 V8_EXPORT void AnnotateStrongRetainer(internal::Address* location,
                                       const char* label);
-V8_EXPORT internal::Address* GlobalizeReference(internal::Isolate* isolate,
+V8_EXPORT JSVM_EXPORT internal::Address* GlobalizeReference(
+    internal::Isolate* isolate,
                                                 internal::Address value);
-V8_EXPORT void MoveGlobalReference(internal::Address** from,
+V8_EXPORT JSVM_EXPORT void MoveGlobalReference(internal::Address** from,
                                    internal::Address** to);
 }  // namespace api_internal
 
@@ -71,7 +73,9 @@ class Eternal : public api_internal::IndirectHandleBase {
 };
 
 namespace api_internal {
-V8_EXPORT void MakeWeak(internal::Address* location, void* data,
+V8_EXPORT JSVM_EXPORT void MakeWeak(
+    internal::Address* location,
+    void* data,
                         WeakCallbackInfo<void>::Callback weak_callback,
                         WeakCallbackType type);
 }  // namespace api_internal
@@ -305,7 +309,9 @@ class Persistent : public PersistentBase<T> {
    * can result in a memory leak, it is recommended to always set this flag.
    */
   V8_INLINE ~Persistent() {
-    if (M::kResetInDestructor) this->Reset();
+    if (M::kResetInDestructor) {
+      this->Reset();
+    }
   }
 
   // TODO(dcarney): this is pretty useless, fix or remove
@@ -314,7 +320,9 @@ class Persistent : public PersistentBase<T> {
 #ifdef V8_ENABLE_CHECKS
     // If we're going to perform the type check then we have to check
     // that the handle isn't empty before doing the checked cast.
-    if (!that.IsEmpty()) T::Cast(that.template value<S>());
+    if (!that.IsEmpty()) {
+      T::Cast(that.template value<S>());
+    }
 #endif
     return reinterpret_cast<Persistent<T, M>&>(
         const_cast<Persistent<S, M2>&>(that));
@@ -522,7 +530,9 @@ void PersistentBase<T>::AnnotateStrongRetainer(const char* label) {
 template <class T>
 void PersistentBase<T>::SetWrapperClassId(uint16_t class_id) {
   using I = internal::Internals;
-  if (this->IsEmpty()) return;
+  if (this->IsEmpty()) {
+    return;
+  }
   uint8_t* addr = reinterpret_cast<uint8_t*>(slot()) + I::kNodeClassIdOffset;
   *reinterpret_cast<uint16_t*>(addr) = class_id;
 }
@@ -530,7 +540,9 @@ void PersistentBase<T>::SetWrapperClassId(uint16_t class_id) {
 template <class T>
 uint16_t PersistentBase<T>::WrapperClassId() const {
   using I = internal::Internals;
-  if (this->IsEmpty()) return 0;
+  if (this->IsEmpty()) {
+    return 0;
+  }
   uint8_t* addr = reinterpret_cast<uint8_t*>(slot()) + I::kNodeClassIdOffset;
   return *reinterpret_cast<uint16_t*>(addr);
 }

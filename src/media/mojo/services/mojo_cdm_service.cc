@@ -23,6 +23,10 @@
 #include "mojo/public/cpp/bindings/callback_helpers.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
 
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+#include "media/mojo/services/mojo_cdm_service_for_include.cc"
+#endif
+
 namespace media {
 
 using SimpleMojoCdmPromise = MojoCdmPromise<void(mojom::CdmPromiseResultPtr)>;

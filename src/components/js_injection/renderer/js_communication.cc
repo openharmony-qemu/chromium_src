@@ -81,6 +81,7 @@ JsCommunication::JsCommunication(content::RenderFrame* render_frame)
   render_frame->GetAssociatedInterfaceRegistry()
       ->AddInterface<mojom::JsCommunication>(base::BindRepeating(
           &JsCommunication::BindPendingReceiver, base::Unretained(this)));
+  implUtils_ = std::make_unique<JsCommunicationUtils>(this);
 }
 
 JsCommunication::~JsCommunication() = default;
@@ -115,6 +116,46 @@ void JsCommunication::RemoveDocumentStartScript(int32_t script_id) {
     }
   }
 }
+
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+void JsCommunication::AddDocumentEndScript(
+    mojom::DocumentEndJavaScriptPtr script_ptr) {
+  implUtils_->AddDocumentEndScript(script_ptr);
+}
+
+void JsCommunication::RemoveDocumentEndScript(int32_t script_id) {
+  implUtils_->RemoveDocumentEndScript(script_id);
+}
+
+void JsCommunication::CommitPendingJavascriptsAtDocumentEnd() {
+  implUtils_->CommitPendingJavascriptsAtDocumentEnd();
+}
+
+void JsCommunication::AddPendingJavascriptAtDocumentEnd(
+    mojom::DocumentEndJavaScriptPtr script_ptr) {
+  implUtils_->AddPendingJavascriptAtDocumentEnd(script_ptr);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_JSPROXY)
+void JsCommunication::AddHeadReadyScript(
+    mojom::DocumentStartJavaScriptPtr script_ptr) {
+  implUtils_->AddHeadReadyScript(script_ptr);
+}
+
+void JsCommunication::RemoveHeadReadyScript(int32_t script_id) {
+  implUtils_->RemoveHeadReadyScript(script_id);
+}
+
+void JsCommunication::CommitPendingJavascriptsAtHeadReady() {
+  implUtils_->CommitPendingJavascriptsAtHeadReady();
+}
+
+void JsCommunication::AddPendingJavascriptAtHeadReady(
+    mojom::DocumentStartJavaScriptPtr script_ptr) {
+  implUtils_->AddPendingJavascriptAtHeadReady(script_ptr);
+}
+#endif
 
 void JsCommunication::DidClearWindowObject() {
   if (inside_did_clear_window_object_)
@@ -192,7 +233,8 @@ void JsCommunication::WillReleaseScriptContext(v8::Local<v8::Context> context,
   }
 }
 
-void JsCommunication::OnDestruct() {
+void JsCommunication::OnDestruct()
+{
   delete this;
 }
 
@@ -223,4 +265,21 @@ mojom::JsToBrowserMessaging* JsCommunication::GetJsToJavaMessage(
   return iterator->second->js_to_java_messaging();
 }
 
+#if BUILDFLAG(ARKWEB_JSPROXY)
+void JsCommunication::AddPendingJavascriptAtDocumentStart(
+    mojom::DocumentStartJavaScriptPtr script_ptr) {
+  DocumentStartJavaScript* script = new DocumentStartJavaScript{
+      script_ptr->origin_matcher,
+      blink::WebString::FromUTF16(script_ptr->script), script_ptr->script_id};
+  swap_scripts_.push_back(std::unique_ptr<DocumentStartJavaScript>(script));
+}
+
+void JsCommunication::CommitPendingJavascriptsAtDocumentStart() {
+  scripts_.clear();
+  for (auto& item : swap_scripts_) {
+    scripts_.push_back(std::move(item));
+  }
+  swap_scripts_.clear();
+}
+#endif
 }  // namespace js_injection

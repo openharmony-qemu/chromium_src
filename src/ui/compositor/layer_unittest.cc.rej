@@ -1,0 +1,56 @@
+--- layer_unittest.cc	2025-10-20 19:53:30.916642379 +0800
++++ layer_unittest.cc	2025-10-16 15:55:05.507650613 +0800
+@@ -110,13 +110,19 @@
+   SkColor color_;
+ };
+ 
+ class LayerWithRealCompositorTest : public testing::Test {
+  public:
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  LayerWithRealCompositorTest()
++      : task_environment_(),
++        default_font_desc_setter_("Segoe UI, 15px") {}
++#else
+   LayerWithRealCompositorTest()
+       : task_environment_(base::test::TaskEnvironment::MainThreadType::UI),
+         default_font_desc_setter_("Segoe UI, 15px") {}
++#endif
+ 
+   LayerWithRealCompositorTest(const LayerWithRealCompositorTest&) = delete;
+   LayerWithRealCompositorTest& operator=(const LayerWithRealCompositorTest&) =
+       delete;
+ 
+@@ -504,12 +510,17 @@
+   DrawTree(l1.get());
+ }
+ 
+ class LayerWithDelegateTest : public testing::Test {
+  public:
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  LayerWithDelegateTest()
++      : task_environment_() {}
++#else
+   LayerWithDelegateTest()
+       : task_environment_(base::test::TaskEnvironment::MainThreadType::UI) {}
++#endif
+ 
+   LayerWithDelegateTest(const LayerWithDelegateTest&) = delete;
+   LayerWithDelegateTest& operator=(const LayerWithDelegateTest&) = delete;
+ 
+   ~LayerWithDelegateTest() override {}
+@@ -574,11 +585,15 @@
+   void WaitForCommit() {
+     DrawWaiterForTest::WaitForCommit(compositor());
+   }
+ 
+  private:
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  base::test::TaskEnvironment task_environment_{};
++#else
+   base::test::TaskEnvironment task_environment_;
++#endif
+   std::unique_ptr<TestContextFactories> context_factories_;
+   std::unique_ptr<TestCompositorHost> compositor_host_;
+ };
+ 
+ void ReturnMailbox(bool* run, const gpu::SyncToken& sync_token, bool is_lost) {

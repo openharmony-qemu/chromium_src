@@ -1,0 +1,16 @@
+--- atspi_in_process_fuzzer.cc	2025-10-20 19:52:51.993422402 +0800
++++ atspi_in_process_fuzzer.cc	2025-10-16 15:57:03.328004327 +0800
+@@ -373,11 +373,13 @@
+     g_hash_table_iter_init(&i, attributes);
+     while (g_hash_table_iter_next(&i, &key, &value)) {
+     }
+   }
+   g_clear_error(&error);
++  if (attributes) {
+   g_hash_table_unref(attributes);
++  }
+ 
+   // The following code is similar to ui::ChildrenOf, except that we
+   // return a vector containing smart pointers which does appropriate reference
+   // counting.
+   int child_count = atspi_accessible_get_child_count(node, &error);

@@ -1,0 +1,77 @@
+--- vulkan_util.cc	2025-10-20 19:52:55.546503164 +0800
++++ vulkan_util.cc	2025-10-16 15:55:00.639474298 +0800
+@@ -9,10 +9,11 @@
+ 
+ #include "gpu/vulkan/vulkan_util.h"
+ 
+ #include <string_view>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/logging.h"
+ #include "base/metrics/histogram_macros.h"
+ #include "base/ranges/algorithm.h"
+ #include "base/strings/pattern.h"
+ #include "base/strings/string_split.h"
+@@ -478,23 +479,25 @@
+   return false;
+ #else
+   return true;
+ #endif
+ #else   // BUILDFLAG(IS_ANDROID)
++#if !BUILDFLAG(ARKWEB_VULKAN)
+   if (IsBlockedByBuildInfo() && !ShouldBypassMediatekBlock(gpu_info)) {
+     return false;
+   }
+-
++#endif
+   if (device_properties.vendor_id == kVendorARM) {
++#if !BUILDFLAG(ARKWEB_VULKAN)
+     int emui_version = GetEMUIVersion();
+     // TODO(crbug.com/40136096) Display problem with Huawei EMUI < 11 and Honor
+     // devices with Mali GPU. The Mali driver version is < 19.0.0.
+     if (device_properties.driver_version < VK_MAKE_VERSION(19, 0, 0) &&
+         emui_version < 11) {
+       return false;
+     }
+-
++#endif
+     // Remove "Mali-" prefix.
+     std::string_view device_name(device_properties.device_name);
+     if (!base::StartsWith(device_name, "Mali-")) {
+       LOG(ERROR) << "Unexpected device_name " << device_name;
+       return false;
+@@ -511,26 +514,32 @@
+     for (std::string_view slow_gpu : slow_gpus) {
+       if (base::MatchPattern(device_name, slow_gpu)) {
+         return false;
+       }
+     }
+-
++#if !BUILDFLAG(ARKWEB_VULKAN)
+     return IsVulkanV1EnabledForMali(gpu_info) ||
+            IsVulkanV2EnabledForMali(gpu_info);
++#endif
+   }
+-
++#if !BUILDFLAG(ARKWEB_VULKAN)
+   if (device_properties.vendor_id == kVendorQualcomm) {
+     return IsVulkanV1EnabledForAdreno(gpu_info, device_properties) ||
+            IsVulkanV2EnabledForAdreno(gpu_info, device_properties) ||
+            IsVulkanV3EnabledForAdreno(gpu_info, device_properties);
+   }
++#endif
+ 
+   // https://crbug.com/1122650: Poor performance and untriaged crashes with
+   // Imagination GPUs.
+   if (device_properties.vendor_id == kVendorImagination) {
+     // Not allowed with V1.
++#if !BUILDFLAG(ARKWEB_VULKAN)
+     return IsVulkanV2EnabledForImagination(gpu_info);
++#else
++    return false;
++#endif
+   }
+ 
+   // Some devices implement Vulkan using Swiftshader. We do not want those,
+   // because of performance, and stability (crbug.com/1479335).
+   if (device_properties.vendor_id == kVendorGoogle &&

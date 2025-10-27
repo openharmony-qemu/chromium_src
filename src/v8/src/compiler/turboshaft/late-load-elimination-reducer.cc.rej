@@ -1,0 +1,22 @@
+--- late-load-elimination-reducer.cc	2025-10-20 19:53:31.368581373 +0800
++++ late-load-elimination-reducer.cc	2025-10-16 15:56:12.734316884 +0800
+@@ -12,19 +12,10 @@
+ #include "src/compiler/turboshaft/phase.h"
+ #include "src/compiler/turboshaft/representations.h"
+ #include "src/objects/code-inl.h"
+ 
+ namespace v8::internal::compiler::turboshaft {
+-#ifdef DEBUG
+-#define TRACE(x)                                    \
+-  do {                                              \
+-    if (v8_flags.turboshaft_trace_load_elimination) \
+-      StdoutStream() << x << std::endl;             \
+-  } while (false)
+-#else
+-#define TRACE(x)
+-#endif
+ 
+ void LateLoadEliminationAnalyzer::Run() {
+   LoopFinder loop_finder(phase_zone_, &graph_);
+   AnalyzerIterator iterator(phase_zone_, graph_, loop_finder);
+ 

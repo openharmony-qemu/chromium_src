@@ -20,7 +20,7 @@ import("vulkan.gni")
 
 # Need a separate config to ensure the warnings are added to the end.
 config("swiftshader_libvulkan_private_config") {
-  if (is_linux) {
+  if (is_linux || is_ohos) {
     defines = [ "VK_EXPORT=__attribute__((visibility(\"default\")))" ]
     if (ozone_platform_x11) {
       defines += [ "VK_USE_PLATFORM_XCB_KHR" ]
@@ -114,7 +114,7 @@ swiftshader_source_set("swiftshader_libvulkan_headers") {
     "VkTimelineSemaphore.hpp",
     "VulkanPlatform.hpp",
   ]
-  if (is_linux || is_chromeos || is_android) {
+  if (is_linux || is_chromeos || is_android || is_ohos) {
     sources += [
       "VkDeviceMemoryExternalLinux.hpp",
       "VkSemaphoreExternalLinux.hpp",
@@ -217,7 +217,7 @@ swiftshader_shared_library("swiftshader_libvulkan") {
       "-Wl,-exported_symbols_list," +
           rebase_path("vk_swiftshader.exports", root_build_dir),
     ]
-  } else if (is_linux || is_chromeos || is_fuchsia) {
+  } else if (is_linux || is_chromeos || is_fuchsia || is_ohos) {
     inputs = [ "vk_swiftshader.lds" ]
     ldflags = [
       # -Bsymbolic binds symbol references to their global definitions within

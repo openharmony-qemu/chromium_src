@@ -243,7 +243,13 @@ WebSchedulerTrackedFeatures StickyFeatures() {
           WebSchedulerTrackedFeature::kWebRTCSticky,
           WebSchedulerTrackedFeature::kWebSocketSticky,
           WebSchedulerTrackedFeature::kWebTransportSticky,
-          WebSchedulerTrackedFeature::kParserAborted};
+          WebSchedulerTrackedFeature::kParserAborted
+#if BUILDFLAG(ARKWEB_BFCACHE)
+          ,
+          WebSchedulerTrackedFeature::kEnableCacheNativeEmbed,
+          WebSchedulerTrackedFeature::kEnableCacheMediaTakeOver
+#endif
+  };
 }
 
 // static

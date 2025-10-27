@@ -12,6 +12,7 @@
 
 namespace cef {
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 bool GetAlloyTabById(int tab_id,
                      Profile* profile,
                      bool include_incognito,
@@ -62,6 +63,7 @@ bool GetAlloyTabById(int tab_id,
 
   return false;
 }
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 bool IsAlloyContents(content::WebContents* contents, bool primary_only) {
   auto browser = CefBrowserHostBase::GetBrowserForContents(contents);

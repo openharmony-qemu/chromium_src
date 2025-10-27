@@ -1,0 +1,15 @@
+--- parsed_cookie_unittest.cc	2025-10-20 19:52:57.010205379 +0800
++++ parsed_cookie_unittest.cc	2025-10-16 15:55:02.521460103 +0800
+@@ -452,11 +452,11 @@
+   ParsedCookie pc20("name=value; path=" + max_path);
+   EXPECT_TRUE(pc20.IsValid());
+   EXPECT_TRUE(pc20.HasPath());
+   EXPECT_EQ("/" + almost_max_path, pc20.Path());
+ 
+-  ParsedCookie pc21("name=value; path=" + too_long_path, &status);
++  ParsedCookie pc21("name=value; path=" + too_long_path, true, &status);
+   EXPECT_TRUE(pc21.IsValid());
+   EXPECT_FALSE(pc21.HasPath());
+   EXPECT_TRUE(status.HasWarningReason(
+       CookieInclusionStatus::WARN_ATTRIBUTE_VALUE_EXCEEDS_MAX_SIZE));
+ 

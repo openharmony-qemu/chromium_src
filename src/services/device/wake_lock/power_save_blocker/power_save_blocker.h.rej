@@ -1,0 +1,33 @@
+--- power_save_blocker.h	2025-10-20 19:52:57.634211022 +0800
++++ power_save_blocker.h	2025-10-16 15:55:03.300626201 +0800
+@@ -33,11 +34,15 @@
+   PowerSaveBlocker(
+       mojom::WakeLockType type,
+       mojom::WakeLockReason reason,
+       const std::string& description,
+       scoped_refptr<base::SequencedTaskRunner> ui_task_runner,
+-      scoped_refptr<base::SingleThreadTaskRunner> blocking_task_runner);
++      scoped_refptr<base::SingleThreadTaskRunner> blocking_task_runner
++      #if BUILDFLAG(ARKWEB_SCREEN_LOCK)
++      , int32_t id
++      #endif //BUILDFLAG(ARKWEB_SCREEN_LOCK)
++      );
+ 
+   PowerSaveBlocker(const PowerSaveBlocker&) = delete;
+   PowerSaveBlocker& operator=(const PowerSaveBlocker&) = delete;
+ 
+   virtual ~PowerSaveBlocker();
+@@ -70,10 +79,13 @@
+   // };
+   scoped_refptr<Delegate> delegate_;
+ 
+   scoped_refptr<base::SequencedTaskRunner> ui_task_runner_;
+   scoped_refptr<base::SequencedTaskRunner> blocking_task_runner_;
++#if BUILDFLAG(ARKWEB_SCREEN_LOCK)
++  int32_t id_;
++#endif //BUILDFLAG(ARKWEB_SCREEN_LOCK)
+ };
+ 
+ }  // namespace device
+ 
+ #endif  // SERVICES_DEVICE_WAKE_LOCK_POWER_SAVE_BLOCKER_POWER_SAVE_BLOCKER_H_

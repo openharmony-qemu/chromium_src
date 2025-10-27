@@ -30,7 +30,7 @@
 #include "unicode/umachine.h"
 
 /* Actual version info lives in uvernum.h */
-#include "unicode/uvernum.h"
+#include "third_party/icu/source/common/unicode/uvernum.h"
 
 /** Maximum length of the copyright string.
  *  @stable ICU 2.4

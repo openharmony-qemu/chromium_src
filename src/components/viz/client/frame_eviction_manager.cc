@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "components/viz/client/frame_eviction_manager.h"
+#include "arkweb/build/features/features.h"
 
 #include <algorithm>
 
@@ -17,6 +18,10 @@
 #include "base/task/single_thread_task_runner.h"
 #include "base/trace_event/memory_dump_manager.h"
 #include "build/build_config.h"
+#include "arkweb/build/features/features.h"
+
+#include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/components/viz/client/frame_eviction_manager_ext.h"
 
 namespace viz {
 namespace {
@@ -94,9 +99,11 @@ void FrameEvictionManager::StartFrameCullingTimer() {
 void FrameEvictionManager::RegisterUnlockedFrame(
     FrameEvictionManagerClient* frame) {
   unlocked_frames_.emplace_front(frame, clock_->NowTicks());
+#if !BUILDFLAG(IS_ARKWEB)
   if (!idle_frame_culling_timer_.IsRunning()) {
     StartFrameCullingTimer();
   }
+#endif
 }
 
 size_t FrameEvictionManager::GetMaxNumberOfSavedFrames() const {
@@ -189,6 +196,10 @@ void FrameEvictionManager::CullOldUnlockedFrames() {
           now - unlocked_frames_.back().second >= kPeriodicCullingDelay)) {
     size_t old_size = unlocked_frames_.size();
     auto* frame = unlocked_frames_.back().first;
+#if BUILDFLAG(IS_ARKWEB)
+    TRACE_EVENT0("viz", "FrameEvictionManager::CullOldUnlockedFrames, evict unlocked frame because timeout");
+    LOG(INFO) << "FrameEvictionManager::CullOldUnlockedFrames, evict unlocked frame because timeout";
+#endif
     frame->EvictCurrentFrame();
     // Should remove self from list. If it's not possible, give up and try again
     // later. This should be a rare case, so don't bother rescheduling earlier

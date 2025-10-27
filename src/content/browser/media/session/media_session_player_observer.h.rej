@@ -1,0 +1,14 @@
+--- media_session_player_observer.h	2025-10-20 19:52:54.334505865 +0800
++++ media_session_player_observer.h	2025-10-16 15:54:59.464731567 +0800
+@@ -7,10 +7,11 @@
+ 
+ #include <optional>
+ 
+ #include "base/functional/callback.h"
+ #include "base/time/time.h"
++#include "arkweb/build/features/features.h"
+ 
+ namespace media {
+ enum class MediaContentType;
+ }
+ 

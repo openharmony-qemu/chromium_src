@@ -156,6 +156,9 @@ struct ContextMenuData;
 struct WebPictureInPictureWindowOptions;
 struct WebPluginParams;
 struct WebWindowFeatures;
+#if BUILDFLAG(IS_ARKWEB)
+class WebLocalFrameClientExt;
+#endif
 
 enum class SyncCondition {
   kNotForced,  // Sync only if the value has changed since the last call.
@@ -177,6 +180,10 @@ enum class DetachReason {
 class BLINK_EXPORT WebLocalFrameClient {
  public:
   virtual ~WebLocalFrameClient() = default;
+#if BUILDFLAG(IS_ARKWEB)
+  friend class WebLocalFrameClientExt;
+  virtual WebLocalFrameClientExt* AsWebLocalFrameClientExt() { return nullptr; }
+#endif
 
   // Initialization ------------------------------------------------------
   // Called exactly once during construction to notify the client about the

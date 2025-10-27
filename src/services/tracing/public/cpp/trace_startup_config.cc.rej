@@ -1,0 +1,78 @@
+--- trace_startup_config.cc	2025-10-20 19:52:57.726211854 +0800
++++ trace_startup_config.cc	2025-10-16 15:55:03.416502184 +0800
+@@ -24,11 +24,11 @@
+ #include "components/tracing/common/tracing_switches.h"
+ #include "services/tracing/public/cpp/perfetto/perfetto_config.h"
+ #include "services/tracing/public/mojom/perfetto_service.mojom.h"
+ #include "third_party/perfetto/protos/perfetto/config/track_event/track_event_config.gen.h"
+ 
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+ #include "base/android/early_trace_event_binding.h"
+ #endif
+ 
+ namespace tracing {
+ 
+@@ -95,11 +95,11 @@
+       track_event_config.SerializeAsString());
+   track_event_data_source->set_name("track_event");
+   config.add_data_sources()->mutable_config()->set_name(
+       tracing::mojom::kMetaDataSourceName);
+ 
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+   config.add_data_sources()->mutable_config()->set_name(
+       tracing::mojom::kSamplerProfilerSourceName);
+ #endif
+   tracing::AdaptPerfettoConfigForChrome(
+       &config, true, true, perfetto::protos::gen::ChromeConfig::BACKGROUND);
+@@ -283,11 +284,11 @@
+   is_enabled_ = true;
+   return true;
+ }
+ 
+ bool TraceStartupConfig::EnableFromConfigFile() {
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+   base::FilePath trace_config_file(kAndroidTraceConfigFile);
+ #else
+   auto* command_line = base::CommandLine::ForCurrentProcess();
+   if (!command_line->HasSwitch(switches::kTraceConfigFile)) {
+     return false;
+@@ -296,31 +297,33 @@
+       command_line->GetSwitchValuePath(switches::kTraceConfigFile);
+ #endif
+ 
+   if (trace_config_file.empty()) {
+     is_enabled_ = true;
+-    DLOG(WARNING) << "Use default trace config.";
++    LOG(WARNING) << "Use default trace config.";
+     perfetto_config_ = tracing::GetDefaultPerfettoConfig(
+         base::trace_event::TraceConfig(), false,
+         output_format_ != OutputFormat::kProto,
+         perfetto::protos::gen::ChromeConfig::USER_INITIATED, "");
+     perfetto_config_.set_duration_ms(kDefaultStartupDurationInSeconds * 1000);
+     return true;
+   }
+-
++  LOG(WARNING) << "TraceStartupConfig::EnableFromConfigFile::trace_config_file: " << trace_config_file;
+   if (!base::PathExists(trace_config_file)) {
+-    DLOG(WARNING) << "The trace config file does not exist.";
++    LOG(WARNING) << "The trace config file does not exist.";
+     return false;
+   }
+ 
+   std::string trace_config_file_content;
+   if (!base::ReadFileToStringWithMaxSize(trace_config_file,
+                                          &trace_config_file_content,
+                                          kTraceConfigFileSizeLimit)) {
+     DLOG(WARNING) << "Cannot read the trace config file correctly.";
+     return false;
+   }
++  LOG(WARNING) << "TraceStartupConfig::EnableFromConfigFile::trace_config_file_content: "
++               << trace_config_file_content;
+   is_enabled_ = ParseTraceConfigFileContent(trace_config_file_content);
+   if (!is_enabled_) {
+     DLOG(WARNING) << "Cannot parse the trace config file correctly.";
+   }
+   return is_enabled_;

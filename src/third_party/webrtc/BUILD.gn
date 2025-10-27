@@ -239,6 +239,12 @@ config("common_inherited_config") {
       defines += [ "WEBRTC_ANDROID_OPENSLES" ]
     }
   }
+  if (is_ohos) {
+    defines += [
+      "WEBRTC_LINUX",
+      "WEBRTC_OHOS",
+    ]
+  }
   if (is_chromeos) {
     defines += [ "CHROMEOS" ]
   }

@@ -177,6 +177,18 @@ interface VideoDecoder {
 
   // Inform the decoder that new OverlayInfo is available.
   OnOverlayInfoChanged(OverlayInfo overlay_info);
+
+  [EnableIf=arkweb_video_assistant]
+  SetVideoSurface(int32 widget_id);
+
+  [EnableIf=arkweb_pip]
+  PipEnable(bool enable);
+
+  [EnableIf=arkweb_media_dmabuf]
+  RecycleDmaBuffer();
+
+  [EnableIf=arkweb_media_dmabuf]
+  ResumeDmaBuffer();
 };
 
 interface VideoDecoderClient {

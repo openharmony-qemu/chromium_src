@@ -1,0 +1,15 @@
+--- BUILD.gn	2025-10-20 19:52:53.390072886 +0800
++++ BUILD.gn	2025-10-16 15:54:57.271794969 +0800
+@@ -3,10 +3,12 @@
+ # found in the LICENSE file.
+ 
+ import("//build/config/chromeos/ui_mode.gni")
+ import("//build/config/features.gni")
+ import("//testing/libfuzzer/fuzzer_test.gni")
++import("//arkweb/build/features/features.gni")
++import("//arkweb/chromium_ext/chromium_ext.gni")
+ 
+ group("policy_namespace") {
+   public_deps = [ ":policy_namespace_internal" ]
+ }
+ 

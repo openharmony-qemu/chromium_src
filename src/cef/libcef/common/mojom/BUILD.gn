@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//build/config/features.gni")
 import("//mojo/public/tools/bindings/mojom.gni")
 
 mojom("mojom") {
@@ -26,4 +27,23 @@ mojom("mojom") {
   ]
 
   component_deps = [ "//content/public/common" ]
+  enabled_features = []
+  if (is_arkweb) {
+    enabled_features += [ "is_arkweb" ]
+    enabled_features += [ "arkweb_input_events" ]
+    enabled_features += [ "arkweb_terminate_render" ]
+    enabled_features += [ "arkweb_clipboard" ]
+    enabled_features += [ "arkweb_get_scroll_offset" ]
+    enabled_features += [ "arkweb_network_base" ]
+    enabled_features += [ "arkweb_media" ]
+    enabled_features += [ "arkweb_resource_interception" ]
+    enabled_features += [ "arkweb_optimize_parser_budget" ]
+    enabled_features += [ "arkweb_scrollbar" ]
+    enabled_features += [ "arkweb_performance_scheduling" ]
+    enabled_features += [ "arkweb_error_page" ]
+
+  }
+  if (arkweb_blank_optimize) {
+    enabled_features += [ "arkweb_blank_optimize" ]
+  }
 }

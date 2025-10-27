@@ -1,0 +1,30 @@
+--- buffer_types_mojom_traits.cc	2025-10-20 19:53:31.016629134 +0800
++++ buffer_types_mojom_traits.cc	2025-10-16 15:55:05.615128854 +0800
+@@ -10,10 +10,12 @@
+ #include "base/android/scoped_hardware_buffer_handle.h"
+ #include "mojo/public/cpp/system/message_pipe.h"
+ #include "mojo/public/cpp/system/scope_to_message_pipe.h"
+ #endif
+ 
++#include "arkweb/build/features/features.h"
++
+ namespace mojo {
+ 
+ // static
+ bool StructTraits<gfx::mojom::BufferUsageAndFormatDataView,
+                   gfx::BufferUsageAndFormat>::
+@@ -82,10 +84,14 @@
+           NewAndroidHardwareBufferHandle(std::move(wrapped_handle));
+ #else
+       break;
+ #endif
+     }
++#if BUILDFLAG(ARKWEB_VULKAN)
++    case gfx::OHOS_NATIVE_BUFFER: {
++    }
++#endif
+   }
+ 
+   return nullptr;
+ }
+ 

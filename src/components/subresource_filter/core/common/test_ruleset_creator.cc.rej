@@ -1,0 +1,22 @@
+--- test_ruleset_creator.cc	2025-10-20 19:52:53.886301546 +0800
++++ test_ruleset_creator.cc	2025-10-16 15:54:57.819209099 +0800
+@@ -55,13 +58,18 @@
+   return std::vector<uint8_t>(data, data + ruleset_contents.size());
+ }
+ 
+ std::vector<uint8_t> SerializeIndexedRulesetWithMultipleRules(
+     const std::vector<proto::UrlRule>& rules) {
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  ArkWebRulesetIndexerExt indexer;
++#else
+   RulesetIndexer indexer;
+-  for (const auto& rule : rules)
++#endif
++  for (const auto& rule : rules) {
+     EXPECT_TRUE(indexer.AddUrlRule(rule));
++  }
+   indexer.Finish();
+   return std::vector<uint8_t>(indexer.data().begin(), indexer.data().end());
+ }
+ 
+ }  // namespace

@@ -1,0 +1,21 @@
+--- render_thread_impl.h	2025-10-20 19:52:54.606433894 +0800
++++ render_thread_impl.h	2025-10-16 15:54:59.740436494 +0800
+@@ -487,10 +531,18 @@
+       WriteClangProfilingProfileCallback callback) override;
+ #endif
+   void SetIsCrossOriginIsolated(bool value) override;
+   void SetIsWebSecurityDisabled(bool value) override;
+   void SetIsIsolatedContext(bool value) override;
++#if BUILDFLAG(ARKWEB_SYNC_RENDER)
++  void SetDrawMode(int mode, base::PassKey<AgentSchedulingGroup>);
++#endif
++
++#if BUILDFLAG(ARKWEB_THEME_FONT)
++  void UpdateThemeFontFile(base::File theme_font) override;
++#endif
++
+   void OnMemoryPressure(
+       base::MemoryPressureListener::MemoryPressureLevel memory_pressure_level);
+ 
+   bool RendererIsHidden() const;
+   void OnRendererHidden();

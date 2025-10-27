@@ -33,6 +33,7 @@
 #include <memory>
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/test/scoped_feature_list.h"
 #include "build/build_config.h"
 #include "services/network/public/cpp/features.h"
@@ -164,6 +165,41 @@ class FixedPolicySubresourceFilter : public WebDocumentSubresourceFilter {
   void ReportDisallowedLoad() override { ++*filtered_load_counter_; }
 
   bool ShouldLogToConsole() override { return false; }
+
+#if BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_ADBLOCK)
+  void ClearStatistics() override{};
+
+  std::unique_ptr<std::string> GetElementHidingSelectors(
+      const WebURL& document_url,
+      bool need_common_selectors) override{};
+
+  bool HasGenericHideTypeOption(
+      const WebURL& document_url,
+      const url::Origin& parent_document_origin) override{};
+
+  bool HasElemHideTypeOption(
+      const WebURL& document_url,
+      const url::Origin& parent_document_origin) override{};
+
+  bool HasDocumentTypeOption(
+      const WebURL& document_url,
+      const url::Origin& parent_document_origin) override{};
+
+  void DidMatchCssRule(const WebURL& document_url,
+                       const std::string& dom_path,
+                       //  unsigned rule_line_num = 0,
+                       bool is_for_report = false) override{};
+
+  void SetDidFinishLoad(bool did_load_finished) override{};
+
+  bool GetDidFinishLoad() override{};
+
+  std::unique_ptr<std::vector<std::string>> GetUserDomPathSelectors(
+      const blink::WebURL& document_url,
+      bool need_generic_selectors) override{};
+
+  void set_activation_state(bool enabled) override{};
+#endif
 
  private:
   const LoadPolicy policy_;

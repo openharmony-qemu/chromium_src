@@ -1,0 +1,44 @@
+--- system_clipboard.cc	2025-10-20 19:53:00.210211765 +0800
++++ system_clipboard.cc	2025-10-16 16:07:39.199720503 +0800
+@@ -31,10 +31,13 @@
+ #include "third_party/blink/renderer/core/html/html_image_element.h"
+ #include "third_party/blink/renderer/platform/graphics/image.h"
+ #include "third_party/blink/renderer/platform/weborigin/kurl.h"
+ #include "third_party/blink/renderer/platform/wtf/std_lib_extras.h"
+ #include "third_party/skia/include/core/SkBitmap.h"
++#if BUILDFLAG(ARKWEB_COPY_OPTION)
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/clipboard/system_clipboard_utils.h"
++#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
+ 
+ namespace blink {
+ 
+ namespace {
+ 
+@@ -489,17 +546,27 @@
+ 
+   if (!clipboard_.is_bound() ||
+       data.size() >= mojom::blink::ClipboardHost::kMaxDataSize) {
+     return;
+   }
++
++#if BUILDFLAG(ARKWEB_COPY_OPTION)
++  if (!utils_->IsCopyAllowed()) {
++    LOG(ERROR) << "WriteCustomFormat failed, copy option mode is 'NONE'";
++    return;
++  }
++#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
+   // The format size restriction is added in `ClipboardItem::supports`.
+   DCHECK_LT(type.length(), mojom::blink::ClipboardHost::kMaxFormatSize);
+   clipboard_->WriteUnsanitizedCustomFormat(type, std::move(data));
+ }
+ 
+ void SystemClipboard::Trace(Visitor* visitor) const {
+   visitor->Trace(clipboard_);
++#if BUILDFLAG(ARKWEB_COPY_OPTION)
++  visitor->Trace(utils_);
++#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
+ }
+ 
+ bool SystemClipboard::IsValidBufferType(mojom::blink::ClipboardBuffer buffer) {
+   switch (buffer) {
+     case mojom::blink::ClipboardBuffer::kStandard:

@@ -1,0 +1,49 @@
+--- context_menu_controller.h	2025-10-20 19:53:00.586208200 +0800
++++ context_menu_controller.h	2025-10-16 16:07:39.590521336 +0800
+@@ -24,37 +24,43 @@
+  */
+ 
+ #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_PAGE_CONTEXT_MENU_CONTROLLER_H_
+ #define THIRD_PARTY_BLINK_RENDERER_CORE_PAGE_CONTEXT_MENU_CONTROLLER_H_
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/memory/scoped_refptr.h"
+ #include "third_party/blink/public/common/input/web_menu_source_type.h"
+ #include "third_party/blink/public/mojom/context_menu/context_menu.mojom-blink.h"
+ #include "third_party/blink/renderer/core/core_export.h"
+ #include "third_party/blink/renderer/core/layout/hit_test_result.h"
+ #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
+ #include "third_party/blink/renderer/platform/mojo/heap_mojo_associated_receiver.h"
+-
+ namespace blink {
+ 
+ class ContextMenuProvider;
+ class Document;
+ class LocalFrame;
+ class MouseEvent;
+ class Page;
+ struct ContextMenuData;
++#if BUILDFLAG(IS_ARKWEB)
++class ContextMenuControllerExt;
++#endif
+ 
+-class CORE_EXPORT ContextMenuController final
++class CORE_EXPORT ContextMenuController
+     : public GarbageCollected<ContextMenuController>,
+       public mojom::blink::ContextMenuClient {
+  public:
+   explicit ContextMenuController(Page*);
+   ContextMenuController(const ContextMenuController&) = delete;
+   ContextMenuController operator=(const ContextMenuController&) = delete;
+   ~ContextMenuController() override;
+   void Trace(Visitor*) const;
+-
++#if BUILDFLAG(IS_ARKWEB)
++  friend class ContextMenuControllerExt;
++  virtual ContextMenuControllerExt* AsContextMenuControllerExt() { return nullptr; }
++#endif
+   void ClearContextMenu();
+ 
+   void DocumentDetached(Document*);
+ 
+   void HandleContextMenuEvent(MouseEvent*);

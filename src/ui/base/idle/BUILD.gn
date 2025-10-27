@@ -60,7 +60,7 @@ component("idle") {
     sources += [ "idle_fuchsia.cc" ]
   }
 
-  if (is_linux) {
+  if (is_linux || is_ohos) {
     sources += [ "idle_linux.cc" ]
     deps += [ "//ui/display" ]
     if (use_dbus) {
@@ -84,6 +84,10 @@ component("idle") {
       "Foundation.framework",
     ]
   }
+
+  import("//arkweb/chromium_ext/ui/base/idle/arkweb_idle_ext.gni")
+  sources += ui_base_idle_ext.sources
+  sources -= ui_base_idle_ext.sources_del
 }
 
 static_library("test_support") {

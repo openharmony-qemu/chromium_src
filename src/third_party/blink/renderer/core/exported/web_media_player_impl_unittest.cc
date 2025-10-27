@@ -91,6 +91,11 @@
 #include "third_party/blink/renderer/platform/wtf/vector.h"
 #include "ui/gfx/geometry/size.h"
 
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/media/web_media_player_impl_ext.h"
+#include "media/filters/memory_data_source.h"
+#endif  // ARKWEB_TEST
+
 namespace blink {
 
 namespace {
@@ -209,6 +214,10 @@ class MockWebMediaPlayerClient : public MediaPlayerClient {
   MOCK_METHOD2(OnFirstFrame, void(base::TimeTicks, size_t));
   MOCK_METHOD0(OnRequestVideoFrameCallback, void());
   MOCK_METHOD0(GetElementId, int());
+  MOCK_METHOD0(ScheduleVideoFreezeEvent, void());
+#if BUILDFLAG(ARKWEB_TEST)
+  MOCK_CONST_METHOD0(IsMediaResumeFromBFCachePage, bool());
+#endif  // ARKWEB_TEST
 };
 
 class MockWebMediaPlayerEncryptedMediaClient
@@ -455,7 +464,11 @@ class WebMediaPlayerImplTest
         media_thread_.task_runner());
     compositor_ = compositor.get();
 
+#if BUILDFLAG(ARKWEB_TEST)
+    wmpi_ = std::make_unique<WebMediaPlayerImplExt>(
+#else
     wmpi_ = std::make_unique<WebMediaPlayerImpl>(
+#endif
         GetWebLocalFrame(), &client_, &encrypted_client_, &delegate_,
         std::move(factory_selector), url_index_.get(), std::move(compositor),
         std::move(media_log), player_id, WebMediaPlayerBuilder::DeferLoadCB(),
@@ -628,7 +641,11 @@ class WebMediaPlayerImplTest
     delegate_.SetPageHiddenForTesting(true);
     SetWasSuspendedForFrameClosed(false);
 
+#if !BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
     wmpi_->OnPageHidden();
+#else
+    wmpi_->OnPageHidden(false);
+#endif
 
     loop.Run();
 
@@ -644,7 +661,11 @@ class WebMediaPlayerImplTest
     delegate_.SetPageHiddenForTesting(false);
     SetWasSuspendedForFrameClosed(false);
 
+#if !BUILDFLAG(ARKWEB_BFCACHE)
     wmpi_->OnPageShown();
+#else
+    wmpi_->OnPageShown(false);
+#endif // ARKWEB_BFCACHE
 
     loop.Run();
 
@@ -3186,5 +3207,9 @@ INSTANTIATE_TEST_SUITE_P(
         ::testing::Bool(),
         ::testing::Bool(),
         ::testing::Bool()));
+
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/media/web_media_player_impl_ext_unittest_include.cc"
+#endif  // BUILDFLAG(ARKWEB_TEST)
 
 }  // namespace blink

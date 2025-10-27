@@ -328,6 +328,10 @@ void ResourceMultiBufferDataProvider::DidReceiveResponse(
   destination_url_data->set_is_cors_cross_origin(
       network::cors::IsCorsCrossOriginResponseType(response_type));
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  destination_url_data->SetMediaWebURLErrorCB(
+      url_data_->GetMediaWebURLErrorCB());
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
   // Only used for metrics.
   {
     WebString access_control =
@@ -503,6 +507,9 @@ void ResourceMultiBufferDataProvider::DidFail(const WebURLError& error) {
   } else {
     // We don't need to continue loading after failure.
     // Note that calling Fail() will most likely delete this object.
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+    url_data_->NotifyMediaWebURLError(error.reason());
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
     url_data_->Fail();
   }
 }

@@ -377,7 +377,7 @@ void ExtensionUpdater::AddToDownloader(
     const Extension& extension = **extension_iter;
     const ExtensionId& extension_id = extension.id();
     if (!Manifest::IsAutoUpdateableLocation(extension.location())) {
-      VLOG(2) << "Extension " << extension_id << " is not auto updateable";
+      LOG(INFO) << "Extension " << extension_id << " is not auto updateable";
       continue;
     }
     // An extension might be overwritten by policy, and have its update url
@@ -509,7 +509,7 @@ void ExtensionUpdater::CheckNow(CheckParams params) {
         update_check_params.update_info[pending_id] =
             GetExtensionUpdateData(pending_id);
       } else if (!Manifest::IsAutoUpdateableLocation(info->install_source())) {
-        VLOG(2) << "Extension " << pending_id << " is not auto updateable";
+        LOG(INFO) << "Extension " << pending_id << " is not auto updateable";
         continue;
       }
       // We have to mark high-priority extensions (such as policy-forced
@@ -675,6 +675,8 @@ void ExtensionUpdater::OnExtensionDownloadFailed(
       break;
   }
 
+  LOG(WARNING) << "Extension download failed as " << (int)error
+               << ", id:" << id;
   UpdatePingData(id, ping);
   bool install_immediately = false;
   for (const int request_id : request_ids) {

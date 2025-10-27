@@ -1,0 +1,17 @@
+--- url_index.h	2025-10-20 19:53:01.234200674 +0800
++++ url_index.h	2025-10-21 21:23:47.826685956 +0800
+@@ -273,10 +283,14 @@
+ 
+   ResourceMultiBuffer multibuffer_;
+   std::vector<RedirectCB> redirect_callbacks_
+       ALLOW_DISCOURAGED_TYPE("TODO(crbug.com/40760651)");
+ 
++#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
++  MediaWebURLErrorCB media_url_error_cb_;
++#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
++
+   THREAD_CHECKER(thread_checker_);
+ };
+ 
+ // The UrlIndex lets you look up UrlData instances by url.
+ class PLATFORM_EXPORT UrlIndex {

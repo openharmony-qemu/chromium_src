@@ -1,0 +1,30 @@
+--- BUILD.gn	2025-10-20 19:52:57.626210950 +0800
++++ BUILD.gn	2025-10-16 15:55:03.288639030 +0800
+@@ -2,10 +2,11 @@
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+ import("//build/config/chromeos/ui_mode.gni")
+ import("//build/config/features.gni")
++import("//arkweb/build/features/features.gni")
+ 
+ if (is_android) {
+   import("//build/config/android/rules.gni")
+   import("//third_party/jni_zero/jni_zero.gni")
+ }
+@@ -53,10 +54,15 @@
+   if (is_chromeos_ash) {
+     sources += [ "time_zone_monitor_ash.cc" ]
+     deps += [ "//chromeos/ash/components/settings" ]
+   }
+ 
++  if (arkweb_time_zone) {
++    import("//arkweb/chromium_ext/service/device/time_zone_monitor/arkweb_time_zone_monitor_ext.gni")
++    sources += arkweb_time_zone_monitor_sources
++  }
++
+   if (is_chromeos_lacros) {
+     sources += [
+       "time_zone_monitor_lacros.cc",
+       "time_zone_monitor_lacros.h",
+     ]

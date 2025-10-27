@@ -43,6 +43,7 @@
 
 #include "include/cef_base.h"
 
+class ArkWebRequestImplExt;
 class CefPostData;
 class CefPostDataElement;
 
@@ -63,6 +64,13 @@ class CefRequest : public virtual CefBaseRefCounted {
   ///
   /*--cef()--*/
   static CefRefPtr<CefRequest> Create();
+
+  ///
+  /// Get a ArkWebRequestImplExt object.
+  ///
+  virtual CefRefPtr<ArkWebRequestImplExt> AsArkWebRequestExt() {
+    return nullptr;
+  }
 
   ///
   /// Returns true if this object is read-only.

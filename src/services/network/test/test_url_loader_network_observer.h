@@ -8,6 +8,7 @@
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "mojo/public/cpp/bindings/receiver_set.h"
 #include "services/network/public/mojom/url_loader_network_service_observer.mojom.h"
+#include "arkweb/build/features/features.h"
 
 namespace network {
 
@@ -29,11 +30,22 @@ class TestURLLoaderNetworkObserver
   void FlushReceivers();
 
   // mojom::URLLoaderNetworkServiceObserver overrides:
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void OnSSLCertificateError(
+      const GURL& url,
+      int net_error,
+      const net::SSLInfo& ssl_info,
+      bool fatal,
+      const ::GURL& origin_url,
+      const std::string& referrer,
+      OnSSLCertificateErrorCallback response) override;
+#else
   void OnSSLCertificateError(const GURL& url,
                              int net_error,
                              const net::SSLInfo& ssl_info,
                              bool fatal,
                              OnSSLCertificateErrorCallback response) override;
+#endif
   void OnCertificateRequested(
       const std::optional<base::UnguessableToken>& window_id,
       const scoped_refptr<net::SSLCertRequestInfo>& cert_info,

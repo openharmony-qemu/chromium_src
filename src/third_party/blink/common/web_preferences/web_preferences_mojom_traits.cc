@@ -4,10 +4,14 @@
 
 #include "third_party/blink/public/common/web_preferences/web_preferences_mojom_traits.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/strings/string_util.h"
 #include "build/build_config.h"
 #include "mojo/public/cpp/base/string16_mojom_traits.h"
 #include "url/mojom/url_gurl_mojom_traits.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/common/web_preferences_mojom_traits_for_include.cc"
+#endif
 
 namespace mojo {
 
@@ -48,6 +52,7 @@ bool StructTraits<blink::mojom::WebPreferencesDataView,
 #if BUILDFLAG(IS_ANDROID)
       || !data.ReadDefaultVideoPosterUrl(&out->default_video_poster_url)
 #endif
+      || WebPreferenceMojomBoolExt(data, out)
   )
     return false;
 
@@ -196,6 +201,18 @@ bool StructTraits<blink::mojom::WebPreferencesDataView,
       data.disable_accelerated_small_canvases();
   out->long_press_link_select_text = data.long_press_link_select_text();
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
+  out->border_radius_top_left = data.border_radius_top_left();
+  out->border_radius_top_right = data.border_radius_top_right();
+  out->border_radius_bottom_left = data.border_radius_bottom_left();
+  out->border_radius_bottom_right = data.border_radius_bottom_right();
+#endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+
+#if BUILDFLAG(ARKWEB_MENU)
+  out->touch_handle_exist = data.touch_handle_exist();
+  out->viewport_scale = data.viewport_scale();
+#endif  // BUILDFLAG(ARKWEB_MENU)
 
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA)
   out->disable_webauthn = data.disable_webauthn();

@@ -1,0 +1,15 @@
+--- fpdf_annot_embeddertest.cpp	2025-10-20 19:53:19.639982587 +0800
++++ fpdf_annot_embeddertest.cpp	2025-10-16 16:15:55.944187885 +0800
+@@ -3193,11 +3193,11 @@
+ TEST_F(FPDFAnnotEmbedderTest, GetLinkFromAnnotation) {
+   ASSERT_TRUE(OpenDocument("annots.pdf"));
+   ScopedEmbedderTestPage page = LoadScopedPage(0);
+   ASSERT_TRUE(page);
+   {
+-    static constexpr char kExpectedResult[] =
++    constexpr char kExpectedResult[] =
+         "https://cs.chromium.org/chromium/src/third_party/pdfium/public/"
+         "fpdf_text.h";
+ 
+     ScopedFPDFAnnotation annot(FPDFPage_GetAnnot(page.get(), 3));
+     ASSERT_TRUE(annot);

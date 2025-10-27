@@ -43,12 +43,27 @@ PA_ALWAYS_INLINE size_t GetCachedPageSize() {
 
 }  // namespace
 
+#if PA_BUILDFLAG(IS_OHOS)
+extern "C" __attribute__((weak)) void memtrace(void* addr, size_t size, const char* tag, bool is_using);
+#endif
+
 // The Shim* functions below are the entry-points into the shim-layer and
 // are supposed to be invoked by the allocator_shim_override_*
 // headers to route the malloc / new symbols through the shim layer.
 // They are defined as ALWAYS_INLINE in order to remove a level of indirection
 // between the system-defined entry points and the shim implementations.
 extern "C" {
+
+#if PA_BUILDFLAG(IS_OHOS)
+void OhosMemtrace(void* addr, size_t size, const char* tag, bool is_using)
+{
+#if defined(OS_OHOS)
+  if (addr != nullptr && tag != nullptr) {
+    (void)memtrace(addr, size, tag, is_using);
+  }
+#endif
+}
+#endif
 
 // The general pattern for allocations is:
 // - Try to allocate, if succeeded return the pointer.
@@ -77,7 +92,9 @@ PA_ALWAYS_INLINE void* ShimCppNew(size_t size) {
   while (!ptr && allocator_shim::internal::CallNewHandler(size)) [[unlikely]] {
     ptr = chain_head->alloc_function(size, context);
   }
-
+#if PA_BUILDFLAG(IS_OHOS)
+  OhosMemtrace(ptr, size, "ShimCppNew", true);
+#endif
   return ptr;
 }
 
@@ -88,7 +105,11 @@ PA_ALWAYS_INLINE void* ShimCppNewNoThrow(size_t size) {
 #if PA_BUILDFLAG(IS_APPLE) && !PA_BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC)
   context = malloc_default_zone();
 #endif
-  return chain_head->alloc_unchecked_function(size, context);
+  void* ptr = chain_head->alloc_unchecked_function(size, context);
+#if PA_BUILDFLAG(IS_OHOS)
+  OhosMemtrace(ptr, size, "ShimCppNewNoThrow", true);
+#endif
+  return ptr; // chain_head->alloc_unchecked_function(size, context);
 }
 
 PA_ALWAYS_INLINE void* ShimCppAlignedNew(size_t size, size_t alignment) {
@@ -103,7 +124,9 @@ PA_ALWAYS_INLINE void* ShimCppAlignedNew(size_t size, size_t alignment) {
   while (!ptr && allocator_shim::internal::CallNewHandler(size)) [[unlikely]] {
     ptr = chain_head->alloc_aligned_function(alignment, size, context);
   }
-
+#if PA_BUILDFLAG(IS_OHOS)
+  OhosMemtrace(ptr, size, "ShimCppAlignedNew", true);
+#endif
   return ptr;
 }
 
@@ -113,6 +136,9 @@ PA_ALWAYS_INLINE void ShimCppDelete(void* address) {
   void* context = nullptr;
 #if PA_BUILDFLAG(IS_APPLE) && !PA_BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC)
   context = malloc_default_zone();
+#endif
+#if PA_BUILDFLAG(IS_OHOS)
+  OhosMemtrace(address, 0, "ShimCppDelete", false);
 #endif
   return chain_head->free_function(address, context);
 }
@@ -163,7 +189,9 @@ PA_ALWAYS_INLINE void* ShimMalloc(size_t size, void* context) {
          allocator_shim::internal::CallNewHandler(size)) [[unlikely]] {
     ptr = chain_head->alloc_function(size, context);
   }
-
+#if PA_BUILDFLAG(IS_OHOS)
+  OhosMemtrace(ptr, size, "ShimMalloc", true);
+#endif
   return ptr;
 }
 
@@ -177,7 +205,9 @@ PA_ALWAYS_INLINE void* ShimCalloc(size_t n, size_t size, void* context) {
          allocator_shim::internal::CallNewHandler(size)) [[unlikely]] {
     ptr = chain_head->alloc_zero_initialized_function(n, size, context);
   }
-
+#if PA_BUILDFLAG(IS_OHOS)
+  OhosMemtrace(ptr, size, "ShimCalloc", true);
+#endif
   return ptr;
 }
 
@@ -193,7 +223,9 @@ PA_ALWAYS_INLINE void* ShimRealloc(void* address, size_t size, void* context) {
          allocator_shim::internal::CallNewHandler(size)) [[unlikely]] {
     ptr = chain_head->realloc_function(address, size, context);
   }
-
+#if PA_BUILDFLAG(IS_OHOS)
+  OhosMemtrace(ptr, size, "ShimRealloc", true);
+#endif
   return ptr;
 }
 
@@ -209,7 +241,9 @@ PA_ALWAYS_INLINE void* ShimMemalign(size_t alignment,
          allocator_shim::internal::CallNewHandler(size)) [[unlikely]] {
     ptr = chain_head->alloc_aligned_function(alignment, size, context);
   }
-
+#if PA_BUILDFLAG(IS_OHOS)
+  OhosMemtrace(ptr, size, "ShimMemalign", true);
+#endif
   return ptr;
 }
 
@@ -251,6 +285,9 @@ PA_ALWAYS_INLINE void* ShimPvalloc(size_t size) {
 PA_ALWAYS_INLINE void ShimFree(void* address, void* context) {
   const allocator_shim::AllocatorDispatch* const chain_head =
       allocator_shim::internal::GetChainHead();
+#if PA_BUILDFLAG(IS_OHOS)
+  OhosMemtrace(address, 0, "ShimFree", false);
+#endif
   return chain_head->free_function(address, context);
 }
 
@@ -316,7 +353,9 @@ PA_ALWAYS_INLINE void* ShimAlignedMalloc(size_t size,
          allocator_shim::internal::CallNewHandler(size)) [[unlikely]] {
     ptr = chain_head->aligned_malloc_function(size, alignment, context);
   }
-
+#if PA_BUILDFLAG(IS_OHOS)
+  OhosMemtrace(ptr, size, "ShimAlignedMalloc", true);
+#endif
   return ptr;
 }
 
@@ -337,13 +376,18 @@ PA_ALWAYS_INLINE void* ShimAlignedRealloc(void* address,
     ptr =
         chain_head->aligned_realloc_function(address, size, alignment, context);
   }
-
+#if PA_BUILDFLAG(IS_OHOS)
+  OhosMemtrace(ptr, size, "ShimAlignedRealloc", true);
+#endif
   return ptr;
 }
 
 PA_ALWAYS_INLINE void ShimAlignedFree(void* address, void* context) {
   const allocator_shim::AllocatorDispatch* const chain_head =
       allocator_shim::internal::GetChainHead();
+#if PA_BUILDFLAG(IS_OHOS)
+  OhosMemtrace(address, 0, "ShimAlignedFree", false);
+#endif
   return chain_head->aligned_free_function(address, context);
 }
 

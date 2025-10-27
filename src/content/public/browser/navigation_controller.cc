@@ -54,6 +54,7 @@ NavigationController::LoadURLParams::LoadURLParams(const OpenURLParams& input)
               static_cast<bool>(source_site_instance));
   }
 
+
   // Implementation notes:
   //   The following LoadURLParams don't have an equivalent in OpenURLParams:
   //     base_url_for_data_url

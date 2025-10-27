@@ -109,7 +109,12 @@ class CefSelectFileDialog final : public ui::SelectFileDialog {
 
     browser_->RunSelectFile(listener_, std::move(select_file_policy_), type,
                             title, default_path, file_types, file_type_index,
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+                            default_extension, owning_window, accept_types_,
+                            use_media_capture_);
+#else
                             default_extension, owning_window);
+#endif
   }
 
   bool IsRunning(gfx::NativeWindow owning_window) const override {

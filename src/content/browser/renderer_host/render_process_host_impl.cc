@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/chromium_ext/content/browser/renderer_host/arkweb_render_process_host_impl_utils.h"
 #include "base/base_switches.h"
 #include "base/clang_profiling_buildflags.h"
 #include "base/command_line.h"
@@ -1110,6 +1111,10 @@ void CopyFeatureSwitch(const base::CommandLine& src,
                        base::CommandLine* dest,
                        const char* switch_name) {
   std::vector<std::string> features = FeaturesFromSwitch(src, switch_name);
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+  std::set<std::string> dedup(features.begin(), features.end());
+  features.assign(dedup.begin(), dedup.end());
+#endif
   if (!features.empty())
     dest->AppendSwitchASCII(switch_name, base::JoinString(features, ","));
 }
@@ -1365,6 +1370,32 @@ void RenderProcessHostImpl::IOThreadHostImpl::Ping(PingCallback callback) {
   std::move(callback).Run();
 }
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+void RenderProcessHostImpl::IOThreadHostImpl::ReportKeyThread(
+    int32_t status,
+    int32_t process_id,
+    int32_t thread_id,
+    int32_t role) {
+  ArkwebRenderProcessHostImplUtils::ReportKeyThreadEx(status, process_id,
+                                                      thread_id, role);
+}
+
+void RenderProcessHostImpl::IOThreadHostImpl::ReportKeyThreadIds(
+    int32_t status,
+    int32_t process_id,
+    const std::vector<int32_t>& thread_ids,
+    int32_t role) {
+  ArkwebRenderProcessHostImplUtils::ReportKeyThreadIdsEx(status, process_id,
+                                                         thread_ids, role);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+void RenderProcessHostImpl::IOThreadHostImpl::ReportHisyevent(int64_t block_time, const std::string& mode) {
+  ArkwebRenderProcessHostImplUtils::ReportHisyevent(block_time, mode);
+}
+#endif
+
 // static
 scoped_refptr<base::SingleThreadTaskRunner>
 RenderProcessHostImpl::GetInProcessRendererThreadTaskRunnerForTesting() {
@@ -1393,6 +1424,9 @@ bool RenderProcessHostImpl::IsPlatformProcessLimitUnknownForTesting() {
 
 // static
 size_t RenderProcessHost::GetMaxRendererProcessCount() {
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+  return ArkwebRenderProcessHostImplUtils::GetMaxRendererProcessCountEx();
+#else
   if (g_max_renderer_count_override)
     return g_max_renderer_count_override;
 
@@ -1456,6 +1490,7 @@ size_t RenderProcessHost::GetMaxRendererProcessCount() {
     MAYBEVLOG(1) << __func__ << ": Calculated max " << max_count;
   }
   return max_count;
+#endif
 #endif
 }
 
@@ -1558,6 +1593,10 @@ RenderProcessHostImpl::RenderProcessHostImpl(
                 ,
                 ChildProcessImportance::NORMAL
 #endif
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+                ,
+                base::TimeTicks::Now()
+#endif
 #if !BUILDFLAG(IS_ANDROID)
                 ,
                 std::nullopt
@@ -1575,6 +1614,9 @@ RenderProcessHostImpl::RenderProcessHostImpl(
       channel_connected_(false),
       sent_render_process_ready_(false),
       shutdown_exit_code_(-1) {
+#if BUILDFLAG(IS_ARKWEB)
+  arkweb_render_process_host_impl_utils_ = std::make_unique<ArkwebRenderProcessHostImplUtils>(this);
+#endif
   CHECK(!browser_context->ShutdownStarted());
   TRACE_EVENT("shutdown", "RenderProcessHostImpl",
               ChromeTrackEvent::kRenderProcessHost, *this);
@@ -2882,6 +2924,12 @@ ProcessLock RenderProcessHostImpl::GetProcessLock() const {
 }
 
 bool RenderProcessHostImpl::MayReuseHost() {
+#if BUILDFLAG(IS_ARKWEB)
+  if (is_dead_) {
+    LOG(ERROR) << "RenderProcessHostImpl is dead";
+    return false;
+  }
+#endif
   return GetContentClient()->browser()->MayReuseHost(this);
 }
 
@@ -3609,7 +3657,9 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
       // should also be added to
       // chrome/browser/ash/login/chrome_restart_request.cc.
       switches::kCCScrollAnimationDurationForTesting,
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
       switches::kCheckDamageEarly,
+#endif
       switches::kDisableCheckerImaging,
       switches::kDisableCompositedAntialiasing,
       switches::kDisableThreadedAnimation,
@@ -3819,17 +3869,20 @@ bool RenderProcessHostImpl::FastShutdownIfPossible(size_t page_count,
   // Do not shut down the process if there are active or pending views other
   // than the ones we're shutting down.
   if (page_count && page_count != (GetActiveViewCount() + pending_views_)) {
+    LOG(INFO) << "Discard failed; there are active or pending views";
     LogDelayReasonForFastShutdown(
         DelayShutdownReason::kOtherActiveOrPendingViews);
     return false;
   }
 
   if (run_renderer_in_process()) {
+    LOG(INFO) << "Discard failed; Single process mode";
     LogDelayReasonForFastShutdown(DelayShutdownReason::kSingleProcess);
     return false;  // Single process mode never shuts down the renderer.
   }
 
   if (!child_process_launcher_.get()) {
+    LOG(INFO) << "Discard failed; Render process hasn't started or is probably crashed";
     LogDelayReasonForFastShutdown(DelayShutdownReason::kNoProcess);
     return false;  // Render process hasn't started or is probably crashed.
   }
@@ -3840,6 +3893,7 @@ bool RenderProcessHostImpl::FastShutdownIfPossible(size_t page_count,
   // the window is small, it's unlikely that the web page has much
   // state that will be lost by not calling its unload handlers properly.
   if (!skip_unload_handlers && !SuddenTerminationAllowed()) {
+    LOG(INFO) << "Discard failed; there's an unload listener";
     LogDelayReasonForFastShutdown(DelayShutdownReason::kUnload);
     return false;
   }
@@ -3847,6 +3901,7 @@ bool RenderProcessHostImpl::FastShutdownIfPossible(size_t page_count,
   // TODO(crbug.com/40236167): Remove this block once the migration is launched.
   if (!ignore_keep_alive && keep_alive_ref_count_ != 0) {
     CHECK(IsKeepAliveRefCountAllowed());
+    LOG(INFO) << "Discard failed; keep_alive_ref_count_ != 0";
     LogDelayReasonForFastShutdown(DelayShutdownReason::kFetchKeepAlive);
     return false;
   }
@@ -3857,6 +3912,7 @@ bool RenderProcessHostImpl::FastShutdownIfPossible(size_t page_count,
   }
 
   if (pending_reuse_ref_count_ != 0) {
+    LOG(INFO) << "Discard failed; pending_reuse_ref_count_ != 0";
     LogDelayReasonForFastShutdown(DelayShutdownReason::kPendingReuse);
     return false;
   }
@@ -3864,6 +3920,7 @@ bool RenderProcessHostImpl::FastShutdownIfPossible(size_t page_count,
   // TODO(wjmaclean): This is probably unnecessary, but let's remove it in a
   // separate CL to be safe.
   if (shutdown_delay_ref_count_ != 0) {
+    LOG(INFO) << "Discard failed; shutdown_delay_ref_count_ != 0";
     LogDelayReasonForFastShutdown(DelayShutdownReason::kShutdownDelay);
     return false;
   }
@@ -4449,6 +4506,9 @@ void RenderProcessHostImpl::UnregisterHost(ChildProcessId host_id) {
 
   GetAllHosts().Remove(host_id);
 
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
+  ArkwebRenderProcessHostImplUtils::RemoveFromSharedRenderProcessMap(host);
+#endif
   // Log after updating the GetAllHosts() list but before deleting the host.
   MAYBEVLOG(3) << __func__ << "(" << host_id << ")" << std::endl
                << GetCurrentHostMapDebugString(
@@ -4533,6 +4593,10 @@ bool RenderProcessHostImpl::IsSuitableHost(
     RenderProcessHost* host,
     const IsolationContext& isolation_context,
     const SiteInfo& site_info) {
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+  if (base::ohos::IsWearableDevice())
+    return true;
+#endif
   BrowserContext* browser_context =
       isolation_context.browser_or_resource_context().ToBrowserContext();
   DCHECK(browser_context);
@@ -4567,6 +4631,9 @@ bool RenderProcessHostImpl::IsSuitableHost(
   if (host->IsPdf() != site_info.is_pdf())
     return false;
 
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+  if (ArkwebRenderProcessHostImplUtils::IsSuitableHostForArkweb(host, site_info)) return true;
+#endif  // ARKWEB_RENDER_PROCESS_MODE
   // Check whether the given host and the intended site_info will be using the
   // same StoragePartition, since a RenderProcessHost can only support a
   // single StoragePartition.  This is relevant for packaged apps.
@@ -5018,6 +5085,10 @@ RenderProcessHost* RenderProcessHostImpl::GetProcessHostForSiteInstance(
     if (render_process_host) {
       site_instance->set_process_assignment(
           SiteInstanceProcessAssignment::REUSED_EXISTING_PROCESS);
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+      LOG(INFO) << "Use an existing rendering process, render_process: "
+                << render_process_host->GetProcess().Handle();
+#endif
     }
   }
 
@@ -5055,11 +5126,25 @@ RenderProcessHost* RenderProcessHostImpl::GetProcessHostForSiteInstance(
     // RenderProcessHostFactory may not instantiate a StoragePartition, and
     // creating one here with GetStoragePartition() can run into cross-thread
     // issues as TestBrowserContext initialization is done on the main thread.
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+    size_t count = RenderProcessHostImpl::GetProcessCountForLimit();
+    LOG(INFO) << "Request to create a new rendering process, current count: "
+              << count << " Max: "
+              << RenderProcessHostImpl::GetMaxRendererProcessCount();
+#endif  // BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
     render_process_host =
         CreateRenderProcessHost(browser_context, site_instance);
 
     site_instance->set_process_assignment(
         SiteInstanceProcessAssignment::CREATED_NEW_PROCESS);
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+  ArkwebRenderProcessHostImplUtils::GetProcessHostForSiteInstanceArkweb(
+    render_process_host,
+    site_info,
+    browser_context,
+    count,
+    site_instance);
+#endif  // ARKWEB_RENDER_PROCESS_MODE
   }
 
   // It is important to call PrepareForFutureRequests *after* potentially
@@ -5215,8 +5300,20 @@ void RenderProcessHostImpl::ProcessDied(
   // while we are dying.
   DCHECK(!deleting_soon_);
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+  base::ProcessId process_id = GetProcess().Pid();
+  OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(
+      OHOS::NWeb::ResSchedStatusAdapter::THREAD_DESTROYED, process_id,
+      process_id, OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+#endif
   child_process_launcher_.reset();
   is_dead_ = true;
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
+  RenderProcessHost* host = GetAllHosts().Lookup(GetID());
+  if (host) {
+    ArkwebRenderProcessHostImplUtils::RemoveFromSharedRenderProcessMap(host);
+  }
+#endif
   // Make sure no IPCs or mojo calls from the old process get dispatched after
   // it has died.
   ResetIPC();
@@ -5271,6 +5368,10 @@ void RenderProcessHostImpl::FastShutdown() {
   // to fast shutdown.
   fast_shutdown_started_ = true;
 
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+  LOG(INFO) << "Rended process: " << GetProcess().Handle()
+            << " died due to fast shutdown versus another cause";
+#endif  // BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
   // Tell observers that the process exited cleanly, even though it will be
   // destroyed a little bit later. Observers shouldn't rely on this process
   // anymore.
@@ -5516,6 +5617,10 @@ void RenderProcessHostImpl::UpdateProcessPriority() {
 #if BUILDFLAG(IS_ANDROID)
       ,
       GetEffectiveImportance()
+#endif
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+          ,
+      base::TimeTicks::Now()
 #endif
 #if !BUILDFLAG(IS_ANDROID)
           ,
@@ -5892,6 +5997,13 @@ void RenderProcessHostImpl::BindTracedProcess(
     mojo::PendingReceiver<tracing::mojom::TracedProcess> receiver) {
   BindReceiver(std::move(receiver));
 }
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+void RenderProcessHostImpl::ReportRendererLog(int policy,
+                                              const std::string& msg) {
+  ohos::logger::ReportRendererLog(policy, msg);
+}
+#endif
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 void RenderProcessHostImpl::ProvideStatusFileForRenderer() {

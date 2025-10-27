@@ -242,6 +242,10 @@ int ContentMainInitialize(ContentMainParams params,
 #endif
 
     base::CommandLine::Init(argc, argv);
+    base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+    command_line->AppendSwitch("--enable-logging");
+    command_line->AppendSwitchASCII("--enable-logging", "stderr");
+    command_line->AppendSwitchASCII("--v", "2");
 
 #if BUILDFLAG(IS_POSIX)
     PopulateFileDescriptorStoreFromFdTable();
@@ -271,9 +275,11 @@ int ContentMainInitialize(ContentMainParams params,
     // default, "C", locale.
     setlocale(LC_NUMERIC, "C");
 
+#if !BUILDFLAG(IS_OHOS)
     if (!params.disable_signal_handlers) {
       SetupSignalHandlers();
     }
+#endif  // !BUILDFLAG(IS_OHOS)
 #endif
 
 #if BUILDFLAG(IS_WIN)

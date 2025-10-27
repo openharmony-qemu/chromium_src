@@ -181,6 +181,8 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
 
   ~Compositor() override;
 
+  friend class CompositorUtils;
+
   ui::ContextFactory* context_factory() { return context_factory_; }
 
   void AddChildFrameSink(const viz::FrameSinkId& frame_sink_id);
@@ -258,7 +260,6 @@ class COMPOSITOR_EXPORT Compositor : public base::PowerSuspendObserver,
   void DisableSwapUntilResize();
   void ReenableSwap();
 #endif
-
   // Sets the compositor's device scale factor and size.
   void SetScaleAndSize(float scale,
                        const gfx::Size& size_in_pixel,

@@ -76,6 +76,10 @@
 #include "mojo/public/cpp/bindings/message.h"
 #endif  // BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/browser/media/media_interface_proxy_for_include.cc"
+#endif
+
 namespace content {
 
 namespace {

@@ -1,0 +1,15 @@
+--- cjx_eventpseudomodel.cpp	2025-10-20 19:53:19.655987568 +0800
++++ cjx_eventpseudomodel.cpp	2025-10-16 16:15:55.964033084 +0800
+@@ -262,11 +262,11 @@
+     case XFA_Event::NewContentType:
+       StringProperty(pIsolate, pValue, &pEventParam->m_wsNewContentType,
+                      bSetting);
+       break;
+     case XFA_Event::NewText:
+-      NOTREACHED();
++      NOTREACHED_NORETURN();
+     case XFA_Event::PreviousContentType:
+       StringProperty(pIsolate, pValue, &pEventParam->m_wsPrevContentType,
+                      bSetting);
+       break;
+     case XFA_Event::PreviousText:

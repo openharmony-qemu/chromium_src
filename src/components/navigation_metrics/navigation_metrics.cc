@@ -56,6 +56,9 @@ constexpr auto kSchemeNames = std::to_array<const char*>({
     dom_distiller::kDomDistillerScheme,
     "devtools",
     "chrome-extension",
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    "arkweb-extension",
+#endif
     "view-source",
     "externalfile",
     "isolated-app",

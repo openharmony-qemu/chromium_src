@@ -1,0 +1,237 @@
+--- tabs_api.cc	2025-10-20 19:52:49.622137714 +0800
++++ tabs_api.cc	2025-10-16 15:57:00.168060622 +0800
+@@ -492,11 +492,11 @@
+       break;
+   }
+ }
+ 
+ // Windows ---------------------------------------------------------------------
+-
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ ExtensionFunction::ResponseAction WindowsGetFunction::Run() {
+   std::optional<windows::Get::Params> params =
+       windows::Get::Params::Create(args());
+   EXTENSION_FUNCTION_VALIDATE(params);
+ 
+@@ -1170,10 +1170,11 @@
+   }
+   return RespondNow(ArgumentList(tabs::Get::Results::Create(
+       CreateTabObjectHelper(contents, extension(), source_context_type(),
+                             tab_strip, tab_strip->active_index()))));
+ }
++#endif
+ 
+ ExtensionFunction::ResponseAction TabsGetAllInWindowFunction::Run() {
+   std::optional<tabs::GetAllInWindow::Params> params =
+       tabs::GetAllInWindow::Params::Create(args());
+   EXTENSION_FUNCTION_VALIDATE(params);
+@@ -1412,11 +1414,13 @@
+     }
+   }
+ 
+   return RespondNow(WithArguments(std::move(result)));
+ }
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ ExtensionFunction::ResponseAction TabsCreateFunction::Run() {
+   std::optional<tabs::Create::Params> params =
+       tabs::Create::Params::Create(args());
+   EXTENSION_FUNCTION_VALIDATE(params);
+   return RespondNow([&] {
+@@ -1593,10 +1597,11 @@
+   return RespondNow(
+       WithArguments(window_controller->CreateWindowValueForExtension(
+           extension(), WindowController::kPopulateTabs,
+           source_context_type())));
+ }
++#endif  // ARKWEB_ARKWEB_EXTENSIONS
+ 
+ bool TabsHighlightFunction::HighlightTab(TabStripModel* tabstrip,
+                                          ui::ListSelectionModel* selection,
+                                          std::optional<size_t>* active_index,
+                                          int index,
+@@ -1617,10 +1622,11 @@
+   return true;
+ }
+ 
+ TabsUpdateFunction::TabsUpdateFunction() : web_contents_(nullptr) {}
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ ExtensionFunction::ResponseAction TabsUpdateFunction::Run() {
+   std::optional<tabs::Update::Params> params =
+       tabs::Update::Params::Create(args());
+   EXTENSION_FUNCTION_VALIDATE(params);
+ 
+@@ -1764,12 +1770,11 @@
+   // -favIconUrl
+ 
+   // Navigate the tab to a new location if the url is different.
+   if (params->update_properties.url) {
+     std::string updated_url = *params->update_properties.url;
+-    auto* profile = Profile::FromBrowserContext(browser_context());
+-    if (profile->IsIncognitoProfile() &&
++    if (browser->profile()->IsIncognitoProfile() &&
+         !IsURLAllowedInIncognito(GURL(updated_url))) {
+       return RespondNow(Error(ErrorUtils::FormatErrorMessage(
+           tabs_constants::kURLsNotAllowedInIncognitoError, updated_url)));
+     }
+ 
+@@ -1787,10 +1792,11 @@
+                              current_url, updated_url, js_callstack());
+   }
+ 
+   return RespondNow(GetResult());
+ }
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+ 
+ bool TabsUpdateFunction::UpdateURL(const std::string& url_string,
+                                    int tab_id,
+                                    std::string* error) {
+   auto url = ExtensionTabUtil::PrepareURLForNavigation(url_string, extension(),
+@@ -1824,10 +1830,11 @@
+             web_contents_->GetController().GetPendingEntry()->GetVirtualURL());
+ 
+   return true;
+ }
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ ExtensionFunction::ResponseValue TabsUpdateFunction::GetResult() {
+   if (!has_callback()) {
+     return NoArguments();
+   }
+ 
+@@ -1878,10 +1885,11 @@
+   }
+ 
+   // Return the results as an array if there are multiple tabs.
+   return RespondNow(WithArguments(std::move(tab_values)));
+ }
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+ 
+ bool TabsMoveFunction::MoveTab(int tab_id,
+                                int* new_index,
+                                base::Value::List& tab_values,
+                                const std::optional<int>& window_id,
+@@ -1965,10 +1973,11 @@
+   *new_index += 1;
+ 
+   return true;
+ }
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ ExtensionFunction::ResponseAction TabsReloadFunction::Run() {
+   std::optional<tabs::Reload::Params> params =
+       tabs::Reload::Params::Create(args());
+   EXTENSION_FUNCTION_VALIDATE(params);
+ 
+@@ -2005,14 +2014,16 @@
+                    : content::ReloadType::NORMAL,
+       true);
+ 
+   return RespondNow(NoArguments());
+ }
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+ 
+ TabsRemoveFunction::TabsRemoveFunction() = default;
+ TabsRemoveFunction::~TabsRemoveFunction() = default;
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ ExtensionFunction::ResponseAction TabsRemoveFunction::Run() {
+   std::optional<tabs::Remove::Params> params =
+       tabs::Remove::Params::Create(args());
+   EXTENSION_FUNCTION_VALIDATE(params);
+ 
+@@ -2118,10 +2130,11 @@
+  private:
+   // Guaranteed to outlive this object.
+   raw_ptr<extensions::TabsRemoveFunction> owner_;
+ };
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ ExtensionFunction::ResponseAction TabsGroupFunction::Run() {
+   std::optional<tabs::Group::Params> params =
+       tabs::Group::Params::Create(args());
+   EXTENSION_FUNCTION_VALIDATE(params);
+ 
+@@ -2263,10 +2276,11 @@
+     }
+   }
+ 
+   return RespondNow(NoArguments());
+ }
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+ 
+ bool TabsUngroupFunction::UngroupTab(int tab_id, std::string* error) {
+   WindowController* window = nullptr;
+   int tab_index = -1;
+   if (!GetTabById(tab_id, browser_context(), include_incognito_information(),
+@@ -2476,10 +2493,11 @@
+ void TabsCaptureVisibleTabFunction::RegisterProfilePrefs(
+     user_prefs::PrefRegistrySyncable* registry) {
+   registry->RegisterBooleanPref(prefs::kDisableScreenshots, false);
+ }
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ ExtensionFunction::ResponseAction TabsDetectLanguageFunction::Run() {
+   std::optional<tabs::DetectLanguage::Params> params =
+       tabs::DetectLanguage::Params::Create(args());
+   EXTENSION_FUNCTION_VALIDATE(params);
+ 
+@@ -2544,10 +2562,11 @@
+       this);
+   is_observing_ = true;
+ 
+   return RespondLater();
+ }
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+ 
+ void TabsDetectLanguageFunction::NavigationEntryCommitted(
+     const content::LoadCommittedDetails& load_details) {
+   // Call RespondWithLanguage() with an empty string as we want to guarantee the
+   // callback is called for every API call the extension made.
+@@ -2591,10 +2610,11 @@
+ ExecuteCodeInTabFunction::ExecuteCodeInTabFunction()
+     : chrome_details_(this), execute_tab_id_(-1) {}
+ 
+ ExecuteCodeInTabFunction::~ExecuteCodeInTabFunction() {}
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ ExecuteCodeFunction::InitResult ExecuteCodeInTabFunction::Init() {
+   if (init_result_) {
+     return init_result_.value();
+   }
+ 
+@@ -2723,11 +2744,15 @@
+   content::WebContents* contents = nullptr;
+ 
+   bool success = GetTabById(execute_tab_id_, browser_context(),
+                             include_incognito_information(), &window, &contents,
+                             nullptr, error) &&
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++                 contents;
++#else
+                  contents && window;
++#endif
+ 
+   if (!success) {
+     return nullptr;
+   }
+ 
+@@ -2925,14 +2951,16 @@
+ 
+   return RespondNow(
+       ArgumentList(tabs::Discard::Results::Create(CreateTabObjectHelper(
+           contents, extension(), source_context_type(), nullptr, -1))));
+ }
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+ 
+ TabsDiscardFunction::TabsDiscardFunction() {}
+ TabsDiscardFunction::~TabsDiscardFunction() {}
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ ExtensionFunction::ResponseAction TabsGoForwardFunction::Run() {
+   std::optional<tabs::GoForward::Params> params =
+       tabs::GoForward::Params::Create(args());
+   EXTENSION_FUNCTION_VALIDATE(params);
+ 

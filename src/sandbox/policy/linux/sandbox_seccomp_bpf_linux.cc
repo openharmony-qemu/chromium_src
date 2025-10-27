@@ -271,10 +271,15 @@ void SandboxSeccompBPF::RunSandboxSanityChecks(
       // Without the sandbox, this would EBADF.
       syscall_ret = fchmod(-1, 07777);
       CHECK_EQ(-1, syscall_ret);
+#if !BUILDFLAG(IS_OHOS)
+      // in ohos EPERM is always 1, not equal to errno
       CHECK_EQ(EPERM, errno);
+#endif
 
 // Run most of the sanity checks only in DEBUG mode to avoid a perf.
 // impact.
+// On ohos, no such path for sanity checks
+#if !BUILDFLAG(IS_OHOS)
 #if !defined(NDEBUG)
       // open() must be restricted.
       syscall_ret = open("/etc/passwd", O_RDONLY);

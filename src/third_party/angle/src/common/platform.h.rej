@@ -1,0 +1,15 @@
+--- platform.h	2025-10-20 19:52:58.030214434 +0800
++++ platform.h	2025-10-16 16:08:14.396998395 +0800
+@@ -21,11 +21,11 @@
+ #    define ANGLE_PLATFORM_ANDROID 1
+ #    define ANGLE_PLATFORM_POSIX 1
+ #elif defined(__ggp__)
+ #    define ANGLE_PLATFORM_GGP 1
+ #    define ANGLE_PLATFORM_POSIX 1
+-#elif defined(__linux__) || defined(EMSCRIPTEN)
++#elif defined(__linux__) || defined(EMSCRIPTEN) || defined(OSOHOS)
+ #    define ANGLE_PLATFORM_LINUX 1
+ #    define ANGLE_PLATFORM_POSIX 1
+ #elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) ||              \
+     defined(__DragonFly__) || defined(__sun) || defined(__GLIBC__) || defined(__GNU__) || \
+     defined(__QNX__) || defined(__Fuchsia__) || defined(__HAIKU__)

@@ -1,0 +1,17 @@
+--- profile_error_dialog.cc	2025-10-20 19:52:50.796853230 +0800
++++ profile_error_dialog.cc	2025-10-16 15:57:01.605559992 +0800
+@@ -64,12 +64,14 @@
+       nullptr, l10n_util::GetStringUTF16(IDS_PROFILE_ERROR_DIALOG_TITLE),
+       l10n_util::GetStringUTF16(message_id),
+       l10n_util::GetStringUTF16(IDS_PROFILE_ERROR_DIALOG_CHECKBOX),
+       base::BindOnce(&OnProfileErrorDialogDismissed, diagnostics));
+ #else   // BUILDFLAG(GOOGLE_CHROME_BRANDING)
++#if !BUILDFLAG(IS_ARKWEB)
+   chrome::ShowWarningMessageBox(
+       nullptr, l10n_util::GetStringUTF16(IDS_PROFILE_ERROR_DIALOG_TITLE),
+       l10n_util::GetStringUTF16(message_id));
++#endif
+ #endif  // BUILDFLAG(GOOGLE_CHROME_BRANDING)
+ 
+ #endif  // BUILDFLAG(IS_ANDROID)
+ }

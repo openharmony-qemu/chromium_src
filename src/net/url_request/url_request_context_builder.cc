@@ -281,7 +281,7 @@ void URLRequestContextBuilder::BindToNetwork(
 }
 
 std::unique_ptr<URLRequestContext> URLRequestContextBuilder::Build() {
-  auto context = std::make_unique<URLRequestContext>(
+  auto context = std::make_unique<URLRequestContextExt>(
       base::PassKey<URLRequestContextBuilder>());
 
   context->set_enable_brotli(enable_brotli_);

@@ -130,6 +130,12 @@ class PrintViewManagerBase : public PrintManager, public PrintJob::Observer {
   void IsPrintingEnabled(IsPrintingEnabledCallback callback) override;
   void ScriptedPrint(mojom::ScriptedPrintParamsPtr params,
                      ScriptedPrintCallback callback) override;
+#if BUILDFLAG(ARKWEB_PRINT)
+  void PdfWritingDone(int page_count) override {}
+  void PrintRequested(PrintRequestedCallback callback) override {}
+  void CheckCancel(CheckCancelCallback callback) override {}
+  void PrintPdfRequested() override {}
+#endif  // BUILDFLAG(ARKWEB_PRINT)
   void PrintingFailed(int32_t cookie,
                       mojom::PrintFailureReason reason) override;
 

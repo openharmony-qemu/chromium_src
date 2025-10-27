@@ -53,6 +53,9 @@ void ExtensionPrefsHelper::SetExtensionControlledPref(
     preference->SetWithoutPathExpansion(pref_key, value.Clone());
   }
   value_map_->SetExtensionPref(extension_id, pref_key, scope, std::move(value));
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  prefs_->pref_service()->CommitPendingWrite();
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 void ExtensionPrefsHelper::RemoveExtensionControlledPref(
@@ -73,6 +76,9 @@ void ExtensionPrefsHelper::RemoveExtensionControlledPref(
     }
   }
   value_map_->RemoveExtensionPref(extension_id, pref_key, scope);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  prefs_->pref_service()->CommitPendingWrite();
+#endif // ARKWEB_ARKWEB_EXTENSIONS  
 }
 
 bool ExtensionPrefsHelper::CanExtensionControlPref(

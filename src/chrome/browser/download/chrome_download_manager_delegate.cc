@@ -578,6 +578,16 @@ ChromeDownloadManagerDelegate::ChromeDownloadManagerDelegate(Profile* profile)
   cef_delegate_ =
       cef::DownloadManagerDelegate::Create(profile_->GetDownloadManager());
 #endif
+
+#if BUILDFLAG(IS_OHOS)
+  // The default path obtained without kDownloadDefault Directory is'/'and does
+  // not have read and write permissions
+  if (download_prefs_->DownloadPath().value() == "/") {
+    base::FilePath path;
+    base::PathService::Get(chrome::DIR_DEFAULT_DOWNLOADS, &path);
+    download_prefs_->SetDownloadPath(path);
+  }
+#endif
 }
 
 ChromeDownloadManagerDelegate::~ChromeDownloadManagerDelegate() {
@@ -711,6 +721,10 @@ bool ChromeDownloadManagerDelegate::DetermineDownloadTarget(
       !download->HasUserGesture()) {
     ReportPDFLoadStatus(PDFLoadStatus::kTriggeredNoGestureDriveByDownload);
   }
+
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  return cef_delegate_->DetermineDownloadTarget(download, callback);
+#endif
 
 #if BUILDFLAG(ENABLE_CEF)
   if (cef_delegate_->DetermineDownloadTarget(download, callback)) {
@@ -975,17 +989,21 @@ void ChromeDownloadManagerDelegate::ShouldCompleteDownloadInternal(
 bool ChromeDownloadManagerDelegate::ShouldCompleteDownload(
     DownloadItem* item,
     base::OnceClosure user_complete_callback) {
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  return true;
+#else
   return IsDownloadReadyForCompletion(
       item, base::BindOnce(
                 &ChromeDownloadManagerDelegate::ShouldCompleteDownloadInternal,
                 weak_ptr_factory_.GetWeakPtr(), item->GetId(),
                 std::move(user_complete_callback)));
+#endif
 }
 
 bool ChromeDownloadManagerDelegate::ShouldOpenDownload(
     DownloadItem* item,
     content::DownloadOpenDelayedCallback callback) {
-#if BUILDFLAG(ENABLE_EXTENSIONS)
+#if BUILDFLAG(ENABLE_EXTENSIONS) && !BUILDFLAG(IS_ARKWEB)
   if (download_crx_util::IsExtensionDownload(*item) &&
       !extensions::WebstoreInstaller::GetAssociatedApproval(*item)) {
     scoped_refptr<CrxInstaller> installer(
@@ -1356,7 +1374,7 @@ void ChromeDownloadManagerDelegate::NotifyExtensions(
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   DCHECK(!download->IsTransient());
 
-#if BUILDFLAG(ENABLE_EXTENSIONS)
+#if BUILDFLAG(ENABLE_EXTENSIONS) && (!BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS))
   extensions::ExtensionDownloadsEventRouter* router =
       DownloadCoreServiceFactory::GetForBrowserContext(profile_)
           ->GetExtensionEventRouter();
@@ -1998,6 +2016,13 @@ bool ChromeDownloadManagerDelegate::IsOpenInBrowserPreferredForFile(
     return true;
   }
 #endif
+
+#if BUILDFLAG(IS_OHOS)
+  if (path.MatchesExtension(FILE_PATH_LITERAL(".mhtml"))) {
+    return true;
+  }
+#endif
+
   return false;
 }
 

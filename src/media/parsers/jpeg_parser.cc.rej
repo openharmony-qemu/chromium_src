@@ -1,0 +1,14 @@
+--- jpeg_parser.cc	2025-10-20 19:52:56.766201661 +0800
++++ jpeg_parser.cc	2025-10-16 15:55:01.954067355 +0800
+@@ -538,11 +538,10 @@
+                       JpegParseResult* result) {
+   DCHECK(result);
+ 
+   auto reader = base::SpanReader(buffer);
+   std::ranges::fill(base::byte_span_from_ref(*result), 0u);
+-
+   uint8_t marker1;
+   uint8_t marker2;
+   READ_U8_OR_RETURN_FALSE(marker1);
+   READ_U8_OR_RETURN_FALSE(marker2);
+   if (marker1 != JPEG_MARKER_PREFIX || marker2 != JPEG_SOI) {

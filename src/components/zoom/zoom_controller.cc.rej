@@ -1,0 +1,18 @@
+--- zoom_controller.cc	2025-10-20 19:52:54.194442260 +0800
++++ zoom_controller.cc	2025-10-16 15:54:59.304902624 +0800
+@@ -403,10 +418,15 @@
+         zoom_change_data.new_zoom_level != GetDefaultZoomLevel();
+     zoom_change_data.can_show_bubble =
+         can_show_bubble_ && !host.empty() && changed_from_default;
+     for (auto& observer : observers_)
+       observer.OnZoomChanged(zoom_change_data);
++#if BUILDFLAG(ARKWEB_AI)
++    if (auto impl = static_cast<content::WebContentsImpl*>(web_contents())) {
++      impl->AsWebContentsImplExt()->OnOverlayZoomChanged();
++    }
++#endif
+   } else {
+     // TODO(wjmaclean) Should we consider having HostZoomMap send both old and
+     // new zoom levels here?
+     double zoom_level = GetZoomLevel();
+     // We never show a zoom bubble for an event we didn't generate.

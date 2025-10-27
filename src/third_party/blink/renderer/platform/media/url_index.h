@@ -40,6 +40,10 @@ class ResourceFetchContext;
 class UrlData;
 class UrlIndexTest;
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+using MediaWebURLErrorCB = base::RepeatingCallback<void(int)>;
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
 // A multibuffer for loading media resources which knows
 // how to create MultiBufferDataProviders to load data
 // into the cache.
@@ -171,6 +175,12 @@ class PLATFORM_EXPORT UrlData : public RefCounted<UrlData> {
 
   // Fail, tell all clients that a failure has occurred.
   void Fail();
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  MediaWebURLErrorCB& GetMediaWebURLErrorCB();
+  void SetMediaWebURLErrorCB(MediaWebURLErrorCB cb);
+  void NotifyMediaWebURLError(int reason);
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
   // Callback for receiving notifications when a redirect occurs.
   using RedirectCB = base::OnceCallback<void(const scoped_refptr<UrlData>&)>;

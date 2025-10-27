@@ -55,7 +55,6 @@ enum LabelPropertyKey {
   kLabelLineHeight,
   kLabelObscured,
   kLabelAllowCharacterBreak,
-  kAccessibleTextOffsets,
   kLabelDrawStringsFlags,
 };
 

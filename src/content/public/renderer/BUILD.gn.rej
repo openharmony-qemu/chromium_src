@@ -1,0 +1,18 @@
+--- BUILD.gn	2025-10-20 19:52:54.574614904 +0800
++++ BUILD.gn	2025-10-16 15:54:59.704474981 +0800
+@@ -3,11 +3,15 @@
+ # found in the LICENSE file.
+ 
+ import("//build/config/features.gni")
+ import("//media/media_options.gni")
+ import("//ppapi/buildflags/buildflags.gni")
++import("//arkweb/build/features/features.gni")
+ 
++if (is_arkweb) {
++  import("//arkweb/chromium_ext/chromium_ext.gni")
++}
+ # See //content/BUILD.gn for how this works.
+ group("renderer") {
+   if (is_component_build) {
+     public_deps = [ "//content" ]
+   } else {

@@ -1,0 +1,52 @@
+--- gpu_main.cc	2025-10-20 19:52:54.522591278 +0800
++++ gpu_main.cc	2025-10-16 15:54:59.648534851 +0800
+@@ -111,20 +111,32 @@
+ 
+ #if BUILDFLAG(USE_VAAPI)
+ #include "media/gpu/vaapi/vaapi_wrapper.h"
+ #endif
+ 
++#if BUILDFLAG(IS_OHOS)
++#include "content/common/gpu_pre_sandbox_hook_linux.h"
++#include "sandbox/policy/linux/sandbox_linux.h"
++#include "sandbox/policy/sandbox_type.h"
++#endif
++
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/content/gpu/gpu_main_ext.h"
++#endif
++
+ namespace content {
+ 
+ namespace {
+ 
+ #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+ bool StartSandboxLinux(gpu::GpuWatchdogThread*,
+                        const gpu::GPUInfo*,
+                        const gpu::GpuPreferences&);
+ #elif BUILDFLAG(IS_WIN)
+ bool StartSandboxWindows(const sandbox::SandboxInterfaceInfo*);
++#elif BUILDFLAG(IS_OHOS)
++bool StartSandboxOHOS(gpu::GpuWatchdogThread*);
+ #endif
+ 
+ class ContentSandboxHelper : public gpu::GpuSandboxHelper {
+  public:
+   ContentSandboxHelper() {}
+@@ -179,10 +191,16 @@
+     return StartSandboxLinux(watchdog_thread, gpu_info, gpu_prefs);
+ #elif BUILDFLAG(IS_WIN)
+     return StartSandboxWindows(sandbox_info_);
+ #elif BUILDFLAG(IS_MAC)
+     return sandbox::Seatbelt::IsSandboxed();
++#elif BUILDFLAG(IS_OHOS)
++#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
++    return false;
++#else
++    return StartSandboxOHOS(watchdog_thread);
++#endif
+ #else
+     return false;
+ #endif
+   }
+ 

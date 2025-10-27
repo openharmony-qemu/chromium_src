@@ -53,6 +53,10 @@ class CefBrowserPlatformDelegateNativeAura
       int clickCount) const override;
   blink::WebMouseEvent TranslateWebMoveEvent(const CefMouseEvent& mouse_event,
                                              bool mouseLeave) const override;
+#if BUILDFLAG(ARKWEB_TOUCHPAD_FLING)
+  blink::WebGestureEvent TranslateTouchpadFlingEvent(
+      const CefMouseEvent& mouse_event) const override;
+#endif
   blink::WebMouseWheelEvent TranslateWebWheelEvent(
       const CefMouseEvent& mouse_event,
       int deltaX,
@@ -68,6 +72,10 @@ class CefBrowserPlatformDelegateNativeAura
       int clickCount) const;
   virtual ui::MouseEvent TranslateUiMoveEvent(const CefMouseEvent& mouse_event,
                                               bool mouseLeave) const;
+#if BUILDFLAG(ARKWEB_TOUCHPAD_FLING)
+  virtual ui::GestureEvent TranslateUiTouchpadEvent(
+      const CefMouseEvent& mouse_event) const;
+#endif
   virtual ui::MouseWheelEvent TranslateUiWheelEvent(
       const CefMouseEvent& mouse_event,
       int deltaX,

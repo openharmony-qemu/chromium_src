@@ -1,0 +1,23 @@
+--- chrome_repack_locales.gni	2025-10-20 19:52:51.157025564 +0800
++++ chrome_repack_locales.gni	2025-10-16 15:57:02.050265083 +0800
+@@ -86,10 +92,20 @@
+       if (is_chrome_branded) {
+         source_patterns += [ "${root_gen_dir}/chrome/app/theme/google_chrome/chromeos/strings/chromeos_chrome_internal_strings_" ]
+         deps += [ "//chrome/app/theme/google_chrome/chromeos/strings" ]
+       }
+     }
++
++    if (defined(is_arkweb_ext) && is_arkweb_ext) {
++      source_patterns += [ "${root_gen_dir}/ohos_nweb_ex/overrides/ui/strings/ohos_nweb_ex_strings_" ]
++      deps += [ "//ohos_nweb_ex/overrides/ui/strings" ]
++    }
++    if (arkweb_i18n) {
++      source_patterns += [ "${root_gen_dir}/ohos_resources/components/string/ohos_components_strings_" ]
++      deps += [ "//ohos_resources/components/string" ]
++    }
++
+     if (is_chromeos_ash) {
+       source_patterns += [
+         "${root_gen_dir}/ash/strings/ash_strings_",
+         "${root_gen_dir}/ash/webui/camera_app_ui/resources/strings/ash_camera_app_strings_",
+         "${root_gen_dir}/chromeos/strings/chromeos_strings_",

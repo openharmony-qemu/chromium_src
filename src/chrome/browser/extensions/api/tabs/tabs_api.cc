@@ -658,6 +658,7 @@ ExtensionFunction::ResponseAction TabsGetAllInWindowFunction::Run() {
       window_controller->CreateTabList(extension(), source_context_type())));
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 ExtensionFunction::ResponseAction TabsQueryFunction::Run() {
   std::optional<tabs::Query::Params> params =
       tabs::Query::Params::Create(args());
@@ -1023,6 +1024,7 @@ ExtensionFunction::ResponseAction TabsRemoveFunction::Run() {
   }
   return RespondLater();
 }
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 bool TabsRemoveFunction::RemoveTab(int tab_id, std::string* error) {
   WindowController* window = nullptr;
@@ -1223,12 +1225,13 @@ TabsCaptureVisibleTabFunction::TabsCaptureVisibleTabFunction()
 WebContentsCaptureClient::ScreenshotAccess
 TabsCaptureVisibleTabFunction::GetScreenshotAccess(
     content::WebContents* web_contents) const {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   PrefService* service =
       Profile::FromBrowserContext(browser_context())->GetPrefs();
   if (service->GetBoolean(prefs::kDisableScreenshots)) {
     return ScreenshotAccess::kDisabledByPreferences;
   }
-
+#endif // ARKWEB_ARKWEB_EXTENSIONS
   if (ExtensionsBrowserClient::Get()->IsScreenshotRestricted(web_contents)) {
     return ScreenshotAccess::kDisabledByDlp;
   }
@@ -1277,6 +1280,7 @@ content::WebContents* TabsCaptureVisibleTabFunction::GetWebContentsForID(
   return contents;
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 ExtensionFunction::ResponseAction TabsCaptureVisibleTabFunction::Run() {
   using api::extension_types::ImageDetails;
 
@@ -1322,6 +1326,7 @@ ExtensionFunction::ResponseAction TabsCaptureVisibleTabFunction::Run() {
 
   return RespondNow(Error(CaptureResultToErrorMessage(capture_result)));
 }
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 void TabsCaptureVisibleTabFunction::GetQuotaLimitHeuristics(
     QuotaLimitHeuristics* heuristics) const {
@@ -1459,6 +1464,7 @@ ExecuteCodeFunction::InitResult ExecuteCodeInTabFunction::Init() {
       mojom::HostID(mojom::HostID::HostType::kExtensions, extension()->id()));
   return set_init_result(SUCCESS);
 }
+#endif
 
 bool ExecuteCodeInTabFunction::ShouldInsertCSS() const {
   return false;
@@ -1566,6 +1572,7 @@ bool TabsRemoveCSSFunction::ShouldRemoveCSS() const {
   return true;
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 ExtensionFunction::ResponseAction TabsSetZoomFunction::Run() {
   std::optional<tabs::SetZoom::Params> params =
       tabs::SetZoom::Params::Create(args());
@@ -1742,5 +1749,6 @@ ExtensionFunction::ResponseAction TabsGoBackFunction::Run() {
   controller.GoBack();
   return RespondNow(NoArguments());
 }
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 }  // namespace extensions

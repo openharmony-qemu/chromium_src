@@ -62,7 +62,7 @@ DownloadCoreServiceImpl::GetDownloadManagerDelegate() {
 
   manager_delegate_->SetDownloadManager(manager);
 
-#if BUILDFLAG(ENABLE_EXTENSIONS)
+#if BUILDFLAG(ENABLE_EXTENSIONS) && (!BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS))
   extension_event_router_ =
       std::make_unique<extensions::ExtensionDownloadsEventRouter>(profile_,
                                                                   manager);

@@ -129,7 +129,11 @@ void AudioOutputDispatcherImpl::CloseStream(AudioOutputProxy* stream_proxy) {
 
   // Leave at least a single stream running until the close timer fires to help
   // cycle time when streams are opened and closed repeatedly.
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  CloseIdleStreams(std::max(idle_proxies_, static_cast<size_t>(0)));
+#else
   CloseIdleStreams(std::max(idle_proxies_, static_cast<size_t>(1)));
+#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
   close_timer_.Reset();
 }
 

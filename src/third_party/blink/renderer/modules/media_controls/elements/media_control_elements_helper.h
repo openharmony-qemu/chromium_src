@@ -19,6 +19,10 @@ class ContainerNode;
 class Element;
 class Event;
 class HTMLDivElement;
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+class HTMLSpanElement;
+class HTMLProgressElement;
+#endif
 class HTMLMediaElement;
 class LayoutObject;
 class Node;

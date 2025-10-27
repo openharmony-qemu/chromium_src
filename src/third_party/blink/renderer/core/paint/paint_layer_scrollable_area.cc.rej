@@ -1,0 +1,86 @@
+--- paint_layer_scrollable_area.cc	2025-10-20 19:53:00.606208010 +0800
++++ paint_layer_scrollable_area.cc	2025-10-16 16:07:39.614206234 +0800
+@@ -44,10 +44,11 @@
+ 
+ #include "third_party/blink/renderer/core/paint/paint_layer_scrollable_area.h"
+ 
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/numerics/checked_math.h"
+ #include "base/task/single_thread_task_runner.h"
+ #include "cc/animation/animation_timeline.h"
+ #include "cc/input/main_thread_scrolling_reason.h"
+ #include "cc/input/snap_selection_strategy.h"
+@@ -123,20 +124,30 @@
+ #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
+ #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
+ #include "ui/base/ui_base_features.h"
+ #include "ui/gfx/geometry/point_conversions.h"
+ 
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/paint_layer_scrollable_area_utils.h"
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/scroll/scrollable_area_utils.h"
++#endif
++
+ namespace blink {
+ 
+ PaintLayerScrollableAreaRareData::PaintLayerScrollableAreaRareData() = default;
+ 
+ void PaintLayerScrollableAreaRareData::Trace(Visitor* visitor) const {
+   visitor->Trace(snapped_query_snapshot_);
+ }
+ 
+ const int kResizerControlExpandRatioForTouch = 2;
+ 
++#if BUILDFLAG(IS_ARKWEB)
++const int kScrollbarMargin = 4;
++#endif
++
+ PaintLayerScrollableArea::PaintLayerScrollableArea(PaintLayer& layer)
+     : ScrollableArea(layer.GetLayoutBox()
+                          ->GetDocument()
+                          .GetPage()
+                          ->GetAgentGroupScheduler()
+@@ -164,14 +175,19 @@
+     scroll_offset_ = element->SavedLayerScrollOffset();
+     if (!scroll_offset_.IsZero())
+       GetScrollAnimator().SetCurrentOffset(scroll_offset_);
+     element->SetSavedLayerScrollOffset(ScrollOffset());
+   }
++#if BUILDFLAG(ARKWEB_SCROLLBAR)
++  utils_ = new PaintLayerScrollableAreaUtils(this);
++#endif  // ARKWEB_SCROLLBAR
++
+ }
+ 
+ PaintLayerScrollableArea::~PaintLayerScrollableArea() {
+   CHECK(HasBeenDisposed());
++  delete(utils_);
+ }
+ 
+ PaintLayerScrollableArea* PaintLayerScrollableArea::FromNode(const Node& node) {
+   const LayoutBox* box = node.GetLayoutBox();
+   return box ? box->GetScrollableArea() : nullptr;
+@@ -3175,10 +3236,20 @@
+   // PositionOverflowControls() even before the paint offset is updated.
+   // This can be fixed only after we support subpixels in overflow control
+   // geometry. For now we ensure correct pixel snapping of overflow controls by
+   // calling PositionOverflowControls() again when paint offset is updated.
+   // TODO(crbug.com/962299): Only correct if the paint offset is correct.
++#if BUILDFLAG(ARKWEB_SCROLLBAR)
++  const TopDocumentRootScrollerController& controller =
++      GetLayoutBox()->GetDocument().GetPage()->GlobalRootScrollerController();
++  if (!base::ohos::IsPcDevice() && DynamicTo<LayoutView>(GetLayoutBox())
++          && controller.RootScrollerArea() == this) {
++    const auto& visualViewportSize=
++        GetLayoutBox()->GetFrameView()->GetPage()->GetVisualViewport().Size();
++    return visualViewportSize;
++  }
++#endif // OHOS_SCROLLBAR
+   return PhysicalRect(GetLayoutBox()->FirstFragment().PaintOffset(),
+                       GetLayoutBox()->Size())
+       .PixelSnappedSize();
+ }
+ 

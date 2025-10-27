@@ -38,6 +38,7 @@
 #define CEF_INCLUDE_CEF_CLIENT_H_
 #pragma once
 
+#include "cef/ohos_cef_ext/include/arkweb_display_handler_ext.h"
 #include "include/cef_audio_handler.h"
 #include "include/cef_base.h"
 #include "include/cef_command_handler.h"
@@ -58,6 +59,17 @@
 #include "include/cef_process_message.h"
 #include "include/cef_render_handler.h"
 #include "include/cef_request_handler.h"
+#include "cef/ohos_cef_ext/include/cef_safe_browsing_detection_callback.h"
+
+
+class ArkWebClientExt;
+class ArkWebLoadHandlerExt;
+class ArkWebRenderHandlerExt;
+class CefDialogHandlerExt;
+class ArkWebDisplayHandlerExt;
+class CefMediaPlayerListenerForVAST;
+class CefMediaPlayerController;
+class CefWebExtensionApiHandler;
 
 ///
 /// Implement this interface to provide handler implementations.
@@ -65,6 +77,7 @@
 /*--cef(source=client,no_debugct_check)--*/
 class CefClient : public virtual CefBaseRefCounted {
  public:
+  virtual CefRefPtr<ArkWebClientExt> AsArkWebClient() { return nullptr; }
   ///
   /// Return the handler for audio rendering events.
   ///
@@ -78,12 +91,7 @@ class CefClient : public virtual CefBaseRefCounted {
   /*--cef()--*/
   virtual CefRefPtr<CefCommandHandler> GetCommandHandler() { return nullptr; }
 
-  ///
-  /// Return the handler for context menus. If no handler is provided the
-  /// default implementation will be used.
-  ///
-  /*--cef()--*/
-  virtual CefRefPtr<CefContextMenuHandler> GetContextMenuHandler() {
+  virtual CefRefPtr<CefContextMenuHandlerExt> GetContextMenuHandler() {
     return nullptr;
   }
 
@@ -91,14 +99,14 @@ class CefClient : public virtual CefBaseRefCounted {
   /// Return the handler for dialogs. If no handler is provided the default
   /// implementation will be used.
   ///
-  /*--cef()--*/
-  virtual CefRefPtr<CefDialogHandler> GetDialogHandler() { return nullptr; }
+  virtual CefRefPtr<CefDialogHandlerExt> GetDialogHandler() { return nullptr; }
 
   ///
   /// Return the handler for browser display state events.
   ///
-  /*--cef()--*/
-  virtual CefRefPtr<CefDisplayHandler> GetDisplayHandler() { return nullptr; }
+  virtual CefRefPtr<ArkWebDisplayHandlerExt> GetDisplayHandler() {
+    return nullptr;
+  }
 
   ///
   /// Return the handler for download events. If no handler is returned
@@ -163,8 +171,7 @@ class CefClient : public virtual CefBaseRefCounted {
   ///
   /// Return the handler for browser load status events.
   ///
-  /*--cef()--*/
-  virtual CefRefPtr<CefLoadHandler> GetLoadHandler() { return nullptr; }
+  virtual CefRefPtr<ArkWebLoadHandlerExt> GetLoadHandler() { return nullptr; }
 
   ///
   /// Return the handler for printing on Linux. If a print handler is not
@@ -176,8 +183,9 @@ class CefClient : public virtual CefBaseRefCounted {
   ///
   /// Return the handler for off-screen rendering events.
   ///
-  /*--cef()--*/
-  virtual CefRefPtr<CefRenderHandler> GetRenderHandler() { return nullptr; }
+  virtual CefRefPtr<ArkWebRenderHandlerExt> GetRenderHandler() {
+    return nullptr;
+  }
 
   ///
   /// Return the handler for browser request events.
@@ -197,6 +205,48 @@ class CefClient : public virtual CefBaseRefCounted {
                                         CefRefPtr<CefProcessMessage> message) {
     return false;
   }
+
+  ///
+  /// notify application to show toast.
+  ///
+  /*--cef()--*/
+  virtual void OnShowToast(double duration, const CefString& toast) {}
+
+  ///
+  /// notify application to show video assistant.
+  ///
+  /*--cef()--*/
+  virtual void OnShowVideoAssistant(const CefString& videoAssistantItems) {}
+
+  ///
+  /// notify application to report statistic log.
+  ///
+  /*--cef()--*/
+  virtual void OnReportStatisticLog(const CefString& content) {}
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  ///
+  /// Return the interface for listening to the full-screen video.
+  ///
+  virtual CefOwnPtr<CefMediaPlayerListenerForVAST> OnFullScreenOverlayEnter(
+      CefOwnPtr<CefMediaPlayerController> media_player_controller,
+      const std::string& extra_info) { return nullptr; }
+
+#endif // ARKWEB_VIDEO_ASSISTANT
+
+  ///
+  /// Detect whether the website has security risks.
+  ///
+  /*--cef()--*/
+  virtual void HandleSafeBrowsingDetection(int detectMode,
+                                           int detectSwitch,
+                                           const CefString& url) {}
+ 
+  ///
+  /// Set the callback for detecting whether the website has security risks.
+  ///
+  virtual void SetSafeBrowsingDetectionCallback(
+      CefRefPtr<CefSafeBrowsingDetectionCallback> callback) {}
 };
 
 #endif  // CEF_INCLUDE_CEF_CLIENT_H_

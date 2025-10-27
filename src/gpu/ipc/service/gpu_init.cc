@@ -96,6 +96,8 @@
 #include "gpu/command_buffer/service/drm_modifiers_filter_dawn.h"
 #endif
 
+#include "arkweb/chromium_ext/gpu/ipc/service/gpu_init_ext.h"
+
 namespace gpu {
 
 namespace {
@@ -417,7 +419,7 @@ bool GpuInit::InitializeAndStartSandbox(base::CommandLine* command_line,
   enable_watchdog = false;
 #endif
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
   bool gpu_sandbox_start_early = gpu_preferences_.gpu_sandbox_start_early;
 #else   // !(BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS))
   // For some reasons MacOSX's VideoToolbox might crash when called after
@@ -425,7 +427,7 @@ bool GpuInit::InitializeAndStartSandbox(base::CommandLine* command_line,
   // operating systems like Windows and Android the pre-sandbox steps have
   // always been executed before initializing GL so keep it this way.
   bool gpu_sandbox_start_early = true;
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 
   // PreSandbox is mainly for resource handling and not related to the GPU
   // driver, it doesn't need the GPU watchdog. The loadLibrary may take long

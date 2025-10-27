@@ -79,6 +79,9 @@ component("ipc") {
   if (enable_ipc_fuzzer) {
     public_configs = [ "//tools/ipc_fuzzer:ipc_fuzzer_config" ]
   }
+  if (arkweb_javascript_bridge) {
+    deps += [ "//arkweb/build/features" ]
+  }
 }
 
 component("message_support") {

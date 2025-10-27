@@ -1,0 +1,17 @@
+--- buffer_manager.h	2025-10-21 21:22:38.186315688 +0800
++++ buffer_manager.h	2025-10-16 15:55:00.579538445 +0800
+@@ -110,10 +110,14 @@
+   // double-bound to transform feedback and non-transform-feedback binding
+   // points.
+   void OnBind(GLenum target, bool indexed);
+   void OnUnbind(GLenum target, bool indexed);
+   
++  bool IsBoundForTransformFeedback() const {
++    return transform_feedback_indexed_binding_count_ > 0;
++  }
++  
+   bool IsBoundForTransformFeedbackAndOther() const {
+     return transform_feedback_indexed_binding_count_ > 0 &&
+            non_transform_feedback_binding_count_ > 0;
+   }
+ 

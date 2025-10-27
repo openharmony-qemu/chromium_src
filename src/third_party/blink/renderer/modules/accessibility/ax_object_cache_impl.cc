@@ -3347,7 +3347,11 @@ int AXObjectCacheImpl::GetDeferredEventsDelay() const {
 int AXObjectCacheImpl::GetLocationSerializationDelay() {
   // The amount of time, in milliseconds, to wait in between location updates
   // when the changed nodes don't include the focused node.
+#if !BUILDFLAG(ARKWEB_ACCESSIBILITY)
   constexpr int kDelayForLocationUpdatesNonFocused = 500;
+#else
+  constexpr int kDelayForLocationUpdatesNonFocused = 150;
+#endif
 
   // The amount of time, in milliseconds, to wait in between location updates
   // when the changed nodes includes the focused node.
@@ -6405,8 +6409,10 @@ void AXObjectCacheImpl::HandleLoadComplete(Document* document) {
 
   // TODO(accessibility) Change this to a DCHECK, but that would fail right now
   // in navigation API tests.
+#if !BUILDFLAG(ARKWEB_ACCESSIBILITY)
   if (!document->IsLoadCompleted())
     return;
+#endif
 
   // Popups do not need to fire load start or load complete , because ATs do not
   // regard popups as documents -- that is an implementation detail of the

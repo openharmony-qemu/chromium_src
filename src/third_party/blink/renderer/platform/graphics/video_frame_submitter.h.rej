@@ -1,0 +1,19 @@
+--- video_frame_submitter.h	2025-10-20 19:53:01.202201169 +0800
++++ video_frame_submitter.h	2025-10-16 16:07:40.107641629 +0800
+@@ -168,10 +171,16 @@
+ 
+   // Notify `surface_embedder_` if the opacity of the most recent video frame
+   // has changed.
+   void NotifyOpacityIfNeeded(Opacity new_opacity);
+ 
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++  void StartRenderingForSameLayer();
++  void StopRenderingForSameLayer();
++  void StopRenderingForSameLayerImpl();
++#endif
++
+   raw_ptr<cc::VideoFrameProvider> video_frame_provider_ = nullptr;
+   bool is_media_stream_ = false;
+   scoped_refptr<viz::RasterContextProvider> context_provider_;
+   scoped_refptr<gpu::ClientSharedImageInterface> shared_image_interface_;
+   mojo::Remote<viz::mojom::blink::CompositorFrameSink> remote_frame_sink_;

@@ -1,0 +1,34 @@
+--- crash_reporter_client.cc	2025-10-20 19:52:47.993858725 +0800
++++ crash_reporter_client.cc	2025-10-16 15:55:22.365995271 +0800
+@@ -629,10 +629,15 @@
+   }
+ 
+   return GetDefaultCrashDumpLocation(crash_dir, base::UTF8ToWide(app_name_));
+ }
+ 
++bool CefCrashReporterClient::GetCrashMetricsLocation(
++    std::wstring* metrics_dir) {
++  return GetDefaultUserDataDirectory(metrics_dir, base::UTF8ToWide(app_name_));
++}
++
+ #elif BUILDFLAG(IS_POSIX)
+ 
+ void CefCrashReporterClient::GetProductNameAndVersion(const char** product_name,
+                                                       const char** version) {
+   *product_name = product_name_.c_str();
+@@ -654,11 +659,15 @@
+   if (env->GetVar("BREAKPAD_DUMP_LOCATION", &alternate_crash_dump_location)) {
+     base::FilePath crash_dumps_dir_path =
+         base::FilePath::FromUTF8Unsafe(alternate_crash_dump_location);
+     base::PathService::Override(chrome::DIR_CRASH_DUMPS, crash_dumps_dir_path);
+   }
++#if BUILDFLAG(ARKWEB_CRASHPAD)
++  return base::PathService::Get(base::DIR_OHOS_CRASHPAD, crash_dir);
++#else
+   return base::PathService::Get(chrome::DIR_CRASH_DUMPS, crash_dir);
++#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
+ }
+ 
+ #endif  // !BUILDFLAG(IS_POSIX)
+ 
+ bool CefCrashReporterClient::GetCollectStatsConsent() {

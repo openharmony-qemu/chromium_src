@@ -4,6 +4,7 @@
 
 #include "third_party/blink/renderer/modules/media_controls/elements/media_control_display_cutout_fullscreen_button_element.h"
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/public/mojom/page/display_cutout.mojom-blink.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_touch_event_init.h"
 #include "third_party/blink/renderer/core/dom/scripted_animation_controller.h"
@@ -32,7 +33,15 @@ class MockDisplayCutoutChromeClient : public EmptyChromeClient {
   // ChromeClient overrides:
   void EnterFullscreen(LocalFrame& frame,
                        const FullscreenOptions*,
-                       FullscreenRequestType) override {
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                       bool overlay_fullscreen,
+#endif // ARKWEB_VIDEO_ASSISTANT
+                       FullscreenRequestType
+#if BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_FULLSCREEN)
+                       ,
+                       const absl::optional<gfx::Size>&
+#endif  // BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_FULLSCREEN)
+                       ) override {
     Fullscreen::DidResolveEnterFullscreenRequest(*frame.GetDocument(),
                                                  true /* granted */);
   }

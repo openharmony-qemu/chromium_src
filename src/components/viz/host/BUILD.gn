@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//build/config/ui.gni")
 import("//components/viz/viz.gni")
 
@@ -42,6 +43,7 @@ viz_component("host") {
     "//gpu/ipc/common",
     "//services/viz/privileged/mojom",
     "//services/webnn/public/mojom",
+    "//services/viz/privileged/mojom/compositing",
     "//ui/base",
     "//ui/base:ozone_buildflags",
     "//ui/gfx",
@@ -51,7 +53,6 @@ viz_component("host") {
     "//components/viz/common",
     "//gpu/command_buffer/client",
     "//gpu/ipc/host",
-    "//services/viz/privileged/mojom/compositing",
     "//services/viz/public/mojom",
     "//ui/gfx/geometry",
   ]
@@ -62,6 +63,10 @@ viz_component("host") {
 
   if (use_ozone) {
     deps += [ "//ui/ozone" ]
+  }
+
+  if (arkweb_oop_gpu_process) {
+    deps += [ "//arkweb/build/features" ]
   }
 }
 
@@ -87,4 +92,9 @@ viz_source_set("unit_tests") {
   if (use_ozone) {
     deps += [ "//ui/ozone" ]
   }
+
+  import("//arkweb/chromium_ext/components/viz/host/arkweb_viz_host_ext.gni")
+  sources += components_viz_host_unittests_ext.sources
+  sources -= components_viz_host_unittests_ext.sources_del
+  deps += components_viz_host_unittests_ext.deps
 }

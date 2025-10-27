@@ -331,6 +331,8 @@ Display::Display(
 
   if (scheduler_)
     scheduler_->SetClient(this);
+
+  display_utils_ = std::make_unique<ArkwebDisplayUtils>(this);
 }
 
 Display::~Display() {
@@ -338,6 +340,7 @@ Display::~Display() {
   allow_schedule_gpu_task_during_destruction_.reset(
       new gpu::ScopedAllowScheduleGpuTask);
 #endif
+  display_utils_.reset();
   if (resource_provider_) {
     resource_provider_->SetAllowAccessToGPUThread(true);
   }
@@ -441,7 +444,6 @@ void Display::SetVisible(bool visible) {
 
 void Display::Resize(const gfx::Size& size) {
   disable_swap_until_resize_ = false;
-
   if (size == current_surface_size_)
     return;
 
@@ -452,7 +454,8 @@ void Display::Resize(const gfx::Size& size) {
   TRACE_EVENT0("viz", "Display::Resize");
 
   swapped_since_resize_ = false;
-  current_surface_size_ = size;
+
+  display_utils_->Resize(size);
 
   damage_tracker_->DisplayResized();
 }
@@ -491,6 +494,14 @@ void Display::DisableSwapUntilResize(
   if (no_pending_swaps_callback)
     std::move(no_pending_swaps_callback).Run();
 }
+
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+void Display::ReenableSwapCheck(const SurfaceId& surface_id,
+                                int width,
+                                int height) {
+  display_utils_->ReenableSwapCheck(surface_id, width, height);
+}
+#endif // ARKWEB_MAXIMIZE_RESIZE
 
 void Display::SetColorMatrix(const SkM44& matrix) {
   if (output_surface_)
@@ -1106,6 +1117,9 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
   }
 
   bool should_swap = !disable_swap_until_resize_ && should_draw && size_matches;
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  should_swap = display_utils_->ShouldDisableSwap(should_swap);
+#endif  // ARKWEB_MAXIMIZE_RESIZE
   if (should_swap) {
     PresentationGroupTiming& presentation_group_timing =
         pending_presentation_group_timings_.emplace_back();
@@ -1223,6 +1237,11 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
           data->set_display_trace_id(swap_trace_id);
         });
 
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+    OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                      std::to_string(swap_frame_data.swap_trace_id), "step", "SendBufferSwap");
+#endif
+
 #if BUILDFLAG(IS_APPLE)
     swap_frame_data.ca_layer_error_code =
         overlay_processor_->GetCALayerErrorCode();
@@ -1310,6 +1329,11 @@ void Display::DidReceiveSwapBuffersAck(
                            StepName::STEP_SWAP_BUFFERS_ACK);
         data->set_display_trace_id(params.swap_trace_id);
       });
+
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                    std::to_string(params.swap_trace_id), "step", "SwapBufferAck");
+#endif
 
   // Both cases require full damage. That is, if buffers are recreated or
   // non-simple overlays failed, a frame is expected to be sent again.
@@ -1416,6 +1440,10 @@ void Display::DidReceivePresentationFeedback(
     const gfx::PresentationFeedback& feedback) {
   if (renderer_)
     renderer_->BuffersPresented();
+
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  display_utils_->RestoreRenderFit();
+#endif  // ARKWEB_MAXIMIZE_RESIZE
 
   if (pending_presentation_group_timings_.empty()) {
     DLOG(ERROR) << "Received unexpected PresentationFeedback";
@@ -1571,5 +1599,11 @@ void Display::ResetDisplayClientForTesting(DisplayClient* old_client) {
   CHECK_EQ(client_, old_client);
   client_ = nullptr;
 }
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+void Display::SetClientId(const uint32_t client_id) {
+  display_utils_->SetClientId(client_id);
+}
+#endif
 
 }  // namespace viz

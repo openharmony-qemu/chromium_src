@@ -1,0 +1,15 @@
+--- devtools_http_handler.cc	2025-10-20 19:52:54.262473153 +0800
++++ devtools_http_handler.cc	2025-10-16 15:54:59.384817095 +0800
+@@ -101,10 +102,12 @@
+ 
+ const char kRemoteUrlPattern[] =
+ #if BUILDFLAG(GOOGLE_CHROME_BRANDING)
+     "https://chrome-devtools-frontend.appspot.com/serve_internal_file/%s/"
+     "%s.html";
++#elif BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++    "https://x.x.x/%s/%s.html";
+ #else
+     "https://chrome-devtools-frontend.appspot.com/serve_rev/%s/%s.html";
+ #endif
+ 
+ constexpr net::NetworkTrafficAnnotationTag

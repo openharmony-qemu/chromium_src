@@ -34,7 +34,11 @@ namespace {
 // chrome/android/java/res/xml/file_paths.xml. Only used if not saving log file
 // to a custom path.
 const base::FilePath::CharType kLogRelativePath[] =
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    FILE_PATH_LITERAL("net-export/arkweb-net-export-log.json");
+#else
     FILE_PATH_LITERAL("net-export/chrome-net-export-log.json");
+#endif
 
 // Contains file-related initialization tasks for NetExportFileWriter.
 NetExportFileWriter::DefaultLogPathResults SetUpDefaultLogPath(

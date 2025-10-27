@@ -56,6 +56,10 @@
 #include "third_party/blink/renderer/platform/widget/input/synchronous_compositor_proxy.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#include "third_party/blink/renderer/platform/widget/input/arkweb_widget_input_handler_impl_ext.h"
+#endif
+
 namespace blink {
 
 using ::perfetto::protos::pbzero::ChromeLatencyInfo2;
@@ -286,8 +290,12 @@ scoped_refptr<WidgetInputHandlerManager> WidgetInputHandlerManager::Create(
     manager->InitInputHandler();
 
   // A compositor thread implies we're using an input handler.
+#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
+  DCHECK(uses_input_handler);
+#else
   DCHECK(!manager->compositor_thread_default_task_runner_ ||
          uses_input_handler);
+#endif
   // Conversely, if we don't use an input handler we must not have a compositor
   // thread.
   DCHECK(uses_input_handler ||
@@ -497,6 +505,9 @@ void WidgetInputHandlerManager::WillShutdown() {
   if (synchronous_compositor_registry_)
     synchronous_compositor_registry_->DestroyProxy();
 #endif
+#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
+  manager_utils_->DestroyProxy();
+#endif
   input_handler_proxy_.reset();
   dropped_event_counts_timer_.reset();
 }
@@ -579,6 +590,7 @@ void WidgetInputHandlerManager::AttachSynchronousCompositor(
   }
 }
 #endif
+
 
 void WidgetInputHandlerManager::ObserveGestureEventOnMainThread(
     const WebGestureEvent& gesture_event,
@@ -1170,7 +1182,12 @@ void WidgetInputHandlerManager::DidHandleInputEventSentToCompositor(
       }
     }
   }
-
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow",
+                    "trace_id",
+                    std::to_string(event->latency_info().trace_id()), "step",
+                    "STEP_DID_HANDLE_INPUT_AND_OVERSCROLL");
+#endif
   if (event_disposition == InputHandlerProxy::REQUIRES_MAIN_THREAD_HIT_TEST) {
     TRACE_EVENT_INSTANT0("input", "PostingHitTestToMainThread",
                          TRACE_EVENT_SCOPE_THREAD);
@@ -1293,7 +1310,11 @@ void WidgetInputHandlerManager::DidHandleInputEventSentToMain(
             ctx, trace_id,
             ChromeLatencyInfo2::Step::STEP_HANDLED_INPUT_EVENT_MAIN_OR_IMPL);
       });
-
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow",
+                    "trace_id", std::to_string(latency_info.trace_id()), "step",
+                    "STEP_HANDLED_INPUT_EVENT_MAIN_OR_IMPL");
+#endif
   std::optional<cc::TouchAction> touch_action_for_ack = touch_action_from_main;
   if (!touch_action_for_ack.has_value()) {
     TRACE_EVENT_INSTANT0("input", "Using allowed_touch_action",
@@ -1415,5 +1436,35 @@ void WidgetInputHandlerManager::FlushEventQueuesForTesting(
                                             std::move(flush_compositor_queue),
                                             std::move(flush_main_queue));
 }
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+void WidgetInputHandlerManager::DidNativeEmbedEvent(
+    blink::WebInputEvent::Type type,
+    std::string embedId,
+    int32_t id,
+    float x,
+    float y) {
+  manager_utils_->DidNativeEmbedEvent(type, embedId, id, x, y);
+}
+
+void WidgetInputHandlerManager::TouchHitTest(const WebPointerEvent& event,
+                                             size_t fingerId) {
+  manager_utils_->TouchHitTest(event, fingerId);
+}
+
+void WidgetInputHandlerManager::DidNativeEmbedMouseEvent(
+    blink::WebInputEvent::Type type,
+    blink::WebInputEvent::Modifiers modifiers,
+    std::string embedId,
+    bool isHitNativeArea,
+    float x,
+    float y) {
+  manager_utils_->DidNativeEmbedMouseEvent(type, modifiers, embedId, isHitNativeArea, x, y);
+}
+
+void WidgetInputHandlerManager::MouseHitTest(const WebMouseEvent& event, int32_t button) {
+  manager_utils_->MouseHitTest(event, button);
+}
+#endif
 
 }  // namespace blink

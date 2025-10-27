@@ -1,0 +1,14 @@
+--- system_network_context_manager.cc	2025-10-20 19:52:49.829662524 +0800
++++ system_network_context_manager.cc	2025-10-16 15:57:00.411507304 +0800
+@@ -11,10 +11,11 @@
+ 
+ #include <algorithm>
+ #include <unordered_map>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/auto_reset.h"
+ #include "base/build_time.h"
+ #include "base/command_line.h"
+ #include "base/feature_list.h"
+ #include "base/functional/bind.h"

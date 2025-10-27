@@ -1,0 +1,45 @@
+--- no_state_prefetch_manager.cc	2025-10-20 19:52:53.165969621 +0800
++++ no_state_prefetch_manager.cc	2025-10-16 15:54:57.020064384 +0800
+@@ -10,23 +10,26 @@
+ #include <optional>
+ #include <string>
+ #include <utility>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/check_op.h"
+ #include "base/command_line.h"
+ #include "base/containers/adapters.h"
+ #include "base/containers/contains.h"
+ #include "base/functional/bind.h"
+ #include "base/functional/callback_helpers.h"
+ #include "base/location.h"
++#include "base/logging.h"
+ #include "base/memory/ptr_util.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/memory/weak_ptr.h"
+ #include "base/metrics/field_trial.h"
+ #include "base/not_fatal_until.h"
+ #include "base/notreached.h"
++#include "base/ohos/sys_info_utils_ext.h"
+ #include "base/ranges/algorithm.h"
+ #include "base/strings/string_util.h"
+ #include "base/system/sys_info.h"
+ #include "base/task/single_thread_task_runner.h"
+ #include "base/time/default_tick_clock.h"
+@@ -886,11 +916,15 @@
+     return true;
+   base::TimeDelta elapsed_time =
+       GetCurrentTimeTicks() - last_prefetch_start_time_;
+   if (!config_.rate_limit_enabled)
+     return true;
++#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
++  return elapsed_time >= base::Milliseconds(min_time_between_prefetches_);
++#else
+   return elapsed_time >= base::Milliseconds(kMinTimeBetweenPrefetchesMs);
++#endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+ }
+ 
+ void NoStatePrefetchManager::DeleteOldWebContents() {
+   old_web_contents_list_.clear();
+ }

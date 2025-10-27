@@ -1,0 +1,18 @@
+--- chrome_extension_host_delegate.cc	2025-10-20 19:52:49.634110300 +0800
++++ chrome_extension_host_delegate.cc	2025-10-16 15:57:00.179732404 +0800
+@@ -39,11 +39,15 @@
+     service->DidCreateMainFrameForBackgroundPage(host);
+ }
+ 
+ content::JavaScriptDialogManager*
+ ChromeExtensionHostDelegate::GetJavaScriptDialogManager() {
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  return nullptr;
++#else
+   return javascript_dialogs::AppModalDialogManager::GetInstance();
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+ }
+ 
+ void ChromeExtensionHostDelegate::CreateTab(
+     std::unique_ptr<content::WebContents> web_contents,
+     const ExtensionId& extension_id,

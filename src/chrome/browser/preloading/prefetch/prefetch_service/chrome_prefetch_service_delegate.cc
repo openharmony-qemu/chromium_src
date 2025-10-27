@@ -40,7 +40,11 @@ std::string ChromePrefetchServiceDelegate::GetAcceptLanguageHeader() {
 }
 
 GURL ChromePrefetchServiceDelegate::GetDefaultPrefetchProxyHost() {
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  return GURL("https://x.x.x");
+#else
   return GURL("https://tunnel.googlezip.net/");
+#endif
 }
 
 std::string ChromePrefetchServiceDelegate::GetAPIKey() {
@@ -48,11 +52,19 @@ std::string ChromePrefetchServiceDelegate::GetAPIKey() {
 }
 
 GURL ChromePrefetchServiceDelegate::GetDefaultDNSCanaryCheckURL() {
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  return GURL("https://x.x.x");
+#else
   return GURL("http://dns-tunnel-check.googlezip.net/connect");
+#endif
 }
 
 GURL ChromePrefetchServiceDelegate::GetDefaultTLSCanaryCheckURL() {
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  return GURL("https://x.x.x");
+#else
   return GURL("http://tls-tunnel-check.googlezip.net/connect");
+#endif
 }
 
 void ChromePrefetchServiceDelegate::ReportOriginRetryAfter(

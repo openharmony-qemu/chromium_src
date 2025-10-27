@@ -1,0 +1,23 @@
+--- interfaces.mojom	2025-10-20 19:52:53.069925364 +0800
++++ interfaces.mojom	2025-10-16 15:54:56.912179847 +0800
+@@ -32,10 +32,20 @@
+   int32 script_id;
+   mojo_base.mojom.String16 script;
+   js_injection.mojom.OriginMatcher origin_matcher;
+ };
+ 
++// DocumentEndJavaScript struct contains the JavaScript snippet |script| and
++// the corresponding |origin_matcher|. We will run the script if the frame's
++// origin matches any rules in the |origin_matcher| when document end.
++[EnableIf=arkweb_js_on_document_end]
++struct DocumentEndJavaScript {
++  int32 script_id;
++  mojo_base.mojom.String16 script;
++  js_injection.mojom.OriginMatcher origin_matcher;
++};
++
+ // The ArrayBuffer arm of the JsWebMessage union below, which contains the
+ // ArrayBuffer payload sent between JavaScript and browser.
+ struct JsWebMessageArrayBufferValue {
+   mojo_base.mojom.BigBuffer array_buffer_value;
+   // If is_resizable_by_user_javascript is false, then max_byte_length is

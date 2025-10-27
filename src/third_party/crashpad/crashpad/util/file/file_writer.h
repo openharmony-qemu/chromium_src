@@ -19,6 +19,7 @@
 
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/files/file_path.h"
 #include "build/build_config.h"
 #include "util/file/file_io.h"
@@ -137,7 +138,7 @@ class FileWriter : public FileWriterInterface {
             FileWriteMode write_mode,
             FilePermissions permissions);
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_CRASHPAD)
   //! \brief Wraps LoggingOpenMemoryFileForWrite().
   //!
   //! \return `true` if the operation succeeded, `false` if it failed, with an

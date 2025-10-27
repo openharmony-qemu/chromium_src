@@ -1,0 +1,44 @@
+--- chrome_client_impl.cc	2025-10-20 19:53:00.586208200 +0800
++++ chrome_client_impl.cc	2025-10-16 16:07:39.590521336 +0800
+@@ -1401,10 +1475,19 @@
+ void ChromeClientImpl::DidChangeSelectionInSelectControl(
+     HTMLFormControlElement& element) {
+   Document& doc = element.GetDocument();
+   if (auto* fill_client = AutofillClientFromFrame(doc.GetFrame()))
+     fill_client->SelectControlDidChange(WebFormControlElement(&element));
++#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
++  if (auto* rc = doc.GetResourceCoordinator()) {
++    rc->SetHadFormInteraction();
++    if (element.Form()) {
++      uint64_t form_id = element.Form()->UniqueRendererFormId();
++      rc->coordinator_utils_->OnFormEditingStateChanged(form_id, false);
++    }
++  }
++#endif
+ }
+ 
+ void ChromeClientImpl::SelectFieldOptionsChanged(
+     HTMLFormControlElement& element) {
+   Document& doc = element.GetDocument();
+@@ -1434,10 +1517,21 @@
+ }
+ 
+ void ChromeClientImpl::DidUpdateBrowserControls() const {
+   DCHECK(web_view_);
+   web_view_->DidUpdateBrowserControls();
++
++#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
++  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
++          switches::kEnableNwebExTopControls) &&
++      web_view_->MainFrameImpl()) {
++    LocalFrame* local_frame = web_view_->MainFrameImpl()->GetFrame();
++    if (local_frame && local_frame->View()) {
++      local_frame->View()->LayoutViewport()->AsPaintLayerScrollableAreaExt()->UpdateScrollbar();
++    }
++  }
++#endif
+ }
+ 
+ void ChromeClientImpl::RegisterPopupOpeningObserver(
+     PopupOpeningObserver* observer) {
+   DCHECK(observer);

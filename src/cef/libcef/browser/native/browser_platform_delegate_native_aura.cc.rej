@@ -1,0 +1,21 @@
+--- browser_platform_delegate_native_aura.cc	2025-10-20 19:52:47.985876885 +0800
++++ browser_platform_delegate_native_aura.cc	2025-10-16 15:55:22.354291131 +0800
+@@ -218,14 +236,16 @@
+       gfx::Point(mouse_event.x, mouse_event.y), /*want_dip_coords=*/false));
+   base::TimeTicks time_stamp = GetEventTimeStamp();
+   int flags = TranslateUiEventModifiers(mouse_event.modifiers);
+   int changed_button_flags =
+       TranslateUiChangedButtonFlags(mouse_event.modifiers);
++  if (mouse_event.source == CEF_EST_TOUCHPAD) {
++    flags |= ui::EF_PRECISION_SCROLLING_DELTA;
++  }
+ 
+   return ui::MouseWheelEvent(offset, location, root_location, time_stamp,
+-                             (ui::EF_PRECISION_SCROLLING_DELTA | flags),
+-                             changed_button_flags);
++                             flags, changed_button_flags);
+ }
+ 
+ gfx::Vector2d CefBrowserPlatformDelegateNativeAura::GetUiWheelEventOffset(
+     int deltaX,
+     int deltaY) const {

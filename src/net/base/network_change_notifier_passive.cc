@@ -19,11 +19,24 @@
 #include "net/android/network_change_notifier_android.h"
 #endif
 
+#include "base/logging.h"
+#include "arkweb/build/features/features.h"
+
 #if BUILDFLAG(IS_LINUX)
 #include <linux/rtnetlink.h>
 
 #include "net/base/network_change_notifier_linux.h"
 #endif
+
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#include "base/base_switches.h"
+#include "base/command_line.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "net/dns/public/dns_protocol.h"
+#endif
+
+#include "base/no_destructor.h"
+#include "arkweb/chromium_ext/net/base/network_change_notifier_passive_for_include.cc"
 
 namespace net {
 
@@ -38,15 +51,27 @@ NetworkChangeNotifierPassive::NetworkChangeNotifierPassive(
     NetworkChangeNotifier::ConnectionType initial_connection_type,
     NetworkChangeNotifier::ConnectionSubtype initial_connection_subtype,
     SystemDnsConfigChangeNotifier* system_dns_config_notifier)
-    : NetworkChangeNotifier(NetworkChangeCalculatorParamsPassive(),
+    : ArkwebNetworkChangeNotifierExt(NetworkChangeCalculatorParamsPassive(),
                             system_dns_config_notifier),
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+      ohos_net_conn_adapter_(OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                                 .CreateNetConnectAdapter()),
+#endif
       connection_type_(initial_connection_type),
       max_bandwidth_mbps_(
           NetworkChangeNotifier::GetMaxBandwidthMbpsForConnectionSubtype(
-              initial_connection_subtype)) {}
+              initial_connection_subtype)) {
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  NetworkChangeNotifierPassiveUtils::RegisterOhosNetConnCallback(this);
+#endif
+}
+
 
 NetworkChangeNotifierPassive::~NetworkChangeNotifierPassive() {
   ClearGlobalPointer();
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  NetworkChangeNotifierPassiveUtils::UnRegisterOhosNetConnCallback(this);
+#endif
 }
 
 void NetworkChangeNotifierPassive::OnDNSChanged() {
@@ -66,6 +91,11 @@ void NetworkChangeNotifierPassive::OnConnectionChanged(
     base::AutoLock scoped_lock(lock_);
     connection_type_ = connection_type;
   }
+
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  NetworkChangeNotifierPassiveUtils::SetDnsServers(this);
+#endif
+
   NetworkChangeNotifier::NotifyObserversOfConnectionTypeChange();
 }
 

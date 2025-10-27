@@ -1,0 +1,17 @@
+--- coordination_unit.mojom	2025-10-20 19:52:53.342050757 +0800
++++ coordination_unit.mojom	2025-10-16 15:54:57.219850562 +0800
+@@ -63,10 +63,14 @@
+ 
+   // Invoked when JS in the renderer requests a memory measurement via
+   // the performance.measureUserAgentSpecificMemory API.
+   OnWebMemoryMeasurementRequested(WebMemoryMeasurement.Mode mode) =>
+       (WebMemoryMeasurement measurement);
++
++  // Called when form editing state is changed
++  [EnableIf=arkweb_activity_state]
++  OnFormEditingStateChanged(uint64 form_id, bool did_submit);
+ };
+ 
+ // Interface used by the RendererResourceCoordinator singleton to send state
+ // associated with resource management of a renderer process to the embedder.
+ interface ProcessCoordinationUnit {

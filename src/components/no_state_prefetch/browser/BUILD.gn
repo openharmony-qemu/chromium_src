@@ -61,7 +61,11 @@ source_set("unit_tests") {
     "no_state_prefetch_processor_impl_unittest.cc",
     "no_state_prefetch_utils_unittest.cc",
   ]
-
+  if (defined(arkweb_no_state_prefetch) && arkweb_no_state_prefetch) {
+    sources += [
+      "//arkweb/chromium_ext/components/no_state_prefetch/browser/ark_web_no_state_prefetch_manager_for_include_unittest.cc"
+    ]
+  }
   deps = [
     "//base",
     "//base/test:test_support",

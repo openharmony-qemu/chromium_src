@@ -318,9 +318,11 @@ void PictureInPictureControllerImpl::OnExitedPictureInPicture(
 
     // Register the video frame sink back to the element when the PiP window
     // is closed and if the video is not unset.
+#if !BUILDFLAG(ARKWEB_PIP)
     if (element->GetWebMediaPlayer()) {
       element->GetWebMediaPlayer()->RegisterFrameSinkHierarchy();
     }
+#endif
   }
 
   if (resolver)

@@ -1,0 +1,59 @@
+--- copy_output_request.cc	2025-10-20 19:52:54.110404096 +0800
++++ copy_output_request.cc	2025-10-16 15:54:59.205009534 +0800
+@@ -14,10 +14,19 @@
+ #include "base/task/thread_pool.h"
+ #include "base/trace_event/trace_event.h"
+ #include "components/viz/common/frame_sinks/copy_output_result.h"
+ #include "third_party/skia/include/core/SkBitmap.h"
+ 
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/components/viz/common/frame_sinks/arkweb_copy_output_request_utils.h"
++#include "arkweb/chromium_ext/components/viz/common/frame_sinks/arkweb_copy_output_result_utils.h"
++#endif
++
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++#include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
++#endif
++
+ namespace {
+ 
+ const char* ResultFormatToShortString(
+     viz::CopyOutputRequest::ResultFormat result_format) {
+   switch (result_format) {
+@@ -78,11 +108,13 @@
+   DCHECK(result_format_ != ResultFormat::I420_PLANES ||
+          result_destination_ == ResultDestination::kSystemMemory);
+ 
+   DCHECK(!result_callback_.is_null());
+   TRACE_EVENT_NESTABLE_ASYNC_BEGIN0("viz", "CopyOutputRequest", this);
++  copy_output_request_utils_ = std::make_unique<ArkwebCopyOutputRequestUtils>(this);
+ }
++#endif
+ 
+ CopyOutputRequest::~CopyOutputRequest() {
+   if (!result_callback_.is_null()) {
+     // Send an empty result to indicate the request was never satisfied.
+     SendResult(std::make_unique<CopyOutputResult>(
+@@ -152,10 +184,22 @@
+   // user has provided a task runner use that instead.
+   auto runner =
+       result_task_runner_
+           ? result_task_runner_
+           : base::ThreadPool::CreateSequencedTaskRunner({base::MayBlock()});
++#if BUILDFLAG(ARKWEB_DFX_DUMP)
++  if (result) {
++    result->SetDumpFrameId(dump_frame_id_);
++    result->SetDumpFramePath(dump_frame_path_);
++  }
++#endif
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  if (result && result->copy_output_result_utils() && copy_output_request_utils_
++      && copy_output_request_utils_->IsBlanklessInfoValid()) {
++    result->copy_output_result_utils()->SetBlanklessInfo(copy_output_request_utils_->GetBlanklessInfo());
++  }
++#endif
+   runner->PostTask(FROM_HERE, base::BindOnce(std::move(result_callback_),
+                                              std::move(result)));
+   // Remove the reference to the task runner (no-op if we didn't have one).
+   result_task_runner_ = nullptr;
+ }

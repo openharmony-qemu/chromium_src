@@ -1,0 +1,119 @@
+--- url_loader.h	2025-10-20 19:52:57.690211529 +0800
++++ url_loader.h	2025-10-16 15:55:03.360562054 +0800
+@@ -106,18 +112,20 @@
+ class KeepaliveStatisticsRecorder;
+ class NetToMojoPendingBuffer;
+ class ScopedThrottlingToken;
+ class SharedDictionaryManager;
+ class SlopBucket;
++class URLLoaderUtils;
+ 
+ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
+     : public mojom::URLLoader,
+       public net::URLRequest::Delegate,
+       public mojom::AuthChallengeResponder,
+       public mojom::ClientCertificateResponder {
+  public:
+   using DeleteCallback = base::OnceCallback<void(URLLoader* loader)>;
++  friend class URLLoaderUtils;
+ 
+   // Holds a sync and async implementation of URLLoaderClient. The sync
+   // implementation can be used if present to avoid posting a task to call back
+   // into CorsURLLoader.
+   class MaybeSyncURLLoaderClient {
+@@ -200,11 +208,18 @@
+           url_loader_network_observer,
+       mojo::PendingRemote<mojom::DevToolsObserver> devtools_observer,
+       mojo::PendingRemote<mojom::AcceptCHFrameObserver>
+           accept_ch_frame_observer,
+       std::unique_ptr<AttributionRequestHelper> attribution_request_helper,
+-      bool shared_storage_writable_eligible);
++      bool shared_storage_writable_eligible
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++,
++      std::shared_ptr<ohos_prp_preload::PRPPRequestLoader> prpp_loader,
++      const std::string& org_main_url,
++      std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info
++#endif
++      );
+ 
+   URLLoader(const URLLoader&) = delete;
+   URLLoader& operator=(const URLLoader&) = delete;
+ 
+   ~URLLoader() override;
+@@ -297,10 +312,17 @@
+   // passed to URLLoaderFactory::CreateLoaderAndStart().
+   bool AllowCookie(const net::CanonicalCookie& cookie,
+                    const GURL& url,
+                    const net::SiteForCookies& site_for_cookies) const;
+ 
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++  void SetStrictLogMode(bool value) { is_strict_log_mode_ = value; }
++  void SetUsageScenario(int32_t usage_scenario) {
++    usage_scenario_ = usage_scenario;
++  }
++#endif  // ARKWEB_LOGGER_REPORT
++
+   const net::HttpRequestHeaders& custom_proxy_pre_cache_headers() const {
+     return custom_proxy_pre_cache_headers_;
+   }
+ 
+   const net::HttpRequestHeaders& custom_proxy_post_cache_headers() const {
+@@ -344,10 +366,11 @@
+   static net::CookieSettingOverrides CalculateCookieSettingOverrides(
+       net::CookieSettingOverrides factory_overrides,
+       const ResourceRequest& request);
+ 
+  private:
++  std::unique_ptr<URLLoaderUtils> url_loader_utils_;
+   // This class is used to set the URLLoader as user data on a URLRequest. This
+   // is used instead of URLLoader directly because SetUserData requires a
+   // std::unique_ptr. This is safe because URLLoader owns the URLRequest, so is
+   // guaranteed to outlive it.
+   class UnownedPointer : public base::SupportsUserData::Data {
+@@ -386,10 +409,13 @@
+       const std::vector<GURL>& url_chain,
+       const GURL& referrer,
+       net::ReferrerPolicy referrer_policy,
+       bool upgrade_if_insecure,
+       bool is_ad_tagged,
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++      int32_t usage_scenario,
++#endif
+       std::optional<net::IsolationInfo> isolation_info,
+       bool force_main_frame_for_same_site_cookies,
+       net::SecureDnsPolicy secure_dns_policy,
+       net::HttpRequestHeaders extra_request_headers,
+       const std::optional<std::vector<net::SourceStream::SourceType>>&
+@@ -673,11 +699,15 @@
+ 
+   const int32_t request_id_;
+   const int keepalive_request_size_;
+   const bool keepalive_;
+   const bool do_not_prompt_for_login_;
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  std::shared_ptr<net::URLRequest> url_request_;
++#else
+   std::unique_ptr<net::URLRequest> url_request_;
++#endif
+   mojo::Receiver<mojom::URLLoader> receiver_;
+   mojo::Receiver<mojom::AuthChallengeResponder>
+       auth_challenge_responder_receiver_{this};
+   mojo::Receiver<mojom::ClientCertificateResponder>
+       client_cert_responder_receiver_{this};
+@@ -846,10 +876,15 @@
+ 
+   // Indicates |url_request_| is fetch upload request and that has streaming
+   // body.
+   const bool has_fetch_streaming_upload_body_;
+ 
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++  bool is_strict_log_mode_ = false;
++  int32_t usage_scenario_ = 99;
++#endif  // ARKWEB_LOGGER_REPORT
++
+   bool emitted_devtools_raw_request_ = false;
+   bool emitted_devtools_raw_response_ = false;
+ 
+   mojo::Remote<mojom::AcceptCHFrameObserver> accept_ch_frame_observer_;
+ 

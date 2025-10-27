@@ -532,6 +532,15 @@ class ContentClientInitializer {
   static void Set(const std::string& process_type,
                   ContentMainDelegate* delegate) {
     ContentClient* content_client = GetContentClient();
+
+  // TODO(ARKWEB_DFX_TRACING): waiting to confirm the impact
+  // https://open.codehub.huawei.com/innersource/shanhai/wutong/chromium/merge_requests/8781
+#if !BUILDFLAG(ARKWEB_DFX_TRACING)
+    if (process_type == switches::kUtilityProcess ||
+        cmd->HasSwitch(switches::kSingleProcess))
+#endif
+      content_client->utility_ = delegate->CreateContentUtilityClient();
+
     if (process_type.empty())
       content_client->browser_ = delegate->CreateContentBrowserClient();
 
@@ -544,10 +553,6 @@ class ContentClientInitializer {
     if (process_type == switches::kRendererProcess ||
         cmd->HasSwitch(switches::kSingleProcess))
       content_client->renderer_ = delegate->CreateContentRendererClient();
-
-    if (process_type == switches::kUtilityProcess ||
-        cmd->HasSwitch(switches::kSingleProcess))
-      content_client->utility_ = delegate->CreateContentUtilityClient();
   }
 };
 
@@ -836,7 +841,7 @@ int ContentMainRunnerImpl::Initialize(ContentMainParams params) {
 // On Android, the shared descriptors are passed through the Java service,
 // which takes care of updating these mappings; otherwise, we need to update
 // the mappings explicitly.
-#if !BUILDFLAG(IS_ANDROID)
+#if (!BUILDFLAG(IS_ANDROID)  && !BUILDFLAG(IS_OHOS))
   g_fds->Set(kMojoIPCChannel,
              kMojoIPCChannel + base::GlobalDescriptors::kBaseDescriptor);
   g_fds->Set(kFieldTrialDescriptor,
@@ -851,6 +856,13 @@ int ContentMainRunnerImpl::Initialize(ContentMainParams params) {
              kTraceOutputSharedMemoryDescriptor +
                  base::GlobalDescriptors::kBaseDescriptor);
 #endif  // !BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(IS_OHOS)
+  g_fds->Set(kTraceConfigSharedMemoryDescriptor,
+             kTraceConfigSharedMemoryDescriptor +
+                 base::GlobalDescriptors::kBaseDescriptor);
+  LOG(INFO) << "ContentMainRunnerImpl::Initialize::kTraceConfigSharedMemoryDescriptor is registered.";
+#endif  // BUILDFLAG(IS_OHOS)
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OPENBSD)
   g_fds->Set(kCrashDumpSignal,
@@ -1278,6 +1290,24 @@ int ContentMainRunnerImpl::RunBrowser(MainFunctionParams main_params,
   main_params.startup_data = mojo_ipc_support_->CreateBrowserStartupData();
   return RunBrowserProcessMain(std::move(main_params), delegate_);
 }
+
+#if BUILDFLAG(IS_ARKWEB)
+bool ContentMainRunnerImpl::RunRenderRemoteProxy(
+    const base::CommandLine& command_line) {
+  std::string process_type =
+      command_line.GetSwitchValueASCII(switches::kProcessType);
+  if (process_type != switches::kRendererProcess &&
+      process_type != switches::kPpapiPluginProcess &&
+      process_type != switches::kGpuProcess) {
+    return true;
+  }
+  RenderRemoteProxy::CreateAndRegist(command_line);
+  if (!RenderRemoteProxy::WaitForBrowserFd()) {
+    return false;
+  }
+  return true;
+}
+#endif
 
 void ContentMainRunnerImpl::Shutdown() {
   DCHECK(is_initialized_);

@@ -30,7 +30,11 @@ void ChromeMimeHandlerViewGuestDelegateCef::OverrideWebContentsCreateParams(
   DCHECK(owner_browser);
 
   if (owner_browser->IsWindowless()) {
+#if BUILDFLAG(IS_ARKWEB)
+    CefWebContentsViewOSR* view_osr = new ArkWebCefWebContentsViewOSRExt(
+#else
     CefWebContentsViewOSR* view_osr = new CefWebContentsViewOSR(
+#endif
         owner_browser->GetBackgroundColor(), false, false);
     params->view = view_osr;
     params->delegate_view = view_osr;

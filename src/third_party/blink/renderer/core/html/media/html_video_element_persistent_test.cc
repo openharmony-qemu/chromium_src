@@ -2,16 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "third_party/blink/renderer/core/html/media/html_video_element.h"
-
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_fullscreen_options.h"
 #include "third_party/blink/renderer/core/frame/local_frame.h"
 #include "third_party/blink/renderer/core/fullscreen/fullscreen.h"
 #include "third_party/blink/renderer/core/html/html_div_element.h"
+#include "third_party/blink/renderer/core/html/media/html_video_element.h"
 #include "third_party/blink/renderer/core/loader/empty_clients.h"
 #include "third_party/blink/renderer/core/testing/page_test_base.h"
 #include "third_party/blink/renderer/platform/testing/unit_test_helpers.h"
@@ -22,10 +22,28 @@ namespace {
 
 class FullscreenMockChromeClient : public EmptyChromeClient {
  public:
+#if BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_FULLSCREEN)
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  MOCK_METHOD5(EnterFullscreen,
+               void(LocalFrame&,
+                    const FullscreenOptions*,
+                    bool overlay_fullscreen,
+                    FullscreenRequestType,
+                    const absl::optional<gfx::Size>&));
+#else
+  MOCK_METHOD4(EnterFullscreen,
+               void(LocalFrame&,
+                    const FullscreenOptions*,
+                    FullscreenRequestType,
+                    const absl::optional<gfx::Size>&));
+#endif // ARKWEB_VIDEO_ASSISTANT
+#else
   MOCK_METHOD3(EnterFullscreen,
                void(LocalFrame&,
                     const FullscreenOptions*,
                     FullscreenRequestType));
+#endif  // BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_FULLSCREEN)
+
   MOCK_METHOD1(ExitFullscreen, void(LocalFrame&));
 };
 
@@ -98,7 +116,15 @@ TEST_F(HTMLVideoElementPersistentTest, nothingIsFullscreen) {
 TEST_F(HTMLVideoElementPersistentTest, videoIsFullscreen) {
   EXPECT_EQ(FullscreenElement(), nullptr);
 
+#if BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_FULLSCREEN)
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  EXPECT_CALL(GetMockChromeClient(), EnterFullscreen(_, _, _, _, _)).Times(1);
+#else
+  EXPECT_CALL(GetMockChromeClient(), EnterFullscreen(_, _, _, _)).Times(1);
+#endif // ARKWEB_VIDEO_ASSISTANT
+#else
   EXPECT_CALL(GetMockChromeClient(), EnterFullscreen(_, _, _)).Times(1);
+#endif  // BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_FULLSCREEN)
   EXPECT_CALL(GetMockChromeClient(), ExitFullscreen(_)).Times(0);
 
   LocalFrame::NotifyUserActivation(
@@ -125,7 +151,15 @@ TEST_F(HTMLVideoElementPersistentTest, videoIsFullscreen) {
 TEST_F(HTMLVideoElementPersistentTest, divIsFullscreen) {
   EXPECT_EQ(FullscreenElement(), nullptr);
 
+#if BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_FULLSCREEN)
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  EXPECT_CALL(GetMockChromeClient(), EnterFullscreen(_, _, _, _, _)).Times(1);
+#else
+  EXPECT_CALL(GetMockChromeClient(), EnterFullscreen(_, _, _, _)).Times(1);
+#endif // ARKWEB_VIDEO_ASSISTANT
+#else
   EXPECT_CALL(GetMockChromeClient(), EnterFullscreen(_, _, _)).Times(1);
+#endif  // BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_FULLSCREEN)
   EXPECT_CALL(GetMockChromeClient(), ExitFullscreen(_)).Times(0);
 
   LocalFrame::NotifyUserActivation(
@@ -159,7 +193,15 @@ TEST_F(HTMLVideoElementPersistentTest, divIsFullscreen) {
 TEST_F(HTMLVideoElementPersistentTest, exitFullscreenBeforePersistence) {
   EXPECT_EQ(FullscreenElement(), nullptr);
 
+#if BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_FULLSCREEN)
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  EXPECT_CALL(GetMockChromeClient(), EnterFullscreen(_, _, _, _, _)).Times(1);
+#else
+  EXPECT_CALL(GetMockChromeClient(), EnterFullscreen(_, _, _, _)).Times(1);
+#endif // ARKWEB_VIDEO_ASSISTANT
+#else
   EXPECT_CALL(GetMockChromeClient(), EnterFullscreen(_, _, _)).Times(1);
+#endif  // BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_FULLSCREEN)
   EXPECT_CALL(GetMockChromeClient(), ExitFullscreen(_)).Times(1);
 
   LocalFrame::NotifyUserActivation(
@@ -189,7 +231,15 @@ TEST_F(HTMLVideoElementPersistentTest, exitFullscreenBeforePersistence) {
 TEST_F(HTMLVideoElementPersistentTest, internalPseudoClassOnlyUAStyleSheet) {
   EXPECT_EQ(FullscreenElement(), nullptr);
 
+#if BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_FULLSCREEN)
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  EXPECT_CALL(GetMockChromeClient(), EnterFullscreen(_, _, _, _, _)).Times(1);
+#else
+  EXPECT_CALL(GetMockChromeClient(), EnterFullscreen(_, _, _, _)).Times(1);
+#endif // ARKWEB_VIDEO_ASSISTANT
+#else
   EXPECT_CALL(GetMockChromeClient(), EnterFullscreen(_, _, _)).Times(1);
+#endif  // BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_FULLSCREEN)
   EXPECT_CALL(GetMockChromeClient(), ExitFullscreen(_)).Times(0);
 
   EXPECT_FALSE(DivElement()->matches(AtomicString(":fullscreen")));
@@ -249,7 +299,15 @@ TEST_F(HTMLVideoElementPersistentTest, internalPseudoClassOnlyUAStyleSheet) {
 TEST_F(HTMLVideoElementPersistentTest, removeContainerWhilePersisting) {
   EXPECT_EQ(FullscreenElement(), nullptr);
 
+#if BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_FULLSCREEN)
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  EXPECT_CALL(GetMockChromeClient(), EnterFullscreen(_, _, _, _, _)).Times(1);
+#else
+  EXPECT_CALL(GetMockChromeClient(), EnterFullscreen(_, _, _, _)).Times(1);
+#endif // ARKWEB_VIDEO_ASSISTANT
+#else
   EXPECT_CALL(GetMockChromeClient(), EnterFullscreen(_, _, _)).Times(1);
+#endif  // BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_FULLSCREEN)
   EXPECT_CALL(GetMockChromeClient(), ExitFullscreen(_)).Times(1);
 
   LocalFrame::NotifyUserActivation(
@@ -271,7 +329,15 @@ TEST_F(HTMLVideoElementPersistentTest, removeContainerWhilePersisting) {
 TEST_F(HTMLVideoElementPersistentTest, removeVideoWhilePersisting) {
   EXPECT_EQ(FullscreenElement(), nullptr);
 
+#if BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_FULLSCREEN)
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  EXPECT_CALL(GetMockChromeClient(), EnterFullscreen(_, _, _, _, _)).Times(1);
+#else
+  EXPECT_CALL(GetMockChromeClient(), EnterFullscreen(_, _, _, _)).Times(1);
+#endif // ARKWEB_VIDEO_ASSISTANT
+#else
   EXPECT_CALL(GetMockChromeClient(), EnterFullscreen(_, _, _)).Times(1);
+#endif  // BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_FULLSCREEN)
   EXPECT_CALL(GetMockChromeClient(), ExitFullscreen(_)).Times(0);
 
   LocalFrame::NotifyUserActivation(
@@ -298,7 +364,15 @@ TEST_F(HTMLVideoElementPersistentTest, removeVideoWithLayerWhilePersisting) {
   DivElement()->AppendChild(span);
   span->AppendChild(VideoElement());
 
+#if BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_FULLSCREEN)
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  EXPECT_CALL(GetMockChromeClient(), EnterFullscreen(_, _, _, _, _)).Times(1);
+#else
+  EXPECT_CALL(GetMockChromeClient(), EnterFullscreen(_, _, _, _)).Times(1);
+#endif // ARKWEB_VIDEO_ASSISTANT
+#else
   EXPECT_CALL(GetMockChromeClient(), EnterFullscreen(_, _, _)).Times(1);
+#endif  // BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_FULLSCREEN)
   EXPECT_CALL(GetMockChromeClient(), ExitFullscreen(_)).Times(0);
 
   LocalFrame::NotifyUserActivation(
@@ -320,7 +394,15 @@ TEST_F(HTMLVideoElementPersistentTest, removeVideoWithLayerWhilePersisting) {
 TEST_F(HTMLVideoElementPersistentTest, containsPersistentVideoScopedToFS) {
   EXPECT_EQ(FullscreenElement(), nullptr);
 
+#if BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_FULLSCREEN)
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  EXPECT_CALL(GetMockChromeClient(), EnterFullscreen(_, _, _, _, _)).Times(1);
+#else
+  EXPECT_CALL(GetMockChromeClient(), EnterFullscreen(_, _, _, _)).Times(1);
+#endif // ARKWEB_VIDEO_ASSISTANT
+#else
   EXPECT_CALL(GetMockChromeClient(), EnterFullscreen(_, _, _)).Times(1);
+#endif  // BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_FULLSCREEN)
   EXPECT_CALL(GetMockChromeClient(), ExitFullscreen(_)).Times(0);
 
   LocalFrame::NotifyUserActivation(

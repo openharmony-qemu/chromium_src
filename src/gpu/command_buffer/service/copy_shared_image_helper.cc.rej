@@ -1,0 +1,14 @@
+--- copy_shared_image_helper.cc	2025-10-20 19:52:55.498904852 +0800
++++ copy_shared_image_helper.cc	2025-10-16 15:55:00.579538445 +0800
+@@ -13,10 +13,11 @@
+ #include <vector>
+ 
+ #include "base/check.h"
+ #include "base/types/expected.h"
+ #include "base/types/expected_macros.h"
++#include "base/trace_event/trace_event.h"
+ #include "gpu/command_buffer/common/mailbox.h"
+ #include "gpu/command_buffer/service/shared_context_state.h"
+ #include "gpu/command_buffer/service/shared_image/shared_image_factory.h"
+ #include "gpu/command_buffer/service/shared_image/shared_image_format_service_utils.h"
+ #include "gpu/command_buffer/service/shared_image/shared_image_representation.h"

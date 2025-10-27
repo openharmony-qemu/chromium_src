@@ -5,13 +5,19 @@
 #ifndef COMPONENTS_PERMISSIONS_PREDICTION_SERVICE_PREDICTION_COMMON_H_
 #define COMPONENTS_PERMISSIONS_PREDICTION_SERVICE_PREDICTION_COMMON_H_
 
+#include "arkweb/build/features/features.h"
 #include "components/permissions/prediction_service/prediction_request_features.h"
 #include "components/permissions/prediction_service/prediction_service_messages.pb.h"
 
 namespace permissions {
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+constexpr char kDefaultPredictionServiceUrl[] =
+    "https://x.x.x";
+#else
 constexpr char kDefaultPredictionServiceUrl[] =
     "https://webpermissionpredictions.googleapis.com/v1:generatePredictions";
+#endif
 
 // A command line switch to override the default service url.
 constexpr char kDefaultPredictionServiceUrlSwitchKey[] =

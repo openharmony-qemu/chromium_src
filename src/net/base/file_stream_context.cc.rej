@@ -1,0 +1,17 @@
+--- file_stream_context.cc	2025-10-20 19:52:56.978204929 +0800
++++ file_stream_context.cc	2025-10-16 15:55:02.489494315 +0800
+@@ -19,10 +20,14 @@
+ 
+ #if BUILDFLAG(IS_MAC)
+ #include "net/base/apple/guarded_fd.h"
+ #endif  // BUILDFLAG(IS_MAC)
+ 
++#if BUILDFLAG(IS_OHOS) && BUILDFLAG(ARKWEB_FILE_UPLOAD)
++#include "arkweb/chromium_ext/base/datashare_uri_utils.h"
++#endif
++
+ namespace net {
+ 
+ namespace {
+ 
+ void CallInt64ToInt(CompletionOnceCallback callback, int64_t result) {

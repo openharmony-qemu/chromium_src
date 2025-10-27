@@ -1,0 +1,23 @@
+--- SkHeifCodec.cpp	2025-10-20 19:53:22.284509253 +0800
++++ SkHeifCodec.cpp	2025-10-16 16:16:48.137604682 +0800
+@@ -4,18 +4,20 @@
+  * Use of this source code is governed by a BSD-style license that can be
+  * found in the LICENSE file.
+  */
+ #include "src/codec/SkHeifCodec.h"
+ 
++#include "base/logging.h"
+ #include "include/codec/SkCodec.h"
+ #include "include/codec/SkEncodedImageFormat.h"
+ #include "include/core/SkStream.h"
+ #include "include/core/SkTypes.h"
+ #include "include/private/SkColorData.h"
+ #include "include/private/base/SkTemplates.h"
+ #include "src/base/SkEndian.h"
+ #include "src/codec/SkCodecPriv.h"
++#include "third_party/bounds_checking_function/include/securec.h"
+ 
+ #define FOURCC(c1, c2, c3, c4) \
+     ((c1) << 24 | (c2) << 16 | (c3) << 8 | (c4))
+ 
+ bool SkHeifCodec::IsSupported(const void* buffer, size_t bytesRead,

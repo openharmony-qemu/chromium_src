@@ -1,0 +1,16 @@
+--- omnibox_view.cc	2025-10-20 19:52:53.201986217 +0800
++++ omnibox_view.cc	2025-10-16 15:54:57.056025896 +0800
+@@ -413,10 +413,13 @@
+   const std::u16string url_scheme =
+       display_text.substr(scheme.begin, scheme.len);
+ 
+   const bool is_extension_url =
+ #if BUILDFLAG(ENABLE_EXTENSIONS)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      base::EqualsASCII(url_scheme, extensions::kArkwebExtensionScheme) ||
++#endif
+       base::EqualsASCII(url_scheme, extensions::kExtensionScheme);
+ #else
+       false;
+ #endif
+ 

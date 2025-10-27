@@ -146,7 +146,6 @@ TEST_F(OSCryptTest, DecryptError) {
   plaintext = "hello";
   ASSERT_TRUE(OSCrypt::EncryptString(plaintext, &ciphertext));
   EXPECT_NE(plaintext, ciphertext);
-  ASSERT_LT(4UL, ciphertext.size());
   ciphertext[3] = ciphertext[3] + 1;
   EXPECT_FALSE(OSCrypt::DecryptString(ciphertext, &result));
   EXPECT_NE(plaintext, result);

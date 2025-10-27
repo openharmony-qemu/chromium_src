@@ -1,0 +1,22 @@
+--- hash-table.h	2025-10-20 19:53:31.476566719 +0800
++++ hash-table.h	2025-10-16 15:56:12.851316873 +0800
+@@ -110,19 +110,12 @@
+   // Update the number of deleted elements in the hash table.
+   inline void SetNumberOfDeletedElements(int nod);
+ 
+   // Returns probe entry.
+   inline static InternalIndex FirstProbe(uint32_t hash, uint32_t size) {
+-    if (size <= (1 << PropertyArray::HashField::kSize)) {
+       return InternalIndex(hash & (size - 1));
+     }
+-    // The hash stored in JSReceiver (see PropertyArray::HashField) only has 20
+-    // bits. This is suboptimal, if the hash table size is larger than 1 << 20.
+-    // This distributes the probes more evenly even in that case.
+-    return InternalIndex((hash * (size >> PropertyArray::HashField::kSize)) &
+-                         (size - 1));
+-  }
+ 
+   inline static InternalIndex NextProbe(InternalIndex last, uint32_t number,
+                                         uint32_t size) {
+     return InternalIndex((last.as_uint32() + number) & (size - 1));
+   }

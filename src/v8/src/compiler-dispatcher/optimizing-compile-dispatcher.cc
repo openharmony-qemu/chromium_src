@@ -23,6 +23,10 @@
 #include "src/tasks/cancelable-task.h"
 #include "src/tracing/trace-event.h"
 
+#ifdef OHOS_JS_ENGINE
+#include "../../../arkweb/chromium_ext/v8/trace.h"
+#endif
+
 namespace v8 {
 namespace internal {
 

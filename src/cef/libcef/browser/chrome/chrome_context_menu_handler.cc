@@ -93,7 +93,11 @@ class CefContextMenuObserver : public RenderViewContextMenuObserver,
   // RenderViewContextMenuObserver methods:
 
   void InitMenu(const content::ContextMenuParams& params) override {
+#if BUILDFLAG(IS_ARKWEB)
+    params_ = new ArkWebCefContextMenuParamsImplExt(
+#else
     params_ = new CefContextMenuParamsImpl(
+#endif
         const_cast<content::ContextMenuParams*>(&context_menu_->params()));
     model_ = new CefSimpleMenuModelImpl(
         const_cast<ui::SimpleMenuModel*>(&context_menu_->menu_model()),

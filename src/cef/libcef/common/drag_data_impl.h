@@ -49,11 +49,22 @@ class CefDragDataImpl : public CefDragData {
   CefRefPtr<CefImage> GetImage() override;
   CefPoint GetImageHotspot() override;
   bool HasImage() override;
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  bool IsImageFileContents() override;
+#endif
 
   // This method is not safe. Use Lock/Unlock to get mutually exclusive access.
   content::DropData* drop_data() { return &data_; }
 
+#if BUILDFLAG(IS_OHOS)
+  size_t GetImageFileSize() override;
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+  void SetReadOnly(bool read_only) override;
+#else
   void SetReadOnly(bool read_only);
+#endif  // BUILDFLAG(IS_OHOS)
 
   base::Lock& lock() { return lock_; }
 

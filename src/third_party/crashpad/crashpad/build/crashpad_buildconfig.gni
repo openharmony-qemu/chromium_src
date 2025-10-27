@@ -74,6 +74,7 @@ if (crashpad_is_in_chromium) {
   crashpad_is_posix = is_posix
 
   crashpad_is_clang = is_clang
+  crashpad_is_ohos = is_ohos
 } else {
   import("$mini_chromium_import_root/build/compiler.gni")
   import("$mini_chromium_import_root/build/platform.gni")

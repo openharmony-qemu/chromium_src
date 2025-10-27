@@ -1474,6 +1474,7 @@ INSTANTIATE_TEST_SUITE_P(VpxTemporalSvc,
                          PrintTestParams);
 #endif  // ENABLE_LIBVPX
 
+#if !BUILDFLAG(IS_ARKWEB)
 #if BUILDFLAG(ENABLE_LIBAOM)
 #if !BUILDFLAG(ENABLE_AV1_DECODER)
 #error PrepareDecoder() requires an AV1 decoder.
@@ -1512,6 +1513,7 @@ INSTANTIATE_TEST_SUITE_P(Av1ManualSvc,
                          ::testing::ValuesIn(kAv1SVCParams),
                          PrintTestParams);
 #endif  // ENABLE_LIBAOM
+#endif  // !BUILDFLAG(IS_ARKWEB)
 
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(H264VideoEncoderTest);
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(SVCVideoEncoderTest);

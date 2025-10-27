@@ -1,0 +1,17 @@
+--- content_main_runner_impl.h	2025-10-20 19:52:54.202445894 +0800
++++ content_main_runner_impl.h	2025-10-16 15:54:59.324881241 +0800
+@@ -50,10 +50,14 @@
+ 
+  private:
+   int RunBrowser(MainFunctionParams main_function_params,
+                  bool start_minimal_browser);
+ 
++#if BUILDFLAG(IS_ARKWEB)
++  bool RunRenderRemoteProxy(const base::CommandLine& command_line);
++#endif
++
+   bool is_browser_main_loop_started_ = false;
+ 
+   std::unique_ptr<discardable_memory::DiscardableSharedMemoryManager>
+       discardable_shared_memory_manager_;
+   std::unique_ptr<MojoIpcSupport> mojo_ipc_support_;

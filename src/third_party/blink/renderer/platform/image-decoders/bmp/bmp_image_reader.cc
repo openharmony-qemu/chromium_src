@@ -541,8 +541,10 @@ bool BMPImageReader::DecodeAlternateFormat() {
     if (info_header_.compression == JPEG) {
       alternate_decoder_ = std::make_unique<JPEGImageDecoder>(
           parent_->GetAlphaOption(), parent_->GetColorBehavior(),
-          parent_->GetAuxImage(), parent_->GetMaxDecodedBytes(),
-          img_data_offset_);
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+          parent_->GetAuxImage(),
+#endif
+          parent_->GetMaxDecodedBytes(), img_data_offset_);
     } else {
       alternate_decoder_ = CreatePngImageDecoder(
           parent_->GetAlphaOption(), ImageDecoder::kDefaultBitDepth,

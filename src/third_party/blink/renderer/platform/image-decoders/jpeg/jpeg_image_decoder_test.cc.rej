@@ -1,0 +1,14 @@
+--- jpeg_image_decoder_test.cc	2025-10-20 19:53:01.214200983 +0800
++++ jpeg_image_decoder_test.cc	2025-10-16 16:07:40.115536595 +0800
+@@ -11,10 +11,11 @@
+ 
+ #include <limits>
+ #include <memory>
+ #include <string>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/test/metrics/histogram_tester.h"
+ #include "testing/gtest/include/gtest/gtest.h"
+ #include "third_party/blink/public/platform/web_data.h"
+ #include "third_party/blink/renderer/platform/graphics/bitmap_image_metrics.h"
+ #include "third_party/blink/renderer/platform/image-decoders/image_animation.h"

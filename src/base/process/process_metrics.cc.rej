@@ -1,0 +1,16 @@
+--- process_metrics.cc	2025-10-20 19:52:46.684834587 +0800
++++ process_metrics.cc	2025-10-16 15:54:55.317433402 +0800
+@@ -72,11 +73,12 @@
+ 
+ Value::Dict SystemMetrics::ToDict() const {
+   Value::Dict res;
+ 
+   res.Set("committed_memory", static_cast<int>(committed_memory_));
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
++    BUILDFLAG(IS_OHOS)
+   Value::Dict meminfo = memory_info_.ToDict();
+   meminfo.Merge(vmstat_info_.ToDict());
+   res.Set("meminfo", std::move(meminfo));
+   res.Set("diskinfo", disk_info_.ToDict());
+ #endif

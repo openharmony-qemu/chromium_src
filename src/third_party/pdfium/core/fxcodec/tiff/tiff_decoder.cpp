@@ -131,7 +131,7 @@ tsize_t tiff_read(thandle_t context, tdata_t buf, tsize_t length) {
 }
 
 tsize_t tiff_write(thandle_t context, tdata_t buf, tsize_t length) {
-  NOTREACHED();
+  NOTREACHED_NORETURN();
 }
 
 toff_t tiff_seek(thandle_t context, toff_t offset, int whence) {

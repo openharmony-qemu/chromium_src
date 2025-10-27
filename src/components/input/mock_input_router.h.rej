@@ -1,0 +1,39 @@
+--- mock_input_router.h	2025-10-20 19:52:53.045914300 +0800
++++ mock_input_router.h	2025-10-16 15:54:56.888205506 +0800
+@@ -47,10 +48,13 @@
+       const GestureEventWithLatencyInfo& gesture_event) override;
+   void SendTouchEvent(
+       const TouchEventWithLatencyInfo& touch_event) override;
+   void NotifySiteIsMobileOptimized(bool is_mobile_optimized) override {}
+   bool HasPendingEvents() const override;
++#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
++  void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) override;
++#endif
+   void SetDeviceScaleFactor(float device_scale_factor) override {}
+   std::optional<cc::TouchAction> AllowedTouchAction() override;
+   std::optional<cc::TouchAction> ActiveTouchAction() override;
+   void SetForceEnableZoom(bool enabled) override {}
+   mojo::PendingRemote<blink::mojom::WidgetInputHandlerHost> BindNewHost(
+@@ -59,10 +63,22 @@
+   void ForceSetTouchActionAuto() override {}
+   void OnHasTouchEventConsumers(
+       blink::mojom::TouchEventConsumersPtr consumers) override;
+   void WaitForInputProcessed(base::OnceClosure callback) override {}
+ 
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++  void SetGestureEventResult(bool result, bool stopPropagation, int32_t fingerId) override {}
++  void SetNativeEmbedMode(bool flag) override {}
++  void SetMouseEventResult(bool result, bool stopPropagation) override {}
++  void SetEnableCustomVideoPlayer(bool flag) override {}
++#endif
++
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++  void ScrollBy(float delta_x, float delta_y) override {}
++  void SetBypassVsyncCondition(int32_t condition) override {}
++#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
++
+   bool sent_mouse_event_;
+   bool sent_wheel_event_;
+   bool sent_keyboard_event_;
+   bool sent_gesture_event_;
+   bool send_touch_event_not_cancelled_;

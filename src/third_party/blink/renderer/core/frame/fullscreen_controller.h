@@ -31,6 +31,8 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_FRAME_FULLSCREEN_CONTROLLER_H_
 #define THIRD_PARTY_BLINK_RENDERER_CORE_FRAME_FULLSCREEN_CONTROLLER_H_
 
+#include "absl/types/optional.h"
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/core/core_export.h"
 #include "third_party/blink/renderer/platform/graphics/color.h"
 #include "third_party/blink/renderer/platform/heap/collection_support/heap_linked_hash_set.h"
@@ -59,7 +61,15 @@ class CORE_EXPORT FullscreenController {
   // fullscreen.
   void EnterFullscreen(LocalFrame&,
                        const FullscreenOptions*,
-                       FullscreenRequestType request_type);
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                       bool overlay_fullscreen,
+#endif // ARKWEB_VIDEO_ASSISTANT
+                       FullscreenRequestType request_type
+#if BUILDFLAG(ARKWEB_FULLSCREEN)
+                       ,
+                       const absl::optional<gfx::Size>& video_natural_size
+#endif  // BUILDFLAG(ARKWEB_FULLSCREEN)
+  );
   void ExitFullscreen(LocalFrame&);
 
   // Called by content::RenderWidget (via WebWidget) to notify that we've

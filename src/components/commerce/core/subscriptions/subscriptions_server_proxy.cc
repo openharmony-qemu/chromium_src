@@ -8,6 +8,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/feature_list.h"
 #include "base/functional/callback.h"
@@ -42,7 +43,11 @@ constexpr base::FeatureParam<int> kTimeoutMs{&commerce::kShoppingList,
                                              kTimeoutParam, kDefaultTimeoutMs};
 
 const char kDefaultServiceBaseUrl[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://x.x.x";
+#else
     "https://memex-pa.googleapis.com/v1/shopping/subscriptions";
+#endif
 const char kBaseUrlParam[] = "subscriptions_service_base_url";
 constexpr base::FeatureParam<std::string> kServiceBaseUrl{
     &commerce::kShoppingList, kBaseUrlParam, kDefaultServiceBaseUrl};

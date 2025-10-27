@@ -6,6 +6,7 @@
 
 #include <algorithm>
 
+#include "arkweb/build/features/features.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/numerics/safe_conversions.h"
 #include "base/task/single_thread_task_runner.h"
@@ -72,7 +73,10 @@ void DecodeAndResizeImage(
   std::unique_ptr<ImageDecoder> decoder = ImageDecoder::Create(
       std::move(data), /*data_complete=*/true,
       ImageDecoder::kAlphaPremultiplied, ImageDecoder::kDefaultBitDepth,
-      ColorBehavior::kTransformToSRGB, cc::AuxImage::kDefault,
+      ColorBehavior::kTransformToSRGB,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      cc::AuxImage::kDefault,
+#endif
       Platform::GetMaxDecodedImageBytes());
 
   if (!decoder) {

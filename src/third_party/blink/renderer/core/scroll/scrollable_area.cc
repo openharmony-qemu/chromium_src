@@ -50,6 +50,7 @@
 #include "third_party/blink/renderer/core/event_type_names.h"
 #include "third_party/blink/renderer/core/frame/local_frame.h"
 #include "third_party/blink/renderer/core/frame/local_frame_view.h"
+#include "third_party/blink/renderer/core/frame/settings.h"
 #include "third_party/blink/renderer/core/frame/visual_viewport.h"
 #include "third_party/blink/renderer/core/html/anchor_element_viewport_position_tracker.h"
 #include "third_party/blink/renderer/core/input/event_handler.h"
@@ -77,6 +78,9 @@
 #include "third_party/blink/renderer/platform/scheduler/public/thread_scheduler.h"
 #include "third_party/blink/renderer/platform/timer.h"
 #include "ui/gfx/geometry/vector2d_conversions.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/scroll/scrollable_area_utils.h"
+#endif  // ARKWEB_SCROLLBAR
 
 namespace blink {
 
@@ -115,6 +119,10 @@ ScrollableArea::ScrollableArea(
       has_been_disposed_(false),
       compositor_task_runner_(std::move(compositor_task_runner)) {
   DCHECK(compositor_task_runner_);
+#if BUILDFLAG(IS_ARKWEB)
+  scrollable_area_utils_ = MakeGarbageCollected<ScrollableAreaUtils>(this);
+  scrollbars_hidden_if_overlay_ = false;
+#endif
 }
 
 ScrollableArea::~ScrollableArea() = default;
@@ -797,6 +805,10 @@ void ScrollableArea::SetOverlayScrollbarColorScheme(
     mojom::blink::ColorScheme overlay_theme) {
   overlay_scrollbar_color_scheme__ = static_cast<unsigned>(overlay_theme);
 
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  scrollable_area_utils_->SetOverlayScrollbarColor();
+#endif  // ARKWEB_SCROLLBAR
+
   if (Scrollbar* scrollbar = HorizontalScrollbar()) {
     scrollbar->SetNeedsPaintInvalidation(kAllParts);
   }
@@ -1312,6 +1324,9 @@ void ScrollableArea::Trace(Visitor* visitor) const {
   visitor->Trace(mac_scrollbar_animator_);
   visitor->Trace(programmatic_scroll_animator_);
   visitor->Trace(fade_overlay_scrollbars_timer_);
+#if BUILDFLAG(IS_ARKWEB)
+  visitor->Trace(scrollable_area_utils_);
+#endif
 }
 
 void ScrollableArea::InjectScrollbarGestureScroll(

@@ -165,6 +165,9 @@ HostZoomMapImpl::HostZoomMapImpl()
     : default_zoom_level_(0.0),
       clock_(base::DefaultClock::GetInstance()) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  imp_utils_ = std::make_unique<HostZoomMapImplUtils>(this);
+#endif
 }
 
 void HostZoomMapImpl::CopyFrom(HostZoomMap* copy_interface) {
@@ -284,7 +287,11 @@ void HostZoomMapImpl::SetZoomLevelForHostInternal(const std::string& host,
                                                   double level,
                                                   base::Time last_modified) {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
-
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  if (imp_utils_->IsZoomTooFast(last_modified, level)) {
+    return;
+  }
+#endif
   if (blink::ZoomValuesEqual(level, default_zoom_level_)) {
     host_zoom_levels_.erase(host);
   } else {

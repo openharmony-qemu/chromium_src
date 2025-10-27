@@ -48,6 +48,10 @@
 #include "ui/base/ui_base_features.h"
 #include "ui/gfx/geometry/rect.h"
 
+#if BUILDFLAG(ARKWEB_HTML_SELECT)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
+
 namespace blink {
 
 namespace {

@@ -1,0 +1,43 @@
+--- browsing_data_api.h	2025-10-20 19:52:49.582229098 +0800
++++ browsing_data_api.h	2025-10-16 15:57:00.113592307 +0800
+@@ -21,10 +21,14 @@
+ #include "content/public/browser/browsing_data_filter_builder.h"
+ #include "content/public/browser/browsing_data_remover.h"
+ #include "extensions/browser/extension_function.h"
+ 
+ class PrefService;
++#ifdef BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++struct NWebExtensionBrowsingDataRemovalOptions;
++struct NWebExtensionBrowsingDataQueryOptions;
++#endif
+ 
+ namespace extension_browsing_data_api_constants {
+ 
+ // Parameter name keys.
+ inline constexpr char kDataRemovalPermittedKey[] = "dataRemovalPermitted";
+@@ -164,10 +168,25 @@
+   base::ScopedObservation<content::BrowsingDataRemover,
+                           content::BrowsingDataRemover::Observer>
+       observation_{this};
+   std::unique_ptr<AccountReconcilor::ScopedSyncedDataDeletion>
+       synced_data_deletion_;
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++ private:
++  static void OnRemovedDownload(const base::WeakPtr<BrowsingDataRemoverFunction>& function,
++                                const std::optional<std::string>& error);
++  static void OnRemovedHistory(const base::WeakPtr<BrowsingDataRemoverFunction>& function,
++                               const std::optional<std::string>& error);
++  void StartRemovingDownload(const NWebExtensionBrowsingDataRemovalOptions& removeOptions,
++                             const NWebExtensionBrowsingDataQueryOptions& queryOptions);
++  void StartRemovingHistory(const NWebExtensionBrowsingDataRemovalOptions& removeOptions,
++                            const NWebExtensionBrowsingDataQueryOptions& queryOptions);
++  base::Value::Dict options_;
++  bool call_remove_download_ = false;
++  bool call_remove_history_ = false;
++  base::WeakPtrFactory<BrowsingDataRemoverFunction> weak_ptr_factory_{this};
++#endif
+ };
+ 
+ class BrowsingDataRemoveAppcacheFunction : public BrowsingDataRemoverFunction {
+  public:
+   DECLARE_EXTENSION_FUNCTION("browsingData.removeAppcache",

@@ -1,0 +1,18 @@
+--- audio_output_stream_broker.h	2025-10-20 19:52:54.326502231 +0800
++++ audio_output_stream_broker.h	2025-10-16 15:54:59.456740120 +0800
+@@ -60,11 +60,15 @@
+   bool AwaitingCreated() const;
+ 
+   SEQUENCE_CHECKER(owning_sequence_);
+ 
+   const std::string output_device_id_;
++#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
++  media::AudioParameters params_;
++#else
+   const media::AudioParameters params_;
++#endif // defined(OHOS_MEDIA_POLICY)
+   const base::UnguessableToken group_id_;
+ 
+   // Set while CreateStream() has been called, but not StreamCreated().
+   base::TimeTicks stream_creation_start_time_;
+ 

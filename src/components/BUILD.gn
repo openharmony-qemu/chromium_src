@@ -74,6 +74,7 @@ if (is_ios) {
   }
 }
 
+if (!arkweb_unittests) {
 disallowed_extension_deps_ = [
   # Components should largely not depend on //extensions. Since // extensions
   # is not a component target and is linked with //chrome, depending on most
@@ -97,6 +98,7 @@ disallowed_extension_deps_ = [
   "//extensions/components/*",
   "//extensions/strings/*",
 ]
+}
 
 # To add a unit test to this target, make a "unit_tests" source_set in your
 # component(it's important to use a source_set instead of a static library or
@@ -417,6 +419,12 @@ test("components_unittests") {
     ]
   }
 
+  if (arkweb_unittests) {
+    deps += [
+      "//cef:libcef_static"
+    ]
+  }
+
   data_deps = [ "//testing/buildbot/filters:components_unittests_filters" ]
 
   if (toolkit_views) {
@@ -459,7 +467,6 @@ test("components_unittests") {
       "//components/browsing_topics/common:unit_tests",
       "//components/captive_portal/content:unit_tests",
       "//components/cast_receiver:unit_tests",
-      "//components/cast_streaming:unit_tests",
       "//components/certificate_transparency:unit_tests",
       "//components/commerce/content/browser:unit_tests",
       "//components/content_capture/browser:unit_tests",
@@ -952,8 +959,11 @@ test("components_unittests") {
   # No components should depend on Chrome.
   # Since //chrome depends on //extensions, we also only assert_no_deps on
   # extensions targets.
-  assert_no_deps = [ "//chrome/*" ]
+  assert_no_deps = []
+  if (!arkweb_unittests) {
+    assert_no_deps += "//chrome/*"
   assert_no_deps += disallowed_extension_deps_
+  }
 
   if (is_ios) {
     assert_no_deps += ios_assert_no_deps
@@ -1273,8 +1283,10 @@ if (use_blink) {
     # No components should depend on Chrome.
     # Since //chrome depends on //extensions, we also only assert_no_deps on
     # extensions targets.
+    if (!arkweb_unittests) {
     assert_no_deps = [ "//chrome/*" ]
     assert_no_deps += disallowed_extension_deps_
+    }
 
     if (is_fuchsia) {
       additional_manifest_fragments = [

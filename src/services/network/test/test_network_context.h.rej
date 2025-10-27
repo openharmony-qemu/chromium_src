@@ -1,0 +1,24 @@
+--- test_network_context.h	2025-10-20 19:52:57.682211456 +0800
++++ test_network_context.h	2025-10-16 15:55:03.352570607 +0800
+@@ -371,10 +371,21 @@
+                 const ResourceRequest& request,
+                 const net::MutableNetworkTrafficAnnotationTag&
+                     traffic_annotation) override {}
+   void GetBoundNetworkForTesting(
+       GetBoundNetworkForTestingCallback callback) override {}
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  void SetHostIP(const std::string& HostName,
++    const std::vector<std::string>& Address,
++    uint32_t AliveTime) override {}
++  void ClearHostIP(const std::string& HostName) override {}
++  void InitPRParallelPreloadMgr() override {}
++  void StartPage(const std::string &url, const ::net::NetworkAnonymizationKey &networkAnonymizationKey,
++                 uint64_t addr_web_handle, StartPageCallback callback) override {}
++  void StopPage(uint64_t addr_web_handle) override {}
++  void SetURLLoaderFactoryParam(mojom::URLLoaderFactoryParamsPtr params) override {}
++#endif  // BUILDFLAG(ARKWEB_UNITTESTS)
+ };
+ 
+ }  // namespace network
+ 
+ #endif  // SERVICES_NETWORK_TEST_TEST_NETWORK_CONTEXT_H_

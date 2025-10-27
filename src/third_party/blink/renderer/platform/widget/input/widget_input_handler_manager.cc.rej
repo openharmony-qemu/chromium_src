@@ -1,0 +1,54 @@
+--- widget_input_handler_manager.cc	2025-10-20 19:53:01.286199870 +0800
++++ widget_input_handler_manager.cc	2025-10-16 16:07:40.206328708 +0800
+@@ -4,10 +4,11 @@
+ 
+ #include "third_party/blink/renderer/platform/widget/input/widget_input_handler_manager.h"
+ 
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/check_op.h"
+ #include "base/feature_list.h"
+ #include "base/functional/bind.h"
+ #include "base/functional/callback_helpers.h"
+ #include "base/memory/raw_ptr.h"
+@@ -279,10 +288,11 @@
+         std::make_unique<SynchronousCompositorProxyRegistry>(
+             compositor_thread_default_task_runner_, io_thread_id,
+             main_thread_id);
+   }
+ #endif
++  manager_utils_ = std::make_unique<WidgetInputHandlerManagerUtils>(this);
+ }
+ 
+ void WidgetInputHandlerManager::DidFirstVisuallyNonEmptyPaint(
+     const base::TimeTicks& first_paint_time) {
+   suppressing_input_events_state_ &=
+@@ -901,20 +915,27 @@
+   if (sync_compositing) {
+     DCHECK(synchronous_compositor_registry_);
+     synchronous_compositor_registry_->CreateProxy(input_handler_proxy_.get());
+   }
+ #endif
++#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
++  manager_utils_->CreateProxy();
++#endif
+ }
+ 
+ void WidgetInputHandlerManager::BindChannel(
+     mojo::PendingReceiver<mojom::blink::WidgetInputHandler> receiver) {
+   if (!receiver.is_valid())
+     return;
+   // Passing null for |input_event_queue_| tells the handler that we don't have
+   // a compositor thread. (Single threaded-mode shouldn't use the queue, or else
+   // events might get out of order - see crrev.com/519829).
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++  ArkwebWidgetInputHandlerImplExt* handler = new ArkwebWidgetInputHandlerImplExt(
++#else
+   WidgetInputHandlerImpl* handler = new WidgetInputHandlerImpl(
++#endif
+       this,
+       compositor_thread_default_task_runner_ ? input_event_queue_ : nullptr,
+       widget_, frame_widget_input_handler_);
+   handler->SetReceiver(std::move(receiver));
+ }

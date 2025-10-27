@@ -1,0 +1,22 @@
+--- web_accessible_resources_router.cc	2025-10-20 19:52:55.320411187 +0800
++++ web_accessible_resources_router.cc	2025-10-16 15:55:00.395735160 +0800
+@@ -21,12 +21,17 @@
+     const GURL& url,
+     content::BrowserContext* browser_context) {
+   // Verify that the feature is enabled and the host is a valid extension id.
+   if (!base::FeatureList::IsEnabled(
+           extensions_features::kExtensionDynamicURLRedirection) ||
+-      !url.SchemeIs(kExtensionScheme) ||
+-      !crx_file::id_util::IdIsValid(url.host())) {
++      (!url.SchemeIs(kExtensionScheme)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++       && !url.SchemeIs(kArkwebExtensionScheme)
++#endif
++           )
++
++      || !crx_file::id_util::IdIsValid(url.host())) {
+     return std::nullopt;
+   }
+ 
+   // Verify that the url's path should use a dynamic url.
+   auto* registry = ExtensionRegistry::Get(browser_context);

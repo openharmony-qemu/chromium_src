@@ -1,0 +1,16 @@
+--- touchscreen_tap_suppression_controller.cc	2025-10-20 19:52:53.049916143 +0800
++++ touchscreen_tap_suppression_controller.cc	2025-10-16 15:54:56.888205506 +0800
+@@ -23,10 +23,13 @@
+     case WebInputEvent::Type::kGestureTapDown:
+       return ShouldSuppressTapDown();
+ 
+     case WebInputEvent::Type::kGestureShowPress:
+     case WebInputEvent::Type::kGestureLongPress:
++#if BUILDFLAG(ARKWEB_DRAG_DROP)
++    case WebInputEvent::Type::kGestureDragLongPress:
++#endif
+     case WebInputEvent::Type::kGestureTapUnconfirmed:
+     case WebInputEvent::Type::kGestureTapCancel:
+     case WebInputEvent::Type::kGestureTap:
+     case WebInputEvent::Type::kGestureDoubleTap:
+     case WebInputEvent::Type::kGestureLongTap:

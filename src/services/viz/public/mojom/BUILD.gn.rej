@@ -1,0 +1,35 @@
+--- BUILD.gn	2025-10-20 19:52:57.742211999 +0800
++++ BUILD.gn	2025-10-16 15:55:03.428489355 +0800
+@@ -2,10 +2,11 @@
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ import("//build/config/chromeos/ui_mode.gni")
+ import("//build/config/ui.gni")
+ import("//mojo/public/tools/bindings/mojom.gni")
++import("//arkweb/build/features/features.gni")
+ mojom("mojom") {
+   generate_java = true
+   sources = [
+     "compositing/animation.mojom",
+     "compositing/begin_frame_args.mojom",
+@@ -53,10 +54,20 @@
+     "gpu.mojom",
+     "hit_test/aggregated_hit_test_region.mojom",
+     "hit_test/hit_test_region_list.mojom",
+     "hit_test/input_target_client.mojom",
+   ]
++  enabled_features = []
++  if (arkweb_slide) {
++    enabled_features += [ "arkweb_slide" ]
++  }
++  if (arkweb_performance_scheduling) {
++    enabled_features += ["arkweb_performance_scheduling"]
++  }
++  if (arkweb_vsync_schedule) {
++    enabled_features += ["arkweb_vsync_schedule"]
++  }
+ 
+   deps = [ "//gpu/ipc/common:gmb_interface" ]
+ 
+   public_deps = [
+     ":shared_image_format",

@@ -1,0 +1,19 @@
+--- proxy_service_factory.cc	2025-10-20 19:52:49.825671662 +0800
++++ proxy_service_factory.cc	2025-10-16 15:57:00.407499950 +0800
+@@ -56,11 +56,15 @@
+ 
+   base_service = net::ProxyConfigService::CreateSystemProxyConfigService(
+       base::SingleThreadTaskRunner::GetCurrentDefault());
+ #endif  // !BUILDFLAG(IS_CHROMEOS_ASH)
+ 
+-  return tracker->CreateTrackingProxyConfigService(std::move(base_service));
++  return tracker->CreateTrackingProxyConfigService(std::move(base_service)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) && !defined(COMPONENT_BUILD)
++                                                   , profile
++#endif
++                                                   );
+ }
+ 
+ // static
+ std::unique_ptr<PrefProxyConfigTracker>
+ ProxyServiceFactory::CreatePrefProxyConfigTrackerOfProfile(

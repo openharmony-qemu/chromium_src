@@ -89,16 +89,16 @@ void ConvertBuffer_ArgbPremul(pdfium::span<uint8_t> dest_buf,
   switch (src_bitmap->GetBPP()) {
     case 8:
       // TODO(crbug.com/42271020): Determine if this ever happens.
-      NOTREACHED();
+      NOTREACHED_NORETURN();
     case 24:
       ConvertBuffer_Rgb2ArgbPremul(dest_buf, dest_pitch, width, height,
                                    src_bitmap, src_left, src_top);
       break;
     case 32:
       // TODO(crbug.com/42271020): Determine if this ever happens.
-      NOTREACHED();
+      NOTREACHED_NORETURN();
     default:
-      NOTREACHED();
+      NOTREACHED_NORETURN();
   }
 }
 #endif  // default(PDF_USE_SKIA)
@@ -456,7 +456,7 @@ void ConvertBuffer_8bppMask(pdfium::span<uint8_t> dest_buf,
                              src_left, src_top);
       break;
     default:
-      NOTREACHED();
+      NOTREACHED_NORETURN();
   }
 }
 
@@ -503,7 +503,7 @@ void ConvertBuffer_Rgb(FXDIB_Format dest_format,
                                    pSrcBitmap, src_left, src_top);
       break;
     default:
-      NOTREACHED();
+      NOTREACHED_NORETURN();
   }
 }
 
@@ -535,7 +535,7 @@ void ConvertBuffer_Argb(FXDIB_Format dest_format,
                               src_left, src_top);
       break;
     default:
-      NOTREACHED();
+      NOTREACHED_NORETURN();
   }
 }
 
@@ -1136,7 +1136,7 @@ DataVector<uint32_t> CFX_DIBBase::ConvertBuffer(
     case FXDIB_Format::kInvalid:
     case FXDIB_Format::k1bppRgb:
     case FXDIB_Format::k1bppMask: {
-      NOTREACHED();
+      NOTREACHED_NORETURN();
     }
     case FXDIB_Format::k8bppMask: {
       ConvertBuffer_8bppMask(dest_buf, dest_pitch, width, height, pSrcBitmap,

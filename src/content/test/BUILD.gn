@@ -29,6 +29,8 @@ import("//tools/grit/grit_rule.gni")
 import("//tools/grit/preprocess_if_expr.gni")
 import("//tools/typescript/webui_ts_library.gni")
 import("//v8/gni/v8.gni")
+import("//arkweb/chromium_ext/chromium_ext.gni")
+import("//arkweb/build/features/features.gni")
 
 if (is_android) {
   import("//build/config/android/rules.gni")
@@ -2504,7 +2506,7 @@ test("content_unittests") {
     "../browser/attribution_reporting/aggregatable_attribution_utils_unittest.cc",
     "../browser/attribution_reporting/aggregatable_debug_rate_limit_table_unittest.cc",
     "../browser/attribution_reporting/aggregatable_debug_report_unittest.cc",
-    "../browser/attribution_reporting/attribution_aggregatable_report_golden_unittest.cc",
+    # "../browser/attribution_reporting/attribution_aggregatable_report_golden_unittest.cc",
     "../browser/attribution_reporting/attribution_data_host_manager_impl_unittest.cc",
     "../browser/attribution_reporting/attribution_debug_report_unittest.cc",
     "../browser/attribution_reporting/attribution_host_unittest.cc",

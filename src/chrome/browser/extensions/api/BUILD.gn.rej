@@ -1,0 +1,29 @@
+--- BUILD.gn	2025-10-20 19:52:49.578238236 +0800
++++ BUILD.gn	2025-10-16 15:57:00.109701713 +0800
+@@ -36,11 +36,10 @@
+     "//chrome/browser/extensions/api/enterprise_hardware_platform",
+     "//chrome/browser/extensions/api/experimental_ai_data",
+     "//chrome/browser/extensions/api/extension_action",
+     "//chrome/browser/extensions/api/font_settings",
+     "//chrome/browser/extensions/api/idltest",
+-    "//chrome/browser/extensions/api/mdns",
+     "//chrome/browser/extensions/api/module",
+     "//chrome/browser/extensions/api/networking_private",
+     "//chrome/browser/extensions/api/notifications",
+     "//chrome/browser/extensions/api/omnibox",
+     "//chrome/browser/extensions/api/page_capture",
+@@ -62,10 +61,14 @@
+     "//chrome/browser/extensions/api/webrtc_audio_private",
+     "//chrome/browser/extensions/api/webrtc_desktop_capture_private",
+     "//chrome/browser/extensions/api/webrtc_logging_private",
+   ]
+ 
++  if (enable_mdns) {
++    public_deps += [ "//chrome/browser/extensions/api/mdns" ]
++  }
++
+   if (enable_pdf) {
+     public_deps += [ "//chrome/browser/extensions/api/pdf_viewer_private" ]
+   }
+ 
+   if (enable_service_discovery) {

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 #include "third_party/blink/renderer/core/css/properties/computed_style_utils.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/values_equivalent.h"
 #include "third_party/blink/renderer/core/css/basic_shape_functions.h"
 #include "third_party/blink/renderer/core/css/css_alternate_value.h"
@@ -80,6 +81,9 @@
 #include "third_party/blink/renderer/platform/transforms/matrix_transform_operation.h"
 #include "third_party/blink/renderer/platform/transforms/perspective_transform_operation.h"
 #include "third_party/blink/renderer/platform/transforms/skew_transform_operation.h"
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/css/css_utils.h"
+#endif
 
 namespace blink {
 
@@ -989,7 +993,11 @@ CSSValueID IdentifierForFamily(const AtomicString& family) {
   if (family == font_family_names::kSystemUi) {
     return CSSValueID::kSystemUi;
   }
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+  if (family == font_family_names::kMath && !Cssutils::IsMathFormulaDisabledMode()) {
+#else
   if (family == font_family_names::kMath) {
+#endif
     return CSSValueID::kMath;
   }
   // If family does not correspond to any of the above, then it was actually

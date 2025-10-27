@@ -870,7 +870,7 @@ ExtensionFunction::ResponseAction AutofillPrivateGetLocalCardFunction::Run() {
     // IsPaymentMethodsMandatoryReauthEnabled() ensures that it's only enabled
     // for MacOS and Windows.
     NOTREACHED();
-#endif  // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
+#endif  // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
   } else {
     ReturnCreditCard();
   }
@@ -919,14 +919,14 @@ void AutofillPrivateGetLocalCardFunction::ReturnCreditCard() {
 
 ExtensionFunction::ResponseAction
 AutofillPrivateCheckIfDeviceAuthAvailableFunction::Run() {
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
   autofill::ContentAutofillClient* client =
       autofill::ContentAutofillClient::FromWebContents(GetSenderWebContents());
   if (client) {
     return RespondNow(WithArguments(autofill::IsDeviceAuthAvailable(
         client->GetDeviceAuthenticator().get())));
   }
-#endif  // BUILDFLAG (IS_MAC) || BUILDFLAG(IS_WIN)
+#endif  // BUILDFLAG (IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
   return RespondNow(Error(kErrorDeviceAuthUnavailable));
 }
 

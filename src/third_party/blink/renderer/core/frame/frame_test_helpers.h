@@ -37,6 +37,7 @@
 #include <memory>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback_helpers.h"
 #include "base/functional/function_ref.h"
 #include "base/memory/weak_ptr.h"
@@ -513,7 +514,11 @@ class WebViewHelper : public ScopedMockOverlayScrollbars {
 // Minimal implementation of WebLocalFrameClient needed for unit tests that load
 // frames. Tests that load frames and need further specialization of
 // WebLocalFrameClient behavior should subclass this.
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+class TestWebFrameClient : public WebLocalFrameClientExt {
+#else
 class TestWebFrameClient : public WebLocalFrameClient {
+#endif
  public:
   TestWebFrameClient();
   ~TestWebFrameClient() override;

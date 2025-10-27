@@ -41,6 +41,11 @@
 #include "third_party/blink/renderer/platform/wtf/hash_set.h"
 #include "ui/gfx/geometry/rect.h"
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER) || \
+    BUILDFLAG(ARKWEB_MEDIA_NETWORK_TRAFFIC_PROMPT)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/graphics/compositing/paint_artifact_compositor_for_include.cc"
+#endif
+
 namespace blink {
 
 // cc property trees make use of a sequence number to identify when tree
@@ -993,6 +998,13 @@ void PaintArtifactCompositor::Update(
   PendingLayer::DecompositeTransforms(pending_layers_);
 
   LayerListBuilder layer_list_builder;
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  LayerListBuilder layer_list_builder_for_video;
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  LayerListBuilder layer_list_builder_for_infinity;
+  LayerListBuilder layer_list_builder_for_overlay;
+#endif
   PropertyTreeManager property_tree_manager(*this, *host->property_trees(),
                                             *root_layer_, layer_list_builder,
                                             g_s_property_tree_sequence_number);
@@ -1072,6 +1084,25 @@ void PaintArtifactCompositor::Update(
     if (layer.subtree_property_changed())
       root_layer_->SetNeedsCommit();
   }
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  overlay_cc_layers_ = layer_list_builder_for_video.Finalize();
+  for (const auto& video_layer : overlay_cc_layers_) {
+    layer_list_builder.Add(video_layer);
+  }
+  std::reverse(overlay_cc_layers_.begin(), overlay_cc_layers_.end());
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  native_overlay_cc_layers_ = layer_list_builder_for_overlay.Finalize();
+  for (const auto& native_overlay_layer : native_overlay_cc_layers_) {
+    layer_list_builder.Add(native_overlay_layer);
+  }
+  native_infinity_cc_layers_ = layer_list_builder_for_infinity.Finalize();
+  for (const auto& native_infinity_layer : native_infinity_cc_layers_) {
+    layer_list_builder.Add(native_infinity_layer);
+  }
+#endif
 
   root_layer_->layer_tree_host()->RegisterSelection(layer_selection);
 
@@ -1540,6 +1571,15 @@ void PaintArtifactCompositor::ShowDebugData() {
                    .Utf8();
 }
 #endif
+
+void PaintArtifactCompositor::ForAllContentLayersForTesting(
+    base::FunctionRef<void(ContentLayerClientImpl*)> func) const {
+  for (auto& pending_layer : pending_layers_) {
+    if (auto* client = pending_layer.GetContentLayerClient()) {
+      func(client);
+    }
+  }
+}
 
 ContentLayerClientImpl* PaintArtifactCompositor::ContentLayerClientForTesting(
     wtf_size_t i) const {

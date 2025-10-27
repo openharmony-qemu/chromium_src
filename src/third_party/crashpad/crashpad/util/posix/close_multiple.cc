@@ -36,6 +36,10 @@
 #include <sys/sysctl.h>
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include <syscall.h>
+#endif
+
 // Everything in this file is expected to execute between fork() and exec(),
 // so everything called here must be acceptable in this context. However,
 // logging code that is not expected to execute under normal circumstances is
@@ -62,7 +66,11 @@ void CloseNowOrOnExec(int fd, bool ebadf_ok) {
   PLOG(WARNING) << "fcntl";
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+  rv = IGNORE_EINTR(syscall(SYS_close, fd));
+#else
   rv = IGNORE_EINTR(close(fd));
+#endif
   if (rv != 0 && !(ebadf_ok && errno == EBADF)) {
     PLOG(WARNING) << "close";
   }
@@ -75,7 +83,8 @@ void CloseNowOrOnExec(int fd, bool ebadf_ok) {
 bool CloseMultipleNowOrOnExecUsingFDDir(int min_fd, int preserve_fd) {
 #if BUILDFLAG(IS_APPLE)
   static constexpr char kFDDir[] = "/dev/fd";
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   static constexpr char kFDDir[] = "/proc/self/fd";
 #endif
 
@@ -143,7 +152,7 @@ void CloseMultipleNowOrOnExec(int fd, int preserve_fd) {
 #endif
 
 #if !(BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
-      BUILDFLAG(IS_ANDROID)) ||                        \
+      BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)) ||  \
     defined(OPEN_MAX)
   // Linux does not provide OPEN_MAX. See
   // https://git.kernel.org/cgit/linux/kernel/git/stable/linux-stable.git/commit/include/linux/limits.h?id=77293034696e3e0b6c8b8fc1f96be091104b3d2b.
@@ -171,7 +180,8 @@ void CloseMultipleNowOrOnExec(int fd, int preserve_fd) {
   } else {
     PLOG(WARNING) << "sysctl";
   }
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   // See linux-4.4.27/fs/file.c sysctl_nr_open, referenced by kernel/sys.c
   // do_prlimit() and kernel/sysctl.c fs_table. Inability to open this file is
   // not considered an error, because /proc may not be available or usable.

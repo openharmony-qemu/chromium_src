@@ -48,6 +48,7 @@ WriteDebugAnnotation(protos::pbzero::DebugAnnotation* annotation, ::base::Time);
 }  // namespace internal
 }  // namespace perfetto
 
+#include "arkweb/build/features/features.h"
 // Pull in the tracing macro definitions from Perfetto.
 #include "third_party/perfetto/include/perfetto/tracing/track_event.h"  // IWYU pragma: export
 #include "third_party/perfetto/include/perfetto/tracing/track_event_legacy.h"  // IWYU pragma: export

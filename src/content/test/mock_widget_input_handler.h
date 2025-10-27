@@ -15,6 +15,7 @@
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "third_party/blink/public/mojom/input/input_handler.mojom.h"
+#include "arkweb/build/features/features.h"
 
 namespace content {
 
@@ -74,7 +75,6 @@ class MockWidgetInputHandler : public blink::mojom::WidgetInputHandler {
     // the message call name (eg. MouseCaptureLost) or the name of an
     // input event (eg. GestureScrollBegin).
     const std::string& name() const { return name_; }
-
    private:
     std::string name_;
   };

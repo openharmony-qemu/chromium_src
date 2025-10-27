@@ -7,6 +7,7 @@
 
 #include "include/codec/SkCodec.h"
 
+#include "arkweb/build/features/features.h"
 #include "include/codec/SkCodecAnimation.h"
 #include "include/codec/SkPixmapUtils.h"
 #include "include/core/SkAlphaType.h"
@@ -119,15 +120,12 @@ static std::vector<Decoder>* get_decoders_for_editing() {
 #if defined(SK_CODEC_DECODES_JPEGXL)
             decoders->push_back(SkJpegxlDecoder::Decoder());
 #endif
-#if defined(SK_HAS_HEIF_LIBRARY)
-            decoders->push_back(SkHeifDecoder::Decoder());
-#endif
 #if defined(SK_CODEC_DECODES_RAW)
             decoders->push_back(SkRawDecoder::Decoder());
 #endif
         }
     });
-#endif // !defined(SK_DISABLE_LEGACY_INIT_DECODERS)
+// #endif // !defined(SK_DISABLE_LEGACY_INIT_DECODERS)
     return decoders.get();
 }
 

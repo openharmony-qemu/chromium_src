@@ -32,6 +32,11 @@ TEST(ChromePaths, UserCacheDir) {
   test_profile_dir = test_profile_dir.Append("foobar");
   ASSERT_TRUE(base::PathService::Get(base::DIR_CACHE, &expected_cache_dir));
   expected_cache_dir = expected_cache_dir.Append("foobar");
+#elif BUILDFLAG(IS_OHOS)
+  ASSERT_TRUE(base::PathService::Get(base::DIR_MODULE, &test_profile_dir));
+  test_profile_dir = test_profile_dir.Append("foobar");
+  ASSERT_TRUE(base::PathService::Get(base::DIR_CACHE, &expected_cache_dir));
+  expected_cache_dir = expected_cache_dir.Append("foobar");
 #elif BUILDFLAG(IS_ANDROID)
   // No matter what the test_profile_dir is, Android always uses the
   // application's cache directory since multiple profiles are not supported.
@@ -56,6 +61,9 @@ TEST(ChromePaths, UserCacheDir) {
   GetUserCacheDirectory(test_profile_dir, &cache_dir);
   EXPECT_EQ(expected_cache_dir.value(), cache_dir.value());
 
+#if !BUILDFLAG(IS_OHOS)
+  // do not support other random directory on ohos platform
+  // see GetUserCacheDirectory in src/chrome/common/chrome_paths_ohos.cc
   // Verify that a profile in some other random directory doesn't use
   // the special cache directory.
   base::FilePath non_special_profile_dir =
@@ -66,6 +74,7 @@ TEST(ChromePaths, UserCacheDir) {
   EXPECT_EQ(expected_cache_dir.value(), cache_dir.value());
 #else
   EXPECT_EQ(non_special_profile_dir.value(), cache_dir.value());
+#endif
 #endif
 }
 

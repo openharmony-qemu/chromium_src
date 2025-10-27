@@ -19,6 +19,9 @@
 #include "third_party/blink/renderer/core/frame/local_dom_window.h"
 #include "third_party/blink/renderer/core/frame/local_frame.h"
 #include "third_party/blink/renderer/core/frame/local_frame_view.h"
+#if BUILDFLAG(IS_OHOS)
+#include "third_party/blink/renderer/core/html/parser/html_document_parser.h"
+#endif
 #include "third_party/blink/renderer/core/inspector/console_message.h"
 #include "third_party/blink/renderer/core/loader/document_loader.h"
 #include "third_party/blink/renderer/core/loader/interactive_detector.h"
@@ -157,6 +160,12 @@ void PaintTiming::MarkFirstContentfulPaint() {
   }
   if (IgnorePaintTimingScope::IgnoreDepth() > 0)
     return;
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+  LOG(INFO) << "event_message: MarkFirstContentfulPaint";
+#endif  // BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "event_message: MarkFirstContentfulPaint";
+#endif
   SetFirstContentfulPaint(clock_->NowTicks());
 }
 

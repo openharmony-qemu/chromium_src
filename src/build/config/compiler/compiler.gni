@@ -88,7 +88,7 @@ declare_args() {
   # have the same LLVM revisions as us, making bitcode useless to them.
   use_thin_lto =
       is_cfi || (is_clang && is_official_build && chrome_pgo_phase != 1 &&
-                 (is_linux || is_win || is_mac ||
+                 (is_linux || is_win || is_mac || is_ohos ||
                   (is_ios && use_lld && !is_cronet_build) ||
                   (is_android && target_os != "chromeos") ||
                   (is_chromeos && is_chromeos_device)))
@@ -200,11 +200,11 @@ if (is_chromeos) {
   } else {
     enable_frame_pointers = true
   }
-} else if (is_android) {
+} else if (is_android || is_ohos) {
   enable_frame_pointers =
       enable_profiling ||
       # Ensure that stacks from arm64 crash dumps are usable (crbug.com/391706).
-      current_cpu == "arm64" ||
+      (current_cpu == "arm64" || current_cpu == "arm") ||
       # For x86 Android, unwind tables are huge without frame pointers
       # (crbug.com/762629). Enabling frame pointers grows the code size slightly
       # but overall shrinks binaries considerably by avoiding huge unwind

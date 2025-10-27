@@ -1,0 +1,50 @@
+--- login_delegate.cc	2025-10-20 19:52:47.985876885 +0800
++++ login_delegate.cc	2025-10-16 15:55:22.358192511 +0800
+@@ -131,28 +153,47 @@
+ 
+   callback_impl->Cancel();
+ }
+ }  // namespace
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++LoginDelegate::LoginDelegate(
++    const net::AuthChallengeInfo& auth_info,
++    content::WebContents* web_contents,
++    const content::GlobalRequestID& request_id,
++    bool is_request_for_main_frame,
++    const GURL& origin_url,
++    scoped_refptr<net::HttpResponseHeaders> response_headers,
++    LoginAuthRequiredCallback callback)
++#else
+ LoginDelegate::LoginDelegate(const net::AuthChallengeInfo& auth_info,
+                              content::WebContents* web_contents,
+                              const content::GlobalRequestID& request_id,
+                              const GURL& origin_url,
+                              LoginAuthRequiredCallback callback)
++#endif
+     : callback_(std::move(callback)), weak_ptr_factory_(this) {
+   CEF_REQUIRE_UIT();
+ 
+   // May be nullptr for requests originating from CefURLRequest.
+   CefRefPtr<CefBrowserHostBase> browser;
+   if (web_contents) {
+     browser = CefBrowserHostBase::GetBrowserForContents(web_contents);
+   }
+ 
+   // |callback| needs to be executed asynchronously.
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  CEF_POST_TASK(CEF_UIT, base::BindOnce(&LoginDelegate::Start,
++                                        weak_ptr_factory_.GetWeakPtr(), browser,
++                                        auth_info, request_id,
++                                        is_request_for_main_frame,
++                                        origin_url, response_headers));
++#else
+   CEF_POST_TASK(CEF_UIT, base::BindOnce(&LoginDelegate::Start,
+                                         weak_ptr_factory_.GetWeakPtr(), browser,
+                                         auth_info, request_id, origin_url));
++#endif
+ }
+ 
+ void LoginDelegate::Continue(const CefString& username,
+                              const CefString& password) {
+   CEF_REQUIRE_UIT();

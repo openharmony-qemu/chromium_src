@@ -1,0 +1,18 @@
+--- autofill_client_provider.cc	2025-10-20 19:52:50.732822402 +0800
++++ autofill_client_provider.cc	2025-10-16 15:57:01.529437733 +0800
+@@ -17,10 +17,15 @@
+ #include "chrome/browser/autofill/android/jni_headers/AutofillClientProviderUtils_jni.h"
+ #include "chrome/browser/keyboard_accessory/android/manual_filling_controller_impl.h"
+ #include "components/android_autofill/browser/android_autofill_client.h"
+ #endif  // BUILDFLAG(IS_ANDROID)
+ 
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(ARKWEB_AUTOFILL)
++#include "cef/ohos_cef_ext/libcef/browser/autofill/oh_autofill_client.h"
++#endif
++
+ namespace autofill {
+ namespace {
+ 
+ #if BUILDFLAG(IS_ANDROID)
+ AndroidAutofillAvailabilityStatus GetAndroidAutofillAvailabilityStatus(

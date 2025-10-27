@@ -24,8 +24,12 @@ ICOImageDecoder::ICOImageDecoder(AlphaOption alpha_option,
     : ImageDecoder(alpha_option,
                    ImageDecoder::kDefaultBitDepth,
                    color_behavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
                    cc::AuxImage::kDefault,
-                   max_decoded_bytes) {}
+#endif
+
+                   max_decoded_bytes) {
+}
 
 ICOImageDecoder::~ICOImageDecoder() = default;
 

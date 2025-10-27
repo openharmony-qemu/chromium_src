@@ -187,6 +187,20 @@ WebTextInputType WebInputMethodControllerImpl::TextInputType() {
   return GetFrame()->GetInputMethodController().TextInputType();
 }
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+void WebInputMethodControllerImpl::GetInputElementAttributes(
+    HashMap<String, String>& attributes) {
+  if (IsEditContextActive()) {
+    return GetInputMethodController()
+        .GetActiveEditContext()
+        ->GetInputElementAttributes(attributes);
+  }
+
+  return GetFrame()->GetInputMethodController().GetArkwebUtilsInstance().GetInputElementAttributes(
+      attributes);
+}
+#endif
+
 void WebInputMethodControllerImpl::GetLayoutBounds(
     gfx::Rect* control_bounds,
     gfx::Rect* selection_bounds) {

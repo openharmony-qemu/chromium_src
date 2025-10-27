@@ -1,0 +1,28 @@
+--- resource_request_handler_wrapper.cc	2025-10-20 19:52:47.989867805 +0800
++++ resource_request_handler_wrapper.cc	2025-10-21 21:23:46.710661587 +0800
+@@ -1612,17 +1826,25 @@
+     }
+   }
+ 
+   CefRefPtr<CefBrowserHostBase> browserPtr;
+   CefRefPtr<CefFrame> framePtr;
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++  CefRefPtr<CefFrame> realFramePtr;
++#endif
+ 
+   // Default to handlers for the same process in case |frame| doesn't have an
+   // associated CefBrowserHost.
+   content::GlobalRenderFrameHostId global_id(frame->GetProcess()->GetID(),
+                                              MSG_ROUTING_NONE);
+ 
+   browserPtr = CefBrowserHostBase::GetBrowserForHost(frame);
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++  if (browserPtr && browserPtr->browser_info()) {
++    realFramePtr = browserPtr->browser_info()->GetFrameForHost(frame, true);
++  }
++#endif
+   if (browserPtr) {
+     // May return nullptr for excluded view requests.
+     framePtr = browserPtr->GetFrameForHost(frame);
+     if (!framePtr) {
+       framePtr = browserPtr->GetMainFrame();

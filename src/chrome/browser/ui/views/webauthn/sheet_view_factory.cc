@@ -210,7 +210,9 @@ std::unique_ptr<AuthenticatorRequestSheetView> CreateSheetViewForCurrentStepOf(
               dialog_model));
       break;
 #else
+#if !BUILDFLAG(IS_ARKWEB)
       NOTREACHED();
+#endif
 #endif
     case Step::kOffTheRecordInterstitial:
       sheet_view = std::make_unique<AuthenticatorRequestSheetView>(

@@ -1,0 +1,143 @@
+--- ruleset_service.cc	2025-10-20 19:52:53.874296013 +0800
++++ ruleset_service.cc	2025-10-16 15:54:57.811217652 +0800
+@@ -126,22 +130,34 @@
+ }
+ 
+ // static
+ void IndexedRulesetLocator::DeleteObsoleteRulesets(
+     const base::FilePath& indexed_ruleset_base_dir,
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++    const base::FilePath& unindexed_ruleset_base_dir,
++    RulesetServiceClient* client,
++#endif
+     const IndexedRulesetVersion& most_recent_version) {
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  bool has_different_format = false;
++  bool has_different_version = false;
++#endif
+   base::FilePath current_format_dir(indexed_ruleset_base_dir.AppendASCII(
+       base::NumberToString(IndexedRulesetVersion::CurrentFormatVersion())));
+ 
+   // First delete all directories containing rulesets of obsolete formats.
+   base::FileEnumerator format_dirs(indexed_ruleset_base_dir,
+                                    false /* recursive */,
+                                    base::FileEnumerator::DIRECTORIES);
+   for (base::FilePath format_dir = format_dirs.Next(); !format_dir.empty();
+        format_dir = format_dirs.Next()) {
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++    DeleteObsoleteRulesetsExt(has_different_format, format_dir, current_format_dir);
++#else
+     if (format_dir != current_format_dir)
+       base::DeletePathRecursively(format_dir);
++#endif
+   }
+ 
+   base::FilePath most_recent_version_dir =
+       most_recent_version.IsValid()
+           ? IndexedRulesetLocator::GetSubdirectoryPathForVersion(
+@@ -157,11 +173,20 @@
+     if (SentinelFile(version_dir).IsPresent())
+       continue;
+     if (version_dir == most_recent_version_dir)
+       continue;
+     base::DeletePathRecursively(version_dir);
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++    LOG(INFO) << "[Adblock] Delete obsolete indexed rulesets:"
++              << version_dir.value();
++    has_different_version = true;
++#endif
+   }
++
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++    DeleteObsoleteRulesetsClientExt(has_different_format, has_different_version, unindexed_ruleset_base_dir, client);
++#endif
+ }
+ 
+ // RulesetService -------------------------------------------------------------
+ 
+ // static
+@@ -230,11 +276,16 @@
+     const RulesetPublisher::Factory& publisher_factory)
+     : config_(config),
+       local_state_(local_state),
+       background_task_runner_(std::move(background_task_runner)),
+       is_initialized_(false),
+-      indexed_ruleset_base_dir_(indexed_ruleset_base_dir) {
++      indexed_ruleset_base_dir_(indexed_ruleset_base_dir)
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++      ,
++      ruleset_service_client_(nullptr)
++#endif
++{
+   CHECK_NE(local_state_->GetInitializationStatus(),
+            PrefService::INITIALIZATION_STATUS_WAITING,
+            base::NotFatalUntil::M129);
+   publisher_ = publisher_factory.Create(this, std::move(blocking_task_runner));
+   IndexedRulesetVersion most_recently_indexed_version(config.filter_tag);
+@@ -249,13 +300,17 @@
+     IndexedRulesetVersion(config.filter_tag).SaveToPrefs(local_state_);
+   }
+ 
+   CHECK(publisher_->BestEffortTaskRunner()->BelongsToCurrentThread(),
+         base::NotFatalUntil::M129);
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  FinishInitialization();
++#else
+   publisher_->BestEffortTaskRunner()->PostTask(
+       FROM_HERE, base::BindOnce(&RulesetService::FinishInitialization,
+                                 weak_ptr_factory_.GetWeakPtr()));
++#endif
+ }
+ 
+ RulesetService::~RulesetService() = default;
+ 
+ void RulesetService::IndexAndStoreAndPublishRulesetIfNeeded(
+@@ -396,23 +457,48 @@
+     return false;
+   UnindexedRulesetReader reader(
+       unindexed_ruleset_stream_generator->ruleset_stream());
+ 
+   size_t num_unsupported_rules = 0;
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  size_t num_supported_url_rules = 0;
++  size_t num_supported_css_rules = 0;
++  size_t num_unsupported_css_rules = 0;
++#endif
++
+   url_pattern_index::proto::FilteringRules ruleset_chunk;
+   while (reader.ReadNextChunk(&ruleset_chunk)) {
+     for (const auto& rule : ruleset_chunk.url_rules()) {
+       if (!indexer->AddUrlRule(rule))
+         ++num_unsupported_rules;
+     }
++
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++    for (const auto& rule : ruleset_chunk.css_rules()) {
++      if (!indexer->AsArkWebRulesetIndexerExt()->AddCssRule(rule)) {
++        ++num_unsupported_css_rules;
++      } else {
++        ++num_supported_css_rules;
++      }
++    }
++#endif
+   }
+   indexer->Finish();
+ 
+   base::UmaHistogramCounts10000(
+       base::StrCat({config.uma_tag, ".IndexRuleset.NumUnsupportedRules"}),
+       num_unsupported_rules);
+ 
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  LOG(INFO) << "[AdBlock] reader.num_bytes_read=" << reader.num_bytes_read()
++            << ", unindexed_ruleset size=" << unindexed_ruleset_size
++            << ", num_unsupported url_rules=" << num_unsupported_rules
++            << ", num_unsupported_css_rules=" << num_unsupported_css_rules
++            << ", num_supported_url_rules=" << num_supported_url_rules
++            << ", num_supported_css_rules=" << num_supported_css_rules;
++#endif
++
+   return reader.num_bytes_read() == unindexed_ruleset_size;
+ }
+ 
+ // static
+ RulesetService::IndexAndWriteRulesetResult RulesetService::WriteRuleset(

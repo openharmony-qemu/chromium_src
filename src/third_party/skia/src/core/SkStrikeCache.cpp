@@ -16,6 +16,7 @@
 #include "src/core/SkDescriptor.h"
 #include "src/core/SkStrike.h"
 #include "src/core/SkStrikeSpec.h"
+#include "base/logging.h"
 
 #include <algorithm>
 #include <utility>
@@ -247,6 +248,11 @@ size_t SkStrikeCache::internalPurge(size_t minBytesNeeded, bool checkPinners) {
         if (strike->fPinner == nullptr || (checkPinners && strike->fPinner->canDelete())) {
             bytesFreed += strike->fMemoryUsed;
             countFreed += 1;
+    #if BUILDFLAG(IS_ARKWEB)
+        if (strike->fRemoved) {
+            LOG(ERROR) << "strike is already removed or invalid strike pointer";
+        }
+    #endif
             this->internalRemoveStrike(strike);
         }
         strike = prev;

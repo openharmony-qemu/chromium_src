@@ -1,0 +1,20 @@
+--- pdf.mojom	2025-10-20 19:52:57.370208635 +0800
++++ pdf.mojom	2025-10-20 19:31:26.808081619 +0800
+@@ -67,6 +67,17 @@
+   // A busy state is when it has some queued pages to process or is processing a
+   // page at the moment. It comes out of this state either when all tasks are
+   // completed or canceled.
+   [EnableIf=enable_screen_ai_service]
+   OnSearchifyStateChange(bool busy);
++
++  // #if BUILDFLAG(ARKWEB_PDF)
++  [EnableIf=arkweb_pdf]
++  UpdateClientClippedSelectionBoundsForPDF(gfx.mojom.Rect clipped_selection_bounds);
++
++  [EnableIf=arkweb_pdf]
++  HideHandleAndQuickMenuForPDF(bool hide_handles);
++
++  [EnableIf=arkweb_pdf]
++  ResetResponsePendingInputEvent();
++  // #endif
+ };

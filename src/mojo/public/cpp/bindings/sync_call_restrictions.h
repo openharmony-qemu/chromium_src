@@ -38,6 +38,7 @@ class SharedImageInterfaceProxy;
 
 namespace ui {
 class Compositor;
+class CompositorUtils;
 }  // namespace ui
 
 namespace viz {
@@ -140,6 +141,9 @@ class COMPONENT_EXPORT(MOJO_CPP_BINDINGS) SyncCallRestrictions {
   friend class gpu::SharedImageInterfaceProxy;
 #if BUILDFLAG(IS_WIN)
   friend class content::DCOMPTextureFactory;
+#endif
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  friend class content::NativeTextureFactory;
 #endif
 #if BUILDFLAG(IS_MAC)
   friend class web_app::WebAppShortcutCopierSyncCallHelper;

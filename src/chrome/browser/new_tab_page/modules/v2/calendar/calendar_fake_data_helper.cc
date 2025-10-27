@@ -11,12 +11,22 @@
 namespace {
 
 const char kGoogleCalendarDriveIconUrl[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://xxx"
+    "xxx";
+#else
     "https://drive-thirdparty.googleusercontent.com/16/type/application/"
     "vnd.google-apps.document";
+#endif
 
 const char kOutlookCalendarDocIconUrl[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://xxx"
+    "xxx";
+#else
     "https://res.cdn.office.net/files/fabric-cdn-prod_20240925.001/assets/"
     "item-types/16/docx.png";
+#endif
 
 }  // namespace
 

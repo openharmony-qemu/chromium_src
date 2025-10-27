@@ -11,6 +11,7 @@
 #include "base/memory/raw_ptr.h"
 #include "base/memory/shared_memory_mapping.h"
 #include "components/viz/host/host_display_client.h"
+#include "libcef/browser/alloy/alloy_browser_host_impl.h"
 #include "ui/gfx/native_widget_types.h"
 
 class CefLayeredWindowUpdaterOSR;
@@ -41,6 +42,11 @@ class CefHostDisplayClientOSR : public viz::HostDisplayClient {
 #if BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE_X11)
   void DidCompleteSwapWithNewSize(const gfx::Size& size) override;
 #endif
+
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+  void DidCompleteSwapWithNewSizeOHOS(const gfx::Size& size) override;
+  CefRefPtr<AlloyBrowserHostImpl> browser_impl_;
+#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 
   const raw_ptr<CefRenderWidgetHostViewOSR> view_;
   std::unique_ptr<CefLayeredWindowUpdaterOSR> layered_window_updater_;

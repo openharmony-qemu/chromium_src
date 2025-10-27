@@ -1,0 +1,42 @@
+--- global_features.h	2025-10-20 19:52:49.697964087 +0800
++++ global_features.h	2025-10-16 15:57:00.253653690 +0800
+@@ -12,11 +12,12 @@
+ 
+ namespace system_permission_settings {
+ class PlatformHandle;
+ }  // namespace system_permission_settings
+ namespace whats_new {
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
++    BUILDFLAG(ARKWEB_ASAN) || BUILDFLAG(ARKWEB_TEST)
+ class WhatsNewRegistry;
+ #endif
+ }  // namespace whats_new
+ 
+ // This class owns the core controllers for features that are globally
+@@ -59,21 +61,23 @@
+   // testing. e.g.
+   // virtual std::unique_ptr<FooFeature> CreateFooFeature();
+ 
+   virtual std::unique_ptr<system_permission_settings::PlatformHandle>
+   CreateSystemPermissionsPlatformHandle();
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
++    BUILDFLAG(ARKWEB_ASAN) || BUILDFLAG(ARKWEB_TEST)
+   virtual std::unique_ptr<whats_new::WhatsNewRegistry> CreateWhatsNewRegistry();
+ #endif
+ 
+  private:
+   // Features will each have a controller. e.g.
+   // std::unique_ptr<FooFeature> foo_feature_;
+ 
+   std::unique_ptr<system_permission_settings::PlatformHandle>
+       system_permissions_platform_handle_;
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
++    BUILDFLAG(ARKWEB_ASAN) || BUILDFLAG(ARKWEB_TEST)
+   std::unique_ptr<whats_new::WhatsNewRegistry> whats_new_registry_;
+ #endif
+ };
+ 
+ #endif  // CHROME_BROWSER_GLOBAL_FEATURES_H_

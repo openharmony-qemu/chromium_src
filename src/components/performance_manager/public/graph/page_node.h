@@ -139,6 +139,10 @@ class PageNode : public TypedNode<PageNode> {
   // A tab is off the record when it is open in incognito or guest mode.
   virtual bool IsOffTheRecord() const = 0;
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+  virtual bool IsMediaPlaying() const = 0;
+#endif
+
   // Returns the page's loading state.
   virtual LoadingState GetLoadingState() const = 0;
 

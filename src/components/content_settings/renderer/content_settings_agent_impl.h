@@ -30,6 +30,8 @@ class WebURL;
 
 namespace content_settings {
 
+class ArkWebContentSettingsAgentImplExt;
+
 // This class serves as an agent of the browser-side content settings machinery
 // to implement browser-specified rules directly within the renderer process.
 // In some cases it forwards requests on to the browser to determine policy.
@@ -64,6 +66,9 @@ class ContentSettingsAgentImpl
   ContentSettingsAgentImpl& operator=(const ContentSettingsAgentImpl&) = delete;
 
   ~ContentSettingsAgentImpl() override;
+
+  friend class ArkWebContentSettingsAgentImplExt;
+  virtual ArkWebContentSettingsAgentImplExt *AsArkWebContentSettingsAgentImplExt() { return nullptr; }
 
   // Sends an IPC notification that the specified content type was blocked.
   void DidBlockContentType(ContentSettingsType settings_type);
@@ -146,5 +151,6 @@ class ContentSettingsAgentImpl
 };
 
 }  // namespace content_settings
+#include "arkweb/chromium_ext/components/content_settings/renderer/arkweb_content_settings_agent_impl_ext.h"
 
 #endif  // COMPONENTS_CONTENT_SETTINGS_RENDERER_CONTENT_SETTINGS_AGENT_IMPL_H_

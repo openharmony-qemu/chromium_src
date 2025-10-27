@@ -1,0 +1,187 @@
+--- BUILD.gn	2025-10-20 19:52:48.987590560 +0800
++++ BUILD.gn	2025-10-16 15:56:59.381992543 +0800
+@@ -116,11 +121,11 @@
+     flags += [ "ENABLE_SEGMENT_HEAP=$enable_segment_heap" ]
+   }
+ 
+   # Android and ChromeOS don't support multiple browser processes, so they don't
+   # employ ProcessSingleton.
+-  if (is_android || is_chromeos) {
++  if (is_android || is_chromeos || is_ohos) {
+     flags += [ "ENABLE_PROCESS_SINGLETON=0" ]
+   } else {
+     flags += [ "ENABLE_PROCESS_SINGLETON=1" ]
+   }
+ }
+@@ -134,10 +139,14 @@
+   public_deps = [
+     "//build:chromeos_buildflags",
+     "//chrome/common:buildflags",
+     "//media:media_buildflags",
+   ]
++
++  if (arkweb_adblock) {
++    sources += arkweb_browser_process_sources
++  }
+ }
+ 
+ source_set("main_extra_parts") {
+   sources = [ "chrome_browser_main_extra_parts.h" ]
+ }
+@@ -1695,10 +1704,18 @@
+     "webid/federated_identity_permission_context_factory.h",
+     "webid/identity_provider_permission_request.cc",
+     "webid/identity_provider_permission_request.h",
+   ]
+ 
++  if (arkweb_password_autofill) {
++    sources += arkweb_chrome_browser_password_manager_sources
++  }
++
++  if (arkweb_adblock) {
++    sources += arkweb_browser_process_impl_sources
++  }
++
+   configs += [
+     "//build/config/compiler:wexit_time_destructors",
+     "//build/config:precompiled_headers",
+   ]
+   defines = [ "ZLIB_CONST" ]
+@@ -6721,11 +6745,11 @@
+       "//components/enterprise/client_certificates/core",
+       "//components/enterprise/core",
+     ]
+   }
+ 
+-  if (is_linux || is_win || is_mac || is_chromeos_ash) {
++  if (is_linux || is_win || is_mac || is_chromeos_ash || arkweb_asan) {
+     sources += [
+       "enterprise/connectors/device_trust/device_trust_connector_service.cc",
+       "enterprise/connectors/device_trust/device_trust_connector_service.h",
+       "enterprise/connectors/device_trust/device_trust_connector_service_factory.cc",
+       "enterprise/connectors/device_trust/device_trust_connector_service_factory.h",
+@@ -6833,10 +6857,29 @@
+       "enterprise/connectors/reporting/realtime_reporting_client.cc",
+       "enterprise/connectors/reporting/realtime_reporting_client.h",
+       "enterprise/connectors/reporting/realtime_reporting_client_factory.cc",
+       "enterprise/connectors/reporting/realtime_reporting_client_factory.h",
+     ]
++    if (is_ohos && safe_browsing_mode == 0) {
++      if (arkweb_asan) {
++        sources -= [
++          "enterprise/connectors/analysis/page_print_analysis_request.cc",
++          "enterprise/connectors/analysis/page_print_analysis_request.h",
++          "enterprise/connectors/analysis/files_request_handler.cc",
++          "enterprise/connectors/analysis/files_request_handler.h",
++          "enterprise/connectors/analysis/content_analysis_delegate.cc",
++          "enterprise/connectors/analysis/content_analysis_delegate.h",
++        ]
++        sources += [
++          arkweb_chrome_enterprise_connectors_analysis
++        ]
++      }
++      sources -= [
++        "safe_browsing/generated_safe_browsing_pref.cc",
++        "safe_browsing/generated_safe_browsing_pref.h",
++      ]
++    }
+   }
+ 
+   if (enterprise_local_content_analysis) {
+     sources += [
+       "enterprise/connectors/analysis/local_binary_upload_service.cc",
+@@ -7029,10 +7114,33 @@
+       "//components/dbus/utils",
+       "//components/os_crypt/async/browser:secret_portal_key_provider",
+     ]
+   }
+ 
++  if (is_ohos) {
++    sources += [
++      "first_run/upgrade_util_linux.cc",
++      "first_run/upgrade_util_linux.h",
++      "//arkweb/chromium_ext/chrome/browser/shell_integration_ohos.cc",
++      "//arkweb/chromium_ext/chrome/browser/platform_util_ohos.cc",
++      "//arkweb/chromium_ext/chrome/browser/icon_loader_ohos.cc",
++    ]
++    if (arkweb_asan) {
++      sources += [
++        "shell_integration_linux.cc",
++        "shell_integration_linux.h",
++      ]
++    }
++    deps += [
++      "//chrome/app/theme:chrome_unscaled_resources_grit"
++    ]
++  }
++
++    if (arkweb_asan) {
++    sources -= []
++  }
++
+   if (is_linux || is_chromeos_lacros) {
+     sources += [
+       "first_run/upgrade_util_linux.cc",
+       "first_run/upgrade_util_linux.h",
+     ]
+@@ -8433,10 +8554,17 @@
+         "net/server_certificate_database_nss_migrator.h",
+       ]
+     }
+   }
+ 
++  if (is_ohos) {
++    sources += [
++      #"//arkweb/chromium_ext/chrome/browser/certificate_manager_model_ohos.cc",
++      #"//arkweb/chromium_ext/chrome/browser/certificate_manager_model_ohos.h"
++    ]
++  }
++
+   if (use_udev) {
+     deps += [ "//device/udev_linux" ]
+   }
+ 
+   if (safe_browsing_mode != 0) {
+@@ -8539,10 +8667,18 @@
+   }
+ 
+   if (enable_reporting) {
+     deps += [ "//components/tpcd/enterprise_reporting" ]
+   }
++
++  if (enable_arkweb) {
++    deps += [ "//arkweb/build/features" ]
++  }
++
++  if (enable_arkweb) {
++    public_deps += [ "//arkweb/build/features" ]
++  }
+ }
+ 
+ # These are the dependencies for the "browser" target that are outside of
+ # //chrome/browser. All gn targets that have circular dependencies with
+ # "browser" should include this dependency.
+@@ -8842,21 +8978,21 @@
+     public_deps += [ "//chrome/browser/ui/startup:buildflags" ]
+     if (is_chrome_branded) {
+       public_deps += [ "//chrome/browser/win/conflicts:module_list_proto" ]
+     }
+   }
+-  if (is_win || is_mac || is_linux) {
++  if (is_win || is_mac || is_linux || is_ohos) {
+     public_deps += [
+       "//chrome/browser/enterprise/connectors/device_trust/attestation/common/proto:attestation_ca_proto",
+       "//chrome/browser/enterprise/connectors/device_trust/attestation/common/proto:google_key_proto",
+       "//chrome/browser/enterprise/connectors/device_trust/attestation/common/proto:interface_proto",
+       "//chrome/browser/ui/webui/app_home:mojo_bindings",
+       "//chrome/browser/ui/webui/on_device_translation_internals:mojo_bindings",
+       "//chrome/browser/ui/webui/whats_new:mojo_bindings",
+     ]
+   }
+-  if (is_win || is_mac || is_linux || is_chromeos_ash) {
++  if (is_win || is_mac || is_linux || is_chromeos_ash || is_ohos) {
+     public_deps +=
+         [ "//chrome/browser/ui/webui/connectors_internals:mojo_bindings" ]
+   }
+   if (safe_browsing_mode == 1) {
+     public_deps += [ "//chrome/browser/ui/webui/reset_password:mojo_bindings" ]

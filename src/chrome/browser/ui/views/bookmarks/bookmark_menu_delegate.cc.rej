@@ -1,0 +1,18 @@
+--- bookmark_menu_delegate.cc	2025-10-20 19:52:50.844876352 +0800
++++ bookmark_menu_delegate.cc	2025-10-16 15:57:01.661650078 +0800
+@@ -497,10 +497,15 @@
+     const ui::DropTargetEvent& event) {
+   std::optional<BookmarkMenuDelegate::DropParams> drop_params =
+       GetDropParams(menu, &position);
+   CHECK(drop_params);
+ 
++#if BUILDFLAG(IS_OHOS)
++  const OSExchangeData& data = event.data();
++  drop_data_.Read(data);
++#endif
++
+   std::unique_ptr<BookmarkModelDropObserver> drop_observer =
+       std::make_unique<BookmarkModelDropObserver>(
+           profile_, std::move(drop_data_), drop_params->drop_parent,
+           drop_params->index_to_drop_at);
+   return base::BindOnce(

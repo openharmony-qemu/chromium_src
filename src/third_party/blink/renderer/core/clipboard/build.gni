@@ -23,6 +23,10 @@ blink_core_sources_clipboard = [
   "system_clipboard.h",
 ]
 
+if (is_arkweb) {
+  blink_core_sources_clipboard += arkweb_third_patry_blink_renderer_core_clipboard_sources
+}
+
 if (is_win) {
   blink_core_sources_clipboard += [ "clipboard_utilities_win.cc" ]
 }

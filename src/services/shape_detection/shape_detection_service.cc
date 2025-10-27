@@ -33,8 +33,8 @@
 #elif BUILDFLAG(IS_MAC)
 #include "services/shape_detection/face_detection_provider_mac.h"
 #elif BUILDFLAG(IS_ANDROID)
-// No C++ code, face detection comes from Java.
 #else
+// No C++ code, face detection comes from Java.
 #include "services/shape_detection/face_detection_provider_impl.h"
 #endif
 

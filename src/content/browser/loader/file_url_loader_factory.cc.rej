@@ -1,0 +1,14 @@
+--- file_url_loader_factory.cc	2025-10-20 19:52:54.318498596 +0800
++++ file_url_loader_factory.cc	2025-10-16 15:54:59.448748672 +0800
+@@ -455,10 +474,11 @@
+                    int32_t intra_priority_value) override {}
+   void PauseReadingBodyFromNet() override {}
+   void ResumeReadingBodyFromNet() override {}
+ 
+  private:
++  friend class FileURLLoaderUtils;
+   // Used to save outstanding redirect data while waiting for FollowRedirect
+   // to be called. Values default to their most restrictive in case they are
+   // not set.
+   struct RedirectData {
+     bool is_directory = false;

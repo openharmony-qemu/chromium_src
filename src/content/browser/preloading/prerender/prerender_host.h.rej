@@ -1,0 +1,17 @@
+--- prerender_host.h	2025-10-20 19:52:54.362518586 +0800
++++ prerender_host.h	2025-10-20 19:31:26.804056868 +0800
+@@ -218,10 +218,14 @@
+       const PrunedDetails& pruned_details) override {}
+   void NotifyNavigationEntriesDeleted() override {}
+   void ActivateAndShowRepostFormWarningDialog() override;
+   bool ShouldPreserveAbortedURLs() override;
+   void UpdateOverridingUserAgent() override {}
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++  std::string NotifyNavigationRewriteUrl(const std::string& original_url,
++                                         const std::string& referrer) override { return ""; }
++#endif
+ 
+   NavigationControllerImpl& GetNavigationController() {
+     return frame_tree_->controller();
+   }
+ 

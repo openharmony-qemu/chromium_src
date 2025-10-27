@@ -542,8 +542,15 @@ void SelectionEditor::UpdateCachedAbsoluteBoundsIfNeeded() const {
   DCHECK_GE(GetDocument().Lifecycle().GetState(),
             DocumentLifecycle::kAfterPerformLayout);
   AssertSelectionValid();
+#if BUILDFLAG(ARKWEB_MENU)
+  if (!NeedsUpdateAbsoluteBounds() && !recalculate_cursor_location_) {
+    return;
+  }
+  recalculate_cursor_location_ = false;
+#else
   if (!NeedsUpdateAbsoluteBounds())
     return;
+#endif
 
   DocumentLifecycle::DisallowTransitionScope disallow_transition(
       frame_->GetDocument()->Lifecycle());

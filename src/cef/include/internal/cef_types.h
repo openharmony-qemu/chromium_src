@@ -47,10 +47,14 @@
 #include "include/internal/cef_types_win.h"
 #elif defined(OS_MAC)
 #include "include/internal/cef_types_mac.h"
-#elif defined(OS_LINUX)
+#elif defined(OS_LINUX) || defined(OS_OHOS)
 #include "include/internal/cef_types_linux.h"
+#include "build/build_config.h"
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "cef/ohos_cef_ext/include/internal/arkweb_cef_types_pre_ext.h"
+#endif
 // 32-bit ARGB color value, not premultiplied. The color components are always
 // in a known order. Equivalent to the SkColor type.
 typedef uint32_t cef_color_t;
@@ -556,6 +560,15 @@ typedef struct _cef_request_context_settings_t {
   ///
   cef_string_t cookieable_schemes_list;
   int cookieable_schemes_exclude_defaults;
+
+#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
+  bool incognito_mode;
+#endif
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  /// Only used by Extensions's background script initialization during startup.
+  void* global_request_context;
+#endif
 } cef_request_context_settings_t;
 
 ///
@@ -699,6 +712,76 @@ typedef struct _cef_browser_settings_t {
   ///
   cef_color_t background_color;
 
+#if BUILDFLAG(IS_ARKWEB)
+  /* ohos webview begin */
+  ///
+  /// Force the background color to be dark
+  ///
+  cef_state_t force_dark_mode_enabled;
+  cef_state_t dark_prefer_color_scheme_enabled;
+  cef_state_t loads_images_automatically;
+  bool javascript_can_open_windows_automatically;
+  int text_size_percent;
+  cef_state_t allow_running_insecure_content;
+  cef_state_t strict_mixed_content_checking;
+  cef_state_t allow_mixed_content_upgrades;
+  bool geolocation_enabled;
+  bool supports_double_tap_zoom;
+  bool supports_multi_touch_zoom;
+  bool zoom_control_access;
+  cef_state_t initialize_at_minimum_page_scale;
+  std::optional<bool> viewport_meta_enabled;
+  bool user_gesture_required;
+  bool pinch_smooth_mode;
+  cef_state_t hide_vertical_scrollbars;
+  cef_state_t hide_horizontal_scrollbars;
+  bool contextmenu_customization_enabled;
+  cef_color_t scrollbar_color;
+  bool is_safe_browsing_enable;
+  bool scroll_enabled;
+  int draw_mode;
+  cef_state_t text_autosizing_enabled;
+  cef_state_t universal_access_from_file_urls;
+  bool force_zero_layout_height;
+  /* ohos webview end */
+#endif  // BUILDFLAG(IS_OHOS)
+
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+  bool error_page_enabled;
+#endif
+
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
+  double border_radius_top_left;
+  double border_radius_top_right;
+  double border_radius_bottom_left;
+  double border_radius_bottom_right;
+#endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+
+#if BUILDFLAG(ARKWEB_MENU)
+  bool touch_handle_exist;
+  bool viewport_scale;
+#endif  // BUILDFLAG(ARKWEB_MENU)
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  cef_state_t native_embed_mode_enabled;
+  cef_state_t intrinsic_size_enabled;
+  cef_state_t css_display_change_enabled;
+  cef_string_t embed_tag;
+  cef_string_t embed_tag_type;
+#endif  // BUILDFLAG(ARKWEB_SAME_LAYER)
+
+#if BUILDFLAG(ARKWEB_CSS_FONT)
+  float font_weight_scale;
+#endif
+
+#if BUILDFLAG(ARKWEB_COPY_OPTION)
+  int32_t copy_option;
+#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
+
+#if BUILDFLAG(ARKWEB_FOCUS)
+  int32_t gesture_focus_mode;
+#endif
+
   ///
   /// Controls whether the Chrome status bubble will be used. Only supported
   /// with Chrome style. For details about the status bubble see
@@ -711,6 +794,38 @@ typedef struct _cef_browser_settings_t {
   /// supported with Chrome style.
   ///
   cef_state_t chrome_zoom_bubble;
+
+#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
+  bool incognito_mode;
+#endif
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  bool custom_video_player_enable;
+  bool custom_video_player_overlay;
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#if BUILDFLAG(ARKWEB_MULTI_WINDOW)
+  bool supports_multiple_windows;
+#endif  // ARKWEB_MULTI_WINDOW
+
+#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
+  bool record_whole_document;
+#endif
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  int32_t usage_scenario;
+#endif
+
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
+  cef_string_t shared_render_process_token;
+#endif
+#if BUILDFLAG(ARKWEB_ACTIVE_POLICY)
+  int64_t delay_for_background_tab_freezing;
+#endif
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  int blur_enabled;
+#endif
+#if BUILDFLAG(ARKWEB_MEDIA_NETWORK_TRAFFIC_PROMPT)
+  bool enable_media_network_traffic_prompt;
+#endif  // ARKWEB_MEDIA_NETWORK_TRAFFIC_PROMPT
 } cef_browser_settings_t;
 
 ///
@@ -1933,6 +2048,18 @@ typedef struct _cef_screen_info_t {
   /// available surface for rendering popup views.
   ///
   cef_rect_t available_rect;
+
+#if BUILDFLAG(IS_OHOS)
+  ///
+  /// This is screen orientation angle.
+  ///
+  int16_t angle;
+
+  ///
+  /// This is screen orientation type.
+  ///
+  cef_screen_orientation_type_t orientation;
+#endif  // BUILDFLAG(IS_OHOS)
 } cef_screen_info_t;
 
 ///
@@ -2007,6 +2134,14 @@ typedef enum {
 
   // Custom menu items originating from the renderer process.
   MENU_ID_CUSTOM_FIRST = 220,
+#if BUILDFLAG(IS_OHOS)
+  MENU_ID_IMAGE_COPY = 221,
+#endif  // BUILDFLAG(IS_OHOS)
+
+#if BUILDFLAG(IS_OHOS)
+  MENU_ID_IMAGE_SHARE = 222,
+  MENU_ID_FEED_SHARE = 223,
+#endif
   MENU_ID_CUSTOM_LAST = 250,
 
   // All user-defined menu IDs should come between MENU_ID_USER_FIRST and
@@ -2023,6 +2158,10 @@ typedef enum {
   MBT_LEFT = 0,
   MBT_MIDDLE,
   MBT_RIGHT,
+#if BUILDFLAG(IS_OHOS)
+  MBT_BACK,
+  MBT_FORWARD,
+#endif  // BUILDFLAG(IS_OHOS)
 } cef_mouse_button_type_t;
 
 ///
@@ -2044,7 +2183,37 @@ typedef struct _cef_mouse_event_t {
   /// cef_event_flags_t for values.
   ///
   uint32_t modifiers;
+
+  ///
+  /// X raw coordinate relative to the left side of the view.
+  ///
+  int raw_x;
+
+  ///
+  /// Y raw coordinate relative to the top side of the view.
+  ///
+  int raw_y;
+
+  ///
+  /// event source. See cef_event_source_t for values.
+  ///
+  int32_t source;
+
 } cef_mouse_event_t;
+
+typedef enum {
+  CEF_EST_UNKNOWN = 0,
+  CEF_EST_FINGER = 1,
+  CEF_EST_PEN = 2,
+  CEF_EST_RUBBER = 3,
+  CEF_EST_BRUSH = 4,
+  CEF_EST_PENCIL = 5,
+  CEF_EST_AIRBRUSH = 6,
+  CEF_EST_MOUSE = 7,
+  CEF_EST_LENS = 8,
+  CEF_EST_TOUCHPAD = 9,
+  CEF_EST_JOYSTICK = 10,
+} cef_event_source_t;
 
 ///
 /// Touch points states types.
@@ -2123,11 +2292,35 @@ typedef struct _cef_touch_event_t {
   ///
   uint32_t modifiers;
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  ///
+  /// Stylus X-axis tilt angle.
+  /// Angle of the stylus relative to the screen plane along the X-axis.
+  /// Range: [-90.0, 90.0] degrees.
+  /// 0 indicates the stylus is perpendicular to the screen, positive values indicate right tilt,
+  /// negative values indicate left tilt. Set to 0.0 if not supported.
+  ///
+  float tiltX;
+
+  ///
+  /// Stylus Y-axis tilt angle.
+  /// Angle of the stylus relative to the screen plane along the Y-axis.
+  /// Range: [-90.0, 90.0] degrees.
+  /// 0 indicates the stylus is perpendicular to the screen, positive values indicate forward tilt,
+  /// negative values indicate backward tilt. Set to 0.0 if not supported.
+  ///
+  float tiltY;
+#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
   ///
   /// The device type that caused the event.
   ///
   cef_pointer_type_t pointer_type;
 
+  ///
+  /// The touch is from overlay.
+  ///
+  bool from_overlay;
 } cef_touch_event_t;
 
 ///
@@ -2294,6 +2487,9 @@ typedef enum {
   QM_EDITFLAG_CAN_CUT = 1 << 1,
   QM_EDITFLAG_CAN_COPY = 1 << 2,
   QM_EDITFLAG_CAN_PASTE = 1 << 3,
+#if BUILDFLAG(IS_OHOS)
+  QM_EDITFLAG_CAN_SELECT_ALL = 1 << 4,
+#endif  // BUILDFLAG(IS_OHOS)
 } cef_quick_menu_edit_state_flags_t;
 
 ///
@@ -3054,6 +3250,13 @@ typedef enum {
   /// Transparency with post-multiplied alpha component.
   ///
   CEF_ALPHA_TYPE_POSTMULTIPLIED,
+
+#if BUILDFLAG(IS_OHOS)
+  ///
+  /// Unknown alpha type.
+  ///
+  CEF_ALPHA_TYPE_UNKNOWN,
+#endif  // BUILDFLAG(IS_OHOS)
 } cef_alpha_type_t;
 
 ///
@@ -3180,6 +3383,13 @@ typedef enum {
   /// Align the text's right edge with that of its display area.
   ///
   CEF_HORIZONTAL_ALIGNMENT_RIGHT,
+
+#if BUILDFLAG(IS_OHOS)
+  ///
+  /// Undefined align.
+  ///
+  CEF_HORIZONTAL_ALIGNMENT_UNDEFINED,
+#endif  // BUILDFLAG(IS_OHOS)
 } cef_horizontal_alignment_t;
 
 ///
@@ -3312,6 +3522,14 @@ typedef enum {
   /// requests.
   ///
   CEF_SCHEME_OPTION_FETCH_ENABLED = 1 << 6,
+
+#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
+  ///
+  /// If CEF_SCHEME_OPTION_CODE_CACHE_ENABLED is set the js of the scheme can
+  /// generate code cache.
+  ///
+  CEF_SCHEME_OPTION_CODE_CACHE_ENABLED = 1 << 7,
+#endif
 } cef_scheme_options_t;
 
 ///
@@ -3737,6 +3955,9 @@ typedef enum {
   CEF_THS_FLAG_ORIENTATION = 1 << 1,
   CEF_THS_FLAG_ORIGIN = 1 << 2,
   CEF_THS_FLAG_ALPHA = 1 << 3,
+#if BUILDFLAG(IS_OHOS)
+  CEF_THS_FLAG_EDGE_HEIGHT = 1 << 4,
+#endif  // BUILDFLAG(IS_OHOS)
 } cef_touch_handle_state_flags_t;
 
 typedef struct _cef_touch_handle_state_t {
@@ -3777,6 +3998,18 @@ typedef struct _cef_touch_handle_state_t {
   /// Alpha state. Only set if |flags| contains CEF_THS_FLAG_ALPHA.
   ///
   float alpha;
+
+#if BUILDFLAG(IS_OHOS)
+  ///
+  /// Edge height state. Only set if |flags| contains CEF_THS_FLAG_EDGE_HEIGHT.
+  ///
+  int edge_height;
+
+  ///
+  /// view port state. Only set if |flags| contains CEF_THS_FLAG_VIEW_PORT.
+  ///
+  cef_point_t view_port;
+#endif  // BUILDFLAG(IS_OHOS)
 } cef_touch_handle_state_t;
 
 ///
@@ -4129,6 +4362,10 @@ typedef struct _cef_task_info_t {
   /// has this value set to true because it is the aggregate of all processes).
   int is_gpu_memory_inflated;
 } cef_task_info_t;
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "cef/ohos_cef_ext/include/internal/arkweb_cef_types_after_ext.h"
+#endif
 
 #ifdef __cplusplus
 }

@@ -173,7 +173,11 @@ bool CefMenuManager::CreateContextMenu(const content::ContextMenuParams& params,
     CefRefPtr<CefContextMenuHandler> handler = client->GetContextMenuHandler();
     if (handler.get()) {
       CefRefPtr<CefContextMenuParamsImpl> paramsPtr(
+#if BUILDFLAG(IS_ARKWEB)
+          new ArkWebCefContextMenuParamsImplExt(&params_));
+#else
           new CefContextMenuParamsImpl(&params_));
+#endif
       CefRefPtr<CefFrame> frame = browser_->GetFocusedFrame();
 
       handler->OnBeforeContextMenu(browser_.get(), frame, paramsPtr.get(),
@@ -246,7 +250,11 @@ void CefMenuManager::ExecuteCommand(CefRefPtr<CefMenuModelImpl> source,
     CefRefPtr<CefContextMenuHandler> handler = client->GetContextMenuHandler();
     if (handler.get()) {
       CefRefPtr<CefContextMenuParamsImpl> paramsPtr(
+#if BUILDFLAG(IS_ARKWEB)
+          new ArkWebCefContextMenuParamsImplExt(&params_));
+#else
           new CefContextMenuParamsImpl(&params_));
+#endif
 
       bool handled = handler->OnContextMenuCommand(
           browser_.get(), browser_->GetFocusedFrame(), paramsPtr.get(),

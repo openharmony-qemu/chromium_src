@@ -40,6 +40,7 @@
 #include "third_party/blink/renderer/platform/weborigin/security_policy.h"
 #include "third_party/blink/renderer/platform/wtf/casting.h"
 #include "third_party/blink/renderer/platform/wtf/hash_counted_set.h"
+#include "third_party/blink/renderer/core/html/html_frame_owner_element_ext.h"
 
 namespace blink {
 
@@ -50,7 +51,8 @@ class WebPluginContainerImpl;
 class ResourceRequestHead;
 
 class CORE_EXPORT HTMLFrameOwnerElement : public HTMLElement,
-                                          public FrameOwner {
+                                          public FrameOwner,
+                                          public HTMLFrameOwnerElementExt {
  public:
   ~HTMLFrameOwnerElement() override;
 

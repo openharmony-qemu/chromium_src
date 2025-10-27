@@ -54,7 +54,7 @@ group("deps") {
         "$clang_base_path/bin/llvm-symbolizer${exe}",
       ]
     }
-    if (is_asan || is_lsan || is_msan || is_tsan || is_ubsan_any) {
+    if (is_asan || is_lsan || is_msan || is_tsan || is_ubsan_any || is_hwasan) {
       public_configs += [ ":sanitizer_options_link_helper" ]
       deps += [ ":options_sources" ]
     }
@@ -210,8 +210,10 @@ config("default_sanitizer_ldflags") {
       ldflags += [ "-fsanitize=vptr" ]
     }
     foreach(sanitizer, sanitizers) {
+      if (!is_hwasan) {
       ldflags += [ "-fsanitize=$sanitizer" ]
       rustflags += [ "-Zsanitizer=$sanitizer" ]
+    }
     }
 
     if (use_sanitizer_coverage) {
@@ -467,7 +469,19 @@ config("coverage_flags") {
 config("hwasan_flags") {
   if (is_hwasan) {
     asmflags = [ "-fsanitize=hwaddress" ]
-    cflags = [ "-fsanitize=hwaddress" ]
+    cflags = [ 
+      "-fsanitize=hwaddress",
+      "-fno-omit-frame-pointer",
+      "-fno-lto",
+      "-fno-whole-program-vtables",
+      "-mllvm",
+      "-hwasan-globals=0",
+      "-fno-sanitize=cfi-icall",
+      "-fno-emulated-tls",
+      "-ftls-model=local-dynamic",
+      "-shared-libasan",
+    ]
+    ldflags = ["-l:libc++_static.a"]
   }
 }
 

@@ -190,6 +190,9 @@ ExtensionFunction::ResponseAction GcmSendFunction::Run() {
 
   // Send might have already responded synchronously.
   return did_respond() ? AlreadyResponded() : RespondLater();
+#else
+  return RespondNow(NoArguments());
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 void GcmSendFunction::CompleteFunctionWithResult(

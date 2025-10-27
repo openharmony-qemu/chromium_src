@@ -163,5 +163,7 @@ class CONTENT_EXPORT HostZoomMapImpl : public HostZoomMap {
 };
 
 }  // namespace content
-
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#include "arkweb/chromium_ext/content/browser/host_zoom_map_impl_utils.h"
+#endif
 #endif  // CONTENT_BROWSER_HOST_ZOOM_MAP_IMPL_H_

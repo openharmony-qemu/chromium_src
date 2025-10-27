@@ -109,6 +109,7 @@ static SkEncodedOrigin get_orientation(const HeifFrameInfo& frameInfo) {
     return kDefault_SkEncodedOrigin;
 }
 
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
 struct SkHeifStreamWrapper : public HeifStream {
     SkHeifStreamWrapper(SkStream* stream) : fStream(stream) {}
 
@@ -137,6 +138,7 @@ struct SkHeifStreamWrapper : public HeifStream {
 private:
     std::unique_ptr<SkStream> fStream;
 };
+#endif
 
 static void releaseProc(const void* ptr, void* context) {
     delete reinterpret_cast<std::vector<uint8_t>*>(context);
@@ -177,7 +179,11 @@ std::unique_ptr<SkCodec> SkHeifCodec::MakeFromStream(std::unique_ptr<SkStream> s
     }
 
     HeifFrameInfo heifInfo;
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+    if (!heifDecoder->init(std::move(stream), &heifInfo)) {
+#else
     if (!heifDecoder->init(new SkHeifStreamWrapper(stream.release()), &heifInfo)) {
+#endif
         *result = SkCodec::kInvalidInput;
         return nullptr;
     }
@@ -211,12 +217,22 @@ std::unique_ptr<SkCodec> SkHeifCodec::MakeFromStream(std::unique_ptr<SkStream> s
 
     *result = SkCodec::kSuccess;
     return std::unique_ptr<SkCodec>(new SkHeifCodec(
-            std::move(info), heifDecoder.release(), orientation, frameCount > 1, format));
+            std::move(info),
+            heifDecoder.release(),
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+            heifInfo,
+#endif
+            orientation,
+            frameCount > 1,
+            format));
 }
 
 SkHeifCodec::SkHeifCodec(
         SkEncodedInfo&& info,
         HeifDecoder* heifDecoder,
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+        HeifFrameInfo heifInfo,
+#endif
         SkEncodedOrigin origin,
         bool useAnimation,
         SkEncodedImageFormat format)
@@ -309,10 +325,28 @@ int SkHeifCodec::readRows(const SkImageInfo& dstInfo, void* dst, size_t rowBytes
         dstWidth = fSwizzler->swizzleWidth();
     }
 
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+    uint64_t size = 0;
+    void* ptr = fHeifDecoder->getDecodeData(size);
+    int32_t stride = fHeifDecoder->getStride();
+    if (ptr == nullptr) {
+        LOG(ERROR) << "[HeifSupport] SkHeifCodec::readRows GetDecodeData failed.";
+        return 0;
+    }
+#endif
+
     for (int y = 0; y < count; y++) {
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+        if (memcpy_s((uint8_t*)decodeDst, rowBytes,
+                     (uint8_t*)ptr + y * stride, dstWidth * fFrameInfo.mBytesPerPixel) != EOK) {
+            LOG(ERROR) << "[HeifSupport] SkHeifCodec::readRows memcpy failed.";
+            return 0;
+        }
+#else
         if (!fHeifDecoder->getScanline(decodeDst)) {
             return y;
         }
+#endif
 
         if (fSwizzler) {
             fSwizzler->swizzle(swizzleDst, decodeDst);
@@ -326,6 +360,10 @@ int SkHeifCodec::readRows(const SkImageInfo& dstInfo, void* dst, size_t rowBytes
         decodeDst = SkTAddOffset<uint8_t>(decodeDst, decodeDstRowBytes);
         swizzleDst = SkTAddOffset<uint32_t>(swizzleDst, swizzleDstRowBytes);
     }
+
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+    fHeifDecoder->closeDecodeData(ptr, size);
+#endif
 
     return count;
 }
@@ -471,6 +509,12 @@ void SkHeifCodec::allocateStorage(const SkImageInfo& dstInfo) {
     }
 
     size_t totalBytes = swizzleBytes + xformBytes;
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+    if (dstInfo.colorType() == kRGBA_8888_SkColorType) {
+        totalBytes = fFrameInfo.mBytesPerPixel * fFrameInfo.mWidth * fFrameInfo.mHeight;
+    }
+    LOG(DEBUG) << "[HeifSupport] SkHeifCodec::allocateStorage totalBytes = " << totalBytes;
+#endif
     fStorage.reset(totalBytes);
     if (totalBytes > 0) {
         fSwizzleSrcRow = (swizzleBytes > 0) ? fStorage.get() : nullptr;

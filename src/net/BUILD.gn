@@ -64,8 +64,8 @@ is_arm_cast_shell_build = (is_castos || is_cast_android) &&
 
 # Python works only on Linux, MacOS and Windows so exclude the others,
 # chromecast, android, fuchsia, ios.
-enable_python_utils =
-    !is_arm_cast_shell_build && !is_android && !is_fuchsia && !is_ios
+enable_python_utils = !is_arm_cast_shell_build && !is_android && !is_fuchsia &&
+                      !is_ios && !is_ohos
 
 # Platforms that cannot use python_utils (like Android but see full
 # list above) will instead use a remote server.
@@ -1318,6 +1318,12 @@ component("net") {
     ]
   }
 
+  if (is_arkweb) {
+    sources += arkweb_net_gn_sources
+    deps += arkweb_net_gn_deps
+    libs = [ "net_connection" ]
+  }
+
   if (is_chromeos && use_nss_certs) {
     sources += [
       "cert/nss_cert_database_chromeos.cc",
@@ -1362,7 +1368,31 @@ component("net") {
     ]
   }
 
-  if (is_linux) {
+  if (is_ohos) {
+    sources += [
+      "base/address_map_linux.cc",
+      "base/address_map_linux.h",
+      "base/address_tracker_linux.cc",
+      "base/address_tracker_linux.h",
+      "base/network_interfaces_linux.cc",
+      "base/network_interfaces_linux.h",
+      "//arkweb/chromium_ext/net/base/platform_mime_util_ohos.cc",
+    ]
+
+    if (arkweb_prp_preload) {
+      import("//arkweb/chromium_ext/net/base/arkweb_net_base_ext.gni")
+      sources += arkweb_net_base_ext_sources
+    }
+
+    if (arkweb_file_upload) {
+      sources += [
+        "//arkweb/chromium_ext/third_party/xdg_shared_mime_info/mime_cache.cc",
+        "//arkweb/chromium_ext/third_party/xdg_shared_mime_info/mime_cache.h",
+      ]
+    }
+  }
+
+  if (is_linux || is_ohos) {
     sources += [
       "base/address_map_cache_linux.cc",
       "base/address_map_cache_linux.h",
@@ -1501,7 +1531,7 @@ component("net") {
     }
   }
 
-  if (is_android || is_chromeos || is_linux) {
+  if (is_android || is_chromeos || is_linux || is_arkweb) {
     sources += [
       "base/network_change_notifier_passive.cc",
       "base/network_change_notifier_passive.h",
@@ -1534,7 +1564,7 @@ component("net") {
   }
 
   # Use getifaddrs() on POSIX platforms, except Linux.
-  if (is_posix && !is_linux && !is_chromeos) {
+  if ((is_posix || arkweb_ext_http_dns_fallback) && !is_linux && !is_chromeos) {
     sources += [
       "base/network_interfaces_getifaddrs.cc",
       "base/network_interfaces_getifaddrs.h",
@@ -2531,7 +2561,7 @@ if (is_android) {
   }
 }
 
-if (is_android || is_linux || is_chromeos) {
+if (is_android || is_linux || is_chromeos || is_ohos) {
   executable("disk_cache_memory_test") {
     testonly = true
     sources = [ "tools/disk_cache_memory_test/disk_cache_memory_test.cc" ]
@@ -3360,7 +3390,7 @@ target(_test_target_type, "net_unittests") {
   }
 
   # Use getifaddrs() on POSIX platforms, except Linux.
-  if (is_posix && !is_linux && !is_chromeos) {
+  if (is_posix && !is_linux && !is_chromeos && !is_ohos) {
     sources += [ "base/network_interfaces_getifaddrs_unittest.cc" ]
   }
 

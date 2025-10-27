@@ -1,0 +1,14 @@
+--- style_sheet_contents.h	2025-10-20 19:53:00.306210855 +0800
++++ style_sheet_contents.h	2025-10-16 16:07:39.302355065 +0800
+@@ -20,10 +20,11 @@
+  */
+ 
+ #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_CSS_STYLE_SHEET_CONTENTS_H_
+ #define THIRD_PARTY_BLINK_RENDERER_CORE_CSS_STYLE_SHEET_CONTENTS_H_
+ 
++#include "arkweb/build/features/features.h"
+ #include "third_party/blink/renderer/core/core_export.h"
+ #include "third_party/blink/renderer/core/css/parser/css_parser_context.h"
+ #include "third_party/blink/renderer/core/css/parser/css_tokenizer.h"
+ #include "third_party/blink/renderer/core/css/rule_set.h"
+ #include "third_party/blink/renderer/core/css/rule_set_diff.h"

@@ -1,0 +1,30 @@
+--- url_loader_throttles.cc	2025-10-20 19:52:54.322500413 +0800
++++ url_loader_throttles.cc	2025-10-16 15:54:59.452744396 +0800
+@@ -42,15 +42,25 @@
+     const network::ResourceRequest& request,
+     BrowserContext* browser_context,
+     const base::RepeatingCallback<WebContents*()>& wc_getter,
+     NavigationUIData* navigation_ui_data,
+     FrameTreeNodeId frame_tree_node_id,
+-    std::optional<int64_t> navigation_id) {
++    std::optional<int64_t> navigation_id
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++,
++    bool is_prerendering
++#endif
++    ) {
+   std::vector<std::unique_ptr<blink::URLLoaderThrottle>> throttles =
+       GetContentClient()->browser()->CreateURLLoaderThrottles(
+           request, browser_context, wc_getter, navigation_ui_data,
+-          frame_tree_node_id, navigation_id);
++          frame_tree_node_id, navigation_id
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++,
++          is_prerendering
++#endif
++          );
+   variations::OmniboxURLLoaderThrottle::AppendThrottleIfNeeded(&throttles);
+   // TODO(crbug.com/40135370): Consider whether we want to use the WebContents
+   // to determine the value for variations::Owner. Alternatively, this is the
+   // browser side, and we might be fine with Owner::kUnknown.
+   variations::VariationsURLLoaderThrottle::AppendThrottleIfNeeded(

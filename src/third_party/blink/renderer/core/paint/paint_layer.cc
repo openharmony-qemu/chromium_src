@@ -873,7 +873,7 @@ void PaintLayer::UpdateScrollableArea() {
     return;
 
   if (!scrollable_area_) {
-    scrollable_area_ = MakeGarbageCollected<PaintLayerScrollableArea>(*this);
+    scrollable_area_ = MakeGarbageCollected<PaintLayerScrollableAreaExt>(*this);
     const ComputedStyle& style = GetLayoutObject().StyleRef();
     // A newly created snap container may need to be made aware of snap areas
     // within it which are targeted or contain a targeted element. Such a

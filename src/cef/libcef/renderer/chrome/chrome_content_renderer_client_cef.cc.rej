@@ -1,0 +1,53 @@
+--- chrome_content_renderer_client_cef.cc	2025-10-20 19:52:47.997849645 +0800
++++ chrome_content_renderer_client_cef.cc	2025-10-16 15:55:22.369896651 +0800
+@@ -55,10 +67,14 @@
+     content::RenderFrame* render_frame) {
+   // Will delete itself when no longer needed.
+   CefRenderFrameObserver* render_frame_observer =
+       new CefRenderFrameObserver(render_frame);
+ 
++#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
++  AsArkWebContentRendererClientCef()->NoStatePrefetchRenderFrame(render_frame);
++#endif  // ARKWEB_NO_STATE_PREFETCH
++
+   bool browser_created;
+   std::optional<bool> is_windowless;
+   std::optional<bool> print_preview_enabled;
+   render_manager_->RenderFrameCreated(render_frame, render_frame_observer,
+                                       browser_created, is_windowless,
+@@ -71,12 +87,19 @@
+     // This value will be used when the when ChromeContentRendererClient
+     // creates the new ChromePrintRenderFrameHelperDelegate below.
+     ChromePrintRenderFrameHelperDelegate::SetNextPrintPreviewEnabled(
+         *print_preview_enabled);
+   }
+-
+   ChromeContentRendererClient::RenderFrameCreated(render_frame);
++
++#if BUILDFLAG(ARKWEB_MIXED_CONTENT)
++  new ArkWebContentSettingsClient(render_frame);
++#endif
++
++#if BUILDFLAG(ARKWEB_SAFEBROWSING) && !BUILDFLAG(ARKWEB_NWEB_EX)
++  new ChromeSafeBrowsingErrorPageControllerDelegateImpl(render_frame);
++#endif
+ }
+ 
+ void ChromeContentRendererClientCef::WebViewCreated(
+     blink::WebView* web_view,
+     bool was_created_by_renderer,
+@@ -90,10 +113,14 @@
+   render_manager_->WebViewCreated(web_view, browser_created, is_windowless,
+                                   print_preview_enabled);
+   if (browser_created) {
+     OnBrowserCreated(web_view, is_windowless);
+   }
++
++#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
++  new prerender::NoStatePrefetchClient(web_view);
++#endif  // ARKWEB_NO_STATE_PREFETCH
+ }
+ 
+ void ChromeContentRendererClientCef::DevToolsAgentAttached() {
+   // WebWorkers may be creating agents on a different thread.
+   if (!render_task_runner_->BelongsToCurrentThread()) {

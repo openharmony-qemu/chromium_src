@@ -9,6 +9,7 @@
 #include "build/build_config.h"
 #include "third_party/blink/renderer/platform/heap/heap_buildflags.h"
 #include "third_party/blink/renderer/platform/platform_export.h"
+#include "arkweb/build/features/features.h"
 
 // On component builds, always hide the thread_local variable behind a call.
 // This avoids complexity with "global-dyn" and allows to use "local-dyn"

@@ -1812,6 +1812,7 @@ void DevToolsWindow::RenderProcessGone(bool crashed) {
 }
 
 void DevToolsWindow::ShowCertificateViewer(const std::string& cert_chain) {
+#if BUILDFLAG(ENABLE_WEBUI_CERTIFICATE_VIEWER)
   std::optional<base::Value> value = base::JSONReader::Read(cert_chain);
   CHECK(value && value->is_list());
   std::vector<std::string> decoded;
@@ -2059,6 +2060,10 @@ void DevToolsWindow::MaybeShowSharedProcessInfobar() {
       inspected_web_contents->GetPrimaryMainFrame()->GetSiteInstance();
   const GURL& site_url = site_instance->GetSiteURL();
   if (site_url.SchemeIs(extensions::kExtensionScheme) ||
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      site_url.SchemeIs(content::kArkWebUIScheme) ||
+      site_url.SchemeIs(extensions::kArkwebExtensionScheme) ||
+#endif
       site_url.SchemeIs(content::kChromeDevToolsScheme) ||
       site_url.SchemeIs(content::kChromeUIScheme)) {
     return;

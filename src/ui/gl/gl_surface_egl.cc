@@ -564,7 +564,7 @@ bool NativeViewGLSurfaceEGL::IsOffscreen() {
 gfx::SwapResult NativeViewGLSurfaceEGL::SwapBuffers(
     PresentationCallback callback,
     gfx::FrameData data) {
-  TRACE_EVENT2("gpu", "NativeViewGLSurfaceEGL:RealSwapBuffers",
+  OHOS_TRACE_EVENT2("gpu", "NativeViewGLSurfaceEGL:RealSwapBuffers",
       "width", GetSize().width(),
       "height", GetSize().height());
 
@@ -735,6 +735,7 @@ bool NativeViewGLSurfaceEGL::Resize(const gfx::Size& size,
   DCHECK(context);
   GLSurface* surface = GLSurface::GetCurrent();
   DCHECK(surface);
+
   // Current surface may not be |this| if it is wrapped, but it should point to
   // the same handle.
   DCHECK_EQ(surface->GetHandle(), GetHandle());
@@ -761,6 +762,7 @@ bool NativeViewGLSurfaceEGL::Recreate() {
   DCHECK(context);
   GLSurface* surface = GLSurface::GetCurrent();
   DCHECK(surface);
+
   // Current surface may not be |this| if it is wrapped, but it should point to
   // the same handle.
   DCHECK_EQ(surface->GetHandle(), GetHandle());
@@ -925,6 +927,15 @@ gfx::SwapResult NativeViewGLSurfaceEGL::SwapBuffersWithDamage(
     gfx::FrameData data) {
   DCHECK(supports_swap_buffer_with_damage_);
 
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  OHOS_TRACE_EVENT2(
+    "gpu", "NativeViewGLSurfaceEGL::RealSwapBuffers SwapBuffersWithDamage",
+    "width", GetSize().width(), "height", GetSize().height());
+  is_first_swapbuffers_ = arkweb_surface_utils_->SwapBuffersSolution(
+    enable_replace_swap_buffer_output_, is_first_swapbuffers_, GetSize());
+  auto start = std::chrono::high_resolution_clock::now();
+#endif
+
   GLSurfacePresentationHelper::ScopedSwapBuffers scoped_swap_buffers(
       presentation_helper_.get(), std::move(callback));
   if (!eglSwapBuffersWithDamageKHR(display_->GetDisplay(), surface_,
@@ -934,6 +945,9 @@ gfx::SwapResult NativeViewGLSurfaceEGL::SwapBuffersWithDamage(
              << GetLastEGLErrorString();
     scoped_swap_buffers.set_result(gfx::SwapResult::SWAP_FAILED);
   }
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  arkweb_surface_utils_->SwapBuffersWithDamageSolution(scoped_swap_buffers.result(), start, GetSize());
+#endif
   return scoped_swap_buffers.result();
 }
 

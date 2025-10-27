@@ -53,7 +53,7 @@ config("vulkan_internal_config") {
       "EXTRASYSCONFDIR=\"/pkg/data\"",
     ]
   }
-  if (is_linux || is_chromeos || is_mac) {
+  if (is_linux || is_chromeos || is_mac || is_ohos) {
     defines += [
       "SYSCONFDIR=\"/etc\"",
       "FALLBACK_CONFIG_DIRS=\"/etc/xdg\"",

@@ -179,6 +179,10 @@ class CORE_EXPORT LocalFrameView final
     return *frame_;
   }
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  bool RunJavaScriptForFSP(const std::string& script);
+#endif
+
   Page* GetPage() const;
 
   LayoutView* GetLayoutView() const;

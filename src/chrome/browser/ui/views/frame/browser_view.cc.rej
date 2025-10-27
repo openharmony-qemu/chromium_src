@@ -1,0 +1,45 @@
+--- browser_view.cc	2025-10-20 19:52:50.872889839 +0800
++++ browser_view.cc	2025-10-16 15:57:01.693701555 +0800
+@@ -340,10 +340,14 @@
+ 
+ #if BUILDFLAG(ENABLE_WEBUI_TAB_STRIP)
+ #include "chrome/browser/ui/views/frame/webui_tab_strip_container_view.h"
+ #endif  // BUILDFLAG(ENABLE_WEBUI_TAB_STRIP)
+ 
++#if BUILDFLAG(IS_OHOS)
++#include "ui/base/layout.h"
++#endif
++
+ using base::UserMetricsAction;
+ using content::WebContents;
+ using input::NativeWebKeyboardEvent;
+ using web_modal::WebContentsModalDialogHost;
+ 
+@@ -359,10 +363,15 @@
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ constexpr base::FeatureParam<base::TimeDelta> kLoadingTabAnimationFrameDelay = {
+     &kChangeFrameRateOfLoadingTabAnimation, "loading_tab_animation_frame_delay",
+     base::Milliseconds(30)};
+ 
++#if BUILDFLAG(IS_OHOS)
++// Width of the window control button in the upper right corner
++const int kWindowControlButtonsWidth = 100;
++#endif
++
+ #if BUILDFLAG(IS_CHROMEOS)
+ // UMA histograms that record animation smoothness for tab loading animation.
+ constexpr char kTabLoadingSmoothnessHistogramName[] =
+     "Chrome.Tabs.AnimationSmoothness.TabLoading";
+ 
+@@ -4670,10 +4685,11 @@
+       side_panel_rounded_corner_, immersive_mode_controller_.get(),
+       contents_separator_));
+ 
+   EnsureFocusOrder();
+ 
++
+   frame_->OnBrowserViewInitViewsComplete();
+   if (frame_->GetFrameView())
+     frame_->GetFrameView()->UpdateMinimumSize();
+   using_native_frame_ = frame_->ShouldUseNativeFrame();
+ 

@@ -1,0 +1,32 @@
+--- font_description.cc	2025-10-20 19:53:01.162201788 +0800
++++ font_description.cc	2025-10-16 16:07:40.064219314 +0800
+@@ -56,11 +56,15 @@
+   scoped_refptr<FontFeatureSettings> feature_settings_;
+   scoped_refptr<FontVariationSettings> variation_settings_;
+   scoped_refptr<FontPalette> palette_;
+   scoped_refptr<FontVariantAlternates> font_variant_alternates_;
+   AtomicString locale;
++#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
++  float sizes[6];
++#else
+   float sizes[5];
++#endif
+   FontSizeAdjust size_adjust_;
+   FontSelectionRequest selection_request_;
+   FieldsAsUnsignedType bitfields;
+ };
+ 
+@@ -85,10 +89,13 @@
+     : specified_size_(0),
+       computed_size_(0),
+       adjusted_size_(0),
+       letter_spacing_(0),
+       word_spacing_(0),
++#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
++      fixed_font_size_(0),
++#endif
+       font_selection_request_(kNormalWeightValue,
+                               kNormalWidthValue,
+                               kNormalSlopeValue) {
+   fields_as_unsigned_.parts[0] = 0;
+   fields_as_unsigned_.parts[1] = 0;

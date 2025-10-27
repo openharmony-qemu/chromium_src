@@ -1,0 +1,36 @@
+--- activation_state_computing_navigation_throttle.cc	2025-10-20 19:52:53.874296013 +0800
++++ activation_state_computing_navigation_throttle.cc	2025-10-16 15:54:57.811217652 +0800
+@@ -40,12 +40,14 @@
+     VerifiedRuleset::Handle* ruleset_handle,
+     const mojom::ActivationState& parent_activation_state,
+     std::string_view uma_tag) {
+   CHECK(!IsInSubresourceFilterRoot(navigation_handle),
+         base::NotFatalUntil::M129);
++#if !BUILDFLAG(ARKWEB_ADBLOCK)
+   CHECK_NE(mojom::ActivationLevel::kDisabled,
+            parent_activation_state.activation_level, base::NotFatalUntil::M129);
++#endif
+   CHECK(ruleset_handle, base::NotFatalUntil::M129);
+   return base::WrapUnique(new ActivationStateComputingNavigationThrottle(
+       navigation_handle, parent_activation_state, ruleset_handle, uma_tag));
+ }
+ 
+@@ -67,12 +69,18 @@
+     NotifyPageActivationWithRuleset(
+         VerifiedRuleset::Handle* ruleset_handle,
+         const mojom::ActivationState& page_activation_state) {
+   CHECK(IsInSubresourceFilterRoot(navigation_handle()),
+         base::NotFatalUntil::M129);
++#if !BUILDFLAG(ARKWEB_ADBLOCK)
+   CHECK_NE(mojom::ActivationLevel::kDisabled,
+            page_activation_state.activation_level, base::NotFatalUntil::M129);
++#endif
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  LOG(DEBUG) << "[AdBlock] NotifyPageActivationWithRuleset activation_level:"
++             << page_activation_state.activation_level;
++#endif
+   parent_activation_state_ = page_activation_state;
+   CHECK(ruleset_handle, base::NotFatalUntil::M129);
+   ruleset_handle_ = ruleset_handle->AsWeakPtr();
+ }
+ 

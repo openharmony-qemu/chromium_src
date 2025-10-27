@@ -1,0 +1,19 @@
+--- render_process_host_impl_receiver_bindings.cc	2025-10-20 19:52:54.418544029 +0800
++++ render_process_host_impl_receiver_bindings.cc	2025-10-16 15:54:59.552637485 +0800
+@@ -133,10 +145,16 @@
+             std::make_unique<RenderMessageFilter>(rph_id, helper.get()),
+             std::move(receiver));
+       },
+       GetID(), widget_helper_));
+ 
++#if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
++  arkweb_render_process_host_impl_utils_->AddHostUIThreadInterface(registry.get());
++#endif  // BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
++#if BUILDFLAG(ARKWEB_CRASHPAD)
++  arkweb_render_process_host_impl_utils_->AddDFXToUIThreadInterface(registry.get());
++#endif
+   AddUIThreadInterface(
+       registry.get(),
+       base::BindRepeating(
+           [](mojo::PendingReceiver<device::mojom::TimeZoneMonitor> receiver) {
+             GetDeviceService().BindTimeZoneMonitor(std::move(receiver));

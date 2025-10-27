@@ -39,6 +39,10 @@
 #include "third_party/blink/public/mojom/navigation/navigation_initiator_activation_and_ad_status.mojom.h"
 #include "third_party/blink/public/mojom/navigation/navigation_params.mojom-forward.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace blink {
 struct NavigationDownloadPolicy;
 }  // namespace blink
@@ -50,6 +54,7 @@ class NavigationEntryScreenshotCache;
 class NavigationRequest;
 class RenderFrameHostImpl;
 class SiteInstance;
+class ArkWebNavigationControllerImplExt;
 struct LoadCommittedDetails;
 
 // NavigationControllerImpl is 1:1 with FrameTree. See comments on the base
@@ -413,7 +418,7 @@ class CONTENT_EXPORT NavigationControllerImpl : public NavigationController {
 
 // Returns true if the string corresponds to a valid data URL, false
 // otherwise.
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
   static bool ValidateDataURLAsString(
       const scoped_refptr<const base::RefCountedString>& data_url_as_string);
 #endif
@@ -450,7 +455,11 @@ class CONTENT_EXPORT NavigationControllerImpl : public NavigationController {
       const std::string& extra_headers,
       BrowserContext* browser_context,
       scoped_refptr<network::SharedURLLoaderFactory> blob_url_loader_factory,
-      bool rewrite_virtual_urls);
+      bool rewrite_virtual_urls
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      , NavigationControllerDelegate* delegate = nullptr
+#endif
+      );
 
   // Called just before sending the commit to the renderer, or when restoring
   // from back/forward cache. Walks the session history entries for the relevant
@@ -514,6 +523,8 @@ class CONTENT_EXPORT NavigationControllerImpl : public NavigationController {
 
  private:
   friend class RestoreHelper;
+  friend class ArkWebNavigationControllerImplExt;
+  virtual ArkWebNavigationControllerImplExt *AsArkWebNavigationControllerImplExt() { return nullptr; }
 
   FRIEND_TEST_ALL_PREFIXES(TimeSmoother, Basic);
   FRIEND_TEST_ALL_PREFIXES(TimeSmoother, SingleDuplicate);
@@ -1105,5 +1116,6 @@ class CONTENT_EXPORT NavigationControllerImpl : public NavigationController {
 };
 
 }  // namespace content
+#include "arkweb/chromium_ext/content/browser/renderer_host/arkweb_navigation_controller_impl_ext.h"
 
 #endif  // CONTENT_BROWSER_RENDERER_HOST_NAVIGATION_CONTROLLER_IMPL_H_

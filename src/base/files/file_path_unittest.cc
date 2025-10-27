@@ -7,6 +7,7 @@
 #pragma allow_unsafe_buffers
 #endif
 
+#include "arkweb/build/features/features.h"
 #include "base/files/file_path.h"
 
 #include <stddef.h>
@@ -1364,7 +1365,11 @@ TEST_F(FilePathTest, CompareIgnoreCase) {
       // (or even have glyphs for <uppercase eszett>)
       {{FPL("\u00DF"), FPL("\u00DF")}, 0},
       {{FPL("\u1E9E"), FPL("\u1E9E")}, 0},
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+    {{FPL("\u00DF"), FPL("\u1E9E")}, 1},
+#else
       {{FPL("\u00DF"), FPL("\u1E9E")}, -1},
+#endif
       {{FPL("SS"), FPL("\u00DF")}, -1},
       {{FPL("SS"), FPL("\u1E9E")}, -1},
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE)

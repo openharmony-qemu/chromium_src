@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <winnt.h>
 
+#include "arkweb/build/features/features.h"
 #include "base/compiler_specific.h"
 #include "build/build_config.h"
 #include "util/misc/pdb_structures.h"
@@ -110,6 +111,10 @@ enum MinidumpStreamType : uint32_t {
 
   //! \brief The last reserved crashpad stream.
   kMinidumpStreamTypeCrashpadLastReservedStream = 0x4350ffff,
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  //! \brief  OHOS crashpad extend info
+  KMinidumpStreamTypeOhosDfxInfo = 0xCAFEBABE,
+#endif
 };
 
 //! \brief A variable-length UTF-8-encoded string carried within a minidump

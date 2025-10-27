@@ -1,0 +1,51 @@
+--- media_devices.cc	2025-10-20 19:53:00.790206266 +0800
++++ media_devices.cc	2025-10-16 16:07:39.898425022 +0800
+@@ -4,10 +4,11 @@
+ 
+ #include "third_party/blink/renderer/modules/mediastream/media_devices.h"
+ 
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/feature_list.h"
+ #include "base/metrics/histogram_functions.h"
+ #include "base/not_fatal_until.h"
+ #include "base/notreached.h"
+ #include "base/ranges/algorithm.h"
+@@ -72,10 +73,13 @@
+ #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
+ #include "third_party/blink/renderer/platform/scheduler/public/event_loop.h"
+ #include "third_party/blink/renderer/platform/weborigin/security_origin.h"
+ #include "third_party/blink/renderer/platform/wtf/functional.h"
+ 
++#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
++#include "ohos_nweb/src/nweb_advanced_security.h"
++#endif
+ namespace blink {
+ 
+ BASE_FEATURE(kEnumerateDevicesRequestAudioCapabilities,
+              "EnumerateDevicesRequestAudioCapabilities",
+ #if BUILDFLAG(IS_MAC)
+@@ -480,10 +484,22 @@
+   auto* resolver = MakeGarbageCollected<
+       ScriptPromiseResolverWithTracker<UserMediaRequestResult, MediaStream>>(
+       script_state, "Media.MediaDevices.GetUserMedia", base::Seconds(8));
+   const auto promise = resolver->Promise();
+ 
++#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
++  bool isAdvancedSecurityMode = OHOS::NWeb::NWebAdvancedSecurityHelper::Inst().
++        IsSecFeatureEnabled(OHOS::NWeb::NWebAdvancedSecurityHelper::Feature::ENABLE_GETUSERMEDIA);
++  if (isAdvancedSecurityMode) {
++    resolver->RecordAndThrowDOMException(
++        exception_state, DOMExceptionCode::kNotSupportedError,
++        "can't use getUserMedia on advancedSecurityMode!",
++        UserMediaRequestResult::kNotSupportedError);
++    return promise;
++  }
++#endif
++
+   DCHECK(options);  // Guaranteed by the default value in the IDL.
+   DCHECK(!exception_state.HadException());
+ 
+   MediaStreamConstraints* const constraints = ToMediaStreamConstraints(options);
+   if (!constraints) {

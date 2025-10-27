@@ -175,6 +175,10 @@ void ReportDesktopCaptureImplementationAndType(
 DesktopCaptureImplementation CreatePlatformDependentVideoCaptureDevice(
     NativeScreenCapturePicker* picker,
     const DesktopMediaID& desktop_id,
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+    bool is_picker_show,
+    int nweb_id,
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
     std::unique_ptr<media::VideoCaptureDevice>& device_out) {
   DCHECK_EQ(device_out.get(), nullptr);
 #if BUILDFLAG(IS_MAC)
@@ -505,8 +509,13 @@ void InProcessVideoCaptureDeviceLauncher::DoStartDesktopCaptureOnDeviceThread(
 
   std::unique_ptr<media::VideoCaptureDevice> video_capture_device;
   DesktopCaptureImplementation implementation =
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+      CreatePlatformDependentVideoCaptureDevice(
+          native_screen_capture_picker_, desktop_id, params.is_picker_show, params.nweb_id, video_capture_device);
+#else
       CreatePlatformDependentVideoCaptureDevice(
           native_screen_capture_picker_, desktop_id, video_capture_device);
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
   DVLOG(1) << __func__ << " implementation " << implementation << " type "
            << desktop_id.type;
   ReportDesktopCaptureImplementationAndType(implementation, desktop_id.type);

@@ -19,6 +19,7 @@
 #include "content/public/browser/network_service_util.h"
 #include "content/public/common/content_client.h"
 #include "sql/database.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_WIN)
 #include <windows.h>
@@ -609,6 +610,13 @@ void GrantSandboxAccessOnThreadPool(
       GetContentClient()->browser()->ShouldSandboxNetworkService();
 #endif  // DCHECK_IS_ON()
 #endif  // BUILDFLAG(IS_WIN)
+
+#if BUILDFLAG(ARKWEB_COOKIE)
+  // Execute sync on ohos.
+  SandboxGrantResult grant_result = MaybeGrantSandboxAccessToNetworkContextData(
+    sandbox_params, params.get());
+  std::move(result_callback).Run(std::move(params), grant_result);
+#else
   base::OnceCallback<SandboxGrantResult()> worker_task =
       base::BindOnce(&MaybeGrantSandboxAccessToNetworkContextData,
                      sandbox_params, params.get());
@@ -616,6 +624,7 @@ void GrantSandboxAccessOnThreadPool(
       FROM_HERE, {base::MayBlock(), base::TaskPriority::USER_BLOCKING},
       std::move(worker_task),
       base::BindOnce(std::move(result_callback), std::move(params)));
+#endif
 }
 
 }  // namespace content

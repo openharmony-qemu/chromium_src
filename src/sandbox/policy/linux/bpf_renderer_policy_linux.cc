@@ -40,7 +40,7 @@ namespace policy {
 
 namespace {
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
 ResultExpr RestrictIoctl() {
   const Arg<unsigned long> request(1);
   return Switch(request)
@@ -49,7 +49,7 @@ ResultExpr RestrictIoctl() {
              Allow())
       .Default(CrashSIGSYSIoctl());
 }
-#endif  // !BUILDFLAG(IS_ANDROID)
+#endif  // !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
 
 }  // namespace
 #if !BUILDFLAG(IS_ANDROID)
@@ -73,10 +73,10 @@ ResultExpr RendererProcessPolicy::EvaluateSyscall(int sysno) const {
       return RestrictClockID();
 // Android requires a larger set of allowed ioctls, so this case is handled
 // through BPFBasePolicy calling through to BaselinePolicyAndroid on Android.
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
     case __NR_ioctl:
       return RestrictIoctl();
-#endif  // !BUILDFLAG(IS_ANDROID)
+#endif  // !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
     // Allow the system calls below.
     case __NR_fdatasync:
     case __NR_fsync:
@@ -111,6 +111,9 @@ ResultExpr RendererProcessPolicy::EvaluateSyscall(int sysno) const {
     case __NR_sysinfo:
     case __NR_times:
     case __NR_uname:
+#if BUILDFLAG(IS_OHOS)
+    case __NR_timerfd_settime:
+#endif
       // getcpu() is allowed on ARM chips because it is used in
       // //third_party/cpuinfo/ on those chips.
 #if defined(__arm__) || defined(__aarch64__)

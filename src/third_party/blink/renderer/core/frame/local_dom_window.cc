@@ -175,7 +175,9 @@
 #include "third_party/blink/renderer/platform/wtf/uuid.h"
 #include "ui/display/screen_info.h"
 #include "v8/include/v8.h"
-
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)
+#include "third_party/blink/renderer/core/frame/ark_web.h"
+#endif // ARKWEB_SCROLLBAR_AVOID_AREA
 namespace blink {
 
 namespace {
@@ -1105,6 +1107,9 @@ void LocalDOMWindow::Reset() {
   media_ = nullptr;
   custom_elements_ = nullptr;
   trusted_types_map_.clear();
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)
+  arkWeb_ = nullptr;
+#endif // ARKWEB_SCROLLBAR_AVOID_AREA
 }
 
 void LocalDOMWindow::SendOrientationChangeEvent() {
@@ -2757,4 +2762,13 @@ void LocalDOMWindow::UpdateEventListenerCountsToDocumentForReuseIfNeeded() {
   }
   is_dom_window_reused_ = false;
 }
+
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)
+ArkWeb* LocalDOMWindow::arkWeb() {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  if (!arkWeb_)
+    arkWeb_ = MakeGarbageCollected<ArkWeb>(this);
+  return arkWeb_.Get();
+}
+#endif // ARKWEB_SCROLLBAR_AVOID_AREA
 }  // namespace blink

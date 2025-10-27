@@ -205,6 +205,15 @@ void ImagePaintTimingDetector::StopRecordEntries() {
   // Clear the records queued for presentation callback to ensure no new updates
   // occur.
   records_manager_.ClearImagesQueuedForPaintTime();
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  records_manager_.image_record_manager_utils_.
+      ClearRejectedImagesQueuedForPaintTime();
+#endif
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (is_for_blankless_only_) {
+    return;
+  }
+#endif
   if (frame_view_->GetFrame().IsOutermostMainFrame()) {
     auto* document = frame_view_->GetFrame().GetDocument();
     ukm::builders::Blink_PaintTiming(document->UkmSourceID())
@@ -417,6 +426,9 @@ uint64_t ImagePaintTimingDetector::ComputeImageRectSize(
     const PropertyTreeStateOrAlias& current_paint_chunk_properties,
     const LayoutObject& object,
     const MediaTiming& media_timing) {
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  is_full_viewport_ = false;
+#endif
   if (std::optional<PaintTimingVisualizer>& visualizer =
           frame_view_->GetPaintTimingDetector().Visualizer()) {
     visualizer->DumpImageDebuggingRect(
@@ -441,6 +453,9 @@ uint64_t ImagePaintTimingDetector::ComputeImageRectSize(
         frame_view_->GetPaintTimingDetector().BlinkSpaceToDIPs(
             gfx::RectF(viewport_int_rect));
     viewport_size_ = viewport.size().GetArea();
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+    records_manager_.UpdateViewportSize(viewport_size_);
+#endif
   }
   // An SVG image size is computed with respect to the virtual viewport of the
   // SVG, so |rect_size| can be larger than |*viewport_size| in edge cases. If
@@ -448,6 +463,9 @@ uint64_t ImagePaintTimingDetector::ComputeImageRectSize(
   // the size is 0.
   if (rect_size >= *viewport_size_) {
     contains_full_viewport_image_ = true;
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+    is_full_viewport_ = true;
+#endif
     return 0;
   }
 
@@ -470,7 +488,11 @@ void ImagePaintTimingDetector::ReportLargestIgnoredImage() {
 }
 
 ImageRecordsManager::ImageRecordsManager(LocalFrameView* frame_view)
-    : frame_view_(frame_view) {}
+    : frame_view_(frame_view)
+#if BUILDFLAG(IS_ARKWEB)
+    , image_record_manager_utils_(ImageRecordsManagerUtils(*this))
+#endif
+    {}
 
 bool ImageRecordsManager::OnFirstAnimatedFramePainted(
     MediaRecordIdHash record_id_hash,

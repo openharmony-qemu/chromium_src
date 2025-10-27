@@ -1,0 +1,41 @@
+--- input_handler.mojom	2025-10-20 19:53:00.114212675 +0800
++++ input_handler.mojom	2025-10-16 16:07:39.081296009 +0800
+@@ -446,10 +485,15 @@
+   // another renderer when it bubbles up to the root. Additionally, the caller
+   // may not be the one to have called ScrollFocusedEditableNodeIntoView; for
+   // example, a test that simulates tapping an input box.
+   WaitForPageScaleAnimationForTesting() => ();
+ 
++  // #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
++  [EnableIf=arkweb_ext_free_copy]
++  ShowFreeCopyMenu();
++  // #endif
++
+   // Requests the renderer to move the caret selection toward the point.
+   MoveCaret(gfx.mojom.Point point);
+ };
+ 
+ // An enumeration describing the active and focus states. If a widget is
+@@ -572,6 +628,22 @@
+   // see UpdateBrowserControlsState in third_party/blink/public/mojom/frame/frame.mojom for details
+   UpdateBrowserControlsState(cc.mojom.BrowserControlsState constraints,
+                              cc.mojom.BrowserControlsState current,
+                              bool animate,
+                              cc.mojom.BrowserControlsOffsetTagsInfo? offset_tags_info);
++  [EnableIf=arkweb_same_layer]
++  SetGestureEventResult(bool result, bool stopPropagation, int32 fingerId);
++
++  [EnableIf=arkweb_same_layer]
++  SetMouseEventResult(bool result, bool stopPropagation);
++
++  [EnableIf=arkweb_same_layer]
++  SetNativeEmbedMode(bool flag);
++
++  [EnableIf=arkweb_same_layer]
++  SetEnableCustomVideoPlayer(bool flag);
++
++  [EnableIf=arkweb_input_events]
++  ScrollBy(float delta_x, float delta_y);
++
++  SetBypassVsyncCondition(int32 condition);
+ };

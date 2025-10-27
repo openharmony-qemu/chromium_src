@@ -1,0 +1,20 @@
+--- tab_contents_task.cc	2025-10-20 19:52:50.468695236 +0800
++++ tab_contents_task.cc	2025-10-16 15:57:01.216935827 +0800
+@@ -16,11 +16,16 @@
+ namespace {
+ 
+ bool HostsExtension(content::WebContents* web_contents) {
+   DCHECK(web_contents);
+   return web_contents->GetLastCommittedURL().SchemeIs(
+-      extensions::kExtensionScheme);
++             extensions::kExtensionScheme)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++         || web_contents->GetLastCommittedURL().SchemeIs(
++                extensions::kArkwebExtensionScheme)
++#endif
++      ;
+ }
+ 
+ }  // namespace
+ 
+ TabContentsTask::TabContentsTask(content::WebContents* web_contents)

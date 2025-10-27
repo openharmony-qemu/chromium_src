@@ -48,7 +48,7 @@ component("animation") {
     sources += [ "animation_win.cc" ]
   }
 
-  if (is_linux) {
+  if (is_linux || is_ohos) {
     sources += [ "animation_linux.cc" ]
   }
 

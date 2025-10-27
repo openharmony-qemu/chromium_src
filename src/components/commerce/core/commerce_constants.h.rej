@@ -1,0 +1,18 @@
+--- commerce_constants.h	2025-10-20 19:52:52.765783607 +0800
++++ commerce_constants.h	2025-10-16 15:54:56.564551896 +0800
+@@ -60,11 +61,15 @@
+ // OAuth name used for network request.
+ inline constexpr char kOAuthName[] = "chromememex_svc";
+ 
+ // OAuth scope used for network request.
+ inline constexpr char kOAuthScope[] =
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++    "https://x.x.x";
++#else
+     "https://www.googleapis.com/auth/chromememex";
++#endif
+ 
+ // Open graph keys.
+ inline constexpr char kOgImage[] = "image";
+ inline constexpr char kOgPriceAmount[] = "price:amount";
+ inline constexpr char kOgPriceCurrency[] = "price:currency";

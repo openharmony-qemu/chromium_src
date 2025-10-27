@@ -79,6 +79,10 @@ ui::EventType WebInputEvent::GetTypeAsUiEventType() const {
       return ui::EventType::kGestureShortPress;
     case WebInputEvent::Type::kGestureLongPress:
       return ui::EventType::kGestureLongPress;
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    case WebInputEvent::Type::kGestureDragLongPress:
+      return ui::EventType::kGestureDragLongPress;
+#endif
     case WebInputEvent::Type::kGestureLongTap:
       return ui::EventType::kGestureLongTap;
     case WebInputEvent::Type::kGestureTwoFingerTap:

@@ -1,0 +1,35 @@
+--- scopes.h	2025-10-20 19:53:31.264595483 +0800
++++ scopes.h	2025-10-16 15:56:12.608650229 +0800
+@@ -388,10 +388,17 @@
+   bool has_using_declaration() const { return has_using_declaration_; }
+   bool has_await_using_declaration() const {
+     return has_await_using_declaration_;
+   }
+ 
++#ifdef OHOS_JS_ENGINE
++  void set_has_never_hide_base_std_hint() {
++    has_never_hide_base_std_hint_ = true;
++  }
++  bool has_never_hide_base_std_hint() { return has_never_hide_base_std_hint_; }
++#endif
++
+   bool is_wrapped_function() const {
+     DCHECK_IMPLIES(is_wrapped_function_, is_function_scope());
+     return is_wrapped_function_;
+   }
+   void set_is_wrapped_function() {
+@@ -841,10 +848,14 @@
+   bool has_await_using_declaration_ : 1;
+ 
+   // If the scope was generated for wrapped function syntax, which will affect
+   // its UniqueIdInScript.
+   bool is_wrapped_function_ : 1;
++#ifdef OHOS_JS_ENGINE
++  // True if the with scope has @optNeverHideBaseStd compile hint.
++  bool has_never_hide_base_std_hint_ : 1;
++#endif
+ };
+ 
+ class V8_EXPORT_PRIVATE DeclarationScope : public Scope {
+  public:
+   DeclarationScope(Zone* zone, Scope* outer_scope, ScopeType scope_type,

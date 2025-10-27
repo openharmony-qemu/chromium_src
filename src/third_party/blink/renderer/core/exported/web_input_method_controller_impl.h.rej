@@ -1,0 +1,17 @@
+--- web_input_method_controller_impl.h	2025-10-20 19:53:00.358210362 +0800
++++ web_input_method_controller_impl.h	2025-10-16 16:07:39.373409762 +0800
+@@ -49,10 +50,14 @@
+   bool FinishComposingText(
+       ConfirmCompositionBehavior selection_behavior) override;
+   WebTextInputInfo TextInputInfo() override;
+   int ComputeWebTextInputNextPreviousFlags() override;
+   WebTextInputType TextInputType() override;
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++  void GetInputElementAttributes(HashMap<String, String>& attributes) override;
++#endif
++
+   WebRange CompositionRange() const override;
+   bool GetCompositionCharacterBounds(WebVector<gfx::Rect>& bounds) override;
+ 
+   WebRange GetSelectionOffsets() const override;
+ 

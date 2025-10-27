@@ -1,0 +1,16 @@
+--- thread_restrictions.h	2025-10-20 19:52:46.744698835 +0800
++++ thread_restrictions.h	2025-10-16 15:54:55.387819000 +0800
+@@ -653,10 +663,13 @@
+       ScopedBypassIOThreadRestrictions;  // http://crbug.com/1144161
+   friend class remoting::ScopedAllowBlockingForCrashReporting;
+   friend class ui::DrmDisplayHostManager;
+   friend class ui::ScopedAllowBlockingForGbmSurface;
+   friend class ui::SelectFileDialogLinux;
++ #if BUILDFLAG(IS_OHOS)
++  friend class ui::SelectFileDialogOHOS;
++#endif
+   friend class weblayer::BrowserContextImpl;
+   friend class weblayer::ContentBrowserClientImpl;
+   friend class weblayer::ProfileImpl;
+   friend class weblayer::WebLayerPathProvider;
+ #if BUILDFLAG(IS_MAC)

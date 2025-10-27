@@ -1,0 +1,17 @@
+--- html_construction_site.cc	2025-10-20 19:53:00.442209565 +0800
++++ html_construction_site.cc	2025-10-16 16:07:39.464201875 +0800
+@@ -79,10 +79,14 @@
+ #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
+ #include "third_party/blink/renderer/platform/scheduler/public/event_loop.h"
+ #include "third_party/blink/renderer/platform/text/text_break_iterator.h"
+ #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
+ 
++#if BUILDFLAG(ARKWEB_JSPROXY)
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/html_construction_site_for_include.cc"
++#endif
++
+ namespace blink {
+ 
+ void HTMLConstructionSite::SetAttributes(Element* element,
+                                          AtomicHTMLToken* token) {
+   if (!is_scripting_content_allowed_)

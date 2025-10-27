@@ -30,6 +30,7 @@
 
 #include "third_party/blink/renderer/core/css/css_default_style_sheets.h"
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/public/resources/grit/blink_resources.h"
 #include "third_party/blink/renderer/core/css/media_query_evaluator.h"
 #include "third_party/blink/renderer/core/css/parser/css_parser.h"

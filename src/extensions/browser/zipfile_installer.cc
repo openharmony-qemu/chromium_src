@@ -198,8 +198,16 @@ void ZipFileInstaller::ManifestRead(
 
   // TODO(crbug.com/41274425): This silently ignores blocked file types.
   //                         Add install warnings.
-  unzip::Unzip(unzip::LaunchUnzipper(), zip_file_, unzip_dir,
-               unzip::mojom::UnzipOptions::New(), filter, base::DoNothing(),
+  unzip::Unzip(
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      // Does not support utility process in OHOS yet, use in-process unzipper
+      // instead.
+      unzip::LaunchInProcessUnzipper(),
+#else
+      unzip::LaunchUnzipper(),
+#endif
+      zip_file_, unzip_dir, unzip::mojom::UnzipOptions::New(), filter,
+      base::DoNothing(),
                base::BindOnce(&ZipFileInstaller::UnzipDone, this, unzip_dir));
 }
 

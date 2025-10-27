@@ -19,6 +19,9 @@ SimpleFileEnumerator::SimpleFileEnumerator(const base::FilePath& path)
     : path_(path), dir_(opendir(path.value().c_str())), has_error_(!dir_) {
   if (has_error_) {
     PLOG(ERROR) << "opendir " << path;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "opendir " << path;
+#endif
   }
 }
 SimpleFileEnumerator::~SimpleFileEnumerator() = default;
@@ -41,6 +44,9 @@ std::optional<SimpleFileEnumerator::Entry> SimpleFileEnumerator::Next() {
       // this case internally. It's safe to ignore EINTR in that case.
       if (errno && errno != EINTR) {
         PLOG(ERROR) << "readdir " << path_;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+        LOG_FEEDBACK(ERROR) << "readdir " << path_;
+#endif
         has_error_ = true;
         dir_ = nullptr;
         return std::nullopt;
@@ -56,6 +62,9 @@ std::optional<SimpleFileEnumerator::Entry> SimpleFileEnumerator::Next() {
     base::File::Info file_info;
     if (!base::GetFileInfo(path, &file_info)) {
       LOG(ERROR) << "Could not get file info for " << path;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+      LOG_FEEDBACK(ERROR) << "Could not get file info for " << path;
+#endif
       continue;
     }
     if (file_info.is_directory) {

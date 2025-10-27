@@ -670,10 +670,14 @@ bool Shell::DidAddMessageToConsole(WebContents* source,
   return switches::IsRunWebTestsSwitchPresent();
 }
 
-void Shell::RendererUnresponsive(
-    WebContents* source,
+void Shell::RendererUnresponsive(WebContents* source,
     RenderWidgetHost* render_widget_host,
-    base::RepeatingClosure hang_monitor_restarter) {
+                                 base::RepeatingClosure hang_monitor_restarter
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+                                 ,
+                                 RendererIsUnresponsiveReason reason
+#endif
+) {
   LOG(WARNING) << "renderer unresponsive";
 }
 

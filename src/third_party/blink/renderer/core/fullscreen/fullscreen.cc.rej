@@ -1,0 +1,15 @@
+--- fullscreen.cc	2025-10-20 19:53:00.406209907 +0800
++++ fullscreen.cc	2025-10-16 16:07:39.412884594 +0800
+@@ -27,10 +27,12 @@
+  *
+  */
+ 
+ #include "third_party/blink/renderer/core/fullscreen/fullscreen.h"
+ 
++#include "absl/types/optional.h"
++#include "arkweb/build/features/features.h"
+ #include "base/containers/adapters.h"
+ #include "base/metrics/histogram_macros.h"
+ #include "base/time/time.h"
+ #include "third_party/blink/public/mojom/permissions/permission.mojom-blink.h"
+ #include "third_party/blink/public/mojom/permissions_policy/permissions_policy.mojom-blink.h"

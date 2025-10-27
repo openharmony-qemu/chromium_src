@@ -1,0 +1,133 @@
+--- BUILD.gn	2025-10-20 19:52:54.634199760 +0800
++++ BUILD.gn	2025-10-16 15:54:59.772402282 +0800
+@@ -844,10 +846,18 @@
+   }
+ 
+   if (is_fuchsia) {
+     public_deps += [ "//third_party/fuchsia-sdk/sdk/fidl/fuchsia.mediacodec:fuchsia.mediacodec_hlcpp" ]
+   }
++
++  if (enable_arkweb) {
++    deps += [ "//arkweb/build/features" ]
++  }
++
++  if (enable_arkweb) {
++    public_deps += [ "//arkweb/build/features" ]
++  }
+ }
+ 
+ # Fuchsia performance tests on smart displays use web_engine and a browser
+ # like shell instead of an actual browser, so Fuchsia needs a separate target.
+ if (is_fuchsia) {
+@@ -1771,11 +1781,16 @@
+     "../test/browser_test_utils_browsertest.cc",
+     "../test/content_browser_test_test.cc",
+     "../test/top_frame_population_browsertest.cc",
+     "../test/url_loader_interceptor_browsertest.cc",
+   ]
+-
++  if (arkweb_unittests) {
++    sources += [
++      "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_input_stream_unittest.cc",
++    ]
++    sources += arkweb_content_renderer_test_sources
++  }
+   if (is_linux) {
+     sources += [ "../browser/network/address_map_linux_browsertest.cc" ]
+   }
+ 
+   if (is_android) {
+@@ -2481,11 +2496,11 @@
+     "../browser/attribution_reporting/attribution_resolver_delegate_impl_unittest.cc",
+     "../browser/attribution_reporting/attribution_resolver_unittest.cc",
+     "../browser/attribution_reporting/attribution_storage_sql_migrations_unittest.cc",
+     "../browser/attribution_reporting/attribution_storage_sql_unittest.cc",
+     "../browser/attribution_reporting/attribution_suitable_context_unittest.cc",
+-    "../browser/attribution_reporting/interop/interop_unittest.cc",
++    # "../browser/attribution_reporting/interop/interop_unittest.cc",
+     "../browser/attribution_reporting/interop/parser_unittest.cc",
+     "../browser/attribution_reporting/rate_limit_table_unittest.cc",
+     "../browser/background_fetch/background_fetch_cross_origin_filter_unittest.cc",
+     "../browser/background_fetch/background_fetch_data_manager_unittest.cc",
+     "../browser/background_fetch/background_fetch_delegate_proxy_unittest.cc",
+@@ -2710,11 +2725,11 @@
+     "../browser/private_aggregation/private_aggregation_budget_storage_unittest.cc",
+     "../browser/private_aggregation/private_aggregation_budgeter_unittest.cc",
+     "../browser/private_aggregation/private_aggregation_host_unittest.cc",
+     "../browser/private_aggregation/private_aggregation_internals_handler_impl_unittest.cc",
+     "../browser/private_aggregation/private_aggregation_manager_impl_unittest.cc",
+-    "../browser/private_aggregation/private_aggregation_report_golden_unittest.cc",
++    # "../browser/private_aggregation/private_aggregation_report_golden_unittest.cc",
+     "../browser/reduce_accept_language/reduce_accept_language_utils_unittest.cc",
+     "../browser/renderer_host/ancestor_throttle_unittest.cc",
+     "../browser/renderer_host/back_forward_cache_impl_unittest.cc",
+     "../browser/renderer_host/back_forward_cache_metrics_unittest.cc",
+     "../browser/renderer_host/back_forward_cache_subframe_navigation_throttle_unittest.cc",
+@@ -2960,12 +2975,29 @@
+     "../renderer/worker/worker_thread_registry_unittest.cc",
+     "navigation_simulator_unittest.cc",
+     "test_aggregation_service_impl_unittest.cc",
+     "test_page_unittest.cc",
+     "test_render_frame_host_unittest.cc",
++    "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_focus_controller_unittest.cc",
++    "../../arkweb/chromium_ext/ohos_test/unittest/dfx/dfx_reporter_browser_impl_unittest.cc",
++  ]
++
++  if (arkweb_unittests) {
++    sources += [ 
++      "../../arkweb/chromium_ext/content/browser/accessibility/browser_accessibility_manager_ohos_unittest.cc",
+   ]
++    sources += [ "../../arkweb/chromium_ext/content/browser/renderer_host/arkweb_render_process_host_impl_utils_unittest.cc" ]
++    sources += [ "../../arkweb/chromium_ext/base/ohos/ltpo/src/mock_sys_info_util_ext.cc" ]
++    sources += [ "../../arkweb/ohos_adapter_ndk/mock_ndk_api/src/mock_ndk_api.cc" ]
++    sources += arkweb_content_browser_test_sources
++    configs += [ "//arkweb/chromium_ext:content_browser_config" ]
++  }
+ 
++  if (arkweb_test) {
++    sources += arkweb_content_browser_unittests_sources
++    configs += [ "//arkweb/chromium_ext:arkweb_base_unittest_config" ]
++  }
+   if (is_mac) {
+     sources += [
+       "../browser/child_process_task_port_provider_mac_unittest.cc",
+       "../browser/cocoa/system_hotkey_map_unittest.mm",
+       "../browser/file_system_access/file_path_watcher/file_path_watcher_fsevents_change_tracker_unittest.cc",
+@@ -3050,11 +3082,11 @@
+ 
+   if (is_win || is_mac || is_linux || is_chromeos) {
+     sources += [ "../browser/file_system_access/file_system_access_observer_observation_unittest.cc" ]
+   }
+ 
+-  if (is_android || is_linux || is_chromeos || is_mac || is_win || is_fuchsia) {
++  if (is_android || is_linux || is_chromeos || is_mac || is_win || is_fuchsia || is_ohos) {
+     data = [
+       "$root_out_dir/content_shell.pak",
+       "data/",
+       "//media/test/data/",
+       "//content/test/data/attribution_reporting/databases/",
+@@ -3563,10 +3595,24 @@
+ 
+   # TODO(crbug.com/1293538): Update to check is_cast_audio_only
+   if (is_castos || is_cast_android) {
+     deps += [ "//chromecast:chromecast_buildflags" ]
+   }
++
++  if (arkweb_test) {
++    sources += arbweb_content_media_test_sources
++    sources += [
++      "//arkweb/chromium_ext/media/audio/ohos/ohos_audio_output_stream_unittest.cc",
++    ]
++    include_dirs = [
++      "//arkweb/ohos_adapter_ndk/interfaces",
++      "//third_party/ohos_ndk/includes/ohos_adapter",
++    ]
++    deps += [
++      "//arkweb/ohos_adapter_ndk:adapter_ndk",
++    ]
++  }
+ }
+ 
+ if (is_ios) {
+   bundle_data("content_shell_pak_bundle_data") {
+     testonly = true

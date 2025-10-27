@@ -30,6 +30,12 @@
 #include <cstdint>
 #include <cstring>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+#include "base/logging.h"
+#include "src/core/SkTraceEvent.h"
+#endif
+
 /*
 
 The following is a high-level overview of our analytic anti-aliasing
@@ -87,6 +93,10 @@ number of scan lines in our algorithm is only about 3 + H while the
 16-supersampling algorithm has about 4H scan lines.
 
 */
+
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+static const int kRECORD_CYCLE_TIMES = 5000;
+#endif
 
 static void add_alpha(SkAlpha* alpha, SkAlpha delta) {
     SkASSERT(*alpha + delta <= 256);
@@ -604,7 +614,7 @@ static void compute_alpha_above_line(SkAlpha* alphas,
         SkFixed last    = r - ((R - 1) << 16);  // horizontal edge length of the right-most triangle
         SkFixed firstH  = SkFixedMul(first, dY);  // vertical edge of the left-most triangle
         alphas[0]       = SkFixedMul(first, firstH) >> 9;  // triangle alpha
-        SkFixed alpha16 = Sk32_sat_add(firstH, dY >> 1);                // rectangle plus triangle
+        SkFixed alpha16 = Sk32_sat_add(firstH, (dY >> 1));              // rectangle plus triangle
         for (int i = 1; i < R - 1; ++i) {
             alphas[i] = alpha16 >> 8;
             alpha16 = Sk32_sat_add(alpha16, dY);
@@ -631,7 +641,7 @@ static void compute_alpha_below_line(SkAlpha* alphas,
         SkFixed last    = r - ((R - 1) << 16);  // horizontal edge length of the right-most triangle
         SkFixed lastH   = SkFixedMul(last, dY);          // vertical edge of the right-most triangle
         alphas[R - 1]   = SkFixedMul(last, lastH) >> 9;  // triangle alpha
-        SkFixed alpha16 = Sk32_sat_add(lastH, dY >> 1);             // rectangle plus triangle
+        SkFixed alpha16 = Sk32_sat_add(lastH, (dY >> 1));             // rectangle plus triangle
         for (int i = R - 2; i > 0; i--) {
             alphas[i] = (alpha16 >> 8) & 0xFF;
             alpha16 = Sk32_sat_add(alpha16, dY);
@@ -1447,7 +1457,10 @@ static void aaa_walk_edges(SkAnalyticEdge*  prevHead,
                         maskRow,
                         false);
     }
-
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+    int cnt = 0;
+    bool needDump = true;
+#endif
     while (true) {
         int             w               = 0;
         bool            in_interval     = isInverse;
@@ -1592,6 +1605,16 @@ static void aaa_walk_edges(SkAnalyticEdge*  prevHead,
         }
 
         y = nextY;
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+        cnt++;
+        if (cnt > kRECORD_CYCLE_TIMES && needDump) {
+            TRACE_EVENT2("skia", TRACE_FUNC, "bound bottom", start_y, "bound top", stop_y);
+            LOG(ERROR) << "aaa_walk_edges cycle times: " << cnt << ", current y: " << y
+                << ", bound bottom: " << start_y << ", top: " << stop_y
+                << ", left" << leftClip << ", right: " << rightClip;
+            needDump = false;
+        }
+#endif
         if (y >= SkIntToFixed(stop_y)) {
             break;
         }

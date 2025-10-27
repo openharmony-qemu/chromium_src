@@ -1,0 +1,16 @@
+--- user_actions.cc	2025-10-20 19:52:50.964934155 +0800
++++ user_actions.cc	2025-10-16 15:57:01.813894596 +0800
+@@ -57,10 +57,13 @@
+       case AuthenticatorType::kWinNative:
+         return AuthenticatorCategory::kWindows;
+       case AuthenticatorType::kChromeOS:
+       case AuthenticatorType::kPhone:
+       case AuthenticatorType::kOther:
++#if BUILDFLAG(ARKWEB_FIDO)
++      case AuthenticatorType::kOhosNative:
++#endif  // BUILDFLAG(ARKWEB_FIDO)
+         return AuthenticatorCategory::kOther;
+     }
+   } else if (absl::holds_alternative<Mechanism::Enclave>(mechanism.type)) {
+     return AuthenticatorCategory::kGpm;
+   } else if (absl::holds_alternative<Mechanism::WindowsAPI>(mechanism.type)) {

@@ -382,6 +382,9 @@ source_set("internal") {
       ]
     }
   }
+  if (is_arkweb && arkweb_edm_policy) {
+    sources += arkweb_components_policy_core_common_sources
+  }
 }
 
 static_library("test_support") {

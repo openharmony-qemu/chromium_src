@@ -24,6 +24,10 @@
 #error This file should only be included on desktop.
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "ui/gfx/native_widget_types.h"
+#endif
+
 enum class BrowserClosingStatus;
 
 class Browser;
@@ -227,6 +231,10 @@ class BrowserList {
       const base::FilePath& profile_path,
       const bool skip_beforeunload,
       bool tab_close_confirmed);
+
+#if BUILDFLAG(IS_OHOS)
+  gfx::AcceleratedWidget GetLastActiveAcceleratedWidget() const;
+#endif
 
   // A vector of the browsers in this list, in the order they were added.
   BrowserVector browsers_;

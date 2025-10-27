@@ -23,12 +23,18 @@ class WebViewImpl;
 class WebLocalFrameImpl;
 class Document;
 class LocalDOMWindow;
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+class SimTestExt;
+#endif
 
 class SimTest : public testing::Test {
  protected:
   explicit SimTest(std::optional<base::test::TaskEnvironment::TimeSource>
                        time_source = std::nullopt);
   ~SimTest() override;
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  friend class SimTestExt;
+#endif
 
   void SetUp() override;
   void TearDown() override;
@@ -104,4 +110,7 @@ class SimTest : public testing::Test {
 
 }  // namespace blink
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/testing/sim/sim_test_ext.h"
+#endif
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_TESTING_SIM_SIM_TEST_H_

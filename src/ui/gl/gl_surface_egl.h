@@ -18,6 +18,7 @@
 #include <memory>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/containers/queue.h"
 #include "base/time/time.h"
@@ -34,9 +35,14 @@
 #include "ui/gl/android/scoped_a_native_window.h"
 #endif
 
-namespace gl {
+#include "arkweb/chromium_ext/ui/gl/arkweb_gl_surface_egl_utils.h"
 
+namespace gl {
+#if BUILDFLAG(IS_OHOS)
+constexpr uint32_t kMaxSwapIntervalOhos = 16;
+#endif
 class GLSurfacePresentationHelper;
+class ArkwebGlSurfaceEglUtils;
 
 // Interface for EGL surface.
 class GL_EXPORT GLSurfaceEGL : public GLSurface {
@@ -67,6 +73,7 @@ class GL_EXPORT GLSurfaceEGL : public GLSurface {
 class GL_EXPORT NativeViewGLSurfaceEGL : public GLSurfaceEGL,
                                          public EGLTimestampClient {
  public:
+ friend class ArkwebGlSurfaceEglUtils;
 #if BUILDFLAG(IS_ANDROID)
   NativeViewGLSurfaceEGL(GLDisplayEGL* display,
                          ScopedANativeWindow scoped_window,
@@ -126,6 +133,10 @@ class GL_EXPORT NativeViewGLSurfaceEGL : public GLSurfaceEGL,
   // Takes care of the platform dependant bits, of any, for creating the window.
   virtual bool InitializeNativeWindow();
 
+#if BUILDFLAG(ARKWEB_DRDC)
+  static std::string GetGLRenderer();
+#endif
+
  protected:
   ~NativeViewGLSurfaceEGL() override;
 
@@ -141,9 +152,15 @@ class GL_EXPORT NativeViewGLSurfaceEGL : public GLSurfaceEGL,
     return presentation_helper_.get();
   }
 
+#if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
+  gfx::SwapResult SwapBuffersWithDamage(const std::vector<int>& rects,
+                                        PresentationCallback callback,
+                                        gfx::FrameData data) override;
+#else
   gfx::SwapResult SwapBuffersWithDamage(const std::vector<int>& rects,
                                         PresentationCallback callback,
                                         gfx::FrameData data);
+#endif
 
  private:
   struct SwapInfo {
@@ -181,6 +198,18 @@ class GL_EXPORT NativeViewGLSurfaceEGL : public GLSurfaceEGL,
 
   bool vsync_enabled_ = true;
   std::unique_ptr<GLSurfacePresentationHelper> presentation_helper_;
+
+#if BUILDFLAG(ARKWEB_DRDC)
+  static std::string gpu_version_;
+#endif
+
+  raw_ptr<ArkwebGlSurfaceEglUtils> arkweb_surface_utils_;
+
+#if BUILDFLAG(IS_OHOS)
+protected:
+  bool enable_replace_swap_buffer_output_ = false;
+  bool is_first_swapbuffers_ = true;
+#endif
 };
 
 // Encapsulates a pbuffer EGL surface.

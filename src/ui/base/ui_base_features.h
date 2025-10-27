@@ -10,6 +10,7 @@
 #include "base/metrics/field_trial_params.h"
 #include "build/build_config.h"
 #include "ui/base/buildflags.h"
+#include "arkweb/build/features/features.h"
 
 namespace features {
 

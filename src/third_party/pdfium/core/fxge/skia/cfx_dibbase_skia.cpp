@@ -262,9 +262,9 @@ sk_sp<SkImage> CFX_DIBBase::RealizeSkImage() const {
           return CreateSkiaImageFromDib(this, kBGRA_8888_SkColorType,
                                         kPremul_SkAlphaType);
         default:
-          NOTREACHED();
+          NOTREACHED_NORETURN();
       }
     default:
-      NOTREACHED();
+      NOTREACHED_NORETURN();
   }
 }

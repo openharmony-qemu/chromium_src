@@ -179,6 +179,9 @@ void ChromeContentClient::AddContentDecryptionModules(
 static const char* const kChromeStandardURLSchemes[] = {
 #if BUILDFLAG(ENABLE_EXTENSIONS_CORE)
     extensions::kExtensionScheme,
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    extensions::kArkwebExtensionScheme,
+#endif
 #endif
     chrome::kIsolatedAppScheme,   chrome::kChromeNativeScheme,
     chrome::kChromeSearchScheme,  dom_distiller::kDomDistillerScheme,
@@ -215,6 +218,9 @@ void ChromeContentClient::AddAdditionalSchemes(Schemes* schemes) {
   // the browser, so there is no danger of manipulation or eavesdropping on
   // communication with them by third parties.
   schemes->secure_schemes.push_back(extensions::kExtensionScheme);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  schemes->secure_schemes.push_back(extensions::kArkwebExtensionScheme);
+#endif
 #endif
 
   // chrome-native: is a scheme used for placeholder navigations that allow
@@ -316,6 +322,12 @@ media::MediaDrmBridgeClient* ChromeContentClient::GetMediaDrmBridgeClient() {
   return new ChromeMediaDrmBridgeClient();
 }
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
+media::OHOSMediaDrmBridgeClient* ChromeContentClient::GetMediaDrmBridgeClient() {
+  return new ChromeMediaDrmBridgeClientOHOS();
+}
+#endif  // BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
 
 void ChromeContentClient::ExposeInterfacesToBrowser(
     scoped_refptr<base::SequencedTaskRunner> io_task_runner,

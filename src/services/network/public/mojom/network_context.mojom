@@ -509,8 +509,10 @@ struct NetworkContextParams {
 
   // Binds to the cookie manager associated with this network context, which
   // should only be handed out to trusted processes.
-  [EnableIf=is_android]
+  // #if BUILDFLAG(ARKWEB_COOKIE)
+  [EnableIf=is_android_or_arkweb_cookie]
   pending_receiver<CookieManager>? cookie_manager;
+  // #endif
 
   // Whether to enable Domain Reliability.
   bool enable_domain_reliability = false;

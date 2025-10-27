@@ -1,0 +1,36 @@
+--- web_input_element.cc	2025-10-20 19:53:00.358210362 +0800
++++ web_input_element.cc	2025-10-16 16:07:39.373409762 +0800
+@@ -28,10 +28,11 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
+ #include "third_party/blink/public/web/web_input_element.h"
+ 
++#include "arkweb/build/features/features.h"
+ #include "build/build_config.h"
+ #include "third_party/blink/public/platform/web_string.h"
+ #include "third_party/blink/public/web/web_element_collection.h"
+ #include "third_party/blink/public/web/web_option_element.h"
+ #include "third_party/blink/renderer/core/dom/shadow_root.h"
+@@ -53,10 +54,21 @@
+ 
+ void WebInputElement::SetHasBeenPasswordField() {
+   Unwrap<HTMLInputElement>()->SetHasBeenPasswordField();
+ }
+ 
++#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
++bool WebInputElement::IsPasswordFieldForAutofill() const {
++  if (ConstUnwrap<HTMLInputElement>()->IsTextField() &&
++      ConstUnwrap<HTMLInputElement>()->HasBeenPasswordField()) {
++    return true;
++  }
++
++  return ConstUnwrap<HTMLInputElement>()->type() == input_type_names::kPassword;
++}
++#endif
++
+ void WebInputElement::SetActivatedSubmit(bool activated) {
+   Unwrap<HTMLInputElement>()->SetActivatedSubmit(activated);
+ }
+ 
+ int WebInputElement::size() const {

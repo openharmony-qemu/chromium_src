@@ -7,6 +7,7 @@
 
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/read_only_shared_memory_region.h"
 #include "components/viz/common/performance_hint_utils.h"
 #include "components/viz/common/quads/compositor_frame.h"

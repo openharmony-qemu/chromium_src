@@ -56,6 +56,26 @@ class CefBeforeDownloadCallback : public virtual CefBaseRefCounted {
   ///
   /*--cef(capi_name=cont,optional_param=download_path)--*/
   virtual void Continue(const CefString& download_path, bool show_dialog) = 0;
+
+#if BUILDFLAG(IS_OHOS)
+  ///
+  /// Call to cancel the download.
+  ///
+  /*--cef()--*/
+  virtual void Cancel() = 0;
+
+  ///
+  /// Call to pause the download.
+  ///
+  /*--cef()--*/
+  virtual void Pause() = 0;
+
+  ///
+  /// Call to resume the download.
+  ///
+  /*--cef()--*/
+  virtual void Resume() = 0;
+#endif
 };
 
 ///

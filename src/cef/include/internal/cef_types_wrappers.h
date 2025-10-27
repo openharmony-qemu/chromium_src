@@ -468,6 +468,10 @@ struct CefSettingsTraits {
 #if defined(OS_POSIX) && !defined(OS_ANDROID)
     target->disable_signal_handlers = src->disable_signal_handlers;
 #endif
+
+#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
+    target->incognito_mode = src->incognito_mode;
+#endif
   }
 };
 
@@ -502,6 +506,14 @@ struct CefRequestContextSettingsTraits {
                    &target->cookieable_schemes_list, copy);
     target->cookieable_schemes_exclude_defaults =
         src->cookieable_schemes_exclude_defaults;
+
+#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
+    target->incognito_mode = src->incognito_mode;
+#endif
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    target->global_request_context = src->global_request_context;
+#endif
   }
 };
 
@@ -525,6 +537,10 @@ struct CefBrowserSettingsTraits {
     cef_string_clear(&s->fantasy_font_family);
     cef_string_clear(&s->default_encoding);
   }
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "cef/ohos_cef_ext/include/internal/cef_types_wrappers_head_for_include.cc"
+#endif  // BUILDFLAG(IS_ARKWEB)
 
   static inline void set(const struct_type* src,
                          struct_type* target,
@@ -576,6 +592,19 @@ struct CefBrowserSettingsTraits {
 
     target->chrome_status_bubble = src->chrome_status_bubble;
     target->chrome_zoom_bubble = src->chrome_zoom_bubble;
+
+    setForInclude(src, target, copy);
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
+    target->border_radius_top_left = src->border_radius_top_left;
+    target->border_radius_top_right = src->border_radius_top_right;
+    target->border_radius_bottom_left = src->border_radius_bottom_left;
+    target->border_radius_bottom_right = src->border_radius_bottom_right;
+#endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+
+#if BUILDFLAG(ARKWEB_MENU)
+    target->touch_handle_exist = src->touch_handle_exist;
+    target->viewport_scale = src->viewport_scale;
+#endif  // BUILDFLAG(ARKWEB_MENU)
   }
 };
 

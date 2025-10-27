@@ -188,6 +188,11 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
 
   ~NetworkContext() override;
 
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS) || BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  virtual ArkWebNetworkContextExt* AsArkWebNetworkContextExt() {
+    return nullptr;
+  }
+#endif
   static std::unique_ptr<NetworkContext> CreateForTesting(
       NetworkService* network_service,
       mojo::PendingReceiver<mojom::NetworkContext> receiver,
@@ -744,7 +749,15 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
   bool IsNetworkForNonceAndUrlAllowed(const base::UnguessableToken& nonce,
                                       const GURL& url) const;
 
+#if BUILDFLAG(ARKWEB_TEST)
+ public:
+#else
  private:
+#endif // ARKWEB_TEST
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS) || BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  friend class ArkWebNetworkContextExt;
+#endif
+
   class NetworkContextHttpAuthPreferences : public net::HttpAuthPreferences {
    public:
     explicit NetworkContextHttpAuthPreferences(NetworkService* network_service);
@@ -1124,5 +1137,9 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
 };
 
 }  // namespace network
+
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS) || BUILDFLAG(ARKWEB_PRP_PRELOAD)
+#include "arkweb/chromium_ext/services/network/arkweb_network_context_ext.h"
+#endif
 
 #endif  // SERVICES_NETWORK_NETWORK_CONTEXT_H_

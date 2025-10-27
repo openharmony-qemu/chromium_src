@@ -233,7 +233,11 @@ WebTouchPoint CreateWebTouchPoint(const MotionEvent& event,
 blink::WebTouchEvent CreateWebTouchEventFromMotionEvent(
     const MotionEvent& event,
     bool moved_beyond_slop_region,
-    bool hovering) {
+    bool hovering
+#if BUILDFLAG(ARKWEB_FIT_CONTENT)
+    , int32_t is_fit_content
+#endif
+) {
   static_assert(static_cast<int>(MotionEvent::MAX_TOUCH_POINT_COUNT) ==
                     static_cast<int>(blink::WebTouchEvent::kTouchesLengthCap),
                 "inconsistent maximum number of active touch points");
@@ -246,7 +250,11 @@ blink::WebTouchEvent CreateWebTouchEventFromMotionEvent(
                              : WebInputEvent::DispatchType::kBlocking;
   result.moved_beyond_slop_region = moved_beyond_slop_region;
   result.hovering = hovering;
-
+#if BUILDFLAG(ARKWEB_FIT_CONTENT)
+  if (is_fit_content) {
+    result.is_fit_content = true;
+  }
+#endif
   // TODO(mustaq): MotionEvent flags seems unrelated, should use
   // metaState instead?
 
@@ -384,6 +392,24 @@ WebGestureEvent CreateWebGestureEvent(const GestureEventDetails& details,
       gesture.data.long_press.height =
           IfNanUseMaxFloat(details.bounding_box_f().height());
       break;
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    case EventType::kGestureDragLongPress:
+      gesture.SetType(WebInputEvent::Type::kGestureDragLongPress);
+      gesture.data.long_press.width =
+          IfNanUseMaxFloat(details.bounding_box_f().width());
+      gesture.data.long_press.height =
+          IfNanUseMaxFloat(details.bounding_box_f().height());
+      break;
+#endif
+#if BUILDFLAG(ARKWEB_AI)
+    case EventType::kGestureCreateOverlay:
+      gesture.SetType(WebInputEvent::Type::kGestureCreateOverlay);
+      gesture.data.long_press.width =
+          IfNanUseMaxFloat(details.bounding_box_f().width());
+      gesture.data.long_press.height =
+          IfNanUseMaxFloat(details.bounding_box_f().height());
+      break;
+#endif
     case EventType::kGestureLongTap:
       gesture.SetType(WebInputEvent::Type::kGestureLongTap);
       gesture.data.long_press.width =
@@ -586,6 +612,12 @@ std::unique_ptr<blink::WebInputEvent> TranslateAndScaleWebInputEvent(
         break;
 
       case blink::WebInputEvent::Type::kGestureLongPress:
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+      case blink::WebInputEvent::Type::kGestureDragLongPress:
+#endif
+#if BUILDFLAG(ARKWEB_AI)
+      case blink::WebInputEvent::Type::kGestureCreateOverlay:
+#endif
       case blink::WebInputEvent::Type::kGestureLongTap:
         gesture_event->data.long_press.width *= scale;
         gesture_event->data.long_press.height *= scale;

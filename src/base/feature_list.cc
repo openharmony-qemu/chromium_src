@@ -1048,3 +1048,7 @@ bool FeatureList::Accessor::GetParamsByFeatureName(
 }
 
 }  // namespace base
+
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+#include "arkweb/chromium_ext/base/feature_list_utils.cc"
+#endif

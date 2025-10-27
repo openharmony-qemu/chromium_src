@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <tuple>
 
+#include "arkweb/build/features/features.h"
 #include "base/base_switches.h"
 #include "base/command_line.h"
 #include "base/logging.h"
@@ -75,7 +76,7 @@ void InitializeScrollbarFadeAndDelay(cc::LayerTreeSettings& settings) {
   }
 }
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_FLING)
 // With 32 bit pixels, this would mean less than 400kb per buffer. Much less
 // than required for, say, nHD.
 static const int kSmallScreenPixelThreshold = 1e5;
@@ -267,7 +268,7 @@ cc::LayerTreeSettings GenerateLayerTreeSettings(
   };
 
   int default_tile_size = 256;
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_FLING)
   const gfx::Size screen_size =
       gfx::ScaleToFlooredSize(initial_screen_size, initial_device_scale_factor);
   int display_width = screen_size.width();
@@ -350,7 +351,11 @@ cc::LayerTreeSettings GenerateLayerTreeSettings(
   settings.use_partial_raster = !cmd.HasSwitch(switches::kDisablePartialRaster);
   // Partial raster is not supported with RawDraw
   settings.use_partial_raster &= !::features::IsUsingRawDraw();
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  settings.enable_elastic_overscroll = true;
+#else
   settings.enable_elastic_overscroll = platform->IsElasticOverscrollEnabled();
+#endif
   settings.use_gpu_memory_buffer_resources =
       cmd.HasSwitch(switches::kEnableGpuMemoryBufferCompositorResources);
   settings.use_painted_device_scale_factor = true;

@@ -12,6 +12,9 @@ import("//testing/test.gni")
 import("//third_party/angle/gni/angle.gni")
 import("//third_party/dawn/scripts/dawn_features.gni")
 import("//ui/gl/features.gni")
+if (is_arkweb) {
+  import("//arkweb/build/features/features.gni")
+}
 
 declare_args() {
   # Whether service side logging (actual calls into the GL driver) is enabled
@@ -192,6 +195,12 @@ component("gl") {
       "//third_party/swiftshader/src/Vulkan:icd_file",
       "//third_party/swiftshader/src/Vulkan:swiftshader_libvulkan",
     ]
+  }
+
+  if (is_arkweb) {
+    import("//arkweb/chromium_ext/ui/gl/arkweb_ui_gl_ext.gni")
+    sources += arkweb_ui_gl_ext_sources
+    deps += arkweb_ui_gl_ext_deps
   }
 
   if (enable_vulkan) {

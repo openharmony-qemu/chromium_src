@@ -45,7 +45,7 @@ class V8_EXPORT ExtensionConfiguration {
  * A sandboxed execution context with its own set of built-in objects
  * and functions.
  */
-class V8_EXPORT Context : public Data {
+class V8_EXPORT JSVM_EXPORT Context : public Data {
  public:
   /**
    * Returns the global proxy object.

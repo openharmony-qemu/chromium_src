@@ -14,7 +14,14 @@
 #include "third_party/blink/renderer/modules/media_controls/media_controls_impl.h"
 #include "third_party/blink/renderer/platform/text/platform_locale.h"
 #include "ui/strings/grit/ax_strings.h"
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "ohos_nweb_ex/overrides/ui/strings/grit/ohos_ex_ui_strings.h"
+#endif // IS_ARKWEB_EXT
+#endif
 
+#define IDS_OHOS_MEDIA_OVERFLOW_MENU_EXIT_PICTURE_IN_PICTURE 62073
+#define IDS_OHOS_MEDIA_OVERFLOW_MENU_ENTER_PICTURE_IN_PICTURE 62074
 namespace blink {
 
 MediaControlPictureInPictureButtonElement::
@@ -57,6 +64,14 @@ int MediaControlPictureInPictureButtonElement::GetOverflowStringId() const {
   bool isInPictureInPicture =
       PictureInPictureController::IsElementInPictureInPicture(
           &To<HTMLVideoElement>(MediaElement()));
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (GetMediaControls().ShouldShowVideoControlsHM()) {
+    return isInPictureInPicture
+              ? IDS_OHOS_MEDIA_OVERFLOW_MENU_EXIT_PICTURE_IN_PICTURE
+              : IDS_OHOS_MEDIA_OVERFLOW_MENU_ENTER_PICTURE_IN_PICTURE;
+  }
+#endif
 
   return isInPictureInPicture
              ? IDS_MEDIA_OVERFLOW_MENU_EXIT_PICTURE_IN_PICTURE

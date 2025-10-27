@@ -1,0 +1,18 @@
+--- content_settings_registry.cc	2025-10-20 19:52:52.793796704 +0800
++++ content_settings_registry.cc	2025-10-16 15:54:56.604509132 +0800
+@@ -888,10 +904,14 @@
+       website_settings_info, allowlisted_primary_schemes, valid_settings,
+       incognito_behavior, origin_restriction);
+   if (type == ContentSettingsType::COOKIES) {
+     content_settings_info_[type]
+         ->set_third_party_cookie_allowed_secondary_schemes(
+-            {kChromeDevToolsScheme, kExtensionScheme});
++            {kChromeDevToolsScheme, kExtensionScheme
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++        , kArkwebExtensionScheme
++#endif
++    });
+   }
+ }
+ 
+ }  // namespace content_settings

@@ -1,0 +1,14 @@
+--- socket_tcp.h	2025-10-21 21:22:38.186315688 +0800
++++ socket_tcp.h	2025-10-16 15:55:03.320604818 +0800
+@@ -174,11 +174,10 @@
+   ~P2PSocketStunTcp() override;
+ 
+  protected:
+   bool ProcessInput(base::span<const uint8_t> input,
+                     size_t* bytes_consumed) override;
+-
+   [[nodiscard]] bool DoSend(
+       const net::IPEndPoint& to,
+       base::span<const uint8_t> data,
+       const rtc::PacketOptions& options) override;
+ 

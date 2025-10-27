@@ -31,6 +31,8 @@
 #define CEF_INCLUDE_INTERNAL_CEF_TYPES_COLOR_H_
 #pragma once
 
+#include "arkweb/build/features/features.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

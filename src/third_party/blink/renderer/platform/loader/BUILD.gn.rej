@@ -1,0 +1,14 @@
+--- BUILD.gn	2025-10-20 19:53:01.218200922 +0800
++++ BUILD.gn	2025-10-16 16:07:40.123431561 +0800
+@@ -197,10 +199,11 @@
+     "//third_party/blink/renderer/platform:allow_discouraged_type",
+     "//third_party/blink/renderer/platform/blob:blob",
+     "//third_party/blink/renderer/platform/instrumentation:instrumentation",
+     "//third_party/blink/renderer/platform/network:network",
+     "//third_party/blink/renderer/platform/scheduler:scheduler",
++    "//cef/libcef/common/mojom",
+   ]
+   public_deps = [
+     "//third_party/blink/public/mojom:mojom_platform_headers",
+     "//third_party/blink/renderer/platform/heap:heap",
+   ]

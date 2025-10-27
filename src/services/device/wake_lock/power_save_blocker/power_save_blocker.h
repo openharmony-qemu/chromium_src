@@ -14,6 +14,7 @@
 #include "build/build_config.h"
 #include "services/device/public/mojom/wake_lock.mojom.h"
 
+#include "arkweb/build/features/features.h"
 #if BUILDFLAG(IS_ANDROID)
 #include "ui/android/view_android.h"
 #endif  // BUILDFLAG(IS_ANDROID)
@@ -46,6 +47,10 @@ class PowerSaveBlocker {
   // valid only for the lifetime of this call; hence it should not be cached
   // internally.
   void InitDisplaySleepBlocker(ui::ViewAndroid* view_android);
+#endif
+
+#if BUILDFLAG(ARKWEB_SCREEN_LOCK)
+  void InitDisplaySleepBlocker(const int32_t id);
 #endif
 
  private:

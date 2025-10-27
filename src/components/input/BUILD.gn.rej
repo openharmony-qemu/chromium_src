@@ -1,0 +1,38 @@
+--- BUILD.gn	2025-10-20 19:52:53.045914300 +0800
++++ BUILD.gn	2025-10-16 15:54:56.884209782 +0800
+@@ -87,17 +91,21 @@
+     "utils.cc",
+     "utils.h",
+     "web_touch_event_traits.cc",
+     "web_touch_event_traits.h",
+   ]
++  if (arkweb_input_events) {
++    sources += arkweb_input_router_impl_sources
++  }
+   public_deps = [ "//ui/base/mojom:ui_base_types" ]
+   deps = [
+     ":mojom",
+     "//base",
+     "//cc",
+     "//services/viz/public/mojom",
+     "//third_party/blink/public/common:headers",
++    "//services/viz/privileged/mojom/compositing",
+     "//ui/base",
+     "//ui/base/cursor",
+     "//ui/events:events",
+     "//ui/events:events_base",
+     "//ui/events:gesture_detection",
+@@ -185,10 +199,13 @@
+     "tap_suppression_controller_unittest.cc",
+     "touch_action_filter_unittest.cc",
+     "touch_event_stream_validator_unittest.cc",
+     "touchpad_pinch_event_queue_unittest.cc",
+   ]
++
++  sources += arkweb_chrome_components_input_unittest_sources
++
+   deps = [
+     ":input",
+     "//base:base",
+     "//base/test:test_support",
+     "//testing/gtest",

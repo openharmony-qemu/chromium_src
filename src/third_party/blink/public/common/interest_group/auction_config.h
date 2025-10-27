@@ -249,7 +249,6 @@ struct BLINK_COMMON_EXPORT AuctionConfig {
     struct BLINK_COMMON_EXPORT AuctionReportBuyerDebugModeConfig {
       bool is_enabled = false;
       std::optional<uint64_t> debug_key;
-
       friend BLINK_COMMON_EXPORT bool operator==(
           const AuctionReportBuyerDebugModeConfig&,
           const AuctionReportBuyerDebugModeConfig&);

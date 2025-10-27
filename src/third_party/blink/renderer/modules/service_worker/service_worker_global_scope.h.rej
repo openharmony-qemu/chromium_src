@@ -1,0 +1,23 @@
+--- service_worker_global_scope.h	2025-10-20 19:53:00.990204370 +0800
++++ service_worker_global_scope.h	2025-10-16 16:07:39.953689785 +0800
+@@ -782,10 +782,20 @@
+   struct RaceNetworkRequestInfo {
+     int fetch_event_id;
+     String token;
+     mojo::PendingRemote<network::mojom::blink::URLLoaderFactory>
+         url_loader_factory;
++#if defined(__clang__) && (__clang_major__ < 17)
++    RaceNetworkRequestInfo(
++        int fetch_event_id,
++        String token,
++        mojo::PendingRemote<network::mojom::blink::URLLoaderFactory>
++            url_loader_factory)
++        : fetch_event_id(fetch_event_id),
++          token(token),
++          url_loader_factory(std::move(url_loader_factory)) {}
++#endif
+   };
+   // TODO(crbug.com/918702) WTF::HashMap cannot use base::UnguessableToken as a
+   // key. As a workaround uses WTF::String as a key instead.
+   HashMap<String, std::unique_ptr<RaceNetworkRequestInfo>>
+       race_network_requests_;

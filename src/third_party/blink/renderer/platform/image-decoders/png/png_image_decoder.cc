@@ -45,6 +45,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/adapters.h"
 #include "base/numerics/checked_math.h"
 #include "media/base/video_color_space.h"
@@ -68,7 +69,10 @@ PNGImageDecoder::PNGImageDecoder(
     : ImageDecoder(alpha_option,
                    high_bit_depth_decoding_option,
                    color_behavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
                    cc::AuxImage::kDefault,
+#endif
+
                    max_decoded_bytes),
       offset_(offset),
       current_frame_(0),
@@ -79,7 +83,8 @@ PNGImageDecoder::PNGImageDecoder(
       has_alpha_channel_(false),
       current_buffer_saw_alpha_(false),
       decode_to_half_float_(false),
-      bit_depth_(0) {}
+      bit_depth_(0) {
+}
 
 PNGImageDecoder::~PNGImageDecoder() = default;
 

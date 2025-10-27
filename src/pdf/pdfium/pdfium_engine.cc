@@ -832,6 +832,7 @@ void PDFiumEngine::PostPaint() {
 
 bool PDFiumEngine::HandleDocumentLoad(std::unique_ptr<UrlLoader> loader,
                                       const std::string& original_url) {
+  LOG(INFO) << __func__ << ", PDF client start to consume.";
   password_tries_remaining_ = kMaxPasswordTries;
   process_when_pending_request_complete_ =
       base::FeatureList::IsEnabled(features::kPdfIncrementalLoading);
@@ -1164,6 +1165,10 @@ void PDFiumEngine::SetCaretBrowsingEnabled(bool enabled) {
 void PDFiumEngine::ClearTextSelection() {
   SelectionChangeInvalidator selection_invalidator(this);
   selection_.clear();
+#if BUILDFLAG(ARKWEB_PDF)
+  is_finding_result_ = false;
+  range_moved_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 }
 
 void PDFiumEngine::ContinueFind(bool case_sensitive) {
@@ -1211,11 +1216,18 @@ bool PDFiumEngine::HandleInputEvent(const blink::WebInputEvent& event) {
     }
     case blink::WebInputEvent::Type::kTouchEnd:
       KillTouchTimer();
+#if BUILDFLAG(ARKWEB_PDF)
+      client_->SetIsTouching(false);
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
       break;
     case blink::WebInputEvent::Type::kTouchMove:
       // TODO(dsinclair): This should allow a little bit of movement (up to the
       // touch radii) to account for finger jiggle.
       KillTouchTimer();
+#if BUILDFLAG(ARKWEB_PDF)
+      client_->SetIsTouching(true);
+#endif  // BUILDFLAG(ARKWEB_PDF)
       break;
     default:
       break;
@@ -2341,6 +2353,10 @@ void PDFiumEngine::StopFind() {
   SelectionChangeInvalidator selection_invalidator(this);
   selection_.clear();
   selecting_ = false;
+#if BUILDFLAG(ARKWEB_PDF)
+  is_finding_result_ = false;
+  range_moved_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   find_results_.clear();
   next_page_to_search_ = -1;
@@ -2591,6 +2607,10 @@ void PDFiumEngine::SelectAll() {
       selection_.push_back(PDFiumRange::AllTextOnPage(page.get()));
     }
   }
+#if BUILDFLAG(ARKWEB_PDF)
+  is_finding_result_ = false;
+  range_moved_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 }
 
 const std::vector<DocumentAttachmentInfo>&
@@ -2828,6 +2848,10 @@ void PDFiumEngine::HandleLongPress(const blink::WebTouchEvent& event) {
   // Only consider the first touch point.
   DCHECK_GT(event.touches_length, 0u);
 
+#if BUILDFLAG(ARKWEB_PDF)
+  is_finding_result_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
   // Send a fake mouse down to trigger the multi-click selection code.
   blink::WebMouseEvent mouse_event(blink::WebInputEvent::Type::kMouseDown,
                                    event.GetModifiers(), event.TimeStamp());
@@ -2896,6 +2920,10 @@ void PDFiumEngine::AppendBlankPages(size_t num_pages) {
 
   selection_.clear();
   pending_pages_.clear();
+#if BUILDFLAG(ARKWEB_PDF)
+  is_finding_result_ = false;
+  range_moved_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   // Delete all pages except the first one.
   while (pages_.size() > 1) {
@@ -4207,7 +4235,10 @@ void PDFiumEngine::SetSelection(const PageCharacterIndex& selection_start_index,
                                 const PageCharacterIndex& selection_end_index) {
   SelectionChangeInvalidator selection_invalidator(this);
   selection_.clear();
-
+#if BUILDFLAG(ARKWEB_PDF)
+  is_finding_result_ = false;
+  range_moved_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
   PageCharacterIndex sel_start_index = selection_start_index;
   PageCharacterIndex sel_end_index = selection_end_index;
   if (sel_end_index.page_index < sel_start_index.page_index) {

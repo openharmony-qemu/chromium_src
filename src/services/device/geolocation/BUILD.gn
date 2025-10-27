@@ -65,6 +65,14 @@ source_set("geolocation") {
     "//services/network/public/cpp",
   ]
 
+ if (defined(arkweb_geolocation) && arkweb_geolocation) {
+    sources += arkweb_geolocation_sources
+    import("//build/config/ohos/config.gni")
+    include_dirs = ohos_src_includes
+    deps += [
+      "//ohos_glue:ohos_adapter_glue_source",
+    ]
+  }
   if (is_android) {
     sources += [
       "location_api_adapter_android.cc",

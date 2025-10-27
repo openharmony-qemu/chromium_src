@@ -7,10 +7,11 @@
 
 #include <list>
 
+#include "cef/ohos_cef_ext/include/arkweb_display_handler_ext.h"
 #include "include/cef_client.h"
 
 class SimpleHandler : public CefClient,
-                      public CefDisplayHandler,
+                      public ArkWebDisplayHandlerExt,
                       public CefLifeSpanHandler,
                       public CefLoadHandler {
  public:

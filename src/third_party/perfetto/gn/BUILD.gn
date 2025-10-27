@@ -66,7 +66,7 @@ action("gen_buildflags") {
 
   # We need local symbolization to run diff tests in chrome.
   if (enable_perfetto_tools ||
-      (enable_perfetto_trace_processor && build_with_chromium)) {
+      (enable_perfetto_trace_processor && build_with_chromium && !is_ohos)) {
     perfetto_local_symbolizer =
         "PERFETTO_BUILDFLAG_DEFINE_PERFETTO_OS_LINUX() || " +
         "PERFETTO_BUILDFLAG_DEFINE_PERFETTO_OS_MAC() ||" +

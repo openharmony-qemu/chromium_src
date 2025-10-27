@@ -23,6 +23,10 @@
 #include "components/password_manager/core/browser/features/password_features.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+#include "arkweb/chromium_ext/components/password_manager/core/browser/password_store/login_database_async_helper_for_include.cc"
+#endif
+
 namespace password_manager {
 
 namespace {

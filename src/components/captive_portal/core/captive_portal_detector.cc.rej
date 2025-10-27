@@ -1,0 +1,27 @@
+--- captive_portal_detector.cc	2025-10-20 19:52:52.737770508 +0800
++++ captive_portal_detector.cc	2025-10-16 15:54:56.536581831 +0800
+@@ -14,14 +14,24 @@
+ #include "net/http/http_util.h"
+ #include "services/network/public/cpp/resource_request.h"
+ #include "services/network/public/mojom/url_response_head.mojom.h"
+ #include "url/gurl.h"
+ 
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
++
+ namespace captive_portal {
+ 
+ const char CaptivePortalDetector::kDefaultURL[] =
++#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
++    "http://connectivitycheck.cbg-app.huawei.com/generate_204";
++#elif BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++    "http://xxx";
++#else
+     "http://www.gstatic.com/generate_204";
++#endif
+ 
+ CaptivePortalDetector::CaptivePortalDetector(
+     network::mojom::URLLoaderFactory* loader_factory)
+     : loader_factory_(loader_factory) {}
+ 

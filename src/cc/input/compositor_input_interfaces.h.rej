@@ -1,0 +1,28 @@
+--- compositor_input_interfaces.h	2025-10-20 19:52:47.906058485 +0800
++++ compositor_input_interfaces.h	2025-10-16 15:54:55.657472805 +0800
+@@ -12,10 +12,11 @@
+ #include "cc/input/actively_scrolling_type.h"
+ #include "cc/input/browser_controls_offset_tags_info.h"
+ #include "cc/input/browser_controls_state.h"
+ #include "cc/paint/element_id.h"
+ #include "ui/gfx/geometry/size.h"
++#include "arkweb/build/features/features.h"
+ 
+ namespace viz {
+ struct BeginFrameArgs;
+ }
+ 
+@@ -154,10 +160,13 @@
+   // TODO(bokan): Temporary escape hatch for code that hasn't yet been
+   // converted to use the input<->compositor interface. This will eventually be
+   // removed.
+   virtual LayerTreeHostImpl& GetImplDeprecated() = 0;
+   virtual const LayerTreeHostImpl& GetImplDeprecated() const = 0;
++#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
++  virtual void ScheduledActionDraw() {}
++#endif
+ };
+ 
+ }  // namespace cc
+ 
+ #endif  // CC_INPUT_COMPOSITOR_INPUT_INTERFACES_H_

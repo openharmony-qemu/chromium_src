@@ -31,6 +31,10 @@ class StartupBrowserCreator;
 class ShutdownWatcherHelper;
 class WebUsbDetector;
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+class BrowserProcessImplExt;
+#endif
+
 namespace base {
 class CommandLine;
 class RunLoop;
@@ -56,7 +60,7 @@ class ChromeBrowserMainParts : public content::BrowserMainParts {
   static std::unique_ptr<base::RunLoop> TakeRunLoopForTest();
 #endif  // !BUILDFLAG(IS_ANDROID)
 
-#if BUILDFLAG(ENABLE_PROCESS_SINGLETON)
+#if BUILDFLAG(ENABLE_PROCESS_SINGLETON) || BUILDFLAG(ARKWEB_TEST)
   // Handles notifications from other processes. The function receives the
   // command line and directory with which the other Chrome process was
   // launched. Return true if the command line will be handled within the
@@ -65,7 +69,7 @@ class ChromeBrowserMainParts : public content::BrowserMainParts {
   static bool ProcessSingletonNotificationCallback(
       base::CommandLine command_line,
       const base::FilePath& current_directory);
-#endif  // BUILDFLAG(ENABLE_PROCESS_SINGLETON)
+#endif  // BUILDFLAG(ENABLE_PROCESS_SINGLETON) || BUILDFLAG(ARKWEB_TEST)
 
  protected:
   ChromeBrowserMainParts(bool is_integration_test, StartupData* startup_data);
@@ -178,7 +182,11 @@ class ChromeBrowserMainParts : public content::BrowserMainParts {
 
   // Members initialized after / released before main_message_loop_ ------------
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  std::unique_ptr<BrowserProcessImplExt> browser_process_;
+#else
   std::unique_ptr<BrowserProcessImpl> browser_process_;
+#endif
 
 #if !BUILDFLAG(IS_ANDROID)
   // Browser creation happens on the Java side in Android.

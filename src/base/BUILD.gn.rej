@@ -1,0 +1,246 @@
+--- BUILD.gn	2025-10-20 19:52:46.593042742 +0800
++++ BUILD.gn	2025-10-16 15:54:55.215765316 +0800
+@@ -30,10 +30,11 @@
+ import("//build/config/cronet/config.gni")
+ import("//build/config/dcheck_always_on.gni")
+ import("//build/config/ios/config.gni")
+ import("//build/config/logging.gni")
+ import("//build/config/nacl/config.gni")
++import("//build/config/ohos/config.gni")
+ import("//build/config/profiling/profiling.gni")
+ import("//build/config/rust.gni")
+ import("//build/config/sanitizers/sanitizers.gni")
+ import("//build/config/sysroot.gni")
+ import("//build/config/ui.gni")
+@@ -44,10 +45,12 @@
+ import("//build/util/process_version.gni")
+ import("//build_overrides/build.gni")
+ import("//cef/libcef/features/features.gni")
+ import("//testing/libfuzzer/fuzzer_test.gni")
+ import("//testing/test.gni")
++import("//arkweb/ohos_nweb/src/nweb_sysevent.gni")
++import("//arkweb/build/features/features.gni")
+ 
+ if (is_ios) {
+   # Used to access ios_is_app_extension variable definition.
+   import("//build/config/ios/ios_sdk.gni")
+ }
+@@ -1049,10 +1084,21 @@
+     "//build:branding_buildflags",
+     "//build:ios_buildflags",
+     "//build/config/compiler:compiler_buildflags",
+     "//third_party/modp_b64",
+   ]
++
++  if (defined(report_sys_event) && report_sys_event) {
++    defines += [ "REPORT_SYS_EVENT" ]
++  }
++ 
++  if (defined(is_arkweb) && is_arkweb) {
++    deps += [
++      "//base:base_static",
++    ]
++  }
++
+   if (!is_nacl) {
+     # Used by metrics/crc32, except on NaCl builds.
+     deps += [ "//third_party/zlib" ]
+ 
+     # NaCl does not support Rust.
+@@ -1060,10 +1106,14 @@
+       ":rust_logger",
+       "//third_party/rust/serde_json_lenient/v0_2/wrapper",
+     ]
+   }
+ 
++  if (enable_arkweb) {
++    deps += [ "//arkweb//build/features" ]
++  }
++
+   # `raw_ptr` cannot be made a component due to CRT symbol issues.
+   # Its gateway to being a component is through `//base`, so we have
+   # to provide the appropriate `#define` here.
+   defines += [ "IS_RAW_PTR_IMPL" ]
+ 
+@@ -1093,10 +1143,24 @@
+     "//base/third_party/icu",
+     "//build:chromecast_buildflags",
+     "//build:chromeos_buildflags",
+     "//third_party/abseil-cpp:absl",
+   ]
++  if (is_ohos && enable_arkweb) {
++    sources += arkweb_base_ext_sources
++    deps += [ "//arkweb//build/features", "//base/third_party/xdg_user_dirs",]
++    public_deps += [ "//arkweb//build/features" ]
++    public_deps += [ ":ohos_package_info" ]
++    if (is_ohos) {
++      if (!defined(public_deps)) {
++        public_deps = []
++      }
++      public_deps += [
++        "//ohos_glue:ohos_adapter_glue_source",
++      ]
++    }
++  }
+ 
+   if (!is_nacl) {
+     sources += [
+       "containers/span_rust.h",
+       "strings/string_view_rust.h",
+@@ -1740,10 +1823,25 @@
+         "debug/elf_reader.h",
+         "stack_canary_linux.cc",
+         "stack_canary_linux.h",
+       ]
+     }
++
++    # FIXME: Only the adaptation to base_path is added.
++    if (is_ohos) {
++      sources += [
++        "//arkweb/chromium_ext/base/base_paths_ohos.h",
++        "//arkweb/chromium_ext/base/base_paths_ohos.cc",
++        "nix/mime_util_xdg.cc",
++        "nix/mime_util_xdg.h",
++        "nix/xdg_util.cc",
++        "nix/xdg_util.h",
++        "stack_canary_linux.cc",
++        "stack_canary_linux.h",
++      ]
++    }
++
+     if (use_partition_alloc) {
+       # Add stuff that doesn't work in NaCl.
+       sources += [
+         # PartitionAlloc uses SpinLock, which doesn't work in NaCl (see below).
+         "allocator/miracle_parameter.cc",
+@@ -2356,11 +2454,11 @@
+ 
+   if (is_posix) {
+     sources += [ "time/time_exploded_posix.cc" ]
+   }
+ 
+-  if ((is_posix && !is_apple && !is_android) || is_fuchsia) {
++  if ((is_posix && !is_apple && !is_android && !enable_arkweb) || is_fuchsia) {
+     sources += [ "profiler/stack_sampler_posix.cc" ]
+   }
+ 
+   if ((is_posix && !is_apple && !is_android && !is_chromeos) || is_fuchsia) {
+     sources += [ "power_monitor/power_monitor_device_source_stub.cc" ]
+@@ -2765,10 +2876,15 @@
+ 
+   deps = [
+     ":fuzzing_buildflags",
+     "//build:chromeos_buildflags",
+   ]
++  if (defined(is_arkweb) && is_arkweb) {
++    deps += [
++      "//arkweb/build/features:features",
++    ]
++  }
+ 
+   if (is_win) {
+     sources += [
+       "win/static_constants.cc",
+       "win/static_constants.h",
+@@ -2785,10 +2901,14 @@
+ 
+   if (!is_debug) {
+     configs -= [ "//build/config/compiler:default_optimization" ]
+     configs += [ "//build/config/compiler:optimize_max" ]
+   }
++
++  if (enable_arkweb) {
++    deps += [ "//arkweb/build/features" ]
++  }
+ }
+ 
+ component("i18n") {
+   output_name = "base_i18n"
+   sources = [
+@@ -3925,11 +4127,22 @@
+       deps += [ ":stack_canary_linux_unittests" ]
+     }
+   }
+ 
+   if (enable_base_tracing) {
+-    sources += [ "test/test_trace_processor_example_unittest.cc" ]
++    sources += [
++      "test/test_trace_processor.cc",
++      "test/test_trace_processor.h",
++      "test/test_trace_processor_export.h",
++      "test/test_trace_processor_impl.cc",
++      "test/test_trace_processor_impl.h",
++      "test/test_trace_processor_example_unittest.cc",
++    ]
++
++    deps += [
++      "//third_party/perfetto:libtrace_processor",
++    ]
+   }
+ 
+   if (is_posix) {
+     sources += [
+       "files/dir_reader_posix_unittest.cc",
+@@ -4312,10 +4525,24 @@
+   }
+ 
+   if (enable_nocompile_tests) {
+     deps += [ ":base_nocompile_tests" ]
+   }
++
++  if (enable_arkweb) {
++    deps += [ "//arkweb/build/features" ]
++    sources += arkweb_metrics_unittests_sources
++  }
++
++  if (arkweb_unittests) {
++    deps += [
++      "//arkweb/ohos_adapter_ndk:adapter_ndk",
++    ]
++    include_dirs = [
++      "//third_party/ohos_ndk/includes/ohos_adapter",
++    ]
++  }
+ }
+ 
+ # Test that CFG is enabled in Rust code.
+ if (is_win && toolchain_has_rust) {
+   source_set("rust_cfg_win_test") {
+@@ -4352,31 +4579,31 @@
+       "containers/contains_nocompile.nc",
+       "containers/enum_set_nocompile.nc",
+       "containers/fixed_flat_map_nocompile.nc",
+       "containers/fixed_flat_set_nocompile.nc",
+       "containers/heap_array_nocompile.nc",
+-      "containers/span_nocompile.nc",
++      # "containers/span_nocompile.nc",
+       "containers/to_value_list_nocompile.nc",
+       "containers/to_vector_nocompile.nc",
+       "debug/crash_logging_nocompile.nc",
+-      "functional/bind_nocompile.nc",
+-      "functional/callback_nocompile.nc",
++      # "functional/bind_nocompile.nc",
++      # "functional/callback_nocompile.nc",
+       "functional/function_ref_nocompile.nc",
+       "functional/overloaded_nocompile.nc",
+-      "logging_nocompile.nc",
++      # "logging_nocompile.nc",
+       "memory/protected_memory_nocompile.nc",
+       "memory/ref_counted_nocompile.nc",
+       "memory/shared_memory_mapping_nocompile.nc",
+       "memory/structured_shared_memory_nocompile.nc",
+-      "memory/weak_ptr_nocompile.nc",
++      # "memory/weak_ptr_nocompile.nc",
+       "metrics/field_trial_params_nocompile.nc",
+       "metrics/histogram_nocompile.nc",
+       "no_destructor_nocompile.nc",
+       "observer_list_nocompile.nc",
+       "run_loop_nocompile.nc",
+       "sequence_checker_nocompile.nc",
+-      "strings/cstring_view_nocompile.nc",
++      # "strings/cstring_view_nocompile.nc",
+       "strings/stringprintf_nocompile.nc",
+       "synchronization/lock_nocompile.nc",
+       "task/bind_post_task_nocompile.nc",
+       "task/task_traits_nocompile.nc",
+       "test/bind_test_nocompile.nc",

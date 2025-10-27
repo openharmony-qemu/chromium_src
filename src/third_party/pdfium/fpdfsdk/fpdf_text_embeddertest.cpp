@@ -355,7 +355,7 @@ TEST_F(FPDFTextEmbedderTest, TextHebrewMirrored) {
   ScopedFPDFTextPage textpage(FPDFText_LoadPage(page.get()));
   ASSERT_TRUE(textpage);
 
-  static constexpr int kCharCount = 10;
+  constexpr int kCharCount = 10;
   ASSERT_EQ(kCharCount, FPDFText_CountChars(textpage.get()));
 
   unsigned short buffer[kCharCount + 1];
@@ -679,8 +679,8 @@ TEST_F(FPDFTextEmbedderTest, MAYBE_TextSearchLatinExtended) {
   ASSERT_TRUE(textpage);
 
   // Upper/lowercase 'a' with breve.
-  static constexpr FPDF_WCHAR kNeedleUpper[] = {0x0102, 0x0000};
-  static constexpr FPDF_WCHAR kNeedleLower[] = {0x0103, 0x0000};
+  constexpr FPDF_WCHAR kNeedleUpper[] = {0x0102, 0x0000};
+  constexpr FPDF_WCHAR kNeedleLower[] = {0x0103, 0x0000};
 
   for (const auto* needle : {kNeedleUpper, kNeedleLower}) {
     ScopedFPDFTextFind search(FPDFText_FindStart(textpage.get(), needle, 0, 0));
@@ -1313,8 +1313,8 @@ TEST_F(FPDFTextEmbedderTest, Bug1029) {
   ScopedFPDFTextPage textpage(FPDFText_LoadPage(page.get()));
   ASSERT_TRUE(textpage);
 
-  static constexpr int page_range_offset = 171;
-  static constexpr int page_range_length = 56;
+  constexpr int page_range_offset = 171;
+  constexpr int page_range_length = 56;
 
   // This text is:
   // 'METADATA table. When the split has committed, it noti' followed
@@ -1425,10 +1425,10 @@ TEST_F(FPDFTextEmbedderTest, GetText) {
   ASSERT_TRUE(text_object);
 
   // Positive testing.
-  static constexpr char kHelloText[] = "Hello, world!";
+  constexpr char kHelloText[] = "Hello, world!";
   // Return value includes the terminating NUL that is provided.
-  static constexpr unsigned long kHelloUTF16Size = std::size(kHelloText) * 2;
-  static constexpr wchar_t kHelloWideText[] = L"Hello, world!";
+  constexpr unsigned long kHelloUTF16Size = std::size(kHelloText) * 2;
+  constexpr wchar_t kHelloWideText[] = L"Hello, world!";
   unsigned long size =
       FPDFTextObj_GetText(text_object, text_page.get(), nullptr, 0);
   ASSERT_EQ(kHelloUTF16Size, size);
@@ -1533,8 +1533,8 @@ TEST_F(FPDFTextEmbedderTest, Bug642) {
   ScopedFPDFTextPage text_page(FPDFText_LoadPage(page.get()));
   ASSERT_TRUE(text_page);
 
-  static constexpr char kText[] = "ABCD";
-  static constexpr size_t kTextSize = std::size(kText);
+  constexpr char kText[] = "ABCD";
+  constexpr size_t kTextSize = std::size(kText);
   // -1 for CountChars not including the \0
   EXPECT_EQ(static_cast<int>(kTextSize) - 1,
             FPDFText_CountChars(text_page.get()));
@@ -1722,7 +1722,7 @@ TEST_F(FPDFTextEmbedderTest, GetMatrix) {
       {1.0f, 0.0f, 0.0f, 0.833333, 60.0f, 130.0f},
       {1.0f, 0.0f, 0.0f, 0.833333, 60.0f, 130.0f},
   });
-  static constexpr size_t kExpectedCount = std::size(kExpectedMatrices);
+  constexpr size_t kExpectedCount = std::size(kExpectedMatrices);
   static_assert(kExpectedCount + 1 == kExpectedTextSize,
                 "Bad expected matrix size");
 
@@ -2114,7 +2114,7 @@ TEST_F(FPDFTextEmbedderTest, SmallType3Glyph) {
 }
 
 TEST_F(FPDFTextEmbedderTest, BigtableTextExtraction) {
-  static constexpr char kExpectedText[] =
+  constexpr char kExpectedText[] =
       "{fay,jeff,sanjay,wilsonh,kerr,m3b,tushar,\x02k es,gruber}@google.com";
   ByteStringView expected_text(kExpectedText);
 

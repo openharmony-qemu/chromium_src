@@ -1,0 +1,41 @@
+--- style_sheet_contents.cc	2025-10-20 19:53:00.306210855 +0800
++++ style_sheet_contents.cc	2025-10-16 16:07:39.302355065 +0800
+@@ -80,11 +80,18 @@
+       is_mutable_(false),
+       has_font_face_rule_(false),
+       has_media_queries_(false),
+       has_single_owner_document_(true),
+       is_used_from_text_cache_(false),
+-      parser_context_(context) {}
++      parser_context_(context)
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++      ,
++      is_for_adblock_(false),
++      is_for_user_adblock_(false)
++#endif
++{
++}
+ 
+ StyleSheetContents::StyleSheetContents(const StyleSheetContents& o)
+     : owner_rule_(nullptr),
+       original_url_(o.original_url_),
+       pre_import_layer_statement_rules_(
+@@ -100,11 +107,17 @@
+       is_mutable_(false),
+       has_font_face_rule_(o.has_font_face_rule_),
+       has_media_queries_(o.has_media_queries_),
+       has_single_owner_document_(true),
+       is_used_from_text_cache_(false),
+-      parser_context_(o.parser_context_) {
++      parser_context_(o.parser_context_)
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++      ,
++      is_for_adblock_(false),
++      is_for_user_adblock_(false)
++#endif
++{
+   for (unsigned i = 0; i < pre_import_layer_statement_rules_.size(); ++i) {
+     pre_import_layer_statement_rules_[i] = To<StyleRuleLayerStatement>(
+         o.pre_import_layer_statement_rules_[i]->Copy());
+   }
+ 

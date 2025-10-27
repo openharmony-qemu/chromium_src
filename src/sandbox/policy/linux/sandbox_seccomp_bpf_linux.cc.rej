@@ -1,0 +1,67 @@
+--- sandbox_seccomp_bpf_linux.cc	2025-10-20 19:52:57.558210335 +0800
++++ sandbox_seccomp_bpf_linux.cc	2025-10-16 15:55:03.212720282 +0800
+@@ -234,15 +234,17 @@
+     case sandbox::mojom::Sandbox::kHardwareVideoDecoding:
+       return std::make_unique<HardwareVideoDecodingProcessPolicy>(
+           HardwareVideoDecodingProcessPolicy::ComputePolicyType(
+               options.use_amd_specific_policies));
+ #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_ASH)
++#if !BUILDFLAG(IS_OHOS)
+     case sandbox::mojom::Sandbox::kHardwareVideoEncoding:
+       // TODO(b/255554267): we're using the GPU process sandbox policy for now
+       // as a transition step. However, we should create a policy that's tighter
+       // just for hardware video encoding.
+       return GetGpuProcessSandbox(options);
++#endif
+ #if BUILDFLAG(IS_CHROMEOS_ASH)
+     case sandbox::mojom::Sandbox::kIme:
+       return std::make_unique<ImeProcessPolicy>();
+     case sandbox::mojom::Sandbox::kTts:
+       return std::make_unique<TtsProcessPolicy>();
+@@ -251,11 +253,13 @@
+ #if BUILDFLAG(ENABLE_CROS_LIBASSISTANT)
+     case sandbox::mojom::Sandbox::kLibassistant:
+       return std::make_unique<LibassistantProcessPolicy>();
+ #endif  // BUILDFLAG(ENABLE_CROS_LIBASSISTANT)
+ #endif  // BUILDFLAG(IS_CHROMEOS_ASH)
++#if !BUILDFLAG(IS_OHOS)
+     case sandbox::mojom::Sandbox::kZygoteIntermediateSandbox:
++#endif
+     case sandbox::mojom::Sandbox::kNoSandbox:
+       NOTREACHED();
+   }
+ }
+ 
+@@ -300,15 +309,18 @@
+       // We should never allow the creation of netlink sockets.
+       syscall_ret = socket(AF_NETLINK, SOCK_DGRAM, 0);
+       CHECK_EQ(-1, syscall_ret);
+       CHECK_EQ(EPERM, errno);
+ #endif  // !defined(NDEBUG)
++#endif  // !BUILDFLAG(IS_OHOS)
+     } break;
+ #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_ASH)
+     case sandbox::mojom::Sandbox::kHardwareVideoDecoding:
+ #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_ASH)
++#if !BUILDFLAG(IS_OHOS)
+     case sandbox::mojom::Sandbox::kHardwareVideoEncoding:
++#endif
+ #if BUILDFLAG(IS_CHROMEOS_ASH)
+     case sandbox::mojom::Sandbox::kIme:
+     case sandbox::mojom::Sandbox::kTts:
+     case sandbox::mojom::Sandbox::kNearby:
+ #if BUILDFLAG(ENABLE_CROS_LIBASSISTANT)
+@@ -333,11 +345,13 @@
+ #if BUILDFLAG(IS_LINUX)
+     case sandbox::mojom::Sandbox::kOnDeviceTranslation:
+ #endif  // BUILDFLAG(IS_LINUX)
+     case sandbox::mojom::Sandbox::kUtility:
+     case sandbox::mojom::Sandbox::kNoSandbox:
++#if !BUILDFLAG(IS_OHOS)
+     case sandbox::mojom::Sandbox::kZygoteIntermediateSandbox:
++#endif
+       // Otherwise, no checks required.
+       break;
+   }
+ }
+ 

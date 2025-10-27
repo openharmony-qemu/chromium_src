@@ -63,6 +63,12 @@ source_set("browser") {
       "//third_party/crashpad/crashpad/client",
     ]
   }
+
+  if (arkweb_crashpad) {
+    deps += [
+      "//third_party/crashpad/crashpad/client",
+    ]
+  }
 }
 
 source_set("unit_tests") {

@@ -222,6 +222,7 @@ base::expected<void, GLError> CopySharedImageHelper::CopySharedImage(
     GLsizei width,
     GLsizei height,
     const volatile GLbyte* mailboxes) {
+  TRACE_EVENT0("base", "CopySharedImageHelper::CopySharedImage");
   Mailbox source_mailbox = Mailbox::FromVolatile(
       reinterpret_cast<const volatile Mailbox*>(mailboxes)[0]);
   DLOG_IF(ERROR, !source_mailbox.Verify())

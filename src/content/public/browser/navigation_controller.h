@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
 #include "content/common/content_export.h"
@@ -35,6 +36,10 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace base {
 class RefCountedString;
 }  // namespace base
@@ -50,6 +55,9 @@ class BrowserContext;
 class NavigationEntry;
 class RenderFrameHost;
 class NavigationHandle;
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+class NavigationControllerDelegate;
+#endif
 struct OpenURLParams;
 
 // A NavigationController manages session history, i.e., a back-forward list
@@ -126,6 +134,14 @@ class NavigationController {
     // static constants.
   };
 
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  enum class NavigationEntryUpdateError {
+    UPDATE_OK = 0,
+    ERR_WRONG_OFFSET = -1,
+    ERR_OTHER = -2
+  };
+#endif  // BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+
   // Creates a navigation entry and translates the virtual url to a real one.
   // This is a general call; prefer LoadURL[WithParams] below.
   // Extra headers are separated by \n.
@@ -138,7 +154,11 @@ class NavigationController {
       bool is_renderer_initiated,
       const std::string& extra_headers,
       BrowserContext* browser_context,
-      scoped_refptr<network::SharedURLLoaderFactory> blob_url_loader_factory);
+      scoped_refptr<network::SharedURLLoaderFactory> blob_url_loader_factory
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      , NavigationControllerDelegate* delegate = nullptr
+#endif
+      );
 
   // Extra optional parameters for LoadURLWithParams.
   struct CONTENT_EXPORT LoadURLParams {
@@ -234,12 +254,17 @@ class NavigationController {
     // displayed to the user for data or pdf loads.
     GURL virtual_url_for_special_cases;
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
     // Used in LOAD_TYPE_DATA loads only. The real data URI is represented
     // as a string to circumvent the restriction on GURL size. This is only
     // needed to pass URLs that exceed the IPC limit (kMaxURLChars). Short
     // data: URLs can be passed in the |url| field.
     scoped_refptr<base::RefCountedString> data_url_as_string;
+     
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+    // true if ignoring Cache-Control: no-store.load_ignore_cache_params 
+    bool load_ignore_cache_params = false;
+#endif
 #endif
 
     // Used in LOAD_TYPE_HTTP_POST loads only. Carries the post data of the
@@ -348,6 +373,12 @@ class NavigationController {
     // login URLs which may be broken by HTTPS Upgrades due to the portal's
     // unconventional handling of HTTPS URLs.
     bool force_no_https_upgrade = false;
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+    // With Arkweb Https Upgrade function, if user Type http as scheme, we will not
+    // upgrade to https. Otherwise, this param will set to FLASE;
+    bool url_typed_with_http_scheme = true;
+#endif
   };
 
   // Disables checking for a repost and prompting the user. This is used during
@@ -642,6 +673,15 @@ class NavigationController {
 
   // Gets the BackForwardCache for this NavigationController.
   virtual BackForwardCache& GetBackForwardCache() = 0;
+
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+  virtual NavigationEntryUpdateError InsertBackForwardEntry(
+      int index,
+      const GURL& url) = 0;
+  virtual NavigationEntryUpdateError UpdateNavigationEntryUrl(
+      int index,
+      const GURL& url) = 0;
+#endif  // BUILDFLAG(ARKWEB_EXT_NAVIGATION)
 
  private:
   // This interface should only be implemented inside content.

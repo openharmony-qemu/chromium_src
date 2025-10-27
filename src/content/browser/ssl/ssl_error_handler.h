@@ -11,6 +11,7 @@
 #include "content/public/browser/global_request_id.h"
 #include "net/ssl/ssl_info.h"
 #include "url/gurl.h"
+#include "arkweb/build/features/features.h"
 
 namespace net {
 class URLRequest;
@@ -47,7 +48,13 @@ class SSLErrorHandler {
                   const GURL& url,
                   int net_error,
                   const net::SSLInfo& ssl_info,
-                  bool fatal);
+                  bool fatal
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+                  ,
+                  const GURL& origin_url,
+                  const std::string& referrer
+#endif
+                  );
 
   SSLErrorHandler(const SSLErrorHandler&) = delete;
   SSLErrorHandler& operator=(const SSLErrorHandler&) = delete;
@@ -68,6 +75,10 @@ class SSLErrorHandler {
 
   bool fatal() const { return fatal_; }
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  const GURL& origin_url() const { return origin_url_; }
+  const std::string& referrer() const { return referrer_; }
+#endif
   // Cancels the associated net::URLRequest.
   void CancelRequest();
 
@@ -99,6 +110,14 @@ class SSLErrorHandler {
 
   // True if the error is from a host requiring certificate errors to be fatal.
   const bool fatal_;
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  // original request url
+  const GURL origin_url_;
+
+  // referrer url
+  const std::string referrer_;
+#endif
 
   // The WebContents associated with the request that generated the error.
   raw_ptr<WebContents> web_contents_;

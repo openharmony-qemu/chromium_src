@@ -65,6 +65,7 @@
 #include "ui/ozone/public/gl_ozone.h"
 #include "ui/ozone/public/ozone_platform.h"
 #include "ui/ozone/public/surface_factory_ozone.h"
+#include "arkweb/chromium_ext/gpu/command_buffer/service/shared_image/ozone_image_backing_factory_ext.h"
 #endif
 
 #if BUILDFLAG(IS_APPLE)
@@ -89,6 +90,10 @@
 #include "base/android/android_hardware_buffer_compat.h"
 #include "gpu/command_buffer/service/shared_image/ahardwarebuffer_image_backing_factory.h"
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ARKWEB_VULKAN)
+#include "gpu/command_buffer/service/shared_image/ohos_native_buffer_image_backing_factory.h"
+#endif
 
 namespace gpu {
 
@@ -280,7 +285,11 @@ SharedImageFactory::SharedImageFactory(
         gpu_preferences_, workarounds_, feature_info.get());
     factories_.push_back(std::move(egl_backing_factory));
   }
-
+#ifdef BUILDFLAG(ARKWEB_VULKAN)
+  auto ohos_factory = std::make_unique<OHOSNativeBufferImageBackingFactory>(
+      feature_info.get(), gpu_preferences);
+  factories_.push_back(std::move(ohos_factory));
+#endif
 #if BUILDFLAG(IS_ANDROID)
   bool is_ahb_supported = true;
   if (gr_context_type_ == GrContextType::kVulkan) {
@@ -302,8 +311,8 @@ SharedImageFactory::SharedImageFactory(
   if (ui::OzonePlatform::GetInstance()
           ->GetPlatformRuntimeProperties()
           .supports_native_pixmaps) {
-    auto ozone_factory = std::make_unique<OzoneImageBackingFactory>(
-        context_state_, workarounds_);
+    auto ozone_factory = std::make_unique<OzoneImageBackingFactoryExt>(
+        context_state_, workarounds_, gpu_preferences_);
     factories_.push_back(std::move(ozone_factory));
   }
 #if BUILDFLAG(ENABLE_VULKAN) && (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_FUCHSIA))
@@ -428,7 +437,12 @@ bool SharedImageFactory::CreateSharedImage(const Mailbox& mailbox,
         IsSharedBetweenThreads(usage), buffer_usage);
 
     if (backing) {
-      DVLOG(1) << "CreateSharedImageBackedByBuffer[" << backing->GetName()
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+      LOG(DEBUG)
+#else
+      DVLOG(1)
+#endif
+               << "CreateSharedImageBackedByBuffer[" << backing->GetName()
                << "] size=" << size.ToString()
                << " usage=" << CreateLabelForSharedImageUsage(usage)
                << " format=" << format.ToString();
@@ -517,7 +531,12 @@ bool SharedImageFactory::CreateSharedImage(const Mailbox& mailbox,
       SharedImageUsageSet(usage), std::move(debug_label),
       IsSharedBetweenThreads(usage), data);
   if (backing) {
-    DVLOG(1) << "CreateSharedImagePixels[" << backing->GetName()
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+    LOG(DEBUG)
+#else
+    DVLOG(1)
+#endif
+             << "CreateSharedImagePixels[" << backing->GetName()
              << "] with pixels size=" << size.ToString()
              << " usage=" << CreateLabelForSharedImageUsage(usage)
              << " format=" << format.ToString();
@@ -573,7 +592,12 @@ bool SharedImageFactory::CreateSharedImage(
   }
 
   if (backing) {
-    DVLOG(1) << "CreateSharedImageWithBuffer[" << backing->GetName()
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+    LOG(DEBUG)
+#else
+    DVLOG(1)
+#endif
+             << "CreateSharedImageWithBuffer[" << backing->GetName()
              << "] size=" << size.ToString()
              << " usage=" << CreateLabelForSharedImageUsage(usage)
              << " format=" << format.ToString()

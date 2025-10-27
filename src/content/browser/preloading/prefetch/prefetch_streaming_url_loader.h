@@ -138,6 +138,9 @@ class CONTENT_EXPORT PrefetchStreamingURLLoader
       network::mojom::URLResponseHeadPtr head,
       mojo::ScopedDataPipeConsumerHandle body,
       std::optional<mojo_base::BigBuffer> cached_metadata) override;
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {}
+#endif
   void OnReceiveRedirect(const net::RedirectInfo& redirect_info,
                          network::mojom::URLResponseHeadPtr head) override;
   void OnUploadProgress(int64_t current_position,

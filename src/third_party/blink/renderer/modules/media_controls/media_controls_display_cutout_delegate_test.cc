@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 #include "third_party/blink/renderer/modules/media_controls/media_controls_display_cutout_delegate.h"
-#include "third_party/blink/renderer/core/page/page_animator.h"
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/public/mojom/page/display_cutout.mojom-blink.h"
 #include "third_party/blink/renderer/core/dom/scripted_animation_controller.h"
 #include "third_party/blink/renderer/core/events/touch_event.h"
@@ -16,6 +16,7 @@
 #include "third_party/blink/renderer/core/input/touch.h"
 #include "third_party/blink/renderer/core/input/touch_list.h"
 #include "third_party/blink/renderer/core/loader/empty_clients.h"
+#include "third_party/blink/renderer/core/page/page_animator.h"
 #include "third_party/blink/renderer/core/testing/page_test_base.h"
 #include "third_party/blink/renderer/modules/media_controls/media_controls_impl.h"
 #include "third_party/blink/renderer/platform/instrumentation/use_counter.h"
@@ -31,7 +32,15 @@ class DisplayCutoutMockChromeClient : public EmptyChromeClient {
   // ChromeClient overrides:
   void EnterFullscreen(LocalFrame& frame,
                        const FullscreenOptions*,
-                       FullscreenRequestType) override {
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                       bool overlay_fullscreen,
+#endif // ARKWEB_VIDEO_ASSISTANT
+                       FullscreenRequestType
+#if BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_FULLSCREEN)
+                       ,
+                       const absl::optional<gfx::Size>&
+#endif  // BUILDFLAG(ARKWEB_FULLSCREEN)
+                       ) override {
     Fullscreen::DidResolveEnterFullscreenRequest(*frame.GetDocument(),
                                                  true /* granted */);
   }

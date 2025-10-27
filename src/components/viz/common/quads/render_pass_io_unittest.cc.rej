@@ -1,0 +1,17 @@
+--- render_pass_io_unittest.cc	2025-10-20 19:52:54.114405914 +0800
++++ render_pass_io_unittest.cc	2025-10-16 15:54:59.209005258 +0800
+@@ -21,10 +21,14 @@
+ #include "components/viz/test/paths.h"
+ #include "components/viz/test/test_surface_id_allocator.h"
+ #include "testing/gtest/include/gtest/gtest.h"
+ #include "third_party/skia/modules/skcms/skcms.h"
+ 
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++#include "arkweb/chromium_ext/components/viz/common/quads/render_pass_io_unittest_ext.h"
++#endif
++
+ namespace gfx {
+ struct HDRMetadata;
+ }
+ 
+ namespace viz {

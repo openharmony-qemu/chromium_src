@@ -54,6 +54,15 @@ class GPU_IPC_SERVICE_EXPORT GpuChannelSharedImageInterface
       scoped_refptr<RefCountedLock> drdc_lock);
 #endif
 
+#if BUILDFLAG(ARKWEB_MEDIA_CODEC)
+  scoped_refptr<ClientSharedImage> CreateSharedImageForOhosVideo(
+      const gfx::Size& size,
+      const gfx::ColorSpace& color_space,
+      scoped_refptr<StreamTextureSharedImageInterface> image,
+      scoped_refptr<RefCountedLock> drdc_lock,
+      gl::ohos::TextureOwnerMode texture_owner_mode);
+#endif
+
 #if BUILDFLAG(IS_WIN)
   scoped_refptr<ClientSharedImage> CreateSharedImageForD3D11Video(
       const SharedImageInfo& si_info,

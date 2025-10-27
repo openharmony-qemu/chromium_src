@@ -10,7 +10,6 @@
 // Common code for interacting with libjpeg shared by other files in
 // core/fxcodec/jpeg/. Not intended to be included in headers.
 
-#include <setjmp.h>
 #include <stdio.h>
 
 #include "build/build_config.h"
@@ -20,9 +19,7 @@
 #include <windows.h>
 #endif
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #undef FAR
 #if defined(USE_SYSTEM_LIBJPEG)

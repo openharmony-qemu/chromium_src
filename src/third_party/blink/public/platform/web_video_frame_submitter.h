@@ -82,6 +82,10 @@ class BLINK_PLATFORM_EXPORT WebVideoFrameSubmitter
 
   // Set whether frames should always be submitted regardless of visibility.
   virtual void SetForceSubmit(bool) = 0;
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  virtual void SetHasNativeLayer(bool has_native_layer) {}
+#endif
 };
 
 }  // namespace blink

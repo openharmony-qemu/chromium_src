@@ -36,6 +36,7 @@
 #include "net/http/http_util.h"
 #include "third_party/blink/public/common/features.h"
 #include "third_party/blink/public/common/user_agent/user_agent_metadata.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_WIN)
 #include <windows.h>
@@ -162,6 +163,7 @@ const std::string& GetWindowsPlatformVersion() {
 
 // Returns true if the user agent reduction should be forced (or prevented).
 // TODO(crbug.com/1330890): Remove this method along with policy.
+#if !BUILDFLAG(ARKWEB_USERAGENT)
 bool ShouldReduceUserAgentMinorVersion(
     UserAgentReductionEnterprisePolicyState user_agent_reduction) {
   return ((user_agent_reduction !=
@@ -171,6 +173,7 @@ bool ShouldReduceUserAgentMinorVersion(
           user_agent_reduction ==
               UserAgentReductionEnterprisePolicyState::kForceEnabled);
 }
+#endif
 
 // For desktop:
 // Returns true if both kReduceUserAgentMinorVersionName and
@@ -191,6 +194,8 @@ bool ShouldSendUserAgentUnifiedPlatform(
   return ShouldReduceUserAgentMinorVersion(user_agent_reduction) &&
          base::FeatureList::IsEnabled(
              blink::features::kReduceUserAgentAndroidVersionDeviceModel);
+#elif BUILDFLAG(ARKWEB_USERAGENT)
+  return false;
 #else
   return ShouldReduceUserAgentMinorVersion(user_agent_reduction) &&
          base::FeatureList::IsEnabled(

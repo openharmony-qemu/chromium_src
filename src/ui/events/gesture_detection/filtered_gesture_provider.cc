@@ -19,7 +19,11 @@ FilteredGestureProvider::FilteredGestureProvider(
     const GestureProvider::Config& config,
     GestureProviderClient* client)
     : client_(client),
+#if BUILDFLAG(IS_ARKWEB)
+      gesture_provider_(std::make_unique<GestureProviderExt>(config, this)),
+#else
       gesture_provider_(std::make_unique<GestureProvider>(config, this)),
+#endif
       gesture_filter_(this),
       handling_event_(false),
       any_touch_moved_beyond_slop_region_(false) {}
@@ -28,7 +32,11 @@ FilteredGestureProvider::~FilteredGestureProvider() = default;
 
 void FilteredGestureProvider::UpdateConfig(
     const GestureProvider::Config& config) {
+#if BUILDFLAG(IS_ARKWEB)
+  gesture_provider_ = std::make_unique<ui::GestureProviderExt>(config, this);
+#else
   gesture_provider_ = std::make_unique<ui::GestureProvider>(config, this);
+#endif
 }
 
 FilteredGestureProvider::TouchHandlingResult
@@ -76,6 +84,12 @@ void FilteredGestureProvider::ResetGestureHandlingState() {
 void FilteredGestureProvider::SendSynthesizedEndEvents() {
   gesture_provider_->SendSynthesizedEndEvents();
 }
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+void FilteredGestureProvider::ResetDetection(bool is_lost_focus) {
+  gesture_provider_->AsGestureProviderExt()->ResetDetection(is_lost_focus);
+}
+#endif
 
 void FilteredGestureProvider::ResetDetection() {
   gesture_provider_->ResetDetection();
@@ -126,5 +140,11 @@ void FilteredGestureProvider::ForwardGestureEvent(
     const GestureEventData& event) {
   client_->OnGestureEvent(event);
 }
+
+#if BUILDFLAG(ARKWEB_AI)
+void FilteredGestureProvider::OnAITextSelected() {
+  gesture_provider_->AsGestureProviderExt()->OnAITextSelected();
+}
+#endif
 
 }  // namespace ui

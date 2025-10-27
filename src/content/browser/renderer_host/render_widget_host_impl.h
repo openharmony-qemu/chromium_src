@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/callback_list.h"
 #include "base/containers/flat_map.h"
 #include "base/containers/flat_set.h"
@@ -120,6 +121,7 @@ class RenderWidgetHostFactory;
 class SiteInstanceGroup;
 class SyntheticGestureController;
 class VisibleTimeRequestTrigger;
+class RenderWidgetHostImplExt;
 
 // This implements the RenderWidgetHost interface that is exposed to
 // embedders of content, and adds things only visible to content.
@@ -162,6 +164,7 @@ class CONTENT_EXPORT RenderWidgetHostImpl
       public input::RenderInputRouterDelegate,
       public input::RenderInputRouterClient {
  public:
+   friend class RenderWidgetHostImplExt;
   // See the constructor for documentation.
   //
   // This static factory method is restricted to being called from the factory,
@@ -195,6 +198,10 @@ class CONTENT_EXPORT RenderWidgetHostImpl
 
   ~RenderWidgetHostImpl() override;
 
+  virtual RenderWidgetHostImplExt* AsRenderWidgetHostImplExt() {
+    return nullptr;
+  }
+
   // Similar to RenderWidgetHost::FromID, but returning the Impl object.
   static RenderWidgetHostImpl* FromID(int32_t process_id, int32_t routing_id);
 
@@ -211,6 +218,13 @@ class CONTENT_EXPORT RenderWidgetHostImpl
   // `group` and `routing_id`.
   static viz::FrameSinkId DefaultFrameSinkId(const SiteInstanceGroup& group,
                                              int routing_id);
+
+#if BUILDFLAG(ARKWEB_MENU_HANDLE)
+  bool IsOrientationChange() { return is_orientation_changed_; }
+  void SetOrientationChange(bool is_orientation_changed) {
+    is_orientation_changed_ = is_orientation_changed;
+  }
+#endif // ARKWEB_MENU_HANDLE
 
   // TODO(crbug.com/40169570): FrameTree and FrameTreeNode will not be const as
   // with prerenderer activation the page needs to move between FrameTreeNodes
@@ -892,12 +906,14 @@ class CONTENT_EXPORT RenderWidgetHostImpl
 
   bool IsContentRenderingTimeoutRunning() const;
 
+#if !BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
   enum class RendererIsUnresponsiveReason {
     kOnInputEventAckTimeout = 0,
     kNavigationRequestCommitTimeout = 1,
     kRendererCancellationThrottleTimeout = 2,
     kMaxValue = kRendererCancellationThrottleTimeout,
   };
+#endif
 
   // Called on delayed response from the renderer by either
   // 1) |hang_monitor_timeout_| (slow to ack input events) or
@@ -1239,6 +1255,10 @@ class CONTENT_EXPORT RenderWidgetHostImpl
   void MaybeDispatchBufferedFrameSinkRequest();
 
   raw_ptr<FrameTree> frame_tree_;
+
+#if BUILDFLAG(ARKWEB_MENU_HANDLE)
+  bool is_orientation_changed_= false;
+#endif // ARKWEB_MENU_HANDLE
 
   // RenderWidgetHost are either:
   // - Owned by RenderViewHostImpl.
@@ -1618,5 +1638,7 @@ struct ScopedObservationTraits<content::RenderWidgetHostImpl,
 };
 
 }  // namespace base
+
+#include "arkweb/chromium_ext/content/browser/renderer_host/render_widget_host_impl_ext.h"
 
 #endif  // CONTENT_BROWSER_RENDERER_HOST_RENDER_WIDGET_HOST_IMPL_H_

@@ -79,6 +79,10 @@ Receiver::~Receiver() {
 // RPC_R_INITIALIZE, which means Receiver::OnRpcInitialize() is called.
 void Receiver::Initialize(MediaResource* media_resource,
                           RendererClient* client,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                          RequestSurfaceCB request_surface_cb,
+                          VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
                           PipelineStatusCallback init_cb) {
   demuxer_ = media_resource;
   init_cb_ = std::move(init_cb);
@@ -165,6 +169,10 @@ void Receiver::ShouldInitializeRenderer() {
   DCHECK(renderer_);
   DCHECK(demuxer_);
   renderer_->Initialize(demuxer_, this,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                        RequestSurfaceCB(),
+                        VideoDecoderChangedCB(),
+#endif // ARKWEB_VIDEO_ASSISTANT
                         base::BindOnce(&Receiver::OnRendererInitialized,
                                        weak_factory_.GetWeakPtr()));
 }

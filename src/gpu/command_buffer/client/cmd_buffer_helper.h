@@ -142,7 +142,11 @@ class GPU_COMMAND_BUFFER_CLIENT_EXPORT CommandBufferHelper {
     // kernel to thrash between generating GPU commands and executing them.
     ++commands_issued_;
     if (flush_automatically_ &&
+#if BUILDFLAG(IS_ARKWEB)
+        (commands_issued_ % kCommandsPerFlushCheck == 0) && EnablePeriodFlush()) {
+#else
         (commands_issued_ % kCommandsPerFlushCheck == 0)) {
+#endif
       PeriodicFlushCheck();
     }
 #endif
@@ -312,6 +316,12 @@ class GPU_COMMAND_BUFFER_CLIENT_EXPORT CommandBufferHelper {
                     base::trace_event::ProcessMemoryDump* pmd);
 
   int32_t GetPutOffsetForTest() const { return put_; }
+#if BUILDFLAG(IS_ARKWEB)
+  // only enable period flush on the pc.
+  bool EnablePeriodFlush() const {
+    return enable_period_flush_;
+  }
+#endif
 
  private:
   void CalcImmediateEntries(int waiting_count);
@@ -349,6 +359,9 @@ class GPU_COMMAND_BUFFER_CLIENT_EXPORT CommandBufferHelper {
 
 #if defined(CMD_HELPER_PERIODIC_FLUSH_CHECK)
   int commands_issued_ = 0;
+#if BUILDFLAG(IS_ARKWEB)
+  bool enable_period_flush_ = false;
+#endif
 #endif
 
   bool usable_ = true;

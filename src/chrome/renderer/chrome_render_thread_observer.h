@@ -110,6 +110,10 @@ class ChromeRenderThreadObserver
   // render process is running.
   chrome::mojom::DynamicParamsPtr GetDynamicParams() const;
 
+#if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
+  const RendererContentSettingRules* content_setting_rules() const;
+#endif
+
 #if BUILDFLAG(ENABLE_BOUND_SESSION_CREDENTIALS)
   std::unique_ptr<BoundSessionRequestThrottledHandler>
   CreateBoundSessionRequestThrottledHandler() const;
@@ -162,6 +166,12 @@ class ChromeRenderThreadObserver
   void OnIdentifiabilityStudyConfiguratorAssociatedRequest(
       mojo::PendingAssociatedReceiver<
           chrome::mojom::IdentifiabilityStudyConfigurator> receiver);
+
+#if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
+  void SetContentSettingRules(
+      const RendererContentSettingRules& rules) override;
+  RendererContentSettingRules content_setting_rules_;
+#endif  // BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
 
   mojo::Remote<content_settings::mojom::ContentSettingsManager>
       content_settings_manager_;

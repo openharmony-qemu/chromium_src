@@ -16,4 +16,9 @@ constexpr RulesetConfig kSafeBrowsingRulesetConfig = {
     .top_level_directory = FILE_PATH_LITERAL("Subresource Filter"),
     .uma_tag = std::string_view("SubresourceFilter")};
 
+constexpr RulesetConfig kSafeBrowsingUserRulesetConfig = {
+    .filter_tag = std::string_view("subresource_filter"),
+    .top_level_directory = FILE_PATH_LITERAL("User Subresource Filter"),
+    .uma_tag = std::string_view("UserSubresourceFilter")};
+
 }  // namespace subresource_filter

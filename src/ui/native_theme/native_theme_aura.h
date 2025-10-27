@@ -64,7 +64,11 @@ class COMPONENT_EXPORT(NATIVE_THEME) NativeThemeAura : public NativeThemeBase {
                            State state,
                            const gfx::Rect& rect,
                            const ScrollbarThumbExtraParams& extra_params,
-                           ColorScheme color_scheme) const override;
+                           ColorScheme color_scheme
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+                           , SkColor scrollbar_color
+#endif
+                           ) const override;
   gfx::Insets GetScrollbarSolidColorThumbInsets(Part part) const override;
   SkColor4f GetScrollbarThumbColor(
       const ui::ColorProvider& color_provider,
@@ -97,6 +101,10 @@ class COMPONENT_EXPORT(NATIVE_THEME) NativeThemeAura : public NativeThemeBase {
   // contrast, preferred color scheme, and preferred contrast.
   std::unique_ptr<NativeTheme::ColorSchemeNativeThemeObserver>
       color_scheme_observer_;
+
+#if BUILDFLAG(IS_ARKWEB)
+  raw_ptr<NativeThemeAuraUtils> native_theme_aura_utils_;
+#endif
 };
 
 }  // namespace ui

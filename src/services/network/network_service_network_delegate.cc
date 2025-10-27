@@ -155,6 +155,26 @@ int NetworkServiceNetworkDelegate::OnHeadersReceived(
 
   chain->AddResult(HandleClearSiteDataHeader(request, chain->CreateCallback(),
                                              original_response_headers));
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+  if (original_response_headers &&
+      original_response_headers->response_code() >= 400) {
+    LOG(INFO) << "INFO: resource: ***"
+              << " error code: " << original_response_headers->response_code();
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO) << "INFO: resource: "
+                       << url::LogUtils::ConvertUrlWithMask(
+                              request->url().spec())
+                       << " error code: "
+                       << original_response_headers->response_code();
+    if (!network_context_->AsArkWebNetworkContextExt()->IsStrictLogMode()) {
+      LOG(URL) << "resource : "
+               << url::LogUtils::ConvertUrl(request->url().spec(),
+                                            request->usage_scenario())
+               << " error code: " << original_response_headers->response_code();
+    }
+#endif
+  }
+#endif
 
   return chain->GetResult();
 }
@@ -183,6 +203,12 @@ void NetworkServiceNetworkDelegate::OnCompleted(net::URLRequest* request,
   }
 
   ForwardProxyErrors(net_error);
+
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+  if (net_error != net::OK) {
+    AsNetworkServiceNetworkDelegateExt()->RecordErrorInfo(request, net_error);
+  }
+#endif
 }
 
 void NetworkServiceNetworkDelegate::OnPACScriptError(

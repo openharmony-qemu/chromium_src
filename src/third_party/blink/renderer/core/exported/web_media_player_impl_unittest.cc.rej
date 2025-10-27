@@ -1,0 +1,55 @@
+--- web_media_player_impl_unittest.cc	2025-10-20 19:53:00.358210362 +0800
++++ web_media_player_impl_unittest.cc	2025-10-16 16:07:39.373409762 +0800
+@@ -1,11 +1,9 @@
+ // Copyright 2016 The Chromium Authors
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+-#include "third_party/blink/renderer/platform/media/web_media_player_impl.h"
+-
+ #include <stdint.h>
+ 
+ #include <memory>
+ #include <string>
+ #include <utility>
+@@ -53,10 +51,17 @@
+ #include "mojo/public/cpp/bindings/pending_associated_receiver.h"
+ #include "mojo/public/cpp/bindings/pending_remote.h"
+ #include "mojo/public/cpp/bindings/remote.h"
+ #include "testing/gmock/include/gmock/gmock.h"
+ #include "testing/gtest/include/gtest/gtest.h"
++#if BUILDFLAG(ARKWEB_TEST)
++#define private public
++#endif  // ARKWEB_TEST
++#include "third_party/blink/renderer/platform/media/web_media_player_impl.h"
++#if BUILDFLAG(ARKWEB_TEST)
++#undef private
++#endif  // ARKWEB_TEST
+ #include "third_party/blink/public/common/thread_safe_browser_interface_broker_proxy.h"
+ #include "third_party/blink/public/common/tokens/tokens.h"
+ #include "third_party/blink/public/platform/media/web_media_player_builder.h"
+ #include "third_party/blink/public/platform/media/web_media_player_delegate.h"
+ #include "third_party/blink/public/platform/web_fullscreen_video_status.h"
+@@ -183,15 +193,22 @@
+   MOCK_CONST_METHOD0(IsInAutoPIP, bool());
+   MOCK_METHOD1(MediaRemotingStarted, void(const WebString&));
+   MOCK_METHOD1(MediaRemotingStopped, void(int));
+   MOCK_METHOD0(PictureInPictureStopped, void());
+   MOCK_METHOD0(OnPictureInPictureStateChange, void());
++#if BUILDFLAG(ARKWEB_PIP)
++  MOCK_METHOD0(UpdatePictureInPictureSurface, void());
++#endif
+   MOCK_CONST_METHOD0(CouldPlayIfEnoughData, bool());
+   MOCK_METHOD0(ResumePlayback, void());
+   MOCK_METHOD1(PausePlayback, void(MediaPlayerClient::PauseReason));
+   MOCK_METHOD0(DidPlayerStartPlaying, void());
++#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
++  MOCK_METHOD1(DidEndAVSession, void(bool));
++#endif // ARKWEB_MEDIA_AVSESSION
+   MOCK_METHOD1(DidPlayerPaused, void(bool));
++  MOCK_METHOD0(DidPlayerGone, void());
+   MOCK_METHOD1(DidPlayerMutedStatusChange, void(bool));
+   MOCK_METHOD6(DidMediaMetadataChange,
+                void(bool,
+                     bool,
+                     media::AudioCodec,

@@ -317,3 +317,7 @@ TEST_F(FlingBoosterTest, NoFlingBoostIfScrollBeginPastCutoffTime) {
 
 }  // namespace test
 }  // namespace ui
+
+#if BUILDFLAG(ARKWEB_FLING)
+#include "arkweb/chromium_ext/ui/events/blink/fling_booster_unittest_for_include.cc"
+#endif

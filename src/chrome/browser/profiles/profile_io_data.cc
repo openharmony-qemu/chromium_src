@@ -36,6 +36,9 @@ bool ProfileIOData::IsHandledProtocol(const std::string& scheme) {
       dom_distiller::kDomDistillerScheme,
 #if BUILDFLAG(ENABLE_EXTENSIONS_CORE)
       extensions::kExtensionScheme,
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    extensions::kArkwebExtensionScheme,
+#endif
 #endif
       content::kChromeUIScheme,
       content::kChromeUIUntrustedScheme,

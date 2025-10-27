@@ -20,12 +20,24 @@
 #include "third_party/blink/renderer/core/html/forms/html_label_element.h"
 #include "third_party/blink/renderer/core/html/html_span_element.h"
 #include "third_party/blink/renderer/core/html/media/html_media_element.h"
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#include "third_party/blink/renderer/core/html/html_hr_element.h"
+#include "ui/base/l10n/l10n_util.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "ohos_nweb_ex/overrides/ui/strings/grit/ohos_ex_ui_strings.h"
+#endif // IS_ARKWEB_EXT
+#include "third_party/blink/renderer/core/html/media/html_media_element.h"
+#endif
 #include "third_party/blink/renderer/core/input_type_names.h"
 #include "third_party/blink/renderer/core/keywords.h"
 #include "third_party/blink/renderer/modules/media_controls/media_controls_impl.h"
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
 #include "third_party/blink/renderer/platform/text/platform_locale.h"
 #include "ui/strings/grit/ax_strings.h"
+
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_playback_speed_list_element_ext.h"
+
+#define IDS_HW_MEDIA_VIDEO_PLAYBACK_SPEED_VALUE 62071
 
 namespace blink {
 
@@ -41,7 +53,12 @@ enum class MediaControlsPlaybackSpeed {
   k1_5X,
   k1_75X,
   k2X,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  k3X,
+  kMaxValue = k3X,
+#else
   kMaxValue = k2X,
+#endif
 };
 
 void RecordPlaybackSpeedUMA(MediaControlsPlaybackSpeed playback_speed) {
@@ -114,13 +131,21 @@ void MediaControlPlaybackSpeedListElement::SetIsWanted(bool wanted) {
   if (wanted)
     RefreshPlaybackSpeedListMenu();
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (!GetMediaControls().ShouldShowVideoControlsHM()) {
+    if (!wanted && !GetMediaControls().OverflowMenuIsWanted())
+      GetMediaControls().CloseOverflowMenu();
+  }
+#else
   if (!wanted && !GetMediaControls().OverflowMenuIsWanted())
     GetMediaControls().CloseOverflowMenu();
+#endif
 
   MediaControlPopupMenuElement::SetIsWanted(wanted);
 }
 
 void MediaControlPlaybackSpeedListElement::DefaultEventHandler(Event& event) {
+  DefaultEventHandlerExt(event);
   if (event.type() == event_type_names::kClick) {
     // This handles the back button click. Clicking on a menu item triggers the
     // change event instead.
@@ -153,6 +178,10 @@ void MediaControlPlaybackSpeedListElement::DefaultEventHandler(Event& event) {
       RecordPlaybackSpeedUMA(MediaControlsPlaybackSpeed::k1_75X);
     } else if (playback_rate == 2.0) {
       RecordPlaybackSpeedUMA(MediaControlsPlaybackSpeed::k2X);
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+    } else if (playback_rate == 3.0) { // 3.0的播放倍速
+      RecordPlaybackSpeedUMA(MediaControlsPlaybackSpeed::k3X);
+#endif
     } else {
       NOTREACHED();
     }

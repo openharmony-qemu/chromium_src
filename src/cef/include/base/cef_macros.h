@@ -42,7 +42,12 @@
 // https://chromium.googlesource.com/chromium/src/+/lkgr/styleguide/c++/c++-dos-and-donts.md#explicitly-declare-class-copyability_movability
 
 // DEPRECATED: See above. Makes a class uncopyable.
+#if defined(OS_OHOS)
+// NOTE(ohos): Duplicated with OHOS NDK's macro name.
+// #define DISALLOW_COPY(TypeName) TypeName(const TypeName&) = delete
+#else
 #define DISALLOW_COPY(TypeName) TypeName(const TypeName&) = delete
+#endif
 
 // DEPRECATED: See above. Makes a class unassignable.
 #define DISALLOW_ASSIGN(TypeName) TypeName& operator=(const TypeName&) = delete

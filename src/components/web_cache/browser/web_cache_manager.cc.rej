@@ -1,0 +1,25 @@
+--- web_cache_manager.cc	2025-10-20 19:52:54.154424087 +0800
++++ web_cache_manager.cc	2025-10-16 15:54:59.252958217 +0800
+@@ -20,12 +21,22 @@
+   // cannot observe the creation of the previous processes.
+   for (auto iter(content::RenderProcessHost::AllHostsIterator());
+        !iter.IsAtEnd(); iter.Advance()) {
+     Add(iter.GetCurrentValue()->GetID());
+   }
++#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
++  webCacheManagerUtils = new WebCacheManagerUtils(this);
++#endif
+ }
++
++#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
++WebCacheManager::~WebCacheManager() {
++  delete webCacheManagerUtils;
++}
++#else
+ WebCacheManager::~WebCacheManager() = default;
++#endif
+ 
+ void WebCacheManager::Add(int renderer_id) {
+   renderers_.insert(renderer_id);
+   content::RenderProcessHost* host =
+       content::RenderProcessHost::FromID(renderer_id);

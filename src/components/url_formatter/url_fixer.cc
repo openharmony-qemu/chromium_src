@@ -38,6 +38,9 @@ namespace {
 
 // Hardcode these constants to avoid dependences on //chrome and //content.
 const char kChromeUIScheme[] = "chrome";
+#if BUILDFLAG(IS_ARKWEB)
+const char kArkWebUIScheme[] = "arkweb";
+#endif
 const char kDevToolsScheme[] = "devtools";
 const char kChromeUIDefaultHost[] = "version";
 const char kViewSourceScheme[] = "view-source";

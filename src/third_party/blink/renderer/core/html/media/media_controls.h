@@ -5,6 +5,7 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_HTML_MEDIA_MEDIA_CONTROLS_H_
 #define THIRD_PARTY_BLINK_RENDERER_CORE_HTML_MEDIA_MEDIA_CONTROLS_H_
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/core/core_export.h"
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
 #include "third_party/blink/renderer/platform/heap/member.h"
@@ -78,6 +79,10 @@ class CORE_EXPORT MediaControls : public GarbageCollectedMixin {
   virtual void OnMediaControlsEnabledChange() = 0;
 
   void Trace(Visitor*) const override;
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  virtual void HidePlaybackSpeedList() = 0;
+#endif
 
  private:
   Member<HTMLMediaElement> media_element_;

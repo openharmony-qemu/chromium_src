@@ -1,0 +1,18 @@
+--- disk_cache.cc	2025-10-20 19:52:57.106206247 +0800
++++ disk_cache.cc	2025-10-16 15:55:02.685284770 +0800
+@@ -26,10 +27,15 @@
+ #include "net/disk_cache/memory/mem_backend_impl.h"
+ #include "net/disk_cache/simple/simple_backend_impl.h"
+ #include "net/disk_cache/simple/simple_file_enumerator.h"
+ #include "net/disk_cache/simple/simple_util.h"
+ 
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
++#include "base/ohos/sys_info_utils_ext.h"
++#endif
++
+ namespace {
+ 
+ using FileEnumerator = disk_cache::BackendFileOperations::FileEnumerator;
+ using ApplicationStatusListenerGetter =
+     disk_cache::ApplicationStatusListenerGetter;

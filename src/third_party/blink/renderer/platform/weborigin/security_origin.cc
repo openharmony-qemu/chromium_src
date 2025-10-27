@@ -34,6 +34,7 @@
 #include <string>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/contains.h"
 #include "net/base/url_util.h"
 #include "services/network/public/cpp/is_potentially_trustworthy.h"
@@ -55,6 +56,10 @@
 #include "url/url_canon_ip.h"
 #include "url/url_constants.h"
 #include "url/url_util.h"
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "content/public/common/url_constants.h"
+#endif
 
 namespace blink {
 

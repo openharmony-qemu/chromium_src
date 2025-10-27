@@ -1,0 +1,16 @@
+--- local_dom_window.cc	2025-10-20 19:53:00.378210172 +0800
++++ local_dom_window.cc	2025-10-16 16:07:39.397094661 +0800
+@@ -2460,10 +2465,13 @@
+   visitor->Trace(text_suggestion_controller_);
+   visitor->Trace(isolated_world_csp_map_);
+   visitor->Trace(network_state_observer_);
+   visitor->Trace(fence_);
+   visitor->Trace(closewatcher_stack_);
++#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)
++  visitor->Trace(arkWeb_);
++#endif // ARKWEB_SCROLLBAR_AVOID_AREA
+   DOMWindow::Trace(visitor);
+   ExecutionContext::Trace(visitor);
+   Supplementable<LocalDOMWindow>::Trace(visitor);
+ }
+ 

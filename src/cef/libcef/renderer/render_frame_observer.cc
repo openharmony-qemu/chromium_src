@@ -199,6 +199,7 @@ void CefRenderFrameObserver::AttachFrame(CefFrameImpl* frame) {
   DCHECK(frame);
   DCHECK(!frame_);
   frame_ = frame;
+  frame_->OnAttached();
 }
 
 void CefRenderFrameObserver::OnLoadStart() {
@@ -211,7 +212,8 @@ void CefRenderFrameObserver::OnLoadStart() {
         blink::WebLocalFrame* frame = render_frame()->GetWebFrame();
         CefRefPtr<CefBrowserImpl> browserPtr =
             CefBrowserImpl::GetBrowserForMainFrame(frame->Top());
-        load_handler->OnLoadStart(browserPtr.get(), frame_, TT_EXPLICIT);
+        load_handler->OnLoadStart(browserPtr.get(), frame_, frame_->GetURL(),
+                                  TT_EXPLICIT);
       }
     }
   }

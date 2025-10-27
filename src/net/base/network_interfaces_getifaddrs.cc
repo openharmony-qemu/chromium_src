@@ -291,11 +291,11 @@ bool GetNetworkList(NetworkInterfaceList* networks, int policy) {
 #if BUILDFLAG(IS_ANDROID)
 }  // namespace internal
 // For Android use GetWifiSSID() impl in network_interfaces_linux.cc.
+#elif BUILDFLAG(ARKWEB_NETWORK_BASE)
+}  // namespace internal
 #else
 std::string GetWifiSSID() {
   NOTIMPLEMENTED();
   return std::string();
 }
 #endif
-
-}  // namespace net

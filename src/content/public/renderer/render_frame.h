@@ -24,6 +24,7 @@
 #include "third_party/blink/public/web/web_navigation_policy.h"
 #include "ui/accessibility/ax_mode.h"
 #include "ui/accessibility/ax_tree_update.h"
+#include "arkweb/build/features/features.h"
 
 class GURL;
 
@@ -89,6 +90,14 @@ class CONTENT_EXPORT RenderFrame :
 
   // Visit all live RenderFrames.
   static void ForEach(RenderFrameVisitor* visitor);
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  virtual void SetZoomLevel(float magnify_delta, const gfx::Point& anchor) {}
+  virtual void SetOverscrollMode(int mode) {}
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  virtual gfx::Vector2dF GetOverScrollOffset() = 0;
+#endif
+#endif  // defined(ARKWEB_INPUT_EVENTS)
 
   // Returns the RenderFrame associated with the main frame of the WebView.
   // See `blink::WebView::MainFrame()`. Note that this will be null when
@@ -203,6 +212,15 @@ class CONTENT_EXPORT RenderFrame :
 
   // Sets that cross browsing instance frame lookup is allowed.
   virtual void SetAllowsCrossBrowsingInstanceFrameLookup() = 0;
+
+  //TODO:ARKWEB_PASSWORD_AUTOFILL
+  //The "ElementBoundsInWindow" has changed "ConvertViewportToWindow" in base 132.
+  // Returns the bounds of |element| in Window coordinates which are device
+  // scale independent. The bounds have been adjusted to include any
+  // transformations, including page scale. This function will update the layout
+  // if required.
+  virtual gfx::RectF ElementBoundsInWindow(
+      const blink::WebElement& element) = 0;
 
   // Converts the |rect| to Window coordinates which are device scale
   // independent. The bounds have been adjusted to include any transformations,

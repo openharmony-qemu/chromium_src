@@ -34,7 +34,9 @@
 
 // The feature is not applicable to 32-bit address space.
 #if PA_BUILDFLAG(HAS_64_BIT_POINTERS)
-
+#if PA_BUILDFLAG(IS_OHOS)
+bool IsOhosTsanRuntime();
+#endif
 namespace partition_alloc {
 
 namespace internal {
@@ -408,6 +410,9 @@ class PA_COMPONENT_EXPORT(PARTITION_ALLOC) PartitionAddressSpace {
   // region. One use case for this Pool is V8 Sandbox, which requires that
   // ArrayBuffers be located inside of it.
   static constexpr size_t kCorePoolSize = kPoolMaxSize;
+#if PA_BUILDFLAG(IS_OHOS)
+  static constexpr size_t kCorePoolSizeForOhosTsan = 4 * kGiB;
+#endif
   static_assert(base::bits::HasSingleBit(kCorePoolSize));
 #if PA_BUILDFLAG(ENABLE_THREAD_ISOLATION)
   static constexpr size_t kThreadIsolatedPoolSize = kGiB / 4;

@@ -37,6 +37,7 @@ class WebInputEventAttribution;
 class WebMouseWheelEvent;
 class WebTouchEvent;
 class ElasticOverscrollController;
+class InputHandlerProxyUtils;
 }  // namespace blink
 
 namespace blink {
@@ -48,6 +49,9 @@ class InputHandlerProxyMomentumScrollJankTest;
 class InputHandlerProxyForceHandlingOnMainThread;
 class TestInputHandlerProxy;
 class UnifiedScrollingInputHandlerProxyTest;
+#if BUILDFLAG(ARKWEB_TEST)
+class InputHandlerProxyUtilsTest;
+#endif
 }  // namespace test
 
 class CompositorThreadEventQueue;
@@ -84,6 +88,8 @@ class SynchronousInputHandler {
 class PLATFORM_EXPORT InputHandlerProxy : public cc::InputHandlerClient,
                                           public cc::SnapFlingClient {
  public:
+  friend class InputHandlerProxyUtils;
+
   InputHandlerProxy(cc::InputHandler& input_handler,
                     InputHandlerProxyClient* client);
   InputHandlerProxy(const InputHandlerProxy&) = delete;
@@ -200,6 +206,10 @@ class PLATFORM_EXPORT InputHandlerProxy : public cc::InputHandlerClient,
   void SynchronouslySetRootScrollOffset(
       const gfx::PointF& root_offset);
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void SetBypassVsyncCondition(int32_t condition);
+#endif
+
   // Similar to SetRootScrollOffset above, to control the zoom level, ie scale
   // factor. Note |magnify_delta| is an incremental rather than absolute value.
   // SynchronousInputHandler should be given back the resulting absolute value.
@@ -261,6 +271,9 @@ class PLATFORM_EXPORT InputHandlerProxy : public cc::InputHandlerClient,
 
   // Immediately dispatches all queued events.
   void FlushQueuedEventsForTesting();
+  InputHandlerProxyUtils* proxy_utils() {
+    return proxy_utils_.get();
+  }
 
  private:
   friend class test::TestInputHandlerProxy;
@@ -269,8 +282,20 @@ class PLATFORM_EXPORT InputHandlerProxy : public cc::InputHandlerClient,
   friend class test::InputHandlerProxyEventQueueTest;
   friend class test::InputHandlerProxyMomentumScrollJankTest;
   friend class test::InputHandlerProxyForceHandlingOnMainThread;
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class test::InputHandlerProxyUtilsTest;
+#endif
+#if BUILDFLAG(ARKWEB_TEST)
+  FRIEND_TEST_ALL_PREFIXES(InputHandlerProxyUtilsTest, SetOverscrollMode_001);
+  FRIEND_TEST_ALL_PREFIXES(InputHandlerProxyUtilsTest, GetOverScrollOffset_002);
+#endif
 
-  void DispatchSingleInputEvent(std::unique_ptr<EventWithCallback>);
+  void DispatchSingleInputEvent(std::unique_ptr<EventWithCallback>
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+        ,
+        bool isDrop = false, bool result = false
+#endif
+  );
   void DispatchQueuedInputEvents(bool frame_aligned);
   void UpdateElasticOverscroll();
 
@@ -493,6 +518,8 @@ class PLATFORM_EXPORT InputHandlerProxy : public cc::InputHandlerClient,
       cc::InputHandlerClient::ScrollEventDispatchMode::kEnqueueScrollEvents;
 
   double scroll_deadline_ratio_ = 0.333;
+
+  std::unique_ptr<InputHandlerProxyUtils> proxy_utils_;
 };
 
 }  // namespace blink

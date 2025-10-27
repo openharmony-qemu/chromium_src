@@ -143,6 +143,9 @@
 #include "third_party/webrtc/api/peer_connection_interface.h"
 #include "third_party/webrtc/api/priority.h"
 #include "third_party/webrtc/rtc_base/ssl_identity.h"
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+#include "ohos_nweb/src/nweb_advanced_security.h"
+#endif
 
 namespace blink {
 
@@ -1986,6 +1989,16 @@ RTCDataChannel* RTCPeerConnection::createDataChannel(
     ExceptionState& exception_state) {
   if (ThrowExceptionIfSignalingStateClosed(signaling_state_, &exception_state))
     return nullptr;
+
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+  bool isAdvancedSecurityMode = OHOS::NWeb::NWebAdvancedSecurityHelper::Inst().
+        IsSecFeatureEnabled(OHOS::NWeb::NWebAdvancedSecurityHelper::Feature::ENABLE_RTCDATACHANNEL);
+  if (isAdvancedSecurityMode) {
+    exception_state.ThrowTypeError(
+        "RTCDataChannel can't be used on advancedSecurityMode!");
+    return nullptr;
+  }
+#endif
 
   webrtc::DataChannelInit init;
   // TODO(jiayl): remove the deprecated reliable field once Libjingle is updated

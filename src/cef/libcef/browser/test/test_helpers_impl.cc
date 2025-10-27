@@ -31,4 +31,5 @@ bool CefIsFeatureEnabledForTests(const CefString& feature_name) {
   }
 
   LOG(FATAL) << "Feature " << name << " is not supported";
+  __builtin_unreachable();
 }

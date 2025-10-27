@@ -735,7 +735,9 @@
     },
     {
       name: "BlockingFocusWithoutUserActivation",
-      status: "experimental",
+      // BUILDFLAG(ARKWEB_WPT)
+      // status: "experimental",
+      status: "stable",
     },
     // crbug.com/1147998: Mouse and Pointer boundary event dispatch (i.e. dispatch
     // of enter, leave, over, out events) tracks DOM node removal to fix event
@@ -2809,7 +2811,8 @@
       name: "InputMultipleFieldsUI",
       // No plan to support complex UI for date/time INPUT types on Android and
       // iOS.
-      status: {"Android": "test", "iOS": "test", "default": "stable"},
+      // status: {"Android": "test", "iOS": "test", "default": "stable"},
+      status: "stable",
     },
     // Insert a blockquote before a outer block after creating the blockquote
     // when indenting a node whose outer block is a blockquote. See
@@ -3038,6 +3041,11 @@
     {
       name: "ManagedConfiguration",
       status: "stable",
+    },
+    {
+      name: "NonAdvancedSecurityMode",
+      status: "stable",
+      base_feature: "none",
     },
     {
       name: "MaskDeserializationTimeForCrossOriginMessages",
@@ -4242,12 +4250,14 @@
     {
       name: "ScriptedSpeechRecognition",
       public: true,
+      depends_on: ["NonAdvancedSecurityMode"],
       status: "stable",
       base_feature: "none",
     },
     {
       name: "ScriptedSpeechSynthesis",
       public: true,
+      depends_on: ["NonAdvancedSecurityMode"],
       status: "stable",
       base_feature: "none",
     },
@@ -4420,6 +4430,11 @@
       public: true,
       status: "stable",
       base_feature: "none",
+    },
+    {
+      // arkweb set this feature not enabled
+      name: "SendMouseEventsDisabledFormControls",
+      public: true,
     },
     {
       name: "SensorExtraClasses",

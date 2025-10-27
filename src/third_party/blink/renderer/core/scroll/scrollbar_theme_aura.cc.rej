@@ -1,0 +1,32 @@
+--- scrollbar_theme_aura.cc	2025-10-20 19:53:00.626207821 +0800
++++ scrollbar_theme_aura.cc	2025-10-16 16:07:39.641838616 +0800
+@@ -27,11 +27,13 @@
+  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
+ #include "third_party/blink/renderer/core/scroll/scrollbar_theme_aura.h"
+-
++#if BUILDFLAG(ARKWEB_SCROLLBAR)
++#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
++#endif
+ #include "build/build_config.h"
+ #include "build/chromeos_buildflags.h"
+ #include "cc/input/scrollbar.h"
+ #include "third_party/blink/public/common/input/web_mouse_event.h"
+ #include "third_party/blink/renderer/core/scroll/scrollbar.h"
+@@ -404,11 +417,13 @@
+ 
+   if (scrollbar.ScrollbarThumbColor().has_value()) {
+     scrollbar_thumb.thumb_color =
+         scrollbar.ScrollbarThumbColor().value().toSkColor4f().toSkColor();
+   }
+-
++#if BUILDFLAG(ARKWEB_SCROLLBAR)
++  scrollbar_thumb.scrollbar_color = scrollbar.GetScrollBarColor();
++#endif // ARKWEB_SCROLLBAR
+   return scrollbar_thumb;
+ }
+ 
+ bool ScrollbarThemeAura::ShouldRepaintAllPartsOnInvalidation() const {
+   // This theme can separately handle thumb invalidation.

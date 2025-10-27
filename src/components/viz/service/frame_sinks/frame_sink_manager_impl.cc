@@ -1049,6 +1049,18 @@ void FrameSinkManagerImpl::StopThrottlingAllFrameSinks() {
   UpdateThrottling();
 }
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+void FrameSinkManagerImpl::SendInternalBeginFrame(const FrameSinkId& id) {
+  root_sink_map_[id]->AsExt()->SendInternalBeginFrame();
+}
+#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
+void FrameSinkManagerImpl::EvictFrameBackBuffers(
+    const FrameSinkId& root_frame_sink_id) {
+    managerImplUtils->EvictFrameBackBuffers(root_frame_sink_id);
+}
+#endif
+
 void FrameSinkManagerImpl::UpdateThrottling() {
   // Clear previous throttling effect on all frame sinks.
   for (auto& support_map_item : support_map_) {

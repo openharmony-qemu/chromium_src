@@ -338,6 +338,10 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
     // default network will be used.
     net::handles::NetworkHandle target_network =
         net::handles::kInvalidNetworkHandle;
+
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
+    std::string shared_render_process_token;
+#endif
   };
 
   // Token that causes input to be blocked on this WebContents for at least as
@@ -718,6 +722,8 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   // pending may be provisional (e.g., the navigation could result in a
   // download, in which case the URL would revert to what it was previously).
   virtual const std::u16string& GetTitle() = 0;
+
+  virtual bool GetIsRealTitle() = 0;
 
   // Saves the given title to the navigation entry and does associated work. It
   // will update history and the view with the new title, and also synthesize
@@ -1420,7 +1426,11 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   //
   // This method must be called if any state that affects web preferences has
   // changed so that it can be recomputed and sent to the renderer.
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  virtual void OnWebPreferencesChanged(int32_t usage_scenario_type = 99) = 0;
+#else
   virtual void OnWebPreferencesChanged() = 0;
+#endif
 
   // Requests the renderer to exit fullscreen.
   // |will_cause_resize| indicates whether the fullscreen change causes a

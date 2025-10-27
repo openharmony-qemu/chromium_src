@@ -3104,7 +3104,7 @@ CXFA_Node::CreateChildUIAndValueNodesIfNeeded() {
       widget_type = XFA_FFWidgetType::kTextEdit;
     }
   } else {
-    NOTREACHED();
+    NOTREACHED_NORETURN();
   }
 
   if (!pUIChild) {
@@ -3120,7 +3120,7 @@ CXFA_Node::CreateChildUIAndValueNodesIfNeeded() {
 }
 
 XFA_FFWidgetType CXFA_Node::GetDefaultFFWidgetType() const {
-  NOTREACHED();
+  NOTREACHED_NORETURN();
 }
 
 CXFA_Node* CXFA_Node::CreateUINodeIfNeeded(CXFA_Ui* ui, XFA_Element type) {
@@ -3168,7 +3168,7 @@ CXFA_Node* CXFA_Node::GetUIChildNode() {
   } else if (type == XFA_Element::ExclGroup) {
     ff_widget_type_ = XFA_FFWidgetType::kExclGroup;
   } else {
-    NOTREACHED();
+    NOTREACHED_NORETURN();
   }
   return ui_ ? ui_->GetFirstChild() : nullptr;
 }
@@ -5418,7 +5418,7 @@ void CXFA_Node::SetToXML(const WideString& value) {
       ToXMLText(GetXMLMappingNode())->SetText(value);
       break;
     default:
-      NOTREACHED();
+      NOTREACHED_NORETURN();
   }
 }
 

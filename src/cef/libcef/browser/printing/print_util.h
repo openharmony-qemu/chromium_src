@@ -23,6 +23,10 @@ void PrintToPDF(content::WebContents* web_contents,
                 const CefPdfPrintSettings& settings,
                 CefRefPtr<CefPdfPrintCallback> callback);
 
+void CreateToPDF(content::WebContents* web_contents,
+                 const CefPdfPrintSettings& settings,
+                 CefRefPtr<CefPdfValueCallback> callback);
+
 }  // namespace print_util
 
 #endif  // CEF_LIBCEF_BROWSER_PRINTING_PRINT_UTIL_H_

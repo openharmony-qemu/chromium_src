@@ -1,0 +1,24 @@
+--- autofill_prefs.h	2025-10-20 19:52:52.585699404 +0800
++++ autofill_prefs.h	2025-10-16 15:54:56.332799928 +0800
+@@ -71,19 +71,19 @@
+     "autofill.payment_cvc_storage";
+ // Boolean that is true when users can see the card benefits with the card.
+ inline constexpr char kAutofillPaymentCardBenefits[] =
+     "autofill.payment_card_benefits";
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
+-    BUILDFLAG(IS_CHROMEOS)
++    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+ // Boolean that controls improved autofill filling predictions. When enabled,
+ // the autofill functionality is enhanced with adopting user data to
+ // the form being filled in, which is triggered by the user via an extra
+ // autofill suggestion.
+ inline constexpr char kAutofillPredictionImprovementsEnabled[] =
+     "autofill.prediction_improvements.enabled";
+ #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) ||
+-        // BUILDFLAG(IS_CHROMEOS)
++        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+ // Boolean that is true if Autofill is enabled and allowed to save profile data.
+ // Do not get/set the value of this pref directly. Use provided getter/setter.
+ inline constexpr char kAutofillProfileEnabled[] = "autofill.profile_enabled";
+ // The opt-ins for Sync Transport features for each client.
+ inline constexpr char kAutofillSyncTransportOptIn[] =

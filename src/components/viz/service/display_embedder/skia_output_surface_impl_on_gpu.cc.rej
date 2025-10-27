@@ -1,0 +1,35 @@
+--- skia_output_surface_impl_on_gpu.cc	2025-10-20 19:52:54.138416817 +0800
++++ skia_output_surface_impl_on_gpu.cc	2025-10-16 15:54:59.236975324 +0800
+@@ -1682,10 +1708,15 @@
+       backing_representation =
+           shared_image_representation_factory_->ProduceSkia(
+               mailbox, context_state_.get());
+       DCHECK(backing_representation);
+ 
++#if BUILDFLAG(IS_ARKWEB)
++      if (!backing_representation)
++        LOG(ERROR) << "Fail to get backing representation.";
++#endif
++
+       SkSurfaceProps surface_props;
+       // TODO(crbug.com/40776586): Use BeginScopedReadAccess instead
+       scoped_access = backing_representation->BeginScopedWriteAccess(
+           /*final_msaa_count=*/1, surface_props, &begin_semaphores,
+           &end_semaphores,
+@@ -2430,10 +2461,16 @@
+     }
+ 
+     output_device_->SetViewportSize(frame->size);
+ 
+     DCHECK(!frame->sub_buffer_rect || capabilities().supports_post_sub_buffer);
++
++#if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
++    OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
++        std::to_string(frame->data.swap_trace_id), "step", "FinishBufferSwap");
++#endif
++
+     output_device_->Present(frame->sub_buffer_rect, buffer_presented_callback_,
+                             std::move(*frame));
+   }
+ 
+   // Reset the overlay plane information even on skipped swap.

@@ -1,0 +1,46 @@
+--- compositor_frame_sink_support.cc	2025-10-20 19:52:54.138416817 +0800
++++ compositor_frame_sink_support.cc	2025-10-16 15:54:59.240971046 +0800
+@@ -133,10 +134,11 @@
+       allow_copy_output_requests_(is_root),
+       use_blit_request_for_view_transition_(base::FeatureList::IsEnabled(
+           features::kBlitRequestsForViewTransition)) {
+   // This may result in SetBeginFrameSource() being called.
+   frame_sink_manager_->RegisterCompositorFrameSinkSupport(frame_sink_id_, this);
++  supportUtils = std::make_unique<CompositorFrameSinkSupportUtils>(this);
+ }
+ 
+ CompositorFrameSinkSupport::~CompositorFrameSinkSupport() {
+   // Unregister |this| as a BeginFrameObserver so that the
+   // BeginFrameSource does not call into |this| after it's deleted.
+@@ -803,18 +813,30 @@
+                            StepName::STEP_RECEIVE_COMPOSITOR_FRAME);
+         frame_sink_id_.WriteIntoTrace(ctx.Wrap(data->set_frame_sink_id()));
+         data->set_surface_frame_trace_id(
+             frame.metadata.begin_frame_ack.trace_id);
+       });
+-
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
++                    std::to_string(frame.metadata.begin_frame_ack.trace_id), "step", "ReceiveCompositorFrame");
++#endif
+   DCHECK(local_surface_id.is_valid());
+   DCHECK(!frame.render_pass_list.empty());
+   DCHECK(!frame.size_in_pixels().IsEmpty());
+ 
+   CHECK(callback_received_begin_frame_);
+   CHECK(callback_received_receive_ack_);
+ 
++#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
++  auto frame_size = frame.size_in_pixels();
++#endif // ARKWEB_MAXIMIZE_RESIZE
++
++#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
++  supportUtils->flingSlideMaybeSubmitCompositorFrame(frame);
++#endif
++
++
+   begin_frame_tracker_.ReceivedAck(frame.metadata.begin_frame_ack);
+   pending_frames_.push_back(FrameData{.local_frame = false});
+ 
+   if (frame.metadata.begin_frame_ack.frame_id.source_id ==
+       BeginFrameArgs::kManualSourceId) {

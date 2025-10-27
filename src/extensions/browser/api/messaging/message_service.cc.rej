@@ -1,0 +1,43 @@
+--- message_service.cc	2025-10-20 19:52:55.312478135 +0800
++++ message_service.cc	2025-10-16 15:55:00.383747989 +0800
+@@ -64,10 +64,14 @@
+ #include "extensions/common/manifest_handlers/incognito_info.h"
+ #include "extensions/common/mojom/message_port.mojom-shared.h"
+ #include "extensions/common/permissions/permissions_data.h"
+ #include "url/gurl.h"
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "cef/ohos_cef_ext/libcef/browser/chrome/extensions/arkweb_chrome_extension_util_ext.h"
++#endif // ARKWEB_ARKWEB_EXTENSIONS
++
+ using content::BrowserContext;
+ using content::BrowserThread;
+ using content::SiteInstance;
+ using content::WebContents;
+ 
+@@ -76,11 +80,11 @@
+ namespace {
+ 
+ const char kReceivingEndDoesntExistError[] =
+     "Could not establish connection. Receiving end does not exist.";
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
+-    BUILDFLAG(IS_CHROMEOS)
++    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+ const char kMissingPermissionError[] =
+     "Access to native messaging requires nativeMessaging permission.";
+ const char kProhibitedByPoliciesError[] =
+     "Access to the native messaging host was disabled by the system "
+     "administrator.";
+@@ -549,11 +553,11 @@
+           std::move(port), std::move(port_host));
+   if (!opener_port->IsValidPort())
+     return;
+ 
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
+-    BUILDFLAG(IS_CHROMEOS)
++    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+   bool has_permission = extension->permissions_data()->HasAPIPermission(
+       mojom::APIPermissionID::kNativeMessaging);
+   if (!has_permission) {
+     opener_port->DispatchOnDisconnect(kMissingPermissionError);
+     return;

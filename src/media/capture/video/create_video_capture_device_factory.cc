@@ -97,6 +97,7 @@ std::unique_ptr<VideoCaptureDeviceFactory> CreateVideoCaptureDeviceFactory(
   } else {
     // |ui_task_runner| is needed for the Linux ChromeOS factory to retrieve
     // screen rotations.
+    LOG(INFO) << "CreateVideoCaptureDeviceFactory";
     return CreatePlatformSpecificVideoCaptureDeviceFactory(ui_task_runner);
   }
 }

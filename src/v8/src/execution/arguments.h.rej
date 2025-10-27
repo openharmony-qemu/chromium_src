@@ -1,0 +1,46 @@
+--- arguments.h	2025-10-20 19:53:31.400577031 +0800
++++ arguments.h	2025-10-16 15:56:12.764650214 +0800
+@@ -138,23 +142,43 @@
+ #define RUNTIME_ENTRY_WITH_RCS(Type, InternalType, Convert, Name)
+ #define TEST_AND_CALL_RCS(Name)
+ 
+ #endif  // V8_RUNTIME_CALL_STATS
+ 
++#ifndef OHOS_JS_ENGINE
++#define RUNTIME_FUNCTION_RETURNS_TYPE(Type, InternalType, Convert, Name)   \
++  static V8_INLINE InternalType __RT_impl_##Name(RuntimeArguments args,    \
++                                                 Isolate* isolate);        \
++  RUNTIME_ENTRY_WITH_RCS(Type, InternalType, Convert, Name)                \
++  Type Name(int args_length, Address* args_object, Isolate* isolate) {     \
++    DCHECK(isolate->context().is_null() || IsContext(isolate->context())); \
++    CLOBBER_DOUBLE_REGISTERS();                                            \
++    TEST_AND_CALL_RCS(Name)                                                \
++    RuntimeArguments args(args_length, args_object);                       \
++    return Convert(__RT_impl_##Name(args, isolate));                       \
++  }                                                                        \
++                                                                           \
++  static InternalType __RT_impl_##Name(RuntimeArguments args, Isolate* isolate)
++#else
+ #define RUNTIME_FUNCTION_RETURNS_TYPE(Type, InternalType, Convert, Name)   \
+   static V8_INLINE InternalType __RT_impl_##Name(RuntimeArguments args,    \
+                                                  Isolate* isolate);        \
+   RUNTIME_ENTRY_WITH_RCS(Type, InternalType, Convert, Name)                \
+   Type Name(int args_length, Address* args_object, Isolate* isolate) {     \
+     DCHECK(isolate->context().is_null() || IsContext(isolate->context())); \
+     CLOBBER_DOUBLE_REGISTERS();                                            \
+     TEST_AND_CALL_RCS(Name)                                                \
++    auto trace = HiTrace("RCS_V8.Runtime_" #Name);                         \
++    if (V8_UNLIKELY(v8::internal::rcs_enable)) {                           \
++      HITRACE_RCS_SCOPE(isolate, RuntimeCallCounterId::k##Name);           \
++    }                                                                      \
+     RuntimeArguments args(args_length, args_object);                       \
+     return Convert(__RT_impl_##Name(args, isolate));                       \
+   }                                                                        \
+                                                                            \
+   static InternalType __RT_impl_##Name(RuntimeArguments args, Isolate* isolate)
++#endif
+ 
+ #ifdef DEBUG
+ #define BUILTIN_CONVERT_RESULT(x) (isolate->VerifyBuiltinsResult(x)).ptr()
+ #define BUILTIN_CONVERT_RESULT_PAIR(x) isolate->VerifyBuiltinsResult(x)
+ #else  // DEBUG

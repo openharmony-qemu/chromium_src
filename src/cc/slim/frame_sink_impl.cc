@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/containers/flat_set.h"
 #include "base/functional/bind.h"
@@ -364,6 +365,10 @@ bool FrameSinkImpl::DoBeginFrame(const viz::BeginFrameArgs& begin_frame_args) {
               data->add_latency_ids(latency.trace_id());
             }
           });
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+      OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                       std::to_string(begin_frame_args.trace_id), "step", "SubmitCompositorFrame");
+#endif
       frame_sink_->SubmitCompositorFrame(
           local_surface_id_, std::move(frame),
           send_new_hit_test_region_list ? hit_test_region_list_ : std::nullopt,

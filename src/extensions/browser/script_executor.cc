@@ -184,7 +184,11 @@ class Handler : public content::WebContentsObserver {
       content::RenderFrameHost* parent = frame->GetParent();
       if (parent) {
         const url::Origin& origin = parent->GetLastCommittedOrigin();
-        if (origin.scheme() == extensions::kExtensionScheme &&
+        if ((origin.scheme() == extensions::kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+             || origin.scheme() == extensions::kArkwebExtensionScheme
+#endif
+        ) &&
             origin.host() == extension_misc::kPdfExtensionId) {
           return content::RenderFrameHost::FrameIterationAction::kSkipChildren;
         }

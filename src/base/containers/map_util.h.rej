@@ -1,0 +1,24 @@
+--- map_util.h	2025-10-20 19:52:46.644925089 +0800
++++ map_util.h	2025-10-16 15:54:55.274419981 +0800
+@@ -55,14 +55,21 @@
+ // null is returned. The function is designed to be used with a map of keys to
+ // pointers or smart pointers.
+ //
+ // This function does not distinguish between a missing key and a key mapped
+ // to a null value.
++#if defined(__clang__) && (__clang_major__ < 17)
++template <typename Map,
++          typename Key,
++          typename MappedElementType =
++              typename std::pointer_traits<internal::MappedType<Map>>::element_type>
++#else
+ template <typename Map,
+           typename Key,
+           typename MappedElementType =
+               std::pointer_traits<internal::MappedType<Map>>::element_type>
++#endif
+ constexpr MappedElementType* FindPtrOrNull(Map& map, const Key& key) {
+   auto it = map.find(key);
+   return it != map.end() ? base::to_address(it->second) : nullptr;
+ }
+ 

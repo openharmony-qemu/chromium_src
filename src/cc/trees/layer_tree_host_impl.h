@@ -16,6 +16,8 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+#include "build/build_config.h"
 #include "base/containers/flat_map.h"
 #include "base/containers/flat_set.h"
 #include "base/containers/lru_cache.h"
@@ -564,6 +566,9 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
   void SetExternalTilePriorityConstraints(
       const gfx::Rect& viewport_rect,
       const gfx::Transform& transform) override;
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  void SetDrawRectState(bool isNeedDrawRect) override;
+#endif
   std::optional<viz::HitTestRegionList> BuildHitTestData() override;
   void DidLoseLayerTreeFrameSink() override;
   void DidReceiveCompositorFrameAck() override;
@@ -683,6 +688,11 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
   }
   virtual void CreatePendingTree();
   virtual void ActivateSyncTree();
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  virtual void HandleScrollUpdateForInternalBeginFrame(
+      const viz::BeginFrameArgs& args);
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
   // Shortcuts to layers/nodes on the active tree.
   ScrollNode* InnerViewportScrollNode() const;
@@ -1168,7 +1178,10 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
       worker_context_visibility_;
 
   RasterCapabilities raster_caps_;
-
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  bool need_layer_tree_frame_sink_ = false;
+  int condition_ = 0;
+#endif
   std::unique_ptr<RasterBufferProvider> raster_buffer_provider_;
   std::unique_ptr<ResourcePool> resource_pool_;
   std::unique_ptr<RasterQueryQueue> pending_raster_queries_;

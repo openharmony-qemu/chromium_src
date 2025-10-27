@@ -1,0 +1,15 @@
+--- tracing_features.cc	2025-10-20 19:52:57.726211854 +0800
++++ tracing_features.cc	2025-10-16 15:55:03.416502184 +0800
+@@ -44,11 +45,11 @@
+ }  // namespace features
+ 
+ namespace tracing {
+ 
+ bool ShouldSetupSystemTracing() {
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) && !BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+   if (base::android::BuildInfo::GetInstance()->is_debug_android()) {
+     return true;
+   }
+ #endif  // BUILDFLAG(IS_ANDROID)
+   if (base::FeatureList::GetInstance()) {

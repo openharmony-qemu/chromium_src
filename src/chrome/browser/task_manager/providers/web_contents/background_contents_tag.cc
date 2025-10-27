@@ -6,12 +6,14 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/strings/utf_string_conversions.h"
 #include "chrome/browser/background/background_contents.h"
 #include "chrome/browser/background/background_contents_service.h"
 #include "chrome/browser/background/background_contents_service_factory.h"
 #include "chrome/browser/profiles/profile.h"
 #include "chrome/browser/task_manager/providers/web_contents/background_contents_task.h"
+#include "chrome/common/buildflags.h"
 #include "content/public/browser/web_contents.h"
 #include "extensions/browser/extension_registry.h"
 #include "extensions/common/extension.h"
@@ -24,10 +26,14 @@ std::unique_ptr<RendererTask> BackgroundContentsTag::CreateTask(
   // Try to lookup the application name from the parent extension (if any).
   Profile* profile = Profile::FromBrowserContext(
       web_contents()->GetBrowserContext());
+#if !(BUILDFLAG(ARKWEB_ASAN)) || BUILDFLAG(ENABLE_BACKGROUND_CONTENTS)
   BackgroundContentsService* background_contents_service =
       BackgroundContentsServiceFactory::GetForProfile(profile);
   const std::string& application_id =
       background_contents_service->GetParentApplicationId(background_contents_);
+#else
+  const std::string& application_id = std::string();
+#endif
   const extensions::ExtensionSet& extensions_set =
       extensions::ExtensionRegistry::Get(profile)->enabled_extensions();
   const extensions::Extension* extension =

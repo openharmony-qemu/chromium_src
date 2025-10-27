@@ -41,7 +41,11 @@ class V8_EXPORT_PRIVATE WasmSerializer {
       kVersionHashOffset + kUInt32Size;
   static constexpr size_t kFlagHashOffset =
       kSupportedCPUFeaturesOffset + kUInt32Size;
-  static constexpr size_t kHeaderSize = 5 * kUInt32Size;
+  static constexpr size_t kEnabledFeaturesOffset =
+      kFlagHashOffset + kUInt32Size;
+  static constexpr size_t kCacheLengthOffset =
+      kEnabledFeaturesOffset + kUInt32Size;
+  static constexpr size_t kHeaderSize = 6 * kUInt32Size;
 
  private:
   NativeModule* native_module_;

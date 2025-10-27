@@ -1,0 +1,29 @@
+--- permissions_api.h	2025-10-20 19:52:49.610165130 +0800
++++ permissions_api.h	2025-10-16 15:57:00.152498246 +0800
+@@ -10,10 +10,14 @@
+ #include "content/public/browser/web_contents.h"
+ #include "extensions/browser/extension_function.h"
+ #include "extensions/common/permissions/permission_set.h"
+ #include "ui/gfx/native_widget_types.h"
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "ohos_nweb/src/capi/browser_service/nweb_extension_prompt_types.h"
++#endif  // ARKWEB_ARKWEB_EXTENSIONS
++
+ namespace extensions {
+ 
+ // chrome.permissions.contains
+ class PermissionsContainsFunction : public ExtensionFunction {
+  public:
+@@ -120,10 +127,11 @@
+   // The permissions, if any, that Chrome would prompt the user for. This will
+   // be recorded if and only if the prompt is being bypassed for a test (see
+   // also SetAutoConfirmForTests()).
+   std::unique_ptr<const PermissionSet> prompted_permissions_for_testing_;
+ };
++#endif  // ARKWEB_ARKWEB_EXTENSIONS
+ 
+ // chrome.permissions.addSiteAccessRequest
+ class PermissionsAddSiteAccessRequestFunction : public ExtensionFunction {
+  public:
+   DECLARE_EXTENSION_FUNCTION("permissions.addSiteAccessRequest",

@@ -1,0 +1,14 @@
+--- prerenderer_impl.cc	2025-10-20 19:52:54.362518586 +0800
++++ prerenderer_impl.cc	2025-10-16 15:54:59.496697355 +0800
+@@ -9,10 +9,11 @@
+ 
+ #include "content/browser/preloading/prerenderer_impl.h"
+ 
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/feature_list.h"
+ #include "content/browser/preloading/prefetch/no_vary_search_helper.h"
+ #include "content/browser/preloading/prefetch/prefetch_document_manager.h"
+ #include "content/browser/preloading/preloading.h"
+ #include "content/browser/preloading/preloading_attempt_impl.h"

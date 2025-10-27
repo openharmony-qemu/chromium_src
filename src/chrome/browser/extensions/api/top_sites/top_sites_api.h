@@ -27,6 +27,13 @@ class TopSitesGetFunction : public ExtensionFunction {
 
  private:
   void OnMostVisitedURLsAvailable(const history::MostVisitedURLList& data);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  static void OnGet(const base::WeakPtr<TopSitesGetFunction>& function,
+                    const std::vector<NWebExtensionTopSitesMostVisitedURL>& data,
+                    const std::optional<std::string>& error);
+  bool call_get_ = false;
+  base::WeakPtrFactory<TopSitesGetFunction> weak_ptr_factory_{this};
+#endif
 };
 
 }  // namespace extensions

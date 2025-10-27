@@ -1,0 +1,15 @@
+--- url_lookup_service_unittest.cc	2025-10-20 19:52:53.638187216 +0800
++++ url_lookup_service_unittest.cc	2025-10-16 15:54:57.555491343 +0800
+@@ -162,11 +162,11 @@
+         &test_pref_service_, std::move(token_fetcher),
+         base::BindRepeating(
+             &RealTimeUrlLookupServiceTest::AreTokenFetchesConfiguredInClient,
+             base::Unretained(this)),
+         /*is_off_the_record=*/false,
+-        /*variations_service_getter=*/
++        /*variations_service_gatter=*/
+         base::BindRepeating(
+             []() -> variations::VariationsService* { return nullptr; }),
+         referrer_chain_provider_.get(),
+         /*webui_delegate=*/nullptr);
+   }

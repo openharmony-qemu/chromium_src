@@ -2,6 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/chromium_ext/chromium_ext.gni")
+
 static_library("browser") {
   sources = [
     "async_document_subresource_filter.cc",
@@ -15,6 +17,12 @@ static_library("browser") {
     "verified_ruleset_dealer.cc",
     "verified_ruleset_dealer.h",
   ]
+
+  if (defined(arkweb_adblock) && arkweb_adblock) {
+    sources += arkweb_user_ruleset_version_sources
+    sources += arkweb_user_subresource_filter_constants_sources
+  }
+
   configs += [ "//build/config/compiler:wexit_time_destructors" ]
   public_deps = [
     "//base",
@@ -50,6 +58,9 @@ source_set("unit_tests") {
     "subresource_filter_features_unittest.cc",
     "verified_ruleset_dealer_unittest.cc",
   ]
+  if (defined(arkweb_adblock) && arkweb_adblock) {
+    sources += arkweb_user_ruleset_version_unittest_sources
+  }
   deps = [
     ":browser",
     ":test_support",

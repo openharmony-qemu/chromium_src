@@ -20,6 +20,7 @@ namespace extensions {
 TopSitesGetFunction::TopSitesGetFunction() = default;
 TopSitesGetFunction::~TopSitesGetFunction() = default;
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 ExtensionFunction::ResponseAction TopSitesGetFunction::Run() {
   scoped_refptr<history::TopSites> ts = TopSitesFactory::GetForProfile(
       Profile::FromBrowserContext(browser_context()));
@@ -34,6 +35,7 @@ ExtensionFunction::ResponseAction TopSitesGetFunction::Run() {
   // already populated.
   return did_respond() ? AlreadyResponded() : RespondLater();
 }
+#endif
 
 void TopSitesGetFunction::OnMostVisitedURLsAvailable(
     const history::MostVisitedURLList& data) {

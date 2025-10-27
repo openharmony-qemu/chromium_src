@@ -1,0 +1,40 @@
+--- renderer.mojom	2025-10-20 19:52:54.522591278 +0800
++++ renderer.mojom	2025-10-16 15:54:59.644539128 +0800
+@@ -13,10 +13,15 @@
+ import "mojo/public/mojom/base/time.mojom";
+ import "services/network/public/mojom/network_types.mojom";
+ import "third_party/blink/public/mojom/browser_interface_broker.mojom";
+ import "third_party/blink/public/mojom/origin_trials/origin_trials_settings.mojom";
+ import "third_party/blink/public/mojom/user_agent/user_agent_metadata.mojom";
++[EnableIf=arkweb_theme_font]
++import "mojo/public/mojom/base/file.mojom";
++
++[EnableIf=arkweb_reader_mode]
++import "arkweb/chromium_ext/third_party/blink/public/mojom/dom_distiller/reader_mode_config.mojom";
+ 
+ struct UpdateScrollbarThemeParams {
+   // TODO(avi): Update these to optional values when optional numeric types are
+   // allowed. (https://crbug.com/657632)
+   bool has_initial_button_delay;
+@@ -166,6 +171,21 @@
+   // does not support origin trials.
+   InitializeRenderer(string user_agent,
+                      blink.mojom.UserAgentMetadata metadata,
+                      array<string> cors_exempt_header_list,
+                      blink.mojom.OriginTrialsSettings? origin_trials_settings);
++
++  // Notify renderer that theme font has been changed.
++  // ARKWEB_THEME_FONT
++  [EnableIf=arkweb_theme_font]
++  UpdateThemeFontFile(mojo_base.mojom.File? theme_font);
++
++  //#ifdef ARKWEB_I18N
++  [EnableIf=arkweb_i18n]
++  NotifyLocaleChanged(string update_locale);
++  //#endif
++
++  // #if BUILDFLAG(ARKWEB_READER_MODE)
++  [EnableIf=arkweb_reader_mode]
++  UpdateReaderModeConfig(blink.mojom.ReaderModeConfig config);
++  // #endif
+ };

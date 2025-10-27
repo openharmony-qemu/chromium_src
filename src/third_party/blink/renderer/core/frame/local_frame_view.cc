@@ -25,7 +25,9 @@
  */
 
 #include "third_party/blink/renderer/core/frame/local_frame_view.h"
-
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+#include "third_party/blink/public/web/web_script_source.h"
+#endif
 #include <algorithm>
 #include <memory>
 #include <utility>
@@ -193,6 +195,10 @@
 #include "ui/gfx/geometry/quad_f.h"
 #include "ui/gfx/geometry/rect_f.h"
 
+#if BUILDFLAG(ARKWEB_MENU)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/frame/local_frame_view_utils.h"
+#endif
+
 // Used to check for dirty layouts violating document lifecycle rules.
 // If arg evaluates to true, the program will continue. If arg evaluates to
 // false, program will crash if DCHECK_IS_ON() or return false from the current
@@ -308,11 +314,17 @@ LocalFrameView::LocalFrameView(LocalFrame& frame, gfx::Rect frame_rect)
   if (frame_->Owner() && frame_->Owner()->ScrollbarMode() ==
                              mojom::blink::ScrollbarMode::kAlwaysOff)
     SetCanHaveScrollbars(false);
+#if BUILDFLAG(ARKWEB_MENU)
+  utils_ = new LocalFrameViewUtils(this);
+#endif
 }
 
 LocalFrameView::~LocalFrameView() {
 #if DCHECK_IS_ON()
   DCHECK(has_been_disposed_);
+#endif
+#if BUILDFLAG(ARKWEB_MENU)
+  delete utils_;
 #endif
 }
 
@@ -777,6 +789,10 @@ void LocalFrameView::PerformLayout() {
       GetLayoutView()->LayoutRoot();
     }
   }
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  utils_->PerformLayoutOnPreload(document);
+#endif
 
   Lifecycle().AdvanceTo(DocumentLifecycle::kAfterPerformLayout);
 
@@ -2618,6 +2634,10 @@ bool LocalFrameView::RunCompositingInputsLifecyclePhase(
     frame_view.Lifecycle().AdvanceTo(
         DocumentLifecycle::kCompositingInputsClean);
   });
+
+#if BUILDFLAG(ARKWEB_MENU)
+  utils_->UpdateCompositedSelectionIfNeed();
+#endif
 
   return target_state > DocumentLifecycle::kCompositingInputsClean;
 }

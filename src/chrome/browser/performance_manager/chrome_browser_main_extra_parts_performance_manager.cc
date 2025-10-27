@@ -251,11 +251,16 @@ void ChromeBrowserMainExtraPartsPerformanceManager::CreatePoliciesAndDecorators(
                        performance_manager::policies::FrameThrottlingPolicy>());
   }
 
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  graph->PassToGraph(
+      std::make_unique<performance_manager::policies::OHOSBFCachePolicy>());
+#else
   if (base::FeatureList::IsEnabled(
           performance_manager::features::kBFCachePerformanceManagerPolicy)) {
     graph->PassToGraph(
         std::make_unique<performance_manager::policies::BFCachePolicy>());
   }
+#endif
 
 #if !BUILDFLAG(IS_ANDROID)
   if (base::FeatureList::IsEnabled(

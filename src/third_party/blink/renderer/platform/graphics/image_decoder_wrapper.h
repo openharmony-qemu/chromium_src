@@ -5,6 +5,7 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_PLATFORM_GRAPHICS_IMAGE_DECODER_WRAPPER_H_
 #define THIRD_PARTY_BLINK_RENDERER_PLATFORM_GRAPHICS_IMAGE_DECODER_WRAPPER_H_
 
+#include "arkweb/build/features/features.h"
 #include "cc/paint/paint_image.h"
 #include "third_party/blink/renderer/platform/image-decoders/image_decoder.h"
 #include "third_party/blink/renderer/platform/wtf/allocator/allocator.h"
@@ -23,7 +24,9 @@ class ImageDecoderWrapper {
                       SegmentReader* data,
                       const SkPixmap& pixmap,
                       ColorBehavior decoder_color_behavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
                       cc::AuxImage aux_image,
+#endif
                       wtf_size_t index,
                       bool all_data_received,
                       cc::PaintImage::GeneratorClientId client_id);
@@ -51,7 +54,9 @@ class ImageDecoderWrapper {
   SegmentReader* data_;
   SkPixmap pixmap_;
   const ColorBehavior decoder_color_behavior_;
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
   const cc::AuxImage aux_image_;
+#endif
   const wtf_size_t frame_index_;
   const bool all_data_received_;
   const cc::PaintImage::GeneratorClientId client_id_;

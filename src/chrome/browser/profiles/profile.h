@@ -508,6 +508,11 @@ class Profile : public content::BrowserContext {
 
   void NotifyOffTheRecordProfileCreated(Profile* off_the_record);
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  bool HasOTRProfile();
+  Profile* GetOTRProfile();
+#endif
+
  protected:
   // Creates an OffTheRecordProfile which points to this Profile.
   static std::unique_ptr<Profile> CreateOffTheRecordProfile(
@@ -533,6 +538,10 @@ class Profile : public content::BrowserContext {
 #endif
 
  private:
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  Profile* off_the_record_ = nullptr;
+#endif
+
   bool restored_last_session_ = false;
 
   // Used to prevent the notification that this Profile is destroyed from

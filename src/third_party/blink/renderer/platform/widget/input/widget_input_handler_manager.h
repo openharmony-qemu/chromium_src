@@ -9,6 +9,7 @@
 #include <memory>
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/types/optional_ref.h"
 #include "base/types/pass_key.h"
@@ -44,6 +45,7 @@ class SynchronousCompositorRegistry;
 class SynchronousCompositorProxyRegistry;
 class WebInputEventAttribution;
 class WidgetBase;
+class WidgetInputHandlerManagerUtils;
 
 // This class maintains the compositor InputHandlerProxy and is
 // responsible for passing input events on the compositor and main threads.

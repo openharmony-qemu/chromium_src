@@ -43,6 +43,10 @@
 #include "media/mojo/services/mojo_cdm_service.h"
 #endif  // BUILDFLAG(ENABLE_MOJO_CDM)
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+#include "arkweb/chromium_ext/media/mojo/services/interface_factory_impl_for_include.cc"
+#endif
+
 namespace media {
 
 #if BUILDFLAG(ENABLE_MOJO_AUDIO_DECODER)

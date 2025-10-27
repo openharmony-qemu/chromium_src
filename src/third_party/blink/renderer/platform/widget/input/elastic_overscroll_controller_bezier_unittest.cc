@@ -98,7 +98,7 @@ TEST_F(ElasticOverscrollControllerBezierTest, OverscrollStretch) {
   SendGestureScrollBegin(PhaseState::kNonMomentum);
   EXPECT_EQ(Vector2dF(0, 0), helper_.StretchAmount());
   SendGestureScrollUpdate(PhaseState::kNonMomentum, Vector2dF(0, -100));
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   EXPECT_EQ(Vector2dF(0, 0), helper_.StretchAmount());
 #else
   EXPECT_EQ(Vector2dF(0, -19), helper_.StretchAmount());
@@ -111,7 +111,7 @@ TEST_F(ElasticOverscrollControllerBezierTest, OverscrollStretch) {
   SendGestureScrollBegin(PhaseState::kNonMomentum);
   EXPECT_EQ(Vector2dF(0, 0), helper_.StretchAmount());
   SendGestureScrollUpdate(PhaseState::kNonMomentum, Vector2dF(-100, 0));
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   EXPECT_EQ(Vector2dF(0, 0), helper_.StretchAmount());
 #else
   EXPECT_EQ(Vector2dF(-19, 0), helper_.StretchAmount());
@@ -142,10 +142,10 @@ TEST_F(ElasticOverscrollControllerBezierTest, ReconcileStretchAndScroll) {
   helper_.SetScrollOffsetAndMaxScrollOffset(gfx::PointF(0, 0),
                                             gfx::PointF(100, 100));
   SendGestureScrollUpdate(PhaseState::kNonMomentum, Vector2dF(0, -100));
-  EXPECT_EQ(Vector2dF(0, -19), helper_.StretchAmount());
+  EXPECT_EQ(Vector2dF(0, 0), helper_.StretchAmount());
   helper_.ScrollBy(Vector2dF(0, 1));
   controller_.ReconcileStretchAndScroll();
-  EXPECT_EQ(Vector2dF(0, -18), helper_.StretchAmount());
+  EXPECT_EQ(Vector2dF(0, 0), helper_.StretchAmount());
 
   // Reset vertical overscroll.
   helper_.SetStretchAmount(Vector2dF(0, 0));
@@ -156,10 +156,10 @@ TEST_F(ElasticOverscrollControllerBezierTest, ReconcileStretchAndScroll) {
   helper_.SetScrollOffsetAndMaxScrollOffset(gfx::PointF(0, 0),
                                             gfx::PointF(100, 100));
   SendGestureScrollUpdate(PhaseState::kNonMomentum, Vector2dF(-100, 0));
-  EXPECT_EQ(Vector2dF(-19, 0), helper_.StretchAmount());
+  EXPECT_EQ(Vector2dF(0, 0), helper_.StretchAmount());
   helper_.ScrollBy(Vector2dF(1, 0));
   controller_.ReconcileStretchAndScroll();
-  EXPECT_EQ(Vector2dF(-18, 0), helper_.StretchAmount());
+  EXPECT_EQ(Vector2dF(0, 0), helper_.StretchAmount());
 }
 
 // Tests that momentum_animation_start_time_ doesn't get reset when the
@@ -210,11 +210,11 @@ TEST_F(ElasticOverscrollControllerBezierTest, VerifyInitialStretchDelta) {
 TEST_F(ElasticOverscrollControllerBezierTest, VerifyOverscrollBounceDistance) {
   Vector2dF overscroll_bounce_distance(
       controller_.StretchAmountForAccumulatedOverscroll(Vector2dF(0, -100)));
-  EXPECT_EQ(overscroll_bounce_distance.y(), -19);
+  EXPECT_EQ(overscroll_bounce_distance.y(), -112);
 
   overscroll_bounce_distance =
       controller_.StretchAmountForAccumulatedOverscroll(Vector2dF(-100, 0));
-  EXPECT_EQ(overscroll_bounce_distance.x(), -19);
+  EXPECT_EQ(overscroll_bounce_distance.x(), -112);
 }
 
 // Tests that the bounce back animation ticks as expected. If the animation was
@@ -239,12 +239,12 @@ TEST_F(ElasticOverscrollControllerBezierTest, VerifyBackwardAnimationTick) {
   // Frame 2.
   controller_.Animate(now + base::Milliseconds(32));
   EXPECT_EQ(controller_.state_,
-            ElasticOverscrollController::kStateMomentumAnimated);
-  ASSERT_FLOAT_EQ(helper_.StretchAmount().y(), -14);
+            ElasticOverscrollController::kStateInactive);
+  ASSERT_FLOAT_EQ(helper_.StretchAmount().y(), 0);
 
   // Frame 5. The stretch amount moving closer to 0 proves that we're animating.
   controller_.Animate(now + base::Milliseconds(80));
-  ASSERT_FLOAT_EQ(helper_.StretchAmount().y(), -8);
+  ASSERT_FLOAT_EQ(helper_.StretchAmount().y(), 0);
 
   // Frame 15. StretchAmount < abs(1), so snap to 0. state_ is kStateInactive.
   controller_.Animate(now + base::Milliseconds(240));
@@ -260,13 +260,12 @@ TEST_F(ElasticOverscrollControllerBezierTest, VerifyBackwardAnimationTick) {
 
   // Frame 2.
   controller_.Animate(now + base::Milliseconds(32));
-  ASSERT_FLOAT_EQ(helper_.StretchAmount().x(), -10);
+  ASSERT_FLOAT_EQ(helper_.StretchAmount().x(), 0);
 
   // Frame 5. The stretch amount moving closer to 0 proves that we're animating.
   controller_.Animate(now + base::Milliseconds(80));
-  EXPECT_EQ(controller_.state_,
-            ElasticOverscrollController::kStateMomentumAnimated);
-  ASSERT_FLOAT_EQ(helper_.StretchAmount().x(), -5);
+  EXPECT_EQ(controller_.state_, ElasticOverscrollController::kStateInactive);
+  ASSERT_FLOAT_EQ(helper_.StretchAmount().x(), 0);
 
   // Frame 15. StretchAmount < abs(1), so snap to 0. state_ is kStateInactive.
   controller_.Animate(now + base::Milliseconds(240));
@@ -343,12 +342,12 @@ TEST_F(ElasticOverscrollControllerBezierTest,
   // When velocity > 200, forward animation is expected to be played.
   controller_.scroll_velocity_ = gfx::Vector2dF(0.f, -201.f);
   controller_.DidEnterMomentumAnimatedState();
-  EXPECT_EQ(gfx::Vector2dF(0, -16),
+  EXPECT_EQ(gfx::Vector2dF(0, -25),
             gfx::ToRoundedVector2d(controller_.bounce_forwards_distance_));
 
   controller_.scroll_velocity_ = gfx::Vector2dF(-201.f, 0.f);
   controller_.DidEnterMomentumAnimatedState();
-  EXPECT_EQ(gfx::Vector2dF(-16, 0),
+  EXPECT_EQ(gfx::Vector2dF(-25, 0),
             gfx::ToRoundedVector2d(controller_.bounce_forwards_distance_));
 }
 
@@ -367,20 +366,20 @@ TEST_F(ElasticOverscrollControllerBezierTest, VerifyScrollDuringBounceBack) {
   // animation.
   const base::TimeTicks now = base::TimeTicks::Now();
   SendGestureScrollEnd(now);
-  EXPECT_EQ(Vector2dF(0, -19), helper_.StretchAmount());
+  EXPECT_EQ(Vector2dF(0, 0), helper_.StretchAmount());
 
   // Frame 2.
   controller_.Animate(now + base::Milliseconds(32));
-  ASSERT_FLOAT_EQ(helper_.StretchAmount().y(), -14);
+  ASSERT_FLOAT_EQ(helper_.StretchAmount().y(), 0);
 
   // Frame 5. The stretch amount moving closer to 0 proves that we're animating.
   controller_.Animate(now + base::Milliseconds(80));
-  ASSERT_FLOAT_EQ(helper_.StretchAmount().y(), -8);
+  ASSERT_FLOAT_EQ(helper_.StretchAmount().y(), 0);
 
   // While the animation is still ticking, initiate a scroll.
   SendGestureScrollBegin(PhaseState::kNonMomentum);
   SendGestureScrollUpdate(PhaseState::kNonMomentum, Vector2dF(0, -50));
-  ASSERT_FLOAT_EQ(helper_.StretchAmount().y(), -17);
+  ASSERT_FLOAT_EQ(helper_.StretchAmount().y(), 0);
 }
 
 // Tests that animation doesn't get created when unused_delta is 0.

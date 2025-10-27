@@ -887,6 +887,11 @@ ThreadGroupImpl::CreateAndRegisterWorkerLockRequired(
       task_tracker_, worker_sequence_num_++, &lock_);
 
   workers_.push_back(worker);
+#if BUILDFLAG(IS_ARKWEB)
+  if (worker) {
+    create_workers_.push_back(worker);
+  }
+#endif
   executor->ScheduleStart(worker);
   DCHECK_LE(workers_.size(), max_tasks_);
 

@@ -60,7 +60,7 @@ class ScriptOriginOptions {
 /**
  * The origin, within a file, of a script.
  */
-class V8_EXPORT ScriptOrigin {
+class V8_EXPORT JSVM_EXPORT ScriptOrigin {
  public:
   V8_INLINE ScriptOrigin(Local<Value> resource_name,
                          int resource_line_offset = 0,

@@ -3503,7 +3503,6 @@ if (!is_android) {
       "../browser/spellchecker/spellcheck_service_browsertest.cc",
       "../browser/ssl/certificate_transparency_browsertest.cc",
       "../browser/ssl/connection_help_tab_helper_browsertest.cc",
-      "../browser/ssl/https_upgrades_browsertest.cc",
       "../browser/ssl/known_interception_disclosure_infobar_browsertest.cc",
       "../browser/ssl/known_interception_disclosure_ui_browsertest.cc",
       "../browser/ssl/ocsp_browsertest.cc",
@@ -4733,6 +4732,9 @@ if (!is_android) {
         "//chrome/test/data/controlled_frame/resources/mangle.js",
       ]
 
+      if (arkweb_test) {
+        sources -= [ "../browser/extensions/api/downloads/downloads_api_browsertest.cc" ]
+      }
       if (is_win) {
         data_deps += [
           "//chrome/browser/extensions/api:native_messaging_test_echo_&_host",
@@ -5931,6 +5933,12 @@ if (!is_android) {
     }
 
     sources += metric_integration_sources
+    sources += [
+      "//arkweb/chromium_ext/chrome/browser/policy/policy_path_parser_ohos_unittest.cc",
+      "//arkweb/chromium_ext/chrome/browser/shell_integration_ohos_unittest.cc",
+      "//arkweb/chromium_ext/chrome/common/chrome_paths_ohos_unittest.cc",
+      "//arkweb/chromium_ext/content/browser/renderer_host/ark_web_back_forward_cache_impl_unittest.cc",
+    ]
 
     if (!is_chromeos) {
       sources += [ "../browser/webauthn/enclave_authenticator_browsertest.cc" ]
@@ -10822,7 +10830,9 @@ if (!is_android) {
     ]
 
     configs += [ "//build/config:precompiled_headers" ]
-
+    if (arkweb_test) {
+      configs += [ "//cef/libcef/features:config" ]
+    }
     public_deps = [
       "//chrome/browser:test_support_ui",
       "//chrome/browser/ui/exclusive_access",

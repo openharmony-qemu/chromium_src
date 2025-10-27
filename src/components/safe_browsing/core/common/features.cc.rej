@@ -1,0 +1,20 @@
+--- features.cc	2025-10-20 19:52:53.638187216 +0800
++++ features.cc	2025-10-16 15:54:57.559487067 +0800
+@@ -194,11 +195,16 @@
+ 
+ constexpr base::FeatureParam<std::string> kHashPrefixRealTimeLookupsRelayUrl{
+     &kHashPrefixRealTimeLookups,
+     "SafeBrowsingHashPrefixRealTimeLookupsRelayUrl",
+     /*default_value=*/
+-    "https://google-ohttp-relay-safebrowsing.fastly-edge.com/"};
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++      "https://x.x.x"
++#else
++      "https://google-ohttp-relay-safebrowsing.fastly-edge.com/"
++#endif
++};
+ 
+ BASE_FEATURE(kHashPrefixRealTimeLookupsFasterOhttpKeyRotation,
+              "SafeBrowsingHashPrefixRealTimeLookupsFasterOhttpKeyRotation",
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ 

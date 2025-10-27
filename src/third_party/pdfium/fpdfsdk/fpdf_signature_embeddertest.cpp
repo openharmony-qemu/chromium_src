@@ -139,10 +139,10 @@ TEST_F(FPDFSignatureEmbedderTest, GetReason) {
   EXPECT_TRUE(signature);
 
   // FPDFSignatureObj_GetReason() positive testing.
-  static constexpr char kReason[] = "test reason";
+  constexpr char kReason[] = "test reason";
   // Return value includes the terminating NUL that is provided.
-  static constexpr unsigned long kReasonUTF16Size = std::size(kReason) * 2;
-  static constexpr wchar_t kReasonWide[] = L"test reason";
+  constexpr unsigned long kReasonUTF16Size = std::size(kReason) * 2;
+  constexpr wchar_t kReasonWide[] = L"test reason";
   unsigned long size = FPDFSignatureObj_GetReason(signature, nullptr, 0);
   ASSERT_EQ(kReasonUTF16Size, size);
 

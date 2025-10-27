@@ -1,0 +1,14 @@
+--- web_settings_impl.cc	2025-10-20 19:53:00.362210324 +0800
++++ web_settings_impl.cc	2025-10-16 16:07:39.373409762 +0800
+@@ -28,10 +28,11 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
+ #include "third_party/blink/renderer/core/exported/web_settings_impl.h"
+ 
++#include "arkweb/build/features/features.h"
+ #include "third_party/blink/public/platform/web_string.h"
+ #include "third_party/blink/public/platform/web_url.h"
+ #include "third_party/blink/renderer/core/frame/settings.h"
+ #include "third_party/blink/renderer/core/inspector/dev_tools_emulator.h"
+ #include "third_party/blink/renderer/platform/graphics/deferred_image_decoder.h"

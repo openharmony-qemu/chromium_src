@@ -18,7 +18,7 @@ class Context;
  * An instance of the built-in Proxy constructor (ECMA-262, 6th Edition,
  * 26.2.1).
  */
-class V8_EXPORT Proxy : public Object {
+class V8_EXPORT JSVM_EXPORT Proxy : public Object {
  public:
   Local<Value> GetTarget();
   Local<Value> GetHandler();

@@ -1,0 +1,15 @@
+--- biometric_authentication_confirmation_bubble_view.cc	2025-10-20 19:52:50.900903326 +0800
++++ biometric_authentication_confirmation_bubble_view.cc	2025-10-16 15:57:01.725753032 +0800
+@@ -35,10 +35,12 @@
+       IDS_PASSWORD_MANAGER_BIOMETRIC_AUTHENTICATION_CONFIRMATION_DESCRIPTION_MAC,
+ #elif BUILDFLAG(IS_WIN)
+       IDS_PASSWORD_MANAGER_BIOMETRIC_AUTHENTICATION_CONFIRMATION_DESCRIPTION_WIN,
+ #elif BUILDFLAG(IS_CHROMEOS_ASH)
+       IDS_PASSWORD_MANAGER_BIOMETRIC_AUTHENTICATION_CONFIRMATION_DESCRIPTION_CHROMEOS,
++#elif BUILDFLAG(IS_OHOS)
++      IDS_PASSWORD_MANAGER_BIOMETRIC_AUTHENTICATION_CONFIRMATION_DESCRIPTION_OHOS,
+ #endif
+       /*link_message_id=*/
+       IDS_PASSWORD_MANAGER_SETTINGS,
+       base::BindRepeating(&BiometricAuthenticationConfirmationBubbleView::
+                               StyledLabelLinkClicked,

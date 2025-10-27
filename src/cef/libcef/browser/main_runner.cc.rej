@@ -1,0 +1,59 @@
+--- main_runner.cc	2025-10-20 19:52:47.985876885 +0800
++++ main_runner.cc	2025-10-16 15:55:22.354291131 +0800
+@@ -36,10 +36,13 @@
+ 
+ #include "content/public/app/sandbox_helper_win.h"
+ #include "sandbox/win/src/sandbox_types.h"
+ #endif
+ 
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
++#endif
+ namespace {
+ 
+ // Based on components/crash/core/app/run_as_crashpad_handler_win.cc
+ // Remove the "--type=crashpad-handler" command-line flag that will otherwise
+ // confuse the crashpad handler.
+@@ -204,10 +207,27 @@
+     }
+     std::move(quit_callback_).Run();
+   }
+ }
+ 
++#if BUILDFLAG(IS_ARKWEB)
++// static
++void CefMainRunner::ParsePixelRatio(const base::CommandLine& command_line) {
++  const std::string& pixel_ratio =
++      command_line.GetSwitchValueASCII(switches::kPixelRatio);
++  if (pixel_ratio.empty()) {
++    return;
++  }
++  std::stringstream ss(pixel_ratio);
++  float ratio = -1;
++  ss >> ratio;
++  if (ratio > 0) {
++    base::ohos::SetPixelRatio(ratio);
++  }
++}
++#endif
++
+ // static
+ int CefMainRunner::RunAsHelperProcess(const CefMainArgs& args,
+                                       CefRefPtr<CefApp> application,
+                                       void* windows_sandbox_info) {
+   base::CommandLine command_line(base::CommandLine::NO_PROGRAM);
+@@ -228,10 +248,14 @@
+       command_line.GetSwitchValueASCII(switches::kProcessType);
+   if (process_type.empty()) {
+     return -1;
+   }
+ 
++#if BUILDFLAG(IS_ARKWEB)
++  ParsePixelRatio(command_line);
++#endif
++
+   auto main_delegate = std::make_unique<ChromeMainDelegateCef>(
+       /*runner=*/nullptr, /*settings=*/nullptr, application);
+   BeforeMainInitialize(args);
+ 
+   if (process_type == crash_reporter::switches::kCrashpadHandler) {

@@ -1,0 +1,35 @@
+--- content_settings_api.h	2025-10-20 19:52:49.582229098 +0800
++++ content_settings_api.h	2025-10-16 15:57:00.117482900 +0800
+@@ -8,17 +8,32 @@
+ #include <vector>
+ 
+ #include "base/gtest_prod_util.h"
+ #include "extensions/browser/extension_function.h"
+ #include "ppapi/buildflags/buildflags.h"
++#include "extensions/browser/browser_context_keyed_api_factory.h"
++#include "extensions/browser/event_router.h"
++
++
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "ohos_nweb/src/capi/browser_service/nweb_extension_content_settings_types.h"
++#endif  // ARKWEB_ARKWEB_EXTENSIONS
+ 
+ namespace content {
+ struct WebPluginInfo;
+ }
+ 
++namespace base {
++class FilePath;
++}
++
+ namespace extensions {
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "cef/ohos_cef_ext/libcef/browser/extensions/api/content_settings/content_settings_api_for_include_file.cc"
++#else
++
+ class ContentSettingsContentSettingClearFunction : public ExtensionFunction {
+  public:
+   DECLARE_EXTENSION_FUNCTION("contentSettings.clear", CONTENTSETTINGS_CLEAR)
+ 
+  protected:

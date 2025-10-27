@@ -4,7 +4,15 @@
 
 import("//build/config/compiler/compiler.gni")
 
+if (is_arkweb_ext) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
+
 # Please keep features in alphabetical order.
 declare_args() {
   enable_captive_portal_detection = !is_android && !is_ios && !is_castos
+}
+
+if (defined(arkweb_ext_https_upgrades) && arkweb_ext_https_upgrades) {
+  enable_captive_portal_detection = true
 }

@@ -21,6 +21,9 @@
 #include <string.h>
 #include <algorithm>
 
+#include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/third_party/skia/src/gpu/ganesh/vk/GrVkRenderPass_ext.h"
+
 using namespace skia_private;
 
 typedef GrVkRenderPass::AttachmentsDescriptor::AttachmentDesc AttachmentDesc;
@@ -160,7 +163,9 @@ GrVkRenderPass* GrVkRenderPass::Create(GrVkGpu* gpu,
 
     VkSubpassDependency dependencies[2];
     int currentDependency = 0;
-
+#if BUILDFLAG(ARKWEB_VULKAN)
+    bool skipSetSubpassDep = false;
+#endif
     if (attachmentFlags & kColor_AttachmentFlag) {
         // set up color attachment
         bool needsGeneralLayout = SkToBool(selfDepFlags & SelfDependencyFlags::kForInputAttachment);
@@ -201,6 +206,9 @@ GrVkRenderPass* GrVkRenderPass::Create(GrVkGpu* gpu,
 
                 dependency.dstStageMask |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
                 dependency.dstAccessMask |= VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+#if BUILDFLAG(ARKWEB_VULKAN)
+                skipSetSubpassDep = true;
+#endif
             }
         }
 
@@ -303,8 +311,13 @@ GrVkRenderPass* GrVkRenderPass::Create(GrVkGpu* gpu,
     createInfo.pAttachments = attachments.begin();
     createInfo.subpassCount = subpassCount;
     createInfo.pSubpasses = subpassDescs;
+#if BUILDFLAG(ARKWEB_VULKAN)
+    // skipSetSubpassDep is a non-specification operation
+    CHECK_IS_FOR_OHOS(skipSetSubpassDep, currentDependency, createInfo);
+#else
     createInfo.dependencyCount = currentDependency;
     createInfo.pDependencies = dependencies;
+#endif
 
     VkResult result;
     VkRenderPass renderPass;

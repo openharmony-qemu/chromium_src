@@ -92,6 +92,14 @@ class WebFrameWidget : public WebWidget {
       const cc::LayerTreeSettings* settings,
       WebFrameWidget& previous_widget) = 0;
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  virtual void SetZoomLevel(float magnify_delta, const gfx::Point& anchor) {}
+  virtual void SetOverscrollMode(int mode) {}
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  virtual gfx::Vector2dF GetOverScrollOffset() = 0;
+#endif
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
   // Returns the local root of this WebFrameWidget.
   virtual WebLocalFrame* LocalRoot() const = 0;
 

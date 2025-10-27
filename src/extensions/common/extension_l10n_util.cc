@@ -39,6 +39,10 @@
 #include "third_party/zlib/google/compression_utils.h"
 #include "ui/base/l10n/l10n_util.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "extensions/common/extension_l10n_util_ext.cc"
+#endif
+
 namespace errors = extensions::manifest_errors;
 namespace keys = extensions::manifest_keys;
 
@@ -405,6 +409,7 @@ bool AddLocale(const std::set<std::string>& chrome_locales,
   return true;
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 std::string CurrentLocaleOrDefault() {
   std::string current_locale = l10n_util::NormalizeLocale(GetProcessLocale());
   if (current_locale.empty())
@@ -412,6 +417,7 @@ std::string CurrentLocaleOrDefault() {
 
   return current_locale;
 }
+#endif
 
 void GetAllLocales(std::set<std::string>* all_locales) {
   const std::vector<std::string>& available_locales =

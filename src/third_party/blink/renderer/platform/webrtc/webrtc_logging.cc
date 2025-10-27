@@ -2,10 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <inttypes.h>
-
 #include "third_party/blink/public/platform/modules/webrtc/webrtc_logging.h"
 
+#include <inttypes.h>
+
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/check_op.h"
 #include "base/logging.h"
@@ -32,7 +33,9 @@ void InitWebRtcLogging() {
 }
 
 void WebRtcLogMessage(const std::string& message) {
-  VLOG(1) << message;
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  LOG(INFO) << message;
+#endif  // BUILDFLAG(ARKWEB_WEBRTC)
   if (g_webrtc_logging_delegate)
     g_webrtc_logging_delegate->LogMessage(message);
 }

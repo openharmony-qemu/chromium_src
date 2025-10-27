@@ -8,6 +8,7 @@
 
 #include <algorithm>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/command_line.h"
 #include "base/functional/bind.h"
@@ -49,6 +50,7 @@
 #include "ui/events/types/scroll_input_type.h"
 #include "ui/gfx/geometry/point_conversions.h"
 #include "ui/latency/latency_info.h"
+
 
 using ScrollThread = cc::InputHandler::ScrollThread;
 
@@ -283,11 +285,16 @@ InputHandlerProxy::InputHandlerProxy(cc::InputHandler& input_handler,
 
   UpdateElasticOverscroll();
   compositor_event_queue_ = std::make_unique<CompositorThreadEventQueue>();
+  proxy_utils_ = std::make_unique<InputHandlerProxyUtils>(this);
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  scroll_predictor_ = proxy_utils_->CreateScrollPredictor();
+#else
   scroll_predictor_ =
       (base::FeatureList::IsEnabled(blink::features::kResamplingScrollEvents) &&
        client->AllowsScrollResampling())
           ? std::make_unique<ScrollPredictor>()
           : nullptr;
+#endif  // defined(OHOS_INPUT_EVENTS)
 
   if (base::FeatureList::IsEnabled(blink::features::kSkipTouchEventFilter) &&
       GetFieldTrialParamValueByFeature(
@@ -365,7 +372,11 @@ void InputHandlerProxy::HandleInputEventWithLatencyInfo(
     base::ScopedSampleMetadata metadata("Input.GestureScrollOrPinch",
                                         NO_SCROLL_PINCH,
                                         base::SampleMetadataScope::kProcess);
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+    proxy_utils_->NativeEventProcess(std::move(event_with_callback));
+#else
     DispatchSingleInputEvent(std::move(event_with_callback));
+#endif
     return;
   } else if (event_with_callback->event().IsGestureScroll() &&
              event_with_callback->metrics()) {
@@ -455,7 +466,9 @@ void InputHandlerProxy::HandleInputEventWithLatencyInfo(
 
     bool queue_was_empty = compositor_event_queue_->empty();
     compositor_event_queue_->Queue(std::move(event_with_callback));
-
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+    WebGestureEvent::Type gesture_event_type = gesture_event.GetType();
+#endif
     // |synchronous_input_handler_| is WebView only. WebView has different
     // mechanisms and we want to forward all events immediately. While we
     // normally end up here when `enqueue_scroll_events_` is true, these edge
@@ -467,6 +480,9 @@ void InputHandlerProxy::HandleInputEventWithLatencyInfo(
     if (queue_was_empty && !compositor_event_queue_->empty()) {
       input_handler_->SetNeedsAnimateInput();
     }
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+    proxy_utils_->NeedFlushScrollUpdateGesture(gesture_event);
+#endif
     return;
   }
 
@@ -1217,7 +1233,9 @@ InputHandlerProxy::HandleGestureScrollUpdate(
               -gesture_event.data.scroll_update.delta_y);
   const float provided_delta_x = gesture_event.data.scroll_update.delta_x;
   const float provided_delta_y = gesture_event.data.scroll_update.delta_y;
-
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  proxy_utils_->ResetNeedFlushScrollUpdateGesture();
+#endif
   if (scroll_sequence_ignored_) {
     TRACE_EVENT_INSTANT0("input", "Scroll Sequence Ignored",
                          TRACE_EVENT_SCOPE_THREAD);
@@ -1284,6 +1302,11 @@ InputHandlerProxy::EventDisposition InputHandlerProxy::HandleGestureScrollEnd(
     const WebGestureEvent& gesture_event) {
   TRACE_EVENT0("input", "InputHandlerProxy::HandleGestureScrollEnd");
 
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  // After dragging the scrollbar by hand,
+  // we need to call MouseLeave() to make the scrollbar FADE_OUT.
+  input_handler_->MouseLeave();
+#endif  // ARKWEB_SCROLLBAR
   if (scroll_sequence_ignored_) {
     DCHECK(!currently_active_gesture_device_.has_value());
     return DROP_EVENT;
@@ -1770,6 +1793,12 @@ void InputHandlerProxy::SynchronouslySetRootScrollOffset(
   DCHECK(synchronous_input_handler_);
   input_handler_->SetSynchronousInputHandlerRootScrollOffset(root_offset);
 }
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void InputHandlerProxy::SetBypassVsyncCondition(int32_t condition) {
+  input_handler_->SetBypassVsyncCondition(condition);
+}
+#endif
 
 void InputHandlerProxy::SynchronouslyZoomBy(float magnify_delta,
                                             const gfx::Point& anchor) {

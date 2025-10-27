@@ -1,0 +1,50 @@
+--- gpu_channel_host.h	2025-10-20 19:52:55.534603585 +0800
++++ gpu_channel_host.h	2025-10-16 15:55:00.623491404 +0800
+@@ -29,19 +29,22 @@
+ #include "ipc/ipc_listener.h"
+ #include "mojo/public/cpp/base/shared_memory_version.h"
+ #include "mojo/public/cpp/bindings/shared_associated_remote.h"
+ #include "ui/gfx/gpu_memory_buffer.h"
+ 
++#include "arkweb/chromium_ext/gpu/ipc/client/gpu_channel_host_utils.h"
++
+ namespace IPC {
+ class ChannelMojo;
+ }
+ 
+ namespace gpu {
+ class ClientSharedImageInterface;
+ struct SyncToken;
+ class GpuChannelHost;
+ class GpuMemoryBufferManager;
++class GpuChannelHostUtils;
+ 
+ using GpuChannelEstablishedCallback =
+     base::OnceCallback<void(scoped_refptr<GpuChannelHost>)>;
+ 
+ class GPU_EXPORT GpuChannelEstablishFactory {
+@@ -58,10 +61,11 @@
+ // Every method can be called on any thread with a message loop, except for the
+ // IO thread.
+ class GPU_EXPORT GpuChannelHost
+     : public base::RefCountedThreadSafe<GpuChannelHost> {
+  public:
++  friend class GpuChannelHostUtils;
+   GpuChannelHost(
+       int channel_id,
+       const gpu::GPUInfo& gpu_info,
+       const gpu::GpuFeatureInfo& gpu_feature_info,
+       const gpu::SharedImageCapabilities& shared_image_capabilities,
+@@ -336,10 +344,12 @@
+   uint32_t enqueued_deferred_message_id_ GUARDED_BY(deferred_message_lock_) = 0;
+   // Highest deferred message id sent to the channel.
+   uint32_t flushed_deferred_message_id_ GUARDED_BY(deferred_message_lock_) = 0;
+ 
+   const bool sync_point_graph_validation_enabled_;
++
++  std::unique_ptr<GpuChannelHostUtils> gpu_channel_host_utils_;
+ };
+ 
+ }  // namespace gpu
+ 
+ #endif  // GPU_IPC_CLIENT_GPU_CHANNEL_HOST_H_

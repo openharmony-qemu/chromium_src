@@ -12,6 +12,8 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
+#include "arkweb/chromium_ext/net/url_request/url_request_context_ext.h"
 #include "base/base_switches.h"
 #include "base/check_op.h"
 #include "base/command_line.h"
@@ -419,6 +421,20 @@ std::unique_ptr<URLRequestJob> URLRequestHttpJob::Create(URLRequest* request) {
                                                   ERR_CLEARTEXT_NOT_PERMITTED);
     }
 #endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    if (base::ohos::ApplicationApiVersion() >= APP_API_LEVEL_20) {
+      auto NetConfigAdapter =
+          OHOS::NWeb::OhosAdapterHelper::GetInstance().GetNetConfigAdapter();
+      if (!NetConfigAdapter) {
+        LOG(ERROR) << "get netconfig adapter failed";
+      } else if (NetConfigAdapter->GetIsCleartextCfgByComponent(
+                     base::ohos::ComponentName()) &&
+                 !NetConfigAdapter->GetIsCleartextPermittedByHostName(url.host())) {
+        return std::make_unique<URLRequestErrorJob>(request, ERR_CLEARTEXT_NOT_PERMITTED);
+      }
+    }
+#endif
   }
 
   RecordSTSHistograms(upgrade_decision, url.SchemeIsCryptographic(),
@@ -771,6 +787,10 @@ void URLRequestHttpJob::StartTransactionInternal() {
         transaction_->SetIsSharedDictionaryReadAllowedCallback(
             is_shared_dictionary_read_allowed_callback_);
       }
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+      InitPreloadInfoAndSetToTransaction();
+#endif
 
       rv = transaction_->Start(
           &request_info_,
@@ -1256,8 +1276,153 @@ void URLRequestHttpJob::ProcessStrictTransportSecurityHeader() {
   }
 }
 
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+bool URLRequestHttpJob::CanRetryWithSecureDnsOnly(int net_error) {
+  if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebExHttpDnsFallback)) {
+    return false;
+  }
+
+  if (net_error == net::OK) {
+    return false;
+  }
+
+  if (request_->isolation_info().request_type() !=
+      IsolationInfo::RequestType::kMainFrame) {
+    LOG(INFO) << "DOH-Fallback request is not mainframe";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO) << "DOH-Fallback request is not mainframe";
+#endif
+    return false;
+  }
+
+  if (transaction_ && transaction_->GetResponseInfo() &&
+      transaction_->GetResponseInfo()
+          ->resolve_error_info.is_secure_network_error) {
+    LOG(INFO) << "DOH-Fallback won't retry for is_secure_network_error is "
+                 "true";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO)
+        << "DOH-Fallback won't retry for is_secure_network_error is "
+           "true";
+#endif
+    return false;
+  }
+
+  if (!const_cast<URLRequestContext*>(request_->context())->AsURLRequestContextExt()->CanUseSecureDnsFallback()) {
+    LOG(INFO) << "DOH-Fallback can't use secure dns fallback";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO) << "DOH-Fallback can't use secure dns fallback";
+#endif
+    return false;
+  }
+
+  // The following net errors will retry to use httpdns to resolve the ip
+  // in the connect phase, and connect again.
+  if (net_error == net::ERR_TIMED_OUT ||
+      net_error == net::ERR_CONNECTION_CLOSED ||
+      net_error == net::ERR_CONNECTION_RESET ||
+      net_error == net::ERR_CONNECTION_REFUSED ||
+      net_error == net::ERR_CONNECTION_ABORTED ||
+      net_error == net::ERR_CONNECTION_FAILED ||
+      net_error == net::ERR_NAME_NOT_RESOLVED ||
+      net_error == net::ERR_ADDRESS_INVALID ||
+      net_error == net::ERR_ADDRESS_UNREACHABLE ||
+      net_error == net::ERR_TUNNEL_CONNECTION_FAILED ||
+      net_error == net::ERR_CONNECTION_TIMED_OUT ||
+      net_error == net::ERR_SOCKS_CONNECTION_FAILED ||
+      net_error == net::ERR_SOCKS_CONNECTION_HOST_UNREACHABLE ||
+      net_error == net::ERR_PROXY_CONNECTION_FAILED ||
+      net_error == net::ERR_NAME_RESOLUTION_FAILED ||
+      net_error == net::ERR_NETWORK_ACCESS_DENIED ||
+      net_error == net::ERR_ADDRESS_IN_USE ||
+      net_error == net::ERR_UNABLE_TO_REUSE_CONNECTION_FOR_PROXY_AUTH) {
+    net::NetErrorDetails details;
+    PopulateNetErrorDetails(&details);
+    // 如果stream已经创建成功。证明dns阶段没有发生问题，所以我们不需要重试.
+    if (details.stream_created) {
+      LOG(INFO) << "DOH-Fallback cann't retry with secure dns since the stream "
+                   "is created.";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+      LOG_FEEDBACK(INFO)
+          << "DOH-Fallback cann't retry with secure dns since the stream "
+             "is created.";
+#endif
+      return false;
+    }
+    return true;
+  }
+  return false;
+}
+
+void URLRequestHttpJob::RetryWithSecureDnsOnly() {
+  // If the transaction was destroyed, then the job was cancelled.
+  if (!transaction_.get()) {
+    return;
+  }
+
+  response_info_ = nullptr;
+  override_response_headers_ = nullptr;  // See https://crbug.com/801237.
+  receive_headers_end_ = base::TimeTicks();
+
+  ResetTimer();
+
+  LOG(INFO) << "DOH-Fallback will retry with secure dns only";
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "DOH-Fallback will retry with secure dns only";
+#endif
+
+  request_info_.secure_dns_only = true;
+  int rv = transaction_->RestartWithSecureDnsOnly(base::BindOnce(
+      &URLRequestHttpJob::OnStartCompleted, base::Unretained(this)));
+  if (rv == ERR_IO_PENDING) {
+    return;
+  }
+
+  // The transaction started synchronously, but we need to notify the
+  // URLRequest delegate via the message loop.
+  base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
+      FROM_HERE, base::BindOnce(&URLRequestHttpJob::OnStartCompleted,
+                                weak_factory_.GetWeakPtr(), rv));
+}
+
+void URLRequestHttpJob::MaybeRetryWithSecureDnsOnly(int result) {
+  state_ = RetryState::DOH_FALLBACK;
+  if (CanRetryWithSecureDnsOnly(result)) {
+    original_net_error_ = result;
+    RetryWithSecureDnsOnly();
+    return;
+  }
+  OnStartCompleted(result);
+}
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+
 void URLRequestHttpJob::OnStartCompleted(int result) {
   TRACE_EVENT0(NetTracingCategory(), "URLRequestHttpJob::OnStartCompleted");
+
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  switch (state_) {
+    case RetryState::INIT:
+      MaybeRetryWithSecureDnsOnly(result);
+      return;
+
+    case RetryState::DOH_FALLBACK:
+      if (result == net::ERR_NAME_NOT_RESOLVED && original_net_error_) {
+        if (transaction_ && transaction_->GetResponseInfo() &&
+            transaction_->GetResponseInfo()->resolve_error_info.error !=
+                net::ERR_NAME_NOT_RESOLVED) {
+          result = original_net_error_;
+        }
+      }
+      break;
+
+    case RetryState::MAX:
+      // do nothing
+      break;
+  }
+#endif
+
   RecordTimer();
 
   // If the job is done (due to cancellation), can just ignore this
@@ -2179,4 +2344,15 @@ bool URLRequestHttpJob::ShouldRecordPartitionedCookieUsage() const {
   return request_->cookie_partition_key().has_value();
 }
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+void URLRequestHttpJob::InitPreloadInfoAndSetToTransaction()
+{
+  if (request_ && transaction_ &&
+      !request_->update_res_request_info_callback().is_null() && request_->preload_info()) {
+    request_->preload_info()->InitInfoFromUrlRequest(*request_);
+    transaction_->SetUpdateResRequestInfoCallback(request_->update_res_request_info_callback());
+    transaction_->SetPreloadInfo(request_->preload_info());
+  }
+}
+#endif
 }  // namespace net

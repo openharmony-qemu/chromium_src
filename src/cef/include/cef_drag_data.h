@@ -228,6 +228,26 @@ class CefDragData : public virtual CefBaseRefCounted {
   ///
   /*--cef()--*/
   virtual bool HasImage() = 0;
+
+#if BUILDFLAG(IS_OHOS)
+  ///
+  /// True if this object is read-only.
+  ///
+  /*--cef()--*/
+  virtual void SetReadOnly(bool readonly) = 0;
+
+  ///
+  /// Returns true if drag data is single image.
+  ///
+  /*--cef()--*/
+  virtual bool IsImageFileContents() = 0;
+
+  ///
+  /// get image file size.
+  ///
+  /*--cef()--*/
+  virtual size_t GetImageFileSize() = 0;
+#endif  // BUILDFLAG(IS_OHOS)
 };
 
 #endif  // CEF_INCLUDE_CEF_DRAG_DATA_H_

@@ -57,14 +57,24 @@ class HTMLInputElement;
 class Node;
 class Page;
 class WebMouseEvent;
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+class DragControllerExt;
+class DragControllerUtils;
+#endif
 
-class CORE_EXPORT DragController final
+class CORE_EXPORT DragController
     : public GarbageCollected<DragController>,
       public ExecutionContextLifecycleObserver {
  public:
   explicit DragController(Page*);
   DragController(const DragController&) = delete;
   DragController& operator=(const DragController&) = delete;
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  friend class DragControllerExt;
+  friend class DragControllerUtils;
+  virtual DragControllerExt* AsDragControllerExt() { return nullptr; }
+#endif
 
   // Holds the drag operation and whether the document is handling it.  Also see
   // DragTargetDragEnter() in widget.mojom for further details.
@@ -115,7 +125,13 @@ class CORE_EXPORT DragController final
 
   DragState& GetDragState();
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  static std::unique_ptr<DragImage> DragImageForSelection(LocalFrame&,
+                                                          float,
+                                                          const gfx::RectF&);
+#else
   static std::unique_ptr<DragImage> DragImageForSelection(LocalFrame&, float);
+#endif
 
   // Return the selection bounds in absolute coordinates for the frame, clipped
   // to the visual viewport.

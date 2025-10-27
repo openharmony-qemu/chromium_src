@@ -167,6 +167,11 @@ void LogStatusHistogram(HangWatcher::ThreadType thread_type,
               any_thread_hung);
           break;
         case HangWatcher::ThreadType::kMainThread:
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+          if (any_thread_hung) {
+            ReportRenderFreeze();
+          }
+#endif
           UMA_HISTOGRAM_SPLIT_BY_PROCESS_PRIORITY(
               UMA_HISTOGRAM_BOOLEAN, sample_ticks, monitoring_period,
               "HangWatcher.IsThreadHung.RendererProcess.MainThread",

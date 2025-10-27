@@ -100,7 +100,12 @@ SurfaceFactoryOzone::CreateNativePixmapFromHandle(
     gfx::AcceleratedWidget widget,
     gfx::Size size,
     gfx::BufferFormat format,
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      gfx::NativePixmapHandle handle,
+      void* window_buffer) {
+#else
     gfx::NativePixmapHandle handle) {
+#endif
   return nullptr;
 }
 

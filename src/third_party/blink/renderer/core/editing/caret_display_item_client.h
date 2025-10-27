@@ -38,8 +38,14 @@
 #include "third_party/blink/renderer/platform/heap/member.h"
 #include "ui/gfx/selection_bound.h"
 
-namespace blink {
+#if BUILDFLAG(ARKWEB_MENU)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/caret_display_item_client_utils.h"
+#endif  // BUILDFLAG(ARKWEB_MENU)
 
+namespace blink {
+#if BUILDFLAG(ARKWEB_MENU)
+class CaretDisplayItemClientUtils;
+#endif
 class GraphicsContext;
 class LayoutBlock;
 class PhysicalBoxFragment;
@@ -124,7 +130,9 @@ class CORE_EXPORT CaretDisplayItemClient final
   Member<const LayoutBlock> previous_layout_block_;
 
   WeakMember<const PhysicalBoxFragment> box_fragment_;
-
+#if BUILDFLAG(ARKWEB_MENU)
+  Member<CaretDisplayItemClientUtils> caret_display_item_client_utils_;
+#endif // BUILDFLAG(ARKWEB_MENU)
   bool is_active_ = false;
   bool needs_paint_invalidation_ = false;
 };

@@ -25,8 +25,13 @@
 
 #include "third_party/blink/renderer/core/core_export.h"
 #include "third_party/blink/renderer/core/html/html_plugin_element.h"
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+#include "third_party/blink/renderer/core/frame/settings.h"
+#endif
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/html_plugin_element_utils.h"
 
 namespace blink {
+class HTMLPlugInElementUtils;
 
 class CORE_EXPORT HTMLEmbedElement final : public HTMLPlugInElement {
   DEFINE_WRAPPERTYPEINFO();

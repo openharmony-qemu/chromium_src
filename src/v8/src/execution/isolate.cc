@@ -2022,6 +2022,7 @@ void Isolate::RequestInterrupt(InterruptCallback callback, void* data) {
 
 void Isolate::InvokeApiInterruptCallbacks() {
   RCS_SCOPE(this, RuntimeCallCounterId::kInvokeApiInterruptCallbacks);
+  HITRACE_RCS_SCOPE(this, RuntimeCallCounterId::kInvokeApiInterruptCallbacks);
   // Note: callback below should be called outside of execution access lock.
   while (true) {
     InterruptEntry entry;
@@ -4873,7 +4874,10 @@ Isolate::~Isolate() {
   compilation_cache_ = nullptr;
   delete bootstrapper_;
   bootstrapper_ = nullptr;
-
+#ifdef OHOS_JS_ENGINE
+  delete enum_times_cache_;
+  enum_times_cache_ = nullptr;
+#endif
   delete thread_manager_;
   thread_manager_ = nullptr;
 

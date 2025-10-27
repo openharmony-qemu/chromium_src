@@ -108,7 +108,9 @@ class UserData : public base::SupportsUserData::Data {
     if (view_) {
       // The CefView does not own the views::View. Remove the CefView's
       // reference to the views::View.
+#if !(BUILDFLAG(ARKWEB_ASAN)) || defined(TOOLKIT_VIEWS)
       CefViewAdapter::GetFor(view_)->Detach();
+#endif
     }
   }
 

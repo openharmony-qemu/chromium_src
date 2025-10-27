@@ -1,0 +1,33 @@
+--- video_capture_manager.cc	2025-10-20 19:52:54.394533125 +0800
++++ video_capture_manager.cc	2025-10-16 15:54:59.520671698 +0800
+@@ -37,10 +37,11 @@
+ #include "media/capture/mojom/video_capture_types.mojom.h"
+ #include "media/capture/video/video_capture_device.h"
+ #include "services/video_effects/public/cpp/buildflags.h"
+ #include "services/video_effects/public/mojom/video_effects_processor.mojom-forward.h"
+ #include "third_party/blink/public/common/mediastream/media_stream_request.h"
++#include "arkweb/build/features/features.h"
+ 
+ namespace {
+ 
+ void LogVideoCaptureError(media::VideoCaptureError error) {
+   base::UmaHistogramEnumeration("Media.VideoCapture.Error", error);
+@@ -278,13 +287,17 @@
+   DCHECK_CURRENTLY_ON(BrowserThread::IO);
+   DCHECK(lock_time_.is_null());
+   device_start_request_queue_.push_back(
+       CaptureDeviceStartRequest(std::move(controller), session_id, params,
+                                 std::move(video_effects_processor)));
+-  if (device_start_request_queue_.size() == 1)
++  if (device_start_request_queue_.size() == 1) {
++#if BUILDFLAG(ARKWEB_WEBRTC)
++    EmitLogMessage("VideoCaptureManager::QueueStartDevice", 1);
++#endif // BUILDFLAG(ARKWEB_WEBRTC)
+     ProcessDeviceStartRequestQueue();
+ }
++}
+ 
+ void VideoCaptureManager::DoStopDevice(VideoCaptureController* controller) {
+   DCHECK_CURRENTLY_ON(BrowserThread::IO);
+   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("video_and_image_capture"),
+                "VideoCaptureManager::DoStopDevice");

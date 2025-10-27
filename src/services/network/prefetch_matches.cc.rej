@@ -1,0 +1,26 @@
+--- prefetch_matches.cc	2025-10-20 19:52:57.654211203 +0800
++++ prefetch_matches.cc	2025-10-16 15:55:03.320604818 +0800
+@@ -117,10 +124,11 @@
+   DO_FIELD(shared_dictionary_writer_enabled) __VA_ARGS__       \
+   DO_FIELD(attribution_reporting_src_token) __VA_ARGS__        \
+   DO_FIELD(is_ad_tagged) __VA_ARGS__                           \
+   DO_FIELD(prefetch_token) __VA_ARGS__                         \
+   DO_FIELD(socket_tag)
++#endif // BUILDFLAG(IS_ARKWEB)
+ 
+ // clang-format on
+ 
+ constexpr bool FieldCountIsCorrect(const ResourceRequest& request) {
+   if ((false)) {
+@@ -215,10 +224,11 @@
+   kSharedDictionaryWriterEnabled = 60,
+   kAttributionReportingSrcToken = 61,
+   kIsAdTagged = 62,
+   kMaxValue = kIsAdTagged,
+ };
++#endif
+ // LINT.ThenChange(//tools/metrics/histograms/metadata/network/enums.xml:PrefetchMatchesResourceRequestField)
+ 
+ constexpr auto kUmaEnumMap = base::MakeFixedFlatMap<Fields, FieldsForUma>({
+     {Fields::kmethod, FieldsForUma::kMethod},
+     {Fields::kurl, FieldsForUma::kUrl},

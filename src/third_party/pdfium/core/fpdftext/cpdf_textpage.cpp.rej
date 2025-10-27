@@ -1,0 +1,15 @@
+--- cpdf_textpage.cpp	2025-10-20 19:53:19.595968889 +0800
++++ cpdf_textpage.cpp	2025-10-16 16:15:55.896559406 +0800
+@@ -1287,11 +1287,11 @@
+       charinfo.set_char_type(CharType::kHyphen);
+       charinfo.set_unicode(0x2);
+       m_TempTextBuf.AppendChar(0xfffe);
+       return true;
+   }
+-  NOTREACHED();
++  NOTREACHED_NORETURN();
+ }
+ 
+ void CPDF_TextPage::ProcessTextObjectItems(CPDF_TextObject* text_object,
+                                            const CFX_Matrix& form_matrix,
+                                            const CFX_Matrix& matrix) {

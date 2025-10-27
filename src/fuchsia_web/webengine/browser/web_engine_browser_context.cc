@@ -35,6 +35,10 @@
 #include "services/network/public/cpp/network_switches.h"
 #include "ui/base/l10n/l10n_util.h"
 
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
+#include "base/logging.h"
+#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
+
 namespace {
 
 std::unique_ptr<WebEngineNetLogObserver> CreateNetLogObserver() {

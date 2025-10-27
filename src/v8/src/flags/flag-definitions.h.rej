@@ -1,0 +1,15 @@
+--- flag-definitions.h	2025-10-20 19:53:31.412575402 +0800
++++ flag-definitions.h	2025-10-16 15:56:12.777650213 +0800
+@@ -1496,12 +1496,10 @@
+                      "trace individual Turboshaft reduction steps")
+ DEFINE_BOOL_READONLY(turboshaft_trace_emitted, false,
+                      "trace emitted Turboshaft instructions")
+ DEFINE_BOOL_READONLY(turboshaft_trace_intermediate_reductions, false,
+                      "trace intermediate Turboshaft reduction steps")
+-DEFINE_BOOL_READONLY(turboshaft_trace_load_elimination, false,
+-                     "trace Turboshaft's late load elimination")
+ #endif  // DEBUG
+ 
+ DEFINE_BOOL(profile_guided_optimization, true, "profile guided optimization")
+ DEFINE_BOOL(profile_guided_optimization_for_empty_feedback_vector, true,
+             "profile guided optimization for empty feedback vector")

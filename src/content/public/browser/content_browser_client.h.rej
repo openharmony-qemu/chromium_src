@@ -1,0 +1,44 @@
+--- content_browser_client.h	2025-10-20 19:52:54.558607634 +0800
++++ content_browser_client.h	2025-10-16 15:54:59.684496364 +0800
+@@ -2278,10 +2306,26 @@
+                                         bool is_prerendering,
+                                         ui::PageTransition transition,
+                                         bool* ignore_navigation);
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_ERROR_PAGE)
++  virtual std::string OverrideErrorPage(
++    FrameTreeNodeId frame_tree_node_id,
++    bool browser_initiated,
++    const GURL& gurl,
++    const std::string& request_method,
++    bool has_user_gesture,
++    bool is_redirect,
++    bool is_outermost_main_frame,
++    int error_code,
++    const std::string& error_text,
++    bool is_prerendering,
++    ui::PageTransition transition,
++    std::string* html);
++#endif
++
+   // Whether same-site RenderFrameHost swaps due to RenderDocument is allowed
+   // for navigations from `rfh`. Embedders can choose to disallow this if there
+   // are cases that are not correctly supported yet.
+   virtual bool ShouldAllowSameSiteRenderFrameHostChange(
+       const content::RenderFrameHost& rfh);
+@@ -3156,10 +3205,14 @@
+   // navigating same-site to `destination_url` and doing a BrowsingInstance
+   // swap, which used to fire those events at that timing.
+   virtual bool ShouldDispatchPagehideDuringCommit(
+       BrowserContext* browser_context,
+       const GURL& destination_url);
++
++#if BUILDFLAG(ARKWEB_USERAGENT)
++  virtual std::string GetUAStringForHost(const std::string& host);
++#endif
+ };
+ 
+ }  // namespace content
+ 
+ #endif  // CONTENT_PUBLIC_BROWSER_CONTENT_BROWSER_CLIENT_H_

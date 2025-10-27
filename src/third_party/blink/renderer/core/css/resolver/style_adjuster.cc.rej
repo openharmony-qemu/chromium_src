@@ -1,0 +1,18 @@
+--- style_adjuster.cc	2025-10-20 19:53:00.294210969 +0800
++++ style_adjuster.cc	2025-10-16 16:07:39.294460099 +0800
+@@ -1175,11 +1183,15 @@
+ 
+   AdjustStyleForEditing(builder, element);
+ 
+   if (auto* svg_element = DynamicTo<SVGElement>(element); svg_element) {
+     AdjustStyleForSvgElement(*svg_element, builder, layout_parent_style);
++#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
++  } else if (IsA<MathMLElement>(element) && !Cssutils::IsMathFormulaDisabledMode()) {
++#else
+   } else if (IsA<MathMLElement>(element)) {
++#endif
+     if (builder.Display() == EDisplay::kContents) {
+       // https://drafts.csswg.org/css-display/#unbox-mathml
+       builder.SetDisplay(EDisplay::kNone);
+     }
+   }

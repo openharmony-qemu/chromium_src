@@ -1,0 +1,34 @@
+--- shared_image_manager.cc	2025-10-20 19:52:55.522704008 +0800
++++ shared_image_manager.cc	2025-10-16 15:55:00.607508510 +0800
+@@ -168,10 +172,15 @@
+   // TODO(jonross): Determine how the direct destruction of a
+   // SharedImageRepresentationFactoryRef leads to ref-counting issues as
+   // well as thread-checking failures in tests.
+   auto factory_ref = std::make_unique<SharedImageRepresentationFactoryRef>(
+       this, backing.get(), tracker, /*is_primary=*/true);
++#if BUILDFLAG(IS_ARKWEB)
++  if (images_.find(backing) != images_.end())
++    LOG(INFO) << "backing is exist, could not emplace again.";
++  LOG(INFO) << "images_ emplace, get mailbox info: " << backing->mailbox().ToDebugString().c_str();
++#endif
+   images_.emplace(std::move(backing));
+ 
+   return factory_ref;
+ }
+ 
+@@ -248,10 +257,15 @@
+   CALLED_ON_VALID_THREAD();
+ 
+   AutoLock autolock(this);
+   auto found = images_.find(mailbox);
+   if (found == images_.end()) {
++#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
++  std::string error_msg =
++    "SharedImageManager::ProduceSkia: Trying to Produce a Skia representation from a non-existent mailbox.";
++  ReportGpuProcessEvent(CrashType::MAILBOX_NONEXISTENT, error_msg);
++#endif
+     LOG(ERROR) << "SharedImageManager::ProduceSkia: Trying to Produce a "
+                   "Skia representation from a non-existent mailbox.";
+     return nullptr;
+   }
+ 

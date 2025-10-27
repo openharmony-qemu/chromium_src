@@ -11,6 +11,10 @@
 #include "src/execution/vm-state-inl.h"
 #include "src/logging/runtime-call-stats-scope.h"
 
+#ifdef OHOS_JS_ENGINE
+#include "../../../arkweb/chromium_ext/v8/trace.h"
+#endif
+
 #if V8_ENABLE_WEBASSEMBLY
 #include "src/compiler/wasm-compiler.h"  // Only for static asserts.
 #include "src/wasm/code-space-access.h"
@@ -652,6 +656,9 @@ void Execution::CallWasm(Isolate* isolate, DirectHandle<Code> wrapper_code,
 
   {
     RCS_SCOPE(isolate, RuntimeCallCounterId::kJS_Execution);
+#ifdef OHOS_JS_ENGINE
+    auto trace = HiTrace("RCS_JS_Execution");
+#endif
     static_assert(compiler::CWasmEntryParameters::kCodeEntry == 0);
     static_assert(compiler::CWasmEntryParameters::kObjectRef == 1);
     static_assert(compiler::CWasmEntryParameters::kArgumentsBuffer == 2);

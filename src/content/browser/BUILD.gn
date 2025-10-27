@@ -27,6 +27,21 @@ import("//testing/libfuzzer/fuzzer_test.gni")
 import("//third_party/blink/public/public_features.gni")
 import("//tools/ipc_fuzzer/ipc_fuzzer.gni")
 
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+  if (defined(arkweb_fido) && arkweb_fido) {
+    import("//arkweb/chromium_ext/content/browser/webauth/webauth_ext.gni")
+  }
+}
+
+if (defined(is_arkweb_ext) && is_arkweb_ext) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
+
+if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
+
 if (is_mac) {
   import("//content/public/app/mac_helpers.gni")
 }
@@ -349,6 +364,7 @@ source_set("browser") {
   public_deps = [
     "//base",
     "//components/memory_pressure",
+    "//components/page_load_metrics/common:page_load_metrics_mojom",
     "//content/browser/indexed_db",
     "//ipc",
     "//media/mojo/mojom:remoting",
@@ -819,6 +835,7 @@ source_set("browser") {
     "code_cache/generated_code_cache.h",
     "code_cache/generated_code_cache_context.cc",
     "code_cache/generated_code_cache_context.h",
+    "code_cache/oh_code_cache.h",
     "code_cache/simple_lru_cache.cc",
     "code_cache/simple_lru_cache.h",
     "compositor/surface_utils.cc",
@@ -2541,6 +2558,34 @@ source_set("browser") {
     "worker_host/worker_script_loader_factory.h",
   ]
 
+  if (defined(arkweb_logger_report) && arkweb_logger_report) {
+    deps += [
+      "//base:base_static",
+      "//base:base",
+    ]
+  }
+
+  if (arkweb_webrtc) {
+    import("//arkweb/chromium_ext/content/browser/renderer_host/media/arkweb_content_browser_renderer_host_media.gni")
+    sources += arkweb_content_browser_renderer_host_media_sources
+  }
+
+  if (defined(arkweb_reader_mode) && arkweb_reader_mode) {
+    deps += [ "//components/dom_distiller/content/common/mojom" ]
+  }
+
+  if (defined(report_sys_event) && report_sys_event) {
+    defines += [ "REPORT_SYS_EVENT" ]
+  }
+
+  if (arkweb_software_compositor) {
+    sources += [
+      "//arkweb/chromium_ext/content/browser/ohos/software_compositor_host_ohos.cc",
+      "//arkweb/chromium_ext/content/browser/ohos/software_compositor_host_ohos.h",
+    ]
+    sources += arkweb_content_browser_renderer_host_sources
+  }
+
   if (is_android) {
     sources += [
       "memory_pressure/user_level_memory_pressure_signal_generator.cc",
@@ -2648,6 +2693,13 @@ source_set("browser") {
       "//components/services/font:lib",
       "//content/common:sandbox_support_linux",
       "//third_party/blink/public/mojom:memory_usage_monitor_linux_mojo_bindings",
+    ]
+  }
+
+  if (is_ohos) {
+    sources += [
+      "file_system_access/file_path_watcher/file_path_watcher_inotify.cc",
+      "file_system_access/file_path_watcher/file_path_watcher_inotify.h",
     ]
   }
 
@@ -3590,6 +3642,12 @@ source_set("browser") {
     ]
   }
 
+  if (arkweb_media_mute_audio) {
+    import(
+        "//arkweb/chromium_ext/content/browser/media/ohos/arkweb_content_browser_media_ohos_ext.gni")
+    sources += arkweb_content_browser_media_ohos_audio_sources
+  }
+
   if (use_aura || is_apple) {
     sources += [
       "compositor/image_transport_factory.cc",
@@ -3609,6 +3667,32 @@ source_set("browser") {
 
   if (use_ozone) {
     deps += [ "//ui/ozone" ]
+  }
+
+  if (is_arkweb) {
+    sources -= [
+      "//arkweb/chromium_ext/content/browser/child_process_launcher_helper_ohos.cc",
+      "//arkweb/chromium_ext/content/browser/memory/swap_metrics_driver_impl_ohos.cc",
+      "//arkweb/chromium_ext/content/browser/memory/swap_metrics_driver_impl_ohos.h",
+    ]
+
+    sources += [
+      "child_process_launcher_helper_linux.cc",
+      "memory/swap_metrics_driver_impl_linux.cc",
+      "memory/swap_metrics_driver_impl_linux.h",
+      "zygote_host/zygote_host_impl_linux.cc",
+      "zygote_host/zygote_host_impl_linux.h",
+    ]
+
+    deps += [ "//arkweb//build/features:features" ]
+  }
+
+  if (arkweb_same_layer) {
+    sources += arkweb_content_browser_media_ohos_sources
+  }
+
+  if (use_cras) {
+    defines += [ "USE_CRAS" ]
   }
 
   if (enable_ipc_fuzzer) {

@@ -5,6 +5,7 @@
 #ifndef COMPONENTS_INPUT_INPUT_ROUTER_CLIENT_H_
 #define COMPONENTS_INPUT_INPUT_ROUTER_CLIENT_H_
 
+#include "arkweb/build/features/features.h"
 #include "cc/input/touch_action.h"
 #include "components/input/event_with_latency_info.h"
 #include "components/input/native_web_keyboard_event.h"
@@ -99,6 +100,10 @@ class COMPONENT_EXPORT(INPUT) InputRouterClient {
 
   // Called when an invalid input event source is sent from the renderer.
   virtual void OnInvalidInputEventSource() = 0;
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  virtual void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) = 0;
+#endif
 
   virtual blink::mojom::WidgetInputHandler* GetWidgetInputHandler() = 0;
   virtual void OnImeCancelComposition() = 0;

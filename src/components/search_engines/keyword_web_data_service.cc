@@ -137,7 +137,7 @@ void KeywordWebDataService::RemoveKeyword(TemplateURLID id) {
 void KeywordWebDataService::UpdateKeyword(const TemplateURLData& data) {
   if (batch_mode_level_) {
     queued_keyword_operations_.push_back(
-        KeywordTable::Operation(KeywordTable::UPDATE, data));
+        KeywordTable::Operation(KeywordTable::UPDATE_OP, data));
   } else {
     AdjustBatchModeLevel(true);
     UpdateKeyword(data);

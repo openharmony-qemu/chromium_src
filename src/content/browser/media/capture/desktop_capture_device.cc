@@ -565,6 +565,9 @@ void DesktopCaptureDevice::Core::OnCaptureResult(
   webrtc::DesktopSize output_size(
       resolution_chooser_.capture_size().width() & ~1,
       resolution_chooser_.capture_size().height() & ~1);
+  LOG(DEBUG) << "screen capture output_size: " << output_size.width() << ", "
+             << output_size.height();
+
   if (output_size.is_empty()) {
     // Even RESOLUTION_POLICY_ANY_WITHIN_LIMIT is used, a non-empty size should
     // be guaranteed.

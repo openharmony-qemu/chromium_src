@@ -33,7 +33,7 @@ class ConsoleCallArguments;
 }  // namespace debug
 
 namespace api_internal {
-V8_EXPORT v8::Local<v8::Value> GetFunctionTemplateData(
+V8_EXPORT JSVM_EXPORT v8::Local<v8::Value> GetFunctionTemplateData(
     v8::Isolate* isolate, v8::Local<v8::Data> raw_target);
 }  // namespace api_internal
 

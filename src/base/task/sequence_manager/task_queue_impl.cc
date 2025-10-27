@@ -728,6 +728,9 @@ void TaskQueueImpl::MoveReadyDelayedTasksToWorkQueue(
 
   while (!main_thread_only().delayed_incoming_queue.empty()) {
     const Task& task = main_thread_only().delayed_incoming_queue.top();
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+    TaskCheckWithFatalMessage(task);
+#endif
     CHECK(task.task);
 
     // Leave the top task alone if it hasn't been canceled and it is not ready.

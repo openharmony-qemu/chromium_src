@@ -1,0 +1,118 @@
+--- layer_tree_host_impl.cc	2025-10-20 19:52:47.953949525 +0800
++++ layer_tree_host_impl.cc	2025-10-16 15:54:55.705465686 +0800
+@@ -308,10 +319,27 @@
+ void LayerTreeHostImpl::AccumulateScrollDeltaForTracing(
+     const gfx::Vector2dF& delta) {
+   scroll_accumulated_this_frame_ += delta;
+ }
+ 
++#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
++void LayerTreeHostImpl::ScheduledActionDraw() {
++  client_->OnScheduledActionDraw();
++}
++
++void LayerTreeHostImpl::OnSetBypassVsyncCondition(int32_t condition) {
++  if (!layer_tree_frame_sink_) {
++    LOG(INFO)
++        << "layer_tree_frame_sink_::need_layer_tree_frame_sink_:true";
++      need_layer_tree_frame_sink_ = true;
++      condition_ = condition;
++      return ;
++  }
++  layer_tree_frame_sink_->OnSetBypassVsyncCondition(condition);
++}
++#endif
++
+ void LayerTreeHostImpl::DidStartPinchZoom() {
+   client_->RenewTreePriority();
+   frame_trackers_.StartSequence(FrameSequenceTrackerType::kPinchZoom);
+ }
+ 
+@@ -537,10 +565,13 @@
+ 
+   dropped_frame_counter_.set_total_counter(&total_frame_counter_);
+   frame_trackers_.set_custom_tracker_results_added_callback(
+       base::BindRepeating(&LayerTreeHostImpl::NotifyThroughputTrackerResults,
+                           weak_factory_.GetWeakPtr()));
++#if BUILDFLAG(IS_ARKWEB)
++  is_ohos_pc_ui_setting_ = base::ohos::IsPcDevice() ? true : false;
++#endif
+ }
+ 
+ LayerTreeHostImpl::~LayerTreeHostImpl() {
+   DCHECK(task_runner_provider_->IsImplThread());
+   TRACE_EVENT0("cc", "LayerTreeHostImpl::~LayerTreeHostImpl()");
+@@ -1629,10 +1660,14 @@
+ DrawResult LayerTreeHostImpl::PrepareToDraw(FrameData* frame) {
+   DCHECK(!use_layer_context_for_display_);
+ 
+   TRACE_EVENT1("cc", "LayerTreeHostImpl::PrepareToDraw", "SourceFrameNumber",
+                active_tree_->source_frame_number());
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
++                    std::to_string(CurrentBeginFrameArgs().trace_id), "step", "GenerateRenderPass");
++#endif
+   if (input_delegate_)
+     input_delegate_->WillDraw();
+ 
+   // No need to record metrics each time we draw, 1% is enough.
+   constexpr double kSamplingFrequency = .01;
+@@ -2899,10 +2959,14 @@
+                     drawn_with_new_layer_tree};
+ }
+ 
+ viz::CompositorFrame LayerTreeHostImpl::GenerateCompositorFrame(
+     FrameData* frame) {
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
++                    std::to_string(CurrentBeginFrameArgs().trace_id), "step", "GenerateCompositorFrame");
++#endif
+   rendering_stats_instrumentation_->IncrementFrameCount(1);
+ 
+   if (!settings_.is_display_tree) {
+     memory_history_->SaveEntry(tile_manager_.memory_stats_from_last_assign());
+   }
+@@ -2955,10 +3025,14 @@
+         raster_caps(), frame->render_passes);
+   }
+ 
+   viz::CompositorFrameMetadata metadata = MakeCompositorFrameMetadata();
+ 
++#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
++  metadata.is_scrolling = g_frameIsScrolling;
++#endif
++
+   ViewTransitionRequest::ViewTransitionElementMap view_transition_element_map;
+   for (RenderSurfaceImpl* render_surface : *frame->render_surface_list) {
+     const auto& view_transition_element_resource_id =
+         render_surface->OwningEffectNode()->view_transition_element_resource_id;
+     if (!view_transition_element_resource_id.IsValid()) {
+@@ -4252,10 +4351,12 @@
+   bool should_finish = true;
+ #if BUILDFLAG(IS_WIN)
+   // Windows does not have stability issues that require calling Finish.
+   // To minimize risk, only avoid waiting for the UI layer tree.
+   should_finish = !settings_.is_layer_tree_for_ui;
++#elif BUILDFLAG(IS_ARKWEB)
++  should_finish = !settings_.is_layer_tree_for_ui || !is_ohos_pc_ui_setting_;
+ #endif
+ 
+   if (should_finish && layer_tree_frame_sink_->context_provider()) {
+     // TODO(kylechar): Exactly where this finish call is still required is not
+     // obvious. Attempts have been made to remove it which caused problems, eg.
+@@ -4372,10 +4478,15 @@
+   const viz::LocalSurfaceId& local_surface_id =
+       child_local_surface_id_allocator_.GetCurrentLocalSurfaceId();
+   if (local_surface_id.is_valid())
+     AllocateLocalSurfaceId();
+ 
++  if (need_layer_tree_frame_sink_) {
++    OnSetBypassVsyncCondition(condition_);
++    need_layer_tree_frame_sink_ = false;
++  }
++
+   return true;
+ }
+ 
+ void LayerTreeHostImpl::SetBeginFrameSource(viz::BeginFrameSource* source) {
+   client_->SetBeginFrameSource(source);

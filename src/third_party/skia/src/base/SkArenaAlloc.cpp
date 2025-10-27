@@ -8,6 +8,9 @@
 #include "src/base/SkArenaAlloc.h"
 
 #include "include/private/base/SkMalloc.h"
+#include "build/build_config.h"
+#include "build/buildflag.h"
+#include "base/logging.h"
 
 #include <algorithm>
 #include <cassert>
@@ -56,6 +59,13 @@ void SkArenaAlloc::RunDtorsOnBlock(char* footerEnd) {
 
         memcpy(&action,  footerEnd - sizeof( Footer), sizeof( action));
         memcpy(&padding, footerEnd - sizeof(padding), sizeof(padding));
+
+    #if BUILDFLAG(IS_ARKWEB)
+        if (action == nullptr || (reinterpret_cast<uintptr_t>(action) & 1)) {
+            LOG(ERROR) << "action is nullptr or the address of action is an odd number";
+            return;
+        }
+    #endif
 
         footerEnd = action(footerEnd) - (ptrdiff_t)padding;
     }

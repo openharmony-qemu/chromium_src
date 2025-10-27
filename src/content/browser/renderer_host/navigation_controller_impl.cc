@@ -57,6 +57,7 @@
 #include "base/types/optional_util.h"
 #include "build/build_config.h"
 #include "cc/base/switches.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #include "content/browser/bad_message.h"
 #include "content/browser/blob_storage/chrome_blob_storage_context.h"
 #include "content/browser/browser_context_impl.h"
@@ -111,6 +112,9 @@
 #include "services/network/public/mojom/fetch_api.mojom.h"
 #include "services/network/public/mojom/url_response_head.mojom-shared.h"
 #include "skia/ext/platform_canvas.h"
+#if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
+#include "third_party/abseil-cpp/absl/types/optional.h"
+#endif
 #include "third_party/blink/public/common/blob/blob_utils.h"
 #include "third_party/blink/public/common/chrome_debug_urls.h"
 #include "third_party/blink/public/common/history/session_history_constants.h"
@@ -121,6 +125,17 @@
 #include "third_party/blink/public/mojom/navigation/prefetched_signed_exchange_info.mojom.h"
 #include "third_party/blink/public/mojom/runtime_feature_state/runtime_feature.mojom.h"
 #include "url/url_constants.h"
+
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+#include "cef/ohos_cef_ext/libcef/browser/page_load_metrics/arkweb_page_load_metrics_observer.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "content/public/browser/web_contents.h"
+#include "cef/ohos_cef_ext/libcef/browser/net/ohos_url_rewrite_controller.h"
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif
 
 namespace content {
 namespace {
@@ -446,10 +461,17 @@ blink::mojom::NavigationType GetNavigationType(
 // Adjusts the original input URL if needed, to get the URL to actually load and
 // the virtual URL, which may differ.
 void RewriteUrlForNavigation(const GURL& original_url,
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+                             const GURL& referrer,
+#endif
                              BrowserContext* browser_context,
                              GURL* url_to_load,
                              GURL* virtual_url,
-                             bool* reverse_on_redirect) {
+                             bool* reverse_on_redirect
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+                             , NavigationControllerDelegate* delegate
+#endif
+) {
   // Allow the browser URL handler to rewrite the URL. This will, for example,
   // remove "view-source:" from the beginning of the URL to get the URL that
   // will actually be loaded. This real URL won't be shown to the user, just
@@ -457,6 +479,17 @@ void RewriteUrlForNavigation(const GURL& original_url,
   *url_to_load = *virtual_url = original_url;
   BrowserURLHandlerImpl::GetInstance()->RewriteURLIfNecessary(
       url_to_load, browser_context, reverse_on_redirect);
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD) && !defined(COMPONENT_BUILD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kEnableNwebEx) &&
+      OhosUrlRewriteController::IsRewriteUrlEnabled()) {
+    if (delegate) {
+      std::string result = delegate->NotifyNavigationRewriteUrl(original_url.spec(), referrer.spec());
+      if (!result.empty()) {
+        *url_to_load = *virtual_url = GURL(result);
+      }
+    }
+  }
+#endif
 }
 
 #if DCHECK_IS_ON()
@@ -651,12 +684,20 @@ std::unique_ptr<NavigationEntry> NavigationController::CreateNavigationEntry(
     bool is_renderer_initiated,
     const std::string& extra_headers,
     BrowserContext* browser_context,
-    scoped_refptr<network::SharedURLLoaderFactory> blob_url_loader_factory) {
+    scoped_refptr<network::SharedURLLoaderFactory> blob_url_loader_factory
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    , NavigationControllerDelegate* delegate
+#endif
+) {
   return NavigationControllerImpl::CreateNavigationEntry(
       url, referrer, std::move(initiator_origin), std::move(initiator_base_url),
       std::nullopt /* source_process_site_url */, transition,
       is_renderer_initiated, extra_headers, browser_context,
-      std::move(blob_url_loader_factory), true /* rewrite_virtual_urls */);
+      std::move(blob_url_loader_factory), true /* rewrite_virtual_urls */
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      , delegate
+#endif
+      );
 }
 
 // static
@@ -672,13 +713,22 @@ NavigationControllerImpl::CreateNavigationEntry(
     const std::string& extra_headers,
     BrowserContext* browser_context,
     scoped_refptr<network::SharedURLLoaderFactory> blob_url_loader_factory,
-    bool rewrite_virtual_urls) {
+    bool rewrite_virtual_urls
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    , NavigationControllerDelegate* delegate
+#endif
+) {
   GURL url_to_load = url;
   GURL virtual_url = url;
   bool reverse_on_redirect = false;
   if (rewrite_virtual_urls) {
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    RewriteUrlForNavigation(url, referrer.url, browser_context, &url_to_load, &virtual_url,
+                            &reverse_on_redirect, delegate);
+#else
     RewriteUrlForNavigation(url, browser_context, &url_to_load, &virtual_url,
                             &reverse_on_redirect);
+#endif
   }
   // Let the NTP override the navigation params and pretend that this is a
   // browser-initiated, bookmark-like navigation.
@@ -1439,6 +1489,9 @@ base::WeakPtr<NavigationHandle> NavigationControllerImpl::LoadURL(
   params.referrer = referrer;
   params.transition_type = transition;
   params.extra_headers = extra_headers;
+#if BUILDFLAG(IS_ARKWEB)
+  params.override_user_agent = NavigationController::UA_OVERRIDE_TRUE;
+#endif
   return LoadURLWithParams(params);
 }
 
@@ -1864,6 +1917,11 @@ bool NavigationControllerImpl::RendererDidNavigate(
   details->is_main_frame = !rfh->GetParent();
   details->http_status_code = params.http_status_code;
 
+#if BUILDFLAG(ARKWEB_NAVIGATION)
+  details->type = static_cast<OhosNavigationType>(navigation_type);
+  details->current_commit_entry_url = active_entry->GetURL();
+#endif // BUILDFLAG(ARKWEB_NAVIGATION)
+
   active_entry->SetIsOverridingUserAgent(
       navigation_request->is_overriding_user_agent());
 
@@ -2232,6 +2290,10 @@ void NavigationControllerImpl::RendererDidNavigateToNewEntry(
         params.transition, request->IsRendererInitiated(),
         nullptr,  // blob_url_loader_factory
         false);   // is_initial_entry
+
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+    AsArkWebNavigationControllerImplExt()->NewEntrySetExtraHeaders(rfh, params, new_entry);
+#endif
 
     // Find out whether the new entry needs to update its virtual URL on URL
     // change and set up the entry accordingly. This is needed to correctly
@@ -2789,7 +2851,7 @@ void NavigationControllerImpl::SetPendingNavigationSSLError(bool error) {
     pending_entry_->set_ssl_error(error);
 }
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
 // static
 bool NavigationControllerImpl::ValidateDataURLAsString(
     const scoped_refptr<const base::RefCountedString>& data_url_as_string) {
@@ -2998,7 +3060,11 @@ void NavigationControllerImpl::NavigateFromFrameProxy(
         url, referrer, initiator_origin, initiator_base_url,
         source_process_site_url, page_transition, is_renderer_initiated,
         extra_headers, browser_context_, blob_url_loader_factory,
-        rewrite_virtual_urls));
+        rewrite_virtual_urls
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+        , delegate_
+#endif
+        ));
     entry->root_node()->frame_entry->set_source_site_instance(
         static_cast<SiteInstanceImpl*>(source_site_instance));
     entry->root_node()->frame_entry->set_method(method);
@@ -4088,7 +4154,11 @@ NavigationControllerImpl::CreateNavigationEntryFromLoadParams(
         params.initiator_base_url, source_process_site_url,
         params.transition_type, params.is_renderer_initiated,
         extra_headers_crlf, browser_context_, blob_url_loader_factory,
-        rewrite_virtual_urls));
+        rewrite_virtual_urls
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+        , delegate_
+#endif
+        ));
     entry->set_source_site_instance(
         static_cast<SiteInstanceImpl*>(params.source_site_instance.get()));
     entry->SetRedirectChain(params.redirect_chain);
@@ -4114,7 +4184,7 @@ NavigationControllerImpl::CreateNavigationEntryFromLoadParams(
       // URL.
       entry->SetBaseURLForDataURL(params.base_url_for_data_url);
       entry->SetVirtualURL(params.virtual_url_for_special_cases);
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
       entry->SetDataURLAsString(params.data_url_as_string);
 #endif
       entry->SetCanLoadLocalResources(params.can_load_local_resources);
@@ -4172,8 +4242,13 @@ NavigationControllerImpl::CreateNavigationRequestFromLoadParams(
   // that should be shown in the address bar.
   if (node->IsOutermostMainFrame()) {
     bool ignored_reverse_on_redirect = false;
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    RewriteUrlForNavigation(params.url, params.referrer.url, browser_context_, &url_to_load,
+                            &virtual_url, &ignored_reverse_on_redirect, delegate_);
+#else
     RewriteUrlForNavigation(params.url, browser_context_, &url_to_load,
                             &virtual_url, &ignored_reverse_on_redirect);
+#endif
 
     // Both LoadDataWithBaseURL and Android PDF navigations are special cases
     // that need to define a virtual URL to display, which differs from the
@@ -4267,7 +4342,15 @@ NavigationControllerImpl::CreateNavigationRequestFromLoadParams(
           network::mojom::CSPDisposition::CHECK, std::vector<int>(),
           params.href_translate,
           false /* is_history_navigation_in_new_child_frame */,
-          params.input_start, network::mojom::RequestDestination::kEmpty);
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+          params.input_start, network::mojom::RequestDestination::kEmpty, ""
+#else
+          params.input_start, network::mojom::RequestDestination::kEmpty
+#endif
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+          , false
+#endif
+          );
 
   blink::mojom::CommitNavigationParamsPtr commit_params =
       blink::mojom::CommitNavigationParams::New(
@@ -4290,7 +4373,7 @@ NavigationControllerImpl::CreateNavigationRequestFromLoadParams(
           blink::mojom::WasActivatedOption::kUnknown,
           /*navigation_token=*/base::UnguessableToken::Create(),
           std::vector<blink::mojom::PrefetchedSignedExchangeInfoPtr>(),
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
           /*data_url_as_string=*/std::string(),
 #endif
           /*is_browser_initiated=*/!params.is_renderer_initiated,

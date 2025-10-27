@@ -8,6 +8,7 @@
 #include <string>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/bind.h"
 #include "base/json/json_reader.h"
 #include "base/metrics/histogram_functions.h"

@@ -35,19 +35,29 @@
 #include "third_party/blink/renderer/platform/graphics/scrollbar_theme_settings.h"
 #include "third_party/skia/include/core/SkColor.h"
 #include "ui/gfx/geometry/rect.h"
-
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/scroll/scrollbar_theme_utils.h"
+#endif // IS_ARKWEB
 namespace blink {
 
 class GraphicsContext;
 class ScrollableArea;
 class WebMouseEvent;
 class WebViewImpl;
-
+#if BUILDFLAG(IS_ARKWEB)
+  class ScrollbarThemeUtils;
+#endif
 class CORE_EXPORT ScrollbarTheme {
   USING_FAST_MALLOC(ScrollbarTheme);
 
  public:
+
+#if BUILDFLAG(IS_ARKWEB)
+  ScrollbarTheme() { scrollbar_theme_utils_ = std::make_shared<ScrollbarThemeUtils>(this); }
+#else
   ScrollbarTheme() = default;
+#endif // IS_ARKWEB
+
   ScrollbarTheme(const ScrollbarTheme&) = delete;
   ScrollbarTheme& operator=(const ScrollbarTheme&) = delete;
   virtual ~ScrollbarTheme() = default;
@@ -240,7 +250,10 @@ class CORE_EXPORT ScrollbarTheme {
   }
 
   virtual bool AllowsHitTest() const { return true; }
-
+#if BUILDFLAG(IS_ARKWEB)
+  friend class ScrollbarThemeUtils;
+  std::shared_ptr<ScrollbarThemeUtils> GetUtils() { return scrollbar_theme_utils_; }
+#endif
  protected:
   // The point is in the same coordinate space as the scrollbar's FrameRect.
   virtual ScrollbarPart HitTest(const Scrollbar&, const gfx::Point&) const;
@@ -286,6 +299,9 @@ class CORE_EXPORT ScrollbarTheme {
  private:
   // Must be implemented to return the correct theme subclass.
   static ScrollbarTheme& NativeTheme();
+#if BUILDFLAG(IS_ARKWEB)
+  std::shared_ptr<ScrollbarThemeUtils> scrollbar_theme_utils_;
+#endif
 };
 
 }  // namespace blink

@@ -16,6 +16,12 @@ import("//ui/base/ui_features.gni")
 import("//ui/webui/webui_features.gni")
 import("chrome_repack_locales.gni")
 
+import("//arkweb/build/features/features.gni")
+
+if (defined(is_arkweb_ext) && is_arkweb_ext) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
+
 assert(!is_fuchsia, "Fuchsia shouldn't use anything in //chrome")
 
 # Generates a rule to repack a set of resources, substituting a given string
@@ -472,12 +478,12 @@ template("chrome_extra_paks") {
       ]
     }
 
-    if (is_win || is_mac || is_linux) {
+    if (is_win || is_mac || is_linux || is_ohos) {
       sources += [ "$root_gen_dir/chrome/app_home_resources.pak" ]
       deps += [ "//chrome/browser/resources/app_home:resources" ]
     }
 
-    if (is_win || is_mac || is_linux) {
+    if (is_win || is_mac || is_linux || is_ohos) {
       sources += [
         "$root_gen_dir/chrome/app_settings_resources.pak",
         "$root_gen_dir/chrome/on_device_translation_internals_resources.pak",
@@ -674,11 +680,18 @@ template("chrome_paks") {
       repack_allowlist = invoker.repack_allowlist
     }
 
+    if (arkweb_i18n) {
+      input_locales = locales_for_ohos
+    } else {
     input_locales = platform_pak_locales
+    }
+
     output_dir = "${invoker.output_dir}/locales"
 
     if (is_mac) {
       output_locales = locales_as_apple_outputs
+    } else if (arkweb_i18n) {
+      output_locales = locales_for_ohos
     } else {
       output_locales = platform_pak_locales
     }

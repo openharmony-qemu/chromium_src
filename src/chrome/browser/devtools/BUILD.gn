@@ -421,6 +421,10 @@ static_library("devtools") {
       "//extensions/browser",
     ]
   }
+
+  if (defined(arkweb_devtools) && arkweb_devtools) {
+    sources += arkweb_devtools_manager_delegate
+  }
 }
 
 static_library("test_support") {

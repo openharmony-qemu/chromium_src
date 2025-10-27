@@ -48,6 +48,7 @@ class LayerImpl;
 class ScrollbarController;
 class ScrollElasticityHelper;
 class Viewport;
+class InputHandlerUtils;
 
 enum class PointerResultType { kUnhandled = 0, kScrollbarScroll };
 
@@ -164,6 +165,9 @@ class CC_EXPORT InputHandlerClient {
       float max_page_scale_factor) = 0;
   virtual void DeliverInputForBeginFrame(const viz::BeginFrameArgs& args) = 0;
   virtual void DeliverInputForHighLatencyMode() = 0;
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  virtual void WillHandleScrollUpdateForInternalBeginFrame(const viz::BeginFrameArgs& args) {}
+#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   virtual void DeliverInputForDeadline() = 0;
   virtual void DidFinishImplFrame() = 0;
   virtual bool HasQueuedInput() const = 0;
@@ -191,6 +195,7 @@ class CC_EXPORT InputHandlerClient {
 // TODO: consider revising these tests to reduce reliance on mocking.
 class CC_EXPORT InputHandler : public InputDelegateForCompositor {
  public:
+  friend class InputHandlerUtils;
   // Creates an instance of the InputHandler and binds it to the layer tree
   // delegate. The delegate owns the InputHandler so their lifetimes
   // are tied together, hence, this returns a WeakPtr.
@@ -359,6 +364,8 @@ class CC_EXPORT InputHandler : public InputDelegateForCompositor {
   // is expected in "content/page coordinates".
   virtual void SetSynchronousInputHandlerRootScrollOffset(
       const gfx::PointF& root_content_offset);
+
+  virtual void SetBypassVsyncCondition(int32_t condition);
 
   virtual void PinchGestureBegin(const gfx::Point& anchor,
                                  ui::ScrollInputType source);
@@ -556,7 +563,17 @@ class CC_EXPORT InputHandler : public InputDelegateForCompositor {
   ActivelyScrollingType GetActivelyScrollingType() const override;
   bool IsHandlingTouchSequence() const override;
   bool IsCurrentScrollMainRepainted() const override;
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  void HandleScrollUpdateForInternalBeginFrame(const viz::BeginFrameArgs& args) override;
+#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   bool HasQueuedInput() const override;
+#if BUILDFLAG(ARKWEB_TEST)
+  virtual InputHandlerUtils* handler_utils() {
+#else
+  InputHandlerUtils* handler_utils() {
+#endif // BUILDFLAG(ARKWEB_TEST)
+    return handler_utils_.get();
+  }
 
  private:
   FRIEND_TEST_ALL_PREFIXES(LayerTreeHostImplTest,
@@ -870,6 +887,10 @@ class CC_EXPORT InputHandler : public InputDelegateForCompositor {
   bool has_scrolled_by_scrollbar_ = false;
 
   bool prefers_reduced_motion_ = false;
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  int32_t condition_ = 0;
+#endif
 
   bool is_handling_touch_sequence_ = false;
 

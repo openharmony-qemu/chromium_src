@@ -637,7 +637,11 @@ bool InterfaceEndpointClient::SendMessageWithResponder(
     bool is_control_message,
     SyncSendMode sync_send_mode,
     std::unique_ptr<MessageReceiver> responder) {
+#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+#else
   CHECK(sequence_checker_.CalledOnValidSequence());
+#endif
   DCHECK(message->has_flag(Message::kFlagExpectsResponse));
   DCHECK(!handle_.pending_association());
 
@@ -738,8 +742,7 @@ bool InterfaceEndpointClient::HandleIncomingMessage(Message* message) {
 }
 
 void InterfaceEndpointClient::NotifyError(
-    const std::optional<DisconnectReason>& reason,
-    MojoResult error_result) {
+    const std::optional<DisconnectReason>& reason) {
   TRACE_EVENT("toplevel", "Closed mojo endpoint",
               [&](perfetto::EventContext& ctx) {
                 auto* info = ctx.event()->set_chrome_mojo_event_info();
@@ -774,14 +777,6 @@ void InterfaceEndpointClient::NotifyError(
           .Run(reason->custom_reason, reason->description);
     } else {
       std::move(error_with_reason_handler_).Run(0, std::string());
-    }
-  } else if (error_with_reason_and_result_handler_) {
-    if (reason) {
-      std::move(error_with_reason_and_result_handler_)
-          .Run(reason->custom_reason, reason->description, error_result);
-    } else {
-      std::move(error_with_reason_and_result_handler_)
-          .Run(0, std::string(), error_result);
     }
   }
 }
@@ -921,8 +916,7 @@ void InterfaceEndpointClient::OnAssociationEvent(
     task_runner_->PostTask(FROM_HERE,
                            base::BindOnce(&InterfaceEndpointClient::NotifyError,
                                           weak_ptr_factory_.GetWeakPtr(),
-                                          handle_.disconnect_reason(),
-                                          MOJO_RESULT_OK));
+                                          handle_.disconnect_reason()));
   }
 }
 

@@ -17,7 +17,7 @@ namespace v8 {
  * A base class for an instance of TypedArray series of constructors
  * (ES6 draft 15.13.6).
  */
-class V8_EXPORT TypedArray : public ArrayBufferView {
+class V8_EXPORT JSVM_EXPORT TypedArray : public ArrayBufferView {
  public:
   /*
    * The largest supported typed array byte size. Each subclass defines a
@@ -51,7 +51,7 @@ class V8_EXPORT TypedArray : public ArrayBufferView {
 /**
  * An instance of Uint8Array constructor (ES6 draft 15.13.6).
  */
-class V8_EXPORT Uint8Array : public TypedArray {
+class V8_EXPORT JSVM_EXPORT Uint8Array : public TypedArray {
  public:
   /*
    * The largest Uint8Array size that can be constructed using New.
@@ -79,7 +79,7 @@ class V8_EXPORT Uint8Array : public TypedArray {
 /**
  * An instance of Uint8ClampedArray constructor (ES6 draft 15.13.6).
  */
-class V8_EXPORT Uint8ClampedArray : public TypedArray {
+class V8_EXPORT JSVM_EXPORT Uint8ClampedArray : public TypedArray {
  public:
   /*
    * The largest Uint8ClampedArray size that can be constructed using New.
@@ -108,7 +108,7 @@ class V8_EXPORT Uint8ClampedArray : public TypedArray {
 /**
  * An instance of Int8Array constructor (ES6 draft 15.13.6).
  */
-class V8_EXPORT Int8Array : public TypedArray {
+class V8_EXPORT JSVM_EXPORT Int8Array : public TypedArray {
  public:
   /*
    * The largest Int8Array size that can be constructed using New.
@@ -136,7 +136,7 @@ class V8_EXPORT Int8Array : public TypedArray {
 /**
  * An instance of Uint16Array constructor (ES6 draft 15.13.6).
  */
-class V8_EXPORT Uint16Array : public TypedArray {
+class V8_EXPORT JSVM_EXPORT Uint16Array : public TypedArray {
  public:
   /*
    * The largest Uint16Array size that can be constructed using New.
@@ -164,7 +164,7 @@ class V8_EXPORT Uint16Array : public TypedArray {
 /**
  * An instance of Int16Array constructor (ES6 draft 15.13.6).
  */
-class V8_EXPORT Int16Array : public TypedArray {
+class V8_EXPORT JSVM_EXPORT Int16Array : public TypedArray {
  public:
   /*
    * The largest Int16Array size that can be constructed using New.
@@ -192,7 +192,7 @@ class V8_EXPORT Int16Array : public TypedArray {
 /**
  * An instance of Uint32Array constructor (ES6 draft 15.13.6).
  */
-class V8_EXPORT Uint32Array : public TypedArray {
+class V8_EXPORT JSVM_EXPORT Uint32Array : public TypedArray {
  public:
   /*
    * The largest Uint32Array size that can be constructed using New.
@@ -220,7 +220,7 @@ class V8_EXPORT Uint32Array : public TypedArray {
 /**
  * An instance of Int32Array constructor (ES6 draft 15.13.6).
  */
-class V8_EXPORT Int32Array : public TypedArray {
+class V8_EXPORT JSVM_EXPORT Int32Array : public TypedArray {
  public:
   /*
    * The largest Int32Array size that can be constructed using New.
@@ -272,7 +272,7 @@ class V8_EXPORT Float16Array : public TypedArray {
 /**
  * An instance of Float32Array constructor (ES6 draft 15.13.6).
  */
-class V8_EXPORT Float32Array : public TypedArray {
+class V8_EXPORT JSVM_EXPORT Float32Array : public TypedArray {
  public:
   /*
    * The largest Float32Array size that can be constructed using New.
@@ -300,7 +300,7 @@ class V8_EXPORT Float32Array : public TypedArray {
 /**
  * An instance of Float64Array constructor (ES6 draft 15.13.6).
  */
-class V8_EXPORT Float64Array : public TypedArray {
+class V8_EXPORT JSVM_EXPORT Float64Array : public TypedArray {
  public:
   /*
    * The largest Float64Array size that can be constructed using New.
@@ -328,7 +328,7 @@ class V8_EXPORT Float64Array : public TypedArray {
 /**
  * An instance of BigInt64Array constructor.
  */
-class V8_EXPORT BigInt64Array : public TypedArray {
+class V8_EXPORT JSVM_EXPORT BigInt64Array : public TypedArray {
  public:
   /*
    * The largest BigInt64Array size that can be constructed using New.
@@ -356,7 +356,7 @@ class V8_EXPORT BigInt64Array : public TypedArray {
 /**
  * An instance of BigUint64Array constructor.
  */
-class V8_EXPORT BigUint64Array : public TypedArray {
+class V8_EXPORT JSVM_EXPORT BigUint64Array : public TypedArray {
  public:
   /*
    * The largest BigUint64Array size that can be constructed using New.

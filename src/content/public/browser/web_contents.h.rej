@@ -1,0 +1,87 @@
+--- web_contents.h	2025-10-20 19:52:54.570613086 +0800
++++ web_contents.h	2025-10-16 15:54:59.700479258 +0800
+@@ -58,14 +58,20 @@
+ #include "ui/gfx/geometry/rect.h"
+ #include "ui/gfx/geometry/size.h"
+ #include "ui/gfx/native_widget_types.h"
+ #include "url/gurl.h"
+ 
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
++
+ #if BUILDFLAG(IS_ANDROID)
+ #include "third_party/jni_zero/jni_zero.h"
+ #endif
+ 
++#include "arkweb/chromium_ext/content/public/browser/web_contents_for_include_file.cc"
++
+ namespace base {
+ class FilePath;
+ }  // namespace base
+ 
+ namespace blink {
+@@ -114,12 +120,12 @@
+ class RenderViewHostDelegateView;
+ class RenderWidgetHostView;
+ class ScreenOrientationDelegate;
+ class SiteInstance;
+ class WebContentsDelegate;
+-class WebContentsView;
+ class WebUI;
++class WebContentsView;
+ struct DropData;
+ struct MHTMLGenerationParams;
+ class PreloadingAttempt;
+ 
+ // WebContents is the core class in content/. A WebContents renders web content
+@@ -625,11 +635,10 @@
+   //
+   // If nonempty, |ua_override|'s value must not contain '\0', '\r', or '\n' (in
+   // other words, it must be a valid HTTP header value).
+   virtual void SetUserAgentOverride(const blink::UserAgentOverride& ua_override,
+                                     bool override_in_new_tabs) = 0;
+-
+   // Configures the value of is-overriding-user-agent for renderer initiated
+   // navigations. The default is UA_OVERRIDE_INHERIT. This value does not apply
+   // to the first renderer initiated navigation if the tab has no navigations.
+   // See SetUserAgentOverride() for details on that.
+   virtual void SetRendererInitiatedUserAgentOverrideOption(
+@@ -1602,11 +1617,16 @@
+       PreloadingAttempt* preloading_attempt,
+       base::RepeatingCallback<bool(const GURL&,
+                                    const std::optional<UrlMatchType>&)>
+           url_match_predicate,
+       base::RepeatingCallback<void(NavigationHandle&)>
+-          prerender_navigation_handle_callback) = 0;
++          prerender_navigation_handle_callback
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++,
++      const char* extra_headers = nullptr
++#endif
++      ) = 0;
+ 
+   // Cancels all prerendering hosted on this WebContents.
+   virtual void CancelAllPrerendering() = 0;
+ 
+   // May be called when the embedder believes that it is likely that the user
+@@ -1650,10 +1670,19 @@
+ 
+   // Returns the network handle targeting to a specific network. The value
+   // `kInvalidNetworkHandle` indicates that the current default network will
+   // be bound.
+   virtual net::handles::NetworkHandle GetTargetNetwork() = 0;
++#if BUILDFLAG(ARKWEB_BGTASK)
++  virtual void OnBrowserForeground() = 0;
++  virtual void OnBrowserBackground() = 0;
++#endif
++#include "arkweb/chromium_ext/content/public/browser/web_contents_for_include.cc"
++
++#if BUILDFLAG(ARKWEB_PIP)
++  virtual void OnPipEvent(int event) = 0;
++#endif
+ 
+  private:
+   // This interface should only be implemented inside content.
+   friend class WebContentsImpl;
+   WebContents() = default;

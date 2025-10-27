@@ -43,6 +43,7 @@
 #include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkFont.h"
 #include "third_party/skia/include/core/SkTypeface.h"
+#include "third_party/blink/renderer/platform/fonts/font_platform_data_utils.h"
 
 #if BUILDFLAG(IS_MAC)
 #include "third_party/skia/include/ports/SkTypeface_mac.h"
@@ -71,6 +72,7 @@ FontPlatformData::FontPlatformData(const FontPlatformData& source)
       style_(source.style_)
 #endif
 {
+  data_utils_ = std::make_unique<FontPlatformDataUtils>(this);
 }
 
 FontPlatformData::FontPlatformData(const FontPlatformData& src, float text_size)
@@ -86,6 +88,7 @@ FontPlatformData::FontPlatformData(const FontPlatformData& src, float text_size)
                        src.text_rendering_,
                        src.resolved_font_features_,
                        src.orientation_) {
+  data_utils_ = std::make_unique<FontPlatformDataUtils>(this);
 }
 
 FontPlatformData::FontPlatformData(sk_sp<SkTypeface> typeface,
@@ -126,6 +129,7 @@ FontPlatformData::FontPlatformData(sk_sp<SkTypeface> typeface,
 #endif  // !BUILDFLAG(IS_WIN)
   style_.OverrideWith(system_style);
 #endif  // !BUILDFLAG(IS_MAC)
+  data_utils_ = std::make_unique<FontPlatformDataUtils>(this);
 }
 
 FontPlatformData::~FontPlatformData() = default;
@@ -231,7 +235,8 @@ WebFontRenderStyle FontPlatformData::QuerySystemRenderStyle(
     TextRenderingMode text_rendering) {
   WebFontRenderStyle result;
 
-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_FUCHSIA) && !BUILDFLAG(IS_IOS)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_FUCHSIA) && !BUILDFLAG(IS_IOS) && \
+    !BUILDFLAG(IS_OHOS)
   // If the font name is missing (i.e. probably a web font) or the sandbox is
   // disabled, use the system defaults.
   if (family.length() && Platform::Current()->GetSandboxSupport()) {
@@ -267,7 +272,16 @@ SkFont FontPlatformData::CreateSkFont(const FontDescription*) const {
   SkFont font(typeface_);
   style_.ApplyToSkFont(&font);
 
-  const float ts = text_size_ >= 0 ? text_size_ : 12;
+  float ts = text_size_ >= 0 ? text_size_ : 12;
+
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+  auto config = data_utils_->FindCompressionConfigWithFont(family_);
+  if (!SkScalarNearlyZero(config.fontScale)) {
+    LOG(DEBUG) << "FontPlatformData::CreateSkFont fontScale is "
+               << config.fontScale;
+    ts = ts * config.fontScale;
+  }
+#endif
   font.setSize(SkFloatToScalar(ts));
   font.setEmbolden(synthetic_bold_);
   font.setSkewX(synthetic_italic_ ? -SK_Scalar1 / 4 : 0);

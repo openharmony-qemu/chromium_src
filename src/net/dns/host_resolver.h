@@ -457,6 +457,12 @@ class NET_EXPORT HostResolver {
 
     // Controls the resolver's Secure DNS behavior for this request.
     SecureDnsPolicy secure_dns_policy = SecureDnsPolicy::kAllow;
+
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+    // If /true/, the dns task type of the request is only secure dns fallback
+    // type.
+    bool only_use_secure_fallback = false;
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   };
 
   // Handler for an ongoing MDNS listening operation. Created by

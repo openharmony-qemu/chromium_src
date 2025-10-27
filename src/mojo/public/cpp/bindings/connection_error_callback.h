@@ -6,7 +6,6 @@
 #define MOJO_PUBLIC_CPP_BINDINGS_CONNECTION_ERROR_CALLBACK_H_
 
 #include "base/functional/callback.h"
-#include "mojo/public/c/system/types.h"
 
 namespace mojo {
 
@@ -19,14 +18,6 @@ using ConnectionErrorWithReasonCallback =
 using RepeatingConnectionErrorWithReasonCallback =
     base::RepeatingCallback<void(uint32_t /* custom_reason */,
                                  const std::string& /* description */)>;
-using ConnectionErrorWithReasonAndResultCallback =
-    base::OnceCallback<void(uint32_t /* custom_reason */,
-                            const std::string& /* description */,
-                            MojoResult /* error_result */)>;
-using RepeatingConnectionErrorWithReasonAndResultCallback =
-    base::RepeatingCallback<void(uint32_t /* custom_reason */,
-                                 const std::string& /* description */,
-                                 MojoResult /* error_result */)>;
 
 }  // namespace mojo
 

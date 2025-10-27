@@ -7,6 +7,7 @@
 #include <memory>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/run_loop.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/threading/thread.h"
@@ -175,6 +176,15 @@ class FakeInterfaceFactory : public media::mojom::InterfaceFactory {
           ::media::mojom::MediaFoundationRendererClientExtension>
           client_extension_remote) override {}
 #endif  // BUILDFLAG(IS_WIN)
+
+#if BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(IS_OHOS)
+  void CreateMediaPlayerRenderer(
+      ::mojo::PendingRemote<::media::mojom::MediaPlayerRendererClientExtension>
+          client_extension,
+      ::mojo::PendingReceiver<::media::mojom::Renderer> renderer,
+      ::mojo::PendingReceiver<::media::mojom::MediaPlayerRendererExtension>
+          renderer_extension) override {}
+#endif  // BUILDFLAG(IS_OHOS)
  private:
   media::MojoCdmServiceContext cdm_service_context_;
   FakeMojoMediaClient mojo_media_client_;

@@ -13,6 +13,10 @@
 #include "src/heap/factory.h"
 #include "src/logging/runtime-call-stats-scope.h"
 
+#ifdef OHOS_JS_ENGINE
+#include "../../../arkweb/chromium_ext/v8/trace.h"
+#endif
+
 namespace v8 {
 namespace internal {
 

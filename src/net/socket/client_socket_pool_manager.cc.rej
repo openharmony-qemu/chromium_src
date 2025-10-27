@@ -1,0 +1,101 @@
+--- client_socket_pool_manager.cc	2025-10-20 19:52:57.182206934 +0800
++++ client_socket_pool_manager.cc	2025-10-16 15:55:02.765199241 +0800
+@@ -99,11 +99,20 @@
+     const NetLogWithSource& net_log,
+     int num_preconnect_streams,
+     ClientSocketHandle* socket_handle,
+     HttpNetworkSession::SocketPoolType socket_pool_type,
+     CompletionOnceCallback callback,
+-    const ClientSocketPool::ProxyAuthCallback& proxy_auth_callback) {
++    const ClientSocketPool::ProxyAuthCallback& proxy_auth_callback
++#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
++    ,
++    bool secure_dns_only = false
++#endif
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++,
++    bool from_preload = false
++#endif
++) {
+   DCHECK(endpoint.IsValid());
+ 
+   bool using_ssl = GURL::SchemeIsCryptographic(endpoint.scheme());
+   if (!using_ssl && session->params().testing_fixed_http_port != 0) {
+     endpoint = url::SchemeHostPort(endpoint.scheme(), endpoint.host(),
+@@ -238,18 +254,36 @@
+     SecureDnsPolicy secure_dns_policy,
+     const SocketTag& socket_tag,
+     const NetLogWithSource& net_log,
+     ClientSocketHandle* socket_handle,
+     CompletionOnceCallback callback,
+-    const ClientSocketPool::ProxyAuthCallback& proxy_auth_callback) {
++    const ClientSocketPool::ProxyAuthCallback& proxy_auth_callback
++#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
++    ,
++    bool secure_dns_only
++#endif
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++,
++    bool from_preload
++#endif
++) {
+   DCHECK(socket_handle);
+   return InitSocketPoolHelper(
+       std::move(endpoint), request_load_flags, request_priority, session,
+       proxy_info, allowed_bad_certs, privacy_mode,
+       std::move(network_anonymization_key), secure_dns_policy, socket_tag,
+       net_log, 0, socket_handle, HttpNetworkSession::NORMAL_SOCKET_POOL,
+-      std::move(callback), proxy_auth_callback);
++      std::move(callback), proxy_auth_callback
++#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
++      ,
++      secure_dns_only
++#endif
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++,
++      from_preload
++#endif
++  );
+ }
+ 
+ int InitSocketHandleForWebSocketRequest(
+     url::SchemeHostPort endpoint,
+     int request_load_flags,
+@@ -292,11 +326,16 @@
+     PrivacyMode privacy_mode,
+     NetworkAnonymizationKey network_anonymization_key,
+     SecureDnsPolicy secure_dns_policy,
+     const NetLogWithSource& net_log,
+     int num_preconnect_streams,
+-    CompletionOnceCallback callback) {
++    CompletionOnceCallback callback
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++,
++    bool from_preload
++#endif
++    ) {
+   // Expect websocket schemes (ws and wss) to be converted to the http(s)
+   // equivalent.
+   DCHECK(endpoint.scheme() == url::kHttpScheme ||
+          endpoint.scheme() == url::kHttpsScheme);
+ 
+@@ -304,9 +343,18 @@
+       std::move(endpoint), request_load_flags, request_priority, session,
+       proxy_info, allowed_bad_certs, privacy_mode,
+       std::move(network_anonymization_key), secure_dns_policy, SocketTag(),
+       net_log, num_preconnect_streams, nullptr,
+       HttpNetworkSession::NORMAL_SOCKET_POOL, std::move(callback),
+-      ClientSocketPool::ProxyAuthCallback());
++      ClientSocketPool::ProxyAuthCallback()
++#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
++,
++      false
++#endif
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++,
++      from_preload
++#endif
++      );
+ }
+ 
+ }  // namespace net

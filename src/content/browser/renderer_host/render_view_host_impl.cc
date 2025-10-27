@@ -119,6 +119,10 @@
 #include "content/browser/host_zoom_map_impl.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "extensions/browser/view_type_utils.h"
+#endif
+
 using blink::WebInputEvent;
 
 namespace content {

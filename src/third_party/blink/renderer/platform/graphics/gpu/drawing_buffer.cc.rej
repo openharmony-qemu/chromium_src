@@ -1,0 +1,30 @@
+--- drawing_buffer.cc	2025-10-20 19:53:01.190201354 +0800
++++ drawing_buffer.cc	2025-10-16 16:07:40.091851696 +0800
+@@ -37,10 +37,11 @@
+ 
+ #include <algorithm>
+ #include <memory>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/feature_list.h"
+ #include "base/logging.h"
+ #include "base/memory/read_only_shared_memory_region.h"
+ #include "base/numerics/checked_math.h"
+ #include "base/numerics/ostream_operators.h"
+@@ -701,10 +702,15 @@
+         color_buffer_for_mailbox->format,
+         color_buffer_for_mailbox->is_overlay_candidate,
+         viz::TransferableResource::ResourceSource::kDrawingBuffer);
+     out_resource->color_space = color_buffer_for_mailbox->color_space;
+     out_resource->hdr_metadata = hdr_metadata_;
++#if BUILDFLAG(ARKWEB_WEBGL)
++    if (webgl_version_ > kWebGL1) {
++      out_resource->enable_defer_impl_invalidation_workaround = want_depth_;
++    }
++#endif
+     // This holds a ref on the DrawingBuffer that will keep it alive until the
+     // mailbox is released (and while the release callback is running).
+     auto func = base::BindOnce(&DrawingBuffer::NotifyMailboxReleasedGpu,
+                                color_buffer_for_mailbox);
+     exported_color_buffers_.insert(color_buffer_for_mailbox);

@@ -53,6 +53,14 @@ class FakeLocalFrameHost : public mojom::blink::LocalFrameHost {
   void DidChangeThemeColor(std::optional<::SkColor> theme_color) override;
   void DidChangeBackgroundColor(const SkColor4f& background_color,
                                 bool color_adjust) override;
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  void NotifyContextMenuWillShow() override {}
+#endif
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  void OnDetectedBlankScreen(const WTF::String &url,
+                             int32_t blankScreenReason,
+                             int32_t detectedContentfulNodesCount) override {}
+#endif
   void DidFailLoadWithError(const ::blink::KURL& url,
                             int32_t error_code) override;
   void DidFocusFrame() override;

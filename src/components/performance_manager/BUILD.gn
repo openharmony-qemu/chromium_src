@@ -4,6 +4,7 @@
 
 import("//components/guest_view/buildflags/buildflags.gni")
 import("//third_party/protobuf/proto_library.gni")
+import("//arkweb/chromium_ext/chromium_ext.gni")
 
 proto_library("site_data_proto") {
   sources = [ "persistence/site_data/site_data.proto" ]

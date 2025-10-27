@@ -178,7 +178,7 @@ TEST_P(HttpCredentialCleanerTest, ReportHttpMigrationMetrics) {
 
   auto request_context = net::CreateTestURLRequestContextBuilder()->Build();
   mojo::Remote<network::mojom::NetworkContext> network_context_remote;
-  auto network_context = std::make_unique<network::NetworkContext>(
+  auto network_context = std::make_unique<network::ArkWebNetworkContextExt>(
       nullptr, network_context_remote.BindNewPipeAndPassReceiver(),
       request_context.get(),
       /*cors_exempt_header_list=*/std::vector<std::string>());
@@ -283,7 +283,7 @@ TEST(HttpCredentialCleaner, StartCleanUpTest) {
 
     auto request_context = net::CreateTestURLRequestContextBuilder()->Build();
     mojo::Remote<network::mojom::NetworkContext> network_context_remote;
-    auto network_context = std::make_unique<network::NetworkContext>(
+    auto network_context = std::make_unique<network::ArkWebNetworkContextExt>(
         nullptr, network_context_remote.BindNewPipeAndPassReceiver(),
         request_context.get(),
         /*cors_exempt_header_list=*/std::vector<std::string>());

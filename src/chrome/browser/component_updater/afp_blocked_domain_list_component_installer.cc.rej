@@ -1,0 +1,18 @@
+--- afp_blocked_domain_list_component_installer.cc	2025-10-20 19:52:49.478466693 +0800
++++ afp_blocked_domain_list_component_installer.cc	2025-10-16 15:56:59.989089099 +0800
+@@ -91,13 +91,15 @@
+       fingerprinting_protection_filter::kUnindexedRulesetDataFileName);
+   ruleset_info.license_path =
+       install_dir.Append(subresource_filter::kUnindexedRulesetLicenseFileName);
+   subresource_filter::RulesetService* ruleset_service =
+       g_browser_process->fingerprinting_protection_ruleset_service();
++#if !BUILDFLAG(ARKWEB_ADBLOCK)
+   if (ruleset_service != nullptr) {
+     ruleset_service->IndexAndStoreAndPublishRulesetIfNeeded(ruleset_info);
+   }
++#endif
+ }
+ 
+ // Called during startup and installation before ComponentReady().
+ bool AntiFingerprintingBlockedDomainListComponentInstallerPolicy::
+     VerifyInstallation(const base::Value::Dict& manifest,

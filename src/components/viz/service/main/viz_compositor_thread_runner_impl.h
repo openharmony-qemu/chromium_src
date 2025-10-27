@@ -58,6 +58,7 @@ class VizCompositorThreadRunnerImpl : public VizCompositorThreadRunner {
                               GpuServiceImpl* gpu_service) override;
   void RequestBeginFrameForGpuService(bool toggle) override;
 
+  friend class VizCompositorThreadRunnerImplUtils;
  private:
   void CreateHintSessionFactoryOnCompositorThread(
       base::flat_set<base::PlatformThreadId> thread_ids,
@@ -87,6 +88,7 @@ class VizCompositorThreadRunnerImpl : public VizCompositorThreadRunner {
   std::unique_ptr<GmbVideoFramePoolContextProvider>
       gmb_video_frame_pool_context_provider_;
   std::unique_ptr<FrameSinkManagerImpl> frame_sink_manager_;
+  std::unique_ptr<VizCompositorThreadRunnerImplUtils> implUtils;
   base::WeakPtrFactory<VizCompositorThreadRunnerImpl> weak_factory_{this};
   // End variables to be accessed only on |task_runner_|.
 };

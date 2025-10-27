@@ -16,6 +16,9 @@
 #include "ui/base/ui_base_features.h"
 #include "ui/events/types/scroll_types.h"
 #include "ui/gfx/geometry/vector2d_conversions.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/widget/input/elastic_overscroll_controller_utils.h"
+#endif
 
 /*
  * Copyright (C) 2011 Apple Inc. All rights reserved.
@@ -52,6 +55,10 @@ constexpr double kRubberbandMinimumRequiredDeltaBeforeStretch = 10;
 // On android, overscroll should not occur if the scroller is not scrollable in
 // the overscrolled direction.
 constexpr bool kOverscrollNonScrollableDirection = false;
+#elif BUILDFLAG(ARKWEB_INPUT_EVENTS)
+// On OHOS, overscroll should not occur if the scroller is not scrollable in
+// the overscrolled direction.
+constexpr bool kOverscrollNonScrollableDirection = false;
 #else   // BUILDFLAG(IS_ANDROID)
 // On other platforms, overscroll can occur even if the scroller is not
 // scrollable.
@@ -64,7 +71,11 @@ ElasticOverscrollController::ElasticOverscrollController(
     cc::ScrollElasticityHelper* helper)
     : helper_(helper),
       state_(kStateInactive),
-      received_overscroll_update_(false) {}
+      received_overscroll_update_(false) {
+#if BUILDFLAG(IS_ARKWEB)
+  elastic_overscroll_controller_utils_ = new ElasticOverscrollControllerUtils(this);
+#endif
+      }
 
 std::unique_ptr<ElasticOverscrollController>
 ElasticOverscrollController::Create(cc::ScrollElasticityHelper* helper) {
@@ -72,6 +83,8 @@ ElasticOverscrollController::Create(cc::ScrollElasticityHelper* helper) {
   return base::FeatureList::IsEnabled(features::kElasticOverscroll)
              ? std::make_unique<ElasticOverscrollControllerBezier>(helper)
              : nullptr;
+#elif BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  return std::make_unique<ElasticOverscrollControllerBezier>(helper);
 #else
   return std::make_unique<ElasticOverscrollControllerExponential>(helper);
 #endif
@@ -131,8 +144,10 @@ void ElasticOverscrollController::ObserveGestureEventAndResult(
     case WebInputEvent::Type::kGestureScrollBegin: {
       received_overscroll_update_ = false;
       overscroll_behavior_ = cc::OverscrollBehavior();
+#if !BUILDFLAG(ARKWEB_INPUT_EVENTS)
       if (gesture_event.data.scroll_begin.synthetic)
         return;
+#endif
 
       bool enter_momentum = gesture_event.data.scroll_begin.inertial_phase ==
                             WebGestureEvent::InertialPhaseState::kMomentum;
@@ -155,8 +170,10 @@ void ElasticOverscrollController::ObserveGestureEventAndResult(
       break;
     }
     case WebInputEvent::Type::kGestureScrollEnd: {
+#if !BUILDFLAG(ARKWEB_INPUT_EVENTS)
       if (gesture_event.data.scroll_end.synthetic)
         return;
+#endif
       ObserveRealScrollEnd(event_timestamp);
       break;
     }
@@ -171,8 +188,14 @@ void ElasticOverscrollController::UpdateVelocity(
   float time_delta =
       (event_timestamp - last_scroll_event_timestamp_).InSecondsF();
   if (time_delta < kScrollVelocityZeroingTimeout && time_delta > 0) {
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+    scroll_velocity_ = gfx::Vector2dF(
+        CanScrollHorizontally() ? event_delta.x() / time_delta : 0,
+        event_delta.y() / time_delta);
+#else
     scroll_velocity_ = gfx::Vector2dF(event_delta.x() / time_delta,
                                       event_delta.y() / time_delta);
+#endif
   } else {
     scroll_velocity_ = gfx::Vector2dF();
   }
@@ -181,6 +204,10 @@ void ElasticOverscrollController::UpdateVelocity(
 
 void ElasticOverscrollController::Overscroll(
     const gfx::Vector2dF& overscroll_delta) {
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  if (!elastic_overscroll_controller_utils_->GetOverscrollMode())
+    return;
+#endif
   gfx::Vector2dF adjusted_overscroll_delta = overscroll_delta;
 
   // The effect can be dynamically disabled by setting styles to disallow user
@@ -210,7 +237,11 @@ void ElasticOverscrollController::Overscroll(
     // is not.
     if (!CanScrollHorizontally())
       adjusted_overscroll_delta.set_x(0);
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+    if (!CanScrollVertically() && CanScrollHorizontally())
+#else
     if (!CanScrollVertically())
+#endif
       adjusted_overscroll_delta.set_y(0);
   }
 
@@ -304,14 +335,22 @@ void ElasticOverscrollController::Animate(base::TimeTicks time) {
 
   // If the new stretch amount is near zero, set it directly to zero and enter
   // the inactive state.
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  gfx::Vector2dF new_stretch_amount = StretchAmountForTimeDelta(
+#else
   const gfx::Vector2dF new_stretch_amount = StretchAmountForTimeDelta(
+#endif
       std::max(time - momentum_animation_start_time_, base::TimeDelta()));
   if (fabs(new_stretch_amount.x()) < 1 && fabs(new_stretch_amount.y()) < 1) {
     helper_->SetStretchAmount(gfx::Vector2dF());
     EnterStateInactive();
     return;
   }
-
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  if (!CanScrollHorizontally()) {
+    new_stretch_amount.set_x(0);
+  }
+#endif
   stretch_scroll_force_ =
       AccumulatedOverscrollForStretchAmount(new_stretch_amount);
   helper_->SetStretchAmount(new_stretch_amount);

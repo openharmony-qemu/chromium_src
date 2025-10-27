@@ -146,6 +146,61 @@ void PDFDocumentHelper::SelectionChanged(const gfx::PointF& left,
   DidScroll();
 }
 
+#if BUILDFLAG(ARKWEB_PDF)
+void PDFDocumentHelper::UpdateClientClippedSelectionBoundsForPDF(const gfx::Rect& clipped_selection_bounds) {
+  if (!touch_selection_controller_client_manager_) {
+    InitTouchSelectionClientManager();
+  }
+
+  if (!touch_selection_controller_client_manager_) {
+    LOG(ERROR) << __func__ << ", PDF touch_selection_controller_client_manager_ is null.";
+    return;
+  }
+
+  LOG(DEBUG) << "PDF clipped selection bounds: " << clipped_selection_bounds.ToString();
+  gfx::Point bounds_origin = clipped_selection_bounds.origin();
+  gfx::Size bounds_size = clipped_selection_bounds.size();
+  gfx::PointF bounds_origin_f =
+    ConvertToRoot(gfx::PointF(bounds_origin.x(), bounds_origin.y()));
+  bounds_origin.set_x(bounds_origin_f.x());
+  bounds_origin.set_y(bounds_origin_f.y());
+  gfx::Rect converted_bounds(bounds_origin, bounds_size);
+  touch_selection_controller_client_manager_->
+    ConvertClientClippedSelectionBounds(converted_bounds);
+  touch_selection_controller_client_manager_->
+    UpdateClientClippedSelectionBounds(converted_bounds);
+}
+
+void PDFDocumentHelper::HideHandleAndQuickMenuForPDF(bool hide_handles) {
+  if (!touch_selection_controller_client_manager_) {
+    InitTouchSelectionClientManager();
+  }
+
+  if (!touch_selection_controller_client_manager_) {
+    LOG(ERROR) << __func__ << ", PDF touch_selection_controller_client_manager_ is null.";
+    return;
+  }
+  
+  LOG(DEBUG) << "PDF hide handle and quick nenu: " << hide_handles;
+  touch_selection_controller_client_manager_->
+    HideHandleAndQuickMenuIfNecessary(hide_handles);
+}
+
+void PDFDocumentHelper::ResetResponsePendingInputEvent() {
+  if (!touch_selection_controller_client_manager_) {
+    InitTouchSelectionClientManager();
+  }
+
+  if (!touch_selection_controller_client_manager_) {
+    LOG(ERROR) << __func__ << ", PDF touch_selection_controller_client_manager_ is null.";
+    return;
+  }
+  
+  touch_selection_controller_client_manager_->
+    ResetResponsePendingInputEvent();
+}
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
 void PDFDocumentHelper::SetPluginCanSave(bool can_save) {
   client_->SetPluginCanSave(pdf_host_receivers_.GetCurrentTargetFrame(),
                             can_save);
@@ -317,6 +372,24 @@ bool PDFDocumentHelper::IsCommandIdEnabled(int command_id) const {
   // selection changed message?
   bool readable = true;
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  switch (command_id) {
+    case ui::TouchEditable::QM_EDITFLAG_CAN_CUT:
+      command_id = ui::TouchEditable::kCut;
+      break;
+    case ui::TouchEditable::QM_EDITFLAG_CAN_COPY:
+      command_id = ui::TouchEditable::kCopy;
+      break;
+    case ui::TouchEditable::QM_EDITFLAG_CAN_PASTE:
+      command_id = ui::TouchEditable::kPaste;
+      break;
+    case ui::TouchEditable::QM_EDITFLAG_CAN_SELECT_ALL:
+      command_id = ui::TouchEditable::kSelectAll;
+      break;
+    default:
+      command_id = ui::TouchEditable::QM_EDITFLAG_NONE;
+  }
+#endif
   switch (command_id) {
     case ui::TouchEditable::kCopy:
       return readable && has_selection_;

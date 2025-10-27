@@ -1,0 +1,35 @@
+--- extension_web_request_event_router.cc	2025-10-20 19:52:55.324377713 +0800
++++ extension_web_request_event_router.cc	2025-10-16 15:55:00.395735160 +0800
+@@ -918,11 +925,15 @@
+   // May be null for browser-initiated requests such as navigations.
+   if (request->initiator) {
+     const std::string& scheme = request->initiator->scheme();
+     const ExtensionId& extension_id = request->initiator->host();
+     const GURL& request_url = request->url;
+-    if (scheme == extensions::kExtensionScheme) {
++    if (scheme == extensions::kExtensionScheme
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++        || scheme == extensions::kArkwebExtensionScheme
++#endif
++    ) {
+       ExtensionsBrowserClient::Get()->NotifyExtensionRemoteHostContacted(
+           browser_context, extension_id, request_url);
+     }
+   }
+ 
+@@ -1743,10 +1762,15 @@
+   if (!listener) {
+     return;
+   }
+ 
+   listener->blocked_requests.erase(request_id);
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  LOG(INFO) << kWebRequestApiLogTag
++            << " webRequest.OnEventHandled:" << event_name << " by extension:"
++            << extension_id;
++#endif
+   DecrementBlockCount(browser_context, extension_id, event_name, request_id,
+                       std::move(response), listener->extra_info_spec);
+ }
+ 
+ bool WebRequestEventRouter::AddEventListener(

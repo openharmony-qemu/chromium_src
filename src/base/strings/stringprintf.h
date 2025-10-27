@@ -44,6 +44,10 @@ PRINTF_FORMAT(2, 0)
 BASE_EXPORT
 void StringAppendV(std::string* dst, const char* format, va_list ap);
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void StringAppendVHelper(std::basic_string<char>* out, const char* format, ...);
+#endif // ARKWEB_VIDEO_ASSISTANT
+
 }  // namespace base
 
 #endif  // BASE_STRINGS_STRINGPRINTF_H_

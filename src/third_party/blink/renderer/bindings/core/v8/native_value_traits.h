@@ -77,7 +77,6 @@ struct NativeValueTraitsBase {
   STATIC_ONLY(NativeValueTraitsBase);
 
   using ImplType = bindings::ImplTypeFor<T>::type;
-
   // Pointer types have nullptr as IDL null value.
   // ScriptValue, String, and union types have IsNull member function.
   static constexpr bool has_null_value =

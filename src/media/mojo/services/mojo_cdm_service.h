@@ -81,6 +81,11 @@ class MEDIA_MOJO_EXPORT MojoCdmService final
   void RemoveSession(const std::string& session_id,
                      RemoveSessionCallback callback) final;
 
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+  void SuspendSession() final;
+  void ResumeSession() final;
+#endif
+
   // Get CDM to be used by the media pipeline.
   scoped_refptr<::media::ContentDecryptionModule> GetCdm();
 

@@ -904,10 +904,14 @@ void RootCompositorFrameSinkImpl::DisplayDidCompleteSwapWithSize(
   if (display_client_ && enable_swap_completion_callback_) {
     display_client_->DidCompleteSwapWithSize(pixel_size);
   }
-#elif BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE_X11)
+#elif BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE_X11) || BUILDFLAG(IS_ARKWEB)
   if (display_client_ && pixel_size != last_swap_pixel_size_) {
     last_swap_pixel_size_ = pixel_size;
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+    display_client_->DidCompleteSwapWithNewSizeOHOS(last_swap_pixel_size_);
+#else
     display_client_->DidCompleteSwapWithNewSize(last_swap_pixel_size_);
+#endif
   }
 #else  // !BUILDFLAG(IS_ANDROID) && !(BUILDFLAG(IS_LINUX) &&
        // BUILDFLAG(IS_OZONE_X11))

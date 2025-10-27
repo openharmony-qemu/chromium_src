@@ -39,16 +39,23 @@ namespace {
 
 // Based on chrome/test/base/interactive_ui_tests_main.cc.
 void InitializeUITesting() {
+#if !BUILDFLAG(IS_OHOS)
   static bool initialized = false;
   if (!initialized) {
+    ui_controls::EnableUIControls();
+
+#if defined(USE_AURA)
 #if BUILDFLAG(IS_WIN)
-    aura::test::EnableUIControlsAuraWin();
-#else
+    ui_controls::InstallUIControlsAura(
+        aura::test::CreateUIControlsAura(nullptr));
+#elif BUILDFLAG(IS_OZONE)
     ui_controls::EnableUIControls();
 #endif
+#endif  // defined(USE_AURA)
 
     initialized = true;
   }
+#endif  // !BUILDFLAG(IS_OHOS)
 }
 
 #if defined(USE_AURA)
@@ -627,13 +634,14 @@ void CefWindowImpl::SendKeyPress(int key_code, uint32_t event_flags) {
   if (!native_window) {
     return;
   }
-
+#if !BUILDFLAG(IS_OHOS)
   ui_controls::SendKeyPress(native_window,
                             static_cast<ui::KeyboardCode>(key_code),
                             !!(event_flags & EVENTFLAG_CONTROL_DOWN),
                             !!(event_flags & EVENTFLAG_SHIFT_DOWN),
                             !!(event_flags & EVENTFLAG_ALT_DOWN),
                             false);  // Command key is not supported by Aura.
+#endif
 }
 
 void CefWindowImpl::SendMouseMove(int screen_x, int screen_y) {
@@ -642,7 +650,9 @@ void CefWindowImpl::SendMouseMove(int screen_x, int screen_y) {
 
   // Converts to pixel coordinates internally on Windows.
   gfx::Point point(screen_x, screen_y);
+#if !BUILDFLAG(IS_OHOS)
   ui_controls::SendMouseMove(point.x(), point.y());
+#endif
 }
 
 void CefWindowImpl::SendMouseEvents(cef_mouse_button_type_t button,
@@ -670,7 +680,9 @@ void CefWindowImpl::SendMouseEvents(cef_mouse_button_type_t button,
     state |= ui_controls::UP;
   }
 
+#if !BUILDFLAG(IS_OHOS)
   ui_controls::SendMouseEvents(type, state);
+#endif
 }
 
 void CefWindowImpl::SetAccelerator(int command_id,

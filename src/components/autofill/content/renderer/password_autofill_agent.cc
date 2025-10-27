@@ -14,6 +14,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/check_deref.h"
 #include "base/containers/contains.h"
@@ -80,6 +81,10 @@
 #include "ui/events/keycodes/keyboard_codes.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+#include "arkweb/chromium_ext/components/autofill/core/common/arkweb_password_autofill_data.h"
+#endif
+
 using blink::WebAutofillState;
 using blink::WebDocument;
 using blink::WebDocumentLoader;
@@ -100,7 +105,9 @@ using password_manager::util::IsRendererRecognizedCredentialForm;
 
 namespace autofill {
 
+#if !BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 namespace {
+#endif
 
 using form_util::ExtractOption;
 using form_util::GetFieldRendererId;
@@ -346,6 +353,18 @@ void AnnotateFieldsWithSignatures(
                       base::ToString(control_element.IsFocusable()));
   }
 }
+
+#if BUILDFLAG(IS_OHOS)
+std::vector<WebFormControlElement> GetFormControlElements(
+    const WebFormElement& element) {
+  std::vector<WebFormControlElement> form_control_elements =
+      element.GetFormControlElements().ReleaseVector();
+  std::erase_if(form_control_elements, [](const WebFormControlElement& e) {
+    return e.IsNull();
+  });
+  return form_control_elements;
+}
+#endif
 
 // Returns true iff there is a password field in `frame`.
 // We don't have to iterate through the whole DOM to find password fields.
@@ -1458,6 +1477,7 @@ void PasswordAutofillAgent::SendPasswordForms(
     logger->LogURL(Logger::STRING_SECURITY_ORIGIN,
                    GURL(origin.ToString().Utf8()));
   }
+
   if (!FrameCanAccessPasswordManager()) {
     LogMessage(logger.get(), Logger::STRING_SECURITY_ORIGIN_FAILURE);
     return;
@@ -1509,6 +1529,7 @@ void PasswordAutofillAgent::SendPasswordForms(
       forms_structure_cache_[form_structure_info.renderer_id] =
           std::move(form_structure_info);
 
+      LOG(INFO) << "rdForms, for <form>, password_forms_data.push_back";
       password_forms_data.push_back(std::move(*form_data));
       continue;
     }
@@ -1926,6 +1947,9 @@ bool PasswordAutofillAgent::HasAcceptedSuggestionOnOtherField(
 }
 
 void PasswordAutofillAgent::CleanupOnDocumentShutdown() {
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  AsPasswordAutofillAgentExt()->CleanupOnDocumentShutdownExt();
+#endif
   web_input_to_password_info_.clear();
   password_to_username_.clear();
   last_supplied_password_info_iter_ = web_input_to_password_info_.end();

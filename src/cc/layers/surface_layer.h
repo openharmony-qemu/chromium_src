@@ -125,6 +125,18 @@ class CC_EXPORT SurfaceLayer : public Layer {
   // Keep track when we change LayerTreeHosts as SurfaceLayerImpl needs to know
   // in order to keep the visibility callback state consistent.
   ProtectedSequenceWritable<bool> callback_layer_tree_host_changed_;
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  RectChangeCallback video_rect_change_callback_;
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  LayerBoundsChangeCallback layer_bounds_change_callback_;
+#endif // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  base::RepeatingCallback<void(const gfx::Rect&)> rect_change_callback_;
+  base::RepeatingCallback<void(bool)> rect_visibility_change_callback_;
+  base::RepeatingCallback<void(bool)> layer_removed_visibility_callback_;
+#endif  // ARKWEB_SAME_LAYER
 };
 
 }  // namespace cc

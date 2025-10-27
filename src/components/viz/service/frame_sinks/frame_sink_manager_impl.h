@@ -55,6 +55,7 @@
 #include "services/viz/privileged/mojom/compositing/frame_sink_video_capture.mojom.h"
 #include "services/viz/privileged/mojom/compositing/frame_sinks_metrics_recorder.mojom.h"
 #include "services/viz/public/mojom/compositing/video_detector_observer.mojom.h"
+#include "arkweb/build/features/features.h"
 
 namespace viz {
 
@@ -200,6 +201,10 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
   void StartFrameCounting(base::TimeTicks start_time,
                           base::TimeDelta bucket_size) override;
   void StopFrameCounting(StopFrameCountingCallback callback) override;
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  void SendInternalBeginFrame(const FrameSinkId& id) override;
+#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   void StartOverdrawTracking(const FrameSinkId& root_frame_sink_id,
                              base::TimeDelta bucket_size) override;
   void StopOverdrawTracking(const FrameSinkId& root_frame_sink_id,
@@ -469,6 +474,10 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
   // frame sink being captured to be stopped; a frame sink hierarchical change
   // requires throttling on affected frame sinks to be started or stopped.
   void UpdateThrottling();
+
+#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
+  void EvictFrameBackBuffers(const FrameSinkId& root_frame_sink_id) override;
+#endif
 
   // Clears throttling operation on the frame sink with |id| and all its
   // descendants.

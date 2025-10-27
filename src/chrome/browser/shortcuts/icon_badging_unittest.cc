@@ -109,7 +109,7 @@ void WriteTestIconsToDiskOrDie(const gfx::ImageFamily& family) {
 int GetOsSpecificSizes() {
 #if BUILDFLAG(IS_MAC)
   return 5;
-#elif BUILDFLAG(IS_LINUX)
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
   return 2;
 #elif BUILDFLAG(IS_WIN)
   return 4;

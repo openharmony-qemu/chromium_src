@@ -1,0 +1,31 @@
+--- media_interface_proxy.cc	2025-10-20 19:52:54.330504048 +0800
++++ media_interface_proxy.cc	2025-10-16 15:54:59.460735843 +0800
+@@ -382,22 +386,27 @@
+     return;
+ 
+   media::MojoRendererService::Create(nullptr, std::move(flinging_renderer),
+                                      std::move(receiver));
+ }
+-
++#endif
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA)
+ void MediaInterfaceProxy::CreateMediaPlayerRenderer(
+     mojo::PendingRemote<media::mojom::MediaPlayerRendererClientExtension>
+         client_extension_remote,
+     mojo::PendingReceiver<media::mojom::Renderer> receiver,
+     mojo::PendingReceiver<media::mojom::MediaPlayerRendererExtension>
+         renderer_extension_receiver) {
+   DCHECK(thread_checker_.CalledOnValidThread());
+ 
+   media::MojoRendererService::Create(
+       nullptr,
++#if BUILDFLAG(IS_ANDROID)
+       std::make_unique<MediaPlayerRenderer>(
++#else
++      std::make_unique<OHOSMediaPlayerRenderer>(
++#endif
+           render_frame_host().GetProcess()->GetID(),
+           render_frame_host().GetRoutingID(),
+           WebContents::FromRenderFrameHost(&render_frame_host()),
+           std::move(renderer_extension_receiver),
+           std::move(client_extension_remote)),

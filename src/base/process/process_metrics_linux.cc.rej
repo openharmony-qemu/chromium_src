@@ -1,0 +1,16 @@
+--- process_metrics_linux.cc	2025-10-20 19:52:46.684834587 +0800
++++ process_metrics_linux.cc	2025-10-16 15:54:55.317433402 +0800
+@@ -137,11 +137,12 @@
+       });
+ 
+   return !cpu_per_thread.empty();
+ }
+ 
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
++    BUILDFLAG(IS_OHOS)
+ uint64_t ProcessMetrics::GetVmSwapBytes() const {
+   return internal::ReadProcStatusAndGetKbFieldAsSizeT(process_, "VmSwap") *
+          1024;
+ }
+ 

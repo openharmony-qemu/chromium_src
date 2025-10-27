@@ -1,0 +1,16 @@
+--- toolbar_view.h	2025-10-20 19:52:50.944924521 +0800
++++ toolbar_view.h	2025-10-16 15:57:01.785849553 +0800
+@@ -91,11 +91,12 @@
+                 // bar, used for popups.
+     CUSTOM_TAB  // Custom tab bar, used in PWAs when a location
+                 // needs to be displayed.
+   };
+ 
+-  ToolbarView(Browser* browser, BrowserView* browser_view,
++  ToolbarView(Browser* browser,
++              BrowserView* browser_view,
+               std::optional<DisplayMode> display_mode);
+   ToolbarView(const ToolbarView&) = delete;
+   ToolbarView& operator=(const ToolbarView&) = delete;
+   ~ToolbarView() override;
+ 

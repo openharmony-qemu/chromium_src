@@ -20,6 +20,7 @@
 #include "content/public/browser/browser_context.h"
 #include "content/public/browser/download_item_utils.h"
 #include "content/public/browser/web_contents.h"
+// #include "libcef/browser/cef_download_item_impl_ext.h"
 #include "net/base/filename_util.h"
 #include "third_party/blink/public/mojom/choosers/file_chooser.mojom.h"
 
@@ -89,6 +90,13 @@ class CefBeforeDownloadCallbackImpl : public CefBeforeDownloadCallback {
   [[nodiscard]] download::DownloadTargetCallback Detach() {
     return std::move(callback_);
   }
+
+#if BUILDFLAG(IS_ARKWEB)
+  // TODO:
+  void Cancel() override {}
+  void Pause() override {}
+  void Resume() override {}
+#endif
 
  private:
   static void GenerateFilename(base::WeakPtr<DownloadManager> manager,
@@ -277,8 +285,8 @@ CefDownloadManagerDelegateImpl::CefDownloadManagerDelegateImpl(
     DownloadManager* manager,
     bool alloy_bootstrap)
     : manager_(manager),
-      manager_ptr_factory_(manager),
-      alloy_bootstrap_(alloy_bootstrap) {
+      alloy_bootstrap_(alloy_bootstrap),
+      manager_ptr_factory_(manager) {
   DCHECK(manager);
   manager->AddObserver(this);
 
@@ -302,6 +310,7 @@ void CefDownloadManagerDelegateImpl::OnDownloadUpdated(DownloadItem* download) {
   }
 
   if (handler.get()) {
+#if !BUILDFLAG(IS_ARKWEB)
     CefRefPtr<CefDownloadItemImpl> download_item(
         new CefDownloadItemImpl(download));
     CefRefPtr<CefDownloadItemCallback> callback(new CefDownloadItemCallbackImpl(
@@ -310,6 +319,7 @@ void CefDownloadManagerDelegateImpl::OnDownloadUpdated(DownloadItem* download) {
     handler->OnDownloadUpdated(browser.get(), download_item.get(), callback);
 
     std::ignore = download_item->Detach(nullptr);
+#endif
   }
 }
 
@@ -355,10 +365,12 @@ void CefDownloadManagerDelegateImpl::OnDownloadCreated(DownloadManager* manager,
     // associated WebContents and consequently no associated CEF browser. In
     // that case DetermineDownloadTarget will be called before this method.
     // TODO(cef): Figure out how to expose this via a client callback.
+#if !BUILDFLAG(ARKWEB_DOWNLOAD)
     const std::vector<GURL>& url_chain = item->GetUrlChain();
     if (!url_chain.empty()) {
       LOG(INFO) << "Rejected download of " << url_chain.back().spec();
     }
+#endif
     item->Cancel(true);
   }
 }
@@ -391,6 +403,7 @@ bool CefDownloadManagerDelegateImpl::DetermineDownloadTarget(
   bool handled = false;
   CefRefPtr<CefDownloadHandler> handler = GetDownloadHandler(browser);
   if (handler) {
+#if !BUILDFLAG(IS_ARKWEB)
     base::FilePath suggested_name = net::GenerateFileName(
         item->GetURL(), item->GetContentDisposition(), std::string(),
         item->GetSuggestedFilename(), item->GetMimeType(), "download");
@@ -414,6 +427,7 @@ bool CefDownloadManagerDelegateImpl::DetermineDownloadTarget(
     }
 
     std::ignore = download_item->Detach(nullptr);
+#endif
   }
 
   // Cancel by default with Alloy style.

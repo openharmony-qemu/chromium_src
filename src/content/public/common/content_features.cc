@@ -595,7 +595,7 @@ BASE_FEATURE(NavigationNetworkResponseQueue,
 // If the network service is enabled, runs it in process.
 BASE_FEATURE(kNetworkServiceInProcess,
              "NetworkServiceInProcess2",
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_DISABLED_BY_DEFAULT

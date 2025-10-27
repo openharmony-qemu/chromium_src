@@ -83,6 +83,11 @@ const int kCertVerifyPending = 1;
 // Default size of the internal BoringSSL buffers.
 const int kDefaultOpenSSLBufferSize = 17 * 1024;
 
+#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
+constexpr uint16_t kDefaultSSLVersionMinWarn = SSL_PROTOCOL_VERSION_TLS1_2;
+constexpr uint16_t k3DESCipher = 0x000a;
+#endif
+
 base::Value::Dict NetLogPrivateKeyOperationParams(uint16_t algorithm,
                                                   SSLPrivateKey* key) {
   return base::Value::Dict()
@@ -720,10 +725,13 @@ int SSLClientSocketImpl::Init() {
       ssl_config_.version_min_override.value_or(context_->config().version_min);
   uint16_t version_max =
       ssl_config_.version_max_override.value_or(context_->config().version_max);
+
+#if !BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
   if (version_min < TLS1_2_VERSION || version_max < TLS1_2_VERSION) {
     // TLS versions before TLS 1.2 are no longer supported.
     return ERR_UNEXPECTED;
   }
+#endif
 
   if (!SSL_set_min_proto_version(ssl_.get(), version_min) ||
       !SSL_set_max_proto_version(ssl_.get(), version_max)) {
@@ -757,12 +765,29 @@ int SSLClientSocketImpl::Init() {
 
   if (!SSL_set_strict_cipher_list(ssl_.get(), command.c_str())) {
     LOG(ERROR) << "SSL_set_cipher_list('" << command << "') failed";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "SSL_set_cipher_list('" << command << "') failed";
+#endif
     return ERR_UNEXPECTED;
   }
 
   // Disable SHA-1 server signatures.
   // TODO(crbug.com/boringssl/699): Once the default is flipped in BoringSSL, we
   // no longer need to override it.
+#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
+  if (ssl_config_.disable_sha1_server_signatures) {
+    static const uint16_t kVerifyPrefs[] = {
+        SSL_SIGN_ECDSA_SECP256R1_SHA256, SSL_SIGN_RSA_PSS_RSAE_SHA256,
+        SSL_SIGN_RSA_PKCS1_SHA256,       SSL_SIGN_ECDSA_SECP384R1_SHA384,
+        SSL_SIGN_RSA_PSS_RSAE_SHA384,    SSL_SIGN_RSA_PKCS1_SHA384,
+        SSL_SIGN_RSA_PSS_RSAE_SHA512,    SSL_SIGN_RSA_PKCS1_SHA512,
+    };
+    if (!SSL_set_verify_algorithm_prefs(ssl_.get(), kVerifyPrefs,
+                                        std::size(kVerifyPrefs))) {
+      return ERR_UNEXPECTED;
+    }
+  }
+#else
   static const uint16_t kVerifyPrefs[] = {
       SSL_SIGN_ECDSA_SECP256R1_SHA256, SSL_SIGN_RSA_PSS_RSAE_SHA256,
       SSL_SIGN_RSA_PKCS1_SHA256,       SSL_SIGN_ECDSA_SECP384R1_SHA384,
@@ -773,6 +798,7 @@ int SSLClientSocketImpl::Init() {
                                       std::size(kVerifyPrefs))) {
     return ERR_UNEXPECTED;
   }
+#endif
 
   SSL_set_alps_use_new_codepoint(
       ssl_.get(),
@@ -901,6 +927,18 @@ int SSLClientSocketImpl::DoHandshake() {
 
     LOG(ERROR) << "handshake failed; returned " << rv << ", SSL error code "
                << ssl_error << ", net_error " << net_error;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "handshake failed; returned " << rv
+                        << ", SSL error code " << ssl_error << ", net_error "
+                        << net_error;
+    if (stream_socket_) {
+      IPEndPoint peer_address;
+      if (stream_socket_->GetPeerAddress(&peer_address) == OK) {
+        LOG_FEEDBACK(INFO) << "handshake failed, peer_address "
+                           << peer_address.ToString();
+      }
+    }
+#endif
     NetLogOpenSSLError(net_log_, NetLogEventType::SSL_HANDSHAKE_ERROR,
                        net_error, ssl_error, error_info);
   }

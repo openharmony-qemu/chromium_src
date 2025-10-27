@@ -1,0 +1,44 @@
+--- biometric_authentication_for_filling_bubble_controller.cc	2025-10-20 19:52:50.788849377 +0800
++++ biometric_authentication_for_filling_bubble_controller.cc	2025-10-16 15:57:01.597547122 +0800
+@@ -76,10 +76,13 @@
+   return l10n_util::GetStringUTF16(
+       IDS_PASSWORD_MANAGER_BIOMETRIC_AUTHENTICATION_FOR_FILLING_PROMO_MESSAGE_WIN);
+ #elif BUILDFLAG(IS_CHROMEOS_ASH)
+   return l10n_util::GetStringUTF16(
+       IDS_PASSWORD_MANAGER_BIOMETRIC_AUTHENTICATION_FOR_FILLING_PROMO_MESSAGE_CHROMEOS);
++#elif BUILDFLAG(IS_OHOS)
++  return l10n_util::GetStringUTF16(
++      IDS_PASSWORD_MANAGER_BIOMETRIC_AUTHENTICATION_FOR_FILLING_PROMO_MESSAGE_OHOS);
+ #else
+   NOTIMPLEMENTED();
+ #endif
+ }
+ 
+@@ -115,10 +118,13 @@
+   message = l10n_util::GetStringUTF16(
+       IDS_PASSWORD_MANAGER_TURN_ON_FILLING_REAUTH_WIN);
+ #elif BUILDFLAG(IS_CHROMEOS_ASH)
+   message = l10n_util::GetStringUTF16(
+       IDS_PASSWORD_MANAGER_TURN_ON_FILLING_REAUTH_CHROMEOS);
++#elif BUILDFLAG(IS_OHOS)
++  message = l10n_util::GetStringUTF16(
++      IDS_PASSWORD_MANAGER_TURN_ON_FILLING_REAUTH_OHOS);
+ #endif
+   delegate_->AuthenticateUserWithMessage(message,
+                                          std::move(on_reauth_completed));
+ }
+ 
+@@ -137,10 +143,13 @@
+   return l10n_util::GetStringUTF16(
+       IDS_PASSWORD_MANAGER_BIOMETRIC_AUTHENTICATION_FOR_FILLING_PROMO_TITLE_WIN);
+ #elif BUILDFLAG(IS_CHROMEOS_ASH)
+   return l10n_util::GetStringUTF16(
+       IDS_PASSWORD_MANAGER_BIOMETRIC_AUTHENTICATION_FOR_FILLING_PROMO_TITLE_CHROMEOS);
++#elif BUILDFLAG(IS_OHOS)
++  return l10n_util::GetStringUTF16(
++      IDS_PASSWORD_MANAGER_BIOMETRIC_AUTHENTICATION_FOR_FILLING_PROMO_TITLE_OHOS);
+ #else
+   NOTIMPLEMENTED();
+ #endif
+ }
+ 

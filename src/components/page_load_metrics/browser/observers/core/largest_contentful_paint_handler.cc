@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "arkweb/build/features/features.h"
 #include "components/page_load_metrics/browser/observers/core/largest_contentful_paint_handler.h"
 
 #include "components/page_load_metrics/browser/page_load_metrics_observer_delegate.h"
@@ -340,6 +341,18 @@ void LargestContentfulPaintHandler::RecordMainFrameTiming(
         largest_contentful_paint.resource_load_timings->load_start,
         largest_contentful_paint.resource_load_timings->load_end);
   }
+#if BUILDFLAG(ARKWEB_PERFORMANCE_LCP)
+  int64_t lcp;
+  if(largest_contentful_paint.largest_image_paint_size >= largest_contentful_paint.largest_text_paint_size) {
+    lcp = largest_contentful_paint.largest_image_paint.value_or(::base::TimeDelta()).InMilliseconds();
+  } else {
+    lcp = largest_contentful_paint.largest_text_paint.value_or(::base::TimeDelta()).InMilliseconds();
+  }
+
+  if(lcp > 0) {
+    LOG(DEBUG) << "Web Load Performance LCP: " << lcp;
+  }
+#endif
 }
 
 void LargestContentfulPaintHandler::RecordSubFrameTiming(

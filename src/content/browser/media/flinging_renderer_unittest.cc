@@ -60,7 +60,13 @@ class FlingingRendererTest : public testing::Test {
         std::unique_ptr<media::FlingingController>(flinging_controller_),
         mojo::NullRemote()));
 
-    renderer_->Initialize(nullptr, &renderer_client_, base::DoNothing());
+    renderer_->Initialize(nullptr, &renderer_client_
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+      ,
+     /*media::RequestSurfaceCB*/ base::DoNothing(),
+     /*media::videoDecoderChangedCB*/ base::DoNothing(),
+#endif
+      base::DoNothing());
   }
 
  protected:

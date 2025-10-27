@@ -1,0 +1,31 @@
+--- display.h	2025-10-20 19:52:54.122409548 +0800
++++ display.h	2025-10-16 15:54:59.220992428 +0800
+@@ -38,10 +38,12 @@
+ #include "ui/gfx/display_color_spaces.h"
+ #include "ui/gfx/overlay_transform.h"
+ #include "ui/gfx/swap_result.h"
+ #include "ui/latency/latency_info.h"
+ 
++#include "arkweb/chromium_ext/components/viz/service/display/arkweb_display_utils.h"
++
+ namespace gfx {
+ class Size;
+ }
+ 
+ namespace gpu {
+@@ -60,11 +62,15 @@
+ class OutputSurface;
+ class RendererSettings;
+ class SharedBitmapManager;
+ class SkiaOutputSurface;
+ class SoftwareRenderer;
++#if BUILDFLAG(ARKWEB_DFX_DUMP)
++class DumpFrameObserver;
++#endif
+ class OcclusionCuller;
++class ArkwebDisplayUtils;
+ 
+ class VIZ_SERVICE_EXPORT DisplayObserver {
+  public:
+   virtual ~DisplayObserver() = default;
+ 

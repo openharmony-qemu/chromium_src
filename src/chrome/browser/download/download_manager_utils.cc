@@ -115,7 +115,11 @@ DownloadManagerUtils::GetInProgressDownloadManager(ProfileKey* key) {
   if (it == map.end()) {
     auto in_progress_manager =
         std::make_unique<download::InProgressDownloadManager>(
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+            nullptr, base::FilePath(),
+#else
             nullptr, key->IsOffTheRecord() ? base::FilePath() : key->GetPath(),
+#endif
             key->IsOffTheRecord() ? nullptr : key->GetProtoDatabaseProvider(),
             base::BindRepeating(&IgnoreOriginSecurityCheck),
             base::BindRepeating(&content::DownloadRequestUtils::IsURLSafe),

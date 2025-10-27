@@ -1,0 +1,17 @@
+--- layout_object.h	2025-10-20 19:53:00.506208959 +0800
++++ layout_object.h	2025-10-16 16:07:39.535256571 +0800
+@@ -4162,10 +4179,14 @@
+ 
+ #if DCHECK_IS_ON()
+   friend class CachedTextInputInfo;
+   bool is_destroyed_ = false;
+ #endif
++
++#if defined(__arm__)
++  char dummy[8];
++#endif
+ };
+ 
+ // Allow equality comparisons of LayoutObjects by reference or pointer,
+ // interchangeably.
+ DEFINE_COMPARISON_OPERATORS_WITH_REFERENCES(LayoutObject)

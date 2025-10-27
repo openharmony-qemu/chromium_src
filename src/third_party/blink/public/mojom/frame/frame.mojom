@@ -248,6 +248,12 @@ struct IframeAttributes {
   string? src;
 };
 
+struct CacheOptions {
+  map<string, string> response_headers;
+  bool is_module;
+  bool is_top_level;
+};
+
 // Code location for an enterprise legacy technology event. The data will be
 // uploaded to the enterprise management server without being parsed by the
 // browser process.
@@ -338,6 +344,14 @@ interface LocalFrameHost {
   // background color. This will be called on main-frames only.
   // |color_adjust| is true if the background is forced by color adjustments.
   DidChangeBackgroundColor(skia.mojom.SkColor4f background_color, bool color_adjust);
+
+  // #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  [EnableIf=arkweb_ext_free_copy]
+  NotifyContextMenuWillShow();
+  // #endif
+
+  [EnableIf=arkweb_blank_screen_detection]
+  OnDetectedBlankScreen(string url, int32 blankScreenReason, int32 detectedContentfulNodesCount);
 
   // Sent when the renderer fails to load with |error_code| which means a net
   // error code.
@@ -1099,6 +1113,12 @@ interface LocalFrame {
   // Content settings are a mechanism that allows users to disable various
   // functions of the browser. One content setting disables javascript. This bit
   // controls whether this content setting is ignored or honored.
+  [EnableIf=is_arkweb]
+  JavaScriptExecuteRequestExt(
+      handle fd_handle,
+      uint64 scriptLength,
+      bool wants_result) => (mojo_base.mojom.Value result);
+
   JavaScriptExecuteRequestForTests(
       mojo_base.mojom.BigString16 javascript,
       bool has_user_gesture,

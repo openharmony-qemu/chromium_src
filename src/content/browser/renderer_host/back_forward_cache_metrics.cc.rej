@@ -1,0 +1,14 @@
+--- back_forward_cache_metrics.cc	2025-10-20 19:52:54.370522221 +0800
++++ back_forward_cache_metrics.cc	2025-10-16 15:54:59.504688802 +0800
+@@ -2,10 +2,11 @@
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+ #include "content/browser/renderer_host/back_forward_cache_metrics.h"
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/debug/crash_logging.h"
+ #include "base/debug/dump_without_crashing.h"
+ #include "base/metrics/histogram_macros.h"
+ #include "base/metrics/metrics_hashes.h"
+ #include "base/metrics/sparse_histogram.h"

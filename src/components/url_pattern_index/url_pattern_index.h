@@ -13,6 +13,7 @@
 #include <string_view>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/flat_set.h"
 #include "base/functional/callback_forward.h"
 #include "base/memory/raw_ptr.h"
@@ -24,6 +25,7 @@
 #include "third_party/flatbuffers/src/include/flatbuffers/flatbuffers.h"
 
 class GURL;
+class ArkWebUrlPatternIndexBuilderExt;
 
 namespace url {
 class Origin;

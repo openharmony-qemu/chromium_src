@@ -745,6 +745,12 @@ class BrowserViewLayoutDelegateImpl : public BrowserViewLayoutDelegate {
         tabstrip_minimum_size));
     views::View::ConvertRectToTarget(browser_view_->parent(), browser_view_,
                                      &bounds_f);
+#if BUILDFLAG(IS_OHOS)
+    float device_scale_factor =
+        ui::GetScaleFactorForNativeView(browser_view_->GetNativeWindow());
+    bounds_f.set_width(bounds_f.width() -
+                       kWindowControlButtonsWidth * device_scale_factor);
+#endif
     return gfx::ToEnclosingRect(bounds_f);
   }
 
@@ -5761,10 +5767,13 @@ void BrowserView::ProcessFullscreen(bool fullscreen, const int64_t display_id) {
   // TODO(b/40276379): Move this out from ProcessFullscreen.
   RequestFullscreen(fullscreen, display_id);
 
-#if !BUILDFLAG(IS_MAC)
+#if !BUILDFLAG(IS_MAC) && !BUILDFLAG(IS_OHOS)
   // On Mac platforms, FullscreenStateChanged() is invoked from
   // BrowserFrameMac::OnWindowFullscreenTransitionComplete when the asynchronous
   // fullscreen transition is complete.
+  // On Ohos,FullscreenStateChanged() is invoked from
+  // BrowserDesktopWindowTreeHostOhos::OnFullscreenModeChanged when the
+  // fullscreen state is updated after.
   // On other platforms, there is no asynchronous transition so we synchronously
   // invoke the function.
   FullscreenStateChanged();

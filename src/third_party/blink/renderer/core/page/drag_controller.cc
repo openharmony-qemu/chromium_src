@@ -100,6 +100,10 @@
 #include <windows.h>
 #endif
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/page/drag_controller_utils.h"
+#endif
+
 namespace blink {
 
 using mojom::blink::FormControlType;
@@ -110,6 +114,9 @@ static const int kLinkDragBorderInset = 2;
 #if BUILDFLAG(IS_ANDROID)
 // Android handles drag image transparency at the browser level
 static const float kDragImageAlpha = 1.00f;
+#elif BUILDFLAG(ARKWEB_DRAG_DROP)
+// drag image's alpha and scale will be processed in ImageDragShadowBuilder.java
+static const float kDragImageAlpha = 1.0f;
 #else
 static const float kDragImageAlpha = 0.75f;
 #endif
@@ -154,7 +161,11 @@ DragController::DragController(Page* page)
       file_input_element_under_mouse_(nullptr),
       document_is_handling_drag_(false),
       drag_destination_action_(kDragDestinationActionNone),
-      did_initiate_drag_(false) {}
+      did_initiate_drag_(false) {
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  utils_ = MakeGarbageCollected<DragControllerUtils>(this);
+#endif
+}
 
 static DocumentFragment* DocumentFragmentFromDragData(
     DragData* drag_data,
@@ -1055,7 +1066,9 @@ bool DragController::PopulateDragDataTransfer(LocalFrame* src,
   return true;
 }
 
+#if !BUILDFLAG(ARKWEB_DRAG_DROP)
 namespace {
+#endif
 
 gfx::Point DragLocationForDHTMLDrag(const gfx::Point& mouse_dragged_point,
                                     const gfx::Point& drag_initiation_location,
@@ -1124,8 +1137,13 @@ std::unique_ptr<DragImage> DragImageForImage(
       image_resource.ImageOrientation();
 
   gfx::Size image_size = image->Size(respect_orientation);
-  if (image_size.Area64() > kMaxOriginalImageArea)
+  if (image_size.Area64() > kMaxOriginalImageArea) {
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    LOG(WARNING) << "drag origin image is too big, need to scale";
+#else
     return nullptr;
+#endif
+  }
 
   InterpolationQuality interpolation_quality = GetDefaultInterpolationQuality();
   if (layout_image->StyleRef().ImageRendering() == EImageRendering::kPixelated)
@@ -1134,6 +1152,10 @@ std::unique_ptr<DragImage> DragImageForImage(
   gfx::Vector2dF image_scale =
       DragImage::ClampedImageScale(image_size, image_element_size_in_pixels,
                                    MaxDragImageSize(device_scale_factor));
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  ArkClampedImageScale(image_scale, image_size, image_element_size_in_pixels);
+#endif
 
   return DragImage::Create(image.get(), respect_orientation,
                            interpolation_quality, kDragImageAlpha, image_scale);
@@ -1158,11 +1180,13 @@ gfx::Rect DragRectForImage(const DragImage* drag_image,
   return gfx::Rect(origin, new_size);
 }
 
+#if !BUILDFLAG(ARKWEB_DRAG_DROP)
 std::unique_ptr<DragImage> DragImageForLink(const KURL& link_url,
                                             const String& link_text,
                                             float device_scale_factor) {
   return DragImage::Create(link_url, link_text, device_scale_factor);
 }
+#endif
 
 gfx::Rect DragRectForLink(const DragImage* link_image,
                           const gfx::Point& origin,
@@ -1185,7 +1209,9 @@ gfx::Rect DragRectForLink(const DragImage* link_image,
   return gfx::Rect(gfx::ToRoundedPoint(image_offset), image_size);
 }
 
+#if !BUILDFLAG(ARKWEB_DRAG_DROP)
 }  // namespace
+#endif
 
 // static
 gfx::RectF DragController::ClippedSelection(const LocalFrame& frame) {
@@ -1197,7 +1223,12 @@ gfx::RectF DragController::ClippedSelection(const LocalFrame& frame) {
 // static
 std::unique_ptr<DragImage> DragController::DragImageForSelection(
     LocalFrame& frame,
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    float opacity,
+    const gfx::RectF& visibleRect) {
+#else
     float opacity) {
+#endif
   if (!frame.Selection().ComputeVisibleSelectionInDOMTreeDeprecated().IsRange())
     return nullptr;
 
@@ -1209,6 +1240,12 @@ std::unique_ptr<DragImage> DragController::DragImageForSelection(
   PaintFlags paint_flags =
       PaintFlag::kSelectionDragImageOnly | PaintFlag::kOmitCompositingInfo;
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  paint_flags |= PaintFlag::kGlobalPaintDragSelection;
+  if (!visibleRect.IsEmpty()) {
+    painting_rect = IntersectRects(painting_rect, visibleRect);
+  }
+#endif
   PaintRecordBuilder builder;
   frame.View()->PaintOutsideOfLifecycle(
       builder.Context(), paint_flags,
@@ -1224,7 +1261,9 @@ std::unique_ptr<DragImage> DragController::DragImageForSelection(
       builder, property_tree_state);
 }
 
+#if !BUILDFLAG(ARKWEB_DRAG_DROP)
 namespace {
+#endif
 
 void SelectEnclosingAnchorIfContentEditable(LocalFrame* frame) {
   if (frame->Selection()
@@ -1254,7 +1293,12 @@ std::unique_ptr<DragImage> DetermineDragImageAndRect(
     const DragState& state,
     const HitTestResult& hit_test_result,
     const gfx::Point& drag_initiation_location,
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    const gfx::Point& mouse_dragged_point,
+    const gfx::RectF& visibleRect) {
+#else
     const gfx::Point& mouse_dragged_point) {
+#endif
   DataTransfer* data_transfer = state.drag_data_transfer_.Get();
   const KURL& link_url = hit_test_result.AbsoluteLinkURL();
   float device_scale_factor =
@@ -1281,36 +1325,57 @@ std::unique_ptr<DragImage> DetermineDragImageAndRect(
   // image and location.
   if (state.drag_type_ == kDragSourceActionSelection) {
     if (!drag_image) {
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+      CreateImgAndRectForSelection(drag_image, drag_obj_rect, frame, visibleRect);
+#else
       drag_image =
           DragController::DragImageForSelection(*frame, kDragImageAlpha);
+
       drag_obj_rect = DragRectForSelectionDrag(*frame);
+#endif
     }
   } else if (state.drag_type_ == kDragSourceActionImage) {
     if (!drag_image) {
       auto* element = DynamicTo<Element>(state.drag_src_.Get());
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+      const gfx::Rect& image_rect = GetImageRectFromImageNode(frame, hit_test_result);
+#else
       const gfx::Rect& image_rect = hit_test_result.ImageRect();
+#endif
       // TODO(crbug.com/331670941): Remove this scaling and simply pass
       // `imageRect`to `dragImageForImage` once all platforms are migrated
       // to use zoom for dsf.
       gfx::Size image_size_in_pixels = gfx::ScaleToFlooredSize(
           image_rect.size(), frame->GetPage()->GetVisualViewport().Scale());
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+      CreateImgAndRectForImage(drag_image, drag_obj_rect, frame, image_rect, state, visibleRect,
+                                                  effective_drag_initiation_location);
+#else
       // Pass the selected image size in DIP becasue dragImageForImage clips the
       // image in DIP.  The coordinates of the locations are in Viewport
       // coordinates, and they're converted in the Blink client.
-      // TODO(crbug.com/331753419): Consider clipping screen coordinates to
-      // use a high resolution image on high DPI screens.
+      // TODO(oshima): Currently, the dragged image on high DPI is scaled and
+      // can be blurry because of this.  Consider to clip in the screen
+      // coordinates to use high resolution image on high DPI screens.
       drag_image = DragImageForImage(*element, device_scale_factor,
                                      image_size_in_pixels);
+
       drag_obj_rect =
           DragRectForImage(drag_image.get(), effective_drag_initiation_location,
                            image_rect.origin(), image_size_in_pixels);
+#endif
     }
   } else if (state.drag_type_ == kDragSourceActionLink) {
     if (!drag_image) {
       DCHECK(frame->GetPage());
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+      drag_image = DragImageForLink(link_url, hit_test_result.TextContent(), device_scale_factor,
+                                                       frame->GetDocument());
+#else
       drag_image = DragImageForLink(link_url, hit_test_result.TextContent(),
                                     device_scale_factor);
+#endif
       drag_obj_rect = DragRectForLink(drag_image.get(), mouse_dragged_point,
                                       device_scale_factor,
                                       frame->GetPage()->PageScaleFactor());
@@ -1322,8 +1387,13 @@ std::unique_ptr<DragImage> DetermineDragImageAndRect(
   return drag_image;
 }
 
+#if !BUILDFLAG(ARKWEB_DRAG_DROP)
 }  // namespace
+#endif
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+NO_SANITIZE("cfi")
+#endif
 bool DragController::StartDrag(LocalFrame* frame,
                                const DragState& state,
                                const WebMouseEvent& drag_event,
@@ -1403,6 +1473,11 @@ void DragController::DoSystemDrag(DragImage* image,
   DragOperationsMask drag_operation_mask = data_transfer->SourceOperation();
 
   SkBitmap drag_image = image ? image->Bitmap() : SkBitmap();
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  AsDragControllerExt()->StartDragTextEffects();
+  AsDragControllerExt()->StartDragImageEffects();
+  AsDragControllerExt()->StartDragLinkEffects();
+#endif
   page_->GetChromeClient().StartDragging(frame, drag_data, drag_operation_mask,
                                          std::move(drag_image), cursor_offset,
                                          drag_obj_rect);
@@ -1444,6 +1519,9 @@ void DragController::Trace(Visitor* visitor) const {
   visitor->Trace(drag_initiator_);
   visitor->Trace(drag_state_);
   visitor->Trace(file_input_element_under_mouse_);
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  visitor->Trace(utils_);
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
   ExecutionContextLifecycleObserver::Trace(visitor);
 }
 

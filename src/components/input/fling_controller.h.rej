@@ -1,0 +1,24 @@
+--- fling_controller.h	2025-10-20 19:52:53.045914300 +0800
++++ fling_controller.h	2025-10-16 15:54:56.884209782 +0800
+@@ -3,17 +3,21 @@
+ // found in the LICENSE file.
+ 
+ #ifndef COMPONENTS_INPUT_FLING_CONTROLLER_H_
+ #define COMPONENTS_INPUT_FLING_CONTROLLER_H_
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/component_export.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/time/time.h"
+ #include "components/input/touchpad_tap_suppression_controller.h"
+ #include "components/input/touchscreen_tap_suppression_controller.h"
+ #include "third_party/blink/public/mojom/input/input_event_result.mojom-shared.h"
+ #include "ui/events/blink/fling_booster.h"
++#if BUILDFLAG(ARKWEB_D_VSYNC)
++#include <atomic>
++#endif
+ 
+ namespace blink {
+ class WebGestureCurve;
+ }
+ 

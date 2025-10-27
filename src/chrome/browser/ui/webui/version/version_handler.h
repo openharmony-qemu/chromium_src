@@ -47,7 +47,8 @@ class VersionHandler : public content::WebUIMessageHandler {
                       std::u16string* executable_path_data,
                       std::u16string* profile_path_data
 #if BUILDFLAG(ENABLE_CEF)
-                      , std::u16string* module_path_data,
+                      ,
+                      std::u16string* module_path_data,
                       std::u16string* user_data_path_data
 #endif
                       );

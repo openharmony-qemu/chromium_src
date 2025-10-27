@@ -1,0 +1,14 @@
+--- drag_image.h	2025-10-20 19:53:00.590208162 +0800
++++ drag_image.h	2025-10-16 16:07:39.594468819 +0800
+@@ -26,10 +26,11 @@
+ #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_PAGE_DRAG_IMAGE_H_
+ #define THIRD_PARTY_BLINK_RENDERER_CORE_PAGE_DRAG_IMAGE_H_
+ 
+ #include <memory>
+ 
++#include "arkweb/build/features/features.h"
+ #include "third_party/blink/renderer/core/core_export.h"
+ #include "third_party/blink/renderer/platform/graphics/graphics_types.h"
+ #include "third_party/blink/renderer/platform/graphics/image_orientation.h"
+ #include "third_party/blink/renderer/platform/graphics/paint/display_item_client.h"
+ #include "third_party/blink/renderer/platform/graphics/paint/paint_image.h"

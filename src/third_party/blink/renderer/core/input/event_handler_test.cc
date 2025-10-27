@@ -3600,3 +3600,8 @@ TEST_F(EventHandlerSimTest, GestureTapHoverState) {
 }
 
 }  // namespace blink
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/input/gesture_manager_utils_unittest_include.cc"
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/input/event_handler_unittest_for_include.cc"
+#endif

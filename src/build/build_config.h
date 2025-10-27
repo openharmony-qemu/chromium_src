@@ -272,6 +272,24 @@
 #define BUILDFLAG_INTERNAL_IS_OZONE() (0)
 #endif
 
+#if defined(OS_OHOS)
+#define BUILDFLAG_INTERNAL_IS_OHOS() (1)
+#else
+#define BUILDFLAG_INTERNAL_IS_OHOS() (0)
+#endif
+
+#if defined(ENABLE_ARKWEB)
+#define BUILDFLAG_INTERNAL_IS_ARKWEB() (1)
+#else
+#define BUILDFLAG_INTERNAL_IS_ARKWEB() (0)
+#endif
+
+#if defined(ENABLE_ARKWEB_EXT)
+#define BUILDFLAG_INTERNAL_IS_ARKWEB_EXT() (1)
+#else
+#define BUILDFLAG_INTERNAL_IS_ARKWEB_EXT() (0)
+#endif
+
 // Compiler detection. Note: clang masquerades as GCC on POSIX and as MSVC on
 // Windows.
 #if defined(__GNUC__)
@@ -391,7 +409,7 @@
 #error Please add support for your compiler in build/build_config.h
 #endif
 
-#if defined(OS_ANDROID)
+#if defined(OS_ANDROID) || defined(OS_OHOS)
 // The compiler thinks std::string::const_iterator and "const char*" are
 // equivalent types.
 #define STD_STRING_ITERATOR_IS_CHAR_POINTER

@@ -1,0 +1,16 @@
+--- mock_input_router_client.h	2025-10-20 19:52:54.378525856 +0800
++++ mock_input_router_client.h	2025-10-16 15:54:59.512680250 +0800
+@@ -62,10 +62,13 @@
+       const gfx::Range& range,
+       const std::optional<std::vector<gfx::Rect>>& character_bounds,
+       const std::optional<std::vector<gfx::Rect>>& line_bounds) override {}
+   input::StylusInterface* GetStylusInterface() override;
+   void OnStartStylusWriting() override;
++#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
++  void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) override {}
++#endif
+ 
+   bool GetAndResetFilterEventCalled();
+   ui::DidOverscrollParams GetAndResetOverscroll();
+   cc::TouchAction GetAndResetCompositorAllowedTouchAction();
+ 

@@ -21,6 +21,10 @@
 #include "net/http/http_util.h"
 #include "services/network/public/cpp/url_loader_completion_status.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "ohos_cef_ext/libcef/browser/net_service/stream_reader_url_loader_utils.h"
+#endif
+
 namespace net_service {
 
 namespace {
@@ -499,9 +503,15 @@ StreamReaderURLLoader::StreamReaderURLLoader(
   // All InputStream work will be performed on this task runner.
   stream_work_task_runner_ =
       base::ThreadPool::CreateSequencedTaskRunner({base::MayBlock()});
+#if BUILDFLAG(IS_ARKWEB)
+  loader_utils_ = new StreamReaderURLLoaderUtils(this);
+#endif
 }
 
 StreamReaderURLLoader::~StreamReaderURLLoader() {
+#if BUILDFLAG(IS_ARKWEB)
+  delete loader_utils_;
+#endif
   if (open_cancel_callback_) {
     // Release the Delegate held by OpenInputStreamWrapper.
     std::move(open_cancel_callback_).Run();
@@ -537,7 +547,15 @@ void StreamReaderURLLoader::Continue() {
       base::BindRepeating(&StreamReaderURLLoader::OnDataPipeWritable,
                           base::Unretained(this)));
 
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  LOG(DEBUG) << "intercept StreamReaderURLLoader::ContinueWithResponseHeaders request_id_=" << request_id_
+    << ", request_.is_sync_mode=" << request_.is_sync_mode;
+  if (!request_.is_sync_mode || !loader_utils_->TryTransferDataWithSharedMemory()) {
+    ReadMore();
+  }
+#else
   ReadMore();
+#endif
 }
 
 void StreamReaderURLLoader::Cancel() {
@@ -731,7 +749,13 @@ void StreamReaderURLLoader::ContinueWithResponseHeaders(
         std::move(pending_response));
   } else {
     mojo::ScopedDataPipeConsumerHandle consumer_handle;
+#if BUILDFLAG(ARKWEB_API_PER)
+    MojoCreateDataPipeOptions options;
+    loader_utils_->CreatePipeOptions(options);
+    if (CreateDataPipe(&options /*options*/, producer_handle_,
+#else
     if (CreateDataPipe(nullptr /*options*/, producer_handle_,
+#endif
                        consumer_handle) != MOJO_RESULT_OK) {
       RequestComplete(net::ERR_FAILED);
       return;
@@ -803,6 +827,10 @@ void StreamReaderURLLoader::OnReaderReadCompleted(int bytes_read) {
   }
   if (bytes_read == 0) {
     // Eof, read completed.
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+    TRACE_EVENT1("net", "StreamReaderURLLoader::OnReaderReadCompleted", "id",
+                 request_id_);
+#endif
     pending_buffer_->Complete(0);
     RequestComplete(net::OK);
     return;

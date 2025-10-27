@@ -86,8 +86,7 @@ TEST(ArrayTest, SetAtBeyond) {
 }
 
 TEST(ArrayTest, InsertAt) {
-  static constexpr std::array<int, 10> elems = {
-      {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}};
+  constexpr std::array<int, 10> elems = {{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}};
   auto arr = pdfium::MakeRetain<CPDF_Array>();
   for (size_t i = 0; i < std::size(elems); ++i) {
     arr->InsertNewAt<CPDF_Number>(i, elems[i]);
@@ -99,7 +98,7 @@ TEST(ArrayTest, InsertAt) {
   arr->InsertNewAt<CPDF_Number>(3, 33);
   arr->InsertNewAt<CPDF_Number>(6, 55);
   arr->InsertNewAt<CPDF_Number>(12, 12);
-  static constexpr std::array<int, 13> expected = {
+  constexpr std::array<int, 13> expected = {
       {1, 2, 3, 33, 4, 5, 55, 6, 7, 8, 9, 10, 12}};
   ASSERT_EQ(expected.size(), arr->size());
   for (size_t i = 0; i < expected.size(); ++i) {
@@ -117,8 +116,7 @@ TEST(ArrayTest, InsertAtBeyond) {
 TEST(ArrayTest, Clone) {
   {
     // Basic case.
-    static constexpr std::array<int, 10> elems = {
-        {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}};
+    constexpr std::array<int, 10> elems = {{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}};
     auto arr = pdfium::MakeRetain<CPDF_Array>();
     for (size_t i = 0; i < std::size(elems); ++i) {
       arr->InsertNewAt<CPDF_Number>(i, elems[i]);
@@ -136,7 +134,7 @@ TEST(ArrayTest, Clone) {
     static const size_t kNumOfRows = 3;
     static const size_t kNumOfColumns = 5;
     using ElemRow = std::array<int, kNumOfColumns>;
-    static constexpr std::array<ElemRow, kNumOfRows> elems = {{
+    constexpr std::array<ElemRow, kNumOfRows> elems = {{
         {{1, 2, 3, 4, 5}},
         {{10, 9, 8, 7, 6}},
         {{11, 12, 13, 14, 15}},
@@ -239,7 +237,7 @@ TEST(ArrayTest, Contains) {
 }
 
 TEST(ArrayTest, Iterator) {
-  static constexpr std::array<int, 10> elems = {
+  constexpr std::array<int, 10> elems = {
       {-23, -11, 3, 455, 2345877, 0, 7895330, -12564334, 10000, -100000}};
   auto arr = pdfium::MakeRetain<CPDF_Array>();
   for (size_t i = 0; i < std::size(elems); ++i) {

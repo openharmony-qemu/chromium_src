@@ -1,0 +1,17 @@
+--- layout_video.h	2025-10-20 19:53:00.534208693 +0800
++++ layout_video.h	2025-10-16 16:07:39.543151538 +0800
+@@ -86,10 +86,14 @@
+     NOT_DESTROYED();
+     return true;
+   }
+   CompositingReasons AdditionalCompositingReasons() const override;
+ 
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++  void WillBeDestroyed() override;
++#endif  // ARKWEB_VIDEO_ASSISTANT
++
+   PhysicalSize cached_image_size_;
+ };
+ 
+ template <>
+ struct DowncastTraits<LayoutVideo> {

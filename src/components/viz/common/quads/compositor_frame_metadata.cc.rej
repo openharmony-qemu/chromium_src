@@ -1,0 +1,16 @@
+--- compositor_frame_metadata.cc	2025-10-20 19:52:54.114405914 +0800
++++ compositor_frame_metadata.cc	2025-10-16 15:54:59.209005258 +0800
+@@ -27,10 +28,13 @@
+     : device_scale_factor(other.device_scale_factor),
+       root_scroll_offset(other.root_scroll_offset),
+       page_scale_factor(other.page_scale_factor),
+       scrollable_viewport_size(other.scrollable_viewport_size),
+       content_color_usage(other.content_color_usage),
++#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
++      is_scrolling(other.is_scrolling),
++#endif
+       may_contain_video(other.may_contain_video),
+       is_handling_interaction(other.is_handling_interaction),
+       root_background_color(other.root_background_color),
+       latency_info(other.latency_info),
+       referenced_surfaces(other.referenced_surfaces),

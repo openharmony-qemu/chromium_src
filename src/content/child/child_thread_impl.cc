@@ -89,6 +89,10 @@
 #endif  // !BUILDFLAG(IS_ANDROID)
 #endif  // BUILDFLAG(IS_POSIX)
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+#include "arkweb/chromium_ext/content/child/child_thread_impl_for_include.cc"
+#endif
+
 #if BUILDFLAG(IS_APPLE)
 #include "base/apple/mach_port_rendezvous.h"
 #endif
@@ -103,9 +107,14 @@
 #if BUILDFLAG(IS_WIN)
 #include <io.h>
 #endif
+
 // Function provided by libclang_rt.profile-*.a, declared and documented at:
 // https://github.com/llvm/llvm-project/blob/master/compiler-rt/lib/profile/InstrProfiling.h
 extern "C" void __llvm_profile_set_file_object(FILE* File, int EnableMerge);
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "third_party/blink/public/web/web_view.h"
 #endif
 
 namespace content {
@@ -333,6 +342,9 @@ class ChildThreadImpl::IOThreadState
     for (auto& receiver : pending_requests)
       BindReceiver(std::move(receiver));
   }
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+  void SetWebkitInited() { webkit_inited_ = true; }
+#endif
 
  private:
   friend class base::RefCountedThreadSafe<IOThreadState>;
@@ -367,6 +379,17 @@ class ChildThreadImpl::IOThreadState
       mojo::PendingRemote<tracing::mojom::SystemTracingService> remote)
       override {
     tracing::TracedProcess::EnableSystemTracingService(std::move(remote));
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  void SetStrictLogMode(bool is_strict_log_mode) override {
+    main_thread_task_runner_->PostTask(
+        FROM_HERE, base::BindOnce(
+                       [](bool is_strict_log_mode) {
+                         blink::WebView::SetStrictLogMode(is_strict_log_mode);
+                       },
+                       is_strict_log_mode));
   }
 #endif
 
@@ -483,6 +506,10 @@ class ChildThreadImpl::IOThreadState
         base::BindOnce(&ChildThreadImpl::SetBatterySaverMode, weak_main_thread_,
                        battery_saver_mode_enabled));
   }
+
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+#include "arkweb/chromium_ext/content/child/child_thread_impl_public_for_include.cc"
+#endif
 
   const scoped_refptr<base::SequencedTaskRunner> main_thread_task_runner_;
   const base::WeakPtr<ChildThreadImpl> weak_main_thread_;
@@ -886,7 +913,7 @@ void ChildThreadImpl::DisconnectChildProcessHost() {
 
 void ChildThreadImpl::BindServiceInterface(
     mojo::GenericPendingReceiver receiver) {
-  DLOG(ERROR) << "Ignoring unhandled request to bind service interface: "
+  LOG(ERROR) << "Ignoring unhandled request to bind service interface: "
               << *receiver.interface_name();
 }
 
@@ -925,6 +952,14 @@ void ChildThreadImpl::OnMemoryPressureFromBrowserReceived(
   }
   // Forward the notification to the registry of MemoryPressureListeners.
   base::MemoryPressureListener::NotifyMemoryPressure(level);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+void ChildThreadImpl::SetWebkitInited() {
+  ChildThreadImpl::GetIOTaskRunner()->PostTask(
+      FROM_HERE,
+      base::BindOnce(&IOThreadState::SetWebkitInited, io_thread_state_));
 }
 #endif
 

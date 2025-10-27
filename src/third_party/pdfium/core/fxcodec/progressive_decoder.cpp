@@ -114,7 +114,7 @@ bool ProgressiveDecoder::PngReadHeader(int width,
     case FXDIB_Format::k1bppRgb:
     case FXDIB_Format::k8bppMask:
     case FXDIB_Format::k8bppRgb:
-      NOTREACHED();
+      NOTREACHED_NORETURN();
     case FXDIB_Format::kBgr:
       *color_type = 2;
       break;
@@ -126,7 +126,7 @@ bool ProgressiveDecoder::PngReadHeader(int width,
     case FXDIB_Format::kBgraPremul:
       // TODO(crbug.com/355630556): Consider adding support for
       // `FXDIB_Format::kBgraPremul`
-      NOTREACHED();
+      NOTREACHED_NORETURN();
 #endif
   }
   *gamma = kPngGamma;
@@ -937,7 +937,7 @@ void ProgressiveDecoder::SetTransMethod() {
     case FXDIB_Format::kBgraPremul:
       // TODO(crbug.com/355630556): Consider adding support for
       // `FXDIB_Format::kBgraPremul`
-      NOTREACHED();
+      NOTREACHED_NORETURN();
 #endif
   }
 }

@@ -1,0 +1,19 @@
+--- extension_localization_throttle.cc	2025-10-20 19:52:55.379909076 +0800
++++ extension_localization_throttle.cc	2025-10-16 15:55:00.463662461 +0800
+@@ -251,11 +259,15 @@
+     const GURL& response_url,
+     network::mojom::URLResponseHead* response_head,
+     bool* defer) {
+   // ExtensionURLLoader can only redirect requests within the
+   // chrome-extension:// scheme.
+-  DCHECK(response_url.SchemeIs(extensions::kExtensionScheme));
++  DCHECK(response_url.SchemeIs(extensions::kExtensionScheme)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++         || response_url.SchemeIs(extensions::kArkwebExtensionScheme)
++#endif
++  );
+   if (!base::StartsWith(response_head->mime_type, "text/css",
+                         base::CompareCase::INSENSITIVE_ASCII)) {
+     return;
+   }
+ 

@@ -62,6 +62,10 @@ class GPUTimingImpl : public GPUTiming {
 
   void UpdateQueryResults();
 
+#if BUILDFLAG(IS_ARKWEB)
+  void ClearQuery();
+#endif
+
   int64_t GetMaxTimeStamp() { return max_time_stamp_; }
   void UpdateMaxTimeStamp(int64_t value) {
     max_time_stamp_ = std::max(max_time_stamp_, value);
@@ -464,6 +468,16 @@ void GPUTimingImpl::UpdateQueryResults() {
   }
 }
 
+#if BUILDFLAG(IS_ARKWEB)
+void GPUTimingImpl::ClearQuery() {
+  if (!queries_.empty()) {
+    scoped_refptr<TimerQuery> query = queries_.front();
+    query->Destroy();
+    queries_.pop_front();
+  }
+}
+#endif
+
 void GPUTimingImpl::SetLastElapsedQuery(
     scoped_refptr<TimeElapsedTimerQuery> query) {
   last_elapsed_query_ = query;
@@ -634,6 +648,14 @@ bool GPUTimingClient::CheckAndResetTimerErrors() {
   }
   return false;
 }
+
+#if BUILDFLAG(IS_ARKWEB)
+void GPUTimingClient::ClearQuery() {
+  if (gpu_timing_) {
+    gpu_timing_->ClearQuery();
+  }
+}
+#endif
 
 int64_t GPUTimingClient::GetCurrentCPUTime() {
   DCHECK(gpu_timing_);

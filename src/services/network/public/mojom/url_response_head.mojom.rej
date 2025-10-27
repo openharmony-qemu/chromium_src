@@ -1,0 +1,14 @@
+--- url_response_head.mojom	2025-10-20 19:52:57.674211384 +0800
++++ url_response_head.mojom	2025-10-16 15:55:03.344579160 +0800
+@@ -303,8 +303,11 @@
+ 
+   // True if the client should load the response content after setting the
+   // environment's `has storage access` bit.
+   bool load_with_storage_access = false;
+ 
++  [EnableIf=arkweb_codecache_enhance]
++  bool code_cache_valid = false;
++
+   // True when a proxy will handle the redirect checks.
+   bool bypass_redirect_checks = false;
+ };

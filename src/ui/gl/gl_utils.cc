@@ -15,8 +15,9 @@
 #include "ui/gl/gl_features.h"
 #include "ui/gl/gl_switches.h"
 #include "ui/gl/gl_surface_egl.h"
+#include "arkweb/build/features/features.h"
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_SAME_LAYER)
 #include "base/posix/eintr_wrapper.h"
 #include "third_party/libsync/src/include/sync/sync.h"  // nogncheck
 #endif
@@ -70,7 +71,7 @@ void Hang() {
   }
 }
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_SAME_LAYER)
 base::ScopedFD MergeFDs(base::ScopedFD a, base::ScopedFD b) {
   if (!a.is_valid())
     return b;

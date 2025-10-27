@@ -1,0 +1,20 @@
+--- web_document_subresource_filter.h	2025-10-20 19:53:00.138212448 +0800
++++ web_document_subresource_filter.h	2025-10-16 16:07:39.104980907 +0800
+@@ -3,12 +3,17 @@
+ // found in the LICENSE file.
+ 
+ #ifndef THIRD_PARTY_BLINK_PUBLIC_PLATFORM_WEB_DOCUMENT_SUBRESOURCE_FILTER_H_
+ #define THIRD_PARTY_BLINK_PUBLIC_PLATFORM_WEB_DOCUMENT_SUBRESOURCE_FILTER_H_
+ 
++#include "arkweb/build/features/features.h"
+ #include "third_party/blink/public/mojom/fetch/fetch_api_request.mojom-shared.h"
+ 
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++#include "url/origin.h"
++#endif
++
+ namespace blink {
+ 
+ class WebURL;
+ 
+ class WebDocumentSubresourceFilter {

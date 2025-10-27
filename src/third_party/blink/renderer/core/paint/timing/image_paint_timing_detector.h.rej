@@ -1,0 +1,96 @@
+--- image_paint_timing_detector.h	2025-10-20 19:53:00.614207935 +0800
++++ image_paint_timing_detector.h	2025-10-20 19:31:57.304120702 +0800
+@@ -16,20 +16,26 @@
+ #include "third_party/blink/public/common/performance/largest_contentful_paint_type.h"
+ #include "third_party/blink/renderer/core/core_export.h"
+ #include "third_party/blink/renderer/core/dom/dom_node_ids.h"
+ #include "third_party/blink/renderer/core/loader/resource/image_resource_content.h"
+ #include "third_party/blink/renderer/core/paint/timing/lcp_objects.h"
++#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
++#include "third_party/blink/renderer/core/paint/timing/paint_timing_detector.h"
++#endif
+ #include "third_party/blink/renderer/core/paint/timing/media_record_id.h"
+ #include "third_party/blink/renderer/core/paint/timing/paint_timing_visualizer.h"
+ #include "third_party/blink/renderer/platform/allow_discouraged_type.h"
+ #include "third_party/blink/renderer/platform/heap/collection_support/heap_deque.h"
+ #include "third_party/blink/renderer/platform/heap/collection_support/heap_hash_set.h"
+ #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
+ #include "third_party/blink/renderer/platform/loader/fetch/media_timing.h"
+ #include "third_party/blink/renderer/platform/wtf/cross_thread_functional.h"
+ #include "third_party/blink/renderer/platform/wtf/hash_set.h"
+ #include "ui/gfx/geometry/rect_conversions.h"
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/image_paint_timing_detector_utils.h"
++#endif
+ 
+ namespace blink {
+ 
+ class LayoutObject;
+ class LocalFrameView;
+@@ -51,14 +57,18 @@
+               MediaRecordIdHash hash)
+       : node_id(new_node_id),
+         media_timing(new_media_timing),
+         hash(hash),
+         recorded_size(new_recorded_size) {
++#if !BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+     if (PaintTimingVisualizer::IsTracingEnabled()) {
++#endif
+       lcp_rect_info_ = std::make_unique<LCPRectInfo>(
+           frame_visual_rect, gfx::ToRoundedRect(root_visual_rect));
++#if !BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+     }
++#endif
+   }
+ 
+   ImageRecord() = delete;
+ 
+   // Returns the image's entropy, in encoded-bits-per-layout-pixel, as used to
+@@ -139,10 +161,19 @@
+       pending_images_.erase(it);
+       // Leave out |images_queued_for_paint_time_| intentionally because the
+       // null record can be removed in
+       // |AssignPaintTimeToRegisteredQueuedRecords|.
+     }
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++    else {
++      image_record_manager_utils_.RemoveRecord(record_id_hash);
++    }
++#endif 
++#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
++    image_record_manager_utils_.RemoveRecordFromFirstScreenCalculator(
++        record_id_hash);
++#endif
+   }
+   // Returns whether an image was added to |pending_images_|.
+   bool RecordFirstPaintAndReturnIsPending(const MediaRecordId& record_id,
+                                           const uint64_t& visual_size,
+                                           const gfx::Rect& frame_visual_rect,
+@@ -317,12 +351,26 @@
+   void RestartRecordingLargestImagePaint() {
+     recording_largest_image_paint_ = true;
+     records_manager_.Clear();
+   }
+ 
+-  void Trace(Visitor*) const;
++#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
++  bool is_full_viewport_image() const {
++    return is_full_viewport_;
++  }
+ 
++  std::optional<uint64_t> GetViewportSize() const {
++    return viewport_size_;
++  }
++#endif
++  void Trace(Visitor*) const;
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  bool TakeIfHasALCP();
++  void SetForBlankless();
++  unsigned GetFrameIndex() const;
++  void SetFrameIndex(unsigned frame_index);
++#endif
+  private:
+   friend class LargestContentfulPaintCalculatorTest;
+   friend class ImagePaintTimingDetectorTest;
+   FRIEND_TEST_ALL_PREFIXES(ImagePaintTimingDetectorTest,
+                            LargestImagePaint_Detached_Frame);

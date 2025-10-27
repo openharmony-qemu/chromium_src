@@ -264,7 +264,7 @@ bool KeywordTable::PerformOperations(const Operations& operations) {
           return false;
         break;
 
-      case UPDATE:
+      case UPDATE_OP:
         if (!UpdateKeyword(i->second))
           return false;
         break;

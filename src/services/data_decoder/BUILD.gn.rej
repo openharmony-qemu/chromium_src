@@ -1,0 +1,30 @@
+--- BUILD.gn	2025-10-20 19:52:57.590210624 +0800
++++ BUILD.gn	2025-10-16 15:55:03.240690347 +0800
+@@ -3,10 +3,11 @@
+ # found in the LICENSE file.
+ 
+ import("//build/config/chromeos/ui_mode.gni")
+ import("//build/config/features.gni")
+ import("//testing/libfuzzer/fuzzer_test.gni")
++import("//arkweb/build/features/features.gni")
+ 
+ source_set("lib") {
+   # This target should only be depended upon by components that host a
+   # data_decoder service. Consumers should depend on a a target in the
+   # public/ directory.
+@@ -39,10 +40,15 @@
+     ]
+   }
+ 
+   configs += [ "//build/config/compiler:wexit_time_destructors" ]
+ 
++  if (use_libfuzzer) {
++    configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
++    configs += [ "//build/config/gcc:symbol_visibility_default" ]
++  }
++
+   deps = [
+     "//base",
+     "//build:chromeos_buildflags",
+     "//components/cbor",
+     "//components/facilitated_payments/core/mojom:pix_code_validator_mojom",

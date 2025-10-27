@@ -1,0 +1,14 @@
+--- cef_types_win.h	2025-10-20 19:52:47.977895045 +0800
++++ cef_types_win.h	2025-10-16 15:55:22.342586992 +0800
+@@ -37,11 +37,10 @@
+ #include <windows.h>
+ 
+ #include "include/internal/cef_string.h"
+ #include "include/internal/cef_types_color.h"
+ #include "include/internal/cef_types_geometry.h"
+-#include "include/internal/cef_types_osr.h"
+ #include "include/internal/cef_types_runtime.h"
+ 
+ // Handle types.
+ #define cef_cursor_handle_t HCURSOR
+ #define cef_event_handle_t MSG*

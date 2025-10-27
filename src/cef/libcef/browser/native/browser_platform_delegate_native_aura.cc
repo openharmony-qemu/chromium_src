@@ -163,6 +163,14 @@ CefBrowserPlatformDelegateNativeAura::TranslateWebMoveEvent(
   return ui::MakeWebMouseEvent(TranslateUiMoveEvent(mouse_event, mouseLeave));
 }
 
+#if BUILDFLAG(ARKWEB_TOUCHPAD_FLING)
+blink::WebGestureEvent
+CefBrowserPlatformDelegateNativeAura::TranslateTouchpadFlingEvent(
+    const CefMouseEvent& mouse_event) const {
+  return ui::MakeWebGestureEvent(TranslateUiTouchpadEvent(mouse_event));
+}
+#endif
+
 blink::WebMouseWheelEvent
 CefBrowserPlatformDelegateNativeAura::TranslateWebWheelEvent(
     const CefMouseEvent& mouse_event,
@@ -228,6 +236,16 @@ ui::MouseEvent CefBrowserPlatformDelegateNativeAura::TranslateUiMoveEvent(
                         changed_button_flags);
 }
 
+#if BUILDFLAG(ARKWEB_TOUCHPAD_FLING)
+ui::GestureEvent CefBrowserPlatformDelegateNativeAura::TranslateUiTouchpadEvent(
+    const CefMouseEvent& mouse_event) const {
+  ui::GestureEventDetails details(ui::EventType::kScrollFlingStart);
+  details.set_device_type(ui::GestureDeviceType::DEVICE_TOUCHPAD);
+  return ui::GestureEvent(mouse_event.x, mouse_event.y, 0, base::TimeTicks(),
+                          details);
+}
+#endif
+
 ui::MouseWheelEvent CefBrowserPlatformDelegateNativeAura::TranslateUiWheelEvent(
     const CefMouseEvent& mouse_event,
     int deltaX,
@@ -289,6 +307,14 @@ int CefBrowserPlatformDelegateNativeAura::TranslateUiEventModifiers(
   if (cef_modifiers & EVENTFLAG_RIGHT_MOUSE_BUTTON) {
     result |= ui::EF_RIGHT_MOUSE_BUTTON;
   }
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  if (cef_modifiers & EVENTFLAG_BACK_MOUSE_BUTTON) {
+    result |= ui::EF_BACK_MOUSE_BUTTON;
+  }
+  if(cef_modifiers & EVENTFLAG_FORWARD_MOUSE_BUTTON) {
+    result |= ui::EF_FORWARD_MOUSE_BUTTON;
+  }
+#endif
   if (cef_modifiers & EVENTFLAG_COMMAND_DOWN) {
     result |= ui::EF_COMMAND_DOWN;
   }

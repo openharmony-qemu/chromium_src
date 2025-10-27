@@ -1,0 +1,39 @@
+--- cfgas_fontmgr.cpp	2025-10-20 19:53:19.720007492 +0800
++++ cfgas_fontmgr.cpp	2025-10-16 16:15:56.063184633 +0800
+@@ -544,24 +544,26 @@
+   return pFace;
+ }
+ 
+ bool VerifyUnicodeForFontDescriptor(CFGAS_FontDescriptor* pDesc,
+                                     wchar_t wcUnicode) {
+-  if (!pDesc->m_pFace) {
+     RetainPtr<IFX_SeekableReadStream> pFileRead =
+         CreateFontStream(pDesc->m_wsFaceName.ToUTF8());
+-    if (!pFileRead) {
++  if (!pFileRead)
+       return false;
+-    }
+-    pDesc->m_pFace = LoadFace(pFileRead, pDesc->m_nFaceIndex);
+-    if (!pDesc->m_pFace) {
++
++  RetainPtr<CFX_Face> pFace = LoadFace(pFileRead, pDesc->m_nFaceIndex);
++  if (!pFace)
+       return false;
+-    }
+-    pDesc->m_pFace->ClearExternalStream();
+-  }
+-  return pDesc->m_pFace->SelectCharMap(fxge::FontEncoding::kUnicode) &&
+-         pDesc->m_pFace->GetCharIndex(wcUnicode);
++
++  bool select_charmap_result =
++      pFace->SelectCharMap(fxge::FontEncoding::kUnicode);
++  int ret_index = pFace->GetCharIndex(wcUnicode);
++
++  pFace->ClearExternalStream();
++
++  return select_charmap_result && ret_index;
+ }
+ 
+ bool IsPartName(const WideString& name1, const WideString& name2) {
+   return name1.Contains(name2.AsStringView());
+ }

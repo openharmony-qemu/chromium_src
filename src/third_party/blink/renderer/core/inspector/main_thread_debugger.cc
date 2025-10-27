@@ -75,6 +75,14 @@
 #include "third_party/blink/renderer/platform/instrumentation/use_counter.h"
 #include "third_party/blink/renderer/platform/wtf/text/string_builder.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/inspector/ark_web_main_thread_debugger.h"
+#endif  // BUILDFLAG(ARKWEB_NWEB_EX)
+
 namespace blink {
 
 namespace {
@@ -198,6 +206,9 @@ void MainThreadDebugger::ExceptionThrown(ExecutionContext* context,
     SourceLocation* location = event->Location();
     String message = event->MessageForConsole();
     String url = location->Url();
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+    ArkWebDealWithMassiveConsoleMessage(message);
+#endif  // BUILDFLAG(ARKWEB_NWEB_EX)
     GetV8Inspector()->exceptionThrown(
         script_state->GetContext(), ToV8InspectorStringView(default_message),
         exception, ToV8InspectorStringView(message),

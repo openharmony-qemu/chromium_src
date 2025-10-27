@@ -1,0 +1,81 @@
+--- local_frame.h	2025-10-20 19:53:00.382210134 +0800
++++ local_frame.h	2025-10-16 16:07:39.397094661 +0800
+@@ -29,10 +29,11 @@
+ #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_FRAME_LOCAL_FRAME_H_
+ #define THIRD_PARTY_BLINK_RENDERER_CORE_FRAME_LOCAL_FRAME_H_
+ 
+ #include <memory>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/gtest_prod_util.h"
+ #include "base/time/default_tick_clock.h"
+ #include "base/time/time.h"
+ #include "base/unguessable_token.h"
+ #include "build/build_config.h"
+@@ -453,10 +476,34 @@
+   void SetTextZoomFactor(float);
+   float TextZoomFactor() const { return text_zoom_factor_; }
+   void SetLayoutAndTextZoomFactors(float layout_zoom_factor,
+                                    float text_zoom_factor);
+ 
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  void DidSubresourceFiltered();
++
++  bool GetGlobalAdblockEnabled();
++
++  void SetAdBlockEnableForSite(bool site_adblock_enabled);
++
++  bool GetAdBlockEnableForSite() const { return adblock_enabled_for_site_; }
++
++  void SetHasElemHideTypeOption(bool has_elemhide_type_option);
++
++  bool GetHasElemHideTypeOption() const { return has_elemhide_type_option_; }
++
++  void SetHasDocumentTypeOption(bool has_document_type_option);
++
++  bool GetHasDocumentTypeOption() const { return has_document_type_option_; }
++
++  void SetHasGenericHideTypeOption(bool has_generichide_type_option);
++
++  bool GetHasGenericHideTypeOption() const {
++    return has_generichide_type_option_;
++  }
++#endif
++
+   double DevicePixelRatio() const;
+ 
+   // Informs the local root's document and its local descendant subtree that a
+   // media query value changed.
+   void MediaQueryAffectingValueChangedForLocalSubtree(MediaValueChange);
+@@ -991,10 +1047,13 @@
+ 
+   bool AllowStorageAccessSyncAndNotify(
+       blink::WebContentSettingsClient::StorageType storage_type);
+ 
+  private:
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  friend class LocalFrameUtilTest;
++#endif
+   friend class FrameNavigationDisabler;
+   // LocalFrameMojoHandler is a part of LocalFrame.
+   friend class LocalFrameMojoHandler;
+ 
+   FRIEND_TEST_ALL_PREFIXES(LocalFrameTest, CharacterIndexAtPointWithPinchZoom);
+@@ -1124,10 +1183,17 @@
+   unsigned did_run_detach_impl_ : 1 = false;
+ 
+   float layout_zoom_factor_;
+   float text_zoom_factor_;
+ 
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  bool adblock_enabled_for_site_ = false;
++  bool has_elemhide_type_option_ = false;
++  bool has_document_type_option_ = false;
++  bool has_generichide_type_option_ = false;
++#endif
++
+   Member<CoreProbeSink> probe_sink_;
+   scoped_refptr<InspectorTaskRunner> inspector_task_runner_;
+   Member<PerformanceMonitor> performance_monitor_;
+ 
+   Member<AdTracker> ad_tracker_;

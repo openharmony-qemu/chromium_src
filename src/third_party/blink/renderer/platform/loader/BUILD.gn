@@ -6,7 +6,9 @@ import("//testing/test.gni")
 import("//third_party/blink/renderer/build/scripts/scripts.gni")
 import("//third_party/blink/renderer/platform/platform.gni")
 import("//third_party/blink/renderer/platform/platform_generated.gni")
-
+if (is_arkweb) {
+  import("//arkweb/build/features/features.gni")
+}
 make_names("make_platform_loader_generated_fetch_initiator_type_names") {
   in_files = [ "fetch/fetch_initiator_type_names.json5" ]
   output_dir = "$blink_platform_output_dir/loader/fetch"
@@ -323,4 +325,10 @@ source_set("test_support") {
     "//third_party/blink/renderer/platform/scheduler:test_support",
     "//third_party/icu",
   ]
+
+  if (arkweb_unittests) {
+    public_deps += [
+      "//content/public/renderer",
+    ]
+  }
 }

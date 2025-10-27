@@ -6,6 +6,7 @@
 
 #include <string_view>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/contains.h"
 #include "base/containers/fixed_flat_map.h"
 #include "base/containers/queue.h"
@@ -55,7 +56,11 @@ constexpr int kFastCheckIntervalSeconds = 1 * 60;
 constexpr int kFastFetchIntervalSeconds = 3 * 60;
 
 constexpr char kRequestUrl[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://x.x.x";
+#else
     "https://chromewebstore.googleapis.com/v2/items/-/storeMetadata:batchGet";
+#endif
 constexpr net::NetworkTrafficAnnotationTag kTrafficAnnotation =
     net::DefineNetworkTrafficAnnotation("cws_info_service", R"(
       semantics {
@@ -305,6 +310,10 @@ std::optional<CWSInfoService::CWSInfo> CWSInfoService::GetCWSInfo(
 }
 
 void CWSInfoService::CheckAndMaybeFetchInfo() {
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  return;
+#endif
+
   CHECK(content::BrowserThread::CurrentlyOn(content::BrowserThread::UI));
 
   // Do nothing unless an official api key is configured OR

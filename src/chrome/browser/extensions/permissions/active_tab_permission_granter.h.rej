@@ -1,0 +1,17 @@
+--- active_tab_permission_granter.h	2025-10-20 19:52:49.658055470 +0800
++++ active_tab_permission_granter.h	2025-10-16 15:57:00.203075968 +0800
+@@ -47,10 +47,14 @@
+   void ClearActiveExtensionAndNotify(const ExtensionId& id);
+ 
+   // Clears tab-specific permissions for all extensions. Used only for testing.
+   void RevokeForTesting();
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  void SetTabId(int id) { tab_id_ = id; }
++#endif // ARKWEB_ARKWEB_EXTENSIONS
++
+  private:
+   FRIEND_TEST_ALL_PREFIXES(ExtensionActionRunnerFencedFrameBrowserTest,
+                            FencedFrameDoesNotClearActiveExtensions);
+ 
+   // content::WebContentsObserver implementation.

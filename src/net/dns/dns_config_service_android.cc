@@ -67,6 +67,9 @@ class DnsConfigServiceAndroid::ConfigReader : public SerialWorker {
       return true;
     } else {
       LOG(WARNING) << "Failed to read DnsConfig.";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+      LOG_FEEDBACK(WARNING) << "Failed to read DnsConfig.";
+#endif
       return false;
     }
   }

@@ -1,0 +1,14 @@
+--- scripting_api.cc	2025-10-20 19:52:49.618146853 +0800
++++ scripting_api.cc	2025-10-16 15:57:00.160279434 +0800
+@@ -411,11 +411,10 @@
+     return false;
+   }
+ 
+   ScriptExecutor* script_executor = tab_helper->script_executor();
+   DCHECK(script_executor);
+-
+   ScriptExecutor::FrameScope frame_scope =
+       target.all_frames && *target.all_frames == true
+           ? ScriptExecutor::INCLUDE_SUB_FRAMES
+           : ScriptExecutor::SPECIFIED_FRAMES;
+ 

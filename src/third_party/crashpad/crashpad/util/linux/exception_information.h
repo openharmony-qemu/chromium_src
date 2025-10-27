@@ -36,6 +36,10 @@ struct ExceptionInformation {
 
   //! \brief The thread ID of the thread which received the signal.
   pid_t thread_id;
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  int signo = 0;
+#endif
 };
 
 #pragma pack(pop)

@@ -46,7 +46,12 @@ void FindTabHelper::StartFinding(std::u16string search_string,
                                  bool forward_direction,
                                  bool case_sensitive,
                                  bool find_match,
-                                 bool run_synchronously_for_testing) {
+                                 bool run_synchronously_for_testing
+#if BUILDFLAG(ARKWEB_FIND_IN_PAGE)
+                                 ,
+                                 bool new_session
+#endif
+) {
   // Remove the carriage return character, which generally isn't in web content.
   const char16_t kInvalidChars[] = u"\r";
   base::RemoveChars(search_string, kInvalidChars, &search_string);
@@ -63,9 +68,15 @@ void FindTabHelper::StartFinding(std::u16string search_string,
     return;
   }
 
+#if BUILDFLAG(ARKWEB_FIND_IN_PAGE)
+  new_session = find_text_ != search_string ||
+                (last_search_case_sensitive_ != case_sensitive) ||
+                find_op_aborted_ || new_session;
+#else
   bool new_session = find_text_ != search_string ||
                      (last_search_case_sensitive_ != case_sensitive) ||
                      find_op_aborted_;
+#endif
 
   // Continuing here would just find the same results, potentially causing
   // some flicker in the highlighting.

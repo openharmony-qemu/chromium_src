@@ -126,7 +126,7 @@ crashpad_static_library("snapshot") {
     ]
   }
 
-  if (crashpad_is_linux || crashpad_is_android) {
+  if (crashpad_is_linux || crashpad_is_android || crashpad_is_ohos) {
     sources += [
       "linux/capture_memory_delegate_linux.cc",
       "linux/capture_memory_delegate_linux.h",
@@ -159,14 +159,15 @@ crashpad_static_library("snapshot") {
   }
 
   if (crashpad_is_linux || crashpad_is_android || crashpad_is_fuchsia ||
-      crashpad_is_win) {
+      crashpad_is_win || crashpad_is_ohos) {
     sources += [
       "crashpad_types/crashpad_info_reader.cc",
       "crashpad_types/crashpad_info_reader.h",
     ]
   }
 
-  if (crashpad_is_linux || crashpad_is_android || crashpad_is_fuchsia) {
+  if (crashpad_is_linux || crashpad_is_android || crashpad_is_fuchsia ||
+      crashpad_is_ohos) {
     sources += [
       "crashpad_types/image_annotation_reader.cc",
       "crashpad_types/image_annotation_reader.h",

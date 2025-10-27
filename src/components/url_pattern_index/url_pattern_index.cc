@@ -44,10 +44,18 @@ const ActivationTypeMap& GetActivationTypeMap() {
       std::initializer_list<ActivationTypeMap::value_type>{
           {proto::ACTIVATION_TYPE_UNSPECIFIED, flat::ActivationType_NONE},
           {proto::ACTIVATION_TYPE_DOCUMENT, flat::ActivationType_DOCUMENT},
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+          // ARKWEB_ADBLOCK -ELEMHIDE is supported.
+          {proto::ACTIVATION_TYPE_ELEMHIDE, flat::ActivationType_ELEMHIDE},
+          // ARKWEB_ADBLOCK- GENERIC_HIDE is supported.
+          {proto::ACTIVATION_TYPE_GENERICHIDE,
+           flat::ActivationType_GENERIC_HIDE},
+#else
           // ELEMHIDE is not supported.
           {proto::ACTIVATION_TYPE_ELEMHIDE, flat::ActivationType_NONE},
           // GENERICHIDE is not supported.
           {proto::ACTIVATION_TYPE_GENERICHIDE, flat::ActivationType_NONE},
+#endif
           {proto::ACTIVATION_TYPE_GENERICBLOCK,
            flat::ActivationType_GENERIC_BLOCK},
       });
@@ -572,6 +580,7 @@ namespace {
 
 using FlatNGramIndex =
     flatbuffers::Vector<flatbuffers::Offset<flat::NGramToRules>>;
+} // namespace
 
 // Returns the size of the longest (sub-)domain of `host` matching one of the
 // `domains` in the list.
@@ -630,6 +639,7 @@ size_t GetLongestMatchingSubdomain(std::string_view host,
   return 0;
 }
 
+namespace {
 // |sorted_candidates| is sorted in descending order by priority. If
 // |matched_rules| is specified, then all rule matches in |sorted_candidates|
 // will be added to |matched_rules| and null is returned. If |matched_rules| is
@@ -666,8 +676,15 @@ const flat::UrlRule* FindMatchAmongCandidates(
     if (disable_generic_rules && IsRuleGeneric(*rule))
       continue;
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+    // Change the 'match-case' option default to case-insensitive
+    if (!UrlPatternExt(*rule, UrlPattern::MatchCase::kFalse).MatchesUrl(url)) {
+      continue;
+    }
+#else
     if (!UrlPattern(*rule).MatchesUrl(url))
       continue;
+#endif
 
     if (!DoesOriginMatchInitiatorDomainList(document_origin, *rule))
       continue;

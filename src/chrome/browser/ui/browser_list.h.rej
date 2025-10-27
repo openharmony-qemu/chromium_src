@@ -1,0 +1,16 @@
+--- browser_list.h	2025-10-21 21:22:38.186315688 +0800
++++ browser_list.h	2025-10-16 15:57:01.545463472 +0800
+@@ -9,12 +9,12 @@
+ 
+ #include <vector>
+ 
+ #include "base/containers/flat_set.h"
+ #include "base/functional/callback_forward.h"
+-#include "base/lazy_instance.h"
+ #include "base/functional/function_ref.h"
++#include "base/lazy_instance.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/memory/raw_ref.h"
+ #include "base/memory/stack_allocated.h"
+ #include "base/memory/weak_ptr.h"
+ #include "base/observer_list.h"

@@ -189,6 +189,7 @@ class WindowsRemoveFunction : public ExtensionFunction {
   ResponseAction Run() override;
   DECLARE_EXTENSION_FUNCTION("windows.remove", WINDOWS_REMOVE)
 };
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 // Tabs
 class TabsGetFunction : public ExtensionFunction {
@@ -299,6 +300,7 @@ class TabsUngroupFunction : public ExtensionFunction {
   bool UngroupTab(int tab_id, std::string* error);
   DECLARE_EXTENSION_FUNCTION("tabs.ungroup", TABS_UNGROUP)
 };
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 class TabsDetectLanguageFunction
     : public ExtensionFunction,
       public content::WebContentsObserver,
@@ -471,6 +473,7 @@ class TabsGetZoomSettingsFunction : public ExtensionFunction {
   DECLARE_EXTENSION_FUNCTION("tabs.getZoomSettings", TABS_GETZOOMSETTINGS)
 };
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 class TabsDiscardFunction : public ExtensionFunction {
  public:
   DECLARE_EXTENSION_FUNCTION("tabs.discard", TABS_DISCARD)
@@ -486,6 +489,7 @@ class TabsDiscardFunction : public ExtensionFunction {
   // ExtensionFunction:
   ExtensionFunction::ResponseAction Run() override;
 };
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 class TabsGoForwardFunction : public ExtensionFunction {
  public:

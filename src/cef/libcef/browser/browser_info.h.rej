@@ -1,0 +1,35 @@
+--- browser_info.h	2025-10-20 19:52:47.981885965 +0800
++++ browser_info.h	2025-10-16 15:55:22.346488372 +0800
+@@ -185,26 +188,31 @@
+     }
+ 
+     content::GlobalRenderFrameHostId global_id_;
+     bool is_main_frame_;
+     bool is_speculative_;
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++    bool is_prerendering_ = false;
++#endif
+     bool is_in_bfcache_ = false;
+     CefRefPtr<CefFrameHostImpl> frame_;
+   };
+ 
+   void SetMainFrame(CefRefPtr<CefBrowserHostBase> browser,
+                     CefRefPtr<CefFrameHostImpl> frame);
+ 
+   void MaybeNotifyFrameCreated(CefRefPtr<CefFrameHostImpl> frame);
+-  void MaybeNotifyFrameDestroyed(CefRefPtr<CefBrowserHostBase> browser,
++  void MaybeNotifyFrameDetached(CefRefPtr<CefBrowserHostBase> browser,
+                                  CefRefPtr<CefFrameHostImpl> frame);
+   void MaybeNotifyMainFrameChanged(CefRefPtr<CefBrowserHostBase> browser,
+                                    CefRefPtr<CefFrameHostImpl> old_frame,
+                                    CefRefPtr<CefFrameHostImpl> new_frame);
+ 
+   void RemoveAllFrames(CefRefPtr<CefBrowserHostBase> old_browser);
+ 
++  static bool IsPrerendering(content::RenderFrameHost* host);
++
+   const int browser_id_;
+   const bool is_popup_;
+   const bool is_windowless_;
+   const bool print_preview_enabled_;
+   CefRefPtr<CefDictionaryValue> extra_info_;

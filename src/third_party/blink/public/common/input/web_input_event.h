@@ -36,6 +36,7 @@
 #include <memory>
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/notreached.h"
 #include "base/time/time.h"
 #include "third_party/blink/public/common/common_export.h"
@@ -155,6 +156,14 @@ class BLINK_COMMON_EXPORT WebInputEvent {
     // this, the decision of whether or not the main thread should handle this
     // event for the scrollbar can then be made.
     kScrollbarManipulationHandledOnCompositorThread = 1 << 26,
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+    // Indicates this mouse event was synthesized by the browser process to handle
+    // mouse movement across frame boundaries (e.g., entering or leaving an iframe).
+    // This is an internal synchronization event generated during SendMouseEnterOrLeaveEvents()
+    // to ensure correct cursor state across different rendering processes.
+    kMoveCrossFrameTransition = 1 << 31,
+#endif
 
     // The set of non-stateful modifiers that specifically change the
     // interpretation of the key being pressed. For example; IsLeft,
@@ -315,6 +324,12 @@ class BLINK_COMMON_EXPORT WebInputEvent {
       CASE_TYPE(GestureTwoFingerTap);
       CASE_TYPE(GestureShortPress);
       CASE_TYPE(GestureLongPress);
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+      CASE_TYPE(GestureDragLongPress);
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
+#if BUILDFLAG(ARKWEB_AI)
+      CASE_TYPE(GestureCreateOverlay);
+#endif
       CASE_TYPE(GestureLongTap);
       CASE_TYPE(GestureBegin);
       CASE_TYPE(GestureEnd);

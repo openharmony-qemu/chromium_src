@@ -63,6 +63,10 @@
 #include "extensions/common/url_pattern.h"
 #include "extensions/common/user_script.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/extensions/browser/extension_prefs_for_include.cc"
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
+
 using extensions::mojom::ManifestLocation;
 
 namespace extensions {
@@ -1450,6 +1454,9 @@ ExtensionIdList ExtensionPrefs::GetPinnedExtensions() const {
 
 void ExtensionPrefs::SetPinnedExtensions(const ExtensionIdList& extension_ids) {
   SetExtensionPrefFromContainer(pref_names::kPinnedExtensions, extension_ids);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  prefs_->CommitPendingWrite();
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 void ExtensionPrefs::OnExtensionInstalled(

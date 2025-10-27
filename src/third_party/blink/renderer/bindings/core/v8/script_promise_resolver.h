@@ -272,7 +272,13 @@ class ScriptPromiseResolver final : public ScriptPromiseResolverBase {
   // union type to be resolved with any type of that union without the caller
   // needing to explicitly construct a union object.
   template <typename BlinkType>
+#if defined(__clang__) && (__clang_major__ < 17)
+    requires std::is_base_of_v<bindings::UnionBase, IDLResolvedType> &&
+             std::is_convertible_v<const volatile IDLResolvedType*,
+                                   const volatile bindings::UnionBase*>
+#else
     requires std::derived_from<IDLResolvedType, bindings::UnionBase>
+#endif
   void Resolve(BlinkType value) {
     if (!PrepareToResolveOrReject<kResolving>()) {
       return;

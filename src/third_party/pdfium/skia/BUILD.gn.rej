@@ -1,0 +1,17 @@
+--- BUILD.gn	2025-10-20 19:53:19.659988813 +0800
++++ BUILD.gn	2025-10-16 16:15:55.971971163 +0800
+@@ -37,12 +37,12 @@
+     sources = [ "//third_party/skia/src/ports/fontations/src/ffi.rs" ]
+     cxx_bindings = [ "//third_party/skia/src/ports/fontations/src/ffi.rs" ]
+     deps = [
+       ":path_bridge",
+       "//third_party/rust/font_types/v0_7:lib",
+-      "//third_party/rust/read_fonts/v0_23:lib",
+-      "//third_party/rust/skrifa/v0_24:lib",
++      "//third_party/rust/read_fonts/v0_22:lib",
++      "//third_party/rust/skrifa/v0_22:lib",
+     ]
+     configs -= [ "//build/config/compiler:chromium_code" ]
+     configs += [
+       ":skia_config",
+       "//build/config/compiler:no_chromium_code",

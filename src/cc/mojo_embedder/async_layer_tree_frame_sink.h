@@ -203,7 +203,7 @@ class CC_MOJO_EMBEDDER_EXPORT AsyncLayerTreeFrameSink
   mojo::Remote<viz::mojom::CompositorFrameSink> compositor_frame_sink_;
   mojo::AssociatedRemote<viz::mojom::CompositorFrameSink>
       compositor_frame_sink_associated_;
-  // One of |compositor_frame_sink_| or |compositor_frame_sink_associated_| will
+  // One of |compositor_frame_sink_| or |compositor_frame_sink_associated_| will：i
   // be bound after calling BindToClient(). |compositor_frame_sink_ptr_| will
   // point to message pipe we want to use. It must be declared last and cleared
   // first.

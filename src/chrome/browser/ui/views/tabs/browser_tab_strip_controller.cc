@@ -757,41 +757,47 @@ gfx::Range BrowserTabStripController::ListTabsInGroup(
 }
 
 bool BrowserTabStripController::IsFrameCondensed() const {
-  if (!GetFrameView())
+  if (!GetFrameView()) {
     return false;
+  }
   return GetFrameView()->IsFrameCondensed();
 }
 
 bool BrowserTabStripController::HasVisibleBackgroundTabShapes() const {
-  if (!GetFrameView())
+  if (!GetFrameView()) {
     return false;
+  }
   return GetFrameView()->HasVisibleBackgroundTabShapes(
       BrowserFrameActiveState::kUseCurrent);
 }
 
 bool BrowserTabStripController::EverHasVisibleBackgroundTabShapes() const {
-  if (!GetFrameView())
+  if (!GetFrameView()) {
     return false;
+  }
   return GetFrameView()->EverHasVisibleBackgroundTabShapes();
 }
 
 bool BrowserTabStripController::CanDrawStrokes() const {
-  if (!GetFrameView())
+  if (!GetFrameView()) {
     return false;
+  }
   return GetFrameView()->CanDrawStrokes();
 }
 
 SkColor BrowserTabStripController::GetFrameColor(
     BrowserFrameActiveState active_state) const {
-  if (!GetFrameView())
+  if (!GetFrameView()) {
     return SK_ColorWHITE;
+  }
   return GetFrameView()->GetFrameColor(active_state);
 }
 
 std::optional<int> BrowserTabStripController::GetCustomBackgroundId(
     BrowserFrameActiveState active_state) const {
-  if (!GetFrameView())
+  if (!GetFrameView()) {
     return std::nullopt;
+  }
   return GetFrameView()->GetCustomBackgroundId(active_state);
 }
 

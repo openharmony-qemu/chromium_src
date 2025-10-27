@@ -25,6 +25,10 @@
 #include "src/tasks/task-utils.h"
 #include "src/zone/zone-list-inl.h"  // crbug.com/v8/8816
 
+#ifdef OHOS_JS_ENGINE
+#include "../../../arkweb/chromium_ext/v8/trace.h"
+#endif
+
 namespace v8 {
 namespace internal {
 
@@ -140,6 +144,9 @@ void LazyCompileDispatcher::Enqueue(
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                "V8.LazyCompilerDispatcherEnqueue");
   RCS_SCOPE(isolate, RuntimeCallCounterId::kCompileEnqueueOnDispatcher);
+#ifdef OHOS_JS_ENGINE
+  auto trace = HiTrace("RCS_v8.compile_V8.LazyCompilerDispatcherEnqueue");
+#endif
 
   Job* job = new Job(std::make_unique<BackgroundCompileTask>(
       isolate_, shared_info, std::move(character_stream),
@@ -191,6 +198,9 @@ void LazyCompileDispatcher::WaitForJobIfRunningOnBackground(
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                "V8.LazyCompilerDispatcherWaitForBackgroundJob");
   RCS_SCOPE(isolate_, RuntimeCallCounterId::kCompileWaitForDispatcher);
+#ifdef OHOS_JS_ENGINE
+  auto trace = HiTrace("RCS_v8.compile_V8.LazyCompilerDispatcherWaitForBackgroundJob");
+#endif
 
   if (!job->is_running_on_background()) {
     if (job->state == Job::State::kPending) {
@@ -244,6 +254,9 @@ bool LazyCompileDispatcher::FinishNow(
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                "V8.LazyCompilerDispatcherFinishNow");
   RCS_SCOPE(isolate_, RuntimeCallCounterId::kCompileFinishNowOnDispatcher);
+#ifdef OHOS_JS_ENGINE
+  auto trace = HiTrace("RCS_v8.compile_V8.LazyCompilerDispatcherFinishNow");
+#endif
   if (trace_compiler_dispatcher_) {
     PrintF("LazyCompileDispatcher: finishing ");
     ShortPrint(*function);
@@ -516,6 +529,9 @@ bool LazyCompileDispatcher::FinalizeSingleJob() {
 void LazyCompileDispatcher::DoIdleWork(double deadline_in_seconds) {
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                "V8.LazyCompilerDispatcherDoIdleWork");
+#ifdef OHOS_JS_ENGINE
+  auto trace = HiTrace("RCS_v8.compile_V8.LazyCompilerDispatcherDoIdleWork");
+#endif
   {
     base::MutexGuard lock(&mutex_);
     idle_task_scheduled_ = false;

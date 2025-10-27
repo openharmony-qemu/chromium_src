@@ -370,14 +370,14 @@ component("gfx") {
   }
 
   if (use_blink) {
-    if (is_android || is_fuchsia || is_ios) {
+    if (is_android || is_fuchsia || is_ios || is_ohos) {
       sources += [
         "font_fallback_skia.cc",
         "font_render_params_skia.cc",
       ]
     }
 
-    if (is_android || is_fuchsia || is_win || is_apple) {
+    if (is_android || is_fuchsia || is_win || is_apple || is_ohos) {
       sources += [
         "font_fallback_skia_impl.cc",
         "font_fallback_skia_impl.h",
@@ -425,6 +425,10 @@ component("gfx") {
   }
   if (is_linux || is_chromeos) {
     deps += [ "//third_party/fontconfig" ]
+  }
+
+  if (is_arkweb){
+    deps += [ "//ui/linux:linux_ui" ]
   }
 
   if (is_apple) {
@@ -661,6 +665,13 @@ source_set("memory_buffer_sources") {
     ]
 
     deps += [ "//build/config/linux/libdrm" ]
+  }
+
+  if (is_arkweb) {
+    sources += [
+      "linux/native_pixmap_dmabuf.cc",
+      "linux/native_pixmap_dmabuf.h",
+    ]
   }
 
   if (is_linux || is_chromeos || is_android) {

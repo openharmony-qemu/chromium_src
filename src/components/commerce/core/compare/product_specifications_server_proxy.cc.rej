@@ -1,0 +1,14 @@
+--- product_specifications_server_proxy.cc	2025-10-20 19:52:52.765783607 +0800
++++ product_specifications_server_proxy.cc	2025-10-16 15:54:56.564551896 +0800
+@@ -5,10 +5,11 @@
+ #include "components/commerce/core/compare/product_specifications_server_proxy.h"
+ 
+ #include <optional>
+ #include <string>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/command_line.h"
+ #include "base/strings/utf_string_conversions.h"
+ #include "base/time/time.h"
+ #include "base/values.h"
+ #include "components/commerce/core/commerce_constants.h"

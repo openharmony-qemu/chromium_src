@@ -1,0 +1,42 @@
+--- mock_widget_input_handler.h	2025-10-20 19:52:54.848393579 +0800
++++ mock_widget_input_handler.h	2025-10-16 15:55:00.080072998 +0800
+@@ -260,10 +260,15 @@
+   void RequestCompositionUpdates(bool immediate_request,
+                                  bool monitor_request) override;
+ 
+   void DispatchEvent(std::unique_ptr<blink::WebCoalescedInputEvent> event,
+                      DispatchEventCallback callback) override;
++#if BUILDFLAG(IS_ARKWEB)
++  void TryStartFling() override {}
++  void TryFinishFling() override {}
++#endif
++
+   void DispatchNonBlockingEvent(
+       std::unique_ptr<blink::WebCoalescedInputEvent> event) override;
+   void WaitForInputProcessed(WaitForInputProcessedCallback callback) override;
+ #if BUILDFLAG(IS_ANDROID)
+   void AttachSynchronousCompositor(
+@@ -281,11 +286,22 @@
+       cc::BrowserControlsState constraints,
+       cc::BrowserControlsState current,
+       bool animate,
+       const std::optional<cc::BrowserControlsOffsetTagsInfo>& offset_tags_info)
+       override;
+-
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  void SetGestureEventResult(bool result,
++                             bool stopPropagation,
++                             int32_t fingerId) override {}
++  void SetNativeEmbedMode(bool flag) override {}
++  void AttachSoftwareCompositorOhos(::mojo::PendingReceiver<::blink::mojom::SoftwareCompositorOhos>
++    compositor_request) override {}
++  void ScrollBy(float delta_x, float delta_y) override {}
++  void SetMouseEventResult(bool result, bool stopPropagation) override {}
++  void SetBypassVsyncCondition(int32_t condition) override {}
++  void SetEnableCustomVideoPlayer(bool flag) override {}
++#endif
+   using MessageVector = std::vector<std::unique_ptr<DispatchedMessage>>;
+   MessageVector GetAndResetDispatchedMessages();
+ 
+  private:
+   mojo::Receiver<blink::mojom::WidgetInputHandler> receiver_{this};

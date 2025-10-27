@@ -34,7 +34,11 @@ Logger::~Logger() = default;
 void Logger::LogMessage(
     const char* filename, int line, const std::string& msg) {
   if (log_message_count_ < kMaxLogMessages || disable_gl_error_limit_) {
+#if BUILDFLAG(ARKWEB_DFX_LOGGING)
+    std::string prefixed_msg(msg);
+#else
     std::string prefixed_msg(std::string("[") + GetLogPrefix() + "]" + msg);
+#endif
     ++log_message_count_;
     // LOG this unless logging is turned off as any chromium code that
     // generates these errors probably has a bug.

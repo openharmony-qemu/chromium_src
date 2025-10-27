@@ -1,0 +1,22 @@
+--- browsing_data_api.cc	2025-10-20 19:52:49.582229098 +0800
++++ browsing_data_api.cc	2025-10-16 15:57:00.113592307 +0800
+@@ -89,17 +89,19 @@
+     return prefs->GetBoolean(prefs::kAllowDeletingBrowserHistory);
+   }
+   return true;
+ }
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ // Returns true if Sync is currently running (i.e. enabled and not in error).
+ bool IsSyncRunning(Profile* profile) {
+   if (profile->IsOffTheRecord()) {
+     return false;
+   }
+   return GetSyncStatusMessageType(profile) == SyncStatusMessageType::kSynced;
+ }
++#endif
+ }  // namespace
+ 
+ bool BrowsingDataSettingsFunction::isDataTypeSelected(
+     BrowsingDataType data_type,
+     ClearBrowsingDataTab tab) {

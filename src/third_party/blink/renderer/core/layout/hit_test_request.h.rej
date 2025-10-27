@@ -1,0 +1,28 @@
+--- hit_test_request.h	2025-10-20 19:53:00.486209148 +0800
++++ hit_test_request.h	2025-10-16 16:07:39.515519156 +0800
+@@ -23,10 +23,11 @@
+ #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_LAYOUT_HIT_TEST_REQUEST_H_
+ #define THIRD_PARTY_BLINK_RENDERER_CORE_LAYOUT_HIT_TEST_REQUEST_H_
+ 
+ #include <optional>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/functional/callback.h"
+ #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
+ #include "third_party/blink/renderer/platform/heap/member.h"
+ #include "third_party/blink/renderer/platform/wtf/allocator/allocator.h"
+ 
+@@ -63,10 +64,13 @@
+     // testing after a hit has been found.
+     kPenetratingList = 1 << 12,
+     kAvoidCache = 1 << 13,
+     kIgnoreZeroOpacityObjects = 1 << 14,
+     kHitTestVisualOverflow = 1 << 15,
++#if BUILDFLAG(ARKWEB_MENU)
++    kOnDoHitTest = 1 << 16,
++#endif  // BUILDFLAG(ARKWEB_MENU)
+   };
+ 
+   typedef unsigned HitTestRequestType;
+ 
+   using HitNodeCb =

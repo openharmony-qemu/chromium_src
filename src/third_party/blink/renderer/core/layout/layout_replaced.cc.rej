@@ -1,0 +1,21 @@
+--- layout_replaced.cc	2025-10-20 19:53:00.506208959 +0800
++++ layout_replaced.cc	2025-10-16 16:07:39.539204055 +0800
+@@ -136,10 +136,18 @@
+ }
+ 
+ static inline bool LayoutObjectHasIntrinsicAspectRatio(
+     const LayoutObject* layout_object) {
+   DCHECK(layout_object);
++  if (!layout_object) {
++    return false;
++  }
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++  if (layout_object->IsLayoutNative()) {
++    return false;
++  }
++#endif
+   return layout_object->IsImage() || layout_object->IsCanvas() ||
+          IsA<LayoutVideo>(layout_object) ||
+          IsA<LayoutViewTransitionContent>(layout_object);
+ }
+ 

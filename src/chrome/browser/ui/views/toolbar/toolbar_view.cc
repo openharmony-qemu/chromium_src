@@ -310,7 +310,8 @@ void ToolbarView::Init() {
 
   auto location_bar = std::make_unique<LocationBarView>(
       browser_, browser_->profile(), browser_->command_controller(), this,
-      display_mode_ != DisplayMode::NORMAL && !browser_->toolbar_overridden());
+        display_mode_ != DisplayMode::NORMAL &&
+            !browser_->toolbar_overridden());
   // Make sure the toolbar shows by default.
   size_animation_.Reset(1);
 
@@ -847,8 +848,9 @@ void ToolbarView::Layout(PassKey) {
 
   if (display_mode_ == DisplayMode::NORMAL) {
     LayoutCommon();
-    if (!browser_->toolbar_overridden())
+    if (!browser_->toolbar_overridden()) {
       UpdateClipPath();
+  }
   }
 
   if (toolbar_controller_) {

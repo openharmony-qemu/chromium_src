@@ -296,5 +296,7 @@ class PasswordAutofillManager : public autofill::AutofillSuggestionDelegate,
 };
 
 }  // namespace password_manager
-
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+#include "arkweb/chromium_ext/components/password_manager/core/browser/password_autofill_manager_ext.h"
+#endif
 #endif  // COMPONENTS_PASSWORD_MANAGER_CORE_BROWSER_PASSWORD_AUTOFILL_MANAGER_H_

@@ -1,0 +1,72 @@
+--- time.h	2025-10-20 19:52:46.744698835 +0800
++++ time.h	2025-10-16 15:54:55.387819000 +0800
+@@ -77,10 +77,11 @@
+ #include "base/check_op.h"
+ #include "base/compiler_specific.h"
+ #include "base/numerics/clamped_math.h"
+ #include "build/build_config.h"
+ #include "build/chromeos_buildflags.h"
++#include "arkweb/build/features/features.h"
+ 
+ #if BUILDFLAG(IS_FUCHSIA)
+ #include <zircon/types.h>
+ #endif
+ 
+@@ -135,13 +136,10 @@
+ }
+ 
+ // Clang compiler is unable to eliminate a "dead" function call to an undefined
+ // `std::_Literal_zero_is_expected()` function that MSVC uses to allow
+ // comparisons with literal zero without warning.
+-#define MSVC_OPERATOR_3WAY_BROKEN \
+-    BUILDFLAG(IS_WIN) && (__cplusplus >= 202002L || _MSVC_LANG >= 202002L) && \
+-    _MSVC_STL_VERSION >= 143 && _MSVC_STL_UPDATE >= 202303
+ 
+ // TimeDelta ------------------------------------------------------------------
+ 
+ class BASE_EXPORT TimeDelta {
+  public:
+@@ -325,21 +323,12 @@
+     return *this = (*this % other);
+   }
+ 
+   // Comparison operators.
+   friend constexpr bool operator==(TimeDelta, TimeDelta) = default;
+-#if MSVC_OPERATOR_3WAY_BROKEN
+-  friend constexpr std::strong_ordering operator<=>(TimeDelta lhs,
+-                                                    TimeDelta rhs) {
+-    if(lhs.delta_ == rhs.delta_) return std::strong_ordering::equal;
+-    if(lhs.delta_ < rhs.delta_) return std::strong_ordering::less;
+-    return std::strong_ordering::greater;
+-  }
+-#else
+   friend constexpr std::strong_ordering operator<=>(TimeDelta,
+                                                     TimeDelta) = default;
+-#endif
+ 
+   // Returns this delta, ceiled/floored/rounded-away-from-zero to the nearest
+   // multiple of |interval|.
+   TimeDelta CeilToMultiple(TimeDelta interval) const;
+   TimeDelta FloorToMultiple(TimeDelta interval) const;
+@@ -486,21 +475,12 @@
+     return static_cast<TimeClass&>(*this = (*this - delta));
+   }
+ 
+   // Comparison operators
+   friend constexpr bool operator==(const TimeBase&, const TimeBase&) = default;
+-#if MSVC_OPERATOR_3WAY_BROKEN
+-  friend constexpr std::strong_ordering operator<=>(TimeBase lhs,
+-                                                    TimeBase rhs) {
+-    if(lhs.us_ == rhs.us_) return std::strong_ordering::equal;
+-    if(lhs.us_ < rhs.us_) return std::strong_ordering::less;
+-    return std::strong_ordering::greater;
+-  }
+-#else
+   friend constexpr std::strong_ordering operator<=>(const TimeBase&,
+                                                     const TimeBase&) = default;
+-#endif
+ 
+  protected:
+   constexpr explicit TimeBase(int64_t us) : us_(us) {}
+ 
+   // Time value in a microsecond timebase.

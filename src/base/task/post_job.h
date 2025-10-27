@@ -12,6 +12,7 @@
 #include "base/functional/callback.h"
 #include "base/location.h"
 #include "base/memory/stack_allocated.h"
+#include "arkweb/build/features/features.h"
 
 namespace base {
 namespace internal {
@@ -130,6 +131,12 @@ class BASE_EXPORT JobHandle {
 
   // Can be invoked before ~JobHandle() to avoid waiting on the job completing.
   void Detach();
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+  internal::JobTaskSource* GetTaskSource() {
+    return task_source_.get();
+  }
+#endif
 
  private:
   friend class internal::JobTaskSource;

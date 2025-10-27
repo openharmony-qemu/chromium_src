@@ -1,0 +1,15 @@
+--- http_network_session.cc	2025-10-20 19:52:57.138206536 +0800
++++ http_network_session.cc	2025-10-16 15:55:02.721246282 +0800
+@@ -451,7 +452,12 @@
+     case base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_CRITICAL:
+       CloseIdleConnections("Low memory");
+       break;
+   }
+ }
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++bool HttpNetworkSession::is_strict_log_mode() {
++  return is_strict_log_mode_;
++}
++#endif
+ 
+ }  // namespace net

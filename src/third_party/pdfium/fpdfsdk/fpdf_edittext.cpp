@@ -83,8 +83,6 @@ static_assert(static_cast<int>(TextRenderingMode::MODE_LAST) ==
 
 namespace {
 
-constexpr uint32_t kMaxBfCharBfRangeEntries = 100;
-
 ByteString BaseFontNameForType(const CFX_Font* font, int font_type) {
   ByteString name = font_type == FPDF_FONT_TYPE1 ? font->GetPsName()
                                                  : font->GetBaseFontName();
@@ -186,33 +184,49 @@ RetainPtr<CPDF_Array> CreateWidthsArray(
     const std::map<uint32_t, uint32_t>& widths) {
   auto widths_array = doc->NewIndirect<CPDF_Array>();
   for (auto it = widths.begin(); it != widths.end(); ++it) {
-    auto next_it = std::next(it);
-
-    if (next_it != widths.end() && next_it->first == it->first + 1 &&
-        next_it->second == it->second) {
+    int ch = it->first;
+    int w = it->second;
+    if (std::next(it) == widths.end()) {
+      // Only one char left, use format c [w]
+      auto single_w_array = pdfium::MakeRetain<CPDF_Array>();
+      single_w_array->AppendNew<CPDF_Number>(w);
+      widths_array->AppendNew<CPDF_Number>(ch);
+      widths_array->Append(std::move(single_w_array));
+      break;
+    }
+    ++it;
+    int next_ch = it->first;
+    int next_w = it->second;
+    if (next_ch == ch + 1 && next_w == w) {
       // The array can have a group c_first c_last w: all CIDs in the range from
       // c_first to c_last will have width w
-      widths_array->AppendNew<CPDF_Number>(static_cast<int>(it->first));
-
-      while (next_it != widths.end() && next_it->first == it->first + 1 &&
-             next_it->second == it->second) {
-        it = next_it;
-        next_it = std::next(it);
+      widths_array->AppendNew<CPDF_Number>(ch);
+      ch = next_ch;
+      while (true) {
+        auto next_it = std::next(it);
+        if (next_it == widths.end() || next_it->first != it->first + 1 ||
+            next_it->second != it->second) {
+          break;
+        }
+        ++it;
+        ch = it->first;
       }
-      widths_array->AppendNew<CPDF_Number>(static_cast<int>(it->first));
-      widths_array->AppendNew<CPDF_Number>(static_cast<int>(it->second));
+      widths_array->AppendNew<CPDF_Number>(ch);
+      widths_array->AppendNew<CPDF_Number>(w);
       continue;
     }
     // Otherwise we can have a group of the form c [w1 w2 ...]: c has width
     // w1, c+1 has width w2, etc.
-    // A group may contain only a single item, e.g. c[w]
-    widths_array->AppendNew<CPDF_Number>(static_cast<int>(it->first));
+    widths_array->AppendNew<CPDF_Number>(ch);
     auto current_width_array = pdfium::MakeRetain<CPDF_Array>();
-    current_width_array->AppendNew<CPDF_Number>(static_cast<int>(it->second));
-
-    while (next_it != widths.end() && next_it->first == it->first + 1) {
-      it = next_it;
-      next_it = std::next(it);
+    current_width_array->AppendNew<CPDF_Number>(w);
+    current_width_array->AppendNew<CPDF_Number>(next_w);
+    while (true) {
+      auto next_it = std::next(it);
+      if (next_it == widths.end() || next_it->first != it->first + 1) {
+        break;
+      }
+      ++it;
       current_width_array->AppendNew<CPDF_Number>(static_cast<int>(it->second));
     }
     widths_array->Append(std::move(current_width_array));
@@ -259,11 +273,12 @@ void AddUnicode(fxcrt::ostringstream& buffer, uint32_t unicode) {
     unicode = 0;
   }
 
-  char unicode_buf[8];
-  pdfium::span<const char> unicode_span = FXSYS_ToUTF16BE(unicode, unicode_buf);
-  CHECK(!unicode_span.empty());
+  char ans[8];
+  size_t char_count = FXSYS_ToUTF16BE(unicode, ans);
   buffer << "<";
-  for (char c : unicode_span) {
+  CHECK_LE(char_count, std::size(ans));
+  auto ans_span = pdfium::make_span(ans).first(char_count);
+  for (char c : ans_span) {
     buffer << c;
   }
   buffer << ">";
@@ -274,18 +289,17 @@ RetainPtr<CPDF_Stream> LoadUnicode(
     CPDF_Document* doc,
     const std::multimap<uint32_t, uint32_t>& to_unicode) {
   // A map charcode->unicode
-  std::map<uint32_t, uint32_t> char_to_unicode_map;
+  std::map<uint32_t, uint32_t> char_to_uni;
   // A map <char_start, char_end> to vector v of unicode characters of size (end
   // - start + 1). This abbreviates: start->v[0], start+1->v[1], etc. PDF spec
   // 1.7 Section 5.9.2 says that only the last byte of the unicode may change.
   std::map<std::pair<uint32_t, uint32_t>, std::vector<uint32_t>>
-      char_range_to_unicodes_map;
+      map_range_vector;
   // A map <start, end> -> unicode
   // This abbreviates: start->unicode, start+1->unicode+1, etc.
   // PDF spec 1.7 Section 5.9.2 says that only the last byte of the unicode may
   // change.
-  std::map<std::pair<uint32_t, uint32_t>, uint32_t>
-      char_range_to_consecutive_unicodes_map;
+  std::map<std::pair<uint32_t, uint32_t>, uint32_t> map_range;
 
   // Calculate the maps
   for (auto it = to_unicode.begin(); it != to_unicode.end(); ++it) {
@@ -294,7 +308,7 @@ RetainPtr<CPDF_Stream> LoadUnicode(
     {
       auto next_it = std::next(it);
       if (next_it == to_unicode.end() || first_charcode + 1 != next_it->first) {
-        char_to_unicode_map[first_charcode] = first_unicode;
+        char_to_uni[first_charcode] = first_unicode;
         continue;
       }
     }
@@ -302,8 +316,8 @@ RetainPtr<CPDF_Stream> LoadUnicode(
     uint32_t current_charcode = it->first;
     uint32_t current_unicode = it->second;
     if (current_charcode % 256 == 0) {
-      char_to_unicode_map[first_charcode] = first_unicode;
-      char_to_unicode_map[current_charcode] = current_unicode;
+      char_to_uni[first_charcode] = first_unicode;
+      char_to_uni[current_charcode] = current_unicode;
       continue;
     }
     const size_t max_extra = 255 - (current_charcode % 256);
@@ -322,8 +336,7 @@ RetainPtr<CPDF_Stream> LoadUnicode(
         next_it = std::next(it);
       }
       CHECK_EQ(it->first - first_charcode + 1, unicodes.size());
-      char_range_to_unicodes_map[std::make_pair(first_charcode, it->first)] =
-          std::move(unicodes);
+      map_range_vector[std::make_pair(first_charcode, it->first)] = unicodes;
       continue;
     }
     // Consecutive charcodes mapping to consecutive unicodes

@@ -1,0 +1,16 @@
+--- chrome_paths.h	2025-10-20 19:52:51.161027462 +0800
++++ chrome_paths.h	2025-10-16 15:57:02.050265083 +0800
+@@ -116,11 +116,12 @@
+                           // data that must persist a Chrome restart but that
+                           // must be cleared on device reboot.
+ 
+ #endif
+ #if BUILDFLAG(ENABLE_EXTENSIONS) && \
+-    (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_MAC))
++    (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_MAC) || \
++     BUILDFLAG(IS_OHOS))
+   DIR_NATIVE_MESSAGING,       // System directory where native messaging host
+                               // manifest files are stored.
+   DIR_USER_NATIVE_MESSAGING,  // Directory with Native Messaging Hosts
+                               // installed per-user.
+ #endif

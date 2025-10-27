@@ -4,6 +4,7 @@
 
 #include "cef/libcef/common/net/scheme_registration.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/contains.h"
 #include "content/public/common/url_constants.h"
 #include "extensions/common/constants.h"
@@ -18,6 +19,10 @@ bool IsInternalHandledScheme(const std::string& scheme) {
       url::kBlobScheme,
       content::kChromeDevToolsScheme,
       content::kChromeUIScheme,
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      content::kArkWebUIScheme,
+      extensions::kArkwebExtensionScheme,
+#endif
       content::kChromeUIUntrustedScheme,
       url::kDataScheme,
       extensions::kExtensionScheme,
@@ -28,6 +33,13 @@ bool IsInternalHandledScheme(const std::string& scheme) {
       url::kJavaScriptScheme,
       url::kWsScheme,
       url::kWssScheme,
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+      url::kDataabilityScheme,
+      url::kDatashareScheme,
+#endif  // BUILDFLAG(ARKWEB_FILE_UPLOAD)
+#if BUILDFLAG(ARKWEB_RECOURCE_SCHEME)
+      url::kResourcesScheme,
+#endif
   };
 
   for (auto& i : schemes) {

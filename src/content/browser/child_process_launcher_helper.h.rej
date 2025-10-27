@@ -1,0 +1,15 @@
+--- child_process_launcher_helper.h	2025-10-20 19:52:54.250467702 +0800
++++ child_process_launcher_helper.h	2025-10-16 15:54:59.372829925 +0800
+@@ -315,11 +328,11 @@
+ 
+ #if BUILDFLAG(IS_CHROMEOS)
+   std::optional<base::ProcessId> process_id_ = std::nullopt;
+ #endif  // BUILDFLAG(IS_CHROMEOS)
+ 
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_RENDER_PROCESS_STARTUP)
+   // The priority of the process. The state is stored to avoid changing the
+   // setting repeatedly.
+   std::optional<base::Process::Priority> priority_;
+ #endif
+ 

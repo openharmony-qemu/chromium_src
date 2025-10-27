@@ -16,7 +16,7 @@ class Context;
 /**
  * An instance of the built-in Date constructor (ECMA-262, 15.9).
  */
-class V8_EXPORT Date : public Object {
+class V8_EXPORT JSVM_EXPORT Date : public Object {
  public:
   static V8_WARN_UNUSED_RESULT MaybeLocal<Value> New(Local<Context> context,
                                                      double time);

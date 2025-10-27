@@ -388,7 +388,11 @@ void BackForwardCacheMetrics::RecordHistoryNavigationUKM(
             "while the page was cached. This behavior will change shortly "
             "which may break the extension. If you are the developer of the "
             "extension, see "
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+            "https://x.x.x"
+#else
             "https://developer.chrome.com/blog/"
+#endif
             "bfcache-extension-messaging-changes.",
             blocking_extension_id.c_str()));
   }

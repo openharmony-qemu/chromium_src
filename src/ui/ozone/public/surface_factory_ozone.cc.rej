@@ -1,0 +1,14 @@
+--- surface_factory_ozone.cc	2025-10-20 19:53:31.096618279 +0800
++++ surface_factory_ozone.cc	2025-10-16 15:55:05.699576043 +0800
+@@ -5,10 +5,11 @@
+ #include "ui/ozone/public/surface_factory_ozone.h"
+ 
+ #include <stdlib.h>
+ #include <memory>
+ 
++#include "base/logging.h"
+ #include "base/command_line.h"
+ #include "gpu/vulkan/buildflags.h"
+ #include "ui/gfx/native_pixmap.h"
+ #include "ui/gl/gl_implementation.h"
+ #include "ui/ozone/public/overlay_surface.h"

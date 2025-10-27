@@ -165,6 +165,9 @@ std::unique_ptr<DragImage> DragImage::Create(const KURL& url,
 
   String url_string = url.GetString();
   String label = in_label.StripWhiteSpace();
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  label = DragImageExt::filterNonPrintable(label);
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
   if (label.empty()) {
     draw_url_string = false;
     label = url_string;
@@ -285,5 +288,4 @@ void DragImage::Scale(float scale_x, float scale_y) {
   bitmap_ = skia::ImageOperations::Resize(bitmap_, resize_method, image_width,
                                           image_height);
 }
-
 }  // namespace blink

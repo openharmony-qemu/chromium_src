@@ -39,17 +39,25 @@ struct Config;
 // Temporary interface due to OSCrypt refactor. See OSCryptImpl for descriptions
 // of what each function does.
 namespace OSCrypt {
-#if BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
 COMPONENT_EXPORT(OS_CRYPT)
 void SetConfig(std::unique_ptr<os_crypt::Config> config);
 #endif  // BUILDFLAG(IS_LINUX)
 COMPONENT_EXPORT(OS_CRYPT) bool IsEncryptionAvailable();
 COMPONENT_EXPORT(OS_CRYPT)
 bool EncryptString16(const std::u16string& plaintext, std::string* ciphertext);
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+COMPONENT_EXPORT(OS_CRYPT)
+bool DecryptString16ForMigrate(const std::string& ciphertext, std::u16string* plaintext);
+#endif
 COMPONENT_EXPORT(OS_CRYPT)
 bool DecryptString16(const std::string& ciphertext, std::u16string* plaintext);
 COMPONENT_EXPORT(OS_CRYPT)
 bool EncryptString(const std::string& plaintext, std::string* ciphertext);
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+COMPONENT_EXPORT(OS_CRYPT)
+bool DecryptStringForMigrate(const std::string& ciphertext, std::string* plaintext);
+#endif
 COMPONENT_EXPORT(OS_CRYPT)
 bool DecryptString(const std::string& ciphertext, std::string* plaintext);
 #if BUILDFLAG(IS_WIN)
@@ -148,6 +156,11 @@ class COMPONENT_EXPORT(OS_CRYPT) OSCryptImpl {
   bool DecryptString16(const std::string& ciphertext,
                        std::u16string* plaintext);
 
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+  // Decrypt string16 for migrating passwords to password vault.
+  bool DecryptString16ForMigrate(const std::string& ciphertext, std::u16string* plaintext);
+#endif
+
   // Encrypt a string.
   bool EncryptString(const std::string& plaintext, std::string* ciphertext);
 
@@ -155,6 +168,11 @@ class COMPONENT_EXPORT(OS_CRYPT) OSCryptImpl {
   // Note that the input (first argument) is a std::string, so you need to first
   // get your (binary) data into a string.
   bool DecryptString(const std::string& ciphertext, std::string* plaintext);
+
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+  // Decrypt string for migrating passwords to password vault.
+  bool DecryptStringForMigrate(const std::string& ciphertext, std::string* plaintext);
+#endif
 
 #if BUILDFLAG(IS_WIN)
   // Registers preferences used by OSCryptImpl.

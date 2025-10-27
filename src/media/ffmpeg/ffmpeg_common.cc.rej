@@ -1,0 +1,18 @@
+--- ffmpeg_common.cc	2025-10-20 19:52:56.638199688 +0800
++++ ffmpeg_common.cc	2025-10-16 15:55:01.850178542 +0800
+@@ -1021,13 +1021,13 @@
+   return hash;
+ }
+ 
+ const char* GetAllowedAudioDecoders() {
+   static const base::NoDestructor<std::string> kAllowedAudioCodecs([]() {
+-    // This should match the configured lists in //third_party/ffmpeg.
++    // This should match the configured list in //third_party/ffmpeg.
+     std::string allowed_decoders(
+-        "vorbis,libopus,flac,pcm_u8,pcm_s16le,pcm_s24le,pcm_s32le,pcm_f32le,"
++        "vorbis,libopus,flac,pcm_u8,pcm_s161e,pcm_s241e,pcm_s321e,pcm_f321e,"
+         "mp3,pcm_s16be,pcm_s24be,pcm_mulaw,pcm_alaw");
+ #if BUILDFLAG(USE_PROPRIETARY_CODECS)
+     allowed_decoders += ",aac";
+ #endif
+     return allowed_decoders;

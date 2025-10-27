@@ -125,6 +125,16 @@ class WebWorkerFetchContext : public base::RefCounted<WebWorkerFetchContext> {
   virtual void SetSubresourceFilterBuilder(
       std::unique_ptr<WebDocumentSubresourceFilter::Builder>) {}
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  virtual void SetUserSubresourceFilterBuilder(
+      std::unique_ptr<WebDocumentSubresourceFilter::Builder>) {}
+
+  virtual std::unique_ptr<WebDocumentSubresourceFilter>
+  TakeUserSubresourceFilter() {
+    return nullptr;
+  }
+#endif
+
   // Creates a WebDocumentSubresourceFilter on the worker thread using the
   // WebDocumentSubresourceFilter::Builder which is set on the main thread.
   // This method should only be called once.

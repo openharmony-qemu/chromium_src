@@ -1,0 +1,19 @@
+--- chrome_permissions_client.cc	2025-10-20 19:52:49.941406652 +0800
++++ chrome_permissions_client.cc	2025-10-16 15:57:00.547757339 +0800
+@@ -522,11 +522,15 @@
+     const GURL& embedding_origin) {
+ #if BUILDFLAG(ENABLE_EXTENSIONS)
+   // Extensions are excluded from origin checks as currently they can request
+   // permission from iframes when embedded in non-secure contexts
+   // (https://crbug.com/530507).
+-  if (requesting_origin.SchemeIs(extensions::kExtensionScheme))
++  if (requesting_origin.SchemeIs(extensions::kExtensionScheme)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      || requesting_origin.SchemeIs(extensions::kArkwebExtensionScheme)
++#endif
++  )
+     return true;
+ #endif
+ 
+   // The New Tab Page is excluded from origin checks as its effective
+   // requesting origin may be the Default Search Engine origin.

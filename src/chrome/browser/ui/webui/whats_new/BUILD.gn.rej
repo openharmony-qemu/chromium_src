@@ -1,0 +1,27 @@
+--- BUILD.gn	2025-10-20 19:52:51.072985690 +0800
++++ BUILD.gn	2025-10-16 15:57:01.942100505 +0800
+@@ -2,10 +2,11 @@
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+ import("//mojo/public/tools/bindings/mojom.gni")
+ import("//pdf/features.gni")
++import("//arkweb/build/features/features.gni")
+ 
+ assert(!is_android && !is_fuchsia)
+ 
+ mojom("mojo_bindings") {
+   sources = [ "whats_new.mojom" ]
+@@ -68,11 +69,11 @@
+ 
+   if (enable_pdf) {
+     deps += [ "//pdf:features" ]
+   }
+ 
+-  if (is_win || is_mac || is_linux) {
++  if (is_win || is_mac || is_linux || arkweb_asan || arkweb_test) {
+     sources += [
+       "whats_new_fetcher.cc",
+       "whats_new_handler.cc",
+       "whats_new_registrar.cc",
+       "whats_new_storage_service_impl.cc",

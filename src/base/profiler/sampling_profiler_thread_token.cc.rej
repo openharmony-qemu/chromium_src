@@ -1,0 +1,15 @@
+--- sampling_profiler_thread_token.cc	2025-10-20 19:52:46.688825537 +0800
++++ sampling_profiler_thread_token.cc	2025-10-16 15:54:55.321343713 +0800
+@@ -16,11 +16,11 @@
+ 
+ SamplingProfilerThreadToken GetSamplingProfilerCurrentThreadToken() {
+   PlatformThreadId id = PlatformThread::CurrentId();
+ #if BUILDFLAG(IS_ANDROID)
+   return {id, pthread_self()};
+-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+   std::optional<uintptr_t> maybe_stack_base =
+       GetThreadStackBaseAddress(id, pthread_self());
+   return {id, maybe_stack_base};
+ #else
+   return {id};

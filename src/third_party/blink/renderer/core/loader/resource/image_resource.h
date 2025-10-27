@@ -41,6 +41,7 @@
 
 namespace blink {
 
+class ImageResourceUtils;
 class DOMWrapperWorld;
 class FetchParameters;
 class ImageResourceContent;

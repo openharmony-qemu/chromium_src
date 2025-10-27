@@ -1,0 +1,29 @@
+--- BUILD.gn	2025-10-20 19:52:50.053150424 +0800
++++ BUILD.gn	2025-10-16 15:57:00.680000020 +0800
+@@ -99,23 +99,23 @@
+       "//chrome/browser/resources/media/mei_preload:component",
+       "//components/privacy_sandbox/privacy_sandbox_attestations/preload:component",
+     ]
+   }
+ 
+-  if (is_win || is_mac || is_linux || is_chromeos_ash) {
++  if (is_win || is_mac || is_linux || is_chromeos_ash || is_ohos) {
+     public_deps += [ "connectors_internals:resources" ]
+   }
+ 
+   if (is_chromeos) {
+     public_deps += [ "chromeos/dlp_internals:resources" ]
+   }
+ 
+-  if (is_win || is_mac || is_linux || is_chromeos) {
++  if (is_win || is_mac || is_linux || is_chromeos || is_ohos) {
+     public_deps += [ "discards:resources" ]
+   }
+ 
+-  if (is_win || is_mac || is_linux) {
++  if (is_win || is_mac || is_linux || is_ohos) {
+     public_deps += [
+       "app_home:resources",
+       "app_settings:resources",
+       "browser_switch:resources",
+       "on_device_translation_internals:resources",

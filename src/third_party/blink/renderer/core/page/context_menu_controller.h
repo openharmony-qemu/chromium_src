@@ -142,5 +142,7 @@ class CORE_EXPORT ContextMenuController final
 };
 
 }  // namespace blink
-
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/page/context_menu_controller_ext.h"
+#endif
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_PAGE_CONTEXT_MENU_CONTROLLER_H_

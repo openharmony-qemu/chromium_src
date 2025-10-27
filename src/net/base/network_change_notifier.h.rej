@@ -1,0 +1,29 @@
+--- network_change_notifier.h	2025-10-20 19:52:56.982204991 +0800
++++ network_change_notifier.h	2025-10-16 15:55:02.493490038 +0800
+@@ -17,20 +17,25 @@
+ #include "base/time/time.h"
+ #include "build/build_config.h"
+ #include "net/base/net_export.h"
+ #include "net/base/network_handle.h"
+ 
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
++
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+ #include "net/base/address_map_linux.h"
+ #endif
+ 
+ namespace net {
+ 
+ class NetworkChangeNotifierFactory;
+ struct NetworkInterface;
+ class SystemDnsConfigChangeNotifier;
+ typedef std::vector<NetworkInterface> NetworkInterfaceList;
++class ArkwebNetworkChangeNotifierExt;
+ 
+ namespace internal {
+ #if BUILDFLAG(IS_FUCHSIA)
+ class NetworkInterfaceCache;
+ #endif

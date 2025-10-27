@@ -909,7 +909,16 @@ component("views") {
           "//ui/base:ozone_buildflags",
         ]
       }
-      if (is_linux || is_fuchsia) {
+      if (is_ohos) {
+        public += [ "//arkweb/chromium_ext/ui/views/widget/desktop_aura/desktop_window_tree_host_ohos.h" ]
+        sources += [
+          "//arkweb/chromium_ext/ui/views/widget/desktop_aura/desktop_window_tree_host_ohos.cc",
+          "//arkweb/chromium_ext/ui/views/widget/desktop_aura/window_event_filter_ohos.cc",
+          "//arkweb/chromium_ext/ui/views/widget/desktop_aura/window_event_filter_ohos.h",
+        ]
+        deps += [ "//ui/base:hit_test" ]
+      }
+      if (is_linux || is_fuchsia || is_ohos) {
         public += [
           "widget/desktop_aura/desktop_window_tree_host_platform.h",
           "widget/desktop_aura/window_move_client_platform.h",

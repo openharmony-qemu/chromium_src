@@ -1,0 +1,44 @@
+--- touch_selection_controller.h	2025-10-20 19:53:31.144611766 +0800
++++ touch_selection_controller.h	2025-10-16 15:55:05.757153672 +0800
+@@ -16,14 +16,19 @@
+ #include "ui/touch_selection/selection_event_type.h"
+ #include "ui/touch_selection/touch_handle.h"
+ #include "ui/touch_selection/touch_handle_orientation.h"
+ #include "ui/touch_selection/touch_selection_metrics.h"
+ #include "ui/touch_selection/ui_touch_selection_export.h"
++#include "arkweb/build/features/features.h"
+ 
+ namespace ui {
+ class MotionEvent;
+ class Event;
++#if BUILDFLAG(IS_ARKWEB)
++  class TouchSelectionControllerExt;
++  class TouchSelectionControllerUtils;
++#endif
+ 
+ // Interface through which |TouchSelectionController| issues selection-related
+ // commands, notifications and requests.
+ class UI_TOUCH_SELECTION_EXPORT TouchSelectionControllerClient {
+  public:
+@@ -290,12 +313,20 @@
+ 
+   // Determines whether the entire touch sequence should be consumed or not.
+   bool consume_touch_sequence_;
+ 
+   bool show_touch_handles_;
+-
++#if BUILDFLAG(ARKWEB_MENU)
++  bool is_first_drag_ = false;
++#endif
+   TouchSelectionSessionMetricsRecorder session_metrics_recorder_;
++#if BUILDFLAG(IS_ARKWEB)
++  std::unique_ptr<TouchSelectionControllerUtils> utils_;
++#endif
+ };
+ 
+ }  // namespace ui
+ 
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/ui/touch_selection/touch_selection_controller_ext.h"
++#endif
+ #endif  // UI_TOUCH_SELECTION_TOUCH_SELECTION_CONTROLLER_H_

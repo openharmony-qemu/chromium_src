@@ -164,10 +164,15 @@ class Shell : public WebContentsDelegate, public WebContentsObserver {
                               const std::u16string& message,
                               int32_t line_no,
                               const std::u16string& source_id) override;
-  void RendererUnresponsive(
-      WebContents* source,
+  void RendererUnresponsive(WebContents* source,
       RenderWidgetHost* render_widget_host,
-      base::RepeatingClosure hang_monitor_restarter) override;
+                            base::RepeatingClosure hang_monitor_restarter
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+                            ,
+                            RendererIsUnresponsiveReason reason
+#endif
+                            ) override;
+
   void ActivateContents(WebContents* contents) override;
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
   std::unique_ptr<ColorChooser> OpenColorChooser(

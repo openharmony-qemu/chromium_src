@@ -18,7 +18,7 @@ class CefDownloadItemImpl
     : public CefValueBase<CefDownloadItem, download::DownloadItem> {
  public:
   explicit CefDownloadItemImpl(download::DownloadItem* value);
-
+  explicit CefDownloadItemImpl(download::DownloadItem* value, int nweb_id);
   CefDownloadItemImpl(const CefDownloadItemImpl&) = delete;
   CefDownloadItemImpl& operator=(const CefDownloadItemImpl&) = delete;
 

@@ -70,6 +70,7 @@ viz_component("service") {
     "display/delegated_ink_trail_data.h",
     "display/direct_renderer.cc",
     "display/direct_renderer.h",
+    "//arkweb/chromium_ext/components/viz/service/display/direct_renderer_ext.h",
     "display/display.cc",
     "display/display.h",
     "display/display_client.h",
@@ -135,6 +136,7 @@ viz_component("service") {
     "display/skia_output_surface.h",
     "display/skia_renderer.cc",
     "display/skia_renderer.h",
+    "//arkweb/chromium_ext/components/viz/service/display/direct_renderer_ext.h",
     "display/software_output_device.cc",
     "display/software_output_device.h",
     "display/software_renderer.cc",
@@ -159,6 +161,8 @@ viz_component("service") {
     "display_embedder/skia_output_device_buffer_queue.h",
     "display_embedder/skia_output_device_gl.cc",
     "display_embedder/skia_output_device_gl.h",
+    "//arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_device_gl_utils.cc",
+    "//arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_device_gl_utils.h",
     "display_embedder/skia_output_device_offscreen.cc",
     "display_embedder/skia_output_device_offscreen.h",
     "display_embedder/skia_output_device_webview.cc",
@@ -450,6 +454,28 @@ viz_component("service") {
       "//ui/events:gesture_detection",
       "//ui/events/blink",
     ]
+  }
+
+  if (is_arkweb && arkweb_dfx_dump) {
+    sources += arkweb_components_viz_service_display_sources
+  }
+
+  if (is_arkweb && arkweb_composite_render) {
+    sources += arkweb_components_viz_service_frame_sinks_sources
+  }
+
+  if (is_arkweb) {
+    sources += arkweb_chromium_components_viz_service_frame_sinks_sources
+    sources += arkweb_components_viz_service_display_embedder_compositor_gpu_thread_sources
+    sources += arkweb_components_viz_service_display_embedder_skia_output_device_vulkan_sources
+  }
+
+  if (enable_arkweb) {
+    deps += [ "//arkweb//build/features"]
+  }
+
+  if (enable_arkweb) {
+    public_deps += [ "//arkweb/build/features" ]
   }
 
   if (use_ozone) {
@@ -749,6 +775,11 @@ viz_source_set("unit_tests") {
       "//gpu/vulkan/init",
     ]
   }
+
+  import("//arkweb/chromium_ext/components/viz/service/arkweb_viz_service_ext.gni")
+  sources += components_viz_service_unittests_ext.sources
+  sources -= components_viz_service_unittests_ext.sources_del
+  deps += components_viz_service_unittests_ext.deps
 }
 
 viz_source_set("perf_tests") {

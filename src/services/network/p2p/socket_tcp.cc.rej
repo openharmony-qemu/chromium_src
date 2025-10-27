@@ -1,0 +1,27 @@
+--- socket_tcp.cc	2025-10-21 21:22:38.186315688 +0800
++++ socket_tcp.cc	2025-10-16 15:55:03.320604818 +0800
+@@ -29,10 +29,11 @@
+ #include "services/network/proxy_resolving_client_socket.h"
+ #include "services/network/proxy_resolving_client_socket_factory.h"
+ #include "services/network/public/cpp/p2p_param_traits.h"
+ #include "third_party/webrtc/media/base/rtp_utils.h"
+ #include "url/gurl.h"
++#include "arkweb/build/features/features.h"
+ 
+ namespace network {
+ namespace {
+ 
+ typedef uint16_t PacketLength;
+@@ -155,11 +156,11 @@
+   }
+ 
+   if (!DoSendSocketCreateMsg())
+     return false;
+ 
+-  return DoRead()
++  return DoRead();
+ }
+ 
+ bool P2PSocketTcpBase::DoSendSocketCreateMsg() {
+   DCHECK(socket_.get());
+ 

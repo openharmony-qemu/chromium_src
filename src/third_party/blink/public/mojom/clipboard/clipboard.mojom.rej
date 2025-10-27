@@ -1,0 +1,15 @@
+--- clipboard.mojom	2025-10-20 19:53:00.106212751 +0800
++++ clipboard.mojom	2025-10-16 16:07:39.069453559 +0800
+@@ -175,6 +175,12 @@
+ 
+   CommitWrite();
+ 
+   [EnableIf=is_mac]
+   WriteStringToFindPboard(mojo_base.mojom.String16 text);
++
++  [EnableIf=arkweb_clipboard, Sync]
++  OnClipboardDataGuard(bool status) => ();
++
++  [EnableIf=arkweb_clipboard, Sync]
++  UpdateClipboardData() => ();
+ };

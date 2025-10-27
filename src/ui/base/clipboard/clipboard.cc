@@ -465,5 +465,4 @@ void Clipboard::ReadData(const ClipboardFormatType& format,
   ReadData(format, data_dst, &result);
   std::move(callback).Run(std::move(result));
 }
-
 }  // namespace ui

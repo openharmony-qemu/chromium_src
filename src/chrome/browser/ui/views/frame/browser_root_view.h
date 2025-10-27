@@ -165,6 +165,11 @@ class BrowserRootView : public views::internal::RootView {
   base::OnceClosure on_filtering_complete_closure_;
 
   base::WeakPtrFactory<BrowserRootView> weak_ptr_factory_{this};
+
+#if BUILDFLAG(IS_OHOS)
+  void RefreshDropUrls(const ui::DropTargetEvent& event,
+                       std::vector<GURL>& filtered_urls);
+#endif
 };
 
 #endif  // CHROME_BROWSER_UI_VIEWS_FRAME_BROWSER_ROOT_VIEW_H_

@@ -769,7 +769,7 @@ void CXFA_TextLayout::LoadText(CXFA_Node* pNode,
         break;
       }
       default:
-        NOTREACHED();
+        NOTREACHED_NORETURN();
     }
   }
 

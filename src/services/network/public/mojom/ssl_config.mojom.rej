@@ -1,0 +1,17 @@
+--- ssl_config.mojom	2025-10-20 19:52:57.674211384 +0800
++++ ssl_config.mojom	2025-10-16 15:55:03.344579160 +0800
+@@ -5,10 +5,14 @@
+ module network.mojom;
+ 
+ import "services/network/public/mojom/optional_bool.mojom";
+ 
+ enum SSLVersion {
++  [EnableIf=arkweb_ssl_auth_algo]
++  kTLS1,
++  [EnableIf=arkweb_ssl_auth_algo]
++  kTLS11,
+   kTLS12,
+   kTLS13,
+ };
+ 
+ // This is a combination of net::SSLContextConfig and

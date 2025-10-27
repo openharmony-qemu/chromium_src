@@ -1,0 +1,14 @@
+--- crash_reporter_client.h	2025-10-20 19:52:47.993858725 +0800
++++ crash_reporter_client.h	2025-10-16 15:55:22.365995271 +0800
+@@ -48,10 +49,11 @@
+                                 std::wstring* product_name,
+                                 std::wstring* version,
+                                 std::wstring* special_build,
+                                 std::wstring* channel_name) override;
+   bool GetCrashDumpLocation(std::wstring* crash_dir) override;
++  bool GetCrashMetricsLocation(std::wstring* metrics_dir) override;
+ #elif BUILDFLAG(IS_POSIX)
+   void GetProductNameAndVersion(const char** product_name,
+                                 const char** version) override;
+   void GetProductNameAndVersion(std::string* product_name,
+                                 std::string* version,

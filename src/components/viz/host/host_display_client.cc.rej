@@ -1,0 +1,14 @@
+--- host_display_client.cc	2025-10-20 19:52:54.118407731 +0800
++++ host_display_client.cc	2025-10-16 15:54:59.216996705 +0800
+@@ -83,6 +83,11 @@
+ void HostDisplayClient::SetPreferredRefreshRate(float refresh_rate) {
+   NOTREACHED();
+ }
+ #endif  // BUILDFLAG(IS_CHROMEOS_ASH)
+ 
++#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
++void HostDisplayClient::DidCompleteSwapWithNewSizeOHOS(const gfx::Size& size) {
++  NOTIMPLEMENTED();
++}
++#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+ }  // namespace viz

@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <limits>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/logging.h"
 #include "base/posix/eintr_wrapper.h"
@@ -39,6 +40,8 @@ ProcessMemoryLinux::ProcessMemoryLinux(PtraceConnection* connection)
   }
 #endif  // ARCH_CPU_ARM_FAMILY
 
+#if !BUILDFLAG(ARKWEB_CRASHPAD)
+  // todo: need to revert this when hm kernel pread bugfix
   char path[32];
   snprintf(path, sizeof(path), "/proc/%d/mem", connection->GetProcessID());
   mem_fd_.reset(HANDLE_EINTR(open(path, O_RDONLY | O_NOCTTY | O_CLOEXEC)));
@@ -53,6 +56,7 @@ ProcessMemoryLinux::ProcessMemoryLinux(PtraceConnection* connection)
     };
     return;
   }
+#endif  // !BUILDFLAG(ARKWEB_CRASHPAD)
 
   read_up_to_ = std::bind(&PtraceConnection::ReadUpTo,
                           connection,

@@ -1,0 +1,15 @@
+--- local_device_info_util.cc	2025-10-20 19:52:53.930321830 +0800
++++ local_device_info_util.cc	2025-10-16 15:54:57.871153506 +0800
+@@ -108,11 +108,11 @@
+ DeviceInfo::OsType GetLocalDeviceOSType() {
+ #if BUILDFLAG(IS_CHROMEOS_ASH)
+   return DeviceInfo::OsType::kChromeOsAsh;
+ #elif BUILDFLAG(IS_CHROMEOS_LACROS)
+   return DeviceInfo::OsType::kChromeOsLacros;
+-#elif BUILDFLAG(IS_LINUX)
++#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+   return DeviceInfo::OsType::kLinux;
+ #elif BUILDFLAG(IS_ANDROID)
+   return DeviceInfo::OsType::kAndroid;
+ #elif BUILDFLAG(IS_IOS)
+   return DeviceInfo::OsType::kIOS;

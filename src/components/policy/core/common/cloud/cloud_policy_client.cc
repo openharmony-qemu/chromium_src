@@ -1115,6 +1115,11 @@ void CloudPolicyClient::UploadSecurityEventReport(bool include_device_info,
 
 void CloudPolicyClient::UploadAppInstallReport(base::Value::Dict report,
                                                ResultCallback callback) {
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  std::move(callback).Run(CloudPolicyClient::Result(NotRegistered()));
+  return;
+#endif
+
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
   if (!is_registered()) {

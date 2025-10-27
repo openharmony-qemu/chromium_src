@@ -150,6 +150,7 @@
     "geometrychange",
     "gestureflingstart",
     "gesturelongpress",
+    "gesturedraglongpress",
     "gestureshowpress",
     "gesturetap",
     "gesturetapdown",

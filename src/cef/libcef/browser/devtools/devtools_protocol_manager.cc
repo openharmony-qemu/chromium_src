@@ -10,6 +10,10 @@
 #include "cef/libcef/browser/thread_util.h"
 #include "content/public/browser/web_contents.h"
 
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+#include "cef/ohos_cef_ext/libcef/browser/devtools/devtools_protocol_manager_for_include.cc"
+#endif // BUILDFLAG(ARKWEB_DEVTOOLS)
+
 namespace {
 
 // May be created on any thread but will be destroyed on the UI thread.

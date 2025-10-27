@@ -8,6 +8,7 @@
 
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/functional/bind.h"
 #include "base/memory/raw_ref.h"
@@ -202,6 +203,11 @@ ImageDecodeAcceleratorSupportedProfileToProtocol(
     case gpu::ImageDecodeAcceleratorType::kWebP:
       image_type = SystemInfo::ImageTypeEnum::Webp;
       break;
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+    case gpu::ImageDecodeAcceleratorType::kHeif:
+      image_type = SystemInfo::ImageTypeEnum::Unknown;
+      break;
+#endif // BUILDFLAG(ARKWEB_HEIF_SUPPORT)
     case gpu::ImageDecodeAcceleratorType::kUnknown:
       image_type = SystemInfo::ImageTypeEnum::Unknown;
       break;

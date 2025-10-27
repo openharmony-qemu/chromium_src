@@ -1,0 +1,17 @@
+--- thread_local.h	2025-10-20 19:53:01.214200983 +0800
++++ thread_local.h	2025-10-16 16:07:40.111589112 +0800
+@@ -36,11 +37,13 @@
+ #endif
+ 
+ #if BLINK_HEAP_HIDE_THREAD_LOCAL_IN_LIBRARY
+ #define BLINK_HEAP_THREAD_LOCAL_MODEL "local-dynamic"
+ #else
+-#if BUILDFLAG(IS_WIN) || (BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_MAC))
++#if BUILDFLAG(ARKWEB_HWASAN)
++#define BLINK_HEAP_THREAD_LOCAL_MODEL "local-dynamic"
++#elif BUILDFLAG(IS_WIN) || (BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_MAC))
+ #define BLINK_HEAP_THREAD_LOCAL_MODEL "initial-exec"
+ #elif BUILDFLAG(IS_ANDROID)
+ #define BLINK_HEAP_THREAD_LOCAL_MODEL "local-dynamic"
+ #else
+ #define BLINK_HEAP_THREAD_LOCAL_MODEL "local-exec"

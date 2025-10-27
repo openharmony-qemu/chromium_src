@@ -1,0 +1,19 @@
+--- BUILD.gn	2025-10-20 19:52:46.712771236 +0800
++++ BUILD.gn	2025-10-16 15:54:55.348715890 +0800
+@@ -638,10 +646,16 @@
+     if (is_ios) {
+       info_plist = "test_trace_processor_impl.plist"
+       output_name = "TestTraceProcessor"
+       bundle_deps_filter = [ "//third_party/icu:icudata" ]
+     }
++
++    if (arkweb_unittests){
++      deps += [
++        "//base:base"
++      ]
++    }
+   }
+ } else if (!is_component_build && is_mac) {
+   # Provide a dummy target in order for clients to not have to special-case
+   # the dependency.
+   group("test_trace_processor_bundle_data") {

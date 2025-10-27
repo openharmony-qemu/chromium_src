@@ -4,8 +4,12 @@
 
 #include "base/files/scoped_file.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "build/build_config.h"
+#if BUILDFLAG(ARKWEB_DFX_LOGGING)
+#include "base/logging.h"
+#endif
 
 #if BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 #include <errno.h>
@@ -39,6 +43,11 @@ void ScopedFDCloseTraits::Free(int fd) {
   // failure to actually close the fd.
   if (ret != 0 && errno != EBADF) {
     ret = 0;
+  }
+#endif
+#if BUILDFLAG(ARKWEB_DFX_LOGGING)
+  if (ret != 0) {
+    LOG(ERROR) << "bad fd found!!! fd:" << fd;
   }
 #endif
 

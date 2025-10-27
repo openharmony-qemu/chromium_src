@@ -356,5 +356,7 @@ void MaybeRemoveSecHeaders(net::URLRequest& request,
     }
   }
 }
-
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "arkweb/chromium_ext/services/network/sec_header_helpers_ext.cc"
+#endif
 }  // namespace network

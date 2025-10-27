@@ -93,6 +93,19 @@ class PLATFORM_EXPORT SurfaceLayerBridge
   // It is okay to call this without a surface layer.
   void UpdateSurfaceLayerOpacity();
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  void SetVideoRectChangeCallback(
+      cc::SurfaceLayer::RectChangeCallback callback) override;
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void SetLayerBoundsChangeCallback(
+      cc::SurfaceLayer::LayerBoundsChangeCallback callback) override;
+#endif  // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+ scoped_refptr<cc::SurfaceLayer> CreateSurfaceLayer(cc::SurfaceLayer::RectChangeCallback callback,
+    cc::SurfaceLayer::RectVisibilityChangeCallback visibilitycallback,
+    cc::SurfaceLayer::LayerRemovedVisibilityCallback layerRemovedCallback) override;
+#endif  // ARKWEB_SAME_LAYER
  private:
   scoped_refptr<cc::SurfaceLayer> surface_layer_;
   scoped_refptr<cc::SolidColorLayer> solid_color_layer_;

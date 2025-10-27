@@ -1,0 +1,14 @@
+--- compositor_frame_sink_support.h	2025-10-20 19:52:54.138416817 +0800
++++ compositor_frame_sink_support.h	2025-10-16 15:54:59.240971046 +0800
+@@ -45,10 +45,11 @@
+ class LatestLocalSurfaceIdLookupDelegate;
+ class LayerContextImpl;
+ class RendererSettings;
+ class Surface;
+ class SurfaceManager;
++class CompositorFrameSinkSupportUtils;
+ 
+ // Possible outcomes of MaybeSubmitCompositorFrame().
+ // These values are persisted to logs. Entries should not be renumbered and
+ // numeric values should never be reused.
+ enum class SubmitResult {

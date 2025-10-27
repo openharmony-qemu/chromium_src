@@ -1,0 +1,36 @@
+--- BUILD.gn	2025-10-20 19:53:30.996631823 +0800
++++ BUILD.gn	2025-10-16 15:55:05.592097802 +0800
+@@ -1,16 +1,18 @@
+ # Copyright 2014 The Chromium Authors
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
++import("//arkweb/build/features/features.gni")
+ import("//build/config/features.gni")
+ import("//build/config/ozone.gni")
+ import("//build/config/ui.gni")
+ import("//device/vr/buildflags/buildflags.gni")
+ import("//gpu/vulkan/features.gni")
+ import("//testing/libfuzzer/fuzzer_test.gni")
+ import("//testing/test.gni")
++import("//arkweb/build/features/features.gni")
+ 
+ if (is_ios) {
+   import("//build/config/ios/bundle_data_from_filelist.gni")
+ }
+ 
+@@ -991,10 +1004,14 @@
+   if (is_fuchsia) {
+     deps += [ "//skia:test_fonts" ]
+     additional_manifest_fragments =
+         [ "//build/config/fuchsia/test/test_fonts.shard.test-cml" ]
+   }
++
++  if (enable_arkweb) {
++    deps += [ "//arkweb/build/features" ]
++  }
+ }
+ 
+ if (is_android) {
+   generate_jni("gfx_jni_headers") {
+     sources = [

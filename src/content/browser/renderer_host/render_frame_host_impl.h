@@ -21,6 +21,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/flat_map.h"
 #include "base/containers/flat_set.h"
 #include "base/containers/unique_ptr_adapters.h"
@@ -506,9 +507,25 @@ class CONTENT_EXPORT RenderFrameHostImpl
                                JavaScriptResultCallback callback) override;
   void ExecuteJavaScript(const std::u16string& javascript,
                          JavaScriptResultCallback callback) override;
+#if BUILDFLAG(IS_ARKWEB)
+  void ExecuteJavaScriptExt(const int fd,
+                            const uint64_t scriptLength,
+                            JavaScriptResultCallback callback) override;
+#endif
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  void SendAccessibilityEvent(int64_t accessibilityId,
+                              int32_t eventType,
+                              const std::string& argument);
+#endif
+
   void ExecuteJavaScriptInIsolatedWorld(const std::u16string& javascript,
                                         JavaScriptResultCallback callback,
                                         int32_t world_id) override;
+  bool GetWorldId(const std::string& worldName, int32_t* worldId);
+  void ExecuteJavaScriptInFrames(const std::u16string& javascript,
+                                 bool recursive,
+                                 const std::string& worldName,
+                                 JavaScriptResultCallback callback) override;
   void ExecuteJavaScriptForTests(const std::u16string& javascript,
                                  JavaScriptResultCallback callback,
                                  int32_t world_id) override;
@@ -662,6 +679,14 @@ class CONTENT_EXPORT RenderFrameHostImpl
   // ManifestBrowserTest.GetManifestInterruptedByDestruction.
   void ReinitializeDocumentAssociatedDataForTesting();
 
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  bool GetUserAgentDifferentFromNavigatingFrame() const {
+    return is_useragent_different_from_navigating_frame;
+  }
+  void SetUserAgentDifferentFromNavigatingFrame(bool value) {
+    is_useragent_different_from_navigating_frame = value;
+  }
+#endif
   // Determines if a clipboard paste using |data| of type |data_type| is allowed
   // in this renderer frame.  The implementation delegates to
   // RenderFrameHostDelegate::IsClipboardPasteAllowedByPolicy().  See the
@@ -1471,6 +1496,11 @@ class CONTENT_EXPORT RenderFrameHostImpl
                                 const gfx::Rect& clip_rect);
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(ARKWEB_MENU) || BUILDFLAG(IS_ARKWEB_EXT)
+  void GetImageFromCache(const std::string& url,
+                         ImageCacheCallback callback) override;
+#endif
+
   // Request a one-time snapshot of the accessibility tree without changing
   // the accessibility mode.
   void RequestAXTreeSnapshot(AXTreeSnapshotCallback callback,
@@ -1620,7 +1650,12 @@ class CONTENT_EXPORT RenderFrameHostImpl
           subresource_overrides,
       blink::mojom::ServiceWorkerContainerInfoForClientPtr container_info,
       const std::optional<blink::DocumentToken>& document_token,
-      const base::UnguessableToken& devtools_navigation_token);
+      const base::UnguessableToken& devtools_navigation_token
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+,
+      uint64_t addr_web_handle
+#endif
+      );
 
   // Indicates that a navigation failed and that this RenderFrame should display
   // an error page.
@@ -2454,6 +2489,9 @@ class CONTENT_EXPORT RenderFrameHostImpl
   void DidChangeThemeColor(std::optional<SkColor> theme_color) override;
   void DidChangeBackgroundColor(const SkColor4f& background_color,
                                 bool color_adjust) override;
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  void NotifyContextMenuWillShow() override;
+#endif
   void DidFailLoadWithError(const GURL& url, int32_t error_code) override;
   void DidFocusFrame() override;
   void DidCallFocus() override;
@@ -2541,10 +2579,18 @@ class CONTENT_EXPORT RenderFrameHostImpl
           blink_widget_host,
       mojo::PendingAssociatedRemote<blink::mojom::Widget> blink_widget)
       override;
+#if BUILDFLAG(ARKWEB_MENU)
+  void MouseSelectMenuShow(bool show) override;
+  void ChangeVisibilityOfQuickMenu() override;
+  void HideQuickMenu() override;
+#endif
   void ShowContextMenu(
       mojo::PendingAssociatedRemote<blink::mojom::ContextMenuClient>
           context_menu_client,
       const blink::UntrustworthyContextMenuParams& params) override;
+#if BUILDFLAG(ARKWEB_AI)
+  void CloseImageOverlaySelection() override;
+#endif  // BUILDFLAG(ARKWEB_AI)
   void DidLoadResourceFromMemoryCache(
       const GURL& url,
       const std::string& http_method,
@@ -2662,6 +2708,20 @@ class CONTENT_EXPORT RenderFrameHostImpl
                          blink::mojom::WindowFeaturesPtr window_features,
                          bool user_gesture,
                          ShowCreatedWindowCallback callback) override;
+
+#if BUILDFLAG(ARKWEB_MULTI_WINDOW)
+  void GetCreateNewWindow(const GURL& target_url,
+                          WindowOpenDisposition disposition,
+                          bool allow_popup,
+                          GetCreateNewWindowCallback callback) override;
+#endif
+#if BUILDFLAG(ARKWEB_PRECOMPILE)
+  void GenerateCodeCache(const std::string& url,
+                         const std::string& script,
+                         const std::shared_ptr<oh_code_cache::CacheOptions>& cacheOptions,
+                         CodeCacheCallback callback) override;
+#endif
+
   void SetWindowRect(const gfx::Rect& bounds,
                      SetWindowRectCallback callback) override;
   void DidFirstVisuallyNonEmptyPaint() override;
@@ -3016,6 +3076,10 @@ class CONTENT_EXPORT RenderFrameHostImpl
       base::OnceCallback<void(blink::mojom::AuthenticatorStatus, bool)>
           callback);
 #endif
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  void OnClearContextMenu() override;
+#endif // BUILDFLAG(ARKWEB_DRAG_DROP)
 
   using JavaScriptResultAndTypeCallback =
       base::OnceCallback<void(blink::mojom::JavaScriptExecutionResultType,
@@ -3410,7 +3474,12 @@ class CONTENT_EXPORT RenderFrameHostImpl
   friend class RenderFrameHostManagerUnloadBrowserTest;
   friend class NavigationBrowserTest;
   friend class FrameHostInterceptorForPopins;
-
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class RenderFrameHostImplForIncludeTest;
+#endif
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  bool is_useragent_different_from_navigating_frame = false;
+#endif  // BUILDFLAG(ARKWEB_USERAGENT)
   FRIEND_TEST_ALL_PREFIXES(NavigatorTest, TwoNavigationsRacingCommit);
   FRIEND_TEST_ALL_PREFIXES(RenderFrameHostImplBeforeUnloadBrowserTest,
                            SubframeShowsDialogWhenMainFrameNavigates);
@@ -3665,6 +3734,10 @@ class CONTENT_EXPORT RenderFrameHostImpl
   void UpdateState(const blink::PageState& state) override;
   void OpenURL(blink::mojom::OpenURLParamsPtr params) override;
   void DidStopLoading() override;
+#if BUILDFLAG(ARKWEB_PDF)
+  void OnPdfScrollAtBottom(const std::string& url) override;
+  void OnPdfLoadEvent(int32_t result, const std::string& url) override;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   // blink::mojom::AssociatedInterfaceProvider:
   void GetAssociatedInterface(
@@ -4458,7 +4531,11 @@ class CONTENT_EXPORT RenderFrameHostImpl
   // some form of page context.
   scoped_refptr<RenderViewHostImpl> render_view_host_;
 
+#if BUILDFLAG(ARKWEB_TEST)
+  raw_ptr<RenderFrameHostDelegate> delegate_;
+#else
   const raw_ptr<RenderFrameHostDelegate> delegate_;
+#endif
 
   // The SiteInstance associated with this RenderFrameHost. All content drawn
   // in this RenderFrameHost is part of this SiteInstance. Cannot change over
@@ -5518,6 +5595,13 @@ class CONTENT_EXPORT RenderFrameHostImpl
       webauthn_remote_rp_id_validation_;
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  bool blank_screen_detection_enable_ = false;
+  std::vector<double> blank_screen_detection_timing_;
+  std::vector<int32_t> blank_screen_detection_methods_;
+  int32_t blank_screen_threshold_ = 0;
+#endif
+
   // Tracks the page that initiates Protected Audience auction. This is set
   // when AdAuctionServiceImpl is constructed, which is when the first call to
   // Protected Audience API takes place on the frame.
@@ -5549,6 +5633,8 @@ class CONTENT_EXPORT RenderFrameHostImpl
   PrerenderStateChangedCallback prerender_state_callback_;
 
   base::OnceClosure on_process_before_unload_completed_for_testing_;
+
+  std::map<std::string, int32_t> isolated_world_;
 
   // WeakPtrFactories are the last members, to ensure they are destroyed before
   // all other fields of `this`.

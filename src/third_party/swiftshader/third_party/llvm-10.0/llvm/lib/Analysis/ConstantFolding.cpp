@@ -1587,6 +1587,9 @@ inline bool llvm_fenv_testexcept() {
   if (errno_val == ERANGE || errno_val == EDOM)
     return true;
 #if defined(HAVE_FENV_H) && HAVE_DECL_FE_ALL_EXCEPT && HAVE_DECL_FE_INEXACT
+#ifndef FE_INEXACT
+#define FE_INEXACT 16
+#endif
   if (fetestexcept(FE_ALL_EXCEPT & ~FE_INEXACT))
     return true;
 #endif

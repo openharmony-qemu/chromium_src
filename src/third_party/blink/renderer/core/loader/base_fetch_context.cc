@@ -75,7 +75,12 @@ BaseFetchContext::CanRequestBasedOnSubresourceFilterOnly(
     return ResourceRequestBlockedReason::kSubresourceFilter;
   }
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  return BaseFetchContextUtil::CanRequestBasedOnSubresourceFilterOnlyForInclude(
+      this, type, resource_request, url, options, reporting_disposition);
+#else
   return std::nullopt;
+#endif
 }
 
 bool BaseFetchContext::CalculateIfAdSubresource(

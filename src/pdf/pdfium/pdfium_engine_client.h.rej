@@ -1,0 +1,19 @@
+--- pdfium_engine_client.h	2025-10-20 19:52:57.378208707 +0800
++++ pdfium_engine_client.h	2025-10-20 19:31:26.808081619 +0800
+@@ -209,10 +209,16 @@
+   virtual void OnSearchifyStateChange(bool busy) = 0;
+ 
+   // Notifies that at least one page is searchified.
+   virtual void OnHasSearchifyText() = 0;
+ #endif
++
++#if BUILDFLAG(ARKWEB_PDF)
++ virtual void UpdateClientClippedSelectionBoundsForPDF(gfx::Rect& clipped_selection_bounds) {}
++ virtual void SetIsTouching(bool is_touching) {}
++ virtual void ResetResponsePendingInputEvent() {}
++#endif  // BUILDFLAG(ARKWEB_PDF)
+ };
+ 
+ }  // namespace chrome_pdf
+ 
+ #endif  // PDF_PDFIUM_PDFIUM_ENGINE_CLIENT_H_

@@ -49,7 +49,7 @@ uint32_t CPDF_PatternCS::v_Load(CPDF_Document* doc,
 
 std::optional<FX_RGB_STRUCT<float>> CPDF_PatternCS::GetRGB(
     pdfium::span<const float> pBuf) const {
-  NOTREACHED();
+  NOTREACHED_NORETURN();
 }
 
 const CPDF_PatternCS* CPDF_PatternCS::AsPatternCS() const {

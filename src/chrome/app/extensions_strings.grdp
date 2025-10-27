@@ -150,6 +150,15 @@
   <message name="IDS_EXTENSIONS_PERMISSIONS_LEARN_MORE_A11Y_LABEL" desc="Accessibility label for a 'Learn more' link that links to an external help article about Extension permissions.">
     Learn more about extension permissions
   </message>
+  <message name="IDS_EXTENSIONS_DEVELOPER_MODE_CONFIRMATION" desc="The confirmation message displayed in the popup when enabling developer mode.">
+    Enabling Developer mode allows you to install and manage third-party extensions. These extensions have not been verified and may pose security risks. Enable Developer mode?
+  </message>
+  <message name="IDS_EXTENSIONS_DEVELOPER_MODE_CONFIRM" desc="The label for the 'Confirm' button in the developer mode confirmation popup.">
+    OK
+  </message>
+  <message name="IDS_EXTENSIONS_DEVELOPER_MODE_CANCEL" desc="The label for the 'Cancel' button in the developer mode confirmation popup.">
+    Cancel
+  </message>
   <!-- TODO(devlin): Unify this with IDS_SETTINGS_EDIT. -->
   <message name="IDS_EXTENSIONS_HOST_PERMISSIONS_EDIT" desc="The label of the button used to edit an extension's access to a given website.">
     Edit

@@ -1,0 +1,17 @@
+--- scope-info.h	2025-10-20 19:53:31.492564548 +0800
++++ scope-info.h	2025-10-16 15:56:12.872983538 +0800
+@@ -122,10 +122,14 @@
+   // Return if this is a function scope with "use asm".
+   inline bool IsAsmModule() const;
+ 
+   inline bool HasSimpleParameters() const;
+ 
++#ifdef OHOS_JS_ENGINE
++  inline bool HasNeverHideBaseStdHint() const;
++#endif
++
+   // Return the function_name if present.
+   V8_EXPORT_PRIVATE Tagged<UnionOf<Smi, String>> FunctionName() const;
+ 
+   // The function's name if it is non-empty, otherwise the inferred name or an
+   // empty string.

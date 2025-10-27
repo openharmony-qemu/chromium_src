@@ -1,0 +1,17 @@
+--- browser_frame.cc	2025-10-20 19:52:50.868887912 +0800
++++ browser_frame.cc	2025-10-16 15:57:01.689695120 +0800
+@@ -59,10 +59,14 @@
+ 
+ #if BUILDFLAG(IS_WIN)
+ #include "chrome/browser/win/mica_titlebar.h"
+ #endif
+ 
++#if BUILDFLAG(IS_OHOS)
++#include "chrome/browser/ui/layout_constants.h"
++#endif
++
+ namespace {
+ 
+ // Helper to track whether a ThemeChange event has been received by the widget.
+ class ThemeChangedObserver : public views::WidgetObserver {
+  public:

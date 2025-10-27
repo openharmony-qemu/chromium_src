@@ -118,6 +118,13 @@ test("device_unittests") {
     ]
   }
 
+  if (is_ohos) {
+    sources += [
+      "//arkweb/chromium_ext/device/bluetooth/test/bluetooth/test/bluetooth_test_ohos.cc",
+      "bluetooth/test/bluetooth_test_ohos.h",
+    ]
+  }
+
   deps = [
     "//base",
     "//base/test:test_support",
@@ -149,6 +156,10 @@ test("device_unittests") {
     "//ui/base",
     "//url",
   ]
+
+  if (arkweb_resource_interception) {
+    deps += ["//content/public/renderer:renderer_sources"]
+  }
 
   data_deps = [
     "bluetooth/strings:bluetooth_test_strings",
@@ -468,7 +479,7 @@ test("device_unittests") {
 
   # Some gamepad tests require the HID service. Only build these tests on
   # platforms where the HID service is enabled.
-  if (!is_android && !is_fuchsia && !is_ios) {
+  if (!is_android && !is_fuchsia && !is_ios && !is_ohos) {
     sources += [ "gamepad/nintendo_data_fetcher_unittest.cc" ]
 
     deps += [

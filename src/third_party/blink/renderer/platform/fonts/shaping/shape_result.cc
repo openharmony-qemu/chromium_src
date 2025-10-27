@@ -57,6 +57,10 @@ namespace blink {
 constexpr unsigned HarfBuzzRunGlyphData::kMaxCharacterIndex;
 constexpr unsigned HarfBuzzRunGlyphData::kMaxGlyphs;
 
+#if BUILDFLAG(IS_OHOS)
+static constexpr double SEGMENTATION_THREDHOLD = 0.6;
+#endif
+
 struct SameSizeAsHarfBuzzRunGlyphData {
   unsigned glyph : 16;
   unsigned char_index_and_bit_field : 16;

@@ -5,6 +5,8 @@
 import("//build/config/locales.gni")
 import("//tools/grit/grit_rule.gni")
 
+import("//arkweb/build/features/features.gni")
+
 # Meta target that includes all ui strings. Most
 # targets want them all. You can depend on the individually if you need to.
 group("strings") {

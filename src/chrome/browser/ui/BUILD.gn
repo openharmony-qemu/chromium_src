@@ -1351,6 +1351,13 @@ static_library("ui") {
       "webui/webui_util_desktop.h",
     ]
 
+    if (arkweb_arkweb_extensions) {
+      sources += [
+        "//arkweb/chromium_ext/chrome/browser/ui/webui/extensions/extensions_ui_ext.cc",
+        "//arkweb/chromium_ext/chrome/browser/ui/webui/extensions/extensions_ui_ext.h",
+      ]
+    }
+
     if (is_chrome_branded) {
       sources += [
         "webui/media_router/cast_feedback_ui.cc",
@@ -2783,7 +2790,7 @@ static_library("ui") {
     }
   }
 
-  if (is_win || is_mac || is_linux || is_chromeos) {
+  if (is_win || is_mac || is_linux || is_chromeos || is_ohos) {
     sources += [
       "frame/window_frame_util.cc",
       "frame/window_frame_util.h",
@@ -4848,6 +4855,13 @@ static_library("ui") {
         "accessibility_util.h",
         "views/accessibility/accessibility_util.cc",
         "views/chrome_views_delegate_win.cc",
+      ]
+    }
+
+    if (is_ohos) {
+      sources += [
+        "//arkweb/chromium_ext/chrome/browser/ui/views/chrome_browser_main_extra_parts_views_ohos.cc",
+        "//arkweb/chromium_ext/chrome/browser/ui/views/chrome_browser_main_extra_parts_views_ohos.h",
       ]
     }
 

@@ -185,9 +185,9 @@ class PLATFORM_EXPORT FontPlatformData
 #if !BUILDFLAG(IS_MAC)
   WebFontRenderStyle style_;
 #endif
-
   mutable Member<HarfBuzzFace> harfbuzz_face_;
   bool is_hash_table_deleted_value_ = false;
+  std::unique_ptr<FontPlatformDataUtils> data_utils_;
 };
 
 }  // namespace blink

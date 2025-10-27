@@ -1,0 +1,14 @@
+--- chrome_component_extension_resource_manager.cc	2025-10-20 19:52:49.630119438 +0800
++++ chrome_component_extension_resource_manager.cc	2025-10-16 15:57:00.179732404 +0800
+@@ -13,10 +13,11 @@
+ #include <string>
+ 
+ #include "base/check.h"
+ #include "base/containers/contains.h"
+ #include "base/files/file_path.h"
++#include "base/logging.h"
+ #include "base/path_service.h"
+ #include "base/values.h"
+ #include "build/build_config.h"
+ #include "build/chromeos_buildflags.h"
+ #include "chrome/common/chrome_paths.h"

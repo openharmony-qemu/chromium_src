@@ -31,6 +31,10 @@
 #include "v8/include/v8-local-handle.h"
 #include "v8/include/v8-value.h"
 
+#if BUILDFLAG(ARKWEB_FIDO)
+#include "third_party/blink/renderer/modules/credentialmanagement/public_key_credential_utils.h"
+#endif // BUILDFLAG(ARKWEB_FIDO)
+
 namespace blink {
 
 namespace {

@@ -52,11 +52,13 @@ void DecodeFailure(ImageMeta* image) {
 
 void DecodeImageData(SharedBuffer* data, ImageMeta* image) {
   const bool all_data_received = true;
-
   std::unique_ptr<ImageDecoder> decoder = ImageDecoder::Create(
       data, all_data_received, ImageDecoder::kAlphaPremultiplied,
       ImageDecoder::kDefaultBitDepth, ColorBehavior::kIgnore,
-      cc::AuxImage::kDefault, Platform::GetMaxDecodedImageBytes());
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      cc::AuxImage::kDefault,
+#endif
+      Platform::GetMaxDecodedImageBytes());
 
   auto start = std::chrono::steady_clock::now();
 

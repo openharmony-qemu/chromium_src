@@ -103,7 +103,7 @@ llvm_include_dirs = [
   "configs/common/lib/Transforms/InstCombine/",
 ]
 
-if (is_linux || is_chromeos) {
+if (is_linux || is_chromeos || is_ohos) {
   llvm_include_dirs += [ "configs/linux/include/" ]
 } else if (is_fuchsia) {
   llvm_include_dirs += [ "configs/fuchsia/include/" ]
@@ -1015,6 +1015,7 @@ swiftshader_llvm_source_set("swiftshader_llvm_transforms_scalar") {
     "llvm/lib/Transforms/Scalar/SROA.cpp",
     "llvm/lib/Transforms/Scalar/TailRecursionElimination.cpp",
     "llvm/lib/Transforms/Scalar/WarnMissedTransforms.cpp",
+    "llvm/lib/Transforms/Scalar/LowerAtomic.cpp",
   ]
 }
 

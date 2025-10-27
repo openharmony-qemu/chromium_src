@@ -1,0 +1,17 @@
+--- video_frame_compositor.cc	2025-10-20 19:53:01.234200674 +0800
++++ video_frame_compositor.cc	2025-10-16 16:07:40.139221494 +0800
+@@ -379,10 +388,14 @@
+   if (!frame || (GetCurrentFrame() && !repaint_duplicate_frame &&
+                  frame->unique_id() == GetCurrentFrame()->unique_id())) {
+     return false;
+   }
+ 
++#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
++  StatisticsTotalFreeTime(is_playing_, last_frame_time_, total_freeze_time_);
++#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
++
+   // TODO(crbug.com/1447318): Add other cases where the frame is not readable.
+   bool is_frame_readable = !frame->metadata().dcomp_surface;
+ 
+   // Copy to a local variable to avoid potential deadlock when executing the
+   // callback.

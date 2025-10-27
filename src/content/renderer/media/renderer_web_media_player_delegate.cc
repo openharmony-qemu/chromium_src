@@ -41,7 +41,12 @@ RendererWebMediaPlayerDelegate::RendererWebMediaPlayerDelegate(
           content::GetContentClient()->renderer()->IsIdleMediaSuspendEnabled()),
       tick_clock_(base::DefaultTickClock::GetInstance()) {
   idle_cleanup_interval_ = base::Seconds(5);
+
+#ifdef BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  idle_timeout_ = base::Seconds(100000);
+#else
   idle_timeout_ = base::Seconds(15);
+#endif
 
   // This imposes drastic limits on the number of media players and is only
   // appropriate for true low end devices.
@@ -200,7 +205,12 @@ bool RendererWebMediaPlayerDelegate::IsStale(int player_id) {
 }
 
 void RendererWebMediaPlayerDelegate::OnPageVisibilityChanged(
+#if !BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
     blink::mojom::PageVisibilityState visibility_state) {
+#else
+    blink::mojom::PageVisibilityState visibility_state,
+    bool storing_in_bfcache) {
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
   // Treat 'hidden but painting' as 'visible', since whatever is consuming the
   // painted output (e.g., Picture in Picture), probably wants the video.
   // Otherwise, the player might optimize the video away.
@@ -224,14 +234,22 @@ void RendererWebMediaPlayerDelegate::OnPageVisibilityChanged(
 
     for (base::IDMap<Observer*>::iterator it(&id_map_); !it.IsAtEnd();
          it.Advance()) {
+#if !BUILDFLAG(ARKWEB_BFCACHE)
       it.GetCurrentValue()->OnPageShown();
+#else
+      it.GetCurrentValue()->OnPageShown(storing_in_bfcache);
+#endif // #endif // BUILDFLAG(ARKWEB_BFCACHE)
     }
   } else {
     RecordAction(base::UserMetricsAction("Media.Hidden"));
 
     for (base::IDMap<Observer*>::iterator it(&id_map_); !it.IsAtEnd();
          it.Advance()) {
+#if !BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
       it.GetCurrentValue()->OnPageHidden();
+#else
+      it.GetCurrentValue()->OnPageHidden(storing_in_bfcache);
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
     }
   }
 

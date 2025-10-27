@@ -23,6 +23,7 @@ class VideoResourceUpdater;
 namespace cc {
 class VideoFrameProvider;
 class VideoFrameProviderClientImpl;
+class VideoLayerImplUtils;
 
 class CC_EXPORT VideoLayerImpl : public LayerImpl {
  public:
@@ -37,6 +38,7 @@ class CC_EXPORT VideoLayerImpl : public LayerImpl {
   ~VideoLayerImpl() override;
 
   VideoLayerImpl& operator=(const VideoLayerImpl&) = delete;
+  friend class VideoLayerImplUtils;
 
   // LayerImpl implementation.
   mojom::LayerType GetLayerType() const override;
@@ -75,8 +77,11 @@ class CC_EXPORT VideoLayerImpl : public LayerImpl {
   media::VideoTransformation video_transform_;
 
   std::unique_ptr<media::VideoResourceUpdater> updater_;
+
+  raw_ptr<VideoLayerImplUtils> videoImplUtils_;
 };
 
 }  // namespace cc
 
+#include "arkweb/chromium_ext/cc/layer/video_layer_impl_utils.h"
 #endif  // CC_LAYERS_VIDEO_LAYER_IMPL_H_

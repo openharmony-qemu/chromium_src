@@ -221,5 +221,8 @@ TEST(ExtensionActiontest, DeclarativeShows) {
   EXPECT_TRUE(action->GetIsVisible(100));
   EXPECT_TRUE(action->GetIsVisibleIgnoringDeclarative(100));
 }
-
 }  // namespace extensions
+
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/chrome/browser/extensions/api/declarative_content/content_action_for_include_unittest.cc"
+#endif

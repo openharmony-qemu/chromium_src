@@ -1,0 +1,18 @@
+--- allocator_shim_default_dispatch_to_partition_alloc.h	2025-10-20 19:52:46.612997491 +0800
++++ allocator_shim_default_dispatch_to_partition_alloc.h	2025-10-16 15:54:55.239227182 +0800
+@@ -60,13 +60,13 @@
+ 
+   static void* ReallocUnchecked(void* address, size_t size, void* context);
+ 
+   static void Free(void* object, void* context);
+ 
+-#if PA_BUILDFLAG(IS_APPLE)
++#if PA_BUILDFLAG(IS_APPLE) || PA_BUILDFLAG(IS_OHOS)
+   static void FreeDefiniteSize(void* address, size_t size, void* context);
+-#endif  // PA_BUILDFLAG(IS_APPLE)
++#endif  // PA_BUILDFLAG(IS_APPLE) || PA_BUILDFLAG(IS_OHOS)
+ 
+   static size_t GetSizeEstimate(void* address, void* context);
+ 
+ #if PA_BUILDFLAG(IS_APPLE)
+   static size_t GoodSize(size_t size, void* context);

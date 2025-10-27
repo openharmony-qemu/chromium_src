@@ -1,0 +1,14 @@
+--- media_factory.cc	2025-10-20 19:52:54.594534238 +0800
++++ media_factory.cc	2025-10-16 15:54:59.732445046 +0800
+@@ -577,10 +590,11 @@
+     is_base_renderer_factory_set = true;
+     factory_selector->AddBaseFactory(RendererType::kContentEmbedderDefined,
+                                      std::move(factory));
+   }
+ 
++  media_factory_utils_->AddOhosAndCustomMediaFactory(factory_selector.get(), render_thread);
+ #if BUILDFLAG(IS_ANDROID)
+   // MediaPlayerRendererClientFactory setup. It is used for HLS playback.
+   auto media_player_factory =
+       std::make_unique<MediaPlayerRendererClientFactory>(
+           render_thread->compositor_task_runner(), CreateMojoRendererFactory(),

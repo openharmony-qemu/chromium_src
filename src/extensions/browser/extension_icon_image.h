@@ -98,6 +98,10 @@ class IconImage : public ExtensionRegistryObserver {
   void AddObserver(Observer* observer);
   void RemoveObserver(Observer* observer);
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  content::BrowserContext* browser_context() const { return browser_context_; }
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
+
  private:
   class Source;
 

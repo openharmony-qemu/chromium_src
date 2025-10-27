@@ -1,0 +1,14 @@
+--- BUILD.gn	2025-10-20 19:52:59.774214507 +0800
++++ BUILD.gn	2025-10-16 16:07:38.651020345 +0800
+@@ -12,10 +13,11 @@
+ import("//third_party/protobuf/proto_library.gni")
+ 
+ if (is_ios) {
+   import("//build/config/ios/bundle_data_from_filelist.gni")
+ }
++import("//arkweb/chromium_ext/chromium_ext.gni")
+ 
+ blink_python_runner("make_generated_permissions_policy_features") {
+   script = "../renderer/build/scripts/make_permissions_policy_features.py"
+ 
+   inputs = scripts_for_json5_files + [

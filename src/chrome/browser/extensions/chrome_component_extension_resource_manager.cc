@@ -170,7 +170,12 @@ bool ChromeComponentExtensionResourceManager::IsComponentExtensionResource(
   base::FilePath directory_path = extension_path;
   base::FilePath resources_dir;
   base::FilePath relative_path;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (!base::PathService::Get(base::DIR_OHOS_APP_INSTALLATION,
+                              &resources_dir) ||
+#else
   if (!base::PathService::Get(chrome::DIR_RESOURCES, &resources_dir) ||
+#endif
       !resources_dir.AppendRelativePath(directory_path, &relative_path)) {
     return false;
   }

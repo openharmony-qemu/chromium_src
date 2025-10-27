@@ -21,6 +21,10 @@
 #include "net/url_request/static_http_user_agent_settings.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace net {
 namespace {
 
@@ -78,6 +82,10 @@ class TestConnectJob : public ConnectJob {
   void ChangePriorityInternal(RequestPriority priority) override {
     last_seen_priority_ = priority;
   }
+
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+  void SetConnectTimeout(int timeout_override) override {}
+#endif
 
   using ConnectJob::ResetTimer;
 

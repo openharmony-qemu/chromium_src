@@ -1,0 +1,13 @@
+--- BUILD.gn	2025-10-20 19:52:57.370208635 +0800
++++ BUILD.gn	2025-10-16 15:55:02.980968314 +0800
+@@ -18,6 +18,10 @@
+   cpp_only = true
+ 
+   if (enable_screen_ai_service) {
+     enabled_features = [ "enable_screen_ai_service" ]
+   }
++
++  if (arkweb_pdf) {
++    enabled_features += [ "arkweb_pdf" ]
++  }
+ }

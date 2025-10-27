@@ -1,0 +1,14 @@
+--- trusted_vault_access_token_fetcher_frontend.cc	2025-10-21 21:22:38.186315688 +0800
++++ trusted_vault_access_token_fetcher_frontend.cc	2025-10-16 15:54:59.125095063 +0800
+@@ -14,10 +14,11 @@
+ namespace trusted_vault {
+ 
+ namespace {
+ const char kCryptAuthOAuth2Scope[] =
+     "https://www.googleapis.com/auth/cryptauth";
++
+ void FulfillPendingRequests(
+     std::vector<TrustedVaultAccessTokenFetcher::TokenCallback> pending_requests,
+     TrustedVaultAccessTokenFetcher::AccessTokenInfoOrError
+         access_token_or_error) {
+   for (TrustedVaultAccessTokenFetcher::TokenCallback& pending_request :

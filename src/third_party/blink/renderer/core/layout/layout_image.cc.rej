@@ -1,0 +1,19 @@
+--- layout_image.cc	2025-10-20 19:53:00.502208997 +0800
++++ layout_image.cc	2025-10-16 16:07:39.531309088 +0800
+@@ -48,10 +48,16 @@
+ #include "third_party/blink/renderer/core/paint/timing/image_element_timing.h"
+ #include "third_party/blink/renderer/core/svg/graphics/svg_image.h"
+ #include "third_party/blink/renderer/platform/instrumentation/use_counter.h"
+ #include "ui/gfx/geometry/size_conversions.h"
+ 
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++#include "base/logging.h"
++#include "third_party/blink/renderer/core/html/html_plugin_element.h"
++#endif  // BUILDFLAG(ARKWEB_SAME_LAYER)
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/html_plugin_element_utils.h"
++
+ namespace blink {
+ 
+ LayoutImage::LayoutImage(Element* element)
+     : LayoutReplaced(element, PhysicalSize()) {}
+ 

@@ -4,6 +4,7 @@
 
 #include "cef/libcef/browser/browser_contents_delegate.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "cef/libcef/browser/browser_event_util.h"
 #include "cef/libcef/browser/browser_host_base.h"
@@ -33,6 +34,14 @@
 
 #if defined(OS_WIN)
 #include "sandbox/win/src/sandbox_types.h"
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "cef/ohos_cef_ext/include/arkweb_load_handler_ext.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "chrome/browser/extensions/api/tabs/tabs_windows_api.h"
 #endif
 
 using content::KeyboardEventProcessingResult;
@@ -81,6 +90,14 @@ class CefWidgetHostInterceptor
   const raw_ptr<blink::mojom::WidgetHost> impl_;
 };
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+constexpr char kTabsUpdateStatusKey[] = "status";
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+const std::string FAILING_URL = "arkweb-error://webdata/";
+#endif
+
 }  // namespace
 
 CefBrowserContentsDelegate::CefBrowserContentsDelegate(
@@ -90,6 +107,12 @@ CefBrowserContentsDelegate::CefBrowserContentsDelegate(
 void CefBrowserContentsDelegate::ObserveWebContents(
     content::WebContents* new_contents) {
   WebContentsObserver::Observe(new_contents);
+
+#if BUILDFLAG(ARKWEB_FAVICON)
+  if (icon_helper_) {
+    icon_helper_->SetWebContents(new_contents);
+  }
+#endif
 
   if (new_contents) {
     // Make sure MaybeCreateFrame is called at least one time.
@@ -173,14 +196,19 @@ void CefBrowserContentsDelegate::LoadingStateChanged(
 
   // This method may be called multiple times in a row with |is_loading|
   // true as a result of https://crrev.com/5e750ad0. Ignore the 2nd+ times.
-  if (is_loading_ == is_loading && can_go_back_ == can_go_back &&
-      can_go_forward_ == can_go_forward) {
+  if (is_loading_ == is_loading
+#if !BUILDFLAG(ARKWEB_NETWORK_BASE)
+      && can_go_back_ == can_go_back && can_go_forward_ == can_go_forward
+#endif
+  ) {
     return;
   }
 
   is_loading_ = is_loading;
+#if !BUILDFLAG(ARKWEB_NETWORK_BASE)
   can_go_back_ = can_go_back;
   can_go_forward_ = can_go_forward;
+#endif
   OnStateChanged(State::kNavigation);
 
   if (auto c = client()) {
@@ -199,6 +227,17 @@ void CefBrowserContentsDelegate::UpdateTargetURL(content::WebContents* source,
       handler->OnStatusMessage(browser(), url.spec());
     }
   }
+
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  if (auto c = client()) {
+    if (auto handler = c->GetRequestHandler()) {
+      if (handler->AsCefRequestHandlerExt()) {
+        handler->AsCefRequestHandlerExt()->OnUpdateTargetURL(browser(),
+                                                             url.spec());
+      }
+    }
+  }
+#endif  // BUILDFLAG(ARKWEB_NWEB_EX)
 }
 
 bool CefBrowserContentsDelegate::DidAddMessageToConsole(
@@ -237,12 +276,27 @@ bool CefBrowserContentsDelegate::DidAddMessageToConsole(
 void CefBrowserContentsDelegate::EnterFullscreenModeForTab(
     content::RenderFrameHost* requesting_frame,
     const blink::mojom::FullscreenOptions& options) {
+#if BUILDFLAG(ARKWEB_MEDIA)
+  if (options.video_natural_size.has_value()) {
+    OnFullscreenModeChange(/*fullscreen=*/true,
+                           CefSize(options.video_natural_size->width(),
+                                   options.video_natural_size->height()));
+  } else {
+    OnFullscreenModeChange(/*fullscreen=*/true, CefSize(0, 0));
+  }
+#else
   OnFullscreenModeChange(/*fullscreen=*/true);
+#endif  // BUILDFLAG(ARKWEB_MEDIA)
 }
 
 void CefBrowserContentsDelegate::ExitFullscreenModeForTab(
     content::WebContents* web_contents) {
-  OnFullscreenModeChange(/*fullscreen=*/false);
+  OnFullscreenModeChange(/*fullscreen=*/false
+#if BUILDFLAG(ARKWEB_MEDIA)
+                         ,
+                         CefSize(0, 0)
+#endif  // BUILDFLAG(ARKWEB_MEDIA)
+  );
 }
 
 void CefBrowserContentsDelegate::CanDownload(
@@ -264,6 +318,12 @@ KeyboardEventProcessingResult
 CefBrowserContentsDelegate::PreHandleKeyboardEvent(
     content::WebContents* source,
     const input::NativeWebKeyboardEvent& event) {
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  // Forward keyboard events to the manager for fullscreen / mouse lock. This
+  // may consume the event (e.g., Esc exits fullscreen mode).
+  if (AsArkWebBrowserContentsDelegateExt()->HandleUserKeyEvent(event))
+    return KeyboardEventProcessingResult::HANDLED;
+#endif
   if (auto delegate = platform_delegate()) {
     if (auto c = client()) {
       if (auto handler = c->GetKeyboardHandler()) {
@@ -343,6 +403,9 @@ void CefBrowserContentsDelegate::RenderFrameCreated(
       // the page base background from web_contents at the creation time
       web_contents()->SetPageBaseBackgroundColor(SkColor());
       web_contents()->SetPageBaseBackgroundColor(base_background_color);
+#if BUILDFLAG(ARKWEB_MULTI_WINDOW)
+      web_contents()->OnWebPreferencesChanged();
+#endif  // BUILDFLAG(ARKWEB_MULTI_WINDOW)
     }
     if (render_view_host->GetWidget() &&
         render_view_host->GetWidget()->GetView()) {
@@ -422,6 +485,12 @@ void CefBrowserContentsDelegate::PrimaryMainFrameRenderProcessGone(
     ts = TS_PROCESS_CRASHED;
   } else if (status == base::TERMINATION_STATUS_OOM) {
     ts = TS_PROCESS_OOM;
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+  } else if (status == base::TERMINATION_STATUS_NORMAL_TERMINATION) {
+    if (browser() && browser()->GetHost()) {
+      browser()->GetHost()->SetNeedsReload(true);
+    }
+#endif  // BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
   } else if (status == base::TERMINATION_STATUS_LAUNCH_FAILED) {
     ts = TS_LAUNCH_FAILED;
 #if BUILDFLAG(IS_WIN)
@@ -500,14 +569,45 @@ void CefBrowserContentsDelegate::DidStopLoading() {
   // functionality.
   for (const auto& frame : browser_info_->GetAllFrames()) {
     frame->MaybeSendDidStopLoading();
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    std::string url = web_contents()->GetLastCommittedURL().spec();
+    if (frame->IsMain() && (last_did_finish_load_url_ == url)) {
+      AsArkWebBrowserContentsDelegateExt()->OnLoadFinished(frame, url);
+      last_did_finish_load_url_ = std::string();
   }
-
-  OnTitleChange(web_contents()->GetTitle());
+#endif
+  }
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (need_report_title_when_stop_loading_) {
+    OnTitleChange(web_contents()->GetTitle(), web_contents()->GetIsRealTitle());
+    need_report_title_when_stop_loading_ = false;
+  }
+#endif
 }
 
 void CefBrowserContentsDelegate::DidFinishNavigation(
     content::NavigationHandle* navigation_handle) {
   const net::Error error_code = navigation_handle->GetNetErrorCode();
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  std::string navUrl = navigation_handle->GetURL().spec();
+  if (navigation_handle->IsInPrimaryMainFrame() && (navUrl != FAILING_URL) &&
+      error_code != net::OK && !navigation_handle->IsDownload()) {
+    const auto global_id = frame_util::GetGlobalId(navigation_handle);
+    CefRefPtr<CefFrameHostImpl> frame =
+        browser_info_->GetFrameForGlobalId(global_id);
+    if (frame) {
+      frame->RefreshAttributes();
+      if (error_code == net::ERR_ABORTED) {
+        AsArkWebBrowserContentsDelegateExt()->OnLoadFinished(frame, frame->GetURL());
+      } else if (error_code == net::ERR_HTTP_RESPONSE_CODE_FAILURE) {
+        OnLoadStart(frame.get(), navigation_handle->GetPageTransition());
+        AsArkWebBrowserContentsDelegateExt()->OnLoadStarted(frame, frame->GetURL());
+        AsArkWebBrowserContentsDelegateExt()->OnLoadFinished(frame, frame->GetURL());
+      }
+    }
+  }
+#endif
 
   // Skip calls where the navigation has not yet committed and there is no
   // error code. For example, when creating a browser without loading a URL.
@@ -526,6 +626,13 @@ void CefBrowserContentsDelegate::DidFinishNavigation(
     has_document_ = false;
     OnStateChanged(State::kDocument);
   }
+
+#if BUILDFLAG(ARKWEB_FAVICON)
+  if (navigation_handle->IsInMainFrame() && navigation_handle->HasCommitted() &&
+      !navigation_handle->IsErrorPage() && icon_helper_) {
+    icon_helper_->SetLastPageUrl(navigation_handle->GetURL());
+  }
+#endif
 
   const bool is_main_frame = navigation_handle->IsInMainFrame();
   const auto global_id = frame_util::GetGlobalId(navigation_handle);
@@ -551,17 +658,73 @@ void CefBrowserContentsDelegate::DidFinishNavigation(
 
     // Don't call OnLoadStart for same page navigations (fragments,
     // history state).
-    if (!navigation_handle->IsSameDocument()) {
+    if (!navigation_handle->IsSameDocument()
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+&&
+        !ArkWebBrowserContentsDelegateExt::IsPrerendering(frame)
+#endif
+      ) {
       OnLoadStart(frame.get(), navigation_handle->GetPageTransition());
       if (navigation_handle->IsServedFromBackForwardCache()) {
+#if BUILDFLAG(ARKWEB_BFCACHE)
+        LOG(INFO) << "[Favicon] page load form bfcache.";
+        if (auto c = client()) {
+          if (auto handler = c->GetLoadHandler()) {
+            auto navigation_lock = browser_info_->CreateNavigationLock();
+            handler->UpdateFavicon(browser());
+          }
+        }
+#endif
         // We won't get an OnLoadEnd notification from anywhere else.
         OnLoadEnd(frame.get(), navigation_handle->GetURL(), 0);
       }
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+      if (auto* render_frame_host = navigation_handle->GetRenderFrameHost()) {
+        auto invokeVisualStateCallback = base::BindOnce(
+            [](base::WeakPtr<CefBrowserContentsDelegate> self, const GURL url,
+               bool success) {
+              LOG(INFO) << "invokeVisualStateCallback success: " << success;
+              if (!self) {
+                return;
+              }
+              self->AsArkWebBrowserContentsDelegateExt()
+                  ->OnOldPageNoLongerRendered(url, success);
+            },
+            weak_factory_.GetWeakPtr(), url);
+        render_frame_host->InsertVisualStateCallback(
+            std::move(invokeVisualStateCallback));
+      }
+#endif
     }
 
     if (is_main_frame) {
       OnAddressChange(url);
     }
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    if (!navigation_handle->IsSameDocument() && !navigation_handle->IsErrorPage()) {
+      AsArkWebBrowserContentsDelegateExt()->OnLoadStarted(frame.get(), frame->GetURL());
+
+      if (navigation_handle->IsServedFromBackForwardCache() &&
+          navigation_handle->IsInPrimaryMainFrame()) {
+        last_did_finish_load_url_ = navigation_handle->GetURL().spec();
+      }
+    }
+
+    // Primary main frame fragment navigation.
+    if (navigation_handle->IsInPrimaryMainFrame() &&
+        navigation_handle->IsSameDocument()) {
+      // Fragment navigation do not have a matching onPageStarted.
+      AsArkWebBrowserContentsDelegateExt()->OnLoadFinished(frame.get(), frame->GetURL());
+    }
+
+    bool isReload =
+        PageTransitionCoreTypeIs(navigation_handle->GetPageTransition(),
+                                 ui::PageTransition::PAGE_TRANSITION_RELOAD);
+    LOG(INFO) << "load type = "
+              << PageTransitionStripQualifier(
+                     navigation_handle->GetPageTransition());
+    OnRefreshAccessedHistoryEx(frame.get(), url, isReload, is_main_frame);
+#endif
   } else {
     // The navigation failed with an error. This may happen before commit
     // (e.g. network error) or after commit (e.g. response filter error).
@@ -582,6 +745,17 @@ void CefBrowserContentsDelegate::DidFailLoad(
   frame->RefreshAttributes();
   OnLoadError(frame, validated_url, error_code);
   OnLoadEnd(frame, validated_url, error_code);
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  // Keep same behavior with webview onPageStareted and onPageFinished.
+  if (render_frame_host && render_frame_host->IsInPrimaryMainFrame() && (validated_url.spec() != FAILING_URL)) {
+    if (error_code == net::ERR_ABORTED) {
+      AsArkWebBrowserContentsDelegateExt()->OnLoadFinished(frame, frame->GetURL());
+    } else if (error_code == net::ERR_HTTP_RESPONSE_CODE_FAILURE) {
+      AsArkWebBrowserContentsDelegateExt()->OnLoadStarted(frame, frame->GetURL());
+      AsArkWebBrowserContentsDelegateExt()->OnLoadFinished(frame, frame->GetURL());
+    }
+  }
+#endif
 }
 
 void CefBrowserContentsDelegate::DidFinishLoad(
@@ -602,16 +776,27 @@ void CefBrowserContentsDelegate::DidFinishLoad(
   }
 
   OnLoadEnd(frame, validated_url, http_status_code);
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (render_frame_host->IsInPrimaryMainFrame() && (validated_url.spec() != FAILING_URL)) {
+    last_did_finish_load_url_ = validated_url.spec();
+  }
+#endif
 }
 
 void CefBrowserContentsDelegate::TitleWasSet(content::NavigationEntry* entry) {
   // |entry| may be NULL if a popup is created via window.open and never
   // navigated.
   if (entry) {
-    OnTitleChange(entry->GetTitle());
+    OnTitleChange(entry->GetTitle(), entry->GetIsRealTitle());
   } else if (web_contents()) {
-    OnTitleChange(web_contents()->GetTitle());
+    OnTitleChange(web_contents()->GetTitle(), web_contents()->GetIsRealTitle());
   }
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (entry || web_contents()) {
+    need_report_title_when_stop_loading_ = false;
+  }
+#endif
 }
 
 void CefBrowserContentsDelegate::DidUpdateFaviconURL(
@@ -630,6 +815,11 @@ void CefBrowserContentsDelegate::DidUpdateFaviconURL(
       }
     }
   }
+#if BUILDFLAG(ARKWEB_FAVICON)
+  if (icon_helper_) {
+    icon_helper_->OnUpdateFaviconURL(render_frame_host, candidates, browser());
+  }
+#endif
 }
 
 void CefBrowserContentsDelegate::OnWebContentsFocused(
@@ -724,7 +914,7 @@ void CefBrowserContentsDelegate::OnLoadStart(
     if (auto handler = c->GetLoadHandler()) {
       auto navigation_lock = browser_info_->CreateNavigationLock();
       // On the handler that loading has started.
-      handler->OnLoadStart(browser(), frame,
+      handler->OnLoadStart(browser(), frame, frame->GetURL(),
                            static_cast<cef_transition_type_t>(transition_type));
     }
   }
@@ -755,15 +945,21 @@ void CefBrowserContentsDelegate::OnLoadError(CefRefPtr<CefFrame> frame,
   }
 }
 
-void CefBrowserContentsDelegate::OnTitleChange(const std::u16string& title) {
+void CefBrowserContentsDelegate::OnTitleChange(const std::u16string& title, bool isRealTitle) {
   if (auto c = client()) {
     if (auto handler = c->GetDisplayHandler()) {
-      handler->OnTitleChange(browser(), title);
+      handler->OnTitleChange(browser(), title, isRealTitle);
     }
   }
 }
 
-void CefBrowserContentsDelegate::OnFullscreenModeChange(bool fullscreen) {
+void CefBrowserContentsDelegate::OnFullscreenModeChange(
+    bool fullscreen
+#if BUILDFLAG(ARKWEB_MEDIA)
+    ,
+    const CefSize& video_natural_size
+#endif  // BUILDFLAG(ARKWEB_MEDIA)
+) {
   if (fullscreen == is_fullscreen_) {
     return;
   }
@@ -773,7 +969,12 @@ void CefBrowserContentsDelegate::OnFullscreenModeChange(bool fullscreen) {
 
   if (auto c = client()) {
     if (auto handler = c->GetDisplayHandler()) {
-      handler->OnFullscreenModeChange(browser(), fullscreen);
+      handler->OnFullscreenModeChange(browser(), fullscreen
+#if BUILDFLAG(ARKWEB_MEDIA)
+                                      ,
+                                      video_natural_size
+#endif  // BUILDFLAG(ARKWEB_MEDIA)
+      );
     }
   }
 }

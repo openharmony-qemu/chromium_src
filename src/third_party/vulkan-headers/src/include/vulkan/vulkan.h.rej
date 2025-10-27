@@ -1,0 +1,13 @@
+--- vulkan.h	2025-10-20 19:53:27.784254670 +0800
++++ vulkan.h	2025-10-16 16:07:58.215994775 +0800
+@@ -94,6 +94,10 @@
+ 
+ #ifdef VK_ENABLE_BETA_EXTENSIONS
+ #include "vulkan_beta.h"
+ #endif
+ 
++#ifdef VK_USE_PLATFORM_OHOS
++#include "vulkan_ohos.h"
++#endif
++
+ #endif // VULKAN_H_

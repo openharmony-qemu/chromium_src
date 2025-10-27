@@ -1744,6 +1744,10 @@ void RegisterLocalState(PrefRegistrySimple* registry) {
       registry,
       fingerprinting_protection_filter::kFingerprintingProtectionRulesetConfig
           .filter_tag);
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  subresource_filter::UserIndexedRulesetVersion::RegisterPrefs(
+      registry, subresource_filter::kSafeBrowsingUserRulesetConfig.filter_tag);
+#endif  // TODO(HUAWEI):jiang   升级之后,兼容性
   SystemNetworkContextManager::RegisterPrefs(registry);
   tpcd::experiment::RegisterLocalStatePrefs(registry);
   tpcd::metadata::RegisterLocalStatePrefs(registry);
@@ -1978,6 +1982,10 @@ void RegisterLocalState(PrefRegistrySimple* registry) {
   // Always call this last.
   browser_prefs::RegisterLocalStatePrefs(registry);
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+  browser_prefs::RegisterMigratePasswordsPrefs(registry);
+#endif
 }
 
 // Register prefs applicable to all profiles.
@@ -2136,6 +2144,11 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry,
 
 #if BUILDFLAG(ENABLE_RLZ)
   ChromeRLZTrackerDelegate::RegisterProfilePrefs(registry);
+#endif
+
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
+  LOG(INFO) << "[DRM]" << __func__;
+  cdm::MediaDrmStorageImpl::RegisterProfilePrefs(registry);
 #endif
 
 #if BUILDFLAG(IS_ANDROID)

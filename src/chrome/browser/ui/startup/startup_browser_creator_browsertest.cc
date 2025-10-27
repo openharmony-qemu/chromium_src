@@ -650,7 +650,7 @@ namespace {
 
 enum class ChromeAppDeprecationFeatureValue {
   kDefault,
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(ARKWEB_TEST)
   kEnabledWithNoLaunch,
   kDisabled,
 #endif
@@ -664,7 +664,7 @@ std::string ChromeAppDeprecationFeatureValueToString(
     case ChromeAppDeprecationFeatureValue::kDefault:
       result = "ChromeAppDeprecationFeatureDefault";
       break;
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(ARKWEB_TEST)
     case ChromeAppDeprecationFeatureValue::kEnabledWithNoLaunch:
       result = "ChromeAppDeprecationFeatureEnabledWithNoLaunch";
       break;
@@ -686,7 +686,7 @@ class StartupBrowserCreatorChromeAppShortcutTest
     switch (GetParam()) {
       case ChromeAppDeprecationFeatureValue::kDefault:
         break;
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(ARKWEB_TEST)
       case ChromeAppDeprecationFeatureValue::kEnabledWithNoLaunch:
         scoped_feature_list_.InitAndEnableFeature(
             features::kChromeAppsDeprecation);
@@ -705,7 +705,7 @@ class StartupBrowserCreatorChromeAppShortcutTest
 
   void ExpectBlockLaunch(const std::string& app_id, bool force_install_dialog) {
     ASSERT_EQ(2u, chrome::GetBrowserCount(browser()->profile()));
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(ARKWEB_TEST)
     auto waiter = views::NamedWidgetShownWaiter(
         views::test::AnyWidgetTestPasskey{},
         force_install_dialog ? "ForceInstalledDeprecatedAppsDialogView"
@@ -725,7 +725,7 @@ class StartupBrowserCreatorChromeAppShortcutTest
     EXPECT_EQ(1, other_tab_strip->count());
     EXPECT_FALSE(other_browser->is_type_app());
     EXPECT_TRUE(other_browser->is_type_normal());
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(ARKWEB_TEST)
 
     GURL expected_url =
         force_install_dialog
@@ -740,7 +740,7 @@ class StartupBrowserCreatorChromeAppShortcutTest
 #endif
   }
 
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(ARKWEB_TEST)
 
   enum class ExpectedLaunchBehavior{kLaunchAnywaysInTab, kLaunchAnywaysInWindow,
                                     kNoLaunch};
@@ -800,10 +800,10 @@ class StartupBrowserCreatorChromeAppShortcutTest
     Browser* app_browser = ui_test_utils::GetBrowserNotInSet(initial_browsers);
     EXPECT_EQ(app_browser, nullptr);
   }
-#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
+#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(ARKWEB_TEST)
 
   bool IsExpectedToAllowLaunch() {
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(ARKWEB_TEST)
     return false;
 #else
     return true;
@@ -2404,8 +2404,10 @@ class StartupBrowserCreatorTestWithGuestParam
   void OpenTabAlreadyRunning() {
     base::CommandLine command_line(base::CommandLine::NO_PROGRAM);
     command_line.AppendArg(GetTestURL().spec());
+#if BUILDFLAG(ENABLE_PROCESS_SINGLETON)
     ChromeBrowserMainParts::ProcessSingletonNotificationCallback(
         command_line, /*current_directory=*/{});
+#endif // BUILDFLAG(ENABLE_PROCESS_SINGLETON)
   }
 };
 
@@ -3087,7 +3089,7 @@ IN_PROC_BROWSER_TEST_F(StartupBrowserWebAppProtocolAndFileHandlingTest,
   ui_test_utils::WaitForBrowserToClose(app_browser);
 }
 
-#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
+#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(ARKWEB_TEST)
 
 // These tests are not applicable to Chrome OS as neither initial preferences
 // nor the onboarding promos exist there.

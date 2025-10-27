@@ -435,11 +435,25 @@ void ProcessDocumentFormat(
 void ProcessMediaCollection(
     const mojom::blink::WebPrinterAttributes& new_attributes,
     WebPrinterAttributes* current_attributes) {
+#if defined(__clang__) && (__clang_major__ < 17)
+  current_attributes->setMediaColDefault(
+      mojo::TypeConverter<BlinkMediaCollection*, MojomMediaCollection*>::
+          Convert(new_attributes.media_col_default.get()));
+
+  blink::HeapVector<Member<BlinkMediaCollection>> colls;
+  for (const auto& db : new_attributes.media_col_database) {
+    colls.push_back(std::move(
+        mojo::TypeConverter<BlinkMediaCollection*,
+                            MojomMediaCollection*>::Convert(db.get())));
+  }
+  current_attributes->setMediaColDatabase(std::move(colls));
+#else
   current_attributes->setMediaColDefault(
       mojo::ConvertTo<BlinkMediaCollection*>(new_attributes.media_col_default));
   current_attributes->setMediaColDatabase(
       mojo::ConvertTo<HeapVector<Member<BlinkMediaCollection>>>(
           new_attributes.media_col_database));
+#endif
 }
 
 void ProcessMediaSource(
@@ -483,9 +497,19 @@ void ProcessPrinterResolution(
   current_attributes->setPrinterResolutionDefault(
       mojo::ConvertTo<blink::WebPrintingResolution*>(
           new_attributes.printer_resolution_default));
+#if defined(__clang__) && (__clang_major__ < 17)
+  blink::HeapVector<Member<blink::WebPrintingResolution>> resolution_vec;
+  for (const auto& solution : new_attributes.printer_resolution_supported) {
+    resolution_vec.push_back(std::move(
+        mojo::TypeConverter<blink::WebPrintingResolution*, gfx::Size>::Convert(
+            solution)));
+  }
+  current_attributes->setPrinterResolutionSupported(std::move(resolution_vec));
+#else
   current_attributes->setPrinterResolutionSupported(
       mojo::ConvertTo<HeapVector<Member<blink::WebPrintingResolution>>>(
           new_attributes.printer_resolution_supported));
+#endif
 }
 
 void ProcessPrintColorMode(

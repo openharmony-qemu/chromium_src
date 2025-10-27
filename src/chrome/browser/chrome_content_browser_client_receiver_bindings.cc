@@ -131,6 +131,16 @@
 #include "chrome/browser/offline_pages/offline_page_tab_helper.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_PRINT)
+#include "cef/ohos_cef_ext/libcef/browser/printing/ohos_print_manager.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "components/subresource_filter/content/browser/content_subresource_filter_throttle_manager.h"
+#include "libcef/browser/subresource_filter/adblock_content_subresource_filter_web_contents_helper_factory.h"
+#include "arkweb/chromium_ext/components/subresource_filter/content/browser/arkweb_content_subresource_filter_throttle_manager_ext.h"
+#endif  // ARKWEB_ADBLOCK
+
 namespace {
 
 #if BUILDFLAG(SAFE_BROWSING_AVAILABLE)
@@ -211,6 +221,9 @@ void BindBadgeServiceForServiceWorker(
 
 }  // namespace
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "arkweb/chromium_ext/chrome/browser/chrome_content_browser_client_receiver_bindings_for_include.cc"
+#endif
 void ChromeContentBrowserClient::ExposeInterfacesToRenderer(
     service_manager::BinderRegistry* registry,
     blink::AssociatedInterfaceRegistry* associated_registry,
@@ -323,7 +336,8 @@ void ChromeContentBrowserClient::BindMediaServiceReceiver(
   }
 #endif  // BUILDFLAG(ENABLE_LIBRARY_CDMS) || BUILDFLAG(IS_WIN)
 
-#if BUILDFLAG(ENABLE_MOJO_CDM) && BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ENABLE_MOJO_CDM) && (BUILDFLAG(IS_ANDROID) || \
+    (BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)))
   if (auto r = receiver.As<media::mojom::MediaDrmStorage>()) {
     CreateMediaDrmStorage(render_frame_host, std::move(r));
     return;
@@ -564,6 +578,19 @@ void ChromeContentBrowserClient::
           },
           &render_frame_host));
 #endif  //  !BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ARKWEB_PRINT)
+  associated_registry.AddInterface<printing::mojom::PrintManagerHost>(
+      base::BindRepeating(
+          [](content::RenderFrameHost* render_frame_host,
+             mojo::PendingAssociatedReceiver<printing::mojom::PrintManagerHost>
+                 receiver) {
+            printing::OhosPrintManager::BindPrintManagerHost(
+                std::move(receiver), render_frame_host);
+          },
+          &render_frame_host));
+#endif  // BUILDFLAG(ARKWEB_PRINT)
+
 #if BUILDFLAG(ENABLE_PRINTING)
   associated_registry.AddInterface<printing::mojom::PrintManagerHost>(
       base::BindRepeating(

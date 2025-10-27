@@ -1,0 +1,16 @@
+--- font_cache.h	2025-10-20 19:53:01.162201788 +0800
++++ font_cache.h	2025-10-16 16:07:40.064219314 +0800
+@@ -315,11 +316,12 @@
+ 
+   sk_sp<SkTypeface> CreateTypeface(const FontDescription&,
+                                    const FontFaceCreationParams&,
+                                    std::string& name);
+ 
+-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
++    BUILDFLAG(IS_OHOS)
+   static AtomicString GetFamilyNameForCharacter(SkFontMgr*,
+                                                 UChar32,
+                                                 const FontDescription&,
+                                                 const char* family_name,
+                                                 FontFallbackPriority);

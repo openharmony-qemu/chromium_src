@@ -1,0 +1,23 @@
+--- demuxer_memory_limit_android.cc	2025-10-20 19:52:56.586198886 +0800
++++ demuxer_memory_limit_android.cc	2025-10-16 15:55:01.802229859 +0800
+@@ -20,16 +20,19 @@
+   if (!base::SysInfo::IsLowEndDevice()) {
+     return base::SysInfo::IsLowEndDeviceOrPartialLowEndModeEnabled()
+                ? medium_limit
+                : default_limit;
+   }
++#if !BUILDFLAG(ARKWEB_MEDIA)
++  constexpr int kPhysicalMemoryLow = 512;
+   // Use very low limit on 512MiB Android Go devices only.
+   if (base::android::BuildInfo::GetInstance()->sdk_int() >=
+           base::android::SDK_VERSION_OREO &&
+-      base::SysInfo::AmountOfPhysicalMemoryMB() <= 512) {
++      base::SysInfo::AmountOfPhysicalMemoryMB() <= kPhysicalMemoryLow) {
+     return very_low_limit;
+   }
++#endif
+   return low_limit;
+ }
+ 
+ }  // namespace
+ 

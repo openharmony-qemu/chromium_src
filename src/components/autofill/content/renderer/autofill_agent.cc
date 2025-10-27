@@ -615,6 +615,10 @@ void AutofillAgent::DidDispatchDOMContentLoadedEvent() {
 
 void AutofillAgent::DidChangeScrollOffset() {
   if (!config_.focus_requires_scroll) {
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+    if (AsAutofillAgentExt()->OhAutoFillDidChangeScrollOffset())
+      return;
+#endif
     // Post a task here since scroll offset may change during layout.
     // TODO(crbug.com/40559425): Do not cancel other tasks and do not invalidate
     // PasswordAutofillAgent::autofill_agent_.
@@ -627,6 +631,9 @@ void AutofillAgent::DidChangeScrollOffset() {
                                     last_queried_element_.GetId()));
     }
   } else {
+#if BUILDFLAG(ARKWEB_DATALIST)
+    if (!is_popup_possibly_visible_)
+#endif
     HidePopup();
   }
 }
@@ -657,6 +664,9 @@ void AutofillAgent::DidChangeScrollOffsetImpl(FieldRendererId element_id) {
 
   // Ignore subsequent scroll offset changes.
   HidePopup();
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+  AsAutofillAgentExt()->SetIsNeedToCreatedPopup(false);
+#endif
 }
 
 CallTimerState AutofillAgent::GetCallTimerState(
@@ -671,6 +681,10 @@ void AutofillAgent::FocusedElementChanged(
   ObserveCaret(new_focused_element);
 
   HidePopup();
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+  AsAutofillAgentExt()->SetIsPopupCreatedByFocusChange(false);
+  AsAutofillAgentExt()->SetIsNeedToCreatedPopup(false);
+#endif
 
   // This behavior was introduced for to fix http://crbug.com/1105254. It's
   // unclear if this is still needed.
@@ -954,6 +968,10 @@ void AutofillAgent::TextFieldDidEndEditing(const WebInputElement& element) {
       password_generation_agent_->ShouldIgnoreBlur()) {
     return;
   }
+#if BUILDFLAG(ARKWEB_DATALIST)
+  if (is_popup_possibly_visible_)
+    return;
+#endif
   if (auto* autofill_driver = unsafe_autofill_driver()) {
     autofill_driver->DidEndTextFieldEditing();
   }
@@ -1347,6 +1365,10 @@ void AutofillAgent::ApplyFieldAction(
             break;
           }
           case mojom::FieldActionType::kReplaceAll: {
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+            if (AsAutofillAgentExt()->FillFieldWithValue(field_id, value))
+              return;
+#endif
             DoFillFieldWithValue(value, form_control,
                                  WebAutofillState::kAutofilled);
             break;
@@ -1463,6 +1485,12 @@ void AutofillAgent::AcceptDataListSuggestion(
   DoFillFieldWithValue(new_value, last_queried_element,
                        WebAutofillState::kNotFilled);
 }
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+void AutofillAgent::FillAccountSuggestion(const std::u16string& username, const std::u16string& password) {
+  AsAutofillAgentExt()->ArkFillAccountSuggestion(username, password);
+}
+#endif
 
 void AutofillAgent::PreviewPasswordSuggestion(const std::u16string& username,
                                               const std::u16string& password) {

@@ -376,7 +376,7 @@ TEST_F(FPDFAttachmentEmbedderTest, GetStringValueForChecksumNotString) {
 
   // The checksum key is a name, which violates the spec. This will still return
   // the value, but should not crash.
-  static constexpr unsigned long kExpectedLength = 8u;
+  constexpr unsigned long kExpectedLength = 8u;
   ASSERT_EQ(kExpectedLength, FPDFAttachment_GetStringValue(
                                  attachment, kChecksumKey, nullptr, 0));
   std::vector<FPDF_WCHAR> buf = GetFPDFWideStringBuffer(kExpectedLength);
@@ -394,7 +394,7 @@ TEST_F(FPDFAttachmentEmbedderTest, GetStringValueForNotString) {
   ASSERT_TRUE(attachment);
 
   // The checksum key is a stream, while the API requires a string or name.
-  static constexpr unsigned long kExpectedLength = 2u;
+  constexpr unsigned long kExpectedLength = 2u;
   ASSERT_EQ(kExpectedLength, FPDFAttachment_GetStringValue(
                                  attachment, kChecksumKey, nullptr, 0));
   std::vector<FPDF_WCHAR> buf = GetFPDFWideStringBuffer(kExpectedLength);

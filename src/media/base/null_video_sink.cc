@@ -8,7 +8,6 @@
 #include "base/functional/callback_helpers.h"
 #include "base/location.h"
 #include "base/task/single_thread_task_runner.h"
-
 namespace media {
 
 NullVideoSink::NullVideoSink(
@@ -103,5 +102,9 @@ void NullVideoSink::PaintSingleFrame(scoped_refptr<VideoFrame> frame,
   if (new_frame_cb_)
     new_frame_cb_.Run(std::move(frame));
 }
+
+#if BUILDFLAG(ARKWEB_MEDIA)
+void NullVideoSink::SetFinishPaintCallback(base::RepeatingClosure callback) {}
+#endif
 
 }  // namespace media

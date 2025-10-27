@@ -2,6 +2,11 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+if (is_arkweb) {
+  import("//arkweb/build/features/features.gni")
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
 blink_core_sources_highlight = [
   "css_highlight_registry.cc",
   "css_highlight_registry.h",
@@ -15,6 +20,10 @@ blink_core_sources_highlight = [
   "highlight_style_utils.cc",
   "highlight_style_utils.h",
 ]
+
+if (arkweb_drag_drop) {
+  blink_core_sources_highlight += arkweb_third_patry_blink_renderer_core_hilight_resources
+}
 
 blink_core_tests_highlight = [
   "highlight_registry_test.cc",

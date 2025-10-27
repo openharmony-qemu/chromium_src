@@ -9,6 +9,10 @@
 #include "content/public/browser/navigation_entry.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_NAVIGATION)
+#include "cef/ohos_cef_ext/libcef/browser/navigation_entry_impl_for_include.cc"
+#endif  // BUILDFLAG(ARKWEB_NAVIGATION)
+
 CefNavigationEntryImpl::CefNavigationEntryImpl(content::NavigationEntry* value)
     : CefValueBase<CefNavigationEntry, content::NavigationEntry>(
           value,

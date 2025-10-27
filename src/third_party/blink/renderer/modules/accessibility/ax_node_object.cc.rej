@@ -1,0 +1,15 @@
+--- ax_node_object.cc	2025-10-20 19:53:00.702207100 +0800
++++ ax_node_object.cc	2025-10-16 16:07:39.744473178 +0800
+@@ -6160,11 +6176,11 @@
+     if (auto* button = select->SlottedButton()) {
+       element = button;
+     }
+   }
+ 
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_ACCESSIBILITY)
+   // If this node is already the currently focused node, then calling
+   // focus() won't do anything.  That is a problem when focus is removed
+   // from the webpage to chrome, and then returns.  In these cases, we need
+   // to do what keyboard and mouse focus do, which is reset focus first.
+   if (document->FocusedElement() == element) {

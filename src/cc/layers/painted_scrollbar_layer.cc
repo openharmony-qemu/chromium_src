@@ -278,6 +278,7 @@ bool PaintedScrollbarLayer::UpdateThumbIfNeeded() {
   bool updated = false;
   // If the scrollbar uses solid color thumb, it sends the correct color for
   // the thumb to the Impl class instead of generating a bitmap.
+#if !BUILDFLAG(ARKWEB_SCROLLBAR)
   if (uses_solid_color_thumb_) {
     if (scrollbar_.Read(*this)->ThumbNeedsRepaint() ||
         !thumb_color_.Read(*this).has_value()) {
@@ -293,6 +294,7 @@ bool PaintedScrollbarLayer::UpdateThumbIfNeeded() {
     }
     return updated;
   }
+#endif
 
   gfx::Size thumb_size = thumb_size_.Read(*this);
   gfx::Size scaled_thumb_size = LayerSizeToContentSize(thumb_size);

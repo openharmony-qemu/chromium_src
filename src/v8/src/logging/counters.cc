@@ -156,7 +156,7 @@ void CountersInitializer::Visit(StatsCounter* counter, const char* caption) {
 
 Counters::Counters(Isolate* isolate)
     :
-#ifdef V8_RUNTIME_CALL_STATS
+#if defined(V8_RUNTIME_CALL_STATS) || defined(HITRACE_RUNTIME_CALL_STATS)
       runtime_call_stats_(RuntimeCallStats::kMainIsolateThread),
       worker_thread_runtime_call_stats_(),
 #endif

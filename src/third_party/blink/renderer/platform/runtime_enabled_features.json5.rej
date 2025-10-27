@@ -1,0 +1,137 @@
+--- runtime_enabled_features.json5	2025-10-20 19:53:01.250200427 +0800
++++ runtime_enabled_features.json5	2025-10-16 16:07:40.158958910 +0800
+@@ -1577,15 +1579,16 @@
+     {
+       name: "DocumentOpenSandboxInheritanceRemoval",
+       status: "stable",
+       copied_from_base_feature_if: "overridden",
+     },
++    // ARKWEB_PIP not support DocumentPictureInPictureAPI yet.
+     {
+       name: "DocumentPictureInPictureAPI",
+       status: {
+         "Android": "",
+-        "default": "stable",
++        "default": "test",
+       },
+     },
+     // Enables `preferInitialWindowPlacement` Document PiP option to skip
+     // re-using the previous pip window bounds.
+     {
+@@ -2354,11 +2357,14 @@
+     },
+     {
+       name: "ImplicitRootScroller",
+       public: true,
+       settable_from_internals: true,
++      // #if BUILDFLAG(ARKWEB_SCROLL_PERFORMANCE)
+       status: {"Android": "stable"},
++      // status: {"Android": "stable", "default": "stable"},
++      // #endif  // BUILDFLAG(ARKWEB_SCROLL_PERFORMANCE)
+       base_feature: "none",
+     },
+     // This change, although technically breaking, is expected to be fully web-compatible
+     // due to how import attributes are currently used in the ecosystem. However, this is
+     // a killswitch just in case. This can be removed once it ships to stable and no
+@@ -2547,11 +2554,11 @@
+     {
+       name: "LayoutIgnoreMarginsForSticky",
+     },
+     {
+       name: "LayoutJustifySelfForBlocks",
+-      status: "stable",
++      status: "test",
+     },
+     {
+       name: "LayoutNGShapeCache",
+       status: "test",
+       base_feature: "LayoutNGShapeCache",
+@@ -2797,11 +2809,11 @@
+     },
+     // This is enabled by default on Windows only. The only part that's
+     // "experimental" is the support on other platforms.
+     {
+       name: "MiddleClickAutoscroll",
+-      status: "test",
++      status: "stable",
+     },
+     // Killswitch. Remove after 1 or 2 stable releases.
+     {
+       name: "MinimimalResourceRequestPrepBeforeCacheLookup",
+       status: "stable",
+@@ -2896,16 +2908,16 @@
+       name: "NetInfoConstantType",
+     },
+     {
+       name: "NetInfoDownlinkMax",
+       public: true,
+-      // Only Android, ChromeOS support NetInfo downlinkMax, type and ontypechange now
++      // Only Android, ChromeOS support NetInfo downlinkMax, type and ontypechange now,add ohos
+       status: {
+         "Android": "stable",
+         "ChromeOS_Ash": "stable",
+         "ChromeOS_Lacros": "stable",
+-        "default": "experimental",
++        "default": "stable",
+       },
+       base_feature: "none",
+     },
+     {
+       // This is a killswitch for the behavior of Element::GetFocusableArea
+@@ -2995,11 +3007,13 @@
+     {
+       name: "OnDeviceWebSpeechAvailable",
+     },
+     {
+       name: "OrientationEvent",
+-      status: {"Android": "stable"},
++      // BUILDFLAG(ARKWEB_WPT)
++      // status: {"Android": "stable"},
++      status: "stable",
+     },
+     {
+       name: "OriginIsolationHeader",
+       status: "stable",
+       base_feature: "none",
+@@ -4544,11 +4565,12 @@
+     },
+     {
+       // This is a kill switch for a fix where viewport changes did not update
+       // the text autosizer, see: crbug.com/359910401.
+       name: "ViewportChangesUpdateTextAutosizing",
+-      status: "stable",
++      // arkweb set this feature disable
++      // status: "stable",
+     },
+     {
+       name: "ViewportHeightClientHintHeader",
+       status: "stable",
+     },
+@@ -4730,11 +4752,12 @@
+     },
+     // Enables the PublicKeyCredential.getClientCapabilities() static method.
+     // https://w3c.github.io/webauthn/#sctn-getClientCapabilities
+     {
+       name: "WebAuthenticationClientCapabilities",
+-      status: "experimental",
++      // arkweb_fido
++      status: "stable",
+     },
+     // Methods for deserializing WebAuthn requests from JSON/serializing
+     // responses into JSON.
+     // https://w3c.github.io/webauthn/#dom-publickeycredential-tojson
+     // https://w3c.github.io/webauthn/#sctn-parseCreationOptionsFromJSON
+@@ -5098,7 +5121,13 @@
+     {
+       // If enabled, the `getDisplayMedia()` family of APIs will ask for NV12
+       // frames, which should trigger a zero-copy path in the tab capture code.
+       name: "ZeroCopyTabCapture",
+     },
++    {
++      // js API `window.arkWeb.scrollbarAvoidAreaTop` and `window.arkWeb.scrollbarAvoidAreaBottom`
++      // for setting the margin of vertical scrollbar avoid area in browser
++      name:  "ArkWeb",
++      status: "experimental",
++    },
+   ],
+ }

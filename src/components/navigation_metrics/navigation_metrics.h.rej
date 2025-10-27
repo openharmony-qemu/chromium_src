@@ -1,0 +1,15 @@
+--- navigation_metrics.h	2025-10-20 19:52:53.157965932 +0800
++++ navigation_metrics.h	2025-10-16 15:54:57.008077213 +0800
+@@ -4,11 +4,11 @@
+ 
+ #ifndef COMPONENTS_NAVIGATION_METRICS_NAVIGATION_METRICS_H_
+ #define COMPONENTS_NAVIGATION_METRICS_NAVIGATION_METRICS_H_
+ 
+ #include <string>
+-
++#include "base/feature_list.h"
+ #include "components/url_formatter/spoof_checks/idna_metrics.h"
+ 
+ class GURL;
+ 
+ namespace profile_metrics {

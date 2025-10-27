@@ -1,0 +1,28 @@
+--- angle.gni	2025-10-20 19:52:57.994214278 +0800
++++ angle.gni	2025-10-16 16:08:14.353530750 +0800
+@@ -59,11 +59,11 @@
+   declare_args() {
+     angle_use_gbm = ozone_platform_gbm
+     angle_use_x11 = ozone_platform_x11 && !is_ggp && (is_linux || is_chromeos)
+     angle_use_wayland =
+         ozone_platform_wayland && !is_ggp && is_linux && !is_castos
+-    angle_use_vulkan_display = (is_linux || is_chromeos) && !is_ggp
++    angle_use_vulkan_display = (is_linux || is_chromeos || is_ohos) && !is_ggp
+   }
+ } else {
+   declare_args() {
+     is_ubsan = false
+     is_tsan = false
+@@ -80,11 +80,11 @@
+     use_fuzzing_engine = false
+     is_apple = is_mac || is_ios
+   }
+ 
+   declare_args() {
+-    angle_use_vulkan_display = (is_linux || is_chromeos) && !is_ggp
++    angle_use_vulkan_display = (is_linux || is_chromeos || is_ohos) && !is_ggp
+   }
+ }
+ 
+ if (!defined(checkout_angle_internal)) {
+   checkout_angle_internal = false

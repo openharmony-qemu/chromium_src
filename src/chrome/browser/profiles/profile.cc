@@ -64,6 +64,10 @@
 #include "extensions/browser/pref_names.h"                        // nogncheck
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/chrome/browser/profiles/profile_for_include.cc"
+#endif
+
 #if DCHECK_IS_ON()
 
 #include <set>
@@ -530,6 +534,10 @@ void Profile::NotifyOffTheRecordProfileCreated(Profile* off_the_record) {
   DCHECK(off_the_record->IsOffTheRecord());
   for (auto& observer : observers_)
     observer.OnOffTheRecordProfileCreated(off_the_record);
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  off_the_record_ = off_the_record;
+#endif
 }
 
 void Profile::NotifyProfileInitializationComplete() {
@@ -540,6 +548,12 @@ void Profile::NotifyProfileInitializationComplete() {
 }
 
 Profile* Profile::GetPrimaryOTRProfile(bool create_if_needed) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  Profile* otr_pofile = GetOTRProfile();
+  if (otr_pofile) {
+    return otr_pofile;
+  }
+#endif
   return GetOffTheRecordProfile(OTRProfileID::PrimaryID(), create_if_needed);
 }
 
@@ -549,6 +563,11 @@ const Profile::OTRProfileID& Profile::GetOTRProfileID() const {
 }
 
 bool Profile::HasPrimaryOTRProfile() {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (HasOTRProfile()) {
+    return true;
+  }
+#endif
   return HasOffTheRecordProfile(OTRProfileID::PrimaryID());
 }
 

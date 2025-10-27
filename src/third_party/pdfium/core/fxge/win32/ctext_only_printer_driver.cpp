@@ -180,12 +180,12 @@ bool CTextOnlyPrinterDriver::DrawDeviceText(
 bool CTextOnlyPrinterDriver::MultiplyAlpha(float alpha) {
   // Not needed. All callers are using `CFX_DIBitmap`-backed raster devices
   // anyway.
-  NOTREACHED();
+  NOTREACHED_NORETURN();
 }
 
 bool CTextOnlyPrinterDriver::MultiplyAlphaMask(
     RetainPtr<const CFX_DIBitmap> mask) {
   // Not needed. All callers are using `CFX_DIBitmap`-backed raster devices
   // anyway.
-  NOTREACHED();
+  NOTREACHED_NORETURN();
 }

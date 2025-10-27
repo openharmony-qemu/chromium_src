@@ -4,6 +4,7 @@
 
 #include "components/site_isolation/site_isolation_policy.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/contains.h"
 #include "base/feature_list.h"
 #include "base/json/values_util.h"

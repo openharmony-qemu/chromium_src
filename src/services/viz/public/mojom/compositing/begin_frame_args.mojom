@@ -5,6 +5,7 @@
 module viz.mojom;
 
 import "mojo/public/mojom/base/time.mojom";
+import "ui/gfx/geometry/mojom/geometry.mojom";
 
 enum BeginFrameArgsType {
   INVALID,
@@ -31,6 +32,10 @@ struct BeginFrameArgs {
   BeginFrameArgsType type;
   bool on_critical_path;
   bool animate_only;
+  [EnableIf=is_ohos]
+  gfx.mojom.Rect draw_rect;
+  [EnableIf=is_ohos]
+  bool internal_frame;
 };
 
 // See components/viz/common/frame_sinks/begin_frame_args.h.

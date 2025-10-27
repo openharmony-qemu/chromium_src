@@ -107,6 +107,9 @@
 #include "third_party/blink/renderer/platform/wtf/text/string_builder.h"
 #include "ui/gfx/animation/keyframe/timing_function.h"
 #include "ui/gfx/color_utils.h"
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/css/css_utils.h"
+#endif
 
 namespace blink {
 
@@ -5895,6 +5898,11 @@ CSSValueList* ConsumeNonGenericFamilyNameList(CSSParserTokenStream& stream) {
 }
 
 CSSValue* ConsumeGenericFamily(CSSParserTokenStream& stream) {
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+  if (Cssutils::IsMathFormulaDisabledMode()) {
+    return ConsumeIdentRange(stream, CSSValueID::kSerif, CSSValueID::kWebkitBody);
+  }
+#endif
   return ConsumeIdentRange(stream, CSSValueID::kSerif, CSSValueID::kMath);
 }
 

@@ -16,6 +16,9 @@
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
+#if BUILDFLAG(ARKWEB_PDF)
+#include "base/logging.h"
+#endif
 #include "base/numerics/safe_math.h"
 #include "base/strings/string_util.h"
 #include "pdf/loader/result_codes.h"
@@ -34,6 +37,9 @@ namespace {
 constexpr int kChunkCloseDistance = 10;
 
 constexpr size_t kReadBufferSize = 256 * 1024;
+#if BUILDFLAG(ARKWEB_PDF)
+constexpr size_t kReadLargeBufferSize = 2048 * 1024;
+#endif
 
 // Return true if the HTTP response of `loader` is a successful one and loading
 // should continue. 4xx error indicate subsequent requests will fail too.
@@ -110,6 +116,14 @@ bool DocumentLoaderImpl::Init(std::unique_ptr<URLLoaderWrapper> loader,
 
   if (!loader_->IsContentEncoded())
     chunk_stream_.set_eof_pos(std::max(0, loader_->GetContentLength()));
+
+#if BUILDFLAG(ARKWEB_PDF)
+  int contentLength = loader_->GetContentLength();
+  if (contentLength > 0 && static_cast<size_t>(contentLength) > kReadLargeBufferSize) {
+    LOG(DEBUG) << "pdf loader use large buffer, content length: " << loader_->GetContentLength();
+    buffer_.resize(kReadLargeBufferSize);
+  }
+#endif
 
   SetPartialLoadingEnabled(
       partial_loading_enabled_ &&
@@ -401,6 +415,9 @@ void DocumentLoaderImpl::ReadComplete() {
       SaveChunkData();
   }
   loader_.reset();
+#if BUILDFLAG(ARKWEB_PDF)
+  buffer_.resize(kReadBufferSize);
+#endif
   if (IsDocumentComplete()) {
     client_->OnDocumentComplete();
   } else {

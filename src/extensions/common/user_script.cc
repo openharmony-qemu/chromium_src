@@ -70,6 +70,9 @@ enum {
                             URLPattern::SCHEME_HTTP | URLPattern::SCHEME_HTTPS |
                             URLPattern::SCHEME_FILE | URLPattern::SCHEME_FTP |
                             URLPattern::SCHEME_UUID_IN_PACKAGE
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+                            | URLPattern::SCHEME_ARKWEBUI
+#endif                            
 };
 
 // static

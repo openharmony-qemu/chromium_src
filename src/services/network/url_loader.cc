@@ -133,6 +133,21 @@
 #include "third_party/abseil-cpp/absl/container/inlined_vector.h"
 #include "url/origin.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+#include "arkweb/chromium_ext/services/network/prp_preload/include/page_res_parallel_preload_mgr.h"
+#include "base/functional/callback.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "base/base_switches.h"
+#include "base/command_line.h"
+#include "url/ohos/log_utils.h"
+#endif
+
 namespace network {
 
 namespace {
@@ -527,6 +542,15 @@ URLLoader::URLLoader(
     return;
   }
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  url_loader_utils_->SetUrlRequestForPRPP(request, url_request_, org_main_url, preload_info);
+#endif
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+  if (url_request_) {
+    TRACE_EVENT2("loading", "URLLoader::URLLoader", "url", url_request_->url().spec(), "id", request_id_);
+  }
+#endif
   ProcessOutboundTrustTokenInterceptor(request);
 }
 
@@ -826,6 +850,9 @@ void URLLoader::FollowRedirect(
 
 void URLLoader::SetPriority(net::RequestPriority priority,
                             int32_t intra_priority_value) {
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  url_loader_utils_->SetPreloadFlagVisible(priority);
+#endif
   if (url_request_ && resource_scheduler_client_) {
     resource_scheduler_client_->ReprioritizeRequest(
         url_request_.get(), priority, intra_priority_value);
@@ -1079,6 +1106,9 @@ void URLLoader::OnAuthRequired(net::URLRequest* url_request,
 
   DCHECK(!auth_challenge_responder_receiver_.is_bound());
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  url_loader_utils_->SetPreloadFlagUnSupport();
+#endif
   url_loader_network_observer_->OnAuthRequired(
       fetch_window_id_, request_id_, url_request_->url(), first_auth_attempt_,
       auth_info, url_request->response_headers(),
@@ -1102,6 +1132,9 @@ void URLLoader::OnCertificateRequested(net::URLRequest* unused,
   // Set up mojo endpoints for ClientCertificateResponder and bind to the
   // Receiver. This enables us to receive messages regarding the client
   // certificate selection.
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  url_loader_utils_->SetPreloadFlagUnSupport();
+#endif
   url_loader_network_observer_->OnCertificateRequested(
       fetch_window_id_, cert_info,
       client_cert_responder_receiver_.BindNewPipeAndPassRemote());
@@ -1119,6 +1152,10 @@ void URLLoader::OnSSLCertificateError(net::URLRequest* request,
   }
   url_loader_network_observer_->OnSSLCertificateError(
       url_request_->url(), net_error, ssl_info, fatal,
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      request->original_url(),
+      request->referrer(),
+#endif
       base::BindOnce(&URLLoader::OnSSLCertificateErrorResponse,
                      weak_ptr_factory_.GetWeakPtr(), ssl_info));
 }
@@ -1134,6 +1171,13 @@ void URLLoader::ProcessInboundSharedStorageInterceptorOnResponseStarted() {
 
 void URLLoader::OnResponseStarted(net::URLRequest* url_request, int net_error) {
   DCHECK(url_request == url_request_.get());
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  if (url_loader_utils_->prpp_loader_.get() && (net_error == ohos_prp_preload::PRPP_ERROR) &&
+      !has_received_response_) {
+    url_loader_utils_->CleanupAndRollback();
+    return;
+  }
+#endif
   has_received_response_ = true;
 
   if (keepalive_) {
@@ -1295,6 +1339,25 @@ void URLLoader::ContinueOnResponseStarted() {
         orb_analyzer_->Init(url_request_->url(), url_request_->initiator(),
                             request_mode_, request_destination_, *response_);
     if (MaybeBlockResponseForOrb(decision)) {
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+      LOG(INFO) << "ContinueOnResponseStarted blocked the request for "
+                   "ORB blocked origin "
+                   "response, url: ***";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+      LOG_FEEDBACK(INFO)
+          << "ContinueOnResponseStarted blocked the request for "
+             "Cross-Origin Read Blocking (CORB) blocked cross-origin "
+             "response, url: "
+          << url::LogUtils::ConvertUrlWithMask(url_request_->url().spec());
+      if (!is_strict_log_mode_) {
+        LOG(URL) << "ContinueOnResponseStarted blocked the request for "
+                    "Cross-Origin Read Blocking (CORB) blocked cross-origin "
+                    "response, url: "
+                 << url::LogUtils::ConvertUrl(url_request_->url().spec(),
+                                              url_request_->usage_scenario());
+      }
+#endif
+#endif
       return;
     }
   }
@@ -1692,6 +1755,27 @@ void URLLoader::DidRead(int num_bytes,
         }
 
         if (MaybeBlockResponseForOrb(orb_decision)) {
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+      LOG(INFO) << "ContinueOnResponseStarted blocked the request for "
+                   "ORB blocked origin "
+                   "response, url: ***";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+      LOG_FEEDBACK(INFO)
+          << "DidRead blocked the request for Cross-Origin Read "
+             "Blocking (CORB) blocked cross-origin response, url: "
+          << url::LogUtils::ConvertUrlWithMask(url_request_->url().spec());
+      if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+              ::switches::kEnableLoggerReport)) {
+            if (!is_strict_log_mode_) {
+              LOG(URL) << "DidRead blocked the request for Cross-Origin Read "
+                          "Blocking (CORB) blocked cross-origin response, url: "
+                       << url::LogUtils::ConvertUrl(
+                              url_request_->url().spec(),
+                              url_request_->usage_scenario());
+            }
+      }
+#endif
+#endif
           return;
         }
       }
@@ -1916,6 +2000,12 @@ void URLLoader::CancelRequestIfNonceMatchesAndUrlNotExempted(
 }
 
 void URLLoader::NotifyCompleted(int error_code) {
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+  if (url_request_->isolation_info().request_type() ==
+                        net::IsolationInfo::RequestType::kMainFrame) {
+    ReportUrlQuicInfo(url_request_.get(), error_code);
+  }
+#endif // BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
   // Ensure sending the final upload progress message here, since
   // OnResponseCompleted can be called without OnResponseStarted on cancellation
   // or error cases.
@@ -1970,6 +2060,10 @@ void URLLoader::NotifyCompleted(int error_code) {
     }
     status.exists_in_cache = url_request_->response_info().was_cached;
     status.completion_time = base::TimeTicks::Now();
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+    TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+                 "responseEnd", status.completion_time);
+#endif
     status.encoded_data_length = url_request_->GetTotalReceivedBytes();
     status.encoded_body_length = url_request_->GetRawBodyBytes();
     status.decoded_body_length = total_written_bytes_;
@@ -1986,8 +2080,18 @@ void URLLoader::NotifyCompleted(int error_code) {
     }
 
     url_loader_client_.Get()->OnComplete(status);
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+    if (url_loader_utils_) {
+      url_loader_utils_->PrintNetworkInfo();
+    }
+#endif
   }
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  if (url_loader_utils_->prpp_loader_.get()) {
+    url_loader_utils_->prpp_loader_->ClearLoaderCallback(devtools_request_id().has_value());
+  }
+#endif
   DeleteSelf();
 }
 
@@ -2268,6 +2372,7 @@ bool URLLoader::HasDataPipe() const {
 
 void URLLoader::ResumeStart() {
   url_request_->LogUnblocked();
+  TRACE_EVENT1("net", "URLLoader::ResumeStart", "id", request_id_);
   url_request_->Start();
 }
 
@@ -2351,6 +2456,18 @@ URLLoader::BlockResponseForOrbResult URLLoader::BlockResponseForOrb() {
        orb::ResponseAnalyzer::BlockedResponseHandling::kEmptyResponse)
           ? net::OK
           : net::ERR_BLOCKED_BY_ORB;
+
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  // This preserves compatibility with current implementations, which use
+  // net::ERR_ABORTED when the resource is detachable.
+  if (url_loader_utils_->corb_detachable_ && blocked_error_code == net::OK) {
+    CHECK(!base::FeatureList::IsEnabled(
+      features::kOpaqueResponseBlockingErrorsForAllFetches));
+    if (!base::FeatureList::IsEnabled(features::kOpaqueResponseBlockingV02)) {
+      blocked_error_code = net::ERR_ABORTED;
+    }
+  }
+#endif
 
   // Send empty body to the real URLLoaderClient. This preserves "ORB v0.1"
   // behaviour and will also go away once

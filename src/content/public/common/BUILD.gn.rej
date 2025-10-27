@@ -1,0 +1,69 @@
+--- BUILD.gn	2025-10-20 19:52:54.570613086 +0800
++++ BUILD.gn	2025-10-16 15:54:59.700479258 +0800
+@@ -11,15 +11,21 @@
+ import("//media/media_options.gni")
+ import("//mojo/public/tools/bindings/mojom.gni")
+ import("//ppapi/buildflags/buildflags.gni")
+ import("//third_party/webrtc/webrtc.gni")
+ import("//tools/ipc_fuzzer/ipc_fuzzer.gni")
++import("//arkweb/build/features/features.gni")
++import("//arkweb/chromium_ext/chromium_ext.gni")
+ 
+ if (is_android) {
+   import("//build/config/android/rules.gni")
+ }
+ 
++if (defined(is_arkweb_ext) && is_arkweb_ext) {
++  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
++}
++
+ buildflag_header("buildflags") {
+   header = "buildflags.h"
+   flags = [ "ENABLE_SCREEN_CAPTURE=$enable_screen_capture" ]
+ }
+ 
+@@ -87,10 +93,14 @@
+   sources = [
+     "//content/common/content_export.h",
+     "content_switches.cc",
+   ]
+ 
++  if (is_arkweb) {
++    sources += arkweb_content_public_common_sources
++  }
++
+   public_configs = [ ":static_switches_defines" ]
+ 
+   # Deps required by the above headers.
+   deps = [
+     "//build:chromeos_buildflags",
+@@ -108,19 +118,29 @@
+   sources = [
+     "//content/common/content_export.h",
+     "content_switches.cc",
+   ]
+ 
++  if (is_arkweb) {
++    sources += arkweb_content_public_common_sources
++    visibility += [ "//storage:storage_unittests" ]
++  }
++
+   # Deps required by the above header.
+   deps = [
+     "//build:chromeos_buildflags",
+     "//media:media_buildflags",
+     "//tools/v8_context_snapshot:buildflags",
+   ]
+ 
+   configs += [ "//content:content_implementation" ]
+ 
++  if (use_libfuzzer) {
++    configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
++    configs += [ "//build/config/gcc:symbol_visibility_default" ]
++  }
++
+   if (enable_ipc_fuzzer) {
+     configs += [ "//tools/ipc_fuzzer:ipc_fuzzer_config" ]
+   }
+ }
+ 

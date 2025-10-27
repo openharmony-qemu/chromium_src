@@ -56,11 +56,23 @@ class CORE_EXPORT ImageRecordsManager {
   DISALLOW_NEW();
   friend class ImagePaintTimingDetector;
   friend class ImagePaintTimingDetectorTest;
+
+#if BUILDFLAG(IS_ARKWEB)
+  friend class ImageRecordsManagerUtils;
+#endif
+
   FRIEND_TEST_ALL_PREFIXES(ImagePaintTimingDetectorTest,
                            LargestImagePaint_Detached_Frame);
 
   void Trace(Visitor* visitor) const;
-
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  bool TakeIfHasALCP();
+  void UpdateViewportSize(const std::optional<uint64_t>& size);
+  bool CheckALCPRecord(const MediaRecordIdHash& record_id_hash, const MediaTiming& media_timing,
+    const StyleImage* style_image, unsigned frame_index, bool new_lcp_record);
+  void ALCPProcessBeforeLcpRecord();
+  void SetForBlankless();
+#endif
  private:
   explicit ImageRecordsManager(LocalFrameView*);
   ImageRecordsManager(const ImageRecordsManager&) = delete;
@@ -180,6 +192,9 @@ class CORE_EXPORT ImageRecordsManager {
   // consider this an LCP candidate when the documentElement's opacity changes
   // from zero to nonzero.
   Member<ImageRecord> largest_ignored_image_;
+#if BUILDFLAG(IS_ARKWEB)
+  ImageRecordsManagerUtils image_record_manager_utils_;
+#endif
 };
 
 // ImagePaintTimingDetector contains Largest Image Paint.
@@ -287,6 +302,9 @@ class CORE_EXPORT ImagePaintTimingDetector final
   bool added_entry_in_latest_frame_ = false;
 
   bool contains_full_viewport_image_ = false;
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  bool is_full_viewport_ = false;
+#endif
 
   // We cache the viewport size computation to avoid performing it on every
   // image. This value is reset when paint is finished and is computed if unset
@@ -301,6 +319,9 @@ class CORE_EXPORT ImagePaintTimingDetector final
   ImageRecordsManager records_manager_;
   Member<LocalFrameView> frame_view_;
   Member<PaintTimingCallbackManager> callback_manager_;
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  bool is_for_blankless_only_ = false;
+#endif
 };
 }  // namespace blink
 

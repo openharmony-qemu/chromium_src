@@ -22,6 +22,10 @@
 #include "content/public/browser/web_contents.h"
 #include "ui/base/resource/resource_bundle.h"
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "arkweb/chromium_ext/url/ohos/log_utils.h"
+#endif
+
 namespace dom_distiller {
 namespace {
 

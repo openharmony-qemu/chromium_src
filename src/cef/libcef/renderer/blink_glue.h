@@ -12,6 +12,10 @@
 #include <string>
 
 #include "cef/include/internal/cef_types.h"
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#include "cef/ohos_cef_ext/libcef/renderer/blink_glue_ex.h"
+#include "ui/gfx/geometry/size.h"
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 #include "third_party/blink/public/mojom/frame/lifecycle.mojom-blink-forward.h"
 #include "third_party/blink/public/platform/web_common.h"
 #include "v8/include/v8.h"

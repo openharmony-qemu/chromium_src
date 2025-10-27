@@ -686,6 +686,11 @@ bool ElementRuleCollector::CollectMatchingRulesForListInternal(
     }
 
     matched++;
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+    DidMatchCssRuleForInclude(rule_data, context_, result_);
+#endif
+
     if (perf_trace_enabled) {
       selector_statistics_collector.SetDidMatch();
     }

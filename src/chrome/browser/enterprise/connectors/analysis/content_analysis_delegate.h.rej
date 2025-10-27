@@ -1,0 +1,17 @@
+--- content_analysis_delegate.h	2025-10-20 19:52:49.546311342 +0800
++++ content_analysis_delegate.h	2025-10-16 15:57:00.074686367 +0800
+@@ -17,12 +17,14 @@
+ #include "base/time/time.h"
+ #include "chrome/browser/enterprise/connectors/analysis/content_analysis_delegate_base.h"
+ #include "chrome/browser/enterprise/connectors/common.h"
+ #include "chrome/browser/safe_browsing/cloud_content_scanning/binary_upload_service.h"
+ #include "chrome/browser/safe_browsing/cloud_content_scanning/deep_scanning_utils.h"
++#include "chrome/browser/safe_browsing/cloud_content_scanning/file_opening_job.h"
+ #include "components/enterprise/common/proto/connectors.pb.h"
+ #include "components/enterprise/connectors/core/analysis_settings.h"
++#include "components/safe_browsing/buildflags.h"
+ #include "content/public/browser/clipboard_types.h"
+ #include "url/gurl.h"
+ 
+ class Profile;
+ 

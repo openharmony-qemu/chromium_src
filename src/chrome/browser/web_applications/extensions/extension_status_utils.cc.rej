@@ -1,0 +1,16 @@
+--- extension_status_utils.cc	2025-10-20 19:52:51.105000880 +0800
++++ extension_status_utils.cc	2025-10-16 15:57:01.982164853 +0800
+@@ -23,11 +23,12 @@
+ 
+ namespace {
+ 
+ const char* g_preinstalled_app_for_testing = nullptr;
+ 
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
++    BUILDFLAG(IS_OHOS)
+ // TODO(b/268221237): Remove this allow-list.
+ const char kDefaultAllowedExtensionIds[] =
+     "alhngdkjgnedakdlnamimgfihgkmenbh,"
+     "gnddkmpjjjcimefninepfmmddpgaaado";
+ 

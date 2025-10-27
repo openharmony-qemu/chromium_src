@@ -1,0 +1,15 @@
+--- memory.h	2025-10-20 19:52:46.680843638 +0800
++++ memory.h	2025-10-16 15:54:55.317433402 +0800
+@@ -24,11 +24,11 @@
+ // The function has been moved to partition_alloc:: namespace. The base:: alias
+ // has been provided to avoid changing too many callers.
+ using partition_alloc::TerminateBecauseOutOfMemory;
+ 
+ #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
+-    BUILDFLAG(IS_AIX)
++    BUILDFLAG(IS_AIX) || BUILDFLAG(IS_OHOS)
+ // The maximum allowed value for the OOM score.
+ const int kMaxOomScore = 1000;
+ 
+ // This adjusts /proc/<pid>/oom_score_adj so the Linux OOM killer will
+ // prefer to kill certain process types over others. The range for the

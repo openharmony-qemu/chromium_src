@@ -1,0 +1,17 @@
+--- BUILD.gn	2025-10-20 19:53:00.102212789 +0800
++++ BUILD.gn	2025-10-16 16:07:39.065506075 +0800
+@@ -406,10 +427,14 @@
+     enabled_features += [ "is_using_open_color_chooser" ]
+   }
+   if (is_android || is_ios) {
+     enabled_features += [ "is_android_or_ios" ]
+   }
++  if (is_arkweb) {
++    import("//arkweb/chromium_ext/third_party/blink/public/mojom/arkweb_features_include.gni")
++    enabled_features += mojom_platform_enabled_features
++  }
+ 
+   shared_cpp_typemaps = [
+     {
+       types = [
+         {

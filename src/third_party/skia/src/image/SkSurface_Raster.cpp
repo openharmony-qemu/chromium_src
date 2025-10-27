@@ -30,6 +30,8 @@
 #include <cstring>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
+
 class SkImage;
 class SkPaint;
 class SkPixmap;

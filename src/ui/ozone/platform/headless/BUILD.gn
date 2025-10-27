@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//gpu/vulkan/features.gni")
+import("//testing/test.gni")
 
 visibility = [ "//ui/ozone/*" ]
 
@@ -55,5 +56,10 @@ source_set("headless") {
       "vulkan_surface_headless.h",
     ]
     deps += [ "//gpu/vulkan" ]
+  }
+
+  if (is_arkweb) {
+    import("//arkweb/chromium_ext/chromium_ext.gni")
+    sources += arkweb_ui_ozone_platform_headless_sources
   }
 }

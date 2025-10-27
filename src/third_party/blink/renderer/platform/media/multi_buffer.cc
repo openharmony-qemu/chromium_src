@@ -230,6 +230,11 @@ void MultiBuffer::AddReader(const BlockId& pos, Reader* reader) {
     writer_index_[pos] = CreateWriter(pos, is_client_audio_element_);
     provider = writer_index_[pos].get();
   }
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  if (!provider) {
+    LOG_FEEDBACK(INFO) << "VLO AddReader error: provider=null";
+  }
+#endif
   provider->SetDeferred(false);
 }
 

@@ -1,0 +1,15 @@
+--- launch.h	2025-10-20 19:52:46.680843638 +0800
++++ launch.h	2025-10-16 15:54:55.317433402 +0800
+@@ -256,11 +256,11 @@
+   bool kill_on_parent_death = false;
+ 
+   // File descriptors of the parent process with FD_CLOEXEC flag to be removed
+   // before calling exec*().
+   std::vector<int> fds_to_remove_cloexec;
+-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+ 
+ #if BUILDFLAG(IS_MAC) || (BUILDFLAG(IS_IOS) && BUILDFLAG(USE_BLINK))
+   // Mach ports that will be accessible to the child process. These are not
+   // directly inherited across process creation, but they are stored by a Mach
+   // IPC server that a child process can communicate with to retrieve them.

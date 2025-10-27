@@ -1,0 +1,14 @@
+--- crashpad_client.h	2025-10-20 19:53:07.336456156 +0800
++++ crashpad_client.h	2025-10-16 16:07:40.415545315 +0800
+@@ -21,10 +21,11 @@
+ #include <string>
+ #include <vector>
+ 
+ #include <stdint.h>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/files/file_path.h"
+ #include "build/build_config.h"
+ #include "build/chromeos_buildflags.h"
+ #include "util/file/file_io.h"
+ 

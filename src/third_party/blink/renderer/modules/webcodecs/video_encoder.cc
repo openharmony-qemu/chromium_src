@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/contains.h"
 #include "base/format_macros.h"
 #include "base/functional/bind.h"
@@ -170,7 +171,8 @@ media::VideoEncodeAccelerator::SupportedRateControlMode BitrateToSupportedMode(
       return media::VideoEncodeAccelerator::kConstantMode;
     case media::Bitrate::Mode::kVariable:
       return media::VideoEncodeAccelerator::kVariableMode
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(ARKWEB_MEDIA_CODEC)
              // On Android and ChromeOS we allow CBR-only encoders to be used
              // for VBR because most devices don't properly advertise support
              // for VBR encoding. In most cases they will initialize
@@ -581,6 +583,40 @@ bool CanUseGpuMemoryBufferReadback(media::VideoPixelFormat format,
          WebGraphicsContext3DVideoFramePool::
              IsGpuMemoryBufferReadbackFromTextureEnabled();
 }
+
+// todo: check. MayHaveOSSoftwareEncoder has been deleted
+/*
+bool MayHaveOSSoftwareEncoder(media::VideoCodecProfile profile) {
+  // Allow OS software encoding when we don't have an equivalent
+  // software encoder.
+  //
+  // Note: Since we don't enumerate OS software encoders this may still fail and
+  // trigger fallback to our bundled software encoder (if any).
+  //
+  // Note 2: It's not ideal to have this logic live here, but otherwise we need
+  // to always wait for GpuFactories enumeration.
+  //
+  // TODO(crbug.com/1383643): Add IS_WIN here once we can force
+  // selection of a software encoder there.
+  constexpr bool kHasBundledH264Encoder = BUILDFLAG(ENABLE_OPENH264);
+  constexpr bool kHasOSSoftwareH264Encoder =
+      BUILDFLAG(IS_MAC) || BUILDFLAG(IS_ANDROID) ||
+BUILDFLAG(ARKWEB_MEDIA_CODEC); constexpr bool kHasOSSoftwareHEVCEncoder =
+      BUILDFLAG(IS_MAC) && BUILDFLAG(ENABLE_HEVC_PARSER_AND_HW_DECODER);
+
+  switch (media::VideoCodecProfileToVideoCodec(profile)) {
+    case media::VideoCodec::kH264:
+      // Prefer the bundled encoder, if present.
+      return kHasOSSoftwareH264Encoder && !kHasBundledH264Encoder;
+
+    case media::VideoCodec::kHEVC:
+      return kHasOSSoftwareHEVCEncoder;
+
+    default:
+      return false;
+  }
+}
+*/
 
 EncoderType GetRequiredEncoderType(media::VideoCodecProfile profile,
                                    HardwarePreference hw_pref) {

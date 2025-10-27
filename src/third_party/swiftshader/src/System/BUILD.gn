@@ -29,7 +29,7 @@ swiftshader_source_set("System_headers") {
     "SwiftConfig.hpp",
     "Timer.hpp",
   ]
-  if (is_linux || is_chromeos || is_android) {
+  if (is_linux || is_chromeos || is_android || is_ohos) {
     sources += [
       "Linux/MemFd.hpp",
     ]
@@ -48,7 +48,7 @@ swiftshader_source_set("System") {
     "SwiftConfig.cpp",
     "Timer.cpp",
   ]
-  if (is_linux || is_chromeos || is_android) {
+  if (is_linux || is_chromeos || is_android || is_ohos) {
     sources += [
       "Linux/MemFd.cpp",
     ]

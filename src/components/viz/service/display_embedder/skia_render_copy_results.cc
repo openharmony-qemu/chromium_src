@@ -110,6 +110,12 @@ void CopyOutputResultSkiaRGBA::OnReadbackDone(
   auto result = std::make_unique<CopyOutputResultSkiaRGBA>(
       impl_on_gpu, context->result_rect, std::move(async_result),
       context->color_space);
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (result && result->copy_output_result_utils() && impl_on_gpu) {
+    result->copy_output_result_utils()->SetImplOnGpu(impl_on_gpu);
+  }
+#endif
   context->request->SendResult(std::move(result));
 }
 

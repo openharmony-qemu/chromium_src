@@ -17,7 +17,101 @@ message PaginationInfo {
   optional string next_page = 1;
   optional string prev_page = 2;
   optional string canonical_page = 3;
+  // #ifdef ARKWEB_READER_MODE
+  optional string catalog_page = 4;
+  // #endif ARKWEB_READER_MODE
 }
+
+// #ifdef ARKWEB_READER_MODE
+message MarkupNovel {
+  optional string category = 1;
+  optional string author = 2;
+  optional string author_link = 3;
+  optional string book_name = 4;
+  optional string image_url = 5;
+  optional string read_url = 6;
+  optional string status = 7;
+  optional string update_time = 8;
+  optional string latest_chapter_name = 9;
+  optional string  latest_chapter_url = 10;
+}
+
+message CatalogPageContent {
+  optional string page_name = 1;
+  optional string page_url = 2;
+  optional bool selected = 3;
+}
+
+message CatalogPaginationInfo {
+  // 目录翻页
+  // 下一个目录页链接
+  optional string next_catalog_page = 1;
+  // 上一个目录页链接
+  optional string prev_catalog_page = 2;
+  // 查看完整目录页链接
+  optional string whole_catalog_page = 3;
+  // 所有目录分页链接列表(支持目录页随机翻页)
+  repeated CatalogPageContent all_catalog_pages = 4;
+}
+
+message ChapterInfo {
+  optional string chapter_name = 1;
+  optional string chapter_url = 2;
+}
+
+message ChapterContent {
+  repeated ChapterInfo latest_chapters = 1;
+  repeated ChapterInfo all_chapters = 2;
+}
+
+message CatalogPageInfo {
+  optional ChapterContent chapter_list = 1;
+  optional CatalogPaginationInfo pagination_info = 2;
+}
+
+message DistilledResult {
+  optional int32 code = 1;
+  optional string message = 2;
+}
+
+message HwReadExtendFields {
+  optional string book_name = 1;
+  optional string chapter_name = 2;
+  optional string description = 3;
+  optional string img_url = 4;
+  optional string author = 5;
+  optional string content = 6;
+  optional string category = 7;
+  optional string last_chapter_name = 8;
+  optional string last_chapter_url = 9;
+  optional PaginationInfo content_info = 10;
+  optional CatalogPageInfo catalog_info = 11;
+  optional string start_read_link = 12;
+  optional bool finished_status = 13;
+}
+
+message XPathConfig {
+  optional string book_name = 1;
+  optional string chapter_name = 2;
+  optional string description = 3;
+  optional string image_url = 4;
+  optional string author = 5;
+  optional string content = 6;
+  optional string category = 7;
+  optional string last_chapter_name = 8;
+  optional string last_chapter_url = 9;
+  optional string start_read_link = 10;
+  optional string next_content_page = 11;
+  optional string prev_content_page = 12;
+  optional string current_catalog_page = 13;
+  optional string all_chapters = 14;
+  optional string latest_chapters = 15;
+  optional string next_catalog_page = 16;
+  optional string prev_catalog_page = 17;
+  optional string whole_catalog_page = 18;
+  optional string all_catalog_pages = 19;
+}
+// #endif ARKWEB_READER_MODE
 
 message MarkupArticle {
   optional string published_time = 1;
@@ -46,6 +140,9 @@ message MarkupInfo {
   optional string author = 7;
   optional MarkupArticle article = 8;
   repeated MarkupImage images = 9;
+  // #ifdef ARKWEB_READER_MODE
+  optional MarkupNovel novel = 10;
+  // #endif ARKWEB_READER_MODE
 }
 
 message TimingEntry {
@@ -89,6 +186,12 @@ message DomDistillerResult {
   }
 
   repeated ContentImage content_images = 10;
+
+  // #ifdef ARKWEB_READER_MODE
+  optional CatalogPageInfo catalog_info = 11;
+  optional HwReadExtendFields flat_fields = 12;
+  optional DistilledResult distilled_result = 13;
+  // #endif ARKWEB_READER_MODE
 }
 
 message DomDistillerOptions {
@@ -100,6 +203,10 @@ message DomDistillerOptions {
   // (1): Text Node data for each stage of processing
   // (2): (1) and some node visibility information
   // (3): (2) and extracted paging information
+  // #ifdef ARKWEB_READER_MODE
+  // (4): timing info
+  // (5): distill info
+  // #endif ARKWEB_READER_MODE
   optional int32 debug_level = 2;
 
   // The original URL of the page, which is used in the heuristics in
@@ -110,4 +217,16 @@ message DomDistillerOptions {
   // "next" : detect anchors with "next" text
   // "pagenum" : detect anchors with numeric page numbers
   optional string pagination_algo = 4;
+
+  // #ifdef ARKWEB_READER_MODE
+  // 抽取策略:
+  // XPATH -- 只使用xpath抽取结果
+  // CUSTOM --只使用自定义抽取结果
+  // COMBINED --组合使用xpath和自定义抽取结果
+  optional string extract_strategy = 5;
+
+  optional XPathConfig xpath_config = 6;
+
+  optional bool extract_no_image_media = 7;
+  // #endif ARKWEB_READER_MODE
 }

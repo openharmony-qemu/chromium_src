@@ -1,0 +1,13 @@
+--- renderer_impl_unittest.cc	2025-10-20 19:52:56.770201723 +0800
++++ renderer_impl_unittest.cc	2025-10-16 15:55:01.958063078 +0800
+@@ -1078,6 +1090,10 @@
+   EXPECT_CALL(*video_renderer_, StartPlayingFrom(_));
+   std::move(video_renderer_flush_cb).Run();
+   track_change.Run();
+ }
+ 
++#if BUILDFLAG(ARKWEB_TEST)
++#include "media/renderers/renderer_impl_for_include_unitttest.cc"
++#endif // ARKWEB_TEST
++
+ }  // namespace media

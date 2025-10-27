@@ -287,7 +287,7 @@ class V8_EXPORT IsolateGroup {
  * thread at any given time.  The Locker/Unlocker API must be used to
  * synchronize.
  */
-class V8_EXPORT Isolate {
+class V8_EXPORT JSVM_EXPORT Isolate {
  public:
   /**
    * Initial configuration parameters for a new Isolate.

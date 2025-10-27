@@ -460,7 +460,7 @@ uint32_t CFX_DIBitmap::GetPixelForTesting(int x, int y) const {
     case FXDIB_Format::kBgraPremul: {
       // TODO(crbug.com/42271020): Consider testing with
       // `FXDIB_Format::kBgraPremul`
-      NOTREACHED();
+      NOTREACHED_NORETURN();
     }
   }
 }

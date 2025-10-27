@@ -478,7 +478,14 @@ class CONTENT_EXPORT MediaStreamManager
   std::optional<url::Origin> GetOriginByVideoSessionId(
       const base::UnguessableToken& session_id);
 
+  virtual MediaStreamManagerExt* AsMediaStreamManagerExt() {
+    return nullptr;
+  }
+#if BUILDFLAG(ARKWEB_TEST)
+ public:
+#else
  private:
+#endif // ARKWEB_TEST
   friend class MediaStreamManagerTest;
   FRIEND_TEST_ALL_PREFIXES(MediaStreamManagerTest, DesktopCaptureDeviceStopped);
   FRIEND_TEST_ALL_PREFIXES(MediaStreamManagerTest, DesktopCaptureDeviceChanged);
@@ -883,7 +890,7 @@ class CONTENT_EXPORT MediaStreamManager
   std::unique_ptr<media::SystemEventMonitorImpl> system_event_monitor_;
 #endif
 };
-
 }  // namespace content
+#include "arkweb/chromium_ext/content/browser/renderer_host/media/media_stream_manager_ext.h"
 
 #endif  // CONTENT_BROWSER_RENDERER_HOST_MEDIA_MEDIA_STREAM_MANAGER_H_

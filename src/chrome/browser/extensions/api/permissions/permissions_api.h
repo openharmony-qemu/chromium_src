@@ -54,6 +54,9 @@ class PermissionsRemoveFunction : public ExtensionFunction {
 };
 
 // chrome.permissions.request
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "cef/ohos_cef_ext/libcef/browser/extensions/api/permissions/permissions_api_for_include_file.cc"
+#else
 class PermissionsRequestFunction : public ExtensionFunction {
  public:
   // An action to take for a permissions prompt, if any. This allows tests to

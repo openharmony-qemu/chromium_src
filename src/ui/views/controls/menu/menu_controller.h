@@ -254,6 +254,10 @@ class VIEWS_EXPORT MenuController final : public gfx::AnimationDelegate,
 
   // WidgetObserver overrides:
   void OnWidgetDestroying(Widget* widget) override;
+#if BUILDFLAG(IS_OHOS)
+  void OnWidgetBoundsChanged(Widget* widget,
+                             const gfx::Rect& new_bounds) override;
+#endif
   void OnWidgetShowStateChanged(Widget* widget) override;
 
   // Only used for testing.

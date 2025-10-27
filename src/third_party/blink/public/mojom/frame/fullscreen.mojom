@@ -4,6 +4,8 @@
 
 module blink.mojom;
 
+import "ui/gfx/geometry/mojom/geometry.mojom";
+
 struct FullscreenOptions {
   // Prefer that the bottom navigation bar be shown when in fullscreen
   // mode on devices with overlay navigation bars.
@@ -25,5 +27,13 @@ struct FullscreenOptions {
   // if a subframe is requesting fullscreen mode, the parent frames need to use
   // a transparent backdrop to keep content visible.
   bool is_xr_overlay = false;
+
+  gfx.mojom.Size? video_natural_size;
+
+  [EnableIf=arkweb_custom_video_player]
+  bool is_custom_media_player = false;
+
+  [EnableIf=arkweb_video_assistant]
+  bool overlay_fullscreen = false;
 };
 

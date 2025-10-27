@@ -5,6 +5,7 @@
 #ifndef THIRD_PARTY_BLINK_PUBLIC_PLATFORM_RESOURCE_LOAD_INFO_NOTIFIER_WRAPPER_H_
 #define THIRD_PARTY_BLINK_PUBLIC_PLATFORM_RESOURCE_LOAD_INFO_NOTIFIER_WRAPPER_H_
 
+#include "arkweb/build/features/features.h"
 #include "base/sequence_checker.h"
 #include "base/task/single_thread_task_runner.h"
 #include "build/build_config.h"
@@ -62,6 +63,9 @@ class BLINK_PLATFORM_EXPORT ResourceLoadInfoNotifierWrapper {
   void NotifyResourceLoadCompleted(
       const network::URLLoaderCompletionStatus& status);
   void NotifyResourceLoadCanceled(int net_error);
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  void SetUsedSharedMemory() { used_shared_memory_ = true; }
+#endif
 
  private:
   SEQUENCE_CHECKER(sequence_checker_);
@@ -76,6 +80,9 @@ class BLINK_PLATFORM_EXPORT ResourceLoadInfoNotifierWrapper {
   // |weak_wrapper_resource_load_info_notifier_|.
   mojom::ResourceLoadInfoPtr resource_load_info_;
 
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  bool used_shared_memory_{false};
+#endif
   bool is_ad_resource_ = false;
 };
 

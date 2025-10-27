@@ -1,0 +1,48 @@
+--- features.cc	2025-10-20 19:52:56.978204929 +0800
++++ features.cc	2025-10-16 15:55:02.489494315 +0800
+@@ -73,11 +73,15 @@
+     &kUseDnsHttpsSvcb, "UseDnsHttpsSvcbSecureExtraTimeMin",
+     base::Milliseconds(5)};
+ 
+ BASE_FEATURE(kUseDnsHttpsSvcbAlpn,
+              "UseDnsHttpsSvcbAlpn",
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++             base::FEATURE_DISABLED_BY_DEFAULT);
++#else // BUILDFLAG(ARKWEB_NETWORK_LOAD)
+              base::FEATURE_ENABLED_BY_DEFAULT);
++#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
+ 
+ BASE_FEATURE(kUseHostResolverCache,
+              "UseHostResolverCache",
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+@@ -152,11 +156,11 @@
+              "PartitionConnectionsByNetworkIsolationKey",
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kPostQuantumKyber,
+              "PostQuantumKyber",
+-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS) || BUILDFLAG(IS_ARKWEB)
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ #else
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ #endif
+ 
+@@ -479,10 +483,16 @@
+ BASE_FEATURE(kAddressTrackerLinuxIsProxied,
+              "AddressTrackerLinuxIsProxied",
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ #endif  // BUILDFLAG(IS_LINUX)
+ 
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++BASE_FEATURE(kEnableNetworkPreload,
++             "EnableNetworkPreload",
++             base::FEATURE_ENABLED_BY_DEFAULT);
++#endif  // BUILDFLAG(ARKWEB_PRP_PRELOAD)
++
+ // Enables binding of cookies to the port that originally set them by default.
+ BASE_FEATURE(kEnablePortBoundCookies,
+              "EnablePortBoundCookies",
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ 

@@ -9,6 +9,7 @@
 #include "base/notreached.h"
 #include "base/task/bind_post_task.h"
 #include "base/task/sequenced_task_runner.h"
+#include "arkweb/build/features/features.h"
 
 namespace cast_streaming {
 namespace {
@@ -103,6 +104,10 @@ PlaybackCommandForwardingRenderer::~PlaybackCommandForwardingRenderer() =
 void PlaybackCommandForwardingRenderer::Initialize(
     media::MediaResource* media_resource,
     media::RendererClient* client,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+    media::RequestSurfaceCB request_surface_cb,
+    media::VideoDecoderChangedCB decoder_changed_cb,
+#endif // OHOS_VIDEO_ASSISTANT
     media::PipelineStatusCallback init_cb) {
   DCHECK(!init_cb_);
 
@@ -110,6 +115,10 @@ void PlaybackCommandForwardingRenderer::Initialize(
   init_cb_ = std::move(init_cb);
   real_renderer_->Initialize(
       media_resource, this,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+      media::RequestSurfaceCB(),
+      media::VideoDecoderChangedCB(),
+#endif // OHOS_VIDEO_ASSISTANT
       base::BindPostTask(
           task_runner_, base::BindOnce(&PlaybackCommandForwardingRenderer::
                                            OnRealRendererInitializationComplete,

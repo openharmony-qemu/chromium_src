@@ -64,9 +64,18 @@
 #include "ui/display/screen_info.h"
 #include "ui/gfx/geometry/dip_util.h"
 #include "ui/gfx/presentation_feedback.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/widget/widget_base_utils.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "third_party/blink/renderer/platform/widget/compositing/android_webview/synchronous_layer_tree_frame_sink.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+#include "base/ohos/sys_info_utils_ext.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #endif
 
 namespace blink {
@@ -171,7 +180,9 @@ WidgetBase::WidgetBase(
       request_animation_after_delay_timer_(
           std::move(task_runner),
           this,
-          &WidgetBase::RequestAnimationAfterDelayTimerFired) {}
+          &WidgetBase::RequestAnimationAfterDelayTimerFired) {
+  widget_base_utils_ = std::make_unique<WidgetBaseUtils>(this);
+}
 
 WidgetBase::~WidgetBase() {
   // Ensure Shutdown was called.
@@ -224,6 +235,9 @@ void WidgetBase::InitializeCompositing(
             : nullptr,
         cc::CategorizedWorkerPool::GetOrCreate(
             &BlinkCategorizedWorkerPoolDelegate::Get()));
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+    is_worker_pool_initial_ = true;
+#endif
   }
 
   screen_infos_ = screen_infos;
@@ -1198,6 +1212,11 @@ void WidgetBase::UpdateTextInputStateInternal(bool show_virtual_keyboard,
       (selection_bounds && frame_selection_bounds_ != selection_bounds)) {
     ui::mojom::blink::TextInputStatePtr params =
         ui::mojom::blink::TextInputState::New();
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+    input_atrributes.insert(
+        "requestKeyboardReason",
+        WTF::String::Number(widget_base_utils_->GetRequestKeyboardReason()));
+#endif
     params->node_id = new_info.node_id;
     params->type = new_type;
     params->mode = new_mode;
@@ -1207,18 +1226,25 @@ void WidgetBase::UpdateTextInputStateInternal(bool show_virtual_keyboard,
     params->last_vk_visibility_request = last_vk_visibility_request;
     params->edit_context_control_bounds = control_bounds;
     params->edit_context_selection_bounds = selection_bounds;
+    params->input_element_attributes = input_atrributes;
 
     if (!new_info.ime_text_spans.empty() && frame_widget) {
       params->ime_text_spans_info =
           frame_widget->GetImeTextSpansInfo(new_info.ime_text_spans);
     }
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+    // reset to none
+    int32_t requestKeyboardReasonNone = 0;
+    widget_base_utils_->SetRequestKeyboardReason(requestKeyboardReasonNone);
+#endif
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_INPUT_EVENTS)
     if (next_previous_flags_ == kInvalidNextPreviousFlagsValue) {
       // Due to a focus change, values will be reset by the frame.
       // That case we only need fresh NEXT/PREVIOUS information.
       // Also we won't send WidgetHostMsg_TextInputStateChanged if next/previous
       // focusable status is changed.
-      if (frame_widget) {
+      const base::CommandLine& command_line = *base::CommandLine::ForCurrentProcess();
+      if (!command_line.HasSwitch(::switches::kDisableNextPreviousFlag) && frame_widget) {
         next_previous_flags_ =
             frame_widget->ComputeWebTextInputNextPreviousFlags();
       } else {
@@ -1264,7 +1290,7 @@ void WidgetBase::UpdateTextInputStateInternal(bool show_virtual_keyboard,
       }
     }
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_INPUT_EVENTS)
     // If we send a new TextInputStateChanged message, we must also deliver a
     // new RenderFrameMetadata, as the IME will need this info to be updated.
     // TODO(ericrk): Consider folding the above IPC into RenderFrameMetadata.
@@ -1371,7 +1397,7 @@ void WidgetBase::UpdateCompositionInfo(bool immediate_request) {
 }
 
 void WidgetBase::ForceTextInputStateUpdate() {
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_INPUT_EVENTS)
   UpdateSelectionBounds();
   UpdateTextInputStateInternal(false, true /* reply_to_request */);
 #endif
@@ -1476,6 +1502,12 @@ void WidgetBase::UpdateSelectionBounds() {
     FrameWidget* frame_widget = client_->FrameWidget();
     if (!frame_widget)
       return;
+#if BUILDFLAG(ARKWEB_MENU)
+    if (is_need_change_cursor_) {
+      frame_widget->CleanFocusCache();
+      is_need_change_cursor_ = false;
+    }
+#endif
     if (frame_widget->GetSelectionBoundsInWindow(
             &selection_focus_rect_, &selection_anchor_rect_,
             &selection_bounding_box_, &focus_dir, &anchor_dir,
@@ -1645,11 +1677,14 @@ void WidgetBase::OnImeEventGuardFinish(ImeEventGuard* guard) {
     return;
   ime_event_guard_ = nullptr;
 
+#if BUILDFLAG(ARKWEB_MENU)
+  is_need_change_cursor_ = true;
+#endif
   // While handling an ime event, text input state and selection bounds updates
   // are ignored. These must explicitly be updated once finished handling the
   // ime event.
   UpdateSelectionBounds();
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS) || BUILDFLAG(IS_ARKWEB)
   if (guard->show_virtual_keyboard())
     ShowVirtualKeyboard();
   else

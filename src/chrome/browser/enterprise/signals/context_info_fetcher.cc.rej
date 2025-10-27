@@ -1,0 +1,15 @@
+--- context_info_fetcher.cc	2025-10-20 19:52:49.570256512 +0800
++++ context_info_fetcher.cc	2025-10-16 15:57:00.101920524 +0800
+@@ -350,11 +350,11 @@
+ }
+ #endif  // BUILDFLAG(IS_LINUX)
+ 
+ std::vector<std::string> ContextInfoFetcher::GetDnsServers() {
+   std::vector<std::string> dns_addresses;
+-#if BUILDFLAG(IS_POSIX)
++#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_OHOS)
+   std::unique_ptr<net::ScopedResState> res = net::ResolvReader().GetResState();
+   if (res) {
+     std::optional<std::vector<net::IPEndPoint>> nameservers =
+         net::GetNameservers(res->state());
+     if (nameservers) {

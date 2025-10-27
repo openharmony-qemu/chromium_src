@@ -66,6 +66,12 @@ ScrollbarPart ScrollbarTheme::HitTestRootFramePosition(
 
 ScrollbarPart ScrollbarTheme::HitTest(const Scrollbar& scrollbar,
                                       const gfx::Point& test_position) const {
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)
+  if (scrollbar_theme_utils_) {
+    return scrollbar_theme_utils_->HitTestUtils(scrollbar, test_position);
+  }
+#endif  // ARKWEB_SCROLLBAR_AVOID_AREA
+
   if (!scrollbar.FrameRect().Contains(test_position))
     return kNoPart;
 
@@ -340,3 +346,7 @@ void ScrollbarTheme::PaintTrackAndButtons(GraphicsContext& context,
 }
 
 }  // namespace blink
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/scroll/scrollbar_theme_utils.cc"
+#endif // IS_ARKWEB

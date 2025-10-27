@@ -1,0 +1,69 @@
+--- page_node_impl.h	2025-10-20 19:52:53.334047069 +0800
++++ page_node_impl.h	2025-10-16 15:54:57.211859115 +0800
+@@ -226,16 +235,23 @@
+ 
+   void SetHadUserEdits(base::PassKey<PageAggregatorData>, bool had_user_edits) {
+     SetHadUserEdits(had_user_edits);
+   }
+ 
++#if BUILDFLAG(ARKWEB_BGTASK)
++  void SetBrowserForeground();
++  void SetBrowserBackground();
++#endif
+  private:
+   friend class PageNodeImplDescriber;
+ 
+   // Partial PageNode implementation:
+   const FrameNode* GetOpenerFrameNode() const override;
+   const FrameNode* GetEmbedderFrameNode() const override;
++#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
++  bool IsMediaPlaying() const override;
++#endif
+   const FrameNode* GetMainFrameNode() const override;
+   NodeSetView<const FrameNode*> GetMainFrameNodes() const override;
+ 
+   // NodeBase:
+   void OnJoiningGraph() override;
+@@ -336,10 +352,17 @@
+   // Whether or not the page is audible. Driven by browser instrumentation.
+   // Initialized on construction.
+   ObservedProperty::NotifiesOnlyOnChanges<bool,
+                                           &PageNodeObserver::OnIsAudibleChanged>
+       is_audible_ GUARDED_BY_CONTEXT(sequence_checker_){false};
++#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
++  int32_t media_playing_num_ = 0;
++  ObservedProperty::
++      NotifiesOnlyOnChanges<bool, &PageNodeObserver::OnIsMediaPlayingChanged>
++          is_media_playing_ GUARDED_BY_CONTEXT(sequence_checker_){false};
++#endif
++
+   // Whether or not the page is displaying content in picture-in-picture. Driven
+   // by browser instrumentation. Initialized on construction.
+   ObservedProperty::NotifiesOnlyOnChanges<
+       bool,
+       &PageNodeObserver::OnHasPictureInPictureChanged>
+@@ -393,10 +416,24 @@
+   // user-initiated edits.
+   ObservedProperty::
+       NotifiesOnlyOnChanges<bool, &PageNodeObserver::OnHadUserEditsChanged>
+           had_user_edits_ GUARDED_BY_CONTEXT(sequence_checker_){false};
+ 
++#if BUILDFLAG(ARKWEB_BGTASK)
++  // Notify the browser is foreground
++  ObservedProperty::NotifiesAlways<
++    bool,
++    &PageNodeObserver::SetBrowserForeground>
++    browser_foreground_ GUARDED_BY_CONTEXT(sequence_checker_){false};
++
++  // Notify the browser is background
++  ObservedProperty::NotifiesAlways<
++    bool,
++    &PageNodeObserver::SetBrowserBackground>
++    browser_background_ GUARDED_BY_CONTEXT(sequence_checker_){false};
++#endif
++
+   base::WeakPtr<PageNodeImpl> weak_this_;
+   base::WeakPtrFactory<PageNodeImpl> weak_factory_
+       GUARDED_BY_CONTEXT(sequence_checker_){this};
+ };
+ 

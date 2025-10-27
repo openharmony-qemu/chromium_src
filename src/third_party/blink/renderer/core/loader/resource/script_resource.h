@@ -71,6 +71,8 @@ class CORE_EXPORT ScriptResource final : public TextResource {
  public:
   // The script resource will always try to start streaming if kAllowStreaming
   // is passed in.
+  friend class ScriptResourceUtils;
+
   enum StreamingAllowed { kNoStreaming, kAllowStreaming };
 
   static ScriptResource* Fetch(

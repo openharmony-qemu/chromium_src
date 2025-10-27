@@ -72,7 +72,7 @@ class CFXJSEFormCalcContextEmbedderTest : public XFAJSEmbedderTest {
   }
 
   void ExecuteExpectFloatNear(ByteStringView input, float expected) {
-    static constexpr float kPrecision = 0.000001f;
+    constexpr float kPrecision = 0.000001f;
 
     EXPECT_TRUE(Execute(input)) << "Program: " << input;
 

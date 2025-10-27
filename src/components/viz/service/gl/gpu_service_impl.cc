@@ -268,6 +268,11 @@ GpuServiceImpl::GpuServiceImpl(
       media::VaapiImageDecodeAcceleratorWorker::Create();
 #endif  // BUILDFLAG(USE_VAAPI_IMAGE_CODECS)
 
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  image_decode_accelerator_worker_ =
+      media::OhosImageDecodeAcceleratorWorker::Create();
+#endif
+
 #if BUILDFLAG(IS_WIN)
   if (media::SupportMediaFoundationClearPlayback()) {
     // Initialize the OverlayStateService using the GPUServiceImpl task

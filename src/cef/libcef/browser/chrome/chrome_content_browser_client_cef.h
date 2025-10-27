@@ -8,6 +8,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "cef/libcef/browser/request_context_impl.h"
 #include "chrome/browser/chrome_content_browser_client.h"
@@ -41,6 +42,10 @@ class ChromeContentBrowserClientCef : public ChromeContentBrowserClient {
       const GURL& request_url,
       bool is_main_frame_request,
       bool strict_enforcement,
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      const GURL& origin_url,
+      const std::string& referrer,
+#endif
       base::OnceCallback<void(content::CertificateRequestResultType)> callback)
       override;
   base::OnceClosure SelectClientCertificate(
@@ -50,6 +55,14 @@ class ChromeContentBrowserClientCef : public ChromeContentBrowserClient {
       net::SSLCertRequestInfo* cert_request_info,
       net::ClientCertIdentityList client_certs,
       std::unique_ptr<content::ClientCertificateDelegate> delegate) override;
+#if BUILDFLAG(ARKWEB_MULTI_WINDOW)
+  bool CanCreateWindow(
+      content::RenderFrameHost* opener,
+      const GURL& target_url,
+      WindowOpenDisposition disposition,
+      bool user_gesture,
+      content::mojom::FrameHost::GetCreateNewWindowCallback callback) override;
+#endif  // BUILDFLAG(ARKWEB_MULTI_WINDOW)
   bool CanCreateWindow(content::RenderFrameHost* opener,
                        const GURL& opener_url,
                        const GURL& opener_top_level_frame_url,
@@ -144,12 +157,32 @@ class ChromeContentBrowserClientCef : public ChromeContentBrowserClient {
       mojo::BinderMapWithContext<content::RenderFrameHost*>* map) override;
   std::unique_ptr<content::WebContentsViewDelegate> GetWebContentsViewDelegate(
       content::WebContents* web_contents) override;
+#if BUILDFLAG(ARKWEB_SITE_ISOLATION)
+  bool ShouldDisableSiteIsolation(
+      content::SiteIsolationMode site_isolation_mode) override;
+
+  bool ShouldLockProcessToSite(content::BrowserContext* browser_context,
+                               const GURL& effective_url) override;
+#endif
 
   CefRefPtr<CefRequestContextImpl> request_context() const;
 
   scoped_refptr<base::SingleThreadTaskRunner> background_task_runner() const;
   scoped_refptr<base::SingleThreadTaskRunner> user_visible_task_runner() const;
   scoped_refptr<base::SingleThreadTaskRunner> user_blocking_task_runner() const;
+
+#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
+  CefRefPtr<CefRequestContextImpl> off_the_record_request_context() const;
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  void RegisterMojoBinderPoliciesForSameOriginPrerendering(
+      content::MojoBinderPolicyMap& policy_map) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  std::string GetUAStringForHost(const std::string& host) override;
+#endif
 
  private:
   static std::unique_ptr<content::WebContentsViewDelegate>

@@ -1,0 +1,17 @@
+--- local_dom_window.h	2025-10-20 19:53:00.382210134 +0800
++++ local_dom_window.h	2025-10-16 16:07:39.397094661 +0800
+@@ -95,11 +95,13 @@
+ class TrustedTypePolicyFactory;
+ class V8FrameRequestCallback;
+ class V8VoidFunction;
+ struct WebPictureInPictureWindowOptions;
+ class WindowAgent;
+-
++#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)
++class ArkWeb;
++#endif // ARKWEB_SCROLLBAR_AVOID_AREA
+ namespace scheduler {
+ class TaskAttributionInfo;
+ }
+ 
+ enum PageTransitionEventPersistence {

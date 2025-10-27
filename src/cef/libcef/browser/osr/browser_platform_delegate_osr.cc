@@ -20,6 +20,12 @@
 #include "ui/display/screen.h"
 #include "ui/events/base_event_utils.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "cef/ohos_cef_ext/libcef/browser/osr/arkweb_web_contents_view_osr_ext.h"
+#include "cef/ohos_cef_ext/libcef/browser/osr/browser_platform_delegate_osr_ext.h"
+#include "cef/ohos_cef_ext/libcef/browser/osr/browser_platform_delegate_osr_utils.h"
+#endif
+
 CefBrowserPlatformDelegateOsr::CefBrowserPlatformDelegateOsr(
     std::unique_ptr<CefBrowserPlatformDelegateNative> native_delegate,
     bool use_shared_texture,
@@ -27,8 +33,11 @@ CefBrowserPlatformDelegateOsr::CefBrowserPlatformDelegateOsr(
     : native_delegate_(std::move(native_delegate)),
       use_shared_texture_(use_shared_texture),
       use_external_begin_frame_(use_external_begin_frame) {
+  cef_browser_platform_delegate_osr_utils_ = std::make_unique<CefBrowserPlatformDelegateOsrUtils>(this);
   native_delegate_->set_windowless_handler(this);
 }
+
+CefBrowserPlatformDelegateOsr::~CefBrowserPlatformDelegateOsr() = default;
 
 void CefBrowserPlatformDelegateOsr::CreateViewForWebContents(
     raw_ptr<content::WebContentsView>* view,
@@ -36,7 +45,11 @@ void CefBrowserPlatformDelegateOsr::CreateViewForWebContents(
   DCHECK(!view_osr_);
 
   // Use the OSR view instead of the default platform view.
+#if BUILDFLAG(IS_ARKWEB)
+  view_osr_ = new ArkWebCefWebContentsViewOSRExt(
+#else
   view_osr_ = new CefWebContentsViewOSR(
+#endif
       GetBackgroundColor(), use_shared_texture_, use_external_begin_frame_);
   *view = view_osr_;
   *delegate_view = view_osr_;
@@ -69,6 +82,15 @@ void CefBrowserPlatformDelegateOsr::RenderViewCreated(
   if (view_osr_) {
     view_osr_->RenderViewCreated();
   }
+#if BUILDFLAG(IS_OHOS)
+  cef_browser_platform_delegate_osr_utils_->InitializeAndUpdateRenderView();
+#endif  // BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  CefRenderWidgetHostViewOSR* view = GetOSRHostView();
+  if (view && condition_) {
+    cef_browser_platform_delegate_osr_utils_->UpdateBypassVsyncCondition(view);
+  }
+#endif
 }
 
 void CefBrowserPlatformDelegateOsr::BrowserCreated(
@@ -76,6 +98,11 @@ void CefBrowserPlatformDelegateOsr::BrowserCreated(
   CefBrowserPlatformDelegateAlloy::BrowserCreated(browser);
 
   if (browser->IsPopup()) {
+#if BUILDFLAG(ARKWEB_MEDIA)
+    if (!web_contents_) {
+      return;
+    }
+#endif
     // Associate the RenderWidget host view with the browser now because the
     // browser wasn't known at the time that the host view was created.
     // |view| will be null if the popup is a DevTools window.
@@ -106,6 +133,9 @@ void CefBrowserPlatformDelegateOsr::WasResized() {
 void CefBrowserPlatformDelegateOsr::SendKeyEvent(const CefKeyEvent& event) {
   CefRenderWidgetHostViewOSR* view = GetOSRHostView();
   if (!view) {
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  cef_browser_platform_delegate_osr_utils_->RedistributeKeyEventIfUrlEmpty(event);
+#endif
     return;
   }
 
@@ -148,8 +178,13 @@ void CefBrowserPlatformDelegateOsr::SendMouseWheelEvent(
     int deltaY) {
   CefRenderWidgetHostViewOSR* view = GetOSRHostView();
   if (!view) {
+    LOG(ERROR) << "SendMouseWheelEvent drop mouse event!!";
     return;
   }
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  cef_browser_platform_delegate_osr_utils_->CancelTouchpadFlingMouseWheel(view, event);
+#endif
 
   blink::WebMouseWheelEvent web_event =
       native_delegate_->TranslateWebWheelEvent(event, deltaX, deltaY);
@@ -158,16 +193,24 @@ void CefBrowserPlatformDelegateOsr::SendMouseWheelEvent(
 
 void CefBrowserPlatformDelegateOsr::SendTouchEvent(const CefTouchEvent& event) {
   CefRenderWidgetHostViewOSR* view = GetOSRHostView();
+#if BUILDFLAG(IS_ARKWEB)
+  cef_browser_platform_delegate_osr_utils_->AdjustAndSendTouchEvent(view, event);
+#else   // BUILDFLAG(IS_ARKWEB)
   if (view) {
     view->SendTouchEvent(event);
   }
+#endif  // BUILDFLAG(IS_ARKWEB)
 }
 
 void CefBrowserPlatformDelegateOsr::SetFocus(bool setFocus) {
   CefRenderWidgetHostViewOSR* view = GetOSRHostView();
+#if BUILDFLAG(ARKWEB_FOCUS)
+  cef_browser_platform_delegate_osr_utils_->SetFocusAndUpdateStatus(setFocus, view);
+#else
   if (view) {
     view->SetFocus(setFocus);
   }
+#endif  // BUILDFLAG(ARKWEB_FOCUS)
 }
 
 gfx::Point CefBrowserPlatformDelegateOsr::GetScreenPoint(
@@ -325,7 +368,12 @@ void CefBrowserPlatformDelegateOsr::DragTargetDragEnter(
 
   const gfx::Point client_pt(event.x, event.y);
   gfx::PointF transformed_pt;
-
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  if (!(AsCefBrowserPlatformDelegateOsrExt()->GetCurRWH(web_contents, gfx::PointF(client_pt), &transformed_pt))) {
+    LOG(WARNING) << "DragDrop Get render widget host failed";
+    return;
+  }
+#else
   // Some random crashes occured when GetWeakPtr is called on a null pointer
   // that is the return of GetRenderWidgetHostViewInputAtPoint. As the root
   // cause is not yet understood (no reproducible scenario yet), the current fix
@@ -342,7 +390,7 @@ void CefBrowserPlatformDelegateOsr::DragTargetDragEnter(
           ->GetRenderWidgetHost());
 
   current_rwh_for_drag_ = target_rwh->GetWeakPtr();
-
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
   current_rvh_for_drag_ = web_contents->GetRenderViewHost();
 
   drag_data_ = drag_data;
@@ -366,7 +414,12 @@ void CefBrowserPlatformDelegateOsr::DragTargetDragEnter(
     drag_data_ = nullptr;
     return;
   }
-
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  if (!current_rwh_for_drag_) {
+    LOG(WARNING) << "DragDrop current render widget host is null";
+    return;
+  }
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
   current_rwh_for_drag_->DragTargetDragEnter(*drop_data, transformed_pt,
                                              gfx::PointF(screen_pt), ops,
                                              modifiers, base::DoNothing());
@@ -394,12 +447,22 @@ void CefBrowserPlatformDelegateOsr::DragTargetDragOver(
       web_contents->GetInputEventRouter()->GetRenderWidgetHostViewInputAtPoint(
           web_contents->GetRenderViewHost()->GetWidget()->GetView(),
           gfx::PointF(client_pt), &transformed_pt);
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  if (!view) {
+    LOG(WARNING) << "DragDrop dragover, get view failed!!";
+    return;
+  }
+#endif
   auto* target_rwh = content::RenderWidgetHostImpl::From(
       static_cast<content::RenderWidgetHostViewBase*>(view)
           ->GetRenderWidgetHost());
 
   if (target_rwh != current_rwh_for_drag_.get()) {
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    if (current_rwh_for_drag_ && web_contents->GetRenderWidgetHostView()) {
+#else
     if (current_rwh_for_drag_) {
+#endif
       gfx::PointF transformed_leave_point(client_pt);
       gfx::PointF transformed_screen_point(screen_pt);
       static_cast<content::RenderWidgetHostViewBase*>(
@@ -435,6 +498,11 @@ void CefBrowserPlatformDelegateOsr::DragTargetDragOver(
 }
 
 void CefBrowserPlatformDelegateOsr::DragTargetDragLeave() {
+#if BUILDFLAG(ARKWEB_MEDIA)
+  if (!web_contents_) {
+    return;
+  }
+#endif
   if (current_rvh_for_drag_ != web_contents_->GetRenderViewHost() ||
       !drag_data_) {
     return;
@@ -512,7 +580,9 @@ void CefBrowserPlatformDelegateOsr::DragTargetDrop(const CefMouseEvent& event) {
                                gfx::PointF(screen_pt), modifiers,
                                base::DoNothing());
   }
-
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  last_drag_data_ = drag_data_;
+#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   drag_data_ = nullptr;
 }
 
@@ -530,7 +600,12 @@ void CefBrowserPlatformDelegateOsr::StartDragging(
   CefRefPtr<CefRenderHandler> handler =
       browser_->GetClient()->GetRenderHandler();
   if (handler.get()) {
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+    CefImageImpl* image_impl = cef_browser_platform_delegate_osr_utils_->CreateDragImage(image);
+    CefRefPtr<CefImage> cef_image(image_impl);
+#else
     CefRefPtr<CefImage> cef_image(new CefImageImpl(image));
+#endif
     CefPoint cef_image_pos(image_offset.x(), image_offset.y());
     CefRefPtr<CefDragDataImpl> drag_data(
         new CefDragDataImpl(drop_data, cef_image, cef_image_pos));
@@ -622,6 +697,9 @@ void CefBrowserPlatformDelegateOsr::DragSourceSystemDragEnded() {
   web_contents->SystemDragEnded(drag_start_rwh_.get());
 
   drag_start_rwh_ = nullptr;
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  cef_browser_platform_delegate_osr_utils_->RestoreTextHandlesAfterDrag();
+#endif
 }
 
 void CefBrowserPlatformDelegateOsr::AccessibilityEventReceived(

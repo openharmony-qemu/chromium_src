@@ -1,0 +1,28 @@
+--- native_handle_types_mojom_traits.h	2025-10-20 19:53:31.016629134 +0800
++++ native_handle_types_mojom_traits.h	2025-10-16 15:55:05.615128854 +0800
+@@ -14,21 +14,23 @@
+ #include "mojo/public/cpp/bindings/struct_traits.h"
+ #include "mojo/public/cpp/bindings/union_traits.h"
+ #include "mojo/public/cpp/system/platform_handle.h"
+ #include "ui/gfx/mojom/native_handle_types.mojom-shared.h"
+ 
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OZONE)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OZONE) || \
++    BUILDFLAG(IS_OHOS)
+ #include "ui/gfx/native_pixmap_handle.h"
+ #endif
+ 
+ #if BUILDFLAG(IS_WIN)
+ #include "ui/gfx/gpu_memory_buffer.h"  // for gfx::DXGIHandleToken
+ #endif
+ 
+ namespace mojo {
+ 
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OZONE)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OZONE) || \
++    BUILDFLAG(IS_OHOS)
+ template <>
+ struct COMPONENT_EXPORT(GFX_NATIVE_HANDLE_TYPES_SHARED_MOJOM_TRAITS)
+     StructTraits<gfx::mojom::NativePixmapPlaneDataView,
+                  gfx::NativePixmapPlane> {
+   static uint32_t stride(const gfx::NativePixmapPlane& plane) {

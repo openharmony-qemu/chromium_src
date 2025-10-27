@@ -14,6 +14,18 @@
 #include "content/public/renderer/render_thread.h"
 #include "third_party/blink/public/web/web_view.h"
 
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+#include "components/no_state_prefetch/renderer/no_state_prefetch_client.h"
+#endif  // ARKWEB_NO_STATE_PREFETCH
+
+#if BUILDFLAG(ARKWEB_MIXED_CONTENT)
+#include "cef/ohos_cef_ext/libcef/renderer/arkweb_content_settings_client.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_SAFEBROWSING) && !BUILDFLAG(ARKWEB_NWEB_EX)
+#include "cef/ohos_cef_ext/libcef/renderer/chrome_safe_browsing_error_page_controller_delegate_impl.h"
+#endif
+
 ChromeContentRendererClientCef::ChromeContentRendererClientCef()
     : render_manager_(new CefRenderManager) {}
 

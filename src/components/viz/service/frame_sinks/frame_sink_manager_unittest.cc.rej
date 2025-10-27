@@ -1,0 +1,85 @@
+--- frame_sink_manager_unittest.cc	2025-10-20 19:52:54.142418634 +0800
++++ frame_sink_manager_unittest.cc	2025-10-16 15:54:59.240971046 +0800
+@@ -610,11 +620,15 @@
+   ExpireAllTemporaryReferencesAndGarbageCollect();
+   EXPECT_TRUE(manager_.surface_manager()->GetSurfaceForId(surface_id1));
+   EXPECT_TRUE(manager_.surface_manager()->GetSurfaceForId(surface_id2));
+ 
+   // Call EvictSurfaces. Now the garbage collector can destroy the surfaces.
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  MyEvictSurfaces({surface_id1, surface_id2});
++#else
+   manager_.EvictSurfaces({surface_id1, surface_id2});
++#endif
+   // Garbage collection is synchronous.
+   EXPECT_FALSE(manager_.surface_manager()->GetSurfaceForId(surface_id1));
+   EXPECT_FALSE(manager_.surface_manager()->GetSurfaceForId(surface_id1));
+ }
+ 
+@@ -886,11 +900,15 @@
+   const LocalSurfaceId local_surface_id = allocator.GetCurrentLocalSurfaceId();
+   const SurfaceId surface_id(kFrameSinkIdRoot, local_surface_id);
+   GetRootCompositorFrameSinkImpl()->SubmitCompositorFrame(
+       local_surface_id, MakeDefaultCompositorFrame(), std::nullopt, 0);
+   EXPECT_EQ(surface_id, GetRootCompositorFrameSinkImpl()->CurrentSurfaceId());
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  MyEvictSurfaces({surface_id});
++#else
+   manager_.EvictSurfaces({surface_id});
++#endif
+ 
+   // Eviction of the root surface takes a snapshot, so the root surface will
+   // not be evicted immediately.
+   EXPECT_TRUE(base::test::RunUntil([&]() {
+     return !GetRootCompositorFrameSinkImpl()->CurrentSurfaceId().is_valid();
+@@ -917,11 +935,15 @@
+       local_surface_id, MakeDefaultCompositorFrame(), std::nullopt, 0);
+   EXPECT_EQ(surface_id, GetRootCompositorFrameSinkImpl()->CurrentSurfaceId());
+   allocator.GenerateId();
+   const LocalSurfaceId next_local_surface_id =
+       allocator.GetCurrentLocalSurfaceId();
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  MyEvictSurfaces({{kFrameSinkIdRoot, next_local_surface_id}});
++#else
+   manager_.EvictSurfaces({{kFrameSinkIdRoot, next_local_surface_id}});
++#endif
+ 
+   // Eviction of the root surface takes a snapshot, so the root surface will
+   // not be evicted immediately.
+   EXPECT_TRUE(base::test::RunUntil([&]() {
+     return !GetRootCompositorFrameSinkImpl()->CurrentSurfaceId().is_valid();
+@@ -945,22 +967,34 @@
+   const LocalSurfaceId local_surface_id = allocator.GetCurrentLocalSurfaceId();
+   const SurfaceId surface_id(kFrameSinkIdRoot, local_surface_id);
+   allocator.GenerateId();
+   const LocalSurfaceId local_surface_id2 = allocator.GetCurrentLocalSurfaceId();
+   const SurfaceId surface_id2(kFrameSinkIdRoot, local_surface_id2);
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  ARKWEB_UNITTESTS_SUBMIT_COMPOSITOR_GRAME_SYNC();
++#else
+   GetRootCompositorFrameSinkImpl()->SubmitCompositorFrame(
+       local_surface_id, MakeDefaultCompositorFrame(), std::nullopt, 0);
++#endif
+   EXPECT_EQ(surface_id, GetRootCompositorFrameSinkImpl()->CurrentSurfaceId());
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  MyEvictSurfaces({surface_id});
++#else
+   manager_.EvictSurfaces({surface_id});
++#endif
+ 
+   // Eviction of the root surface takes a snapshot, so the root surface will
+   // not be evicted immediately.
+   EXPECT_TRUE(base::test::RunUntil([&]() {
+     return !GetRootCompositorFrameSinkImpl()->CurrentSurfaceId().is_valid();
+   }));
+ 
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  MyEvictSurfaces({surface_id2});
++#else
+   manager_.EvictSurfaces({surface_id2});
++#endif
+ 
+   GetRootCompositorFrameSinkImpl()->SubmitCompositorFrame(
+       local_surface_id2, MakeDefaultCompositorFrame(), std::nullopt, 0);
+ 
+   // Even though `surface_id2` was just submitted, Display should not reference

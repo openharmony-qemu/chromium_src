@@ -10,6 +10,7 @@
 #include <string>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/files/file_util.h"
 #include "base/functional/bind.h"
 #include "base/memory/ptr_util.h"
@@ -257,17 +258,16 @@ void FileSelectHelper::OnListDone(int error) {
   }
 
   if (dialog_type_ == ui::SelectFileDialog::SELECT_UPLOAD_FOLDER) {
-    if (run_from_cef_) {
-      // Don't show the upload confirmation dialog when triggered via CEF
-      // (initially or recursively).
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+    // Don't show the upload confirmation dialog.
       PerformContentAnalysisIfNeeded(std::move(chooser_files));
-      return;
-    }
+#else
     auto model = CreateConfirmationDialog(
         entry->display_name_, std::move(chooser_files),
         base::BindOnce(&FileSelectHelper::PerformContentAnalysisIfNeeded,
                        this));
     chrome::ShowTabModal(std::move(model), web_contents_);
+#endif
   } else {
     listener_->FileSelected(std::move(chooser_files), base_dir_,
                             FileChooserParams::Mode::kUploadFolder);
@@ -681,7 +681,7 @@ void FileSelectHelper::RunFileChooserOnUIThread(
   gfx::NativeWindow owning_window =
       platform_util::GetTopLevel(web_contents_->GetNativeView());
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_FILE_UPLOAD)
   select_file_dialog_->SetAcceptTypes(params->accept_types);
   select_file_dialog_->SetUseMediaCapture(params->use_media_capture);
 #endif

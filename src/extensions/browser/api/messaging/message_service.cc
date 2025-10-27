@@ -770,7 +770,11 @@ void MessageService::OpenChannelToTabImpl(
   DCHECK(
       ExtensionsBrowserClient::Get()->IsSameContext(source_context, context_));
   content::WebContents* receiver_contents =
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      cef::GetWebContentByTabId(tab_id);
+#else
       messaging_delegate_->GetWebContentsByTabId(source_context, tab_id);
+#endif // ARKWEB_ARKWEB_EXTENSIONS
   if (!receiver_contents || receiver_contents->GetController().NeedsReload()) {
     // The tab isn't loaded yet. Don't attempt to connect.
     opener_port->DispatchOnDisconnect(kReceivingEndDoesntExistError);

@@ -8,6 +8,7 @@
 #include <optional>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/logging.h"
 #include "base/memory/scoped_refptr.h"
@@ -115,6 +116,10 @@
 #include "components/user_manager/user_manager.h"
 #else
 #include "extensions/browser/updater/null_extension_cache.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "chrome/browser/extensions/chrome_extensions_browser_client_ext.cc"
 #endif
 
 namespace extensions {
@@ -624,6 +629,7 @@ bool ChromeExtensionsBrowserClient::IsActivityLoggingEnabled(
   return activity_log && activity_log->is_active();
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 void ChromeExtensionsBrowserClient::GetTabAndWindowIdForWebContents(
     content::WebContents* web_contents,
     int* tab_id,
@@ -638,6 +644,7 @@ void ChromeExtensionsBrowserClient::GetTabAndWindowIdForWebContents(
     *window_id = -1;
   }
 }
+#endif
 
 KioskDelegate* ChromeExtensionsBrowserClient::GetKioskDelegate() {
   if (!kiosk_delegate_) {

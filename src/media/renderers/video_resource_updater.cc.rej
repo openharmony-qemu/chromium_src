@@ -1,0 +1,14 @@
+--- video_resource_updater.cc	2025-10-20 19:52:56.770201723 +0800
++++ video_resource_updater.cc	2025-10-16 15:55:01.958063078 +0800
+@@ -896,10 +899,11 @@
+ }
+ 
+ void VideoResourceUpdater::CopyHardwarePlane(
+     VideoFrame* video_frame,
+     VideoFrameExternalResource* external_resource) {
++  TRACE_EVENT0("cc", "VideoResourceUpdater::CopyHardwarePlane");
+   const gfx::Size output_plane_resource_size = video_frame->coded_size();
+   auto shared_image = video_frame->shared_image();
+   // The copy needs to be a direct transfer of pixel data, so we use an RGBA8
+   // target to avoid loss of precision or dropping any alpha component.
+   constexpr viz::SharedImageFormat copy_si_format =

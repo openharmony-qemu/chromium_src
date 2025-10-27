@@ -89,9 +89,18 @@ import("//third_party/blink/renderer/core/xml/build.gni")
 import("//third_party/blink/renderer/core/xmlhttprequest/build.gni")
 import("//third_party/blink/renderer/platform/platform_generated.gni")
 import("//third_party/protobuf/proto_library.gni")
+import("//arkweb/build/features/features.gni")
 
 if (is_ios) {
   import("//build/config/ios/bundle_data_from_filelist.gni")
+}
+
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
+if (defined(is_arkweb_ext) && is_arkweb_ext) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
 }
 
 visibility = [
@@ -345,10 +354,20 @@ component("core") {
       rebase_path(blink_core_sources_xmlhttprequest, "", "xmlhttprequest")
   sources += rebase_path(blink_core_sources_speech, "", "speech")
   sources += rebase_path(blink_core_sources_preferences, "", "preferences")
+  sources += arkweb_third_patry_blink_renderer_core_exported_sources
+  sources += arkweb_third_patry_blink_renderer_core_frame_sources
+  sources += arkweb_third_patry_blink_renderer_core_html_sources
+  sources += arkweb_third_patry_blink_renderer_core_v8_sources
+  sources += arkweb_third_patry_blink_renderer_core_sources
 
   configs -= core_config_remove
   configs += core_config_add
   configs += [ "//v8:external_startup_data" ]
+
+  if (defined(arkweb_reader_mode) && arkweb_reader_mode) {
+    import("//arkweb/chromium_ext/third_party/blink/renderer/core/dom/arkweb_blink_renderer_core_dom_ext.gni")
+    sources += arkweb_third_party_blink_renderer_core_dom_sources
+  }
 
   public_deps = [
     ":buildflags",
@@ -442,6 +461,18 @@ component("core") {
     deps += [ "//printing:metafile" ]
   }
 
+  if (enable_arkweb) {
+    deps += [ "//arkweb//build/features" ]
+  }
+
+  if (enable_arkweb) {
+    public_deps += [ "//arkweb/build/features" ]
+  }
+
+  if (defined(is_arkweb_ext) && is_arkweb_ext) {
+    deps += [ "//arkweb/ohos_nweb_ex/build/features"]
+  }
+
   allow_circular_includes_from = [
     ":core_generated",
     ":core_hot",
@@ -460,6 +491,10 @@ component("core") {
       "Carbon.framework",
     ]
   }
+
+  if (arkweb_javascript_bridge) {
+    deps += [ "//arkweb/build/features" ]
+  }
 }
 
 # Certain sources should be compiled with heavy optimization enabled.
@@ -468,6 +503,10 @@ component("core") {
 blink_core_sources("core_hot") {
   sources = []
   sources += rebase_path(blink_core_hot_sources_dom, "", "dom")
+  if (is_arkweb) {
+    import("//arkweb/chromium_ext/chromium_ext.gni")
+    sources += arkweb_third_party_blink_renderer_core_dom_document_sources
+  }
   sources += rebase_path(blink_core_hot_sources_html, "", "html")
   sources += rebase_path(blink_core_hot_sources_layout, "", "layout")
   sources += rebase_path(blink_core_hot_sources_css, "", "css")
@@ -1709,6 +1748,15 @@ source_set("unit_test_support") {
     "//third_party/blink/renderer/platform/testing/data/third_party/Noto/NotoNaskhArabic-regular.woff2",
     "//third_party/blink/web_tests/external/wpt/fonts/mplus-1p-regular.woff",
   ]
+
+  if (enable_arkweb) {
+    deps += [ "//arkweb/build/features" ]
+  }
+
+  if (arkweb_unittests) {
+    import("//arkweb/chromium_ext/chromium_ext.gni")
+    sources += arkweb_third_party_blink_renderer_core_unittests_sources
+  }
 }
 
 # Fuzzer for blink::StyleSheetContents
@@ -1716,7 +1764,8 @@ fuzzer_test("stylesheet_contents_fuzzer") {
   sources = [ "css/style_sheet_contents_fuzzer.cc" ]
   deps = [
     ":core",
-    "../platform:blink_fuzzer_test_support",
+    "//third_party/blink/renderer/core:testing",
+    "//third_party/blink/renderer/platform:blink_fuzzer_test_support",
   ]
   dict = "//third_party/blink/renderer/core/css/css.dict"
   seed_corpus = "//third_party/blink/web_tests/fast/css/resources"
@@ -1728,7 +1777,8 @@ fuzzer_test("css_parser_fast_paths_fuzzer") {
   sources = [ "css/parser/css_parser_fast_paths_fuzzer.cc" ]
   deps = [
     ":core",
-    "../platform:blink_fuzzer_test_support",
+    "//third_party/blink/renderer/core:testing",
+    "//third_party/blink/renderer/platform:blink_fuzzer_test_support",
   ]
   dict = "//third_party/blink/renderer/core/css/css.dict"
   libfuzzer_options = [ "max_len=128" ]
@@ -1743,8 +1793,8 @@ fuzzer_test("html_preload_scanner_fuzzer") {
   seed_corpus = "//third_party/blink/web_tests/fast/parser"
   deps = [
     ":core",
-    ":element_locator_proto",
-    "../platform:blink_fuzzer_test_support",
+    "//third_party/blink/renderer/core:testing",
+    "//third_party/blink/renderer/platform:blink_fuzzer_test_support",
   ]
 }
 
@@ -1783,6 +1833,7 @@ fuzzer_test("css_parser_proto_fuzzer") {
     ":css_proto",
     "//third_party/blink/renderer/platform:blink_fuzzer_test_support",
     "//third_party/libprotobuf-mutator",
+    "//cef:libcef_static",
   ]
   dict = "//third_party/blink/renderer/core/css/css.dict"
 }
@@ -1867,6 +1918,7 @@ fuzzer_test("blink_html_tokenizer_fuzzer") {
   sources = [ "html/parser/html_tokenizer_fuzzer.cc" ]
   deps = [
     ":core",
+    "//third_party/blink/renderer/core:testing",
     "//third_party/blink/renderer/platform:blink_fuzzer_test_support",
   ]
 }
@@ -1913,6 +1965,7 @@ fuzzer_test("document_policy_fuzzer") {
     "//third_party/blink/renderer/core",
     "//third_party/blink/renderer/platform:blink_fuzzer_test_support",
     "//third_party/icu",
+    "//cef:libcef_static",
   ]
   dict = "//third_party/blink/renderer/core/permissions_policy/document_policy.dict"
   seed_corpus = "//third_party/blink/renderer/core/permissions_policy/document_policy_corpus"

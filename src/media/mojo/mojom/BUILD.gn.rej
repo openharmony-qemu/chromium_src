@@ -1,0 +1,59 @@
+--- BUILD.gn	2025-10-20 19:52:56.750201415 +0800
++++ BUILD.gn	2025-10-16 15:55:01.934088737 +0800
+@@ -117,18 +127,56 @@
+     # remove this dependency.
+     public_deps += [ "//sandbox/mac/mojom" ]
+   }
+ 
+   enabled_features = []
++
++  if (arkweb_enable_wiseplay) {
++    enabled_features += [ "arkweb_enable_wiseplay" ]
++  }
++
+   if (is_linux || is_chromeos) {
+     enabled_features += [ "is_linux_or_chromeos" ]
+   }
+ 
++  if (is_android || is_arkweb) {
++    enabled_features += [ "is_arkweb" ]
++    enabled_features += [ "is_android_or_arkweb" ]
++  }
++
++  if (arkweb_media) {
++    enabled_features += ["arkweb_media"]
++  }
++
++  if (arkweb_media_avsession) {
++    enabled_features += ["arkweb_media_avsession"]
++  }
++
++  if (arkweb_custom_video_player) {
++    enabled_features += ["arkweb_custom_video_player"]
++  }
++
++  if (arkweb_video_assistant) {
++    enabled_features += ["arkweb_video_assistant"]
++  }
++
+   if (allow_oop_video_decoder) {
+     enabled_features += [ "allow_oop_video_decoder" ]
+   }
+ 
++  if (arkweb_pip) {
++    enabled_features += ["arkweb_pip"]
++  }
++
++  if (arkweb_media_dmabuf) {
++    enabled_features += ["arkweb_media_dmabuf"]
++  }
++
++  if (arkweb_media_memory_pressure) {
++    enabled_features += ["arkweb_media_memory_pressure"]
++  }
++
+   # Help select ServiceSandbox for media_service.mojom.
+   if (mojo_media_host == "browser") {
+     enabled_features += [ "mojo_media_in_browser" ]
+   } else if (mojo_media_host == "gpu") {
+     enabled_features += [ "mojo_media_in_gpu" ]

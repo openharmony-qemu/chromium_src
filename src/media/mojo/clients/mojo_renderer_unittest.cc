@@ -21,7 +21,6 @@
 #include "media/base/test_helpers.h"
 #include "media/cdm/clear_key_cdm_common.h"
 #include "media/cdm/default_cdm_factory.h"
-#include "media/mojo/clients/mojo_renderer.h"
 #include "media/mojo/common/media_type_converters.h"
 #include "media/mojo/mojom/content_decryption_module.mojom.h"
 #include "media/mojo/mojom/renderer.mojom.h"
@@ -35,6 +34,15 @@
 #include "mojo/public/cpp/bindings/self_owned_receiver.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "url/gurl.h"
+#include "arkweb/build/features/features.h"
+
+#if BUILDFLAG(ARKWEB_TEST)
+#define private public
+#include "media/mojo/clients/mojo_renderer.h"
+#undef private
+#else
+#include "media/mojo/clients/mojo_renderer.h"
+#endif //ARKWEB_TEST
 
 using ::base::test::RunCallback;
 using ::base::test::RunOnceCallback;
@@ -131,6 +139,10 @@ class MojoRendererTest : public ::testing::Test {
     DVLOG(1) << __func__ << ": " << status;
     EXPECT_CALL(*this, OnInitialized(SameStatusCode(status)));
     mojo_renderer_->Initialize(&demuxer_, &renderer_client_,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                               RequestSurfaceCB(),
+                               VideoDecoderChangedCB(),
+#endif // ARKWEB_VIDEO_ASSISTANT
                                base::BindOnce(&MojoRendererTest::OnInitialized,
                                               base::Unretained(this)));
     base::RunLoop().RunUntilIdle();
@@ -453,6 +465,10 @@ TEST_F(MojoRendererTest, Destroy_PendingInitialize) {
                          HasStatusCode(PIPELINE_ERROR_INITIALIZATION_FAILED)));
   mojo_renderer_->Initialize(
       &demuxer_, &renderer_client_,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+      RequestSurfaceCB(),
+      VideoDecoderChangedCB(),
+#endif // ARKWEB_VIDEO_ASSISTANT
       base::BindOnce(&MojoRendererTest::OnInitialized, base::Unretained(this)));
   Destroy();
 }
@@ -515,5 +531,9 @@ TEST_F(MojoRendererTest, ErrorDuringFlush) {
                       RunOnceClosure<0>()));
   Flush();
 }
+
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/media/mojo/clients/mojo_renderer_for_include_unittest.cc"
+#endif  // ARKWEB_TEST
 
 }  // namespace media

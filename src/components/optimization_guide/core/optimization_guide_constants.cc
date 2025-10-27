@@ -10,7 +10,19 @@ const base::FilePath::CharType kUnindexedHintsFileName[] =
     FILE_PATH_LITERAL("optimization-hints.pb");
 
 const char kRulesetFormatVersionString[] = "1.0.0";
+#if BUILDFLAG(IS_ARKWEB)
+const char kOptimizationGuideServiceGetHintsDefaultURL[] =
+    "https://***/";
 
+const char kOptimizationGuideServiceGetModelsDefaultURL[] =
+    "https://***/";
+
+const char kOptimizationGuideServiceModelExecutionDefaultURL[] =
+    "https://***/";
+
+const char kOptimizationGuideServiceModelQualtiyDefaultURL[] =
+    "https://***/";
+#else
 const char kOptimizationGuideServiceGetHintsDefaultURL[] =
     "https://optimizationguide-pa.googleapis.com/v1:GetHints";
 
@@ -22,6 +34,7 @@ const char kOptimizationGuideServiceModelExecutionDefaultURL[] =
 
 const char kOptimizationGuideServiceModelQualtiyDefaultURL[] =
     "https://chromemodelquality-pa.googleapis.com/v1:LogAiData";
+#endif
 
 const char kLoadedHintLocalHistogramString[] =
     "OptimizationGuide.LoadedHint.Result";

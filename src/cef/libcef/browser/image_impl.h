@@ -83,11 +83,16 @@ class CefImageImpl : public CefImage {
 
   // Returns the skia representation of this Image.
   gfx::ImageSkia AsImageSkia() const;
-
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+#else
  private:
+#endif
   // Add a bitmap.
   bool AddBitmap(float scale_factor, const SkBitmap& bitmap);
-
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+ private:
+#else
+#endif
   // Returns the bitmap that most closely matches |scale_factor| or nullptr if
   // one doesn't exist.
   const SkBitmap* GetBitmap(float scale_factor) const;

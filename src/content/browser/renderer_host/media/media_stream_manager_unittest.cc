@@ -434,8 +434,13 @@ class MediaStreamManagerTest : public ::testing::Test {
         std::make_unique<media::AudioSystemImpl>(audio_manager_.get());
     auto video_capture_provider = std::make_unique<MockVideoCaptureProvider>();
     video_capture_provider_ = video_capture_provider.get();
+#if BUILDFLAG(ARKWEB_TEST)
+    media_stream_manager_ = std::make_unique<MediaStreamManagerExt>(
+        audio_system_.get(), std::move(video_capture_provider));
+#else
     media_stream_manager_ = std::make_unique<MediaStreamManager>(
         audio_system_.get(), std::move(video_capture_provider));
+#endif
     media_observer_ = std::make_unique<MockMediaObserver>();
     browser_content_client_ = std::make_unique<TestBrowserClient>(
         media_observer_.get(), &screen_count_);
@@ -2131,5 +2136,9 @@ TEST_P(MediaStreamManagerCapturedSurfaceControlActionTest,
   EXPECT_EQ(result_, CapturedSurfaceControlResult::kUnknownError);
 }
 #endif  // !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS)
+
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/content/browser/renderer_host/media/media_stream_manager_ext_unittest.cc"
+#endif // ARKWEB_TEST
 
 }  // namespace content

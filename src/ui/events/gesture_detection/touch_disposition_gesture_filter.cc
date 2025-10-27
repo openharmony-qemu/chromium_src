@@ -85,6 +85,11 @@ DispositionHandlingInfo GetDispositionHandlingInfo(EventType type) {
       return Info(RT_START);
     case EventType::kGestureLongPress:
       return Info(RT_START);
+#if BUILDFLAG(ARKWEB_DRAG_DROP) || BUILDFLAG(ARKWEB_AI)
+    case EventType::kGestureDragLongPress:
+    case EventType::kGestureCreateOverlay:
+      return Info(RT_START);
+#endif
     case EventType::kGestureShortPress:
       return Info(RT_START);
     case EventType::kGestureLongTap:

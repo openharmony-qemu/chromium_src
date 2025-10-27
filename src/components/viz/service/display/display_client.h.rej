@@ -1,0 +1,16 @@
+--- display_client.h	2025-10-20 19:52:54.122409548 +0800
++++ display_client.h	2025-10-16 15:54:59.220992428 +0800
+@@ -34,10 +34,13 @@
+   virtual void SetWideColorEnabled(bool enabled) = 0;
+   virtual void SetPreferredFrameInterval(base::TimeDelta interval) = 0;
+   virtual base::TimeDelta GetPreferredFrameIntervalForFrameSinkId(
+       const FrameSinkId& id,
+       mojom::CompositorFrameSinkType* type) = 0;
++#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
++  virtual void RestoreRenderFit(const FrameSinkId& frame_sink_id) = 0;
++#endif // ARKWEB_MAXIMIZE_RESIZE
+ };
+ 
+ }  // namespace viz
+ 
+ #endif  // COMPONENTS_VIZ_SERVICE_DISPLAY_DISPLAY_CLIENT_H_

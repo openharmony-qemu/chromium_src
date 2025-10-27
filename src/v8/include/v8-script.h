@@ -350,7 +350,7 @@ class V8_EXPORT CompileHintsCollector : public Data {
  * A compiled JavaScript script, tied to a Context which was active when the
  * script was compiled.
  */
-class V8_EXPORT Script : public Data {
+class V8_EXPORT JSVM_EXPORT Script : public Data {
  public:
   /**
    * A shorthand for ScriptCompiler::Compile().
@@ -399,7 +399,7 @@ enum class ScriptType { kClassic, kModule };
 /**
  * For compiling scripts.
  */
-class V8_EXPORT ScriptCompiler {
+class V8_EXPORT JSVM_EXPORT ScriptCompiler {
  public:
   class ConsumeCodeCacheTask;
 
@@ -410,7 +410,7 @@ class V8_EXPORT ScriptCompiler {
    * = true. The data to cache can then can be retrieved from
    * UnboundScript.
    */
-  struct V8_EXPORT CachedData {
+  struct V8_EXPORT JSVM_EXPORT CachedData {
     enum BufferPolicy { BufferNotOwned, BufferOwned };
 
     CachedData()

@@ -7,6 +7,16 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
+#include "build/build_config.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+#include "arkweb/chromium_ext/chrome/browser/ssl/ohos_https_upgrades_helper.h"
+#include "arkweb/chromium_ext/components/captive_portal/content/captive_portal_tab_helper_ohos.h"
+#endif
+
 #include "base/command_line.h"
 #include "base/feature_list.h"
 #include "base/logging.h"

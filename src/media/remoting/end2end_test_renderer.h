@@ -36,6 +36,10 @@ class End2EndTestRenderer final : public Renderer {
   // Renderer implementation.
   void Initialize(MediaResource* media_resource,
                   RendererClient* client,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                  RequestSurfaceCB request_surface_cb,
+                  VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
                   PipelineStatusCallback init_cb) override;
   void SetLatencyHint(std::optional<base::TimeDelta> latency_hint) override;
   void SetPreservesPitch(bool preserves_pitch) override;

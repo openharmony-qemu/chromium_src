@@ -20,6 +20,10 @@
 #include "third_party/blink/public/mojom/loader/resource_load_info_notifier.mojom.h"
 #include "third_party/blink/public/platform/weak_wrapper_resource_load_info_notifier.h"
 
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+#include "base/debug/dump_without_crashing.h"
+#endif  // BUILDFLAG(ARKWEB_NETWORK_BASE)
+
 namespace blink {
 
 ResourceLoadInfoNotifierWrapper::ResourceLoadInfoNotifierWrapper(
@@ -211,6 +215,13 @@ void ResourceLoadInfoNotifierWrapper::NotifyResourceLoadCompleted(
 void ResourceLoadInfoNotifierWrapper::NotifyResourceLoadCanceled(
     int net_error) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  if (!resource_load_info_) {
+    LOG(ERROR) << "used shared memory : " << used_shared_memory_;
+    base::debug::DumpWithoutCrashing();
+    return;
+  }
+#endif  // BUILDFLAG(ARKWEB_NETWORK_BASE)
   RecordLoadHistograms(url::Origin::Create(resource_load_info_->final_url),
                        resource_load_info_->request_destination, net_error);
 

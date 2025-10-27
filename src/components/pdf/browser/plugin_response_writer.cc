@@ -43,6 +43,39 @@ std::string GenerateResponse(const PdfStreamDelegate::StreamInfo& stream_info) {
   // when JavaScript is blocked throughout the browser (set in
   // chrome://settings/content/javascript). A permanent solution would likely
   // have to hook into postMessage() natively.
+#if BUILDFLAG(ARKWEB_PDF)
+  static constexpr char kResponseTemplate[] = R"(<!DOCTYPE html>
+<head>
+<meta name="viewport" content="width=device-width">
+</head>
+<style>
+body,
+embed,
+html {
+  height: 100%;
+  margin: 0;
+  width: 100%;
+}
+
+embed {
+  left: 0;
+  position: fixed;
+  top: 0;
+}
+
+/* Hide scrollbars when in Presentation mode. */
+.fullscreen {
+  overflow: hidden;
+}
+</style>
+<div id="sizer"></div>
+<embed type="application/x-google-chrome-pdf" src="$1" original-url="$2"
+    background-color="$4" javascript="$5"$6>
+<script type="module">
+$3
+</script>
+)";
+#else
   static constexpr char kResponseTemplate[] = R"(<!DOCTYPE html>
 <style>
 body,
@@ -71,6 +104,7 @@ embed {
 $3
 </script>
 )";
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   // TODO(crbug.com/40792950): We should load the injected scripts as network
   // resources instead. Until then, feel free to raise this limit as necessary.

@@ -206,6 +206,9 @@ bool MaglevCompiler::Compile(LocalIsolate* local_isolate,
   {
     TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                  "V8.Maglev.CodeAssembly");
+#ifdef OHOS_JS_ENGINE
+    auto trace = HiTrace("RCS_v8.compile_V8.Maglev.CodeAssembly");
+#endif
     UnparkedScopeIfOnBackground unparked_scope(local_isolate->heap());
     std::unique_ptr<MaglevCodeGenerator> code_generator =
         std::make_unique<MaglevCodeGenerator>(local_isolate, compilation_info,

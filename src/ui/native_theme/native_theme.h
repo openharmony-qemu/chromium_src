@@ -619,11 +619,11 @@ class COMPONENT_EXPORT(NATIVE_THEME) NativeTheme {
   // Whether dark mode is forced via command-line flag.
   static bool IsForcedDarkMode();
 
-  // Calculates and returns the use overlay scrollbar setting.
-  static bool CalculateUseOverlayScrollbar();
-
   // Whether light mode is forced via command-line flag.
   static bool IsForcedLightMode();
+
+  // Calculates and returns the use overlay scrollbar setting.
+  static bool CalculateUseOverlayScrollbar();
 
  protected:
   explicit NativeTheme(
@@ -707,6 +707,7 @@ class COMPONENT_EXPORT(NATIVE_THEME) NativeTheme {
 
   SEQUENCE_CHECKER(sequence_checker_);
 };
+
 
 }  // namespace ui
 

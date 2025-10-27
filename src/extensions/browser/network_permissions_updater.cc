@@ -18,6 +18,7 @@ namespace extensions {
 
 namespace {
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 void SetCorsOriginAccessListForExtensionHelper(
     const std::vector<content::BrowserContext*>& browser_contexts,
     const Extension& extension,
@@ -40,6 +41,7 @@ void SetCorsOriginAccessListForExtensionHelper(
         mojo::Clone(block_patterns), barrier_closure);
   }
 }
+#endif
 
 }  // namespace
 

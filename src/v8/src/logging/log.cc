@@ -22,7 +22,11 @@
 #include "src/codegen/source-position-table.h"
 #include "src/common/assert-scope.h"
 #include "src/deoptimizer/deoptimizer.h"
+#ifdef V8_ENABLE_OHOS_PERF_JIT
+#include "../../../arkweb/chromium_ext/v8/ohos-perf-jit.h"
+#else
 #include "src/diagnostics/perf-jit.h"
+#endif
 #include "src/execution/isolate.h"
 #include "src/execution/v8threads.h"
 #include "src/execution/vm-state-inl.h"

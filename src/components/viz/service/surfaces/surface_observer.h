@@ -6,6 +6,7 @@
 #define COMPONENTS_VIZ_SERVICE_SURFACES_SURFACE_OBSERVER_H_
 
 #include "components/viz/service/viz_service_export.h"
+#include "arkweb/build/features/features.h"
 
 namespace viz {
 
@@ -70,6 +71,9 @@ class VIZ_SERVICE_EXPORT SurfaceObserver {
   // A matching `OnRemovedSurfaceReference` can be added if there are use cases.
   virtual void OnAddedSurfaceReference(const SurfaceId& parent_id,
                                        const SurfaceId& child_id) {}
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  virtual void ReenableSwapCheck(const SurfaceId& surface_id, int width, int height) {}
+#endif // ARKWEB_MAXIMIZE_RESIZE
 };
 
 }  // namespace viz

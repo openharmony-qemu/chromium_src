@@ -440,7 +440,7 @@ class StockColorSpaces {
     if (family == CPDF_ColorSpace::Family::kPattern) {
       return pattern_;
     }
-    NOTREACHED();
+    NOTREACHED_NORETURN();
   }
 
  private:
@@ -600,7 +600,7 @@ uint32_t CPDF_ColorSpace::ComponentsForFamily(Family family) {
     case Family::kDeviceCMYK:
       return 4;
     default:
-      NOTREACHED();
+      NOTREACHED_NORETURN();
   }
 }
 

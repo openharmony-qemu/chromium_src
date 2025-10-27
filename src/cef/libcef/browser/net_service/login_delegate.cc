@@ -12,15 +12,37 @@
 #include "content/public/browser/global_request_id.h"
 #include "content/public/browser/web_contents.h"
 
+#if BUILDFLAG(ARKWEB_CA)
+#include "third_party/bounds_checking_function/include/securec.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "extensions/browser/api/web_request/web_request_api.h"
+#include "extensions/browser/browser_context_keyed_api_factory.h"
+#endif
+
 namespace net_service {
 
 namespace {
+const int USERNAME_PASSWORD_VECTOR_NUM = 2;
 
 class AuthCallbackImpl : public CefAuthCallback {
  public:
-  explicit AuthCallbackImpl(base::WeakPtr<LoginDelegate> delegate)
-      : delegate_(delegate),
-        task_runner_(base::SequencedTaskRunner::GetCurrentDefault()) {}
+  explicit AuthCallbackImpl(base::WeakPtr<LoginDelegate> delegate
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+                            ,
+                            const CefString& host,
+                            const CefString& realm
+#endif
+                            )
+      :
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+        host_(host),
+        realm_(realm),
+#endif
+        delegate_(delegate),
+        task_runner_(base::SequencedTaskRunner::GetCurrentDefault()) {
+  }
 
   AuthCallbackImpl(const AuthCallbackImpl&) = delete;
   AuthCallbackImpl& operator=(const AuthCallbackImpl&) = delete;
@@ -59,7 +81,7 @@ class AuthCallbackImpl : public CefAuthCallback {
       delegate_ = nullptr;
     }
   }
-
+#include "cef/ohos_cef_ext/libcef/browser/net_service/login_delegate_auth_callback_impl_for_include.cc"
  private:
   base::WeakPtr<LoginDelegate> delegate_;
   scoped_refptr<base::SequencedTaskRunner> task_runner_;
@@ -148,6 +170,11 @@ void LoginDelegate::Cancel() {
   }
 }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "cef/ohos_cef_ext/libcef/browser/net_service/login_delegate_for_include.cc"
+#endif  // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 void LoginDelegate::Start(CefRefPtr<CefBrowserHostBase> browser,
                           const net::AuthChallengeInfo& auth_info,
                           const content::GlobalRequestID& request_id,
@@ -159,7 +186,11 @@ void LoginDelegate::Start(CefRefPtr<CefBrowserHostBase> browser,
   if (browser || url_request_info) {
     // AuthCallbackImpl is bound to the current thread.
     CefRefPtr<AuthCallbackImpl> callbackImpl =
-        new AuthCallbackImpl(weak_ptr_factory_.GetWeakPtr());
+        new AuthCallbackImpl(weak_ptr_factory_.GetWeakPtr(),
+#if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
+                             auth_info.challenger.host(), auth_info.realm
+#endif
+        );
 
     // Execute callbacks on the IO thread to maintain the "old"
     // network_delegate callback behaviour.
@@ -170,5 +201,6 @@ void LoginDelegate::Start(CefRefPtr<CefBrowserHostBase> browser,
     Cancel();
   }
 }
+#endif  // !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 
 }  // namespace net_service

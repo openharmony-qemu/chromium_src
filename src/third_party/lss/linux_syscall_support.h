@@ -89,7 +89,7 @@
      defined(__mips__) || defined(__PPC__) || defined(__ARM_EABI__) || \
      defined(__aarch64__) || defined(__s390__) || defined(__e2k__) ||  \
      (defined(__riscv) && __riscv_xlen == 64) || defined(__loongarch_lp64))  \
-  && (defined(__linux) || defined(__ANDROID__))
+  && (defined(__linux) || defined(__ANDROID__) || defined(__MUSL__))
 
 #ifndef SYS_CPLUSPLUS
 #ifdef __cplusplus

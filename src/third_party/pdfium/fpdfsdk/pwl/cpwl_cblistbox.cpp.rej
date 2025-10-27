@@ -1,0 +1,15 @@
+--- cpwl_cblistbox.cpp	2025-10-20 19:53:19.643983832 +0800
++++ cpwl_cblistbox.cpp	2025-10-16 16:15:55.948156925 +0800
+@@ -72,11 +72,11 @@
+       break;
+     case FWL_VKEY_Right:
+       m_pListCtrl->OnVK_RIGHT(IsSHIFTKeyDown(nFlag), IsCTRLKeyDown(nFlag));
+       break;
+     default:
+-      NOTREACHED();
++      NOTREACHED_NORETURN();
+   }
+   return OnNotifySelectionChanged(true, nFlag);
+ }
+ 
+ bool CPWL_CBListBox::IsChar(uint16_t nChar, Mask<FWL_EVENTFLAG> nFlag) const {

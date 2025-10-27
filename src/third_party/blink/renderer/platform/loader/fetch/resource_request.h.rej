@@ -1,0 +1,37 @@
+--- resource_request.h	2025-10-20 19:53:01.226200798 +0800
++++ resource_request.h	2025-10-16 16:07:40.131326528 +0800
+@@ -655,10 +655,18 @@
+ #if DCHECK_IS_ON()
+     is_set_url_allowed_ = value;
+ #endif
+   }
+ 
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  bool GetAllowPreloadRecord() const { return allow_preload_record_; }
++  void SetAllowPreloadRecord(bool allow) { allow_preload_record_ = allow; }
++ 
++  const KURL& GetMainUrl() const { return main_url_; }
++  void SetMainUrl(const KURL& url) { main_url_ = url; }
++#endif
++
+  private:
+   const CacheControlHeader& GetCacheControlHeader() const;
+ 
+   bool NeedsHTTPOrigin() const;
+ 
+@@ -802,10 +810,15 @@
+   std::optional<base::UnguessableToken>
+       service_worker_race_network_request_token_;
+ #if DCHECK_IS_ON()
+   bool is_set_url_allowed_ = true;
+ #endif
++
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  bool allow_preload_record_ = false;
++  KURL main_url_;
++#endif
+ };
+ 
+ class PLATFORM_EXPORT ResourceRequestBody {
+  public:
+   ResourceRequestBody();

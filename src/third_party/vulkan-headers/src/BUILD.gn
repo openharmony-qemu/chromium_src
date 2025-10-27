@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import("//arkweb/build/features/features.gni")
 import("//build_overrides/vulkan_headers.gni")
 
 config("vulkan_headers_config") {
@@ -41,6 +42,10 @@ config("vulkan_headers_config") {
   }
   if (defined(is_ggp) && is_ggp) {
     defines += [ "VK_USE_PLATFORM_GGP" ]
+  }
+  if (arkweb_vulkan) {
+    defines += [ "VK_USE_PLATFORM_OHOS" ]
+    include_dirs += ["//arkweb/chromium_ext/third_party/vulkan-headers/src/include/vulkan"]
   }
   if (is_clang) {
     cflags = [

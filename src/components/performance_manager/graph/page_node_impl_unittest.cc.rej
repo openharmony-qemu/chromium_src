@@ -1,0 +1,18 @@
+--- page_node_impl_unittest.cc	2025-10-20 19:52:53.334047069 +0800
++++ page_node_impl_unittest.cc	2025-10-16 15:54:57.211859115 +0800
+@@ -290,10 +290,15 @@
+   MOCK_METHOD(void,
+               OnAboutToBeDiscarded,
+               (const PageNode*, const PageNode*),
+               (override));
+ 
++#if BUILDFLAG(ARKWEB_BGTASK)
++  MOCK_METHOD(void, SetBrowserForeground, (const PageNode*), (override));
++  MOCK_METHOD(void, SetBrowserBackground, (const PageNode*), (override));
++#endif
++
+   void SetNotifiedPageNode(const PageNode* page_node) {
+     notified_page_node_ = page_node;
+   }
+ 
+   const PageNode* TakeNotifiedPageNode() {

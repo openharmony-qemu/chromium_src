@@ -1,0 +1,119 @@
+--- handler_main.cc	2025-10-20 19:53:07.344454935 +0800
++++ handler_main.cc	2025-10-16 16:07:40.427387765 +0800
+@@ -216,11 +223,11 @@
+ "                              pass the --always_allow_feedback flag to\n"
+ "                              crash_reporter, thus skipping metrics consent\n"
+ "                              checks\n"
+   // clang-format on
+ #endif  // BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_CHROMEOS_LACROS)
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+       // clang-format off
+ "      --write-minidump-to-log write minidump to log\n"
+   // clang-format on
+ #endif  // BUILDFLAG(IS_ANDROID)
+       // clang-format off
+@@ -623,34 +633,37 @@
+     kOptionMonitorSelfArgument,
+     kOptionNoIdentifyClientViaUrl,
+     kOptionNoPeriodicTasks,
+     kOptionNoRateLimit,
+     kOptionNoUploadGzip,
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+     kOptionNoWriteMinidumpToDatabase,
+ #endif  // BUILDFLAG(IS_ANDROID)
+ #if BUILDFLAG(IS_WIN)
+     kOptionPipeName,
+ #endif  // BUILDFLAG(IS_WIN)
+ #if BUILDFLAG(IS_APPLE)
+     kOptionResetOwnCrashExceptionPortToSystemDefault,
+ #endif  // BUILDFLAG(IS_APPLE)
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
++    BUILDFLAG(IS_OHOS)
+     kOptionSanitizationInformation,
+     kOptionSharedClientConnection,
+     kOptionTraceParentWithException,
++    kOptionHappenTime,
++    kOptionBundleName,
+ #endif
+     kOptionURL,
+     kOptionMaxUploads,
+     kOptionMaxDatabaseSize,
+     kOptionMaxDatabaseAge,
+ #if BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_CHROMEOS_LACROS)
+     kOptionUseCrosCrashReporter,
+     kOptionMinidumpDirForTests,
+     kOptionAlwaysAllowFeedback,
+ #endif  // BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_CHROMEOS_LACROS)
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+     kOptionWriteMinidumpToLog,
+ #endif  // BUILDFLAG(IS_ANDROID)
+ 
+     // Standard options.
+     kOptionHelp = -2,
+@@ -738,14 +755,20 @@
+      kOptionUseCrosCrashReporter},
+     {"minidump-dir-for-tests",
+      required_argument,
+      nullptr,
+      kOptionMinidumpDirForTests},
+-    {"always-allow-feedback", no_argument, nullptr, kOptionAlwaysAllowFeedback},
++    {"always-allow-feedback",
++      no_argument,
++      nullptr,
++      kOptionAlwaysAllowFeedback},
+ #endif  // BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_CHROMEOS_LACROS)
+-#if BUILDFLAG(IS_ANDROID)
+-    {"write-minidump-to-log", no_argument, nullptr, kOptionWriteMinidumpToLog},
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
++    {"write-minidump-to-log",
++       no_argument,
++       nullptr,
++       kOptionWriteMinidumpToLog},
+ #endif  // BUILDFLAG(IS_ANDROID)
+     {"help", no_argument, nullptr, kOptionHelp},
+     {"version", no_argument, nullptr, kOptionVersion},
+     {"max-uploads", required_argument, nullptr, kOptionMaxUploads},
+     {"max-db-size", required_argument, nullptr, kOptionMaxDatabaseSize},
+@@ -954,11 +990,11 @@
+       case kOptionAlwaysAllowFeedback: {
+         options.always_allow_feedback = true;
+         break;
+       }
+ #endif  // BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_CHROMEOS_LACROS)
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+       case kOptionWriteMinidumpToLog: {
+         options.write_minidump_to_log = true;
+         break;
+       }
+ #endif  // BUILDFLAG(IS_ANDROID)
+@@ -1147,22 +1185,23 @@
+       static_cast<CrashReportUploadThread*>(upload_thread.Get()),
+       &options.annotations,
+ #if defined(ATTACHMENTS_SUPPORTED)
+       &options.attachments,
+ #endif  // ATTACHMENTS_SUPPORTED
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+       options.write_minidump_to_database,
+       options.write_minidump_to_log,
+ #endif  // BUILDFLAG(IS_ANDROID)
+ #if BUILDFLAG(IS_LINUX)
+       true,
+       false,
+ #endif  // BUILDFLAG(IS_LINUX)
+       user_stream_sources);
+ #endif  // BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_CHROMEOS_LACROS)
+ 
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
++    BUILDFLAG(IS_OHOS)
+   if (options.exception_information_address) {
+     ExceptionHandlerProtocol::ClientInformation info;
+     info.exception_information_address = options.exception_information_address;
+     info.sanitization_information_address =
+         options.sanitization_information_address;

@@ -1,0 +1,47 @@
+--- key_systems_impl.cc	2025-10-20 19:52:56.590198948 +0800
++++ key_systems_impl.cc	2025-10-16 15:55:01.802229859 +0800
+@@ -23,10 +23,13 @@
+ #include "media/base/media_switches.h"
+ #include "media/base/mime_util.h"
+ #include "media/cdm/clear_key_cdm_common.h"
+ #include "media/media_buildflags.h"
+ #include "third_party/widevine/cdm/widevine_cdm_common.h"
++#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
++#include "media/cdm/wiseplay_cdm_common.h"
++#endif
+ 
+ namespace media {
+ 
+ namespace {
+ 
+@@ -213,10 +216,16 @@
+ // KeySystemsImpl. Only then should you change this function.
+ static bool IsPotentiallySupportedKeySystem(const std::string& key_system) {
+   if (key_system == kWidevineKeySystem)
+     return true;
+ 
++#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
++  if (key_system == kWiseplayKeySystem) {
++    return true;
++  }
++#endif
++
+   if (key_system == kClearKeyKeySystem) {
+     return true;
+   }
+ 
+   // External or MediaFoundation Clear Key is known and supports suffixes for
+@@ -393,10 +402,13 @@
+ 
+     if (!IsPotentiallySupportedKeySystem(key_system->GetBaseKeySystemName())) {
+       // If you encounter this path, see the comments for the function above.
+       DLOG(ERROR) << "Unsupported name '" << key_system->GetBaseKeySystemName()
+                   << "'. See code comments.";
++      LOG(INFO) << "[DRM]" << __func__ << "Unsupported name '"
++                << key_system->GetBaseKeySystemName()
++                << "'. See code comments.";
+       continue;
+     }
+ 
+     // Supporting persistent state is a prerequisite for supporting persistent
+     // sessions.

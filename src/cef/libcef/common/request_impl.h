@@ -10,6 +10,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/synchronization/lock.h"
 #include "cef/include/cef_request.h"
 #include "cef/libcef/common/mojom/cef.mojom.h"
@@ -36,8 +37,10 @@ struct ResourceRequest;
 class ResourceRequestBody;
 }  // namespace network
 
+class ArkWebRequestExt;
+
 // Implementation of CefRequest
-class CefRequestImpl : public CefRequest {
+class CefRequestImpl : public virtual CefRequest {
  public:
   enum Changes {
     kChangedNone = 0,
@@ -82,17 +85,30 @@ class CefRequestImpl : public CefRequest {
   uint64_t GetIdentifier() override;
 
   // Populate this object from the ResourceRequest object.
+#if BUILDFLAG(ARKWEB_NETWORK_CONNINFO)
+  virtual void Set(const network::ResourceRequest* request,
+                   uint64_t identifier);
+#else
   void Set(const network::ResourceRequest* request, uint64_t identifier);
+#endif
 
   // Populate the ResourceRequest object from this object.
   // If |changed_only| is true then only the changed fields will be updated.
   void Get(network::ResourceRequest* request, bool changed_only) const;
 
   // Populate this object from the RedirectInfo object.
+#if BUILDFLAG(ARKWEB_NETWORK_CONNINFO)
+  virtual void Set(const net::RedirectInfo& redirect_info);
+#else
   void Set(const net::RedirectInfo& redirect_info);
+#endif
 
   // Populate this object from the HttpRequestHeaders object.
+#if BUILDFLAG(ARKWEB_NETWORK_CONNINFO)
+  virtual void Set(const net::HttpRequestHeaders& headers);
+#else
   void Set(const net::HttpRequestHeaders& headers);
+#endif
 
   // Populate this object from the NavigationParams object.
   // Called from throttle_handler.cc NavigationOnUIThread().
@@ -118,6 +134,10 @@ class CefRequestImpl : public CefRequest {
   void RevertChanges();
   void DiscardChanges();
   uint8_t GetChanges() const;
+
+#if BUILDFLAG(ARKWEB_NETWORK_CONNINFO)
+  void SetDestination(network::mojom::RequestDestination destination);
+#endif
 
   static network::mojom::ReferrerPolicy NetReferrerPolicyToBlinkReferrerPolicy(
       cef_referrer_policy_t net_policy);
@@ -179,6 +199,10 @@ class CefRequestImpl : public CefRequest {
   uint8_t changes_ = kChangedNone;
 
   mutable base::Lock lock_;
+
+#if BUILDFLAG(ARKWEB_NETWORK_CONNINFO)
+  network::mojom::RequestDestination destination_;
+#endif
 
   IMPLEMENT_REFCOUNTING(CefRequestImpl);
 };

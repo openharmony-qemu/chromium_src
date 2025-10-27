@@ -65,6 +65,7 @@ class TileManager;
 class UIResourceRequest;
 class VideoFrameControllerClient;
 struct PendingPageScaleAnimation;
+class LayerTreeImplUtils;
 
 using UIResourceRequestQueue = std::vector<UIResourceRequest>;
 using SyncedScale = SyncedProperty<ScaleGroup>;
@@ -623,6 +624,9 @@ class CC_EXPORT LayerTreeImpl {
 
   LayerImpl* FindLayerThatIsHitByPoint(const gfx::PointF& screen_space_point);
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  LayerImpl* FindLayerThatIsHitByPointNative(const gfx::PointF& screen_space_point);
+#endif
   LayerImpl* FindLayerThatIsHitByPointInTouchHandlerRegion(
       const gfx::PointF& screen_space_point);
 

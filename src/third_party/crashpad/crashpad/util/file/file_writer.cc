@@ -20,6 +20,7 @@
 
 #include <algorithm>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/logging.h"
 #include "base/numerics/safe_conversions.h"
@@ -172,7 +173,7 @@ bool FileWriter::Open(const base::FilePath& path,
   return true;
 }
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_CRASHPAD)
 bool FileWriter::OpenMemfd(const base::FilePath& path) {
   CHECK(!file_.is_valid());
   file_.reset(LoggingOpenMemoryFileForReadAndWrite(path));

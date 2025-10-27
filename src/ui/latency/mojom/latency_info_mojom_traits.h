@@ -52,6 +52,9 @@ struct COMPONENT_EXPORT(LATENCY_SHARED_MOJOM_TRAITS)
   static int64_t gesture_scroll_id(const ui::LatencyInfo& info);
   static int64_t touch_trace_id(const ui::LatencyInfo& info);
   static bool Read(ui::mojom::LatencyInfoDataView data, ui::LatencyInfo* out);
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  static bool is_stop_propagation(const ui::LatencyInfo& info);
+#endif
 };
 
 template <>

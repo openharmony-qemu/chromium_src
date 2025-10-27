@@ -21,6 +21,7 @@ namespace blink {
 class MainThreadEventQueue;
 class WidgetBase;
 class WidgetInputHandlerManager;
+class ArkwebWidgetInputHandlerImplExt;
 
 // This class provides an implementation of the mojo WidgetInputHandler
 // interface. If threaded compositing is used this thread will live on
@@ -28,6 +29,10 @@ class WidgetInputHandlerManager;
 // is done so that events stay in order relative to other events.
 class WidgetInputHandlerImpl : public mojom::blink::WidgetInputHandler {
  public:
+  friend class ArkwebWidgetInputHandlerImplExt;
+  virtual ArkwebWidgetInputHandlerImplExt* AsArkwebWidgetInputHandlerImplExt() {
+    return nullptr;
+  }
   // The `widget` and `frame_widget_input_handler` should be invalidated
   // at the same time.
   WidgetInputHandlerImpl(

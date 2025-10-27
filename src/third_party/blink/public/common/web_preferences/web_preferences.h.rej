@@ -1,0 +1,73 @@
+--- web_preferences.h	2025-10-20 19:53:00.098212827 +0800
++++ web_preferences.h	2025-10-16 16:07:39.061558593 +0800
+@@ -7,20 +7,25 @@
+ 
+ #include <map>
+ #include <string>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "build/build_config.h"
+ #include "net/nqe/effective_connection_type.h"
+ #include "third_party/blink/public/common/common_export.h"
+ #include "third_party/blink/public/mojom/css/preferred_color_scheme.mojom-shared.h"
+ #include "third_party/blink/public/mojom/css/preferred_contrast.mojom-shared.h"
+ #include "third_party/blink/public/mojom/v8_cache_options.mojom-forward.h"
+ #include "third_party/blink/public/mojom/webpreferences/web_preferences.mojom-shared.h"
+ #include "url/gurl.h"
+ #include "url/origin.h"
+ 
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
++
+ namespace blink {
+ 
+ namespace web_pref {
+ 
+ using blink::mojom::EffectiveConnectionType;
+@@ -487,15 +544,44 @@
+ 
+   // Whether modal context menu is used. A modal context menu meaning it is
+   // blocking user's access to the background web content.
+   bool modal_context_menu = true;
+ 
++#if BUILDFLAG(ARKWEB_ACTIVE_POLICY)
++  int64_t delay_for_background_tab_freezing = -1;
++#endif
++
++#if BUILDFLAG(ARKWEB_PINCH_SMOOTH)
++  bool pinch_smooth_mode = false;
++#endif
++
++#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
++  bool custom_video_player_enable = false;
++  bool custom_video_player_overlay = false;
++#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
++
++#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
++  int32_t usage_scenario = 1;
++#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+   // Whether the safe-area-insets should be changed dynamically based on
+   // browser controls shown ratio. This value is used in web settings only
+   // when feature DynamicSafeAreaInsets is enabled.
+   bool dynamic_safe_area_insets_enabled = false;
+ 
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++  bool video_assistant_enabled = false;
++  bool custom_media_player_enabled = false;
++#endif // ARKWEB_VIDEO_ASSISTANT
++
++#if BUILDFLAG(ARKWEB_ERROR_PAGE)
++  bool error_page_enabled = false;
++#endif
++
++#if BUILDFLAG(ARKWEB_BFCACHE)
++  bool media_resume_from_bfcache_page = true;
++#endif // BUILDFLAG(ARKWEB_BFCACHE)
++
+   // We try to keep the default values the same as the default values in
+   // chrome, except for the cases where it would require lots of extra work for
+   // the embedder to use the same default value.
+   WebPreferences();
+   WebPreferences(const WebPreferences& other);

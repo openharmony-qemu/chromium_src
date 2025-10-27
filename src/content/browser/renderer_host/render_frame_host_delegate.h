@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback_forward.h"
 #include "base/i18n/rtl.h"
 #include "base/memory/safe_ref.h"
@@ -150,7 +151,7 @@ struct PartitionedPopinOpenerProperties {
 // this. This delegate interface is useful for renderer_host/ to make requests
 // to WebContentsImpl, as renderer_host/ is not permitted to know the
 // WebContents type (see //renderer_host/DEPS).
-class CONTENT_EXPORT RenderFrameHostDelegate {
+class CONTENT_EXPORT RenderFrameHostDelegate : public RenderFrameHostDelegateExt {
  public:
   // Callback used with IsClipboardPasteAllowedByPolicy() method.  If the
   // clipboard paste is allowed to proceed, the callback is called with the data
@@ -180,6 +181,7 @@ class CONTENT_EXPORT RenderFrameHostDelegate {
       const GURL& blocked_url,
       const GURL& initiator_url,
       blink::mojom::NavigationBlockedReason reason) {}
+
 
   // Called when blink.mojom.LocalFrameHost::DidFinishLoad() is invoked.
   virtual void OnDidFinishLoad(RenderFrameHostImpl* render_frame_host,

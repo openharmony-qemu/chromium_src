@@ -1,0 +1,16 @@
+--- BUILD.gn	2025-10-20 19:52:55.546503164 +0800
++++ BUILD.gn	2025-10-16 15:55:00.635478575 +0800
+@@ -39,10 +40,13 @@
+     deps += [ "//gpu/vulkan/win32" ]
+   }
+   if (is_apple) {
+     deps += [ "//gpu/vulkan/mac" ]
+   }
++  if (arkweb_vulkan) {
++    deps += [ "//arkweb/chromium_ext/gpu/vulkan/ohos" ]
++  }
+ }
+ 
+ component("skia") {
+   output_name = "vulkan_init_skia"
+ 

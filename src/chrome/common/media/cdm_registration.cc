@@ -304,6 +304,21 @@ void AddWidevine(std::vector<content::CdmInfo>* cdms) {
 }
 #endif  // BUILDFLAG(ENABLE_WIDEVINE)
 
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+void AddSoftwareSecureWiseplay(std::vector<content::CdmInfo>* cdms) {
+  LOG(INFO) << "[DRM]" << __func__;
+  cdms->emplace_back(
+      media::kWiseplayKeySystem, Robustness::kSoftwareSecure, std::nullopt,
+      false, media::kWiseplayCdmDisplayName,
+      media::kWiseplayCdmType, base::Version(), base::FilePath());
+}
+
+void AddWiseplay(std::vector<content::CdmInfo>* cdms) {
+  LOG(INFO) << "[DRM]" << __func__;
+  AddSoftwareSecureWiseplay(cdms);
+}
+#endif
+
 #if BUILDFLAG(ENABLE_LIBRARY_CDMS)
 void AddExternalClearKey(std::vector<content::CdmInfo>* cdms) {
   // Register Clear Key CDM if specified in command line.
@@ -413,6 +428,10 @@ void RegisterCdmInfo(std::vector<content::CdmInfo>* cdms) {
 
 #if BUILDFLAG(ENABLE_WIDEVINE)
   AddWidevine(cdms);
+#endif
+
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+  AddWiseplay(cdms);
 #endif
 
 #if BUILDFLAG(ENABLE_LIBRARY_CDMS)

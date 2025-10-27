@@ -1,0 +1,17 @@
+--- BUILD.gn	2025-10-20 19:53:14.492248594 +0800
++++ BUILD.gn	2025-10-16 16:07:46.056837381 +0800
+@@ -28,10 +29,14 @@
+ 
+   if (!is_android) {
+     # Selects type1cid.c and type1.c modules in
+     # freetype-custom-include/freetype/config/ftmodule.h.
+     defines += [ "PDFIUM_REQUIRED_MODULES" ]
++    if (arkweb_performance_inc_freq) {
++      # Same with Android to avoid performance impact.
++      defines += [ "WITHOUT_HARFBUZZ" ]
++    }
+   } else {
+     # Using HarfBuzz assisted autohinting has a performance impact that we do
+     # not want to take on Android, see crbug.com/724095.
+     defines += [ "WITHOUT_HARFBUZZ" ]
+   }

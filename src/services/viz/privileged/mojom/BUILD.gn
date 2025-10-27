@@ -26,6 +26,11 @@ mojom("mojom") {
     "//services/viz/public/mojom",
     "//ui/gfx/mojom",
   ]
+
+  if (arkweb_occluded_opt) {
+    enabled_features += [ "arkweb_occluded_opt" ]
+  }
+
 }
 
 source_set("unit_tests") {

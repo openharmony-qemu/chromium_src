@@ -1,0 +1,47 @@
+--- BUILD.gn	2025-10-20 19:53:00.082212979 +0800
++++ BUILD.gn	2025-10-16 16:07:39.041821177 +0800
+@@ -360,21 +364,30 @@
+     "//mojo/public/mojom/base",
+     "//net",
+     "//ui/base:base",
+   ]
+ 
++  if (arkweb_msgport) {
++    sources += arkweb_string_message_codec_h_sources
++  }
++
++  if (is_arkweb) {
++    sources += arkweb_context_memu_params_builder_h_sources
++    deps += [ "//arkweb/build/features" ]
++  }
++
+   # Chromium without blink doesn't use and must not depend on //media
+   if (use_blink) {
+     deps += [
+       "//media",
+       "//media/capture:capture_base",
+       "//media/capture:capture_lib",
+     ]
+     public_deps += [ "//media/mojo/mojom" ]
+   }
+ 
+-  if (is_android || is_win) {
++  if (is_android || is_win || (is_arkweb && arkweb_wpt)) {
+     sources += [
+       "font_unique_name_lookup/font_table_matcher.h",
+       "font_unique_name_lookup/font_table_persistence.h",
+       "font_unique_name_lookup/icu_fold_case_util.h",
+     ]
+@@ -384,11 +397,11 @@
+   if (is_mac) {
+     sources += [ "sandbox_support/sandbox_support_mac.h" ]
+   }
+ }
+ 
+-if (is_android || is_win) {
++if (is_android || is_win || (is_arkweb && arkweb_wpt)) {
+   proto_library("font_unique_name_table_proto") {
+     sources = [ "font_unique_name_lookup/font_unique_name_table.proto" ]
+   }
+ }
+ 

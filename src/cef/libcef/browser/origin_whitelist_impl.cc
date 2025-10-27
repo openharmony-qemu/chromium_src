@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/bind.h"
 #include "base/lazy_instance.h"
 #include "base/synchronization/lock.h"
@@ -298,8 +299,16 @@ bool HasCrossOriginWhitelistEntry(const url::Origin& source,
   // Components of chrome that are implemented as extensions or platform apps
   // are allowed to use chrome://resources/ and chrome://theme/ URLs.
   // See also RegisterNonNetworkSubresourceURLLoaderFactories.
-  if (source.scheme() == extensions::kExtensionScheme &&
-      target.scheme() == content::kChromeUIScheme &&
+  if ((source.scheme() == extensions::kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+       || source.scheme() == extensions::kArkwebExtensionScheme
+#endif
+  ) &&
+      (target.scheme() == content::kChromeUIScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+       || target.scheme() == content::kArkWebUIScheme
+#endif
+       ) &&
       (target.host() == chrome::kChromeUIThemeHost ||
        target.host() == content::kChromeUIResourcesHost)) {
     return true;

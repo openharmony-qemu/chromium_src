@@ -4,11 +4,16 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/debug/debugging_buildflags.h"
 #include "base/memory/scoped_refptr.h"
 #include "components/gwp_asan/buildflags/buildflags.h"
 #include "third_party/crashpad/crashpad/handler/handler_main.h"
 #include "third_party/crashpad/crashpad/handler/user_stream_data_source.h"
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+#include "base/logging.h"
+#endif
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_MAC)
 #include "components/stability_report/user_stream_data_source_posix.h"
@@ -49,6 +54,10 @@ __attribute__((visibility("default"), used)) int CrashpadHandlerMain(
                                    AllocationRecorderHolder>(),
           base::MakeRefCounted<
               allocation_recorder::crash_handler::StreamDataSourceFactory>()));
+#endif
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  LOG(INFO) << "crashpad::HandlerMain start";
 #endif
 
   return crashpad::HandlerMain(argc, argv, &user_stream_data_sources);

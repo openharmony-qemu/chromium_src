@@ -143,7 +143,7 @@ class CrashReporterClient {
   // that case, |breakpad_enabled| is set to the value enforced by policies.
   virtual bool ReportingIsEnforcedByPolicy(bool* breakpad_enabled);
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   // Used by WebView to sample crashes without generating the unwanted dumps. If
   // the returned value is less than 100, crash dumping will be sampled to that
   // percentage.
@@ -157,7 +157,7 @@ class CrashReporterClient {
   virtual bool ShouldWriteMinidumpToLog();
 #endif
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ARKWEB)
   // Configures sanitization of crash dumps.
   // |allowed_annotations| is a nullptr terminated array of NUL-terminated
   // strings of allowed annotation names or nullptr if all annotations are

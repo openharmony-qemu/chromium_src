@@ -262,6 +262,13 @@ class COMPONENT_EXPORT(URL) GURL {
     return SchemeIs(url::kFileSystemScheme);
   }
 
+#if BUILDFLAG(ARKWEB_RECOURCE_SCHEME) || BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
+  // Resource URLs for ohos system
+  bool SchemeIsOhosResource() const { return SchemeIs(url::kResourcesScheme); }
+
+  // Return true if the js of this scheme supports code cache.
+  bool SchemeIsCodeCacheEnabled() const;
+#endif
   // Returns true if the scheme indicates a network connection that uses TLS or
   // some other cryptographic protocol (e.g. QUIC) for security.
   //

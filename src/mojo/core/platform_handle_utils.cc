@@ -36,7 +36,7 @@ void ExtractPlatformHandlesFromSharedMemoryRegionHandle(
   // This is a Mach port. Same code as above and below, but separated for
   // clarity.
   *extracted_handle = PlatformHandle(std::move(handle));
-#elif BUILDFLAG(IS_ANDROID)
+#elif BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   // This is a file descriptor. Same code as above, but separated for clarity.
   *extracted_handle = PlatformHandle(std::move(handle));
 #else
@@ -58,7 +58,7 @@ CreateSharedMemoryRegionHandleFromPlatformHandles(
 #elif BUILDFLAG(IS_APPLE)
   DCHECK(!readonly_handle.is_valid());
   return handle.TakeMachSendRight();
-#elif BUILDFLAG(IS_ANDROID)
+#elif BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   DCHECK(!readonly_handle.is_valid());
   return handle.TakeFD();
 #else

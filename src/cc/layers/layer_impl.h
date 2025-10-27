@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/containers/flat_set.h"
 #include "base/memory/ptr_util.h"
@@ -46,6 +47,8 @@
 #include "ui/gfx/geometry/transform.h"
 #include "ui/gfx/geometry/vector2d_f.h"
 
+#include "arkweb/chromium_ext/cc/layer/layer_impl_utils.h"
+
 namespace viz {
 class ClientResourceProvider;
 class CompositorRenderPass;
@@ -61,6 +64,7 @@ class MicroBenchmarkImpl;
 class PrioritizedTile;
 class SimpleEnclosedRegion;
 class Tile;
+class LayerImplUtils;
 
 enum ViewportLayerType {
   NOT_VIEWPORT_LAYER,
@@ -401,6 +405,10 @@ class CC_EXPORT LayerImpl {
       LayerTreeImpl* tree_impl) const;
   virtual void PushPropertiesTo(LayerImpl* layer);
 
+#if BUILDFLAG(ARKWEB_WEBGL)
+  virtual bool ShouldDeferImplInvalidation() const;
+#endif
+
   // Internal to property tree construction (which only happens in tests on a
   // LayerImpl tree. See Layer::IsSnappedToPixelGridInTarget() for explanation,
   // as this mirrors that method.
@@ -581,7 +589,6 @@ class CC_EXPORT LayerImpl {
   bool contributes_to_drawn_render_surface_ : 1 = false;
 
   bool is_inner_viewport_scroll_layer_ : 1 = false;
-
   HitTestOpaqueness hit_test_opaqueness_ = HitTestOpaqueness::kTransparent;
   TouchActionRegion touch_action_region_;
 
@@ -632,6 +639,8 @@ class CC_EXPORT LayerImpl {
   bool raster_even_if_not_drawn_ : 1 = false;
 
   bool has_transform_node_ : 1 = false;
+
+  std::unique_ptr<LayerImplUtils> layer_impl_utils_;
 };
 
 }  // namespace cc

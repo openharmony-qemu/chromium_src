@@ -15,11 +15,30 @@
 #include "content/public/browser/global_routing_id.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+#include "libcef/browser/net/scheme_handler.h"
+
+CefIOThreadState::CefIOThreadState() {
+  CEF_POST_TASK(CEF_IOT, base::BindOnce(&CefIOThreadState::InitOnIOThread,
+                                        base::Unretained(this)));
+}
+#else
 CefIOThreadState::CefIOThreadState() = default;
+#endif // BUILDFLAG(ARKWEB_DEVTOOLS)
+
 
 CefIOThreadState::~CefIOThreadState() {
   CEF_REQUIRE_IOT();
 }
+
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+void CefIOThreadState::InitOnIOThread() {
+  CEF_REQUIRE_IOT();
+
+  // Add the default internal handlers.
+  scheme::RegisterInternalHandlers(this);
+}
+#endif // BUILDFLAG(ARKWEB_DEVTOOLS)
 
 void CefIOThreadState::AddHandler(
     const content::GlobalRenderFrameHostId& global_id,

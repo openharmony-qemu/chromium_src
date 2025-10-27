@@ -36,6 +36,7 @@
 #include "content/public/renderer/render_thread.h"
 #include "extensions/common/switches.h"
 #include "mojo/public/cpp/bindings/binder_map.h"
+#include "ohos_cef_ext/libcef/renderer/browser_impl_ext.h"
 #include "services/network/public/mojom/cors_origin_pattern.mojom.h"
 #include "third_party/blink/public/platform/web_string.h"
 #include "third_party/blink/public/platform/web_url.h"
@@ -44,6 +45,11 @@
 #include "third_party/blink/public/web/web_security_policy.h"
 #include "third_party/blink/public/web/web_view.h"
 #include "third_party/blink/public/web/web_view_observer.h"
+
+#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
+#include "base/logging.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/weborigin/scheme_registry_utils.h"
+#endif
 
 namespace {
 
@@ -244,6 +250,15 @@ void CefRenderManager::WebKitInitialized() {
       if (info.is_fetch_enabled) {
         blink_glue::RegisterURLSchemeAsSupportingFetchAPI(scheme);
       }
+#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
+      if (info.is_code_cache_enabled) {
+        LOG(DEBUG) << "Render manager register the scheme:"
+                   << info.scheme_name.c_str() << " supported code cache.";
+        blink::SchemeRegistryUtils::
+            RegisterURLSchemeAsSupportingCodeCacheWithResponseTime(
+                String(info.scheme_name));
+      }
+#endif
     }
   }
 

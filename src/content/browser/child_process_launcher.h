@@ -101,6 +101,10 @@ struct RenderProcessPriority {
                         ,
                         ChildProcessImportance importance
 #endif
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+                        ,
+                        base::TimeTicks background_time
+#endif
 #if !BUILDFLAG(IS_ANDROID)
                         ,
                         std::optional<base::Process::Priority> priority_override
@@ -179,6 +183,10 @@ struct RenderProcessPriority {
 
 #if BUILDFLAG(IS_ANDROID)
   ChildProcessImportance importance;
+#endif
+
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+  base::TimeTicks background_time;
 #endif
 
 #if !BUILDFLAG(IS_ANDROID)

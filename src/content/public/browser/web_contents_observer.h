@@ -782,6 +782,11 @@ class CONTENT_EXPORT WebContentsObserver : public base::CheckedObserver {
   // Invoked when the WebContents is muted/unmuted.
   virtual void DidUpdateAudioMutingState(bool muted) {}
 
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  //Set whether to the HTML play can be used to control media
+  virtual void SetHtmlPlayEnabled(bool enabled) {}
+#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
+
   // Invoked when the renderer process has toggled the tab into/out of
   // fullscreen mode.
   virtual void DidToggleFullscreenModeForTab(bool entered_fullscreen,
@@ -1025,7 +1030,12 @@ class CONTENT_EXPORT WebContentsObserver : public base::CheckedObserver {
   // Start observing a different WebContents; used with the default constructor.
   void Observe(WebContents* web_contents);
 
+#if BUILDFLAG(ARKWEB_TEST)
+  public:
+#else
  private:
+#endif  // ARKWEB_TEST
+
   friend class WebContentsImpl;
 
   void ResetWebContents();

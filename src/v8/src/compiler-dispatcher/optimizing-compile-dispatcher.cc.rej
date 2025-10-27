@@ -1,0 +1,16 @@
+--- optimizing-compile-dispatcher.cc	2025-10-20 19:53:31.328586800 +0800
++++ optimizing-compile-dispatcher.cc	2025-10-16 15:56:12.690983554 +0800
+@@ -49,10 +53,13 @@
+         if (!job) break;
+         TRACE_EVENT_WITH_FLOW0(
+             TRACE_DISABLED_BY_DEFAULT("v8.compile"), "V8.OptimizeBackground",
+             job->trace_id(),
+             TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT);
++#ifdef OHOS_JS_ENGINE
++        auto trace = HiTrace("RCS_v8.compile_V8.OptimizeBackground");
++#endif
+ 
+         if (dispatcher_->recompilation_delay_ != 0) {
+           base::OS::Sleep(base::TimeDelta::FromMilliseconds(
+               dispatcher_->recompilation_delay_));
+         }

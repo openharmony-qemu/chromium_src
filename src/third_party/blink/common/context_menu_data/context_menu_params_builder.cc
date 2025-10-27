@@ -97,6 +97,9 @@ UntrustworthyContextMenuParams ContextMenuParamsBuilder::Build(
   // TODO(crbug.com/373340199): Remove `WebMenuSourceType` and static_cast
   params.source_type = static_cast<ui::mojom::MenuSourceType>(data.source_type);
 
+#if BUILDFLAG(IS_ARKWEB)
+  blink::ContextMenuParamsBuilderUtils::SetOHOSContextMenuParam(params, data);
+#endif
   return params;
 }
 

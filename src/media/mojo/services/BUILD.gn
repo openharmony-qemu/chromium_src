@@ -7,6 +7,9 @@ import("//media/gpu/args.gni")
 import("//media/media_options.gni")
 import("//mojo/public/tools/fuzzers/mojolpm.gni")
 import("//testing/test.gni")
+if (is_arkweb){
+  import("//arkweb/build/features/features.gni")
+}
 
 enable_playback_events_recorder =
     enable_cast_receiver && (is_fuchsia || is_android)
@@ -294,7 +297,16 @@ source_set("unit_tests") {
     "//services/service_manager/public/cpp/test:test_support",
     "//testing/gmock",
     "//testing/gtest",
+    "//content/public/browser:browser",
+    "//cef:libcef_static"
   ]
+
+  if (arkweb_unittests) {
+    deps += [
+      "//content/public/browser:browser",
+      "//cef:libcef_static"
+    ]
+  }
 
   if (enable_library_cdms) {
     sources += [

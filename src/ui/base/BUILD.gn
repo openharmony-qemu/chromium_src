@@ -19,6 +19,7 @@ import("//third_party/jni_zero/jni_zero.gni")
 import("//tools/grit/grit_rule.gni")
 import("//ui/base/ui_features.gni")
 import("//ui/qt/qt.gni")
+import("//arkweb/build/features/features.gni")
 
 if (is_android) {
   import("//build/config/android/config.gni")
@@ -76,6 +77,9 @@ component("ui_data_pack") {
   ]
 
   defines = [ "IS_UI_DATA_PACK_IMPL" ]
+  if (is_ohos && build_watch) {
+    defines += [ "SUPPORT_MULTI_LANGUAGE" ]
+  }
 
   configs += [ "//build/config/compiler:wexit_time_destructors" ]
 }
@@ -391,6 +395,10 @@ component("base") {
       "themed_vector_icon.h",
     ]
 
+    include_dirs = [
+      "src/ohos_sdk/openharmony/native/sysroot/usr/include",
+    ]
+
     if (!is_android && !is_ios) {
       sources += [
         "menu_source_utils.cc",
@@ -461,6 +469,9 @@ component("base") {
   ]
 
   defines = [ "IS_UI_BASE_IMPL" ]
+  if (is_ohos && build_watch) {
+    defines += [ "SUPPORT_MULTI_LANGUAGE" ]
+  }
 
   public_deps = [
     ":buildflags",
@@ -516,6 +527,10 @@ component("base") {
     ]
   }
 
+  if (enable_arkweb) {
+    public_deps += [ "//arkweb/build/features" ]
+  }
+
   if (is_ios) {
     sources += [
       "l10n/l10n_util_mac_bridge.h",
@@ -557,7 +572,7 @@ component("base") {
     deps += [ "//ui/events" ]
   }
 
-  if (use_aura && (is_linux || is_chromeos)) {
+  if (use_aura && (is_linux || is_chromeos || is_ohos)) {
     sources += [ "resource/resource_bundle_auralinux.cc" ]
   }
 
@@ -1025,7 +1040,10 @@ test("ui_base_unittests") {
     "test/run_all_unittests.cc",
     "webui/i18n_source_stream_unittest.cc",
   ]
-
+  if (arkweb_unittests) {
+    import("//arkweb/chromium_ext/chromium_ext.gni")
+    sources += arkweb_ui_base_pointer_test_sources
+  }
   data = []
   data_deps = [ "//testing/buildbot/filters:ui_base_unittests_filters" ]
   deps = [

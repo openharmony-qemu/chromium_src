@@ -140,9 +140,13 @@ class VIZ_SERVICE_EXPORT RootCompositorFrameSinkImpl
   void StartOverdrawTracking(int interval_length_in_seconds);
   OverdrawTracker::OverdrawTimeSeries StopOverdrawTracking();
 
+  virtual RootCompositorFrameSinkImplExt* AsExt() {
+    return nullptr;
+  }
+
  private:
   class StandaloneBeginFrameObserver;
-
+  std::unique_ptr<FrameSinkManagerImplUtils> managerImplUtils;
   RootCompositorFrameSinkImpl(
       FrameSinkManagerImpl* frame_sink_manager,
       const FrameSinkId& frame_sink_id,

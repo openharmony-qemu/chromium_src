@@ -1,0 +1,15 @@
+--- cxfa_textlayout.cpp	2025-10-20 19:53:19.728009982 +0800
++++ cxfa_textlayout.cpp	2025-10-16 16:15:56.075076378 +0800
+@@ -181,11 +181,11 @@
+         break;
+       case XFA_AttributeValue::Left:
+       case XFA_AttributeValue::Radix:
+         break;
+       default:
+-        NOTREACHED();
++        NOTREACHED_NORETURN();
+     }
+     m_pBreak->SetAlignment(iAlign);
+ 
+     fStart = para->GetMarginLeft();
+     if (m_pTextProvider->IsCheckButtonAndAutoWidth()) {

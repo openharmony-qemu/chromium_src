@@ -39,6 +39,7 @@
 #include "third_party/blink/public/mojom/frame/fullscreen.mojom.h"
 #include "third_party/blink/public/mojom/frame/intrinsic_sizing_info.mojom-forward.h"
 #include "third_party/blink/public/mojom/input/input_event_result.mojom-shared.h"
+#include "third_party/blink/public/mojom/widget/platform_widget.mojom-forward.h"
 #include "third_party/blink/public/mojom/widget/record_content_to_visible_time_request.mojom.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "ui/accessibility/ax_action_handler_registry.h"
@@ -84,6 +85,9 @@ class SyntheticGestureTarget;
 // Basic implementation shared by concrete RenderWidgetHostView subclasses.
 class CONTENT_EXPORT RenderWidgetHostViewBase
     : public RenderWidgetHostView,
+#if BUILDFLAG(IS_ARKWEB)
+      public RenderWidgetHostViewBaseInterface,
+#endif
       public input::RenderWidgetHostViewInput {
  public:
   // The TooltipObserver is used in browser tests only.
@@ -136,6 +140,9 @@ class CONTENT_EXPORT RenderWidgetHostViewBase
   display::ScreenInfo GetScreenInfo() const override;
   display::ScreenInfos GetScreenInfos() const override;
   virtual void ResetGestureDetection();
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  virtual void ResetGestureDetection(bool is_lost_focus) {}
+#endif
 
   // RenderWidgetHostViewInput implementation
   base::WeakPtr<input::RenderWidgetHostViewInput> GetInputWeakPtr() override;
@@ -504,7 +511,6 @@ class CONTENT_EXPORT RenderWidgetHostViewBase
   TextInputManager* GetTextInputManager();
 
   virtual void DidNavigate();
-
   // Called when the RenderWidgetHostImpl establishes a connection to the
   // renderer process Widget.
   virtual void OnRendererWidgetCreated() {}

@@ -1,0 +1,17 @@
+--- first_run_dialog.h	2025-10-20 19:52:49.689982363 +0800
++++ first_run_dialog.h	2025-10-16 15:57:00.245872502 +0800
+@@ -10,11 +10,13 @@
+ #include "build/chromeos_buildflags.h"
+ 
+ // Hide this function on platforms where the dialog does not exist.
+ // TODO(crbug.com/40118868): Revisit the macro expression once build flag switch
+ // of lacros-chrome is complete.
+-#if BUILDFLAG(IS_MAC) || (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_LACROS))
++#if BUILDFLAG(IS_MAC) ||                                      \
++    (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_LACROS)) || \
++    BUILDFLAG(IS_OHOS)
+ 
+ namespace first_run {
+ 
+ // Shows the first run dialog. Only called for organic first runs on Mac and
+ // desktop Linux official builds when metrics reporting is not already enabled.

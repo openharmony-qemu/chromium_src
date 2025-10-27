@@ -79,6 +79,10 @@ class PdfViewWebPluginClient : public chrome_pdf::PdfViewWebPlugin::Client {
   bool HasFrame() const override;
   void DidStartLoading() override;
   void DidStopLoading() override;
+#if BUILDFLAG(ARKWEB_PDF)
+  void OnPdfScrollAtBottom(const std::string& url) override;
+  void OnPdfLoadEvent(int32_t result, const std::string& url) override;
+#endif  // BUILDFLAG(ARKWEB_PDF)
   void Print() override;
   void RecordComputedAction(const std::string& action) override;
   std::unique_ptr<chrome_pdf::PdfAccessibilityDataHandler>

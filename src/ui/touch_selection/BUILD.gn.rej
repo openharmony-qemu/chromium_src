@@ -1,0 +1,29 @@
+--- BUILD.gn	2025-10-20 19:53:31.144611766 +0800
++++ BUILD.gn	2025-10-16 15:55:05.757153672 +0800
+@@ -101,10 +109,14 @@
+     "touch_handle_unittest.cc",
+     "touch_selection_controller_unittest.cc",
+     "touch_selection_metrics_unittest.cc",
+   ]
+ 
++  if (is_arkweb) {
++    sources += arkweb_ui_touch_selection_unitest_sources
++  }
++
+   deps = [
+     ":test_support",
+     ":touch_selection",
+     "//base/test:run_all_unittests",
+     "//base/test:test_support",
+@@ -112,10 +124,11 @@
+     "//testing/gtest:gtest",
+     "//ui/base:base",
+     "//ui/events:test_support",
+     "//ui/gfx:gfx",
+     "//ui/gfx:test_support",
++    "//content/public/common:static_switches"
+   ]
+ 
+   data_deps = [ "//third_party/angle:includes" ]
+ 
+   if (use_aura) {

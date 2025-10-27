@@ -962,6 +962,7 @@ bool Debug::CheckBreakPoint(DirectHandle<BreakPoint> break_point,
 
   {
     RCS_SCOPE(isolate_, RuntimeCallCounterId::kDebuggerCallback);
+    HITRACE_RCS_SCOPE(isolate_, RuntimeCallCounterId::kDebuggerCallback);
     debug_delegate_->BreakpointConditionEvaluated(
         v8::Utils::ToLocal(isolate_->native_context()), break_point->id(),
         exception_thrown, v8::Utils::ToLocal(maybe_exception));
@@ -2594,6 +2595,7 @@ void Debug::OnException(DirectHandle<Object> exception,
       promise_object = isolate_->factory()->undefined_value();
     }
     RCS_SCOPE(isolate_, RuntimeCallCounterId::kDebuggerCallback);
+    HITRACE_RCS_SCOPE(isolate_, RuntimeCallCounterId::kDebuggerCallback);
     debug_delegate_->ExceptionThrown(
         v8::Utils::ToLocal(isolate_->native_context()),
         v8::Utils::ToLocal(exception), v8::Utils::ToLocal(promise_object),
@@ -2635,6 +2637,7 @@ void Debug::OnDebugBreak(DirectHandle<FixedArray> break_points_hit,
   }
   {
     RCS_SCOPE(isolate_, RuntimeCallCounterId::kDebuggerCallback);
+    HITRACE_RCS_SCOPE(isolate_, RuntimeCallCounterId::kDebuggerCallback);
     if (lastStepAction != StepAction::StepNone)
       break_reasons.Add(debug::BreakReason::kStep);
     debug_delegate_->BreakProgramRequested(
@@ -2683,6 +2686,7 @@ bool Debug::IsBlackboxed(DirectHandle<SharedFunctionInfo> shared) {
       DCHECK(script->IsUserJavaScript());
       {
         RCS_SCOPE(isolate_, RuntimeCallCounterId::kDebuggerCallback);
+        HITRACE_RCS_SCOPE(isolate_, RuntimeCallCounterId::kDebuggerCallback);
         is_blackboxed = this->IsFunctionBlackboxed(
             script, shared->StartPosition(), shared->EndPosition());
       }
@@ -2711,6 +2715,7 @@ bool Debug::ShouldBeSkipped() {
   Script::GetPositionInfo(script, source_position, &info);
   {
     RCS_SCOPE(isolate_, RuntimeCallCounterId::kDebuggerCallback);
+    HITRACE_RCS_SCOPE(isolate_, RuntimeCallCounterId::kDebuggerCallback);
     return debug_delegate_->ShouldBeSkipped(ToApiHandle<debug::Script>(script),
                                             info.line, info.column);
   }
@@ -2783,6 +2788,7 @@ void Debug::ProcessCompileEvent(bool has_compile_error,
   AllowJavascriptExecution allow_script(isolate_);
   {
     RCS_SCOPE(isolate_, RuntimeCallCounterId::kDebuggerCallback);
+    HITRACE_RCS_SCOPE(isolate_, RuntimeCallCounterId::kDebuggerCallback);
     debug_delegate_->ScriptCompiled(ToApiHandle<debug::Script>(script),
                                     running_live_edit_, has_compile_error);
   }

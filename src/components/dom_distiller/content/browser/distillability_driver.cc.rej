@@ -1,0 +1,19 @@
+--- distillability_driver.cc	2025-10-20 19:52:52.865830386 +0800
++++ distillability_driver.cc	2025-10-16 15:54:56.680427880 +0800
+@@ -151,10 +179,16 @@
+   DistillabilityResultPageData* page_data =
+       DistillabilityResultPageData::GetForPage(
+           GetWebContents().GetPrimaryPage());
+   page_data->distillability_result = result;
+   latest_result_ = result;
++
++#if BUILDFLAG(ARKWEB_READER_MODE)
++  LOG(INFO) << "[Distiller] DistillabilityDriver::OnDistillability OnIsPageDistillable";
++  int page_type = static_cast<int32_t>(result.page_info.pageType);
++  GetWebContents().OnIsPageDistillable(page_type, result.page_info.distillablePageUrl, result.page_info.title);
++#endif
+   for (auto& observer : observers_)
+     observer.OnResult(result);
+ }
+ 
+ WEB_CONTENTS_USER_DATA_KEY_IMPL(DistillabilityDriver);

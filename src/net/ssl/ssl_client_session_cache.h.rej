@@ -1,0 +1,16 @@
+--- ssl_client_session_cache.h	2025-10-20 19:52:57.222207296 +0800
++++ ssl_client_session_cache.h	2025-10-16 15:55:02.785177859 +0800
+@@ -52,10 +52,13 @@
+ 
+     HostPortPair server;
+     std::optional<IPAddress> dest_ip_addr;
+     NetworkAnonymizationKey network_anonymization_key;
+     PrivacyMode privacy_mode = PRIVACY_MODE_DISABLED;
++#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
++    bool disable_legacy_crypto = false;
++#endif
+   };
+ 
+   explicit SSLClientSessionCache(const Config& config);
+ 
+   SSLClientSessionCache(const SSLClientSessionCache&) = delete;

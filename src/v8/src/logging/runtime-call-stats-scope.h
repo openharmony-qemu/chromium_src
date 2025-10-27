@@ -50,6 +50,25 @@ RuntimeCallTimerScope::RuntimeCallTimerScope(
 
 #endif  // defined(V8_RUNTIME_CALL_STATS)
 
+#if defined(HITRACE_RUNTIME_CALL_STATS) && !defined(V8_RUNTIME_CALL_STATS)
+
+#define HITRACE_RCS_SCOPE(...)                                        \
+  v8::internal::RuntimeCallTimerScope CONCAT(hitrace_rcs_timer_scope, \
+                                             __LINE__)(__VA_ARGS__)
+
+RuntimeCallTimerScope::RuntimeCallTimerScope(Isolate* isolate,
+                                             RuntimeCallCounterId counter_id) {
+  if (V8_LIKELY(!v8::internal::rcs_enable)) return;
+  stats_ = isolate->counters()->runtime_call_stats();
+  stats_->Enter(&timer_, counter_id);
+}
+
+#else
+
+#define HITRACE_RCS_SCOPE(...)
+
+#endif // defined(HITRACE_RUNTIME_CALL_STATS)
+
 }  // namespace internal
 }  // namespace v8
 

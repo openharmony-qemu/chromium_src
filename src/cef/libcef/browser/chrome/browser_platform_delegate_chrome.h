@@ -5,15 +5,22 @@
 #ifndef CEF_LIBCEF_BROWSER_CHROME_BROWSER_PLATFORM_DELEGATE_CHROME_H_
 #define CEF_LIBCEF_BROWSER_CHROME_BROWSER_PLATFORM_DELEGATE_CHROME_H_
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "cef/libcef/browser/browser_platform_delegate.h"
 #include "cef/libcef/browser/native/browser_platform_delegate_native.h"
 
 class Browser;
-
+#if BUILDFLAG(IS_ARKWEB)
+class ArkWebCefBrowserPlatformDelegateExt;
+#endif
 // Implementation of Chrome-based browser functionality.
 class CefBrowserPlatformDelegateChrome
+#if BUILDFLAG(IS_ARKWEB)
+    : public ArkWebCefBrowserPlatformDelegateExt,
+#else
     : public CefBrowserPlatformDelegate,
+#endif
       public CefBrowserPlatformDelegateNative::WindowlessHandler {
  public:
   explicit CefBrowserPlatformDelegateChrome(
@@ -55,6 +62,14 @@ class CefBrowserPlatformDelegateChrome
   CefBrowserPlatformDelegateNative* native_delegate() const {
     return native_delegate_.get();
   }
+
+#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
+  void OnOnlineRenderToForeground() override {}
+#endif
+
+#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
+  void WasOccluded(bool occluded) override {}
+#endif
 
  protected:
   gfx::NativeWindow GetNativeWindow() const;

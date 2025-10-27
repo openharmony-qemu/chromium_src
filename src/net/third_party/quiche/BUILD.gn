@@ -84,6 +84,11 @@ component("quiche") {
     "//third_party/protobuf:protobuf_lite",
     "//third_party/zlib",
   ]
+  if (defined(is_arkweb) && is_arkweb) {
+    deps += [
+      "//base:base_static",
+    ]
+  }
 
   public_deps = [
     ":net_quic_proto",
@@ -790,6 +795,7 @@ fuzzer_test("net_quic_framer_fuzzer") {
     "//net:quic_test_tools",
     "//net:test_support",
     "//net/data/ssl/certificates:generate_fuzzer_cert_includes",
+    "//cef:libcef_static",
   ]
 }
 
@@ -802,6 +808,7 @@ fuzzer_test("net_quic_framer_process_data_packet_fuzzer") {
     "//net:quic_test_tools",
     "//net:test_support",
     "//net/data/ssl/certificates:generate_fuzzer_cert_includes",
+    "//cef:libcef_static",
   ]
 }
 
@@ -810,9 +817,9 @@ fuzzer_test("net_qpack_decoder_fuzzer") {
   deps = [
     "//base",
     "//net",
-    "//net:net_fuzzer_test_support",
     "//net:quic_test_tools",
     "//net:test_support",
+    "//cef:libcef_static",
   ]
 }
 
@@ -824,6 +831,7 @@ fuzzer_test("net_qpack_encoder_stream_receiver_fuzzer") {
     "//base",
     "//net",
     "//net:net_fuzzer_test_support",
+    "//cef:libcef_static",
   ]
 }
 
@@ -834,9 +842,9 @@ fuzzer_test("net_qpack_encoder_stream_sender_fuzzer") {
   deps = [
     "//base",
     "//net",
-    "//net:net_fuzzer_test_support",
     "//net:quic_test_tools",
     "//net:test_support",
+    "//cef:libcef_static",
   ]
 }
 
@@ -845,9 +853,9 @@ fuzzer_test("net_qpack_round_trip_fuzzer") {
   deps = [
     "//base",
     "//net",
-    "//net:net_fuzzer_test_support",
     "//net:quic_test_tools",
     "//net:test_support",
+    "//cef:libcef_static",
   ]
 }
 

@@ -1,0 +1,16 @@
+--- ink_drop_event_handler.cc	2025-10-20 19:53:31.152610681 +0800
++++ ink_drop_event_handler.cc	2025-10-16 15:55:05.764830688 +0800
+@@ -76,10 +76,13 @@
+       if (current_ink_drop_state == InkDropState::ACTIVATED)
+         return;
+       ink_drop_state = InkDropState::ACTION_PENDING;
+       break;
+     case ui::EventType::kGestureLongPress:
++#if BUILDFLAG(ARKWEB_DRAG_DROP)
++    case ui::EventType::kGestureDragLongPress:
++#endif
+       if (current_ink_drop_state == InkDropState::ACTIVATED)
+         return;
+       ink_drop_state = InkDropState::ALTERNATE_ACTION_PENDING;
+       break;
+     case ui::EventType::kGestureLongTap:

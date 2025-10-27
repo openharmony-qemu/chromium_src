@@ -1,0 +1,14 @@
+--- cef_types_mac.h	2025-10-20 19:52:47.977895045 +0800
++++ cef_types_mac.h	2025-10-16 15:55:22.342586992 +0800
+@@ -35,11 +35,10 @@
+ 
+ #if defined(OS_MAC)
+ #include "include/internal/cef_string.h"
+ #include "include/internal/cef_types_color.h"
+ #include "include/internal/cef_types_geometry.h"
+-#include "include/internal/cef_types_osr.h"
+ #include "include/internal/cef_types_runtime.h"
+ 
+ // Handle types.
+ // Actually NSCursor*
+ #define cef_cursor_handle_t void*

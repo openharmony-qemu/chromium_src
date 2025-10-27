@@ -21,9 +21,12 @@ BMPImageDecoder::BMPImageDecoder(AlphaOption alpha_option,
     : ImageDecoder(alpha_option,
                    ImageDecoder::kDefaultBitDepth,
                    color_behavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
                    cc::AuxImage::kDefault,
+#endif
                    max_decoded_bytes),
-      decoded_offset_(0) {}
+      decoded_offset_(0) {
+}
 
 BMPImageDecoder::~BMPImageDecoder() = default;
 

@@ -1,0 +1,17 @@
+--- BUILD.gn	2025-10-20 19:53:01.094202840 +0800
++++ BUILD.gn	2025-10-16 16:07:39.981322167 +0800
+@@ -172,10 +173,14 @@
+     "//third_party/blink/renderer/platform/wtf",
+     "//third_party/libyuv",
+   ]
+ 
+   data = [ "//third_party/blink/web_tests/images/resources/" ]
++
++  if (enable_arkweb) {
++    deps += [ "//arkweb/build/features" ]
++  }
+ }
+ 
+ fuzzable_proto_library("fuzzer_protos") {
+   generate_python = true
+   sources = [ "fuzzer_inputs.proto" ]

@@ -1742,7 +1742,7 @@ CXFA_Node* CXFA_Document::DataMerge_CopyContainer(CXFA_Node* pTemplateNode,
     case XFA_Element::Variables:
       return nullptr;
     default:
-      NOTREACHED();
+      NOTREACHED_NORETURN();
   }
 }
 

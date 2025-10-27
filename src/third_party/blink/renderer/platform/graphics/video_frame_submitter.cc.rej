@@ -1,0 +1,10 @@
+--- video_frame_submitter.cc	2025-10-20 19:53:01.202201169 +0800
++++ video_frame_submitter.cc	2025-10-16 16:07:40.107641629 +0800
+@@ -1042,7 +1069,6 @@
+   }
+ 
+   opacity_ = new_opacity;
+   surface_embedder_->OnOpacityChanged(new_opacity == Opacity::kIsOpaque);
+ }
+-
+ }  // namespace blink

@@ -213,6 +213,7 @@ TextFragmentGenerationNavigationTest::GenerateAndNavigate(
           expected_highlighted_text == actual_highlighted_text};
 }
 
+#if !BUILDFLAG(ARKWEB_UNITTESTS)
 TEST_P(TextFragmentGenerationNavigationTest,
        DataDrivenGenerationAndNavigation) {
   RunOneDataDrivenTest(GetParam(), GetOutputDirectory(),
@@ -224,5 +225,6 @@ INSTANTIATE_TEST_SUITE_P(
     TextFragmentGenerationNavigationTest,
     testing::ValuesIn(
         shared_highlighting::SharedHighlightingDataDrivenTest::GetTestFiles()));
+#endif
 
 }  // namespace blink

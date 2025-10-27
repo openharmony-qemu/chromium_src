@@ -6,6 +6,8 @@
 
 #include "core/fpdfapi/font/cpdf_cmapparser.h"
 
+#include <ctype.h>
+
 #include <array>
 #include <iterator>
 

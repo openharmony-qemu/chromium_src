@@ -169,6 +169,17 @@ class WebContentsView;
 struct MHTMLGenerationParams;
 class PreloadingAttempt;
 
+#if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
+class DisplayCutoutHostOhos;
+#endif
+
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+enum class RendererIsUnresponsiveReason;
+#endif
+
+class WebContentsImplExt;
+class WebContentsImplUtils;
+
 namespace mojom {
 class CreateNewWindowParams;
 }  // namespace mojom
@@ -667,7 +678,11 @@ class CONTENT_EXPORT WebContentsImpl
   const blink::web_pref::WebPreferences& GetOrCreateWebPreferences() override;
   void NotifyPreferencesChanged() override;
   void SetWebPreferences(const blink::web_pref::WebPreferences& prefs) override;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  void OnWebPreferencesChanged(int32_t usage_scenario_type = 99) override;
+#else
   void OnWebPreferencesChanged() override;
+#endif
 
   void AboutToBeDiscarded(WebContents* new_contents) override;
   void NotifyWasDiscarded() override;
@@ -1153,7 +1168,12 @@ class CONTENT_EXPORT WebContentsImpl
       RenderWidgetHostImpl* render_widget_host) override;
   void RendererUnresponsive(
       RenderWidgetHostImpl* render_widget_host,
-      base::RepeatingClosure hang_monitor_restarter) override;
+      base::RepeatingClosure hang_monitor_restarter
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+      ,
+      RendererIsUnresponsiveReason reason
+#endif
+     ) override;
   void RendererResponsive(RenderWidgetHostImpl* render_widget_host) override;
   void RequestToLockPointer(RenderWidgetHostImpl* render_widget_host,
                             bool user_gesture,
@@ -1249,6 +1269,10 @@ class CONTENT_EXPORT WebContentsImpl
 
   void LoadingStateChanged(LoadingState new_state) override;
   void DidStartLoading(FrameTreeNode* frame_tree_node) override;
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+  void DidStartLoading(FrameTreeNode* frame_tree_node,
+                       bool should_show_loading_ui) override;
+#endif
   void DidStopLoading() override;
   bool IsHidden() override;
   FrameTreeNodeId GetOuterDelegateFrameTreeNodeId() override;
@@ -1464,7 +1488,7 @@ class CONTENT_EXPORT WebContentsImpl
                                  const gfx::RectF& active_rect);
 #endif
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT) || BUILDFLAG(IS_ANDROID)
   // Called by WebContentsAndroid to send the Display Cutout safe area to
   // DisplayCutoutHostImpl.
   void SetDisplayCutoutSafeArea(gfx::Insets insets);
@@ -1510,7 +1534,11 @@ class CONTENT_EXPORT WebContentsImpl
   bool has_persistent_video() { return has_persistent_video_; }
 
   // Returns the focused frame's input handler.
+#if BUILDFLAG(ARKWEB_TEST)
+  virtual blink::mojom::FrameWidgetInputHandler* GetFocusedFrameWidgetInputHandler();
+#else
   blink::mojom::FrameWidgetInputHandler* GetFocusedFrameWidgetInputHandler();
+#endif  // BUILDFLAG(ARKWEB_TEST)
 
   // A render view-originated drag has ended. Informs the render view host and
   // WebContentsDelegate.
@@ -1624,6 +1652,9 @@ class CONTENT_EXPORT WebContentsImpl
   friend class TestWebContentsDestructionObserver;
   friend class BeforeUnloadBlockingDelegate;
   friend class TestWCDelegateForDialogsAndFullscreen;
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class WebContentsImplUtilsTest;
+#endif
 
   FRIEND_TEST_ALL_PREFIXES(WebContentsImplTest, CaptureHoldsWakeLock);
   FRIEND_TEST_ALL_PREFIXES(WebContentsImplTest, NoJSMessageOnInterstitials);
@@ -1722,6 +1753,10 @@ class CONTENT_EXPORT WebContentsImpl
 
   // TODO(brettw) TestWebContents shouldn't exist!
   friend class TestWebContents;
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class TestWebContentsImplExt;
+  friend class WebContentsImplExtTest;
+#endif
 
   class RenderWidgetHostDestructionObserver;
   class WebContentsDestructionObserver;
@@ -1837,7 +1872,7 @@ class CONTENT_EXPORT WebContentsImpl
     bool is_notifying_observers_ = false;
     base::ObserverList<WebContentsObserver> observers_;
   };
-
+  raw_ptr<WebContentsImplUtils> implUtils_;
   // See WebContents::Create for a description of these parameters.
   explicit WebContentsImpl(BrowserContext* browser_context);
 
@@ -2023,7 +2058,11 @@ class CONTENT_EXPORT WebContentsImpl
 
   // TODO(creis): This should take in a FrameTreeNode to know which node's
   // render manager to return.  For now, we just return the root's.
+#if BUILDFLAG(ARKWEB_TEST)
+  virtual RenderFrameHostManager* GetRenderManager();
+#else
   RenderFrameHostManager* GetRenderManager();
+#endif  // BUILDFLAG(ARKWEB_TEST)
 
   // Removes browser plugin embedder if there is one.
   void RemoveBrowserPluginEmbedder();
@@ -2689,6 +2728,9 @@ class CONTENT_EXPORT WebContentsImpl
   // WebContents::CreateParams::picture_in_picture_options.
   std::optional<blink::mojom::PictureInPictureWindowOptions>
       picture_in_picture_options_;
+#if BUILDFLAG(ARKWEB_PIP)
+  bool picture_in_picture_active_ = false;
+#endif
 
   // Only set if this WebContents represents a document picture-in-picture
   // window. This points to the WebContents that originally opened this
@@ -2786,5 +2828,6 @@ class CONTENT_EXPORT WebContentsImpl::FriendWrapper {
 };
 
 }  // namespace content
+#include "arkweb/chromium_ext/content/browser/web_contents/web_contents_impl_ext.h"
 
 #endif  // CONTENT_BROWSER_WEB_CONTENTS_WEB_CONTENTS_IMPL_H_

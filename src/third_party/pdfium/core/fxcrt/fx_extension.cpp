@@ -8,10 +8,7 @@
 
 #include <wchar.h>
 
-#include <array>
-
 #include "core/fxcrt/check.h"
-#include "core/fxcrt/check_op.h"
 #include "core/fxcrt/compiler_specific.h"
 #include "core/fxcrt/fx_system.h"
 #include "core/fxcrt/utf16.h"

@@ -87,6 +87,9 @@ class CC_EXPORT ProxyImpl : public LayerTreeHostImplClient,
       std::vector<std::unique_ptr<SwapPromise>> swap_promises,
       bool scroll_and_viewport_changes_synced);
   void SetVisibleOnImpl(bool visible);
+#if BUILDFLAG(ARKWEB_PINCH_SMOOTH)
+  void SetPinchSmoothModeOnImpl(bool isEnable);
+#endif
   void SetShouldWarmUpOnImpl();
   void ReleaseLayerTreeFrameSinkOnImpl(CompletionEvent* completion);
   void FinishGLOnImpl(CompletionEvent* completion);
@@ -202,7 +205,13 @@ class CC_EXPORT ProxyImpl : public LayerTreeHostImplClient,
       base::TimeTicks time) override;
   void FrameIntervalUpdated(base::TimeDelta interval) override {}
   void OnBeginImplFrameDeadline() override;
-
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  void HandleScrollUpdateForInternalBeginFrame(
+      const viz::BeginFrameArgs& args) override;
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void OnScheduledActionDraw() override;
+#endif
   DrawResult DrawInternal(bool forced_draw);
 
   bool IsImplThread() const;

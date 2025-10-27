@@ -330,6 +330,11 @@ class MockWebContentsObserver : public WebContentsObserver {
               (WebContents * new_contents),
               (override));
   MOCK_METHOD(void, WasDiscarded, (), (override));
+
+#if BUILDFLAG(ARKWEB_BGTASK)
+  MOCK_METHOD(void, OnBrowserForeground, (), (override));
+  MOCK_METHOD(void, OnBrowserBackground, (), (override));
+#endif
 };
 
 }  // namespace content

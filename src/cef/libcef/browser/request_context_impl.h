@@ -158,9 +158,12 @@ class CefRequestContextImpl : public CefRequestContext {
   // frame is deleted.
   void OnRenderFrameDeleted(const content::GlobalRenderFrameHostId& global_id,
                             bool is_main_frame);
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
+#endif
 
  private:
   friend class CefRequestContext;
+  friend ArkWebRequestContextImplExt;
 
   struct Config {
     // True if wrapping the global context.
@@ -182,6 +185,9 @@ class CefRequestContextImpl : public CefRequestContext {
     // CefBrowserContext has been created. Should be set when creating a new
     // CefRequestContext via the API.
     int unique_id = -1;
+#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
+    bool incognito_mode = false;
+#endif
   };
 
   static CefRefPtr<CefRequestContextImpl> GetOrCreateRequestContext(
@@ -195,6 +201,7 @@ class CefRequestContextImpl : public CefRequestContext {
   void ClearCertificateExceptionsInternal(
       CefRefPtr<CefCompletionCallback> callback,
       CefBrowserContext::Getter browser_context_getter);
+
   void ClearHttpAuthCredentialsInternal(
       CefRefPtr<CefCompletionCallback> callback,
       CefBrowserContext::Getter browser_context_getter);

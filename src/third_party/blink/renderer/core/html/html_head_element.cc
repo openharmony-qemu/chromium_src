@@ -25,6 +25,10 @@
 
 #include "third_party/blink/renderer/core/html_names.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/html_head_element_for_include.cc"
+#endif
+
 namespace blink {
 
 HTMLHeadElement::HTMLHeadElement(Document& document)

@@ -1,0 +1,17 @@
+--- mojo_video_decoder_service.cc	2025-10-20 19:52:56.758201538 +0800
++++ mojo_video_decoder_service.cc	2025-10-16 15:55:01.946075908 +0800
+@@ -30,10 +30,14 @@
+ #include "mojo/public/c/system/types.h"
+ #include "mojo/public/cpp/bindings/message.h"
+ #include "mojo/public/cpp/system/buffer.h"
+ #include "mojo/public/cpp/system/handle.h"
+ 
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/media/mojo/services/mojo_video_decoder_service_for_include.cc"
++#endif
++
+ namespace media {
+ 
+ namespace {
+ 
+ // Number of active (Decode() was called at least once)

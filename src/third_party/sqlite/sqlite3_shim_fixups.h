@@ -4,6 +4,7 @@
 
 #ifndef THIRD_PARTY_SQLITE_SQLITE3_SHIM_FIXUPS_H_
 #define THIRD_PARTY_SQLITE_SQLITE3_SHIM_FIXUPS_H_
+#include "arkweb/build/features/features.h"
 
 // This file contains various fixups for the amalgamated SQLite code.
 // It is intended to be included in sqlite3_shim.c only.
@@ -44,7 +45,7 @@
 //
 // malloc_usable_size() is not exported by the Android NDK. It is not
 // implemented by uclibc.
-#if !defined(__UCLIBC__) && !defined(__ANDROID__)
+#if !defined(__UCLIBC__) && !defined(__ANDROID__) && !BUILDFLAG(ARKWEB_MEM)
 #define HAVE_MALLOC_H 1
 #define HAVE_MALLOC_USABLE_SIZE 1
 #endif

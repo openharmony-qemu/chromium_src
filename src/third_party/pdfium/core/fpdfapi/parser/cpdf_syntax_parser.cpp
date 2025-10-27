@@ -6,6 +6,8 @@
 
 #include "core/fpdfapi/parser/cpdf_syntax_parser.h"
 
+#include <ctype.h>
+
 #include <algorithm>
 #include <utility>
 

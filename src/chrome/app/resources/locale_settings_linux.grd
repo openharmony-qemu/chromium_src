@@ -89,6 +89,8 @@
     <output filename="platform_locale_settings_vi.pak" type="data_package" lang="vi" />
     <output filename="platform_locale_settings_zh-CN.pak" type="data_package" lang="zh-CN" />
     <output filename="platform_locale_settings_zh-TW.pak" type="data_package" lang="zh-TW" />
+    <!-- <if expr="pp_ifdef('arkweb_i18n')"> -->
+    <part file="../../../arkweb/chromium_ext/chrome/app/resources/locale_settings_extra.grdp" />
 
     <!-- Pseudolocales -->
     <output filename="platform_locale_settings_ar-XB.pak" type="data_package" lang="ar-XB" />
@@ -147,6 +149,8 @@
     <file path="platform_locale_settings/locale_settings_linux_vi.xtb" lang="vi" />
     <file path="platform_locale_settings/locale_settings_linux_zh-CN.xtb" lang="zh-CN" />
     <file path="platform_locale_settings/locale_settings_linux_zh-TW.xtb" lang="zh-TW" />
+    <!-- <if expr="pp_ifdef('arkweb_i18n')"> -->
+    <part file="../../../arkweb/chromium_ext/chrome/app/resources/locale_settings_platform_linux.grdp" />
   </translations>
   <release seq="1" allow_pseudo="false">
     <messages fallback_to_english="true">

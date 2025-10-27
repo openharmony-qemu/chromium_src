@@ -1,0 +1,169 @@
+--- chrome_browser_main.cc	2025-10-20 19:52:49.422594629 +0800
++++ chrome_browser_main.cc	2025-10-16 15:56:59.926822785 +0800
+@@ -297,16 +297,18 @@
+ #include "chrome/browser/metrics/desktop_session_duration/touch_mode_stats_tracker.h"
+ #include "chrome/browser/profiles/profile_activity_metrics_recorder.h"
+ #include "ui/base/pointer/touch_ui_controller.h"
+ #endif
+ 
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || \
++    BUILDFLAG(ARKWEB_TEST)
+ #include "chrome/browser/headless/headless_mode_metrics.h"  // nogncheck
+ #include "chrome/browser/headless/headless_mode_util.h"     // nogncheck
+ #include "components/headless/select_file_dialog/headless_select_file_dialog.h"
+ #include "ui/gfx/switches.h"
+-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC)
++#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) ||
++        // BUILDFLAG(ARKWEB_TEST)
+ 
+ #if BUILDFLAG(ENABLE_PROCESS_SINGLETON)
+ #include "chrome/browser/chrome_process_singleton.h"
+ #include "chrome/browser/process_singleton.h"
+ #endif  // BUILDFLAG(ENABLE_PROCESS_SINGLETON)
+@@ -493,18 +495,21 @@
+     base::UmaHistogramEnumeration(
+         "ProfilePicker.StartupMode.FallbackProfileUsed", profile_info.mode);
+   }
+ 
+   if (profile_info.mode == StartupProfileMode::kError) {
++#if !BUILDFLAG(IS_OHOS)
++    // TODO:OHOS
+     ProfileErrorType error_type =
+         profile_dir_specified ? ProfileErrorType::CREATE_FAILURE_SPECIFIED
+                               : ProfileErrorType::CREATE_FAILURE_ALL;
+ 
+     // TODO(lwchkg): What diagnostics do you want to include in the feedback
+     // report when an error occurs?
+     ShowProfileErrorDialog(error_type, IDS_COULDNT_STARTUP_PROFILE_ERROR,
+                            "Error creating initial profile.");
++#endif
+     return profile_info;
+   }
+ #endif  // BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_ANDROID)
+ 
+   UMA_HISTOGRAM_LONG_TIMES(
+@@ -517,11 +522,11 @@
+                           SecKeychainCallbackInfo* info, void* context) {
+   return noErr;
+ }
+ #endif  // BUILDFLAG(IS_MAC)
+ 
+-#if BUILDFLAG(ENABLE_PROCESS_SINGLETON)
++#if BUILDFLAG(ENABLE_PROCESS_SINGLETON) || BUILDFLAG(ARKWEB_TEST)
+ void ProcessSingletonNotificationCallbackImpl(
+     base::CommandLine command_line,
+     const base::FilePath& current_directory) {
+   // Drop the request if the browser process is already shutting down.
+   if (!g_browser_process || g_browser_process->IsShuttingDown() ||
+@@ -835,10 +844,17 @@
+       startup_data_->chrome_feature_list_creator();
+   browser_process_->SetMetricsServices(
+       chrome_feature_list_creator->TakeMetricsServicesManager(),
+       chrome_feature_list_creator->GetMetricsServicesManagerClient());
+ 
++#if BUILDFLAG(IS_OHOS)
++  // TODO:OHOS
++  if (browser_process_) {
++    return content::RESULT_CODE_NORMAL_EXIT;
++  }
++#endif
++
+   if (load_local_state_result == chrome::RESULT_CODE_MISSING_DATA &&
+       failed_to_load_resource_bundle) {
+     if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+             switches::kNoErrorDialogs)) {
+       return chrome::RESULT_CODE_MISSING_DATA;
+@@ -1053,11 +1069,14 @@
+ 
+ int ChromeBrowserMainParts::PreCreateThreadsImpl() {
+   TRACE_EVENT0("startup", "ChromeBrowserMainParts::PreCreateThreadsImpl");
+ 
+   if (browser_process_->GetApplicationLocale().empty()) {
++#if !BUILDFLAG(IS_OHOS)
++    // TODO:OHOS
+     ShowMissingLocaleMessageBox();
++#endif
+     return chrome::RESULT_CODE_MISSING_DATA;
+   }
+ 
+ #if !BUILDFLAG(IS_ANDROID)
+   MaybeShowInvalidUserDataDirWarningDialog();
+@@ -1127,11 +1146,11 @@
+     if (!base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kApp) &&
+         !base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kAppId)) {
+       browser_creator_->AddFirstRunTabs(master_prefs_->new_tabs);
+     }
+ 
+-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+     // Create directory for user-level Native Messaging manifest files. This
+     // makes it less likely that the directory will be created by third-party
+     // software with incorrect owner or permission. See crbug.com/725513 .
+     base::FilePath user_native_messaging_dir;
+     CHECK(base::PathService::Get(chrome::DIR_USER_NATIVE_MESSAGING,
+@@ -1578,11 +1608,10 @@
+ #if defined(USE_AURA)
+   // Make sure aura::Env has been initialized.
+   CHECK(aura::Env::GetInstance());
+ #endif  // defined(USE_AURA)
+ 
+-
+ #if !BUILDFLAG(ENABLE_CEF)
+ #if BUILDFLAG(IS_WIN)
+   // We must call DoUpgradeTasks now that we own the browser singleton to
+   // finish upgrade tasks (swap) and relaunch if necessary.
+   if (upgrade_util::DoUpgradeTasks(*base::CommandLine::ForCurrentProcess()))
+@@ -1614,20 +1643,21 @@
+       browser_process_->local_state(),
+       browser_process_->system_network_context_manager()
+           ->GetSharedURLLoaderFactory());
+ #endif  // !BUILDFLAG(IS_CHROMEOS)
+ 
+-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS)
++#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_OHOS)
+   // Wait for the chrome browser cloud management enrollment to finish.
+   // If enrollment is not mandatory, this function returns immediately.
+   // Abort the launch process if required enrollment fails.
+   if (!browser_process_->browser_policy_connector()
+            ->chrome_browser_cloud_management_controller()
+            ->WaitUntilPolicyEnrollmentFinished()) {
+     return chrome::RESULT_CODE_CLOUD_POLICY_ENROLLMENT_FAILED;
+   }
+-#endif  // !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS)
++#endif  // !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS) && \
++        // !BUILDFLAG(IS_OHOS)
+ 
+ #if BUILDFLAG(IS_WIN) && !BUILDFLAG(ENABLE_CEF)
+   // Check if there is any machine level Chrome installed on the current
+   // machine. If yes and the current Chrome process is user level, we do not
+   // allow the user level Chrome to run. So we notify the user and uninstall
+@@ -1652,10 +1682,15 @@
+   // and more directly Profile.CreateAndInitializeProfile.
+   StartupProfileInfo profile_info = CreateInitialProfile(
+       user_data_dir_, *base::CommandLine::ForCurrentProcess());
+   base::UmaHistogramEnumeration(
+       "ProfilePicker.StartupMode.CreateInitialProfile", profile_info.mode);
++#if !BUILDFLAG(IS_OHOS)
++  // TODO:OHOS
++  if (profile_info.mode == StartupProfileMode::kError)
++    return content::RESULT_CODE_NORMAL_EXIT;
++#endif
+ 
+   if (profile_info.mode == StartupProfileMode::kError)
+     return content::RESULT_CODE_NORMAL_EXIT;
+ 
+ #if !BUILDFLAG(IS_ANDROID)
+@@ -2090,11 +2125,11 @@
+   DCHECK(GetMainRunLoopInstance());
+   return std::move(GetMainRunLoopInstance());
+ }
+ #endif  // !BUILDFLAG(IS_ANDROID)
+ 
+-#if BUILDFLAG(ENABLE_PROCESS_SINGLETON)
++#if BUILDFLAG(ENABLE_PROCESS_SINGLETON) || BUILDFLAG(ARKWEB_TEST)
+ // static
+ bool ChromeBrowserMainParts::ProcessSingletonNotificationCallback(
+     base::CommandLine command_line,
+     const base::FilePath& current_directory) {
+   // Drop the request if the browser process is already shutting down.

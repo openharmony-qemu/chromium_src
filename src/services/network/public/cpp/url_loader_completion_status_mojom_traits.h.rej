@@ -1,0 +1,19 @@
+--- url_loader_completion_status_mojom_traits.h	2025-10-20 19:52:57.670211348 +0800
++++ url_loader_completion_status_mojom_traits.h	2025-10-16 15:55:03.336587713 +0800
+@@ -58,10 +59,16 @@
+   static bool exists_in_memory_cache(
+       const network::URLLoaderCompletionStatus& status) {
+     return status.exists_in_memory_cache;
+   }
+ 
++#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
++  static bool abort_due_to_cef_browser_destroyed(const network::URLLoaderCompletionStatus& status) {
++    return status.abort_due_to_cef_browser_destroyed;
++  }
++#endif  //  ARKWEB_EX_DOWNLOAD
++
+   static const base::TimeTicks& completion_time(
+       const network::URLLoaderCompletionStatus& status) {
+     return status.completion_time;
+   }
+ 

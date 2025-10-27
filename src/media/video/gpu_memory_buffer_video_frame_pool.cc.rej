@@ -1,0 +1,14 @@
+--- gpu_memory_buffer_video_frame_pool.cc	2025-10-20 19:52:56.782201908 +0800
++++ gpu_memory_buffer_video_frame_pool.cc	2025-10-16 15:55:02.221780835 +0800
+@@ -738,10 +742,11 @@
+ 
+   frame_copy_requests_.emplace_back(std::move(video_frame),
+                                     std::move(frame_ready_cb), passthrough);
+   if (frame_copy_requests_.size() == 1u)
+     StartCopy();
++#endif
+ }
+ 
+ bool GpuMemoryBufferVideoFramePool::PoolImpl::OnMemoryDump(
+     const base::trace_event::MemoryDumpArgs& args,
+     base::trace_event::ProcessMemoryDump* pmd) {

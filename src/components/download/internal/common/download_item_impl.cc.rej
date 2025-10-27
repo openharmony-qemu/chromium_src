@@ -1,0 +1,64 @@
+--- download_item_impl.cc	2025-10-20 19:52:52.885839742 +0800
++++ download_item_impl.cc	2025-10-16 15:54:56.704402221 +0800
+@@ -63,22 +63,35 @@
+ #include "net/http/http_status_code.h"
+ #include "net/traffic_annotation/network_traffic_annotation.h"
+ #include "net/url_request/referrer_policy.h"
+ #include "services/metrics/public/cpp/ukm_source_id.h"
+ 
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
++
+ #if BUILDFLAG(IS_ANDROID)
+ #include "components/download/internal/common/android/download_collection_bridge.h"
+ #endif  // BUILDFLAG(IS_ANDROID)
+ 
+ #if BUILDFLAG(IS_MAC)
+ #include "base/mac/mac_util.h"
+ #endif  // BUILDFLAG(IS_MAC)
+ 
++#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
++#include "base/command_line.h"
++#include "content/public/common/content_switches.h"
++#endif
++
+ namespace download {
+ 
+ namespace {
+ 
++#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
++const char kRequestMethod[] = "request_method";
++#endif
++
+ void DeleteDownloadedFileDone(base::WeakPtr<DownloadItemImpl> item,
+                               base::OnceCallback<void(bool)> callback,
+                               bool success) {
+   if (success && item.get())
+     item->OnDownloadedFileRemoved();
+@@ -2134,19 +2208,25 @@
+                                   download_source_);
+   }
+   if (is_parallelizable) {
+     RecordParallelizableDownloadCount(COMPLETED_COUNT,
+                                       IsParallelDownloadEnabled());
++#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
++    if (response_headers_) {
++#endif
+     int64_t content_length = -1;
+     if (response_headers_->response_code() != net::HTTP_PARTIAL_CONTENT) {
+       content_length = response_headers_->GetContentLength();
+     } else {
+       int64_t first_byte = -1;
+       int64_t last_byte = -1;
+       response_headers_->GetContentRangeFor206(&first_byte, &last_byte,
+                                                &content_length);
+     }
++#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
++    }
++#endif
+   }
+ 
+   if (auto_opened_) {
+     // If it was already handled by the delegate, do nothing.
+   } else if (GetOpenWhenComplete() || ShouldOpenFileBasedOnExtension() ||

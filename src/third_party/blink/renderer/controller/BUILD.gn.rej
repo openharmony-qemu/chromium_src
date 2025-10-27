@@ -1,0 +1,17 @@
+--- BUILD.gn	2025-10-20 19:53:00.190211955 +0800
++++ BUILD.gn	2025-10-16 16:07:39.172088121 +0800
+@@ -74,10 +78,14 @@
+     "performance_manager/v8_worker_memory_reporter.h",
+     "//cef/libcef/renderer/blink_glue.cc",
+     "//cef/libcef/renderer/blink_glue.h",
+   ]
+ 
++  if (is_arkweb) {
++    sources += arkweb_libcef_render_sources
++  }
++
+   if (is_linux || is_chromeos) {
+     sources += [
+       "memory_usage_monitor_posix.cc",
+       "memory_usage_monitor_posix.h",
+     ]

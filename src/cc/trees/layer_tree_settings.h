@@ -18,6 +18,8 @@
 #include "components/viz/common/display/renderer_settings.h"
 #include "third_party/skia/include/core/SkColor.h"
 #include "ui/gfx/geometry/size.h"
+#include "arkweb/build/features/features.h"
+#include "build/build_config.h"
 
 namespace cc {
 
@@ -203,6 +205,10 @@ class CC_EXPORT LayerTreeSettings {
 
   // Whether it is a LayerTree for ui.
   bool is_layer_tree_for_ui = false;
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+  bool enable_delete_unused_resources_delay = false;
+#endif
 
   // Whether tile resources are dropped for hidden layers. In terms of code,
   // this uses PictureLayerImpl::HasValidTilePriorities(), which may return true

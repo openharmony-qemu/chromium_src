@@ -769,6 +769,12 @@ ChromePermissionMessageRule::GetAllRules() {
        {}},
       {IDS_EXTENSION_PROMPT_WARNING_CHROMEOS_TELEMETRY_NETWORK_INFORMATION,
        {APIPermissionID::kChromeOSTelemetryNetworkInformation},
+       {}},
+      {IDS_EXTENSION_PROMPT_WARNING_BROWSING_DATA,
+       {APIPermissionID::kBrowsingData},
+       {}},
+      {IDS_EXTENSION_PROMPT_WARNING_COOKIES,
+       {APIPermissionID::kCookie},
        {}}};
 
   return std::vector<ChromePermissionMessageRule>(

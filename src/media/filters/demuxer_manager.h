@@ -8,6 +8,7 @@
 #include <optional>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback.h"
 #include "base/memory/memory_pressure_listener.h"
 #include "base/memory/raw_ptr.h"
@@ -181,6 +182,9 @@ class MEDIA_EXPORT DemuxerManager {
   void OnChunkDemuxerOpened();
   void OnProgress();
   void RestartClientForHLS();
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  void RestartClientForPrimitive();
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
   void FreeResourcesAfterMediaThreadWait(base::OnceClosure cb);
 
 #if BUILDFLAG(ENABLE_FFMPEG)

@@ -43,7 +43,9 @@ struct KeycodeConverterData {
 
 #define DOM_CODE(usb, evdev, xkb, win, mac, code, id) \
   {                                                   \
-    usb, code, #id, { evdev, xkb, win, mac }          \
+    usb, code, #id, {                                       \
+      evdev, xkb, win, mac                                  \
+    }                                                       \
   }
 #define DOM_CODE_DECLARATION \
   const KeycodeConverterData kKeycodeConverterData[] =

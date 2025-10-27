@@ -11,6 +11,10 @@
 
 namespace subresource_filter {
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+class PageLoadStatisticsExt;
+#endif
+
 // This class is notified of metrics recorded for individual (sub-)documents of
 // a page, aggregates them, and logs the aggregated metrics to UMA histograms
 // when the page load is complete (at the load event).
@@ -22,7 +26,14 @@ class PageLoadStatistics {
   PageLoadStatistics(const PageLoadStatistics&) = delete;
   PageLoadStatistics& operator=(const PageLoadStatistics&) = delete;
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  virtual ~PageLoadStatistics();
+  virtual PageLoadStatisticsExt* AsPageLoadStatisticsExt() { return nullptr; }
+
+  friend class PageLoadStatisticsExt;
+#else
   ~PageLoadStatistics();
+#endif
 
   void OnDocumentLoadStatistics(
       const mojom::DocumentLoadStatistics& statistics);
@@ -40,5 +51,9 @@ class PageLoadStatistics {
 };
 
 }  // namespace subresource_filter
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "arkweb/chromium_ext/components/subresource_filter/content/shared/browser/page_load_statistics_ext.h"
+#endif
 
 #endif  // COMPONENTS_SUBRESOURCE_FILTER_CONTENT_SHARED_BROWSER_PAGE_LOAD_STATISTICS_H_

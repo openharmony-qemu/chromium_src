@@ -174,6 +174,10 @@
 #include "chrome/browser/signin/bound_session_credentials/bound_session_cookie_refresh_service_factory.h"
 #endif  // BUILDFLAG(ENABLE_BOUND_SESSION_CREDENTIALS)
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/chrome/browser/profiles/profile_manager_for_include.cc"
+#endif
+
 using content::BrowserThread;
 
 namespace {

@@ -1,0 +1,14 @@
+--- BUILD.gn	2025-10-20 19:52:53.165969621 +0800
++++ BUILD.gn	2025-10-16 15:54:57.016068660 +0800
+@@ -1,9 +1,11 @@
+ # Copyright 2020 The Chromium Authors
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
++import("//arkweb/build/features/features.gni")
++
+ static_library("browser") {
+   sources = [
+     "no_state_prefetch_config.cc",
+     "no_state_prefetch_config.h",
+     "no_state_prefetch_contents.cc",

@@ -8,6 +8,7 @@
 
 #include <map>
 
+#include "base/memory/raw_ptr.h"
 #include "base/functional/callback.h"
 #include "base/threading/thread_checker.h"
 #include "mojo/public/cpp/bindings/remote.h"
@@ -22,6 +23,7 @@
 namespace net_service {
 
 class InputStreamReader;
+class StreamReaderURLLoaderUtils;
 
 // Abstract class representing an input stream. All methods are called in
 // sequence on a worker thread, but not necessarily on the same thread.
@@ -92,6 +94,12 @@ class ResourceResponse {
                                   std::string* charset,
                                   int64_t* content_length,
                                   HeaderMap* extra_headers) = 0;
+
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  virtual const std::string& GetResponseData() = 0;
+  virtual size_t GetResponseDataBuffer(char* data, size_t dest_size) = 0;
+  virtual size_t GetResponseDataBufferSize() = 0;
+#endif
 };
 
 // Custom URLLoader implementation for loading network responses from stream.
@@ -100,6 +108,7 @@ class ResourceResponse {
 // android_stream_reader_url_loader.h
 class StreamReaderURLLoader : public network::mojom::URLLoader {
  public:
+  friend class StreamReaderURLLoaderUtils;
   // Delegate abstraction for obtaining input streams. All methods are called
   // on the IO thread unless otherwise indicated.
   class Delegate : public ResourceResponse {
@@ -189,6 +198,7 @@ class StreamReaderURLLoader : public network::mojom::URLLoader {
   bool need_client_callback_ = false;
   bool got_client_callback_ = false;
 
+  raw_ptr<StreamReaderURLLoaderUtils> loader_utils_;
   base::WeakPtrFactory<StreamReaderURLLoader> weak_factory_;
 };
 

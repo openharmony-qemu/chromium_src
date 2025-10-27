@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
 #include "base/types/strong_alias.h"
@@ -30,12 +31,12 @@
 #include "net/cert/cert_status_flags.h"
 
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || \
-    BUILDFLAG(IS_CHROMEOS)
+    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 #include "base/i18n/rtl.h"
 #include "components/password_manager/core/browser/password_cross_domain_confirmation_popup_controller.h"
 #include "ui/gfx/geometry/rect_f.h"
 #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) ||
-        // BUILDFLAG(IS_CHROMEOS)
+        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 
 #if BUILDFLAG(IS_ANDROID)
 #include "components/password_manager/core/browser/first_cct_page_load_passwords_ukm_recorder.h"
@@ -137,6 +138,9 @@ class PasswordManagerClient {
   PasswordManagerClient& operator=(const PasswordManagerClient&) = delete;
 
   virtual ~PasswordManagerClient() = default;
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  virtual PasswordManagerClientExt* AsPasswordManagerClientExt() { return nullptr; }
+#endif
 
   // Is saving new data for password autofill and filling of saved data enabled
   // for the current profile and page? For example, saving is disabled in

@@ -5,6 +5,7 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_FULLSCREEN_FULLSCREEN_REQUEST_TYPE_H_
 #define THIRD_PARTY_BLINK_RENDERER_CORE_FULLSCREEN_FULLSCREEN_REQUEST_TYPE_H_
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/dcheck_is_on.h"
 
@@ -41,6 +42,10 @@ enum class FullscreenRequestType {
   // For WebXR Immersive AR sessions with access to the camera, in this mode,
   // the status bar should stay visible.
   kForXrArWithCamera = 8,
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  kForCustomMediaPlayer = 16,
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 
   // Convenience value for "no flags".
   kUnprefixed = kNull,

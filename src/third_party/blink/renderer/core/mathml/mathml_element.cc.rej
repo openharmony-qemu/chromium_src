@@ -1,0 +1,19 @@
+--- mathml_element.cc	2025-10-20 19:53:00.578208276 +0800
++++ mathml_element.cc	2025-10-16 16:07:39.582626369 +0800
+@@ -83,10 +92,16 @@
+ 
+ void MathMLElement::CollectStyleForPresentationAttribute(
+     const QualifiedName& name,
+     const AtomicString& value,
+     MutableCSSPropertyValueSet* style) {
++#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
++  if (Cssutils::IsMathFormulaDisabledMode()) {
++    Element::CollectStyleForPresentationAttribute(name, value, style);
++    return;
++  }
++#endif
+   if (name == html_names::kDirAttr) {
+     if (IsValidDirAttribute(value)) {
+       AddPropertyToPresentationAttributeStyle(style, CSSPropertyID::kDirection,
+                                               value);
+     }

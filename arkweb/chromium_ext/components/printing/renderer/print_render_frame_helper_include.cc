@@ -108,3 +108,16 @@ void PrintRenderFrameHelper::ArkWebPrintNode(const blink::WebNode& node)
   frame->DispatchBeforePrintEvent(nullptr);
   GetPrintManagerHost()->PrintPdfRequested();
 }
+
+#if BUILDFLAG(ARKWEB_PRINT)
+  blink::WebLocalFrame* PrintRenderFrameHelper::ArkWebUpdateFrame(
+      blink::WebLocalFrame* frame)
+  {
+    if (!static_web_frame_) {
+      LOG(INFO) << "OhosPrintManager static web frame is null";
+      return frame;
+    }
+
+    return static_web_frame_;
+  }
+#endif  // BUILDFLAG(ARKWEB_PRINT)

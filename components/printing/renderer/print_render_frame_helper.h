@@ -653,6 +653,9 @@ class PrintRenderFrameHelper
   void PrintRequestedPagesInternal(bool already_notified_frame);
   bool PrintQuitLoop(blink::WebLocalFrame* web_frame);
   void ArkWebPrintNode(const blink::WebNode& node);
+#if BUILDFLAG(ARKWEB_PRINT)
+  blink::WebLocalFrame* ArkWebUpdateFrame(blink::WebLocalFrame* web_frame);
+#endif  // BUILDFLAG(ARKWEB_PRINT)
 
   ScriptingThrottler scripting_throttler_;
 

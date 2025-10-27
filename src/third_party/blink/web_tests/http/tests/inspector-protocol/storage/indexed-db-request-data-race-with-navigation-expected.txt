@@ -1,0 +1,3 @@
+Tests that IndexedDB protocol commands work in a frame.
+Navigating page immediately to trigger potential UAF...
+Wait completed without a crash.

@@ -37,7 +37,7 @@ base::Value::List GetFontList_SlowBlocking() {
       .GetDrawingArraySize(font_array, size);
 
   base::Value::List font_list;
-  for (size_t index = 0; index < static_cast<size_t>(size); ++index) {
+  for (int32_t index = 0; index < size; ++index) {
     const void* full_name = nullptr;
     OHOS::NWeb::OhosAdapterHelper::GetInstance()
         .GetOhosDrawingTextFontAdapter()

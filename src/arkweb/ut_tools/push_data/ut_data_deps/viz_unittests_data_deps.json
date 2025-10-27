@@ -1,0 +1,50 @@
+[
+    {
+        "is_file": true,
+        "need_chmod": false,
+        "is_need_tar":false,
+        "names": ["icudtl.dat"],
+        "src_paths": [
+            "out",
+            "$project_name"
+        ],
+        "dst_path": "."
+    },
+    {
+        "is_file": false,
+        "need_chmod": false,
+        "is_need_tar":false,
+        "names": ["viz"],
+        "src_paths": [
+            "components",
+            "test",
+            "data"
+        ],
+        "dst_path": "components/test/data"
+    },
+    {
+        "is_file": true,
+        "need_chmod": true,
+        "is_need_tar":false,
+        "names": [
+            "location_tags.json",
+            "test_env.py",
+            "xvfb.py"
+        ],
+        "src_paths": [
+            "testing"
+        ],
+        "dst_path": "testing"
+    },
+    {
+        "is_file": true,
+        "need_chmod": true,
+        "is_need_tar":false,
+        "names": ["common.py"],
+        "src_paths": [
+            "testing",
+            "scripts"
+        ],
+        "dst_path": "testing/scripts"
+    }
+]

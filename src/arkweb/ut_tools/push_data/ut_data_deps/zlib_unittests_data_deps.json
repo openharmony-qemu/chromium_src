@@ -1,0 +1,15 @@
+[
+    {
+        "is_file": false,
+        "need_chmod": false,
+        "is_need_tar":false,
+        "names": ["data"],
+        "src_paths": [
+            "third_party",
+            "zlib",
+            "google",
+            "test"
+        ],
+        "dst_path": "third_party/zlib/google/test"
+    }
+]

@@ -1,0 +1,59 @@
+# Copyright (c) 2023 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/config/features.gni")
+import("//build/test.gni")
+import("../../../../config.gni")
+
+config("audio_adapter_fuzztest_config") {
+  visibility = [ "./*" ]
+
+  if (webview_audio_enable) {
+    defines = [ "NWEB_AUDIO_ENABLE" ]
+  }
+}
+
+group("fuzztest") {
+  testonly = true
+  deps = []
+  if (webview_audio_enable) {
+    deps += [
+      "audio_render_fuzzer:AudioRenderFuzzTest",
+      "audio_system_fuzzer:AudioSystemFuzzTest",
+      "audioabandon_fuzzer:AudioAbandonFuzzTest",
+      "audiocreaterender_fuzzer:AudioCreateRenderFuzzTest",
+      "audiodevicechange_fuzzer:AudioDeviceChangeFuzzTest",
+      "audiodevicechange_fuzzer:AudioDeviceChangeFuzzTest",
+      "audiogetchannel_fuzzer:AudioGetChannelFuzzTest",
+      "audiogetcontent_fuzzer:AudioGetContentFuzzTest",
+      "audiogetdevice_fuzzer:AudioGetDeviceFuzzTest",
+      "audiogetformat_fuzzer:AudioGetFormatFuzzTest",
+      "audiogetlatency_fuzzer:AudioGetLatencyFuzzTest",
+      "audiogetsampling_fuzzer:AudioGetSamplingFuzzTest",
+      "audiogetstream_fuzzer:AudioGetStreamFuzzTest",
+      "audioinputdevices_fuzzer:AudioInputDevicesFuzzTest",
+      "audiointerrupt_fuzzer:AudioInterruptFuzzTest",
+      "audiooutputdevices_fuzzer:AudioOutputDevicesFuzzTest",
+      "audioreleaserender_fuzzer:AudioReleaseRenderFuzzTest",
+      "audiorendereradapter_fuzzer:AudioRendererAdapterFuzzTest",
+      "audiorequest_fuzzer:AudioRequestFuzzTest",
+      "audiosetcallback_fuzzer:AudioSetCallbackFuzzTest",
+      "audiosetstreamtype_fuzzer:AudioSetStreamtypeFuzzTest",
+      "audiosetvolume_fuzzer:AudioSetVolumeFuzzTest",
+      "audiostartrender_fuzzer:AudioStartRenderFuzzTest",
+      "audiostoprender_fuzzer:AudioStopRenderFuzzTest",
+      "audiounsetcallback_fuzzer:AudioUnsetCallbackFuzzTest",
+      "audiowriterender_fuzzer:AudioWriteRenderFuzzTest",
+    ]
+  }
+}

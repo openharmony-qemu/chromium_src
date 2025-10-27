@@ -1,0 +1,1 @@
+"use strict";Object.defineProperty(exports,"__esModule",{value:!0}),exports.HashUtil=void 0;const e=require("crypto"),t=require("./FsUtil");function r(t,r="sha512"){return(0,e.createHash)(r).update(t).digest("hex")}exports.HashUtil={getDigest:r,getFileDigest:function(e,s="sha512"){return r(t.FsUtil.readFileSync(e),s)}};

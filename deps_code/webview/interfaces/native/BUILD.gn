@@ -1,0 +1,76 @@
+# Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//build/ohos/ndk/ndk.gni")
+
+ohos_ndk_headers("web_header") {
+  dest_dir = "$ndk_headers_out_dir/web/"
+  sources = [
+    "arkweb_interface.h",
+    "arkweb_type.h",
+    "native_interface_arkweb.h",
+  ]
+}
+
+ohos_ndk_library("libohweb") {
+  cflags = [ "-fstack-protector-all" ]
+  min_compact_version = "11"
+  ndk_description_file = "./libohweb.ndk.json"
+  system_capability = "SystemCapability.Web.Webview.Core"
+  output_name = "ohweb"
+}
+
+ohos_shared_library("ohweb") {
+  if (target_cpu == "arm64") {
+    branch_protector_ret = "pac_ret"
+  }
+
+  output_extension = "so"
+  include_dirs = [
+    "${target_gen_dir}/../../ohos_nweb/include",
+    "../../ohos_nweb/include",
+  ]
+
+  sources = [
+    "arkweb_interface.cpp",
+    "arkweb_scheme_handler.cpp",
+    "native_arkweb_utils.cpp",
+    "native_interface_arkweb.cpp",
+    "native_javascript_execute_callback.cpp",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "napi:ace_napi",
+    "ability_runtime:ability_connect_callback_stub",
+    "eventhandler:libeventhandler",
+  ]
+
+  deps = [
+    "../../arkweb_utils:libarkweb_utils",
+    "../../ohos_nweb:libnweb",
+  ]
+  relative_install_dir = "ndk"
+  part_name = "webview"
+  subsystem_name = "web"
+}
+
+group("webview_ndk") {
+  deps = [
+    ":libohweb",
+    ":ohweb",
+  ]
+}

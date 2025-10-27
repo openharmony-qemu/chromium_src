@@ -1,0 +1,70 @@
+/*
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+syntax = "proto2";
+
+package browser_service;
+
+option optimize_for = LITE_RUNTIME;
+
+message WebDownload {
+  enum WebDownloadState {
+    IN_PROGRESS = 0;
+    COMPLETE = 1;
+    CANCELED = 2;
+    INTERRUPTED = 3;
+    PENDING = 4;
+    PAUSED = 5;
+    MAX_DOWNLOAD_STATE = 6;
+  }
+  
+  required int64 web_download_id = 1;
+
+  optional int64 current_speed = 2;
+
+  optional int64 percent_complete = 3;
+
+  optional int64 total_bytes = 4;
+
+  optional int64 received_bytes = 5;
+
+  optional string full_path = 6;
+
+  optional string url = 7;
+
+  optional string etag = 8;
+
+  optional string original_url = 9;
+
+  optional string suggested_file_name = 10;
+
+  optional string content_disposition = 11;
+
+  optional string mime_type = 12;
+
+  optional string last_modified = 13;
+
+  optional WebDownloadState state = 14;
+
+  optional string method = 15;
+
+  optional int64 last_error_code = 16;
+
+  optional string received_slices = 17;
+
+  optional string download_path = 18;
+
+  optional string guid = 19;
+}

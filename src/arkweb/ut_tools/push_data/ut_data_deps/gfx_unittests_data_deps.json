@@ -1,0 +1,54 @@
+[
+    {
+        "is_file": true,
+        "need_chmod": false,
+        "is_need_tar":false,
+        "names": [
+            "icudtl.dat",
+            "ui_test.pak",
+            "ui_test.pak.info"
+        ],
+        "src_paths": [
+            "out",
+            "$project_name"
+        ],
+        "dst_path": "."
+    },
+    {
+        "is_file": false,
+        "need_chmod": true,
+        "is_need_tar":false,
+        "names": ["data"],
+        "src_paths": [
+            "ui",
+            "gfx",
+            "test"
+        ],
+        "dst_path": "ui/gfx/test"
+    },
+    {
+        "is_file": false,
+        "need_chmod": true,
+        "is_need_tar":false,
+        "names": [
+            "location_tags.json",
+            "test_env.py",
+            "xvfb.py"
+        ],
+        "src_paths": [
+            "testing"
+        ],
+        "dst_path": "testing"
+    },
+    {
+        "is_file": false,
+        "need_chmod": true,
+        "is_need_tar":false,
+        "names": ["common.py"],
+        "src_paths": [
+            "testing",
+            "scripts"
+        ],
+        "dst_path": "testing/scripts"
+    }
+]

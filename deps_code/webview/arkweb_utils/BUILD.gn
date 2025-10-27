@@ -1,0 +1,79 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("../config.gni")
+
+ohos_shared_library("libarkweb_utils") {
+  output_name = "arkweb_utils"
+  if (target_cpu == "arm64") {
+    branch_protector_ret = "pac_ret"
+  }
+
+  public_configs = [
+    ":arkweb_utils_public_interface"
+  ]
+
+  sources = [
+    "arkweb_utils.cpp",
+  ]
+
+  sources += ["arkweb_preload_common.cpp"]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-g3",
+  ]
+
+  defines = []
+  if (is_asan || use_hwasan) {
+    defines += [ "IS_ASAN" ]
+  }
+
+  if (target_cpu == "arm64") {
+    defines += [ "webview_arm64" ]
+  } else if (target_cpu == "arm") {
+    defines += [ "webview_arm" ]
+  } else if (target_cpu == "x86_64") {
+    defines += [ "webview_x86_64" ]
+  }
+
+  if (asan_detector || is_asan) {
+    defines += [ "ASAN_DETECTOR" ]
+  }
+
+  external_deps = [
+    "init:libbegetutil",
+    "hilog:libhilog",
+    "jsoncpp:jsoncpp",
+  ]
+
+  include_dirs = [
+    "../ohos_nweb/include/",
+    "../ohos_adapter/hiviewdfx_adapter/include/",
+  ]
+
+  innerapi_tags = [ "platformsdk" ]
+  part_name = "webview"
+  subsystem_name = "web"
+
+  if(webview_preload_render_lib){
+    defines += ["PRELOAD_RENDER_LIB"]
+  }
+}
+
+
+config("arkweb_utils_public_interface") {
+  include_dirs = [ "./" ]
+}

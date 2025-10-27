@@ -1,0 +1,80 @@
+{
+    "groups": {
+        "https://gitee.com/arkwebbuild": [
+            "https://gitee.com/li-ke1067"
+        ],
+        "https://gitee.com/chenbushan": [
+            "https://gitee.com/chenbushan"
+        ],
+        "https://gitee.com/d0ub1eh": [
+            "https://gitee.com/d0ub1eh"
+        ],
+        "https://gitee.com/cloud_nine999": [
+            "https://gitee.com/cloud_nine999"
+        ],
+        "https://gitee.com/zhushengle": [
+            "https://gitee.com/zhushengle"
+        ],
+        "https://gitee.com/spruceovo": [
+            "https://gitee.com/spruceovo"
+        ],
+        "https://gitee.com/jerrywangxmu": [
+            "https://gitee.com/jerrywangxmu"
+        ],
+        "https://gitee.com/yp99ustc": [
+            "https://gitee.com/yp99ustc"
+        ],
+        "https://gitee.com/yjone": [
+            "https://gitee.com/yjone"
+        ],
+        "https://gitee.com/ohpi": [
+            "https://gitee.com/ohpi"
+        ]
+    },
+    "userInfos": {
+        "https://gitee.com/li-ke1067": {
+            "info": "[部署测试 like]",
+            "group": "https://gitee.com/arkwebbuild"
+        },
+        "https://gitee.com/chenbushan": {
+            "info": "[DFX]",
+            "group": "https://gitee.com/chenbushan"
+        },
+        "https://gitee.com/d0ub1eh": {
+            "info": "[media]",
+            "group": "https://gitee.com/d0ub1eh"
+        },
+        "https://gitee.com/cloud_nine999": {
+            "info": "[framework]",
+            "group": "https://gitee.com/cloud_nine999"
+        },
+        "https://gitee.com/zhushengle": {
+            "info": "[security]",
+            "group": "https://gitee.com/zhushengle"
+        },
+        "https://gitee.com/spruceovo": {
+            "info": "[effect]",
+            "group": "https://gitee.com/spruceovo"
+        },
+        "https://gitee.com/jerrywangxmu": {
+            "info": "[synthesis]",
+            "group": "https://gitee.com/jerrywangxmu"
+        },
+        "https://gitee.com/yp99ustc": {
+            "info": "[engine]",
+            "group": "https://gitee.com/yp99ustc"
+        },
+        "https://gitee.com/yjone": {
+            "info": "[performance]",
+            "group": "https://gitee.com/yjone"
+        },
+        "https://gitee.com/zhang-yinglie": {
+            "info": "[peripherals]",
+            "group": "https://gitee.com/zhang-yinglie"
+        },
+        "https://gitee.com/ohpi": {
+            "info": "[web]",
+            "group": "https://gitee.com/ohpi"
+        }
+    }
+}

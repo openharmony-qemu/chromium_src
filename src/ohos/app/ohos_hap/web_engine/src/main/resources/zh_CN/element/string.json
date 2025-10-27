@@ -1,0 +1,72 @@
+{
+  "string": [
+    {
+      "name": "page_show",
+      "value": "page from package"
+    },
+    {
+      "name": "reason",
+      "value": "是否允许获取设备位置信息"
+    },
+    {
+      "name": "access_bluetooth",
+      "value": "是否允许使用蓝牙"
+    },
+    {
+      "name": "microphone",
+      "value": "是否允许使用麦克风"
+    },
+    {
+      "name": "camera",
+      "value": "是否允许使用相机"
+    },
+    {
+      "name": "reason_print",
+      "value": "\"打印\"请求用户授权"
+    },
+    {
+      "name": "print_title",
+      "value": "打印提示"
+    },
+    {
+      "name": "print_tip",
+      "value": "预览数据未完成加载，请加载完毕后打印！"
+    },
+    {
+      "name": "print_ok",
+      "value": "确认"
+    },
+    {
+      "name": "access_pasteboard",
+      "value": "是否允许读取剪贴板"
+    },
+    {
+      "name": "reason_download",
+      "value": "是否允许浏览器直接访问下载文件夹"
+    },
+    {
+      "name": "reason_documents",
+      "value": "是否允许浏览器直接访问文档文件夹"
+    },
+    {
+      "name": "reason_desktop",
+      "value": "是否允许浏览器直接访问桌面文件夹"
+    },
+    {
+      "name": "download_dialog_title",
+      "value": "无法访问系统文件夹"
+    },
+    {
+      "name": "download_dialog_content",
+      "value": "您已关闭文件夹的访问权限，建议前往设置-> 隐私与安全-> 文件夹，开启 label 的文件夹访问权限"
+    },
+    {
+      "name": "download_dialog_confirm_button",
+      "value": "前往系统设置"
+    },
+    {
+      "name": "download_dialog_cancel_button",
+      "value": "取消"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "module": {
+    "name": "entry",
+    "type": "entry",
+    "description": "$string:entry_desc",
+    "mainElement": "MainAbility",
+    "deviceTypes": [
+      "default",
+      "tablet",
+      "2in1",
+      "wearable",
+      "tv",
+    ],
+    "compressNativeLibs": true,
+    "deliveryWithInstall": true,
+    "installationFree": false,
+    "pages": "$profile:main_pages",
+    "metadata":[
+      {
+        "name": "license_file_path",
+        "value": "/system/etc/noticeFile/NWeb_OpenSource.html"
+      }
+    ]
+  },
+}

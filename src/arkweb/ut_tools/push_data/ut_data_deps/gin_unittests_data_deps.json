@@ -1,0 +1,35 @@
+[
+    {
+        "is_file": false,
+        "need_chmod": false,
+        "is_need_tar":false,
+        "names": ["shell"],
+        "src_paths": [
+            "gin"
+        ],
+        "dst_path": "gin"
+    },
+    {
+        "is_file": true,
+        "need_chmod": true,
+        "is_need_tar":false,
+        "names": ["gin_shell"],
+        "src_paths": [
+            "out",
+            "$project_name",
+            "exe.unstripped"
+        ],
+        "dst_path": "."
+    },
+    {
+        "is_file": true,
+        "need_chmod": false,
+        "is_need_tar":false,
+        "names": ["hello_world.js"],
+        "src_paths": [
+            "gin",
+            "shell"
+        ],
+        "dst_path": "gin/shell"
+    }
+]

@@ -1,0 +1,73 @@
+# Copyright (c) 2022 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//base/web/webview/web_aafwk.gni")
+import("//build/test.gni")
+import("../../../config.gni")
+
+module_output_path = "webview/webview"
+
+config("module_private_config") {
+  visibility = [ ":*" ]
+
+  if (webview_audio_enable) {
+    defines = [ "NWEB_AUDIO_ENABLE" ]
+  }
+
+  include_dirs = [ "../../../ohos_adapter/audio_adapter/include" ]
+}
+
+ohos_unittest("nweb_audio_adapter_test") {
+  module_out_path = module_output_path
+
+  sources = [ "audio_adapter_impl_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+
+  deps = [ "$webview_path/ohos_adapter:nweb_ohos_adapter" ]
+
+  external_deps = [
+    "ability_runtime:app_context",
+    "ability_runtime:app_manager",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "access_token:libtoken_setproc",
+    "audio_framework:audio_capturer",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "googletest:gmock_main",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+    "cJSON:cjson",
+  ]
+
+  if (build_selinux) {
+      external_deps += [ "selinux_adapter:librestorecon" ]
+      cflags = [ "-DWITH_SELINUX" ]
+  }
+
+  if (webview_audio_enable) {
+    external_deps += [
+      "audio_framework:audio_client",
+      "audio_framework:audio_renderer",
+    ]
+  }
+}
+
+group("unittest") {
+  testonly = true
+  deps = []
+  if (webview_audio_enable) {
+    deps += [ ":nweb_audio_adapter_test" ]
+  }
+}

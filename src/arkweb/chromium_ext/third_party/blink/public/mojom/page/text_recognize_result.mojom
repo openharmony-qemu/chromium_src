@@ -1,0 +1,9 @@
+module blink.mojom;
+
+import "ui/gfx/geometry/mojom/geometry.mojom";
+
+struct TextRecognizeResult {
+  string raw_value;
+  gfx.mojom.RectF bounding_box;
+  array<gfx.mojom.PointF> corner_points;
+};

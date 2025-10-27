@@ -1,0 +1,41 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+template("arkweb_replace_scheme") {
+  action(target_name) {
+    script = "//arkweb/chromium_ext/ui/webui/resources/tools/arkweb_replace_scheme.py"
+
+    forward_variables_from(invoker,
+                           [
+                             "visibility",
+                             "deps",
+                             "in_folder",
+                             "out_folder",
+                           ])
+
+    inputs = []
+    outputs = []
+    foreach(f, invoker.in_files) {
+      inputs += [ "$in_folder/$f" ]
+      outputs += [ "$out_folder/$f" ]
+    }
+
+    args = [
+             "--in_folder",
+             rebase_path(in_folder, root_build_dir),
+             "--out_folder",
+             rebase_path(out_folder, root_build_dir),
+             "--in_files",
+           ] + invoker.in_files
+  }
+}

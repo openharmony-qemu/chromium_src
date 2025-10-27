@@ -1,0 +1,16 @@
+<?xml version="1.0" ?>
+<!DOCTYPE translationbundle>
+<translationbundle lang="zh-CN">
+<translation id="IDS_OHOS_BLOCK_PAGE_TITLE">风险提示</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_INFO_TITLE">已停止访问此网页</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_TITLE">谨防网络诈骗</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_TITLE">此网页疑似含有风险内容</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_URL_TRUST_LIST_TITLE">此网页被限制访问</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_ILLEGAL_INFO_BODY">根据法律法规要求以及投诉举报，此网页包含违法或违规内容，已停止访问。</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_FRAUD_INFO_BODY">您访问的网页存在诈骗风险，请您注意个人信息和财产安全。</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_RISK_INFO_BODY">您访问的网页存在安全风险，请您注意个人信息和财产安全。</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_DONT_PROCEED">返回</translation>
+<translation id="IDS_OHOS_BLOCK_PAGE_PROCEED">继续访问</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_NOTE">已启用未成年人保护，此网页被限制访问。</translation>
+<translation id="IDS_OHOS_MINOR_PROTECTION_SETING_BUTTON">设置</translation>
+</translationbundle>

@@ -1,0 +1,28 @@
+[
+    {
+        "is_file": true,
+        "need_chmod": false,
+        "is_need_tar":false,
+        "names": [
+            "icudtl.dat"
+        ],
+        "src_paths": [
+            "out",
+            "$project_name"
+        ],
+        "dst_path": "."
+    },
+    {
+        "is_file": false,
+        "need_chmod": true,
+        "is_need_tar":false,
+        "names": ["compositor"],
+        "src_paths": [
+            "ui",
+            "gfx",
+            "test",
+            "data"
+        ],
+        "dst_path": "ui/gfx/test/data"
+    }
+]

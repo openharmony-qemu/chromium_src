@@ -1,0 +1,12 @@
+#4 tests failed:
+-VideoCaptureDeviceTests/VideoCaptureDeviceTest.UsingRealWebcam_AllocateBadSize/0
+-VideoCaptureDeviceTests/VideoCaptureDeviceTest.UsingRealWebcam_AllocateBadSize/1
+-VideoCaptureDeviceTests/VideoCaptureDeviceTest.UsingRealWebcam_CaptureWithSize/0
+-VideoCaptureDeviceTests/VideoCaptureDeviceTest.UsingRealWebcam_CaptureWithSize/1
+#added by chromium_trunk20240515
+#2 tests failed:
+-VideoCaptureDeviceTests/VideoCaptureDeviceTest.UsingRealWebcam_OpenInvalidDevice/0
+-VideoCaptureDeviceTests/VideoCaptureDeviceTest.UsingRealWebcam_OpenInvalidDevice/1
+#2 tests crashed:
+-VideoCaptureDeviceTests/VideoCaptureDeviceTest.UsingRealWebcam_NoCameraSupportsPixelFormatMax/0
+-VideoCaptureDeviceTests/VideoCaptureDeviceTest.UsingRealWebcam_NoCameraSupportsPixelFormatMax/1

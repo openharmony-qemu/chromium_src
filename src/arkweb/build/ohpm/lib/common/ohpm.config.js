@@ -1,0 +1,1 @@
+"use strict";let t;Object.defineProperty(exports,"__esModule",{value:!0}),exports.PmConfig=void 0,t=["https://cmc.centralrepo.rnd.huawei.com/artifactory/api/npm/product_npm/","https://cmc.centralrepo.rnd.huawei.com/npm/","https://mirrors.tools.huawei.com/npm/","http://mirrors.tools.huawei.com/npm/"],exports.PmConfig={registryWhiteList:t,auditTimeOut:200};

@@ -281,6 +281,8 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
   std::shared_ptr<NWebTouchHandleState> GetDefalutTouchHandleState(
       NWebTouchHandleState::TouchHandleType type);
   void OnSelectAreaChanged(CefRect& select_area) override; 
+  void OnClippedSelectionBoundsChanged(const CefRect& rect,
+                                       bool need_report) override;
 #endif
   CefRefPtr<CefDragData> GetDragData();
 
@@ -321,6 +323,7 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
       const CefTouchHandleState& touch_handle);
 #if BUILDFLAG(ARKWEB_MENU)
   CefRect ConvertSelectAreaDisplayRatio(const CefRect& rect);
+  CefRect clipped_selection_bounds_;
 #endif
 
   std::function<void(const char*)> render_update_cb_ = nullptr;

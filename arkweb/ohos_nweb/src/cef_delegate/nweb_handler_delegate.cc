@@ -5391,8 +5391,7 @@ bool NWebHandlerDelegate::IsShowHandle() {
 #if BUILDFLAG(ARKWEB_READER_MODE)
 void NWebHandlerDelegate::OnIsPageDistillable(int page_type,
                                             const std::string& distillable_page_url, const std::string& title) {
-  LOG(INFO) << "NWebHandlerDelegate::OnIsPageDistillable page_type:" << page_type
-            << " title:" << title.c_str();
+  LOG(INFO) << "NWebHandlerDelegate::OnIsPageDistillable page_type:" << page_type;
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   if (IsNativeApiEnable()) {
     dispatcher_.OnIsPageDistillable(page_type, distillable_page_url.c_str(), title.c_str());

@@ -317,6 +317,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void SetBrowserZoomLevel(double zoomFactor) override {}
   int GetTopControlsOffset() override { return 0; }
   MOCK_METHOD0(GetShrinkViewportHeight, int());
+  void OnEyeDropperResult(bool success, uint32_t color) override {}
   void SetPrintBackground(bool enable) override {}
   bool GetPrintBackground() override { return false; }
   void SetScrollable(bool enable, int scrollType) override {}

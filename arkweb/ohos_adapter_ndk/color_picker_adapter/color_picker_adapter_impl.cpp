@@ -180,8 +180,13 @@ void ColorPickerAdapterImpl::StartColorPickerInternal(
   }
   callback_index_ = callback_wrapper_.AddCallback(
       std::make_shared<ColorPickerCallback>(color_picker_callback));
+#if defined(USE_LIBFUZZER) || BUILDFLAG(ARKWEB_TEST)
+  HMS_GCP_PickedColorInfo color_info;
+  ColorPickerNotify(reinterpret_cast<void*>(callback_index_), color_info, 0);
+#else
   start_color_picker_func(x, y, ColorPickerNotify,
                           reinterpret_cast<void*>(callback_index_));
+#endif
 }
 
 }  // namespace OHOS::NWeb

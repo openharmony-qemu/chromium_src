@@ -344,6 +344,11 @@ component("adapter_ndk") {
     defines += [ "NWEB_PRINT_ENABLE" ]
   }
 
+  import("//build/config/sanitizers/sanitizers.gni")
+  if (use_fuzzing_engine) {
+    defines += [ "USE_LIBFUZZER" ]
+  }
+
   deps = [
     "//third_party:huawei_securec",
     "//arkweb/build/features",

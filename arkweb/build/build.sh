@@ -457,9 +457,8 @@ cp "./arkweb/ohos_adapter_ndk/stub/network/netstack/net_ssl/lib/aarch64-linux-oh
 cp "./arkweb/ohos_adapter_ndk/stub/network/netstack/net_ssl/lib/x86_64-linux-ohos/libnet_ssl.so" "./ohos_sdk/openharmony/native/sysroot/usr/lib/x86_64-linux-ohos/libnet_ssl.so"
 cp "./arkweb/ohos_adapter_ndk/stub/network/netstack/net_ssl/lib/arm-linux-ohos/libnet_ssl.so" "./ohos_sdk/openharmony/native/sysroot/usr/lib/arm-linux-ohos/libnet_ssl.so"
 
-cp "./arkweb/ohos_adapter_ndk/stub/huks/include/native_huks_external_api.h" "./ohos_sdk/openharmony/native/sysroot/usr/include/huks/native_huks_external_api.h"
-cp "./arkweb/ohos_adapter_ndk/stub/huks/include/native_huks_external_param.h" "./ohos_sdk/openharmony/native/sysroot/usr/include/huks/native_huks_external_param.h"
-cp "./arkweb/ohos_adapter_ndk/stub/huks/include/native_huks_type.h" "./ohos_sdk/openharmony/native/sysroot/usr/include/huks/native_huks_type.h"
+cp "./arkweb/ohos_adapter_ndk/stub/huks/include/native_huks_external_crypto_api.h" "./ohos_sdk/openharmony/native/sysroot/usr/include/huks/native_huks_external_crypto_api.h"
+cp "./arkweb/ohos_adapter_ndk/stub/huks/include/native_huks_external_crypto_type.h" "./ohos_sdk/openharmony/native/sysroot/usr/include/huks/native_huks_external_crypto_type.h"
  
 mkdir -p "./ohos_sdk/openharmony/native/sysroot/usr/include/certificate_manager"
 cp "./arkweb/ohos_adapter_ndk/stub/certificate_manager/include/cm_native_api.h" "./ohos_sdk/openharmony/native/sysroot/usr/include/certificate_manager/cm_native_api.h"

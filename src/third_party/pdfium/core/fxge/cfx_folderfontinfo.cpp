@@ -11,6 +11,9 @@
 #include <iterator>
 #include <limits>
 #include <utility>
+#if BUILDFLAG(IS_OHOS)
+#include <hilog/log.h>
+#endif
 
 #include "build/build_config.h"
 #include "core/fxcrt/byteorder.h"

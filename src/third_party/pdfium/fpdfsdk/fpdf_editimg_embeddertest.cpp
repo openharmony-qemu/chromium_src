@@ -40,7 +40,7 @@ TEST_F(PDFEditImgTest, NewImageObjGenerateContent) {
   ScopedFPDFPage page(FPDFPage_New(doc.get(), 0, 100, 100));
   EXPECT_EQ(0, FPDFPage_CountObjects(page.get()));
 
-  static constexpr int kBitmapSize = 50;
+  constexpr int kBitmapSize = 50;
   ScopedFPDFBitmap bitmap(FPDFBitmap_Create(kBitmapSize, kBitmapSize, 0));
   ASSERT_TRUE(FPDFBitmap_FillRect(bitmap.get(), 0, 0, kBitmapSize, kBitmapSize,
                                   0x00000000));
@@ -61,8 +61,8 @@ TEST_F(PDFEditImgTest, NewImageObjGenerateContent) {
 
 TEST_F(PDFEditImgTest, NewImageObjLoadJpeg) {
   CreateEmptyDocumentWithoutFormFillEnvironment();
-  static constexpr int kPageWidth = 200;
-  static constexpr int kPageHeight = 200;
+  constexpr int kPageWidth = 200;
+  constexpr int kPageHeight = 200;
   ScopedFPDFPage page(FPDFPage_New(document(), 0, kPageWidth, kPageHeight));
   ASSERT_TRUE(page);
 
@@ -74,8 +74,8 @@ TEST_F(PDFEditImgTest, NewImageObjLoadJpeg) {
   EXPECT_TRUE(
       FPDFImageObj_LoadJpegFile(&temp_page, 1, image.get(), &file_access));
 
-  static constexpr int kImageWidth = 120;
-  static constexpr int kImageHeight = 120;
+  constexpr int kImageWidth = 120;
+  constexpr int kImageHeight = 120;
   const char kImageChecksum[] = "58589c36b3b27a0058f5ca1fbed4d5e5";
   const char kPageChecksum[] = "52b3a852f39c5fa9143e59d805dcb343";
   {
@@ -98,8 +98,8 @@ TEST_F(PDFEditImgTest, NewImageObjLoadJpeg) {
 
 TEST_F(PDFEditImgTest, NewImageObjLoadJpegInline) {
   CreateEmptyDocumentWithoutFormFillEnvironment();
-  static constexpr int kPageWidth = 200;
-  static constexpr int kPageHeight = 200;
+  constexpr int kPageWidth = 200;
+  constexpr int kPageHeight = 200;
   ScopedFPDFPage page(FPDFPage_New(document(), 0, kPageWidth, kPageHeight));
   ASSERT_TRUE(page);
 
@@ -111,8 +111,8 @@ TEST_F(PDFEditImgTest, NewImageObjLoadJpegInline) {
   EXPECT_TRUE(FPDFImageObj_LoadJpegFileInline(&temp_page, 1, image.get(),
                                               &file_access));
 
-  static constexpr int kImageWidth = 120;
-  static constexpr int kImageHeight = 120;
+  constexpr int kImageWidth = 120;
+  constexpr int kImageHeight = 120;
   const char kImageChecksum[] = "58589c36b3b27a0058f5ca1fbed4d5e5";
   const char kPageChecksum[] = "52b3a852f39c5fa9143e59d805dcb343";
   {

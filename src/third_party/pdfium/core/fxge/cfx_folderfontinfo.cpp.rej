@@ -1,0 +1,20 @@
+--- cfx_folderfontinfo.cpp	2025-10-20 19:53:19.619976360 +0800
++++ cfx_folderfontinfo.cpp	2025-10-16 16:15:55.920373645 +0800
+@@ -151,12 +154,16 @@
+   return true;
+ }
+ 
+ void CFX_FolderFontInfo::ScanPath(const ByteString& path) {
+   std::unique_ptr<FX_Folder> handle = FX_Folder::OpenFolder(path);
+-  if (!handle)
++  if (!handle) {
++#if BUILDFLAG(IS_OHOS)
++    OH_LOG_Print(LOG_APP, LOG_ERROR, LOG_DOMAIN, "PDF", "Load font failed, path: %{public}s.\n", path.c_str());
++#endif
+     return;
++  }
+ 
+   ByteString filename;
+   bool bFolder;
+   while (handle->GetNextFile(&filename, &bFolder)) {
+     if (bFolder) {

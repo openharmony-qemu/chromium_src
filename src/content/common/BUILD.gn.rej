@@ -1,0 +1,143 @@
+--- BUILD.gn	2025-10-20 19:52:54.510585827 +0800
++++ BUILD.gn	2025-10-20 19:31:26.804056868 +0800
+@@ -12,10 +12,20 @@
+ import("//ppapi/buildflags/buildflags.gni")
+ import("//sandbox/features.gni")
+ import("//testing/libfuzzer/fuzzer_test.gni")
+ import("//tools/ipc_fuzzer/ipc_fuzzer.gni")
+ import("features.gni")
++import("//arkweb/build/features/features.gni")
++import("//arkweb/chromium_ext/chromium_ext.gni")
++
++if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {
++  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
++}
++
++if (defined(is_arkweb_ext) && is_arkweb_ext) {
++  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
++}
+ 
+ # For feature flags internal to content. See content/public/common:features
+ # for feature flags that clients of contents need to know about.
+ buildflag_header("buildflags") {
+   header = "buildflags.h"
+@@ -224,10 +234,11 @@
+     "//build/util:chromium_git_revision",
+     "//components/discardable_memory/common",
+     "//components/input",
+     "//components/services/filesystem/public/mojom",
+     "//components/tracing:startup_tracing",
++    "//components/embedder_support:make_ohos_arkweb_version",
+     "//content:content_resources",
+     "//content/common/fetch:fetch_api_request_proto",
+     "//content/public/common:interfaces",
+     "//content/public/common/zygote:buildflags",
+     "//device/base/synchronization",
+@@ -408,14 +419,18 @@
+       "zygote/zygote_handle_impl_linux.h",
+       "zygote/zygote_handle_linux.cc",
+     ]
+   }
+ 
+-  if (is_mac || is_win || is_android || is_fuchsia || is_ios) {
++  if (is_mac || is_win || is_android || is_fuchsia || is_ios || is_ohos) {
+     sources -= [ "font_list_fontconfig.cc" ]
+   }
+ 
++  if (is_arkweb) {
++    sources += arkweb_content_common_font_list_sources
++  }
++
+   if (enable_ppapi) {
+     sources += [
+       "pepper_file_util.cc",
+       "pepper_file_util.h",
+       "pepper_plugin_list.cc",
+@@ -514,21 +533,87 @@
+ 
+   enabled_features = []
+   if (enable_ipc_logging) {
+     enabled_features += [ "ipc_logging" ]
+   }
++  if (arkweb_render_process_mode) {
++    enabled_features += [ "arkweb_render_process_mode" ]
++  }
++
++  if (arkweb_menu) {
++    enabled_features += [ "arkweb_menu" ]
++  }
++
++  if (arkweb_drag_drop) {
++    enabled_features += [ "arkweb_drag_drop" ]
++  }
++
++  if (arkweb_ai) {
++    enabled_features += [ "arkweb_ai" ]
++  }
++
++  if (enable_arkweb) {
++    enabled_features += [ "arkweb_theme_font" ]
++    enabled_features += [ "arkweb_i18n" ]
++  }
++
++  if (arkweb_pdf) {
++    enabled_features += [ "arkweb_pdf" ]
++  }
++
++  if (arkweb_arkweb_extensions) {
++    enabled_features += [ "arkweb_arkweb_extensions" ]
++  }
++
++  if (arkweb_renderer_anr_dump) {
++    enabled_features += ["arkweb_renderer_anr_dump"]
++  }
++
++  if (arkweb_performance_scheduling) {
++    enabled_features += ["arkweb_performance_scheduling"]
++  }
++
+   if (use_clang_profiling_inside_sandbox) {
+     enabled_features += [ "clang_profiling_inside_sandbox" ]
+   }
+   if (is_posix && !is_android) {
+     enabled_features += [ "is_non_android_posix" ]
+   }
+ 
++  if (arkweb_multi_window) {
++    enabled_features +=[ "arkweb_multi_window" ]
++  }
++
++  if (arkweb_blank_screen_detection) {
++    enabled_features += [ "arkweb_blank_screen_detection" ]
++  }
++
++  if (arkweb_network_base) {
++    enabled_features += [ "arkweb_network_base" ]
++  }
++
+   if (enable_plugins) {
+     sources += [ "pepper_plugin.mojom" ]
+   }
+ 
++  if (defined(arkweb_reader_mode) && arkweb_reader_mode) {
++    enabled_features += [ "arkweb_reader_mode" ]
++  }
++
++  if (defined(arkweb_adblock) && arkweb_adblock) {
++    enabled_features += [ "arkweb_adblock" ]
++  }
++  if (defined(arkweb_javascript_bridge) && arkweb_javascript_bridge) {
++    enabled_features += [ "arkweb_javascript_bridge" ]
++  }
++  if (arkweb_blank_optimize) {
++    enabled_features += [ "arkweb_blank_optimize" ]
++  }
++  if (is_arkweb) {
++    enabled_features += [ "arkweb_dfx_tracing" ]
++  }  
++
+   cpp_typemaps = [
+     {
+       types = [
+         {
+           mojom = "content.mojom.ChildFrameOwnerElementType"

@@ -255,6 +255,17 @@ Surface::QueueFrameResult Surface::CommitFrame(FrameData frame) {
     previous_frame_surface_id_ = surface_id();
 
   TakePendingLatencyInfo(&frame.frame.metadata.latency_info);
+#if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
+  if (!features::IsUsingVulkan()) {
+    auto new_page_scale_factor = frame.frame.metadata.page_scale_factor;
+    if (current_page_scale_factor_ != new_page_scale_factor) {
+      current_page_scale_factor_ = new_page_scale_factor;
+      base::ohos::SetPageScale(true);
+    } else {
+      base::ohos::SetPageScale(false);
+    }
+  }
+#endif
 
   std::optional<FrameData> previous_pending_frame_data =
       std::move(pending_frame_data_);
@@ -574,7 +585,11 @@ void Surface::ActivateFrame(FrameData frame_data) {
 
   // Save root pass copy requests.
   std::vector<std::unique_ptr<CopyOutputRequest>> old_copy_requests;
+#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
+  if (active_frame_data_ && !active_frame_data_->frame.render_pass_list.empty()) {
+#else
   if (active_frame_data_) {
+#endif // BUILDFLAG(ARKWEB_BUGFIX_CRASH)
     std::swap(old_copy_requests,
               active_frame_data_->frame.render_pass_list.back()->copy_requests);
   }

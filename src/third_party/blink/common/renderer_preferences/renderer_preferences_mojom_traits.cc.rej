@@ -1,0 +1,17 @@
+--- renderer_preferences_mojom_traits.cc	2025-10-20 19:52:59.786214466 +0800
++++ renderer_preferences_mojom_traits.cc	2025-10-16 16:07:38.666810277 +0800
+@@ -113,10 +113,14 @@
+       data.selection_clipboard_buffer_available();
+ #endif
+   out->plugin_fullscreen_allowed = data.plugin_fullscreen_allowed();
+   out->caret_browsing_enabled = data.caret_browsing_enabled();
+ 
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  out->is_global_adblock_enabled = data.is_global_adblock_enabled();
++#endif
++
+   if (!data.ReadExplicitlyAllowedNetworkPorts(
+           &out->explicitly_allowed_network_ports)) {
+     return false;
+   }
+ 

@@ -92,6 +92,7 @@ void SetRawEncryptionKey(const std::string& key) {
 bool IsEncryptionAvailable() {
   return OSCryptImpl::GetInstance()->IsEncryptionAvailable();
 }
+#if !BUILDFLAG(IS_ARKWEB)
 void UseMockKeyStorageForTesting(
     base::OnceCallback<std::unique_ptr<KeyStorageLinux>()>
         storage_provider_factory) {
@@ -104,7 +105,12 @@ void ClearCacheForTesting() {
 void SetEncryptionPasswordForTesting(const std::string& password) {
   OSCryptImpl::GetInstance()->SetEncryptionPasswordForTesting(password);
 }
+#endif
 }  // namespace OSCrypt
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/components/os_crypt/sync/os_crypt_linux_for_include.cc"
+#endif
 
 OSCryptImpl* OSCryptImpl::GetInstance() {
   return base::Singleton<OSCryptImpl,

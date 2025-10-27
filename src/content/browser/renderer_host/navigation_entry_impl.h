@@ -575,7 +575,7 @@ class CONTENT_EXPORT NavigationEntryImpl : public NavigationEntry {
   // persisted by Android WebView.
   GURL base_url_for_data_url_;
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
   // Used for passing really big data URLs from browser to renderers. Only used
   // and persisted by Android WebView.
   scoped_refptr<const base::RefCountedString> data_url_as_string_;

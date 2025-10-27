@@ -1,0 +1,28 @@
+--- frame.mojom	2025-10-20 19:53:00.114212675 +0800
++++ frame.mojom	2025-10-16 16:07:39.077348525 +0800
+@@ -1230,10 +1250,25 @@
+     bool is_secure_transport,
+     bool is_validated,
+     string normalized_server_timing,
+     network.mojom.URLLoaderCompletionStatus completion_status
+   );
++
++  // This passes a url of a img down to the renderer, in order to get img cache of
++  // this url
++  [EnableIf=arkweb_menu_or_nweb_ex]
++  GetImageFromCache(string url) => (uint32 buffer_size, mojo_base.mojom.ReadOnlySharedMemoryRegion? region);
++
++  [EnableIf=arkweb_blank_screen_detection]
++  DetectBlankScreen(string url,
++                    array<double> detection_timing,
++                    array<int32> detection_methods,
++                    int32 contentful_nodes_count_threshold);
++
++  // Request the renderer to generate code cache for the given javascript.
++  [EnableIf=arkweb_precompile]
++  GenerateCodeCache(string url, string script, CacheOptions cache_options) => (int32 result);
+ };
+ 
+ // Implemented in Blink, this interface defines main-frame-specific methods that
+ // will be invoked from the browser process (e.g. content::WebContentsImpl).
+ //

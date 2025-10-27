@@ -88,6 +88,9 @@ class HitTestRequest {
     hit_node_cb_ = std::move(hit_node_cb);
   }
 
+#if BUILDFLAG(ARKWEB_MENU)
+  bool OnDoHitTest() const { return request_type_ & kOnDoHitTest; }
+#endif  // BUILDFLAG(ARKWEB_MENU)
   bool ReadOnly() const { return request_type_ & kReadOnly; }
   bool Active() const { return request_type_ & kActive; }
   bool Move() const { return request_type_ & kMove; }

@@ -273,6 +273,9 @@ LikelyFormFilling SendFillInformationToRenderer(
 
   bool wait_for_username =
       wait_for_username_reason != WaitForUsernameReason::kDontWait;
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  wait_for_username = true;
+#endif // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 #else
   bool wait_for_username = true;
 #endif  // !BUILDFLAG(IS_IOS) && !defined(ANDROID)

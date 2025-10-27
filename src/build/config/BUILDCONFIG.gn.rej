@@ -1,0 +1,17 @@
+--- BUILDCONFIG.gn	2025-10-20 19:52:46.796581183 +0800
++++ BUILDCONFIG.gn	2025-10-16 15:54:55.545489415 +0800
+@@ -349,10 +383,14 @@
+ is_linux = current_os == "linux"
+ is_mac = current_os == "mac"
+ is_nacl = current_os == "nacl"
+ is_watchos = current_os == "watchos"
+ is_win = current_os == "win" || current_os == "winuwp"
++is_ohos = current_os == "ohos"
++
++is_arkweb = is_ohos && enable_arkweb
++is_arkweb_ext = is_arkweb && enable_arkweb_ext
+ 
+ is_apple = is_ios || is_mac || is_watchos
+ is_posix = !is_win && !is_fuchsia
+ 
+ # =============================================================================

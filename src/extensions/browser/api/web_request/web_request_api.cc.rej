@@ -1,0 +1,62 @@
+--- web_request_api.cc	2025-10-20 19:52:55.324377713 +0800
++++ web_request_api.cc	2025-10-16 15:55:00.395735160 +0800
+@@ -8,10 +8,11 @@
+ 
+ #include <memory>
+ #include <utility>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/functional/bind.h"
+ #include "base/json/json_writer.h"
+ #include "base/lazy_instance.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/not_fatal_until.h"
+@@ -86,10 +87,14 @@
+ 
+ namespace web_request = api::web_request;
+ 
+ namespace {
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++const char kWebRequestApiLogTag[] = "[WebRequestAPI]";
++#endif
++
+ // Converts an HttpHeaders dictionary to a |name|, |value| pair. Returns
+ // true if successful.
+ bool FromHeaderDictionary(const base::Value::Dict& header_value,
+                           std::string* name,
+                           std::string* out_value) {
+@@ -432,11 +444,15 @@
+     // requests to be intercepted for CRX telemetry service if enabled.
+     // Only proxy if the new RHC interception logic is disabled.
+     // TODO(crbug.com/40913716): Clean up collection logic here once new RHC
+     // interception logic is fully launched.
+     const std::string& request_scheme = request_initiator.scheme();
+-    if (extensions::kExtensionScheme == request_scheme &&
++    if ((extensions::kExtensionScheme == request_scheme
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++         || extensions::kArkwebExtensionScheme == request_scheme
++#endif
++         ) &&
+         ExtensionsBrowserClient::Get()->IsExtensionTelemetryServiceEnabled(
+             browser_context) &&
+         base::FeatureList::IsEnabled(
+             safe_browsing::kExtensionTelemetryReportContactedHosts) &&
+         !base::FeatureList::IsEnabled(
+@@ -646,13 +665,15 @@
+       ->HasAnyExtraHeadersListener(browser_context_);
+ }
+ 
+ void WebRequestAPI::UpdateMayHaveProxies() {
+   bool may_have_proxies = MayHaveProxies();
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+   if (!may_have_proxies_ && may_have_proxies) {
+     browser_context_->GetDefaultStoragePartition()->ResetURLLoaderFactories();
+   }
++#endif
+   may_have_proxies_ = may_have_proxies;
+ }
+ 
+ void WebRequestAPI::OnExtensionLoaded(content::BrowserContext* browser_context,
+                                       const Extension* extension) {

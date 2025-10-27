@@ -1,0 +1,12 @@
+--- side_panel_api.cc	2025-10-20 19:52:49.618146853 +0800
++++ side_panel_api.cc	2025-10-16 15:57:00.164170028 +0800
+@@ -137,8 +167,9 @@
+ 
+   // TODO(crbug.com/40064601): Should we wait for the side panel to be
+   // created and load? That would probably be nice.
+ 
+   return RespondNow(NoArguments());
++#endif
+ }
+ 
+ }  // namespace extensions

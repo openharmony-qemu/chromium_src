@@ -11,6 +11,11 @@
 #include "base/command_line.h"
 #include "base/memory/raw_ptr.h"
 #include "base/strings/string_number_conversions.h"
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+#include "base/trace_event/trace_event.h"
+#endif
+#include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/url/ohos/log_utils.h"
 #include "cef/libcef/browser/context.h"
 #include "cef/libcef/browser/origin_whitelist_impl.h"
 #include "cef/libcef/browser/thread_util.h"
@@ -32,6 +37,30 @@
 #include "services/network/public/cpp/features.h"
 #include "services/network/public/mojom/early_hints.mojom.h"
 #include "third_party/blink/public/common/loader/referrer_utils.h"
+
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+#include "cef/ohos_cef_ext/libcef/browser/res_reporter.h"
+#include "cef/ohos_cef_ext/libcef/common/arkweb_request_impl_ext.h"
+#include "net/base/load_flags.h"
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+#include "content/public/browser/download_utils.h"
+#include "third_party/blink/public/common/mime_util/mime_util.h"
+#endif
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+#include "cef/ohos_cef_ext/libcef/common/arkweb_request_impl_ext.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "extensions/common/constants.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "cef/ohos_cef_ext/libcef/browser/net/ohos_url_rewrite_controller.h"
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif
 
 namespace net_service {
 
@@ -225,7 +254,11 @@ class InterceptedRequest : public network::mojom::URLLoader,
   ~InterceptedRequest() override;
 
   // Restart the request. This happens on initial start and after redirect.
+#if BUILDFLAG(IS_ARKWEB)
+  void Restart(bool is_redirect);
+#else
   void Restart();
+#endif
 
   // Called from ProxyURLLoaderFactory::OnLoaderCreated.
   void OnLoaderCreated(
@@ -247,6 +280,10 @@ class InterceptedRequest : public network::mojom::URLLoader,
       network::mojom::URLResponseHeadPtr head,
       mojo::ScopedDataPipeConsumerHandle body,
       std::optional<mojo_base::BigBuffer> cached_metadata) override;
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region,
+                                      uint64_t buffer_size) override;
+#endif
   void OnReceiveRedirect(const net::RedirectInfo& redirect_info,
                          network::mojom::URLResponseHeadPtr head) override;
   void OnUploadProgress(int64_t current_position,
@@ -315,12 +352,28 @@ class InterceptedRequest : public network::mojom::URLLoader,
                       bool wait_for_loader_error);
 
   void SendErrorAndCompleteImmediately(int error_code);
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  void CancelRequest(int error_code);
+#endif
   void SendErrorStatusAndCompleteImmediately(
       const network::URLLoaderCompletionStatus& status);
 
   void SendErrorCallback(int error_code, bool safebrowsing_hit);
 
   void OnUploadProgressACK();
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  GURL AddQueryForRedirectOnUI(
+    GURL original_url,
+    GURL referrer);
+
+  void AddQueryForRedirectOnUIDone(
+    const std::vector<std::string>& removed_headers,    
+    const net::HttpRequestHeaders& modified_headers,
+    const net::HttpRequestHeaders& modified_cors_exempt_headers,
+    const std::optional<GURL>& original_url,
+    GURL rewrited_url);
+#endif
 
   const raw_ptr<ProxyURLLoaderFactory> factory_;
   const int32_t id_;
@@ -373,6 +426,10 @@ class InterceptedRequest : public network::mojom::URLLoader,
 
   std::unique_ptr<StreamReaderURLLoader> stream_loader_;
 
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  bool is_download_{false};
+#endif
+
   base::WeakPtrFactory<InterceptedRequest> weak_factory_;
 };
 
@@ -404,10 +461,28 @@ class InterceptDelegate : public StreamReaderURLLoader::Delegate {
                                   extra_headers);
   }
 
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  const std::string& GetResponseData() override {
+    return response_->GetResponseData();
+  }
+
+  size_t GetResponseDataBuffer(char* data, size_t dest_size) override {
+    return response_->GetResponseDataBuffer(data, dest_size);
+  }
+
+  size_t GetResponseDataBufferSize() override {
+    return response_->GetResponseDataBufferSize();
+  }
+#endif
+
  private:
   std::unique_ptr<ResourceResponse> response_;
   base::WeakPtr<InterceptedRequest> request_;
 };
+
+}  // namespace net_service
+#include "cef/ohos_cef_ext/libcef/browser/net_service/proxy_url_loader_factory_for_include.cc"
+namespace net_service {
 
 InterceptedRequest::InterceptedRequest(
     ProxyURLLoaderFactory* factory,
@@ -451,23 +526,34 @@ InterceptedRequest::~InterceptedRequest() {
   }
 }
 
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+void InterceptedRequest::Restart(bool is_redirect) {
+  ResReporter::GetInstance().FetchBegin();
+#else
 void InterceptedRequest::Restart() {
-  // May exist if the previous stream resulted in a redirect.
-  if (stream_loader_) {
-    stream_loader_.reset();
-  }
-
+#endif
+  stream_loader_ = nullptr;
+  if (!is_redirect) {
   if (proxied_client_receiver_.is_bound()) {
     proxied_client_receiver_.reset();
     target_loader_.reset();
   }
-
   if (header_client_receiver_.is_bound()) {
     std::ignore = header_client_receiver_.Unbind();
   }
+  }
 
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  if (request_.method == "OPTIONS") {
+    current_request_uses_header_client_ = false;
+  } else {
+    current_request_uses_header_client_ =
+        factory_->url_loader_header_client_receiver_.is_bound();
+  }
+#else
   current_request_uses_header_client_ =
       factory_->url_loader_header_client_receiver_.is_bound();
+#endif  // BUILDFLAG(ARKWEB_NETWORK_BASE)
 
   const bool is_cross_origin =
       request_.request_initiator &&
@@ -524,27 +610,57 @@ void InterceptedRequest::Restart() {
        request_.method != net::HttpRequestHeaders::kGetMethod &&
        request_.method != net::HttpRequestHeaders::kHeadMethod);
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  const bool is_extension_scheme =
+      request_.request_initiator && (request_.request_initiator->scheme() == extensions::kExtensionScheme);
+  if (should_add_origin_header && !is_extension_scheme) {
+#else
   if (should_add_origin_header) {
+#endif
     // Match logic in navigation_request.cc AddAdditionalRequestHeaders.
     url::Origin origin_header_value =
         request_.request_initiator.value_or(url::Origin());
+#if !BUILDFLAG(ARKWEB_NETWORK_LOAD)
     origin_header_value = content::Referrer::SanitizeOriginForRequest(
         request_.url, origin_header_value,
         blink::ReferrerUtils::NetToMojoReferrerPolicy(
             request_.referrer_policy));
+#endif
 
     request_.headers.SetHeaderIfMissing(net::HttpRequestHeaders::kOrigin,
                                         origin_header_value.Serialize());
   }
 
-  const GURL original_url = request_.url;
+#if BUILDFLAG(ARKWEB_NETWORK_CONNINFO)
+  struct NetHelperSetting setting;
+  factory_->request_handler_->GetSettingOfNetHelper(request_.url, setting);
+  if (IsURLBlocked(request_.url, setting)) {
+    LOG(WARNING) << "File url access denied! url="
+                 << url::LogUtils::ConvertUrlWithMask(request_.url.spec());
+    SendErrorAndCompleteImmediately(net::ERR_ACCESS_DENIED);
+    return;
+  }
 
+  request_.load_flags = UpdateLoadFlags(request_.load_flags, setting);
+#endif  // BUILDFLAG(ARKWEB_NETWORK_CONNINFO)
+
+  const GURL original_url = request_.url;
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (proxied_client_receiver_.is_bound()) {
+    proxied_client_receiver_.Pause();
+  }
+#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
+
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  InterceptedRequestUtils::RestartExt(original_url, this);
+#else
   factory_->request_handler_->OnBeforeRequest(
       id_, &request_, request_was_redirected_,
       base::BindOnce(&InterceptedRequest::BeforeRequestReceived,
                      weak_factory_.GetWeakPtr(), original_url),
       base::BindOnce(&InterceptedRequest::SendErrorAndCompleteImmediately,
                      weak_factory_.GetWeakPtr()));
+#endif
 }
 
 void InterceptedRequest::OnLoaderCreated(
@@ -564,6 +680,13 @@ bool InterceptedRequest::InputStreamFailed() {
     SendErrorAndCompleteImmediately(net::ERR_UNKNOWN_URL_SCHEME);
     return true;
   }
+
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  Restart(false);
+#else
+  Restart();
+#endif
+
   return false;
 }
 
@@ -626,6 +749,10 @@ void InterceptedRequest::OnReceiveResponse(
   current_response_ = std::move(head);
   current_body_ = std::move(body);
   current_cached_metadata_ = std::move(cached_metadata);
+
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD) || BUILDFLAG(ARKWEB_NETWORK_BASE)
+  InterceptedRequestUtils::OnReceiveResponseExt(this);
+#endif
 
   // |current_headers_| may be null for cached responses where OnHeadersReceived
   // is not called.
@@ -742,7 +869,39 @@ void InterceptedRequest::FollowRedirect(
   net::HttpRequestHeaders modified_headers = modified_headers_ext;
   OnProcessRequestHeaders(new_url.value_or(GURL()), &modified_headers,
                           &removed_headers);
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  LOG(DEBUG) << "InterceptedRequest::FollowRedirect";
+  bool is_main_frame = request_.resource_type ==
+                       static_cast<int>(blink::mojom::ResourceType::kMainFrame);
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kEnableNwebEx) &&
+        OhosUrlRewriteController::IsRewriteUrlEnabled() && is_main_frame) {
+    GURL rewrited_url;
+    if (new_url.has_value()) {
+      rewrited_url = new_url.value();
+    } else {
+      rewrited_url = request_.url;
+    }
 
+    GURL referrer = request_.referrer.is_valid() ? request_.referrer : GURL();
+
+    content::GetUIThreadTaskRunner({})->PostTaskAndReplyWithResult(
+      FROM_HERE,
+      base::BindOnce(&InterceptedRequest::AddQueryForRedirectOnUI,
+                    base::Unretained(this),
+                    std::move(rewrited_url),
+                    std::move(referrer)),
+      base::BindOnce(&InterceptedRequest::AddQueryForRedirectOnUIDone,
+                    weak_factory_.GetWeakPtr(),
+                    removed_headers,
+                    modified_headers,
+                    modified_cors_exempt_headers,
+                    new_url));
+  } else {
+#if BUILDFLAG(IS_ARKWEB)
+    InterceptedRequestUtils::FollowRedirectExt(removed_headers, modified_headers,
+                                             modified_cors_exempt_headers,
+                                             new_url, this);
+#endif
   // If |OnURLLoaderClientError| was called then we're just waiting for the
   // connection error handler of |proxied_loader_receiver_|. Don't restart the
   // job since that'll create another URLLoader.
@@ -753,7 +912,13 @@ void InterceptedRequest::FollowRedirect(
   // Normally we would call FollowRedirect on the target loader and it would
   // begin loading the redirected request. However, the client might want to
   // intercept that request so restart the job instead.
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+    Restart(true);
+#else
   Restart();
+#endif
+  }
+#endif
 }
 
 void InterceptedRequest::SetPriority(net::RequestPriority priority,
@@ -768,8 +933,22 @@ void InterceptedRequest::SetPriority(net::RequestPriority priority,
 void InterceptedRequest::BeforeRequestReceived(const GURL& original_url,
                                                bool intercept_request,
                                                bool intercept_only) {
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (proxied_client_receiver_.is_bound()) {
+    proxied_client_receiver_.Resume();
+  }
+#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
   intercept_request_ = intercept_request;
   intercept_only_ = intercept_only;
+
+  // We donn't create a urlloader for redirect, so should not intercept the
+  // redirect.
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  if (target_loader_) {
+    InterceptResponseReceived(original_url, nullptr);
+    return;
+  }
+#endif
 
   if (!intercept_request_) {
     // Equivalent to no interception.
@@ -788,6 +967,13 @@ void InterceptedRequest::BeforeRequestReceived(const GURL& original_url,
 void InterceptedRequest::InterceptResponseReceived(
     const GURL& original_url,
     std::unique_ptr<ResourceResponse> response) {
+#if !BUILDFLAG(IS_ARKWEB)
+  // We donn't reset and create a new url_loader for redirects then
+  // donn't need call HandleResponseOrRedirectHeaders when received
+  // response.
+  // See c68654c58db10e0add64ab0ddd1bcf9ace337324, if we reset and
+  // create a new url_loader for redirects then we will loss the
+  // information for cors check.
   if (request_.url != original_url) {
     // A response object shouldn't be created if we're redirecting.
     DCHECK(!response);
@@ -831,10 +1017,14 @@ void InterceptedRequest::InterceptResponseReceived(
                        weak_factory_.GetWeakPtr(), redirect_info));
     return;
   }
-
+#endif  // IS_ARKWEB
   if (response) {
     // Non-null response: make sure to use it as an override for the
     // normal network data.
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+    TRACE_EVENT2("net", "InterceptedRequest::InterceptResponseReceived", "url",
+                 request_.url.spec(), "id", id());
+#endif
     ContinueAfterInterceptWithOverride(std::move(response));
   } else {
     // Request was not intercepted/overridden. Proceed with loading
@@ -872,6 +1062,10 @@ void InterceptedRequest::ContinueAfterInterceptWithOverride(
     std::unique_ptr<ResourceResponse> response) {
   // StreamReaderURLLoader will synthesize TrustedHeaderClient callbacks to
   // avoid having Set-Cookie headers stripped by the IPC layer.
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  InterceptedRequestUtils::ContinueAfterInterceptWithOverrideExt(
+      std::move(response), this);
+#else
   current_request_uses_header_client_ = true;
 
   DCHECK(!stream_loader_);
@@ -881,6 +1075,7 @@ void InterceptedRequest::ContinueAfterInterceptWithOverride(
       std::move(current_cached_metadata_),
       std::make_unique<InterceptDelegate>(std::move(response),
                                           weak_factory_.GetWeakPtr()));
+#endif  // BUILDFLAG(ARKWEB_NETWORK_BASE)
   stream_loader_->Start();
 }
 
@@ -925,7 +1120,11 @@ void InterceptedRequest::ContinueResponseOrRedirect(
     return;
   } else if (response_mode ==
              InterceptedRequestHandler::ResponseMode::RESTART) {
+#if BUILDFLAG(IS_ARKWEB)
+    Restart(false);
+#else
     Restart();
+#endif
     return;
   }
 
@@ -1047,7 +1246,12 @@ void InterceptedRequest::ContinueToBeforeRedirect(
   bool should_clear_upload;
   net::RedirectUtil::UpdateHttpRequest(original_url, original_method,
                                        new_redirect_info,
+#if BUILDFLAG(IS_ARKWEB)
+                                       // OHOS not restart on redirect.
+                                       std::nullopt,
+#else
                                        std::make_optional(remove_headers),
+#endif
                                        /*modified_headers=*/std::nullopt,
                                        &request_.headers, &should_clear_upload);
 
@@ -1260,6 +1464,54 @@ void InterceptedRequest::OnUploadProgressACK() {
   waiting_for_upload_progress_ack_ = false;
 }
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+GURL InterceptedRequest::AddQueryForRedirectOnUI(
+    GURL original_url, 
+    GURL referrer) {
+  if (!original_url.is_empty() && original_url.is_valid()) {
+    std::string new_url =
+      factory_->request_handler_->OnRewriteUrlForNavigation(original_url.spec(), referrer.spec());
+    return GURL(new_url);
+  }
+  return GURL();
+}
+
+void InterceptedRequest::AddQueryForRedirectOnUIDone(
+    const std::vector<std::string>& removed_headers,
+    const net::HttpRequestHeaders& modified_headers,
+    const net::HttpRequestHeaders& modified_cors_exempt_headers,
+    const std::optional<GURL>& original_url,
+    GURL rewrited_url) {
+  std::optional<GURL> optional_url;
+  if (rewrited_url.is_empty() || !rewrited_url.is_valid() || rewrited_url == request_.url) {
+    optional_url = std::nullopt;
+  } else {
+    optional_url = std::optional<GURL>(rewrited_url);
+  }
+
+#if BUILDFLAG(IS_ARKWEB)
+    InterceptedRequestUtils::FollowRedirectExt(removed_headers, modified_headers,
+                                             modified_cors_exempt_headers,
+                                             optional_url, this);
+#endif
+    // If |OnURLLoaderClientError| was called then we're just waiting for the
+    // connection error handler of |proxied_loader_receiver_|. Don't restart the
+    // job since that'll create another URLLoader.
+    if (!target_client_) {
+      return;
+    }
+
+    // Normally we would call FollowRedirect on the target loader and it would
+    // begin loading the redirected request. However, the client might want to
+    // intercept that request so restart the job instead.
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+    Restart(true);
+#else
+    Restart();
+#endif  
+}
+#endif
+
 //==============================
 // InterceptedRequestHandler
 //==============================
@@ -1271,6 +1523,9 @@ void InterceptedRequestHandler::OnBeforeRequest(
     int32_t request_id,
     network::ResourceRequest* request,
     bool request_was_redirected,
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    base::WeakPtr<InterceptedRequest> intercepted_request,
+#endif
     OnBeforeRequestResultCallback callback,
     CancelRequestCallback cancel_callback) {
   std::move(callback).Run(false, false);
@@ -1316,6 +1571,12 @@ ProxyURLLoaderFactory::ProxyURLLoaderFactory(
   CEF_REQUIRE_IOT();
   DCHECK(request_handler_);
 
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  std::vector<int> tids;
+  tids.push_back(gettid());
+  ResReporter::GetInstance().AddRtg(tids);
+#endif
+
   // Actual creation of the factory.
   if (target_factory_remote) {
     target_factory_.Bind(std::move(target_factory_remote));
@@ -1358,6 +1619,7 @@ void ProxyURLLoaderFactory::SetDisconnectCallback(
   on_disconnect_ = std::move(on_disconnect);
 }
 
+#if !BUILDFLAG(ARKWEB_NETWORK_LOAD)
 // static
 void ProxyURLLoaderFactory::CreateProxy(
     content::BrowserContext* browser_context,
@@ -1387,6 +1649,7 @@ void ProxyURLLoaderFactory::CreateProxy(
           std::move(target_factory_remote), std::move(header_client_receiver),
           base::Unretained(resource_context), std::move(request_handler)));
 }
+#endif
 
 // static
 void ProxyURLLoaderFactory::CreateProxy(
@@ -1425,7 +1688,14 @@ void ProxyURLLoaderFactory::CreateLoaderAndStart(
     // Don't start a request while we're shutting down.
     return;
   }
-
+#if BUILDFLAG(ARKWEB_DOWNLOAD)
+  if (request.is_download_request) {
+    CreateLoaderAndStartForDownloadRequest(std::move(receiver), request_id,
+                                           options, request, std::move(client),
+                                           traffic_annotation);
+    return;
+  }
+#endif
   if (DisableRequestHandlingForTesting() && request.url.SchemeIsHTTPOrHTTPS()) {
     // This is the so-called pass-through, no-op option.
     if (target_factory_) {
@@ -1441,12 +1711,30 @@ void ProxyURLLoaderFactory::CreateLoaderAndStart(
     target_factory_->Clone(
         target_factory_clone.InitWithNewPipeAndPassReceiver());
   }
-
+#if BUILDFLAG(ARKWEB_COOKIE)
+  ModifyOptions(options);
+#endif
   InterceptedRequest* req = new InterceptedRequest(
       this, request_id, options, request, traffic_annotation,
       std::move(receiver), std::move(client), std::move(target_factory_clone));
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  bool is_redirect = false;
+  auto it = requests_.find(request_id);
+  if (it != requests_.end()) {
+    LOG(INFO) << "Use same request id for redirect.";
+    is_redirect = true;
+    if (!it->second.second) {
+      it->second.first.release();
+    }
+    requests_.erase(it);
+  }
+  requests_[request_id] =
+      std::make_pair(base::WrapUnique(req), req->GetWeakPtr());
+  req->Restart(is_redirect);
+#else
   requests_.insert(std::make_pair(request_id, base::WrapUnique(req)));
   req->Restart();
+#endif
 }
 
 void ProxyURLLoaderFactory::Clone(
@@ -1461,7 +1749,11 @@ void ProxyURLLoaderFactory::OnLoaderCreated(
   CEF_REQUIRE_IOT();
   auto request_it = requests_.find(request_id);
   if (request_it != requests_.end()) {
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+    request_it->second.first->OnLoaderCreated(std::move(receiver));
+#else
     request_it->second->OnLoaderCreated(std::move(receiver));
+#endif
   }
 }
 

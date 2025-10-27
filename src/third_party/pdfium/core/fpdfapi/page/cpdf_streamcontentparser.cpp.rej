@@ -1,0 +1,15 @@
+--- cpdf_streamcontentparser.cpp	2025-10-20 19:53:19.583965154 +0800
++++ cpdf_streamcontentparser.cpp	2025-10-16 16:15:55.884652286 +0800
+@@ -489,11 +489,11 @@
+     return param.m_pObject;
+   }
+   if (param.m_Type == ContentParam::Type::kObject)
+     return param.m_pObject;
+ 
+-  NOTREACHED();
++  NOTREACHED_NORETURN();
+ }
+ 
+ ByteString CPDF_StreamContentParser::GetString(uint32_t index) const {
+   if (index >= m_ParamCount)
+     return ByteString();

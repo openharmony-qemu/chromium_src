@@ -1,0 +1,17 @@
+--- access-info.cc	2025-10-20 19:53:31.328586800 +0800
++++ access-info.cc	2025-10-16 15:56:12.690983554 +0800
+@@ -1185,12 +1185,13 @@
+               *descriptors_field_type_ref));
+       // Remember the field map, and try to infer a useful type.
+       OptionalMapRef maybe_field_map =
+           TryMakeRef(broker(), FieldType::AsClass(*descriptors_field_type));
+       if (!maybe_field_map.has_value()) return Invalid();
+-      field_type = Type::For(maybe_field_map.value(), broker());
+       field_map = maybe_field_map;
++      // field_type can only be inferred from field_map if it is stable and we
++      // add a stability dependency. This happens on use in the access builder.
+     }
+   }
+ 
+   unrecorded_dependencies.push_back(
+       dependencies()->TransitionDependencyOffTheRecord(transition_map));

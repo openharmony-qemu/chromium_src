@@ -1,0 +1,212 @@
+--- BUILD.gn	2025-10-20 19:53:31.248597654 +0800
++++ BUILD.gn	2025-10-16 15:56:12.586983564 +0800
+@@ -216,10 +219,11 @@
+   #    tools/builtins-pgo/combine_hints.py to combine the hints produced in
+   #    step 3 into a single file.
+   # 5. Build again with v8_builtins_profiling_log_file set to the file created
+   #    in step 3 or 4.
+   v8_builtins_profiling_log_file = "default"
++  pgo_exists_flag = false
+ 
+   # Enables various testing features.
+   v8_enable_test_features = ""
+ 
+   # Enable short builtins call instruction sequences by un-embedding builtins.
+@@ -300,15 +304,16 @@
+   v8_annotate_torque_ir = false
+ 
+   # Enable snapshot compression (enabled by default for desktop) devices.
+   v8_enable_snapshot_compression =
+       target_os == "android" || target_os == "chromeos" ||
+-      target_os == "fuchsia"
++      target_os == "fuchsia" || target_os == "ohos"
+ 
+   # Enable control-flow integrity features, such as pointer authentication for
+   # ARM64. Enable it by default for simulator builds and when native code
+   # supports it as well.
++  #v8_control_flow_integrity = false
+   v8_control_flow_integrity =
+       v8_current_cpu == "arm64" &&
+       (target_is_simulator || arm_control_flow_integrity != "none")
+ 
+   # A temporary flag for development of the WasmCodePointerTable.
+@@ -442,11 +454,11 @@
+ 
+   v8_shortcut_strings_in_minor_ms = false
+ 
+   # Whether custom embedder snapshots may extend (= allocate new objects in)
+   # ReadOnlySpace.
+-  v8_enable_extensible_ro_snapshot = true
++  v8_enable_extensible_ro_snapshot = false
+ 
+   # Enable Turboshaft CSA pipeline.
+   v8_enable_turboshaft_csa = false
+ 
+   # Black allocate objects on separate pages.
+@@ -472,11 +484,24 @@
+ 
+   # Set to true if V8 will be used in a shared library.
+   v8_used_in_shared_library = enable_cef
+ }
+ 
++declare_args() {
++  v8_enable_hitrace_runtime_call_stats = v8_enable_ohos_js_engine
++}
++
+ # Derived defaults.
++pgo_exists_flag = exec_script("tools/builtins-pgo/check_pgo.py", ["--pgo_path", "profiles/ohos.profile"], "value")
++if (pgo_exists_flag) {
++  v8_builtins_profiling_log_file = "tools/builtins-pgo/profiles/ohos.profile"
++} else {
++  v8_builtins_profiling_log_file = "default"
++}
++print("Using v8_builtins_profiling from: ")
++print(v8_builtins_profiling_log_file)
++
+ if (cppgc_enable_verify_heap == "") {
+   cppgc_enable_verify_heap = v8_enable_debugging_features || v8_dcheck_always_on
+ }
+ if (v8_enable_verify_heap == "") {
+   v8_enable_verify_heap = v8_enable_debugging_features
+@@ -796,10 +821,17 @@
+   include_dirs = [
+     ".",
+     "include",
+     "$target_gen_dir",
+   ]
++  cflags = []
++  if (v8_component_build) {
++    cflags += [ "-U_FORTIFY_SOURCE" ]
++    include_dirs += [
++      "//arkweb/chromium_ext/v8"
++    ]
++  }
+ }
+ 
+ config("internal_config") {
+   defines = []
+ 
+@@ -1389,10 +1428,16 @@
+     defines += [ "V8_DISABLE_LEAPTIERING" ]
+   }
+   if (v8_wasm_random_fuzzers) {
+     defines += [ "V8_WASM_RANDOM_FUZZERS" ]
+   }
++  if (v8_enable_ohos_js_engine) {
++    defines += [ "OHOS_JS_ENGINE" ]
++  }
++  if (v8_enable_ohos_perf_jit) {
++    defines += [ "V8_ENABLE_OHOS_PERF_JIT" ]
++  }
+ }
+ 
+ config("toolchain") {
+   # Only targets in this file and its subdirs can depend on this.
+   visibility = [ "./*" ]
+@@ -1590,10 +1648,21 @@
+         "-fno-inline",
+       ]
+     }
+   }
+ 
++  if (is_ohos && v8_component_build) {
++    cflags += [
++      "-flto",
++      "-fomit-frame-pointer"
++    ]
++    ldflags += [ "-flto" ]
++    include_dirs = [ "../ohos_sdk/openharmony/native/sysroot/usr/include/hilog" ]
++    defines += [ "USING_OHOS" ]
++    libs = ["hitrace_ndk.z"]
++  }
++
+   if (is_clang) {
+     cflags += [
+       "-Wunreachable-code",
+ 
+       # TODO(v8:12245): Fix shadowing instances and remove.
+@@ -4383,10 +4452,25 @@
+     "src/zone/zone-type-traits.h",
+     "src/zone/zone-utils.h",
+     "src/zone/zone.h",
+   ]
+ 
++
++  if (v8_enable_ohos_perf_jit) {
++    sources += [
++      "//arkweb/chromium_ext/v8/ohos-perf-jit.h",
++      "//arkweb/chromium_ext/v8/ohos-perf-jit.cc",
++      "//arkweb/chromium_ext/v8/parse-jitcode.cc",
++    ]
++  } else {
++    sources += [
++      "src/diagnostics/perf-jit.h",
++      "src/diagnostics/perf-jit.cc"
++    ]
++  }
++
++
+   if (v8_enable_snapshot_compression) {
+     sources += [ "src/snapshot/snapshot-compression.h" ]
+   }
+ 
+   if (v8_use_perfetto) {
+@@ -5649,10 +5732,11 @@
+     "src/logging/log-file.cc",
+     "src/logging/log.cc",
+     "src/logging/metrics.cc",
+     "src/logging/runtime-call-stats.cc",
+     "src/logging/tracing-flags.cc",
++    "//arkweb/chromium_ext/v8/ohlog.cc",
+     "src/numbers/conversions.cc",
+     "src/numbers/math-random.cc",
+     "src/objects/abstract-code.cc",
+     "src/objects/backing-store.cc",
+     "src/objects/bigint.cc",
+@@ -6860,11 +6944,11 @@
+     "src/tracing/trace-event-no-perfetto.h",
+   ]
+ 
+   configs = [ ":internal_config_base" ]
+ 
+-  if (is_component_build) {
++  if (is_component_build || v8_component_build) {
+     defines = [ "BUILDING_V8_PLATFORM_SHARED" ]
+   }
+ 
+   public_configs = [ ":libplatform_config" ]
+ 
+@@ -8115,5 +8204,33 @@
+       "//third_party/perfetto/src/trace_processor:export_json",
+       "//third_party/perfetto/src/tracing:client_api",
+     ]
+   }
+ }  # if (!build_with_chromium && v8_use_perfetto)
++
++action("copy_v8_include") {
++  script = "//arkweb/chromium_ext/v8/cp_v8_include.py"
++  report_file = "$target_gen_dir/v8-include.txt"
++  outputs = [ report_file ]
++}
++
++if (is_ohos) {
++  action("build_v8_script") {
++    script = "//arkweb/chromium_ext/v8/build_v8_script.py"
++    args = []
++    outputs = [ "$target_out_dir/build_v8_script.so" ]
++  }
++}
++
++v8_shared_library("v8_shared") {
++  public_deps = [
++    ":v8_base",
++    ":v8_snapshot",
++    ":copy_v8_include",
++  ]
++  if (is_ohos) {
++    deps = [":build_v8_script"]
++  }
++  libs = [ "hilog_ndk.z" ]
++
++  public_configs = [ ":external_config" ]
++}

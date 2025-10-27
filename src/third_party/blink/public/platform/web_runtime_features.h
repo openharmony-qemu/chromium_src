@@ -31,11 +31,12 @@
 #ifndef THIRD_PARTY_BLINK_PUBLIC_PLATFORM_WEB_RUNTIME_FEATURES_H_
 #define THIRD_PARTY_BLINK_PUBLIC_PLATFORM_WEB_RUNTIME_FEATURES_H_
 
+#include <string>
+
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/public/platform/web_common.h"
 #include "third_party/blink/public/platform/web_runtime_features_base.h"
 #include "third_party/blink/public/platform/web_string.h"
-
-#include <string>
 
 namespace blink {
 

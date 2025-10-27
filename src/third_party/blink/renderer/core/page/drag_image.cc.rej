@@ -1,0 +1,69 @@
+--- drag_image.cc	2025-10-20 19:53:00.590208162 +0800
++++ drag_image.cc	2025-10-16 16:07:39.594468819 +0800
+@@ -118,11 +118,15 @@
+       paint_image, orientation, image_scale, opacity, interpolation_quality,
+       SkColorSpace::MakeSRGB());
+   if (!paint_image || !paint_image.GetSwSkImage()->asLegacyBitmap(&bm))
+     return nullptr;
+ 
++#if BUILDFLAG(ARKWEB_DRAG_DROP)
++  return base::WrapUnique(new DragImageExt(bm, interpolation_quality));
++#else
+   return base::WrapUnique(new DragImage(bm, interpolation_quality));
++#endif
+ }
+ 
+ static Font DeriveDragLabelFont(int size, FontSelectionValue font_weight) {
+   const AtomicString& family =
+       LayoutThemeFontProvider::SystemFontFamily(CSSValueID::kNone);
+@@ -136,13 +140,20 @@
+   Font result(description);
+   return result;
+ }
+ 
+ // static
++#if BUILDFLAG(ARKWEB_DRAG_DROP)
++std::unique_ptr<DragImage> DragImage::Create(const KURL& url,
++                                             const String& in_label,
++                                             float device_scale_factor,
++                                             bool is_force_dark_mode) {
++#else
+ std::unique_ptr<DragImage> DragImage::Create(const KURL& url,
+                                              const String& in_label,
+                                              float device_scale_factor) {
++#endif
+   const Font label_font =
+       DeriveDragLabelFont(kDragLinkLabelFontSize, kBoldWeightValue);
+   const SimpleFontData* label_font_data = label_font.PrimaryFont();
+   DCHECK(label_font_data);
+   const Font url_font =
+@@ -220,19 +234,29 @@
+ 
+   const float kDragLabelRadius = 5;
+ 
+   gfx::Rect rect(image_size);
+   cc::PaintFlags background_paint;
++#if BUILDFLAG(ARKWEB_DRAG_DROP)
++  background_paint.setStyle(cc::PaintFlags::Style::kFill_Style);
++  background_paint.setColor(0x00FFFFFF);  // transparent
++  background_paint.setBlendMode(SkBlendMode::kSrcOver);
++#else
+   background_paint.setColor(SkColorSetRGB(140, 140, 140));
++#endif BUILDFLAG(ARKWEB_DRAG_DROP)
+   background_paint.setAntiAlias(true);
+   SkRRect rrect;
+   rrect.setRectXY(SkRect::MakeWH(image_size.width(), image_size.height()),
+                   kDragLabelRadius, kDragLabelRadius);
+   resource_provider->Canvas().drawRRect(rrect, background_paint);
+ 
+   // Draw the text
+   cc::PaintFlags text_paint;
++#if BUILDFLAG(ARKWEB_DRAG_DROP)
++  if (is_force_dark_mode)
++    text_paint.setColor(0xFFFFFFFF);
++#endif
+   if (draw_url_string) {
+     if (clip_url_string)
+       url_string = StringTruncator::CenterTruncate(
+           url_string, image_size.width() - (kDragLabelBorderX * 2.0f),
+           url_font);

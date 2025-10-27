@@ -1,0 +1,15 @@
+--- BUILD.gn	2025-10-20 19:53:19.615975116 +0800
++++ BUILD.gn	2025-10-16 16:15:55.920373645 +0800
+@@ -142,11 +142,11 @@
+       "skia/fx_skia_device.cpp",
+     ]
+     public_deps += [ "//skia" ]
+   }
+ 
+-  if (is_android) {
++  if (is_android || is_ohos) {
+     sources += [
+       "android/cfpf_skiadevicemodule.cpp",
+       "android/cfpf_skiadevicemodule.h",
+       "android/cfpf_skiafont.cpp",
+       "android/cfpf_skiafont.h",

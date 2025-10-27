@@ -162,6 +162,12 @@ class HttpStreamFactory::JobController
     return main_job_wait_time_;
   }
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  void SetFromPreload(bool from_preload) { from_preload_ = from_preload; }
+
+  bool IsFromPreload() const { return from_preload_; }
+#endif
+
  private:
   friend class test::JobControllerPeer;
 

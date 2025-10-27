@@ -1,0 +1,14 @@
+--- web_document_subresource_filter_test.cc	2025-10-20 19:53:00.358210362 +0800
++++ web_document_subresource_filter_test.cc	2025-10-16 16:07:39.369462279 +0800
+@@ -2,10 +2,11 @@
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+ #include "third_party/blink/public/platform/web_document_subresource_filter.h"
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/containers/contains.h"
+ #include "testing/gmock/include/gmock/gmock.h"
+ #include "testing/gtest/include/gtest/gtest.h"
+ #include "third_party/blink/public/mojom/fetch/fetch_api_request.mojom-blink.h"
+ #include "third_party/blink/public/platform/web_cache.h"

@@ -319,6 +319,9 @@
 #define IPC_MESSAGE_HANDLER(msg_class, member_func) \
   IPC_MESSAGE_FORWARD(msg_class, this, _IpcMessageHandlerClass::member_func)
 
+
+#include "arkweb/chromium_ext/ipc/ipc_message_macros_ext.h"
+
 #define IPC_MESSAGE_FORWARD_DELAY_REPLY(msg_class, obj, member_func) \
   case msg_class::ID: {                                              \
     IPC_TASK_ANNOTATOR_CONTEXT(msg_class)                            \

@@ -1,0 +1,18 @@
+--- audio_input_stream_broker.h	2025-10-20 19:52:54.326502231 +0800
++++ audio_input_stream_broker.h	2025-10-16 15:54:59.452744396 +0800
+@@ -67,11 +67,15 @@
+   void ObserverBindingLost(uint32_t reason, const std::string& description);
+   void ClientBindingLost();
+   void Cleanup();
+ 
+   const std::string device_id_;
++#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+   media::AudioParameters params_;
++#else
++  const media::AudioParameters params_;
++#endif // defined(OHOS_MEDIA_POLICY)
+   const uint32_t shared_memory_count_;
+   const raw_ptr<media::UserInputMonitorBase> user_input_monitor_;
+   const bool enable_agc_;
+ 
+   // Indicates that CreateStream has been called, but not StreamCreated.

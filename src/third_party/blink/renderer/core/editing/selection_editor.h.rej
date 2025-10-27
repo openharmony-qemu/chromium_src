@@ -1,0 +1,17 @@
+--- selection_editor.h	2025-10-20 19:53:00.346210476 +0800
++++ selection_editor.h	2025-10-16 16:07:39.353672346 +0800
+@@ -64,10 +64,14 @@
+ 
+   void MarkCacheDirty();
+ 
+   void Trace(Visitor*) const override;
+ 
++#if BUILDFLAG(ARKWEB_MENU)
++  void NeedRecalculateCursor();
++#endif
++
+  private:
+   Document& GetDocument() const;
+   LocalFrame* GetFrame() const { return frame_.Get(); }
+ 
+   void AssertSelectionValid() const;

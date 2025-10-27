@@ -1,0 +1,16 @@
+--- memory_cache.cc	2025-10-20 19:53:01.222200860 +0800
++++ memory_cache.cc	2025-10-16 16:07:40.127379045 +0800
+@@ -191,10 +191,13 @@
+   Resource* resource = it->value->GetResource();
+   DCHECK(resource);
+ 
+   Update(resource, resource->size(), 0);
+   resource_map->erase(it);
++#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
++  resource->SetKeepAliveOff();
++#endif
+   strong_references_.erase(resource);
+ }
+ 
+ bool MemoryCache::Contains(const Resource* resource) const {
+   if (!resource || resource->Url().IsEmpty())

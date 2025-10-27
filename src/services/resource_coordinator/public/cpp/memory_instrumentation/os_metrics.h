@@ -123,7 +123,7 @@ class COMPONENT_EXPORT(
   // making sure that peak RSS is useful.
   static size_t GetPeakResidentSetSize(base::ProcessId pid);
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
-        // BUILDFLAG(IS_ANDROID)
+        // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 };
 
 }  // namespace memory_instrumentation

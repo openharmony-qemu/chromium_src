@@ -80,7 +80,7 @@ BASE_FEATURE(kBackForwardCachePrioritizedEntry,
 // cache.
 BASE_FEATURE(kBackForwardCacheUnloadAllowed,
              "BackForwardCacheUnloadAllowed",
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_BFCACHE)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_DISABLED_BY_DEFAULT
@@ -462,7 +462,22 @@ class CONTENT_EXPORT BackForwardCacheImpl
       const std::optional<url::Origin>& initiator_origin,
       bool require_no_subframes) const;
 
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  size_t GetStoredEntriesNumber() override;
+  void SetCacheSize(int size) override;
+  int ArkWebGetCacheSize() const override { return size_; }
+  void SetTimeToLive(int timeToLive) override {
+    this->time_to_live_ = timeToLive;
+  }
+  int ArkWebGetTimeToLive() const override { return time_to_live_; }
+  base::TimeDelta ArkWebGetTimeToLiveInBackForwardCache() override;
+#endif
+
+#if BUILDFLAG(ARKWEB_TEST)
+ public:
+#else
  private:
+#endif //ARKWEB_TEST
   // Destroys all evicted frames in the BackForwardCache.
   void DestroyEvictedFrames();
 

@@ -1,0 +1,32 @@
+--- html_form_element.h	2025-10-20 19:53:00.418209793 +0800
++++ html_form_element.h	2025-10-16 16:07:39.432622009 +0800
+@@ -141,11 +141,13 @@
+   // 'construct the entry list'
+   // https://html.spec.whatwg.org/C/#constructing-the-form-data-set
+   // Returns nullptr if this form is already running this function.
+   FormData* ConstructEntryList(HTMLFormControlElement* submit_button,
+                                const WTF::TextEncoding& encoding);
+-
++#if BUILDFLAG(ARKWEB_ACTIVITY_STATE) || BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
++  uint64_t UniqueRendererFormId() const { return unique_renderer_form_id_; }
++#endif
+   void InvalidateListedElementsIncludingShadowTrees();
+   void UseCountPropertyAccess(v8::Local<v8::Name>&,
+                               const v8::PropertyCallbackInfo<v8::Value>&);
+ 
+  private:
+@@ -198,11 +200,13 @@
+   // Do not access listed_elements_including_shadow_trees_ directly. Use
+   // ListedElements(true) instead.
+   ListedElement::List listed_elements_including_shadow_trees_;
+   // Do not access image_elements_ directly. Use ImageElements() instead.
+   HeapVector<Member<HTMLImageElement>> image_elements_;
+-
++#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
++  uint64_t unique_renderer_form_id_;
++#endif
+   base::OnceClosure cancel_last_submission_;
+ 
+   bool is_submitting_ = false;
+   bool in_user_js_submit_event_ = false;
+   bool is_constructing_entry_list_ = false;

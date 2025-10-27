@@ -63,6 +63,10 @@
 #include "third_party/blink/renderer/platform/weborigin/kurl.h"
 #include "third_party/blink/renderer/platform/wtf/vector.h"
 #include "third_party/webrtc_overrides/low_precision_timer.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/media/html_media_element_utils.h"
+#if BUILDFLAG(ARKWEB_MEDIA_MEMORY_PRESSURE)
+#include "base/memory/memory_pressure_listener.h"
+#endif
 
 namespace cc {
 class Layer;
@@ -136,6 +140,7 @@ class CORE_EXPORT HTMLMediaElement
   };
 
   bool IsMediaElement() const override { return true; }
+  friend class HTMLMediaElementUtils;
 
   static MIMETypeRegistry::SupportsType GetSupportsType(const ContentType&);
 
@@ -247,6 +252,18 @@ class CORE_EXPORT HTMLMediaElement
   void SetLoop(bool);
   ScriptPromise<IDLUndefined> playForBindings(ScriptState*);
   std::optional<DOMExceptionCode> Play();
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  void ScheduleVideoFreezeEvent() override;
+  double freezeTime();
+  double playedTime();
+  std::string AddErrorCodeToMessage(WebMediaPlayer::NetworkState error,
+                                    const String &input_message);
+  void ReportMediaLoadingErrorMessage(const std::string& error_type,
+                                      WebMediaPlayer::NetworkState error,
+                                      const String& message,
+                                      bool is_message_not_clear);
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
   // Called when the video should pause to let audio descriptions finish.
   void PauseToLetDescriptionFinish();
@@ -368,6 +385,10 @@ class CORE_EXPORT HTMLMediaElement
   // Returns the "effective media volume" value as specified in the HTML5 spec.
   double EffectiveMediaVolume() const;
 
+#ifdef BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  bool IsUsedCustomVideoPlayer();
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+
   // Predicates also used when dispatching wrapper creation (cf.
   // [SpecialWrapFor] IDL attribute usage.)
   virtual bool IsHTMLAudioElement() const { return false; }
@@ -481,6 +502,16 @@ class CORE_EXPORT HTMLMediaElement
   virtual void RecordVideoOcclusionState(
       std::string_view occlusion_state) const {}
 
+#ifdef BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  void FullscreenChanged(bool is_fullscreen);
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  virtual void SetMediaTitle();
+  virtual String GetMediaTitle() const;
+  virtual String GetVideoPoster() const;
+#endif  // ARKWEB_MEDIA_AVSESSION
+
  private:
   // Friend class for testing.
   friend class ContextMenuControllerTest;
@@ -542,6 +573,10 @@ class CORE_EXPORT HTMLMediaElement
   // Updates the `MediaVideoVisibilityTracker` state whenever the media play
   // state is updated. This is typically handled during `UpdatePlayState`.
   virtual void UpdateVideoVisibilityTracker() {}
+#if BUILDFLAG(ARKWEB_PIP)
+  virtual void OnPictureInPictureStateChanged(
+      uint32_t state, int32_t width, int32_t height) {}
+#endif
 
   // Handles playing of media element when audio descriptions are finished
   // speaking.
@@ -604,6 +639,43 @@ class CORE_EXPORT HTMLMediaElement
   void DidPlayerSizeChange(const gfx::Size& size) override;
   void OnRemotePlaybackDisabled(bool disabled) override;
 
+#ifdef BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  bool IsMuted() override;
+  uint32_t IsMediaMuted();
+  bool IsCustomVideoPlayerEnabled() override;
+  bool ShouldCustomVideoPlayerOverlay() override;
+  bool ShouldShowMediaControls() override;
+  std::string GetMediaFormat() override;
+  void RestartForPrimitive() override;
+  Vector<media::Renderer::MediaSourceInfo> GetRemainSourceInfos() override;
+  Vector<WebString> GetMediaControlsList() override;
+  base::flat_map<std::string, std::string> GetElementAttributes() override;
+  std::string GetOutgoingReferrerString() override;
+
+  void UpdatePlaybackStatus(uint32_t status) override;
+  void UpdateVolume(double volume) override;
+  void UpdateMuted(bool muted) override;
+  void UpdatePlaybackRate(double playback_rate) override;
+
+  gfx::Rect GetVideoRect() override;
+
+  void OnLayerRectChange(const gfx::Rect& rect) override;
+
+  void RequestEnterFullscreen() override {}
+  void RequestExitFullscreen() override {}
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void SetPlaybackRate(double playback_rate) override {}
+  void RequestDownloadUrl() override {}
+  void HidePlaybackSpeedList() override;
+  void SetVideoSurface(int32_t widget_id) override;
+  void SetVolume(double volume) override;
+  bool GetVolume(double* out_volume) override { return true; }
+  void GetVolume(GetVolumeCallback callback) override;
+  void RequestExitFullscreenIfNeeded();
+#endif  // ARKWEB_VIDEO_ASSISTANT
+
   // Returns a reference to the mojo remote for the MediaPlayerHost interface,
   // requesting it first from the BrowserInterfaceBroker if needed. It is an
   // error to call this method before having access to the document's frame.
@@ -611,6 +683,9 @@ class CORE_EXPORT HTMLMediaElement
 
   // media::mojom::MediaPlayer  implementation.
   void RequestPlay() override;
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  void SetHtmlPlayEnabled(bool enabled) override;
+#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
   void RequestPause(bool triggered_by_user) override;
   void RequestSeekForward(base::TimeDelta seek_time) override;
   void RequestSeekBackward(base::TimeDelta seek_time) override;
@@ -765,10 +840,27 @@ class CORE_EXPORT HTMLMediaElement
   mojo::PendingAssociatedReceiver<media::mojom::blink::MediaPlayerObserver>
   AddMediaPlayerObserverAndPassReceiver();
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+
+  media::mojom::blink::MediaInfoForVASTPtr CollectMediaInfoAttributesForVAST();
+
+  void NotifyVideoPlayingInternal();
+
+  void NotifyVideoDestroyed();
+
+  void OnVideoAssistantConfigReceived(
+      base::OnceCallback<void()> callback,
+      media::mojom::blink::VideoAssistantConfigPtr config);
+  void OnNotifyVideoPlayingTimerFired(TimerBase*);
+#endif  // ARKWEB_VIDEO_ASSISTANT
+
   // Timers used to schedule one-shot tasks with no delay.
   HeapTaskRunnerTimer<HTMLMediaElement> load_timer_;
   HeapTaskRunnerTimer<HTMLMediaElement> audio_tracks_timer_;
   HeapTaskRunnerTimer<HTMLMediaElement> removed_from_document_timer_;
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  HeapTaskRunnerTimer<HTMLMediaElement> notify_video_playing_timer_;
+#endif  // ARKWEB_VIDEO_ASSISTANT
   // Use a low precision timer for repeating tasks to avoid excessive Idle Wake
   // Up frequency, especially when WebRTC is used and the page contains many
   // HTMLMediaElements.
@@ -783,6 +875,10 @@ class CORE_EXPORT HTMLMediaElement
   NetworkState network_state_;
   ReadyState ready_state_;
   ReadyState ready_state_maximum_;
+
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  bool is_enabled_HTML_play_ = true;
+#endif  // BUILDFLAG(ARKWEB_MEDIA_POLICY)
 
   SourceMetadata current_src_;
   KURL current_src_after_redirects_;
@@ -857,6 +953,11 @@ class CORE_EXPORT HTMLMediaElement
 
   typedef unsigned PendingActionFlags;
   PendingActionFlags pending_action_flags_;
+
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  String media_title_;
+  String video_poster_;
+#endif  // ARKWEB_MEDIA_AVSESSION
 
   // FIXME: HTMLMediaElement has way too many state bits.
   bool playing_ : 1;
@@ -1026,6 +1127,10 @@ class CORE_EXPORT HTMLMediaElement
   Member<MediaControls> media_controls_;
   Member<HTMLMediaElementControlsList> controls_list_;
 
+ public:
+  HTMLMediaElementUtils html_media_element_utils_;
+ 
+ private:
   Member<IntersectionObserver> lazy_load_intersection_observer_;
 
   Member<DisallowNewWrapper<
@@ -1045,6 +1150,23 @@ class CORE_EXPORT HTMLMediaElement
       HeapMojoAssociatedReceiverSet<media::mojom::blink::MediaPlayer,
                                     HTMLMediaElement>>>
       media_player_receiver_set_;
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  gfx::Rect layer_rect_;
+  std::string media_format_;
+  Member<Node> next_retry_child_node_ = nullptr;
+  bool should_create_custom_renderer_ = true;
+  bool played_by_custom_mp_ = false;
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  bool video_assistant_enabled_ = false;
+  bool video_visible_ = false;
+  bool has_been_seen_playing_once_ = false;
+  bool has_notified_playing_ = false;
+  gfx::RectF video_rect_;
+  std::optional<bool> video_assistant_;
+#endif  // ARKWEB_VIDEO_ASSISTANT
 };
 
 template <>

@@ -86,6 +86,10 @@ class MEDIA_EXPORT PipelineController {
              Demuxer* demuxer,
              Pipeline::Client* client,
              bool is_streaming,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+             RequestSurfaceCB request_surface_cb,
+             VideoDecoderChangedCB decoder_changed_cb,
+#endif // ARKWEB_VIDEO_ASSISTANT
              bool is_static);
 
   // Request a seek to |time|. If |time_updated| is true, then the eventual
@@ -105,7 +109,12 @@ class MEDIA_EXPORT PipelineController {
 
   // Request that |pipeline_| be resumed. This is a no-op if |pipeline_| has not
   // been suspended.
-  void Resume();
+  void Resume(
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+        RequestSurfaceCB request_surface_cb,
+        VideoDecoderChangedCB decoder_changed_cb
+#endif // ARKWEB_VIDEO_ASSISTANT
+      );
 
   // Called when a decoder in the pipeline lost its state. This requires a seek
   // so that the decoder can start from a new key frame.
@@ -247,6 +256,11 @@ class MEDIA_EXPORT PipelineController {
   // Set to true during Start(). Indicates that |seeked_cb_| must be fired once
   // we've completed startup.
   bool pending_startup_ = false;
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  RequestSurfaceCB pending_surface_request_cb_;
+  VideoDecoderChangedCB pending_decoder_changed_cb_;
+#endif // ARKWEB_VIDEO_ASSISTANT
 
   base::ThreadChecker thread_checker_;
   base::WeakPtrFactory<PipelineController> weak_factory_{this};

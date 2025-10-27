@@ -1,0 +1,26 @@
+--- host_resolver_dns_task.h	2025-10-20 19:52:57.114206319 +0800
++++ host_resolver_dns_task.h	2025-10-16 15:55:02.693276217 +0800
+@@ -27,10 +27,11 @@
+ #include "net/dns/httpssvc_metrics.h"
+ #include "net/dns/public/secure_dns_mode.h"
+ #include "net/dns/resolve_context.h"
+ #include "net/log/net_log_with_source.h"
+ #include "third_party/abseil-cpp/absl/types/variant.h"
++#include "arkweb/chromium_ext/net/dns/arkweb_host_resolver_dns_task_ext.h"
+ 
+ namespace net {
+ 
+ class DnsClient;
+ class DnsTransaction;
+@@ -40,10 +41,11 @@
+ // a DNS stub resolver. One DnsTransaction is created for each resolution
+ // needed, which for AF_UNSPEC resolutions includes both A and AAAA. The
+ // transactions are scheduled separately and started separately.
+ class NET_EXPORT_PRIVATE HostResolverDnsTask final {
+  public:
++  friend class ArkWebHostResolverDnsTaskExt;
+   using Results = std::set<std::unique_ptr<HostResolverInternalResult>>;
+ 
+   // Represents a single transaction results.
+   struct SingleTransactionResults {
+     SingleTransactionResults(DnsQueryType query_type, Results results);

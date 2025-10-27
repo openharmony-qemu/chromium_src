@@ -1,0 +1,85 @@
+--- gesture_manager.cc	2025-10-20 19:53:00.454209451 +0800
++++ gesture_manager.cc	2025-10-16 16:07:39.479991807 +0800
+@@ -442,10 +481,13 @@
+   return event_result;
+ }
+ 
+ WebInputEventResult GestureManager::HandleGestureShortPress(
+     const GestureEventWithHitTestResults& targeted_event) {
++#if BUILDFLAG(ARKWEB_AI)
++  utils_->CloseAIOverlay(targeted_event);
++#endif
+   drag_in_progress_ = false;
+   // TODO(crbug.com/1299010): When TouchDragAndContextMenu is enabled, we want
+   // to start drag here at short-press and open context-menu later at
+   // long-press.  However, on Android an ACTION_CANCEL event is fired on
+   // drag-start, and occcasionally that happens before long-press gesture
+@@ -472,10 +514,17 @@
+   HitTestLocation location(frame_->View()->ConvertFromRootFrame(
+       gfx::ToFlooredPoint(long_press_position_in_root_frame_)));
+   HitTestResult hit_test_result =
+       frame_->GetEventHandler().HitTestResultAtLocation(location);
+ 
++#if BUILDFLAG(ARKWEB_AI)
++  if (mouse_event_manager_->AsMouseEventManagerExt()->GetHitOverlayStatus(hit_test_result) ==
++      HitOverlayStatus::kCreating) {
++    return WebInputEventResult::kNotHandled;
++  }
++#endif
++
+   gesture_context_menu_deferred_ = false;
+ 
+   if (TouchDragAndContextMenuEnabled(frame_)) {
+     if (!RuntimeEnabledFeatures::TouchDragOnShortPressEnabled()) {
+       drag_in_progress_ =
+@@ -487,22 +536,32 @@
+     bool hit_test_contains_links =
+         hit_test_result.URLElement() ||
+         !hit_test_result.AbsoluteImageURL().IsNull() ||
+         !hit_test_result.AbsoluteMediaURL().IsNull();
+     if (!hit_test_contains_links &&
+-        mouse_event_manager_->HandleDragDropIfPossible(targeted_event)) {
++        mouse_event_manager_->HandleDragDropIfPossible(targeted_event)
++#if BUILDFLAG(ARKWEB_AI)
++        && !mouse_event_manager_->AsMouseEventManagerExt()->GetOverlayInProgress()
++#endif
++    ) {
+       gesture_context_menu_deferred_ = true;
+       return WebInputEventResult::kHandledSystem;
+     }
+   }
+ 
+   Node* inner_node = hit_test_result.InnerNode();
++#if BUILDFLAG(ARKWEB_AI)
++  utils_->UpdateContextMenuForAI(hit_test_result, location, gesture_event);
++#endif
++#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
++  utils_->UpdateContextMenuForFreeCopy(hit_test_result, location);
++#else
+   if (!drag_in_progress_ && inner_node && inner_node->GetLayoutObject() &&
+       selection_controller_->HandleGestureLongPress(hit_test_result)) {
+     mouse_event_manager_->FocusDocumentView();
+   }
+-
++#endif  // BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+   if (frame_->GetSettings() &&
+       frame_->GetSettings()->GetShowContextMenuOnMouseUp()) {
+     // TODO(https://crbug.com/1290905): Prevent a contextmenu after a
+     // finger-drag when TouchDragAndContextMenu is enabled.
+     gesture_context_menu_deferred_ = true;
+@@ -527,11 +586,15 @@
+ WebInputEventResult GestureManager::HandleGestureTwoFingerTap(
+     const GestureEventWithHitTestResults& targeted_event) {
+   Node* inner_node = targeted_event.GetHitTestResult().InnerNode();
+   if (inner_node && inner_node->GetLayoutObject())
+     selection_controller_->HandleGestureTwoFingerTap(targeted_event);
++#if BUILDFLAG(ARKWEB_MENU)
++  return WebInputEventResult::kNotHandled;
++#else
+   return SendContextMenuEventForGesture(targeted_event);
++#endif
+ }
+ 
+ void GestureManager::SendContextMenuEventTouchDragEnd(
+     const WebMouseEvent& mouse_event) {
+   if (!gesture_context_menu_deferred_ || suppress_mouse_events_from_gestures_) {

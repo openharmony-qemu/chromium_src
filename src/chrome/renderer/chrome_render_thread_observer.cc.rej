@@ -1,0 +1,17 @@
+--- chrome_render_thread_observer.cc	2025-10-20 19:52:51.233061639 +0800
++++ chrome_render_thread_observer.cc	2025-10-16 15:57:02.146400211 +0800
+@@ -54,10 +54,14 @@
+ #include "third_party/blink/public/web/web_document.h"
+ #include "third_party/blink/public/web/web_frame.h"
+ #include "third_party/blink/public/web/web_security_policy.h"
+ #include "third_party/blink/public/web/web_view.h"
+ 
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
++
+ #if BUILDFLAG(IS_CHROMEOS_ASH)
+ #include "chrome/renderer/ash_merge_session_loader_throttle.h"
+ #endif
+ 
+ #if BUILDFLAG(ENABLE_BOUND_SESSION_CREDENTIALS)

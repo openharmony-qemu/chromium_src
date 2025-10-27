@@ -1,0 +1,19 @@
+--- screenlock_monitor_device_source.h	2025-10-20 19:52:54.442554932 +0800
++++ screenlock_monitor_device_source.h	2025-10-16 15:54:59.568620380 +0800
+@@ -93,14 +93,14 @@
+   };
+ 
+   SessionMessageWindow session_message_window_;
+ #endif  // BUILDFLAG(IS_WIN)
+ 
+-#if BUILDFLAG(IS_MAC)
++#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_OHOS)
+   void StartListeningForScreenlock();
+   void StopListeningForScreenlock();
+-#endif  // BUILDFLAG(IS_MAC)
++#endif  // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_OHOS)
+ 
+ #if BUILDFLAG(IS_CHROMEOS_ASH)
+   class ScreenLockListener : public session_manager::SessionManagerObserver {
+    public:
+     ScreenLockListener();

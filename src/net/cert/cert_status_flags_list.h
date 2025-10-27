@@ -15,6 +15,9 @@
 
 // The possible status bits for CertStatus.
 // Bits 0 to 15 are for errors.
+
+#include "build/build_config.h"
+
 CERT_STATUS_FLAG(COMMON_NAME_INVALID, 1 << 0)
 CERT_STATUS_FLAG(DATE_INVALID, 1 << 1)
 CERT_STATUS_FLAG(AUTHORITY_INVALID, 1 << 2)

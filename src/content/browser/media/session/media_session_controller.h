@@ -36,6 +36,7 @@ class WebContentsImpl;
 class CONTENT_EXPORT MediaSessionController
     : public MediaSessionPlayerObserver {
  public:
+  friend class MediaSessionControllerExt;
   MediaSessionController(const MediaPlayerId& id,
                          WebContentsImpl* web_contents);
 
@@ -120,7 +121,16 @@ class CONTENT_EXPORT MediaSessionController
   // Called when video visibility changes for the given media player.
   void OnVideoVisibilityChanged(bool meets_visibility_threshold);
 
+  virtual MediaSessionControllerExt* AsMediaSessionControllerExt() {
+    return nullptr;
+  }
+
+#if BUILDFLAG(ARKWEB_TEST)
+ public:
+#else
  private:
+#endif  // ARKWEB_TEST
+
   bool IsMediaSessionNeeded() const;
 
   // Determines whether a session is needed and adds or removes the player
@@ -160,5 +170,6 @@ class CONTENT_EXPORT MediaSessionController
 };
 
 }  // namespace content
+#include "arkweb/chromium_ext/content/browser/media/session/media_session_controller_ext.h"
 
 #endif  // CONTENT_BROWSER_MEDIA_SESSION_MEDIA_SESSION_CONTROLLER_H_

@@ -210,6 +210,13 @@ void StyleSheetContents::ParserAppendRule(StyleRuleBase* rule) {
     return;
   }
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  if (rule) {
+    rule->SetForAdBlock(is_for_adblock_);
+    rule->SetForUserAdBlock(is_for_user_adblock_);
+  }
+#endif
+
   child_rules_.push_back(rule);
 }
 

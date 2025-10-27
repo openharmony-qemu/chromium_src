@@ -1,0 +1,19 @@
+--- url_loader_factory_manager.cc	2025-10-20 19:52:55.352143394 +0800
++++ url_loader_factory_manager.cc	2025-10-16 15:55:00.427700948 +0800
+@@ -214,11 +214,15 @@
+   // by an extension should inherit CORS/ORB treatment of the extension.
+   url::SchemeHostPort precursor_origin =
+       origin.GetTupleOrPrecursorTupleIfOpaque();
+ 
+   // Don't change factory params for something that is not an extension.
+-  if (precursor_origin.scheme() != kExtensionScheme)
++  if (precursor_origin.scheme() != kExtensionScheme
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      && precursor_origin.scheme() != kArkwebExtensionScheme
++#endif
++  )
+     return;
+ 
+   // Find the |extension| associated with |initiator_origin|.
+   const Extension* extension =
+       registry->enabled_extensions().GetByID(precursor_origin.host());

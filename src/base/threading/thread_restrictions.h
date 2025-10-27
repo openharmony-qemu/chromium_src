@@ -7,6 +7,7 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/base_export.h"
 #include "base/compiler_specific.h"
@@ -136,9 +137,15 @@ class PartnerBookmarksReader;
 class Profile;
 class ProfileImpl;
 class ScopedAllowBlockingForProfile;
+#if BUILDFLAG(ARKWEB_COOKIE)
+class CefCookieManagerImplExt;
+#endif // BUILDFLAG(ARKWEB_COOKIE)
 class StartupTabProviderImpl;
 class WebEngineBrowserMainParts;
 struct StartupProfilePathInfo;
+#if BUILDFLAG(ARKWEB_MSGPORT)
+class ArkWebBrowserHostExtImpl;
+#endif
 
 namespace base {
 class Environment;
@@ -430,6 +437,9 @@ class DrmThreadProxy;
 class DrmDisplayHostManager;
 class ScopedAllowBlockingForGbmSurface;
 class SelectFileDialogLinux;
+#if BUILDFLAG(IS_OHOS)
+class SelectFileDialogOHOS;
+#endif
 class WindowResizeHelperMac;
 }  // namespace ui
 namespace updater {
@@ -655,6 +665,9 @@ class BASE_EXPORT ScopedAllowBlocking {
 #if BUILDFLAG(IS_IOS)
   friend class ::BrowserStateDirectoryBuilder;
 #endif
+#if BUILDFLAG(ARKWEB_MSGPORT)
+  friend class ::ArkWebBrowserHostExtImpl;
+#endif
 
   // Sorted by function name (with namespace), ignoring the return type.
   friend Profile* ::GetLastProfileMac();  // http://crbug.com/1176734
@@ -830,6 +843,9 @@ class BASE_EXPORT
   friend class android_webview::
       AwFormDatabaseService;  // http://crbug.com/904431
   friend class android_webview::CookieManager;
+#if BUILDFLAG(ARKWEB_COOKIE)
+  friend class ::CefCookieManagerImplExt;
+#endif // BUILDFLAG(ARKWEB_COOKIE)
   friend class android_webview::VizCompositorThreadRunnerWebView;
   friend class audio::OutputDevice;
   friend class base::FileDescriptorWatcher;

@@ -1,0 +1,16 @@
+--- shell.h	2025-10-20 19:52:54.630233208 +0800
++++ shell.h	2025-10-16 15:54:59.768406559 +0800
+@@ -19,10 +19,13 @@
+ #include "content/public/browser/web_contents_observer.h"
+ #include "content/shell/browser/shell_platform_delegate.h"
+ #include "ipc/ipc_channel.h"
+ #include "ui/gfx/geometry/size.h"
+ #include "ui/gfx/native_widget_types.h"
++#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
++enum class RendererIsUnresponsiveReason;
++#endif
+ 
+ class GURL;
+ 
+ namespace content {
+ class FileSelectListener;

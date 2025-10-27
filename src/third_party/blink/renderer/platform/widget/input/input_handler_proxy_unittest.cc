@@ -1210,6 +1210,7 @@ TEST_P(InputHandlerProxyEventQueueTest, AckTouchActionNonBlockingForFling) {
   {
     float delta = 10;
 
+    EXPECT_CALL(mock_client_, TouchHitTest(_, _));
     // ScrollBegin
     {
       EXPECT_CALL(mock_input_handler_, ScrollBegin(_, _))
@@ -1283,14 +1284,6 @@ TEST_P(InputHandlerProxyEventQueueTest, AckTouchActionNonBlockingForFling) {
   // so that the browser knows that it shouldn't wait for an ACK with an allowed
   // touch-action before dispatching more scrolls.
   {
-    // Simulate hitting a blocking region on the scrolling layer, as if there
-    // was a non-passive touchstart handler.
-    EXPECT_CALL(mock_input_handler_,
-                EventListenerTypeForTouchStartOrMoveAt(_, _))
-        .WillOnce(DoAll(SetArgPointee<1>(TouchAction::kNone),
-                        Return(InputHandler::TouchStartOrMoveEventListenerType::
-                                   kHandlerOnScrollingLayer)));
-
     std::unique_ptr<WebTouchEvent> touch_start =
         std::make_unique<WebTouchEvent>(
             WebInputEvent::Type::kTouchStart, WebInputEvent::kNoModifiers,
@@ -1299,13 +1292,6 @@ TEST_P(InputHandlerProxyEventQueueTest, AckTouchActionNonBlockingForFling) {
     touch_start->touch_start_or_first_touch_move = true;
     touch_start->touches[0] =
         CreateWebTouchPoint(WebTouchPoint::State::kStatePressed, 10, 10);
-
-    // This is the call this test is checking: we expect that the client will
-    // report the touch as non-blocking and also that the allowed touch action
-    // matches the non blocking expectation (i.e. all touches are allowed).
-    EXPECT_CALL(mock_client_, SetAllowedTouchAction(TouchAction::kAuto))
-        .WillOnce(Return());
-    EXPECT_CALL(mock_input_handler_, SetIsHandlingTouchSequence(true));
 
     InjectInputEvent(std::move(touch_start));
   }
@@ -1672,18 +1658,7 @@ TEST_P(InputHandlerProxyTest, TouchMoveBlockingAddedAfterPassiveTouchStart) {
   // non-blocking but drop all touch moves.
   VERIFY_AND_RESET_MOCKS();
 
-  EXPECT_CALL(
-      mock_input_handler_,
-      GetEventListenerProperties(cc::EventListenerClass::kTouchStartOrMove))
-      .WillOnce(testing::Return(cc::EventListenerProperties::kPassive));
-  EXPECT_CALL(mock_input_handler_, EventListenerTypeForTouchStartOrMoveAt(_, _))
-      .WillOnce(testing::Return(
-          cc::InputHandler::TouchStartOrMoveEventListenerType::kNoHandler));
-  EXPECT_CALL(mock_client_, SetAllowedTouchAction(_))
-      .WillOnce(testing::Return());
-  EXPECT_CALL(mock_input_handler_, HitTest(_))
-      .WillOnce(testing::Return(cc::PointerResultType::kUnhandled));
-  EXPECT_CALL(mock_input_handler_, SetIsHandlingTouchSequence(true));
+  EXPECT_CALL(mock_client_, TouchHitTest(_, _));
 
   WebTouchEvent touch(WebInputEvent::Type::kTouchStart,
                       WebInputEvent::kNoModifiers,
@@ -1692,7 +1667,7 @@ TEST_P(InputHandlerProxyTest, TouchMoveBlockingAddedAfterPassiveTouchStart) {
   touch.touch_start_or_first_touch_move = true;
   touch.touches[0] =
       CreateWebTouchPoint(WebTouchPoint::State::kStatePressed, 0, 0);
-  EXPECT_EQ(InputHandlerProxy::DID_NOT_HANDLE_NON_BLOCKING,
+  EXPECT_EQ(InputHandlerProxy::DID_NOT_HANDLE,
             HandleInputEventWithLatencyInfo(input_handler_.get(), touch));
 
   EXPECT_CALL(mock_input_handler_, EventListenerTypeForTouchStartOrMoveAt(_, _))
@@ -1706,7 +1681,7 @@ TEST_P(InputHandlerProxyTest, TouchMoveBlockingAddedAfterPassiveTouchStart) {
   touch.touch_start_or_first_touch_move = true;
   touch.touches[0] =
       CreateWebTouchPoint(WebTouchPoint::State::kStateMoved, 10, 10);
-  EXPECT_EQ(InputHandlerProxy::DID_NOT_HANDLE_NON_BLOCKING,
+  EXPECT_EQ(InputHandlerProxy::DID_NOT_HANDLE,
             HandleInputEventWithLatencyInfo(input_handler_.get(), touch));
   VERIFY_AND_RESET_MOCKS();
 }
@@ -3283,22 +3258,8 @@ TEST_P(InputHandlerProxyMainThreadScrollingReasonTest,
   // Touch start with passive event listener.
   SetupEvents(TestEventType::kTouch);
 
-  EXPECT_CALL(mock_input_handler_,
-              EventListenerTypeForTouchStartOrMoveAt(
-                  testing::Property(&gfx::Point::x, testing::Gt(0)), _))
-      .WillOnce(testing::Return(
-          cc::InputHandler::TouchStartOrMoveEventListenerType::kNoHandler));
-  EXPECT_CALL(
-      mock_input_handler_,
-      GetEventListenerProperties(cc::EventListenerClass::kTouchStartOrMove))
-      .WillOnce(testing::Return(cc::EventListenerProperties::kPassive));
-  EXPECT_CALL(mock_client_, SetAllowedTouchAction(_))
-      .WillOnce(testing::Return());
-  EXPECT_CALL(mock_input_handler_, HitTest(_))
-      .WillOnce(testing::Return(cc::PointerResultType::kUnhandled));
-  EXPECT_CALL(mock_input_handler_, SetIsHandlingTouchSequence(true));
-
-  expected_disposition_ = InputHandlerProxy::DID_NOT_HANDLE_NON_BLOCKING;
+  EXPECT_CALL(mock_client_, TouchHitTest(_, _));
+  expected_disposition_ = InputHandlerProxy::DID_NOT_HANDLE;
   EXPECT_EQ(expected_disposition_,
             HandleInputEventAndFlushEventQueue(
                 mock_input_handler_, input_handler_.get(), touch_start_));
@@ -3331,20 +3292,9 @@ TEST_P(InputHandlerProxyMainThreadScrollingReasonTest,
   // The touch event hits a touch event handler that is acked from the
   // compositor thread.
   SetupEvents(TestEventType::kTouch);
+  EXPECT_CALL(mock_client_, TouchHitTest(_, _)).Times(testing::AtMost(1));
 
-  EXPECT_CALL(mock_input_handler_,
-              EventListenerTypeForTouchStartOrMoveAt(
-                  testing::Property(&gfx::Point::x, testing::Gt(0)), _))
-      .WillOnce(
-          testing::Return(cc::InputHandler::TouchStartOrMoveEventListenerType::
-                              kHandlerOnScrollingLayer));
-  EXPECT_CALL(mock_client_, SetAllowedTouchAction(_))
-      .WillOnce(testing::Return());
-  EXPECT_CALL(mock_input_handler_, HitTest(_))
-      .WillOnce(testing::Return(cc::PointerResultType::kUnhandled));
-  EXPECT_CALL(mock_input_handler_, SetIsHandlingTouchSequence(true));
-
-  expected_disposition_ = InputHandlerProxy::DID_NOT_HANDLE_NON_BLOCKING;
+  expected_disposition_ = InputHandlerProxy::DID_NOT_HANDLE;
   EXPECT_EQ(expected_disposition_,
             HandleInputEventAndFlushEventQueue(
                 mock_input_handler_, input_handler_.get(), touch_start_));

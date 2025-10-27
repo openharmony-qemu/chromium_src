@@ -1,0 +1,20 @@
+--- cef_types_color.h	2025-10-20 19:52:47.977895045 +0800
++++ cef_types_color.h	2025-10-16 15:55:22.342586992 +0800
+@@ -48,10 +50,17 @@
+ 
+   ///
+   /// BGRA with 8 bits per pixel (32bits total).
+   ///
+   CEF_COLOR_TYPE_BGRA_8888,
++
++#if BUILDFLAG(ARKWEB_NAVIGATION)
++  ///
++  /// Unknown color type.
++  ///
++  CEF_COLOR_TYPE_UNKNOWN,
++#endif  // BUILDFLAG(ARKWEB_NAVIGATION)
+ } cef_color_type_t;
+ 
+ #ifdef __cplusplus
+ }
+ #endif

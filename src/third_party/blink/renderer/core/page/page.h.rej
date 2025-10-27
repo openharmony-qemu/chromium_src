@@ -1,0 +1,17 @@
+--- page.h	2025-10-20 19:53:00.590208162 +0800
++++ page.h	2025-10-16 16:07:39.594468819 +0800
+@@ -558,10 +559,14 @@
+   // struct, otherwise this function CHECKs. See
+   // https://explainers-by-googlers.github.io/partitioned-popins/
+   const PartitionedPopinOpenerProperties& GetPartitionedPopinOpenerProperties()
+       const;
+ 
++  PageUtils* page_utils() {
++    return page_utils_.get();
++  }
++
+  private:
+   friend class ScopedPagePauser;
+   class CloseTaskHandler;
+ 
+   // SettingsDelegate overrides.

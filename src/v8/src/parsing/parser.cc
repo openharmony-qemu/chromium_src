@@ -36,6 +36,10 @@
 #include "src/tracing/trace-event.h"
 #include "src/zone/zone-list-inl.h"
 
+#ifdef OHOS_JS_ENGINE
+#include "../../../arkweb/chromium_ext/v8/trace.h"
+#endif
+
 namespace v8::internal {
 
 FunctionLiteral* Parser::DefaultConstructor(const AstRawString* name,
@@ -707,6 +711,9 @@ void Parser::ParseProgram(Isolate* isolate, DirectHandle<Script> script,
                                      ? RuntimeCallCounterId::kParseEval
                                      : RuntimeCallCounterId::kParseProgram);
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"), "V8.ParseProgram");
+#ifdef OHOS_JS_ENGINE
+  auto trace = HiTrace("RCS_v8.compile_V8.ParseProgram");
+#endif
   base::ElapsedTimer timer;
   if (V8_UNLIKELY(v8_flags.log_function_events)) timer.Start();
 
@@ -1032,6 +1039,9 @@ void Parser::ParseFunction(Isolate* isolate, ParseInfo* info,
   DCHECK(parsing_on_main_thread_);
   RCS_SCOPE(runtime_call_stats_, RuntimeCallCounterId::kParseFunction);
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"), "V8.ParseFunction");
+#ifdef OHOS_JS_ENGINE
+  auto trace = HiTrace("RCS_v8.compile_V8.ParseFunction");
+#endif
   base::ElapsedTimer timer;
   if (V8_UNLIKELY(v8_flags.log_function_events)) timer.Start();
 

@@ -1,0 +1,41 @@
+--- mojom.gni	2025-10-20 19:52:56.842202833 +0800
++++ mojom.gni	2025-10-16 15:55:02.285712412 +0800
+@@ -13,10 +13,11 @@
+ # TODO(rockot): Maybe we can factor these dependencies out of //mojo. They're
+ # used to conditionally enable message ID scrambling in a way which is
+ # consistent across toolchains and which is affected by branded vs non-branded
+ # Chrome builds. Ideally we could create some generic knobs here that could be
+ # flipped elsewhere though.
++import("//arkweb/build/features/features.gni")
+ import("//build/config/chrome_build.gni")
+ import("//build/config/chromeos/ui_mode.gni")
+ import("//build/config/features.gni")
+ import("//build/config/nacl/config.gni")
+ import("//build/config/sanitizers/sanitizers.gni")
+@@ -786,16 +790,26 @@
+       enabled_features += [ "is_linux" ]
+     } else if (is_mac) {
+       enabled_features += [ "is_mac" ]
+     } else if (is_win) {
+       enabled_features += [ "is_win" ]
++    } else if (is_ohos) {
++      enabled_features += [ "is_ohos" ]
+     }
+ 
+     if (is_apple) {
+       enabled_features += [ "is_apple" ]
+     }
+ 
++    if (is_arkweb) {
++      if (defined(arkweb_mojo_features)) {
++        foreach(feature, arkweb_mojo_features) {
++          enabled_features += [ feature ]
++        }
++      }
++    }
++
+     action(parser_target_name) {
+       allow_remote = true
+ 
+       # Use large worker to avoid OOM (b/325844324) and make it faster with
+       # multiple cores.

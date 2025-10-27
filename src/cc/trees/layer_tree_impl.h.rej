@@ -1,0 +1,53 @@
+--- layer_tree_impl.h	2025-10-20 19:52:47.957940445 +0800
++++ layer_tree_impl.h	2025-10-16 15:54:55.713462774 +0800
+@@ -38,10 +38,11 @@
+ #include "cc/trees/layer_tree_host_impl.h"
+ #include "cc/trees/property_tree.h"
+ #include "cc/trees/swap_promise.h"
+ #include "components/viz/common/frame_sinks/begin_frame_args.h"
+ #include "ui/gfx/overlay_transform.h"
++#include "arkweb/build/features/features.h"
+ 
+ namespace base {
+ namespace trace_event {
+ class TracedValue;
+ }
+@@ -108,10 +110,11 @@
+   LifecycleState state_ = kNotSyncing;
+ };
+ 
+ class CC_EXPORT LayerTreeImpl {
+  public:
++  friend class LayerTreeImplUtils;
+   // This is the number of times a fixed point has to be hit continuously by a
+   // layer to consider it as jittering.
+   enum : int { kFixedPointHitsThreshold = 3 };
+   LayerTreeImpl(
+       LayerTreeHostImpl& host_impl,
+@@ -823,10 +829,14 @@
+   }
+ 
+   void SetViewTransitionContentRect(const viz::ViewTransitionElementResourceId&,
+                                     const gfx::RectF&);
+ 
++  LayerTreeImplUtils* layer_tree_impl_utils() {
++    return utils_.get();
++  }
++
+  protected:
+   float ClampPageScaleFactorToLimits(float page_scale_factor) const;
+   void PushPageScaleFactorAndLimits(const float* page_scale_factor,
+                                     float min_page_scale_factor,
+                                     float max_page_scale_factor);
+@@ -1001,10 +1011,11 @@
+   base::UnguessableToken screenshot_destination_;
+ 
+   // See `CommitState::primary_main_frame_item_sequence_number`.
+   int64_t primary_main_frame_item_sequence_number_ =
+       RenderFrameMetadata::kInvalidItemSequenceNumber;
++  std::unique_ptr<LayerTreeImplUtils> utils_;
+ };
+ 
+ }  // namespace cc
+ 
+ #endif  // CC_TREES_LAYER_TREE_IMPL_H_

@@ -1,0 +1,14 @@
+--- layer_tree_host.h	2025-10-20 19:52:47.953949525 +0800
++++ layer_tree_host.h	2025-10-16 15:54:55.705465686 +0800
+@@ -20,10 +20,11 @@
+ #include <string>
+ #include <unordered_map>
+ #include <utility>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/cancelable_callback.h"
+ #include "base/containers/flat_map.h"
+ #include "base/functional/callback_forward.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/memory/read_only_shared_memory_region.h"

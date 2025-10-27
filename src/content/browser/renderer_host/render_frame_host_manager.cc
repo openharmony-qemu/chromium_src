@@ -97,6 +97,10 @@
 #include "ui/gfx/mac/scoped_cocoa_disable_screen_updates.h"
 #endif  // BUILDFLAG(IS_MAC)
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/browser/renderer_host/ark_web_render_frame_host_manager.h"
+#endif  // BUILDFLAG(IS_ARKWEB)
+
 namespace content {
 
 using LifecycleStateImpl = RenderFrameHostImpl::LifecycleStateImpl;
@@ -1243,6 +1247,11 @@ void RenderFrameHostManager::UnloadOldFrame(
         back_forward_cache.GetCurrentBackForwardCacheEligibility(
             old_render_frame_host.get());
     bool can_store = bfcache_eligibility.CanStore();
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+    LOG(INFO) << "NativeEmbed BFCache, render frame host can_store = "
+      << can_store << ", reason = " << bfcache_eligibility.flattened_reasons.ToString() << ", render frame global id = "
+      << old_render_frame_host->GetGlobalId();
+#endif
     if (old_page_back_forward_cache_metrics &&
         old_page_back_forward_cache_metrics->had_form_data_associated()) {
       UMA_HISTOGRAM_ENUMERATION(
@@ -1258,6 +1267,17 @@ void RenderFrameHostManager::UnloadOldFrame(
                 "old_render_frame_host", old_render_frame_host,
                 "bfcache_eligibility",
                 bfcache_eligibility.flattened_reasons.ToString());
+
+#if BUILDFLAG(ARKWEB_BFCACHE) || BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    ArkWebUnloadOldFrame(back_forward_cache,
+                         bfcache_eligibility.flattened_reasons.ToString(),
+                         can_store);
+#endif  // BUILDFLAG(ARKWEB_BFCACHE) || BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#if BUILDFLAG(ARKWEB_USERAGENT)
+    if (old_render_frame_host->GetUserAgentDifferentFromNavigatingFrame()) {
+      can_store = false;
+    }
+#endif  // BUILDFLAG(ARKWEB_USERAGENT)
     if (can_store) {
       bool is_same_process =
           (old_render_frame_host->GetProcess() ==

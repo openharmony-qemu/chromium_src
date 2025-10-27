@@ -89,6 +89,8 @@ class PLATFORM_EXPORT WidgetBase : public mojom::blink::Widget,
       bool is_for_scalable_page);
   ~WidgetBase() override;
 
+  friend class WidgetBaseUtils;
+
   // Initialize the compositor. |settings| is typically null. When |settings| is
   // null the default settings will be used, tests may provide a |settings|
   // object to override the defaults.

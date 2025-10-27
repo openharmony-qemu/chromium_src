@@ -1,0 +1,18 @@
+--- first_party_set_parser.cc	2025-10-20 19:52:54.282482240 +0800
++++ first_party_set_parser.cc	2025-10-16 15:54:59.408791436 +0800
+@@ -764,11 +764,15 @@
+                          PolicySetType::kReplacement));
+     ASSIGN_OR_RETURN(std::vector<SingleSet> additions,
+                      context.GetPolicySetsFromList(
+                          policy.FindList(kFirstPartySetPolicyAdditionsField),
+                          PolicySetType::kAddition));
++#if BUILDFLAG(IS_OHOS)
++    return ParsedPolicySetLists{std::move(replacements), std::move(additions)};
++#else
+     return ParsedPolicySetLists(std::move(replacements), std::move(additions));
++#endif
+   }();
+ 
+   context.PostProcessSetLists(set_lists);
+ 
+   return FirstPartySetParser::PolicyParseResult(

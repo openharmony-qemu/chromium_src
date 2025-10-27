@@ -1,0 +1,33 @@
+--- download_manager_impl.cc	2025-10-20 19:52:54.274478606 +0800
++++ download_manager_impl.cc	2025-10-16 15:54:59.396804266 +0800
+@@ -208,22 +213,30 @@
+ 
+   download::DownloadItemImpl* CreateActiveItem(
+       download::DownloadItemImplDelegate* delegate,
+       uint32_t download_id,
+       const download::DownloadCreateInfo& info) override {
++#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
++    return new download::ArkWebDownloadItemImplExt(delegate, download_id, info);
++#else
+     return new download::DownloadItemImpl(delegate, download_id, info);
++#endif
+   }
+ 
+   download::DownloadItemImpl* CreateSavePageItem(
+       download::DownloadItemImplDelegate* delegate,
+       uint32_t download_id,
+       const base::FilePath& path,
+       const GURL& url,
+       const std::string& mime_type,
+       download::DownloadJob::CancelRequestCallback cancel_request_callback)
+       override {
++#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
++    return new download::ArkWebDownloadItemImplExt(delegate, download_id, path, url,
++#else
+     return new download::DownloadItemImpl(delegate, download_id, path, url,
++#endif
+                                           mime_type,
+                                           std::move(cancel_request_callback));
+   }
+ };
+ 

@@ -1,0 +1,34 @@
+--- media_control_loading_panel_element.cc	2025-10-20 19:53:00.774206418 +0800
++++ media_control_loading_panel_element.cc	2025-10-16 16:07:39.835265291 +0800
+@@ -161,20 +161,31 @@
+   switch (state_) {
+     case State::kHidden:
+       // If the media controls are loading metadata then we should show the
+       // loading panel and insert it into the DOM.
+       if (IsInLoadingState(GetMediaControls()) && !controls_hidden_) {
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++    if (!GetMediaControls().ShouldShowVideoControlsHM()) {
++#endif
+         PopulateShadowDOM();
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++    }
++#endif
+         SetIsWanted(true);
+         SetAnimationIterationCount(kInfinite);
+         state_ = State::kPlaying;
+       }
+       break;
+     case State::kPlaying:
+       // If the media controls are stopped then we should hide the loading
+       // panel, but not until the current cycle of animations is complete.
+       if (!IsInLoadingState(GetMediaControls())) {
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++    if (GetMediaControls().ShouldShowVideoControlsHM()) {
++        HideAnimation();
++    }
++#endif
+         SetAnimationIterationCount(WTF::String::Number(animation_count_ + 1));
+         state_ = State::kCoolingDown;
+       }
+       break;
+     case State::kCoolingDown:

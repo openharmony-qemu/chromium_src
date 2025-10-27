@@ -1,0 +1,15 @@
+--- gl_features.cc	2025-10-20 19:53:31.040625878 +0800
++++ gl_features.cc	2025-10-16 15:55:05.638159905 +0800
+@@ -119,11 +119,11 @@
+ // the --use-cmd-decoder=passthrough or --use-cmd-decoder=validating flags.
+ // Feature lives in ui/gl because it affects the GL binding initialization on
+ // platforms that would otherwise not default to using EGL bindings.
+ BASE_FEATURE(kDefaultPassthroughCommandDecoder,
+              "DefaultPassthroughCommandDecoder",
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ // Add a small delay in shader compiling if validating command decoder is used.
+ // This is to verify if passthrough command decoder impacting negatively top
+ // level metrics could be due to slower shader compiling.
+ BASE_FEATURE(kAddDelayToGLCompileShader,

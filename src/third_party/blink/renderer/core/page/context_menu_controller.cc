@@ -447,6 +447,9 @@ bool ContextMenuController::ShowContextMenu(LocalFrame* frame,
 
   HitTestRequest::HitTestRequestType type =
       HitTestRequest::kReadOnly | HitTestRequest::kActive |
+#if BUILDFLAG(ARKWEB_MENU)
+      HitTestRequest::kOnDoHitTest |
+#endif  // BUILDFLAG(ARKWEB_MENU)
       HitTestRequest::kPenetratingList | HitTestRequest::kListBased;
 
   HitTestLocation location(point);
@@ -498,6 +501,10 @@ bool ContextMenuController::ShowContextMenu(LocalFrame* frame,
     }
   }
   data.link_url = GURL(result.AbsoluteLinkURL());
+#if BUILDFLAG(ARKWEB_MENU)
+  AsContextMenuControllerExt()->GetImgUrl(result, data, source_type);
+  AsContextMenuControllerExt()->IsAILink(data, result);
+#endif
 
   auto* html_element = DynamicTo<HTMLElement>(result.InnerNode());
   if (html_element) {
@@ -586,6 +593,10 @@ bool ContextMenuController::ShowContextMenu(LocalFrame* frame,
       data.media_flags |= ContextMenuData::kMediaCanToggleControls;
     if (media_element->ShouldShowAllControls())
       data.media_flags |= ContextMenuData::kMediaControls;
+#if BUILDFLAG(ARKWEB_MENU)
+  } else if (!result.AbsoluteImageURL().IsEmpty()) {
+    AsContextMenuControllerExt()->SetArkWebMenuData(data, result);
+#endif  // BUILDFLAG(ARKWEB_MENU)
   } else if (IsA<HTMLObjectElement>(*result.InnerNode()) ||
              IsA<HTMLEmbedElement>(*result.InnerNode())) {
     if (auto* embedded = DynamicTo<LayoutEmbeddedContent>(
@@ -859,6 +870,10 @@ bool ContextMenuController::ShowContextMenu(LocalFrame* frame,
     }
   }
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  AsContextMenuControllerExt()->FindImgUrl(data, result, point);
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
   selected_web_frame->ShowContextMenu(
       context_menu_client_receiver_.BindNewEndpointAndPassRemote(
           selected_web_frame->GetTaskRunner(TaskType::kInternalDefault)),
@@ -866,5 +881,4 @@ bool ContextMenuController::ShowContextMenu(LocalFrame* frame,
 
   return true;
 }
-
 }  // namespace blink

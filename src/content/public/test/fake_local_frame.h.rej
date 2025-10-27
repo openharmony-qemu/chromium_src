@@ -1,0 +1,38 @@
+--- fake_local_frame.h	2025-10-20 19:52:54.582634581 +0800
++++ fake_local_frame.h	2025-10-16 15:54:59.716462152 +0800
+@@ -181,10 +181,35 @@
+       const std::string& normalized_server_timing,
+       const ::network::URLLoaderCompletionStatus& completion_status) override;
+   void UpdatePrerenderURL(const ::GURL& matched_url,
+                           UpdatePrerenderURLCallback callback) override;
+ 
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  void JavaScriptExecuteRequestExt(
++      ::mojo::ScopedHandle fd_handle,
++      uint64_t scriptLength,
++      bool wants_result,
++      JavaScriptExecuteRequestCallback callback) override {}
++
++  void GetImageFromCache(
++      const std::string& url,
++      GetImageFromCacheCallback callback) override {}
++
++  void GenerateCodeCache(
++      const std::string& url,
++      const std::string& script,
++      blink::mojom::CacheOptionsPtr cache_options,
++      GenerateCodeCacheCallback callback) override {}
++#endif
++
++#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
++  void DetectBlankScreen(const std::string& url,
++                         const std::vector<double>& detection_timing,
++                         const std::vector<int32_t>& detection_methods,
++                         int32_t contentful_nodes_count_threshold) override {}
++#endif
++
+  private:
+   void BindFrameHostReceiver(mojo::ScopedInterfaceEndpointHandle handle);
+ 
+   mojo::AssociatedReceiver<blink::mojom::LocalFrame> receiver_{this};
+ };

@@ -1,0 +1,54 @@
+--- web_frame_widget_impl.cc	2025-10-20 19:53:00.402209945 +0800
++++ web_frame_widget_impl.cc	2025-10-16 16:07:39.408937111 +0800
+@@ -31,10 +31,12 @@
+ #include "third_party/blink/renderer/core/frame/web_frame_widget_impl.h"
+ 
+ #include <memory>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
++#include "arkweb/chromium_ext/third_party/blink/renderer/platform/widget/widget_base_utils.h"
+ #include "base/auto_reset.h"
+ #include "base/debug/crash_logging.h"
+ #include "base/debug/dump_without_crashing.h"
+ #include "base/functional/callback_helpers.h"
+ #include "base/functional/function_ref.h"
+@@ -935,15 +937,23 @@
+ 
+   // If there is a popup open, it should be the one processing the event,
+   // not the page.
+   scoped_refptr<WebPagePopupImpl> page_popup = View()->GetPagePopup();
+   if (page_popup) {
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++    WebInputEventResult event_result = page_popup->HandleKeyEvent(event);
++#else
+     page_popup->HandleKeyEvent(event);
++#endif
+     if (event.GetType() == WebInputEvent::Type::kRawKeyDown) {
+       suppress_next_keypress_event_ = true;
+     }
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++    return event_result;
++#else
+     return WebInputEventResult::kHandledSystem;
++#endif
+   }
+ 
+   auto* frame = DynamicTo<LocalFrame>(FocusedCoreFrame());
+   if (!frame)
+     return WebInputEventResult::kNotHandled;
+@@ -1828,10 +1850,14 @@
+     std::move(page_scale_animation_for_testing_callback_).Run();
+ }
+ 
+ void WebFrameWidgetImpl::ScheduleAnimation() {
+   if (!View()->does_composite()) {
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++    TRACE_EVENT0(
++      "blink", "WebFrameWidgetImpl::ScheduleAnimation non_composited_client_");
++#endif
+     non_composited_client_->ScheduleNonCompositedAnimation();
+     return;
+   }
+ 
+   if (widget_base_->WillBeDestroyed()) {

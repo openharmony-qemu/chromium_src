@@ -1,0 +1,11 @@
+--- features.gni	2025-10-20 19:52:52.781791091 +0800
++++ features.gni	2025-10-16 15:54:56.584530514 +0800
+@@ -4,7 +4,7 @@
+ 
+ import("//build/config/chromeos/ui_mode.gni")
+ 
+ declare_args() {
+   # Whether Compose is enabled in the build.
+-  enable_compose = is_mac || is_win || is_linux || is_chromeos_ash
++  enable_compose = is_mac || is_win || is_linux || is_chromeos_ash || is_ohos
+ }

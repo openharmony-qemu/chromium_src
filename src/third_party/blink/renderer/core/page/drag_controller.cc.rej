@@ -1,0 +1,48 @@
+--- drag_controller.cc	2025-10-20 19:53:00.590208162 +0800
++++ drag_controller.cc	2025-10-16 16:07:39.590521336 +0800
+@@ -230,13 +241,21 @@
+ void DragController::ClearDragCaret() {
+   page_->GetDragCaret().Clear();
+ }
+ 
+ void DragController::DragEnded() {
++#if BUILDFLAG(ARKWEB_DRAG_DROP)
++  AsDragControllerExt()->RestoreDragLinkEffects();
++  AsDragControllerExt()->SetIsDragging(false);
++#endif
+   drag_initiator_ = nullptr;
+   did_initiate_drag_ = false;
+   page_->GetDragCaret().Clear();
++#if BUILDFLAG(ARKWEB_DRAG_DROP)
++  AsDragControllerExt()->RestoreDragTextEffects();
++  AsDragControllerExt()->RestoreDragImageEffects();
++#endif
+ }
+ 
+ void DragController::DragExited(DragData* drag_data, LocalFrame& local_root) {
+   DCHECK(drag_data);
+ 
+@@ -1417,15 +1495,22 @@
+   gfx::Rect drag_obj_rect;
+   gfx::Point effective_drag_initiation_location;
+ 
+   std::unique_ptr<DragImage> drag_image = DetermineDragImageAndRect(
+       drag_obj_rect, effective_drag_initiation_location, frame, state,
+-      hit_test_result, drag_initiation_location, mouse_dragged_point);
++      hit_test_result, drag_initiation_location, mouse_dragged_point
++#if BUILDFLAG(ARKWEB_DRAG_DROP)
++      , AsDragControllerExt()->GetVisibleRectToUIInRootFrame(frame)
++#endif
++  );
+ 
+   DoSystemDrag(drag_image.get(), drag_obj_rect,
+                effective_drag_initiation_location,
+                state.drag_data_transfer_.Get(), frame);
++#if BUILDFLAG(ARKWEB_DRAG_DROP)
++  AsDragControllerExt()->SetIsDragging(true);
++#endif
+   return true;
+ }
+ 
+ void DragController::DoSystemDrag(DragImage* image,
+                                   const gfx::Rect& drag_obj_rect,

@@ -25,8 +25,11 @@ class TestImageDecoder : public ImageDecoder {
       : ImageDecoder(kAlphaNotPremultiplied,
                      high_bit_depth_decoding_option,
                      ColorBehavior::kTransformToSRGB,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
                      cc::AuxImage::kDefault,
-                     max_decoded_bytes) {}
+#endif
+                     max_decoded_bytes) {
+  }
 
   TestImageDecoder() : TestImageDecoder(ImageDecoder::kDefaultBitDepth) {}
 

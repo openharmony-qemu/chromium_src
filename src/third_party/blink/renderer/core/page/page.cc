@@ -265,10 +265,14 @@ Page::Page(base::PassKey<Page>,
       autoscroll_controller_(MakeGarbageCollected<AutoscrollController>(*this)),
       chrome_client_(&chrome_client),
       drag_caret_(MakeGarbageCollected<DragCaret>()),
-      drag_controller_(MakeGarbageCollected<DragController>(this)),
+      drag_controller_(MakeGarbageCollected<DragControllerExt>(this)),
       focus_controller_(MakeGarbageCollected<FocusController>(this)),
       context_menu_controller_(
+#if BUILDFLAG(ARKWEB_MENU)
+          MakeGarbageCollected<ContextMenuControllerExt>(this)),
+#else
           MakeGarbageCollected<ContextMenuController>(this)),
+#endif  // ARKWEB_MENU
       page_scale_constraints_set_(
           MakeGarbageCollected<PageScaleConstraintsSet>(this)),
       pointer_lock_controller_(
@@ -321,6 +325,7 @@ Page::Page(base::PassKey<Page>,
             "HistoryNavigation",
             WebScopedVirtualTimePauser::VirtualTaskDuration::kInstant);
   }
+  page_utils_ = std::make_unique<PageUtils>(this);
   UpdateColorProviders(color_provider_colors &&
                                !color_provider_colors->IsEmpty()
                            ? *color_provider_colors
@@ -458,7 +463,13 @@ void Page::SetMainFrame(Frame* main_frame) {
   // initialization or swaps between local and remote frames.
   main_frame_ = main_frame;
 
+#if BUILDFLAG(ARKWEB_TEST)
+  if (main_frame_) {
+#endif
   page_scheduler_->SetIsMainFrameLocal(main_frame->IsLocalFrame());
+#if BUILDFLAG(ARKWEB_TEST)
+  }
+#endif
 
   // Now that the page has a main frame, connect it to related pages if needed.
   // However, if the main frame is a fake RemoteFrame used for a new Page to
@@ -777,7 +788,11 @@ void Page::SetDefaultPageScaleLimits(float min_scale, float max_scale) {
   new_defaults.minimum_scale = min_scale;
   new_defaults.maximum_scale = max_scale;
 
+#if BUILDFLAG(IS_ARKWEB)
+  if (page_utils_->IsNotPageScaleLimits(new_defaults))
+#else
   if (new_defaults == GetPageScaleConstraintsSet().DefaultConstraints())
+#endif
     return;
 
   GetPageScaleConstraintsSet().SetDefaultConstraints(new_defaults);
@@ -1620,6 +1635,7 @@ void Page::SetAttributionSupport(
     network::mojom::AttributionSupport attribution_support) {
   attribution_support_ = attribution_support;
 }
+
 
 template class CORE_TEMPLATE_EXPORT Supplement<Page>;
 

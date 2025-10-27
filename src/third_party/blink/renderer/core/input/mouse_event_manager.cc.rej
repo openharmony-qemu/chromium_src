@@ -1,0 +1,40 @@
+--- mouse_event_manager.cc	2025-10-20 19:53:00.454209451 +0800
++++ mouse_event_manager.cc	2025-10-16 16:07:39.479991807 +0800
+@@ -2,10 +2,11 @@
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+ #include "third_party/blink/renderer/core/input/mouse_event_manager.h"
+ 
++#include "arkweb/build/features/features.h"
+ #include "build/build_config.h"
+ #include "third_party/blink/public/platform/web_input_event_result.h"
+ #include "third_party/blink/renderer/bindings/core/v8/v8_drag_event_init.h"
+ #include "third_party/blink/renderer/bindings/core/v8/v8_pointer_event_init.h"
+ #include "third_party/blink/renderer/core/clipboard/data_object.h"
+@@ -115,11 +116,10 @@
+ #else
+ const int kDragThresholdX = 4;
+ const int kDragThresholdY = 4;
+ constexpr base::TimeDelta kTextDragDelay = base::Seconds(0.0);
+ #endif
+-
+ }  // namespace
+ 
+ enum class DragInitiator { kMouse, kTouch };
+ 
+ MouseEventManager::MouseEventManager(LocalFrame& frame,
+@@ -815,10 +822,13 @@
+ }
+ 
+ WebInputEventResult MouseEventManager::HandleMouseDraggedEvent(
+     const MouseEventWithHitTestResults& event) {
+   TRACE_EVENT0("blink", "MouseEventManager::handleMouseDraggedEvent");
++#if BUILDFLAG(ARKWEB_AI)
++  AsMouseEventManagerExt()->HandleCreateOverlayWhenDrag(event);
++#endif
+ 
+   bool is_pen = event.Event().pointer_type ==
+                 blink::WebPointerProperties::PointerType::kPen;
+ 
+   WebPointerProperties::Button pen_drag_button =

@@ -1,0 +1,83 @@
+--- BUILD.gn	2025-10-20 19:52:45.937020047 +0800
++++ BUILD.gn	2025-10-16 15:54:54.081775126 +0800
+@@ -98,14 +102,16 @@
+     } else {
+       deps = []
+     }
+   } else {
+     deps = [
++      "//arkweb/build:arkweb_test_targets",
+       "//base:base_perftests",
+       "//base:base_unittests",
+       "//codelabs",
+       "//components:components_unittests",
++      "//ohos_nweb/test:ohos_nweb_unittests",
+       "//components/gwp_asan:gwp_asan_unittests",
+       "//infra/orchestrator:orchestrator_all",
+       "//net:net_unittests",
+       "//sandbox:sandbox_unittests",
+       "//services:services_unittests",
+@@ -122,15 +128,32 @@
+       "//third_party/rapidhash:rapidhash_fuzztests",
+       "//tools/binary_size:binary_size_trybot_py",
+       "//tools/ipc_fuzzer:ipc_fuzzer_all",
+       "//tools/metrics:metrics_metadata",
+       "//ui/base:ui_base_unittests",
++      "//ui/color:color_unittests",
+       "//ui/gfx:gfx_unittests",
+       "//ui/tests:ui_unittests",
+       "//url:url_unittests",
+     ]
+ 
++    if (defined(arkweb_nweb_ex) && arkweb_nweb_ex) {
++      deps += [
++        "//ohos_browser_shell",
++        "//ohos_nweb_ex/browser_service",
++        "//ohos_nweb_ex/test:ohos_nweb_ex_unittests",
++        "//third_party/ohos_nweb_hap",
++      ]
++    deps += [
++      "//arkweb/chromium_ext/ohos_test",
++    ]
++    }  # endif // ARKWEB_NWEB_EX
++
++    if (defined(enable_ohos_nweb_hap) && enable_ohos_nweb_hap) {
++      deps += [ "//third_party/ohos_nweb_hap" ]
++    }
++
+     if (current_cpu == "arm64" && is_android && host_os == "linux") {
+       deps += [
+         "//components/allocation_recorder/tools:dump_allocation_recorder_data",
+       ]
+     }
+@@ -763,10 +788,18 @@
+       # and how cross-platform this is.
+       deps +=
+           [ "//components/services/filesystem:filesystem_service_unittests" ]
+     }
+ 
++    if (is_ohos) {
++      deps += [
++        "//third_party/angle:libANGLE",
++        "//third_party/angle:libEGL",
++        "//third_party/angle:libGLESv2",
++      ]
++    }
++
+     if ((is_linux && !is_castos) || is_chromeos_lacros) {
+       # TODO(https://crbug.com/1329673): Figure out if any of these should be in
+       # gn_all and figure out how cross-platform they are.
+       deps += [
+         "//chrome/installer/util:strings",
+@@ -1847,10 +1880,11 @@
+       "mojo/public/tools/bindings/generators/js_templates/lite/test:closure_compile_modules",
+     ]
+   }
+ }
+ 
++
+ # Write debug logs to gn_logs.txt.
+ _lines = [
+            "Generated during 'gn gen' by //BUILD.gn.",
+            "",
+          ] + build_gn_logs

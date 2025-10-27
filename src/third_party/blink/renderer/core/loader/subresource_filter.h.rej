@@ -1,0 +1,51 @@
+--- subresource_filter.h	2025-10-20 19:53:00.578208276 +0800
++++ subresource_filter.h	2025-10-16 16:07:39.578678886 +0800
+@@ -37,23 +43,33 @@
+  public:
+   SubresourceFilter(ExecutionContext*,
+                     std::unique_ptr<WebDocumentSubresourceFilter>);
+   ~SubresourceFilter();
+ 
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  std::unique_ptr<ArkWebSubresourceFilterExt> utils;
++#endif
++
+   bool AllowLoad(const KURL& resource_url,
+                  network::mojom::RequestDestination,
+                  ReportingDisposition);
++
+   bool AllowWebSocketConnection(const KURL&);
+   bool AllowWebTransportConnection(const KURL&);
+ 
+   // Returns if |resource_url| is an ad resource.
+   bool IsAdResource(const KURL& resource_url,
+                     network::mojom::RequestDestination);
+ 
+   virtual void Trace(Visitor*) const;
+ 
+  private:
++  friend class ArkWebSubresourceFilterExt;
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  void SendStatistics(TimerBase*);
++#endif
++
+   void ReportLoad(const KURL& resource_url,
+                   WebDocumentSubresourceFilter::LoadPolicy);
+   void ReportLoadAsync(const KURL& resource_url,
+                        WebDocumentSubresourceFilter::LoadPolicy);
+ 
+@@ -62,10 +78,14 @@
+ 
+   // Save the last resource check's result in the single element cache.
+   std::pair<std::pair<KURL, network::mojom::RequestDestination>,
+             WebDocumentSubresourceFilter::LoadPolicy>
+       last_resource_check_result_;
++
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  HeapTaskRunnerTimer<SubresourceFilter> statistics_timer_;
++#endif
+ };
+ 
+ }  // namespace blink
+ 
+ #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_LOADER_SUBRESOURCE_FILTER_H_

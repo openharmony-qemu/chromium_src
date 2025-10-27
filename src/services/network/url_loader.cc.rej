@@ -1,0 +1,337 @@
+--- url_loader.cc	2025-10-20 19:52:57.690211529 +0800
++++ url_loader.cc	2025-10-16 15:55:03.360562054 +0800
+@@ -12,10 +12,13 @@
+ #include <string>
+ #include <string_view>
+ #include <utility>
+ #include <vector>
+ 
++#include "arkweb/chromium_ext/services/network/url_loader_utils.h"
++#include "arkweb/chromium_ext/services/network/url_loader_ext.h"
++
+ #include "base/command_line.h"
+ #include "base/containers/fixed_flat_set.h"
+ #include "base/files/file.h"
+ #include "base/functional/bind.h"
+ #include "base/functional/callback_helpers.h"
+@@ -590,11 +608,18 @@
+     mojo::PendingRemote<mojom::URLLoaderNetworkServiceObserver>
+         url_loader_network_observer,
+     mojo::PendingRemote<mojom::DevToolsObserver> devtools_observer,
+     mojo::PendingRemote<mojom::AcceptCHFrameObserver> accept_ch_frame_observer,
+     std::unique_ptr<AttributionRequestHelper> attribution_request_helper,
+-    bool shared_storage_writable_eligible)
++    bool shared_storage_writable_eligible
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++,
++    std::shared_ptr<ohos_prp_preload::PRPPRequestLoader> prpp_loader,
++    const std::string& org_main_url,
++    std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info
++#endif
++    )
+     : url_request_context_(context.GetUrlRequestContext()),
+       network_context_client_(context.GetNetworkContextClient()),
+       delete_callback_(std::move(delete_callback)),
+       options_(options),
+       resource_type_(request.resource_type),
+@@ -668,11 +693,11 @@
+       include_request_cookies_with_response_(
+           request.trusted_params &&
+           request.trusted_params->include_request_cookies_with_response),
+       provide_data_use_updates_(context.DataUseUpdatesEnabled()) {
+   DCHECK(delete_callback_);
+-
++  url_loader_utils_ = std::make_unique<URLLoaderUtils>(this, request.corb_detachable);
+   if (options_ & mojom::kURLLoadOptionReadAndDiscardBody) {
+     CHECK(!(options_ & mojom::kURLLoadOptionSniffMimeType))
+         << "options ReadAndDiscardBody and SniffMimeType cannot be used "
+            "together";
+     if (factory_params_->is_orb_enabled) {
+@@ -705,13 +730,23 @@
+     options_ |= mojom::kURLLoadOptionSendSSLInfoWithResponse |
+                 mojom::kURLLoadOptionSendSSLInfoForCertificateError;
+   }
+   receiver_.set_disconnect_handler(
+       base::BindOnce(&URLLoader::OnMojoDisconnect, base::Unretained(this)));
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  bool isStartReplay = url_loader_utils_->HandlePrppLoaderStartReplay(
++      prpp_loader, context, request, traffic_annotation,
++      shared_dictionary_manager, org_main_url, preload_info,
++      shared_storage_writable_eligible);
++  if (isStartReplay) {
++    return;
++  }
++#else
+   url_request_ = url_request_context_->CreateRequest(
+       request.url, request.priority, this, traffic_annotation,
+       /*is_for_websockets=*/false, request.net_log_create_info);
++#endif
+ 
+   TRACE_EVENT(
+       "loading", "URLLoader::URLLoader",
+       perfetto::Flow::ProcessScoped(url_request_->net_log().source().id));
+ 
+@@ -759,10 +794,13 @@
+       ShouldForceIgnoreSiteForCookies(request),
+       request.navigation_redirect_chain, request.referrer,
+       request.referrer_policy,
+       /*upgrade_if_insecure=*/request.upgrade_if_insecure,
+       /*is_ad_tagged=*/request.is_ad_tagged,
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++      request.usage_scenario_,
++#endif
+       /*isolation_info=*/
+       GetIsolationInfo(factory_params_->isolation_info,
+                        factory_params_->automatically_assign_isolation_info,
+                        request),
+       /*force_main_frame_for_same_site_cookies=*/
+@@ -827,10 +874,13 @@
+     const std::vector<GURL>& url_chain,
+     const GURL& referrer,
+     net::ReferrerPolicy referrer_policy,
+     bool upgrade_if_insecure,
+     bool is_ad_tagged,
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++    int32_t usage_scenario,
++#endif
+     std::optional<net::IsolationInfo> isolation_info,
+     bool force_main_frame_for_same_site_cookies,
+     net::SecureDnsPolicy secure_dns_policy,
+     net::HttpRequestHeaders extra_request_headers,
+     const std::optional<std::vector<net::SourceStream::SourceType>>&
+@@ -852,10 +902,14 @@
+   url_request_->SetReferrer(referrer.GetAsReferrer().spec());
+   url_request_->set_referrer_policy(referrer_policy);
+   url_request_->set_upgrade_if_insecure(upgrade_if_insecure);
+   url_request_->set_ad_tagged(is_ad_tagged);
+ 
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++  url_request_->set_usage_scenario(usage_scenario);
++#endif
++
+   if (isolation_info) {
+     url_request_->set_isolation_info(std::move(isolation_info).value());
+   }
+ 
+   url_request_->set_force_main_frame_for_same_site_cookies(
+@@ -1101,10 +1155,14 @@
+   if (!request.trust_token_params) {
+     ProcessOutboundAttributionInterceptor();
+     return;
+   }
+ 
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  url_loader_utils_->SetPreloadFlagUnSupport();
++#endif
++
+   // Trust token operations other than signing cannot be served from cache
+   // because it needs to send the server the Trust Tokens request header and
+   // get the corresponding response header. It is okay to cache the results in
+   // case subsequent requests are made to the same URL in non-trust-token
+   // settings.
+@@ -1256,15 +1314,21 @@
+             !(options_ & mojom::kURLLoadOptionSynchronous), url_request_.get());
+     resource_scheduler_request_handle_->set_resume_callback(
+         base::BindOnce(&URLLoader::ResumeStart, base::Unretained(this)));
+     resource_scheduler_request_handle_->WillStartRequest(&defer);
+   }
+-  if (defer)
++
++#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
++  if (defer) {
+     url_request_->LogBlockedBy("ResourceScheduler");
+-  else
++  }
++  else {
++    TRACE_EVENT1("net", "URLLoader::ScheduleStart", "id", request_id_);
+     url_request_->Start();
+ }
++#endif
++}
+ 
+ URLLoader::~URLLoader() {
+   TRACE_EVENT(
+       "loading", "URLLoader::~URLLoader",
+       perfetto::Flow::ProcessScoped(url_request_->net_log().source().id));
+@@ -1481,18 +1548,32 @@
+   return net::OK;
+ }
+ 
+ mojom::URLResponseHeadPtr URLLoader::BuildResponseHead() const {
+   auto response = mojom::URLResponseHead::New();
+-
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  net::LoadTimingInfo load_timing_info = net::LoadTimingInfo();
++  url_loader_utils_->UpdateResponseTimes(response, load_timing_info);
++#else
+   response->request_time = url_request_->request_time();
+   response->response_time = url_request_->response_time();
+   response->original_response_time = url_request_->original_response_time();
++#endif
+   response->headers = url_request_->response_headers();
+   response->parsed_headers =
+       PopulateParsedHeaders(response->headers.get(), url_request_->url());
+ 
++#if BUILDFLAG(ARKWEB_CODECACHE_ENHANCE)
++  response->code_cache_valid = url_request_->is_code_cache_valid();
++#endif
++
++#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
++  std::string http_version = url_loader_utils_->GetRequestHttpVersion();
++  TRACE_EVENT2("net", "URLLoader::BuildResponseHead", "http", http_version,
++               "id", request_id_);
++#endif
++
+   url_request_->GetCharset(&response->charset);
+   response->content_length = url_request_->GetExpectedContentSize();
+   url_request_->GetMimeType(&response->mime_type);
+   net::HttpResponseInfo response_info = url_request_->response_info();
+   response->was_fetched_via_spdy = response_info.was_fetched_via_spdy;
+@@ -1520,14 +1601,16 @@
+       // IsInclude() true means the cookie was sent.
+       response->was_cookie_in_request = true;
+       break;
+     }
+   }
+-
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  url_loader_utils_->GetResponseLoadingTime(response);
++#else
+   if (is_load_timing_enabled_)
+     url_request_->GetLoadTimingInfo(&response->load_timing);
+-
++#endif
+   if (url_request_->ssl_info().cert.get()) {
+     response->cert_status = url_request_->ssl_info().cert_status;
+     if ((options_ & mojom::kURLLoadOptionSendSSLInfoWithResponse) ||
+         (net::IsCertStatusError(url_request_->ssl_info().cert_status) &&
+          (options_ & mojom::kURLLoadOptionSendSSLInfoForCertificateError))) {
+@@ -1538,11 +1621,15 @@
+   if (request_cookies_.size()) {
+     CHECK(include_request_cookies_with_response_);
+     response->request_cookies = request_cookies_;
+   }
+ 
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  url_loader_utils_->SetRequestStartTime(response, load_timing_info);
++#else
+   response->request_start = url_request_->creation_time();
++#endif
+   response->response_start = base::TimeTicks::Now();
+   response->encoded_data_length = url_request_->GetTotalReceivedBytes();
+   response->auth_challenge_info = url_request_->auth_challenge_info();
+   response->has_range_requested =
+       url_request_->extra_request_headers().HasHeader(
+@@ -1568,10 +1655,15 @@
+                                    const net::RedirectInfo& redirect_info,
+                                    bool* defer_redirect) {
+   DCHECK(url_request == url_request_.get());
+ 
+   DCHECK(!deferred_redirect_url_);
++
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  url_loader_utils_->SetPreloadFlagUnSupport();
++#endif
++
+   deferred_redirect_url_ = std::make_unique<GURL>(redirect_info.new_url);
+ 
+   // Send the redirect response to the client, allowing them to inspect it and
+   // optionally follow the redirect.
+   *defer_redirect = true;
+@@ -1650,10 +1742,13 @@
+                           *origin_access_list_);
+ 
+   DCHECK_EQ(emitted_devtools_raw_request_, emitted_devtools_raw_response_);
+   response->emitted_extra_info = emitted_devtools_raw_request_;
+ 
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  url_loader_utils_->HandleRedirectUrl(redirect_info);
++#endif
+   ProcessInboundAttributionInterceptorOnReceivedRedirect(redirect_info,
+                                                          std::move(response));
+ }
+ 
+ void URLLoader::ProcessInboundSharedStorageInterceptorOnReceivedRedirect(
+@@ -1907,11 +2019,13 @@
+         base::BindOnce(&URLLoader::OnDoneFinalizingTrustTokenOperation,
+                        weak_ptr_factory_.GetWeakPtr()));
+     // |this| may have been deleted.
+     return;
+   }
+-
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  url_loader_utils_->UpdatePreconnectInfo();
++#endif
+   ProcessInboundAttributionInterceptorOnResponseStarted();
+ }
+ 
+ void URLLoader::OnDoneFinalizingTrustTokenOperation(
+     mojom::TrustTokenOperationStatus status) {
+@@ -1995,10 +2109,33 @@
+               url_request_->initiator(), *response_, request_mode_,
+               request_destination_, cross_origin_embedder_policy,
+               coep_reporter_, document_isolation_policy)) {
+     CompleteBlockedResponse(net::ERR_BLOCKED_BY_RESPONSE, false,
+                             blocked_reason);
++
++#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
++    LOG(INFO)
++        << "ContinueOnResponseStarted blocked by response, blocked_reason "
++        << static_cast<int>(*blocked_reason) << ", url: ***";
++#endif
++
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++    LOG_FEEDBACK(INFO)
++        << "ContinueOnResponseStarted blocked by response, blocked_reason "
++        << static_cast<int>(*blocked_reason) << ", url: "
++        << url::LogUtils::ConvertUrlWithMask(url_request_->url().spec());
++    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
++            ::switches::kEnableLoggerReport)) {
++      if (!is_strict_log_mode_) {
++        LOG(URL)
++            << "ContinueOnResponseStarted blocked by response, blocked_reason "
++            << static_cast<int>(*blocked_reason) << ", url: "
++            << url::LogUtils::ConvertUrl(url_request_->url().spec(),
++                                         url_request_->usage_scenario());
++      }
++    }
++#endif
+     // Close the socket associated with the request, to prevent leaking
+     // information.
+     url_request_->AbortAndCloseConnection();
+     DeleteSelf();
+     return;
+@@ -2178,13 +2334,17 @@
+ 
+   CHECK(!slop_bucket_ || !slop_bucket_->IsComplete());
+   auto buf = base::MakeRefCounted<NetToMojoIOBuffer>(
+       pending_write_, pending_write_buffer_offset_);
+   read_in_progress_ = true;
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  int bytes_read = url_loader_utils_->ReadDataFromLoaderOrRequest(buf);
++#else
+   int bytes_read = url_request_->Read(
+       buf.get(), static_cast<int>(pending_write_buffer_size_ -
+                                   pending_write_buffer_offset_));
++#endif
+   if (bytes_read != net::ERR_IO_PENDING) {
+     DidRead(bytes_read, /*completed_synchronously=*/true,
+             /*into_slop_bucket=*/false);
+     // |this| may have been deleted.
+   }
+@@ -2780,11 +2981,15 @@
+   DCHECK(devtools_observer_ && devtools_request_id());
+ 
+   seen_raw_request_headers_ = true;
+ 
+   net::LoadTimingInfo load_timing_info;
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++  url_loader_utils_->GetLoadTimeInfo(&load_timing_info);
++#else
+   url_request_->GetLoadTimingInfo(&load_timing_info);
++#endif
+ 
+   emitted_devtools_raw_request_ = true;
+ 
+   bool is_main_frame_navigation =
+       url_request_->isolation_info().IsMainFrameRequest() ||

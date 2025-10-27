@@ -1,0 +1,50 @@
+--- document_timing.cc	2025-10-20 19:53:00.314210779 +0800
++++ document_timing.cc	2025-10-16 16:07:39.314197514 +0800
+@@ -30,35 +30,47 @@
+     document_->Loader()->DidChangePerformanceTiming();
+ }
+ 
+ void DocumentTiming::MarkDomLoading() {
+   dom_loading_ = base::TimeTicks::Now();
++#if BUILDFLAG(ARKWEB_NETWORK_DFX)
++  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME", "domLoading", dom_loading_);
++#endif
+   TRACE_EVENT_MARK_WITH_TIMESTAMP1("blink.user_timing,rail", "domLoading",
+                                    dom_loading_, "frame",
+                                    GetFrameIdForTracing(GetFrame()));
+   NotifyDocumentTimingChanged();
+ }
+ 
+ void DocumentTiming::MarkDomInteractive() {
+   dom_interactive_ = base::TimeTicks::Now();
++#if BUILDFLAG(ARKWEB_NETWORK_DFX)
++  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME", "domLoading", dom_loading_);
++#endif
+   TRACE_EVENT_MARK_WITH_TIMESTAMP1("blink.user_timing,rail", "domInteractive",
+                                    dom_interactive_, "frame",
+                                    GetFrameIdForTracing(GetFrame()));
+   NotifyDocumentTimingChanged();
+ }
+ 
+ void DocumentTiming::MarkDomContentLoadedEventStart() {
+   dom_content_loaded_event_start_ = base::TimeTicks::Now();
++#if BUILDFLAG(ARKWEB_NETWORK_DFX)
++  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME", "domLoading", dom_loading_);
++#endif
+   TRACE_EVENT_MARK_WITH_TIMESTAMP1("blink.user_timing,rail",
+                                    "domContentLoadedEventStart",
+                                    dom_content_loaded_event_start_, "frame",
+                                    GetFrameIdForTracing(GetFrame()));
+   NotifyDocumentTimingChanged();
+ }
+ 
+ void DocumentTiming::MarkDomContentLoadedEventEnd() {
+   dom_content_loaded_event_end_ = base::TimeTicks::Now();
++#if BUILDFLAG(ARKWEB_NETWORK_DFX)
++  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME", "domLoading", dom_loading_);
++#endif
+   TRACE_EVENT_MARK_WITH_TIMESTAMP1(
+       "blink.user_timing,rail", "domContentLoadedEventEnd",
+       dom_content_loaded_event_end_, "frame", GetFrameIdForTracing(GetFrame()));
+   InteractiveDetector* interactive_detector(
+       InteractiveDetector::From(*document_));

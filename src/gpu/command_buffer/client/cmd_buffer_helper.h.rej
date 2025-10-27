@@ -1,0 +1,17 @@
+--- cmd_buffer_helper.h	2025-10-20 19:52:55.483038749 +0800
++++ cmd_buffer_helper.h	2025-10-16 15:55:00.563555550 +0800
+@@ -21,10 +21,14 @@
+ #include "gpu/command_buffer/common/cmd_buffer_common.h"
+ #include "gpu/command_buffer/common/command_buffer.h"
+ #include "gpu/command_buffer/common/context_result.h"
+ #include "gpu/gpu_export.h"
+ 
++#if BUILDFLAG(IS_ARKWEB)
++#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
++#endif
++
+ namespace gpu {
+ 
+ class Buffer;
+ 
+ #if !BUILDFLAG(IS_ANDROID)

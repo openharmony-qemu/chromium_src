@@ -1,0 +1,27 @@
+--- native_pixmap_egl_binding.cc	2025-10-20 19:53:31.064622621 +0800
++++ native_pixmap_egl_binding.cc	2025-10-16 15:55:05.661190957 +0800
+@@ -7,18 +7,24 @@
+ #pragma allow_unsafe_buffers
+ #endif
+ 
+ #include "ui/ozone/common/native_pixmap_egl_binding.h"
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/logging.h"
+ #include "base/memory/scoped_refptr.h"
+ #include "base/notreached.h"
+ #include "ui/gfx/buffer_format_util.h"
++#include "ui/gl/buffer_format_utils.h"
+ #include "ui/gl/gl_bindings.h"
+ #include "ui/gl/gl_surface_egl.h"
+ #include "ui/gl/scoped_binders.h"
+ 
++#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
++#include "ui/gl/ohos/native_buffer_utils.h"
++#endif
++
+ namespace ui {
+ 
+ namespace {
+ 
+ #define FOURCC(a, b, c, d)                                        \

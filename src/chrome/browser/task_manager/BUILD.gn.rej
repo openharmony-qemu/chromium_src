@@ -1,0 +1,18 @@
+--- BUILD.gn	2025-10-20 19:52:50.460691382 +0800
++++ BUILD.gn	2025-10-16 15:57:01.212929392 +0800
+@@ -1,13 +1,14 @@
+ # Copyright 2024 The Chromium Authors
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+-assert(is_win || is_mac || is_linux || is_chromeos)
++assert(is_win || is_mac || is_linux || is_chromeos || is_ohos)
+ 
+ import("//build/config/chromeos/ui_mode.gni")
+ import("//components/nacl/features.gni")
++import("//arkweb/build/features/features.gni")
+ 
+ # The public interface for task_manager does not allow circular dependencies.
+ source_set("task_manager") {
+   sources = [
+     "providers/browser_process_task.h",

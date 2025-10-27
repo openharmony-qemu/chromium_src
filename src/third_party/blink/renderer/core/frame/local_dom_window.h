@@ -268,7 +268,9 @@ class CORE_EXPORT LocalDOMWindow final : public DOMWindow,
   BarProp* toolbar();
   Navigator* navigator();
   Navigator* clientInformation() { return navigator(); }
-
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)
+  ArkWeb* arkWeb();
+#endif // ARKWEB_SCROLLBAR_AVOID_AREA
   bool offscreenBuffering() const;
 
   int outerHeight() const;
@@ -714,6 +716,9 @@ class CORE_EXPORT LocalDOMWindow final : public DOMWindow,
 
   // Used to indicate if the DOM window is reused or not.
   bool is_dom_window_reused_ = false;
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)
+  mutable Member<ArkWeb> arkWeb_;
+#endif // ARKWEB_SCROLLBAR_AVOID_AREA
 };
 
 template <>

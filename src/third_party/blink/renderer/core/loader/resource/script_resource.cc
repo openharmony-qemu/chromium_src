@@ -192,6 +192,7 @@ ScriptResource::ScriptResource(
     // If we have a null isolate disable off thread cache consumption.
     DisableOffThreadConsumeCache();
   }
+  resourceUtils = std::make_unique<ScriptResourceUtils>(this);
 }
 
 ScriptResource::~ScriptResource() = default;

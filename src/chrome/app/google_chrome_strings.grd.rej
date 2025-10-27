@@ -1,0 +1,18 @@
+--- google_chrome_strings.grd	2025-10-20 19:52:48.464783888 +0800
++++ google_chrome_strings.grd	2025-10-16 15:56:58.693076582 +0800
+@@ -304,10 +304,15 @@
+       <if expr="is_macosx or is_linux">
+         <message name="IDS_FIRST_RUN_DIALOG_WINDOW_TITLE" desc="Window title of First Run dialog on Mac and Linux, displayed in title bar">
+           Welcome to Google Chrome
+         </message>
+       </if>
++      <if expr="is_ohos">
++        <message name="IDS_FIRST_RUN_DIALOG_WINDOW_TITLE" desc="Window title of First Run dialog on Ohos, displayed in title bar">
++          Welcome to Google Chrome
++        </message>
++      </if>
+       <if expr="chromeos_ash">
+         <if expr="reven">
+           <message name="IDS_PRODUCT_OS_NAME" desc="The ChromeOS Flex application name">
+             Google ChromeOS Flex
+           </message>

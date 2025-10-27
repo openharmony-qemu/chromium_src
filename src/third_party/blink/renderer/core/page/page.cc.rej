@@ -1,0 +1,26 @@
+--- page.cc	2025-10-20 19:53:00.590208162 +0800
++++ page.cc	2025-10-16 16:07:39.594468819 +0800
+@@ -19,10 +19,11 @@
+  * Boston, MA 02110-1301, USA.
+  */
+ 
+ #include "third_party/blink/renderer/core/page/page.h"
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/check.h"
+ #include "base/compiler_specific.h"
+ #include "base/feature_list.h"
+ #include "third_party/blink/public/common/features.h"
+ #include "third_party/blink/public/common/page/color_provider_color_maps.h"
+@@ -102,10 +103,11 @@
+ #include "third_party/blink/renderer/platform/scheduler/public/frame_scheduler.h"
+ #include "third_party/blink/renderer/platform/web_test_support.h"
+ #include "third_party/skia/include/core/SkColor.h"
+ #include "ui/color/color_provider.h"
+ #include "ui/color/color_provider_utils.h"
++#include "third_party/blink/renderer/core/page/page_utils.h"
+ 
+ namespace blink {
+ 
+ namespace {
+ // This seems like a reasonable upper bound, and otherwise mutually

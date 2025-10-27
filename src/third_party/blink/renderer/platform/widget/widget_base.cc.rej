@@ -1,0 +1,102 @@
+--- widget_base.cc	2025-10-20 19:53:01.286199870 +0800
++++ widget_base.cc	2025-10-21 21:23:47.826685956 +0800
+@@ -2,10 +2,11 @@
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+ #include "third_party/blink/renderer/platform/widget/widget_base.h"
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/command_line.h"
+ #include "base/debug/dump_without_crashing.h"
+ #include "base/logging.h"
+ #include "base/metrics/histogram_macros.h"
+ #include "base/ranges/algorithm.h"
+@@ -914,16 +929,27 @@
+                                 std::move(compositor_frame_sink_client));
+   widget_host_->RegisterRenderFrameMetadataObserver(
+       std::move(render_frame_metadata_observer_client_receiver),
+       std::move(render_frame_metadata_observer_remote));
+   params->gpu_memory_buffer_manager = gpu_memory_buffer_manager;
++#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
++  auto sink = std::make_unique<cc::mojo_embedder::AsyncLayerTreeFrameSink>(
++      std::move(context_provider), std::move(worker_context_provider_wrapper),
++      gpu_channel_host->CreateClientSharedImageInterface(), params.get());
++  sink->InitSoftwareCompositorRender(
++      widget_input_handler_manager_->manager_utils()->GetSoftwareCompositorRegistryOhos());
++
++  std::move(callback).Run(std::move(sink),
++                          std::move(render_frame_metadata_observer));
++#else
+   std::move(callback).Run(
+       std::make_unique<cc::mojo_embedder::AsyncLayerTreeFrameSink>(
+           std::move(context_provider),
+           std::move(worker_context_provider_wrapper),
+           gpu_channel_host->CreateClientSharedImageInterface(), params.get()),
+       std::move(render_frame_metadata_observer));
++#endif
+ }
+ 
+ void WidgetBase::DidCommitAndDrawCompositorFrame() {
+   // NOTE: Tests may break if this event is renamed or moved. See
+   // tab_capture_performancetest.cc.
+@@ -982,10 +1008,15 @@
+   UpdateSelectionBounds();
+   // UpdateTextInputState() will cause a forced style and layout update, which
+   // we would like to eliminate.
+   if (!base::FeatureList::IsEnabled(features::kRunTextInputUpdatePostLifecycle))
+     UpdateTextInputState();
++#if BUILDFLAG(IS_ARKWEB)
++  if (base::ohos::IsPcDevice()) {
++    widget_base_utils_->ReportForegroundThreadPool();
++  }
++#endif
+ }
+ 
+ void WidgetBase::RunPaintBenchmark(int repeat_count,
+                                    cc::PaintBenchmarkResult& result) {
+   client_->RunPaintBenchmark(repeat_count, result);
+@@ -1148,22 +1179,30 @@
+   ui::mojom::VirtualKeyboardVisibilityRequest last_vk_visibility_request =
+       ui::mojom::VirtualKeyboardVisibilityRequest::NONE;
+   bool always_hide_ime = false;
+   std::optional<gfx::Rect> control_bounds;
+   std::optional<gfx::Rect> selection_bounds;
++  HashMap<String, String> input_atrributes;
+   if (frame_widget) {
+     new_info = frame_widget->TextInputInfo();
+     // This will be used to decide whether or not to show VK when VK policy is
+     // manual.
+     last_vk_visibility_request =
+         frame_widget->GetLastVirtualKeyboardVisibilityRequest();
+ 
+     // Check whether the keyboard should always be hidden for the currently
+     // focused element.
+     always_hide_ime = frame_widget->ShouldSuppressKeyboardForFocusedElement();
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++    if (always_hide_ime) {
++      LOG(INFO) << "UpdateTextInputStateInternal update always_hide_ime value:"
++                << always_hide_ime;
++    }
++#endif
+     frame_widget->GetEditContextBoundsInWindow(&control_bounds,
+                                                &selection_bounds);
++    frame_widget->GetInputElementAttributes(input_atrributes);
+   }
+   const ui::TextInputMode new_mode =
+       ConvertWebTextInputMode(new_info.input_mode);
+   const ui::mojom::VirtualKeyboardPolicy new_vk_policy =
+       new_info.virtual_keyboard_policy;
+@@ -1303,11 +1354,11 @@
+   text_input_flags_ = 0;
+   next_previous_flags_ = kInvalidNextPreviousFlagsValue;
+ }
+ 
+ void WidgetBase::ShowVirtualKeyboardOnElementFocus() {
+-#if BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_INPUT_EVENTS)
+   // On ChromeOS, virtual keyboard is triggered only when users leave the
+   // mouse button or the finger and a text input element is focused at that
+   // time. Focus event itself shouldn't trigger virtual keyboard.
+   UpdateTextInputState();
+ #else

@@ -71,6 +71,11 @@ class WebInputMethodController {
   // Returns the type of current text input of this controller.
   virtual WebTextInputType TextInputType() { return kWebTextInputTypeNone; }
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  virtual void GetInputElementAttributes(
+      HashMap<WTF::String, WTF::String>& attributes) {}
+#endif
+
   // Fetch the current selection range of this frame.
   virtual WebRange GetSelectionOffsets() const = 0;
 

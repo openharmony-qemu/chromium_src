@@ -31,6 +31,10 @@
 #include "ui/base/resource/resource_scale_factor.h"
 #include "ui/base/resource/scoped_file_writer.h"
 
+#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
+#include "arkweb/chromium_ext/ui/base/data_pack_for_include.h"
+#endif
+
 // For details of the file layout, see
 // http://dev.chromium.org/developers/design-documents/linuxresourcesandlocalizedstrings
 
@@ -560,3 +564,7 @@ bool DataPack::WritePack(const base::FilePath& path,
 }
 
 }  // namespace ui
+
+#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
+#include "arkweb/chromium_ext/ui/base/data_pack_for_include.cc"
+#endif

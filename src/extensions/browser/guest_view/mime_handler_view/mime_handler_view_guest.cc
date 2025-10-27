@@ -499,7 +499,11 @@ void MimeHandlerViewGuest::ReadyToCommitNavigation(
 
 #if BUILDFLAG(ENABLE_PDF)
   const GURL& url = navigation_handle->GetURL();
-  if (url.SchemeIs(kExtensionScheme) &&
+  if ((url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+       || url.SchemeIs(kArkwebExtensionScheme)
+#endif
+           ) &&
       url.host_piece() == extension_misc::kPdfExtensionId) {
     // The PDF viewer will navigate to the stream URL (using
     // PdfNavigtionThrottle), rather than using it as a subresource.

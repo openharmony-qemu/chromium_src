@@ -60,7 +60,13 @@ class NET_EXPORT HostCache {
         DnsQueryType dns_query_type,
         HostResolverFlags host_resolver_flags,
         HostResolverSource host_resolver_source,
-        const NetworkAnonymizationKey& network_anonymization_key);
+        const NetworkAnonymizationKey& network_anonymization_key
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+        ,
+        bool secure = false,
+        bool external_added = false
+#endif
+        );
     Key();
     Key(const Key& key);
     Key(Key&& key);
@@ -451,6 +457,10 @@ class NET_EXPORT HostCache {
   size_t max_entries() const;
   int network_changes() const { return network_changes_; }
   const EntryMap& entries() const { return entries_; }
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  std::vector<IPEndPoint> LookupByHost(url::SchemeHostPort destination);
+#endif  // ARKWEB_LOGGER_REPORT
 
  private:
   FRIEND_TEST_ALL_PREFIXES(HostCacheTest, NoCache);

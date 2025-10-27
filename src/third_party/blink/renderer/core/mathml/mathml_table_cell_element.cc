@@ -49,6 +49,11 @@ void MathMLTableCellElement::ParseAttribute(
 
 LayoutObject* MathMLTableCellElement::CreateLayoutObject(
     const ComputedStyle& style) {
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+  if (Cssutils::IsMathFormulaDisabledMode()) {
+    return MathMLElement::CreateLayoutObject(style);
+  }
+#endif
   if (style.Display() == EDisplay::kTableCell) {
     return MakeGarbageCollected<LayoutTableCellWithAnonymousMrow>(this);
   }

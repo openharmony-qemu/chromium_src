@@ -1,0 +1,35 @@
+--- BUILD.gn	2025-10-20 19:53:30.800657686 +0800
++++ BUILD.gn	2025-10-16 15:55:05.384818338 +0800
+@@ -5,10 +5,16 @@
+ import("///build/config/ozone.gni")
+ import("//build/config/features.gni")
+ import("//build/config/ui.gni")
+ import("//testing/libfuzzer/fuzzer_test.gni")
+ 
++
++if (is_arkweb) {
++  import("//arkweb/build/features/features.gni")
++  import("//arkweb/chromium_ext/chromium_ext.gni")
++}
++
+ component("clipboard_types") {
+   output_name = "ui_base_clipboard_types"
+   sources = [
+     "clipboard_buffer.h",
+     "clipboard_constants.cc",
+@@ -303,10 +327,15 @@
+         "//ui/ozone:ozone_switches",
+         "//ui/ozone:platform",
+       ]
+     }
+   }
++  if (is_arkweb) {
++    sources -= [
++      "clipboard_non_backed_unittest.cc",
++    ]
++  }
+ }
+ 
+ fuzzer_test("url_file_parser_fuzzer") {
+   sources = [ "url_file_parser_fuzzer.cc" ]
+   deps = [

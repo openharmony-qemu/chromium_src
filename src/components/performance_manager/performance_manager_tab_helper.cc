@@ -41,6 +41,7 @@
 #include "components/guest_view/browser/guest_view_base.h"
 #endif
 
+#include "arkweb/chromium_ext/components/performance_manager/performance_manager_tab_helper_utils.cc"
 namespace performance_manager {
 
 namespace {

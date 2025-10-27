@@ -30,6 +30,11 @@
 #include "base/android/task_scheduler/task_traits_android.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/ohos/task_scheduler/task_runner_ohos.h"
+#include "base/ohos/task_scheduler/task_traits_ohos.h"
+#endif
+
 using QueueType = content::BrowserTaskQueues::QueueType;
 
 namespace content {
@@ -189,6 +194,11 @@ void BrowserTaskExecutor::CreateInternal(
   base::TaskRunnerAndroid::SetUiThreadTaskRunnerCallback(
       base::BindRepeating(&GetTaskRunnerForAndroidMainThread));
   base::PostTaskAndroid::SignalNativeSchedulerReady();
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+  base::TaskRunnerOHOS::SetUiThreadTaskRunnerCallback(
+      base::BindRepeating(&GetTaskRunnerForOHOSMainThread));
 #endif
 }
 

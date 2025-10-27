@@ -1,0 +1,47 @@
+--- script_resource.cc	2025-10-20 19:53:00.578208276 +0800
++++ script_resource.cc	2025-10-16 16:07:39.578678886 +0800
+@@ -23,13 +23,17 @@
+     This class provides all functionality needed for loading images, style
+     sheets and html pages from the web. It has a memory cache for these objects.
+ */
+ 
+ #include "third_party/blink/renderer/core/loader/resource/script_resource.h"
+-
+ #include <utility>
+ 
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/loader/resource/script_resource_utils.h"
++#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
++#include "arkweb/chromium_ext/third_party/blink/renderer/platform/weborigin/scheme_registry_utils.h"
++#endif
++
+ #include "base/metrics/histogram_macros.h"
+ #include "base/task/single_thread_task_runner.h"
+ #include "base/types/expected.h"
+ #include "third_party/blink/public/common/features.h"
+ #include "third_party/blink/public/mojom/fetch/fetch_api_request.mojom-blink.h"
+@@ -391,11 +396,24 @@
+   // given resource request.
+   code_cache_with_hashing_supported &=
+       Platform::Current()->ShouldUseCodeCacheWithHashing(
+           WebURL(GetResourceRequest().Url()));
+ 
+-  bool code_cache_supported = http_family || code_cache_with_hashing_supported;
++#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
++  bool code_cache_with_response_time_supported =
++      SchemeRegistryUtils::SchemeSupportsCodeCacheWithResponseTime(
++          GetResourceRequest().Url().Protocol());
++  LOG(DEBUG) << "Script resource if scheme:"
++             << GetResourceRequest().Url().Protocol().Utf8().c_str()
++             << " supports code cache:"
++             << code_cache_with_response_time_supported;
++#endif
++  bool code_cache_supported = http_family || code_cache_with_hashing_supported
++#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
++                              || code_cache_with_response_time_supported
++#endif
++      ;
+   if (code_cache_supported) {
+     std::unique_ptr<CachedMetadataSender> sender = CachedMetadataSender::Create(
+         response, mojom::blink::CodeCacheType::kJavascript,
+         GetResourceRequest().RequestorOrigin());
+     if (code_cache_with_hashing_supported) {

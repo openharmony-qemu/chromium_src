@@ -566,6 +566,10 @@ bool PermissionsData::CanCaptureVisiblePage(
   // - The Chrome Web Store.
   bool allowed_with_active_tab =
       origin_url.SchemeIs(content::kChromeUIScheme) ||
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      origin_url.SchemeIs(content::kArkWebUIScheme) ||
+      origin_url.SchemeIs(kArkwebExtensionScheme) ||
+#endif
       origin_url.SchemeIs(kExtensionScheme) ||
       // Note: The origin of a data: url is empty, so check the url itself.
       document_url.SchemeIs(url::kDataScheme) ||

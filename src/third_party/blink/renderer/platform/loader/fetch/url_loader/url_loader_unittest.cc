@@ -110,8 +110,14 @@ class MockResourceRequestSender : public ResourceRequestSender {
       CodeCacheHost* code_cache_host,
       base::OnceCallback<void(mojom::blink::RendererEvictionReason)>
           evict_from_bfcache_callback,
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+      base::RepeatingCallback<void(size_t)>
+          did_buffer_load_while_in_bfcache_callback,
+      bool is_sync_mode = true) override {
+#else
       base::RepeatingCallback<void(size_t)>
           did_buffer_load_while_in_bfcache_callback) override {
+#endif
     EXPECT_FALSE(resource_request_client_);
     if (sync_load_response_.head->encoded_body_length) {
       EXPECT_TRUE(loader_options & network::mojom::kURLLoadOptionSynchronous);

@@ -1,0 +1,30 @@
+--- BUILD.gn	2025-10-20 19:53:00.134212486 +0800
++++ BUILD.gn	2025-10-16 16:07:39.101033424 +0800
+@@ -5,17 +5,27 @@
+ # TODO(https://crbug.com/1198341): once this code is ported to Blink code
+ # conventions, this target should be merged into
+ # //third_party/blink/public:blink_headers and
+ # //third_party/blink/renderer/platform/media should be a dep of
+ # //third_party/blink/renderer/platform.
++
++if (is_arkweb) {
++  import("//arkweb/chromium_ext/chromium_ext.gni")
++}
++
+ source_set("media") {
+   sources = [
+     "key_system_config_selector.h",
+     "video_frame_compositor.h",
+     "web_encrypted_media_client_impl.h",
+     "web_media_player_builder.h",
+   ]
++
++  if (arkweb_same_layer) {
++    sources += arkweb_third_patry_blink_public_platform_media_sources
++  }
++
+   public_deps = [
+     "//base",
+     "//cc",
+     "//components/viz/common",
+     "//media",

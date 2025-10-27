@@ -20,6 +20,10 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "arkweb/chromium_ext/components/viz/common/frame_sinks/begin_frame_source_unittest_ext.h"
+#endif
+
 using testing::NiceMock;
 using testing::_;
 

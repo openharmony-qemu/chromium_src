@@ -73,6 +73,10 @@ SystemClipboard::SystemClipboard(LocalFrame* frame)
   is_selection_buffer_available_ =
       frame->GetSettings()->GetSelectionClipboardBufferAvailable();
 #endif  // BUILDFLAG(IS_OZONE)
+
+#if BUILDFLAG(ARKWEB_COPY_OPTION)
+  utils_ = MakeGarbageCollected<SystemClipboardUtils>(this, frame);
+#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
 }
 
 bool SystemClipboard::IsSelectionMode() const {
@@ -104,6 +108,9 @@ Vector<String> SystemClipboard::ReadAvailableTypes() {
   if (!IsValidBufferType(buffer_) || !clipboard_.is_bound())
     return {};
   Vector<String> types;
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  clipboard_->UpdateClipboardData();
+#endif
   clipboard_->ReadAvailableTypes(buffer_, &types);
   return types;
 }
@@ -149,6 +156,13 @@ void SystemClipboard::WritePlainText(const String& plain_text,
 
   if (!clipboard_.is_bound())
     return;
+
+#if BUILDFLAG(ARKWEB_COPY_OPTION)
+  if (!utils_->IsCopyAllowed()) {
+    LOG(ERROR) << "WritePlainText failed, copy option mode is 'NONE'";
+    return;
+  }
+#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
   // TODO(https://crbug.com/106449): add support for smart replace, which is
   // currently under-specified.
   String text = plain_text;
@@ -218,6 +232,14 @@ void SystemClipboard::WriteHTML(const String& markup,
 
   if (!clipboard_.is_bound())
     return;
+
+#if BUILDFLAG(ARKWEB_COPY_OPTION)
+  if (!utils_->IsCopyAllowed()) {
+    LOG(ERROR) << "WriteHTML failed, copy option mode is 'NONE'";
+    return;
+  }
+#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
+
   clipboard_->WriteHtml(NonNullString(markup), document_url);
   if (smart_replace_option == kCanSmartReplace)
     clipboard_->WriteSmartPasteMarker();
@@ -241,6 +263,13 @@ void SystemClipboard::WriteSvg(const String& markup) {
 
   if (!clipboard_.is_bound())
     return;
+
+#if BUILDFLAG(ARKWEB_COPY_OPTION)
+  if (!utils_->IsCopyAllowed()) {
+    LOG(ERROR) << "WriteSvg failed, copy option mode is 'NONE'";
+    return;
+  }
+#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
   clipboard_->WriteSvg(NonNullString(markup));
 }
 
@@ -299,6 +328,13 @@ void SystemClipboard::WriteImageWithTag(Image* image,
   if (!clipboard_.is_bound())
     return;
 
+#if BUILDFLAG(ARKWEB_COPY_OPTION)
+  if (!utils_->IsCopyAllowed()) {
+    LOG(ERROR) << "WriteImage failed, copy option mode is 'NONE'";
+    return;
+  }
+#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
+
   PaintImage paint_image = image->PaintImageForCurrentFrame();
   // Orient the data.
   if (!image->HasDefaultOrientation()) {
@@ -346,6 +382,14 @@ void SystemClipboard::WriteImage(const SkBitmap& bitmap) {
 
   if (!clipboard_.is_bound())
     return;
+
+#if BUILDFLAG(ARKWEB_COPY_OPTION)
+  if (!utils_->IsCopyAllowed()) {
+    LOG(ERROR) << "WriteImage failed, copy option mode is 'NONE'";
+    return;
+  }
+#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
+
   clipboard_->WriteImage(bitmap);
 }
 
@@ -393,6 +437,13 @@ void SystemClipboard::WriteDataObject(DataObject* data_object) {
   DCHECK(data_object);
   if (!clipboard_.is_bound())
     return;
+
+#if BUILDFLAG(ARKWEB_COPY_OPTION)
+  if (!utils_->IsCopyAllowed()) {
+    LOG(ERROR) << "WriteData failed, copy option mode is 'NONE'";
+    return;
+  }
+#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
   // This plagiarizes the logic in DropDataBuilder::Build, but only extracts the
   // data needed for the implementation of WriteDataObject.
   //
@@ -458,6 +509,9 @@ void SystemClipboard::ReadAvailableCustomAndStandardFormats(
         callback) {
   if (!clipboard_.is_bound())
     return;
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  clipboard_->UpdateClipboardData();
+#endif
   clipboard_->ReadAvailableCustomAndStandardFormats(std::move(callback));
 }
 
@@ -512,6 +566,9 @@ void SystemClipboard::TakeSnapshot() {
   if (snapshot_count_ == 1) {
     DCHECK(!snapshot_);
     snapshot_ = std::make_unique<Snapshot>();
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+    clipboard_->OnClipboardDataGuard(true);
+#endif
   }
 }
 
@@ -520,6 +577,9 @@ void SystemClipboard::DropSnapshot() {
   --snapshot_count_;
   if (snapshot_count_ == 0) {
     snapshot_.reset();
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+    clipboard_->OnClipboardDataGuard(false);
+#endif
   }
 }
 

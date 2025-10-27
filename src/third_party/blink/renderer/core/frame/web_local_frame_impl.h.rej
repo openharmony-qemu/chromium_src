@@ -1,0 +1,14 @@
+--- web_local_frame_impl.h	2025-10-20 19:53:00.402209945 +0800
++++ web_local_frame_impl.h	2025-10-16 16:07:39.412884594 +0800
+@@ -33,10 +33,11 @@
+ 
+ #include <memory>
+ #include <set>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/dcheck_is_on.h"
+ #include "base/observer_list.h"
+ #include "base/task/single_thread_task_runner.h"
+ #include "base/types/pass_key.h"
+ #include "build/build_config.h"

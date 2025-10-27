@@ -1,0 +1,14 @@
+--- permission_controller_impl.cc	2025-10-20 19:52:54.350513134 +0800
++++ permission_controller_impl.cc	2025-10-16 15:54:59.484710185 +0800
+@@ -2,10 +2,11 @@
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+ #include "content/browser/permissions/permission_controller_impl.h"
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/functional/bind.h"
+ #include "content/browser/permissions/permission_service_context.h"
+ #include "content/browser/permissions/permission_util.h"
+ #include "content/browser/renderer_host/render_frame_host_impl.h"
+ #include "content/public/browser/browser_context.h"

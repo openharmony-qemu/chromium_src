@@ -125,6 +125,9 @@ enum class PictureInPictureResult {
   kNotSupported,
 };
 
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+enum class RendererIsUnresponsiveReason;
+#endif
 // Objects implement this interface to get notified about changes in the
 // WebContents and to provide necessary functionality. If a method doesn't
 // change state, e.g. has no return value, then it can move to
@@ -436,8 +439,13 @@ class CONTENT_EXPORT WebContentsDelegate {
   virtual void RendererUnresponsive(
       WebContents* source,
       RenderWidgetHost* render_widget_host,
-      base::RepeatingClosure hang_monitor_restarter) {}
-
+      base::RepeatingClosure hang_monitor_restarter
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+      ,
+      RendererIsUnresponsiveReason reason
+#endif
+  ) {
+  }
   // Notification that a process in the WebContents is no longer hung. |source|
   // is the WebContents that was hung, and |render_widget_host| is the
   // RenderWidgetHost that was passed in an earlier call to

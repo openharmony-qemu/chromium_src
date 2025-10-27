@@ -1,0 +1,14 @@
+--- build.gni	2025-10-20 19:53:00.406209907 +0800
++++ build.gni	2025-10-16 16:07:39.420779560 +0800
+@@ -553,10 +561,11 @@
+   "trust_token_attribute_parsing.h",
+   "window_name_collection.cc",
+   "window_name_collection.h",
+ ]
+ 
++
+ # Optimizing the HTML parser for speed yields significant gains in performance
+ # in parser-heavy scenarios. See https://crbug.com/787512.
+ blink_core_hot_sources_html = [
+   "custom/custom_element.cc",
+   "custom/custom_element.h",

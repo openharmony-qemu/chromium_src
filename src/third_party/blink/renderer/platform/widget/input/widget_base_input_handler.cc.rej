@@ -1,0 +1,15 @@
+--- widget_base_input_handler.cc	2025-10-20 19:53:01.286199870 +0800
++++ widget_base_input_handler.cc	2025-10-16 16:07:40.206328708 +0800
+@@ -7,10 +7,12 @@
+ #include <stddef.h>
+ #include <stdint.h>
+ 
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
++#include "arkweb/chromium_ext/third_party/blink/renderer/platform/widget/widget_base_utils.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/metrics/histogram_macros.h"
+ #include "base/time/time.h"
+ #include "base/tracing/protos/chrome_track_event.pbzero.h"
+ #include "build/build_config.h"

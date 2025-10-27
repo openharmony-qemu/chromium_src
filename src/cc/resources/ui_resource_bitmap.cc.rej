@@ -1,0 +1,15 @@
+--- ui_resource_bitmap.cc	2025-10-20 19:52:47.933994925 +0800
++++ ui_resource_bitmap.cc	2025-10-16 15:54:55.685468653 +0800
+@@ -92,11 +93,11 @@
+ 
+ UIResourceBitmap::UIResourceBitmap(const SkBitmap& skbitmap) {
+   DCHECK(skbitmap.isImmutable());
+ 
+   const SkBitmap* target = &skbitmap;
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_DRDC)
+   SkBitmap copy;
+   if (features::IsDrDcEnabled()) {
+     // TODO(vikassoni): Forcing everything to N32 while android backing cannot
+     // support some other formats. Note that DrDc is disabled on some gl
+     // renderers and hence gpus via gpu driver bug workaround. That workaround

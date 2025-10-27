@@ -48,11 +48,11 @@ FX_Number::FX_Number(ByteStringView strc) {
     cc++;
   }
 
-  for (; cc < strc.GetLength() && FXSYS_IsDecimalDigit(strc.CharAt(cc)); ++cc) {
+  for (; cc < strc.GetLength() && isdigit(strc[cc]); ++cc) {
     // Deliberately not using FXSYS_DecimalCharToInt() in a tight loop to avoid
-    // a duplicate FXSYS_IsDecimalDigit() call. Note that the order of operation
-    // is important to avoid unintentional overflows.
-    unsigned_val = unsigned_val * 10 + (strc.CharAt(cc) - '0');
+    // a duplicate isdigit() call. Note that the order of operation is
+    // important to avoid unintentional overflows.
+    unsigned_val = unsigned_val * 10 + (strc[cc] - '0');
   }
 
   uint32_t uValue = unsigned_val.ValueOrDefault(0);

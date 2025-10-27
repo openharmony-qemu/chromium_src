@@ -1,0 +1,23 @@
+--- style_cascade.cc	2025-10-20 19:53:00.298210931 +0800
++++ style_cascade.cc	2025-10-16 16:07:39.294460099 +0800
+@@ -861,11 +865,20 @@
+   DCHECK(value);
+   value = Resolve(property, *value, *priority, origin, resolver);
+   DCHECK(IsA<CustomProperty>(property) || !value->IsUnparsedDeclaration());
+   DCHECK(!value->IsPendingSubstitutionValue());
+   value = EnsureScopedValue(GetDocument(), match_result_, *priority, value);
++
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  blink::EDisplay tmp = state_.StyleBuilder().Display();
++#endif
++
+   StyleBuilder::ApplyPhysicalProperty(property, state_, *value);
++
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  StyleCascadeUtil::LookupAndApplyDeclarationExt(this, property, tmp);
++#endif
+ }
+ 
+ void StyleCascade::LookupAndApplyInterpolation(const CSSProperty& property,
+                                                CascadePriority* priority,
+                                                CascadeResolver& resolver) {

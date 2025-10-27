@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+
 #include "base/debug/crash_logging.h"
 #include "base/functional/callback.h"
 #include "base/functional/callback_forward.h"
@@ -109,6 +110,7 @@ class PrerenderHostRegistry;
 class RenderFrameHostCSPContext;
 class ServiceWorkerMainResourceHandle;
 class SubframeHistoryNavigationThrottle;
+class NavigationRequestUtils;
 
 // The primary implementation of NavigationHandle.
 //
@@ -1757,6 +1759,9 @@ class CONTENT_EXPORT NavigationRequest
   // Called from BeginNavigation(), OnPrerenderingActivationChecksComplete(),
   // or OnFencedFrameURLMappingComplete().
   void BeginNavigationImpl();
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  void StartNavigationExt();
+#endif
 
   // Checks if the response requests an isolated origin via the
   // Origin-Agent-Cluster header, and if so opts in the origin to be isolated.
@@ -3332,6 +3337,11 @@ class CONTENT_EXPORT NavigationRequest
 
   // If true, HTTPS Upgrades will be disabled on this navigation request.
   bool force_no_https_upgrade_ = false;
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  // If true, HTTPS Upgrades will be disabled on this navigation request.
+  bool url_typed_with_http_scheme_ = true;
+#endif
 
   // The initial request method of the request, before any redirects.
   std::string request_method_;

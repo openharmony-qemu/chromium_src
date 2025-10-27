@@ -2153,9 +2153,17 @@ const blink::Color CaretColor::ColorIncludingFallback(
   const StyleAutoColor& auto_color = style.CaretColor();
   // TODO(rego): We may want to adjust the caret color if it's the same as
   // the background to ensure good visibility and contrast.
+#if BUILDFLAG(ARKWEB_MENU)
+  blink::Color caret_auto_color(10, 89, 247);
+  blink::StyleColor caret_auto_style_color(caret_auto_color);
+  const StyleColor result = auto_color.IsAutoColor()
+                                ? caret_auto_style_color
+                                : auto_color.ToStyleColor();
+#else
   const StyleColor result = auto_color.IsAutoColor()
                                 ? StyleColor::CurrentColor()
                                 : auto_color.ToStyleColor();
+#endif
   if (style.ShouldForceColor(result)) {
     return style.GetInternalForcedCurrentColor(is_current_color);
   }
@@ -3688,6 +3696,11 @@ static bool IsDisplayInside(CSSValueID id) {
   if (id == CSSValueID::kMasonry) {
     return RuntimeEnabledFeatures::CSSMasonryLayoutEnabled();
   }
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+  if (Cssutils::IsMathFormulaDisabledMode() && id == CSSValueID::kMath) {
+    return false;
+  }
+#endif
   return (id >= CSSValueID::kFlowRoot && id <= CSSValueID::kMasonry) ||
          id == CSSValueID::kMath || id == CSSValueID::kRuby;
 }

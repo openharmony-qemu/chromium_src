@@ -1,0 +1,220 @@
+--- cpdf_object_unittest.cpp	2025-10-20 19:53:19.587966399 +0800
++++ cpdf_object_unittest.cpp	2025-10-16 16:15:55.888621326 +0800
+@@ -197,28 +197,28 @@
+   RetainPtr<CPDF_Array> m_ArrayObj;
+   std::vector<uint32_t> m_IndirectObjNums;
+ };
+ 
+ TEST_F(PDFObjectsTest, GetString) {
+-  static constexpr auto direct_obj_results = fxcrt::ToArray<const char*>(
++  constexpr auto direct_obj_results = fxcrt::ToArray<const char*>(
+       {"false", "true", "1245", "9.0034504", "A simple test", "\t\n", "space",
+        "", "", "", ""});
+   // Check for direct objects.
+   for (size_t i = 0; i < m_DirectObjs.size(); ++i) {
+     EXPECT_EQ(direct_obj_results[i], m_DirectObjs[i]->GetString());
+   }
+ 
+   // Check indirect references.
+-  static constexpr auto indirect_obj_results = fxcrt::ToArray<const char*>(
++  constexpr auto indirect_obj_results = fxcrt::ToArray<const char*>(
+       {"true", "1245", "\t\n", "space", "", "", ""});
+   for (size_t i = 0; i < m_RefObjs.size(); ++i) {
+     EXPECT_EQ(indirect_obj_results[i], m_RefObjs[i]->GetString());
+   }
+ }
+ 
+ TEST_F(PDFObjectsTest, GetUnicodeText) {
+-  static constexpr auto direct_obj_results = fxcrt::ToArray<const wchar_t*>(
++  constexpr auto direct_obj_results = fxcrt::ToArray<const wchar_t*>(
+       {L"", L"", L"", L"", L"A simple test", L"\t\n", L"space", L"", L"",
+        L"abcdefghijklmnopqrstuvwxyz", L""});
+   // Check for direct objects.
+   for (size_t i = 0; i < m_DirectObjs.size(); ++i) {
+     EXPECT_EQ(direct_obj_results[i], m_DirectObjs[i]->GetUnicodeText());
+@@ -229,34 +229,34 @@
+     EXPECT_EQ(L"", it->GetUnicodeText());
+   }
+ }
+ 
+ TEST_F(PDFObjectsTest, GetNumber) {
+-  static constexpr auto direct_obj_results =
++  constexpr auto direct_obj_results =
+       fxcrt::ToArray<const float>({0, 0, 1245, 9.00345f, 0, 0, 0, 0, 0, 0, 0});
+   // Check for direct objects.
+   for (size_t i = 0; i < m_DirectObjs.size(); ++i) {
+     EXPECT_EQ(direct_obj_results[i], m_DirectObjs[i]->GetNumber());
+   }
+ 
+   // Check indirect references.
+-  static constexpr auto indirect_obj_results =
++  constexpr auto indirect_obj_results =
+       fxcrt::ToArray<const float>({0, 1245, 0, 0, 0, 0, 0});
+   for (size_t i = 0; i < m_RefObjs.size(); ++i)
+     EXPECT_EQ(indirect_obj_results[i], m_RefObjs[i]->GetNumber());
+ }
+ 
+ TEST_F(PDFObjectsTest, GetInteger) {
+-  static constexpr auto direct_obj_results =
++  constexpr auto direct_obj_results =
+       fxcrt::ToArray<const int>({0, 1, 1245, 9, 0, 0, 0, 0, 0, 0, 0});
+   // Check for direct objects.
+   for (size_t i = 0; i < m_DirectObjs.size(); ++i) {
+     EXPECT_EQ(direct_obj_results[i], m_DirectObjs[i]->GetInteger());
+   }
+ 
+   // Check indirect references.
+-  static constexpr auto indirect_obj_results =
++  constexpr auto indirect_obj_results =
+       fxcrt::ToArray<const int>({1, 1245, 0, 0, 0, 0, 0});
+   for (size_t i = 0; i < m_RefObjs.size(); ++i) {
+     EXPECT_EQ(indirect_obj_results[i], m_RefObjs[i]->GetInteger());
+   }
+ }
+@@ -345,13 +345,13 @@
+     EXPECT_EQ(m_IndirectObjNums[i], m_RefObjs[i]->GetDirect()->GetObjNum());
+ }
+ 
+ TEST_F(PDFObjectsTest, SetString) {
+   // Check for direct objects.
+-  static constexpr auto set_values = fxcrt::ToArray<const char*>(
++  constexpr auto set_values = fxcrt::ToArray<const char*>(
+       {"true", "fake", "3.125f", "097", "changed", "", "NewName"});
+-  static constexpr auto expected = fxcrt::ToArray<const char*>(
++  constexpr auto expected = fxcrt::ToArray<const char*>(
+       {"true", "false", "3.125", "97", "changed", "", "NewName"});
+   for (size_t i = 0; i < std::size(set_values); ++i) {
+     m_DirectObjs[i]->SetString(set_values[i]);
+     EXPECT_EQ(expected[i], m_DirectObjs[i]->GetString());
+   }
+@@ -454,11 +454,11 @@
+   EXPECT_EQ(18u, key_set.size());
+ }
+ 
+ TEST(PDFArrayTest, GetMatrix) {
+   using Row = std::array<float, 6>;
+-  static constexpr auto elems = fxcrt::ToArray<const Row>({
++  constexpr auto elems = fxcrt::ToArray<const Row>({
+       {{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}},
+       {{1, 2, 3, 4, 5, 6}},
+       {{2.3f, 4.05f, 3, -2, -3, 0.0f}},
+       {{0.05f, 0.1f, 0.56f, 0.67f, 1.34f, 99.9f}},
+   });
+@@ -473,11 +473,11 @@
+   }
+ }
+ 
+ TEST(PDFArrayTest, GetRect) {
+   using Row = std::array<float, 4>;
+-  static constexpr auto elems = fxcrt::ToArray<const Row>({
++  constexpr auto elems = fxcrt::ToArray<const Row>({
+       {{0.0f, 0.0f, 0.0f, 0.0f}},
+       {{1, 2, 5, 6}},
+       {{2.3f, 4.05f, -3, 0.0f}},
+       {{0.05f, 0.1f, 1.34f, 99.9f}},
+   });
+@@ -493,11 +493,11 @@
+ }
+ 
+ TEST(PDFArrayTest, GetTypeAt) {
+   {
+     // Boolean array.
+-    static constexpr auto vals =
++    constexpr auto vals =
+         fxcrt::ToArray<const bool>({true, false, false, true, true});
+     auto arr = pdfium::MakeRetain<CPDF_Array>();
+     for (size_t i = 0; i < vals.size(); ++i) {
+       arr->InsertNewAt<CPDF_Boolean>(i, vals[i]);
+     }
+@@ -512,11 +512,11 @@
+                          nullptr);                    // Stream value.
+     }
+   }
+   {
+     // Integer array.
+-    static constexpr auto vals = fxcrt::ToArray<const int>(
++    constexpr auto vals = fxcrt::ToArray<const int>(
+         {10, 0, -345, 2089345456, -1000000000, 567, 93658767});
+     auto arr = pdfium::MakeRetain<CPDF_Array>();
+     for (size_t i = 0; i < vals.size(); ++i) {
+       arr->InsertNewAt<CPDF_Number>(i, vals[i]);
+     }
+@@ -532,17 +532,17 @@
+                          nullptr);                      // Stream value.
+     }
+   }
+   {
+     // Float array.
+-    static constexpr auto vals = fxcrt::ToArray<const float>(
++    constexpr auto vals = fxcrt::ToArray<const float>(
+         {0.0f, 0, 10, 10.0f, 0.0345f, 897.34f, -2.5f, -1.0f, -345.0f, -0.0f});
+     auto arr = pdfium::MakeRetain<CPDF_Array>();
+     for (size_t i = 0; i < vals.size(); ++i) {
+       arr->InsertNewAt<CPDF_Number>(i, vals[i]);
+     }
+-    static constexpr auto expected_str =
++    constexpr auto expected_str =
+         fxcrt::ToArray<const char*>({"0", "0", "10", "10", ".034499999",
+                                      "897.34003", "-2.5", "-1", "-345", "0"});
+     for (size_t i = 0; i < vals.size(); ++i) {
+       TestArrayAccessors(arr.Get(), i,     // Array and index.
+                          expected_str[i],  // String value.
+@@ -554,11 +554,11 @@
+                          nullptr);         // Stream value.
+     }
+   }
+   {
+     // String and name array
+-    static constexpr auto vals = fxcrt::ToArray<const char*>(
++    constexpr auto vals = fxcrt::ToArray<const char*>(
+         {"this", "adsde$%^", "\r\t", "\"012", ".", "EYREW", "It is a joke :)"});
+     auto string_array = pdfium::MakeRetain<CPDF_Array>();
+     auto name_array = pdfium::MakeRetain<CPDF_Array>();
+     for (size_t i = 0; i < vals.size(); ++i) {
+       string_array->InsertNewAt<CPDF_String>(i, vals[i]);
+@@ -713,16 +713,16 @@
+     // dynamically allocated.
+     auto stream_val = object_holder.NewIndirect<CPDF_Stream>(
+         DataVector<uint8_t>(std::begin(kData), std::end(kData)), stream_dict);
+     arr->InsertNewAt<CPDF_Reference>(13, &object_holder,
+                                      stream_val->GetObjNum());
+-    static constexpr auto expected_str = fxcrt::ToArray<const char*>(
++    constexpr auto expected_str = fxcrt::ToArray<const char*>(
+         {"true", "false", "0", "-1234", "2345", ".050000001", "",
+          "It is a test!", "NAME", "test", "", "", "", ""});
+-    static constexpr auto expected_int = fxcrt::ToArray<const int>(
++    constexpr auto expected_int = fxcrt::ToArray<const int>(
+         {1, 0, 0, -1234, 2345, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+-    static constexpr auto expected_float = fxcrt::ToArray<const float>(
++    constexpr auto expected_float = fxcrt::ToArray<const float>(
+         {0, 0, 0, -1234, 2345, 0.05f, 0, 0, 0, 0, 0, 0, 0, 0});
+     for (size_t i = 0; i < arr->size(); ++i) {
+       EXPECT_EQ(expected_str[i], arr->GetByteStringAt(i));
+       EXPECT_EQ(expected_int[i], arr->GetIntegerAt(i));
+       EXPECT_EQ(expected_float[i], arr->GetFloatAt(i));
+@@ -744,11 +744,11 @@
+     }
+   }
+ }
+ 
+ TEST(PDFArrayTest, AddNumber) {
+-  static constexpr auto vals = fxcrt::ToArray<const float>(
++  constexpr auto vals = fxcrt::ToArray<const float>(
+       {1.0f, -1.0f, 0, 0.456734f, 12345.54321f, 0.5f, 1000, 0.000045f});
+   auto arr = pdfium::MakeRetain<CPDF_Array>();
+   for (size_t i = 0; i < vals.size(); ++i) {
+     arr->AppendNew<CPDF_Number>(vals[i]);
+   }
+@@ -757,11 +757,11 @@
+     EXPECT_EQ(vals[i], arr->GetObjectAt(i)->GetNumber());
+   }
+ }
+ 
+ TEST(PDFArrayTest, AddInteger) {
+-  static constexpr auto vals = fxcrt::ToArray<const int>(
++  constexpr auto vals = fxcrt::ToArray<const int>(
+       {0, 1, 934435456, 876, 10000, -1, -24354656, -100});
+   auto arr = pdfium::MakeRetain<CPDF_Array>();
+   for (size_t i = 0; i < vals.size(); ++i) {
+     arr->AppendNew<CPDF_Number>(vals[i]);
+   }

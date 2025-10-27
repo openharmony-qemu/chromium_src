@@ -1,0 +1,15 @@
+--- downloads_handler.h	2025-10-20 19:52:51.048974297 +0800
++++ downloads_handler.h	2025-10-16 15:57:01.914055463 +0800
+@@ -51,11 +51,11 @@
+ 
+   // SelectFileDialog::Listener implementation.
+   void FileSelected(const ui::SelectedFileInfo& file, int index) override;
+   void FileSelectionCanceled() override;
+ 
+-#if BUILDFLAG(IS_CHROMEOS_ASH)
++#if BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_OHOS)
+   // Callback for the "getDownloadLocationText" message.  Converts actual
+   // paths in chromeos to values suitable to display to users.
+   // E.g. /home/chronos/u-<hash>/MyFiles/Downloads => "My Files > Downloads".
+   void HandleGetDownloadLocationText(const base::Value::List& args);
+ #endif

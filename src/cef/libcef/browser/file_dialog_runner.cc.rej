@@ -1,0 +1,27 @@
+--- file_dialog_runner.cc	2025-10-20 19:52:47.985876885 +0800
++++ file_dialog_runner.cc	2025-10-16 15:55:22.354291131 +0800
+@@ -130,14 +135,24 @@
+ 
+   bool HasMultipleFileTypeChoicesImpl() override {
+     return has_multiple_file_choices_;
+   }
+ 
++#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
++#include "cef/ohos_cef_ext/libcef/browser/file_dialog_runner_for_include.cc"
++#endif
++
+  private:
+   gfx::NativeWindow owning_window_ = nullptr;
+   bool has_multiple_file_choices_ = false;
+ 
++#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
++  std::vector<std::u16string> accept_types_;
++  bool use_media_capture_ = false;
++  bool open_writable_ = false;
++#endif
++
+   CefRefPtr<CefBrowserHostBase> browser_;
+ };
+ 
+ ui::SelectFileDialog* CefSelectFileDialogFactory::Create(
+     ui::SelectFileDialog::Listener* listener,

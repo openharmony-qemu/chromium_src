@@ -1,0 +1,14 @@
+--- jpeg_image_decoder.cc	2025-10-20 19:53:01.214200983 +0800
++++ jpeg_image_decoder.cc	2025-10-16 16:07:40.115536595 +0800
+@@ -43,10 +43,11 @@
+ #include "third_party/blink/renderer/platform/image-decoders/jpeg/jpeg_image_decoder.h"
+ 
+ #include <limits>
+ #include <memory>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/logging.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/numerics/checked_math.h"
+ #include "base/trace_event/trace_event.h"
+ #include "build/build_config.h"

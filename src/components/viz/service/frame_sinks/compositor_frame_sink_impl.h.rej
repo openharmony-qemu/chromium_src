@@ -1,0 +1,39 @@
+--- compositor_frame_sink_impl.h	2025-10-20 19:52:54.138416817 +0800
++++ compositor_frame_sink_impl.h	2025-10-16 15:54:59.236975324 +0800
+@@ -60,10 +71,13 @@
+   void SubmitCompositorFrame(
+       const LocalSurfaceId& local_surface_id,
+       CompositorFrame frame,
+       std::optional<HitTestRegionList> hit_test_region_list,
+       uint64_t submit_time) override;
++#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
++  void OnSetBypassVsyncCondition(int32_t condition) override;
++#endif
+   void SubmitCompositorFrameSync(
+       const LocalSurfaceId& local_surface_id,
+       CompositorFrame frame,
+       std::optional<HitTestRegionList> hit_test_region_list,
+       uint64_t submit_time,
+@@ -77,10 +91,22 @@
+   void BindLayerContext(mojom::PendingLayerContextPtr context) override;
+ #if BUILDFLAG(IS_ANDROID)
+   void SetThreads(const std::vector<Thread>& threads) override;
+ #endif
+ 
++  friend class CompositorFrameSinkImplUtil;
++
++#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
++  void ReportKeyThreadIds(const std::vector<int32_t>& thread_ids,
++                          int32_t process_id,
++                          bool is_created) override;
++#endif
++
++#if BUILDFLAG(IS_ARKWEB)
++  std::unique_ptr<CompositorFrameSinkImplUtil> compositor_frame_sink_impl_util_;
++#endif
++
+  private:
+   void SubmitCompositorFrameInternal(
+       const LocalSurfaceId& local_surface_id,
+       CompositorFrame frame,
+       std::optional<HitTestRegionList> hit_test_region_list,

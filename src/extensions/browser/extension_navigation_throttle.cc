@@ -71,7 +71,11 @@ bool ShouldBlockNavigationToPlatformAppResource(
     if (navigation_handle.IsPdf()) {
       const url::Origin& initiator_origin =
           navigation_handle.GetInitiatorOrigin().value();
-      CHECK_EQ(initiator_origin.scheme(), kExtensionScheme);
+      CHECK(initiator_origin.scheme() == kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+            || initiator_origin.scheme() == kArkwebExtensionScheme
+#endif
+      );
       CHECK_EQ(initiator_origin.host(), extension_misc::kPdfExtensionId);
       return false;
     }
@@ -356,7 +360,11 @@ ExtensionNavigationThrottle::WillStartOrRedirectRequest() {
   //   navigated, but the page that contains the PDF can be.
   const url::Origin& initiator_origin =
       navigation_handle()->GetInitiatorOrigin().value();
-  if (initiator_origin.scheme() == kExtensionScheme &&
+  if ((initiator_origin.scheme() == kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+       || initiator_origin.scheme() == kArkwebExtensionScheme
+#endif
+       ) &&
       base::Contains(MimeTypesHandler::GetMIMETypeAllowlist(),
                      initiator_origin.host())) {
     return content::NavigationThrottle::PROCEED;
@@ -367,6 +375,9 @@ ExtensionNavigationThrottle::WillStartOrRedirectRequest() {
   // - https://crbug.com/662602
   // - similar checks in extensions::ResourceRequestPolicy::CanRequestResource
   if (initiator_origin.scheme() == content::kChromeUIScheme ||
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      initiator_origin.scheme() == content::kArkWebUIScheme ||
+#endif
       initiator_origin.scheme() == content::kChromeDevToolsScheme ||
       ExtensionsBrowserClient::Get()->ShouldSchemeBypassNavigationChecks(
           initiator_origin.scheme())) {

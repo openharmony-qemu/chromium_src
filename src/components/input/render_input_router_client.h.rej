@@ -1,0 +1,18 @@
+--- render_input_router_client.h	2025-10-20 19:52:53.049916143 +0800
++++ render_input_router_client.h	2025-10-16 15:54:56.888205506 +0800
+@@ -56,10 +56,15 @@
+   virtual void UpdateElementFocusForStylusWriting(
+ #if BUILDFLAG(IS_WIN)
+       const gfx::Rect& focus_rect_in_widget
+ #endif  // BUILDFLAG(IS_WIN)
+       ) = 0;
++
++#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
++  virtual void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) = 0;
++#endif
++
+ };
+ 
+ }  // namespace input
+ 
+ #endif  // COMPONENTS_INPUT_RENDER_INPUT_ROUTER_CLIENT_H_

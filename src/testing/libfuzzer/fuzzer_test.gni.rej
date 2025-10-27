@@ -1,0 +1,14 @@
+--- fuzzer_test.gni	2025-10-20 19:52:57.810212614 +0800
++++ fuzzer_test.gni	2025-10-16 15:55:03.512399550 +0800
+@@ -69,10 +69,11 @@
+       test_deps += [ "//testing/libfuzzer:fuzzing_engine_main" ]
+     }
+     test_data_deps = []
+ 
+     if (defined(invoker.deps)) {
++      invoker.deps += ["//cef:libarkweb_engine"]
+       test_deps += invoker.deps
+     }
+     if (defined(invoker.data_deps)) {
+       test_data_deps += invoker.data_deps
+     }

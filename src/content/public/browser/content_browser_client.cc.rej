@@ -1,0 +1,81 @@
+--- content_browser_client.cc	2025-10-20 19:52:54.558607634 +0800
++++ content_browser_client.cc	2025-10-16 15:54:59.684496364 +0800
+@@ -10,10 +10,11 @@
+ 
+ #include "base/check.h"
+ #include "base/feature_list.h"
+ #include "base/files/file_path.h"
+ #include "base/functional/callback_helpers.h"
++#include "base/logging.h"
+ #include "base/no_destructor.h"
+ #include "base/notreached.h"
+ #include "base/supports_user_data.h"
+ #include "base/task/sequenced_task_runner.h"
+ #include "base/task/thread_pool/thread_pool_instance.h"
+@@ -85,18 +86,24 @@
+ #include "third_party/blink/public/mojom/payments/payment_credential.mojom.h"
+ #include "ui/gfx/image/image_skia.h"
+ #include "ui/shell_dialogs/select_file_policy.h"
+ #include "url/gurl.h"
+ #include "url/origin.h"
++#include "arkweb/build/features/features.h"
+ 
+ #if BUILDFLAG(IS_ANDROID)
+ #include "content/public/browser/tts_environment_android.h"
+ #else
+ #include "services/video_effects/public/mojom/video_effects_processor.mojom-forward.h"
+ #include "third_party/blink/public/mojom/installedapp/related_application.mojom.h"
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
++#include "base/system/sys_info.h"
++#endif
++
++
+ using AttributionReportType =
+     content::ContentBrowserClient::AttributionReportingOsRegistrar;
+ 
+ namespace content {
+ 
+@@ -1216,10 +1254,28 @@
+     bool* ignore_navigation) {
+   return true;
+ }
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_ERROR_PAGE)
++std::string ContentBrowserClient::OverrideErrorPage(
++    FrameTreeNodeId frame_tree_node_id,
++    bool browser_initiated,
++    const GURL& gurl,
++    const std::string& request_method,
++    bool has_user_gesture,
++    bool is_redirect,
++    bool is_outermost_main_frame,
++    int error_code,
++    const std::string& error_text,
++    bool is_prerendering,
++    ui::PageTransition transition,
++    std::string* html) {
++  return "";
++}
++#endif
++
+ bool ContentBrowserClient::ShouldAllowSameSiteRenderFrameHostChange(
+     const RenderFrameHost& rfh) {
+   return true;
+ }
+ 
+@@ -1847,6 +1903,12 @@
+     BrowserContext* browser_context,
+     const GURL& destination_url) {
+   return true;
+ }
+ 
++#if BUILDFLAG(ARKWEB_USERAGENT)
++std::string ContentBrowserClient::GetUAStringForHost(const std::string& host) {
++  return GetUserAgent();
++}
++#endif
++
+ }  // namespace content

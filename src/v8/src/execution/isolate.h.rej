@@ -1,0 +1,16 @@
+--- isolate.h	2025-10-20 19:53:31.404576487 +0800
++++ isolate.h	2025-10-16 15:56:12.768983547 +0800
+@@ -2502,10 +2550,13 @@
+   StringStream* incomplete_message_ = nullptr;
+   Address isolate_addresses_[kIsolateAddressCount + 1] = {};
+   Bootstrapper* bootstrapper_ = nullptr;
+   TieringManager* tiering_manager_ = nullptr;
+   CompilationCache* compilation_cache_ = nullptr;
++#ifdef OHOS_JS_ENGINE
++  EnumTimesCache* enum_times_cache_ = nullptr;
++#endif
+   std::shared_ptr<Counters> async_counters_;
+   base::RecursiveMutex break_access_;
+   base::SharedMutex feedback_vector_access_;
+   base::SharedMutex internalized_string_access_;
+   base::SharedMutex full_transition_array_access_;

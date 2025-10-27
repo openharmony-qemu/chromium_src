@@ -27,6 +27,12 @@
 #include "chrome/browser/ui/browser_list_observer.h"
 #include "chrome/browser/ui/browser_window.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "ui/aura/window.h"
+#include "ui/aura/window_tree_host.h"
+#include "ui/gfx/native_widget_types.h"
+#endif
+
 using base::UserMetricsAction;
 using content::WebContents;
 

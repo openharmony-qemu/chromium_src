@@ -14,6 +14,7 @@
 #include <string_view>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/flat_map.h"
 #include "base/functional/callback.h"
 #include "base/gtest_prod_util.h"
@@ -502,6 +503,10 @@ class ChromeContentBrowserClient : public content::ContentBrowserClient {
       const GURL& request_url,
       bool is_primary_main_frame_request,
       bool strict_enforcement,
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      const GURL& origin_url,
+      const std::string& referrer,
+#endif
       base::OnceCallback<void(content::CertificateRequestResultType)> callback)
       override;
 #if !BUILDFLAG(IS_ANDROID)
@@ -1232,6 +1237,10 @@ class ChromeContentBrowserClient : public content::ContentBrowserClient {
  private:
   friend class DisableWebRtcEncryptionFlagTest;
   friend class InProcessBrowserTest;
+  friend class ChromeContentBrowserClientUtils;
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class ChromeContentBrowserClientForIncludeTest;
+#endif  // BUILDFLAG(ARKWEB_TEST)
 
   FRIEND_TEST_ALL_PREFIXES(ChromeSiteIsolationPolicyTest,
                            IsolatedOriginsContainChromeOrigins);

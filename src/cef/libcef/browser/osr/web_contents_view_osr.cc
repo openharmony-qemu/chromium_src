@@ -26,6 +26,9 @@ void CefWebContentsViewOSR::WebContentsCreated(
     content::WebContents* web_contents) {
   DCHECK(!web_contents_);
   web_contents_ = web_contents;
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+  AsArkWebCefWebContentsViewOSRExt()->WebContentsMaybeCreatePageNode();
+#endif
 
   RenderViewCreated();
 }
@@ -87,7 +90,7 @@ void CefWebContentsViewOSR::TakeFocus(bool reverse) {
 }
 
 gfx::Rect CefWebContentsViewOSR::GetViewBounds() const {
-  CefRenderWidgetHostViewOSR* view = GetView();
+  ArkWebRenderWidgetHostViewOSRExt* view = GetView();
   return view ? view->GetViewBounds() : gfx::Rect();
 }
 
@@ -98,8 +101,8 @@ content::RenderWidgetHostViewBase* CefWebContentsViewOSR::CreateViewForWidget(
         render_widget_host->GetView());
   }
 
-  return new CefRenderWidgetHostViewOSR(background_color_, use_shared_texture_,
-                                        use_external_begin_frame_,
+  return new ArkWebRenderWidgetHostViewOSRExt(
+      background_color_, use_shared_texture_, use_external_begin_frame_,
                                         render_widget_host, nullptr);
 }
 
@@ -107,11 +110,11 @@ content::RenderWidgetHostViewBase* CefWebContentsViewOSR::CreateViewForWidget(
 content::RenderWidgetHostViewBase*
 CefWebContentsViewOSR::CreateViewForChildWidget(
     content::RenderWidgetHost* render_widget_host) {
-  CefRenderWidgetHostViewOSR* view = GetView();
+  ArkWebRenderWidgetHostViewOSRExt* view = GetView();
   CHECK(view);
 
-  return new CefRenderWidgetHostViewOSR(background_color_, use_shared_texture_,
-                                        use_external_begin_frame_,
+  return new ArkWebRenderWidgetHostViewOSRExt(
+      background_color_, use_shared_texture_, use_external_begin_frame_,
                                         render_widget_host, view);
 }
 
@@ -144,6 +147,9 @@ void CefWebContentsViewOSR::StartDragging(
   if (browser.get()) {
     browser->StartDragging(drop_data, allowed_ops, image, cursor_offset,
                            event_info, source_rwh);
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  AsArkWebCefWebContentsViewOSRExt()->SetTextHandlesTemporarilyHiddenByDrag();
+#endif
   } else if (web_contents_) {
     static_cast<content::WebContentsImpl*>(web_contents_)
         ->SystemDragEnded(source_rwh);
@@ -159,16 +165,16 @@ void CefWebContentsViewOSR::UpdateDragOperation(
   }
 }
 
-CefRenderWidgetHostViewOSR* CefWebContentsViewOSR::GetView() const {
+ArkWebRenderWidgetHostViewOSRExt* CefWebContentsViewOSR::GetView() const {
   if (web_contents_) {
-    return static_cast<CefRenderWidgetHostViewOSR*>(
+    return static_cast<ArkWebRenderWidgetHostViewOSRExt*>(
         web_contents_->GetRenderViewHost()->GetWidget()->GetView());
   }
   return nullptr;
 }
 
 AlloyBrowserHostImpl* CefWebContentsViewOSR::GetBrowser() const {
-  CefRenderWidgetHostViewOSR* view = GetView();
+  ArkWebRenderWidgetHostViewOSRExt* view = GetView();
   if (view) {
     return view->browser_impl().get();
   }
@@ -177,6 +183,6 @@ AlloyBrowserHostImpl* CefWebContentsViewOSR::GetBrowser() const {
 
 CefTouchSelectionControllerClientOSR*
 CefWebContentsViewOSR::GetSelectionControllerClient() const {
-  CefRenderWidgetHostViewOSR* view = GetView();
+  ArkWebRenderWidgetHostViewOSRExt* view = GetView();
   return view ? view->selection_controller_client() : nullptr;
 }

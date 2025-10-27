@@ -1,0 +1,33 @@
+--- network_anonymization_key.cc	2025-10-20 19:52:56.982204991 +0800
++++ network_anonymization_key.cc	2025-10-16 15:55:02.493490038 +0800
+@@ -4,10 +4,11 @@
+ #include "net/base/network_anonymization_key.h"
+ 
+ #include <atomic>
+ #include <optional>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/feature_list.h"
+ #include "base/unguessable_token.h"
+ #include "base/values.h"
+ #include "net/base/features.h"
+ #include "net/base/net_export.h"
+@@ -67,10 +68,18 @@
+ NetworkAnonymizationKey::NetworkAnonymizationKey()
+     : top_frame_site_(std::nullopt),
+       is_cross_site_(false),
+       nonce_(std::nullopt) {}
+ 
++#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
++NetworkAnonymizationKey::NetworkAnonymizationKey(bool should_check_top_frame_site)
++      : top_frame_site_(std::nullopt),
++      is_cross_site_(false),
++      nonce_(std::nullopt),
++      should_check_top_frame_site_(should_check_top_frame_site) {}
++#endif
++
+ NetworkAnonymizationKey::NetworkAnonymizationKey(
+     const NetworkAnonymizationKey& network_anonymization_key) = default;
+ 
+ NetworkAnonymizationKey::NetworkAnonymizationKey(
+     NetworkAnonymizationKey&& network_anonymization_key) = default;

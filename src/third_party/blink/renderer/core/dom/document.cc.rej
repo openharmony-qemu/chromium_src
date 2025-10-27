@@ -1,0 +1,17 @@
+--- document.cc	2025-10-20 19:53:00.310210817 +0800
++++ document.cc	2025-10-16 16:07:39.310250031 +0800
+@@ -387,10 +387,14 @@
+ #include "third_party/blink/renderer/platform/wtf/text/character_names.h"
+ #include "third_party/blink/renderer/platform/wtf/text/character_visitor.h"
+ #include "third_party/blink/renderer/platform/wtf/text/string_buffer.h"
+ #include "third_party/blink/renderer/platform/wtf/text/text_encoding_registry.h"
+ 
++#if BUILDFLAG(IS_ARKWEB)
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/dom/document_utils.h"
++#endif
++
+ #ifndef NDEBUG
+ using WeakDocumentSet = blink::HeapHashSet<blink::WeakMember<blink::Document>>;
+ static WeakDocumentSet& LiveDocumentSet();
+ #endif
+ 

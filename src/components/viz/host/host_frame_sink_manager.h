@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/compiler_specific.h"
 #include "base/containers/flat_map.h"
@@ -40,6 +41,7 @@
 #include "services/viz/privileged/mojom/compositing/frame_sink_manager_test_api.mojom.h"
 #include "services/viz/privileged/mojom/compositing/frame_sinks_metrics_recorder.mojom.h"
 #include "services/viz/public/mojom/compositing/frame_sink_bundle.mojom.h"
+#include "arkweb/build/features/features.h"
 
 namespace base {
 class SingleThreadTaskRunner;
@@ -48,6 +50,7 @@ class SingleThreadTaskRunner;
 namespace viz {
 
 class SurfaceInfo;
+class HostFrameSinkManagerUtils;
 
 enum class ReportFirstSurfaceActivation { kYes, kNo };
 
@@ -58,6 +61,10 @@ class VIZ_HOST_EXPORT HostFrameSinkManager
     : public mojom::FrameSinkManagerClient,
       public HitTestDataProvider {
  public:
+  friend class HostFrameSinkManagerUtils;
+
+  std::unique_ptr<HostFrameSinkManagerUtils> managerUtils;
+
   HostFrameSinkManager();
 
   HostFrameSinkManager(const HostFrameSinkManager&) = delete;

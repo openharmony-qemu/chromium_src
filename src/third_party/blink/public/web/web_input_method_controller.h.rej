@@ -1,0 +1,32 @@
+--- web_input_method_controller.h	2025-10-20 19:53:00.158212258 +0800
++++ web_input_method_controller.h	2025-10-16 16:07:39.128665806 +0800
+@@ -3,19 +3,29 @@
+ // found in the LICENSE file.
+ 
+ #ifndef THIRD_PARTY_BLINK_PUBLIC_WEB_WEB_INPUT_METHOD_CONTROLLER_H_
+ #define THIRD_PARTY_BLINK_PUBLIC_WEB_WEB_INPUT_METHOD_CONTROLLER_H_
+ 
++#include "arkweb/build/features/features.h"
+ #include "third_party/blink/public/platform/web_text_input_info.h"
+ #include "third_party/blink/public/web/web_range.h"
+ #include "third_party/blink/public/web/web_widget.h"
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++#include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
++#endif
+ #include "ui/base/ime/ime_text_span.h"
+ 
+ namespace gfx {
+ class Rect;
+ }  // namespace gfx
+ 
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++namespace WTF {
++class String;
++}
++#endif
++
+ namespace blink {
+ 
+ class WebString;
+ template <typename T>
+ class WebVector;

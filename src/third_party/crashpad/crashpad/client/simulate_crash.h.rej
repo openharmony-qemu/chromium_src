@@ -1,0 +1,15 @@
+--- simulate_crash.h	2025-10-20 19:53:07.336456156 +0800
++++ simulate_crash.h	2025-10-16 16:07:40.419492798 +0800
+@@ -21,10 +21,11 @@
+ #include "client/simulate_crash_mac.h"
+ #elif BUILDFLAG(IS_IOS)
+ #include "client/simulate_crash_ios.h"
+ #elif BUILDFLAG(IS_WIN)
+ #include "client/simulate_crash_win.h"
+-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
++#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
++    BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+ #include "client/simulate_crash_linux.h"
+ #endif
+ 
+ #endif  // CRASHPAD_CLIENT_SIMULATE_CRASH_H_

@@ -1,0 +1,15 @@
+--- thread_local_state.h	2025-10-20 19:52:53.009897704 +0800
++++ thread_local_state.h	2025-10-16 15:54:56.844252546 +0800
+@@ -7,11 +7,11 @@
+ 
+ #include "base/check.h"
+ #include "base/compiler_specific.h"
+ #include "build/build_config.h"
+ 
+-#if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_GWP_ASAN)
+ // On macOS and Android (before Q), the first use of a `thread_local` variable
+ // on a new thread will cause an allocation, leading to infinite recursion.
+ // Also, `thread_local` goes through `emutls` on Android, which is slower than
+ // `pthread_getspecific`.
+ #define THREAD_LOCAL_STATE_USES_PARTITION_ALLOC_TLS

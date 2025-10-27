@@ -1,0 +1,15 @@
+--- BUILD.gn	2025-10-20 19:52:54.258471336 +0800
++++ BUILD.gn	2025-10-16 15:54:59.384817095 +0800
+@@ -9,11 +9,11 @@
+ import("//third_party/inspector_protocol/inspector_protocol.gni")
+ import("//third_party/protobuf/proto_library.gni")
+ import("//tools/grit/grit_rule.gni")
+ 
+ # Android and iOS don't support DevTools front-end.
+-if (!is_android && !is_ios) {
++if (!is_android) {
+   source_set("devtools_resources_extern") {
+     sources = [ "devtools_resources.cc" ]
+ 
+     # This is to remove unnecessary dependency from compiles of targets depends
+     # on this target to grit action.

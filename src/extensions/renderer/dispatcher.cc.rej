@@ -1,0 +1,19 @@
+--- dispatcher.cc	2025-10-20 19:52:55.379909076 +0800
++++ dispatcher.cc	2025-10-16 15:55:00.463662461 +0800
+@@ -584,11 +616,15 @@
+ 
+ void Dispatcher::DidInitializeServiceWorkerContextOnWorkerThread(
+     blink::WebServiceWorkerContextProxy* context_proxy,
+     const GURL& service_worker_scope,
+     const GURL& script_url) {
+-  if (!script_url.SchemeIs(kExtensionScheme))
++  if (!script_url.SchemeIs(kExtensionScheme)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      && !script_url.SchemeIs(kArkwebExtensionScheme)
++#endif
++  )
+     return;
+ 
+   {
+     base::AutoLock lock(service_workers_paused_for_on_loaded_message_lock_);
+     ExtensionId extension_id =

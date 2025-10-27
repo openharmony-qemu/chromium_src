@@ -1,0 +1,34 @@
+--- interactive_test_internal.h	2025-10-20 19:53:30.824654519 +0800
++++ interactive_test_internal.h	2025-10-16 15:55:05.411687898 +0800
+@@ -476,11 +480,15 @@
+ struct ArgsExtractor<R(Args...)> {
+   using Holder = std::tuple<Args...>;
+ };
+ 
+ template <typename F>
++#if defined(__clang__) && (__clang_major__ < 17)
++using ReturnTypeOf = typename MaybeBindTypeHelper<F>::ReturnType;
++#else
+ using ReturnTypeOf = MaybeBindTypeHelper<F>::ReturnType;
++#endif
+ 
+ template <size_t N, typename F>
+ using NthArgumentOf = std::tuple_element_t<
+     N,
+     typename ArgsExtractor<typename MaybeBindTypeHelper<F>::Signature>::Holder>;
+@@ -545,11 +553,15 @@
+ 
+ // Gets the appropriate matchable type for `T`. This affects string-like types
+ // (e.g. `const char*`) as the corresponding `Matcher` should match a
+ // `std::string` or `std::u16string`.
+ template <typename T>
++#if defined(__clang__) && (__clang_major__ < 17)
++using MatcherTypeFor = typename MatcherTypeHelper<std::decay_t<T>>::ActualType;
++#else
+ using MatcherTypeFor = MatcherTypeHelper<std::decay_t<T>>::ActualType;
++#endif
+ 
+ // Determines if `T` is a valid type to be used in a matcher. This precludes
+ // string-like types (const char*, constexpr char16_t[], etc.) in favor of
+ // `std::string` and `std::u16string`.
+ template <typename T>

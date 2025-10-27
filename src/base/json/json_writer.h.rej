@@ -1,0 +1,18 @@
+--- json_writer.h	2025-10-20 19:52:46.660888889 +0800
++++ json_writer.h	2025-10-16 15:54:55.293971536 +0800
+@@ -71,11 +74,14 @@
+       JsonOptions::OPTIONS_OMIT_BINARY_VALUES;
+   static constexpr auto OPTIONS_OMIT_DOUBLE_TYPE_PRESERVATION =
+       JsonOptions::OPTIONS_OMIT_DOUBLE_TYPE_PRESERVATION;
+   static constexpr auto OPTIONS_PRETTY_PRINT =
+       JsonOptions::OPTIONS_PRETTY_PRINT;
+-
++#if BUILDFLAG(IS_ARKWEB)
++  static constexpr auto OPTIONS_DOUBLE_AS_LONG =
++      JsonOptions::OPTIONS_DOUBLE_AS_LONG;
++#endif
+   JSONWriter(const JSONWriter&) = delete;
+   JSONWriter& operator=(const JSONWriter&) = delete;
+ 
+   // Given a root node, generates a JSON string and puts it into |json|.
+   // The output string is overwritten and not appended.

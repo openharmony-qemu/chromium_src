@@ -458,7 +458,12 @@ class CORE_EXPORT WebViewImpl final : public WebView,
 
   PageScheduler* Scheduler() const override;
   void SetVisibilityState(mojom::blink::PageVisibilityState visibility_state,
+#if !BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
                           bool is_initial_state) override;
+#else
+                          bool is_initial_state,
+                          bool storing_in_bfcache = false) override;
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
   mojom::blink::PageVisibilityState GetVisibilityState() override;
 
   void SetPageLifecycleStateFromNewPageCommit(
@@ -504,7 +509,15 @@ class CORE_EXPORT WebViewImpl final : public WebView,
 
   void EnterFullscreen(LocalFrame&,
                        const FullscreenOptions*,
-                       FullscreenRequestType);
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                       bool overlay_fullscreen,
+#endif // ARKWEB_VIDEO_ASSISTANT
+                       FullscreenRequestType
+#if BUILDFLAG(ARKWEB_FULLSCREEN)
+                       ,
+                       const absl::optional<gfx::Size>&
+#endif  // BUILDFLAG(ARKWEB_FULLSCREEN)
+  );
   void ExitFullscreen(LocalFrame&);
   void FullscreenElementChanged(Element* old_element,
                                 Element* new_element,
@@ -641,6 +654,9 @@ class CORE_EXPORT WebViewImpl final : public WebView,
   // words, after the frame has painted something.
   void DidFirstVisuallyNonEmptyPaint();
 
+#if BUILDFLAG(ARKWEB_ACTIVE_POLICY)
+  void SetDelayDurationForBackgroundTabFreezing(int64_t millisecond);
+#endif
   // Caleld once the first contentful paint happens on the main frame.
   void OnFirstContentfulPaint();
 
@@ -653,6 +669,20 @@ class CORE_EXPORT WebViewImpl final : public WebView,
 
   double ClampZoomLevel(double zoom_level) const;
   double ZoomLevelToZoomFactor(double zoom_level) const;
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  void SetScrollOffset(const gfx::PointF point) override;
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  void OnSetAdBlockEnable(bool site_adblock_enabled) override;
+
+  bool GetAdBlockEnableForSite() override;
+#endif
+
+#if BUILDFLAG(ARKWEB_PAGE_UP_DOWN)
+  gfx::PointF GetScrollOffset() override;
+  float GetScrollBottom() override;
+#endif  // #if BUILDFLAG(ARKWEB_PAGE_UP_DOWN)
 
  private:
   FRIEND_TEST_ALL_PREFIXES(WebFrameTest, DivScrollIntoEditableTest);
@@ -672,6 +702,10 @@ class CORE_EXPORT WebViewImpl final : public WebView,
   friend class frame_test_helpers::WebViewHelper;
   friend class SimCompositor;
   friend class WebView;  // So WebView::Create can call our constructor
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class WebViewImplTest; // For testing purposes
+  friend class WebLocalFrameImplTest;
+#endif
 
   void AcceptLanguagesChanged();
   void ThemeChanged();
@@ -701,6 +735,9 @@ class CORE_EXPORT WebViewImpl final : public WebView,
 
   float MaximumLegiblePageScale() const;
   void RefreshPageScaleFactor();
+#if BUILDFLAG(ARKWEB_PINCH_SMOOTH)
+  void SetPinchSmoothMode(bool isEnable);
+#endif
   gfx::Size ContentsSize() const;
 
   void UpdateBrowserControlsConstraint(cc::BrowserControlsState constraint);
@@ -953,6 +990,10 @@ class CORE_EXPORT WebViewImpl final : public WebView,
   // Whether the preferred size may have changed and |UpdatePreferredSize| needs
   // to be called.
   bool needs_preferred_size_update_ = true;
+
+#if BUILDFLAG(ARKWEB_PINCH_SMOOTH)
+  bool pinch_smooth_mode = false;
+#endif
 
   // Cache the preferred size of the page in order to prevent sending the IPC
   // when layout() recomputes but doesn't actually change sizes.

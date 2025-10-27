@@ -1,0 +1,95 @@
+--- throttle_handler.cc	2025-10-20 19:52:47.985876885 +0800
++++ throttle_handler.cc	2025-10-16 15:55:22.354291131 +0800
+@@ -2,30 +2,43 @@
+ // Use of this source code is governed by a BSD-style license that can be found
+ // in the LICENSE file.
+ 
+ #include "cef/libcef/browser/net/throttle_handler.h"
+ 
++#include "arkweb/build/features/features.h"
+ #include "cef/libcef/browser/browser_host_base.h"
+ #include "cef/libcef/browser/browser_info_manager.h"
+ #include "cef/libcef/browser/frame_host_impl.h"
+ #include "cef/libcef/common/frame_util.h"
+ #include "cef/libcef/common/request_impl.h"
+ #include "components/navigation_interception/intercept_navigation_throttle.h"
+ #include "content/public/browser/navigation_handle.h"
+ #include "content/public/browser/navigation_throttle.h"
+ #include "content/public/browser/page_navigator.h"
+ 
++#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
++#include "libcef/common/arkweb_request_impl_ext.h"
++#endif
++
++#if BUILDFLAG(IS_ARKWEB)
++#include "cef/ohos_cef_ext/libcef/browser/net/ark_web_throttle_handler.cc"
++#endif
++
+ namespace throttle {
+ 
+ namespace {
+ 
+ bool NavigationOnUIThread(content::NavigationHandle* navigation_handle) {
+   CEF_REQUIRE_UIT();
+ 
+   const bool is_main_frame = navigation_handle->IsInMainFrame();
+   const auto global_id = frame_util::GetGlobalId(navigation_handle);
+ 
++#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
++  ArkWebRecordVisitedUrl(navigation_handle);
++#endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
++
+   // Identify the RenderFrameHost that originated the navigation.
+   const auto parent_global_id =
+       !is_main_frame ? navigation_handle->GetParentFrame()->GetGlobalId()
+                      : frame_util::InvalidGlobalId();
+ 
+@@ -46,28 +59,48 @@
+           open_params, browser)) {
+     // Cancel the navigation.
+     return true;
+   }
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  if (ArkWebIsExtensionNavigation(navigation_handle)) {
++    return false;
++  }
++#endif  // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++
+   bool ignore_navigation = false;
+ 
+   if (browser) {
+     if (auto client = browser->GetClient()) {
+       if (auto handler = client->GetRequestHandler()) {
+         CefRefPtr<CefFrame> frame;
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++        if (base::CommandLine::ForCurrentProcess()->HasSwitch(
++            ::switches::kEnableNwebEx)) {
++          frame = GetFrameFromGlobalIdFirst(browser,
++            global_id, parent_global_id, is_main_frame);
++        } else {
++#endif
+         if (is_main_frame) {
+           frame = browser->GetMainFrame();
+         } else {
+           frame = browser->GetFrameForGlobalId(global_id);
+         }
+         if (!frame) {
+           // Create a temporary frame object for navigation of sub-frames that
+           // don't yet exist.
+           frame = browser->browser_info()->CreateTempSubFrame(parent_global_id);
+         }
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++        }
++#endif
+ 
++#if BUILDFLAG(IS_ARKWEB)
++        CefRefPtr<CefRequestImpl> request = new ArkWebRequestImplExt();
++#else
+         CefRefPtr<CefRequestImpl> request = new CefRequestImpl();
++#endif
+         request->Set(navigation_handle);
+         request->SetReadOnly(true);
+ 
+         // Initiating a new navigation in OnBeforeBrowse will delete the
+         // InterceptNavigationThrottle that currently owns this callback,

@@ -1,0 +1,23 @@
+--- signals_features.h	2025-10-20 19:52:52.861828515 +0800
++++ signals_features.h	2025-10-16 15:54:56.676432156 +0800
+@@ -29,18 +29,18 @@
+ // Returns true if the function pointed at by `new_ev_function` is considered
+ // to be enabled based on the feature flag and its parameters.
+ bool IsNewFunctionEnabled(NewEvFunction new_ev_function);
+ 
+ #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || \
+-    BUILDFLAG(IS_CHROMEOS_ASH)
++    BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(ARKWEB_ASAN)
+ BASE_DECLARE_FEATURE(kDeviceSignalsConsentDialog);
+ 
+ // Returns true if device signals consent dialog has been enabled for
+ // consent collection.
+ bool IsConsentDialogEnabled();
+ #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) ||
+-        // BUILDFLAG(IS_CHROMEOS_ASH)
++        // BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(ARKWEB_ASAN)
+ 
+ // Feature flag for supporting the new private SecureConnect functions in
+ // unaffiliated contexts via the consent flow.
+ BASE_DECLARE_FEATURE(kNewEvSignalsUnaffiliatedEnabled);
+ 

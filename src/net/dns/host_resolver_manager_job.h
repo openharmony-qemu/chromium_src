@@ -80,6 +80,12 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
       const HostResolver::HttpsSvcbOptions& https_svcb_options);
   ~Job() override;
 
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  virtual ArkWebHostResolverManagerJobExt* AsArkWebHostResolverManagerJobExt() {
+    return nullptr;
+  }
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+
   // Add this job to the dispatcher.  If "at_head" is true, adds at the front
   // of the queue.
   void Schedule(bool at_head);
@@ -151,6 +157,10 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
   }
 
  private:
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  friend class ArkWebHostResolverManagerJobExt;
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+
   // Keeps track of the highest priority.
   class PriorityTracker {
    public:
@@ -374,5 +384,9 @@ class HostResolverManager::Job : public PrioritizedDispatcher::Job,
 };
 
 }  // namespace net
+
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#include "arkweb/chromium_ext/net/dns/arkweb_host_resolver_manager_job_ext.h"
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 
 #endif  // NET_DNS_HOST_RESOLVER_MANAGER_JOB_H_

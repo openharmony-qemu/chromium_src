@@ -1,0 +1,13 @@
+--- web_preferences_mojom_traits.cc	2025-10-20 19:52:59.790214452 +0800
++++ web_preferences_mojom_traits.cc	2025-10-16 16:07:38.670757760 +0800
+@@ -250,9 +267,10 @@
+   out->modal_context_menu = data.modal_context_menu();
+   out->dynamic_safe_area_insets_enabled =
+       data.dynamic_safe_area_insets_enabled();
+   out->subapps_apis_require_user_gesture_and_authorization =
+       data.require_transient_activation_and_user_confirmation_for_subapps_api();
++  WebPreferenceMojomExt(data, out);
+   return true;
+ }
+ 
+ }  // namespace mojo

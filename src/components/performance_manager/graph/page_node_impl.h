@@ -125,6 +125,12 @@ class PageNodeImpl
   void SetIsFocused(bool is_focused);
   void SetIsVisible(bool is_visible);
   void SetIsAudible(bool is_audible);
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+  void SetIsMediaPlaying(bool is_media_playing);
+  void OneShotMediaPlayerStopped();
+  void AudioContextPlaybackStarted(const AudioContextId& audio_context_id);
+  void AudioContextPlaybackStopped(const AudioContextId& audio_context_id);
+#endif
   void SetHasPictureInPicture(bool has_picture_in_picture);
   void SetLoadingState(LoadingState loading_state);
   void SetUkmSourceId(ukm::SourceId ukm_source_id);
@@ -154,6 +160,9 @@ class PageNodeImpl
   // Accessors.
   FrameNodeImpl* opener_frame_node() const;
   FrameNodeImpl* embedder_frame_node() const;
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+  bool is_media_playing() const;
+#endif
   FrameNodeImpl* main_frame_node() const;
   NodeSetView<FrameNodeImpl*> main_frame_nodes() const;
 

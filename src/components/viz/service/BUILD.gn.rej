@@ -1,0 +1,77 @@
+--- BUILD.gn	2025-10-20 19:52:54.122409548 +0800
++++ BUILD.gn	2025-10-16 15:54:59.216996705 +0800
+@@ -1,18 +1,24 @@
+ # Copyright 2017 The Chromium Authors
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
++import("//arkweb/build/features/features.gni")
+ import("//build/config/chromeos/ui_mode.gni")
+ import("//build/config/ozone.gni")
+ import("//build/config/ui.gni")
+ import("//components/viz/viz.gni")
+ import("//gpu/vulkan/features.gni")
+ import("//media/gpu/args.gni")
+ import("//skia/features.gni")
+ import("//testing/libfuzzer/fuzzer_test.gni")
+ import("//third_party/jni_zero/jni_zero.gni")
++import("//arkweb/build/features/features.gni")
++
++if (is_arkweb) {
++  import("//arkweb/chromium_ext/chromium_ext.gni")
++}
+ 
+ config("viz_service_implementation") {
+ }
+ 
+ source_set("viz_service_export") {
+@@ -184,20 +194,24 @@
+     "frame_sinks/begin_frame_tracker.h",
+     "frame_sinks/compositor_frame_sink_impl.cc",
+     "frame_sinks/compositor_frame_sink_impl.h",
+     "frame_sinks/compositor_frame_sink_support.cc",
+     "frame_sinks/compositor_frame_sink_support.h",
++    "//arkweb/chromium_ext/components/viz/service/frame_sinks/compositor_frame_sink_support_utils.cc",
++    "//arkweb/chromium_ext/components/viz/service/frame_sinks/compositor_frame_sink_support_utils.h",
+     "frame_sinks/eviction_handler.cc",
+     "frame_sinks/eviction_handler.h",
+     "frame_sinks/external_begin_frame_source_mojo.cc",
+     "frame_sinks/external_begin_frame_source_mojo.h",
+     "frame_sinks/frame_counter.cc",
+     "frame_sinks/frame_counter.h",
+     "frame_sinks/frame_sink_bundle_impl.cc",
+     "frame_sinks/frame_sink_bundle_impl.h",
+     "frame_sinks/frame_sink_manager_impl.cc",
+     "frame_sinks/frame_sink_manager_impl.h",
++    "//arkweb/chromium_ext/components/viz/service/frame_sinks/frame_sink_manager_impl_utils.cc",
++    "//arkweb/chromium_ext/components/viz/service/frame_sinks/frame_sink_manager_impl_utils.h",
+     "frame_sinks/frame_sink_observer.h",
+     "frame_sinks/gmb_video_frame_pool_context_provider.h",
+     "frame_sinks/gmb_video_frame_pool_context_provider_impl.cc",
+     "frame_sinks/gmb_video_frame_pool_context_provider_impl.h",
+     "frame_sinks/root_compositor_frame_sink_impl.cc",
+@@ -341,10 +355,24 @@
+     "//ui/gfx",
+     "//ui/gfx/geometry",
+     "//ui/latency",
+   ]
+ 
++  if (arkweb_oop_gpu_process) {
++    deps += [ "//arkweb/build/features" ]
++  }
++  
++  if (arkweb_slide_ltpo) {
++    import("//arkweb/chromium_ext/base/arkweb_base_ext.gni")
++    sources += arkweb_base_ohos_ltpo_sources
++  }
++
++  if (arkweb_d_vsync) {
++    import("//arkweb/chromium_ext/base/arkweb_base_ext.gni")
++    sources += arkweb_base_ohos_d_vsync_sources
++  }
++
+   if (is_chromeos_ash) {
+     sources += [
+       "display_embedder/output_surface_unified.cc",
+       "display_embedder/output_surface_unified.h",
+     ]

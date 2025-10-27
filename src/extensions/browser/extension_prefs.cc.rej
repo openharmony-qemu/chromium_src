@@ -1,0 +1,46 @@
+--- extension_prefs.cc	2025-10-20 19:52:55.336277290 +0800
++++ extension_prefs.cc	2025-10-16 15:55:00.407722331 +0800
+@@ -1400,10 +1407,14 @@
+                       base::Value(Extension::ENABLED));
+   extension_pref_value_map_->SetExtensionState(extension_id, true);
+   UpdateExtensionPref(extension_id, kPrefDisableReasons, std::nullopt);
+   for (auto& observer : observer_list_)
+     observer.OnExtensionStateChanged(extension_id, true);
++
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  prefs_->CommitPendingWrite();
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+ }
+ 
+ void ExtensionPrefs::SetExtensionDisabled(const ExtensionId& extension_id,
+                                           int disable_reasons) {
+   UpdateExtensionPref(extension_id, kPrefState,
+@@ -1411,10 +1422,14 @@
+   extension_pref_value_map_->SetExtensionState(extension_id, false);
+   UpdateExtensionPref(extension_id, kPrefDisableReasons,
+                       base::Value(disable_reasons));
+   for (auto& observer : observer_list_)
+     observer.OnExtensionStateChanged(extension_id, false);
++
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  prefs_->CommitPendingWrite();
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+ }
+ 
+ std::string ExtensionPrefs::GetVersionString(
+     const ExtensionId& extension_id) const {
+   const base::Value::Dict* extension = GetExtensionPref(extension_id);
+@@ -2137,10 +2152,13 @@
+       kMV2DeprecationWarningAcknowledgedGloballyPref.name, false);
+   registry->RegisterBooleanPref(
+       kMV2DeprecationDisabledAcknowledgedGloballyPref.name, false);
+   registry->RegisterBooleanPref(
+       kMV2DeprecationUnsupportedAcknowledgedGloballyPref.name, false);
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  registry->RegisterBooleanPref(kPrefNotDisplayInSettings, false);
++#endif  // ARKWEB_ARKWEB_EXTENSIONS
+ }
+ 
+ template <class ExtensionIdContainer>
+ bool ExtensionPrefs::GetUserExtensionPrefIntoContainer(
+     const char* pref,

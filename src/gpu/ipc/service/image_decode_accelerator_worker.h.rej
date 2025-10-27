@@ -1,0 +1,33 @@
+--- image_decode_accelerator_worker.h	2025-10-20 19:52:55.542536637 +0800
++++ image_decode_accelerator_worker.h	2025-10-16 15:55:00.631482851 +0800
+@@ -16,10 +16,15 @@
+ #include "third_party/skia/include/core/SkImageInfo.h"
+ #include "ui/gfx/buffer_types.h"
+ #include "ui/gfx/geometry/size.h"
+ #include "ui/gfx/gpu_memory_buffer.h"
+ 
++#include "arkweb/build/features/features.h"
++#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
++#include "base/synchronization/waitable_event.h"
++#endif
++
+ namespace gpu {
+ 
+ // An ImageDecodeAcceleratorWorker handles the actual hardware-accelerated
+ // decode of an image of a specific type (e.g., JPEG, WebP, etc.).
+ class ImageDecodeAcceleratorWorker {
+@@ -31,10 +36,14 @@
+     gfx::GpuMemoryBufferHandle handle;
+     gfx::Size visible_size;
+     gfx::BufferFormat buffer_format;
+     size_t buffer_byte_size;
+     SkYUVColorSpace yuv_color_space;
++#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
++    raw_ptr<void> window_buffer = nullptr;
++    raw_ptr<base::WaitableEvent> event = nullptr;
++#endif
+   };
+ 
+   using CompletedDecodeCB =
+       base::OnceCallback<void(std::unique_ptr<DecodeResult>)>;
+ 

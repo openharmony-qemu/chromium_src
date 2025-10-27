@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "components/subresource_filter/content/browser/content_subresource_filter_throttle_manager.h"
+#include "arkweb/chromium_ext/components/subresource_filter/content/browser/arkweb_content_subresource_filter_throttle_manager_ext.h"
 
 #include <utility>
 
@@ -51,6 +52,9 @@
 #include "third_party/blink/public/common/features.h"
 #include "third_party/blink/public/common/tokens/tokens.h"
 #include "third_party/blink/public/mojom/devtools/console_message.mojom.h"
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "components/subresource_filter/content/browser/ohos_adblock_config.h"
+#endif
 
 namespace subresource_filter {
 
@@ -109,6 +113,9 @@ ContentSubresourceFilterThrottleManager::
         ContentSubresourceFilterWebContentsHelper& web_contents_helper,
         content::NavigationHandle& initiating_navigation_handle)
     : receiver_(initiating_navigation_handle.GetWebContents(), this),
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+      user_receiver_(initiating_navigation_handle.GetWebContents(), this),
+#endif
       dealer_handle_(dealer_handle),
       database_manager_(std::move(database_manager)),
       profile_interaction_manager_(
@@ -178,11 +185,23 @@ void ContentSubresourceFilterThrottleManager::ReadyToCommitInFrameNavigation(
   mojo::AssociatedRemote<mojom::SubresourceFilterAgent> agent;
   frame_host->GetRemoteAssociatedInterfaces()->GetInterface(&agent);
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  LOG(DEBUG) << "[Adblock] ready to commit in frame navigation, url : ***"
+             << ", activation_level:" << activation_state.activation_level;
+#endif
+
   // We send `ad_evidence_for_navigation` even if the frame is not tagged as an
   // ad. This ensures the renderer's copy is up-to-date, including propagating
   // it on cross-process navigations.
   agent->ActivateForNextCommittedLoad(activation_state.Clone(),
                                       ad_evidence_for_navigation);
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  mojo::AssociatedRemote<mojom::UserSubresourceFilterAgent> user_agent;
+  frame_host->GetRemoteAssociatedInterfaces()->GetInterface(&user_agent);
+  user_agent->ActivateForNextCommittedLoad(activation_state.Clone(),
+                                           ad_evidence_for_navigation);
+#endif
 }
 
 mojom::ActivationState
@@ -492,8 +511,10 @@ void ContentSubresourceFilterThrottleManager::OnPageActivationComputed(
     return;
   }
 
+#if !BUILDFLAG(ARKWEB_ADBLOCK)
   it->second->NotifyPageActivationWithRuleset(EnsureRulesetHandle(),
                                               activation_state);
+#endif
 }
 
 void ContentSubresourceFilterThrottleManager::OnChildFrameNavigationEvaluated(
@@ -628,6 +649,12 @@ ContentSubresourceFilterThrottleManager::
       throttle->NotifyPageActivationWithRuleset(EnsureRulesetHandle(),
                                                 ad_tagging_state);
     }
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+    AsArkWebContentSubresourceFilterThrottleManagerExt()->AdBlockMaybeCreateActivationState(
+        navigation_handle, throttle);
+#endif
+
     return throttle;
   }
 

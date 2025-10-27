@@ -1,0 +1,47 @@
+--- cdm_registration.cc	2025-10-20 19:52:51.177035057 +0800
++++ cdm_registration.cc	2025-10-16 15:57:02.070293235 +0800
+@@ -54,10 +54,14 @@
+ 
+ #if BUILDFLAG(IS_ANDROID)
+ #include "components/cdm/common/android_cdm_registration.h"
+ #endif  // BUILDFLAG(IS_ANDROID)
+ 
++#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
++#include "media/cdm/wiseplay_cdm_common.h"
++#endif
++
+ namespace {
+ 
+ using Robustness = content::CdmInfo::Robustness;
+ 
+ #if BUILDFLAG(ENABLE_WIDEVINE)
+@@ -230,10 +234,16 @@
+   cdms->emplace_back(
+       kWidevineKeySystem, Robustness::kSoftwareSecure, std::nullopt,
+       /*supports_sub_key_systems=*/false, kWidevineCdmDisplayName,
+       kWidevineCdmType, base::Version(), base::FilePath());
+ 
++#elif BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
++  LOG(INFO) << "[DRM]" << __func__;
++  cdms->emplace_back(
++      kWidevineKeySystem, Robustness::kSoftwareSecure, std::nullopt,
++      /*supports_sub_key_systems=*/false, kWidevineCdmDisplayName,
++      kWidevineCdmType, base::Version(), base::FilePath());
+ #elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+ #if defined(WIDEVINE_CDM_MIN_GLIBC_VERSION)
+   base::Version glibc_version(gnu_get_libc_version());
+   DCHECK(glibc_version.IsValid());
+   if (glibc_version < base::Version(WIDEVINE_CDM_MIN_GLIBC_VERSION)) {
+@@ -335,11 +345,11 @@
+   // On Android Widevine is done by MediaDrm, and should be supported on all
+   // devices. Register Widevine without any capabilities so that it will be
+   // checked the first time some page attempts to play protected content.
+   cdms->emplace_back(
+       kWidevineKeySystem, Robustness::kHardwareSecure, std::nullopt,
+-      /*supports_sub_key_systems=*/false, kWidevineCdmDisplayName,
++      false, kWidevineCdmDisplayName,
+       kWidevineCdmType, base::Version(), base::FilePath());
+ 
+ #elif BUILDFLAG(USE_CHROMEOS_PROTECTED_MEDIA)
+ #if BUILDFLAG(IS_CHROMEOS_LACROS)
+   if (!base::CommandLine::ForCurrentProcess()->HasSwitch(

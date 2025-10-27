@@ -65,6 +65,9 @@
 #include "ui/gfx/video_types.h"
 #include "ui/gl/gl_enums.h"
 #include "ui/gl/trace_util.h"
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+#include "base/ohos/sys_info_utils_ext.h"
+#endif
 
 namespace media {
 namespace {
@@ -812,6 +815,9 @@ VideoFrameExternalResource VideoResourceUpdater::CreateForHardwareFrame(
                 << VideoPixelFormatToString(video_frame->format());
     return external_resource;
   }
+
+  TRACE_EVENT2("media", "VideoResourceUpdater::CreateForHardwarePlanes",
+      "copy_required", copy_required, "format", VideoPixelFormatToString(video_frame->format()));
 
   // Make a copy of the current release SyncToken so we know if it changes.
   CopyingSyncTokenClient client;

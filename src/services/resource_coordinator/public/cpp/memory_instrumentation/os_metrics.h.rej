@@ -1,0 +1,34 @@
+--- os_metrics.h	2025-10-20 19:52:57.706211673 +0800
++++ os_metrics.h	2025-10-16 15:55:03.376544948 +0800
+@@ -51,14 +51,15 @@
+   static bool FillProcessMemoryMaps(base::ProcessId,
+                                     mojom::MemoryMapOption,
+                                     mojom::RawOSMemDump*);
+   static std::vector<mojom::VmRegionPtr> GetProcessMemoryMaps(base::ProcessId);
+ 
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
++    BUILDFLAG(IS_OHOS)
+   static void SetProcSmapsForTesting(FILE*);
+ #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
+-        // BUILDFLAG(IS_ANDROID)
++        // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+ 
+  private:
+   FRIEND_TEST_ALL_PREFIXES(OSMetricsTest, ParseProcSmaps);
+   FRIEND_TEST_ALL_PREFIXES(OSMetricsTest, TestWinModuleReading);
+   FRIEND_TEST_ALL_PREFIXES(OSMetricsTest, TestMachOReading);
+@@ -68,11 +69,12 @@
+ 
+ #if BUILDFLAG(IS_MAC)
+   static std::vector<mojom::VmRegionPtr> GetProcessModules(base::ProcessId);
+ #endif
+ 
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
++    BUILDFLAG(IS_OHOS)
+   // Provides information on the dump state of resident pages. These values are
+   // written to logs. New enum values can be added, but existing enums must
+   // never be renumbered or deleted and reused.
+   enum class MappedAndResidentPagesDumpState {
+     // Access to /proc/<pid>/pagemap can be denied for android devices running

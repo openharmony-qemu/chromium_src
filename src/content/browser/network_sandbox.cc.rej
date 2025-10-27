@@ -1,0 +1,19 @@
+--- network_sandbox.cc	2025-10-20 19:52:54.346511317 +0800
++++ network_sandbox.cc	2025-10-16 15:54:59.476718737 +0800
+@@ -303,10 +304,16 @@
+       if (!MaybeGrantAccessToDataPath(
+               sandbox_params, &*params->file_paths->http_cache_directory)) {
+         PLOG(ERROR) << "Failed to grant sandbox access to cache directory "
+                     << params->file_paths->http_cache_directory->path();
+       }
++#if BUILDFLAG(ARKWEB_PRECOMPILE)
++      if (params->file_paths->shared_dictionary_directory) {
++        oh_code_cache::ResponseCache::InitCacheDirectory(
++            params->file_paths->shared_dictionary_directory->path());
++      }
++#endif
+     }
+   }
+   if (params->file_paths->shared_dictionary_directory &&
+       params->shared_dictionary_enabled) {
+     SCOPED_UMA_HISTOGRAM_TIMER(

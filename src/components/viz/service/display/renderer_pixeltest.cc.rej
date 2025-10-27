@@ -1,0 +1,35 @@
+--- renderer_pixeltest.cc	2025-10-20 19:52:54.130413182 +0800
++++ renderer_pixeltest.cc	2025-10-16 15:54:59.228983876 +0800
+@@ -71,10 +71,13 @@
+ #include "ui/gfx/geometry/skia_conversions.h"
+ #include "ui/gfx/geometry/transform_util.h"
+ #include "ui/gfx/test/icc_profiles.h"
+ #include "ui/gfx/video_types.h"
+ #include "ui/gl/gl_implementation.h"
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++#include "arkweb/chromium_ext/components/viz/service/display/renderer_pixeltest_ext.h"
++#endif
+ 
+ namespace viz {
+ namespace {
+ const gfx::DisplayColorSpaces kRec601DisplayColorSpaces(
+     gfx::ColorSpace(gfx::ColorSpace::PrimaryID::SMPTE170M,
+@@ -6081,14 +6173,18 @@
+ 
+     pass_list.push_back(std::move(color_conversion_pass));
+   }
+ 
+   void Basic() {
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++    ARKWEB_UNITTESTS_BASIC();
++#else
+     if (this->src_color_space_.IsToneMappedByDefault() &&
+         !this->dst_color_space_.IsHDR()) {
+       GTEST_SKIP() << "Skipping tonemapped src for non-hdr dst";
+     }
++#endif
+ 
+     gfx::Rect rect(this->device_viewport_size_);
+     std::vector<uint8_t> input_colors(4 * rect.width() * rect.height(), 0);
+     std::vector<SkColor> expected_output_colors(rect.width() * rect.height());
+ 

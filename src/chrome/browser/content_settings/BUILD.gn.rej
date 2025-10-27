@@ -1,0 +1,15 @@
+--- BUILD.gn	2025-10-20 19:52:49.486448416 +0800
++++ BUILD.gn	2025-10-16 15:57:00.000765082 +0800
+@@ -3,11 +3,11 @@
+ # found in the LICENSE file.
+ 
+ import("//extensions/buildflags/buildflags.gni")
+ import("//ppapi/buildflags/buildflags.gni")
+ 
+-assert(is_win || is_mac || is_linux || is_chromeos || is_android)
++assert(is_win || is_mac || is_linux || is_chromeos || is_android || is_ohos)
+ 
+ source_set("content_settings") {
+   sources = [
+     "content_settings_manager_delegate.h",
+     "mixed_content_settings_tab_helper.h",

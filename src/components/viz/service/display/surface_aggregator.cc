@@ -867,7 +867,10 @@ void SurfaceAggregator::EmitSurfaceContent(
       surface_quad_sqs->quad_to_target_transform);
   scaled_quad_to_target_transform.Scale(extra_content_scale_x,
                                         extra_content_scale_y);
-
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                    std::to_string(resolved_frame.GetMetadata().begin_frame_ack.trace_id), "step", "SurfaceAggregation");
+#endif
   // A map keyed by RenderPass id.
   Surface::CopyRequestsMap copy_requests;
   if (take_copy_requests_) {
@@ -2214,7 +2217,10 @@ AggregatedFrame SurfaceAggregator::Aggregate(
     // `absl::Cleanup` is run after `ResetAfterAggregate`.
     flow_ids_for_resolved_frames_.clear();
   };
-
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                    std::to_string(resolved_frame->GetMetadata().begin_frame_ack.trace_id), "step", "SurfaceAggregation");
+#endif
   CheckFrameSinksChanged(resolved_frame->surface_id());
 
   AggregatedFrame frame;
@@ -2403,6 +2409,7 @@ void SurfaceAggregator::SetMaxRenderTargetSize(int max_size) {
 bool SurfaceAggregator::CheckForDisplayDamage(const SurfaceId& surface_id) {
   auto it = damage_ranges_.find(surface_id.frame_sink_id());
   if (it == damage_ranges_.end()) {
+    TRACE_EVENT0("viz", "damage_ranges_.end() not find");
     return false;
   }
 
@@ -2411,7 +2418,7 @@ bool SurfaceAggregator::CheckForDisplayDamage(const SurfaceId& surface_id) {
       return true;
     }
   }
-
+  TRACE_EVENT0("viz", "damage_ranges_.end() not find");
   return false;
 }
 

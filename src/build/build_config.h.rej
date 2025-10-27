@@ -1,0 +1,47 @@
+--- build_config.h	2025-10-20 19:52:46.796581183 +0800
++++ build_config.h	2025-10-16 15:54:55.541490007 +0800
+@@ -15,16 +15,16 @@
+ //    Deprecated: #if defined(OS_WIN)
+ //
+ //  Operating System:
+ //    IS_AIX / IS_ANDROID / IS_ASMJS / IS_CHROMEOS / IS_FREEBSD / IS_FUCHSIA /
+ //    IS_IOS / IS_IOS_MACCATALYST / IS_LINUX / IS_MAC / IS_NACL / IS_NETBSD /
+-//    IS_OPENBSD / IS_QNX / IS_SOLARIS / IS_WATCHOS / IS_WIN
++//    IS_OPENBSD / IS_QNX / IS_SOLARIS / IS_WATCHOS / IS_WIN / IS_OHOS
+ //  Operating System family:
+ //    IS_APPLE: IOS or MAC or IOS_MACCATALYST or WATCHOS
+ //    IS_BSD: FREEBSD or NETBSD or OPENBSD
+ //    IS_POSIX: AIX or ANDROID or ASMJS or CHROMEOS or FREEBSD or IOS or LINUX
+-//              or MAC or NACL or NETBSD or OPENBSD or QNX or SOLARIS
++//              or MAC or NACL or NETBSD or OPENBSD or QNX or SOLARIS or OHOS
+ 
+ // This file also adds defines specific to the platform, architecture etc.
+ //
+ //  Platform:
+ //    IS_OZONE
+@@ -63,10 +63,12 @@
+ #if defined(__native_client__)
+ // __native_client__ must be first, so that other OS_ defines are not set.
+ #define OS_NACL 1
+ #elif defined(ANDROID)
+ #define OS_ANDROID 1
++#elif defined(OSOHOS)
++#define OS_OHOS 1
+ #elif defined(__APPLE__)
+ // Only include TargetConditionals after testing ANDROID as some Android builds
+ // on the Mac have this header available and it's not needed unless the target
+ // is really an Apple platform.
+ #include <TargetConditionals.h>
+@@ -135,11 +137,11 @@
+ // more specific macro.
+ #if defined(OS_AIX) || defined(OS_ANDROID) || defined(OS_ASMJS) ||  \
+     defined(OS_FREEBSD) || defined(OS_IOS) || defined(OS_LINUX) ||  \
+     defined(OS_CHROMEOS) || defined(OS_MAC) || defined(OS_NACL) ||  \
+     defined(OS_NETBSD) || defined(OS_OPENBSD) || defined(OS_QNX) || \
+-    defined(OS_SOLARIS) || defined(OS_ZOS)
++    defined(OS_SOLARIS) || defined(OS_ZOS) || defined(OS_OHOS)
+ #define OS_POSIX 1
+ #endif
+ 
+ // OS build flags
+ #if defined(OS_AIX)

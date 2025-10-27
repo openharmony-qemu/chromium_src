@@ -157,6 +157,10 @@ void SubresourceFilter::ReportLoad(
 
 void SubresourceFilter::Trace(Visitor* visitor) const {
   visitor->Trace(execution_context_);
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  visitor->Trace(statistics_timer_);
+#endif
 }
 
 }  // namespace blink

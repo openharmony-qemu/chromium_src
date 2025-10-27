@@ -1,0 +1,96 @@
+--- fetcher_config.h	2025-10-20 19:52:53.886301546 +0800
++++ fetcher_config.h	2025-10-16 15:54:57.823204823 +0800
+@@ -8,10 +8,11 @@
+ #include <optional>
+ #include <string>
+ #include <string_view>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/feature_list.h"
+ #include "base/metrics/field_trial_params.h"
+ #include "base/types/strong_alias.h"
+ #include "components/signin/public/identity_manager/primary_account_access_token_fetcher.h"
+ #include "google_apis/gaia/gaia_constants.h"
+@@ -136,11 +143,15 @@
+         {
+             .credentials_requirement =
+                 AccessTokenConfig::CredentialsRequirement::kStrict,
+             .mode = signin::PrimaryAccountAccessTokenFetcher::Mode::kImmediate,
+             // TODO(b/284523446): Refer to GaiaConstants rather than literal.
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++            .oauth2_scope = "https://x.x.x",
++#else
+             .oauth2_scope = "https://www.googleapis.com/auth/kid.permission",
++#endif
+         },
+     .request_priority = net::IDLE,
+ };
+ 
+ inline constexpr FetcherConfig kClassifyUrlConfigWaitUntilAccessTokenAvailable =
+@@ -155,12 +166,17 @@
+                     AccessTokenConfig::CredentialsRequirement::kStrict,
+                 .mode = signin::PrimaryAccountAccessTokenFetcher::Mode::
+                     kWaitUntilAvailable,
+                 // TODO(b/284523446): Refer to GaiaConstants rather than
+                 // literal.
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++                .oauth2_scope =
++                    "https://x.x.x", 
++#else
+                 .oauth2_scope =
+                     "https://www.googleapis.com/auth/kid.permission",
++#endif
+             },
+         .request_priority = net::IDLE,
+ };
+ 
+ inline constexpr FetcherConfig kClassifyUrlConfigBestEffort = {
+@@ -172,11 +188,15 @@
+         {
+             .credentials_requirement =
+                 AccessTokenConfig::CredentialsRequirement::kBestEffort,
+             .mode = signin::PrimaryAccountAccessTokenFetcher::Mode::kImmediate,
+             // TODO(b/284523446): Refer to GaiaConstants rather than literal.
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++            .oauth2_scope = "https://x.x.x",
++#else
+             .oauth2_scope = "https://www.googleapis.com/auth/kid.permission",
++#endif
+         },
+     .request_priority = net::IDLE,
+ };
+ 
+ inline constexpr FetcherConfig kListFamilyMembersConfig{
+@@ -218,11 +238,15 @@
+         // latency sensitive.
+         .mode =
+             signin::PrimaryAccountAccessTokenFetcher::Mode::kWaitUntilAvailable,
+ 
+         // TODO(b/284523446): Refer to GaiaConstants rather than literal.
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++        .oauth2_scope = "https://x.x.x",
++#else
+         .oauth2_scope = "https://www.googleapis.com/auth/kid.family.readonly",
++#endif
+     },
+     .request_priority = net::IDLE,
+ };
+ 
+ inline constexpr FetcherConfig kCreatePermissionRequestConfig = {
+@@ -235,11 +259,15 @@
+             AccessTokenConfig::CredentialsRequirement::kStrict,
+         // Fail the fetch right away when access token is not immediately
+         // available.
+         .mode = signin::PrimaryAccountAccessTokenFetcher::Mode::kImmediate,
+         // TODO(b/284523446): Refer to GaiaConstants rather than literal.
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++        .oauth2_scope = "https://x.x.x",
++#else
+         .oauth2_scope = "https://www.googleapis.com/auth/kid.permission",
++#endif
+     },
+     .request_priority = net::IDLE,
+ };
+ 
+ }  // namespace supervised_user

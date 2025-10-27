@@ -1,0 +1,20 @@
+--- x11_menu_utils.cc	2025-10-20 19:53:31.096618279 +0800
++++ x11_menu_utils.cc	2025-10-16 15:55:05.699576043 +0800
+@@ -18,11 +18,17 @@
+ int X11MenuUtils::GetCurrentKeyModifiers() const {
+   return GetModifierKeyState();
+ }
+ 
+ std::string X11MenuUtils::ToDBusKeySym(KeyboardCode code) const {
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++  return base::UTF16ToUTF8(
++      std::u16string(1, ui::GetUnicodeCharacterFromXKeySym(
++                            XKeysymForWindowsKeyCode(code, false, false))));
++#else
+   return base::UTF16ToUTF8(
+       std::u16string(1, ui::GetUnicodeCharacterFromXKeySym(
+                             XKeysymForWindowsKeyCode(code, false))));
++#endif
+ }
+ 
+ }  // namespace ui

@@ -1,0 +1,17 @@
+--- devtools_url_loader_interceptor.cc	2025-10-20 19:52:54.262473153 +0800
++++ devtools_url_loader_interceptor.cc	2025-10-16 15:54:59.384817095 +0800
+@@ -464,10 +464,14 @@
+   void SetPriority(net::RequestPriority priority,
+                    int32_t intra_priority_value) override;
+   void PauseReadingBodyFromNet() override;
+   void ResumeReadingBodyFromNet() override;
+ 
++#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
++  void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region, uint64_t buffer_size) override {}
++#endif
++
+   // network::mojom::URLLoaderClient methods
+   void OnReceiveEarlyHints(network::mojom::EarlyHintsPtr early_hints) override;
+   void OnReceiveResponse(
+       network::mojom::URLResponseHeadPtr head,
+       mojo::ScopedDataPipeConsumerHandle body,

@@ -2514,7 +2514,7 @@ void CFX_ScanlineCompositor::CompositePalBitmapLineSrcBpp8(
     case FXDIB_Format::kBgraPremul: {
       // TODO(crbug.com/42271020): Consider adding support for
       // `FXDIB_Format::kBgraPremul`
-      NOTREACHED();
+      NOTREACHED_NORETURN();
     }
 #endif
   }
@@ -2580,7 +2580,7 @@ void CFX_ScanlineCompositor::CompositeByteMaskLine(
     case FXDIB_Format::kBgraPremul: {
       // TODO(crbug.com/42271020): Consider adding support for
       // `FXDIB_Format::kBgraPremul`
-      NOTREACHED();
+      NOTREACHED_NORETURN();
     }
 #endif
   }
@@ -2649,7 +2649,7 @@ void CFX_ScanlineCompositor::CompositeBitMaskLine(
     case FXDIB_Format::kBgraPremul: {
       // TODO(crbug.com/42271020): Consider adding support for
       // `FXDIB_Format::kBgraPremul`
-      NOTREACHED();
+      NOTREACHED_NORETURN();
     }
 #endif
   }

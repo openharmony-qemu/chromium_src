@@ -122,7 +122,11 @@ void AutofillClientProvider::CreateClientForWebContents(
     NOTREACHED();
 #endif
   } else {
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+    autofill::OhAutofillClient::CreateForWebContents(web_contents);
+#else
     ChromeAutofillClient::CreateForWebContents(web_contents);
+#endif
   }
 }
 

@@ -358,6 +358,9 @@ ImageResource::ImageResource(const ResourceRequest& resource_request,
       << "MakeGarbageCollected<ImageResource>(ResourceRequest) " << this;
   GetContent()->SetImageResourceInfo(
       MakeGarbageCollected<ImageResourceInfoImpl>(this));
+#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
+  imageResourceUtils = std::make_unique<ImageResourceUtils>(this);
+#endif
 }
 
 ImageResource::~ImageResource() {

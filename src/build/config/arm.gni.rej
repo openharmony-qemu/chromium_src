@@ -1,0 +1,15 @@
+--- arm.gni	2025-10-20 19:52:46.800572132 +0800
++++ arm.gni	2025-10-16 15:54:55.549488821 +0800
+@@ -45,11 +45,11 @@
+     # if ever we update to a version of arm that supports these instructions.
+     arm_version = 8
+     arm_arch = "armv8-a+crc"
+   }
+ 
+-  if (current_os == "android" || target_os == "android") {
++  if (current_os == "android" || target_os == "android" || target_os == "ohos") {
+     arm_float_abi = "softfp"
+   } else {
+     declare_args() {
+       # The ARM floating point mode. This is either the string "hard", "soft",
+       # or "softfp". An empty string means to use the default one for the

@@ -17,6 +17,10 @@
 #include "components/subresource_filter/tools/rule_parser/rule_options.h"
 #include "components/url_pattern_index/proto/rules.pb.h"
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "arkweb/chromium_ext/components/subresource_filter/tools/rule_parser_for_include.cc"
+#endif
+
 namespace subresource_filter {
 
 namespace {

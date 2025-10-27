@@ -282,6 +282,13 @@ extern const char kIpcDumpDirectory[];
 extern const char kIpcFuzzerTestcase[];
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+CONTENT_EXPORT extern const char kOhosDeviceType[];
+CONTENT_EXPORT extern const char kOhosMobileDevice[];
+CONTENT_EXPORT extern const char kOhosTabletDevice[];
+CONTENT_EXPORT extern const char kOhos2IN1Device[];
+CONTENT_EXPORT extern const char kOhosUnkownDevice[];
+#endif
 // DON'T ADD RANDOM STUFF HERE. Put it in the main section above in
 // alphabetical order, or in one of the ifdefs (also in order in each section).
 

@@ -1,0 +1,15 @@
+--- auction_config.h	2025-10-20 19:53:00.090212903 +0800
++++ auction_config.h	2025-10-16 16:07:39.045768660 +0800
+@@ -464,11 +463,11 @@
+   bool expects_additional_bids = false;
+ 
+   // Origin for the Coordinator to be used for Private Aggregation.
+   std::optional<url::Origin> aggregation_coordinator_origin;
+ 
+-  static_assert(__LINE__ == 470, R"(
++  static_assert(__LINE__ == 469, R"(
+ If modifying AuctionConfig fields, please make sure to also modify:
+ 
+ * third_party/blink/public/mojom/interest_group/interest_group_types.mojom
+ * Mojo serialization in:
+     third_party/blink/public/common/interest_group/auction_config_mojom_traits.h

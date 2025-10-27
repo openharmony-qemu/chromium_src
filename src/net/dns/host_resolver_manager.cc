@@ -452,7 +452,8 @@ HostResolverManager::HostResolverManager(
 #if BUILDFLAG(IS_WIN)
   EnsureWinsockInit();
 #endif
-#if (BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID)) || \
+#if (BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID) && \
+     !BUILDFLAG(IS_OHOS)) ||                                                  \
     BUILDFLAG(IS_FUCHSIA)
   RunLoopbackProbeJob();
 #endif
@@ -663,6 +664,12 @@ void HostResolverManager::SetDnsConfigOverrides(DnsConfigOverrides overrides) {
 
 void HostResolverManager::RegisterResolveContext(ResolveContext* context) {
   registered_contexts_.AddObserver(context);
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  context->SetHttpsDnsFallbackEnabled(https_dns_fallback_enabled_);
+  if (https_dns_fallback_enabled_) {
+    WarmUpHttpsDnsFallback(context);
+  }
+#endif
   context->InvalidateCachesAndPerSessionData(
       dns_client_ ? dns_client_->GetCurrentSession() : nullptr,
       false /* network_change */);
@@ -970,9 +977,14 @@ HostResolverManager::Job* HostResolverManager::AddJobWithoutRequest(
     RequestPriority priority,
     const NetLogWithSource& source_net_log) {
   auto new_job =
-      std::make_unique<Job>(weak_ptr_factory_.GetWeakPtr(), key, cache_usage,
-                            host_cache, std::move(tasks), priority,
-                            source_net_log, tick_clock_, https_svcb_options_);
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+      std::make_unique<ArkWebHostResolverManagerJobExt>(
+#else
+      std::make_unique<Job>(
+#endif
+          weak_ptr_factory_.GetWeakPtr(), key, cache_usage,
+          host_cache, std::move(tasks), priority, source_net_log, tick_clock_,
+          https_svcb_options_);
   auto insert_result = jobs_.emplace(std::move(key), std::move(new_job));
   auto& iterator = insert_result.first;
   bool is_new = insert_result.second;
@@ -1350,6 +1362,12 @@ void HostResolverManager::PushDnsTasks(bool system_task_allowed,
   if (system_task_allowed &&
       (no_dns_or_secure_tasks || allow_fallback_to_systemtask_))
     out_tasks->push_back(TaskType::SYSTEM);
+
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  if (dns_client_->CanUseSecureDnsFallbackTransactions(resolve_context)) {
+    out_tasks->push_back(TaskType::SECURE_DNS_FALLBACK);
+  }
+#endif
 }
 
 void HostResolverManager::CreateTaskSequence(
@@ -1689,7 +1707,8 @@ void HostResolverManager::OnIPAddressChanged(
   // Abandon all ProbeJobs.
   probe_weak_ptr_factory_.InvalidateWeakPtrs();
   InvalidateCaches();
-#if (BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID)) || \
+#if (BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID) && \
+     !BUILDFLAG(IS_OHOS)) ||                                                  \
     BUILDFLAG(IS_FUCHSIA)
   RunLoopbackProbeJob();
 #endif
@@ -1804,6 +1823,17 @@ void HostResolverManager::InvalidateCaches(bool network_change) {
         network_change);
   }
   invalidation_in_progress_ = false;
+
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebExHttpDnsFallback)) {
+    LOG(INFO) << "Host caches has been invalidated";
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO) << "Host caches has been invalidated";
+#endif
+  }
+#endif
 
 #if DCHECK_IS_ON()
   // Sanity checks that invalidation does not have reentrancy issues.

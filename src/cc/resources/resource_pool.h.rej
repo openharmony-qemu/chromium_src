@@ -1,0 +1,18 @@
+--- resource_pool.h	2025-10-20 19:52:47.933994925 +0800
++++ resource_pool.h	2025-10-16 15:54:55.685468653 +0800
+@@ -56,10 +56,15 @@
+   // Delay before a resource is considered expired.
+   static constexpr base::TimeDelta kDefaultExpirationDelay = base::Seconds(5);
+   // Max delay before an evicted resource is flushed.
+   static constexpr base::TimeDelta kDefaultMaxFlushDelay = base::Seconds(1);
+ 
++#if BUILDFLAG(IS_ARKWEB_EXT)
++  static constexpr base::TimeDelta kDefaultMaxExpirationDelay = base::Seconds(60);
++  static constexpr size_t kUnusedResourcesToKeep = 12;
++#endif
++
+   // A base class to hold ownership of gpu backed PoolResources. Allows the
+   // client to define destruction semantics.
+   class CC_EXPORT GpuBacking {
+    public:
+     GpuBacking();

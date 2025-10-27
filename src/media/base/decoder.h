@@ -10,6 +10,7 @@
 
 #include "media/base/media_export.h"
 #include "media/base/status.h"
+#include "arkweb/build/features/features.h"
 
 namespace media {
 
@@ -58,7 +59,12 @@ enum class VideoDecoderType : int {
   kVideoToolbox = 19,  // VideoToolboxVideoDecoder (Mac)
 
   // Keep this at the end and equal to the last entry.
+#if BUILDFLAG(ARKWEB_MEDIA_CODEC)
+  kOHOS = 20,
+  kMaxValue = kOHOS
+#else
   kMaxValue = kVideoToolbox
+#endif
 };
 
 MEDIA_EXPORT std::string GetDecoderName(AudioDecoderType type);

@@ -718,5 +718,4 @@ const AffineTransform* TextPainter::SvgTextPaintState::GetShaderTransform()
     const {
   return base::OptionalToPtr(shader_transform_);
 }
-
 }  // namespace blink

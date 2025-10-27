@@ -50,6 +50,12 @@ const int kPublicPort = 53;  // DNS port.
 // Trouble has been seen on Linux at 3479 sockets in test, so leave a margin.
 const int kMaxSimultaneousSockets = 3000;
 
+#if BUILDFLAG(ARKWEB_WEBRTC)
+// When more than half of the maximum sockets are running at the same time,
+// check whether these sockets are destroyed in time.
+const int kHalfOfMaxSimultaneousSockets = kMaxSimultaneousSockets / 2;
+#endif
+
 const size_t kMinRtcpHeaderLength = 8;
 const size_t kDtlsRecordHeaderLength = 13;
 

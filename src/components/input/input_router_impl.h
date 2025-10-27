@@ -42,6 +42,8 @@ class SitePerProcessBrowserTouchActionTest;
 
 namespace input {
 
+class ArkwebInputRouterImplUtils;
+class ArkwebInputRouterImplExt;
 class InputDispositionHandler;
 
 // A default implementation for browser input event routing.
@@ -54,6 +56,11 @@ class COMPONENT_EXPORT(INPUT) InputRouterImpl
       public TouchpadPinchEventQueueClient,
       public blink::mojom::WidgetInputHandlerHost {
  public:
+  friend class ArkwebInputRouterImplUtils;
+  friend class ArkwebInputRouterImplExt;
+  virtual ArkwebInputRouterImplExt* AsArkwebInputRouterImplExt() {
+    return nullptr;
+  }
   InputRouterImpl(InputRouterClient* client,
                   InputDispositionHandler* disposition_handler,
                   FlingControllerSchedulerClient* fling_scheduler_client,
@@ -93,6 +100,10 @@ class COMPONENT_EXPORT(INPUT) InputRouterImpl
   void SetTouchActionFromMain(cc::TouchAction touch_action) override;
   void SetPanAction(blink::mojom::PanAction pan_action) override;
   void DidOverscroll(blink::mojom::DidOverscrollParamsPtr params) override;
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  bool GetNativeResult() { return native_result_; }
+  bool GetMouseNativeResult() { return mouse_native_result_; }
+#endif
   void ImeCancelComposition() override;
   void DidStartScrollingViewport() override;
   void ImeCompositionRangeChanged(
@@ -246,6 +257,12 @@ class COMPONENT_EXPORT(INPUT) InputRouterImpl
       DispatchToRendererCallback& dispatch_callback);
   void ProcessDeferredGestureEventQueue();
   void OnSetCompositorAllowedTouchAction(cc::TouchAction touch_action);
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  bool native_result_ = false;
+  bool mouse_native_result_ = false;
+  std::unique_ptr<ArkwebInputRouterImplUtils> arkweb_input_router_impl_utils_;
+#endif
 
   raw_ptr<InputRouterClient> client_;
   raw_ptr<InputDispositionHandler> disposition_handler_;

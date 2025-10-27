@@ -1,0 +1,15 @@
+--- http_network_layer.cc	2025-10-20 19:52:57.138206536 +0800
++++ http_network_layer.cc	2025-10-16 15:55:02.721246282 +0800
+@@ -41,11 +41,11 @@
+     RequestPriority priority,
+     std::unique_ptr<HttpTransaction>* trans) {
+   if (suspended_)
+     return ERR_NETWORK_IO_SUSPENDED;
+ 
+-  *trans = std::make_unique<HttpNetworkTransaction>(priority, GetSession());
++  *trans = std::make_unique<ArkWebHttpNetworkTransactionExt>(priority, GetSession());
+   return OK;
+ }
+ 
+ HttpCache* HttpNetworkLayer::GetCache() {
+   return nullptr;

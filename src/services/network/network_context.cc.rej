@@ -1,0 +1,17 @@
+--- network_context.cc	2025-10-20 19:52:57.650211167 +0800
++++ network_context.cc	2025-10-16 15:55:03.316609095 +0800
+@@ -200,10 +202,14 @@
+ 
+ #if BUILDFLAG(ENABLE_DEVICE_BOUND_SESSIONS)
+ #include "net/device_bound_sessions/session_service.h"
+ #endif  // BUILDFLAG(ENABLE_DEVICE_BOUND_SESSIONS)
+ 
++#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
++#include "arkweb/chromium_ext/services/network/prp_preload/include/page_res_parallel_preload_mgr.h"
++#endif // BUILDFLAG(ARKWEB_PRP_PRELOAD)
++
+ namespace network {
+ 
+ namespace {
+ 
+ net::CertVerifier* g_cert_verifier_for_testing = nullptr;

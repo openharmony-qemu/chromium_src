@@ -1,0 +1,15 @@
+--- cxfa_node.cpp	2025-10-20 19:53:19.744014963 +0800
++++ cxfa_node.cpp	2025-10-16 16:15:56.086968123 +0800
+@@ -3704,11 +3704,11 @@
+           break;
+         case XFA_AttributeValue::Bottom:
+           fStartOffset += (fHeight - fTextHeight + fSpaceAbove);
+           break;
+         default:
+-          NOTREACHED();
++          NOTREACHED_NORETURN();
+       }
+     }
+     if (fStartOffset < 0.1f)
+       fStartOffset = 0;
+   }

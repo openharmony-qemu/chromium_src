@@ -1,0 +1,43 @@
+--- renderer.mojom	2025-10-20 19:52:56.750201415 +0800
++++ renderer.mojom	2025-10-16 15:55:01.938084461 +0800
+@@ -12,19 +12,40 @@
+ import "services/network/public/mojom/storage_access_api.mojom";
+ import "ui/gfx/geometry/mojom/geometry.mojom";
+ import "url/mojom/url.mojom";
+ import "url/mojom/origin.mojom";
+ 
++[EnableIf=arkweb_custom_video_player]
++struct CustomMediaUrlParams {
++  uint32 preload_type;
++  uint32 media_source_type;
++};
++
+ // See media/base/media_url_params.h for descriptions.
+ struct MediaUrlParams {
+   url.mojom.Url media_url;
+   network.mojom.SiteForCookies site_for_cookies;
+   url.mojom.Origin top_frame_origin;
+   network.mojom.StorageAccessApiStatus storage_access_api_status;
+   bool allow_credentials;
+   bool is_hls;
+   map<string, string> headers;
++
++  [EnableIf=arkweb_custom_video_player]
++  CustomMediaUrlParams custom_media_url_params;
++};
++
++[EnableIf=arkweb_custom_video_player]
++struct MediaSourceInfo {
++  string media_source;
++  string media_format;
++};
++
++[EnableIf=arkweb_custom_video_player]
++enum ActionReason {
++  kNormal,
++  kCustomRenderer,
+ };
+ 
+ // A Mojo equivalent of media::Renderer. Used when audio and video decoding
+ // happens outside of the sandboxed render process.
+ // See media/mojo/README.md

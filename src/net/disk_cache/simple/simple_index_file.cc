@@ -157,6 +157,11 @@ void ProcessEntryFile(BackendFileOperations* file_operations,
   if (!simple_util::GetEntryHashKeyFromHexString(hash_string, &hash_key)) {
     LOG(WARNING) << "Invalid entry hash key filename while restoring index from"
                  << " disk: " << file_name;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(WARNING)
+        << "Invalid entry hash key filename while restoring index from"
+        << " disk: " << file_name;
+#endif
     return;
   }
 
@@ -308,6 +313,10 @@ void SimpleIndexFile::SyncWriteToDisk(
   if (!file_operations->DirectoryExists(index_file_directory) &&
       !file_operations->CreateDirectory(index_file_directory)) {
     LOG(ERROR) << "Could not create a directory to hold the index file";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR)
+        << "Could not create a directory to hold the index file";
+#endif
     return;
   }
 
@@ -321,6 +330,9 @@ void SimpleIndexFile::SyncWriteToDisk(
       file_operations->GetFileInfo(cache_directory);
   if (!file_info) {
     LOG(ERROR) << "Could not obtain information about cache age";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "Could not obtain information about cache age";
+#endif
     return;
   }
   cache_dir_mtime = file_info->last_modified;
@@ -328,6 +340,9 @@ void SimpleIndexFile::SyncWriteToDisk(
   if (!WritePickleFile(file_operations.get(), pickle.get(),
                        temp_index_filename)) {
     LOG(ERROR) << "Failed to write the temporary index file";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "Failed to write the temporary index file";
+#endif
     return;
   }
 
@@ -619,6 +634,9 @@ void SimpleIndexFile::SyncRestoreFromDisk(
   }
   if (enumerator->HasError()) {
     LOG(ERROR) << "Could not reconstruct index from disk";
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(ERROR) << "Could not reconstruct index from disk";
+#endif
     return;
   }
   out_result->did_load = true;

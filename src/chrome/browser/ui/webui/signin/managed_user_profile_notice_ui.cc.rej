@@ -1,0 +1,15 @@
+--- managed_user_profile_notice_ui.cc	2025-10-20 19:52:51.060979993 +0800
++++ managed_user_profile_notice_ui.cc	2025-10-16 15:57:01.930081202 +0800
+@@ -258,11 +258,11 @@
+     update_data.Set(
+         "enterpriseProfileWelcomeTitle",
+         l10n_util::GetStringUTF16(IDS_ENTERPRISE_WELCOME_PROFILE_SETUP_TITLE));
+ 
+     update_data.Set("showLinkDataCheckbox", false);
+-#if !BUILDFLAG(IS_CHROMEOS)
++#if !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_OHOS)
+     update_data.Set(
+         "useUpdatedUi",
+         base::FeatureList::IsEnabled(
+             features::kEnterpriseUpdatedProfileCreationScreen) ||
+             base::FeatureList::IsEnabled(

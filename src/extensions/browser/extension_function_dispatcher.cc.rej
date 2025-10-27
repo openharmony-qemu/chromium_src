@@ -1,0 +1,29 @@
+--- extension_function_dispatcher.cc	2025-10-20 19:52:55.332310765 +0800
++++ extension_function_dispatcher.cc	2025-10-16 15:55:00.407722331 +0800
+@@ -393,10 +393,12 @@
+   } else {
+     process_manager->IncrementLazyKeepaliveCount(
+         function->extension(), Activity::API_FUNCTION, function->name());
+   }
+ 
++  function->set_did_initialize();
++
+   if (violation_error.empty()) {
+     // See crbug.com/39178.
+     ExtensionsBrowserClient::Get()->PermitExternalProtocolHandler();
+     NotifyApiFunctionCalled(extension->id(), params.name, params.arguments,
+                             browser_context_);
+@@ -478,11 +480,13 @@
+     return;
+   }
+ 
+   ProcessManager* process_manager = ProcessManager::Get(browser_context_);
+   if (extension_function.is_from_service_worker()) {
++    if (extension_function.did_initialize()) {
+     CHECK(extension_function.request_uuid().is_valid());
++    }
+     CHECK(extension_function.worker_id());
+ 
+     extension_function.ResetServiceWorkerKeepalive();
+   } else {
+     process_manager->DecrementLazyKeepaliveCount(extension_function.extension(),

@@ -110,6 +110,19 @@ MediaStreamDevicePermissionContext::GetContentSettingStatusInternal(
   return setting;
 }
 
+void MediaStreamDevicePermissionContext::RequestReply(
+    permissions::PermissionRequestData request_data,
+    permissions::BrowserPermissionCallback callback,
+    bool reply_success) {
+  if (!reply_success) {
+    std::move(callback).Run(CONTENT_SETTING_ASK);
+    return;
+  }
+
+  permissions::PermissionContextBase::RequestPermission(std::move(request_data),
+                                                        std::move(callback));
+}
+
 #if BUILDFLAG(IS_ANDROID)
 // There are two other permissions that need to check corresponding OS-level
 // permissions, and they take two different approaches to this. Geolocation only

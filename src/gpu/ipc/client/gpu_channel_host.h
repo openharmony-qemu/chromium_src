@@ -175,6 +175,10 @@ class GPU_IPC_CLIENT_EXPORT GpuChannelHost
   // Calls ConnectionTracker::RemoveObserver() directly.
   void RemoveObserver(GpuChannelLostObserver* obs);
 
+  GpuChannelHostUtils* gpu_channel_host_utils() {
+    return gpu_channel_host_utils_.get();
+  }
+
  protected:
   friend class base::RefCountedThreadSafe<GpuChannelHost>;
   virtual ~GpuChannelHost();

@@ -8,6 +8,7 @@
 #include <string>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/functional/bind.h"
 #include "base/metrics/field_trial_params.h"
@@ -513,8 +514,13 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
 
 }  // namespace
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ExtensionsUIConfig::ExtensionsUIConfig()
+    : WebUIConfig(content::kArkWebUIScheme, chrome::kChromeUIExtensionsHost) {}
+#else
 ExtensionsUIConfig::ExtensionsUIConfig()
     : WebUIConfig(content::kChromeUIScheme, chrome::kChromeUIExtensionsHost) {}
+#endif
 
 ExtensionsUIConfig::~ExtensionsUIConfig() = default;
 
@@ -544,6 +550,11 @@ ExtensionsUI::ExtensionsUI(content::WebUI* web_ui) : WebUIController(web_ui) {
   // plugin can be loaded within chrome://extensions.
   source->OverrideContentSecurityPolicy(
       network::mojom::CSPDirectiveName::ObjectSrc, "object-src 'self';");
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  // TODO: If chrome:// -> arkweb:// replaced completely, remove it
+  ArkWebExtensionsWebUIOverrideContentSecurityPolicies(source);
+#endif
 
   content::URLDataSource::Add(
       profile, std::make_unique<FaviconSource>(

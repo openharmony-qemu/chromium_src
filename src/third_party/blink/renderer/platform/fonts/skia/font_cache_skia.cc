@@ -33,6 +33,7 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/notreached.h"
 #include "build/build_config.h"
@@ -208,6 +209,16 @@ const SimpleFontData* FontCache::GetLastResortFallbackFont(
   }
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+  if (!font_platform_data) {
+    DEFINE_THREAD_SAFE_STATIC_LOCAL(const FontFaceCreationParams,
+                                    ohos_sans_creation_params,
+                                    (font_family_names::kHarmonyOSSans));
+    font_platform_data = GetFontPlatformData(
+        description, ohos_sans_creation_params, AlternateFontName::kLastResort);
+  }
+#endif
+
   DCHECK(font_platform_data);
   return FontDataFromFontPlatformData(font_platform_data);
 }
@@ -256,7 +267,7 @@ const FontPlatformData* FontCache::CreateFontPlatformData(
   std::string name;
 
   sk_sp<SkTypeface> typeface;
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_WPT) 
   bool noto_color_emoji_from_gmscore = false;
 #if BUILDFLAG(IS_ANDROID)
   // Use the unique local matching pathway for fetching Noto Color Emoji Compat

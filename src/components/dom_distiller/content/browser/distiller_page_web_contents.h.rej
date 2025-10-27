@@ -1,0 +1,23 @@
+--- distiller_page_web_contents.h	2025-10-20 19:52:52.865830386 +0800
++++ distiller_page_web_contents.h	2025-10-16 15:54:56.680427880 +0800
+@@ -70,16 +70,20 @@
+                    int error_code) override;
+ 
+   DistillerPageWebContents(const DistillerPageWebContents&) = delete;
+   DistillerPageWebContents& operator=(const DistillerPageWebContents&) = delete;
+ 
++  virtual DistillerPageWebContentsExt* AsExt() {
++    return nullptr;
++  }
+  protected:
+   bool StringifyOutput() override;
+   void DistillPageImpl(const GURL& url, const std::string& script) override;
+ 
+  private:
+   friend class TestDistillerPageWebContents;
++  friend class DistillerPageWebContentsExt;
+ 
+   enum State {
+     // The page distiller is idle.
+     IDLE,
+     // A page is currently loading.

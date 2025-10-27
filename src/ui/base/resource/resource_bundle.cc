@@ -78,6 +78,10 @@
 #undef LoadBitmap
 #endif
 
+#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
+#include "arkweb/chromium_ext/ui/base/resource/resource_bundle_for_include.cc"
+#endif
+
 namespace ui {
 
 namespace {

@@ -204,11 +204,6 @@ typedef struct _cef_accelerated_paint_info_t {
   /// The pixel format of the texture.
   ///
   cef_color_type_t format;
-
-  ///
-  /// The extra common info.
-  ///
-  cef_accelerated_paint_info_common_t extra;
 } cef_accelerated_paint_info_t;
 
 #ifdef __cplusplus

@@ -7,6 +7,7 @@
 
 #include <atomic>
 #include <cstddef>
+#include <deque>
 #include <functional>
 #include <list>
 #include <memory>
@@ -548,6 +549,50 @@ using DebugObjectCache = std::vector<Handle<HeapObject>>;
 
 #define THREAD_LOCAL_TOP_ADDRESS(type, name) \
   inline type* name##_address() { return &thread_local_top()->name##_; }
+
+#ifdef OHOS_JS_ENGINE
+class EnumTimesCache {
+ public:
+  explicit EnumTimesCache() {}
+  ~EnumTimesCache() = default;
+ 
+  size_t LookUp(uint64_t objPtr, int &objCnt) {
+    for (size_t index = 0; index < cache_deque_.size(); index++) {
+      if (cache_deque_[index].first == objPtr) {
+        objCnt = cache_deque_[index].second;
+        return index;
+      }
+    }
+    return kOperateEnumTimeCacheInvalidPos;
+  }
+
+  void RemoveCurrentElem(uint64_t objPtr) {
+    int objCnt = 0;
+    size_t index = LookUp(objPtr, objCnt);
+    if (index != kOperateEnumTimeCacheInvalidPos) {
+      cache_deque_.erase(cache_deque_.begin() + index);
+    }
+  }
+
+  int Put(uint64_t objPtr) {
+    int objCnt = 0;
+    size_t index = LookUp(objPtr, objCnt);
+    if (index == kOperateEnumTimeCacheInvalidPos) {
+      if (cache_deque_.size() > kSlowEnumTimesCacheCapacity) {
+        cache_deque_.pop_front();
+      }
+      cache_deque_.push_back(std::make_pair(objPtr, 0));
+    } else {
+      objCnt++;
+      cache_deque_[index] = {objPtr, objCnt};
+    }
+    return objCnt;
+  }
+
+ private:
+  std::deque<std::pair<uint64_t, int>> cache_deque_;
+};
+#endif
 
 // Do not use this variable directly, use Isolate::Current() instead.
 // Defined outside of Isolate because Isolate uses V8_EXPORT_PRIVATE.
@@ -1174,6 +1219,9 @@ class V8_EXPORT_PRIVATE Isolate final : private HiddenFactory {
   }
   TieringManager* tiering_manager() { return tiering_manager_; }
   CompilationCache* compilation_cache() { return compilation_cache_; }
+#ifdef OHOS_JS_ENGINE
+  EnumTimesCache* enum_times_cache() { return enum_times_cache_; }
+#endif
   V8FileLogger* v8_file_logger() const {
     // Call InitializeLoggingAndCounters() if logging is needed before
     // the isolate is fully initialized.

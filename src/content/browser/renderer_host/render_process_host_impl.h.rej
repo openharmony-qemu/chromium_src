@@ -1,0 +1,22 @@
+--- render_process_host_impl.h	2025-10-20 19:52:54.418544029 +0800
++++ render_process_host_impl.h	2025-10-16 15:54:59.552637485 +0800
+@@ -999,10 +1032,19 @@
+     void BindHostReceiver(mojo::GenericPendingReceiver receiver) override;
+     static void BindHostReceiverOnUIThread(
+         base::WeakPtr<RenderProcessHostImpl> weak_host,
+         mojo::GenericPendingReceiver receiver);
+ 
++#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
++    void ReportKeyThread(int32_t status, int32_t process_id, int32_t thread_id, int32_t role) override;
++    void ReportKeyThreadIds(int32_t status, int32_t process_id,
++    const std::vector<int32_t>& thread_ids, int32_t role) override;
++#endif
++
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++    void ReportHisyevent(int64_t block_time, const std::string& mode) override;
++#endif
+     const int render_process_id_;
+     const base::WeakPtr<RenderProcessHostImpl> weak_host_;
+     std::unique_ptr<service_manager::BinderRegistry> binders_;
+     mojo::Receiver<mojom::ChildProcessHost> receiver_{this};
+ 

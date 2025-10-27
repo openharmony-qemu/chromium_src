@@ -487,4 +487,13 @@ void MojoVideoDecoder::Stop() {
   weak_factory_.InvalidateWeakPtrs();
 }
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void MojoVideoDecoder::SetVideoSurface(int32_t widget_id) {
+  if (has_connection_error_) {
+    return;
+  }
+  remote_decoder_->SetVideoSurface(widget_id);
+}
+#endif // ARKWEB_VIDEO_ASSISTANT
+
 }  // namespace media

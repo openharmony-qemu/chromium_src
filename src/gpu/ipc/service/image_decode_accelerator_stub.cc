@@ -85,6 +85,7 @@ struct CleanUpContext {
         num_callbacks_pending_(skia_representation_->NumPlanesExpected()) {}
 };
 
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
 void CleanUpResource(SkImages::ReleaseContext context) {
   auto* clean_up_context = static_cast<CleanUpContext*>(context);
   DCHECK(clean_up_context->main_task_runner_->BelongsToCurrentThread());
@@ -93,15 +94,11 @@ void CleanUpResource(SkImages::ReleaseContext context) {
   // call is coming from Skia itself.
   DCHECK(
       clean_up_context->shared_context_state_->IsCurrent(/*surface=*/nullptr));
+
   clean_up_context->skia_scoped_access_->ApplyBackendSurfaceEndState();
-
-  CHECK_GT(clean_up_context->num_callbacks_pending_, 0u);
-  clean_up_context->num_callbacks_pending_--;
-
-  if (clean_up_context->num_callbacks_pending_ == 0u) {
     delete clean_up_context;
   }
-}
+#endif
 
 }  // namespace
 #endif
@@ -146,7 +143,7 @@ void ImageDecodeAcceleratorStub::ScheduleImageDecode(
 
   const SyncToken decode_sync_token(CommandBufferNamespace::GPU_IO,
                                     command_buffer_id_, release_count);
-
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
   if (!base::FeatureList::IsEnabled(
           features::kVaapiJpegImageDecodeAcceleration) &&
       !base::FeatureList::IsEnabled(
@@ -154,6 +151,7 @@ void ImageDecodeAcceleratorStub::ScheduleImageDecode(
     ScheduleSyncTokenRelease(decode_sync_token);
     return;
   }
+#endif
 
   base::AutoLock lock(lock_);
   if (!channel_) {
@@ -215,6 +213,12 @@ void ImageDecodeAcceleratorStub::ProcessCompletedDecode(
     DLOG(ERROR) << "The image could not be decoded";
     return;
   }
+
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  base::ScopedClosureRunner event_finalizer(
+      base::BindOnce(&ImageDecodeAcceleratorStub::ReleasePixmapData,
+                     base::Unretained(this), completed_decode->event));
+#endif
 
   // TODO(crbug.com/40641220): the output_size parameter is going away, so this
   // validation is not needed. Checking if the size is too small should happen
@@ -397,6 +401,12 @@ void ImageDecodeAcceleratorStub::ProcessCompletedDecode(
   }
   DCHECK(notify_gl_state_changed);
   notify_gl_state_changed->RunAndReset();
+#elif BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  bool needReturn = ProcessCompletedDecodeExt(params, shared_context_state,
+    plane_sk_images, notify_gl_state_changed, completed_decode);
+  if (needReturn) {
+    return;
+  }
 #else
   // Right now, we only support Chrome OS because we need to use the
   // |native_pixmap_handle| member of a GpuMemoryBufferHandle.

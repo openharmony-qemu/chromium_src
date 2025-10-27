@@ -1,0 +1,40 @@
+--- input_handler_proxy.h	2025-10-21 21:22:38.186315688 +0800
++++ input_handler_proxy.h	2025-10-16 16:07:40.206328708 +0800
+@@ -5,22 +5,25 @@
+ #ifndef THIRD_PARTY_BLINK_RENDERER_PLATFORM_WIDGET_INPUT_INPUT_HANDLER_PROXY_H_
+ #define THIRD_PARTY_BLINK_RENDERER_PLATFORM_WIDGET_INPUT_INPUT_HANDLER_PROXY_H_
+ 
+ #include <memory>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/time/time.h"
+ #include "base/types/optional_ref.h"
+ #include "cc/input/browser_controls_offset_tags_info.h"
+ #include "cc/input/browser_controls_state.h"
+ #include "cc/input/input_handler.h"
+ #include "cc/input/snap_fling_controller.h"
+ #include "cc/paint/element_id.h"
+ #include "third_party/blink/public/common/input/web_coalesced_input_event.h"
+ #include "third_party/blink/public/common/input/web_gesture_event.h"
++#include "third_party/blink/public/mojom/widget/platform_widget.mojom-blink.h"
+ #include "third_party/blink/public/platform/web_common.h"
+ #include "third_party/blink/renderer/platform/platform_export.h"
++#include "third_party/blink/renderer/platform/widget/input/input_handler_proxy_utils.h";
+ 
+ namespace base {
+ class TickClock;
+ }
+ 
+@@ -158,10 +167,11 @@
+       EventDisposition,
+       std::unique_ptr<blink::WebCoalescedInputEvent> event,
+       std::unique_ptr<DidOverscrollParams>,
+       const blink::WebInputEventAttribution&,
+       std::unique_ptr<cc::EventMetrics> metrics)>;
++
+   void HandleInputEventWithLatencyInfo(
+       std::unique_ptr<blink::WebCoalescedInputEvent> event,
+       std::unique_ptr<cc::EventMetrics> metrics,
+       EventDispositionCallback callback);
+ 

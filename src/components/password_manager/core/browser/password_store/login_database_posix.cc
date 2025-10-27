@@ -12,6 +12,10 @@
 #include "components/os_crypt/sync/os_crypt.h"
 #include "components/password_manager/core/browser/password_store/login_database.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace password_manager {
 
 namespace {

@@ -65,6 +65,10 @@ extern const char kPackageVersionName[];
 extern const char kSchedulerBoostUrgent[];
 #endif
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "arkweb/chromium_ext/base/base_switches_for_include.h"
+#endif  // BUILDFLAG(ARKWEB_LOGGER_REPORT)
+
 }  // namespace switches
 
 #endif  // BASE_BASE_SWITCHES_H_

@@ -284,7 +284,7 @@ void IncrementPaymentMethodsMandatoryReauthPromoShownCounter(
       prefs->GetInteger(
           kAutofillPaymentMethodsMandatoryReauthPromoShownCounter) +
           1);
-#endif  // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID)
+#endif  // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 }
 
 bool IsPaymentCvcStorageEnabled(const PrefService* prefs) {

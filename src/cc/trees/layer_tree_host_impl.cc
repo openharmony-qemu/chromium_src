@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/command_line.h"
 #include "base/compiler_specific.h"
@@ -148,6 +149,16 @@
 #include "ui/gfx/geometry/vector2d_conversions.h"
 #include "ui/gfx/geometry/vector2d_f.h"
 #include "ui/gfx/skia_span_util.h"
+#include "arkweb/build/features/features.h"
+#include "cc/trees/layer_tree_impl_utils.h"
+
+#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
+#include "cc/trees/layer_tree_host_impl_for_include.cc"
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
 
 namespace cc {
 namespace {
@@ -2265,7 +2276,7 @@ void LayerTreeHostImpl::SetExternalTilePriorityConstraints(
       viewport_rect_for_tile_priority_ != viewport_rect;
   viewport_rect_for_tile_priority_ = viewport_rect;
 
-  if (tile_priority_params_changed) {
+  if (isNeedDrawRect_ || tile_priority_params_changed) {
     active_tree_->set_needs_update_draw_properties();
     if (pending_tree_)
       pending_tree_->set_needs_update_draw_properties();
@@ -2419,6 +2430,11 @@ void LayerTreeHostImpl::OnDraw(const gfx::Transform& transform,
     // draw as well.
     SetFullViewportDamage();
   }
+
+#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
+  external_transform_ = gfx::Transform();
+  external_viewport_ = gfx::Rect();
+#endif
 }
 
 void LayerTreeHostImpl::OnCompositorFrameTransitionDirectiveProcessed(
@@ -2711,6 +2727,22 @@ RenderFrameMetadata LayerTreeHostImpl::MakeRenderFrameMetadata(
 
   bool allocate_new_local_surface_id = false;
 
+#if BUILDFLAG(IS_ARKWEB)
+  metadata.scrollable_viewport_size = active_tree_->ScrollableViewportSize();
+  metadata.root_layer_size = active_tree_->ScrollableSize();
+  if (InnerViewportScrollNode()) {
+    DCHECK(OuterViewportScrollNode());
+    metadata.root_overflow_y_hidden =
+        !OuterViewportScrollNode()->user_scrollable_vertical ||
+        !InnerViewportScrollNode()->user_scrollable_vertical;
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_MENU)
+  metadata.clipped_selection_bounds =
+    active_tree_->layer_tree_impl_utils()->GetClippedVisualViewportSelectionBounds();
+#endif
+
   if (last_draw_render_frame_metadata_) {
     const float last_root_scroll_offset_y =
         last_draw_render_frame_metadata_->root_scroll_offset
@@ -2932,6 +2964,10 @@ std::optional<SubmitInfo> LayerTreeHostImpl::DrawLayers(FrameData* frame) {
             data->add_latency_ids(latency.trace_id());
           }
         });
+
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+OHOS_TRACE_EVENT0("viz,benchmark", "MainFrame.SubmitCompositorFrame");
+#endif
     layer_tree_frame_sink_->SubmitCompositorFrame(
         std::move(compositor_frame),
         /*hit_test_data_changed=*/false);
@@ -3077,6 +3113,12 @@ viz::CompositorFrame LayerTreeHostImpl::GenerateCompositorFrame(
                        TRACE_EVENT_SCOPE_THREAD, "x",
                        scroll_accumulated_this_frame_.x(), "y",
                        scroll_accumulated_this_frame_.y());
+
+#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
+  g_frameIsScrolling = scroll_accumulated_this_frame_.x() != 0 ||
+                       scroll_accumulated_this_frame_.y() != 0;
+#endif
+
   scroll_accumulated_this_frame_ = gfx::Vector2dF();
 
   bool is_new_trace;
@@ -3283,8 +3325,18 @@ viz::CompositorFrame LayerTreeHostImpl::GenerateCompositorFrame(
     for (auto& latency : metadata.latency_info) {
       latency.AddLatencyNumberWithTimestamp(
           ui::INPUT_EVENT_LATENCY_RENDERER_SWAP_COMPONENT, draw_time);
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+      OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
+                        std::to_string(latency.trace_id()), "step", "INPUT_EVENT_LATENCY_RENDERER_SWAP_COMPONENT");
+#endif
     }
+    }
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  for (auto& latency : metadata.latency_info) {
+      OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
+                        std::to_string(latency.trace_id()), "step", "STEP_SWAP_BUFFERS");
   }
+#endif
 
   // Collect all resource ids in the render passes into a single array.
   std::vector<viz::ResourceId> resources;
@@ -3932,6 +3984,21 @@ void LayerTreeHostImpl::ActivateSyncTree() {
     active_tree_->lifecycle().AdvanceTo(
         LayerTreeLifecycle::kSyncedPropertyTrees);
 
+#if BUILDFLAG(ARKWEB_WEBGL)
+    bool should_defer_impl_invalidation = false;
+    for (EffectTreeLayerListIterator it(pending_tree_.get());
+        it.state() != EffectTreeLayerListIterator::State::kEnd; ++it) {
+      if (it.state() == EffectTreeLayerListIterator::State::kLayer) {
+        LayerImpl* layer = it.current_layer();
+        if (layer->ShouldDeferImplInvalidation()) {
+          should_defer_impl_invalidation = true;
+        }
+      }
+    }
+    client_->SetDeferInvalidationForFastMainFrameFromImpl(
+                 should_defer_impl_invalidation);
+#endif
+
     TreeSynchronizer::PushLayerProperties(pending_tree(), active_tree());
 
     active_tree_->lifecycle().AdvanceTo(
@@ -4553,6 +4620,11 @@ bool LayerTreeHostImpl::InitializeFrameSink(
         resource_provider_.get(), layer_tree_frame_sink_->context_provider(),
         GetTaskRunner(), ResourcePool::kDefaultExpirationDelay,
         settings_.disallow_non_exact_resource_reuse);
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+    resource_pool_->EnableDeleteUnusedResourcesDelay(
+        settings_.enable_delete_unused_resources_delay);
+#endif
 
     CreateTileManagerResources();
     RecreateTileResources();

@@ -18,6 +18,7 @@
 #include "media/media_buildflags.h"
 #include "ui/gl/gl_features.h"
 #include "ui/gl/gl_utils.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_LINUX)
 #include "base/cpu.h"
@@ -48,8 +49,10 @@ const char kAudioCodecsFromEDID[] = "audio-codecs-from-edid";
 const char kAutoplayPolicy[] = "autoplay-policy";
 
 // Forces input and output stream creation to use fake audio streams.
-const char kDisableAudioInput[] = "disable-audio-input";
 const char kDisableAudioOutput[] = "disable-audio-output";
+#if BUILDFLAG(ARKWEB_WEBRTC)
+const char kDisableAudioInput[] = "disable-audio-input";
+#endif // BUILDFLAG(ARKWEB_WEBRTC)
 
 // Causes the AudioManager to fail creating audio streams. Used when testing
 // various failure cases.
@@ -336,7 +339,7 @@ BASE_FEATURE(MediaRecorderHEVCSupport, base::FEATURE_ENABLED_BY_DEFAULT);
 // when in background.
 BASE_FEATURE(kResumeBackgroundVideo,
              "resume-background-video",
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA_POLICY)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_DISABLED_BY_DEFAULT

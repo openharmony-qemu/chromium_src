@@ -160,6 +160,21 @@
 #include "ui/base/cocoa/cursor_accessibility_scale_factor.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "arkweb/chromium_ext/third_party/blink/public/mojom/page/text_recognize_result.mojom.h"
+#include "third_party/blink/renderer/platform/wtf/vector.h"
+#include "third_party/skia/include/core/SkBitmap.h"
+#include "third_party/skia/include/core/SkImage.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+#include "base/ohos/sys_info_utils_ext.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#include "arkweb/chromium_ext/content/browser/renderer_host/render_widget_host_impl_log.h"
+#endif
+
 using blink::DragOperationsMask;
 using blink::WebGestureEvent;
 using blink::WebInputEvent;
@@ -351,7 +366,7 @@ std::unique_ptr<RenderWidgetHostImpl> RenderWidgetHostImpl::Create(
     bool hidden,
     bool renderer_initiated_creation,
     std::unique_ptr<FrameTokenMessageQueue> frame_token_message_queue) {
-  return base::WrapUnique(new RenderWidgetHostImpl(
+  return base::WrapUnique(new RenderWidgetHostImplExt(
       frame_tree, /*self_owned=*/false, frame_sink_id, delegate,
       std::move(site_instance_group), routing_id, hidden,
       renderer_initiated_creation, std::move(frame_token_message_queue)));
@@ -368,7 +383,7 @@ RenderWidgetHostImpl* RenderWidgetHostImpl::CreateSelfOwned(
     std::unique_ptr<FrameTokenMessageQueue> frame_token_message_queue) {
   viz::FrameSinkId frame_sink_id =
       DefaultFrameSinkId(*site_instance_group, routing_id);
-  return new RenderWidgetHostImpl(frame_tree, /*self_owned=*/true,
+  return new RenderWidgetHostImplExt(frame_tree, /*self_owned=*/true,
                                   frame_sink_id, delegate,
                                   std::move(site_instance_group), routing_id,
                                   hidden, /*renderer_initiated_creation=*/true,
@@ -1336,6 +1351,9 @@ bool RenderWidgetHostImpl::SynchronizeVisualProperties(
         old_screen_info.orientation_angle != screen_info.orientation_angle ||
         old_screen_info.orientation_type != screen_info.orientation_type;
     if (orientation_changed) {
+#if BUILDFLAG(ARKWEB_MENU_HANDLE)
+      is_orientation_changed_ = true;
+#endif // ARKWEB_MENU_HANDLE
       delegate_->DidChangeScreenOrientation();
     }
   }
@@ -2516,8 +2534,13 @@ void RenderWidgetHostImpl::RendererIsUnresponsive(
   }
 
   if (delegate_) {
-    delegate_->RendererUnresponsive(this,
-                                    std::move(restart_hang_monitor_timeout));
+    delegate_->RendererUnresponsive(
+        this, std::move(restart_hang_monitor_timeout)
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+                  ,
+        static_cast<content::RendererIsUnresponsiveReason>(reason)
+#endif
+    );
   }
 
   // Do not add code after this since the Delegate may delete this
@@ -2571,6 +2594,12 @@ void RenderWidgetHostImpl::OnKeyboardEventAck(
 
   bool processed =
       (blink::mojom::InputEventResultState::kConsumed == ack_result);
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  if (view_ && processed && !is_hidden() && !event.event.skip_if_unhandled) {
+    view_->KeyboardReDispatch(event.event, true);
+  }
+#endif
 
   // We only send unprocessed key event upwards if we are not hidden,
   // because the user has moved away from us and no longer expect any effect
@@ -3441,13 +3470,21 @@ void RenderWidgetHostImpl::OnWheelEventAck(
 
 bool RenderWidgetHostImpl::IsIgnoringWebInputEvents(
     const blink::WebInputEvent& event) const {
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  IGNORING_WEB_INPUT_FOR_EVENTS_RETURN(event);
+#else
   return agent_scheduling_group_->GetProcess()->IsBlocked() || !delegate_ ||
          delegate_->ShouldIgnoreWebInputEvents(event);
+#endif
 }
 
 bool RenderWidgetHostImpl::IsIgnoringInputEvents() const {
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  IGNORING_WEB_INPUT_EVENTS_RETURN();
+#else
   return agent_scheduling_group_->GetProcess()->IsBlocked() || !delegate_ ||
          delegate_->ShouldIgnoreInputEvents();
+#endif
 }
 
 bool RenderWidgetHostImpl::GotResponseToPointerLockRequest(
@@ -3529,6 +3566,9 @@ void RenderWidgetHostImpl::GotResponseToForceRedraw(int snapshot_id) {
 }
 
 void RenderWidgetHostImpl::DetachDelegate() {
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  LOG(INFO) << "RenderWidgetHostImpl DetachDelegate";
+#endif
   delegate_ = nullptr;
   GetRenderInputRouter()->GetLatencyTracker()->reset_delegate();
 }
@@ -4133,5 +4173,4 @@ void RenderWidgetHostImpl::CompositorMetricRecorder::TryToRecordMetrics() {
         base::Milliseconds(1), base::Minutes(10), 50);
   }
 }
-
 }  // namespace content

@@ -82,6 +82,15 @@ class BLINK_EXPORT WebDocument : public WebNode {
   WebDocument() = default;
   WebDocument(const WebDocument& e) = default;
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  enum class StyleSheetType : int32_t {
+    kNormal,
+    kAdBlock,
+    kUserAdBlock,
+    kManualAdBlock
+  };
+#endif
+
   WebDocument& operator=(const WebDocument& e) {
     WebNode::Assign(e);
     return *this;
@@ -150,7 +159,12 @@ class BLINK_EXPORT WebDocument : public WebNode {
       const WebString& source_code,
       const WebStyleSheetKey* = nullptr,
       WebCssOrigin = WebCssOrigin::kAuthor,
-      BackForwardCacheAware = BackForwardCacheAware::kAllow);
+      BackForwardCacheAware = BackForwardCacheAware::kAllow
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+      ,
+      const StyleSheetType = StyleSheetType::kNormal
+#endif
+  );
 
   // Removes the CSS which was previously inserted by a call to
   // InsertStyleSheet().
@@ -165,6 +179,11 @@ class BLINK_EXPORT WebDocument : public WebNode {
   std::vector<WebDraggableRegion> DraggableRegions() const;
 
   WebDistillabilityFeatures DistillabilityFeatures();
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  BLINK_EXPORT WebDistillabilityMatchInfo DistillabilityMatchInfo(
+      const blink::mojom::UrlHostDistillerInfoPtr& distiller_info);
+#endif
 
   void SetShowBeforeUnloadDialog(bool show_dialog);
 

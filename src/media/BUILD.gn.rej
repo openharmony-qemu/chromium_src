@@ -1,0 +1,31 @@
+--- BUILD.gn	2025-10-20 19:52:56.554198393 +0800
++++ BUILD.gn	2025-10-16 15:55:01.770264071 +0800
+@@ -259,15 +262,27 @@
+   if (enable_media_remoting) {
+     deps += [ "//media/remoting:media_remoting_tests" ]
+   }
+ 
+   # The test needs OPUS_FIXED_POINT conditional define.
+-  configs += [ "//third_party/opus:opus_config" ]
++  configs += [
++    "//third_party/opus:opus_config",
++    "//arkweb/chromium_ext:arkweb_codec_decoder_adapter_unittest_config",
++  ]
+ 
+   if (is_ios) {
+     deps += [ ":unit_tests_bundle_data" ]
+   }
++
++  if (arkweb_unittests) {
++    deps += [
++      "//content/public/browser:browser_sources",
++      "//content/public/renderer:renderer_sources",
++      "//components/subresource_filter/content/browser:browser",
++      "//cef:libcef_static",
++    ]
++  }
+ }
+ 
+ test("media_perftests") {
+   configs += [ ":media_config" ]
+   deps = [

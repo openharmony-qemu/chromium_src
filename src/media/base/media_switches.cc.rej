@@ -1,0 +1,37 @@
+--- media_switches.cc	2025-10-20 19:52:56.590198948 +0800
++++ media_switches.cc	2025-10-16 15:55:01.806225583 +0800
+@@ -682,13 +685,19 @@
+              "SpecCompliantCanPlayThrough",
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ // Disables the real audio output stream after silent audio has been delivered
+ // for too long. Should save quite a bit of power in the muted video case.
++#if BUILDFLAG(ARKWEB_WEBRTC)
++BASE_FEATURE(kSuspendMutedAudio,
++             "SuspendMutedAudio",
++             base::FEATURE_DISABLED_BY_DEFAULT);
++#else
+ BASE_FEATURE(kSuspendMutedAudio,
+              "SuspendMutedAudio",
+              base::FEATURE_ENABLED_BY_DEFAULT);
++#endif
+ 
+ // Enables the Unified Autoplay policy by overriding the platform's default
+ // autoplay policy.
+ BASE_FEATURE(kUnifiedAutoplay,
+              "UnifiedAutoplay",
+@@ -1137,10 +1146,14 @@
+              "AllowMediaCodecCallsInSeparateProcess",
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ #endif  // BUILDFLAG(IS_ANDROID)
+ 
++#if BUILDFLAG(ARKWEB_MEDIA)
++BASE_FEATURE(kCanPlayHls, "CanPlayHls", base::FEATURE_ENABLED_BY_DEFAULT);
++#endif
++
+ #if BUILDFLAG(ENABLE_HLS_DEMUXER)
+ BASE_FEATURE(kBuiltInHlsPlayer,
+              "BuiltInHlsPlayer",
+              base::FEATURE_DISABLED_BY_DEFAULT
+ );

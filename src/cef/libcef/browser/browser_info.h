@@ -165,8 +165,11 @@ class CefBrowserInfo : public base::RefCountedThreadSafe<CefBrowserInfo> {
       CefRefPtr<CefBrowserHostBase> browser,
       CefRefPtr<CefFrameHostImpl> frame,
       std::vector<CefDraggableRegion> draggable_regions);
-  void MaybeNotifyFrameDetached(CefRefPtr<CefBrowserHostBase> browser,
-                                CefRefPtr<CefFrameHostImpl> frame);
+
+#if BUILDFLAG(IS_ARKWEB)
+  content::GlobalRenderFrameHostId GetLastDeleteSpeculativeRFHId();
+  content::GlobalRenderFrameHostToken GetLastDeleteSpeculativeRFHToken();
+#endif
 
  private:
   friend class base::RefCountedThreadSafe<CefBrowserInfo>;
@@ -263,6 +266,11 @@ class CefBrowserInfo : public base::RefCountedThreadSafe<CefBrowserInfo> {
 
   // Only accessed on the UI thread.
   std::vector<CefDraggableRegion> draggable_regions_;
+
+#if BUILDFLAG(IS_ARKWEB)
+  content::GlobalRenderFrameHostId last_delete_speculative_rfh_id_;
+  content::GlobalRenderFrameHostToken last_delete_speculative_rfh_token_;
+#endif
 };
 
 #endif  // CEF_LIBCEF_BROWSER_BROWSER_INFO_H_

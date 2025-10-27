@@ -390,6 +390,15 @@ void ResourceLoader::DidFailLoadingBody() {
 }
 
 void ResourceLoader::DidCancelLoadingBody() {
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+  LOG(WARNING) << "Resource loader DidCancelLoadingBody, url: ***";
+#endif
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(WARNING)
+      << "Resource loader DidCancelLoadingBody, url: "
+      << url::LogUtils::ConvertUrlWithMask(
+             resource_->LastResourceRequest().Url().GetString().Utf8());
+#endif
   Cancel();
 }
 
@@ -397,6 +406,15 @@ void ResourceLoader::StartFetch() {
   DCHECK_NE(ResourceLoadScheduler::kInvalidClientId, scheduler_client_id_);
   if (resource_->Options().synchronous_policy == kRequestSynchronously &&
       fetcher_->GetProperties().FreezeMode() != LoaderFreezeMode::kNone) {
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+    LOG(WARNING) << "Resource loader StartWith, url: ***";
+#endif
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(WARNING)
+        << "Resource loader StartWith, url: "
+        << url::LogUtils::ConvertUrlWithMask(
+               resource_->LastResourceRequest().Url().GetString().Utf8());
+#endif
     // TODO(yuzus): Evict bfcache if necessary.
     Cancel();
     return;
@@ -497,6 +515,15 @@ void ResourceLoader::ScheduleCancel() {
 
 void ResourceLoader::CancelTimerFired(TimerBase*) {
   if (IsLoading() && !resource_->HasClientsOrObservers()) {
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+    LOG(WARNING) << "Resource loader CancelTimerFired, url *";
+#endif
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(WARNING)
+        << "Resource loader CancelTimerFired, url "
+        << url::LogUtils::ConvertUrlWithMask(
+               resource_->LastResourceRequest().Url().GetString().Utf8());
+#endif
     Cancel();
   }
 }
@@ -1344,7 +1371,10 @@ void ResourceLoader::RequestAsynchronously() {
   // Don't do mime sniffing for fetch (crbug.com/2016)
   bool no_mime_sniffing = resource_->GetResourceRequest().GetRequestContext() ==
                           blink::mojom::blink::RequestContextType::FETCH;
-
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+  network_resource_request_->request_id_perf_stat_ =
+      resource_->request_id_perf_stat_;
+#endif
   // Don't pass a CodeCacheHost when DownloadToBlob is true. The detailed
   // decision logic for whether or not to fetch code cache from the isolated
   // code cache is implemented in ResourceRequestSender::CodeCacheFetcher. We

@@ -64,6 +64,16 @@
 #include "media/mojo/mojom/fuchsia_media.mojom-forward.h"
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/build/features/features.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_THEME_FONT)
+#include "base/files/file.h"
+#endif
+
+#include "arkweb/chromium_ext/content/public/browser/render_process_host_ohos.h"
+
 class GURL;
 
 namespace base {
@@ -125,10 +135,19 @@ namespace mojom {
 class Renderer;
 }  // namespace mojom
 
+#if BUILDFLAG(IS_ARKWEB)
+enum class RenderProcessMode {
+    SINGLE_MODE = 0,
+    MULTIPLE_MODE = 1,
+    DEFAULT_MODE = 2,
+};
+#endif
+
 // Interface that represents the browser side of the browser <-> renderer
 // communication channel. There will generally be one RenderProcessHost per
 // renderer process.
-class CONTENT_EXPORT RenderProcessHost : public IPC::Sender,
+class CONTENT_EXPORT RenderProcessHost : public RenderProcessHostOhos,
+                                         public IPC::Sender,
                                          public IPC::Listener,
                                          public base::SupportsUserData {
   // Do not remove this macro!
@@ -785,6 +804,12 @@ class CONTENT_EXPORT RenderProcessHost : public IPC::Sender,
   // a cost on every call.
   virtual uint64_t GetPrivateMemoryFootprint() = 0;
 
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+  virtual void dumpCurrentJavaScriptStackInMainThread(
+      base::OnceCallback<void(const std::string&)> callback) {}
+
+  virtual void InvokeRenderCrashDump() {}
+#endif
   // Static management functions -----------------------------------------------
 
   // Flag to run the renderer in process.  This is primarily

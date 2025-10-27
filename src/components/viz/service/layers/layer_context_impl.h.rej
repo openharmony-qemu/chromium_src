@@ -1,0 +1,30 @@
+--- layer_context_impl.h	2025-10-20 19:52:54.146420452 +0800
++++ layer_context_impl.h	2025-10-16 15:54:59.248962493 +0800
+@@ -7,10 +7,11 @@
+ 
+ #include <memory>
+ #include <string>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/types/expected.h"
+ #include "cc/animation/animation_host.h"
+ #include "cc/layers/tile_display_layer_impl.h"
+ #include "cc/trees/layer_tree_frame_sink.h"
+@@ -115,11 +116,14 @@
+   void DidDeleteSharedBitmap(const SharedBitmapId& id) override;
+ 
+   // cc::TileDisplayLayerImpl::Client:
+   void DidAppendQuadsWithResources(
+       const std::vector<TransferableResource>& resources) override;
+-
++#if BUILDFLAG(ARKWEB_WEBGL)
++  void SetDeferInvalidationForFastMainFrameFromImpl(
++           bool defer_invalidation_for_fast_main_frame) override {}
++#endif
+   // mojom::LayerContext:
+   void SetVisible(bool visible) override;
+   void UpdateDisplayTree(mojom::LayerTreeUpdatePtr update) override;
+   void UpdateDisplayTiling(mojom::TilingPtr tiling) override;
+ 

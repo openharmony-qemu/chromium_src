@@ -30,17 +30,39 @@ namespace content {
 class InterestGroupManagerImpl;
 
 inline constexpr char kDefaultBiddingAndAuctionGCPCoordinatorOrigin[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://xxx";
+#else
     "https://publickeyservice.gcp.privacysandboxservices.com";
+#endif
 inline constexpr char kBiddingAndAuctionGCPCoordinatorOrigin[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://xxx";
+#else
     "https://publickeyservice.pa.gcp.privacysandboxservices.com";
+#endif
 inline constexpr char kBiddingAndAuctionGCPCoordinatorKeyURL[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://xxx"
+    "xxx";
+#else
     "https://publickeyservice.pa.gcp.privacysandboxservices.com/.well-known/"
     "protected-auction/v1/public-keys";
+#endif
 inline constexpr char kBiddingAndAuctionAWSCoordinatorOrigin[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://xxx";
+#else
     "https://publickeyservice.pa.aws.privacysandboxservices.com";
+#endif
 inline constexpr char kBiddingAndAuctionAWSCoordinatorKeyURL[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://xxx"
+    "xxx";
+#else
     "https://publickeyservice.pa.aws.privacysandboxservices.com/.well-known/"
     "protected-auction/v1/public-keys";
+#endif
 
 struct BiddingAndAuctionServerKey {
   std::string key;  // bytes containing the key.

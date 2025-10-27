@@ -38,6 +38,10 @@
 #include "net/third_party/quiche/src/quiche/quic/core/quic_versions.h"
 #include "net/websockets/websocket_handshake_stream_base.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace net {
 
 class BidirectionalStreamImpl;
@@ -47,12 +51,15 @@ class HttpStream;
 class IOBuffer;
 class ProxyInfo;
 class SSLPrivateKey;
+class ArkWebHttpNetworkTransactionExt;
 struct HttpRequestInfo;
 
 class NET_EXPORT_PRIVATE HttpNetworkTransaction
     : public HttpTransaction,
       public HttpStreamRequest::Delegate {
  public:
+  friend class ArkWebHttpNetworkTransactionExt;
+
   HttpNetworkTransaction(RequestPriority priority, HttpNetworkSession* session);
 
   HttpNetworkTransaction(const HttpNetworkTransaction&) = delete;
@@ -60,10 +67,15 @@ class NET_EXPORT_PRIVATE HttpNetworkTransaction
 
   ~HttpNetworkTransaction() override;
 
+  virtual ArkWebHttpNetworkTransactionExt *AsArkWebHttpNetworkTransactionExt() { return nullptr; }
+
   // HttpTransaction methods:
   int Start(const HttpRequestInfo* request_info,
             CompletionOnceCallback callback,
             const NetLogWithSource& net_log) override;
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  int RestartWithSecureDnsOnly(CompletionOnceCallback callback) override { return ERR_IO_PENDING; }
+#endif
   int RestartIgnoringLastError(CompletionOnceCallback callback) override;
   int RestartWithCertificate(scoped_refptr<X509Certificate> client_cert,
                              scoped_refptr<SSLPrivateKey> client_private_key,
@@ -511,6 +523,10 @@ class NET_EXPORT_PRIVATE HttpNetworkTransaction
 
   bool close_connection_on_destruction_ = false;
 
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  bool stream_created_ = false;
+#endif
+
   // Set to true when the server required HTTP/1.1 fallback.
   bool http_1_1_was_required_ = false;
 
@@ -536,5 +552,6 @@ class NET_EXPORT_PRIVATE HttpNetworkTransaction
 };
 
 }  // namespace net
+#include "arkweb/chromium_ext/net/http/arkweb_http_network_transaction_ext.h"
 
 #endif  // NET_HTTP_HTTP_NETWORK_TRANSACTION_H_

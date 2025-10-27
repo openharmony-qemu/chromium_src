@@ -1,0 +1,38 @@
+--- skia_image_decoder_base.cc	2025-10-20 19:53:01.218200922 +0800
++++ skia_image_decoder_base.cc	2025-10-16 16:07:40.119484078 +0800
+@@ -54,13 +55,16 @@
+                                            wtf_size_t max_decoded_bytes,
+                                            wtf_size_t reading_offset)
+     : ImageDecoder(alpha_option,
+                    ImageDecoder::kDefaultBitDepth,
+                    color_behavior,
++#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+                    cc::AuxImage::kDefault,
++#endif
+                    max_decoded_bytes),
+-      reading_offset_(reading_offset) {}
++      reading_offset_(reading_offset) {
++}
+ 
+ SkiaImageDecoderBase::~SkiaImageDecoderBase() = default;
+ 
+ void SkiaImageDecoderBase::OnSetData(scoped_refptr<SegmentReader> data) {
+   if (!data) {
+@@ -266,12 +270,15 @@
+ 
+     if (frame.GetStatus() == ImageFrame::kFrameEmpty) {
+       wtf_size_t required_previous_frame_index =
+           frame.RequiredPreviousFrameIndex();
+       if (required_previous_frame_index == kNotFound) {
+-        frame.AllocatePixelData(Size().width(), Size().height(),
+-                                ColorSpaceForSkImages());
++        if (!frame.AllocatePixelData(Size().width(), Size().height(),
++                                     ColorSpaceForSkImages())) {
++          SetFailedFrameIndex(current_frame_index);
++          continue;
++        }
+         frame.ZeroFillPixelData();
+         prior_frame_ = SkCodec::kNoFrame;
+       } else {
+         // We check if previous_frame_index is already initialized, meaning it
+         // has been visited already, then if a viable reference frame exists.

@@ -95,7 +95,7 @@ enum class AlternateFontName {
 extern const char kColorEmojiLocale[];
 extern const char kMonoEmojiLocale[];
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_THEME_FONT)
 extern const char kNotoColorEmojiCompat[];
 #endif
 
@@ -170,7 +170,7 @@ class PLATFORM_EXPORT FontCache final {
 
   static void MaybePreloadSystemFonts();
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
   // These are needed for calling QueryRenderStyleForStrike, since
   // gfx::GetFontRenderParams makes distinctions based on DSF.
   static float DeviceScaleFactor() { return device_scale_factor_; }
@@ -232,7 +232,7 @@ class PLATFORM_EXPORT FontCache final {
 
   static void AcceptLanguagesChanged(const String&);
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_THEME_FONT)
   static AtomicString GetGenericFamilyNameForScript(
       const AtomicString& family_name,
       const AtomicString& generic_family_name_fallback,
@@ -244,7 +244,8 @@ class PLATFORM_EXPORT FontCache final {
   sk_sp<SkTypeface> CreateLocaleSpecificTypeface(
       const FontDescription& font_description,
       const char* locale_family_name);
-#endif  // BUILDFLAG(IS_ANDROID)
+  void InvalidateSystemFontFamily();
+#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_THEME_FONT)
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
   static bool GetFontForCharacter(UChar32,
@@ -354,7 +355,7 @@ class PLATFORM_EXPORT FontCache final {
   bool is_test_font_mgr_ = false;
 #endif  // BUILDFLAG(IS_WIN)
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
   static float device_scale_factor_;
 #endif
 

@@ -10,6 +10,8 @@
 
 // This file contains the list of network errors.
 
+#include "arkweb/build/features/features.h"
+
 //
 // Ranges:
 //     0- 99 System related errors

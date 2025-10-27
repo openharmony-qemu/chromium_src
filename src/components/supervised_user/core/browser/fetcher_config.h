@@ -62,9 +62,15 @@ struct FetcherConfig {
   enum class Method { kUndefined, kGet, kPost };
 
   // Primary endpoint of the fetcher. May be overridden with feature flags.
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  base::FeatureParam<std::string> service_endpoint{
+      &kSupervisedUserProtoFetcherConfig, "service_endpoint",
+      "https://x.x.x"};
+#else
   base::FeatureParam<std::string> service_endpoint{
       &kSupervisedUserProtoFetcherConfig, "service_endpoint",
       "https://kidsmanagement-pa.googleapis.com"};
+#endif
 
   // Path of the service or a template of such path.
   //

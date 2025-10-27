@@ -43,8 +43,19 @@ class JsCommunication
       mojo::PendingAssociatedRemote<mojom::JsObjectsClient> client) override;
   void AddDocumentStartScript(
       mojom::DocumentStartJavaScriptPtr script_ptr) override;
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  void AddDocumentEndScript(
+      mojom::DocumentEndJavaScriptPtr script_ptr) override;
+#endif
+#if BUILDFLAG(ARKWEB_JSPROXY)
+  void AddHeadReadyScript(
+      mojom::DocumentStartJavaScriptPtr script_ptr) override;
+  void RemoveHeadReadyScript(int32_t script_id) override;
+#endif
   void RemoveDocumentStartScript(int32_t script_id) override;
-
+#if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
+  void RemoveDocumentEndScript(int32_t script_id) override;
+#endif
   // RenderFrameObserver implementation
   void DidClearWindowObject() override;
   void WillReleaseScriptContext(v8::Local<v8::Context> context,
@@ -56,6 +67,22 @@ class JsCommunication
   mojom::JsToBrowserMessaging* GetJsToJavaMessage(
       const std::u16string& js_object_name);
 
+#if BUILDFLAG(ARKWEB_JSPROXY)
+  void AddPendingJavascriptAtDocumentStart(
+      mojom::DocumentStartJavaScriptPtr script_ptr) override;
+
+  void AddPendingJavascriptAtDocumentEnd(
+      mojom::DocumentEndJavaScriptPtr script_ptr) override;
+
+  void AddPendingJavascriptAtHeadReady(
+      mojom::DocumentStartJavaScriptPtr script_ptr) override;
+
+  void CommitPendingJavascriptsAtDocumentStart() override;
+
+  void CommitPendingJavascriptsAtDocumentEnd() override;
+
+  void CommitPendingJavascriptsAtHeadReady() override;
+#endif
  private:
   class JsObjectInfo;
   struct DocumentStartJavaScript;

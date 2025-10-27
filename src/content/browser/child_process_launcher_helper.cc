@@ -6,6 +6,7 @@
 
 #include <optional>
 
+#include "arkweb/chromium_ext/content/browser/arkweb_child_process_launcher_helper_utils.h"
 #include "base/base_switches.h"
 #include "base/command_line.h"
 #include "base/functional/bind.h"

@@ -45,6 +45,10 @@
 #include "net/net_buildflags.h"
 #include "net/ssl/ssl_info.h"
 
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif  // BUILDFLAG(ARKWEB_NETWORK_BASE)
+
 namespace net {
 
 namespace {

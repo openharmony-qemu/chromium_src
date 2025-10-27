@@ -1,0 +1,20 @@
+--- chrome_web_ui_configs.cc	2025-10-20 19:52:51.020961006 +0800
++++ chrome_web_ui_configs.cc	2025-10-16 15:57:01.877997551 +0800
+@@ -209,10 +209,17 @@
+ #if BUILDFLAG(IS_CHROMEOS_ASH)
+   ash::RegisterAshChromeWebUIConfigs();
+ #endif  // BUILDFLAG(IS_CHROMEOS_ASH)
+ 
+   auto& map = content::WebUIConfigMap::GetInstance();
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  map.AddWebUIConfig(std::make_unique<extensions::ExtensionsUIConfig>());
++#endif
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++  map.AddWebUIConfig(std::make_unique<NetExportUIConfig>());
++#endif
++  return;
+   map.AddWebUIConfig(std::make_unique<AccessibilityUIConfig>());
+   map.AddWebUIConfig(std::make_unique<AutofillInternalsUIConfig>());
+   map.AddWebUIConfig(std::make_unique<BluetoothInternalsUIConfig>());
+   map.AddWebUIConfig(std::make_unique<BrowsingTopicsInternalsUIConfig>());
+   map.AddWebUIConfig(std::make_unique<chromeos::DeviceLogUIConfig>());

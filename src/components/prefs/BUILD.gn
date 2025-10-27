@@ -68,6 +68,10 @@ component("prefs") {
     ]
     deps += [ "android:jni_headers" ]
   }
+
+  if (defined(arkweb_adblock) && arkweb_adblock) {
+    sources += arkweb_pref_ext_sources
+  }
 }
 
 static_library("test_support") {

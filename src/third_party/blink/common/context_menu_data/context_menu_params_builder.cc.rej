@@ -1,0 +1,14 @@
+--- context_menu_params_builder.cc	2025-10-20 19:52:59.774214507 +0800
++++ context_menu_params_builder.cc	2025-10-16 16:07:38.651020345 +0800
+@@ -71,11 +71,10 @@
+   params.edit_flags = data.edit_flags;
+   params.frame_charset = data.frame_encoding;
+   params.referrer_policy = data.referrer_policy;
+   params.suggested_filename = base::UTF8ToUTF16(data.suggested_filename);
+   params.opened_from_highlight = data.opened_from_highlight;
+-
+   for (const auto& suggestion : data.dictionary_suggestions)
+     params.dictionary_suggestions.push_back(suggestion);
+ 
+   for (const auto& item : data.custom_items)
+     params.custom_items.push_back(MenuItemBuild(item));

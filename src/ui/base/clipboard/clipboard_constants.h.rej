@@ -1,0 +1,41 @@
+--- clipboard_constants.h	2025-10-20 19:53:30.800657686 +0800
++++ clipboard_constants.h	2025-10-16 15:55:05.384818338 +0800
+@@ -40,21 +41,22 @@
+ COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
+ extern const char kMimeTypeWindowDrag[];
+ 
+ // ----- LINUX & CHROMEOS & FUCHSIA MIME TYPES -----
+ 
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || \
++    BUILDFLAG(IS_OHOS)
+ COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
+ extern const char kMimeTypeLinuxUtf8String[];
+ COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
+ extern const char kMimeTypeLinuxString[];
+ COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
+ extern const char kMimeTypeLinuxText[];
+ COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
+ extern const char kMimeTypeLinuxSourceUrl[];
+ #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
+-        // BUILDFLAG(IS_FUCHSIA)
++        // BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
+ 
+ // ----- EVERYTHING EXCEPT FOR APPLE MIME TYPES -----
+ 
+ #if !BUILDFLAG(IS_APPLE)
+ // TODO(dcheng): This name is temporary. See crbug.com/106449.
+@@ -148,8 +150,13 @@
+ 
+ // Web prefix for web custom format types.
+ COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
+ extern const char kWebClipboardFormatPrefix[];
+ 
++#if BUILDFLAG(ARKWEB_CLIPBOARD)
++COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
++extern const char kMimeTypeOHOSCustomData[];
++#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
++
+ }  // namespace ui
+ 
+ #endif  // UI_BASE_CLIPBOARD_CLIPBOARD_CONSTANTS_H_

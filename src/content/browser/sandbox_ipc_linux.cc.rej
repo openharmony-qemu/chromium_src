@@ -1,0 +1,40 @@
+--- sandbox_ipc_linux.cc	2025-10-20 19:52:54.438553115 +0800
++++ sandbox_ipc_linux.cc	2025-10-16 15:54:59.564624656 +0800
+@@ -15,10 +15,11 @@
+ #include <string.h>
+ #include <sys/poll.h>
+ #include <sys/socket.h>
+ #include <sys/stat.h>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/command_line.h"
+ #include "base/files/scoped_file.h"
+ #include "base/linux_util.h"
+ #include "base/logging.h"
+ #include "base/memory/platform_shared_memory_region.h"
+@@ -143,19 +144,25 @@
+   // NaCl is unshipped.
+   bool executable;
+   if (!iter.ReadBool(&executable))
+     return;
+   base::ScopedFD shm_fd;
++#if BUILDFLAG(ARKWEB_LOAD_PER)
++  base::subtle::PlatformSharedMemoryRegion region =
++        base::subtle::PlatformSharedMemoryRegion::CreateUnsafe(size);
++    shm_fd = region.PassPlatformHandle();
++#else
+   if (executable) {
+     shm_fd =
+         base::subtle::PlatformSharedMemoryRegion::ExecutableRegion::CreateFD(
+             size);
+   } else {
+     base::subtle::PlatformSharedMemoryRegion region =
+         base::subtle::PlatformSharedMemoryRegion::CreateUnsafe(size);
+     shm_fd = std::move(region.PassPlatformHandle().fd);
+   }
++#endif
+   base::Pickle reply;
+   SendRendererReply(fds, reply, shm_fd.get());
+   // shm_fd will close the handle which is no longer needed by this process.
+ }
+ 

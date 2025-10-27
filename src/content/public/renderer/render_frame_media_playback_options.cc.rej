@@ -1,0 +1,15 @@
+--- render_frame_media_playback_options.cc	2025-10-20 19:52:54.574614904 +0800
++++ render_frame_media_playback_options.cc	2025-10-16 15:54:59.708470705 +0800
+@@ -7,11 +7,11 @@
+ #include "build/android_buildflags.h"
+ #include "build/build_config.h"
+ 
+ namespace content {
+ 
+-#if BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_DESKTOP_ANDROID)
++#if (BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_DESKTOP_ANDROID)) || BUILDFLAG(ARKWEB_MEDIA_POLICY)
+ const bool kIsBackgroundMediaSuspendEnabled = true;
+ #else
+ const bool kIsBackgroundMediaSuspendEnabled = false;
+ #endif
+ 

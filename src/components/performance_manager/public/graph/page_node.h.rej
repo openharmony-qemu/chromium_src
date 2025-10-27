@@ -1,0 +1,100 @@
+--- page_node.h	2025-10-20 19:52:53.342050757 +0800
++++ page_node.h	2025-10-16 15:54:57.219850562 +0800
+@@ -16,19 +16,26 @@
+ #include "components/performance_manager/public/mojom/coordination_unit.mojom.h"
+ #include "components/performance_manager/public/mojom/lifecycle.mojom.h"
+ #include "components/performance_manager/public/resource_attribution/page_context.h"
+ #include "services/metrics/public/cpp/ukm_source_id.h"
+ #include "third_party/blink/public/common/permissions/permission_utils.h"
++#include "arkweb/build/features/features.h"
++
++#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
++#include "content/public/browser/web_contents_observer.h"
++#endif
+ 
+ class GURL;
+ 
+ namespace content {
+ class WebContents;
+ }
+ 
+ namespace performance_manager {
+-
++#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
++using AudioContextId = content::WebContentsObserver::AudioContextId;
++#endif
+ class FrameNode;
+ class PageNodeObserver;
+ 
+ enum class PageType {
+   // A browser tab.
+@@ -298,10 +309,17 @@
+   virtual void OnIsAudibleChanged(const PageNode* page_node) = 0;
+ 
+   // Invoked when the HasPictureInPicture property changes.
+   virtual void OnHasPictureInPictureChanged(const PageNode* page_node) = 0;
+ 
++#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
++  virtual void OnIsMediaPlayingChanged(const PageNode* page_node) {}
++  virtual void OnDecrementAudioNum(const PageNode* page_node) {}
++  virtual void OnAudioContextPlaybackStarted(const AudioContextId& audio_context_id) {}
++  virtual void OnAudioContextPlaybackStopped(const AudioContextId& audio_context_id) {}
++#endif
++
+   // Invoked when the GetLoadingState property changes.
+   virtual void OnLoadingStateChanged(const PageNode* page_node,
+                                      PageNode::LoadingState previous_state) = 0;
+ 
+   // Invoked when the UkmSourceId property changes.
+@@ -347,10 +365,18 @@
+   // Fired after `new_page_node` is created but before `page_node` is deleted
+   // from being discarded. See the equivalent function on `WebContentsObserver`
+   // for more detail.
+   virtual void OnAboutToBeDiscarded(const PageNode* page_node,
+                                     const PageNode* new_page_node) = 0;
++
++#if BUILDFLAG(ARKWEB_BGTASK)
++  // Invoked when Browser is foreground.
++  virtual void SetBrowserForeground(const PageNode* page_node) = 0;
++
++  // Invoked when Browser is background.
++  virtual void SetBrowserBackground(const PageNode* page_node) = 0;
++#endif
+ };
+ 
+ // Default implementation of observer that provides dummy versions of each
+ // function. Derive from this if you only need to implement a few of the
+ // functions.
+@@ -374,10 +400,17 @@
+       EmbeddingType previous_embedding_type) override {}
+   void OnTypeChanged(const PageNode* page_node,
+                      PageType previous_type) override {}
+   void OnIsFocusedChanged(const PageNode* page_node) override {}
+   void OnIsVisibleChanged(const PageNode* page_node) override {}
++#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
++  void OnIsMediaPlayingChanged(const PageNode* page_node) override {}
++
++  void OnDecrementAudioNum(const PageNode* page_node) override {}
++  void OnAudioContextPlaybackStarted(const AudioContextId& audio_context_id) override {}
++  void OnAudioContextPlaybackStopped(const AudioContextId& audio_context_id) override {}
++#endif
+   void OnIsAudibleChanged(const PageNode* page_node) override {}
+   void OnHasPictureInPictureChanged(const PageNode* page_node) override {}
+   void OnLoadingStateChanged(const PageNode* page_node,
+                              PageNode::LoadingState previous_state) override {}
+   void OnUkmSourceIdChanged(const PageNode* page_node) override {}
+@@ -392,10 +425,14 @@
+   void OnHadUserEditsChanged(const PageNode* page_node) override {}
+   void OnTitleUpdated(const PageNode* page_node) override {}
+   void OnFaviconUpdated(const PageNode* page_node) override {}
+   void OnAboutToBeDiscarded(const PageNode* page_node,
+                             const PageNode* new_page_node) override {}
++#if BUILDFLAG(ARKWEB_BGTASK)
++  void SetBrowserForeground(const PageNode* page_node) override {}
++  void SetBrowserBackground(const PageNode* page_node) override {}
++#endif
+ };
+ 
+ // std::ostream support for PageNode::EmbeddingType.
+ std::ostream& operator<<(
+     std::ostream& os,

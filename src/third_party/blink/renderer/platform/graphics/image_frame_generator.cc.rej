@@ -1,0 +1,47 @@
+--- image_frame_generator.cc	2025-10-20 19:53:01.194201293 +0800
++++ image_frame_generator.cc	2025-10-16 16:07:40.095799179 +0800
+@@ -27,10 +27,12 @@
+ 
+ #include <array>
+ #include <memory>
+ #include <utility>
+ 
++#include "arkweb/build/features/features.h"
++#include "base/logging.h"
+ #include "base/not_fatal_until.h"
+ #include "base/synchronization/lock.h"
+ #include "third_party/blink/public/platform/platform.h"
+ #include "third_party/blink/renderer/platform/graphics/image_decoder_wrapper.h"
+ #include "third_party/blink/renderer/platform/graphics/image_decoding_store.h"
+@@ -141,11 +147,14 @@
+   bool current_decode_succeeded = false;
+   {
+     // Lock the mutex, so only one thread can use the decoder at once.
+     ClientAutoLock lock(this, client_id);
+     ImageDecoderWrapper decoder_wrapper(this, data, pixmap,
+-                                        decoder_color_behavior_, aux_image_,
++                                        decoder_color_behavior_,
++#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
++                                        aux_image_,
++#endif
+                                         index, all_data_received, client_id);
+     current_decode_succeeded = decoder_wrapper.Decode(
+         image_decoder_factory_.get(), &frame_count, &has_alpha);
+     decode_failed = decoder_wrapper.decode_failed();
+   }
+@@ -285,11 +297,14 @@
+ 
+   if (yuv_decoding_failed_)
+     return false;
+   std::unique_ptr<ImageDecoder> decoder = ImageDecoder::Create(
+       data, /*data_complete=*/true, ImageDecoder::kAlphaPremultiplied,
+-      ImageDecoder::kDefaultBitDepth, decoder_color_behavior_, aux_image_,
++      ImageDecoder::kDefaultBitDepth, decoder_color_behavior_,
++#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
++      aux_image,
++#endif
+       Platform::GetMaxDecodedImageBytes());
+   DCHECK(decoder);
+ 
+   DCHECK(decoder->CanDecodeToYUV())
+       << decoder->FilenameExtension() << " image decoder";

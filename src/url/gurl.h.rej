@@ -1,0 +1,14 @@
+--- gurl.h	2025-10-20 19:53:31.240598740 +0800
++++ gurl.h	2025-10-16 15:55:05.868470421 +0800
+@@ -10,10 +10,11 @@
+ #include <iosfwd>
+ #include <memory>
+ #include <string>
+ #include <string_view>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/component_export.h"
+ #include "base/debug/alias.h"
+ #include "base/debug/crash_logging.h"
+ #include "base/trace_event/base_tracing_forward.h"
+ #include "url/third_party/mozilla/url_parse.h"

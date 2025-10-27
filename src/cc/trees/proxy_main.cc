@@ -464,7 +464,9 @@ void ProxyMain::BeginMainFrame(
                       perfetto::protos::pbzero::MainFramePipeline::Step::
                           COMMIT_ON_MAIN);
                 });
-
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+    OHOS_TRACE_EVENT0("cc,raf_investigation", "ProxyMain::BeginMainFrame::commit");
+#endif
     std::optional<DebugScopedSetMainThreadBlocked> main_thread_blocked;
     if (blocking)
       main_thread_blocked.emplace(task_runner_provider_);

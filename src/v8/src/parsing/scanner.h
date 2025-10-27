@@ -446,6 +446,11 @@ class V8_EXPORT_PRIVATE Scanner {
 
   const Utf16CharacterStream* stream() const { return source_; }
 
+#ifdef OHOS_JS_ENGINE
+  bool HasNeverHideBaseStdHint() { return has_never_hide_base_std_hint_; }
+  void ResetHasNeverHideBaseStdHint() { has_never_hide_base_std_hint_ = false; }
+#endif
+
  private:
   // Scoped helper for saving & restoring scanner error state.
   // This is used for tagged template literals, in which normally forbidden

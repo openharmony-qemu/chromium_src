@@ -1,0 +1,43 @@
+--- generated_resources.grd	2025-10-20 19:52:48.420884092 +0800
++++ generated_resources.grd	2025-10-16 15:56:58.638576747 +0800
+@@ -274,10 +277,14 @@
+     <file path="resources/generated_resources_vi.xtb" lang="vi" />
+     <file path="resources/generated_resources_zh-CN.xtb" lang="zh-CN" />
+     <file path="resources/generated_resources_zh-HK.xtb" lang="zh-HK" />
+     <file path="resources/generated_resources_zh-TW.xtb" lang="zh-TW" />
+     <file path="resources/generated_resources_zu.xtb" lang="zu" />
++    <!-- <if expr="pp_ifdef('arkweb_i18n')"> -->
++    <file path="resources/generated_resources_bo-CN.xtb" lang="bo-CN" />
++    <file path="resources/generated_resources_ug.xtb" lang="ug" />
++    <!-- </if> -->
+   </translations>
+   <release seq="1">
+     <messages fallback_to_english="true">
+       <!-- Access Code Cast specific strings -->
+       <part file="access_code_cast_strings.grdp" />
+@@ -3891,11 +3898,11 @@
+           Pin to Taskbar
+         </message>
+       </if>
+ 
+       <!-- Bluetooth Device Credentials (i.e. PIN/Passkey) dialog -->
+-      <if expr="is_win or is_linux">
++      <if expr="is_win or is_linux or is_ohos">
+         <message name="IDS_BLUETOOTH_DEVICE_CREDENTIALS_TITLE" desc="Title of the Bluetooth device credentials prompt dialog.">
+           Device Credentials
+         </message>
+         <!--
+           NOTE: As per Bluetooth spec. v4.2 [Vol 3, Part C] (section 3.2.3.2):
+@@ -5636,11 +5643,11 @@
+         <message name="IDS_EXTENSION_PROMPT_WARNING_VPN" desc="Permission string for access to VPN API.">
+           Access your network traffic
+         </message>
+ 
+         <message name="IDS_EXTENSION_PROMPT_WARNING_CONTENT_SETTINGS" desc="Permission string for access to content settings.">
+-          Change your settings that control websites' access to features such as cookies, JavaScript, plugins, geolocation, microphone, camera, etc.
++          Change your settings that control websites' access to features including cookies, JavaScript, plugins, geolocation, microphone, camera, and more
+         </message>
+         <message name="IDS_EXTENSION_PROMPT_WARNING_PRIVACY" desc="Permission string for access to privacy settings.">
+           Change your privacy-related settings
+         </message>
+         <message name="IDS_EXTENSION_PROMPT_WARNING_DOWNLOADS" desc="Permission string for access to downloads.">

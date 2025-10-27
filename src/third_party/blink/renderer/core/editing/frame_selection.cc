@@ -96,7 +96,6 @@
 #include "third_party/blink/renderer/platform/text/text_direction.h"
 #include "third_party/blink/renderer/platform/text/unicode_utilities.h"
 #include "ui/gfx/geometry/quad_f.h"
-
 #define EDIT_DEBUG 0
 
 namespace blink {
@@ -263,12 +262,19 @@ bool FrameSelection::SetSelectionDeprecated(
   if (options.ShouldClearTypingStyle())
     frame_->GetEditor().ClearTypingStyle();
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  AsFrameSelectionExt()->SetIsSelectAll(options.IsSelectAll());
+#endif  // ARKWEB_CLIPBOARD
+
   const SelectionInDOMTree old_selection_in_dom_tree =
       selection_editor_->GetSelectionInDOMTree();
   const bool is_changed = old_selection_in_dom_tree != new_selection;
   const bool should_show_handle = options.ShouldShowHandle();
   if (!is_changed && is_handle_visible_ == should_show_handle &&
       is_directional_ == options.IsDirectional())
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+    if (AsFrameSelectionExt()->GetSelectionMarkMaxLengthOverflow())
+#endif
     return false;
   Document& current_document = GetDocument();
   if (is_changed) {
@@ -312,7 +318,11 @@ void FrameSelection::DidSetSelectionDeprecated(
   }
 
   if (!new_selection.IsNone() && !options.DoNotSetFocus()) {
+#if BUILDFLAG(ARKWEB_FOCUS)
+    SetFocusedNodeIfNeeded(options.IsSkipFocusCheck());
+#else
     SetFocusedNodeIfNeeded();
+#endif
     // |setFocusedNodeIfNeeded()| dispatches sync events "FocusOut" and
     // "FocusIn", |frame_| may associate to another document.
     if (!IsAvailable() || GetDocument() != current_document) {
@@ -772,7 +782,13 @@ void FrameSelection::PaintCaret(GraphicsContext& context,
   frame_caret_->PaintCaret(context, paint_offset);
 }
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+bool FrameSelection::Contains(const PhysicalOffset& point,
+                              bool contains_boundaries) {
+#else
 bool FrameSelection::Contains(const PhysicalOffset& point) {
+#endif
+
   if (!GetDocument().GetLayoutView())
     return false;
 
@@ -808,6 +824,11 @@ bool FrameSelection::Contains(const PhysicalOffset& point) {
   const PositionInFlatTree& start = visible_start.DeepEquivalent();
   const PositionInFlatTree& end = visible_end.DeepEquivalent();
   const PositionInFlatTree& pos = pos_with_affinity.GetPosition();
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  if (!contains_boundaries) {
+    return start.CompareTo(pos) < 0 && pos.CompareTo(end) < 0;
+  }
+#endif
   return start.CompareTo(pos) <= 0 && pos.CompareTo(end) <= 0;
 }
 
@@ -954,6 +975,9 @@ void FrameSelection::SelectAll(SetSelectionBy set_selection_by,
                    .SetShouldCloseTyping(true)
                    .SetShouldClearTypingStyle(true)
                    .SetShouldShowHandle(IsHandleVisible())
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+                   .SetIsSelectAll(true)
+#endif  // ARKWEB_CLIPBOARD
                    .Build());
 
   SelectFrameElementInParentIfFullySelected();
@@ -1120,12 +1144,21 @@ static bool IsFrameElement(const Node* n) {
   return false;
 }
 
-void FrameSelection::SetFocusedNodeIfNeeded() {
+void FrameSelection::SetFocusedNodeIfNeeded(
+#if BUILDFLAG(ARKWEB_FOCUS)
+    bool is_skip_focus_check
+#endif
+) {
   // TODO(editing-dev): The use of UpdateStyleAndLayout
   // needs to be audited.  See http://crbug.com/590369 for more details.
   GetDocument().UpdateStyleAndLayout(DocumentUpdateReason::kSelection);
 
+#if BUILDFLAG(ARKWEB_FOCUS)
+  if (ComputeVisibleSelectionInDOMTree().IsNone() ||
+      !(FrameIsFocused() || is_skip_focus_check)) {
+#else
   if (ComputeVisibleSelectionInDOMTree().IsNone() || !FrameIsFocused()) {
+#endif
     return;
   }
 
@@ -1419,6 +1452,9 @@ void FrameSelection::MoveRangeSelectionExtent(
           .SetSetSelectionBy(SetSelectionBy::kUser)
           .SetShouldShowHandle(true)
           .Build());
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  AsFrameSelectionExt()->ScrollRectToVisualIfClosestEdge(contents_point);
+#endif
 }
 
 void FrameSelection::MoveRangeSelection(const gfx::Point& base_point,
@@ -1572,7 +1608,6 @@ EphemeralRange FrameSelection::GetSelectionRangeAroundPosition(
 
   return EphemeralRange(start, end);
 }
-
 }  // namespace blink
 
 #if DCHECK_IS_ON()

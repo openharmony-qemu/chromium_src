@@ -1,0 +1,16 @@
+--- direct_layer_tree_frame_sink.h	2025-10-20 19:53:30.916642379 +0800
++++ direct_layer_tree_frame_sink.h	2025-10-16 15:55:05.507650613 +0800
+@@ -73,10 +73,13 @@
+   void SetWideColorEnabled(bool enabled) override {}
+   void SetPreferredFrameInterval(base::TimeDelta interval) override {}
+   base::TimeDelta GetPreferredFrameIntervalForFrameSinkId(
+       const viz::FrameSinkId& id,
+       viz::mojom::CompositorFrameSinkType* type) override;
++#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
++  void RestoreRenderFit(const viz::FrameSinkId& frame_sink_id) override {}
++#endif // ARKWEB_MAXIMIZE_RESIZE
+ 
+  private:
+   // viz::mojom::CompositorFrameSinkClient implementation:
+   void DidReceiveCompositorFrameAck(
+       std::vector<viz::ReturnedResource> resources) override;

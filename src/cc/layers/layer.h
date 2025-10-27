@@ -56,6 +56,8 @@ class LayerTreeHost;
 class LayerTreeHostCommon;
 class LayerTreeImpl;
 class PictureLayer;
+class LayerExt;
+class LayerUtils;
 
 struct CommitState;
 struct ThreadUnsafeCommitState;
@@ -88,7 +90,8 @@ struct CC_EXPORT LayerDebugInfo {
 // parent (or none at the root). Layers within the tree, other than the root
 // layer, are kept alive by that tree relationship, with refpointer ownership
 // from parents to children.
-class CC_EXPORT Layer : public base::RefCounted<Layer>,
+class CC_EXPORT Layer : public LayerExt,
+                        public base::RefCounted<Layer>,
                         public ProtectedSequenceSynchronizer {
  public:
   // An invalid layer id, as all layer ids are positive.
@@ -875,9 +878,14 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
   // surface, returns the ID of that resource.
   virtual viz::ViewTransitionElementResourceId ViewTransitionResourceId() const;
 
+  LayerUtils* layer_utils() {
+    return layer_utils_.get();
+  }
+
  protected:
   friend class LayerImpl;
   friend class TreeSynchronizer;
+  friend class LayerUtils;
 
   Layer();
   ~Layer() override;
@@ -1236,6 +1244,8 @@ class CC_EXPORT Layer : public base::RefCounted<Layer>,
 
   static constexpr gfx::Transform kIdentityTransform{};
   static constexpr gfx::RoundedCornersF kNoRoundedCornersF{};
+
+  std::unique_ptr<LayerUtils> layer_utils_;
 };
 
 }  // namespace cc

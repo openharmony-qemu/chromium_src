@@ -30,6 +30,7 @@
 
 #include "third_party/blink/renderer/core/css/resolver/style_adjuster.h"
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/public/common/features.h"
 #include "third_party/blink/renderer/core/css/properties/longhands.h"
 #include "third_party/blink/renderer/core/css/resolver/style_resolver.h"
@@ -101,6 +102,9 @@
 #include "third_party/blink/renderer/platform/transforms/transform_operations.h"
 #include "third_party/blink/renderer/platform/wtf/casting.h"
 #include "ui/base/ui_base_features.h"
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+  #include "arkweb/chromium_ext/third_party/blink/renderer/core/css/css_utils.h"
+#endif
 
 namespace blink {
 
@@ -1096,7 +1100,11 @@ void StyleAdjuster::AdjustComputedStyle(StyleResolverState& state,
 
     // math display values on non-MathML elements compute to flow display
     // values.
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+    if (!Cssutils::IsMathFormulaDisabledMode() && (!IsA<MathMLElement>(element) && builder.IsDisplayMathType())) {
+#else
     if (!IsA<MathMLElement>(element) && builder.IsDisplayMathType()) {
+#endif
       builder.SetDisplay(builder.Display() == EDisplay::kBlockMath
                              ? EDisplay::kBlock
                              : EDisplay::kInline);

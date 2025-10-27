@@ -34,11 +34,18 @@ AudioRendererMixer::AudioRendererMixer(
   RenderCallback* callback = this;
   audio_sink_->Initialize(output_params, callback);
   audio_sink_->Start();
+  implUtils = new AudioRendererMixerUtils(this);
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+  media_tid_ = base::PlatformThread::CurrentRealId();
+#endif
+  implUtils->AudioRendererMixerShareInit(media_tid_);
 }
 
 AudioRendererMixer::~AudioRendererMixer() {
   // AudioRendererSink must be stopped before mixer is destructed.
   audio_sink_->Stop();
+  implUtils->AudioRendererMixerShareDestroy(audio_output_tid_, media_tid_);
+  delete implUtils;
 
   // Ensure that all mixer inputs have removed themselves prior to destruction.
   DCHECK(aggregate_converter_.empty());
@@ -54,6 +61,7 @@ void AudioRendererMixer::AddMixerInput(
     playing_ = true;
     last_play_time_ = base::TimeTicks::Now();
     audio_sink_->Play();
+    implUtils->AddMixerInputShareInit(audio_output_tid_, media_tid_);
   }
 
   int input_sample_rate = input_params.sample_rate();
@@ -135,11 +143,15 @@ int AudioRendererMixer::Render(base::TimeDelta delay,
   // sink to avoid wasting resources when media elements are present but remain
   // in the pause state.
   const base::TimeTicks now = base::TimeTicks::Now();
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+  audio_output_tid_ = base::PlatformThread::CurrentRealId();
+#endif
   if (!aggregate_converter_.empty()) {
     last_play_time_ = now;
   } else if (now - last_play_time_ >= pause_delay_ && playing_) {
     audio_sink_->Pause();
     playing_ = false;
+    implUtils->AddMixerInputShareRender(audio_output_tid_, media_tid_);
   }
 
   // Since AudioConverter uses uint32_t for delay calculations, we must drop

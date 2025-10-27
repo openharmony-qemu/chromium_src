@@ -1214,6 +1214,12 @@ void WebLocalFrameImpl::ClearActiveFindMatchForTesting() {
 }
 
 WebDocumentLoader* WebLocalFrameImpl::GetDocumentLoader() const {
+#if BUILDFLAG(ARKWEB_TEST)
+  if (loader_test_mode){
+    loader_test_mode = false;
+    return loader_test;
+  }
+#endif
   DCHECK(GetFrame());
   return GetFrame()->Loader().GetDocumentLoader();
 }
@@ -2989,7 +2995,11 @@ void WebLocalFrameImpl::CreateFrameWidgetInternal(
     // is enforced via a private constructor (and friend class) on
     // WebFrameWidget.
     frame_widget_ =
+#if BUILDFLAG(IS_ARKWEB)
+        static_cast<WebFrameWidgetImplExt*>(g_create_web_frame_widget->Run(
+#else
         static_cast<WebFrameWidgetImpl*>(g_create_web_frame_widget->Run(
+#endif  // BUILDFLAG(IS_ARKWEB)
             std::move(pass_key), std::move(mojo_frame_widget_host),
             std::move(mojo_frame_widget), std::move(mojo_widget_host),
             std::move(mojo_widget),
@@ -2997,7 +3007,11 @@ void WebLocalFrameImpl::CreateFrameWidgetInternal(
             frame_sink_id, hidden, never_composited, is_for_child_local_root,
             is_for_nested_main_frame, is_for_scalable_page));
   } else {
+#if BUILDFLAG(IS_ARKWEB)
+    frame_widget_ = MakeGarbageCollected<WebFrameWidgetImplExt>(
+#else
     frame_widget_ = MakeGarbageCollected<WebFrameWidgetImpl>(
+#endif  // BUILDFLAG(IS_ARKWEB)
         std::move(pass_key), std::move(mojo_frame_widget_host),
         std::move(mojo_frame_widget), std::move(mojo_widget_host),
         std::move(mojo_widget),
@@ -3505,4 +3519,10 @@ bool WebLocalFrameImpl::AllowStorageAccessSyncAndNotify(
   return GetFrame()->AllowStorageAccessSyncAndNotify(storage_type);
 }
 
+#if BUILDFLAG(ARKWEB_TEST)
+void WebLocalFrameImpl::SetDocumentLoaderForTest(WebDocumentLoader* loader) {
+  loader_test_mode = true;
+  loader_test = loader;
+}
+#endif
 }  // namespace blink

@@ -1,0 +1,37 @@
+--- authenticator_common_impl.cc	2025-10-20 19:52:54.494578558 +0800
++++ authenticator_common_impl.cc	2025-10-16 15:54:59.616569063 +0800
+@@ -1583,15 +1609,19 @@
+   }
+ 
+   req_state_->request_delegate->SetCredentialIdFilter(
+       options->allow_credentials);
+   if (options->is_conditional) {
++#if BUILDFLAG(ARKWEB_FIDO)
++    // No need to strip allowCredentials for OHOS.
++#else
+     // Conditional mediation requests can only be fulfilled by discoverable
+     // credentials. The provided allowCredentials list is stripped and will be
+     // used to filter returned passkeys
+     options->allow_credentials =
+         std::vector<device::PublicKeyCredentialDescriptor>();
++#endif // BUILDFLAG(ARKWEB_FIDO)
+   }
+ 
+   if (options->allow_credentials.empty()) {
+     if (!GetWebAuthenticationDelegate()->SupportsResidentKeys(
+             GetRenderFrameHost())) {
+@@ -1625,10 +1655,14 @@
+ 
+   req_state_->ctap_request = CreateCtapGetAssertionRequest(
+       req_state_->client_data_json, options, req_state_->app_id);
+   auto* ctap_get_assertion_request =
+       &absl::get<device::CtapGetAssertionRequest>(req_state_->ctap_request);
++#if BUILDFLAG(ARKWEB_FIDO)
++  ctap_get_assertion_request->extra = CreateCtapGetAssertionRequestExtra(
++      caller_origin, options);
++#endif // BUILDFLAG(ARKWEB_FIDO)
+ 
+   req_state_->request_options.emplace<device::CtapGetAssertionOptions>();
+   auto* ctap_get_assertion_options =
+       &absl::get<device::CtapGetAssertionOptions>(req_state_->request_options);
+   ctap_get_assertion_options->is_off_the_record_context =

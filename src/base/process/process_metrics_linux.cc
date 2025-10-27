@@ -1032,7 +1032,8 @@ bool GetGraphicsMemoryInfo(GraphicsMemoryInfoKB* gpu_meminfo) {
 
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX) || \
+    BUILDFLAG(IS_OHOS)
 int ProcessMetrics::GetIdleWakeupsPerSecond() {
   uint64_t num_switches;
   static const char kSwitchStat[] = "voluntary_ctxt_switches";

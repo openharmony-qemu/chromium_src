@@ -1,0 +1,29 @@
+--- web_video_capture_impl_manager.cc	2025-10-20 19:53:01.158201850 +0800
++++ web_video_capture_impl_manager.cc	2025-10-16 16:07:40.060271831 +0800
+@@ -126,11 +126,12 @@
+     const VideoCaptureNotifyFrameDroppedCB& frame_dropped_cb) {
+   DCHECK(render_main_task_runner_->BelongsToCurrentThread());
+   const auto it = base::ranges::find(devices_, id, &DeviceEntry::session_id);
+   if (it == devices_.end())
+     return base::OnceClosure();
+-
++  LOG(INFO) << "WebVideoCaptureImplManager::StartCapture "
++            << params.requested_format.pixel_format;
+   // This ID is used to identify a client of VideoCaptureImpl.
+   const int client_id = ++next_client_id_;
+ 
+   Platform::Current()->GetIOTaskRunner()->PostTask(
+       FROM_HERE,
+@@ -142,10 +143,12 @@
+ }
+ 
+ void WebVideoCaptureImplManager::RequestRefreshFrame(
+     const media::VideoCaptureSessionId& id) {
+   DCHECK(render_main_task_runner_->BelongsToCurrentThread());
++  LOG(INFO) << "WebVideoCaptureImplManager::StopCapture id " << id
++            << ", session ID: " << &DeviceEntry::session_id;
+   const auto it = base::ranges::find(devices_, id, &DeviceEntry::session_id);
+   if (it == devices_.end())
+     return;
+   Platform::Current()->GetIOTaskRunner()->PostTask(
+       FROM_HERE, base::BindOnce(&VideoCaptureImpl::RequestRefreshFrame,

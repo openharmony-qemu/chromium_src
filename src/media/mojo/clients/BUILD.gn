@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//media/media_options.gni")
+import("//arkweb/build/features/features.gni")
 
 # Implementations of media C++ interfaces using corresponding mojo services.
 source_set("clients") {

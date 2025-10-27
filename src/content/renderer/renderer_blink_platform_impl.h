@@ -122,6 +122,9 @@ class CONTENT_EXPORT RendererBlinkPlatformImpl : public BlinkPlatformImpl {
   bool IsLockedToSite() const override;
   bool IsThreadedAnimationEnabled() override;
   bool IsGpuCompositingDisabled() const override;
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  int32_t GetDrawMode() override;
+#endif
 #if BUILDFLAG(IS_ANDROID)
   bool IsSynchronousCompositingEnabledForAndroidWebView() override;
   bool IsZeroCopySynchronousSwDrawEnabledForAndroidWebView() override;
@@ -293,6 +296,9 @@ class CONTENT_EXPORT RendererBlinkPlatformImpl : public BlinkPlatformImpl {
 
   // If true, the renderer process is locked to a site.
   bool is_locked_to_site_;
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  int32_t draw_mode_;
+#endif
 
   // NOT OWNED
   raw_ptr<blink::scheduler::WebThreadScheduler> main_thread_scheduler_;

@@ -207,6 +207,10 @@ void ChromeBrowserContext::ProfileCreated(CreateStatus status,
       }
       init_callbacks_.clear();
     }
+
+#if BUILDFLAG(ARKWEB_CLOUD_CONTROL)
+    OnContextInitialized();
+#endif
   }
 }
 

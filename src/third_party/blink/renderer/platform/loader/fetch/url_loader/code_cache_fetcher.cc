@@ -41,7 +41,18 @@ bool ShouldFetchCodeCache(const network::ResourceRequest& request) {
           String(request.url.scheme())) &&
       Platform::Current()->ShouldUseCodeCacheWithHashing(
           WebURL(KURL(request.url)));
-  if (!request.url.SchemeIsHTTPOrHTTPS() && !should_use_source_hash) {
+#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
+  auto protocol = KURL(request.url).Protocol();
+  bool is_protocal_support_code_cache =
+      SchemeRegistryUtils::SchemeSupportsCodeCacheWithResponseTime(protocol);
+  LOG(DEBUG) << "Resource loader if scheme:" << protocol.Utf8().c_str()
+             << " supports code cache:" << is_protocal_support_code_cache;
+#endif
+  if (!request.url.SchemeIsHTTPOrHTTPS() && !should_use_source_hash
+#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
+      && !is_protocal_support_code_cache
+#endif
+  ) {
     return false;
   }
 

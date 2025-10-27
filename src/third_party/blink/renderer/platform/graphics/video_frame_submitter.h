@@ -8,6 +8,7 @@
 #include <memory>
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/read_only_shared_memory_region.h"
 #include "base/memory/weak_ptr.h"
@@ -66,7 +67,9 @@ class PLATFORM_EXPORT VideoFrameSubmitter
   void SetIsPageVisible(bool is_visible) override;
   void SetForceBeginFrames(bool force_begin_frames) override;
   void SetForceSubmit(bool) override;
-
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  void SetHasNativeLayer(bool has_native_layer) override;
+#endif
   // viz::ContextLostObserver implementation.
   void OnContextLost() override;
 
@@ -252,11 +255,16 @@ class PLATFORM_EXPORT VideoFrameSubmitter
 
   Opacity opacity_ = Opacity::kNotReported;
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  bool has_native_layer_ {false};
+  bool start_begin_frame_ {false};
+  int32_t vsync_period_cnt_without_submit_{0};
+#endif
+
   THREAD_CHECKER(thread_checker_);
 
   base::WeakPtrFactory<VideoFrameSubmitter> weak_ptr_factory_{this};
 };
 
 }  // namespace blink
-
 #endif  // THIRD_PARTY_BLINK_RENDERER_PLATFORM_GRAPHICS_VIDEO_FRAME_SUBMITTER_H_

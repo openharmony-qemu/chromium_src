@@ -132,6 +132,18 @@
 #include "content/common/gin_java_bridge.mojom.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/web_native_bridge.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+#include "arkweb/chromium_ext/content/renderer/ark_web_render_frame_impl.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
+#endif
+
 namespace blink {
 namespace scheduler {
 class WebAgentGroupScheduler;
@@ -198,6 +210,9 @@ class CONTENT_EXPORT RenderFrameImpl
       blink::mojom::FrameReplicationStatePtr replication_state,
       const base::UnguessableToken& devtools_frame_token,
       mojom::CreateLocalMainFrameParamsPtr params,
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      bool is_offscreen,
+#endif
       const blink::WebURL& base_url);
 
   // Creates a new RenderFrame with |routing_id|. If |previous_frame_token| is
@@ -359,6 +374,13 @@ class CONTENT_EXPORT RenderFrameImpl
   void SetSelectedText(const std::u16string& selection_text,
                        size_t offset,
                        const gfx::Range& range) override;
+#if BUILDFLAG(ARKWEB_AI)
+  void CloseImageOverlaySelection() override;
+#endif  // BUILDFLAG(ARKWEB_AI)
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  void SendCommitNavigationTime(int64_t start_time) override;
+#endif  // BUILDFLAG(ARKWEB_DFX_TRACING)
+
   void AddMessageToConsole(blink::mojom::ConsoleMessageLevel level,
                            const std::string& message) override;
   bool IsPasting() override;
@@ -377,10 +399,35 @@ class CONTENT_EXPORT RenderFrameImpl
   void SetRenderFrameMediaPlaybackOptions(
       const RenderFrameMediaPlaybackOptions& opts) override;
   void SetAllowsCrossBrowsingInstanceFrameLookup() override;
+  //TODO(ARKWEB_PASSWORD_AUTOFILL)
+  gfx::RectF ElementBoundsInWindow(const blink::WebElement& element) override;
+
   [[nodiscard]] gfx::Rect ConvertViewportToWindow(
       const gfx::Rect& rect) override;
   float GetDeviceScaleFactor() override;
   blink::scheduler::WebAgentGroupScheduler& GetAgentGroupScheduler() override;
+
+#if BUILDFLAG(ARKWEB_PDF)
+  void OnPdfScrollAtBottom(const std::string& url) override;
+  void OnPdfLoadEvent(int32_t result, const std::string& url) override;
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  void ClearContextMenu() override;
+#endif
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  void SetZoomLevel(float magnify_delta, const gfx::Point& anchor) override;
+  void SetOverscrollMode(int mode) override;
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+  gfx::Vector2dF GetOverScrollOffset() override;
+#endif
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_MENU)
+  void MouseSelectMenuShow(bool show) override;
+  void ChangeVisibilityOfQuickMenu() override;
+  void HideQuickMenu() override;
+#endif
 
   // blink::mojom::AutoplayConfigurationClient implementation:
   void AddAutoplayFlags(const url::Origin& origin,
@@ -482,6 +529,10 @@ class CONTENT_EXPORT RenderFrameImpl
       const blink::WebString& sink_id,
       const cc::LayerTreeSettings* settings,
       scoped_refptr<base::TaskRunner> compositor_worker_task_runner) override;
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  blink::WebNativeBridge* CreateWebNativeBridge(
+      blink::WebNativeClient* client) override;
+#endif
   std::unique_ptr<blink::WebContentSettingsClient>
   CreateWorkerContentSettingsClient() override;
 #if !BUILDFLAG(IS_ANDROID)
@@ -540,6 +591,9 @@ class CONTENT_EXPORT RenderFrameImpl
   void DidClearWindowObject() override;
   void DidCreateDocumentElement() override;
   void RunScriptsAtDocumentElementAvailable() override;
+#if BUILDFLAG(ARKWEB_JSPROXY)
+  void RunScriptsAtHeadReady() override;
+#endif
   void DidReceiveTitle(const blink::WebString& title) override;
   void DidDispatchDOMContentLoadedEvent() override;
   void RunScriptsAtDocumentReady() override;
@@ -789,6 +843,9 @@ class CONTENT_EXPORT RenderFrameImpl
   friend class RenderFrameImplTest;
   friend class RenderFrameObserver;
   friend class TestRenderFrame;
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class ArkWebRenderFrameImplTest;
+#endif
 
   FRIEND_TEST_ALL_PREFIXES(RenderAccessibilityImplTest,
                            AccessibilityMessagesQueueWhileSwappedOut);
@@ -1382,7 +1439,7 @@ class CONTENT_EXPORT RenderFrameImpl
   std::unique_ptr<NavigationClient> navigation_client_impl_;
 
   // Creates various media clients.
-  MediaFactory media_factory_;
+  ArkwebMediaFactoryExt media_factory_;
 
   blink::AssociatedInterfaceRegistry associated_interfaces_;
   // `remote_associated_interfaces_` cannot be constructed/bound at

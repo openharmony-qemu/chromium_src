@@ -24,6 +24,10 @@
 #include "src/parsing/parse-info.h"
 #include "src/utils/ostreams.h"
 
+#ifdef OHOS_JS_ENGINE
+#include "../../../arkweb/chromium_ext/v8/trace.h"
+#endif
+
 namespace v8 {
 namespace internal {
 namespace interpreter {

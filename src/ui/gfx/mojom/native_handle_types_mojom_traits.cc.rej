@@ -1,0 +1,21 @@
+--- native_handle_types_mojom_traits.cc	2025-10-20 19:53:31.016629134 +0800
++++ native_handle_types_mojom_traits.cc	2025-10-16 15:55:05.615128854 +0800
+@@ -6,15 +6,16 @@
+ 
+ #include "build/build_config.h"
+ 
+ namespace mojo {
+ 
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OZONE)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OZONE) || \
++    BUILDFLAG(IS_OHOS)
+ mojo::PlatformHandle StructTraits<
+     gfx::mojom::NativePixmapPlaneDataView,
+     gfx::NativePixmapPlane>::buffer_handle(gfx::NativePixmapPlane& plane) {
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+   return mojo::PlatformHandle(std::move(plane.fd));
+ #elif BUILDFLAG(IS_FUCHSIA)
+   return mojo::PlatformHandle(std::move(plane.vmo));
+ #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+ }

@@ -1,0 +1,52 @@
+--- main_thread_event_queue.cc	2025-10-20 19:53:01.282199932 +0800
++++ main_thread_event_queue.cc	2025-10-16 16:07:40.206328708 +0800
+@@ -829,12 +841,20 @@
+     if (raf_fallback_timer_) {
+       raf_fallback_timer_->Start(
+           FROM_HERE, kMaxRafDelay,
+           base::BindOnce(&MainThreadEventQueue::RafFallbackTimerFired, this));
+     }
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++    if (client_) {
++      client_->SetNeedsMainFrame();
++    } else {
++      TRACE_EVENT0("input", "MainThreadEventQueue::SetNeedsMainFrame failed");
++    }
++#else
+     if (client_)
+       client_->SetNeedsMainFrame();
++#endif
+     return;
+   }
+ 
+   main_task_runner_->PostTask(
+       FROM_HERE,
+@@ -846,10 +866,14 @@
+   client_ = nullptr;
+   raf_fallback_timer_.reset();
+ }
+ 
+ void MainThreadEventQueue::SetNeedsLowLatency(bool low_latency) {
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++  TRACE_EVENT1("input", "MainThreadEventQueue::SetNeedsLowLatency",
++    "low_latency", low_latency);
++#endif
+   needs_low_latency_ = low_latency;
+ }
+ 
+ void MainThreadEventQueue::SetNeedsUnbufferedInputForDebugger(bool unbuffered) {
+   needs_unbuffered_input_for_debugger_ = unbuffered;
+@@ -859,10 +883,13 @@
+     bool has_handlers) {
+   has_pointerrawupdate_handlers_ = has_handlers;
+ }
+ 
+ void MainThreadEventQueue::RequestUnbufferedInputEvents() {
++#if BUILDFLAG(ARKWEB_DFX_TRACING)
++  TRACE_EVENT0("input", "MainThreadEventQueue::RequestUnbufferedInputEvents");
++#endif
+   needs_low_latency_until_pointer_up_ = true;
+ }
+ 
+ void MainThreadEventQueue::UnblockQueuedBlockingTouchMovesIfNeeded(
+     const WebInputEvent& dispatched_event,

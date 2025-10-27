@@ -12,6 +12,9 @@
 #include "third_party/blink/renderer/core/page/event_with_hit_test_results.h"
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
 #include "third_party/blink/renderer/platform/wtf/deque.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/input/gesture_manager_utils.h"
+#endif
 
 namespace gfx {
 class Point;
@@ -24,6 +27,9 @@ class ScrollManager;
 class SelectionController;
 class PointerEventManager;
 class MouseEventManager;
+#if BUILDFLAG(IS_ARKWEB)
+class GestureManagerUtils;
+#endif
 
 // This class takes care of gestures and delegating the action based on the
 // gesture to the responsible class.

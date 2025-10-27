@@ -510,6 +510,10 @@ class ContentAnalysisDelegate : public ContentAnalysisDelegateBase,
   // should wait before deleting `this`.
   bool all_work_done_ = false;
 
+#if BUILDFLAG(FULL_SAFE_BROWSING)
+  std::unique_ptr<safe_browsing::FileOpeningJob> file_opening_job_;
+#endif
+
   // Content type of the page that triggered the action.
   std::string page_content_type_;
 

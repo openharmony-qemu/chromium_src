@@ -4,6 +4,7 @@
 
 #ifndef COMPONENTS_COMMERCE_CORE_COMMERCE_CONSTANTS_H_
 #define COMPONENTS_COMMERCE_CORE_COMMERCE_CONSTANTS_H_
+#include "arkweb/build/features/features.h"
 
 namespace commerce {
 

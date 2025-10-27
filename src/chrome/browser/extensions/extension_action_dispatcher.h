@@ -93,6 +93,10 @@ class ExtensionActionDispatcher : public BrowserContextKeyedAPI {
     extension_prefs_ = prefs;
   }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/chrome/browser/extensions/extension_action_dispatcher_for_include_file.cc"
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
  private:
   friend class BrowserContextKeyedAPIFactory<ExtensionActionDispatcher>;
 

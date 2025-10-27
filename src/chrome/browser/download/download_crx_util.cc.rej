@@ -1,0 +1,18 @@
+--- download_crx_util.cc	2025-10-20 19:52:49.526357034 +0800
++++ download_crx_util.cc	2025-10-16 15:57:00.051342803 +0800
+@@ -59,10 +59,15 @@
+         browser = Browser::Create(
+             Browser::CreateParams(Browser::TYPE_NORMAL, profile, true));
+       }
+       web_contents = browser->tab_strip_model()->GetActiveWebContents();
+     }
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++    if (!web_contents) {
++      return std::make_unique<ExtensionInstallPrompt>(profile, nullptr);
++    }
++#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+     return std::make_unique<ExtensionInstallPrompt>(web_contents);
+   }
+ }
+ 
+ }  // namespace

@@ -40,6 +40,19 @@ namespace {
 /* Reserve 0 for the invalid format specifier */
 #define DRM_FORMAT_INVALID 0
 
+// Returns corresponding internalformat if supported, and GL_NONE otherwise.
+unsigned GLInternalFormat(gfx::BufferFormat format) {
+  switch (format) {
+    case gfx::BufferFormat::RGBA_4444:
+    case gfx::BufferFormat::RGBA_F16:
+    case gfx::BufferFormat::P010:
+      return GL_RGB_YCBCR_P010_CHROMIUM;
+    default:
+      break;
+  }
+  return gl::BufferFormatToGLInternalFormat(format);
+}
+
 EGLint FourCC(gfx::BufferFormat format) {
   switch (format) {
     case gfx::BufferFormat::R_8:
@@ -123,6 +136,10 @@ bool NativePixmapEGLBinding::InitializeFromNativePixmap(
     GLenum target,
     GLuint texture_id) {
   DCHECK(!pixmap_);
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  LOG(DEBUG) << "[HeifSupport] InitializeFromNativePixmap GLInternalFormat " <<  (int)GLInternalFormat(format_)
+    << ", format_ " << (int)format_ <<   ", plane_ " << (int)plane_ << ", WindowBuffer " << pixmap->GetWindowBuffer();
+#endif
   if (FourCC(format_) == DRM_FORMAT_INVALID) {
     LOG(ERROR) << "Unsupported format: " << gfx::BufferFormatToString(format_);
     return false;
@@ -133,6 +150,14 @@ bool NativePixmapEGLBinding::InitializeFromNativePixmap(
     return false;
   }
 
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  egl_image_ = gl::ohos::CreateEGLImage(
+      static_cast<EGLClientBuffer>(pixmap->GetWindowBuffer()));
+  if (egl_image_ == EGL_NO_IMAGE_KHR) {
+    LOG(ERROR) << "[HeifSupport] egl_image_ is EGL_NO_IMAGE_KHR.";
+    return false;
+  }
+#else
   // Note: If eglCreateImageKHR is successful for a EGL_LINUX_DMA_BUF_EXT
   // target, the EGL will take a reference to the dma_buf.
   std::vector<EGLint> attrs;
@@ -256,6 +281,7 @@ bool NativePixmapEGLBinding::InitializeFromNativePixmap(
   egl_image_ =
       gl::MakeScopedEGLImage(EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT,
                              static_cast<EGLClientBuffer>(nullptr), &attrs[0]);
+#endif
   if (!egl_image_.get()) {
     return false;
   }

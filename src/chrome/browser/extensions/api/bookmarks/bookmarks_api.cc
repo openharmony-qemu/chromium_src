@@ -311,6 +311,7 @@ void BookmarksAPI::OnListenerAdded(const EventListenerInfo& details) {
   EventRouter::Get(browser_context_)->UnregisterObserver(this);
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 ExtensionFunction::ResponseValue BookmarksGetFunction::RunOnReady() {
   std::optional<api::bookmarks::Get::Params> params =
       api::bookmarks::Get::Params::Create(args());

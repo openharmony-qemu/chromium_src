@@ -69,6 +69,16 @@
 #include "net/log/net_log_event_type.h"
 #include "net/ssl/ssl_cert_request_info.h"
 #include "net/ssl/ssl_config_service.h"
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_CODECACHE_ENHANCE)
+#include "base/logging.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
+#include "arkweb/chromium_ext/net/http/http_cache_transaction_utils.h"
 
 using base::Time;
 using base::TimeTicks;
@@ -160,6 +170,7 @@ HttpCache::Transaction::~Transaction() {
       cache_->RemovePendingTransaction(this);
     }
   }
+  delete http_transation_utils_;
 }
 
 HttpCache::Transaction::Mode HttpCache::Transaction::mode() const {
@@ -207,6 +218,13 @@ int HttpCache::Transaction::Start(const HttpRequestInfo* request,
 
   // We have to wait until the backend is initialized so we start the SM.
   next_state_ = STATE_GET_BACKEND;
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  if (!update_res_request_info_callback_.is_null() && request_ && preload_info_) {
+    update_res_request_info_callback_.Run(request_->main_url.spec(), preload_info_);
+  }
+#endif
+
   int rv = DoLoop(OK);
 
   // Setting this here allows us to check for the existence of a callback_ to
@@ -217,6 +235,13 @@ int HttpCache::Transaction::Start(const HttpRequestInfo* request,
 
   return rv;
 }
+
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+int HttpCache::Transaction::RestartWithSecureDnsOnly(
+    CompletionOnceCallback callback) {
+  return http_transation_utils_->RestartWithSecureDnsOnly(callback);
+}
+#endif
 
 int HttpCache::Transaction::RestartIgnoringLastError(
     CompletionOnceCallback callback) {
@@ -1176,6 +1201,10 @@ int HttpCache::Transaction::DoOpenOrCreateEntry() {
   cache_pending_ = true;
   net_log_.BeginEvent(NetLogEventType::HTTP_CACHE_OPEN_OR_CREATE_ENTRY);
   first_cache_access_since_ = TimeTicks::Now();
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "requestStart", first_cache_access_since_);
+#endif
   const bool has_opened_or_created_entry = has_opened_or_created_entry_;
   has_opened_or_created_entry_ = true;
   record_entry_open_or_creation_time_ = false;
@@ -1660,6 +1689,10 @@ int HttpCache::Transaction::DoCacheReadResponseComplete(int result) {
 
   // Record the time immediately before the cached response is parsed.
   read_headers_since_ = TimeTicks::Now();
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "responseStart", read_headers_since_);
+#endif
 
   if (result != read_buf_->size() ||
       !HttpCache::ParseResponseInfo(read_buf_->span(), &response_,
@@ -2023,6 +2056,13 @@ int HttpCache::Transaction::DoSuccessfulSendRequest() {
     return ERR_CACHE_AUTH_FAILURE_AFTER_READ;
   }
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  if (request_ && request_->allow_preload_record && preload_info_ &&
+      !UpdateAndReportCacheability(*new_response->headers)) {
+    http_transation_utils_->UpdateCacheInfo(*new_response);
+  }
+#endif
+
   new_response_ = new_response;
   if (!ValidatePartialResponse() && !auth_response_.headers.get()) {
     // Something went wrong with this request and we have to restart it.
@@ -2119,6 +2159,19 @@ int HttpCache::Transaction::DoUpdateCachedResponse() {
   response_.restricted_prefetch = new_response_->restricted_prefetch;
   response_.ssl_info = new_response_->ssl_info;
   response_.dns_aliases = new_response_->dns_aliases;
+
+#if BUILDFLAG(ARKWEB_CODECACHE_ENHANCE)
+  if (new_response_->headers->response_code() == HTTP_NOT_MODIFIED) {
+    static bool res = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                          .GetSystemPropertiesInstance()
+                          .GetBoolParameter("web.304CodeCache.enable", true);
+    if (res) {
+      LOG(DEBUG) << "HttpCache::Transaction::DoUpdateCachedResponse set "
+                    "response code: HTTP_NOT_MODIFIED";
+      response_.code_cache_valid = true;
+    }
+  }
+#endif
 
   // If the new response didn't have a vary header, we continue to use the
   // header from the stored response per the effect of headers->Update().
@@ -4082,13 +4135,16 @@ void HttpCache::Transaction::TransitionToState(State state) {
 bool HttpCache::Transaction::UpdateAndReportCacheability(
     const HttpResponseHeaders& headers) {
   // Do not cache no-store content.
-  if (headers.HasHeaderValue("cache-control", "no-store")) {
+  if (headers.HasHeaderValue("cache-control", "no-store") 
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+   && !(effective_load_flags_ & LOAD_IGNORE_CACHE_CONTROL)
+#endif
+   ) {
     if (base::FeatureList::IsEnabled(features::kAvoidEntryCreationForNoStore)) {
       cache_->MarkKeyNoStore(cache_key_);
     }
     return true;
   }
-
   return false;
 }
 

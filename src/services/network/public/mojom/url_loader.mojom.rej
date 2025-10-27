@@ -1,0 +1,16 @@
+--- url_loader.mojom	2025-10-20 19:52:57.674211384 +0800
++++ url_loader.mojom	2025-10-16 15:55:03.344579160 +0800
+@@ -90,10 +92,13 @@
+   // as cancelled.
+   OnReceiveResponse(URLResponseHead head,
+                     handle<data_pipe_consumer>? body,
+                     mojo_base.mojom.BigBuffer? cached_metadata);
+ 
++  [EnableIf=arkweb_resource_interception]
++  OnTransferDataWithSharedMemory(mojo_base.mojom.ReadOnlySharedMemoryRegion region, uint64 buffer_size);
++                    
+   // Called when the request has been redirected. The receiver is expected to
+   // call FollowRedirect or cancel the request.
+   OnReceiveRedirect(URLRequestRedirectInfo redirect_info, URLResponseHead head);
+ 
+   // Called when the service made some progress on the file upload. This is

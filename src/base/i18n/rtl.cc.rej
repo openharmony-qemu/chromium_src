@@ -1,0 +1,14 @@
+--- rtl.cc	2025-10-20 19:52:46.656897939 +0800
++++ rtl.cc	2025-10-16 15:54:55.290061225 +0800
+@@ -28,10 +28,11 @@
+ 
+ #if BUILDFLAG(IS_IOS)
+ #include "base/debug/crash_logging.h"
+ #include "base/ios/ios_util.h"
+ #endif
++#include "arkweb/build/features/features.h"
+ 
+ namespace {
+ 
+ // Extract language, country and variant, but ignore keywords.  For example,
+ // en-US, ca@valencia, ca-ES@valencia.

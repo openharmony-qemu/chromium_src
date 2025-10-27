@@ -1,0 +1,19 @@
+--- resource_handler_wrapper.cc	2025-10-20 19:52:47.989867805 +0800
++++ resource_handler_wrapper.cc	2025-10-16 15:55:22.358192511 +0800
+@@ -493,12 +503,15 @@
+       *status_code = response->GetStatus();
+       *reason_phrase = response->GetStatusText();
+     }
+ 
+     if (reason_phrase->empty() && *status_code > 0) {
+-      *reason_phrase = net::GetHttpReasonPhrase(
++      auto ans = net::GetHttpReasonPhrase(
+           static_cast<net::HttpStatusCode>(*status_code));
++      if (ans != nullptr) {
++        *reason_phrase = ans;
++      }
+     }
+ 
+     *mime_type = response->GetMimeType();
+     *charset = response->GetCharset();
+ 

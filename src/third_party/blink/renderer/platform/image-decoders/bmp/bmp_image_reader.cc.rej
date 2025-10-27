@@ -1,0 +1,14 @@
+--- bmp_image_reader.cc	2025-10-20 19:53:01.214200983 +0800
++++ bmp_image_reader.cc	2025-10-16 16:07:40.115536595 +0800
+@@ -7,10 +7,11 @@
+ #pragma allow_unsafe_buffers
+ #endif
+ 
+ #include "third_party/blink/renderer/platform/image-decoders/bmp/bmp_image_reader.h"
+ 
++#include "arkweb/build/features/features.h"
+ #include "third_party/blink/renderer/platform/image-decoders/jpeg/jpeg_image_decoder.h"
+ #include "third_party/blink/renderer/platform/image-decoders/png/png_decoder_factory.h"
+ #include "third_party/skia/include/core/SkColorSpace.h"
+ 
+ namespace {

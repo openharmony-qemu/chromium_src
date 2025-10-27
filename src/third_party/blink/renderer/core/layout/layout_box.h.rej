@@ -1,0 +1,17 @@
+--- layout_box.h	2025-10-20 19:53:00.498209035 +0800
++++ layout_box.h	2025-10-16 16:07:39.531309088 +0800
+@@ -245,10 +245,14 @@
+   LayoutUnit LogicalHeightForEmptyLine() const {
+     NOT_DESTROYED();
+     return FirstLineHeight();
+   }
+ 
++  virtual LayoutPoint Location() const {
++    NOT_DESTROYED();
++    return frame_location_;
++  }
+   virtual PhysicalSize Size() const;
+ 
+   void SetLocation(const LayoutPoint& location) {
+     NOT_DESTROYED();
+     if (location == frame_location_) {

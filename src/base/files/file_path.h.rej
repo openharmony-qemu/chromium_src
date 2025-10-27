@@ -1,0 +1,39 @@
+--- file_path.h	2025-10-20 19:52:46.648916039 +0800
++++ file_path.h	2025-10-16 15:54:55.278330292 +0800
+@@ -499,10 +500,24 @@
+   // to access it.
+   // Returns true if the path is a content uri, or false otherwise.
+   bool IsContentUri() const;
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_FILE_UPLOAD) || BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  // Return true if the path is a datashare uri or dataability, or false
++  // otherwise
++  bool IsDataShareUri(std::string bundleName = "") const;
++
++  void SetBundleName(const std::string& bundleName) const {
++    bundleName_ = bundleName;
++  }
++#endif
++
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  static bool IsDataShareUrl(const StringType& url);
++#endif
++
+   // NOTE: When adding a new public method, consider adding it to
+   // file_path_fuzzer.cc as well.
+ 
+  private:
+   // Remove trailing separators from this object.  If the path is absolute, it
+@@ -511,10 +526,11 @@
+   // separators is never stripped, to support alternate roots.  This is used to
+   // support UNC paths on Windows.
+   void StripTrailingSeparatorsInternal();
+ 
+   StringType path_;
++  mutable std::string bundleName_;
+ };
+ 
+ BASE_EXPORT std::ostream& operator<<(std::ostream& out,
+                                      const FilePath& file_path);
+ 

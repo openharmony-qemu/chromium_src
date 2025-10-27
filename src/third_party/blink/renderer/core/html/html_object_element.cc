@@ -119,7 +119,13 @@ void HTMLObjectElement::ParseAttribute(
   } else if (name == html_names::kClassidAttr) {
     class_id_ = params.new_value;
     ReloadPluginOnAttributeChange(name);
-  } else {
+  }
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  else if (IsNativeType() && name == html_names::kArkwebnativestyleAttr) {
+    NativeEmbedOverlay(params);
+  }
+#endif
+  else {
     HTMLPlugInElement::ParseAttribute(params);
   }
 }
@@ -255,6 +261,11 @@ void HTMLObjectElement::RemovedFrom(ContainerNode& insertion_point) {
 
 void HTMLObjectElement::ChildrenChanged(const ChildrenChange& change) {
   HTMLPlugInElement::ChildrenChanged(change);
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  if (IsNativeType()) {
+    HandleParamAlterations(change);
+  }
+#endif
   if (isConnected() && !UseFallbackContent()) {
     SetNeedsPluginUpdate(true);
     ReattachOnPluginChangeIfNeeded();
@@ -448,5 +459,19 @@ bool HTMLObjectElement::DidFinishLoading() const {
 int HTMLObjectElement::DefaultTabIndex() const {
   return 0;
 }
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+ParamMap HTMLObjectElement::ParamList() {
+  ParamMap param_map;
+  for (Node* child = firstChild(); child; child = child->nextSibling()) {
+    if (auto* param = DynamicTo<HTMLParamElement>(*child)) {
+      if (!param->Value().IsNull() && !param->GetName().IsNull()) {
+        param_map.insert(param->GetName(), param->Value());
+      }
+    }
+  }
+  return param_map;
+}
+#endif
 
 }  // namespace blink

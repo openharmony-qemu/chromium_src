@@ -1,0 +1,19 @@
+--- web_scheduler_tracked_feature.cc	2025-10-20 19:52:59.786214466 +0800
++++ web_scheduler_tracked_feature.cc	2025-10-16 16:07:38.666810277 +0800
+@@ -126,10 +126,16 @@
+       return {"mediastream", "page has live MediaStreamTrack"};
+     case WebSchedulerTrackedFeature::kUnloadHandler:
+       return {"unload-handler", "page contains unload handler"};
+     case WebSchedulerTrackedFeature::kParserAborted:
+       return {"parser-aborted", "parser was aborted"};
++#if BUILDFLAG(ARKWEB_BFCACHE)
++    case WebSchedulerTrackedFeature::kEnableCacheNativeEmbed:
++      return {"EnableCacheNativeEmbed", "enable native embed to bfcache"};
++    case WebSchedulerTrackedFeature::kEnableCacheMediaTakeOver:
++      return {"EnableCacheMediaTakeOver", "enable media take over to bfcache"};
++#endif
+   }
+   return {};
+ }
+ 
+ std::map<std::string, WebSchedulerTrackedFeature> MakeShortNameToFeature() {

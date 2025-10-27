@@ -253,7 +253,11 @@ bool InitializeICUWithFileDescriptorInternal(
 
   std::unique_ptr<MemoryMappedFile> mapped_file;
   UErrorCode err;
+#if BUILDFLAG(IS_ARKWEB) && (BUILDFLAG(ARKWEB_HAP_DECOMPRESSED) || BUILDFLAG(ARKWEB_MEM))
+  LOAD_ICU_DATA(data_fd, data_region, mapped_file, err);
+#else
   g_debug_icu_load = LoadIcuData(data_fd, data_region, &mapped_file, &err);
+#endif
   if (g_debug_icu_load == 1 || g_debug_icu_load == 2) {
     return false;
   }

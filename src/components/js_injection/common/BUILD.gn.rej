@@ -1,0 +1,14 @@
+--- BUILD.gn	2025-10-20 19:52:53.069925364 +0800
++++ BUILD.gn	2025-10-16 15:54:56.912179847 +0800
+@@ -1,10 +1,11 @@
+ # Copyright 2020 The Chromium Authors
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+ import("//mojo/public/tools/bindings/mojom.gni")
++import("//build/config/features.gni")
+ 
+ mojom("common_mojom") {
+   sources = [
+     "interfaces.mojom",
+     "origin_matcher.mojom",

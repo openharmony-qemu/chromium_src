@@ -44,6 +44,7 @@ class NetworkInterfaceCache;
 // destroyed on the same thread.
 class NET_EXPORT NetworkChangeNotifier {
  public:
+  friend class ArkwebNetworkChangeNotifierExt;
   // This is a superset of the connection types in the NetInfo v3 specification:
   // http://w3c.github.io/netinfo/.
   //
@@ -349,6 +350,10 @@ class NET_EXPORT NetworkChangeNotifier {
   NetworkChangeNotifier& operator=(const NetworkChangeNotifier&) = delete;
   virtual ~NetworkChangeNotifier();
 
+  ArkwebNetworkChangeNotifierExt* AsArkwebNetworkChangeNotifierExt() {
+    return nullptr;
+  }
+
   // Returns the factory or nullptr if it is not set.
   static NetworkChangeNotifierFactory* GetFactory();
 
@@ -459,7 +464,7 @@ class NET_EXPORT NetworkChangeNotifier {
   // packets sent lazily.
   static bool IsDefaultNetworkActive();
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
   // Returns the AddressTrackerLinux if present.
   static AddressMapOwnerLinux* GetAddressMapOwner();
 #endif
@@ -634,7 +639,7 @@ class NET_EXPORT NetworkChangeNotifier {
       SystemDnsConfigChangeNotifier* system_dns_config_notifier = nullptr,
       bool omit_observers_in_constructor_for_testing = false);
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
   // Returns the AddressMapOwnerLinux if present.
   virtual AddressMapOwnerLinux* GetAddressMapOwnerInternal();
 #endif
@@ -662,6 +667,7 @@ class NET_EXPORT NetworkChangeNotifier {
   virtual SystemDnsConfigChangeNotifier* GetCurrentSystemDnsConfigNotifier();
 
   virtual bool IsDefaultNetworkActiveInternal();
+
 
   // Broadcasts a notification to all registered observers.  Note that this
   // happens asynchronously, even for observers on the current thread, even in
@@ -738,5 +744,6 @@ class NET_EXPORT NetworkChangeNotifier {
 };
 
 }  // namespace net
+#include "arkweb/chromium_ext/net/base/arkweb_network_change_notifier_ext.h"
 
 #endif  // NET_BASE_NETWORK_CHANGE_NOTIFIER_H_

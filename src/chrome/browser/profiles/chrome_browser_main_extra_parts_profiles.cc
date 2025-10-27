@@ -7,6 +7,7 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
@@ -1022,11 +1023,14 @@ void ChromeBrowserMainExtraPartsProfiles::
 #if !BUILDFLAG(IS_ANDROID)
   media_router::AccessCodeCastSinkServiceFactory::GetInstance();
 #endif
+  // todo #if !(BUILDFLAG(IS_OHOS) && BUILDFLAG(ARKWEB_ASAN)) ||
+  // BUILDFLAG(OHOS_ENABLE_MEDIA_ROUTER)
   media_router::ChromeLocalPresentationManagerFactory::GetInstance();
   media_router::ChromeMediaRouterFactory::GetInstance();
 #if !BUILDFLAG(IS_ANDROID)
   media_router::MediaRouterUIServiceFactory::GetInstance();
 #endif
+// #endif
 #if BUILDFLAG(IS_ANDROID)
   MediaDrmOriginIdManagerFactory::GetInstance();
 #endif

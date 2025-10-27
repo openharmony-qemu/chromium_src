@@ -6,6 +6,7 @@
 
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/barrier_closure.h"
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
@@ -133,6 +134,10 @@ CacheCreator::~CacheCreator() = default;
 void CacheCreator::Run() {
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA)
   static const bool kSimpleBackendIsDefault = true;
+#elif BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_CACHE)
+  static const bool kSimpleBackendIsDefault =
+      base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kSimpleBackendIsDefault);
 #else
   static const bool kSimpleBackendIsDefault = false;
 #endif
@@ -176,6 +181,11 @@ void CacheCreator::Run() {
 #if BUILDFLAG(IS_ANDROID)
   FailAttempt();
 #else
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_CACHE)
+  if (kSimpleBackendIsDefault) {
+    return net::ERR_FAILED;
+  }
+#endif  // BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_CACHE)
   auto cache = std::make_unique<disk_cache::BackendImpl>(
       path_, cleanup_tracker_.get(),
       /*cache_thread = */ nullptr, type_, net_log_);

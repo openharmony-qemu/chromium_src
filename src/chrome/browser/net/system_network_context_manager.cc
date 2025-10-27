@@ -864,8 +864,10 @@ void SystemNetworkContextManager::OnNetworkServiceCreated(
 #endif  // !BUILDFLAG(IS_WIN)
   }
 
+#if !BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
   // Configure SCT Auditing in the NetworkService.
   SCTReportingService::ReconfigureAfterNetworkRestart();
+#endif
 
   component_updater::PKIMetadataComponentInstallerService::GetInstance()
       ->ReconfigureAfterNetworkRestart();
@@ -915,8 +917,10 @@ void SystemNetworkContextManager::DisableQuic() {
 void SystemNetworkContextManager::
     AddCookieEncryptionManagerToNetworkContextParams(
         network::mojom::NetworkContextParams* network_context_params) {
+#if !BUILDFLAG(ARKWEB_NETWORK_BASE)
   network_context_params->cookie_encryption_provider =
       cookie_encryption_provider_.BindNewRemote();
+#endif
 }
 
 void SystemNetworkContextManager::AddSSLConfigToNetworkContextParams(

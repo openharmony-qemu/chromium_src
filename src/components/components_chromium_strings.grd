@@ -189,6 +189,10 @@
     <file path="strings/components_chromium_strings_zh-HK.xtb" lang="zh-HK" />
     <file path="strings/components_chromium_strings_zh-TW.xtb" lang="zh-TW" />
     <file path="strings/components_chromium_strings_zu.xtb" lang="zu" />
+    <!-- <if expr="pp_ifdef('arkweb_i18n')"> -->
+       <file path="strings/components_chromium_strings_bo-CN.xtb" lang="bo-CN" />
+        <file path="strings/components_chromium_strings_ug.xtb" lang="ug" />
+    <!-- </if> -->
   </translations>
   <release seq="1">
     <messages fallback_to_english="true">

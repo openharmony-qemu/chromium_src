@@ -29,6 +29,10 @@
 #include "net/ssl/ssl_cert_request_info.h"
 #include "net/ssl/ssl_config_service.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace net {
 
 class HostPortPair;
@@ -140,6 +144,10 @@ class NET_EXPORT_PRIVATE SSLConnectJob : public ConnectJob,
   // Returns the timeout for the SSL handshake. This is the same for all
   // connections regardless of whether or not there is a proxy in use.
   static base::TimeDelta HandshakeTimeoutForTesting();
+
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+  void SetConnectTimeout(int timeout_override) override;
+#endif
 
  private:
   enum State {

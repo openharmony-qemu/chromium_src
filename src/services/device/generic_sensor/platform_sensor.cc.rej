@@ -1,0 +1,17 @@
+--- platform_sensor.cc	2025-10-20 19:52:57.602210733 +0800
++++ platform_sensor.cc	2025-10-16 15:55:03.256673241 +0800
+@@ -276,10 +276,14 @@
+     case mojom::SensorType::ABSOLUTE_ORIENTATION_EULER_ANGLES:
+     case mojom::SensorType::RELATIVE_ORIENTATION_EULER_ANGLES:
+     case mojom::SensorType::ABSOLUTE_ORIENTATION_QUATERNION:
+     case mojom::SensorType::RELATIVE_ORIENTATION_QUATERNION:
+     case mojom::SensorType::MAGNETOMETER:
++#if BUILDFLAG(ARKWEB_SENSOR)
++    case mojom::SensorType::PRESSURE:
++    case mojom::SensorType::PROXIMITY:
++#endif
+       return !base::ranges::equal(lhs.raw.values, rhs.raw.values);
+   }
+ }
+ 
+ base::WeakPtr<PlatformSensor> PlatformSensor::AsWeakPtr() {

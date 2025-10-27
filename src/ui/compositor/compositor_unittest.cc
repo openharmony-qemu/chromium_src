@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "ui/compositor/compositor.h"
-
 #include <stdint.h>
 
 #include "base/memory/raw_ptr.h"
@@ -102,16 +100,24 @@ class CompositorTestWithMockedTime : public CompositorTest {
   base::test::ScopedPowerMonitorTestSource test_power_monitor_source_;
 
  private:
+ #if BUILDFLAG(ARKWEB_UNITTESTS)
+  base::test::TaskEnvironment task_environment_{};
+#else
   base::test::TaskEnvironment task_environment_{
       base::test::TaskEnvironment::MainThreadType::UI,
       base::test::TaskEnvironment::TimeSource::MOCK_TIME};
+#endif
 };
 
 // For tests that run on a real MessageLoop with real time.
 class CompositorTestWithMessageLoop : public CompositorTest {
  public:
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  CompositorTestWithMessageLoop() : task_environment_() {}
+#else
   CompositorTestWithMessageLoop()
       : task_environment_(base::test::TaskEnvironment::MainThreadType::UI) {}
+#endif
   ~CompositorTestWithMessageLoop() override = default;
 
  protected:
@@ -123,7 +129,11 @@ class CompositorTestWithMessageLoop : public CompositorTest {
   base::SequencedTaskRunner* task_runner() { return task_runner_.get(); }
 
  private:
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  base::test::TaskEnvironment task_environment_{};
+#else
   base::test::TaskEnvironment task_environment_;
+#endif
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
 };
 

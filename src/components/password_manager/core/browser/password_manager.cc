@@ -630,9 +630,11 @@ void PasswordManager::RegisterLocalPrefs(PrefRegistrySimple* registry) {
   registry->RegisterBooleanPref(prefs::kOsPasswordBlank, false);
   registry->RegisterBooleanPref(prefs::kIsBiometricAvailable, false);
 #endif  // BUILDFLAG(IS_WIN)
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
   registry->RegisterBooleanPref(prefs::kHadBiometricsAvailable, false);
-#endif  // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#endif  // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || \
+        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
   registry->RegisterListPref(prefs::kLocalPasswordHashDataList,
                              PrefRegistry::NO_REGISTRATION_FLAGS);
 }

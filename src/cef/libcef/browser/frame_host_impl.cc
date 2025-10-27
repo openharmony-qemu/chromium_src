@@ -4,6 +4,7 @@
 
 #include "cef/libcef/browser/frame_host_impl.h"
 
+#include "arkweb/build/features/features.h"
 #include "cef/include/cef_request.h"
 #include "cef/include/cef_stream.h"
 #include "cef/include/cef_v8.h"
@@ -101,9 +102,17 @@ CefFrameHostImpl::CefFrameHostImpl(scoped_refptr<CefBrowserInfo> browser_info,
           is_main_frame_
               ? std::optional<content::GlobalRenderFrameHostToken>()
               : render_frame_host->GetParent()->GetGlobalFrameToken()),
-      render_frame_host_(render_frame_host) {
+      render_frame_host_(render_frame_host)
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+,
+      rfh_global_id_(render_frame_host->GetGlobalId()),
+      initial_is_prerendering_(
+          static_cast<content::RenderFrameHostImpl *>(render_frame_host)
+              ->frame_tree()
+              ->is_prerendering())
+#endif
+      {
   DCHECK(browser_info_);
-  DVLOG(1) << __func__ << ": " << GetDebugString() << " created ";
 }
 
 CefFrameHostImpl::~CefFrameHostImpl() {
@@ -166,7 +175,11 @@ void CefFrameHostImpl::GetText(CefRefPtr<CefStringVisitor> visitor) {
 
 void CefFrameHostImpl::LoadRequest(CefRefPtr<CefRequest> request) {
   auto params = cef::mojom::RequestParams::New();
+#if BUILDFLAG(IS_ARKWEB)
+  request->AsArkWebRequestExt()->Get(params);
+#else
   static_cast<CefRequestImpl*>(request.get())->Get(params);
+#endif
   LoadRequest(std::move(params));
 }
 
@@ -366,11 +379,29 @@ void CefFrameHostImpl::LoadRequest(cef::mojom::RequestParamsPtr params) {
 void CefFrameHostImpl::LoadURLWithExtras(const std::string& url,
                                          const content::Referrer& referrer,
                                          ui::PageTransition transition,
-                                         const std::string& extra_headers) {
+                                         const std::string& extra_headers
+#if BUILDFLAG(ARKWEB_POST_URL)
+                                         ,
+                                         const std::string& method,
+                                         const std::vector<char>& post_data
+#endif
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+                                         ,
+                                         bool user_gesture
+#endif
+) {
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  // Only known frame ids or kMainFrameId are supported.
+  const auto frame_id = GetFrameId();
+  if (frame_id < ::kMainFrameId) {
+    return;
+  }
+  GURL gurl = ArkWebFixupFileUrl(url);
+#else
   // Any necessary fixup will occur in LoadRequest.
   GURL gurl = url_util::MakeGURL(url, /*fixup=*/false);
-
-  if (is_main_frame_) {
+#endif
+  if (frame_id == ::kMainFrameId) {
     // Load via the browser using NavigationController.
     auto browser = GetBrowserHostBase();
     if (browser) {
@@ -378,8 +409,12 @@ void CefFrameHostImpl::LoadURLWithExtras(const std::string& url,
           gurl, referrer, WindowOpenDisposition::CURRENT_TAB, transition,
           /*is_renderer_initiated=*/false);
       params.extra_headers = extra_headers;
-      params.user_gesture = false;
-
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      params.user_gesture = user_gesture;
+#endif
+#if BUILDFLAG(ARKWEB_POST_URL)
+      ArkWebDealWithPostData(method, post_data, &params);
+#endif
       browser->LoadMainFrameURL(params);
     }
   } else {
@@ -388,6 +423,9 @@ void CefFrameHostImpl::LoadURLWithExtras(const std::string& url,
     params->referrer =
         blink::mojom::Referrer::New(referrer.url, referrer.policy);
     params->headers = extra_headers;
+#if BUILDFLAG(ARKWEB_POST_URL)
+    ArkWebDealWithPostUploadData(method, post_data, params);
+#endif
     LoadRequest(std::move(params));
   }
 }
@@ -502,18 +540,9 @@ bool CefFrameHostImpl::IsDetached() const {
   return !GetRenderFrameHost();
 }
 
-std::pair<bool, bool> CefFrameHostImpl::Detach(DetachReason reason,
-                                               bool is_current_main_frame) {
+bool CefFrameHostImpl::Detach(DetachReason reason, bool is_current_main_frame) {
   CEF_REQUIRE_UIT();
 
-  // Should not be called for temporary frames.
-  CHECK(!is_temporary());
-
-  // Must be a main frame if |is_current_main_frame| is true.
-  CHECK(!is_current_main_frame || is_main_frame_);
-
-  const bool is_bound = render_frame_.is_bound();
-  if (is_bound) {
     if (VLOG_IS_ON(1)) {
       std::string reason_str;
       switch (reason) {
@@ -528,26 +557,24 @@ std::pair<bool, bool> CefFrameHostImpl::Detach(DetachReason reason,
           break;
       };
 
-      DVLOG(1) << __func__ << ": " << GetDebugString()
-               << " detached (reason=" << reason_str << ")";
-    }
-    DetachRenderFrame();
-  }
-
-  if (render_frame_host_) {
-    DVLOG(1) << __func__ << ": " << GetDebugString() << " host cleared";
-    render_frame_host_ = nullptr;
+    VLOG(1) << GetDebugString() << " detached (reason=" << reason_str
+            << ", is_connected=" << render_frame_.is_bound() << ")";
   }
 
   // This method may be called multiple times (e.g. from CefBrowserInfo
   // SetMainFrame and RemoveFrame).
   bool is_first_complete_detach = false;
 
+  // Should not be called for temporary frames.
+  CHECK(!is_temporary());
+
+  // Must be a main frame if |is_current_main_frame| is true.
+  CHECK(!is_current_main_frame || is_main_frame_);
+
   if (!is_current_main_frame) {
     {
       base::AutoLock lock_scope(state_lock_);
       if (browser_info_) {
-        DVLOG(1) << __func__ << ": " << GetDebugString() << " invalidated";
         is_first_complete_detach = true;
         browser_info_ = nullptr;
       }
@@ -559,21 +586,22 @@ std::pair<bool, bool> CefFrameHostImpl::Detach(DetachReason reason,
     }
   }
 
-  return std::make_pair(is_bound, is_first_complete_detach);
+  if (render_frame_.is_bound()) {
+    render_frame_->FrameDetached();
 }
 
-void CefFrameHostImpl::DetachRenderFrame() {
-  CEF_REQUIRE_UIT();
-  DCHECK(render_frame_.is_bound());
-  render_frame_.ResetWithReason(
-      static_cast<uint32_t>(frame_util::ResetReason::kDetached), "Detached");
+  render_frame_.reset();
+  render_frame_host_ = nullptr;
+
+  return is_first_complete_detach;
 }
 
-void CefFrameHostImpl::MaybeAttach(
+void CefFrameHostImpl::MaybeReAttach(
     scoped_refptr<CefBrowserInfo> browser_info,
-    content::RenderFrameHost* render_frame_host) {
+    content::RenderFrameHost* render_frame_host,
+    bool require_detached) {
   CEF_REQUIRE_UIT();
-  if (render_frame_host_ == render_frame_host) {
+  if (render_frame_.is_bound() && render_frame_host_ == render_frame_host) {
     // Nothing to do here.
     return;
   }
@@ -581,13 +609,20 @@ void CefFrameHostImpl::MaybeAttach(
   // Should not be called for temporary frames.
   CHECK(!is_temporary());
 
-  // We expect that either this frame has never attached (e.g. when swapping
-  // from speculative to non-speculative) or Detach() was called previously
-  // (e.g. when exiting the bfcache).
-  CHECK(!render_frame_.is_bound());
+  // If |require_detached| then we expect that Detach() was called previously.
+  CHECK(!require_detached || !render_frame_.is_bound());
 
+  if (render_frame_host_) {
   // Intentionally not clearing |queued_renderer_actions_|, as we may be
   // changing RFH during initial browser navigation.
+    VLOG(1) << GetDebugString()
+            << " detached (reason=RENDER_FRAME_CHANGED, is_connected="
+            << render_frame_.is_bound() << ")";
+    if (render_frame_.is_bound()) {
+      render_frame_->FrameDetached();
+    }
+    render_frame_.reset();
+  }
 
   // The RFH may change but the frame token should remain the same.
   CHECK(*frame_token_ == render_frame_host->GetGlobalFrameToken());
@@ -597,8 +632,14 @@ void CefFrameHostImpl::MaybeAttach(
     browser_info_ = browser_info;
   }
 
-  DVLOG(1) << __func__ << ": " << GetDebugString() << " host changed";
   render_frame_host_ = render_frame_host;
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  rfh_global_id_ = render_frame_host->GetGlobalId();
+  initial_is_prerendering_ =
+      static_cast<content::RenderFrameHostImpl *>(render_frame_host)
+          ->frame_tree()
+          ->is_prerendering();
+#endif
   RefreshAttributes();
 
   // We expect a reconnect to be triggered via FrameAttached().
@@ -654,14 +695,6 @@ void CefFrameHostImpl::SendToRenderFrame(const std::string& function_name,
 void CefFrameHostImpl::OnRenderFrameDisconnect() {
   CEF_REQUIRE_UIT();
 
-  DVLOG(1) << __func__ << ": " << GetDebugString();
-
-  if (auto browser_info = GetBrowserInfo()) {
-    if (auto browser = browser_info->browser()) {
-      browser_info->MaybeNotifyFrameDetached(browser, this);
-    }
-  }
-
   // Reconnect, if any, will be triggered via FrameAttached().
   render_frame_.reset();
 }
@@ -704,8 +737,7 @@ void CefFrameHostImpl::FrameAttached(
     return;
   }
 
-  DVLOG(1) << __func__ << ": " << GetDebugString() << " "
-           << (reattached ? "re" : "") << "connected";
+  VLOG(1) << GetDebugString() << " " << (reattached ? "re" : "") << "connected";
 
   render_frame_.Bind(std::move(render_frame_remote));
   render_frame_.set_disconnect_handler(
@@ -723,7 +755,7 @@ void CefFrameHostImpl::FrameAttached(
       [](CefRefPtr<CefFrameHostImpl> self, bool reattached,
          CefRefPtr<CefFrameHandler> handler) {
         if (auto browser = self->GetBrowserHostBase()) {
-          handler->OnFrameAttached(browser, self, reattached);
+          handler->OnFrameAttached(browser.get(), self, reattached);
         }
       },
       CefRefPtr<CefFrameHostImpl>(this), reattached));
@@ -762,8 +794,25 @@ std::string CefFrameHostImpl::GetDebugString() const {
 
 void CefExecuteJavaScriptWithUserGestureForTests(CefRefPtr<CefFrame> frame,
                                                  const CefString& javascript) {
-  CefFrameHostImpl* impl = static_cast<CefFrameHostImpl*>(frame.get());
+  auto impl = frame.get()->AsCefFrameHostImpl();
   if (impl) {
     impl->ExecuteJavaScriptWithUserGestureForTests(javascript);
   }
 }
+
+#if defined(OHOS_INPUT_EVENTS)
+bool CefFrameHostImpl::SetFocusByPosition(float x, float y) {
+  if (is_temporary() || !render_frame_host_) {
+    LOG(ERROR) << "is temporary or not render frame host.";
+    return false;
+  }
+
+  if (!render_frame_.is_bound()) {
+    LOG(ERROR) << "render frame is not bound.";
+    return false;
+  }
+  bool out_isEditable = false;
+  render_frame_->SetFocusByPosition(x, y, &out_isEditable);
+  return out_isEditable;
+}
+#endif // defined(OHOS_INPUT_EVENTS)

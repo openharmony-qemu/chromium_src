@@ -1,0 +1,15 @@
+--- webrtc_log_uploader.cc	2025-10-20 19:52:49.781772183 +0800
++++ webrtc_log_uploader.cc	2025-10-16 15:57:00.363419056 +0800
+@@ -114,10 +114,12 @@
+ #endif
+ #elif BUILDFLAG(IS_ANDROID)
+   const char product[] = "Chrome_Android";
+ #elif BUILDFLAG(IS_CHROMEOS_ASH)
+   const char product[] = "Chrome_ChromeOS";
++#elif BUILDFLAG(IS_OHOS)
++  const char product[] = "Chrome_OHOS";
+ #else
+ #error Platform not supported.
+ #endif
+   if (base::FeatureList::IsEnabled(kWebRTCLogUploadSuffix)) {
+     return base::StrCat({product, "_webrtc"});

@@ -1,0 +1,38 @@
+--- input_handler.cc	2025-10-20 19:52:47.910049405 +0800
++++ input_handler.cc	2025-10-16 15:54:55.657472805 +0800
+@@ -713,12 +720,23 @@
+     const gfx::PointF& root_content_offset) {
+   TRACE_EVENT2("cc", "InputHandler::SetSynchronousInputHandlerRootScrollOffset",
+                "offset_x", root_content_offset.x(), "offset_y",
+                root_content_offset.y());
+ 
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++  gfx::Vector2dF physical_delta =
++      gfx::Vector2dF(root_content_offset.x(), root_content_offset.y());
++#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
++      float page_scroll_offset = 0.0;
++      if (condition_) {
++        page_scroll_offset = GetViewport().TotalScrollOffset().y();
++      }
++#endif
++#else
+   gfx::Vector2dF physical_delta =
+       root_content_offset - GetViewport().TotalScrollOffset();
++#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+   physical_delta.Scale(ActiveTree().page_scale_factor_for_scroll());
+ 
+   bool changed = !GetViewport()
+                       .ScrollBy(physical_delta,
+                                 /*viewport_point=*/gfx::Point(),
+@@ -943,11 +984,10 @@
+       }
+     }
+   }
+   return InputHandler::TouchStartOrMoveEventListenerType::kHandler;
+ }
+-
+ std::unique_ptr<LatencyInfoSwapPromiseMonitor>
+ InputHandler::CreateLatencyInfoSwapPromiseMonitor(ui::LatencyInfo* latency) {
+   return compositor_delegate_->GetImplDeprecated()
+       .CreateLatencyInfoSwapPromiseMonitor(latency);
+ }

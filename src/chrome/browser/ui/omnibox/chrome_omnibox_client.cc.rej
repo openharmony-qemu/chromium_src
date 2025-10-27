@@ -1,0 +1,19 @@
+--- chrome_omnibox_client.cc	2025-10-20 19:52:50.784847450 +0800
++++ chrome_omnibox_client.cc	2025-10-16 15:57:01.593540688 +0800
+@@ -604,11 +604,15 @@
+       ->StartPrerendering(match.destination_url, *web_contents,
+                           container_bounds.size());
+ }
+ 
+ void ChromeOmniboxClient::DoPreconnect(const AutocompleteMatch& match) {
+-  if (match.destination_url.SchemeIs(extensions::kExtensionScheme))
++  if (match.destination_url.SchemeIs(extensions::kExtensionScheme)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      || match.destination_url.SchemeIs(extensions::kArkwebExtensionScheme)
++#endif
++  )
+     return;
+ 
+   auto* loading_predictor =
+       predictors::LoadingPredictorFactory::GetForProfile(profile_);
+   if (loading_predictor) {

@@ -1,0 +1,29 @@
+--- BUILD.gn	2025-10-20 19:53:00.082212979 +0800
++++ BUILD.gn	2025-10-16 16:07:39.041821177 +0800
+@@ -484,10 +505,26 @@
+     "//third_party/blink/renderer/platform/wtf:wtf",
+     "//third_party/webrtc_overrides:webrtc_component",
+     "//ui/base:base",
+     "//v8:v8_headers",
+   ]
++
++  if (enable_arkweb) {
++    deps += [ "//arkweb/build/features" ]
++  }
++
++  if (enable_arkweb) {
++    public_deps += [ "//arkweb/build/features" ]
++  }
++
++  if (enable_arkweb_ext) {
++    deps += [ "//arkweb/ohos_nweb_ex/build/features" ]
++  }
++
++  if (enable_arkweb_ext) {
++    public_deps += [ "//arkweb/ohos_nweb_ex/build/features" ]
++  }
+ }
+ 
+ blink_python_runner("runtime_features_for_public") {
+   script = "../renderer/build/scripts/make_runtime_features_for_public.py"
+ 

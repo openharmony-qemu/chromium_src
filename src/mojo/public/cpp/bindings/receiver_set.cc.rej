@@ -1,0 +1,16 @@
+--- receiver_set.cc	2025-10-20 19:52:56.806202278 +0800
++++ receiver_set.cc	2025-10-16 15:55:02.245755176 +0800
+@@ -157,12 +147,11 @@
+   current_receiver_ = receiver_id;
+ }
+ 
+ void ReceiverSetState::OnDisconnect(ReceiverId id,
+                                     uint32_t custom_reason_code,
+-                                    const std::string& description,
+-                                    MojoResult error_result) {
++                                    const std::string& description) {
+   auto it = entries_.find(id);
+   CHECK(it != entries_.end(), base::NotFatalUntil::M130);
+ 
+   // We keep the Entry alive throughout error dispatch.
+   std::unique_ptr<Entry> entry = std::move(it->second);

@@ -19,7 +19,7 @@
 #include "url/gurl.h"
 
 namespace dom_distiller {
-
+class DistillerPageWebContentsExt;
 class SourcePageHandleWebContents : public SourcePageHandle {
  public:
   SourcePageHandleWebContents(content::WebContents* web_contents, bool owned);

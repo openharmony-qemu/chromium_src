@@ -33,6 +33,8 @@
 #include "base/system/sys_info.h"
 #endif  // BUILDFLAG(IS_MAC)
 
+#include "arkweb/chromium_ext/gpu/config/gpu_finch_features_ext.h"
+
 namespace features {
 namespace {
 
@@ -426,7 +428,7 @@ bool UseGles2ForOopR() {
 }
 
 bool IsUsingVulkan() {
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) && !BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
   // Force on if Vulkan feature is enabled from command line.
   base::FeatureList* feature_list = base::FeatureList::GetInstance();
   if (feature_list &&

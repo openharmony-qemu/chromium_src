@@ -1,0 +1,15 @@
+--- image_decoder_test.cc	2025-10-20 19:53:01.214200983 +0800
++++ image_decoder_test.cc	2025-10-16 16:07:40.115536595 +0800
+@@ -8,10 +8,12 @@
+ #endif
+ 
+ #include "third_party/blink/renderer/platform/image-decoders/image_decoder.h"
+ 
+ #include <memory>
++
++#include "arkweb/build/features/features.h"
+ #include "build/build_config.h"
+ #include "media/media_buildflags.h"
+ #include "testing/gtest/include/gtest/gtest.h"
+ #include "third_party/blink/renderer/platform/image-decoders/image_frame.h"
+ #include "third_party/blink/renderer/platform/wtf/forward.h"

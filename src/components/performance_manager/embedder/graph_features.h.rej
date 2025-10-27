@@ -1,0 +1,14 @@
+--- graph_features.h	2025-10-20 19:52:53.330045226 +0800
++++ graph_features.h	2025-10-16 15:54:57.207863392 +0800
+@@ -7,10 +7,11 @@
+ 
+ #include <cstdint>
+ 
+ #include "base/feature_list.h"
+ #include "components/performance_manager/public/features.h"
++#include "arkweb/build/features/features.h"
+ 
+ namespace performance_manager {
+ 
+ class Graph;
+ 

@@ -811,7 +811,7 @@ class MaybeLocal {
  * A HandleScope which first allocates a handle in the current scope
  * which will be later filled with the escape value.
  */
-class V8_EXPORT V8_NODISCARD EscapableHandleScopeBase : public HandleScope {
+class V8_EXPORT JSVM_EXPORT V8_NODISCARD EscapableHandleScopeBase : public HandleScope {
  public:
   explicit EscapableHandleScopeBase(Isolate* isolate);
   V8_INLINE ~EscapableHandleScopeBase() = default;
@@ -861,7 +861,7 @@ class V8_EXPORT V8_NODISCARD EscapableHandleScope
  * are allowed. It can be useful for debugging handle leaks.
  * Handles can be allocated within inner normal HandleScopes.
  */
-class V8_EXPORT V8_NODISCARD SealHandleScope {
+class V8_EXPORT JSVM_EXPORT V8_NODISCARD SealHandleScope {
  public:
   explicit SealHandleScope(Isolate* isolate);
   ~SealHandleScope();

@@ -9,6 +9,10 @@ if (is_android) {
   import("//build/config/android/rules.gni")
 }
 
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
 component("touch_selection") {
   output_name = "ui_touch_selection"
 
@@ -67,6 +71,10 @@ component("touch_selection") {
     sources += [ "touch_editing_controller.h" ]
 
     deps += [ "//ui/menus" ]
+  }
+
+  if (is_arkweb) {
+    sources += arkweb_ui_touch_selection_sources
   }
 }
 

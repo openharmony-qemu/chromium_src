@@ -1,0 +1,31 @@
+--- single_thread_proxy.h	2025-10-20 19:52:47.961931365 +0800
++++ single_thread_proxy.h	2025-10-16 15:54:55.717458498 +0800
+@@ -53,10 +54,13 @@
+   bool IsStarted() const override;
+   void SetLayerTreeFrameSink(
+       LayerTreeFrameSink* layer_tree_frame_sink) override;
+   void ReleaseLayerTreeFrameSink() override;
+   void SetVisible(bool visible) override;
++#if BUILDFLAG(ARKWEB_PINCH_SMOOTH)
++  void SetPinchSmoothMode(bool isEnable) override;
++#endif
+   void SetShouldWarmUp() override;
+   void SetNeedsAnimate() override;
+   void SetNeedsUpdateLayers() override;
+   void SetNeedsCommit() override;
+   void SetNeedsRedraw(const gfx::Rect& damage_rect) override;
+@@ -135,10 +139,14 @@
+   void SetNeedsUpdateDisplayTreeOnImplThread() override {}
+   void SetNeedsPrepareTilesOnImplThread() override;
+   void SetNeedsCommitOnImplThread() override;
+   void SetVideoNeedsBeginFrames(bool needs_begin_frames) override;
+   void SetDeferBeginMainFrameFromImpl(bool defer_begin_main_frame) override {}
++#if BUILDFLAG(ARKWEB_WEBGL)
++  void SetDeferInvalidationForFastMainFrameFromImpl(
++           bool defer_invalidation_for_fast_main_frame) override {}
++#endif
+   bool IsInsideDraw() override;
+   void RenewTreePriority() override;
+   void PostDelayedAnimationTaskOnImplThread(base::OnceClosure task,
+                                             base::TimeDelta delay) override;
+   void DidActivateSyncTree() override;

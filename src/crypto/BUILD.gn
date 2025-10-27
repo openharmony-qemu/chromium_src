@@ -201,6 +201,7 @@ test("crypto_unittests") {
     "//base",
     "//base/test:run_all_unittests",
     "//base/test:test_support",
+    "//components/os_crypt/sync",
     "//testing/gmock",
     "//testing/gtest",
   ]

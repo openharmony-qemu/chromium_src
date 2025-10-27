@@ -1,0 +1,14 @@
+--- host_zoom_map_impl.cc	2025-10-20 19:52:54.290485875 +0800
++++ host_zoom_map_impl.cc	2025-10-16 15:54:59.416782884 +0800
+@@ -38,11 +38,10 @@
+ #endif
+ 
+ namespace content {
+ 
+ namespace {
+-
+ std::string GetHostFromProcessFrame(RenderFrameHostImpl* rfh) {
+   DCHECK_CURRENTLY_ON(BrowserThread::UI);
+   if (!rfh)
+     return std::string();
+ 

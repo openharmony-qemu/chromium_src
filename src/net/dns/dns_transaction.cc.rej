@@ -1,0 +1,18 @@
+--- dns_transaction.cc	2025-10-20 19:52:57.114206319 +0800
++++ dns_transaction.cc	2025-10-16 15:55:02.693276217 +0800
+@@ -1450,10 +1465,15 @@
+     DCHECK(secure_);
+ 
+     size_t doh_server_index = dns_server_iterator_->GetNextAttemptIndex();
+ 
+     unsigned attempt_number = attempts_.size();
++#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
++    if (resolve_context_->IsHttpsDnsFallbackEnabled()) {
++      LOG(INFO) << "DOH-Fallback make http fallback attempt for " << hostname_;
++    }
++#endif
+     ConstructDnsHTTPAttempt(session_.get(), doh_server_index, qnames_.front(),
+                             qtype_, opt_rdata_, &attempts_,
+                             resolve_context_->url_request_context(),
+                             resolve_context_->isolation_info(),
+                             request_priority_, /*is_probe=*/false);

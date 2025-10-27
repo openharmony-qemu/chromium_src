@@ -1,0 +1,15 @@
+--- mojom_traits_unittest.cc	2025-10-20 19:53:31.016629134 +0800
++++ mojom_traits_unittest.cc	2025-10-16 15:55:05.615128854 +0800
+@@ -209,11 +215,11 @@
+   const uint64_t kSize = kOffset + kStride;
+   handle2.type = gfx::NATIVE_PIXMAP;
+   handle2.id = kId;
+   handle2.offset = kOffset;
+   handle2.stride = kStride;
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+   const uint64_t kModifier = 2;
+   base::ScopedFD buffer_handle = CreateValidLookingBufferHandle();
+   handle2.native_pixmap_handle.modifier = kModifier;
+ #elif BUILDFLAG(IS_FUCHSIA)
+   zx::vmo buffer_handle = CreateValidLookingBufferHandle();

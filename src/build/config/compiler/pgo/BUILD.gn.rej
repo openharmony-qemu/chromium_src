@@ -1,0 +1,15 @@
+--- BUILD.gn	2025-10-20 19:52:46.804563082 +0800
++++ BUILD.gn	2025-10-16 15:54:55.549488821 +0800
+@@ -127,11 +127,11 @@
+                                   "value")
+     }
+     assert(pgo_data_path != "",
+            "Please set pgo_data_path to point at the profile data")
+     cflags = [
+-      "-fprofile-use=" + rebase_path(pgo_data_path, root_build_dir),
++      #"-fprofile-use=" + rebase_path(pgo_data_path, root_build_dir),
+ 
+       # It's possible to have some profile data legitimately missing,
+       # and at least some profile data always ends up being considered
+       # out of date, so make sure we don't error for those cases.
+       "-Wno-profile-instr-unprofiled",

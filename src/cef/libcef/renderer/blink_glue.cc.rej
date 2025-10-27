@@ -1,0 +1,25 @@
+--- blink_glue.cc	2025-10-20 19:52:47.997849645 +0800
++++ blink_glue.cc	2025-10-16 15:55:22.369896651 +0800
+@@ -312,6 +312,22 @@
+   blink::To<blink::LocalFrame>(core_frame)
+       ->Loader()
+       .StartNavigation(frame_load_request, blink::WebFrameLoadType::kStandard);
+ }
+ 
++#if defined(OHOS_INPUT_EVENTS)
++void PenTouchInputFocus(blink::WebNode webNode) {
++  blink::Node* node = webNode.Unwrap<blink::Node>();
++  if (!node->IsElementNode()) {
++    return;
++  }
++  blink::Element* element = blink::To<blink::Element>(node);
++  if (!element) {
++    return;
++  }
++  element->Focus();
++}
++#endif // defined(OHOS_INPUT_EVENTS)
++
++#include "cef/ohos_cef_ext/libcef/renderer/blink_glue_for_include.cc"
++
+ }  // namespace blink_glue

@@ -77,7 +77,7 @@ class NET_EXPORT HttpCache : public HttpTransactionFactory {
     // Equivalent to setting LOAD_DISABLE_CACHE on every request.
     DISABLE
   };
-
+  friend class HttpTransactionUtils;
   // A BackendFactory creates a backend object to be used by the HttpCache.
   class NET_EXPORT BackendFactory {
    public:
@@ -306,7 +306,12 @@ class NET_EXPORT HttpCache : public HttpTransactionFactory {
   // Resets g_init_cache and g_enable_split_cache for tests.
   static void ClearGlobalsForTesting();
 
+#if BUILDFLAG(ARKWEB_TEST)
+ public:
+#else
  private:
+#endif  // ARKWEB_TEST
+
   // Types --------------------------------------------------------------------
 
   // The type of operation represented by a work item.

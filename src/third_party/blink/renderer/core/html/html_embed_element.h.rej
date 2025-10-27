@@ -1,0 +1,20 @@
+--- html_embed_element.h	2025-10-20 19:53:00.430209679 +0800
++++ html_embed_element.h	2025-10-16 16:07:39.444464459 +0800
+@@ -46,10 +51,17 @@
+ 
+   FrameOwnerElementType OwnerType() const final {
+     return FrameOwnerElementType::kEmbed;
+   }
+ 
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++  bool IsNativeType() const override {
++    return Utils()->CheckNativeType(web_pref::kEmbedTag);
++  }
++  void NativeEmbedOverlay(const AttributeModificationParams& params);
++#endif
++
+  private:
+   void ParseAttribute(const AttributeModificationParams&) override;
+   bool IsPresentationAttribute(const QualifiedName&) const override;
+   void CollectStyleForPresentationAttribute(
+       const QualifiedName&,

@@ -1,0 +1,18 @@
+--- url_constants.h	2025-10-20 19:52:54.574614904 +0800
++++ url_constants.h	2025-10-16 15:54:59.704474981 +0800
+@@ -16,11 +16,15 @@
+ 
+ // Canonical schemes you can use as input to GURL.SchemeIs().
+ // TODO(jam): some of these don't below in the content layer, but are accessed
+ // from there.
+ inline constexpr char kChromeDevToolsScheme[] = "devtools";
++#if (BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_DEVTOOLS))
++inline constexpr char kChromeErrorScheme[] = "arkweb-error";
++#else
+ inline constexpr char kChromeErrorScheme[] = "chrome-error";
++#endif
+ inline constexpr char kChromeUIScheme[] = "chrome";  // Used for WebUIs.
+ inline constexpr char kChromeUIUntrustedScheme[] = "chrome-untrusted";
+ inline constexpr char kViewSourceScheme[] = "view-source";
+ #if BUILDFLAG(IS_CHROMEOS_ASH)
+ inline constexpr char kExternalFileScheme[] = "externalfile";

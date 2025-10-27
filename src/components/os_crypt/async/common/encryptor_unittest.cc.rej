@@ -1,0 +1,17 @@
+--- encryptor_unittest.cc	2025-10-20 19:52:53.238002813 +0800
++++ encryptor_unittest.cc	2025-10-16 15:54:57.099978855 +0800
+@@ -71,12 +71,12 @@
+ // platform dependent, as Windows will fail, but other platforms will return the
+ // ciphertext back.
+ [[nodiscard]] bool MaybeVerifyFailedDecryptOperation(
+     const std::optional<std::string>& decrypted,
+     base::span<const uint8_t> ciphertext) {
+-#if BUILDFLAG(IS_WIN)
+-  // On Windows, decryption fails, and decrypted will have no valid value.
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
++  // On Windows, Ohos, decryption fails, and decrypted will have no valid value.
+   return !decrypted;
+ #else
+   // On other platforms, OSCrypt does not recognise the data and it returns
+   // the data without decrypting.
+   if (!decrypted) {

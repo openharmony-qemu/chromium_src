@@ -1,0 +1,20 @@
+--- BUILD.gn	2025-10-20 19:52:55.538570111 +0800
++++ BUILD.gn	2025-10-16 15:55:00.627487127 +0800
+@@ -151,10 +153,17 @@
+     libs += [ "android" ]
+   }
+   if (is_linux || is_chromeos) {
+     sources += [ "image_transport_surface_linux.cc" ]
+   }
++  if (is_arkweb) {
++    import("//arkweb/chromium_ext/gpu/ipc/service/arkweb_gpu_ipc_service_ext.gni")
++    sources += arkweb_gpu_ipc_service_sources
++  }
++  if (arkweb_bugfix_crash) {
++    deps += [ "//arkweb/build/features" ]
++  }
+   if (use_ozone) {
+     sources += [
+       "gpu_memory_buffer_factory_native_pixmap.cc",
+       "gpu_memory_buffer_factory_native_pixmap.h",
+     ]

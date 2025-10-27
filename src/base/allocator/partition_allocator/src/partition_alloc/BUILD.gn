@@ -4,6 +4,7 @@
 
 import("../../partition_alloc.gni")
 import("buildflag_header.gni")
+import("//arkweb/build/features/features.gni")
 
 # //build_overrides/partition_alloc.gni should define partition_alloc_{
 # add,remove}_configs. But if not defined (e.g. the embedder misses the config),
@@ -871,7 +872,7 @@ if (is_clang_or_gcc) {
       shim_sources += [ "shim/allocator_shim_default_dispatch_to_partition_alloc_with_advanced_checks.cc" ]
       shim_headers += [ "shim/allocator_shim_default_dispatch_to_partition_alloc_with_advanced_checks.h" ]
     }
-    if (is_android) {
+    if (is_android || is_ohos) {
       shim_headers += [
         "shim/allocator_shim_override_cpp_symbols.h",
         "shim/allocator_shim_override_linker_wrapped_symbols.h",
@@ -939,7 +940,7 @@ if (is_clang_or_gcc) {
     }
 
     if (!use_partition_alloc_as_malloc) {
-      if (is_android) {
+      if (is_android || enable_arkweb) {
         shim_sources += [
           "shim/allocator_shim_default_dispatch_to_linker_wrapped_symbols.cc",
         ]
@@ -1126,6 +1127,7 @@ source_set("test_support") {
   ]
   if (is_posix) {
     sources += [
+      "partition_alloc_base/threading/platform_thread_linux_for_testing.cc",
       "partition_alloc_base/threading/platform_thread_posix_for_testing.cc",
     ]
   }

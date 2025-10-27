@@ -162,6 +162,16 @@ bool AsyncLayerTreeFrameSink::BindToClient(LayerTreeFrameSinkClient* client) {
   compositor_frame_sink_ptr_->SetThreads(threads);
 #endif
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+  async_layer_tree_frame_sink_utils_->BindToClientArkWebPerSch(compositor_frame_sink_ptr_,
+      base::PlatformThread::CurrentRealId(),
+      base::GetCurrentRealPid());
+#endif
+
+#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
+  async_layer_tree_frame_sink_utils_->BindToClientArkWebSoftCom(client, begin_frame_source_.get());
+#endif
+
   return true;
 }
 
@@ -178,6 +188,11 @@ void AsyncLayerTreeFrameSink::DetachFromClient() {
   compositor_frame_sink_ptr_ = nullptr;
   compositor_frame_sink_.reset();
   compositor_frame_sink_associated_.reset();
+
+#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
+  async_layer_tree_frame_sink_utils_->DetachFromClientArkWebSoftCom();
+#endif
+
   LayerTreeFrameSink::DetachFromClient();
 }
 
@@ -233,6 +248,10 @@ void AsyncLayerTreeFrameSink::SubmitCompositorFrame(
   } else {
     last_hit_test_data_ = *hit_test_region_list;
   }
+
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  async_layer_tree_frame_sink_utils_->SubmitCompositorFrameDfxDumpLog(local_surface_id_);
+#endif
 
   if (last_submitted_local_surface_id_ != local_surface_id_) {
     last_submitted_local_surface_id_ = local_surface_id_;

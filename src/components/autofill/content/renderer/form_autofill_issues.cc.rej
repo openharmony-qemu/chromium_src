@@ -1,0 +1,24 @@
+--- form_autofill_issues.cc	2025-10-20 19:52:52.513665722 +0800
++++ form_autofill_issues.cc	2025-10-16 15:54:56.260876904 +0800
+@@ -255,11 +255,21 @@
+ // and returns a vector that is the union of `form_issues` and the new issues
+ // found.
+ std::vector<FormIssue> GetFormIssues(
+     const blink::WebVector<blink::WebFormControlElement>& control_elements,
+     std::vector<FormIssue> form_issues) {
++#if BUILDFLAG(IS_OHOS)
++  blink::WebVector<blink::WebFormControlElement> elements(control_elements);
++  std::vector<blink::WebFormControlElement> form_control_elements =
++    elements.ReleaseVector();
++  std::erase_if(form_control_elements, [](const WebFormControlElement& e) {
++    return e.IsNull();
++  });
++  AppendFormIssuesInternal(form_control_elements, form_issues);
++#else
+   AppendFormIssuesInternal(control_elements, form_issues);
++#endif
+   return form_issues;
+ }
+ 
+ // Method specific to find issues regarding label `for` attribute. This needs to
+ // be called after label extraction. Similar to `GetFormIssues` it returns

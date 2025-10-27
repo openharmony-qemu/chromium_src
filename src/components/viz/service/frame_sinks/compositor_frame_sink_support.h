@@ -68,6 +68,8 @@ class VIZ_SERVICE_EXPORT CompositorFrameSinkSupport
       public SurfaceClient,
       public CapturableFrameSink {
  public:
+  friend class CompositorFrameSinkSupportUtils;
+  std::unique_ptr<CompositorFrameSinkSupportUtils> supportUtils;
   using AggregatedDamageCallback =
       base::RepeatingCallback<void(const LocalSurfaceId& local_surface_id,
                                    const gfx::Size& frame_size_in_pixels,

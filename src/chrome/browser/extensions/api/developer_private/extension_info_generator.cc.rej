@@ -1,0 +1,16 @@
+--- extension_info_generator.cc	2025-10-20 19:52:49.590210821 +0800
++++ extension_info_generator.cc	2025-10-16 15:57:00.125264088 +0800
+@@ -713,11 +713,13 @@
+   }
+ 
+   // Location text.
+   int location_text = -1;
+   if (info->location == developer::Location::kUnknown) {
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)    
+     location_text = IDS_EXTENSIONS_INSTALL_LOCATION_UNKNOWN;
++#endif
+   } else if (extension.location() ==
+              mojom::ManifestLocation::kExternalRegistry) {
+     location_text = IDS_EXTENSIONS_INSTALL_LOCATION_3RD_PARTY;
+   } else if (extension.is_shared_module()) {
+     location_text = IDS_EXTENSIONS_INSTALL_LOCATION_SHARED_MODULE;

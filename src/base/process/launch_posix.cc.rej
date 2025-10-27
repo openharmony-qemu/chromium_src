@@ -1,0 +1,16 @@
+--- launch_posix.cc	2025-10-20 19:52:46.680843638 +0800
++++ launch_posix.cc	2025-10-16 15:54:55.317433402 +0800
+@@ -701,11 +703,12 @@
+   // Run |execve()| with the current environment.
+   return GetAppOutputInternal(cl.argv(), nullptr, false, output, true,
+                               exit_code);
+ }
+ 
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX) || \
++    BUILDFLAG(IS_OHOS)
+ namespace {
+ 
+ // This function runs on the stack specified on the clone call. It uses longjmp
+ // to switch back to the original stack so the child can return from sys_clone.
+ int CloneHelper(void* arg) {

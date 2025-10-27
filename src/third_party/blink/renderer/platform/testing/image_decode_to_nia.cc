@@ -32,8 +32,10 @@
 
 #include <iostream>
 
+#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/files/file_util.h"
+#include "base/logging.h"
 #include "base/task/single_thread_task_executor.h"
 #include "third_party/blink/public/platform/platform.h"
 #include "third_party/blink/renderer/platform/image-decoders/image_decoder.h"

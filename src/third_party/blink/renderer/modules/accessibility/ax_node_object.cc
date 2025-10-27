@@ -1109,7 +1109,9 @@ AXObjectInclusion AXNodeObject::ShouldIncludeBasedOnSemantics(
           ax::mojom::blink::Role::kSplitter,
           ax::mojom::blink::Role::kSubscript,
           ax::mojom::blink::Role::kSuperscript,
+#if !BUILDFLAG(ARKWEB_ACCESSIBILITY)
           ax::mojom::blink::Role::kStrong,
+#endif
           ax::mojom::blink::Role::kTerm,
           ax::mojom::blink::Role::kTime,
           ax::mojom::blink::Role::kVideo,
@@ -3519,7 +3521,21 @@ String AXNodeObject::AutoComplete() const {
 void AXNodeObject::SerializeMarkerAttributes(ui::AXNodeData* node_data) const {
   if (!GetNode() || !GetDocument() || !GetDocument()->View())
     return;
-
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  // Inject attributes to the HTML role, only for embed now
+  Element *element_node = DynamicTo<Element>(GetNode());
+  if (element_node && node_data && element_node->tagName() == "EMBED") {
+    for (const Attribute &attr : element_node->Attributes()) {
+      std::string name = attr.GetName().LocalName().LowerASCII().Utf8();
+      if (base::EqualsCaseInsensitiveASCII(name, "id")) {
+        std::string value = attr.Value().Utf8();
+        LOG(DEBUG) << "embed html element id: " << value;
+        node_data->html_attributes.push_back(std::make_pair(name, value));
+        break;
+      }
+    }
+  }
+#endif
   auto* text_node = DynamicTo<Text>(GetNode());
   if (!text_node)
     return;

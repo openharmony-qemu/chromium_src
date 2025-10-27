@@ -1,0 +1,69 @@
+--- web_contents_observer.h	2025-10-20 19:52:54.570613086 +0800
++++ web_contents_observer.h	2025-10-16 15:54:59.700479258 +0800
+@@ -37,10 +37,11 @@
+ #include "third_party/blink/public/mojom/media/capture_handle_config.mojom-forward.h"
+ #include "third_party/skia/include/core/SkColor.h"
+ #include "ui/accessibility/ax_location_and_scroll_updates.h"
+ #include "ui/base/page_transition_types.h"
+ #include "ui/base/window_open_disposition.h"
++#include "arkweb/build/features/features.h"
+ 
+ class GURL;
+ 
+ namespace blink {
+ namespace mojom {
+@@ -873,10 +879,18 @@
+   };
+   virtual void MediaStoppedPlaying(
+       const MediaPlayerInfo& video_type,
+       const MediaPlayerId& id,
+       WebContentsObserver::MediaStoppedReason reason) {}
++#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
++  virtual void MediaPlayerGone(
++      const MediaPlayerInfo& video_type,
++      const MediaPlayerId& id) {}
++#endif
++#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
++  virtual void OneShotMediaPlayerStopped() {}
++#endif
+   virtual void MediaResized(const gfx::Size& size, const MediaPlayerId& id) {}
+   // Invoked when media enters or exits fullscreen. We must use a heuristic
+   // to determine this as it is not trivial for media with custom controls.
+   // There is a slight delay between media entering or exiting fullscreen
+   // and it being detected.
+@@ -982,16 +996,35 @@
+   virtual void PointerLockRequested() {}
+ 
+   // Called when WebContents received a request to vibrate the page.
+   virtual void VibrationRequested() {}
+ 
++#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
++  // Called when form editing state changed
++  virtual void OnFormEditingStateChanged(bool state, uint64_t form_id) {}
++#endif
++
+   // Called when a first contentful paint happened in the primary main frame.
+   virtual void OnFirstContentfulPaintInPrimaryMainFrame() {}
+ 
+   WebContents* web_contents() const;
+ 
++#if BUILDFLAG(ARKWEB_CSS_INPUT_TIME)
++  virtual void OpenDateTimeChooser() {}
++  virtual void CloseDateTimeChooser() {}
++#endif
++
++#if BUILDFLAG(ARKWEB_BGTASK)
++  virtual void OnBrowserForeground() {}
++  virtual void OnBrowserBackground() {}
++#endif
++
++#if BUILDFLAG(ARKWEB_TEST)
++  public:
++#else
+  protected:
++#endif  // ARKWEB_TEST
+   // Use this constructor when the object is tied to a single WebContents for
+   // its entire lifetime.
+   explicit WebContentsObserver(WebContents* web_contents);
+ 
+   // Use this constructor when the object wants to observe a WebContents for

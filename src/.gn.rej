@@ -1,0 +1,14 @@
+--- .gn	2025-10-20 19:52:45.937020047 +0800
++++ .gn	2025-10-16 15:54:54.077864816 +0800
+@@ -157,10 +157,11 @@
+ 
+       "//chrome/android/webapk/shell_apk/prepare_upload_dir/BUILD.gn",
+       "//chrome/version.gni",
+ 
+       "//cef/BUILD.gn",
++      "//arkweb/ohos_adapter_ndk/BUILD.gn",
+ 
+       # TODO(dgn): Layer violation but breaks the build otherwise, see
+       # https://crbug.com/474506.
+       "//clank/java/BUILD.gn",
+       "//clank/native/BUILD.gn",

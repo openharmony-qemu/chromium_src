@@ -1,0 +1,18 @@
+--- clang.gni	2025-10-20 19:52:46.804563082 +0800
++++ clang.gni	2025-10-16 15:54:55.549488821 +0800
+@@ -5,10 +5,15 @@
+ import("//build/config/chromeos/ui_mode.gni")
+ import("//build/toolchain/toolchain.gni")
+ 
+ default_clang_base_path = "//third_party/llvm-build/Release+Asserts"
+ 
++if (is_arkweb) {
++  import("//build/config/ohos/config.gni")
++  default_clang_base_path = ohos_toolchain_root
++}
++
+ declare_args() {
+   # Indicates if the build should use the Chrome-specific plugins for enforcing
+   # coding guidelines, etc. Only used when compiling with Chrome's Clang, not
+   # Chrome OS's.
+   clang_use_chrome_plugins =

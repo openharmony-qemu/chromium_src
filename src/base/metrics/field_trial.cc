@@ -67,6 +67,10 @@
 #include "base/fuchsia/fuchsia_logging.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+#include "arkweb/chromium_ext/base/feature_list_utils.h"
+#endif
+
 namespace base {
 
 namespace {

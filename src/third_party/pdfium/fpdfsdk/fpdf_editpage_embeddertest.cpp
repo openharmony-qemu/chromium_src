@@ -316,10 +316,10 @@ TEST_F(FPDFEditPageEmbedderTest, GetBoundsForNormalText) {
   FPDF_PAGEOBJECT obj = FPDFPage_GetObject(page.get(), 0);
   ASSERT_EQ(FPDF_PAGEOBJ_TEXT, FPDFPageObj_GetType(obj));
 
-  static constexpr float kExpectedLeft = 20.348f;
-  static constexpr float kExpectedBottom = 48.164f;
-  static constexpr float kExpectedRight = 83.36f;
-  static constexpr float kExpectedTop = 58.328f;
+  constexpr float kExpectedLeft = 20.348f;
+  constexpr float kExpectedBottom = 48.164f;
+  constexpr float kExpectedRight = 83.36f;
+  constexpr float kExpectedTop = 58.328f;
 
   float left;
   float bottom;
@@ -351,10 +351,10 @@ TEST_F(FPDFEditPageEmbedderTest, GetBoundsForRotatedText) {
   FPDF_PAGEOBJECT obj = FPDFPage_GetObject(page.get(), 0);
   ASSERT_EQ(FPDF_PAGEOBJ_TEXT, FPDFPageObj_GetType(obj));
 
-  static constexpr float kExpectedLeft = 98.9478f;
-  static constexpr float kExpectedBottom = 78.2607f;
-  static constexpr float kExpectedRight = 126.32983f;
-  static constexpr float kExpectedTop = 105.64272f;
+  constexpr float kExpectedLeft = 98.9478f;
+  constexpr float kExpectedBottom = 78.2607f;
+  constexpr float kExpectedRight = 126.32983f;
+  constexpr float kExpectedTop = 105.64272f;
 
   float left;
   float bottom;
@@ -386,10 +386,10 @@ TEST_F(FPDFEditPageEmbedderTest, GetBoundsForNormalImage) {
   FPDF_PAGEOBJECT obj = FPDFPage_GetObject(page.get(), 2);
   ASSERT_EQ(FPDF_PAGEOBJ_IMAGE, FPDFPageObj_GetType(obj));
 
-  static constexpr float kExpectedLeft = 0.0f;
-  static constexpr float kExpectedBottom = 90.0f;
-  static constexpr float kExpectedRight = 40.0f;
-  static constexpr float kExpectedTop = 150.0f;
+  constexpr float kExpectedLeft = 0.0f;
+  constexpr float kExpectedBottom = 90.0f;
+  constexpr float kExpectedRight = 40.0f;
+  constexpr float kExpectedTop = 150.0f;
 
   float left;
   float bottom;
@@ -421,10 +421,10 @@ TEST_F(FPDFEditPageEmbedderTest, GetBoundsForRotatedImage) {
   FPDF_PAGEOBJECT obj = FPDFPage_GetObject(page.get(), 0);
   ASSERT_EQ(FPDF_PAGEOBJ_IMAGE, FPDFPageObj_GetType(obj));
 
-  static constexpr float kExpectedLeft = 100.0f;
-  static constexpr float kExpectedBottom = 70.0f;
-  static constexpr float kExpectedRight = 170.0f;
-  static constexpr float kExpectedTop = 140.0f;
+  constexpr float kExpectedLeft = 100.0f;
+  constexpr float kExpectedBottom = 70.0f;
+  constexpr float kExpectedRight = 170.0f;
+  constexpr float kExpectedTop = 140.0f;
 
   float left;
   float bottom;
@@ -449,8 +449,8 @@ TEST_F(FPDFEditPageEmbedderTest, GetBoundsForRotatedImage) {
 }
 
 TEST_F(FPDFEditPageEmbedderTest, VerifyDashArraySaved) {
-  static constexpr float kDashArray[] = {2.5, 3.6};
-  static constexpr float kDashPhase = 1.2;
+  constexpr float kDashArray[] = {2.5, 3.6};
+  constexpr float kDashPhase = 1.2;
 
   CreateEmptyDocument();
   {
@@ -495,7 +495,7 @@ TEST_F(FPDFEditPageEmbedderTest, VerifyDashArraySaved) {
   CloseSavedDocument();
 }
 
-TEST_F(FPDFEditPageEmbedderTest, PageObjectActiveState) {
+TEST_F(FPDFEditPageEmbedderTest, PageObjectSetIsActive) {
   const char* one_rectangle_inactive_checksum = []() {
     if (CFX_DefaultRenderDevice::UseSkiaRenderer()) {
       return "cf5bb4e61609162c03f4c8a6d9791230";
@@ -540,22 +540,9 @@ TEST_F(FPDFEditPageEmbedderTest, PageObjectActiveState) {
   // Mark one of the page objects as inactive.  It is still present in the page.
   FPDF_PAGEOBJECT page_obj = FPDFPage_GetObject(page.get(), 4);
   ASSERT_TRUE(page_obj);
-
-  // Negative testing.
-  EXPECT_FALSE(FPDFPageObj_GetIsActive(page_obj, nullptr));
-  FPDF_BOOL page_obj_is_active;
-  EXPECT_FALSE(FPDFPageObj_GetIsActive(nullptr, &page_obj_is_active));
-  EXPECT_FALSE(FPDFPageObj_GetIsActive(nullptr, nullptr));
-
-  // Positive testing.
-  page_obj_is_active = false;
-  EXPECT_TRUE(FPDFPageObj_GetIsActive(page_obj, &page_obj_is_active));
-  EXPECT_TRUE(page_obj_is_active);
   ASSERT_TRUE(FPDFPageObj_SetIsActive(page_obj, /*active=*/false));
   EXPECT_TRUE(FPDFPage_GenerateContent(page.get()));
   EXPECT_EQ(8, FPDFPage_CountObjects(page.get()));
-  EXPECT_TRUE(FPDFPageObj_GetIsActive(page_obj, &page_obj_is_active));
-  EXPECT_FALSE(page_obj_is_active);
 
   {
     // Save a copy, open the copy, and render it.
@@ -575,10 +562,6 @@ TEST_F(FPDFEditPageEmbedderTest, PageObjectActiveState) {
     CloseSavedPage(saved_page);
     CloseSavedDocument();
   }
-
-  // Negative testing.
-  EXPECT_FALSE(FPDFPageObj_SetIsActive(nullptr, false));
-  EXPECT_FALSE(FPDFPageObj_SetIsActive(nullptr, true));
 }
 
 TEST_F(FPDFEditPageEmbedderTest, Bug378120423) {

@@ -10,6 +10,10 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+#include "arkweb/ohos_nweb/src/sysevent/event_reporter.h"
+#endif
 #include "base/containers/contains.h"
 #include "base/debug/crash_logging.h"
 #include "base/debug/dump_without_crashing.h"

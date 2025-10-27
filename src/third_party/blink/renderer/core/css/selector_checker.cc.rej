@@ -1,0 +1,25 @@
+--- selector_checker.cc	2025-10-20 19:53:00.298210931 +0800
++++ selector_checker.cc	2025-10-16 16:07:39.298407582 +0800
+@@ -1815,15 +1815,22 @@
+                               &force_pseudo_state);
+       if (force_pseudo_state) {
+         return false;
+       }
+       if (auto* fieldset = DynamicTo<HTMLFieldSetElement>(element)) {
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++        if (RuntimeEnabledFeatures::
++                SendMouseEventsDisabledFormControlsEnabled()) {
++#endif
+         // <fieldset> should never be considered disabled, but should still
+         // match the :enabled or :disabled pseudo-classes according to whether
+         // the attribute is set or not. See here for context:
+         // https://github.com/whatwg/html/issues/5886#issuecomment-1582410112
+         return fieldset->IsActuallyDisabled();
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++        }
++#endif
+       }
+       return element.IsDisabledFormControl();
+     case CSSSelector::kPseudoReadOnly: {
+       probe::ForcePseudoState(&element, CSSSelector::kPseudoReadOnly,
+                               &force_pseudo_state);

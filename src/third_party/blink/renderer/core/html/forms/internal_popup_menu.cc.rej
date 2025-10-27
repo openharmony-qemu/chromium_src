@@ -1,0 +1,20 @@
+--- internal_popup_menu.cc	2025-10-20 19:53:00.422209755 +0800
++++ internal_popup_menu.cc	2025-10-16 16:07:39.436569493 +0800
+@@ -646,12 +650,17 @@
+     chrome_client_->ClosePagePopup(popup_);
+ }
+ 
+ void InternalPopupMenu::Show(PopupMenu::ShowEventType type) {
+   DCHECK(!popup_);
++#if BUILDFLAG(ARKWEB_HTML_SELECT)
++  taller_options_ =
++      (!base::ohos::IsPcDevice() && type == PopupMenu::kTouch) ||
++#else
+   taller_options_ =
+       type == PopupMenu::kTouch ||
++#endif
+       RuntimeEnabledFeatures::ForceTallerSelectPopupEnabled() ||
+       RuntimeEnabledFeatures::SelectOptionAccessibilityTargetSizeEnabled();
+   popup_ = chrome_client_->OpenPagePopup(this);
+ }
+ 

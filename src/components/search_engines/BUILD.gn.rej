@@ -1,0 +1,45 @@
+--- BUILD.gn	2025-10-20 19:52:53.650192748 +0800
++++ BUILD.gn	2025-10-16 15:54:57.571474237 +0800
+@@ -268,20 +268,42 @@
+       "//components/search_engines/android:test_utils_jni_headers",
+     ]
+   }
+ }
+ 
++if (is_ohos) {
++  action("create_prepopulated_engines_json") {
++    script = "//arkweb/build/search_engines/prepopulated_engines.py"
++    outputs = [
++      "$root_gen_dir/../../../arkweb/build/search_engines/prepopulated_engines.json"
++    ]
++  }
++  copy("copy_prepopulated_engines_json") {
++    sources = [
++      "//arkweb/build/search_engines/prepopulated_engines.json"
++    ]
++    outputs = [
++      "$root_gen_dir/../../../components/search_engines/prepopulated_engines.json"
++    ]
++  }
++}
++
+ json_to_struct("prepopulated_engines") {
+   visibility = [ ":*" ]
+ 
+   source = "prepopulated_engines.json"
+   schema_file = "prepopulated_engines_schema.json"
+   namespace = "TemplateURLPrepopulateData"
+   deps = [
+     ":search_engine_type",
+     "//base",
+   ]
++  if (is_ohos) {
++    deps += [
++      ":copy_prepopulated_engines_json"
++    ]
++  }
+ }
+ 
+ if (is_android) {
+   java_cpp_enum("search_engine_enums_java") {
+     sources = [

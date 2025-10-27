@@ -1,0 +1,23 @@
+--- service_worker_context_core.cc	2025-10-20 19:52:54.450558567 +0800
++++ service_worker_context_core.cc	2025-10-16 15:54:59.576611827 +0800
+@@ -1293,18 +1293,20 @@
+     const GURL& source_url) {
+   DCHECK_CURRENTLY_ON(BrowserThread::UI);
+   BrowserContext* browser_context = wrapper_->browser_context();
+   DCHECK(browser_context);
+   DCHECK_EQ(this, version->context().get());
++#if !BUILDFLAG(IS_OHOS)
+   const bool is_builtin_component =
+       HasWebUIScheme(source_url) ||
+       GetContentClient()->browser()->IsBuiltinComponent(
+           browser_context, url::Origin::Create(source_url));
+ 
+   LogConsoleMessage(message_level, message, line_number, is_builtin_component,
+                     wrapper_->is_incognito(),
+                     base::UTF8ToUTF16(source_url.spec()));
++#endif
+ 
+   observer_list_->Notify(
+       FROM_HERE, &ServiceWorkerContextCoreObserver::OnReportConsoleMessage,
+       version->version_id(), version->scope(), version->key(),
+       ConsoleMessage(source, message_level, message, line_number, source_url));

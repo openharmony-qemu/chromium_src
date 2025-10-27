@@ -61,6 +61,10 @@ class COMPONENT_EXPORT(PRINTING_METAFILE) MetafilePlayer {
                           bool fit_to_page) const = 0;
 #endif  // BUILDFLAG(IS_WIN)
 
+#if BUILDFLAG(ARKWEB_PRINT)
+  virtual bool OhosFinishDocument(std::function<bool()> checkCancel) = 0;
+#endif // BUILDFLAG(ARKWEB_PRINT)
+
   // Populates the buffer with the underlying data. This function should ONLY be
   // called after the metafile is closed. Returns true if writing succeeded.
   virtual bool GetDataAsVector(std::vector<char>* buffer) const = 0;

@@ -1,0 +1,14 @@
+--- font_platform_data.h	2025-10-20 19:53:01.162201788 +0800
++++ font_platform_data.h	2025-10-16 16:07:40.064219314 +0800
+@@ -57,10 +57,11 @@
+ #endif  // BUILDFLAG(IS_MAC)
+ 
+ namespace blink {
+ 
+ class HarfBuzzFace;
++class FontPlatformDataUtils;
+ 
+ class PLATFORM_EXPORT FontPlatformData
+     : public GarbageCollected<FontPlatformData> {
+  public:
+   // Used for deleted values in the font cache's hash tables. The hash table

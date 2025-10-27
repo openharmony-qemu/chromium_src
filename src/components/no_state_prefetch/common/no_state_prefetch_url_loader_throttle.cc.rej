@@ -1,0 +1,52 @@
+--- no_state_prefetch_url_loader_throttle.cc	2025-10-20 19:52:53.169971464 +0800
++++ no_state_prefetch_url_loader_throttle.cc	2025-10-16 15:54:57.020064384 +0800
+@@ -19,12 +19,14 @@
+ 
+ namespace prerender {
+ 
+ namespace {
+ 
++#if !BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+ const char kPurposeHeaderName[] = "Purpose";
+ const char kPurposeHeaderValue[] = "prefetch";
++#endif
+ 
+ void CallCancelNoStatePrefetchForUnsupportedScheme(
+     mojo::PendingRemote<prerender::mojom::NoStatePrefetchCanceler> canceler) {
+   mojo::Remote<prerender::mojom::NoStatePrefetchCanceler>(std::move(canceler))
+       ->CancelNoStatePrefetchForUnsupportedScheme();
+@@ -36,10 +38,19 @@
+     mojo::PendingRemote<prerender::mojom::NoStatePrefetchCanceler> canceler)
+     : canceler_(std::move(canceler)) {
+   DCHECK(canceler_);
+ }
+ 
++NoStatePrefetchURLLoaderThrottle::NoStatePrefetchURLLoaderThrottle(
++    const std::string& histogram_prefix,
++    mojo::PendingRemote<prerender::mojom::NoStatePrefetchCanceler> canceler)
++    // todo:check
++    //: histogram_prefix_(histogram_prefix), canceler_(std::move(canceler)) {
++    : histogram_prefix_(histogram_prefix) {
++  DCHECK(canceler_);
++}
++
+ NoStatePrefetchURLLoaderThrottle::~NoStatePrefetchURLLoaderThrottle() {
+   if (destruction_closure_)
+     std::move(destruction_closure_).Run();
+ }
+ 
+@@ -57,12 +68,14 @@
+ 
+ void NoStatePrefetchURLLoaderThrottle::WillStartRequest(
+     network::ResourceRequest* request,
+     bool* defer) {
+   request->load_flags |= net::LOAD_PREFETCH;
++#if !BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+   request->cors_exempt_headers.SetHeader(kPurposeHeaderName,
+                                          kPurposeHeaderValue);
++#endif
+ 
+   request_destination_ = request->destination;
+   // Abort any prerenders that spawn requests that use unsupported HTTP
+   // methods or schemes.
+   if (!IsValidHttpMethod(request->method)) {

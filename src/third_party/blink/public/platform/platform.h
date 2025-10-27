@@ -38,6 +38,7 @@
 #include <tuple>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/task/sequenced_task_runner.h"
@@ -145,6 +146,9 @@ class WebThreadScheduler;
 
 namespace mojom {
 class ServiceWorkerContainerHostInterfaceBase;
+#if BUILDFLAG(ARKWEB_READER_MODE)
+class ReaderModeConfig;
+#endif
 }
 
 class BLINK_PLATFORM_EXPORT Platform {
@@ -276,6 +280,14 @@ class BLINK_PLATFORM_EXPORT Platform {
   // This means the process will not be used to load documents or workers from
   // URLs outside that site.
   virtual bool IsLockedToSite() const { return false; }
+
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  virtual int32_t GetDrawMode() { return 0; }
+#endif
+
+#if BUILDFLAG(ARKWEB_ZOOM)
+  virtual float GetTextZoomFactor() { return 1.0f; }
+#endif
 
   // Network -------------------------------------------------------------
 
@@ -849,6 +861,12 @@ class BLINK_PLATFORM_EXPORT Platform {
 
   virtual void DevToolsAgentAttached() {}
   virtual void DevToolsAgentDetached() {}
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  virtual const blink::mojom::ReaderModeConfig* GetReaderModeConfig() {
+    return nullptr;
+  }
+#endif
 
  private:
   static void InitializeMainThreadCommon(

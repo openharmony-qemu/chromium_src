@@ -99,30 +99,6 @@ void CefVideoConsumerOSR::OnFrameCaptured(
         callbacks) {
   ScopedVideoFrameDone scoped_done(std::move(callbacks));
 
-  media::VideoFrameMetadata metadata = info->metadata;
-  gfx::Rect damage_rect;
-
-  if (bounds_in_pixels_) {
-    // Use the bounds passed to RequestRefreshFrame().
-    damage_rect = gfx::Rect(info->coded_size);
-    damage_rect.Intersect(*bounds_in_pixels_);
-    bounds_in_pixels_ = std::nullopt;
-  } else {
-    // Retrieve the rectangular region of the frame that has changed since the
-    // frame with the directly preceding CAPTURE_COUNTER. If that frame was not
-    // received, typically because it was dropped during transport from the
-    // producer, clients must assume that the entire frame has changed.
-    // This rectangle is relative to the full frame data, i.e. [0, 0,
-    // coded_size.width(), coded_size.height()]. It does not have to be
-    // fully contained within visible_rect.
-    if (metadata.capture_update_rect) {
-      damage_rect = *metadata.capture_update_rect;
-    }
-    if (damage_rect.IsEmpty()) {
-      damage_rect = gfx::Rect(info->coded_size);
-    }
-  }
-
   // If it is GPU Texture OSR.
   if (use_shared_texture_) {
     CHECK(data->is_gpu_memory_buffer_handle() &&
@@ -205,12 +181,11 @@ void CefVideoConsumerOSR::OnFrameCaptured(
       cef_plane.fd = plane.fd.get();
       paint_info.planes[cef_plain_index++] = cef_plane;
     }
-    view_->OnAcceleratedPaint(damage_rect, info->coded_size, paint_info);
+    view_->OnAcceleratedPaint(content_rect, info->coded_size, paint_info);
 #endif
     return;
   }
 
-  // If it is CPU bitmap OSR.
   if (info->pixel_format != media::PIXEL_FORMAT_ARGB) {
     DLOG(ERROR) << "Unsupported pixel format " << info->pixel_format;
     return;
@@ -241,6 +216,30 @@ void CefVideoConsumerOSR::OnFrameCaptured(
   // The SkBitmap's pixels will be marked as immutable, but the installPixels()
   // API requires a non-const pointer. So, cast away the const.
   void* const pixels = const_cast<void*>(mapping.memory());
+
+  media::VideoFrameMetadata metadata = info->metadata;
+  gfx::Rect damage_rect;
+
+  if (bounds_in_pixels_) {
+    // Use the bounds passed to RequestRefreshFrame().
+    damage_rect = gfx::Rect(info->coded_size);
+    damage_rect.Intersect(*bounds_in_pixels_);
+    bounds_in_pixels_ = std::nullopt;
+  } else {
+    // Retrieve the rectangular region of the frame that has changed since the
+    // frame with the directly preceding CAPTURE_COUNTER. If that frame was not
+    // received, typically because it was dropped during transport from the
+    // producer, clients must assume that the entire frame has changed.
+    // This rectangle is relative to the full frame data, i.e. [0, 0,
+    // coded_size.width(), coded_size.height()]. It does not have to be
+    // fully contained within visible_rect.
+    if (metadata.capture_update_rect) {
+      damage_rect = *metadata.capture_update_rect;
+    }
+    if (damage_rect.IsEmpty()) {
+      damage_rect = gfx::Rect(info->coded_size);
+    }
+  }
 
   view_->OnPaint(damage_rect, info->coded_size, pixels);
 }

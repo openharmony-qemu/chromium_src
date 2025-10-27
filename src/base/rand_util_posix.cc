@@ -147,6 +147,7 @@ void RandBytesInternal(span<uint8_t> output, bool avoid_allocation) {
   //
   // TODO(crbug.com/40641285): When we no longer need to support old Linux
   // kernels, we can get rid of this /dev/urandom branch altogether.
+  LOG(WARNING) << "getrandom syscall failed, fall through to reading from urandom";
   const int urandom_fd = GetUrandomFD();
   const bool success = ReadFromFD(urandom_fd, as_writable_chars(output));
   CHECK(success);

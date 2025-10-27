@@ -46,6 +46,7 @@
 #include "components/viz/service/transitions/surface_animation_manager.h"
 #include "media/filters/video_cadence_estimator.h"
 #include "mojo/public/cpp/system/platform_handle.h"
+#include "arkweb/chromium_ext/components/viz/service/frame_sinks/compositor_frame_sink_support_utils.h"
 
 // This determines whether the provided time since last interval corresponds
 // to a cadence frame that needs to be rendered.
@@ -429,6 +430,14 @@ void CompositorFrameSinkSupport::OnSurfacePresented(
     base::TimeTicks draw_start_timestamp,
     const gfx::SwapTimings& swap_timings,
     const gfx::PresentationFeedback& feedback) {
+#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
+  if (g_firstScrollingFrame == frame_token) {
+    TRACE_EVENT1("viz", "CompositorFrameSinkSupport::OnSurfacePresented",
+      "sliding response end frame", frame_token);
+    LOG(DEBUG) << "CompositorFrameSinkSupport::OnSurfacePresented "
+      "sliding response end";
+  }
+#endif
   // If the frame was submitted locally (from inside viz), do not tell the
   // client about it, since the client did not send it.
   if (frame_token != kLocalFrameToken) {
@@ -751,6 +760,10 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
     if (latency.latency_components().size() > 0) {
       latency.AddLatencyNumberWithTimestamp(
           ui::DISPLAY_COMPOSITOR_RECEIVED_FRAME_COMPONENT, now_time);
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+      OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
+                        std::to_string(latency.trace_id()), "step", "DISPLAY_COMPOSITOR_RECEIVED_FRAME_COMPONENT");
+#endif
     }
   }
 
@@ -948,10 +961,18 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
       break;
   }
 
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  supportUtils->maximizeResizeCompositorFrame(current_surface, frame_size);
+#endif
+
   if (begin_frame_source_) {
     begin_frame_source_->DidFinishFrame(this);
     frame_sink_manager_->DidFinishFrame(frame_sink_id_, last_begin_frame_args_);
   }
+
+#if BUILDFLAG(ARKWEB_VIDEO_LTPO)
+  supportUtils->videoLtpoMaybeSubmitCompositorFrame();
+#endif
 
   return SubmitResult::ACCEPTED;
 }
@@ -1144,6 +1165,10 @@ void CompositorFrameSinkSupport::OnBeginFrame(const BeginFrameArgs& args) {
       adjusted_args.animate_only = false;
 
     adjusted_args.trace_id = trace_id;
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+    OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                      std::to_string(adjusted_args.trace_id), "step", "IssueBeginFrame");
+#endif
     adjusted_args.frames_throttled_since_last = frames_throttled_since_last_;
     frames_throttled_since_last_ = 0;
 

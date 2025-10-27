@@ -1,0 +1,26 @@
+--- vp9_rtcd.h	2025-10-20 19:53:17.959780305 +0800
++++ vp9_rtcd.h	2025-10-16 16:07:47.636730337 +0800
+@@ -251,17 +251,23 @@
+   int flags = arm_cpu_caps();
+ 
+   (void)flags;
+ 
+   vp9_block_error = vp9_block_error_neon;
++  // FIXME: ARM64 is not supported in ohos
++#if !defined(OSOHOS)
+   if (flags & HAS_SVE) {
+     vp9_block_error = vp9_block_error_sve;
+   }
++#endif
+   vp9_block_error_fp = vp9_block_error_fp_neon;
++  // FIXME: ARM64 is not supported in ohos
++#if !defined(OSOHOS)
+   if (flags & HAS_SVE) {
+     vp9_block_error_fp = vp9_block_error_fp_sve;
+   }
++#endif
+ }
+ #endif
+ 
+ #ifdef __cplusplus
+ }  // extern "C"

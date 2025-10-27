@@ -1,0 +1,18 @@
+--- callback_internal.cc	2025-10-20 19:52:46.656897939 +0800
++++ callback_internal.cc	2025-10-16 15:54:55.286150914 +0800
+@@ -5,10 +5,15 @@
+ #include "base/functional/callback_internal.h"
+ 
+ #include "base/check.h"
+ #include "base/notreached.h"
+ #include "base/types/cxx23_to_underlying.h"
++#include "arkweb/build/features/features.h"
++
++#if BUILDFLAG(ARKWEB_CRASHPAD)
++#include "base/logging.h"
++#endif
+ 
+ namespace base {
+ namespace internal {
+ 
+ namespace {

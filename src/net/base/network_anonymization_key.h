@@ -61,6 +61,10 @@ class NET_EXPORT NetworkAnonymizationKey {
   // Construct an empty key.
   NetworkAnonymizationKey();
 
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+  NetworkAnonymizationKey(bool should_check_top_frame_site);
+#endif
+
   NetworkAnonymizationKey(
       const NetworkAnonymizationKey& network_anonymization_key);
   NetworkAnonymizationKey(NetworkAnonymizationKey&& network_anonymization_key);

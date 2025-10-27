@@ -1,0 +1,17 @@
+--- builtins-intl-gen.cc	2025-10-20 19:53:31.280593312 +0800
++++ builtins-intl-gen.cc	2025-10-16 15:56:12.638983560 +0800
+@@ -122,11 +130,13 @@
+ 
+ void IntlBuiltinsAssembler::ToLowerCaseImpl(
+     TNode<String> string, TNode<Object> maybe_locales, TNode<Context> context,
+     ToLowerCaseKind kind, std::function<void(TNode<Object>)> ReturnFct) {
+   Label call_c(this), return_string(this), runtime(this, Label::kDeferred);
+-
++#ifdef OHOS_JS_ENGINE
++  Label two_byte_string(this);
++#endif
+   // Unpack strings if possible, and bail to runtime unless we get a one-byte
+   // flat string.
+   ToDirectStringAssembler to_direct(
+       state(), string, ToDirectStringAssembler::kDontUnpackSlicedStrings);
+   to_direct.TryToDirect(&runtime);

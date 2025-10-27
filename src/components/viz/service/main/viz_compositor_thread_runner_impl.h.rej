@@ -1,0 +1,14 @@
+--- viz_compositor_thread_runner_impl.h	2025-10-20 19:52:54.146420452 +0800
++++ viz_compositor_thread_runner_impl.h	2025-10-16 15:54:59.248962493 +0800
+@@ -29,10 +29,11 @@
+ class HintSessionFactory;
+ class InProcessGpuMemoryBufferManager;
+ class OutputSurfaceProvider;
+ class ServerSharedBitmapManager;
+ class SharedImageInterfaceProvider;
++class VizCompositorThreadRunnerImplUtils;
+ 
+ #if BUILDFLAG(IS_ANDROID)
+ using VizCompositorThreadType = base::android::JavaHandlerThread;
+ #else
+ using VizCompositorThreadType = base::Thread;

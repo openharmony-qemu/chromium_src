@@ -1,0 +1,25 @@
+--- pipeline_controller.h	2025-10-20 19:52:56.670200182 +0800
++++ pipeline_controller.h	2025-10-16 15:55:01.866161437 +0800
+@@ -164,10 +173,22 @@
+ 
+   // Used to fire the OnTrackChangeComplete function which is captured in a
+   // OnceCallback, and doesn't play nicely with gmock.
+   void FireOnTrackChangeCompleteForTesting(State set_to);
+ 
++#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
++  void SetMediaPlayerState(bool is_suspend, int suspend_type = 0);
++  void SetPlaybackRateWithReason(double playback_rate, ActionReason reason);
++#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
++#if BUILDFLAG(ARKWEB_PIP)
++  void PipEnable(bool enable);
++#endif
++#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
++  void RecycleDmaBuffer();
++  void ResumeDmaBuffer();
++#endif  // ARKWEB_MEDIA_DMABUF
++
+  private:
+   // Attempts to make progress from the current state to the target state.
+   void Dispatch();
+ 
+   // PipelineStaus callback that also carries the target state.

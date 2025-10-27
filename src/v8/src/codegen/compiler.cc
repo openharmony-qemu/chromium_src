@@ -70,6 +70,10 @@
 #include "src/utils/ostreams.h"
 #include "src/zone/zone-list-inl.h"  // crbug.com/v8/8816
 
+#ifdef OHOS_JS_ENGINE
+#include "../../../arkweb/chromium_ext/v8/trace.h"
+#endif
+
 #ifdef V8_ENABLE_MAGLEV
 #include "src/maglev/maglev-concurrent-dispatcher.h"
 #include "src/maglev/maglev.h"
@@ -1141,6 +1145,9 @@ bool CompileTurbofan_Concurrent(Isolate* isolate,
   TRACE_EVENT_WITH_FLOW0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                          "V8.OptimizeConcurrentPrepare", job->trace_id(),
                          TRACE_EVENT_FLAG_FLOW_OUT);
+#ifdef OHOS_JS_ENGINE
+  auto trace = HiTrace("RCS_v8.compile_V8.OptimizeConcurrentPrepare");
+#endif
 
   if (!PrepareJobWithHandleScope(job.get(), isolate, compilation_info,
                                  ConcurrencyMode::kConcurrent)) {
@@ -1205,6 +1212,9 @@ MaybeHandle<Code> CompileTurbofan(Isolate* isolate, Handle<JSFunction> function,
   TimerEventScope<TimerEventOptimizeCode> optimize_code_timer(isolate);
   RCS_SCOPE(isolate, RuntimeCallCounterId::kOptimizeCode);
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"), "V8.OptimizeCode");
+#ifdef OHOS_JS_ENGINE
+  auto trace = HiTrace("RCS_v8.compile_V8.OptimizeCode");
+#endif
 
   DCHECK(!isolate->has_exception());
   PostponeInterruptsScope postpone(isolate);
@@ -1291,6 +1301,10 @@ MaybeHandle<Code> CompileMaglev(Isolate* isolate, Handle<JSFunction> function,
         TRACE_DISABLED_BY_DEFAULT("v8.compile"),
         IsSynchronous(mode) ? "V8.MaglevPrepare" : "V8.MaglevConcurrentPrepare",
         job->trace_id(), TRACE_EVENT_FLAG_FLOW_OUT);
+#ifdef OHOS_JS_ENGINE
+    auto trace = HiTrace(IsSynchronous(mode) ? "RCS_v8.compile_V8.MaglevPrepare" :
+                                               "RCS_v8.compile_V8.MaglevConcurrentPrepare");
+#endif
     CompilerTracer::TraceStartMaglevCompile(isolate, function, job->is_osr(),
                                             mode);
     CompilationJob::Status status = job->PrepareJob(isolate);
@@ -1578,6 +1592,9 @@ MaybeHandle<SharedFunctionInfo> CompileToplevel(
     IsCompiledScope* is_compiled_scope) {
   TimerEventScope<TimerEventCompileCode> top_level_timer(isolate);
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"), "V8.CompileCode");
+#ifdef OHOS_JS_ENGINE
+  auto trace_compile_code = HiTrace("RCS_v8.compile_V8.CompileCode");
+#endif
   DCHECK_EQ(ThreadId::Current(), isolate->thread_id());
 
   PostponeInterruptsScope postpone(isolate);
@@ -1602,6 +1619,10 @@ MaybeHandle<SharedFunctionInfo> CompileToplevel(
   NestedTimedHistogramScope timer(rate);
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                parse_info->flags().is_eval() ? "V8.CompileEval" : "V8.Compile");
+#ifdef OHOS_JS_ENGINE
+  auto trace_compile = HiTrace(parse_info->flags().is_eval() ? "RCS_v8.compile_V8.CompileEval" :
+                                                               "RCS_v8.compile_V8.Compile");
+#endif
 
   // Create the SharedFunctionInfo and add it to the script's list.
   Handle<SharedFunctionInfo> shared_info =
@@ -1940,6 +1961,9 @@ void BackgroundCompileTask::Run(
 
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                "BackgroundCompileTask::Run");
+#ifdef OHOS_JS_ENGINE
+  auto trace_run = HiTrace("RCS_v8.compile_BackgroundCompileTask::Run");
+#endif
   RCS_SCOPE(isolate, RuntimeCallCounterId::kCompileCompileTask,
             RuntimeCallStats::CounterMode::kThreadSpecific);
 
@@ -2015,6 +2039,9 @@ void BackgroundCompileTask::Run(
 
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                "V8.CompileCodeBackground");
+#ifdef OHOS_JS_ENGINE
+  auto trace = HiTrace("RCS_v8.compile_V8.CompileCodeBackground");
+#endif
   RCS_SCOPE(isolate, RuntimeCallCounterIdForCompile(&info),
             RuntimeCallStats::CounterMode::kThreadSpecific);
 
@@ -2838,6 +2865,9 @@ bool Compiler::CollectSourcePositions(
   RCS_SCOPE(isolate, RuntimeCallCounterId::kCompileCollectSourcePositions);
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                "V8.CollectSourcePositions");
+#ifdef OHOS_JS_ENGINE
+  auto trace = HiTrace("RCS_v8.compile_V8.CollectSourcePositions");
+#endif
   NestedTimedHistogramScope timer(
       isolate->counters()->collect_source_positions());
 
@@ -2920,6 +2950,9 @@ bool Compiler::Compile(Isolate* isolate, Handle<SharedFunctionInfo> shared_info,
   TimerEventScope<TimerEventCompileCode> compile_timer(isolate);
   RCS_SCOPE(isolate, RuntimeCallCounterId::kCompileFunction);
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"), "V8.CompileCode");
+#ifdef OHOS_JS_ENGINE
+  auto trace = HiTrace("RCS_v8.compile_V8.CompileCode");
+#endif
   AggregatedHistogramTimerScope timer(isolate->counters()->compile_lazy());
 
   Handle<Script> script(Cast<Script>(shared_info->script()), isolate);
@@ -3134,6 +3167,9 @@ bool Compiler::FinalizeBackgroundCompileTask(BackgroundCompileTask* task,
                                              ClearExceptionFlag flag) {
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                "V8.FinalizeBackgroundCompileTask");
+#ifdef OHOS_JS_ENGINE
+  auto trace = HiTrace("RCS_v8.compile_V8.FinalizeBackgroundCompileTask");
+#endif
   RCS_SCOPE(isolate,
             RuntimeCallCounterId::kCompileFinalizeBackgroundCompileTask);
 
@@ -3371,6 +3407,7 @@ bool ModifyCodeGenerationFromStrings(Isolate* isolate,
   // execution if it's not set.
   VMState<EXTERNAL> state(isolate);
   RCS_SCOPE(isolate, RuntimeCallCounterId::kCodeGenerationFromStringsCallbacks);
+  HITRACE_RCS_SCOPE(isolate, RuntimeCallCounterId::kCodeGenerationFromStringsCallbacks);
   ModifyCodeGenerationFromStringsResult result =
       isolate->modify_code_gen_callback()(v8::Utils::ToLocal(context),
                                           v8::Utils::ToLocal(*source),
@@ -3924,6 +3961,9 @@ MaybeDirectHandle<SharedFunctionInfo> GetSharedFunctionInfoForScriptImpl(
       RCS_SCOPE(isolate, RuntimeCallCounterId::kCompileDeserialize);
       TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                    "V8.CompileDeserialize");
+#ifdef OHOS_JS_ENGINE
+      auto trace = HiTrace("RCS_v8.compile_V8.CompileDeserialize");
+#endif
       if (deserialize_task) {
         // If there's a cache consume task, finish it.
         maybe_result =
@@ -4127,6 +4167,9 @@ MaybeDirectHandle<JSFunction> Compiler::GetWrappedFunction(
     RCS_SCOPE(isolate, RuntimeCallCounterId::kCompileDeserialize);
     TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                  "V8.CompileDeserialize");
+#ifdef OHOS_JS_ENGINE
+    auto trace = HiTrace("RCS_v8.compile_V8.CompileDeserialize");
+#endif
     maybe_result = CodeSerializer::Deserialize(isolate, cached_data, source,
                                                script_details);
     bool consuming_code_cache_succeeded = false;
@@ -4223,6 +4266,9 @@ Compiler::GetSharedFunctionInfoForStreamedScript(
   {
     TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                  "V8.StreamingFinalization.CheckCache");
+#ifdef OHOS_JS_ENGINE
+    auto trace = HiTrace("RCS_v8.compile_V8.StreamingFinalization.CheckCache");
+#endif
     CompilationCacheScript::LookupResult lookup_result =
         compilation_cache->LookupScript(source, script_details,
                                         task->flags().outer_language_mode());
@@ -4248,6 +4294,9 @@ Compiler::GetSharedFunctionInfoForStreamedScript(
               RuntimeCallCounterId::kCompilePublishBackgroundFinalization);
     TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                  "V8.OffThreadFinalization.Publish");
+#ifdef OHOS_JS_ENGINE
+    auto trace = HiTrace("RCS_v8.compile_V8.OffThreadFinalization.Publish");
+#endif
 
     maybe_result = task->FinalizeScript(isolate, source, script_details,
                                         maybe_cached_script);
@@ -4266,6 +4315,9 @@ Compiler::GetSharedFunctionInfoForStreamedScript(
       // Add compiled code to the isolate cache.
       TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                    "V8.StreamingFinalization.AddToCache");
+#ifdef OHOS_JS_ENGINE
+      auto trace = HiTrace("RCS_v8.compile_V8.StreamingFinalization.AddToCache");
+#endif
       compilation_cache->PutScript(source, task->flags().outer_language_mode(),
                                    result);
     }
@@ -4273,6 +4325,9 @@ Compiler::GetSharedFunctionInfoForStreamedScript(
 
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                "V8.StreamingFinalization.Release");
+#ifdef OHOS_JS_ENGINE
+  auto trace = HiTrace("RCS_v8.compile_V8.StreamingFinalization.Release");
+#endif
   streaming_data->Release();
   return maybe_result;
 }  // namespace internal

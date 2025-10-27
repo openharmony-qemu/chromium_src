@@ -43,6 +43,10 @@
 #include "content/public/browser/render_process_host.h"
 #include "third_party/protobuf/src/google/protobuf/io/zero_copy_stream_impl_lite.h"
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "arkweb/chromium_ext/components/subresource_filter/content/shared/browser/ruleset_service_for_include.cc"
+#endif
+
 namespace subresource_filter {
 
 namespace {
@@ -178,6 +182,9 @@ std::unique_ptr<RulesetService> RulesetService::Create(
     const RulesetConfig& config,
     PrefService* local_state,
     const base::FilePath& user_data_dir,
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+    RulesetServiceClient* client,
+#endif
     const RulesetPublisher::Factory& publisher_factory) {
   // Runner for tasks critical for user experience.
   scoped_refptr<base::SequencedTaskRunner> blocking_task_runner(
@@ -185,20 +192,38 @@ std::unique_ptr<RulesetService> RulesetService::Create(
           {base::MayBlock(), base::TaskPriority::USER_BLOCKING,
            base::TaskShutdownBehavior::SKIP_ON_SHUTDOWN}));
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  // Runner for tasks that do not influence user experience.
+  scoped_refptr<base::SequencedTaskRunner> background_task_runner(
+      base::ThreadPool::CreateSequencedTaskRunner(
+          {base::MayBlock(), base::TaskPriority::USER_VISIBLE,
+           base::TaskShutdownBehavior::SKIP_ON_SHUTDOWN}));
+#else
   // Runner for tasks that do not influence user experience.
   scoped_refptr<base::SequencedTaskRunner> background_task_runner(
       base::ThreadPool::CreateSequencedTaskRunner(
           {base::MayBlock(), base::TaskPriority::BEST_EFFORT,
            base::TaskShutdownBehavior::SKIP_ON_SHUTDOWN}));
+#endif
 
   base::FilePath indexed_ruleset_base_dir =
       user_data_dir.Append(config.top_level_directory)
           .Append(kIndexedRulesetBaseDirectoryName);
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  base::FilePath unindexed_ruleset_base_dir =
+      user_data_dir.Append(::subresource_filter::kTopLevelDirectoryName)
+          .Append(::subresource_filter::kUnindexedRulesetBaseDirectoryName);
+  return std::make_unique<RulesetService>(
+      config, local_state, std::move(background_task_runner),
+      indexed_ruleset_base_dir, unindexed_ruleset_base_dir,
+      client, std::move(blocking_task_runner), publisher_factory);
+#else
   return std::make_unique<RulesetService>(
       config, local_state, std::move(background_task_runner),
       indexed_ruleset_base_dir, std::move(blocking_task_runner),
       publisher_factory);
+#endif
 }
 
 RulesetService::RulesetService(
@@ -248,11 +273,13 @@ void RulesetService::IndexAndStoreAndPublishRulesetIfNeeded(
   // in use.
   IndexedRulesetVersion most_recently_indexed_version(config_.filter_tag);
   most_recently_indexed_version.ReadFromPrefs(local_state_);
+#if !BUILDFLAG(ARKWEB_ADBLOCK)
   if (most_recently_indexed_version.IsCurrentFormatVersion() &&
       most_recently_indexed_version.content_version ==
           unindexed_ruleset_info.content_version) {
     return;
   }
+#endif
 
   // Before initialization, retain information about the most recently supplied
   // unindexed ruleset, to be processed during initialization.
@@ -323,7 +350,11 @@ IndexedRulesetVersion RulesetService::IndexAndWriteRuleset(
   // Crashes or errors occurring here will leave behind a sentinel file that
   // will prevent this version of the ruleset from ever being indexed again.
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  ArkWebRulesetIndexerExt indexer;
+#else
   RulesetIndexer indexer;
+#endif
   if (!(*g_index_ruleset_func)(config, &unindexed_ruleset_stream_generator,
                                &indexer)) {
     RecordIndexAndWriteRulesetResult(
@@ -446,7 +477,11 @@ void RulesetService::FinishInitialization() {
   background_task_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(&IndexedRulesetLocator::DeleteObsoleteRulesets,
-                     indexed_ruleset_base_dir_, most_recently_indexed_version));
+                     indexed_ruleset_base_dir_,
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+                     unindexed_ruleset_base_dir_, ruleset_service_client_,
+#endif
+                     most_recently_indexed_version));
 
   if (!queued_unindexed_ruleset_info_.content_version.empty()) {
     IndexAndStoreRuleset(queued_unindexed_ruleset_info_,
@@ -493,6 +528,16 @@ void RulesetService::OpenAndPublishRuleset(
 }
 
 void RulesetService::OnRulesetSet(RulesetFilePtr file) {
+#ifdef BUILDFLAG(ARKWEB_ADBLOCK)
+  auto task = content::GetUIThreadTaskRunner({base::TaskPriority::USER_BLOCKING});
+  LOG(DEBUG) << "[adblock] RulesetService::OnRulesetSet, check ui thread:"
+             << task->BelongsToCurrentThread();
+  if (!task->BelongsToCurrentThread()) {
+    task->PostTask(FROM_HERE, base::BindOnce(&RulesetService::OnRulesetSet,
+            weak_ptr_factory_.GetWeakPtr(), std::move(file)));
+    return;
+  }
+#endif
   // The file has just been successfully written, so a failure here is unlikely
   // unless |indexed_ruleset_base_dir_| has been tampered with or there are disk
   // errors. Still, restore the invariant that a valid version in preferences

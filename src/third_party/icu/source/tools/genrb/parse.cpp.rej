@@ -1,0 +1,15 @@
+--- parse.cpp	2025-10-20 19:53:16.476041739 +0800
++++ parse.cpp	2025-10-16 16:15:24.771619901 +0800
+@@ -272,11 +272,11 @@
+     }
+ 
+     if (token != expectedToken)
+     {
+         *status = U_INVALID_FORMAT_ERROR;
+-        error((line == nullptr) ? 0 : *line, "invariant characters required for table keys, binary data, etc.");
++        error(line, "expecting %s, got %s", tokenNames[expectedToken], tokenNames[token]);
+     }
+     else
+     {
+         *status = U_ZERO_ERROR;
+     }

@@ -1,0 +1,17 @@
+--- viz_process_transport_factory.h	2025-10-20 19:52:54.254469519 +0800
++++ viz_process_transport_factory.h	2025-10-16 15:54:59.376825649 +0800
+@@ -65,10 +65,14 @@
+   void CreateLayerTreeFrameSink(
+       base::WeakPtr<ui::Compositor> compositor) override;
+   scoped_refptr<viz::RasterContextProvider>
+   SharedMainThreadRasterContextProvider() override;
+ 
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++void SendInternalBeginFrame(const viz::FrameSinkId& id) override;
++#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
++
+   void RemoveCompositor(ui::Compositor* compositor) override;
+   gpu::GpuMemoryBufferManager* GetGpuMemoryBufferManager() override;
+   cc::TaskGraphRunner* GetTaskGraphRunner() override;
+   viz::FrameSinkId AllocateFrameSinkId() override;
+   viz::SubtreeCaptureId AllocateSubtreeCaptureId() override;

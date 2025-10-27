@@ -1,0 +1,53 @@
+--- tab_helpers.cc	2025-10-20 19:52:50.812860937 +0800
++++ tab_helpers.cc	2025-10-16 15:57:01.625592165 +0800
+@@ -242,11 +252,11 @@
+ #include "chrome/browser/chromeos/policy/dlp/dlp_content_tab_helper.h"
+ #include "chrome/browser/chromeos/printing/print_preview/printing_init_cros.h"
+ #endif
+ 
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
+-    BUILDFLAG(IS_CHROMEOS)
++    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+ #include "chrome/browser/ui/blocked_content/framebust_block_tab_helper.h"
+ #include "chrome/browser/ui/browser_finder.h"
+ #include "chrome/browser/ui/hats/hats_helper.h"
+ #include "chrome/browser/ui/shared_highlighting/shared_highlighting_promo.h"
+ #endif
+@@ -653,11 +663,13 @@
+ 
+   if (SearchEngineChoiceTabHelper::IsHelperNeeded()) {
+     SearchEngineChoiceTabHelper::CreateForWebContents(web_contents);
+   }
+ 
++#if !BUILDFLAG(IS_OHOS)
+   SadTabHelper::CreateForWebContents(web_contents);
++#endif // BUILDFLAG(IS_OHOS)
+   SearchTabHelper::CreateForWebContents(web_contents);
+   TabDialogs::CreateForWebContents(web_contents);
+   MemorySaverChipTabHelper::CreateForWebContents(web_contents);
+   TabResourceUsageTabHelper::CreateForWebContents(web_contents);
+   if (base::FeatureList::IsEnabled(features::kTabHoverCardImages) ||
+@@ -741,16 +753,23 @@
+ 
+   // --- Section 3: Feature tab helpers behind BUILDFLAGs ---
+   // NOT for "if enabled"; put those in section 1.
+ 
+ #if BUILDFLAG(ENABLE_CAPTIVE_PORTAL_DETECTION)
++#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
++  captive_portal::CaptivePortalTabHelperOhos::CreateForWebContents(
++      web_contents, CaptivePortalServiceFactory::GetForProfile(profile),
++      base::BindRepeating(&OhosHttpsUpgradesHelper::NullOpenLoginTabCallback,
++                          web_contents, false));
++#else
+   captive_portal::CaptivePortalTabHelper::CreateForWebContents(
+       web_contents, CaptivePortalServiceFactory::GetForProfile(profile),
+       base::BindRepeating(
+           &ChromeSecurityBlockingPageFactory::OpenLoginTabForWebContents,
+           web_contents, false));
+ #endif
++#endif
+ 
+ #if BUILDFLAG(ENABLE_EXTENSIONS)
+   // If the web contents already have a view type, don't overwrite it here. One
+   // case where this can happen is when the user opens undocked developer tools.
+   // For all developer tools web contents, the view type is set to

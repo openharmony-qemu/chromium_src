@@ -127,6 +127,14 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
     kMaxValue = kSecureSetNonsecureRequest  // Keep as the last value.
   };
 
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  enum class RetryState {
+    INIT,
+    DOH_FALLBACK,
+    MAX,
+  };
+#endif
+
   typedef base::RefCountedData<bool> SharedBoolean;
 
   // Shadows URLRequestJob's version of this method so we can grab cookies.
@@ -214,6 +222,12 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
   IPEndPoint GetResponseRemoteEndpoint() const override;
   void NotifyURLRequestDestroyed() override;
 
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  bool CanRetryWithSecureDnsOnly(int net_error);
+  void RetryWithSecureDnsOnly();
+  void MaybeRetryWithSecureDnsOnly(int result);
+#endif
+
   void RecordTimer();
   void ResetTimer();
 
@@ -266,6 +280,13 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
   // Returns true if we should log how many partitioned cookies are included
   // in a request.
   bool ShouldRecordPartitionedCookieUsage() const;
+
+  // Applies the relevant Sec-Fetch-Storage-Access header if needed.
+  void MaybeSetSecFetchStorageAccessHeader();
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  void InitPreloadInfoAndSetToTransaction();
+#endif
 
   RequestPriority priority_ = DEFAULT_PRIORITY;
 

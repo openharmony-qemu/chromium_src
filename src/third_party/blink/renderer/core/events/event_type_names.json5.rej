@@ -1,0 +1,11 @@
+--- event_type_names.json5	2025-10-20 19:53:00.354210400 +0800
++++ event_type_names.json5	2025-10-16 16:07:39.361567313 +0800
+@@ -379,7 +380,8 @@
+     "wheel",
+     "write",
+     "writeend",
+     "writestart",
+     "zoom",
++    "videofreeze",
+   ],
+ }

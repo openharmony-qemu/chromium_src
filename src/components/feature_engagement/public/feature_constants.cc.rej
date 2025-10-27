@@ -1,0 +1,56 @@
+--- feature_constants.cc	2025-10-20 19:52:52.969879036 +0800
++++ feature_constants.cc	2025-10-16 15:54:56.796303863 +0800
+@@ -16,11 +16,11 @@
+ 
+ // Features used by various clients to show their In-Product Help messages.
+ BASE_FEATURE(kIPHDummyFeature, "IPH_Dummy", base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX) || \
+-    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
++    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
+ #if BUILDFLAG(GOOGLE_CHROME_BRANDING)
+ BASE_FEATURE(kEsbDownloadRowPromoFeature,
+              "EsbDownloadRowPromo",
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ #endif
+@@ -215,11 +215,11 @@
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ BASE_FEATURE(kIPHBackNavigationMenuFeature,
+              "IPH_BackNavigationMenu",
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX) ||
+-        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
++        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
+ 
+ #if BUILDFLAG(IS_ANDROID)
+ BASE_FEATURE(kIPHAndroidTabDeclutter,
+              "IPH_AndroidTabDeclutter",
+              base::FEATURE_DISABLED_BY_DEFAULT);
+@@ -644,11 +644,13 @@
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ #endif  // BUILDFLAG(IS_IOS)
+ 
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX) || \
+-    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA)
++    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
++    BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
++
+ BASE_FEATURE(kIPHAutofillCreditCardBenefitFeature,
+              "IPH_AutofillCreditCardBenefit",
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ BASE_FEATURE(kIPHAutofillDisabledVirtualCardSuggestionFeature,
+              "IPH_AutofillDisabledVirtualCardSuggestion",
+@@ -677,11 +679,11 @@
+ BASE_FEATURE(kIPHPlusAddressCreateSuggestionFeature,
+              "IPH_PlusAddressCreateSuggestion",
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE) ||
+         // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
+-        // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA)
++        // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
+ 
+ #if BUILDFLAG(IS_CHROMEOS_ASH)
+ BASE_FEATURE(kIPHGrowthFramework,
+              "IPH_GrowthFramework",
+              base::FEATURE_ENABLED_BY_DEFAULT);

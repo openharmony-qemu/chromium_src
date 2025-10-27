@@ -4,6 +4,12 @@
 
 import("//media/media_options.gni")
 import("//mojo/public/tools/bindings/mojom.gni")
+import("//arkweb/build/features/features.gni")
+
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+  enabled_features = [ "is_arkweb" ]
+}
 
 mojom("mojom") {
   generate_java = true
@@ -50,6 +56,10 @@ mojom("mojom") {
     "watch_time_recorder.mojom",
     "webrtc_video_perf.mojom",
   ]
+
+  if (arkweb_same_layer) {
+    sources += arkweb_media_mojo_mojom_sources
+  }
 
   if (enable_media_drm_storage) {
     sources += [ "media_drm_storage.mojom" ]
@@ -137,6 +147,10 @@ mojom("mojom") {
     enabled_features += [ "enable_cast_renderer" ]
   }
 
+  if (is_arkweb) {
+    enabled_features += [ "is_arkweb" ]
+    enabled_features += [ "arkweb_activity_state" ]
+  }
   shared_typemaps = [
     {
       types = [

@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "components/performance_manager/public/mojom/coordination_unit.mojom-blink.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "third_party/blink/renderer/platform/platform_export.h"
@@ -15,11 +16,13 @@
 namespace blink {
 
 class BrowserInterfaceBrokerProxy;
+class DocumentResourceCoordinatorUtils;
 
 class PLATFORM_EXPORT DocumentResourceCoordinator final {
   USING_FAST_MALLOC(DocumentResourceCoordinator);
 
  public:
+  friend class DocumentResourceCoordinatorUtils;
   using WebMemoryMeasurementMode =
       ::performance_manager::mojom::blink::WebMemoryMeasurement::Mode;
   using OnWebMemoryMeasurementRequestedCallback = ::performance_manager::mojom::

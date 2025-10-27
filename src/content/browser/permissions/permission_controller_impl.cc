@@ -897,5 +897,8 @@ void PermissionControllerImpl::NotifyEventListener() {
     onchange_listeners_callback_for_tests_.Run();
   }
 }
+#if BUILDFLAG(ARKWEB_NOTIFICATION)
+#include "arkweb/chromium_ext/content/browser/permissions/permission_controller_impl_ext.cc"
+#endif // ARKWEB_NOTIFICATION
 
 }  // namespace content

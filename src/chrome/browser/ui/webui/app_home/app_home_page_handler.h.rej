@@ -1,0 +1,16 @@
+--- app_home_page_handler.h	2025-10-20 19:52:50.968936082 +0800
++++ app_home_page_handler.h	2025-10-16 15:57:01.813894596 +0800
+@@ -22,11 +22,12 @@
+ #include "extensions/browser/extension_registry_observer.h"
+ #include "extensions/common/constants.h"
+ #include "mojo/public/cpp/bindings/receiver.h"
+ #include "mojo/public/cpp/bindings/remote.h"
+ 
+-static_assert(BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX));
++static_assert(BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) ||
++              BUILDFLAG(IS_OHOS));
+ 
+ class ExtensionEnableFlow;
+ 
+ namespace content {
+ class WebUI;

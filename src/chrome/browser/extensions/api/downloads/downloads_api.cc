@@ -1175,6 +1175,7 @@ ExtensionFunction::ResponseAction DownloadsDownloadFunction::Run() {
   return RespondLater();
 }
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 void DownloadsDownloadFunction::OnStarted(
     const base::FilePath& creator_suggested_filename,
     downloads::FilenameConflictAction creator_conflict_action,

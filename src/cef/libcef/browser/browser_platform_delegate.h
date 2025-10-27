@@ -75,12 +75,21 @@ struct CefBrowserCreateParams;
 class CefBrowserHostBase;
 class CefJavaScriptDialogRunner;
 class CefMenuRunner;
+#if BUILDFLAG(IS_ARKWEB)
+class ArkWebCefBrowserPlatformDelegateExt;
+#endif
 
 // Provides platform-specific implementations of browser functionality. All
 // methods are called on the browser process UI thread unless otherwise
 // indicated.
 class CefBrowserPlatformDelegate {
  public:
+#if BUILDFLAG(IS_ARKWEB)
+  virtual ArkWebCefBrowserPlatformDelegateExt* AsArkWebCefBrowserPlatformDelegateExt() {
+    return nullptr;
+  }
+  friend class ArkWebCefBrowserPlatformDelegateExt;
+#endif  // BUILDFLAG(IS_ARKWEB)
   CefBrowserPlatformDelegate(const CefBrowserPlatformDelegate&) = delete;
   CefBrowserPlatformDelegate& operator=(const CefBrowserPlatformDelegate&) =
       delete;
@@ -391,4 +400,7 @@ class CefBrowserPlatformDelegate {
   raw_ptr<CefBrowserHostBase> browser_ = nullptr;
 };
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "cef/ohos_cef_ext/libcef/browser/arkweb_browser_platform_delegate_ext.h"
+#endif
 #endif  // CEF_LIBCEF_BROWSER_BROWSER_PLATFORM_DELEGATE_H_

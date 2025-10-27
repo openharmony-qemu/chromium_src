@@ -127,6 +127,11 @@ void ChromeFeatureListCreator::CreateFeatureList() {
   ConvertFlagsToSwitches();
   CreateMetricsServices();
   SetupInitialPrefs();
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+  DealGlobalConfig(local_state_.get());
+#endif
+#endif
   SetUpFieldTrials(command_line_variation_ids);
 }
 
@@ -176,6 +181,12 @@ void ChromeFeatureListCreator::CreatePrefService() {
                             base::PathExists(local_state_file));
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(ARKWEB_EDM_POLICY)
+  base::FilePath policy_path;
+  base::PathService::Get(base::DIR_CACHE, &policy_path);
+  policy::BrowserPolicyHandler::GetInstance()->InitPolicyFromFile(policy_path);
+#endif
+
   auto pref_registry = base::MakeRefCounted<PrefRegistrySimple>();
   RegisterLocalState(pref_registry.get());
 
@@ -192,8 +203,14 @@ void ChromeFeatureListCreator::CreatePrefService() {
   // ManagementService needs Local State but creating local state needs
   // ManagementService, instantiate the underlying PrefStore early and share it
   // between both.
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  auto local_state_pref_store =
+      base::MakeRefCounted<JsonPrefStore>(local_state_file,
+          std::make_unique<MigrationFilter>());
+#else
   auto local_state_pref_store =
       base::MakeRefCounted<JsonPrefStore>(local_state_file);
+#endif // BUILDFLAG(ARKWEB_ADBLOCK)
 
   // Try and read the local state prefs, if it succeeds, use it as the
   // ManagementService's cache.
@@ -209,6 +226,14 @@ void ChromeFeatureListCreator::CreatePrefService() {
       browser_policy_connector_->GetPolicyService(), std::move(pref_registry),
       browser_policy_connector_.get());
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  OHOS::adblock::AdBlockConfig::GetInstance()->SetPrefService(
+      local_state_.get());
+#endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  nweb_ex::GlobalReaderModeDataManager::GetInstance()->Init(local_state_.get());
+#endif
   // Apply local test policies from the kLocalTestPoliciesForNextStartup pref if
   // there are any.
   browser_policy_connector_->MaybeApplyLocalTestPolicies(local_state_.get());

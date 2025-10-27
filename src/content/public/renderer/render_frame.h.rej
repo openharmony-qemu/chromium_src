@@ -1,0 +1,37 @@
+--- render_frame.h	2025-10-20 19:52:54.574614904 +0800
++++ render_frame.h	2025-10-16 15:54:59.708470705 +0800
+@@ -38,10 +39,11 @@
+ struct WebPreferences;
+ }  // namespace web_pref
+ class AssociatedInterfaceProvider;
+ class AssociatedInterfaceRegistry;
+ class BrowserInterfaceBrokerProxy;
++class WebElement;
+ class WebFrame;
+ class WebLocalFrame;
+ class WebPlugin;
+ struct WebPluginParams;
+ class WebView;
+@@ -259,10 +278,22 @@
+   // Return the dedicated scheduler for the AgentSchedulingGroup associated with
+   // this RenderFrame.
+   virtual blink::scheduler::WebAgentGroupScheduler&
+   GetAgentGroupScheduler() = 0;
+ 
++#if BUILDFLAG(ARKWEB_PDF)
++  // NotifyPdfScrollAtBottom
++  virtual void OnPdfScrollAtBottom(const std::string& url) = 0;
++
++  // NotifyPdfLoadEvent
++  virtual void OnPdfLoadEvent(int32_t result, const std::string& url) = 0;
++#endif  // BUILDFLAG(ARKWEB_PDF)
++
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  virtual bool GetGlobalAdblockEnabled() = 0;
++#endif
++
+  protected:
+   ~RenderFrame() override {}
+ 
+  private:
+   // This interface should only be implemented inside content.

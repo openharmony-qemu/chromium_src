@@ -251,7 +251,11 @@ void ChromePasswordManagerClient::CreateForWebContents(
 
   contents->SetUserData(
       UserDataKey(),
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+      base::WrapUnique(new ChromePasswordManagerClientExt(contents)));
+#else
       base::WrapUnique(new ChromePasswordManagerClient(contents)));
+#endif
 }
 
 // static
@@ -692,7 +696,7 @@ void ChromePasswordManagerClient::ContinueShowKeyboardReplacingSurface(
 bool ChromePasswordManagerClient::IsReauthBeforeFillingRequired(
     device_reauth::DeviceAuthenticator* authenticator) {
 #if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || \
-    BUILDFLAG(IS_CHROMEOS)
+    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
   if (!GetLocalStatePrefs() || !GetPrefs() || !authenticator) {
     return false;
   }
@@ -969,7 +973,7 @@ void ChromePasswordManagerClient::NotifyUserCredentialsWereLeaked(
 }
 
 void ChromePasswordManagerClient::NotifyKeychainError() {
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
   PasswordsClientUIDelegate* manage_passwords_ui_controller =
       PasswordsClientUIDelegateFromWebContents(web_contents());
   if (manage_passwords_ui_controller) {
@@ -1377,7 +1381,11 @@ password_manager::WebAuthnCredentialsDelegate*
 ChromePasswordManagerClient::GetWebAuthnCredentialsDelegateForDriver(
     PasswordManagerDriver* driver) {
   auto* frame_host =
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+      static_cast<password_manager::ContentPasswordManagerDriverExt*>(driver)
+#else
       static_cast<password_manager::ContentPasswordManagerDriver*>(driver)
+#endif
           ->render_frame_host();
   return ChromeWebAuthnCredentialsDelegateFactory::GetFactory(web_contents())
       ->GetDelegateForFrame(frame_host);
@@ -1739,6 +1747,9 @@ bool ChromePasswordManagerClient::CanShowBubbleOnURL(const GURL& url) {
               scheme) &&
 #if BUILDFLAG(ENABLE_EXTENSIONS)
           scheme != extensions::kExtensionScheme &&
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+          scheme != extensions::kArkwebExtensionScheme &&
+#endif
 #endif
           scheme != content::kChromeDevToolsScheme);
 }

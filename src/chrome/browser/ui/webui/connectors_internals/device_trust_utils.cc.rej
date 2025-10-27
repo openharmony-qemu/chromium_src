@@ -1,0 +1,57 @@
+--- device_trust_utils.cc	2025-10-20 19:52:51.024962905 +0800
++++ device_trust_utils.cc	2025-10-16 15:57:01.882003985 +0800
+@@ -5,22 +5,24 @@
+ #include "chrome/browser/ui/webui/connectors_internals/device_trust_utils.h"
+ 
+ #include "build/build_config.h"
+ #include "components/enterprise/buildflags/buildflags.h"
+ 
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || \
++    BUILDFLAG(IS_OHOS)
+ #include "base/base64url.h"
+ #include "chrome/browser/browser_process.h"
+ #include "chrome/browser/policy/chrome_browser_policy_connector.h"
+ #include "components/enterprise/browser/controller/chrome_browser_cloud_management_controller.h"
+ #include "components/enterprise/browser/device_trust/device_trust_key_manager.h"
+ #include "components/policy/proto/device_management_backend.pb.h"
+ #include "crypto/sha2.h"
+ #include "crypto/signature_verifier.h"
+ 
+ using BPKUR = enterprise_management::BrowserPublicKeyUploadRequest;
+-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC)
++#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || \
++        // BUILDFLAG(IS_OHOS)
+ 
+ #if BUILDFLAG(IS_MAC)
+ #include "chrome/common/channel_info.h"
+ #include "components/version_info/channel.h"
+ #endif  // BUILDFLAG(IS_MAC)
+@@ -36,11 +38,12 @@
+ 
+ namespace enterprise_connectors::utils {
+ 
+ namespace {
+ 
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || \
++    BUILDFLAG(IS_OHOS)
+ 
+ connectors_internals::mojom::KeyTrustLevel ParseTrustLevel(
+     BPKUR::KeyTrustLevel trust_level) {
+   switch (trust_level) {
+     case BPKUR::CHROME_BROWSER_HW_KEY:
+@@ -99,11 +102,12 @@
+   return integer_value ? connectors_internals::mojom::Int32Value::New(
+                              integer_value.value())
+                        : nullptr;
+ }
+ 
+-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC)
++#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || \
++        // BUILDFLAG(IS_OHOS)
+ 
+ #if BUILDFLAG(ENTERPRISE_CLIENT_CERTIFICATES)
+ 
+ std::string BufferToString(base::span<const uint8_t> buffer) {
+   return std::string(buffer.begin(), buffer.end());

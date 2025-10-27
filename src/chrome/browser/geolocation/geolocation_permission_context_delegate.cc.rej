@@ -1,0 +1,14 @@
+--- geolocation_permission_context_delegate.cc	2025-10-20 19:52:49.697964087 +0800
++++ geolocation_permission_context_delegate.cc	2025-10-16 15:57:00.253653690 +0800
+@@ -25,11 +25,10 @@
+     const GURL& requesting_origin,
+     bool user_gesture,
+     permissions::BrowserPermissionCallback* callback,
+     permissions::GeolocationPermissionContext* context) {
+   DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
+-
+   bool permission_set;
+   bool new_permission;
+   if (extensions_context_.DecidePermission(id, requesting_origin, user_gesture,
+                                            callback, &permission_set,
+                                            &new_permission)) {

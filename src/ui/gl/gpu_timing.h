@@ -142,6 +142,10 @@ class GL_EXPORT GPUTimingClient
   // discarded.
   bool CheckAndResetTimerErrors();
 
+#if BUILDFLAG(IS_ARKWEB)
+  void ClearQuery();
+#endif
+
   int64_t GetCurrentCPUTime();
   void SetCpuTimeForTesting(base::RepeatingCallback<int64_t(void)> cpu_time);
 

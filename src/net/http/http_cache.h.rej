@@ -1,0 +1,14 @@
+--- http_cache.h	2025-10-20 19:52:57.134206500 +0800
++++ http_cache.h	2025-10-16 15:55:02.717250558 +0800
+@@ -55,10 +55,11 @@
+ class HttpNetworkSession;
+ class HttpResponseInfo;
+ class NetLog;
+ class NetworkIsolationKey;
+ struct HttpRequestInfo;
++class HttpTransactionUtils;
+ 
+ class NET_EXPORT HttpCache : public HttpTransactionFactory {
+  public:
+   // The cache mode of operation.
+   enum Mode {

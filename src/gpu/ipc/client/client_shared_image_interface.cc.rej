@@ -1,0 +1,48 @@
+--- client_shared_image_interface.cc	2025-10-20 19:52:55.534603585 +0800
++++ client_shared_image_interface.cc	2025-10-16 15:55:00.623491404 +0800
+@@ -311,17 +311,27 @@
+   AddMailbox(mailboxes.back_buffer);
+   SyncToken sync_token = GenUnverifiedSyncToken();
+   return ClientSharedImageInterface::SwapChainSharedImages(
+       base::MakeRefCounted<ClientSharedImage>(
+           mailboxes.front_buffer,
++#if defined(__clang__) && (__clang_major__ < 17)
++          SharedImageMetadata{format, size, color_space, surface_origin,
++                              alpha_type, usage},
++#else
+           SharedImageMetadata(format, size, color_space, surface_origin,
+                               alpha_type, usage),
++#endif
+           sync_token, holder_, gfx::EMPTY_BUFFER),
+       base::MakeRefCounted<ClientSharedImage>(
+           mailboxes.back_buffer,
++#if defined(__clang__) && (__clang_major__ < 17)
++          SharedImageMetadata{format, size, color_space, surface_origin,
++                              alpha_type, usage},
++#else
+           SharedImageMetadata(format, size, color_space, surface_origin,
+                               alpha_type, usage),
++#endif
+           sync_token, holder_, gfx::EMPTY_BUFFER));
+ }
+ 
+ void ClientSharedImageInterface::DestroySharedImage(const SyncToken& sync_token,
+                                                     const Mailbox& mailbox) {
+@@ -375,12 +385,17 @@
+   AddMailbox(mailbox);
+   proxy_->NotifyMailboxAdded(mailbox, usage);
+ 
+   return base::MakeRefCounted<ClientSharedImage>(
+       mailbox,
++#if defined(__clang__) && (__clang_major__ < 17)
++      SharedImageMetadata{format, size, color_space, surface_origin, alpha_type,
++                          usage},
++#else
+       SharedImageMetadata(format, size, color_space, surface_origin, alpha_type,
+                           usage),
++#endif
+       GenUnverifiedSyncToken(), holder_, gfx::EMPTY_BUFFER);
+ }
+ 
+ scoped_refptr<ClientSharedImage> ClientSharedImageInterface::NotifyMailboxAdded(
+     const Mailbox& mailbox,

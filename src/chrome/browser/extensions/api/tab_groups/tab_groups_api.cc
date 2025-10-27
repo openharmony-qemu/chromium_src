@@ -97,9 +97,13 @@ ExtensionFunction::ResponseAction TabGroupsGetFunction::Run() {
 
   return RespondNow(ArgumentList(api::tab_groups::Get::Results::Create(
       ExtensionTabUtil::CreateTabGroupObject(id, *visual_data))));
+#else
+  return RespondNow(NoArguments());
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 ExtensionFunction::ResponseAction TabGroupsQueryFunction::Run() {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   std::optional<api::tab_groups::Query::Params> params =
       api::tab_groups::Query::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
@@ -184,9 +188,13 @@ ExtensionFunction::ResponseAction TabGroupsQueryFunction::Run() {
   }
 
   return RespondNow(WithArguments(std::move(result_list)));
+#else
+  return RespondNow(NoArguments());
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 ExtensionFunction::ResponseAction TabGroupsUpdateFunction::Run() {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   std::optional<api::tab_groups::Update::Params> params =
       api::tab_groups::Update::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
@@ -246,9 +254,13 @@ ExtensionFunction::ResponseAction TabGroupsUpdateFunction::Run() {
   return RespondNow(ArgumentList(api::tab_groups::Get::Results::Create(
       ExtensionTabUtil::CreateTabGroupObject(tab_group->id(),
                                              *tab_group->visual_data()))));
+#else
+  return RespondNow(NoArguments());
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 ExtensionFunction::ResponseAction TabGroupsMoveFunction::Run() {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   std::optional<api::tab_groups::Move::Params> params =
       api::tab_groups::Move::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
@@ -270,6 +282,9 @@ ExtensionFunction::ResponseAction TabGroupsMoveFunction::Run() {
 
   return RespondNow(ArgumentList(api::tab_groups::Get::Results::Create(
       *ExtensionTabUtil::CreateTabGroupObject(group))));
+#else
+  return RespondNow(NoArguments());
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 bool TabGroupsMoveFunction::MoveGroup(int group_id,

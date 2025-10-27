@@ -1,0 +1,34 @@
+--- touch_handle.h	2025-10-20 19:53:31.144611766 +0800
++++ touch_handle.h	2025-10-16 15:55:05.757153672 +0800
+@@ -5,10 +5,15 @@
+ #ifndef UI_TOUCH_SELECTION_TOUCH_HANDLE_H_
+ #define UI_TOUCH_SELECTION_TOUCH_HANDLE_H_
+ 
+ #include <memory>
+ 
++#include "arkweb/build/features/features.h"
++#include "build/build_config.h"
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
+ #include "base/memory/raw_ptr.h"
+ #include "base/time/time.h"
+ #include "ui/events/velocity_tracker/motion_event.h"
+ #include "ui/gfx/geometry/point_f.h"
+ #include "ui/gfx/geometry/rect_f.h"
+@@ -51,10 +59,15 @@
+   // The bounds includes the transparent horizontal padding.
+   virtual gfx::RectF GetVisibleBounds() const = 0;
+ 
+   // Returns the transparent horizontal padding ratio of the handle drawable.
+   virtual float GetDrawableHorizontalPaddingRatio() const = 0;
++
++#if BUILDFLAG(ARKWEB_MENU)
++  // Sets the Selection left-handle-start or right-handle-end's edge.
++  virtual void SetEdge(const gfx::PointF& top, const gfx::PointF& bottom) = 0;
++#endif
+ };
+ 
+ // Interface through which |TouchHandle| communicates handle manipulation and
+ // requests concrete drawable instances.
+ class UI_TOUCH_SELECTION_EXPORT TouchHandleClient

@@ -123,8 +123,13 @@ void FilterTool::Match(const std::string& document_origin,
                        const std::string& url,
                        const std::string& type) {
   bool blocked;
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  const url_pattern_index::flat::UrlRule* rule =
+      MatchUrlRuleImpl(document_origin, url, type, &blocked);
+#else
   const url_pattern_index::flat::UrlRule* rule =
       MatchImpl(document_origin, url, type, &blocked);
+#endif
   PrintResult(blocked, rule, document_origin, url, type);
 }
 
@@ -149,7 +154,11 @@ void FilterTool::PrintResult(bool blocked,
   *output_ << document_origin << " " << url << " " << type << std::endl;
 }
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+const url_pattern_index::flat::UrlRule* FilterTool::MatchUrlRuleImpl(
+#else
 const url_pattern_index::flat::UrlRule* FilterTool::MatchImpl(
+#endif
     std::string_view document_origin,
     std::string_view url,
     std::string_view type,
@@ -163,14 +172,25 @@ const url_pattern_index::flat::UrlRule* FilterTool::MatchImpl(
   return rule;
 }
 
+}  // namespace subresource_filter
+#include "arkweb/chromium_ext/components/subresource_filter/tools/filter_tool_for_include.cc"
+namespace subresource_filter {
+
 // If |print_each_request| is true, then the result of each match is written
 // to |output_|, just as in Match. Otherwise, the set of matching rules is
 // written to |output_|.
 void FilterTool::MatchBatchImpl(std::istream* request_stream,
                                 bool print_each_request,
                                 int min_match_count) {
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  std::unordered_map<const url_pattern_index::flat::CssRule*, int>
+      matched_css_rules;
+  std::unordered_map<const url_pattern_index::flat::UrlRule*, int>
+      matched_url_rules;
+#else
   std::unordered_map<const url_pattern_index::flat::UrlRule*, int>
       matched_rules;
+#endif
 
   std::string line;
   while (std::getline(*request_stream, line)) {

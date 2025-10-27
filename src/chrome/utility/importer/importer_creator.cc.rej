@@ -1,0 +1,15 @@
+--- importer_creator.cc	2025-10-20 19:52:52.041444924 +0800
++++ importer_creator.cc	2025-10-16 15:57:03.412107783 +0800
+@@ -33,11 +33,11 @@
+         return new IEImporter();
+       return new EdgeImporter();
+ #endif
+     case TYPE_BOOKMARKS_FILE:
+       return new BookmarksFileImporter();
+-#if !BUILDFLAG(IS_CHROMEOS)
++#if !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_OHOS)
+     case TYPE_FIREFOX:
+       return new FirefoxImporter();
+ #endif
+ #if BUILDFLAG(IS_MAC)
+     case TYPE_SAFARI:

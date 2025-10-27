@@ -1,0 +1,97 @@
+--- layer_tree_settings.cc	2025-10-20 19:53:01.278199994 +0800
++++ layer_tree_settings.cc	2025-10-16 16:07:40.202381224 +0800
+@@ -33,10 +34,12 @@
+ #include "ui/base/ui_base_switches.h"
+ #include "ui/native_theme/native_theme_features.h"
+ #include "ui/native_theme/native_theme_utils.h"
+ #include "ui/native_theme/overlay_scrollbar_constants_aura.h"
+ 
++#include "arkweb/chromium_ext/third_party/blink/renderer/platform/widget/compositing/layer_tree_settings_utils.h"
++
+ namespace blink {
+ 
+ namespace {
+ 
+ BASE_FEATURE(kUnpremultiplyAndDitherLowBitDepthTiles,
+@@ -176,11 +179,11 @@
+             &actual.bytes_limit_when_visible))
+       actual.bytes_limit_when_visible *= 1024 * 1024;
+     return actual;
+   }
+ 
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_PERFORMANCE_MEMORY_THRESHOLD)
+   if (base::SysInfo::IsLowEndDevice() ||
+       base::SysInfo::AmountOfPhysicalMemoryMB() < 2000) {
+     actual.bytes_limit_when_visible = 96 * 1024 * 1024;
+   } else {
+     actual.bytes_limit_when_visible = 256 * 1024 * 1024;
+@@ -219,10 +222,14 @@
+   actual.bytes_limit_when_visible = mb_limit_when_visible * 1024 * 1024;
+ #endif
+   actual.priority_cutoff_when_visible =
+       gpu::MemoryAllocation::CUTOFF_ALLOW_NICE_TO_HAVE;
+ 
++#if BUILDFLAG(ARKWEB_SYNC_RENDER)
++  SetMaxVisibleBytes(actual);
++#endif
++
+   return actual;
+ }
+ 
+ // static
+ cc::LayerTreeSettings GenerateLayerTreeSettings(
+@@ -255,11 +262,13 @@
+ #if BUILDFLAG(IS_ANDROID)
+   // WebView should always raster in the default color space.
+   // Synchronous compositing indicates WebView.
+   if (!platform->IsSynchronousCompositingEnabledForAndroidWebView())
+     settings.prefer_raster_in_srgb = ::features::IsDynamicColorGamutEnabled();
++#endif
+ 
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_FLING)
+   // We can use a more aggressive limit on Android since decodes tend to take
+   // longer on these devices.
+   settings.min_image_bytes_to_checker = 512 * 1024;  // 512kB
+ 
+   // Re-rasterization of checker-imaged content with software raster can be too
+@@ -496,13 +509,25 @@
+     // raster-on-demand already, so now we reserve 50% _only_ to avoid
+     // raster-on-demand, and use 50% of the memory otherwise.
+     settings.max_memory_for_prepaint_percentage = 50;
+   }
+ 
++#if BUILDFLAG(ARKWEB_SCROLL_PERFORMANCE)
++  ConfigureOverlayScrollbarSettings(settings);
++#endif  // BUILDFLAG(ARKWEB_SCROLL_PERFORMANCE)
++
+   // TODO(danakj): Only do this on low end devices.
+   settings.create_low_res_tiling = true;
+ 
++#elif BUILDFLAG(ARKWEB_FLING)
++  bool using_low_memory_policy =
++      base::SysInfo::IsLowEndDevice() && !IsSmallScreen(screen_size);
++  AdjustGraphicsSettings(screen_size, settings, using_low_memory_policy);
++#if BUILDFLAG(IS_ARKWEB_EXT)
++  SetEnableDeleteUnusedResourcesDelay(settings);
++#endif
++
+ #else   // BUILDFLAG(IS_ANDROID)
+   const bool using_low_memory_policy = base::SysInfo::IsLowEndDevice();
+ 
+   settings.enable_fluent_scrollbar = ui::IsFluentScrollbarEnabled();
+   settings.enable_fluent_overlay_scrollbar =
+@@ -510,12 +535,11 @@
+ 
+   if (ui::IsOverlayScrollbarEnabled()) {
+     settings.scrollbar_animator = cc::LayerTreeSettings::AURA_OVERLAY;
+     settings.scrollbar_thinning_duration =
+         ui::kOverlayScrollbarThinningDuration;
+-    settings.scrollbar_flash_after_any_scroll_update =
+-        !settings.enable_fluent_overlay_scrollbar;
++    settings.scrollbar_flash_after_any_scroll_update = true;
+     // Avoid animating in web tests to improve reliability.
+     if (settings.enable_fluent_overlay_scrollbar) {
+       settings.scrollbar_thinning_duration =
+           ui::kFluentOverlayScrollbarThinningDuration;
+       if (WebTestSupport::IsRunningWebTest()) {

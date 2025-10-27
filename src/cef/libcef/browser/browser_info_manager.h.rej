@@ -1,0 +1,18 @@
+--- browser_info_manager.h	2025-10-20 19:52:47.981885965 +0800
++++ browser_info_manager.h	2025-10-16 15:55:22.346488372 +0800
+@@ -54,10 +58,15 @@
+   ~CefBrowserInfoManager() override;
+ 
+   // Returns this singleton instance of this class.
+   static CefBrowserInfoManager* GetInstance();
+ 
++#if BUILDFLAG(IS_ARKWEB)
++  friend class ArkwebBrowserInfoManagerUtils;
++  ArkwebBrowserInfoManagerUtils* GetUtils();
++#endif
++
+   // Called immediately before a new CefBrowserHost implementation is created
+   // directly. In this case |is_popup| will be true only for DevTools browsers.
+   scoped_refptr<CefBrowserInfo> CreateBrowserInfo(
+       bool is_popup,
+       bool is_windowless,

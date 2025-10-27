@@ -1,0 +1,28 @@
+--- sync_call_restrictions.h	2025-10-20 19:52:56.810202340 +0800
++++ sync_call_restrictions.h	2025-10-16 15:55:02.249750900 +0800
+@@ -24,10 +24,13 @@
+ class DesktopCapturerLacros;
+ class StreamTextureFactory;
+ #if BUILDFLAG(IS_WIN)
+ class DCOMPTextureFactory;
+ #endif
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++class NativeTextureFactory;
++#endif
+ }  // namespace content
+ 
+ namespace crosapi {
+ class ScopedAllowSyncCall;
+ }  // namespace crosapi
+@@ -125,10 +129,11 @@
+   friend class viz::HostFrameSinkManager;
+   friend class viz::HostGpuMemoryBufferManager;
+   // For preventing frame swaps of wrong size during resize on Windows.
+   // (https://crbug.com/811945)
+   friend class ui::Compositor;
++  friend class ui::CompositorUtils;
+   // For query of whether to use SoftwareOutputDevice or not.
+   friend class viz::GpuDisplayProvider;
+   // For calling sync mojo API to get cdm origin. The service and the client are
+   // running in the same process, so it won't block anything.
+   // TODO(159346933) Remove once the origin isolation logic is moved outside of

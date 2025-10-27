@@ -7,6 +7,7 @@
 
 #include "ui/accessibility/ax_base_export.h"
 #include "ui/accessibility/ax_enums.mojom-forward.h"
+#include "arkweb/build/features/features.h"
 
 namespace ui {
 

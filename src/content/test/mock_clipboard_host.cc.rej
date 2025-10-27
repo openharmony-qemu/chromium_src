@@ -1,0 +1,16 @@
+--- mock_clipboard_host.cc	2025-10-20 19:52:54.848393579 +0800
++++ mock_clipboard_host.cc	2025-10-16 15:55:00.080072998 +0800
+@@ -218,6 +218,13 @@
+ 
+ #if BUILDFLAG(IS_MAC)
+ void MockClipboardHost::WriteStringToFindPboard(const std::u16string& text) {}
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_CLIPBOARD)
++void MockClipboardHost::OnClipboardDataGuard(
++    bool status,
++    OnClipboardDataGuardCallback callback) {
++  std::move(callback).Run();
++}
++#endif
+ }  // namespace content

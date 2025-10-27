@@ -103,6 +103,11 @@ void HTMLEmbedElement::ParseAttribute(
       SetNeedsPluginUpdate(true);
       GetLayoutObject()->SetNeedsLayoutAndFullPaintInvalidation(
           "Embed type changed");
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+      if (IsNativeType()) {
+        ReattachOnPluginChangeIfNeeded();
+      }
+#endif
     }
   } else if (params.name == html_names::kCodeAttr) {
     // TODO(rendering-core): Remove this branch? It's not in the spec and we're
@@ -130,7 +135,13 @@ void HTMLEmbedElement::ParseAttribute(
       SetNeedsPluginUpdate(true);
       ReattachOnPluginChangeIfNeeded();
     }
-  } else {
+  }
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  else if (IsNativeType() && params.name == html_names::kArkwebnativestyleAttr) {
+    NativeEmbedOverlay(params);
+  }
+#endif
+  else {
     HTMLPlugInElement::ParseAttribute(params);
   }
 }

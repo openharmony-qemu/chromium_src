@@ -97,9 +97,17 @@ NativeThemeAura::NativeThemeAura(bool use_overlay_scrollbars,
 #if BUILDFLAG(IS_CHROMEOS)
   set_scrollbar_button_length(0);
 #endif
+
+#if BUILDFLAG(IS_ARKWEB)
+  native_theme_aura_utils_ = new NativeThemeAuraUtils(this);
+#endif
+
   if (use_overlay_scrollbars) {
     scrollbar_width_ =
         kOverlayScrollbarThumbWidthPressed + kOverlayScrollbarStrokeWidth;
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+    native_theme_aura_utils_->SetScrollbarThumbWidth();
+#endif
   }
 
   // Images and alphas declarations assume the following order.
@@ -341,12 +349,18 @@ void NativeThemeAura::PaintScrollbarThumb(
     // ScrollbarThemeOverlay::paintThumb.
     gfx::Insets fill_insets(kStrokeWidth);
     fill_rect.Inset(fill_insets + edge_adjust_insets);
+#endif // ARKWEB_SCROLLBAR
   } else {
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+    native_theme_aura_utils_->PaintScrollbarThumbWithColor(
+        canvas, rect, scrollbar_color, color_scheme, part, state, extra_params);
+    return;
+#else
     fill_rect.Inset(GetScrollbarSolidColorThumbInsets(part));
     fill_flags.setColor(
         GetScrollbarThumbColor(*color_provider, state, extra_params));
+#endif
   }
-
   canvas->drawIRect(gfx::RectToSkIRect(fill_rect), fill_flags);
 }
 
@@ -408,6 +422,11 @@ void NativeThemeAura::PaintScrollbarCorner(
 gfx::Size NativeThemeAura::GetPartSize(Part part,
                                        State state,
                                        const ExtraParams& extra) const {
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  gfx::Size result = native_theme_aura_utils_->GetPartSize(part, state, extra);
+  if (!result.IsZero())
+    return result;
+#else
   if (use_overlay_scrollbar()) {
     constexpr int minimum_length =
         kOverlayScrollbarMinimumLength + 2 * kOverlayScrollbarStrokeWidth;
@@ -426,6 +445,7 @@ gfx::Size NativeThemeAura::GetPartSize(Part part,
         break;
     }
   }
+#endif  // BUILDFLAG(ARKWEB_SCROLLBAR)
 
   return NativeThemeBase::GetPartSize(part, state, extra);
 }
@@ -464,18 +484,24 @@ bool NativeThemeAura::SupportsNinePatch(Part part) const {
 
 gfx::Size NativeThemeAura::GetNinePatchCanvasSize(Part part) const {
   DCHECK(SupportsNinePatch(part));
-
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  return native_theme_aura_utils_->GetNinePatchCanvasSize(part);
+#else
   return gfx::Size(
       kOverlayScrollbarBorderPatchWidth * 2 + kOverlayScrollbarCenterPatchSize,
       kOverlayScrollbarBorderPatchWidth * 2 + kOverlayScrollbarCenterPatchSize);
+#endif // ARKWEB_SCROLLBAR
 }
 
 gfx::Rect NativeThemeAura::GetNinePatchAperture(Part part) const {
   DCHECK(SupportsNinePatch(part));
-
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  return native_theme_aura_utils_->GetNinePatchAperture(part);
+#else
   return gfx::Rect(
       kOverlayScrollbarBorderPatchWidth, kOverlayScrollbarBorderPatchWidth,
       kOverlayScrollbarCenterPatchSize, kOverlayScrollbarCenterPatchSize);
+#endif // ARKWEB_SCROLLBAR
 }
 
 }  // namespace ui

@@ -16,6 +16,7 @@
 #include "media/gpu/buildflags.h"
 #include "media/media_buildflags.h"
 #include "ui/gl/angle_implementation.h"
+#include "arkweb/build/features/features.h"
 
 namespace base {
 class CommandLine;
@@ -31,8 +32,11 @@ MEDIA_EXPORT extern const char kAudioCodecsFromEDID[];
 
 MEDIA_EXPORT extern const char kAutoplayPolicy[];
 
-MEDIA_EXPORT extern const char kDisableAudioInput[];
 MEDIA_EXPORT extern const char kDisableAudioOutput[];
+
+#if BUILDFLAG(ARKWEB_WEBRTC)
+MEDIA_EXPORT extern const char kDisableAudioInput[];
+#endif // BUILDFLAG(ARKWEB_WEBRTC)
 
 MEDIA_EXPORT extern const char kFailAudioStreamCreation[];
 

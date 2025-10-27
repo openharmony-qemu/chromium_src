@@ -46,6 +46,11 @@ import("//third_party/webrtc/webrtc.gni")
 import("//third_party/widevine/cdm/widevine.gni")
 import("//tools/grit/grit_rule.gni")
 import("//ui/base/ui_features.gni")
+import("//arkweb/build/features/features.gni")
+
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
 
 assert(enable_supervised_users)
 
@@ -4349,6 +4354,13 @@ static_library("browser") {
     public_deps += [ "//ui/base/mojom:ui_base_types" ]
 
     #!is_android
+    if (is_arkweb && arkweb_enable_cdm) {
+      import("//arkweb/chromium_ext/chrome/browser/media/ohos/cdm/arkweb_chrome_browser_media_ohos_ext.gni")
+      sources += arkweb_chrome_browser_media_ohos_sources
+      deps += [
+        "//components/cdm/browser",
+      ]
+    }
     deps += [
       "//chrome/app:command_ids",
       "//chrome/app/theme:chrome_unscaled_resources_grit",
@@ -7051,6 +7063,48 @@ static_library("browser") {
     }
   }
 
+  if (is_ohos) {
+    sources += [
+      "first_run/first_run_internal_linux.cc",
+      "memory_details_linux.cc",
+      "obsolete_system/obsolete_system_stub.cc",
+      "policy/browser_dm_token_storage_linux.cc",
+      "policy/browser_dm_token_storage_linux.h",
+      "supervised_user/linux_mac_windows/supervised_user_web_content_handler_impl.cc",
+      "supervised_user/linux_mac_windows/supervised_user_web_content_handler_impl.h",
+      "enterprise/profile_management/profile_management_features.cc",
+      "enterprise/profile_management/profile_management_features.h",
+      "supervised_user/supervised_user_verification_page.cc",
+      "supervised_user/supervised_user_verification_page.h",
+      "supervised_user/supervised_user_verification_page_youtube.cc",
+      "supervised_user/supervised_user_verification_page_youtube.h",
+    ]
+
+    if (arkweb_test) {
+      sources += [
+        "enterprise/signin/managed_profile_required_navigation_throttle.cc",
+        "enterprise/signin/managed_profile_required_navigation_throttle.h",
+      ]
+    }
+    
+    if (arkweb_asan) {
+      sources += [
+        "enterprise/connectors/device_trust/attestation/browser/attestation_switches.cc",
+        "enterprise/connectors/device_trust/attestation/browser/attestation_switches.h",
+        "enterprise/connectors/device_trust/attestation/browser/browser_attestation_service.cc",
+        "enterprise/connectors/device_trust/attestation/browser/browser_attestation_service.h",
+        "enterprise/connectors/device_trust/attestation/browser/crypto_utility.cc",
+        "enterprise/connectors/device_trust/attestation/browser/crypto_utility.h",
+        "enterprise/connectors/device_trust/attestation/browser/google_keys.cc",
+        "enterprise/connectors/device_trust/attestation/browser/google_keys.h",
+        "enterprise/connectors/device_trust/attestation/browser/device_attester.cc",
+        "enterprise/connectors/device_trust/attestation/browser/device_attester.h",
+        "enterprise/connectors/device_trust/attestation/browser/profile_attester.cc",
+        "enterprise/connectors/device_trust/attestation/browser/profile_attester.h",
+      ]
+    }
+  }
+
   if (is_linux || is_chromeos) {
     sources += [
       "chrome_browser_main_linux.cc",
@@ -7114,6 +7168,19 @@ static_library("browser") {
     }
   }
 
+  if (is_arkweb) {
+    sources += [
+      "media/webrtc/window_icon_util_ozone.cc",
+    ]
+    sources += arkweb_chrome_browser_notifications_sources
+    deps += [
+      "//ohos/adapter:adapter",
+    ]
+    if (use_ozone) {
+      sources += [ "fullscreen_ozone.cc" ]
+    }
+  }
+
   if (is_posix) {
     sources += [
       "download/trusted_sources_manager_posix.cc",
@@ -7124,7 +7191,7 @@ static_library("browser") {
     ]
   }
 
-  if (is_win || is_linux || is_chromeos) {
+  if (is_win || is_linux || is_chromeos || is_ohos) {
     sources += [
       "renderer_context_menu/spelling_options_submenu_observer.cc",
       "renderer_context_menu/spelling_options_submenu_observer.h",
@@ -7140,7 +7207,7 @@ static_library("browser") {
     ]
   }
 
-  if (is_win || is_mac || is_linux) {
+  if (is_win || is_mac || is_linux || arkweb_asan) {
     sources += [
       "browser_switcher/alternative_browser_driver.h",
       "browser_switcher/browser_switcher_navigation_throttle.cc",
@@ -7159,7 +7226,7 @@ static_library("browser") {
     if (is_win) {
       sources += [ "browser_switcher/alternative_browser_driver_win.cc" ]
     }
-    if (is_mac || is_linux) {
+    if (is_mac || is_linux || arkweb_asan) {
       sources += [ "browser_switcher/alternative_browser_driver_posix.cc" ]
     }
   }
@@ -7357,7 +7424,7 @@ static_library("browser") {
         "//chromeos/printing",
       ]
     }
-    if (is_linux) {
+    if (is_linux ||arkweb_asan) {
       sources += [ "printing/printer_manager_dialog_linux.cc" ]
     }
     if (enable_oop_printing) {
@@ -9472,7 +9539,7 @@ if (!is_android) {
       "//ui/webui/resources/cr_components/app_management:mojo_bindings",
     ]
 
-    if (is_win || is_mac || is_linux) {
+    if (is_win || is_mac || is_linux || is_ohos) {
       public_deps += [ "//chrome/browser/ui/webui/app_home:mojo_bindings" ]
     }
   }

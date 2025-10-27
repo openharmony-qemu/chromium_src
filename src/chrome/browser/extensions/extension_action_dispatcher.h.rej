@@ -1,0 +1,17 @@
+--- extension_action_dispatcher.h	2025-10-20 19:52:49.638101161 +0800
++++ extension_action_dispatcher.h	2025-10-16 15:57:00.183622999 +0800
+@@ -12,10 +12,14 @@
+ #include "base/scoped_observation.h"
+ #include "base/values.h"
+ #include "extensions/browser/browser_context_keyed_api_factory.h"
+ #include "extensions/common/extension_id.h"
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "ohos_nweb/src/capi/web_extension_tab_items.h"
++#endif // ARKWEB_ARKWEB_EXTENSIONS
++
+ namespace content {
+ class BrowserContext;
+ class WebContents;
+ }  // namespace content
+ 

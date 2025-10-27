@@ -227,6 +227,11 @@ class BASE_EXPORT PlatformThreadBase {
   // Gets the current thread id, which may be useful for logging purposes.
   static PlatformThreadId CurrentId();
 
+#if BUILDFLAG(IS_ARKWEB)
+  // Gets the current thread global id, which may be useful for logging purposes.
+  static PlatformThreadId CurrentRealId();
+#endif
+
   // Gets the current thread reference, which can be used to check if
   // we're on the right thread quickly.
   static PlatformThreadRef CurrentRef();
@@ -353,7 +358,7 @@ class BASE_EXPORT PlatformThreadApple : public PlatformThreadBase {
 };
 #endif  // BUILDFLAG(IS_APPLE)
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 class ThreadTypeDelegate;
 using IsViaIPC = base::StrongAlias<class IsViaIPCTag, bool>;
 
@@ -478,7 +483,7 @@ void SetThreadTypeChromeOS(ProcessId process_id,
 #endif
 #if BUILDFLAG(IS_CHROMEOS)
 inline constexpr auto SetThreadType = SetThreadTypeChromeOS;
-#elif BUILDFLAG(IS_LINUX)
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
 inline constexpr auto SetThreadType = SetThreadTypeLinux;
 #endif
 

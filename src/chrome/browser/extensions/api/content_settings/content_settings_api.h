@@ -49,6 +49,7 @@ class ContentSettingsContentSettingSetFunction : public ExtensionFunction {
   // ExtensionFunction:
   ResponseAction Run() override;
 };
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 class ContentSettingsContentSettingGetResourceIdentifiersFunction
     : public ExtensionFunction {

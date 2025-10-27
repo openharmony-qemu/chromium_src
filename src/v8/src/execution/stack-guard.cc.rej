@@ -1,0 +1,17 @@
+--- stack-guard.cc	2025-10-20 19:53:31.412575402 +0800
++++ stack-guard.cc	2025-10-16 15:56:12.777650213 +0800
+@@ -243,12 +247,12 @@
+ }
+ 
+ void StackGuard::ThreadLocal::Initialize(Isolate* isolate,
+                                          const ExecutionAccess& lock) {
+   const uintptr_t kLimitSize = v8_flags.stack_size * KB;
+-  DCHECK_GT(GetCurrentStackPosition(), kLimitSize);
+-  uintptr_t limit = GetCurrentStackPosition() - kLimitSize;
++  DCHECK_GT(base::Stack::GetStackStart(), kLimitSize);
++  uintptr_t limit = base::Stack::GetStackStart() - kLimitSize;
+   real_jslimit_ = SimulatorStack::JsLimitFromCLimit(isolate, limit);
+   set_jslimit(SimulatorStack::JsLimitFromCLimit(isolate, limit));
+   real_climit_ = limit;
+   set_climit(limit);
+   interrupt_scopes_ = nullptr;

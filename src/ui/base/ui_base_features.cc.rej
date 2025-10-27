@@ -1,0 +1,20 @@
+--- ui_base_features.cc	2025-10-20 19:53:30.832653464 +0800
++++ ui_base_features.cc	2025-10-16 15:55:05.419364916 +0800
+@@ -262,15 +262,15 @@
+ BASE_FEATURE(kDragDropEmpty, "DragDropEmpty", base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kDragDropFiles, "DragDropFiles", base::FEATURE_ENABLED_BY_DEFAULT);
+ #endif  // BUILDFLAG(IS_ANDROID)
+ 
+-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_WIN)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_WIN) || BUILDFLAG(ARKWEB_INPUT_EVENTS)
+ // Cached in Java as well, make sure defaults are updated together.
+ BASE_FEATURE(kElasticOverscroll,
+              "ElasticOverscroll",
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_INPUT_EVENTS)
+              base::FEATURE_ENABLED_BY_DEFAULT
+ #else  // BUILDFLAG(IS_ANDROID)
+              base::FEATURE_DISABLED_BY_DEFAULT
+ #endif
+ );

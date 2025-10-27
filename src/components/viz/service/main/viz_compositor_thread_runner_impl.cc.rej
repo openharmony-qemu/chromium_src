@@ -1,0 +1,51 @@
+--- viz_compositor_thread_runner_impl.cc	2025-10-20 19:52:54.146420452 +0800
++++ viz_compositor_thread_runner_impl.cc	2025-10-16 15:54:59.248962493 +0800
+@@ -31,11 +32,11 @@
+ #include "gpu/command_buffer/service/scheduler_sequence.h"
+ #include "gpu/config/gpu_finch_features.h"
+ #include "gpu/config/gpu_switches.h"
+ #include "gpu/ipc/service/gpu_memory_buffer_factory.h"
+ #include "ui/gfx/switches.h"
+-
++#include "arkweb/chromium_ext/components/viz/service/main/viz_compositor_thread_runner_impl_utils.h"
+ #if BUILDFLAG(IS_OZONE)
+ #include "ui/ozone/public/ozone_platform.h"
+ #endif
+ 
+ namespace viz {
+@@ -74,28 +75,34 @@
+ #endif
+ 
+   thread_options.thread_type = thread_type;
+ 
+   CHECK(thread->StartWithOptions(std::move(thread_options)));
+-
++#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
++  ReportThreadForInit(thread);
++#endif
+   return thread;
+ #endif  // !BUILDFLAG(IS_ANDROID)
+ }
+ }  // namespace
+ 
+ VizCompositorThreadRunnerImpl::VizCompositorThreadRunnerImpl()
+     : thread_(CreateAndStartCompositorThread()),
+       task_runner_(thread_->task_runner()) {
+   DCHECK_CALLED_ON_VALID_SEQUENCE(gpu_sequence_checker_);
++  implUtils = std::make_unique<VizCompositorThreadRunnerImplUtils>(this);
+ }
+ 
+ VizCompositorThreadRunnerImpl::~VizCompositorThreadRunnerImpl() {
+   task_runner_->PostTask(
+       FROM_HERE,
+       base::BindOnce(&VizCompositorThreadRunnerImpl::TearDownOnCompositorThread,
+                      base::Unretained(this)));
+   thread_->Stop();
++#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
++  implUtils->ReportThreadForDestroy(thread_);
++#endif
+ }
+ 
+ bool VizCompositorThreadRunnerImpl::CreateHintSessionFactory(
+     base::flat_set<base::PlatformThreadId> thread_ids,
+     base::RepeatingClosure* wake_up_closure) {

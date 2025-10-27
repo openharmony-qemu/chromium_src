@@ -1,0 +1,15 @@
+--- BUILD.gn	2025-10-20 19:52:50.256682919 +0800
++++ BUILD.gn	2025-10-16 15:57:00.968529507 +0800
+@@ -411,11 +411,11 @@
+         [ "//ui/webui/resources/cr_components/theme_color_picker:build_ts" ]
+   } else {
+     ts_deps += [ "//ash/webui/common/resources:build_ts" ]
+   }
+ 
+-  if (use_nss_certs || chrome_root_store_cert_management_ui) {
++  if (use_nss_certs || chrome_root_store_cert_management_ui || is_ohos) {
+     ts_deps +=
+         [ "//ui/webui/resources/cr_components/certificate_manager:build_ts" ]
+   }
+ 
+   ts_path_mappings =

@@ -472,7 +472,9 @@ LayoutObject::LayoutObject(Node* node)
 #if DCHECK_IS_ON()
   fragment_->SetIsFirst();
 #endif
-
+#if BUILDFLAG(ARKWEB_MENU)
+  imp_utils_ = std::make_unique<LayoutObjectUtils>(this);
+#endif
   InstanceCounters::IncrementCounter(InstanceCounters::kLayoutObjectCounter);
   if (node_)
     GetFrameView()->IncrementLayoutObjectCount();
@@ -1641,7 +1643,11 @@ void LayoutObject::MarkParentForSpannerOrOutOfFlowPositionedChange() {
   const LayoutBlock* containing_block = ContainingBlock();
   while (object != containing_block) {
     object->SetChildNeedsLayout(kMarkOnlyThis);
+#if BUILDFLAG(IS_ARKWEB)
+    object = object->Parent();
+#else
     object = object->Container();
+#endif
   }
   // Finally mark the parent block for layout. This will mark everything which
   // has an OOF-positioned object or column spanner in a LayoutResult as
@@ -5227,6 +5233,26 @@ void LayoutObject::InvalidateSubtreePositionTry(bool mark_style_dirty) {
   }
 }
 
+#if BUILDFLAG(ARKWEB_MENU)
+bool LayoutObject::VisibleToHitTestRequest(
+    const HitTestRequest& request) const {
+  return imp_utils_->ArkWebVisibleToHitTestRequest(request);
+}
+
+void LayoutObject::SetPositionMode(bool mode) {
+  if (!imp_utils_) {
+    return;
+  }
+  imp_utils_->get_position_mode_ = mode;
+}
+
+bool LayoutObject::IsGetPostionForSelection() const {
+  if (!imp_utils_) {
+    return false;
+  }
+  return imp_utils_->get_position_mode_;
+}
+#endif
 }  // namespace blink
 
 #if DCHECK_IS_ON()

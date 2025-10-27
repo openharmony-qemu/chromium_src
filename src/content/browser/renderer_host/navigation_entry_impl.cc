@@ -46,6 +46,11 @@
 #include "base/android/content_uri_utils.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
+#include <locale>
+#include <codecvt>
+#endif
+
 using base::UTF16ToUTF8;
 
 namespace content {
@@ -487,7 +492,7 @@ const GURL& NavigationEntryImpl::GetBaseURLForDataURL() {
   return base_url_for_data_url_;
 }
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
 void NavigationEntryImpl::SetDataURLAsString(
     scoped_refptr<base::RefCountedString> data_url) {
   if (data_url) {
@@ -650,6 +655,17 @@ const std::u16string& NavigationEntryImpl::GetTitleForDisplay() {
   }
 #endif
 
+#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
+  if (GetURL().SchemeIs(url::kResourcesScheme)) {
+    std::string fileName = GetURL().ExtractFileName();
+    if (fileName == "") {
+      title = u"";
+    } else {
+      std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter;
+      title = converter.from_bytes(fileName);
+    }
+  }
+#endif
   gfx::ElideString(title, blink::mojom::kMaxTitleChars, &cached_display_title_);
   return cached_display_title_;
 }
@@ -846,7 +862,7 @@ NavigationEntryImpl::CloneAndReplaceInternal(
   // ResetForCommit: post_data_
   copy->extra_headers_ = extra_headers_;
   copy->base_url_for_data_url_ = base_url_for_data_url_;
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
   copy->data_url_as_string_ = data_url_as_string_;
 #endif
   // ResetForCommit: is_renderer_initiated_
@@ -973,7 +989,7 @@ NavigationEntryImpl::ConstructCommitNavigationParams(
           blink::mojom::WasActivatedOption::kUnknown,
           base::UnguessableToken::Create(),
           std::vector<blink::mojom::PrefetchedSignedExchangeInfoPtr>(),
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
           std::string(),
 #endif
           false /* is_browser_initiated */, false /*has_ua_visual_transition*/,

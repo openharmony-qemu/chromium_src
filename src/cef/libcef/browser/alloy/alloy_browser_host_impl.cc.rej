@@ -1,0 +1,199 @@
+--- alloy_browser_host_impl.cc	2025-10-20 19:52:47.981885965 +0800
++++ alloy_browser_host_impl.cc	2025-10-16 15:55:22.346488372 +0800
+@@ -438,26 +475,34 @@
+     platform_delegate_->WasResized();
+   }
+ }
+ 
+ void AlloyBrowserHostImpl::WasHidden(bool hidden) {
++#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
++  LOG(DEBUG) << "web was hidden:" << hidden;
++#endif
+   if (!IsWindowless()) {
+     DCHECK(false) << "Window rendering is not disabled";
+     return;
+   }
+ 
+   if (!CEF_CURRENTLY_ON_UIT()) {
+     CEF_POST_TASK(CEF_UIT,
+                   base::BindOnce(&CefBrowserHost::WasHidden, this, hidden));
+     return;
+   }
+-
++#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
++  AsAlloyBrowserHostImplExt()->is_hidden_ = hidden;
++  AsAlloyBrowserHostImplExt()->ReportWindowStatus(false);
++#endif
+   if (platform_delegate_) {
+     platform_delegate_->WasHidden(hidden);
+   }
+ }
+ 
++#include "cef/ohos_cef_ext/libcef/browser/alloy/alloy_browser_host_impl_for_include.cc"
++
+ void AlloyBrowserHostImpl::NotifyScreenInfoChanged() {
+   if (!IsWindowless()) {
+     DCHECK(false) << "Window rendering is not disabled";
+     return;
+   }
+@@ -470,12 +515,16 @@
+   }
+ 
+   if (platform_delegate_) {
+     platform_delegate_->NotifyScreenInfoChanged();
+   }
++#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
++  base::ohos::SlidingObserver::GetInstance().OnDisplayInfoChange();
++#endif
+ }
+ 
++
+ void AlloyBrowserHostImpl::Invalidate(PaintElementType type) {
+   if (!IsWindowless()) {
+     DCHECK(false) << "Window rendering is not disabled";
+     return;
+   }
+@@ -995,10 +1080,11 @@
+     return false;
+   }
+   return web_contents()->IsAudioMuted();
+ }
+ 
++
+ // content::WebContentsDelegate methods.
+ // -----------------------------------------------------------------------------
+ 
+ void AlloyBrowserHostImpl::PrintCrossProcessSubframe(
+     content::WebContents* web_contents,
+@@ -1270,24 +1381,41 @@
+       settings, client, new_contents, /*own_web_contents=*/false, info, opener,
+       /*is_devtools_popup=*/false, request_context,
+       std::move(platform_delegate));
+ }
+ 
++
+ void AlloyBrowserHostImpl::RendererUnresponsive(
+     content::WebContents* source,
+     content::RenderWidgetHost* render_widget_host,
++#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
++    base::RepeatingClosure hang_monitor_restarter,
++    content::RendererIsUnresponsiveReason reason) {
++  if (implUtils->handleRendererUnresponsive(source, reason) == -1) {
++    return;
++  }
++#else
+     base::RepeatingClosure hang_monitor_restarter) {
+   hang_monitor::RendererUnresponsive(this, render_widget_host,
+                                      hang_monitor_restarter);
++#endif
+ }
+ 
+ void AlloyBrowserHostImpl::RendererResponsive(
+     content::WebContents* source,
+     content::RenderWidgetHost* render_widget_host) {
++#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
++  if (auto handler = client_->GetRequestHandler()) {
++    handler->AsCefRequestHandlerExt()->OnRenderProcessResponding(this);
++  }
++#else
+   hang_monitor::RendererResponsive(this, render_widget_host);
++#endif
+ }
+ 
++
++
+ content::JavaScriptDialogManager*
+ AlloyBrowserHostImpl::GetJavaScriptDialogManager(content::WebContents* source) {
+   return CefBrowserHostBase::GetJavaScriptDialogManager();
+ }
+ 
+@@ -1362,29 +1496,46 @@
+ content::PictureInPictureResult AlloyBrowserHostImpl::EnterPictureInPicture(
+     content::WebContents* web_contents) {
+   if (!IsPictureInPictureSupported()) {
+     return content::PictureInPictureResult::kNotSupported;
+   }
+-
++#if BUILDFLAG(ARKWEB_PIP)
++  SetPipActive(true);
++#endif
+   return PictureInPictureWindowManager::GetInstance()
+       ->EnterVideoPictureInPicture(web_contents);
+ }
+ 
+ void AlloyBrowserHostImpl::ExitPictureInPicture() {
+   DCHECK(IsPictureInPictureSupported());
++#if BUILDFLAG(ARKWEB_PIP)
++  SetPipActive(false);
++#endif
+   PictureInPictureWindowManager::GetInstance()->ExitPictureInPicture();
+ }
+ 
+ bool AlloyBrowserHostImpl::IsBackForwardCacheSupported(
+     content::WebContents& web_contents) {
++#if BUILDFLAG(ARKWEB_BFCACHE)
++  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
++          switches::kEnableBFCache)) {
+   return true;
+ }
++#endif
++  // Disabled due to issue #3237.
++  return false;
++}
+ 
+ content::PreloadingEligibility AlloyBrowserHostImpl::IsPrerender2Supported(
+     content::WebContents& web_contents) {
+-  // Prerender is not supported in CEF. See issue #3664.
+-  return content::PreloadingEligibility::kPreloadingDisabled;
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
++      switches::kEnableNwebEx)) {
++    return content::PreloadingEligibility::kEligible;
++  }
++#endif
++  return content::PreloadingEligibility::kPreloadingUnsupportedByWebContents;
+ }
+ 
+ void AlloyBrowserHostImpl::DraggableRegionsChanged(
+     const std::vector<blink::mojom::DraggableRegionPtr>& regions,
+     content::WebContents* contents) {
+@@ -1395,10 +1546,16 @@
+ // -----------------------------------------------------------------------------
+ 
+ void AlloyBrowserHostImpl::DidFinishNavigation(
+     content::NavigationHandle* navigation_handle) {
+   if (web_contents()) {
++#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
++    if (web_contents()->GetBrowserContext() &&
++        web_contents()->GetBrowserContext()->IsOffTheRecord()) {
++      return;
++    }
++#endif
+     auto cef_browser_context = CefBrowserContext::FromBrowserContext(
+         web_contents()->GetBrowserContext());
+     if (cef_browser_context) {
+       cef_browser_context->AddVisitedURLs(
+           navigation_handle->GetURL(), navigation_handle->GetRedirectChain(),
+@@ -1406,10 +1563,22 @@
+     }
+   }
+ }
+ 
+ void AlloyBrowserHostImpl::OnAudioStateChanged(bool audible) {
++#if BUILDFLAG(ARKWEB_MEDIA_MUTE_AUDIO)
++  LOG(INFO) << "OnAudioStateChanged: " << audible;
++#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
++  LOG_FEEDBACK(INFO) << "OnAudioStateChanged: " << audible;
++#endif
++
++  if (client_.get() && client_->AsArkWebClient()->GetMediaHandler().get()) {
++    client_->AsArkWebClient()->GetMediaHandler()->OnAudioStateChanged(this,
++                                                                      audible);
++  }
++#endif  // BUILDFLAG(ARKWEB_MEDIA_MUTE_AUDIO)
++
+   if (audible) {
+     if (recently_audible_timer_) {
+       recently_audible_timer_->Stop();
+     }
+ 

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "content/public/browser/web_contents_delegate.h"
+#include "content/public/browser/custom_media_player_listener.h"
 
 #include <memory>
 #include <utility>
@@ -28,6 +29,12 @@
 #include "ui/base/mojom/window_show_state.mojom.h"
 #include "ui/base/ui_base_types.h"
 #include "ui/gfx/geometry/rect.h"
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#include "content/browser/media/video_assistant/video_assistant.h"
+#include "content/public/browser/media_player_controller.h"
+#include "content/public/browser/media_player_listener.h"
+#include "media/mojo/mojom/media_player.mojom.h"
+#endif // ARKWEB_VIDEO_ASSISTANT
 
 namespace content {
 

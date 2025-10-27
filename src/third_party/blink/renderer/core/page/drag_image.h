@@ -43,6 +43,9 @@ namespace blink {
 
 class Image;
 class KURL;
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+class DragImageExt;
+#endif
 
 class CORE_EXPORT DragImage {
   USING_FAST_MALLOC(DragImage);
@@ -54,13 +57,24 @@ class CORE_EXPORT DragImage {
       InterpolationQuality = GetDefaultInterpolationQuality(),
       float opacity = 1,
       gfx::Vector2dF image_scale = gfx::Vector2dF(1, 1));
-
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  static std::unique_ptr<DragImage> Create(const KURL&,
+                                           const String& label,
+                                           float device_scale_factor,
+                                           bool is_force_dark_mode);
+#else
   static std::unique_ptr<DragImage> Create(const KURL&,
                                            const String& label,
                                            float device_scale_factor);
+#endif
 
   DragImage(const DragImage&) = delete;
   DragImage& operator=(const DragImage&) = delete;
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  friend class DragImageExt;
+  virtual DragImageExt* AsDragImageExt() { return nullptr; }
+  virtual
+#endif
   ~DragImage();
 
   static gfx::Vector2dF ClampedImageScale(const gfx::Size&,
@@ -83,4 +97,7 @@ class CORE_EXPORT DragImage {
 
 }  // namespace blink
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/page/drag_image_ext.h"
+#endif
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_PAGE_DRAG_IMAGE_H_

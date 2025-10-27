@@ -1224,6 +1224,14 @@ class PDFiumEngine : public DocumentLoader::Client,
   // Whether to render PDF annotations.
   bool render_annots_ = true;
 
+#if BUILDFLAG(ARKWEB_PDF)
+  // Whether PDF is searching for results.
+  bool is_finding_result_ = false;
+
+  // Whether PDF selection range is moved.
+  bool range_moved_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
   // Pending progressive paints.
   class ProgressivePaint {
    public:

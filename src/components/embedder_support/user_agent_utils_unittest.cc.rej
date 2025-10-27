@@ -1,0 +1,29 @@
+--- user_agent_utils_unittest.cc	2025-10-20 19:52:52.909850968 +0800
++++ user_agent_utils_unittest.cc	2025-10-16 15:54:56.732372286 +0800
+@@ -75,10 +75,12 @@
+     "X11; Linux x86_64"
+ #elif BUILDFLAG(IS_MAC)
+     "Macintosh; Intel Mac OS X 10_15_7"
+ #elif BUILDFLAG(IS_WIN)
+     "Windows NT 10.0; Win64; x64"
++#elif BUILDFLAG(IS_OHOS)
++    "OHOS; OHOS x86_64"
+ #else
+ #error Unsupported platform
+ #endif
+     ") AppleWebKit/537.36 (KHTML, like Gecko) Chrome/%s.0.0.0 "
+     "Safari/537.36";
+@@ -212,10 +214,13 @@
+ #elif BUILDFLAG(IS_FUCHSIA)
+   // Post-UA Reduction there is a single <unifiedPlatform> value for Fuchsia:
+   // Fuchsia
+   ASSERT_EQ(1u, pieces.size());
+   ASSERT_EQ("Fuchsia", pieces[0]);
++#elif BUILDFLAG(IS_OHOS)
++  ASSERT_EQ(2u, pieces.size());
++  ASSERT_EQ("OHOS", pieces[0]);
+ #else
+ #error Unsupported platform
+ #endif
+ 
+   // Check that the version numbers match.

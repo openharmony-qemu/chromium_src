@@ -169,6 +169,14 @@ class VIZ_SERVICE_EXPORT SkiaOutputDevice {
   virtual void EnsureBackbuffer();
   virtual void DiscardBackbuffer();
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  virtual void SetNativeInnerWeb(bool isInnerWeb) {}
+#endif
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  virtual void SetBypassVsyncCondition(int32_t condition) {}
+#endif
+
   // Acknowledges a SwapBuffers request without actually attempting to swap.
   // This should be called when the GPU thread decides to skip a swap that was
   // invoked by the viz thread to ensure that we still run the relevant metrics
@@ -203,6 +211,9 @@ class VIZ_SERVICE_EXPORT SkiaOutputDevice {
         gfx::SwapCompletionResult result,
         const std::optional<gfx::Rect>& damage_area,
         std::vector<gpu::Mailbox> released_overlays,
+#if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
+        const gpu::Mailbox& primary_plane_mailbox,
+#endif
         int64_t swap_trace_id);
     void CallFeedback();
 

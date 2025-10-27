@@ -300,6 +300,9 @@ void SubresourceFilterAgent::SetAdEvidenceForInitialEmptySubframe() {
 }
 
 void SubresourceFilterAgent::DidCreateNewDocument() {
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  did_load_finished_ = false;
+#endif
   // TODO(csharrison): Use WebURL and WebSecurityOrigin for efficiency here,
   // which requires changes to the unit tests.
   const GURL& url = GetDocumentURL();
@@ -359,6 +362,12 @@ void SubresourceFilterAgent::ConstructFilter(
       std::move(first_disallowed_load_callback));
   filter_for_last_created_document_ = filter->AsWeakPtr();
   SetSubresourceFilterForCurrentDocument(std::move(filter));
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  // This calc will only allowed after SetSubresourceFilterForCommittedLoad
+  // which already finish web_frame->GetDocumentLoader()->SetSubresourceFilter
+  AsArkWebSubresourceFilterAgentExt()->CalcElementHidingTypeOption(render_frame());
+#endif
 }
 
 void SubresourceFilterAgent::DidFailProvisionalLoad() {
@@ -373,6 +382,12 @@ void SubresourceFilterAgent::DidFinishLoad() {
   const auto& statistics =
       filter_for_last_created_document_->filter().statistics();
   SendDocumentLoadStatistics(statistics);
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  filter_for_last_created_document_->SetDidFinishLoad(true);
+  filter_for_last_created_document_->ClearStatistics();
+  did_load_finished_ = true;
+#endif
 }
 
 void SubresourceFilterAgent::WillCreateWorkerFetchContext(
@@ -414,5 +429,4 @@ void SubresourceFilterAgent::DidCreateFencedFrame(
     GetSubresourceFilterHost()->AdScriptDidCreateFencedFrame(placeholder_token);
   }
 }
-
 }  // namespace subresource_filter

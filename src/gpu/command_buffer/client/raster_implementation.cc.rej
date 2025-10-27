@@ -1,0 +1,16 @@
+--- raster_implementation.cc	2025-10-20 19:52:55.490971801 +0800
++++ raster_implementation.cc	2025-10-16 15:55:00.567551274 +0800
+@@ -103,10 +103,13 @@
+              "kDisableErrorHandlingForReadback",
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ const uint32_t kMaxTransferCacheEntrySizeForTransferBuffer = 1024;
+ const size_t kMaxImmediateDeletedPaintCachePaths = 1024;
++#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
++const int QUEUE_MAX_SIZE = 100;
++#endif
+ 
+ class ScopedSharedMemoryPtr {
+  public:
+   ScopedSharedMemoryPtr(size_t size,
+                         TransferBufferInterface* transfer_buffer,

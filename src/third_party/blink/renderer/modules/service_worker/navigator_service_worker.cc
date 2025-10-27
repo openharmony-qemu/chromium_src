@@ -4,6 +4,7 @@
 
 #include "third_party/blink/renderer/modules/service_worker/navigator_service_worker.h"
 
+#include "arkweb/build/features/features.h"
 #include "services/network/public/mojom/web_sandbox_flags.mojom-blink.h"
 #include "third_party/blink/renderer/core/dom/document.h"
 #include "third_party/blink/renderer/core/execution_context/execution_context.h"
@@ -13,6 +14,9 @@
 #include "third_party/blink/renderer/modules/service_worker/service_worker_container.h"
 #include "third_party/blink/renderer/platform/bindings/script_state.h"
 #include "third_party/blink/renderer/platform/instrumentation/use_counter.h"
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+#include "ohos_nweb/src/nweb_advanced_security.h"
+#endif
 
 namespace blink {
 

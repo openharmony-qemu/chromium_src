@@ -18,6 +18,12 @@
 #include "third_party/blink/renderer/platform/weborigin/kurl.h"
 #include "third_party/blink/renderer/platform/weborigin/reporting_disposition.h"
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "third_party/blink/renderer/core/page/page.h"
+#include "third_party/blink/renderer/platform/timer.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/loader/arkweb_subresource_filter_ext.h"
+#endif
+
 namespace blink {
 
 class ExecutionContext;

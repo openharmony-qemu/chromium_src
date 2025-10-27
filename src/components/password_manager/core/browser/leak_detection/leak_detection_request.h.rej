@@ -1,0 +1,20 @@
+--- leak_detection_request.h	2025-10-20 19:52:53.282023097 +0800
++++ leak_detection_request.h	2025-10-16 15:54:57.147927538 +0800
+@@ -33,12 +33,17 @@
+     kFetchError = 1,
+     kParseError = 2,
+     kMaxValue = kParseError
+   };
+ 
++#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
++  static constexpr char kLookupSingleLeakEndpoint[] =
++      "https://x.x.x.x";
++#else
+   static constexpr char kLookupSingleLeakEndpoint[] =
+       "https://passwordsleakcheck-pa.googleapis.com/v1/leaks:lookupSingle";
++#endif
+ 
+   LeakDetectionRequest();
+   ~LeakDetectionRequest() override;
+ 
+   // Initiates a leak lookup network request for the credential corresponding to

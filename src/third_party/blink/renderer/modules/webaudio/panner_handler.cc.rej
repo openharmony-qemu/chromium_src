@@ -1,0 +1,14 @@
+--- panner_handler.cc	2025-10-20 19:53:01.094202840 +0800
++++ panner_handler.cc	2025-10-16 16:07:39.981322167 +0800
+@@ -7,10 +7,11 @@
+ #pragma allow_unsafe_buffers
+ #endif
+ 
+ #include "third_party/blink/renderer/modules/webaudio/panner_handler.h"
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/metrics/histogram_functions.h"
+ #include "base/synchronization/lock.h"
+ #include "third_party/blink/renderer/modules/webaudio/audio_listener.h"
+ #include "third_party/blink/renderer/modules/webaudio/audio_node_input.h"
+ #include "third_party/blink/renderer/modules/webaudio/audio_node_output.h"

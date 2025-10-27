@@ -1,0 +1,69 @@
+--- BUILD.gn	2025-10-20 19:52:49.574247374 +0800
++++ BUILD.gn	2025-10-16 15:57:00.105811118 +0800
+@@ -17,10 +18,12 @@
+ import("//printing/buildflags/buildflags.gni")
+ import("//rlz/buildflags/buildflags.gni")
+ import("//services/screen_ai/buildflags/features.gni")
+ import("//testing/libfuzzer/fuzzer_test.gni")
+ import("//third_party/protobuf/proto_library.gni")
++import("//arkweb/build/features/features.gni")
++import("//arkweb/chromium_ext/chrome/browser/extensions/arkweb_ui_views_extension.gni")
+ 
+ assert(enable_extensions)
+ assert(enable_supervised_users)
+ assert(!is_fuchsia, "Fuchsia shouldn't use anything in //chrome")
+ 
+@@ -638,10 +641,14 @@
+     "window_controller_list.cc",
+     "window_controller_list.h",
+     "window_controller_list_observer.h",
+   ]
+ 
++  include_dirs = [
++      "//cef",
++  ]
++
+   # Chrome OS does not support Native Messaging policies.
+   if (!is_chromeos) {
+     sources += [
+       "api/messaging/native_messaging_policy_handler.cc",
+       "api/messaging/native_messaging_policy_handler.h",
+@@ -971,10 +978,16 @@
+     "//ui/shell_dialogs",
+     "//ui/strings",
+     "//url",
+   ]
+ 
++  if (arkweb_arkweb_extensions) {
++    deps += [
++      "//components/services/unzip:in_process",
++    ]
++  }
++
+   if (is_linux || is_mac || is_win) {
+     sources += [
+       "api/system_indicator/system_indicator_manager.cc",
+       "api/system_indicator/system_indicator_manager.h",
+     ]
+@@ -1480,10 +1504,21 @@
+     deps += [
+       "//components/enterprise/buildflags",
+       "//components/enterprise/data_controls/core/browser",
+     ]
+   }
++
++  if (arkweb_arkweb_extensions) {
++    sources += arkweb_ui_views_extension_sources
++  }
++
++  if (arkweb_arkweb_extensions) {
++    import("//arkweb/chromium_ext/chrome/browser/extensions/api/declarative_content/arkweb_extension_declarative_content_ext.gni")
++    sources += arkweb_extensions_declarative_content_ext.sources
++    sources -= arkweb_extensions_declarative_content_ext.sources_del
++    deps += arkweb_extensions_declarative_content_ext.deps
++  }
+ }
+ 
+ # KeyedService factories initialization.
+ source_set("keyed_service_factories") {
+   sources = [

@@ -1,0 +1,16 @@
+--- network_context.h	2025-10-20 19:52:57.650211167 +0800
++++ network_context.h	2025-10-16 15:55:03.316609095 +0800
+@@ -130,10 +130,13 @@
+ class SQLiteTrustTokenPersister;
+ class SessionCleanupCookieStore;
+ class SharedDictionaryManager;
+ class WebSocketFactory;
+ class WebTransport;
++#if BUILDFLAG(ARKWEB_CUSTOM_DNS) || BUILDFLAG(ARKWEB_PRP_PRELOAD)
++class ArkWebNetworkContextExt;
++#endif
+ 
+ struct ResourceRequest;
+ 
+ // A NetworkContext creates and manages access to a URLRequestContext.
+ //

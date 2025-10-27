@@ -1,0 +1,45 @@
+--- code_cache_fetcher.cc	2025-10-20 19:53:01.230200736 +0800
++++ code_cache_fetcher.cc	2025-10-16 16:07:40.131326528 +0800
+@@ -10,10 +10,13 @@
+ #include "third_party/blink/public/platform/platform.h"
+ #include "third_party/blink/public/platform/web_url.h"
+ #include "third_party/blink/renderer/platform/loader/fetch/code_cache_host.h"
+ #include "third_party/blink/renderer/platform/weborigin/scheme_registry.h"
+ #include "third_party/blink/renderer/platform/wtf/functional.h"
++#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
++#include "arkweb/chromium_ext/third_party/blink/renderer/platform/weborigin/scheme_registry_utils.h"
++#endif
+ 
+ namespace blink {
+ 
+ namespace {
+ 
+@@ -59,21 +62,27 @@
+       return false;
+     }
+   } else if (!response_head.should_use_source_hash_for_js_code_cache) {
+     // If the timestamps don't match or are null, the code cache data may be
+     // for a different response. See https://crbug.com/1099587.
+-
++#if BUILDFLAG(ARKWEB_CODECACHE_ENHANCE)
++    if (!response_head.code_cache_valid &&
++        (code_cache_response_time.is_null() ||
++         response_head.response_time.is_null() ||
++         code_cache_response_time != response_head.response_time)) {
++#else
+     // When the cached resource is revalidated and an HTTP 304 ("Not Modified")
+     // response is received, the response time changes. However, the code cache
+     // is still valid. We use original_response_time (which doesn't change when
+     // a HTTP 304 is received) instead of response_time for validating the code
+     // cache.
+     base::Time response_time = response_head.original_response_time.is_null()
+                                    ? response_head.response_time
+                                    : response_head.original_response_time;
+     if (code_cache_response_time.is_null() || response_time.is_null() ||
+         code_cache_response_time != response_time) {
++#endif
+       return false;
+     }
+   }
+   return true;
+ }

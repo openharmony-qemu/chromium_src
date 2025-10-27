@@ -352,6 +352,15 @@ void Compositor::SetLayerTreeFrameSink(
     mojo::AssociatedRemote<viz::mojom::DisplayPrivate> display_private) {
   layer_tree_frame_sink_requested_ = false;
   display_private_ = std::move(display_private);
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  compositor_utils_->SetDrawMode(compositor_utils_->drawMode_);
+#endif
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  compositor_utils_->SetNativeInnerWeb(compositor_utils_->isInnerWeb_);
+#endif
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  compositor_utils_->SetBypassVsyncCondition(compositor_utils_->condition_);
+#endif
   host_->SetLayerTreeFrameSink(std::move(layer_tree_frame_sink));
   // Display properties are reset when the output surface is lost, so update it
   // to match the Compositor's.

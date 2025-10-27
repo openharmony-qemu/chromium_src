@@ -78,6 +78,9 @@ void CaptivePortalDetector::StartProbe(
 
   simple_loader_ = network::SimpleURLLoader::Create(std::move(resource_request),
                                                     traffic_annotation);
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  simple_loader_->SetTimeoutDuration(base::Seconds(5));
+#endif
   simple_loader_->SetAllowHttpErrorResults(true);
   network::SimpleURLLoader::BodyAsStringCallbackDeprecated callback =
       base::BindOnce(&CaptivePortalDetector::OnSimpleLoaderComplete,
@@ -126,6 +129,15 @@ void CaptivePortalDetector::OnSimpleLoaderCompleteInternal(
   Results results;
   GetCaptivePortalResultFromResponse(net_error, response_code, content_length,
                                      url, headers, &results);
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  GURL fallback_probe_url(kDefaultURL);
+  if (results.result != captive_portal::RESULT_INTERNET_CONNECTED &&
+      probe_url_ != fallback_probe_url) {
+    state_ = State::kProbe;
+    StartProbe(kTrafficAnnotation, fallback_probe_url);
+    return;
+  }
+#endif
   simple_loader_.reset();
   std::move(detection_callback_).Run(results);
 }

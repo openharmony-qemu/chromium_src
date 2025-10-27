@@ -1,0 +1,22 @@
+--- scheduler.cc	2025-10-20 19:52:47.933994925 +0800
++++ scheduler.cc	2025-10-16 15:54:55.685468653 +0800
+@@ -6,15 +6,19 @@
+ 
+ #include <algorithm>
+ #include <utility>
+ #include <vector>
+ 
++#include "arkweb/chromium_ext/cc/scheduler/scheduler_utils.h"
+ #include "base/auto_reset.h"
+ #include "base/check_op.h"
+ #include "base/functional/bind.h"
+ #include "base/location.h"
+ #include "base/metrics/histogram_macros.h"
++#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
++#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
++#endif
+ #include "base/task/delay_policy.h"
+ #include "base/task/single_thread_task_runner.h"
+ #include "base/trace_event/trace_event.h"
+ #include "base/trace_event/traced_value.h"
+ #include "cc/base/devtools_instrumentation.h"

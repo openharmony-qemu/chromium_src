@@ -1,0 +1,16 @@
+--- pdf_document_helper.cc	2025-10-20 19:52:53.326043382 +0800
++++ pdf_document_helper.cc	2025-10-20 19:31:26.800032116 +0800
+@@ -4,10 +4,13 @@
+ 
+ #include "components/pdf/browser/pdf_document_helper.h"
+ 
+ #include <utility>
+ 
++#if BUILDFLAG(ARKWEB_PDF)
++#include "base/logging.h"
++#endif  // BUILDFLAG(ARKWEB_PDF)
+ #include "base/memory/ptr_util.h"
+ #include "base/notreached.h"
+ #include "components/pdf/browser/pdf_document_helper_client.h"
+ #include "components/pdf/browser/pdf_frame_util.h"
+ #include "content/public/browser/document_user_data.h"

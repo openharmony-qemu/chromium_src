@@ -87,6 +87,15 @@ void LayoutImage::StyleDidChange(StyleDifference diff,
   NOT_DESTROYED();
   LayoutReplaced::StyleDidChange(diff, old_style);
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  auto* html_plugin_element = DynamicTo<HTMLPlugInElement>(GetNode());
+  if (html_plugin_element && html_plugin_element->IsNativeType()
+      && html_plugin_element->Utils()->CheckIntrinsicSizeEnable()) {
+    LayoutReplaced::IntrinsicSizeChanged();
+    LOG(DEBUG) << "LayoutImage::StyleDidChange set intrinsic size: " << IntrinsicSize().ToString().Utf8();
+  }
+#endif  // BUILDFLAG(ARKWEB_SAME_LAYER)
+
   RespectImageOrientationEnum old_orientation =
       old_style ? old_style->ImageOrientation()
                 : ComputedStyleInitialValues::InitialImageOrientation();

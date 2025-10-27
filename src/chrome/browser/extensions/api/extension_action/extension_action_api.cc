@@ -39,6 +39,12 @@
 #include "ui/gfx/image/image_skia.h"
 #include "url/origin.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "base/logging.h"
+#include "ohos_nweb/src/cef_delegate/nweb_extension_action_cef_delegate.h"
+#include "ohos_nweb/src/capi/nweb_extension_action_icon.h"
+#endif
+
 using content::WebContents;
 
 namespace extensions {
@@ -185,12 +191,34 @@ void ExtensionActionFunction::SetVisible(bool visible) {
 ExtensionFunction::ResponseAction
 ExtensionActionShowFunction::RunExtensionAction() {
   SetVisible(true);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  std::optional<int> tab_id;
+  if (tab_id_ != ExtensionAction::kDefaultTabId) {
+    tab_id = tab_id_;
+  }
+  LOG(INFO) << "ExtensionActionShowFunction::RunExtensionAction";
+  OHOS::NWeb::NWebExtensionActionCefDelegate::GetInstance()->OnEnable(
+      extension()->id(), tab_id,
+      OHOS::NWeb::GetExtensionContextType(browser_context()),
+      include_incognito_information());
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
   return RespondNow(NoArguments());
 }
 
 ExtensionFunction::ResponseAction
 ExtensionActionHideFunction::RunExtensionAction() {
   SetVisible(false);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  std::optional<int> tab_id;
+  if (tab_id_ != ExtensionAction::kDefaultTabId) {
+    tab_id = tab_id_;
+  }
+  LOG(INFO) << "ExtensionActionHideFunction::RunExtensionAction";
+  OHOS::NWeb::NWebExtensionActionCefDelegate::GetInstance()->OnDisable(
+      extension()->id(), tab_id,
+      OHOS::NWeb::GetExtensionContextType(browser_context()),
+      include_incognito_information());
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
   return RespondNow(NoArguments());
 }
 
@@ -251,6 +279,17 @@ ExtensionActionSetTitleFunction::RunExtensionAction() {
   EXTENSION_FUNCTION_VALIDATE(title);
   extension_action_->SetTitle(tab_id_, *title);
   NotifyChange();
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  NWebExtensionActionSetTitleDetails details;
+  if (tab_id_ != ExtensionAction::kDefaultTabId) {
+    details.tabId = tab_id_;
+  }
+  details.title = *title;
+  OHOS::NWeb::NWebExtensionActionCefDelegate::GetInstance()->OnSetTitle(
+      extension()->id(), details,
+      OHOS::NWeb::GetExtensionContextType(browser_context()),
+      include_incognito_information());
+#endif
   return RespondNow(NoArguments());
 }
 
@@ -273,6 +312,17 @@ ExtensionActionSetPopupFunction::RunExtensionAction() {
 
   extension_action_->SetPopupUrl(tab_id_, popup_url);
   NotifyChange();
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  NWebExtensionActionSetPopupDetails details;
+  if (tab_id_ != ExtensionAction::kDefaultTabId) {
+    details.tabId = tab_id_;
+  }
+  details.popup = *popup_string;
+  OHOS::NWeb::NWebExtensionActionCefDelegate::GetInstance()->OnSetPopup(
+      extension()->id(), details,
+      OHOS::NWeb::GetExtensionContextType(browser_context()),
+      include_incognito_information());
+#endif
   return RespondNow(NoArguments());
 }
 
@@ -384,6 +434,14 @@ ActionGetUserSettingsFunction::~ActionGetUserSettingsFunction() = default;
 
 ExtensionFunction::ResponseAction ActionGetUserSettingsFunction::Run() {
   DCHECK(extension());
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  std::optional<NWebExtensionActionUserSettings> user_settings =
+      OHOS::NWeb::NWebExtensionActionCefDelegate::GetInstance()->OnGetUserSettings(extension()->id());
+  bool is_pinned = false;
+  if (user_settings) {
+    is_pinned = user_settings->isOnToolbar;
+  }
+#else
   ExtensionActionManager* const action_manager =
       ExtensionActionManager::Get(browser_context());
   ExtensionAction* const action =

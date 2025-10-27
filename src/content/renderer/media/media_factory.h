@@ -45,6 +45,10 @@ class WebMediaPlayer;
 class WebMediaPlayerBuilder;
 class WebMediaPlayerClient;
 class WebMediaPlayerEncryptedMediaClient;
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+class WebNativeBridge;
+class WebNativeClient;
+#endif
 }  // namespace blink
 
 #if BUILDFLAG(ENABLE_CAST_RECEIVER)
@@ -83,6 +87,10 @@ class MediaFactory {
                media::RequestRoutingTokenCallback request_routing_token_cb);
   ~MediaFactory();
 
+  virtual content::ArkwebMediaFactoryExt* AsArkwebMediaFactoryExt() {
+    return nullptr;
+  }
+
   // Instruct MediaFactory to establish Mojo channels as needed to perform its
   // factory duties. This should be called by RenderFrameImpl as soon as its own
   // interface provider is bound.
@@ -118,6 +126,14 @@ class MediaFactory {
   // Returns `DecoderFactory`, which can be used to created decoders in WebRTC.
   // Can be dereferenced only on the media thread.
   base::WeakPtr<media::DecoderFactory> GetDecoderFactory();
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  std::unique_ptr<blink::WebVideoFrameSubmitter> CreateSubmitter(
+    scoped_refptr<base::SingleThreadTaskRunner>
+        main_thread_compositor_task_runner,
+    const cc::LayerTreeSettings& settings,
+    media::MediaLog* media_log,
+    content::RenderFrame* render_frame);
+#endif
 
  private:
   // Initializes `decoder_factory_` if it hasn't been initialized yet.
@@ -208,8 +224,11 @@ class MediaFactory {
   std::unique_ptr<cast_streaming::ResourceProvider>
       cast_streaming_resource_provider_;
 #endif
+
+  std::unique_ptr<ArkwebMediaFactoryUtils> media_factory_utils_;
 };
 
 }  // namespace content
 
+#include "arkweb/chromium_ext/content/renderer/media/ohos/arkweb_media_factory_ext.h"
 #endif  // CONTENT_RENDERER_MEDIA_MEDIA_FACTORY_H_

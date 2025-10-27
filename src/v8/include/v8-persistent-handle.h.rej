@@ -1,0 +1,90 @@
+--- v8-persistent-handle.h	2025-10-20 19:53:31.256596569 +0800
++++ v8-persistent-handle.h	2025-10-16 15:56:12.599983563 +0800
+@@ -428,36 +436,44 @@
+                                      uint16_t class_id) {}
+ };
+ 
+ template <class T>
+ internal::Address* PersistentBase<T>::New(Isolate* isolate, T* that) {
+-  if (internal::ValueHelper::IsEmpty(that)) return nullptr;
++  if (internal::ValueHelper::IsEmpty(that)) {
++    return nullptr;
++  }
+   return api_internal::GlobalizeReference(
+       reinterpret_cast<internal::Isolate*>(isolate),
+       internal::ValueHelper::ValueAsAddress(that));
+ }
+ 
+ template <class T, class M>
+ template <class S, class M2>
+ void Persistent<T, M>::Copy(const Persistent<S, M2>& that) {
+   static_assert(std::is_base_of<T, S>::value, "type check");
+   this->Reset();
+-  if (that.IsEmpty()) return;
++  if (that.IsEmpty()) {
++    return;
++  }
+   this->slot() = api_internal::CopyGlobalReference(that.slot());
+   M::Copy(that, this);
+ }
+ 
+ template <class T>
+ bool PersistentBase<T>::IsWeak() const {
+   using I = internal::Internals;
+-  if (this->IsEmpty()) return false;
++  if (this->IsEmpty()) {
++    return false;
++  }
+   return I::GetNodeState(this->slot()) == I::kNodeStateIsWeakValue;
+ }
+ 
+ template <class T>
+ void PersistentBase<T>::Reset() {
+-  if (this->IsEmpty()) return;
++  if (this->IsEmpty()) {
++    return;
++  }
+   api_internal::DisposeGlobal(this->slot());
+   this->Clear();
+ }
+ 
+ /**
+@@ -467,11 +483,13 @@
+ template <class T>
+ template <class S>
+ void PersistentBase<T>::Reset(Isolate* isolate, const Local<S>& other) {
+   static_assert(std::is_base_of<T, S>::value, "type check");
+   Reset();
+-  if (other.IsEmpty()) return;
++  if (other.IsEmpty()) {
++    return;
++  }
+   this->slot() = New(isolate, *other);
+ }
+ 
+ /**
+  * If non-empty, destroy the underlying storage cell
+@@ -481,18 +499,21 @@
+ template <class S>
+ void PersistentBase<T>::Reset(Isolate* isolate,
+                               const PersistentBase<S>& other) {
+   static_assert(std::is_base_of<T, S>::value, "type check");
+   Reset();
+-  if (other.IsEmpty()) return;
++  if (other.IsEmpty()) {
++    return;
++  }
+   this->slot() = New(isolate, other.template value<S>());
+ }
+ 
+ template <class T>
+ template <typename P>
+ V8_INLINE void PersistentBase<T>::SetWeak(
+-    P* parameter, typename WeakCallbackInfo<P>::Callback callback,
++    P* parameter,
++    typename WeakCallbackInfo<P>::Callback callback,
+     WeakCallbackType type) {
+   using Callback = WeakCallbackInfo<void>::Callback;
+ #if (__GNUC__ >= 8) && !defined(__clang__)
+ #pragma GCC diagnostic push
+ #pragma GCC diagnostic ignored "-Wcast-function-type"

@@ -5,6 +5,7 @@
 import("//build/config/features.gni")
 import("//media/cdm/library_cdm/cdm_paths.gni")
 import("//media/media_options.gni")
+import("//arkweb/build/features/features.gni")
 
 assert(enable_library_cdms)
 

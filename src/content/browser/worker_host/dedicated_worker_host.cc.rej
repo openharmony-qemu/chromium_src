@@ -1,0 +1,25 @@
+--- dedicated_worker_host.cc	2025-10-20 19:52:54.506584010 +0800
++++ dedicated_worker_host.cc	2025-10-16 15:54:59.628556233 +0800
+@@ -256,22 +256,20 @@
+     return;
+   }
+ 
+   RenderFrameHostImpl* creator_render_frame_host = nullptr;
+   DedicatedWorkerHost* creator_worker = nullptr;
+-
+   absl::visit(base::Overloaded(
+                   [&](const GlobalRenderFrameHostId& render_frame_host_id) {
+                     creator_render_frame_host =
+                         RenderFrameHostImpl::FromID(render_frame_host_id);
+                   },
+                   [&](blink::DedicatedWorkerToken dedicated_worker_token) {
+                     creator_worker = service_->GetDedicatedWorkerHostFromToken(
+                         dedicated_worker_token);
+                   }),
+               creator_);
+-
+   if (!creator_render_frame_host && !creator_worker) {
+     ScriptLoadStartFailed(network::URLLoaderCompletionStatus(net::ERR_ABORTED));
+     return;
+   }
+ 

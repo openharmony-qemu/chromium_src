@@ -256,9 +256,15 @@ const base::FeatureParam<bool>
     kSendVisualSearchInteractionParamForLensTextQueries{
         &kLensOverlay, "send-vsint-for-text-selections", true};
 
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+constexpr base::FeatureParam<std::string> kLensOverlayEndpointUrl{
+    &kLensOverlay, "endpoint-url",
+    "https://x.x.x.x"};
+#else
 constexpr base::FeatureParam<std::string> kLensOverlayEndpointUrl{
     &kLensOverlay, "endpoint-url",
     "https://lensfrontend-pa.googleapis.com/v1/crupload"};
+#endif
 
 constexpr base::FeatureParam<bool> kUseOauthForLensOverlayRequests{
     &kLensOverlay, "use-oauth-for-requests", true};

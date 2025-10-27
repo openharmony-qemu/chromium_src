@@ -1,0 +1,52 @@
+--- font_cache_android.cc	2025-10-20 19:53:01.162201788 +0800
++++ font_cache_android.cc	2025-10-16 16:07:40.064219314 +0800
+@@ -71,15 +73,31 @@
+   if (sk_sp<SkFontMgr> font_manager = FontCache::Get().FontManager())
+     return DefaultFontFamily(font_manager);
+   return DefaultFontFamily(skia::DefaultFontMgr());
+ }
+ 
++#if BUILDFLAG(ARKWEB_THEME_FONT)
++static AtomicString& MutableSystemFontFamily() {
++  DEFINE_THREAD_SAFE_STATIC_LOCAL(AtomicString, system_font_family,
++                                  (DefaultFontFamily()));
++  return system_font_family;
++}
++
++void FontCache::InvalidateSystemFontFamily() {
++  MutableSystemFontFamily() = DefaultFontFamily();
++}
++#endif
++
+ // static
+ const AtomicString& FontCache::SystemFontFamily() {
++#if BUILDFLAG(ARKWEB_THEME_FONT)
++  return MutableSystemFontFamily();
++#else
+   DEFINE_THREAD_SAFE_STATIC_LOCAL(AtomicString, system_font_family,
+                                   (DefaultFontFamily()));
+   return system_font_family;
++#endif
+ }
+ 
+ // static
+ void FontCache::SetSystemFontFamily(const AtomicString&) {}
+ 
+@@ -142,15 +160,17 @@
+   if (font_description.GenericFamily() == FontDescription::kSerifFamily)
+     generic_family_name = "serif";
+ 
+   FontFallbackPriority fallback_priority_with_emoji_text = fallback_priority;
+ 
++#if !BUILDFLAG(IS_ARKWEB)
+   if (RuntimeEnabledFeatures::SystemFallbackEmojiVSSupportEnabled() &&
+       fallback_priority == FontFallbackPriority::kText &&
+       Character::IsEmoji(c)) {
+     fallback_priority_with_emoji_text = FontFallbackPriority::kEmojiText;
+   }
++#endif
+ 
+   AtomicString family_name = GetFamilyNameForCharacter(
+       fm.get(), c, font_description, generic_family_name,
+       fallback_priority_with_emoji_text);
+ 

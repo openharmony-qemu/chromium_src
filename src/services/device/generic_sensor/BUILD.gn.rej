@@ -1,0 +1,14 @@
+--- BUILD.gn	2025-10-20 19:52:57.598210697 +0800
++++ BUILD.gn	2025-10-16 15:55:03.252677518 +0800
+@@ -58,10 +58,11 @@
+     "//base",
+     "//build:chromeos_buildflags",
+     "//device/base/synchronization",
+     "//services/device/public/cpp:device_features",
+     "//ui/gfx/geometry:geometry",
++    "//ohos_glue:ohos_nweb_glue_source",
+   ]
+ 
+   public_deps = [ "//services/device/public/cpp/generic_sensor" ]
+ 
+   if (is_android) {

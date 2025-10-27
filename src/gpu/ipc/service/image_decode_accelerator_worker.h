@@ -58,6 +58,10 @@ class ImageDecodeAcceleratorWorker {
   virtual void Decode(std::vector<uint8_t> encoded_data,
                       const gfx::Size& output_size,
                       CompletedDecodeCB decode_cb) = 0;
+
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  virtual void ReleaseDecodedPixelMap() = 0;
+#endif
 };
 
 }  // namespace gpu

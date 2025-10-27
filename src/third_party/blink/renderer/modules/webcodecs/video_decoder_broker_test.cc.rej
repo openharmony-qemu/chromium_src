@@ -1,0 +1,24 @@
+--- video_decoder_broker_test.cc	2025-10-20 19:53:01.102202716 +0800
++++ video_decoder_broker_test.cc	2025-10-16 16:07:39.989217134 +0800
+@@ -124,10 +125,21 @@
+             &mojo_media_client_, &cdm_service_context_,
+             mojo::PendingRemote<media::stable::mojom::StableVideoDecoder>()),
+         std::move(receiver));
+   }
+ 
++#if BUILDFLAG(ARKWEB_UNITTESTS)
++  void CreateCustomMediaPlayerRenderer(
++      mojo::PendingRemote<
++          media::mojom::CustomMediaPlayerRendererClientExtension>
++          client_extension,
++      mojo::PendingReceiver<media::mojom::Renderer> renderer,
++      mojo::PendingReceiver<media::mojom::MediaPlayerRendererExtension>
++          renderer_extension,
++      int32_t player_id) override {}
++#endif  // ARKWEB_UNITTESTS
++
+ #if BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
+   void CreateStableVideoDecoder(
+       mojo::PendingReceiver<media::stable::mojom::StableVideoDecoder>
+           video_decoder) override {
+     // TODO(b/327268445): we'll need to complete this for GTFO OOP-VD testing.

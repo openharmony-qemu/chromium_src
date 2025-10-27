@@ -1,0 +1,20 @@
+--- field_trial.cc	2025-10-20 19:52:46.672861738 +0800
++++ field_trial.cc	2025-10-16 15:54:55.305702469 +0800
+@@ -1127,12 +1131,16 @@
+   if (!global_)
+     return;
+ 
+   AutoLock auto_lock(global_->lock_);
+   // Create the allocator if not already created and add all existing trials.
+-  if (global_->field_trial_allocator_ != nullptr)
++  if (global_->field_trial_allocator_ != nullptr) {
++#if BUILDFLAG(ARKWEB_SCROLLBAR)
++    FeatureList::GetInstance()->GetUtils()->ModifyFeaturesToAllocator(global_->field_trial_allocator_.get());
++#endif
+     return;
++  }
+ 
+   MappedReadOnlyRegion shm =
+       ReadOnlySharedMemoryRegion::Create(kFieldTrialAllocationSize);
+ 
+   if (!shm.IsValid())

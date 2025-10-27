@@ -1,0 +1,109 @@
+--- web_preferences_mojom_traits.h	2025-10-20 19:53:00.098212827 +0800
++++ web_preferences_mojom_traits.h	2025-10-16 16:07:39.061558593 +0800
+@@ -3,17 +3,22 @@
+ // found in the LICENSE file.
+ 
+ #ifndef THIRD_PARTY_BLINK_PUBLIC_COMMON_WEB_PREFERENCES_WEB_PREFERENCES_MOJOM_TRAITS_H_
+ #define THIRD_PARTY_BLINK_PUBLIC_COMMON_WEB_PREFERENCES_WEB_PREFERENCES_MOJOM_TRAITS_H_
+ 
++#include "arkweb/build/features/features.h"
+ #include "build/build_config.h"
+ #include "mojo/public/cpp/bindings/struct_traits.h"
+ #include "net/nqe/effective_connection_type.h"
+ #include "third_party/blink/public/common/common_export.h"
+ #include "third_party/blink/public/common/web_preferences/web_preferences.h"
+ #include "third_party/blink/public/mojom/webpreferences/web_preferences.mojom.h"
+ 
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
++
+ namespace mojo {
+ 
+ template <>
+ struct BLINK_COMMON_EXPORT StructTraits<blink::mojom::WebPreferencesDataView,
+                                         blink::web_pref::WebPreferences> {
+@@ -982,10 +1173,83 @@
+   require_transient_activation_and_user_confirmation_for_subapps_api(
+       const blink::web_pref::WebPreferences& r) {
+     return r.subapps_apis_require_user_gesture_and_authorization;
+   }
+ 
++#if BUILDFLAG(ARKWEB_ACTIVE_POLICY)
++  static int64_t delay_for_background_tab_freezing(
++      const blink::web_pref::WebPreferences& r) {
++    return r.delay_for_background_tab_freezing;
++  }
++#endif  // ARKWEB_ACTIVE_POLICY
++
++#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
++  static bool contextmenu_customization_enabled(
++      const blink::web_pref::WebPreferences& r) {
++    return r.contextmenu_customization_enabled;
++  }
++#endif
++
++#if BUILDFLAG(ARKWEB_COPY_OPTION)
++  static blink::mojom::CopyOptionMode copy_option(
++      const blink::web_pref::WebPreferences& r) {
++    return r.copy_option;
++  }
++#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
++
++#if BUILDFLAG(ARKWEB_FOCUS)
++  static int gesture_focus_mode(const blink::web_pref::WebPreferences& r) {
++    return r.gesture_focus_mode;
++  }
++#endif
++
++#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
++  static bool custom_video_player_enable(
++      const blink::web_pref::WebPreferences& r) {
++    return r.custom_video_player_enable;
++  }
++  static bool custom_video_player_overlay(
++      const blink::web_pref::WebPreferences& r) {
++    return r.custom_video_player_overlay;
++  }
++#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
++
++#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
++  static int32_t usage_scenario(const blink::web_pref::WebPreferences& r) {
++    return r.usage_scenario;
++  }
++#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
++
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++  static bool video_assistant_enabled(
++      const blink::web_pref::WebPreferences& r) {
++    return r.video_assistant_enabled;
++  }
++  static bool custom_media_player_enabled(
++      const blink::web_pref::WebPreferences& r) {
++    return r.custom_media_player_enabled;
++  }
++#endif // ARKWEB_VIDEO_ASSISTANT
++
++#if BUILDFLAG(ARKWEB_ERROR_PAGE)
++  static bool error_page_enabled(const blink::web_pref::WebPreferences& r) {
++    return r.error_page_enabled;
++  }
++#endif
++
++#if BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
++  static bool force_enable_zoom(const blink::web_pref::WebPreferences& r) {
++    return r.force_enable_zoom;
++  }
++#endif
++
++#if BUILDFLAG(ARKWEB_BFCACHE)
++  static bool media_resume_from_bfcache_page(const blink::web_pref::WebPreferences& r) {
++    return r.media_resume_from_bfcache_page;
++  }
++#endif // BUILDFLAG(ARKWEB_BFCACHE)
++
+   static bool Read(blink::mojom::WebPreferencesDataView r,
+                    blink::web_pref::WebPreferences* out);
+ };
+ 
+ }  // namespace mojo

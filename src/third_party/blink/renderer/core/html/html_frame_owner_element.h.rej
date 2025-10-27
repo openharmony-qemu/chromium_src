@@ -1,0 +1,26 @@
+--- html_frame_owner_element.h	2025-10-20 19:53:00.430209679 +0800
++++ html_frame_owner_element.h	2025-10-16 16:07:39.448411942 +0800
+@@ -19,10 +19,11 @@
+  */
+ 
+ #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_HTML_HTML_FRAME_OWNER_ELEMENT_H_
+ #define THIRD_PARTY_BLINK_RENDERER_CORE_HTML_HTML_FRAME_OWNER_ELEMENT_H_
+ 
++#include "arkweb/build/features/features.h"
+ #include "services/network/public/mojom/trust_tokens.mojom-blink-forward.h"
+ #include "third_party/blink/public/common/frame/frame_owner_element_type.h"
+ #include "third_party/blink/public/mojom/scroll/scrollbar_mode.mojom-blink.h"
+ #include "third_party/blink/public/mojom/timing/resource_timing.mojom-blink.h"
+ #include "third_party/blink/renderer/core/core_export.h"
+@@ -159,10 +162,11 @@
+   void SetSandboxFlags(network::mojom::blink::WebSandboxFlags);
+ 
+   bool LoadOrRedirectSubframe(const KURL&,
+                               const AtomicString& frame_name,
+                               bool replace_current_item);
++
+   bool IsKeyboardFocusable(UpdateBehavior update_behavior =
+                                UpdateBehavior::kStyleAndLayout) const override;
+   void FrameOwnerPropertiesChanged() override;
+ 
+   void DisposePluginSoon(WebPluginContainerImpl*);

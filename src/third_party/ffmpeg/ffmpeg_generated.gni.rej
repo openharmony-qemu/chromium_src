@@ -1,0 +1,50 @@
+--- ffmpeg_generated.gni	2025-10-20 19:53:13.924207520 +0800
++++ ffmpeg_generated.gni	2025-10-16 16:14:46.383039888 +0800
+@@ -10,11 +10,11 @@
+ # Declare empty versions of each variable for easier +=ing later.
+ ffmpeg_c_sources = []
+ ffmpeg_gas_sources = []
+ ffmpeg_asm_sources = []
+ 
+-use_linux_config = is_linux || is_chromeos || is_fuchsia
++use_linux_config = is_linux || is_chromeos || is_fuchsia || is_ohos
+ 
+ if (current_cpu == "arm64" || current_cpu == "x64" ||
+     (is_android && current_cpu == "arm" && arm_use_neon) ||
+     (is_android && current_cpu == "x86") || is_apple || is_win ||
+     use_linux_config) {
+@@ -282,34 +282,10 @@
+     "libavformat/autorename_libavformat_aacdec.c",
+     "libavformat/img2.c",
+   ]
+ }
+ 
+-if ((current_cpu == "x64" && ffmpeg_branding == "Chrome") ||
+-    (is_win && current_cpu == "x86" && ffmpeg_branding == "Chrome") ||
+-    (use_linux_config && current_cpu == "x86" && ffmpeg_branding == "Chrome")) {
+-  ffmpeg_asm_sources += [
+-    "libavcodec/x86/aacpsdsp.asm",
+-    "libavcodec/x86/autorename_libavcodec_x86_videodsp.asm",
+-    "libavcodec/x86/fpel.asm",
+-    "libavcodec/x86/h264_chromamc.asm",
+-    "libavcodec/x86/h264_chromamc_10bit.asm",
+-    "libavcodec/x86/h264_deblock.asm",
+-    "libavcodec/x86/h264_deblock_10bit.asm",
+-    "libavcodec/x86/h264_idct.asm",
+-    "libavcodec/x86/h264_idct_10bit.asm",
+-    "libavcodec/x86/h264_intrapred.asm",
+-    "libavcodec/x86/h264_intrapred_10bit.asm",
+-    "libavcodec/x86/h264_qpel_10bit.asm",
+-    "libavcodec/x86/h264_qpel_8bit.asm",
+-    "libavcodec/x86/h264_weight.asm",
+-    "libavcodec/x86/h264_weight_10bit.asm",
+-    "libavcodec/x86/qpel.asm",
+-    "libavcodec/x86/sbrdsp.asm",
+-  ]
+-}
+-
+ if (current_cpu == "arm64" && ffmpeg_branding == "Chrome") {
+   ffmpeg_c_sources += [
+     "libavcodec/aarch64/aacpsdsp_init_aarch64.c",
+     "libavcodec/aarch64/autorename_libavcodec_aarch64_videodsp_init.c",
+     "libavcodec/aarch64/h264chroma_init_aarch64.c",

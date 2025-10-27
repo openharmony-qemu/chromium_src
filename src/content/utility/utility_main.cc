@@ -117,6 +117,18 @@
 #include "sandbox/win/src/sandbox.h"
 #endif  // BUILDFLAG(IS_WIN)
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/file_descriptor_store.h"
+#include "base/files/file_util.h"
+#include "base/pickle.h"
+#include "content/common/gpu_pre_sandbox_hook_linux.h"
+#include "content/public/common/content_descriptor_keys.h"
+#include "content/utility/speech/speech_recognition_sandbox_hook_linux.h"
+#include "sandbox/policy/linux/sandbox_linux.h"
+#include "services/audio/audio_sandbox_hook_linux.h"
+#include "services/network/network_sandbox_hook_linux.h"
+#endif
+
 #if BUILDFLAG(IS_WIN)
 sandbox::TargetServices* g_utility_target_services = nullptr;
 #endif  // BUILDFLAG(IS_WIN)
@@ -129,7 +141,7 @@ namespace content {
 
 namespace {
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 std::vector<std::string> GetNetworkContextsParentDirectories() {
   base::MemoryMappedFile::Region region;
   base::ScopedFD read_pipe_fd = base::FileDescriptorStore::GetInstance().TakeFD(

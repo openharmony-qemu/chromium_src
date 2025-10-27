@@ -65,6 +65,15 @@
 #include "third_party/blink/public/platform/web_connection_type.h"
 #include "ui/gfx/native_widget_types.h"
 
+#ifdef IS_ARKWEB
+#include "arkweb/build/features/features.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "arkweb/chromium_ext/third_party/blink/public/mojom/dom_distiller/reader_mode_config.mojom-forward.h"
+#include "arkweb/chromium_ext/third_party/blink/public/mojom/dom_distiller/reader_mode_config.mojom.h"
+#endif
+
 namespace blink {
 class WebVideoCaptureImplManager;
 }
@@ -109,6 +118,10 @@ class VariationsRenderThreadObserver;
 class DCOMPTextureFactory;
 class OverlayStateServiceProvider;
 class OverlayStateServiceProviderImpl;
+#endif
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+class NativeTextureFactory;
 #endif
 
 // The RenderThreadImpl class represents the main thread, where `blink::WebView`
@@ -246,6 +259,10 @@ class CONTENT_EXPORT RenderThreadImpl
   scoped_refptr<OverlayStateServiceProvider> GetOverlayStateServiceProvider();
 #endif
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  scoped_refptr<NativeTextureFactory> GetNativeTexureFactory();
+#endif
+
   blink::WebVideoCaptureImplManager* video_capture_impl_manager() const {
     return vc_manager_.get();
   }
@@ -355,11 +372,29 @@ class CONTENT_EXPORT RenderThreadImpl
   void SetPrivateMemoryFootprint(uint64_t private_memory_footprint_bytes);
 #endif
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void SetBlanklessDumpInfo(uint32_t nweb_id,
+                            uint64_t blankless_key,
+                            uint64_t frame_sink_id,
+                            int32_t lcp_time,
+                            int64_t pref_hash);
+#endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  void UpdateReaderModeConfig(
+      blink::mojom::ReaderModeConfigPtr config) override;
+  const blink::mojom::ReaderModeConfig* GetReaderModeConfig() override;
+#endif
+
  private:
   FRIEND_TEST_ALL_PREFIXES(RenderThreadImplBrowserTest,
                            TransferSharedLastForegroundTime);
+
   friend class RenderThreadImplBrowserTest;
   friend class AgentSchedulingGroup;
+#if BUILDFLAG(ARKWEB_TEST)
+  friend class RenderThreadImplExtUnittest;
+#endif
 
   void OnProcessFinalRelease() override;
   // IPC::Listener
@@ -368,6 +403,15 @@ class CONTENT_EXPORT RenderThreadImpl
   // ChildThread
   void RecordAction(const base::UserMetricsAction& action) override;
   void RecordComputedAction(const std::string& action) override;
+
+#if BUILDFLAG(ARKWEB_I18N)
+  void NotifyLocaleChanged(const std::string& update_locale) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  void OnChannelConnected(int32_t peer_pid) override;
+  void OnChannelListenError() override;
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
   // ChildThreadImpl
@@ -514,6 +558,14 @@ class CONTENT_EXPORT RenderThreadImpl
   scoped_refptr<OverlayStateServiceProviderImpl>
       overlay_state_service_provider_;
 #endif
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  scoped_refptr<NativeTextureFactory> native_texture_factory_;
+#endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  blink::mojom::ReaderModeConfigPtr reader_mode_config_;
+#endif  // ARKWEB_READER_MODE
 
   scoped_refptr<viz::ContextProviderCommandBuffer> shared_main_thread_contexts_;
 

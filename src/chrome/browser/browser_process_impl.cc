@@ -1302,6 +1302,10 @@ void BrowserProcessImpl::PreCreateThreads() {
   // commit (including in iframes) in extension processes.
   ChildProcessSecurityPolicy::GetInstance()->RegisterWebSafeIsolatedScheme(
       extensions::kExtensionScheme, true);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  ChildProcessSecurityPolicy::GetInstance()->RegisterWebSafeIsolatedScheme(
+      extensions::kArkwebExtensionScheme, true);
+#endif
 #endif
 
   battery_metrics_ = std::make_unique<BatteryMetrics>();
@@ -1566,13 +1570,22 @@ void BrowserProcessImpl::CreateSubresourceFilterRulesetService() {
   }
 
   base::FilePath user_data_dir;
-  base::PathService::Get(chrome::DIR_USER_DATA, &user_data_dir);
+  base::PathService::Get(base::DIR_CACHE, &user_data_dir);
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  subresource_filter_ruleset_service_ =
+      subresource_filter::RulesetService::Create(
+          subresource_filter::kSafeBrowsingRulesetConfig, local_state(),
+          user_data_dir,
+          subresource_filter::AdblockRulesetManager::GetInstance(),
+          subresource_filter::SafeBrowsingRulesetPublisher::Factory());
+#else
   subresource_filter_ruleset_service_ =
       subresource_filter::RulesetService::Create(
           subresource_filter::kSafeBrowsingRulesetConfig, local_state(),
           user_data_dir,
           subresource_filter::SafeBrowsingRulesetPublisher::Factory());
+#endif
 }
 
 void BrowserProcessImpl::CreateFingerprintingProtectionRulesetService() {
@@ -1589,6 +1602,9 @@ void BrowserProcessImpl::CreateFingerprintingProtectionRulesetService() {
           fingerprinting_protection_filter::
               kFingerprintingProtectionRulesetConfig,
           local_state(), user_data_dir,
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+          nullptr,
+#endif
           fingerprinting_protection_filter::
               FingerprintingProtectionRulesetPublisher::Factory());
 }

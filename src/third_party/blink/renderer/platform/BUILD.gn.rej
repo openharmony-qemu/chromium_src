@@ -1,0 +1,52 @@
+--- BUILD.gn	2025-10-20 19:53:01.138202159 +0800
++++ BUILD.gn	2025-10-16 16:07:40.036586932 +0800
+@@ -2077,12 +2128,19 @@
+     "testing/video_frame_utils.cc",
+     "testing/video_frame_utils.h",
+     "webrtc/testing/mock_webrtc_video_frame_adapter_shared_resources.h",
+   ]
+ 
++  if (use_libfuzzer) {
++    sources += [
++      "testing/fuzzed_data_provider.cc",
++      "testing/fuzzed_data_provider.h",
++    ]
++  }
++
+   # fuzzed_data_provider may not work with a custom toolchain.
+-  if (custom_toolchain == "" && is_clang) {
++  if (custom_toolchain == "" && is_clang && !is_arkweb) {
+     sources += [
+       "testing/fuzzed_data_provider.cc",
+       "testing/fuzzed_data_provider.h",
+     ]
+   }
+@@ -2424,10 +2490,16 @@
+     "widget/input/main_thread_event_queue_unittest.cc",
+     "widget/input/prediction/filter_factory_unittests.cc",
+     "widget/input/scroll_predictor_unittest.cc",
+   ]
+ 
++  if (arkweb_unittests) {
++    sources += arkweb_native_event_queue_test_sources
++    sources += arkweb_third_party_blink_renderer_platform_widget_test_sources
++    sources += arkweb_third_party_blink_renderer_platform_media_unittest_sources
++  }
++
+   if (rtc_use_h265) {
+     sources += [ "peerconnection/h265_parameter_sets_tracker_unittest.cc" ]
+   }
+ 
+   if (is_android) {
+@@ -2719,10 +2798,11 @@
+ }
+ 
+ # Fuzzer for WTF::unicode::MathVariant.
+ fuzzer_test("math_transform_fuzzer") {
+   sources = [ "math_transform_fuzzer.cc" ]
++  include_dirs = ["//third_party/blink/renderer/platform/testing"]
+   deps = [
+     ":blink_fuzzer_test_support",
+     ":platform",
+   ]
+   libfuzzer_options = [ "max_len=10" ]

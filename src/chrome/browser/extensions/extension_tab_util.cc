@@ -12,6 +12,7 @@
 #include <optional>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/fixed_flat_set.h"
 #include "base/hash/hash.h"
 #include "base/metrics/histogram_functions.h"
@@ -534,7 +535,11 @@ int ExtensionTabUtil::GetWindowId(BrowserWindowInterface* browser) {
 }
 
 int ExtensionTabUtil::GetTabId(const WebContents* web_contents) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  return cef::GetTabIdForWebContents(web_contents);
+#else
   return sessions::SessionTabHelper::IdForTab(web_contents).id();
+#endif
 }
 
 int ExtensionTabUtil::GetWindowIdOfTab(const WebContents* web_contents) {

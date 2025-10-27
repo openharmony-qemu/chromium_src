@@ -1,0 +1,31 @@
+--- local_frame_view.h	2025-10-20 19:53:00.382210134 +0800
++++ local_frame_view.h	2025-10-16 16:07:39.401042144 +0800
+@@ -117,10 +117,13 @@
+ class ScrollableArea;
+ class Scrollbar;
+ class TapFriendlinessChecker;
+ class TransformState;
+ class WebPluginContainerImpl;
++#if BUILDFLAG(ARKWEB_MENU)
++class LocalFrameViewUtils;
++#endif
+ struct DraggableRegionValue;
+ struct IntrinsicSizingInfo;
+ struct PhysicalOffset;
+ struct PhysicalRect;
+ 
+@@ -1251,10 +1258,14 @@
+ #if DCHECK_IS_ON()
+   bool is_updating_descendant_dependent_flags_;
+   bool is_updating_layout_;
+ #endif
+ 
++#if BUILDFLAG(ARKWEB_MENU)
++  LocalFrameViewUtils* utils_ = nullptr;
++#endif
++
+   FRIEND_TEST_ALL_PREFIXES(FrameThrottlingTest, ForAllThrottledLocalFrameViews);
+ };
+ 
+ inline void LocalFrameView::IncrementVisuallyNonEmptyCharacterCount(
+     unsigned count) {

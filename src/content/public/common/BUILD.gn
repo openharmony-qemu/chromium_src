@@ -65,7 +65,7 @@ source_set("content_descriptor_keys") {
 
 # This target allows other targets to depend on sandbox_support_linux.h which is
 # a header-only dependency, without bringing in all of content.
-if (is_linux || is_chromeos) {
+if (is_linux || is_chromeos || arkweb_render_process_startup) {
   source_set("sandbox_support_linux") {
     public = [
       "//content/common/content_export.h",
@@ -318,6 +318,10 @@ source_set("common_sources") {
 
   if (is_chromeos) {
     public_deps += [ "//media/capture/video/chromeos/public" ]
+  }
+
+  if (defined(arkweb_reader_mode) && arkweb_reader_mode) {
+    public_deps += [ "//components/dom_distiller/content/common/mojom" ]
   }
 
   if (is_linux || is_chromeos) {

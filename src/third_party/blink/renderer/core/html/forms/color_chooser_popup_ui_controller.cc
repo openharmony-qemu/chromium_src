@@ -120,6 +120,9 @@ void ColorChooserPopupUIController::WriteColorPickerDocument(
   PagePopupClient::AddProperty(
       "selectedColor", client_->CurrentColor().SerializeAsCSSColor(), data);
   AddProperty("anchorRectInScreen", anchor_rect_in_screen, data);
+#if BUILDFLAG(IS_OHOS)
+  AddProperty("availableRectInScreen", available_rect_in_screen, data);
+#endif
   AddProperty("zoomFactor", ScaledZoomFactor(), data);
   AddProperty("shouldShowColorSuggestionPicker", false, data);
   AddProperty("isEyeDropperEnabled", ::features::IsEyeDropperEnabled(), data);

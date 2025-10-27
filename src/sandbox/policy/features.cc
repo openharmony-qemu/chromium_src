@@ -21,7 +21,7 @@ BASE_FEATURE(kNetworkServiceSandbox,
              "NetworkServiceSandbox",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 // Enables a fine-grained seccomp-BPF syscall filter for the network service.
 // Only has an effect if IsNetworkSandboxEnabled() returns true.
 // If the network service sandbox is enabled and |kNetworkServiceSyscallFilter|
@@ -38,7 +38,7 @@ BASE_FEATURE(kNetworkServiceSyscallFilter,
 BASE_FEATURE(kNetworkServiceFileAllowlist,
              "NetworkServiceFileAllowlist",
              base::FEATURE_ENABLED_BY_DEFAULT);
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 #endif  // !BUILDFLAG(IS_MAC) && !BUILDFLAG(IS_FUCHSIA)
 
 #if BUILDFLAG(IS_WIN)

@@ -462,6 +462,10 @@ int GpuMain(MainFunctionParams parameters) {
   base::allocator::PartitionAllocSupport::Get()->ReconfigureAfterTaskRunnerInit(
       switches::kGpuProcess);
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+  retry_times = 0;
+  TryForReportThread();
+#endif //!BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
   base::HighResolutionTimerManager hi_res_timer_manager;
 
   // Adds support of wall-time based TimerKeeper metrics for the main GPU thread
@@ -612,6 +616,33 @@ bool StartSandboxWindows(const sandbox::SandboxInterfaceInfo* sandbox_info) {
   return false;
 }
 #endif  // BUILDFLAG(IS_WIN)
+
+#if BUILDFLAG(IS_OHOS)
+bool StartSandboxOHOS(gpu::GpuWatchdogThread* watchdog_thread) {
+  TRACE_EVENT0("gpu,startup", "Initialize sandbox");
+
+  if (watchdog_thread) {
+    // SandboxLinux needs to be able to ensure that the thread
+    // has really been stopped.
+    sandbox::policy::SandboxLinux::GetInstance()->StopThread(watchdog_thread);
+  }
+
+  // SandboxLinux::InitializeSandbox() must always be called
+  // with only one thread.
+  sandbox::policy::SandboxLinux::Options sandbox_options;
+
+  bool res = sandbox::policy::SandboxLinux::GetInstance()->InitializeSandbox(
+      sandbox::policy::SandboxTypeFromCommandLine(
+          *base::CommandLine::ForCurrentProcess()),
+      base::BindOnce(GpuPreSandboxHook), sandbox_options);
+
+  if (watchdog_thread) {
+    watchdog_thread->Start();
+  }
+
+  return res;
+}
+#endif
 
 }  // namespace.
 

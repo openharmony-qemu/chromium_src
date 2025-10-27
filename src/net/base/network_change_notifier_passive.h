@@ -47,6 +47,14 @@ class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier {
       NetworkChangeNotifier::ConnectionType connection_type,
       NetworkChangeNotifier::ConnectionSubtype connection_subtype);
 
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  const std::vector<std::string> GetCurrentDnsServers() override;
+#endif
+
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+  void BindDnsToNetwork(int network_for_dns) override;
+#endif
+
  protected:
   // NetworkChangeNotifier overrides.
   NetworkChangeNotifier::ConnectionType GetCurrentConnectionType()
@@ -60,6 +68,11 @@ class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier {
 
  private:
   friend class NetworkChangeNotifierPassiveTest;
+#if BUILDFLAG(ARKWEB_NETWORK_BASE) ||           \
+    BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) || \
+    BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+  friend class NetworkChangeNotifierPassiveUtils;
+#endif
 
   // For testing purposes, allows specifying a SystemDnsConfigChangeNotifier.
   // If |system_dns_config_notifier| is nullptr, NetworkChangeNotifier create a
@@ -80,10 +93,20 @@ class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier {
   AddressMapCacheLinux address_map_cache_;
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  std::unique_ptr<OHOS::NWeb::NetConnectAdapter> ohos_net_conn_adapter_;
+#endif
   mutable base::Lock lock_;
   NetworkChangeNotifier::ConnectionType
       connection_type_;        // Guarded by |lock_|.
   double max_bandwidth_mbps_;  // Guarded by |lock_|.
+
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  int32_t network_for_dns_ = -1;
+  mutable base::Lock dns_server_lock_;
+  std::vector<std::string> dns_servers_;
+#endif
+
 };
 
 }  // namespace net

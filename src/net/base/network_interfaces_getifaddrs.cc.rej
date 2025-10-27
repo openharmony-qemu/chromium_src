@@ -1,0 +1,21 @@
+--- network_interfaces_getifaddrs.cc	2025-10-20 19:52:56.986205053 +0800
++++ network_interfaces_getifaddrs.cc	2025-10-16 15:55:02.497485761 +0800
+@@ -232,12 +232,17 @@
+                                    bool use_alternative_getifaddrs) {
+   DCHECK_GE(base::android::BuildInfo::GetInstance()->sdk_int(),
+             base::android::SDK_VERSION_NOUGAT);
+   DCHECK(getifaddrs);
+   DCHECK(freeifaddrs);
++#elif BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
++namespace internal {
++bool GetNetworkListUsingGetifaddrs(NetworkInterfaceList* networks,
++                                   int policy) {
++  constexpr bool use_alternative_getifaddrs = false;
+ #else
+-bool GetNetworkList(NetworkInterfaceList* networks, int policy) {
++bool GetNetworkListUnused(NetworkInterfaceList* networks, int policy) {
+   constexpr bool use_alternative_getifaddrs = false;
+ #endif
+   if (networks == nullptr)
+     return false;
+ 

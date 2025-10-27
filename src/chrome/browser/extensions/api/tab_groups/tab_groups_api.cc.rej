@@ -1,0 +1,14 @@
+--- tab_groups_api.cc	2025-10-20 19:52:49.622137714 +0800
++++ tab_groups_api.cc	2025-10-16 15:57:00.168060622 +0800
+@@ -72,10 +72,11 @@
+ }
+ 
+ }  // namespace
+ 
+ ExtensionFunction::ResponseAction TabGroupsGetFunction::Run() {
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+   std::optional<api::tab_groups::Get::Params> params =
+       api::tab_groups::Get::Params::Create(args());
+   EXTENSION_FUNCTION_VALIDATE(params);
+   int group_id = params->group_id;
+ 

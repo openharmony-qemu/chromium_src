@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "services/tracing/public/cpp/tracing_features.h"
+#include "arkweb/build/features/features.h"
 
 #include <string>
 

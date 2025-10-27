@@ -169,6 +169,13 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
                            EstablishGpuChannelCallback callback) override;
   void SetChannelClientPid(int32_t client_id,
                            base::ProcessId client_pid) override;
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+  void GetSurfaceId(int32_t native_embed_id,
+                    GetSurfaceIdCallback callback) override;
+  void SetTransformHint(uint32_t rotation, uint32_t window_id) override;
+  void DestroyNativeWindow(uint32_t native_window_id) override;
+  void Discard(uint32_t native_window_id) override;
+#endif
   void SetChannelDiskCacheHandle(
       int32_t client_id,
       const gpu::GpuDiskCacheHandle& handle) override;
@@ -572,6 +579,9 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
   // out of the finch experiment as ::LoadedBlob() is not called in the next
   // browser start after the disk cache is cleared.
   const bool clear_shader_cache_;
+#if BUILDFLAG(ARKWEB_D_VSYNC)
+  bool is_scroll_enabled_ = false; 
+#endif
 
   base::WeakPtr<GpuServiceImpl> weak_ptr_;
   base::WeakPtrFactory<GpuServiceImpl> weak_ptr_factory_{this};

@@ -31,6 +31,12 @@
 #include "third_party/blink/public/common/input/web_input_event.h"
 #include "ui/base/mojom/menu_source_type.mojom.h"
 #include "ui/latency/latency_info.h"
+#include "arkweb/build/features/features.h"
+
+#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
+#include "base/ohos/ltpo/include/sliding_observer.h"
+#include "content/browser/gpu/gpu_process_host.h"
+#endif
 
 using blink::WebGestureEvent;
 using blink::WebInputEvent;
@@ -87,6 +93,15 @@ class UnboundWidgetInputHandler : public blink::mojom::WidgetInputHandler {
       DispatchEventCallback callback) override {
     DLOG(WARNING) << "Input request on unbound interface";
   }
+  #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+  void TryStartFling() override {
+    DLOG(WARNING) << "Input request on unbound interface";
+  }
+
+  void TryFinishFling() override {
+    DLOG(WARNING) << "Input request on unbound interface";
+  }
+#endif
   void DispatchNonBlockingEvent(
       std::unique_ptr<blink::WebCoalescedInputEvent> event) override {
     DLOG(WARNING) << "Input request on unbound interface";
@@ -105,6 +120,15 @@ class UnboundWidgetInputHandler : public blink::mojom::WidgetInputHandler {
     NOTREACHED() << "Input request on unbound interface";
   }
 #endif
+
+#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
+  void AttachSoftwareCompositorOhos(
+    mojo::PendingReceiver<blink::mojom::SoftwareCompositorOhos>
+        compositor_request) override {
+    NOTREACHED_IN_MIGRATION() << "Input request on unbound interface";
+  }
+#endif
+
   void GetFrameWidgetInputHandler(
       mojo::PendingAssociatedReceiver<blink::mojom::FrameWidgetInputHandler>
           request) override {
@@ -260,6 +284,12 @@ StylusInterface* RenderInputRouter::GetStylusInterface() {
 void RenderInputRouter::OnStartStylusWriting() {
   render_input_router_client_->OnStartStylusWriting();
 }
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+void RenderInputRouter::DynamicFrameLossEvent(const std::string& sceneId, bool isStart) {
+  render_input_router_client_->DynamicFrameLossEvent(sceneId, isStart);
+}
+#endif
 
 bool RenderInputRouter::IsWheelScrollInProgress() {
   return is_in_gesture_scroll_[static_cast<int>(
@@ -418,6 +448,9 @@ void RenderInputRouter::ForwardGestureEventWithLatencyInfo(
   TRACE_EVENT1("input", "RenderInputRouter::ForwardGestureEvent", "type",
                WebInputEvent::GetName(gesture_event.GetType()));
 
+#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
+  ReportSlidingFrameRate(gesture_event);
+#endif
   input::GestureEventWithLatencyInfo gesture_with_latency(gesture_event,
                                                           latency_info);
 

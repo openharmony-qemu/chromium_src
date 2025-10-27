@@ -307,6 +307,11 @@ HostResolverDnsTask::HostResolverDnsTask(
   }
 
   PushTransactionsNeeded(MaybeDisableAdditionalQueries(query_types));
+
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  utils = std::make_unique<ArkWebHostResolverDnsTaskExt>(this);
+  delegate_->InitReportInfoForDohFallback();
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 }
 
 HostResolverDnsTask::~HostResolverDnsTask() = default;
@@ -389,6 +394,11 @@ DnsQueryTypeSet HostResolverDnsTask::MaybeDisableAdditionalQueries(
   if (types.Has(DnsQueryType::HTTPS)) {
     if (!secure_ && !client_->CanQueryAdditionalTypesViaInsecureDns()) {
       types.Remove(DnsQueryType::HTTPS);
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+    } else if (resolve_context_->IsHttpsDnsFallbackEnabled() &&
+               !client_->CanQueryAdditionalTypesViaInsecureDns()) {
+      types.Remove(DnsQueryType::HTTPS);
+#endif
     } else {
       DCHECK(!httpssvc_metrics_);
       httpssvc_metrics_.emplace(secure_);

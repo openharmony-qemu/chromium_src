@@ -1,0 +1,14 @@
+--- pref_proxy_config_tracker_impl.cc	2025-10-20 19:52:53.590165087 +0800
++++ pref_proxy_config_tracker_impl.cc	2025-10-16 15:54:57.499551213 +0800
+@@ -429,10 +436,11 @@
+   }
+   NOTREACHED_IN_MIGRATION()
+       << "Unknown proxy mode, falling back to system settings.";
+   return false;
+ }
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+ 
+ void PrefProxyConfigTrackerImpl::OnProxyPrefChanged() {
+   DCHECK(thread_checker_.CalledOnValidThread());
+   net::ProxyConfigWithAnnotation new_config;
+   ProxyPrefs::ConfigState config_state =

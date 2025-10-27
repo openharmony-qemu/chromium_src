@@ -202,7 +202,7 @@ std::optional<size_t> GuessSizeForVSWPrintf(const wchar_t* pFormat,
         nItemLen = nWidth;
       }
     } else {
-      switch (view.Front()) {
+        switch (*pStr) {
         case 'd':
         case 'i':
         case 'u':
@@ -257,6 +257,7 @@ std::optional<size_t> GuessSizeForVSWPrintf(const wchar_t* pFormat,
     }
     nMaxLen += nItemLen;
   }
+  });
   nMaxLen += 32;  // Fudge factor.
   return nMaxLen;
 }

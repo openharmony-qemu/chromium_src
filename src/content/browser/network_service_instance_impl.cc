@@ -99,6 +99,10 @@
 #include "services/network/public/mojom/network_interface_change_listener.mojom.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+#include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
+#endif
+
 namespace content {
 
 namespace {
@@ -147,7 +151,11 @@ static NetworkServiceClient* g_client = nullptr;
 
 void CreateInProcessNetworkServiceOnThread(
     mojo::PendingReceiver<network::mojom::NetworkService> receiver) {
+#if BUILDFLAG(IS_ARKWEB)
+  g_in_process_instance = new network::ArkWebNetworkServiceExt(
+#else
   g_in_process_instance = new network::NetworkService(
+#endif
       nullptr /* registry */, std::move(receiver),
       true /* delay_initialization_until_set_client */);
 }
@@ -428,7 +436,11 @@ void CreateNetworkServiceOnIOForTesting(
     return;
   }
 
+#if BUILDFLAG(IS_ARKWEB)
+  GetLocalNetworkService() = std::make_unique<network::ArkWebNetworkServiceExt>(
+#else
   GetLocalNetworkService() = std::make_unique<network::NetworkService>(
+#endif
       nullptr /* registry */, std::move(receiver),
       true /* delay_initialization_until_set_client */);
   GetLocalNetworkService()->Initialize(

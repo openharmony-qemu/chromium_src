@@ -1,0 +1,158 @@
+--- developer_private_api.cc	2025-10-20 19:52:49.590210821 +0800
++++ developer_private_api.cc	2025-10-16 15:57:00.121373494 +0800
+@@ -130,10 +130,15 @@
+ #include "ui/base/l10n/l10n_util.h"
+ #include "ui/shell_dialogs/selected_file_info.h"
+ #include "url/gurl.h"
+ #include "url/origin.h"
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++#include "arkweb/chromium_ext/chrome/browser/extensions/api/developer_private_api_ext.cc"
++#include "arkweb/chromium_ext/chrome/browser/extensions/extension_multiple_uninstall_dialog_ohos.h"
++#endif // ARKWEB_ARKWEB_EXTENSIONS
++
+ namespace extensions {
+ 
+ namespace developer = api::developer_private;
+ 
+ namespace {
+@@ -1403,14 +1408,22 @@
+   scoped_refptr<UnpackedInstaller> installer(
+       UnpackedInstaller::Create(GetExtensionService(browser_context())));
+   installer->set_be_noisy_on_failure(!fail_quietly_);
+   installer->set_completion_callback(base::BindOnce(
+       &DeveloperPrivateLoadUnpackedFunction::OnLoadComplete, this));
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  base::FilePath real_path = base::FilePath(base::GetRealPath(file_path));
++  installer->Load(real_path);
++
++  retry_guid_ = DeveloperPrivateAPI::Get(browser_context())
++                    ->AddUnpackedPath(GetSenderWebContents(), real_path);
++#else
+   installer->Load(file_path);
+ 
+   retry_guid_ = DeveloperPrivateAPI::Get(browser_context())
+                     ->AddUnpackedPath(GetSenderWebContents(), file_path);
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+ }
+ 
+ void DeveloperPrivateLoadUnpackedFunction::OnLoadComplete(
+     const Extension* extension,
+     const base::FilePath& file_path,
+@@ -1453,16 +1466,38 @@
+ DeveloperPrivateInstallDroppedFileFunction::
+     ~DeveloperPrivateInstallDroppedFileFunction() = default;
+ 
+ ExtensionFunction::ResponseAction
+ DeveloperPrivateInstallDroppedFileFunction::Run() {
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  LOG(INFO) << "DeveloperPrivateInstallDroppedFileFunction::Run";
++#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+   content::WebContents* web_contents = GetSenderWebContents();
+   if (!web_contents)
+     return RespondNow(Error(kCouldNotFindWebContentsError));
+ 
+   DeveloperPrivateAPI* api = DeveloperPrivateAPI::Get(browser_context());
+   base::FilePath path = api->GetDraggedPath(web_contents);
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  LOG(INFO) << "path[" << path << "]";
++  if (path.empty()) {
++    auto* web_contents_delegate = web_contents->GetDelegate();
++    content::DropData* drop_data = nullptr;
++    if (web_contents_delegate) {
++      drop_data = web_contents_delegate->GetDropData();
++    }
++    if (drop_data && !drop_data->filenames.empty()) {
++      path = drop_data->filenames.front().path;
++      if (!path.IsAbsolute()
++            || !base::PathExists(path)
++            || !base::DirectoryExists(path.DirName())) {
++        return RespondNow(Error("Invalid path"));
++      }
++    }
++  }
++  LOG(INFO) << "fixed_path[" << path << "]";
++#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+   if (path.empty())
+     return RespondNow(Error("No dragged path"));
+ 
+   ExtensionService* service = GetExtensionService(browser_context());
+   if (path.MatchesExtension(FILE_PATH_LITERAL(".zip"))) {
+@@ -2195,10 +2230,11 @@
+   Respond(success ? NoArguments() : Error(error));
+ }
+ 
+ DeveloperPrivateShowOptionsFunction::~DeveloperPrivateShowOptionsFunction() {}
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+ ExtensionFunction::ResponseAction DeveloperPrivateShowOptionsFunction::Run() {
+   std::optional<developer::ShowOptions::Params> params =
+       developer::ShowOptions::Params::Create(args());
+   EXTENSION_FUNCTION_VALIDATE(params);
+   const Extension* extension = GetEnabledExtensionById(params->extension_id);
+@@ -2210,14 +2246,17 @@
+ 
+   content::WebContents* web_contents = GetSenderWebContents();
+   if (!web_contents)
+     return RespondNow(Error(kCouldNotFindWebContentsError));
+ 
++#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+   ExtensionTabUtil::OpenOptionsPage(extension,
+                                     chrome::FindBrowserWithTab(web_contents));
++#endif
+   return RespondNow(NoArguments());
+ }
++#endif // ARKWEB_ARKWEB_EXTENSIONS
+ 
+ DeveloperPrivateShowPathFunction::~DeveloperPrivateShowPathFunction() {}
+ 
+ ExtensionFunction::ResponseAction DeveloperPrivateShowPathFunction::Run() {
+   std::optional<developer::ShowPath::Params> params =
+@@ -2741,10 +2780,20 @@
+       OnDialogCancelled();
+     }
+     return AlreadyResponded();
+   }
+ 
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  ohos::ShowExtensionMultipleUninstallDialog(
++      extension_ids_,
++      base::BindOnce(
++          &DeveloperPrivateRemoveMultipleExtensionsFunction::OnDialogAccepted,
++          this),
++      base::BindOnce(
++          &DeveloperPrivateRemoveMultipleExtensionsFunction::OnDialogCancelled,
++          this));
++#else
+   gfx::NativeWindow parent;
+   if (!GetSenderWebContents()) {
+     CHECK_IS_TEST();
+     parent = nullptr;
+   } else {
+@@ -2759,19 +2808,26 @@
+           &DeveloperPrivateRemoveMultipleExtensionsFunction::OnDialogAccepted,
+           this),
+       base::BindOnce(
+           &DeveloperPrivateRemoveMultipleExtensionsFunction::OnDialogCancelled,
+           this));
++#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+   return RespondLater();
+ }
+ 
+ void DeveloperPrivateRemoveMultipleExtensionsFunction::OnDialogCancelled() {
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  LOG(INFO) << "DeveloperPrivateRemoveMultipleExtensionsFunction::OnDialogCancelled";
++#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+   // Let the consumer end know that the Close button was clicked.
+   Respond(Error(kUserCancelledError));
+ }
+ 
+ void DeveloperPrivateRemoveMultipleExtensionsFunction::OnDialogAccepted() {
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++  LOG(INFO) << "DeveloperPrivateRemoveMultipleExtensionsFunction::OnDialogAccepted";
++#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+   for (const auto& extension_id : extension_ids_) {
+     if (!browser_context()) {
+       return;
+     }
+     const Extension* current_extension =

@@ -1,0 +1,36 @@
+--- page_node_impl.cc	2025-10-20 19:52:53.334047069 +0800
++++ page_node_impl.cc	2025-10-16 15:54:57.211859115 +0800
+@@ -17,11 +17,11 @@
+ #include "components/performance_manager/graph/graph_impl_operations.h"
+ #include "components/performance_manager/graph/process_node_impl.h"
+ #include "components/performance_manager/public/graph/graph_operations.h"
+ #include "content/public/browser/browser_thread.h"
+ #include "content/public/browser/web_contents.h"
+-
++#include "arkweb/chromium_ext/components/performance_manager/graph/page_node_impl_for_include.cc"
+ namespace performance_manager {
+ 
+ PageNodeImpl::PageNodeImpl(base::WeakPtr<content::WebContents> web_contents,
+                            const std::string& browser_context_id,
+                            const GURL& visible_url,
+@@ -576,6 +576,20 @@
+ void PageNodeImpl::SetHadUserEdits(bool had_user_edits) {
+   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+   had_user_edits_.SetAndMaybeNotify(this, had_user_edits);
+ }
+ 
++#if BUILDFLAG(ARKWEB_BGTASK)
++void PageNodeImpl::SetBrowserForeground()
++{
++  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
++  browser_foreground_.SetAndNotify(this, false);
++}
++
++void PageNodeImpl::SetBrowserBackground()
++{
++  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
++  browser_background_.SetAndNotify(this, false);
++}
++#endif
++
+ }  // namespace performance_manager

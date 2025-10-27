@@ -1,0 +1,17 @@
+--- web_document.cc	2025-10-20 19:53:00.358210362 +0800
++++ web_document.cc	2025-10-16 16:07:39.369462279 +0800
+@@ -71,10 +71,14 @@
+ #include "third_party/blink/renderer/core/speculation_rules/document_speculation_rules.h"
+ #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
+ #include "third_party/blink/renderer/platform/weborigin/security_origin.h"
+ #include "third_party/blink/renderer/platform/wtf/casting.h"
+ 
++#if BUILDFLAG(ARKWEB_READER_MODE)
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/dom/document_recognise_util.h"
++#endif
++
+ namespace {
+ 
+ static const blink::WebStyleSheetKey GenerateStyleSheetKey() {
+   static unsigned counter = 0;
+   return String::Number(++counter);

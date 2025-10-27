@@ -1,0 +1,15 @@
+--- stack_util.cc	2025-10-20 19:53:01.290199808 +0800
++++ stack_util.cc	2025-10-16 16:07:40.214223674 +0800
+@@ -102,11 +103,11 @@
+ #endif
+ }
+ 
+ void* GetStackStart() {
+ #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
+-    BUILDFLAG(IS_FREEBSD) || BUILDFLAG(IS_FUCHSIA)
++    BUILDFLAG(IS_FREEBSD) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
+   pthread_attr_t attr;
+   int error;
+ #if BUILDFLAG(IS_FREEBSD)
+   pthread_attr_init(&attr);
+   error = pthread_attr_get_np(pthread_self(), &attr);

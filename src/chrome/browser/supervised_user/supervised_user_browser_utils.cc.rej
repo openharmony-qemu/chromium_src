@@ -1,0 +1,15 @@
+--- supervised_user_browser_utils.cc	2025-10-20 19:52:50.412668261 +0800
++++ supervised_user_browser_utils.cc	2025-10-16 15:57:01.152832872 +0800
+@@ -100,11 +101,11 @@
+ #endif  // BUILDFLAG(ENABLE_EXTENSIONS)
+ }
+ 
+ bool AreExtensionsPermissionsEnabled(Profile* profile) {
+ #if BUILDFLAG(ENABLE_EXTENSIONS)
+-#if BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+   return profile->IsChild();
+ #else
+   return profile->IsChild() &&
+          base::FeatureList::IsEnabled(
+              kEnableExtensionsPermissionsForSupervisedUsersOnDesktop);

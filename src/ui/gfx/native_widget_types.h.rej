@@ -1,0 +1,16 @@
+--- native_widget_types.h	2025-10-20 19:53:31.016629134 +0800
++++ native_widget_types.h	2025-10-16 15:55:05.615128854 +0800
+@@ -242,10 +242,13 @@
+ using AcceleratedWidget = uint64_t;
+ constexpr AcceleratedWidget kNullAcceleratedWidget = 0;
+ #elif BUILDFLAG(IS_ANDROID)
+ using AcceleratedWidget = ANativeWindow*;
+ constexpr AcceleratedWidget kNullAcceleratedWidget = nullptr;
++#elif BUILDFLAG(IS_ARKWEB)
++typedef uint32_t AcceleratedWidget;
++constexpr AcceleratedWidget kNullAcceleratedWidget = 0;
+ #elif BUILDFLAG(IS_OZONE)
+ using AcceleratedWidget = uint32_t;
+ constexpr AcceleratedWidget kNullAcceleratedWidget = 0;
+ #else
+ #error unknown platform

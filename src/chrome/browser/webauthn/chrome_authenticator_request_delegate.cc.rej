@@ -1,0 +1,38 @@
+--- chrome_authenticator_request_delegate.cc	2025-10-20 19:52:51.141017968 +0800
++++ chrome_authenticator_request_delegate.cc	2025-10-16 15:57:02.022225671 +0800
+@@ -447,11 +447,15 @@
+         const url::Origin& caller_origin,
+         const std::string& relying_party_id) {
+   // Allow chrome-extensions:// origins to make WebAuthn requests.
+   // `MaybeGetRelyingPartyId` will override the RP ID if it matches the
+   // extension origin.
+-  if (caller_origin.scheme() != extensions::kExtensionScheme) {
++  if (caller_origin.scheme() != extensions::kExtensionScheme
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      && caller_origin.scheme() != extensions::kArkwebExtensionScheme
++#endif
++    ) {
+     return false;
+   }
+   const extensions::Extension* extension =
+       extensions::ExtensionRegistry::Get(browser_context)
+           ->enabled_extensions()
+@@ -516,12 +520,16 @@
+     const url::Origin& caller_origin) {
+   // Extensions may claim their origin as an RP ID. In that case, we use the
+   // whole origin to avoid collisions with the RP ID space for HTTPS origins.
+   // Extensions may not claim other extensions RP IDs, even if they have host
+   // permissions on them.
+-  if (caller_origin.scheme() == extensions::kExtensionScheme &&
+-      claimed_relying_party_id == caller_origin.host()) {
++  if ((caller_origin.scheme() == extensions::kExtensionScheme
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      || caller_origin.scheme() == extensions::kArkwebExtensionScheme
++#endif
++    ) && claimed_relying_party_id == caller_origin.host()
++    ) {
+     return caller_origin.Serialize();
+   }
+ 
+   return std::nullopt;
+ }

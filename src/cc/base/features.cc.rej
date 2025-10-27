@@ -1,0 +1,14 @@
+--- features.cc	2025-10-20 19:52:47.902067565 +0800
++++ features.cc	2025-10-16 15:54:55.653473398 +0800
+@@ -4,10 +4,11 @@
+ 
+ #include "cc/base/features.h"
+ 
+ #include <string>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/feature_list.h"
+ #include "build/build_config.h"
+ #include "ui/base/ui_base_features.h"
+ 
+ namespace features {

@@ -83,6 +83,12 @@ class NET_EXPORT_PRIVATE HostResolverDnsTask final {
 
     virtual void AddTransactionTimeQueued(base::TimeDelta time_queued) = 0;
 
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+    virtual void AddTransactionResultForReport(const DnsQueryType query_type,
+                                               int net_error) = 0;
+    virtual void InitReportInfoForDohFallback() = 0;
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+
    protected:
     Delegate() = default;
     virtual ~Delegate() = default;
@@ -114,6 +120,10 @@ class NET_EXPORT_PRIVATE HostResolverDnsTask final {
   }
 
   bool secure() const { return secure_; }
+
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  bool need_to_sniff_ip_result() { return need_to_sniff_ip_result_; }
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 
   void StartNextTransaction();
 
@@ -263,11 +273,17 @@ class NET_EXPORT_PRIVATE HostResolverDnsTask final {
   // transactions should timeout more quickly.
   bool fallback_available_;
 
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  bool need_to_sniff_ip_result_ = false;
+  std::unique_ptr<ArkWebHostResolverDnsTaskExt> utils;
+#endif
+
   const HostResolver::HttpsSvcbOptions https_svcb_options_;
 
   base::WeakPtrFactory<HostResolverDnsTask> weak_ptr_factory_{this};
 };
 
 }  // namespace net
+#include "arkweb/chromium_ext/net/dns/arkweb_host_resolver_dns_task_ext.h"
 
 #endif  // NET_DNS_HOST_RESOLVER_DNS_TASK_H_

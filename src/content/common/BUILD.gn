@@ -30,7 +30,7 @@ buildflag_header("buildflags") {
   ]
 }
 
-if (is_linux || is_chromeos) {
+if (is_linux || is_chromeos || arkweb_render_process_startup) {
   source_set("sandbox_support_linux") {
     public = [
       "zygote/zygote_commands_linux.h",
@@ -407,6 +407,10 @@ source_set("common") {
 
   if (use_clang_profiling_inside_sandbox) {
     sources += [ "profiling_utils.cc" ]
+  }
+
+  if (arkweb_same_layer) {
+    sources += arkweb_content_common_sources
   }
 }
 

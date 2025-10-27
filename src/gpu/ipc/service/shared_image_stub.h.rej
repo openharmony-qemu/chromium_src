@@ -1,0 +1,35 @@
+--- shared_image_stub.h	2025-10-20 19:52:55.542536637 +0800
++++ shared_image_stub.h	2025-10-16 15:55:00.631482851 +0800
+@@ -15,10 +15,11 @@
+ #include "gpu/ipc/common/command_buffer_id.h"
+ #include "gpu/ipc/common/gpu_channel.mojom.h"
+ #include "gpu/ipc/service/gpu_ipc_service_export.h"
+ #include "ui/gfx/gpu_extra_info.h"
+ 
++#include "arkweb/build/features/features.h"
+ namespace gfx {
+ #if BUILDFLAG(IS_WIN)
+ class D3DSharedFence;
+ #endif
+ 
+@@ -28,14 +29,20 @@
+ namespace gpu {
+ class SharedContextState;
+ struct Mailbox;
+ class GpuChannel;
+ class GpuChannelSharedImageInterface;
++class SharedImageStubExt;
+ class SharedImageFactory;
+ 
+ class GPU_IPC_SERVICE_EXPORT SharedImageStub : public MemoryTracker {
+  public:
++  friend class SharedImageStubExt;
++  virtual gpu::SharedImageStubExt* AsSharedImageStubExt() {
++    return nullptr;
++  }
++
+   ~SharedImageStub() override;
+ 
+   using SharedImageDestructionCallback =
+       base::OnceCallback<void(const gpu::SyncToken&)>;
+ 

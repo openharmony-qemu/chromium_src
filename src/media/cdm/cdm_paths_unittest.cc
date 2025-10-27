@@ -31,7 +31,11 @@ const char kComponentPlatform[] =
 #elif BUILDFLAG(IS_FUCHSIA)
     "fuchsia";
 #else
+#if BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(IS_ARKWEB)
+    "";
+#else
 #error unsupported platform
+#endif
 #endif
 
 // Name of the component architecture.

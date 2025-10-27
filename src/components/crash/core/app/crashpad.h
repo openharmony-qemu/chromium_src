@@ -265,21 +265,23 @@ void ProcessIntermediateDump(
 void StartProcessingPendingReports();
 #endif
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_GWP_ASAN)
 // If a CrashReporterClient has enabled sanitization, this function specifies
 // regions of memory which are allowed to be collected by Crashpad.
 void AllowMemoryRange(void* begin, size_t size);
 #endif  // BUILDFLAG(IS_ANDROID)
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 // Install a handler that gets a chance to handle faults before Crashpad. This
 // is used by V8 for trap-based bounds checks.
+#if !defined(__MUSL__)
 void SetFirstChanceExceptionHandler(bool (*handler)(int, siginfo_t*, void*));
+#endif
 
 // Gets the socket and process ID of the Crashpad handler connected to this
 // process, valid if this function returns `true`.
 bool GetHandlerSocket(int* sock, pid_t* pid);
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 
 namespace internal {
 
@@ -295,7 +297,7 @@ DWORD WINAPI DumpProcessForHungInputThread(void* param);
 
 #endif  // BUILDFLAG(IS_WIN)
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_CRASHPAD)
 // Starts the handler process with an initial client connected on fd,
 // the handler will write minidump to database if write_minidump_to_database is
 // true.

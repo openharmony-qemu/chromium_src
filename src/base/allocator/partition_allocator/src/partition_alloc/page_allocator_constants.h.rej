@@ -1,0 +1,24 @@
+--- page_allocator_constants.h	2025-10-20 19:52:46.597033691 +0800
++++ page_allocator_constants.h	2025-10-16 15:54:55.223585938 +0800
+@@ -67,18 +67,19 @@
+ 
+ #endif
+ 
+ // Ability to name anonymous VMAs is available on some, but not all Linux-based
+ // systems.
+-#if PA_BUILDFLAG(IS_ANDROID) || PA_BUILDFLAG(IS_LINUX)
++#if PA_BUILDFLAG(IS_ANDROID) || PA_BUILDFLAG(IS_LINUX) || PA_BUILDFLAG(IS_OHOS)
+ #include <sys/prctl.h>
+ 
+ #if defined(PR_SET_VMA) && defined(PR_SET_VMA_ANON_NAME)
+ #define LINUX_NAME_REGION 1
+ #endif
+ 
+-#endif  // PA_BUILDFLAG(IS_ANDROID) || PA_BUILDFLAG(IS_LINUX)
++#endif  // PA_BUILDFLAG(IS_ANDROID) || PA_BUILDFLAG(IS_LINUX) || \
++        // PA_BUILDFLAG(IS_OHOS)
+ 
+ namespace partition_alloc {
+ namespace internal {
+ 
+ // Forward declaration, implementation below

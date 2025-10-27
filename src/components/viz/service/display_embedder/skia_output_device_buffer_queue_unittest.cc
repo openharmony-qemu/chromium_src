@@ -36,6 +36,10 @@
 #include "ui/gl/gl_utils.h"
 #include "ui/gl/presenter.h"
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "ui/gl/init/gl_factory.h"
+#endif
+
 #if BUILDFLAG(IS_OZONE)
 #include "ui/ozone/public/ozone_platform.h"
 #endif

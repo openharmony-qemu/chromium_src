@@ -102,6 +102,8 @@
 #include "chrome/browser/password_manager/password_manager_util_win.h"
 #elif BUILDFLAG(IS_MAC)
 #include "chrome/browser/password_manager/password_manager_util_mac.h"
+#elif BUILDFLAG(IS_OHOS)
+#include "chrome/browser/password_manager/password_manager_util_ohos.h"
 #endif
 
 using password_manager::MovePasswordToAccountStoreHelper;
@@ -1203,7 +1205,8 @@ void ManagePasswordsUIController::AuthenticateUserWithMessage(
     std::move(callback).Run(true);
     return;
   }
-#if !BUILDFLAG(IS_MAC) && !BUILDFLAG(IS_WIN) && !BUILDFLAG(IS_CHROMEOS)
+#if !BUILDFLAG(IS_MAC) && !BUILDFLAG(IS_WIN) && !BUILDFLAG(IS_CHROMEOS) && \
+    !BUILDFLAG(IS_OHOS)
   std::move(callback).Run(true);
   return;
 #else

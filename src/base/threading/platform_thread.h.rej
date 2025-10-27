@@ -1,0 +1,15 @@
+--- platform_thread.h	2025-10-20 19:52:46.740707885 +0800
++++ platform_thread.h	2025-10-16 15:54:55.383908689 +0800
+@@ -400,11 +405,11 @@
+                           MessagePumpType pump_type_hint);
+ 
+ void SetCurrentThreadTypeImpl(ThreadType thread_type,
+                               MessagePumpType pump_type_hint);
+ 
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+ void SetThreadTypeLinux(PlatformThreadId process_id,
+                         PlatformThreadId thread_id,
+                         ThreadType thread_type,
+                         IsViaIPC via_ipc);
+ #endif

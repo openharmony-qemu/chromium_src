@@ -23,6 +23,9 @@
 #include "content/public/browser/render_view_host.h"
 #include "content/public/browser/render_widget_host.h"
 #include "content/public/browser/render_widget_host_view.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "cef/ohos_cef_ext/libcef/browser/browser_platform_delegate_for_include.cc"
+#endif
 
 namespace {
 
@@ -577,7 +580,12 @@ cef::BrowserConfig CefBrowserPlatformDelegate::GetBrowserConfig() const {
 void CefBrowserPlatformDelegate::Find(const CefString& searchText,
                                       bool forward,
                                       bool matchCase,
-                                      bool findNext) {
+                                      bool findNext
+#if BUILDFLAG(ARKWEB_FIND_IN_PAGE)
+                                      ,
+                                      bool newSession
+#endif
+) {
   NOTIMPLEMENTED();
 }
 

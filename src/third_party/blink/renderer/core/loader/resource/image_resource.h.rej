@@ -1,0 +1,37 @@
+--- image_resource.h	2025-10-20 19:53:00.574208314 +0800
++++ image_resource.h	2025-10-16 16:07:39.578678886 +0800
+@@ -21,10 +21,11 @@
+ */
+ 
+ #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_LOADER_RESOURCE_IMAGE_RESOURCE_H_
+ #define THIRD_PARTY_BLINK_RENDERER_CORE_LOADER_RESOURCE_IMAGE_RESOURCE_H_
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/containers/span.h"
+ #include "base/task/single_thread_task_runner.h"
+ #include "base/time/time.h"
+ #include "third_party/abseil-cpp/absl/types/variant.h"
+ #include "third_party/blink/renderer/core/core_export.h"
+@@ -59,18 +61,22 @@
+ // https://docs.google.com/document/d/1v0yTAZ6wkqX2U_M6BNIGUJpM1s0TIw1VsqpxoL7aciY/edit?usp=sharing
+ class CORE_EXPORT ImageResource final
+     : public Resource,
+       public MultipartImageResourceParser::Client {
+  public:
++  friend class ImageResourceUtils;
+   // Use ImageResourceContent::Fetch() unless ImageResource is required.
+   // TODO(hiroshige): Make Fetch() private.
+   static ImageResource* Fetch(FetchParameters&, ResourceFetcher*);
+ 
+   // TODO(hiroshige): Make Create() test-only by refactoring ImageDocument.
+   static ImageResource* Create(const ResourceRequest&,
+                                const DOMWrapperWorld* world);
+   static ImageResource* CreateForTest(const KURL&);
++#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
++  std::unique_ptr<ImageResourceUtils> imageResourceUtils;
++#endif
+ 
+   ImageResource(const ResourceRequest&,
+                 const ResourceLoaderOptions&,
+                 ImageResourceContent*);
+   ~ImageResource() override;

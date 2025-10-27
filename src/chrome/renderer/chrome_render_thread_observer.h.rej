@@ -1,0 +1,25 @@
+--- chrome_render_thread_observer.h	2025-10-20 19:52:51.233061639 +0800
++++ chrome_render_thread_observer.h	2025-10-16 15:57:02.146400211 +0800
+@@ -19,14 +19,22 @@
+ #include "mojo/public/cpp/bindings/associated_receiver_set.h"
+ #include "mojo/public/cpp/bindings/pending_associated_receiver.h"
+ #include "mojo/public/cpp/bindings/pending_receiver.h"
+ #include "mojo/public/cpp/bindings/receiver.h"
+ 
++#if BUILDFLAG(IS_ARKWEB_EXT)
++#include "arkweb/ohos_nweb_ex/build/features/features.h"
++#endif
++
+ #if BUILDFLAG(IS_CHROMEOS_ASH)
+ #include "chrome/renderer/chromeos_delayed_callback_group.h"
+ #endif  // BUILDFLAG(IS_CHROMEOS_ASH)
+ 
++#if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
++#include "third_party/blink/public/common/associated_interfaces/associated_interface_registry.h"
++#endif
++
+ #if BUILDFLAG(ENABLE_BOUND_SESSION_CREDENTIALS)
+ class BoundSessionRequestThrottledInRendererManager;
+ class BoundSessionRequestThrottledHandler;
+ #endif
+ 

@@ -714,6 +714,11 @@
       These passkeys are only saved on this device. They aren't saved to your Google Account.
     </message>
   </if>
+  <if expr="is_ohos">
+    <message name="IDS_AUTOFILL_MANAGE_PASSKEYS_SUB_TITLE_OHOS" desc="A warning on a page where the user can see and delete passkeys saved on their computer. For consistency, the word 'passkey' is in the glossary with translations already suggested.">
+      These passkeys are only saved on this device. They aren't saved to your Google Account.
+    </message>
+  </if>
     <message name="IDS_AUTOFILL_MANAGE_PASSKEYS_SEARCH" desc="The label on a field that a user can use to search within a list of passkeys. For consistency, the word 'passkey' is in the glossary with translations already suggested.">
       Search passkeys
     </message>

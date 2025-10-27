@@ -165,6 +165,9 @@ source_set("xml_parser_fuzzer_deps") {
     "//third_party/libxml:libxml_utils",
     "//third_party/libxml:xml_reader",
   ]
+  if (arkweb_fuzz_compile_error_fix) {
+    public_deps += [ "//content/public/renderer:renderer" ]
+  }
 }
 
 fuzzer_test("xml_parser_fuzzer") {

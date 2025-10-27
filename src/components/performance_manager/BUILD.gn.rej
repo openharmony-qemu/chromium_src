@@ -1,0 +1,15 @@
+--- BUILD.gn	2025-10-20 19:52:53.330045226 +0800
++++ BUILD.gn	2025-10-16 15:54:57.203867668 +0800
+@@ -497,10 +498,12 @@
+       "//chromeos/dbus/power:power_manager_proto",
+     ]
+ 
+     sources += [ "power/battery_level_provider_chromeos_unittest.cc" ]
+   }
++
++  sources += arkweb_components_performance_manager_graph_test_sources
+ }
+ 
+ source_set("browser_tests") {
+   testonly = true
+ 

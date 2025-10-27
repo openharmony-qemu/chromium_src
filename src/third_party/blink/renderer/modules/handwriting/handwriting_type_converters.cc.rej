@@ -1,0 +1,21 @@
+--- handwriting_type_converters.cc	2025-10-20 19:53:00.758206569 +0800
++++ handwriting_type_converters.cc	2025-10-16 16:07:39.815527876 +0800
+@@ -51,12 +51,18 @@
+     const blink::HandwritingStroke* input) {
+   if (!input) {
+     return nullptr;
+   }
+   auto output = handwriting::mojom::blink::HandwritingStroke::New();
++#if defined(__clang__) && (__clang_major__ < 17)
++  for (const auto& point : input->getPoints()) {
++    output->points.push_back(mojo::ConvertTo<HandwritingPointPtr>(point.Get()));
++  }
++#else
+   output->points =
+       mojo::ConvertTo<Vector<HandwritingPointPtr>>(input->getPoints());
++#endif
+   return output;
+ }
+ 
+ // static
+ HandwritingHintsPtr

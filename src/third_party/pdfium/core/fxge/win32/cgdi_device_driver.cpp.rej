@@ -1,0 +1,15 @@
+--- cgdi_device_driver.cpp	2025-10-20 19:53:19.635981341 +0800
++++ cgdi_device_driver.cpp	2025-10-16 16:15:55.936249805 +0800
+@@ -384,11 +384,11 @@
+     case FXDC_BITS_PIXEL:
+       return m_nBitsPerPixel;
+     case FXDC_RENDER_CAPS:
+       return m_RenderCaps;
+     default:
+-      NOTREACHED();
++      NOTREACHED_NORETURN();
+   }
+ }
+ 
+ void CGdiDeviceDriver::SaveState() {
+   SaveDC(m_hDC);

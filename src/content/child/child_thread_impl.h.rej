@@ -1,0 +1,17 @@
+--- child_thread_impl.h	2025-10-20 19:52:54.510585827 +0800
++++ child_thread_impl.h	2025-10-16 15:54:59.636547680 +0800
+@@ -262,11 +274,13 @@
+   mojo::SharedRemote<mojom::ChildProcessHost> child_process_host_;
+ 
+   // ChildThreadImpl state which lives on the IO thread, including its
+   // implementation of the mojom ChildProcess interface.
+   scoped_refptr<IOThreadState> io_thread_state_;
+-
++#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
++  bool webkit_inited_ = false;
++#endif
+   base::WeakPtrFactory<ChildThreadImpl> weak_factory_{this};
+ };
+ 
+ struct ChildThreadImpl::Options {
+   Options(const Options& other);

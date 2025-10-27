@@ -1,0 +1,58 @@
+--- input_router_impl.h	2025-10-20 19:52:53.045914300 +0800
++++ input_router_impl.h	2025-10-16 15:54:56.888205506 +0800
+@@ -8,10 +8,11 @@
+ #include <stdint.h>
+ 
+ #include <memory>
+ #include <queue>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/containers/flat_map.h"
+ #include "base/gtest_prod_util.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/task/sequenced_task_runner.h"
+ #include "cc/input/touch_action.h"
+@@ -183,10 +195,31 @@
+       const blink::WebGestureEvent& gesture_event,
+       const ui::LatencyInfo& latency_info) override;
+   bool IsWheelScrollInProgress() override;
+   bool IsAutoscrollInProgress() override;
+ 
++#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
++  void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) override {}
++#endif
++
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++  void SetGestureEventResult(bool result,
++    bool stopPropagation, int32_t fingerId) override {}
++
++  void SetNativeEmbedMode(bool flag) override {}
++  void SetMouseEventResult(bool result, bool stopPropagation) override {}
++  void SetEnableCustomVideoPlayer(bool flag) override {}
++#endif
++
++#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
++  void ScrollBy(float delta_x, float delta_y) override {}
++#endif
++
++#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
++  void SetBypassVsyncCondition(int32_t condition) override {}
++#endif
++
+   // TouchpadPinchEventQueueClient
+   void SendMouseWheelEventForPinchImmediately(
+       const MouseWheelEventWithLatencyInfo& event,
+       TouchpadPinchEventQueueClient::MouseWheelEventHandledCallback
+           callback) override;
+@@ -286,11 +325,10 @@
+   base::flat_map<int, gfx::Point> global_touch_position_;
+ 
+   // The host receiver associated with the widget input handler from
+   // the widget.
+   mojo::Receiver<blink::mojom::WidgetInputHandlerHost> host_receiver_{this};
+-
+   base::WeakPtr<InputRouterImpl> weak_this_;
+   base::WeakPtrFactory<InputRouterImpl> weak_ptr_factory_{this};
+ };
+ 
+ }  // namespace input

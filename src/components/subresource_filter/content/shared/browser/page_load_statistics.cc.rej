@@ -1,0 +1,20 @@
+--- page_load_statistics.cc	2025-10-20 19:52:53.874296013 +0800
++++ page_load_statistics.cc	2025-10-16 15:54:57.811217652 +0800
+@@ -35,10 +35,17 @@
+ 
+   aggregated_document_statistics_.evaluation_total_wall_duration +=
+       statistics.evaluation_total_wall_duration;
+   aggregated_document_statistics_.evaluation_total_cpu_duration +=
+       statistics.evaluation_total_cpu_duration;
++
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  // 需要将每个Document 拦截到的url 进行累加
++  for (auto& pair : statistics.loads_disallowed_url_map) {
++    aggregated_document_statistics_.loads_disallowed_url_map.insert(pair);
++  }
++#endif  // BUILDFLAG(ARKWEB_ADBLOCK)
+ }
+ 
+ void PageLoadStatistics::OnDidFinishLoad() {
+   if (activation_state_.activation_level != mojom::ActivationLevel::kDisabled) {
+     base::UmaHistogramCounts1000(

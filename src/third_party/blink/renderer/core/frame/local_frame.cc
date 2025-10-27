@@ -46,6 +46,12 @@
 #include "base/unguessable_token.h"
 #include "base/values.h"
 #include "build/build_config.h"
+
+#if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
+#include "base/command_line.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#endif
+
 #include "mojo/public/cpp/bindings/self_owned_receiver.h"
 #include "mojo/public/cpp/system/message_pipe.h"
 #include "services/network/public/cpp/features.h"
@@ -243,6 +249,7 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/rect_f.h"
 #include "ui/gfx/geometry/transform.h"
+#include "third_party/blink/renderer/core/page/page_utils.h"
 
 #if BUILDFLAG(IS_MAC)
 #include "third_party/blink/renderer/core/editing/ephemeral_range.h"
@@ -254,6 +261,10 @@
 
 #if !BUILDFLAG(IS_ANDROID)
 #include "third_party/blink/renderer/core/frame/window_controls_overlay_changed_delegate.h"
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/frame/local_frame_for_include.cc"
 #endif
 
 namespace blink {
@@ -1967,7 +1978,11 @@ LocalFrame::LocalFrame(
                         : FrameScheduler::FrameType::kSubframe)),
       loader_(this),
       editor_(MakeGarbageCollected<Editor>(*this)),
+      #if BUILDFLAG(ARKWEB_MENU)
+      selection_(MakeGarbageCollected<FrameSelectionExt>(*this)),
+      #else
       selection_(MakeGarbageCollected<FrameSelection>(*this)),
+      #endif  // ARKWEB_MENU
       event_handler_(MakeGarbageCollected<EventHandler>(*this)),
       console_(MakeGarbageCollected<FrameConsole>(*this)),
       navigation_disable_count_(0),
@@ -4181,6 +4196,12 @@ bool LocalFrame::ScriptEnabled() {
   bool allow_script_renderer = GetSettings()->GetScriptEnabled();
   bool allow_script_content_setting =
       loader_.GetDocumentLoader()->GetContentSettings()->allow_script;
+#if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
+  const base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  if (command_line && command_line->HasSwitch(switches::kEnableNwebExExceptionList)) {
+    return allow_script_content_setting;
+  }
+#endif
   return allow_script_renderer && allow_script_content_setting;
 }
 

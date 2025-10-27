@@ -734,7 +734,6 @@ FilePath FilePath::Append(StringViewType component) const {
     // component.
     return FilePath(appended);
   }
-
   FilePath new_path(path_);
   new_path.StripTrailingSeparatorsInternal();
 
@@ -751,7 +750,6 @@ FilePath FilePath::Append(StringViewType component) const {
       }
     }
   }
-
   new_path.path_.append(appended);
   return new_path;
 }
@@ -779,6 +777,11 @@ FilePath FilePath::AppendUTF8(std::string_view component) const {
 }
 
 bool FilePath::IsAbsolute() const {
+#if BUILDFLAG(IS_ARKWEB)
+  if (IsDataShareUri()) {
+    return true;
+  }
+#endif
   return IsPathAbsolute(path_);
 }
 

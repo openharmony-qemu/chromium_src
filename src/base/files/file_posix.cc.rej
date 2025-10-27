@@ -1,0 +1,41 @@
+--- file_posix.cc	2025-10-20 19:52:46.648916039 +0800
++++ file_posix.cc	2025-10-16 15:54:55.282240603 +0800
+@@ -261,11 +261,11 @@
+   ScopedBlockingCall scoped_blocking_call(FROM_HERE, BlockingType::MAY_BLOCK);
+   DCHECK(IsValid());
+ 
+   SCOPED_FILE_TRACE_WITH_SIZE("Seek", offset);
+ 
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
+   static_assert(sizeof(int64_t) == sizeof(off64_t), "off64_t must be 64 bits");
+   return lseek64(file_.get(), static_cast<off64_t>(offset),
+                  static_cast<int>(whence));
+ #else
+   static_assert(sizeof(int64_t) == sizeof(off_t), "off_t must be 64 bits");
+@@ -355,11 +355,11 @@
+   SCOPED_FILE_TRACE_WITH_SIZE("Write", size);
+ 
+   int bytes_written = 0;
+   long rv;
+   do {
+-#if BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
+     // In case __USE_FILE_OFFSET64 is not used, we need to call pwrite64()
+     // instead of pwrite().
+     static_assert(sizeof(int64_t) == sizeof(off64_t),
+                   "off64_t must be 64 bits");
+     rv = HANDLE_EINTR(pwrite64(file_.get(), data + bytes_written,
+@@ -663,11 +663,11 @@
+ 
+ #if BUILDFLAG(IS_NACL)
+   NOTIMPLEMENTED();  // NaCl doesn't implement fsync.
+   return true;
+ #elif BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS) || \
+-    BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_LINUX)
++    BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
+   return !HANDLE_EINTR(fdatasync(file_.get()));
+ #elif BUILDFLAG(IS_APPLE)
+   // On macOS and iOS, fsync() is guaranteed to send the file's data to the
+   // underlying storage device, but may return before the device actually writes
+   // the data to the medium. When used by database systems, this may result in

@@ -419,6 +419,7 @@ ExtensionFunction::ResponseAction OmniboxSendSuggestionsFunction::Run() {
   NotifySuggestionsReady();
   return RespondNow(NoArguments());
 }
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 void OmniboxSendSuggestionsFunction::OnParsedDescriptionsAndStyles(
     DescriptionAndStylesResult result) {
@@ -466,6 +467,7 @@ void OmniboxSendSuggestionsFunction::NotifySuggestionsReady() {
 }
 
 ExtensionFunction::ResponseAction OmniboxSetDefaultSuggestionFunction::Run() {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   std::optional<SetDefaultSuggestion::Params> params =
       SetDefaultSuggestion::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
@@ -481,6 +483,9 @@ ExtensionFunction::ResponseAction OmniboxSetDefaultSuggestionFunction::Run() {
 
   SetDefaultSuggestion(params->suggestion);
   return RespondNow(NoArguments());
+#else
+  return RespondNow(NoArguments());
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 void OmniboxSetDefaultSuggestionFunction::OnParsedDescriptionAndStyles(

@@ -10,6 +10,10 @@ import("//services/video_effects/args.gni")
 import("//testing/test.gni")
 import("//third_party/webrtc/webrtc.gni")
 
+if(is_arkweb) {
+  import("//arkweb/build/features/features.gni")
+}
+
 group("capture") {
   public_deps = [
     ":capture_lib",

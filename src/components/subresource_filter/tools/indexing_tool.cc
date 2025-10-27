@@ -16,6 +16,10 @@
 #include "components/subresource_filter/core/common/unindexed_ruleset.h"
 #include "components/url_pattern_index/proto/rules.pb.h"
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "base/logging.h"
+#endif
+
 namespace subresource_filter {
 
 bool IndexAndWriteRuleset(const base::FilePath& unindexed_path,

@@ -19,6 +19,7 @@
 #include "services/viz/privileged/mojom/compositing/frame_sink_manager.mojom.h"
 #include "services/viz/privileged/mojom/compositing/frame_sink_manager_test_api.mojom.h"
 #include "services/viz/privileged/mojom/compositing/frame_sinks_metrics_recorder.mojom.h"
+#include "arkweb/build/features/features.h"
 
 namespace viz {
 

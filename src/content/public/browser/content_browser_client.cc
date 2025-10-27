@@ -176,6 +176,16 @@ bool ContentBrowserClient::IsExplicitNavigation(ui::PageTransition transition) {
   return transition & ui::PAGE_TRANSITION_FROM_ADDRESS_BAR;
 }
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+bool ContentBrowserClient::ShouldUseMobileFlingCurve() {
+  if (base::SysInfo::IsLowEndDevice()) {
+    LOG(DEBUG) << "low device do not trigger fling";
+    return false;
+  }
+  return true;
+}
+#endif
+
 bool ContentBrowserClient::ShouldUseProcessPerSite(
     BrowserContext* browser_context,
     const GURL& site_url) {
@@ -806,6 +816,10 @@ void ContentBrowserClient::AllowCertificateError(
     const GURL& request_url,
     bool is_primary_main_frame_request,
     bool strict_enforcement,
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    const GURL& origin_url,
+    const std::string& referrer,
+#endif
     base::OnceCallback<void(CertificateRequestResultType)> callback) {
   std::move(callback).Run(CERTIFICATE_REQUEST_RESULT_TYPE_DENY);
 }
@@ -890,6 +904,18 @@ bool ContentBrowserClient::CanCreateWindow(
   *no_javascript_access = false;
   return true;
 }
+
+#if BUILDFLAG(ARKWEB_MULTI_WINDOW)
+bool ContentBrowserClient::CanCreateWindow(
+    RenderFrameHost* opener,
+    const GURL& target_url,
+    WindowOpenDisposition disposition,
+    bool user_gesture,
+    content::mojom::FrameHost::GetCreateNewWindowCallback callback) {
+  std::move(callback).Run(mojom::CreateNewWindowStatus::kBlocked);
+  return false;
+}
+#endif  // BUILDFLAG(ARKWEB_MULTI_WINDOW)
 
 SpeechRecognitionManagerDelegate*
 ContentBrowserClient::CreateSpeechRecognitionManagerDelegate() {
@@ -1085,7 +1111,12 @@ ContentBrowserClient::CreateURLLoaderThrottles(
     const base::RepeatingCallback<WebContents*()>& wc_getter,
     NavigationUIData* navigation_ui_data,
     FrameTreeNodeId frame_tree_node_id,
-    std::optional<int64_t> navigation_id) {
+    std::optional<int64_t> navigation_id
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+,
+    bool is_prerendering
+#endif
+) {
   return std::vector<std::unique_ptr<blink::URLLoaderThrottle>>();
 }
 
@@ -1222,7 +1253,7 @@ base::Value::Dict ContentBrowserClient::GetNetLogConstants() {
   return base::Value::Dict();
 }
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_LOAD)
 bool ContentBrowserClient::ShouldOverrideUrlLoading(
     FrameTreeNodeId frame_tree_node_id,
     bool browser_initiated,

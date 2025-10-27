@@ -1,0 +1,105 @@
+--- render_frame_host_impl.h	2025-10-20 19:52:54.414542212 +0800
++++ render_frame_host_impl.h	2025-10-16 15:54:59.544646038 +0800
+@@ -759,10 +784,13 @@
+       base::OnceCallback<void(ui::AXPlatformTreeManager* hit_manager,
+                               ui::AXNodeID hit_node_id)> opt_callback) override;
+   gfx::NativeWindow GetTopLevelNativeWindow() override;
+   bool CanFireAccessibilityEvents() const override;
+   bool AccessibilityIsRootFrame() const override;
++#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
++  RenderFrameHostImpl* AccessibilityRenderFrameHost() override;
++#endif
+   bool ShouldSuppressAXLoadComplete() override;
+   WebContentsAccessibility* AccessibilityGetWebContentsAccessibility() override;
+ 
+   // ui::AXNodeIdDelegate:
+   ui::AXPlatformNodeId GetOrCreateAXNodeUniqueId(
+@@ -3068,18 +3135,26 @@
+   // after receiving a ClosePage ACK) or that they should be ignored. This is
+   // queried while attempting to close the current tab/window.  Should only be
+   // used on primary main frames.
+   bool IsPageReadyToBeClosed();
+ 
++#if BUILDFLAG(ARKWEB_DISATCH_BEFORE_UNLOAD)
++  bool IsJsDialogShowOrBeforeUnloadTimedOut();
++#endif // ARKWEB_DISATCH_BEFORE_UNLOAD
++
+   // Retrieves the information about the cookie changes that are observed on the
+   // last committed document.
+   CookieChangeListener::CookieChangeInfo GetCookieChangeInfo();
+ 
+   // Records metrics on sudden termination handlers found in this frame and
+   // subframes.
+   void RecordNavigationSuddenTerminationHandlers();
+ 
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  void UpdateAdBlockEnabledToRender(bool site_adblock_enabled);
++#endif
++
+   // Returns the devtools_navigation_token (see
+   // NavigationRequest::devtools_navigation_token()) associated with the last
+   // cross-document navigation in this RenderFrameHost. This is the same value
+   // that is stored in the DocumentLoader for the RFH's document in the renderer
+   // (and therefore it has per-document semantics). Returns std::nullopt for a
+@@ -3208,11 +3283,44 @@
+   // popin from impacting partitioning).
+   // See https://explainers-by-googlers.github.io/partitioned-popins/
+   bool ShouldPartitionAsPopin() const;
+ 
+   void SimulateDiscardShutdownKeepAliveTimeoutForTesting();
+-
++#if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
++  void AddNamedObject(const std::string& name,
++                      int32_t object_id,
++                      base::Value::List& async_method_list,
++                      bool need_update);
++#endif
++#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
++  void OnDetectedBlankScreen(const std::string& url,
++                             int32_t blankScreenReason,
++                             int32_t detectedContentfulNodesCount) override;
++  void DetectBlankScreen(const std::string& url);
++  void SetBlankScreenDetectionConfig(
++      bool enable,
++      const std::vector<double>& detectionTiming,
++      const std::vector<int32_t>& detectionMethods,
++      int32_t contentfulNodesCountThreshold);
++#endif
++#if BUILDFLAG(ARKWEB_ERROR_PAGE)
++  void CommitFailedNavigation(
++    mojom::NavigationClient* navigation_client,
++    NavigationRequest* navigation_request,
++    blink::mojom::CommonNavigationParamsPtr common_params,
++    blink::mojom::CommitNavigationParamsPtr commit_params,
++    bool has_stale_copy_in_cache,
++    int error_code,
++    int extended_error_code,
++    const net::ResolveErrorInfo& resolve_error_info,
++    const std::optional<std::string>& error_page_content,
++    std::unique_ptr<blink::PendingURLLoaderFactoryBundle> subresource_loaders,
++    const blink::DocumentToken& document_token,
++    blink::mojom::PolicyContainerPtr policy_container,
++    mojom::AlternativeErrorPageOverrideInfoPtr alternative_error_page_info,
++    mojom::NavigationClient::CommitFailedNavigationCallback callback);
++#endif
+  protected:
+   friend class RenderFrameHostFactory;
+ 
+   // |flags| is a combination of CreateRenderFrameFlags.
+   // TODO(nasko): Remove dependency on RenderViewHost here. RenderProcessHost
+@@ -4322,10 +4439,15 @@
+   void CleanupRenderProcessForDiscardIfPossible();
+ 
+   blink::mojom::PermissionStatus GetCombinedPermissionStatus(
+       blink::PermissionType permission_type);
+ 
++#if BUILDFLAG(ARKWEB_READER_MODE)
++  net::Error GetNetErrorCode() override;
++  net::Error net_error_{net::Error::OK};
++#endif // ARKWEB_READER_MODE
++
+   // The RenderViewHost that this RenderFrameHost is associated with.
+   //
+   // It is kept alive as long as any RenderFrameHosts or RenderFrameProxyHosts
+   // are using it.
+   //

@@ -1,0 +1,15 @@
+--- wasm-compiler.h	2025-10-20 19:53:31.380579744 +0800
++++ wasm-compiler.h	2025-10-16 15:56:12.747316882 +0800
+@@ -628,10 +628,12 @@
+ 
+   // MemBuffer is only called with valid offsets (after bounds checking), so the
+   // offset fits in a platform-dependent uintptr_t.
+   Node* MemBuffer(uint32_t mem_index, uintptr_t offset);
+ 
++  // only for load/store
++  Node* MemBuffer(uint32_t mem_index, Node* index);
+   // BoundsCheckMem receives a 32/64-bit index (depending on
+   // {memory->is_memory64}) and returns a ptrsize index and information about
+   // the kind of bounds check performed (or why none was needed).
+   std::pair<Node*, BoundsCheckResult> BoundsCheckMem(
+       const wasm::WasmMemory* memory, uint8_t access_size, Node* index,

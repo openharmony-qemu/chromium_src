@@ -504,9 +504,16 @@ int HttpProxyConnectJob::DoBeginConnect() {
 int HttpProxyConnectJob::DoTransportConnect() {
   ProxyServer::Scheme scheme = GetProxyServerScheme();
   if (scheme == ProxyServer::SCHEME_HTTP) {
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION) || BUILDFLAG(ARKWEB_MULTI_IP_CONNECT)
+    nested_connect_job_ = std::make_unique<ArkWebTransportConnectJobExt>(
+#else
     nested_connect_job_ = std::make_unique<TransportConnectJob>(
+#endif
         priority(), socket_tag(), common_connect_job_params(),
         params_->transport_params(), this, &net_log());
+#if BUILDFLAG(ARKWEB_EXT_NETWORK_CONNECTION)
+    nested_connect_job_->SetConnectTimeout(timeout_override_for_nested_job_);
+#endif
   } else {
     DCHECK_EQ(scheme, ProxyServer::SCHEME_HTTPS);
     DCHECK(params_->is_over_ssl());
@@ -939,6 +946,13 @@ SpdySessionKey HttpProxyConnectJob::CreateSpdySessionKey() const {
       params_->network_anonymization_key(), params_->secure_dns_policy(),
       /*disable_cert_verification_network_fetches=*/true);
 }
+
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+void HttpProxyConnectJob::SetConnectTimeout(int timeout_override) {
+  timeout_override_for_nested_job_ = timeout_override;
+  timeout_override_ = base::TimeDelta();
+}
+#endif
 
 // static
 void HttpProxyConnectJob::EmitConnectLatency(NextProto http_version,

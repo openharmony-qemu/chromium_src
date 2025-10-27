@@ -33,6 +33,11 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/perfetto/include/perfetto/tracing/tracing.h"
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "components/viz/common/features.h"
+#include "arkweb/chromium_ext/components/viz/service/frame_sinks/frame_sink_manager_unittest_ext.h"
+#endif
+
 namespace viz {
 namespace {
 
@@ -154,6 +159,11 @@ class FrameSinkManagerTest : public testing::Test {
     config->grouping_id = grouping_id;
     return config;
   }
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  ARKWEB_UNITTESTS_MY_EVICT_SURFACES_PART1();
+  ARKWEB_UNITTESTS_MY_EVICT_SURFACES_PART2()
+#endif
 
   base::flat_set<FrameSinkId> GetEmbeddedRenderInputRouters(
       const FrameSinkId& frame_sink_id) {

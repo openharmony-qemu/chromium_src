@@ -71,7 +71,7 @@ SharedImageStub::shared_image_interface() {
 
 std::unique_ptr<SharedImageStub> SharedImageStub::Create(GpuChannel* channel,
                                                          int32_t route_id) {
-  auto stub = base::WrapUnique(new SharedImageStub(channel, route_id));
+  auto stub = base::WrapUnique(new SharedImageStubExt(channel, route_id));
   ContextResult result = stub->Initialize();
   if (result == ContextResult::kSuccess)
     return stub;
@@ -607,7 +607,7 @@ ContextResult SharedImageStub::Initialize() {
     }
   }
 
-  factory_ = std::make_unique<SharedImageFactory>(
+  factory_ = std::make_unique<SharedImageFactoryExt>(
       channel_manager->gpu_preferences(),
       channel_manager->gpu_driver_bug_workarounds(),
       channel_manager->gpu_feature_info(), context_state_.get(),

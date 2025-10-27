@@ -1,0 +1,23 @@
+--- render_frame_metadata.mojom	2025-10-20 19:52:47.922022165 +0800
++++ render_frame_metadata.mojom	2025-10-16 15:54:55.673470432 +0800
+@@ -106,17 +109,17 @@
+   float min_page_scale_factor;
+ 
+   [EnableIf=is_android_or_ios]
+   float max_page_scale_factor;
+ 
+-  [EnableIf=is_android_or_ios]
++  [EnableIf=is_android_or_ios_or_arkweb]
+   bool root_overflow_y_hidden;
+ 
+-  [EnableIf=is_android_or_ios]
++  [EnableIf=is_android_or_ios_or_arkweb]
+   gfx.mojom.SizeF scrollable_viewport_size;
+ 
+-  [EnableIf=is_android_or_ios]
++  [EnableIf=is_android_or_ios_or_arkweb]
+   gfx.mojom.SizeF root_layer_size;
+ 
+   [EnableIf=is_android_or_ios]
+   bool has_transparent_background;
+ };

@@ -1,0 +1,18 @@
+--- url_features.cc	2025-10-20 19:53:31.244598198 +0800
++++ url_features.cc	2025-10-16 15:55:05.872308929 +0800
+@@ -18,11 +19,15 @@
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ // Kill switch for crbug.com/1416006.
+ BASE_FEATURE(kStandardCompliantNonSpecialSchemeURLParsing,
+              "StandardCompliantNonSpecialSchemeURLParsing",
++#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
++             base::FEATURE_DISABLED_BY_DEFAULT);
++#else // BUILDFLAG(ARKWEB_NETWORK_LOAD)
+              base::FEATURE_ENABLED_BY_DEFAULT);
++#endif // BUILDFLAG(ARKWEB_NETWORK_LOAD)
+ 
+ BASE_FEATURE(kDisallowSpaceCharacterInURLHostParsing,
+              "DisallowSpaceCharacterInURLHostParsing",
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ 

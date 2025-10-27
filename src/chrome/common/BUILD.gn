@@ -20,6 +20,7 @@ import("//printing/buildflags/buildflags.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//third_party/widevine/cdm/widevine.gni")
 import("//tools/grit/grit_rule.gni")
+import("//arkweb/build/features/features.gni")
 
 assert(enable_supervised_users)
 assert(!is_fuchsia, "Fuchsia shouldn't use anything in //chrome")
@@ -356,6 +357,11 @@ static_library("common_lib") {
     ]
   }
 
+  if (is_arkweb && arkweb_enable_cdm) {
+    import("//arkweb/chromium_ext/chrome/common/media/arkweb_chrome_browser_media_ohos_ext.gni")
+    sources += arkweb_chrome_common_media_ohos_sources
+  }
+
   if (is_win) {
     sources += [
       "conflicts/module_watcher_win.cc",
@@ -404,7 +410,7 @@ static_library("common_lib") {
     public_deps += [ "//chrome/common/safe_browsing" ]
   }
 
-  if (is_linux || is_chromeos) {
+  if (is_linux || is_chromeos || arkweb_asan) {
     sources += [
       "auto_start_linux.cc",
       "auto_start_linux.h",

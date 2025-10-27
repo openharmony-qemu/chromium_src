@@ -1,0 +1,16 @@
+--- local_video_capturer_source.cc	2025-10-20 19:53:00.790206266 +0800
++++ local_video_capturer_source.cc	2025-10-16 16:07:39.898425022 +0800
+@@ -50,11 +50,12 @@
+     const VideoCaptureNotifyFrameDroppedCB& frame_dropped_callback,
+     const RunningCallback& running_callback) {
+   DCHECK(params.requested_format.IsValid());
+   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
+   running_callback_ = running_callback;
+-
++  LOG(INFO) << "LocalVideoCapturerSource::StartCapture "
++            << params.requested_format.pixel_format;
+   stop_capture_cb_ = manager_->StartCapture(
+       session_id_, params,
+       base::BindPostTask(
+           task_runner_, ConvertToBaseRepeatingCallback(CrossThreadBindRepeating(
+                             &LocalVideoCapturerSource::OnStateUpdate,

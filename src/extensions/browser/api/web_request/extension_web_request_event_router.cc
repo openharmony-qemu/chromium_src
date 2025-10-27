@@ -89,6 +89,10 @@ constexpr char kEventMessage[] = "webViewInternal.onMessage";
 constexpr char kWebRequestEventPrefix[] = "webRequest.";
 constexpr char kWebViewEventPrefix[] = "webViewInternal.";
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+const char kWebRequestApiLogTag[] = "[WebRequestAPI]";
+#endif
+
 constexpr size_t kWebRequestEventPrefixLen =
     std::char_traits<char>::length(kWebRequestEventPrefix);
 constexpr size_t kWebViewEventPrefixLen =
@@ -766,6 +770,9 @@ bool WebRequestEventRouter::RequestFilter::InitFromValue(
         URLPattern pattern(URLPattern::SCHEME_HTTP | URLPattern::SCHEME_HTTPS |
                            URLPattern::SCHEME_FTP | URLPattern::SCHEME_FILE |
                            URLPattern::SCHEME_EXTENSION |
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+                           URLPattern::SCHEME_ARKWEB_EXTENSION |
+#endif
                            URLPattern::SCHEME_WS | URLPattern::SCHEME_WSS |
                            URLPattern::SCHEME_UUID_IN_PACKAGE);
         if (item.is_string()) {
@@ -1368,6 +1375,10 @@ WebRequestEventRouter::OnAuthRequired(content::BrowserContext* browser_context,
     blocked_request.request = request;
     blocked_request.auth_callback = std::move(callback);
     blocked_request.auth_credentials = credentials;
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    LOG(INFO) << kWebRequestApiLogTag
+              << " webRequest.onAuthRequired dispatched";
+#endif
     return AuthRequiredResponse::AUTH_REQUIRED_RESPONSE_IO_PENDING;
   }
   return AuthRequiredResponse::AUTH_REQUIRED_RESPONSE_NO_ACTION;
@@ -1419,6 +1430,10 @@ void WebRequestEventRouter::OnResponseStarted(
 
   // OnResponseStarted is even triggered, when the request was cancelled.
   if (net_error != net::OK) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    LOG(INFO) << kWebRequestApiLogTag
+              << " OnResponseStarted, net_error=" << net_error;
+#endif
     return;
   }
 
@@ -1840,6 +1855,11 @@ bool WebRequestEventRouter::AddEventListener(
   if (!is_reactivated && listener->HasExtraHeaders()) {
     IncrementExtraHeadersListenerCount(browser_context);
   }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  LOG(INFO) << kWebRequestApiLogTag << " webRequest.AddListener for "
+            << event_name;
+#endif
 
   data_[browser_context_id].active_listeners[event_name].push_back(
       std::move(listener));

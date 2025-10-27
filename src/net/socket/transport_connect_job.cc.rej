@@ -1,0 +1,66 @@
+--- transport_connect_job.cc	2025-10-20 19:52:57.206207151 +0800
++++ transport_connect_job.cc	2025-10-16 15:55:02.773190688 +0800
+@@ -1,10 +1,11 @@
+ // Copyright 2012 The Chromium Authors
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+ #include "net/socket/transport_connect_job.h"
++#include "arkweb/chromium_ext/net/socket/arkweb_transport_connect_job_ext.h"
+ 
+ #include <memory>
+ #include <utility>
+ 
+ #include "base/check_op.h"
+@@ -48,23 +51,31 @@
+ 
+   DCHECK(absl::holds_alternative<HostPortPair>(endpoint));
+   return absl::get<HostPortPair>(endpoint);
+ }
+ 
+-}  // namespace
+-
+ TransportSocketParams::TransportSocketParams(
+     Endpoint destination,
+     NetworkAnonymizationKey network_anonymization_key,
+     SecureDnsPolicy secure_dns_policy,
+     OnHostResolutionCallback host_resolution_callback,
+-    base::flat_set<std::string> supported_alpns)
++    base::flat_set<std::string> supported_alpns
++#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
++    ,
++    bool secure_dns_only
++#endif
++    )
+     : destination_(std::move(destination)),
+       network_anonymization_key_(std::move(network_anonymization_key)),
+       secure_dns_policy_(secure_dns_policy),
+       host_resolution_callback_(std::move(host_resolution_callback)),
+-      supported_alpns_(std::move(supported_alpns)) {
++      supported_alpns_(std::move(supported_alpns))
++#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
++      ,
++      secure_dns_only_(secure_dns_only)
++#endif
++{
+ #if DCHECK_IS_ON()
+   auto* scheme_host_port = absl::get_if<url::SchemeHostPort>(&destination_);
+   if (scheme_host_port) {
+     if (scheme_host_port->scheme() == url::kHttpsScheme) {
+       // HTTPS destinations will, when passed to the DNS resolver, return
+@@ -262,10 +281,15 @@
+   next_state_ = STATE_RESOLVE_HOST_COMPLETE;
+ 
+   HostResolver::ResolveHostParameters parameters;
+   parameters.initial_priority = priority();
+   parameters.secure_dns_policy = params_->secure_dns_policy();
++#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
++  if (host_resolver()->CanUseSecureDnsFallback()) {
++    parameters.only_use_secure_fallback = params_->secure_dns_only();
++  }
++#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+   if (absl::holds_alternative<url::SchemeHostPort>(params_->destination())) {
+     request_ = host_resolver()->CreateRequest(
+         absl::get<url::SchemeHostPort>(params_->destination()),
+         params_->network_anonymization_key(), net_log(), parameters);
+   } else {

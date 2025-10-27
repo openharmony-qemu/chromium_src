@@ -1,0 +1,61 @@
+--- layer.cc	2025-10-20 19:52:47.910049405 +0800
++++ layer.cc	2025-10-16 15:54:55.661472212 +0800
+@@ -64,10 +64,21 @@
+   gfx::Rect update_rect;
+   int int_fields[7];
+   gfx::Vector2dF offset;
+   unsigned bitfields;
+   std::unique_ptr<int> debug_info;
++#if DCHECK_IS_ON()
++  bool allow_remove_for_readd;
++#endif
++  std::unique_ptr<LayerUtils> layer_utils_;
++#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
++  bool should_overlay_;
++#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
++
++#if defined(__arm__)
++  char dummy[8];
++#endif
+ };
+ 
+ static_assert(sizeof(Layer) == sizeof(SameSizeAsLayer),
+               "Layer should stay small");
+ 
+@@ -104,11 +115,13 @@
+       clip_tree_index_(kInvalidPropertyNodeId),
+       scroll_tree_index_(kInvalidPropertyNodeId),
+       property_tree_sequence_number_(-1),
+       ignore_set_needs_commit_for_test_(false),
+       bitflags_(0u),
+-      subtree_property_changed_(false) {}
++      subtree_property_changed_(false) {
++  layer_utils_ = std::make_unique<LayerUtils>(this);
++}
+ 
+ Layer::~Layer() {
+   // Our parent should be holding a reference to us so there should be no
+   // way for us to be destroyed while we still have a parent.
+   DCHECK(!parent());
+@@ -1446,10 +1459,13 @@
+   // subtree_property_changed_ is propagated to all descendants while building
+   // property trees. So, it is enough to check it only for the current layer.
+   if (subtree_property_changed_.Read(*this))
+     layer->NoteLayerPropertyChanged();
+   layer->set_may_contain_video(may_contain_video());
++#if BUILDFLAG(ARKWEB_SAME_LAYER)
++  layer_utils_->PushPropertiesToImpl(layer);
++#endif
+   layer->SetTouchActionRegion(inputs.touch_action_region);
+   layer->SetContentsOpaque(inputs.contents_opaque);
+   layer->SetContentsOpaqueForText(inputs.contents_opaque_for_text);
+   layer->SetShouldCheckBackfaceVisibility(should_check_backface_visibility());
+ 
+@@ -1662,6 +1678,7 @@
+   DCHECK_NE(transform_tree_index_.Read(*this), kInvalidPropertyNodeId);
+   return draw_property_utils::ScreenSpaceTransform(
+       this, layer_tree_host()->property_trees()->transform_tree());
+ }
+ 
++
+ }  // namespace cc

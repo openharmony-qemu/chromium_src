@@ -222,6 +222,25 @@ class CORE_EXPORT HTMLVideoElement final
   void RequestVisibility(
       HTMLMediaElement::RequestVisibilityCallback request_visibility_cb) final;
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  void RequestEnterFullscreen() final;
+  void RequestExitFullscreen() final;
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void SetPlaybackRate(double playback_rate) final;
+  void RequestDownloadUrl() final;
+#endif  // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_PIP)
+  void OnPictureInPictureStateChanged(
+      uint32_t state, int32_t width, int32_t height) final;
+  void PipDown(bool state) final;
+  void RequestExitPictureInPicture() final;
+  void NotifyPipResize() final;
+  void PipRequestPlay() final;
+#endif
+
   void DidMoveToNewDocument(Document& old_document) override;
 
   void UpdatePictureInPictureAvailability();

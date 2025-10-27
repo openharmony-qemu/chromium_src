@@ -110,6 +110,11 @@ class InputDelegateForCompositor {
   // IsCurrentScrollMainRepainted into a single method returning everything.
   virtual bool IsCurrentScrollMainRepainted() const = 0;
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  virtual void HandleScrollUpdateForInternalBeginFrame(
+      const viz::BeginFrameArgs& args) {}
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
   // Returns true if there are input events queued to be dispatched at the start
   // of the next frame.
   virtual bool HasQueuedInput() const = 0;

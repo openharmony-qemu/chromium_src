@@ -1,0 +1,56 @@
+--- api.cc	2025-10-20 19:53:31.260596027 +0800
++++ api.cc	2025-10-16 15:56:12.608650229 +0800
+@@ -1277,10 +1285,25 @@
+   }
+   return obj;
+ }
+ }  // namespace
+ 
++#ifdef OHOS_JS_ENGINE
++bool FunctionTemplate::Inherit(v8::Local<Function> parentFunc) {
++  auto i_function =
++      i::Cast<i::JSFunction>(v8::Utils::OpenDirectHandle(*parentFunc));
++  if (!i_function->shared()->IsApiFunction()) {
++      return false;
++  }
++  auto info = Utils::OpenHandle(this);
++  i::Isolate* i_isolate = info->GetIsolateChecked();
++  i::Handle<i::FunctionTemplateInfo> funcInfo(i_function->shared()->api_func_data(), i_isolate);
++  Inherit(v8::Utils::ToLocal(funcInfo));
++  return true;
++}
++#endif
++
+ void FunctionTemplate::Inherit(v8::Local<FunctionTemplate> value) {
+   auto info = Utils::OpenHandle(this);
+   EnsureNotPublished(info, "v8::FunctionTemplate::Inherit");
+   i::Isolate* i_isolate = info->GetIsolateChecked();
+   ENTER_V8_NO_SCRIPT_NO_EXCEPTION(i_isolate);
+@@ -2909,10 +3000,13 @@
+                                            const ScriptOrigin& origin) {
+   PREPARE_FOR_EXECUTION(context, ScriptCompiler, Compile);
+   TRACE_EVENT_CALL_STATS_SCOPED(i_isolate, "v8", "V8.ScriptCompiler");
+   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
+                "V8.CompileStreamedScript");
++#ifdef OHOS_JS_ENGINE
++  auto trace = HiTrace("RCS_v8.compile_V8.CompileStreamedScript");
++#endif
+   i::DirectHandle<i::SharedFunctionInfo> sfi;
+   i::MaybeDirectHandle<i::SharedFunctionInfo> maybe_sfi =
+       CompileStreamedSource(i_isolate, v8_source, full_source_string, origin);
+   has_exception = !maybe_sfi.ToHandle(&sfi);
+   if (has_exception) i_isolate->ReportPendingMessages();
+@@ -2929,10 +3023,13 @@
+     Local<String> full_source_string, const ScriptOrigin& origin) {
+   PREPARE_FOR_EXECUTION(context, ScriptCompiler, Compile);
+   TRACE_EVENT_CALL_STATS_SCOPED(i_isolate, "v8", "V8.ScriptCompiler");
+   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
+                "V8.CompileStreamedModule");
++#ifdef OHOS_JS_ENGINE
++  auto trace = HiTrace("RCS_v8.compile_V8.CompileStreamedModule");
++#endif
+   i::DirectHandle<i::SharedFunctionInfo> sfi;
+   i::MaybeDirectHandle<i::SharedFunctionInfo> maybe_sfi =
+       CompileStreamedSource(i_isolate, v8_source, full_source_string, origin);
+   has_exception = !maybe_sfi.ToHandle(&sfi);
+   if (has_exception) i_isolate->ReportPendingMessages();

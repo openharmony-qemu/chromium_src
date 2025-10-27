@@ -1,0 +1,72 @@
+--- gpu_service_impl.h	2025-10-20 19:52:54.146420452 +0800
++++ gpu_service_impl.h	2025-10-16 15:54:59.244966770 +0800
+@@ -7,10 +7,11 @@
+ 
+ #include <memory>
+ #include <string>
+ #include <unordered_map>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/clang_profiling_buildflags.h"
+ #include "base/compiler_specific.h"
+ #include "base/functional/callback.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/memory/scoped_refptr.h"
+@@ -59,10 +60,16 @@
+ 
+ #if BUILDFLAG(IS_WIN)
+ #include "ui/gl/direct_composition_support.h"
+ #endif  // BUILDFLAG(IS_WIN)
+ 
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++#include "third_party/skia/include/core/SkPixmap.h"
++#include "ui/gfx/geometry/rect.h"
++#include "components/viz/common/frame_sinks/copy_output_result.h"
++#endif
++
+ #if BUILDFLAG(IS_CHROMEOS_ASH)
+ namespace arc {
+ class ProtectedBufferManager;
+ }
+ #endif  // BUILDFLAG(IS_CHROMEOS_ASH)
+@@ -435,10 +449,40 @@
+ #endif
+ 
+   using VisibilityChangedCallback =
+       base::RepeatingCallback<void(bool /*visible*/)>;
+   void SetVisibilityChangedCallback(VisibilityChangedCallback);
++#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
++  void SetVisible(int32_t nweb_id, bool visible) override;
++  void SetHasTouchPoint(bool has_touch_point) override;
++  void ReportSlidingFrameRate(int32_t frame_rate) override;
++  void SetLTPOStrategy(int32_t strategy) override;
++#endif
++#if BUILDFLAG(ARKWEB_DFX_DUMP)
++  void DumpGpuInfo(DumpGpuInfoCallback callback) override;
++#endif
++
++#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
++  void StartMonitor() override;
++  void StopMonitor() override;
++#endif
++
++#if BUILDFLAG(ARKWEB_D_VSYNC)
++  void SetIsFling(bool is_fling_enabled) override;
++  void SetIsScroll(bool is_scroll_enabled) override;
++  bool GetIsScroll();
++#endif
++
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  void SendBlanklessSnapshotInfo(mojom::BlanklessSendInfoPtr infoPtr,
++                                 mojo::ScopedSharedBufferHandle buffer,
++                                 mojom::BlanklessBitmapMetadataPtr metadata);
++
++  void ClearBlanklessSnapshotInfo(uint64_t blankless_key);
++  void OnFrameSnapshotCopyOutputResult(std::unique_ptr<CopyOutputResult> result);
++  base::WeakPtr<GpuServiceImpl> GetWeakPtr() const;
++#endif
+ 
+  private:
+   // This class is used to receive direct IPCs for GMB from renderers without
+   // needing to go/route via the browser process.
+   class ClientGmbInterfaceImpl : public gpu::mojom::ClientGmbInterface,

@@ -1,0 +1,19 @@
+--- cookie_controls_controller.cc	2025-10-20 19:52:52.793796704 +0800
++++ cookie_controls_controller.cc	2025-10-16 15:54:56.604509132 +0800
+@@ -191,11 +191,15 @@
+                 /*protections_on=*/false)};
+   }
+ 
+   const GURL& url = web_contents->GetLastCommittedURL();
+   if (url.SchemeIs(content::kChromeUIScheme) ||
+-      url.SchemeIs(kExtensionScheme)) {
++      url.SchemeIs(kExtensionScheme)
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      || url.SchemeIs(kArkwebExtensionScheme)
++#endif
++      ) {
+     return {/*controls_visible=*/false,
+             /*protections_on=*/false,
+             CookieControlsEnforcement::kNoEnforcement,
+             CookieBlocking3pcdStatus::kNotIn3pcd,
+             base::Time(),

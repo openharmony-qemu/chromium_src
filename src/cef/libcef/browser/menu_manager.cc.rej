@@ -1,0 +1,31 @@
+--- menu_manager.cc	2025-10-20 19:52:47.985876885 +0800
++++ menu_manager.cc	2025-10-16 15:55:22.354291131 +0800
+@@ -17,10 +17,13 @@
+ #include "chrome/grit/generated_resources.h"
+ #include "content/public/browser/render_frame_host.h"
+ #include "content/public/browser/render_process_host.h"
+ #include "content/public/browser/render_widget_host_view.h"
+ #include "third_party/blink/public/mojom/context_menu/context_menu.mojom.h"
++#if BUILDFLAG(ARKWEB_CLIPBOARD)
++#include "cef/ohos_cef_ext/libcef/browser/menu_manager_for_include.cc"
++#endif  // #if BUILDFLAG(ARKWEB_CLIPBOARD)
+ 
+ namespace {
+ 
+ CefString GetLabel(int message_id) {
+   std::u16string label =
+@@ -134,10 +137,14 @@
+   }
+ 
+   params_ = params;
+   model_->Clear();
+ 
++#if BUILDFLAG(ARKWEB_CLIPBOARD)
++  UpdateMenuEditStateFlags(params_);
++#endif  // #if BUILDFLAG(ARKWEB_CLIPBOARD)
++
+   // Create the default menu model.
+   CreateDefaultModel();
+ 
+   bool custom_menu = false;
+   DCHECK(!custom_menu_callback_);

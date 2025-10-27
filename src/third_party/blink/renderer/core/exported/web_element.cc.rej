@@ -1,0 +1,30 @@
+--- web_element.cc	2025-10-20 19:53:00.358210362 +0800
++++ web_element.cc	2025-10-16 16:07:39.369462279 +0800
+@@ -57,11 +57,11 @@
+ #include "third_party/blink/renderer/platform/graphics/image.h"
+ #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
+ #include "third_party/blink/renderer/platform/wtf/casting.h"
+ #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
+ #include "ui/gfx/geometry/size.h"
+-
++#include "arkweb/chromium_ext/third_party/blink/renderer/core/exported/web_element_utils.h"
+ namespace blink {
+ 
+ WebElement WebElement::FromV8Value(v8::Isolate* isolate,
+                                    v8::Local<v8::Value> value) {
+   Element* element = V8Element::ToWrappable(isolate, value);
+@@ -149,10 +152,14 @@
+ 
+ WebString WebElement::InnerHTML() const {
+   return ConstUnwrap<Element>()->innerHTML();
+ }
+ 
++bool WebElement::IsContentEditable() const {
++  return utils_->IsContentEditable();
++}
++
+ bool WebElement::WritingSuggestions() const {
+   const auto* html_element =
+       blink::DynamicTo<HTMLElement>(ConstUnwrap<Element>());
+   return html_element &&
+          !EqualIgnoringASCIICase(html_element->writingSuggestions(),

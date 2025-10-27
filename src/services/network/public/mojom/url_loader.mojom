@@ -11,6 +11,8 @@ import "services/network/public/mojom/request_priority.mojom";
 import "services/network/public/mojom/url_loader_completion_status.mojom";
 import "services/network/public/mojom/url_response_head.mojom";
 import "url/mojom/url.mojom";
+[EnableIf=arkweb_resource_interception]
+import "mojo/public/mojom/base/shared_memory.mojom";
 
 [Native]
 struct URLRequestRedirectInfo;

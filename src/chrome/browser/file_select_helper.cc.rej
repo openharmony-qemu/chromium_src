@@ -1,0 +1,17 @@
+--- file_select_helper.cc	2025-10-20 19:52:49.685991502 +0800
++++ file_select_helper.cc	2025-10-16 15:57:00.238091315 +0800
+@@ -62,10 +63,14 @@
+ #else
+ #include "chrome/browser/picture_in_picture/picture_in_picture_window_manager.h"
+ #include "chrome/browser/picture_in_picture/scoped_disallow_picture_in_picture.h"
+ #endif  // BUILDFLAG(IS_ANDROID)
+ 
++#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
++#include "arkweb/chromium_ext/base/datashare_uri_utils.h"
++#endif
++
+ using blink::mojom::FileChooserFileInfo;
+ using blink::mojom::FileChooserFileInfoPtr;
+ using blink::mojom::FileChooserParams;
+ using blink::mojom::FileChooserParamsPtr;
+ using content::BrowserThread;

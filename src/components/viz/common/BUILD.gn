@@ -9,6 +9,10 @@ import("//gpu/vulkan/features.gni")
 import("//skia/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//testing/test.gni")
+if (is_arkweb) {
+  import("//arkweb/build/features/features.gni")
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
 
 import("//third_party/inspector_protocol/inspector_protocol.gni")
 

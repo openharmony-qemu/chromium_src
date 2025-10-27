@@ -573,7 +573,7 @@ TEST_F(FPDFViewEmbedderTest, SandboxDocument) {
   EXPECT_EQ(0u, buf[0]);
   CloseDocument();
 
-  static constexpr unsigned long kNoSuchPolicy = 102;
+  constexpr unsigned long kNoSuchPolicy = 102;
   FPDF_SetSandBoxPolicy(kNoSuchPolicy, true);
   CreateEmptyDocument();
   len = FPDF_GetMetaText(document(), "CreationDate", buf, sizeof(buf));
@@ -872,7 +872,7 @@ TEST_F(FPDFViewEmbedderTest, NamedDestsOldStyle) {
   EXPECT_TRUE(FPDF_GetNamedDestByName(document(), kLastAlternate));
 
   char buffer[512];
-  static constexpr long kBufferSize = sizeof(buffer);
+  constexpr long kBufferSize = sizeof(buffer);
   long size = kBufferSize;
 
   // Test bad indices.
@@ -2219,10 +2219,9 @@ TEST_F(FPDFViewEmbedderTest, RenderAnnotsGrayScale) {
 }
 
 TEST_F(FPDFViewEmbedderTest, BadFillRectInput) {
-  static constexpr int kWidth = 200;
-  static constexpr int kHeight = 200;
-  static constexpr char kExpectedChecksum[] =
-      "acc736435c9f84aa82941ba561bc5dbc";
+  constexpr int kWidth = 200;
+  constexpr int kHeight = 200;
+  constexpr char kExpectedChecksum[] = "acc736435c9f84aa82941ba561bc5dbc";
   ScopedFPDFBitmap bitmap(FPDFBitmap_Create(200, 200, /*alpha=*/true));
   ASSERT_TRUE(FPDFBitmap_FillRect(bitmap.get(), /*left=*/0, /*top=*/0,
                                   /*width=*/kWidth,

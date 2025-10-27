@@ -173,7 +173,14 @@ class CefRequestContext : public CefPreferenceManager {
   /*--cef(optional_param=callback)--*/
   virtual CefRefPtr<CefCookieManager> GetCookieManager(
       CefRefPtr<CefCompletionCallback> callback) = 0;
-
+#if BUILDFLAG(ARKWEB_COOKIE)
+  virtual CefRefPtr<CefCookieManagerExt> GetCookieManagerExt(
+      bool support_incognito,
+      CefRefPtr<CefCompletionCallback> callback) {
+    return nullptr;
+  }
+#endif  // BUILDFLAG(ARKWEB_COOKIE)
+  virtual CefRefPtr<CefDataBase> GetDataBase() {return nullptr;};
   ///
   /// Register a scheme handler factory for the specified |scheme_name| and
   /// optional |domain_name|. An empty |domain_name| value for a standard scheme
@@ -220,7 +227,9 @@ class CefRequestContext : public CefPreferenceManager {
   /*--cef(optional_param=callback)--*/
   virtual void ClearHttpAuthCredentials(
       CefRefPtr<CefCompletionCallback> callback) = 0;
-
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
+#include "cef/ohos_cef_ext/include/cef_request_context_for_include.h"
+#endif  // #if BUILDFLAG(ARKWEB_WEBSTORAGE)
   ///
   /// Clears all active and idle connections that Chromium currently has.
   /// This is only recommended if you have released all other CEF objects but
@@ -356,6 +365,18 @@ class CefRequestContext : public CefPreferenceManager {
   ///
   /*--cef(default_retval=CEF_COLOR_VARIANT_SYSTEM)--*/
   virtual cef_color_variant_t GetChromeColorSchemeVariant() = 0;
+
+  ///
+  /// Returns the global off-the-record context object.
+  ///
+  static CefRefPtr<CefRequestContext> GetGlobalOTRContext();
+
+  ///
+  /// Returns the adsblock manager for this object.
+  ///
+  /*--cef(optional_param=callback)--*/
+  virtual CefRefPtr<CefAdsBlockManager> GetAdsBlockManager(
+      CefRefPtr<CefCompletionCallback> callback) = 0;
 };
 
 #endif  // CEF_INCLUDE_CEF_REQUEST_CONTEXT_H_

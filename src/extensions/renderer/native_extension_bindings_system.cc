@@ -72,6 +72,10 @@
 #include "v8/include/v8-primitive.h"
 #include "v8/include/v8-template.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/extensions/renderer/native_extension_bindings_system_for_include.cc"
+#endif
+
 using perfetto::protos::pbzero::ChromeTrackEvent;
 
 namespace extensions {

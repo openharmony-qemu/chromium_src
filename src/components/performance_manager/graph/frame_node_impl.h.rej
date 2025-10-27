@@ -1,0 +1,29 @@
+--- frame_node_impl.h	2025-10-20 19:52:53.334047069 +0800
++++ frame_node_impl.h	2025-10-16 15:54:57.211859115 +0800
+@@ -27,10 +27,11 @@
+ #include "third_party/blink/public/common/tokens/tokens.h"
+ #include "third_party/blink/public/mojom/frame/lifecycle.mojom-forward.h"
+ #include "third_party/blink/public/mojom/frame/viewport_intersection_state.mojom-forward.h"
+ #include "url/gurl.h"
+ #include "url/origin.h"
++#include "arkweb/build/features/features.h"
+ 
+ namespace performance_manager {
+ 
+ class FrameNodeImplDescriber;
+ 
+@@ -84,11 +85,13 @@
+   void OnFirstContentfulPaint(
+       base::TimeDelta time_since_navigation_start) override;
+   void OnWebMemoryMeasurementRequested(
+       mojom::WebMemoryMeasurement::Mode mode,
+       OnWebMemoryMeasurementRequestedCallback callback) override;
+-
++#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
++  void OnFormEditingStateChanged(uint64_t form_id, bool did_submit) override;
++#endif
+   // Partial FrameNode implementation:
+   const blink::LocalFrameToken& GetFrameToken() const override;
+   content::BrowsingInstanceId GetBrowsingInstanceId() const override;
+   content::SiteInstanceGroupId GetSiteInstanceGroupId() const override;
+   resource_attribution::FrameContext GetResourceContext() const override;

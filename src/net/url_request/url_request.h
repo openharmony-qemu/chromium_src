@@ -66,6 +66,11 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+#include "arkweb/chromium_ext/net/base/page_res_request_info.h"
+#include "net/http/http_transaction.h"
+#endif
+
 namespace net {
 
 class CookieOptions;
@@ -915,6 +920,41 @@ class NET_EXPORT URLRequest : public base::SupportsUserData {
   StorageAccessStatusCache storage_access_status() const {
     return storage_access_status_;
   }
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  void set_update_res_request_info_callback(HttpTransaction::UpdateResRequestInfoCallback callback) {
+    update_res_request_info_callback_ = callback;
+  }
+  HttpTransaction::UpdateResRequestInfoCallback update_res_request_info_callback() {
+    return update_res_request_info_callback_;
+  }
+
+  void set_allow_preload_record(bool allow) { allow_preload_record_ = allow; }
+  bool allow_preload_record() const { return allow_preload_record_; }
+
+  void set_main_url(const GURL& url) { main_url_ = url; }
+  const GURL& main_url() const { return main_url_; }
+
+  void set_preload_info(const std::shared_ptr<ohos_prp_preload::PRRequestInfo>& preload_info) {
+    preload_info_ = preload_info;
+  }
+  std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info() const { return preload_info_; }
+
+  bool CanReadFromURLRequestJob() { return job_.get() != nullptr; }
+#endif
+
+#if BUILDFLAG(ARKWEB_CODECACHE_ENHANCE)
+  void set_code_cache_valid(bool valid) { response_info_.code_cache_valid = valid; }
+  bool is_code_cache_valid() { return response_info_.code_cache_valid; }
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  int32_t usage_scenario_ = 99;
+  void set_usage_scenario(int32_t usage_scenario) {
+    usage_scenario_ = usage_scenario;
+  }
+  int32_t usage_scenario() { return usage_scenario_; }
+#endif
 
   static bool DefaultCanUseCookies();
 

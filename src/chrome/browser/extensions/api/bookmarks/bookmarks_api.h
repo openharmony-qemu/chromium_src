@@ -24,6 +24,10 @@
 #include "extensions/browser/extension_function.h"
 #include "ui/shell_dialogs/select_file_dialog.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "ohos_nweb/src/capi/browser_service/nweb_extension_bookmarks_types.h"
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
+
 class Profile;
 
 namespace base {
@@ -270,6 +274,7 @@ class BookmarksUpdateFunction : public BookmarksFunction {
   // BookmarksFunction:
   ResponseValue RunOnReady() override;
 };
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 }  // namespace extensions
 

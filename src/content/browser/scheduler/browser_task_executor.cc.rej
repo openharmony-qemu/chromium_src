@@ -1,0 +1,35 @@
+--- browser_task_executor.cc	2025-10-20 19:52:54.438553115 +0800
++++ browser_task_executor.cc	2025-10-16 15:54:59.568620380 +0800
+@@ -61,10 +66,32 @@
+   }
+   return g_browser_task_executor->GetUIThreadTaskRunner(traits);
+ }
+ #endif
+ 
++#if BUILDFLAG(IS_OHOS)
++scoped_refptr<base::SingleThreadTaskRunner> GetTaskRunnerForOHOSMainThread(
++    ::TaskTraits ohos_traits) {
++  BrowserTaskTraits traits;
++  switch (ohos_traits) {
++    case ::TaskTraits::UI_BEST_EFFORT:
++      traits = {base::TaskPriority::BEST_EFFORT};
++      break;
++    case ::TaskTraits::UI_USER_VISIBLE:
++      traits = {base::TaskPriority::USER_VISIBLE};
++      break;
++    case ::TaskTraits::UI_USER_BLOCKING:
++      traits = {base::TaskPriority::USER_BLOCKING};
++      break;
++    default:
++      traits = {};
++  }
++  return g_browser_task_executor->GetUIThreadTaskRunner(traits);
++}
++#endif
++
++
+ }  // namespace
+ 
+ BaseBrowserTaskExecutor::BaseBrowserTaskExecutor() = default;
+ 
+ BaseBrowserTaskExecutor::~BaseBrowserTaskExecutor() = default;

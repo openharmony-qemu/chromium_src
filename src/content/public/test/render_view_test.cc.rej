@@ -1,0 +1,23 @@
+--- render_view_test.cc	2025-10-20 19:52:54.586601133 +0800
++++ render_view_test.cc	2025-10-16 15:54:59.720457875 +0800
+@@ -913,11 +923,19 @@
+       false /* started_from_context_menu */, false /* has_user_gesture */,
+       false /* has_text_fragment_token */,
+       network::mojom::CSPDisposition::CHECK, std::vector<int>(), std::string(),
+       false /* is_history_navigation_in_new_child_frame */,
+       base::TimeTicks() /* input_start */,
+-      network::mojom::RequestDestination::kDocument);
++#if BUILDFLAG(ARKWEB_NETWORK_BASE)
++      network::mojom::RequestDestination::kDocument, ""
++#else
++      network::mojom::RequestDestination::kDocument
++#endif
++#if BUILDFLAG(ARKWEB_ERROR_PAGE)
++      , false
++#endif
++      );
+   auto commit_params = blink::CreateCommitNavigationParams();
+   commit_params->page_state = state.ToEncodedData();
+   commit_params->nav_entry_id = pending_offset + 1;
+   commit_params->pending_history_list_offset = pending_offset;
+   commit_params->current_history_list_offset = webview->HistoryBackListCount();

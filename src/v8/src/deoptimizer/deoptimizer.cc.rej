@@ -1,0 +1,18 @@
+--- deoptimizer.cc	2025-10-20 19:53:31.388578658 +0800
++++ deoptimizer.cc	2025-10-16 15:56:12.755983548 +0800
+@@ -397,10 +432,15 @@
+           // builtin Code is still inside the sandbox while runtime-generated
+           // Code is in trusted space.
+           static_assert(!kAllCodeObjectsLiveInTrustedSpace);
+           DCHECK_IMPLIES(code.SafeEquals(topmost_), safe_to_deopt_);
+           static_assert(SafepointEntry::kNoTrampolinePC == -1);
++#ifdef OHOS_JS_ENGINE
++          if (trampoline_pc < 0) {
++            PrintCodeState(code, trampoline_pc);
++          }
++#endif
+           CHECK_GE(trampoline_pc, 0);
+           if (!it.frame()->InFastCCall()) {
+             Address new_pc = code->instruction_start() + trampoline_pc;
+             if (v8_flags.cet_compatible) {
+               Address pc = *it.frame()->pc_address();

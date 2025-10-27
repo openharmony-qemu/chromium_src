@@ -112,6 +112,9 @@
 #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
 #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 #include "v8/include/v8.h"
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+#include "third_party/blink/renderer/core/loader/native_loader.h"
+#endif
 
 namespace blink {
 
@@ -181,7 +184,9 @@ bool IsCompositedOutermostMainFrame(WebLocalFrameImpl* web_frame) {
 }  // namespace
 
 LocalFrameClientImpl::LocalFrameClientImpl(WebLocalFrameImpl* frame)
-    : web_frame_(frame) {}
+    : web_frame_(frame) {
+  impl_utils_ = std::make_unique<LocalFrameClientImplUtils>(this);
+}
 
 LocalFrameClientImpl::~LocalFrameClientImpl() = default;
 
@@ -235,6 +240,13 @@ void LocalFrameClientImpl::RunScriptsAtDocumentElementAvailable() {
     web_frame_->Client()->RunScriptsAtDocumentElementAvailable();
   // The callback might have deleted the frame, do not use |this|!
 }
+
+#if BUILDFLAG(ARKWEB_JSPROXY)
+void LocalFrameClientImpl::RunScriptsAtHeadElementAvailable() {
+  impl_utils_->RunScriptsAtHeadElementAvailable();
+  // The callback might have deleted the frame, do not use |this|!
+}
+#endif
 
 void LocalFrameClientImpl::RunScriptsAtDocumentReady(bool document_is_empty) {
   if (!document_is_empty && IsLoadedAsMHTMLArchive(web_frame_->GetFrame())) {
@@ -1010,6 +1022,14 @@ std::unique_ptr<WebMediaPlayer> LocalFrameClientImpl::CreateWebMediaPlayer(
       web_frame->Client(), html_media_element, source, client);
 }
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+std::unique_ptr<WebNativeBridge> LocalFrameClientImpl::CreateWebNativeBridge(
+    NativeLoader& native_loader,
+    WebNativeClient* client) {
+  return impl_utils_->CreateWebNativeBridge(native_loader, client);
+}
+#endif
+
 RemotePlaybackClient* LocalFrameClientImpl::CreateRemotePlaybackClient(
     HTMLMediaElement& html_media_element) {
   return CoreInitializer::GetInstance().CreateRemotePlaybackClient(
@@ -1231,4 +1251,19 @@ bool LocalFrameClientImpl::IsDomStorageDisabled() const {
   return web_frame_->Client()->IsDomStorageDisabled();
 }
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+void LocalFrameClientImpl::DispatchDidSubresourceFiltered() {
+  impl_utils_->DispatchDidSubresourceFiltered();
+}
+
+bool LocalFrameClientImpl::GetGlobalAdblockEnabled() {
+  return impl_utils_->GetGlobalAdblockEnabled();
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+void LocalFrameClientImpl::NotifyLcpForBlankless() {
+  impl_utils_->NotifyLcpForBlankless();
+}
+#endif
 }  // namespace blink

@@ -1,0 +1,16 @@
+--- toolbar_view.cc	2025-10-20 19:52:50.944924521 +0800
++++ toolbar_view.cc	2025-10-16 15:57:01.785849553 +0800
+@@ -215,11 +215,12 @@
+ END_METADATA
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+ // ToolbarView, public:
+ 
+-ToolbarView::ToolbarView(Browser* browser, BrowserView* browser_view,
++ToolbarView::ToolbarView(Browser* browser,
++                         BrowserView* browser_view,
+                          std::optional<DisplayMode> display_mode)
+     : AnimationDelegateViews(this),
+       browser_(browser),
+       browser_view_(browser_view),
+       app_menu_icon_controller_(browser->profile(), this),

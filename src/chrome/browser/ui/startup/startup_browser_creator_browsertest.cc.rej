@@ -1,0 +1,76 @@
+--- startup_browser_creator_browsertest.cc	2025-10-20 19:52:50.808859011 +0800
++++ startup_browser_creator_browsertest.cc	2025-10-16 15:57:01.621585731 +0800
+@@ -121,11 +121,11 @@
+ 
+ #if BUILDFLAG(IS_CHROMEOS_LACROS)
+ #include "chromeos/startup/browser_init_params.h"
+ #endif
+ 
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(ARKWEB_TEST)
+ #include "base/json/json_string_value_serializer.h"
+ #include "chrome/browser/ui/views/web_apps/protocol_handler_launch_dialog_view.h"
+ #include "chrome/browser/web_applications/os_integration/os_integration_manager.h"
+ #include "chrome/browser/web_applications/test/web_app_install_test_utils.h"
+ #include "chrome/browser/web_applications/web_app.h"
+@@ -136,11 +136,11 @@
+ #include "ui/views/widget/any_widget_observer.h"
+ #include "ui/views/widget/widget.h"
+ #endif
+ 
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || \
+-    (BUILDFLAG(IS_LINUX) && !BUILDFLAG(IS_CHROMEOS_LACROS))
++    (BUILDFLAG(IS_LINUX) && !BUILDFLAG(IS_CHROMEOS_LACROS)) || BUILDFLAG(ARKWEB_TEST)
+ #include "chrome/browser/ui/web_applications/app_browser_controller.h"
+ #endif
+ 
+ using testing::Return;
+ #endif  // !BUILDFLAG(IS_CHROMEOS_ASH)
+@@ -911,19 +911,19 @@
+ INSTANTIATE_TEST_SUITE_P(
+     All,
+     StartupBrowserCreatorChromeAppShortcutTest,
+     ::testing::Values(
+         ChromeAppDeprecationFeatureValue::kDefault
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(ARKWEB_TEST)
+         ,
+         ChromeAppDeprecationFeatureValue::kEnabledWithNoLaunch,
+         ChromeAppDeprecationFeatureValue::kDisabled
+ #endif
+         ),
+     ChromeAppDeprecationFeatureValueToString);
+ 
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(ARKWEB_TEST)
+ 
+ using StartupBrowserCreatorChromeAppShortcutTestWithLaunch =
+     StartupBrowserCreatorChromeAppShortcutTest;
+ 
+ IN_PROC_BROWSER_TEST_P(StartupBrowserCreatorChromeAppShortcutTestWithLaunch,
+@@ -1039,11 +1039,11 @@
+     StartupBrowserCreatorChromeAppShortcutTestWithLaunch,
+     ::testing::Values(
+         ChromeAppDeprecationFeatureValue::kEnabledWithNoLaunch),
+     ChromeAppDeprecationFeatureValueToString);
+ 
+-#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(ARKWEB_TEST)
+ 
+ #endif  // !BUILDFLAG(IS_CHROMEOS_ASH)
+ 
+ #if BUILDFLAG(IS_WIN)
+ IN_PROC_BROWSER_TEST_F(StartupBrowserCreatorTest, ValidNotificationLaunchId) {
+@@ -2576,11 +2578,11 @@
+   ASSERT_EQ(new_browser->type(), Browser::Type::TYPE_APP);
+ }
+ #endif  // !BUILDFLAG(IS_CHROMEOS_LACROS)
+ #endif  // !BUILDFLAG(IS_CHROMEOS_ASH)
+ 
+-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(ARKWEB_TEST)
+ 
+ class StartupBrowserWebAppProtocolHandlingTest : public InProcessBrowserTest {
+  protected:
+   StartupBrowserWebAppProtocolHandlingTest() = default;
+ 

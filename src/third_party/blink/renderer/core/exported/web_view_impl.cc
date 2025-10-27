@@ -192,6 +192,10 @@
 #include "ui/base/ui_base_features.h"
 #include "ui/gfx/geometry/skia_conversions.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 #if BUILDFLAG(IS_CHROMEOS)
 #include "ui/native_theme/native_theme.h"
 #endif
@@ -204,6 +208,16 @@
 
 #if BUILDFLAG(IS_WIN)
 #include "third_party/blink/public/web/win/web_font_rendering.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_VIEWPORT)
+#include "base/ohos/sys_info_utils_ext.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/frame/display_cutout_client_imp_utils.h"
+#include "third_party/blink/renderer/core/frame/display_cutout_client_impl.h"
 #endif
 
 // Get rid of WTF's pow define so we can use std::pow.
@@ -1786,6 +1800,10 @@ void WebView::ApplyWebPreferences(const web_pref::WebPreferences& prefs,
       prefs.dont_send_key_events_to_javascript);
   settings->SetWebAppScope(WebString::FromASCII(prefs.web_app_scope.spec()));
 
+#if BUILDFLAG(IS_ARKWEB)
+  ApplyWebPreferencesForInclude(prefs, web_view);
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
   settings->SetAllowCustomScrollbarInMainFrame(false);
   settings->SetAccessibilityFontScaleFactor(prefs.font_scale_factor);
@@ -2030,7 +2048,11 @@ void WebViewImpl::SetPageFocus(bool enable) {
 
 WebSettingsImpl* WebViewImpl::SettingsImpl() {
   if (!web_settings_) {
+#if BUILDFLAG(ARKWEB_MENU)
+    web_settings_ = std::make_unique<WebSettingsImplExt>(
+#else
     web_settings_ = std::make_unique<WebSettingsImpl>(
+#endif
         &page_->GetSettings(), dev_tools_emulator_.Get());
   }
   DCHECK(web_settings_);
@@ -2391,6 +2413,9 @@ void WebViewImpl::UpdateInspectorDeviceScaleFactorOverride() {
   } else {
     page_->SetInspectorDeviceScaleFactorOverride(1.0f);
   }
+#if BUILDFLAG(ARKWEB_ZOOM)
+  UpdateStyleAndLayoutTreeForInclude(page_.Get());
+#endif  // BUILDFLAG(ARKWEB_ZOOM)
 }
 
 float WebViewImpl::PageScaleFactor() const {
@@ -2583,7 +2608,12 @@ void WebViewImpl::SetPageLifecycleStateInternal(
     SetPageFrozen(false);
   }
   if (showing_page) {
+#if !BUILDFLAG(ARKWEB_BFCACHE)
     SetVisibilityState(new_state->visibility, /*is_initial_state=*/false);
+#else
+    SetVisibilityState(new_state->visibility, /*is_initial_state=*/false,
+                      restoring_from_bfcache);
+#endif // !BUILDFLAG(ARKWEB_BFCACHE)
   }
   if (restoring_from_bfcache) {
     DCHECK(dispatching_pageshow);
@@ -3834,6 +3864,12 @@ void WebViewImpl::PageScaleFactorChanged() {
       SetDeviceEmulationTransform(device_emulation_transform);
     }
   }
+
+#if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
+  if (auto* local_frame = DynamicTo<LocalFrame>(GetPage()->MainFrame())) {
+    DisplayCutoutClientImplUtils::UpdateSafeArea(local_frame);
+  }
+#endif
 }
 
 void WebViewImpl::OutermostMainFrameScrollOffsetChanged() {
@@ -4011,7 +4047,12 @@ PageScheduler* WebViewImpl::Scheduler() const {
 
 void WebViewImpl::SetVisibilityState(
     mojom::blink::PageVisibilityState visibility_state,
+#if !BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
     bool is_initial_state) {
+#else
+    bool is_initial_state,
+    bool storing_in_bfcache) {
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
   DCHECK(GetPage());
   GetPage()->SetVisibilityState(visibility_state, is_initial_state);
   // Do not throttle if the page should be painting.
@@ -4027,7 +4068,11 @@ void WebViewImpl::SetVisibilityState(
   // Notify observers of the change.
   if (!is_initial_state) {
     for (auto& observer : observers_)
+#if !BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
       observer.OnPageVisibilityChanged(visibility_state);
+#else
+      observer.OnPageVisibilityChanged(visibility_state, storing_in_bfcache);
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
   }
 }
 

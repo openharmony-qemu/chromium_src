@@ -18,6 +18,10 @@
 #include "extensions/browser/event_router.h"
 #include "extensions/browser/extension_function.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "libcef/browser/extensions/api/sessions/sessions_api_h_for_include.cc"
+#endif
+
 class Browser;
 class Profile;
 
@@ -46,6 +50,7 @@ class SessionsGetRecentlyClosedFunction : public ExtensionFunction {
   api::sessions::Session CreateSessionModel(
       const sessions::tab_restore::Entry& entry);
 };
+#endif
 
 class SessionsGetDevicesFunction : public ExtensionFunction {
  protected:
@@ -83,6 +88,7 @@ class SessionsRestoreFunction : public ExtensionFunction {
   ResponseValue RestoreForeignSession(const SessionId& session_id,
                                       Browser* browser);
 };
+#endif
 
 class SessionsEventRouter : public sessions::TabRestoreServiceObserver {
  public:
@@ -128,6 +134,10 @@ class SessionsAPI : public BrowserContextKeyedAPI,
 
   // EventRouter::Observer implementation.
   void OnListenerAdded(const extensions::EventListenerInfo& details) override;
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  SessionsEventRouter* event_router() { return sessions_event_router_.get(); }
+#endif
 
  private:
   friend class BrowserContextKeyedAPIFactory<SessionsAPI>;

@@ -615,6 +615,9 @@ void MouseEventManager::SetLastMousePositionAsUnknown() {
 WebInputEventResult MouseEventManager::HandleMousePressEvent(
     const MouseEventWithHitTestResults& event) {
   TRACE_EVENT0("blink", "MouseEventManager::handleMousePressEvent");
+#if BUILDFLAG(ARKWEB_AI)
+  AsMouseEventManagerExt()->StopCreateOverlayTimer();
+#endif
 
   ResetDragSource();
 
@@ -658,6 +661,10 @@ WebInputEventResult MouseEventManager::HandleMousePressEvent(
   frame_->GetDocument()->SetSequentialFocusNavigationStartingPoint(inner_node);
   drag_start_pos_in_root_frame_ =
       PhysicalOffset(gfx::ToFlooredPoint(event.Event().PositionInRootFrame()));
+
+#if BUILDFLAG(ARKWEB_AI)
+  AsMouseEventManagerExt()->CloseImageOverlayWhenMousePress(event);
+#endif
 
   mouse_pressed_ = true;
 
@@ -939,7 +946,7 @@ bool MouseEventManager::TryStartDrag(
 
   GetDragState().drag_data_transfer_ = CreateDraggingDataTransfer();
 
-  DragController& drag_controller = frame_->GetPage()->GetDragController();
+  DragControllerExt& drag_controller = frame_->GetPage()->GetDragController();
   if (!drag_controller.PopulateDragDataTransfer(frame_, GetDragState(),
                                                 mouse_down_pos_)) {
     return false;
@@ -1095,6 +1102,11 @@ void MouseEventManager::ResetDragSource() {
   if (!frame_->GetPage())
     return;
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  frame_->GetPage()->GetDragController().RestoreDragLinkEffects();
+  frame_->GetPage()->GetDragController().RestoreDragTextEffects();
+  frame_->GetPage()->GetDragController().RestoreDragImageEffects();
+#endif
   Node* drag_src = GetDragState().drag_src_;
   if (!drag_src)
     return;

@@ -1,0 +1,15 @@
+--- cpdf_syntax_parser.cpp	2025-10-20 19:53:19.587966399 +0800
++++ cpdf_syntax_parser.cpp	2025-10-16 16:15:55.888621326 +0800
+@@ -333,11 +335,11 @@
+   uint8_t code = 0;
+   while (true) {
+     if (ch == '>')
+       break;
+ 
+-    if (FXSYS_IsHexDigit(ch)) {
++    if (isxdigit(ch)) {
+       int val = FXSYS_HexCharToInt(ch);
+       if (bFirst) {
+         code = val * 16;
+       } else {
+         code += val;

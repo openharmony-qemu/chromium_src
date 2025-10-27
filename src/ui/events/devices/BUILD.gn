@@ -67,6 +67,10 @@ component("devices") {
     ]
   }
 
+  if (arkweb_input_events) {
+    sources += arkweb_ui_events_devices_sources
+  }
+
   defines = [ "EVENTS_DEVICES_IMPLEMENTATION" ]
 
   public_deps = [
@@ -82,6 +86,8 @@ component("devices") {
     "//ui/gfx/geometry",
     "//ui/gfx/geometry:geometry_skia",
   ]
+
+  deps += [ "//arkweb/build/features" ]
 
   if (is_android) {
     deps += [ ":ui_events_devices_jni_headers" ]

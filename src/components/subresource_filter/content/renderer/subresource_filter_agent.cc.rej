@@ -1,0 +1,22 @@
+--- subresource_filter_agent.cc	2025-10-20 19:52:53.874296013 +0800
++++ subresource_filter_agent.cc	2025-10-16 15:54:57.811217652 +0800
+@@ -336,13 +339,17 @@
+     const mojom::ActivationState activation_state,
+     const GURL& url) {
+   filter_for_last_created_document_.reset();
+ 
+   if (activation_state.activation_level == mojom::ActivationLevel::kDisabled ||
+-      !ruleset_dealer_->IsRulesetFileAvailable())
++      !ruleset_dealer_->IsRulesetFileAvailable()
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++      || activation_state.user_subresource_filter_replace
++#endif
++      ) {
+     return;
+-
++  }
+   scoped_refptr<const MemoryMappedRuleset> ruleset =
+       ruleset_dealer_->GetRuleset();
+   if (!ruleset)
+     return;
+ 

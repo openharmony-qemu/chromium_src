@@ -1,0 +1,36 @@
+--- chrome_content_settings_agent_delegate.cc	2025-10-20 19:52:51.233061639 +0800
++++ chrome_content_settings_agent_delegate.cc	2025-10-16 15:57:02.146400211 +0800
+@@ -93,11 +93,15 @@
+ }
+ 
+ bool ChromeContentSettingsAgentDelegate::IsSchemeAllowlisted(
+     const std::string& scheme) {
+ #if BUILDFLAG(ENABLE_EXTENSIONS)
+-  return scheme == extensions::kExtensionScheme;
++  return scheme == extensions::kExtensionScheme
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++         || scheme == extensions::kArkwebExtensionScheme
++#endif
++      ;
+ #else
+   return false;
+ #endif
+ }
+ 
+@@ -181,11 +185,15 @@
+ }
+ 
+ #if BUILDFLAG(ENABLE_EXTENSIONS)
+ const extensions::Extension* ChromeContentSettingsAgentDelegate::GetExtension(
+     const blink::WebSecurityOrigin& origin) const {
+-  if (origin.Protocol().Ascii() != extensions::kExtensionScheme)
++  if (origin.Protocol().Ascii() != extensions::kExtensionScheme
++#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
++      && origin.Protocol().Ascii() != extensions::kArkwebExtensionScheme
++#endif
++  )
+     return nullptr;
+ 
+   const std::string extension_id = origin.Host().Utf8().data();
+   if (!extension_dispatcher_->IsExtensionActive(extension_id))
+     return nullptr;

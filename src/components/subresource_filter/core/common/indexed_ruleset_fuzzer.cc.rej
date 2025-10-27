@@ -1,0 +1,18 @@
+--- indexed_ruleset_fuzzer.cc	2025-10-20 19:52:53.878297857 +0800
++++ indexed_ruleset_fuzzer.cc	2025-10-16 15:54:57.815213375 +0800
+@@ -48,11 +48,15 @@
+   google::protobuf::io::ArrayInputStream input_stream(remaining_bytes.data(),
+                                                       remaining_bytes.size());
+   subresource_filter::UnindexedRulesetReader reader(&input_stream);
+ 
+   // Use the unindexed ruleset to build a flat indexed ruleset.
++#if BUILDFLAG(ARKWEB_ADBLOCK)
++  subresource_filter::ArkWebRulesetIndexerExt indexer;
++#else
+   subresource_filter::RulesetIndexer indexer;
++#endif
+   url_pattern_index::proto::FilteringRules ruleset_chunk;
+   while (reader.ReadNextChunk(&ruleset_chunk)) {
+     for (const auto& rule : ruleset_chunk.url_rules())
+       indexer.AddUrlRule(rule);
+   }

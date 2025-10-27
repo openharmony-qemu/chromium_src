@@ -1,0 +1,17 @@
+--- decoder_stream.h	2025-10-20 19:52:56.658199997 +0800
++++ decoder_stream.h	2025-10-16 15:55:01.858169989 +0800
+@@ -323,10 +341,14 @@
+ 
+   bool encryption_type_reported_ = false;
+ 
+   int fallback_buffers_being_decoded_ = 0;
+ 
++#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
++  VideoDecoderChangedCB decoder_changed_cb_;
++#endif // ARKWEB_VIDEO_ASSISTANT
++
+   // NOTE: Weak pointers must be invalidated before all other member variables.
+   base::WeakPtrFactory<DecoderStream<StreamType>> weak_factory_{this};
+ 
+   // Used to invalidate pending decode requests and output callbacks.
+   base::WeakPtrFactory<DecoderStream<StreamType>> fallback_weak_factory_{this};

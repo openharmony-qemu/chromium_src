@@ -1,0 +1,38 @@
+--- client_shared_image.h	2025-10-20 19:52:55.483038749 +0800
++++ client_shared_image.h	2025-10-16 15:55:00.563555550 +0800
+@@ -34,10 +34,11 @@
+ class GLES2Interface;
+ }  // namespace gles2
+ 
+ class ClientSharedImageInterface;
+ class GpuChannelSharedImageInterface;
++class GpuChannelSharedImageInterfaceExt;
+ class SharedImageTexture;
+ class TestSharedImageInterface;
+ 
+ struct ExportedSharedImage;
+ 
+@@ -132,11 +133,10 @@
+   SkAlphaType alpha_type() const { return metadata_.alpha_type; }
+   SharedImageUsageSet usage() { return metadata_.usage; }
+   std::optional<gfx::BufferUsage> buffer_usage() { return buffer_usage_; }
+ 
+   bool HasHolder() { return sii_holder_ != nullptr; }
+-
+   // Returns a clone of the GpuMemoryBufferHandle associated with this ClientSI.
+   // Valid to call only if this instance was created with a non-null
+   // GpuMemoryBuffer.
+   gfx::GpuMemoryBufferHandle CloneGpuMemoryBufferHandle() const {
+     CHECK(gpu_memory_buffer_);
+@@ -281,10 +281,11 @@
+   // which should only be done via implementations of
+   // SharedImageInterface::ImportSharedImage().
+   // `sii_holder` must not be null.
+   friend class ClientSharedImageInterface;
+   friend class GpuChannelSharedImageInterface;
++  friend class GpuChannelSharedImageInterfaceExt;
+   friend class TestSharedImageInterface;
+   friend class media::VideoFrame;
+   ClientSharedImage(const Mailbox& mailbox,
+                     const SharedImageMetadata& metadata,
+                     const SyncToken& sync_token,

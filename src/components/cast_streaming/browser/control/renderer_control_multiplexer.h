@@ -14,6 +14,7 @@
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "mojo/public/cpp/bindings/remote.h"
+#include "arkweb/build/features/features.h"
 
 namespace cast_streaming {
 

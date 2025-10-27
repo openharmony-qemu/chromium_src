@@ -80,6 +80,11 @@ cc::ImageType FileExtensionToImageType(String image_extension) {
     return cc::ImageType::kAVIF;
   }
 #endif
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  if (image_extension == "heif") {
+    return cc::ImageType::kHEIF;
+  }
+#endif
   return cc::ImageType::kInvalid;
 }
 
@@ -210,6 +215,11 @@ String SniffMimeTypeInternal(scoped_refptr<SegmentReader> reader) {
   }
 #endif
 
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  if (HEIFImageDecoder::MatchesHeifSignature(reader->GetAsSkData())) {
+    return "image/heif";
+  }
+#endif
   return String();
 }
 
@@ -240,15 +250,20 @@ ImageDecoder::ImageDecoder(
     AlphaOption alpha_option,
     HighBitDepthDecodingOption high_bit_depth_decoding_option,
     ColorBehavior color_behavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
     cc::AuxImage aux_image,
+#endif
     wtf_size_t max_decoded_bytes)
     : premultiply_alpha_(alpha_option == kAlphaPremultiplied),
       high_bit_depth_decoding_option_(high_bit_depth_decoding_option),
       color_behavior_(color_behavior),
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
       aux_image_(aux_image),
+#endif
       max_decoded_bytes_(max_decoded_bytes),
       allow_decode_to_yuv_(false),
-      purge_aggressively_(false) {}
+      purge_aggressively_(false) {
+}
 
 ImageDecoder::~ImageDecoder() = default;
 
@@ -258,7 +273,9 @@ std::unique_ptr<ImageDecoder> ImageDecoder::Create(
     AlphaOption alpha_option,
     HighBitDepthDecodingOption high_bit_depth_decoding_option,
     ColorBehavior color_behavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
     cc::AuxImage aux_image,
+#endif
     size_t platform_max_decoded_bytes,
     const SkISize& desired_size,
     AnimationOption animation_option) {
@@ -269,7 +286,10 @@ std::unique_ptr<ImageDecoder> ImageDecoder::Create(
 
   return CreateByMimeType(type, std::move(data), data_complete, alpha_option,
                           high_bit_depth_decoding_option, color_behavior,
-                          aux_image, platform_max_decoded_bytes, desired_size,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+                          aux_image,
+#endif
+                          platform_max_decoded_bytes, desired_size,
                           animation_option);
 }
 
@@ -280,7 +300,9 @@ std::unique_ptr<ImageDecoder> ImageDecoder::CreateByMimeType(
     AlphaOption alpha_option,
     HighBitDepthDecodingOption high_bit_depth_decoding_option,
     ColorBehavior color_behavior,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
     cc::AuxImage aux_image,
+#endif
     size_t platform_max_decoded_bytes,
     const SkISize& desired_size,
     AnimationOption animation_option) {
@@ -294,7 +316,10 @@ std::unique_ptr<ImageDecoder> ImageDecoder::CreateByMimeType(
   if (mime_type == "image/jpeg" || mime_type == "image/pjpeg" ||
       mime_type == "image/jpg") {
     decoder = std::make_unique<JPEGImageDecoder>(alpha_option, color_behavior,
-                                                 aux_image, max_decoded_bytes);
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+                                                 aux_image,
+#endif
+                                                 max_decoded_bytes);
   } else if (mime_type == "image/png" || mime_type == "image/x-png" ||
              mime_type == "image/apng") {
     decoder =

@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/containers/contains.h"
 #include "base/debug/crash_logging.h"
@@ -64,6 +65,10 @@
 #include "url/gurl.h"
 #include "url/url_canon.h"
 #include "url/url_constants.h"
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "url/ohos/log_utils.h"
+#endif
 
 namespace features {
 
@@ -534,6 +539,10 @@ class ChildProcessSecurityPolicyImpl::SecurityState {
     }
     return false;
   }
+#endif
+
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+#include "arkweb/chromium_ext/content/browser/child_process_security_policy_impl_for_include.cc"
 #endif
 
   void GrantBindings(BindingsPolicySet bindings) {
@@ -1986,6 +1995,13 @@ bool ChildProcessSecurityPolicyImpl::CanAccessOrigin(int child_id,
       // precursor). Remove this logic once that has been completed.
       base::AutoLock lock(lock_);
       SecurityState* security_state = GetSecurityState(child_id);
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+      if (!security_state) {
+        LOG(URL) << "percursor_tuple is invalid and donn't found a valid "
+                 << "security state"
+                 << url::LogUtils::ConvertUrl(origin.GetDebugString());
+      }
+#endif
       return !!security_state;
     } else {
       url_to_check = precursor_tuple.GetURL();
@@ -2003,6 +2019,10 @@ bool ChildProcessSecurityPolicyImpl::CanAccessOrigin(int child_id,
   // CanAccessDataForOrigin() call above. The code below overrides the origin
   // crash key set in that call with data from |origin| because it provides
   // more accurate information than the origin derived from |url_to_check|.
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG(URL) << "Can not access data for origin "
+           << url::LogUtils::ConvertUrl(origin.GetDebugString());
+#endif
   auto* requested_origin_key = GetRequestedOriginCrashKey();
   base::debug::SetCrashKeyString(requested_origin_key, origin.GetDebugString());
   return false;

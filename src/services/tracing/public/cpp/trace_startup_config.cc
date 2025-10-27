@@ -42,9 +42,9 @@ const size_t kTraceConfigFileSizeLimit = 64 * 1024;
 // Trace config file path:
 // - Android: /data/local/chrome-trace-config.json
 // - Others: specified by --trace-config-file flag.
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 const base::FilePath::CharType kAndroidTraceConfigFile[] =
-    FILE_PATH_LITERAL("/data/local/chrome-trace-config.json");
+    FILE_PATH_LITERAL("/data/storage/el1/bundle/arkwebcore/libs/ohos-trace-config.json");
 #endif
 
 // String parameters that can be used to parse the trace config file content.
@@ -55,7 +55,7 @@ const char kResultDirectoryParam[] = "result_directory";
 
 constexpr std::string_view kDefaultStartupCategories[] = {
     "__metadata",
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
     "startup",
     "browser",
     "toplevel",
@@ -130,6 +130,7 @@ TraceStartupConfig::TraceStartupConfig() {
       command_line->GetSwitchValueASCII(switches::kTraceStartupOwner);
   if (value == "devtools") {
     session_owner_ = SessionOwner::kDevToolsTracingHandler;
+    LOG(WARNING) << "TraceStartupConfig::--trace-startup-owner=devtools";
   } else if (value == "system") {
     session_owner_ = SessionOwner::kSystemTracing;
   }
@@ -229,7 +230,7 @@ bool TraceStartupConfig::EnableFromCommandLine() {
     if (!startup_duration_str.empty() &&
         !base::StringToInt(startup_duration_str,
                            &startup_duration_in_seconds)) {
-      DLOG(WARNING) << "Could not parse --" << switches::kTraceStartupDuration
+      LOG(WARNING) << "Could not parse --" << switches::kTraceStartupDuration
                     << "=" << startup_duration_str << " defaulting to 5 (secs)";
       startup_duration_in_seconds = kDefaultStartupDurationInSeconds;
     }

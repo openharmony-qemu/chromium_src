@@ -39,6 +39,11 @@ WebPreferences::WebPreferences() {
   // may be refined via resource files for the Chrome profile, in order to take
   // into account platform-specific availability of math fonts.
   math_font_family_map[web_pref::kCommonScript] = u"Latin Modern Math";
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  // To match platform convention like Windows, context menu should be shown
+  // on mouse up instead of mouse down for pc device.
+  context_menu_on_mouse_up = base::ohos::IsPcDevice();
+#endif
 }
 
 WebPreferences::WebPreferences(const WebPreferences& other) = default;

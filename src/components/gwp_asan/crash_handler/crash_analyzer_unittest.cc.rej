@@ -1,0 +1,15 @@
+--- crash_analyzer_unittest.cc	2025-10-20 19:52:53.013899547 +0800
++++ crash_analyzer_unittest.cc	2025-10-16 15:54:56.848248270 +0800
+@@ -52,11 +52,11 @@
+   auto* context = exception.MutableContext();
+   context->architecture = crashpad::kCPUArchitectureX86_64;
+   memset(context->x86_64, 0, sizeof(*context->x86_64));
+ #endif  // defined(ARCH_CPU_X86_64)
+ 
+-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_GWP_ASAN)
+   exception.SetException(SIGSEGV);
+ #if defined(ARCH_CPU_X86_64)
+   exception.SetExceptionInfo(SI_KERNEL);
+   exception.SetExceptionAddress(0);
+   context->x86_64->rax = address;

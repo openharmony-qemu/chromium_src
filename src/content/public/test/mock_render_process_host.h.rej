@@ -1,0 +1,31 @@
+--- mock_render_process_host.h	2025-10-20 19:52:54.582634581 +0800
++++ mock_render_process_host.h	2025-10-16 15:54:59.716462152 +0800
+@@ -161,10 +161,12 @@
+       WebRtcRtpPacketCallback packet_callback) override;
+   void BindReceiver(mojo::GenericPendingReceiver receiver) override;
+   std::unique_ptr<base::PersistentMemoryAllocator> TakeMetricsAllocator()
+       override;
+   const base::TimeTicks& GetLastInitTime() override;
++  base::TimeTicks timeTicksForMock = base::TimeTicks::Now();
++  const base::TimeTicks& ProcessBackgroundTime() override {return timeTicksForMock;}
+   base::Process::Priority GetPriority() override;
+   size_t GetWorkerRefCount() const;
+   std::string GetKeepAliveDurations() const override;
+   size_t GetShutdownDelayRefCount() const override;
+   int GetRenderFrameHostCount() const override;
+@@ -318,10 +320,15 @@
+ 
+   int foreground_service_worker_count() const {
+     return foreground_service_worker_count_;
+   }
+ 
++#if BUILDFLAG(ARKWEB_READER_MODE)
++  void UpdateReaderModeConfig(
++      const nweb_ex::BrowserReaderModeConfigData*) override {}
++#endif
++
+  private:
+   // Stores IPC messages that would have been sent to the renderer.
+   IPC::TestSink sink_;
+   int bad_msg_count_;
+   int id_;

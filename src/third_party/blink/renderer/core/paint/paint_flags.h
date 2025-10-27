@@ -5,6 +5,8 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_PAINT_PAINT_FLAGS_H_
 #define THIRD_PARTY_BLINK_RENDERER_CORE_PAINT_PAINT_FLAGS_H_
 
+#include "arkweb/build/features/features.h"
+
 namespace blink {
 
 // Using an anonymous enum under a namespace instead of an enum class to allow

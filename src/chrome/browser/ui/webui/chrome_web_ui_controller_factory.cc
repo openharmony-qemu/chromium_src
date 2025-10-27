@@ -290,7 +290,11 @@ void ChromeWebUIControllerFactory::GetFaviconForURL(
   ExtensionWebUI::HandleChromeURLOverride(&url, profile);
 
   // All extensions get their favicon from the icons part of the manifest.
-  if (url.SchemeIs(extensions::kExtensionScheme)) {
+  if (url.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      || url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+  ) {
     ExtensionWebUI::GetFaviconForURL(profile, url, std::move(callback));
     return;
   }
@@ -370,7 +374,11 @@ base::RefCountedMemory* ChromeWebUIControllerFactory::GetFaviconResourceBytes(
     ui::ResourceScaleFactor scale_factor) const {
 #if !BUILDFLAG(IS_ANDROID)
   // The extension scheme is handled in GetFaviconForURL.
-  if (page_url.SchemeIs(extensions::kExtensionScheme)) {
+  if (page_url.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      || page_url.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+  ) {
     NOTREACHED();
   }
 #endif

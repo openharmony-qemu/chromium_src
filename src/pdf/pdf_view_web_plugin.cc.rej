@@ -1,0 +1,17 @@
+--- pdf_view_web_plugin.cc	2025-10-20 19:52:57.374208671 +0800
++++ pdf_view_web_plugin.cc	2025-10-20 19:31:26.808081619 +0800
+@@ -1446,10 +1488,14 @@
+   return background_color_;
+ }
+ 
+ void PdfViewWebPlugin::SelectionChanged(const gfx::Rect& left,
+                                         const gfx::Rect& right) {
++#if BUILDFLAG(ARKWEB_PDF)
++  current_left_ = left;
++  current_right_ = right;
++#endif
+   gfx::PointF left_point(left.x() + available_area_.x(), left.y());
+   gfx::PointF right_point(right.x() + available_area_.x(), right.y());
+ 
+   const float inverse_scale = 1.0f / device_scale_;
+   left_point.Scale(inverse_scale);

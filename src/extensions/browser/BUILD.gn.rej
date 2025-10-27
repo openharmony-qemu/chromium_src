@@ -1,0 +1,14 @@
+--- BUILD.gn	2025-10-20 19:52:55.288678980 +0800
++++ BUILD.gn	2025-10-20 19:31:26.808081619 +0800
+@@ -6,10 +6,11 @@
+ import("//build/config/features.gni")
+ import("//components/guest_view/buildflags/buildflags.gni")
+ import("//extensions/buildflags/buildflags.gni")
+ import("//pdf/features.gni")
+ import("//testing/libfuzzer/fuzzer_test.gni")
++import("//arkweb/build/features/features.gni")
+ 
+ assert(enable_extensions_core)
+ 
+ # If enable_extensions is true then enable_guest_view must also be true.
+ assert(!enable_extensions || enable_guest_view)

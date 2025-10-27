@@ -7,6 +7,7 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/time/time.h"
 #include "mojo/public/cpp/bindings/struct_traits.h"

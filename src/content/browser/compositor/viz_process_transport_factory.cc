@@ -188,6 +188,13 @@ void VizProcessTransportFactory::ConnectHostFrameSinkManager() {
   }
 }
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+void VizProcessTransportFactory::SendInternalBeginFrame(
+    const viz::FrameSinkId& id) {
+  GetHostFrameSinkManager()->managerUtils->SendInternalBeginFrame(id);
+}
+#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
 void VizProcessTransportFactory::CreateLayerTreeFrameSink(
     base::WeakPtr<ui::Compositor> compositor) {
 #if BUILDFLAG(IS_WIN)
@@ -335,6 +342,16 @@ void VizProcessTransportFactory::OnEstablishedGpuChannel(
   bool gpu_compositing =
       !is_gpu_compositing_disabled_ && !compositor->force_software_compositor();
 
+#if BUILDFLAG(IS_ARKWEB)
+  if (!gpu_compositing) {
+    LOG(ERROR) << "Gpu compositor info, gpu_compositing: " << gpu_compositing
+               << " , is_gpu_compositing_disabled_: " << is_gpu_compositing_disabled_;
+  }
+  TRACE_EVENT2("base", "VizProcessTransportFactory::OnEstablishedGpuChannel",
+               "gpu_compositing", gpu_compositing,
+               "is_gpu_compositing_disabled_", is_gpu_compositing_disabled_);
+#endif
+
   if (gpu_compositing) {
     auto context_result = TryCreateContextsForGpuCompositing(gpu_channel_host);
     if (context_result == gpu::ContextResult::kTransientFailure) {
@@ -446,6 +463,11 @@ void VizProcessTransportFactory::OnEstablishedGpuChannel(
   GetHostFrameSinkManager()->CreateRootCompositorFrameSink(
       std::move(root_params), !using_direct_composition);
 #else
+
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+  root_params->send_swap_size_notifications = true;
+#endif  // BUILDFLAG(ARKWEb_COMPOSITE_RENDER)
+
   GetHostFrameSinkManager()->CreateRootCompositorFrameSink(
       std::move(root_params));
 #endif  // BUILDFLAG(IS_WIN)

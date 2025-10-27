@@ -1,0 +1,15 @@
+--- BUILD.gn	2025-10-20 19:52:56.550198332 +0800
++++ BUILD.gn	2025-10-16 15:55:01.766268347 +0800
+@@ -9,10 +9,12 @@
+ import("//mojo/public/tools/bindings/mojom.gni")
+ import("//testing/test.gni")
+ import("//third_party/protobuf/proto_library.gni")
+ import("//tools/ipc_fuzzer/ipc_fuzzer.gni")
+ 
++import("//arkweb/build/features/features.gni")
++
+ buildflag_header("ipc_buildflags") {
+   header = "ipc_buildflags.h"
+ 
+   flags = [ "IPC_MESSAGE_LOG_ENABLED=$enable_ipc_logging" ]
+ }

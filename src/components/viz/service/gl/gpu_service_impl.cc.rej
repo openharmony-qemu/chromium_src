@@ -1,0 +1,87 @@
+--- gpu_service_impl.cc	2025-10-20 19:52:54.146420452 +0800
++++ gpu_service_impl.cc	2025-10-16 15:54:59.244966770 +0800
+@@ -7,10 +7,11 @@
+ #include <memory>
+ #include <string>
+ #include <utility>
+ #include <vector>
+ 
++#include "arkweb/build/features/features.h"
+ #include "base/allocator/partition_alloc_support.h"
+ #include "base/command_line.h"
+ #include "base/feature_list.h"
+ #include "base/functional/bind.h"
+ #include "base/memory/scoped_refptr.h"
+@@ -143,10 +144,15 @@
+ 
+ #if BUILDFLAG(IS_OZONE)
+ #include "ui/ozone/public/ozone_platform.h"
+ #endif  // BUILDFLAG(IS_OZONE)
+ 
++#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
++#include "media/gpu/ohos/ohos_image_decode_accelerator_worker.h"
++#endif  // BUILDFLAG(ARKWEB_HEIF_SUPPORT)
++
++#include "arkweb/chromium_ext/components/viz/service/gl/gpu_service_impl_utils.cc"
+ namespace viz {
+ 
+ namespace {
+ 
+ // The names emitted for GPU initialization trace events.
+@@ -174,15 +180,17 @@
+ bool PreInitializeLogHandler(int severity,
+                              const char* file,
+                              int line,
+                              size_t message_start,
+                              const std::string& message);
++#if !BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+ bool PostInitializeLogHandler(int severity,
+                               const char* file,
+                               int line,
+                               size_t message_start,
+                               const std::string& message);
++#endif
+ 
+ // Class which manages LOG() message forwarding before and after GpuServiceImpl
+ // InitializeWithHost(). Prior to initialize, log messages are deferred and kept
+ // within the class. During initialize, InstallPostInitializeLogHandler() will
+ // be called to flush deferred messages and route new ones directly to GpuHost.
+@@ -244,11 +252,15 @@
+     DCHECK(!log_callback_);
+     log_callback_ = std::move(log_callback);
+     for (auto& log : deferred_messages_)
+       RouteMessage(log.severity, std::move(log.header), std::move(log.message));
+     deferred_messages_.clear();
++#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
++    logging::SetLogMessageHandler(nullptr);
++#else
+     logging::SetLogMessageHandler(PostInitializeLogHandler);
++#endif
+   }
+ 
+   // Called when it's no longer safe to invoke |log_callback_|.
+   void ShutdownLogging() {
+     logging::SetLogMessageHandler(nullptr);
+@@ -277,20 +289,22 @@
+                                              message.substr(0, message_start),
+                                              message.substr(message_start));
+   return false;
+ }
+ 
++#if !BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+ bool PostInitializeLogHandler(int severity,
+                               const char* file,
+                               int line,
+                               size_t message_start,
+                               const std::string& message) {
+   GetLogMessageManager()->RouteMessage(severity,
+                                        message.substr(0, message_start),
+                                        message.substr(message_start));
+   return false;
+ }
++#endif
+ 
+ bool IsAcceleratedJpegDecodeSupported() {
+ #if BUILDFLAG(IS_CHROMEOS_ASH)
+   return chromeos_camera::GpuMjpegDecodeAcceleratorFactory::
+       IsAcceleratedJpegDecodeSupported();

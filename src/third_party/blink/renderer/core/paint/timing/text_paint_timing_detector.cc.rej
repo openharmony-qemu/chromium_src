@@ -1,0 +1,81 @@
+--- text_paint_timing_detector.cc	2025-10-20 19:53:00.614207935 +0800
++++ text_paint_timing_detector.cc	2025-10-16 16:07:39.622101201 +0800
+@@ -92,10 +92,13 @@
+   // |WeakPersistent| guarantees that when |this| is killed,
+   // the callback function will not be invoked.
+   RegisterNotifyPresentationTime(
+       WTF::BindOnce(&TextPaintTimingDetector::ReportPresentationTime,
+                     WrapWeakPersistent(this), frame_index_++));
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  frame_view_->GetPaintTimingDetector().SyncTPTDFrameIdxToBLTPTD(frame_index_);
++#endif
+   added_entry_in_latest_frame_ = false;
+ }
+ 
+ void TextPaintTimingDetector::LayoutObjectWillBeDestroyed(
+     const LayoutObject& object) {
+@@ -193,20 +196,25 @@
+   if (RuntimeEnabledFeatures::WebFontResizeLCPEnabled()) {
+     if (aggregator.StyleRef().GetFont().HasCustomFont()) {
+       rewalkable_set_.insert(&aggregator);
+     }
+   }
+-
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  if (!is_for_blankless_only_) {
++#endif
+   LocalFrame& frame = frame_view_->GetFrame();
+   if (LocalDOMWindow* window = frame.DomWindow()) {
+     if (SoftNavigationHeuristics* heuristics =
+             SoftNavigationHeuristics::From(*window)) {
+       heuristics->RecordPaint(
+           &frame, mapped_visual_rect.size().GetArea(),
+           aggregator.GetNode()->IsModifiedBySoftNavigation());
+     }
+   }
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  }
++#endif
+   recorded_set_.insert(&aggregator);
+   MaybeRecordTextRecord(aggregator, aggregated_size, property_tree_state,
+                         aggregated_visual_rect, mapped_visual_rect);
+   if (std::optional<PaintTimingVisualizer>& visualizer =
+           frame_view_->GetPaintTimingDetector().Visualizer()) {
+@@ -230,14 +238,20 @@
+   TextRecord* record = ltp_manager_->PopLargestIgnoredText();
+   // If the content has been removed, abort. It was never visible.
+   if (!record || !record->node_ || !record->node_->GetLayoutObject())
+     return;
+ 
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  if (!is_for_blankless_only_) {
++#endif
+   // Trigger FCP if it's not already set.
+   Document* document = frame_view_->GetFrame().GetDocument();
+   DCHECK(document);
+   PaintTiming::From(*document).MarkFirstContentfulPaint();
++#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
++  }
++#endif
+ 
+   record->frame_index_ = frame_index_;
+   QueueToMeasurePaintTime(*record->node_->GetLayoutObject(), record);
+ }
+ 
+@@ -302,10 +316,16 @@
+ 
+     if (ltp_manager_ && (record->recorded_size > 0u) &&
+         !(record->node_ &&
+           ltp_manager_->IsUnrelatedSoftNavigationPaint(*(record->node_)))) {
+       ltp_manager_->MaybeUpdateLargestText(record);
++#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
++      auto first_screen_calculator = frame_view_->GetPaintTimingDetector().GetFirstScreenCalculator();
++      if (first_screen_calculator) {
++        first_screen_calculator->NotifyTextPaint(record, timestamp);
++      }
++#endif
+     }
+     keys_to_be_removed.push_back(it.key);
+   }
+   texts_queued_for_paint_time_.RemoveAll(keys_to_be_removed);
+ }

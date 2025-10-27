@@ -1,0 +1,28 @@
+--- pdfium_test.cc	2025-10-20 19:53:19.667991304 +0800
++++ pdfium_test.cc	2025-10-16 16:15:55.975940203 +0800
+@@ -332,11 +332,11 @@
+   return 4;
+ }
+ 
+ int ExampleDocGetFilePath(IPDF_JSPLATFORM*, void* file_path, int length) {
+   static const char kPath[] = "myfile.pdf";
+-  static constexpr int kRequired = static_cast<int>(sizeof(kPath));
++  constexpr int kRequired = static_cast<int>(sizeof(kPath));
+   if (file_path && length >= kRequired)
+     memcpy(file_path, kPath, kRequired);
+   return kRequired;
+ }
+ 
+@@ -384,11 +384,11 @@
+   printf("Goto Page: %d\n", page_number);
+ }
+ 
+ int ExampleFieldBrowse(IPDF_JSPLATFORM*, void* file_path, int length) {
+   static const char kPath[] = "selected.txt";
+-  static constexpr int kRequired = static_cast<int>(sizeof(kPath));
++  constexpr int kRequired = static_cast<int>(sizeof(kPath));
+   if (file_path && length >= kRequired)
+     memcpy(file_path, kPath, kRequired);
+   return kRequired;
+ }
+ #endif  // PDF_ENABLE_V8

@@ -166,7 +166,6 @@ void OhosHttpsUpgradesInterceptor::MaybeCreateLoader(
   if (!tab_helper) {
     HttpsOnlyModeTabHelper::CreateForWebContents(web_contents);
   }
-  auto* https_helper = OhosHttpsUpgradesHelper::FromWebContents(web_contents);
 
   // Exclude HTTPS URLs.
   if (tentative_resource_request.url.SchemeIs(url::kHttpsScheme)) {
@@ -205,6 +204,7 @@ void OhosHttpsUpgradesInterceptor::MaybeCreateLoader(
     // Chrome shows the HTTP interstitial before navigation to them.
     // Potentially, these could fast-fail instead and skip directly to the
     // interstitial.
+    auto* https_helper = OhosHttpsUpgradesHelper::FromWebContents(web_contents);
     if (!https_helper || !(https_helper->should_upgrade_to_https())) {
       std::move(callback).Run({});
       return;

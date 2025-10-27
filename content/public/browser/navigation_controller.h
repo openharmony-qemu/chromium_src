@@ -154,6 +154,7 @@ class NavigationController {
       BrowserContext* browser_context,
       scoped_refptr<network::SharedURLLoaderFactory> blob_url_loader_factory
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      , GURL* url_to_rewrite = nullptr
       , NavigationControllerDelegate* delegate = nullptr
 #endif
       );

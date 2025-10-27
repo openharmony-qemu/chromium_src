@@ -362,7 +362,10 @@ void FencedFrame::DidChangeFramePolicy(const blink::FramePolicy& frame_policy) {
 }
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-std::string FencedFrame::NotifyNavigationRewriteUrl(const std::string& original_url, const std::string& referrer) { return ""; }
+std::string FencedFrame::NotifyNavigationRewriteUrl(const std::string& original_url,
+                                                    const std::string& referrer,
+                                                    int transition_type,
+                                                    bool is_key_request) { return ""; }
 #endif
 
 }  // namespace content

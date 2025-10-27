@@ -441,14 +441,15 @@ blink::mojom::NavigationType GetNavigationType(
 // Adjusts the original input URL if needed, to get the URL to actually load and
 // the virtual URL, which may differ.
 void RewriteUrlForNavigation(const GURL& original_url,
-#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-                             const GURL& referrer,
-#endif
                              BrowserContext* browser_context,
                              GURL* url_to_load,
                              GURL* virtual_url,
                              bool* reverse_on_redirect
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+                             , const GURL& referrer
+                             , ui::PageTransition transition_type
+                             , bool is_key_request
+                             , GURL* url_to_rewrite
                              , NavigationControllerDelegate* delegate
 #endif
 ) {
@@ -463,8 +464,12 @@ void RewriteUrlForNavigation(const GURL& original_url,
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kEnableNwebEx) &&
       OhosUrlRewriteController::IsRewriteUrlEnabled()) {
     if (delegate) {
-      std::string result = delegate->NotifyNavigationRewriteUrl(original_url.spec(), referrer.spec());
+      std::string result =
+          delegate->NotifyNavigationRewriteUrl(original_url.spec(), referrer.spec(), transition_type, is_key_request);
       if (!result.empty()) {
+        if (url_to_rewrite != nullptr) {
+          *url_to_rewrite = GURL(result);
+        }
         *url_to_load = *virtual_url = GURL(result);
       }
     }
@@ -639,6 +644,7 @@ std::unique_ptr<NavigationEntry> NavigationController::CreateNavigationEntry(
     BrowserContext* browser_context,
     scoped_refptr<network::SharedURLLoaderFactory> blob_url_loader_factory
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    , GURL*url_to_rewrite
     , NavigationControllerDelegate* delegate
 #endif
 ) {
@@ -648,7 +654,7 @@ std::unique_ptr<NavigationEntry> NavigationController::CreateNavigationEntry(
       is_renderer_initiated, extra_headers, browser_context,
       std::move(blob_url_loader_factory), true /* rewrite_virtual_urls */
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-      , delegate
+      , url_to_rewrite, delegate
 #endif
       );
 }
@@ -668,6 +674,7 @@ NavigationControllerImpl::CreateNavigationEntry(
     scoped_refptr<network::SharedURLLoaderFactory> blob_url_loader_factory,
     bool rewrite_virtual_urls
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    , GURL* url_to_rewrite
     , NavigationControllerDelegate* delegate
 #endif
 ) {
@@ -676,8 +683,8 @@ NavigationControllerImpl::CreateNavigationEntry(
   bool reverse_on_redirect = false;
   if (rewrite_virtual_urls) {
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-    RewriteUrlForNavigation(url, referrer.url, browser_context, &url_to_load, &virtual_url,
-                            &reverse_on_redirect, delegate);
+    RewriteUrlForNavigation(url, browser_context, &url_to_load, &virtual_url,
+                            &reverse_on_redirect, referrer.url, transition, true, url_to_rewrite, delegate);
 #else
     RewriteUrlForNavigation(url, browser_context, &url_to_load, &virtual_url,
                             &reverse_on_redirect);
@@ -2900,7 +2907,7 @@ void NavigationControllerImpl::NavigateFromFrameProxy(
         extra_headers, browser_context_, blob_url_loader_factory,
         rewrite_virtual_urls
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-        , delegate_
+        , nullptr, delegate_
 #endif
         ));
     entry->root_node()->frame_entry->set_source_site_instance(
@@ -3947,7 +3954,7 @@ NavigationControllerImpl::CreateNavigationEntryFromLoadParams(
         extra_headers_crlf, browser_context_, blob_url_loader_factory,
         rewrite_virtual_urls
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-        , delegate_
+        , nullptr, delegate_
 #endif
         ));
     entry->set_source_site_instance(
@@ -4033,8 +4040,9 @@ NavigationControllerImpl::CreateNavigationRequestFromLoadParams(
   if (node->IsOutermostMainFrame()) {
     bool ignored_reverse_on_redirect = false;
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-    RewriteUrlForNavigation(params.url, params.referrer.url, browser_context_, &url_to_load,
-                            &virtual_url, &ignored_reverse_on_redirect, delegate_);
+    RewriteUrlForNavigation(params.url, browser_context_, &url_to_load,
+                            &virtual_url, &ignored_reverse_on_redirect,
+                            params.referrer.url, params.transition_type, false, nullptr, delegate_);
 #else
     RewriteUrlForNavigation(params.url, browser_context_, &url_to_load,
                             &virtual_url, &ignored_reverse_on_redirect);

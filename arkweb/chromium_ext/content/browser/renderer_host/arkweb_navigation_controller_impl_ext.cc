@@ -197,7 +197,7 @@ ArkWebNavigationControllerImplExt::InsertBackForwardEntry(int index, const GURL&
               ui::PAGE_TRANSITION_FORWARD_BACK, false, std::string(),
               browser_context_, nullptr
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-              , delegate_
+              , nullptr, delegate_
 #endif
               ));
   std::unique_ptr<content::NavigationEntryRestoreContext> context =

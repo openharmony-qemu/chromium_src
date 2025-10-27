@@ -175,7 +175,9 @@ void GuestPageHolderImpl::UpdateOverridingUserAgent() {
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 std::string GuestPageHolderImpl::NotifyNavigationRewriteUrl(const std::string& original_url,
-                                                            const std::string& referrer) { return ""; }
+                                                            const std::string& referrer,
+                                                            int transition_type,
+                                                            bool is_key_request) { return ""; }
 #endif
 
 ForwardingAudioStreamFactory* GuestPageHolderImpl::GetAudioStreamFactory() {

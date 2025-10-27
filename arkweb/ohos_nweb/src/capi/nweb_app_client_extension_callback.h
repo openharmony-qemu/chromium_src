@@ -137,6 +137,8 @@ struct NWebAppClientExtensionCallback {
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   const char* (*OnRewriteUrlForNavigation)(const char* original_url,
                                            const char* referrer,
+                                           int transition_type,
+                                           bool is_key_request,
                                            int32_t nweb_id);
 #endif
 };

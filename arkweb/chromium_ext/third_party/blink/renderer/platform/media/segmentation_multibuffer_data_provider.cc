@@ -43,7 +43,7 @@
 
 namespace blink {
 // bitRate < 1000kb/s, slice size=256KB(8 blocks)
- // 1000kb/s <= bitRate < 2000kb/s, slice size=256KB(16 blocks)
+// 1000kb/s <= bitRate < 2000kb/s, slice size=256KB(16 blocks)
 // bitRate > 2000kb/s, slice size=512KB(24 blocks)
 const uint16_t low_byte_rate = 125;
 const uint16_t high_byte_rate = 250;
@@ -129,7 +129,7 @@ void SegmentationMultiBufferDataProvider::StartRequest(int64_t start) {
   read_index_ = 0;
 
   if (start == 0) {
-    LOG(INFO) << "VideoOpt: StartRequest: start:" << start << ", cur_end_:" << cur_end_; // Todo-LWY
+    LOG(DEBUG) << "VideoOpt: StartRequest: start:" << start << ", cur_end_:" << cur_end_;
     range_vector_.push_back(std::make_pair(start, cur_end_));
     std::unique_ptr<VideoRangeURLLoaderClient> client =
         std::make_unique<VideoRangeURLLoaderClient>(this, start, cur_end_, id_,
@@ -146,7 +146,8 @@ void SegmentationMultiBufferDataProvider::StartRequest(int64_t start) {
       end = start + (range_size_ << block_size_shift()) - 1;
       end = end > cur_end_ ? cur_end_ : end;
 
-      LOG(INFO) << "VideoOpt: StartRequest: start:" << start << ", end_" << end << ", range_size_:" << range_size_; // Todo-LWY
+      LOG(DEBUG) << "VideoOpt: StartRequest: start:" << start << ", end_" << end 
+                 << ", range_size_:" << range_size_;
       range_vector_.push_back(std::make_pair(start, end));
       std::unique_ptr<VideoRangeURLLoaderClient> client =
           std::make_unique<VideoRangeURLLoaderClient>(this, start, end, id_,

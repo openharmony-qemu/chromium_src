@@ -382,22 +382,8 @@ void VideoRangeURLLoaderClient::DidReceiveResponse(
   // This is vital for security!
   destination_url_data->set_is_cors_cross_origin(
       network::cors::IsCorsCrossOriginResponseType(response_type));
-
-//   TODO-LWY
-//   destination_url_data->SetFailedByRedirectWithCors(
-//       provider_->urlData()->IsFailedByRedirectWithCors(),
-//       provider_->urlData()->GetFailedByRedirectWithCorsDetails());
-//   destination_url_data->SetMediaEnhanced(
-//       provider_->urlData()->IsMediaEnhanced());
-//   destination_url_data->SetOnlineState(
-//       provider_->urlData()->GetOldOnlineState(),
-//       provider_->urlData()->GetNewOnlineState());
-//   destination_url_data->SetIsFailedAfterRetry(
-//       provider_->urlData()->IsFailedAfterRetry());
-//   destination_url_data->OnReportTimeout(
-//       provider_->urlData()->GetReportTimeout());
-//   destination_url_data->SetMediaWebURLErrorCB(
-//       provider_->urlData()->GetMediaWebURLErrorCB());
+  destination_url_data->SetMediaWebURLErrorCB(
+      provider_->urlData()->GetMediaWebURLErrorCB());
 
   // Only used for metrics.
   {
@@ -648,6 +634,7 @@ void VideoRangeURLLoaderClient::DidFail(const blink::WebURLError& error) {
   } else {
     // We don't need to continue loading after failure.
     // Note that calling Fail() will most likely delete this object.
+    provider_->urlData()->NotifyMediaWebURLError(error.reason());
     provider_->urlData()->Fail();
     LOG(INFO) << "VideoOpt" 
               << "(hash" << std::hex << base::FastHash(base::byte_span_from_ref(this)) << ")"

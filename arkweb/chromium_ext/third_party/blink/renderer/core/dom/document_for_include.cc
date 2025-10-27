@@ -46,7 +46,7 @@ void Document::setVideoPriority(const HeapVector<Member<VideoPriority>>& vec) {
 }
 
 void Document::SetVideoIsPlaying(std::string id, bool playing) {
-  LOG(INFO) << "VideoOpt, Document SetVideoIsPlaying, id: " << id << ", playing:" << playing;
+  LOG(DEBUG) << "VideoOpt, Document SetVideoIsPlaying, id: " << id << ", playing:" << playing;
   if (GetFrame()) {
     GetFrame()->SetVideoIsPlaying(id, playing);
   }

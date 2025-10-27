@@ -524,6 +524,7 @@ TEST_F(ArkWebRenderFrameImplTest, GetNewWindowWebView_True) {
   EXPECT_EQ(result, false);
 }
 
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
 TEST_F(ArkWebRenderFrameImplTest, VideoLoadOpt_IsVideoLoadOptimizationEnabledTest) {
   std::string url = "https://www.baidu.com/";
   auto* frame_host = TestGetFrameHost();
@@ -580,5 +581,6 @@ TEST_F(ArkWebRenderFrameImplTest, VideoLoadOpt_SetNewsFeedPageFittedTest) {
   SetFrameHostForTest(frame_host);
   GetMainRenderFrame()->SetNewsFeedPageFitted();
 }
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
 }  // namespace content

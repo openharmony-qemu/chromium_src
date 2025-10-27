@@ -537,7 +537,6 @@ int32_t CertManagerAdapterImpl::SignUsingHuks(const std::string& identity, const
  
     uint64_t handleValue = 0;
     struct OH_Huks_Blob handleSign = {sizeof(uint64_t), (uint8_t *)&handleValue};
-    WVLOG_E("CertManagerAdapterImpl::SignHuks2, keyAlias = %{public}s ", (char*) keyAlias.data);
     result = OH_Huks_InitSession(&keyAlias, paramSet, &handleSign, nullptr);
     if (result.errorCode != OH_HUKS_SUCCESS) {
         WVLOG_E("SignHuks, init session failed, errorCode = %{public}d ", result.errorCode);

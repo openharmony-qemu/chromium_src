@@ -459,7 +459,10 @@ cp "./arkweb/ohos_adapter_ndk/stub/network/netstack/net_ssl/lib/arm-linux-ohos/l
 
 cp "./arkweb/ohos_adapter_ndk/stub/huks/include/native_huks_external_crypto_api.h" "./ohos_sdk/openharmony/native/sysroot/usr/include/huks/native_huks_external_crypto_api.h"
 cp "./arkweb/ohos_adapter_ndk/stub/huks/include/native_huks_external_crypto_type.h" "./ohos_sdk/openharmony/native/sysroot/usr/include/huks/native_huks_external_crypto_type.h"
+<<<<<<< HEAD
 cp "./arkweb/ohos_adapter_ndk/stub/huks/include/native_huks_type.h" "./ohos_sdk/openharmony/native/sysroot/usr/include/huks/native_huks_type.h"
+=======
+>>>>>>> b8f93188e970345d5f9b5d238b6516ea1d9dd066
  
 mkdir -p "./ohos_sdk/openharmony/native/sysroot/usr/include/certificate_manager"
 cp "./arkweb/ohos_adapter_ndk/stub/certificate_manager/include/cm_native_api.h" "./ohos_sdk/openharmony/native/sysroot/usr/include/certificate_manager/cm_native_api.h"

@@ -49,7 +49,7 @@ class OhosHttpsUpgradesInterceptor : public content::URLLoaderRequestInterceptor
   static std::unique_ptr<OhosHttpsUpgradesInterceptor> MaybeCreateInterceptor(
       content::FrameTreeNodeId frame_tree_node_id);
 
-  explicit hosHttpsUpgradesInterceptor(
+  explicit OhosHttpsUpgradesInterceptor(
       content::FrameTreeNodeId frame_tree_node_id);
   ~OhosHttpsUpgradesInterceptor() override;
 

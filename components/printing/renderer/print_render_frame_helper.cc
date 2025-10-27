@@ -1295,7 +1295,11 @@ void PrintRenderFrameHelper::PrintRequestedPagesInternal(
   blink::WebLocalFrame* frame = render_frame()->GetWebFrame();
 
 #if BUILDFLAG(ARKWEB_PRINT)
-  frame = static_web_frame_;
+  if (static_web_frame_) {
+    frame = static_web_frame_;
+  } else {
+    LOG(INFO) << "OhosPrintManager static web frame is null";
+  }
 #endif // BUILDFLAG(ARKWEB_PRINT)
 
   if (!already_notified_frame) {

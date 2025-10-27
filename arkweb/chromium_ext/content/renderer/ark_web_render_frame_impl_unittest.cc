@@ -97,6 +97,15 @@ class MockFrameHostForArkWeb : public mojom::FrameHost {
   MOCK_METHOD(void, CloseImageOverlaySelection, ());
   MOCK_METHOD(void, OnPdfScrollAtBottom, (const std::string& url));
   MOCK_METHOD(void, OnPdfLoadEvent, (int32_t result, const std::string& url));
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  MOCK_METHOD(bool, IsVideoLoadOptimizationEnabled, (const std::string& url));
+  MOCK_METHOD(int, GetVideoPreloadTimeDefault, (), (const));
+  MOCK_METHOD(int, GetVideoMinCacheTimeDefault, (), (const));
+  MOCK_METHOD(int, GetVideoMaxCacheTimeDefault, (), (const));
+  MOCK_METHOD(int, GetVideoMoovSizeDefault, (), (const));
+  MOCK_METHOD(int, GetVideoBitrateDefault, (), (const));
+  MOCK_METHOD(bool, SetNewsFeedPageFitted, ());
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 };
 
 class MockWebDocumentSubresourceFilter : public blink::WebDocumentSubresourceFilter {
@@ -513,6 +522,63 @@ TEST_F(ArkWebRenderFrameImplTest, GetNewWindowWebView_True) {
   auto result = TestGetNewWindowWebView(target_url,
       blink::WebNavigationPolicy::kWebNavigationPolicyNewWindow, allow_popup);
   EXPECT_EQ(result, false);
+}
+
+TEST_F(ArkWebRenderFrameImplTest, VideoLoadOpt_IsVideoLoadOptimizationEnabledTest) {
+  std::string url = "https://www.baidu.com/";
+  auto* frame_host = TestGetFrameHost();
+  SetFrameHostForTest(nullptr);
+  GetMainRenderFrame()->IsVideoLoadOptimizationEnabled(url);
+  SetFrameHostForTest(frame_host);
+  GetMainRenderFrame()->IsVideoLoadOptimizationEnabled(url);
+}
+
+TEST_F(ArkWebRenderFrameImplTest, VideoLoadOpt_GetVideoPreloadTimeDefaultTest) {
+  auto* frame_host = TestGetFrameHost();
+  SetFrameHostForTest(nullptr);
+  GetMainRenderFrame()->GetVideoPreloadTimeDefault();
+  SetFrameHostForTest(frame_host);
+  GetMainRenderFrame()->GetVideoPreloadTimeDefault();
+}
+
+TEST_F(ArkWebRenderFrameImplTest, VideoLoadOpt_GetVideoMinCacheTimeDefaultTest) {
+  auto* frame_host = TestGetFrameHost();
+  SetFrameHostForTest(nullptr);
+  GetMainRenderFrame()->GetVideoMinCacheTimeDefault();
+  SetFrameHostForTest(frame_host);
+  GetMainRenderFrame()->GetVideoMinCacheTimeDefault();
+}
+
+TEST_F(ArkWebRenderFrameImplTest, VideoLoadOpt_GetVideoMaxCacheTimeDefaultTest) {
+  auto* frame_host = TestGetFrameHost();
+  SetFrameHostForTest(nullptr);
+  GetMainRenderFrame()->GetVideoMaxCacheTimeDefault();
+  SetFrameHostForTest(frame_host);
+  GetMainRenderFrame()->GetVideoMaxCacheTimeDefault();
+}
+
+TEST_F(ArkWebRenderFrameImplTest, VideoLoadOpt_GetVideoMoovSizeDefaultTest) {
+  auto* frame_host = TestGetFrameHost();
+  SetFrameHostForTest(nullptr);
+  GetMainRenderFrame()->GetVideoMoovSizeDefault();
+  SetFrameHostForTest(frame_host);
+  GetMainRenderFrame()->GetVideoMoovSizeDefault();
+}
+
+TEST_F(ArkWebRenderFrameImplTest, VideoLoadOpt_GetVideoBitrateDefaultTest) {
+  auto* frame_host = TestGetFrameHost();
+  SetFrameHostForTest(nullptr);
+  GetMainRenderFrame()->GetVideoBitrateDefault();
+  SetFrameHostForTest(frame_host);
+  GetMainRenderFrame()->GetVideoBitrateDefault();
+}
+
+TEST_F(ArkWebRenderFrameImplTest, VideoLoadOpt_SetNewsFeedPageFittedTest) {
+  auto* frame_host = TestGetFrameHost();
+  SetFrameHostForTest(nullptr);
+  GetMainRenderFrame()->SetNewsFeedPageFitted();
+  SetFrameHostForTest(frame_host);
+  GetMainRenderFrame()->SetNewsFeedPageFitted();
 }
 
 }  // namespace content

@@ -313,6 +313,7 @@ if (defined(enable_arkweb_ext) && enable_arkweb_ext) {
   arkweb_mojo_features += [
     "arkweb_ext_network_connection",
     "arkweb_ext_http_dns_fallback",
+    "arkweb_ext_video_load_optimization",
   ]
 }  #endif  // BUILDFLAG(ARKWEB_EXT)
 

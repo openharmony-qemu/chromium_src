@@ -137,4 +137,53 @@ void RenderFrameImpl::OnPdfLoadEvent(int32_t result, const std::string& url) {
   }
 }
 #endif  // BUILDFLAG(ARKWEB_PDF)
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+bool RenderFrameImpl::IsVideoLoadOptimizationEnabled(const std::string& url) {
+  if (auto* thread = RenderThreadImpl::current()) {
+    return thread->IsVideoLoadOptimizationEnabled(url);
+  }
+  return false;
+}
+
+int RenderFrameImpl::GetVideoPreloadTimeDefault() const {
+  if (auto* thread = RenderThreadImpl::current()) {
+    return thread->GetVideoPreloadTimeDefault();
+  }
+  return INT_MAX;
+}
+
+int RenderFrameImpl::GetVideoMinCacheTimeDefault() const {
+  if (auto* thread = RenderThreadImpl::current()) {
+    return thread->GetVideoMinCacheTimeDefault();
+  }
+  return INT_MAX;
+}
+
+int RenderFrameImpl::GetVideoMaxCacheTimeDefault() const {
+  if (auto* thread = RenderThreadImpl::current()) {
+    return thread->GetVideoMaxCacheTimeDefault();
+  }
+  return INT_MAX;
+}
+
+int RenderFrameImpl::GetVideoMoovSizeDefault() const {
+  if (auto* thread = RenderThreadImpl::current()) {
+    return thread->GetVideoMoovSizeDefault();
+  }
+  return INT_MAX;
+}
+
+int RenderFrameImpl::GetVideoBitrateDefault() const {
+  if (auto* thread = RenderThreadImpl::current()) {
+    return thread->GetVideoBitrateDefault();
+  }
+  return INT_MAX;
+}
+
+bool RenderFrameImpl::SetNewsFeedPageFitted() {
+  return media_factory_.SetNewsFeedPageFitted();
+}
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
 // LCOV_EXCL_STOP

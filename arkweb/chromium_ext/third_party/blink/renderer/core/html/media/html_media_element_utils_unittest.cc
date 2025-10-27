@@ -418,6 +418,14 @@ class MockWebMediaPlayerClient : public MediaPlayerClient {
   MOCK_METHOD0(OnRequestVideoFrameCallback, void());
   MOCK_METHOD0(GetElementId, int());
   MOCK_METHOD0(ScheduleVideoFreezeEvent, void());
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  MOCK_METHOD0(videoId, std::string());
+  MOCK_METHOD0(hbsMediaPreloadTime, uint16_t());
+  MOCK_METHOD0(hbsMediaMaxCacheTime, uint16_t());
+  MOCK_METHOD0(hbsMediaMinCacheTime, uint16_t());
+  MOCK_METHOD0(hbsMediaBitrate, uint16_t());
+  MOCK_METHOD0(hbsMediaMoovSize, uint16_t());
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 };
 
 TEST_F(HTMLMediaElementUtilsTest, TestDidPlayerMutedStatusChangeExt) {
@@ -926,6 +934,22 @@ TEST_F(HTMLMediaElementUtilsTest, TestOnVolumeChanged) {
   EXPECT_EQ(Media()->IsCustomMediaPlayerEnabled(), true);
   ASSERT_NO_FATAL_FAILURE(element_utils_two_.OnVolumeChanged(1.01));
 }
-
 #endif  // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+TEST_F(HTMLMediaElementUtilsTest, VideoLoadOpt_IsUseVideoLoadOptimizationTest) {
+  media_ =
+      MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
+  HTMLMediaElementUtils* element_utils_ = new HTMLMediaElementUtils(Media());
+  EXPECT_EQ(element_utils_->IsUseVideoLoadOptimization(), false);
+}
+
+TEST_F(HTMLMediaElementUtilsTest, VideoLoadOpt_SetVideoIsPlayingTest) {
+  media_ =
+      MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
+  HTMLMediaElementUtils* element_utils_ = new HTMLMediaElementUtils(Media());
+  ASSERT_NO_FATAL_FAILURE(element_utils_->SetVideoIsPlaying(true));
+}
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
 }  // namespace blink

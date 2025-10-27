@@ -170,4 +170,33 @@ void ArkwebRenderProcessHostImplExt::UpdateReaderModeConfig(
   renderer_interface->UpdateReaderModeConfig(std::move(config));
 }
 #endif  // ARKWEB_READER_MODE
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+void ArkwebRenderProcessHostImplExt::UpdateVideoLoadOptimizationConfigData(
+    nweb_ex::AlloyVideoLoadOptimizationData& data) {
+  content::RenderProcessHost::iterator it =
+      content::RenderProcessHost::AllHostsIterator();
+  while (!it.IsAtEnd()) {
+    content::RenderProcessHost* host = it.GetCurrentValue();
+    if (host && host->IsInitializedAndNotDead()) {
+      host->UpdateVideoLoadOptimizationConfig(data);
+    }
+    it.Advance();
+  }
+}
+
+void ArkwebRenderProcessHostImplExt::UpdateVideoLoadOptimizationConfig(
+    nweb_ex::AlloyVideoLoadOptimizationData& data) {
+  auto* renderer_interface = GetRendererInterface();
+  if (!renderer_interface) {
+    LOG(WARNING) << "UpdateVideoLoadOptimizationConfig interface is null";
+    return;
+  }
+  LOG(INFO) << "VideoOpt: UpdateVideoLoadOptimizationConfig";
+  renderer_interface->UpdateVideoLoadOptimizationConfigData(data.use_video_load_optimization_,
+      data.preload_video_time_, data.min_cache_time_,
+      data.max_cache_time_, data.moov_size_, data.bit_rate_, data.support_domains_);
+}
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
 }  // namespace content

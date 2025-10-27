@@ -496,6 +496,9 @@ std::unique_ptr<blink::WebMediaPlayer> MediaFactory::CreateMediaPlayer(
     media_player_builder_ = std::make_unique<blink::WebMediaPlayerBuilder>(
         *web_frame,
         render_frame_->GetTaskRunner(blink::TaskType::kInternalMedia));
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+    media_player_builder_->SetNewsFeedPageFitted(news_feed_page_fitted_);
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
   }
 
   return media_player_builder_->Build(

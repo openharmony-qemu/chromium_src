@@ -326,6 +326,10 @@ class MockRenderProcessHost : public RenderProcessHost {
   void UpdateReaderModeConfig(
       const nweb_ex::BrowserReaderModeConfigData*) override {}
 #endif
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  void UpdateVideoLoadOptimizationConfig(
+      nweb_ex::AlloyVideoLoadOptimizationData&) override {}
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
  private:
   // Stores IPC messages that would have been sent to the renderer.

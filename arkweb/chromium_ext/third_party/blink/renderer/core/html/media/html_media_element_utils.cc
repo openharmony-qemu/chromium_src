@@ -16,10 +16,12 @@
 #include "arkweb/chromium_ext/third_party/blink/renderer/core/html/media/html_media_element_utils.h"
 
 #include "arkweb/build/features/features.h"
+#include "third_party/blink/public/web/web_local_frame_client.h"
 #include "third_party/blink/renderer/core/page/page.h"
 #include "third_party/blink/renderer/core/frame/local_dom_window.h"
 #include "third_party/blink/renderer/core/frame/local_frame.h"
 #include "third_party/blink/renderer/core/frame/local_frame_client.h"
+#include "third_party/blink/renderer/core/frame/web_local_frame_impl.h"
 #include "third_party/blink/renderer/core/html/media/media_error.h"
 #include "third_party/blink/renderer/core/frame/settings.h"
 #include "third_party/blink/renderer/core/html/media/html_media_element_controls_list.h"
@@ -154,7 +156,7 @@ double HTMLMediaElementUtils::freezeTime() {
   freeze_time_recorder_.Reset();
   return total_freeze_time.InMillisecondsF();
 }
-#endif
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 // LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
@@ -508,4 +510,15 @@ void HTMLMediaElementUtils::Trace(Visitor* visitor) const {
   visitor->Trace(htmlMediaElement_);
 }
 
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+bool HTMLMediaElementUtils::IsUseVideoLoadOptimization() const {
+  return htmlMediaElement_->GetDocument().IsUseVideoLoadOptimization();
+}
+
+void HTMLMediaElementUtils::SetVideoIsPlaying(bool playing) {
+  std::string videoStr = htmlMediaElement_->videoId();
+  LOG(INFO) << "VideoOpt SetVideoIsPlaying, videoId:" << videoStr << ", playing:" << playing;
+  htmlMediaElement_->GetDocument().SetVideoIsPlaying(videoStr, playing);
+}
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 }

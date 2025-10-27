@@ -136,4 +136,56 @@ void LocalFrame::SetHasGenericHideTypeOption(bool has_generichide_type_option) {
 #endif
 // LCOV_EXCL_STOP
 
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+bool LocalFrame::IsVideoPrioritySupported() {
+  KURL url;
+  if (GetDocument()) {
+    url = GetDocument()->Url();
+  }
+
+  GURL main_url;
+  if (!url.IsEmpty() && url.IsValid()) {
+    main_url = GURL(url.GetString().Utf8().data());
+  }
+  std::string surl = main_url.DeprecatedGetOriginAsURL().spec();
+
+  if (Client() && Client()->GetWebFrame() &&
+      Client()->GetWebFrame()->Client()) {
+    WebLocalFrameClient* client = Client()->GetWebFrame()->Client();
+    return client->AsWebLocalFrameClientExt()->IsVideoLoadOptimizationEnabled(surl);
+  }
+  return false;
+}
+
+bool LocalFrame::SetNewsFeedPageFitted() {
+  if (Client() && Client()->GetWebFrame() &&
+      Client()->GetWebFrame()->Client()) {
+    WebLocalFrameClient* client = Client()->GetWebFrame()->Client();
+    return client->AsWebLocalFrameClientExt()->SetNewsFeedPageFitted();
+  }
+  return false;
+}
+
+void LocalFrame::SetVideoIsPlaying(std::string id, bool playing) {
+  loader_manager_.SetVideoIsPlaying(id, playing);
+}
+
+void LocalFrame::SetVideoPriority(const HeapVector<Member<VideoPriority>>& vec) {
+  loader_manager_.SetVideoPriority(vec);
+}
+
+void LocalFrame::RegisterUrlLoader(base::WeakPtr<VideoURLLoaderImpl> loader,
+                                   std::string id,
+                                   int64_t start,
+                                   WebURLRequest request,
+                                   base::WeakPtr<WebAssociatedURLLoaderClient> client) {
+  PriorityLoader load =
+      PriorityLoader(loader, id, start, std::move(request), client);
+  loader_manager_.AddUrlLoader(std::move(load));
+}
+
+void LocalFrame::NotifyFinished(base::WeakPtr<VideoURLLoaderImpl> loader) {
+  loader_manager_.RemoveUrlLoader(loader);
+}
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 }  // namespace blink

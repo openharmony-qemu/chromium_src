@@ -71,6 +71,7 @@ class WebFrameWidgetImplExt : public WebFrameWidgetImpl {
 
 #if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
   gfx::Vector2dF GetOverScrollOffset() override;
+  void OnOverScrollOffsetChanged(float offset_x, float offset_y) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)

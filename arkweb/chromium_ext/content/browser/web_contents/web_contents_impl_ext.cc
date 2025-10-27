@@ -1227,6 +1227,22 @@ bool WebContentsImplExt::OnStartBackgroundTask(int32_t type,
 }
 #endif  // ARKWEB_PERFORMANCE_PERSISTENT_TASK
 
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+void WebContentsImplExt::GetOverScrollOffset(float* offset_x, float* offset_y) {
+  if (offset_x && offset_y) {
+    *offset_x = over_scroll_offset_x_;
+    *offset_y = over_scroll_offset_y_;
+  }
+}
+
+void WebContentsImplExt::OnOverScrollOffsetChanged(float offset_x,
+                                                   float offset_y) {
+  over_scroll_offset_x_ = offset_x;
+  over_scroll_offset_y_ = offset_y;
+}
+#endif
+
+
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 std::string WebContentsImplExt::OnRewriteUrlForNavigation(const std::string& original_url,
                                                           const std::string& referrer) {

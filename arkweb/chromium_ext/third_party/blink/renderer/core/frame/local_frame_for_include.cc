@@ -89,6 +89,19 @@ void LocalFrameUtil::SetTextZoomFactorsExt(LocalFrame* LocalFrameObj) {
   }
 }
 
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+void LocalFrame::OnOverScrollOffsetChanged(float offset_x, float offset_y) {
+  if (!IsMainThread()) {
+    GetTaskRunner(TaskType::kInternalDefault)
+        ->PostTask(FROM_HERE,
+                   WTF::BindOnce(&LocalFrame::OnOverScrollOffsetChanged,
+                                 WrapWeakPersistent(this), offset_x, offset_y));
+  } else {
+    GetLocalFrameHostRemote().OnOverScrollOffsetChanged(offset_x, offset_y);
+  }
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
 void LocalFrame::OnDetectedBlankScreen(const WTF::String& url,
                                        int32_t blankScreenReason,

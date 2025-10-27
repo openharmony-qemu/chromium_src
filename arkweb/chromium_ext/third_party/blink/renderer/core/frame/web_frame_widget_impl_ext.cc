@@ -170,6 +170,13 @@ gfx::Vector2dF WebFrameWidgetImplExt::GetOverScrollOffset() {
   }
   return widget_base_->utils()->GetOverScrollOffset();
 }
+
+void WebFrameWidgetImplExt::OnOverScrollOffsetChanged(float offset_x,
+                                                      float offset_y) {
+  if (local_root_ && local_root_->GetFrame()) {
+    local_root_->GetFrame()->OnOverScrollOffsetChanged(offset_x, offset_y);
+  }
+}
 #endif
 // LCOV_EXCL_STOP
 

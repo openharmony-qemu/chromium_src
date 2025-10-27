@@ -724,7 +724,7 @@ export class PopupWindowRelayout extends AComponent {
         const matrixMatch = style.transform.match(/matrix\((.*?),(.*?),(.*?),(.*?),(.*?),(.*?)\)/);
         const translateY = matrixMatch ? parseFloat(matrixMatch[6]) : 0;
         if (Math.abs(translateY) > window.innerHeight && !this._isElementInViewport(rect)) {
-            Log.d(`元素在屏幕外，跳过缩放: ${element.className}, translateY: ${translateY.toFixed(0)}`, Tag.popupRelayout);
+            Log.d('scaleByTransform: elements that exceed the screen height and are not within the viewport, skip scaling');
             return true;
         }
     
@@ -732,7 +732,7 @@ export class PopupWindowRelayout extends AComponent {
         if (this.popupDecisionTreeType === PopupDecisionTreeType.Bottom && rect.scrollElement) {
             const scrollElementRect = rect.scrollElement.getBoundingClientRect();
             if (!this._isElementInViewport(scrollElementRect)) {
-                Log.d(`底部弹窗滚动容器在屏幕外，跳过缩放`, Tag.popupRelayout);
+                Log.d('scaleByTransform: Scrolling elements are off-screen, skip scaling');
                 return true;
             } else {
                 // 此处保留了对滚动容器的样式设置，因为它属于前置处理的一部分
@@ -743,6 +743,12 @@ export class PopupWindowRelayout extends AComponent {
             }
         }
     
+        // 检测3：检查弹窗是否是选择器弹窗
+        if (this.popupDecisionTreeType === PopupDecisionTreeType.Picker) {
+            Log.d('scaleByTransform: the Popup is TimePicker, skip scaling');
+            return true;
+        }
+        
         return false;
     }
     

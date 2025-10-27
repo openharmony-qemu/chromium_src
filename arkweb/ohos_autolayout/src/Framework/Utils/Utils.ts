@@ -352,7 +352,7 @@ export default class Utils {
     /**
      * 从CSS颜色字符串中提取alpha通道值。
      * @param {string} colorValue - CSS颜色字符串 (e.g., "rgba(0, 0, 0, 0.5)", "#ff0000", "transparent")
-     * @returns {boolean} - 是否是半透明。
+     * @returns {boolean} - 是否是透明。
      */
     static isColorTransparent(colorValue: string): boolean {
         if (!colorValue) {
@@ -370,7 +370,7 @@ export default class Utils {
         if (colorValue.startsWith('rgba') || colorValue.startsWith('hsla')) {
             const alpha = parseFloat(colorValue.split(',')[3]);
             // 有alpha通道且值小于1,大于0
-            return !isNaN(alpha) && alpha === 0 ;
+            return !isNaN(alpha) && alpha === 0;
         }
         
         // HEX 带透明度 (#RRGGBBAA/#RGBA)

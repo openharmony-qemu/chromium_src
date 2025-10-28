@@ -25,6 +25,7 @@
 #include <linux/android/binder.h>
 #include <sched.h>
 #include <signal.h>
+#include <sys/mman.h>
 #include <sys/socket.h>
 #include <time.h>
 
@@ -209,12 +210,24 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
     case __NR_getrlimit:
     case __NR_newfstatat:
     case __NR_fstatfs:
-    case __NR_mmap:
 #endif
 
     override_and_allow = true;
     break;
     }
+
+#if defined(__aarch64__)
+    if (sysno == __NR_mmap) {
+#define MAP_XPM 0x40
+#define MAP_JIT 0x1000
+        const uint64_t kAllowdMask = MAP_SHARED | MAP_PRIVATE | MAP_ANONYMOUS |
+                                    MAP_STACK | MAP_NORESERVE | MAP_FIXED |
+                                    MAP_DENYWRITE | MAP_LOCKED | MAP_XPM | MAP_JIT;
+        const Arg<int> flags(3);
+        return If((flags & ~kAllowdMask) == 0, Allow())
+            .Else(CrashSIGSYS());
+    }
+#endif  // defined(__aarch64__)
 
 #if defined(__arm__) || defined(__aarch64__)
     if (sysno == __NR_socket) {
@@ -248,7 +261,6 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
 
     if (sysno == __NR_madvise) {
         const Arg<int> advice(2);
-        const unsigned int MADV_WIPEONFORK = 18;
         return If(AnyOf(advice == -1,
                         advice == MADV_WIPEONFORK),
                 Allow())

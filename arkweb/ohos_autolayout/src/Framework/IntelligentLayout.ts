@@ -1,4 +1,5 @@
 import { AComponent } from './Common/base/AComponent';
+import { LayoutConstraintMetrics } from './Common/LayoutConstraintDetector';
 import Utils from './Utils/Utils';
 import { PopupWindowRelayout } from './Popup/PopupWindowRelayout';
 import { PopupWindowDetector } from './Popup/PopupWindowDetector';
@@ -40,6 +41,15 @@ export default class IntelligentLayout {
 
         if (popupInfo != null) {
             IntelligentLayout.calculateForPopWin(popupInfo);
+        } else {
+            let metrics: LayoutConstraintMetrics = {
+                resultCode: -2,
+                errorMsg: 'no popup found',
+                duration: 0,
+                report: 'no popup found',
+            };
+            // @ts-ignore
+            window.layoutConstraintResult = metrics;
         }
         Log.info('离开 intelligentLayout', IntelligentLayout.TAG);
     }

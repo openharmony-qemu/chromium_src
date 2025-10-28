@@ -1,0 +1,13 @@
+{
+    "groups": {
+        "https://gitcode.com/ArkWeb_Build": [
+            "https://gitcode.com/doublelucky"
+        ]
+    },
+    "userInfos": {
+        "https://gitcode.com/doublelucky": {
+            "info": "[部署测试 cmx]",
+            "group": "https://gitcode.com/ArkWeb_Build"
+        }
+    }
+}

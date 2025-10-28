@@ -32,7 +32,7 @@ class NWebOutputHandler
       uint32_t height,
       std::function<bool(const char*, uint32_t, uint32_t)> output_frame_cb);
 
-  NWebOutputHandler(
+  explicit NWebOutputHandler(
       std::function<bool(const char*, uint32_t, uint32_t)> output_frame_cb);
   ~NWebOutputHandler();
 

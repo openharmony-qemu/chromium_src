@@ -46,7 +46,7 @@ const std::string AUTO_FILL_CANCEL_PRIVATE_COMMAND = "autofill.cancel";
 
 class OnTextChangedListenerImpl : public IMFTextListenerAdapter {
  public:
-  OnTextChangedListenerImpl(NWebInputMethodHandler* handler)
+  explicit OnTextChangedListenerImpl(NWebInputMethodHandler* handler)
       : handler_(handler) {}
   ~OnTextChangedListenerImpl() = default;
 
@@ -161,9 +161,8 @@ class InputMethodTask : public CefTask {
   InputMethodTask(const InputMethodTask&) = delete;
   InputMethodTask& operator=(const InputMethodTask&) = delete;
 
-  virtual void Execute() override {
+  void Execute() override {
     std::move(closure_).Run();
-    // closure_.Reset();
   }
 
  private:

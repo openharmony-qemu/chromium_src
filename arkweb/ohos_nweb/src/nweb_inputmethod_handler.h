@@ -43,7 +43,7 @@ class NWebInputMethodHandler : public NWebInputMethodClient {
     FROM_ONDRAG,
   };
   NWebInputMethodHandler();
-  ~NWebInputMethodHandler();
+  ~NWebInputMethodHandler() override;
   NWebInputMethodHandler(const NWebInputMethodHandler&) = delete;
   NWebInputMethodHandler& operator=(const NWebInputMethodHandler&) = delete;
 

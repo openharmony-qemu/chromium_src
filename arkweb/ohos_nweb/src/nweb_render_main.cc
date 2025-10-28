@@ -33,7 +33,7 @@ extern "C" OHOS_NWEB_EXPORT void NWebRenderMain(const char* args) {
     argv_str.push_back(arg_str);
   }
   std::vector<char*> argv_cstr;
-  int argc = argv_str.size();
+  int argc = static_cast<int>(argv_str.size());
   argv_cstr.reserve(argc + 1);
   for (const auto& arg : argv_str) {
     argv_cstr.push_back(const_cast<char*>(arg.c_str()));

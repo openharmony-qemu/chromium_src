@@ -116,7 +116,11 @@ void NWebOutputHandler::Resize(uint32_t width, uint32_t height) {
     height_ = height;
     frame_size_ = width_ * height_ * kBitsPerPixel;
     if (!dump_path_.empty() || dump_buf_ == nullptr) {
-      dump_buf_.reset(new char[frame_size_]);
+      auto buf = new char[frame_size_];
+      if (!buf) {
+        return;
+      }
+      dump_buf_.reset(buf);
     }
 
     if (!is_initialized_resize_) {
@@ -234,9 +238,9 @@ void NWebOutputHandler::BmpDumpHelper::RgbaToRgb(char* buf,
     if (i % 4 == 3) {
       // check alpha value, if 0, set related color to white
       if (buf[i] == 0) {
-        *(unsigned char*)(p_rgb - 3) = 255;
-        *(unsigned char*)(p_rgb - 2) = 255;
-        *(unsigned char*)(p_rgb - 1) = 255;
+        *reinterpret_cast<unsigned char*>(p_rgb - 3) = 255;
+        *reinterpret_cast<unsigned char*>(p_rgb - 2) = 255;
+        *reinterpret_cast<unsigned char*>(p_rgb - 1) = 255;
       }
       continue;
     }

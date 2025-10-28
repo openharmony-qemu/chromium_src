@@ -30,10 +30,10 @@ namespace OHOS::NWeb {
 class NWebPermissionStatusQueryManager {
  public:
   static void SetPermissionStatusQueryDelegate(
-      struct NWebPermissionStatusQueryDelegateCallback*);
-  static void QueryPermissionStatus(NWebPermissionStatusQuery*);
+      struct NWebPermissionStatusQueryDelegateCallback* callback);
+  static void QueryPermissionStatus(NWebPermissionStatusQuery* query);
 #if BUILDFLAG(ARKWEB_NWEB_EX)
-  static void QueryPermissionStatus(ArkWebPermissionStatusQuery*);
+  static void QueryPermissionStatus(ArkWebPermissionStatusQuery* query);
 #endif
 };
 

@@ -16,7 +16,7 @@
 #ifndef OHOS_NWEB_SRC_NWEB_APP_CLIENT_EXTENSION_CALLBACK_H_
 #define OHOS_NWEB_SRC_NWEB_APP_CLIENT_EXTENSION_CALLBACK_H_
 
-#include <stddef.h>
+#include <cstddef>
 
 #include <map>
 #include <string>

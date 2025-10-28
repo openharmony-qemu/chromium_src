@@ -27,13 +27,13 @@ class DistillabilityServiceImplExt : public DistillabilityServiceImpl {
                                bool is_mobile_friendly) override {
     if (!distillability_driver_)
       return;
+    if (!page_info)
+      return;
     DistillabilityResult result;
     result.page_info = *page_info;
     result.is_distillable = page_info->pageDistillable;
     result.is_last = is_last_update;
     result.is_mobile_friendly = is_mobile_friendly;
-    DVLOG(1) << "[Distiller] Notifying observers of distillability service result: "
-             << result;
     distillability_driver_->OnDistillability(result);
   }
 

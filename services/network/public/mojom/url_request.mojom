@@ -572,6 +572,11 @@ struct URLRequest {
   [EnableIf=arkweb_logger_report]
   int32 usage_scenario_;
   // #endif
+
+  // #if BUILDFLAG(ARKWEB_COOKIE)
+  [EnableIf=is_android_or_arkweb_cookie]
+  bool disable_web_security_;
+  // #endif
 };
 
 // URLRequestBody represents body (i.e. upload data) of a HTTP request.

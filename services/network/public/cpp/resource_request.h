@@ -250,6 +250,10 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE) ResourceRequest {
   int32_t usage_scenario_ = 99;
 #endif
   net::SocketTag socket_tag;
+
+#if BUILDFLAG(ARKWEB_COOKIE)
+  bool disable_web_security = false;
+#endif
 };
 // LINT.ThenChange(//services/network/prefetch_matches.cc)
 

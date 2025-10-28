@@ -54,26 +54,12 @@ class NWebEngineEventLogger {
   void set_upload_callback(UploadCallbackFunc callback) {
     upload_callback_ = callback;
     task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
-
-    std::lock_guard<std::mutex> lock(GetQueueMutex());
-    while (!GetUploadQueue().empty()) {
-        std::shared_ptr<UploadData> data = GetUploadQueue().front();
-        GetUploadQueue().pop();
- 
-        upload_callback(data->module, data->resource, data->error_code, data->error_msg);
-    }
+    PopAndUploadData();
   }
 
   void set_upload_callback_new(UploadCallbackFuncNew callback) {
     upload_callback_new_ = callback;
-
-    std::lock_guard<std::mutex> lock(GetQueueMutex());
-    while (!GetUploadQueue().empty()) {
-        std::shared_ptr<UploadData> data = GetUploadQueue().front();
-        GetUploadQueue().pop();
- 
-        upload_callback(data->module, data->resource, data->error_code, data->error_msg);
-    }
+    PopAndUploadData();
   }
 
   void upload_callback(const std::string& module,
@@ -109,6 +95,15 @@ class NWebEngineEventLogger {
   }
 
  private:
+  void PopAndUploadData() {
+    std::lock_guard<std::mutex> lock(GetQueueMutex());
+    while (!GetUploadQueue().empty()) {
+        std::shared_ptr<UploadData> data = GetUploadQueue().front();
+        GetUploadQueue().pop();
+
+        upload_callback(data->module, data->resource, data->error_code, data->error_msg);
+    } 
+  }
   friend class NoDestructor<NWebEngineEventLogger>;
 
   NWebEngineEventLogger();
@@ -119,7 +114,8 @@ class NWebEngineEventLogger {
   scoped_refptr<SingleThreadTaskRunner> task_runner_;
 };
 
-NWebEngineEventLogger::NWebEngineEventLogger() : upload_callback_(nullptr) {
+NWebEngineEventLogger::NWebEngineEventLogger() : upload_callback_(nullptr),
+    upload_callback_new_(nullptr), task_runner_(nullptr) {
 
 }
 

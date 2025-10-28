@@ -2928,7 +2928,7 @@ TEST_F(NWebInputMethodHandlerTest, UpdateTextFieldStatus_001) {
   CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
   testing::Mock::AllowLeak(mockHost.get());
   EXPECT_CALL(*mockHost, PostTaskToUIThread(testing::_)).Times(0);
-  inputmethod_handler_->UpdateTextFieldStatus();
+  inputmethod_handler_->UpdateTextFieldStatus(true, true);
 }
 
 TEST_F(NWebInputMethodHandlerTest, UpdateTextFieldStatus_002) {
@@ -2939,7 +2939,7 @@ TEST_F(NWebInputMethodHandlerTest, UpdateTextFieldStatus_002) {
   EXPECT_CALL(*mock_browser, GetHost()).WillOnce(testing::Return(mockHost));
   EXPECT_CALL(*mockHost, PostTaskToUIThread(testing::_)).Times(1);
   inputmethod_handler_->browser_ = mock_browser.release();
-  inputmethod_handler_->UpdateTextFieldStatus();
+  inputmethod_handler_->UpdateTextFieldStatus(true, true);
   EXPECT_NE(inputmethod_handler_->browser_, nullptr);
 }
 
@@ -2950,7 +2950,7 @@ TEST_F(NWebInputMethodHandlerTest, UpdateTextFieldStatus_003) {
   testing::Mock::AllowLeak(mock_browser.get());
   EXPECT_CALL(*mock_browser, GetHost()).WillOnce(testing::Return(nullptr));
   inputmethod_handler_->browser_ = mock_browser.release();
-  inputmethod_handler_->UpdateTextFieldStatus();
+  inputmethod_handler_->UpdateTextFieldStatus(true, true);
   EXPECT_NE(inputmethod_handler_->browser_, nullptr);
 }
 
@@ -2959,7 +2959,7 @@ TEST_F(NWebInputMethodHandlerTest, UpdateTextFieldStatusHandlerOnUI_001) {
   CefRefPtr<MockCefBrowserHost> mockHost = new MockCefBrowserHost();
   testing::Mock::AllowLeak(mockHost.get());
   EXPECT_CALL(*mockHost, PostTaskToUIThread(testing::_)).Times(0);
-  inputmethod_handler_->UpdateTextFieldStatusHandlerOnUI();
+  inputmethod_handler_->UpdateTextFieldStatusHandlerOnUI(true, true);
 }
 
 TEST_F(NWebInputMethodHandlerTest, UpdateTextFieldStatusHandlerOnUI_002) {
@@ -2970,7 +2970,7 @@ TEST_F(NWebInputMethodHandlerTest, UpdateTextFieldStatusHandlerOnUI_002) {
   EXPECT_CALL(*mock_browser, GetHost()).WillOnce(testing::Return(mockHost));
   EXPECT_CALL(*mockHost, PostTaskToUIThread(testing::_)).Times(1);
   inputmethod_handler_->browser_ = mock_browser.release();
-  inputmethod_handler_->UpdateTextFieldStatusHandlerOnUI();
+  inputmethod_handler_->UpdateTextFieldStatusHandlerOnUI(true, true);
   EXPECT_NE(inputmethod_handler_->browser_, nullptr);
 }
 
@@ -2981,7 +2981,7 @@ TEST_F(NWebInputMethodHandlerTest, UpdateTextFieldStatusHandlerOnUI_003) {
   testing::Mock::AllowLeak(mock_browser.get());
   EXPECT_CALL(*mock_browser, GetHost()).WillOnce(testing::Return(nullptr));
   inputmethod_handler_->browser_ = mock_browser.release();
-  inputmethod_handler_->UpdateTextFieldStatusHandlerOnUI();
+  inputmethod_handler_->UpdateTextFieldStatusHandlerOnUI(true, true);
   EXPECT_NE(inputmethod_handler_->browser_, nullptr);
 }
 

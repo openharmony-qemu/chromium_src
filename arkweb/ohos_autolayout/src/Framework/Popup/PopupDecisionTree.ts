@@ -56,6 +56,11 @@ export class PopupDecisionTree {
     public static judgePopupDecisionTreeType(allNodes: HTMLElement[], popupInfo: PopupInfo): PopupDecisionTreeType {
         const rootNode = popupInfo.root_node;
         
+        const isPickerPopup = PopupDecisionTree.isTimePickerPopup(rootNode);
+        if (isPickerPopup) {
+            return PopupDecisionTreeType.Picker;
+        }
+        
         const isBottomPopup = PopupDecisionTree.isModalWin(allNodes, rootNode, popupInfo);
 
         if (isBottomPopup) {
@@ -383,6 +388,122 @@ export class PopupDecisionTree {
     }
 
     /**
+     * 检查一个根节点 (rootNode) 是否包含一个“滚轮选择器”(Picker)。
+     *
+     * 检查三个核心特征：
+     * 1. 存在 'picker' 类名。
+     * 2. 存在一个具有统一内联高度子元素的列表。
+     * 3. 存在一个带有 'linear-gradient' 背景的元素。
+     *
+     *
+     * @param rootNode - 要检查的弹窗根元素 (如 .a-view.ant-popup)。
+     * @returns {boolean} - 如果是，则返回 true。
+     */
+    private static isTimePickerPopup(rootNode: HTMLElement): boolean {
+        // 1. 初始化三个特征的“信号旗”
+        let hasPickerClass = false;
+        let hasUniformInlineHeight = false;
+        let hasLinearGradient = false;
+ 
+        // 2. 只遍历一次：获取所有子孙节点
+        const allDescendants = rootNode.querySelectorAll('*');
+ 
+        // 3. 开始单次遍历
+        for (const element of Array.from(allDescendants)) {
+            if (!(element instanceof HTMLElement)) {
+                continue;
+            }
+            
+            // 特征 1: 检查 'picker' 类名
+            if (!hasPickerClass) {
+                hasPickerClass = this.checkPickerClass(element);
+            }
+ 
+            // 特征 2: 检查统一内联高度的子元素
+            if (!hasUniformInlineHeight) {
+                // 我们检查 *当前元素* 的 *子元素* 是否满足条件
+                hasUniformInlineHeight = this.checkUniformInlineHeight(element);
+            }
+ 
+            // 特征 3: 检查 'linear-gradient'
+            if (!hasLinearGradient) {
+                hasLinearGradient = this.checkLinearGradient(element);
+            }
+            
+            // 如果三个特征都已找到，立即停止遍历
+            if (hasPickerClass && hasUniformInlineHeight && hasLinearGradient) {
+                break; 
+            }
+        }
+ 
+        // 4. 最终裁决
+        return hasPickerClass && hasUniformInlineHeight && hasLinearGradient;
+    }
+ 
+    /**
+     * 【辅助函数】检查单个元素是否在其类名中包含 'picker'。
+     */
+    private static checkPickerClass(element: HTMLElement): boolean {
+        return typeof element.className === 'string' && element.className.includes('picker');
+    }
+ 
+    /**
+     * 【辅助函数】检查单个元素的 *直接子元素* 是否具有统一的内联高度。
+     */
+    private static checkUniformInlineHeight(element: HTMLElement): boolean {
+        const children = element.children;
+ 
+        // 必须有至少2个子元素才能判断“统一性”
+        if (children.length < 2) {
+            return false;
+        }
+ 
+        // 检查第一个子元素
+        const firstChild = children[0] as HTMLElement;
+        // 必须有 style 属性且定义了内联 height
+        if (!firstChild.style || !firstChild.style.height) {
+            return false;
+        }
+        
+        const firstChildHeight = firstChild.style.height;
+ 
+        // 遍历剩余子元素
+        for (let i = 1; i < children.length; i++) {
+            const child = children[i] as HTMLElement;
+            // 只要有一个子元素不匹配（或没有内联 height），就返回 false
+            if (!child.style || child.style.height !== firstChildHeight) {
+                return false;
+            }
+        }
+ 
+        // 如果循环完成，说明所有子元素都具有统一的内联高度
+        return true;
+    }
+ 
+    /**
+     * 【辅助函数】检查单个元素的计算样式是否包含 'linear-gradient'。
+     */
+    private static checkLinearGradient(element: HTMLElement): boolean {
+        const computedStyle = window.getComputedStyle(element);
+        const bgImage = computedStyle.backgroundImage;
+    
+        // 1. 快速失败：如果连 "linear-gradient" 字符串都没有，直接返回 false
+        if (!bgImage.includes('linear-gradient')) {
+            return false;
+        }
+ 
+        // 2. 使用正则表达式提取所有可能的颜色值
+        const colorRegex = /(rgba?\(.*?\)|hsla?\(.*?\)|#\w{3,8}|transparent)/gi;
+        const foundColors = bgImage.match(colorRegex);
+ 
+        if (!foundColors) {
+            return false;
+        }
+ 
+        return foundColors.some(color => Utils.isColorSemiTransparent(color));
+    }
+ 
+    /**
      * 判断是否紧贴底部的模态窗口，特征：
      * 1、满屏宽
      * 2、bottom=0px
@@ -429,9 +550,9 @@ export class PopupDecisionTree {
         }
         
         const rect = closeElements[0].getBoundingClientRect();
-        const isTypicalCenterCloseButton = closeElements.length === 1 
-                                        && rect.height < window.innerHeight * Constant.maxCloseButtonSizeRatio 
-                                        && rect.bottom > window.innerHeight * Constant.bottomCloseButtonRatio;                               
+        const isTypicalCenterCloseButton = closeElements.length === 1 && 
+            rect.height < window.innerHeight * Constant.maxCloseButtonSizeRatio &&
+            rect.bottom > window.innerHeight * Constant.bottomCloseButtonRatio;                               
         return isTypicalCenterCloseButton; 
     }
 
@@ -584,10 +705,10 @@ export class PopupDecisionTree {
     static specialBottomCondition(rootNode: HTMLElement, contentNode: HTMLElement): boolean {
         const style = window.getComputedStyle(contentNode);
         const rootStyle = window.getComputedStyle(rootNode);
-        return (style.flexDirection === 'column' && (style.justifyContent === 'flex-end' || style.justifyContent === 'end'))
-               || (style.flexDirection === 'row' && (style.alignItems === 'flex-end' || style.alignItems === 'end')) 
-               || (rootStyle.flexDirection === 'column' && (rootStyle.justifyContent === 'flex-end' || rootStyle.justifyContent === 'end')) 
-               || (rootStyle.flexDirection === 'row' && (rootStyle.alignItems === 'flex-end' || rootStyle.alignItems === 'end'))
+        return (style.flexDirection === 'column' && (style.justifyContent === 'flex-end' || style.justifyContent === 'end')) ||
+            (style.flexDirection === 'row' && (style.alignItems === 'flex-end' || style.alignItems === 'end')) ||
+            (rootStyle.flexDirection === 'column' && (rootStyle.justifyContent === 'flex-end' || rootStyle.justifyContent === 'end')) ||
+            (rootStyle.flexDirection === 'row' && (rootStyle.alignItems === 'flex-end' || rootStyle.alignItems === 'end'))
     }
 
     /**
@@ -597,8 +718,8 @@ export class PopupDecisionTree {
      */
     static specialCenterCondition(contentNode: HTMLElement): boolean {
         const style = window.getComputedStyle(contentNode);
-        return (style.flexDirection === 'row' && style.alignItems === 'center')
-               || (style.flexDirection === 'column' && style.justifyContent === 'center');
+        return (style.flexDirection === 'row' && style.alignItems === 'center') ||
+            (style.flexDirection === 'column' && style.justifyContent === 'center');
     }
 
     // 校验满宽条件，允许存在偏差discrepancy
@@ -612,9 +733,9 @@ export class PopupDecisionTree {
         }
         
         // boxSizing = content-box
-        if (isNaN(parseFloat(paddingLeft)) || isNaN(parseFloat(paddingRight)) 
-            || isNaN(parseFloat(borderLeft)) || isNaN(parseFloat(borderRight)) 
-            || boxSizing !== 'content-box') {
+        if (isNaN(parseFloat(paddingLeft)) || isNaN(parseFloat(paddingRight)) ||
+            isNaN(parseFloat(borderLeft)) || isNaN(parseFloat(borderRight)) ||
+            boxSizing !== 'content-box') {
             return false;
         }
         return Math.abs(parseFloat(width) + parseFloat(paddingLeft) + parseFloat(paddingRight) - window.innerWidth) < discrepancy;

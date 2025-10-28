@@ -72,13 +72,6 @@ export default class StyleSetter {
         } else {
             eleStyleMap.set(key, value);
         }
-
-        // 被zoom的元素也要收集依赖，因为单独的zoom会影响offsetWidth，从而影响识别
-        if (key === Constant.width || key === Constant.zoom) {
-        }
-
-        if (key === Constant.zoom) {
-        }
     }
 
     static setStyleByInsertRule(ele: HTMLElement, key: string, value: string): void {

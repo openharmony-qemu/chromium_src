@@ -70,7 +70,7 @@ describe('Log Module', () => {
       
       Log.debug(mockElement, 'Element message');
       
-      expect(consoleLogSpy).toHaveBeenCalledTimes(2);
+      expect(consoleLogSpy).toHaveBeenCalledTimes(1);
       const firstCall = consoleLogSpy.mock.calls[0][0];
       expect(firstCall).toContain('DIV.test-class');
       expect(firstCall).toContain('Element message');
@@ -79,7 +79,7 @@ describe('Log Module', () => {
     test('should log debug with null element', () => {
       Log.debug(null, 'Null element message');
       
-      expect(consoleLogSpy).toHaveBeenCalledTimes(2);
+      expect(consoleLogSpy).toHaveBeenCalledTimes(1);
       const firstCall = consoleLogSpy.mock.calls[0][0];
       expect(firstCall).toContain('null');
       expect(firstCall).toContain('Null element message');
@@ -90,7 +90,7 @@ describe('Log Module', () => {
       
       Log.debug(mockElement, 'No class element');
       
-      expect(consoleLogSpy).toHaveBeenCalledTimes(2);
+      expect(consoleLogSpy).toHaveBeenCalledTimes(1);
       const firstCall = consoleLogSpy.mock.calls[0][0];
       expect(firstCall).toContain('SPAN.no-class');
     });

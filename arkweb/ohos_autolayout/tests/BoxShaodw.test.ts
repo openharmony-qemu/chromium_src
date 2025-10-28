@@ -3,7 +3,7 @@
  * 测试 BoxShadow 接口类型定义
  */
 
-import { BoxShadow } from '../src/Framework/Common/BoxShaodw';
+import { BoxShadow } from '../src/Framework/Common/BoxShadow';
 
 describe('BoxShadow Interface', () => {
   describe('Type Definition', () => {

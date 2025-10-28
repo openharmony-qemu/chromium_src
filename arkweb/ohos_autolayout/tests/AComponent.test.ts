@@ -45,7 +45,8 @@ describe('AComponent Abstract Class', () => {
   describe('Constructor', () => {
     test('should initialize with root element', () => {
       expect(component).toBeDefined();
-      expect(component['mComponent']).toBe(rootElement);
+      // @ts-ignore
+      expect(component.mComponent).toBe(rootElement);
     });
 
     test('should initialize mDirty as true', () => {
@@ -53,7 +54,8 @@ describe('AComponent Abstract Class', () => {
     });
 
     test('should set mDOMSnapshot property', () => {
-      expect(component['mDOMSnapshot']).toBeUndefined(); // Not initialized in constructor
+      // @ts-ignore
+      expect(component.mDOMSnapshot).toBeUndefined(); // Not initialized in constructor
     });
   });
 
@@ -77,13 +79,15 @@ describe('AComponent Abstract Class', () => {
   describe('setDirty method', () => {
     test('should set dirty state to false', () => {
       component.setDirty(false);
-      expect(component['mDirty']).toBe(false);
+      // @ts-ignore
+      expect(component.mDirty).toBe(false);
     });
 
     test('should set dirty state to true', () => {
       component.setDirty(false);
       component.setDirty(true);
-      expect(component['mDirty']).toBe(true);
+      // @ts-ignore
+      expect(component.mDirty).toBe(true);
     });
 
     test('should allow multiple state changes', () => {
@@ -190,22 +194,29 @@ describe('AComponent Abstract Class', () => {
 
   describe('Protected properties', () => {
     test('should have mComponent property', () => {
-      expect(component['mComponent']).toBeDefined();
-      expect(component['mComponent']).toBe(rootElement);
+      // @ts-ignore
+      expect(component.mComponent).toBeDefined();
+      // @ts-ignore
+      expect(component.mComponent).toBe(rootElement);
     });
 
     test('should have mDirty property', () => {
-      expect(component['mDirty']).toBeDefined();
-      expect(typeof component['mDirty']).toBe('boolean');
+      // @ts-ignore
+      expect(component.mDirty).toBeDefined();
+      // @ts-ignore
+      expect(typeof component.mDirty).toBe('boolean');
     });
 
     test('should have root property', () => {
-      expect(component['root']).toBeDefined();
-      expect(component['root']).toBe(rootElement);
+      // @ts-ignore
+      expect(component.root).toBeDefined();
+      // @ts-ignore
+      expect(component.root).toBe(rootElement);
     });
 
     test('mComponent and root should reference the same element', () => {
-      expect(component['mComponent']).toBe(component['root']);
+      // @ts-ignore
+      expect(component.mComponent).toBe(component.root);
     });
   });
 

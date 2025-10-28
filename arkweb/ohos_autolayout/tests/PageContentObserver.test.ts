@@ -37,7 +37,7 @@ describe('PageContentObserver', () => {
         jest.clearAllMocks();
 
         // Mock MutationObserver
-        observeCallback = null as any;
+        observeCallback = null;
         mockMutationObserver = jest.fn((callback: MutationCallback) => {
             observeCallback = callback;
             return {
@@ -46,7 +46,7 @@ describe('PageContentObserver', () => {
                 takeRecords: jest.fn((): MutationRecord[] => []),
             };
         });
-        global.MutationObserver = mockMutationObserver as any;
+        global.MutationObserver = mockMutationObserver;
 
         // 重置 document.body
         document.body.innerHTML = '';
@@ -61,16 +61,19 @@ describe('PageContentObserver', () => {
 
     describe('reInit', () => {
         it('应该重置内容就绪状态', () => {
-            PageContentObserver['contentReady'] = true;
+            // @ts-ignore
+            PageContentObserver.contentReady = true;
 
             PageContentObserver.reInit();
-
-            expect(PageContentObserver['contentReady']).toBe(false);
+            
+            // @ts-ignore
+            expect(PageContentObserver.contentReady).toBe(false);
         });
 
         it('应该断开现有观察器', () => {
             PageContentObserver.startObserving();
-            const observer = PageContentObserver['observer'];
+            // @ts-ignore
+            const observer = PageContentObserver.observer;
             const disconnectSpy = jest.spyOn(observer!, 'disconnect');
 
             PageContentObserver.reInit();
@@ -81,7 +84,8 @@ describe('PageContentObserver', () => {
 
     describe('isContentReady', () => {
         it('应该在已经确认内容就绪时返回 true', () => {
-            PageContentObserver['contentReady'] = true;
+            // @ts-ignore
+            PageContentObserver.contentReady = true;
 
             const result = PageContentObserver.isContentReady();
 
@@ -99,7 +103,8 @@ describe('PageContentObserver', () => {
             const result = PageContentObserver.isContentReady();
 
             expect(result).toBe(true);
-            expect(PageContentObserver['contentReady']).toBe(true);
+            // @ts-ignore
+            expect(PageContentObserver.contentReady).toBe(true);
         });
 
         it('应该在页面内容不足时返回 false', () => {
@@ -197,7 +202,8 @@ describe('PageContentObserver', () => {
             PageContentObserver.startObserving();
 
             expect(mockMutationObserver).toHaveBeenCalled();
-            expect(PageContentObserver['observer']).toBeDefined();
+            // @ts-ignore
+            expect(PageContentObserver.observer).toBeDefined();
         });
 
         it('应该避免重复启动', () => {
@@ -210,7 +216,8 @@ describe('PageContentObserver', () => {
         it('应该观察 body 的子节点变化', () => {
             PageContentObserver.startObserving();
 
-            const observer = PageContentObserver['observer'];
+            // @ts-ignore
+            const observer = PageContentObserver.observer;
             expect(observer).toBeDefined();
         });
 
@@ -226,16 +233,19 @@ describe('PageContentObserver', () => {
 
             // 模拟 MutationObserver 回调
             if (observeCallback) {
-                observeCallback([], PageContentObserver['observer'] as MutationObserver);
+                // @ts-ignore
+                observeCallback([], PageContentObserver.observer as MutationObserver);
             }
 
             expect(ObserverHandler.postTask).toHaveBeenCalled();
-            expect(PageContentObserver['contentReady']).toBe(true);
+            // @ts-ignore
+            expect(PageContentObserver.contentReady).toBe(true);
         });
 
         it('应该在检测到内容后自动断开观察器', () => {
             PageContentObserver.startObserving();
-            const observer = PageContentObserver['observer'];
+            // @ts-ignore
+            const observer = PageContentObserver.observer;
             const disconnectSpy = jest.spyOn(observer!, 'disconnect');
 
             // 添加足够的内容
@@ -246,11 +256,13 @@ describe('PageContentObserver', () => {
             }
 
             if (observeCallback) {
-                observeCallback([], PageContentObserver['observer'] as MutationObserver);
+                // @ts-ignore
+                observeCallback([], PageContentObserver.observer as MutationObserver);
             }
 
             expect(disconnectSpy).toHaveBeenCalled();
-            expect(PageContentObserver['observer']).toBeNull();
+            // @ts-ignore
+            expect(PageContentObserver.observer).toBeNull();
         });
 
         it('应该在内容不足时继续观察', () => {
@@ -261,24 +273,28 @@ describe('PageContentObserver', () => {
             document.body.appendChild(div);
 
             if (observeCallback) {
-                observeCallback([], PageContentObserver['observer'] as MutationObserver);
+                // @ts-ignore
+                observeCallback([], PageContentObserver.observer as MutationObserver);
             }
 
             expect(ObserverHandler.postTask).not.toHaveBeenCalled();
-            expect(PageContentObserver['observer']).not.toBeNull();
+            // @ts-ignore
+            expect(PageContentObserver.observer).not.toBeNull();
         });
     });
 
     describe('disconnect', () => {
         it('应该断开观察器连接', () => {
             PageContentObserver.startObserving();
-            const observer = PageContentObserver['observer'];
+            // @ts-ignore
+            const observer = PageContentObserver.observer;
             const disconnectSpy = jest.spyOn(observer!, 'disconnect');
 
             PageContentObserver.disconnect();
 
             expect(disconnectSpy).toHaveBeenCalled();
-            expect(PageContentObserver['observer']).toBeNull();
+            // @ts-ignore
+            expect(PageContentObserver.observer).toBeNull();
         });
 
         it('应该在没有观察器时安全调用', () => {
@@ -290,13 +306,16 @@ describe('PageContentObserver', () => {
 
     describe('reset', () => {
         it('应该重置状态并断开观察器', () => {
-            PageContentObserver['contentReady'] = true;
+            // @ts-ignore
+            PageContentObserver.contentReady = true;
             PageContentObserver.startObserving();
 
             PageContentObserver.reset();
 
-            expect(PageContentObserver['contentReady']).toBe(false);
-            expect(PageContentObserver['observer']).toBeNull();
+            // @ts-ignore
+            expect(PageContentObserver.contentReady).toBe(false);
+            // @ts-ignore
+            expect(PageContentObserver.observer).toBeNull();
         });
     });
 

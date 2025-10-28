@@ -102,8 +102,10 @@ describe('StyleCleaner', () => {
 
   describe('resetEle', () => {
     it('should call resetChild and resetParent', () => {
-      const resetChildSpy = jest.spyOn(StyleCleaner as any, 'resetChild').mockImplementation();
-      const resetParentSpy = jest.spyOn(StyleCleaner as any, 'resetParent').mockImplementation();
+      // @ts-ignore
+      const resetChildSpy = jest.spyOn(StyleCleaner, 'resetChild').mockImplementation();
+      // @ts-ignore
+      const resetParentSpy = jest.spyOn(StyleCleaner, 'resetParent').mockImplementation();
 
       StyleCleaner.resetEle(ele);
 
@@ -115,8 +117,10 @@ describe('StyleCleaner', () => {
     });
 
     it('should pass isDelete to resetChild', () => {
-        const resetChildSpy = jest.spyOn(StyleCleaner as any, 'resetChild').mockImplementation();
-        const resetParentSpy = jest.spyOn(StyleCleaner as any, 'resetParent').mockImplementation();
+        // @ts-ignore
+        const resetChildSpy = jest.spyOn(StyleCleaner, 'resetChild').mockImplementation();
+        // @ts-ignore
+        const resetParentSpy = jest.spyOn(StyleCleaner, 'resetParent').mockImplementation();
   
         StyleCleaner.resetEle(ele, true);
   
@@ -130,7 +134,7 @@ describe('StyleCleaner', () => {
   describe('resetParent', () => {
     it('should do nothing if element is null or documentElement', () => {
       const removeAllStyleSpy = jest.spyOn(StyleCleaner, 'removeAllStyle');
-      StyleCleaner.resetParent(null as any);
+      StyleCleaner.resetParent(null);
       StyleCleaner.resetParent(document.documentElement);
       expect(removeAllStyleSpy).not.toHaveBeenCalled();
       removeAllStyleSpy.mockRestore();
@@ -169,7 +173,7 @@ describe('StyleCleaner', () => {
           });
       const removeAllStyleSpy = jest.spyOn(StyleCleaner, 'removeAllStyle');
       const clearAllTagSpy = jest.spyOn(Store, 'clearAllTag');
-      const resetParentSpy = jest.spyOn(StyleCleaner as any, 'resetParent');
+      const resetParentSpy = jest.spyOn(StyleCleaner, 'resetParent');
 
       StyleCleaner.resetParent(parent);
 
@@ -187,8 +191,8 @@ describe('StyleCleaner', () => {
       const removeSingleStyleSpy = jest.spyOn(StyleCleaner, 'removeSingleStyle');
       StyleCleaner.removeWidth(ele);
       expect(removeSingleStyleSpy).toHaveBeenCalledWith(ele, Constant.width);
-      expect(removeSingleStyleSpy).toHaveBeenCalledWith(ele, Constant.maxWidth);
-      expect(removeSingleStyleSpy).toHaveBeenCalledWith(ele, Constant.flexBasis);
+      expect(removeSingleStyleSpy).toHaveBeenCalledWith(ele, Constant.max_width);
+      expect(removeSingleStyleSpy).toHaveBeenCalledWith(ele, Constant.flex_basis);
       removeSingleStyleSpy.mockRestore();
     });
   });
@@ -200,7 +204,8 @@ describe('StyleCleaner', () => {
     });
 
     it('should handle null element gracefully', () => {
-      expect(() => (StyleCleaner as any).resetChild(null, false)).not.toThrow();
+      // @ts-ignore
+      expect(() => (StyleCleaner).resetChild(null, false)).not.toThrow();
     });
 
     it('should remove swiper-box elements', () => {
@@ -217,7 +222,8 @@ describe('StyleCleaner', () => {
       document.body.appendChild(parent);
 
       const removeSpy = jest.spyOn(swiperDiv, 'remove');
-      (StyleCleaner as any).resetChild(swiperDiv, false);
+      // @ts-ignore
+      StyleCleaner.resetChild(swiperDiv, false);
 
       expect(removeSpy).toHaveBeenCalled();
 
@@ -234,7 +240,8 @@ describe('StyleCleaner', () => {
 
       (Store.getValue as jest.Mock).mockReturnValue(null);
 
-      (StyleCleaner as any).resetChild(child, false);
+      // @ts-ignore
+      StyleCleaner.resetChild(child, false);
 
       expect(removeAllStyleSpy).toHaveBeenCalledWith(child);
       expect(clearAllTagSpy).toHaveBeenCalledWith(child, false);
@@ -249,7 +256,8 @@ describe('StyleCleaner', () => {
       const clearAllTagSpy = jest.spyOn(Store, 'clearAllTag');
       (Store.getValue as jest.Mock).mockReturnValue(null);
 
-      (StyleCleaner as any).resetChild(ele, true);
+      // @ts-ignore
+      StyleCleaner.resetChild(ele, true);
 
       expect(clearAllTagSpy).toHaveBeenCalledWith(ele, true);
 
@@ -341,20 +349,20 @@ describe('StyleCleaner', () => {
 
   describe('edge cases and error handling', () => {
     it('should handle removeAllStyle with null element', () => {
-      expect(() => StyleCleaner.removeAllStyle(null as any)).not.toThrow();
+      expect(() => StyleCleaner.removeAllStyle(null)).not.toThrow();
     });
 
     it('should handle removeSingleStyle with null element', () => {
-      expect(() => StyleCleaner.removeSingleStyle(null as any, 'width')).not.toThrow();
+      expect(() => StyleCleaner.removeSingleStyle(null, 'width')).not.toThrow();
     });
 
     it('should handle resetEle with null element', () => {
-      expect(() => StyleCleaner.resetEle(null as any)).toThrow(TypeError);
-      expect(() => StyleCleaner.resetEle(null as any)).toThrow("Cannot read properties of null");
+      expect(() => StyleCleaner.resetEle(null)).toThrow(TypeError);
+      expect(() => StyleCleaner.resetEle(null)).toThrow('Cannot read properties of null');
     });
 
     it('should handle removeWidth with null element', () => {
-      expect(() => StyleCleaner.removeWidth(null as any)).not.toThrow();
+      expect(() => StyleCleaner.removeWidth(null)).not.toThrow();
     });
   });
 

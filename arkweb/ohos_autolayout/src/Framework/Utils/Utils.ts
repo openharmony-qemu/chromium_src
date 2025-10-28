@@ -3,6 +3,8 @@ import Log from '../../Debug/Log';
 import Tag from '../../Debug/Tag';
 import LayoutUtils from './LayoutUtils';
 import { CCMConfig } from '../Common/CCMConfig';
+import ModifyObserver from '../Observer/Observers/ModifyObserver';
+import ObserverHandler from '../Observer/ObserverHandler';
 export default class Utils {
     private static TAG = Tag.util;
 
@@ -350,7 +352,7 @@ export default class Utils {
     /**
      * 从CSS颜色字符串中提取alpha通道值。
      * @param {string} colorValue - CSS颜色字符串 (e.g., "rgba(0, 0, 0, 0.5)", "#ff0000", "transparent")
-     * @returns {boolean} - 是否是半透明。
+     * @returns {boolean} - 是否是透明。
      */
     static isColorTransparent(colorValue: string): boolean {
         if (!colorValue) {
@@ -368,7 +370,7 @@ export default class Utils {
         if (colorValue.startsWith('rgba') || colorValue.startsWith('hsla')) {
             const alpha = parseFloat(colorValue.split(',')[3]);
             // 有alpha通道且值小于1,大于0
-            return !isNaN(alpha) && alpha === 0 ;
+            return !isNaN(alpha) && alpha === 0;
         }
         
         // HEX 带透明度 (#RRGGBBAA/#RGBA)
@@ -608,21 +610,57 @@ export default class Utils {
      * @returns {Element[]} - 可见的兄弟节点数组。
      */
     static getVisibleSiblings(node:Element): Element[] {
+        Log.d(`========== 查找可见兄弟节点 ==========`, Utils.TAG);
+        Log.d(`目标节点: ${(node as HTMLElement).className || node.tagName}`, Utils.TAG);
+        
         // 确保节点及其父节点存在
         if (!node || !node.parentNode) {
+            Log.d(`❌ 节点或父节点不存在`, Utils.TAG);
             return [];
         }
 
-        return Array.from(node.parentNode.children).filter(el => {
+        const allChildren = Array.from(node.parentNode.children);
+        Log.d(`父节点总子元素数: ${allChildren.length}`, Utils.TAG);
+
+        let selfCount = 0;
+        let invisibleCount = 0;
+        let visibleCount = 0;
+
+        const visibleSiblings = allChildren.filter(el => {
             // 排除节点自身
             if (el === node) {
+                selfCount++;
                 return false;
             }
+            
             const style = getComputedStyle(el);
-            // 过滤掉不可见的元素 (display:none, visibility:hidden, opacity:0)
-            // 返回true的条件是元素必须是可见的
-            return style.display !== 'none' && style.visibility !== 'hidden' && parseFloat(style.opacity) > 0;
+            // 注意：如果找到的兄弟节点的opacity为0，可能是动画开始前的状态，所以需要检查它的AnimationDuration
+            if (style.display !== 'none' && style.visibility !== 'hidden' && parseFloat(style.opacity) === 0) {
+                // 检查动画持续时间
+               const animationDuration = ModifyObserver.getDurationFromElement(el as HTMLElement);
+               if (animationDuration > 0) {
+                   Log.d(`存在动画节点：: ${(el as HTMLElement).className || el.tagName} (display=${style.display}, visibility=${style.visibility}, opacity=${style.opacity})，动画时长: ${animationDuration}ms`, Utils.TAG);
+                   ObserverHandler.postTask();
+               }
+            }
+            const isVisible = style.display !== 'none' && 
+                style.visibility !== 'hidden' && 
+                parseFloat(style.opacity) > 0;
+            if (!isVisible) {
+                invisibleCount++;
+                Log.d(`  ⚫ 不可见兄弟: ${(el as HTMLElement).className || el.tagName} (display=${style.display}, visibility=${style.visibility}, opacity=${style.opacity})`, Utils.TAG);
+                return false;
+            }
+            
+            visibleCount++;
+            Log.d(`  ✅ 可见兄弟: ${(el as HTMLElement).className || el.tagName}`, Utils.TAG);
+            return true;
         });
+
+        Log.d(`统计结果: 自身=${selfCount}, 不可见=${invisibleCount}, 可见=${visibleCount}`, Utils.TAG);
+        Log.d(`${visibleSiblings.length > 0 ? '✅' : '❌'} 找到 ${visibleSiblings.length} 个可见兄弟节点`, Utils.TAG);
+        
+        return visibleSiblings;
     };
 
     static visualFilter(el :Element) : boolean {

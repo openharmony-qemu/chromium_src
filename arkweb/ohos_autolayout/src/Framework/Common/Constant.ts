@@ -1,7 +1,7 @@
 export default class Constant {
     static readonly minMargin = 5;
     static readonly ATTR_NUM = 5; // 样式表选择器关联属性个数
-
+    
     // Layout
     static readonly display = 'display';
     static readonly width = 'width';
@@ -84,8 +84,6 @@ export default class Constant {
     static readonly stylesheet = 'stylesheet';
     static readonly link = 'link';
     static readonly delete = 'delete';
-    static readonly maxWidth = 'max-width';
-    static readonly flexBasis = 'flex-basis';
 
     static readonly fixed = 'fixed';
     static readonly sticky = 'sticky';
@@ -123,25 +121,25 @@ export default class Constant {
     static readonly ERR_CODE_OFFSET = 10;
     static readonly ERR_CODE_CLOSE_BTN_OVERLAP = 2;
     static readonly ERR_CODE_INTERACTIVE = 1;
- 
+
     static readonly paddingTop = 'padding-top';
     static readonly paddingBottom = 'padding-bottom';
- 
+
     // event name
     static readonly transitionend = 'transitionend';
- 
+
     // localName
     static readonly script = 'script';
     static readonly noscript = 'noscript';
     static readonly back = 'back';
     static readonly swiperBox = 'swiper-box';
- 
+
     // value
     static readonly num0px = '0px';
     static readonly hidden = 'hidden';
     static readonly num100percent = '100%';
     static readonly important = '!important';
- 
+
     static readonly hw_ = 'hw_';
     static readonly a_ = 'a';
     static readonly hwA = Constant.hw_ + Constant.a_;
@@ -155,7 +153,7 @@ export const LayoutValue = {
     ONE_LINE: 'oneLine', // 用于记录单行节点，后续不对此元素进行任何操作
     ZOOM_PARENT: 'zoomParent', // 用于标记缩放过的节点的所有祖先节点，此节点禁止缩放，但可对其子孙元素中未缩放过的元素进行处理
     IS_IMG: 'isImg', // 用来记录该元素是否为图片
-    HAS_TEXT_CHILD: 'hasTextChild', // 用来记录该元素是否为图片
+    HAS_TEXT_CHILD: 'hasTextChild', // 用来记录该元素是否包含文本子元素
     WATERFALL: 'waterfall', // 用于标记瀑布流
     SWIPER: 'swiper', // 标记swiper
     SCROLL_LIST: 'scrollList', // 标记纵向列表
@@ -166,7 +164,7 @@ export const LayoutValue = {
     BOTTOM: 'bottom',
     EMPTY: 'empty', // 标记通栏处理的空元素
 };
- 
+
 export const LayoutKey = {
     LAYOUT_TAG: 'hwLayout', // 用来记录元素是否被重排过
     CONFIG_LAYOUT_TAG: 'thirdLayout', // 用来记录元素是否被重排过
@@ -174,7 +172,7 @@ export const LayoutKey = {
     INSERT_RULE: 'insertRule', // insert rule 的元素
     INSERT_SWIPER: 'insertSwiper', // insert rule 的元素
 };
- 
+
 export const HwTag = {
     MULTI_IMGS: 'multi_items',
     ELE_NUM: 'ele_num',

@@ -1,4 +1,5 @@
 import { PopupType } from './PopupType';
+import { PopupLayoutState } from './PopupLayoutState';
 
 /**
  * 弹窗信息接口

@@ -117,7 +117,7 @@ export default class StyleCleaner {
  
     static removeWidth(ele: HTMLElement): void {
         StyleCleaner.removeSingleStyle(ele, Constant.width);
-        StyleCleaner.removeSingleStyle(ele, Constant.maxWidth);
-        StyleCleaner.removeSingleStyle(ele, Constant.flexBasis);
+        StyleCleaner.removeSingleStyle(ele, Constant.max_width);
+        StyleCleaner.removeSingleStyle(ele, Constant.flex_basis);
     }
 }

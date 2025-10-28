@@ -4,7 +4,8 @@
  */
 
 // Define global __DEV__ variable
-(global as any).__DEV__ = true;
+// @ts-ignore
+global.__DEV__ = true;
 
 // Mock console methods to avoid cluttering test output
 global.console = {

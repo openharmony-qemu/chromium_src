@@ -229,9 +229,11 @@ describe('StyleSetter', () => {
     });
 
     it('should not add null element to deleteList', () => {
-        const deleteListLengthBefore = (StyleSetter as any).deleteList.length;
+        // @ts-ignore
+        const deleteListLengthBefore = StyleSetter.deleteList.length;
         StyleSetter.removeEle(null);
-        expect((StyleSetter as any).deleteList.length).toBe(deleteListLengthBefore);
+        // @ts-ignore
+        expect(StyleSetter.deleteList.length).toBe(deleteListLengthBefore);
     });
   });
 
@@ -346,7 +348,7 @@ describe('StyleSetter', () => {
 
     it('should not set style for null element', () => {
       const setStyleSpy = jest.spyOn(StyleSetter, 'setStyle');
-      StyleSetter.checkAndSetStyle(null as any, 'width', '100px');
+      StyleSetter.checkAndSetStyle(null, 'width', '100px');
       expect(setStyleSpy).not.toHaveBeenCalled();
       setStyleSpy.mockRestore();
     });
@@ -597,19 +599,19 @@ describe('StyleSetter', () => {
     describe('appendRule edge cases', () => {
       it('should handle case when forceCSSAppendStyle is truthy', () => {
         // Ensure forceCSSAppendStyle is truthy to trigger the branch
-        const originalForceCSSAppendStyle = (StyleSetter as any).forceCSSAppendStyle;
+        const originalForceCSSAppendStyle = StyleSetter.forceCSSAppendStyle;
         
         // Set up a mock style element
         const styleElement = document.createElement('style');
         document.head.appendChild(styleElement);
-        (StyleSetter as any).forceCSSAppendStyle = styleElement;
+        StyleSetter.forceCSSAppendStyle = styleElement;
         
         try {
           StyleSetter.appendRule('.test-selector', [['color', 'red'], ['width', '100px']]);
         } catch (e) {
           // May fail due to CSS rule insertion, but we're testing the branch
         } finally {
-          (StyleSetter as any).forceCSSAppendStyle = originalForceCSSAppendStyle;
+          StyleSetter.forceCSSAppendStyle = originalForceCSSAppendStyle;
           document.head.removeChild(styleElement);
         }
       });
@@ -639,7 +641,7 @@ describe('StyleSetter', () => {
         StyleCommon.styleFlushed.clear();
         
         // Clear the problematic selector array
-        (StyleSetter as any).insertRuleSelectorArr = [];
+        StyleSetter.insertRuleSelectorArr = [];
         
         StyleSetter.flushAllStyles();
         
@@ -650,7 +652,8 @@ describe('StyleSetter', () => {
         StyleCommon.indexMappingList = [10, 20, 30, 40, 50];
         const initialLength = StyleCommon.indexMappingList.length;
         
-        const delRuleIdxInList = (StyleSetter as any).delRuleIdxInList;
+        // @ts-ignore
+        const delRuleIdxInList = StyleSetter.delRuleIdxInList;
         delRuleIdxInList.call(StyleSetter, 2);
         
         expect(StyleCommon.indexMappingList.length).toBe(initialLength - 1);

@@ -7,7 +7,7 @@ describe('CSSSheetManage', () => {
         document.head.innerHTML = '';
         CSSSheetManage.initFlag = false;
         CSSSheetManage.styleNodeList = [];
-        StyleCommon.styleDiv = null as any;
+        StyleCommon.styleDiv = null;
 
         // Mock window.matchMedia
         Object.defineProperty(window, 'matchMedia', {
@@ -113,7 +113,7 @@ describe('CSSSheetManage', () => {
                 removeEventListener: jest.fn(),
                 dispatchEvent: jest.fn(),
             }));
-            (window as any).matchMedia = mockMatchMedia;
+            window.matchMedia = mockMatchMedia;
 
             const styleNode = document.createElement('style');
             document.head.appendChild(styleNode);
@@ -135,7 +135,7 @@ describe('CSSSheetManage', () => {
                 removeEventListener: jest.fn(),
                 dispatchEvent: jest.fn(),
             }));
-            (window as any).matchMedia = mockMatchMedia;
+            window.matchMedia = mockMatchMedia;
 
             const styleNode = document.createElement('style');
             document.head.appendChild(styleNode);
@@ -200,7 +200,7 @@ describe('CSSSheetManage', () => {
                 removeEventListener: jest.fn(),
                 dispatchEvent: jest.fn(),
             }));
-            (window as any).matchMedia = mockMatchMedia;
+            window.matchMedia = mockMatchMedia;
 
             const styleNode = document.createElement('style');
             document.head.appendChild(styleNode);

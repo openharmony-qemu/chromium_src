@@ -25,7 +25,8 @@ describe('CCMConfig Module', () => {
 
   beforeEach(() => {
     // Reset singleton instance before each test
-    (CCMConfig as any).instance = undefined;
+    // @ts-ignore
+    CCMConfig.instance = undefined;
     configInstance = CCMConfig.getInstance();
     jest.clearAllMocks();
   });
@@ -226,21 +227,28 @@ describe('CCMConfig Module', () => {
   describe('checkRule', () => {
     beforeEach(() => {
       // Mock window functions
-      (window as any)._getAppId_ = jest.fn(() => '000');
-      (window as any)._getPage_ = jest.fn(() => 'home');
+      // @ts-ignore
+      window._getAppId_ = jest.fn(() => '000');
+      // @ts-ignore
+      window._getPage_ = jest.fn(() => 'home');
     });
 
     afterEach(() => {
-      delete (window as any)._getAppId_;
-      delete (window as any)._getPage_;
+      // @ts-ignore
+      delete window._getAppId_;
+      // @ts-ignore
+      delete window._getPage_;
     });
 
     test('should return initial when appId and page are not available', () => {
-      (window as any)._getAppId_ = jest.fn(() => '');
-      (window as any)._getPage_ = jest.fn(() => '');
+      // @ts-ignore
+      window._getAppId_ = jest.fn(() => '');
+      // @ts-ignore
+      window._getPage_ = jest.fn(() => '');
       
       // Reset the singleton to get fresh state
-      (CCMConfig as any).instance = undefined;
+      // @ts-ignore
+      CCMConfig.instance = undefined;
       const freshInstance = CCMConfig.getInstance();
       
       const result = freshInstance.checkRule();
@@ -253,11 +261,14 @@ describe('CCMConfig Module', () => {
     });
 
     test('should return inWhiteList when appId and page match', () => {
-      (window as any)._getAppId_ = jest.fn(() => '000');
-      (window as any)._getPage_ = jest.fn(() => 'home');
+      // @ts-ignore
+      window._getAppId_ = jest.fn(() => '000');
+      // @ts-ignore
+      window._getPage_ = jest.fn(() => 'home');
       
       // Reset the singleton to get fresh state
-      (CCMConfig as any).instance = undefined;
+      // @ts-ignore
+      CCMConfig.instance = undefined;
       const freshInstance = CCMConfig.getInstance();
       
       const result = freshInstance.checkRule();
@@ -266,11 +277,14 @@ describe('CCMConfig Module', () => {
     });
 
     test('should return outOfWhiteList when no rule matches', () => {
-      (window as any)._getAppId_ = jest.fn(() => '999');
-      (window as any)._getPage_ = jest.fn(() => 'unknown');
+      // @ts-ignore
+      window._getAppId_ = jest.fn(() => '999');
+      // @ts-ignore
+      window._getPage_ = jest.fn(() => 'unknown');
       
       // Reset the singleton to get fresh state
-      (CCMConfig as any).instance = undefined;
+      // @ts-ignore
+      CCMConfig.instance = undefined;
       const freshInstance = CCMConfig.getInstance();
       
       const result = freshInstance.checkRule();
@@ -289,12 +303,15 @@ describe('CCMConfig Module', () => {
       });
       
       // Reset the singleton to get fresh state
-      (CCMConfig as any).instance = undefined;
+      // @ts-ignore
+      CCMConfig.instance = undefined;
       const freshInstance = CCMConfig.getInstance();
       freshInstance.fromJson(jsonConfig);
       
-      (window as any)._getAppId_ = jest.fn(() => 'anyAppId');
-      (window as any)._getPage_ = jest.fn(() => 'home');
+      // @ts-ignore
+      window._getAppId_ = jest.fn(() => 'anyAppId');
+      // @ts-ignore
+      window._getPage_ = jest.fn(() => 'home');
       
       const result = freshInstance.checkRule();
       
@@ -312,12 +329,15 @@ describe('CCMConfig Module', () => {
       });
       
       // Reset the singleton to get fresh state
-      (CCMConfig as any).instance = undefined;
+      // @ts-ignore
+      CCMConfig.instance = undefined;
       const freshInstance = CCMConfig.getInstance();
       freshInstance.fromJson(jsonConfig);
       
-      (window as any)._getAppId_ = jest.fn(() => '123');
-      (window as any)._getPage_ = jest.fn(() => 'anyPage');
+      // @ts-ignore
+      window._getAppId_ = jest.fn(() => '123');
+      // @ts-ignore
+      window._getPage_ = jest.fn(() => 'anyPage');
       
       const result = freshInstance.checkRule();
       
@@ -325,11 +345,14 @@ describe('CCMConfig Module', () => {
     });
 
     test('should cache result and not check again', () => {
-      (window as any)._getAppId_ = jest.fn(() => '000');
-      (window as any)._getPage_ = jest.fn(() => 'home');
+      // @ts-ignore
+      window._getAppId_ = jest.fn(() => '000');
+      // @ts-ignore
+      window._getPage_ = jest.fn(() => 'home');
       
       // Reset the singleton to get fresh state
-      (CCMConfig as any).instance = undefined;
+      // @ts-ignore
+      CCMConfig.instance = undefined;
       const freshInstance = CCMConfig.getInstance();
       
       const result1 = freshInstance.checkRule();
@@ -340,11 +363,14 @@ describe('CCMConfig Module', () => {
     });
 
     test('should handle functions not being available', () => {
-      delete (window as any)._getAppId_;
-      delete (window as any)._getPage_;
+      // @ts-ignore
+      delete window._getAppId_;
+      // @ts-ignore
+      delete window._getPage_;
       
       // Reset the singleton to get fresh state
-      (CCMConfig as any).instance = undefined;
+      // @ts-ignore
+      CCMConfig.instance = undefined;
       const freshInstance = CCMConfig.getInstance();
       
       const result = freshInstance.checkRule();

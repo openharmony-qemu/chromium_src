@@ -10,12 +10,14 @@ export default class Tag {
     static resizeObserver = 'ResizeObserver';
     static modifyObserver = 'ModifyObserver';
     static pageContentObserver = 'PageContentObserver';
-    static transitionEndObserver = 'TransitionEndObserver';
     static throttle = 'Throttle';
     
     // Popup 相关
     static popupDecisionTree = 'PopupDecisionTree';
     static popupRecog = 'PopupRecog';
+    static popupDetector = 'PopupDetector';
+    static popupRelayout = 'PopupRelayout';
+    static popupStateManager = 'PopupStateManager';
     
     // Layout 相关
     static layoutConstraintDetector = 'LayoutConstraintDetector';

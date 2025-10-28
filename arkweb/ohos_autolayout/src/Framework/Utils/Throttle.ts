@@ -25,13 +25,16 @@ export default class Throttle {
      * @param task 要执行的任务函数
      */
     constructor(timeout: number, task: Function) {
+        Log.d('========== 创建节流器 ==========', Throttle.TAG);
+        
         // 参数验证
         if (typeof task !== 'function') {
+            Log.e('任务参数必须是函数', Throttle.TAG);
             throw new TypeError('Throttle: task must be a function');
         }
         
         if (typeof timeout !== 'number' || timeout < Throttle.MIN_TIMEOUT) {
-            Log.w(`Throttle: timeout must be >= ${Throttle.MIN_TIMEOUT}ms, got ${timeout}. Using ${Throttle.MIN_TIMEOUT}ms`, Throttle.TAG);
+            Log.w(`⚠️ timeout参数无效 (${timeout}ms)，使用最小值 ${Throttle.MIN_TIMEOUT}ms`, Throttle.TAG);
             this.timeout = Throttle.MIN_TIMEOUT;
         } else {
             this.timeout = timeout;
@@ -39,7 +42,7 @@ export default class Throttle {
         
         this.taskToRun = task;
         
-        Log.d(`Throttle created with timeout: ${this.timeout}ms`, Throttle.TAG);
+        Log.d(`✅ 节流器创建成功: 间隔=${this.timeout}ms, 任务=${task.name || 'anonymous'}`, Throttle.TAG);
     }
 
     /**
@@ -50,13 +53,12 @@ export default class Throttle {
     postTask(): void {
         this.taskCount++;
         
-        Log.d(`postTask called, taskCount: ${this.taskCount}, isLocked: ${this.isLocked}`, Throttle.TAG);
-        
-        // 如果未锁定，立即执行
         if (!this.isLocked) {
+            Log.d(`📥 提交任务: 计数=${this.taskCount}, 状态=🔓解锁 => 立即执行`, Throttle.TAG);
             this.executeTask();
+        } else {
+            Log.d(`📥 提交任务: 计数=${this.taskCount}, 状态=🔒锁定 => 等待执行`, Throttle.TAG);
         }
-        // 否则等待解锁后自动执行
     }
 
     /**
@@ -64,13 +66,20 @@ export default class Throttle {
      * 清空任务计数，但不会中断正在执行的任务
      */
     cancel(): void {
-        Log.d('cancel called', Throttle.TAG);
+        const cancelledTasks = this.taskCount;
+        Log.d(`🚫 取消任务: 待执行任务数=${cancelledTasks}`, Throttle.TAG);
+        
         this.taskCount = 0;
         
         // 如果有待执行的定时器，清除它
         if (this.timerId !== null) {
+            Log.d('清除定时器', Throttle.TAG);
             clearTimeout(this.timerId);
             this.timerId = null;
+        }
+        
+        if (cancelledTasks > 0) {
+            Log.d(`✅ 已取消 ${cancelledTasks} 个待执行任务`, Throttle.TAG);
         }
     }
 
@@ -79,36 +88,43 @@ export default class Throttle {
      * 清理所有资源，取消待执行任务
      */
     destroy(): void {
-        Log.d('destroy called', Throttle.TAG);
+        Log.info('🗑️ 销毁节流器', Throttle.TAG);
         this.cancel();
         this.isLocked = false;
+        Log.d('节流器已销毁，资源已清理', Throttle.TAG);
     }
 
     /**
      * 执行任务
      * 私有方法，负责实际的任务执行和节流控制
+     * 注意：一次执行会处理所有累积的任务请求，因此执行后会清空所有待执行任务
      */
     private executeTask(): void {
         const startTime = Date.now();
+        const pendingTaskCount = this.taskCount;
+        Log.d(`⚡ 开始执行任务 (时间戳: ${startTime}, 合并处理${pendingTaskCount}个待执行任务)`, Throttle.TAG);
         
-        // 加锁，防止重复执行
+        // 加锁并清空任务计数，因为一次执行就处理了所有累积的变更
         this.lock();
         
         try {
-            // 执行任务
+            // 执行任务（一次执行即可处理所有累积的状态变更）
+            Log.d(`调用任务函数 (合并${pendingTaskCount}次请求)...`, Throttle.TAG);
             this.taskToRun();
             
             const executionTime = Date.now() - startTime;
-            Log.d(`Task executed in ${executionTime}ms`, Throttle.TAG);
+            Log.d(`✅ 任务执行完成，耗时: ${executionTime}ms, 已处理${pendingTaskCount}次累积请求`, Throttle.TAG);
             
             // 调度解锁
             this.scheduleUnlock(startTime);
             
         } catch (error) {
             // 错误处理：确保即使任务失败，也能解锁
-            Log.e(`Task execution failed: ${error}`, Throttle.TAG, error as Error);
+            const executionTime = Date.now() - startTime;
+            Log.e(`❌ 任务执行失败 (耗时: ${executionTime}ms): ${error}`, Throttle.TAG, error as Error);
             
             // 立即解锁，避免死锁
+            Log.w('紧急解锁以避免死锁', Throttle.TAG);
             this.unlock();
         }
     }
@@ -117,9 +133,10 @@ export default class Throttle {
      * 加锁并清空任务计数
      */
     private lock(): void {
-        Log.d(`Lock at ${Date.now()}`, Throttle.TAG);
+        const previousCount = this.taskCount;
         this.isLocked = true;
         this.taskCount = 0;
+        Log.d(`🔒 加锁: 时间=${Date.now()}, 清空待执行任务=${previousCount}个`, Throttle.TAG);
     }
 
     /**
@@ -133,38 +150,39 @@ export default class Throttle {
         const now = Date.now();
         const delay = Math.max(0, unlockTime - now);
         
-        Log.d(`Schedule unlock in ${delay}ms (timeout: ${this.timeout}ms)`, Throttle.TAG);
+        Log.d(`⏰ 调度解锁: ${delay}ms后 (配置间隔: ${this.timeout}ms, 目标时间: ${unlockTime})`, Throttle.TAG);
         
         // 清除之前的定时器（如果有）
         if (this.timerId !== null) {
+            Log.d('清除旧定时器', Throttle.TAG);
             clearTimeout(this.timerId);
         }
         
         // 设置新的定时器
         this.timerId = window.setTimeout(() => {
             this.timerId = null;
+            Log.d('⏰ 定时器触发，准备解锁', Throttle.TAG);
             this.unlock();
         }, delay);
     }
 
     /**
      * 解锁
-     * 如果有待执行任务，继续执行
+     * 如果在锁定期间又有新任务提交（taskCount > 0），则立即执行一次
+     * 注意：同一任务的多次请求会被合并为一次执行
      */
     private unlock(): void {
-        Log.d(`Unlock at ${Date.now()}, pending tasks: ${this.taskCount}`, Throttle.TAG);
-        
         this.isLocked = false;
         
-        // 如果有待执行的任务，继续执行
         if (this.taskCount > 0) {
-            // 使用 setTimeout(0) 确保在下一个事件循环执行
-            // 避免递归调用栈过深
-            setTimeout(() => {
-                if (this.taskCount > 0 && !this.isLocked) {
-                    this.executeTask();
-                }
-            }, 0);
+            const pendingCount = this.taskCount;
+            Log.d(`🔓 解锁: 时间=${Date.now()}, 锁定期间累积了${pendingCount}个新请求 => 立即执行`, Throttle.TAG);
+            
+            // 立即执行，不需要 setTimeout(0)
+            // 因为一次执行就能处理所有累积的请求
+            this.executeTask();
+        } else {
+            Log.d(`🔓 解锁: 时间=${Date.now()}, 锁定期间无新请求`, Throttle.TAG);
         }
     }
 
@@ -172,10 +190,12 @@ export default class Throttle {
      * 获取当前状态（用于调试）
      */
     getState(): { isLocked: boolean; taskCount: number; timeout: number } {
-        return {
+        const state = {
             isLocked: this.isLocked,
             taskCount: this.taskCount,
             timeout: this.timeout,
         };
+        Log.d(`获取状态: 锁定=${state.isLocked ? '🔒' : '🔓'}, 待执行=${state.taskCount}, 间隔=${state.timeout}ms`, Throttle.TAG);
+        return state;
     }
 }

@@ -204,8 +204,6 @@ component("cef_nweb") {
   if (defined(arkweb_logger_report) && arkweb_logger_report) {
     sources += [
       "//cef/ohos_cef_ext/include/cef_logger_callback_api_handler.h",
-      "src/cef_delegate/nweb_engine_event_logger_cef_delegate.cc",
-      "src/cef_delegate/nweb_engine_event_logger_cef_delegate.h",
     ]
   }
 

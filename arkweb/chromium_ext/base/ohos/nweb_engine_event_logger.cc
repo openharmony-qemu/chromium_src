@@ -21,7 +21,6 @@
 #include "base/logging.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/no_destructor.h"
-#include "arkweb/ohos_nweb/src/nweb_common.h"
 
 namespace base {
 namespace ohos {
@@ -100,10 +99,8 @@ class NWebEngineEventLogger {
                              module, resource, error_code, error_msg));
       return;
     }
-    if (IsNativeApiEnable()) {
-      if (upload_callback_new_ != nullptr) {
-        upload_callback_new_(module.c_str(), resource.c_str(), error_code.c_str(), error_msg.c_str());
-      }
+    if (upload_callback_new_ != nullptr) {
+      upload_callback_new_(module.c_str(), resource.c_str(), error_code.c_str(), error_msg.c_str());
     } else {
       if (upload_callback_ != nullptr) {
         upload_callback_(module, resource, error_code, error_msg);

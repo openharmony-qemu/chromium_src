@@ -1115,7 +1115,7 @@ component("base") {
   ]
   if (is_ohos && enable_arkweb) {
     sources += arkweb_base_ext_sources
-    deps += [ "//arkweb//build/features", "//base/third_party/xdg_user_dirs", "//ohos_nweb:nweb_sources",]
+    deps += [ "//arkweb//build/features", "//base/third_party/xdg_user_dirs",]
     public_deps += [ "//arkweb//build/features" ]
     public_deps += [ ":ohos_package_info" ]
     if (is_ohos) {

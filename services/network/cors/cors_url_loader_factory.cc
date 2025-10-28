@@ -434,6 +434,9 @@ void CorsURLLoaderFactory::CreateLoaderAndStart(
     return;
   }
 
+#if BUILDFLAG(ARKWEB_COOKIE)
+  resource_request.disable_web_security = disable_web_security_;
+#endif
   if (!disable_web_security_) {
     mojo::PendingRemote<mojom::DevToolsObserver> devtools_observer;
     const bool always_clone = !base::FeatureList::IsEnabled(

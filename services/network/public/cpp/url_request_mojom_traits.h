@@ -443,6 +443,11 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE)
     return request.usage_scenario_;
   }
 #endif
+#if BUILDFLAG(ARKWEB_COOKIE)
+  static bool disable_web_security_(const network::ResourceRequest& request) {
+    return request.disable_web_security;
+  }
+#endif
 };
 
 template <>

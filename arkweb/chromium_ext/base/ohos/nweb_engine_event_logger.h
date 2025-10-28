@@ -29,13 +29,8 @@ using UploadCallbackFunc = std::function<void(const std::string&,
                                               const std::string&,
                                               const std::string&,
                                               const std::string&)>;
-using UploadCallbackFuncNew = std::function<void(const char*,
-                                                 const char*,
-                                                 const char*,
-                                                 const char*)>;
 
 BASE_EXPORT void SetUploadCallback(UploadCallbackFunc callbabck);
-BASE_EXPORT void SetUploadCallbackNew(UploadCallbackFuncNew callbabck);
 
 BASE_EXPORT void ReportEngineEvent(const std::string& module,
                                    const std::string& resource,

@@ -71,7 +71,11 @@ void GestureDetectorExt::StopCreateOverlayGesture() {
 // LCOV_EXCL_STOP
 
 // LCOV_EXCL_START
-void GestureDetectorExt::OnAITextSelected() {}
+void GestureDetectorExt::OnAITextSelected() {
+  timeout_handler_->StopTimeout(SHORT_PRESS);
+  timeout_handler_->StopTimeout(LONG_PRESS);
+  timeout_handler_->StopTimeout(DRAG_LONG_PRESS);
+}
 // LCOV_EXCL_STOP
 #endif
 }  // namespace ui

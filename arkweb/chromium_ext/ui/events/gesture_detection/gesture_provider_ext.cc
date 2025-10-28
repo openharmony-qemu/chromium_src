@@ -38,6 +38,8 @@ void GestureProviderExt::ResetDetection(bool is_lost_focus) {
 #if BUILDFLAG(ARKWEB_AI)
 // LCOV_EXCL_START
 void GestureProviderExt::OnAITextSelected() {
+  LOG(INFO)
+      << "GestureProviderExt::OnAITextSelected, stop arkweb generated gesture.";
   gesture_listener_->GetDetector().AsGestureDetectorExt()->OnAITextSelected();
 }
 // LCOV_EXCL_STOP

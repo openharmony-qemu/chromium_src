@@ -192,3 +192,12 @@
 /base/...fuchsia* @ringking0
 /base/fuchsia/filtered_service_directory.* @ringking0
 /apps/ @ringking0
+
+#arkweb dfx
+/arkweb/ohos_nweb/src/capi/nweb_logger_callback.h @StringChen
+/arkweb/ohos_nweb/src/capi/nweb_logger_report_event_callback.h @StringChen
+/arkweb/ohos_nweb/src/capi/nweb_statistic_callback.h @StringChen
+/arkweb/ohos_nweb/src/cef_delegate/nweb_console_log_impl.cc @StringChen
+/arkweb/ohos_nweb/src/nweb_hilog.h @StringChen
+/arkweb/ohos_nweb/src/nweb_sysevent.gni @StringChen
+/arkweb/ohos_nweb/src/sysevent/ @StringChen

@@ -13,14 +13,14 @@
  * limitations under the License.
  */
 
-#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+// ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 #include "third_party/blink/renderer/bindings/core/v8/v8_video_priority.h"
-#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+// ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
 namespace blink {
 
-#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
 bool Document::isVideoPrioritySupported() {
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
   LOG(INFO) << "VideoOpt, Document receive query, isVideoPrioritySupported()";
   bool result = false;
   bool cloudCtrl = false;
@@ -36,15 +36,21 @@ bool Document::isVideoPrioritySupported() {
   LOG(INFO) << "VideoOpt: " << __func__ << " cloudCtrl=" << cloudCtrl
             << "; result=" << result;
   return result;
+#else
+  return false;
+#endif
 }
 
 void Document::setVideoPriority(const HeapVector<Member<VideoPriority>>& vec) {
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
   LOG(INFO) << "VideoOpt, Document receive setVideoPriority";
   if (GetFrame()) {
     GetFrame()->SetVideoPriority(vec);
   }
+#endif
 }
 
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
 void Document::SetVideoIsPlaying(std::string id, bool playing) {
   LOG(DEBUG) << "VideoOpt, Document SetVideoIsPlaying, id: " << id << ", playing:" << playing;
   if (GetFrame()) {

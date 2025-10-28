@@ -182,6 +182,24 @@ uint16_t HTMLVideoElement::GetVideoBitrateDefault() {
   return result;
 }
 
+void HTMLVideoElement::CheckAndSetValue(const QualifiedName& name,
+                                        uint16_t* out) {
+  const AtomicString& value = FastGetAttribute(name);
+  bool ok = true;
+  int result = value.ToInt(&ok);
+  if (!ok) {
+    return;
+  }
+
+  if (result <= 0 || result > UINT16_MAX) {
+    return;
+  }
+
+  *out = result;
+}
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
+// ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 uint16_t HTMLVideoElement::hbsPreloadTime() {
   return hbs_preload_time_;
 }
@@ -224,22 +242,6 @@ void HTMLVideoElement::setHbsBitrate(uint16_t bt) {
 void HTMLVideoElement::setHbsMoovSize(uint16_t ms) {
   setAttribute(html_names::kHbsmoovsizeAttr, AtomicString::Number<short>(ms));
 }
-
-void HTMLVideoElement::CheckAndSetValue(const QualifiedName& name,
-                                        uint16_t* out) {
-  const AtomicString& value = FastGetAttribute(name);
-  bool ok = true;
-  int result = value.ToInt(&ok);
-  if (!ok) {
-    return;
-  }
-
-  if (result <= 0 || result > UINT16_MAX) {
-    return;
-  }
-
-  *out = result;
-}
-#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+// ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
 }  // namespace blink

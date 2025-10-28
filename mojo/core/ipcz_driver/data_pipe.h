@@ -22,6 +22,10 @@
 #include "mojo/public/c/system/types.h"
 #include "third_party/ipcz/include/ipcz/ipcz.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/logging.h"
+#endif
+
 namespace mojo::core::ipcz_driver {
 
 class Transport;
@@ -198,6 +202,11 @@ class DataPipe : public Object<DataPipe> {
   // This loosely tracks whether new data has arrived since the last ReadData or
   // BeginReadData attempt.
   bool has_new_data_ GUARDED_BY(lock_) = false;
+
+#if BUILDFLAG(IS_OHOS)
+  static std::atomic<size_t> instance_count_;
+#endif
+
 };
 
 }  // namespace mojo::core::ipcz_driver

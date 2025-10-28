@@ -48,6 +48,16 @@ class PermissionServiceImpl : public blink::mojom::PermissionService {
   class PendingRequest;
   using RequestsMap = base::IDMap<std::unique_ptr<PendingRequest>>;
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  void HasPermissionAsync(blink::mojom::PermissionDescriptorPtr permission,
+                          PermissionStatusCallback callback);
+
+  // blink::mojom::PermissionService.
+  void RequestPermissionSync(blink::mojom::PermissionDescriptorPtr permission,
+                             bool user_gesture,
+                             PermissionStatusCallback callback) override;
+#endif  // ARKWEB_CLIPBOARD
+
   // blink::mojom::PermissionService.
   void HasPermission(blink::mojom::PermissionDescriptorPtr permission,
                      PermissionStatusCallback callback) override;

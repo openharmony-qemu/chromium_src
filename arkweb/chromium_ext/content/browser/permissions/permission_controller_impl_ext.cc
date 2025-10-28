@@ -20,7 +20,7 @@ void PermissionControllerImpl::GetPermissionStatusAsync(
     void* render_host,
     const url::Origin& origin,
     base::OnceCallback<void(blink::mojom::PermissionStatus)> callback) {
-  if (!render_host) {
+  if (isFromDocument && !render_host) {
     LOG(ERROR) << "GetPermissionStatusAsync render_host is null";
     std::move(callback).Run(blink::mojom::PermissionStatus::DENIED);
     return;

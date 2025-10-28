@@ -309,7 +309,11 @@ void PermissionServiceImpl::OnRequestPermissionsResponse(
 
 void PermissionServiceImpl::HasPermission(PermissionDescriptorPtr permission,
                                           PermissionStatusCallback callback) {
+#if BUILDFLAG(ARKWEB_CLIPBOARD) && BUILDFLAG(ARKWEB_NWEB_EX)
+  HasPermissionAsync(std::move(permission), std::move(callback));
+#else
   std::move(callback).Run(GetPermissionStatus(permission));
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD) && BUILDFLAG(ARKWEB_NWEB_EX)
 }
 
 void PermissionServiceImpl::RevokePermission(
@@ -498,3 +502,7 @@ void PermissionServiceImpl::ReceivedBadMessage() {
 }
 
 }  // namespace content
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+#include "arkweb/chromium_ext/content/browser/permissions/permission_service_impl_for_include.cc"
+#endif  // ARKWEB_CLIPBOARD

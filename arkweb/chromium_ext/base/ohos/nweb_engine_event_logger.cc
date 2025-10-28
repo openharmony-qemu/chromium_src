@@ -21,6 +21,7 @@
 #include "base/logging.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/no_destructor.h"
+#include "arkweb/ohos_nweb/src/nweb_common.h"
 
 namespace base {
 namespace ohos {
@@ -64,6 +65,18 @@ class NWebEngineEventLogger {
     }
   }
 
+  void set_upload_callback_new(UploadCallbackFuncNew callback) {
+    upload_callback_new_ = callback;
+
+    std::lock_guard<std::mutex> lock(GetQueueMutex());
+    while (!GetUploadQueue().empty()) {
+        std::shared_ptr<UploadData> data = GetUploadQueue().front();
+        GetUploadQueue().pop();
+ 
+        upload_callback(data->module, data->resource, data->error_code, data->error_msg);
+    }
+  }
+
   void upload_callback(const std::string& module,
                        const std::string& resource,
                        const std::string& error_code,
@@ -87,8 +100,14 @@ class NWebEngineEventLogger {
                              module, resource, error_code, error_msg));
       return;
     }
-    if (upload_callback_ != nullptr) {
-      upload_callback_(module, resource, error_code, error_msg);
+    if (IsNativeApiEnable()) {
+      if (upload_callback_new_ != nullptr) {
+        upload_callback_new_(module.c_str(), resource.c_str(), error_code.c_str(), error_msg.c_str());
+      }
+    } else {
+      if (upload_callback_ != nullptr) {
+        upload_callback_(module, resource, error_code, error_msg);
+      }
     }
   }
 
@@ -99,6 +118,7 @@ class NWebEngineEventLogger {
   ~NWebEngineEventLogger() = default;
 
   UploadCallbackFunc upload_callback_;
+  UploadCallbackFuncNew upload_callback_new_;
   scoped_refptr<SingleThreadTaskRunner> task_runner_;
 };
 
@@ -110,6 +130,10 @@ NWebEngineEventLogger::NWebEngineEventLogger() : upload_callback_(nullptr) {
 
 BASE_EXPORT void SetUploadCallback(UploadCallbackFunc callback) {
   NWebEngineEventLogger::Instance()->set_upload_callback(callback);
+}
+
+BASE_EXPORT void SetUploadCallbackNew(UploadCallbackFuncNew callback) {
+  NWebEngineEventLogger::Instance()->set_upload_callback_new(callback);
 }
 
 BASE_EXPORT void ReportEngineEvent(const std::string& module,

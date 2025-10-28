@@ -13,6 +13,7 @@
 #include "base/containers/circular_deque.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
+#include "base/memory/safe_ref.h"
 #include "base/time/time.h"
 #include "base/timer/timer.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/audio_codec_decoder_adapter.h"

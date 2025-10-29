@@ -35,7 +35,7 @@ class CORE_EXPORT ScrollableAreaUtils : public GarbageCollected<ScrollableAreaUt
   SkColor GetScrollBarColor() const {
     return static_cast<SkColor>(scrollbar_color_);
   }
-  void UpdateScrollbarColor();
+  void SetOverlayScrollbarColor();
 
   SkColor scrollbar_color_ = SK_ColorTRANSPARENT;
 #endif  // ARKWEB_SCROLLBAR

@@ -33,19 +33,21 @@ void ScrollableAreaUtils::SetScrollbarColor(SkColor colorValue) {
 // LCOV_EXCL_STOP
 
 // LCOV_EXCL_START
-void ScrollableAreaUtils::UpdateScrollbarColor() {
-  // set scrollbar color for overlay color theme
-  if (scrollable_area_->overlay_scrollbar_color_scheme__ ==
-      static_cast<unsigned>(mojom::blink::ColorScheme::kLight)) {
-    SkColor skDark = SkColorSetRGB(0x18, 0x24, 0x31);
-    SetScrollbarColor(skDark);
-    LOG(INFO) << "ScrollableArea::SetOverlayScrollbarColorScheme"
-              << " scrollbar color is RGB:0x18, 0x24, 0x31";
-  } else {
-    SkColor skLight = SkColorSetRGB(0xFF, 0xFF, 0xFF);
-    SetScrollbarColor(skLight);
-    LOG(INFO) << "ScrollableArea::SetOverlayScrollbarColorScheme"
-              << " scrollbar color is RGB:0xFF, 0xFF, 0xFF";
+void ScrollableAreaUtils::SetOverlayScrollbarColor() {
+  if (scrollable_area_->HasOverlayScrollbars()) {
+    // set scrollbar color for overlay color theme
+    if (scrollable_area_->overlay_scrollbar_color_scheme__ ==
+        static_cast<unsigned>(mojom::blink::ColorScheme::kLight)) {
+      SkColor skDark = SkColorSetRGB(0x18, 0x24, 0x31);
+      SetScrollbarColor(skDark);
+      LOG(INFO) << "ScrollableArea::SetOverlayScrollbarColorScheme"
+                << " scrollbar color is RGB:0x18, 0x24, 0x31";
+    } else {
+      SkColor skLight = SkColorSetRGB(0xFF, 0xFF, 0xFF);
+      SetScrollbarColor(skLight);
+      LOG(INFO) << "ScrollableArea::SetOverlayScrollbarColorScheme"
+                << " scrollbar color is RGB:0xFF, 0xFF, 0xFF";
+    }
   }
 }
 // LCOV_EXCL_STOP

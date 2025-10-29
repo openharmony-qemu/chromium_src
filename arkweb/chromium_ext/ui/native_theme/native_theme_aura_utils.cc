@@ -117,11 +117,14 @@ void NativeThemeAuraUtils::PaintScrollbarThumbWithColor(
   SkScalar radius;
   gfx::Rect aroundRRect;  // Draw rect on aroundRRect's position.
   gfx::Rect thumb_rect(rect);
+  if (color_scheme == NativeTheme::ColorScheme::kDark) {
+    overflags.setColor(SkColorSetA(SK_ColorWHITE, 102));
+  } else {
+    overflags.setColor(SkColorSetA(SkColorSetRGB(0x18, 0x24, 0x31), 102));
+  }
   float ratio = base::ohos::GetPixelRatio();
   if (extra_params.thumb_color.has_value()) {
     overflags.setColor(SkColor4f::FromColor(extra_params.thumb_color.value()));
-  } else {
-    overflags.setColor(SkColorSetA(scrollbar_color, 102));
   }
   if (state == NativeTheme::kHovered || state == NativeTheme::kPressed) {
     radius = SkIntToScalar(kForceScrollbarActiveRadius * ratio);

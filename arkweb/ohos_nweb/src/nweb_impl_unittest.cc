@@ -3233,6 +3233,39 @@ TEST_F(NWebImplTest, StoreWebArchive002) {
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
 }
 
+TEST_F(NWebImplTest, StoreWebArchive003) {
+  const std::string base_name = "name";
+  bool auto_name = false;
+  std::shared_ptr<NWebStringValueCallback> callback = nullptr;
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, StoreWebArchive(base_name, auto_name, callback)).Times(1);
+  nweb_impl_->StoreWebArchive(base_name, auto_name, callback);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, StoreWebArchive004) {
+  const std::string base_name = "name";
+  bool auto_name = false;
+  std::shared_ptr<NWebStringValueCallback> callback = nullptr;
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, StoreWebArchive(base_name, auto_name, callback)).Times(1);
+  nweb_impl_->StoreWebArchive(base_name, auto_name, callback);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, StoreWebArchive005) {
+  const std::string base_name = "name";
+  bool auto_name = false;
+  std::shared_ptr<NWebStringValueCallback> callback = nullptr;
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, StoreWebArchive(base_name, auto_name, callback)).Times(1);
+  nweb_impl_->StoreWebArchive(base_name, auto_name, callback);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
 TEST_F(NWebImplTest, SendDragEvent001) {
   std::shared_ptr<MockNWebDragEvent> dragEvent = std::make_shared<MockNWebDragEvent>();
   EXPECT_NE(dragEvent, nullptr);

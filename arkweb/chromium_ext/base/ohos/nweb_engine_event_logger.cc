@@ -59,7 +59,7 @@ class NWebEngineEventLogger {
     while (!GetUploadQueue().empty()) {
         std::shared_ptr<UploadData> data = GetUploadQueue().front();
         GetUploadQueue().pop();
- 
+
         upload_callback(data->module, data->resource, data->error_code, data->error_msg);
     }
   }
@@ -102,7 +102,7 @@ class NWebEngineEventLogger {
   scoped_refptr<SingleThreadTaskRunner> task_runner_;
 };
 
-NWebEngineEventLogger::NWebEngineEventLogger() : upload_callback_(nullptr) {
+NWebEngineEventLogger::NWebEngineEventLogger() : upload_callback_(nullptr), task_runner_(nullptr) {
 
 }
 

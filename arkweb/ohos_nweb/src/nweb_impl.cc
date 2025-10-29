@@ -286,6 +286,10 @@ extern bool g_siteIsolationMode;
 #include "components/os_crypt/sync/os_crypt.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+#include "ohos_nweb_ex/core/static/nweb_static_dispatcher.h"
+#endif
+
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 OnReportStatisticLogFunc
     OHOS::NWeb::NWebImpl::on_report_statistic_log_callback_ = nullptr;
@@ -1334,6 +1338,10 @@ NO_SANITIZE("cfi") void NWebImpl::UploadCallback(const std::string& module,
                                                  const std::string& resource,
                                                  const std::string& errorCode,
                                                  const std::string& errorMsg) {
+#if BUILDFLAG(ARKWEB_NWEB_EX)
+  NWebStaticDispatcher::OnLoggerReportEvent(module, resource, errorCode, errorMsg);
+#endif
+
   if (logger_report_event_callback_ == nullptr) {
     return;
   }

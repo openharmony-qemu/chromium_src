@@ -228,6 +228,7 @@ extern bool g_siteIsolationMode;
 #include "chrome/browser/profiles/profile.h"
 #include "cef/include/cef_request_context.h"
 #include "cef/libcef/browser/request_context_impl.h"
+#include "ohos_cef_ext/libcef/browser/offscreen_document_dialog_manager.h"
 #include "ohos_cef_ext/libcef/browser/extensions/web_extension_menu_manager.h"
 #include "ohos_cef_ext/libcef/browser/extensions/tab_extensions_util.h"
 #include "chrome/browser/extensions/extension_service.h"
@@ -238,6 +239,7 @@ extern bool g_siteIsolationMode;
 #include "extensions/browser/extension_registry_info_manager.h"
 #include "extensions/browser/extension_system.h"
 #include "nweb_extension_action_cef_delegate.h"
+#include "nweb_js_dialog_result_impl.h"
 #include "chrome/browser/extensions/api/debugger/extension_dev_tools_infobar_delegate.h"
 #include "arkweb/chromium_ext/components/crx_file/crx_key_service.h"
 #endif // ARKWEB_ARKWEB_EXTENSIONS
@@ -294,6 +296,12 @@ extern bool g_siteIsolationMode;
 OnReportStatisticLogFunc
     OHOS::NWeb::NWebImpl::on_report_statistic_log_callback_ = nullptr;
 #endif  // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+OnArkWebStaticOffscreenDocumentAlertFunc   OHOS::NWeb::NWebImpl::on_off_screen_alert_callback_ = nullptr;
+OnArkWebStaticOffscreenDocumentConfirmFunc OHOS::NWeb::NWebImpl::on_off_screen_confirm_callback_ = nullptr;
+OnArkWebStaticOffscreenDocumentPromptFunc  OHOS::NWeb::NWebImpl::on_off_screen_prompt_callback_ = nullptr;
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 #include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
@@ -4330,6 +4338,116 @@ void NWebImpl::WebExtensionSetForbidDisplayInSettings(
     return;
   }
   extension_service->SetForbidDisplayInSettings(extension_ids);
+}
+
+NO_SANITIZE("cfi")
+void NWebImpl::OnAlertDialogByJS(const std::string& extensionId,
+                                 const std::string& url,
+                                 const std::string& message,
+                                 CefRefPtr<CefJSDialogCallback> callback,
+                                 bool& suppress_message) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  std::shared_ptr<NWebJSDialogResult> js_alert_callback =
+      std::make_shared<NWebJSDialogResultImpl>(callback);
+  CefOffScreenDocumentDialogManager* dialog_manager =
+      CefOffScreenDocumentDialogManager::GetInstance();
+  if (dialog_manager) {
+    int requestId = dialog_manager->AddAlertRequest(js_alert_callback);
+    if (on_off_screen_alert_callback_) {
+      on_off_screen_alert_callback_(extensionId.c_str(), url.c_str(),
+                                    message.c_str(), requestId);
+    }
+  }
+  suppress_message = false;
+}
+
+NO_SANITIZE("cfi")
+void NWebImpl::OnConfirmDialogByJS(const std::string& extensionId,
+                                   const std::string& url,
+                                   const std::string& message,
+                                   CefRefPtr<CefJSDialogCallback> callback,
+                                   bool& suppress_message) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  std::shared_ptr<NWebJSDialogResult> js_confirm_callback =
+      std::make_shared<NWebJSDialogResultImpl>(callback);
+  CefOffScreenDocumentDialogManager* dialog_manager =
+      CefOffScreenDocumentDialogManager::GetInstance();
+  if (dialog_manager) {
+    int requestId = dialog_manager->AddConfirmRequest(js_confirm_callback);
+    if (on_off_screen_confirm_callback_) {
+      on_off_screen_confirm_callback_(extensionId.c_str(), url.c_str(),
+                                      message.c_str(), requestId);
+    }
+  }
+  suppress_message = false;
+}
+
+NO_SANITIZE("cfi")
+void NWebImpl::OnPromptDialogByJS(const std::string& extensionId,
+                                  const std::string& url,
+                                  const std::string& message,
+                                  const std::string& value,
+                                  CefRefPtr<CefJSDialogCallback> callback,
+                                  bool& suppress_message) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  std::shared_ptr<NWebJSDialogResult> js_prompt_callback =
+      std::make_shared<NWebJSDialogResultImpl>(callback);
+  CefOffScreenDocumentDialogManager* dialog_manager =
+      CefOffScreenDocumentDialogManager::GetInstance();
+  if (dialog_manager) {
+    int requestId = dialog_manager->AddPromptRequest(js_prompt_callback);
+    if (on_off_screen_prompt_callback_) {
+      on_off_screen_prompt_callback_(extensionId.c_str(), url.c_str(),
+                                     message.c_str(), value.c_str(), requestId);
+    }
+  }
+}
+
+void NWebImpl::SetOnOffscreenDocumentAlertCallback(
+    OnArkWebStaticOffscreenDocumentAlertFunc func) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  on_off_screen_alert_callback_ = func;
+}
+
+void NWebImpl::SetOnOffscreenDocumentConfirmCallback(
+    OnArkWebStaticOffscreenDocumentConfirmFunc func) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  on_off_screen_confirm_callback_ = func;
+}
+
+void NWebImpl::SetOnOffscreenDocumentPromptCallback(
+    OnArkWebStaticOffscreenDocumentPromptFunc func) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  on_off_screen_prompt_callback_ = func;
+}
+
+void NWebImpl::AlertHandle(const int requestId) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  CefOffScreenDocumentDialogManager* dialog_manager =
+      CefOffScreenDocumentDialogManager::GetInstance();
+  if (dialog_manager) {
+    dialog_manager->Alert(requestId);
+  }
+}
+
+void NWebImpl::ConfirmHandle(const bool type, const int requestId) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  CefOffScreenDocumentDialogManager* dialog_manager =
+      CefOffScreenDocumentDialogManager::GetInstance();
+  if (dialog_manager) {
+    dialog_manager->Confirm(type, requestId);
+  }
+}
+
+void NWebImpl::PromptHandle(const bool type,
+                            const std::string& value,
+                            const int requestId) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  CefOffScreenDocumentDialogManager* dialog_manager =
+      CefOffScreenDocumentDialogManager::GetInstance();
+  if (dialog_manager) {
+    dialog_manager->Prompt(type, value, requestId);
+  }
 }
 
 #endif // ARKWEB_ARKWEB_EXTENSIONS

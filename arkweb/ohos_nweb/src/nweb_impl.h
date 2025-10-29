@@ -67,6 +67,7 @@ struct RunJavaScriptParam;
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 #include "capi/nweb_extension_manager_callback.h"
 #include "capi/nweb_extension_context_menus_callback.h"
+#include "capi/nweb_offscreen_document_callback.h"
 #include "capi/web_extension_tab_items.h"
 #include "ohos_nweb/src/capi/nweb_context_menus_on_clicked_data.h"
 #include "ohos_nweb/src/capi/web_extension_install_crx_items.h"
@@ -958,6 +959,30 @@ class NWebImpl : public NWeb {
                             std::unique_ptr<NWebExtensionTabMoveInfo> moveInfo);
   void WebExtensionTabReplaced(int32_t addedTabId, int32_t removedTabId);
   void WebExtensionSetViewType(int32_t type);
+
+  static void OnAlertDialogByJS(const std::string& extensionId,
+                                const std::string& url,
+                                const std::string& message,
+                                CefRefPtr<CefJSDialogCallback> callback,
+                                bool& suppress_message);
+  static void OnConfirmDialogByJS(const std::string& extensionId,
+                                  const std::string& url,
+                                  const std::string& message,
+                                  CefRefPtr<CefJSDialogCallback> callback,
+                                  bool& suppress_message);
+  static void OnPromptDialogByJS(const std::string& extensionId,
+                                 const std::string& url,
+                                 const std::string& message,
+                                 const std::string& value,
+                                 CefRefPtr<CefJSDialogCallback> callback,
+                                 bool& suppress_message);
+  static void SetOnOffscreenDocumentAlertCallback(OnArkWebStaticOffscreenDocumentAlertFunc func);
+  static void SetOnOffscreenDocumentConfirmCallback(OnArkWebStaticOffscreenDocumentConfirmFunc func);
+  static void SetOnOffscreenDocumentPromptCallback(OnArkWebStaticOffscreenDocumentPromptFunc func);
+
+  static void AlertHandle(const int requestId);
+  static void ConfirmHandle(const bool type, const int requestId);
+  static void PromptHandle(const bool type, const std::string& value, const int requestId);
 #endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_AI)
@@ -1212,6 +1237,12 @@ class NWebImpl : public NWeb {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   static OnReportStatisticLogFunc on_report_statistic_log_callback_;
 #endif  // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  static OnArkWebStaticOffscreenDocumentAlertFunc on_off_screen_alert_callback_;
+  static OnArkWebStaticOffscreenDocumentConfirmFunc on_off_screen_confirm_callback_;
+  static OnArkWebStaticOffscreenDocumentPromptFunc on_off_screen_prompt_callback_;
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
   void RegisterNativeJavaScriptProxy(const std::string& objName,

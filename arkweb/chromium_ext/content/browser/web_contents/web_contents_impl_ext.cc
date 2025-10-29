@@ -1245,9 +1245,11 @@ void WebContentsImplExt::OnOverScrollOffsetChanged(float offset_x,
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 std::string WebContentsImplExt::OnRewriteUrlForNavigation(const std::string& original_url,
-                                                          const std::string& referrer) {
+                                                          const std::string& referrer,
+                                                          int transition_type,
+                                                          bool is_key_request) {
   if (delegate_) {
-    return delegate_->OnRewriteUrlForNavigation(original_url, referrer);
+    return delegate_->OnRewriteUrlForNavigation(original_url, referrer, transition_type, is_key_request);
   } else {
     LOG(ERROR) << "WebContentsImplExt::OnRewriteUrlForNavigation delegate_ is nullptr";
     return "";
@@ -1255,8 +1257,10 @@ std::string WebContentsImplExt::OnRewriteUrlForNavigation(const std::string& ori
 }
 
 std::string WebContentsImplExt::NotifyNavigationRewriteUrl(const std::string& original_url,
-                                                           const std::string& referrer) {
-  return OnRewriteUrlForNavigation(original_url, referrer);
+                                                           const std::string& referrer,
+                                                           int transition_type,
+                                                           bool is_key_request) {
+  return OnRewriteUrlForNavigation(original_url, referrer, transition_type, is_key_request);
 }
 #endif
 }  // namespace content

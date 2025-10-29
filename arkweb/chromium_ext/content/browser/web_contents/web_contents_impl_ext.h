@@ -324,10 +324,14 @@ class WebContentsImplExt : public WebContentsImpl {
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   std::string OnRewriteUrlForNavigation(const std::string& original_url,
-                                        const std::string& referrer) override;
+                                        const std::string& referrer,
+                                        int transition_type,
+                                        bool is_key_request) override;
 
   std::string NotifyNavigationRewriteUrl(const std::string& original_url,
-                                         const std::string& referrer) override;
+                                         const std::string& referrer,
+                                         int transition_type,
+                                         bool is_key_request) override;
 #endif
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)

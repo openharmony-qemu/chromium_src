@@ -5446,13 +5446,24 @@ bool NWebHandlerDelegate::OnStartBackgroundTask(int32_t type,
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 std::string NWebHandlerDelegate::OnRewriteUrlForNavigation(const std::string& original_url,
-                                                           const std::string& referrer) {
+                                                           const std::string& referrer,
+                                                           int transition_type,
+                                                           bool is_key_request) {
   if (!CefCurrentlyOn(TID_UI)) {
     return "";
   }
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   if (IsNativeApiEnable()) {
-    return dispatcher_.OnRewriteUrlForNavigation(original_url.c_str(), referrer.c_str());
+    const char* raw_url = dispatcher_.OnRewriteUrlForNavigation(
+        original_url.c_str(), referrer.c_str(), transition_type, is_key_request);
+
+    if (!raw_url) {
+      return "";
+    }
+
+    std::string result(raw_url);
+    FreeExternalMemory(const_cast<void*>(static_cast<const void*>(raw_url)));
+    return result;
   }
 #endif  // ARKWEB_NWEB_EX
   return "";

@@ -445,6 +445,7 @@ class CONTENT_EXPORT NavigationControllerImpl : public NavigationController {
       scoped_refptr<network::SharedURLLoaderFactory> blob_url_loader_factory,
       bool rewrite_virtual_urls
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      , GURL* url_to_rewrite = nullptr
       , NavigationControllerDelegate* delegate = nullptr
 #endif
       );

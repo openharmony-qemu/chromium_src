@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
+#ifndef OHOS_NWEB_SRC_NWEB_DOWNLOAD_ITEM_H_
+#define OHOS_NWEB_SRC_NWEB_DOWNLOAD_ITEM_H_
+
 #include "cef/include/cef_download_item.h"
 #include "ohos_nweb/src/capi/nweb_c_api.h"
 #include "ohos_nweb/src/nweb_hilog.h"
 #include "include/cef_download_item_ext.h"
-
-#ifndef OHOS_NWEB_SRC_NWEB_DOWNLOAD_ITEM_H_
-#define OHOS_NWEB_SRC_NWEB_DOWNLOAD_ITEM_H_
 
 //  Defined in DownloadItem::DownloadState::INTERRUPTED
 //  components/download/public/common/download_item.h

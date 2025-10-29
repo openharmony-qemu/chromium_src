@@ -13,11 +13,11 @@
  * limitations under the License.
  */
  
-#include <vector>
- 
 #ifndef OHOS_NWEB_SRC_NWEB_CONTEXT_MENUS_ITEM_H_
 #define OHOS_NWEB_SRC_NWEB_CONTEXT_MENUS_ITEM_H_
  
+#include <vector>
+
 // This is an exported struct. Do not modify it or its nested structs.
 struct NWebContextMenusItem {
   bool checked;

@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
+#ifndef OHOS_NWEB_SRC_NWEB_PERMISSION_REQUEST_H_
+#define OHOS_NWEB_SRC_NWEB_PERMISSION_REQUEST_H_
+
 #include "ohos_nweb/include/nweb_access_request.h"
 #include "ohos_nweb/src/capi/nweb_c_api.h"
 #include "ohos_nweb/src/nweb_hilog.h"
-
-#ifndef OHOS_NWEB_SRC_NWEB_PERMISSION_REQUEST_H_
-#define OHOS_NWEB_SRC_NWEB_PERMISSION_REQUEST_H_
 
 struct NWebPermissionRequest {
   int nweb_id;

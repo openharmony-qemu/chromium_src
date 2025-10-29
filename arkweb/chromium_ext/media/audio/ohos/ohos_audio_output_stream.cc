@@ -188,9 +188,11 @@ void OHOSAudioOutputStream::OnSuspend() {
     isSuspended_ = true;
     // After stopping playback, it is necessary to continue obtaining audio
     // data, which will trigger the pause action of the render process.
-    audio_task_runner_->PostTask(
+    if (audio_task_runner_) {
+      audio_task_runner_->PostTask(
         FROM_HERE, base::BindOnce(&OHOSAudioOutputStream::PumpSamples,
                                   weak_factory_.GetWeakPtr()));
+    }
   } else {
     LOG(INFO) << "media session is not active. [hash: "
               << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";

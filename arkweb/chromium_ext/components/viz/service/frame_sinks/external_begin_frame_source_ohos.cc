@@ -212,6 +212,7 @@ ReportLossFrame::GetInstance()->SetVsyncPeriod(vsync_period_);
     }
   }
 #endif  // ARKWEB_PIP
+#endif
 
 #if BUILDFLAG(ARKWEB_D_VSYNC)
 bool currentDysyncState = base::ohos::DVsyncController::GetInstance().GetIsFling();

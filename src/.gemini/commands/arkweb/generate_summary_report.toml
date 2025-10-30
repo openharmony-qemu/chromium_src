@@ -1,0 +1,10 @@
+# .gemini/commands/arkweb/resolve_rej.toml
+description = "汇总某个文件夹下的解冲突总体报告"
+prompt = """
+    用户输入了一个文件夹名：'{{args}}'，请你在这个文件夹下（包括所有子目录）遍历所有后缀为.rej.json的文件。
+    对这些文件进行读取和汇总后，生成一个对应文件夹的markdown文件。
+    markdown文件文件名应命名为该文件夹名加上_allrej.md后缀。
+    markdown文件路径应放在你收到的输入文件夹名对应的路径下。
+    例如，如果输入是 'google_apis'，则报告应为 'google_apis/google_apis_allrej.md'。
+    markdown文件内容应为对应文件夹下所有后缀为.rej.json的文件的信息汇总。
+"""

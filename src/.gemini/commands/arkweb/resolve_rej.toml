@@ -1,0 +1,6 @@
+# .gemini/commands/arkweb/resolve_rej.toml
+description = "解决单个文件的冲突"
+prompt = """
+    用户输入了一个输入rej文件：'{{args}}'，其对应源文件名称即为rej文件名去掉.rej后缀，并且源文件与rej文件存在于同级目录下，请你把这个rej文件应用于对应源文件中，并解决冲突，
+    冲突解决后不要删除rej文件内容，并在同级目录下生成一个对应的json文件，json文件名为对应rej文件名加上.json后缀，json文件内容用中文告知我这个冲突出现的原因是什么，你是通过什么思路来解决的
+"""

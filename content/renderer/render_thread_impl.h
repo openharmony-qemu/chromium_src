@@ -624,7 +624,7 @@ class CONTENT_EXPORT RenderThreadImpl
   std::atomic<int> moov_size_{512};
   std::atomic<int> bit_rate_{2000};
   std::vector<std::string> support_domains_;
-  std::mutex cloud_control_config_mutex;
+  mutable std::mutex cloud_control_config_mutex;
 #endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
   scoped_refptr<viz::ContextProviderCommandBuffer> shared_main_thread_contexts_;

@@ -114,6 +114,10 @@ class PDFDocumentHelper
   gfx::PointF ConvertToRoot(const gfx::PointF& point_f);
   gfx::PointF ConvertHelper(const gfx::PointF& point_f, float scale);
 
+#if BUILDFLAG(ARKWEB_PDF)
+  void UpdateQuickMenu();
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
   content::RenderFrameHostReceiverSet<mojom::PdfHost> pdf_host_receivers_;
   std::unique_ptr<PDFDocumentHelperClient> const client_;
   raw_ptr<content::TouchSelectionControllerClientManager>

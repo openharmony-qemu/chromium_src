@@ -33,6 +33,7 @@ const uint32_t IPC_G2B_CODE_QUERY_WINDOW = 10002;
 const uint32_t IPC_G2B_CODE_DESTROY_WINDOW = 10003;
 const uint32_t IPC_G2B_CODE_PASS_SURFACE = 10004;
 const uint32_t IPC_G2B_CODE_QUERY_BOOL = 10005;
+const uint32_t IPC_G2B_CODE_DESTROY_PASSED_WINDOW = 10006;
 const char *GPU_IPC_DESCRIPTOR = "chromium.native.gpu";
 const int START_TIMEOUT_SEC = 3;
 
@@ -149,6 +150,9 @@ void PassWindow(int64_t window_id) {
     return;
   }
   OHNativeWindow* window;
+  // Here we create a nativewindow in GPU process just for
+  // passing it to browser process, so this nativewindow should
+  // be released after passing.
   if (OH_NativeWindow_CreateNativeWindowFromSurfaceId(window_id, &window) != 0) {
     WVLOG_E("PassWindow get window failed, id = %{public}d", window_id);
     return;
@@ -159,16 +163,48 @@ void PassWindow(int64_t window_id) {
     WVLOG_E("PassWindow write to window failed, id = %{public}d", window_id);
     OH_IPCParcel_Destroy(data);
     OH_IPCParcel_Destroy(reply);
+    OH_NativeWindow_NativeObjectUnreference(window);
     return;
   }
   if(OH_IPCRemoteProxy_SendRequest(g_ipc_remote_proxy, IPC_G2B_CODE_PASS_SURFACE, data, reply, nullptr) != 0) {
     WVLOG_E("PassWindow send request failed, id = %{public}d", window_id);
     OH_IPCParcel_Destroy(data);
     OH_IPCParcel_Destroy(reply);
+    OH_NativeWindow_NativeObjectUnreference(window);
     return;
   }
   OH_IPCParcel_Destroy(data);
   OH_IPCParcel_Destroy(reply);
+  OH_NativeWindow_NativeObjectUnreference(window);
+}
+
+void DestroyPassedSurfaceFromGpuProcess(int64_t surface_id) {
+    if (g_ipc_remote_proxy == nullptr) {
+        WVLOG_E("ipc remote proxy is null");
+        return;
+    }
+
+    OHIPCParcel* data = OH_IPCParcel_Create();
+    OHIPCParcel* reply = OH_IPCParcel_Create();
+
+    if (OH_IPCParcel_WriteInt64(data, surface_id) != 0) {
+      WVLOG_E("failed to write surface id");
+      OH_IPCParcel_Destroy(data);
+      OH_IPCParcel_Destroy(reply);
+      return;
+    }
+
+    if (OH_IPCRemoteProxy_SendRequest(g_ipc_remote_proxy,
+                                      IPC_G2B_CODE_DESTROY_PASSED_WINDOW, data,
+                                      reply, nullptr) != 0) {
+      WVLOG_E(
+          "DestroyPassedSurfaceFromGpuProcess send request failed, surface_id"
+          " = %{public}llu",
+          surface_id);
+    }
+
+    OH_IPCParcel_Destroy(data);
+    OH_IPCParcel_Destroy(reply);
 }
 
 bool QueryBoolFromBrowserProcess(const std::string& key, bool defaultValue) {

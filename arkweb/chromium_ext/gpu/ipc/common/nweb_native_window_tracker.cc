@@ -16,6 +16,7 @@ NWebNativeWindowTracker* g_instance = nullptr;
 extern void* QueryRenderWindowFromBrowserProcess(int32_t window_id);
 extern void DestoryRenderWindowFromBrowserProcess(int32_t window_id);
 extern void PassWindow(int64_t window_id);
+extern void DestroyPassedSurfaceFromGpuProcess(int64_t surface_id);
 
 class BrowserClientAdapterImpl : public OHOS::NWeb::AafwkBrowserClientAdapter {
 public:
@@ -38,6 +39,10 @@ public:
     void DestroyRenderSurface(int32_t surface_id) override {
         LOG(INFO) << "BrowserClientAdapterImpl.DestroyRenderSurface " << surface_id;
         DestoryRenderWindowFromBrowserProcess(surface_id);
+    }
+
+    void DestroyPassedSurface(int64_t surface_id) override {
+        DestroyPassedSurfaceFromGpuProcess(surface_id);
     }
 };
 
@@ -92,6 +97,16 @@ void NWebNativeWindowTracker::DestroyNativeWindow(int32_t native_window_id) {
   base::AutoLock lock(window_map_lock_);
   auto it = native_window_map_.find(native_window_id);
   if (it != native_window_map_.end()) {
+        // g_browser_client_ is NOT nullptr means now NWebNativeWindowTracker is
+        // working on GPU process. In this case we need to do a NativeWindow
+        // UNREF, as OH_NativeWindow_ReadFromParcel did a NativeWindow REF
+        // implicitly during passing NativeWindow from browser process, or else
+        // a memory leak would occur.
+        if (g_browser_client_) {
+          OHOS::NWeb::OhosAdapterHelper::GetInstance()
+              .GetWindowAdapterInstance()
+              .NativeWindowUnRef(it->second);
+        }
     native_window_map_.erase(native_window_id);
     LOG(DEBUG) << __FUNCTION__
                << "Destroy native_window id = " << native_window_id;

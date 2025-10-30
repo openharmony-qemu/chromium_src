@@ -1229,6 +1229,8 @@
                 "OHIPCParcel* OH_IPCParcel_Create(void)",
                 "int OH_IPCParcel_ReadInt32(const OHIPCParcel *parcel, int32_t *value)",
                 "int OH_IPCParcel_WriteInt32(OHIPCParcel *parcel, int32_t value)",
+                "int OH_IPCParcel_ReadInt64(const OHIPCParcel *parcel, int64_t *value)",
+                "int OH_IPCParcel_WriteInt64(OHIPCParcel *parcel, int64_t value)",
                 "const char* OH_IPCParcel_ReadString(const OHIPCParcel *parcel)",
                 "void OH_IPCParcel_Destroy(OHIPCParcel *parcel)",
                 "int OH_IPCParcel_WriteFileDescriptor(OHIPCParcel *parcel, int32_t fd)",

@@ -300,9 +300,9 @@ constexpr unsigned int QOS_CTRL_IPC_MAGIC = 0xCC;
                         ASHMEM_PIN, ASHMEM_UNPIN, ASHMEM_GET_PIN_STATUS,
                         kBinderWriteRead32, kBinderWriteRead64, BINDER_SET_MAX_THREADS,
                         BINDER_THREAD_EXIT, BINDER_VERSION, BINDER_ENABLE_ONEWAY_SPAM_DETECTION,
-                        BINDER_FEATURE_SET, BINDER_GET_SENDER_INFO},
+                        BINDER_FEATURE_SET, BINDER_GET_SENDER_INFO, QOS_CTRL_BASIC_OPERATION},
                     Allow())
-            .Cases({QOS_CTRL_BASIC_OPERATION, TIOCGWINSZ},
+            .Cases({TIOCGWINSZ},
                     Error(EPERM))
             .Default(RestrictIoctl());
 #endif  // BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)

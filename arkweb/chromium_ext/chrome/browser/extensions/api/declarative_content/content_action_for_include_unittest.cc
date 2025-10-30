@@ -79,6 +79,7 @@ TEST(ContentActionTest, ContentActionGetActionIcon_DefaultIcon) {
 class MockNWebExtensionActionCefDelegate
     : public OHOS::NWeb::NWebExtensionActionCefDelegate {
  public:
+  MockNWebExtensionActionCefDelegate() : OHOS::NWeb::NWebExtensionActionCefDelegate() {}
   MOCK_METHOD(void, OnEnable,
       (const std::string&, std::optional<int>&, std::optional<std::string>, std::optional<bool>),
       ());

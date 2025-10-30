@@ -48,7 +48,8 @@ bool LogUtils::IsSupportScheme(const std::string& url,
 // static
 bool LogUtils::IsSupportScheme(const std::string& scheme) {
   if (base::EqualsCaseInsensitiveASCII(scheme, url::kHttpScheme) ||
-      base::EqualsCaseInsensitiveASCII(scheme, url::kHttpsScheme)) {
+      base::EqualsCaseInsensitiveASCII(scheme, url::kHttpsScheme) ||
+      base::EqualsCaseInsensitiveASCII(scheme, url::kChromeExtensionScheme)) {
     return true;
   }
   return false;

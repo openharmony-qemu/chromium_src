@@ -204,17 +204,10 @@ void NWebExtensionActionCefDelegate::UnRegisterWebExtensionApiListener() {
   g_action_api_listener = nullptr;
 }
 
-std::unique_ptr<NWebExtensionActionCefDelegate>
-    NWebExtensionActionCefDelegate::instance = nullptr;
-std::mutex NWebExtensionActionCefDelegate::mtx;
-
 // static
 NWebExtensionActionCefDelegate* NWebExtensionActionCefDelegate::GetInstance() {
-  std::lock_guard<std::mutex> lock(mtx);
-  if (!instance) {
-    instance = std::make_unique<NWebExtensionActionCefDelegate>();
-  }
-  return instance.get();
+  static NWebExtensionActionCefDelegate instance;
+  return &instance;
 }
 
 // static

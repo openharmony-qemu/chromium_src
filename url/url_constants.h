@@ -27,6 +27,7 @@ inline constexpr char16_t kAboutScheme16[] = u"about";
 inline constexpr char kAndroidScheme[] = "android";
 inline constexpr char kBlobScheme[] = "blob";
 inline constexpr char16_t kBlobScheme16[] = u"blob";
+inline constexpr char kChromeExtensionScheme[] = "chrome-extension";
 inline constexpr char kChromeosSteamScheme[] = "chromeos-steam";
 inline constexpr char kContentScheme[] = "content";
 inline constexpr char16_t kContentScheme16[] = u"content";

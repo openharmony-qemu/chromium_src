@@ -95,7 +95,9 @@ void DoTaskQueueFunction(content::BrowserContext* browser_context,
 
   // This is only necessary for service worker-based extensions.
   if (!BackgroundInfo::IsServiceWorkerBased(extension)) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
     LOG(INFO) << "extension is not service worked-based";
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
     return;
   }
 
@@ -110,6 +112,7 @@ void DoTaskQueueFunction(content::BrowserContext* browser_context,
       !IncognitoInfo::IsSplitMode(extension) ||
       !ExtensionsBrowserClient::Get()->IsExtensionIncognitoEnabled(
           extension->id(), browser_context)) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
     bool is_split_mode = IncognitoInfo::IsSplitMode(extension);
     bool is_off_the_record = ExtensionsBrowserClient::Get()->HasOffTheRecordContext(
         browser_context);
@@ -117,6 +120,7 @@ void DoTaskQueueFunction(content::BrowserContext* browser_context,
         extension->id(), browser_context);
     LOG(INFO) << "split mode is " << is_split_mode << ",off the record flag is " <<
         is_off_the_record << ",incognite enabled is " << is_incognito_enabled;
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
     return;
   }
 

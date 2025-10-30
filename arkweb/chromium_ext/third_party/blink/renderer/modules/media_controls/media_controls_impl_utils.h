@@ -22,6 +22,8 @@
 #include "third_party/blink/renderer/modules/media_controls/elements/media_control_top_row_panel_element.h"
 #include "third_party/blink/renderer/modules/media_controls/elements/media_control_timeline_row_panel_element.h"
 #endif  // ARKWEB_VIDEO_ASSISTANT
+#include "third_party/blink/renderer/platform/heap/garbage_collected.h"
+#include "third_party/blink/renderer/platform/heap/member.h"
 
 namespace blink {
 
@@ -56,7 +58,9 @@ const char kMediaControlsDevicePcCSSClass[] = "device-pc";
 
 class MediaControlsImplUtils {
 public:
-  raw_ptr<MediaControlsImpl> media_controls_impl_ = nullptr;
+  DISALLOW_NEW();
+  void Trace(Visitor* visitor) const;
+  Member<MediaControlsImpl> media_controls_impl_ = nullptr;
   MediaControlsImplUtils(MediaControlsImpl* media_controls_impl, HTMLMediaElement& media_element);
   static bool ShouldShowPlaybackSpeedButtonExt(HTMLMediaElement& media_element);
   void InitializeControlsExt();
@@ -78,9 +82,9 @@ public:
   void OnEnteredFullscreenAddStyleElement();
   void OnExitedFullscreenSetIswanted();
   void OnExitedFullscreenRemoveStyleElement();
-  void TraceExt(Visitor* visitor);
+  void TraceExt(Visitor* visitor) const;
   void UpdateOverflowMenuWantedExt(
-      std::pair<MediaControlElementBase*, bool>(&row_elements)[kRowElementsCount]);
+      std::pair<MediaControlElementBase*, bool>(&row_elements)[kRowElementsCount]) const;
   static void CreateExt(MediaControlsImpl* controls, HTMLMediaElement& media_element);
   bool PopulatePanelExtVideoAssistant();
   void BeginScrubbingExt(bool is_touch_event);

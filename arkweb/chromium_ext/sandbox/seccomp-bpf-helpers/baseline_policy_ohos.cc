@@ -125,10 +125,8 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
     case __NR_pread64:
     case __NR_recvfrom:
     case __NR_recvmsg:
-    case __NR_sendto:
     case __NR_write:
     case __NR_writev:
-    case __NR_pipe2:
     case __NR_gettimeofday:
     case __NR_exit:
     case __NR_exit_group:
@@ -157,11 +155,9 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
     case __NR_shutdown:
     case __NR_mincore:
     case __NR_memfd_create:
-    case __NR_faccessat:
     case __NR_openat:
     case __NR_connect:
     case __NR_readlinkat:
-    case __NR_mkdirat:
     case __NR_set_tid_address:
     case __NR_getdents64:
     case __NR_getrandom:
@@ -214,6 +210,10 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
 
     override_and_allow = true;
     break;
+    }
+
+    if (sysno == __NR_sched_setaffinity || sysno == __NR_sched_getaffinity) {
+        return Error(EPERM);
     }
 
 #if defined(__aarch64__)
@@ -396,7 +396,6 @@ constexpr unsigned int QOS_CTRL_IPC_MAGIC = 0xCC;
     case __NR_setresuid:
     case __NR_unlinkat:
     case __NR_flock:
-    case __NR_sched_setaffinity:
     case __NR_getrusage:
     case __NR_process_vm_readv:
     case __NR_pkey_free:
@@ -405,6 +404,7 @@ constexpr unsigned int QOS_CTRL_IPC_MAGIC = 0xCC;
     case __NR_execve:
     case __NR_capset:
     case __NR_setsid:
+    case __NR_rseq:
 #endif
 #if defined(__arm__)
     case __NR_sigaction:

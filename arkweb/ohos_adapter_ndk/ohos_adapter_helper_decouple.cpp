@@ -97,6 +97,7 @@
 #include "ohos_adapter/bridge/ark_vsync_adapter_wrapper.h"
 #include "ohos_adapter/bridge/ark_web_timezone_info_wrapper.h"
 #include "ohos_adapter/bridge/ark_window_adapter_wrapper.h"
+#include "color_picker_adapter/color_picker_adapter_impl.h"
 #include "pasteboard_adapter/include/pasteboard_client_adapter_impl.h"
 
 namespace OHOS::NWeb {
@@ -194,6 +195,11 @@ ArkOhosAdapterHelperWrapper::GetOhosWebDataBaseAdapterInstance() {
 
 NWeb::PasteBoardClientAdapter& ArkOhosAdapterHelperWrapper::GetPasteBoard() {
   static PasteBoardClientAdapterImpl instance;
+  return instance;
+}
+
+NWeb::ColorPickerAdapter& ArkOhosAdapterHelperWrapper::GetColorPickerAdapter() {
+  static ColorPickerAdapterImpl instance;
   return instance;
 }
 

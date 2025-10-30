@@ -30,7 +30,7 @@
 #include "nweb_mouse_event_result_impl.h"
 #include "nweb_touch_handle_hot_zone_impl.h"
 #include "nweb_touch_handle_state_impl.h"
-#include "ohos_adapter_helper.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
 #include "res_sched_client_adapter.h"
 #include "third_party/bounds_checking_function/include/securec.h"
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
@@ -969,6 +969,34 @@ void NWebRenderHandler::GetTouchHandleSize(
     }
   }
   LOG(INFO) << "GetTouchHandleSize " << size.width << " " << size.height;
+}
+
+void NWebRenderHandler::OpenEyeDropper(CefRefPtr<CefBrowser> browser) {
+  if (!browser || !browser->GetHost()) {
+    return;
+  }
+  std::pair<double, double> position;
+  auto delegate = delegate_interface_.lock();
+  if (delegate) {
+    position = delegate->GetLastTouchMousePosition();
+  }
+  auto view_port_height = browser->GetHost()->GetShrinkViewportHeight();
+  view_port_height +=
+      view_port_height > 0 ? browser->GetHost()->GetTopControlsOffset() : 0;
+
+  OhosAdapterHelper::GetInstance()
+      .GetColorPickerAdapter()
+      .StartColorPickerWithColorValue(
+          position.first + screen_x_ * screen_info_.display_ratio,
+          position.second +
+              (view_port_height + screen_y_) * screen_info_.display_ratio,
+          [browser](bool success, uint32_t color) {
+            if (browser && browser->GetHost()) {
+              LOG(INFO) << "OnEyeDropperResult, success == " << success
+                        << ", color == " << color;
+              browser->GetHost()->OnEyeDropperResult(success, color);
+            }
+          });
 }
 
 std::shared_ptr<NWebTouchHandleState> NWebRenderHandler::GetTouchHandleState(

@@ -167,6 +167,10 @@ void WebView::ApplyWebPreferencesForInclude(
   LOG(DEBUG) << "WebViewImpl::UpdateMainFrameLayoutSize,forceZeroLayoutHeight:"
              << prefs.force_zero_layout_height;
   RuntimeEnabledFeatures::SetMediaCaptureEnabled(true);
+  RuntimeEnabledFeatures::SetEyeDropperAPIEnabled(
+      OHOS::NWeb::OhosAdapterHelper::GetInstance()
+          .GetSystemPropertiesInstance()
+          .GetBoolParameter("web.eyedropper.enabled", false));
   if (!base::ohos::IsPcDevice()) {
     settings->SetAllowCustomScrollbarInMainFrame(false);
     settings->SetAccessibilityFontScaleFactor(prefs.font_scale_factor);

@@ -43,6 +43,8 @@ class ArkOhosAdapterHelperWrapper : public NWeb::OhosAdapterHelper {
 
   NWeb::PasteBoardClientAdapter& GetPasteBoard() override;
 
+  NWeb::ColorPickerAdapter& GetColorPickerAdapter() override;
+
   std::unique_ptr<NWeb::AudioRendererAdapter> CreateAudioRendererAdapter()
       override;
 

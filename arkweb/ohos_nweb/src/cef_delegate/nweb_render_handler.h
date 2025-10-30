@@ -273,6 +273,8 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
   uint32_t GetContentHeight() const { return content_height_; }
 
   uint32_t GetContentWidth() const { return content_width_; }
+
+  void OpenEyeDropper(CefRefPtr<CefBrowser> browser) override;
 #endif
 
   std::shared_ptr<NWebTouchHandleState> GetTouchHandleState(

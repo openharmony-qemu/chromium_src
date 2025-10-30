@@ -875,6 +875,7 @@ class NWebDelegateInterface
       const ScriptItemsByOrder& ScriptItemsByOrder) = 0;
 #endif
   virtual bool SetFocusByPosition(float x, float y) = 0;
+  virtual std::pair<double, double> GetLastTouchMousePosition() = 0;
 
 #if BUILDFLAG(ARKWEB_SAFEBROWSING)
   virtual void OnSafeBrowsingDetectionResult(int code,

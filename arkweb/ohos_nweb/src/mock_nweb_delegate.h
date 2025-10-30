@@ -929,6 +929,7 @@ class MockNWebDelegate : public NWebDelegateInterface {
 #endif
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   MOCK_METHOD(bool, SetFocusByPosition, (float x, float y), (override));
+  MOCK_METHOD((std::pair<double, double>), GetLastTouchMousePosition, (), (override));
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
 #if BUILDFLAG(ARKWEB_ACTIVE_POLICY)

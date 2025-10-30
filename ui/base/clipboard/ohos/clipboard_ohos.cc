@@ -565,11 +565,12 @@ class ClipboardOHOSInternal {
 
     result_vector.push_back(record);
 
+    CopyOptionMode copy_option = CopyOptionMode::LOCAL_DEVICE;
     if (copy_option_cb_.is_null()) {
       LOG(ERROR) << "copy_option_cb_ is null.";
-      return;
+    } else {
+      copy_option = static_cast<CopyOptionMode>(copy_option_cb_.Run());
     }
-    auto copy_option = static_cast<CopyOptionMode>(copy_option_cb_.Run());
 
     base::ThreadPool::PostTask(
         FROM_HERE,

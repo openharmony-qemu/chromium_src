@@ -975,32 +975,18 @@ void NWebHandlerDelegate::OnFrameDetached(CefRefPtr<CefBrowser> browser,
     return;
   }
 
-  std::string frameRoutingId = frame->GetIdentifier().ToString();
-  int childId = 0;
-  std::string parentRoutingId;
-  int parentChildId = 0;
-  FrameInfos frameInfo;
+  CefRefPtr<CefFrameHostImpl> frameHost = static_cast<CefFrameHostImpl*>(frame.get());
+  auto globalId = frameHost->GetGlobalRenderFrameHostId();
 
-  if (!frame->IsMain()) {
-    CefRefPtr<CefFrame> parent = frame->GetParent();
-    if (parent) {
-      parentRoutingId = parent->GetIdentifier().ToString();
-      if (parent->GetBrowser() && parent->GetBrowser()->GetHost()) {
-        parentChildId = parent->GetBrowser()->GetHost()->GetIdentifier();
-      }
-      frameInfo.parentId = std::to_string(parentChildId) + "_" + parentRoutingId;
-    }
+  FrameInfos frameInfo;
+  frameInfo.id = std::to_string(globalId.child_id) + "_" + std::to_string(globalId.frame_routing_id);
+  if (CefRefPtr<CefFrameHostImpl> parent = static_cast<CefFrameHostImpl*>(frameHost->GetParent().get())) {
+    auto parentGlobalId = parent->GetGlobalRenderFrameHostId();
+    frameInfo.parentId = std::to_string(parentGlobalId.child_id) + "_" +
+                         std::to_string(parentGlobalId.frame_routing_id);
   } else {
     frameInfo.parentId.clear();
   }
-
-  if (browser->GetHost()) {
-    childId = browser->GetHost()->GetIdentifier();
-  } else {
-    LOG(ERROR) << "OnFrameDetached browser getHost failed.";
-    return;
-  }
-  frameInfo.id = std::to_string(childId) + "_" + frameRoutingId;
 
   dispatcher_.OnFrameDetached(frameInfo);
 }

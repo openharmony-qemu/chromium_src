@@ -63,7 +63,7 @@ UrlData* VideoCommonDataProvider::urlData() const {
   return url_data_;
 }
 
-KURL VideoCommonDataProvider::Origin() const {
+const KURL& VideoCommonDataProvider::Origin() const {
   return origin_;
 }
 

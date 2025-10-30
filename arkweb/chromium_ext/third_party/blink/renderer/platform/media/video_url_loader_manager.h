@@ -76,7 +76,8 @@ class VideoUrlLoaderManager {
   std::list<PriorityLoader> executing_list_;
   std::set<std::string> playing_video_set_
     ALLOW_DISCOURAGED_TYPE("Set playing video");
-
+  
+  void PrintVideoPriority() const;
   base::WeakPtrFactory<VideoUrlLoaderManager> weak_factory_{this};
 };
 

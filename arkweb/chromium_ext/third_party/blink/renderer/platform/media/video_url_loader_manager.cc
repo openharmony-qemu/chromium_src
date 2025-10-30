@@ -19,11 +19,11 @@
 #include "third_party/blink/public/web/web_associated_url_loader_client.h"
 
 namespace blink {
+// The priority of the video being played, the highest priority for H5 set to 1.
+static const uint16_t kPlayingPriority = 0;
 
-static const uint16_t kPlayingPriority =
-    0;  // The priority of the video being played, the highest priority for H5 set to 1.
-static const uint16_t kDefaultPriority =
-    UINT16_MAX;  // Default priority, the priority will not trigger a download event.
+// Default priority, the priority will not trigger a download event.
+static const uint16_t kDefaultPriority = UINT16_MAX;
 
 PriorityLoader::PriorityLoader(base::WeakPtr<VideoURLLoaderImpl> load,
                                std::string id,
@@ -38,8 +38,9 @@ PriorityLoader::PriorityLoader(base::WeakPtr<VideoURLLoaderImpl> load,
 
 std::string PriorityLoader::AsHumanReadableString() const {
   std::ostringstream s;
-  s << "[VideoOpt: pri=" << priority_ << "; client=" << (void*)client_.get()
-    << "; start=" << start_ << "]";
+  s << "[VideoOpt: pri=" << priority_ <<
+    << ", start=" << start_ << "]" <<
+    << "(hash" << std::hex << base::FastHash(base::byte_span_from_ref(this)) << ")";
 
   return s.str();
 }
@@ -230,6 +231,8 @@ void VideoUrlLoaderManager::StartPendingLoaderIfNeeded() {
   auto& iter = executing_list_.back();
 
   iter.loader_->LoadAsynchronously(iter.request_, iter.client_.get());
+
+  PrintVideoPriority();
   // Beware, `pit`, `pit->loader_` and `pit->client_` may be deleted after LoadAsynchronously.
 }
 
@@ -253,6 +256,18 @@ bool VideoUrlLoaderManager::RemoveLoaderFromList(
     }
   }
   return false;
+}
+
+void VideoUrlLoaderManager::PrintVideoPriority() {
+  LOG(DEBUG) << "VideoOpt, pending size:" << pending_list_.size();
+  for (const auto& pendVideo : pending_list_) {
+    LOG(DEBUG) << "VideoOpt, pending:" << pendVideo.AsHumanReadableString();
+  }
+
+  LOG(DEBUG) << "VideoOpt, execute size:" << executing_list_.size();
+  for (const auto& executeVideo : executing_list_) {
+    LOG(DEBUG) << "VideoOpt, execute:" << executeVideo.AsHumanReadableString();
+  }
 }
 
 }  // namespace blink

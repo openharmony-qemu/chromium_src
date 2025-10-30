@@ -69,7 +69,7 @@ class VideoCommonDataProvider : public MultiBuffer::DataProvider {
 
   void SetUrlData(UrlData*);
   UrlData* urlData() const;
-  KURL Origin() const;
+  const KURL& Origin() const;
   UrlData::CorsMode CorsMode() const;
   virtual void NotifyLengthSet() {}
 

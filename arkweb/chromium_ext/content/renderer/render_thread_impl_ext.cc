@@ -289,7 +289,8 @@ void RenderThreadImpl::UpdateVideoLoadOptimizationConfigData(
   support_domains_ = support_domains;
 }
 
-+bool RenderThreadImpl::IsVideoLoadOptimizationEnabled(const std::string& url) const {
+bool RenderThreadImpl::IsVideoLoadOptimizationEnabled(const std::string& url) const {
+  std::lock_guard<std::mutex> cloudConfigMutexLock(cloud_control_config_mutex);
   if (!video_load_opt_enable_) {
     LOG(INFO) << "VideoOpt: cloudControl VLO GlobalEnabled is false";
     return false;
@@ -335,7 +336,7 @@ bool RenderThreadImpl::IsVideoLoadOptSupportDomainMatch(const std::string& url) 
     WTF::String url_domain_string(domain.c_str());
     const blink::KURL domain_kurl(url_domain_string);
     if (blink::SecurityOrigin::AreSameOrigin(kurl, domain_kurl)) {
-      LOG(INFO) << "VideoOpt: IsVideoLoadOptSupportDomain regular expression match url"
+      LOG(INFO) << "VideoOpt: IsVideoLoadOptSupportDomain regular expression match url";
       return true;
     }
   }

@@ -43,8 +43,8 @@
 
 namespace blink {
 // bitRate < 1000kb/s, slice size=256KB(8 blocks)
-// 1000kb/s <= bitRate < 2000kb/s, slice size=256KB(16 blocks)
-// bitRate > 2000kb/s, slice size=512KB(24 blocks)
+// 1000kb/s <= bitRate < 2000kb/s, slice size=512KB(16 blocks)
+// bitRate > 2000kb/s, slice size=768KB(24 blocks)
 const uint16_t low_byte_rate = 125;
 const uint16_t high_byte_rate = 250;
 const int32_t low_range_size = 8;

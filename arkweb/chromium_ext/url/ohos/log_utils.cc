@@ -15,7 +15,10 @@
 
 #include "log_utils.h"
 
+#include <algorithm>
 #include <memory>
+#include <sstream>
+#include <vector>
 
 #include "base/strings/string_util.h"
 #include "build/build_config.h"
@@ -270,6 +273,58 @@ std::string LogUtils::ConvertUrlWithMask(const std::string& url) {
   converted.append(url.substr(0, endPos));
   converted.append("***");
   return converted;
+}
+
+// static
+std::string LogUtils::ConvertPathWithMask(const std::string& file_path) {
+    if (file_path.empty()) {
+        return "";
+    }
+    std::string normalized_path = file_path;
+    std::string::size_type pos = 0;      // 将所有反斜杠和双斜杠标准化为单个正斜杠
+    while ((pos = normalized_path.find('\\', pos)) != std::string::npos) {
+        normalized_path[pos] = '/';
+        pos++;
+    }
+    pos = 0;
+    while ((pos = normalized_path.find("//", pos)) != std::string::npos) {
+        normalized_path.replace(pos, 2, "/");
+    }
+    //分割路径
+    std::vector<std::string> parts;
+    std::stringstream ss(normalized_path);
+    std::string part;
+    while (std::getline(ss, part, '/')) {
+        if (!part.empty()) {
+            parts.push_back(part);
+        }
+    }
+    if (parts.empty()) {
+        return "";
+    }
+    std::string result = "";
+    // 跳过驱动器盘符(如 "D:")
+    size_t start_index = 0;
+    if (parts.size() > 0 && parts[0].length() == 2 && parts[0][1] == ':') {
+      start_index = 1;
+    }
+    for (size_t i = start_index; i < parts.size(); ++i) {
+        std::string current_part = parts[i];
+        if (i == parts.size() - 1) {
+            size_t dot_pos = current_part.find_last_of('.');  // 如果是最后一个部分(文件名), 去除扩展名
+            if (dot_pos != std::string::npos) {
+                current_part = current_part.substr(0, dot_pos);
+            }
+        }
+        if (!current_part.empty()) {
+            std::string masked_part;
+            masked_part += current_part[0];  // 保留首字母
+            masked_part += "***";            // 添加三个星号
+
+            result += "/" + masked_part;
+        }
+    }
+    return result;
 }
 
 }  // namespace url

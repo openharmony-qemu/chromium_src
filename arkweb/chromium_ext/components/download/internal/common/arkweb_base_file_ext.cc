@@ -21,6 +21,7 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/chromium_ext/url/ohos/log_utils.h"
 #include "base/containers/heap_array.h"
 #include "base/files/file.h"
 #include "base/files/file_util.h"
@@ -55,7 +56,8 @@ bool ArkWebBaseFileExt::ReadDataFromFile(int64_t offset,
                                          char* data,
                                          size_t data_len,
                                          const base::FilePath& file_path) {
-  LOG(DEBUG) << "BaseFile::ReadDataFromFile file_path: " << file_path;
+  LOG(DEBUG) << "BaseFile::ReadDataFromFile file_path: "
+             << url::LogUtils::ConvertPathWithMask(file_path.value());
 
   bool re_open_flag = false;
   if (!file_.IsValid()) {

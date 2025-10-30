@@ -204,7 +204,14 @@ ReportLossFrame::GetInstance()->SetVsyncPeriod(vsync_period_);
 #if BUILDFLAG(ARKWEB_PIP)
   }
 #endif
-#endif
+#if BUILDFLAG(ARKWEB_PIP)
+  if (pip_active_ && isAlreadyThrottle) {
+    if {frame_sink_manager_} {
+      frame_sink_manager_->StopThrottlingAllFrameSinks();
+      isAlreadyThrottle = false;
+    }
+  }
+#endif  // ARKWEB_PIP
 
 #if BUILDFLAG(ARKWEB_D_VSYNC)
 bool currentDysyncState = base::ohos::DVsyncController::GetInstance().GetIsFling();

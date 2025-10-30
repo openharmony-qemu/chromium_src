@@ -239,6 +239,10 @@ void NWebEngineImpl::SetWebDestroyMode(WebDestroyMode mode) {
     NWebImpl::SetWebDestroyMode(mode);
 }
 
+void NWebEngineImpl::SetScrollbarMode(ScrollbarMode mode) {
+    NWebImpl::SetScrollbarMode(mode);
+}
+
 #if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
 void NWebEngineImpl::SetSoftKeyboardBehaviorMode(WebSoftKeyboardBehaviorMode mode) {
     NWebImpl::SetSoftKeyboardBehaviorMode(mode);

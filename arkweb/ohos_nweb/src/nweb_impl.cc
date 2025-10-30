@@ -828,7 +828,18 @@ void InitialWebEngineArgs(
   web_engine_args.emplace_back("--off-screen-frame-rate=60");
   web_engine_args.emplace_back("--no-unsandboxed-zygote");
   web_engine_args.emplace_back("--no-zygote");
-  web_engine_args.emplace_back("--enable-features=UseOzonePlatform");
+  if (OHOS::NWeb::NWebImp::GetScrollbarMode() ==
+      OHOS::NWeb::ScrollbarMode::FORCE_DISPLAY_SCROLLBAR &&
+      OHOS::NWeb::NWebImp::IsScrollbarModeChanged()) {
+    web_engine_args.emplace_back("--disable-features=OverlayScrollbar");
+  }
+  if (OHOS::NWeb::NWebImp::GetScrollbarMode() ==
+      OHOS::NWeb::ScrollbarMode::OVERLAY_DISPLAY_SCROLLBAR &&
+      OHOS::NWeb::NWebImp::IsScrollbarModeChanged()) {
+    web_engine_args.emplace_back("--enable-features=UseOzonePlatform,OverlayScrollbar");
+  } else {
+    web_engine_args.emplace_back("--enable-features=UseOzonePlatform");
+  }
   web_engine_args.emplace_back("-ozone-platform=headless");
   web_engine_args.emplace_back("--no-sandbox");
   web_engine_args.emplace_back("--use-mobile-user-agent");
@@ -1048,6 +1059,9 @@ bool NWebImpl::disableWebActivePolicy_ = false;
 void* NWebImpl::logger_report_event_callback_ = nullptr;
 
 WebDestroyMode NWebImpl::webDestroyMode_ = WebDestroyMode::NORMAL_MODE;
+
+ScrollbarMode NWebImpl::scrollbarMode_ = ScrollbarMode::OVERLAY_LAYOUT_SCROLLBAR;
+bool NWebImpl::scrollbarModeChanged_ = false;
 
 #if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
  WebSoftKeyboardBehaviorMode NWebImpl::keyboardBehaviorMode_ = WebSoftKeyboardBehaviorMode::DEFAULT;
@@ -3547,6 +3561,41 @@ WebDestroyMode NWebImpl::GetWebDestroyMode() {
 void NWebImpl::SetWebDestroyMode(WebDestroyMode mode) {
   WVLOG_I("NWebImpl set web destroy mode %{public}d", static_cast<int32_t>(mode));
   webDestroyMode_ = mode;
+}
+
+bool NWebImpl::IsScrollbarModeChanged() {
+  return scrollbarModeChanged_;
+}
+
+ScrollbarMode NWebImpl::GetScrollbarMode() {
+  return scrollbarMode_;
+}
+
+void NWebImpl::SetScrollbarMode(ScrollbarMode mode) {
+  WVLOG_I("NWebImpl set web scrollbar mode %{public}d", static_cast<int32_t>(mode));
+  if (!base::FeatureList::GetInstance() && !scrollbarModeChanged_) {
+    scrollbarModeChanged_ = true;
+    scrollbarMode_ = mode;
+    LOG(INFO) << "FeatureList is null and save mode";
+    return;
+  }
+  const base::CommandLine& command_line =
+      *base::CommandLine::ForCurrentProcess();
+  std::string enableFeatures;
+  std::string disableFeatures;
+  base::FeatureList::GetInstance()->GetCommandLineFeatureOverrides(&enableFeatures, &disableFeatures);
+  LOG(INFO) << "enable:" << enableFeatures << " disable:" << disableFeatures;
+  std::string allFeatures = enableFeatures + disableFeatures;
+  if ((allFeatures.find("OverlayScrollbar") == std::string::npos)) {
+    if (mode == ScrollbarMode::OVERLAY_LAYOUT_SCROLLBAR) {
+      enableFeatures = "OverlayScrollbar";
+    } else {
+      disableFeatures = "OverlayScrollbar";
+    }
+    base::FeatureList::GetInstance()->InitFromCommandLine(enableFeatures, disableFeatures);
+    base::FeatureList::GetInstance()->GetCommandLineFeatureOverrides(&enableFeatures, &disableFeatures);
+    LOG(INFO) << "update enable:" << enableFeatures << " disable:" << disableFeatures;
+  }
 }
 
 void NWebImpl::SetDelayDurationForBackgroundTabFreezing(int64_t delay) {

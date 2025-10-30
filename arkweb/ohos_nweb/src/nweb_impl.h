@@ -542,6 +542,10 @@ class NWebImpl : public NWeb {
 
   static void SetWebDestroyMode(WebDestroyMode mode);
 
+  static ScrollbarMode GetScrollbarMode();
+  static void SetScrollbarMode(ScrollbarMode mode);
+  static bool IsScrollbarModeChanged();
+
   void SetDelayDurationForBackgroundTabFreezing(int64_t delay);
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
   std::shared_ptr<NWebDragData> GetOrCreateDragData() override;
@@ -1214,6 +1218,8 @@ class NWebImpl : public NWeb {
   bool is_richtext_value_ = false;
   static bool disableWebActivePolicy_;
   static WebDestroyMode webDestroyMode_;
+  static ScrollbarMode scrollbarMode_;
+  static bool scrollbarModeChanged_;
 
   bool incognito_mode_ = false;
   raw_ptr<void> window_;

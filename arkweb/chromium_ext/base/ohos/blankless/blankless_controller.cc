@@ -166,6 +166,10 @@ void BlanklessController::BlankOptWhiteList::ParseAppWhiteList(std::vector<char>
       }
       const std::string* url_value = dict_val->FindString("url");
       const base::Value::List* query_keys = dict_val->FindList("query_keys");
+      if (!url_value || !query_keys) {
+        LOG(WARNING) << "blankless BlankOptWhiteList read app url or query keys failed.";
+        continue;
+      }
       std::unordered_set<std::string> query_keys_set;
       for (const auto& key : *query_keys) {
         const std::string key_str = key.GetString();

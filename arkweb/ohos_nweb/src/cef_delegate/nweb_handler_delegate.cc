@@ -964,6 +964,9 @@ void NWebHandlerDelegate::OnFrameCreated(CefRefPtr<CefBrowser> browser,
     frameInfo.parentId.clear();
   }
 
+  LOG(DEBUG) << "NWebHandlerDelegate::OnFrameCreated childId:" << frameInfo.id
+             << ", parentId:" << frameInfo.parentId;
+
   dispatcher_.OnFrameCreated(frameInfo);
 }
 
@@ -987,6 +990,9 @@ void NWebHandlerDelegate::OnFrameDetached(CefRefPtr<CefBrowser> browser,
   } else {
     frameInfo.parentId.clear();
   }
+
+  LOG(DEBUG) << "NWebHandlerDelegate::OnFrameDetached childId:" << frameInfo.id
+             << ", parentId:" << frameInfo.parentId;
 
   dispatcher_.OnFrameDetached(frameInfo);
 }

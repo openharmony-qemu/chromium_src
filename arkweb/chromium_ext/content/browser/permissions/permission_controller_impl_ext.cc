@@ -57,3 +57,17 @@ void PermissionControllerImpl::GetPermissionStatusAsync(
                                      std::move(callback));
 }
 #endif  // ARKWEB_NOTIFICATION
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+bool PermissionControllerImpl::IsClipboardSitePermissionEnabled() {
+  if (!browser_context_) {
+    return false;
+  }
+  PermissionControllerDelegate* delegate =
+      browser_context_->GetPermissionControllerDelegate();
+  if (!delegate) {
+    return false;
+  }
+  return delegate->IsClipboardSitePermissionEnabled();
+}
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)

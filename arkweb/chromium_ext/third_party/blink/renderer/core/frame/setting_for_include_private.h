@@ -64,6 +64,10 @@
   bool media_resume_from_bfcache_page_ = true;
 #endif  // BUILDFLAG(ARKWEB_BFCACHE)
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  bool clipboard_site_permission_enabled_ = false;
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
 #if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)
   double border_radius_top_left_ = 0.0;
   double border_radius_top_right_ = 0.0;

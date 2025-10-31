@@ -183,6 +183,13 @@ double WebSettingsImplExt::GetBorderRadiusBottomRight()
 }
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+void WebSettingsImplExt::SetClipboardSitePermissionEnabled(bool enable)
+{
+  settings_->SetClipboardSitePermissionEnabled(enable);
+}
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
 #if BUILDFLAG(ARKWEB_MENU)
 void WebSettingsImplExt::SetTouchHandleExistState(bool touchHandleExist)
 {

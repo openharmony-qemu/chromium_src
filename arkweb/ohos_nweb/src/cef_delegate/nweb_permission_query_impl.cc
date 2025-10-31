@@ -29,6 +29,10 @@
 #include "ohos_nweb_ex/public/nweb_common_pub.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+#include "nweb_impl.h"
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
 static std::atomic<int> new_key = 0;
 static std::unordered_map<int, std::shared_ptr<OHOS::NWeb::NWebAccessQuery>>
     g_ArkWebMap;
@@ -126,3 +130,9 @@ void CefPermissionQuery::GetPermissionStatusAsync(
   OHOS::NWeb::NWebPermissionStatusQueryManager::QueryPermissionStatus(
       nweb_query);
 }
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+bool CefPermissionQuery::IsClipboardSitePermissionEnabled() {
+  return OHOS::NWeb::NWebImpl::IsClipboardSitePermissionEnabled();
+}
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)

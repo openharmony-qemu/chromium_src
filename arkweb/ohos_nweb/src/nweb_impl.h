@@ -1153,6 +1153,11 @@ class NWebImpl : public NWeb {
   static void SetSocketIdleTimeout(int32_t timeout);
 #endif
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  static void SetClipboardSitePermissionEnabled(bool enable);
+  static bool IsClipboardSitePermissionEnabled();
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

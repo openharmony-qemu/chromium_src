@@ -150,6 +150,10 @@ class CONTENT_EXPORT PermissionControllerImpl : public PermissionController {
       base::OnceCallback<void(blink::mojom::PermissionStatus)> callback) override;
 #endif // ARKWEB_NOTIFICATION
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  bool IsClipboardSitePermissionEnabled() override;
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
   // WARNING: Permission requests order is not guaranteed.
   // TODO(crbug.com/40864728): Migrate to `std::set`.
   // TODO(crbug.com/40275129): `RequestPermissions` and

@@ -40,6 +40,10 @@
 #include "ohos_nweb/src/cef_delegate/nweb_application.h"
 #include "arkweb/chromium_ext/base/feature_list_utils.h"
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+#include "nweb_impl.h"
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
 namespace OHOS::NWeb {
 
 constexpr int fontMinSize = 1;
@@ -237,6 +241,9 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
 #if BUILDFLAG(ARKWEB_COPY_OPTION)
   browser_settings.copy_option = static_cast<int>(GetCopyOptionMode());
 #endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  browser_settings.clipboard_site_permission_enabled = OHOS::NWeb::NWebImpl::IsClipboardSitePermissionEnabled();
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
   browser_settings.scrollbar_color = GetScrollBarColor();
 #endif  // ARKWEB_SCROLLBAR

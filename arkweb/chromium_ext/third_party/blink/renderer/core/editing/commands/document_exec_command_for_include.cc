@@ -20,10 +20,17 @@
 #include "third_party/blink/renderer/core/editing/commands/editing_command_type.h"
 #include "third_party/blink/renderer/core/execution_context/execution_context.h"
 #include "third_party/blink/renderer/core/frame/local_dom_window.h"
+#include "third_party/blink/renderer/core/frame/settings.h"
 
 #if !defined(COMPONENT_BUILD)
 #include "third_party/blink/renderer/modules/permissions/permission_utils.h"
 #else
+#include "third_party/blink/public/mojom/permissions/permission.mojom-blink.h"
+#endif  // !defined(COMPONENT_BUILD)
+#endif  // BUILDFLAG(ARKWEB_NWEB_EX)
+
+namespace blink {
+#if defined(COMPONENT_BUILD)
 namespace {
 mojom::blink::PermissionDescriptorPtr CreateClipboardPermissionDescriptor(
     mojom::blink::PermissionName name,
@@ -39,10 +46,7 @@ mojom::blink::PermissionDescriptorPtr CreateClipboardPermissionDescriptor(
   return descriptor;
 }
 }
-#endif  // !defined(COMPONENT_BUILD)
-#endif  // BUILDFLAG(ARKWEB_NWEB_EX)
-
-namespace blink {
+#endif  // defined(COMPONENT_BUILD)
 bool Document::ValidateClipboardPreconditions(
     const EditorCommand& command,
     const String& checked_value) {
@@ -51,24 +55,29 @@ bool Document::ValidateClipboardPreconditions(
   if (!is_browser) {
     return command.Execute(checked_value);
   }
-
   auto command_type = command.GetCommandType();
   if (command_type != EditingCommandType::kCopy &&
       command_type != EditingCommandType::kCut) {
     return command.Execute(checked_value);
   }
+  ExecutionContext* context = GetExecutionContext();
+  if (!context) {
+    return command.Execute(checked_value);
+  }
+  LocalDOMWindow& window = *To<LocalDOMWindow>(context);
+  LocalFrame* local_frame = window.GetFrame();
+  if (!local_frame || !local_frame->GetSettings() ||
+      !local_frame->GetSettings()->GetClipboardSitePermissionEnabled()) {
+    LOG(INFO) << "clipboard site permission not enabled";
+    return command.Execute(checked_value);
+  }
+
   bool can_execute = command.CanExecute();
   if (!can_execute) {
     return false;
   }
 
-  ExecutionContext* context = GetExecutionContext();
-  if (!context) {
-    return false;
-  }
-  LocalDOMWindow& window = *To<LocalDOMWindow>(context);
   DCHECK(window.IsSecureContext());  // [SecureContext] in IDL
-
   if (!window.document()->hasFocus()) {
     LOG(WARNING) << "Document is not focused.";
     return false;
@@ -84,12 +93,6 @@ bool Document::ValidateClipboardPreconditions(
            ReportOptions::kReportOnFailure, kFeaturePolicyMessage)) {
     LOG(WARNING) <<
         "The Clipboard API has been blocked because of a permissions policy applied to the current document.";
-    return false;
-  }
-  
-  LocalFrame* local_frame = window.GetFrame();
-  if (!local_frame) {
-    LOG(ERROR) << "Get local frame failed.";
     return false;
   }
   // Grant permission by-default if extension has read/write permissions.

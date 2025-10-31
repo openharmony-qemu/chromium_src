@@ -34,24 +34,27 @@ void PermissionServiceImpl::HasPermissionAsync(
     std::move(callback).Run(GetPermissionStatus(permission));
     return;
   }
+  BrowserContext* browser_context = context_->GetBrowserContext();
+  if (!browser_context || !browser_context->GetPermissionController()) {
+    std::move(callback).Run(GetPermissionStatus(permission));
+    return;
+  }
+  if (!browser_context->GetPermissionController()->IsClipboardSitePermissionEnabled()) {
+    LOG(INFO) << "clipboard site permission not enabled";
+    std::move(callback).Run(GetPermissionStatus(permission));
+    return;
+  }
   LOG(DEBUG) << "HasPermissionAsync type: " << blink::GetPermissionString(*type);
   if (PermissionUtil::IsDomainOverride(permission) &&
       context_->render_frame_host()) {
-    BrowserContext* browser_context = context_->GetBrowserContext();
-    if (browser_context &&
-        PermissionUtil::ValidateDomainOverride(
-            {type.value()}, context_->render_frame_host(), permission)) {
+    if (PermissionUtil::ValidateDomainOverride(
+          {type.value()}, context_->render_frame_host(), permission)) {
       std::move(callback).Run(PermissionControllerImpl::FromBrowserContext(browser_context)
           ->GetPermissionStatusForEmbeddedRequester(
               *type, context_->render_frame_host(),
               PermissionUtil::ExtractDomainOverride(permission)));
       return;
     }
-  }
-  BrowserContext* browser_context = context_->GetBrowserContext();
-  if (!browser_context) {
-    std::move(callback).Run(PermissionStatus::DENIED);
-    return;
   }
 
   if (context_->render_frame_host()) {

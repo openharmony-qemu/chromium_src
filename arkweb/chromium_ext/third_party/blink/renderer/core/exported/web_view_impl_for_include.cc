@@ -149,6 +149,10 @@ void ApplyOhosWebPreferences(const web_pref::WebPreferences& prefs,
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
   settings->SetScrollBarColor(prefs.scrollbar_color);
 #endif
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  settings->SetClipboardSitePermissionEnabled(prefs.clipboard_site_permission_enabled);
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 }
 
 void WebView::ApplyWebPreferencesForInclude(

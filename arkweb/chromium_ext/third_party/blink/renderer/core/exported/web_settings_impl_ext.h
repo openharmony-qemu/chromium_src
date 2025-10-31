@@ -113,6 +113,10 @@ class CORE_EXPORT WebSettingsImplExt final : public WebSettingsImpl {
   double GetBorderRadiusBottomRight() override;
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  void SetClipboardSitePermissionEnabled(bool enable) override;
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
 #if BUILDFLAG(ARKWEB_MENU)
   void SetTouchHandleExistState(bool touchHandleExist) override;
   bool IsTouchHandleExist() override;

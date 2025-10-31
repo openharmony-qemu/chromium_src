@@ -150,6 +150,10 @@ class CONTENT_EXPORT PermissionController
       const url::Origin& origin,
       base::OnceCallback<void(blink::mojom::PermissionStatus)> callback) {}
 #endif // ARKWEB_NOTIFICATION
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  virtual bool IsClipboardSitePermissionEnabled() { return false; }
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 };
 
 }  // namespace content

@@ -16,8 +16,8 @@
 #ifndef COLOR_PICKER_ADAPTER_IMPL_H
 #define COLOR_PICKER_ADAPTER_IMPL_H
 
+#include "arkweb/ohos_adapter_ndk/interfaces/color_picker_adapter.h"
 #include "arkweb/ohos_adapter_ndk/ndk_callback_wrapper/callback_shared_wrapper.h"
-#include "color_picker_adapter.h"
 
 namespace OHOS::NWeb {
 

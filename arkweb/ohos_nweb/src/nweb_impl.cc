@@ -3576,7 +3576,7 @@ void NWebImpl::SetScrollbarMode(ScrollbarMode mode) {
   if (!base::FeatureList::GetInstance() && !scrollbarModeChanged_) {
     scrollbarModeChanged_ = true;
     scrollbarMode_ = mode;
-    LOG(INFO) << "FeatureList is null and save mode";
+    LOG(ERROR) << "FeatureList is null and save mode";
     return;
   }
   const base::CommandLine& command_line =

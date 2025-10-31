@@ -5174,7 +5174,7 @@ void Generate_BaselineOrInterpreterEntry(MacroAssembler* masm,
       code_obj,
       FieldOperand(shared_function_info,
                    SharedFunctionInfo::kTrustedFunctionDataOffset),
-      kUnknownIndirectPointerTag, kScratchRegister);
+      kCodeIndirectPointerTag, kScratchRegister);
 
   // Check if we have baseline code. For OSR entry it is safe to assume we
   // always have baseline code.

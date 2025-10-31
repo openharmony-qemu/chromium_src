@@ -8977,6 +8977,7 @@ class LiftoffCompiler {
     }
     Label* trap_label =
         AddOutOfLineTrap(decoder, Builtin::kThrowWasmTrapNullDereference);
+    SCOPED_CODE_COMMENT("null check");
     LiftoffRegister null = __ GetUnusedRegister(kGpReg, pinned);
     LoadNullValueForCompare(null.gp(), pinned, type);
     FREEZE_STATE(trapping);
@@ -8990,6 +8991,7 @@ class LiftoffCompiler {
     if (V8_UNLIKELY(v8_flags.experimental_wasm_skip_bounds_checks)) return;
     Label* trap_label =
         AddOutOfLineTrap(decoder, Builtin::kThrowWasmTrapArrayOutOfBounds);
+    SCOPED_CODE_COMMENT("array bounds check");
     LiftoffRegister length = __ GetUnusedRegister(kGpReg, pinned);
     constexpr int kLengthOffset =
         wasm::ObjectAccess::ToTagged(WasmArray::kLengthOffset);

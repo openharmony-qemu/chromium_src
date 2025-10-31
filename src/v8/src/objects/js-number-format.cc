@@ -1477,6 +1477,14 @@ MaybeHandle<JSNumberFormat> JSNumberFormat::New(Isolate* isolate,
 
 namespace {
 
+template <typename StringHandle>
+int32_t SignedStringLength(StringHandle string) {
+  uint32_t unsigned_length = string->length();
+  static_assert(String::kMaxLength < std::numeric_limits<int32_t>::max());
+  SBXCHECK_LE(unsigned_length, String::kMaxLength);
+  return static_cast<int32_t>(unsigned_length);
+}
+
 icu::number::FormattedNumber FormatDecimalString(
     Isolate* isolate,
     const icu::number::LocalizedNumberFormatter& number_format,
@@ -1484,7 +1492,7 @@ icu::number::FormattedNumber FormatDecimalString(
   string = String::Flatten(isolate, string);
   DisallowGarbageCollection no_gc;
   const String::FlatContent& flat = string->GetFlatContent(no_gc);
-  int32_t length = static_cast<int32_t>(string->length());
+  int32_t length = SignedStringLength(string);
   if (flat.IsOneByte()) {
     const char* char_buffer =
         reinterpret_cast<const char*>(flat.ToOneByteVector().begin());
@@ -1527,7 +1535,7 @@ Maybe<icu::number::FormattedNumber> IcuFormatNumber(
     big_int_string = String::Flatten(isolate, big_int_string);
     DisallowGarbageCollection no_gc;
     const String::FlatContent& flat = big_int_string->GetFlatContent(no_gc);
-    int32_t length = static_cast<int32_t>(big_int_string->length());
+    int32_t length = SignedStringLength(big_int_string);
     DCHECK(flat.IsOneByte());
     const char* char_buffer =
         reinterpret_cast<const char*>(flat.ToOneByteVector().begin());
@@ -1540,7 +1548,7 @@ Maybe<icu::number::FormattedNumber> IcuFormatNumber(
           String::Flatten(isolate, Cast<String>(numeric_obj));
       DisallowGarbageCollection no_gc;
       const String::FlatContent& flat = string->GetFlatContent(no_gc);
-      int32_t length = static_cast<int32_t>(string->length());
+      int32_t length = SignedStringLength(string);
       if (flat.IsOneByte()) {
         const char* char_buffer =
             reinterpret_cast<const char*>(flat.ToOneByteVector().begin());
@@ -1778,7 +1786,7 @@ Maybe<icu::Formattable> IntlMathematicalValue::ToFormattable(
   {
     DisallowGarbageCollection no_gc;
     const String::FlatContent& flat = string->GetFlatContent(no_gc);
-    int32_t length = static_cast<int32_t>(string->length());
+    int32_t length = SignedStringLength(string);
     if (flat.IsOneByte()) {
       icu::Formattable result(
           {reinterpret_cast<const char*>(flat.ToOneByteVector().begin()),

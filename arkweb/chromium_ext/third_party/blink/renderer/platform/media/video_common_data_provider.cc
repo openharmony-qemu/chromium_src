@@ -335,8 +335,9 @@ void VideoRangeURLLoaderClient::DidReceiveResponse(
     // Check to see whether the server supports byte ranges.
     std::string accept_ranges =
         response.HttpHeaderField("Accept-Ranges").Utf8();
-    if (accept_ranges.find("bytes") != std::string::npos)
+    if (accept_ranges.find("bytes") != std::string::npos) {
       destination_url_data->set_range_supported();
+    }
 
     // If we have verified the partial response and it is correct.
     // It's also possible for a server to support range requests
@@ -538,8 +539,9 @@ void VideoRangeURLLoaderClient::DidFinishLoading() {
 }
 
 void VideoRangeURLLoaderClient::SetDefersLoading(bool deferred) {
-  if (active_loader_)
+  if (active_loader_) {
     active_loader_->SetDefersLoading(deferred);
+  }
 }
 
 bool VideoRangeURLLoaderClient::VerifyPartialResponse(
@@ -642,4 +644,10 @@ void VideoRangeURLLoaderClient::DidFail(const blink::WebURLError& error) {
   }
 }
 
+void VideoRangeURLLoaderClient::DidReStart() {
+  LOG(INFO) << "VideoOpt, VideoRangeURLLoaderClient DidReStart";
+  task_runner_->PostTask(FROM_HERE,
+                         base::BindOnce(&VideoRangeURLLoaderClient::Start,
+                                        weak_factory_.GetWeakPtr()));
+}
 }  // namespace blink

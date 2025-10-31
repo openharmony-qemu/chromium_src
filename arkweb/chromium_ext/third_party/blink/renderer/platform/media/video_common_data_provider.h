@@ -139,6 +139,7 @@ class VideoRangeURLLoaderClient : public WebAssociatedURLLoaderClient {
   void DidReceiveData(base::span<const char>) override;
   void DidFinishLoading() override;
   void DidFail(const WebURLError&) override;
+  void DidReStart() override;
 
  private:
   // Callback used when we're asked to fetch data after the end of the file.

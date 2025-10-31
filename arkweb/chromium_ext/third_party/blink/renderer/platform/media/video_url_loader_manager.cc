@@ -219,6 +219,7 @@ void VideoUrlLoaderManager::StartPendingLoaderIfNeeded() {
     }
     if (eit->loader_ && eit->client_) {
       eit->loader_->Cancel();
+      eit->client_->DidReStart();
     } else {
       LOG(ERROR) << "VideoOpt: executing loader error:" << eit->AsHumanReadableString()
                  << "; loader=" << (!!eit->loader_) << "; client=" << (!!eit->client_);

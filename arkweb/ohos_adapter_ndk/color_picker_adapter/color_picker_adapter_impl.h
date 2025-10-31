@@ -24,7 +24,7 @@ namespace OHOS::NWeb {
 class ColorPickerAdapterImpl : public ColorPickerAdapter {
  public:
   ColorPickerAdapterImpl();
-  ~ColorPickerAdapterImpl() override = default;
+  ~ColorPickerAdapterImpl();
 
   void StartColorPicker(double x,
                         double y,
@@ -33,14 +33,15 @@ class ColorPickerAdapterImpl : public ColorPickerAdapter {
       double x,
       double y,
       ColorPickerCallback color_picker_callback) override;
+
+  static CallbackSharedWrapper<ColorPickerCallback> callback_wrapper_;
+
+ private:
   void StartColorPickerInternal(double x,
                                 double y,
                                 ColorPickerCallback color_picker_callback,
                                 std::string func_name);
 
-  static CallbackSharedWrapper<ColorPickerCallback> callback_wrapper_;
-
- private:
   size_t callback_index_ = 0;
   void* library_handle_ = nullptr;
 };

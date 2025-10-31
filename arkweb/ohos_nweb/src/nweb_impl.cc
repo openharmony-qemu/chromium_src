@@ -2720,14 +2720,28 @@ void NWebImpl::JavaScriptOnDocumentStart(const ScriptItems& scriptItems) {
   if (nweb_delegate_ == nullptr) {
     return;
   }
-  return nweb_delegate_->JavaScriptOnDocumentStart(scriptItems);
+  nweb_delegate_->JavaScriptOnDocumentStart(scriptItems);
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      ::switches::kEnableNwebEx)) {
+    nweb_delegate_->CancelAllPrerendering();
+  }
+#endif
 }
 
 void NWebImpl::JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) {
   if (nweb_delegate_ == nullptr) {
     return;
   }
-  return nweb_delegate_->JavaScriptOnDocumentEnd(scriptItems);
+  nweb_delegate_->JavaScriptOnDocumentEnd(scriptItems);
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      ::switches::kEnableNwebEx)) {
+    nweb_delegate_->CancelAllPrerendering();
+  }
+#endif
 }
 
 void NWebImpl::JavaScriptOnDocumentStartByOrder(

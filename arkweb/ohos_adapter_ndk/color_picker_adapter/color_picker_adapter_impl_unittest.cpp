@@ -19,6 +19,7 @@
 #define private public
 #include "color_picker_adapter_impl.h"
 #undef private
+#include "arkweb/ohos_nweb/src/nweb_hilog.h"
 
 using namespace testing;
 

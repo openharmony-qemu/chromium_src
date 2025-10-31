@@ -134,7 +134,7 @@ bool MediaCodecDecoderAdapterImplFuzzTest(const uint8_t* data, size_t size)
     std::shared_ptr<NWeb::DecoderFormatAdapter> format = std::make_unique<DecoderFormatAdapterMock>();
     FuzzedDataProvider dataProvider(data, size);
     std::string stringParam = dataProvider.ConsumeRandomLengthString(MAX_STRING_LENGTH);
-    code = mediaCodecDecoderAdapterImpl.CreateVideoDecoderByName(stringParam);
+    mediaCodecDecoderAdapterImpl.CreateVideoDecoderByName(stringParam);
     NWeb::DecoderAdapterCode code = mediaCodecDecoderAdapterImpl.CreateVideoDecoderByMime("video/avc");
 
     int32_t intParam = dataProvider.ConsumeIntegralInRange<int32_t>(0, 10000);

@@ -16,7 +16,7 @@
 #include "content/browser/media/session/media_session_ohos.h"
 
 #include <chrono>
-
+#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
 #include "base/ohos/sys_info_utils_ext.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/time/time.h"
@@ -24,7 +24,6 @@
 #include "content/public/browser/media_session.h"
 #include "services/media_session/public/cpp/media_image.h"
 #include "services/media_session/public/cpp/media_position.h"
-#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 
 namespace content {
 

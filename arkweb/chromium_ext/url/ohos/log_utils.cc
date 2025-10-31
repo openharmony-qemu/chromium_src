@@ -281,7 +281,8 @@ std::string LogUtils::ConvertPathWithMask(const std::string& file_path) {
         return "";
     }
     std::string normalized_path = file_path;
-    std::string::size_type pos = 0;      // 将所有反斜杠和双斜杠标准化为单个正斜杠
+    std::string::size_type pos = 0;
+    // Replace '\\' "//"" with '/' 
     while ((pos = normalized_path.find('\\', pos)) != std::string::npos) {
         normalized_path[pos] = '/';
         pos++;
@@ -290,7 +291,6 @@ std::string LogUtils::ConvertPathWithMask(const std::string& file_path) {
     while ((pos = normalized_path.find("//", pos)) != std::string::npos) {
         normalized_path.replace(pos, 2, "/");
     }
-    //分割路径
     std::vector<std::string> parts;
     std::stringstream ss(normalized_path);
     std::string part;
@@ -303,7 +303,7 @@ std::string LogUtils::ConvertPathWithMask(const std::string& file_path) {
         return "";
     }
     std::string result = "";
-    // 跳过驱动器盘符(如 "D:")
+    // Skip the drive letter(e.g "D:")
     size_t start_index = 0;
     if (parts.size() > 0 && parts[0].length() == 2 && parts[0][1] == ':') {
       start_index = 1;
@@ -311,15 +311,17 @@ std::string LogUtils::ConvertPathWithMask(const std::string& file_path) {
     for (size_t i = start_index; i < parts.size(); ++i) {
         std::string current_part = parts[i];
         if (i == parts.size() - 1) {
-            size_t dot_pos = current_part.find_last_of('.');  // 如果是最后一个部分(文件名), 去除扩展名
+            // Remove file extension
+            size_t dot_pos = current_part.find_last_of('.');
             if (dot_pos != std::string::npos) {
                 current_part = current_part.substr(0, dot_pos);
             }
         }
         if (!current_part.empty()) {
             std::string masked_part;
-            masked_part += current_part[0];  // 保留首字母
-            masked_part += "***";            // 添加三个星号
+            // Replace all characters except the first one with "***"
+            masked_part += current_part[0];
+            masked_part += "***";
 
             result += "/" + masked_part;
         }

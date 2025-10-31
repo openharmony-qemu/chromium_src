@@ -178,7 +178,7 @@ void Generate_BaselineOrInterpreterEntry(MacroAssembler* masm,
   __ LoadTrustedPointerField(
       code_obj,
       FieldMemOperand(code_obj, SharedFunctionInfo::kTrustedFunctionDataOffset),
-      kUnknownIndirectPointerTag, r0);
+      kCodeIndirectPointerTag, r0);
 
   // Check if we have baseline code. For OSR entry it is safe to assume we
   // always have baseline code.

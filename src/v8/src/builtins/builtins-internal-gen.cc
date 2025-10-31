@@ -111,6 +111,9 @@ TF_BUILTIN(DebugBreakTrampoline, CodeStubAssembler) {
   // Tail call into code object on the SharedFunctionInfo.
   // TODO(saelo): this is not safe. We either need to validate the parameter
   // count here or obtain the code from the dispatch table.
+  // TODO(https://crbug.com/451355210, ishell): consider removing this
+  // duplicate implementation in favour of returning code object from above
+  // runtime calls once non-leaptering code is removed.
   TNode<Code> code = GetSharedFunctionInfoCode(shared);
   TailCallJSCode(code, context, function, new_target, arg_count,
                  dispatch_handle);

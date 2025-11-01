@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "arkweb/chromium_ext/base/ohos/process_uid_define.h"
 #include "arkweb/chromium_ext/components/viz/service/display/arkweb_display_utils.h"
 #include "base/time/time.h"
 #include "base/timer/elapsed_timer.h"
@@ -45,7 +46,6 @@ namespace viz {
 
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
 const int DUMP_FRAME_FREQ = 60;
-const int MAIN_PROCESS_ID_MIN = 20000000;
 
 //LCOV_EXCL_START
 class DumpFrameObserver : public OHOS::NWeb::SystemPropertiesObserver {
@@ -132,7 +132,9 @@ ArkwebDisplayUtils::ArkwebDisplayUtils(Display* display) : display_(display) {
   // by uid, uid for browser is bigger than MAIN_PROCESS_ID_MIN, and gpu will
   // not come here.
   uid_t uid = getuid();
-  if (uid < MAIN_PROCESS_ID_MIN) {
+  uint32_t renderId = uid % BASE_USER_RANGE_FOR_NWEB;
+  if (renderId >= START_ID_FOR_RENDER_PROCESS_ISOLATION &&
+      renderId <= END_ID_FOR_RENDER_PROCESS_ISOLATION) {
     blink::SysPropRenderObserverClientRep sysproprender_;
     sysproprender_.AttachSysPropObserver(1, dump_frame_observer_.get());
   } else {
@@ -159,7 +161,9 @@ ArkwebDisplayUtils::ArkwebDisplayUtils(Display* display) : display_(display) {
 ArkwebDisplayUtils::~ArkwebDisplayUtils() {
 #if BUILDFLAG(ARKWEB_DFX_DUMP)
   uid_t uid = getuid();
-  if (uid < MAIN_PROCESS_ID_MIN) {
+  uint32_t renderId = uid % BASE_USER_RANGE_FOR_NWEB;
+  if (renderId >= START_ID_FOR_RENDER_PROCESS_ISOLATION &&
+      renderId <= END_ID_FOR_RENDER_PROCESS_ISOLATION) {
     blink::SysPropRenderObserverClientRep sysproprender_;
     sysproprender_.DetachSysPropObserver(1, dump_frame_observer_.get());
   } else {

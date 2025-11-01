@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "arkweb/chromium_ext/base/ohos/process_uid_define.h"
 #include "hilog_adapter.h"
 #include "securec.h"
 #include <unistd.h>
@@ -22,7 +23,6 @@
 
 namespace OHOS::NWeb {
 namespace {
-constexpr uint32_t BROWSER_UID_BASE = 20000000;
 constexpr uint32_t LOG_APP_DOMAIN = 0x004510;
 constexpr uint32_t LOG_RENDER_DOMAIN = 0x004511;
 constexpr uint32_t LOG_CONSOLE_DOMAIN = 0x001194;
@@ -60,9 +60,12 @@ inline void Format(std::string& fmtStr)
 
 int HiLogAdapterPrintLog(uint32_t level, const char* tag, const char* fmt, va_list ap)
 {
-    uint32_t domain = LOG_RENDER_DOMAIN;
-    if ((getuid() / BROWSER_UID_BASE) != 0) {
-        domain = LOG_APP_DOMAIN;
+    uint32_t domain = LOG_APP_DOMAIN;
+    uid_t uid = getuid();
+    uint32_t renderId = uid % BASE_USER_RANGE_FOR_NWEB;
+    if (renderId >= START_ID_FOR_RENDER_PROCESS_ISOLATION &&
+        renderId <= END_ID_FOR_RENDER_PROCESS_ISOLATION) {
+        domain = LOG_RENDER_DOMAIN;
     }
     std::string fmtStr(fmt);
     Format(fmtStr);

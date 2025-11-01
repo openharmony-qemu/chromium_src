@@ -936,8 +936,9 @@ Value::Dict::Dict(
   storage_.reserve(storage.size());
   for (const auto& [key, value] : storage) {
 #if BUILDFLAG(ARKWEB_WEBSTORAGE)
-    if (!value) {
-      LOG(ERROR) << "Dict constructor, key:" << key << " value is nullptr";
+    if (!value || value->type() > Type::LIST) {
+      LOG(ERROR) << "Dict constructor, key:" << key << ", value:" << (value != nullptr)
+                 << ", valueless:" << (value->type() > Type::LIST);
       continue;
     }
 #endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)

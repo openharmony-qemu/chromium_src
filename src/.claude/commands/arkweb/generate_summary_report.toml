@@ -1,0 +1,4 @@
+# .claude/commands/arkweb/generate_summary_report.toml
+description = "汇总某个文件夹下的解冲突总体报告"
+prompt = """
+请你在{args}这个文件夹下（包括所有子目录）遍历所有后缀为.rej.json的文件。对这些文件进行读取和汇总后，生成一个对应文件夹的markdown文件。markdown文件文件名应命名为{args}加上_allrej.md后缀。markdown文件路径应放在{args}路径下。markdown文件内容应为{args}文件夹下所有后缀为.rej.json的文件的信息汇总。"""

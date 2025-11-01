@@ -1,4 +1,4 @@
-# .gemini/commands/arkweb/resolve_rej.toml
+# .gemini/commands/arkweb/generate_summary_report.toml
 description = "汇总某个文件夹下的解冲突总体报告"
 prompt = """
     用户输入了一个文件夹名：'{{args}}'，请你在这个文件夹下（包括所有子目录）遍历所有后缀为.rej.json的文件。

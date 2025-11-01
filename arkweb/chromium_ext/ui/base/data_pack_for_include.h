@@ -26,7 +26,8 @@ namespace ui {
 class DataPackUtil {
 public:
   static bool LoadFromPathExt(raw_ptr<DataPack> dataPackObj, const base::FilePath& path);
-  bool SwapPathName(const std::string& origin, std::string& copy, const std::string change);
+  static bool bool SwapPathName(const std::string& origin, std::string& copy,
+                                const std::string& from, const std::string& to);
 };
 }
 #endif

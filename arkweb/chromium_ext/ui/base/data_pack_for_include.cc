@@ -162,7 +162,7 @@ bool DataPackUtil::LoadFromPathExt(raw_ptr<DataPack> dataPackObj, const base::Fi
 
     std::shared_ptr<OHOS::NWeb::OhosFileMapper> fileMapper =
       resourceInstance->GetRawFileMapper(pathHap, true);
-    SwapPathName(pathHap, pathPrint, "chrome");
+    SwapPathName(pathHap, pathPrint, "chrome", "arkweb");
     if (!fileMapper) {
       LOG(ERROR) << "DataPack::LoadFromPath couldn't data file: "
                  << pathPrint.c_str();
@@ -194,12 +194,13 @@ bool DataPackUtil::LoadFromPathExt(raw_ptr<DataPack> dataPackObj, const base::Fi
   }
 }
 
-bool SwapPathName(const std::string& origin, std::string& copy, const std::string& change) {
+bool DataPackUtil::DataSwapPathName(const std::string& origin, std::string& copy,
+                  const std::string& from, const std::string& to) {
   copy = origin;
   size_t start_pos = 0;
-  while ((start_pos = copy.find(change, start_pos)) != std::string::npos) {
-    copy.replace(start_pos, change.length(), "arkweb");
-    start_pos += "arkweb".length();
+  while ((start_pos = copy.find(from, start_pos)) != std::string::npos) {
+    copy.replace(start_pos, from.length(), to);
+    start_pos += to.length();
   }
 }
 }  // namespace ui

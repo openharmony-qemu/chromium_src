@@ -20,7 +20,7 @@
 
 namespace OHOS::NWeb {
 
-static std::set<OH_AudioCapturer*> captures_;
+static std::unordered_map<OH_AudioCapturer*, AudioCapturerAdapterImpl*> captures_;
 static std::mutex capturesSetMutex_;
 CallbackSharedWrapper<UserDataCallBack> AudioCapturerAdapterImpl::callback_wrapper_;
 
@@ -111,6 +111,27 @@ int32_t AudioCapturerAdapterImpl::OnReadData(OH_AudioCapturer* capturer, void* u
     return 0;
 }
 
+int32_t AudioCapturerAdapterImpl::OnInterruptEvent(OH_AudioCapturer* capturer, void* userData,
+                                                   OH_AudioInterrupt_ForceType type, OH_AudioInterrupt_Hint hint)
+{
+    AudioCapturerAdapterImpl* adapter = nullptr;
+    {
+        std::unique_lock<std::mutex> lock(capturesSetMutex_);
+        auto it = captures_.find(capturer);
+        if (it == captures_.end()) {
+            WVLOG_E("AudioCapturerAdapterImpl OnReadData cannot find capture, return");
+            return -1;
+        }
+        adapter = it->second;
+    }
+    WVLOG_I("AudioCapturerAdapterImpl::OnInterruptEvent %{public}d", static_cast<int>(hint));
+    if (hint == OH_AudioInterrupt_Hint::AUDIOSTREAM_INTERRUPT_HINT_RESUME && adapter != nullptr) {
+        WVLOG_I("AudioCapturerAdapterImpl::OnInterruptEvent RESUME restart capture");
+        adapter->Start();
+    }
+    return 0;
+}
+
 int32_t AudioCapturerAdapterImpl::Create(
     const std::shared_ptr<AudioCapturerOptionsAdapter> capturerOptions,
     std::string cachePath)
@@ -175,7 +196,7 @@ int32_t AudioCapturerAdapterImpl::Create(
 
     OH_AudioCapturer_Callbacks callbacks;
     callbacks.OH_AudioCapturer_OnReadData = OnReadData;
-    callbacks.OH_AudioCapturer_OnInterruptEvent = nullptr;
+    callbacks.OH_AudioCapturer_OnInterruptEvent = OnInterruptEvent;
     callbacks.OH_AudioCapturer_OnStreamEvent = nullptr;
     callbacks.OH_AudioCapturer_OnError = nullptr;
 
@@ -207,7 +228,7 @@ bool AudioCapturerAdapterImpl::Start()
     {
         std::unique_lock<std::mutex> lock(capturesSetMutex_);
         if (ret == AUDIOSTREAM_SUCCESS) {
-            captures_.insert(audio_capturer_);
+            captures_.insert({audio_capturer_, this});
         }
     }
     return ret == AUDIOSTREAM_SUCCESS;

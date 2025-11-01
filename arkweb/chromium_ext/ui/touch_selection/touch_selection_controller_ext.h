@@ -61,7 +61,7 @@ class TouchSelectionControllerExt : public TouchSelectionController {
   bool OnHandleSwap(bool need_swap,
                     const gfx::SelectionBound& start,
                     const gfx::SelectionBound& end);
-  void HandleIfEndNotVisible(const MotionEvent& event);
+  bool IsEndHandleNotVisible(const MotionEvent& event);
   void ArkSelectBetweenCoordinates(const gfx::PointF& base,
                                    const gfx::PointF& extent);
   void ResetPositionAfterDragEnd(const TouchSelectionDraggable& draggable);

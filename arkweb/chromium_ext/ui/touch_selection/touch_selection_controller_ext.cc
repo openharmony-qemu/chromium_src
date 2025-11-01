@@ -77,13 +77,14 @@ bool TouchSelectionControllerExt::OnHandleSwap(bool need_swap,
   return handled_swap;
 }
 
-void TouchSelectionControllerExt::HandleIfEndNotVisible(
+bool TouchSelectionControllerExt::IsEndHandleNotVisible(
     const MotionEvent& event) {
   if (!end_selection_handle_->AsTouchHandleExt()->GetVisible() &&
       start_selection_handle_->AsTouchHandleExt()->GetVisible()) {
     LOG(INFO) << "Handle selection event, start is visible end is not visible.";
-    return start_selection_handle_->WillHandleTouchEvent(event);
+    return true;
   }
+  return false;
 }
 
 void TouchSelectionControllerExt::ArkSelectBetweenCoordinates(

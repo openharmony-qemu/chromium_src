@@ -242,6 +242,7 @@ extern bool g_siteIsolationMode;
 #include "nweb_js_dialog_result_impl.h"
 #include "chrome/browser/extensions/api/debugger/extension_dev_tools_infobar_delegate.h"
 #include "arkweb/chromium_ext/components/crx_file/crx_key_service.h"
+#include "cef/ohos_cef_ext/libcef/browser/permission/offscreen_permission_request_handler.h"
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_USERAGENT)
@@ -301,6 +302,9 @@ OnReportStatisticLogFunc
 OnArkWebStaticOffscreenDocumentAlertFunc   OHOS::NWeb::NWebImpl::on_off_screen_alert_callback_ = nullptr;
 OnArkWebStaticOffscreenDocumentConfirmFunc OHOS::NWeb::NWebImpl::on_off_screen_confirm_callback_ = nullptr;
 OnArkWebStaticOffscreenDocumentPromptFunc  OHOS::NWeb::NWebImpl::on_off_screen_prompt_callback_ = nullptr;
+
+OnArkWebStaticOffscreenDocumentPermissionRequestFunc
+    OHOS::NWeb::NWebImpl::on_offscreen_document_permission_request_callback_ = nullptr;
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
@@ -4464,6 +4468,40 @@ void NWebImpl::PromptHandle(const bool type,
   }
 }
 
+void NWebImpl::SetOnOffscreenDocumentPermissionRequestCallback(
+    OnArkWebStaticOffscreenDocumentPermissionRequestFunc func) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  on_offscreen_document_permission_request_callback_ = func;
+}
+
+NO_SANITIZE("cfi")
+void NWebImpl::OnOffscreenDocumentPermissionRequest(
+    const std::string& extension_id,
+    const std::string& origin_url,
+    int resources,
+    int request_key) {
+  if (on_offscreen_document_permission_request_callback_) {
+    LOG(INFO) << " func:" << __FUNCTION__;
+    on_offscreen_document_permission_request_callback_(
+        extension_id.c_str(), origin_url.c_str(), resources, request_key);
+  } else {
+    LOG(ERROR) << __FUNCTION__ << " callback is null";
+    DenyOffscreenDocumentPermission(resources, request_key);
+  }
+}
+
+void NWebImpl::GrantOffscreenDocumentPermission(int resources,
+                                                int request_key) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  OffscreenPermissionRequestHandler::GetInstance()->Grant(resources,
+                                                          request_key);
+}
+
+void NWebImpl::DenyOffscreenDocumentPermission(int resources, int request_key) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  OffscreenPermissionRequestHandler::GetInstance()->Deny(resources,
+                                                         request_key);
+}
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)

@@ -8068,5 +8068,34 @@ TEST_F(NWebImplTest, AbortDistill002) {
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
 }
 #endif  // BUILDFLAG(ARKWEB_READER_MODE)
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+void OnOffscreenDocumentPermissionRequestCallback(const char* extension_id,
+                                                  const char* origin_url,
+                                                  const int resources,
+                                                  const int request_key) {}
+
+TEST_F(NWebImplTest, OffscreenDocumentPermissionRequest001) {
+  const std::string extension_id = "extension-id";
+  const std::string origin_url = "arkweb-extension://extension-id/";
+  int resources =
+      static_cast<int>(OffscreenDocumentPermissionResourceType::VIDEO_CAPTURE);
+  int request_key = 1;
+
+  testing::internal::CaptureStderr();
+  NWebImpl::OnOffscreenDocumentPermissionRequest(extension_id, origin_url,
+                                                 resources, request_key);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("callback is null"), std::string::npos);
+
+  NWebImpl::GrantOffscreenDocumentPermission(resources, request_key);
+  NWebImpl::DenyOffscreenDocumentPermission(resources, request_key);
+  NWebImpl::SetOnOffscreenDocumentPermissionRequestCallback(
+      OnOffscreenDocumentPermissionRequestCallback);
+  NWebImpl::OnOffscreenDocumentPermissionRequest(extension_id, origin_url,
+                                                 resources, request_key);
+  EXPECT_NE(NWebImpl::on_offscreen_document_permission_request_callback_, nullptr);
+}
+#endif  // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 }  // namespace OHOS::NWeb
                           

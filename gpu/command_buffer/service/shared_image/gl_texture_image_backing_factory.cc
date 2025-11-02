@@ -17,6 +17,9 @@
 #include "ui/gl/gl_implementation.h"
 #include "ui/gl/progress_reporter.h"
 
+#include "base/command_line.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+
 namespace gpu {
 namespace {
 
@@ -169,6 +172,12 @@ bool GLTextureImageBackingFactory::IsSupported(
     gfx::GpuMemoryBufferType gmb_type,
     GrContextType gr_context_type,
     base::span<const uint8_t> pixel_data) {
+#if BUILDFLAG(IS_ARKWEB)
+  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  if (command_line && !command_line->HasSwitch(::switches::kOhosEnableDrDc)) {
+    return false;
+  }
+#endif
   if (format.is_multi_plane() && !use_passthrough_) {
     // With validating command decoder the clear rect tracking doesn't work with
     // multi-planar textures.

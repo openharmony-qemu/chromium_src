@@ -52,7 +52,7 @@ void OHOSAudioOutputCallback::AudioRendererOnInterruptEvent(OH_AudioInterrupt_Hi
             default:
                 LOG(ERROR) << "audio renderer interrupt hint not foud, code:" << hint;
                 break;
-        }        
+        }
     }
 }
 

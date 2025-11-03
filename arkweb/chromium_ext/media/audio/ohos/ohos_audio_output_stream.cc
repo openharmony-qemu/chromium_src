@@ -42,6 +42,7 @@ OHOSAudioOutputStream::OHOSAudioOutputStream(OHOSAudioManager* manager,
   time_per_buffer_ = AudioTimestampHelper::FramesToTime(parameters_.frames_per_buffer(),
                                                         parameters_.sample_rate());
   main_task_runner_ = content::GetUIThreadTaskRunner({});
+  audio_task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
   audioResumeInterval_ = OHOSAudioFocusController::GetAudioResumeInterval(parameters_);
 }
 
@@ -186,9 +187,11 @@ void OHOSAudioOutputStream::OnSuspend() {
     isSuspended_ = true;
     // After stopping playback, it is necessary to continue obtaining audio
     // data, which will trigger the pause action of the render process.
-    main_task_runner_->PostTask(
+    if (audio_task_runner_) {
+      audio_task_runner_->PostTask(
         FROM_HERE, base::BindOnce(&OHOSAudioOutputStream::PumpSamples,
                                   weak_factory_.GetWeakPtr()));
+    }
   } else {
     LOG(INFO) << "media session is not active. [hash: " << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
@@ -371,11 +374,7 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
 void OHOSAudioOutputStream::Stop() {
   LOG(INFO) << "OHOSAudioOutputStream::Stop. [hash: " << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";
   base::AutoLock lock(lock_);
-  if (main_task_runner_) {
-    main_task_runner_->PostTask(
-        FROM_HERE, base::BindOnce(&OHOSAudioOutputStream::StopTimer,
-                                  weak_factory_.GetWeakPtr()));
-  }
+  StopTimer();
   running_ = false;
   auto it = std::find(OHOSAudioOutputStream::audioParameterSet_.begin(),
                       OHOSAudioOutputStream::audioParameterSet_.end(), parameters_);

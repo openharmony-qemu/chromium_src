@@ -22,7 +22,6 @@
 
 #include "base/test/task_environment.h"
 #include "base/test/test_mock_time_task_runner.h"
-#include "base/test/test_simple_task_runner.h"
 #include "content/browser/media/session/media_session_impl.h"
 #include "content/browser/media/session/mock_media_session_player_observer.h"
 #include "content/browser/scheduler/browser_io_thread_delegate.h"
@@ -70,24 +69,6 @@ class MockAudioSourceCallback
   }
 };
 
-class MockSingleThreadTaskRunner : public base::SingleThreadTaskRunner {
- public:
-  MOCK_METHOD(bool, RunsTasksInCurrentSequence, (), (const, override));
-  MOCK_METHOD(bool,
-              PostNonNestableDelayedTask,
-              (const base::Location& from_here,
-               base::OnceClosure task,
-               base::TimeDelta delay),
-              (override));
-  MOCK_METHOD(bool,
-              PostDelayedTask,
-              (const base::Location& from_here,
-               base::OnceClosure task,
-               base::TimeDelta delay),
-              (override));
-  MOCK_METHOD2(PostTask, bool(const base::Location&, base::OnceClosure));
-};
-
 class OHOSAudioOutputStreamTest : public content::RenderViewHostTestHarness {
  public:
   OHOSAudioOutputStreamTest() : content::RenderViewHostTestHarness() {}
@@ -111,8 +92,6 @@ class OHOSAudioOutputStreamTest : public content::RenderViewHostTestHarness {
         ChannelLayoutConfig::FromLayout<CHANNEL_LAYOUT_MONO>(), 8000, 160);
     stream_ = std::make_unique<OHOSAudioOutputStream>(nullptr, params_, false);
     ASSERT_NE(stream_, nullptr);
-    task_runner_ = base::MakeRefCounted<MockSingleThreadTaskRunner>();
-    base::SingleThreadTaskRunner::CurrentDefaultHandle sttcd(task_runner_);
   }
 
   content::MediaSessionImpl* GetMediaSession() {
@@ -190,7 +169,6 @@ class OHOSAudioOutputStreamTest : public content::RenderViewHostTestHarness {
  protected:
   AudioParameters params_;
   std::unique_ptr<OHOSAudioOutputStream> stream_;
-  scoped_refptr<MockSingleThreadTaskRunner> task_runner_;
 };
 
 TEST_F(OHOSAudioOutputStreamTest, Open001) {
@@ -209,7 +187,7 @@ TEST_F(OHOSAudioOutputStreamTest, AudioRendererOnWriteData001) {
   buffer[0] = 97;
   std::shared_ptr<OHOSAudioOutputCallback> audioOutputCallback =
       std::make_shared<OHOSAudioOutputCallback>(
-          task_runner_, stream_->weak_factory_.GetWeakPtr());
+          stream_->weak_factory_.GetWeakPtr());
 
   stream_->callback_index_ =
       stream_->callback_wrapper_.AddCallback(audioOutputCallback);
@@ -260,7 +238,7 @@ TEST_F(OHOSAudioOutputStreamTest, AudioRendererOnError002) {
   buffer[0] = 97;
   std::shared_ptr<OHOSAudioOutputCallback> audioOutputCallback =
       std::make_shared<OHOSAudioOutputCallback>(
-          task_runner_, stream_->weak_factory_.GetWeakPtr());
+          stream_->weak_factory_.GetWeakPtr());
 
   stream_->callback_index_ =
       stream_->callback_wrapper_.AddCallback(audioOutputCallback);
@@ -275,7 +253,7 @@ TEST_F(OHOSAudioOutputStreamTest, AudioRendererOnError002) {
 TEST_F(OHOSAudioOutputStreamTest, AudioRendererOnInterruptEvent001) {
   std::shared_ptr<OHOSAudioOutputCallback> audioOutputCallback =
       std::make_shared<OHOSAudioOutputCallback>(
-          task_runner_, stream_->weak_factory_.GetWeakPtr());
+          stream_->weak_factory_.GetWeakPtr());
 
   stream_->callback_index_ =
       stream_->callback_wrapper_.AddCallback(audioOutputCallback);
@@ -341,7 +319,7 @@ TEST_F(OHOSAudioOutputStreamTest, AudioRendererOutputDeviceChangeCallback002) {
   testing::internal::CaptureStderr();
   std::shared_ptr<OHOSAudioOutputCallback> audioOutputCallback =
       std::make_shared<OHOSAudioOutputCallback>(
-          task_runner_, stream_->weak_factory_.GetWeakPtr());
+          stream_->weak_factory_.GetWeakPtr());
 
   stream_->callback_index_ =
       stream_->callback_wrapper_.AddCallback(audioOutputCallback);
@@ -784,7 +762,7 @@ TEST_F(OHOSAudioOutputStreamTest, InitRender002) {
   testing::internal::CaptureStderr();
   std::shared_ptr<OHOSAudioOutputCallback> audioOutputCallback =
       std::make_shared<OHOSAudioOutputCallback>(
-          task_runner_, stream_->weak_factory_.GetWeakPtr());
+          stream_->weak_factory_.GetWeakPtr());
 
   stream_->callback_index_ =
       stream_->callback_wrapper_.AddCallback(audioOutputCallback);

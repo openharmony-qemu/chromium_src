@@ -194,7 +194,7 @@ bool DataPackUtil::LoadFromPathExt(raw_ptr<DataPack> dataPackObj, const base::Fi
   }
 }
 
-bool DataPackUtil::SwapPathName(const std::string& origin, std::string& copy,
+void DataPackUtil::SwapPathName(const std::string& origin, std::string& copy,
                                 const std::string& from, const std::string& to) {
   copy = origin;
   size_t start_pos = 0;

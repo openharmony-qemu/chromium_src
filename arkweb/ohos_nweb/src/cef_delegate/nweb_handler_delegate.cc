@@ -1954,7 +1954,7 @@ void NWebHandlerDelegate::OnRefreshAccessedHistory(
     return;
   }
 
-#ifdef OHOS_NETWORK_LOAD
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
       ::switches::kEnableNwebEx) &&
       IsPrerendering(frame)) {

@@ -365,4 +365,35 @@ TEST_F(LocalFrameUtilTest, SetZoomFactorsExt_TabletDevice_ZoomLessAndAlreadyChan
   EXPECT_TRUE(local_frame_->scale_limits_max_changed_);
   base::ohos::SysInfoUtilsMock::mockIsTabletDevice = false;
 }
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+TEST_F(LocalFrameUtilTest, VideoLoadOpt_IsVideoPrioritySupportedTest) {
+  EXPECT_FALSE(local_frame_->IsVideoPrioritySupported());
+}
+
+TEST_F(LocalFrameUtilTest, VideoLoadOpt_SetNewsFeedPageFittedTest) {
+  EXPECT_FALSE(local_frame_->SetNewsFeedPageFitted());
+}
+
+TEST_F(LocalFrameUtilTest, VideoLoadOpt_SetVideoIsPlayingTest) {
+  std::string videoId = "v_662102_html5_api";
+  local_frame_->SetVideoIsPlaying(videoId, false);
+}
+
+TEST_F(LocalFrameUtilTest, VideoLoadOpt_SetVideoPriorityTest) {
+  HeapVector<Member<VideoPriority>> videoVec;
+  auto* videoPri = MakeGarbageCollected<VideoPriority>();
+  videoPri->setId("v_662102_html5_api");
+  videoPri->setPriority(1);
+
+  auto* videoPriOther = MakeGarbageCollected<VideoPriority>();
+  videoPriOther->setId("v_7a47ff_html5_api");
+  videoPriOther->setPriority(2);
+
+  videoVec.push_back(videoPri);
+  videoVec.push_back(videoPriOther);
+  local_frame_->SetVideoPriority(videoVec);
+}
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
 }  // namespace blink

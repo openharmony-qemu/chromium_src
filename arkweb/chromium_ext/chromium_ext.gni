@@ -437,6 +437,19 @@ if (arkweb_menu) {
   ]
 }
 
+if (defined(enable_arkweb_ext) && enable_arkweb_ext) {
+  arkweb_third_patry_blink_renderer_core_frame_resources += [
+    "//arkweb/chromium_ext/third_party/blink/renderer/platform/media/video_url_loader_manager.cc",
+    "//arkweb/chromium_ext/third_party/blink/renderer/platform/media/video_url_loader_manager.h",
+    "//arkweb/chromium_ext/third_party/blink/renderer/platform/media/segmentation_multibuffer_data_provider.cc",
+    "//arkweb/chromium_ext/third_party/blink/renderer/platform/media/segmentation_multibuffer_data_provider.h",
+    "//arkweb/chromium_ext/third_party/blink/renderer/platform/media/video_common_data_provider.cc",
+    "//arkweb/chromium_ext/third_party/blink/renderer/platform/media/video_common_data_provider.h",
+    "//arkweb/chromium_ext/third_party/blink/renderer/platform/media/video_url_loader_impl.cc",
+    "//arkweb/chromium_ext/third_party/blink/renderer/platform/media/video_url_loader_impl.h",
+  ]
+}
+
 arkweb_third_patry_blink_renderer_core_input_resources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/core/input/mouse_event_manager_ext.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/input/mouse_event_manager_ext.h",

@@ -120,6 +120,11 @@ class HTMLMediaElement;
   void OnVolumeChanged(double volume);
 #endif
   void DidPlayerMutedStatusChangeExt(bool muted);
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  bool IsUseVideoLoadOptimization() const;
+  void SetVideoIsPlaying(bool playing);
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
  };
 
 

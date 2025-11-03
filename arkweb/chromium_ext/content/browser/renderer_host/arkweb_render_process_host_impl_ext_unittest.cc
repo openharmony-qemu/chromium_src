@@ -174,4 +174,36 @@ TEST_F(ArkWebRenderProcessHostImplExtTest, UpdateReaderModeConfig_InvalidContent
       std::string::npos);
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+TEST_F(ArkWebRenderProcessHostImplExtTest, UpdateVideoLoadOptimizationConfig_WithData) {
+  nweb_ex::AlloyVideoLoadOptimizationData config_data;
+  config_data.use_video_load_optimization_ = true;
+  config_data.preload_video_time_ = 4;
+  config_data.min_cache_time_ = 2;
+  config_data.max_cache_time_ = 6;
+  config_data.moov_size_ = 512;
+  config_data.bit_rate_ = 2000;
+  std::string exampleDomain = "https://www.baidu.com/";
+  config_data.support_domains_.emplace_back(exampleDomain);
+  render_process_host_impl_ext_->UpdateVideoLoadOptimizationConfigData(config_data);
+}
+
+TEST_F(ArkWebRenderProcessHostImplExtTest, UpdateVideoLoadOptimizationConfig_NullRendererInterface) {
+  nweb_ex::AlloyVideoLoadOptimizationData config_data;
+  config_data.use_video_load_optimization_ = true;
+  ResetRenderInterface();
+  testing::internal::CaptureStderr();
+  render_process_host_impl_ext_->UpdateVideoLoadOptimizationConfig(config_data);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("UpdateVideoLoadOptimizationConfig interface is null"), std::string::npos);
+}
+
+TEST_F(ArkWebRenderProcessHostImplExtTest, UpdateVideoLoadOptimizationConfig_ValidContent) {
+  nweb_ex::AlloyVideoLoadOptimizationData config_data;
+  config_data.use_video_load_optimization_ = true;
+  render_process_host_impl_ext_->UpdateVideoLoadOptimizationConfig(config_data);
+}
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
 }

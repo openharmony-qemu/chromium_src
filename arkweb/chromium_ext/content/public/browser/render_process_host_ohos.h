@@ -26,6 +26,12 @@ struct BrowserReaderModeConfigData;
 }
 #endif  // ARKWEB_READER_MODE
 
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+namespace nweb_ex {
+struct AlloyVideoLoadOptimizationData;
+}
+#endif  // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
 namespace content {
 class RenderProcessHostOhos {
  public:
@@ -33,6 +39,11 @@ class RenderProcessHostOhos {
   virtual void UpdateReaderModeConfig(
       const nweb_ex::BrowserReaderModeConfigData* data) = 0;
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  virtual void UpdateVideoLoadOptimizationConfig(
+    nweb_ex::AlloyVideoLoadOptimizationData& data) = 0;
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 };
 }  // namespace content
 #endif  // CONTENT_PUBLIC_BROWSER_RENDER_PROCESS_HOST_OHOS_H_

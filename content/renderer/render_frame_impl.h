@@ -482,6 +482,15 @@ class CONTENT_EXPORT RenderFrameImpl
   void ChangeVisibilityOfQuickMenu() override;
   void HideQuickMenu() override;
 #endif
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  bool IsVideoLoadOptimizationEnabled(const std::string& url) override;
+  int GetVideoPreloadTimeDefault() const override;
+  int GetVideoMinCacheTimeDefault() const override;
+  int GetVideoMaxCacheTimeDefault() const override;
+  int GetVideoMoovSizeDefault() const override;
+  int GetVideoBitrateDefault() const override;
+  bool SetNewsFeedPageFitted() override;
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
   // blink::mojom::AutoplayConfigurationClient implementation:
   void AddAutoplayFlags(const url::Origin& origin,

@@ -188,4 +188,10 @@ interface Renderer {
   [EnableIf=arkweb_reader_mode]
   UpdateReaderModeConfig(blink.mojom.ReaderModeConfig config);
   // #endif
+
+  [EnableIf=arkweb_ext_video_load_optimization]
+  UpdateVideoLoadOptimizationConfigData(bool enable, int32 preload_video_time,
+                                        int32 min_cache_time, int32 max_cache_time,
+                                        int32 moov_size, int32 bit_rate,
+                                        array<string> support_domains);
 };

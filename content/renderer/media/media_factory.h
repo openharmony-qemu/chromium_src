@@ -35,6 +35,10 @@
 #include "media/mojo/mojom/remoting.mojom.h"  // nogncheck
 #endif  // BUILDFLAG(ENABLE_MEDIA_REMOTING)
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif // IS_ARKWEB_EXT
+
 namespace blink {
 class BrowserInterfaceBrokerProxy;
 class WebContentDecryptionModule;
@@ -156,6 +160,9 @@ class MediaFactory {
     media::MediaLog* media_log,
     content::RenderFrame* render_frame);
 #endif
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  bool SetNewsFeedPageFitted();
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
  private:
   // Initializes `decoder_factory_` if it hasn't been initialized yet.
@@ -246,6 +253,10 @@ class MediaFactory {
   std::unique_ptr<cast_streaming::ResourceProvider>
       cast_streaming_resource_provider_;
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  bool news_feed_page_fitted_ = false;
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
   std::unique_ptr<ArkwebMediaFactoryUtils> media_factory_utils_;
 };

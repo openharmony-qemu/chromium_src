@@ -1843,6 +1843,14 @@ void NWebHandlerDelegate::OnLoadError(CefRefPtr<CefBrowser> browser,
   }
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      ::switches::kEnableNwebEx) &&
+      IsPrerendering(frame)) {
+    return;
+  }
+#endif
+
   if (nweb_handler_ != nullptr) {
     nweb_handler_->OnPageLoadError(error_code, error_text.ToString(),
                                    failed_url.ToString());

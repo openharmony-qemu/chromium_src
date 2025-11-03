@@ -102,7 +102,7 @@ std::shared_ptr<LocationCallbackAdapter> getSharedPtrByUserData(void* userData)
 
 static void LocationCallback(Location_Info* location, void* userData)
 {
-    WVLOG_I("LocationCallback");v
+    WVLOG_I("LocationCallback");
     Location_BasicInfo basicInfo = OH_LocationInfo_GetBasicInfo(location);
     char additions[MAX_ADDITION_LEN] = { 0 };
     OH_LocationInfo_GetAdditionalInfo(location, additions, MAX_ADDITION_LEN);
@@ -278,8 +278,8 @@ int32_t LocationProxyAdapterImpl::StartLocating(
     OH_LocationRequestConfig_SetCallback(ohRequestConfig_, LocationCallback, ohCallback_.get());
     Location_ResultCode errCode = OH_Location_StartLocating(ohRequestConfig_);
     if (errCode != LOCATION_SUCCESS) {
-        OH_Location_DestroyRequestConfig(ohRequestConfig);
-        ohRequestConfig = nullptr;
+        OH_Location_DestroyRequestConfig(ohRequestConfig_);
+        ohRequestConfig_ = nullptr;
         WVLOG_E("StartLocating failed, errcode:%{public}d", errCode);
         return id;
     }

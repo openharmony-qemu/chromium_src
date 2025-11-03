@@ -828,14 +828,14 @@ void InitialWebEngineArgs(
   web_engine_args.emplace_back("--off-screen-frame-rate=60");
   web_engine_args.emplace_back("--no-unsandboxed-zygote");
   web_engine_args.emplace_back("--no-zygote");
-  if (OHOS::NWeb::NWebImp::GetScrollbarMode() ==
+  if (OHOS::NWeb::NWebImpl::GetScrollbarMode() ==
       OHOS::NWeb::ScrollbarMode::FORCE_DISPLAY_SCROLLBAR &&
-      OHOS::NWeb::NWebImp::IsScrollbarModeChanged()) {
+      OHOS::NWeb::NWebImpl::IsScrollbarModeChanged()) {
     web_engine_args.emplace_back("--disable-features=OverlayScrollbar");
   }
-  if (OHOS::NWeb::NWebImp::GetScrollbarMode() ==
-      OHOS::NWeb::ScrollbarMode::OVERLAY_DISPLAY_SCROLLBAR &&
-      OHOS::NWeb::NWebImp::IsScrollbarModeChanged()) {
+  if (OHOS::NWeb::NWebImpl::GetScrollbarMode() ==
+      OHOS::NWeb::ScrollbarMode::OVERLAY_LAYOUT_SCROLLBAR &&
+      OHOS::NWeb::NWebImpl::IsScrollbarModeChanged()) {
     web_engine_args.emplace_back("--enable-features=UseOzonePlatform,OverlayScrollbar");
   } else {
     web_engine_args.emplace_back("--enable-features=UseOzonePlatform");

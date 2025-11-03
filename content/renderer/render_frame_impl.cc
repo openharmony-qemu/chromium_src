@@ -3332,7 +3332,18 @@ void RenderFrameImpl::CommitFailedNavigation(
       *common_params, *commit_params, std::move(callback),
       std::move(navigation_client_impl_), blink::GenerateRequestId(),
       false /* was_initiated_in_this_frame */);
-
+#if BUILDFLAG(ARKWEB_EXT_UA)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebExUa)) {
+    if ((common_params->navigation_type == blink::mojom::NavigationType::RELOAD ||
+        common_params->navigation_type ==
+            blink::mojom::NavigationType::RELOAD_BYPASSING_CACHE) &&
+        viewport_meta_enabled_ != GetBlinkPreferences().viewport_meta_enabled) {
+      document_state->set_must_reset_scroll_and_scale_state(true);
+    }
+    viewport_meta_enabled_ = GetBlinkPreferences().viewport_meta_enabled;
+  }
+#endif
   DCHECK(!pending_loader_factories_);
   pending_loader_factories_ = std::move(new_loader_factories);
 

@@ -567,9 +567,9 @@ TEST_F(TouchSelectionControllerExtTest, SelectionBasicDrag_001) {
   event = MockMotionEvent(MockMotionEvent::Action::UP, event_time, 0, 0);
   EXPECT_FALSE(controller().WillHandleTouchEvent(event));
   ChangeSelection(start_rect, true, end_rect, false);
-  controller().HandleIfEndNotVisible(event);
+  controller().IsEndHandleNotVisible(event);
   ChangeSelection(start_rect, false, end_rect, false);
-  controller().HandleIfEndNotVisible(event);
+  controller().IsEndHandleNotVisible(event);
   EXPECT_FALSE(GetAndResetSelectionMoved());
   ClearSelection();
 }
@@ -717,16 +717,16 @@ TEST_F(TouchSelectionControllerExtTest, UpdateSelectionChanged) {
   EXPECT_EQ(controller().SelectOverImg(), true);
 
   controller().end_selection_handle_->SetVisible(true, TouchHandle::AnimationStyle::ANIMATION_NONE);
-  controller().HandleIfEndNotVisible(event);
+  controller().IsEndHandleNotVisible(event);
   EXPECT_EQ(controller().end_selection_handle_->AsTouchHandleExt()->GetVisible(), true);
   controller().end_selection_handle_->SetVisible(false, TouchHandle::AnimationStyle::ANIMATION_NONE);
-  controller().HandleIfEndNotVisible(event);
+  controller().IsEndHandleNotVisible(event);
   EXPECT_EQ(controller().end_selection_handle_->AsTouchHandleExt()->GetVisible(), false);
   controller().start_selection_handle_->SetVisible(false, TouchHandle::AnimationStyle::ANIMATION_NONE);
-  controller().HandleIfEndNotVisible(event);
+  controller().IsEndHandleNotVisible(event);
   EXPECT_EQ(controller().start_selection_handle_->AsTouchHandleExt()->GetVisible(), false);
   controller().start_selection_handle_->SetVisible(true, TouchHandle::AnimationStyle::ANIMATION_NONE);
-  controller().HandleIfEndNotVisible(event);
+  controller().IsEndHandleNotVisible(event);
   EXPECT_EQ(controller().start_selection_handle_->AsTouchHandleExt()->GetVisible(), true);
   controller().insertion_handle_ = nullptr;
   controller().start_selection_handle_ = nullptr;

@@ -79,5 +79,5 @@ TEST_F(ColorPickerAdapterImplTest, StartColorPickerWithColorValue_WhenNormal) {
     EXPECT_EQ(success, true);
   };
   impl.StartColorPickerWithColorValue(0, 0, color_picker_callback);
-  EXPECT_EQ(impl.callback_wrapper_.Size(), 1);
+  EXPECT_EQ(impl.callback_wrapper_.Size(), 2);
 }

@@ -923,6 +923,10 @@ bool WebContentsImplExt::isSameUserAgent(
       !net::HttpUtil::IsValidHeaderValue(ua_override.ua_string_override)) {
     return true;
   }
+  if (GetUserAgentOverride().ua_string_override.empty()) {
+    return true;
+  }
+
   return false;
 }
 

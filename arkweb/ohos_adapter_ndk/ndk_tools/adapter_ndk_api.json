@@ -403,6 +403,9 @@
                 "int OH_NativeVSync_RequestFrame(OH_NativeVSync* nativeVsync, OH_NativeVSync_FrameCallback callback, void* data)",
                 "int OH_NativeVSync_GetPeriod(OH_NativeVSync* nativeVsync, long long* period)",
                 "int OH_NativeVSync_DVSyncSwitch(OH_NativeVSync* nativeVsync, bool enable)"
+            ],
+            "20": [
+                "int OH_NativeVSync_SetExpectedFrameRateRange(OH_NativeVSync* nativeVsync, OH_NativeVSync_ExpectedRateRange* range)"
             ]
         },
         "includes": [
@@ -726,7 +729,8 @@
                 "const char *OH_GetBrand()",
                 "const char *OH_GetProductModel(void)",
                 "const char *OH_GetDistributionOSName(void)",
-                "const char *OH_GetOSFullName(void)"
+                "const char *OH_GetOSFullName(void)",
+                "int OH_GetSdkApiVersion(void)"
             ]
         },
         "includes": []

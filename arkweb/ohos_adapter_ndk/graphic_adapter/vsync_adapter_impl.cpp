@@ -16,6 +16,7 @@
 #include "vsync_adapter_impl.h"
 
 #include "nweb_log.h"
+#include <deviceinfo.h>
 #include <unistd.h>
 #include <native_vsync/graphic_error_code.h>
 
@@ -23,6 +24,7 @@ namespace OHOS::NWeb {
 const int MAX_FRAME_RATE = 120;
 const int MIN_FRAME_RATE = 60;
 const int DISABLE_FRAME_RATE = 0;
+const int FRAME_RATE_VERSION = 20;
 
 namespace {
 const std::string THREAD_NAME = "VSync-webview";
@@ -123,8 +125,12 @@ int64_t VSyncAdapterNdkImpl::GetVSyncPeriod()
 
 void VSyncAdapterNdkImpl::SetFrameRateLinkerEnable(bool enabled)
 {
-#if API20_LTPO
     if (enabled) {
+        return;
+    }
+
+    if (OH_GetSdkApiVersion() < FRAME_RATE_VERSION) {
+        WVLOG_I("The current API version does not support setting dynamic frame rate.");
         return;
     }
 
@@ -133,14 +139,17 @@ void VSyncAdapterNdkImpl::SetFrameRateLinkerEnable(bool enabled)
     if (ret != NATIVE_ERROR_OK) {
         WVLOG_E("NWebWindowAdapter set rate fail, ret=%{public}d", ret);
     }
-#endif
 }
 
 void VSyncAdapterNdkImpl::SetFramePreferredRate(int32_t preferredRate)
 {
-#if API20_LTPO
     if (preferredRate < MIN_FRAME_RATE || preferredRate > MAX_FRAME_RATE) {
         WVLOG_E("Param error, rate=%{public}d", preferredRate);
+        return;
+    }
+
+    if (OH_GetSdkApiVersion() < FRAME_RATE_VERSION) {
+        WVLOG_I("The current API version does not support setting dynamic frame rate.");
         return;
     }
 
@@ -149,7 +158,6 @@ void VSyncAdapterNdkImpl::SetFramePreferredRate(int32_t preferredRate)
     if (ret != NATIVE_ERROR_OK) {
         WVLOG_E("NWebWindowAdapter set rate fail, ret=%{public}d", ret);
     }
-#endif
 }
 
 void VSyncAdapterNdkImpl::SetOnVsyncCallback(void (*callback)())

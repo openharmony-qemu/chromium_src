@@ -1,0 +1,89 @@
+{
+  "file": "cc/layers/surface_layer.h",
+  "total_hunks": 7,
+  "resolved_hunks": 7,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "maintained",
+  "analysis": [
+    {
+      "hunk_id": 1,
+      "location": "lines 9-13",
+      "content": "#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)\n  using RectChangeCallback = base::RepeatingCallback<void(const gfx::Rect&)>;\n  void SetVideoRectChangeCallback(RectChangeCallback callback);\n  void OnLayerRectUpdate(const gfx::Rect& rect) override;\n#endif // ARKWEB_CUSTOM_VIDEO_PLAYER",
+      "risk": "low",
+      "conflict_reason": "新增Arkweb自定义视频播放器功能代码",
+      "analysis_process": "检查源文件中是否已包含相关代码",
+      "confidence": "high",
+      "resolution": "已解决 - 源文件中已存在相同代码"
+    },
+    {
+      "hunk_id": 2,
+      "location": "lines 14-18",
+      "content": "#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)\n  using LayerBoundsChangeCallback =\n      base::RepeatingCallback<void(const gfx::Rect&)>;\n  void SetLayerBoundsChangeCallback(LayerBoundsChangeCallback callback);\n#endif // ARKWEB_VIDEO_ASSISTANT",
+      "risk": "low",
+      "conflict_reason": "新增Arkweb视频助手功能代码",
+      "analysis_process": "检查源文件中是否已包含相关代码",
+      "confidence": "high",
+      "resolution": "已解决 - 源文件中已存在相同代码"
+    },
+    {
+      "hunk_id": 3,
+      "location": "lines 20-31",
+      "content": "#if BUILDFLAG(ARKWEB_SAME_LAYER)\n  using RectVisibilityChangeCallback = base::RepeatingCallback<void(bool)>;\n  static scoped_refptr<SurfaceLayer> Create(UpdateSubmissionStateCB update_submission_state_callback,\n                                          RectChangeCallback callback,\n                                          RectVisibilityChangeCallback visibilitycallback);\n  using LayerRemovedVisibilityCallback = base::RepeatingCallback<void(bool)>;\n  static scoped_refptr<SurfaceLayer> Create(\n      UpdateSubmissionStateCB update_submission_state_callback,\n      RectChangeCallback callback,\n      RectVisibilityChangeCallback visibilitycallback,\n      LayerRemovedVisibilityCallback layerRemovedCallback);\n#endif",
+      "risk": "low",
+      "conflict_reason": "新增Arkweb同层功能代码",
+      "analysis_process": "检查源文件中是否已包含相关代码",
+      "confidence": "high",
+      "resolution": "已解决 - 源文件中已存在相同代码"
+    },
+    {
+      "hunk_id": 4,
+      "location": "lines 41-43",
+      "content": "#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)\n  void OnLayerBoundsUpdate(const gfx::Rect& bounds) override;\n#endif // ARKWEB_VIDEO_ASSISTANT",
+      "risk": "low",
+      "conflict_reason": "新增Arkweb视频助手边界更新功能代码",
+      "analysis_process": "检查源文件中是否已包含相关代码",
+      "confidence": "high",
+      "resolution": "已解决 - 源文件中已存在相同代码"
+    },
+    {
+      "hunk_id": 5,
+      "location": "lines 45-50",
+      "content": "#if BUILDFLAG(ARKWEB_SAME_LAYER)\n  void OnLayerRectVisibilityChange(bool visibility) override;\n  void ResetLayerRectUpdateCallback();\n  void ResetLayerRectVisibilityChangeCallback();\n  void CleanupVisibilityForRemovedLayer(bool visibility) override;\n#endif",
+      "risk": "low",
+      "conflict_reason": "新增Arkweb同层可见性处理功能代码",
+      "analysis_process": "检查源文件中是否已包含相关代码",
+      "confidence": "high",
+      "resolution": "已解决 - 源文件中已存在相同代码"
+    },
+    {
+      "hunk_id": 6,
+      "location": "lines 64-69",
+      "content": "#if BUILDFLAG(ARKWEB_SAME_LAYER)\n  SurfaceLayer(UpdateSubmissionStateCB updateSubmissionStateCB,\n                                          RectChangeCallback callback,\n                                          RectVisibilityChangeCallback visibilitycallback,\n                                          LayerRemovedVisibilityCallback layerRemovedCallback);\n#endif",
+      "risk": "low",
+      "conflict_reason": "新增Arkweb同层构造函数代码",
+      "analysis_process": "检查源文件中是否已包含相关代码",
+      "confidence": "high",
+      "resolution": "已解决 - 源文件中已存在相同代码"
+    },
+    {
+      "hunk_id": 7,
+      "location": "lines 74-76",
+      "content": "#if BUILDFLAG(ARKWEB_TEST)\n  friend class SurfaceLayerForIncludeTest;\n#endif",
+      "risk": "low",
+      "conflict_reason": "新增Arkweb测试功能代码",
+      "analysis_process": "检查源文件中是否已包含相关代码",
+      "confidence": "high",
+      "resolution": "已解决 - 源文件中已存在相同代码"
+    }
+  ],
+  "api_changes": [
+    {
+      "change_type": "function_signature_update",
+      "old_signature": "void PushPropertiesTo(LayerImpl* layer, const CommitState& commit_state, const ThreadUnsafeCommitState& unsafe_state) override;",
+      "new_signature": "void PushDirtyPropertiesTo(LayerImpl* layer, uint8_t dirty_flag, const CommitState& commit_state, const ThreadUnsafeCommitState& unsafe_state) override;",
+      "reason": "Chromium 141版本中的API演进",
+      "impact": "低 - 正常的API更新"
+    }
+  ],
+  "summary": "所有冲突均已解决。源文件中已经包含了所有需要的Arkweb自定义代码，.rej文件可以安全删除。API签名的更新是正常的版本演进，不需要额外处理。"
+}

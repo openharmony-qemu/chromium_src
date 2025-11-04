@@ -45,8 +45,15 @@ class LayerTreeHostImplClient {
   virtual void SetNeedsPrepareTilesOnImplThread() = 0;
   virtual void SetVideoNeedsBeginFrames(bool needs_begin_frames) = 0;
   virtual void SetDeferBeginMainFrameFromImpl(bool defer_begin_main_frame) = 0;
+#if BUILDFLAG(ARKWEB_WEBGL)
+  virtual void SetDeferInvalidationForFastMainFrameFromImpl(
+                   bool defer_invalidation_for_fast_main_frame) = 0;
+#endif
   virtual bool IsInsideDraw() = 0;
   virtual void RenewTreePriority() = 0;
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  virtual void OnScheduledActionDraw() {}
+#endif
   virtual void PostDelayedAnimationTaskOnImplThread(base::OnceClosure task,
                                                     base::TimeDelta delay) = 0;
   virtual void DidActivateSyncTree() = 0;
@@ -108,6 +115,15 @@ class LayerTreeHostImplClient {
   virtual void ReturnResource(viz::ReturnedResource returned_resource) {}
 
   virtual size_t CommitDurationSampleCountForTesting() const = 0;
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  virtual void OnLayerRectUpdate(int id, const gfx::Rect& rect) {}
+
+  virtual void OnLayerRectVisibilityChange(int id, bool visibility) {}
+#endif
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  virtual void OnLayerBoundsUpdate(int id, const gfx::Rect& bounds) {}
+#endif // ARKWEB_VIDEO_ASSISTANT
 
  protected:
   virtual ~LayerTreeHostImplClient() = default;

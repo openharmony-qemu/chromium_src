@@ -79,6 +79,9 @@
 #include "components/viz/common/surfaces/surface_id.h"
 #include "components/viz/common/surfaces/surface_range.h"
 #include "components/viz/common/view_transition_element_resource_id.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/vector2d_f.h"
 
@@ -384,6 +387,11 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
   bool HasScrollLinkedAnimation(ElementId for_scroller) const override;
 
   void DetachInputDelegateAndRenderFrameObserver();
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void ScheduledActionDraw() override;
+  void OnSetBypassVsyncCondition(int32_t condition);
+#endif
 
   FrameSequenceTrackerCollection& frame_trackers() { return frame_trackers_; }
 
@@ -938,6 +946,19 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
       const viz::ViewTransitionElementResourceId& id,
       const gfx::RectF& rect);
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  void OnLayerRectUpdate(int id, const gfx::Rect& rect);
+
+  void OnLayerRectVisibilityChange(int id, bool visibility);
+#endif
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void OnLayerBoundsUpdate(int id, const gfx::Rect& bounds);
+#endif // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+  void SetupScrollBy() override;
+#endif
+
   void UpdateChildLocalSurfaceId();
 
   void ReturnResource(viz::ReturnedResource returned_resource);
@@ -1428,9 +1449,17 @@ class CC_EXPORT LayerTreeHostImpl : public TileManagerClient,
   // was reused.
   viz::BeginFrameArgs last_draw_active_tree_begin_frame_args_;
 
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  bool isNeedDrawRect_ = false;
+#endif
+
   // When true, we are expected to get a new local surface id with the next
   // commit.
   bool new_local_surface_id_expected_ = false;
+
+#if BUILDFLAG(IS_ARKWEB)
+  bool is_ohos_pc_ui_setting_ = false;
+#endif
 
   // Track previously visible scrollable elements for viewport visibility
   // detection.

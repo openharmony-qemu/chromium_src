@@ -252,6 +252,9 @@ class LayerTreeHostImplTestBase : public testing::Test,
   }
   void SetVideoNeedsBeginFrames(bool needs_begin_frames) override {}
   void SetDeferBeginMainFrameFromImpl(bool defer_begin_main_frame) override {}
+#if BUILDFLAG(ARKWEB_WEBGL)
+  void SetDeferInvalidationForFastMainFrameFromImpl(bool defer_invalidation_for_fast_main_frame) override {}
+#endif
   bool IsInsideDraw() override { return false; }
   void RenewTreePriority() override {}
   void PostDelayedAnimationTaskOnImplThread(base::OnceClosure task,

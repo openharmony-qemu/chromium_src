@@ -1,0 +1,36 @@
+{
+  "文件信息": {
+    "源文件": "/home/chenyunjiu/arkweb141/chromium_src/src/cc/scheduler/scheduler.cc",
+    "冲突文件": "/home/chenyunjiu/arkweb141/chromium_src/src/cc/scheduler/scheduler.cc.rej",
+    "报告文件": "/home/chenyunjiu/arkweb141/chromium_src/src/claude_out/report/cc/cc_scheduler_scheduler.cc.json"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "成功率": "100%"
+  },
+  "hunk详情": [
+    {
+      "hunk编号": 1,
+      "状态": "已解决",
+      "风险评估": "低风险",
+      "冲突原因": "版本升级导致的include语句顺序变化",
+      "分析过程": "1. 解析.rej文件中的hunk块，识别出需要添加的4行代码（1个普通include和3行条件编译include） 2. 在源文件中定位到相应位置，发现在base/metrics/histogram_macros.h和base/task/delay_policy.h之间的include结构与.rej文件略有不同 3. 根据代码逻辑和最佳实践，决定在base/metrics/histogram_macros.h之后立即插入新增的include语句",
+      "修改置信度": "高",
+      "处理策略": "在源文件的第17行位置（base/metrics/histogram_macros.h之后）插入了4行新增的include语句，保持了原有的代码结构和意图",
+      "具体变更": [
+        "+ #include \"arkweb/chromium_ext/cc/scheduler/scheduler_utils.h\"",
+        "+ #if BUILDFLAG(ARKWEB_SLIDE_LTPO)",
+        "+ #include \"arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h\"",
+        "+ #endif"
+      ]
+    }
+  ],
+  "验证结果": {
+    ".rej文件状态": "保持完整未被修改",
+    "源文件修改状态": "成功应用所有变更",
+    "最终一致性检查": "通过"
+  },
+  "备注": "本次冲突解决严格遵守了不添加上下文的铁律，仅添加了+.rej文件中指定的行，未修改或删除任何.rej文件"
+}

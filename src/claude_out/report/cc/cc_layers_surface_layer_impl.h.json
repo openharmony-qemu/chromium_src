@@ -1,0 +1,28 @@
+{
+  "file": "cc/layers/surface_layer_impl.h",
+  "total_hunks": 2,
+  "resolved_hunks": 2,
+  "unresolved_hunks": 0,
+  "resolution_status": "COMPLETE",
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "location": "Line 114-122",
+      "conflict_type": "Missing ARKWEB feature member variables",
+      "risk_level": "MEDIUM",
+      "description": "Added member variables for ARKWEB_VIDEO_ASSISTANT, ARKWEB_CUSTOM_VIDEO_PLAYER, and ARKWEB_SAME_LAYER features",
+      "resolution": "Added gfx::Rect layer_bounds_ for ARKWEB_VIDEO_ASSISTANT, gfx::Rect visible_quad_rect_ for ARKWEB_CUSTOM_VIDEO_PLAYER, and raw_ptr<SurfaceLayerImplUtils> surfaceLayerImplUtils_ for ARKWEB_SAME_LAYER",
+      "confidence": "HIGH"
+    },
+    {
+      "hunk_id": 2,
+      "location": "Line 128",
+      "conflict_type": "Missing include file",
+      "risk_level": "LOW",
+      "description": "Added missing include file for surface_layer_impl_utils.h required for ARKWEB features",
+      "resolution": "Added include statement at the end of the file before the #endif guard",
+      "confidence": "HIGH"
+    }
+  ],
+  "notes": "Successfully resolved all conflicts by adding the required ARKWEB feature member variables and include file."
+}

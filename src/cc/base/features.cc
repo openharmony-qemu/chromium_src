@@ -7,6 +7,7 @@
 #include <atomic>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "build/build_config.h"
 

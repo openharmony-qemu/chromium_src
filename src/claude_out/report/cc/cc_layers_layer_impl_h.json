@@ -1,0 +1,37 @@
+{
+  "file": "cc/layers/layer_impl.h",
+  "total_hunks": 3,
+  "resolved_hunks": 3,
+  "unresolved_hunks": 0,
+  "resolution_status": "COMPLETE",
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "location": "Line 447-448",
+      "conflict_type": "Missing may_contain_video functions",
+      "risk_level": "MEDIUM",
+      "description": "Added missing set_may_contain_video and may_contain_video getter functions",
+      "resolution": "Added function declarations after contributes_to_drawn_render_surface functions",
+      "confidence": "HIGH"
+    },
+    {
+      "hunk_id": 2,
+      "location": "Line 526-531",
+      "conflict_type": "Missing layer_impl_utils function",
+      "risk_level": "MEDIUM",
+      "description": "Added layer_impl_utils function with ARKWEB_TEST conditional compilation",
+      "resolution": "Added function declaration with proper conditional compilation after SetInInvisibleLayerTree",
+      "confidence": "HIGH"
+    },
+    {
+      "hunk_id": 3,
+      "location": "Line 617",
+      "conflict_type": "Missing friend class declaration",
+      "risk_level": "LOW",
+      "description": "The friend class LayerImplUtils declaration was already present",
+      "resolution": "No changes needed - friend class was already correctly defined",
+      "confidence": "HIGH"
+    }
+  ],
+  "notes": "Successfully resolved all conflicts by adding the required function declarations. The friend class declaration was already present and did not require changes."
+}

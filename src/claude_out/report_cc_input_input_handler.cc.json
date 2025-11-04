@@ -1,0 +1,26 @@
+{
+  "总hunk数量": 2,
+  "成功解决的hunk数量": 2,
+  "未能解决的hunk数量": 0,
+  "hunk处理详情": [
+    {
+      "hunk编号": 1,
+      "位置": "SetSynchronousInputHandlerRootScrollOffset函数",
+      "解决状态": "已解决",
+      "修改置信度": "高",
+      "处理过程": "在SetSynchronousInputHandlerRootScrollOffset函数中，根据.rej文件的指示，添加了ARKWEB_INPUT_EVENTS和ARKWEB_VSYNC_SCHEDULE宏的条件编译代码。这些修改精确地添加了+.rej文件中定义的行，并删除了-.rej文件中定义的行，没有添加任何上下文行。",
+      "风险分析": "修改涉及条件编译，需要确保ARKWEB_INPUT_EVENTS和ARKWEB_VSYNC_SCHEDULE宏在编译时正确定义。修改后的代码逻辑保持一致，没有引入语法错误。"
+    },
+    {
+      "hunk编号": 2,
+      "位置": "CreateLatencyInfoSwapPromiseMonitor函数后",
+      "解决状态": "已解决",
+      "修改置信度": "高",
+      "处理过程": "根据.rej文件的指示，删除了CreateLatencyInfoSwapPromiseMonitor函数后的空行。这是一个简单的格式调整，不会影响代码功能。",
+      "风险分析": "删除空行是一个低风险的修改，只影响代码的格式，不会改变代码的逻辑或功能。"
+    }
+  ],
+  "总体分析": "所有hunk都已成功解决，没有遇到无法定位或应用的修改。源文件已按要求精确修改，只添加了+.rej文件中定义的行，删除了-.rej文件中定义的行，没有添加任何上下文行。",
+  "rej文件状态": "保持完整未被修改",
+  "注意事项": "1. 确保ARKWEB_INPUT_EVENTS和ARKWEB_VSYNC_SCHEDULE宏在编译时正确定义；2. 建议进行编译测试以验证修改的正确性；3. .rej文件保持完整，未被修改或删除。"
+}

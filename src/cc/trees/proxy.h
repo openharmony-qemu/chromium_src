@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/shared_memory_mapping.h"
 #include "base/threading/platform_thread.h"
 #include "base/time/time.h"
@@ -47,6 +48,9 @@ class CC_EXPORT Proxy {
   virtual void ReleaseLayerTreeFrameSink() = 0;
 
   virtual void SetVisible(bool visible) = 0;
+#if BUILDFLAG(ARKWEB_PINCH_SMOOTH)
+  virtual void SetPinchSmoothMode(bool isEnable) = 0;
+#endif
   virtual void SetShouldWarmUp() = 0;
 
   virtual void SetNeedsAnimate(bool urgent = false) = 0;

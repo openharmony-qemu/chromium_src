@@ -32,6 +32,11 @@
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "services/viz/public/mojom/compositing/compositor_frame_sink.mojom.h"
+#include "arkweb/build/features/features.h"
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/cc/mojo_embedder/async_layer_tree_frame_sink_utils.h"
+#endif
 
 namespace viz {
 class RasterContextProvider;
@@ -41,6 +46,8 @@ namespace cc {
 
 class LayerContext;
 class LayerTreeHostImpl;
+
+class AsyncLayerTreeFrameSinkUtils;
 
 namespace mojo_embedder {
 
@@ -142,6 +149,9 @@ class CC_MOJO_EMBEDDER_EXPORT AsyncLayerTreeFrameSink
   void SetLocalSurfaceId(const viz::LocalSurfaceId& local_surface_id) override;
   void SubmitCompositorFrame(viz::CompositorFrame frame,
                              bool hit_test_data_changed) override;
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void OnSetBypassVsyncCondition(int32_t condition) override;
+#endif
   void DidNotProduceFrame(const viz::BeginFrameAck& ack,
                           FrameSkippedReason reason) override;
   void ExportFrameTiming() override;
@@ -151,6 +161,10 @@ class CC_MOJO_EMBEDDER_EXPORT AsyncLayerTreeFrameSink
   const viz::HitTestRegionList& get_last_hit_test_data_for_testing() const {
     return last_hit_test_data_;
   }
+
+#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
+  void InitSoftwareCompositorRender(SoftwareCompositorRegistryOhos* registry);
+#endif
 
   bool use_internal_begin_frame_source_for_testing() const {
     return use_internal_begin_frame_source_;
@@ -240,6 +254,10 @@ class CC_MOJO_EMBEDDER_EXPORT AsyncLayerTreeFrameSink
   uint64_t num_did_not_produce_frame_since_last_submit_ = 0;
   bool use_internal_begin_frame_source_ = false;
   std::unique_ptr<viz::DelayBasedBeginFrameSource> internal_begin_frame_source_;
+
+#if BUILDFLAG(IS_ARKWEB)
+  raw_ptr<AsyncLayerTreeFrameSinkUtils> async_layer_tree_frame_sink_utils_;
+#endif
 
   base::WeakPtrFactory<AsyncLayerTreeFrameSink> weak_factory_{this};
 };

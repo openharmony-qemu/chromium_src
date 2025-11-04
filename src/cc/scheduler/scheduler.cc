@@ -14,6 +14,10 @@
 #include "base/functional/bind.h"
 #include "base/location.h"
 #include "base/metrics/histogram_macros.h"
+#include "arkweb/chromium_ext/cc/scheduler/scheduler_utils.h"
+#if BUILDFLAG(ARKWEB_SLIDE_LTPO)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
 #include "base/rand_util.h"
 #include "base/task/delay_policy.h"
 #include "base/task/single_thread_task_runner.h"

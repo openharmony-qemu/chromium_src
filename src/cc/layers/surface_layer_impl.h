@@ -110,9 +110,20 @@ class CC_EXPORT SurfaceLayerImpl : public LayerImpl {
   // SurfaceLayer, so that it can be propagated to the active SurfaceLayerImpl
   // and used to update `will_draw_` on that layer accordingly.
   bool will_draw_needs_reset_ = false;
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  gfx::Rect layer_bounds_;
+#endif // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  gfx::Rect visible_quad_rect_;
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  raw_ptr<SurfaceLayerImplUtils> surfaceLayerImplUtils_;
+#endif
   bool override_child_paint_flags_ = false;
 };
 
 }  // namespace cc
 
+#include "arkweb/chromium_ext/cc/layer/surface_layer_impl_utils.h"
 #endif  // CC_LAYERS_SURFACE_LAYER_IMPL_H_

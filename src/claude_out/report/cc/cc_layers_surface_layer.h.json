@@ -1,0 +1,82 @@
+{
+  "file": "cc/layers/surface_layer.h",
+  "total_hunks": 8,
+  "resolved_hunks": 8,
+  "unresolved_hunks": 0,
+  "resolution_status": "COMPLETE",
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "location": "Line 64-68",
+      "conflict_type": "ARKWEB_CUSTOM_VIDEO_PLAYER function declarations",
+      "risk_level": "MEDIUM",
+      "description": "Added RectChangeCallback type and SetVideoRectChangeCallback/OnLayerRectUpdate function declarations for ARKWEB_CUSTOM_VIDEO_PLAYER feature",
+      "resolution": "Added function declarations in public section after SetOverrideChildPaintFlags",
+      "confidence": "HIGH"
+    },
+    {
+      "hunk_id": 2,
+      "location": "Line 70-73",
+      "conflict_type": "ARKWEB_VIDEO_ASSISTANT function declarations",
+      "risk_level": "MEDIUM",
+      "description": "Added LayerBoundsChangeCallback type and SetLayerBoundsChangeCallback function declarations for ARKWEB_VIDEO_ASSISTANT feature",
+      "resolution": "Added function declarations in public section after ARKWEB_CUSTOM_VIDEO_PLAYER declarations",
+      "confidence": "HIGH"
+    },
+    {
+      "hunk_id": 3,
+      "location": "Line 76-85",
+      "conflict_type": "ARKWEB_SAME_LAYER function declarations",
+      "risk_level": "MEDIUM",
+      "description": "Added RectVisibilityChangeCallback type, LayerRemovedVisibilityCallback type, and two Create function declarations for ARKWEB_SAME_LAYER feature",
+      "resolution": "Added function declarations in public section after ARKWEB_VIDEO_ASSISTANT declarations",
+      "confidence": "HIGH"
+    },
+    {
+      "hunk_id": 4,
+      "location": "Line 118-119",
+      "conflict_type": "ARKWEB_VIDEO_ASSISTANT override function",
+      "risk_level": "MEDIUM",
+      "description": "Added OnLayerBoundsUpdate override function declaration for ARKWEB_VIDEO_ASSISTANT feature",
+      "resolution": "Added function declaration in protected section after PushDirtyPropertiesTo",
+      "confidence": "HIGH"
+    },
+    {
+      "hunk_id": 5,
+      "location": "Line 122-125",
+      "conflict_type": "ARKWEB_SAME_LAYER override functions",
+      "risk_level": "MEDIUM",
+      "description": "Added OnLayerRectVisibilityChange, ResetLayerRectUpdateCallback, ResetLayerRectVisibilityChangeCallback, and CleanupVisibilityForRemovedLayer override function declarations for ARKWEB_SAME_LAYER feature",
+      "resolution": "Added function declarations in protected section after ARKWEB_VIDEO_ASSISTANT override function",
+      "confidence": "HIGH"
+    },
+    {
+      "hunk_id": 6,
+      "location": "Line 109-113",
+      "conflict_type": "ARKWEB_SAME_LAYER constructor",
+      "risk_level": "MEDIUM",
+      "description": "Added additional constructor for ARKWEB_SAME_LAYER feature with extra callback parameters",
+      "resolution": "Added constructor declaration in protected section before explicit SurfaceLayer(UpdateSubmissionStateCB)",
+      "confidence": "HIGH"
+    },
+    {
+      "hunk_id": 7,
+      "location": "Line 181-182",
+      "conflict_type": "ARKWEB_TEST friend class",
+      "risk_level": "LOW",
+      "description": "Added friend class declaration for ARKWEB_TEST feature",
+      "resolution": "Added friend class declaration before closing brace of class",
+      "confidence": "HIGH"
+    },
+    {
+      "hunk_id": 8,
+      "location": "Member variables section",
+      "conflict_type": "ARKWEB callback member variables",
+      "risk_level": "LOW",
+      "description": "The callback member variables were already present in the file",
+      "resolution": "No changes needed - variables were already correctly defined",
+      "confidence": "HIGH"
+    }
+  ],
+  "notes": "Successfully resolved all conflicts by adding the required ARKWEB feature function declarations and constructors. All member variables were already present."
+}

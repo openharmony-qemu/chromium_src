@@ -572,6 +572,10 @@ LayerTreeHostImpl::LayerTreeHostImpl(
       &LayerTreeHostImpl::NotifyCompositorMetricsTrackerResults,
       weak_factory_.GetWeakPtr()));
 
+#if BUILDFLAG(IS_ARKWEB)
+  is_ohos_pc_ui_setting_ = base::ohos::IsPcDevice() ? true : false;
+#endif
+
   if (settings_.is_layer_tree_for_ui) {
     total_invalidated_area_ = 0u;
   }
@@ -1718,6 +1722,10 @@ void LayerTreeHostImpl::InvalidateLayerTreeFrameSink(bool needs_redraw) {
 DrawResult LayerTreeHostImpl::PrepareToDraw(FrameData* frame) {
   TRACE_EVENT1("cc", "LayerTreeHostImpl::PrepareToDraw", "SourceFrameNumber",
                active_tree_->source_frame_number());
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                    std::to_string(CurrentBeginFrameArgs().trace_id), "step", "GenerateRenderPass");
+#endif
   if (input_delegate_)
     input_delegate_->WillDraw();
 
@@ -3099,6 +3107,10 @@ OHOS_TRACE_EVENT0("viz,benchmark", "MainFrame.SubmitCompositorFrame");
 
 viz::CompositorFrame LayerTreeHostImpl::GenerateCompositorFrame(
     FrameData* frame) {
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                    std::to_string(CurrentBeginFrameArgs().trace_id), "step", "GenerateCompositorFrame");
+#endif
   if (!settings_.trees_in_viz_in_viz_process) {
     memory_history_->SaveEntry(tile_manager_.memory_stats_from_last_assign());
   }
@@ -3152,6 +3164,10 @@ viz::CompositorFrame LayerTreeHostImpl::GenerateCompositorFrame(
   }
 
   viz::CompositorFrameMetadata metadata = MakeCompositorFrameMetadata();
+
+#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
+  metadata.is_scrolling = g_frameIsScrolling;
+#endif
 
   // Don't compute transition directives in TreesInViz mode because
   // the requests will be sent over to viz to compute them.
@@ -4526,6 +4542,8 @@ void LayerTreeHostImpl::ReleaseLayerTreeFrameSink() {
   // Windows does not have stability issues that require calling Finish.
   // To minimize risk, only avoid waiting for the UI layer tree.
   should_finish &= !settings_.is_layer_tree_for_ui;
+#elif BUILDFLAG(IS_ARKWEB)
+  should_finish = !settings_.is_layer_tree_for_ui || !is_ohos_pc_ui_setting_;
 #endif
 
   if (should_finish && layer_tree_frame_sink_->context_provider()) {
@@ -4644,6 +4662,11 @@ bool LayerTreeHostImpl::InitializeFrameSink(
   const viz::LocalSurfaceId& local_surface_id = GetCurrentLocalSurfaceId();
   if (local_surface_id.is_valid() && !settings().trees_in_viz_in_viz_process) {
     AllocateLocalSurfaceId();
+  }
+
+  if (need_layer_tree_frame_sink_) {
+    OnSetBypassVsyncCondition(condition_);
+    need_layer_tree_frame_sink_ = false;
   }
 
   return true;
@@ -4904,6 +4927,23 @@ void LayerTreeHostImpl::DidScrollContent(ElementId element_id,
     SetNeedsRedraw(/*animation_only=*/false, /*skip_if_inside_draw=*/false);
   }
 }
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void LayerTreeHostImpl::ScheduledActionDraw() {
+  client_->OnScheduledActionDraw();
+}
+
+void LayerTreeHostImpl::OnSetBypassVsyncCondition(int32_t condition) {
+  if (!layer_tree_frame_sink_) {
+    LOG(INFO)
+        << "layer_tree_frame_sink_::need_layer_tree_frame_sink_:true";
+      need_layer_tree_frame_sink_ = true;
+      condition_ = condition;
+      return ;
+  }
+  layer_tree_frame_sink_->OnSetBypassVsyncCondition(condition);
+}
+#endif
 
 float LayerTreeHostImpl::DeviceScaleFactor() const {
   return active_tree_->device_scale_factor();

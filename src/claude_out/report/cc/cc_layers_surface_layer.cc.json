@@ -1,0 +1,19 @@
+{
+  "file": "cc/layers/surface_layer.cc",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "resolution_status": "COMPLETE",
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "location": "End of file",
+      "conflict_type": "Extra blank line removal",
+      "risk_level": "LOW",
+      "description": "The .rej file indicated an extra blank line should be removed at the end of the file, but the current file was already in the correct state.",
+      "resolution": "No changes needed - file was already correctly formatted",
+      "confidence": "HIGH"
+    }
+  ],
+  "notes": "The .rej file suggested removing an extra blank line, but inspection showed the file was already correctly formatted. No modifications were necessary."
+}

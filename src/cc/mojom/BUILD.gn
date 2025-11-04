@@ -29,6 +29,11 @@ mojom("mojom") {
     "touch_action.mojom",
   ]
 
+  if (is_android || is_ohos || is_arkweb) {
+    enabled_features += [ "is_android_or_ios_or_arkweb" ]
+    enabled_features += [ "arkweb_menu" ]
+  }
+
   public_deps = [
     ":mojom_browser_controls",
     "//mojo/public/mojom/base",

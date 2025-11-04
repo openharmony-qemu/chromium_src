@@ -15,7 +15,6 @@
 
 #include "arkweb/chromium_ext/third_party/blink/renderer/platform/media/segmentation_multibuffer_data_provider.h"
 
-#include <stddef.h>
 #include <utility>
 #include <sstream>
 

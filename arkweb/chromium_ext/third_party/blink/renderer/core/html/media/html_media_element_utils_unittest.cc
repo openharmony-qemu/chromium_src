@@ -940,15 +940,15 @@ TEST_F(HTMLMediaElementUtilsTest, TestOnVolumeChanged) {
 TEST_F(HTMLMediaElementUtilsTest, VideoLoadOpt_IsUseVideoLoadOptimizationTest) {
   media_ =
       MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
-  HTMLMediaElementUtils* element_utils_ = new HTMLMediaElementUtils(Media());
-  EXPECT_EQ(element_utils_->IsUseVideoLoadOptimization(), false);
+  HTMLMediaElementUtils element_utils_(Media());
+  EXPECT_EQ(element_utils_.IsUseVideoLoadOptimization(), false);
 }
 
 TEST_F(HTMLMediaElementUtilsTest, VideoLoadOpt_SetVideoIsPlayingTest) {
   media_ =
       MakeGarbageCollected<HTMLVideoElement>(dummy_page_holder_->GetDocument());
-  HTMLMediaElementUtils* element_utils_ = new HTMLMediaElementUtils(Media());
-  ASSERT_NO_FATAL_FAILURE(element_utils_->SetVideoIsPlaying(true));
+  HTMLMediaElementUtils element_utils_(Media());
+  ASSERT_NO_FATAL_FAILURE(element_utils_.SetVideoIsPlaying(true));
 }
 #endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 

@@ -619,6 +619,14 @@ class MockWebLocalFrame : public blink::WebLocalFrame {
       const blink::WebAssociatedURLLoaderOptions&) override {
     return nullptr;
   }
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  virtual std::unique_ptr<blink::WebAssociatedURLLoader> CreateVideoURLLoader(
+      const blink::WebAssociatedURLLoaderOptions&) override {
+    return nullptr;
+  }
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
   void DeprecatedStopLoading() override {}
   gfx::PointF GetScrollOffset() const override {
     return gfx::PointF(0, 0);

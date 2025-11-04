@@ -66,6 +66,7 @@ class VideoUrlLoaderManager {
                                     uint16_t from_priority,
                                     uint16_t to_priority);
   void UpdateUrlLoader();
+  void UpdateUrlLoaderList(std::list<PriorityLoader>::iterator& it);
   void StartPendingLoaderIfNeeded();
   bool RemoveLoaderFromList(std::list<PriorityLoader>*,
                             base::WeakPtr<VideoURLLoaderImpl>);

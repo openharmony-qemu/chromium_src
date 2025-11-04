@@ -16,7 +16,6 @@
 #include "arkweb/chromium_ext/third_party/blink/renderer/platform/media/video_common_data_provider.h"
 
 #include "arkweb/ohos_nweb/src/nweb_hilog.h"
-#include "base/strings/stringprintf.h"
 #include "net/http/http_byte_range.h"
 #include "net/http/http_request_headers.h"
 #include "services/network/public/cpp/cors/cors.h"
@@ -226,7 +225,6 @@ void VideoRangeURLLoaderClient::Start() {
   active_loader_->Load(req, weak_factory_.GetWeakPtr(), id_, start_);
 }
 
-/////////////////////////////////////////////////////////////////////////////
 // WebAssociatedURLLoaderClient implementation.
 
 bool VideoRangeURLLoaderClient::WillFollowRedirect(
@@ -403,7 +401,6 @@ void VideoRangeURLLoaderClient::DidReceiveResponse(
   if (destination_url_data != provider_->urlData()) {
     LOG(INFO) << "VideoOpt: " << __func__ << " url_data != destination_url_data"
               << AsHumanReadableString();
-              // << "; dest=" << destination_url_data->url().spec();
 
     // At this point, we've encountered a redirect, or found a better url data
     // instance for the data that we're about to download.
@@ -547,7 +544,9 @@ void VideoRangeURLLoaderClient::SetDefersLoading(bool deferred) {
 bool VideoRangeURLLoaderClient::VerifyPartialResponse(
     const WebURLResponse& response,
     const scoped_refptr<UrlData>& url_data) {
-  int64_t first_byte_position, last_byte_position, instance_size;
+  int64_t first_byte_position;
+  int64_t last_byte_position;
+  int64_t instance_size;
   if (!ParseContentRange(response.HttpHeaderField("Content-Range").Utf8(),
                          &first_byte_position, &last_byte_position,
                          &instance_size)) {

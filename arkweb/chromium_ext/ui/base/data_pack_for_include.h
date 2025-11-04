@@ -27,7 +27,7 @@ class DataPackUtil {
 public:
   static bool LoadFromPathExt(raw_ptr<DataPack> dataPackObj, const base::FilePath& path);
   static void SwapPathName(const std::string& origin, std::string& copy,
-                                const std::string& from, const std::string& to);
+                           const std::string& from, const std::string& to);
 };
 }
 #endif

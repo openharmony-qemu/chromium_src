@@ -55,6 +55,7 @@
 #include "build/build_config.h"
 #include "third_party/abseil-cpp/absl/base/internal/raw_logging.h"
 #include "third_party/abseil-cpp/absl/cleanup/cleanup.h"
+#include "arkweb/build/features/features.h"
 #include "third_party/perfetto/protos/perfetto/trace/track_event/log_message.pbzero.h"
 
 #if defined(LEAK_SANITIZER)
@@ -85,6 +86,10 @@ typedef HANDLE FileHandle;
 
 #if BUILDFLAG(ARKWEB_DFX_LOGGING)
 #include "third_party/ohos_ndk/includes/ohos_adapter/hilog_adapter.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_DFX_LOGGING)
+#include "ohos_sdk/openharmony/native/sysroot/usr/include/hilog/log.h"
 #endif
 
 #if BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
@@ -191,7 +196,9 @@ void MaybeInitializeVlogInfo() {
   }
 }
 
-const char* const log_severity_names[] = {"INFO", "WARNING", "ERROR", "FATAL"};
+#if !BUILDFLAG(ARKWEB_DFX_LOGGING)
+const char* const log_severity_names[] = {"INFO", "WARNING", "ERROR", "FATAL", "DEBUG"};
+
 static_assert(LOGGING_NUM_SEVERITIES == std::size(log_severity_names),
               "Incorrect number of log_severity_names");
 
@@ -201,6 +208,7 @@ const char* log_severity_name(int severity) {
   }
   return "UNKNOWN";
 }
+#endif
 
 // Specifies the process' logging sink(s), represented as a combination of
 // LoggingDestination values joined by bitwise OR.
@@ -728,6 +736,9 @@ LogMessage::LogMessage(const char* file, int line, LogSeverity severity)
   Init(file, line);
 }
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+NO_SANITIZE("cfi-icall")
+#endif
 LogMessage::~LogMessage() {
   Flush();
 }
@@ -779,9 +790,12 @@ void LogMessage::Flush() {
     }
   };
 
-  if (severity_ == LOGGING_FATAL) {
+  if (severity_ == LOGGING_FATAL
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+      || priority_ == PRIORITY_FATAL
+#endif
+  )
     SetLogFatalCrashKey(this);
-  }
 
   // Give any log message handler first dibs on the message.
   if (g_log_message_handler &&
@@ -998,6 +1012,24 @@ void LogMessage::Init(const char* file, int line) {
   // Don't let actions from this method affect the system error after returning.
   base::ScopedClearLastError scoped_clear_last_error;
 
+#if BUILDFLAG(ARKWEB_DFX_LOGGING)
+  std::string_view filename;
+  std::string_view message(file);
+  size_t tagStart = message.find_first_of('#');
+  if (tagStart == std::string_view::npos) {
+    tag_ = std::string("chromium");
+    filename = message;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    ohos_tag_ = std::string("mainprocess");
+#endif
+  } else {
+    tag_ = std::string(message.substr(0, tagStart));
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    ohos_tag_ = std::string(message.substr(0, tagStart));
+#endif
+    filename = message.substr(tagStart + 1, message.size() - tagStart);
+  }
+#else
   // Most logging initializes `file` from __FILE__. Unfortunately, because we
   // build from out/Foo we get a `../../` (or \) prefix for all of our
   // __FILE__s. This isn't true for base::Location::Current() which already does
@@ -1012,6 +1044,7 @@ void LogMessage::Init(const char* file, int line) {
       file[0] == '.' ? std::string_view(file).substr(
                            std::min(std::size_t{6}, strlen(file)))
                      : file;
+#endif
 
 #if BUILDFLAG(IS_CHROMEOS)
   if (g_log_format == LogFormat::LOG_FORMAT_SYSLOG) {
@@ -1023,6 +1056,7 @@ void LogMessage::Init(const char* file, int line) {
   {
     // TODO(darin): It might be nice if the columns were fixed width.
     stream_ << '[';
+  #if !BUILDFLAG(ARKWEB_DFX_LOGGING)
     if (g_log_prefix) {
       stream_ << g_log_prefix << ':';
     }
@@ -1066,6 +1100,9 @@ void LogMessage::Init(const char* file, int line) {
       stream_ << "VERBOSE" << -severity_;
     }
     stream_ << ":" << filename << ":" << line << "] ";
+#else
+    stream_ << filename << ":" << line << "] ";
+#endif
   }
   message_start_ = stream_.str().length();
 }

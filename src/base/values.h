@@ -821,7 +821,8 @@ class BASE_EXPORT GSL_OWNER Value {
   Dict TakeDict() &&;
   List TakeList() &&;
 
-
+  Value* FindPath(std::string_view path);
+  const Value* FindPath(std::string_view path) const;
 
   // Note: Do not add more types. See the file-level comment above for why.
 

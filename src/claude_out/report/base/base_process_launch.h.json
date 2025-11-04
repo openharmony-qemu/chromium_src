@@ -1,0 +1,61 @@
+{
+  "file_path": "base/process/launch.h",
+  "rej_file": "base/process/launch.h.rej",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": {
+    "status": "保持完整",
+    "verified": true,
+    "modified": false
+  },
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "line_range": "256-256",
+      "status": "已解决",
+      "confidence": "高",
+      "modification_type": "条件编译指令修改",
+      "risk_assessment": "低风险 - 仅添加了对OHOS平台的条件编译支持，不影响现有功能",
+      "change_description": "在条件编译指令中添加了对BUILDFLAG(IS_OHOS)的支持",
+      "analysis": {
+        "conflict_cause": "Arkweb141在Chromium141基础上缺少对OHOS平台的条件编译支持",
+        "intent": "Arkweb132针对OHOS平台适配，需要在条件编译中包含IS_OHOS标志",
+        "positioning_method": "精确匹配定位",
+        "anchor_context": "使用std::vector<int> fds_to_remove_cloexec;作为锚点"
+      },
+      "changes_applied": {
+        "removed_lines": [
+          "#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)"
+        ],
+        "added_lines": [
+          "#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)"
+        ]
+      },
+      "verification": {
+        "syntax_check": "通过 - 语法正确",
+        "logic_check": "通过 - 逻辑一致",
+        "position_check": "通过 - 位置准确"
+      }
+    }
+  ],
+  "summary": {
+    "processing_result": "成功",
+    "total_modifications": 1,
+    "platform_support": "添加了对OHOS平台的条件编译支持",
+    "code_impact": "极小 - 仅影响条件编译指令的范围",
+    "compliance": {
+      "context_lines_added": false,
+      "scripts_generated": false,
+      "auxiliary_files_created": false,
+      "rej_file_modified": false,
+      "only_symbol_operations": true
+    }
+  },
+  "resolution_strategy": {
+    "approach": "原子化应用",
+    "context_usage": "仅用于定位，未添加到源文件",
+    "symbol_operations_only": true,
+    "additional_references_required": false
+  }
+}

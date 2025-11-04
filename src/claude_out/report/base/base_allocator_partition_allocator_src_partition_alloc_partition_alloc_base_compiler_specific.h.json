@@ -1,0 +1,49 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/compiler_specific.h.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/compiler_specific.h",
+    "Chromium132基线版本": "/home/sujiahao/code/chromium_132_baseline/src/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/compiler_specific.h",
+    "Arkweb132代码": "/home/sujiahao/code/arkweb_132/src/base/allocator/partition_allocator/src/partition_alloc/partition_alloc_base/compiler_specific.h"
+  },
+  "处理总结": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%",
+    ".rej文件保持完整未被修改": true
+  },
+  "hunks详情": [
+    {
+      "hunk编号": 1,
+      "冲突原因": "Arkweb132对chromium132内核进行了侵入式修改，将相对路径include改为绝对路径，在升级到chromium141时产生路径冲突",
+      "风险等级": "低",
+      "风险说明": "这是一个简单的include路径修改，风险很低。变更只是将相对路径改为绝对路径，不会影响代码逻辑和功能",
+      "待删除行": [
+        "#include \"partition_alloc/build_config.h\""
+      ],
+      "待添加行": [
+        "#include \"base/allocator/partition_allocator/src/partition_alloc/build_config.h\""
+      ],
+      "分析过程": "通过在源文件中搜索被删除的include语句，精确定位到第8行。该行存在且内容完全匹配，确认可以直接应用修改",
+      "定位状态": "成功",
+      "应用状态": "已成功应用",
+      "修改置信度": "高",
+      "最终处理策略": "直接将第8行的include路径从相对路径修改为绝对路径，保持其他内容不变"
+    }
+  ],
+  "处理原则遵循情况": {
+    "黄金法则遵循": {
+      "未添加上下文行到源文件": true,
+      "未生成脚本文件": true,
+      "未创建辅助文件": true,
+      "未使用外部工具": true,
+      "仅在指定目录创建JSON报告": true,
+      "未修改.rej文件": true
+    }
+  },
+  "最终验证": {
+    "源文件修改确认": "已成功将include路径从相对路径修改为绝对路径",
+    "语法完整性": "修改后的代码语法正确，include路径有效",
+    ".rej文件完整性": ".rej文件保持原始状态，未被修改或删除"
+  }
+}

@@ -30,6 +30,7 @@
 #include "base/debug/crash_logging.h"
 #include "base/ios/ios_util.h"
 #endif
+#include "arkweb/build/features/features.h"
 
 namespace base::i18n {
 

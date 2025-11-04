@@ -368,7 +368,11 @@ class PA_COMPONENT_EXPORT(PARTITION_ALLOC) PartitionAddressSpace {
 
  public:
   PA_ALWAYS_INLINE static size_t CorePoolSize() {
+#if PA_BUILDFLAG(IS_OHOS)
+    return IsOhosTsanRuntime() ? kCorePoolSizeForOhosTsan : kCorePoolSize;
+#else
     return IsIOSTestProcess() ? kCorePoolSizeForIOSTestProcess : kCorePoolSize;
+#endif
   }
 #else
   // The pool sizes should be as large as maximum whenever possible.

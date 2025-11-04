@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "arkweb/build/features/features.h"
 #include "base/threading/hang_watcher.h"
 
 #include <algorithm>
@@ -30,6 +31,9 @@
 #include "base/time/time.h"
 #include "base/trace_event/trace_event.h"
 #include "build/build_config.h"
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+extern void ReportRenderFreeze();
+#endif
 
 namespace base {
 

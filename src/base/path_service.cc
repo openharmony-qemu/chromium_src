@@ -124,7 +124,20 @@ Provider base_provider_fuchsia = {PathProviderFuchsia, &base_provider,
                                   true};
 #endif
 
-#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_OHOS)
+Provider base_provider_ohos = {
+    PathProviderOHOS,
+    &base_provider,
+#ifndef NDEBUG
+    PATH_OHOS_START,
+    PATH_OHOS_END,
+#endif
+    true
+};
+#endif
+
+#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID) && \
+    !BUILDFLAG(IS_OHOS)
 Provider posix_provider = {PathProviderPosix, &base_provider,
 #ifndef NDEBUG
                            PATH_POSIX_START, PATH_POSIX_END,

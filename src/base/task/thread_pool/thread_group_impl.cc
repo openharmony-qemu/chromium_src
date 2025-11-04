@@ -626,6 +626,12 @@ void ThreadGroupImpl::WorkerDelegate::CleanupLockRequired(
   auto worker_iter = std::ranges::find(outer_->workers_, worker);
   CHECK(worker_iter != outer_->workers_.end());
   outer_->workers_.erase(worker_iter);
+
+#if BUILDFLAG(IS_ARKWEB)
+  if (worker->GetRealTid()) {
+    outer_->destroy_workers_ids_.push_back(worker->GetRealTid());
+  }
+#endif
 }
 
 void ThreadGroupImpl::WorkerDelegate::OnWorkerBecomesIdleLockRequired(

@@ -12,6 +12,7 @@
 #include "base/base_export.h"
 #include "base/compiler_specific.h"
 #include "third_party/abseil-cpp/absl/strings/str_format.h"
+#include "arkweb/build/features/features.h"
 
 namespace base {
 

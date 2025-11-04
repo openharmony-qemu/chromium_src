@@ -725,7 +725,8 @@ bool GetAppOutputWithExitCode(const std::vector<std::string>& argv,
   return GetAppOutputInternal(argv, nullptr, false, output, true, exit_code);
 }
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX) || \
+    BUILDFLAG(IS_OHOS)
 namespace {
 
 // This function runs on the stack specified on the clone call. It uses longjmp

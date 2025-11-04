@@ -425,7 +425,7 @@ PartitionAllocFunctionsInternal<base_alloc_flags, base_free_flags>::Free(
   // malloc() pointer can be passed to PartitionAlloc's free(). If we don't own
   // the pointer, pass it along. This should not have a runtime cost vs regular
   // Android, since on Android we have a PA_CHECK() rather than the branch here.
-#if PA_BUILDFLAG(IS_CAST_ANDROID)
+#if PA_BUILDFLAG(IS_CAST_ANDROID) || PA_BUILDFLAG(IS_OHOS)
   if (!partition_alloc::IsManagedByPartitionAlloc(
           reinterpret_cast<uintptr_t>(object)) &&
       object) [[unlikely]] {
@@ -434,7 +434,7 @@ PartitionAllocFunctionsInternal<base_alloc_flags, base_free_flags>::Free(
     // here.
     return __real_free(object);
   }
-#endif  // PA_BUILDFLAG(IS_CAST_ANDROID)
+#endif  // PA_BUILDFLAG(IS_CAST_ANDROID) || PA_BUILDFLAG(IS_OHOS)
 
   partition_alloc::PartitionRoot::FreeInlineInUnknownRoot<base_free_flags>(
       object);

@@ -1,0 +1,67 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/base/task/thread_pool/thread_pool_impl.h.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/base/task/thread_pool/thread_pool_impl.h",
+    "文件类型": "C++头文件"
+  },
+  "冲突统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "Hunk分析": [
+    {
+      "hunk编号": 1,
+      "位置信息": {
+        "原始行号": 152-163,
+        "源文件对应位置": 156-163
+      },
+      "修改类型": "新增条件编译代码块",
+      "新增内容": [
+        "#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)",
+        "  ThreadGroup* GetForegroundThreadGroup() {",
+        "    return foreground_thread_group_.get();",
+        "  }",
+        "#endif"
+      ],
+      "删除内容": [],
+      "冲突原因": "Arkweb 132中的性能调度功能需要在Arkweb 141中重新集成",
+      "定位策略": {
+        "使用锚点": [
+          "CreateUpdateableSequencedTaskRunner函数声明（上方锚点）",
+          "private: 访问修饰符（下方锚点）"
+        ],
+        "定位结果": "成功定位到公共接口区域的正确位置"
+      },
+      "风险评估": {
+        "语法风险": "低 - 代码结构完整，语法正确",
+        "逻辑风险": "低 - 简单的getter函数，风险可控",
+        "编译风险": "低 - 条件编译确保只在特定配置下生效",
+        "功能风险": "中 - 需要确保ARKWEB_PERFORMANCE_SCHEDULING宏定义正确"
+      },
+      "处理结果": {
+        "状态": "已解决",
+        "修改位置": "第158-163行",
+        "修改方式": "在CreateUpdateableSequencedTaskRunner函数声明后插入新的条件编译代码块",
+        "置信度": "高 - 上下文匹配度高，定位精确"
+      }
+    }
+  ],
+  "整体分析": {
+    "冲突性质": "侵入式修改 - Arkweb性能调度功能的特性代码集成",
+    "修改意图": "提供对前台线程组的访问接口，用于性能调度优化",
+    "代码质量": "良好 - 遵循C++最佳实践，使用条件编译避免影响默认行为"
+  },
+  "验证结果": {
+    ".rej文件状态": "保持完整，未被修改",
+    "源文件修改": "成功应用所有修改",
+    "语法检查": "通过 - 代码结构完整",
+    "编译兼容性": "预期兼容 - 条件编译确保向后兼容"
+  },
+  "建议": {
+    "编译验证": "建议在定义ARKWEB_PERFORMANCE_SCHEDULING宏的配置下进行编译测试",
+    "功能测试": "验证GetForegroundThreadGroup()方法的返回值和行为",
+    "代码审查": "确认foreground_thread_group_成员变量的声明和初始化"
+  }
+}

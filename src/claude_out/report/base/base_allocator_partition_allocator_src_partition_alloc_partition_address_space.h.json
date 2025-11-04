@@ -1,0 +1,45 @@
+{
+  "conflict_file": "base/allocator/partition_allocator/src/partition_alloc/partition_address_space.h.rej",
+  "source_file": "base/allocator/partition_allocator/src/partition_alloc/partition_address_space.h",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "保持完整未被修改",
+  "analysis": {
+    "hunk_1": {
+      "line_range": "333-339",
+      "risk_level": "低风险",
+      "conflict_cause": "Arkweb 132在CorePoolSize函数中添加了OHOS平台的条件编译逻辑，在Arkweb 141中需要保留这些针对OHOS平台的特殊处理",
+      "analysis_process": "通过.rej文件中的上下文行精确定位到源文件第370-376行的CorePoolSize函数实现，使用周围的PA_CONFIG(DYNAMICALLY_SELECT_POOL_SIZE)条件编译块作为定位锚点",
+      "confidence": "高置信度",
+      "resolution_strategy": "原子化应用修改",
+      "status": "已解决",
+      "details": {
+        "added_lines": [
+          "#if PA_BUILDFLAG(IS_OHOS)",
+          "    return IsOhosTsanRuntime() ? kCorePoolSizeForOhosTsan : kCorePoolSize;",
+          "#else",
+          "#endif"
+        ],
+        "removed_lines": [],
+        "anchor_context": {
+          "before": "PA_ALWAYS_INLINE static size_t CorePoolSize() {",
+          "after": "}"
+        },
+        "location_in_source": "第371-375行"
+      }
+    }
+  },
+  "summary": {
+    "task_completion": "所有hunk已成功解决",
+    "modifications_applied": "在CorePoolSize函数中添加了OHOS平台的条件编译逻辑，当编译OHOS平台时使用IsOhosTsanRuntime判断并返回相应的池大小",
+    "code_integrity": "修改后代码保持语法正确性和逻辑完整性，IsOhosTsanRuntime函数已在文件第38行声明",
+    "compliance_check": {
+      "no_context_lines_added": "合规 - 仅添加了+开头的行",
+      "no_script_files_created": "合规 - 未创建任何脚本文件",
+      "rej_file_preserved": "合规 - .rej文件保持完整未被修改",
+      "atomic_modifications": "合规 - 仅在指定位置进行了原子化修改",
+      "report_location_verified": "合规 - 报告创建在指定目录"
+    }
+  }
+}

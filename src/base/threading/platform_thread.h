@@ -469,7 +469,7 @@ void SetCurrentThreadType(ThreadType thread_type,
 void SetCurrentThreadTypeImpl(ThreadType thread_type,
                               MessagePumpType pump_type_hint);
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 void SetThreadTypeLinux(ProcessId process_id,
                         PlatformThreadId thread_id,
                         ThreadType thread_type,

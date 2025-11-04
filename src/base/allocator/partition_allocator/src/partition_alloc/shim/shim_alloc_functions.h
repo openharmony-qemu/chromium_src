@@ -323,8 +323,17 @@ PA_ALWAYS_INLINE unsigned ShimBatchMalloc(size_t size,
                                           void* context) {
   const allocator_shim::AllocatorDispatch* const chain_head =
       allocator_shim::internal::GetChainHead();
+#if PA_BUILDFLAG(IS_OHOS)
+  unsigned const num_allocated = chain_head->batch_malloc_function(size, results,
+    num_requested, context);
+  for (unsigned i = 0; i < num_allocated; ++i) {
+    OhosMemtrace(results[i], size, "ShimBatchMalloc", true);
+  }
+  return num_allocated;
+#else
   return chain_head->batch_malloc_function(size, results, num_requested,
                                            context);
+#endif
 }
 
 PA_ALWAYS_INLINE void ShimBatchFree(void** to_be_freed,
@@ -332,12 +341,20 @@ PA_ALWAYS_INLINE void ShimBatchFree(void** to_be_freed,
                                     void* context) {
   const allocator_shim::AllocatorDispatch* const chain_head =
       allocator_shim::internal::GetChainHead();
+#if PA_BUILDFLAG(IS_OHOS)
+  for (unsigned i = 0; i < num_to_be_freed; ++i) {
+    OhosMemtrace(to_be_freed[i], 0, "ShimBatchFree", false);
+  }
+#endif
   return chain_head->batch_free_function(to_be_freed, num_to_be_freed, context);
 }
 
 PA_ALWAYS_INLINE void ShimTryFreeDefault(void* ptr, void* context) {
   const allocator_shim::AllocatorDispatch* const chain_head =
       allocator_shim::internal::GetChainHead();
+#if PA_BUILDFLAG(IS_OHOS)
+  OhosMemtrace(ptr, 0, "ShimTryFreeDefault", false);
+#endif
   return chain_head->try_free_default_function(ptr, context);
 }
 

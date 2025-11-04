@@ -8,6 +8,7 @@
 #endif
 
 #include "base/files/file_path.h"
+#include "arkweb/build/features/features.h"
 
 #include <string.h>
 
@@ -15,6 +16,7 @@
 #include <atomic>
 #include <string_view>
 
+#include "base/logging.h"
 #include "base/check_op.h"
 #include "base/features.h"
 #include "base/files/safe_base_name.h"
@@ -1638,5 +1640,13 @@ bool FilePath::IsVirtualDocumentPath() const {
 }
 
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD) || BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/base/files/file_path_ext.cc"
+#endif
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/base/files/file_path_sta_ext.cc"
+#endif
 
 }  // namespace base

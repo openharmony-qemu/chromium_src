@@ -45,6 +45,10 @@ using ::base::test::SingleThreadTaskEnvironment;
 using ::base::test::TaskEnvironment;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
+
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+void ReportRenderFreeze() {}
+#endif
 using ::testing::Pair;
 using ::testing::TestWithParam;
 using ::testing::UnorderedElementsAre;

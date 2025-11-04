@@ -122,7 +122,7 @@ size_t PartitionAddressSpace::metadata_region_size_ = 0;
 #endif  // PA_CONFIG(DYNAMICALLY_SELECT_POOL_SIZE)
 #endif  // PA_CONFIG(MOVE_METADATA_OUT_OF_GIGACAGE)
 
-#if PA_CONFIG(DYNAMICALLY_SELECT_POOL_SIZE)
+#if PA_CONFIG(DYNAMICALLY_SELECT_POOL_SIZE) && !PA_BUILDFLAG(IS_OHOS)
 #if !PA_BUILDFLAG(IS_IOS)
 #error Dynamic pool size is only supported on iOS.
 #endif
@@ -158,7 +158,7 @@ bool PartitionAddressSpace::IsIOSTestProcess() {
 
   return has_suffix("Runner") || has_suffix("ios_web_view_inttests");
 }
-#endif  // PA_CONFIG(DYNAMICALLY_SELECT_POOL_SIZE)
+#endif  // PA_CONFIG(DYNAMICALLY_SELECT_POOL_SIZE) && !PA_BUILDFLAG(IS_OHOS)
 
 void PartitionAddressSpace::Init() {
   if (IsInitialized()) {

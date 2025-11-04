@@ -1,0 +1,75 @@
+{
+  "conflict_file": "base/message_loop/message_pump_for_ui.h.rej",
+  "source_file": "base/message_loop/message_pump_for_ui.h",
+  "analysis_summary": {
+    "total_hunks": 2,
+    "resolved_hunks": 2,
+    "unresolved_hunks": 0,
+    "resolution_success_rate": "100%"
+  },
+  "rej_file_integrity": {
+    "status": "intact",
+    "modified": false,
+    "deleted": false
+  },
+  "hunks_analysis": [
+    {
+      "hunk_id": 1,
+      "location_lines": "3-23",
+      "conflict_type": "platform_specific_conditional_compilation",
+      "risk_level": "低",
+      "description": "在平台特定的条件编译指令中添加Arkweb平台支持",
+      "changes_required": {
+        "additions": [
+          "#elif BUILDFLAG(IS_ARKWEB)",
+          "#include \"base/message_loop/message_pump_ohos.h\""
+        ],
+        "modifications": [
+          "在Linux/ChromeOS/BSD条件中添加 || BUILDFLAG(IS_OHOS)"
+        ]
+      },
+      "resolution_process": "成功定位到Android和Apple条件编译指令之间，插入Arkweb条件块。修改了Linux相关条件，添加OHOS支持。",
+      "confidence_level": "高",
+      "status": "已解决",
+      "final_action": "精确应用了.rej文件中的所有+行和-行修改"
+    },
+    {
+      "hunk_id": 2,
+      "location_lines": "25-50",
+      "conflict_type": "namespace_platform_specific_typedef",
+      "risk_level": "低",
+      "description": "在base命名空间中添加Arkweb平台的MessagePumpForUI类型定义",
+      "changes_required": {
+        "additions": [
+          "#elif BUILDFLAG(IS_ARKWEB)",
+          "using MessagePumpForUI = MessagePumpForUI;"
+        ],
+        "modifications": [
+          "在Linux/ChromeOS/BSD条件中添加 || BUILDFLAG(IS_OHOS)"
+        ]
+      },
+      "resolution_process": "成功定位到namespace base内的Android和Apple类型定义之间，插入Arkweb类型定义。修改了对应的Linux相关条件。",
+      "confidence_level": "高",
+      "status": "已解决",
+      "final_action": "精确应用了.rej文件中的所有+行和-行修改"
+    }
+  ],
+  "conflict_cause_analysis": {
+    "primary_cause": "Arkweb 132 到 141 升级过程中，Chromium 141版本移除了对某些平台特定编译条件的支持，但Arkweb需要保留这些条件以支持OpenHarmony平台",
+    "technical_details": "冲突主要集中在两个方面：1) 头文件包含的条件编译指令；2) 类型定义的条件编译指令",
+    "platform_impact": "主要影响Arkweb和OHOS平台的编译配置"
+  },
+  "modification_strategy": {
+    "approach": "原子化修改策略",
+    "golden_rule_compliance": "严格遵守黄金法则，只应用.rej文件中的+行和-行，不添加任何上下文",
+    "positioning_method": "使用周围代码作为锚点精确定位插入/删除位置",
+    "verification_method": "应用后立即验证代码语法正确性和逻辑完整性"
+  },
+  "final_verification": {
+    "source_file_modified": true,
+    "syntax_validation": "通过",
+    "logical_consistency": "通过",
+    "platform_coverage": "现在支持Windows、Android、Arkweb、Apple、AIX、GLIB、Linux/ChromeOS/BSD/OHOS、Fuchsia平台",
+    "compilation_readiness": "就绪"
+  }
+}

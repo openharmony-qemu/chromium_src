@@ -25,6 +25,7 @@
 #include "base/memory/raw_ptr.h"
 #include "base/synchronization/lock.h"
 #include "build/build_config.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(ENABLE_BANNED_BASE_FEATURE_PREFIX)
 #include "base/logging.h"
@@ -36,6 +37,9 @@ class FieldTrial;
 class FieldTrialList;
 class PersistentMemoryAllocator;
 class FeatureVisitor;
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+class FeatureListUtils;
+#endif
 
 // Specifies whether a given feature is enabled or disabled by default.
 // NOTE: The actual runtime state may be different, due to a field trial or a

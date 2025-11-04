@@ -638,6 +638,12 @@ target(_target_type, "test_trace_processor") {
     output_name = "TestTraceProcessor"
     bundle_deps_filter = [ "//third_party/icu:icudata" ]
   }
+
+  if (arkweb_unittests){
+    deps += [
+      "//base:base"
+    ]
+  }
 }
 
 if (is_android) {

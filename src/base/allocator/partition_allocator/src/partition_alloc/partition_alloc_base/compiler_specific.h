@@ -5,7 +5,7 @@
 #ifndef PARTITION_ALLOC_PARTITION_ALLOC_BASE_COMPILER_SPECIFIC_H_
 #define PARTITION_ALLOC_PARTITION_ALLOC_BASE_COMPILER_SPECIFIC_H_
 
-#include "partition_alloc/build_config.h"
+#include "base/allocator/partition_allocator/src/partition_alloc/build_config.h"
 #include "partition_alloc/buildflags.h"
 
 // A wrapper around `__has_cpp_attribute()`, which is in C++20 and thus not yet

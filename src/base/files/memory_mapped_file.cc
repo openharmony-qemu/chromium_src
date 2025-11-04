@@ -12,14 +12,25 @@
 #include "base/numerics/safe_math.h"
 #include "base/system/sys_info.h"
 #include "build/build_config.h"
+#include "arkweb/build/features/features.h"
 
 namespace base {
 
 const MemoryMappedFile::Region MemoryMappedFile::Region::kWholeFile = {0, 0};
 
 MemoryMappedFile::~MemoryMappedFile() {
+#if BUILDFLAG(IS_ARKWEB) && (BUILDFLAG(ARKWEB_HAP_DECOMPRESSED) || BUILDFLAG(ARKWEB_MEM))
+  mapper_file_ext_.ClearData(std::bind(&MemoryMappedFile::CloseHandles, this));
+#else
   CloseHandles();
+#endif
 }
+
+#if BUILDFLAG(IS_ARKWEB) && (BUILDFLAG(ARKWEB_HAP_DECOMPRESSED) || BUILDFLAG(ARKWEB_MEM))
+void MemoryMappedFile::SetOhosFileMapper(std::shared_ptr<OHOS::NWeb::OhosFileMapper>& mapper) {
+  mapper_file_ext_.SetOhosFileMapper(mapper, std::bind(&MemoryMappedFile::CloseHandles, this), bytes_);
+}
+#endif
 
 bool MemoryMappedFile::Initialize(const FilePath& file_name, Access access) {
   if (IsValid()) {

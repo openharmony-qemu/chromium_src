@@ -1,0 +1,28 @@
+{
+  "file_path": "/home/sujiahao/code/arkweb_141/src/base/memory/platform_shared_memory_region.h",
+  "rej_file_path": "/home/sujiahao/code/arkweb_141/src/base/memory/platform_shared_memory_region.h.rej",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "line_range": "124-134",
+      "risk_level": "low",
+      "conflict_cause": "在平台条件编译中需要排除 OHOS 系统",
+      "analysis_process": "分析 .rej 文件发现需要对条件编译指令进行修改，在 POSIX 条件中排除 OHOS 系统。通过在源文件中精确定位第130行的条件编译指令，成功应用了修改。",
+      "confidence_level": "high",
+      "resolution_strategy": "直接应用修改",
+      "removed_line": "#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_APPLE)",
+      "added_line": "#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_OHOS)",
+      "status": "resolved"
+    }
+  ],
+  "summary": {
+    "rej_file_intact": true,
+    "all_hunks_resolved": true,
+    "modifications_applied": 1,
+    "potential_issues": "无，修改简单明确",
+    "recommendation": "修改已成功应用，代码逻辑正确"
+  }
+}

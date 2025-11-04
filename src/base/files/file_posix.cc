@@ -698,7 +698,7 @@ bool File::Flush() {
   SCOPED_FILE_TRACE("Flush");
 
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS) || \
-    BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_LINUX)
+    BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
   return !HANDLE_EINTR(fdatasync(file_.get()));
 #elif BUILDFLAG(IS_APPLE)
   // On macOS and iOS, fsync() is guaranteed to send the file's data to the

@@ -1,0 +1,125 @@
+{
+  "冲突文件": "/home/sujiahao/code/arkweb_141/src/base/logging.cc.rej",
+  "源文件": "/home/sujiahao/code/arkweb_141/src/base/logging.cc",
+  "处理时间": "2025-11-04",
+  "总hunk数量": 6,
+  "成功解决的hunk数量": 6,
+  "未能解决的hunk数量": 0,
+  ".rej文件保持完整性": true,
+  "hunks处理详情": [
+    {
+      "hunk编号": 1,
+      "位置": "第8行后",
+      "操作类型": "添加include",
+      "待添加行": [
+        "#include \"arkweb/build/features/features.h\""
+      ],
+      "风险分析": "低风险 - 简单的include添加，用于引入Arkweb特性定义",
+      "冲突原因": "Arkweb132版本需要引入额外的特性头文件",
+      "处理策略": "直接在abseil-cpp include后添加",
+      "置信度": "高",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 2,
+      "位置": "第89行后",
+      "操作类型": "添加条件编译include",
+      "待添加行": [
+        "#if BUILDFLAG(ARKWEB_DFX_LOGGING)",
+        "#include \"ohos_sdk/openharmony/native/sysroot/usr/include/hilog/log.h\"",
+        "#endif"
+      ],
+      "风险分析": "低风险 - 条件编译的include，只在启用DFX日志时生效",
+      "冲突原因": "需要引入OpenHarmony的hilog头文件用于DFX日志功能",
+      "处理策略": "在现有的ARKWEB_DFX_LOGGING条件块后添加新的include",
+      "置信度": "高",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 3,
+      "位置": "第199-211行",
+      "操作类型": "修改现有代码并条件包装",
+      "待删除行": [
+        "const char* const log_severity_names[] = {\"INFO\", \"WARNING\", \"ERROR\", \"FATAL\"};"
+      ],
+      "待添加行": [
+        "#if !BUILDFLAG(ARKWEB_DFX_LOGGING)",
+        "const char* const log_severity_names[] = {\"INFO\", \"WARNING\", \"ERROR\", \"FATAL\", \"DEBUG\"};",
+        "相关的static_assert和log_severity_name函数",
+        "#endif"
+      ],
+      "风险分析": "中风险 - 修改核心日志数组，影响日志严重性名称的显示，添加了DEBUG级别",
+      "冲突原因": "Arkweb132版本在ARKWEB_DFX_LOGGING模式下使用不同的日志系统，需要修改标准日志数组",
+      "处理策略": "将原有的log_severity_names数组和相关函数用!ARKWEB_DFX_LOGGING条件包装",
+      "置信度": "高",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 4,
+      "位置": "第739-741行",
+      "操作类型": "添加属性标记",
+      "待添加行": [
+        "#if BUILDFLAG(ARKWEB_LOGGER_REPORT)",
+        "NO_SANITIZE(\"cfi-icall\")",
+        "#endif"
+      ],
+      "风险分析": "中风险 - 在析构函数前添加NO_SANITIZE属性，可能影响CFI检查",
+      "冲突原因": "Arkweb132版本在启用LOGGER_REPORT时需要禁用CFI-icall检查",
+      "处理策略": "在LogMessage析构函数定义前添加条件编译的NO_SANITIZE属性",
+      "置信度": "高",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 5,
+      "位置": "第793-798行",
+      "操作类型": "修改条件判断",
+      "待删除行": [
+        "if (severity_ == LOGGING_FATAL)"
+      ],
+      "待添加行": [
+        "if (severity_ == LOGGING_FATAL",
+        "#if BUILDFLAG(ARKWEB_LOGGER_REPORT)",
+        "      || priority_ == PRIORITY_FATAL",
+        "#endif",
+        "  )"
+      ],
+      "风险分析": "中风险 - 修改致命日志处理条件，可能影响崩溃报告的生成",
+      "冲突原因": "Arkweb132版本在启用LOGGER_REPORT时需要额外的PRIORITY_FATAL检查",
+      "处理策略": "在原有的LOGGING_FATAL检查基础上添加OR条件，包含PRIORITY_FATAL检查",
+      "置信度": "高",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 6,
+      "位置": "第1015-1047行和1101-1105行",
+      "操作类型": "添加文件名解析和标签处理逻辑",
+      "待添加行": [
+        "ARKWEB_DFX_LOGGING条件块：包含文件名解析、标签提取和格式化逻辑"
+      ],
+      "风险分析": "高风险 - 修改日志初始化的核心逻辑，影响日志格式和标签处理",
+      "冲突原因": "Arkweb132版本需要特殊的文件名解析逻辑以支持OpenHarmony的日志标签系统",
+      "处理策略": "在Init函数中添加完整的ARKWEB_DFX_LOGGING条件块，包含文件名解析和标签设置逻辑",
+      "置信度": "高",
+      "解决状态": "已解决"
+    }
+  ],
+  "总结": {
+    "处理结果": "所有6个hunk都已成功应用到源文件中",
+    "主要修改内容": [
+      "添加Arkweb特性相关的include文件",
+      "添加OpenHarmony hilog支持",
+      "修改日志严重性数组，支持DEBUG级别",
+      "添加CFI检查禁用标记",
+      "扩展致命日志处理条件",
+      "实现OpenHarmony日志标签解析逻辑"
+    ],
+    "代码兼容性": "所有修改都使用了适当的条件编译宏(#if BUILDFLAG)，确保在不启用Arkweb特性时不会影响原有功能",
+    "风险评估": "大部分修改风险较低到中等，主要集中在Arkweb相关的功能分支，不会影响标准的Chromium日志功能",
+    "建议后续验证": [
+      "验证ARKWEB_DFX_LOGGING编译开关是否正确配置",
+      "测试日志输出格式是否符合OpenHarmony标准",
+      "验证CFI-icall禁用是否必要",
+      "确认PRIORITY_FATAL在LOGGER_REPORT中的正确使用"
+    ]
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/base/threading/hang_watcher.cc.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/base/threading/hang_watcher.cc",
+    "处理时间": "2025-11-04"
+  },
+  "冲突解决总结": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 2,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunks详细信息": [
+    {
+      "hunk编号": 1,
+      "风险等级": "低",
+      "冲突原因": "添加Arkweb特性头文件包含",
+      "分析过程": "解析.rej文件发现需要在第8行添加#include \"arkweb/build/features/features.h\"。通过精确定位源文件中的对应位置，在版权声明后、主要头文件包含前成功插入该行。",
+      "修改置信度": "高",
+      "处理策略": "直接在源文件第5行添加了arkweb/build/features/features.h头文件包含",
+      "解决状态": "已解决",
+      "修改内容": {
+        "添加的行": [
+          "#include \"arkweb/build/features/features.h\""
+        ],
+        "删除的行": []
+      }
+    },
+    {
+      "hunk编号": 2,
+      "风险等级": "低",
+      "冲突原因": "添加Arkweb crashpad相关函数声明",
+      "分析过程": "解析.rej文件发现在第20-22行需要添加条件编译的ReportRenderFreeze()函数声明。通过定位源文件中的build_config.h包含后、namespace base声明前的位置，成功插入了条件编译代码块。",
+      "修改置信度": "高",
+      "处理策略": "在源文件第34-36行添加了#if BUILDFLAG(ARKWEB_CRASHPAD)条件编译的extern函数声明",
+      "解决状态": "已解决",
+      "修改内容": {
+        "添加的行": [
+          "#if BUILDFLAG(ARKWEB_CRASHPAD)",
+          "extern void ReportRenderFreeze();",
+          "#endif"
+        ],
+        "删除的行": []
+      }
+    }
+  ],
+  "修改验证": {
+    "源文件修改后状态": "所有修改已成功应用到源文件中",
+    "代码完整性": "保持良好，没有语法错误或逻辑断裂",
+    "包含关系": "新增的头文件和函数声明位置合理"
+  },
+  "处理结果": {
+    "总体状态": "完全成功",
+    "代码质量": "所有修改都符合Arkweb项目的侵入式修改要求",
+    "功能影响": "添加了Arkweb crashpad特性支持，不影响原有功能",
+    ".rej文件状态": "保持完整，未被修改或删除"
+  },
+  "注意事项": [
+    "添加的arkweb/build/features/features.h头文件需要确保在项目中存在",
+    "ReportRenderFreeze()函数需要在其他地方提供实现",
+    "条件编译确保只有在ARKWEB_CRASHPAD启用时才会包含相关代码"
+  ]
+}

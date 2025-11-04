@@ -746,6 +746,10 @@ void FeatureList::FinalizeInitialization() {
 bool FeatureList::IsFeatureEnabled(const Feature& feature) const {
   OverrideState overridden_state = GetOverrideState(feature);
 
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  if (std::string(feature.name) == "ForceScrollbar")
+    return overridden_state == OVERRIDE_DISABLE_FEATURE;
+#endif
   // If marked as OVERRIDE_USE_DEFAULT, simply return the default state below.
   if (overridden_state != OVERRIDE_USE_DEFAULT) {
     return overridden_state == OVERRIDE_ENABLE_FEATURE;

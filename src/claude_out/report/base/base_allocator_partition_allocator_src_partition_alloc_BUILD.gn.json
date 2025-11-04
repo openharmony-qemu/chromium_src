@@ -1,0 +1,38 @@
+{
+  "文件路径": "/home/sujiahao/code/arkweb_141/src/base/allocator/partition_allocator/src/partition_alloc/BUILD.gn",
+  "冲突文件": "/home/sujiahao/code/arkweb_141/src/base/allocator/partition_allocator/src/partition_alloc/BUILD.gn.rej",
+  "处理时间": "2025-11-04",
+  "总hunk数量": 2,
+  "成功解决的hunk数量": 2,
+  "未能解决的hunk数量": 0,
+  "rej文件完整性": "保持完整未被修改",
+  "hunks详情": [
+    {
+      "hunk序号": 1,
+      "行号范围": "529-540",
+      "冲突原因": "Arkweb132针对OHOS和arkweb功能的侵入式修改在Arkweb141中缺失",
+      "待添加行数": 8,
+      "待删除行数": 0,
+      "修改置信度": "高",
+      "风险分析": "低风险，添加的是条件化的依赖配置，不会影响现有功能",
+      "分析过程": "通过deps += [\"//buildtools/third_party/libc++\"]锚点精确定位到allocator_core组件的deps配置区域，在public_configs之前插入了OHOS和arkweb的条件化依赖",
+      "解决状态": "已解决",
+      "处理策略": "原子化应用：在第552行空行处添加8行条件化依赖配置"
+    },
+    {
+      "hunk序号": 2,
+      "行号范围": "960-970",
+      "冲突原因": "Arkweb132添加的proc_maps相关测试文件在Arkweb141中缺失",
+      "待添加行数": 2,
+      "待删除行数": 0,
+      "修改置信度": "高",
+      "风险分析": "极低风险，仅添加测试文件，不影响生产代码",
+      "分析过程": "通过memory_reclaimer_unittest.cc锚点定位到unittests的sources列表，在hardening_unittest.cc和memory_reclaimer_unittest.cc之间插入proc_maps相关的测试文件",
+      "解决状态": "已解决",
+      "处理策略": "原子化应用：在第1014行memory_reclaimer_unittest.cc之前添加2行测试文件引用"
+    }
+  ],
+  "整体处理结果": "全部hunk已成功解决，所有侵入式修改已精确应用到源文件中",
+  "代码完整性": "保持良好，所有修改均为增量添加，未删除任何现有代码",
+  "编译影响": "添加了OHOS/arkweb相关依赖和测试文件，预计不会破坏现有编译流程"
+}

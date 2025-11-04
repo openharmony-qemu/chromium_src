@@ -1,0 +1,42 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/base/feature_list.h.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/base/feature_list.h",
+    "处理时间": "2025-11-04"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk详情": [
+    {
+      "hunk编号": 1,
+      "风险等级": "低风险",
+      "冲突原因": "Arkweb132在chromium132基础上添加了Arkweb特性的头文件包含和FeatureListUtils前向声明",
+      "分析过程": "解析.rej文件发现需要添加两项内容：1）包含arkweb/build/features/features.h头文件；2）在条件编译下添加FeatureListUtils类的前向声明。通过精确定位，在第27行后添加了头文件包含，在第39行后添加了前向声明。",
+      "修改置信度": "高",
+      "处理策略": "直接应用修改",
+      "解决状态": "已解决",
+      "具体修改": [
+        {
+          "类型": "添加",
+          "位置": "第28行",
+          "内容": "#include \"arkweb/build/features/features.h\""
+        },
+        {
+          "类型": "添加",
+          "位置": "第40-42行",
+          "内容": "#if BUILDFLAG(ARKWEB_SCROLLBAR)\nclass FeatureListUtils;\n#endif"
+        }
+      ]
+    }
+  ],
+  "验证信息": {
+    "rej文件完整性": "确认.rej文件保持完整，未被修改或删除",
+    "代码一致性": "修改后的代码与现有FeatureListUtils使用代码（第348-352行）保持一致",
+    "编译兼容性": "添加的条件编译声明与现有代码结构兼容"
+  },
+  "总结": "成功将Arkweb132的侵入式修改精确应用到Arkweb141源文件中，所有修改都已正确实施，代码结构完整，无语法错误风险。"
+}

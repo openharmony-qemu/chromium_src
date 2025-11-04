@@ -251,7 +251,7 @@ struct BASE_EXPORT LaunchOptions {
   // File descriptors of the parent process with FD_CLOEXEC flag to be removed
   // before calling exec*().
   std::vector<int> fds_to_remove_cloexec;
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 
 #if BUILDFLAG(IS_MAC) || (BUILDFLAG(IS_IOS) && BUILDFLAG(USE_BLINK))
 #if !BUILDFLAG(IS_IOS_TVOS)

@@ -551,6 +551,15 @@ if (is_clang_or_gcc) {
       deps += [ "//buildtools/third_party/libc++" ]
     }
 
+    if(is_ohos) {
+      deps += [ "//arkweb/build/features" ]
+    }
+    if (enable_arkweb) {
+      deps += [ "//arkweb/build/features" ]
+    }
+    if (enable_arkweb) {
+      public_deps += [ "//arkweb/build/features" ]
+    }
     public_configs = []
     if (is_fuchsia) {
       deps += [
@@ -1003,6 +1012,8 @@ if (build_with_chromium) {
         "compressed_pointer_unittest.cc",
         "hardening_unittest.cc",
         "memory_reclaimer_unittest.cc",
+        "partition_alloc_base/debug/proc_maps_linux.cc",
+        "partition_alloc_base/debug/proc_maps_linux.h",
         "page_allocator_unittest.cc",
         "partition_alloc_base/bits_pa_unittest.cc",
         "partition_alloc_base/component_export_pa_unittest.cc",

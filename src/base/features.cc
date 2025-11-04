@@ -51,7 +51,7 @@ std::atomic_bool g_is_reduce_ppms_enabled{false};
 
 // Controls caching within BASE_FEATURE_PARAM(). This is feature-controlled
 // so that ScopedFeatureList can disable it to turn off caching.
-BASE_FEATURE(FeatureParamWithCache, FEATURE_ENABLED_BY_DEFAULT);
+BASE_FEATURE(FeatureParamWithCache, FEATURE_DISABLED_BY_DEFAULT);
 
 // Whether a fast implementation of FilePath::IsParent is used. This feature
 // exists to ensure that the fast implementation can be disabled quickly if

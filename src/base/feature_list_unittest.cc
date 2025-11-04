@@ -2,7 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "arkweb/build/features/features.h"
+
 #include "base/feature_list.h"
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "base/metrics/field_trial.h"
+#include "base/metrics/field_trial_param_associator.h"
+#include "base/test/scoped_feature_list.h"
+#endif
 
 #include <stddef.h>
 
@@ -25,12 +32,34 @@
 #include "base/strings/strcat.h"
 #include "base/strings/string_util.h"
 #include "base/strings/stringprintf.h"
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "base/feature_list.cc"
+#include "testing/gmock/include/gmock/gmock.h"
+#else
 #include "base/test/scoped_feature_list.h"
+#endif
 #include "testing/gtest/include/gtest/gtest.h"
 
 namespace base {
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+class MockSharedMemoryMapper : public SharedMemoryMapper {
+ public:
+  MOCK_METHOD(absl::optional<span<uint8_t>>,
+              Map,
+              (subtle::PlatformSharedMemoryHandle handle,
+               bool write_allowed,
+               uint64_t offset,
+               size_t size),
+              (override));
+  MOCK_METHOD(void, Unmap, (span<uint8_t> mapping), (override));
+};
+#endif
+
 namespace {
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+constexpr char kFeatureOverlayScrollbarName[] = "OverlayScrollbar";
+#endif
 
 constexpr char kFeatureOnByDefaultName[] = "OnByDefault";
 BASE_FEATURE(kFeatureOnByDefault,

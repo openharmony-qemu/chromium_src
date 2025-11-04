@@ -30,6 +30,11 @@
 #include "base/trace_event/memory_usage_estimator.h"  // no-presubmit-check
 #include "base/trace_event/trace_event.h"
 #include "base/tracing_buildflags.h"
+
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
+#include "base/logging.h"
+#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
+
 #include "base/types/pass_key.h"
 #include "base/types/to_address.h"
 

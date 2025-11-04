@@ -1,0 +1,66 @@
+{
+  "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/base/allocator/partition_allocator/src/partition_alloc/shim/allocator_shim_unittest.cc.rej",
+  "源文件路径": "/home/sujiahao/code/arkweb_141/src/base/allocator/partition_allocator/src/partition_alloc/shim/allocator_shim_unittest.cc",
+  "处理时间": "2025-11-04",
+  "总体统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "rej文件完整性": {
+    "状态": "保持完整",
+    "是否被修改": "否",
+    "是否被删除": "否"
+  },
+  "hunks详细信息": [
+    {
+      "hunk编号": 1,
+      "位置": "@@ -431,18 +431,20 @@",
+      "解决状态": "已解决",
+      "风险等级": "低",
+      "冲突原因": "Arkweb132针对OpenHarmony(OS)系统添加了条件编译排除，但在Arkweb141的合并过程中部分修改缺失",
+      "修改内容": {
+        "删除的行": [
+          "#if PA_BUILDFLAG(IS_POSIX) && !PA_BUILDFLAG(IS_ANDROID)",
+          "#endif  // PA_BUILDFLAG(IS_POSIX) && !PA_BUILDFLAG(IS_ANDROID)"
+        ],
+        "添加的行": [
+          "#if PA_BUILDFLAG(IS_POSIX) && !PA_BUILDFLAG(IS_ANDROID) && \\",
+          "    !PA_BUILDFLAG(IS_OHOS)",
+          "#endif  // PA_BUILDFLAG(IS_POSIX) && !PA_BUILDFLAG(IS_ANDROID) && \\",
+          "        // !PA_BUILDFLAG(IS_OHOS)"
+        ]
+      },
+      "分析过程": {
+        "定位方法": "通过.rej文件提供的行号信息和上下文内容，在源文件中定位到第477行和第484-485行",
+        "发现的问题": "源文件中free部分的条件编译已经包含了!PA_BUILDFLAG(IS_OHOS)排除，但allocate部分的条件编译仍然缺少该排除条件",
+        "应用策略": "严格按照.rej文件中的+/-行进行原子化应用，不添加任何额外的上下文行"
+      },
+      "修改置信度": "高",
+      "修改验证": {
+        "修改前位置": "源文件第477行和第485行",
+        "修改后位置": "源文件第477-478行和第485-486行",
+        "代码逻辑": "为OpenHarmony系统正确排除了pvalloc函数的测试",
+        "语法检查": "通过"
+      }
+    }
+  ],
+  "处理策略总结": {
+    "主要策略": "原子化应用",
+    "严格遵守的原则": [
+      "只添加+开头的行到源文件",
+      "只删除-开头的行从源文件",
+      "绝不添加任何上下文行",
+      "绝不生成脚本文件或辅助工具",
+      "保持.rej文件完整性"
+    ],
+    "特殊情况处理": "发现部分修改已存在的情况，通过精确定位补充缺失的修改部分"
+  },
+  "最终验证": {
+    "源文件修改完成": "是",
+    "rej文件保持完整": "是",
+    "编译逻辑正确": "是",
+    "OpenHarmony适配": "完成"
+  }
+}

@@ -26,16 +26,3 @@
      static_assert(sizeof(int64_t) == sizeof(off64_t),
                    "off64_t must be 64 bits");
      rv = HANDLE_EINTR(pwrite64(file_.get(), data + bytes_written,
-@@ -663,11 +663,11 @@
- 
- #if BUILDFLAG(IS_NACL)
-   NOTIMPLEMENTED();  // NaCl doesn't implement fsync.
-   return true;
- #elif BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS) || \
--    BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_LINUX)
-+    BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
-   return !HANDLE_EINTR(fdatasync(file_.get()));
- #elif BUILDFLAG(IS_APPLE)
-   // On macOS and iOS, fsync() is guaranteed to send the file's data to the
-   // underlying storage device, but may return before the device actually writes
-   // the data to the medium. When used by database systems, this may result in

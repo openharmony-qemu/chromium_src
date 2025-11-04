@@ -21,6 +21,7 @@
 #include "base/logging/log_severity.h"
 #include "base/strings/utf_ostream_operators.h"
 #include "build/build_config.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_CHROMEOS)
 #include <cstdio>
@@ -481,7 +482,11 @@ constexpr LogSeverity LOGGING_0 = LOGGING_ERROR;
 // impossible to stream something like a string directly to an unnamed
 // ostream. We employ a neat hack by calling the stream() member
 // function of LogMessage which seems to avoid the problem.
-#define LOG_STREAM(severity) COMPACT_GOOGLE_LOG_##severity.stream()
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#define LOG_STREAM(severity) COMPACT_ARKWEB_LOG_ ## severity.stream()
+#else
+#define LOG_STREAM(severity) COMPACT_GOOGLE_LOG_ ## severity.stream()
+#endif // BUILDFLAG(ARKWEB_LOGGER_REPORT)
 
 #define LOG(severity) LAZY_STREAM(LOG_STREAM(severity), LOG_IS_ON(severity))
 #define LOG_IF(severity, condition) \
@@ -528,6 +533,10 @@ constexpr LogSeverity LOGGING_0 = LOGGING_ERROR;
   COMPACT_GOOGLE_LOG_EX_##severity(Win32ErrorLogMessage,                \
                                    ::logging::GetLastSystemErrorCode()) \
       .stream()
+#elif BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#define PLOG_STREAM(severity) \
+  COMPACT_ARKWEB_LOG_EX_ ## severity(ErrnoLogMessage, \
+      ::logging::GetLastSystemErrorCode()).stream()
 #elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
 #define PLOG_STREAM(severity)                                           \
   COMPACT_GOOGLE_LOG_EX_##severity(ErrnoLogMessage,                     \
@@ -625,6 +634,15 @@ constexpr LogSeverity LOGGING_DCHECK = LOGGING_FATAL;
 class BASE_EXPORT LogMessage {
  public:
   LogMessage(const char* file, int line, LogSeverity severity);
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  // Used for LOG(severity, level).
+  LogMessage(const char* file,
+             int line,
+             LogSeverity severity,
+             LogPriority priority);
+  void ArkWebLoggingSeverity(const std::string& str_newline);
+#endif
 
   LogMessage(const LogMessage&) = delete;
   LogMessage& operator=(const LogMessage&) = delete;

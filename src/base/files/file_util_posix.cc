@@ -479,6 +479,13 @@ FilePath MakeAbsoluteFilePath(const FilePath& input) {
     return input;
   }
 #endif
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (input.IsDataShareUri()) {
+    return input;
+  }
+#endif
+
   ScopedBlockingCall scoped_blocking_call(FROM_HERE, BlockingType::MAY_BLOCK);
   char full_path[PATH_MAX];
   if (realpath(input.value().c_str(), full_path) == nullptr) {
@@ -649,6 +656,14 @@ bool PathExists(const FilePath& path) {
     return content_uri && internal::ContentUriExists(*content_uri);
   }
 #endif
+
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_FILE_UPLOAD)
+  if (path.IsDataShareUri()) {
+    File file = OpenDatashareUriForRead(path);
+    return file.IsValid();
+  }
+#endif
+
   return access(path.value().c_str(), F_OK) == 0;
 }
 

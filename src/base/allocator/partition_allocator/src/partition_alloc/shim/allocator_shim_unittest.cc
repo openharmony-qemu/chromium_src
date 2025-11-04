@@ -474,14 +474,16 @@ TEST_F(AllocatorShimTest, InterceptLibcSymbols) {
   ASSERT_GE(allocs_intercepted_by_alignment[128], 1u);
   ASSERT_GE(allocs_intercepted_by_size[53], 1u);
 
-#if PA_BUILDFLAG(IS_POSIX) && !PA_BUILDFLAG(IS_ANDROID)
+#if PA_BUILDFLAG(IS_POSIX) && !PA_BUILDFLAG(IS_ANDROID) && \
+    !PA_BUILDFLAG(IS_OHOS)
   void* pvalloc_ptr = pvalloc(67);
   ASSERT_NE(nullptr, pvalloc_ptr);
   ASSERT_EQ(0u, reinterpret_cast<uintptr_t>(pvalloc_ptr) % kPageSize);
   ASSERT_GE(allocs_intercepted_by_alignment[kPageSize], 1u);
   // pvalloc rounds the size up to the next page.
   ASSERT_GE(allocs_intercepted_by_size[kPageSize], 1u);
-#endif  // PA_BUILDFLAG(IS_POSIX) && !PA_BUILDFLAG(IS_ANDROID)
+#endif  // PA_BUILDFLAG(IS_POSIX) && !PA_BUILDFLAG(IS_ANDROID) && \
+        // !PA_BUILDFLAG(IS_OHOS)
 
 #endif  // !PA_BUILDFLAG(IS_WIN) && !PA_BUILDFLAG(IS_APPLE)
 

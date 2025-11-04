@@ -3966,6 +3966,7 @@ if (!is_android) {
         "../browser/extensions/api/declarative_net_request/declarative_net_request_browsertest.cc",
         "../browser/extensions/api/desktop_capture/desktop_capture_apitest.cc",
         "../browser/extensions/api/developer_private/developer_private_apitest.cc",
+        "../browser/extensions/api/devtools/devtools_apitest.cc",
         "../browser/extensions/api/downloads/downloads_api_browsertest.cc",
         "../browser/extensions/api/extension_action/browser_action_apitest.cc",
         "../browser/extensions/api/extension_action/browser_action_browsertest.cc",

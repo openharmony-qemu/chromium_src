@@ -4,12 +4,13 @@ import sys
 import time
 from pathlib import Path
 import shlex
+import argparse
 
 # --- Configuration (请根据您的环境修改以下路径) ---
 
 # 1. 搜索目录 (SEARCH_DIR): 脚本将在此目录下递归查找所有 .rej 文件。
 SCRIPT_DIR = Path(__file__).resolve().parent
-SEARCH_DIR = SCRIPT_DIR.parent.parent.parent / "base"
+SEARCH_DIR = SCRIPT_DIR.parent.parent.parent / "cc"
 SEARCH_DIR = SEARCH_DIR.resolve()
 
 # 2. CLI 工作目录根 (CLI_CWD_ROOT): 
@@ -56,7 +57,7 @@ def load_prompt_from_toml(toml_path: Path) -> str:
         print(f"❌ 错误: 解析 TOML 文件 {toml_path} 时发生错误: {e}")
         sys.exit(1)
 
-def call_claude_cli(rej_file_path: Path, cli_cwd_root: Path, base_path: Path, search_dir: Path, prompt_template: str) -> bool:
+def call_claude_cli(rej_file_path: Path, cli_cwd_root: Path, base_path: Path, search_dir: Path, prompt_template: str, model: str = 'qwen-plus') -> bool:
     """调用 Claude CLI 命令来解决单个 .rej 冲突。"""
     try:
         # 1. 检查目标文件是否存在
@@ -68,10 +69,10 @@ def call_claude_cli(rej_file_path: Path, cli_cwd_root: Path, base_path: Path, se
         # 2. 计算相对路径
         relative_rej_path = rej_file_path.relative_to(cli_cwd_root)
         relative_target_path = target_file_path.relative_to(cli_cwd_root)
-        
+
         # 3. 获取搜索目录名
         search_dir_name = search_dir.name
-        
+
         # 4. 格式化 prompt 模板
         try:
             prompt_content = prompt_template.format(
@@ -88,7 +89,7 @@ def call_claude_cli(rej_file_path: Path, cli_cwd_root: Path, base_path: Path, se
         command_list = [
             'claude',
             '-p', prompt_content,
-            '--model', 'GLM-4.6',
+            '--model', model,
             '--allowedTools', ALLOWED_TOOLS,
             '-d'
         ]
@@ -125,20 +126,20 @@ def call_claude_cli(rej_file_path: Path, cli_cwd_root: Path, base_path: Path, se
         print(f"    [❌] 发生未知错误: {e}")
         return False
 
-def call_claude_report_cli(search_dir: Path, cli_cwd_root: Path, base_path: Path, prompt_template: str) -> bool:
+def call_claude_report_cli(search_dir: Path, cli_cwd_root: Path, base_path: Path, prompt_template: str, model: str = 'qwen-plus') -> bool:
     """调用 Claude CLI 命令生成汇总报告。"""
     try:
         search_dir_name = search_dir.name
-        
+
         prompt_content = prompt_template.format(
             args1=base_path,
             args2=search_dir_name
         )
-        
+
         command_list = [
             'claude',
             '-p', prompt_content,
-            '--model', 'GLM-4.6',
+            '--model', model,
             '--allowedTools', ALLOWED_TOOLS,
             '-d'
         ]
@@ -172,10 +173,16 @@ def call_claude_report_cli(search_dir: Path, cli_cwd_root: Path, base_path: Path
 
 def main():
     """主执行逻辑：查找文件并循环调用 CLI，并在最后生成报告。"""
+    # 添加命令行参数解析
+    parser = argparse.ArgumentParser(description='AI 冲突解决脚本')
+    parser.add_argument('--model', type=str, default='GLM-4.6', help='指定使用的 Claude 模型 (默认: qwen-plus)')
+    args = parser.parse_args()
+    model = args.model
+
     if not SEARCH_DIR.is_dir():
         print(f"❌ 错误: 搜索路径 '{SEARCH_DIR}' 不是一个有效的目录。")
         sys.exit(1)
-        
+
     # --- 加载 Prompt 模板 ---
     print("--- 📋 加载 Prompt 模板 ---")
     resolve_prompt_template = load_prompt_from_toml(RESOLVE_REJ_TOML_PATH)
@@ -187,13 +194,14 @@ def main():
     print(f"搜索目录: {SEARCH_DIR}")
     print(f"CLI 相对路径基准: {CLI_CWD_ROOT}")
     print(f"基础路径: {BASE_PATH}")
+    print(f"使用模型: {model}")
 
     # 查找所有 .rej 文件，并排序
     all_rej_files = sorted(list(SEARCH_DIR.glob('**/*.rej')))
     
     if not all_rej_files:
         print("\nℹ️ 未找到任何 .rej 文件，脚本结束。")
-        call_claude_report_cli(SEARCH_DIR, CLI_CWD_ROOT, BASE_PATH, report_prompt_template) 
+        call_claude_report_cli(SEARCH_DIR, CLI_CWD_ROOT, BASE_PATH, report_prompt_template, model)
         sys.exit(0)
 
     total_count = len(all_rej_files)
@@ -206,11 +214,11 @@ def main():
         print(f"\n--- 处理文件 {i + 1}/{total_count} ---")
         
         try:
-            if call_claude_cli(rej_file, CLI_CWD_ROOT, BASE_PATH, SEARCH_DIR, resolve_prompt_template):
+            if call_claude_cli(rej_file, CLI_CWD_ROOT, BASE_PATH, SEARCH_DIR, resolve_prompt_template, model):
                 success_count += 1
             else:
                 failure_count += 1
-        except KeyboardInterrupt: 
+        except KeyboardInterrupt:
             print("\n🛑 用户中断。")
             break
         
@@ -229,7 +237,7 @@ def main():
     print(f"✅ 保留 {len(remaining_rej_files)} 个.rej文件，保持完整性")
     
     # --- 生成汇总报告 ---
-    call_claude_report_cli(SEARCH_DIR, CLI_CWD_ROOT, BASE_PATH, report_prompt_template)
+    call_claude_report_cli(SEARCH_DIR, CLI_CWD_ROOT, BASE_PATH, report_prompt_template, model)
 
 
 if __name__ == "__main__":

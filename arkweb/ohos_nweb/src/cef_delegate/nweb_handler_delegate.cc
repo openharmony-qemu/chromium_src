@@ -3505,6 +3505,8 @@ bool NWebHandlerDelegate::OnFileDialog(
     const std::vector<CefString>& accept_filters,
     const std::vector<CefString>& accept_extensions,
     const std::vector<CefString>& accept_descriptions,
+    const CefString& start_in,
+    bool is_exclude_accept_all_options,
     bool capture,
     const std::vector<CefString>& mime_filters,
     CefRefPtr<CefFileDialogCallback> callback) {
@@ -3535,7 +3537,8 @@ bool NWebHandlerDelegate::OnFileDialog(
   std::shared_ptr<NWebFileSelectorParams> param =
       std::make_shared<FileSelectorParamsImpl>(
           file_mode, file_selector_title, accept_extensions,
-          default_file_path.ToString(), capture, mime_filters);
+          default_file_path.ToString(), capture, mime_filters, start_in.ToString(),
+          accept_descriptions, is_exclude_accept_all_options);
   std::shared_ptr<NWebStringVectorValueCallback> file_path_callback =
       std::make_shared<FileSelectorCallbackImpl>(callback);
   return nweb_handler_->OnFileSelectorShow(file_path_callback, param);

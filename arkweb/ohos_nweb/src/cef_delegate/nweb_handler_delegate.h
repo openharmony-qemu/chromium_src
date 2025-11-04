@@ -634,6 +634,8 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                     const std::vector<CefString>& accept_filters,
                     const std::vector<CefString>& accept_extensions,
                     const std::vector<CefString>& accept_descriptions,
+                    const CefString& start_in,
+                    bool is_exclude_accept_all_options,
                     bool capture,
                     const std::vector<CefString>& mime_filters,
                     CefRefPtr<CefFileDialogCallback> callback) override;

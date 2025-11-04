@@ -26,8 +26,6 @@ import { PopupType } from './PopupType';
 import { PopupInfo, PotentialElements } from './PopupInfo';
 import Utils from '../Utils/Utils';
 import { CCMConfig } from '../Common/CCMConfig';
-import ModifyObserver from '../Observer/Observers/ModifyObserver';
-import { PopupLayoutState } from './PopupLayoutState';
 
 type StickyElements = {
     potentialStickyTop: Element | null;
@@ -675,5 +673,43 @@ export class PopupWindowDetector {
 
         // 遍历完所有长兄节点都没找到，说明它不在下方
         return false;
+    }
+
+    
+    /**
+     * 对外暴露的mask节点有效性检测，供生命周期管理使用。
+     *
+     * @param maskNode 候选的mask节点
+     * @returns 当节点仍然满足mask特征并存在于文档中时返回true，否则返回false
+     */
+    static isMaskNodeActive(maskNode: HTMLElement | null): boolean {
+        if (!maskNode) {
+            return false;
+        }
+
+        // 节点已经从DOM中移除，直接视为失效
+        if (!maskNode.isConnected) {
+            Log.d('Mask节点已脱离文档结构', Tag.popupDetector);
+            return false;
+        }
+
+        try {
+            const style = window.getComputedStyle(maskNode);
+
+            if (!this.isElementQualified(maskNode, style)) {
+                Log.d(`Mask节点不再满足可见或尺寸要求: ${(maskNode as HTMLElement).className}`, Tag.popupDetector);
+                return false;
+            }
+
+            if (!this.isPotentialMask(maskNode, style)) {
+                Log.d(`Mask节点不再满足遮罩特征: ${(maskNode as HTMLElement).className}`, Tag.popupDetector);
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            Log.d(`Mask节点检测异常: ${(maskNode as HTMLElement).className}`, Tag.popupDetector);
+            return false;
+        }
     }
 }

@@ -179,24 +179,39 @@ export default class LayoutUtils{
         Log.d(`========== 检测节点截断 ==========`, Tag.layoutUtils);
         Log.d(`节点: ${node.className || node.tagName}`, Tag.layoutUtils);
         
+        // 带滚动条的scroll的子节点不做截断判定
+        if (this.isScrollChildOverflow(node)) {
+
+            return false;
+        }
         // 1. 获取视口尺寸
         const viewportHeight = window.innerHeight;
 
-        // 2. 获取元素的边界框（相对于视口）
+        // 2. 获取吸顶吸底高度信息
+        const stickyTopHeight = popupInfo?.stickyTop_height || 0;
+        const stickyBottomHeight = popupInfo?.stickyBottom_height || 0;
+
+        // 3. 计算有效可视区域高度
+        const effectiveViewportHeight = viewportHeight - stickyTopHeight - stickyBottomHeight;
+
+        Log.d(`视口信息: 总高度=${viewportHeight}, 吸顶高度=${stickyTopHeight}, 吸底高度=${stickyBottomHeight}`, Tag.layoutUtils);
+        Log.d(`有效可视区域高度: ${effectiveViewportHeight}`, Tag.layoutUtils);
+
+        // 4. 获取元素的边界框（相对于视口）
        const rect = node.getBoundingClientRect();
- 
-        // 3. 获取计算后的样式
+
+        // 5. 获取计算后的样式
         const style = window.getComputedStyle(node);
         const borderTop = parseFloat(style.borderTopWidth);
         const borderBottom = parseFloat(style.borderBottomWidth);
         const paddingTop = parseFloat(style.paddingTop);
         const paddingBottom = parseFloat(style.paddingBottom);
- 
-        // 4. 计算内容框（Content Box）在视口中的坐标
+
+        // 6. 计算内容框（Content Box）在视口中的坐标
         const contentTop = rect.top + borderTop + paddingTop;
         const contentBottom = rect.bottom - borderBottom - paddingBottom;
 
-        Log.d(`视口高度: ${viewportHeight}, 内容区: top=${contentTop}, bottom=${contentBottom}`, Tag.layoutUtils);
+        Log.d(`内容区坐标: top=${contentTop}, bottom=${contentBottom}`, Tag.layoutUtils);
 
         // 边界情况处理：如果元素的padding和border过大，可能导致内容区尺寸为0或负数
         // 在这种情况下，我们认为其内容没有"空间"被截断
@@ -204,19 +219,40 @@ export default class LayoutUtils{
             Log.d(`⚠️ 内容区尺寸无效 (contentTop >= contentBottom)`, Tag.layoutUtils);
             return false;
         }
-        // 5. 比较内容框与视口的边界
-        const isTopTruncated = Math.round(contentTop) < 0;
-           const isBottomTruncated = Math.round(contentBottom) > viewportHeight;
+
+        // 7. 比较内容框与有效可视区域的边界
+        // 顶部截断：内容在吸顶区域上方
+        const isTopTruncated = Math.round(contentTop) < stickyTopHeight;
+        // 底部截断：内容在吸底区域下方（即 contentBottom > viewportHeight - stickyBottomHeight）
+        const isBottomTruncated = Math.round(contentBottom) > (viewportHeight - stickyBottomHeight);
+
         if(isTopTruncated) {
-            Log.d(`✂️ 节点 ${node.className} top截断: contentTop(${contentTop}), viewportHeight(${viewportHeight})`, Tag.layoutUtils);
+            Log.d(`✂️ 节点 ${node.className} 顶部截断: contentTop(${contentTop}) < stickyTopHeight(${stickyTopHeight})`, Tag.layoutUtils);
         }
         if(isBottomTruncated) {
-            Log.d(`✂️ 节点 ${node.className} bottom截断: contentBottom(${contentBottom}), viewportHeight(${viewportHeight})`, Tag.layoutUtils);
+            Log.d(`✂️ 节点 ${node.className} 底部截断: contentBottom(${contentBottom}) > viewportHeight-bottomHeight(${viewportHeight - stickyBottomHeight})`, Tag.layoutUtils);
         }
-        
+
         const result = isTopTruncated || isBottomTruncated;
-        Log.d(`${result ? '✂️ 存在截断' : '✅ 无截断'}`, Tag.layoutUtils);
+        Log.d(`${result ? '✂️ 存在截断' : '✅ 无截断'} (考虑吸顶吸底组件)`, Tag.layoutUtils);
         return result;
+    }
+
+    /**
+     * 检测是否是带滚动条的scroll的子节点
+     * @param node 
+     * @returns 
+     */
+    static isScrollChildOverflow(node: Element): boolean {
+        const style = window.getComputedStyle(node.parentElement);
+
+        const overflowY = style.overflowY;
+        const isScrollableY = (overflowY === 'scroll' || overflowY === 'auto');
+        
+        // 检查内容是否溢出
+        const hasVerticalScroll = node.parentElement.scrollHeight > node.parentElement.clientHeight;
+        
+        return isScrollableY && hasVerticalScroll;
     }
 
     /**

@@ -1,5 +1,6 @@
 import Log from '../../Debug/Log';
 import Tag from '../../Debug/Tag';
+import ObserverHandler from '../Observer/ObserverHandler';
 import { PopupLayoutState, isValidTransition, getStateDescription, getStateIcon } from './PopupLayoutState';
 
 /**
@@ -59,6 +60,9 @@ export class PopupStateManager {
         const reasonText = reason ? ` (原因: ${reason})` : '';
         Log.info(`🔄 状态转换: ${getStateIcon(oldState)} ${getStateDescription(oldState)} -> ${getStateIcon(newState)} ${getStateDescription(newState)}${reasonText}`, PopupStateManager.TAG);
         
+        if (newState != PopupLayoutState.COMPLETED && newState != PopupLayoutState.FAILED && newState != PopupLayoutState.RESTORED) {
+            ObserverHandler.postTask();
+        }
         return true;
     }
     
@@ -99,7 +103,7 @@ export class PopupStateManager {
      */
     static canStartLayout(popupRoot: HTMLElement): boolean {
         const state = this.getState(popupRoot);
-        const canStart = state === PopupLayoutState.IDLE;
+        const canStart = (state === PopupLayoutState.IDLE || state === PopupLayoutState.PREPROCESSING);
         
         if (!canStart) {
             Log.d(`⛔ 不能开始布局: 当前状态 ${getStateIcon(state)} ${getStateDescription(state)}`, PopupStateManager.TAG);
@@ -114,6 +118,7 @@ export class PopupStateManager {
     static isProcessing(popupRoot: HTMLElement): boolean {
         const state = this.getState(popupRoot);
         return state === PopupLayoutState.WAITING_ANIMATION ||
+               state === PopupLayoutState.PREPROCESSING ||
                state === PopupLayoutState.LAYOUTING ||
                state === PopupLayoutState.WAITING_VALIDATION ||
                state === PopupLayoutState.VALIDATING;

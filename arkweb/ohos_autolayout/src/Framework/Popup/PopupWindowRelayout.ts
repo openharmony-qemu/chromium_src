@@ -43,7 +43,6 @@ export class PopupWindowRelayout extends AComponent {
     private minTop: number = Infinity;
     private maxBottom: number = -Infinity;
     private truncateNodes: HTMLElement[] = [];  // 被截断的节点
-    private truncateBkgImgNodes: HTMLElement[] = [];    // 背景图被截断的节点（但是rect没有在视口内被截断）
     private popupInfo: PopupInfo;
     private bottomNode: HTMLElement = null;
     private needRestoreStyleNodes: Set<HTMLElement> = new Set<HTMLElement>;
@@ -53,6 +52,7 @@ export class PopupWindowRelayout extends AComponent {
     private isCloseButtonTruncatedByScroll = false;
     private popupDecisionTreeType = PopupDecisionTreeType.Center;
     private equivalentMask: HTMLElement;
+    private contentNodes: HTMLElement[] = []; // 存储弹窗内容主体节点
     private minScaleFactor = CCMConfig.getInstance().getMinScaleFactor() / 100;
     private scaleAnimationDuration = CCMConfig.getInstance().getScaleAnimationDuration();
 
@@ -93,11 +93,26 @@ export class PopupWindowRelayout extends AComponent {
         const token = this.cancellationToken;
         Log.d(`生成新的取消令牌 (generation: ${token.generation})`, Tag.popupRelayout);
         
-        const allNodes = this.traverseTree(this.mComponent, []);
-        Log.d(`遍历DOM树，共 ${allNodes.length} 个节点`, Tag.popupRelayout);
+        // 使用筛选后的弹窗内容主体节点，而不是所有DOM节点
+        this.contentNodes = this.getContentNodes();
+        const allContentDescendantNodes: HTMLElement[] = [];
+        this.contentNodes.forEach(node => {
+            this.traverseTree(node, allContentDescendantNodes);
+        });
+        Log.d(`获取到 ${this.contentNodes.length} 个弹窗内容主体节点，${allContentDescendantNodes.length} 个弹窗内容子孙节点`, Tag.popupRelayout);
+        
+
+        // 判断flex布局是否需要对子节点设置flex-shrink:0，避免控件缩放导致的子节点高度压缩问题，也为了更好的计算高度。
+        if (PopupStateManager.getState(this.popupInfo.root_node) === PopupLayoutState.IDLE) {
+            if (this.tryToFixFlexShrink(this.mComponent)) {
+                PopupStateManager.setState(this.popupInfo.root_node, PopupLayoutState.PREPROCESSING, '预处理，修复flex')
+                return;
+            }
+        }
+        PopupStateManager.setState(this.popupInfo.root_node, PopupLayoutState.LAYOUTING, '开始重布局')
 
         // step1: 计算被截断的节点
-        this.findTruncateNodes(allNodes);
+        this.findTruncateNodes(allContentDescendantNodes);
 
         if (this.truncateNodes.length === 0) {
             Log.d(`未找到被截断的节点，无需布局调整`, Tag.popupRelayout);
@@ -114,30 +129,24 @@ export class PopupWindowRelayout extends AComponent {
         Log.d(`找到 ${this.truncateNodes.length} 个被截断的节点`, Tag.popupRelayout);
 
         // step2: 判断弹窗决策树类型
-        this.popupDecisionTreeType = PopupDecisionTree.judgePopupDecisionTreeType(allNodes, this.popupInfo);
+        this.popupDecisionTreeType = PopupDecisionTree.judgePopupDecisionTreeType(allContentDescendantNodes, this.popupInfo);
         Log.d(`弹窗决策树类型: ${this.popupDecisionTreeType}`, Tag.popupRelayout);
 
-        // step3: 恢复背景图片被截断的节点
-        if (this.truncateBkgImgNodes.length !== 0) {
-            Log.d(`修复 ${this.truncateBkgImgNodes.length} 个背景图被截断的节点`, Tag.popupRelayout);
-            this.resetTruncateBkgImgNodes();
-        }
-
-        // step4: 计算缩放系数
+        // step3: 计算缩放系数
         this.calScale();
         DetectorInst.getInstance().recordOriginalPosition(this.popupInfo.content_node);
-
+        
         if (this.scale > 1) {
             Log.d(`缩放系数 ${this.scale.toFixed(3)} > 1，无需缩放`, Tag.popupRelayout);
             return;
         }
         Log.d(`计算缩放系数: ${this.scale.toFixed(3)}`, Tag.popupRelayout);
 
-        // step5: 应用缩放系数
+        // step4: 应用缩放系数
         Log.d('开始应用缩放变换', Tag.popupRelayout);
         this.resetByScale();
-
-        // step6: 修复按钮重合
+        
+        // step5: 修复按钮重合
         if (this.popupDecisionTreeType === PopupDecisionTreeType.Center_Button_Overlap) {
             Log.d('检测到按钮重叠，开始修复', Tag.popupRelayout);
             this.fixButtonOverlap();
@@ -149,10 +158,38 @@ export class PopupWindowRelayout extends AComponent {
         // ⚠️ 注意：不要在这里设置 WAITING_VALIDATION 状态
         // 状态设置移到 getLayoutConstraintReport() 的异步函数开始处
         
-        // step7: 自验证算法
+        // step6: 自验证算法
         Log.d('开始布局约束验证', Tag.popupRelayout);
         //  传递令牌给异步验证
+
         this.getLayoutConstraintReport(token);
+    }
+
+    /**
+     * 根据弹窗类型获取需要处理的弹窗内容节点
+     * @return {HTMLElement[]} - 弹窗内容节点
+     */
+    private getContentNodes(): HTMLElement[] {
+        Log.d(`开始获取弹窗内容节点，弹窗类型: ${PopupType[this.popupInfo.popup_type]}`, Tag.popupRelayout);
+
+        let topContentNodes: HTMLElement[] = [];
+
+        if (this.popupInfo.popup_type === PopupType.C) {
+            // C型弹窗: 从根节点获取顶层子节点
+            topContentNodes = this.getTopmostChildren(this.mComponent, this.popupInfo.popup_type);
+            Log.d(`C型弹窗: 从根节点获取到 ${topContentNodes.length} 个顶层弹窗内容节点`, Tag.popupRelayout);
+        } else if (this.popupInfo.popup_type === PopupType.B) {
+            // B型弹窗: 从等效mask的父节点获取顶层子节点，并排除mask节点
+            this.equivalentMask = this.getEquivalentMask();
+            const allNodes = this.getTopmostChildren(this.equivalentMask.parentElement, this.popupInfo.popup_type);
+            topContentNodes = allNodes.filter(node => node !== this.equivalentMask);
+            Log.d(`B型弹窗: 从等效mask父节点获取到 ${topContentNodes.length} 个顶层弹窗内容节点 (排除mask后)`, Tag.popupRelayout);
+        } else if (this.popupInfo.popup_type === PopupType.A) {
+            // A型弹窗: 从mask节点获取子节点
+            topContentNodes = this.getTopmostChildren(this.popupInfo.mask_node, this.popupInfo.popup_type);
+            Log.d(`A型弹窗: 从mask节点获取到 ${topContentNodes.length} 个顶层弹窗内容节点`, Tag.popupRelayout);
+        }
+        return topContentNodes;
     }
 
     /**
@@ -322,45 +359,32 @@ export class PopupWindowRelayout extends AComponent {
         // 如果mask和rootNode是同一个节点，则直接缩放rootNode的所有子节点。
         if (this.popupInfo.popup_type === PopupType.C) {
             Log.d('C型弹窗: 缩放根节点的顶层子节点', Tag.popupRelayout);
-            let topNodes = this.getTopmostChildren(this.mComponent, this.popupInfo.popup_type);
-            Log.d(`找到 ${topNodes.length} 个顶层节点`, Tag.popupRelayout);
-            for (let child of topNodes) {
+            for (let child of this.contentNodes) {
                 const childStyle = child.children.length > 0 ? getComputedStyle(child.children[0]) : null;
                 const childRect = child.getBoundingClientRect();
                 const isFixedOrAbsolute = childStyle ? childStyle.position === 'fixed' || childStyle.position === 'absolute' : false;
                 const isZeroSize = childRect.width === 0 || childRect.height === 0;
-                this.scaleChildForTypeC(childStyle, isFixedOrAbsolute, isZeroSize, child, topNodes);
+                this.scaleChildForTypeC(childStyle, isFixedOrAbsolute, isZeroSize, child, this.contentNodes);
             }
         } else if (this.popupInfo.popup_type === PopupType.B) {
             Log.d('B型弹窗: 缩放Mask的兄弟节点', Tag.popupRelayout);
-            this.equivalentMask = this.getEquivalentMask();
-            Log.d(`等效Mask节点: ${this.equivalentMask.className}`, Tag.popupRelayout);
-            // 如果mask和content是兄弟节点，则其他兄弟节点做缩放
-            let topNodes = this.getTopmostChildren(this.equivalentMask.parentElement, this.popupInfo.popup_type);
-            topNodes.filter(node => node !== this.equivalentMask);
-            Log.d(`找到 ${topNodes.length} 个顶层节点`, Tag.popupRelayout);
-            for (let child of topNodes) {
-                if (this.equivalentMask.contains(child)) {
-                    continue;
-                }
+            for (let child of this.contentNodes) {
                 const childStyle = child.children.length > 0 ? getComputedStyle(child.children[0]) : null;
                 const childRect = child.getBoundingClientRect();
                 const isFixedOrAbsolute = childStyle ? childStyle.position === 'fixed' || childStyle.position === 'absolute' : false;
                 const isZeroSize = childRect.width === 0 || childRect.height === 0;
                 if (childStyle && isFixedOrAbsolute && isZeroSize) {
-                    this.scaleGrandChildrenForTypeB(child, topNodes);
+                    this.scaleGrandChildrenForTypeB(child, this.contentNodes);
                 }
                 else {
-                    this.scaleChildForTypeB(child, topNodes);
+                    this.scaleChildForTypeB(child, this.contentNodes);
                 }
             }
         } else if (this.popupInfo.popup_type === PopupType.A) {
             Log.d('A型弹窗: 缩放Mask的子节点', Tag.popupRelayout);
             // 如果mask是rootNode的子节点，content是mask的子节点，则对mask的所有子节点以及它的兄弟节点做缩放
-            let topNodes = this.getTopmostChildren(this.popupInfo.mask_node, this.popupInfo.popup_type);
-            Log.d(`找到 ${topNodes.length} 个顶层节点`, Tag.popupRelayout);
-            for (let child of topNodes) {
-                this.scaleByTransform(child as HTMLElement, this.scale, false, topNodes, false, []);
+            for (let child of this.contentNodes) {
+                this.scaleByTransform(child as HTMLElement, this.scale, false, this.contentNodes, false, []);
                 Log.d(`A型弹窗缩放完成: ${child.className}`, Tag.popupRelayout);
             }
         }
@@ -435,18 +459,6 @@ export class PopupWindowRelayout extends AComponent {
     }
 
     /**
-     * 修复图片内容被截断的场景
-     */
-    private resetTruncateBkgImgNodes(): void {
-        this.truncateBkgImgNodes.forEach((node: HTMLElement) => {
-            if (node !== this.popupInfo.mask_node) {
-                StyleSetter.setStyle(node, Constant.background_size, `contain`);
-                this.needRestoreStyleNodes.add(node);
-            }
-        });
-    }
-
-    /**
      * 递归地将节点及其所有父节点的 overflow 属性设置为 visible。
      * @param {HTMLElement} node - 需要处理的节点。
      */
@@ -493,11 +505,6 @@ export class PopupWindowRelayout extends AComponent {
             return LayoutUtils.isNodeTruncated(node, this.popupInfo);
         });
         Log.d(`初步筛选出 ${tmpTruncateNodes.length} 个被截断的节点`, Tag.popupRelayout);
-        
-        this.truncateBkgImgNodes = allNodes.filter(node => {
-            return LayoutUtils.checkIfBackgroundImgTruncated(node);
-        });
-        Log.d(`找到 ${this.truncateBkgImgNodes.length} 个背景图被截断的节点`, Tag.popupRelayout);
 
         this.handleScrollbar(tmpTruncateNodes);
 
@@ -540,53 +547,11 @@ export class PopupWindowRelayout extends AComponent {
             
             Log.d(`开始布局约束验证，共 ${this.needLayoutConstraintNodes.size} 个节点`, Tag.popupRelayout);
             
-            //  步骤2：等待 26 帧（约 450ms）
-            const frameCount = 26;
-            await this.forceLayoutUpdate(frameCount);
+            //  步骤2：等待450ms
+            setTimeout(()=>{
+                this.runReport(token);
+            }, 450);
             
-            //  步骤3：检查取消令牌
-            if (token.cancelled) {
-                Log.d(`验证已取消 (令牌已失效, generation: ${token.generation})`, Tag.popupRelayout);
-                return;
-            }
-            
-            //  步骤4：检查状态是否仍然有效
-            const currentState = PopupStateManager.getState(this.popupInfo.root_node);
-            if (currentState !== PopupLayoutState.WAITING_VALIDATION) {
-                Log.d(`验证已取消 - 状态已改变为 ${currentState}`, Tag.popupRelayout);
-                return;
-            }
-            
-            //  步骤5：设置为验证中状态
-            if (!PopupStateManager.setState(this.popupInfo.root_node, PopupLayoutState.VALIDATING, '开始验证')) {
-                Log.d('验证已取消 - 无法切换到验证状态', Tag.popupRelayout);
-                return;
-            }
-
-            //  步骤6：执行验证
-            this.layoutConstraintResult = LayoutConstraintMetricsDetector.detectLayoutConstraintMetrics(this.popupInfo, this.needLayoutConstraintNodes);
-            Log.d(`布局约束验证完成，结果代码: ${this.layoutConstraintResult.resultCode}`, Tag.popupRelayout);
-            
-            //  步骤7：再次检查取消令牌
-            if (token.cancelled) {
-                Log.d('验证完成但令牌已失效，不更新状态', Tag.popupRelayout);
-                return;
-            }
-            
-            //  步骤8：更新最终状态
-            if (this.layoutConstraintResult.resultCode === Constant.ERR_CODE_GAPS || this.layoutConstraintResult.resultCode === Constant.ERR_CODE_OVERFLOW) {
-                Log.d(`检测到布局问题 (代码: ${this.layoutConstraintResult.resultCode})，恢复原始样式`, Tag.popupRelayout);
-                this.restoreStyles();
-                PopupStateManager.setState(this.popupInfo.root_node, PopupLayoutState.RESTORED, '验证失败，已恢复');
-            } else {
-                Log.d('布局约束验证通过', Tag.popupRelayout);
-                PopupStateManager.setState(this.popupInfo.root_node, PopupLayoutState.COMPLETED, '验证通过');
-            }
-            
-            this.needLayoutConstraintNodes.clear();
-            // @ts-ignore
-            window.layoutConstraintResult = this.layoutConstraintResult;
-            Log.d('========== 弹窗重新布局流程完成 ==========', Tag.popupRelayout);
         } catch (error) {
             //  只有令牌未取消时才处理错误
             if (!token.cancelled) {
@@ -597,27 +562,52 @@ export class PopupWindowRelayout extends AComponent {
         }
     }
 
-    /**
-     * 强制布局更新
-     */
-    private async forceLayoutUpdate(rafCount = 1): Promise<void> {
-        // 返回一个在下一动画帧开始时解析的 Promise
-        const nextFrame = (): Promise<number> => new Promise(resolve => requestAnimationFrame(resolve));
-
-        if (rafCount <= 0) {
+    private runReport(token: { cancelled: boolean; generation: number }): void {
+        //  步骤3：检查取消令牌
+        if (token.cancelled) {
+            Log.d(`验证已取消 (令牌已失效, generation: ${token.generation})`, Tag.popupRelayout);
             return;
         }
 
-        // 第一次更新比较特殊，只等待一帧
-        await nextFrame();
-        void document.body.offsetHeight;
-
-        // 从第二次更新开始，每次都需要等待两帧
-        for (let i = 1; i < rafCount; i++) {
-            await nextFrame();
-            await nextFrame();
-            void document.body.offsetHeight;
+        //  步骤4：检查状态是否仍然有效
+        const currentState = PopupStateManager.getState(this.popupInfo.root_node);
+        if (currentState !== PopupLayoutState.WAITING_VALIDATION) {
+            Log.d(`验证已取消 - 状态已改变为 ${currentState}`, Tag.popupRelayout);
+            return;
         }
+
+        //  步骤5：设置为验证中状态
+        if (!PopupStateManager.setState(this.popupInfo.root_node, PopupLayoutState.VALIDATING, '开始验证')) {
+            Log.d('验证已取消 - 无法切换到验证状态', Tag.popupRelayout);
+            return;
+        }
+
+        //  步骤6：执行验证
+        this.layoutConstraintResult = LayoutConstraintMetricsDetector.detectLayoutConstraintMetrics(this.popupInfo, this.needLayoutConstraintNodes);
+        Log.d(`布局约束验证完成，结果代码: ${this.layoutConstraintResult.resultCode}`, Tag.popupRelayout);
+
+        //  步骤7：再次检查取消令牌
+        if (token.cancelled) {
+            Log.d('验证完成但令牌已失效，不更新状态', Tag.popupRelayout);
+            return;
+        }
+
+        //  步骤8：更新最终状态
+        if (this.layoutConstraintResult.resultCode === Constant.ERR_CODE_GAPS || this.layoutConstraintResult.resultCode === Constant.ERR_CODE_OVERFLOW) {
+            Log.d(`检测到布局问题 (代码: ${this.layoutConstraintResult.resultCode})，恢复原始样式`, Tag.popupRelayout);
+            this.restoreStyles();
+            PopupStateManager.setState(this.popupInfo.root_node, PopupLayoutState.RESTORED, '验证失败，已恢复');
+        } else {
+            Log.d('布局约束验证通过', Tag.popupRelayout);
+            PopupStateManager.setState(this.popupInfo.root_node, PopupLayoutState.COMPLETED, '验证通过');
+        }
+
+        this.setDirty(false);
+
+        this.needLayoutConstraintNodes.clear();
+        // @ts-ignore
+        window.layoutConstraintResult = this.layoutConstraintResult;
+        Log.d('========== 弹窗重新布局流程完成 ==========', Tag.popupRelayout);
     }
 
     private filterContainedNodes(nodes: HTMLElement[]): HTMLElement[] {
@@ -737,7 +727,6 @@ export class PopupWindowRelayout extends AComponent {
             } else {
                 // 此处保留了对滚动容器的样式设置，因为它属于前置处理的一部分
                 const maxHeightVh = ((window.innerHeight - scrollElementRect.top) / window.innerHeight) * 100;
-                Log.d(`设置滚动容器最大高度: ${maxHeightVh.toFixed(2)}vh`, Tag.popupRelayout);
                 StyleSetter.setStyle(rect.scrollElement, Constant.max_height, `${maxHeightVh}vh`);
                 this.needRestoreStyleNodes.add(rect.scrollElement);
             }
@@ -896,18 +885,59 @@ export class PopupWindowRelayout extends AComponent {
         Log.d('样式恢复完成', Tag.popupRelayout);
     }
 
-    public fixFlexShrink(node: HTMLElement): void {
+    /**
+     * 设置flex_shrink:0 的条件：
+     * 1、父节点为flex布局，且主轴为纵向
+     * 2、非absolute和fixex的子节点大于1个
+     * 3、除position为absolute和fix的子节点外，其余子节点纵向跨度大于等于父布局的高度
+     * @param node 
+     */
+    private shouldFixFlexSharink(element: HTMLElement): boolean {
+        let elementStyle = getComputedStyle(element);
+        if (!elementStyle.display.includes(Constant.flex) ||
+            elementStyle.flexDirection !== Constant.column ||
+            element.children.length <= 1) {
+                return false;
+            }
+        
+        let childMinTop: number = Infinity;
+        let childMaxBottom: number = -Infinity;
+        let cnt: number = 0;
+        Array.from(element.children).forEach(child => {
+            let childStyle = getComputedStyle(child);
+            let childRect = child.getBoundingClientRect();
+            if (childStyle.position != Constant.absolute && childStyle.position != Constant.fixed) {
+                childMinTop = Math.min(childRect.top - parseFloat(childStyle.marginTop), childMinTop);
+                childMaxBottom = Math.max(childRect.bottom + parseFloat(childStyle.marginBottom), childMaxBottom);
+                cnt++;
+            }
+        });
+
+        if (cnt > 1 && childMinTop != Infinity &&
+            Math.abs(childMaxBottom - childMinTop - parseFloat(elementStyle.height)) < Constant.flexDelHeightThreshold) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 尝试修复flex-shrink
+     * @param node 
+     * @returns 是否需要修复，并执行了修复操作
+     */
+    public tryToFixFlexShrink(node: HTMLElement): boolean {
+        let isNeedFix: boolean = false;
         // 查找所有flex容器
         const flexContainers = [];
 
         // 检查根节点
-        if (window.getComputedStyle(this.mComponent).display.includes(Constant.flex)) {
+        if (this.shouldFixFlexSharink(this.mComponent)) {
             flexContainers.push(this.mComponent);
         }
 
-        // 检查所有子节点
+        // 检查所有子节点，筛选需要进行flex_shrink修改的容器节点
         this.mComponent.querySelectorAll('*').forEach(element => {
-            if (window.getComputedStyle(element).display.includes(Constant.flex)) {
+            if (element instanceof HTMLElement && this.shouldFixFlexSharink(element)) {
                 flexContainers.push(element);
             }
         });
@@ -917,27 +947,17 @@ export class PopupWindowRelayout extends AComponent {
 
         flexContainers.forEach(container => {
             Array.from(container.children).forEach(child => {
-                if (getComputedStyle(container).flexDirection === Constant.column) {
+                let childStyle = getComputedStyle(child);
+                if (childStyle.position != Constant.absolute && childStyle.position != Constant.fixed) {
                     StyleSetter.setStyle(child as HTMLElement, Constant.flex_shrink, '0');
                     this.needRestoreStyleNodes.add(child as HTMLElement);
+                    totalProcessed++;
                 }
-                // 检查父容器的尺寸
-                if (container.clientWidth > 0 && container.clientHeight > 0) {
-                    StyleSetter.setStyle(child as HTMLElement, Constant.max_width, '100%');
-                    this.needRestoreStyleNodes.add(child as HTMLElement);
-                }
-                if (Utils.hasButton(child as HTMLElement)) {
-                    // 写进默认生效样式
-                    const selfStyle = window.getComputedStyle(child as HTMLElement);
-                    const width = selfStyle.width;
-                    StyleSetter.setStyle(child as HTMLElement, Constant.width, width);
-                    this.needRestoreStyleNodes.add(child as HTMLElement);
-                }
-                totalProcessed++;
             });
         });
 
-        Log.d(`fix ${flexContainers.length} flex contaner, ${totalProcessed} child elements`);
+        Log.d(`${flexContainers.length} flex contaners, fix ${totalProcessed} child elements`);
+        return totalProcessed > 0;
     }
 
     /**

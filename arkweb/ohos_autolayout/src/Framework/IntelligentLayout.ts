@@ -12,31 +12,32 @@ import { PopupLayoutState } from './Popup/PopupLayoutState';
 export default class IntelligentLayout {
     static TAG = Tag.intelligentLayout;
 
-    static popWindowMap = new Map<PopupInfo, AComponent>();
+    private static activePopupWindow: { popupInfo: PopupInfo | null; popupComponent: AComponent | null } = {
+        popupInfo: null,
+        popupComponent: null,
+    };
 
-    /**
-     * 响应开启重布局的按钮事件，局部刷新节点
-     */
-    public static relayoutForPopWin(): void {
-        Log.info('relayoutForPopWin run', IntelligentLayout.TAG);
-        let popupInfo: PopupInfo = null;
-        if (IntelligentLayout.popWindowMap.size > 0) {
-            popupInfo = IntelligentLayout.popWindowMap.keys().next().value;
-        } else {
-            popupInfo = PopupWindowDetector.findPopups(document.body);
-        }
+    public static getActivePopupWindowInfo(): PopupInfo | null {
+        return IntelligentLayout.activePopupWindow.popupInfo;
+    }
 
-        if (popupInfo != null) {
-            IntelligentLayout.calculateForPopWin(popupInfo);
-        }
+    public static getActivePopupWindowComponent(): AComponent | null {
+        return IntelligentLayout.activePopupWindow.popupComponent;
+    }
+
+    private static setActivePopupWindow(popupInfo: PopupInfo, component: AComponent): void {
+        IntelligentLayout.activePopupWindow = { popupInfo: popupInfo, popupComponent: component };
+    }
+
+    public static clearActivePopupWindow(): void {
+        IntelligentLayout.activePopupWindow = { popupInfo: null, popupComponent: null };
     }
     
     public static intelligentLayout(root: HTMLElement): void {
         Log.info('进入 intelligentLayout', IntelligentLayout.TAG);
 
-        let popupInfo = IntelligentLayout.popWindowMap.size > 0?
-            IntelligentLayout.popWindowMap.keys().next().value : 
-            PopupWindowDetector.findPopups(root);
+        const activePopup = IntelligentLayout.getActivePopupWindowInfo();
+        const popupInfo = activePopup ?? PopupWindowDetector.findPopups(root);
         Log.d(`popupInfo root_node: ${popupInfo?.root_node?.className}`, IntelligentLayout.TAG);
 
         if (popupInfo != null) {
@@ -54,29 +55,21 @@ export default class IntelligentLayout {
         Log.info('离开 intelligentLayout', IntelligentLayout.TAG);
     }
 
-    public static recoverPopwinStyle(): void {
-        for (const component of IntelligentLayout.popWindowMap.values()) {
-            if (component instanceof PopupWindowRelayout) {
-                component.restoreStyles(); 
-            }
-        }
-        IntelligentLayout.popWindowMap.clear();
-    }
-
     public static removePopwinCache(node: HTMLElement): boolean {
-        let hasValidChange:boolean = false;
-        for (const [popupInfo, comp] of IntelligentLayout.popWindowMap.entries()) {
-            if (node.contains(popupInfo.root_node)) {
-                Log.info(`弹窗消失: ${popupInfo.root_node}`, IntelligentLayout.TAG);
-                
-                //  清理弹窗状态
-                PopupStateManager.clearState(popupInfo.root_node);
-                
-                IntelligentLayout.popWindowMap.delete(popupInfo);
-                hasValidChange = true;
-            }
+        const popupInfo = IntelligentLayout.getActivePopupWindowInfo();
+        if (!popupInfo || !popupInfo.root_node) {
+            return false;
         }
-        return hasValidChange;
+
+        if (node.contains(popupInfo.root_node)) {
+            Log.info(`弹窗消失: ${popupInfo.root_node}`, IntelligentLayout.TAG);
+
+            PopupStateManager.clearState(popupInfo.root_node);
+            IntelligentLayout.clearActivePopupWindow();
+            return true;
+        }
+
+        return false;
     }
 
     static calculateForPopWin(popupInfo: PopupInfo): void {
@@ -88,16 +81,17 @@ export default class IntelligentLayout {
             return;
         }
         
-        //  步骤2：设置为布局中状态
-        PopupStateManager.setState(popupInfo.root_node, PopupLayoutState.LAYOUTING, '开始布局');
-        
-        const component: AComponent = IntelligentLayout.popWindowMap.has(popupInfo) ?
-            IntelligentLayout.popWindowMap.get(popupInfo) : new PopupWindowRelayout(popupInfo);
-        if (component && component.isDirty()) {
+        const activePopupInfo = IntelligentLayout.getActivePopupWindowInfo();
+        let activePopupComponent = IntelligentLayout.getActivePopupWindowComponent();
+
+        if (!activePopupInfo || activePopupInfo != popupInfo) {
+            activePopupComponent = new PopupWindowRelayout(popupInfo);
+            IntelligentLayout.setActivePopupWindow(popupInfo, activePopupComponent);
+        }
+
+        if (activePopupComponent && activePopupComponent.isDirty()) {
             try {
-                component.intelligenceLayout();
-                // 清除标记
-                component.setDirty(false);
+                activePopupComponent.intelligenceLayout();
             } catch (error) {
                 //  步骤4：布局失败
                 PopupStateManager.setState(popupInfo.root_node, PopupLayoutState.FAILED, `布局失败: ${error}`);
@@ -105,9 +99,6 @@ export default class IntelligentLayout {
             }
         }
 
-        if(component && !IntelligentLayout.popWindowMap.has(popupInfo)) {
-            IntelligentLayout.popWindowMap.set(popupInfo, component);
-        }
         // @ts-ignore
         window.popupInfo = popupInfo;
     }
@@ -119,47 +110,49 @@ export default class IntelligentLayout {
         }
 
         // 节点变化，就重新刷新界面
-        for (const [info, comp] of IntelligentLayout.popWindowMap.entries()) {
-            if(comp.isDirty()) {
-	    	continue;
-	    }
-            if(info && info.root_node && comp && info.root_node.contains(item)) {
-                comp.setDirty(true);
-            }
-        }                
+        const popupInfo = IntelligentLayout.getActivePopupWindowInfo();
+        const component = IntelligentLayout.getActivePopupWindowComponent();
+
+        if (!popupInfo || !component || component.isDirty()) {
+            return;
+        }
+
+        if (popupInfo.root_node && popupInfo.root_node.contains(item)) {
+            component.setDirty(true);
+        }            
     }
 
-    static resetAllPopWindows(): void {
+    static resetPopWindows(reason: string): void {
         Log.d('========== 重置所有弹窗状态并取消异步任务 ==========', IntelligentLayout.TAG);
+        const popupInfo = IntelligentLayout.getActivePopupWindowInfo();
+        const component = IntelligentLayout.getActivePopupWindowComponent();
         
-        for (const [popupInfo, component] of IntelligentLayout.popWindowMap.entries()) {
-            Log.d(`处理弹窗: ${popupInfo.root_node?.className}`, IntelligentLayout.TAG);
-            
-            //  步骤1：取消组件的异步验证任务
-            if (component instanceof PopupWindowRelayout) {
-                component.cancelPendingValidation();
-            }
-            
-            //  步骤2：重置弹窗状态为 IDLE
-            PopupStateManager.resetState(popupInfo.root_node, '窗口尺寸变化');
-            
-            //  步骤3：恢复弹窗样式
-            if (component instanceof PopupWindowRelayout) {
-                component.restoreStyles();
-            }
-            
-            //  步骤4：标记为脏，需要重新布局
-            component.setDirty(true);
+        if (!popupInfo || !component) {
+            IntelligentLayout.clearActivePopupWindow();
+            return;
+        }
+
+        Log.d(`处理弹窗: ${popupInfo.root_node?.className}`, IntelligentLayout.TAG);
+        
+        //  步骤1：取消组件的异步验证任务 及 恢复弹窗样式
+        if (component instanceof PopupWindowRelayout) {
+            component.cancelPendingValidation();
+            component.restoreStyles();
         }
         
-        //  步骤5：清空popWindowMap，避免reInit()重复恢复样式
-        IntelligentLayout.popWindowMap.clear();
+        //  步骤2：重置弹窗状态为 IDLE
+        PopupStateManager.resetState(popupInfo.root_node, reason);
+        
+        //  步骤3：标记为脏，需要重新布局
+        component.setDirty(true);
+        
+        //  步骤4：清空activePopup，避免reInit()重复恢复样式
+        IntelligentLayout.clearActivePopupWindow();
         
         Log.d('所有弹窗状态重置完成', IntelligentLayout.TAG);
     }
 
-    static reInit(): void {
-        IntelligentLayout.recoverPopwinStyle();
-        IntelligentLayout.popWindowMap.clear();
+    static reInit(reason: string): void {
+        IntelligentLayout.resetPopWindows(reason);
     }
 }

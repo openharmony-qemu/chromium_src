@@ -8,6 +8,9 @@ export enum PopupLayoutState {
     
     /** 等待动画完成：弹窗正在播放动画，需要等待动画结束后再进行布局 */
     WAITING_ANIMATION = 'WAITING_ANIMATION',
+
+    /** 预处理：进行一些重布局前的预处理操作（flex-shrink的修复） */
+    PREPROCESSING = 'PREPROCESSING',
     
     /** 布局中：正在执行布局操作（检测、计算、应用样式） */
     LAYOUTING = 'LAYOUTING',
@@ -35,6 +38,7 @@ export enum PopupLayoutState {
 export const StateTransitionRules: Record<PopupLayoutState, PopupLayoutState[]> = {
     [PopupLayoutState.IDLE]: [
         PopupLayoutState.WAITING_ANIMATION,
+        PopupLayoutState.PREPROCESSING,
         PopupLayoutState.LAYOUTING,
         PopupLayoutState.FAILED
     ],
@@ -42,6 +46,10 @@ export const StateTransitionRules: Record<PopupLayoutState, PopupLayoutState[]> 
         PopupLayoutState.LAYOUTING,
         PopupLayoutState.IDLE,
         PopupLayoutState.FAILED
+    ],
+    [PopupLayoutState.PREPROCESSING]: [
+        PopupLayoutState.IDLE, // 允许 resize 中断
+        PopupLayoutState.LAYOUTING
     ],
     [PopupLayoutState.LAYOUTING]: [
         PopupLayoutState.WAITING_VALIDATION,
@@ -111,6 +119,7 @@ export function getStateDescription(state: PopupLayoutState): string {
     const descriptions: Record<PopupLayoutState, string> = {
         [PopupLayoutState.IDLE]: '未布局',
         [PopupLayoutState.WAITING_ANIMATION]: '等待动画完成',
+        [PopupLayoutState.PREPROCESSING]: '预处理',
         [PopupLayoutState.LAYOUTING]: '布局中',
         [PopupLayoutState.WAITING_VALIDATION]: '等待验证',
         [PopupLayoutState.VALIDATING]: '验证中',
@@ -128,6 +137,7 @@ export function getStateIcon(state: PopupLayoutState): string {
     const icons: Record<PopupLayoutState, string> = {
         [PopupLayoutState.IDLE]: '⚪',
         [PopupLayoutState.WAITING_ANIMATION]: '⏳',
+        [PopupLayoutState.PREPROCESSING]: '🔄',
         [PopupLayoutState.LAYOUTING]: '🔄',
         [PopupLayoutState.WAITING_VALIDATION]: '⏰',
         [PopupLayoutState.VALIDATING]: '🔍',

@@ -1,0 +1,45 @@
+{
+  "file_path": "gpu/vulkan/init/BUILD.gn",
+  "analysis_time": "2025-11-04",
+  "conflict_resolution": {
+    "total_hunks": 1,
+    "resolved_hunks": 1,
+    "unresolved_hunks": 0,
+    "rej_file_integrity": "preserved"
+  },
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "description": "添加 arkweb_vulkan 条件编译依赖",
+      "risk_level": "低",
+      "risk_analysis": "此修改为添加条件编译逻辑，仅在 arkweb_vulkan 特性启用时添加额外的依赖路径。这是一个标准的构建配置修改，不会影响现有功能。",
+      "conflict_cause": "Arkweb 132 中添加了对 arkweb/chromium_ext/gpu/vulkan/ohos 路径的依赖，在升级到 Chromium 141 时需要重新应用此侵入式修改",
+      "analysis_process": "1. 解析 .rej 文件，识别出需要添加的行：if (arkweb_vulkan) 条件块和相关依赖\n2. 在源文件中定位到 is_apple 条件块后的正确位置\n3. 精确插入新的条件编译逻辑",
+      "modification_confidence": 100,
+      "resolution_strategy": "已成功应用",
+      "applied_changes": [
+        "添加: if (arkweb_vulkan) {",
+        "添加:   deps += [ \"//arkweb/chromium_ext/gpu/vulkan/ohos\" ]",
+        "添加: }"
+      ],
+      "location_verification": "在 init 组件的 deps 配置部分，is_apple 条件块之后，组件结束括号之前",
+      "syntax_validation": "通过",
+      "status": "已解决"
+    }
+  ],
+  "summary": {
+    "resolution_status": "完全成功",
+    "compliance_check": {
+      "golden_rules_followed": true,
+      "no_context_lines_added": true,
+      "no_script_files_created": true,
+      "only_specified_directory_used": true,
+      "rej_file_preserved": true
+    },
+    "final_verification": {
+      "rej_file_intact": true,
+      "source_file_modified": true,
+      "json_report_created": true
+    }
+  }
+}

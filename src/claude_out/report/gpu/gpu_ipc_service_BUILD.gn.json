@@ -1,0 +1,90 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/gpu/ipc/service/BUILD.gn.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/gpu/ipc/service/BUILD.gn",
+    "基线文件": "/home/sujiahao/code/chromium_132_baseline/src/gpu/ipc/service/BUILD.gn",
+    "Arkweb132文件": "/home/sujiahao/code/arkweb_132/src/gpu/ipc/service/BUILD.gn"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "rej文件完整性": {
+    "状态": "保持完整",
+    "未被修改": true,
+    "未被删除": true
+  },
+  "hunks处理详情": [
+    {
+      "hunk索引": 1,
+      "位置信息": "第151-163行",
+      "冲突原因": "Arkweb项目在基于chromium 132时添加了arkweb特定的条件编译和依赖，包括is_arkweb条件判断和arkweb_bugfix_crash修复配置",
+      "修改内容": {
+        "添加行数": 7,
+        "删除行数": 0,
+        "具体添加": [
+          "if (is_arkweb) {",
+          "  import(\"//arkweb/chromium_ext/gpu/ipc/service/arkweb_gpu_ipc_service_ext.gni\")",
+          "  sources += arkweb_gpu_ipc_service_sources",
+          "}",
+          "if (arkweb_bugfix_crash) {",
+          "  deps += [ \"//arkweb/build/features\" ]",
+          "}"
+        ]
+      },
+      "定位过程": {
+        "锚点识别": [
+          "if (is_linux || is_chromeos) {",
+          "sources += [ \"image_transport_surface_linux.cc\" ]",
+          "if (use_ozone) {"
+        ],
+        "源文件匹配": "成功在源文件第142-152行之间找到对应锚点",
+        "定位策略": "使用上下文锚点精确定位到Linux条件判断之后、ChromeOS条件判断之前的位置"
+      },
+      "应用结果": {
+        "状态": "已成功应用",
+        "插入位置": "第144-151行",
+        "置信度": "高",
+        "风险等级": "低",
+        "风险说明": "添加的代码是Arkweb项目的标准扩展配置，包含条件编译和依赖管理，不会影响原有功能逻辑"
+      },
+      "代码质量评估": {
+        "语法正确性": "正确",
+        "逻辑一致性": "良好",
+        "与现有代码兼容性": "完全兼容",
+        "潜在问题": "无"
+      }
+    }
+  ],
+  "整体分析": {
+    "冲突类型": "新增功能冲突",
+    "主要修改领域": "构建配置扩展",
+    "Arkweb定制内容": [
+      "arkweb特定的GPU IPC服务源文件引入",
+      "arkweb崩溃修复依赖配置"
+    ],
+    "技术影响": {
+      "构建系统": "扩展了GPU服务的构建配置以支持Arkweb特性",
+      "功能扩展": "为Arkweb项目添加了定制化的GPU IPC服务组件",
+      "依赖管理": "引入了arkweb特定的构建依赖"
+    },
+    "兼容性评估": {
+      "向后兼容": "是",
+      "向前兼容": "是",
+      "平台影响": "仅影响is_arkweb为true的构建"
+    }
+  },
+  "处理策略总结": {
+    "严格遵循黄金法则": "完全遵守，仅添加+开头的行，未添加任何上下文行",
+    "原子化操作": "每个hunk独立处理，确保修改精确性",
+    "文件完整性": ".rej文件保持原始状态，未被修改",
+    "风险评估": "所有修改均为Arkweb项目的标准定制化配置，风险可控"
+  },
+  "建议后续行动": {
+    "代码审查": "建议确认arkweb_gpu_ipc_service_ext.gni文件存在并包含正确的源文件列表",
+    "构建验证": "建议在arkweb构建环境中验证构建配置的正确性",
+    "功能测试": "建议测试相关的GPU IPC服务功能是否正常工作"
+  }
+}

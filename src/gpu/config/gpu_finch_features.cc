@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "gpu/config/gpu_finch_features.h"
+#include "arkweb/build/features/features.h"
 
 #include <string_view>
 
@@ -127,7 +128,8 @@ BASE_FEATURE(AllowHardwareBufferUsageFlagsFromVulkanForScanout,
 // Android and Linux.
 BASE_FEATURE(DefaultEnableGpuRasterization,
 #if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
-    BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_LINUX)
+    BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_LINUX) || \
+    BUILDFLAG(IS_OHOS)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_DISABLED_BY_DEFAULT
@@ -178,7 +180,7 @@ BASE_FEATURE(VaapiWebPImageDecodeAcceleration,
 // --use-vulkan will be followed.
 // Note Android WebView uses kWebViewDrawFunctorUsesVulkan instead of this.
 BASE_FEATURE(Vulkan,
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_VULKAN)
              base::FEATURE_ENABLED_BY_DEFAULT
 #else
              base::FEATURE_DISABLED_BY_DEFAULT
@@ -186,7 +188,7 @@ BASE_FEATURE(Vulkan,
 );
 
 BASE_FEATURE(EnableDrDc,
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
              base::FEATURE_ENABLED_BY_DEFAULT
 #elif BUILDFLAG(IS_MAC)
              // DrDC will not be running if Graphite is disabled on Mac.
@@ -243,7 +245,7 @@ BASE_FEATURE(WebGPUEnableRangeAnalysisForRobustness,
 
 BASE_FEATURE(WebGPUUseSpirv14, base::FEATURE_DISABLED_BY_DEFAULT);
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) && !BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 
 const base::FeatureParam<std::string> kVulkanBlockListByHardware{
     &kVulkan, "BlockListByHardware", ""};
@@ -488,7 +490,8 @@ bool IsUsingVulkan() {
   }
 
   return true;
-
+#elif BUILDFLAG(ARKWEB_VULKAN)
+  return features::IsEnableVulkan();
 #else
   return base::FeatureList::IsEnabled(kVulkan);
 #endif
@@ -589,6 +592,8 @@ bool IsSkiaGraphiteSupportedByDevice(const base::CommandLine* command_line) {
   // Graphite on ChromeOS uses the Dawn Vulkan backend. Only enable Graphite if
   // device would already be using Ganesh/Vulkan.
   return IsUsingVulkan();
+#elif BUILDFLAG(IS_OHOS)
+  return base::FeatureList::IsEnabled(kEnableDrDc);
 #elif BUILDFLAG(IS_WIN) && defined(ARCH_CPU_ARM64)
   // Graphite on Windows ARM requires further research.
   return false;

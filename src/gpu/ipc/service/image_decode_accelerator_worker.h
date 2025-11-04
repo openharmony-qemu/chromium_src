@@ -18,6 +18,11 @@
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/gpu_memory_buffer_handle.h"
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+#include "base/synchronization/waitable_event.h"
+#endif
+
 namespace gpu {
 
 // An ImageDecodeAcceleratorWorker handles the actual hardware-accelerated
@@ -33,6 +38,10 @@ class ImageDecodeAcceleratorWorker {
     viz::SharedImageFormat si_format;
     size_t buffer_byte_size;
     SkYUVColorSpace yuv_color_space;
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+    raw_ptr<void> window_buffer = nullptr;
+    raw_ptr<base::WaitableEvent> event = nullptr;
+#endif
   };
 
   using CompletedDecodeCB =

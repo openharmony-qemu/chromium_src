@@ -1,0 +1,47 @@
+{
+  "文件路径": "gpu/ipc/service/image_decode_accelerator_worker.h",
+  "处理时间": "2025-11-04",
+  "总hunk数量": 2,
+  "成功解决的hunk数量": 2,
+  "未能解决的hunk数量": 0,
+  ".rej文件完整性": "确认保持完整未被修改",
+  "hunk处理详情": [
+    {
+      "hunk编号": 1,
+      "hunk行范围": "3-12行",
+      "冲突原因": "Arkweb 132在chromium 132基础上添加了HEIF支持相关的头文件包含",
+      "风险分析": "低风险。添加的是条件编译的头文件包含，只有在启用ARKWEB_HEIF_SUPPORT时才会生效，不会影响现有功能",
+      "修改内容": {
+        "添加的行": [
+          "#include \"arkweb/build/features/features.h\"",
+          "#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)",
+          "#include \"base/synchronization/waitable_event.h\"",
+          "#endif"
+        ],
+        "删除的行": []
+      },
+      "分析过程": "通过分析.rej文件中的上下文行，定位到源文件中第19行（ui/gfx/gpu_memory_buffer_handle.h包含后）和第21行（namespace gpu声明前）之间作为插入点。虽然rej文件中期望的是gfx/gpu_memory_buffer.h而源文件中是gfx/gpu_memory_buffer_handle.h，但这不影响arkweb头文件的插入位置",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "应用策略": "在namespace gpu声明前添加arkweb HEIF支持相关的条件编译头文件包含"
+    },
+    {
+      "hunk编号": 2,
+      "hunk行范围": "19-28行",
+      "冲突原因": "Arkweb 132在DecodeResult结构体中添加了HEIF支持相关的成员变量",
+      "风险分析": "低风险。添加的是条件编译的成员变量，只有在启用ARKWEB_HEIF_SUPPORT时才会存在，不会破坏现有结构体布局的兼容性",
+      "修改内容": {
+        "添加的行": [
+          "raw_ptr<void> window_buffer = nullptr;",
+          "raw_ptr<base::WaitableEvent> event = nullptr;"
+        ],
+        "删除的行": []
+      },
+      "分析过程": "通过分析.rej文件中的上下文行，定位到DecodeResult结构体中yuv_color_space成员后作为插入点。虽然源文件中使用了viz::SharedImageFormat si_format而不是rej文件期望的gfx::BufferFormat buffer_format，但这不影响arkweb特定成员的添加",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "应用策略": "在DecodeResult结构体的yuv_color_space成员后添加条件编译的arkweb HEIF支持相关成员变量"
+    }
+  ],
+  "总结": "所有hunk都已成功解决。本次冲突主要是因为Arkweb 132在chromium 132基础上添加了HEIF图像格式支持功能，包括相关的头文件包含和结构体成员变量。所有修改都使用了条件编译（#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)），确保在不启用HEIF支持时不会影响原有功能。修改过程中严格遵循了黄金法则，只添加了+开头的行，未添加任何上下文行，也未修改.rej文件本身。"
+}

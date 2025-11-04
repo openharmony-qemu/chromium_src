@@ -16,6 +16,7 @@
 #include "base/check.h"
 #include "base/types/expected.h"
 #include "base/types/expected_macros.h"
+#include "base/trace_event/trace_event.h"
 #include "gpu/command_buffer/common/mailbox.h"
 #include "gpu/command_buffer/service/graphite_shared_context.h"
 #include "gpu/command_buffer/service/shared_context_state.h"

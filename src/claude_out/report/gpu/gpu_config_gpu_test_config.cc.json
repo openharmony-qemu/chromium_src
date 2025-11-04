@@ -1,0 +1,42 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/gpu/config/gpu_test_config.cc.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/gpu/config/gpu_test_config.cc",
+    "处理时间": "2025-11-04"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk详情": [
+    {
+      "hunk编号": 1,
+      "行范围": "3-15",
+      "冲突原因": "Arkweb 132向Linux平台检测添加了IS_OHOS支持，但在升级到Chromium 141时产生了冲突",
+      "风险分析": "低风险。这是一个平台检测扩展，添加OpenHarmony操作系统支持到现有的Linux平台分类中，不会破坏现有逻辑",
+      "修改内容": {
+        "删除行": [
+          "BUILDFLAG(IS_OPENBSD)"
+        ],
+        "添加行": [
+          "BUILDFLAG(IS_OPENBSD) || BUILDFLAG(IS_OHOS)"
+        ]
+      },
+      "分析过程": "通过.rej文件上下文精确定位到源文件第30行的#elif条件判断，该条件与.rej文件中的上下文完全匹配",
+      "定位策略": "直接匹配成功",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "应用位置": "源文件第30行",
+      "验证结果": "成功将IS_OHOS条件添加到平台检测中，使OpenHarmony系统被归类为Linux平台"
+    }
+  ],
+  "合规性验证": {
+    "rej文件保持完整": true,
+    "未添加上下文": true,
+    "未创建脚本文件": true,
+    "仅在指定目录创建JSON报告": true
+  },
+  "总结": "所有冲突已成功解决。本次修改将OpenHarmony操作系统支持集成到GPU测试配置的平台检测逻辑中，使其与Linux、OpenBSD等系统一同被归类为kOsLinux类型。"
+}

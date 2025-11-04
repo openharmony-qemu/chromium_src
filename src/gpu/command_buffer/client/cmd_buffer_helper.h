@@ -28,6 +28,10 @@
 #include "gpu/command_buffer/common/command_buffer.h"
 #include "gpu/command_buffer/common/context_result.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
+
 namespace gpu {
 
 class Buffer;

@@ -1,0 +1,96 @@
+{
+  "conflict_file": "gpu/config/gpu_finch_features.cc.rej",
+  "source_file": "gpu/config/gpu_finch_features.cc",
+  "analysis_summary": {
+    "total_hunks": 1,
+    "resolved_hunks": 1,
+    "unresolved_hunks": 0,
+    "rej_file_integrity": "preserved"
+  },
+  "hunks_analysis": [
+    {
+      "hunk_number": 1,
+      "description": "添加Arkweb特有的编译条件和功能支持",
+      "changes": [
+        {
+          "type": "addition",
+          "content": "#include \"arkweb/build/features/features.h\"",
+          "location": "line_6",
+          "risk_level": "低风险",
+          "confidence": "高"
+        },
+        {
+          "type": "modification",
+          "content": "在DefaultEnableGpuRasterization特性中添加BUILDFLAG(IS_OHOS)条件",
+          "location": "lines_130-132",
+          "risk_level": "低风险",
+          "confidence": "高"
+        },
+        {
+          "type": "modification",
+          "content": "在Vulkan特性中添加BUILDFLAG(ARKWEB_VULKAN)条件",
+          "location": "line_183",
+          "risk_level": "中风险",
+          "confidence": "高"
+        },
+        {
+          "type": "modification",
+          "content": "在EnableDrDc特性中添加BUILDFLAG(IS_OHOS)条件",
+          "location": "line_191",
+          "risk_level": "低风险",
+          "confidence": "高"
+        },
+        {
+          "type": "modification",
+          "content": "修改Vulkan blocklist的条件编译为IS_ANDROID && !ARKWEB_COMPOSITE_RENDER",
+          "location": "line_248",
+          "risk_level": "中风险",
+          "confidence": "高"
+        },
+        {
+          "type": "addition",
+          "content": "在IsUsingVulkan()函数中添加ARKWEB_VULKAN分支",
+          "location": "lines_493-494",
+          "risk_level": "中风险",
+          "confidence": "高"
+        },
+        {
+          "type": "addition",
+          "content": "在ShouldEnableDrDc()函数中添加ARKWEB_DRDC分支",
+          "location": "lines_702-705",
+          "risk_level": "中风险",
+          "confidence": "高"
+        },
+        {
+          "type": "addition",
+          "content": "在IsSkiaGraphiteSupportedByDevice函数中添加IS_OHOS分支",
+          "location": "lines_595-596",
+          "risk_level": "低风险",
+          "confidence": "高"
+        }
+      ],
+      "conflict_cause": "Arkweb 132版本针对OpenHarmony平台添加了特有的GPU功能支持，包括Vulkan、DrDc等特性的条件编译修改，这些侵入式修改在Chromium 141基线中不存在",
+      "resolution_strategy": "严格按照.rej文件中的+/-行进行修改，保持与Arkweb 132版本的功能一致性",
+      "verification_status": "已成功应用",
+      "risk_assessment": "所有修改都是条件编译的添加，不会影响现有平台的功能，风险可控。主要风险来自于新引入的ARKWEB_VULKAN和ARKWEB_DRDC功能，需要确保对应的features模块正确实现。"
+    }
+  ],
+  "overall_assessment": {
+    "completion_status": "所有hunk已成功处理",
+    "code_quality": "修改保持了原有代码结构，仅添加了条件编译分支",
+    "compatibility_risk": "低风险，修改主要通过条件编译隔离到特定平台",
+    "recommendations": [
+      "确保arkweb/build/features/features.h头文件存在并包含所需的特性定义",
+      "验证features::IsEnableVulkan()和features::IsDrDcForVulkan()函数的实现",
+      "在OpenHarmony平台上测试GPU功能是否正常工作"
+    ]
+  },
+  "compliance_check": {
+    "golden_rule_violated": false,
+    "context_lines_added": false,
+    "scripts_generated": false,
+    "auxiliary_files_created": false,
+    "rej_file_modified": false,
+    "modifications_limited_to_additions_deletions": true
+  }
+}

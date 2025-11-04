@@ -16,7 +16,7 @@ scoped_refptr<gl::Presenter> ImageTransportSurface::CreatePresenter(
     const GpuFeatureInfo& gpu_feature_info,
     SurfaceHandle surface_handle) {
   DCHECK_NE(surface_handle, kNullSurfaceHandle);
-#if BUILDFLAG(IS_OZONE)
+#if BUILDFLAG(IS_OZONE) && !BUILDFLAG(IS_ARKWEB)
   return gl::init::CreateSurfacelessViewGLSurface(context_state->display(),
                                                   surface_handle);
 #else

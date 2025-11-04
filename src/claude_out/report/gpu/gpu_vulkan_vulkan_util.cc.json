@@ -1,0 +1,65 @@
+{
+  "文件路径": "gpu/vulkan/vulkan_util.cc",
+  "分析时间": "2025-11-04",
+  "总hunk数量": 2,
+  "成功解决的hunk数量": 2,
+  "未能解决的hunk数量": 0,
+  ".rej文件状态": "保持完整未被修改",
+  "hunks详情": [
+    {
+      "hunk_id": 1,
+      "行号范围": "9-15",
+      "风险等级": "低",
+      "冲突原因": "缺少Arkweb特定头文件和算法库引用",
+      "分析过程": "在源文件第15行添加了arkweb/build/features/features.h头文件，在第17行添加了base/ranges/algorithm.h头文件。这些修改是为了支持Arkweb特有的功能标记和算法操作。",
+      "修改置信度": "高",
+      "处理策略": "已成功应用：添加了两个必需的#include语句",
+      "解决状态": "已解决",
+      "应用的具体修改": [
+        "+ #include \"arkweb/build/features/features.h\"",
+        "+ #include \"base/ranges/algorithm.h\""
+      ]
+    },
+    {
+      "hunk_id": 2,
+      "行号范围": "15-78",
+      "风险等级": "中",
+      "冲突原因": "Arkweb Vulkan条件编译逻辑集成",
+      "分析过程": "该hunk涉及多个ARKWEB_VULKAN条件编译块的添加，主要用于控制不同GPU厂商（ARM、Qualcomm、Imagination）的Vulkan支持逻辑。修改包括：1) 在BuildInfo检查外围添加ARKWEB_VULKAN条件；2) 在EMUI版本检查外围添加条件；3) 在Mali GPU返回语句外围添加条件；4) 在Qualcomm GPU整个块外围添加条件；5) 修改Imagination GPU的处理逻辑，在ARKWEB_VULKAN启用时直接返回false。",
+      "修改置信度": "高",
+      "处理策略": "已成功应用：添加了所有ARKWEB_VULKAN条件编译块",
+      "解决状态": "已解决",
+      "应用的具体修改": [
+        "+ #if !BUILDFLAG(ARKWEB_VULKAN)",
+        "+   if (IsBlockedByBuildInfo() && !ShouldBypassMediatekBlock(gpu_info)) {",
+        "+     return false;",
+        "+   }",
+        "+ #endif",
+        "+ #if !BUILDFLAG(ARKWEB_VULKAN)",
+        "+     int emui_version = GetEMUIVersion();",
+        "+     if (device_properties.driver_version < VK_MAKE_VERSION(19, 0, 0) &&",
+        "+         emui_version < 11) {",
+        "+       return false;",
+        "+     }",
+        "+ #endif",
+        "+ #if !BUILDFLAG(ARKWEB_VULKAN)",
+        "+     return IsVulkanV1EnabledForMali(gpu_info) ||",
+        "+            IsVulkanV2EnabledForMali(gpu_info);",
+        "+ #endif",
+        "+ #if !BUILDFLAG(ARKWEB_VULKAN)",
+        "+   if (device_properties.vendor_id == kVendorQualcomm) {",
+        "+     return IsVulkanV1EnabledForAdreno(gpu_info, device_properties) ||",
+        "+            IsVulkanV2EnabledForAdreno(gpu_info, device_properties) ||",
+        "+            IsVulkanV3EnabledForAdreno(gpu_info, device_properties);",
+        "+   }",
+        "+ #endif",
+        "+ #if !BUILDFLAG(ARKWEB_VULKAN)",
+        "+     return IsVulkanV2EnabledForImagination(gpu_info);",
+        "+ #else",
+        "+     return false;",
+        "+ #endif"
+      ]
+    }
+  ],
+  "总结": "所有hunks均已成功解决，主要涉及Arkweb特有的Vulkan功能控制逻辑集成。修改严格遵循了黄金法则，仅应用了+/-开头的行，未添加任何上下文行。代码现在能够根据ARKWEB_VULKAN标记正确控制不同GPU厂商的Vulkan支持策略。"
+}

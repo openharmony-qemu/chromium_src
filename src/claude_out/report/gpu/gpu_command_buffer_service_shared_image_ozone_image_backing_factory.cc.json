@@ -1,0 +1,46 @@
+{
+  "file_path": "gpu/command_buffer/service/shared_image/ozone_image_backing_factory.cc",
+  "conflict_file": "gpu/command_buffer/service/shared_image/ozone_image_backing_factory.cc.rej",
+  "analysis_timestamp": "2025-11-04",
+  "summary": {
+    "total_hunks": 1,
+    "resolved_hunks": 1,
+    "unresolved_hunks": 0,
+    "success_rate": "100%"
+  },
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "location": "lines 11-16",
+      "type": "include_statement_addition",
+      "risk_level": "低",
+      "conflict_reason": "Arkweb132在chromium132基础上添加了gpu_memory_buffer_support.h头文件引用，在升级到chromium141时该引用丢失，需要重新添加",
+      "analysis_process": "分析.rej文件发现只有一个待添加的include语句：#include \"gpu/command_buffer/common/gpu_memory_buffer_support.h\"。通过在源文件中查找上下文匹配（#include \"build/chromecast_buildflags.h\"和#include \"components/viz/common/resources/shared_image_format_utils.h\"），准确定位到第13行后需要插入该include语句。",
+      "modification_confidence": "高",
+      "resolution_strategy": "在第13行（#include \"build/chromecast_buildflags.h\"）之后，第14行（#include \"components/viz/common/resources/shared_image_format_utils.h\"）之前插入待添加的include语句",
+      "changes_made": [
+        {
+          "action": "insert",
+          "line": 14,
+          "content": "#include \"gpu/command_buffer/common/gpu_memory_buffer_support.h\""
+        }
+      ],
+      "status": "已解决",
+      "verification": "成功添加include语句到正确的位置，保持include语句的合理排序"
+    }
+  ],
+  "compliance_status": {
+    "rej_file_integrity": "保持完整，未被修改或删除",
+    "no_context_lines_added": "严格遵守，只添加了+开头的行",
+    "no_script_files_created": "严格遵守，未创建任何脚本文件",
+    "specified_directory_only": "严格遵守，JSON报告创建在指定目录中"
+  },
+  "final_assessment": {
+    "overall_risk": "低风险",
+    "recommendations": [
+      "建议编译验证新添加的头文件是否能正确找到",
+      "建议运行相关单元测试确保功能正常"
+    ],
+    "conflict_resolution_quality": "高质量，精确遵循了不添加上下文的原则"
+  }
+}

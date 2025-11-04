@@ -685,6 +685,11 @@ test("gpu_unittests") {
         [ "//testing/buildbot/filters:gpu_unittests_filters_bundle_data" ]
   }
 
+  import("//arkweb/chromium_ext/gpu/gpu_ext.gni")
+  sources += gpu_unittests_ext.sources
+  sources -= gpu_unittests_ext.sources_del
+  deps += gpu_unittests_ext.deps
+
   if (is_apple) {
     deps += [ "//ui/accelerated_widget_mac" ]
   }

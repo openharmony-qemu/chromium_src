@@ -31,6 +31,8 @@
 #include "mojo/public/cpp/bindings/shared_associated_remote.h"
 #include "ui/gfx/gpu_memory_buffer_handle.h"
 
+#include "arkweb/chromium_ext/gpu/ipc/client/gpu_channel_host_utils.h"
+
 namespace IPC {
 class ChannelMojo;
 }
@@ -39,6 +41,7 @@ namespace gpu {
 class ClientSharedImageInterface;
 struct SyncToken;
 class GpuChannelHost;
+class GpuChannelHostUtils;
 
 using GpuChannelEstablishedCallback =
     base::OnceCallback<void(scoped_refptr<GpuChannelHost>)>;
@@ -58,6 +61,7 @@ class GPU_IPC_CLIENT_EXPORT GpuChannelEstablishFactory {
 class GPU_IPC_CLIENT_EXPORT GpuChannelHost
     : public base::RefCountedThreadSafe<GpuChannelHost> {
  public:
+  friend class GpuChannelHostUtils;
   GpuChannelHost(
       int channel_id,
       const gpu::GPUInfo& gpu_info,
@@ -340,6 +344,8 @@ class GPU_IPC_CLIENT_EXPORT GpuChannelHost
   static constexpr base::TimeDelta kDelayForEnsuringFlush = base::Seconds(1);
 
   const bool sync_point_graph_validation_enabled_;
+
+  std::unique_ptr<GpuChannelHostUtils> gpu_channel_host_utils_;
 };
 
 }  // namespace gpu

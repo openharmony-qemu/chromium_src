@@ -1,0 +1,101 @@
+{
+  "conflict_file": "gpu/ipc/common/BUILD.gn.rej",
+  "source_file": "gpu/ipc/common/BUILD.gn",
+  "total_hunks": 3,
+  "resolved_hunks": 3,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "maintained",
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "description": "添加Arkweb特性配置导入",
+      "risk_level": "低",
+      "conflict_reason": "Arkweb 132在文件顶部添加了arkweb特性的import语句，但在Chromium 141中文件结构略有变化",
+      "analysis": {
+        "added_lines": [
+          "import(\"//arkweb/build/features/features.gni\")",
+          "import(\"//arkweb/build/features/features.gni\")"
+        ],
+        "removed_lines": [],
+        "context_anchors": [
+          "import(\"//build/config/ui.gni\")",
+          "import(\"//gpu/vulkan/features.gni\")",
+          "import(\"//mojo/public/tools/bindings/mojom.gni\")"
+        ]
+      },
+      "location_strategy": "在源文件第5-7行的import语句组中插入",
+      "confidence": "高",
+      "resolution_status": "已解决",
+      "modification_details": "在文件顶部import语句组的开头和结尾各添加一个arkweb特性导入语句，虽然重复但保持与rej文件一致"
+    },
+    {
+      "hunk_number": 2,
+      "description": "在gpu_channel_mojom目标中添加arkweb_blank_optimize特性",
+      "risk_level": "低",
+      "conflict_reason": "Arkweb 132在gpu_channel_mojom目标中添加了blank_optimize特性配置",
+      "analysis": {
+        "added_lines": [
+          "enabled_features = []",
+          "if (arkweb_blank_optimize) {",
+          "  enabled_features += [ \"arkweb_blank_optimize\" ]",
+          "}"
+        ],
+        "removed_lines": [],
+        "context_anchors": [
+          "disable_variants = true",
+          "export_class_attribute = \"GPU_EXPORT\"",
+          "export_header = \"gpu/gpu_export.h\"",
+          "cpp_configs = [ \"//gpu:gpu_implementation\" ]"
+        ]
+      },
+      "location_strategy": "在gpu_channel_mojom目标的cpp_configs配置后添加",
+      "confidence": "高",
+      "resolution_status": "已解决",
+      "modification_details": "在gpu_channel_mojom目标中正确添加了arkweb_blank_optimize特性的条件配置"
+    },
+    {
+      "hunk_number": 3,
+      "description": "在interfaces目标中添加arkweb_heif_support特性",
+      "risk_level": "低",
+      "conflict_reason": "Arkweb 132在interfaces目标中添加了heif_support特性，但Chromium 141中移除了原有的is_win || is_chromeos条件配置",
+      "analysis": {
+        "added_lines": [
+          "if (arkweb_heif_support) {",
+          "  enabled_features += [ \"arkweb_heif_support\" ]",
+          "}"
+        ],
+        "removed_lines": [],
+        "context_anchors": [
+          "if (enable_vulkan) {",
+          "  enabled_features += [ \"supports_vulkan\" ]",
+          "}",
+          "cpp_typemaps = ["
+        ]
+      },
+      "location_strategy": "在interfaces目标中enable_vulkan条件配置后添加",
+      "confidence": "高",
+      "resolution_status": "已解决",
+      "modification_details": "由于Chromium 141中不存在is_win || is_chromeos的条件配置，将arkweb_heif_support特性配置添加在enable_vulkan配置之后，保持代码逻辑的连贯性"
+    }
+  ],
+  "summary": {
+    "processing_completed": true,
+    "all_modifications_applied": true,
+    "code_integrity_maintained": true,
+    "no_context_lines_added": true,
+    "no_script_files_created": true,
+    "rej_file_untouched": true,
+    "arkweb_features_integrated": [
+      "arkweb_blank_optimize",
+      "arkweb_heif_support"
+    ],
+    "import_statements_added": 2,
+    "conditional_blocks_added": 2
+  },
+  "final_verification": {
+    "source_file_modified": true,
+    "rej_file_integrity": "confirmed_intact",
+    "modifications_follow_rules": true,
+    "only_plus_minus_lines_applied": true
+  }
+}

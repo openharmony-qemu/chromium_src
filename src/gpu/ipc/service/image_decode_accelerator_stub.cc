@@ -55,15 +55,17 @@
 #include "third_party/skia/include/gpu/ganesh/GrTypes.h"
 #include "ui/gfx/color_space.h"
 #include "ui/gfx/gpu_memory_buffer_handle.h"
+#include "arkweb/chromium_ext/gpu/ipc/service/shared_image_stub_ext.h"
+#include "arkweb/chromium_ext/gpu/ipc/service/image_decode_accelerator_stub_ext.h"
 
-#if BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_HEIF_SUPPORT)
 #include "ui/gfx/linux/native_pixmap_dmabuf.h"
 #endif
 
 namespace gpu {
 class Buffer;
 
-#if BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_HEIF_SUPPORT)
 namespace {
 
 struct CleanUpContext {

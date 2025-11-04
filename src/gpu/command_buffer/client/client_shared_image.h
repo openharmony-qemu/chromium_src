@@ -63,6 +63,7 @@ enum MailboxFlags : uint32_t;
 class SharedImageInterface;
 class ClientSharedImageInterface;
 class GpuChannelSharedImageInterface;
+class GpuChannelSharedImageInterfaceExt;
 class GpuMemoryBufferImpl;
 class InterfaceBase;
 class RasterScopedAccess;
@@ -168,7 +169,6 @@ class GPU_COMMAND_BUFFER_CLIENT_EXPORT ClientSharedImage
   bool is_software() const { return is_software_; }
 
   bool HasHolder() { return sii_holder_ != nullptr; }
-
   // Returns a clone of the GpuMemoryBufferHandle associated with this ClientSI.
   // Valid to call only if this instance was created with a non-null
   // GpuMemoryBuffer.
@@ -336,6 +336,7 @@ class GPU_COMMAND_BUFFER_CLIENT_EXPORT ClientSharedImage
   // `sii_holder` must not be null.
   friend class ClientSharedImageInterface;
   friend class GpuChannelSharedImageInterface;
+  friend class GpuChannelSharedImageInterfaceExt;
   friend class RasterScopedAccess;
   friend class TestSharedImageInterface;
   friend class media::VideoFrame;

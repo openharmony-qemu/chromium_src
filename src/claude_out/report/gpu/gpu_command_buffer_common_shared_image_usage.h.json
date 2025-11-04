@@ -1,0 +1,47 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/gpu/command_buffer/common/shared_image_usage.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/gpu/command_buffer/common/shared_image_usage.h",
+    "处理时间": "2025-11-04"
+  },
+  "统计信息": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0
+  },
+  "hunk处理详情": [
+    {
+      "hunk编号": 1,
+      "位置": "第110-113行附近",
+      "解决状态": "已解决",
+      "风险等级": "低",
+      "冲突原因": "Arkweb 132 在枚举末尾添加了 OHOS_NATIVE_BUFFER 用途标识符，但在 Arkweb 141 中枚举结构已发生变化",
+      "修改内容": {
+        "删除行": [
+          "LAST_SHARED_IMAGE_USAGE = SHARED_IMAGE_USAGE_CPU_UPLOAD"
+        ],
+        "添加行": [
+          "LAST_SHARED_IMAGE_USAGE = SHARED_IMAGE_USAGE_CPU_UPLOAD,",
+          "",
+          "SHARED_IMAGE_USAGE_OHOS_NATIVE_BUFFER = 1 << 27,"
+        ]
+      },
+      "分析过程": "通过源文件分析，在第134行找到了匹配的 LAST_SHARED_IMAGE_USAGE 定义。该行后面缺少逗号，需要添加逗号并在其后插入新的 OHOS_NATIVE_BUFFER 枚举值。",
+      "置信度": "高",
+      "处理策略": "精确匹配源文件中的目标行，应用删除和添加操作，保持代码结构完整性。",
+      "最终结果": "成功将 OHOS_NATIVE_BUFFER 枚举值插入到 SharedImageUsage 枚举的适当位置，保持了枚举的语法正确性。"
+    }
+  ],
+  "整体评估": {
+    "处理成功率": "100%",
+    "代码完整性": "保持良好",
+    "语法正确性": "已验证",
+    "风险等级": "低"
+  },
+  "验证信息": {
+    ".rej文件状态": "保持完整，未被修改",
+    "源文件修改": "已成功应用所有侵入式修改",
+    "枚举结构": "保持完整，新增的 OHOS_NATIVE_BUFFER 已正确添加"
+  },
+  "总结": "本次冲突解决成功处理了 Arkweb 132 到 Arkweb 141 升级过程中的共享图像用途枚举冲突。新增的 OHOS_NATIVE_BUFFER 标识符已正确集成到现有的枚举结构中，为 OpenHarmony 系统的原生缓冲区支持提供了必要的标识。修改过程严格遵守了'不添加上下文'的原则，仅应用了 .rej 文件中定义的精确修改。"
+}

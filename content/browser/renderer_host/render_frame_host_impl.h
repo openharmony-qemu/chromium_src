@@ -3258,6 +3258,10 @@ class CONTENT_EXPORT RenderFrameHostImpl
     mojom::AlternativeErrorPageOverrideInfoPtr alternative_error_page_info,
     mojom::NavigationClient::CommitFailedNavigationCallback callback);
 #endif
+#if BUILDFLAG(ARKWEB_PDF)
+  void SetIsPDF(bool is_pdf);
+#endif
+
  protected:
   friend class RenderFrameHostFactory;
 

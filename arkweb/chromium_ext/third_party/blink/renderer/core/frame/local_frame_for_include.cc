@@ -147,6 +147,26 @@ void LocalFrame::SetHasGenericHideTypeOption(bool has_generichide_type_option) {
   has_generichide_type_option_ = has_generichide_type_option;
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_PDF)
+bool LocalFrame::IsPDF() {
+  if (!Client()) {
+    LOG(ERROR) << "Client() null";
+    return false;
+  }
+  WebLocalFrame* web_frame = Client()->GetWebFrame();
+  if (web_frame) {
+    WebLocalFrameClient* client = web_frame->Client();
+    if (client) {
+      bool is_pdf = client->IsPDF();
+      LOG_IF(INFO, is_pdf) << "current frame is pdf.";
+      return is_pdf;      
+    }
+  }
+  return false;
+}
+#endif
+
 // LCOV_EXCL_STOP
 
 #if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)

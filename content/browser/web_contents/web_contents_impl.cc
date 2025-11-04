@@ -7069,6 +7069,9 @@ void WebContentsImpl::DidFinishNavigation(NavigationHandle* navigation_handle) {
     if (!navigation_handle->IsSameDocument()) {
       last_screen_orientation_change_time_ = base::TimeTicks();
     }
+#if BUILDFLAG(ARKWEB_PDF)
+    AsWebContentsImplExt()->ProcessForPdfType(navigation_handle);
+#endif
   }
 
   // If we didn't end up on about:blank after setting this in DidStartNavigation

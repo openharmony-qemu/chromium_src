@@ -31,8 +31,7 @@ class FrameAvailableListenerFuzzTest : public FrameAvailableListener {
 public:
     FrameAvailableListenerFuzzTest() {}
     ~FrameAvailableListenerFuzzTest() {}
-    void* GetContext() override { return nullptr; }
-    OnFrameAvailableCb GetOnFrameAvailableCb() override { return nullptr; }
+    void OnFrameAvailableListener() {}
 };
 
 bool NativeImageAdapterImplFuzzTest(const uint8_t* data, size_t size)

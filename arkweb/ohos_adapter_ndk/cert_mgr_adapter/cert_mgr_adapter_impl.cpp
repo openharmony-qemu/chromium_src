@@ -80,9 +80,9 @@ void InitDlopenFun() {
   static std::once_flag initFlag;
 std::call_once(initFlag, [](){
 #if defined(ARCH_CPU_ARM64)
-  base::FilePath cmFile("system/lib64/platformsdk/libcm_ndk.z.so");
+  base::FilePath cmFile("system/lib64/platformsdk/libohcert_manager.z.so");
 #else
-  base::FilePath cmFile("system/lib/platformsdk/libcm_ndk.z.so");
+  base::FilePath cmFile("system/lib/platformsdk/libohcert_manager.z.so");
 #endif
   void* dl = dlopen(cmFile.value().c_str(), RTLD_NOW);
   if (dl) {

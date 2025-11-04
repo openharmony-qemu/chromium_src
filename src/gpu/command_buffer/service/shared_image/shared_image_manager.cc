@@ -303,6 +303,11 @@ SharedImageManager::Register(std::unique_ptr<SharedImageBacking> backing,
   auto factory_ref = std::make_unique<SharedImageRepresentationFactoryRef>(
       this, backing.get(), tracker, /*is_primary=*/true);
   gpu::Mailbox mailbox = backing->mailbox();
+#if BUILDFLAG(IS_ARKWEB)
+  if (images_.find(mailbox) != images_.end())
+    LOG(INFO) << "backing is exist, could not emplace again.";
+  LOG(INFO) << "images_ emplace, get mailbox info: " << backing->mailbox().ToDebugString().c_str();
+#endif
   images_.emplace(std::move(mailbox), std::move(backing));
 
   return factory_ref;
@@ -390,6 +395,11 @@ std::unique_ptr<SkiaImageRepresentation> SharedImageManager::ProduceSkia(
   AutoLock autolock(this);
   auto* backing = GetBacking(mailbox);
   if (!backing) {
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+    std::string error_msg =
+      "SharedImageManager::ProduceSkia: Trying to Produce a Skia representation from a non-existent mailbox.";
+    ReportGpuProcessEvent(CrashType::MAILBOX_NONEXISTENT, error_msg);
+#endif
     LOG(ERROR) << "SharedImageManager::ProduceSkia: Trying to Produce a "
                   "Skia representation from a non-existent mailbox.";
     return nullptr;

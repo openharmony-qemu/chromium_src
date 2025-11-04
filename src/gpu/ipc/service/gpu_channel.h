@@ -54,15 +54,22 @@ class ImageDecodeAcceleratorWorker;
 class Scheduler;
 class SharedImageStub;
 class SyncPointManager;
+class GpuChannelExt;
 
 // Encapsulates an IPC channel between the GPU process and one renderer
 // process. On the renderer side there's a corresponding GpuChannelHost.
 class GPU_IPC_SERVICE_EXPORT GpuChannel : public IPC::Listener,
                                           public IsolationKeyProvider {
  public:
+  friend class GpuChannelExt;
+
   GpuChannel(const GpuChannel&) = delete;
   GpuChannel& operator=(const GpuChannel&) = delete;
   ~GpuChannel() override;
+
+  virtual gpu::GpuChannelExt* AsGpuChannelExt() {
+    return nullptr;
+  }
 
   static std::unique_ptr<GpuChannel> Create(
       GpuChannelManager* gpu_channel_manager,

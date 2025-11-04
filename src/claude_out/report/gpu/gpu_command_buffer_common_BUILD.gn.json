@@ -1,0 +1,33 @@
+{
+  "文件路径": "gpu/command_buffer/common/BUILD.gn",
+  "处理时间": "2025-11-04",
+  "总hunk数量": 1,
+  "成功解决的hunk数量": 1,
+  "未能解决的hunk数量": 0,
+  ".rej文件状态": "保持完整，未被修改",
+  "hunks详细信息": [
+    {
+      "hunk序号": 1,
+      "位置": "@@ -85,10 +85,12 @@",
+      "风险分析": "低风险。添加的是arkweb扩展文件，属于预期的侵入式修改。文件路径使用了相对路径指向arkweb扩展目录，符合项目结构。",
+      "冲突原因": "Arkweb 132添加了两个新的源文件到common_sources的sources列表中，这些文件在Chromium 141中不存在，需要手动合并。",
+      "分析过程": "1. 解析hunk识别出需要添加的两行代码（+开头的行）\n2. 使用上下文行'gpu_memory_buffer_support.cc'和'gpu_memory_buffer_support.h'作为锚点\n3. 在源文件第73-74行找到了完全匹配的位置\n4. 在gpu_memory_buffer_support.h行之后、id_allocator.cc行之前插入了两行新代码",
+      "修改置信度": "高置信度。上下文匹配度100%，插入位置明确，修改后代码结构合理。",
+      "处理策略": "原子化应用 - 仅添加.rej文件中以+开头的两行代码，不修改任何上下文行。",
+      "解决状态": "已解决",
+      "具体修改": [
+        {
+          "行号": 75,
+          "操作": "添加",
+          "内容": "../../../arkweb/chromium_ext/gpu/command_buffer/common/gpu_memory_buffer_support_utils.cc,"
+        },
+        {
+          "行号": 76,
+          "操作": "添加",
+          "内容": "../../../arkweb/chromium_ext/gpu/command_buffer/common/gpu_memory_buffer_support_utils.h,"
+        }
+      ]
+    }
+  ],
+  "总结": "成功处理了1个hunk，添加了arkweb扩展的两个源文件到BUILD.gn中。修改严格遵循了黄金法则，只应用了.rej文件中以+开头的行，没有添加任何上下文行。所有修改都已精确应用到源文件中。"
+}

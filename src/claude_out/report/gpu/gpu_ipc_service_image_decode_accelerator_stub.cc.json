@@ -1,0 +1,59 @@
+{
+  "file_path": "gpu/ipc/service/image_decode_accelerator_stub.cc",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "maintained",
+  "analysis": {
+    "conflict_reason": "Arkweb 132 针对chromium 132内核的侵入式修改在升级到chromium 141时产生冲突。主要涉及Arkweb HEIF支持相关的条件编译和扩展头文件包含。",
+    "risk_level": "低风险",
+    "modifications": [
+      {
+        "hunk_index": 1,
+        "line_range": "55-67",
+        "changes": [
+          {
+            "type": "添加",
+            "lines": [
+              "#include \"arkweb/chromium_ext/gpu/ipc/service/shared_image_stub_ext.h\"",
+              "#include \"arkweb/chromium_ext/gpu/ipc/service/image_decode_accelerator_stub_ext.h\""
+            ],
+            "purpose": "添加Arkweb扩展功能的头文件包含"
+          },
+          {
+            "type": "修改",
+            "original": "#if BUILDFLAG(IS_CHROMEOS_ASH)",
+            "modified": "#if BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(ARKWEB_HEIF_SUPPORT)",
+            "purpose": "扩展条件编译，支持Arkweb HEIF功能"
+          }
+        ]
+      }
+    ]
+  },
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "status": "已解决",
+      "confidence": "高",
+      "location_in_source": "第56-68行",
+      "analysis_process": "通过分析.rej文件中的hunk，识别出需要添加两个Arkweb扩展头文件，并修改两处条件编译指令，将IS_CHROMEOS_ASH扩展为同时支持ARKWEB_HEIF_SUPPORT。在源文件中找到了对应的位置并成功应用修改。",
+      "changes_applied": [
+        "添加了两个include语句：arkweb/chromium_ext/gpu/ipc/service/shared_image_stub_ext.h和arkweb/chromium_ext/gpu/ipc/service/image_decode_accelerator_stub_ext.h",
+        "修改了两处条件编译：从#if BUILDFLAG(IS_CHROMEOS_ASH)改为#if BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(ARKWEB_HEIF_SUPPORT)"
+      ],
+      "validation": "修改后的代码符合Arkweb HEIF支持的架构设计，条件编译逻辑正确，头文件包含位置合适。"
+    }
+  ],
+  "summary": {
+    "success_rate": "100%",
+    "total_changes": 4行（2行添加，2行修改），
+    "risk_assessment": "低风险。所有修改都是Arkweb项目中标准的HEIF支持扩展，不会影响现有功能。",
+    "compliance_check": {
+      "context_added": false,
+      "scripts_generated": false,
+      "auxiliary_files_created": false,
+      "rej_file_modified": false,
+      "specified_directory_only": true
+    }
+  }
+}

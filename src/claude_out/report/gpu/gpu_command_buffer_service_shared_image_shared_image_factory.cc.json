@@ -1,0 +1,63 @@
+{
+  "处理总结": {
+    "文件路径": "gpu/command_buffer/service/shared_image/shared_image_factory.cc",
+    "总hunk数量": 4,
+    "成功解决hunk数量": 4,
+    "未能解决hunk数量": 0,
+    ".rej文件保持完整": true,
+    "处理状态": "全部完成"
+  },
+  "hunk处理详情": [
+    {
+      "hunk编号": 1,
+      "位置": "第11行",
+      "修改类型": "添加include",
+      "修改内容": "添加 #include \"arkweb/build/features/features.h\"",
+      "冲突原因": "Arkweb 132需要包含自定义的feature定义",
+      "分析过程": "通过上下文定位，在#include <memory>和#include \"base/containers/contains.h\"之间插入",
+      "风险": "低风险 - 这是标准的include语句添加",
+      "置信度": "高",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 2,
+      "位置": "GmbTypeToString函数中",
+      "修改类型": "添加条件编译case语句",
+      "修改内容": "添加OHOS_NATIVE_BUFFER类型的处理，使用ARKWEB_VULKAN条件编译",
+      "冲突原因": "Arkweb 132支持OHOS原生缓冲区类型，需要添加到类型转换函数中",
+      "分析过程": "在ANDROID_HARDWARE_BUFFER的case之后添加新的条件编译case语句",
+      "风险": "低风险 - 标准的switch case添加，受条件编译保护",
+      "置信度": "高",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 3,
+      "位置": "CreateSharedImage函数中的日志输出部分",
+      "修改类型": "修改日志输出语句",
+      "修改内容": "根据ARKWEB_SAME_LAYER条件编译选择LOG(DEBUG)或DVLOG(1)，并将日志消息从\"size=\"改为\"with pixels size=\"",
+      "冲突原因": "Arkweb 132需要根据不同配置使用不同的日志级别和消息格式",
+      "分析过程": "定位到CreateSharedImage函数中的backing创建成功后的日志输出部分",
+      "风险": "中等风险 - 日志级别变更可能影响调试信息的显示，但受条件编译保护",
+      "置信度": "高",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 4,
+      "位置": "RegisterBacking函数中shared_images_.emplace之前",
+      "修改类型": "添加重复检查和条件编译",
+      "修改内容": "在ARKWEB条件编译下添加重复检查，如果mailbox已存在则输出警告日志",
+      "冲突原因": "Arkweb 132需要防止重复添加相同的shared_image，避免内存泄漏和重复注册",
+      "分析过程": "在RegisterImageFactory调用之后，shared_images_.emplace之前添加检查逻辑",
+      "风险": "中等风险 - 添加了额外的检查逻辑，但不会影响原有功能，只是增加了日志输出",
+      "置信度": "高",
+      "解决状态": "已解决"
+    }
+  ],
+  "最终验证": {
+    "所有hunk都已成功应用到源文件中": true,
+    ".rej文件保持完整未被修改": true,
+    "没有生成任何脚本或辅助文件": true,
+    "严格遵守了'不添加上下文'原则": true,
+    "所有修改都精确应用了+/-行的内容": true
+  }
+}

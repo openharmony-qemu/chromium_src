@@ -108,6 +108,9 @@ BASE_FEATURE(kDisableErrorHandlingForReadback,
 
 const uint32_t kMaxTransferCacheEntrySizeForTransferBuffer = 1024;
 const size_t kMaxImmediateDeletedPaintCachePaths = 1024;
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+const int QUEUE_MAX_SIZE = 100;
+#endif
 constexpr size_t kMaxImmediateDeletedPaintCacheEffects = 10u;
 
 #define DEFINE_PAINT_CACHE_DELETION(                                     \

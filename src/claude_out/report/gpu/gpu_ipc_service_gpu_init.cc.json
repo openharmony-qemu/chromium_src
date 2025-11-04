@@ -1,0 +1,124 @@
+{
+  "冲突文件": "gpu/ipc/service/gpu_init.cc.rej",
+  "源文件": "gpu/ipc/service/gpu_init.cc",
+  "处理时间": "2025-11-04",
+  "总体统计": {
+    "总hunk数量": 5,
+    "成功解决的hunk数量": 5,
+    "未能解决的hunk数量": 0
+  },
+  "hunks": [
+    {
+      "hunk编号": 1,
+      "描述": "添加arkweb/build/features/features.h头文件引用",
+      "风险等级": "低",
+      "冲突原因": "Arkweb132新增了自定义features头文件的引用",
+      "分析过程": "在源文件第7-11行的include块中找到合适位置，在#include <string>后添加新的头文件引用",
+      "修改置信度": "高",
+      "处理策略": "成功应用",
+      "解决状态": "已解决",
+      "修改内容": "+#include \"arkweb/build/features/features.h\""
+    },
+    {
+      "hunk编号": 2,
+      "描述": "在IS_LINUX || IS_CHROMEOS条件中添加IS_OHOS支持",
+      "风险等级": "低",
+      "冲突原因": "Arkweb132为OpenHarmony系统添加了OS特定的条件编译支持",
+      "分析过程": "找到两处需要修改的位置：1) 第461行的条件编译开始处 2) 第470行的条件编译结束处",
+      "修改置信度": "高",
+      "处理策略": "成功应用",
+      "解决状态": "已解决",
+      "修改内容": [
+        "-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)",
+        "+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)",
+        "-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)",
+        "+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)"
+      ]
+    },
+    {
+      "hunk编号": 3,
+      "描述": "在InitializeInProcess函数中添加ARKWEB_GL_INIT条件编译的TRACE事件",
+      "风险等级": "低",
+      "冲突原因": "Arkweb132在GL初始化时添加了自定义的性能跟踪点",
+      "分析过程": "在InitializeInProcess函数开始处（第966行），在函数参数声明后、初始化代码前添加条件编译的TRACE事件",
+      "修改置信度": "高",
+      "处理策略": "成功应用",
+      "解决状态": "已解决",
+      "修改内容": [
+        "+#if BUILDFLAG(ARKWEB_GL_INIT)",
+        "+  TRACE_EVENT0(\"startup\", \"GpuInit::InitializeInProcess\");",
+        "+#endif"
+      ]
+    },
+    {
+      "hunk编号": 4,
+      "描述": "在DisableInProcessGpuVulkan调用周围添加ARKWEB_VULKAN条件编译",
+      "风险等级": "中",
+      "冲突原因": "Arkweb132对Vulkan初始化流程进行了修改，添加了自定义的检查和控制逻辑",
+      "分析过程": "在非Android平台的InitializeInProcess函数中（第1143行），在DisableInProcessGpuVulkan调用前后添加条件编译的检查代码",
+      "修改置信度": "高",
+      "处理策略": "成功应用",
+      "解决状态": "已解决",
+      "修改内容": [
+        "+#if BUILDFLAG(ARKWEB_VULKAN)",
+        "+  CHECK_IS_USING_VULKAN_AND_INITIAL()",
+        "+#endif",
+        "+#if BUILDFLAG(ARKWEB_VULKAN)",
+        "+  }",
+        "+#endif"
+      ]
+    },
+    {
+      "hunk编号": 5,
+      "描述": "在InitializeVulkan函数开始处添加ARKWEB_VULKAN条件检查",
+      "风险等级": "中",
+      "冲突原因": "Arkweb132在Vulkan初始化前添加了额外的功能检查，确保只有在需要使用Vulkan时才继续初始化",
+      "分析过程": "在InitializeVulkan函数开始处（第1328行），在ENABLE_VULKAN条件编译后、TRACE_EVENT前添加features::IsUsingVulkan()检查",
+      "修改置信度": "高",
+      "处理策略": "成功应用",
+      "解决状态": "已解决",
+      "修改内容": [
+        "+#if BUILDFLAG(ARKWEB_VULKAN)",
+        "+  if (!features::IsUsingVulkan()) {",
+        "+    return false;",
+        "+  }",
+        "+#endif"
+      ]
+    }
+  ],
+  "处理总结": {
+    "rej文件完整性": "保持完整，未被修改或删除",
+    "修改类型": {
+      "添加": 9,
+      "删除": 2
+    },
+    "涉及的编译标志": [
+      "ARKWEB_GL_INIT",
+      "ARKWEB_VULKAN",
+      "IS_OHOS"
+    ],
+    "主要功能模块": [
+      "头文件引用",
+      "OpenHarmony系统支持",
+      "GL初始化跟踪",
+      "Vulkan功能控制"
+    ],
+    "处理原则遵守情况": {
+      "未添加上下文行": "严格遵守",
+      "未生成脚本文件": "严格遵守",
+      "未创建辅助文件": "严格遵守",
+      "未修改.rej文件": "严格遵守",
+      "仅在指定目录创建JSON": "严格遵守"
+    }
+  },
+  "风险提示": [
+    "Hunk 4和Hunk 5涉及Vulkan功能的条件编译，需要确保相关features和宏定义正确配置",
+    "ARKWEB_VULKAN相关的CHECK_IS_USING_VULKAN_AND_INITIAL()宏需要在其他地方定义",
+    "IS_OHOS编译标志需要在构建系统中正确配置"
+  ],
+  "建议": {
+    "编译验证": "建议在修改后进行完整的编译测试，确保所有新增的编译标志和宏定义都能正确解析",
+    "功能测试": "特别测试Vulkan相关功能，确保ARKWEB_VULKAN条件编译不会影响正常功能",
+    "OpenHarmony兼容性": "验证IS_OHOS相关的沙箱初始化逻辑在OpenHarmony平台上的正确性"
+  }
+}

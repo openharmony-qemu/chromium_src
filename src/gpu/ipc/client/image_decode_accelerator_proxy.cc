@@ -9,7 +9,9 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
+#include "base/logging.h"
 #include "base/containers/contains.h"
 #include "base/notreached.h"
 #include "cc/paint/paint_image.h"

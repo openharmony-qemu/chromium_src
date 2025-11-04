@@ -682,7 +682,7 @@ bool SharedContextState::InitializeGraphite(
         /*require_ordered_recordings=*/false);
   }
 
-  transfer_cache_ = std::make_unique<ServiceTransferCache>(
+  transfer_cache_ = std::make_unique<ServiceTransferCacheExt>(
       gpu_preferences,
       base::BindRepeating(&SharedContextState::ScheduleSkiaCleanup,
                           base::Unretained(this)));

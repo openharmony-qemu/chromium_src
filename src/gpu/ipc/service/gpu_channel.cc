@@ -68,6 +68,7 @@
 #include "ui/gl/gl_context.h"
 #include "ui/gl/gl_surface.h"
 #include "ui/gl/gl_utils.h"
+#include "arkweb/chromium_ext/gpu/ipc/service/image_decode_accelerator_stub_ext.h"
 
 #if BUILDFLAG(IS_WIN)
 #include "components/viz/common/overlay_state/win/overlay_state_service.h"
@@ -852,6 +853,11 @@ void GpuChannel::ExecuteDeferredRequest(
     mojom::DeferredRequestParamsPtr params,
     FenceSyncReleaseDelegate* release_delegate) {
   TRACE_EVENT0("gpu", "GpuChannel::ExecuteDeferredRequest");
+#if BUILDFLAG(IS_ARKWEB)
+  if (params.get() == nullptr) {
+    return;
+  }
+#endif  // BUILDFLAG(IS_ARKWEB)
   switch (params->which()) {
 #if BUILDFLAG(IS_WIN)
     case mojom::DeferredRequestParams::Tag::kDestroyDcompTexture:

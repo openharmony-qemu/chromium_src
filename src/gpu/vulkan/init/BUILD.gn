@@ -41,4 +41,7 @@ component("init") {
   if (is_apple) {
     deps += [ "//gpu/vulkan/mac" ]
   }
+  if (arkweb_vulkan) {
+    deps += [ "//arkweb/chromium_ext/gpu/vulkan/ohos" ]
+  }
 }

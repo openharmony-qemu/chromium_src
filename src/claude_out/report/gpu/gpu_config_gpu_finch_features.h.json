@@ -1,0 +1,31 @@
+{
+  "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/gpu/config/gpu_finch_features.h.rej",
+  "源文件路径": "/home/sujiahao/code/arkweb_141/src/gpu/config/gpu_finch_features.h",
+  "处理时间": "2025-11-04",
+  "总hunk数量": 1,
+  "成功解决的hunk数量": 1,
+  "未能解决的hunk数量": 0,
+  "解决状态": "全部解决",
+  "rej文件完整性": "保持完整，未被修改",
+  "hunks": [
+    {
+      "hunk序号": 1,
+      "解决状态": "已解决",
+      "冲突原因": "Arkweb 132 在 #if BUILDFLAG(IS_ANDROID) 条件编译指令中添加了 ARKWEB_VULKAN 扩展，以支持 Vulkan 功能在非 Android 平台上的使用",
+      "分析过程": "通过对比 .rej 文件和源文件，定位到第97行的条件编译指令 #if BUILDFLAG(IS_ANDROID)，需要扩展为 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_VULKAN)",
+      "变更内容": {
+        "删除行": [
+          "#if BUILDFLAG(IS_ANDROID)"
+        ],
+        "添加行": [
+          "#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_VULKAN)"
+        ]
+      },
+      "风险分析": "低风险。这是一个条件编译扩展，不会影响现有功能，只是在 ARKWEB_VULKAN 宏定义时启用额外的 Vulkan 支持",
+      "修改置信度": "高。上下文匹配完全，定位准确，修改意图明确",
+      "处理策略": "直接应用修改，将条件编译指令从仅支持 Android 扩展为同时支持 Android 和 ARKWEB_VULKAN"
+    }
+  ],
+  "总结": "成功处理了 1 个 hunk，所有冲突都已解决。修改涉及 Vulkan 功能的条件编译扩展，风险较低，符合 Arkweb 141 版本升级的预期变更。",
+  "验证建议": "建议在编译时验证 ARKWEB_VULKAN 宏定义是否正确配置，确保 Vulkan 功能在目标平台上正常工作。"
+}

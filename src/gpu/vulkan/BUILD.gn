@@ -169,6 +169,11 @@ if (enable_vulkan) {
       ]
     }
 
+    if (arkweb_vulkan) {
+      import("//arkweb/chromium_ext/gpu/vulkan/arkweb_gpu_vulkan_ext.gni")
+      sources += arkweb_gpu_vulkan
+    }
+
     if (is_chromeos) {
       deps += [ "//ui/gfx/linux:drm" ]
     }

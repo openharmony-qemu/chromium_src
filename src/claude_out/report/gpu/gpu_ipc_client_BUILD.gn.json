@@ -1,0 +1,77 @@
+{
+  "conflict_file": "gpu/ipc/client/BUILD.gn.rej",
+  "source_file": "gpu/ipc/client/BUILD.gn",
+  "analysis_timestamp": "2025-11-04",
+  "summary": {
+    "total_hunks": 2,
+    "resolved_hunks": 2,
+    "unresolved_hunks": 0,
+    "resolution_success_rate": "100%"
+  },
+  "rej_file_integrity": {
+    "status": "保持完整",
+    "modified": false,
+    "deleted": false
+  },
+  "hunks_analysis": [
+    {
+      "hunk_id": 1,
+      "description": "添加 Arkweb 特性导入语句",
+      "lines_to_add": [
+        "import(\"//arkweb/build/features/features.gni\")"
+      ],
+      "lines_to_remove": [],
+      "risk_assessment": "低风险 - 这是一个标准的导入语句添加，不会影响现有代码结构",
+      "conflict_reason": "Arkweb 132 在文件头部添加了特性导入，但在升级到 Arkweb 141 时这个修改没有被自动合并",
+      "analysis_process": "通过分析 .rej 文件中的 hunk，识别出需要添加的导入语句。在源文件中找到对应位置（版权声明后，现有导入语句前）并精确插入。",
+      "confidence_level": "高",
+      "resolution_strategy": "直接在源文件第 5 行位置添加导入语句，保持代码结构清晰",
+      "status": "已解决",
+      "applied_changes": "在第 5 行成功添加了 import(\"//arkweb/build/features/features.gni\")"
+    },
+    {
+      "hunk_id": 2,
+      "description": "添加 Arkweb 特定的条件编译代码块",
+      "lines_to_add": [
+        "",
+        "  if (is_arkweb) {",
+        "    import(\"//arkweb/chromium_ext/gpu/ipc/client/arkweb_gpu_ipc_client_ext.gni\")",
+        "    sources += arkweb_gpu_ipc_client_sources",
+        "  }",
+        ""
+      ],
+      "lines_to_remove": [],
+      "risk_assessment": "中等风险 - 添加了条件编译块，但基于 is_arkweb 标志，在非 Arkweb 构建中不会生效",
+      "conflict_reason": "Arkweb 132 在 sources 列表后添加了条件编译的扩展源文件，在升级过程中这部分代码被遗漏",
+      "analysis_process": "识别出需要在 sources 数组定义后添加条件编译块。在源文件中找到 sources 数组结束位置（第 29 行的 ] 后），在此处插入 Arkweb 扩展代码。",
+      "confidence_level": "高",
+      "resolution_strategy": "在 sources 数组定义后、deps 数组定义前插入条件编译块，保持 GN 文件的标准结构",
+      "status": "已解决",
+      "applied_changes": "在第 30-34 行成功添加了 Arkweb 条件编译代码块"
+    }
+  ],
+  "overall_assessment": {
+    "difficulty": "简单",
+    "risk_level": "低",
+    "success_probability": "100%",
+    "manual_review_required": "建议",
+    "review_points": [
+      "确认 arkweb_gpu_ipc_client_ext.gni 文件存在且路径正确",
+      "验证 is_arkweb 特性在构建系统中正确定义",
+      "检查 arkweb_gpu_ipc_client_sources 变量在扩展文件中正确定义"
+    ]
+  },
+  "technical_details": {
+    "file_type": "GN 构建配置文件",
+    "modification_type": "添加 Arkweb 特定的构建扩展",
+    "impact_scope": "仅影响 Arkweb 构建配置",
+    "backwards_compatibility": "完全兼容，通过 is_arkweb 条件控制"
+  },
+  "final_verification": {
+    "rej_file_intact": true,
+    "all_hunks_processed": true,
+    "source_file_modified": true,
+    "syntax_validation": "通过 - GN 文件语法正确",
+    "logical_structure": "保持 - 代码结构清晰合理"
+  }
+}

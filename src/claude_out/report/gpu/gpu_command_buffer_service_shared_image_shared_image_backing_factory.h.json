@@ -1,0 +1,44 @@
+{
+  "conflict_file": "gpu/command_buffer/service/shared_image/shared_image_backing_factory.h.rej",
+  "source_file": "gpu/command_buffer/service/shared_image/shared_image_backing_factory.h",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "preserved",
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "status": "已解决",
+      "confidence": "高",
+      "risk_level": "低风险",
+      "conflict_reason": "Arkweb132针对SharedImageBackingFactory类添加了扩展继承支持，需要引入外部扩展头文件并修改类继承关系",
+      "analysis_process": "1. 解析.rej文件识别出需要添加include语句、修改类声明和添加using声明\n2. 在源文件中定位到对应位置：include区域和类声明区域\n3. 精确应用所有修改：添加扩展头文件include、修改类继承关系、添加using声明",
+      "modifications": [
+        {
+          "type": "添加",
+          "line_content": "#include \"arkweb/chromium_ext/gpu/command_buffer/service/shared_image/shared_image_backing_factory_ext.h\"",
+          "location": "在include区域最后添加"
+        },
+        {
+          "type": "修改",
+          "old_content": "class GPU_GLES2_EXPORT SharedImageBackingFactory {",
+          "new_content": "class GPU_GLES2_EXPORT SharedImageBackingFactory : public SharedImageBackingFactoryExt {",
+          "location": "类声明行"
+        },
+        {
+          "type": "添加",
+          "line_content": "  using SharedImageBackingFactoryExt::CreateSharedImage;",
+          "location": "public部分开头"
+        }
+      ],
+      "resolution_strategy": "直接应用所有修改，包括添加扩展头文件include、修改类继承声明为继承扩展基类、以及添加using声明来引入扩展类的CreateSharedImage方法"
+    }
+  ],
+  "summary": "成功解决1个hunk的冲突，所有修改都已精确应用到源文件中。冲突主要是为了支持Arkweb的扩展功能，需要让SharedImageBackingFactory继承扩展基类并引入相关方法。修改后的代码结构清晰，没有语法错误。",
+  "verification": {
+    "rej_file_modified": false,
+    "source_file_modified": true,
+    "syntax_check": "通过",
+    "compilation_risk": "低"
+  }
+}

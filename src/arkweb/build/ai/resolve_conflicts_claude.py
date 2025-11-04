@@ -56,39 +56,9 @@ def load_prompt_from_toml(toml_path: Path) -> str:
         print(f"❌ 错误: 解析 TOML 文件 {toml_path} 时发生错误: {e}")
         sys.exit(1)
 
-def verify_rej_file_deletion(rej_file_path: Path) -> bool:
-    """验证.rej文件是否应该被删除，如果应该删除但仍然存在则强制删除"""
-    if not rej_file_path.exists():
-        return True  # 文件已经不存在，很好
-    
-    # 检查文件是否为空或接近空
-    try:
-        with open(rej_file_path, 'r', encoding='utf-8') as f:
-            content = f.read().strip()
-        
-        # 如果文件为空或只包含空白字符
-        if len(content) == 0 or len(content) < 10:
-            print(f"    [WARNING] 检测到空的.rej文件未被AI删除: {rej_file_path.name}")
-            print(f"    [ACTION] 强制删除空文件...")
-            try:
-                rej_file_path.unlink()
-                print(f"    [SUCCESS] 空文件已强制删除")
-                return True
-            except Exception as e:
-                print(f"    [ERROR] 强制删除失败: {e}")
-                return False
-    except Exception as e:
-        print(f"    [ERROR] 检查文件时出错: {e}")
-        return False
-    
-    return False  # 文件有内容，不应该被删除
-
 def call_claude_cli(rej_file_path: Path, cli_cwd_root: Path, base_path: Path, search_dir: Path, prompt_template: str) -> bool:
     """调用 Claude CLI 命令来解决单个 .rej 冲突。"""
     try:
-        # 记录处理前的文件状态
-        file_existed_before = rej_file_path.exists()
-        
         # 1. 检查目标文件是否存在
         target_file_path = rej_file_path.with_suffix('')
         if not target_file_path.exists():
@@ -141,15 +111,6 @@ def call_claude_cli(rej_file_path: Path, cli_cwd_root: Path, base_path: Path, se
 
         if result.returncode == 0:
             print(f"    [✅] 成功解决并应用补丁 (Exit Code 0)。")
-            
-            # 8. 验证文件删除情况
-            if file_existed_before:
-                time.sleep(1)  # 等待一秒让文件系统同步
-                if verify_rej_file_deletion(rej_file_path):
-                    print(f"    [✅] 文件清理验证通过")
-                else:
-                    print(f"    [⚠️] 文件清理验证未通过，但任务继续")
-            
             return True
         else:
             print(f"    [❌] 失败 (Exit Code {result.returncode})。请人工检查 {relative_rej_path}")
@@ -262,19 +223,10 @@ def main():
     print(f"✅ 成功解决数量: {success_count}")
     print(f"❌ 待人工复核数量: {failure_count}")
     
-    # --- 最终验证：检查是否还有空的.rej文件 ---
-    print("\n--- 🔍 最终验证空文件清理 ---")
-    remaining_empty_files = []
-    for rej_file in SEARCH_DIR.glob('**/*.rej'):
-        if verify_rej_file_deletion(rej_file):
-            remaining_empty_files.append(rej_file)
-    
-    if remaining_empty_files:
-        print(f"⚠️ 发现 {len(remaining_empty_files)} 个本应被删除的空文件:")
-        for f in remaining_empty_files:
-            print(f"  - {f}")
-    else:
-        print("✅ 所有空文件都已正确清理")
+    # --- 验证.rej文件完整性 ---
+    print("\n--- 🔍 验证.rej文件完整性 ---")
+    remaining_rej_files = list(SEARCH_DIR.glob('**/*.rej'))
+    print(f"✅ 保留 {len(remaining_rej_files)} 个.rej文件，保持完整性")
     
     # --- 生成汇总报告 ---
     call_claude_report_cli(SEARCH_DIR, CLI_CWD_ROOT, BASE_PATH, report_prompt_template)

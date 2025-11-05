@@ -252,11 +252,7 @@ BASE_FEATURE(kCookieDomainRejectNonASCII,
 // by the top level site to reduce fingerprinting.
 BASE_FEATURE(kThirdPartyStoragePartitioning,
              "ThirdPartyStoragePartitioning",
-#if BUILDFLAG(ARKWEB_WEBSTORAGE)
-    base::FEATURE_DISABLED_BY_DEFAULT);
-#else
-    base::FEATURE_ENABLED_BY_DEFAULT);
-#endif
+             base::FEATURE_ENABLED_BY_DEFAULT);
 
 BASE_FEATURE(kTopLevelTpcdOriginTrial,
              "TopLevelTpcdOriginTrial",

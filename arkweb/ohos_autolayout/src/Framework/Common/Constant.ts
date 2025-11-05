@@ -117,6 +117,7 @@ export default class Constant {
     static readonly bottomCloseButtonRatio = 0.6;
 
     static readonly flexDelHeightThreshold = 2;
+    static readonly truncateThreshold = 2;
     
     static readonly ERR_CODE_GAPS = 100;
     static readonly ERR_CODE_OVERFLOW = 50;

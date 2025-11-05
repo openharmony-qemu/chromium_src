@@ -178,12 +178,7 @@ export default class LayoutUtils{
         
         Log.d(`========== 检测节点截断 ==========`, Tag.layoutUtils);
         Log.d(`节点: ${node.className || node.tagName}`, Tag.layoutUtils);
-        
-        // 带滚动条的scroll的子节点不做截断判定
-        if (this.isScrollChildOverflow(node)) {
 
-            return false;
-        }
         // 1. 获取视口尺寸
         const viewportHeight = window.innerHeight;
 
@@ -223,8 +218,8 @@ export default class LayoutUtils{
         // 7. 比较内容框与有效可视区域的边界
         // 顶部截断：内容在吸顶区域上方
         const isTopTruncated = Math.round(contentTop) < stickyTopHeight;
-        // 底部截断：内容在吸底区域下方（即 contentBottom > viewportHeight - stickyBottomHeight）
-        const isBottomTruncated = Math.round(contentBottom) > (viewportHeight - stickyBottomHeight);
+        // 底部截断：内容在吸底区域下方（即 contentBottom > viewportHeight - stickyBottomHeight），允许偏差 2px
+        const isBottomTruncated = Math.round(contentBottom) > (viewportHeight - stickyBottomHeight) + Constant.truncateThreshold;
 
         if(isTopTruncated) {
             Log.d(`✂️ 节点 ${node.className} 顶部截断: contentTop(${contentTop}) < stickyTopHeight(${stickyTopHeight})`, Tag.layoutUtils);
@@ -239,22 +234,25 @@ export default class LayoutUtils{
     }
 
     /**
-     * 检测是否是带滚动条的scroll的子节点
+     * 检测是否是带滚动条的节点
      * @param node 
      * @returns 
      */
-    static isScrollChildOverflow(node: Element): boolean {
-        const style = window.getComputedStyle(node.parentElement);
-
-        const overflowY = style.overflowY;
-        const isScrollableY = (overflowY === 'scroll' || overflowY === 'auto');
+    static isOverflowScroll(node: HTMLElement): boolean {
+        const isScrollableY = this.hasScrollbar(node);
         
         // 检查内容是否溢出
-        const hasVerticalScroll = node.parentElement.scrollHeight > node.parentElement.clientHeight;
+        const isOverFlow = node.scrollHeight > node.clientHeight;
         
-        return isScrollableY && hasVerticalScroll;
+        return isScrollableY && isOverFlow;
     }
 
+    static isOverflowScrollChild(node: HTMLElement, scrollNodes: HTMLElement[]): boolean {
+        return scrollNodes.some(scrollNode => {
+            return scrollNode.contains(node);
+        });
+    }
+    
     /**
      * 对于一个包含backgroundSize为cover的背景图的节点，一致做处理
      * @param node 

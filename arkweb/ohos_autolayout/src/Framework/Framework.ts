@@ -8,7 +8,6 @@ import StyleSetter from './Common/Style/Setter/StyleSetter';
 import Utils from './Common/Utils/Utils';
 import Log from '../Debug/Log';
 import Tag from '../Debug/Tag';
-import AutoTest from '../Debug/AutoTest';
 import ObserverHandler from './Observer/ObserverHandler';
 import PageContentObserver from './Observer/Observers/PageContentObserver';
 import WaitSystemReady from './Utils/WaitSystemReady';

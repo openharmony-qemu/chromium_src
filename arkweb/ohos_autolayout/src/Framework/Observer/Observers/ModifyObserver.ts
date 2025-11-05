@@ -595,7 +595,7 @@ export default class ModifyObserver {
     private static checkMaskNodeExistence(): boolean {
         const popupInfo = IntelligentLayout.getActivePopupWindowInfo();
         if (!popupInfo) {
-            return false;
+            return true;
         }
 
         if (!ModifyObserver.isMaskNodeValid(popupInfo)) {

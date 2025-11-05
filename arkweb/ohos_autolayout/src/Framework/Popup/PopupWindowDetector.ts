@@ -614,10 +614,10 @@ export class PopupWindowDetector {
     private static updateStickyHeights(popup: PopupInfo,
         stickyElements: { potentialStickyTop?: Element | null, potentialStickyBottom?: Element | null }): void {
         const { potentialStickyTop, potentialStickyBottom } = stickyElements;
-        if (potentialStickyTop && LayoutUtils.compareZIndex(popup.mask_node, potentialStickyTop as HTMLElement) <= 0) {
+        if (potentialStickyTop && LayoutUtils.compareZIndex(popup.mask_node, potentialStickyTop as HTMLElement) <= 0 && !popup.root_node.contains(potentialStickyTop)) {
             popup.stickyTop_height = parseInt(getComputedStyle(potentialStickyTop).height, 10) || 0;
         }
-        if (potentialStickyBottom && LayoutUtils.compareZIndex(popup.mask_node, potentialStickyBottom as HTMLElement) <= 0) {
+        if (potentialStickyBottom && LayoutUtils.compareZIndex(popup.mask_node, potentialStickyBottom as HTMLElement) <= 0 && !popup.root_node.contains(potentialStickyBottom)) {
             popup.stickyBottom_height = parseInt(getComputedStyle(potentialStickyBottom).height, 10) || 0;
         }
     }

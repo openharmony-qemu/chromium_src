@@ -387,6 +387,7 @@ export class PopupDecisionTree {
         return topmostChildren;
     }
 
+    
     /**
      * 检查一个根节点 (rootNode) 是否包含一个“滚轮选择器”(Picker)。
      *
@@ -404,10 +405,10 @@ export class PopupDecisionTree {
         let hasPickerClass = false;
         let hasUniformInlineHeight = false;
         let hasLinearGradient = false;
- 
+
         // 2. 只遍历一次：获取所有子孙节点
         const allDescendants = rootNode.querySelectorAll('*');
- 
+
         // 3. 开始单次遍历
         for (const element of Array.from(allDescendants)) {
             if (!(element instanceof HTMLElement)) {
@@ -418,13 +419,13 @@ export class PopupDecisionTree {
             if (!hasPickerClass) {
                 hasPickerClass = this.checkPickerClass(element);
             }
- 
+
             // 特征 2: 检查统一内联高度的子元素
             if (!hasUniformInlineHeight) {
                 // 我们检查 *当前元素* 的 *子元素* 是否满足条件
                 hasUniformInlineHeight = this.checkUniformInlineHeight(element);
             }
- 
+
             // 特征 3: 检查 'linear-gradient'
             if (!hasLinearGradient) {
                 hasLinearGradient = this.checkLinearGradient(element);
@@ -435,29 +436,29 @@ export class PopupDecisionTree {
                 break; 
             }
         }
- 
+
         // 4. 最终裁决
         return hasPickerClass && hasUniformInlineHeight && hasLinearGradient;
     }
- 
+
     /**
      * 【辅助函数】检查单个元素是否在其类名中包含 'picker'。
      */
     private static checkPickerClass(element: HTMLElement): boolean {
         return typeof element.className === 'string' && element.className.includes('picker');
     }
- 
+
     /**
      * 【辅助函数】检查单个元素的 *直接子元素* 是否具有统一的内联高度。
      */
     private static checkUniformInlineHeight(element: HTMLElement): boolean {
         const children = element.children;
- 
+
         // 必须有至少2个子元素才能判断“统一性”
         if (children.length < 2) {
             return false;
         }
- 
+
         // 检查第一个子元素
         const firstChild = children[0] as HTMLElement;
         // 必须有 style 属性且定义了内联 height
@@ -466,7 +467,7 @@ export class PopupDecisionTree {
         }
         
         const firstChildHeight = firstChild.style.height;
- 
+
         // 遍历剩余子元素
         for (let i = 1; i < children.length; i++) {
             const child = children[i] as HTMLElement;
@@ -475,11 +476,11 @@ export class PopupDecisionTree {
                 return false;
             }
         }
- 
+
         // 如果循环完成，说明所有子元素都具有统一的内联高度
         return true;
     }
- 
+
     /**
      * 【辅助函数】检查单个元素的计算样式是否包含 'linear-gradient'。
      */
@@ -491,18 +492,18 @@ export class PopupDecisionTree {
         if (!bgImage.includes('linear-gradient')) {
             return false;
         }
- 
+
         // 2. 使用正则表达式提取所有可能的颜色值
         const colorRegex = /(rgba?\(.*?\)|hsla?\(.*?\)|#\w{3,8}|transparent)/gi;
         const foundColors = bgImage.match(colorRegex);
- 
+
         if (!foundColors) {
             return false;
         }
- 
+
         return foundColors.some(color => Utils.isColorSemiTransparent(color));
     }
- 
+
     /**
      * 判断是否紧贴底部的模态窗口，特征：
      * 1、满屏宽

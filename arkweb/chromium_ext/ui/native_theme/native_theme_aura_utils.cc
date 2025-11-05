@@ -120,7 +120,7 @@ void NativeThemeAuraUtils::PaintScrollbarThumbWithColor(
   if (color_scheme == NativeTheme::ColorScheme::kDark) {
     overflags.setColor(SkColorSetA(SK_ColorWHITE, 102));
   } else {
-    overflags.setColor(SkColorSetA(SkColorSetRGB(0x18, 0x24, 0x31), 102));
+    overflags.setColor(SkColorSetA(SK_ColorBLACK, 102));
   }
   float ratio = base::ohos::GetPixelRatio();
   if (extra_params.thumb_color.has_value()) {

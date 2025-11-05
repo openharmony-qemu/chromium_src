@@ -1,0 +1,73 @@
+{
+  "file_path": "pdf/pdfium/pdfium_engine.h",
+  "rej_file_path": "pdf/pdfium/pdfium_engine.h.rej",
+  "analysis_timestamp": "2025-11-05",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "preserved",
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "rej_line_range": "3-21",
+      "target_line_range": "487-506",
+      "risk_level": "low",
+      "conflict_cause": "Arkweb132中的侵入式修改未在Arkweb141中集成",
+      "description": "添加ARKWEB_PDF相关的PDF选择位置变更处理函数",
+      "analysis_process": "通过识别SetFormHighlight函数和private:标签作为锚点，成功定位到插入位置",
+      "confidence_level": "high",
+      "resolution_strategy": "在SetFormHighlight函数后、private:标签前添加条件编译代码块",
+      "status": "resolved",
+      "changes_made": [
+        {
+          "type": "addition",
+          "line_number": 578,
+          "content": "#if BUILDFLAG(ARKWEB_PDF)"
+        },
+        {
+          "type": "addition",
+          "line_number": 579,
+          "content": "  void OnSelectionPositionChangedForPDF(gfx::Rect& left,"
+        },
+        {
+          "type": "addition",
+          "line_number": 580,
+          "content": "                                        gfx::Rect& right,"
+        },
+        {
+          "type": "addition",
+          "line_number": 581,
+          "content": "                                        gfx::Rect& clipped_selection_bounds,"
+        },
+        {
+          "type": "addition",
+          "line_number": 582,
+          "content": "                                        const std::vector<PDFiumRange>& selections);"
+        },
+        {
+          "type": "addition",
+          "line_number": 583,
+          "content": "#endif  // BUILDFLAG(ARKWEB_PDF)"
+        }
+      ],
+      "verification": "代码语法正确，条件编译结构完整，函数声明格式符合标准"
+    }
+  ],
+  "summary": {
+    "total_additions": 6,
+    "total_deletions": 0,
+    "modification_type": "功能增强",
+    "arkweb_features_affected": ["PDF选择处理"],
+    "build_flags_involved": ["ARKWEB_PDF"],
+    "overall_assessment": "成功将Arkweb132的PDF选择处理功能集成到Arkweb141中，修改最小化且符合条件编译最佳实践"
+  },
+  "compliance_notes": {
+    "golden_rule_adhered": "是",
+    "context_lines_added": "否",
+    "scripts_generated": "否",
+    "auxiliary_files_created": "否",
+    "rej_file_modified": "否",
+    "external_tools_used": "否",
+    "report_location_verified": "是"
+  }
+}

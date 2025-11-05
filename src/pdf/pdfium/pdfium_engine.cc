@@ -15,6 +15,11 @@
 #include <string>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_PDF)
+#include "base/logging.h"
+#include "arkweb/chromium_ext/pdf/pdfium/pdfium_engine_for_include.cc"
+#endif
 #include "base/auto_reset.h"
 #include "base/check_op.h"
 #include "base/compiler_specific.h"
@@ -637,6 +642,10 @@ PDFiumEngine::~PDFiumEngine() {
   // Clear all the containers that can prevent unloading.
   find_results_.clear();
   selection_.clear();
+#if BUILDFLAG(ARKWEB_PDF)
+  is_finding_result_ = false;
+  range_moved_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 #if BUILDFLAG(ENABLE_PDF_INK2)
   ink_stroke_data_.clear();
   stroked_pages_unload_preventers_.clear();
@@ -1534,6 +1543,10 @@ bool PDFiumEngine::OnLeftMouseDown(const blink::WebMouseEvent& event) {
   auto selection_invalidator =
       std::make_unique<SelectionChangeInvalidator>(this);
   selection_.clear();
+#if BUILDFLAG(ARKWEB_PDF)
+  is_finding_result_ = false;
+  range_moved_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   const gfx::PointF& point = event.PositionInWidget();
   auto point_data = GetPointData(point);
@@ -2311,6 +2324,10 @@ bool PDFiumEngine::SelectFindResult(bool forward) {
 
   SelectionChangeInvalidator selection_invalidator(this);
 
+#if BUILDFLAG(ARKWEB_PDF)
+  is_finding_result_ = true;
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
   // Move back/forward through the search locations we previously found.
   size_t new_index;
   const size_t last_index = find_results_.size() - 1;
@@ -2339,6 +2356,9 @@ bool PDFiumEngine::SelectFindResult(bool forward) {
   // paint then.
   selection_.clear();
   selection_.push_back(find_results_[current_find_index_.value()]);
+#if BUILDFLAG(ARKWEB_PDF)
+  range_moved_ = false;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   // If the result is not in view, scroll to it.
   ScrollToBoundingRects(find_results_[current_find_index_.value()],
@@ -3684,6 +3704,9 @@ gfx::Rect PDFiumEngine::GetPDFiumRect(int page_index,
 
 int PDFiumEngine::GetRenderingFlags() const {
   int flags = FPDF_LCD_TEXT;
+#if BUILDFLAG(ARKWEB_PDF)
+  flags |= FPDF_REVERSE_BYTE_ORDER;
+#endif
   if (render_grayscale_) {
     flags |= FPDF_GRAYSCALE;
   }
@@ -4088,6 +4111,19 @@ void PDFiumEngine::OnSelectionPositionChanged() {
   gfx::Rect left(std::numeric_limits<int32_t>::max(),
                  std::numeric_limits<int32_t>::max(), 0, 0);
   gfx::Rect right;
+
+#if BUILDFLAG(ARKWEB_PDF)
+  if (!client_) {
+    LOG(ERROR) << __func__ << ", PDF client_ is null.";
+    return;
+  }
+  gfx::Rect clipped_selection_bounds(0, 0, 0, 0);
+  // When searching for results, do not calculate the selection position to
+  // hide the menu and handles.
+  if (!is_finding_result_) {
+    OnSelectionPositionChangedForPDF(left, right, clipped_selection_bounds, selection_);
+  }
+#else
   for (const auto& sel : selection_) {
     const std::vector<gfx::Rect>& screen_rects = sel.GetScreenRects(
         GetVisibleRect().origin(), current_zoom_, GetCurrentOrientation());
@@ -4100,12 +4136,17 @@ void PDFiumEngine::OnSelectionPositionChanged() {
       }
     }
   }
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
   right.set_x(right.x() + right.width());
   if (left.IsEmpty()) {
     left.set_x(0);
     left.set_y(0);
   }
   client_->SelectionChanged(left, right);
+#if BUILDFLAG(ARKWEB_PDF)
+  client_->UpdateClientClippedSelectionBoundsForPDF(clipped_selection_bounds);
+#endif  // BUILDFLAG(ARKWEB_PDF)
 }
 
 gfx::Size PDFiumEngine::ApplyDocumentLayout(
@@ -4412,10 +4453,12 @@ void PDFiumEngine::MoveRangeSelectionExtent(const gfx::Point& extent) {
   }
 
   SelectionChangeInvalidator selection_invalidator(this);
+#if !BUILDFLAG(ARKWEB_PDF)
   if (range_selection_direction_ == RangeSelectionDirection::Right) {
     ExtendSelection(point_data.page_index, point_data.char_index);
     return;
   }
+#endif  // !BUILDFLAG(ARKWEB_PDF)
 
   // For a left selection we clear the current selection and set a new starting
   // point based on the new left position. We then extend that selection out to
@@ -4423,6 +4466,13 @@ void PDFiumEngine::MoveRangeSelectionExtent(const gfx::Point& extent) {
   selection_.clear();
   selection_.push_back(PDFiumRange(pages_[point_data.page_index].get(),
                                    point_data.char_index, 0));
+#if BUILDFLAG(ARKWEB_PDF)
+  is_finding_result_ = false;
+  if (!range_moved_) {
+    range_moved_ = true;
+    client_->ResetResponsePendingInputEvent();
+  }
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   // This should always succeeed because the range selection base should have
   // already been selected.

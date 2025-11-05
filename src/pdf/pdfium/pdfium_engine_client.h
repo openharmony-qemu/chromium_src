@@ -221,6 +221,12 @@ class PDFiumEngineClient {
   // indicator is not showing.
   virtual void MaybeShowSearchifyInProgress() = 0;
 #endif
+
+#if BUILDFLAG(ARKWEB_PDF)
+ virtual void UpdateClientClippedSelectionBoundsForPDF(gfx::Rect& clipped_selection_bounds) {}
+ virtual void SetIsTouching(bool is_touching) {}
+ virtual void ResetResponsePendingInputEvent() {}
+#endif  // BUILDFLAG(ARKWEB_PDF)
 };
 
 }  // namespace chrome_pdf

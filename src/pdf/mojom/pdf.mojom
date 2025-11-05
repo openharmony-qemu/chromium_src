@@ -108,4 +108,15 @@ interface PdfHost {
   // called at most once.
   [EnableIf=enable_screen_ai_service]
   OnSearchifyStarted();
+
+  // #if BUILDFLAG(ARKWEB_PDF)
+  [EnableIf=arkweb_pdf]
+  UpdateClientClippedSelectionBoundsForPDF(gfx.mojom.Rect clipped_selection_bounds);
+
+  [EnableIf=arkweb_pdf]
+  HideHandleAndQuickMenuForPDF(bool hide_handles);
+
+  [EnableIf=arkweb_pdf]
+  ResetResponsePendingInputEvent();
+  // #endif
 };

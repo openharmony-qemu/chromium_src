@@ -328,9 +328,21 @@ void PaintManager::DoPaint() {
     paint.setColor(SK_ColorWHITE);
     surface_->getCanvas()->drawRect(skia_rect, paint);
 
+    #if BUILDFLAG(ARKWEB_PDF)
+    if (!base::ohos::IsPcDevice()) {
+      if (!cc::InputHandlerUtils::PdfOverSpeed() || is_repainting) {
+        surface_->getCanvas()->drawImageRect(
+            ready_rect.image(), skia_rect, skia_rect, SkSamplingOptions(), nullptr,
+            SkCanvas::kStrict_SrcRectConstraint);
+      }
+    } else {
+#endif
     surface_->getCanvas()->drawImageRect(
         ready_rect.image(), skia_rect, skia_rect, SkSamplingOptions(), nullptr,
         SkCanvas::kStrict_SrcRectConstraint);
+#if BUILDFLAG(ARKWEB_PDF)
+    }
+#endif
   }
 
   Flush();

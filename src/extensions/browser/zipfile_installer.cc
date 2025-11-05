@@ -28,6 +28,10 @@
 #include "extensions/strings/grit/extensions_strings.h"
 #include "ui/base/l10n/l10n_util.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "components/services/unzip/in_process_unzipper.h"
+#endif
+
 namespace extensions {
 
 namespace {
@@ -151,8 +155,14 @@ void ZipFileInstaller::Unzip(ZipResultVariant unzip_dir_or_error) {
 
   base::FilePath unzip_dir = std::get<base::FilePath>(unzip_dir_or_error);
   unzip::Unzip(
-      unzip::LaunchUnzipper(), zip_file_, unzip_dir,
-      unzip::mojom::UnzipOptions::New(),
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      // Does not support utility process on OHOS yet, use in-process unzipper
+      // instead.
+      unzip::LaunchInProcessUnzipper(),
+#else
+      unzip::LaunchUnzipper(),
+#endif
+      zip_file_, unzip_dir, unzip::mojom::UnzipOptions::New(),
       base::BindRepeating(&ZipFileInstaller::IsManifestFile), base::DoNothing(),
       base::BindOnce(&ZipFileInstaller::ManifestUnzipped, this, unzip_dir));
 }

@@ -1,0 +1,37 @@
+{
+  "文件路径": "extensions/common/permissions/permissions_data.cc",
+  "总hunk数量": 1,
+  "成功解决的hunk数量": 1,
+  "未能解决的hunk数量": 0,
+  ".rej文件状态": "保持完整未被修改",
+  "处理详情": [
+    {
+      "hunk索引": 1,
+      "行号范围": "151-169",
+      "解决状态": "已解决",
+      "风险等级": "低风险",
+      "冲突原因": "Arkweb132针对chromium132内核的侵入式修改，在升级到chromium141时产生冲突",
+      "修改内容": {
+        "删除的行": [
+          "bool allow_on_chrome_urls = switches::AreExtensionsOnChromeURLsAllowed();",
+          "bool allow_on_extension_urls = switches::AreExtensionsOnExtensionURLsAllowed();"
+        ],
+        "添加的行": [
+          "bool allow_on_chrome_urls = base::CommandLine::ForCurrentProcess()->HasSwitch(",
+          "                                  switches::kExtensionsOnChromeURLs);",
+          "#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)",
+          "#else",
+          "  if ((document_url.SchemeIs(content::kChromeUIScheme) || document_url.SchemeIs(content::kArkWebUIScheme)) &&",
+          "#endif",
+          "#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)",
+          "       || document_url.SchemeIs(kArkwebExtensionScheme)",
+          "#endif"
+        ]
+      },
+      "分析过程": "通过对比.rej文件和源文件，精确定位到需要修改的代码块。修改涉及Arkweb扩展机制的条件编译指令和URL scheme检查逻辑的变更。",
+      "修改置信度": "高",
+      "处理策略": "严格按照.rej文件中的+/-行进行原子化应用，保持上下文不变，只添加+开头的行和删除-开头的行。"
+    }
+  ],
+  "总结": "成功处理了permissions_data.cc文件中的冲突，主要涉及Arkweb扩展相关的条件编译和URL scheme检查逻辑的修改。所有修改都已精确应用到源文件中，.rej文件保持完整。"
+}

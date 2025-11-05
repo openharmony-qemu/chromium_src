@@ -1,0 +1,81 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/extensions/browser/api/messaging/message_service.cc.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/extensions/browser/api/messaging/message_service.cc",
+    "基线版本": "/home/sujiahao/code/chromium_132_baseline/src/extensions/browser/api/messaging/message_service.cc",
+    "Arkweb132版本": "/home/sujiahao/code/arkweb_132/src/extensions/browser/api/messaging/message_service.cc"
+  },
+  "处理总结": {
+    "总hunk数量": 3,
+    "成功解决的hunk数量": 3,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunks详细分析": [
+    {
+      "hunk序号": 1,
+      "位置": "第3-11行",
+      "类型": "添加include语句",
+      "风险等级": "低",
+      "冲突原因": "Arkweb141需要添加ARKWEB扩展相关的头文件引用",
+      "分析过程": "在源文件第68行后成功添加了ARKWEB扩展的条件编译include语句",
+      "修改置信度": "高",
+      "处理策略": "直接应用修改",
+      "修改内容": [
+        "添加: #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)",
+        "添加: #include \"cef/ohos_cef_ext/libcef/browser/chrome/extensions/arkweb_chrome_extension_util_ext.h\"",
+        "添加: #endif // ARKWEB_ARKWEB_EXTENSIONS"
+      ],
+      "解决状态": "已解决"
+    },
+    {
+      "hunk序号": 2,
+      "位置": "第23-25行",
+      "类型": "平台条件修改",
+      "风险等级": "低",
+      "冲突原因": "需要将Android平台支持替换为OHOS平台支持",
+      "分析过程": "在源文件中找到两处BUILDFLAG(IS_ANDROID)并成功替换为BUILDFLAG(IS_OHOS)",
+      "修改置信度": "高",
+      "处理策略": "直接应用修改",
+      "修改内容": [
+        "位置1(第89-90行): 将BUILDFLAG(IS_ANDROID)改为BUILDFLAG(IS_OHOS)",
+        "位置2(第682-683行): 将BUILDFLAG(IS_ANDROID)改为BUILDFLAG(IS_OHOS)"
+      ],
+      "解决状态": "已解决"
+    },
+    {
+      "hunk序号": 3,
+      "位置": "第31-44行",
+      "类型": "已存在的代码块",
+      "风险等级": "无",
+      "冲突原因": "Arkweb141源文件中已经包含了所需的ARKWEB条件编译代码",
+      "分析过程": "检查发现源文件第777-781行已经存在完整的ARKWEB条件编译代码块",
+      "修改置信度": "高",
+      "处理策略": "无需修改，已存在",
+      "修改内容": [],
+      "解决状态": "已解决（无需修改）"
+    }
+  ],
+  "技术分析": {
+    "主要修改类型": "平台适配和扩展支持",
+    "影响范围": "条件编译和平台检测",
+    "兼容性": "修改仅影响OHOS平台，其他平台无影响",
+    "代码完整性": "保持良好，所有修改都正确应用到预期位置"
+  },
+  "验证结果": {
+    ".rej文件保持完整性": true,
+    "源文件修改成功": true,
+    "语法检查": "通过",
+    "逻辑一致性": "通过"
+  },
+  "风险评估": {
+    "整体风险": "低",
+    "主要风险点": [
+      "平台条件修改可能影响native messaging功能在OHOS平台的行为",
+      "新增include需要确保头文件路径正确"
+    ],
+    "建议": "在OHOS平台上进行充分测试以确保native messaging功能正常工作"
+  },
+  "处理完成时间": "2025-11-04",
+  "处理状态": "全部hunks已成功解决"
+}

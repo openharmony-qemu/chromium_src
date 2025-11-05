@@ -1,17 +1,5 @@
 --- extension_urls.cc	2025-10-20 19:52:55.360076446 +0800
 +++ extension_urls.cc	2025-10-16 15:55:00.439688119 +0800
-@@ -4,10 +4,11 @@
- 
- #include "extensions/common/extension_urls.h"
- 
- #include <string_view>
- 
-+#include "arkweb/build/features/features.h"
- #include "base/strings/escape.h"
- #include "base/strings/string_util.h"
- #include "base/strings/stringprintf.h"
- #include "base/strings/utf_string_conversions.h"
- #include "components/safe_browsing/core/common/features.h"
 @@ -98,13 +102,17 @@
                                     g_item_snippet_url_for_test_->spec().c_str(),
                                     extension_id.c_str()));

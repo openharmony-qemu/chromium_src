@@ -1,0 +1,44 @@
+{
+  "conflict_file": "extensions/browser/service_worker/service_worker_host.cc.rej",
+  "source_file": "extensions/browser/service_worker/service_worker_host.cc",
+  "analysis_timestamp": "2025-11-04",
+  "hunks_summary": {
+    "total_hunks": 1,
+    "resolved_hunks": 1,
+    "unresolved_hunks": 0
+  },
+  "hunks_details": [
+    {
+      "hunk_number": 1,
+      "location": "@@ -224,11 +228,15 @@",
+      "risk_level": "低",
+      "confidence": "高",
+      "status": "已解决",
+      "conflict_reason": "Arkweb 132 在 CHECK 语句中添加了对 kArkwebExtensionScheme 的支持，使用了条件编译 BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)",
+      "analysis_process": "通过匹配上下文行（process_map->Contains、extension_id 相关代码）在源文件第245行准确定位到目标 CHECK 语句。将原来简单的 SchemeIs(kExtensionScheme) 检查替换为支持双方案的条件编译检查。",
+      "changes_applied": {
+        "deleted_lines": [
+          "CHECK(service_worker_scope.SchemeIs(kExtensionScheme) &&"
+        ],
+        "added_lines": [
+          "CHECK((service_worker_scope.SchemeIs(kExtensionScheme)",
+          "#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)",
+          "        || service_worker_scope.SchemeIs(kArkwebExtensionScheme)",
+          "#endif",
+          "  ) &&"
+        ]
+      },
+      "verification": "修改后的代码保持了原有的逻辑结构，添加了对 Arkweb 扩展方案的支持，使用了正确的条件编译语法"
+    }
+  ],
+  "overall_assessment": {
+    "total_risk": "低",
+    "modification_type": "功能性增强 - 扩展方案支持",
+    "backwards_compatibility": "完全保持",
+    "code_quality": "良好",
+    "rej_file_integrity": "保持完整，未被修改"
+  },
+  "summary": "成功解决了1个hunk的冲突。该冲突是Arkweb项目对Chromium扩展方案支持的功能性增强，通过条件编译方式添加了对 kArkwebExtensionScheme 的支持。修改风险低，置信度高，不会影响现有功能。",
+  "arkweb_modification_type": "侵入式修改 - 扩展核心功能",
+  "changelog": "在 ServiceWorkerHost::DidStopServiceWorkerContext 方法中，扩展了对服务工作者方案的检查逻辑，支持Arkweb扩展方案"
+}

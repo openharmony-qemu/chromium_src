@@ -621,7 +621,11 @@ void Dispatcher::DidInitializeServiceWorkerContextOnWorkerThread(
     blink::WebServiceWorkerContextProxy* context_proxy,
     const GURL& service_worker_scope,
     const GURL& script_url) {
-  if (!script_url.SchemeIs(kExtensionScheme))
+  if (!script_url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && !script_url.SchemeIs(kArkwebExtensionScheme)
+#endif
+  )
     return;
 
   // Defer `PrepareForEvaluation` until `ModuleSystem` is created.

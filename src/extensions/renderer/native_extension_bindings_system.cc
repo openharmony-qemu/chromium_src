@@ -171,6 +171,16 @@ v8::Local<v8::Object> GetOrCreateGlobalObjectProperty(
       requested_object = obj;
   }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  if (command_line != nullptr &&
+      command_line->HasSwitch(::switches::kSetExtensionName)) {
+    CreateAliasName(
+        context, requested_object,
+        command_line->GetSwitchValueASCII(::switches::kSetExtensionName));
+  }
+#endif
+
   return requested_object;
 }
 

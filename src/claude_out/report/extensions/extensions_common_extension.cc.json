@@ -1,0 +1,49 @@
+{
+  "file_path": "extensions/common/extension.cc",
+  "rej_file": "extensions/common/extension.cc.rej",
+  "analysis_timestamp": "2025-11-04",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "maintained",
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "location_line": 298,
+      "conflict_reason": "Arkweb 132 在 GetResourceURL 函数中添加了对 kArkwebExtensionScheme 的支持检查，但在 Arkweb 141 中该函数已重构",
+      "risk_analysis": "低风险。这是对 Arkweb 扩展协议支持的功能性修改，用于验证扩展 URL 的合法性。修改内容为条件编译，仅在启用 ARKWEB_EXTENSIONS 特性时生效。",
+      "analysis_process": "经过分析发现，.rej 文件中的 DCHECK 语句在 Arkweb 141 中已被重构移动到 ResolveExtensionURL 函数中。通过精确定位，在第309行找到了对应的 DCHECK 语句，并成功应用了 Arkweb 的侵入式修改。",
+      "modification_confidence": "高",
+      "final_strategy": "已成功应用修改。将原来的单行 DCHECK 替换为支持 kArkwebExtensionScheme 的条件编译版本，保持了原有的语义同时增加了 Arkweb 协议支持。",
+      "status": "已解决",
+      "applied_changes": [
+        {
+          "action": "删除",
+          "line": "DCHECK(extension_url.SchemeIs(kExtensionScheme));"
+        },
+        {
+          "action": "添加",
+          "lines": [
+            "DCHECK(extension_url.SchemeIs(kExtensionScheme)",
+            "#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)",
+            "         || extension_url.SchemeIs(kArkwebExtensionScheme)",
+            "#endif",
+            "  );"
+          ]
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total_modifications": 1,
+    "successful_applications": 1,
+    "failure_reasons": [],
+    "compliance_status": {
+      "no_context_added": true,
+      "no_scripts_generated": true,
+      "no_auxiliary_files": true,
+      "rej_file_unchanged": true,
+      "output_path_correct": true
+    }
+  }
+}

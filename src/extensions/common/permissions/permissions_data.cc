@@ -152,7 +152,11 @@ bool PermissionsData::IsRestrictedUrl(const GURL& document_url,
     return true;
 
   bool allow_on_chrome_urls = switches::AreExtensionsOnChromeURLsAllowed();
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)   
   if (document_url.SchemeIs(content::kChromeUIScheme) &&
+#else
+  if ((document_url.SchemeIs(content::kChromeUIScheme) || document_url.SchemeIs(content::kArkWebUIScheme)) &&
+#endif
       !allow_on_chrome_urls) {
     if (error)
       *error = manifest_errors::kCannotAccessChromeUrl;
@@ -161,7 +165,11 @@ bool PermissionsData::IsRestrictedUrl(const GURL& document_url,
 
   bool allow_on_extension_urls =
       switches::AreExtensionsOnExtensionURLsAllowed();
-  if (document_url.SchemeIs(kExtensionScheme) &&
+  if ((document_url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+       || document_url.SchemeIs(kArkwebExtensionScheme)
+#endif
+           ) &&
       document_url.host() != extension_id_ && !allow_on_extension_urls) {
     if (error)
       *error = manifest_errors::kCannotAccessExtensionUrl;

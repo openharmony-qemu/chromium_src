@@ -8,6 +8,7 @@ import("//components/guest_view/buildflags/buildflags.gni")
 import("//extensions/buildflags/buildflags.gni")
 import("//pdf/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
+import("//arkweb/build/features/features.gni")
 
 if (enable_desktop_android_extensions) {
   import("//build/config/android/rules.gni")

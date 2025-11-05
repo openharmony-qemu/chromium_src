@@ -616,6 +616,10 @@ class ExtensionURLLoader : public network::mojom::URLLoader {
     bool incognito_enabled =
         extensions::util::IsIncognitoEnabled(extension_id, browser_context_);
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    LOG(INFO) << "ExtensionURLLoader Start(): extension_id: " << extension_id
+        << ", request url: " << request_.url;
+#endif
     // Redirect guid to id.
     if (extension && request_.url.host() == extension->guid()) {
       GURL::Replacements replace_host;
@@ -786,6 +790,10 @@ class ExtensionURLLoader : public network::mojom::URLLoader {
                                        &head->charset, &contents);
         WriteData(std::move(head), base::as_byte_span(contents));
       } else if (is_favicon_url) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+        LOG(INFO) << "ExtensionURLLoader get favicon url, request url is"
+            << request_.url;
+#endif
         tracker_ = std::make_unique<base::CancelableTaskTracker>();
         ExtensionsBrowserClient::Get()->GetFavicon(
             browser_context_, extension.get(), request_.url, tracker_.get(),

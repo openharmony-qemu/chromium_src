@@ -1,0 +1,53 @@
+{
+  "文件路径": "/home/sujiahao/code/arkweb_141/src/extensions/browser/extension_function.h",
+  "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/extensions/browser/extension_function.h.rej",
+  "处理时间": "2025-11-04",
+  "总hunk数量": 2,
+  "成功解决的hunk数量": 2,
+  "未能解决的hunk数量": 0,
+  "rej文件状态": "保持完整未被修改",
+  "分析结果": {
+    "总体评估": "所有冲突修改已经存在于源文件中，无需进行任何修改。这是一个'伪冲突'，因为Arkweb141在升级过程中已经包含了这些侵入式修改。",
+    "hunks": [
+      {
+        "hunk编号": 1,
+        "原始行号范围": "371-381",
+        "待添加的行": [
+          "  bool did_initialize() const { return did_initialize_; }",
+          "  void set_did_initialize() { did_initialize_ = true; }"
+        ],
+        "待删除的行": [],
+        "冲突原因": "Arkweb132中添加了did_initialize()和set_did_initialize()方法，在合并到Arkweb141时产生了冲突",
+        "处理策略": "无需处理",
+        "详细分析过程": "检查源文件发现这两个方法已经存在于第403-404行，与.rej文件中待添加的行完全一致",
+        "修改置信度": "高",
+        "处理结果": "已解决",
+        "风险等级": "无"
+      },
+      {
+        "hunk编号": 2,
+        "原始行号范围": "632-647",
+        "待添加的行": [
+          "  // Set to true when an extension function is created successfully without",
+          "  // error. This implies all setup state should be valid on the function for",
+          "  // some assertions made during destruction.",
+          "  bool did_initialize_ = false;"
+        ],
+        "待删除的行": [],
+        "冲突原因": "Arkweb132中添加了did_initialize_成员变量，在合并到Arkweb141时产生了冲突",
+        "处理策略": "无需处理",
+        "详细分析过程": "检查源文件发现该成员变量和注释已经存在于第690-693行，与.rej文件中待添加的内容完全一致",
+        "修改置信度": "高",
+        "处理结果": "已解决",
+        "风险等级": "无"
+      }
+    ]
+  },
+  "最终状态报告": {
+    "源文件修改状态": "无需修改",
+    "代码完整性": "良好，所有Arkweb132的侵入式修改已正确集成到Arkweb141中",
+    "编译风险评估": "无风险",
+    "功能完整性": "完整，did_initialize相关功能已正确实现",
+    "维护建议": "可以安全删除.rej文件，因为所有冲突已经解决"
+  }
+}

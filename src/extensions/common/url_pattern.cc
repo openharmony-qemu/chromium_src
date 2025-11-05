@@ -36,6 +36,9 @@ constexpr std::array kValidSchemes = {
     url::kFileSystemScheme,    url::kWsScheme,
     url::kWssScheme,           url::kDataScheme,
     url::kUuidInPackageScheme,
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    content::kArkWebUIScheme, extensions::kArkwebExtensionScheme,
+#endif
 };
 
 constexpr std::array kValidSchemeMasks = {

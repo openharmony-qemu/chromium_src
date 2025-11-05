@@ -380,7 +380,11 @@ ExtensionId GetExtensionIdForSiteInstance(
   // This works for both apps and extensions because the site has been
   // normalized to the extension URL for hosted apps.
   const GURL& site_url = site_instance.GetSiteURL();
-  if (!site_url.SchemeIs(kExtensionScheme)) {
+  if (!site_url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && !site_url.SchemeIs(kArkwebExtensionScheme)
+#endif
+  ) {
     return ExtensionId();
   }
 
@@ -403,7 +407,11 @@ ExtensionId GetExtensionIdForSiteInstance(
 std::string GetExtensionIdFromFrame(
     content::RenderFrameHost* render_frame_host) {
   const GURL& site = render_frame_host->GetSiteInstance()->GetSiteURL();
-  if (!site.SchemeIs(kExtensionScheme)) {
+  if (!site.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && !site.SchemeIs(kArkwebExtensionScheme)
+#endif
+  ) {
     return std::string();
   }
 

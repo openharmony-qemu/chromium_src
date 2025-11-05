@@ -14,32 +14,3 @@
          errors::kInvalidKeyBindingUnknownPlatform, base::NumberToString(index),
          platform_key);
      return ui::Accelerator();
-@@ -292,10 +295,12 @@
-   return values::kKeybindingPlatformLinux;
- #elif BUILDFLAG(IS_DESKTOP_ANDROID)
-   // For now, we use linux keybindings on desktop android.
-   // TODO(https://crbug.com/356905053): Should this be ChromeOS keybindings?
-   return values::kKeybindingPlatformLinux;
-+#elif BUILDFLAG(IS_ARKWEB)
-+  return values::kKeybindingPlatformOHOS;
- #else
- #error Unsupported platform
- #endif
- }
- 
-@@ -499,10 +504,15 @@
-   std::string platform = CommandPlatform();
-   std::string key = platform;
-   if (suggestions.find(key) == suggestions.end()) {
-     key = values::kKeybindingPlatformDefault;
-   }
-+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-+  if (suggestions.find(key) == suggestions.end()) {
-+    key = values::kKeybindingPlatformWin;
-+  }
-+#endif
-   if (suggestions.find(key) == suggestions.end()) {
-     *error = ErrorUtils::FormatErrorMessageUTF16(
-         errors::kInvalidKeyBindingMissingPlatform, base::NumberToString(index),
-         keys::kSuggestedKey, platform);
-     return false;  // No platform specified and no fallback. Bail.

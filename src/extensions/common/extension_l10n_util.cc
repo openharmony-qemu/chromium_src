@@ -435,6 +435,7 @@ void GetAllFallbackLocales(const std::string& default_locale,
   DCHECK(all_fallback_locales);
   std::string application_locale = CurrentLocaleOrDefault();
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   // Use the preferred locale if available. Otherwise, fall back to the
   // application locale or the application locale's parent locales. Thus, a
   // preferred locale of "en_CA" with an application locale of "en_GB" will
@@ -445,6 +446,7 @@ void GetAllFallbackLocales(const std::string& default_locale,
       preferred_locale != application_locale) {
     all_fallback_locales->push_back(preferred_locale);
   }
+#endif
 
   if (!application_locale.empty() && application_locale != default_locale) {
     base::Extend(*all_fallback_locales,

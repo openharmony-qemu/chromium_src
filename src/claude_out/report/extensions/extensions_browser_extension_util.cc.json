@@ -1,0 +1,58 @@
+{
+  "文件路径": "extensions/browser/extension_util.cc",
+  "总hunk数量": 2,
+  "成功解决的hunk数量": 2,
+  "未能解决的hunk数量": 0,
+  ".rej文件状态": "保持完整未被修改",
+  "处理时间": "2025-11-04",
+  "详细分析": [
+    {
+      "hunk编号": 1,
+      "位置": "第305-325行",
+      "冲突原因": "Arkweb 132在GetExtensionIdForSiteInstance函数中添加了对kArkwebExtensionScheme的支持，但Arkweb 141的代码结构不同，导致无法直接合并",
+      "修改内容": {
+        "删除行": "if (!site_url.SchemeIs(kExtensionScheme))",
+        "添加行": [
+          "if (!site_url.SchemeIs(kExtensionScheme)",
+          "#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)",
+          "      && !site_url.SchemeIs(kArkwebExtensionScheme)",
+          "#endif",
+          "  )"
+        ]
+      },
+      "风险分析": "低风险，这是对现有条件判断的扩展，增加了对Arkweb扩展scheme的支持，不会破坏原有逻辑",
+      "分析过程": "通过在源文件中定位到'const GURL& site_url = site_instance.GetSiteURL()'上下文，成功找到了需要修改的条件判断语句",
+      "修改置信度": "100%",
+      "解决状态": "已解决",
+      "应用位置": "extension_util.cc:383-387"
+    },
+    {
+      "hunk编号": 2,
+      "位置": "第326-334行",
+      "冲突原因": "Arkweb 132在GetExtensionIdFromFrame函数中同样添加了对kArkwebExtensionScheme的支持，与第一个hunk的修改模式相同",
+      "修改内容": {
+        "删除行": "if (!site.SchemeIs(kExtensionScheme))",
+        "添加行": [
+          "if (!site.SchemeIs(kExtensionScheme)",
+          "#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)",
+          "      && !site.SchemeIs(kArkwebExtensionScheme)",
+          "#endif",
+          "  )"
+        ]
+      },
+      "风险分析": "低风险，与第一个hunk的修改逻辑完全一致，都是扩展scheme检查逻辑，保持代码一致性",
+      "分析过程": "通过在源文件中定位到'const GURL& site = render_frame_host->GetSiteInstance()->GetSiteURL()'上下文，成功找到了需要修改的条件判断语句",
+      "修改置信度": "100%",
+      "解决状态": "已解决",
+      "应用位置": "extension_util.cc:410-414"
+    }
+  ],
+  "整体评估": {
+    "复杂度": "简单",
+    "风险等级": "低",
+    "代码一致性": "良好",
+    "主要修改类型": "功能扩展 - 添加对Arkweb扩展scheme的支持",
+    "潜在影响": "扩展了两个关键函数以支持Arkweb的扩展scheme，使得系统能够识别和处理Arkweb扩展的URL",
+    "测试建议": "建议测试GetExtensionIdForSiteInstance和GetExtensionIdFromFrame函数是否能正确识别kArkwebExtensionScheme"
+  }
+}

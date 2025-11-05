@@ -12,23 +12,3 @@
  inline constexpr char kKeyCommand[] = "Command";
  inline constexpr char kKeyCtrl[] = "Ctrl";
  inline constexpr char kKeyDel[] = "Delete";
-@@ -698,14 +701,19 @@
- inline constexpr char kLocalesTreeMissing[] =
-     "Default locale was specified, but _locales subtree is missing.";
- inline constexpr char kManifestParseError[] = "Manifest is not valid JSON.";
- inline constexpr char kManifestUnreadable[] =
-     "Manifest file is missing or unreadable";
-+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-+inline constexpr char kManifestV2IsDeprecatedWarning[] =
-+    "Manifest version 2 is deprecated, and support will be removed soon.";
-+#else
- inline constexpr char kManifestV2IsDeprecatedWarning[] =
-     "Manifest version 2 is deprecated, and support will be removed in 2024. "
-     "See https://developer.chrome.com/docs/extensions/develop/migrate/mv2-deprecation-timeline"
-     " for details.";
-+#endif
- inline constexpr char kManifestVersionTooHighWarning[] =
-     "The maximum currently-supported manifest version is *, but this is *.  "
-     "Certain features may not work as expected.";
- inline constexpr char16_t kMatchOriginAsFallbackCantHavePaths[] =
-     u"The path component for scripts with 'match_origin_as_fallback' must be "

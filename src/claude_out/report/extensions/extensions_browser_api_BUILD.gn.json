@@ -1,0 +1,45 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/extensions/browser/api/BUILD.gn.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/extensions/browser/api/BUILD.gn",
+    "Chromium 132 基线版本": "/home/sujiahao/code/chromium_132_baseline/src/extensions/browser/api/BUILD.gn",
+    "Arkweb 132 代码": "/home/sujiahao/code/arkweb_132/src/extensions/browser/api/BUILD.gn"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunks详情": [
+    {
+      "hunk编号": 1,
+      "冲突原因": "Arkweb 132 在 extensions/browser/api/BUILD.gn 文件开头添加了 arkweb 特性相关的 import 语句，但在 Arkweb 141 中这个修改没有被正确集成",
+      "待添加行": [
+        "import(\"//arkweb/build/features/features.gni\")"
+      ],
+      "待删除行": [],
+      "定位策略": "使用上下文行作为锚点，在文件开头的 import 语句区域定位",
+      "应用位置": "第5行，在其他 import 语句之前",
+      "处理过程": "成功定位到源文件中的 import 语句区域，在第5行位置添加了 arkweb 特性的 import 语句",
+      "修改置信度": "高",
+      "风险评估": "低风险 - 这是标准的 import 语句添加，不会影响现有代码结构",
+      "解决状态": "已解决",
+      "验证结果": "修改已成功应用到源文件中，import 语句已正确添加到文件开头"
+    }
+  ],
+  "整体分析": {
+    "冲突类型": "侵入式修改冲突",
+    "主要变更": "添加 Arkweb 特性相关的 import 语句",
+    "影响范围": "仅影响文件的依赖导入，不影响核心逻辑",
+    "处理策略": "原子化应用 - 直接添加 import 语句",
+    "兼容性": "良好 - 新增的 import 不会与现有代码产生冲突"
+  },
+  "最终验证": {
+    ".rej文件完整性": "确认 .rej 文件保持完整，未被修改或删除",
+    "源文件修改状态": "已成功应用修改",
+    "语法检查": "通过 - import 语法正确",
+    "逻辑完整性": "保持 - 没有破坏现有代码结构"
+  },
+  "处理总结": "成功解决了 1 个 hunk 的冲突。 Arkweb 132 中的侵入式修改（添加 arkweb 特性 import 语句）已正确应用到 Arkweb 141 源文件中。整个过程严格遵守了黄金法则，只添加了必要的 import 语句，没有引入任何上下文行或其他修改。"
+}

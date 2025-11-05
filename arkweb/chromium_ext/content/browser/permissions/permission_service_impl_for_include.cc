@@ -77,10 +77,36 @@ void PermissionServiceImpl::RequestPermissionSync(
     bool user_gesture,
     PermissionStatusCallback callback) {
   LOG(DEBUG) << "RequestPermissionSync user_gesture: " << user_gesture;
+  BrowserContext* browser_context = context_->GetBrowserContext();
+  if (!browser_context) {
+    std::move(callback).Run(PermissionStatus::DENIED);
+    return;
+  }
+
   std::vector<PermissionDescriptorPtr> permissions;
   permissions.push_back(std::move(permission));
-  RequestPermissions(std::move(permissions), user_gesture,
-                     base::BindOnce(&PermissionRequestResponseCallbackWrapper,
-                                    std::move(callback)));
+  RequestPermissionsCallback callback_wrapper =
+      base::BindOnce(&PermissionRequestResponseCallbackWrapper, std::move(callback));
+  if (!context_->render_frame_host()) {
+    std::vector<PermissionStatus> result(permissions.size());
+    for (size_t i = 0; i < permissions.size(); ++i) {
+      result[i] = GetPermissionStatus(permissions[i]);
+    }
+    std::move(callback_wrapper).Run(result);
+    return;
+  }
+
+  std::vector<blink::PermissionType> permission_types =
+      GetPermissionTypesAndCheckDuplicates(permissions);
+  if (permission_types.empty()) {
+    ReceivedBadMessage();
+    std::move(callback_wrapper).Run({ PermissionStatus::DENIED });
+    return;
+  }
+
+  RequestPermissionsInternal(
+      browser_context, permissions,
+      PermissionRequestDescription(permission_types, user_gesture),
+      std::move(callback_wrapper), false);
 }
 }   // namespace content

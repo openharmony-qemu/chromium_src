@@ -151,6 +151,11 @@ class CONTENT_EXPORT PermissionControllerImpl : public PermissionController {
 #endif // ARKWEB_NOTIFICATION
 
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
+  void RequestPermissionsSkipPermissionsPolicy(
+      RenderFrameHost* render_frame_host,
+      PermissionRequestDescription request_description,
+      base::OnceCallback<void(const std::vector<PermissionStatus>&)> callback) override;
+
   bool IsClipboardSitePermissionEnabled() override;
 #endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 

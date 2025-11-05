@@ -57,7 +57,8 @@ bool Document::ValidateClipboardPreconditions(
   }
   auto command_type = command.GetCommandType();
   if (command_type != EditingCommandType::kCopy &&
-      command_type != EditingCommandType::kCut) {
+      command_type != EditingCommandType::kCut &&
+      command_type != EditingCommandType::kPaste) {
     return command.Execute(checked_value);
   }
   ExecutionContext* context = GetExecutionContext();
@@ -77,24 +78,11 @@ bool Document::ValidateClipboardPreconditions(
     return false;
   }
 
-  DCHECK(window.IsSecureContext());  // [SecureContext] in IDL
   if (!window.document()->hasFocus()) {
     LOG(WARNING) << "Document is not focused.";
     return false;
   }
 
-  auto permission = mojom::blink::PermissionName::CLIPBOARD_WRITE;
-  constexpr char kFeaturePolicyMessage[] =
-      "The Clipboard API has been blocked because of a permissions policy "
-      "applied to the current document. See https://goo.gl/EuHzyv for more "
-      "details.";
-  if (!window.IsFeatureEnabled(
-           mojom::blink::PermissionsPolicyFeature::kClipboardWrite,
-           ReportOptions::kReportOnFailure, kFeaturePolicyMessage)) {
-    LOG(WARNING) <<
-        "The Clipboard API has been blocked because of a permissions policy applied to the current document.";
-    return false;
-  }
   // Grant permission by-default if extension has read/write permissions.
   if (local_frame->GetContentSettingsClient() &&
       local_frame->GetContentSettingsClient()->AllowWriteToClipboard()) {
@@ -105,16 +93,17 @@ bool Document::ValidateClipboardPreconditions(
     LOG(DEBUG) << "Is executing cut or copy.";
     return command.Execute(checked_value);
   }
+
   mojom::blink::PermissionService* premission_service = GetPermissionService(context);
   if (!premission_service) {
     LOG(ERROR) << "Permission Service could not connect.";
     return false;
   }
-
+  auto permission = (command_type == EditingCommandType::kPaste ?
+      mojom::blink::PermissionName::CLIPBOARD_READ : mojom::blink::PermissionName::CLIPBOARD_WRITE);
   bool has_transient_user_activation = LocalFrame::HasTransientUserActivation(local_frame);
-  auto permission_descriptor = CreateClipboardPermissionDescriptor(
-      permission, /*has_user_gesture=*/has_transient_user_activation,
-      /*will_be_sanitized=*/false);
+  auto permission_descriptor = CreateClipboardPermissionDescriptor(permission,
+      /*has_user_gesture=*/has_transient_user_activation, /*will_be_sanitized=*/false);
 
   mojom::blink::PermissionStatus out_status = mojom::blink::PermissionStatus::DENIED;
   bool success = premission_service->RequestPermissionSync(

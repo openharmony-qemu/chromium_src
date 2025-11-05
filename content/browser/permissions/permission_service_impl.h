@@ -93,7 +93,12 @@ class PermissionServiceImpl : public blink::mojom::PermissionService {
       BrowserContext* browser_context,
       const std::vector<blink::mojom::PermissionDescriptorPtr>& permissions,
       PermissionRequestDescription request_description,
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+      RequestPermissionsCallback callback,
+      bool permissions_policy_verification = true);
+#else
       RequestPermissionsCallback callback);
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 
   void OnRequestPermissionsResponse(
       int pending_request_id,

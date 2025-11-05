@@ -101,7 +101,11 @@ std::string GetKey(const std::string& alias) {
                           .GetKeystoreAdapterInstance()
                           .EncryptKey(alias, local_key);
       if (!encryptedData.empty()) {
-        base::WriteFile(key_file, encryptedData.c_str());
+        base::WriteFile(
+            key_file,
+            base::span<const uint8_t>(
+                reinterpret_cast<const uint8_t*>(encryptedData.data()),
+                encryptedData.size()));
         return local_key;
       }
     }

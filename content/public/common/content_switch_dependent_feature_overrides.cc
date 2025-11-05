@@ -82,9 +82,11 @@ GetSwitchDependentFeatureOverrides(const base::CommandLine& command_line) {
       {switches::kEnableExperimentalWebPlatformFeatures,
        std::cref(features::kPrivateNetworkAccessRespectPreflightResults),
        base::FeatureList::OVERRIDE_ENABLE_FEATURE},
+#if !BUILDFLAG(ARKWEB_WEBSTORAGE)
       {switches::kEnableExperimentalWebPlatformFeatures,
        std::cref(net::features::kThirdPartyStoragePartitioning),
        base::FeatureList::OVERRIDE_ENABLE_FEATURE},
+#endif
       {switches::kEnableExperimentalWebPlatformFeatures,
        std::cref(blink::features::kPartitionedPopins),
        base::FeatureList::OVERRIDE_ENABLE_FEATURE},

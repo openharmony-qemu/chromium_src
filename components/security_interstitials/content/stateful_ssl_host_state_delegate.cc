@@ -183,6 +183,12 @@ bool HostFilterToPatternFilter(
   return std::move(host_filter).Run(url.host());
 }
 
+#if BUILDFLAG(IS_ARKWEB)
+bool IsInMemoryCertsStorageEnforced() {
+  return true;
+}
+#endif
+
 }  // namespace
 
 StatefulSSLHostStateDelegate::StatefulSSLHostStateDelegate(
@@ -215,6 +221,15 @@ void StatefulSSLHostStateDelegate::AllowCert(
     const net::X509Certificate& cert,
     int error,
     content::StoragePartition* storage_partition) {
+#if BUILDFLAG(IS_ARKWEB)
+  if (IsInMemoryCertsStorageEnforced()) {
+    auto allowed_cert =
+        AllowedCert(GetKey(cert, error), browser_context_->GetDefaultStoragePartition()->GetPath());
+    allowed_certs_for_non_default_storage_partitions_[host].insert(
+        allowed_cert);
+    return;
+  }
+#endif
   if (!storage_partition ||
       storage_partition != browser_context_->GetDefaultStoragePartition()) {
     // Decisions for non-default storage partitions are stored in memory only;
@@ -283,6 +298,21 @@ StatefulSSLHostStateDelegate::QueryPolicy(
     const net::X509Certificate& cert,
     int error,
     content::StoragePartition* storage_partition) {
+#if BUILDFLAG(IS_ARKWEB)
+  if (IsInMemoryCertsStorageEnforced()) {
+    if (allowed_certs_for_non_default_storage_partitions_.find(host) ==
+        allowed_certs_for_non_default_storage_partitions_.end()) {
+      return DENIED;
+    }
+    AllowedCert allowed_cert =
+        AllowedCert(GetKey(cert, error), browser_context_->GetDefaultStoragePartition()->GetPath());
+    if (base::Contains(allowed_certs_for_non_default_storage_partitions_[host],
+                       allowed_cert)) {
+      return ALLOWED;
+    }
+    return DENIED;
+  }
+#endif
   if (!storage_partition ||
       storage_partition != browser_context_->GetDefaultStoragePartition()) {
     if (allowed_certs_for_non_default_storage_partitions_.find(host) ==
@@ -443,6 +473,11 @@ bool StatefulSSLHostStateDelegate::HasAllowExceptionForAnyHost(
 
 bool StatefulSSLHostStateDelegate::HasCertAllowExceptionForAnyHost(
     content::StoragePartition* storage_partition) {
+#if BUILDFLAG(IS_ARKWEB)
+  if (IsInMemoryCertsStorageEnforced()) {
+    return !allowed_certs_for_non_default_storage_partitions_.empty();
+  }
+#endif
   if (!storage_partition ||
       storage_partition != browser_context_->GetDefaultStoragePartition()) {
     return !allowed_certs_for_non_default_storage_partitions_.empty();
@@ -604,6 +639,12 @@ StatefulSSLHostStateDelegate::GetRecurrentInterstitialMode() const {
 bool StatefulSSLHostStateDelegate::HasCertAllowException(
     const std::string& host,
     content::StoragePartition* storage_partition) {
+#if BUILDFLAG(IS_ARKWEB)
+  if (IsInMemoryCertsStorageEnforced()) {
+    return base::Contains(allowed_certs_for_non_default_storage_partitions_,
+                          host);
+  }
+#endif
   if (!storage_partition ||
       storage_partition != browser_context_->GetDefaultStoragePartition()) {
     return base::Contains(allowed_certs_for_non_default_storage_partitions_,

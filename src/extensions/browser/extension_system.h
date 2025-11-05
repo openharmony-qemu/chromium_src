@@ -17,6 +17,10 @@
 #include "extensions/common/extension.h"
 #include "extensions/common/extension_id.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "extensions/browser/extension_registry_info_manager.h"
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 namespace base {
@@ -133,6 +137,10 @@ class ExtensionSystem : public KeyedService {
   virtual void PerformActionBasedOnOmahaAttributes(
       const ExtensionId& extension_id,
       const base::Value::Dict& attributes) = 0;
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  virtual ExtensionRegistryInfoManager* GetExtensionRegistryInfoManager() {return nullptr;}
+#endif
 };
 
 }  // namespace extensions

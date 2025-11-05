@@ -1078,6 +1078,9 @@ ExtensionFunction::ResponseAction ManagementGenerateAppForLinkFunction::Run() {
 
   // Response is sent async in FinishCreateWebApp().
   return RespondLater();
+#else
+  return RespondNow(NoArguments());
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 ManagementInstallReplacementWebAppFunction::
@@ -1088,6 +1091,7 @@ ManagementInstallReplacementWebAppFunction::
 
 ExtensionFunction::ResponseAction
 ManagementInstallReplacementWebAppFunction::Run() {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   if (ExtensionsBrowserClient::Get()->IsRunningInForcedAppMode()) {
     return RespondNow(Error(keys::kNotAllowedInKioskError));
   }

@@ -1,0 +1,45 @@
+{
+  "file_path": "/home/sujiahao/code/arkweb_141/src/extensions/common/extension_l10n_util.cc",
+  "rej_file_path": "/home/sujiahao/code/arkweb_141/src/extensions/common/extension_l10n_util.cc.rej",
+  "analysis_timestamp": "2025-11-04",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "maintained",
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "line_range": "432-454",
+      "description": "在GetAllFallbackLocales函数中添加条件编译指令",
+      "conflict_cause": "Arkweb 132针对ARKWEB_ARKWEB_EXTENSIONS构建标志添加了条件编译，但在升级到Arkweb 141时产生了冲突",
+      "added_lines": [
+        "#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)",
+        "#endif"
+      ],
+      "removed_lines": [],
+      "risk_assessment": "低风险。这是一个标准的条件编译修改，用于在ARKWEB_ARKWEB_EXTENSIONS构建时排除特定的locale处理逻辑",
+      "analysis_process": "通过源文件中的函数签名和上下文成功定位到GetAllFallbackLocales函数，准确识别需要被条件编译包围的代码块",
+      "modification_confidence": "高",
+      "resolution_status": "已解决",
+      "modifications_applied": [
+        {
+          "action": "insert",
+          "line": 438,
+          "content": "#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)"
+        },
+        {
+          "action": "insert",
+          "line": 449,
+          "content": "#endif"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "processing_result": "成功",
+    "final_status": "所有冲突已解决",
+    "code_integrity": "保持良好",
+    "arkweb_compatibility": "修改符合Arkweb 141的构建要求",
+    "notes": "通过条件编译指令，在ARKWEB_ARKWEB_EXTENSIONS构建时将跳过preferred locale处理逻辑，这与Arkweb 132的修改意图一致"
+  }
+}

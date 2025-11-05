@@ -1,0 +1,55 @@
+{
+  "文件路径": "extensions/browser/extension_system.h",
+  "rej文件": "extensions/browser/extension_system.h.rej",
+  "分析时间": "2025-11-04",
+  "总体统计": {
+    "总hunk数量": 2,
+    "成功解决数量": 2,
+    "未能解决数量": 0
+  },
+  "hunks": [
+    {
+      "hunk_index": 1,
+      "rej文件行号": "3-11",
+      "风险等级": "低",
+      "冲突原因": "Arkweb 132 需要添加 ARKWEB_ARKWEB_EXTENSIONS 条件编译的头文件包含",
+      "分析过程": "该hunk需要在 extension_id.h 包含后添加条件编译的 extension_registry_info_manager.h 头文件。源文件中该位置存在且上下文匹配。",
+      "修改内容": {
+        "添加行": [
+          "#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)",
+          "#include \"extensions/browser/extension_registry_info_manager.h\"",
+          "#endif // ARKWEB_ARKWEB_EXTENSIONS"
+        ]
+      },
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "定位方法": "通过 extension_id.h 包含后的精确位置定位"
+    },
+    {
+      "hunk_index": 2,
+      "rej文件行号": "18-27",
+      "风险等级": "低",
+      "冲突原因": "Arkweb 132 需要添加 ARKWEB_ARKWEB_EXTENSIONS 条件编译的虚方法声明",
+      "分析过程": "该hunk需要添加 GetExtensionRegistryInfoManager() 虚方法。原始期望的上下文（FinishDelayedInstallationIfReady 方法）在 Arkweb 141 中不存在，但通过分析类结构，找到了合适的位置在最后一个方法后、类结束前添加该方法。",
+      "修改内容": {
+        "添加行": [
+          "#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)",
+          "  virtual ExtensionRegistryInfoManager* GetExtensionRegistryInfoManager() {return nullptr;}",
+          "#endif"
+        ]
+      },
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "定位方法": "通过类结构分析，在最后一个虚方法后、类结束前添加"
+    }
+  ],
+  "处理策略总结": {
+    "成功应用的修改": [
+      "在文件头添加了 ARKWEB_ARKWEB_EXTENSIONS 条件编译的头文件包含",
+      "在 ExtensionSystem 类中添加了 GetExtensionRegistryInfoManager() 虚方法"
+    ],
+    "rej文件状态": "保持完整未被修改",
+    "代码完整性": "所有修改都遵循了原子化应用原则，仅添加了 + 开头的行，未添加任何上下文行",
+    "编译兼容性": "添加的代码使用了条件编译，不会影响现有功能"
+  }
+}

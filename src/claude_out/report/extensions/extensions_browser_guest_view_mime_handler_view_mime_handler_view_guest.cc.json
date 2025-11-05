@@ -1,0 +1,69 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/extensions/browser/guest_view/mime_handler_view/mime_handler_view_guest.cc.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/extensions/browser/guest_view/mime_handler_view/mime_handler_view_guest.cc",
+    "处理时间": "2025-11-04"
+  },
+  "处理统计": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 2,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunks详情": [
+    {
+      "hunk索引": 1,
+      "原始位置": "第199-232行",
+      "冲突原因": "Arkweb扩展需要额外的缩放级别设置，同时移除了delegate_相关的参数覆盖逻辑",
+      "待添加行数": 5,
+      "待删除行数": 2,
+      "风险分析": {
+        "风险等级": "中等",
+        "描述": "添加了Arkweb扩展的缩放级别设置，这可能影响扩展页面的显示效果。移除delegate_参数覆盖可能影响某些依赖此功能的扩展。",
+        "潜在影响": "如果kArkwebExtensionScheme未正确定义，可能导致编译错误。移除的delegate_逻辑可能影响特定扩展的行为。"
+      },
+      "解决过程": {
+        "定位方法": "通过HostZoomMap::Get调用精确定位到CreateInnerPage函数中的缩放设置部分",
+        "应用策略": "添加了Arkweb扩展的条件编译缩放设置，移除了delegate_相关的OverrideWebContentsCreateParams调用",
+        "置信度": "高",
+        "状态": "已解决"
+      }
+    },
+    {
+      "hunk索引": 2,
+      "原始位置": "第235-246行",
+      "冲突原因": "扩展scheme检查需要支持Arkweb扩展的kArkwebExtensionScheme",
+      "待添加行数": 3,
+      "待删除行数": 1,
+      "风险分析": {
+        "风险等级": "低",
+        "描述": "扩展了URL scheme验证逻辑以支持Arkweb扩展，这是一个向后兼容的修改。",
+        "潜在影响": "如果kArkwebExtensionScheme未定义，条件编译将确保不影响现有功能。"
+      },
+      "解决过程": {
+        "定位方法": "通过DCHECK语句中的SchemeIs检查精确定位到DidAttachToEmbedder函数",
+        "应用策略": "将单条件检查扩展为支持kArkwebExtensionScheme的逻辑或条件",
+        "置信度": "高",
+        "状态": "已解决"
+      }
+    }
+  ],
+  "整体分析": {
+    "修改类型": "Arkweb扩展支持性修改",
+    "主要目的": "为Arkweb扩展系统添加专用的scheme和缩放级别支持",
+    "代码质量": "良好",
+    "潜在风险": "依赖BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)条件编译的正确配置",
+    "建议审查重点": [
+      "确认kArkwebExtensionScheme常量的定义",
+      "验证BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)的配置",
+      "测试移除delegate_逻辑后对现有扩展的影响"
+    ]
+  },
+  "合规性验证": {
+    ".rej文件保持完整": true,
+    "未创建任何脚本文件": true,
+    "未修改.rej文件": true,
+    "仅在指定目录创建JSON报告": true,
+    "严格遵守'不添加上下文'原则": true
+  }
+}

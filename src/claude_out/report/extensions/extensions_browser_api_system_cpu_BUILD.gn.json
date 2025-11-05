@@ -1,0 +1,43 @@
+{
+  "file_path": "extensions/browser/api/system_cpu/BUILD.gn",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": {
+    "status": "保持完整",
+    "modified": false,
+    "deleted": false
+  },
+  "hunks_analysis": [
+    {
+      "hunk_number": 1,
+      "line_range": "26-37",
+      "risk_level": "低",
+      "conflict_reason": "Arkweb132为OHOS平台添加了特定的CPU信息提供者源文件，但在Arkweb141中此修改未能正确集成",
+      "analysis_process": "通过分析.rej文件，识别出需要添加的OHOS平台条件判断代码块，包含3行代码：if (is_ohos)条件判断、sources添加语句和闭合大括号。使用源文件中现有的if (is_mac)条件作为上下文锚点，在其前方精确插入了OHOS平台支持代码。",
+      "modification_confidence": "高",
+      "resolution_strategy": "已成功应用",
+      "added_lines": [
+        "if (is_ohos) {",
+        "    sources += [ \"//arkweb/chromium_ext/extensions/browser/api/system_cpu/cpu_info_provider_ohos.cc\" ]",
+        "  }"
+      ],
+      "deleted_lines": [],
+      "anchor_points_used": [
+        "if (is_mac) {"
+      ],
+      "final_status": "已解决",
+      "notes": "在is_mac条件前成功插入OHOS平台支持，代码结构与原文件保持一致"
+    }
+  ],
+  "summary": {
+    "处理状态": "成功完成",
+    "总hunk数": 1,
+    "成功解决": 1,
+    "未能解决": 0,
+    "成功率": "100%",
+    "主要变更": "为OHOS平台添加了cpu_info_provider_ohos.cc源文件的包含",
+    "代码完整性": "保持良好",
+    "风险评估": "低风险，符合原Arkweb132的侵入式修改模式"
+  }
+}

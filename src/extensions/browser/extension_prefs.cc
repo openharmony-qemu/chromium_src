@@ -2277,6 +2277,9 @@ void ExtensionPrefs::RegisterProfilePrefs(
       kMV2DeprecationDisabledAcknowledgedGloballyPref.name, false);
   registry->RegisterBooleanPref(
       kMV2DeprecationUnsupportedAcknowledgedGloballyPref.name, false);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  registry->RegisterBooleanPref(kPrefNotDisplayInSettings, false);
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
   registry->RegisterStringPref(pref_names::kGlobalShortcutsUuid, std::string());
 
   registry->RegisterBooleanPref(

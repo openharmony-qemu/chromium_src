@@ -1,0 +1,59 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/extensions/browser/extension_prefs.cc.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/extensions/browser/extension_prefs.cc",
+    "处理时间": "2025-11-04"
+  },
+  "处理统计": {
+    "总hunk数量": 3,
+    "成功解决的hunk数量": 3,
+    "未能解决的hunk数量": 0,
+    ".rej文件完整性": "保持未被修改"
+  },
+  "hunks详情": [
+    {
+      "hunk编号": 1,
+      "原始位置": "第1400-1413行 (SetExtensionEnabled函数)",
+      "修改类型": "添加Arkweb扩展的CommitPendingWrite调用",
+      "风险分析": "低风险 - 这是一个简单的函数调用，用于确保扩展状态变更时立即写入首选项",
+      "冲突原因": "Arkweb 132在扩展启用时需要立即提交待写入的首选项变更",
+      "分析过程": "在Arkweb 141源码中，扩展启用/禁用的逻辑被重构到OnDisableReasonsChanged函数中，通过new_enabled参数区分状态。根据黄金法则，只添加了+行的内容，即Arkweb的条件编译代码块",
+      "修改置信度": "高",
+      "解决策略": "在OnDisableReasonsChanged函数末尾添加Arkweb的条件编译代码，调用prefs_->CommitPendingWrite()",
+      "最终状态": "已解决"
+    },
+    {
+      "hunk编号": 2,
+      "原始位置": "第1415-1428行 (SetExtensionDisabled函数)",
+      "修改类型": "添加Arkweb扩展的CommitPendingWrite调用",
+      "风险分析": "低风险 - 与第一个hunk相同的函数调用，确保禁用扩展时也立即写入首选项",
+      "冲突原因": "Arkweb 132在扩展禁用时需要立即提交待写入的首选项变更",
+      "分析过程": "由于Arkweb 141将启用/禁用逻辑合并到同一个函数中，我将两个hunk的修改合并为一个统一的条件编译块，避免了代码重复",
+      "修改置信度": "高",
+      "解决策略": "与第一个hunk合并处理，在同一个条件编译块中调用prefs_->CommitPendingWrite()",
+      "最终状态": "已解决"
+    },
+    {
+      "hunk编号": 3,
+      "原始位置": "第2137-2142行 (RegisterProfilePrefs函数)",
+      "修改类型": "注册Arkweb扩展的boolean preference",
+      "风险分析": "极低风险 - 这是一个标准的首选项注册操作，只是注册一个新的boolean类型的首选项",
+      "冲突原因": "Arkweb 132需要注册一个用于控制扩展是否在设置中显示的首选项",
+      "分析过程": "找到了RegisterProfilePrefs函数中对应的位置，在MV2 deprecation相关的preference注册后添加了Arkweb的条件编译代码块",
+      "修改置信度": "高",
+      "解决策略": "在RegisterProfilePrefs函数中添加Arkweb的条件编译代码，注册kPrefNotDisplayInSettings boolean preference",
+      "最终状态": "已解决"
+    }
+  ],
+  "整体评估": {
+    "冲突解决成功率": "100%",
+    "代码质量影响": "正面 - 所有修改都是对Arkweb特定功能的条件编译添加，不会影响核心功能",
+    "潜在风险": "极低 - 所有修改都遵循Arkweb的条件编译模式，只在ArkWEB_ARKWEB_EXTENSIONS标志启用时生效",
+    "建议": "建议验证kPrefNotDisplayInSettings常量在arkweb/chromium_ext/extensions/browser/extension_prefs_for_include.cc中是否已定义",
+    "合规性检查": {
+      "黄金法则遵循": "完全遵循 - 只添加了+开头的行，未添加任何上下文行",
+      "文件完整性": ".rej文件保持完整未被修改",
+      "路径合规": "只在指定源文件中进行修改，未创建任何脚本或辅助文件"
+    }
+  }
+}

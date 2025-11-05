@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/fixed_flat_set.h"
 #include "base/functional/bind.h"
 #include "base/json/json_writer.h"
@@ -90,6 +91,10 @@ namespace extensions {
 namespace web_request = api::web_request;
 
 namespace {
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+const char kWebRequestApiLogTag[] = "[WebRequestAPI]";
+#endif
 
 WebRequestAPI::TestObserver* g_test_observer = nullptr;
 
@@ -731,9 +736,11 @@ void WebRequestAPI::ResetURLLoaderFactories() {
 
 void WebRequestAPI::UpdateMayHaveProxies() {
   bool may_have_proxies = MayHaveProxies();
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   if (!may_have_proxies_ && may_have_proxies) {
     ResetURLLoaderFactories();
   }
+#endif
   may_have_proxies_ = may_have_proxies;
 }
 

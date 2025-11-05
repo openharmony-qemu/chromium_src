@@ -30,17 +30,3 @@
  std::string ExtensionPrefs::GetVersionString(
      const ExtensionId& extension_id) const {
    const base::Value::Dict* extension = GetExtensionPref(extension_id);
-@@ -2137,10 +2152,13 @@
-       kMV2DeprecationWarningAcknowledgedGloballyPref.name, false);
-   registry->RegisterBooleanPref(
-       kMV2DeprecationDisabledAcknowledgedGloballyPref.name, false);
-   registry->RegisterBooleanPref(
-       kMV2DeprecationUnsupportedAcknowledgedGloballyPref.name, false);
-+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-+  registry->RegisterBooleanPref(kPrefNotDisplayInSettings, false);
-+#endif  // ARKWEB_ARKWEB_EXTENSIONS
- }
- 
- template <class ExtensionIdContainer>
- bool ExtensionPrefs::GetUserExtensionPrefIntoContainer(
-     const char* pref,

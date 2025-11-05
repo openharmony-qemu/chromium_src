@@ -1113,6 +1113,21 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
   SearchifyState searchify_state_ = SearchifyState::kNotStarted;
 #endif
 
+#if BUILDFLAG(ARKWEB_PDF)
+  bool scroll_at_bottom_status_ = false;
+  gfx::Rect current_left_;
+  gfx::Rect current_right_;
+  bool is_touching_ = false;
+  bool is_scrolling_ = false;
+  bool is_pinching_ = false;
+
+  // Used for cancelable delayed task in `UpdateScroll()`.
+  const scoped_refptr<base::SequencedTaskRunner> task_runner_;
+  SEQUENCE_CHECKER(sequence_checker_);
+  base::DelayedTaskHandle cancelable_delayed_task_ GUARDED_BY_CONTEXT(sequence_checker_);
+
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
   base::WeakPtrFactory<PdfViewWebPlugin> weak_factory_{this};
 };
 

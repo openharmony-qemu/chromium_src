@@ -1572,6 +1572,10 @@ SkColor PdfViewWebPlugin::GetBackgroundColor() const {
 
 void PdfViewWebPlugin::SelectionChanged(const gfx::Rect& left,
                                         const gfx::Rect& right) {
+#if BUILDFLAG(ARKWEB_PDF)
+  current_left_ = left;
+  current_right_ = right;
+#endif
 #if BUILDFLAG(ENABLE_PDF_INK2)
   // Ignore the selected text if `ink_module_` is currently text highlighting.
   // This prevents `pdf_host_` from showing touch handles for touch text

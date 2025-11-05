@@ -1,0 +1,52 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/chenyunjiu/arkweb141/chromium_src/src/pdf/mojom/pdf.mojom.rej",
+    "源文件": "/home/chenyunjiu/arkweb141/chromium_src/src/pdf/mojom/pdf.mojom",
+    "处理时间": "2025-11-05"
+  },
+  "统计信息": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk处理详情": [
+    {
+      "hunk_id": 1,
+      "位置信息": "@@ -67,6 +67,17 @@",
+      "风险等级": "低",
+      "冲突原因": "Arkweb项目在PdfHost接口中添加了三个PDF相关的方法，使用了条件编译[EnableIf=arkweb_pdf]",
+      "分析过程": "根据.rej文件中的上下文行，找到了源文件中对应的OnSearchifyStarted()方法位置，在该方法后成功添加了三个新的PDF相关方法",
+      "待添加行": [
+        "  // #if BUILDFLAG(ARKWEB_PDF)",
+        "  [EnableIf=arkweb_pdf]",
+        "  UpdateClientClippedSelectionBoundsForPDF(gfx.mojom.Rect clipped_selection_bounds);",
+        "",
+        "  [EnableIf=arkweb_pdf]",
+        "  HideHandleAndQuickMenuForPDF(bool hide_handles);",
+        "",
+        "  [EnableIf=arkweb_pdf]",
+        "  ResetResponsePendingInputEvent();",
+        "  // #endif"
+      ],
+      "待删除行": [],
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "定位方法": "通过上下文行'OnSearchifyStarted()'精确定位到PdfHost接口的末尾位置",
+      "应用策略": "在OnSearchifyStarted()方法后，接口结束前添加三个PDF相关的方法定义"
+    }
+  ],
+  "整体分析": {
+    "冲突类型": "侵入式修改集成冲突",
+    "主要变更内容": "添加了Arkweb项目特有的PDF功能接口方法",
+    "影响范围": "PdfHost接口扩展",
+    "兼容性": "使用条件编译，不会影响标准Chromium功能",
+    "技术风险": "低风险，新增的接口方法都有明确的条件编译标记"
+  },
+  "验证结果": {
+    ".rej文件完整性": "未被修改，保持原样",
+    "源文件修改": "成功应用所有+/-行修改",
+    "语法检查": "mojom语法正确，接口定义完整",
+    "结构完整性": "接口定义结构完整，未破坏原有功能"
+  }
+}

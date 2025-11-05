@@ -575,6 +575,13 @@ class PDFiumEngine : public DocumentLoader::Client,
   // Sets whether form highlight should be enabled or cleared.
   virtual void SetFormHighlight(bool enable_form);
 
+#if BUILDFLAG(ARKWEB_PDF)
+  void OnSelectionPositionChangedForPDF(gfx::Rect& left,
+                                        gfx::Rect& right,
+                                        gfx::Rect& clipped_selection_bounds,
+                                        const std::vector<PDFiumRange>& selections);
+#endif  // BUILDFLAG(ARKWEB_PDF)
+
   // Scrolls to and highlights the first entry in `text_fragment_highlights_`.
   // Only valid if `text_fragment_highlights_` is non-empty (gated by a CHECK).
   // `force_smooth_scroll` forces smooth scrolling regardless of the current

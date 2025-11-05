@@ -53,6 +53,11 @@ class CC_EXPORT ResourcePool : public base::trace_event::MemoryDumpProvider {
   // Max delay before an evicted resource is flushed.
   static constexpr base::TimeDelta kDefaultMaxFlushDelay = base::Seconds(1);
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+  static constexpr base::TimeDelta kDefaultMaxExpirationDelay = base::Seconds(60);
+  static constexpr size_t kUnusedResourcesToKeep = 12;
+#endif
+
   // A class to hold ownership of PoolResources.
   class CC_EXPORT Backing {
    public:

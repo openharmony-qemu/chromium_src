@@ -1,0 +1,88 @@
+{
+  "文件名": "cc/trees/layer_tree_host_impl.h",
+  "总hunk数量": 7,
+  "成功解决的hunk数量": 7,
+  "未能解决的hunk数量": 0,
+  "处理状态": "全部解决",
+  ".rej文件保持完整未被修改": true,
+  "hunk详情": [
+    {
+      "hunk编号": 1,
+      "位置": "文件头部包含部分",
+      "描述": "添加ARKWEB_EXT的包含文件",
+      "风险": "低",
+      "冲突原因": "新增的包含文件",
+      "分析过程": "在ui/gfx/geometry/rect.h之前添加了ARKWEB_EXT相关的包含文件",
+      "修改置信度": "高",
+      "处理策略": "已成功添加",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 2,
+      "位置": "LayerTreeHostImplClient类定义中",
+      "描述": "添加SetDeferInvalidationForFastMainFrameFromImpl和OnScheduledActionDraw函数声明",
+      "风险": "低",
+      "冲突原因": "新增的虚函数接口",
+      "分析过程": "在LayerTreeHostImplClient类中正确添加了ARKWEB_WEBGL和ARKWEB_VSYNC_SCHEDULE条件编译的函数声明",
+      "修改置信度": "高",
+      "处理策略": "已成功添加",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 3,
+      "位置": "LayerTreeHostImplClient类的protected部分",
+      "描述": "添加OnLayerRectUpdate、OnLayerRectVisibilityChange和OnLayerBoundsUpdate函数声明",
+      "风险": "低",
+      "冲突原因": "新增的虚函数接口",
+      "分析过程": "在LayerTreeHostImplClient类的protected部分正确添加了ARKWEB_SAME_LAYER和ARKWEB_VIDEO_ASSISTANT条件编译的函数声明",
+      "修改置信度": "高",
+      "处理策略": "已成功添加",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 4,
+      "位置": "LayerTreeHostImpl类的public部分",
+      "描述": "添加ScheduledActionDraw和OnSetBypassVsyncCondition函数声明",
+      "风险": "低",
+      "冲突原因": "新增的函数声明",
+      "分析过程": "检查发现这些函数声明已经存在于源文件中，无需额外添加",
+      "修改置信度": "高",
+      "处理策略": "无需修改",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 5,
+      "位置": "LayerTreeHostImpl类的public部分",
+      "描述": "添加OnLayerRectUpdate、OnLayerRectVisibilityChange、OnLayerBoundsUpdate和SetupScrollBy函数声明",
+      "风险": "低",
+      "冲突原因": "新增的函数声明",
+      "分析过程": "在SetViewTransitionContentRect函数后正确添加了相关函数声明",
+      "修改置信度": "高",
+      "处理策略": "已成功添加",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 6,
+      "位置": "LayerTreeHostImpl类的成员变量部分",
+      "描述": "添加is_ohos_pc_ui_setting_成员变量",
+      "风险": "低",
+      "冲突原因": "新增的成员变量",
+      "分析过程": "检查发现该成员变量已经存在于源文件中，无需额外添加",
+      "修改置信度": "高",
+      "处理策略": "无需修改",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 7,
+      "位置": "LayerTreeHostImpl类的成员变量部分",
+      "描述": "添加isNeedDrawRect_成员变量",
+      "风险": "低",
+      "冲突原因": "新增的成员变量",
+      "分析过程": "在last_draw_active_tree_begin_frame_args_成员变量后正确添加了ARKWEB_SYNC_RENDER条件编译的成员变量",
+      "修改置信度": "高",
+      "处理策略": "已成功添加",
+      "解决状态": "已解决"
+    }
+  ],
+  "总结": "所有7个hunk均已成功处理，没有未能解决的冲突。.rej文件保持完整未被修改。"
+}

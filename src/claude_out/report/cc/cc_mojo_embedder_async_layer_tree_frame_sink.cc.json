@@ -1,0 +1,64 @@
+{
+  "file": "cc/mojo_embedder/async_layer_tree_frame_sink.cc",
+  "total_hunks": 2,
+  "resolved_hunks": 2,
+  "unresolved_hunks": 0,
+  "resolution_summary": "所有冲突均已成功解决",
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "location": "OnBeginFrame 函数内",
+      "status": "resolved",
+      "changes": [
+        {
+          "type": "insertion",
+          "description": "在 if (!needs_begin_frames_) 块中添加 ARKWEB_SWAP_BUFFER_TRACE 相关代码",
+          "confidence": "high",
+          "lines_added": 3,
+          "lines_removed": 0
+        },
+        {
+          "type": "insertion",
+          "description": "在 OnBeginFrame 函数末尾添加 ARKWEB_DFX_TRACING 相关代码",
+          "confidence": "high",
+          "lines_added": 3,
+          "lines_removed": 0
+        }
+      ],
+      "risk_assessment": "低风险 - 仅添加条件编译代码，不影响原有逻辑"
+    },
+    {
+      "hunk_id": 2,
+      "location": "文件末尾，命名空间结束前",
+      "status": "resolved",
+      "changes": [
+        {
+          "type": "insertion",
+          "description": "添加 InitSoftwareCompositorRender 函数实现",
+          "confidence": "high",
+          "lines_added": 6,
+          "lines_removed": 0
+        }
+      ],
+      "risk_assessment": "低风险 - 新增函数实现，不影响现有代码逻辑"
+    }
+  ],
+  "conflict_analysis": [
+    {
+      "reason": "版本升级导致的侵入式修改冲突",
+      "impact": "需要将 Arkweb 132 的特定功能移植到 Arkweb 141",
+      "resolution_approach": "精确匹配上下文并在正确位置应用修改"
+    }
+  ],
+  "verification": {
+    "rej_file_integrity": "保持完整未被修改",
+    "source_file_modifications": "已成功应用所有修改",
+    "syntax_check": "通过 - 添加的代码符合条件编译规范"
+  },
+  "process_notes": [
+    "严格按照第一性原则处理，未添加任何上下文行到源文件",
+    "未修改或删除 .rej 文件",
+    "未创建任何脚本文件或辅助工具",
+    "所有修改均在指定目录内完成"
+  ]
+}

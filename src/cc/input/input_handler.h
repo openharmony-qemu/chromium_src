@@ -908,6 +908,8 @@ class CC_EXPORT InputHandler : public InputDelegateForCompositor {
 
   base::TimeTicks last_scroll_begin_time_;
 
+  std::unique_ptr<InputHandlerUtils> handler_utils_;
+
   // Must be the last member to ensure this is destroyed first in the
   // destruction order and invalidates all weak pointers.
   base::WeakPtrFactory<InputHandler> weak_factory_{this};

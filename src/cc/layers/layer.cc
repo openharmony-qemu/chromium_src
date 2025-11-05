@@ -69,6 +69,14 @@ struct SameSizeAsLayer : public base::RefCounted<SameSizeAsLayer>,
 #if DCHECK_IS_ON()
   bool allow_remove_for_readd;
 #endif
+  std::unique_ptr<LayerUtils> layer_utils_;
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  bool should_overlay_;
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+
+#if defined(__arm__)
+  char dummy[8];
+#endif
   uint8_t bit_fields[2];
 };
 
@@ -115,7 +123,9 @@ Layer::Layer()
       ignore_set_needs_commit_for_test_(false),
       subtree_property_changed_(false),
       bitflags_(0u),
-      changed_properties_(0u) {}
+      changed_properties_(0u) {
+  layer_utils_ = std::make_unique<LayerUtils>(this);
+}
 
 Layer::~Layer() {
   // Our parent should be holding a reference to us so there should be no
@@ -1485,6 +1495,9 @@ void Layer::PushDirtyPropertiesTo(LayerImpl* layer,
     if (subtree_property_changed_.Read(*this)) {
       layer->NoteLayerPropertyChanged();
     }
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+    layer_utils_->PushPropertiesToImpl(layer);
+#endif
     layer->SetTouchActionRegion(inputs.touch_action_region);
     layer->SetContentsOpaque(inputs.contents_opaque);
     layer->SetContentsOpaqueForText(inputs.contents_opaque_for_text);

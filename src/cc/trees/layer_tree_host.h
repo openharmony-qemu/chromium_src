@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/cancelable_callback.h"
 #include "base/containers/flat_map.h"

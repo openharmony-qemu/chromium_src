@@ -1,0 +1,28 @@
+{
+  "file": "cc/mojom/BUILD.gn",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_status": "保持完整未被修改",
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "status": "已解决",
+      "risk_analysis": "低风险 - 添加了针对Android、OHOS和Arkweb平台的条件编译特性",
+      "conflict_reason": "上游Chromium 141版本中移除了特定于Arkweb的条件编译配置",
+      "analysis_process": "通过分析.rej文件中的上下文，确定了需要在mojom块中的public_deps定义之前插入条件编译配置。该配置启用了两个特性：is_android_or_ios_or_arkweb和arkweb_menu。",
+      "confidence": "高置信度 - 在源文件中准确找到了插入位置，并成功应用了所有添加的行",
+      "resolution_strategy": "直接在源文件中添加了+开头的行，没有修改或删除任何.rej文件中的上下文行",
+      "details": {
+        "added_lines": [
+          "if (is_android || is_ohos || is_arkweb) {",
+          "  enabled_features += [ \"is_android_or_ios_or_arkweb\" ]",
+          "  enabled_features += [ \"arkweb_menu\" ]",
+          "}"
+        ],
+        "removed_lines": []
+      }
+    }
+  ],
+  "summary": "成功解决了cc/mojom/BUILD.gn.rej文件中的所有冲突。总共1个hunk，全部成功解决。.rej文件保持完整未被修改。"
+}

@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/ref_counted.h"
@@ -44,6 +45,9 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/rounded_corners_f.h"
 #include "ui/gfx/geometry/rrect_f.h"
+
+#include "arkweb/chromium_ext/cc/layer/layer_ext.h"
+#include "arkweb/chromium_ext/cc/layer/layer_utils.h"
 
 namespace viz {
 class CopyOutputRequest;

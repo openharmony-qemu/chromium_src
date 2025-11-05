@@ -1,0 +1,43 @@
+{
+  "文件信息": {
+    "源文件": "/home/chenyunjiu/arkweb141/chromium_src/src/cc/trees/single_thread_proxy.h",
+    "冲突文件": "/home/chenyunjiu/arkweb141/chromium_src/src/cc/trees/single_thread_proxy.h.rej",
+    "报告文件": "/home/chenyunjiu/arkweb141/chromium_src/src/claude_out/report/cc/cc_trees_single_thread_proxy.h.json"
+  },
+  "处理统计": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 2,
+    "未能解决的hunk数量": 0,
+    "成功率": "100%"
+  },
+  "hunk处理详情": [
+    {
+      "hunk编号": 1,
+      "位置": "在SetVisible函数声明后添加SetPinchSmoothMode函数声明",
+      "状态": "已解决",
+      "风险评估": "低风险",
+      "冲突原因": "Arkweb132版本中添加了针对触控缩放平滑模式的支持函数声明",
+      "分析过程": "在single_thread_proxy.h文件中定位到SetVisible函数声明，在其后精确插入了#if BUILDFLAG(ARKWEB_PINCH_SMOOTH)条件编译块，包含SetPinchSmoothMode函数声明",
+      "修改置信度": "高",
+      "处理策略": "直接在指定位置添加+行内容，未添加任何上下文行",
+      "验证结果": "函数声明已正确添加到指定位置"
+    },
+    {
+      "hunk编号": 2,
+      "位置": "在SetDeferBeginMainFrameFromImpl函数声明后添加SetDeferInvalidationForFastMainFrameFromImpl函数声明",
+      "状态": "已解决",
+      "风险评估": "低风险",
+      "冲突原因": "Arkweb132版本中添加了针对WebGL快速主帧无效化的支持函数声明",
+      "分析过程": "在single_thread_proxy.h文件中定位到SetDeferBeginMainFrameFromImpl函数声明，在其后精确插入了#if BUILDFLAG(ARKWEB_WEBGL)条件编译块，包含SetDeferInvalidationForFastMainFrameFromImpl函数声明",
+      "修改置信度": "高",
+      "处理策略": "直接在指定位置添加+行内容，未添加任何上下文行",
+      "验证结果": "函数声明已正确添加到指定位置"
+    }
+  ],
+  "处理总结": {
+    "总体状态": "所有冲突均已成功解决",
+    "处理方式": "严格按照要求，仅添加+行内容，未添加任何上下文行",
+    "文件完整性": ".rej文件保持完整未被修改",
+    "合规性检查": "未创建任何脚本文件、工具文件或临时文件，完全遵守处理规则"
+  }
+}

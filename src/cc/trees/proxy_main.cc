@@ -577,6 +577,15 @@ void ProxyMain::SetShouldWarmUp() {
                                 base::Unretained(proxy_impl_.get())));
 }
 
+#if BUILDFLAG(ARKWEB_PINCH_SMOOTH)
+void ProxyMain::SetPinchSmoothMode(bool isEnable) {
+  TRACE_EVENT1("cc", "ProxyMain::SetPinchSmoothMode", "isEnable", isEnable);
+  ImplThreadTaskRunner()->PostTask(
+      FROM_HERE, base::BindOnce(&ProxyImpl::SetPinchSmoothModeOnImpl,
+                                base::Unretained(proxy_impl_.get()), isEnable));
+}
+#endif
+
 void ProxyMain::SetNeedsAnimate(bool urgent) {
   DCHECK(IsMainThread());
   if (SendCommitRequestToImplThreadIfNeeded(ANIMATE_PIPELINE_STAGE, urgent)) {
@@ -969,5 +978,21 @@ void ProxyMain::NotifyNewLocalSurfaceIdExpectedWhilePaused() {
       base::BindOnce(&ProxyImpl::NotifyNewLocalSurfaceIdExpectedWhilePaused,
                      base::Unretained(proxy_impl_.get())));
 }
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+void ProxyMain::OnLayerRectUpdate(int id, const gfx::Rect& rect) {
+  layer_tree_host_->AsLayerTreeHostExt()->OnLayerRectUpdate(id, rect);
+}
+
+void ProxyMain::OnLayerRectVisibilityChange(int id, bool visibility) {
+  layer_tree_host_->AsLayerTreeHostExt()->OnLayerRectVisibilityChange(id, visibility);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void ProxyMain::OnLayerBoundsUpdate(int id, const gfx::Rect& bounds) {
+  layer_tree_host_->AsLayerTreeHostExt()->OnLayerBoundsUpdate(id, bounds);
+}
+#endif // ARKWEB_VIDEO_ASSISTANT
 
 }  // namespace cc

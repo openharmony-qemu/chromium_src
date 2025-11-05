@@ -1,0 +1,50 @@
+{
+  "file": "cc/trees/proxy_impl.h",
+  "total_hunks": 4,
+  "resolved_hunks": 4,
+  "unresolved_hunks": 0,
+  "rej_file_status": "unchanged",
+  "analysis": [
+    {
+      "hunk_id": 1,
+      "description": "添加 arkweb/build/features/features.h 头文件包含",
+      "risk": "低",
+      "conflict_reason": "新添加的头文件包含，与上下文无冲突",
+      "analysis_process": "在 #include <vector> 之后，#include \"base/memory/raw_ptr.h\" 之前找到了精确的插入位置",
+      "confidence": "高",
+      "resolution": "已成功应用",
+      "details": "添加了 #include \"arkweb/build/features/features.h\" 行"
+    },
+    {
+      "hunk_id": 2,
+      "description": "添加 ARKWEB_SAME_LAYER 和 ARKWEB_VIDEO_ASSISTANT 相关的函数声明",
+      "risk": "低",
+      "conflict_reason": "新增函数声明，与现有代码结构兼容",
+      "analysis_process": "在 SmoothnessPriorityExpirationNotifierForTesting() 函数之后，SetShouldThrottleFrameRate() 函数之前找到了精确的插入位置",
+      "confidence": "高",
+      "resolution": "已成功应用",
+      "details": "添加了 OnLayerRectUpdate 和 OnLayerRectVisibilityChange (ARKWEB_SAME_LAYER) 以及 OnLayerBoundsUpdate (ARKWEB_VIDEO_ASSISTANT) 函数声明"
+    },
+    {
+      "hunk_id": 3,
+      "description": "添加 ARKWEB_WEBGL 相关的函数声明",
+      "risk": "低",
+      "conflict_reason": "新增函数声明，与现有代码结构兼容",
+      "analysis_process": "在 SetDeferBeginMainFrameFromImpl() 函数之后，IsInsideDraw() 函数之前找到了精确的插入位置",
+      "confidence": "高",
+      "resolution": "已成功应用",
+      "details": "添加了 SetDeferInvalidationForFastMainFrameFromImpl 函数声明，包含在 ARKWEB_WEBGL 宏定义中"
+    },
+    {
+      "hunk_id": 4,
+      "description": "添加 ARKWEB_PINCH_SMOOTH 相关的布尔变量",
+      "risk": "低",
+      "conflict_reason": "新增成员变量，与现有数据结构兼容",
+      "analysis_process": "在 inside_draw_ 变量之后，注释和其它变量之前找到了精确的插入位置",
+      "confidence": "高",
+      "resolution": "已成功应用",
+      "details": "添加了 pinch_smooth_ 布尔变量，初始化为 false，包含在 ARKWEB_PINCH_SMOOTH 宏定义中"
+    }
+  ],
+  "summary": "所有冲突均已成功解决，未修改 .rej 文件，严格遵守了不添加上下文的规则。所有修改均已精确应用到源文件中。"
+}

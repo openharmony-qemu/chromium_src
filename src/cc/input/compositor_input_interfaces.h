@@ -19,6 +19,7 @@
 #include "cc/trees/scroll_node.h"
 #include "ui/gfx/geometry/point_f.h"
 #include "ui/gfx/geometry/size.h"
+#include "arkweb/build/features/features.h"
 #include "ui/latency/latency_info.h"
 
 namespace viz {
@@ -202,6 +203,9 @@ class CompositorDelegateForInput {
   // eventually be removed.
   virtual LayerTreeHostImpl& GetImplDeprecated() = 0;
   virtual const LayerTreeHostImpl& GetImplDeprecated() const = 0;
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  virtual void ScheduledActionDraw() {}
+#endif
 };
 
 }  // namespace cc

@@ -737,8 +737,19 @@ void InputHandler::SetSynchronousInputHandlerRootScrollOffset(
                "offset_x", root_content_offset.x(), "offset_y",
                root_content_offset.y());
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  gfx::Vector2dF physical_delta =
+      gfx::Vector2dF(root_content_offset.x(), root_content_offset.y());
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+      float page_scroll_offset = 0.0;
+      if (condition_) {
+        page_scroll_offset = GetViewport().TotalScrollOffset().y();
+      }
+#endif
+#else
   gfx::Vector2dF physical_delta =
       root_content_offset - GetViewport().TotalScrollOffset();
+#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
   physical_delta.Scale(ActiveTree().page_scale_factor_for_scroll());
 
   gfx::Vector2dF consumed_delta =

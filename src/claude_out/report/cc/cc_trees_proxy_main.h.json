@@ -1,0 +1,41 @@
+{
+  "file": "cc/trees/proxy_main.h",
+  "total_hunks": 2,
+  "resolved_hunks": 2,
+  "unresolved_hunks": 0,
+  "hunks": [
+    {
+      "id": 1,
+      "status": "resolved",
+      "location": "After final_pipeline_stage() method, before private section",
+      "changes": [
+        "Added ARKWEB_SAME_LAYER conditional methods: OnLayerRectUpdate, OnLayerRectVisibilityChange",
+        "Added ARKWEB_VIDEO_ASSISTANT conditional method: OnLayerBoundsUpdate"
+      ],
+      "confidence": "high",
+      "analysis": "Successfully located the exact position in the source file where these methods should be added. The context matched perfectly with the final_pipeline_stage() method followed by the private section.",
+      "risk": "low",
+      "resolution_method": "Direct insertion of + lines without any context copying"
+    },
+    {
+      "id": 2,
+      "status": "resolved",
+      "location": "In private section, after SetVisible method",
+      "changes": [
+        "Added ARKWEB_PINCH_SMOOTH conditional method: SetPinchSmoothMode"
+      ],
+      "confidence": "high",
+      "analysis": "Successfully located the exact position in the private section after the SetVisible method where this method should be added. The context matched perfectly.",
+      "risk": "low",
+      "resolution_method": "Direct insertion of + lines without any context copying"
+    }
+  ],
+  "conflict_reasons": [
+    "Version upgrade from Chromium 132 to 141 caused structural differences in the proxy_main.h file",
+    "Arkweb-specific modifications in Chromium 132 were not present in the Chromium 141 baseline",
+    "Code movements and refactorings between versions affected the placement of custom methods"
+  ],
+  "resolution_summary": "All conflicts successfully resolved by precisely applying the Arkweb-specific modifications to the appropriate locations in the Chromium 141 codebase.",
+  "rej_file_status": "intact",
+  "verification": "The .rej file remains unmodified and intact as required."
+}

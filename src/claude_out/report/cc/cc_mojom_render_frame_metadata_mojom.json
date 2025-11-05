@@ -1,0 +1,43 @@
+{
+  "文件路径": "/home/chenyunjiu/arkweb141/arkweb_141/src/cc/mojom/render_frame_metadata.mojom.rej",
+  "冲突原因": "在Chromium 132到141的升级过程中，Arkweb对render_frame_metadata.mojom文件进行了侵入式修改，将原有的[EnableIf=is_android_or_ios]条件扩展为[EnableIf=is_android_or_ios_or_arkweb]以支持Arkweb特定功能。由于Chromium基线代码变更，这些修改在合并时产生了冲突。",
+  "分析过程": "通过对比.rej文件中的hunk信息与当前源文件，定位到三个需要修改的字段：root_overflow_y_hidden、scrollable_viewport_size和root_layer_size。每个字段都从仅限Android/iOS的条件判断扩展为包含Arkweb的条件判断。",
+  "修改置信度": "高",
+  "处理策略": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "hunk详细处理情况": [
+      {
+        "hunk编号": 1,
+        "原始定位行": "@@ -106,17 +109,17 @@",
+        "解决状态": "已解决",
+        "应用修改": [
+          {
+            "类型": "替换",
+            "原行": "[EnableIf=is_android|is_ios]",
+            "新行": "[EnableIf=is_android_or_ios_or_arkweb]",
+            "目标字段": "root_overflow_y_hidden"
+          },
+          {
+            "类型": "替换",
+            "原行": "[EnableIf=is_android|is_ios]",
+            "新行": "[EnableIf=is_android_or_ios_or_arkweb]",
+            "目标字段": "scrollable_viewport_size"
+          },
+          {
+            "类型": "替换",
+            "原行": "[EnableIf=is_android|is_ios]",
+            "新行": "[EnableIf=is_android_or_ios_or_arkweb]",
+            "目标字段": "root_layer_size"
+          }
+        ],
+        "备注": "所有修改均已精确应用，未添加任何额外上下文"
+      }
+    ]
+  },
+  "最终验证": {
+    ".rej文件完整性": ".rej文件保持完整未被修改",
+    "禁止操作遵守情况": "严格遵守了不添加上下文、不创建辅助文件、不生成脚本文件等黄金法则"
+  }
+}

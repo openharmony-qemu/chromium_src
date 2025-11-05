@@ -1,0 +1,22 @@
+{
+  "conflict_analysis": "根据.rej文件分析，Arkweb132在features.cc中添加了对'arkweb/build/features/features.h'的头文件引用。该修改已在Arkweb141源码中成功应用。",
+  "conflict_reason": "此冲突源于Arkweb132为支持其专有功能而进行的侵入式修改，在升级到Chromium141基线时因代码结构差异产生合并冲突。",
+  "analysis_process": "首先解析.rej文件中的hunk，识别出需要添加的'+'行。然后在源文件中定位相关include语句区域，精确插入新的头文件引用，严格遵守不添加上下文的原则。",
+  "modification_confidence": "高",
+  "handling_strategy": "直接应用",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "保持完整未被修改",
+  "hunk_details": [
+    {
+      "status": "已解决",
+      "description": "添加arkweb特有头文件引用",
+      "added_lines": [
+        "#include \"arkweb/build/features/features.h\""
+      ],
+      "removed_lines": [],
+      "location_in_rej": "第9行 (+)"
+    }
+  ]
+}

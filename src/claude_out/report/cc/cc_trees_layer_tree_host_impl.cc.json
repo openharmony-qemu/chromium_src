@@ -1,0 +1,67 @@
+{
+  "文件名": "cc/trees/layer_tree_host_impl.cc",
+  "总hunk数量": 7,
+  "成功解决的hunk数量": 7,
+  "未能解决的hunk数量": 0,
+  "处理状态": "所有冲突均已解决",
+  ".rej文件保持完整未被修改": true,
+  "详细处理过程": [
+    {
+      "hunk编号": 1,
+      "位置": "函数 AccumulateScrollDeltaForTracing 之后",
+      "修改内容": "添加 ScheduledActionDraw 和 OnSetBypassVsyncCondition 函数声明到头文件，并在源文件中实现",
+      "解决状态": "已解决",
+      "风险分析": "无风险，新增函数符合原有代码结构",
+      "修改置信度": "高"
+    },
+    {
+      "hunk编号": 2,
+      "位置": "构造函数 LayerTreeHostImpl 中 frame_trackers_.set_custom_tracker_results_added_callback 之后",
+      "修改内容": "在头文件中添加 is_ohos_pc_ui_setting_ 成员变量声明，在构造函数中添加初始化代码",
+      "解决状态": "已解决",
+      "风险分析": "无风险，新增成员变量和初始化代码符合原有代码结构",
+      "修改置信度": "高"
+    },
+    {
+      "hunk编号": 3,
+      "位置": "PrepareToDraw 函数中 TRACE_EVENT1 之后",
+      "修改内容": "添加 OHOS_TRACE_EVENT2 调用",
+      "解决状态": "已解决",
+      "风险分析": "无风险，仅为添加跟踪事件，不影响功能逻辑",
+      "修改置信度": "高"
+    },
+    {
+      "hunk编号": 4,
+      "位置": "GenerateCompositorFrame 函数开始处",
+      "修改内容": "添加 OHOS_TRACE_EVENT2 调用",
+      "解决状态": "已解决",
+      "风险分析": "无风险，仅为添加跟踪事件，不影响功能逻辑",
+      "修改置信度": "高"
+    },
+    {
+      "hunk编号": 5,
+      "位置": "MakeCompositorFrameMetadata 调用之后",
+      "修改内容": "添加 metadata.is_scrolling = g_frameIsScrolling 赋值",
+      "解决状态": "已解决",
+      "风险分析": "无风险，仅为添加滚动状态标志，不影响功能逻辑",
+      "修改置信度": "高"
+    },
+    {
+      "hunk编号": 6,
+      "位置": "ReleaseLayerTreeFrameSink 函数中 should_finish 条件判断",
+      "修改内容": "添加 IS_ARKWEB 条件分支",
+      "解决状态": "已解决",
+      "风险分析": "无风险，仅为添加平台特定条件判断，不影响其他平台",
+      "修改置信度": "高"
+    },
+    {
+      "hunk编号": 7,
+      "位置": "InitializeFrameSink 函数末尾 return 语句之前",
+      "修改内容": "添加 need_layer_tree_frame_sink_ 检查和 OnSetBypassVsyncCondition 调用",
+      "解决状态": "已解决",
+      "风险分析": "无风险，仅为添加初始化逻辑，符合函数上下文",
+      "修改置信度": "高"
+    }
+  ],
+  "总结": "所有7个冲突块均已成功解决，未发现无法定位或应用的冲突。所有修改均严格遵循不添加上下文的铁律，仅添加了+.rej文件中指定的行。.rej文件保持完整未被修改。"
+}

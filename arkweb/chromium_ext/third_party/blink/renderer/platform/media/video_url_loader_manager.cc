@@ -15,6 +15,7 @@
 
 #include "arkweb/chromium_ext/third_party/blink/renderer/platform/media/video_url_loader_manager.h"
 
+#include "base/hash/hash.h"
 #include "base/task/single_thread_task_runner.h"
 #include "third_party/blink/public/web/web_associated_url_loader_client.h"
 
@@ -38,8 +39,8 @@ PriorityLoader::PriorityLoader(base::WeakPtr<VideoURLLoaderImpl> load,
 
 std::string PriorityLoader::AsHumanReadableString() const {
   std::ostringstream s;
-  s << "[VideoOpt: pri=" << priority_ <<
-    << ", start=" << start_ << "]" <<
+  s << "[VideoOpt: pri=" << priority_
+    << ", start=" << start_ << "]"
     << "(hash" << std::hex << base::FastHash(base::byte_span_from_ref(this)) << ")";
 
   return s.str();
@@ -84,14 +85,17 @@ void VideoUrlLoaderManager::UpdatePriority4EnsurePlaying(std::string id,
     if (!it->loader_) {
       it = executing_list_.erase(it);
     } else {
-      if (it->id_ == id) {
-        if (it->priority_ == from_priority) {
-          it->priority_ = to_priority;
-        } else {
-          return;
-        }
+      if (it->id_ != id) {
+        ++it;
+        continue;
       }
-      it++;
+
+      if (it->priority_ == from_priority) {
+        it->priority_ = to_priority;
+      } else {
+        return;
+      }
+      ++it;
     }
   }
 
@@ -100,14 +104,17 @@ void VideoUrlLoaderManager::UpdatePriority4EnsurePlaying(std::string id,
     if (!it->loader_) {
       it = pending_list_.erase(it);
     } else {
-      if (it->id_ == id) {
-        if (it->priority_ == from_priority) {
-          it->priority_ = to_priority;
-        } else {
-          return;
-        }
+      if (it->id_ != id) {
+        ++it;
+        continue;
       }
-      it++;
+
+      if (it->priority_ == from_priority) {
+        it->priority_ = to_priority;
+      } else {
+        return;
+      }
+      ++it;
     }
   }
 
@@ -136,16 +143,8 @@ void VideoUrlLoaderManager::UpdateUrlLoader() {
     if (!it->loader_) {
       it = executing_list_.erase(it);
     } else {
-      if (loader_priority_map_.count(it->id_)) {
-        it->priority_ = loader_priority_map_[it->id_];
-      } else {
-        if (playing_video_set_.count(it->id_)) {
-          it->priority_ = kPlayingPriority;
-        } else {
-          it->priority_ = kDefaultPriority;
-        }
-      }
-      it++;
+      UpdateUrlLoaderList(it);
+      ++it;
     }
   }
 
@@ -154,21 +153,25 @@ void VideoUrlLoaderManager::UpdateUrlLoader() {
     if (!it->loader_) {
       it = pending_list_.erase(it);
     } else {
-      if (loader_priority_map_.count(it->id_)) {
-        it->priority_ = loader_priority_map_[it->id_];
-      } else {
-        if (playing_video_set_.count(it->id_)) {
-          it->priority_ = kPlayingPriority;
-        } else {
-          it->priority_ = kDefaultPriority;
-        }
-      }
-      it++;
+      UpdateUrlLoaderList(it);
+      ++it;
     }
   }
 
   pending_list_.sort();
   StartPendingLoaderIfNeeded();
+}
+
+void VideoUrlLoaderManager::UpdateUrlLoaderList(std::list<PriorityLoader>::iterator& it) {
+  if (loader_priority_map_.count(it->id_)) {
+    it->priority_ = loader_priority_map_[it->id_];
+  } else {
+    if (playing_video_set_.count(it->id_)) {
+      it->priority_ = kPlayingPriority;
+    } else {
+      it->priority_ = kDefaultPriority;
+    }
+  }
 }
 
 void VideoUrlLoaderManager::AddUrlLoader(PriorityLoader priLoader) {
@@ -253,13 +256,13 @@ bool VideoUrlLoaderManager::RemoveLoaderFromList(
         lst->erase(it);
         return true;
       }
-      it++;
+      ++it;
     }
   }
   return false;
 }
 
-void VideoUrlLoaderManager::PrintVideoPriority() {
+void VideoUrlLoaderManager::PrintVideoPriority() const {
   LOG(DEBUG) << "VideoOpt, pending size:" << pending_list_.size();
   for (const auto& pendVideo : pending_list_) {
     LOG(DEBUG) << "VideoOpt, pending:" << pendVideo.AsHumanReadableString();

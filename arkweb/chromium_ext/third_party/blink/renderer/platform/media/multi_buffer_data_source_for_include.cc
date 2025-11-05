@@ -15,6 +15,12 @@
 
 namespace blink {
 
+namespace {
+const uint16_t kRate = 1000;
+const uint16_t kDefaultByteRate = 250;
+const uint16_t kByteUnit = 8;
+}
+
 #if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
 void MultiBufferDataSource::SetVLOParams(uint16_t preload,
                                          uint16_t max,
@@ -23,15 +29,15 @@ void MultiBufferDataSource::SetVLOParams(uint16_t preload,
                                          uint16_t moov_size,
                                          std::string video_id) {
   video_id_ = video_id;
-  byte_rate_ = bitrate / 8;
+  byte_rate_ = bitrate / kByteUnit;
   if (byte_rate_ <= 0) {
-    byte_rate_ = 250;
+    byte_rate_ = kDefaultByteRate;
     LOG(INFO) << "VideoOpt bitrate is invalid, value=" << bitrate;
   }
  
-  max_cache_ = byte_rate_ * max * 1000;
-  min_cache_ = byte_rate_ * min * 1000;
-  preload_cache_ = (byte_rate_ * preload + moov_size) * 1000;
+  max_cache_ = byte_rate_ * max * kRate;
+  min_cache_ = byte_rate_ * min * kRate;
+  preload_cache_ = (byte_rate_ * preload + moov_size) * kRate;
   LOG(INFO) << "VideoOpt video_id_=" << video_id_ << "; byte_rate_=" << byte_rate_
             << "; preload_cache_=" << preload_cache_ << "; moov=" << moov_size
             << "; max=" << max << "; min=" << min << "; preload=" << preload

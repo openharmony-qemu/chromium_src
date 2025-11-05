@@ -362,7 +362,7 @@ TEST_F(RenderThreadImplExtUnittest, VideoLoadOpt_UpdateOptimizationConfigTest) {
   bool enable_ = true;
   int preloadTime = 6;
   int maxCacheTime = 9;
-  int minCacheTime = 3;;
+  int minCacheTime = 3;
   int moovSize = 200;
   int bitRate = 800;
   std::vector<std::string> support_domains;
@@ -383,7 +383,7 @@ TEST_F(RenderThreadImplExtUnittest, VideoLoadOpt_ConfigEnableTest) {
   bool enable_ = true;
   int preloadTime = 6;
   int maxCacheTime = 9;
-  int minCacheTime = 3;;
+  int minCacheTime = 3;
   int moovSize = 200;
   int bitRate = 800;
   std::vector<std::string> support_domains;

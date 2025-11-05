@@ -1153,6 +1153,23 @@ void WebContentsImplExt::OnPdfLoadEvent(int32_t result,
     delegate_->OnPdfLoadEvent(result, url);
   }
 }
+
+void WebContentsImplExt::ProcessForPdfType(NavigationHandle* navigation_handle) {
+  if (!navigation_handle) {
+    LOG(ERROR) << "navigation_handle is null";
+    return;
+  }
+
+  std::string mime_type = GetContentsMimeType();
+  RenderFrameHostImpl* rfh = GetPrimaryMainFrame();
+  if (!rfh) {
+    LOG(ERROR) << "rfh is null";
+    return;
+  }
+  bool is_pdf = base::EqualsCaseInsensitiveASCII(mime_type, "application/pdf");
+  LOG_IF(INFO, is_pdf) << "content is pdf.";
+  rfh->SetIsPDF(is_pdf);
+}
 #endif  // BUILDFLAG(ARKWEB_PDF)
 // LCOV_EXCL_STOP
 

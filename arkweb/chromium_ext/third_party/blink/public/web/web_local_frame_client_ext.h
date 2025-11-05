@@ -75,6 +75,10 @@ class BLINK_EXPORT WebLocalFrameClientExt : public WebLocalFrameClient {
                                              int64_t pref_hash) {}
 #endif
 
+#if BUILDFLAG(ARKWEB_PDF)
+  virtual bool IsPDF() override { return false; }
+#endif
+
 #if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
   virtual bool IsVideoLoadOptimizationEnabled(const std::string& url) { return false; }
   virtual int GetVideoPreloadTimeDefault() const { return INT_MAX; }

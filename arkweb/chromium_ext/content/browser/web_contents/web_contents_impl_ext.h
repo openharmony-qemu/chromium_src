@@ -385,6 +385,7 @@ private:
 #if BUILDFLAG(ARKWEB_PDF)
   void OnPdfScrollAtBottom(const std::string& url) override;
   void OnPdfLoadEvent(int32_t result, const std::string& url) override;
+  void ProcessForPdfType(NavigationHandle* navigation_handle);
 #endif  // BUILDFLAG(ARKWEB_PDF)
 #if BUILDFLAG(ARKWEB_BFCACHE)
   void SetMediaResumeFromBFCachePage(bool resume) override;

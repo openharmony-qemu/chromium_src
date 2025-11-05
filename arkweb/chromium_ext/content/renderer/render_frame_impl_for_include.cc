@@ -136,6 +136,15 @@ void RenderFrameImpl::OnPdfLoadEvent(int32_t result, const std::string& url) {
     GetFrameHost()->OnPdfLoadEvent(result, url);
   }
 }
+
+void RenderFrameImpl::SetIsPDF(bool is_pdf) {
+  is_pdf_ = is_pdf;
+}
+
+bool RenderFrameImpl::IsPDF() {
+  return is_pdf_;
+}
+
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
 #if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)

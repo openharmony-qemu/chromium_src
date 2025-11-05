@@ -40,6 +40,8 @@
 #include "arkweb/chromium_ext/pdf/paint_manager_for_include.cc"
 #endif
 
+#include "base/trace_event/trace_event.h"
+
 namespace chrome_pdf {
 
 PaintManager::PaintManager(Client* client) : client_(client) {
@@ -195,6 +197,7 @@ void PaintManager::DoPaint(bool is_repainting) {
 #else
 void PaintManager::DoPaint() {
 #endif
+  TRACE_EVENT0("media", "PaintManager::DoPaint");
   base::AutoReset<bool> auto_reset_in_paint(&in_paint_, true);
 
   std::vector<PaintReadyRect> ready_rects;

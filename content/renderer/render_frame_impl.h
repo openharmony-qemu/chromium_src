@@ -464,6 +464,8 @@ class CONTENT_EXPORT RenderFrameImpl
 #if BUILDFLAG(ARKWEB_PDF)
   void OnPdfScrollAtBottom(const std::string& url) override;
   void OnPdfLoadEvent(int32_t result, const std::string& url) override;
+  void SetIsPDF(bool is_pdf) override;
+  bool IsPDF() override;
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
@@ -1361,6 +1363,10 @@ class CONTENT_EXPORT RenderFrameImpl
   // main frame or not. It remains accurate during destruction, even when
   // |frame_| has been invalidated.
   bool is_main_frame_;
+
+#if BUILDFLAG(ARKWEB_PDF)
+  bool is_pdf_ = false;
+#endif
 
   class UniqueNameFrameAdapter : public blink::UniqueNameHelper::FrameAdapter {
    public:

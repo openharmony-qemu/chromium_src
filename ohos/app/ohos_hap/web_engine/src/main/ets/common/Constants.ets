@@ -40,4 +40,10 @@ export enum CommandType {
   kGetLastActiveWidget,
   kOpenURL,
   kAppExit,
-};
+}
+
+export enum kTitleBarHeight{
+  kDefault = 37,
+  kMinimum = 37,
+  kMaximum = 112
+}

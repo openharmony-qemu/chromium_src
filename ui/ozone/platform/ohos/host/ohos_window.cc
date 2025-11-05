@@ -59,7 +59,14 @@ bool OhosWindow::Initialize(PlatformWindowInitProperties properties) {
   TRACE_EVENT0("gpu", "OhosWindow::Initialize");
 
   type_ = properties.type;
-  bounds_in_pixels_ = ConvertDipToPixelForNewWindow(properties.bounds);
+  display::Display current_display = PrepareDisplayForNewWindow();
+  bounds_in_pixels_ = display::ohos::ScreenOhos::ConvertDipToPixel(
+      current_display, properties.bounds);
+  if (ohos::adapter::nodeHandle::NodeHandleImpl::GetInstance()
+          .IsSupportNodeHandle() &&
+      current_display.is_valid()) {
+    SetCurrentDisplayId(current_display.id());
+  }
 
   OnInitialize(std::move(properties));
 
@@ -456,8 +463,7 @@ int32_t OhosWindow::GetOriginWindowId() {
   return origin_window_ids.front();
 }
 
-gfx::Rect OhosWindow::ConvertDipToPixelForNewWindow(
-    const gfx::Rect& rect_in_dip) {
+display::Display OhosWindow::PrepareDisplayForNewWindow() {
   int32_t target_widget_id = gfx::kNullAcceleratedWidget;
   if (parent_window()) {
     target_widget_id = parent_window()->GetWidget();
@@ -474,8 +480,7 @@ gfx::Rect OhosWindow::ConvertDipToPixelForNewWindow(
   if (target_window != nullptr) {
     current_display = target_window->GetCurrentDisplay();
   }
-  return display::ohos::ScreenOhos::ConvertDipToPixel(current_display,
-                                                      rect_in_dip);
+  return current_display;
 }
 
 display::Display OhosWindow::GetCurrentDisplay() {

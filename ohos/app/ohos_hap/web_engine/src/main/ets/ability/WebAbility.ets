@@ -10,7 +10,7 @@ import window from '@ohos.window';
 import Want from '@ohos.app.ability.Want';
 import { AbilityManager } from '../common/AbilityManager';
 import { AppLifecycleAdapter } from '../adapter/AppLifecycleAdapter';
-import { BrowserCloseResponse, CaptionButtonRect, WindowBound, WindowLimits, IWebAppInfo } from '../interface/CommonInterface';
+import { BrowserCloseResponse, CaptionButtonRect, WindowBound, WinLimits, IWebAppInfo, WindowStatus } from '../interface/CommonInterface';
 import { BusinessError, deviceInfo, settings } from '@kit.BasicServicesKit';
 import { CommandType, ConfigData, WebStatus } from '../common/Constants';
 import { common, ConfigurationConstant } from '@kit.AbilityKit';
@@ -198,6 +198,14 @@ export class WebAbility extends WebBaseAbility {
         LogUtil.error(TAG, `register displayIdChange listener fail, xcomponentId:${this.xcomponentId},
                       exception: ${JSON.stringify(exception)}`);
       }
+
+      if (this.initStatus === WindowStatus.MAXIMIZE) {
+        data.maximize(window.MaximizePresentation.EXIT_IMMERSIVE).then(() => {
+          LogUtil.info(TAG, 'Window starts in maximized state.');
+        }).catch((err: BusinessError) => {
+          LogUtil.error(TAG, 'Window fails to start in maximized state. Cause:' + JSON.stringify(err));
+        });
+      }
     });
 
     try {
@@ -272,11 +280,11 @@ export class WebAbility extends WebBaseAbility {
         if (this.xcomponentId === ConfigData.DEFAULT_WINDOW_ID) {
           let windowLimits = this.getWindow()?.getWindowLimits();
           let uiContext = window.getUIContext();
-          let limits: WindowLimits = {
-            maxHeight: Math.ceil(uiContext.px2vp(windowLimits?.maxHeight ?? 0)),
-            maxWidth: Math.ceil(uiContext.px2vp(windowLimits?.maxWidth ?? 0)),
-            minHeight: Math.ceil(uiContext.px2vp(windowLimits?.minHeight ?? 0)),
-            minWidth: Math.ceil(uiContext.px2vp(windowLimits?.minWidth ?? 0))
+          let limits: WinLimits = {
+            max_height: Math.ceil(uiContext.px2vp(windowLimits?.maxHeight ?? 0)),
+            max_width: Math.ceil(uiContext.px2vp(windowLimits?.maxWidth ?? 0)),
+            min_height: Math.ceil(uiContext.px2vp(windowLimits?.minHeight ?? 0)),
+            min_width: Math.ceil(uiContext.px2vp(windowLimits?.minWidth ?? 0))
           }
           this.nativeContext.SetSystemWindowLimits(limits);
         }

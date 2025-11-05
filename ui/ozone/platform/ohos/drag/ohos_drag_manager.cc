@@ -323,10 +323,10 @@ void OhosDragManager::HandleDropData(
         ui::ClipboardFormatType::GetType(kBookmarkFormatString),
         std::move(pickle));
   }
-  if (drop_data.basic_data.bookmark_data.size() > 0) {
+  if (drop_data.basic_data.web_custom_data.size() > 0) {
     base::Pickle pickle = base::Pickle::WithData((
-        base::span(reinterpret_cast<const uint8_t*>(drop_data.basic_data.bookmark_data.data()),
-                   drop_data.basic_data.bookmark_data.size())));
+        base::span(reinterpret_cast<const uint8_t*>(drop_data.basic_data.web_custom_data.data()),
+                   drop_data.basic_data.web_custom_data.size())));
     provider.SetPickledData(
         ui::ClipboardFormatType::GetType(kWebCustomFormatString),
         std::move(pickle));

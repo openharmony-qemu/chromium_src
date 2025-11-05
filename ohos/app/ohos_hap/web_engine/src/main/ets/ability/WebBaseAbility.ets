@@ -8,7 +8,7 @@ import window from '@ohos.window';
 import Want from '@ohos.app.ability.Want';
 import AbilityConstant from '@ohos.app.ability.AbilityConstant';
 import JsBindingUtils from '../utils/JsBindingUtils';
-import { ChangeEventType, NativeContext } from '../interface/CommonInterface';
+import { ChangeEventType, NativeContext, WindowStatus } from '../interface/CommonInterface';
 import { CommandType, ConfigData, ContextType } from '../common/Constants';
 import CheckEmptyUtils from '../utils/CheckEmptyUtils';
 import { WebProxy } from '../interface/WebProxy';
@@ -31,6 +31,7 @@ export class WebBaseAbility extends UIAbility implements WebProxy {
   protected titleButtonVisible: boolean = true;
   protected appId: string = '';
   protected deviceModeChangeEvent: ChangeEventType | undefined = undefined;
+  protected initStatus: WindowStatus = WindowStatus.FLOATING;
 
   private initParameters(want: Want) {
     if (want && want.parameters) {
@@ -51,6 +52,9 @@ export class WebBaseAbility extends UIAbility implements WebProxy {
       }
       if (want.parameters["webappWindow"] !== undefined && want.parameters["webappWindow"] !== '') {
         this.appId = "--app-id=" + want.parameters['webappWindow'] as string;
+      }
+      if (want.parameters["status"] !== undefined) {
+        this.initStatus = want.parameters['status'] as WindowStatus;
       }
     }
 

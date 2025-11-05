@@ -171,10 +171,7 @@ class OhosWindow : public PlatformWindow,
   int64_t GetCurrentDisplayId() {
     return current_display_id_;
   }
-  // Convert the logical pixels of the rectangular area data in the new window
-  // to physical pixels.
-  gfx::Rect ConvertDipToPixelForNewWindow(
-      const gfx::Rect& rect_in_dip);
+  display::Display PrepareDisplayForNewWindow();
 
   virtual int32_t GetOriginWindowId();
   virtual display::Display GetCurrentDisplay();

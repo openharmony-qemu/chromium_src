@@ -74,6 +74,9 @@ class ADAPTER_EXPORT_API XComponentManager final : public XComponentDelegate {
   bool BindNativeXComponentNode(const std::string& id, ArkUI_NodeContentHandle node_content_handle);
   bool UnBindNativeXComponentNode(const std::string& id, ArkUI_NodeContentHandle node_content_handle);
   void OnAbilityAvailable(const std::string& id);
+  std::string GetCreatedAbility();
+  void CreateAndShowAbility(const WindowInitParameter& param,
+                            std::string create_id);
 
  private:
   XComponentManager() = default;

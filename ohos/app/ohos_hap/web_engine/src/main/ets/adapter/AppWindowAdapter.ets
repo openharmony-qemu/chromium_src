@@ -13,12 +13,15 @@ import LogUtil from '../utils/LogUtil';
 import { AbilityManager } from '../common/AbilityManager';
 import LogMethod from '../common/LogDecorator';
 import { StartOptions } from '@kit.AbilityKit';
-import { NewWindowParam, PointCoordinate, WindowBound, kAbilityMap } from '../interface/CommonInterface';
+import { NewWindowParam, PointCoordinate, WindowBound, kAbilityMap,
+  AbilityType } from '../interface/CommonInterface';
 import LaunchHelper from '../utils/LaunchHelper';
 import { ContextAdapter } from './ContextAdapter';
 import { DeviceInfoAdapter } from "../adapter/DeviceInfoAdapter";
 import { NativeThemeAdapter } from './NativeThemeAdapter';
 import { NodeHandleManager } from '../common/NodeHandleManager';
+import { kTitleBarHeight } from '../common/Constants';
+import CheckEmptyUtils from '../utils/CheckEmptyUtils';
 
 const TAG: string = 'AppWindow';
 
@@ -83,7 +86,8 @@ export class AppWindowAdapter extends BaseAdapter {
         'useDarkMode': param.use_dark_mode,
         'titleButtonVisible': param.caption_button_visible,
         instanceKey: param.window_id,
-        'webappWindow': param.app_id
+        'webappWindow': param.app_id,
+        'initStatus': param.status
       }
     };
 
@@ -91,11 +95,34 @@ export class AppWindowAdapter extends BaseAdapter {
     const windowProp = windowClass?.getWindowProperties();
     let xComBorder: number = windowProp?.drawableRect.left || 0;
     let xComTop: number = windowProp?.drawableRect.top || 0;
+    let uiContext = windowClass?.getUIContext();
+
+    if (this.nativeContext.IsSupportNodeHandleFeature() &&
+      param.ability_type === AbilityType.kTaskManagerAbility &&
+      !CheckEmptyUtils.isWindowBoundsEmpty(param.bounds) &&
+      !param.hide_title_bar) {
+      // Keep the bounds saved in Chromium consistent with the bounds in windowRectChange,
+      // otherwise the window will shift downwards the next time it is created.
+      xComTop = uiContext ? uiContext.vp2px(kTitleBarHeight.kDefault) : xComTop;
+    }
+
     let options: StartOptions = {
       windowLeft: param.bounds.left - xComBorder,
       windowTop: param.bounds.top - xComTop,
       windowWidth: param.bounds.width + xComBorder + xComBorder,
       windowHeight: param.bounds.height + xComBorder + xComTop,
+      minWindowWidth: uiContext ?
+        uiContext.px2vp(param.window_limit.min_width === 0 ? 0 :
+          param.window_limit.min_width + xComBorder + xComBorder) : 0,
+      minWindowHeight: uiContext ?
+        uiContext.px2vp(param.window_limit.min_height === 0 ? 0 :
+          param.window_limit.min_height + xComBorder + xComTop) : 0,
+      maxWindowWidth: uiContext ?
+        uiContext.px2vp(param.window_limit.max_width === 0 ? 0 :
+          param.window_limit.max_width + xComBorder + xComBorder) : 0,
+      maxWindowHeight: uiContext ?
+        uiContext.px2vp(param.window_limit.max_height === 0 ? 0 :
+          param.window_limit.max_height + xComBorder + xComTop) : 0,
       startWindowBackgroundColor: this.backgroundColor(param.use_dark_mode),
     }
     LaunchHelper.LaunchWithOptions(this.ctxAdapter.getActiveContext(), want, options);

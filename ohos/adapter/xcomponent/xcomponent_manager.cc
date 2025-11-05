@@ -33,6 +33,8 @@ NewWindowParam ConvertWindowInitParamsToNewParams(
   newParam.caption_button_visible = param.caption_button_visible;
   newParam.ability_type = param.ability_type;
   newParam.app_id = std::string(param.app_id);
+  newParam.status = param.status;
+  newParam.window_limit = param.window_limit;
   if (param.use_floating_window) {
     newParam.adapter_type = AdapterType::kSystemFloatingWindow;
   } else if (param.type == WindowInitType::kPopup) {
@@ -361,8 +363,8 @@ void XComponentManager::RegisterNodeHandleInputEventCallBack(
     int32_t widget_id,
     std::shared_ptr<NodeHandleInputEventCallBack> callback) {
   for (const auto& [xcomponentId, render] : node_handle_render_map_) {
-    if (render != nullptr && WindowAdapter::GetInstance().GetWidgetId(
-                                 render->GetId()) == widget_id) {
+    if (render != nullptr &&
+        WindowAdapter::GetInstance().GetWidgetId(render->GetId()) == widget_id) {
       render->RegisterNodeHandleInputEventCallBack(callback);
     }
   }
@@ -390,7 +392,12 @@ std::string XComponentManager::CreateWindow(const WindowInitParameter& param) {
 
 std::string XComponentManager::CreateMainWindow(const NewWindowParam& param) {
   if (nodeHandle::NodeHandleImpl::GetInstance().IsSupportNodeHandle()) {
-    return CreateMainWindowViaNodeHandle(std::move(param));
+    std::string create_id = param.window_id;
+    creating_window_ = create_id;
+    CreateXComponentViaNodeHandle(create_id, XComponentType::kWindow);
+    WaitForXComponentCreated(create_id);
+    creating_window_.clear();
+    return create_id;
   } else {
     {
       std::lock_guard<std::mutex> lock_protect(window_status_mutex_);
@@ -428,28 +435,21 @@ void XComponentManager::CreateAbilityViaNodeHandle(const NewWindowParam& param,
   CreateWindowViaAdapter(param);
 }
 
-std::string XComponentManager::CreateMainWindowViaNodeHandle(
-    const NewWindowParam& param) {
-  std::string create_id = param.window_id;
-  bool need_create_ability;
-  {
-    std::lock_guard<std::mutex> lock_protect(ability_status_mutex_);
-    need_create_ability = reuse_ability_.empty();
-    if (!need_create_ability) {
-      create_id = reuse_ability_.front();
-      reuse_ability_.pop();
-    }
+std::string XComponentManager::GetCreatedAbility() {
+  std::lock_guard<std::mutex> lock_protect(ability_status_mutex_);
+  std::string ability_id;
+  if (!reuse_ability_.empty()) {
+    ability_id = reuse_ability_.front();
+    reuse_ability_.pop();
   }
- 
-  creating_window_ = create_id;
-  CreateXComponentViaNodeHandle(create_id, XComponentType::kWindow);
-  if (need_create_ability) {
-    CreateAbilityViaNodeHandle(param, create_id);
-    WaitForAbilityCreated(create_id);
-  }
-  WaitForXComponentCreated(create_id);
-  creating_window_.clear();
-  return create_id;
+  return ability_id;
+}
+
+void XComponentManager::CreateAndShowAbility(const WindowInitParameter& param,
+                                             std::string create_id) {
+  NewWindowParam newParam = ConvertWindowInitParamsToNewParams(param);
+  CreateAbilityViaNodeHandle(newParam, create_id);
+  WaitForAbilityCreated(create_id);
 }
 
 std::string XComponentManager::CreateSubWindow(const NewWindowParam& param) {
@@ -568,13 +568,14 @@ bool XComponentManager::BindNativeXComponentNode(
 
 void XComponentManager::OnAbilityAvailable(const std::string& id) {
   std::lock_guard<std::mutex> lock_protect(ability_status_mutex_);
-  if (ability_status_.contains(id)) {
-    ability_status_[id].set_value(true);
+  auto iter = ability_status_.find(id);
+  if (iter != ability_status_.end()) {
+    iter->second.set_value(true);
   } else {
     reuse_ability_.push(id);
   }
 }
- 
+
 void XComponentManager::WaitForAbilityCreated(std::string& create_id) {
   if (create_id.empty()) {
     return;

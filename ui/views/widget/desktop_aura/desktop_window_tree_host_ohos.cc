@@ -36,16 +36,6 @@ void DesktopWindowTreeHostOhos::OnClosed() {
   DesktopWindowTreeHostPlatform::OnClosed();
 }
 
-void DesktopWindowTreeHostOhos::Show(ui::mojom::WindowShowState show_state,
-                                     const gfx::Rect& restore_bounds) {
-  if (show_state == ui::mojom::WindowShowState::kMaximized) {
-    display::Display display = AccessDisplayNearestRootWindow();
-    gfx::Rect work_area = display.work_area();
-    platform_window()->SetBoundsInDIP(work_area);
-  }
-  DesktopWindowTreeHostPlatform::Show(show_state, restore_bounds);
-}
-
 void DesktopWindowTreeHostOhos::AddAdditionalInitProperties(
     const Widget::InitParams& params,
     ui::PlatformWindowInitProperties* properties) {

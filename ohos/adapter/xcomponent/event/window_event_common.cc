@@ -8,6 +8,8 @@
 #include <sstream>
 #include <string>
 
+#include "ohos/adapter/window/window_common.h"
+
 namespace ohos::adapter::xcomponent {
 std::string WithEnumValue(int value) {
   std::string tmp = "(";

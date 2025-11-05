@@ -32,7 +32,9 @@ constexpr int MAX_SET_CHANNELS = 12;
 constexpr int MAX_SET_BITRATE = 2000000;
 constexpr int MAX_SET_FRAME = 120;
 constexpr int MAX_SET_WIDTH = 1920;
+constexpr int MIN_SET_WIDTH = 192;
 constexpr int MAX_SET_HEIGHT = 1080;
+constexpr int MIN_SET_HEIGHT = 144;
 constexpr int MAX_SET_TIMESTAMP = 10000000;
 constexpr int32_t kFuzzAudioSampleRate = 48000;
 constexpr int32_t kFuzzAudioChannels = 2;
@@ -543,18 +545,6 @@ bool ScreenCaptureAdapterImplNullFuzzTest(FuzzedDataProvider* fdp)
     if (!screenCaptureAdapter) {
         return false;
     }
-
-    auto displayMgr =
-          OHOS::NWeb::OhosAdapterHelperExt::CreateDisplayMgrAdapter();
-    if (!displayMgr) {
-        return false;
-    }
-    auto display = displayMgr->GetDefaultDisplay();
-    if (!display) {
-        return false;
-    }
-    int32_t videoFrameWidth = display->GetWidth();
-    int32_t videoFrameHeight = display->GetHeight();
     
     //setting the microphone information
     std::shared_ptr<AudioCaptureInfoAdapterMock> micCapInfo =
@@ -587,8 +577,8 @@ bool ScreenCaptureAdapterImplNullFuzzTest(FuzzedDataProvider* fdp)
     //setting video information
     std::shared_ptr<VideoCaptureInfoAdapterMock> videoCapInfo =
         std::make_shared<VideoCaptureInfoAdapterMock>();
-    videoCapInfo->SetVideoFrameWidth(videoFrameWidth);
-    videoCapInfo->SetVideoFrameHeight(videoFrameHeight);
+    videoCapInfo->SetVideoFrameWidth(MIN_SET_WIDTH);
+    videoCapInfo->SetVideoFrameHeight(MIN_SET_HEIGHT);
     videoCapInfo->SetVideoSourceType(
           OHOS::NWeb::VideoSourceTypeAdapter::VIDEO_SOURCE_SURFACE_RGBA);
 
@@ -608,7 +598,7 @@ bool ScreenCaptureAdapterImplNullFuzzTest(FuzzedDataProvider* fdp)
     std::shared_ptr<ScreenCaptureConfigAdapterMock> config =
         std::make_shared<ScreenCaptureConfigAdapterMock>();
     config->SetCaptureMode(OHOS::NWeb::CaptureModeAdapter::CAPTURE_HOME_SCREEN);
-    config->SetDataType(OHOS::NWeb::DataTypeAdapter::ORIGINAL_STREAM_DATA_TYPE);
+    config->SetDataType(OHOS::NWeb::DataTypeAdapter::CAPTURE_FILE_DATA_TYPE);
     config->SetAudioInfo(audioInfo);
     config->SetVideoInfo(videoInfo);
 

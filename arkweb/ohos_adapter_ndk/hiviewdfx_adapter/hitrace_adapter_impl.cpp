@@ -87,6 +87,9 @@ bool HiTraceAdapterImpl::IsHiTraceEnable()
 {
 #if defined(OS_OHOS)
     static void* g_handle = CachedParameterCreate("debug.hitrace.tags.enableflags", "0");
+    if (!g_handle) {
+        return false;
+    }
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_handle, &changed);
     uint64_t tags = ConvertToUint64(enable, 0);

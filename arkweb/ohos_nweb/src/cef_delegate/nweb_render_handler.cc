@@ -954,6 +954,24 @@ NWebRenderHandler::GetDefalutTouchHandleState(
 
   return std::make_shared<NWebTouchHandleStateImpl>(state);
 }
+
+CefRect NWebRenderHandler::ConvertSelectAreaDisplayRatio(const CefRect& rect)
+{
+  CefRect result_select_area = rect;
+  if (screen_info_.display_ratio <= 0) {
+    LOG(WARNING) << "virtual display ratio is invalid";
+    return result_select_area;
+  }
+  result_select_area.x *= screen_info_.display_ratio;
+  result_select_area.y *= screen_info_.display_ratio;
+  result_select_area.width *= screen_info_.display_ratio;
+  result_select_area.height *= screen_info_.display_ratio;
+  return result_select_area;
+}
+
+void NWebRenderHandler::OnSelectAreaChanged(CefRect& select_area) {
+  select_area = ConvertSelectAreaDisplayRatio(select_area);
+}
 #endif
 CefTouchHandleState NWebRenderHandler::ConvertTouchHandleDisplayRatio(
     const CefTouchHandleState& touch_handle) {

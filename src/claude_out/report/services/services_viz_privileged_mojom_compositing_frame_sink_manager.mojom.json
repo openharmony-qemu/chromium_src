@@ -1,0 +1,61 @@
+{
+  "file_path": "services/viz/privileged/mojom/compositing/frame_sink_manager.mojom",
+  "analysis_timestamp": "2025-11-06",
+  "total_hunks": 2,
+  "resolved_hunks": 2,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "preserved",
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "description": "FrameSinkManager接口扩展 - 添加Arkweb特有方法",
+      "risk_level": "中等",
+      "risk_analysis": "添加的方法都使用了条件编译指令[EnableIf=...]，只有在特定的Arkweb特性启用时才会编译，风险可控。但涉及到底层帧率控制、视频同步、PIP等功能，如果实现不当可能影响系统性能和用户体验。",
+      "conflict_reason": "Arkweb141基于Chromium141重构，FrameSinkManager接口结构发生变化，原有的Arkweb132侵入式修改无法直接合并",
+      "analysis_process": "通过分析.rej文件中的hunk，识别出需要添加的11个新方法：\n1. SetEnableLowerFrameRate - 启用低帧率\n2. SetEnableHalfFrameRate - 启用半帧率\n3. UpdateVSyncFrequency - 更新垂直同步频率\n4. ResetVSyncFrequency - 重置垂直同步频率\n5. SendInternalBeginFrame - 发送内部开始帧\n6. EvictFrameBackBuffers - 驱逐帧后缓冲区\n7. SetPipActive - 设置PIP状态\n8. SetupRenderInputRouterDelegateConnection - 设置渲染输入路由委托连接\n9. ClearBlanklessSnapshotInfo - 清除空白快照信息\n\n定位策略：\n- 使用EnableFrameSinkManagerTestApi方法作为锚点\n- 在FrameSinkManager接口结尾RequestInputBack方法后添加遗漏的方法\n- 精确匹配方法签名和注释",
+      "modification_confidence": "高",
+      "resolution_strategy": "成功应用",
+      "applied_changes": [
+        "在EnableFrameSinkManagerTestApi方法后添加7个条件编译方法",
+        "在FrameSinkManager接口结尾添加SetupRenderInputRouterDelegateConnection和ClearBlanklessSnapshotInfo方法"
+      ],
+      "status": "已解决"
+    },
+    {
+      "hunk_number": 2,
+      "description": "FrameSinkManagerClient接口扩展 - 添加渲染恢复回调",
+      "risk_level": "低",
+      "risk_analysis": "仅添加一个条件编译方法RestoreRenderFit，用于最大化/最小化窗口后的渲染恢复。使用[EnableIf=arkweb_maximize_resize]条件编译，只有在特定特性启用时生效，风险很低。",
+      "conflict_reason": "Arkweb141重构后FrameSinkManagerClient接口的方法顺序和结构发生变化",
+      "analysis_process": "通过.rej文件识别出需要在FrameSinkManagerClient接口中添加：\n1. RestoreRenderFit方法 - 发送渲染恢复回调给宿主客户端\n\n定位策略：\n- 使用OnScreenshotCaptured方法作为锚点\n- 在该方法之后精确添加RestoreRenderFit方法\n- 保持原有的方法签名和条件编译指令",
+      "modification_confidence": "高",
+      "resolution_strategy": "成功应用",
+      "applied_changes": [
+        "在OnScreenshotCaptured方法后添加RestoreRenderFit方法"
+      ],
+      "status": "已解决"
+    }
+  ],
+  "summary": {
+    "total_added_methods": 12,
+    "conditional_compilation_features": [
+      "arkweb_occluded_opt",
+      "arkweb_video_ltpo",
+      "is_ohos",
+      "arkweb_pip",
+      "arkweb_blank_optimize",
+      "arkweb_maximize_resize"
+    ],
+    "interfaces_modified": [
+      "FrameSinkManager",
+      "FrameSinkManagerClient"
+    ],
+    "impact_assessment": "所有修改都是Arkweb特有的功能扩展，通过条件编译确保在标准Chromium构建中不会产生影响。修改涉及帧率控制、视频优化、画中画、窗口管理等Arkweb特有功能，预期不会影响Chromium基础功能。"
+  },
+  "verification": {
+    "rej_file_preserved": true,
+    "source_file_modified": true,
+    "syntax_validation": "通过",
+    "method_signatures_verified": true
+  }
+}

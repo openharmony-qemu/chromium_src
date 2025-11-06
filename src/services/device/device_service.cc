@@ -49,6 +49,11 @@
 #include "services/device/hid/input_service_linux.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+#include "services/device/res_sched_report/res_sched_report.h"
+#include "services/device/sysprop_render_observer/sysprop_render_observer.h"
+#endif  // BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+
 namespace device {
 
 DeviceServiceParams::DeviceServiceParams() = default;
@@ -210,10 +215,15 @@ void DeviceService::BindVibrationManager(
 #if !BUILDFLAG(IS_ANDROID)
 void DeviceService::BindHidManager(
     mojo::PendingReceiver<mojom::HidManager> receiver) {
+#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
+  // OHOS platform functions is not implemented.
+  LOG(INFO) << "OHOS don't support hid_device.";
+#else
   if (!hid_manager_) {
     hid_manager_ = std::make_unique<HidManagerImpl>();
   }
   hid_manager_->AddReceiver(std::move(receiver));
+#endif  // BUILDFLAG(ARKWEB_BUGFIX_CRASH)
 }
 #endif
 

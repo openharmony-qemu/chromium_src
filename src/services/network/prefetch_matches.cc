@@ -128,6 +128,7 @@ namespace {
   DO_FIELD(allows_device_bound_session_registration) __VA_ARGS__   \
   DO_FIELD(permissions_policy) __VA_ARGS__   \
   DO_FIELD(fetch_retry_options)
+#endif // BUILDFLAG(IS_ARKWEB)
 
 // clang-format on
 
@@ -230,6 +231,7 @@ enum class FieldsForUma {
   kClientSideContentDecodingEnabled = 66,
   kMaxValue = kClientSideContentDecodingEnabled,
 };
+#endif
 // LINT.ThenChange(//tools/metrics/histograms/metadata/network/enums.xml:PrefetchMatchesResourceRequestField)
 
 constexpr auto kUmaEnumMap = base::MakeFixedFlatMap<Fields, FieldsForUma>({

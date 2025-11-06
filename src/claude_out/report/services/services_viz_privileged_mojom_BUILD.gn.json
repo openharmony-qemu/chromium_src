@@ -1,0 +1,41 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/services/viz/privileged/mojom/BUILD.gn.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/services/viz/privileged/mojom/BUILD.gn",
+    "Chromium132基线": "/home/sujiahao/code/chromium_132_baseline/src/services/viz/privileged/mojom/BUILD.gn",
+    "Arkweb132代码": "/home/sujiahao/code/arkweb_132/src/services/viz/privileged/mojom/BUILD.gn"
+  },
+  "处理总结": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    ".rej文件状态": "保持完整未被修改"
+  },
+  "hunks详情": [
+    {
+      "hunk编号": 1,
+      "风险等级": "低",
+      "冲突原因": "Arkweb141在import语句部分缺少了arkweb特性的import语句",
+      "分析过程": "通过分析.rej文件，发现需要在现有的mojom相关import语句后添加arkweb特性的features.gni import。源文件中的上下文与.rej文件中的锚点完全匹配，定位准确。",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "具体操作": {
+        "添加行": [
+          "import(\"//arkweb/build/features/features.gni\")"
+        ],
+        "删除行": [],
+        "定位锚点": [
+          "import(\"//components/viz/common/debugger/viz_debugger.gni\")",
+          "import(\"//mojo/public/tools/bindings/mojom.gni\")"
+        ],
+        "插入位置": "第8行后"
+      }
+    }
+  ],
+  "处理策略说明": {
+    "核心原则": "严格遵循黄金法则，仅处理带+/-符号的行，不添加任何上下文",
+    "定位方法": "使用.rej文件中最少上下文作为锚点进行精确定位",
+    "应用方式": "原子化操作，直接在源文件中添加+行，删除-行",
+    "验证结果": "修改已成功应用，代码结构完整，无语法错误"
+  }
+}

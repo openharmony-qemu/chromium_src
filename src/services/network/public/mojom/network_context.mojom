@@ -640,6 +640,11 @@ struct NetworkContextParams {
   // endpoints set by the ReportingEndpoints enterprise policy.
   map<string, url.mojom.Url>? enterprise_reporting_endpoints;
 
+  // #ifdef ARKWEB_LOGGER_REPORT
+  [EnableIf=arkweb_logger_report]
+  bool is_strict_log_mode = true;
+  // #endif ARKWEB_LOGGER_REPORT
+
   // Enables usage of net::dns::StaleHostResolver. This is only available
   // as opt-in in Android. This will be used during constructing
   // the URLRequestContextOwner object in the NetworkContext.
@@ -948,6 +953,12 @@ struct URLLoaderFactoryParams {
   // For context on usage see:
   // https://privacycg.github.io/saa-non-cookie-storage/shared-workers.html
   bool require_cross_site_request_for_cookies = false;
+
+  [EnableIf=arkweb_prp_preload]
+  string main_url = "";
+
+  [EnableIf=arkweb_prp_preload]
+  uint64 addr_web_handle;
 
   // If this is true, this URLLoaderFactory should not be reset when
   // calling `ResetURLLoaderFactories()`.
@@ -1603,6 +1614,18 @@ interface NetworkContext {
                               string sct_list)
       => (int32 error_code, CertVerifyResult cv_result, bool pkp_bypassed);
 
+  [EnableIf=arkweb_prp_preload]
+  InitPRParallelPreloadMgr();
+
+  [EnableIf=arkweb_prp_preload]
+  StartPage(string url, NetworkAnonymizationKey networkAnonymizationKey, uint64 addr_web_handle) => (string page_origin_url);
+
+  [EnableIf=arkweb_prp_preload]
+  StopPage(uint64 addr_web_handle);
+
+  [EnableIf=arkweb_prp_preload]
+  SetURLLoaderFactoryParam(URLLoaderFactoryParams params);
+
   // Performs 2-QWAC verification. Returns the verified 2-QWAC certificate
   // chain if `binding` is a valid 2-QWAC binding for `hostname` which binds
   // `tls_certificate`.
@@ -1817,6 +1840,12 @@ interface NetworkContext {
   // `bound_network` == -1 means that this NetworkContext is not bound to any
   // network. Refer to NetworkContextParams::bound_network for more info.
   GetBoundNetworkForTesting() => (int64 bound_network);
+
+  [EnableIf=arkweb_custom_dns]
+  SetHostIP(string HostName, array<string> Address, uint32 AliveTime);
+
+  [EnableIf=arkweb_custom_dns]
+  ClearHostIP(string HostName);
 
   // Gets the DeviceBoundSessionManager associated with this network context.
   //

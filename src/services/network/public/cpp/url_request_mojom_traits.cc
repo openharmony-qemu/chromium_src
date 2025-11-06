@@ -211,12 +211,25 @@ bool StructTraits<
   out->attribution_reporting_support = data.attribution_reporting_support();
   out->attribution_reporting_eligibility =
       data.attribution_reporting_eligibility();
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  out->is_sync_mode = data.is_sync_mode();
+#endif
   out->is_ad_tagged = data.is_ad_tagged();
   out->shared_dictionary_writer_enabled =
       data.shared_dictionary_writer_enabled();
   out->client_side_content_decoding_enabled =
       data.client_side_content_decoding_enabled();
   out->required_ip_address_space = data.required_ip_address_space();
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  out->allow_preload_record = data.allow_preload_record();
+  out->is_preflight = data.is_preflight();
+#endif  //  ARKWEB_PRP_PRELOAD
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  out->is_download_request = data.is_download_request();
+#endif  //  ARKWEB_EX_DOWNLOAD
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  out->usage_scenario_ = data.usage_scenario_();
+#endif
   out->allows_device_bound_session_registration =
       data.allows_device_bound_session_registration();
   return true;

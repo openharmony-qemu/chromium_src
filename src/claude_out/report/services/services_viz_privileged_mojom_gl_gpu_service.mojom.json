@@ -1,0 +1,98 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/services/viz/privileged/mojom/gl/gpu_service.mojom.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/services/viz/privileged/mojom/gl/gpu_service.mojom",
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 2,
+    "未能解决的hunk数量": 0,
+    ".rej文件保持完整未被修改": true
+  },
+  "处理总结": {
+    "整体状态": "全部成功解决",
+    "主要修改类型": "新增Arkweb特有的GPU服务接口方法",
+    "风险等级": "低风险",
+    "修改置信度": "高"
+  },
+  "hunks详情": [
+    {
+      "hunk序号": 1,
+      "位置信息": "在SetChannelClientPid方法之后，SetChannelDiskCacheHandle方法之前",
+      "待添加的行数": 4,
+      "待删除的行数": 0,
+      "解决状态": "已解决",
+      "风险分析": "低风险 - 这些都是Arkweb特有的条件编译方法，使用EnableIf=is_arkweb保护，不会影响标准Chrome代码",
+      "冲突原因": "Arkweb 132版本添加了四个GPU服务相关的接口方法，用于处理Surface ID、窗口丢弃、变换提示和窗口销毁等操作",
+      "分析过程": "通过上下文匹配找到了SetChannelClientPid方法后的准确位置，添加了四个新的接口方法",
+      "修改置信度": "高",
+      "处理策略": "直接在SetChannelClientPid方法后添加四个新的EnableIf=is_arkweb接口方法",
+      "实际修改内容": [
+        "[EnableIf=is_arkweb, Sync] GetSurfaceId(int32 native_embed_id) => (string surfaceId);",
+        "[EnableIf=is_arkweb] Discard(uint32 native_window_id);",
+        "[EnableIf=is_arkweb] SetTransformHint(uint32 rotation, uint32 window_id);",
+        "[EnableIf=is_arkweb] DestroyNativeWindow(uint32 native_window_id);"
+      ]
+    },
+    {
+      "hunk序号": 2,
+      "位置信息": "在Crash()、Hang()、ThrowJavaException()方法之后，接口定义结束符之前",
+      "待添加的行数": 13,
+      "待删除的行数": 0,
+      "解决状态": "已解决",
+      "风险分析": "低风险 - 所有新方法都使用了条件编译保护，包括EnableIf=is_ohos、EnableIf=arkweb_report_loss_frame、EnableIf=arkweb_slide_ltpo、EnableIf=is_arkweb、EnableIf=arkweb_d_vsync，不会影响其他平台",
+      "冲突原因": "Arkweb 132版本在GPU服务接口末尾添加了多个功能方法，包括可见性设置、帧丢失监控、滑动LTPO管理、GPU信息获取和滚动状态设置等",
+      "分析过程": "通过上下文匹配找到了ThrowJavaException()方法后的准确位置，在接口定义结束符前添加了所有新方法",
+      "修改置信度": "高",
+      "处理策略": "在ThrowJavaException()方法后，接口定义结束符前添加所有新方法",
+      "实际修改内容": [
+        "[EnableIf=is_ohos] SetVisible(int32 nweb_id, bool visible);",
+        "[EnableIf=arkweb_report_loss_frame] StartMonitor();",
+        "[EnableIf=arkweb_report_loss_frame] StopMonitor();",
+        "[EnableIf=arkweb_slide_ltpo] SetHasTouchPoint(bool has_touch_point);",
+        "[EnableIf=arkweb_slide_ltpo] ReportSlidingFrameRate(int32 frame_rate);",
+        "[EnableIf=arkweb_slide_ltpo] SetLTPOStrategy(int32 strategy);",
+        "[EnableIf=is_arkweb] DumpGpuInfo() => (float totalSize);",
+        "[EnableIf=arkweb_d_vsync] SetIsFling(bool is_fling_enabled);",
+        "[EnableIf=arkweb_d_vsync] SetIsScroll(bool is_scroll_enabled);"
+      ],
+      "新增注释": [
+        "// notify web ltpo to update frame rate when visibility changed",
+        "// start frame loss monitor during page sliding scene",
+        "// notify web ltpo to update frame rate when touch status changed",
+        "// Send vsync callback to host client",
+        "// Set ltpo strategy to gpu process",
+        "// get gpu total size",
+        "// Set fling state to gpu process",
+        "// Set scroll state to gpu process"
+      ]
+    }
+  ],
+  "功能分析": {
+    "新增功能模块": [
+      "Arkweb Surface管理 - GetSurfaceId、Discard、SetTransformHint、DestroyNativeWindow",
+      "OHOS可见性管理 - SetVisible",
+      "帧丢失监控 - StartMonitor、StopMonitor",
+      "滑动LTPO管理 - SetHasTouchPoint、ReportSlidingFrameRate、SetLTPOStrategy",
+      "GPU信息获取 - DumpGpuInfo",
+      "滚动状态管理 - SetIsFling、SetIsScroll"
+    ],
+    "条件编译标志": [
+      "is_arkweb - Arkweb平台通用功能",
+      "is_ohos - OpenHarmony特定功能",
+      "arkweb_report_loss_frame - 帧丢失监控功能",
+      "arkweb_slide_ltpo - 滑动LTPO功能",
+      "arkweb_d_vsync - 垂直同步功能"
+    ]
+  },
+  "验证结果": {
+    "语法检查": "通过 - 所有新增的Mojom接口方法语法正确",
+    "代码结构": "保持 - 接口结构完整，条件编译使用正确",
+    ".rej文件状态": "完整 - .rej文件未被修改或删除",
+    "源文件状态": "已更新 - 成功应用所有hunk的修改"
+  },
+  "人工复查要点": [
+    "确认新增的EnableIf条件编译标志与项目构建配置匹配",
+    "验证接口参数类型和返回值类型符合Arkweb平台需求",
+    "检查新增方法与现有GPU服务架构的兼容性",
+    "确认条件编译标志的正确性，避免不必要的功能启用"
+  ]
+}

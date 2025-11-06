@@ -1,0 +1,61 @@
+{
+  "file_path": "services/viz/privileged/mojom/compositing/BUILD.gn",
+  "rej_file_path": "services/viz/privileged/mojom/compositing/BUILD.gn.rej",
+  "analysis": {
+    "total_hunks": 2,
+    "resolved_hunks": 2,
+    "unresolved_hunks": 0,
+    "rej_file_integrity": "保持完整未被修改",
+    "overall_status": "全部成功解决"
+  },
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "line_range": "3-14",
+      "risk_level": "低风险",
+      "conflict_reason": "Arkweb 132 添加了 arkweb_composite_render 和 arkweb_blank_optimize 特性的条件判断",
+      "analysis_process": "通过锚点 'if (is_android || is_chromeos)' 在源文件中定位到第70-72行，成功应用了两个条件判断块",
+      "modification_confidence": 0.95,
+      "resolution_strategy": "精确匹配锚点位置，在 can_set_refresh_rate 条件块后添加两个新的 arkweb 特性条件判断",
+      "status": "已解决",
+      "applied_changes": [
+        "添加了 arkweb_composite_render 条件判断",
+        "添加了 arkweb_blank_optimize 条件判断"
+      ]
+    },
+    {
+      "hunk_number": 2,
+      "line_range": "27-33",
+      "risk_level": "低风险",
+      "conflict_reason": "Arkweb 132 在文件末尾添加了多个 arkweb 特性的 enabled_features",
+      "analysis_process": "在源文件末尾的 '}' 之前添加了7个 arkweb 特性配置",
+      "modification_confidence": 0.98,
+      "resolution_strategy": "在文件末尾 blink_cpp_typemaps 声明后、mojom 块结束前添加所有 arkweb 特性",
+      "status": "已解决",
+      "applied_changes": [
+        "添加了 arkweb_occluded_opt 特性",
+        "添加了 arkweb_video_ltpo 特性",
+        "添加了 arkweb_performance_jitter 特性",
+        "添加了 arkweb_maximize_resize 特性",
+        "添加了 arkweb_pip 特性",
+        "添加了 arkweb_same_layer 特性",
+        "添加了 arkweb_vsync_schedule 特性"
+      ]
+    }
+  ],
+  "summary": {
+    "description": "Arkweb 132 针对 Chromium 132 的所有侵入式修改已成功应用到 Arkweb 141 源文件中",
+    "arkweb_features_added": 9,
+    "feature_categories": {
+      "conditional_features": 2,
+      "global_features": 7
+    },
+    "code_quality_assessment": "修改后的代码结构保持一致，所有 arkweb 特性都正确添加到 enabled_features 列表中",
+    "compliance_check": {
+      "no_context_added": true,
+      "rej_file_preserved": true,
+      "no_auxiliary_files_created": true,
+      "modifications_restricted_to_source_file": true
+    }
+  }
+}

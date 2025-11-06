@@ -14,6 +14,9 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/chromium_ext/services/network/url_loader_utils.h"
+#include "arkweb/chromium_ext/services/network/url_loader_ext.h"
+
 #include "base/command_line.h"
 #include "base/containers/enum_set.h"
 #include "base/containers/fixed_flat_set.h"
@@ -386,7 +389,14 @@ URLLoader::URLLoader(
     ObserverWrapper<mojom::DeviceBoundSessionAccessObserver>
         device_bound_session_observer,
     mojo::PendingRemote<mojom::AcceptCHFrameObserver> accept_ch_frame_observer,
-    bool shared_storage_writable_eligible,
+    bool shared_storage_writable_eligible
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+,
+    std::shared_ptr<ohos_prp_preload::PRPPRequestLoader> prpp_loader,
+    const std::string& org_main_url,
+    std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info
+#endif
+    ,
     SharedResourceChecker& shared_resource_checker,
     base::WeakPtr<DevtoolsDurableMessage> devtools_durable_message)
     : url_request_context_(context.GetUrlRequestContext()),
@@ -475,6 +485,7 @@ URLLoader::URLLoader(
       permissions_policy_(request.permissions_policy),
       devtools_durable_message_(devtools_durable_message) {
   DCHECK(delete_callback_);
+  url_loader_utils_ = std::make_unique<URLLoaderUtils>(this, request.corb_detachable);
 
   if (options_ & mojom::kURLLoadOptionReadAndDiscardBody) {
     if (!factory_params_->is_orb_enabled) {
@@ -501,9 +512,19 @@ URLLoader::URLLoader(
   }
   receiver_.set_disconnect_handler(
       base::BindOnce(&URLLoader::OnMojoDisconnect, base::Unretained(this)));
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  bool isStartReplay = url_loader_utils_->HandlePrppLoaderStartReplay(
+      prpp_loader, context, request, traffic_annotation,
+      shared_dictionary_manager, org_main_url, preload_info,
+      shared_storage_writable_eligible);
+  if (isStartReplay) {
+    return;
+  }
+#else
   url_request_ = url_request_context_->CreateRequest(
       request.url, request.priority, this, traffic_annotation,
       /*is_for_websockets=*/false, request.net_log_create_info);
+#endif
 
   TRACE_EVENT("loading", "URLLoader::URLLoader",
               net::NetLogWithSourceToFlow(url_request_->net_log()));
@@ -755,10 +776,16 @@ void URLLoader::ScheduleStart() {
         base::BindOnce(&URLLoader::ResumeStart, base::Unretained(this)));
     resource_scheduler_request_handle_->WillStartRequest(&defer);
   }
-  if (defer)
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+  if (defer) {
     url_request_->LogBlockedBy("ResourceScheduler");
-  else
+  }
+  else {
+    TRACE_EVENT1("net", "URLLoader::ScheduleStart", "id", request_id_);
     url_request_->Start();
+  }
+#endif
 }
 
 URLLoader::~URLLoader() {
@@ -963,6 +990,9 @@ void URLLoader::OnReceivedRedirect(net::URLRequest* url_request,
   DCHECK(url_request == url_request_.get());
 
   DCHECK(!deferred_redirect_url_);
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  url_loader_utils_->SetPreloadFlagUnSupport();
+#endif
   deferred_redirect_url_ = std::make_unique<GURL>(redirect_info.new_url);
 
   TRACE_EVENT("loading", "URLLoader::OnReceivedRedirect",
@@ -1061,6 +1091,9 @@ void URLLoader::OnReceivedRedirect(net::URLRequest* url_request,
   ad_auction_event_record_request_helper_.HandleResponse(
       *url_request_, GetPermissionsPolicy());
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  url_loader_utils_->HandleRedirectUrl(redirect_info);
+#endif
   ProcessInboundSharedStorageInterceptorOnReceivedRedirect(redirect_info,
                                                            std::move(response));
 }
@@ -1215,6 +1248,9 @@ void URLLoader::OnResponseStarted(net::URLRequest* url_request, int net_error) {
     return;
   }
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  url_loader_utils_->UpdatePreconnectInfo();
+#endif
   ProcessInboundSharedStorageInterceptorOnResponseStarted();
 }
 
@@ -1282,6 +1318,29 @@ void URLLoader::ContinueOnResponseStarted() {
               coep_reporter_, document_isolation_policy, dip_reporter_)) {
     CompleteBlockedResponse(net::ERR_BLOCKED_BY_RESPONSE, false,
                             blocked_reason);
+
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+    LOG(INFO)
+        << "ContinueOnResponseStarted blocked by response, blocked_reason "
+        << static_cast<int>(*blocked_reason) << ", url: ***";
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    LOG_FEEDBACK(INFO)
+        << "ContinueOnResponseStarted blocked by response, blocked_reason "
+        << static_cast<int>(*blocked_reason) << ", url: "
+        << url::LogUtils::ConvertUrlWithMask(url_request_->url().spec());
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            ::switches::kEnableLoggerReport)) {
+      if (!is_strict_log_mode_) {
+        LOG(URL)
+            << "ContinueOnResponseStarted blocked by response, blocked_reason "
+            << static_cast<int>(*blocked_reason) << ", url: "
+            << url::LogUtils::ConvertUrl(url_request_->url().spec(),
+                                         url_request_->usage_scenario());
+      }
+    }
+#endif
     // Close the socket associated with the request, to prevent leaking
     // information.
     url_request_->AbortAndCloseConnection();
@@ -1649,9 +1708,13 @@ void URLLoader::ReadMore() {
   auto buf = base::MakeRefCounted<NetToMojoIOBuffer>(
       pending_write_, pending_write_buffer_offset_);
   url_read_state_ = URLReadState::kURLReadInProgress;
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  int bytes_read = url_loader_utils_->ReadDataFromLoaderOrRequest(buf);
+#else
   int bytes_read = url_request_->Read(
       buf.get(), static_cast<int>(pending_write_buffer_size_ -
                                   pending_write_buffer_offset_));
+#endif
   if (bytes_read != net::ERR_IO_PENDING) {
     DidRead(bytes_read, /*completed_synchronously=*/true,
             /*into_slop_bucket=*/false);
@@ -2255,7 +2318,11 @@ void URLLoader::DispatchOnRawRequest(
   DCHECK(devtools_observer_ && devtools_request_id());
 
   net::LoadTimingInfo load_timing_info;
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  url_loader_utils_->GetLoadTimeInfo(&load_timing_info);
+#else
   url_request_->GetLoadTimingInfo(&load_timing_info);
+#endif
 
   emitted_devtools_raw_request_ = true;
 

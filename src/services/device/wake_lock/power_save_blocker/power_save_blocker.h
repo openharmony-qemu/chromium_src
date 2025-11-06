@@ -33,7 +33,11 @@ class PowerSaveBlocker {
   PowerSaveBlocker(mojom::WakeLockType type,
                    mojom::WakeLockReason reason,
                    const std::string& description,
-                   scoped_refptr<base::SequencedTaskRunner> ui_task_runner);
+                   scoped_refptr<base::SequencedTaskRunner> ui_task_runner
+                   #if BUILDFLAG(ARKWEB_SCREEN_LOCK)
+                   , int32_t id
+                   #endif //BUILDFLAG(ARKWEB_SCREEN_LOCK)
+                   );
 
   PowerSaveBlocker(const PowerSaveBlocker&) = delete;
   PowerSaveBlocker& operator=(const PowerSaveBlocker&) = delete;
@@ -57,6 +61,9 @@ class PowerSaveBlocker {
   class Delegate;
 
   base::SequenceBound<Delegate> delegate_;
+#if BUILDFLAG(ARKWEB_SCREEN_LOCK)
+  int32_t id_;
+#endif //BUILDFLAG(ARKWEB_SCREEN_LOCK)
 };
 
 }  // namespace device

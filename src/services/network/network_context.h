@@ -136,6 +136,9 @@ class SharedDictionaryManager;
 class SharedResourceChecker;
 class WebSocketFactory;
 class WebTransport;
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS) || BUILDFLAG(ARKWEB_PRP_PRELOAD)
+class ArkWebNetworkContextExt;
+#endif
 class DeviceBoundSessionManager;
 
 struct ResourceRequest;

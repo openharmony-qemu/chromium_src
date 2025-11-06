@@ -313,6 +313,9 @@ struct URLResponseHead {
   // environment's `has storage access` bit.
   bool load_with_storage_access = false;
 
+  [EnableIf=arkweb_codecache_enhance]
+  bool code_cache_valid = false;
+
   // List of content decoding algorithms to attempt. The client needs to decode
   // the response body using these algorithms, in the reverse order.
   // This is only non-empty if `client_side_content_decoding_enabled` was set to

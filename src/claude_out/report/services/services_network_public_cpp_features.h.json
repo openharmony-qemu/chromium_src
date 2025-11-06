@@ -1,0 +1,65 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/services/network/public/cpp/features.h.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/services/network/public/cpp/features.h",
+    "处理时间": "2025-11-06"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk详情": [
+    {
+      "hunk序号": 1,
+      "目标行范围": "51-65",
+      "冲突原因": "Arkweb 132 在 kMdnsResponderGeneratedNameListing 和 kOpaqueResponseBlockingErrorsForAllFetches 之间添加了条件编译的 kOpaqueResponseBlockingV02 特性声明，但在 Arkweb 141 中此修改未被集成",
+      "待添加行数": 4,
+      "待删除行数": 0,
+      "修改内容": {
+        "添加行": [
+          "#if BUILDFLAG(ARKWEB_NETWORK_BASE)",
+          "COMPONENT_EXPORT(NETWORK_CPP)",
+          "BASE_DECLARE_FEATURE(kOpaqueResponseBlockingV02);",
+          "#endif"
+        ],
+        "删除行": []
+      },
+      "定位过程": {
+        "锚点搜索": "成功找到 kMdnsResponderGeneratedNameListing (第59行) 和 kOpaqueResponseBlockingErrorsForAllFetches (第62行)",
+        "位置确定": "在第60行空行后插入新代码块",
+        "定位状态": "成功"
+      },
+      "风险评估": {
+        "风险等级": "低",
+        "风险描述": "添加的条件编译代码块使用了 ARKWEB_NETWORK_BASE 编译标志，只在 Arkweb 网络模块启用时编译，不会影响现有功能",
+        "语法检查": "通过",
+        "逻辑一致性": "保持与现有特性声明模式一致"
+      },
+      "处理策略": {
+        "策略": "直接应用",
+        "操作": "在源文件第60行后添加4行条件编译代码",
+        "结果": "成功应用修改"
+      },
+      "置信度评估": {
+        "置信度": "高",
+        "置信度原因": "锚点匹配完美，上下文清晰，添加代码符合条件编译标准模式，无语法风险"
+      }
+    }
+  ],
+  "整体分析": {
+    "冲突类型": "新增特性声明",
+    "修改性质": "Arkweb 特有功能扩展",
+    "影响范围": "仅影响 ARKWEB_NETWORK_BASE 编译选项启用时的构建",
+    "向后兼容性": "完全兼容",
+    "代码质量": "良好，遵循 Chromium 代码风格"
+  },
+  "处理结果": {
+    "状态": "全部解决",
+    "源文件修改": "已完成",
+    "rej文件完整性": "保持未被修改",
+    "是否需要人工复查": "建议复查"
+  },
+  "说明": "此次冲突解决成功将 Arkweb 132 中的 OpaqueResponseBlockingV02 特性声明集成到 Arkweb 141 中。该特性使用了条件编译，只在 Arkweb 网络基础模块启用时生效，不会对标准 Chromium 功能产生影响。修改后的代码结构清晰，符合 Chromium 编码规范。"
+}

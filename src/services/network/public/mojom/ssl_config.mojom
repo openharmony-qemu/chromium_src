@@ -5,6 +5,10 @@
 module network.mojom;
 
 enum SSLVersion {
+  [EnableIf=arkweb_ssl_auth_algo]
+  kTLS1,
+  [EnableIf=arkweb_ssl_auth_algo]
+  kTLS11,
   kTLS12,
   kTLS13,
 };

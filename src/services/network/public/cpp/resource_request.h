@@ -150,6 +150,9 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE) ResourceRequest {
   bool SendsCookies() const;
   bool SavesCookies() const;
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+  int request_id_perf_stat_;
+#endif
   // See comments in network.mojom.URLRequest in url_request.mojom for details
   // of each field.
   // LINT.IfChange(ResourceRequestFields)
@@ -264,6 +267,22 @@ struct COMPONENT_EXPORT(NETWORK_CPP_BASE) ResourceRequest {
   bool is_ad_tagged = false;
   bool client_side_content_decoding_enabled = false;
   std::optional<base::UnguessableToken> prefetch_token;
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  bool allow_preload_record = false;
+  GURL main_url;
+  bool is_preflight = false;
+#endif
+
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  bool is_sync_mode = false;
+#endif
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+  bool is_download_request = false;
+#endif  //  ARKWEB_EX_DOWNLOAD
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  int32_t usage_scenario_ = 99;
+#endif
   net::SocketTag socket_tag;
 
   // Whether this request is allowed to register device bound sessions

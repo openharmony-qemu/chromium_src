@@ -30,6 +30,12 @@
 #include "content/public/browser/web_contents.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/functional/callback.h"
+#include "base/task/thread_pool.h"
+#include "components/permissions/permission_request_id.h"
+#endif
+
 namespace {
 
 network::mojom::PermissionsPolicyFeature GetPermissionsPolicyFeature(

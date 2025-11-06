@@ -420,7 +420,8 @@ class ManagePasswordsUIController
   // Whether the mouse is currently hovering over the bubble.
   bool is_mouse_hovered_ = false;
 
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
   bool was_biometric_authentication_for_filling_promo_shown_ = false;
 #endif
 

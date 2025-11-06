@@ -274,6 +274,10 @@ static_library("common_lib") {
     public_deps += [ "//components/cdm/common" ]
   }
 
+  if (is_arkweb && arkweb_enable_cdm) {
+    public_deps += [ "//components/cdm/common" ]
+  }
+
   if (enable_extensions_core) {
     public_deps += [
       "//chrome/common/extensions",
@@ -595,9 +599,11 @@ static_library("constants") {
     # implemented in //ui/base, so we need that dependency.
     deps += [ "//ui/base" ]
   }
-  if (is_linux || is_chromeos) {
+  if (is_linux || is_chromeos || arkweb_asan) {
     sources += [ "chrome_paths_linux.cc" ]
     deps += [ ":channel_info" ]
+  } else if (is_ohos) {
+    sources += [ "//arkweb/chromium_ext/chrome/common/chrome_paths_ohos.cc" ]
   }
   if (is_mac) {
     sources += [ "chrome_paths_mac.mm" ]
@@ -768,6 +774,9 @@ mojom("mojo_bindings") {
 
   if (enable_bound_session_credentials) {
     enabled_features += [ "enable_bound_session_credentials" ]
+  }
+  if (enable_arkweb_ext) {
+    enabled_features += [ "arkweb_ext_exception_list" ]
   }
 }
 

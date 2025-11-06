@@ -2022,14 +2022,9 @@ bool Browser::IsBackForwardCacheSupported(content::WebContents& web_contents) {
 content::PreloadingEligibility Browser::IsPrerender2Supported(
     content::WebContents& web_contents,
     content::PreloadingTriggerType trigger_type) {
-#if BUILDFLAG(ENABLE_CEF)
-  // Prerender is not supported in CEF. See issue #3664.
-  return content::PreloadingEligibility::kPreloadingDisabled;
-#else
   Profile* profile =
       Profile::FromBrowserContext(web_contents.GetBrowserContext());
   return prefetch::IsSomePreloadingEnabled(*profile->GetPrefs());
-#endif
 }
 
 bool Browser::ShouldShowStaleContentOnEviction(content::WebContents* source) {

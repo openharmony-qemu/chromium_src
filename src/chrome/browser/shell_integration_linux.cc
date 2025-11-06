@@ -120,6 +120,7 @@ const int EXIT_XDG_SETTINGS_SYNTAX_ERROR = 1;
 
 // If |scheme| is empty this function sets Chrome as the default browser,
 // otherwise it sets Chrome as the default handler application for |scheme|.
+#if !BUILDFLAG(ARKWEB_ASAN)
 bool SetDefaultWebClient(const std::string& scheme) {
 #if BUILDFLAG(IS_CHROMEOS)
   return true;

@@ -4,6 +4,7 @@
 
 import("//chrome/common/features.gni")
 import("//mojo/public/tools/bindings/mojom.gni")
+import("//arkweb/build/features/features.gni")
 
 assert(!is_android && !is_fuchsia)
 
@@ -70,7 +71,7 @@ source_set("impl") {
     "//url",
   ]
 
-  if (is_win || is_mac || is_linux) {
+  if (is_win || is_mac || is_linux || arkweb_asan || arkweb_test) {
     sources += [
       "whats_new_fetcher.cc",
       "whats_new_handler.cc",

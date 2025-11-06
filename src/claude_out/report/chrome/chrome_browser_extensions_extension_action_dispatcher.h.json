@@ -1,0 +1,37 @@
+{
+  "conflict_file": "chrome/browser/extensions/extension_action_dispatcher.h.rej",
+  "source_file": "chrome/browser/extensions/extension_action_dispatcher.h",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "preserved",
+  "analysis": {
+    "conflict_reason": "Arkweb 132 在 Chromium 132 基础上添加了 ARKWEB_ARKWEB_EXTENSIONS 条件编译的头文件包含，该修改在升级到 Chromium 141 时产生了冲突",
+    "hunks": [
+      {
+        "hunk_number": 1,
+        "status": "已解决",
+        "lines_to_add": [
+          "#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)",
+          "#include \"ohos_nweb/src/capi/web_extension_tab_items.h\"",
+          "#endif // ARKWEB_ARKWEB_EXTENSIONS"
+        ],
+        "lines_to_remove": [],
+        "anchor_context": {
+          "before": "#include \"extensions/common/extension_id.h\"",
+          "after": "namespace content {"
+        },
+        "application_location": "第16行之后",
+        "confidence_level": "高",
+        "risk_assessment": "低风险 - 添加了条件编译的Arkweb扩展相关头文件包含，与现有代码风格一致",
+        "processing_description": "成功定位到目标位置并在 #include \"extensions/common/extension_id.h\" 之后添加了Arkweb扩展相关的条件编译头文件包含"
+      }
+    ]
+  },
+  "summary": {
+    "modification_type": "头文件包含",
+    "purpose": "为Arkweb扩展功能添加必要的头文件引用",
+    "compatibility": "与现有条件编译结构兼容",
+    "impact": "仅影响Arkweb扩展功能的编译时行为"
+  }
+}

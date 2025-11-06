@@ -725,7 +725,11 @@ bool ChromeContentBrowserClientExtensionsPart::IsBuiltinComponent(
 #if !BUILDFLAG(ENABLE_EXTENSIONS_CORE)
   return false;
 #else
-  if (origin.scheme() != kExtensionScheme) {
+  if (origin.scheme() != kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && origin.scheme() != extensions::kArkwebExtensionScheme
+#endif
+  ) {
     return false;
   }
 
@@ -840,7 +844,11 @@ bool ChromeContentBrowserClientExtensionsPart::
   // `extension` below, they are not unset when navigating a tab from an
   // extension page to a regular web page. We should clear extension settings in
   // this case.
-  if (!main_frame_site.GetSiteURL().SchemeIs(kExtensionScheme)) {
+  if (!main_frame_site.GetSiteURL().SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && !main_frame_site.GetSiteURL().SchemeIs(kArkwebExtensionScheme)
+#endif
+  ) {
     return false;
   }
 

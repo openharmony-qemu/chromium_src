@@ -23,8 +23,9 @@ void IncognitoClearBrowsingDataDialogCoordinator::Show(
     IncognitoClearBrowsingDataDialogInterface::Type type,
     views::View* anchor_view) {
   // The full toolbar may not be visible.
-  if (!anchor_view)
+  if (!anchor_view) {
     return;
+  }
 
   auto bubble = std::make_unique<IncognitoClearBrowsingDataDialog>(
       anchor_view, profile_, type);

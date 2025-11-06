@@ -44,6 +44,11 @@
 #include "third_party/cros_system_api/dbus/service_constants.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "chrome/browser/extensions/api/tabs/tabs_api.h"
+#include "extensions/common/manifest_handlers/options_page_info.h"
+#endif
+
 #if BUILDFLAG(IS_WIN)
 #include "base/win/windows_version.h"
 #endif
@@ -354,6 +359,8 @@ bool ChromeRuntimeAPIDelegate::GetPlatformInfo(PlatformInfo* info) {
     info->os = extensions::api::runtime::PlatformOs::kLinux;
   } else if (UNSAFE_TODO(strcmp(os, "openbsd")) == 0) {
     info->os = extensions::api::runtime::PlatformOs::kOpenbsd;
+  } else if (UNSAFE_TODO(strcmp(os, "ohos")) == 0) {
+    info->os = extensions::api::runtime::PlatformOs::kOhos;
   } else if (UNSAFE_TODO(strcmp(os, "android")) == 0) {
     info->os = extensions::api::runtime::PlatformOs::kAndroid;
   } else {
@@ -400,6 +407,15 @@ bool ChromeRuntimeAPIDelegate::RestartDevice(std::string* error_message) {
 bool ChromeRuntimeAPIDelegate::OpenOptionsPage(
     const Extension* extension,
     content::BrowserContext* browser_context) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (!extensions::OptionsPageInfo::HasOptionsPage(extension)) {
+    return false;
+  }
+
+  std::string url = extensions::OptionsPageInfo::GetOptionsPage(extension).spec();
+  extensions::TabsCreateFunction::CreateTabForExtension(url, browser_context);
+  return true;
+#else
 #if BUILDFLAG(ENABLE_EXTENSIONS)
   return extensions::ExtensionTabUtil::OpenOptionsPageFromAPI(extension,
                                                               browser_context);
@@ -408,6 +424,7 @@ bool ChromeRuntimeAPIDelegate::OpenOptionsPage(
   // becomes available for desktop android.
   NOTIMPLEMENTED_LOG_ONCE();
   return false;
+#endif
 #endif
 }
 

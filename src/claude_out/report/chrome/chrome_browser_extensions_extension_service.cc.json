@@ -1,0 +1,56 @@
+{
+  "文件路径": "chrome/browser/extensions/extension_service.cc",
+  "分析时间": "2025-11-04",
+  "总hunk数量": 5,
+  "成功解决的hunk数量": 3,
+  "未能解决的hunk数量": 2,
+  ".rej文件完整性": "保持完整，未被修改",
+  "处理结果": {
+    "hunk_1": {
+      "状态": "已解决",
+      "风险等级": "低",
+      "冲突原因": "在包含语句部分添加ARKWEB扩展的包含文件",
+      "分析过程": "成功在源文件第126行#endif后找到匹配位置，添加了ARKWEB扩展的包含语句",
+      "修改置信度": "高",
+      "处理策略": "在第126行#endif后、第128行using语句前成功添加了ARKWEB扩展包含"
+    },
+    "hunk_2": {
+      "状态": "已解决",
+      "风险等级": "低",
+      "冲突原因": "在构造函数中添加ARKWEB扩展的初始化代码",
+      "分析过程": "成功在源文件构造函数中找到对应位置，添加了ExtensionRegistryInfoManager::StartInitialLoad()和NotifyOnInstalledExtensionsLoaded()调用",
+      "修改置信度": "高",
+      "处理策略": "在LoadSigninProfileTestExtension相关代码后和InstalledLoader调用后分别添加了ARKWEB初始化代码"
+    },
+    "hunk_3": {
+      "状态": "已解决",
+      "风险等级": "低",
+      "冲突原因": "在构造函数末尾添加LoadForbidDisplayInSettingsExtensions()调用",
+      "分析过程": "成功在源文件CheckForUpdatesSoon()调用后找到匹配位置",
+      "修改置信度": "高",
+      "处理策略": "在第393行CheckForUpdatesSoon()调用后添加了ARKWEB扩展加载函数调用"
+    },
+    "hunk_4": {
+      "状态": "未解决",
+      "风险等级": "中",
+      "冲突原因": "在卸载扩展函数中添加prefs提交代码",
+      "分析过程": "rej文件显示的上下文包含delayed_installs_.Remove()和extension_prefs_->OnExtensionUninstalled()调用，但在Arkweb141源文件中未找到这些方法调用。相关代码结构可能在Chromium 141中已重构。",
+      "修改置信度": "无法确定",
+      "处理策略": "无法应用 - 源文件中缺少rej文件所示的上下文代码。需要人工检查Chromium 141中的扩展卸载流程变化。"
+    },
+    "hunk_5": {
+      "状态": "未解决",
+      "风险等级": "中",
+      "冲突原因": "在安装扩展函数中添加prefs提交代码",
+      "分析过程": "rej文件显示的上下文包含SharedModuleInfo::IsSharedModule()检查和MaybeFinishDelayedInstallations()调用，但在Arkweb141源文件中未找到MaybeFinishDelayedInstallations()方法。SharedModule相关代码结构可能已变化。",
+      "修改置信度": "无法确定",
+      "处理策略": "无法应用 - 源文件中缺少rej文件所示的上下文代码。需要人工检查Chromium 141中的扩展安装和共享模块处理流程变化。"
+    }
+  },
+  "总结": {
+    "成功率": "60% (3/5)",
+    "主要问题": "第4和第5个hunk因代码结构变化无法定位到准确位置",
+    "建议": "需要人工检查Chromium 141中扩展卸载和安装流程的API变化，手动集成ARKWEB相关的prefs提交逻辑",
+    "遵循原则": "严格遵循黄金法则，未添加任何上下文行，未创建脚本文件，保持了.rej文件完整性"
+  }
+}

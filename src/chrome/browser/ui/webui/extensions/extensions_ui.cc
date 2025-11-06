@@ -58,6 +58,10 @@
 #include "chrome/browser/ui/webui/current_channel_logo.h"
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "chrome/browser/ui/webui/extensions/extensions_ui_ext.h"
+#endif
+
 namespace extensions {
 
 namespace {
@@ -420,6 +424,11 @@ content::WebUIDataSource* CreateAndAddExtensionsSource(Profile* profile,
       {"kioskDisableBailoutWarningTitle",
        IDS_EXTENSIONS_KIOSK_DISABLE_BAILOUT_SHORTCUT_WARNING_TITLE},
 #endif  // BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      {"toolbarDevModeConfirmation", IDS_EXTENSIONS_DEVELOPER_MODE_CONFIRMATION},
+      {"toolbarDevModeConfirm", IDS_EXTENSIONS_DEVELOPER_MODE_CONFIRM},
+      {"toolbarDevModeCancel", IDS_EXTENSIONS_DEVELOPER_MODE_CANCEL},
+#endif
       {"pendingChangeWarning", IDS_PENDING_CHANGE_WARNING},
   };
   source->AddLocalizedStrings(kLocalizedStrings);

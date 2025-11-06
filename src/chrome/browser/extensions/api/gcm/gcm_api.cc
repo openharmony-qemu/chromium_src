@@ -108,6 +108,7 @@ GcmRegisterFunction::GcmRegisterFunction() = default;
 GcmRegisterFunction::~GcmRegisterFunction() = default;
 
 ExtensionFunction::ResponseAction GcmRegisterFunction::Run() {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   std::optional<api::gcm::Register::Params> params =
       api::gcm::Register::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);
@@ -125,6 +126,9 @@ ExtensionFunction::ResponseAction GcmRegisterFunction::Run() {
   // Register() might have returned synchronously.
   return did_respond() ? AlreadyResponded() : RespondLater();
 #endif  // BUILDFLAG(IS_ANDROID)
+#else
+  return RespondNow(NoArguments());
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 void GcmRegisterFunction::CompleteFunctionWithResult(
@@ -146,6 +150,7 @@ GcmUnregisterFunction::GcmUnregisterFunction() = default;
 GcmUnregisterFunction::~GcmUnregisterFunction() = default;
 
 ExtensionFunction::ResponseAction GcmUnregisterFunction::Run() {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 #if BUILDFLAG(IS_ANDROID)
   // This server API was deprecated by Firebase in 2019. Don't bother trying to
   // implement register() on Android - it will just return an error.
@@ -159,6 +164,9 @@ ExtensionFunction::ResponseAction GcmUnregisterFunction::Run() {
   // Unregister might have responded already (synchronously).
   return did_respond() ? AlreadyResponded() : RespondLater();
 #endif  // BUILDFLAG(IS_ANDROID)
+#else
+  return RespondNow(NoArguments());
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 }
 
 void GcmUnregisterFunction::CompleteFunctionWithResult(
@@ -172,6 +180,7 @@ GcmSendFunction::GcmSendFunction() = default;
 GcmSendFunction::~GcmSendFunction() = default;
 
 ExtensionFunction::ResponseAction GcmSendFunction::Run() {
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   std::optional<api::gcm::Send::Params> params =
       api::gcm::Send::Params::Create(args());
   EXTENSION_FUNCTION_VALIDATE(params);

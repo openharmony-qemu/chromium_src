@@ -35,6 +35,7 @@
 #include "ui/views/controls/table/table_view.h"
 #include "ui/views/layout/box_layout.h"
 #include "ui/views/widget/widget.h"
+#include "chrome/common/buildflags.h"
 
 #if BUILDFLAG(IS_CHROMEOS)
 #include "chrome/browser/certificate_provider/certificate_provider_service.h"
@@ -341,6 +342,7 @@ views::View* CertificateSelector::GetInitiallyFocusedView() {
 }
 
 void CertificateSelector::ViewCertButtonPressed() {
+#if BUILDFLAG(ENABLE_WEBUI_CERTIFICATE_VIEWER)
   net::ClientCertIdentity* const cert = GetSelectedCert();
   if (!cert) {
     return;
@@ -353,6 +355,7 @@ void CertificateSelector::ViewCertButtonPressed() {
   ShowCertificateViewerForClientAuth(web_contents_,
                                      native_window,
                                      cert->certificate());
+#endif
 }
 
 void CertificateSelector::OnSelectionChanged() {

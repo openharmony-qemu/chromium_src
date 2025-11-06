@@ -1,0 +1,70 @@
+{
+  "file_path": "chrome/browser/ui/views/certificate_selector.cc",
+  "rej_file": "chrome/browser/ui/views/certificate_selector.cc.rej",
+  "analysis_time": "2025-11-04",
+  "total_hunks": 2,
+  "resolved_hunks": 2,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "maintained",
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "line_range": "3-14",
+      "description": "添加编译时标志头文件引用",
+      "risk_level": "低",
+      "confidence": "高",
+      "status": "已解决",
+      "changes": {
+        "additions": [
+          "#include \"chrome/common/buildflags.h\""
+        ],
+        "deletions": []
+      },
+      "analysis": {
+        "conflict_cause": "Arkweb 132需要额外的编译时标志头文件来支持条件编译",
+        "location_method": "通过上下文锚点定位 - 在#include \"ui/views/widget/widget.h\"之后添加",
+        "application_result": "成功在第38行添加了缺失的头文件引用"
+      }
+    },
+    {
+      "hunk_id": 2,
+      "line_range": "15-33",
+      "description": "为证书查看器功能添加条件编译保护",
+      "risk_level": "中",
+      "confidence": "高",
+      "status": "已解决",
+      "changes": {
+        "additions": [
+          "#if BUILDFLAG(ENABLE_WEBUI_CERTIFICATE_VIEWER)",
+          "#endif"
+        ],
+        "deletions": []
+      },
+      "analysis": {
+        "conflict_cause": "Arkweb 132中的证书查看器功能需要条件编译保护，仅在启用WEBUI证书查看器时编译",
+        "location_method": "通过函数签名ViewCertButtonPressed()定位，包围整个函数实现",
+        "application_result": "成功在第345-352行添加了条件编译保护，保持了原有功能逻辑"
+      }
+    }
+  ],
+  "summary": {
+    "total_changes_applied": 4,
+    "additions": 4,
+    "deletions": 0,
+    "modification_types": [
+      "头文件添加",
+      "条件编译保护"
+    ],
+    "impact_assessment": {
+      "compatibility": "向后兼容，不影响现有功能",
+      "build_impact": "增加了条件编译支持，提高了代码的可配置性",
+      "runtime_behavior": "在未启用WEBUI证书查看器时，ViewCertButtonPressed()函数将变为空实现"
+    }
+  },
+  "verification": {
+    "rej_file_preserved": true,
+    "source_file_modified": true,
+    "syntax_check": "通过 - 所有添加的代码符合C++语法规范",
+    "logic_check": "通过 - 保持了原有代码逻辑完整性"
+  }
+}

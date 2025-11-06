@@ -1,0 +1,48 @@
+{
+  "file": "chrome/browser/shell_integration_linux.cc",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "lines": {
+        "added": [
+          "#if !BUILDFLAG(ARKWEB_ASAN)"
+        ],
+        "removed": []
+      },
+      "context_lines": {
+        "before": [
+          "// If |scheme| is empty this function sets Chrome as the default browser,",
+          "// otherwise it sets Chrome as the default handler application for |scheme|."
+        ],
+        "after": [
+          "bool SetDefaultWebClient(const std::string& scheme) {"
+        ]
+      },
+      "conflict_reason": "Arkweb 132 在 SetDefaultWebClient 函数前添加了 ARKWEB_ASAN 条件编译指令",
+      "analysis_process": "通过分析.rej文件发现需要在SetDefaultWebClient函数定义前添加#if !BUILDFLAG(ARKWEB_ASAN)条件编译指令。在源文件中找到了精确的匹配位置（第121-124行），使用注释作为锚点成功定位。",
+      "confidence": "高",
+      "risk_level": "低",
+      "resolution_strategy": "成功应用",
+      "status": "已解决",
+      "modifications": {
+        "file_path": "/home/sujiahao/code/arkweb_141/src/chrome/browser/shell_integration_linux.cc",
+        "line_number": 123,
+        "change": "在第122行后插入: #if !BUILDFLAG(ARKWEB_ASAN)"
+      }
+    }
+  ],
+  "overall_status": "成功",
+  "rej_file_integrity": {
+    "status": "保持完整",
+    "path": "/home/sujiahao/code/arkweb_141/src/chrome/browser/shell_integration_linux.cc.rej",
+    "verified": true
+  },
+  "summary": {
+    "description": "Arkweb 132 对 SetDefaultWebClient 函数添加了 ARKWEB_ASAN 条件编译保护，防止在ASAN构建中包含该函数。该修改已成功应用到Arkweb 141源文件中。",
+    "impact": "此修改确保了在ARKWEB_ASAN构建配置下正确排除SetDefaultWebClient函数，避免编译冲突。",
+    "validation": "通过检查源文件确认修改已正确应用，条件编译指令已插入到正确位置。"
+  }
+}

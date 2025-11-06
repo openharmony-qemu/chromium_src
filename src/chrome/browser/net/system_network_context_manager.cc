@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/build_time.h"
 #include "base/check_is_test.h"

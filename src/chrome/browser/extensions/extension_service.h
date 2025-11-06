@@ -210,6 +210,12 @@ class ExtensionService : public ExtensionServiceInterface,
   // directly.
   ExtensionAllowlist* allowlist() { return allowlist_; }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  ExtensionIdSet& forbid_display_in_settings() {
+    return forbid_display_in_settings_;
+  }
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
+
   //////////////////////////////////////////////////////////////////////////////
   // For Testing
 
@@ -312,6 +318,10 @@ class ExtensionService : public ExtensionServiceInterface,
   // - Re-enables unpacked extensions if developer mode is ON and there are no
   // other disable reasons associated with them.
   void OnDeveloperModePrefChanged();
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void LoadForbidDisplayInSettingsExtensions();
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
   // Logs a warning if --extensions-on-chrome-urls switch is used in Google
   // Chrome.

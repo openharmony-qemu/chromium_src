@@ -51,7 +51,7 @@ void DownloadsHandler::RegisterMessages() {
       "selectDownloadLocation",
       base::BindRepeating(&DownloadsHandler::HandleSelectDownloadLocation,
                           base::Unretained(this)));
-#if BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
   web_ui()->RegisterMessageCallback(
       "getDownloadLocationText",
       base::BindRepeating(&DownloadsHandler::HandleGetDownloadLocationText,

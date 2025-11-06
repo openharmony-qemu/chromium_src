@@ -186,7 +186,8 @@
 #include "chrome/browser/first_run/upgrade_util_linux.h"
 #endif
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || \
+    BUILDFLAG(ARKWEB_TEST)
 #include "chrome/browser/headless/headless_mode_metrics.h"  // nogncheck
 #include "chrome/browser/headless/headless_mode_util.h"     // nogncheck
 #include "chrome/browser/metrics/desktop_session_duration/desktop_session_duration_tracker.h"
@@ -398,6 +399,8 @@ StartupProfileInfo CreateInitialProfile(
   }
 
   if (profile_info.mode == StartupProfileMode::kError) {
+#if !BUILDFLAG(IS_OHOS)
+    // TODO:OHOS
     ProfileErrorType error_type =
         profile_dir_specified ? ProfileErrorType::CREATE_FAILURE_SPECIFIED
                               : ProfileErrorType::CREATE_FAILURE_ALL;
@@ -406,6 +409,7 @@ StartupProfileInfo CreateInitialProfile(
     // report when an error occurs?
     ShowProfileErrorDialog(error_type, IDS_COULDNT_STARTUP_PROFILE_ERROR,
                            "Error creating initial profile.");
+#endif
     return profile_info;
   }
 #endif
@@ -422,7 +426,7 @@ OSStatus KeychainCallback(SecKeychainEvent keychain_event,
 }
 #endif
 
-#if BUILDFLAG(ENABLE_PROCESS_SINGLETON)
+#if BUILDFLAG(ENABLE_PROCESS_SINGLETON) || BUILDFLAG(ARKWEB_TEST)
 void ProcessSingletonNotificationCallbackImpl(
     base::CommandLine command_line,
     const base::FilePath& current_directory) {
@@ -735,6 +739,13 @@ int ChromeBrowserMainParts::PreEarlyInitialization() {
       chrome_feature_list_creator->TakeMetricsServicesManager(),
       chrome_feature_list_creator->GetMetricsServicesManagerClient());
 
+#if BUILDFLAG(IS_OHOS)
+  // TODO:OHOS
+  if (browser_process_) {
+    return content::RESULT_CODE_NORMAL_EXIT;
+  }
+#endif
+
   if (load_local_state_result == CHROME_RESULT_CODE_MISSING_DATA &&
       failed_to_load_resource_bundle) {
     if (base::CommandLine::ForCurrentProcess()->HasSwitch(
@@ -935,7 +946,10 @@ int ChromeBrowserMainParts::PreCreateThreadsImpl() {
   TRACE_EVENT0("startup", "ChromeBrowserMainParts::PreCreateThreadsImpl");
 
   if (startup_data_->chrome_feature_list_creator()->actual_locale().empty()) {
+#if !BUILDFLAG(IS_OHOS)
+    // TODO:OHOS
     ShowMissingLocaleMessageBox();
+#endif
     return CHROME_RESULT_CODE_MISSING_DATA;
   }
 
@@ -1011,7 +1025,7 @@ int ChromeBrowserMainParts::PreCreateThreadsImpl() {
 
 #if BUILDFLAG(ENABLE_EXTENSIONS_CORE) &&                                   \
     (BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || \
-     BUILDFLAG(IS_ANDROID))
+     BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS))
   // Create directory for user-level Native Messaging manifest files. This
   // makes it less likely that the directory will be created by third-party
   // software with incorrect owner or permission. See crbug.com/725513 .
@@ -1516,7 +1530,7 @@ int ChromeBrowserMainParts::PreMainMessageLoopRunImpl() {
           ->GetSharedURLLoaderFactory());
 #endif
 
-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_OHOS)
   // Wait for the chrome browser cloud management enrollment to finish.
   // If enrollment is not mandatory, this function returns immediately.
   // Abort the launch process if required enrollment fails.
@@ -1545,6 +1559,11 @@ int ChromeBrowserMainParts::PreMainMessageLoopRunImpl() {
   // and more directly Profile.CreateAndInitializeProfile.
   StartupProfileInfo profile_info = CreateInitialProfile(
       user_data_dir_, *base::CommandLine::ForCurrentProcess());
+#if !BUILDFLAG(IS_OHOS)
+  // TODO:OHOS
+  if (profile_info.mode == StartupProfileMode::kError)
+    return content::RESULT_CODE_NORMAL_EXIT;
+#endif
 
   if (profile_info.mode == StartupProfileMode::kError)
     return content::RESULT_CODE_NORMAL_EXIT;
@@ -1980,7 +1999,7 @@ std::unique_ptr<base::RunLoop> ChromeBrowserMainParts::TakeRunLoopForTest() {
 }
 #endif
 
-#if BUILDFLAG(ENABLE_PROCESS_SINGLETON)
+#if BUILDFLAG(ENABLE_PROCESS_SINGLETON) || BUILDFLAG(ARKWEB_TEST)
 // static
 bool ChromeBrowserMainParts::ProcessSingletonNotificationCallback(
     base::CommandLine command_line,

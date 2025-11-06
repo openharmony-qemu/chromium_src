@@ -1,0 +1,85 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/chrome/chrome_paks.gni.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/chrome/chrome_paks.gni",
+    "处理时间": "2025-11-04"
+  },
+  "总体统计": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 2,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk详情": [
+    {
+      "hunk序号": 1,
+      "位置信息": "@@ -161,11 +167,22 @@",
+      "冲突原因": "Arkweb132版本在chrome_extra_paks模板中添加了arkweb扩展、AI和自动布局功能的资源包",
+      "风险分析": {
+        "风险等级": "低",
+        "风险描述": "添加的代码只是包含条件判断的资源包依赖，不会影响核心逻辑，相对安全",
+        "潜在问题": "需要确保相关的资源包路径和依赖项在Arkweb141中存在"
+      },
+      "分析过程": "通过查找'if (defined(invoker.additional_paks))'作为锚点，在第190行后成功定位插入位置",
+      "修改置信度": "高",
+      "解决策略": "成功应用",
+      "实际操作": {
+        "添加内容": [
+          "if (defined(is_arkweb_ext) && is_arkweb_ext) {",
+          "  sources += [ \"$root_gen_dir/ohos_nweb_ex/overrides/ui/resources/ohos_nweb_ex_resources.pak\" ]",
+          "  deps += [ \"//ohos_nweb_ex/overrides/ui/resources\" ]",
+          "}",
+          "if (arkweb_ai) {",
+          "  sources += [ \"$root_gen_dir/ohos_resources/data_detector/data_detector_resources.pak\" ]",
+          "  deps += [ \"//ohos_resources/data_detector:data_detector_resources\" ]",
+          "}",
+          "if (arkweb_autolayout) {",
+          "  sources += [ \"$root_gen_dir/arkweb/ohos_autolayout/autolayout_resources.pak\" ]",
+          "  deps += [ \"//arkweb/ohos_autolayout:autolayout_resources\" ]",
+          "}"
+        ],
+        "应用位置": "第191-203行",
+        "操作类型": "新增"
+      }
+    },
+    {
+      "hunk序号": 2,
+      "位置信息": "@@ -462,16 +479,16 @@",
+      "冲突原因": "Arkweb132版本修改了平台条件判断，将is_chromeos相关条件中的is_chromeos替换为is_ohos，以适配OHOS平台",
+      "风险分析": {
+        "风险等级": "中",
+        "风险描述": "修改平台条件判断会影响特定平台的资源包加载，需要确保OHOS平台的兼容性",
+        "潜在问题": "如果OHOS平台不支持某些资源包，可能导致编译或运行时错误"
+      },
+      "分析过程": "查找包含'is_chromeos'的条件表达式，在第507行和第512行找到匹配的目标表达式",
+      "修改置信度": "高",
+      "解决策略": "成功应用",
+      "实际操作": [
+        {
+          "原始表达式": "if (is_win || is_mac || is_linux || is_chromeos || is_desktop_android) {",
+          "修改后表达式": "if (is_win || is_mac || is_linux || is_chromeos || is_ohos) {",
+          "应用位置": "第507行",
+          "操作类型": "修改条件判断"
+        },
+        {
+          "原始表达式": "if (is_win || is_mac || is_linux) {",
+          "修改后表达式": "if (is_win || is_mac || is_linux || is_chromeos_lacros || is_ohos) {",
+          "应用位置": "第512行",
+          "操作类型": "修改条件判断"
+        }
+      ]
+    }
+  ],
+  "合规性验证": {
+    ".rej文件保持完整": "确认",
+    "未添加上下文行": "确认",
+    "未创建脚本文件": "确认",
+    "未修改.rej文件": "确认",
+    "仅在指定目录创建JSON报告": "确认"
+  },
+  "总结": {
+    "处理状态": "全部成功解决",
+    "主要修改内容": "添加了3个Arkweb特性相关的资源包条件包含，修改了2个平台条件判断以支持OHOS平台",
+    "建议后续验证": "1. 确认ohos_nweb_ex、ohos_resources和arkweb相关的资源包路径存在\n2. 验证OHOS平台的资源包兼容性\n3. 测试编译是否成功"
+  }
+}

@@ -143,6 +143,10 @@
 #include "chrome/browser/ui/webui/extensions/extensions_ui.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "cef/ohos_cef_ext/libcef//browser/net/ohos_net_export_ui.h"
+#endif
+
 using content::WebUI;
 using content::WebUIController;
 using ui::WebDialogUI;

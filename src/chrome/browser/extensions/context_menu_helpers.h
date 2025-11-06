@@ -18,6 +18,10 @@
 #include "extensions/common/manifest_handlers/background_info.h"
 #include "extensions/common/utils/extension_utils.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "cef/ohos_cef_ext/libcef/browser/extensions/web_extension_menu_manager.h"
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
 namespace content {
 struct ContextMenuParams;
 }  // namespace content

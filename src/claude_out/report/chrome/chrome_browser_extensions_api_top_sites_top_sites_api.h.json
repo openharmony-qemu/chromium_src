@@ -1,0 +1,60 @@
+{
+  "conflict_file": "chrome/browser/extensions/api/top_sites/top_sites_api.h.rej",
+  "source_file": "chrome/browser/extensions/api/top_sites/top_sites_api.h",
+  "analysis_time": "2025-11-04",
+  "conflict_cause": "Arkweb 132 版本中的 ARKWEB_EXTENSIONS 条件编译修改在升级到 Arkweb 141 时与上游 Chromium 代码发生冲突",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "intact",
+  "hunks_analysis": [
+    {
+      "hunk_id": 1,
+      "line_range": "8-11",
+      "risk_level": "低",
+      "risk_description": "添加条件编译的包含头文件，不会影响现有功能结构",
+      "modification_intent": "为 Arkweb 扩展功能添加必要的头文件包含",
+      "changes": {
+        "additions": [
+          "#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)",
+          "#include \"ohos_nweb/src/capi/web_extension_top_sites_items.h\"",
+          "#endif"
+        ],
+        "deletions": []
+      },
+      "locating_process": "通过上下文锚点 `#include \"extensions/browser/extension_function.h\"` 成功定位到插入位置",
+      "application_result": "成功应用，在第10行后插入了条件编译代码块",
+      "confidence": "高",
+      "syntax_validation": "通过",
+      "status": "已解决"
+    }
+  ],
+  "resolution_summary": {
+    "strategy": "精确定位 + 原子化应用",
+    "total_additions": 3,
+    "total_deletions": 0,
+    "compilation_risk": "低",
+    "logic_integrity": "完整",
+    "modifications": [
+      {
+        "line": 10,
+        "action": "insert",
+        "content": "#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)\n#include \"ohos_nweb/src/capi/web_extension_top_sites_items.h\"\n#endif"
+      }
+    ]
+  },
+  "final_status": {
+    "all_hunks_processed": true,
+    "rej_file_preserved": true,
+    "source_file_modified": true,
+    "no_context_added": true,
+    "no_scripts_generated": true,
+    "report_created_at_specified_location": true
+  },
+  "validation_notes": [
+    "修改后的代码保持了原有的结构和功能完整性",
+    "条件编译块确保了只有在 ARKWEB_EXTENSIONS 启用时才会包含额外的头文件",
+    ".rej 文件保持完整未被修改",
+    "严格遵循了不添加上下文的原则"
+  ]
+}

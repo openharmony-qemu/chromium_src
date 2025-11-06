@@ -1,0 +1,53 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/chrome/browser/ui/views/toolbar/toolbar_view.cc.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/chrome/browser/ui/views/toolbar/toolbar_view.cc",
+    "Chromium 132 基线版本": "/home/sujiahao/code/chromium_132_baseline/src/chrome/browser/ui/views/toolbar/toolbar_view.cc",
+    "Arkweb 132 代码": "/home/sujiahao/code/arkweb_132/src/chrome/browser/ui/views/toolbar/toolbar_view.cc"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "成功率": "100%"
+  },
+  "hunk详情": [
+    {
+      "hunk编号": 1,
+      "冲突原因": "Arkweb 132 对 Chromium 132 构造函数声明进行了代码格式化修改，将单行参数声明改为多行格式",
+      "修改内容": {
+        "待删除行": [
+          "ToolbarView::ToolbarView(Browser* browser, BrowserView* browser_view,"
+        ],
+        "待添加行": [
+          "ToolbarView::ToolbarView(Browser* browser,",
+          "                         BrowserView* browser_view,"
+        ]
+      },
+      "分析过程": {
+        "定位策略": "使用构造函数声明作为锚点，在源文件第232-233行找到匹配位置",
+        "风险评估": "低风险。这是纯代码格式化变更，不影响功能逻辑",
+        "置信度": "高",
+        "验证结果": "成功应用修改，构造函数参数声明已按要求改为多行格式"
+      },
+      "解决状态": "已解决",
+      "修改位置": "第232-233行",
+      "修改类型": "代码格式化"
+    }
+  ],
+  "整体评估": {
+    "风险等级": "低",
+    "冲突复杂度": "简单",
+    "主要问题": "代码风格不一致",
+    "解决方案": "格式化调整",
+    "影响范围": "仅影响代码格式，不涉及功能变更"
+  },
+  "合规性检查": {
+    ".rej文件状态": "保持完整，未被修改或删除",
+    "修改原则遵循": "严格遵循原子化应用原则，只添加+行和删除-行",
+    "上下文处理": "未添加任何上下文行到源文件中",
+    "脚本生成": "未生成任何脚本文件或辅助工具",
+    "文件创建": "仅在指定目录创建JSON报告文件"
+  },
+  "最终结论": "冲突已成功解决。所有修改已精确应用到源文件中，.rej文件保持完整。这是一个低风险的代码格式化冲突，不影响代码功能逻辑。"
+}

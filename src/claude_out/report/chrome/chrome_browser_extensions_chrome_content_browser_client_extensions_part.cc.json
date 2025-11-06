@@ -1,0 +1,82 @@
+{
+  "conflict_file": "chrome/browser/extensions/chrome_content_browser_client_extensions_part.cc.rej",
+  "source_file": "chrome/browser/extensions/chrome_content_browser_client_extensions_part.cc",
+  "total_hunks": 2,
+  "resolved_hunks": 2,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "保持完整，未被修改",
+  "analysis": {
+    "conflict_cause": "Arkweb项目从chromium 132升级到141版本时，Arkweb的侵入式修改与新的chromium基线代码产生冲突",
+    "modification_intent": "添加对Arkweb扩展scheme (kArkwebExtensionScheme) 的支持，使其与标准的kExtensionScheme并列处理",
+    "risk_level": "低风险",
+    "confidence_level": "高"
+  },
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "location": "第728-734行，IsBuiltinComponent函数",
+      "status": "已解决",
+      "changes": {
+        "removed_lines": [
+          "if (origin.scheme() != kExtensionScheme) {"
+        ],
+        "added_lines": [
+          "if (origin.scheme() != kExtensionScheme",
+          "#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)",
+          "      && origin.scheme() != extensions::kArkwebExtensionScheme",
+          "#endif",
+          "  ) {"
+        ]
+      },
+      "analysis": {
+        "description": "在IsBuiltinComponent函数中扩展scheme检查逻辑",
+        "risk": "低风险，仅添加条件检查，不改变函数核心逻辑",
+        "confidence": "高，上下文匹配完美"
+      },
+      "resolution_process": {
+        "location_method": "通过函数签名和上下文精确定位",
+        "application": "成功应用所有+行和-行修改",
+        "challenges": "无"
+      }
+    },
+    {
+      "hunk_number": 2,
+      "location": "第847-853行，OverrideWebPreferencesAfterNavigation函数",
+      "status": "已解决",
+      "changes": {
+        "removed_lines": [
+          "if (!main_frame_site.GetSiteURL().SchemeIs(kExtensionScheme)) {"
+        ],
+        "added_lines": [
+          "if (!main_frame_site.GetSiteURL().SchemeIs(kExtensionScheme)",
+          "#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)",
+          "      && !main_frame_site.GetSiteURL().SchemeIs(kArkwebExtensionScheme)",
+          "#endif",
+          "  ) {"
+        ]
+      },
+      "analysis": {
+        "description": "在OverrideWebPreferencesAfterNavigation函数中扩展scheme检查逻辑",
+        "risk": "低风险，仅扩展条件检查，保持原有逻辑不变",
+        "confidence": "高，通过代码逻辑推断准确"
+      },
+      "resolution_process": {
+        "location_method": "通过注释内容和代码逻辑推断位置",
+        "application": "成功应用所有+行和-行修改",
+        "challenges": "变量名从site_url变为main_frame_site.GetSiteURL()，但逻辑意图一致"
+      }
+    }
+  ],
+  "summary": {
+    "overall_status": "成功解决所有冲突",
+    "modification_type": "扩展式修改，添加Arkweb扩展支持",
+    "code_impact": "在两个关键函数中添加了对Arkweb扩展scheme的检查，使Arkweb扩展能够获得与标准扩展相同的处理权限",
+    "compliance_check": {
+      "no_context_lines_added": true,
+      "no_script_files_created": true,
+      "rej_file_preserved": true,
+      "only_json_report_created": true,
+      "correct_report_path": true
+    }
+  }
+}

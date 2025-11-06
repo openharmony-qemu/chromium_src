@@ -1,0 +1,81 @@
+{
+  "文件路径": "/home/sujiahao/code/arkweb_141/src/chrome/browser/enterprise/util/managed_browser_utils.cc",
+  "rej文件路径": "/home/sujiahao/code/arkweb_141/src/chrome/browser/enterprise/util/managed_browser_utils.cc.rej",
+  "处理时间": "2025-11-04",
+  "总hunk数量": 3,
+  "成功解决的hunk数量": 3,
+  "未能解决的hunk数量": 0,
+  "rej文件保持完整": true,
+  "hunks处理详情": [
+    {
+      "hunk序号": 1,
+      "行号范围": "44-54",
+      "变更类型": "添加头文件",
+      "待添加行": [
+        "#include \"base/no_destructor.h\""
+      ],
+      "待删除行": [],
+      "风险分析": "低风险，添加标准库头文件",
+      "冲突原因": "Arkweb132版本在Android部分添加了no_destructor头文件，Arkweb141版本未包含此修改",
+      "处理策略": "在Android条件编译块内适当位置添加头文件包含",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "实际应用位置": "61行"
+    },
+    {
+      "hunk序号": 2,
+      "行号范围": "21-28",
+      "变更类型": "添加函数定义",
+      "待添加行": [
+        "#if BUILDFLAG(IS_OHOS)",
+        "base::Value::List getList(GURL url) {",
+        "  if (*g_tempurl == url) {",
+        "    return std::move(*g_templist);",
+        "  }",
+        "  return base::Value::List();",
+        "}",
+        "#endif  // BUILDFLAG(IS_OHOS)"
+      ],
+      "待删除行": [],
+      "风险分析": "中等风险，OHOS平台特定功能函数",
+      "冲突原因": "Arkweb132版本添加了OHOS测试支持函数getList，在Arkweb141中缺失",
+      "处理策略": "在匿名命名空间内OnManagementIconReceived函数后添加getList函数定义",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "实际应用位置": "154-161行"
+    },
+    {
+      "hunk序号": 3,
+      "行号范围": "32-37",
+      "变更类型": "添加函数定义",
+      "待添加行": [
+        "#if BUILDFLAG(IS_OHOS)",
+        "void SetTemplistForOhosTest(base::Value::List list, GURL url) {",
+        "  *g_tempurl = std::move(url);",
+        "  *g_templist = std::move(list);",
+        "}",
+        "#endif  // BUILDFLAG(IS_OHOS)"
+      ],
+      "待删除行": [],
+      "风险分析": "中等风险，OHOS平台测试函数",
+      "冲突原因": "Arkweb132版本添加了OHOS测试辅助函数SetTemplistForOhosTest，在Arkweb141中缺失",
+      "处理策略": "在匿名命名空间结束后添加SetTemplistForOhosTest函数定义",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "实际应用位置": "262-267行"
+    }
+  ],
+  "总体分析": {
+    "冲突特征": "所有冲突都是Arkweb132向标准Chromium132添加的OHOS平台特定代码",
+    "修改类型": "全部为添加操作，没有删除操作",
+    "平台影响": "所有修改都使用BUILDFLAG(IS_OHOS)条件编译，仅影响OHOS平台",
+    "代码质量": "修改的代码结构良好，使用了适当的条件编译保护",
+    "集成状态": "成功将所有Arkweb132的OHOS特定修改集成到Arkweb141中"
+  },
+  "验证结果": {
+    "语法正确性": "通过，所有添加的代码符合C++语法规范",
+    "编译兼容性": "通过，使用了正确的条件编译和包含文件",
+    "功能完整性": "通过，恢复了OHOS平台所需的所有测试支持功能",
+    "命名空间使用": "正确，getList函数位于匿名命名空间内，SetTemplistForOhosTest位于全局命名空间"
+  }
+}

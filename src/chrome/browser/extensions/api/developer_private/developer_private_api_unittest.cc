@@ -93,6 +93,10 @@
 #include "services/service_manager/public/cpp/test/test_connector_factory.h"
 #include "ui/shell_dialogs/selected_file_info.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/drag_drop/drag_drop_ohos_adapter.h"
+#endif
+
 // TODO(crbug.com/439448250): Enable on desktop android.
 #if BUILDFLAG(ENABLE_EXTENSIONS)
 #include "chrome/browser/ui/extensions/extension_install_ui.h"  // nogncheck
@@ -392,6 +396,13 @@ void ItemStatePrefsChangedObserver::OnWillDispatchEvent(const Event& event) {
     }
   }
 }
+
+#if BUILDFLAG(IS_OHOS)
+void SetDraggedExtensionFileName(const std::string& file_name) {
+  ohos::adapter::DragDropOhosAdapter::GetInstance().SetDraggedExtensionFileName(
+      file_name);
+}
+#endif
 
 }  // namespace
 
@@ -1746,6 +1757,9 @@ TEST_F(DeveloperPrivateApiUnitTest, InstallDroppedFileCrx) {
       content::WebContentsTester::CreateTestWebContents(profile(), nullptr));
   DeveloperPrivateAPI::Get(profile())->SetDraggedFile(
       web_contents.get(), ui::FileInfo(crx_path, crx_path.BaseName()));
+#if BUILDFLAG(IS_OHOS)
+  SetDraggedExtensionFileName(crx_path.value());
+#endif
 
   auto function =
       base::MakeRefCounted<api::DeveloperPrivateInstallDroppedFileFunction>();
@@ -1771,6 +1785,9 @@ TEST_F(DeveloperPrivateApiUnitTest, InstallDroppedFileUserScript) {
       content::WebContentsTester::CreateTestWebContents(profile(), nullptr));
   DeveloperPrivateAPI::Get(profile())->SetDraggedFile(
       web_contents.get(), ui::FileInfo(script_path, script_path.BaseName()));
+#if BUILDFLAG(IS_OHOS)
+  SetDraggedExtensionFileName(script_path.value());
+#endif
 
   auto function =
       base::MakeRefCounted<api::DeveloperPrivateInstallDroppedFileFunction>();
@@ -2236,6 +2253,9 @@ TEST_F(DeveloperPrivateApiZipFileUnitTest, InstallDroppedFileZip) {
       content::WebContentsTester::CreateTestWebContents(profile(), nullptr));
   DeveloperPrivateAPI::Get(profile())->SetDraggedFile(
       web_contents.get(), ui::FileInfo(zip_path, zip_path.BaseName()));
+#if BUILDFLAG(IS_OHOS)
+  SetDraggedExtensionFileName(zip_path.value());
+#endif
 
   auto function =
       base::MakeRefCounted<api::DeveloperPrivateInstallDroppedFileFunction>();

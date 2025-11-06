@@ -93,6 +93,14 @@
 #include "base/path_service.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+#include "ohos_nweb/browser/performance_manager/policies/background_task_policy.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_BFCACHE)
+#include "ohos_nweb/browser/performance_manager/policies/ohos_bfcache_policy.h"
+#endif
+
 namespace {
 
 ChromeBrowserMainExtraPartsPerformanceManager* g_instance = nullptr;
@@ -296,6 +304,11 @@ void ChromeBrowserMainExtraPartsPerformanceManager::CreatePoliciesAndDecorators(
     graph->PassToGraph(
         std::make_unique<performance_manager::policies::KeepAliveDSEPolicy>());
   }
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+  graph->PassToGraph(
+      std::make_unique<performance_manager::policies::BackgroundTaskPolicy>());
+#endif
 }
 
 content::FeatureObserverClient*

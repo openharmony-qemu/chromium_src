@@ -139,6 +139,7 @@ ExtensionFunction::ResponseAction SidePanelOpenFunction::RunFunction() {
   // created and load? That would probably be nice.
 
   return RespondNow(NoArguments());
+#endif
 }
 
 ExtensionFunction::ResponseAction SidePanelGetLayoutFunction::RunFunction() {

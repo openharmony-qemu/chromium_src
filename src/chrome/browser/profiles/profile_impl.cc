@@ -269,6 +269,10 @@
 #include "chrome/browser/spellchecker/spellcheck_service.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_PERMISSION)
+#include "cef/ohos_cef_ext/libcef/browser/permission/alloy_permission_manager.h"
+#endif  // BUILDFLAG(ARKWEB_PERMISSION)
+
 #if BUILDFLAG(SAFE_BROWSING_AVAILABLE)
 #include "chrome/browser/safe_browsing/safe_browsing_service.h"
 #endif

@@ -189,6 +189,19 @@ template("chrome_extra_paks") {
       sources += invoker.additional_paks
     }
 
+    if (defined(is_arkweb_ext) && is_arkweb_ext) {
+      sources += [ "$root_gen_dir/ohos_nweb_ex/overrides/ui/resources/ohos_nweb_ex_resources.pak" ]
+      deps += [ "//ohos_nweb_ex/overrides/ui/resources" ]
+    }
+    if (arkweb_ai) {
+      sources += [ "$root_gen_dir/ohos_resources/data_detector/data_detector_resources.pak" ]
+      deps += [ "//ohos_resources/data_detector:data_detector_resources" ]
+    }
+    if (arkweb_autolayout) {
+      sources += [ "$root_gen_dir/arkweb/ohos_autolayout/autolayout_resources.pak" ]
+      deps += [ "//arkweb/ohos_autolayout:autolayout_resources" ]
+    }
+
     if (enable_extensions_core) {
       sources += [ "$root_gen_dir/chrome/component_extension_resources.pak" ]
       deps += [ "//chrome/browser/resources:component_extension_resources" ]
@@ -491,12 +504,12 @@ template("chrome_extra_paks") {
       deps += [ "//chrome/browser/resources/app_settings:resources" ]
     }
 
-    if (is_win || is_mac || is_linux || is_chromeos || is_desktop_android) {
+    if (is_win || is_mac || is_linux || is_chromeos || is_desktop_android || is_ohos) {
       sources += [ "$root_gen_dir/chrome/discards_resources.pak" ]
       deps += [ "//chrome/browser/resources/discards:resources" ]
     }
 
-    if (is_win || is_mac || is_linux) {
+    if (is_win || is_mac || is_linux || is_ohos) {
       sources += [ "$root_gen_dir/chrome/browser_switch_resources.pak" ]
       deps += [ "//chrome/browser/resources/browser_switch:resources" ]
     }

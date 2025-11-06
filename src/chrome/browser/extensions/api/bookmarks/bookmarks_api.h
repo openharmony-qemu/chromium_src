@@ -125,6 +125,9 @@ class BookmarksAPI : public BrowserContextKeyedAPI,
   std::unique_ptr<BookmarkEventRouter> bookmark_event_router_;
 };
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "cef/ohos_cef_ext/libcef/browser/extensions/api/bookmarks/bookmarks_api_for_include_file.cc"
+#else
 template <>
 struct BrowserContextFactoryDependencies<BookmarksAPI> {
   static void DeclareFactoryDependencies(

@@ -28,6 +28,11 @@
 #include "ui/base/mojom/window_show_state.mojom-forward.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+struct WebExtensionWindow;
+struct NWebExtensionTab;
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
 #if BUILDFLAG(FULL_SAFE_BROWSING)
 #include "chrome/browser/safe_browsing/extension_telemetry/tabs_api_signal.h"
 #endif
@@ -153,6 +158,10 @@ bool WindowBoundsIntersectDisplays(const gfx::Rect& bounds);
 void ZoomModeToZoomSettings(zoom::ZoomController::ZoomMode zoom_mode,
                             api::tabs::ZoomSettings* zoom_settings);
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "cef/ohos_cef_ext/libcef/browser/extensions/api/tabs/tabs_api_for_include_file.cc"
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
 // Windows
 class WindowsGetFunction : public ExtensionFunction {
   ~WindowsGetFunction() override = default;
@@ -174,6 +183,8 @@ class WindowsGetAllFunction : public ExtensionFunction {
   ResponseAction Run() override;
   DECLARE_EXTENSION_FUNCTION("windows.getAll", WINDOWS_GETALL)
 };
+
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 class WindowsCreateFunction : public ExtensionFunction {
   ~WindowsCreateFunction() override = default;
   ResponseAction Run() override;
@@ -217,6 +228,7 @@ class TabsQueryFunction : public ExtensionFunction {
   ResponseAction Run() override;
   DECLARE_EXTENSION_FUNCTION("tabs.query", TABS_QUERY)
 };
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 class TabsCreateFunction : public ExtensionFunction {
   ~TabsCreateFunction() override = default;
   ResponseAction Run() override;
@@ -265,11 +277,13 @@ class TabsMoveFunction : public ExtensionFunction {
                std::string* error);
   DECLARE_EXTENSION_FUNCTION("tabs.move", TABS_MOVE)
 };
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 class TabsReloadFunction : public ExtensionFunction {
   ~TabsReloadFunction() override = default;
   ResponseAction Run() override;
   DECLARE_EXTENSION_FUNCTION("tabs.reload", TABS_RELOAD)
 };
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 class TabsRemoveFunction : public ExtensionFunction {
  public:
   TabsRemoveFunction();

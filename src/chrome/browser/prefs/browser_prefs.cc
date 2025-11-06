@@ -205,6 +205,10 @@
 #include "printing/buildflags/buildflags.h"
 #include "rlz/buildflags/buildflags.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 #if BUILDFLAG(ENABLE_BACKGROUND_MODE)
 #include "chrome/browser/background/extensions/background_mode_manager.h"
 #endif
@@ -256,6 +260,10 @@
 #if BUILDFLAG(ENABLE_PDF)
 #include "chrome/browser/pdf/pdf_pref_names.h"
 #endif  // BUILDFLAG(ENABLE_PDF)
+
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
+#include "components/cdm/browser/media_drm_storage_impl.h"
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
 #include "chrome/browser/accessibility/accessibility_prefs/android/accessibility_prefs_controller.h"
@@ -542,6 +550,24 @@
 
 #if BUILDFLAG(ENTERPRISE_DATA_CONTROLS)
 #include "components/enterprise/data_controls/core/browser/prefs.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "components/subresource_filter/core/browser/user_ruleset_version.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_UA)
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#include "ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_browser_ua_config.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_USERAGENT)
+#include "cef/ohos_cef_ext/libcef/browser/useragent/ua_push_config.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_CLOUD_CONTROL) && BUILDFLAG(IS_ARKWEB_EXT)
+#include "ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_browser_engine_global_config.h"
 #endif
 
 #if BUILDFLAG(ENABLE_GLIC)
@@ -2104,6 +2130,20 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry,
       registry);
   omnibox::RegisterProfilePrefs(registry);
   ZeroSuggestProvider::RegisterProfilePrefs(registry);
+#if BUILDFLAG(ARKWEB_EXT_UA)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebExUa)) {
+    nweb_ex::AlloyBrowserUAConfig::RegisterProfilePrefs(registry);
+    registry->RegisterDictionaryPref(nweb_ex::kUACloudConfigInfo);
+  }
+#endif
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  ohos_user_agent::UAPushConfig::RegisterProfilePrefs(registry);
+#endif
+#if BUILDFLAG(ARKWEB_CLOUD_CONTROL) && BUILDFLAG(IS_ARKWEB_EXT)
+  nweb_ex::AlloyBrowserEngineGlobalConfig::RegisterProfilePrefs(registry);
+  registry->RegisterDictionaryPref(nweb_ex::kBrowserEngineGlobalConfigInfo);
+#endif
 
 #if BUILDFLAG(ENABLE_SESSION_SERVICE)
   RegisterSessionServiceLogProfilePrefs(registry);
@@ -2386,7 +2426,9 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry,
 
   tabs::RegisterProfilePrefs(registry);
 
+#if !BUILDFLAG(IS_OHOS)
   CertificateManagerPageHandler::RegisterProfilePrefs(registry);
+#endif
 
   actor::ui::RegisterProfilePrefs(registry);
 #endif  // !BUILDFLAG(IS_ANDROID)

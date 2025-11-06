@@ -382,17 +382,18 @@ using flags_ui::kOsCrOS;
 using flags_ui::kOsCrOSOwnerOnly;
 using flags_ui::kOsLinux;
 using flags_ui::kOsMac;
+using flags_ui::kOsOhOS;
 using flags_ui::kOsWin;
 
 namespace about_flags {
 
 namespace {
 
-const unsigned kOsAll = kOsMac | kOsWin | kOsLinux | kOsCrOS | kOsAndroid;
-const unsigned kOsDesktop = kOsMac | kOsWin | kOsLinux | kOsCrOS;
+const unsigned kOsAll = kOsMac | kOsWin | kOsLinux | kOsCrOS | kOsAndroid | kOsOhOS;
+const unsigned kOsDesktop = kOsMac | kOsWin | kOsLinux | kOsCrOS | kOsOhOS;
 
 #if defined(USE_AURA)
-const unsigned kOsAura = kOsWin | kOsLinux | kOsCrOS;
+const unsigned kOsAura = kOsWin | kOsLinux | kOsCrOS | kOsOhOS;
 #endif  // USE_AURA
 
 #if defined(USE_AURA)

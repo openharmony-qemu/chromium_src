@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/fixed_flat_set.h"
 #include "base/files/file_path.h"
 #include "base/functional/callback.h"

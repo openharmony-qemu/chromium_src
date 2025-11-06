@@ -55,6 +55,10 @@
 #include "third_party/blink/public/web/web_security_policy.h"
 #include "third_party/blink/public/web/web_view.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 #if BUILDFLAG(IS_CHROMEOS)
 #include "chrome/renderer/ash_merge_session_loader_throttle.h"
 #endif

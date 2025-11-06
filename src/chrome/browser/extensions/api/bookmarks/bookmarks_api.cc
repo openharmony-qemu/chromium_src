@@ -760,5 +760,6 @@ ExtensionFunction::ResponseValue BookmarksUpdateFunction::RunOnReady() {
       /*only_folders=*/false);
   return ArgumentList(api::bookmarks::Update::Results::Create(tree_node));
 }
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 }  // namespace extensions

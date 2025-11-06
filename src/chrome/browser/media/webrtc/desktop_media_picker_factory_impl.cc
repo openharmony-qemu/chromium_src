@@ -73,7 +73,12 @@ std::unique_ptr<DesktopMediaPicker> DesktopMediaPickerFactoryImpl::CreatePicker(
   // DesktopMediaPicker is implemented only for Windows, OSX, Aura Linux, and
   // desktop Android builds.
 #if defined(TOOLKIT_VIEWS)
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+  LOG(WARNING) << "[webrtc_logging] desktop media picker factory create picker failed";
+  return nullptr;
+#else
   return DesktopMediaPicker::Create(request);
+#endif  // BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
 #elif BUILDFLAG(IS_ANDROID)
   if (base::FeatureList::IsEnabled(kAndroidMediaPicker)) {
     return DesktopMediaPicker::Create(request);

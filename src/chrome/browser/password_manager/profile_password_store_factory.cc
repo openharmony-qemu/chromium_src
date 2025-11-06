@@ -61,7 +61,7 @@ scoped_refptr<RefcountedKeyedService> BuildPasswordStore(
 
   scoped_refptr<PasswordStore> ps;
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_MAC) || \
-    BUILDFLAG(IS_OZONE)
+    BUILDFLAG(IS_OZONE) || BUILDFLAG(IS_OHOS)
   ps = new password_manager::PasswordStore(
       CreateProfilePasswordStoreBackend(profile->GetPath(), profile->GetPrefs(),
                                         g_browser_process->os_crypt_async()));

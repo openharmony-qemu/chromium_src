@@ -1,0 +1,44 @@
+{
+  "conflict_file": "chrome/browser/extensions/chrome_component_extension_resource_manager.cc.rej",
+  "source_file": "chrome/browser/extensions/chrome_component_extension_resource_manager.cc",
+  "analysis_timestamp": "2025-11-04",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "preserved",
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "status": "已解决",
+      "lines_added": [
+        "#include \"base/logging.h\""
+      ],
+      "lines_removed": [],
+      "risk_assessment": "低风险",
+      "conflict_cause": "Arkweb132在源文件中添加了base/logging.h头文件引用，在Chromium141升级过程中该修改被覆盖",
+      "analysis_process": "通过上下文行精确定位，在base/files/file_path.h和base/path_service.h之间找到了插入位置",
+      "modification_confidence": "高",
+      "resolution_strategy": "在源文件第13行后添加#include \"base/logging.h\"，保持头文件引用的逻辑顺序",
+      "applied_changes": {
+        "line": 14,
+        "content": "#include \"base/logging.h\"",
+        "context": "在base/files/file_path.h和base/path_service.h之间插入"
+      }
+    }
+  ],
+  "summary": {
+    "overall_risk": "低风险",
+    "success_rate": "100%",
+    "modifications_made": "添加了一个头文件引用",
+    "code_integrity": "已保持",
+    "compilation_impact": "最小，仅添加头文件引用",
+    "functional_impact": "无，仅添加logging支持"
+  },
+  "verification": {
+    "rej_file_unchanged": true,
+    "source_file_modified": true,
+    "modifications_applied": 1,
+    "syntax_errors": false,
+    "logical_consistency": true
+  }
+}

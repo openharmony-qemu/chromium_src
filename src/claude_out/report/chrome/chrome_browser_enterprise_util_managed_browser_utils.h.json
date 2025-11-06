@@ -1,0 +1,61 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/chrome/browser/enterprise/util/managed_browser_utils.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/chrome/browser/enterprise/util/managed_browser_utils.h",
+    "处理时间": "2025-11-04",
+    "Chromium基线版本": "132",
+    "目标版本": "141"
+  },
+  "处理统计": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 2,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunks详情": [
+    {
+      "hunk编号": 1,
+      "描述": "添加BUILDFLAG(IS_OHOS)条件编译的base/values.h包含",
+      "风险等级": "低",
+      "冲突原因": "Arkweb132在OHOS平台需要包含base/values.h头文件，但在Arkweb141中缺失",
+      "分析过程": "通过上下文锚点'#include \"url/gurl.h\"'和'struct AccountInfo;'精确定位到插入位置",
+      "修改内容": [
+        "添加: #if BUILDFLAG(IS_OHOS)",
+        "添加: #include \"base/values.h\"",
+        "添加: #endif  // BUILDFLAG(IS_OHOS)"
+      ],
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "定位方式": "精确匹配上下文锚点",
+      "应用位置": "第21行之后，第27行之前"
+    },
+    {
+      "hunk编号": 2,
+      "描述": "添加SetTemplistForOhosTest函数声明",
+      "风险等级": "低",
+      "冲突原因": "Arkweb132为OHOS平台测试添加了SetTemplistForOhosTest函数，在Arkweb141中缺失",
+      "分析过程": "通过上下文锚点'GetManagementIcon函数定义'和'namespace结束'精确定位到插入位置",
+      "修改内容": [
+        "添加: #if BUILDFLAG(IS_OHOS)",
+        "添加: void SetTemplistForOhosTest(base::Value::List list, GURL url);",
+        "添加: #endif  // BUILDFLAG(IS_OHOS)"
+      ],
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "定位方式": "精确匹配函数上下文",
+      "应用位置": "第139行之后，第155行之前"
+    }
+  ],
+  "验证信息": {
+    ".rej文件状态": "保持完整未被修改",
+    "源文件修改状态": "已成功应用所有侵入式修改",
+    "代码完整性": "保持良好，无语法错误",
+    "条件编译": "所有修改均使用BUILDFLAG(IS_OHOS)条件编译，不影响其他平台"
+  },
+  "总结": {
+    "处理结果": "成功解决所有冲突",
+    "主要修改": "为OHOS平台添加了必要的头文件包含和测试函数声明",
+    "代码影响": "仅影响OHOS平台，其他平台无影响",
+    "合规性": "严格遵守黄金法则，只添加+开头的行，未添加任何上下文行"
+  }
+}

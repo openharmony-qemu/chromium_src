@@ -1,0 +1,66 @@
+{
+  "file_path": "/home/sujiahao/code/arkweb_141/src/cef/include/cef_request_context.h",
+  "rej_file": "/home/sujiahao/code/arkweb_141/src/cef/include/cef_request_context.h.rej",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "maintained",
+  "analysis_summary": {
+    "conflict_cause": "Arkweb 132版本在Chromium 132基础上添加了自定义的include语句，包括arkweb特性头文件和ohos扩展头文件，这些修改在升级到Chromium 141时产生了冲突",
+    "risk_assessment": "低风险。所有添加的都是头文件包含，不会导致语法错误，主要风险在于新增的头文件是否存在于当前的构建环境中",
+    "modification_confidence": "高置信度。根据include语句的逻辑分组和上下文，能够准确定位插入位置"
+  },
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "status": "已解决",
+      "location_analysis": {
+        "original_target": "第38-23行区域，include语句部分",
+        "final_location": "成功在源文件第43-45行和第235行插入",
+        "anchoring_strategy": "使用#include <vector>和#include \"include/cef_callback.h\"作为锚点定位"
+      },
+      "changes_applied": {
+        "additions": [
+          {
+            "line": "#include \"arkweb/build/features/features.h\"",
+            "position": 43,
+            "reason": "添加arkweb特性定义头文件"
+          },
+          {
+            "line": "#include \"cef/ohos_cef_ext/include/cef_adsblock_manager.h\"",
+            "position": 44,
+            "reason": "添加广告拦截管理器扩展头文件"
+          },
+          {
+            "line": "#include \"cef/ohos_cef_ext/include/cef_data_base.h\"",
+            "position": 45,
+            "reason": "添加数据库扩展头文件"
+          },
+          {
+            "line": "#include \"cef/ohos_cef_ext/include/cef_web_storage.h\"",
+            "position": 235,
+            "reason": "在条件编译块内添加web存储扩展头文件"
+          }
+        ],
+        "deletions": []
+      },
+      "processing_details": {
+        "initial_attempt": "成功",
+        "context_matching": "使用周围的include语句作为上下文锚点，成功定位到正确的插入位置",
+        "conditional_compilation_handling": "正确识别ARKWEB_WEBSTORAGE条件编译块并在内部添加web_storage头文件",
+        "verification": "添加后的include语句保持原有的分组逻辑和格式一致性"
+      }
+    }
+  ],
+  "final_verification": {
+    "rej_file_status": ".rej文件保持完整，未被修改或删除",
+    "source_file_modified": "源文件已成功应用所有侵入式修改",
+    "syntax_check": "添加的include语句语法正确，位置合理",
+    "build_impact": "需要确认新增头文件在构建环境中可用"
+  },
+  "recommendations": [
+    "验证arkweb/build/features/features.h文件在构建路径中存在",
+    "确认cef/ohos_cef_ext/目录下的扩展头文件已正确集成到Arkweb 141项目中",
+    "检查BUILDFLAG(ARKWEB_WEBSTORAGE)宏定义在构建系统中是否正确设置"
+  ]
+}

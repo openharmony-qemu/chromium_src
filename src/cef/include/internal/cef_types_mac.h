@@ -39,7 +39,6 @@
 #include "include/internal/cef_string.h"
 #include "include/internal/cef_types_color.h"
 #include "include/internal/cef_types_geometry.h"
-#include "include/internal/cef_types_osr.h"
 #include "include/internal/cef_types_runtime.h"
 
 #define kNullCursorHandle NULL

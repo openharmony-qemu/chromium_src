@@ -4,6 +4,7 @@
 
 #include "cef/libcef/browser/net/throttle_handler.h"
 
+#include "arkweb/build/features/features.h"
 #include "cef/libcef/browser/browser_host_base.h"
 #include "cef/libcef/browser/browser_info_manager.h"
 #include "cef/libcef/browser/frame_host_impl.h"
@@ -14,6 +15,14 @@
 #include "content/public/browser/navigation_throttle.h"
 #include "content/public/browser/page_navigator.h"
 #include "content/public/browser/web_contents.h"
+
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+#include "libcef/common/arkweb_request_impl_ext.h"
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "cef/ohos_cef_ext/libcef/browser/net/ark_web_throttle_handler.cc"
+#endif
 
 namespace throttle {
 
@@ -29,6 +38,10 @@ void NavigationOnUIThread(
 
   const bool is_main_frame = navigation_handle->IsInMainFrame();
   const auto global_id = frame_util::GetGlobalId(navigation_handle);
+
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+  ArkWebRecordVisitedUrl(navigation_handle);
+#endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 
   // Identify the RenderFrameHost that originated the navigation.
   const auto parent_global_id =
@@ -55,12 +68,26 @@ void NavigationOnUIThread(
     return;
   }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (ArkWebIsExtensionNavigation(navigation_handle)) {
+    std::move(result_callback).Run(false);
+    return;
+  }
+#endif  // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+
   bool ignore_navigation = false;
 
   if (browser) {
     if (auto client = browser->GetClient()) {
       if (auto handler = client->GetRequestHandler()) {
         CefRefPtr<CefFrame> frame;
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+        if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            ::switches::kEnableNwebEx)) {
+          frame = GetFrameFromGlobalIdFirst(browser,
+            global_id, parent_global_id, is_main_frame);
+        } else {
+#endif
         if (is_main_frame) {
           frame = browser->GetMainFrame();
         } else {
@@ -71,8 +98,15 @@ void NavigationOnUIThread(
           // don't yet exist.
           frame = browser->browser_info()->CreateTempSubFrame(parent_global_id);
         }
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+        }
+#endif
 
+        #if BUILDFLAG(IS_ARKWEB)
+        CefRefPtr<CefRequestImpl> request = new ArkWebRequestImplExt();
+#else
         CefRefPtr<CefRequestImpl> request = new CefRequestImpl();
+#endif
         request->Set(navigation_handle);
         request->SetReadOnly(true);
 

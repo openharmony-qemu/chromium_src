@@ -6,6 +6,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/files/file_util.h"
 #include "base/functional/bind.h"
 #include "base/notimplemented.h"

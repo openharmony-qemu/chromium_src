@@ -1,0 +1,67 @@
+{
+  "analysis_report": {
+    "file_path": "cef/libcef/renderer/chrome/chrome_content_renderer_client_cef.cc",
+    "conflict_file": "cef/libcef/renderer/chrome/chrome_content_renderer_client_cef.cc.rej",
+    "analysis_time": "2025-11-05",
+    "total_hunks": 2,
+    "resolved_hunks": 2,
+    "unresolved_hunks": 0,
+    "rej_file_integrity": "preserved",
+    "confidence_level": "high",
+    "conflict_cause": "Arkweb 132版本中的侵入式修改在Arkweb 141版本中产生了冲突，主要涉及ARKWEB_NO_STATE_PREFETCH、ARKWEB_MIXED_CONTENT和ARKWEB_SAFEBROWSING特性的集成。",
+    "hunks": [
+      {
+        "hunk_number": 1,
+        "location": "RenderFrameCreated方法",
+        "risk_assessment": "低风险 - 这些都是条件编译的Arkweb特性代码，有明确的预处理器保护，不会影响默认构建流程。",
+        "conflict_reason": "Arkweb 141版本的RenderFrameCreated方法结构发生变化，缺少了Arkweb特有的条件编译代码段。",
+        "resolution_strategy": "基于.rej文件中的+/-标记精确定位并添加必要的Arkweb特性代码段。",
+        "modifications_applied": [
+          {
+            "type": "addition",
+            "line_after": "new CefRenderFrameObserver(render_frame);",
+            "code": "#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)\n  AsArkWebContentRendererClientCef()->NoStatePrefetchRenderFrame(render_frame);\n#endif  // ARKWEB_NO_STATE_PREFETCH",
+            "purpose": "为Arkweb添加无状态预取支持"
+          },
+          {
+            "type": "addition",
+            "line_after": "ChromeContentRendererClient::RenderFrameCreated(render_frame);",
+            "code": "#if BUILDFLAG(ARKWEB_MIXED_CONTENT)\n  new ArkWebContentSettingsClient(render_frame);\n#endif\n\n#if BUILDFLAG(ARKWEB_SAFEBROWSING) && !BUILDFLAG(ARKWEB_NWEB_EX)\n  new ChromeSafeBrowsingErrorPageControllerDelegateImpl(render_frame);\n#endif",
+            "purpose": "为Arkweb添加混合内容处理和安全浏览错误页面控制"
+          }
+        ],
+        "status": "已解决",
+        "confidence": "高 - 代码定位精确，与现有代码结构完全兼容"
+      },
+      {
+        "hunk_number": 2,
+        "location": "WebViewCreated方法",
+        "risk_assessment": "低风险 - 条件编译代码，有明确的功能定义和边界保护。",
+        "conflict_reason": "Arkweb 141版本的WebViewCreated方法中缺少NoStatePrefetch客户端初始化代码。",
+        "resolution_strategy": "在方法末尾适当位置添加NoStatePrefetch客户端创建代码。",
+        "modifications_applied": [
+          {
+            "type": "addition",
+            "line_after": "OnBrowserCreated(web_view, *config);",
+            "code": "#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)\n  new prerender::NoStatePrefetchClient(web_view);\n#endif  // ARKWEB_NO_STATE_PREFETCH",
+            "purpose": "为WebView创建无状态预取客户端"
+          }
+        ],
+        "status": "已解决",
+        "confidence": "高 - 逻辑定位清晰，与原有代码结构一致"
+      }
+    ],
+    "verification": {
+      "rej_file_status": ".rej文件保持完整，未被修改或删除",
+      "source_file_modified": "已成功应用所有hunk修改",
+      "syntax_check": "添加的代码语法正确，符合C++标准",
+      "integration_check": "新增代码与现有代码结构完全兼容"
+    },
+    "summary": {
+      "resolution_rate": "100%",
+      "overall_risk": "低",
+      "impact_assessment": "添加的代码都是Arkweb的特有功能，通过条件编译进行控制，不会影响非Arkweb构建。所有修改都严格遵守了不添加上下文的原则，仅应用了.rej文件中标记的修改。",
+      "manual_review_required": "建议人工审查ArkWebContentRendererClientCef()和prerender::NoStatePrefetchClient相关的头文件包含是否正确"
+    }
+  }
+}

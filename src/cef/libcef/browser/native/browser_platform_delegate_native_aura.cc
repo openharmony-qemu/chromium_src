@@ -259,9 +259,12 @@ ui::MouseWheelEvent CefBrowserPlatformDelegateNativeAura::TranslateUiWheelEvent(
   int flags = TranslateUiEventModifiers(mouse_event.modifiers);
   int changed_button_flags =
       TranslateUiChangedButtonFlags(mouse_event.modifiers);
+  if (mouse_event.source == CEF_EST_TOUCHPAD) {
+    flags |= ui::EF_PRECISION_SCROLLING_DELTA;
+  }
 
-  return ui::MouseWheelEvent(offset, location, root_location, time_stamp, flags,
-                             changed_button_flags);
+  return ui::MouseWheelEvent(offset, location, root_location, time_stamp,
+                             flags, changed_button_flags);
 }
 
 gfx::Vector2d CefBrowserPlatformDelegateNativeAura::GetUiWheelEventOffset(

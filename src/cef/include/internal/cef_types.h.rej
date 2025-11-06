@@ -1,34 +1,5 @@
 --- cef_types.h	2025-10-20 19:52:47.977895045 +0800
 +++ cef_types.h	2025-10-16 15:55:22.342586992 +0800
-@@ -33,10 +33,11 @@
- 
- #include <limits.h>
- #include <stddef.h>
- #include <stdint.h>
- 
-+#include "arkweb/build/features/features.h"
- #include "include/internal/cef_string.h"
- #include "include/internal/cef_string_list.h"
- #include "include/internal/cef_time.h"
- #include "include/internal/cef_types_content_settings.h"
- #include "include/internal/cef_types_geometry.h"
-@@ -495,10 +500,16 @@
-   ///
-   /// Specify whether signal handlers must be disabled on POSIX systems.
-   ///
-   int disable_signal_handlers;
- #endif
-+#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
-+  bool incognito_mode;
-+#endif
-+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
-+  std::string shared_render_process_token;
-+#endif
- } cef_settings_t;
- 
- ///
- /// Request context initialization settings. Specify NULL or 0 to get the
- /// recommended default values.
 @@ -2266,10 +2466,14 @@
    EVENTFLAG_IS_KEY_PAD = 1 << 9,
    EVENTFLAG_IS_LEFT = 1 << 10,
@@ -44,33 +15,3 @@
  ///
  /// Supported menu item types.
  ///
-@@ -2497,10 +2704,16 @@
-   FOCUS_SOURCE_NAVIGATION = 0,
-   ///
-   /// The source is a system-generated focus event.
-   ///
-   FOCUS_SOURCE_SYSTEM,
-+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-+  ///
-+  /// The source is a user gesture focus event.
-+  ///
-+  FOCUS_SOURCE_GESTURE,
-+#endif
- } cef_focus_source_t;
- 
- ///
- /// Navigation types.
- ///
-@@ -2774,10 +2987,12 @@
-   CT_CUSTOM,
-   CT_DND_NONE,
-   CT_DND_MOVE,
-   CT_DND_COPY,
-   CT_DND_LINK,
-+  CT_LOCK,
-+  CT_UNLOCK,
- } cef_cursor_type_t;
- 
- ///
- /// Structure representing cursor information. |buffer| will be
- /// |size.width|*|size.height|*4 bytes in size and represents a BGRA image with

@@ -1,0 +1,65 @@
+{
+  "file_path": "cef/include/internal/cef_types_win.h",
+  "rej_file": "cef/include/internal/cef_types_win.h.rej",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "preserved",
+  "analysis": {
+    "conflict_cause": "Arkweb 141 中的 cef_types_osr.h 包含语句在 Chromium 141 升级后需要被移除",
+    "risk_level": "低",
+    "confidence": "高"
+  },
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "status": "已解决",
+      "operation_type": "删除",
+      "lines_to_remove": [
+        "#include \"include/internal/cef_types_osr.h\""
+      ],
+      "lines_to_add": [],
+      "anchoring_context": {
+        "preceding_lines": [
+          "#include \"include/internal/cef_types_geometry.h\""
+        ],
+        "following_lines": [
+          "#include \"include/internal/cef_types_runtime.h\""
+        ]
+      },
+      "location_in_source_file": {
+        "line_number": 47,
+        "before_line": "#include \"include/internal/cef_types_geometry.h\"",
+        "after_line": "#include \"include/internal/cef_types_runtime.h\""
+      },
+      "analysis": {
+        "description": "删除对 cef_types_osr.h 头文件的包含引用",
+        "risk_assessment": "低风险 - 这是一个简单的头文件包含删除操作，不会影响代码逻辑结构",
+        "resolution_confidence": "高 - 上下文匹配完美，定位准确",
+        "processing_steps": [
+          "1. 解析 hunk：识别需要删除的行",
+          "2. 精确定位：使用前后 include 语句作为锚点找到源文件中的对应位置",
+          "3. 原子化应用：删除指定的 include 行",
+          "4. 验证：确认删除操作成功且未影响其他代码"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "total_changes_applied": 1,
+    "successful_deletions": 1,
+    "successful_additions": 0,
+    "final_status": "所有冲突已成功解决",
+    "compliance_check": {
+      "no_context_lines_added": true,
+      "no_script_files_created": true,
+      "rej_file_unmodified": true,
+      "only_json_report_created": true
+    }
+  },
+  "verification": {
+    "source_file_modified": true,
+    "rej_file_integrity": "maintained",
+    "no_additional_files_created": true
+  }
+}

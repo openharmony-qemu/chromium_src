@@ -25,6 +25,17 @@
 #include "content/public/browser/web_contents.h"
 #include "services/service_manager/public/cpp/interface_provider.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "cef/ohos_cef_ext/libcef/browser/ark_web_frame_host_impl.h"
+#include "libcef/common/arkweb_request_impl_ext.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "base/command_line.h"
+#include "content/browser/renderer_host/frame_tree.h"
+#include "content/public/common/content_switches.h"
+#endif
+
 namespace {
 
 void StringVisitCallback(CefRefPtr<CefStringVisitor> visitor,

@@ -51,6 +51,13 @@ typedef enum {
   ///
   CEF_COLOR_TYPE_BGRA_8888,
 
+#if BUILDFLAG(ARKWEB_NAVIGATION)
+  ///
+  /// Unknown color type.
+  ///
+  CEF_COLOR_TYPE_UNKNOWN,
+#endif  // BUILDFLAG(ARKWEB_NAVIGATION)
+
   CEF_COLOR_TYPE_NUM_VALUES,
 } cef_color_type_t;
 

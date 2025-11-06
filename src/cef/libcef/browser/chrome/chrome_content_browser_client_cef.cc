@@ -7,6 +7,7 @@
 
 #include <tuple>
 
+#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/path_service.h"
 #include "cef/include/wrapper/cef_library_loader.h"
@@ -51,30 +52,87 @@
 #include "cef/libcef/browser/chrome/chrome_web_contents_view_delegate_cef.h"
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "base/files/file_util.h"
+#include "base/ohos/sys_info_utils_ext.h"
+#include "cef/ohos_cef_ext/libcef/browser/alloy/alloy_client_cert_identity.h"
+#include "cef/ohos_cef_ext/libcef/browser/alloy/alloy_client_cert_lookup_table.h"
+#include "cef/ohos_cef_ext/libcef/browser/alloy/alloy_ssl_platform_key.h"
+#include "cef/ohos_cef_ext/libcef/browser/alloy/alloy_ssl_platform_key_ohos.h"
+#include "content/public/browser/shared_cors_origin_access_list.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_CA)
+#include "base/base_switches.h"
+#include "third_party/bounds_checking_function/include/securec.h"
+constexpr int32_t APPLICATION_API_10 = 10;
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "cef/ohos_cef_ext/libcef/browser/ark_web_certificate_query.h"
+#include "components/page_load_metrics/browser/metrics_web_contents_observer.h"
+#include "extensions/browser/event_router.h"
+#include "extensions/browser/extension_frame_host.h"
+#include "extensions/browser/renderer_startup_helper.h"
+#endif  // BUILDFLAG(ARKWEB_NETWORK_LOAD)
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "base/ohos/nweb_engine_event_logger.h"
+#include "base/ohos/nweb_engine_event_logger_code.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_USERAGENT)
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/overrides/cef/libcef/browser/alloy/alloy_browser_ua_config.h"
+#endif
+#include "cef/ohos_cef_ext/libcef/browser/alloy/alloy_browser_ua_config.h"
+#endif
+
 #if BUILDFLAG(IS_WIN)
 #include "cef/libcef_dll/bootstrap/bootstrap_util_win.h"
 #endif
 
 namespace {
 
+#if BUILDFLAG(IS_ARKWEB)
+void TransferVector(const std::vector<std::string>& source,
+std::vector<CefString>& target) {
+if (!target.empty()) {
+target.clear();
+}
+
+if (!source.empty()) {
+std::vector<std::string>::const_iterator it = source.begin();
+for (; it != source.end(); ++it) {
+target.push_back(*it);
+}
+}
+}
+#endif
+
 class CefSelectClientCertificateCallbackImpl
-    : public CefSelectClientCertificateCallback {
+    : public CefSelectClientCertificateCallbackExt {
  public:
+#if !BUILDFLAG(IS_ARKWEB)
   explicit CefSelectClientCertificateCallbackImpl(
       std::unique_ptr<content::ClientCertificateDelegate> delegate)
       : delegate_(std::move(delegate)) {}
+#endif
 
   CefSelectClientCertificateCallbackImpl(
       const CefSelectClientCertificateCallbackImpl&) = delete;
   CefSelectClientCertificateCallbackImpl& operator=(
       const CefSelectClientCertificateCallbackImpl&) = delete;
 
+#if !BUILDFLAG(IS_ARKWEB)
   ~CefSelectClientCertificateCallbackImpl() override {
     // If Select has not been called, call it with NULL to continue without any
     // client certificate.
     RunNow(std::move(delegate_), nullptr);
   }
+#endif
 
+  #if !BUILDFLAG(IS_ARKWEB)
   void Select(CefRefPtr<CefX509Certificate> cert) override {
     if (!CEF_CURRENTLY_ON_UIT()) {
       CEF_POST_TASK(
@@ -85,14 +143,17 @@ class CefSelectClientCertificateCallbackImpl
       RunNow(std::move(delegate_), cert);
     }
   }
+#endif
 
   [[nodiscard]] std::unique_ptr<content::ClientCertificateDelegate>
   DisconnectDelegate() {
+    LOG(DEBUG) << "CefSelectClientCertificateCallbackImpl::DisconnectDelegate";
     CEF_REQUIRE_UIT();
     return std::move(delegate_);
   }
 
  private:
+#if !BUILDFLAG(IS_ARKWEB)
   static void RunNow(
       std::unique_ptr<content::ClientCertificateDelegate> delegate,
       CefRefPtr<CefX509Certificate> cert) {
@@ -363,6 +424,17 @@ base::OnceClosure ChromeContentBrowserClientCef::SelectClientCertificate(
     std::unique_ptr<content::ClientCertificateDelegate> delegate) {
   CEF_REQUIRE_UIT();
 
+#if BUILDFLAG(IS_ARKWEB)
+  std::string host = cert_request_info->host_and_port.host();
+  int port = cert_request_info->host_and_port.port();
+
+  if (AlloyClientCertLookupTable::IsDenied(host, port)) {
+    return ChromeContentBrowserClient::SelectClientCertificate(
+        browser_context, process_id, web_contents, cert_request_info,
+        std::move(client_certs), std::move(delegate));
+  }
+#endif
+
   // |web_contents| will be nullptr for requests originating from service
   // workers. Proceed with default handling in that case.
   CefRefPtr<CefRequestHandler> handler;
@@ -376,6 +448,10 @@ base::OnceClosure ChromeContentBrowserClientCef::SelectClientCertificate(
   }
 
   if (!handler) {
+#if BUILDFLAG(IS_ARKWEB)
+      LOG(ERROR) << "AlloyContentBrowserClient::SelectClientCertificate get "
+                    "handler failed.";
+#endif
     return ChromeContentBrowserClient::SelectClientCertificate(
         browser_context, process_id, web_contents, cert_request_info,
         std::move(client_certs), std::move(delegate));
@@ -386,13 +462,52 @@ base::OnceClosure ChromeContentBrowserClientCef::SelectClientCertificate(
     certs.push_back(new CefX509CertificateImpl(std::move(client_cert)));
   }
 
+#if BUILDFLAG(IS_ARKWEB)
+  std::vector<std::string> key_types;
+  for (size_t i = 0; i < cert_request_info->signature_algorithms.size(); ++i) {
+    switch (cert_request_info->signature_algorithms[i]) {
+      case SSL_SIGN_RSA_PKCS1_SHA256:
+      case SSL_SIGN_RSA_PKCS1_SHA384:
+      case SSL_SIGN_RSA_PKCS1_SHA512:
+      case SSL_SIGN_RSA_PKCS1_SHA1:
+      case SSL_SIGN_RSA_PSS_SHA256:
+      case SSL_SIGN_RSA_PSS_SHA384:
+      case SSL_SIGN_RSA_PSS_SHA512:
+        key_types.push_back("RSA");
+        break;
+      case SSL_SIGN_ECDSA_SHA1:
+      case SSL_SIGN_ECDSA_SECP256R1_SHA256:
+      case SSL_SIGN_ECDSA_SECP384R1_SHA384:
+      case SSL_SIGN_ECDSA_SECP521R1_SHA512:
+        key_types.push_back("ECDSA");
+        break;
+      default:
+        break;
+    }
+  }
+  std::vector<CefString> key_types_cef;
+  TransferVector(key_types, key_types_cef);
+  std::vector<CefString> cert_authorities_cef;
+  TransferVector(cert_request_info->cert_authorities, cert_authorities_cef);
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+  CefRefPtr<CefSelectClientCertificateCallbackImpl> callbackImpl(
+      new CefSelectClientCertificateCallbackImpl(std::move(delegate), host, port));
+#else
   CefRefPtr<CefSelectClientCertificateCallbackImpl> callbackImpl(
       new CefSelectClientCertificateCallbackImpl(std::move(delegate)));
+#endif
 
-  bool handled = handler->OnSelectClientCertificate(
+  bool handled = handler->AsCefRequestHandlerExt()->OnSelectClientCertificate(
       browser.get(), cert_request_info->is_proxy,
+#if BUILDFLAG(IS_ARKWEB)
+      host, port, key_types_cef, cert_authorities_cef,
+#else
       cert_request_info->host_and_port.host(),
-      cert_request_info->host_and_port.port(), certs, callbackImpl.get());
+      cert_request_info->host_and_port.port(), {}, {},
+#endif
+      certs, callbackImpl.get());
 
   if (!handled) {
     delegate = callbackImpl->DisconnectDelegate();
@@ -649,6 +764,9 @@ bool ChromeContentBrowserClientCef::HandleExternalProtocol(
   // HandleExternalProtocolHelper may be called if nothing handles the request.
   auto request_handler = net_service::CreateInterceptedRequestHandler(
       web_contents_getter, frame_tree_node_id, request,
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      isolation_info,
+#endif
       base::BindRepeating(HandleExternalProtocolHelper, base::Unretained(this),
                           web_contents_getter, frame_tree_node_id,
                           base::Passed(navigation_data->Clone()),

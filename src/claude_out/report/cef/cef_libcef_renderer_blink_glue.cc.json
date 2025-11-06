@@ -1,0 +1,43 @@
+{
+  "file_path": "cef/libcef/renderer/blink_glue.cc",
+  "analysis_date": "2025-11-05",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "verified",
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "risk_level": "低",
+      "conflict_cause": "Arkweb132在Arkweb141中缺少OHOS输入事件相关的扩展代码",
+      "analysis_process": "通过分析.rej文件中的hunk，识别出需要在StartNavigation函数后添加PenTouchInputFocus函数和相关条件编译代码。使用函数结束符'}'作为锚点成功定位插入位置。",
+      "modification_confidence": "高",
+      "resolution_status": "已解决",
+      "added_lines": [
+        "#if defined(OHOS_INPUT_EVENTS)",
+        "void PenTouchInputFocus(blink::WebNode webNode) {",
+        "  blink::Node* node = webNode.Unwrap<blink::Node>();",
+        "  if (!node->IsElementNode()) {",
+        "    return;",
+        "  }",
+        "  blink::Element* element = blink::To<blink::Element>(node);",
+        "  if (!element) {",
+        "    return;",
+        "  }",
+        "  element->Focus();",
+        "}",
+        "#endif // defined(OHOS_INPUT_EVENTS)",
+        "",
+        "#include \"cef/ohos_cef_ext/libcef/renderer/blink_glue_for_include.cc\""
+      ],
+      "removed_lines": [],
+      "anchor_context": "使用StartNavigation函数的结束作为定位锚点"
+    }
+  ],
+  "summary": {
+    "total_modifications": "成功应用1个hunk，添加了14行代码",
+    "risk_assessment": "低风险 - 添加的代码是有条件编译的OpenHarmony特定功能，不会影响其他平台",
+    "人工_review建议": "建议检查PenTouchInputFocus函数的实现是否符合OHOS输入事件的具体要求",
+    "rej_file_status": ".rej文件保持完整未被修改"
+  }
+}

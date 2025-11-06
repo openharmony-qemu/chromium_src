@@ -58,6 +58,10 @@ void ChromeContentRendererClientCef::RenderFrameCreated(
   CefRenderFrameObserver* render_frame_observer =
       new CefRenderFrameObserver(render_frame);
 
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+  AsArkWebContentRendererClientCef()->NoStatePrefetchRenderFrame(render_frame);
+#endif  // ARKWEB_NO_STATE_PREFETCH
+
   bool browser_created;
   std::optional<cef::BrowserConfig> config;
   render_manager_->RenderFrameCreated(render_frame, render_frame_observer,
@@ -75,6 +79,14 @@ void ChromeContentRendererClientCef::RenderFrameCreated(
   }
 
   ChromeContentRendererClient::RenderFrameCreated(render_frame);
+
+#if BUILDFLAG(ARKWEB_MIXED_CONTENT)
+  new ArkWebContentSettingsClient(render_frame);
+#endif
+
+#if BUILDFLAG(ARKWEB_SAFEBROWSING) && !BUILDFLAG(ARKWEB_NWEB_EX)
+  new ChromeSafeBrowsingErrorPageControllerDelegateImpl(render_frame);
+#endif
 }
 
 void ChromeContentRendererClientCef::WebViewCreated(
@@ -91,6 +103,10 @@ void ChromeContentRendererClientCef::WebViewCreated(
     CHECK(config.has_value());
     OnBrowserCreated(web_view, *config);
   }
+
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+  new prerender::NoStatePrefetchClient(web_view);
+#endif  // ARKWEB_NO_STATE_PREFETCH
 }
 
 void ChromeContentRendererClientCef::DevToolsAgentAttached() {

@@ -4,6 +4,7 @@
 
 #include "cef/libcef/browser/browser_platform_delegate.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/logging.h"
 #include "base/notimplemented.h"

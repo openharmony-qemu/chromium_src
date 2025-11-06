@@ -34,6 +34,7 @@
 #include <algorithm>
 #include <limits>
 
+#include "arkweb/build/features/features.h"
 #include "include/internal/cef_string.h"
 #include "include/internal/cef_string_list.h"
 #include "include/internal/cef_types.h"
@@ -347,13 +348,24 @@ class CefScreenInfo : public CefStructBaseSimple<cef_screen_info_t> {
            int depth_per_component_val,
            bool is_monochrome_val,
            const CefRect& rect_val,
-           const CefRect& available_rect_val) {
+           const CefRect& available_rect_val
+#if BUILDFLAG(IS_OHOS)
+           ,
+           uint16_t angle_val,
+           cef_screen_orientation_type_t orientation_val
+#endif
+  ) {
     device_scale_factor = device_scale_factor_val;
     depth = depth_val;
     depth_per_component = depth_per_component_val;
     is_monochrome = is_monochrome_val;
     rect = rect_val;
     available_rect = available_rect_val;
+
+#if BUILDFLAG(IS_OHOS)
+    angle = angle_val;
+    orientation = orientation_val;
+#endif
   }
 };
 
@@ -805,6 +817,10 @@ using CefMediaSinkDeviceInfo = CefStructBase<CefMediaSinkDeviceInfoTraits>;
 ///
 using CefAcceleratedPaintInfo =
     CefStructBaseSimple<cef_accelerated_paint_info_t>;
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "cef/ohos_cef_ext/include/internal/cef_types_wrappers_for_include.cc"
+#endif  // BUILDFLAG(IS_ARKWEB)
 
 struct CefTaskInfoTraits {
   using struct_type = cef_task_info_t;

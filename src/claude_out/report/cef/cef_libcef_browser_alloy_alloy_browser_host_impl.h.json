@@ -1,0 +1,62 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/cef/libcef/browser/alloy/alloy_browser_host_impl.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/cef/libcef/browser/alloy/alloy_browser_host_impl.h",
+    "处理时间": "2025-11-05"
+  },
+  "统计信息": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 1,
+    "解决成功率": "50%"
+  },
+  "hunk详情": [
+    {
+      "hunk编号": 1,
+      "在rej文件中的位置": "第107-126行",
+      "风险等级": "低",
+      "冲突原因": "ArkWeb 132中添加了ARKWEB_OCCLUDED_OPT条件编译的SetEnableHalfFrameRate方法",
+      "分析过程": "通过精确定位，在源文件中找到了WasHidden和NotifyScreenInfoChanged方法，成功在它们之间插入了条件编译代码块",
+      "修改内容": {
+        "添加的行": [
+          "空行",
+          "#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)",
+          "  void SetEnableHalfFrameRate(bool enabled) override;",
+          "#endif",
+          "空行"
+        ],
+        "删除的行": []
+      },
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "最终处理策略": "成功应用修改，在源文件第111-117行之间插入了ARKWEB_OCCLUDED_OPT条件编译代码块"
+    },
+    {
+      "hunk编号": 2,
+      "在rej文件中的位置": "第134-159行",
+      "风险等级": "中",
+      "冲突原因": "需要添加空行但无法精确定位插入位置",
+      "分析过程": "尝试在源文件中查找IsAudioMuted和SetAudioMuted方法作为定位锚点，但发现这些方法在Arkweb 141中不存在。可能这些方法在版本升级过程中被移除或重命名。",
+      "修改内容": {
+        "添加的行": [
+          "空行",
+          "空行"
+        ],
+        "删除的行": []
+      },
+      "修改置信度": "低",
+      "解决状态": "未解决",
+      "最终处理策略": "无法应用修改。原因：源文件中不存在IsAudioMuted方法作为定位锚点，无法确定插入位置。建议人工检查音频相关方法的位置变化。"
+    }
+  ],
+  "整体分析": {
+    "主要冲突类型": "条件编译功能添加和方法位置变化",
+    "冲突严重程度": "中等",
+    "建议的后续处理": "对于未解决的hunk 2，建议检查Arkweb 141中音频相关API的变化，可能需要更新条件编译逻辑或查找新的插入位置"
+  },
+  "验证信息": {
+    ".rej文件保持完整": true,
+    ".rej文件未被修改": true,
+    "源文件已更新": true
+  }
+}

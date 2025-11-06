@@ -1,0 +1,72 @@
+{
+  "file_path": "cef/libcef/browser/browser_host_base.h",
+  "rej_file": "cef/libcef/browser/browser_host_base.h.rej",
+  "analysis_timestamp": "2025-11-05",
+  "total_hunks": 2,
+  "resolved_hunks": 2,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "maintained",
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "description": "添加 ArkWeb DevTools 扩展方法",
+      "lines_added": [
+        "#if BUILDFLAG(ARKWEB_DEVTOOLS)",
+        "void ShowDevToolsWith(",
+        "    CefRefPtr<ArkWebBrowserHostExt> frontend_browser,",
+        "    CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,",
+        "    const CefPoint& inspect_element_at) override {}",
+        "#endif // BUILDFLAG(ARKWEB_DEVTOOLS)"
+      ],
+      "lines_removed": [],
+      "risk_level": "低",
+      "conflict_cause": "Arkweb141 源文件中缺少 ArkWeb DevTools 扩展方法，这是 Arkweb132 中的特有功能",
+      "analysis_process": "通过上下文定位，在 NotifyMoveOrResizeStarted() 方法后成功插入 DevTools 扩展代码",
+      "confidence": "高",
+      "resolution_strategy": "成功定位并在 NotifyMoveOrResizeStarted() 方法后插入条件编译的 DevTools 扩展方法",
+      "status": "已解决"
+    },
+    {
+      "hunk_id": 2,
+      "description": "修改 GetHost 方法实现方式",
+      "lines_added": [
+        "// CefRefPtr<CefBrowserHost> GetHost() override { return this; }"
+      ],
+      "lines_removed": [
+        "CefRefPtr<CefBrowserHost> GetHost() override;"
+      ],
+      "risk_level": "低",
+      "conflict_cause": "Arkweb132 中将 GetHost 方法的实现直接内联在声明中，而 Arkweb141 保持为纯虚函数声明",
+      "analysis_process": "精确匹配源文件中的 GetHost 方法声明，成功替换为注释形式并包含内联实现",
+      "confidence": "高",
+      "resolution_strategy": "将纯虚函数声明替换为包含实现的内联注释，保持 Arkweb132 的实现方式",
+      "status": "已解决"
+    }
+  ],
+  "summary": {
+    "total_modifications": 2,
+    "successful_modifications": 2,
+    "failed_modifications": 0,
+    "success_rate": "100%",
+    "key_changes": [
+      "添加了 ArkWeb DevTools 扩展支持",
+      "修改了 GetHost 方法的实现方式"
+    ]
+  },
+  "compliance": {
+    "golden_rule_followed": true,
+    "no_context_lines_added": true,
+    "no_script_files_created": true,
+    "no_auxiliary_files_created": true,
+    "rej_file_preserved": true,
+    "json_report_created_only": true,
+    "specified_path_used": true
+  },
+  "final_verification": {
+    "rej_file_integrity": "confirmed",
+    "source_file_modified": true,
+    "modifications_applied": 2,
+    "syntax_errors": null,
+    "compilation_risk": "低"
+  }
+}

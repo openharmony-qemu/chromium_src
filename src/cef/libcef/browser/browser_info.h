@@ -186,6 +186,9 @@ class CefBrowserInfo : public base::RefCountedThreadSafe<CefBrowserInfo> {
     content::GlobalRenderFrameHostId global_id_;
     bool is_main_frame_;
     bool is_speculative_;
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    bool is_prerendering_ = false;
+#endif
     bool is_in_bfcache_ = false;
     CefRefPtr<CefFrameHostImpl> frame_;
   };
@@ -194,13 +197,15 @@ class CefBrowserInfo : public base::RefCountedThreadSafe<CefBrowserInfo> {
                     CefRefPtr<CefFrameHostImpl> frame);
 
   void MaybeNotifyFrameCreated(CefRefPtr<CefFrameHostImpl> frame);
-  void MaybeNotifyFrameDestroyed(CefRefPtr<CefBrowserHostBase> browser,
-                                 CefRefPtr<CefFrameHostImpl> frame);
+  void MaybeNotifyFrameDetached(CefRefPtr<CefBrowserHostBase> browser,
+                                CefRefPtr<CefFrameHostImpl> frame);
   void MaybeNotifyMainFrameChanged(CefRefPtr<CefBrowserHostBase> browser,
                                    CefRefPtr<CefFrameHostImpl> old_frame,
                                    CefRefPtr<CefFrameHostImpl> new_frame);
 
   void RemoveAllFrames(CefRefPtr<CefBrowserHostBase> old_browser);
+
+  static bool IsPrerendering(content::RenderFrameHost* host);
 
   const int browser_id_;
   const bool is_popup_;

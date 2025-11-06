@@ -301,9 +301,23 @@ class InterceptedRequest : public network::mojom::URLLoader,
   void SetPriority(net::RequestPriority priority,
                    int32_t intra_priority_value) override;
 
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  base::WeakPtr<InterceptedRequest> GetWeakPtr() {
+    return weak_factory_.GetWeakPtr();
+  }
+#endif
   int32_t id() const { return id_; }
 
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+  void OnHttpErrorForUIThread(int32_t,
+                              CefRefPtr<CefRequest> request,
+                              bool is_main_frame,
+                              bool has_user_gesture,
+                              CefRefPtr<CefResponse> error_response);
+#endif
+
  private:
+  friend class InterceptedRequestUtils;
   // Helpers for determining the request handler.
   void BeforeRequestReceived(const GURL& original_url,
                              bool intercept_request,
@@ -1343,8 +1357,30 @@ void InterceptedRequest::ContinueToResponseStarted(int error_code) {
 }
 
 void InterceptedRequest::OnDestroy() {
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  ResReporter::GetInstance().FetchEnd();
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (status_.error_code != net::OK) {
+    LOG(INFO) << "InterceptedRequest id " << id_ << ", OnDestroy for error_code: "
+              << status_.error_code;
+  }
+#endif
   // We don't want any callbacks after this point.
   weak_factory_.InvalidateWeakPtrs();
+
+#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
+  if (!factory_) {
+    LOG(ERROR) << "InterceptedRequest::OnDestroy factory_ is nullptr";
+    return;
+  }
+  if (!factory_->request_handler_) {
+    LOG(ERROR) << "InterceptedRequest::OnDestroy factory_->request_handler_ is "
+                  "nullptr";
+    return;
+  }
+#endif
 
   bool handled_externally = false;
   factory_->request_handler_->OnRequestComplete(id_, request_, status_,

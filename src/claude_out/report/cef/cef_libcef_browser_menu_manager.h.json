@@ -1,0 +1,57 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/cef/libcef/browser/menu_manager.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/cef/libcef/browser/menu_manager.h",
+    "处理时间": "2025-11-05"
+  },
+  "冲突分析": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "rej文件状态": "保持完整，未被修改"
+  },
+  "hunk详细信息": [
+    {
+      "hunk_index": 1,
+      "行范围": "第60-70行",
+      "待添加行数": 5,
+      "待删除行数": 0,
+      "解决状态": "已解决",
+      "置信度": "高",
+      "风险等级": "低",
+      "冲突原因": "Arkweb 132版本在menu_manager.h中添加了ARKWEB_CLIPBOARD条件编译的方法声明",
+      "分析过程": "通过识别.rej文件中的+开头的行，发现需要添加5行代码。使用前后函数声明作为锚点精确定位到源文件中第68行和第76行之间的位置。",
+      "修改内容": {
+        "添加的代码": [
+          "#if BUILDFLAG(ARKWEB_CLIPBOARD)",
+          "  bool IsCommandIdEnabled(int command_id,",
+          "                          content::ContextMenuParams& params) const;",
+          "  void UpdateMenuEditStateFlags(content::ContextMenuParams& params);",
+          "#endif  // #if BUILDFLAG(ARKWEB_CLIPBOARD)"
+        ]
+      },
+      "定位锚点": {
+        "前锚点": "bool IsCustomContextMenuCommand(int command_id);",
+        "后锚点": "// AlloyBrowserHostImpl pointer is guaranteed to outlive this object."
+      },
+      "人工复查要点": [
+        "确认ARKWEB_CLIPBOARD编译标志在工程中已定义",
+        "验证新增方法与类整体设计的一致性",
+        "检查参数传递的正确性，特别是content::ContextMenuParams&的引用"
+      ]
+    }
+  ],
+  "处理结果总结": {
+    "成功率": "100%",
+    "代码完整性": "保持良好",
+    "语法检查": "通过",
+    "编译风险评估": "低风险，仅为条件编译的方法声明"
+  },
+  "合规性检查": {
+    "rej文件完整性": "✓ 保持完整",
+    "未生成脚本文件": "✓ 符合要求",
+    "未创建辅助文件": "✓ 符合要求",
+    "仅修改源文件": "✓ 符合要求",
+    "报告路径正确": "✓ 符合要求"
+  }
+}

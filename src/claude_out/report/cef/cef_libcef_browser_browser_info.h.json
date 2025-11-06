@@ -1,0 +1,77 @@
+{
+  "冲突文件分析报告": {
+    "文件路径": "/home/sujiahao/code/arkweb_141/src/cef/libcef/browser/browser_info.h.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/cef/libcef/browser/browser_info.h",
+    "处理时间": "2025-11-05",
+    "总体统计": {
+      "总hunk数量": 3,
+      "成功解决的hunk数量": 3,
+      "未能解决的hunk数量": 0,
+      "解决成功率": "100%"
+    },
+    "hunk详情": [
+      {
+        "hunk编号": 1,
+        "行号范围": "9-11",
+        "变更类型": "添加",
+        "变更内容": [
+          "#if BUILDFLAG(ARKWEB_NETWORK_LOAD)",
+          "bool is_prerendering_ = false;",
+          "#endif"
+        ],
+        "冲突原因": "Arkweb针对网络加载功能添加了预渲染状态跟踪，但Arkweb141源文件中缺少此条件编译代码块",
+        "分析过程": "通过上下文定位到FrameInfo结构体中的成员变量区域，在is_speculative_和is_in_bfcache_之间找到了合适的位置插入Arkweb网络加载相关的条件编译代码块",
+        "修改置信度": "高",
+        "风险等级": "低",
+        "处理策略": "精确插入条件编译代码块，新增is_prerendering_成员变量用于跟踪预渲染状态",
+        "处理结果": "成功应用",
+        "实际应用位置": "browser_info.h:189-191"
+      },
+      {
+        "hunk编号": 2,
+        "行号范围": "20-22",
+        "变更类型": "方法重命名",
+        "变更内容": {
+          "删除": "void MaybeNotifyFrameDestroyed(CefRefPtr<CefBrowserHostBase> browser,",
+          "添加": "void MaybeNotifyFrameDetached(CefRefPtr<CefBrowserHostBase> browser,"
+        },
+        "冲突原因": "Arkweb132中使用了MaybeNotifyFrameDestroyed方法名，但在Arkweb141中该方法被重命名为MaybeNotifyFrameDetached",
+        "分析过程": "通过方法签名在私有方法区域中精确定位到MaybeNotifyFrameDestroyed方法，并将其重命名为MaybeNotifyFrameDetached以匹配Arkweb132的修改",
+        "修改置信度": "高",
+        "风险等级": "中",
+        "风险说明": "方法重命名可能影响调用方，需要确保所有调用点也同步更新",
+        "处理策略": "执行方法重命名，保持参数签名不变，确保与Arkweb132的侵入式修改一致",
+        "处理结果": "成功应用",
+        "实际应用位置": "browser_info.h:200-201"
+      },
+      {
+        "hunk编号": 3,
+        "行号范围": "29",
+        "变更类型": "添加",
+        "变更内容": [
+          "static bool IsPrerendering(content::RenderFrameHost* host);"
+        ],
+        "冲突原因": "Arkweb添加了静态方法IsPrerendering用于检查RenderFrameHost的预渲染状态，此方法在Arkweb141源文件中缺失",
+        "分析过程": "在私有方法的末尾、成员变量之前找到了合适的位置插入静态方法声明，与方法声明的代码风格保持一致",
+        "修改置信度": "高",
+        "风险等级": "低",
+        "处理策略": "在RemoveAllFrames方法后添加静态方法声明，与其他私有方法保持一致的声明风格",
+        "处理结果": "成功应用",
+        "实际应用位置": "browser_info.h:208"
+      }
+    ],
+    "关键发现": {
+      "侵入式修改特点": "Arkweb132针对网络加载功能添加了预渲染状态跟踪机制，包括FrameInfo结构体中的is_prerendering_成员变量和IsPrerendering静态方法",
+      "API变更": "MaybeNotifyFrameDestroyed方法被重命名为MaybeNotifyFrameDetached，这反映了Arkweb对Frame生命周期管理概念的调整",
+      "条件编译": "使用BUILDFLAG(ARKWEB_NETWORK_LOAD)宏进行条件编译，确保相关代码只在Arkweb网络加载功能启用时编译"
+    },
+    "合规性验证": {
+      ".rej文件完整性": "已验证.rej文件保持完整，未被修改或删除",
+      "无上下文添加": "严格遵守黄金法则，仅添加+行和删除-行，未添加任何上下文行",
+      "无脚本创建": "未创建任何脚本文件、工具文件或临时文件",
+      "路径合规": "仅在指定目录创建JSON报告文件",
+      "原子化操作": "每个hunk的处理都是原子化的，精确应用+/-变更"
+    },
+    "结论": "所有3个hunk均已成功解决，冲突解决完成度100%。修改主要包括Arkweb网络加载功能的预渲染状态跟踪和Frame生命周期管理API的调整。所有修改都严格遵循了黄金法则，确保了代码的清洁性和一致性。"
+  }
+}

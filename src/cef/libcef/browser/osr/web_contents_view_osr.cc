@@ -5,13 +5,26 @@
 
 #include "cef/libcef/browser/osr/web_contents_view_osr.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/notimplemented.h"
 #include "cef/libcef/browser/alloy/alloy_browser_host_impl.h"
 #include "cef/libcef/browser/osr/render_widget_host_view_osr.h"
 #include "cef/libcef/browser/osr/touch_selection_controller_client_osr.h"
 #include "cef/libcef/common/drag_data_impl.h"
+#include "cef/ohos_cef_ext/libcef/browser/osr/arkweb_render_widget_host_view_osr_ext.h"
 #include "content/browser/web_contents/web_contents_impl.h"
 #include "content/public/browser/render_widget_host.h"
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+#include "components/performance_manager/embedder/performance_manager_registry.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+#include "base/command_line.h"
+#include "cef/ohos_cef_ext/include/arkweb_client_ext.h"
+#include "content/public/common/content_switches.h"
+#endif
+
+#include "cef/ohos_cef_ext/libcef/browser/alloy/alloy_browser_host_impl_ext.h"
 
 CefWebContentsViewOSR::CefWebContentsViewOSR(SkColor background_color,
                                              bool use_shared_texture,

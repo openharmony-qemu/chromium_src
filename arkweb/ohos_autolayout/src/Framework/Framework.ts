@@ -113,11 +113,6 @@ export default class Framework {
         Log.info('========== 离开主任务 mainTask ==========', Framework.TAG);
     }
 
-    static recoverStyle(): void {
-        Log.info('恢复弹窗样式', Framework.TAG);
-        IntelliLayout.recoverPopwinStyle();
-    }
-
     static reInit(): void {
         Log.info('========== Framework 重新初始化 ==========', Framework.TAG);
         
@@ -137,7 +132,7 @@ export default class Framework {
         CSSSheetManage.reInit();
         
         Log.d('步骤2: 重新初始化智能布局模块', Framework.TAG);
-        IntelligentLayout.reInit();
+        IntelligentLayout.reInit('智能布局初始化');
         
         Log.d('步骤3: 重新初始化观察器处理器', Framework.TAG);
         ObserverHandler.reInit();

@@ -55,7 +55,7 @@ export default class ResizeObserver {
         
         // 步骤2: 重置所有弹窗状态（取消异步验证、重置状态为IDLE、标记为dirty）
         Log.d('步骤2: 重置所有弹窗窗口状态', ResizeObserver.TAG);
-        IntelligentLayout.resetAllPopWindows();
+        IntelligentLayout.resetPopWindows('窗口尺寸变化');
             
         Log.d('  - 执行头部就绪任务', ResizeObserver.TAG);
         Framework.headReadyTask();

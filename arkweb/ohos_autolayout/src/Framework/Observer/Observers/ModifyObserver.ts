@@ -4,9 +4,11 @@ import Tag from '../../../Debug/Tag';
 import IntelligentLayout from '../../../Framework/IntelligentLayout';
 import ObserverHandler from '../ObserverHandler';
 import Constant from '../../Common/Constant';
-import Framework from '../../Framework';
 import { PopupStateManager } from '../../Popup/PopupStateManager';
 import { PopupLayoutState } from '../../Popup/PopupLayoutState';
+import { PopupInfo } from '../../Popup/PopupInfo';
+import { PopupWindowDetector } from '../../Popup/PopupWindowDetector';
+import { PopupWindowRelayout } from '../../Popup/PopupWindowRelayout';
 
 interface AnimationDurations {
     animationDur: number,
@@ -188,10 +190,9 @@ export default class ModifyObserver {
      * @private
      */
     private static findPopupRoot(element: HTMLElement): HTMLElement | null {
-        for (const [popupInfo] of IntelligentLayout.popWindowMap.entries()) {
-            if (popupInfo.root_node && popupInfo.root_node.contains(element)) {
-                return popupInfo.root_node;
-            }
+        const popupInfo = IntelligentLayout.getActivePopupWindowInfo();
+        if (popupInfo?.root_node && popupInfo.root_node.contains(element)) {
+            return popupInfo.root_node;
         }
         return null;
     }
@@ -333,13 +334,19 @@ export default class ModifyObserver {
             return;
         }
         
+        const isMaskNodeExistence = ModifyObserver.checkMaskNodeExistence();
+
+        if (!isMaskNodeExistence) {
+            Log.d('检测到遮罩节点失效，已重置弹窗', ModifyObserver.TAG);
+            return;
+        }
+
         Log.d(`========== 开始批处理 ${records.length} 个变更记录 ==========`, ModifyObserver.TAG);
-        
         // 分类记录，减少重复遍历
         const removeRecords: MutationRecord[] = [];
         const addRecords: MutationRecord[] = [];
         const attrRecords: MutationRecord[] = [];
-        
+
         for (let i = 0; i < records.length; i++) {
             const record = records[i];
             if (record.removedNodes.length > 0) {
@@ -386,7 +393,7 @@ export default class ModifyObserver {
         
         Log.d('========== 批处理完成 ==========', ModifyObserver.TAG);
     }
-
+    
     private static handleAddedNodes(addRecords: MutationRecord[]): boolean {
         let hasValidChange = false;
         if (addRecords.length === 0) {
@@ -578,5 +585,62 @@ export default class ModifyObserver {
         }
         
         return { animationDur: animDur, transitionDur: transDur, total: total };
+    }
+
+    /**
+     * 检查Mask节点是否存在
+     * 
+     * @returns Mask节点存在则返回 true，否则返回 false
+     */
+    private static checkMaskNodeExistence(): boolean {
+        const popupInfo = IntelligentLayout.getActivePopupWindowInfo();
+        if (!popupInfo) {
+            return true;
+        }
+
+        if (!ModifyObserver.isMaskNodeValid(popupInfo)) {
+            const maskClass = popupInfo?.mask_node?.className || 'unknown-mask';
+            const reason = `检测到遮罩节点失效: ${maskClass}`;
+            ModifyObserver.resetPopup(reason);
+            ObserverHandler.postTask();
+            return false;
+        }
+
+        return true;
+    }
+
+    private static isMaskNodeValid(popupInfo: PopupInfo): boolean {
+        if (!popupInfo) {
+            return false;
+        }
+
+        if (!popupInfo.root_node || !popupInfo.root_node.isConnected) {
+            Log.d('弹窗根节点已脱离文档结构', ModifyObserver.TAG);
+            return false;
+        }
+
+        if (!PopupWindowDetector.isMaskNodeActive(popupInfo.mask_node)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private static resetPopup(reason: string): void {
+        Log.d(`重置弹窗: ${reason}`, ModifyObserver.TAG);
+
+        const popupInfo = IntelligentLayout.getActivePopupWindowInfo();
+        const component = IntelligentLayout.getActivePopupWindowComponent();
+
+        if (component instanceof PopupWindowRelayout) {
+            component.cancelPendingValidation();
+            component.restoreStyles();
+        }
+
+        if (popupInfo?.root_node) {
+            PopupStateManager.resetState(popupInfo.root_node, reason);
+        }
+
+        IntelligentLayout.clearActivePopupWindow();
     }
 }

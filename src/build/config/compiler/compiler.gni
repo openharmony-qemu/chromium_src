@@ -76,7 +76,7 @@ declare_args() {
   # use_debug_fission: whether to use split DWARF debug info files. This can
   # reduce link time significantly.
   use_debug_fission =
-      !is_android && !is_fuchsia && !is_apple && !is_win && use_lld
+      !is_android && !is_fuchsia && !is_apple && !is_win && use_lld && !is_ohos
 
   # Enables support for ThinLTO, which links 3x-10x faster than full LTO. See
   # also http://blog.llvm.org/2016/06/thinlto-scalable-and-incremental-lto.html
@@ -258,7 +258,7 @@ enable_arm_cfi_table = is_android && !is_component_build && current_cpu == "arm"
 # official builders.
 strip_absolute_paths_from_debug_symbols_default =
     is_android || is_fuchsia || (is_win && use_lld) || is_linux ||
-    is_chromeos || (is_apple && !enable_dsyms)
+    is_chromeos || (is_apple && !enable_dsyms) || is_ohos
 
 # If the platform uses stripped absolute paths by default, then we don't expose
 # it as a configuration option. If this is causing problems, please file a bug.

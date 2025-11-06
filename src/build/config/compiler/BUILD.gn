@@ -321,6 +321,8 @@ config("compiler") {
     configs += [ "//build/config/win:compiler" ]
   } else if (is_android) {
     configs += [ "//build/config/android:compiler" ]
+  } else if (is_ohos) {
+    configs += [ "//build/config/ohos:compiler" ]
   } else if (is_linux || is_chromeos) {
     configs += [ "//build/config/linux:compiler" ]
   } else if (is_mac) {
@@ -690,7 +692,8 @@ config("compiler") {
     # TODO(crbug.com/376278218): This causes segfault on Linux ARM builds.
     # It also causes segfault on Linux s390x:
     # https://github.com/llvm/llvm-project/issues/149511
-    if (is_linux && use_lld && !llvm_android_mainline && current_cpu != "arm" &&
+    if (is_linux && use_lld && !llvm_android_mainline && !llvm_ohos_mainline &&
+        current_cpu != "arm" &&
         current_cpu != "s390x") {
       cflags += [ "-Wa,--crel,--allow-experimental-crel" ]
     }
@@ -698,7 +701,7 @@ config("compiler") {
 
   # C11/C++11 compiler flags setup.
   # ---------------------------
-  if (is_linux || is_chromeos || is_android || current_os == "aix") {
+  if (is_linux || is_chromeos || is_android || is_ohos || current_os == "aix") {
     if (is_clang) {
       standard_prefix = "c"
 
@@ -1303,7 +1306,8 @@ config("compiler_cpu_abi") {
         "-msse3",
       ]
     } else if (current_cpu == "arm") {
-      if (is_clang && !is_android && !is_chromeos_device) {
+      if (is_clang && !is_android && !is_ohos &&
+          !is_chromeos_device) {
         cflags += [ "--target=arm-linux-gnueabihf" ]
         ldflags += [ "--target=arm-linux-gnueabihf" ]
       }
@@ -1315,7 +1319,8 @@ config("compiler_cpu_abi") {
         cflags += [ "-mtune=$arm_tune" ]
       }
     } else if (current_cpu == "arm64") {
-      if (is_clang && !is_android && !is_fuchsia && !is_chromeos_device) {
+      if (is_clang && !is_android && !is_fuchsia && !is_ohos &&
+           !is_chromeos_device) {
         cflags += [ "--target=aarch64-linux-gnu" ]
         ldflags += [ "--target=aarch64-linux-gnu" ]
       }
@@ -2404,6 +2409,12 @@ config("chromium_code") {
       # Warn on unreachable code, including unreachable breaks and returns.
       # See https://crbug.com/346399#c148 for suppression strategies.
       "-Wunreachable-code-aggressive",
+    ]
+
+    if (is_component_build) {
+      # FIXME(AR20250313353352): Should be turn on after re-factoring
+      cflags += [ "-w" ]
+    }
 
       # Warn on GNU extensions.
       "-Wgnu",

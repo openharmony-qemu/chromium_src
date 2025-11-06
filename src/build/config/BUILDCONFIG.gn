@@ -357,6 +357,10 @@ is_mac = current_os == "mac"
 is_wasm = current_os == "emscripten"
 is_watchos = current_os == "watchos"
 is_win = current_os == "win" || current_os == "winuwp"
+is_ohos = current_os == "ohos"
+
+is_arkweb = is_ohos && enable_arkweb
+is_arkweb_ext = is_arkweb && enable_arkweb_ext
 
 is_apple = is_ios || is_mac || is_watchos
 is_posix = !is_win && !is_fuchsia

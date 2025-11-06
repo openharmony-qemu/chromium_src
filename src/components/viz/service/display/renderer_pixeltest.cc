@@ -68,6 +68,9 @@
 #include "ui/gfx/geometry/transform_util.h"
 #include "ui/gfx/video_types.h"
 #include "ui/gl/gl_implementation.h"
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "arkweb/chromium_ext/components/viz/service/display/renderer_pixeltest_ext.h"
+#endif
 
 namespace viz {
 namespace {

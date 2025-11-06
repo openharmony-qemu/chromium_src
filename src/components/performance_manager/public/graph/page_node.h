@@ -18,6 +18,11 @@
 #include "components/performance_manager/public/mojom/lifecycle.mojom.h"
 #include "services/metrics/public/cpp/ukm_source_id.h"
 #include "third_party/blink/public/common/permissions/permission_utils.h"
+#include "arkweb/build/features/features.h"
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+#include "content/public/browser/web_contents_observer.h"
+#endif
 
 class GURL;
 
@@ -31,6 +36,9 @@ class PageContext;
 
 namespace performance_manager {
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+using AudioContextId = content::WebContentsObserver::AudioContextId;
+#endif
 class FrameNode;
 class PageNodeObserver;
 
@@ -315,6 +323,13 @@ class PageNodeObserver : public base::CheckedObserver {
   // Invoked when the HasPictureInPicture property changes.
   virtual void OnHasPictureInPictureChanged(const PageNode* page_node) {}
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+  virtual void OnIsMediaPlayingChanged(const PageNode* page_node) {}
+  virtual void OnDecrementAudioNum(const PageNode* page_node) {}
+  virtual void OnAudioContextPlaybackStarted(const AudioContextId& audio_context_id) {}
+  virtual void OnAudioContextPlaybackStopped(const AudioContextId& audio_context_id) {}
+#endif
+
   // Invoked when the HasFreezingOriginTrialOptOut() property changes.
   virtual void OnPageHasFreezingOriginTrialOptOutChanged(
       const PageNode* page_node) {}
@@ -373,6 +388,14 @@ class PageNodeObserver : public base::CheckedObserver {
   // for more detail.
   virtual void OnAboutToBeDiscarded(const PageNode* page_node,
                                     const PageNode* new_page_node) {}
+
+#if BUILDFLAG(ARKWEB_BGTASK)
+  // Invoked when Browser is foreground.
+  virtual void SetBrowserForeground(const PageNode* page_node) = 0;
+
+  // Invoked when Browser is background.
+  virtual void SetBrowserBackground(const PageNode* page_node) = 0;
+#endif
 };
 
 }  // namespace performance_manager

@@ -281,6 +281,10 @@
     <file path="strings/components_strings_zh-HK.xtb" lang="zh-HK" />
     <file path="strings/components_strings_zh-TW.xtb" lang="zh-TW" />
     <file path="strings/components_strings_zu.xtb" lang="zu" />
+    <!-- <if expr="pp_ifdef('arkweb_i18n')"> -->
+       <file path="strings/components_strings_bo-CN.xtb" lang="bo-CN" />
+        <file path="strings/components_strings_ug.xtb" lang="ug" />
+    <!-- </if> -->
   </translations>
   <release seq="1">
     <!-- IMPORTANT: .grdp files must be in the same directory as this file -->

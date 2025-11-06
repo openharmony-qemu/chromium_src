@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/command_line.h"
 #include "base/containers/adapters.h"
@@ -20,11 +21,13 @@
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "base/location.h"
+#include "base/logging.h"
 #include "base/memory/ptr_util.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/metrics/field_trial.h"
 #include "base/notreached.h"
+#include "base/ohos/sys_info_utils_ext.h"
 #include "base/strings/string_util.h"
 #include "base/system/sys_info.h"
 #include "base/task/single_thread_task_runner.h"
@@ -903,7 +906,11 @@ bool NoStatePrefetchManager::DoesRateLimitAllowPrefetch(Origin origin) const {
   if (!config_.rate_limit_enabled) {
     return true;
   }
+  #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+  return elapsed_time >= base::Milliseconds(min_time_between_prefetches_);
+#else
   return elapsed_time >= base::Milliseconds(kMinTimeBetweenPrefetchesMs);
+#endif  // BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
 }
 
 void NoStatePrefetchManager::DeleteOldWebContents() {

@@ -154,6 +154,12 @@ void DistillabilityDriver::OnDistillability(
   page_data->distillability_result = result;
   page_data->distillability_result.url = GetWebContents().GetVisibleURL();
   latest_result_ = page_data->distillability_result;
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  LOG(INFO) << "[Distiller] DistillabilityDriver::OnDistillability OnIsPageDistillable";
+  int page_type = static_cast<int32_t>(result.page_info.pageType);
+  GetWebContents().OnIsPageDistillable(page_type, result.page_info.distillablePageUrl, result.page_info.title);
+#endif
   for (auto& observer : observers_)
     observer.OnResult(result);
 }

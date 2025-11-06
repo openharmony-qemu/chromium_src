@@ -4,6 +4,7 @@
 
 #include "components/page_info/core/about_this_site_service.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "base/metrics/histogram_functions.h"
 #include "components/optimization_guide/core/hints/hints_processing_util.h"

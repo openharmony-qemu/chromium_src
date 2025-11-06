@@ -1,0 +1,41 @@
+{
+  "文件路径": "components/input/mock_input_router.h",
+  "分析时间": "2025-11-05",
+  "总hunk数量": 2,
+  "成功解决的hunk数量": 2,
+  "未能解决的hunk数量": 0,
+  "rej文件完整性": "保持完整未被修改",
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "行范围": "9-11",
+      "状态": "已解决",
+      "风险等级": "低",
+      "冲突原因": "Arkweb132添加了帧丢失报告功能的方法声明",
+      "分析过程": "在NotifySiteIsMobileOptimized和HasPendingEvents方法之间插入了条件编译的DynamicFrameLossEvent方法声明",
+      "修改内容": [
+        "添加: #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)",
+        "添加: void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) override;",
+        "添加: #endif"
+      ],
+      "修改置信度": "高",
+      "处理策略": "精确匹配上下文行，在正确的位置插入条件编译的方法声明"
+    },
+    {
+      "hunk_id": 2,
+      "行范围": "23-33",
+      "状态": "已解决",
+      "风险等级": "低",
+      "冲突原因": "Arkweb132添加了同层渲染和输入事件相关的功能方法声明",
+      "分析过程": "在WaitForInputProcessed方法和成员变量声明之间插入了多个条件编译的方法声明",
+      "修改内容": [
+        "添加: #if BUILDFLAG(ARKWEB_SAME_LAYER) 及其包含的4个方法声明",
+        "添加: #if BUILDFLAG(ARKWEB_INPUT_EVENTS) 及其包含的2个方法声明"
+      ],
+      "修改置信度": "高",
+      "处理策略": "使用方法声明区域作为定位锚点，在正确的位置插入所有条件编译的方法声明"
+    }
+  ],
+  "总结": "所有hunks都已成功解决，没有遗留的冲突。修改内容都是Arkweb特有的功能扩展，通过条件编译确保在不启用相关功能时不会影响原有代码结构。",
+  "建议": "建议在编译时验证相关的BUILDFLAG宏定义是否正确配置，以确保新增的方法能够被正确编译和使用。"
+}

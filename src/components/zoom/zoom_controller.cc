@@ -540,6 +540,11 @@ void ZoomController::UpdateState(const std::string& host) {
     for (auto& observer : observers_) {
       observer.OnZoomChanged(zoom_change_data);
     }
+#if BUILDFLAG(ARKWEB_AI)
+    if (auto impl = static_cast<content::WebContentsImpl*>(web_contents())) {
+      impl->AsWebContentsImplExt()->OnOverlayZoomChanged();
+    }
+#endif
   } else {
     // TODO(wjmaclean) Should we consider having HostZoomMap send both old and
     // new zoom levels here?

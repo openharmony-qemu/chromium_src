@@ -13,6 +13,7 @@
 #include <utility>
 #include <variant>
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/containers/lru_cache.h"
 #include "base/debug/crash_logging.h"

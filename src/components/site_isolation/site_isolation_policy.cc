@@ -48,7 +48,7 @@ bool ShouldDisableSiteIsolationDueToMemorySlow(
   //   partial and strict site isolation thresholds can be overridden via
   //   params defined in a kSiteIsolationMemoryThresholds field trial.
   // - Desktop does not enforce a default memory threshold.
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_SITE_ISOLATION)
   int default_memory_threshold_mb;
   if (site_isolation_mode == content::SiteIsolationMode::kStrictSiteIsolation) {
     default_memory_threshold_mb = 3200;

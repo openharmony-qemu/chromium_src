@@ -61,6 +61,10 @@
 constexpr char kUserAgentProductAndVersion[] = "user-agent-product";
 #endif
 
+#if BUILDFLAG(ARKWEB_USERAGENT)
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
+
 namespace embedder_support {
 
 namespace {
@@ -482,24 +486,38 @@ std::string BuildOSCpuInfo(
 
 }  // namespace
 
+// todo: check
 std::string GetProductAndVersion(
     UserAgentReductionEnterprisePolicyState user_agent_reduction) {
 #if BUILDFLAG(ENABLE_CEF)
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  if (command_line != nullptr) {
   if (command_line->HasSwitch(kUserAgentProductAndVersion)) {
     return command_line->GetSwitchValueASCII(kUserAgentProductAndVersion);
   }
+  }
+#endif
 #endif
 
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  std::string version_str = "Chrome/";
+  version_str.append(version_info::GetMajorVersionNumber());
+  version_str.append(".0.0.0");
+  return version_str;
+#else
   return ShouldReduceUserAgentMinorVersion(user_agent_reduction)
              ? version_info::GetProductNameAndVersionForReducedUserAgent(
                    blink::features::kUserAgentFrozenBuildVersion.Get())
              : std::string(
                    version_info::GetProductNameAndVersionForUserAgent());
+#endif
 }
 
 std::optional<std::string> GetUserAgentFromCommandLine() {
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  if (command_line != nullptr) {
   if (command_line->HasSwitch(kUserAgent)) {
     std::string ua = command_line->GetSwitchValueASCII(kUserAgent);
     if (net::HttpUtil::IsValidHeaderValue(ua)) {
@@ -507,6 +525,8 @@ std::optional<std::string> GetUserAgentFromCommandLine() {
     }
     LOG(WARNING) << "Ignored invalid value for flag --" << kUserAgent;
   }
+  }
+#endif
   return std::nullopt;
 }
 

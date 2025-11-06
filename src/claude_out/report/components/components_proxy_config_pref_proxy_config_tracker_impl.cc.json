@@ -1,0 +1,47 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/components/proxy_config/pref_proxy_config_tracker_impl.cc.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/components/proxy_config/pref_proxy_config_tracker_impl.cc",
+    "文件名": "components_proxy_config_pref_proxy_config_tracker_impl.cc.json"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk处理详情": [
+    {
+      "hunk编号": 1,
+      "hunk头部": "@@ -429,10 +436,11 @@",
+      "风险等级": "低",
+      "冲突原因": "Arkweb141在PrefConfigToNetConfig函数结尾缺少#endif条件编译结束指令",
+      "分析过程": "通过分析.rej文件中的上下文行，在源文件第423-424行找到了匹配的代码位置：'NOTREACHED() << \"Unknown proxy mode, falling back to system settings.\";'}。源文件中第347行存在'#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) || defined(COMPONENT_BUILD)'条件编译开始，但缺少对应的#endif结束指令。",
+      "修改内容": {
+        "待添加行": [
+          "#endif // ARKWEB_ARKWEB_EXTENSIONS"
+        ],
+        "待删除行": []
+      },
+      "定位策略": "使用上下文行'NOTREACHED() << \"Unknown proxy mode, falling back to system settings.\";'}作为锚点，在源文件第424行'}'后精确插入#endif指令",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "应用位置": "第425行",
+      "代码语法检查": "通过 - 添加的#endif与第347行的#if条件编译指令正确匹配，不会破坏代码结构"
+    }
+  ],
+  "整体评估": {
+    "处理策略": "精确定位+原子化应用",
+    "代码完整性": "保持良好 - 修改后条件编译结构完整",
+    "编译风险评估": "无风险 - 添加的#endif指令修复了条件编译结构",
+    "功能影响": "无负面影响 - 修复了Arkweb扩展的条件编译逻辑"
+  },
+  "合规性验证": {
+    ".rej文件完整性": "已验证 - .rej文件未被修改或删除",
+    "禁止创建脚本文件": "已遵守 - 未创建任何脚本文件",
+    "禁止创建辅助文件": "已遵守 - 仅创建指定的JSON报告文件",
+    "禁止修改上下文行": "已遵守 - 仅添加+开头的行，未复制任何上下文内容",
+    "路径合规性": "已验证 - 报告文件创建在指定路径 /home/sujiahao/code/arkweb_141/src/claude_out/report/components/"
+  },
+  "最终处理结果": "所有hunk均已成功解决，冲突文件处理完成。Arkweb141的条件编译结构已修复，PrefConfigToNetConfig函数现在被正确的条件编译块包围。"
+}

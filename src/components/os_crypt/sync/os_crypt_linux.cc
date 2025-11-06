@@ -25,6 +25,10 @@
 #include "crypto/aes_cbc.h"
 #include "crypto/kdf.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/components/os_crypt/sync/os_crypt_linux_for_include.h"
+#endif
+
 namespace {
 
 // Prefixes for cypher text returned by obfuscation version.  We prefix the
@@ -197,9 +201,19 @@ bool OSCryptImpl::DecryptString(const std::string& ciphertext,
     return false;
   }
 
+#if BUILDFLAG(ARKWEB_ENCRYPT)
+  if (ciphertext.length() < (obfuscation_prefix.length() + kIVSizeAESGCM)) {
+    return true;
+  }
+  std::string raw_ciphertext =
+      ciphertext.substr(obfuscation_prefix.length() + kIVSizeAESGCM);
+  std::string iv =
+      ciphertext.substr(obfuscation_prefix.length(), kIVSizeAESGCM);
+#else
   // Strip off the versioning prefix before decrypting.
   const std::string raw_ciphertext =
       ciphertext.substr(obfuscation_prefix.length());
+#endif
 
   std::optional<std::vector<uint8_t>> maybe_plain =
       crypto::aes_cbc::Decrypt(key, kIv, base::as_byte_span(raw_ciphertext));
@@ -268,6 +282,7 @@ std::string OSCryptImpl::GetRawEncryptionKey() {
                         : std::string();
 }
 
+#if !BUILDFLAG(IS_ARKWEB)
 void OSCryptImpl::ClearCacheForTesting() {
   v11_key_ = std::nullopt;
   try_v11_ = true;
@@ -280,12 +295,15 @@ void OSCryptImpl::UseMockKeyStorageForTesting(
   base::AutoLock auto_lock(OSCryptImpl::GetLock());
   storage_provider_factory_for_testing_ = std::move(storage_provider_factory);
 }
+#endif
 
+#if !BUILDFLAG(IS_ARKWEB)
 void OSCryptImpl::SetEncryptionPasswordForTesting(const std::string& password) {
   ClearCacheForTesting();  // IN-TEST
   v11_key_ = Pbkdf2(password);
   try_v11_ = true;
 }
+#endif
 
 crypto::SubtlePassKey OSCryptImpl::MakeCryptoPassKey() {
   return crypto::SubtlePassKey{};

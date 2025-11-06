@@ -130,7 +130,15 @@ base::FilePath IndexedRulesetLocator::GetSentinelFilePath(
 // static
 void IndexedRulesetLocator::DeleteObsoleteRulesets(
     const base::FilePath& indexed_ruleset_base_dir,
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+    const base::FilePath& unindexed_ruleset_base_dir,
+    RulesetServiceClient* client,
+#endif
     const IndexedRulesetVersion& most_recent_version) {
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  bool has_different_format = false;
+  bool has_different_version = false;
+#endif
   base::FilePath current_format_dir(indexed_ruleset_base_dir.AppendASCII(
       base::NumberToString(IndexedRulesetVersion::CurrentFormatVersion())));
 
@@ -140,9 +148,13 @@ void IndexedRulesetLocator::DeleteObsoleteRulesets(
                                    base::FileEnumerator::DIRECTORIES);
   for (base::FilePath format_dir = format_dirs.Next(); !format_dir.empty();
        format_dir = format_dirs.Next()) {
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+    DeleteObsoleteRulesetsExt(has_different_format, format_dir, current_format_dir);
+#else
     if (format_dir != current_format_dir) {
       base::DeletePathRecursively(format_dir);
     }
+#endif
   }
 
   base::FilePath most_recent_version_dir =
@@ -164,7 +176,16 @@ void IndexedRulesetLocator::DeleteObsoleteRulesets(
       continue;
     }
     base::DeletePathRecursively(version_dir);
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+    LOG(INFO) << "[Adblock] Delete obsolete indexed rulesets:"
+              << version_dir.value();
+    has_different_version = true;
+#endif
   }
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+    DeleteObsoleteRulesetsClientExt(has_different_format, has_different_version, unindexed_ruleset_base_dir, client);
+#endif
 }
 
 // RulesetService -------------------------------------------------------------
@@ -237,7 +258,12 @@ RulesetService::RulesetService(
       local_state_(local_state),
       background_task_runner_(std::move(background_task_runner)),
       is_initialized_(false),
-      indexed_ruleset_base_dir_(indexed_ruleset_base_dir) {
+      indexed_ruleset_base_dir_(indexed_ruleset_base_dir)
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+      ,
+      ruleset_service_client_(nullptr)
+#endif
+{
   CHECK_NE(local_state_->GetInitializationStatus(),
            PrefService::INITIALIZATION_STATUS_WAITING);
   publisher_ = publisher_factory.Create(this, std::move(blocking_task_runner));
@@ -254,9 +280,13 @@ RulesetService::RulesetService(
   }
 
   CHECK(publisher_->BestEffortTaskRunner()->BelongsToCurrentThread());
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  FinishInitialization();
+#else
   publisher_->BestEffortTaskRunner()->PostTask(
       FROM_HERE, base::BindOnce(&RulesetService::FinishInitialization,
                                 weak_ptr_factory_.GetWeakPtr()));
+#endif
 }
 
 RulesetService::~RulesetService() = default;
@@ -403,6 +433,12 @@ bool RulesetService::IndexRuleset(
       unindexed_ruleset_stream_generator->ruleset_stream());
 
   size_t num_unsupported_rules = 0;
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  size_t num_supported_url_rules = 0;
+  size_t num_supported_css_rules = 0;
+  size_t num_unsupported_css_rules = 0;
+#endif
+
   url_pattern_index::proto::FilteringRules ruleset_chunk;
   while (reader.ReadNextChunk(&ruleset_chunk)) {
     for (const auto& rule : ruleset_chunk.url_rules()) {
@@ -410,12 +446,31 @@ bool RulesetService::IndexRuleset(
         ++num_unsupported_rules;
       }
     }
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+    for (const auto& rule : ruleset_chunk.css_rules()) {
+      if (!indexer->AsArkWebRulesetIndexerExt()->AddCssRule(rule)) {
+        ++num_unsupported_css_rules;
+      } else {
+        ++num_supported_css_rules;
+      }
+    }
+#endif
   }
   indexer->Finish();
 
   base::UmaHistogramCounts10000(
       base::StrCat({config.uma_tag, ".IndexRuleset.NumUnsupportedRules"}),
       num_unsupported_rules);
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  LOG(INFO) << "[AdBlock] reader.num_bytes_read=" << reader.num_bytes_read()
+            << ", unindexed_ruleset size=" << unindexed_ruleset_size
+            << ", num_unsupported url_rules=" << num_unsupported_rules
+            << ", num_unsupported_css_rules=" << num_unsupported_css_rules
+            << ", num_supported_url_rules=" << num_supported_url_rules
+            << ", num_supported_css_rules=" << num_supported_css_rules;
+#endif
 
   return reader.num_bytes_read() == unindexed_ruleset_size;
 }

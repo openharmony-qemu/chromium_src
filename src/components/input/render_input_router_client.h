@@ -50,6 +50,10 @@ class COMPONENT_EXPORT(INPUT) RenderInputRouterClient {
       const gfx::Rect& focus_widget_rect_in_dips
 #endif  // BUILDFLAG(IS_WIN)
       ) = 0;
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  virtual void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) = 0;
+#endif
 };
 
 }  // namespace input

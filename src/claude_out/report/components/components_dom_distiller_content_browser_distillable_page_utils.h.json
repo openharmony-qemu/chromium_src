@@ -1,0 +1,50 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/components/dom_distiller/content/browser/distillable_page_utils.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/components/dom_distiller/content/browser/distillable_page_utils.h",
+    "处理时间": "2025-11-05"
+  },
+  "处理统计": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 2,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunks处理详情": [
+    {
+      "hunk编号": 1,
+      "修改位置": "第11-13行后（include部分）",
+      "待添加行数": 6,
+      "风险分析": "低风险。添加条件编译的include语句，仅在ARKWEB相关特性启用时生效，不会影响核心功能",
+      "冲突原因": "Arkweb132版本添加了ARKWEB扩展和阅读模式的条件编译支持，在Chromium141版本中需要重新集成",
+      "处理过程": "通过上下文定位找到base/functional/callback.h和base/observer_list_types.h后的位置，插入了6行条件编译include语句",
+      "置信度": "高",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 2,
+      "修改位置": "第41行的DistillabilityResult结构体中",
+      "待添加行数": 3,
+      "风险分析": "低风险。在结构体中添加条件编译成员变量，仅在ARKWEB_READER_MODE启用时包含page_info字段，保持向后兼容性",
+      "冲突原因": "Arkweb132版本扩展了DistillabilityResult结构体，添加了PageDistillableInfo字段支持更详细的页面信息",
+      "处理过程": "精确定位到DistillabilityResult结构体的开始位置，在GURL url成员前插入了条件编译的page_info字段",
+      "置信度": "高",
+      "解决状态": "已解决"
+    }
+  ],
+  "技术分析": {
+    "修改类型": "条件编译扩展",
+    "涉及特性": [
+      "IS_ARKWEB_EXT - Arkweb扩展支持",
+      "ARKWEB_READER_MODE - Arkweb阅读模式"
+    ],
+    "影响范围": "头文件包含和结构体定义",
+    "兼容性": "通过条件编译确保只在特定配置下生效，不影响原有功能"
+  },
+  "验证结果": {
+    ".rej文件状态": "保持完整，未被修改或删除",
+    "源文件修改": "成功应用所有hunks的修改",
+    "语法检查": "修改后的代码语法正确，条件编译结构完整",
+    "逻辑完整性": "保持了原有代码结构的完整性，新增的扩展功能通过条件编译隔离"
+  }
+}

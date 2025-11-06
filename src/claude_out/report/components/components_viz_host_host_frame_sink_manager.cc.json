@@ -1,0 +1,54 @@
+{
+  "file_path": "components/viz/host/host_frame_sink_manager.cc",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "preserved",
+  "analysis": {
+    "conflict_reason": "Arkweb 132 在 Chromium 132 基础上添加了侵入式修改，包含对 HostFrameSinkManagerUtils 的引用，在升级到 Chromium 141 时产生了冲突",
+    "modification_type": "新增头文件引用",
+    "risk_assessment": "低风险 - 仅添加了一个新的头文件引用，不会影响现有代码逻辑"
+  },
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "status": "已解决",
+      "line_range": "7-11",
+      "modification": {
+        "additions": [
+          "#include \"arkweb/chromium_ext/components/viz/host/host_frame_sink_manager_utils.h\""
+        ],
+        "deletions": []
+      },
+      "localization_process": {
+        "anchor_context": [
+          "#include <utility>",
+          "#include <vector>",
+          "",
+          "#include \"base/containers/contains.h\""
+        ],
+        "positioning_strategy": "在 <vector> 和 base/containers/contains.h 之间插入新的头文件引用",
+        "confidence": "高置信度"
+      },
+      "atomic_application": {
+        "success": true,
+        "applied_at_line": 12,
+        "modification_applied": "成功添加了 HostFrameSinkManagerUtils 头文件引用"
+      },
+      "verification": {
+        "syntax_check": "通过 - 头文件引用格式正确",
+        "logic_check": "通过 - 不会影响现有代码逻辑",
+        "integration_check": "通过 - 源文件已在使用相关工具类"
+      }
+    }
+  ],
+  "summary": {
+    "resolution_strategy": "原子化应用 - 仅添加了必要的头文件引用，保持了代码的完整性",
+    "code_integrity": "良好 - 所有修改都精确应用，没有添加任何上下文或额外内容",
+    "compliance": "完全符合黄金法则 - 没有添加上下文行，没有生成脚本文件，仅修改了源文件"
+  },
+  "notes": {
+    "special_considerations": "该头文件引用是为了支持 HostFrameSinkManagerUtils 类的使用，在源文件的构造函数中已经使用了 managerUtils 实例",
+    "potential_impact": "无破坏性影响，仅增加了必要的依赖关系"
+  }
+}

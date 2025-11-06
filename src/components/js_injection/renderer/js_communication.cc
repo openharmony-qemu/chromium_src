@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "components/js_injection/renderer/js_communication.h"
+#include "arkweb/chromium_ext/components/js_injection/renderer/js_communication_utils.h"
 
 #include "base/feature_list.h"
 #include "components/js_injection/renderer/js_binding.h"

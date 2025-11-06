@@ -68,6 +68,11 @@ class LenientMockPageNodeObserver : public PageNodeObserver {
               OnAboutToBeDiscarded,
               (const PageNode*, const PageNode*),
               (override));
+
+#if BUILDFLAG(ARKWEB_BGTASK)
+  MOCK_METHOD(void, SetBrowserForeground, (const PageNode*), (override));
+  MOCK_METHOD(void, SetBrowserBackground, (const PageNode*), (override));
+#endif
 };
 
 using MockPageNodeObserver = ::testing::StrictMock<LenientMockPageNodeObserver>;

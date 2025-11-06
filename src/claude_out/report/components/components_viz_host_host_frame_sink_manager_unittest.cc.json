@@ -1,0 +1,48 @@
+{
+  "file_path": "components/viz/host/host_frame_sink_manager_unittest.cc",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "preserved",
+  "analysis": {
+    "conflict_cause": "Arkweb132在MockFrameSinkManagerImpl类中添加了SetEnableHalfFrameRate方法，该方法在Arkweb141中不存在",
+    "modification_intent": "添加一个新的方法来支持半帧率功能，这是Arkweb项目针对特定需求添加的功能",
+    "risk_assessment": "低风险。添加的是一个空实现的方法，不会影响现有功能，符合Google Test mock模式的标准做法"
+  },
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "status": "已解决",
+      "confidence": 100,
+      "location_in_source": "第114行之后",
+      "changes": {
+        "additions": [
+          "void SetEnableHalfFrameRate(bool enabled, const ::viz::FrameSinkId& frame_sink_id) override {}"
+        ],
+        "deletions": []
+      },
+      "anchor_context": {
+        "before": "MOCK_METHOD(void, Throttle, (const std::vector<FrameSinkId>& ids, base::TimeDelta interval), (override));",
+        "after": "void set_run_invalidate_frame_sink_callback(bool run) {"
+      },
+      "analysis": {
+        "change_type": "方法添加",
+        "purpose": "为MockFrameSinkManagerImpl类添加SetEnableHalfFrameRate方法的重写，该方法在真实的mojom::FrameSinkManager接口中存在",
+        "positioning_logic": "方法被正确添加在Throttle方法之后，set_run_invalidate_frame_sink_callback方法之前，保持了代码的逻辑组织",
+        "syntax_verification": "方法声明符合C++语法，使用了override关键字，参数类型正确，空实现符合测试需求"
+      }
+    }
+  ],
+  "summary": {
+    "success_rate": "100%",
+    "total_changes_applied": 1,
+    "modifications_summary": "成功添加了SetEnableHalfFrameRate方法的空实现",
+    "code_integrity": "修改后的代码保持了原有的结构和功能，新添加的方法与现有的MOCK_METHOD声明保持一致的风格",
+    "compliance_check": {
+      "no_context_lines_added": true,
+      "no_script_files_created": true,
+      "rej_file_unmodified": true,
+      "only_required_operations_performed": true
+    }
+  }
+}

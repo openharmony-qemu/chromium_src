@@ -19,6 +19,15 @@
 #include "third_party/perfetto/include/perfetto/tracing/track.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/components/viz/common/frame_sinks/arkweb_copy_output_request_utils.h"
+#include "arkweb/chromium_ext/components/viz/common/frame_sinks/arkweb_copy_output_result_utils.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
+#endif
+
 namespace {
 
 constexpr int kMaxPendingSendResult = 4;
@@ -96,7 +105,9 @@ CopyOutputRequest::CopyOutputRequest(ResultFormat result_format,
   DCHECK(!result_callback_.is_null());
   TRACE_EVENT_BEGIN("viz", "CopyOutputRequest",
                     perfetto::Track::FromPointer(this));
+  copy_output_request_utils_ = std::make_unique<ArkwebCopyOutputRequestUtils>(this);
 }
+#endif
 
 CopyOutputRequest::~CopyOutputRequest() {
   if (!result_callback_.is_null()) {
@@ -166,6 +177,18 @@ void CopyOutputRequest::SendResult(std::unique_ptr<CopyOutputResult> result) {
                   "success", !result->IsEmpty(), "has_provided_task_runner",
                   !!result_task_runner_);
   CHECK(result_task_runner_);
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+  if (result) {
+    result->SetDumpFrameId(dump_frame_id_);
+    result->SetDumpFramePath(dump_frame_path_);
+  }
+#endif
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (result && result->copy_output_result_utils() && copy_output_request_utils_
+      && copy_output_request_utils_->IsBlanklessInfoValid()) {
+    result->copy_output_result_utils()->SetBlanklessInfo(copy_output_request_utils_->GetBlanklessInfo());
+  }
+#endif
   auto task = base::BindOnce(std::move(result_callback_), std::move(result));
 
   if (send_result_delay_.is_zero()) {

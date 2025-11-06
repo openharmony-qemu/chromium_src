@@ -1,0 +1,59 @@
+{
+  "file_path": "components/embedder_support/BUILD.gn",
+  "rej_file_path": "components/embedder_support/BUILD.gn.rej",
+  "analysis": {
+    "conflict_reason": "Arkweb132 在升级到 Chromium 141 过程中，原有的侵入式修改与新的代码结构产生冲突",
+    "total_hunks": 1,
+    "resolved_hunks": 1,
+    "unresolved_hunks": 0,
+    "hunks": [
+      {
+        "hunk_id": 1,
+        "description": "添加 arkweb_useragent 相关的导入、action 目标和条件依赖",
+        "risk_level": "中等",
+        "risk_analysis": "添加了新的导入语句和 action 目标，这些修改涉及 Arkweb 特定的版本管理功能。风险主要在于路径依赖和构建系统的兼容性，但这些修改是 Arkweb 项目所必需的。",
+        "changes": {
+          "additions": [
+            "# arkweb_useragent",
+            "import(\"//build/config/python.gni\")",
+            "action(\"make_ohos_arkweb_version\") { ... }",
+            "import(\"//arkweb/build/features/features.gni\")",
+            "if (arkweb_useragent) { deps += [ \":make_ohos_arkweb_version\" ] }"
+          ],
+          "deletions": []
+        },
+        "anchor_analysis": {
+          "primary_anchors": [
+            "static_library(\"embedder_support\")",
+            "static_library(\"content_settings\")"
+          ],
+          "anchor_match_status": "部分匹配",
+          "adaptation_required": "由于源文件中没有 browser_util 目标，将条件依赖应用到 content_settings 目标中"
+        },
+        "resolution_strategy": "适应性应用",
+        "confidence": 85,
+        "detailed_process": "1. 解析 .rej 文件中的 hunk，识别所有添加行\n2. 在源文件中找到对应的锚点位置\n3. 由于源文件结构变化（没有 browser_util 目标），将条件依赖应用到最相关的 content_settings 目标中\n4. 严格按照只添加 + 行的原则，不添加任何上下文行",
+        "status": "已解决",
+        "applied_modifications": [
+          "在文件开头添加了 arkweb_useragent 注释和 python.gni 导入",
+          "在 embedder_support 目标后添加了 make_ohos_arkweb_version action",
+          "添加了 features.gni 导入",
+          "在 content_settings 目标中添加了条件依赖"
+        ]
+      }
+    ],
+    "modifications_summary": {
+      "total_lines_added": 12,
+      "total_lines_removed": 0,
+      "imports_added": 2,
+      "targets_added": 1,
+      "conditional_deps_added": 1
+    },
+    "compliance": {
+      "rej_file_integrity": "完整保持，未被修改",
+      "no_context_lines_added": "严格遵守，只添加了 + 开头的行",
+      "no_script_files_created": "遵守规定，未创建任何脚本文件",
+      "json_report_location": "/home/sujiahao/code/arkweb_141/src/claude_out/report/components/components_embedder_support_BUILD.gn.json"
+    }
+  }
+}

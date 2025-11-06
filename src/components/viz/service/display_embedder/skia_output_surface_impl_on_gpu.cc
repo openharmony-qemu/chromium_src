@@ -1699,6 +1699,11 @@ void SkiaOutputSurfaceImplOnGpu::CopyOutput(
               mailbox, context_state_.get());
       CHECK(backing_representation);
 
+#if BUILDFLAG(IS_ARKWEB)
+      if (!backing_representation)
+        LOG(ERROR) << "Fail to get backing representation.";
+#endif
+
       SkSurfaceProps surface_props;
       // TODO(crbug.com/40776586): Use BeginScopedReadAccess instead
       scoped_access = backing_representation->BeginScopedWriteAccess(
@@ -2473,6 +2478,11 @@ bool SkiaOutputSurfaceImplOnGpu::PresentFrame(OutputSurfaceFrame frame) {
   output_device_->SetViewportSize(frame.size);
 
   DCHECK(!frame.sub_buffer_rect || capabilities().supports_post_sub_buffer);
+
+#if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+      std::to_string(frame->data.swap_trace_id), "step", "FinishBufferSwap");
+#endif
   output_device_->Present(frame.sub_buffer_rect, buffer_presented_callback_,
                           std::move(frame));
 

@@ -1,0 +1,54 @@
+{
+  "文件路径": "/home/sujiahao/code/arkweb_141/src/components/cdm/common/BUILD.gn",
+  "rej文件路径": "/home/sujiahao/code/arkweb_141/src/components/cdm/common/BUILD.gn.rej",
+  "处理时间": "2025-01-25",
+  "总hunk数量": 2,
+  "成功解决的hunk数量": 2,
+  "未能解决的hunk数量": 0,
+  "rej文件状态": "保持完整未被修改",
+  "hunks处理详情": [
+    {
+      "hunk编号": 1,
+      "描述": "添加Arkweb特定的特性导入",
+      "待添加行": [
+        "if (is_arkweb) {",
+        "  import(\"//arkweb/build/features/features.gni\")",
+        "}"
+      ],
+      "待删除行": [],
+      "定位锚点": "import(\"//third_party/widevine/cdm/widevine.gni\")",
+      "冲突原因": "Arkweb141中缺少针对Arkweb的特定特性导入逻辑",
+      "应用位置": "第7行之后",
+      "分析过程": "通过查找widevine导入语句作为锚点，成功定位到插入位置。该hunk添加了Arkweb特定的条件编译导入，用于引入Arkweb特性配置。",
+      "风险分析": "低风险。这些是条件编译导入，只有在is_arkweb为true时才会生效，不会影响标准Chromium构建。",
+      "置信度": "高",
+      "解决状态": "已解决",
+      "应用结果": "成功添加了3行Arkweb特性导入代码"
+    },
+    {
+      "hunk编号": 2,
+      "描述": "添加Arkweb CDM特定源文件",
+      "待添加行": [
+        "if (arkweb_enable_cdm) {",
+        "  import(\"//arkweb/chromium_ext/chromium_ext.gni\")",
+        "  sources += arkweb_components_cdm_common_soureces",
+        "}"
+      ],
+      "待删除行": [],
+      "定位锚点": "deps += [ \"//third_party/widevine/cdm:buildflags\" ]",
+      "冲突原因": "Arkweb141中缺少Arkweb CDM的源文件包含逻辑",
+      "应用位置": "Android CDM配置块之后，enable_playready检查之前",
+      "分析过程": "使用Android CDM配置的结束作为锚点，成功定位到插入位置。该hunk添加了Arkweb CDM的源文件列表，扩展了CDM通用库的功能。",
+      "风险分析": "低风险。这是条件编译代码块，只有在arkweb_enable_cdm为true时才会生效。添加的源文件变量遵循了Arkweb的命名规范。",
+      "置信度": "高",
+      "解决状态": "已解决",
+      "应用结果": "成功添加了4行Arkweb CDM源文件配置代码"
+    }
+  ],
+  "整体分析": {
+    "冲突原因总结": "Arkweb132版本针对Chromium132基线添加了Arkweb特定的CDM支持功能，包括特性导入和源文件扩展。这些修改在升级到Chromium141基线时产生了冲突。",
+    "修改策略": "严格按照.rej文件中的+/-行进行原子化应用，保持上下文完整性，确保Arkweb特定功能正确集成到新的Chromium141基线中。",
+    "整体风险评估": "低风险。所有修改都是条件编译的Arkweb特定代码，不会影响标准Chromium的功能，且遵循了Arkweb的编码规范。",
+    "最终处理结果": "成功应用了所有2个hunk的修改，Arkweb的CDM特定功能已正确集成到Chromium141基线中。"
+  }
+}

@@ -142,10 +142,17 @@ FrameEvictionManager::FrameEvictionManager()
       // If the amount of memory on the device is >= 3.5 GB, save up to 5
       // frames.
       base::SysInfo::AmountOfPhysicalMemory().InGiBF() < 3.5f ? 1 : 5;
+#elif BUILDFLAG(ARKWEB_FLING)
+      std::min(kOhosFramesMax, kOhosFramesBase +
+          (base::SysInfo::AmountOfPhysicalMemoryMB() / kPhysicalMemoryBlockSize));
 #else
       std::min(
           5, static_cast<int>(
                  2 + (base::SysInfo::AmountOfPhysicalMemory().InMiB() / 256)));
+#endif
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_DISCARD_BG_WEBPAGE)
+  UPDATE_MAX_NUMBER_OF_FRAMES(max_number_of_saved_frames_);
 #endif
 
   // For WebView, we may not have a default task runner.

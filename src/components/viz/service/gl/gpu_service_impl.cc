@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/allocator/partition_alloc_support.h"
 #include "base/android/android_info.h"
 #include "base/command_line.h"
@@ -135,6 +136,11 @@
 #include "ui/ozone/public/surface_factory_ozone.h"
 #endif  // BUILDFLAG(IS_OZONE)
 
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+#include "media/gpu/ohos/ohos_image_decode_accelerator_worker.h"
+#endif  // BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+
+#include "arkweb/chromium_ext/components/viz/service/gl/gpu_service_impl_utils.cc"
 namespace viz {
 
 namespace {

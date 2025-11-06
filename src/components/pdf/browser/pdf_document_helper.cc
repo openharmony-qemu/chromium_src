@@ -6,6 +6,9 @@
 
 #include <utility>
 
+#if BUILDFLAG(ARKWEB_PDF)
+#include "base/logging.h"
+#endif  // BUILDFLAG(ARKWEB_PDF)
 #include "base/notreached.h"
 #include "components/pdf/browser/pdf_document_helper_client.h"
 #include "components/pdf/browser/pdf_frame_util.h"

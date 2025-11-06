@@ -1,0 +1,58 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/components/device_signals/core/common/signals_features.h.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/components/device_signals/core/common/signals_features.h",
+    "处理时间": "2025-11-05"
+  },
+  "冲突分析": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "hunk解决状态": {
+      "hunk_1": "已解决"
+    }
+  },
+  "hunk详细分析": [
+    {
+      "hunk编号": 1,
+      "风险等级": "低风险",
+      "冲突原因": "Arkweb项目需要添加ARKWEB_ASAN构建标志到条件编译中",
+      "分析过程": "通过分析.rej文件，发现需要修改两处：1)在第36行的BUILDFLAG(IS_CHROMEOS)后添加 || BUILDFLAG(ARKWEB_ASAN) 2)在第43行的注释中对应添加相同的条件",
+      "修改类型": "添加条件编译标志",
+      "上下文匹配": "完美匹配",
+      "修改置信度": "高",
+      "处理策略": "直接应用修改",
+      "具体操作": [
+        {
+          "行号": 36,
+          "操作": "添加",
+          "内容": "|| BUILDFLAG(ARKWEB_ASAN)",
+          "定位方式": "精确匹配BUILDFLAG(IS_CHROMEOS)"
+        },
+        {
+          "行号": 43,
+          "操作": "添加",
+          "内容": "|| BUILDFLAG(ARKWEB_ASAN)",
+          "定位方式": "精确匹配注释中的BUILDFLAG(IS_CHROMEOS)"
+        }
+      ],
+      "解决状态": "已成功应用",
+      "验证结果": "修改已正确应用到源文件中，语法和逻辑结构保持完整"
+    }
+  ],
+  "处理总结": {
+    "总体风险": "低风险",
+    "处理结果": "成功解决所有冲突",
+    "代码完整性": "保持良好",
+    "构建标志集成": "ARKWEB_ASAN标志已成功集成到条件编译系统中",
+    "影响范围": "仅影响Linux、Windows、Mac、ChromeOS和ARKWEB_ASAN平台的设备信号同意对话框功能",
+    "向后兼容性": "完全兼容，现有功能不受影响"
+  },
+  "合规性验证": {
+    ".rej文件保持完整": true,
+    "未生成脚本文件": true,
+    "仅在指定目录创建JSON报告": true,
+    "严格遵守不添加上下文原则": true,
+    "原子化应用修改": true
+  }
+}

@@ -47,6 +47,7 @@ class LatestLocalSurfaceIdLookupDelegate;
 class LayerContextImpl;
 class Surface;
 class SurfaceManager;
+class CompositorFrameSinkSupportUtils;
 
 // Possible outcomes of MaybeSubmitCompositorFrame().
 // These values are persisted to logs. Entries should not be renumbered and

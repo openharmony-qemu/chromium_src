@@ -282,6 +282,23 @@ source_set("unit_tests") {
   configs += [ "//build/config/compiler:no_exit_time_destructors" ]
 }
 
+if (is_ohos) {
+  action("create_prepopulated_engines_json") {
+    script = "//arkweb/build/search_engines/prepopulated_engines.py"
+    outputs = [
+      "$root_gen_dir/../../../arkweb/build/search_engines/prepopulated_engines.json"
+    ]
+  }
+  copy("copy_prepopulated_engines_json") {
+    sources = [
+      "//arkweb/build/search_engines/prepopulated_engines.json"
+    ]
+    outputs = [
+      "$root_gen_dir/../../../components/search_engines/prepopulated_engines.json"
+    ]
+  }
+}
+
 if (is_android) {
   java_cpp_enum("search_engine_enums_java") {
     sources = [

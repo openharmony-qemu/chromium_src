@@ -100,6 +100,7 @@ flat::ElementType ProtoToFlatElementType(proto::ElementType type) {
   CHECK(it != GetElementTypeMap().end());
   return it->second;
 }
+}
 
 std::string_view ToStringView(const flatbuffers::String* string) {
   DCHECK(string);
@@ -110,6 +111,7 @@ bool HasNoUpperAscii(std::string_view string) {
   return std::ranges::none_of(string, base::IsAsciiUpper<char>);
 }
 
+namespace {
 // Comparator to sort UrlRule. Sorts rules by descending order of rule priority.
 bool UrlRuleDescendingPriorityComparator(const flat::UrlRule* lhs,
                                          const flat::UrlRule* rhs) {

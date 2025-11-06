@@ -1,0 +1,65 @@
+{
+  "文件路径": "/home/sujiahao/code/arkweb_141/src/components/input/input_router_impl.cc",
+  "冲突文件": "/home/sujiahao/code/arkweb_141/src/components/input/input_router_impl.cc.rej",
+  "处理时间": "2025-11-05",
+  "处理状态": "已完成",
+  "统计信息": {
+    "总hunk数量": 3,
+    "成功解决的hunk数量": 3,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunks详情": [
+    {
+      "hunk编号": 1,
+      "风险等级": "低",
+      "冲突原因": "Arkweb132在源文件头部添加了自定义头文件包含",
+      "分析过程": "通过在#include <utility>和#include \"base/command_line.h\"之间插入arkweb头文件包含语句，成功定位到精确位置",
+      "修改内容": "添加了#include \"arkweb/chromium_ext/components/input/arkweb_input_router_impl_utils.h\"",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "潜在风险": "引入Arkweb特定的输入处理工具类，可能影响编译依赖"
+    },
+    {
+      "hunk编号": 2,
+      "风险等级": "中",
+      "冲突原因": "Arkweb132在SendGestureEvent函数中添加了自定义的Gesture事件处理逻辑",
+      "分析过程": "在GestureEventWithLatencyInfo gesture_event(original_gesture_event);语句之后、PassToFlingController检查之前精确定位，成功添加了条件编译的arkweb调用",
+      "修改内容": "添加了#if BUILDFLAG(ARKWEB_INPUT_EVENTS)条件块，包含arkweb_input_router_impl_utils_->SendGestureEventEx(gesture_event);调用",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "潜在风险": "可能影响Gesture事件的处理流程，需要确保arkweb调用不会破坏原有逻辑"
+    },
+    {
+      "hunk编号": 3,
+      "风险等级": "中",
+      "冲突原因": "Arkweb132在FilterAndSendWebInputEvent函数中添加了多个自定义修改，包括DFX跟踪、输入事件过滤日志和过滤事件处理",
+      "分析过程": "分三个子步骤处理：1) 替换TRACE_EVENT1调用为arkweb的DFX跟踪条件编译；2) 在InputEventFiltered部分添加详细的日志记录；3) 在事件过滤检查后添加ProcessFilteredEvent调用",
+      "修改内容": [
+        "添加了#if BUILDFLAG(ARKWEB_DFX_TRACING)条件块，替换原有的TRACE_EVENT1",
+        "在InputEventFiltered部分添加了LOG(INFO)和TRACE_EVENT1详细日志",
+        "在return语句后添加了arkweb_input_router_impl_utils_->ProcessFilteredEvent(input_event)调用"
+      ],
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "潜在风险": "涉及多个条件编译块，可能影响事件过滤和跟踪的性能；需要确保所有BUILDFLAG宏在Arkweb141中仍然有效"
+    }
+  ],
+  "处理策略总结": {
+    "原子化应用": "严格遵循黄金法则，只添加+行，不复制任何上下文行",
+    "精确定位": "使用源文件中现有的代码结构作为锚点，确保修改位置准确",
+    "条件编译保护": "所有arkweb特定代码都使用BUILDFLAG宏进行条件编译，确保向后兼容",
+    "函数调用完整性": "保持了所有原有函数调用的参数和逻辑不变"
+  },
+  "验证信息": {
+    ".rej文件完整性": "已确认.rej文件保持原始状态，未被修改或删除",
+    "源文件修改": "所有hunk已成功应用到源文件中",
+    "代码语法": "修改后的代码语法正确，符合C++标准"
+  },
+  "后续建议": [
+    "验证arkweb/chromium_ext/components/input/arkweb_input_router_impl_utils.h头文件是否存在",
+    "确认BUILDFLAG(ARKWEB_INPUT_EVENTS)和BUILDFLAG(ARKWEB_DFX_TRACING)宏在Arkweb141构建系统中已定义",
+    "进行编译测试，确保所有依赖项正确解析",
+    "进行运行时测试，验证arkweb的输入事件处理逻辑正常工作"
+  ]
+}

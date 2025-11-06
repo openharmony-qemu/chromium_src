@@ -1,0 +1,138 @@
+{
+  "conflict_file": "components/viz/service/display/display.cc.rej",
+  "source_file": "components/viz/service/display/display.cc",
+  "analysis_timestamp": "2025-11-05",
+  "total_hunks": 5,
+  "resolved_hunks": 5,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "maintained",
+  "hunks_analysis": [
+    {
+      "hunk_number": 1,
+      "line_range": "11-18",
+      "description": "添加Arkweb特性头文件引用",
+      "changes": {
+        "additions": [
+          "#include \"arkweb/build/features/features.h\""
+        ],
+        "deletions": []
+      },
+      "risk_level": "低",
+      "confidence": "高",
+      "resolution_strategy": "在现有build头文件后添加Arkweb特性头文件",
+      "applied_successfully": true,
+      "reasoning": "头文件引用添加是标准操作，不会影响现有代码逻辑"
+    },
+    {
+      "hunk_number": 2,
+      "line_range": "1007-1034",
+      "description": "为同步渲染功能添加条件编译",
+      "changes": {
+        "additions": [
+          "#if BUILDFLAG(ARKWEB_SYNC_RENDER)",
+          "display_utils_->DrawAndSwap(last_render_pass, current_surface_size, frame);",
+          "#else",
+          "#endif"
+        ],
+        "deletions": []
+      },
+      "risk_level": "中",
+      "confidence": "高",
+      "resolution_strategy": "将auto_resize_output_surface相关代码包装在ARKWEB_SYNC_RENDER条件编译块中",
+      "applied_successfully": true,
+      "reasoning": "条件编译保护了原有功能，Arkweb的同步渲染实现作为替代路径"
+    },
+    {
+      "hunk_number": 3,
+      "line_range": "1042-1045",
+      "description": "为最大化窗口调整大小功能添加条件编译",
+      "changes": {
+        "additions": [
+          "#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)",
+          "should_draw = display_utils_->ShouldDisableSwap(should_draw);",
+          "#endif  // ARKWEB_MAXIMIZE_RESIZE"
+        ],
+        "deletions": []
+      },
+      "risk_level": "中",
+      "confidence": "高",
+      "resolution_strategy": "在should_draw判断逻辑后添加Arkweb的交换控制功能",
+      "applied_successfully": true,
+      "reasoning": "该修改允许Arkweb在特定条件下禁用交换操作，属于性能优化功能"
+    },
+    {
+      "hunk_number": 4,
+      "line_range": "1056-1063",
+      "description": "添加空白优化和DFX转储功能",
+      "changes": {
+        "additions": [
+          "#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)",
+          "display_utils_->DumpSnapshotForBlankLess(frame);",
+          "#endif",
+          "#if BUILDFLAG(ARKWEB_DFX_DUMP)",
+          "display_utils_->DrawAndSwapDump(frame);",
+          "#endif"
+        ],
+        "deletions": []
+      },
+      "risk_level": "低",
+      "confidence": "高",
+      "resolution_strategy": "在DebugDrawFrameVisible后添加两个独立的条件编译块",
+      "applied_successfully": true,
+      "reasoning": "空白优化和DFX转储都是调试和诊断功能，条件编译确保仅在需要时启用"
+    },
+    {
+      "hunk_number": 5,
+      "line_range": "1174-1181",
+      "description": "为DFX跟踪功能添加条件编译",
+      "changes": {
+        "additions": [
+          "#if BUILDFLAG(ARKWEB_DFX_TRACING)",
+          "for (auto& latency : frame.latency_info) {",
+          "OHOS_TRACE_EVENT2(\"input,benchmark,latencyInfo\", \"LatencyInfo.Flow\", \"trace_id\",",
+          "std::to_string(latency.trace_id()), \"step\", \"STEP_DRAW_AND_SWAP\");",
+          "}",
+          "#endif"
+        ],
+        "deletions": []
+      },
+      "risk_level": "低",
+      "confidence": "高",
+      "resolution_strategy": "在IssueDisplayRenderingStatsEvent前添加延迟信息跟踪代码",
+      "applied_successfully": true,
+      "reasoning": "DFX跟踪功能用于性能分析，条件编译确保仅在调试模式下启用"
+    }
+  ],
+  "overall_assessment": {
+    "success_rate": "100%",
+    "code_integrity": "maintained",
+    "compatibility": "backward_compatible",
+    "risk_assessment": "中低风险",
+    "modifications_type": "条件编译添加",
+    "arkweb_features_integrated": [
+      "ARKWEB_SYNC_RENDER",
+      "ARKWEB_MAXIMIZE_RESIZE",
+      "ARKWEB_BLANK_OPTIMIZE",
+      "ARKWEB_DFX_DUMP",
+      "ARKWEB_DFX_TRACING"
+    ]
+  },
+  "technical_notes": {
+    "key_findings": [
+      "所有修改都使用了BUILDFLAG条件编译，确保向后兼容性",
+      "display_utils_对象已在源文件中存在，可直接调用相关方法",
+      "修改遵循了Chromium的代码风格和最佳实践",
+      "没有删除任何原有代码，仅添加了新的功能分支"
+    ],
+    "potential_concerns": [
+      "需要确保arkweb/build/features/features.h头文件在构建系统中可用",
+      "display_utils_的相关方法需要正确实现",
+      "条件编译标志需要在构建系统中正确定义"
+    ],
+    "recommendations": [
+      "验证所有BUILDFLAG标志在Arkweb构建系统中的定义",
+      "测试display_utils_各个方法的实现和调用",
+      "在调试模式下验证DFX功能的正确性"
+    ]
+  }
+}

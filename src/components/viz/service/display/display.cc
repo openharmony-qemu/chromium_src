@@ -16,6 +16,7 @@
 #include <utility>
 #include <variant>
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/containers/contains.h"
 #include "base/containers/flat_set.h"
@@ -1064,6 +1065,9 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
       cc::MathUtil::MapEnclosedRectWith2dAxisAlignedTransform(
           display_transform, gfx::Rect(current_surface_size_))
           .size();
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+    display_utils_->DrawAndSwap(last_render_pass, current_surface_size, frame);
+#else
   if (settings_.auto_resize_output_surface &&
       last_render_pass.output_rect.size() != current_surface_size &&
       last_render_pass.damage_rect == last_render_pass.output_rect &&
@@ -1074,6 +1078,7 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
     last_render_pass.damage_rect = last_render_pass.output_rect;
     frame.surface_damage_rect_list_.push_back(last_render_pass.damage_rect);
   }
+#endif
   surface_size = last_render_pass.output_rect.size();
   have_damage = !last_render_pass.damage_rect.size().IsEmpty();
 
@@ -1082,6 +1087,9 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
     TRACE_EVENT_INSTANT0("viz", "Size mismatch.", TRACE_EVENT_SCOPE_THREAD);
 
   bool should_draw = have_copy_requests || (have_damage && size_matches);
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  should_draw = display_utils_->ShouldDisableSwap(should_draw);
+#endif  // ARKWEB_MAXIMIZE_RESIZE
   client_->DisplayWillDrawAndSwap(should_draw, &frame.render_pass_list);
 
   std::optional<base::ElapsedTimer> draw_timer;
@@ -1091,6 +1099,14 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
     base::ElapsedTimer draw_occlusion_timer;
     occlusion_culler_->RemoveOverdrawQuads(&frame);
     DebugDrawFrameVisible(frame);
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+    display_utils_->DumpSnapshotForBlankLess(frame);
+#endif
+
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+    display_utils_->DrawAndSwapDump(frame);
+#endif
     UMA_HISTOGRAM_COUNTS_1000(
         "Compositing.Display.Draw.Occlusion.Calculation.Time",
         draw_occlusion_timer.Elapsed().InMicroseconds());
@@ -1214,6 +1230,12 @@ bool Display::DrawAndSwap(const DrawAndSwapParams& params) {
                         perfetto::Track(display_trace_id));
     swapped_since_resize_ = true;
 
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+    for (auto& latency : frame.latency_info) {
+      OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow", "trace_id",
+                        std::to_string(latency.trace_id()), "step", "STEP_DRAW_AND_SWAP");
+    }
+#endif
     IssueDisplayRenderingStatsEvent();
     DirectRenderer::SwapFrameData swap_frame_data;
     swap_frame_data.latency_info = std::move(frame.latency_info);

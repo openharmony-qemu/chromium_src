@@ -179,6 +179,9 @@ class PasswordAutofillAgent : public content::RenderFrameObserver,
                                         const SynchronousFormCache& form_cache);
 
   // Instructs `autofill_agent_` to track the autofilled `element`.
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  virtual
+#endif
   void TrackAutofilledElement(const blink::WebFormControlElement& element);
 
   // Previews the username and password fields of this form with the given
@@ -204,6 +207,10 @@ class PasswordAutofillAgent : public content::RenderFrameObserver,
       const blink::WebInputElement& element,
       AutofillSuggestionTriggerSource trigger_source,
       const SynchronousFormCache& form_cache);
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  void SetParsedPasswordForm(const PasswordFormFillData& form_data) override;
+#endif
 
   // Performs necessary feasibility checks to trigger manual fallback
   // suggestion on the provided `element`. Returns a request if any suggestions

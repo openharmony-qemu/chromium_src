@@ -7,6 +7,7 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/functional/callback_forward.h"
 #include "base/task/sequenced_task_runner.h"
@@ -59,6 +60,10 @@ class InputRouter {
   virtual void SendWheelEvent(
       const MouseWheelEventWithLatencyInfo& wheel_event,
       DispatchToRendererCallback& dispatch_callback) = 0;
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  virtual void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) = 0;
+#endif
 
   using KeyboardEventCallback = base::OnceCallback<void(
       const NativeWebKeyboardEventWithLatencyInfo& event,
@@ -119,6 +124,22 @@ class InputRouter {
   // OOPIF hit-testing will need to wait until updated CompositorFrames have
   // been submitted to the browser.
   virtual void WaitForInputProcessed(base::OnceClosure callback) = 0;
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  virtual void SetGestureEventResult(bool result,
+                                     bool stopPropagation,
+                                     int32_t fingerId) = 0;
+  virtual void SetNativeEmbedMode(bool flag) = 0;
+  virtual void SetMouseEventResult(bool result, bool stopPropagation) = 0;
+  virtual void SetEnableCustomVideoPlayer(bool flag) = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  virtual void ScrollBy(float delta_x, float delta_y) = 0;
+#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  virtual void SetBypassVsyncCondition(int32_t condition) = 0;
+#endif
 
  private:
   bool active_ = false;

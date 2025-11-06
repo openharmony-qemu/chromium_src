@@ -7,6 +7,7 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/memory/raw_ptr.h"
 #include "base/time/time.h"
@@ -14,6 +15,9 @@
 #include "components/input/touchscreen_tap_suppression_controller.h"
 #include "third_party/blink/public/mojom/input/input_event_result.mojom-shared.h"
 #include "ui/events/blink/fling_booster.h"
+#if BUILDFLAG(ARKWEB_D_VSYNC)
+#include <atomic>
+#endif
 
 namespace blink {
 class WebGestureCurve;

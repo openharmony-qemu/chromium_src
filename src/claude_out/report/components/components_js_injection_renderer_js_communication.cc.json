@@ -1,0 +1,45 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/components/js_injection/renderer/js_communication.cc.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/components/js_injection/renderer/js_communication.cc",
+    "处理时间": "2025-11-05"
+  },
+  "统计信息": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunks详情": [
+    {
+      "hunk索引": 1,
+      "解决状态": "已解决",
+      "冲突原因": "Arkweb 132 在 chromium 132 基础上添加了 Arkweb 特定的 js_communication_utils.h 头文件引用，但在 chromium 141 版本中该引用缺失",
+      "分析过程": "通过 .rej 文件识别出需要在 js_communication.h include 后添加 js_communication_utils.h 的引用。使用源文件中第5行的 '#include \"components/js_injection/renderer/js_communication.h\"' 作为锚点精确定位插入位置。",
+      "修改内容": {
+        "添加的行": [
+          "#include \"arkweb/chromium_ext/components/js_injection/renderer/js_communication_utils.h\""
+        ],
+        "删除的行": []
+      },
+      "风险分析": "低风险。该修改仅为添加头文件引用，符合 Arkweb 项目的侵入式修改模式，不会破坏现有代码逻辑。源文件中已经存在 implUtils_ 成员变量的使用（第84行），表明该头文件是必要的。",
+      "修改置信度": "高",
+      "验证结果": "成功在第6行插入目标include语句，位置准确无误"
+    }
+  ],
+  "整体处理策略": {
+    "策略描述": "严格遵守\"不添加上下文\"铁律，仅应用 .rej 文件中明确标示的修改内容。对于每个 hunk，使用最少的上下文行作为锚点进行精确定位，然后原子化地应用修改。",
+    "合规性检查": {
+      "rej文件完整性": "保持完整，未被修改或删除",
+      "仅修改源文件": "是",
+      "未创建脚本文件": "是",
+      "未创建辅助工具": "是",
+      "报告路径合规": "是"
+    }
+  },
+  "最终验证": {
+    "rej文件状态": "完整保持原样",
+    "源文件修改状态": "已成功应用 Arkweb 132 的侵入式修改",
+    "代码完整性": "保持良好，新增头文件与现有代码使用一致"
+  }
+}

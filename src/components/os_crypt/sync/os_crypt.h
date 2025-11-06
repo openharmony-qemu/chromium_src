@@ -16,6 +16,8 @@
 #include "build/build_config.h"
 #include "build/chromecast_buildflags.h"
 #include "crypto/subtle_passkey.h"
+#include "crypto/symmetric_key.h"
+#include "components/os_crypt/sync/key_storage_config_linux.h"
 
 #if BUILDFLAG(IS_APPLE)
 namespace crypto::apple {
@@ -23,9 +25,13 @@ class Keychain;
 }
 #endif
 
-#if BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
 class KeyStorageLinux;
-#endif  // BUILDFLAG(IS_LINUX)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
 
 #if BUILDFLAG(IS_WIN)
 class PrefRegistrySimple;
@@ -126,12 +132,12 @@ class COMPONENT_EXPORT(OS_CRYPT) OSCryptImpl {
   // Returns singleton instance of OSCryptImpl.
   static OSCryptImpl* GetInstance();
 
-#if BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
   // Set the configuration of OSCryptImpl.
   // This method, or SetRawEncryptionKey(), must be called before using
   // EncryptString() and DecryptString().
   void SetConfig(std::unique_ptr<os_crypt::Config> config);
-#endif  // BUILDFLAG(IS_LINUX)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
 
   // In production code:
   // - On Linux, returns true iff the real secret key (not hardcoded one) is
@@ -259,11 +265,11 @@ class COMPONENT_EXPORT(OS_CRYPT) OSCryptImpl {
   bool DeriveKey();
 #endif  // BUILDFLAG(IS_APPLE)
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_APPLE)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_ARKWEB)
   // This lock is used to make the GetEncryptionKey and
   // GetRawEncryptionKey methods thread-safe.
   static base::Lock& GetLock();
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_APPLE)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_ARKWEB)
 
 #if BUILDFLAG(IS_LINUX)
   static constexpr size_t kDerivedKeyBytes = 16;
@@ -279,6 +285,25 @@ class COMPONENT_EXPORT(OS_CRYPT) OSCryptImpl {
   // previously) and false if one is not present. If `try_v11_` is false, and
   // there is no cached v11 key, this method just returns false.
   bool DeriveV11Key();
+
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+  crypto::SymmetricKey* GetPasswordV10ForMigrate();
+#endif
+
+  // For ota password loss, nullptr means to backend.
+  std::unique_ptr<crypto::SymmetricKey> password_ota_cache_;
+
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+  std::unique_ptr<crypto::SymmetricKey> password_migrate_cache_;
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+  bool is_password_migrate_cached_ = false;
+  int migration_count_ = 0;
+#endif
+
+  // Returns a cached. Is thread-safe for ota password loss.
+  crypto::SymmetricKey*  GetPasswordForOtaFail();
 
   // The cached V1.1 derived key. If this is nullopt, no V1.1 key is available
   // yet, but `DeriveV11Key()` may be able to generate one.

@@ -1,0 +1,55 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/components/prefs/BUILD.gn.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/components/prefs/BUILD.gn",
+    "Chromium 132 基线": "/home/sujiahao/code/chromium_132_baseline/src/components/prefs/BUILD.gn",
+    "Arkweb 132 参考": "/home/sujiahao/code/arkweb_132/src/components/prefs/BUILD.gn"
+  },
+  "处理总结": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决状态": "全部解决",
+    ".rej文件完整性": "保持完整，未被修改"
+  },
+  "hunks处理详情": [
+    {
+      "hunk索引": 1,
+      "修改类型": "插入Arkweb条件导入",
+      "风险等级": "低风险",
+      "冲突原因": "Arkweb 132版本在文件开头添加了条件导入语句，用于Arkweb特性和adblock功能的支持，但Arkweb 141版本缺少这些导入",
+      "分析过程": "通过分析.rej文件发现需要在文件开头添加Arkweb相关的条件导入。检查源文件发现缺少这些导入语句，需要插入在版权声明之后、component声明之前的位置",
+      "修改内容": {
+        "添加行数": 6,
+        "具体添加": [
+          "if (defined(is_arkweb) && is_arkweb) {",
+          "  import(\"//arkweb/build/features/features.gni\")",
+          "  if (defined(arkweb_adblock) && arkweb_adblock) {",
+          "    import(\"//arkweb/chromium_ext/components/prefs/arkweb_pref_ext.gni\")",
+          "  }",
+          "}"
+        ]
+      },
+      "定位策略": "使用版权声明作为锚点，在空行后插入条件导入，保持代码逻辑结构",
+      "应用位置": "第4行之后，component(\"prefs\")声明之前",
+      "置信度": "高",
+      "解决状态": "已解决",
+      "验证结果": "成功插入条件导入，语法正确，不影响现有代码结构"
+    }
+  ],
+  "处理原则遵循情况": {
+    "未添加上下文行": "严格遵守",
+    "未生成脚本文件": "严格遵守",
+    "未创建辅助文件": "严格遵守",
+    "未使用外部工具": "严格遵守",
+    "未修改.rej文件": "严格遵守",
+    "原子化应用": "严格执行",
+    "仅在指定目录创建报告": "严格遵守"
+  },
+  "最终验证": {
+    "源文件完整性": "保持",
+    ".rej文件完整性": "保持，未被修改",
+    "语法正确性": "验证通过",
+    "逻辑一致性": "验证通过"
+  }
+}

@@ -33,6 +33,8 @@
 #include "gpu/config/gpu_switches.h"
 #include "ui/gfx/switches.h"
 
+#include "arkweb/chromium_ext/components/viz/service/main/viz_compositor_thread_runner_impl_utils.h"
+
 #if BUILDFLAG(IS_OZONE)
 #include "ui/ozone/public/ozone_platform.h"
 #endif
@@ -120,6 +122,10 @@ std::unique_ptr<VizCompositorThreadType> CreateAndStartCompositorThread() {
 
   CHECK(thread->StartWithOptions(std::move(thread_options)));
 
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+  ReportThreadForInit(thread);
+#endif
+
   thread->task_runner()->PostTask(
       FROM_HERE, base::BindOnce([]() {
         mojo::InterfaceEndpointClient::SetThreadNameSuffixForMetrics(
@@ -135,6 +141,7 @@ VizCompositorThreadRunnerImpl::VizCompositorThreadRunnerImpl()
     : thread_(CreateAndStartCompositorThread()),
       task_runner_(thread_->task_runner()) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(gpu_sequence_checker_);
+  implUtils = std::make_unique<VizCompositorThreadRunnerImplUtils>(this);
 }
 
 VizCompositorThreadRunnerImpl::~VizCompositorThreadRunnerImpl() {
@@ -143,6 +150,9 @@ VizCompositorThreadRunnerImpl::~VizCompositorThreadRunnerImpl() {
       base::BindOnce(&VizCompositorThreadRunnerImpl::TearDownOnCompositorThread,
                      base::Unretained(this)));
   thread_->Stop();
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+  implUtils->ReportThreadForDestroy(thread_);
+#endif
 }
 
 bool VizCompositorThreadRunnerImpl::CreateHintSessionFactory(

@@ -10,6 +10,7 @@
 #include <variant>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_deref.h"
 #include "base/i18n/rtl.h"
 #include "base/memory/raw_ptr.h"
@@ -46,9 +47,15 @@ class PasswordManagerDriver;
 class PasswordManualFallbackMetricsRecorder;
 class PasswordSuggestionGenerator;
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+class PasswordAutofillManagerExt;
+#endif
 // This class is responsible for filling password forms.
 class PasswordAutofillManager : public autofill::AutofillSuggestionDelegate,
                                 public autofill::PasswordManagerDelegate {
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  friend class PasswordAutofillManagerExt;
+#endif
  public:
   PasswordAutofillManager(PasswordManagerDriver* password_manager_driver,
                           autofill::AutofillClient* autofill_client,
@@ -59,6 +66,9 @@ class PasswordAutofillManager : public autofill::AutofillSuggestionDelegate,
 
   ~PasswordAutofillManager() override;
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  virtual PasswordAutofillManagerExt* AsWebPasswordAutofillManagerExt() { return nullptr; }
+#endif
   // PasswordManagerDelegate:
 #if BUILDFLAG(IS_ANDROID)
   void ShowKeyboardReplacingSurface(

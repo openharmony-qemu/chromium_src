@@ -22,6 +22,11 @@
 #include "components/viz/test/test_surface_id_allocator.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/skia/modules/skcms/skcms.h"
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "arkweb/chromium_ext/components/viz/common/quads/render_pass_io_unittest_ext.h"
+#endif
+
 #include "ui/gfx/geometry/rrect_f.h"
 #include "ui/gfx/geometry/skia_conversions.h"
 

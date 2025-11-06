@@ -27,11 +27,15 @@
 #include "components/viz/service/display_embedder/output_surface_provider.h"
 #include "components/viz/service/display_embedder/vsync_parameter_listener.h"
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
+#include "arkweb/chromium_ext/components/viz/service/frame_sinks/frame_sink_manager_impl_utils.h"
 #include "components/viz/service/hit_test/hit_test_aggregator.h"
 #include "services/viz/public/mojom/compositing/layer_context.mojom.h"
 #include "third_party/abseil-cpp/absl/functional/overload.h"
 #include "ui/base/ozone_buildflags.h"
 #include "ui/gfx/geometry/skia_conversions.h"
+
+#include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/components/viz/service/frame_sinks/root_compositor_frame_sink_impl_ext.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "components/viz/service/frame_sinks/external_begin_frame_source_android.h"
@@ -52,6 +56,10 @@
 #if BUILDFLAG(IS_WIN)
 #include "components/viz/service/frame_sinks/external_begin_frame_source_win.h"
 #endif
+
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+#include "arkweb/chromium_ext/components/viz/service/frame_sinks/external_begin_frame_source_ohos.h"
+#endif  // BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
 
 namespace viz {
 
@@ -193,6 +201,10 @@ RootCompositorFrameSinkImpl::Create(
     hw_support_for_multiple_refresh_rates = true;
     external_begin_frame_source =
         std::make_unique<ExternalBeginFrameSourceIOS>(restart_id);
+#elif BUILDFLAG(IS_ARKWEB) && (BUILDFLAG(ARKWEB_COMPOSITE_RENDER) || BUILDFLAG(ARKWEB_PERFORMANCE_JITTER))
+    external_begin_frame_source =
+        std::make_unique<ExternalBeginFrameSourceOHOS>(restart_id,
+                                                       frame_sink_manager);
 #else
 #if BUILDFLAG(IS_CHROMEOS)
     hw_support_for_multiple_refresh_rates =
@@ -270,7 +282,7 @@ RootCompositorFrameSinkImpl::Create(
 #endif
 
   // base::WrapUnique instead of std::make_unique because the ctor is private.
-  auto impl = base::WrapUnique(new RootCompositorFrameSinkImpl(
+  auto impl = base::WrapUnique(new RootCompositorFrameSinkImplExt(
       frame_sink_manager, params->frame_sink_id,
       std::move(params->compositor_frame_sink),
       std::move(params->compositor_frame_sink_client),
@@ -649,6 +661,7 @@ RootCompositorFrameSinkImpl::RootCompositorFrameSinkImpl(
   interval_decider_use_fixed_intervals_ = false;
 #endif
   UpdateFrameIntervalDeciderSettings();
+  managerImplUtils = std::make_unique<FrameSinkManagerImplUtils>(frame_sink_manager);
 }
 
 void RootCompositorFrameSinkImpl::UpdateFrameIntervalDeciderSettings() {
@@ -1001,5 +1014,4 @@ void RootCompositorFrameSinkImpl::SetMaxVSyncAndVrr(
 #endif  // BUILDFLAG(IS_CHROMEOS)
   UpdateFrameIntervalDeciderSettings();
 }
-
 }  // namespace viz

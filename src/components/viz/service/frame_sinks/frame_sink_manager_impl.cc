@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "components/viz/service/frame_sinks/frame_sink_manager_impl.h"
+#include "arkweb/chromium_ext/components/viz/service/frame_sinks/frame_sink_manager_impl_utils.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -13,6 +14,8 @@
 #include <utility>
 #include <variant>
 
+#include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/components/viz/service/frame_sinks/root_compositor_frame_sink_impl_ext.h"
 #include "base/check.h"
 #include "base/check_op.h"
 #include "base/containers/contains.h"
@@ -43,6 +46,7 @@
 #include "components/viz/service/surfaces/pending_copy_output_request.h"
 #include "components/viz/service/surfaces/surface.h"
 #include "services/viz/privileged/mojom/compositing/frame_sink_manager.mojom.h"
+#include "arkweb/build/features/features.h"
 #include "third_party/abseil-cpp/absl/functional/overload.h"
 
 namespace viz {
@@ -95,6 +99,7 @@ FrameSinkManagerImpl::FrameSinkManagerImpl(const InitParams& params)
       host_process_id_(params.host_process_id),
       hint_session_factory_(params.hint_session_factory),
       frame_sink_manager_receiver_(std::in_place_type<Receiver>, this) {
+  managerImplUtils = std::make_unique<FrameSinkManagerImplUtils>(this);
   if (mojo::IsDirectReceiverSupported() &&
       features::IsVizDirectCompositorThreadIpcFrameSinkManagerEnabled()) {
     frame_sink_manager_receiver_.emplace<DirectReceiver>(
@@ -1308,5 +1313,45 @@ void FrameSinkManagerImpl::RequestBeginFrameForGpuService(bool toggle) {
 GpuServiceImpl* FrameSinkManagerImpl::GetGpuService() {
   return gpu_service_;
 }
+
+#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
+void FrameSinkManagerImpl::SetEnableLowerFrameRate(
+    bool enabled,
+    const FrameSinkId& frame_sink_id) {
+    managerImplUtils->SetEnableLowerFrameRate(enabled, frame_sink_id);
+}
+
+void FrameSinkManagerImpl::SetEnableHalfFrameRate(
+    bool enabled,
+    const FrameSinkId& frame_sink_id) {
+    managerImplUtils->SetEnableHalfFrameRate(enabled, frame_sink_id);
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_VIDEO_LTPO)
+void FrameSinkManagerImpl::UpdateVSyncFrequency(
+    const FrameSinkId& frame_sink_id,
+    uint32_t client_id) {
+    managerImplUtils->UpdateVSyncFrequency(frame_sink_id, client_id);
+}
+void FrameSinkManagerImpl::ResetVSyncFrequency(
+    const FrameSinkId& frame_sink_id) {
+    managerImplUtils->ResetVSyncFrequency(frame_sink_id);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_PIP)
+void FrameSinkManagerImpl::SetPipActive(
+    bool active,
+    const FrameSinkId& frame_sink_id) {
+    managerImplUtils->SetPipActive(active, frame_sink_id);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+void FrameSinkManagerImpl::ClearBlanklessSnapshotInfo(uint64_t blankless_key) {
+  managerImplUtils->ClearBlanklessSnapshotInfo(blankless_key);
+}
+#endif
 
 }  // namespace viz

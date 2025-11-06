@@ -1,13 +1,6 @@
 --- distiller_page.cc	2025-10-20 19:52:52.869832256 +0800
 +++ distiller_page.cc	2025-10-16 15:54:56.684423603 +0800
 @@ -21,27 +21,37 @@
- #include "third_party/dom_distiller_js/dom_distiller.pb.h"
- #include "third_party/dom_distiller_js/dom_distiller_json_converter.h"
- #include "ui/base/resource/resource_bundle.h"
- #include "url/gurl.h"
- 
-+#include "arkweb/chromium_ext/components/dom_distiller/core/distiller_page_ohos.h"
-+
  namespace dom_distiller {
  
  namespace {
@@ -58,24 +51,4 @@
  DistillerPageFactory::~DistillerPageFactory() = default;
  
  DistillerPage::DistillerPage() : ready_(true) {}
-@@ -81,12 +92,20 @@
-   CHECK(!distiller_page_callback_, base::NotFatalUntil::M127);
-   // It is only possible to distill one page at a time. |ready_| is reset when
-   // the callback to OnDistillationDone happens.
-   ready_ = false;
-   distiller_page_callback_ = std::move(callback);
-+#if BUILDFLAG(ARKWEB_READER_MODE)
-+  dom_distiller::proto::DomDistillerOptions new_options = options;
-+  bool is_distill_catalog = DistillPageOhos(gurl, new_options);
-+  DistillPageImpl(gurl,
-+                  GetDistillerScriptWithOptions(new_options, StringifyOutput(),
-+                                                is_distill_catalog));
-+#else
-   DistillPageImpl(gurl,
-                   GetDistillerScriptWithOptions(options, StringifyOutput()));
-+#endif // ARKWEB_READER_MODE
- }
  
- void DistillerPage::OnDistillationDone(const GURL& page_url,
-                                        const base::Value* value) {
-   DCHECK(!ready_);

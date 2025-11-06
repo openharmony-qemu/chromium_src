@@ -307,6 +307,9 @@ class VIZ_HOST_EXPORT HostFrameSinkManager
  private:
   friend class HostFrameSinkManagerTest;
   friend class HostFrameSinkManagerTestApi;
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  friend class HostFrameSinkManagerUtilsTest;
+#endif
   FRIEND_TEST_ALL_PREFIXES(HostFrameSinkManagerTest,
                            InvalidateFrameSinkIdCallbackOnConnectionError);
 
@@ -387,6 +390,10 @@ class VIZ_HOST_EXPORT HostFrameSinkManager
       const blink::SameDocNavigationScreenshotDestinationToken&
           destination_token,
       std::unique_ptr<CopyOutputResult> copy_output_result) override;
+
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  void RestoreRenderFit(uint32_t client_id, uint32_t sink_id) override;
+#endif // ARKWEB_MAXIMIZE_RESIZE
 
   mojo::Remote<mojom::RendererInputRouterDelegateRegistry>
       rir_delegate_registry_;

@@ -210,14 +210,26 @@ void FilterTool::MatchBatchImpl(std::istream* request_stream,
         ExtractStringFromDictionary(dictionary->GetDict(), "request_type");
 
     bool blocked;
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+    const url_pattern_index::flat::UrlRule* url_rule =
+        FilterToolUtils::MatchRuleImplExt(origin, request_url, request_type,
+                                          blocked, matched_url_rules,
+                                          matched_css_rules, this);
+#else
     const url_pattern_index::flat::UrlRule* rule =
         MatchImpl(origin, request_url, request_type, &blocked);
     if (rule) {
       matched_rules[rule] += 1;
     }
+#endif
 
     if (print_each_request) {
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+      PrintResult(blocked, url_rule, origin, request_url, request_type);
+#else
       PrintResult(blocked, rule, origin, request_url, request_type);
+#endif
     }
   }
 
@@ -227,7 +239,11 @@ void FilterTool::MatchBatchImpl(std::istream* request_stream,
 
   // Sort the rules in descending order by match count.
   std::vector<std::pair<std::string, int>> vector_rules;
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  for (auto rule_and_count : matched_url_rules) {
+#else
   for (auto rule_and_count : matched_rules) {
+#endif
     if (rule_and_count.second < min_match_count) {
       continue;
     }

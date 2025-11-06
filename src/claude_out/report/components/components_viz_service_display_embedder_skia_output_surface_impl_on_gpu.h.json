@@ -1,0 +1,40 @@
+{
+  "file_path": "components/viz/service/display_embedder/skia_output_surface_impl_on_gpu.h",
+  "rej_file_path": "components/viz/service/display_embedder/skia_output_surface_impl_on_gpu.h.rej",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": {
+    "status": "完整未被修改",
+    "verified": true
+  },
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "original_line_range": "48-58",
+      "patch_line_range": "48-60",
+      "status": "已解决",
+      "confidence": "高",
+      "risk_assessment": "低风险",
+      "conflict_reason": "Arkweb132版本需要添加arkweb扩展工具类的头文件包含，但在chromium141版本中该包含缺失",
+      "analysis_process": "通过分析.rej文件中的上下文，识别出需要在第48-58行之间插入arkweb工具类头文件。使用'#endif'作为锚点精确定位插入位置。",
+      "resolution_strategy": "在第51行'#endif'语句之后插入'#include \"arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_surface_impl_on_gpu_utils.h\"'",
+      "changes_made": [
+        {
+          "type": "添加",
+          "line_number": 53,
+          "content": "#include \"arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_surface_impl_on_gpu_utils.h\""
+        }
+      ],
+      "verification": "修改已成功应用，在正确位置插入了所需的头文件包含，符合Arkweb132的侵入式修改要求"
+    }
+  ],
+  "summary": {
+    "total_changes": 1,
+    "additions": 1,
+    "deletions": 0,
+    "processing_time": "2025-11-05",
+    "resolution_status": "完全成功",
+    "notes": "所有hunk都已成功解决，没有任何未解决的冲突。修改严格遵循了'不添加上下文'的原则，仅添加了以'+'开头的行。"
+  }
+}

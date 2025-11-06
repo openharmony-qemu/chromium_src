@@ -183,6 +183,24 @@ void ContentSubresourceFilterWebContentsHelper::WillDestroyThrottleManager(
   CHECK(was_erased);
 }
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+void ContentSubresourceFilterWebContentsHelper::CreateThrottleManager(
+    content::NavigationHandle* navigation_handle) {
+  if (!WillCreateNewThrottleManager(*navigation_handle)) {
+    return;
+  }
+
+  std::unique_ptr<ContentSubresourceFilterThrottleManager> new_manager =
+      ContentSubresourceFilterThrottleManager::CreateForNewPage(
+          profile_context_, database_manager_, dealer_handle_, *this,
+          *navigation_handle);
+
+  throttle_managers_.insert(new_manager.get());
+  ThrottleManagerInUserDataContainer::CreateForNavigationHandle(
+      *navigation_handle, std::move(new_manager));
+}
+#endif
+
 void ContentSubresourceFilterWebContentsHelper::RenderFrameDeleted(
     content::RenderFrameHost* frame_host) {
   ContentSubresourceFilterThrottleManager* throttle_manager =

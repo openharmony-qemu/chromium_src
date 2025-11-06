@@ -93,6 +93,9 @@ extern const char kDownloadRestrictions[];
 extern const char kAlwaysOnVpnPreConnectUrlAllowlist[];
 extern const char kFloatingWorkspaceEnabled[];
 #endif
+#if BUILDFLAG(ARKWEB_EDM_POLICY)
+extern const char kBrowserPolicyVersion[];
+#endif
 extern const char kBuiltInAIAPIsEnabled[];
 #if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_WIN) || \
     BUILDFLAG(IS_MAC)

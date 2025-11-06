@@ -1,0 +1,48 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/components/performance_manager/embedder/graph_features.h.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/components/performance_manager/embedder/graph_features.h",
+    "处理时间": "2025-11-05"
+  },
+  "处理总结": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk详情": [
+    {
+      "hunk索引": 1,
+      "冲突类型": "添加include语句",
+      "风险等级": "低",
+      "待添加行": [
+        "#include \"arkweb/build/features/features.h\""
+      ],
+      "待删除行": [],
+      "上下文锚点": {
+        "前行": "#include \"components/performance_manager/public/features.h\"",
+        "后行": "namespace performance_manager {"
+      },
+      "冲突原因": "Arkweb 132版本需要包含Arkweb特定的features头文件，在升级到Chromium 141时这个include被遗漏",
+      "分析过程": "通过分析.rej文件内容，发现需要在第10行后添加Arkweb的features头文件包含语句。在源文件中找到了准确的匹配位置：第10行为'components/performance_manager/public/features.h'，其后为chromium 141新增的'ui/base/device_form_factor.h'。根据上下文匹配，在第10行后插入所需的include语句。",
+      "修改置信度": "高",
+      "处理策略": "在源文件第10行后添加'#include \"arkweb/build/features/features.h\"'语句，保持代码结构的完整性",
+      "解决状态": "已解决",
+      "实际应用位置": "第12行",
+      "备注": "修改完成后代码结构保持良好，没有语法错误或逻辑断裂"
+    }
+  ],
+  "合规性验证": {
+    ".rej文件保持完整": true,
+    "未创建任何脚本文件": true,
+    "未修改.rej文件": true,
+    "仅在指定目录创建JSON报告": true,
+    "严格遵守黄金法则": true
+  },
+  "技术说明": {
+    "修改类型": "添加Arkweb特定的头文件包含",
+    "影响范围": "编译时依赖，不影响运行时逻辑",
+    "兼容性": "与现有代码完全兼容",
+    "潜在风险": "极低，仅为添加include语句"
+  }
+}

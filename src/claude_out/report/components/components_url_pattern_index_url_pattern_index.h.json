@@ -1,0 +1,40 @@
+{
+  "文件路径": "/home/sujiahao/code/arkweb_141/src/components/url_pattern_index/url_pattern_index.h",
+  "冲突文件": "/home/sujiahao/code/arkweb_141/src/components/url_pattern_index/url_pattern_index.h.rej",
+  "处理时间": "2025-11-05",
+  "总hunk数量": 1,
+  "成功解决的hunk数量": 1,
+  "未能解决的hunk数量": 0,
+  "解决状态": "全部解决",
+  "rej文件完整性": "保持完整未被修改",
+  "hunks详情": [
+    {
+      "hunk_index": 1,
+      "原始位置": "第89-91行和第24行（基于.rej文件的行号）",
+      "修改类型": "添加新内容",
+      "待删除行数": 1,
+      "待添加行数": 5,
+      "风险等级": "低",
+      "冲突原因": "Arkweb132针对chromium132基线添加了ARKWEB_ADBLOCK功能相关的函数声明和友元类声明，在升级到chromium141时产生了冲突",
+      "分析过程": "该hunk包含两个独立的修改：1）在kUrlPatternIndexFormatVersion常量后添加ARKWEB_ADBLOCK条件编译的函数声明；2）在UrlPatternIndexBuilder类中添加友元类声明。由于chromium141中版本号已从15升级到16，原删除操作不适用，只需添加新内容。",
+      "修改置信度": "高",
+      "解决策略": "精确应用修改",
+      "实际应用位置": {
+        "ARKWEB_ADBLOCK函数声明": "第94-101行，添加在kUrlPatternIndexFormatVersion常量定义之后",
+        "友元类声明": "第109行，添加在UrlPatternIndexBuilder类的public部分开始处"
+      },
+      "应用结果": "成功应用",
+      "具体修改内容": [
+        "添加了#if BUILDFLAG(ARKWEB_ADBLOCK)条件编译块，包含三个函数声明：GetLongestMatchingSubdomain、ToStringView、HasNoUpperAscii",
+        "在UrlPatternIndexBuilder类中添加了friend class ArkWebUrlPatternIndexBuilderExt声明"
+      ]
+    }
+  ],
+  "整体评估": {
+    "代码完整性": "保持良好",
+    "语法正确性": "无语法错误",
+    "功能影响": "添加了Arkweb广告拦截功能相关的扩展接口，不会影响现有功能",
+    "兼容性": "通过条件编译确保只在启用ARKWEB_ADBLOCK时生效，保持了向后兼容性"
+  },
+  "备注": "所有修改都已成功应用到源文件中，.rej文件保持完整未修改。修改内容严格遵循了Arkweb的侵入式修改需求，仅添加了必要的代码行。"
+}

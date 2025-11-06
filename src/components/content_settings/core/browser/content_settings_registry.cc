@@ -937,7 +937,11 @@ void ContentSettingsRegistry::Register(
 
   if (type == ContentSettingsType::COOKIES) {
     info->set_third_party_cookie_allowed_secondary_schemes(
-        {kChromeDevToolsScheme, kExtensionScheme});
+        {kChromeDevToolsScheme, kExtensionScheme
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+        , kArkwebExtensionScheme
+#endif
+        });
   }
 }
 

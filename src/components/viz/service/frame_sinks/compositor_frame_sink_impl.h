@@ -62,12 +62,27 @@ class CompositorFrameSinkImpl : public mojom::CompositorFrameSink {
       CompositorFrame frame,
       std::optional<HitTestRegionList> hit_test_region_list,
       uint64_t submit_time) override;
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void OnSetBypassVsyncCondition(int32_t condition) override;
+#endif
   void DidNotProduceFrame(const BeginFrameAck& begin_frame_ack) override;
   void NotifyNewLocalSurfaceIdExpectedWhilePaused() override;
   void BindLayerContext(mojom::PendingLayerContextPtr context,
                         mojom::LayerContextSettingsPtr settings) override;
 #if BUILDFLAG(IS_ANDROID)
   void SetThreads(const std::vector<Thread>& threads) override;
+#endif
+
+  friend class CompositorFrameSinkImplUtil;
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+  void ReportKeyThreadIds(const std::vector<int32_t>& thread_ids,
+                          int32_t process_id,
+                          bool is_created) override;
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+  std::unique_ptr<CompositorFrameSinkImplUtil> compositor_frame_sink_impl_util_;
 #endif
 
  private:

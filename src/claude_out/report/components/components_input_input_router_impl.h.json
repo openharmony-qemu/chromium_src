@@ -1,0 +1,104 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/components/input/input_router_impl.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/components/input/input_router_impl.h",
+    "处理时间": "2025-11-05"
+  },
+  "处理总结": {
+    "总hunk数量": 3,
+    "成功解决的hunk数量": 3,
+    "未能解决的hunk数量": 0,
+    "解决状态": "全部解决",
+    ".rej文件保持完整": true
+  },
+  "hunk处理详情": [
+    {
+      "hunk编号": 1,
+      "行号范围": "第3行",
+      "冲突原因": "Arkweb132需要添加arkweb/features.h头文件以支持条件编译功能",
+      "分析过程": "该hunk需要在第8行后添加#include \"arkweb/build/features/features.h\"。这个头文件对于后续的ARKWEB功能条件编译是必需的。",
+      "待添加行": [
+        "#include \"arkweb/build/features/features.h\""
+      ],
+      "待删除行": [],
+      "修改置信度": "高",
+      "风险等级": "低",
+      "风险描述": "添加头文件是安全的，不会影响现有功能，只是为条件编译提供必要的宏定义",
+      "处理策略": "在#include <memory>后添加该头文件，同时在同一段落添加#include <queue>",
+      "最终结果": "已成功应用"
+    },
+    {
+      "hunk编号": 2,
+      "行号范围": "第15-41行",
+      "冲突原因": "Arkweb132在InputRouterImpl类中添加了多个ARKWEB功能的条件编译方法",
+      "分析过程": "该hunk需要在IsAutoscrollInProgress() override;后添加5个条件编译块，包括报告丢帧、同层渲染、输入事件和垂直同步调度功能。",
+      "待添加行": [
+        "#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)",
+        "  void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) override {}",
+        "#endif",
+        "",
+        "#if BUILDFLAG(ARKWEB_SAME_LAYER)",
+        "  void SetGestureEventResult(bool result,",
+        "    bool stopPropagation, int32_t fingerId) override {}",
+        "",
+        "  void SetNativeEmbedMode(bool flag) override {}",
+        "  void SetMouseEventResult(bool result, bool stopPropagation) override {}",
+        "  void SetEnableCustomVideoPlayer(bool flag) override {}",
+        "#endif",
+        "",
+        "#if BUILDFLAG(ARKWEB_INPUT_EVENTS)",
+        "  void ScrollBy(float delta_x, float delta_y) override {}",
+        "#endif",
+        "",
+        "#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)",
+        "  void SetBypassVsyncCondition(int32_t condition) override {}",
+        "#endif"
+      ],
+      "待删除行": [],
+      "修改置信度": "高",
+      "风险等级": "低",
+      "风险描述": "所有方法都是空实现，使用条件编译包装，不会影响现有功能，只是提供了扩展接口",
+      "处理策略": "在IsAutoscrollInProgress() override;和TouchpadPinchEventQueueClient注释之间插入所有条件编译块",
+      "最终结果": "已成功应用"
+    },
+    {
+      "hunk编号": 3,
+      "行号范围": "第47-55行",
+      "冲突原因": "Arkweb132版本删除了host_receiver_声明后的一个空白行",
+      "分析过程": "该hunk需要删除mojo::Receiver<blink::mojom::WidgetInputHandlerHost> host_receiver_{this};后的一个空白行",
+      "待添加行": [],
+      "待删除行": [
+        "host_receiver_{this};后的一个空白行"
+      ],
+      "修改置信度": "高",
+      "风险等级": "极低",
+      "风险描述": "删除空白行不会影响代码功能，只是调整代码格式",
+      "处理策略": "删除host_receiver_行和下一个注释行之间的空白行",
+      "最终结果": "已成功应用"
+    }
+  ],
+  "整体风险评估": {
+    "风险等级": "低",
+    "主要原因": [
+      "所有修改都是基于Arkweb132的侵入式修改，已经在132版本中验证过",
+      "添加的都是条件编译代码，默认不会启用",
+      "删除的只是格式相关的空白行，不影响逻辑",
+      "所有空方法实现都是安全的"
+    ],
+    "建议人工复查重点": [
+      "确认arkweb/build/features/features.h路径在Arkweb141中是否正确",
+      "验证各BUILDFLAG宏在Arkweb141构建系统中是否已定义",
+      "检查新增方法是否符合blink::mojom::WidgetInputHandlerHost接口定义"
+    ]
+  },
+  "技术细节": {
+    "涉及的ARKWEB功能": [
+      "ARKWEB_REPORT_LOSS_FRAME - 丢帧报告功能",
+      "ARKWEB_SAME_LAYER - 同层渲染功能",
+      "ARKWEB_INPUT_EVENTS - 输入事件处理功能",
+      "ARKWEB_VSYNC_SCHEDULE - 垂直同步调度功能"
+    ],
+    "代码结构影响": "在类定义中添加了新的虚方法声明，使用条件编译包装，不影响现有类层次结构",
+    "编译影响": "需要确保arkweb/build/features/features.h头文件在Arkweb141中存在且包含相应的BUILDFLAG定义"
+  }
+}

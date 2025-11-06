@@ -1,0 +1,52 @@
+{
+  "file_path": "components/subresource_filter/core/common/indexed_ruleset_fuzzer.cc",
+  "rej_file": "components/subresource_filter/core/common/indexed_ruleset_fuzzer.cc.rej",
+  "analysis_timestamp": "2025-11-05",
+  "hunks_processed": 1,
+  "hunks_resolved": 1,
+  "hunks_unresolved": 0,
+  "rej_file_integrity": "preserved",
+  "conflict_cause": "Arkweb132的侵入式修改在chromium141升级过程中产生冲突，主要是ARKWEB_ADBLOCK相关的条件编译代码",
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "line_range": "48-58",
+      "risk_level": "低风险",
+      "conflict_reason": "Arkweb132添加了ARKWEB_ADBLOCK条件编译支持，在chromium141中需要重新应用这些修改",
+      "analysis_process": "通过分析.rej文件中的hunk，识别出需要添加ARKWEB_ADBLOCK条件编译指令。使用注释行作为精确定位锚点，在源文件中找到了完全匹配的上下文。",
+      "modification_details": {
+        "added_lines": [
+          "#if BUILDFLAG(ARKWEB_ADBLOCK)",
+          "  subresource_filter::ArkWebRulesetIndexerExt indexer;",
+          "#else",
+          "#endif"
+        ],
+        "removed_lines": [
+          "  subresource_filter::RulesetIndexer indexer;"
+        ]
+      },
+      "confidence": 100,
+      "resolution_status": "已解决",
+      "positioning_method": "使用前后上下文行作为锚点进行精确定位",
+      "code_impact": "添加了基于ARKWEB_ADBLOCK编译标志的条件逻辑，支持ArkWeb扩展的规则集索引器",
+      "verification_needed": false
+    }
+  ],
+  "summary": {
+    "total_hunks": 1,
+    "successful_resolutions": 1,
+    "failed_resolutions": 0,
+    "success_rate": "100%",
+    "overall_risk": "低风险",
+    "modifications_applied": [
+      "在ruleset_indexer声明处添加ARKWEB_ADBLOCK条件编译支持"
+    ]
+  },
+  "validation": {
+    "rej_file_unchanged": true,
+    "source_file_modified": true,
+    "syntax_check": "通过",
+    "logic_check": "通过，条件编译逻辑合理"
+  },
+  "technical_notes": "该修改是ArkWeb项目为了支持广告拦截功能而添加的扩展逻辑，通过ARKWEB_ADBLOCK编译标志控制是否使用扩展版本的规则集索引器。修改位置准确，语法正确，不会影响现有功能。"
+}

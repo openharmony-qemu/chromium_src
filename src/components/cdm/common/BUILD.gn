@@ -5,6 +5,9 @@
 import("//build/buildflag_header.gni")
 import("//components/cdm/common/playready.gni")
 import("//third_party/widevine/cdm/widevine.gni")
+if (is_arkweb) {
+  import("//arkweb/build/features/features.gni")
+}
 
 buildflag_header("buildflags") {
   header = "buildflags.h"
@@ -44,6 +47,11 @@ static_library("common") {
       "//third_party/widevine/cdm:buildflags",
       "//third_party/widevine/cdm:headers",
     ]
+  }
+
+  if (arkweb_enable_cdm) {
+    import("//arkweb/chromium_ext/chromium_ext.gni")
+    sources += arkweb_components_cdm_common_soureces
   }
 
   if (enable_playready) {

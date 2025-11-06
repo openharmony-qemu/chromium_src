@@ -509,6 +509,11 @@ void FreezingPolicy::OnCannotFreezeReasonChange(const PageNode* page_node,
   before_tracker.PopulateWithPageFreezingState(state);
 
   if (add) {
+#if BUILDFLAG(IS_ARKWEB)
+    if (state.cannot_freeze_reasons.Has(reason)) {
+      return;
+    }
+#endif
     DCHECK(!state.cannot_freeze_reasons.Has(reason));
     state.cannot_freeze_reasons.Put(reason);
 

@@ -422,6 +422,7 @@ bool PrefProxyConfigTrackerImpl::PrefConfigToNetConfig(
   }
   NOTREACHED() << "Unknown proxy mode, falling back to system settings.";
 }
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 void PrefProxyConfigTrackerImpl::OnProxyPrefChanged() {
   DCHECK(thread_checker_.CalledOnValidThread());

@@ -13,6 +13,10 @@
 #include "third_party/libyuv/include/libyuv/planar_functions.h"
 #include "third_party/skia/include/core/SkPixelRef.h"
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+#include "arkweb/chromium_ext/components/viz/common/frame_sinks/arkweb_copy_output_result_utils.h"
+#endif
+
 namespace viz {
 
 AsyncReadResultLock::AsyncReadResultLock() = default;

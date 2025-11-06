@@ -18,6 +18,10 @@
 #include "services/network/public/mojom/url_response_head.mojom.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace {
 constexpr char kLegacyURL[] = "http://www.gstatic.com/generate_204";
 constexpr char kDefaultURL[] =

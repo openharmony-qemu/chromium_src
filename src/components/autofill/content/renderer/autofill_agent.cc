@@ -18,6 +18,7 @@
 #include <variant>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_deref.h"
 #include "base/containers/contains.h"
 #include "base/containers/flat_map.h"
@@ -715,6 +716,13 @@ void AutofillAgent::FocusedElementChanged(
                   new_focused_element == GetDocument().FocusedElement()
               ? SynchronousFormCache(*extracted_form)
               : SynchronousFormCache());
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+      if (focused_node_was_last_clicked) {
+        AsAutofillAgentExt()->SetIsPopupCreatedByFocusChange(true);
+        AsAutofillAgentExt()->SetIsNeedToCreatedPopup(true);
+        AsAutofillAgentExt()->SetCreatedPopupTime(base::TimeTicks::Now());
+      }
+#endif
     }
   };
 
@@ -1084,6 +1092,13 @@ void AutofillAgent::TextFieldDidReceiveKeyDown(const WebInputElement& element,
                                                const WebKeyboardEvent& event) {
   DCHECK(form_util::MaybeWasOwnedByFrame(element, unsafe_render_frame()));
 
+#if BUILDFLAG(ARKWEB_DATALIST)
+  if (is_popup_possibly_visible_) {
+    LOG(INFO) << "TextFieldDidReceiveKeyDown is_popup_possibly_visible_";
+    return;
+  }
+#endif
+
   if (event.windows_key_code == ui::VKEY_DOWN ||
       event.windows_key_code == ui::VKEY_UP) {
     ShowSuggestions(
@@ -1098,6 +1113,11 @@ void AutofillAgent::TextFieldDidReceiveKeyDown(const WebInputElement& element,
 
 void AutofillAgent::OpenTextDataListChooser(const WebInputElement& element) {
   DCHECK(form_util::MaybeWasOwnedByFrame(element, unsafe_render_frame()));
+#if BUILDFLAG(ARKWEB_DATALIST)
+  if (is_popup_possibly_visible_ || last_left_mouse_down_or_gesture_tap_in_node_caused_focus_) {
+    return;
+  }
+#endif
   ShowSuggestions(
       element, AutofillSuggestionTriggerSource::kOpenTextDataListChooser,
       /*form_cache=*/{},
@@ -1599,6 +1619,14 @@ void AutofillAgent::ShowSuggestions(
     return;
   }
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  const WebInputElement input_element = element.DynamicTo<WebInputElement>();
+  if (password_autofill_agent_->AsPasswordAutofillAgentExt()->IsPasswordAutofill(input_element)) {
+    LOG(INFO) << "[Autofill] Is password autofill, skip form fill.";
+    return;
+  }
+#endif
+
   std::optional<FormAndField> form_and_field =
       form_util::FindFormAndFieldForFormControlElement(
           element, field_data_manager(),
@@ -1619,7 +1647,11 @@ void AutofillAgent::ShowSuggestions(
   if (auto* autofill_driver = unsafe_autofill_driver()) {
     if (auto* render_frame = unsafe_render_frame()) {
       autofill_driver->AskForValuesToFill(form, field->renderer_id(),
+#if BUILDFLAG(ARKWEB_DATALIST)
+                                          render_frame->ConvertViewportToWindow(element.BoundsInWidget()),
+#else
                                           GetCaretBounds(*render_frame),
+#endif
                                           trigger_source, password_request);
     }
   }
@@ -1935,6 +1967,15 @@ void AutofillAgent::DidReceiveLeftMouseDownOrGestureTapInNode(
   const bool is_focused =
       node.Focused() || ((contenteditable = node.RootEditableElement()) &&
                          contenteditable.Focused());
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  AsAutofillAgentExt()->OhFormControlElementClicked();
+#endif
+
+#if BUILDFLAG(ARKWEB_AUTOFILL)
+  AsAutofillAgentExt()->OhAutoFillFormControlElementClicked(node);
+#endif
+
 #if defined(ANDROID)
   HandleFocusChangeComplete(/*focused_node_was_last_clicked=*/is_focused,
                             /*form_cache=*/{});

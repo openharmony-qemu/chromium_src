@@ -4,6 +4,7 @@
 
 #include "components/enterprise/connectors/core/reporting_service_settings.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/logging.h"
 #include "components/enterprise/connectors/core/service_provider_config.h"
 
@@ -15,6 +16,9 @@ namespace {
 ReportingServiceSettings::ReportingServiceSettings(
     const base::Value& settings_value,
     const ServiceProviderConfig& service_provider_config) {
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  return;
+#endif
   if (!settings_value.is_dict())
     return;
   const base::Value::Dict& settings_dict = settings_value.GetDict();

@@ -84,7 +84,7 @@ namespace policy {
 namespace em = enterprise_management;
 
 std::string GetMachineName() {
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_FUCHSIA)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
   char hostname[HOST_NAME_MAX];
   if (gethostname(hostname, HOST_NAME_MAX) == 0)  // Success.
     return hostname;
@@ -192,6 +192,9 @@ std::string GetOSUsername() {
   // TODO(crbug.com/40200780): This should be fully implemented when there is
   // support in fuchsia.
   return std::string();
+#elif BUILDFLAG(IS_OHOS)
+  // need to call ets to get ohos username
+  return std::string("ohos-anonymous");
 #else
   NOTREACHED();
 #endif

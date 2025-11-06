@@ -1,0 +1,71 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/components/performance_manager/graph/frame_node_impl.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/components/performance_manager/graph/frame_node_impl.h",
+    "处理时间": "2025-11-05"
+  },
+  "处理统计": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 2,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunks处理详情": [
+    {
+      "hunk索引": 1,
+      "冲突原因": "Arkweb 132 添加了自定义功能头文件包含",
+      "风险等级": "低",
+      "分析过程": "通过分析.rej文件，发现需要添加 #include \"arkweb/build/features/features.h\" 头文件。在源文件中找到了合适的插入位置（在 url/origin.h 之后，namespace 之前），插入位置合理且不会破坏现有代码结构。",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "具体操作": {
+        "添加行": [
+          "#include \"arkweb/build/features/features.h\""
+        ],
+        "删除行": [],
+        "插入位置": "第32行，在url/origin.h包含之后"
+      },
+      "上下文锚点": [
+        "#include \"url/origin.h\"",
+        "namespace performance_manager {"
+      ]
+    },
+    {
+      "hunk索引": 2,
+      "冲突原因": "Arkweb 132 添加了表单编辑状态变化相关的回调函数",
+      "风险等级": "低",
+      "分析过程": "需要在mojom::DocumentCoordinationUnit接口中添加条件编译的OnFormEditingStateChanged方法。使用BUILDFLAG(ARKWEB_ACTIVITY_STATE)条件编译确保只在Arkweb特性启用时包含此方法。在源文件中准确定位到了OnWebMemoryMeasurementRequested函数之后的合适位置。",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "具体操作": {
+        "添加行": [
+          "#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)",
+          "  void OnFormEditingStateChanged(uint64_t form_id, bool did_submit) override;",
+          "#endif"
+        ],
+        "删除行": [],
+        "插入位置": "第94-96行，OnFreezingOriginTrialOptOut函数之后"
+      },
+      "上下文锚点": [
+        "void OnFreezingOriginTrialOptOut() override;",
+        "// Partial FrameNode implementation:"
+      ]
+    }
+  ],
+  "整体评估": {
+    "冲突复杂度": "简单",
+    "修改侵入性": "低",
+    "代码完整性": "保持良好",
+    "编译兼容性": "通过条件编译确保兼容性",
+    "潜在风险": "minimal",
+    "人工复查建议": "确认arkweb/build/features/features.h文件存在且BUILDFLAG(ARKWEB_ACTIVITY_STATE)定义正确"
+  },
+  "合规性检查": {
+    ".rej文件保持完整": "是",
+    "未创建脚本文件": "是",
+    "未创建辅助文件": "是",
+    "仅在指定目录创建JSON报告": "是",
+    "严格遵循不添加上下文原则": "是"
+  },
+  "处理总结": "成功将所有.rej文件中的侵入式修改精确应用到源文件中。所有修改都是Arkweb自定义功能的集成，通过条件编译确保在不同配置下的兼容性。修改过程严格遵守了不添加上下文的黄金法则，仅添加了+开头的行，没有修改任何现有的代码结构。"
+}

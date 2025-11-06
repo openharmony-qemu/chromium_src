@@ -40,6 +40,8 @@
 #include "ui/gfx/swap_result.h"
 #include "ui/latency/latency_info.h"
 
+#include "arkweb/chromium_ext/components/viz/service/display/arkweb_display_utils.h"
+
 #if BUILDFLAG(IS_ANDROID)
 #include "ui/gfx/android/surface_control_frame_rate.h"
 #endif
@@ -64,7 +66,11 @@ class OutputSurface;
 class RendererSettings;
 class SkiaOutputSurface;
 class SoftwareRenderer;
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+class DumpFrameObserver;
+#endif
 class OcclusionCuller;
+class ArkwebDisplayUtils;
 
 class VIZ_SERVICE_EXPORT DisplayObserver {
  public:

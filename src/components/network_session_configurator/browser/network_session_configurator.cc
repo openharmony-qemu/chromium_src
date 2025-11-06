@@ -844,6 +844,15 @@ void ParseCommandLineAndFieldTrials(const base::CommandLine& command_line,
 }
 
 net::URLRequestContextBuilder::HttpCacheParams::Type ChooseCacheType() {
+#if BUILDFLAG(ARKWEB_CACHE)
+  if ((*base::CommandLine::ForCurrentProcess())
+          .HasSwitch(switches::kOhosHttpCacheSimple)) {
+    return net::URLRequestContextBuilder::HttpCacheParams::DISK_SIMPLE;
+  } else {
+    return net::URLRequestContextBuilder::HttpCacheParams::DISK_BLOCKFILE;
+  }
+#else
+
   if (base::FeatureList::IsEnabled(
           net::features::kDiskCacheBackendExperiment)) {
     switch (net::features::kDiskCacheBackendParam.Get()) {
@@ -863,6 +872,7 @@ net::URLRequestContextBuilder::HttpCacheParams::Type ChooseCacheType() {
   return disk_cache::IsSimpleBackendEnabledByDefaultPlatform()
              ? net::URLRequestContextBuilder::HttpCacheParams::DISK_SIMPLE
              : net::URLRequestContextBuilder::HttpCacheParams::DISK_BLOCKFILE;
+#endif // BUILDFLAG(ARKWEB_CACHE)
 }
 
 }  // namespace network_session_configurator

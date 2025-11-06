@@ -1,0 +1,41 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/components/resources/dom_distiller_resources.grdp.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/components/resources/dom_distiller_resources.grdp",
+    "处理时间": "2025-11-05"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunks详情": [
+    {
+      "hunk索引": 1,
+      "解决状态": "已解决",
+      "风险等级": "低",
+      "冲突原因": "Arkweb 132 在 Chromium 132 基础上添加了自定义的 domdistiller.js 资源文件引用，该资源指向 Arkweb 特定的扩展目录",
+      "分析过程": "通过 .rej 文件分析，发现需要添加一行新的资源引用 IDR_DISTILLER_JS_ARKWEB，指向 Arkweb 扩展目录中的 domdistiller.js 文件。使用上下文行中的 IDR_DISTILLER_JS 作为锚点，在源文件中成功定位到相同位置并应用修改。",
+      "修改内容": {
+        "添加的行": [
+          "  <include name=\"IDR_DISTILLER_JS_ARKWEB\" file=\"../../arkweb/chromium_ext/components/dom_distiller/core/javascript/domdistiller.js\" flattenhtml=\"true\" type=\"BINDATA\" />"
+        ],
+        "删除的行": []
+      },
+      "定位策略": "使用 IDR_DISTILLER_JS 行作为精确锚点，在其后插入新的 ARKWEB 资源引用",
+      "修改置信度": "高",
+      "语法检查": "通过，XML 格式正确，标签结构完整",
+      "处理策略": "原子化应用 - 仅添加 + 开头的行，不添加任何上下文内容"
+    }
+  ],
+  "合规性检查": {
+    ".rej文件保持完整": true,
+    "未修改.rej文件": true,
+    "未创建脚本文件": true,
+    "未创建辅助文件": true,
+    "仅在指定目录创建JSON报告": true,
+    "严格遵守不添加上下文原则": true
+  },
+  "总结": "成功处理了 1 个 hunk，将 Arkweb 132 中的自定义资源引用集成到 Arkweb 141 代码中。修改涉及添加 Arkweb 特定的 domdistiller.js 资源文件引用，保持与原有代码结构的兼容性。整个过程严格遵守了不添加上下文的原则，仅应用了必要的修改内容。"
+}

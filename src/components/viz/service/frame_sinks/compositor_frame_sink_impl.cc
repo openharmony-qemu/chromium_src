@@ -161,11 +161,20 @@ void CompositorFrameSinkImpl::SetParams(
   }
 }
 
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+void CompositorFrameSinkImpl::OnSetBypassVsyncCondition(int32_t condition) {
+  compositor_frame_sink_impl_util_->OnSetBypassVsyncCondition(condition);
+}
+#endif
+
 void CompositorFrameSinkImpl::SubmitCompositorFrame(
     const LocalSurfaceId& local_surface_id,
     CompositorFrame frame,
     std::optional<HitTestRegionList> hit_test_region_list,
     uint64_t submit_time) {
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+  compositor_frame_sink_impl_util_->SubmitCompositorFrameUtils(frame.metadata);
+#endif
   // Non-root surface frames should not have display transform hint.
   DCHECK_EQ(gfx::OVERLAY_TRANSFORM_NONE, frame.metadata.display_transform_hint);
 

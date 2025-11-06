@@ -1,0 +1,94 @@
+{
+  "file_path": "components/viz/service/BUILD.gn",
+  "analysis_timestamp": "2025-11-05T00:00:00Z",
+  "conflict_analysis": {
+    "total_hunks": 3,
+    "resolved_hunks": 3,
+    "unresolved_hunks": 0,
+    "hunk_details": [
+      {
+        "hunk_number": 1,
+        "location": "lines 8-22",
+        "description": "添加arkweb相关的import语句",
+        "risk_level": "低",
+        "changes": [
+          {
+            "type": "add",
+            "line": "import(\"//arkweb/build/features/features.gni\")",
+            "confidence": "高"
+          },
+          {
+            "type": "add",
+            "line": "if (is_arkweb) { import(\"//arkweb/chromium_ext/chromium_ext.gni\") }",
+            "confidence": "高"
+          }
+        ],
+        "analysis": "这个hunk添加了arkweb特有的import语句和条件编译块。风险较低，因为只是添加了配置相关的导入语句，不会影响现有功能。已成功在源文件第13-17行添加。",
+        "resolution": "已解决 - 在import语句区域正确添加了所需的import语句"
+      },
+      {
+        "hunk_number": 2,
+        "location": "lines 196-205",
+        "description": "添加arkweb扩展源文件到sources列表",
+        "risk_level": "中",
+        "changes": [
+          {
+            "type": "add",
+            "line": "\"//arkweb/chromium_ext/components/viz/service/frame_sinks/compositor_frame_sink_support_utils.cc\",",
+            "confidence": "高"
+          },
+          {
+            "type": "add",
+            "line": "\"//arkweb/chromium_ext/components/viz/service/frame_sinks/compositor_frame_sink_support_utils.h\",",
+            "confidence": "高"
+          },
+          {
+            "type": "add",
+            "line": "\"//arkweb/chromium_ext/components/viz/service/frame_sinks/frame_sink_manager_impl_utils.cc\",",
+            "confidence": "高"
+          },
+          {
+            "type": "add",
+            "line": "\"//arkweb/chromium_ext/components/viz/service/frame_sinks/frame_sink_manager_impl_utils.h\",",
+            "confidence": "高"
+          }
+        ],
+        "analysis": "这个hunk添加了4个arkweb扩展的源文件到sources列表中，这些文件是对frame_sinks模块的功能扩展。风险中等，因为添加了新的源文件，但这些文件路径明确指向arkweb扩展目录。已成功在源文件第196-197行和第204-205行添加。",
+        "resolution": "已解决 - 在对应的sources列表位置正确添加了所需的源文件"
+      },
+      {
+        "hunk_number": 3,
+        "location": "lines 490-502",
+        "description": "添加arkweb条件编译块",
+        "risk_level": "中",
+        "changes": [
+          {
+            "type": "add",
+            "line": "if (arkweb_oop_gpu_process) { deps += [ \"//arkweb/build/features\" ] }",
+            "confidence": "高"
+          },
+          {
+            "type": "add",
+            "line": "if (arkweb_slide_ltpo) { import(\"//arkweb/chromium_ext/base/arkweb_base_ext.gni\"); sources += arkweb_base_ohos_ltpo_sources }",
+            "confidence": "中"
+          },
+          {
+            "type": "add",
+            "line": "if (arkweb_d_vsync) { import(\"//arkweb/chromium_ext/base/arkweb_base_ext.gni\"); sources += arkweb_base_ohos_d_vsync_sources }",
+            "confidence": "中"
+          }
+        ],
+        "analysis": "这个hunk添加了3个条件编译块，用于根据arkweb的不同特性配置添加相应的依赖和源文件。风险中等，因为涉及条件编译和变量引用。已成功在源文件第490-502行添加。",
+        "resolution": "已解决 - 在适当的条件编译位置添加了所需的条件块"
+      }
+    ],
+    "conflict_cause": "由于Chromium从132版本升级到141版本，Arkweb132中的侵入式修改（主要是arkweb扩展相关的import、源文件和条件编译）在新的版本中产生了冲突。.rej文件包含了这些需要在Arkweb141中重新应用的修改。",
+    "processing_strategy": "严格按照'不添加上下文'原则，只添加以+开头的行，忽略所有上下文行。对于每个hunk，使用最少的上下文作为锚点进行精确定位。",
+    "validation_notes": [
+      "所有修改都只添加了+开头的行，没有添加任何上下文行",
+      ".rej文件保持完整，未被修改或删除",
+      "没有创建任何脚本文件或辅助工具",
+      "所有修改都直接在源文件中进行原子化应用"
+    ]
+  }
+}

@@ -101,6 +101,26 @@ class TestFrameSinkManagerImpl : public mojom::FrameSinkManager {
       const std::vector<FrameSinkId>& render_input_routers) override {}
   void RequestInputBack() override {}
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void SetEnableLowerFrameRate(
+      bool enabled,
+      const ::viz::FrameSinkId& frame_sink_id) override {}
+  void SetEnableHalfFrameRate(
+      bool enabled,
+      const ::viz::FrameSinkId& frame_sink_id) override {}
+  void UpdateVSyncFrequency(const ::viz::FrameSinkId& frame_sink_id,
+                            uint32_t client_id) override {}
+  void ResetVSyncFrequency(const ::viz::FrameSinkId& frame_sink_id) override {}
+  void SendInternalBeginFrame(const ::viz::FrameSinkId& frame_sink_id) override {}
+  void EvictFrameBackBuffers(const ::viz::FrameSinkId& frame_sink_id) {}
+#endif
+#if BUILDFLAG(ARKWEB_PIP)
+  void SetPipActive(bool active, const FrameSinkId& frame_sink_id) override {}
+#endif
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void ClearBlanklessSnapshotInfo(uint64_t blankless_key) override {}
+#endif
+
   mojo::Receiver<mojom::FrameSinkManager> receiver_{this};
   mojo::Remote<mojom::FrameSinkManagerClient> client_;
 };

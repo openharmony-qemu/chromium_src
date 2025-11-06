@@ -1,0 +1,40 @@
+{
+  "文件路径": "/home/sujiahao/code/arkweb_141/src/components/viz/client/BUILD.gn",
+  "冲突文件": "/home/sujiahao/code/arkweb_141/src/components/viz/client/BUILD.gn.rej",
+  "处理时间": "2025-11-05",
+  "总体统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0
+  },
+  "hunks分析": [
+    {
+      "hunk索引": 1,
+      "解决状态": "已解决",
+      "风险等级": "低",
+      "冲突原因": "Arkweb132在源文件列表中添加了自定义的头文件引用",
+      "分析过程": "通过精确匹配上下文行，在源文件的sources列表中定位到'frame_eviction_manager.h'之后的位置，成功插入了Arkweb扩展的头文件路径",
+      "修改内容": {
+        "添加的行": [
+          "//arkweb/chromium_ext/components/viz/client/frame_eviction_manager_ext.h"
+        ],
+        "删除的行": []
+      },
+      "修改置信度": "高",
+      "定位策略": "通过上下文行'frame_eviction_manager.h'和'frame_evictor.cc'精确定位插入位置",
+      "处理策略": "直接在源文件第12行后添加+行，保持原有代码结构完整性",
+      "人工复查建议": "确认该头文件路径在当前工程中存在，且包含正确的声明"
+    }
+  ],
+  "规则遵守情况": {
+    "rej文件完整性": "已保持，未被修改或删除",
+    "上下文行处理": "严格遵守黄金法则，未添加任何上下文行到源文件",
+    "文件创建限制": "仅在指定目录创建JSON报告文件，未创建任何脚本或辅助文件",
+    "修改原子化": "仅添加了+开头的行，执行了原子化操作"
+  },
+  "最终验证": {
+    "源文件修改成功": true,
+    "rej文件保持完整": true,
+    "代码语法完整性": "保持良好，未破坏BUILD.gn文件结构"
+  }
+}

@@ -44,7 +44,11 @@ constexpr char kTranslateBodyRequestTemplate[] =
     "\"format\":\"text\""
     "}";
 constexpr char kTranslateUrl[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://xxx%s";
+#else
     "https://translation.googleapis.com/language/translate/v2?key=%s";
+#endif
 constexpr char kUploadContentType[] = "application/json";
 constexpr char kHttpErrorMessageTemplate[] =
     "Failed to recieve response, got errror: %s";

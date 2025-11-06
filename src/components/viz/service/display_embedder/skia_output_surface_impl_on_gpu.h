@@ -50,6 +50,8 @@
 #include "media/gpu/chromeos/vulkan_overlay_adaptor.h"
 #endif
 
+#include "arkweb/chromium_ext/components/viz/service/display_embedder/skia_output_surface_impl_on_gpu_utils.h"
+
 #if BUILDFLAG(IS_ANDROID)
 #include "ui/gfx/android/surface_control_frame_rate.h"
 #endif

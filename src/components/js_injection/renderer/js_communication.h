@@ -15,6 +15,7 @@
 #include "mojo/public/cpp/bindings/associated_receiver.h"
 #include "mojo/public/cpp/bindings/associated_remote.h"
 #include "third_party/blink/public/platform/web_string.h"
+#include "arkweb/build/features/features.h"
 #include "v8/include/cppgc/persistent.h"
 
 namespace content {
@@ -24,12 +25,15 @@ class RenderFrame;
 namespace js_injection {
 
 class JsBinding;
+class JsCommunicationUtils;
 
 class JsCommunication
     : public mojom::JsCommunication,
       public content::RenderFrameObserver,
       public content::RenderFrameObserverTracker<JsCommunication> {
  public:
+  friend class JsCommunicationUtils;
+  std::unique_ptr<JsCommunicationUtils> implUtils_;
   explicit JsCommunication(content::RenderFrame* render_frame);
 
   JsCommunication(const JsCommunication&) = delete;
@@ -97,6 +101,9 @@ class JsCommunication
   // to prevent doing multiple injection in that case.
   bool inside_did_clear_window_object_ = false;
 
+#if BUILDFLAG(ARKWEB_JSPROXY)
+  std::vector<std::unique_ptr<DocumentStartJavaScript>> swap_scripts_;
+#endif
   std::vector<std::unique_ptr<DocumentStartJavaScript>> scripts_;
   std::vector<cppgc::WeakPersistent<JsBinding>> js_bindings_;
 

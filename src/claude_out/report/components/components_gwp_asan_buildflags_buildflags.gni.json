@@ -1,0 +1,49 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/components/gwp_asan/buildflags/buildflags.gni.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/components/gwp_asan/buildflags/buildflags.gni",
+    "处理时间": "2025-11-05"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决状态": "全部解决"
+  },
+  "hunk详情": [
+    {
+      "hunk编号": 1,
+      "修改类型": "条件编译增强",
+      "风险等级": "低",
+      "冲突原因": "Arkweb在原有Chromium代码基础上增加了arkweb条件编译支持，以及arkweb_gwp_asan扩展配置",
+      "分析过程": {
+        "待添加行数": 7,
+        "待删除行数": 0,
+        "修改说明": "添加了两个条件编译块：1) is_arkweb条件导入features.gni；2) arkweb_gwp_asan条件扩展supported_platform定义",
+        "定位策略": "使用import语句和supported_platform定义作为锚点精确定位"
+      },
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "具体修改": [
+        "在第8行后添加: if (is_arkweb) { import('//arkweb/build/features/features.gni') }",
+        "在第20行后添加: if (defined(arkweb_gwp_asan)) { supported_platform = supported_platform || (arkweb_gwp_asan && !is_component_build && enable_frame_pointers) }"
+      ]
+    }
+  ],
+  "代码完整性验证": {
+    "语法检查": "通过",
+    "逻辑一致性": "通过",
+    "引入风险": "低风险 - 仅为条件编译扩展，不影响原有逻辑"
+  },
+  "合规性检查": {
+    ".rej文件完整性": "保持完整未被修改",
+    "未创建脚本文件": "确认",
+    "未创建辅助文件": "确认",
+    "仅在指定目录创建JSON报告": "确认"
+  },
+  "总结": {
+    "处理结果": "成功将Arkweb的侵入式修改精确应用到Arkweb141源文件中",
+    "代码影响": "扩展了GWP-ASan功能的平台支持条件，为Arkweb项目提供了定制化的编译配置",
+    "建议": "建议在后续编译测试中验证arkweb_gwp_asan功能的正确性"
+  }
+}

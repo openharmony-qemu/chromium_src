@@ -297,6 +297,10 @@ class SkiaOutputDeviceBufferQueueTest : public TestOnGpu {
   }
 
   void SetUpOnGpu() override {
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+    gl::init::InitializeGLNoExtensionsOneOff(
+      /*init_bindings=*/true, /*gpu_preference=*/gl::GpuPreference::kDefault);
+#endif
     presenter_ = base::MakeRefCounted<MockPresenter>();
     memory_tracker_ = base::MakeRefCounted<gpu::MemoryTracker>();
     shared_image_factory_ = std::make_unique<gpu::SharedImageFactory>(

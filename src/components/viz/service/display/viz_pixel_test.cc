@@ -7,6 +7,10 @@
 #include "build/build_config.h"
 #include "ui/base/ui_base_features.h"
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "ui/gl/init/gl_factory.h"
+#endif
+
 namespace viz {
 
 // static

@@ -12,6 +12,7 @@
 #include <variant>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/compiler_specific.h"
 #include "base/feature_list.h"
 #include "base/memory/raw_ptr.h"
@@ -89,6 +90,10 @@ class AutofillAgentExt;
 class AutofillAgent : public content::RenderFrameObserver,
                       public blink::WebAutofillClient,
                       public mojom::AutofillAgent {
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  friend class AutofillAgentExt;
+#endif
+
  public:
   static constexpr base::TimeDelta kFormsSeenThrottle = base::Milliseconds(100);
 

@@ -54,7 +54,11 @@ std::vector<uint8_t> SerializeUnindexedRulesetWithMultipleRules(
 
 std::vector<uint8_t> SerializeIndexedRulesetWithMultipleRules(
     const std::vector<proto::UrlRule>& rules) {
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  ArkWebRulesetIndexerExt indexer;
+#else
   RulesetIndexer indexer;
+#endif
   for (const auto& rule : rules) {
     EXPECT_TRUE(indexer.AddUrlRule(rule));
   }

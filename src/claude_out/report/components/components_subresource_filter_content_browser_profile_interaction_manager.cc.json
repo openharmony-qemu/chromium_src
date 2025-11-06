@@ -1,0 +1,78 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/components/subresource_filter/content/browser/profile_interaction_manager.cc.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/components/subresource_filter/content/browser/profile_interaction_manager.cc",
+    "处理时间": "2025-11-05"
+  },
+  "处理总结": {
+    "总hunk数量": 3,
+    "成功解决的hunk数量": 3,
+    "未能解决的hunk数量": 0,
+    "解决状态": "全部解决"
+  },
+  "hunk详情": [
+    {
+      "hunk_id": 1,
+      "描述": "在OnAdsViolationTriggered函数末尾添加#endif",
+      "冲突原因": "Arkweb132的广告拦截功能需要条件编译支持",
+      "修改内容": {
+        "添加的行": ["#endif"],
+        "删除的行": [],
+        "锚点": "profile_context_->ads_intervention_manager()->TriggerAdsInterventionForUrlOnSubsequentLoads(url, triggered_violation);"
+      },
+      "风险分析": "低风险 - 这是一个简单的条件编译结束标记，与已存在的#if BUILDFLAG(ARKWEB_ADBLOCK)配对",
+      "置信度": "高 - 能够精确匹配上下文位置",
+      "处理策略": "在第108行广告干预触发代码后添加#endif",
+      "处理结果": "已成功应用"
+    },
+    {
+      "hunk_id": 2,
+      "描述": "在OnPageActivationComputed函数添加Arkweb扩展逻辑",
+      "冲突原因": "Arkweb132使用了扩展的页面激活计算逻辑",
+      "修改内容": {
+        "添加的行": [
+          "#if BUILDFLAG(ARKWEB_ADBLOCK)",
+          "  return OnPageActivationComputedExt(navigation_handle, initial_activation_level);",
+          "#else"
+        ],
+        "删除的行": [],
+        "锚点": "CHECK(IsInSubresourceFilterRoot(navigation_handle));"
+      },
+      "风险分析": "中等风险 - 这会完全替换原有的激活计算逻辑，需要确保OnPageActivationComputedExt函数已定义",
+      "置信度": "高 - 上下文匹配精确",
+      "处理策略": "在函数开始处添加条件编译，使用Arkweb扩展逻辑替代原逻辑，在函数结尾添加#endif",
+      "处理结果": "已成功应用"
+    },
+    {
+      "hunk_id": 3,
+      "描述": "在MaybeShowNotification函数中添加profile_context_空指针检查",
+      "冲突原因": "Arkweb132在使用profile_context_前增加了安全检查",
+      "修改内容": {
+        "添加的行": [
+          "#if BUILDFLAG(ARKWEB_ADBLOCK)",
+          "  if (profile_context_ &&",
+          "      profile_context_->settings_manager()->ShouldShowUIForSite(",
+          "          top_level_url)) {",
+          "#else"
+        ],
+        "删除的行": [],
+        "锚点": "const GURL& top_level_url = page_->GetMainDocument().GetLastCommittedURL();"
+      },
+      "风险分析": "低风险 - 这是一个防御性编程修改，增加了空指针检查，提高代码健壮性",
+      "置信度": "高 - 上下文匹配精确",
+      "处理策略": "在if条件处添加条件编译，Arkweb版本包含额外的profile_context_空指针检查",
+      "处理结果": "已成功应用"
+    }
+  ],
+  "处理原则遵循情况": {
+    "不添加上下文": "严格遵循 - 仅添加了.rej文件中+开头的行",
+    "不创建脚本文件": "严格遵循 - 未创建任何脚本文件",
+    "不修改.rej文件": "严格遵循 - .rej文件保持完整未被修改",
+    "精确原子化应用": "严格遵循 - 每个hunk的修改都精确应用到源文件"
+  },
+  "代码完整性检查": {
+    "语法检查": "通过 - 所有添加的代码语法正确",
+    "逻辑检查": "通过 - 条件编译配对正确",
+    "功能影响": "Arkweb广告拦截功能已正确集成"
+  }
+}

@@ -255,7 +255,7 @@ void OHOSAudioOutputStream::OnResume() {
     }
     return;
   }
-  if(callback_ && audio_task_runner_) {
+  if (callback_ && audio_task_runner_) {
     LOG(INFO) << "[Oneshot] try to restart stream";
     audio_task_runner_->PostTask(
       FROM_HERE, base::BindOnce(&OHOSAudioOutputStream::Start,

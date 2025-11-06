@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//build/buildflag_header.gni")
 import("//build/config/avx512.gni")
 import("//build/config/compiler/compiler.gni")
@@ -105,7 +106,7 @@ config("skia_config") {
       "SK_GAMMA_EXPONENT=1.2",
       "SK_GAMMA_CONTRAST=0.2",
     ]
-  } else if (is_android) {
+  } else if (is_android || is_ohos) {
     defines += [
       "SK_BUILD_FOR_ANDROID",
       "USE_CHROMIUM_SKIA",
@@ -113,7 +114,22 @@ config("skia_config") {
       "SK_GAMMA_EXPONENT=1.4",
       "SK_GAMMA_CONTRAST=0.0",
     ]
-  } else if (is_mac) {
+  }
+
+  # TODO: ohos use skia to be adapted
+  if (is_arkweb) {
+    defines += [
+      "USE_CHROMIUM_SKIA",
+      "OHOS_SKIA_CACHE",
+      "SK_BUILD_FOR_OHOS",
+    ]
+
+    if (enable_ohos_bytrace) {
+      defines += [ "ENABLE_ARKWEB_SKIA_TRACE" ]
+    }
+  }
+
+  if (is_mac) {
     defines += [
       "SK_BUILD_FOR_MAC",
       "SK_GAMMA_SRGB",

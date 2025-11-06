@@ -210,6 +210,11 @@ WebEngineBrowserContext::WebEngineBrowserContext(
 {
   SimpleKeyMap::GetInstance()->Associate(this, &simple_factory_key_);
 
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
+  LOG(INFO) << "WebEngineBrowserContext SetBrowserProfileType, context : "
+      << reinterpret_cast<uintptr_t>(this) % 100000000
+      << " IsOffTheRecord : " << IsOffTheRecord();
+#endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
   profile_metrics::SetBrowserProfileType(
       this, IsOffTheRecord() ? profile_metrics::BrowserProfileType::kIncognito
                              : profile_metrics::BrowserProfileType::kRegular);

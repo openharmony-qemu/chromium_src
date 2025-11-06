@@ -191,6 +191,8 @@
 #include "ipc/ipc_message_templates.h"
 #include "ipc/ipc_message_utils.h"
 #include "ipc/param_traits_macros.h"
+
+#include "arkweb/build/features/features.h"
 #include "ipc/tracing_helpers.h"
 
 // Message macros collect arguments and funnel them into the common message

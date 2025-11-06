@@ -225,6 +225,7 @@ std::unique_ptr<BPFBasePolicy> SandboxSeccompBPF::PolicyForSandboxType(
           HardwareVideoDecodingProcessPolicy::ComputePolicyType(
               options.use_amd_specific_policies));
 #endif  // BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
+#if !BUILDFLAG(IS_OHOS)
 #if BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION)
     case sandbox::mojom::Sandbox::kHardwareVideoEncoding:
       // TODO(b/255554267): we're using the GPU process sandbox policy for now
@@ -232,6 +233,7 @@ std::unique_ptr<BPFBasePolicy> SandboxSeccompBPF::PolicyForSandboxType(
       // just for hardware video encoding.
       return GetGpuProcessSandbox(options, MremapPolicy::kBlock);
 #endif  // BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION)
+#endif
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 #if BUILDFLAG(IS_LINUX)
     case sandbox::mojom::Sandbox::kVideoEffects:
@@ -249,7 +251,9 @@ std::unique_ptr<BPFBasePolicy> SandboxSeccompBPF::PolicyForSandboxType(
       return std::make_unique<LibassistantProcessPolicy>();
 #endif  // BUILDFLAG(ENABLE_CROS_LIBASSISTANT)
 #endif  // BUILDFLAG(IS_CHROMEOS)
+#if !BUILDFLAG(IS_OHOS)
     case sandbox::mojom::Sandbox::kZygoteIntermediateSandbox:
+#endif
     case sandbox::mojom::Sandbox::kNoSandbox:
       NOTREACHED();
   }
@@ -296,14 +300,17 @@ void SandboxSeccompBPF::RunSandboxSanityChecks(
       CHECK_EQ(-1, syscall_ret);
       CHECK_EQ(EPERM, errno);
 #endif  // !defined(NDEBUG)
+#endif  // !BUILDFLAG(IS_OHOS)
       return;
     }
 #if BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
     case sandbox::mojom::Sandbox::kHardwareVideoDecoding:
 #endif  // BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
+#if !BUILDFLAG(IS_OHOS)
 #if BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION)
     case sandbox::mojom::Sandbox::kHardwareVideoEncoding:
 #endif  // BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION)
+#endif
 #if BUILDFLAG(IS_CHROMEOS)
     case sandbox::mojom::Sandbox::kIme:
     case sandbox::mojom::Sandbox::kTts:
@@ -329,7 +336,9 @@ void SandboxSeccompBPF::RunSandboxSanityChecks(
     case sandbox::mojom::Sandbox::kOnDeviceModelExecution:
     case sandbox::mojom::Sandbox::kUtility:
     case sandbox::mojom::Sandbox::kNoSandbox:
+#if !BUILDFLAG(IS_OHOS)
     case sandbox::mojom::Sandbox::kZygoteIntermediateSandbox:
+#endif
       // Otherwise, no checks required.
       return;
   }

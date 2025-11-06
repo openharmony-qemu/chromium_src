@@ -1,0 +1,101 @@
+{
+  "处理总结": {
+    "文件路径": "sandbox/policy/linux/sandbox_seccomp_bpf_linux.cc",
+    "总hunk数量": 5,
+    "成功解决的hunk数量": 5,
+    "未能解决的hunk数量": 0,
+    ".rej文件状态": "保持完整未被修改"
+  },
+  "每个hunk的处理详情": [
+    {
+      "hunk编号": 1,
+      "位置": "PolicyForSandboxType函数中的kHardwareVideoEncoding case",
+      "风险等级": "低风险",
+      "冲突原因": "Arkweb132在OHOS平台下需要禁用硬件视频编码功能",
+      "修改内容": {
+        "添加的行": [
+          "#if !BUILDFLAG(IS_OHOS)",
+          "#endif"
+        ]
+      },
+      "分析过程": "通过在源文件第228行和第236行添加条件编译指令，将kHardwareVideoEncoding相关代码包装在非OHOS平台的条件判断中",
+      "修改置信度": "高",
+      "处理策略": "成功应用",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 2,
+      "位置": "PolicyForSandboxType函数中的kZygoteIntermediateSandbox case",
+      "风险等级": "低风险",
+      "冲突原因": "Arkweb132在OHOS平台下不需要Zygote中间沙箱功能",
+      "修改内容": {
+        "添加的行": [
+          "#if !BUILDFLAG(IS_OHOS)",
+          "#endif"
+        ]
+      },
+      "分析过程": "在源文件第254-256行添加条件编译指令，将kZygoteIntermediateSandbox case包装在非OHOS平台的条件判断中",
+      "修改置信度": "高",
+      "处理策略": "成功应用",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 3,
+      "位置": "RunSandboxSanityChecks函数中kGpu case的结尾",
+      "风险等级": "低风险",
+      "冲突原因": "为OHOS平台添加的条件编译块需要对应的结束指令",
+      "修改内容": {
+        "添加的行": [
+          "#endif  // !BUILDFLAG(IS_OHOS)"
+        ]
+      },
+      "分析过程": "在源文件第303行添加endif指令，用于关闭之前为OHOS平台添加的条件编译块",
+      "修改置信度": "高",
+      "处理策略": "成功应用",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 4,
+      "位置": "RunSandboxSanityChecks函数中的kHardwareVideoEncoding case",
+      "风险等级": "低风险",
+      "冲突原因": "Arkweb132在OHOS平台下需要禁用硬件视频编码的沙箱检查",
+      "修改内容": {
+        "添加的行": [
+          "#if !BUILDFLAG(IS_OHOS)",
+          "#endif"
+        ]
+      },
+      "分析过程": "在源文件第309行和第313行添加条件编译指令，将kHardwareVideoEncoding相关沙箱检查代码包装在非OHOS平台的条件判断中",
+      "修改置信度": "高",
+      "处理策略": "成功应用",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 5,
+      "位置": "RunSandboxSanityChecks函数末尾的kZygoteIntermediateSandbox case",
+      "风险等级": "低风险",
+      "冲突原因": "Arkweb132在OHOS平台下不需要Zygote中间沙箱的检查",
+      "修改内容": {
+        "添加的行": [
+          "#if !BUILDFLAG(IS_OHOS)",
+          "#endif"
+        ]
+      },
+      "分析过程": "在源文件第339行和第341行添加条件编译指令，将kZygoteIntermediateSandbox相关沙箱检查代码包装在非OHOS平台的条件判断中",
+      "修改置信度": "高",
+      "处理策略": "成功应用",
+      "解决状态": "已解决"
+    }
+  ],
+  "总体风险评估": {
+    "风险等级": "低风险",
+    "风险说明": "所有修改都是条件编译指令，用于在OHOS平台下禁用特定功能。这些修改不会影响非OHOS平台的现有功能，符合平台适配的常规做法。",
+    "建议": "建议人工重点检查条件编译的配对关系，确保每个#if都有对应的#endif"
+  },
+  "修改特点": {
+    "主要修改类型": "条件编译适配",
+    "平台适配目标": "OpenHarmony (OHOS)",
+    "修改模式": "功能禁用式适配",
+    "代码污染风险": "无"
+  }
+}

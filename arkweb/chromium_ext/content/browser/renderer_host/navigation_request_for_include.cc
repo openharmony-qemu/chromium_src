@@ -22,8 +22,7 @@ void NavigationRequest::StartNavigationExt() {
     int32_t usage_scenario =
         web_contents->GetOrCreateWebPreferences().usage_scenario;
     LOG(URL) << "start a navigation url: "
-             << url::LogUtils::ConvertUrl(common_params_->url.spec(),
-                                          usage_scenario)
+             << common_params_->url.spec()
              << " is_browser_initiated_: "
              << commit_params_->is_browser_initiated
              << " was_redirected_: " << was_redirected_;

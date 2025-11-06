@@ -98,9 +98,7 @@ void NetworkServiceNetworkDelegateExt::RecordErrorInfo(net::URLRequest* request,
         url_info = url_info.substr(0, url_print_len);
         url_info.append("...");
       }
-      LOG(URL) << "final url "
-               << url::LogUtils::ConvertUrl(url_info, request->usage_scenario())
-               << ostr.str();
+      LOG(URL) << "final url " << url_info << ostr.str();
     }
   }
 #endif

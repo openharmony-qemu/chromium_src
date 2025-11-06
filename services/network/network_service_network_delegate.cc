@@ -175,9 +175,7 @@ int NetworkServiceNetworkDelegate::OnHeadersReceived(
                        << " error code: "
                        << original_response_headers->response_code();
     if (!network_context_->AsArkWebNetworkContextExt()->IsStrictLogMode()) {
-      LOG(URL) << "resource : "
-               << url::LogUtils::ConvertUrl(request->url().spec(),
-                                            request->usage_scenario())
+      LOG(URL) << "resource : " << request->url().spec()
                << " error code: " << original_response_headers->response_code();
     }
 #endif

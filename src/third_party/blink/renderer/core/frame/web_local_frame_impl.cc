@@ -288,6 +288,10 @@
 #include "third_party/blink/renderer/core/layout/layout_font_accessor_win.h"
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/frame/web_local_frame_impl_for_include.cc"
+#endif
+
 #if BUILDFLAG(IS_IOS)
 #include "third_party/blink/renderer/core/editing/dom_selection.h"
 #include "third_party/blink/renderer/core/page/autoscroll_controller.h"

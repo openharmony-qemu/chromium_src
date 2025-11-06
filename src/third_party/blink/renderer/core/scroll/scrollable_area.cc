@@ -317,6 +317,14 @@ bool ScrollableArea::SetScrollOffset(const ScrollOffset& offset,
     return false;
   }
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  if (!scrollable_area_utils_->GetScrollable()) {
+    std::move(run_scroll_complete_callbacks)
+        .Run(ScrollableArea::ScrollCompletionMode::kFinished);
+    return false;
+  }
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
   // If this was not a targeted scroll, the associated scroll-marker-group
   // should stop pinning its selected scroll-marker.
   if (!targeted_scroll) {
@@ -835,6 +843,9 @@ void ScrollableArea::RecalculateOverlayScrollbarColorScheme() {
           background_color.GetLightness(Color::ColorSpace::kHSL);
       overlay_theme = lightness <= 0.5f ? mojom::blink::ColorScheme::kDark
                                         : mojom::blink::ColorScheme::kLight;
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+      overlay_scrollbar_color_scheme__ = static_cast<unsigned>(overlay_theme);
+#endif  // ARKWEB_SCROLLBAR
     }
   }
 

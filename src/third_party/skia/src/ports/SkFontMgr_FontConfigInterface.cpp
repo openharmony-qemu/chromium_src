@@ -254,6 +254,10 @@ protected:
                                            SkFontStyle requestedStyle) const override {
         return this->onMatchFamilyStyle(requestedFamilyName, requestedStyle);
     }
+
+#if BUILDFLAG(ARKWEB_THEME_FONT)
+    void onInvalidateThemeFont(int fd) override {}
+#endif
 };
 
 SK_API sk_sp<SkFontMgr> SkFontMgr_New_FCI(sk_sp<SkFontConfigInterface> fci,

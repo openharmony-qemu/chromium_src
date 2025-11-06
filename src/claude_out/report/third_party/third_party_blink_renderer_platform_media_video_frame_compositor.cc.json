@@ -1,0 +1,52 @@
+{
+  "file_info": {
+    "rej_file": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/platform/media/video_frame_compositor.cc.rej",
+    "source_file": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/platform/media/video_frame_compositor.cc",
+    "total_hunks": 1,
+    "resolved_hunks": 1,
+    "unresolved_hunks": 0,
+    "rej_file_intact": true
+  },
+  "hunk_details": [
+    {
+      "hunk_number": 1,
+      "line_range": "-379,10 +388,14",
+      "status": "已解决",
+      "context_info": {
+        "function": "ProcessNewFrame",
+        "anchor_lines": [
+          "if (!frame || (GetCurrentFrame() && !repaint_duplicate_frame &&",
+          "               frame->unique_id() == GetCurrentFrame()->unique_id())) {",
+          "  return false;",
+          "}",
+          "// TODO(crbug.com/1447318): Add other cases where the frame is not readable."
+        ]
+      },
+      "changes": {
+        "added_lines": [
+          "#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)",
+          "  StatisticsTotalFreeTime(is_playing_, last_frame_time_, total_freeze_time_);",
+          "#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE"
+        ],
+        "removed_lines": []
+      },
+      "analysis": {
+        "conflict_reason": "Chromium 141 版本中 ProcessNewFrame 函数的代码结构与 Arkweb 132 的修改存在差异",
+        "localization_method": "使用函数签名和周围的代码逻辑作为锚点，找到 ProcessNewFrame 函数中的正确插入位置",
+        "confidence_level": "高",
+        "risk_assessment": {
+          "functional_risk": "低 - 这是一个条件编译的增强功能，仅在 ARKWEB_MEDIA_CAPABILITIES_ENHANCE 标志启用时才会编译",
+          "compatibility_risk": "中 - 需要确保相关的头文件和函数声明在 Arkweb 141 中仍然存在",
+          "integration_risk": "低 - 代码被放置在原有逻辑流程中的适当位置，不会改变原有的执行逻辑"
+        },
+        "modification_strategy": "在返回 false 语句之后、TODO 注释之前插入条件编译的统计功能代码"
+      }
+    }
+  ],
+  "summary": {
+    "conflict_analysis": "这是一个典型的功能增强代码冲突，Arkweb 132 在 ProcessNewFrame 函数中添加了媒体性能统计功能",
+    "resolution_approach": "通过匹配函数语义和代码结构，成功在 Arkweb 141 的对应位置插入了条件编译的统计代码",
+    "technical_considerations": "添加的代码使用了 is_playing_, last_frame_time_, total_freeze_time_ 等成员变量，需要确保这些变量在类中正确定义",
+    "verification_needed": "建议检查 1) ARKWEB_MEDIA_CAPABILITIES_ENHANCE 编译标志是否定义 2) StatisticsTotalFreeTime 函数是否声明和实现 3) 相关成员变量是否在类中定义"
+  }
+}

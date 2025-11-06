@@ -396,6 +396,11 @@
 #include "third_party/blink/renderer/platform/wtf/text/strcat.h"
 #include "third_party/blink/renderer/platform/wtf/text/string_buffer.h"
 #include "third_party/blink/renderer/platform/wtf/text/text_encoding_registry.h"
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/dom/document_utils.h"
+#endif
+
 #include "third_party/blink/renderer/platform/wtf/text/utf16.h"
 
 namespace blink {

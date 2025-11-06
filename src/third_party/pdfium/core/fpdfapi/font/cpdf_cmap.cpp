@@ -398,7 +398,7 @@ int CPDF_CMap::GetCharSize(uint32_t charcode) const {
       }
       return 4;
   }
-  NOTREACHED();
+  NOTREACHED_NORETURN();
 }
 
 size_t CPDF_CMap::CountChar(ByteStringView pString) const {

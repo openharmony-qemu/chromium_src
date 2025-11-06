@@ -1,0 +1,48 @@
+{
+  "file_path": "third_party/blink/renderer/core/css/element_rule_collector.cc",
+  "analysis_timestamp": "2025-11-04",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "maintained",
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "description": "添加Arkweb条件编译包含语句",
+      "risk_level": "低风险",
+      "conflict_reason": "Chromium 141版本增加了额外的include语句（probe/core_probes.h），导致插入位置发生变化",
+      "analysis_process": "通过分析.rej文件中的上下文锚点，确定了需要添加的Arkweb条件编译包含语句的位置。在fragment_anchor.h和computed_style.h之间找到了合适的插入点，并成功应用了修改。",
+      "confidence": 100,
+      "resolution_strategy": "直接应用",
+      "status": "已解决",
+      "added_lines": [
+        "#if BUILDFLAG(IS_ARKWEB)",
+        "#include \"arkweb/chromium_ext/third_party/blink/renderer/core/css/element_rule_collector_for_include.cc\"",
+        "#endif"
+      ],
+      "removed_lines": [],
+      "positioning": "在第73行（computed_style.h包含之后）和第75行（namespace blink之前）之间成功插入"
+    }
+  ],
+  "summary": {
+    "overall_status": "完全解决",
+    "modifications_applied": [
+      "成功添加了Arkweb条件编译包含语句"
+    ],
+    "compliance": {
+      "no_context_lines_added": true,
+      "no_script_files_created": true,
+      "no_auxiliary_files_created": true,
+      "rej_file_untouched": true,
+      "only_atomic_modifications": true,
+      "correct_output_directory": true
+    }
+  },
+  "verification": {
+    "rej_file_exists": true,
+    "rej_file_modified": false,
+    "source_file_modified": true,
+    "modifications_match_rej": true,
+    "no_syntax_errors": true
+  }
+}

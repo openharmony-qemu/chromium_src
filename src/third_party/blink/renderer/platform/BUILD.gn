@@ -2128,8 +2128,15 @@ static_library("test_support") {
     "widget/compositing/test/stub_widget_base_client.h",
   ]
 
+  if (use_libfuzzer) {
+    sources += [
+      "testing/fuzzed_data_provider.cc",
+      "testing/fuzzed_data_provider.h",
+    ]
+  }
+
   # fuzzed_data_provider may not work with a custom toolchain.
-  if (custom_toolchain == "" && is_clang) {
+  if (custom_toolchain == "" && is_clang && !is_arkweb) {
     sources += [
       "testing/fuzzed_data_provider.cc",
       "testing/fuzzed_data_provider.h",
@@ -2480,6 +2487,12 @@ source_set("blink_platform_unittests_sources") {
     "widget/input/widget_input_handler_manager_unittest.cc",
   ]
 
+  if (arkweb_unittests) {
+    sources += arkweb_native_event_queue_test_sources
+    sources += arkweb_third_party_blink_renderer_platform_widget_test_sources
+    sources += arkweb_third_party_blink_renderer_platform_media_unittest_sources
+  }
+
   if (use_dawn) {
     sources += [ "graphics/gpu/webgpu_swap_buffer_provider_test.cc" ]
   }
@@ -2791,6 +2804,7 @@ source_set("blink_image_decoder_fuzzer_test_support") {
 # Fuzzer for blink::unicode::MathVariant.
 fuzzer_test("math_transform_fuzzer") {
   sources = [ "math_transform_fuzzer.cc" ]
+  include_dirs = ["//third_party/blink/renderer/platform/testing"]
   deps = [
     ":blink_fuzzer_test_support",
     ":platform",

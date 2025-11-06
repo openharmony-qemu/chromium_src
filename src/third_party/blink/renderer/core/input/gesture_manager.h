@@ -128,6 +128,10 @@ class CORE_EXPORT GestureManager final
   bool drag_in_progress_ = false;
 
   const Member<SelectionController> selection_controller_;
+#if BUILDFLAG(IS_ARKWEB)
+  friend class GestureManagerUtils;
+  Member<GestureManagerUtils> utils_;
+#endif
 };
 
 }  // namespace blink

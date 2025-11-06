@@ -79,6 +79,7 @@ static_library("handler") {
     "../snapshot",
     "../tools:tool_support",
     "//cef/libcef/features:buildflags",
+    "//third_party:huawei_securec",
   ]
 
   if (crashpad_is_win) {

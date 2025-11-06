@@ -1,0 +1,73 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/core/web_test/web_test_web_frame_widget_impl.h.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/core/web_test/web_test_web_frame_widget_impl.h",
+    "处理时间": "2025-11-04"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "rej文件完整性": {
+    "状态": "保持完整",
+    "说明": ".rej文件未被修改或删除，符合黄金法则要求"
+  },
+  "hunk处理详情": [
+    {
+      "hunk索引": 1,
+      "冲突原因": "Arkweb132版本添加了ARKWEB_TEST条件编译的测试相关功能函数，这些是Arkweb的侵入式修改",
+      "修改类型": "新增Arkweb特有功能函数",
+      "风险分析": {
+        "风险等级": "低",
+        "说明": "添加的功能都被包含在#if BUILDFLAG(ARKWEB_TEST)条件编译块中，只在测试环境中启用，不会影响正式版本",
+        "潜在影响": "仅在启用ARKWEB_TEST宏时编译这些测试功能函数"
+      },
+      "分析过程": {
+        "定位策略": "使用rej文件中提供的上下文行精确定位",
+        "锚点识别": "使用'FrameWidgetTestHelper* GetFrameWidgetTestHelperForTesting() override;'作为主要锚点",
+        "定位结果": "成功在源文件第59行后找到插入位置",
+        "修改操作": "在第64行RequestDecode方法定义后添加了Arkweb测试功能函数块"
+      },
+      "修改置信度": {
+        "置信度": "高",
+        "依据": "上下文匹配度100%，插入位置明确，代码语法正确"
+      },
+      "解决状态": "已解决",
+      "处理策略": "直接应用修改，将所有+开头的行添加到源文件的合适位置",
+      "添加内容统计": {
+        "函数数量": 14,
+        "代码行数": 18,
+        "主要功能": [
+          "GetOverScrollOffset - 获取过度滚动偏移",
+          "OnTextRecognized - 文本识别回调",
+          "GetImageRect - 获取图像矩形区域",
+          "OnTextSelected - 文本选择回调",
+          "OnDestroyImageAnalyzerOverlay - 销毁图像分析器覆盖层",
+          "OnFoldStatusChanged - 折叠状态变化回调",
+          "NotifyOverlayStateChanged - 通知覆盖层状态变化",
+          "OnDataDetectorSelectText - 数据检测器选择文本",
+          "SelectRangeV2 - 范围选择V2版本",
+          "CleanFocusCache - 清理焦点缓存",
+          "TouchHitTest - 触摸命中测试",
+          "MouseHitTest - 鼠标命中测试",
+          "GetInputElementAttributes - 获取输入元素属性",
+          "RegisterClippedVisualViewportSelectionBounds - 注册裁剪视口选择边界"
+        ]
+      }
+    }
+  ],
+  "代码质量检查": {
+    "语法检查": "通过",
+    "缩进检查": "通过",
+    "条件编译检查": "通过，所有新增代码都在#if BUILDFLAG(ARKWEB_TEST)块内",
+    "函数签名检查": "通过，所有函数都有正确的override标记"
+  },
+  "总结": {
+    "处理结果": "成功应用了.rej文件中的所有修改",
+    "合规性": "严格遵守了黄金法则，只添加了+开头的行，未添加任何上下文行",
+    "文件完整性": ".rej文件保持完整未被修改",
+    "功能影响": "为Arkweb141添加了完整的测试相关功能函数支持，这些功能仅在ARKWEB_TEST启用时编译"
+  }
+}

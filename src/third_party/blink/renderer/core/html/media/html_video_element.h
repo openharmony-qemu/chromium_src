@@ -155,6 +155,9 @@ class CORE_EXPORT HTMLVideoElement final
   void OnPictureInPictureStateChange() final;
   void SetPersistentState(bool persistent) final;
 
+#if BUILDFLAG(ARKWEB_PIP)
+  void UpdatePictureInPictureSurface() final;
+#endif
   // Used by the PictureInPictureController as callback when the video element
   // enters or exits Picture-in-Picture state.
   void OnEnteredPictureInPicture();
@@ -298,6 +301,10 @@ class CORE_EXPORT HTMLVideoElement final
   std::unique_ptr<CanvasResourceProvider> resource_provider_;
   bool allow_accelerated_images_ = true;
   HeapTaskRunnerTimer<HTMLVideoElement> cache_deleting_timer_;
+#if BUILDFLAG(ARKWEB_PIP)
+  bool pip_down_ = true;
+  bool pip_active_ = false;
+#endif
 
   // Paint flags set based on CSS properties, which must be propagated to the
   // cc::Layer.

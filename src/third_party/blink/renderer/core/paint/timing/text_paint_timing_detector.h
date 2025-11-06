@@ -124,6 +124,12 @@ class CORE_EXPORT TextPaintTimingDetector final
   void ReportLargestIgnoredText();
   void Trace(Visitor*) const;
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void SetForBlankless();
+  uint32_t GetFrameIndex() const;
+  void SetFrameIndex(uint32_t frame_index);
+#endif
+
  private:
   friend class LargestContentfulPaintCalculatorTest;
 

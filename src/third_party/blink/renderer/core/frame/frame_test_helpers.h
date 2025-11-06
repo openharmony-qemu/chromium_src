@@ -225,6 +225,25 @@ class TestWebFrameWidgetHost : public mojom::blink::WidgetHost,
       mojo::PendingRemote<mojom::blink::WidgetInputHandlerHost> host,
       bool from_viz);
 
+#if BUILDFLAG(IS_OHOS)
+  void CreateOverlay(const ::SkBitmap& image,
+                     const ::gfx::Rect& image_rect,
+                     const ::gfx::Point& touch_point) override {}
+  void OnOverlayStateChanged(const ::gfx::Rect& image_rect) override {};
+  void GetVisibleRectToWeb(GetVisibleRectToWebCallback callback) override {}
+#endif
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void DidNativeEmbedEvent(
+      mojom::blink::NativeEmbedTouchEventPtr event) override {}
+  void DidNativeEmbedMouseEvent(
+      mojom::blink::NativeEmbedMouseEventPtr event) override {}
+  void GetWordSelection(const WTF::String& text,
+                        int8_t offset,
+                        GetWordSelectionCallback callback) override {}
+  void SendCurrentLanguage(const WTF::String& ans) override {}
+#endif  // ARKWEB_UNITTESTS
+
  private:
   size_t cursor_set_count_ = 0;
   size_t virtual_keyboard_request_count_ = 0;
@@ -233,11 +252,19 @@ class TestWebFrameWidgetHost : public mojom::blink::WidgetHost,
   mojo::AssociatedReceiver<mojom::blink::FrameWidgetHost> frame_receiver_{this};
 };
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+class TestWebFrameWidget : public WebFrameWidgetImplExt {
+#else
 class TestWebFrameWidget : public WebFrameWidgetImpl {
+#endif
  public:
   template <typename... Args>
   explicit TestWebFrameWidget(Args&&... args)
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+      : WebFrameWidgetImplExt(std::forward<Args>(args)...) {}
+#else
       : WebFrameWidgetImpl(std::forward<Args>(args)...) {}
+#endif
   ~TestWebFrameWidget() override = default;
 
   TestWebFrameWidgetHost& WidgetHost() { return *widget_host_; }

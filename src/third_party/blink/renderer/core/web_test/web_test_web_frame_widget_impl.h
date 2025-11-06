@@ -63,6 +63,25 @@ class WebTestWebFrameWidgetImpl : public WebFrameWidgetImpl,
                      base::OnceCallback<void(bool)>,
                      bool speculative) override;
 
+#if BUILDFLAG(ARKWEB_TEST)
+    gfx::Vector2dF GetOverScrollOffset() override { return gfx::Vector2dF(); }
+    void OnTextRecognized(WTF::Vector<::blink::mojom::blink::TextRecognizeResultPtr> res, float scale) override {}
+    void GetImageRect(GetImageRectCallback callback) override {}
+    void OnTextSelected(bool flag) override {}
+    void OnDestroyImageAnalyzerOverlay() override {}
+    void OnFoldStatusChanged(uint32_t foldstatus) override {}
+    void NotifyOverlayStateChanged() override {}
+    void OnDataDetectorSelectText() override {}
+    void SelectRangeV2(const ::gfx::Point& position, bool is_base) override {}
+    void CleanFocusCache() override {}
+    void TouchHitTest(const WebPointerEvent& event, size_t i) override {}
+    void MouseHitTest(const WebMouseEvent& event, int32_t button) override {}
+    void GetInputElementAttributes(
+        HashMap<String, String>& attributes) const override {}
+    void RegisterClippedVisualViewportSelectionBounds(
+          gfx::Rect clipped_selection_bounds) override {}
+#endif
+
  private:
   // WebFrameWidgetImpl overrides.
   void BindLocalRoot(WebLocalFrame&) override;

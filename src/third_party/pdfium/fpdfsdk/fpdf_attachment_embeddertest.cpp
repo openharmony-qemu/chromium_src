@@ -148,7 +148,7 @@ TEST_F(FPDFAttachmentEmbedderTest, AddAttachments) {
   EXPECT_FALSE(FPDFAttachment_SetFile(attachment, document(), nullptr, 10));
 
   // Set the new attachment's file.
-  static constexpr char kContents1[] = "Hello!";
+  constexpr char kContents1[] = "Hello!";
   EXPECT_TRUE(FPDFAttachment_SetFile(attachment, document(), kContents1,
                                      UNSAFE_TODO(strlen(kContents1))));
   EXPECT_EQ(3, FPDFDoc_GetAttachmentCount(document()));
@@ -175,7 +175,7 @@ TEST_F(FPDFAttachmentEmbedderTest, AddAttachments) {
   file_name = GetFPDFWideString(L"z.txt");
   attachment = FPDFDoc_AddAttachment(document(), file_name.get());
   ASSERT_TRUE(attachment);
-  static constexpr char kContents2[] = "World!";
+  constexpr char kContents2[] = "World!";
   EXPECT_TRUE(FPDFAttachment_SetFile(attachment, document(), kContents2,
                                      UNSAFE_TODO(strlen(kContents2))));
   EXPECT_EQ(4, FPDFDoc_GetAttachmentCount(document()));
@@ -209,18 +209,18 @@ TEST_F(FPDFAttachmentEmbedderTest, AddAttachmentsWithParams) {
   FPDF_ATTACHMENT attachment =
       FPDFDoc_AddAttachment(document(), file_name.get());
   ASSERT_TRUE(attachment);
-  static constexpr char kContents[] = "Hello World!";
+  constexpr char kContents[] = "Hello World!";
   EXPECT_TRUE(FPDFAttachment_SetFile(attachment, document(), kContents,
                                      UNSAFE_TODO(strlen(kContents))));
 
   // Set the date to be an arbitrary value.
-  static constexpr wchar_t kDateW[] = L"D:20170720161527-04'00'";
+  constexpr wchar_t kDateW[] = L"D:20170720161527-04'00'";
   ScopedFPDFWideString ws_date = GetFPDFWideString(kDateW);
   EXPECT_TRUE(
       FPDFAttachment_SetStringValue(attachment, kDateKey, ws_date.get()));
 
   // Set the checksum to be an arbitrary value.
-  static constexpr wchar_t kCheckSumW[] = L"<ABCDEF01234567899876543210FEDCBA>";
+  constexpr wchar_t kCheckSumW[] = L"<ABCDEF01234567899876543210FEDCBA>";
   ScopedFPDFWideString ws_checksum = GetFPDFWideString(kCheckSumW);
   EXPECT_TRUE(FPDFAttachment_SetStringValue(attachment, kChecksumKey,
                                             ws_checksum.get()));
@@ -288,7 +288,7 @@ TEST_F(FPDFAttachmentEmbedderTest, AddAttachmentsToFileWithNoAttachments) {
   ASSERT_TRUE(attachment);
 
   // Set the new attachment's file.
-  static constexpr char kContents1[] = "Hello!";
+  constexpr char kContents1[] = "Hello!";
   EXPECT_TRUE(FPDFAttachment_SetFile(attachment, document(), kContents1,
                                      UNSAFE_TODO(strlen(kContents1))));
   EXPECT_EQ(1, FPDFDoc_GetAttachmentCount(document()));
@@ -315,7 +315,7 @@ TEST_F(FPDFAttachmentEmbedderTest, AddAttachmentsToFileWithNoAttachments) {
   file_name = GetFPDFWideString(L"z.txt");
   attachment = FPDFDoc_AddAttachment(document(), file_name.get());
   ASSERT_TRUE(attachment);
-  static constexpr char kContents2[] = "World!";
+  constexpr char kContents2[] = "World!";
   EXPECT_TRUE(FPDFAttachment_SetFile(attachment, document(), kContents2,
                                      UNSAFE_TODO(strlen(kContents2))));
   EXPECT_EQ(2, FPDFDoc_GetAttachmentCount(document()));

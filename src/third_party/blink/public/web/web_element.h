@@ -50,6 +50,7 @@ class Element;
 class Image;
 class LayoutBox;
 class WebLabelElement;
+class WebElementUtils;
 
 // Provides access to some properties of a DOM element node.
 class BLINK_EXPORT WebElement : public WebNode {
@@ -86,6 +87,11 @@ class BLINK_EXPORT WebElement : public WebNode {
   WebString AttributeLocalName(unsigned index) const;
   WebString AttributeValue(unsigned index) const;
   unsigned AttributeCount() const;
+
+  // Returns true if the element's contenteditable attribute is in the true
+  // state or in the plaintext-only state:
+  // https://html.spec.whatwg.org/multipage/interaction.html#attr-contenteditable
+  bool IsContentEditable() const;
 
   void Focus();
 
@@ -215,6 +221,7 @@ class BLINK_EXPORT WebElement : public WebNode {
  private:
   LayoutBox* GetScrollingBox() const;
   Image* GetImage();
+  raw_ptr<WebElementUtils> utils_;
 };
 
 DECLARE_WEB_NODE_TYPE_CASTS(WebElement);

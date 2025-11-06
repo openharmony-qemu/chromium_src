@@ -125,6 +125,9 @@ class ScrollMarkerGroupPseudoElement;
 class TapFriendlinessChecker;
 class TransformState;
 class WebPluginContainerImpl;
+#if BUILDFLAG(ARKWEB_MENU)
+class LocalFrameViewUtils;
+#endif
 struct DraggableRegionValue;
 struct NaturalSizingInfo;
 struct PhysicalRect;
@@ -1314,6 +1317,10 @@ class CORE_EXPORT LocalFrameView final
 #if DCHECK_IS_ON()
   bool is_updating_descendant_dependent_flags_;
   bool is_updating_layout_;
+#endif
+
+#if BUILDFLAG(ARKWEB_MENU)
+  LocalFrameViewUtils* utils_ = nullptr;
 #endif
 
 #if BUILDFLAG(IS_ANDROID)

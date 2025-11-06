@@ -1,21 +1,5 @@
 --- local_frame.cc	2025-10-20 19:53:00.382210134 +0800
 +++ local_frame.cc	2025-10-16 16:07:39.397094661 +0800
-@@ -429,11 +440,15 @@
-   CoreInitializer::GetInstance().InitLocalFrame(*this);
- 
-   GetInterfaceRegistry()->AddInterface(WTF::BindRepeating(
-       &LocalFrame::BindTextFragmentReceiver, WrapWeakPersistent(this)));
-   DCHECK(!mojo_handler_);
-+#if BUILDFLAG(IS_ARKWEB)
-+  mojo_handler_ = MakeGarbageCollected<ArkWebLocalFrameMojoHandlerExt>(*this);
-+#else
-   mojo_handler_ = MakeGarbageCollected<LocalFrameMojoHandler>(*this);
-+#endif
- 
-   SetOpenerDoNotNotify(opener);
-   loader_.Init(document_token, std::move(policy_container), storage_key,
-                document_ukm_source_id, creator_base_url);
- }
 @@ -1598,18 +1613,26 @@
    SetLayoutAndTextZoomFactors(layout_zoom_factor_, factor);
  }
@@ -43,19 +27,3 @@
    if (!document)
      return;
  
-@@ -1621,10 +1644,15 @@
-       return;
-   }
- 
-   bool layout_zoom_changed = (layout_zoom_factor != layout_zoom_factor_);
- 
-+#if BUILDFLAG(IS_ARKWEB)
-+  LocalFrameUtil::SetLayoutAndTextZoomFactorsExt(
-+      this, layout_zoom_factor, text_zoom_factor, layout_zoom_changed, page);
-+#endif
-+
-   layout_zoom_factor_ = layout_zoom_factor;
-   text_zoom_factor_ = text_zoom_factor;
- 
-   if (!GetDocument()->StandardizedBrowserZoomEnabled()) {
-     // Zoom factor will not be propagated via style resolution, it must be

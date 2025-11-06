@@ -150,7 +150,7 @@ source_set("fxge") {
     }
   }
 
-  if (is_android) {
+  if (is_android || is_ohos) {
     sources += [
       "android/cfpf_skiadevicemodule.cpp",
       "android/cfpf_skiadevicemodule.h",

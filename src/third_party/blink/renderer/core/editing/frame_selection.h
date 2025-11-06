@@ -69,6 +69,9 @@ enum class SelectionModifyDirection;
 enum class SelectionState;
 struct PaintInvalidatorContext;
 struct PhysicalRect;
+#if BUILDFLAG(ARKWEB_MENU)
+class FrameSelectionExt;
+#endif  // ARKWEB_MENU
 
 enum RevealExtentOption { kRevealExtent, kDoNotRevealExtent };
 
@@ -132,13 +135,18 @@ struct LayoutTextSelectionStatus {
   SelectionIncludeEnd include_end;
 };
 
-class CORE_EXPORT FrameSelection final
+class CORE_EXPORT FrameSelection
     : public GarbageCollected<FrameSelection> {
  public:
   explicit FrameSelection(LocalFrame&);
   FrameSelection(const FrameSelection&) = delete;
   FrameSelection& operator=(const FrameSelection&) = delete;
   ~FrameSelection();
+
+#if BUILDFLAG(ARKWEB_MENU)
+  friend class FrameSelectionExt;
+  virtual FrameSelectionExt* AsFrameSelectionExt() { return nullptr; }
+#endif  // ARKWEB_MENU
 
   bool IsAvailable() const;
   // You should not call |document()| when |!isAvailable()|.

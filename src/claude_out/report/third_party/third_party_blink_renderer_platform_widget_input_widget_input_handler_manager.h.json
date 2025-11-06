@@ -1,0 +1,67 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/platform/widget/input/widget_input_handler_manager.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/platform/widget/input/widget_input_handler_manager.h",
+    "处理时间": "2025-11-05"
+  },
+  "处理总结": {
+    "总hunk数量": 4,
+    "成功解决的hunk数量": 4,
+    "未能解决的hunk数量": 0,
+    ".rej文件保持完整": true,
+    "处理状态": "全部解决"
+  },
+  "hunk详情": [
+    {
+      "hunk编号": 1,
+      "风险等级": "低",
+      "冲突原因": "Arkweb132添加了WidgetInputHandlerManagerUtils头文件引用",
+      "分析过程": "在rej文件中发现需要添加#include \"third_party/blink/renderer/platform/widget/input/widget_input_handler_manager_utils.h\"，在源文件中找到了合适的位置（其他头文件引用之后）进行添加",
+      "修改置信度": "高",
+      "处理策略": "在第28行后添加了所需的include语句",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 2,
+      "风险等级": "低",
+      "冲突原因": "Arkweb132添加了WidgetInputHandlerManagerUtils友元类声明",
+      "分析过程": "在rej文件中发现需要添加friend class WidgetInputHandlerManagerUtils;，在源文件的public区域找到了合适的位置进行添加",
+      "修改置信度": "高",
+      "处理策略": "在public区域开始处添加了友元类声明",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 3,
+      "风险等级": "中",
+      "冲突原因": "Arkweb132添加了ARKWEB_SAME_LAYER条件编译的相关方法",
+      "分析过程": "在rej文件中发现需要添加4个Arkweb相关的方法（DidNativeEmbedEvent、TouchHitTest、DidNativeEmbedMouseEvent、MouseHitTest），都在#if BUILDFLAG(ARKWEB_SAME_LAYER)条件编译块内，在源文件的AsWeakPtr()方法后找到了合适位置",
+      "修改置信度": "高",
+      "处理策略": "在AsWeakPtr()方法后添加了完整的条件编译块和方法声明",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 4,
+      "风险等级": "低",
+      "冲突原因": "Arkweb132添加了manager_utils()访问方法和manager_utils_成员变量",
+      "分析过程": "在rej文件中发现需要添加manager_utils()方法和manager_utils_成员变量。manager_utils()方法添加在public区域，manager_utils_成员变量添加在private区域",
+      "修改置信度": "高",
+      "处理策略": "在public区域添加了manager_utils()方法，在private区域添加了manager_utils_成员变量",
+      "解决状态": "已解决"
+    }
+  ],
+  "处理原则遵守情况": {
+    "未添加上下文行": true,
+    "未生成脚本文件": true,
+    "未创建辅助文件": true,
+    "未使用外部工具": true,
+    "仅在指定目录创建JSON报告": true,
+    "未修改.rej文件": true,
+    "保持.rej文件完整性": true
+  },
+  "技术说明": {
+    "修改类型": "侵入式修改集成",
+    "主要功能": "为WidgetInputHandlerManager类添加Arkweb特有的同层渲染支持功能",
+    "影响范围": "添加了新的头文件引用、友元类声明、条件编译方法和成员变量",
+    "兼容性": "通过条件编译确保只在ARKWEB_SAME_LAYER启用时包含相关代码"
+  }
+}

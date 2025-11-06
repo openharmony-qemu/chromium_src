@@ -113,7 +113,7 @@ int CPSPrinterDriver::GetDeviceCaps(int caps_id) const {
     case FXDC_VERT_SIZE:
       return vert_size_;
     default:
-      NOTREACHED();
+      NOTREACHED_NORETURN();
   }
 }
 

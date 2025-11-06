@@ -23,6 +23,7 @@
 
 #include <inttypes.h>
 
+#include "arkweb/build/features/features.h"
 #include "base/debug/dump_without_crashing.h"
 #include "base/time/time.h"
 #include "build/build_config.h"

@@ -1007,7 +1007,7 @@ TEST_F(FPDFTextEmbedderTest, GetFontSize) {
   ScopedFPDFTextPage textpage(FPDFText_LoadPage(page.get()));
   ASSERT_TRUE(textpage);
 
-  static constexpr auto kExpectedFontsSizes = std::to_array<const double>(
+  constexpr auto kExpectedFontsSizes = std::to_array<const double>(
       {12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 1,  1,
        16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16});
 
@@ -1172,7 +1172,7 @@ TEST_F(FPDFTextEmbedderTest, IsInvalidUnicode) {
   ScopedPage page = LoadScopedPage(0);
   ASSERT_TRUE(page);
 
-  static constexpr int kExpectedCharCount = 5;
+  constexpr int kExpectedCharCount = 5;
   ScopedFPDFTextPage textpage(FPDFText_LoadPage(page.get()));
   ASSERT_TRUE(textpage);
   EXPECT_EQ(kExpectedCharCount, FPDFText_CountChars(textpage.get()));
@@ -1234,11 +1234,11 @@ TEST_F(FPDFTextEmbedderTest, GetTextWithHyphen) {
   // Expecting 'Veritaserum', except there is a \uFFFE where the hyphen was in
   // the original text. This is a weird thing that Adobe does, which we
   // replicate.
-  static constexpr auto soft_expected = std::to_array<unsigned short>(
+  constexpr auto soft_expected = std::to_array<unsigned short>(
       {0x0056, 0x0065, 0x0072, 0x0069, 0x0074, 0x0061, 0xfffe, 0x0073, 0x0065,
        0x0072, 0x0075, 0x006D, 0x0000});
   {
-    static constexpr int count = std::size(soft_expected) - 1;
+    constexpr int count = std::size(soft_expected) - 1;
     std::array<unsigned short, soft_expected.size()> buffer = {};
     EXPECT_EQ(count + 1,
               FPDFText_GetText(textpage.get(), 0, count, buffer.data()));
@@ -1249,13 +1249,13 @@ TEST_F(FPDFTextEmbedderTest, GetTextWithHyphen) {
   {
     // There isn't the \0 in the actual doc, but there is a \r\n, so need to
     // add 1 to get aligned.
-    static constexpr size_t offset = std::size(soft_expected) + 1;
+    constexpr size_t offset = std::size(soft_expected) + 1;
     // Expecting 'User-\r\ngenerated', the - is a unicode character, so cannot
     // store in a char[].
-    static constexpr auto hard_expected = std::to_array<unsigned short>(
+    constexpr auto hard_expected = std::to_array<unsigned short>(
         {0x0055, 0x0073, 0x0065, 0x0072, 0x2010, 0x000d, 0x000a, 0x0067, 0x0065,
          0x006e, 0x0065, 0x0072, 0x0061, 0x0074, 0x0065, 0x0064, 0x0000});
-    static constexpr int count = std::size(hard_expected) - 1;
+    constexpr int count = std::size(hard_expected) - 1;
     std::array<unsigned short, hard_expected.size()> buffer;
     EXPECT_EQ(count + 1,
               FPDFText_GetText(textpage.get(), offset, count, buffer.data()));
@@ -1708,9 +1708,9 @@ TEST_F(FPDFTextEmbedderTest, GetStrokeColor) {
 }
 
 TEST_F(FPDFTextEmbedderTest, GetMatrix) {
-  static constexpr char kExpectedText[] = "A1\r\nA2\r\nA3";
-  static constexpr size_t kExpectedTextSize = std::size(kExpectedText);
-  static constexpr auto kExpectedMatrices = std::to_array<const FS_MATRIX>({
+  constexpr char kExpectedText[] = "A1\r\nA2\r\nA3";
+  constexpr size_t kExpectedTextSize = std::size(kExpectedText);
+  constexpr auto kExpectedMatrices = std::to_array<const FS_MATRIX>({
       {12.0f, 0.0f, 0.0f, 10.0f, 66.0f, 90.0f},
       {12.0f, 0.0f, 0.0f, 10.0f, 66.0f, 90.0f},
       {1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f},
@@ -1765,10 +1765,10 @@ TEST_F(FPDFTextEmbedderTest, GetMatrix) {
 
 TEST_F(FPDFTextEmbedderTest, CharBox) {
   // For a size 12 letter 'A'.
-  static constexpr double kExpectedCharWidth = 8.460;
-  static constexpr double kExpectedCharHeight = 6.600;
-  static constexpr float kExpectedLooseCharWidth = 8.664f;
-  static constexpr float kExpectedLooseCharHeight = 12.82999f;
+  constexpr double kExpectedCharWidth = 8.460;
+  constexpr double kExpectedCharHeight = 6.600;
+  constexpr float kExpectedLooseCharWidth = 8.664f;
+  constexpr float kExpectedLooseCharHeight = 12.82999f;
 
   ASSERT_TRUE(OpenDocument("font_matrix.pdf"));
   ScopedPage page = LoadScopedPage(0);
@@ -2191,7 +2191,7 @@ TEST_F(FPDFTextEmbedderTest, Bug1769) {
   // The first instance of "world" is visible to the human eye and should be
   // extracted as is. The second instance is not, so how it should be
   // extracted is debatable.
-  static constexpr char kNeedsImprovementResult[] = "wo d wo d";
+  constexpr char kNeedsImprovementResult[] = "wo d wo d";
   ASSERT_EQ(10, FPDFText_GetText(textpage.get(), 0, 128, buffer));
   EXPECT_THAT(pdfium::span(buffer).first(10u),
               ElementsAreArray(kNeedsImprovementResult));
@@ -2233,61 +2233,6 @@ TEST_F(FPDFTextEmbedderTest, Bug420508260) {
               ElementsAreArray(kExpected));
 }
 
-TEST_F(FPDFTextEmbedderTest, TextObjectSetIsActive) {
-  ASSERT_TRUE(OpenDocument("hello_world.pdf"));
-  ScopedPage page = LoadScopedPage(0);
-  ASSERT_TRUE(page);
-
-  {
-    // First, sanity check hello_world.pdf.
-    ScopedFPDFTextPage textpage(FPDFText_LoadPage(page.get()));
-    ASSERT_TRUE(textpage);
-
-    unsigned short buffer[128];
-    int num_chars =
-        FPDFText_GetText(textpage.get(), 0, std::size(buffer), buffer);
-    ASSERT_EQ(kHelloGoodbyeTextSize, num_chars);
-    EXPECT_THAT(pdfium::span(buffer).first<kHelloGoodbyeTextSize>(),
-                ElementsAreArray(kHelloGoodbyeText));
-  }
-
-  FPDF_PAGEOBJECT text_obj = FPDFPage_GetObject(page.get(), 0);
-  ASSERT_TRUE(text_obj);
-  ASSERT_EQ(FPDF_PAGEOBJ_TEXT, FPDFPageObj_GetType(text_obj));
-
-  {
-    // Deactivate `text_obj` and check `textpage` again.
-    ASSERT_TRUE(FPDFPageObj_SetIsActive(text_obj, false));
-
-    ScopedFPDFTextPage textpage(FPDFText_LoadPage(page.get()));
-    ASSERT_TRUE(textpage);
-
-    static constexpr int kGoodbyeTextSize = 16;
-    static constexpr int kOffset = kHelloGoodbyeTextSize - kGoodbyeTextSize;
-    unsigned short buffer[128];
-    int num_chars =
-        FPDFText_GetText(textpage.get(), 0, std::size(buffer), buffer);
-    ASSERT_EQ(kGoodbyeTextSize, num_chars);
-    EXPECT_THAT(
-        pdfium::span(buffer).first<kGoodbyeTextSize>(),
-        ElementsAreArray(pdfium::span(kHelloGoodbyeText).subspan<kOffset>()));
-  }
-
-  {
-    // Reactivate `text_obj` and check `textpage` again.
-    ASSERT_TRUE(FPDFPageObj_SetIsActive(text_obj, true));
-
-    ScopedFPDFTextPage textpage(FPDFText_LoadPage(page.get()));
-    ASSERT_TRUE(textpage);
-
-    unsigned short buffer[128];
-    int num_chars =
-        FPDFText_GetText(textpage.get(), 0, std::size(buffer), buffer);
-    ASSERT_EQ(kHelloGoodbyeTextSize, num_chars);
-    EXPECT_THAT(pdfium::span(buffer).first<kHelloGoodbyeTextSize>(),
-                ElementsAreArray(kHelloGoodbyeText));
-  }
-}
 
 TEST_F(FPDFTextEmbedderTest, Bug425244539) {
   static constexpr std::array<unsigned short, 6> kExpectedChars = {

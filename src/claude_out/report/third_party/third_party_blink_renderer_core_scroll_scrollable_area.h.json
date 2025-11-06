@@ -1,0 +1,68 @@
+{
+  "文件路径": "third_party/blink/renderer/core/scroll/scrollable_area.h.rej",
+  "处理时间": "2025-11-04",
+  "总hunk数量": 3,
+  "成功解决的hunk数量": 3,
+  "未能解决的hunk数量": 0,
+  "修改置信度": "高",
+  ".rej文件保持完整": true,
+  "hunks处理详情": [
+    {
+      "hunk编号": 1,
+      "行号范围": "9-11",
+      "修改内容": [
+        "+#if BUILDFLAG(IS_ARKWEB)",
+        "+  class ScrollableAreaUtils;",
+        "+#endif"
+      ],
+      "修改类型": "添加前向声明",
+      "定位策略": "根据上下文前向声明区域定位",
+      "应用位置": "第83-85行，在ScrollMarkerGroupPseudoElement前向声明后",
+      "风险评估": "低风险 - 仅添加条件编译的前向声明，不影响现有代码结构",
+      "置信度": "100%",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 2,
+      "行号范围": "24-30",
+      "修改内容": [
+        "+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)",
+        "+  virtual double GetScrollbarAvoidAreaTop() const { return 0.0f; }",
+        "+  virtual double GetScrollbarAvoidAreaBottom() const { return 0.0f; }",
+        "+#endif // ARKWEB_SCROLLBAR_AVOID_AREA",
+        "+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_CORNER)",
+        "+  virtual bool HasScrollbarAvoidCorner() const { return false; }",
+        "+#endif  // ARKWEB_SCROLLBAR_AVOID_CORNER"
+      ],
+      "修改类型": "添加虚拟方法声明",
+      "定位策略": "在UpdateFocusDataForSnapAreas()方法后找到合适位置",
+      "应用位置": "第189-195行，在snap相关方法后，其他方法前",
+      "风险评估": "低风险 - 仅添加条件编译的虚拟方法声明，Arkweb特有功能",
+      "置信度": "100%",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 3,
+      "行号范围": "42-45",
+      "修改内容": [
+        "+#if BUILDFLAG(IS_ARKWEB)",
+        "+  friend class ScrollableAreaUtils;",
+        "+  ScrollableAreaUtils* GetUtils() { return scrollable_area_utils_.Get(); }",
+        "+#endif"
+      ],
+      "修改类型": "添加友元类声明和访问方法",
+      "定位策略": "在protected段前找到合适位置",
+      "应用位置": "第641-644行，在UpdateScrollMarkers()方法后，protected段前",
+      "风险评估": "低风险 - 仅添加条件编译的友元声明和访问方法，Arkweb特有功能",
+      "置信度": "100%",
+      "解决状态": "已解决"
+    }
+  ],
+  "冲突原因分析": "Arkweb132针对Chromium132-Base内核做了侵入式修改，在升级到Chromium141-Base内核时，相关的Arkweb特有代码（ScrollableAreaUtils类、滚动条避让功能等）需要重新集成到新的代码结构中。",
+  "处理策略": "严格按照黄金法则，仅应用+开头的行（添加内容）和-开头的行（删除内容），忽略所有上下文行，确保不添加任何额外的上下文或生成任何辅助文件。",
+  "最终验证": {
+    "源文件修改状态": "已完成",
+    ".rej文件完整性": "保持完整未被修改",
+    "编译兼容性": "预期良好，所有修改均为条件编译的Arkweb特有功能"
+  }
+}

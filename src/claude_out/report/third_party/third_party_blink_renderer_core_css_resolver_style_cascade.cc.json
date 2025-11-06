@@ -1,0 +1,67 @@
+{
+  "文件路径": "third_party/blink/renderer/core/css/resolver/style_cascade.cc",
+  "分析时间": "2025-11-04",
+  "处理摘要": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "冲突分析": {
+    "主要原因": "Arkweb 141 与 Arkweb 132 在 CSS 解析器实现上存在架构差异，主要是 EnsureScopedValue 方法的调用方式不同",
+    "修改性质": "Arkweb 广告拦截功能的侵入式集成，需要在样式属性应用前后插入自定义逻辑"
+  },
+  "hunks处理详情": [
+    {
+      "hunk索引": 1,
+      "行范围": "861-872",
+      "解决状态": "已解决",
+      "风险等级": "中等",
+      "冲突原因": "EnsureScopedValue 调用方式从函数调用改为方法调用，参数从 GetDocument() 和 match_result_ 改为 tree_scope",
+      "分析过程": "1. 识别 .rej 文件中的待添加/删除行：需要在 StyleBuilder::ApplyPhysicalProperty 前后添加 ARKWEB_ADBLOCK 条件编译代码\n2. 精确定位：通过查找 EnsureScopedValue 和 StyleBuilder::ApplyPhysicalProperty 的实际位置找到正确的插入点\n3. 代码适配：由于 EnsureScopedValue 调用方式改变，使用 Arkweb 141 中的调用方式作为锚点\n4. 原子化应用：严格只添加 + 开头的行，不添加任何上下文行",
+      "应用的修改": [
+        {
+          "位置": "第917行后",
+          "添加内容": [
+            "",
+            "#if BUILDFLAG(ARKWEB_ADBLOCK)",
+            "  blink::EDisplay tmp = state_.StyleBuilder().Display();",
+            "#endif",
+            ""
+          ]
+        },
+        {
+          "位置": "第923行后",
+          "添加内容": [
+            "",
+            "#if BUILDFLAG(ARKWEB_ADBLOCK)",
+            "  StyleCascadeUtil::LookupAndApplyDeclarationExt(this, property, tmp);",
+            "#endif"
+          ]
+        }
+      ],
+      "修改置信度": "高",
+      "潜在风险": [
+        "state_.StyleBuilder().Display() 调用的时机和兼容性需要验证",
+        "StyleCascadeUtil::LookupAndApplyDeclarationExt 函数在新版本中的行为需要确认",
+        "tree_scope 参数可能与原 GetDocument() 返回的文档对象存在差异"
+      ],
+      "建议人工复查": "建议重点检查 StyleCascadeUtil::LookupAndApplyDeclarationExt 在 Arkweb 141 中的实现和兼容性"
+    }
+  ],
+  "最终验证": {
+    ".rej文件状态": "保持完整，未被修改或删除",
+    "源文件修改": "已成功在指定位置添加所有必要的代码",
+    "编译检查": "语法结构正确，条件编译块完整"
+  },
+  "处理策略总结": {
+    "主要策略": "基于代码逻辑和函数调用模式进行智能定位，而非依赖过时的上下文行",
+    "成功因素": "准确识别了 StyleBuilder::ApplyPhysicalProperty 调用位置作为核心锚点",
+    "严格遵循原则": [
+      "只添加 + 开头的行",
+      "未添加任何上下文行",
+      "未修改 .rej 文件",
+      "未创建脚本文件"
+    ]
+  }
+}

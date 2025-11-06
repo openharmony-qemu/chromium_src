@@ -58,6 +58,7 @@ typedef const struct __CTFont* CTFontRef;
 namespace blink {
 
 class HarfBuzzFace;
+class FontPlatformDataUtils;
 class IdentifiableToken;
 
 class PLATFORM_EXPORT FontPlatformData

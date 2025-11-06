@@ -1,0 +1,47 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/core/exported/web_input_method_controller_impl.h.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/core/exported/web_input_method_controller_impl.h",
+    "Chromium 132 基线版本": "/home/sujiahao/code/chromium_132_baseline/src/third_party/blink/renderer/core/exported/web_input_method_controller_impl.h",
+    "Arkweb 132 代码": "/home/sujiahao/code/arkweb_132/src/third_party/blink/renderer/core/exported/web_input_method_controller_impl.h"
+  },
+  "处理总结": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk详情": [
+    {
+      "hunk编号": 1,
+      "行号范围": "49-58",
+      "风险等级": "低",
+      "冲突原因": "Arkweb 132 在 WebInputMethodControllerImpl 类中添加了条件编译的 GetInputElementAttributes 方法，但在 Arkweb 141 版本中该方法缺失",
+      "分析过程": "通过分析 .rej 文件，发现需要在 TextInputType() 方法之后插入条件编译代码块。上下文锚点清晰，在源文件的第53行找到了精确的匹配位置。",
+      "修改内容": {
+        "添加的行": [
+          "#if BUILDFLAG(ARKWEB_INPUT_EVENTS)",
+          "  void GetInputElementAttributes(HashMap<String, String>& attributes) override;",
+          "#endif"
+        ],
+        "删除的行": []
+      },
+      "定位策略": "使用上下文锚点 WebTextInputType TextInputType() override; 和 WebRange CompositionRange() const override; 进行精确定位",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "代码语义": "添加了一个 Arkweb 特有的输入法相关方法，通过 BUILDFLAG(ARKWEB_INPUT_EVENTS) 条件编译控制，仅在使用 Arkweb 输入事件功能时包含该方法"
+    }
+  ],
+  "合规性检查": {
+    ".rej文件保持完整": true,
+    "未生成脚本文件": true,
+    "未创建辅助文件": true,
+    "仅在指定目录创建JSON报告": true,
+    "严格遵守黄金法则": true
+  },
+  "最终验证": {
+    "源文件修改成功": true,
+    "语法完整性": "通过条件编译块正确添加了方法声明",
+    "代码逻辑": "保持了原有的类结构，新增的条件编译方法不会影响现有功能"
+  }
+}

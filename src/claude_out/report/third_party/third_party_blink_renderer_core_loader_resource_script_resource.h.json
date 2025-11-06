@@ -1,0 +1,54 @@
+{
+  "file_path": "third_party/blink/renderer/core/loader/resource/script_resource.h",
+  "analysis": {
+    "total_hunks": 2,
+    "resolved_hunks": 2,
+    "unresolved_hunks": 0,
+    "rej_file_integrity": "preserved"
+  },
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "description": "添加 ScriptResourceUtils 前向声明",
+      "changes": {
+        "added_lines": [
+          "class ScriptResourceUtils;"
+        ],
+        "removed_lines": []
+      },
+      "risk_assessment": "低风险",
+      "risk_reason": "添加前向声明不会影响现有代码功能，只是为后续使用 ScriptResourceUtils 类做准备",
+      "conflict_cause": "Arkweb 132 在类声明区域添加了 ScriptResourceUtils 的前向声明，而 Arkweb 141 中缺少此声明",
+      "analysis_process": "通过上下文锚点 'class ResourceFetcher;' 精确定位到第49行后，成功添加前向声明",
+      "confidence": "高",
+      "resolution_strategy": "在 ResourceFetcher 类声明后添加 ScriptResourceUtils 前向声明",
+      "status": "已解决"
+    },
+    {
+      "hunk_number": 2,
+      "description": "添加 resourceUtils 成员变量",
+      "changes": {
+        "added_lines": [
+          "  std::unique_ptr<ScriptResourceUtils> resourceUtils;"
+        ],
+        "removed_lines": []
+      },
+      "risk_assessment": "低风险",
+      "risk_reason": "添加成员变量不会影响现有功能，只是增加了存储 ScriptResourceUtils 实例的能力",
+      "conflict_cause": "Arkweb 132 在私有成员区域添加了 resourceUtils 成员变量，而 Arkweb 141 中缺少此成员",
+      "analysis_process": "通过上下文锚点 'ParkableString source_text_;' 精确定位到第326行后，成功添加成员变量",
+      "confidence": "高",
+      "resolution_strategy": "在 source_text_ 成员变量后添加 resourceUtils 成员变量",
+      "status": "已解决"
+    }
+  ],
+  "summary": {
+    "total_modifications": {
+      "additions": 2,
+      "deletions": 0
+    },
+    "final_status": "所有冲突已成功解决",
+    "code_integrity": "保持良好",
+    "compilation_expectation": "应该能够正常编译"
+  }
+}

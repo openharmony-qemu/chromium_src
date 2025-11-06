@@ -982,7 +982,6 @@ void VideoFrameSubmitter::NotifyOpacityIfNeeded(Opacity new_opacity) {
   opacity_ = new_opacity;
   surface_embedder_->OnOpacityChanged(new_opacity == Opacity::kIsOpaque);
 }
-
 void VideoFrameSubmitter::ClearFrameResources() {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
 

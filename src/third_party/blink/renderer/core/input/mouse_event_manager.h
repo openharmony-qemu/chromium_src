@@ -27,15 +27,20 @@ class HitTestResult;
 class InputDeviceCapabilities;
 class LocalFrame;
 class ScrollManager;
+#if BUILDFLAG(IS_ARKWEB)
+class MouseEventManagerExt;
+#endif
 
 // This class takes care of dispatching all mouse events and keeps track of
 // positions and states of mouse.
-class CORE_EXPORT MouseEventManager final
+class CORE_EXPORT MouseEventManager
     : public GarbageCollected<MouseEventManager> {
+  friend class MouseEventManagerExt;
  public:
   MouseEventManager(LocalFrame&, ScrollManager&);
   MouseEventManager(const MouseEventManager&) = delete;
   MouseEventManager& operator=(const MouseEventManager&) = delete;
+  virtual MouseEventManagerExt* AsMouseEventManagerExt() { return nullptr; }
   void Trace(Visitor*) const;
 
   WebInputEventResult DispatchMouseEvent(
@@ -246,4 +251,5 @@ class CORE_EXPORT MouseEventManager final
 
 }  // namespace blink
 
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/input/mouse_event_manager_ext.h"
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_INPUT_MOUSE_EVENT_MANAGER_H_

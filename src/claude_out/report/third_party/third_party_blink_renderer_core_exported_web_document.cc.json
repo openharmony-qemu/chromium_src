@@ -1,0 +1,27 @@
+{
+  "文件路径": "third_party/blink/renderer/core/exported/web_document.cc.rej",
+  "处理时间": "2025-11-04",
+  "hunks": [
+    {
+      "hunk_index": 1,
+      "冲突原因": "Arkweb 132 在第71行附近添加了 ARKWEB_READER_MODE 条件编译包含语句，但在升级到 Chromium 141 时这些修改被冲突解决工具拒绝",
+      "风险分析": "低风险。这是标准的条件编译头文件包含，仅在 ARKWEB_READER_MODE 编译标志启用时生效，不会影响其他代码路径",
+      "分析过程": "通过分析 .rej 文件内容，识别出需要添加的 3 行条件编译包含语句。使用上下文锚点（#include \"third_party/blink/renderer/platform/wtf/casting.h\" 和 namespace {）在源文件中精确定位到第78-81行位置",
+      "修改置信度": "高",
+      "处理策略": "已成功应用。在第78行 wtf/casting.h 包含后添加了条件编译块，包含 Arkweb 特定的 document_recognise_util.h 头文件",
+      "解决状态": "已解决",
+      "应用的具体修改": [
+        "添加行: #if BUILDFLAG(ARKWEB_READER_MODE)",
+        "添加行: #include \"arkweb/chromium_ext/third_party/blink/renderer/core/dom/document_recognise_util.h\"",
+        "添加行: #endif"
+      ]
+    }
+  ],
+  "总结": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    ".rej文件保持完整": true,
+    "所有修改严格遵守'不添加上下文'原则": true
+  }
+}

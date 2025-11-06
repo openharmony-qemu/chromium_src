@@ -1226,7 +1226,11 @@ void StyleAdjuster::AdjustComputedStyle(StyleResolverState& state,
     auto* styled_element = DynamicTo<SVGElement>(state.GetStyledElement());
     AdjustStyleForSvgElement(*svg_element, styled_element, builder,
                              layout_parent_style);
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+  } else if (IsA<MathMLElement>(element) && !Cssutils::IsMathFormulaDisabledMode()) {
+#else
   } else if (IsA<MathMLElement>(element)) {
+#endif
     if (builder.Display() == EDisplay::kContents) {
       // https://drafts.csswg.org/css-display/#unbox-mathml
       builder.SetDisplay(EDisplay::kNone);

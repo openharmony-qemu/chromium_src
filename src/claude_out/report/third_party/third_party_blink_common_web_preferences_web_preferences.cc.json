@@ -1,0 +1,69 @@
+{
+  "conflict_file": "third_party/blink/common/web_preferences/web_preferences.cc.rej",
+  "analysis_timestamp": "2025-11-04",
+  "hunks": {
+    "total_count": 1,
+    "resolved_count": 1,
+    "unresolved_count": 0,
+    "details": [
+      {
+        "hunk_number": 1,
+        "description": "大型hunk包含多个Arkweb功能的侵入式修改",
+        "risk_assessment": "低风险 - 所有修改都是条件编译的功能添加，不会影响现有功能",
+        "conflict_cause": "Arkweb132在Chromium132基础上添加了多个条件编译功能模块，在升级到Chromium141时这些修改产生了冲突",
+        "analysis_process": "分析了.rej文件中的所有添加和删除行，通过上下文匹配成功定位到源文件中的对应位置",
+        "confidence_level": "高",
+        "resolution_strategy": "已成功应用所有修改",
+        "status": "已解决",
+        "modifications_applied": [
+          {
+            "type": "添加",
+            "line_count": 1,
+            "description": "添加arkweb/build/features/features.h头文件引入"
+          },
+          {
+            "type": "添加",
+            "line_count": 4,
+            "description": "添加ARKWEB_INPUT_EVENTS条件编译块和相应的头文件引入"
+          },
+          {
+            "type": "添加",
+            "line_count": 5,
+            "description": "添加IsTouchDragDropEnabled函数实现"
+          },
+          {
+            "type": "添加",
+            "line_count": 6,
+            "description": "添加ARKWEB_SAME_LAYER条件编译的常量定义"
+          },
+          {
+            "type": "替换",
+            "line_count": 31,
+            "description": "将简单的WebPreferences构造函数替换为包含多个Arkweb功能初始化的扩展版本"
+          }
+        ]
+      }
+    ]
+  },
+  "file_integrity": {
+    "rej_file_status": "完整保留",
+    "rej_file_modified": false,
+    "source_file_status": "成功应用所有修改"
+  },
+  "features_integrated": [
+    "ARKWEB_COPY_OPTION",
+    "ARKWEB_INPUT_EVENTS",
+    "ARKWEB_SAME_LAYER",
+    "ARKWEB_CSS_FONT",
+    "ARKWEB_ZOOM",
+    "ARKWEB_EXT_FREE_COPY",
+    "ARKWEB_SCROLLBAR"
+  ],
+  "summary": {
+    "total_hunks": 1,
+    "successfully_resolved": 1,
+    "failed_to_resolve": 0,
+    "success_rate": "100%",
+    "compliance_status": "严格遵守黄金法则，未添加任何上下文行，仅应用+/-行，未修改.rej文件"
+  }
+}

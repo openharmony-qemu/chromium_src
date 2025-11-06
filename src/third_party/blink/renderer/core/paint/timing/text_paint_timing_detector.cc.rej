@@ -62,20 +62,3 @@
    QueueToMeasurePaintTime(*record->node_->GetLayoutObject(), record);
  }
  
-@@ -302,10 +316,16 @@
- 
-     if (ltp_manager_ && (record->recorded_size > 0u) &&
-         !(record->node_ &&
-           ltp_manager_->IsUnrelatedSoftNavigationPaint(*(record->node_)))) {
-       ltp_manager_->MaybeUpdateLargestText(record);
-+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
-+      auto first_screen_calculator = frame_view_->GetPaintTimingDetector().GetFirstScreenCalculator();
-+      if (first_screen_calculator) {
-+        first_screen_calculator->NotifyTextPaint(record, timestamp);
-+      }
-+#endif
-     }
-     keys_to_be_removed.push_back(it.key);
-   }
-   texts_queued_for_paint_time_.RemoveAll(keys_to_be_removed);
- }

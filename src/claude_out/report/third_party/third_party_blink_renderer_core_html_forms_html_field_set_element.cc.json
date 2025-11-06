@@ -1,0 +1,65 @@
+{
+  "file_path": "third_party/blink/renderer/core/html/forms/html_field_set_element.cc",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "maintained",
+  "analysis": {
+    "conflict_reason": "Arkweb132针对fieldset元素的disabled状态处理添加了条件编译支持，在升级到Chromium 141时产生了冲突。这些修改与ARKWEB_INPUT_EVENTS特性标志相关，用于控制是否向禁用的表单控件发送鼠标事件。",
+    "modification_purpose": "为HTMLFieldSetElement添加运行时特性控制，在启用SendMouseEventsDisabledFormControlsEnabled特性时，改变fieldset及其子元素的disabled状态处理逻辑。"
+  },
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "hunk_range": "@@ -207,20 +207,34 @@",
+      "status": "已解决",
+      "confidence": "高",
+      "risk_analysis": "低风险。修改仅添加条件编译块，不影响默认行为。在ARKWEB_INPUT_EVENTS未启用时保持原有逻辑不变。",
+      "changes": [
+        {
+          "method": "IsDisabledFormControl()",
+          "type": "条件编译包装",
+          "added_lines": [
+            "#if BUILDFLAG(ARKWEB_INPUT_EVENTS)",
+            "  if (RuntimeEnabledFeatures::SendMouseEventsDisabledFormControlsEnabled()) {",
+            "#if BUILDFLAG(ARKWEB_INPUT_EVENTS)",
+            "  }",
+            "  return HTMLFormControlElement::IsDisabledFormControl();",
+            "#endif"
+          ],
+          "removed_lines": [],
+          "location": "源文件第230-242行"
+        },
+        {
+          "method": "MatchesEnabledPseudoClass()",
+          "type": "条件编译包装",
+          "added_lines": [
+            "#if BUILDFLAG(ARKWEB_INPUT_EVENTS)",
+            "  if (RuntimeEnabledFeatures::SendMouseEventsDisabledFormControlsEnabled()) {",
+            "#if BUILDFLAG(ARKWEB_INPUT_EVENTS)",
+            "  }",
+            "  return HTMLFormControlElement::MatchesEnabledPseudoClass();",
+            "#endif"
+          ],
+          "removed_lines": [],
+          "location": "源文件第263-272行"
+        }
+      ],
+      "resolution_process": "1. 解析.rej文件识别出两个方法的条件编译修改\n2. 在源文件中精确定位IsDisabledFormControl()方法位置\n3. 添加ARKWEB_INPUT_EVENTS条件编译块包装原有逻辑\n4. 在源文件中精确定位MatchesEnabledPseudoClass()方法位置\n5. 添加相同的条件编译块包装原有逻辑\n6. 验证修改后代码语法正确性",
+      "final_strategy": "直接应用.rej文件中定义的修改，添加条件编译支持但不改变默认行为。所有修改都严格遵循只添加+行和删除-行的原则，未添加任何额外的上下文。"
+    }
+  ],
+  "summary": {
+    "total_modifications": 2个方法修改,
+    "lines_added": 12行,
+    "lines_removed": 0行,
+    "impact_assessment": "修改仅影响启用ARKWEB_INPUT_EVENTS特性时的行为，默认情况下保持原有逻辑不变",
+    "compliance_check": {
+      "golden_rule_compliance": "完全符合",
+      "context_lines_added": "否",
+      "script_files_created": "否",
+      "rej_file_modified": "否",
+      "auxiliary_files_created": "仅创建要求的JSON报告文件"
+    }
+  }
+}

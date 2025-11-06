@@ -1,0 +1,64 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/core/css/properties/css_parsing_utils.cc.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/core/css/properties/css_parsing_utils.cc",
+    "处理时间": "2025-11-04",
+    "Chromium版本升级": "132 -> 141"
+  },
+  "总体统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk处理详情": [
+    {
+      "hunk索引": 1,
+      "描述": "添加arkweb features头文件包含",
+      "冲突原因": "Arkweb 132中的侵入式修改需要在include部分添加arkweb/build/features/features.h头文件",
+      "变更内容": {
+        "待添加行": [
+          "#include \"arkweb/build/features/features.h\""
+        ],
+        "待删除行": [],
+        "上下文行": [
+          "#include <cmath>",
+          "#include <memory>",
+          "#include <utility>",
+          "#include \"third_party/blink/renderer/core/css/counter_style_map.h\""
+        ]
+      },
+      "定位过程": {
+        "原始锚点": "#include <utility>",
+        "定位状态": "成功",
+        "插入位置": "第13行#include <utility>之后，第15行#include \"base/notreached.h\"之前",
+        "定位置信度": "高"
+      },
+      "风险分析": {
+        "技术风险": "低风险",
+        "风险评估": "添加头文件包含是安全操作，不会破坏现有代码结构",
+        "潜在影响": "引入arkweb特定的功能定义，可能影响后续编译和功能特性",
+        "人工复查建议": "确认arkweb/build/features/features.h文件存在于项目中，并检查其定义的功能特性是否适合在此处引入"
+      },
+      "处理策略": {
+        "策略类型": "原子化应用",
+        "执行操作": "在源文件第13行后添加#include \"arkweb/build/features/features.h\"",
+        "结果状态": "已成功应用",
+        "代码完整性": "保持良好，语法结构完整"
+      }
+    }
+  ],
+  "处理流程验证": {
+    "rej文件完整性": "已验证，.rej文件保持完整未被修改",
+    "源文件修改": "仅在指定位置添加了必要的包含行，未修改任何其他内容",
+    "上下文行处理": "严格遵循黄金法则，未添加任何rej文件中的上下文行到源文件",
+    "脚本文件创建": "未创建任何脚本文件，严格遵守规定",
+    "辅助文件创建": "仅创建了本JSON分析报告文件"
+  },
+  "结论": {
+    "处理结果": "完全成功",
+    "代码质量": "保持高质量",
+    "合规性": "完全符合第一性原则和黄金法则要求",
+    "建议": "建议编译验证确保新添加的头文件路径正确"
+  }
+}

@@ -122,5 +122,4 @@ void MediaControlPictureInPictureButtonElement::UpdateAriaString(
   setAttribute(html_names::kAriaLabelAttr, AtomicString(aria_string));
   UpdateAriaLabel(aria_string);
 }
-
 }  // namespace blink

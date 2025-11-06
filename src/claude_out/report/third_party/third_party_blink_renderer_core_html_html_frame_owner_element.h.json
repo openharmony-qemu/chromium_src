@@ -1,0 +1,71 @@
+{
+  "文件路径": "third_party/blink/renderer/core/html/html_frame_owner_element.h",
+  "冲突文件": "html_frame_owner_element.h.rej",
+  "处理时间": "2025-11-04",
+  "总体统计": {
+    "总hunk数量": 2,
+    "成功解决": 2,
+    "未能解决": 0,
+    "解决率": "100%"
+  },
+  "rej文件完整性": "保持完整，未被修改",
+  "hunks详情": [
+    {
+      "hunk编号": 1,
+      "描述": "添加Arkweb特性头文件包含",
+      "风险等级": "低",
+      "冲突原因": "Arkweb 132版本添加了arkweb/build/features/features.h头文件，在Arkweb 141版本中需要保留此修改",
+      "分析过程": {
+        "待添加行": [
+          "#include \"arkweb/build/features/features.h\""
+        ],
+        "待删除行": [],
+        "定位锚点": [
+          "#ifndef THIRD_PARTY_BLINK_RENDERER_CORE_HTML_HTML_FRAME_OWNER_ELEMENT_H_",
+          "#include \"services/network/public/mojom/trust_tokens.mojom-blink-forward.h\""
+        ],
+        "修改位置": "第26行"
+      },
+      "修改置信度": "高",
+      "处理策略": "已解决 - 在第26行添加了#include \"arkweb/build/features/features.h\"",
+      "修改结果": "成功应用，添加了Arkweb特性头文件包含"
+    },
+    {
+      "hunk编号": 2,
+      "描述": "在LoadOrRedirectSubframe方法后添加空行",
+      "风险等级": "极低",
+      "冲突原因": "代码格式化差异，Arkweb 132版本在LoadOrRedirectSubframe方法后有空行",
+      "分析过程": {
+        "待添加行": [
+          ""
+        ],
+        "待删除行": [],
+        "定位锚点": [
+          "bool LoadOrRedirectSubframe(const KURL&,",
+          "const AtomicString& frame_name,",
+          "bool replace_current_item);",
+          "bool IsKeyboardFocusableSlow("
+        ],
+        "修改位置": "第179行后"
+      },
+      "修改置信度": "高",
+      "处理策略": "已解决 - 在LoadOrRedirectSubframe方法声明后添加空行",
+      "修改结果": "成功应用，添加了格式化空行"
+    }
+  ],
+  "合规性检查": {
+    "严格遵守黄金法则": "是",
+    "未添加上下文行": "是",
+    "未创建脚本文件": "是",
+    "未创建辅助文件": "是",
+    "未修改rej文件": "是",
+    "仅在指定目录创建JSON报告": "是"
+  },
+  "代码影响分析": {
+    "功能影响": "无负面功能影响",
+    "编译影响": "无编译风险",
+    "兼容性": "保持Arkweb 132版本的功能特性",
+    "代码质量": "符合代码规范"
+  },
+  "总结": "所有冲突已成功解决，Arkweb 132版本的侵入式修改已精确应用到Arkweb 141版本中，确保了代码的一致性和功能完整性。"
+}

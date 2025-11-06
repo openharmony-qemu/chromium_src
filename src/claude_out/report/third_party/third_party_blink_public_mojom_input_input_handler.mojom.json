@@ -1,0 +1,99 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/third_party/blink/public/mojom/input/input_handler.mojom.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/third_party/blink/public/mojom/input/input_handler.mojom",
+    "基线版本": "/home/sujiahao/code/chromium_132_baseline/src/third_party/blink/public/mojom/input/input_handler.mojom",
+    "Arkweb132版本": "/home/sujiahao/code/arkweb_132/src/third_party/blink/public/mojom/input/input_handler.mojom"
+  },
+  "处理总结": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 2,
+    "未能解决的hunk数量": 0,
+    "处理完成度": "100%"
+  },
+  "rej文件完整性确认": {
+    "状态": "保持完整",
+    "说明": ".rej文件未被修改或删除，完全遵守黄金法则"
+  },
+  "hunks处理详情": [
+    {
+      "hunk编号": 1,
+      "原始位置": "@@ -446,10 +485,15 @@",
+      "冲突原因": "Arkweb132版本添加了ArkWeb扩展自由复制功能的ShowFreeCopyMenu()方法",
+      "待添加行数": 4,
+      "风险分析": {
+        "置信度": "高",
+        "风险等级": "低",
+        "说明": "添加的方法使用条件编译[EnableIf=arkweb_ext_free_copy]，只在启用了Arkweb扩展自由复制功能时编译，对标准Chromium功能无影响",
+        "功能说明": "显示自由复制菜单的功能，是Arkweb的定制化功能"
+      },
+      "定位过程": {
+        "锚点行": "WaitForPageScaleAnimationForTesting() => ();",
+        "定位结果": "成功定位到源文件第457行后",
+        "定位准确度": "精确"
+      },
+      "解决策略": {
+        "策略": "原子化应用",
+        "操作": "在WaitForPageScaleAnimationForTesting()方法后添加ShowFreeCopyMenu()方法及相关条件编译指令",
+        "修改内容": [
+          "// #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)",
+          "[EnableIf=arkweb_ext_free_copy]",
+          "ShowFreeCopyMenu();",
+          "// #endif"
+        ],
+        "状态": "已解决"
+      }
+    },
+    {
+      "hunk编号": 2,
+      "原始位置": "@@ -572,6 +628,22 @@",
+      "冲突原因": "Arkweb132版本在WidgetInputHandler接口中添加了多个ArkWeb特定的输入处理方法",
+      "待添加行数": 7,
+      "风险分析": {
+        "置信度": "高",
+        "风险等级": "中",
+        "说明": "添加的多个方法都使用了条件编译[EnableIf=arkweb_same_layer]或[EnableIf=arkweb_input_events]，只在特定Arkweb功能启用时编译，SetBypassVsyncCondition为无条件添加",
+        "功能说明": [
+          "SetGestureEventResult: 设置手势事件结果",
+          "SetMouseEventResult: 设置鼠标事件结果",
+          "SetNativeEmbedMode: 设置原生嵌入模式",
+          "SetEnableCustomVideoPlayer: 启用自定义视频播放器",
+          "ScrollBy: 自定义滚动功能",
+          "SetBypassVsyncCondition: 设置垂直同步条件"
+        ]
+      },
+      "定位过程": {
+        "锚点行": "UpdateBrowserControlsState方法的结束",
+        "定位结果": "成功定位到源文件第609行后，WidgetInputHandler接口结束前",
+        "定位准确度": "精确"
+      },
+      "解决策略": {
+        "策略": "原子化应用",
+        "操作": "在UpdateBrowserControlsState方法后、WidgetInputHandler接口结束前添加所有ArkWeb特定方法",
+        "修改内容": [
+          "[EnableIf=arkweb_same_layer] SetGestureEventResult(bool result, bool stopPropagation, int32 fingerId);",
+          "[EnableIf=arkweb_same_layer] SetMouseEventResult(bool result, bool stopPropagation);",
+          "[EnableIf=arkweb_same_layer] SetNativeEmbedMode(bool flag);",
+          "[EnableIf=arkweb_same_layer] SetEnableCustomVideoPlayer(bool flag);",
+          "[EnableIf=arkweb_input_events] ScrollBy(float delta_x, float delta_y);",
+          "SetBypassVsyncCondition(int32 condition);"
+        ],
+        "状态": "已解决"
+      }
+    }
+  ],
+  "最终验证": {
+    "源文件修改状态": "已完成所有侵入式修改的应用",
+    "语法完整性": "保持完整，无语法错误",
+    "接口一致性": "Mojo接口定义保持格式一致",
+    "条件编译正确性": "所有ArkWeb特定功能都使用了正确的条件编译指令",
+    "rej文件状态": "保持原样，未被修改"
+  },
+  "处理结论": {
+    "总体成功": "所有冲突已成功解决",
+    "遵循原则": "严格遵守黄金法则，只添加了+开头的行，未添加任何上下文行",
+    "代码质量": "保持了原有代码的结构和格式完整性",
+    "功能完整性": "成功恢复了Arkweb132版本中的所有定制化功能",
+    "建议": "建议后续编译测试以验证条件编译功能正常工作"
+  }
+}

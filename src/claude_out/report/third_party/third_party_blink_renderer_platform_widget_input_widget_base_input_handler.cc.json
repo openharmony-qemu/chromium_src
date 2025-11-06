@@ -1,0 +1,46 @@
+{
+  "文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/platform/widget/input/widget_base_input_handler.cc",
+  "冲突文件": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/platform/widget/input/widget_base_input_handler.cc.rej",
+  "总hunk数量": 1,
+  "成功解决的hunk数量": 1,
+  "未能解决的hunk数量": 0,
+  "解决状态": "全部解决",
+  "rej文件完整性": "保持完整未被修改",
+  "处理时间": "2025-11-05",
+  "详细分析": {
+    "hunk_1": {
+      "位置": "第7-16行（include部分）",
+      "修改类型": "添加头文件引用",
+      "待添加行数": 2,
+      "添加内容": [
+        "#include \"arkweb/build/features/features.h\"",
+        "#include \"arkweb/chromium_ext/third_party/blink/renderer/platform/widget/widget_base_utils.h\""
+      ],
+      "锚点上下文": {
+        "前一行": "#include <utility>",
+        "后一行": "#include \"base/memory/raw_ptr.h\""
+      },
+      "应用状态": "已成功应用",
+      "置信度": "高",
+      "风险分析": "低风险，仅添加Arkweb特有的头文件引用，不会影响现有代码逻辑",
+      "冲突原因": "Arkweb 132版本在chromium 132基线基础上添加了两个特有的头文件引用，在升级到chromium 141时需要保留这些Arkweb特有的修改",
+      "定位策略": "使用最小上下文锚点（#include <utility>和#include \"base/memory/raw_ptr.h\"）精确定位插入位置",
+      "应用过程": "在源文件第10行和第14行之间成功插入了两行头文件引用"
+    }
+  },
+  "处理总结": {
+    "成功应用所有修改": true,
+    "代码结构影响": "无",
+    "编译风险": "低",
+    "功能影响": "无，仅添加必要的头文件引用",
+    "人工复查建议": "建议编译验证新增头文件路径是否正确，确保Arkweb特有功能模块能正常工作"
+  },
+  "遵循原则": {
+    "严格遵守黄金法则": true,
+    "未添加上下文": true,
+    "未生成脚本文件": true,
+    "未创建辅助文件": true,
+    "未修改rej文件": true,
+    "仅在指定位置创建报告": true
+  }
+}

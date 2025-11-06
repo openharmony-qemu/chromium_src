@@ -1,0 +1,63 @@
+{
+  "file_name": "third_party/blink/renderer/core/html/html_param_element.h",
+  "rej_file": "third_party/blink/renderer/core/html/html_param_element.h.rej",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "preserved",
+  "analysis": {
+    "conflict_reason": "Arkweb 132 版本在 HTMLParamElement 类中添加了条件编译的 AttributeChanged 方法重写，但在升级到 Arkweb 141 时与基线代码产生冲突",
+    "risk_assessment": "低风险。添加的方法被条件编译宏包围，只有在 ARKWEB_SAME_LAYER 宏定义时才会编译，不会影响默认构建",
+    "modification_purpose": "为 Arkweb 同层渲染架构提供属性变更通知机制"
+  },
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "status": "已解决",
+      "confidence": "高",
+      "modification_lines": [
+        "+",
+        "+#if BUILDFLAG(ARKWEB_SAME_LAYER)",
+        "+  void AttributeChanged(const AttributeModificationParams&) override;",
+        "+#endif"
+      ],
+      "anchor_context": {
+        "before": "const AtomicString& Value() const;",
+        "after": "};"
+      },
+      "location_analysis": {
+        "target_class": "HTMLParamElement",
+        "insertion_point": "在现有成员函数声明之后，类定义结束之前",
+        "positioning_logic": "基于 .rej 文件的上下文，修改应该在 Value() 方法之后添加"
+      },
+      "application_process": {
+        "initial_locating": "成功在源文件第37行找到 Value() const; 声明",
+        "context_matching": "源文件结构与 .rej 文件上下文完全匹配",
+        "atomic_modification": "在第37行后添加了4行代码：空行、条件编译开始、方法声明、条件编译结束",
+        "syntax_validation": "添加的代码语法正确，符合C++条件编译规范"
+      },
+      "risk_details": {
+        "syntax_risk": "无 - 代码语法正确",
+        "logic_risk": "低 - 条件编译确保仅在特定配置下生效",
+        "compatibility_risk": "极低 - 仅影响 Arkweb 特定构建配置",
+        "build_risk": "无 - BUILDFLAG 宏定义确保向后兼容"
+      }
+    }
+  ],
+  "summary": {
+    "resolution_strategy": "精确应用",
+    "final_verification": {
+      "rej_file_preserved": true,
+      "source_file_modified": true,
+      "all_hunks_processed": true,
+      "syntax_integrity": "maintained"
+    },
+    "modifications_applied": {
+      "lines_added": 4,
+      "lines_removed": 0,
+      "conditional_code": true,
+      "arkweb_specific": true
+    },
+    "conclusion": "成功解决了所有冲突。添加的条件编译方法重写为 Arkweb 同层渲染架构提供了必要的属性变更通知能力，同时通过条件编译确保了与标准 Chromium 代码库的兼容性。修改遵循了原子化应用原则，没有引入任何上下文污染。"
+  }
+}

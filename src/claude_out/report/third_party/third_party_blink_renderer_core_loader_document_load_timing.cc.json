@@ -1,0 +1,59 @@
+{
+  "conflict_file": "third_party/blink/renderer/core/loader/document_load_timing.cc.rej",
+  "source_file": "third_party/blink/renderer/core/loader/document_load_timing.cc",
+  "analysis_timestamp": "2025-11-04",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "preserved",
+  "conflict_cause": "Arkweb132的侵入式修改在Arkweb141中产生了冲突，主要原因是变量名称从load_event_start_/load_event_end_变更为document_load_timing_values_->load_event_start/document_load_timing_values_->load_event_end",
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "description": "在MarkLoadEventStart()和MarkLoadEventEnd()方法中添加ARKWEB_NETWORK_DFX条件编译的跟踪事件",
+      "lines_to_add": 4,
+      "lines_to_remove": 0,
+      "risk_level": "低风险",
+      "risk_assessment": "添加的条件编译跟踪事件不会影响现有功能，仅在ARKWEB_NETWORK_DFX宏启用时生效，用于性能监控和调试",
+      "resolution_status": "已解决",
+      "confidence": 95,
+      "resolution_strategy": "变量适配：将.rej文件中的load_event_start_和load_event_end_变量名适配为当前源文件中使用的document_load_timing_values_->load_event_start和document_load_timing_values_->load_event_end",
+      "modification_details": [
+        {
+          "method": "MarkLoadEventStart()",
+          "insertion_point": "在timestamp赋值语句之后，现有TRACE_EVENT_MARK_WITH_TIMESTAMP1之前",
+          "added_code": [
+            "#if BUILDFLAG(ARKWEB_NETWORK_DFX)",
+            "  TRACE_EVENT1(\"navigation\", \"PAGE_LOAD_TIME\", \"loadEventStart\",",
+            "               document_load_timing_values_->load_event_start);",
+            "#endif"
+          ],
+          "variable_adaptation": "load_event_start_ -> document_load_timing_values_->load_event_start"
+        },
+        {
+          "method": "MarkLoadEventEnd()",
+          "insertion_point": "在timestamp赋值语句之后，现有TRACE_EVENT_MARK_WITH_TIMESTAMP1之前",
+          "added_code": [
+            "#if BUILDFLAG(ARKWEB_NETWORK_DFX)",
+            "  TRACE_EVENT1(\"navigation\", \"PAGE_LOAD_TIME\", \"loadEventEnd\", document_load_timing_values_->load_event_end);",
+            "#endif"
+          ],
+          "variable_adaptation": "load_event_end_ -> document_load_timing_values_->load_event_end"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "conflict_type": "变量名称变更适配冲突",
+    "resolution_method": "变量名适配 + 条件编译代码插入",
+    "code_compatibility": "与现有代码完全兼容",
+    "functionality_impact": "无负面影响，仅增加可选的性能跟踪功能",
+    "build_impact": "仅在ARKWEB_NETWORK_DFX启用时编译，不会影响默认构建"
+  },
+  "verification_steps": [
+    "确认.rej文件保持完整，未被修改",
+    "验证添加的ARKWEB_NETWORK_DFX跟踪事件代码语法正确",
+    "确认变量名适配正确，使用当前源文件的变量命名",
+    "验证条件编译指令格式正确"
+  ]
+}

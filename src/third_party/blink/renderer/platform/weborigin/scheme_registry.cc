@@ -110,6 +110,9 @@ class URLSchemesRegistry final {
   URLSchemesSet allowing_shared_array_buffer_schemes;
   URLSchemesSet web_ui_schemes;
   URLSchemesSet code_cache_with_hashing_schemes;
+#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
+  URLSchemesSet code_cache_with_response_time_schemes;
+#endif
   URLSchemesSet webui_bundled_bytecode_schemes;
 
  private:

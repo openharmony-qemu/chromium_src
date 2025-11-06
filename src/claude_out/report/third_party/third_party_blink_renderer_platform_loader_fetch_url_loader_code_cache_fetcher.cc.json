@@ -1,0 +1,47 @@
+{
+  "文件路径": "third_party/blink/renderer/platform/loader/fetch/url_loader/code_cache_fetcher.cc",
+  "处理时间": "2025-11-05",
+  "总hunk数量": 2,
+  "成功解决的hunk数量": 1,
+  "未能解决的hunk数量": 1,
+  "rej文件保持完整": true,
+  "hunks": [
+    {
+      "hunk编号": 1,
+      "行范围": "9-11",
+      "风险等级": "低",
+      "冲突原因": "添加Arkweb自定义scheme的codecache支持头文件包含",
+      "分析过程": "在源文件第14行（包含scheme_registry.h）之后成功添加了条件编译的头文件包含。这是标准的Arkweb扩展，用于支持自定义scheme的代码缓存功能。",
+      "修改内容": [
+        "添加: #if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)",
+        "添加: #include \"arkweb/chromium_ext/third_party/blink/renderer/platform/weborigin/scheme_registry_utils.h\"",
+        "添加: #endif"
+      ],
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "应用位置": "源文件第14行之后"
+    },
+    {
+      "hunk编号": 2,
+      "行范围": "24-40",
+      "风险等级": "高",
+      "冲突原因": "代码缓存验证逻辑在Chromium 141中被重构或移动到其他文件",
+      "分析过程": "经过详细搜索，源文件中不存在response_head.code_cache_valid、code_cache_response_time等相关的验证逻辑。这表明在Chromium 132到141的重构过程中，代码缓存验证逻辑被重新设计或移动到了其他模块中。由于找不到对应的代码上下文，无法安全地应用此修改。",
+      "修改内容": [
+        "添加: #if BUILDFLAG(ARKWEB_CODECACHE_ENHANCE)",
+        "添加: if (!response_head.code_cache_valid && (code_cache_response_time.is_null() || response_head.response_time.is_null() || code_cache_response_time != response_head.response_time)) {",
+        "添加: #else",
+        "添加: #endif"
+      ],
+      "修改置信度": "低",
+      "解决状态": "未解决",
+      "无法应用原因": "源文件中缺少相关的代码缓存验证逻辑上下文，强制应用可能导致编译错误或功能异常"
+    }
+  ],
+  "总结": {
+    "成功应用": "成功添加了Arkweb自定义scheme的codecache头文件支持",
+    "失败原因": "代码缓存验证逻辑在Chromium 141版本中不存在，可能已被重构到其他文件",
+    "建议": "需要进一步调查代码缓存验证逻辑在Chromium 141中的新位置，或者重新设计这部分增强功能",
+    "代码污染风险": "低，仅成功应用了安全的头文件包含"
+  }
+}

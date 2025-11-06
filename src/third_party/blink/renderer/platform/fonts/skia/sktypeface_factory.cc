@@ -38,7 +38,7 @@ sk_sp<SkTypeface> SkTypeface_Factory::FromFilenameAndTtcIndex(
     const std::string& filename,
     int ttc_index) {
 #if !BUILDFLAG(IS_WIN) && !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_FUCHSIA) && \
-    !BUILDFLAG(IS_APPLE)
+    !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_OHOS)
   return SkFontMgr_New_Fontations_Empty()->makeFromFile(filename.c_str(),
                                                         ttc_index);
 #else

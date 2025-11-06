@@ -349,7 +349,7 @@ int ExampleAppResponse(IPDF_JSPLATFORM*,
 
 int ExampleDocGetFilePath(IPDF_JSPLATFORM*, void* file_path, int length) {
   static const char kPath[] = "myfile.pdf";
-  static constexpr int kRequired = static_cast<int>(sizeof(kPath));
+  constexpr int kRequired = static_cast<int>(sizeof(kPath));
   if (file_path && length >= kRequired) {
     memcpy(file_path, kPath, kRequired);
   }
@@ -403,7 +403,7 @@ void ExampleDocGotoPage(IPDF_JSPLATFORM*, int page_number) {
 
 int ExampleFieldBrowse(IPDF_JSPLATFORM*, void* file_path, int length) {
   static const char kPath[] = "selected.txt";
-  static constexpr int kRequired = static_cast<int>(sizeof(kPath));
+  constexpr int kRequired = static_cast<int>(sizeof(kPath));
   if (file_path && length >= kRequired) {
     memcpy(file_path, kPath, kRequired);
   }

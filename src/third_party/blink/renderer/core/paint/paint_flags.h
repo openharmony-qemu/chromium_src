@@ -37,6 +37,10 @@ enum : unsigned {
   // Used to paint SVG resource subtree for masks.
   kPaintingSVGMask = 1 << 5,
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  kGlobalPaintDragSelection = 1 << 6,
+#endif
+
   // Used for painting [2D or WebGL canvas context].drawHTMLElement().
   kPaintingCanvasDrawElement = 1 << 6,
 

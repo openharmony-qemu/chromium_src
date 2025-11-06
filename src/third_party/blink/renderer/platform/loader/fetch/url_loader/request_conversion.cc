@@ -437,6 +437,11 @@ void PopulateResourceRequest(const ResourceRequestHead& src,
 
   dest->is_ad_tagged = src.IsAdResource();
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  dest->allow_preload_record = src.GetAllowPreloadRecord();
+  dest->main_url = GURL(src.GetMainUrl());
+#endif
+
   dest->allows_device_bound_session_registration =
       src.AllowsDeviceBoundSessionRegistration();
 }

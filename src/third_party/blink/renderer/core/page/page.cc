@@ -23,6 +23,7 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/compiler_specific.h"
 #include "base/feature_list.h"
@@ -109,6 +110,7 @@
 #include "ui/color/color_provider.h"
 #include "ui/color/color_provider_utils.h"
 #include "ui/gfx/geometry/insets_conversions.h"
+#include "third_party/blink/renderer/core/page/page_utils.h"
 
 namespace blink {
 

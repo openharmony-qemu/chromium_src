@@ -46,6 +46,10 @@
 #include "third_party/blink/renderer/core/layout/layout_embedded_object.h"
 #include "third_party/blink/renderer/platform/network/mime/mime_type_registry.h"
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/html_object_element_for_include.cc"
+#endif
+
 namespace blink {
 
 HTMLObjectElement::HTMLObjectElement(Document& document,

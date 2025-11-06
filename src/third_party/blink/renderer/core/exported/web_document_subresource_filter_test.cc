@@ -4,6 +4,7 @@
 
 #include "third_party/blink/public/platform/web_document_subresource_filter.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/contains.h"
 #include "services/network/public/cpp/permissions_policy/permissions_policy_declaration.h"
 #include "testing/gmock/include/gmock/gmock.h"

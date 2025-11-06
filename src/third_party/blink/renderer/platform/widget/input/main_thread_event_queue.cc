@@ -868,9 +868,16 @@ void MainThreadEventQueue::SetNeedsMainFrame(bool urgent) {
           FROM_HERE, kMaxRafDelay,
           base::BindOnce(&MainThreadEventQueue::RafFallbackTimerFired, this));
     }
+  #if BUILDFLAG(ARKWEB_DFX_TRACING)
     if (client_) {
       client_->SetNeedsMainFrame(urgent);
+    } else {
+      TRACE_EVENT0("input", "MainThreadEventQueue::SetNeedsMainFrame failed");
     }
+#else
+    if (client_)
+      client_->SetNeedsMainFrame(urgent);
+#endif
     return;
   }
 
@@ -886,6 +893,10 @@ void MainThreadEventQueue::ClearClient() {
 }
 
 void MainThreadEventQueue::SetNeedsLowLatency(bool low_latency) {
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  TRACE_EVENT1("input", "MainThreadEventQueue::SetNeedsLowLatency",
+    "low_latency", low_latency);
+#endif
   needs_low_latency_.store(low_latency, std::memory_order_relaxed);
 }
 
@@ -900,6 +911,9 @@ void MainThreadEventQueue::SetHasPointerRawUpdateEventHandlers(
 }
 
 void MainThreadEventQueue::RequestUnbufferedInputEvents() {
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  TRACE_EVENT0("input", "MainThreadEventQueue::RequestUnbufferedInputEvents");
+#endif
   needs_low_latency_until_pointer_up_.store(true, std::memory_order_relaxed);
 }
 

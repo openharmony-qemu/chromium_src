@@ -25,13 +25,17 @@
  */
 
 #include "third_party/blink/renderer/core/html/media/html_media_element.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/media/html_media_element_utils.h"
 
 #include <algorithm>
 #include <limits>
 #include <utility>
 #include <variant>
 
+#include "arkweb/build/features/features.h"
+#include "base/hash/hash.h"
 #include "base/auto_reset.h"
+#include "base/command_line.h"
 #include "base/debug/crash_logging.h"
 #include "base/feature_list.h"
 #include "base/memory/ptr_util.h"
@@ -148,6 +152,8 @@
 #define LOG_OFFICIAL_TIME_STATUS 0
 #endif
 
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/media/html_media_element_for_include.cc"
+
 namespace blink {
 
 using WeakMediaElementSet = GCedHeapHashSet<WeakMember<HTMLMediaElement>>;
@@ -155,6 +161,11 @@ using DocumentElementSetMap =
     HeapHashMap<WeakMember<Document>, Member<WeakMediaElementSet>>;
 
 namespace {
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+const base::TimeDelta kVideoFreezeTimeThresholdDefault =
+    base::Milliseconds(100);
+#endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
 // When enabled, CSS media queries are supported in <source> elements.
 BASE_FEATURE(VideoSourceMediaQuerySupport, base::FEATURE_ENABLED_BY_DEFAULT);
@@ -202,6 +213,15 @@ enum class MediaPlaybackInterruptionType {
 };
 
 static const base::TimeDelta kStalledNotificationInterval = base::Seconds(3);
+
+std::string GetFormatFromType(std::string type) {
+  std::string format;
+  size_t index = type.find('/');
+  if (index != std::string::npos) {
+    format = type.substr(index + 1);
+  }
+  return format;
+}
 
 void RecordMediaPlaybackInterruptionType(MediaPlaybackInterruptionType type) {
   base::UmaHistogramEnumeration(
@@ -445,6 +465,12 @@ HTMLMediaElement::HTMLMediaElement(const QualifiedName& tag_name,
           document.GetTaskRunner(TaskType::kInternalMedia),
           this,
           &HTMLMediaElement::OnRemovedFromDocumentTimerFired),
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+      notify_video_playing_timer_(
+          document.GetTaskRunner(TaskType::kInternalMedia),
+          this,
+          &HTMLMediaElement::OnNotifyVideoPlayingTimerFired),
+#endif  // ARKWEB_VIDEO_ASSISTANT
       progress_event_timer_(
           document.GetTaskRunner(TaskType::kInternalMedia),
           BindRepeating(&HTMLMediaElement::ProgressEventTimerFired,
@@ -811,6 +837,11 @@ void HTMLMediaElement::ParseAttribute(
         SoftNavigationHeuristics::OnVideoSrcChanged(video_element);
       }
       ignore_preload_none_ = false;
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+      if (IsCustomVideoPlayerEnabled()) {
+        ignore_preload_none_ = true;
+      }
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
       InvokeLoadAlgorithm();
     }
   } else if (name == html_names::kControlsAttr) {
@@ -3142,6 +3173,9 @@ void HTMLMediaElement::PlayInternal() {
   can_autoplay_ = false;
 
   OnPlay();
+#if BUILDFLAG(ARKWEB_PIP)
+  OnPictureInPictureStateChanged(content::PIP_STATE_PLAY, 0, 0);
+#endif
 
   SetIgnorePreloadNone();
   UpdatePlayState();
@@ -3150,6 +3184,9 @@ void HTMLMediaElement::PlayInternal() {
 void HTMLMediaElement::pause() {
   DVLOG(2) << "pause(" << *this << ")";
 
+#if BUILDFLAG(ARKWEB_MEDIA)
+  LOG(WARNING) << "OhMedia::pause(hash" << std::hex << base::FastHash(base::byte_span_from_ref(this)) << ")";
+#endif // ARKWEB_MEDIA
   // When updating pause, be sure to update PauseToLetDescriptionFinish().
   autoplay_policy_->StopAutoplayMutedWhenVisible();
   PauseInternal(WebMediaPlayer::PauseReason::kPauseCalled);
@@ -3166,6 +3203,9 @@ void HTMLMediaElement::PauseToLetDescriptionFinish() {
 
 void HTMLMediaElement::PauseInternal(WebMediaPlayer::PauseReason pause_reason) {
   DVLOG(3) << "pauseInternal(" << *this << ")";
+#if BUILDFLAG(ARKWEB_PIP)
+  OnPictureInPictureStateChanged(content::PIP_STATE_PAUSE, 0, 0);
+#endif
 
   if (network_state_ == kNetworkEmpty)
     InvokeResourceSelectionAlgorithm();
@@ -3953,6 +3993,39 @@ void HTMLMediaElement::TimeChanged() {
   }
   UpdatePlayState(pause_reason);
 }
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+void HTMLMediaElement::ScheduleVideoFreezeEvent() {
+  if (html_media_element_utils_.IsFeedsPage()) {
+    ScheduleNamedEvent(event_type_names::kVideofreeze);
+  }
+}
+
+double HTMLMediaElement::freezeTime() {
+  if (!html_media_element_utils_.IsFeedsPage()) {
+    LOG(INFO) << "HTMLMediaElement::freezeTime is not feedsPage";
+    return 0.0;
+  }
+  html_media_element_utils_.freeze_time_recorder_.StopRecord();
+  base::TimeDelta total_freeze_time = html_media_element_utils_.freeze_time_recorder_.GetDuration();
+  if (web_media_player_) {
+    total_freeze_time += base::Milliseconds(web_media_player_->GetFreezeTime());
+  }
+  html_media_element_utils_.freeze_time_recorder_.Reset();
+  return total_freeze_time.InMillisecondsF();
+}
+
+double HTMLMediaElement::playedTime() {
+  if (!html_media_element_utils_.IsFeedsPage()) {
+    LOG(INFO) << "HTMLMediaElement::playedTime is not feedsPage";
+    return 0.0;
+  }
+  html_media_element_utils_.played_time_recorder_.StopRecord();
+  double total_played_time = html_media_element_utils_.played_time_recorder_.GetDuration().InMillisecondsF();
+  html_media_element_utils_.played_time_recorder_.Reset();
+  return total_played_time;
+}
+#endif
 
 void HTMLMediaElement::DurationChanged() {
   DVLOG(3) << "durationChanged(" << *this << ")";

@@ -1067,7 +1067,16 @@ void PaintArtifactCompositor::Update(
         property_tree_manager.EnsureCompositorScrollAndTransformNode(
             ScrollTranslationStateForLayer(pending_layer));
 
+  #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER) || \
+    BUILDFLAG(ARKWEB_MEDIA_NETWORK_TRAFFIC_PROMPT) || \
+    BUILDFLAG(ARKWEB_SAME_LAYER)
+    UpdateExt(layer, pending_layer, layer_list_builder,
+              layer_list_builder_for_video,
+              layer_list_builder_for_infinity,
+              layer_list_builder_for_overlay);
+#else
     layer_list_builder.Add(&layer);
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER || ARKWEB_MEDIA_NETWORK_TRAFFIC_PROMPT
     if (pending_layer.HasText()) {
       layers_having_text.insert(layer.id());
     }

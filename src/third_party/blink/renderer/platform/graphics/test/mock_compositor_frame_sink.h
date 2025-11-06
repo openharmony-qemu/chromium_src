@@ -59,6 +59,12 @@ class MockCompositorFrameSink : public viz::mojom::blink::CompositorFrameSink {
                     viz::mojom::blink::LayerContextSettingsPtr));
   MOCK_METHOD1(SetThreads, void(const Vector<viz::Thread>&));
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void ReportKeyThreadIds(const WTF::Vector<int32_t>& thread_ids,
+                          int32_t process_id,
+                          bool is_created) override {}
+  void OnSetBypassVsyncCondition(int32_t condition) override {}
+#endif
  private:
   mojo::Receiver<viz::mojom::blink::CompositorFrameSink> receiver_{this};
 };

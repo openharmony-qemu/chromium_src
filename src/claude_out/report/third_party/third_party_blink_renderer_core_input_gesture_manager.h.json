@@ -1,0 +1,52 @@
+{
+  "file_path": "third_party/blink/renderer/core/input/gesture_manager.h",
+  "conflict_file": "third_party/blink/renderer/core/input/gesture_manager.h.rej",
+  "analysis_time": "2025-11-04",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "intact",
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "hunk_location": "@@ -120,10 +126,14 @@",
+      "risk_level": "低",
+      "conflict_reason": "Arkweb在GestureManager类中添加了条件编译的友元类和成员变量，用于扩展手势管理功能",
+      "analysis_process": "通过上下文定位到selection_controller_成员变量位置，在该变量后添加Arkweb特定的条件编译代码块",
+      "changes_applied": [
+        {
+          "type": "addition",
+          "lines": [
+            "#if BUILDFLAG(IS_ARKWEB)",
+            "  friend class GestureManagerUtils;",
+            "  Member<GestureManagerUtils> utils_;",
+            "#endif"
+          ]
+        }
+      ],
+      "confidence": "高",
+      "resolution_status": "已解决",
+      "modification_details": {
+        "target_location": "第130行 selection_controller_ 成员变量后",
+        "inserted_code": "条件编译块包含GestureManagerUtils友元类声明和成员变量",
+        "syntax_validation": "通过，符合C++语法规范"
+      }
+    }
+  ],
+  "summary": {
+    "overall_confidence": "高",
+    "implementation_complexity": "低",
+    "integration_risk": "低",
+    "required_manual_review": false,
+    "modifications_successfully_applied": true,
+    "rej_file_preserved": true,
+    "notes": "成功将Arkweb特定的条件编译代码集成到GestureManager类中，所有修改都已精确应用到源文件，.rej文件保持完整未被修改"
+  },
+  "final_verification": {
+    "source_file_modified": true,
+    "rej_file_intact": true,
+    "no_additional_files_created": true,
+    "no_scripts_generated": true,
+    "compliance_with_golden_rules": true
+  }
+}

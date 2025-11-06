@@ -335,6 +335,11 @@ void InputHandlerProxy::HandleInputEventWithLatencyInfo(
                     ctx, trace_id,
                     ChromeLatencyInfo2::Step::STEP_HANDLE_INPUT_EVENT_IMPL);
               });
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  TRACE_EVENT2("input", "InputHandlerProxy::HandleInputEventWithLatencyInfo",
+               "type", WebInputEvent::GetName(event->Event().GetType()),
+               "trace_id", trace_id);
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
   bool is_fling =
       (WebInputEvent::Type::kGestureScrollUpdate == event->Event().GetType() &&
@@ -353,6 +358,11 @@ void InputHandlerProxy::HandleInputEventWithLatencyInfo(
   if (handling_gesture_on_impl_thread_) {
     event->EventPointer()->SetPreventCountingAsInteractionTrue();
   }
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  OHOS_TRACE_EVENT2("input,benchmark,latencyInfo", "LatencyInfo.Flow",
+                    "trace_id", std::to_string(trace_id), "step",
+                    "STEP_HANDLE_INPUT_EVENT_IMPL");
+#endif
 
   auto event_with_callback = std::make_unique<EventWithCallback>(
       std::move(event), std::move(callback), std::move(metrics));
@@ -558,8 +568,15 @@ void InputHandlerProxy::ContinueScrollBeginAfterMainThreadHitTest(
 }
 
 void InputHandlerProxy::DispatchSingleInputEvent(
-    std::unique_ptr<EventWithCallback> event_with_callback) {
+    std::unique_ptr<EventWithCallback> event_with_callback
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+    , bool isDrop, bool result
+#endif
+) {
   ui::LatencyInfo monitored_latency_info = event_with_callback->latency_info();
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  monitored_latency_info.set_stop_propagation(result);
+#endif
   std::unique_ptr<cc::LatencyInfoSwapPromiseMonitor>
       latency_info_swap_promise_monitor =
           input_handler_->CreateLatencyInfoSwapPromiseMonitor(
@@ -567,8 +584,22 @@ void InputHandlerProxy::DispatchSingleInputEvent(
 
   current_overscroll_params_.reset();
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  event_with_callback = proxy_utils_->OverScrollRunCallback(
+      std::move(event_with_callback), monitored_latency_info, attribution);
+  if (!event_with_callback) {
+    return;
+  }
+#endif
+
   InputHandlerProxy::EventDisposition disposition =
       RouteToTypeSpecificHandler(event_with_callback.get());
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  if (isDrop) {
+    disposition = DID_HANDLE;
+  }
+#endif
 
   const WebInputEvent& event = event_with_callback->event();
   WebInputEventAttribution attribution;

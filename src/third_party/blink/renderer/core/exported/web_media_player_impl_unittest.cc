@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "third_party/blink/renderer/platform/media/web_media_player_impl.h"
-
 #include <stdint.h>
 
 #include <algorithm>
@@ -56,6 +54,13 @@
 #include "mojo/public/cpp/bindings/remote.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#if BUILDFLAG(ARKWEB_TEST)
+#define private public
+#endif  // ARKWEB_TEST
+#include "third_party/blink/renderer/platform/media/web_media_player_impl.h"
+#if BUILDFLAG(ARKWEB_TEST)
+#undef private
+#endif  // ARKWEB_TEST
 #include "third_party/blink/public/common/thread_safe_browser_interface_broker_proxy.h"
 #include "third_party/blink/public/common/tokens/tokens.h"
 #include "third_party/blink/public/platform/cross_variant_mojo_util.h"
@@ -187,11 +192,18 @@ class MockWebMediaPlayerClient : public MediaPlayerClient {
   MOCK_METHOD1(MediaRemotingStopped, void(int));
   MOCK_METHOD0(PictureInPictureStopped, void());
   MOCK_METHOD0(OnPictureInPictureStateChange, void());
+#if BUILDFLAG(ARKWEB_PIP)
+  MOCK_METHOD0(UpdatePictureInPictureSurface, void());
+#endif
   MOCK_CONST_METHOD0(CouldPlayIfEnoughData, bool());
   MOCK_METHOD0(ResumePlayback, void());
   MOCK_METHOD1(PausePlayback, void(WebMediaPlayer::PauseReason));
   MOCK_METHOD0(DidPlayerStartPlaying, void());
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  MOCK_METHOD1(DidEndAVSession, void(bool));
+#endif // ARKWEB_MEDIA_AVSESSION
   MOCK_METHOD1(DidPlayerPaused, void(bool));
+  MOCK_METHOD0(DidPlayerGone, void());
   MOCK_METHOD1(DidPlayerMutedStatusChange, void(bool));
   MOCK_METHOD6(DidMediaMetadataChange,
                void(bool,

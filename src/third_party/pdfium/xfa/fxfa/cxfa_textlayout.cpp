@@ -192,7 +192,7 @@ void CXFA_TextLayout::InitBreak(float fLineWidth) {
       case XFA_AttributeValue::Radix:
         break;
       default:
-        NOTREACHED();
+        NOTREACHED_NORETURN();
     }
     break_->SetAlignment(iAlign);
 

@@ -1,0 +1,56 @@
+{
+  "conflict_file": "third_party/blink/public/common/renderer_preferences/renderer_preferences.h",
+  "analysis_timestamp": "2025-11-04",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "preserved",
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "status": "已解决",
+      "confidence": "高",
+      "risk_level": "低",
+      "description": "添加Arkweb广告拦截功能的配置字段",
+      "added_lines": [
+        "#if BUILDFLAG(ARKWEB_ADBLOCK)",
+        "  bool is_global_adblock_enabled{false};",
+        "#endif"
+      ],
+      "removed_lines": [],
+      "anchor_context": "std::vector<uint16_t> explicitly_allowed_network_ports;",
+      "location": {
+        "line_before": 94,
+        "line_after": 102
+      },
+      "conflict_cause": "Arkweb 141中代码结构发生变化，新增了uses_platform_autofill字段和view_source_line_wrap_enabled字段，导致Arkweb 132中的adblock相关代码无法自动合并",
+      "resolution_process": "通过精确定位，在explicitly_allowed_network_ports字段后、view_source_line_wrap_enabled字段前插入adblock条件编译代码块",
+      "final_action": "成功在正确位置添加了ARKWEB_ADBLOCK条件编译的is_global_adblock_enabled字段"
+    }
+  ],
+  "summary": {
+    "changes_applied": {
+      "count": 1,
+      "details": "添加了Arkweb广告拦截功能的配置字段，包含条件编译保护"
+    },
+    "modifications": {
+      "files_modified": [
+        "third_party/blink/public/common/renderer_preferences/renderer_preferences.h"
+      ],
+      "total_lines_added": 3,
+      "total_lines_removed": 0
+    },
+    "compliance": {
+      "no_context_lines_added": true,
+      "no_scripts_generated": true,
+      "rej_file_preserved": true,
+      "only_json_report_created": true
+    }
+  },
+  "risk_assessment": {
+    "functional_risk": "低风险，仅添加配置字段，不影响现有功能",
+    "syntax_risk": "无语法风险，使用了标准的C++条件编译语法",
+    "integration_risk": "低风险，条件编译确保只在启用ARKWEB_ADBLOCK时生效",
+    "recommendation": "建议验证ARKWEB_ADBLOCK编译标志是否已在构建系统中定义"
+  }
+}

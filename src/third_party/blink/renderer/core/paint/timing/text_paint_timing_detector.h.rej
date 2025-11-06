@@ -19,20 +19,3 @@
    TextRecord& operator=(const TextRecord&) = delete;
  
    void Trace(Visitor*) const;
-@@ -154,10 +158,16 @@
-   }
-   void ReportLargestIgnoredText();
-   void ReportPresentationTime(uint32_t frame_index, base::TimeTicks timestamp);
-   void Trace(Visitor*) const;
- 
-+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-+  void SetForBlankless();
-+  uint32_t GetFrameIndex() const;
-+  void SetFrameIndex(uint32_t frame_index);
-+#endif
-+
-  private:
-   friend class LargestContentfulPaintCalculatorTest;
- 
-   void RegisterNotifyPresentationTime(
-       PaintTimingCallbackManager::LocalThreadCallback callback);

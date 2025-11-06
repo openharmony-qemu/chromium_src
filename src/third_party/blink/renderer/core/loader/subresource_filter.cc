@@ -26,12 +26,20 @@ namespace {
 
 String GetErrorStringForDisallowedLoad(const KURL& url) {
   StringBuilder builder;
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  builder.Append("Browser blocked resource ");
+  builder.Append(url.GetString());
+  builder.Append(
+      " on this site because this site tends to show ads that interrupt, "
+      "distract, mislead, or prevent user control.");
+#else
   builder.Append("Chrome blocked resource ");
   builder.Append(url.GetString());
   builder.Append(
       " on this site because this site tends to show ads that interrupt, "
       "distract, mislead, or prevent user control. Learn more at "
       "https://www.chromestatus.com/feature/5738264052891648");
+#endif
   return builder.ToString();
 }
 
@@ -41,8 +49,19 @@ SubresourceFilter::SubresourceFilter(
     ExecutionContext* execution_context,
     std::unique_ptr<WebDocumentSubresourceFilter> subresource_filter)
     : execution_context_(execution_context),
-      subresource_filter_(std::move(subresource_filter)) {
+      subresource_filter_(std::move(subresource_filter))
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+      ,
+      statistics_timer_(
+          execution_context_->GetTaskRunner(TaskType::kNetworking),
+          this,
+          &SubresourceFilter::SendStatistics)
+#endif
+{
   DCHECK(subresource_filter_);
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  utils = std::make_unique<ArkWebSubresourceFilterExt>(this);
+#endif
 }
 
 SubresourceFilter::~SubresourceFilter() = default;
@@ -51,13 +70,24 @@ bool SubresourceFilter::AllowLoad(
     const KURL& resource_url,
     network::mojom::RequestDestination request_destination,
     ReportingDisposition reporting_disposition) {
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  WebDocumentSubresourceFilter::LoadPolicy load_policy =
+      WebDocumentSubresourceFilter::kAllow;
+
+  if (utils->GetAdBlockEnabledByPage()) {
+    // TODO(csharrison): Implement a caching layer here which is a HashMap of
+    // Pair<url string, context> -> LoadPolicy.
+    load_policy =
+        subresource_filter_->GetLoadPolicy(resource_url, request_destination);
+  }
+#else
   // TODO(csharrison): Implement a caching layer here which is a HashMap of
   // Pair<url string, context> -> LoadPolicy.
   subresource_filter::ScopedRule rule;
   WebDocumentSubresourceFilter::LoadPolicy load_policy =
       subresource_filter_->GetLoadPolicy(resource_url, request_destination,
                                          /*out_rule=*/&rule);
-
+#endif
   if (reporting_disposition == ReportingDisposition::kReport) {
     ReportLoad(resource_url, load_policy);
   }
@@ -65,6 +95,12 @@ bool SubresourceFilter::AllowLoad(
   last_resource_check_result_ = std::make_pair(
       std::make_pair(resource_url, request_destination),
       ResourceCheckResult{.load_policy = load_policy, .rule = std::move(rule)});
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  if (load_policy == WebDocumentSubresourceFilter::kDisallow) {
+    utils->RequestSendStatistics(base::Milliseconds(1000));
+  }
+#endif
 
   return load_policy != WebDocumentSubresourceFilter::kDisallow;
 }

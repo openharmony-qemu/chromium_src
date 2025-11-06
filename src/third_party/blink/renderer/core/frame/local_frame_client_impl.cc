@@ -36,6 +36,7 @@
 
 #include "base/containers/to_vector.h"
 #include "base/metrics/histogram_functions.h"
+#include "base/logging.h"
 #include "base/time/time.h"
 #include "base/types/optional_util.h"
 #include "components/viz/common/frame_timing_details.h"

@@ -389,6 +389,10 @@ bool VideoFrameCompositor::ProcessNewFrame(
     return false;
   }
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  StatisticsTotalFreeTime(is_playing_, last_frame_time_, total_freeze_time_);
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
   // TODO(crbug.com/40064689): Add other cases where the frame is not readable.
   bool is_frame_readable = !frame->metadata().dcomp_surface;
 

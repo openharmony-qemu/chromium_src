@@ -1,0 +1,50 @@
+{
+  "文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/vulkan-headers/src/include/vulkan/vulkan_core.h",
+  "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/vulkan-headers/src/include/vulkan/vulkan_core.h.rej",
+  "处理时间": "2025-11-05",
+  "总hunk数量": 2,
+  "成功解决的hunk数量": 2,
+  "未能解决的hunk数量": 0,
+  "rej文件保持完整": true,
+  "hunks处理详情": [
+    {
+      "hunk编号": 1,
+      "冲突原因": "Arkweb132在Chromium132基础上添加了OHOS平台相关的Vulkan结构类型定义",
+      "风险分析": "低风险。这些是标准的枚举值添加，不会破坏现有API兼容性",
+      "分析过程": "通过锚点'VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_LINEAR_COLOR_ATTACHMENT_FEATURES_NV = 1000430000'成功定位到源文件中的正确位置。添加的9个OHOS相关结构类型定义遵循了Vulkan标准命名规范和值分配模式。",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "修改内容": {
+        "添加的行数": 9,
+        "具体添加": [
+          "VK_STRUCTURE_TYPE_SURFACE_CREATE_INFO_OHOS = 1000451000",
+          "VK_STRUCTURE_TYPE_NATIVE_BUFFER_OHOS = 1000453001",
+          "VK_STRUCTURE_TYPE_SWAPCHAIN_IMAGE_CREATE_INFO_OHOS = 1000453002",
+          "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENTATION_PROPERTIES_OHOS = 1000453003",
+          "VK_STRUCTURE_TYPE_NATIVE_BUFFER_USAGE_OHOS = 1000452000",
+          "VK_STRUCTURE_TYPE_NATIVE_BUFFER_PROPERTIES_OHOS = 1000452001",
+          "VK_STRUCTURE_TYPE_NATIVE_BUFFER_FORMAT_PROPERTIES_OHOS = 1000452002",
+          "VK_STRUCTURE_TYPE_IMPORT_NATIVE_BUFFER_INFO_OHOS = 1000452003",
+          "VK_STRUCTURE_TYPE_MEMORY_GET_NATIVE_BUFFER_INFO_OHOS = 1000452004",
+          "VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_OHOS = 1000452005"
+        ]
+      }
+    },
+    {
+      "hunk编号": 2,
+      "冲突原因": "Arkweb132在Chromium132基础上添加了OHOS平台相关的Vulkan外部内存句柄类型定义",
+      "风险分析": "低风险。这是标准的枚举值添加，值0x00002000在可用的位域范围内，不会与现有枚举冲突",
+      "分析过程": "通过锚点'VK_EXTERNAL_MEMORY_HANDLE_TYPE_RDMA_ADDRESS_BIT_NV = 0x00001000'和'VK_EXTERNAL_MEMORY_HANDLE_TYPE_SCREEN_BUFFER_BIT_QNX = 0x00004000'成功定位到源文件中的正确位置。添加的OHOS_NATIVE_BUFFER_BIT_OHOS定义遵循了Vulkan平台扩展的命名规范。",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "修改内容": {
+        "添加的行数": 1,
+        "具体添加": [
+          "VK_EXTERNAL_MEMORY_HANDLE_TYPE_OHOS_NATIVE_BUFFER_BIT_OHOS = 0x00002000"
+        ]
+      }
+    }
+  ],
+  "总体处理策略": "严格遵循黄金法则，仅添加.rej文件中以+开头的行，忽略所有上下文行。通过锚点精确匹配源文件位置，执行原子化修改操作。",
+  "验证结果": "所有OHOS相关的Vulkan平台扩展定义已成功集成到Arkweb141代码库中，保持了代码的完整性和一致性。"
+}

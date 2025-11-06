@@ -434,7 +434,11 @@ void LocalFrame::Init(Frame* opener,
   GetInterfaceRegistry()->AddInterface(BindRepeating(
       &LocalFrame::BindTextFragmentReceiver, WrapWeakPersistent(this)));
   DCHECK(!mojo_handler_);
+#if BUILDFLAG(IS_ARKWEB)
+  mojo_handler_ = MakeGarbageCollected<ArkWebLocalFrameMojoHandlerExt>(*this);
+#else
   mojo_handler_ = MakeGarbageCollected<LocalFrameMojoHandler>(*this);
+#endif
 
   SetOpenerDoNotNotify(opener);
   loader_.Init(document_token, std::move(policy_container), storage_key,
@@ -1727,6 +1731,11 @@ void LocalFrame::SetZoomFactors(float layout_zoom_factor,
   }
 
   bool layout_zoom_changed = (layout_zoom_factor != layout_zoom_factor_);
+
+#if BUILDFLAG(IS_ARKWEB)
+  LocalFrameUtil::SetLayoutAndTextZoomFactorsExt(
+      this, layout_zoom_factor, text_zoom_factor, layout_zoom_changed, page);
+#endif
 
   layout_zoom_factor_ = layout_zoom_factor;
   text_zoom_factor_ = text_zoom_factor;

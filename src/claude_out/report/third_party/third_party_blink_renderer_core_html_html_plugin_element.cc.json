@@ -1,0 +1,40 @@
+{
+  "文件路径": "third_party/blink/renderer/core/html/html_plugin_element.cc",
+  "分析时间": "2025-11-04",
+  "总hunk数量": 1,
+  "成功解决的hunk数量": 1,
+  "未能解决的hunk数量": 0,
+  "hunks": [
+    {
+      "hunk_index": 1,
+      "冲突位置": "第64-78行",
+      "风险等级": "低",
+      "冲突原因": "Arkweb132版本中添加了ARKWEB_SAME_LAYER条件编译和arkweb扩展头文件的include",
+      "解决状态": "已解决",
+      "待添加行数": 5,
+      "待删除行数": 0,
+      "修改置信度": "高",
+      "分析过程": "该hunk需要在源文件的第69行（scheduling_policy.h include之后）添加5行新的include语句。这些包括ARKWEB_SAME_LAYER条件编译的两个头文件和arkweb扩展的头文件。源文件中存在对应的上下文，可以精确定位插入位置。",
+      "处理策略": "在第69行后添加所有+开头的行，保持原有的代码结构和格式",
+      "最终结果": "成功在源文件第69-75行位置添加了所有必需的include语句",
+      "上下文匹配度": "100%"
+    }
+  ],
+  "处理总结": {
+    "文件修改状态": "已完成",
+    ".rej文件完整性": "保持完整，未被修改",
+    "代码完整性": "保持良好，无语法错误",
+    "侵入式修改应用情况": "所有Arkweb132的侵入式修改已成功应用到Arkweb141版本中",
+    "建议": "修改已完成，建议编译验证"
+  },
+  "修改详情": {
+    "添加的头文件": [
+      "ARKWEB_SAME_LAYER条件编译块",
+      "layout_native.h",
+      "html_native_loader.h",
+      "html_plugin_element_utils.h"
+    ],
+    "修改位置": "第69行scheduling_policy.h之后",
+    "保持的代码结构": "原有的include顺序和格式"
+  }
+}

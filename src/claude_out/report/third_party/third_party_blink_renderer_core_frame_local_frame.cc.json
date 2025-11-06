@@ -1,0 +1,75 @@
+{
+  "文件路径": "third_party/blink/renderer/core/frame/local_frame.cc",
+  "总hunk数量": 2,
+  "成功解决的hunk数量": 1,
+  "未能解决的hunk数量": 1,
+  ".rej文件完整性": "保持完整，未被修改",
+  "处理详情": [
+    {
+      "hunk编号": 1,
+      "位置": "第429-440行附近",
+      "冲突原因": "Arkweb 132中的ArkWebLocalFrameMojoHandlerExt条件编译支持在Arkweb 141中丢失",
+      "修改内容": {
+        "删除": [
+          "mojo_handler_ = MakeGarbageCollected<LocalFrameMojoHandler>(*this);"
+        ],
+        "添加": [
+          "#if BUILDFLAG(IS_ARKWEB)",
+          "  mojo_handler_ = MakeGarbageCollected<ArkWebLocalFrameMojoHandlerExt>(*this);",
+          "#else",
+          "  mojo_handler_ = MakeGarbageCollected<LocalFrameMojoHandler>(*this);",
+          "#endif"
+        ]
+      },
+      "分析过程": "在源文件中精确定位到第436-437行，找到了DCHECK(!mojo_handler_);和mojo_handler_初始化代码，成功应用了条件编译修改",
+      "修改置信度": "高",
+      "风险等级": "低",
+      "最终处理策略": "已成功应用修改",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 2,
+      "位置": "第1598-1644行附近",
+      "冲突原因": "SetLayoutAndTextZoomFactors函数在Arkweb 141中可能已被重构或重命名",
+      "修改内容": {
+        "删除": [
+          "if (layout_zoom_factor_ == layout_zoom_factor &&",
+          "    text_zoom_factor_ == text_zoom_factor) {",
+          "  return;",
+          "}",
+          "",
+          "Page* page = GetPage();",
+          "if (!page)",
+          "  return;",
+          "#endif"
+        ],
+        "添加": [
+          "#if BUILDFLAG(ARKWEB_ZOOM)",
+          "  Page* page = GetPage();",
+          "  if (!LocalFrameUtil::SetLayoutAndTextZoomFactorsPage(",
+          "          this, layout_zoom_factor, text_zoom_factor, page)) {",
+          "    return;",
+          "  }",
+          "#else",
+          "",
+          "#if BUILDFLAG(IS_ARKWEB)",
+          "  LocalFrameUtil::SetLayoutAndTextZoomFactorsExt(",
+          "      this, layout_zoom_factor, text_zoom_factor, layout_zoom_changed, page);",
+          "#endif"
+        ]
+      },
+      "分析过程": "在Arkweb 141源文件中未找到SetLayoutAndTextZoomFactors函数，该函数可能已被重构为SetZoomFactors函数。由于无法准确定位对应的代码位置，且函数签名和结构可能已发生变化，强行应用修改可能导致语法错误或逻辑断裂。",
+      "修改置信度": "低",
+      "风险等级": "高",
+      "最终处理策略": "无法应用，需要人工介入处理",
+      "解决状态": "未解决",
+      "建议": "需要开发人员确认SetLayoutAndTextZoomFactors函数在Arkweb 141中的新位置或替代实现，然后手动应用ARKWEB_ZOOM相关的条件编译逻辑"
+    }
+  ],
+  "总结": {
+    "成功应用": 1个hunk（ArkWebLocalFrameMojoHandlerExt条件编译）,
+    "失败应用": 1个hunk（ARKWEB_ZOOM相关缩放逻辑）,
+    "主要问题": "代码重构导致函数位置和结构发生变化，部分历史修改无法直接应用到新版本",
+    "建议措施": "对于未解决的hunk，建议开发人员检查Arkweb 141中的缩放相关函数实现，并手动整合Arkweb 132中的ARKWEB_ZOOM功能"
+  }
+}

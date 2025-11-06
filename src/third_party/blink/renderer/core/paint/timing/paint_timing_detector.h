@@ -38,6 +38,10 @@ class PropertyTreeStateOrAlias;
 class MediaTiming;
 class TextPaintTimingDetector;
 class StyleImage;
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+class PaintTimingDetectorUtils;
+class PTDSupplementForBL;
+#endif
 
 // PaintTimingDetector receives signals regarding text and image paints and
 // orchestrates the functionality of more specific paint detectors
@@ -183,6 +187,13 @@ class CORE_EXPORT PaintTimingDetector
 
   // The LCP details reported to metrics (UKM).
   LargestContentfulPaintDetails lcp_details_for_metrics_;
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  std::shared_ptr<FirstScreenCalculator> first_screen_calculator_;
+#endif
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  PaintTimingDetectorUtils paint_timing_detector_utils_;
+#endif
 };
 
 // Largest Text Paint and Text Element Timing aggregate text nodes by these

@@ -1,0 +1,50 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/third_party/pdfium/fpdfsdk/fpdf_editpage.cpp.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/third_party/pdfium/fpdfsdk/fpdf_editpage.cpp",
+    "处理时间": "2025-11-05"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk处理详情": [
+    {
+      "hunk编号": 1,
+      "修改类型": "删除函数",
+      "涉及函数": "FPDFPageObj_GetIsActive",
+      "行数范围": "628-652",
+      "风险等级": "中等",
+      "风险说明": "删除完整的API函数可能影响依赖此功能的调用方",
+      "冲突原因": "Arkweb 132中的FPDFPageObj_GetIsActive函数在Arkweb 141中被移除或重构",
+      "分析过程": "通过源文件分析发现FPDFPageObj_GetIsActive函数位于第697-710行，在FPDFPageObj_GetType函数和FPDFPageObj_SetIsActive函数之间。根据.rej文件要求，需要删除此函数。",
+      "修改置信度": "高",
+      "置信度说明": "函数位置定位精确，上下文匹配明确",
+      "解决策略": "原子化删除操作",
+      "具体操作": "删除第697-710行的FPDFPageObj_GetIsActive完整函数定义",
+      "处理状态": "已解决",
+      "验证结果": "函数已成功删除，代码结构保持完整"
+    }
+  ],
+  "代码完整性验证": {
+    "语法检查": "通过",
+    "函数连续性": "保持",
+    "编译兼容性": "预期良好"
+  },
+  "遵守原则验证": {
+    "未添加上下文行": true,
+    "未生成脚本文件": true,
+    "未创建辅助文件": true,
+    "未使用外部工具": true,
+    "仅在指定目录创建JSON": true,
+    ".rej文件保持完整": true,
+    "仅执行添加+删除操作": true
+  },
+  "最终结论": {
+    "处理状态": "成功完成",
+    "建议": "建议进行编译测试以验证删除FPDFPageObj_GetIsActive函数后是否会影响其他依赖此API的代码",
+    "注意事项": "如果存在调用FPDFPageObj_GetIsActive的代码，需要进行相应的适配修改"
+  }
+}

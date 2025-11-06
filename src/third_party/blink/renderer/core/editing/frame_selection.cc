@@ -29,6 +29,7 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/trace_event/trace_event.h"
 #include "third_party/blink/public/mojom/scroll/scroll_into_view_params.mojom-blink.h"

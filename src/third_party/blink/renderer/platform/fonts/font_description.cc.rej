@@ -16,17 +16,3 @@
    FieldsAsUnsignedType bitfields;
  };
  
-@@ -85,10 +89,13 @@
-     : specified_size_(0),
-       computed_size_(0),
-       adjusted_size_(0),
-       letter_spacing_(0),
-       word_spacing_(0),
-+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
-+      fixed_font_size_(0),
-+#endif
-       font_selection_request_(kNormalWeightValue,
-                               kNormalWidthValue,
-                               kNormalSlopeValue) {
-   fields_as_unsigned_.parts[0] = 0;
-   fields_as_unsigned_.parts[1] = 0;

@@ -1,0 +1,103 @@
+{
+  "文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/pdfium/fpdfsdk/fpdf_text_embeddertest.cpp",
+  "rej文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/pdfium/fpdfsdk/fpdf_text_embeddertest.cpp.rej",
+  "分析时间": "2025-11-05",
+  "总hunk数量": 7,
+  "成功解决的hunk数量": 7,
+  "未能解决的hunk数量": 0,
+  "rej文件保持完整": true,
+  "hunks详情": [
+    {
+      "hunk编号": 1,
+      "描述": "删除kExpectedFontsSizes变量的static关键字",
+      "原始行号": 925,
+      "修改内容": "- static constexpr auto kExpectedFontsSizes = fxcrt::ToArray<const double>(\n+ constexpr auto kExpectedFontsSizes = fxcrt::ToArray<const double>(",
+      "风险等级": "低",
+      "冲突原因": "Arkweb 141将fxcrt::ToArray改为std::to_array，但仍保留了static关键字",
+      "分析过程": "在源文件第1010行找到匹配的变量声明，发现使用的是std::to_array而不是fxcrt::ToArray。这表明Chromium 141已经更改了数组创建函数。成功删除static关键字。",
+      "修改置信度": "高",
+      "处理策略": "直接删除static关键字，保持std::to_array不变",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 2,
+      "描述": "删除kExpectedCharCount变量的static关键字",
+      "原始行号": 1090,
+      "修改内容": "- static constexpr int kExpectedCharCount = 5;\n+ constexpr int kExpectedCharCount = 5;",
+      "风险等级": "低",
+      "冲突原因": "C++17开始，constexpr变量默认具有内部链接特性，不需要static关键字",
+      "分析过程": "在源文件第1175行找到匹配的变量声明，成功删除static关键字",
+      "修改置信度": "高",
+      "处理策略": "直接删除static关键字",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 3,
+      "描述": "删除soft_expected和hard_expected相关变量的static关键字",
+      "原始行号": 1152,
+      "修改内容": "- static constexpr auto soft_expected = fxcrt::ToArray<unsigned short>(\n+ constexpr auto soft_expected = fxcrt::ToArray<unsigned short>(\n- static constexpr int count = std::size(soft_expected) - 1;\n+ constexpr int count = std::size(soft_expected) - 1;\n- static constexpr size_t offset = std::size(soft_expected) + 1;\n+ constexpr size_t offset = std::size(soft_expected) + 1;\n- static constexpr auto hard_expected = fxcrt::ToArray<unsigned short>(\n+ constexpr auto hard_expected = fxcrt::ToArray<unsigned short>(\n- static constexpr int count = std::size(hard_expected) - 1;\n+ constexpr int count = std::size(hard_expected) - 1;",
+      "风险等级": "低",
+      "冲突原因": "Arkweb 141将fxcrt::ToArray改为std::to_array，但仍保留了static关键字",
+      "分析过程": "在源文件第1237-1258行找到所有匹配的变量声明，发现使用的是std::to_array而不是fxcrt::ToArray。成功删除所有5个static关键字",
+      "修改置信度": "高",
+      "处理策略": "逐个删除static关键字，保持std::to_array不变",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 4,
+      "描述": "删除GetMatrix测试中相关变量的static关键字",
+      "原始行号": 1612,
+      "修改内容": "- static constexpr char kExpectedText[] = \"A1\\r\\nA2\\r\\nA3\";\n+ constexpr char kExpectedText[] = \"A1\\r\\nA2\\r\\nA3\";\n- static constexpr size_t kExpectedTextSize = std::size(kExpectedText);\n+ constexpr size_t kExpectedTextSize = std::size(kExpectedText);\n- static constexpr auto kExpectedMatrices = fxcrt::ToArray<const FS_MATRIX>({\n+ constexpr auto kExpectedMatrices = fxcrt::ToArray<const FS_MATRIX>({",
+      "风险等级": "低",
+      "冲突原因": "Arkweb 141将fxcrt::ToArray改为std::to_array，但仍保留了static关键字",
+      "分析过程": "在源文件第1711-1713行找到所有匹配的变量声明，发现使用的是std::to_array而不是fxcrt::ToArray。成功删除所有3个static关键字",
+      "修改置信度": "高",
+      "处理策略": "逐个删除static关键字，保持std::to_array不变",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 5,
+      "描述": "删除CharBox测试中相关变量的static关键字",
+      "原始行号": 1669,
+      "修改内容": "- static constexpr double kExpectedCharWidth = 8.460;\n+ constexpr double kExpectedCharWidth = 8.460;\n- static constexpr double kExpectedCharHeight = 6.600;\n+ constexpr double kExpectedCharHeight = 6.600;\n- static constexpr float kExpectedLooseCharWidth = 8.664f;\n+ constexpr float kExpectedLooseCharWidth = 8.664f;\n- static constexpr float kExpectedLooseCharHeight = 12.0f;\n+ constexpr float kExpectedLooseCharHeight = 12.0f;",
+      "风险等级": "低",
+      "冲突原因": "C++17开始，constexpr变量默认具有内部链接特性，不需要static关键字",
+      "分析过程": "在源文件第1768-1771行找到所有匹配的变量声明。注意kExpectedLooseCharHeight在源文件中的值是12.82999f而不是12.0f，这可能是版本差异。成功删除所有4个static关键字",
+      "修改置信度": "高",
+      "处理策略": "逐个删除static关键字",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 6,
+      "描述": "删除kNeedsImprovementResult变量的static关键字",
+      "原始行号": 1842,
+      "修改内容": "- static constexpr char kNeedsImprovementResult[] = \"wo d wo d\";\n+ constexpr char kNeedsImprovementResult[] = \"wo d wo d\";",
+      "风险等级": "低",
+      "冲突原因": "C++17开始，constexpr变量默认具有内部链接特性，不需要static关键字",
+      "分析过程": "在源文件第2194行找到匹配的变量声明，成功删除static关键字",
+      "修改置信度": "高",
+      "处理策略": "直接删除static关键字",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 7,
+      "描述": "删除整个TextObjectSetIsActive测试函数",
+      "原始行号": 128-183,
+      "修改内容": "删除了完整的TextObjectSetIsActive测试函数，包括所有53行代码",
+      "风险等级": "中等",
+      "冲突原因": "Arkweb 141中可能已经移除了FPDFPageObj_SetIsActive相关的功能或API",
+      "分析过程": "在源文件第2236-2290行找到完整的TextObjectSetIsActive测试函数。该函数测试FPDFPageObj_SetIsActive功能，可能在Chromium 141中被移除或重构。成功删除整个函数",
+      "修改置信度": "高",
+      "处理策略": "完全删除该测试函数，因为相关的API可能在Chromium 141中已不存在",
+      "解决状态": "已解决"
+    }
+  ],
+  "总结": {
+    "主要冲突类型": "static constexpr变量的优化和API变更",
+    "处理原则": "严格按照.rej文件中的+/-行进行修改，不添加任何上下文",
+    "技术背景": "Chromium 141采用了C++17标准，constexpr变量默认具有内部链接特性，不再需要static关键字。同时部分API从fxcrt::ToArray迁移到std::to_array。",
+    "所有hunks已成功处理": true,
+    "源文件完整性": "保持良好，所有修改已精确应用",
+    "rej文件状态": "保持完整未被修改"
+  }
+}

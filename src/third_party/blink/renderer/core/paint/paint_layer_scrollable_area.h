@@ -57,6 +57,11 @@
 #include "third_party/blink/renderer/platform/heap/collection_support/heap_vector.h"
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"
 #include "third_party/blink/renderer/platform/heap/persistent.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 #include "ui/gfx/geometry/transform.h"
 
 namespace blink {
@@ -74,6 +79,10 @@ class ScrollingCoordinator;
 class ScrollMarkerGroupPseudoElement;
 class SnappedQueryScrollSnapshot;
 class ScrollMarkerGroupData;
+#if BUILDFLAG(IS_ARKWEB)
+class PaintLayerScrollableAreaExt;
+class PaintLayerScrollableAreaUtils;
+#endif
 
 struct CORE_EXPORT PaintLayerScrollableAreaRareData final
     : public GarbageCollected<PaintLayerScrollableAreaRareData> {

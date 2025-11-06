@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/public/platform/scheduler/web_scoped_virtual_time_pauser.h"
 #include "third_party/blink/renderer/platform/platform_export.h"
 #include "third_party/blink/renderer/platform/scheduler/public/frame_scheduler.h"
@@ -85,6 +86,11 @@ class PLATFORM_EXPORT PageScheduler {
   // until `scheduler::WidgetScheduler::WillShutdown()` is called.
   virtual scoped_refptr<scheduler::WidgetScheduler> CreateWidgetScheduler(
       scheduler::WidgetScheduler::Delegate*) = 0;
+
+#if BUILDFLAG(ARKWEB_ACTIVE_POLICY)
+  virtual void SetDelayDurationForBackgroundTabFreezing(
+      int64_t millisecond) = 0;
+#endif
 };
 
 }  // namespace blink

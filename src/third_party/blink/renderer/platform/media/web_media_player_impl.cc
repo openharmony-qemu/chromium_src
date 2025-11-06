@@ -12,6 +12,7 @@
 #include <string_view>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/command_line.h"
 #include "base/debug/alias.h"
@@ -119,6 +120,9 @@
 #if BUILDFLAG(IS_ANDROID)
 #include "media/base/android/media_codec_util.h"
 #endif
+
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/media/web_media_player_impl_ext.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/media/web_media_player_impl_utils.h"
 
 namespace blink {
 
@@ -625,6 +629,7 @@ WebMediaPlayerImpl::WebMediaPlayerImpl(
       base::BindPostTaskToCurrentDefault(blink::BindRepeating(
           &WebMediaPlayerImpl::OnRemotePlayStateChange, weak_this_)));
 #endif  // defined (IS_ANDROID)
+  webMediaPlayerImplUtils_ = std::make_unique<WebMediaPlayerImplUtils>(this);
 }
 
 WebMediaPlayerImpl::~WebMediaPlayerImpl() {
@@ -999,6 +1004,10 @@ void WebMediaPlayerImpl::DoLoad(LoadType load_type,
 
   auto* mb_data_source = data_source.get();
   demuxer_manager_->SetDataSource(std::move(data_source));
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  mb_data_source->SetMediaWebURLErrorCB(
+      blink::BindRepeating(&WebMediaPlayerImplExt::OnWebURLError, WebMediaPlayerImplExtWeakThis()));
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
   mb_data_source->OnRedirect(blink::BindRepeating(
       &WebMediaPlayerImpl::OnDataSourceRedirected, weak_this_));
@@ -1172,7 +1181,16 @@ void WebMediaPlayerImpl::DoSeek(base::TimeDelta time, bool time_updated) {
   //   3) For MSE.
   //      Because the buffers may have changed between seeks, MSE seeks are
   //      never elided.
-  const bool seeking_to_same_paused_time = paused_ && paused_time_ == time;
+  const bool seeking_to_same_paused_time = paused_ &&
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+      !AsWebMediaPlayerImplExt()->IsDmaBufferRecycleEnabled() &&
+#endif
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+      paused_time_ == time && !client_->IsVideoAssistantEnabled()
+#else
+      paused_time_ == time
+#endif
+      ;
   if ((seeking_to_same_paused_time || seeking_for_zero_duration_loop) &&
       pipeline_controller_->IsStable() &&
       GetDemuxerType() != media::DemuxerType::kChunkDemuxer) {
@@ -2003,6 +2021,9 @@ void WebMediaPlayerImpl::OnError(media::PipelineStatus status) {
   DVLOG(1) << __func__ << ": status=" << status;
   DCHECK(main_task_runner_->BelongsToCurrentThread());
   DCHECK(status != media::PIPELINE_OK);
+#if BUILDFLAG(ARKWEB_MEDIA)
+  LOG(INFO) << "OhMedia::OnError PipelineStatus = " << status;
+#endif
 
   if (suppress_destruction_errors_)
     return;
@@ -2657,14 +2678,37 @@ void WebMediaPlayerImpl::SuspendForFrameClosed() {
   UpdatePlayState();
 }
 
+#if !BUILDFLAG(ARKWEB_BFCACHE)
 void WebMediaPlayerImpl::OnPageShown() {
+#else
+void WebMediaPlayerImpl::OnPageShown(bool restoring_in_bfcache) {
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
   DCHECK(main_task_runner_->BelongsToCurrentThread());
+
+#if BUILDFLAG(ARKWEB_MEDIA)
+  LOG(INFO) << "OhMedia::WebMediaPlayerImpl::OnPageShown()"
+            << " delegate_id_:" << delegate_id_;
+#endif // ARKWEB_MEDIA
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (client_) {
+    client_->OnPageVisibilityChanged();
+  }
+#endif // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  if (AsWebMediaPlayerImplExt()) {
+    AsWebMediaPlayerImplExt()->ResumeDmaBuffer();
+  }
+#endif
+
   background_pause_timer_.Stop();
 
   // Foreground videos don't require user gesture to continue playback.
   video_locked_when_paused_when_hidden_ = false;
 
   was_suspended_for_frame_closed_or_frozen_ = false;
+
+  webMediaPlayerImplUtils_->ResumeCdmSessionExt();
 
   if (watch_time_reporter_)
     watch_time_reporter_->OnShown();
@@ -3032,6 +3076,7 @@ std::unique_ptr<media::Renderer> WebMediaPlayerImpl::CreateRenderer(
   }
 
   bool old_uses_audio_service = UsesAudioService(renderer_type_);
+  webMediaPlayerImplUtils_->CreateRendererExtSetRendererType();
   renderer_type_ = renderer_factory_selector_->GetCurrentRendererType();
 
   // TODO(crbug.com/40261162): Support codec changing for Media Foundation.
@@ -3082,7 +3127,18 @@ media::PipelineStatus WebMediaPlayerImpl::OnDemuxerCreated(
   }
 
   media_metrics_provider_->SetDemuxerType(demuxer->GetDemuxerType());
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  media::RequestSurfaceCB request_surface_cb = base::BindPostTaskToCurrentDefault(
+    base::BindOnce(&WebMediaPlayerImplExt::OnSurfaceRequested, WebMediaPlayerImplExtWeakThis()));
+  media::VideoDecoderChangedCB video_decoder_changed_cb = base::BindPostTaskToCurrentDefault(
+    base::BindRepeating(&WebMediaPlayerImplExt::OnVideoDecoderChanaged, WebMediaPlayerImplExtWeakThis()));
+#endif // ARKWEB_VIDEO_ASSISTANT
+
   pipeline_controller_->Start(start_type, demuxer, this, is_streaming,
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                              std::move(request_surface_cb), std::move(video_decoder_changed_cb),
+#endif // ARKWEB_VIDEO_ASSISTANT
                               is_static);
   return media::OkStatus();
 }
@@ -3111,6 +3167,10 @@ void WebMediaPlayerImpl::StartPipeline() {
   // method directly and immediately.
   auto create_demuxer_error = demuxer_manager_->CreateDemuxer(
       load_type_ == kLoadTypeMediaSource, preload_, needs_first_frame_,
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+      should_create_custom_renderer_, initial_preload_,
+      static_cast<uint32_t>(load_type_),
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
       BindOnce(&WebMediaPlayerImpl::OnDemuxerCreated, Unretained(this)),
       std::move(headers));
 
@@ -3660,7 +3720,7 @@ bool WebMediaPlayerImpl::IsPageHidden() const {
          !was_suspended_for_frame_closed_or_frozen_;
 }
 
-bool WebMediaPlayerImpl::IsFrameHidden() const {
+bool WebMediaPlayerImpl::IsHidden() const {
   DCHECK(main_task_runner_->BelongsToCurrentThread());
   if (base::FeatureList::IsEnabled(media::kSuspendMediaForFrozenFrames)) {
     return delegate_->IsFrameHidden();
@@ -3842,11 +3902,14 @@ bool WebMediaPlayerImpl::ShouldDisableVideoWhenHidden() const {
 
 void WebMediaPlayerImpl::UpdateBackgroundVideoOptimizationState() {
   bool should_pause_because_frame_hidden =
-      IsFrameHidden() && should_pause_when_frame_is_hidden_;
+      IsHidden() && should_pause_when_frame_is_hidden_;
   if (IsPageHidden() || should_pause_because_frame_hidden) {
     if (ShouldPausePlaybackWhenHidden()) {
       update_background_status_cb_.Cancel();
       is_background_status_change_cancelled_ = true;
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+      LOG(INFO) << "WebMediaPlayerImpl::UpdateBackgroundVideoOptimizationState, PauseVideoIfNeeded";
+#endif
       PauseVideoIfNeeded(should_pause_because_frame_hidden
                              ? PauseReason::kFrameHidden
                              : PauseReason::kPageHidden);
@@ -3875,7 +3938,7 @@ void WebMediaPlayerImpl::UpdateBackgroundVideoOptimizationState() {
 }
 
 void WebMediaPlayerImpl::PauseVideoIfNeeded(PauseReason pause_reason) {
-  DCHECK(IsPageHidden() || IsFrameHidden());
+  DCHECK(IsPageHidden() || IsHidden());
 
   // Don't pause video while the pipeline is stopped, resuming or seeking.
   // Also if the video is paused already.

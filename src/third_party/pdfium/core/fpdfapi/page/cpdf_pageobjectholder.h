@@ -57,14 +57,6 @@ class CPDF_PageObjectHolder {
   // Value: The current transformation matrix at the end of the stream.
   using CTMMap = std::map<int32_t, CFX_Matrix>;
 
-  // Key: The dictionary key for a given removed resource.
-  // Value: The removed object.
-  using RemovedResourceMap = std::map<ByteString, RetainPtr<CPDF_Object>>;
-
-  // Key: The resource dictionary name.
-  // Value: The entries removed from that dictionary.
-  using AllRemovedResourcesMap =
-      std::map<ByteString, RemovedResourceMap, std::less<>>;
 
   using iterator = std::deque<std::unique_ptr<CPDF_PageObject>>::iterator;
   using const_iterator =
@@ -142,10 +134,6 @@ class CPDF_PageObjectHolder {
   // `stream` must be non-negative.
   CFX_Matrix GetCTMAtEndOfStream(int32_t stream);
 
-  AllRemovedResourcesMap& all_removed_resources_map() {
-    return all_removed_resources_map_;
-  }
-
  protected:
   void LoadTransparencyInfo();
 
@@ -170,9 +158,6 @@ class CPDF_PageObjectHolder {
   // The indexes of Content streams that are dirty and need to be regenerated.
   std::set<int32_t> dirty_streams_;
 
-  // All the resources from `resources_` that are unused. Hold on to them here
-  // in case they need to be restored.
-  AllRemovedResourcesMap all_removed_resources_map_;
 };
 
 #endif  // CORE_FPDFAPI_PAGE_CPDF_PAGEOBJECTHOLDER_H_

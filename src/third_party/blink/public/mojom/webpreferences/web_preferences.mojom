@@ -11,6 +11,9 @@ import "url/mojom/url.mojom";
 import "mojo/public/mojom/base/string16.mojom";
 import "skia/public/mojom/skcolor.mojom";
 
+[EnableIf=arkweb_copy_option]
+import "arkweb/chromium_ext/third_party/blink/public/mojom/copy_options.mojom";
+
 enum PointerType {
   kPointerNone                              = 1,             // 1 << 0
   kPointerFirstType                         = kPointerNone,
@@ -609,10 +612,37 @@ struct WebPreferences {
   // blocking user's access to the background web content.
   bool modal_context_menu = true;
 
+  [EnableIf=is_arkweb]
+  bool pinch_smooth_mode;
+
+  // #if defined(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  [EnableIf=arkweb_custom_video_player]
+  bool custom_video_player_enable = false;
+  [EnableIf=arkweb_custom_video_player]
+  bool custom_video_player_overlay = false;
+  // #endif ARKWEB_CUSTOM_VIDEO_PLAYER
   // Whether the safe-area-insets should be changed dynamically based on
   // browser controls shown ratio. This value is used in web settings only
   // when feature DynamicSafeAreaInsets is enabled.
   bool dynamic_safe_area_insets_enabled = false;
+
+  // #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  [EnableIf=arkweb_video_assistant]
+  bool video_assistant_enabled = false;
+  [EnableIf=arkweb_video_assistant]
+  bool custom_media_player_enabled = false;
+  // #endif ARKWEB_VIDEO_ASSISTANT
+
+  // #if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  [EnableIf=arkweb_media_capabilities_enhance]
+  int32 usage_scenario = 1;
+  // #endif ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
+  [EnableIf=arkweb_error_page]
+  bool error_page_enabled;
+
+  [EnableIf=arkweb_bfcache]
+  bool media_resume_from_bfcache_page = true;
 
   // Whether PaymentRequest is enabled. Controlled by WebView settings on
   // WebView and by `kWebPayments` feature flag everywhere.

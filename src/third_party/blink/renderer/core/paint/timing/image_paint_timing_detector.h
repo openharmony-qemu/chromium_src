@@ -20,6 +20,9 @@
 #include "third_party/blink/renderer/core/paint/timing/media_record_id.h"
 #include "third_party/blink/renderer/core/paint/timing/paint_timing_callback_manager.h"
 #include "third_party/blink/renderer/core/paint/timing/paint_timing_record.h"
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+#include "third_party/blink/renderer/core/paint/timing/paint_timing_detector.h"
+#endif
 #include "third_party/blink/renderer/core/timing/performance_entry.h"
 #include "third_party/blink/renderer/platform/allow_discouraged_type.h"
 #include "third_party/blink/renderer/platform/graphics/dom_node_id.h"
@@ -31,6 +34,9 @@
 #include "third_party/blink/renderer/platform/wtf/cross_thread_functional.h"
 #include "third_party/blink/renderer/platform/wtf/hash_set.h"
 #include "ui/gfx/geometry/rect_conversions.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/image_paint_timing_detector_utils.h"
+#endif
 
 namespace blink {
 
@@ -92,6 +98,15 @@ class CORE_EXPORT ImageRecordsManager {
       // null record can be removed in
       // |AssignPaintTimeToRegisteredQueuedRecords|.
     }
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+    else {
+      image_record_manager_utils_.RemoveRecord(record_id_hash);
+    }
+#endif
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+    image_record_manager_utils_.RemoveRecordFromFirstScreenCalculator(
+        record_id_hash);
+#endif
   }
   // Always adds media record to `recorded_images_`, and might create a new
   // ImageRecord to add to `pending_images_`.
@@ -270,7 +285,23 @@ class CORE_EXPORT ImagePaintTimingDetector final
   void StopRecordingLargestImagePaint() {
     recording_largest_image_paint_ = false;
   }
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  bool is_full_viewport_image() const {
+    return is_full_viewport_;
+  }
+
+  std::optional<uint64_t> GetViewportSize() const {
+    return viewport_size_;
+  }
+#endif
   void Trace(Visitor*) const;
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  bool TakeIfHasALCP();
+  void SetForBlankless();
+  unsigned GetFrameIndex() const;
+  void SetFrameIndex(unsigned frame_index);
+#endif
 
  private:
   friend class LargestContentfulPaintCalculatorTest;

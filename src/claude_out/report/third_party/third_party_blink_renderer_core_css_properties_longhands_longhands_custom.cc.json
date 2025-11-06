@@ -1,0 +1,56 @@
+{
+  "文件路径": "third_party/blink/renderer/core/css/properties/longhands/longhands_custom.cc",
+  "分析时间": "2025-11-04",
+  "总hunk数量": 2,
+  "成功解决的hunk数量": 2,
+  "未能解决的hunk数量": 0,
+  ".rej文件完整性": "已确认保持完整未被修改",
+  "hunks分析": [
+    {
+      "hunk索引": 1,
+      "修改类型": "添加include语句",
+      "待添加行": [
+        "#include \"arkweb/build/features/features.h\""
+      ],
+      "待删除行": [],
+      "冲突原因": "Arkweb132在文件头部添加了arkweb features相关的头文件引用，但在升级到Chromium141时这个修改未能自动合并",
+      "分析过程": "通过.rej文件中的上下文精确定位到源文件第4行注释和第6行base/numerics/clamped_math.h之间",
+      "修改置信度": "高",
+      "风险等级": "低",
+      "风险说明": "添加头文件引用是安全的操作，不会影响现有代码逻辑",
+      "解决状态": "已解决",
+      "处理策略": "在源文件第5行位置成功添加了arkweb/build/features/features.h的include语句"
+    },
+    {
+      "hunk索引": 2,
+      "修改类型": "添加条件编译代码块",
+      "待添加行": [
+        "#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)",
+        "  #include \"arkweb/chromium_ext/third_party/blink/renderer/core/css/css_utils.h\"",
+        "#endif"
+      ],
+      "待删除行": [],
+      "冲突原因": "Arkweb132添加了高级安全模式的条件编译代码，在升级过程中需要在新的Chromium141代码中重新应用此修改",
+      "分析过程": "通过上下文定位到源文件platform/text/quotes_data.h之后，实现方法注释之前的位置",
+      "修改置信度": "高",
+      "风险等级": "低",
+      "风险说明": "使用条件编译指令，只有在ARKWEB_ADVANCED_SECURITY_MODE启用时才会包含额外头文件，对现有代码无影响",
+      "解决状态": "已解决",
+      "处理策略": "在源文件第88行位置成功添加了完整的条件编译代码块"
+    }
+  ],
+  "总体评估": {
+    "冲突复杂度": "简单",
+    "修改影响范围": "头文件引用区域",
+    "代码完整性": "保持良好",
+    "编译兼容性": "预期兼容",
+    "建议": "所有修改都严格遵守了'不添加上下文'原则，只添加了必要的include语句和条件编译块，建议编译测试确认"
+  },
+  "合规性验证": {
+    "未添加上下文行": "已确认",
+    "未生成脚本文件": "已确认",
+    "未创建辅助文件": "已确认",
+    "未修改.rej文件": "已确认",
+    "仅在指定目录创建JSON报告": "已确认"
+  }
+}

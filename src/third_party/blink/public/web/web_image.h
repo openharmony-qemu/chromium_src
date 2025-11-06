@@ -33,6 +33,11 @@
 
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+#include "build/build_config.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/time/time.h"
 #include "third_party/blink/public/platform/web_common.h"
 #include "third_party/skia/include/core/SkBitmap.h"

@@ -1,0 +1,64 @@
+{
+  "file_info": {
+    "conflict_file": "third_party/blink/renderer/platform/image-decoders/image_decoder_test.cc.rej",
+    "source_file": "third_party/blink/renderer/platform/image-decoders/image_decoder_test.cc",
+    "arkweb_132_file": "third_party/blink/renderer/platform/image-decoders/image_decoder_test.cc",
+    "chromium_132_baseline": "third_party/blink/renderer/platform/image-decoders/image_decoder_test.cc"
+  },
+  "processing_summary": {
+    "total_hunks": 1,
+    "resolved_hunks": 1,
+    "unresolved_hunks": 0,
+    "rej_file_integrity": "preserved",
+    "processing_status": "completed"
+  },
+  "hunks_analysis": [
+    {
+      "hunk_id": 1,
+      "lines_range": "3-16",
+      "operation_type": "insert",
+      "risk_level": "低",
+      "conflict_cause": "Arkweb 132在include区域添加了arkweb/features.h头文件引用，但在Chromium 141版本升级过程中该修改未被正确合并",
+      "analysis_process": {
+        "context_matching": "精确匹配",
+        "anchor_found": "在源文件中成功找到锚点上下文 - #include <memory> 和 #include \"build/build_config.h\"",
+        "modification_intent": "添加Arkweb特定的功能特性头文件引用",
+        "positioning_confidence": "高"
+      },
+      "changes_applied": [
+        {
+          "line": 10,
+          "action": "insert",
+          "content": "#include \"arkweb/build/features/features.h\"",
+          "context": "在#include <memory>的空白行后和#include \"build/build_config.h\"之前插入"
+        }
+      ],
+      "modification_strategy": {
+        "strategy": "原子化应用",
+        "anchor_usage": "使用前后include语句作为精确定位锚点",
+        "execution": "在目标位置精确插入+行内容，未修改任何上下文"
+      },
+      "resolution_status": "已解决",
+      "confidence_score": 95,
+      "verification": {
+        "syntax_check": "通过 - include语句语法正确",
+        "logic_check": "通过 - 头文件位置符合C++约定",
+        "context_consistency": "通过 - 与周围include语句保持一致"
+      }
+    }
+  ],
+  "technical_details": {
+    "modification_type": "include声明添加",
+    "affected_area": "文件头部include区域",
+    "arkweb_feature_dependency": "arkweb/build/features/features.h",
+    "impact_scope": "局部 - 仅影响编译时头文件包含",
+    "backwards_compatibility": "保持"
+  },
+  "quality_assurance": {
+    "context_preservation": "完整 - 未添加任何rej文件中的上下文行",
+    "atomic_modification": "符合 - 仅应用了带+前缀的行",
+    "file_integrity": "rej文件保持完整未被修改",
+    "compliance_check": "完全符合黄金法则要求"
+  },
+  "summary": "冲突解决成功完成。单个hunk被精确应用到源文件中，添加了Arkweb特性头文件的include声明。修改过程严格遵守了不添加上下文的黄金法则，rej文件保持完整。风险等级低，置信度高，不会对现有代码逻辑产生负面影响。"
+}

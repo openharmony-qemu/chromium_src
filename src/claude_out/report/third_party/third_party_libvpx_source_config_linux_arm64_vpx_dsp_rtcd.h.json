@@ -1,0 +1,47 @@
+{
+  "conflict_file": "third_party/libvpx/source/config/linux/arm64/vpx_dsp_rtcd.h.rej",
+  "source_file": "third_party/libvpx/source/config/linux/arm64/vpx_dsp_rtcd.h",
+  "analysis_result": {
+    "total_hunks": 1,
+    "resolved_hunks": 1,
+    "unresolved_hunks": 0,
+    "rej_file_integrity": "preserved",
+    "processing_date": "2025-11-05"
+  },
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "line_range": "3728-3741",
+      "status": "resolved",
+      "risk_level": "低风险",
+      "conflict_cause": "在Arkweb132中，为了兼容OpenHarmony OS，添加了条件编译来禁用ARM64平台上的SVE优化，但这个修改在升级到Arkweb141时产生了冲突",
+      "analysis_process": "通过Grep工具定位到源文件中第1177-1178行的vpx_sum_squares_2d_i16函数指针赋值代码段，找到了与.rej文件中上下文匹配的代码位置",
+      "modification_confidence": "高置信度",
+      "resolution_strategy": "在vpx_sum_squares_2d_i16_neon赋值后和HAS_SVE条件检查前，添加了OSOHOS条件编译块，包含注释说明",
+      "applied_changes": [
+        {
+          "type": "addition",
+          "line_content": "// FIXME: ARM64 is not supported in ohos",
+          "position": "after line 1177"
+        },
+        {
+          "type": "addition",
+          "line_content": "#if !defined(OSOHOS)",
+          "position": "after comment line"
+        },
+        {
+          "type": "addition",
+          "line_content": "#endif",
+          "position": "after the HAS_SVE conditional block"
+        }
+      ],
+      "final_state": "成功将条件编译保护应用到SVE相关代码段，确保在OpenHarmony OS环境下不会调用不支持的SVE优化函数"
+    }
+  ],
+  "summary": {
+    "overall_status": "成功解决",
+    "code_impact": "在OpenHarmony OS环境下禁用了SVE优化的sum_squares_2d_i16函数，回退到NEON实现",
+    "compatibility_note": "此修改确保了Arkweb141在OpenHarmony OS上的兼容性，避免了ARM64平台上SVE指令集的潜在问题",
+    "verification_required": false
+  }
+}

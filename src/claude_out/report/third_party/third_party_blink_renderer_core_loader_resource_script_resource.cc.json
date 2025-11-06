@@ -1,0 +1,68 @@
+{
+  "file_path": "third_party/blink/renderer/core/loader/resource/script_resource.cc",
+  "analysis_timestamp": "2025-11-04",
+  "total_hunks": 2,
+  "resolved_hunks": 2,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "preserved",
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "description": "添加 Arkweb 自定义 scheme 缓存相关的头文件引用",
+      "risk_level": "低",
+      "conflict_reason": "Arkweb 132 针对自定义 scheme 缓存功能添加了新的头文件引用，在 Arkweb 141 中需要重新集成",
+      "analysis_process": "解析 .rej 文件第一个 hunk，识别出需要添加的 include 语句：\n1. script_resource_utils.h - 通用脚本资源工具\n2. scheme_registry_utils.h - 自定义 scheme 注册表工具（条件编译）\n使用上下文行定位到源文件第27行之后的位置，准确添加了这些 include 语句",
+      "modification_confidence": "高",
+      "resolution_strategy": "精确应用",
+      "changes_made": [
+        "在第27行后添加: #include \"arkweb/chromium_ext/third_party/blink/renderer/core/loader/resource/script_resource_utils.h\"",
+        "添加条件编译块: #if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)",
+        "添加头文件: #include \"arkweb/chromium_ext/third_party/blink/renderer/platform/weborigin/scheme_registry_utils.h\"",
+        "结束条件编译块: #endif"
+      ],
+      "status": "已解决"
+    },
+    {
+      "hunk_number": 2,
+      "description": "集成自定义 scheme 代码缓存支持逻辑",
+      "risk_level": "中",
+      "conflict_reason": "Arkweb 141 重构了代码缓存的逻辑结构，从单一的 code_cache_supported 变量改为 if-else 结构，导致 Arkweb 132 的修改无法直接应用",
+      "analysis_process": "发现 .rej 文件期望的 code_cache_supported 变量在 Arkweb 141 中已不存在。\n分析当前代码结构发现已改为 if-else 链式结构处理不同类型的缓存。\n理解到核心意图是在现有缓存类型基础上添加对自定义 scheme 的支持。\n在第437行后添加了 code_cache_with_response_time_supported 变量的定义和初始化。\n在 if-else 结构中添加了新的条件分支来处理自定义 scheme 缓存。",
+      "modification_confidence": "高",
+      "resolution_strategy": "适应性重构",
+      "changes_made": [
+        "在第437行后添加自定义 scheme 缓存支持变量和逻辑",
+        "添加调试日志输出",
+        "在缓存处理器的 if-else 结构中添加新的条件分支",
+        "使用条件编译确保只在启用 ARKWEB_CUSTOM_SCHEME_CODECACHE 时生效"
+      ],
+      "status": "已解决"
+    }
+  ],
+  "summary": {
+    "overall_risk_assessment": "中低风险",
+    "key_modifications": [
+      "成功集成了 Arkweb 自定义 scheme 缓存功能所需的头文件引用",
+      "在重构后的代码结构中适配了自定义 scheme 缓存支持逻辑",
+      "保持了条件编译的正确性，确保功能可配置"
+    ],
+    "compatibility_notes": [
+      "所有修改都使用了 BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE) 条件编译",
+      "保持了与现有代码架构的兼容性",
+      "没有破坏现有的 HTTP family 和 hash-based 缓存逻辑"
+    ],
+    "verification_required": [
+      "确认 ARKWEB_CUSTOM_SCHEME_CODECACHE 编译标志正确定义",
+      "验证 SchemeRegistryUtils::SchemeSupportsCodeCacheWithResponseTime 函数可用",
+      "测试自定义 scheme 的代码缓存功能是否正常工作"
+    ]
+  },
+  "final_verification": {
+    "rej_file_preserved": true,
+    "source_file_modified": true,
+    "context_lines_added": false,
+    "only_plus_minus_lines_applied": true,
+    "no_script_files_created": true,
+    "json_report_created_at_specified_path": true
+  }
+}

@@ -414,8 +414,9 @@ bool SecurityOrigin::CanReadContent(const KURL& url) const {
 }
 
 bool SecurityOrigin::CanDisplay(const KURL& url) const {
-  if (universal_access_)
+  if (universal_access_) {
     return true;
+  }
 
   // Data URLs can always be displayed.
   if (url.ProtocolIsData()) {
@@ -423,12 +424,20 @@ bool SecurityOrigin::CanDisplay(const KURL& url) const {
   }
 
   String protocol = url.Protocol();
-  if (SchemeRegistry::CanDisplayOnlyIfCanRequest(protocol))
+  if (SchemeRegistry::CanDisplayOnlyIfCanRequest(protocol)) {
     return CanRequest(url);
+  }
 
   if (SchemeRegistry::ShouldTreatURLSchemeAsDisplayIsolated(protocol)) {
+#if BUILDFLAG(ARKWEB_NETWORK_BASE) || BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    return protocol_ == protocol ||
+           SecurityPolicy::IsOriginAccessToURLAllowed(this, url) ||
+           (base::Contains(url::GetCorsEnabledSchemes(), url.Protocol().Ascii()) &&
+           (protocol != content::kArkWebUIScheme && protocol != content::kChromeUIScheme));
+#else
     return protocol_ == protocol ||
            SecurityPolicy::IsOriginAccessToURLAllowed(this, url);
+#endif
   }
 
   if (base::Contains(url::GetLocalSchemes(), protocol.Ascii())) {

@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/command_line.h"
 #include "base/feature_list.h"
@@ -344,6 +345,7 @@ WidgetInputHandlerManager::WidgetInputHandlerManager(
             main_thread_id);
   }
 #endif
+  manager_utils_ = std::make_unique<WidgetInputHandlerManagerUtils>(this);
 }
 
 void WidgetInputHandlerManager::OnFirstContentfulPaint(
@@ -1047,6 +1049,9 @@ void WidgetInputHandlerManager::InitOnInputHandlingThread(
     synchronous_compositor_registry_->CreateProxy(input_handler_proxy_.get());
   }
 #endif
+#if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
+  manager_utils_->CreateProxy();
+#endif
 }
 
 void WidgetInputHandlerManager::BindChannel(
@@ -1059,7 +1064,11 @@ void WidgetInputHandlerManager::BindChannel(
   //
   // Deliberately leaked here because WidgetInputHandlerImpl calls
   // "delete this;" when it receives mojo disconnect notification.
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  ArkwebWidgetInputHandlerImplExt* handler = new ArkwebWidgetInputHandlerImplExt(
+#else
   WidgetInputHandlerImpl* handler = new WidgetInputHandlerImpl(
+#endif
       this,
       compositor_thread_default_task_runner_ ? input_event_queue_ : nullptr,
       widget_, frame_widget_input_handler_);

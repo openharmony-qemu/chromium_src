@@ -1,0 +1,78 @@
+{
+  "冲突文件路径": "third_party/blink/renderer/core/html/forms/color_chooser_popup_ui_controller.cc.rej",
+  "源文件路径": "third_party/blink/renderer/core/html/forms/color_chooser_popup_ui_controller.cc",
+  "处理结果": {
+    "总hunk数量": 1,
+    "成功解决数量": 1,
+    "未能解决数量": 0,
+    "解决状态": "全部成功解决"
+  },
+  "rej文件保持完整": true,
+  "hunks分析": [
+    {
+      "hunk序号": 1,
+      "冲突原因": "Arkweb132为OpenHarmony系统添加了available_rect_in_screen变量计算功能，在Chromium 141升级时产生冲突",
+      "风险等级": "低",
+      "待添加行数": 8,
+      "待删除行数": 0,
+      "定位锚点": "gfx::Rect anchor_rect_in_screen = chrome_client_->LocalRootToScreenDIPs()",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "处理过程": {
+        "步骤1_解析": {
+          "待添加列表": [
+            "#if BUILDFLAG(IS_OHOS)",
+            "// available_rect_in_screen refers to the rectangle of the frame, which can be",
+            "// used to contain the color chooser.",
+            "gfx::Rect available_rect_in_screen;",
+            "if (frame_->View()) {",
+            "available_rect_in_screen = chrome_client_->LocalRootToScreenDIPs(",
+            "frame_->View()->FrameRect(), frame_->View());",
+            "}"
+          ],
+          "待删除列表": []
+        },
+        "步骤2_定位": {
+          "原始锚点": [
+            "void ColorChooserPopupUIController::WriteColorPickerDocument(",
+            "SegmentedBuffer& data) {",
+            "gfx::Rect anchor_rect_in_screen = chrome_client_->LocalRootToScreenDIPs(",
+            "client_->ElementRectRelativeToLocalRoot(), frame_->View());"
+          ],
+          "定位成功": true,
+          "源文件位置": "第106-108行，WriteColorPickerDocument函数中anchor_rect_in_screen变量定义之后"
+        },
+        "步骤3_应用": {
+          "应用成功": true,
+          "应用位置": "第108行后",
+          "实际插入行数": 9,
+          "代码逻辑检查": "通过 - OHOS平台特定代码块格式正确，变量定义与使用逻辑一致"
+        }
+      },
+      "最终处理策略": {
+        "策略类型": "精确应用",
+        "具体操作": "在源文件第108行后插入完整的OHOS平台条件编译代码块",
+        "策略说明": "严格按照.rej文件中的+行列表，在WriteColorPickerDocument函数中anchor_rect_in_screen变量定义后添加OHOS特定的available_rect_in_screen变量计算逻辑",
+        "代码完整性": "插入的代码块语法正确，逻辑完整，与现有代码风格一致"
+      }
+    }
+  ],
+  "总体分析": {
+    "冲突性质": "平台特定功能添加 - OpenHarmony系统适配",
+    "修改复杂度": "简单 - 纯代码添加，无逻辑冲突",
+    "风险评估": "低风险 - 条件编译块不会影响其他平台",
+    "代码质量": "良好 - 遵循现有代码风格和命名规范",
+    "功能影响": "为OpenHarmony系统添加颜色选择器的可用屏幕矩形计算功能",
+    "人工复查重点": [
+      "验证available_rect_in_screen变量在第124行的AddProperty调用中正确使用",
+      "确认OHOS平台编译标志的正确性",
+      "检查frame_->View()空指针检查的必要性"
+    ]
+  },
+  "任务完成状态": {
+    "主要任务完成": true,
+    "rej文件完整性": "保持原样，未被修改",
+    "违规检查": "无任何违规操作",
+    "输出限制合规": "仅在指定目录创建JSON报告文件"
+  }
+}

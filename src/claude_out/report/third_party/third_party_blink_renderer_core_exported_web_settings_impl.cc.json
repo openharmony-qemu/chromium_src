@@ -1,0 +1,40 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/core/exported/web_settings_impl.cc.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/core/exported/web_settings_impl.cc",
+    "处理时间": "2025-11-04"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk详情": [
+    {
+      "hunk编号": 1,
+      "风险等级": "低",
+      "冲突原因": "Arkweb132添加了自定义features头文件的include语句，在升级到Chromium 141时产生了冲突",
+      "修改内容": {
+        "添加行": ["#include \"arkweb/build/features/features.h\""],
+        "删除行": []
+      },
+      "分析过程": "通过解析rej文件发现需要在第31行的web_settings_impl.h include后添加arkweb/build/features/features.h的include语句。源文件中该位置存在，可以精确定位并应用修改。",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "应用位置": "第33行",
+      "处理策略": "在web_settings_impl.h include语句后添加arkweb features头文件的include，保持了代码的组织结构和逻辑性"
+    }
+  ],
+  "验证结果": {
+    ".rej文件完整性": "保持完整，未被修改或删除",
+    "源文件修改状态": "成功应用了所有必要的修改",
+    "代码语法检查": "通过，添加的include语句语法正确"
+  },
+  "总体评估": {
+    "处理结果": "成功",
+    "代码质量": "良好",
+    "集成风险": "低",
+    "建议": "修改成功完成，arkweb features头文件已正确包含，可以继续后续的编译和测试流程"
+  }
+}

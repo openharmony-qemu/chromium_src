@@ -1,0 +1,44 @@
+{
+  "file_path": "third_party/blink/renderer/core/exported/web_input_method_controller_impl.cc",
+  "analysis_time": "2025-11-04",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "preserved",
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "status": "已解决",
+      "confidence": "高",
+      "risk_level": "低",
+      "conflict_reason": "Arkweb132在Chromium132基础上添加了两个自定义include文件，在Chromium141版本中需要重新应用这些修改",
+      "analysis_process": "通过分析.rej文件中的第一个hunk，识别出需要添加的两个include语句。使用上下文锚点'web_input_method_controller_impl.h'和'web_string.h'成功定位到源文件中的正确插入位置（第5行和第9行之间）",
+      "modifications": [
+        {
+          "type": "添加",
+          "line_number": 7,
+          "content": "#include \"arkweb/build/features/features.h\""
+        },
+        {
+          "type": "添加",
+          "line_number": 8,
+          "content": "#include \"arkweb/chromium_ext/third_party/blink/renderer/core/editing/ime/arkweb_input_method_controller_utils.h\""
+        }
+      ],
+      "final_strategy": "成功应用了.rej文件中的所有修改，在正确的位置添加了两个Arkweb特有的include文件"
+    }
+  ],
+  "summary": {
+    "total_additions": 2,
+    "total_deletions": 0,
+    "modification_type": "include文件添加",
+    "impact_assessment": "修改仅涉及头文件包含，不会影响现有代码逻辑",
+    "validation_needed": "需要确保新增的include文件路径在Arkweb141项目中存在且可访问"
+  },
+  "notes": [
+    "修改遵循了黄金法则，仅添加了以+开头的行",
+    "没有添加任何上下文行",
+    ".rej文件保持完整未被修改",
+    "所有修改都精确地应用到了源文件中"
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "文件信息": {
+    "冲突文件": "third_party/blink/renderer/platform/loader/fetch/memory_cache.cc.rej",
+    "源文件": "third_party/blink/renderer/platform/loader/fetch/memory_cache.cc",
+    "处理时间": "2025-11-05"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk分析": [
+    {
+      "hunk编号": 1,
+      "原始位置": "第191行附近",
+      "风险等级": "低",
+      "冲突原因": "Arkweb 132 中的侵入式修改未能自动合并到 Arkweb 141 中，需要在 RemoveInternal 函数中添加离线资源处理逻辑",
+      "分析过程": "通过在源文件中找到匹配的代码模式 'resource_map->erase(it);' 确定了正确的插入位置。虽然 Arkweb 141 中后续的代码结构发生了变化（增加了条件分支处理 strong_references_），但 Arkweb 的侵入式修改应该紧跟在 resource_map->erase(it); 之后，这是逻辑上最合理的位置",
+      "修改置信度": "高",
+      "处理策略": "原子化应用 - 在 resource_map->erase(it); 之后添加条件编译的 Arkweb 注入代码",
+      "应用结果": "成功",
+      "添加的行数": 3,
+      "具体修改": "在函数 RemoveInternal 中的 resource_map->erase(it); 语句后添加了 #if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE) 条件编译块，调用 resource->SetKeepAliveOff();"
+    }
+  ],
+  "验证信息": {
+    ".rej文件完整性": "已验证 - .rej 文件保持完整，未被修改或删除",
+    "源文件修改状态": "已成功应用侵入式修改",
+    "编译兼容性": "修改使用条件编译，不会影响非 Arkweb 构建的代码"
+  },
+  "技术说明": {
+    "修改目的": "在资源从内存缓存中移除时，如果是 Arkweb 的离线资源注入模式，则调用 SetKeepAliveOff() 来关闭资源的保活机制",
+    "影响范围": "仅影响使用 ARKWEB_INJECT_OFFLINE_RESOURCE 标志编译的构建",
+    "潜在风险": "极低 - 修改使用了条件编译，只在特定的构建配置下生效"
+  }
+}

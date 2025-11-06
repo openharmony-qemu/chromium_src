@@ -1,0 +1,75 @@
+{
+  "冲突文件": "third_party/blink/renderer/core/frame/web_frame_widget_impl.cc.rej",
+  "源文件": "third_party/blink/renderer/core/frame/web_frame_widget_impl.cc",
+  "处理状态": "已完成",
+  "总hunk数量": 3,
+  "成功解决的hunk数量": 3,
+  "未能解决的hunk数量": 0,
+  "rej文件完整性": "保持完整未被修改",
+  "hunks处理详情": [
+    {
+      "hunk编号": 1,
+      "行号范围": "31-42",
+      "冲突原因": "Arkweb132需要添加两个特殊的include文件用于arkweb功能支持",
+      "风险分析": "低风险 - 这是头文件包含的添加，不会影响现有代码逻辑",
+      "分析过程": "在源文件的第31行后找到了正确的include位置，在#include <utility>和#include base/auto_reset.h之间添加了两个arkweb特定的头文件",
+      "修改内容": {
+        "添加行": [
+          "#include \"arkweb/build/features/features.h\"",
+          "#include \"arkweb/chromium_ext/third_party/blink/renderer/platform/widget/widget_base_utils.h\""
+        ]
+      },
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "策略": "原子化应用 - 只添加+开头的行，保持代码结构清晰"
+    },
+    {
+      "hunk编号": 2,
+      "行号范围": "937-966",
+      "冲突原因": "Arkweb132需要在HandleKeyEvent方法中对popup事件处理添加条件编译控制",
+      "风险分析": "中等风险 - 修改了事件处理的返回逻辑，可能影响popup的行为",
+      "分析过程": "发现源文件中的HandleKeyEvent方法已经与.rej文件期望的基础代码有所不同，但核心逻辑结构一致。找到了popup处理代码块并正确应用了条件编译修改",
+      "修改内容": {
+        "添加行": [
+          "#if BUILDFLAG(ARKWEB_INPUT_EVENTS)",
+          "  WebInputEventResult event_result = page_popup->HandleKeyEvent(event);",
+          "#else",
+          "  page_popup->HandleKeyEvent(event);",
+          "#endif",
+          "#if BUILDFLAG(ARKWEB_INPUT_EVENTS)",
+          "    return event_result;",
+          "#else",
+          "    return WebInputEventResult::kHandledSystem;",
+          "#endif"
+        ]
+      },
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "策略": "条件编译应用 - 使用ARKWEB_INPUT_EVENTS宏控制不同的事件处理逻辑"
+    },
+    {
+      "hunk编号": 3,
+      "行号范围": "1850-1860",
+      "冲突原因": "Arkweb132需要在ScheduleAnimation方法中添加DFX跟踪支持",
+      "风险分析": "低风险 - 仅添加调试跟踪代码，不影响核心功能",
+      "分析过程": "发现ScheduleAnimation方法的签名已从无参数变为bool urgent参数，但核心逻辑相同。在non_composited_client_->ScheduleNonCompositedAnimation()调用前成功添加了TRACE_EVENT0",
+      "修改内容": {
+        "添加行": [
+          "#if BUILDFLAG(ARKWEB_DFX_TRACING)",
+          "    TRACE_EVENT0(",
+          "      \"blink\", \"WebFrameWidgetImpl::ScheduleAnimation non_composited_client_\");",
+          "#endif"
+        ]
+      },
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "策略": "适应性应用 - 根据方法签名变化调整添加位置，保持功能一致性"
+    }
+  ],
+  "总体评估": {
+    "风险等级": "中等",
+    "主要风险点": "HandleKeyEvent方法的事件返回逻辑修改可能影响popup行为",
+    "建议": "1. 重点关注popup相关的功能测试，确保事件处理逻辑正确 2. 验证ARKWEB_INPUT_EVENTS功能宏是否正确定义 3. 测试DFX跟踪功能是否正常工作",
+    "代码质量": "所有修改都严格遵循了原子化应用原则，只添加了+开头的行，未添加任何上下文行，符合要求"
+  }
+}

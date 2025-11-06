@@ -1,0 +1,53 @@
+{
+  "conflict_file": "third_party/pdfium/xfa/fgas/font/cfgas_fontmgr.cpp.rej",
+  "source_file": "third_party/pdfium/xfa/fgas/font/cfgas_fontmgr.cpp",
+  "analysis_timestamp": "2025-11-05",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "maintained",
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "function_name": "VerifyUnicodeForFontDescriptor",
+      "line_range": "582-600",
+      "resolution_status": "已解决",
+      "risk_level": "低",
+      "confidence": "高",
+      "conflict_cause": "Arkweb 132 版本中对 VerifyUnicodeForFontDescriptor 函数进行了重构，将原来使用成员变量 m_pFace 缓存字体的方式改为使用局部变量，避免修改 descriptor 的状态。这个变更在 Arkweb 141 中产生了冲突，因为源代码结构已经发生变化。",
+      "analysis_process": "1. 解析 .rej 文件中的 hunk，识别出待删除的 10 行代码和待添加的 8 行代码\n2. 在源文件中定位到 VerifyUnicodeForFontDescriptor 函数（第582-600行）\3. 分析发现源代码使用的是 face_ 成员变量而不是 m_pFace，但代码逻辑结构相似\n4. 理解变更意图：避免将加载的字体缓存到 descriptor 中，而是使用局部变量\n5. 应用原子化修改：移除条件检查和成员变量赋值，改为每次都创建新的局部 face 对象\n6. 将字符映射选择和字符索引获取结果分别存储到局部变量中\n7. 在函数结束前清理外部流",
+      "modification_strategy": "完全按照 .rej 文件中的 +/- 行进行原子化应用：\n- 删除了基于 pDesc->face_ 的条件检查逻辑\n- 删除了向 pDesc->face_ 赋值的代码\n- 添加了局部变量 pFace 来加载字体\n- 添加了局部变量 select_charmap_result 和 ret_index 来存储中间结果\n- 添加了在函数结束前调用 ClearExternalStream() 的代码\n- 修改了返回语句使用局部变量而不是成员变量",
+      "applied_changes": {
+        "deleted_lines": [
+          "  if (!pDesc->face_) {",
+          "    if (!pFileRead) {",
+          "    }",
+          "    if (!pDesc->face_) {",
+          "    }",
+          "    pDesc->face_->ClearExternalStream();",
+          "  }",
+          "  return pDesc->face_->SelectCharMap(fxge::FontEncoding::kUnicode) &&",
+          "         pDesc->face_->GetCharIndex(wcUnicode);"
+        ],
+        "added_lines": [
+          "  if (!pFileRead)",
+          "  RetainPtr<CFX_Face> pFace = LoadFace(pFileRead, pDesc->face_index_);",
+          "  if (!pFace)",
+          "  bool select_charmap_result =",
+          "      pFace->SelectCharMap(fxge::FontEncoding::kUnicode);",
+          "  int ret_index = pFace->GetCharIndex(wcUnicode);",
+          "  pFace->ClearExternalStream();",
+          "  return select_charmap_result && ret_index;"
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "处理状态": "成功完成",
+    "主要变更": "VerifyUnicodeForFontDescriptor 函数重构",
+    "变更影响": "从使用缓存的成员变量改为每次创建新的字体对象，避免了 descriptor 状态的修改",
+    "代码质量": "保持了原有的功能逻辑，提高了代码的线程安全性",
+    "风险提示": "由于每次调用都会重新加载字体，可能会有轻微的性能影响，但这是为了提高代码正确性和线程安全性的必要权衡",
+    "最终验证": ".rej 文件保持完整未被修改，所有 hunk 都已成功应用到源文件中"
+  }
+}

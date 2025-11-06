@@ -25,6 +25,7 @@
 
 #include <optional>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback.h"
 #include "third_party/blink/renderer/core/dom/dom_node_ids.h"
 #include "third_party/blink/renderer/platform/heap/garbage_collected.h"

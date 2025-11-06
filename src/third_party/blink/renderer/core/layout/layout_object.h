@@ -4191,6 +4191,10 @@ class CORE_EXPORT LayoutObject : public GarbageCollected<LayoutObject>,
   friend class CachedTextInputInfo;
   bool is_destroyed_ = false;
 #endif
+
+#if defined(__arm__)
+  char dummy[8];
+#endif
 };
 
 template <typename T>

@@ -1,0 +1,59 @@
+{
+  "文件路径": "third_party/blink/public/web/web_image.h",
+  "处理时间": "2025-11-04",
+  "总hunk数量": 1,
+  "成功解决的hunk数量": 1,
+  "未能解决的hunk数量": 0,
+  "rej文件完整性": "已确认未被修改",
+  "hunks详情": [
+    {
+      "hunk序号": 1,
+      "行号范围": "29-38",
+      "冲突原因": "Arkweb132在chromium132基础上添加了arkweb特定的头文件包含，用于支持OHOS扩展功能",
+      "风险等级": "低风险",
+      "修改内容": {
+        "添加的行": [
+          "#include \"arkweb/build/features/features.h\"",
+          "#include \"build/build_config.h\"",
+          "#if BUILDFLAG(IS_ARKWEB_EXT)",
+          "#include \"arkweb/ohos_nweb_ex/build/features/features.h\"",
+          "#endif"
+        ],
+        "删除的行": []
+      },
+      "定位过程": {
+        "锚点上下文": [
+          "#ifndef THIRD_PARTY_BLINK_PUBLIC_WEB_WEB_IMAGE_H_",
+          "#define THIRD_PARTY_BLINK_PUBLIC_WEB_WEB_IMAGE_H_",
+          "#include \"base/time/time.h\""
+        ],
+        "定位策略": "使用头文件保护宏作为主要锚点，在include区域添加arkweb特定头文件",
+        "应用位置": "第32行（#define宏定义）之后，第39行（<vector>包含）之前"
+      },
+      "分析过程": {
+        "修改意图": "添加Arkweb构建特性支持，为OHOS扩展功能提供条件编译支持",
+        "代码逻辑": "通过BUILDFLAG(IS_ARKWEB_EXT)条件编译来控制是否包含OHOS扩展特性头文件",
+        "依赖关系": "依赖于arkweb构建系统中的features.h文件"
+      },
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "处理策略": "精确应用",
+      "语法检查": "通过，所有include语句语法正确",
+      "逻辑检查": "通过，条件编译逻辑合理"
+    }
+  ],
+  "总体评估": {
+    "冲突复杂度": "简单",
+    "修改影响范围": "仅影响头文件包含，不改变API接口",
+    "向后兼容性": "保持",
+    "潜在风险": "极低，纯头文件添加不影响现有功能",
+    "建议": "建议验证arkweb构建系统的features.h文件存在性"
+  },
+  "处理结果确认": {
+    "源文件修改状态": "已成功应用所有hunk修改",
+    "rej文件保持完整": "是",
+    "是否创建脚本文件": "否",
+    "是否修改.rej文件": "否",
+    "是否在指定目录外创建文件": "否"
+  }
+}

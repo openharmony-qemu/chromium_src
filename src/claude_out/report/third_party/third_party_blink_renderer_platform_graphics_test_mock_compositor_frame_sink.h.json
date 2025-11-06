@@ -1,0 +1,54 @@
+{
+  "file_path": "third_party/blink/renderer/platform/graphics/test/mock_compositor_frame_sink.h",
+  "conflict_file": "third_party/blink/renderer/platform/graphics/test/mock_compositor_frame_sink.h.rej",
+  "analysis_timestamp": "2025-11-05",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "maintained",
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "status": "已解决",
+      "line_range": "71-82",
+      "confidence": "高",
+      "risk_level": "低",
+      "conflict_reason": "Arkweb132在MockCompositorFrameSink类中添加了ARKWEB_UNITTESTS条件编译的两个方法，Arkweb141版本中缺少这些方法",
+      "analysis_process": "通过.rej文件中的上下文锚点（MOCK_METHOD1(SetThreads...)和private:）精确定位到源文件中的插入位置",
+      "changes_applied": [
+        {
+          "type": "addition",
+          "lines": [
+            "#if BUILDFLAG(ARKWEB_UNITTESTS)",
+            "  void ReportKeyThreadIds(const WTF::Vector<int32_t>& thread_ids,",
+            "                          int32_t process_id,",
+            "                          bool is_created) override {}",
+            "  void OnSetBypassVsyncCondition(int32_t condition) override {}",
+            "#endif"
+          ]
+        }
+      ],
+      "insertion_point": "MOCK_METHOD1(SetThreads, void(const Vector<viz::Thread>&)); 与 private: 之间",
+      "modification_strategy": "使用上下文锚点精确匹配插入位置，保持与Arkweb132一致的代码结构",
+      "syntax_verification": "通过 - 添加的条件编译块语法正确，与类声明结构一致",
+      "compatibility_notes": "新增的两个方法为空实现，仅用于unittest环境，不会影响现有功能"
+    }
+  ],
+  "overall_assessment": {
+    "success_rate": "100%",
+    "total_changes": 1,
+    "additions": 6,
+    "deletions": 0,
+    "code_quality": "良好",
+    "compatibility": "完全向后兼容",
+    "test_coverage_impact": "新增测试支持方法，提升测试覆盖率"
+  },
+  "final_status": {
+    "all_hunks_resolved": true,
+    "source_file_modified": true,
+    "rej_file_preserved": true,
+    "compilation_expected": true,
+    "functional_impact": "最小化 - 仅在ARKWEB_UNITTESTS编译时生效"
+  },
+  "summary": "成功解决1个hunk冲突，添加了ARKWEB_UNITTESTS条件编译的两个方法到MockCompositorFrameSink类中。修改精准，风险低，不影响现有功能。"
+}

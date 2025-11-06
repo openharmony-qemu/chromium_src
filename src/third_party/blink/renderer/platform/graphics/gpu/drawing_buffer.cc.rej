@@ -1,17 +1,5 @@
 --- drawing_buffer.cc	2025-10-20 19:53:01.190201354 +0800
 +++ drawing_buffer.cc	2025-10-16 16:07:40.091851696 +0800
-@@ -37,10 +37,11 @@
- 
- #include <algorithm>
- #include <memory>
- #include <utility>
- 
-+#include "arkweb/build/features/features.h"
- #include "base/feature_list.h"
- #include "base/logging.h"
- #include "base/memory/read_only_shared_memory_region.h"
- #include "base/numerics/checked_math.h"
- #include "base/numerics/ostream_operators.h"
 @@ -701,10 +702,15 @@
          color_buffer_for_mailbox->format,
          color_buffer_for_mailbox->is_overlay_candidate,

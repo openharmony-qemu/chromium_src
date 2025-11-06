@@ -24,6 +24,7 @@
 #include <array>
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/heap_array.h"
 #include "base/containers/span.h"
 #include "base/logging.h"
@@ -48,7 +49,8 @@
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/geometry/size_conversions.h"
 
-#if BUILDFLAG(ENABLE_AV1_DECODER)
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+#include "arkweb/chromium_ext/blink/renderer/platform/image_decoders/heif/heif_image_decoder.h"
 #include "third_party/blink/renderer/platform/image-decoders/avif/crabbyavif_image_decoder.h"
 #endif
 
@@ -342,6 +344,12 @@ std::unique_ptr<ImageDecoder> ImageDecoder::CreateByMimeType(
   } else if (mime_type == "image/avif") {
     decoder = std::make_unique<CrabbyAVIFImageDecoder>(
         alpha_option, high_bit_depth_decoding_option, color_behavior, aux_image,
+        max_decoded_bytes, animation_option);
+#endif
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  } else if (mime_type == "image/heif") {
+    decoder = std::make_unique<HEIFImageDecoder>(
+        alpha_option, high_bit_depth_decoding_option, color_behavior,
         max_decoded_bytes, animation_option);
 #endif
   }

@@ -7,12 +7,22 @@
 # //third_party/blink/public:blink_headers and
 # //third_party/blink/renderer/platform/media should be a dep of
 # //third_party/blink/renderer/platform.
+
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
 source_set("media") {
   sources = [
     "key_system_config_selector.h",
     "web_encrypted_media_client_impl.h",
     "web_media_player_builder.h",
   ]
+
+  if (arkweb_same_layer) {
+    sources += arkweb_third_patry_blink_public_platform_media_sources
+  }
+
   public_deps = [
     "//base",
     "//cc",

@@ -30,6 +30,7 @@
 #include <utility>
 #include <variant>
 
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/loader/resource/image_resource_utils.h"
 #include "base/compiler_specific.h"
 #include "base/containers/span.h"
 #include "base/memory/scoped_refptr.h"

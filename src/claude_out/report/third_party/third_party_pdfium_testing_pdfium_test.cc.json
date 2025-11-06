@@ -1,0 +1,50 @@
+{
+  "文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/pdfium/testing/pdfium_test.cc",
+  "冲突文件": "/home/sujiahao/code/arkweb_141/src/third_party/pdfium/testing/pdfium_test.cc.rej",
+  "分析时间": "2025-11-05",
+  "总hunk数量": 2,
+  "成功解决的hunk数量": 2,
+  "未能解决的hunk数量": 0,
+  ".rej文件保持完整": true,
+  "hunks分析": [
+    {
+      "hunk编号": 1,
+      "位置": "第332-344行 (ExampleDocGetFilePath函数)",
+      "冲突原因": "Arkweb132在constexpr变量声明中使用了static关键字，而Arkweb141中去掉了static",
+      "待删除行": [
+        "static constexpr int kRequired = static_cast<int>(sizeof(kPath));"
+      ],
+      "待添加行": [
+        "constexpr int kRequired = static_cast<int>(sizeof(kPath));"
+      ],
+      "分析过程": "通过搜索ExampleDocGetFilePath函数名定位到源文件第350行，找到了需要修改的constexpr变量声明",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "实际修改位置": "源文件第352行",
+      "风险评估": "低风险 - 这是C++14标准的合规性修改，去掉static关键字是正确的，因为constexpr变量默认具有内部链接属性"
+    },
+    {
+      "hunk编号": 2,
+      "位置": "第384-396行 (ExampleFieldBrowse函数)",
+      "冲突原因": "Arkweb132在constexpr变量声明中使用了static关键字，而Arkweb141中去掉了static",
+      "待删除行": [
+        "static constexpr int kRequired = static_cast<int>(sizeof(kPath));"
+      ],
+      "待添加行": [
+        "constexpr int kRequired = static_cast<int>(sizeof(kPath));"
+      ],
+      "分析过程": "通过搜索ExampleFieldBrowse函数名定位到源文件第404行，找到了需要修改的constexpr变量声明",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "实际修改位置": "源文件第406行",
+      "风险评估": "低风险 - 这是C++14标准的合规性修改，去掉static关键字是正确的，因为constexpr变量默认具有内部链接属性"
+    }
+  ],
+  "总结": {
+    "处理策略": "直接应用原子化修改",
+    "修改性质": "C++语法标准合规性修改",
+    "影响范围": "两个函数中的局部变量声明",
+    "兼容性": "修改后的代码符合C++14标准，不会破坏功能性",
+    "人工复查建议": "建议检查编译是否通过，确保constexpr变量的使用符合预期"
+  }
+}

@@ -33,6 +33,9 @@
 #include "third_party/blink/renderer/platform/weborigin/kurl.h"
 #include "third_party/blink/renderer/platform/wtf/std_lib_extras.h"
 #include "third_party/skia/include/core/SkBitmap.h"
+#if BUILDFLAG(ARKWEB_COPY_OPTION)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/clipboard/system_clipboard_utils.h"
+#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
 #include "ui/base/clipboard/clipboard_constants.h"
 #include "ui/base/ui_base_features.h"
 
@@ -540,6 +543,13 @@ void SystemClipboard::WriteUnsanitizedCustomFormat(const String& type,
       data.size() >= mojom::blink::ClipboardHost::kMaxDataSize) {
     return;
   }
+
+#if BUILDFLAG(ARKWEB_COPY_OPTION)
+  if (!utils_->IsCopyAllowed()) {
+    LOG(ERROR) << "WriteCustomFormat failed, copy option mode is 'NONE'";
+    return;
+  }
+#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
   // The format size restriction is added in `ClipboardItem::supports`.
   DCHECK_LT(type.length(), mojom::blink::ClipboardHost::kMaxFormatSize);
   clipboard_->WriteUnsanitizedCustomFormat(type, std::move(data));
@@ -548,6 +558,9 @@ void SystemClipboard::WriteUnsanitizedCustomFormat(const String& type,
 void SystemClipboard::Trace(Visitor* visitor) const {
   PlatformEventDispatcher::Trace(visitor);
   visitor->Trace(clipboard_);
+#if BUILDFLAG(ARKWEB_COPY_OPTION)
+  visitor->Trace(utils_);
+#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
   visitor->Trace(clipboard_listener_receiver_);
 }
 

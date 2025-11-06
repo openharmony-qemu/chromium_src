@@ -77,6 +77,10 @@ class SelectionEditor final : public GarbageCollected<SelectionEditor> {
 
   void Trace(Visitor*) const;
 
+#if BUILDFLAG(ARKWEB_MENU)
+  void NeedRecalculateCursor();
+#endif
+
  private:
   Document& GetDocument() const;
   LocalFrame* GetFrame() const { return frame_.Get(); }

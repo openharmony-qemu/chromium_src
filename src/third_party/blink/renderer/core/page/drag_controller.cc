@@ -230,10 +230,18 @@ void DragController::ClearDragCaret() {
 }
 
 void DragController::DragEnded() {
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  AsDragControllerExt()->RestoreDragLinkEffects();
+  AsDragControllerExt()->SetIsDragging(false);
+#endif
   drag_initiator_ = nullptr;
   did_initiate_drag_ = false;
   drag_pointer_id_.reset();
   page_->GetDragCaret().Clear();
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  AsDragControllerExt()->RestoreDragTextEffects();
+  AsDragControllerExt()->RestoreDragImageEffects();
+#endif
   // When dragging occurs, the mousedown event is triggered, causing the caret's
   // blinking state to be suspended. Therefore, it is necessary to reset the
   // blinking state after dragging.
@@ -1442,12 +1450,19 @@ bool DragController::StartDrag(LocalFrame* frame,
 
   std::unique_ptr<DragImage> drag_image = DetermineDragImageAndRect(
       drag_obj_rect, effective_drag_initiation_location, frame, state,
-      hit_test_result, drag_initiation_location, mouse_dragged_point);
+      hit_test_result, drag_initiation_location, mouse_dragged_point
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+      , AsDragControllerExt()->GetVisibleRectToUIInRootFrame(frame)
+#endif
+  );
 
   drag_pointer_id_ = drag_event.id;
   DoSystemDrag(drag_image.get(), drag_obj_rect,
                effective_drag_initiation_location,
                state.drag_data_transfer_.Get(), frame);
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  AsDragControllerExt()->SetIsDragging(true);
+#endif
   return true;
 }
 

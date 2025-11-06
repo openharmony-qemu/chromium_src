@@ -161,6 +161,12 @@ class PLATFORM_EXPORT VideoFrameSubmitter
   // has changed.
   void NotifyOpacityIfNeeded(Opacity new_opacity);
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  void StartRenderingForSameLayer();
+  void StopRenderingForSameLayer();
+  void StopRenderingForSameLayerImpl();
+#endif
+
   void ClearFrameResources();
 
   raw_ptr<cc::VideoFrameProvider> video_frame_provider_ = nullptr;

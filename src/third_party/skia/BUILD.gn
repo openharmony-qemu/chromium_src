@@ -1831,6 +1831,14 @@ skia_component("skia") {
     ]
   }
 
+  if (is_arkweb){
+    import("//arkweb/build/features/features.gni")
+  }
+
+  if (enable_arkweb) {
+    deps += [ "//arkweb//build/features"]
+  }
+
   if (skia_enable_spirv_validation) {
     deps += [ "//third_party/externals/spirv-tools:spvtools_val" ]
     defines += [ "SK_ENABLE_SPIRV_VALIDATION" ]

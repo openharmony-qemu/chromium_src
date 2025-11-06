@@ -1,0 +1,80 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/platform/image-decoders/jpeg/jpeg_image_decoder.cc.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/platform/image-decoders/jpeg/jpeg_image_decoder.cc",
+    "处理时间": "2025-11-05"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk处理详情": [
+    {
+      "hunk索引": 1,
+      "位置信息": {
+        "目标行范围": "43-54行附近",
+        "实际插入位置": "第43行"
+      },
+      "变更内容": {
+        "添加行": [
+          "#include \"arkweb/build/features/features.h\""
+        ],
+        "删除行": []
+      },
+      "分析过程": {
+        "原始定位": "成功",
+        "锚点识别": [
+          "#include \"third_party/blink/renderer/platform/image-decoders/jpeg/jpeg_image_decoder.h\"",
+          "#include <limits>",
+          "#include <memory>",
+          "#include \"base/logging.h\""
+        ],
+        "定位策略": "使用上下文锚点精确定位到#include <memory>之后的位置"
+      },
+      "风险评估": {
+        "风险等级": "低",
+        "风险描述": "添加一个Arkweb特性的头文件包含，这是典型的构建系统配置变更，不会影响核心逻辑",
+        "潜在影响": "可能会引入Arkweb特定的编译时特性开关",
+        "语法检查": "通过 - include语句语法正确"
+      },
+      "冲突原因分析": {
+        "主要原因": "Arkweb 132在Chromium 132基础上添加了arkweb/build/features/features.h头文件包含",
+        "变更类型": "新增包含文件",
+        "侵入程度": "轻微 - 仅添加了一个include语句"
+      },
+      "解决策略": {
+        "策略类型": "原子化应用",
+        "执行操作": "在第42行后插入#include \"arkweb/build/features/features.h\"",
+        "置信度": "高",
+        "验证状态": "成功应用"
+      }
+    }
+  ],
+  "整体分析": {
+    "冲突性质": "构建系统集成冲突",
+    "修改复杂度": "简单",
+    "代码完整性": "保持良好",
+    "编译影响": "需要在构建系统中确保arkweb/build/features/features.h文件存在"
+  },
+  "处理结果总结": {
+    "处理状态": "全部完成",
+    "rej文件完整性": "保持完整，未被修改或删除",
+    "源文件修改": "成功添加了arkweb/build/features/features.h包含",
+    "质量评估": "高质量 - 精确应用了所有必需的变更",
+    "建议后续动作": [
+      "验证arkweb/build/features/features.h文件在构建路径中存在",
+      "确认编译时能正确找到该头文件",
+      "运行编译测试确保变更生效"
+    ]
+  },
+  "合规性验证": {
+    "未添加上下文行": "✓ 符合要求",
+    "未生成脚本文件": "✓ 符合要求",
+    "未创建辅助文件": "✓ 符合要求",
+    "未修改rej文件": "✓ 符合要求",
+    "仅修改指定源文件": "✓ 符合要求",
+    "JSON报告路径合规": "✓ 符合要求"
+  }
+}

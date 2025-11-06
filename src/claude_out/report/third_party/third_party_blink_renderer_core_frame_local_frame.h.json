@@ -1,0 +1,124 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/core/frame/local_frame.h.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/core/frame/local_frame.h",
+    "文件类型": "C++头文件",
+    "模块": "Blink渲染器核心框架模块"
+  },
+  "处理总结": {
+    "总hunk数量": 4,
+    "成功解决的hunk数量": 4,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk处理详情": [
+    {
+      "hunk序号": 1,
+      "位置": "第29行附近，文件头部include区域",
+      "待添加内容": ["#include \"arkweb/build/features/features.h\""],
+      "待删除内容": [],
+      "冲突原因": "Arkweb132添加了自定义features头文件包含，但Arkweb141中没有此修改",
+      "分析过程": "在源文件中发现第103-105行已存在类似的include但路径不同，需要在第35行后添加新的include",
+      "修改策略": "在standard includes之后添加新的features头文件包含",
+      "修改置信度": "高",
+      "风险评估": "低风险 - 简单的头文件添加，与现有代码兼容",
+      "处理结果": "成功在第35行添加了 #include \"arkweb/build/features/features.h\"",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk序号": 2,
+      "位置": "第453行附近，public方法声明区域",
+      "待添加内容": [
+        "#if BUILDFLAG(ARKWEB_ADBLOCK)",
+        "void DidSubresourceFiltered();",
+        "bool GetGlobalAdblockEnabled();",
+        "void SetAdBlockEnableForSite(bool site_adblock_enabled);",
+        "bool GetAdBlockEnableForSite() const { return adblock_enabled_for_site_; }",
+        "void SetHasElemHideTypeOption(bool has_elemhide_type_option);",
+        "bool GetHasElemHideTypeOption() const { return has_elemhide_type_option_; }",
+        "void SetHasDocumentTypeOption(bool has_document_type_option);",
+        "bool GetHasDocumentTypeOption() const { return has_document_type_option_; }",
+        "void SetHasGenericHideTypeOption(bool has_generichide_type_option);",
+        "bool GetHasGenericHideTypeOption() const { return has_generichide_type_option_; }",
+        "#endif"
+      ],
+      "待删除内容": [],
+      "冲突原因": "Arkweb132添加了广告拦截相关的方法接口，在Arkweb141中缺失",
+      "分析过程": "在SetZoomFactors方法之后（第466行）找到合适位置插入这些方法声明",
+      "修改策略": "在zoom相关方法之后，DevicePixelRatio方法之前插入完整的ARKWEB_ADBLOCK方法声明块",
+      "修改置信度": "高",
+      "风险评估": "中风险 - 涉及新的广告拦截功能接口，需要确保实现文件中有对应实现",
+      "处理结果": "成功在第466行后添加了完整的ARKWEB_ADBLOCK方法声明块",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk序号": 3,
+      "位置": "第991行附近，private访问控制区域",
+      "待添加内容": [
+        "#if BUILDFLAG(ARKWEB_UNITTESTS)",
+        "friend class LocalFrameUtilTest;",
+        "#endif"
+      ],
+      "待删除内容": [],
+      "冲突原因": "Arkweb132添加了单元测试相关的友元类声明，在Arkweb141中缺失",
+      "分析过程": "在第一个private段（第1043行）中，在FrameNavigationDisabler友元声明之前插入",
+      "修改策略": "在private段开头添加条件编译的友元类声明",
+      "修改置信度": "高",
+      "风险评估": "低风险 - 友元类声明不影响类的接口和功能，仅用于测试访问",
+      "处理结果": "成功在第1044行添加了ARKWEB_UNITTESTS友元类声明",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk序号": 4,
+      "位置": "第1124行附近，private成员变量区域",
+      "待添加内容": [
+        "#if BUILDFLAG(ARKWEB_ADBLOCK)",
+        "bool adblock_enabled_for_site_ = false;",
+        "bool has_elemhide_type_option_ = false;",
+        "bool has_document_type_option_ = false;",
+        "bool has_generichide_type_option_ = false;",
+        "#endif"
+      ],
+      "待删除内容": [],
+      "冲突原因": "Arkweb132添加了广告拦截相关的成员变量，在Arkweb141中缺失",
+      "分析过程": "在zoom factor成员变量之后（第1168行），probe_sink_成员变量之前插入",
+      "修改策略": "在zoom相关成员变量后添加完整的ARKWEB_ADBLOCK成员变量块",
+      "修改置信度": "高",
+      "风险评估": "中风险 - 新增成员变量会影响类的内存布局，但因为有条件编译保护，风险可控",
+      "处理结果": "成功在第1168行后添加了完整的ARKWEB_ADBLOCK成员变量块",
+      "解决状态": "已解决"
+    }
+  ],
+  "技术分析": {
+    "侵入式修改类型": "Arkweb特定的广告拦截功能和单元测试支持",
+    "主要功能模块": [
+      "ARKWEB_ADBLOCK - 广告拦截功能模块",
+      "ARKWEB_UNITTESTS - 单元测试支持模块"
+    ],
+    "条件编译使用": "所有修改都使用了适当的BUILDFLAG条件编译，确保只在特定配置下生效",
+    "代码兼容性": "修改与现有代码结构兼容，遵循了Arkweb141的代码组织方式"
+  },
+  "风险评估": {
+    "整体风险等级": "中等",
+    "主要风险点": [
+      "广告拦截功能接口需要在对应的.cpp文件中有具体实现",
+      "新增的成员变量可能影响序列化或内存布局相关的功能",
+      "features头文件的引入可能影响编译依赖"
+    ],
+    "风险缓解措施": [
+      "所有修改都使用了条件编译，只在特定功能开启时生效",
+      "遵循了现有代码的组织结构和命名约定",
+      "成员变量都有合适的默认值初始化"
+    ]
+  },
+  "验证要求": {
+    "编译验证": "需要确认在启用ARKWEB_ADBLOCK和ARKWEB_UNITTESTS时能够正常编译",
+    "功能验证": "需要验证广告拦截功能的完整实现",
+    "回归测试": "需要确保这些修改不会影响现有功能"
+  },
+  "处理状态": {
+    ".rej文件状态": "保持完整，未被修改或删除",
+    "源文件修改": "已成功应用所有4个hunks的修改",
+    "后续工作建议": "需要检查对应的.cpp实现文件，确保新增的成员函数有具体实现"
+  }
+}

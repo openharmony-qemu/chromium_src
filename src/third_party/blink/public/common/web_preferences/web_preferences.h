@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 #include "net/nqe/effective_connection_type.h"
 #include "third_party/blink/public/common/common_export.h"
@@ -19,6 +20,10 @@
 #include "third_party/skia/include/core/SkColor.h"
 #include "url/gurl.h"
 #include "url/origin.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 namespace blink {
 
@@ -492,10 +497,40 @@ struct BLINK_COMMON_EXPORT WebPreferences {
   // blocking user's access to the background web content.
   bool modal_context_menu = true;
 
+#if BUILDFLAG(ARKWEB_ACTIVE_POLICY)
+  int64_t delay_for_background_tab_freezing = -1;
+#endif
+
+#if BUILDFLAG(ARKWEB_PINCH_SMOOTH)
+  bool pinch_smooth_mode = false;
+#endif
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  bool custom_video_player_enable = false;
+  bool custom_video_player_overlay = false;
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
+
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  int32_t usage_scenario = 1;
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
   // Whether the safe-area-insets should be changed dynamically based on
   // browser controls shown ratio. This value is used in web settings only
   // when feature DynamicSafeAreaInsets is enabled.
   bool dynamic_safe_area_insets_enabled = false;
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  bool video_assistant_enabled = false;
+  bool custom_media_player_enabled = false;
+#endif // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+  bool error_page_enabled = false;
+#endif
+
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  bool media_resume_from_bfcache_page = true;
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
 
   // Whether PaymentRequest is enabled. Controlled by WebView settings on
   // WebView and by `kWebPayments` feature flag everywhere.

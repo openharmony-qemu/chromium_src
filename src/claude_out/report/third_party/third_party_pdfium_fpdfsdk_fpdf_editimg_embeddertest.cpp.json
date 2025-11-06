@@ -1,0 +1,73 @@
+{
+  "文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/pdfium/fpdfsdk/fpdf_editimg_embeddertest.cpp",
+  "rej文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/pdfium/fpdfsdk/fpdf_editimg_embeddertest.cpp.rej",
+  "处理时间": "2025-11-05",
+  "分析总结": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 2,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk详情": [
+    {
+      "hunk编号": 1,
+      "位置": "TEST_F(PDFEditImgTest, Bug2132) 函数内",
+      "风险等级": "低",
+      "冲突原因": "C++17标准变更：在函数内部使用constexpr变量不再需要static关键字",
+      "分析过程": "该hunk涉及移除static constexpr声明中的static关键字。在C++17标准中，函数内部的constexpr变量默认具有内部链接，无需static关键字。这是标准的演进，不是功能性变更。",
+      "修改置信度": "高",
+      "处理策略": "成功应用 - 删除了static关键字，将static constexpr改为constexpr",
+      "待删除行": [
+        "static constexpr int kExpectedWidth = 200;",
+        "static constexpr int kExpectedHeight = 300;",
+        "static constexpr char kExpectedChecksum[] =",
+        "\"617b1d57c30c516beee86e0781ff7810\";"
+      ],
+      "待添加行": [
+        "constexpr int kExpectedWidth = 200;",
+        "constexpr int kExpectedHeight = 300;",
+        "constexpr char kExpectedChecksum[] = \"617b1d57c30c516beee86e0781ff7810\";"
+      ],
+      "解决状态": "已解决",
+      "应用结果": "成功将4行static constexpr声明替换为对应的constexpr声明，保持了相同的常量值"
+    },
+    {
+      "hunk编号": 2,
+      "位置": "TEST_F(PDFEditImgTest, GetAndSetMatrixForFormWithImage) 函数内",
+      "风险等级": "低",
+      "冲突原因": "C++17标准变更：在函数内部使用constexpr变量不再需要static关键字",
+      "分析过程": "该hunk与第一个hunk相同，涉及移除static constexpr声明中的static关键字。在Chromium 141中，代码风格更严格遵循C++17标准规范。",
+      "修改置信度": "高",
+      "处理策略": "成功应用 - 删除了static关键字，将static constexpr改为constexpr",
+      "待删除行": [
+        "static constexpr int kExpectedWidth = 200;",
+        "static constexpr int kExpectedHeight = 300;",
+        "static constexpr char kExpectedChecksum[] =",
+        "\"fcb9007fd901d2052e2bd1c147b82800\";"
+      ],
+      "待添加行": [
+        "constexpr int kExpectedWidth = 200;",
+        "constexpr int kExpectedHeight = 300;",
+        "constexpr char kExpectedChecksum[] = \"fcb9007fd901d2052e2bd1c147b82800\";"
+      ],
+      "解决状态": "已解决",
+      "应用结果": "成功将4行static constexpr声明替换为对应的constexpr声明，保持了相同的常量值"
+    }
+  ],
+  "技术背景": {
+    "Chromium版本变更": "132 -> 141",
+    "冲突类型": "C++标准演进导致的代码风格冲突",
+    "影响范围": "仅涉及测试文件中的变量声明方式",
+    "功能影响": "无功能性影响，仅代码风格调整"
+  },
+  "合规性验证": {
+    ".rej文件保持完整": true,
+    "未修改.rej文件": true,
+    "未删除.rej文件": true,
+    "仅修改源文件": true,
+    "未创建脚本文件": true,
+    "仅在指定目录创建JSON报告": true,
+    "严格遵守黄金法则": true
+  },
+  "结论": "所有hunk均已成功解决，没有遗留的冲突。这些修改是C++17标准演进的结果，移除了函数内部constexpr变量不需要的static关键字，对代码功能没有任何影响。"
+}

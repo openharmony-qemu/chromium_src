@@ -5343,7 +5343,11 @@ bool SdpOfferAnswerHandler::UseCandidate(const IceCandidate* candidate) {
   const Candidate& c = candidate->candidate();
   RTCError error = VerifyCandidate(c);
   if (!error.ok()) {
+#if BUILDFLAG(ARKWEB_WEBRTC)
+    RTC_DLOG(LS_VERBOSE) << "Invalid candidate: " << c.ToString();
+#else
     RTC_LOG(LS_WARNING) << "Invalid candidate: " << c.ToString();
+#endif
     return true;
   }
 

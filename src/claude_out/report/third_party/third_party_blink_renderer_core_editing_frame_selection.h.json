@@ -1,0 +1,67 @@
+{
+  "文件信息": {
+    "冲突文件": "third_party/blink/renderer/core/editing/frame_selection.h.rej",
+    "源文件": "third_party/blink/renderer/core/editing/frame_selection.h",
+    "处理时间": "2025-11-04"
+  },
+  "处理统计": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 2,
+    "未能解决的hunk数量": 0
+  },
+  "rej文件完整性": {
+    "状态": "保持完整",
+    "是否被修改": "否",
+    "是否被删除": "否"
+  },
+  "hunk详情": [
+    {
+      "hunk编号": 1,
+      "位置": "第63-70行",
+      "冲突原因": "Arkweb132在PhysicalRect结构体声明后添加了FrameSelectionExt类的前向声明，用于支持菜单功能扩展",
+      "待添加行": [
+        "#if BUILDFLAG(ARKWEB_MENU)",
+        "class FrameSelectionExt;",
+        "#endif  // ARKWEB_MENU"
+      ],
+      "风险分析": "低风险 - 仅添加条件编译的前向声明，不会影响现有功能",
+      "置信度": "100%",
+      "处理策略": "成功应用 - 在PhysicalRect;后正确添加了条件编译的前向声明",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 2,
+      "位置": "第126-136行",
+      "冲突原因": "Arkweb132移除了FrameSelection类的final修饰符并添加了虚函数AsFrameSelectionExt，以支持继承扩展",
+      "待删除行": [
+        "class CORE_EXPORT FrameSelection final"
+      ],
+      "待添加行": [
+        "class CORE_EXPORT FrameSelection",
+        "#if BUILDFLAG(ARKWEB_MENU)",
+        "  friend class FrameSelectionExt;",
+        "  virtual FrameSelectionExt* AsFrameSelectionExt() { return nullptr; }",
+        "#endif  // ARKWEB_MENU"
+      ],
+      "风险分析": "中等风险 - 移除final修饰符允许类被继承，添加虚函数增加了运行时开销，但这是ARKWEB_MENU功能的必要修改",
+      "置信度": "100%",
+      "处理策略": "成功应用 - 移除了final关键字，添加了SynchronousMutationObserver继承，并在析构函数后正确添加了条件编译的friend声明和虚函数",
+      "解决状态": "已解决"
+    }
+  ],
+  "整体处理结果": {
+    "状态": "成功",
+    "所有hunk都已成功应用到源文件中",
+    "修改总结": [
+      "添加了FrameSelectionExt的前向声明（条件编译）",
+      "移除了FrameSelection的final修饰符，使其可被继承",
+      "添加了SynchronousMutationObserver继承",
+      "添加了friend类声明和虚函数AsFrameSelectionExt（条件编译）"
+    ],
+    "后续建议": [
+      "确保在相应的.cpp文件中实现了必要的SynchronousMutationObserver接口",
+      "验证FrameSelectionExt类的定义和实现是否正确",
+      "测试ARKWEB_MENU功能是否正常工作"
+    ]
+  }
+}

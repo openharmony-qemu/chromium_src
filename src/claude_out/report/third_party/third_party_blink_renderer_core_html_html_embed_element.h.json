@@ -1,0 +1,63 @@
+{
+  "文件路径": "third_party/blink/renderer/core/html/html_embed_element.h",
+  "处理结果": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决状态": "全部解决"
+  },
+  "hunks": [
+    {
+      "hunk编号": 1,
+      "位置信息": {
+        "行范围": "46-52",
+        "上下文锚点": [
+          "FrameOwnerElementType OwnerType() const final {",
+          "return FrameOwnerElementType::kEmbed;",
+          "}",
+          "private:"
+        ]
+      },
+      "变更内容": {
+        "待添加的行": [
+          "#if BUILDFLAG(ARKWEB_SAME_LAYER)",
+          "bool IsNativeType() const override {",
+          "return Utils()->CheckNativeType(web_pref::kEmbedTag);",
+          "}",
+          "void NativeEmbedOverlay(const AttributeModificationParams& params);",
+          "#endif"
+        ],
+        "待删除的行": []
+      },
+      "风险分析": {
+        "风险等级": "低",
+        "原因": "添加的代码是条件编译块(#if BUILDFLAG(ARKWEB_SAME_LAYER))，只在Arkweb特定构建时生效，不会影响标准Chromium构建。添加的成员函数都是Arkweb扩展功能。",
+        "潜在影响": "增加了IsNativeType()和NativeEmbedOverlay()两个方法，用于Arkweb的原生类型检查和嵌入叠加功能。"
+      },
+      "冲突原因": "Arkweb 132中的ARKWEB_SAME_LAYER条件编译代码块在合并到Chromium 141时未被正确应用，导致需要在HTMLEmbedElement类中添加Arkweb特定的扩展方法。",
+      "分析过程": {
+        "定位策略": "使用OwnerType()方法作为主要锚点，该方法在源文件中保持一致",
+        "定位结果": "成功在第47-49行找到OwnerType()方法的完整实现",
+        "插入位置": "在OwnerType()方法之后，src()方法之前插入代码块",
+        "应用策略": "精确添加所有+开头的行，保持原有代码结构不变"
+      },
+      "修改置信度": "高",
+      "处理策略": "精确应用",
+      "处理结果": "成功将ARKWEB_SAME_LAYER条件编译代码块添加到HTMLEmbedElement类的public部分，位置正确且语法完整。"
+    }
+  ],
+  "整体评估": {
+    "处理状态": "完成",
+    "rej文件完整性": "保持完整，未被修改",
+    "代码完整性": "良好，添加的代码与现有类结构兼容",
+    "语法正确性": "通过，所有添加的代码语法正确",
+    "构建兼容性": "预期良好，使用条件编译确保只在Arkweb构建时生效"
+  },
+  "验证要求": [
+    "确认ARKWEB_SAME_LAYER宏定义在构建系统中正确配置",
+    "确认Utils()方法在HTMLPluginElement基类中可用",
+    "确认web_pref::kEmbedTag枚举值已定义",
+    "确认AttributeModificationParams类型已包含"
+  ],
+  "处理总结": "成功处理了1个hunk的冲突，将Arkweb 132中的条件编译代码块精确应用到Arkweb 141源文件中。所有修改都遵循了'不添加上下文'的黄金法则，仅添加了.rej文件中定义的+行内容。修改后的代码结构清晰，语法正确，预期可以正常编译。"
+}

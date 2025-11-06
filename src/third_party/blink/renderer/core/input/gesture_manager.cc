@@ -447,6 +447,9 @@ WebInputEventResult GestureManager::HandleGestureTap(
 
 WebInputEventResult GestureManager::HandleGestureShortPress(
     const GestureEventWithHitTestResults& targeted_event) {
+#if BUILDFLAG(ARKWEB_AI)
+  utils_->CloseAIOverlay(targeted_event);
+#endif
   drag_in_progress_ = false;
   if (frame_->GetSettings() &&
       frame_->GetSettings()->GetTouchDragDropEnabled() &&
@@ -474,6 +477,13 @@ WebInputEventResult GestureManager::HandleGestureLongPress(
 
   gesture_context_menu_deferred_ = false;
 
+#if BUILDFLAG(ARKWEB_AI)
+  if (mouse_event_manager_->AsMouseEventManagerExt()->GetHitOverlayStatus(hit_test_result) ==
+      HitOverlayStatus::kCreating) {
+    return WebInputEventResult::kNotHandled;
+  }
+#endif
+
   if (RuntimeEnabledFeatures::TouchDragOnShortPressEnabled()) {
     if (drag_in_progress_ && DragEndOpensContextMenu()) {
       gesture_context_menu_deferred_ = true;
@@ -499,12 +509,19 @@ WebInputEventResult GestureManager::HandleGestureLongPress(
     }
   }
 
+#if BUILDFLAG(ARKWEB_AI)
+  utils_->UpdateContextMenuForAI(hit_test_result, location, gesture_event);
+#endif
   Node* inner_node = hit_test_result.InnerNode();
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  utils_->UpdateContextMenuForFreeCopy(hit_test_result, location);
+#else
   if (!(drag_in_progress_ && TouchDragAndContextMenuEnabled(frame_)) &&
       inner_node && inner_node->GetLayoutObject() &&
       selection_controller_->HandleGestureLongPress(hit_test_result)) {
     mouse_event_manager_->FocusDocumentView();
   }
+#endif  // BUILDFLAG(ARKWEB_EXT_FREE_COPY)
 
   if (frame_->GetSettings() &&
       frame_->GetSettings()->GetShowContextMenuOnMouseUp()) {
@@ -534,7 +551,11 @@ WebInputEventResult GestureManager::HandleGestureTwoFingerTap(
   Node* inner_node = targeted_event.GetHitTestResult().InnerNode();
   if (inner_node && inner_node->GetLayoutObject())
     selection_controller_->HandleGestureTwoFingerTap(targeted_event);
+#if BUILDFLAG(ARKWEB_MENU)
+  return WebInputEventResult::kNotHandled;
+#else
   return SendContextMenuEventForGesture(targeted_event);
+#endif
 }
 
 void GestureManager::HandleTouchDragEnd(const WebMouseEvent& mouse_event) {

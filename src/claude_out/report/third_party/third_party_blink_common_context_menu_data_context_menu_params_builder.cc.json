@@ -1,0 +1,33 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/blink/common/context_menu_data/context_menu_params_builder.cc.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/blink/common/context_menu_data/context_menu_params_builder.cc"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 0,
+    "未能解决的hunk数量": 1,
+    "rej文件完整性": "保持完整未被修改"
+  },
+  "hunk详情": [
+    {
+      "hunk编号": 1,
+      "hunk位置": "第71-82行",
+      "待删除行": [
+        "第9行：空行"
+      ],
+      "待添加行": [],
+      "冲突原因": "Arkweb132中的空行删除修改在Arkweb141中不再适用，因为代码结构已经发生变化",
+      "分析过程": "通过对比.rej文件和源文件，发现.rej文件要求删除第75行后的空行，但在Arkweb141源文件中，该位置已经是具体的代码行（params.annotation_type），没有空行可删除",
+      "修改置信度": "低 - 目标位置无法准确定位匹配的空行",
+      "风险等级": "低 - 仅涉及空行删除，不影响代码逻辑",
+      "解决策略": "未应用 - 无法在源文件中找到对应的空行进行删除",
+      "最终状态": "未解决"
+    }
+  ],
+  "总结": {
+    "主要冲突类型": "代码结构变化导致的历史修改不适用",
+    "处理结果": "由于Arkweb141版本的代码结构相比Arkweb132已经发生变化，原本的空行删除修改无法找到对应的匹配位置",
+    "建议": "此冲突涉及的仅为空行删除，对代码功能无影响，可以忽略此.rej文件"
+  }
+}

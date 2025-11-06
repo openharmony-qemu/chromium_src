@@ -32,6 +32,9 @@
 #define THIRD_PARTY_BLINK_RENDERER_CORE_EXPORTED_WEB_VIEW_IMPL_H_
 
 #include <memory>
+
+#include "absl/types/optional.h"
+#include "arkweb/build/features/features.h"
 #include <vector>
 
 #include "base/debug/stack_trace.h"

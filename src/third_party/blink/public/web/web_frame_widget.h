@@ -33,6 +33,7 @@
 
 #include <stdint.h>
 
+#include "arkweb/build/features/features.h"
 #include <vector>
 
 #include "base/functional/callback_forward.h"

@@ -9,6 +9,8 @@
 
 #include <utility>
 
+#include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/widget/widget_base_utils.h"
 #include "base/memory/raw_ptr.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/task/common/task_annotator.h"

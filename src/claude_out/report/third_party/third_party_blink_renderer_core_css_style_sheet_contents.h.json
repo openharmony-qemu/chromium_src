@@ -1,0 +1,48 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/core/css/style_sheet_contents.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/core/css/style_sheet_contents.h",
+    "处理时间": "2025-11-04"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk处理详情": [
+    {
+      "hunk索引": 1,
+      "冲突原因": "Arkweb132在chromium132基础上添加了arkweb构建特性头文件的包含，而在升级到chromium141时这个修改产生了冲突",
+      "风险分析": "低风险。这是一个标准的头文件包含添加，用于引入arkweb构建特性定义。添加位置正确，不会破坏现有代码结构",
+      "修改内容": {
+        "待添加行": ["#include \"arkweb/build/features/features.h\""],
+        "待删除行": [],
+        "上下文锚点": [
+          "#ifndef THIRD_PARTY_BLINK_RENDERER_CORE_CSS_STYLE_SHEET_CONTENTS_H_",
+          "#define THIRD_PARTY_BLINK_RENDERER_CORE_CSS_STYLE_SHEET_CONTENTS_H_",
+          "#include \"third_party/blink/renderer/core/core_export.h\""
+        ]
+      },
+      "定位过程": "使用.rej文件中提供的上下文锚点，在源文件第22-25行找到了完全匹配的位置，确定了插入点",
+      "修改置信度": "高。锚点完全匹配，插入位置明确",
+      "应用结果": "成功在第23行和第25行之间添加了#include \"arkweb/build/features/features.h\"",
+      "解决状态": "已解决",
+      "验证结果": "修改后的代码结构正确，包含语句位置合适"
+    }
+  ],
+  "整体分析": {
+    "冲突类型": "包含语句冲突",
+    "修改性质": "侵入式修改恢复",
+    "技术影响": "恢复了Arkweb对arkweb构建特性的支持，这是广告拦截等功能的基础",
+    "代码质量": "良好。修改符合C++最佳实践，头文件包含位置正确",
+    "编译预期": "预期编译成功，无语法错误"
+  },
+  "合规性验证": {
+    ".rej文件完整性": "确认.rej文件保持完整，未被修改或删除",
+    "操作合规性": "严格遵守黄金法则，仅添加+开头的行，未添加任何上下文行",
+    "文件创建限制": "仅在指定目录创建JSON报告文件，未创建任何脚本或辅助文件",
+    "路径验证": "JSON文件创建在正确的指定路径下"
+  },
+  "总结": "成功处理了1个hunk，恢复了Arkweb132中对arkweb构建特性头文件的包含。修改过程严格遵守了所有规定，.rej文件保持完整，代码修改准确无误。预期此修改将使Arkweb141能够正确支持arkweb相关的构建特性功能。"
+}

@@ -228,10 +228,17 @@ HTMLCollection* HTMLFieldSetElement::elements() {
 }
 
 bool HTMLFieldSetElement::IsDisabledFormControl() const {
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  if (RuntimeEnabledFeatures::SendMouseEventsDisabledFormControlsEnabled()) {
+#endif
   // The fieldset element itself should never be considered disabled, it is
   // only supposed to affect its descendants:
   // https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#concept-fe-disabled
   return false;
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  }
+  return HTMLFormControlElement::IsDisabledFormControl();
+#endif
 }
 
 void HTMLFieldSetElement::UpdateMenuItemCheckableExclusivity(
@@ -254,7 +261,14 @@ void HTMLFieldSetElement::UpdateMenuItemCheckableExclusivity(
 // set or not. See here for context:
 // https://github.com/whatwg/html/issues/5886#issuecomment-1582410112
 bool HTMLFieldSetElement::MatchesEnabledPseudoClass() const {
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  if (RuntimeEnabledFeatures::SendMouseEventsDisabledFormControlsEnabled()) {
+#endif
   return !IsActuallyDisabled();
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  }
+  return HTMLFormControlElement::MatchesEnabledPseudoClass();
+#endif
 }
 
 }  // namespace blink

@@ -915,7 +915,16 @@ void StyleCascade::LookupAndApplyDeclaration(const CSSProperty& property,
   DCHECK(IsA<CustomProperty>(property) || !value->IsUnparsedDeclaration());
   DCHECK(!value->IsPendingSubstitutionValue());
   value = &value->EnsureScopedValue(tree_scope);
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  blink::EDisplay tmp = state_.StyleBuilder().Display();
+#endif
+
   StyleBuilder::ApplyPhysicalProperty(property, state_, *value);
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  StyleCascadeUtil::LookupAndApplyDeclarationExt(this, property, tmp);
+#endif
 }
 
 void StyleCascade::LookupAndApplyInterpolation(const CSSProperty& property,

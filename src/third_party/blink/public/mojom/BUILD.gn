@@ -409,6 +409,10 @@ mojom("mojom_platform") {
   if (use_ozone) {
     enabled_features += [ "is_selection_clipboard_buffer_possible" ]
   }
+  if (is_arkweb) {
+    import("//arkweb/chromium_ext/third_party/blink/public/mojom/arkweb_features_include.gni")
+    enabled_features += mojom_platform_enabled_features
+  }
 
   shared_cpp_typemaps = [
     {

@@ -48,6 +48,15 @@
 #include "third_party/blink/public/web/web_draggable_region.h"
 #include "third_party/blink/public/web/web_node.h"
 #include "third_party/skia/include/core/SkColor.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "arkweb/chromium_ext/third_party/blink/public/mojom/dom_distiller/reader_mode_config.mojom.h"
+#endif
+
 #include "ui/accessibility/ax_error_types.h"
 
 namespace ui {
@@ -66,6 +75,9 @@ class WebLocalFrame;
 class WebString;
 class WebURL;
 struct WebDistillabilityFeatures;
+#if BUILDFLAG(ARKWEB_READER_MODE)
+struct WebDistillabilityMatchInfo;
+#endif
 
 using WebStyleSheetKey = WebString;
 

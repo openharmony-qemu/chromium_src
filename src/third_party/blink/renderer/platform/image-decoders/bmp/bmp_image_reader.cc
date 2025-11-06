@@ -4,6 +4,7 @@
 
 #include "third_party/blink/renderer/platform/image-decoders/bmp/bmp_image_reader.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/compiler_specific.h"
 #include "third_party/blink/renderer/platform/image-decoders/jpeg/jpeg_image_decoder.h"
 #include "third_party/blink/renderer/platform/image-decoders/png/png_decoder_factory.h"

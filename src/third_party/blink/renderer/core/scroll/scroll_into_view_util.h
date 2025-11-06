@@ -67,7 +67,12 @@ ScrollOffset GetScrollOffsetToExpose(
     const PhysicalRect& local_expose_rect,
     const PhysicalBoxStrut& expose_scroll_margin,
     const mojom::blink::ScrollAlignment& align_x,
-    const mojom::blink::ScrollAlignment& align_y);
+    const mojom::blink::ScrollAlignment& align_y
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+    ,
+    const int32_t scroll_offset_limit = 0
+#endif
+);
 
 ScrollableArea* GetScrollableAreaForLayoutBox(
     const LayoutBox& box,

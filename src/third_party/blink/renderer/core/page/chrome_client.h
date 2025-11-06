@@ -80,6 +80,12 @@ namespace ui {
 class Cursor;
 }
 
+#if BUILDFLAG(IS_OHOS)
+namespace gfx {
+class PointF;
+}  // namespace gfx
+#endif
+
 namespace viz {
 class FrameTimingDetails;
 }

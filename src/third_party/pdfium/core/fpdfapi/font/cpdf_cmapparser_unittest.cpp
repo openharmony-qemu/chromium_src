@@ -53,8 +53,8 @@ TEST(CPDFCMapParserTest, GetCodeRange) {
   ASSERT_TRUE(range.has_value());
   ASSERT_EQ(4u, range.value().char_size_);
   {
-    static constexpr uint8_t kLower[4] = {18, 52, 86, 120};
-    static constexpr uint8_t kUpper[4] = {135, 101, 67, 33};
+    constexpr uint8_t kLower[4] = {18, 52, 86, 120};
+    constexpr uint8_t kUpper[4] = {135, 101, 67, 33};
     EXPECT_TRUE(uint_ranges_equal(kLower, range.value().lower_));
     EXPECT_TRUE(uint_ranges_equal(kUpper, range.value().upper_));
   }

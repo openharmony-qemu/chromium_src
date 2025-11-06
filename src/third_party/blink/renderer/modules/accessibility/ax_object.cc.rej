@@ -20,19 +20,3 @@
  bool AXObject::CanSetSelectedAttribute() const {
    // Sub-widget elements can be selected if not disabled (native or ARIA)
    return IsSubWidget() && Restriction() != kRestrictionDisabled;
-@@ -7330,10 +7343,15 @@
-       mojom::blink::UserActivationNotificationType::kInteraction);
- 
-   if (IsTextField())
-     return OnNativeFocusAction();
- 
-+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
-+  if (RoleValue() == ax::mojom::blink::Role::kVideo) {
-+    OnNativeFocusAction();
-+  }
-+#endif
-   Element* element = GetClosestElement();
- 
-   // Forward default action on custom select to its button.
-   if (auto* select = DynamicTo<HTMLSelectElement>(GetNode())) {
-     if (select->IsAppearanceBaseButton()) {

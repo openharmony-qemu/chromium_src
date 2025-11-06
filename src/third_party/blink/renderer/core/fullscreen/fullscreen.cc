@@ -29,6 +29,8 @@
 
 #include "third_party/blink/renderer/core/fullscreen/fullscreen.h"
 
+#include "absl/types/optional.h"
+#include "arkweb/build/features/features.h"
 #include "base/containers/adapters.h"
 #include "base/time/time.h"
 #include "services/network/public/mojom/permissions_policy/permissions_policy_feature.mojom-blink.h"

@@ -1,0 +1,62 @@
+{
+  "file_path": "/home/sujiahao/code/arkweb_141/src/third_party/libvpx/BUILD.gn",
+  "rej_file": "/home/sujiahao/code/arkweb_141/src/third_party/libvpx/BUILD.gn.rej",
+  "analysis_time": "2025-11-05",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": {
+    "status": "intact",
+    "was_modified": false,
+    "was_deleted": false
+  },
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "line_range": "600-612",
+      "status": "已解决",
+      "risk_assessment": "低风险",
+      "conflict_cause": "Arkweb132针对OpenHarmony平台的特殊处理，在ARM64架构上添加了!is_ohos条件判断，以排除OpenHarmony对SVE/SVE2指令集的支持",
+      "analysis_process": "通过精确匹配上下文锚点'current_cpu == \"arm64\"'和'libvpx_intrinsics_neon_dotprod'依赖项，成功定位到源文件第592-596行。该位置与.rej文件中的修改意图完全一致。",
+      "modification_confidence": "高",
+      "resolution_strategy": "原子化应用修改：删除原有的'if (!is_win) {'条件，添加FIXME注释和新的'if (!is_win && !is_ohos) {'条件",
+      "changes_applied": [
+        {
+          "action": "删除",
+          "line_content": "    if (!is_win) {",
+          "line_number": 595
+        },
+        {
+          "action": "添加",
+          "line_content": "    # FIXME: ARM64 is not supported in ohos",
+          "line_number": 595
+        },
+        {
+          "action": "添加",
+          "line_content": "    if (!is_win && !is_ohos) {",
+          "line_number": 596
+        }
+      ],
+      "context_verification": {
+        "before_match": "if (current_cpu == \"arm64\" || current_cpu == \"arm64e\") {",
+        "after_match": "deps += [\":libvpx_intrinsics_sve\", \":libvpx_intrinsics_sve2\"]",
+        "location_confirmed": true
+      }
+    }
+  ],
+  "summary": {
+    "total_modifications": 3,
+    "additions": 2,
+    "deletions": 1,
+    "success_rate": "100%",
+    "compliance_status": "完全符合黄金法则要求",
+    "final_state": "所有侵入式修改已成功应用到源文件中，.rej文件保持完整性"
+  },
+  "technical_details": {
+    "platform_specificity": "OpenHarmony (OHOS) 平台适配",
+    "architectural_scope": "ARM64 处理器架构",
+    "instruction_set_impact": "SVE/SVE2 指令集支持限制",
+    "build_system_integration": "GN构建配置",
+    "dependency_management": "条件化依赖包含"
+  }
+}

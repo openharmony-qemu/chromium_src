@@ -1,0 +1,93 @@
+{
+  "conflict_file": "third_party/skia/src/ports/SkFontMgr_FontConfigInterface.cpp.rej",
+  "source_file": "third_party/skia/src/ports/SkFontMgr_FontConfigInterface.cpp",
+  "analysis_time": "2025-11-05",
+  "summary": {
+    "total_hunks": 1,
+    "resolved_hunks": 1,
+    "unresolved_hunks": 0,
+    "resolution_success_rate": "100%"
+  },
+  "rej_file_integrity": {
+    "status": "preserved",
+    "modified": false,
+    "deleted": false
+  },
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "status": "已解决",
+      "confidence": "高",
+      "risk_level": "低",
+      "conflict_cause": "Arkweb 132 在 SkFontMgr_FCI 类中添加了主题字体失效功能的侵入式修改，该修改在 Arkweb 141 中未正确集成",
+      "description": "在 SkFontMgr_FCI 类的 onLegacyMakeTypeface 方法之后添加 onInvalidateThemeFont 方法声明",
+      "changes": {
+        "additions": [
+          "空行",
+          "#if BUILDFLAG(ARKWEB_THEME_FONT)",
+          "    void onInvalidateThemeFont(int fd) override {}",
+          "#endif"
+        ],
+        "deletions": []
+      },
+      "localization_process": {
+        "target_location": "第 256 行之后，onLegacyMakeTypeface 方法结束处",
+        "context_matches": [
+          "sk_sp<SkTypeface> onLegacyMakeTypeface(const char requestedFamilyName[],",
+          "                                           SkFontStyle requestedStyle) const override {",
+          "        return this->onMatchFamilyStyle(requestedFamilyName, requestedStyle);",
+          "    }",
+          "};"
+        ],
+        "localization_success": true
+      },
+      "application_process": {
+        "method": "原子化应用",
+        "applied_changes": [
+          "在第 256 行后添加空行",
+          "添加预编译指令 #if BUILDFLAG(ARKWEB_THEME_FONT)",
+          "添加方法声明 void onInvalidateThemeFont(int fd) override {}",
+          "添加结束指令 #endif"
+        ],
+        "final_result": "修改成功应用到源文件中"
+      },
+      "review_notes": {
+        "syntax_correctness": "正确",
+        "logical_consistency": "正确",
+        "integration_impact": "低风险，仅添加条件编译的方法声明",
+        "dependencies": "需要确保 BUILDFLAG(ARKWEB_THEME_FONT) 宏定义存在"
+      }
+    }
+  ],
+  "technical_analysis": {
+    "code_structure": {
+      "class_name": "SkFontMgr_FCI",
+      "inheritance": "public SkFontMgr",
+      "modification_type": "方法添加",
+      "compilation_guard": "#if BUILDFLAG(ARKWEB_THEME_FONT)"
+    },
+    "functionality": {
+      "purpose": "提供主题字体失效功能接口",
+      "signature": "void onInvalidateThemeFont(int fd) override",
+      "implementation": "空实现（虚拟函数）"
+    },
+    "integration_assessment": {
+      "breaks_existing_functionality": false,
+      "introduces_new_dependencies": false,
+      "compilation_impact": "条件编译，无宏定义时无影响",
+      "runtime_impact": "最小，空实现"
+    }
+  },
+  "conclusion": {
+    "overall_status": "成功",
+    "all_hunks_resolved": true,
+    "code_integrity_maintained": true,
+    "rej_file_preserved": true,
+    "manual_review_required": false,
+    "next_steps": [
+      "验证 BUILDFLAG(ARKWEB_THEME_FONT) 宏定义是否存在",
+      "确认编译过程无错误",
+      "测试字体管理器功能正常"
+    ]
+  }
+}

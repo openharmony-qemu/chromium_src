@@ -2,12 +2,33 @@
     "groups": {
         "https://gitcode.com/ArkWeb_Build": [
             "https://gitcode.com/doublelucky"
+        ],
+        "https://gitcode.com/ringking0": [
+            "https://gitcode.com/ringking0"
+        ],
+        "https://gitcode.com/StringChen": [
+            "https://gitcode.com/StringChen"
+        ],
+        "https://gitcode.com/cloud_nine999": [
+            "https://gitcode.com/cloud_nine999"
         ]
     },
     "userInfos": {
         "https://gitcode.com/doublelucky": {
             "info": "[部署测试 cmx]",
             "group": "https://gitcode.com/ArkWeb_Build"
+        },
+        "https://gitcode.com/ringking0": {
+            "info": "[构建工程]",
+            "group": "https://gitcode.com/ringking0"
+        },
+        "https://gitcode.com/StringChen": {
+            "info": "[DFX]",
+            "group": "https://gitcode.com/StringChen"
+        },
+        "https://gitcode.com/cloud_nine999": {
+            "info": "[基础框架]",
+            "group": "https://gitcode.com/cloud_nine999"
         }
     }
 }

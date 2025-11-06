@@ -84,7 +84,7 @@ export default class IntelligentLayout {
         const activePopupInfo = IntelligentLayout.getActivePopupWindowInfo();
         let activePopupComponent = IntelligentLayout.getActivePopupWindowComponent();
 
-        if (!activePopupInfo || activePopupInfo != popupInfo) {
+        if (!activePopupInfo || activePopupInfo !== popupInfo) {
             activePopupComponent = new PopupWindowRelayout(popupInfo);
             IntelligentLayout.setActivePopupWindow(popupInfo, activePopupComponent);
         }

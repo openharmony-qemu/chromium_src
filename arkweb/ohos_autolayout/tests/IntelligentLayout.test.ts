@@ -5,6 +5,14 @@ import { PopupInfo } from '../src/Framework/Popup/PopupInfo';
 import { PopupType } from '../src/Framework/Popup/PopupType';
 import { PopupStateManager } from '../src/Framework/Popup/PopupStateManager';
 
+type MockStateManager = {
+  canStartLayout: jest.Mock;
+  clearState: jest.Mock;
+  printState: jest.Mock;
+  resetState: jest.Mock;
+  setState: jest.Mock;
+};
+
 jest.mock('../src/Debug/Log', () => ({
   __esModule: true,
   default: {
@@ -59,15 +67,9 @@ jest.mock('../src/Framework/Popup/PopupStateManager', () => ({
   },
 }));
 
-const getDetectorMock = () => PopupWindowDetector.findPopups as jest.Mock;
-const getRelayoutMock = () => PopupWindowRelayout as unknown as jest.MockedClass<typeof PopupWindowRelayout>;
-const getStateManager = () => PopupStateManager as unknown as {
-  canStartLayout: jest.Mock;
-  clearState: jest.Mock;
-  printState: jest.Mock;
-  resetState: jest.Mock;
-  setState: jest.Mock;
-};
+const getDetectorMock = (): jest.Mock => PopupWindowDetector.findPopups as jest.Mock;
+const getRelayoutMock = (): jest.MockedClass<typeof PopupWindowRelayout> => PopupWindowRelayout as unknown as jest.MockedClass<typeof PopupWindowRelayout>;
+const getStateManager = (): MockStateManager => PopupStateManager as unknown as MockStateManager;
 
 const createPopupInfo = (): PopupInfo => {
   const root = document.createElement('div');
@@ -117,14 +119,14 @@ describe('IntelligentLayout (single popup cache)', () => {
     expect(getRelayoutMock()).toHaveBeenCalledWith(info);
     expect(cachedInfo).toBe(info);
     expect(cachedComponent).not.toBeNull();
-    expect((cachedComponent as any).isDirty()).toBe(false);
+    expect((cachedComponent).isDirty()).toBe(false);
   });
 ;
 
   it('markDirty marks cached component when target is inside popup', () => {
     const info = createPopupInfo();
     IntelligentLayout.calculateForPopWin(info);
-    const component = IntelligentLayout.getActivePopupWindowComponent() as any;
+    const component = IntelligentLayout.getActivePopupWindowComponent();
     const child = document.createElement('div');
     info.root_node.appendChild(child);
 
@@ -137,7 +139,7 @@ describe('IntelligentLayout (single popup cache)', () => {
   it('markDirty skips when component already dirty or target outside popup', () => {
     const info = createPopupInfo();
     IntelligentLayout.calculateForPopWin(info);
-    const component = IntelligentLayout.getActivePopupWindowComponent() as any;
+    const component = IntelligentLayout.getActivePopupWindowComponent();
 
     // Make component report dirty
     component.setDirty(true);
@@ -164,7 +166,7 @@ describe('IntelligentLayout (single popup cache)', () => {
   it('resetAllPopWindows cancels validation and restores styles', () => {
     const info = createPopupInfo();
     IntelligentLayout.calculateForPopWin(info);
-    const component = IntelligentLayout.getActivePopupWindowComponent() as any;
+    const component = IntelligentLayout.getActivePopupWindowComponent();
 
     IntelligentLayout.resetPopWindows('初始化');
 

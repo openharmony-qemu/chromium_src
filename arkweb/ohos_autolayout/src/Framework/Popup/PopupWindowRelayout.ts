@@ -904,14 +904,14 @@ export class PopupWindowRelayout extends AComponent {
         Array.from(element.children).forEach(child => {
             let childStyle = getComputedStyle(child);
             let childRect = child.getBoundingClientRect();
-            if (childStyle.position != Constant.absolute && childStyle.position != Constant.fixed) {
+            if (childStyle.position !== Constant.absolute && childStyle.position !== Constant.fixed) {
                 childMinTop = Math.min(childRect.top - parseFloat(childStyle.marginTop), childMinTop);
                 childMaxBottom = Math.max(childRect.bottom + parseFloat(childStyle.marginBottom), childMaxBottom);
                 cnt++;
             }
         });
 
-        if (cnt > 1 && childMinTop != Infinity &&
+        if (cnt > 1 && childMinTop !== Infinity &&
             Math.abs(childMaxBottom - childMinTop - parseFloat(elementStyle.height)) < Constant.flexDelHeightThreshold) {
             return true;
         }
@@ -946,7 +946,7 @@ export class PopupWindowRelayout extends AComponent {
         flexContainers.forEach(container => {
             Array.from(container.children).forEach(child => {
                 let childStyle = getComputedStyle(child);
-                if (childStyle.position != Constant.absolute && childStyle.position != Constant.fixed) {
+                if (childStyle.position !== Constant.absolute && childStyle.position !== Constant.fixed) {
                     StyleSetter.setStyle(child as HTMLElement, Constant.flex_shrink, '0');
                     this.needRestoreStyleNodes.add(child as HTMLElement);
                     totalProcessed++;

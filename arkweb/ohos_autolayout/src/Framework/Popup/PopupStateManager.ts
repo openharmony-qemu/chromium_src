@@ -60,7 +60,7 @@ export class PopupStateManager {
         const reasonText = reason ? ` (原因: ${reason})` : '';
         Log.info(`🔄 状态转换: ${getStateIcon(oldState)} ${getStateDescription(oldState)} -> ${getStateIcon(newState)} ${getStateDescription(newState)}${reasonText}`, PopupStateManager.TAG);
         
-        if (newState != PopupLayoutState.COMPLETED && newState != PopupLayoutState.FAILED && newState != PopupLayoutState.RESTORED) {
+        if (newState !== PopupLayoutState.COMPLETED && newState !== PopupLayoutState.FAILED && newState !== PopupLayoutState.RESTORED) {
             ObserverHandler.postTask();
         }
         return true;

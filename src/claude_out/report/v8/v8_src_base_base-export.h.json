@@ -1,0 +1,47 @@
+{
+  "file_path": "v8/src/base/base-export.h",
+  "rej_file_path": "v8/src/base/base-export.h.rej",
+  "analysis_timestamp": "2025-11-05",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "preserved",
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "description": "修改Linux共享库导出条件编译指令，添加OHOS_JS_ENGINE条件排除",
+      "risk_level": "低",
+      "risk_description": "这是一个相对安全的条件编译修改，仅在OHOS_JS_ENGINE未定义时启用V8_BASE_EXPORT导出，不会影响核心功能逻辑",
+      "conflict_cause": "Arkweb 132在Chromium 132基础上添加了OHOS平台特定的条件编译限制，而Arkweb 141基于Chromium 141，其条件编译表达式发生了变化（从简单的#ifdef变为|| USING_V8_BASE_SHARED），导致合并冲突",
+      "analysis_process": {
+        "identified_changes": {
+          "deletions": ["#ifdef BUILDING_V8_BASE_SHARED"],
+          "additions": ["#if defined(BUILDING_V8_BASE_SHARED) && !defined(OHOS_JS_ENGINE)"]
+        },
+        "location_strategy": "使用上下文锚点'// Setup for Linux shared library export.'和'#define V8_BASE_EXPORT __attribute__((visibility(\"default\")))'精确定位到源文件第23行",
+        "application_result": "成功将源文件中的#if defined(BUILDING_V8_BASE_SHARED) || USING_V8_BASE_SHARED替换为#if defined(BUILDING_V8_BASE_SHARED) && !defined(OHOS_JS_ENGINE)"
+      },
+      "confidence_score": "高",
+      "confidence_reason": "能够通过上下文锚点精确定位目标代码，且修改意图明确（添加OHOS平台条件限制），应用后代码语法正确且逻辑合理",
+      "resolution_strategy": "直接应用修改",
+      "status": "已解决",
+      "modification_details": {
+        "line_number": 23,
+        "original": "#if defined(BUILDING_V8_BASE_SHARED) || USING_V8_BASE_SHARED",
+        "modified": "#if defined(BUILDING_V8_BASE_SHARED) && !defined(OHOS_JS_ENGINE)"
+      }
+    }
+  ],
+  "summary": {
+    "processing_result": "成功解决所有冲突",
+    "total_modifications": 1,
+    "platform_specific_changes": "为OHOS平台添加了条件编译排除机制，确保在OHOS环境下不导出V8_BASE_BASE符号",
+    "code_integrity": "修改后的代码语法正确，逻辑完整，保持了原有的条件编译结构",
+    "compliance_check": {
+      "no_context_lines_added": true,
+      "no_script_files_created": true,
+      "rej_file_unmodified": true,
+      "only_report_file_created": true
+    }
+  }
+}

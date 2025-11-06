@@ -1,0 +1,62 @@
+{
+  "文件路径": "v8/include/v8-local-handle.h.rej",
+  "分析时间": "2025-11-05",
+  "总体统计": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 2,
+    "未能解决的hunk数量": 0
+  },
+  "hunks": [
+    {
+      "hunk编号": 1,
+      "描述": "api_internal::ToLocalEmpty() 函数声明修改",
+      "风险等级": "低",
+      "冲突原因": "Arkweb 132 在函数声明前添加了 JSVM_EXPORT 修饰符，用于区分标准 V8 导出和 Arkweb 特定导出",
+      "分析过程": {
+        "待删除行": [
+          "V8_EXPORT void ToLocalEmpty();"
+        ],
+        "待添加行": [
+          "V8_EXPORT JSVM_EXPORT void ToLocalEmpty();"
+        ],
+        "定位策略": "使用周围的注释作为锚点，在 api_internal 命名空间中找到了 ToLocalEmpty() 函数声明",
+        "应用结果": "成功应用修改"
+      },
+      "修改置信度": "高",
+      "处理策略": "已解决",
+      "最终状态": "在源文件第83行成功添加了 JSVM_EXPORT 修饰符"
+    },
+    {
+      "hunk编号": 2,
+      "描述": "HandleScope 类声明修改",
+      "风险等级": "低",
+      "冲突原因": "Arkweb 132 在类声明前添加了 JSVM_EXPORT 修饰符，与第一个 hunk 类似，都是为 Arkweb 特定的导出机制做准备",
+      "分析过程": {
+        "待删除行": [
+          "class V8_EXPORT V8_NODISCARD HandleScope {"
+        ],
+        "待添加行": [
+          "class V8_EXPORT JSVM_EXPORT V8_NODISCARD HandleScope {"
+        ],
+        "定位策略": "使用类上方的注释块作为锚点，在源文件第119行成功定位到 HandleScope 类声明",
+        "应用结果": "成功应用修改"
+      },
+      "修改置信度": "高",
+      "处理策略": "已解决",
+      "最终状态": "在源文件第119行成功添加了 JSVM_EXPORT 修饰符"
+    }
+  ],
+  "总结": {
+    "所有hunk都已成功解决": true,
+    "修改类型": "两个修改都是在函数/类声明中添加 JSVM_EXPORT 修饰符，这是 Arkweb 132 为了区分标准 V8 导出和 Arkweb 特定导出而做的侵入式修改",
+    "影响评估": "低风险修改，仅影响导出符号的标记方式，不会改变功能逻辑",
+    ".rej文件状态": "保持完整，未被修改或删除"
+  },
+  "处理流程验证": {
+    "严格遵守了第一性原则": true,
+    "未添加任何上下文行": true,
+    "未创建任何脚本文件": true,
+    "未修改.rej文件": true,
+    "仅在指定目录创建JSON报告": true
+  }
+}

@@ -271,6 +271,9 @@ class MaglevConcurrentDispatcher::JobTask final : public v8::JobTask {
       return;
     }
     TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"), "V8.MaglevTask");
+#ifdef OHOS_JS_ENGINE
+    auto trace = HiTrace("RCS_v8.compile_V8.MaglevTask");
+#endif
     base::FlushDenormalsScope flush_denormals_scope(
         isolate()->flush_denormals());
     LocalIsolate local_isolate(isolate(), ThreadKind::kBackground);

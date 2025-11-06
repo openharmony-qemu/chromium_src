@@ -15,16 +15,6 @@
 
 namespace v8::internal::compiler::turboshaft {
 
-#ifdef DEBUG
-#define TRACE(x)                                    \
-  do {                                              \
-    if (v8_flags.turboshaft_trace_load_elimination) \
-      StdoutStream() << x << std::endl;             \
-  } while (false)
-#else
-#define TRACE(x)
-#endif
-
 std::ostream& operator<<(std::ostream& os, const MemoryAddress& mem) {
   return os << "MemoryAddress{base=" << mem.base << ", index=" << mem.index
             << ", offset=" << mem.offset << ", elem_size_log2="

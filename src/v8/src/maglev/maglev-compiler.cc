@@ -36,6 +36,10 @@
 #include "src/objects/code-inl.h"
 #include "src/objects/js-function.h"
 
+#ifdef OHOS_JS_ENGINE
+#include "../../../arkweb/chromium_ext/v8/trace.h"
+#endif
+
 #ifdef ALWAYS_MAGLEV_GRAPH_LABELLER
 #define ALWAYS_MAGLEV_GRAPH_LABELLER_BOOL true
 #else
@@ -99,6 +103,9 @@ bool MaglevCompiler::Compile(LocalIsolate* local_isolate,
     {
       TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                    "V8.Maglev.GraphBuilding");
+#ifdef OHOS_JS_ENGINE
+      auto trace = HiTrace("RCS_v8.compile_V8.Maglev.GraphBuilding");
+#endif
       MaglevGraphBuilder graph_builder(
           local_isolate, compilation_info->toplevel_compilation_unit(), graph);
       if (!graph_builder.Build()) return false;
@@ -130,6 +137,9 @@ bool MaglevCompiler::Compile(LocalIsolate* local_isolate,
     if (v8_flags.maglev_licm) {
       TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                    "V8.Maglev.LoopOptimizations");
+#ifdef OHOS_JS_ENGINE
+      auto trace = HiTrace("RCS_v8.compile_V8.Maglev.LoopOptimizations");
+#endif
       GraphProcessor<LoopOptimizationProcessor> loop_optimizations(
           compilation_info);
       loop_optimizations.ProcessGraph(graph);
@@ -141,6 +151,9 @@ bool MaglevCompiler::Compile(LocalIsolate* local_isolate,
     if (v8_flags.maglev_untagged_phis) {
       TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                    "V8.Maglev.PhiUntagging");
+#ifdef OHOS_JS_ENGINE
+      auto trace = HiTrace("RCS_v8.compile_V8.Maglev.PhiUntagging");
+#endif
       GraphProcessor<MaglevPhiRepresentationSelector> representation_selector(
           graph);
       representation_selector.ProcessGraph(graph);
@@ -156,6 +169,9 @@ bool MaglevCompiler::Compile(LocalIsolate* local_isolate,
     //   - Cleaning up identity nodes
     TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                  "V8.Maglev.DeadCodeMarking");
+#ifdef OHOS_JS_ENGINE
+    auto trace = HiTrace("RCS_v8.compile_V8.Maglev.DeadCodeMarking");
+#endif
     if (graph->may_have_unreachable_blocks()) {
       graph->RemoveUnreachableBlocks();
     }
@@ -180,6 +196,9 @@ bool MaglevCompiler::Compile(LocalIsolate* local_isolate,
       //   - Mark
       TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                    "V8.Maglev.NodeProcessing");
+#ifdef OHOS_JS_ENGINE
+      auto trace = HiTrace("RCS_v8.compile_V8.Maglev.NodeProcessing");
+#endif
       UnparkedScopeIfOnBackground unparked_scope(local_isolate->heap());
       GraphMultiProcessor<DeadNodeSweepingProcessor,
                           ValueLocationConstraintProcessor,
@@ -196,6 +215,9 @@ bool MaglevCompiler::Compile(LocalIsolate* local_isolate,
     {
       TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                    "V8.Maglev.RegisterAllocation");
+#ifdef OHOS_JS_ENGINE
+      auto trace = HiTrace("RCS_v8.compile_V8.Maglev.RegisterAllocation");
+#endif
       StraightForwardRegisterAllocator allocator(compilation_info, graph,
                                                  &regalloc_info);
       PrintGraph(graph, v8_flags.print_maglev_graph,
@@ -241,6 +263,9 @@ std::pair<MaybeHandle<Code>, BailoutReason> MaglevCompiler::GenerateCode(
     }
     TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                  "V8.Maglev.CodeGeneration");
+#ifdef OHOS_JS_ENGINE
+    auto trace = HiTrace("RCS_v8.compile_V8.Maglev.CodeGeneration");
+#endif
     if (compilation_info->is_detached() ||
         !code_generator->Generate(isolate).ToHandle(&code)) {
       compilation_info->toplevel_compilation_unit()

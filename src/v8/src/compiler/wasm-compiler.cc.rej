@@ -1,22 +1,5 @@
 --- wasm-compiler.cc	2025-10-20 19:53:31.380579744 +0800
 +++ wasm-compiler.cc	2025-10-16 15:56:12.747316882 +0800
-@@ -3441,10 +3441,16 @@
-   Node* mem_start = MemStart(mem_index);
-   if (offset == 0) return mem_start;
-   return gasm_->IntAdd(mem_start, gasm_->UintPtrConstant(offset));
- }
- 
-+Node* WasmGraphBuilder::MemBuffer(uint32_t mem_index, Node* index) {
-+  DCHECK_NOT_NULL(index);
-+  Node* mem_start = MemStart(mem_index);
-+  return gasm_->IntAdd(mem_start, index);
-+}
-+
- Node* WasmGraphBuilder::CurrentMemoryPages(const wasm::WasmMemory* memory) {
-   // CurrentMemoryPages can not be called from asm.js.
-   DCHECK_EQ(wasm::kWasmOrigin, env_->module->origin);
- 
-   Node* mem_size = MemSize(memory->index);
 @@ -3866,14 +3872,14 @@
        memory, access_size, index, offset, position,
        EnforceBoundsCheck::kCanOmitBoundsCheck, AlignmentCheck::kNo);

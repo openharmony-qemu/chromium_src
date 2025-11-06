@@ -306,6 +306,7 @@ struct is_trivially_copyable {
   static constexpr bool value = std::is_trivially_copyable_v<T>;
 #endif
 };
+
 #define ASSERT_TRIVIALLY_COPYABLE(T)                         \
   static_assert(::v8::base::is_trivially_copyable<T>::value, \
                 #T " should be trivially copyable")
@@ -495,7 +496,8 @@ bool is_inbounds(float_t v) {
 
 // Setup for Linux shared library export.
 #if V8_HAS_ATTRIBUTE_VISIBILITY && \
-    (defined(BUILDING_V8_SHARED_PRIVATE) || USING_V8_SHARED_PRIVATE)
+    (defined(BUILDING_V8_SHARED_PRIVATE) || USING_V8_SHARED_PRIVATE) && \
+    !defined(OHOS_JS_ENGINE)
 #define V8_EXPORT_PRIVATE __attribute__((visibility("default")))
 #define V8_EXPORT_ENUM V8_EXPORT_PRIVATE
 #else

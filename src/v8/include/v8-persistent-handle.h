@@ -430,7 +430,9 @@ class V8_EXPORT PersistentHandleVisitor {
 
 template <class T>
 internal::Address* PersistentBase<T>::New(Isolate* isolate, T* that) {
-  if (internal::ValueHelper::IsEmpty(that)) return nullptr;
+  if (internal::ValueHelper::IsEmpty(that)) {
+    return nullptr;
+  }
   return api_internal::GlobalizeReference(
       reinterpret_cast<internal::Isolate*>(isolate),
       internal::ValueHelper::ValueAsAddress(that));
@@ -441,7 +443,9 @@ template <class S, class M2>
 void Persistent<T, M>::Copy(const Persistent<S, M2>& that) {
   static_assert(std::is_base_of_v<T, S>, "type check");
   this->Reset();
-  if (that.IsEmpty()) return;
+  if (that.IsEmpty()) {
+    return;
+  }
   this->slot() = api_internal::CopyGlobalReference(that.slot());
   M::Copy(that, this);
 }
@@ -449,13 +453,17 @@ void Persistent<T, M>::Copy(const Persistent<S, M2>& that) {
 template <class T>
 bool PersistentBase<T>::IsWeak() const {
   using I = internal::Internals;
-  if (this->IsEmpty()) return false;
+  if (this->IsEmpty()) {
+    return false;
+  }
   return I::GetNodeState(this->slot()) == I::kNodeStateIsWeakValue;
 }
 
 template <class T>
 void PersistentBase<T>::Reset() {
-  if (this->IsEmpty()) return;
+  if (this->IsEmpty()) {
+    return;
+  }
   api_internal::DisposeGlobal(this->slot());
   this->Clear();
 }
@@ -469,7 +477,9 @@ template <class S>
 void PersistentBase<T>::Reset(Isolate* isolate, const Local<S>& other) {
   static_assert(std::is_base_of_v<T, S>, "type check");
   Reset();
-  if (other.IsEmpty()) return;
+  if (other.IsEmpty()) {
+    return;
+  }
   this->slot() = New(isolate, *other);
 }
 
@@ -483,14 +493,17 @@ void PersistentBase<T>::Reset(Isolate* isolate,
                               const PersistentBase<S>& other) {
   static_assert(std::is_base_of_v<T, S>, "type check");
   Reset();
-  if (other.IsEmpty()) return;
+  if (other.IsEmpty()) {
+    return;
+  }
   this->slot() = New(isolate, other.template value<S>());
 }
 
 template <class T>
 template <typename P>
 V8_INLINE void PersistentBase<T>::SetWeak(
-    P* parameter, typename WeakCallbackInfo<P>::Callback callback,
+    P* parameter,
+    typename WeakCallbackInfo<P>::Callback callback,
     WeakCallbackType type) {
   using Callback = WeakCallbackInfo<void>::Callback;
 #if (__GNUC__ >= 8) && !defined(__clang__)

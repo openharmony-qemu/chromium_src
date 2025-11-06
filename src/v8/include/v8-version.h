@@ -13,6 +13,10 @@
 #define V8_BUILD_NUMBER 146
 #define V8_PATCH_LEVEL 11
 
+#ifdef OHOS_JS_ENGINE
+#define V8_INNER_VERSION 24
+#endif
+
 // Use 1 for candidates and 0 otherwise.
 // (Boolean macro values are not supported by all preprocessors.)
 #define V8_IS_CANDIDATE_VERSION 0

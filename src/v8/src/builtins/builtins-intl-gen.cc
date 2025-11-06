@@ -135,6 +135,9 @@ void IntlBuiltinsAssembler::ToLowerCaseImpl(
     TNode<ContextOrEmptyContext> context, ToLowerCaseKind kind,
     std::function<void(TNode<JSAny>)> ReturnFct) {
   Label call_c(this), return_string(this), runtime(this, Label::kDeferred);
+#ifdef OHOS_JS_ENGINE
+  Label two_byte_string(this);
+#endif
 
   // Unpack strings if possible, and bail to runtime unless we get a one-byte
   // flat string.

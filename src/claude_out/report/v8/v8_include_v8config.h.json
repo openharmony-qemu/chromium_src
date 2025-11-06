@@ -1,0 +1,77 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/v8/include/v8config.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/v8/include/v8config.h",
+    "Chromium132基线版本": "/home/sujiahao/code/chromium_132_baseline/src/v8/include/v8config.h",
+    "Arkweb132代码": "/home/sujiahao/code/arkweb_132/src/v8/include/v8config.h"
+  },
+  "处理总结": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%",
+    ".rej文件保持完整未被修改": true
+  },
+  "hunk详情": [
+    {
+      "hunk编号": 1,
+      "位置信息": {
+        "rej文件中的行号范围": "796-811",
+        "实际在源文件中的位置": "870-882"
+      },
+      "变更内容": {
+        "删除的行": [
+          "#if V8_HAS_ATTRIBUTE_VISIBILITY",
+          "# ifdef BUILDING_V8_SHARED",
+          "#  define V8_EXPORT __attribute__ ((visibility(\"default\")))",
+          "# else",
+          "#  define V8_EXPORT"
+        ],
+        "添加的行": [
+          "#if V8_HAS_ATTRIBUTE_VISIBILITY && defined(BUILDING_V8_SHARED)",
+          "# ifdef OHOS_JS_ENGINE",
+          "#  define JSVM_EXPORT __attribute__((visibility(\"default\")))",
+          "# else",
+          "#  define JSVM_EXPORT",
+          "#  define V8_EXPORT __attribute__((visibility(\"default\")))",
+          "# define JSVM_EXPORT"
+        ]
+      },
+      "冲突原因分析": "Arkweb针对OHOS系统的特殊定制，添加了OHOS_JS_ENGINE条件编译和JSVM_EXPORT宏定义",
+      "处理过程": {
+        "定位策略": "通过搜索V8_OS_WIN关键字找到相关的Linux导出配置段落",
+        "定位结果": "成功在源文件第870-882行找到目标代码段",
+        "应用策略": "原子化应用所有+行和-行的修改，不添加任何上下文",
+        "应用结果": "修改成功完成"
+      },
+      "风险分析": {
+        "修改置信度": "高",
+        "潜在风险": [
+          "引入了OHOS_JS_ENGINE条件编译，需要确保相关定义存在",
+          "添加了JSVM_EXPORT宏，需要在其他地方正确使用"
+        ],
+        "语法风险": "低，修改后的C++预处理器指令语法正确",
+        "逻辑风险": "中等，需要与OHOS系统的整体构建配置保持一致"
+      },
+      "解决状态": "已解决",
+      "验证建议": [
+        "确保OHOS_JS_ENGINE宏在相关构建配置中已正确定义",
+        "检查JSVM_EXPORT宏在项目其他地方的使用情况",
+        "验证在OHOS和Linux环境下V8_EXPORT的行为符合预期"
+      ]
+    }
+  ],
+  "技术分析": {
+    "修改意图": "为OHOS系统提供定制的V8导出机制，同时保持与现有Linux/Windows平台的兼容性",
+    "代码变更类型": "条件编译逻辑重构和新增OHOS特定宏定义",
+    "影响范围": "V8库的导出符号控制，主要影响动态库构建和符号可见性"
+  },
+  "合规性检查": {
+    "严格遵守不添加上下文原则": true,
+    "未生成任何脚本文件": true,
+    "未创建辅助文件": true,
+    "未修改.rej文件": true,
+    "仅在指定目录创建JSON报告": true,
+    "所有修改均为原子化应用": true
+  }
+}

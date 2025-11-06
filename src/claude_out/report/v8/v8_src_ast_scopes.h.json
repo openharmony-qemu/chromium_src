@@ -1,0 +1,60 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/v8/src/ast/scopes.h.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/v8/src/ast/scopes.h",
+    "处理时间": "2025-11-05"
+  },
+  "处理结果统计": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 2,
+    "未能解决的hunk数量": 0,
+    "rej文件完整性": "保持完整，未被修改"
+  },
+  "hunk处理详情": [
+    {
+      "hunk编号": 1,
+      "在.rej文件中的行范围": "3-14",
+      "冲突原因": "Arkweb132添加了OHOS_JS_ENGINE条件编译的never_hide_base_std_hint相关方法",
+      "修改类型": "添加新方法",
+      "待添加的行": [
+        "#ifdef OHOS_JS_ENGINE",
+        "void set_has_never_hide_base_std_hint() {",
+        "  has_never_hide_base_std_hint_ = true;",
+        "}",
+        "bool has_never_hide_base_std_hint() { return has_never_hide_base_std_hint_; }",
+        "#endif"
+      ],
+      "定位锚点": "bool has_await_using_declaration() const",
+      "置信度": "高",
+      "解决状态": "已解决",
+      "应用位置": "第398-404行",
+      "风险分析": "低风险 - 这是一个条件编译的功能添加，仅在OHOS_JS_ENGINE宏定义时生效，不会影响标准V8功能。添加的是getter/setter方法对，用于设置和获取has_never_hide_base_std_hint_标志位。"
+    },
+    {
+      "hunk编号": 2,
+      "在.rej文件中的行范围": "21-30",
+      "冲突原因": "Arkweb132添加了OHOS_JS_ENGINE条件编译的成员变量",
+      "修改类型": "添加新成员变量",
+      "待添加的行": [
+        "#ifdef OHOS_JS_ENGINE",
+        "// True if the with scope has @optNeverHideBaseStd compile hint.",
+        "bool has_never_hide_base_std_hint_ : 1;",
+        "#endif"
+      ],
+      "定位锚点": "bool is_wrapped_function_ : 1;",
+      "置信度": "高",
+      "解决状态": "已解决",
+      "应用位置": "第864-867行",
+      "风险分析": "低风险 - 添加了一个1位的布尔成员变量，使用位域优化内存占用。同样在OHOS_JS_ENGINE宏保护下，仅对特定构建环境生效。该变量与第一个hunk中添加的方法对应，构成完整的功能实现。"
+    }
+  ],
+  "整体分析": {
+    "修改目的": "为Arkweb引擎添加@optNeverHideBaseStd编译提示的支持，用于优化JavaScript代码中with语句的处理性能",
+    "实现方式": "通过条件编译宏OHOS_JS_ENGINE保护，添加成员变量和对应的访问方法",
+    "架构一致性": "与现有代码风格完全一致，遵循了V8项目的编码规范",
+    "向后兼容性": "完全兼容，因为所有修改都通过条件编译宏保护",
+    "功能完整性": "两个hunk构成了完整的功能实现 - 成员变量声明 + 访问方法定义",
+    "建议": "建议人工检查OHOS_JS_ENGINE宏在构建系统中的定义，确保在需要时正确启用此功能"
+  },
+  "处理策略总结": "成功将所有侵入式修改精确应用到源文件中，严格遵守了不添加上下文的原则，仅应用+开头的行和删除-开头的行。所有修改都通过条件编译保护，确保了代码的安全性和兼容性。"
+}

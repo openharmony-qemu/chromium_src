@@ -1,0 +1,82 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/v8/src/logging/runtime-call-stats.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/v8/src/logging/runtime-call-stats.h",
+    "处理时间": "2025-11-05"
+  },
+  "冲突概述": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 2,
+    "未能解决的hunk数量": 0,
+    "解决状态": "全部解决"
+  },
+  "hunk处理详情": [
+    {
+      "hunk序号": 1,
+      "位置信息": {
+        "文件行数": "第17行",
+        "上下文锚点": [
+          "#include \"src/runtime/runtime.h\"",
+          "#include \"src/base/atomic-utils.h\""
+        ]
+      },
+      "修改内容": {
+        "待删除行": "#ifdef V8_RUNTIME_CALL_STATS",
+        "待添加行": "#if defined(V8_RUNTIME_CALL_STATS) || defined(HITRACE_RUNTIME_CALL_STATS)"
+      },
+      "分析过程": {
+        "冲突原因": "Arkweb132 添加了 HITRACE_RUNTIME_CALL_STATS 条件编译支持，在升级到 Chromium 141 时产生了冲突",
+        "定位策略": "使用上下文行作为锚点，精确匹配源文件中的位置",
+        "置信度": "高",
+        "风险评估": "低风险 - 这是条件编译的扩展，保持了向后兼容性，不会影响现有功能"
+      },
+      "解决状态": "已解决",
+      "验证结果": "成功应用修改，语法正确"
+    },
+    {
+      "hunk序号": 2,
+      "位置信息": {
+        "文件行数": "第525行",
+        "上下文锚点": [
+          "};",
+          "class RuntimeCallCounter final {"
+        ]
+      },
+      "修改内容": {
+        "待删除行": "#ifdef V8_RUNTIME_CALL_STATS",
+        "待添加行": "#if defined(V8_RUNTIME_CALL_STATS) || defined(HITRACE_RUNTIME_CALL_STATS)"
+      },
+      "分析过程": {
+        "冲突原因": "Arkweb132 在 RuntimeCallCounter 类定义前添加了 HITRACE_RUNTIME_CALL_STATS 条件编译支持",
+        "定位策略": "使用类定义前的上下文作为锚点，精确匹配源文件位置",
+        "置信度": "高",
+        "风险评估": "低风险 - 与第一个hunk相同的条件编译扩展，保持代码一致性"
+      },
+      "解决状态": "已解决",
+      "验证结果": "成功应用修改，语法正确"
+    }
+  ],
+  "整体分析": {
+    "修改性质": "功能扩展 - 添加了 HITRACE_RUNTIME_CALL_STATS 条件编译支持",
+    "影响范围": "运行时调用统计功能的条件编译",
+    "兼容性": "向后兼容 - 保留了原有的 V8_RUNTIME_CALL_STATS 条件",
+    "技术意图": "支持额外的运行时调用统计追踪机制（HiTrace）",
+    "代码质量": "良好 - 修改简洁明确，符合条件编译的最佳实践"
+  },
+  "处理策略总结": {
+    "采用策略": "原子化应用 - 精确应用 +/- 行，不添加任何上下文",
+    "遵循原则": "严格遵循黄金法则，仅处理 +/- 行，保持 .rej 文件完整性",
+    "扩展查找": "无需扩展查找 - 直接定位成功",
+    "人工复核要点": [
+      "确认 HITRACE_RUNTIME_CALL_STATS 宏定义在项目中存在",
+      "验证两个条件编译位置的一致性",
+      "检查是否需要更新相应的 #endif 注释"
+    ]
+  },
+  "完整性验证": {
+    ".rej文件状态": "保持完整，未被修改或删除",
+    "源文件修改": "成功应用2个hunk的所有修改",
+    "语法检查": "通过 - 修改后的代码语法正确",
+    "逻辑一致性": "通过 - 两个位置的修改保持一致"
+  }
+}

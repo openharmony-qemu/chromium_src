@@ -8,6 +8,7 @@
 
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/compiler_specific.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"

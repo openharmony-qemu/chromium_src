@@ -50,6 +50,9 @@ class PLATFORM_EXPORT DocumentResourceCoordinator final {
       WebMemoryMeasurementMode mode,
       OnWebMemoryMeasurementRequestedCallback callback);
   void OnFreezingOriginTrialOptOut();
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+  std::unique_ptr<DocumentResourceCoordinatorUtils> coordinator_utils_;
+#endif
 
  private:
   explicit DocumentResourceCoordinator(const BrowserInterfaceBrokerProxy&);

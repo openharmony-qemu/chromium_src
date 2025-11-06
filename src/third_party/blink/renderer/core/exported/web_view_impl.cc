@@ -34,6 +34,8 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #include "base/command_line.h"
 #include "base/debug/alias.h"
 #include "base/debug/crash_logging.h"
@@ -267,6 +269,17 @@ HashSet<WebViewImpl*>& WebViewImpl::AllInstances() {
   return all_instances;
 }
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+static bool g_is_strict_log_mode_ = true;
+void WebView::SetStrictLogMode(bool is_strict_log_mode) {
+  g_is_strict_log_mode_ = is_strict_log_mode;
+}
+
+bool WebView::IsStrictLogMode() {
+  return g_is_strict_log_mode_;
+}
+#endif
+
 namespace {
 
 class EmptyEventListener final : public NativeEventListener {
@@ -496,6 +509,10 @@ void MaybePreloadSystemFonts(Page* page) {
 
 }  // namespace
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/exported/web_view_impl_for_include.cc"
+#endif
+
 // WebView ----------------------------------------------------------------
 
 WebView* WebView::Create(
@@ -627,7 +644,11 @@ WebViewImpl::WebViewImpl(
     const std::optional<uint64_t>& canvas_noise_token)
     : widgets_never_composited_(widgets_never_composited),
       web_view_client_(client),
+#if BUILDFLAG(IS_ARKWEB)
+      chrome_client_(MakeGarbageCollected<ChromeClientImplExt>(this)),
+#else
       chrome_client_(MakeGarbageCollected<ChromeClientImpl>(this)),
+#endif  // IS_ARKWEB
       minimum_zoom_level_(
           blink::ZoomFactorToZoomLevel(kMinimumBrowserZoomFactor)),
       maximum_zoom_level_(
@@ -1946,6 +1967,13 @@ void WebView::ApplyWebPreferences(const web_pref::WebPreferences& prefs,
     RuntimeEnabledFeatures::SetStrictMimeTypesForWorkersEnabled(false);
   }
 
+#if BUILDFLAG(IS_ARKWEB)
+  void ApplyOhosWebPreferences(const web_pref::WebPreferences& prefs,
+                               WebView* web_view, WebSettings* settings,
+                               WebViewImpl* web_view_impl);
+  ApplyOhosWebPreferences(prefs, web_view, settings, web_view_impl);
+#endif
+
   RuntimeEnabledFeatures::SetPaymentRequestEnabled(
       prefs.payment_request_enabled);
 
@@ -1961,11 +1989,13 @@ void WebViewImpl::ThemeChanged() {
     page->InvalidatePaint();
 }
 
+#if !BUILDFLAG(IS_ARKWEB)
 void WebViewImpl::EnterFullscreen(LocalFrame& frame,
                                   const FullscreenOptions* options,
                                   FullscreenRequestType request_type) {
   fullscreen_controller_->EnterFullscreen(frame, options, request_type);
 }
+#endif
 
 void WebViewImpl::ExitFullscreen(LocalFrame& frame) {
   fullscreen_controller_->ExitFullscreen(frame);
@@ -2571,7 +2601,12 @@ void WebViewImpl::SetPageLifecycleStateInternal(
     DispatchPagehide(new_state->pagehide_dispatch);
   }
   if (hiding_page) {
+#if !BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
     SetVisibilityState(new_state->visibility, /*is_initial_state=*/false);
+#else
+    SetVisibilityState(new_state->visibility, /*is_initial_state=*/false,
+                       storing_in_bfcache);
+#endif
   }
   if (storing_in_bfcache) {
     // TODO(https://crbug.com/427130212): Consider moving this to happen earlier

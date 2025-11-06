@@ -15,6 +15,9 @@ enum class DecoderType {
   kBmpDecoder,
   kJpegDecoder,
   kPngDecoder,
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  kHeifDecoder,
+#endif
   kCrabbyAvifDecoder,
 };
 

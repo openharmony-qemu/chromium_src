@@ -203,6 +203,12 @@ interface ClipboardHost {
   [EnableIf=is_mac]
   WriteStringToFindPboard(mojo_base.mojom.String16 text);
 
+  [EnableIf=arkweb_clipboard, Sync]
+  OnClipboardDataGuard(bool status) => ();
+
+  [EnableIf=arkweb_clipboard, Sync]
+  UpdateClipboardData() => ();
+
   // Returns the current clipboard access permission state as configured
   // in macOS System Settings. Only available on macOS 15.4+.
   // NOTE: This only affects programmatic access that lacks an associated user

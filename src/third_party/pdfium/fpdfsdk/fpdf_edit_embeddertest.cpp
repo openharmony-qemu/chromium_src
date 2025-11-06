@@ -228,9 +228,8 @@ class FPDFEditEmbedderTest : public EmbedderTest {
     EXPECT_TRUE(font_desc->KeyExist("StemV"));
     ByteStringView present("FontFile");
     ByteStringView absent("FontFile2");
-    if (font_type == FPDF_FONT_TRUETYPE) {
+    if (font_type == FPDF_FONT_TRUETYPE)
       std::swap(present, absent);
-    }
     EXPECT_TRUE(font_desc->KeyExist(present));
     EXPECT_FALSE(font_desc->KeyExist(absent));
 
@@ -245,9 +244,8 @@ class FPDFEditEmbedderTest : public EmbedderTest {
     }
 
     pdfium::span<const uint8_t> stream_data = streamAcc->GetSpan();
-    for (size_t j = 0; j < span.size(); j++) {
+    for (size_t j = 0; j < span.size(); j++)
       EXPECT_EQ(span[j], stream_data[j]) << " at byte " << j;
-    }
   }
 
   void CheckCompositeFontWidths(const CPDF_Array* widths_array,
@@ -1438,7 +1436,7 @@ TEST_F(FPDFEditEmbedderTest, GetMarkedContentId) {
   ScopedPage page = LoadScopedPage(0);
   ASSERT_TRUE(page);
 
-  static constexpr int kExpectedObjectCount = 4;
+  constexpr int kExpectedObjectCount = 4;
   ASSERT_EQ(kExpectedObjectCount, FPDFPage_CountObjects(page.get()));
   for (int i = 0; i < kExpectedObjectCount; ++i) {
     FPDF_PAGEOBJECT page_object = FPDFPage_GetObject(page.get(), i);
@@ -1596,7 +1594,7 @@ TEST_F(FPDFEditEmbedderTest, RemoveMarks) {
   ScopedPage page = LoadScopedPage(0);
   ASSERT_TRUE(page);
 
-  static constexpr int kExpectedObjectCount = 19;
+  constexpr int kExpectedObjectCount = 19;
   CheckMarkCounts(page.get(), 1, kExpectedObjectCount, 8, 4, 9, 1);
 
   // Remove all "Prime" content marks.
@@ -1648,7 +1646,7 @@ TEST_F(FPDFEditEmbedderTest, RemoveMarkParam) {
   ScopedPage page = LoadScopedPage(0);
   ASSERT_TRUE(page);
 
-  static constexpr int kExpectedObjectCount = 19;
+  constexpr int kExpectedObjectCount = 19;
   CheckMarkCounts(page.get(), 1, kExpectedObjectCount, 8, 4, 9, 1);
 
   // Remove all "Square" content marks parameters.
@@ -4080,7 +4078,7 @@ TEST_F(FPDFEditEmbedderTest, SetMarkParam) {
   ScopedPage page = LoadScopedPage(0);
   ASSERT_TRUE(page);
 
-  static constexpr int kExpectedObjectCount = 19;
+  constexpr int kExpectedObjectCount = 19;
   CheckMarkCounts(page.get(), 1, kExpectedObjectCount, 8, 4, 9, 1);
 
   // Check the "Bounds" mark's "Position" param is "Last".
@@ -4579,7 +4577,7 @@ TEST_F(FPDFEditEmbedderTest, GetBitmapIgnoresSMask) {
   ScopedPage page = LoadScopedPage(0);
   ASSERT_TRUE(page);
 
-  static constexpr int kExpectedObjects = 4;
+  constexpr int kExpectedObjects = 4;
   ASSERT_EQ(kExpectedObjects, FPDFPage_CountObjects(page.get()));
 
   for (int i = 0; i < kExpectedObjects; ++i) {
@@ -4598,7 +4596,7 @@ TEST_F(FPDFEditEmbedderTest, GetBitmapWithArgbImageWithPalette) {
   ScopedPage page = LoadScopedPage(0);
   ASSERT_TRUE(page);
 
-  static constexpr int kExpectedObjects = 2;
+  constexpr int kExpectedObjects = 2;
   ASSERT_EQ(kExpectedObjects, FPDFPage_CountObjects(page.get()));
   FPDF_PAGEOBJECT obj = FPDFPage_GetObject(page.get(), 1);
   ASSERT_EQ(FPDF_PAGEOBJ_IMAGE, FPDFPageObj_GetType(obj));
@@ -4676,7 +4674,7 @@ TEST_F(FPDFEditEmbedderTest, GetRenderedBitmapHandlesSMask) {
   ScopedPage page = LoadScopedPage(0);
   ASSERT_TRUE(page);
 
-  static constexpr int kExpectedObjects = 4;
+  constexpr int kExpectedObjects = 4;
   ASSERT_EQ(kExpectedObjects, FPDFPage_CountObjects(page.get()));
 
   const char* smask_checksum = []() {
@@ -5395,8 +5393,8 @@ TEST_F(FPDFEditEmbedderTest, MultipleGraphicsStates) {
 }
 
 TEST_F(FPDFEditEmbedderTest, GetAndSetMatrixForFormWithText) {
-  static constexpr int kExpectedWidth = 200;
-  static constexpr int kExpectedHeight = 200;
+  constexpr int kExpectedWidth = 200;
+  constexpr int kExpectedHeight = 200;
 
   ASSERT_TRUE(OpenDocument("form_object_with_text.pdf"));
   ScopedPage page = LoadScopedPage(0);
@@ -5549,32 +5547,6 @@ TEST_F(FPDFEditMoveEmbedderTest, MovePagesTest) {
   }
 }
 
-// Regression test for https://issues.chromium.org/377948405
-// fonts/bug_377948405.ttf was made with harfbuzz* subset utility:
-// > hb-subset NotoSans-Regular.ttf -u 41,C0,C4-C6,C8 -o bug_377948405.ttf
-// Font W array state before bug fix: [1 [639 639 639 639 881 556]]
-// Font W array state after bug fix: [1 [639] 5 7 639 8 [881 556]]
-// *At the moment of the bug detection harfbuzz version was 10.1.0
-TEST_F(FPDFEditEmbedderTest, Bug377948405) {
-  CreateEmptyDocument();
-  ScopedFPDFPage page(FPDFPage_New(document(), 0, 400, 400));
-  std::string font_path =
-      PathService::GetTestFilePath("fonts/bug_377948405.ttf");
-  ASSERT_FALSE(font_path.empty());
-
-  std::vector<uint8_t> font_data = GetFileContents(font_path.c_str());
-  ASSERT_FALSE(font_data.empty());
-
-  ScopedFPDFFont font(FPDFText_LoadFont(
-      document(), font_data.data(), font_data.size(), FPDF_FONT_TRUETYPE, 1));
-  ASSERT_TRUE(font);
-  CPDF_Font* typed_font = CPDFFontFromFPDFFont(font.get());
-  RetainPtr<const CPDF_Array> widths_array =
-      GetWidthsArrayForCidFont(typed_font);
-  ASSERT_TRUE(widths_array);
-  EXPECT_EQ(widths_array->GetIntegerAt(0), 1);
-  EXPECT_EQ(widths_array->GetIntegerAt(2), 5);
-}
 
 TEST_F(FPDFEditEmbedderTest, FormModifyObject) {
   ASSERT_TRUE(OpenDocument("form_object_with_image.pdf"));

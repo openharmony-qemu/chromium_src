@@ -1,0 +1,39 @@
+{
+  "conflict_file": "third_party/blink/renderer/core/layout/layout_view.cc",
+  "rej_file": "third_party/blink/renderer/core/layout/layout_view.cc.rej",
+  "analysis_summary": {
+    "total_hunks": 1,
+    "resolved_hunks": 1,
+    "unresolved_hunks": 0,
+    "rej_file_integrity": "保持完整未被修改"
+  },
+  "hunks_analysis": [
+    {
+      "hunk_id": 1,
+      "description": "添加arkweb/build/features/features.h头文件引用",
+      "risk_level": "低风险",
+      "conflict_reason": "Arkweb141相比Chromium141在include部分缺少arkweb特有的features头文件引用",
+      "analysis_process": "解析.rej文件发现需要在第29行之前添加#include \"arkweb/build/features/features.h\"。使用上下文锚点（#include <inttypes.h>和#include \"base/debug/dump_without_crashing.h\"）精确定位到插入位置。",
+      "modification_confidence": "高置信度",
+      "resolution_strategy": "已成功应用：在源文件第26行位置添加了#include \"arkweb/build/features/features.h\"",
+      "status": "已解决",
+      "lines_added": 1,
+      "lines_removed": 0,
+      "anchor_lines_used": [
+        "#include <inttypes.h>",
+        "#include \"base/debug/dump_without_crashing.h\""
+      ]
+    }
+  ],
+  "final_status": {
+    "success": true,
+    "message": "所有hunks已成功解决，无未解决的冲突",
+    "validation_required": false
+  },
+  "compliance_check": {
+    "no_context_lines_added": true,
+    "no_script_files_created": true,
+    "rej_file_preserved": true,
+    "output_path_correct": true
+  }
+}

@@ -18,6 +18,7 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/span.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
@@ -684,7 +685,8 @@ void VideoCaptureImpl::StartCapture(
     int client_id,
     const media::VideoCaptureParams& params,
     VideoCaptureCallbacks video_capture_callbacks) {
-  DVLOG(1) << __func__ << " |device_id_| = " << device_id_;
+  LOG(INFO) << __func__ << " |device_id_| = " << device_id_
+            << ", format: " << params.requested_format.pixel_format;
   DCHECK_CALLED_ON_VALID_THREAD(io_thread_checker_);
   OnLog("VideoCaptureImpl got request to start capture.");
 

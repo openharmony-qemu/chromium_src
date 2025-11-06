@@ -217,7 +217,7 @@ void Usage(const base::FilePath& me) {
 "                              checks\n"
   // clang-format on
 #endif  // BUILDFLAG(IS_CHROMEOS)
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
       // clang-format off
 "      --write-minidump-to-log write minidump to log\n"
   // clang-format on
@@ -624,7 +624,7 @@ int HandlerMain(int argc,
     kOptionNoPeriodicTasks,
     kOptionNoRateLimit,
     kOptionNoUploadGzip,
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
     kOptionNoWriteMinidumpToDatabase,
 #endif  // BUILDFLAG(IS_ANDROID)
 #if BUILDFLAG(IS_WIN)
@@ -633,10 +633,13 @@ int HandlerMain(int argc,
 #if BUILDFLAG(IS_APPLE)
     kOptionResetOwnCrashExceptionPortToSystemDefault,
 #endif  // BUILDFLAG(IS_APPLE)
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
+    BUILDFLAG(IS_OHOS)
     kOptionSanitizationInformation,
     kOptionSharedClientConnection,
     kOptionTraceParentWithException,
+    kOptionHappenTime,
+    kOptionBundleName,
 #endif
     kOptionURL,
     kOptionMaxUploads,
@@ -647,7 +650,7 @@ int HandlerMain(int argc,
     kOptionMinidumpDirForTests,
     kOptionAlwaysAllowFeedback,
 #endif  // BUILDFLAG(IS_CHROMEOS)
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
     kOptionWriteMinidumpToLog,
 #endif  // BUILDFLAG(IS_ANDROID)
 
@@ -739,10 +742,16 @@ int HandlerMain(int argc,
      required_argument,
      nullptr,
      kOptionMinidumpDirForTests},
-    {"always-allow-feedback", no_argument, nullptr, kOptionAlwaysAllowFeedback},
+    {"always-allow-feedback",
+      no_argument,
+      nullptr,
+      kOptionAlwaysAllowFeedback},
 #endif  // BUILDFLAG(IS_CHROMEOS)
-#if BUILDFLAG(IS_ANDROID)
-    {"write-minidump-to-log", no_argument, nullptr, kOptionWriteMinidumpToLog},
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+    {"write-minidump-to-log",
+       no_argument,
+       nullptr,
+       kOptionWriteMinidumpToLog},
 #endif  // BUILDFLAG(IS_ANDROID)
     {"help", no_argument, nullptr, kOptionHelp},
     {"version", no_argument, nullptr, kOptionVersion},
@@ -955,7 +964,7 @@ int HandlerMain(int argc,
         break;
       }
 #endif  // BUILDFLAG(IS_CHROMEOS)
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
       case kOptionWriteMinidumpToLog: {
         options.write_minidump_to_log = true;
         break;
@@ -1148,7 +1157,7 @@ int HandlerMain(int argc,
 #if defined(ATTACHMENTS_SUPPORTED)
       &options.attachments,
 #endif  // ATTACHMENTS_SUPPORTED
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
       options.write_minidump_to_database,
       options.write_minidump_to_log,
 #endif  // BUILDFLAG(IS_ANDROID)
@@ -1159,7 +1168,8 @@ int HandlerMain(int argc,
       user_stream_sources);
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
+    BUILDFLAG(IS_OHOS)
   if (options.exception_information_address) {
     ExceptionHandlerProtocol::ClientInformation info;
     info.exception_information_address = options.exception_information_address;

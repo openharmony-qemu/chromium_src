@@ -12,6 +12,7 @@
 #include <optional>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/notreached.h"
 #include "third_party/blink/renderer/core/css/counter_style_map.h"
 #include "third_party/blink/renderer/core/css/css_axis_value.h"

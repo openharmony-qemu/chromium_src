@@ -1,0 +1,32 @@
+{
+  "文件路径": "third_party/blink/renderer/platform/testing/image_decode_to_nia.cc",
+  "总hunk数量": 1,
+  "成功解决的hunk数量": 1,
+  "未能解决的hunk数量": 0,
+  "处理状态": "全部成功解决",
+  "rej文件保持完整": true,
+  "详细分析": [
+    {
+      "hunk编号": 1,
+      "位置": "@@ -167,11 +169,14 @@",
+      "冲突原因": "Arkweb 132 中对 cc::AuxImage::kDefault 参数添加了条件编译宏 ARKWEB_HEIF_SUPPORT 的包装，但在 Arkweb 141 中此参数没有被条件编译包围",
+      "风险分析": "低风险 - 这是一个简单的条件编译添加，用于控制 HEIF 图像格式的支持。不会影响代码的核心逻辑。",
+      "修改内容": {
+        "删除行": [
+          "cc::AuxImage::kDefault, blink::Platform::GetMaxDecodedImageBytes());"
+        ],
+        "添加行": [
+          "#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)",
+          "cc::AuxImage::kDefault,",
+          "#endif",
+          "blink::Platform::GetMaxDecodedImageBytes());"
+        ]
+      },
+      "分析过程": "通过在源文件中找到 ImageDecoder::Create 函数调用的确切位置（第172行），识别出需要用条件编译宏包围的 cc::AuxImage::kDefault 参数。",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "应用策略": "精确定位策略 - 使用函数调用签名作为锚点，在源文件第172行成功应用了条件编译修改"
+    }
+  ],
+  "总结": "本次冲突解决成功处理了1个hunk，主要是为Arkweb的HEIF图像格式支持添加条件编译控制。修改过程严格遵循了黄金法则，只应用了必要的+/-行，没有添加任何上下文行或创建辅助文件。.rej文件保持完整未被修改。"
+}

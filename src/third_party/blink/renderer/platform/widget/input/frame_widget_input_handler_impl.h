@@ -109,6 +109,10 @@ class PLATFORM_EXPORT FrameWidgetInputHandlerImpl
       WaitForPageScaleAnimationForTestingCallback callback) override;
   void MoveCaret(const gfx::Point& point) override;
 
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+  void ShowFreeCopyMenu() override;
+#endif
+
 #if BUILDFLAG(IS_IOS)
   void StartAutoscrollForSelectionToPoint(const gfx::PointF& point) override;
   void StopAutoscroll() override;

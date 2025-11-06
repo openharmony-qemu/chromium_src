@@ -1,19 +1,5 @@
 --- code_cache_fetcher.cc	2025-10-20 19:53:01.230200736 +0800
 +++ code_cache_fetcher.cc	2025-10-16 16:07:40.131326528 +0800
-@@ -10,10 +10,13 @@
- #include "third_party/blink/public/platform/platform.h"
- #include "third_party/blink/public/platform/web_url.h"
- #include "third_party/blink/renderer/platform/loader/fetch/code_cache_host.h"
- #include "third_party/blink/renderer/platform/weborigin/scheme_registry.h"
- #include "third_party/blink/renderer/platform/wtf/functional.h"
-+#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
-+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/weborigin/scheme_registry_utils.h"
-+#endif
- 
- namespace blink {
- 
- namespace {
- 
 @@ -59,21 +62,27 @@
        return false;
      }

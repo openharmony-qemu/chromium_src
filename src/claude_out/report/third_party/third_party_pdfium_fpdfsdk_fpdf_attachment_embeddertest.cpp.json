@@ -1,0 +1,118 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/third_party/pdfium/fpdfsdk/fpdf_attachment_embeddertest.cpp.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/third_party/pdfium/fpdfsdk/fpdf_attachment_embeddertest.cpp",
+    "Chromium 132 基线": "/home/sujiahao/code/chromium_132_baseline/src/third_party/pdfium/fpdfsdk/fpdf_attachment_embeddertest.cpp",
+    "Arkweb 132 代码": "/home/sujiahao/code/arkweb_132/src/third_party/pdfium/fpdfsdk/fpdf_attachment_embeddertest.cpp"
+  },
+  "处理总结": {
+    "总hunk数量": 4,
+    "成功解决的hunk数量": 4,
+    "未能解决的hunk数量": 0,
+    ".rej文件保持完整": true,
+    "处理状态": "全部解决"
+  },
+  "冲突原因分析": {
+    "主要冲突类型": "C++关键字修饰符变更",
+    "根本原因": "Chromium 141版本中C++编译器标准的更新，要求移除局部静态变量中冗余的'static'关键字",
+    "影响范围": "4个测试函数中的局部constexpr变量声明",
+    "风险评估": "低风险 - 仅涉及编译器兼容性优化，不影响功能逻辑"
+  },
+  "详细处理过程": [
+    {
+      "hunk编号": 1,
+      "位置信息": "第151行 - AddAttachments测试函数中的kContents1变量",
+      "待删除行": [
+        "  static constexpr char kContents1[] = \"Hello!\";"
+      ],
+      "待添加行": [
+        "  constexpr char kContents1[] = \"Hello!\";"
+      ],
+      "修改内容": "移除局部constexpr变量中的'static'关键字",
+      "处理策略": "精确定位后应用修改",
+      "处理结果": "成功",
+      "置信度": "高",
+      "风险说明": "低风险 - 编译器兼容性优化，不影响运行时行为",
+      "上下文锚点": "使用注释和周围的EXPECT_FALSE语句作为定位锚点"
+    },
+    {
+      "hunk编号": 2,
+      "位置信息": "第178行 - AddAttachments测试函数中的kContents2变量",
+      "待删除行": [
+        "  static constexpr char kContents2[] = \"World!\";"
+      ],
+      "待添加行": [
+        "  constexpr char kContents2[] = \"World!\";"
+      ],
+      "修改内容": "移除局部constexpr变量中的'static'关键字",
+      "处理策略": "使用函数上下文精确定位",
+      "处理结果": "成功",
+      "置信度": "高",
+      "风险说明": "低风险 - 编译器兼容性优化，保持原有语义",
+      "上下文锚点": "使用前面的EXPECT_EQ语句和后续的EXPECT_EQ语句作为双重锚点"
+    },
+    {
+      "hunk编号": 3,
+      "位置信息": "第212-223行 - AddAttachmentsWithParams测试函数中的三个变量",
+      "待删除行": [
+        "  static constexpr char kContents[] = \"Hello World!\";",
+        "  static constexpr wchar_t kDateW[] = L\"D:20170720161527-04'00'\";",
+        "  static constexpr wchar_t kCheckSumW[] = L\"<ABCDEF01234567899876543210FEDCBA>\";"
+      ],
+      "待添加行": [
+        "  constexpr char kContents[] = \"Hello World!\";",
+        "  constexpr wchar_t kDateW[] = L\"D:20170720161527-04'00'\";",
+        "  constexpr wchar_t kCheckSumW[] = L\"<ABCDEF01234567899876543210FEDCBA>\";"
+      ],
+      "修改内容": "移除三个局部constexpr变量中的'static'关键字",
+      "处理策略": "分组处理，使用注释作为定位锚点",
+      "处理结果": "成功",
+      "置信度": "高",
+      "风险说明": "低风险 - 编译器标准适应，保持测试逻辑完整性",
+      "上下文锚点": "使用注释标识的不同代码段作为精确锚点"
+    },
+    {
+      "hunk编号": 4,
+      "位置信息": "第291-318行 - AddAttachmentsToFileWithNoAttachments测试函数中的两个变量",
+      "待删除行": [
+        "  static constexpr char kContents1[] = \"Hello!\";",
+        "  static constexpr char kContents2[] = \"World!\";"
+      ],
+      "待添加行": [
+        "  constexpr char kContents1[] = \"Hello!\";",
+        "  constexpr char kContents2[] = \"World!\";"
+      ],
+      "修改内容": "移除两个局部constexpr变量中的'static'关键字",
+      "处理策略": "合并处理，使用函数内的具体代码上下文",
+      "处理结果": "成功",
+      "置信度": "高",
+      "风险说明": "低风险 - 编译器优化，保持测试功能完整性",
+      "上下文锚点": "使用完整的测试逻辑上下文作为定位锚点"
+    }
+  ],
+  "技术分析": {
+    "变更性质": "编译器标准适应",
+    "影响范围": "局部变量声明语法",
+    "功能影响": "无 - constexpr变量在函数内部默认具有内部链接",
+    "性能影响": "无 - 不影响生成的机器代码",
+    "编译器标准": "符合C++14及更高版本的constexpr规范"
+  },
+  "质量保证": {
+    "修改精确性": "严格按.rej文件内容应用，无额外修改",
+    "上下文完整性": "保持原文件上下文不变",
+    "语法正确性": "所有修改符合C++语法规范",
+    "测试兼容性": "保持原有测试逻辑完整性"
+  },
+  "人工复查建议": {
+    "重点关注": [
+      "确认所有constexpr变量的'static'关键字已正确移除",
+      "验证测试函数的编译状态",
+      "确认运行时行为与原版本一致"
+    ],
+    "测试建议": [
+      "运行相关单元测试确保功能正常",
+      "在不同编译器版本下验证兼容性",
+      "检查生成的二进制文件大小是否发生变化"
+    ]
+  }
+}

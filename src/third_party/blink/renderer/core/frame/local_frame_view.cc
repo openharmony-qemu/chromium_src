@@ -2527,6 +2527,17 @@ bool LocalFrameView::ShouldDeferLayoutSnap() const {
   return false;
 }
 
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+bool LocalFrameView::RunJavaScriptForFSP(const std::string& script) {
+  if (auto* web_frame = WebLocalFrameImpl::FromFrame(frame_)) {
+    WebScriptSource source = WebScriptSource(blink::WebString::FromASCII(script));
+    web_frame->ExecuteScript(source);
+    return true;
+  }
+  return false;
+}
+#endif
+
 void LocalFrameView::EnqueueScrollSnapChangingFromImplIfNecessary() {
   ForAllNonThrottledLocalFrameViews([](LocalFrameView& frame_view) {
     for (const auto& area : frame_view.scrollable_areas_.Values()) {

@@ -1,0 +1,50 @@
+{
+  "conflict_file": "third_party/blink/renderer/platform/image-decoders/bmp/bmp_image_reader.cc.rej",
+  "source_file": "third_party/blink/renderer/platform/image-decoders/bmp/bmp_image_reader.cc",
+  "analysis_timestamp": "2025-11-05",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "maintained",
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "description": "添加Arkweb特性头文件包含",
+      "risk_level": "低风险",
+      "conflict_cause": "Arkweb项目需要在BMP图像解码器中引入自定义特性标志，用于控制特定功能的开启/关闭。这是一个简单的头文件包含修改，不会影响核心解码逻辑。",
+      "analysis_process": "通过对比.rej文件和源文件，确定需要在第7行后添加arkweb/build/features/features.h头文件包含。该修改为预编译指令，不会产生运行时逻辑影响。",
+      "modification_confidence": "高置信度",
+      "resolution_strategy": "精确定位应用",
+      "resolution_status": "已解决",
+      "changes_applied": [
+        {
+          "line_number": 7,
+          "action": "插入",
+          "content": "#include \"arkweb/build/features/features.h\"",
+          "context": "在bmp_image_reader.h包含之后，其他系统头文件包含之前"
+        }
+      ],
+      "verification": "修改已成功应用，头文件包含顺序正确，符合Arkweb项目代码规范"
+    }
+  ],
+  "summary": {
+    "overall_status": "完全解决",
+    "total_changes": 1,
+    "insertions": 1,
+    "deletions": 0,
+    "risk_assessment": "此修改为简单的头文件添加，风险极低。添加的arkweb/build/features/features.h头文件用于编译时特性控制，不会影响BMP解码器的核心功能。",
+    "compliance_check": {
+      "context_lines_added": false,
+      "scripts_generated": false,
+      "auxiliary_files_created": false,
+      "rej_file_modified": false,
+      "modifications_applied_only_to_source": true
+    }
+  },
+  "final_verification": {
+    "rej_file_integrity_confirmed": true,
+    "source_file_modified_successfully": true,
+    "compilation_impact": "正面影响 - 为Arkweb项目特性提供编译时支持",
+    "functionality_impact": "无负面影响 - 纯编译时修改，不影响运行时行为"
+  }
+}

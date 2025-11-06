@@ -1,0 +1,55 @@
+{
+  "file_path": "third_party/blink/renderer/core/html/html_embed_element.cc",
+  "rej_file_path": "third_party/blink/renderer/core/html/html_embed_element.cc.rej",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "maintained",
+  "analysis_summary": {
+    "conflict_cause": "Arkweb141升级过程中，Chromium内核版本从132升级到141导致的侵入式修改冲突",
+    "risk_assessment": "低风险 - 仅添加条件编译包含语句，不影响核心逻辑",
+    "modification_confidence": "高置信度 - 锚点匹配完美，修改位置明确"
+  },
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "status": "已解决",
+      "risk_level": "低风险",
+      "conflict_reason": "需要在include区域添加Arkweb条件编译的包含文件",
+      "analysis_process": {
+        "added_lines": [
+          "#if BUILDFLAG(ARKWEB_SAME_LAYER)",
+          "#include \"arkweb/chromium_ext/third_party/blink/renderer/core/html/html_embed_element_for_include.cc\"",
+          "#endif"
+        ],
+        "removed_lines": [],
+        "anchor_context": {
+          "before_anchor": "#include \"third_party/blink/renderer/core/layout/layout_embedded_object.h\"",
+          "after_anchor": "namespace blink {"
+        },
+        "location_strategy": "使用include语句和namespace声明作为双重锚点精确定位"
+      },
+      "resolution_strategy": {
+        "method": "精确锚点定位",
+        "success_reason": "锚点在源文件中完全匹配，位置明确无误",
+        "applied_modifications": [
+          "在第42行后插入条件编译包含语句"
+        ]
+      },
+      "confidence_score": "100%"
+    }
+  ],
+  "final_status": {
+    "completion_time": "2025-11-04",
+    "all_hunks_processed": true,
+    "source_file_modified": true,
+    "rej_file_preserved": true,
+    "compilation_impact": "最小化 - 仅添加条件编译包含",
+    "functional_impact": "无 - 仅在ARKWEB_SAME_LAYER编译标志下生效"
+  },
+  "validation": {
+    "syntax_check": "通过 - C++条件编译语法正确",
+    "logic_check": "通过 - 不影响现有代码逻辑",
+    "integration_check": "通过 - 与现有Arkweb条件编译模式一致"
+  }
+}

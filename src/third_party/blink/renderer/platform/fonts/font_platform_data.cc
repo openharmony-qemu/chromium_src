@@ -51,7 +51,9 @@
 
 namespace blink {
 FontPlatformData::FontPlatformData(HashTableDeletedValueType)
-    : is_hash_table_deleted_value_(true) {}
+    : is_hash_table_deleted_value_(true) {
+  data_utils_ = std::make_unique<FontPlatformDataUtils>(this);
+}
 
 FontPlatformData::FontPlatformData() = default;
 

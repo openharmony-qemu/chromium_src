@@ -62,6 +62,7 @@ import("//third_party/blink/renderer/core/paint/build.gni")
 import("//third_party/blink/renderer/core/patching/build.gni")
 import("//third_party/blink/renderer/core/permissions_policy/build.gni")
 import("//third_party/blink/renderer/core/preferences/build.gni")
+import("//third_party/blink/renderer/core/render_mojom/build.gni")
 import("//third_party/blink/renderer/core/resize_observer/build.gni")
 import("//third_party/blink/renderer/core/route_matching/build.gni")
 import("//third_party/blink/renderer/core/sanitizer/build.gni")
@@ -329,6 +330,7 @@ component("core") {
   sources += rebase_path(blink_core_sources_origin_trials, "", "origin_trials")
   sources += rebase_path(blink_core_sources_page, "", "page")
   sources += rebase_path(blink_core_sources_paint, "", "paint")
+  sources += rebase_path(blink_core_sources_rendermojom, "", "render_mojom")
   sources +=
       rebase_path(blink_core_sources_resize_observer, "", "resize_observer")
   sources +=
@@ -1621,6 +1623,20 @@ source_set("unit_tests") {
       "//third_party/blink/renderer/platform/media",
       "//ui/gfx/geometry",
     ]
+  }
+
+  if (arkweb_unittests){
+    deps += [
+      "//base/test:test_trace_processor"
+    ]
+  }
+
+  if (enable_arkweb) {
+    deps += [ "//arkweb/build/features" ]
+  }
+
+  if (is_arkweb) {
+    deps += arkweb_fuzzer_test_sources
   }
 
   # TODO(crbug.com/40031409): Fix code that adds exit-time destructors and

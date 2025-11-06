@@ -1119,7 +1119,7 @@ RetainPtr<CPDF_ColorSpace> CPDF_ICCBasedCS::GetStockAlternateProfile(
   if (nComponents == 4) {
     return GetStockCS(Family::kDeviceCMYK);
   }
-  NOTREACHED();
+  NOTREACHED_NORETURN();
 }
 
 // static

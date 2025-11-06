@@ -29,6 +29,8 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
+#include "base/logging.h"
 #include "base/synchronization/lock.h"
 #include "third_party/blink/public/platform/platform.h"
 #include "third_party/blink/renderer/platform/graphics/image_decoder_wrapper.h"
@@ -142,7 +144,10 @@ bool ImageFrameGenerator::DecodeAndScale(
     // Lock the mutex, so only one thread can use the decoder at once.
     ClientAutoLock lock(this, client_id);
     ImageDecoderWrapper decoder_wrapper(this, data, pixmap,
-                                        decoder_color_behavior_, aux_image_,
+                                        decoder_color_behavior_,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+                                        aux_image_,
+#endif
                                         index, all_data_received, client_id);
     current_decode_succeeded =
         decoder_wrapper.Decode(image_decoder_factory_.get(), &has_alpha);
@@ -283,7 +288,10 @@ bool ImageFrameGenerator::GetYUVAInfo(
   }
   std::unique_ptr<ImageDecoder> decoder = ImageDecoder::Create(
       data, /*data_complete=*/true, ImageDecoder::kAlphaPremultiplied,
-      ImageDecoder::kDefaultBitDepth, decoder_color_behavior_, aux_image_,
+      ImageDecoder::kDefaultBitDepth, decoder_color_behavior_,
+#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      aux_image_,
+#endif
       Platform::GetMaxDecodedImageBytes());
   DCHECK(decoder);
 

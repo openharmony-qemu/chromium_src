@@ -28,6 +28,7 @@
 
 #include <tuple>
 
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/ime/arkweb_input_method_controller_utils.h"
 #include "base/feature_list.h"
 #include "third_party/blink/public/common/features.h"
 #include "third_party/blink/public/mojom/input/focus_type.mojom-blink.h"

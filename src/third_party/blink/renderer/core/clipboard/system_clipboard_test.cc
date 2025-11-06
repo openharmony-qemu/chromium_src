@@ -69,6 +69,11 @@ class SystemClipboardTest : public testing::Test {
     controller_ = MakeGarbageCollected<MockPlatformEventController>(
         *page_holder_->GetFrame().DomWindow());
   }
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  LocalFrame& local_frame() {
+    return page_holder_.get()->GetFrame();
+  }
+#endif
 
  protected:
   MockClipboardHost* mock_clipboard_host() {
@@ -671,3 +676,7 @@ TEST_F(SystemClipboardTest, GetPlatformPermissionStateCallback) {
 #endif  // BUILDFLAG(IS_MAC)
 
 }  // namespace blink
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/clipboard/system_clipboard_utils_unittest.cc"
+#endif

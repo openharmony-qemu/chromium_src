@@ -32,6 +32,7 @@
 #include <memory>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/gtest_prod_util.h"
 #include "base/time/default_tick_clock.h"
 #include "base/time/time.h"
@@ -463,6 +464,30 @@ class CORE_EXPORT LocalFrame final
   void SetZoomFactors(float layout_zoom_factor,
                       float text_zoom_factor,
                       float css_zoom_factor);
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  void DidSubresourceFiltered();
+
+  bool GetGlobalAdblockEnabled();
+
+  void SetAdBlockEnableForSite(bool site_adblock_enabled);
+
+  bool GetAdBlockEnableForSite() const { return adblock_enabled_for_site_; }
+
+  void SetHasElemHideTypeOption(bool has_elemhide_type_option);
+
+  bool GetHasElemHideTypeOption() const { return has_elemhide_type_option_; }
+
+  void SetHasDocumentTypeOption(bool has_document_type_option);
+
+  bool GetHasDocumentTypeOption() const { return has_document_type_option_; }
+
+  void SetHasGenericHideTypeOption(bool has_generichide_type_option);
+
+  bool GetHasGenericHideTypeOption() const {
+    return has_generichide_type_option_;
+  }
+#endif
 
   double DevicePixelRatio() const;
 
@@ -1016,6 +1041,9 @@ class CORE_EXPORT LocalFrame final
   }
 
  private:
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  friend class LocalFrameUtilTest;
+#endif
   friend class FrameNavigationDisabler;
   // LocalFrameMojoHandler is a part of LocalFrame.
   friend class LocalFrameMojoHandler;
@@ -1138,6 +1166,13 @@ class CORE_EXPORT LocalFrame final
   float layout_zoom_factor_;
   float text_zoom_factor_;
   float css_zoom_factor_;
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  bool adblock_enabled_for_site_ = false;
+  bool has_elemhide_type_option_ = false;
+  bool has_document_type_option_ = false;
+  bool has_generichide_type_option_ = false;
+#endif
 
   Member<CoreProbeSink> probe_sink_;
   scoped_refptr<InspectorTaskRunner> inspector_task_runner_;

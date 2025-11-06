@@ -1,0 +1,38 @@
+{
+  "conflict_file": "third_party/blink/public/common/BUILD.gn",
+  "total_hunks": 2,
+  "resolved_hunks": 2,
+  "unresolved_hunks": 0,
+  "analysis": {
+    "hunk_1": {
+      "risk": "低风险",
+      "conflict_cause": "Arkweb132 针对消息端口和上下文菜单参数构建器的侵入式修改",
+      "analysis_process": "第一个 hunk 在 deps 声明后添加了两个条件块：1) arkweb_msgport 条件用于添加字符串消息编解码器头文件源，2) is_arkweb 条件用于添加上下文菜单参数构建器头文件源和额外的依赖项",
+      "confidence": "高置信度",
+      "strategy": "成功应用 - 在 deps 数组结束位置精确添加了两个条件块",
+      "result": "已解决"
+    },
+    "hunk_2": {
+      "risk": "低风险",
+      "conflict_cause": "Arkweb132 针对 WPT (Web Platform Tests) 支持的侵入式修改",
+      "analysis_process": "第二个 hunk 修改了两处相同的条件判断，将原有的 'is_android || is_win' 扩展为 'is_android || is_win || (is_arkweb && arkweb_wpt)'，为 Arkweb 的 WPT 功能启用字体唯一名称查找功能",
+      "confidence": "高置信度",
+      "strategy": "成功应用 - 使用 replace_all 标志替换了所有匹配的条件判断",
+      "result": "已解决"
+    }
+  },
+  "summary": {
+    "status": "全部解决",
+    "rej_file_integrity": "完整保持",
+    "modifications_applied": [
+      "添加 arkweb_msgport 条件编译支持",
+      "添加 is_arkweb 条件编译支持",
+      "扩展字体相关功能的条件判断以支持 Arkweb WPT"
+    ]
+  },
+  "verification": {
+    "rej_file_untouched": true,
+    "source_file_modified": true,
+    "syntax_validation": "通过"
+  }
+}

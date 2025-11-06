@@ -29,6 +29,7 @@
 #include <optional>
 
 #include "third_party/blink/public/common/input/pointer_id.h"
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/core/core_export.h"
 #include "third_party/blink/renderer/core/dom/events/event_target.h"
 #include "third_party/blink/renderer/core/execution_context/execution_context_lifecycle_observer.h"
@@ -186,11 +187,18 @@ class CORE_EXPORT DragController
 
   DragDestinationAction drag_destination_action_;
   bool did_initiate_drag_;
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  Member<DragControllerUtils> utils_;
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
   // Used to set the correct pointer id to synthetic events. Principally added
   // to track touch drag and drop when `TouchDragEndContextMenu` is enabled.
   std::optional<PointerId> drag_pointer_id_;
 };
 
 }  // namespace blink
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/page/drag_controller_ext.h"
+#endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
 
 #endif  // THIRD_PARTY_BLINK_RENDERER_CORE_PAGE_DRAG_CONTROLLER_H_

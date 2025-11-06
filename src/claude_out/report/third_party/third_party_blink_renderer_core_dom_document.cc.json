@@ -1,0 +1,46 @@
+{
+  "文件信息": {
+    "rej文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/core/dom/document.cc.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/core/dom/document.cc",
+    "处理时间": "2025-11-04"
+  },
+  "处理总结": {
+    "总hunk数量": 1,
+    "成功解决": 1,
+    "未能解决": 0,
+    "解决成功率": "100%"
+  },
+  "rej文件状态": {
+    "完整性": "保持未被修改",
+    "处理方式": "严格遵守黄金法则，未修改rej文件本身"
+  },
+  "hunks分析": [
+    {
+      "hunk编号": 1,
+      "冲突原因": "Arkweb 132中的条件编译头文件包含在Arkweb 141中缺失",
+      "风险评估": "低风险 - 这是Arkweb框架的标准条件编译头文件包含，使用IS_ARKWEB编译标志",
+      "分析过程": "需要添加arkweb专用的document_utils.h头文件包含，并使用BUILDFLAG(IS_ARKWEB)条件编译",
+      "待添加的行": [
+        "#if BUILDFLAG(IS_ARKWEB)",
+        "#include \"arkweb/chromium_ext/third_party/blink/renderer/core/dom/document_utils.h\"",
+        "#endif"
+      ],
+      "待删除的行": [],
+      "定位策略": "使用text_encoding_registry.h和utf16.h之间的位置作为插入点",
+      "修改置信度": "高 - 上下文匹配完全准确",
+      "解决状态": "已解决",
+      "应用位置": "第398-399行之间"
+    }
+  ],
+  "技术细节": {
+    "修改类型": "条件编译头文件包含",
+    "依赖关系": "依赖于BUILDFLAG(IS_ARKWEB)编译标志",
+    "影响范围": "仅在Arkweb构建时生效",
+    "功能说明": "包含Arkweb框架的文档工具函数声明"
+  },
+  "验证结果": {
+    "语法正确性": "通过 - C++条件编译语法正确",
+    "位置准确性": "通过 - 在正确的include段落中",
+    "上下文连贯性": "通过 - 与其他include语句保持一致"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/core/loader/resource/css_style_sheet_resource.h.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/core/loader/resource/css_style_sheet_resource.h",
+    "处理时间": "2025-11-04"
+  },
+  "总体处理结果": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%",
+    "rej文件完整性": "保持完整未被修改"
+  },
+  "hunk详情": [
+    {
+      "hunk索引": 1,
+      "冲突原因": "Arkweb132添加了针对离线资源注入的功能支持，包括新增头文件引用、友元类声明和条件编译成员变量",
+      "风险级别": "中等",
+      "风险描述": "添加的代码涉及Arkweb特定的离线资源注入功能，如果features.h文件或相关宏定义不存在，可能导致编译错误",
+      "分析过程": "通过分析.rej文件中的+/-行，识别出需要添加的代码：1）添加arkweb/build/features/features.h头文件引用；2）添加CSSStyleSheetResourceUtils前向声明；3）添加友元类声明；4）添加条件编译的成员变量。所有修改都成功定位到源文件的对应位置并正确应用。",
+      "修改置信度": "高",
+      "处理策略": "精确应用",
+      "解决状态": "已解决",
+      "具体修改": [
+        {
+          "类型": "添加",
+          "内容": "#include \"arkweb/build/features/features.h\"",
+          "位置": "第29行，在#define之后"
+        },
+        {
+          "类型": "添加",
+          "内容": "class CSSStyleSheetResourceUtils;",
+          "位置": "第39行，在namespace blink内"
+        },
+        {
+          "类型": "添加",
+          "内容": "friend class CSSStyleSheetResourceUtils;",
+          "位置": "第48行，在public区域内"
+        },
+        {
+          "类型": "添加",
+          "内容": "#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)\n  std::unique_ptr<CSSStyleSheetResourceUtils> cssStyleSheetResourceUtils;\n#endif",
+          "位置": "第55-57行，在CreateForTest函数声明后"
+        }
+      ]
+    }
+  ],
+  "验证信息": {
+    "修改后源文件语法检查": "通过",
+    "rej文件完整性确认": "确认.rej文件未被修改或删除",
+    "Arkweb特性集成": "成功集成ARKWEB_INJECT_OFFLINE_RESOURCE条件编译支持"
+  }
+}

@@ -946,22 +946,19 @@ void CPDF_InteractiveForm::AddTerminalField(
       }
     }
 
-    auto new_field = std::make_unique<CPDF_FormField>(this, std::move(pParent));
-    field = new_field.get();
-    RetainPtr<const CPDF_Object> t_obj =
+    auto newField = std::make_unique<CPDF_FormField>(this, std::move(pParent));
+    field = newField.get();
+    RetainPtr<const CPDF_Object> pTObj =
         field_dict->GetObjectFor(pdfium::form_fields::kT);
-    if (ToReference(t_obj)) {
-      RetainPtr<CPDF_Object> t_obj_clone = t_obj->CloneDirectObject();
-      if (t_obj_clone && t_obj_clone->IsString()) {
-        field_dict->SetFor(pdfium::form_fields::kT, std::move(t_obj_clone));
-      } else {
-        field_dict->SetNewFor<CPDF_String>(pdfium::form_fields::kT,
-                                           ByteString());
-      }
+    if (ToReference(pTObj)) {
+      RetainPtr<CPDF_Object> pClone = pTObj->CloneDirectObject();
+      if (pClone)
+        field_dict->SetFor(pdfium::form_fields::kT, std::move(pClone));
+      else
+        field_dict->SetNewFor<CPDF_Name>(pdfium::form_fields::kT, ByteString());
     }
-    if (!field_tree_->SetField(field_name, std::move(new_field))) {
+    if (!field_tree_->SetField(field_name, std::move(newField)))
       return;
-    }
   }
 
   RetainPtr<CPDF_Array> kids =

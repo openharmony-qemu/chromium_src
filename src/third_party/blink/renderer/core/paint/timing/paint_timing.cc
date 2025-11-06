@@ -52,6 +52,10 @@
 #include "third_party/blink/renderer/platform/wtf/functional.h"
 #include "third_party/blink/renderer/platform/wtf/wtf.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace blink {
 
 namespace {
@@ -636,6 +640,11 @@ void PaintTiming::SetFirstContentfulPaintPresentation(
   TRACE_EVENT_INSTANT_WITH_TIMESTAMP0(
       "benchmark,loading", "GlobalFirstContentfulPaint",
       TRACE_EVENT_SCOPE_GLOBAL, paint_timing_info.presentation_time);
+#if BUILDFLAG(IS_OHOS)
+  LOG(DEBUG) << "OptimizeParserBudget FCP reset budget.";
+  TRACE_EVENT0("blink", "PaintTiming::SetFirstContentfulPaintPresentation");
+  SetOptimizeParserBudgetEnabled(false);
+#endif
   relevant_paint_details.first_contentful_paint_presentation_ =
       paint_timing_info.presentation_time;
   CHECK(first_contentful_paint_presentation_.is_null());

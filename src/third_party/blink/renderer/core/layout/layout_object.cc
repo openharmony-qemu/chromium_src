@@ -319,6 +319,9 @@ struct SameSizeAsLayoutObject : public GarbageCollected<SameSizeAsLayoutObject>,
   unsigned bitfields2_;
   unsigned bitfields3_;
   Member<void*> members[6];
+#if BUILDFLAG(ARKWEB_MENU)
+  Member<void*> members1[4];
+#endif
 #if DCHECK_IS_ON()
   bool is_destroyed_;
 #endif

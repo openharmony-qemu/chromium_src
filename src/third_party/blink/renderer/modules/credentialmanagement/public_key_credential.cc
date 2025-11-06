@@ -175,8 +175,13 @@ PublicKeyCredential::getClientCapabilities(ScriptState* script_state) {
 
   auto* authenticator =
       CredentialManagerProxy::From(script_state)->Authenticator();
+#if BUILDFLAG(ARKWEB_FIDO)
+  authenticator->GetClientCapabilities(WTF::BindOnce(
+      &OnGetClientCapabilitiesFullComplete, WrapPersistent(resolver)));
+#else
   authenticator->GetClientCapabilities(
       BindOnce(&OnGetClientCapabilitiesComplete, WrapPersistent(resolver)));
+#endif  // BUILDFLAG(ARKWEB_FIDO)
   return promise;
 }
 

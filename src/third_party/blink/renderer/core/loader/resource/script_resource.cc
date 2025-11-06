@@ -25,8 +25,12 @@
 */
 
 #include "third_party/blink/renderer/core/loader/resource/script_resource.h"
-
 #include <utility>
+
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/loader/resource/script_resource_utils.h"
+#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/weborigin/scheme_registry_utils.h"
+#endif
 
 #include "base/metrics/histogram_macros.h"
 #include "base/notreached.h"
@@ -430,6 +434,16 @@ void ScriptResource::ResponseReceived(const ResourceResponse& response) {
   code_cache_with_hashing_supported &=
       Platform::Current()->ShouldUseCodeCacheWithHashing(
           WebURL(GetResourceRequest().Url()));
+
+#if BUILDFLAG(ARKWEB_CUSTOM_SCHEME_CODECACHE)
+  bool code_cache_with_response_time_supported =
+      SchemeRegistryUtils::SchemeSupportsCodeCacheWithResponseTime(
+          GetResourceRequest().Url().Protocol());
+  LOG(DEBUG) << "Script resource if scheme:"
+             << GetResourceRequest().Url().Protocol().Utf8().c_str()
+             << " supports code cache:"
+             << code_cache_with_response_time_supported;
+#endif
 
   bool webui_bundled_code_cache_supported =
       SchemeRegistry::SchemeSupportsWebUIBundledBytecode(

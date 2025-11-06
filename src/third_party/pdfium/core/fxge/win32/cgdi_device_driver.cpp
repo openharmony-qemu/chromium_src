@@ -393,7 +393,7 @@ int CGdiDeviceDriver::GetDeviceCaps(int caps_id) const {
     case FXDC_RENDER_CAPS:
       return render_caps_;
     default:
-      NOTREACHED();
+      NOTREACHED_NORETURN();
   }
 }
 

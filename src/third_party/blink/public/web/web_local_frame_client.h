@@ -895,4 +895,7 @@ class BLINK_EXPORT WebLocalFrameClient {
 
 }  // namespace blink
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/public/web/web_local_frame_client_ext.h"
+#endif
 #endif  // THIRD_PARTY_BLINK_PUBLIC_WEB_WEB_LOCAL_FRAME_CLIENT_H_

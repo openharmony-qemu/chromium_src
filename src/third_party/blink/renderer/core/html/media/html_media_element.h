@@ -440,6 +440,23 @@ class CORE_EXPORT HTMLMediaElement
 
   // media::RemotePlaybackClientWrapper overrides:
   std::string GetActivePresentationId() override;
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  bool IsVideoAssistantEnabled() override;
+  void OnLayerBoundsChange(const gfx::Rect& bounds) override;
+  void OnPageVisibilityChanged() override;
+
+  bool IsCustomMediaPlayerEnabled() const override;
+  void OnSupportVideoSurfaceChanged(
+      bool support, std::string decoder_name) override;
+#endif  // ARKWEB_VIDEO_ASSISTANT
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  void OnDmaBufferSeekTo(base::TimeDelta dmabuf_pause_time) override;
+  void RecycleDmaBuffer();
+  void ResumeDmaBuffer();
+#endif  // ARKWEB_MEDIA_DMABUF
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  bool IsMediaResumeFromBFCachePage() const override;
+#endif  // BUILDFLAG(ARKWEB_BFCACHE)
 
   // Returns the execution context for player creation. This will be the
   // execution context of the opener document if available, otherwise the
@@ -623,6 +640,15 @@ class CORE_EXPORT HTMLMediaElement
   void PausePlayback(WebMediaPlayer::PauseReason) final;
   void DidPlayerStartPlaying() override;
   void DidPlayerPaused(bool stream_ended) override;
+
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  // Notify the client that the avsession should be destoryed.
+  virtual void DidEndAVSession(bool is_hidden) override;
+#endif // ARKWEB_MEDIA_AVSESSION
+
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+  void DidPlayerGone() override;
+#endif
   void DidPlayerMutedStatusChange(bool muted) override;
   void DidMediaMetadataChange(bool has_audio,
                               bool has_video,
@@ -700,6 +726,19 @@ class CORE_EXPORT HTMLMediaElement
   void RequestMediaRemoting() override {}
   void RequestVisibility(
       RequestVisibilityCallback request_visibility_cb) override {}
+
+#if BUILDFLAG(ARKWEB_PIP)
+  void PipDown(bool enable) override {}
+  void PipEnable(bool enable) override;
+  void RequestExitPictureInPicture() override {}
+  void NotifyPipResize() override {}
+  void PipRequestPlay() override {}
+#endif
+#if BUILDFLAG(ARKWEB_MEDIA_MEMORY_PRESSURE)
+  void NotifyMemoryLevel(int32_t level) override;
+  base::MemoryPressureListener::MemoryPressureLevel memory_pressure_level_ =
+      base::MemoryPressureListener::MEMORY_PRESSURE_LEVEL_NONE;
+#endif
   void RecordAutoPictureInPictureInfo(
       const media::PictureInPictureEventsInfo::AutoPipInfo&
           auto_picture_in_picture_info) override;

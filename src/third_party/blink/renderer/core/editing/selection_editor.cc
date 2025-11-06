@@ -607,4 +607,10 @@ void SelectionEditor::Trace(Visitor* visitor) const {
   visitor->Trace(cached_range_);
 }
 
+#if BUILDFLAG(ARKWEB_MENU)
+void SelectionEditor::NeedRecalculateCursor() {
+  recalculate_cursor_location_ = true;
+}
+#endif
+
 }  // namespace blink

@@ -528,13 +528,13 @@ ByteString GUIDString(bool bSeparator) {
   ByteString bsGUID;
   {
     // Span's lifetime must end before ReleaseBuffer() below.
-    pdfium::span<char> guid_span = bsGUID.GetBuffer(40);
+    pdfium::span<char> pBuf = bsGUID.GetBuffer(40);
     size_t out_index = 0;
     for (size_t i = 0; i < 16; ++i, out_index += 2) {
       if (bSeparator && (i == 4 || i == 6 || i == 8 || i == 10)) {
-        guid_span[out_index++] = L'-';
+        pBuf[out_index++] = L'-';
       }
-      FXSYS_IntToTwoHexChars(data[i], guid_span.subspan(out_index).first<2u>());
+      FXSYS_IntToTwoHexChars(data[i], &pBuf[out_index]);
     }
   }
   bsGUID.ReleaseBuffer(bSeparator ? 36 : 32);
@@ -1105,8 +1105,8 @@ int32_t ValueToInteger(v8::Isolate* pIsolate, v8::Local<v8::Value> arg) {
   }
 
   if (fxv8::IsString(extracted)) {
-    ByteString value = fxv8::ReentrantToByteStringHelper(pIsolate, extracted);
-    return StringToInt(value.AsStringView());
+    ByteString bsValue = fxv8::ReentrantToByteStringHelper(pIsolate, extracted);
+    return FXSYS_atoi(bsValue.c_str());
   }
 
   return fxv8::ReentrantToInt32Helper(pIsolate, extracted);

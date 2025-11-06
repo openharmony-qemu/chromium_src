@@ -46,6 +46,7 @@ class CachedMetadataHandler;
 class FetchParameters;
 class KURL;
 class ResourceFetcher;
+class ScriptResourceUtils;
 
 enum class ResolvedModuleType;
 
@@ -323,6 +324,7 @@ class CORE_EXPORT ScriptResource final : public TextResource {
 
   // Stores the source text. Should be used only for non-Wasm resources.
   ParkableString source_text_;
+  std::unique_ptr<ScriptResourceUtils> resourceUtils;
 
   // This isolate will be null if this ScriptResource is not created on the main
   // thread. The isolate is not stored because non-main thread Isolates are

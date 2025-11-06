@@ -47,6 +47,7 @@
 #include <optional>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/numerics/checked_math.h"
 #include "base/task/single_thread_task_runner.h"
 #include "cc/animation/animation_timeline.h"
@@ -129,6 +130,12 @@
 #include "ui/gfx/geometry/point_conversions.h"
 #include "ui/gfx/geometry/point_f.h"
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/paint_layer_scrollable_area_utils.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/scroll/scrollable_area_utils.h"
+#endif
+
 namespace blink {
 
 PaintLayerScrollableAreaRareData::PaintLayerScrollableAreaRareData() = default;
@@ -138,6 +145,10 @@ void PaintLayerScrollableAreaRareData::Trace(Visitor* visitor) const {
 }
 
 const int kResizerControlExpandRatioForTouch = 2;
+
+#if BUILDFLAG(IS_ARKWEB)
+const int kScrollbarMargin = 4;
+#endif
 
 PaintLayerScrollableArea::PaintLayerScrollableArea(PaintLayer& layer)
     : ScrollableArea(layer.GetLayoutBox()
@@ -174,10 +185,14 @@ PaintLayerScrollableArea::PaintLayerScrollableArea(PaintLayer& layer)
   if (LocalFrameView* frame_view = GetLayoutBox()->GetFrameView()) {
     frame_view->AddScrollableArea(*this);
   }
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  utils_ = new PaintLayerScrollableAreaUtils(this);
+#endif  // ARKWEB_SCROLLBAR
 }
 
 PaintLayerScrollableArea::~PaintLayerScrollableArea() {
   CHECK(HasBeenDisposed());
+  delete(utils_);
 }
 
 PaintLayerScrollableArea* PaintLayerScrollableArea::FromNode(const Node& node) {
@@ -3209,6 +3224,16 @@ gfx::Size PaintLayerScrollableArea::PixelSnappedBorderBoxSize() const {
   // geometry. For now we ensure correct pixel snapping of overflow controls by
   // calling PositionOverflowControls() again when paint offset is updated.
   // TODO(crbug.com/962299): Only correct if the paint offset is correct.
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  const TopDocumentRootScrollerController& controller =
+      GetLayoutBox()->GetDocument().GetPage()->GlobalRootScrollerController();
+  if (!base::ohos::IsPcDevice() && DynamicTo<LayoutView>(GetLayoutBox())
+          && controller.RootScrollerArea() == this) {
+    const auto& visualViewportSize=
+        GetLayoutBox()->GetFrameView()->GetPage()->GetVisualViewport().Size();
+    return visualViewportSize;
+  }
+#endif // OHOS_SCROLLBAR
   return PhysicalRect(GetLayoutBox()->FirstFragment().PaintOffset(),
                       GetLayoutBox()->StitchedSize())
       .PixelSnappedSize();

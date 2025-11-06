@@ -50,6 +50,8 @@ void LocalVideoCapturerSource::StartCapture(
   DCHECK(params.requested_format.IsValid());
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
   running_callback_ = std::move(running_callback);
+  LOG(INFO) << "LocalVideoCapturerSource::StartCapture "
+            << params.requested_format.pixel_format;
 
   // Combine all callbacks into MediaStreamVideoSourceCallbacks structure
   VideoCaptureCallbacks new_video_capture_callbacks;

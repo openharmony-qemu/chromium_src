@@ -213,23 +213,17 @@ bool CPDF_Parser::InitSyntaxParser(RetainPtr<CPDF_ReadValidator> validator) {
 bool CPDF_Parser::ParseFileVersion() {
   file_version_ = 0;
   uint8_t ch;
-  if (!syntax_->GetCharAt(5, ch)) {
+  if (!syntax_->GetCharAt(5, ch))
     return false;
-  }
 
-  wchar_t wch = static_cast<wchar_t>(ch);
-  if (FXSYS_IsDecimalDigit(wch)) {
-    file_version_ = FXSYS_DecimalCharToInt(wch) * 10;
-  }
+  if (isdigit(ch))
+    file_version_ = FXSYS_DecimalCharToInt(static_cast<wchar_t>(ch)) * 10;
 
-  if (!syntax_->GetCharAt(7, ch)) {
+  if (!syntax_->GetCharAt(7, ch))
     return false;
-  }
 
-  wch = static_cast<wchar_t>(ch);
-  if (FXSYS_IsDecimalDigit(wch)) {
-    file_version_ += FXSYS_DecimalCharToInt(wch);
-  }
+  if (isdigit(ch))
+    file_version_ += FXSYS_DecimalCharToInt(static_cast<wchar_t>(ch));
   return true;
 }
 
@@ -603,18 +597,16 @@ bool CPDF_Parser::ParseAndAppendCrossRefSubsectionData(
 
         if (offset.ValueOrDie() == 0) {
           for (int32_t c = 0; c < 10; c++) {
-            if (!FXSYS_IsDecimalDigit(pEntry[c])) {
+            if (!isdigit(pEntry[c]))
               return false;
             }
-          }
         }
 
         info.pos = offset.ValueOrDie();
 
         // TODO(art-snake): The info.gennum is uint16_t, but version may be
-        // greater than max<uint16_t>. Need to solve this issue.
-        const int32_t version =
-            StringToInt(ByteStringView(pEntry.subspan<11u>()));
+        // greated than max<uint16_t>. Needs solve this issue.
+        const int32_t version = FXSYS_atoi(pEntry.subspan<11u>.data());
         info.gennum = version;
         info.type = ObjectType::kNormal;
       }

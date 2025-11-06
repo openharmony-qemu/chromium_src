@@ -113,7 +113,7 @@ thread_local void* thread_stack_start = nullptr;
 
 void* GetStackStartImpl() {
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(IS_FREEBSD) || BUILDFLAG(IS_FUCHSIA)
+    BUILDFLAG(IS_FREEBSD) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
   pthread_attr_t attr;
   int error;
 #if BUILDFLAG(IS_FREEBSD)

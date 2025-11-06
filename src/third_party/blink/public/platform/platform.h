@@ -64,6 +64,10 @@
 #include "ui/gl/angle_implementation.h"
 #include "v8/include/v8-local-handle.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 class GURL;
 class SkCanvas;
 class SkBitmap;

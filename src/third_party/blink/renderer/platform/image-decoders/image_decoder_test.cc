@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "build/build_config.h"
 #include "media/media_buildflags.h"
 #include "testing/gtest/include/gtest/gtest.h"

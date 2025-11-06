@@ -3273,7 +3273,7 @@ TEST_F(FPDFAnnotEmbedderTest, GetLinkFromAnnotation) {
   ScopedPage page = LoadScopedPage(0);
   ASSERT_TRUE(page);
   {
-    static constexpr char kExpectedResult[] =
+    constexpr char kExpectedResult[] =
         "https://cs.chromium.org/chromium/src/third_party/pdfium/public/"
         "fpdf_text.h";
 

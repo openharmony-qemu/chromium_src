@@ -30,6 +30,9 @@
 
 #include "third_party/blink/renderer/core/scroll/scrollbar_theme_aura.h"
 
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
 #include "base/numerics/safe_conversions.h"
 #include "build/build_config.h"
 #include "cc/input/scrollbar.h"
@@ -404,6 +407,9 @@ ScrollbarThemeAura::BuildScrollbarThumbExtraParams(
     scrollbar_thumb.thumb_color =
         scrollbar.ScrollbarThumbColor().value().toSkColor4f().toSkColor();
   }
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+  scrollbar_thumb.scrollbar_color = scrollbar.GetScrollBarColor();
+#endif // ARKWEB_SCROLLBAR
   if (scrollbar.ScrollbarTrackColor().has_value()) {
     scrollbar_thumb.track_color =
         scrollbar.ScrollbarTrackColor().value().toSkColor4f().toSkColor();

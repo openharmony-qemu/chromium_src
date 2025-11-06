@@ -359,7 +359,7 @@ DataVector<uint8_t> CPDF_SyntaxParser::ReadHexString() {
       break;
     }
 
-    if (FXSYS_IsHexDigit(ch)) {
+    if (isxdigit(ch)) {
       int val = FXSYS_HexCharToInt(ch);
       if (bFirst) {
         code = val * 16;

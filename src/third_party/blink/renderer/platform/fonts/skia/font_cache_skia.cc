@@ -60,13 +60,18 @@
 #error This file should not be used by MacOS.
 #endif
 
+#if BUILDFLAG(ARKWEB_THEME_FONT)
+constexpr SkFourByteTag kWghtTag = SkSetFourByteTag('w', 'g', 'h', 't');
+#endif
+
 namespace blink {
 
 AtomicString ToAtomicString(const SkString& str) {
   return AtomicString::FromUTF8(std::string_view(str.begin(), str.end()));
 }
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
 // This function is called on android or when we are emulating android fonts on
 // linux and the embedder has overriden the default fontManager with
 // WebFontRendering::setSkiaFontMgr.
@@ -254,8 +259,49 @@ sk_sp<SkTypeface> FontCache::CreateTypeface(
       return typeface;
   }
 #endif  // BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_OHOS)
+  auto typeface = sk_sp<SkTypeface>(font_manager->matchFamilyStyle(
+      name.empty() ? nullptr : name.c_str(), font_description.SkiaFontStyle()));
+  if (!typeface) {
+    return nullptr;
+  }
+
+  int existing_axes = typeface->getVariationDesignPosition(nullptr, 0);
+  if (existing_axes <= 0) {
+    return typeface;
+  }
+
+  Vector<SkFontArguments::VariationPosition::Coordinate> coordinates_to_set;
+  coordinates_to_set.resize(existing_axes);
+
+  if (typeface->getVariationDesignPosition(coordinates_to_set.data(),
+                                           existing_axes) != existing_axes) {
+    return typeface;
+  }
+  bool hasChanged = false;
+  for (auto& coordinate : coordinates_to_set) {
+    if (coordinate.axis == kWghtTag) {
+      coordinate.value =
+          SkFloatToScalar(font_description.SkiaFontStyle().weight());
+      hasChanged = true;
+    }
+  }
+  if (!hasChanged) {
+    SkFontArguments::VariationPosition::Coordinate coordinate;
+    coordinate.axis = kWghtTag;
+    coordinate.value =
+        SkFloatToScalar(font_description.SkiaFontStyle().weight());
+    coordinates_to_set.push_back(coordinate);
+  }
+  SkFontArguments::VariationPosition variation_design_position{
+      coordinates_to_set.data(), static_cast<int>(coordinates_to_set.size())};
+  SkFontArguments fontArgs;
+  fontArgs.setVariationDesignPosition(variation_design_position);
+  return typeface->makeClone(fontArgs);
+#else
   return sk_sp<SkTypeface>(font_manager_->matchFamilyStyle(
       name.empty() ? nullptr : name.c_str(), font_description.SkiaFontStyle()));
+#endif
 }
 
 #if !BUILDFLAG(IS_WIN)

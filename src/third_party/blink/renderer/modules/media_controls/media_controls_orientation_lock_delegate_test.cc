@@ -145,7 +145,15 @@ class MockChromeClientForOrientationLockDelegate final
   // async due to IPC, emulate that by posting tasks:
   void EnterFullscreen(LocalFrame& frame,
                        const FullscreenOptions*,
-                       FullscreenRequestType) override {
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+                       bool overlay_fullscreen,
+#endif // ARKWEB_VIDEO_ASSISTANT
+                       FullscreenRequestType
+#if BUILDFLAG(ARKWEB_UNITTESTS) && BUILDFLAG(ARKWEB_FULLSCREEN)
+                       ,
+                       const absl::optional<gfx::Size>&
+#endif  // BUILDFLAG(ARKWEB_FULLSCREEN)
+                       ) override {
     frame.GetTaskRunner(TaskType::kInternalNavigationAssociated)
         ->PostTask(FROM_HERE, BindOnce(DidEnterFullscreen,
                                        WrapPersistent(frame.GetDocument())));

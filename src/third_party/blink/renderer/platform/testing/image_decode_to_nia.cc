@@ -169,7 +169,10 @@ int main(int argc, char* argv[]) {
       blink::SharedBuffer::Create(src), data_complete,
       blink::ImageDecoder::kAlphaNotPremultiplied,
       blink::ImageDecoder::kDefaultBitDepth, blink::ColorBehavior::kIgnore,
-      cc::AuxImage::kDefault, blink::Platform::GetMaxDecodedImageBytes());
+  #if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+      cc::AuxImage::kDefault,
+#endif
+      blink::Platform::GetMaxDecodedImageBytes());
 
   const size_t frame_count = decoder->FrameCount();
   if (frame_count == 0) {

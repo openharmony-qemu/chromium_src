@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <algorithm>
 #include <limits>
 #include <map>
 #include <memory>
@@ -351,90 +350,49 @@ RetainPtr<CPDF_Stream> LoadUnicode(
       ++current_unicode;
       next_it = std::next(it);
     }
-    char_range_to_consecutive_unicodes_map[std::make_pair(
-        first_charcode, current_charcode)] = first_unicode;
+    map_range[std::make_pair(first_charcode, current_charcode)] = first_unicode;
   }
 
   fxcrt::ostringstream buffer;
   buffer << kToUnicodeStart;
 
   {
-    // Add `char_to_unicode_map` to `buffer`.
-    uint32_t to_process =
-        pdfium::checked_cast<uint32_t>(char_to_unicode_map.size());
-    auto it = char_to_unicode_map.begin();
-    while (to_process) {
-      const uint32_t to_process_this_iteration =
-          std::min(to_process, kMaxBfCharBfRangeEntries);
-      buffer << to_process_this_iteration << " beginbfchar\n";
-      for (uint32_t i = 0; i < to_process_this_iteration; ++i) {
-        CHECK(it != char_to_unicode_map.end());
-        AddCharcode(buffer, it->first);
+  // Add maps to buffer
+  buffer << static_cast<uint32_t>(char_to_uni.size()) << " beginbfchar\n";
+  for (const auto& it : char_to_uni) {
+    AddCharcode(buffer, it.first);
         buffer << " ";
-        AddUnicode(buffer, it->second);
+    AddUnicode(buffer, it.second);
         buffer << "\n";
-        ++it;
-      }
-      buffer << "endbfchar\n";
-      to_process -= to_process_this_iteration;
     }
-  }
-
-  {
-    // Add `char_range_to_unicodes_map` to `buffer`.
-    uint32_t to_process =
-        pdfium::checked_cast<uint32_t>(char_range_to_unicodes_map.size());
-    auto it = char_range_to_unicodes_map.begin();
-    while (to_process) {
-      const uint32_t to_process_this_iteration =
-          std::min(to_process, kMaxBfCharBfRangeEntries);
-      buffer << to_process_this_iteration << " beginbfrange\n";
-      for (uint32_t i = 0; i < to_process_this_iteration; ++i) {
-        CHECK(it != char_range_to_unicodes_map.end());
-        const std::pair<uint32_t, uint32_t>& charcode_range = it->first;
+  buffer << "endbfchar\n"
+         << static_cast<uint32_t>(map_range_vector.size() + map_range.size())
+         << " beginbfrange\n";
+  for (const auto& it : map_range_vector) {
+    const std::pair<uint32_t, uint32_t>& charcode_range = it.first;
         AddCharcode(buffer, charcode_range.first);
         buffer << " ";
         AddCharcode(buffer, charcode_range.second);
         buffer << " [";
-        auto unicodes = pdfium::span(it->second);
-        AddUnicode(buffer, unicodes[0]);
-        for (uint32_t code : unicodes.subspan(1u)) {
+    const std::vector<uint32_t>& unicodes = it.second;
+    for (size_t i = 0; i < unicodes.size(); ++i) {
+      AddUnicode(buffer, unicodes[i]);
+      if (i != unicodes.size() - 1)
           buffer << " ";
-          AddUnicode(buffer, code);
         }
         buffer << "]\n";
-        ++it;
       }
-      buffer << "endbfrange\n";
-      to_process -= to_process_this_iteration;
     }
-  }
-
-  {
-    // Add `char_range_to_consecutive_unicodes_map` to `buffer`.
-    uint32_t to_process = pdfium::checked_cast<uint32_t>(
-        char_range_to_consecutive_unicodes_map.size());
-    auto it = char_range_to_consecutive_unicodes_map.begin();
-    while (to_process) {
-      const uint32_t to_process_this_iteration =
-          std::min(to_process, kMaxBfCharBfRangeEntries);
-      buffer << to_process_this_iteration << " beginbfrange\n";
-      for (uint32_t i = 0; i < to_process_this_iteration; ++i) {
-        CHECK(it != char_range_to_consecutive_unicodes_map.end());
-        const std::pair<uint32_t, uint32_t>& charcode_range = it->first;
+  for (const auto& it : map_range) {
+    const std::pair<uint32_t, uint32_t>& charcode_range = it.first;
         AddCharcode(buffer, charcode_range.first);
         buffer << " ";
         AddCharcode(buffer, charcode_range.second);
         buffer << " ";
-        AddUnicode(buffer, it->second);
+    AddUnicode(buffer, it.second);
         buffer << "\n";
-        ++it;
       }
       buffer << "endbfrange\n";
-      to_process -= to_process_this_iteration;
-    }
-  }
-
   buffer << kToUnicodeEnd;
   auto stream = doc->NewIndirect<CPDF_Stream>(&buffer);
   return stream;

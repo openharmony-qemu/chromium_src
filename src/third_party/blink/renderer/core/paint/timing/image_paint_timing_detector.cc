@@ -167,6 +167,11 @@ ImagePaintTimingDetector::UpdateMetricsCandidate() {
 OptionalPaintTimingCallback
 ImagePaintTimingDetector::TakePaintTimingCallback() {
   viewport_size_ = std::nullopt;
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  records_manager_.UpdateViewportSize(std::nullopt);
+#endif
+
   if (!added_entry_in_latest_frame_)
     return std::nullopt;
 
@@ -183,6 +188,9 @@ ImagePaintTimingDetector::TakePaintTimingCallback() {
       },
       WrapWeakPersistent(this), frame_index_, IsRecordingLargestImagePaint());
   last_registered_frame_index_ = frame_index_++;
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  frame_view_->GetPaintTimingDetector().SyncIPTDFrameIdxToBLIPTD(frame_index_);
+#endif
 
   // This is for unit-testing purposes only. Some of these tests check for UKMs
   // and things that are not covered by WPT.
@@ -266,6 +274,9 @@ void ImageRecordsManager::AssignPaintTimeToRegisteredQueuedRecords(
     // If it's no longer pending for any other reason, move on.
     auto it = pending_images_.find(record->Hash());
     if (it == pending_images_.end()) {
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+      image_record_manager_utils_.AssignPaintTimeToRegisteredQueuedRecordsForALCP(record->hash, timestamp);
+#endif
       continue;
     }
 
@@ -273,6 +284,10 @@ void ImageRecordsManager::AssignPaintTimeToRegisteredQueuedRecords(
     if (!record->HasPaintTime()) {
       record->SetPaintTime(presentation_timestamp, paint_timing_info);
     }
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+    image_record_manager_utils_.AssignImagePaintTimeFromRecord(record,
+                                                               presentation_timestamp);
+#endif
     // Update largest if necessary.
     if (is_recording_lcp &&
         (!largest_painted_image_ ||
@@ -282,6 +297,11 @@ void ImageRecordsManager::AssignPaintTimeToRegisteredQueuedRecords(
     // Remove from pending.
     pending_images_.erase(it);
   }
+
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  image_record_manager_utils_.AssignImagePaintTimeFromRejectedImages(
+      presentation_timestamp, last_queued_frame_index);
+#endif
 }
 
 void ImagePaintTimingDetector::NotifyInteractionTriggeredVideoSrcChange(
@@ -374,8 +394,19 @@ bool ImagePaintTimingDetector::RecordImage(
   // first paint, but we only do Record-keeping for some Nodes (i.e. those which
   // actually need timing for some reason).
   if (!record) {
-    return false;
-  }
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+      added_entry_in_latest_frame_ |=
+        records_manager_.CheckALCPRecord(record_id_hash, media_timing, style_image, frame_index_, false);
+#endif
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+      records_manager_.image_record_manager_utils_
+          .GetAddedEntryInLatestFrameByRejectedImage(
+              media_timing, object, record_id_hash, frame_index_,
+              added_entry_in_latest_frame_, style_image, image_border,
+              current_paint_chunk_properties);
+#endif
+      return false;
+    }
 
   // Check if context changed from the last time we painted this media.
   if (record->GetSoftNavigationContext() != context) {
@@ -563,9 +594,15 @@ void ImageRecordsManager::ReportLargestIgnoredImage(
   }
 
   // Trigger FCP if it's not already set.
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (!image_record_manager_utils_.IsForBlankless()) {
+#endif
   Document* document = frame_view_->GetFrame().GetDocument();
   DCHECK(document);
   PaintTiming::From(*document).MarkFirstContentfulPaint();
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  }
+#endif
 
   ImageRecord* record = largest_ignored_image_.Get();
   CHECK(record);
@@ -606,12 +643,31 @@ ImageRecord* ImageRecordsManager::RecordFirstPaintAndMaybeCreateImageRecord(
     const gfx::RectF& root_visual_rect,
     double bpp,
     SoftNavigationContext* soft_navigation_context) {
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  MediaRecordIdHash hash = record_id.GetHash();
+  bool is_full_viewport = frame_view_->GetPaintTimingDetector().GetImagePaintTimingDetector().is_full_viewport_image();
+
+  ImageRecord *record = CreateImageRecord(
+      *record_id.GetLayoutObject(), record_id.GetMediaTiming(), visual_size,
+      frame_visual_rect, root_visual_rect, record_id.GetHash());
+#endif
   // Don't process the image yet if it is invisible, as it may later become
   // visible, and potentially eligible to be an LCP candidate.
   if (visual_size == 0u) {
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+    if (is_full_viewport){
+      image_record_manager_utils_.NotifyImagePaintForFirstScreenCalculator(
+          hash, record);
+      image_record_manager_utils_.InsertRejectedImageRecords(hash, record);
+    }
+#endif
     return nullptr;
   }
   recorded_images_.insert(record_id.GetHash());
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  image_record_manager_utils_.NotifyImagePaintForFirstScreenCalculator(hash,
+                                                                       record);
+#endif
 
   // If we are recording LCP, take the timing unless the correct LCP is already
   // larger.
@@ -652,6 +708,12 @@ void ImageRecordsManager::AddPendingImage(ImageRecord* record,
 
 void ImageRecordsManager::ClearImagesQueuedForPaintTime() {
   images_queued_for_paint_time_.clear();
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  image_record_manager_utils_.ClearRejectedImageRecords();
+#endif
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  image_record_manager_utils_.ClearForALCP();
+#endif
 }
 
 void ImageRecordsManager::Trace(Visitor* visitor) const {
@@ -661,6 +723,12 @@ void ImageRecordsManager::Trace(Visitor* visitor) const {
   visitor->Trace(pending_images_);
   visitor->Trace(images_queued_for_paint_time_);
   visitor->Trace(largest_ignored_image_);
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  image_record_manager_utils_.TraceRejectedImages(visitor);
+#endif
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  visitor->Trace(image_record_manager_utils_);
+#endif
 }
 
 void ImagePaintTimingDetector::Trace(Visitor* visitor) const {

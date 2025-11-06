@@ -130,7 +130,11 @@ void ReportImagePixelInaccuracy(HTMLImageElement* image_element) {
 
 }  // namespace
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+PaintTimingDetector::PaintTimingDetector(LocalFrameView* frame_view, bool need_supplement_for_bl /* = true */)
+#else
 PaintTimingDetector::PaintTimingDetector(LocalFrameView* frame_view)
+#endif
     : frame_view_(frame_view),
       text_paint_timing_detector_(
           MakeGarbageCollected<TextPaintTimingDetector>(frame_view, this)),
@@ -139,6 +143,9 @@ PaintTimingDetector::PaintTimingDetector(LocalFrameView* frame_view)
   if (PaintTimingVisualizer::IsTracingEnabled()) {
     visualizer_.emplace();
   }
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  first_screen_calculator_ = std::make_shared<FirstScreenCalculator>(frame_view);
+#endif
 }
 
 void PaintTimingDetector::NotifyPaintFinished() {
@@ -264,6 +271,9 @@ void PaintTimingDetector::NotifyInteractionTriggeredVideoSrcChange(
 void PaintTimingDetector::NotifyImageFinished(const LayoutObject& object,
                                               const MediaTiming* media_timing) {
   if (IgnorePaintTimingScope::ShouldIgnore()) {
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  paint_timing_detector_utils_.ForwardNotifyImageFinished(object, media_timing);
+#endif
     return;
   }
   image_paint_timing_detector_->NotifyImageFinished(object, media_timing);
@@ -272,6 +282,9 @@ void PaintTimingDetector::NotifyImageFinished(const LayoutObject& object,
 void PaintTimingDetector::LayoutObjectWillBeDestroyed(
     const LayoutObject& object) {
   text_paint_timing_detector_->LayoutObjectWillBeDestroyed(object);
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  paint_timing_detector_utils_.ForwardLayoutObjectWillBeDestroyed(object);
+#endif
 }
 
 void PaintTimingDetector::NotifyImageRemoved(
@@ -281,6 +294,9 @@ void PaintTimingDetector::NotifyImageRemoved(
 }
 
 void PaintTimingDetector::OnInputOrScroll() {
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  paint_timing_detector_utils_.ForwardOnInputOrScroll();
+#endif
   if (LocalDOMWindow* window = frame_view_->GetFrame().DomWindow()) {
     if (auto* heuristics = window->GetSoftNavigationHeuristics()) {
       heuristics->OnInputOrScroll();
@@ -301,6 +317,9 @@ void PaintTimingDetector::OnInputOrScroll() {
   // LargestContentfulPaint.
   image_paint_timing_detector_->StopRecordEntries();
   image_paint_timing_detector_->StopRecordingLargestImagePaint();
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  first_screen_calculator_->OnUserScroll();
+#endif
   largest_contentful_paint_calculator_ = nullptr;
 
   DidChangePerformanceTiming();
@@ -359,9 +378,17 @@ void PaintTimingDetector::UpdateMetricsLcp() {
       GetLargestContentfulPaintCalculator()->LatestLcpDetails();
 
   DidChangePerformanceTiming();
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  paint_timing_detector_utils_.NotifyLcpForBlankless();
+#endif
 }
 
 void PaintTimingDetector::DidChangePerformanceTiming() {
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (!paint_timing_detector_utils_.HaveSupplementForBL()) {
+    return;
+  }
+#endif
   Document* document = frame_view_->GetFrame().GetDocument();
   if (!document) {
     return;
@@ -445,6 +472,11 @@ void PaintTimingDetector::UpdateLcpCandidate() {
   if (image_update_result.second || text_update_result.second) {
     UpdateMetricsLcp();
   }
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  else {
+    paint_timing_detector_utils_.CheckNotifyLcpForBlankless();
+  }
+#endif
 
   lcp_calculator->UpdateWebExposedLargestContentfulPaintIfNeeded(
       text_update_result.first, image_update_result.first,
@@ -525,6 +557,9 @@ void PaintTimingDetector::Trace(Visitor* visitor) const {
   visitor->Trace(image_paint_timing_detector_);
   visitor->Trace(frame_view_);
   visitor->Trace(largest_contentful_paint_calculator_);
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  visitor->Trace(paint_timing_detector_utils_);
+#endif
 }
 
 }  // namespace blink

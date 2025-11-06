@@ -670,6 +670,11 @@ BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE(
     kGetUserMediaDeferredDeviceSettingsSelection);
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE(kEnableOcrTextRecognition);
+BLINK_COMMON_EXPORT bool IsEnableOcrTextRecognition();
+#endif  // BUILDFLAG(IS_OHOS)
+
 BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE_PARAM(
     std::string,
     kHTMLParserYieldEventNameForPause);

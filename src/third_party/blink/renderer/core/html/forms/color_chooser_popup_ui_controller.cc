@@ -105,6 +105,15 @@ void ColorChooserPopupUIController::WriteColorPickerDocument(
 #else
   gfx::Rect anchor_rect_in_screen = chrome_client_->LocalRootToScreenDIPs(
       client_->ElementRectRelativeToLocalRoot(), frame_->View());
+#if BUILDFLAG(IS_OHOS)
+  // available_rect_in_screen refers to the rectangle of the frame, which can be
+  // used to contain the color chooser.
+  gfx::Rect available_rect_in_screen;
+  if (frame_->View()) {
+    available_rect_in_screen = chrome_client_->LocalRootToScreenDIPs(
+        frame_->View()->FrameRect(), frame_->View());
+  }
+#endif
 
   PagePopupClient::AddString(
       "<!DOCTYPE html><head><meta charset='UTF-8'><meta name='color-scheme' "

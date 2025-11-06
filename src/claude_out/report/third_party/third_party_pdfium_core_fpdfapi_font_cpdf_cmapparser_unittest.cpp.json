@@ -1,0 +1,59 @@
+{
+  "file_path": "third_party/pdfium/core/fpdfapi/font/cpdf_cmapparser_unittest.cpp",
+  "analysis_timestamp": "2025-11-05",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": {
+    "status": "保持完整",
+    "modified": false,
+    "deleted": false
+  },
+  "hunks_analysis": [
+    {
+      "hunk_number": 1,
+      "line_range": "3-17",
+      "conflict_reason": "Arkweb132中的constexpr声明使用了static关键字，而Arkweb141中需要移除static关键字",
+      "risk_assessment": "低风险 - 这是C++11标准相关的语法优化，移除static关键字不影响功能逻辑",
+      "analysis_process": "1. 解析hunk识别出需要删除两行'static constexpr uint8_t'声明，添加两行'constexpr uint8_t'声明 2. 在源文件第56-57行找到完全匹配的代码 3. 应用修改，移除static关键字",
+      "modification_confidence": "高 - 源文件中的代码与.rej文件中的删除行完全匹配，上下文对应准确",
+      "resolution_strategy": "精确定位 - 使用源文件第56-57行的代码作为锚点，直接应用修改移除static关键字",
+      "status": "已解决",
+      "changes_applied": [
+        {
+          "type": "删除",
+          "line": 56,
+          "content": "static constexpr uint8_t kLower[4] = {18, 52, 86, 120};"
+        },
+        {
+          "type": "删除",
+          "line": 57,
+          "content": "static constexpr uint8_t kUpper[4] = {135, 101, 67, 33};"
+        },
+        {
+          "type": "添加",
+          "line": 56,
+          "content": "constexpr uint8_t kLower[4] = {18, 52, 86, 120};"
+        },
+        {
+          "type": "添加",
+          "line": 57,
+          "content": "constexpr uint8_t kUpper[4] = {135, 101, 67, 33};"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total_changes": 4,
+    "deletions": 2,
+    "additions": 2,
+    "final_status": "所有hunk已成功解决，侵入式修改已精确应用到源文件中",
+    "compliance_check": {
+      "no_context_added": true,
+      "no_scripts_created": true,
+      "no_auxiliary_files": true,
+      "rej_file_preserved": true,
+      "json_report_in_correct_path": true
+    }
+  }
+}

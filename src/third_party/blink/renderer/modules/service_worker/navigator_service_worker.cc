@@ -33,6 +33,14 @@ ServiceWorkerContainer* NavigatorServiceWorker::serviceWorker(
     ScriptState* script_state,
     Navigator&,
     ExceptionState& exception_state) {
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+  // block it on advanced security mode.
+  bool isAdvancedSecurityMode = OHOS::NWeb::NWebAdvancedSecurityHelper::Inst().
+        IsSecFeatureEnabled(OHOS::NWeb::NWebAdvancedSecurityHelper::Feature::ENABLE_SERVICEWORKER);
+  if (isAdvancedSecurityMode) {
+    return nullptr;
+  }
+#endif  // BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
   ExecutionContext* execution_context = ExecutionContext::From(script_state);
   auto* container = From(*execution_context);
   if (!container) {

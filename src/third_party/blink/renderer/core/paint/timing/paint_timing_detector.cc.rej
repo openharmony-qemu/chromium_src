@@ -1,16 +1,6 @@
 --- paint_timing_detector.cc	2025-10-20 19:53:00.614207935 +0800
 +++ paint_timing_detector.cc	2025-10-16 16:07:39.622101201 +0800
 @@ -126,27 +126,38 @@
-   }
- }
- 
- }  // namespace
- 
-+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-+PaintTimingDetector::PaintTimingDetector(LocalFrameView* frame_view, bool need_supplement_for_bl /* = true */)
-+#else
- PaintTimingDetector::PaintTimingDetector(LocalFrameView* frame_view)
-+#endif
      : frame_view_(frame_view),
        text_paint_timing_detector_(
            MakeGarbageCollected<TextPaintTimingDetector>(frame_view,
@@ -32,30 +22,6 @@
    }
    text_paint_timing_detector_->ResetCallbackManager(callback_manager_.Get());
    image_paint_timing_detector_->ResetCallbackManager(callback_manager_.Get());
-+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
-+  first_screen_calculator_ = std::make_shared<FirstScreenCalculator>(frame_view);
-+#endif
- }
- 
- void PaintTimingDetector::NotifyPaintFinished() {
-   if (PaintTimingVisualizer::IsTracingEnabled()) {
-     if (!visualizer_) {
-@@ -161,10 +172,15 @@
-     image_paint_timing_detector_->OnPaintFinished();
-   }
-   if (callback_manager_->CountCallbacks() > 0) {
-     callback_manager_->RegisterPaintTimeCallbackForCombinedCallbacks();
-   }
-+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-+  if (!paint_timing_detector_utils_.ForwardNotifyPaintFinished()) {	
-+    return;
-+  }
-+#endif
-   LocalDOMWindow* window = frame_view_->GetFrame().DomWindow();
-   if (window) {
-     DOMWindowPerformance::performance(*window)->OnPaintFinished();
-   }
- }
 @@ -191,10 +207,14 @@
      return false;
    }
@@ -88,26 +54,6 @@
    if (image_node &&
 @@ -251,29 +275,43 @@
  
- void PaintTimingDetector::NotifyImageFinished(const LayoutObject& object,
-                                               const MediaTiming* media_timing) {
-   if (IgnorePaintTimingScope::ShouldIgnore() ||
-       !image_paint_timing_detector_->IsRecordingLargestImagePaint()) {
-+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-+  paint_timing_detector_utils_.ForwardNotifyImageFinished(object, media_timing);
-+#endif
-     return;
-   }
-   image_paint_timing_detector_->NotifyImageFinished(object, media_timing);
- }
- 
- void PaintTimingDetector::LayoutObjectWillBeDestroyed(
-     const LayoutObject& object) {
-   text_paint_timing_detector_->LayoutObjectWillBeDestroyed(object);
-+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-+  paint_timing_detector_utils_.ForwardLayoutObjectWillBeDestroyed(object);
-+#endif
- }
- 
  void PaintTimingDetector::NotifyImageRemoved(
      const LayoutObject& object,
      const ImageResourceContent* cached_image) {
@@ -121,29 +67,6 @@
 +#endif
  }
  
- void PaintTimingDetector::OnInputOrScroll() {
-+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-+  paint_timing_detector_utils_.ForwardOnInputOrScroll();
-+#endif
-   // If we have already stopped and we're no longer recording the largest image
-   // paint, then abort.
-   if (!image_paint_timing_detector_->IsRecordingLargestImagePaint()) {
-     return;
-   }
-@@ -284,10 +322,13 @@
-   text_paint_timing_detector_->StopRecordingLargestTextPaint();
-   // ImagePaintTimingDetector is currently only being used for
-   // LargestContentfulPaint.
-   image_paint_timing_detector_->StopRecordEntries();
-   image_paint_timing_detector_->StopRecordingLargestImagePaint();
-+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
-+  first_screen_calculator_->OnUserScroll();
-+#endif
-   largest_contentful_paint_calculator_ = nullptr;
-   record_lcp_to_metrics_ = false;
- 
-   // Set first_input_or_scroll_notified_timestamp_ only once.
-   if (first_input_or_scroll_notified_timestamp_ == base::TimeTicks()) {
 @@ -323,18 +364,27 @@
    return text_paint_timing_detector_->IsRecordingLargestTextPaint() ||
           image_paint_timing_detector_;
@@ -186,53 +109,3 @@
    record_soft_navigation_lcp_for_metrics_ = true;
    // Reset the lcp candidate and the soft navigation LCP for reporting to UKM
    // when a new soft navigation happens. When this resetting happens, the
-@@ -406,13 +459,21 @@
-         GetLargestContentfulPaintCalculator()->LatestLcpDetails();
-     soft_navigation_lcp_details_for_metrics_ = latest_lcp_details;
-   }
- 
-   DidChangePerformanceTiming();
-+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-+  paint_timing_detector_utils_.NotifyLcpForBlankless();
-+#endif
- }
- 
- void PaintTimingDetector::DidChangePerformanceTiming() {
-+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-+  if (!paint_timing_detector_utils_.HaveSupplementForBL()) {
-+    return;
-+  }
-+#endif
-   Document* document = frame_view_->GetFrame().GetDocument();
-   if (!document) {
-     return;
-   }
-   DocumentLoader* loader = document->Loader();
-@@ -494,10 +555,15 @@
-   }
- 
-   if (image_update_result.second || text_update_result.second) {
-     UpdateMetricsLcp();
-   }
-+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-+  else {
-+    paint_timing_detector_utils_.CheckNotifyLcpForBlankless();
-+  }
-+#endif
-   // If we stopped and then restarted LCP measurement (to support soft
-   // navigations), and didn't yet detect a soft navigation, put aside the
-   // records as potential soft navigation LCP ones, and don't update the web
-   // exposed entries just yet. We'll do that once we actually detect the soft
-   // navigation.
-@@ -598,8 +669,11 @@
-   visitor->Trace(frame_view_);
-   visitor->Trace(largest_contentful_paint_calculator_);
-   visitor->Trace(callback_manager_);
-   visitor->Trace(potential_soft_navigation_image_record_);
-   visitor->Trace(potential_soft_navigation_text_record_);
-+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-+  visitor->Trace(paint_timing_detector_utils_);
-+#endif
- }
- 
- }  // namespace blink

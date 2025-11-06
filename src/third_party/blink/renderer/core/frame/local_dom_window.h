@@ -99,6 +99,9 @@ class V8FrameRequestCallback;
 struct WebPictureInPictureWindowOptions;
 class WindowAgent;
 
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)
+class ArkWeb;
+#endif // ARKWEB_SCROLLBAR_AVOID_AREA
 namespace scheduler {
 class TaskAttributionInfo;
 }

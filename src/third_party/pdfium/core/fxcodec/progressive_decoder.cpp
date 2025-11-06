@@ -881,7 +881,7 @@ void ProgressiveDecoder::SetTransMethod() {
     case FXDIB_Format::k1bppRgb:
     case FXDIB_Format::k8bppMask:
     case FXDIB_Format::k8bppRgb:
-      NOTREACHED();
+      NOTREACHED_NORETURN();
     case FXDIB_Format::kBgr: {
       switch (src_format_) {
         case FXCodec_Invalid:

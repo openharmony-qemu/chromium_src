@@ -1485,6 +1485,15 @@ void ChromeClientImpl::JavaScriptChangedValue(HTMLFormControlElement& element,
   if (auto* fill_client = AutofillClientFromFrame(doc.GetFrame())) {
     fill_client->JavaScriptChangedValue(WebFormControlElement(&element),
                                         old_value, was_autofilled);
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+  if (auto* rc = doc.GetResourceCoordinator()) {
+    rc->SetHadFormInteraction();
+    if (element.Form()) {
+      uint64_t form_id = element.Form()->UniqueRendererFormId();
+      rc->coordinator_utils_->OnFormEditingStateChanged(form_id, false);
+    }
+  }
+#endif
   }
 }
 
@@ -1496,6 +1505,17 @@ gfx::Transform ChromeClientImpl::GetDeviceEmulationTransform() const {
 void ChromeClientImpl::DidUpdateBrowserControls() const {
   DCHECK(web_view_);
   web_view_->DidUpdateBrowserControls();
+
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableNwebExTopControls) &&
+      web_view_->MainFrameImpl()) {
+    LocalFrame* local_frame = web_view_->MainFrameImpl()->GetFrame();
+    if (local_frame && local_frame->View()) {
+      local_frame->View()->LayoutViewport()->AsPaintLayerScrollableAreaExt()->UpdateScrollbar();
+    }
+  }
+#endif
 }
 
 void ChromeClientImpl::DidUpdateLoadProgress(float progress) {

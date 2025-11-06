@@ -104,6 +104,9 @@
 #include "third_party/webrtc_overrides/environment.h"
 #include "third_party/webrtc_overrides/metronome_source.h"
 #include "third_party/webrtc_overrides/timer_based_tick_provider.h"
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+#include "ohos_nweb/src/nweb_advanced_security.h"
+#endif
 
 namespace blink {
 

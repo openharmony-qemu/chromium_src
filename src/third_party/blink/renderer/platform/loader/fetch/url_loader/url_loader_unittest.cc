@@ -631,7 +631,6 @@ TEST_F(URLLoaderTest, AuthChallengeInfo) {
   EXPECT_TRUE(response.AuthChallengeInfo()->is_proxy);
   EXPECT_EQ("foobar", response.AuthChallengeInfo()->challenge);
 }
-
 struct IPProtectionTestParams {
   std::string test_name;
   bool enable_ipp_feature_param;

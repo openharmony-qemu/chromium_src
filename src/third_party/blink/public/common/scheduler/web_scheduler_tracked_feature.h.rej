@@ -1,17 +1,5 @@
 --- web_scheduler_tracked_feature.h	2025-10-20 19:53:00.094212865 +0800
 +++ web_scheduler_tracked_feature.h	2025-10-16 16:07:39.057611110 +0800
-@@ -8,10 +8,11 @@
- #include <stdint.h>
- 
- #include <optional>
- #include <string>
- 
-+#include "arkweb/build/features/features.h"
- #include "base/containers/enum_set.h"
- #include "third_party/blink/public/common/common_export.h"
- 
- namespace blink {
- namespace scheduler {
 @@ -161,14 +162,24 @@
    // so that the source location can be tracked. See https://crbug.com/1513120
    // for details.

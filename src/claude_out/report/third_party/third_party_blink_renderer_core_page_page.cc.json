@@ -1,0 +1,48 @@
+{
+  "file_path": "third_party/blink/renderer/core/page/page.cc",
+  "total_hunks": 2,
+  "resolved_hunks": 2,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "maintained",
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "lines_range": "3-9",
+      "change_type": "addition",
+      "added_lines": [
+        "#include \"arkweb/build/features/features.h\""
+      ],
+      "removed_lines": [],
+      "risk_level": "low",
+      "conflict_reason": "Arkweb132添加了arkweb构建特性的头文件包含，在Chromium141中这个包含缺失",
+      "analysis_process": "通过上下文定位，在#include \"third_party/blink/renderer/core/page/page.h\"之后和#include \"base/check.h\"之前找到了正确的插入位置",
+      "confidence": "high",
+      "resolution_strategy": "在第26行成功添加了#include \"arkweb/build/features/features.h\"",
+      "status": "已解决"
+    },
+    {
+      "hunk_number": 2,
+      "lines_range": "15-21",
+      "change_type": "addition",
+      "added_lines": [
+        "#include \"third_party/blink/renderer/core/page/page_utils.h\""
+      ],
+      "removed_lines": [],
+      "risk_level": "low",
+      "conflict_reason": "Arkweb132添加了页面工具类的头文件包含，在Chromium141中这个包含缺失",
+      "analysis_process": "通过上下文定位，在#include \"ui/color/color_provider_utils.h\"之后和namespace blink {之前找到了正确的插入位置",
+      "confidence": "high",
+      "resolution_strategy": "在第113行成功添加了#include \"third_party/blink/renderer/core/page/page_utils.h\"",
+      "status": "已解决"
+    }
+  ],
+  "summary": {
+    "description": "成功解决了所有冲突hunks，都是头文件包含的添加",
+    "modifications_applied": 2,
+    "modifications_successful": 2,
+    "overall_success_rate": "100%",
+    "code_integrity": "maintained",
+    "no_context_added": "confirmed",
+    "no_scripts_generated": "confirmed"
+  }
+}

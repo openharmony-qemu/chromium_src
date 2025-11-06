@@ -151,7 +151,7 @@ uint32_t CPDF_CMapParser::GetCode(ByteStringView word) {
 
   FX_SAFE_UINT32 num = 0;
   if (word[0] == '<') {
-    for (size_t i = 1; i < word.GetLength() && FXSYS_IsHexDigit(word[i]); ++i) {
+    for (size_t i = 1; i < word.GetLength() && isxdigit(word[i]); ++i) {
       num = num * 16 + FXSYS_HexCharToInt(word[i]);
       if (!num.IsValid()) {
         return 0;
@@ -160,9 +160,8 @@ uint32_t CPDF_CMapParser::GetCode(ByteStringView word) {
     return num.ValueOrDie();
   }
 
-  for (size_t i = 0;
-       i < word.GetLength() && FXSYS_IsDecimalDigit(word.CharAt(i)); ++i) {
-    num = num * 10 + FXSYS_DecimalCharToInt(word.CharAt(i));
+  for (size_t i = 0; i < word.GetLength() && isdigit(word[i]); ++i) {
+    num = num * 10 + FXSYS_DecimalCharToInt(static_cast<wchar_t>(word[i]));
     if (!num.IsValid()) {
       return 0;
     }

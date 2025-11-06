@@ -65,6 +65,7 @@
 #include "third_party/blink/renderer/platform/wtf/casting.h"
 #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 #include "ui/gfx/geometry/size.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/exported/web_element_utils.h"
 #include "ui/gfx/geometry/vector2d_f.h"
 
 namespace blink {
@@ -156,6 +157,10 @@ WebString WebElement::TextContentAbridged(const unsigned int max_length) const {
 
 WebString WebElement::InnerHTML() const {
   return ConstUnwrap<Element>()->GetInnerHTMLString();
+}
+
+bool WebElement::IsContentEditable() const {
+  return utils_->IsContentEditable();
 }
 
 void WebElement::Focus() {

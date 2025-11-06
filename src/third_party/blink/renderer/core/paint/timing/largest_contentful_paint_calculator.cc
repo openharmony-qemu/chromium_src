@@ -114,6 +114,11 @@ void LargestContentfulPaintCalculator::UpdateWebExposedLargestContentfulImage(
 
   largest_image_bpp_ = bpp;
   largest_reported_size_ = size;
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (is_for_blankless_only_) {
+    return;
+  }
+#endif
   const KURL& url = media_timing->Url();
   const String& image_string = url.GetString();
   const String& image_url =
@@ -167,6 +172,11 @@ void LargestContentfulPaintCalculator::UpdateWebExposedLargestContentfulText(
     return;
   }
   largest_reported_size_ = largest_text.RecordedSize();
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  if (is_for_blankless_only_) {
+    return;
+  }
+#endif
   // Do not expose element attribution from shadow trees. Also note that @page
   // margin boxes do not create Element nodes.
   Element* text_element =

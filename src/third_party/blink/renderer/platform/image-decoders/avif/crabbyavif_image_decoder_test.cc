@@ -12,6 +12,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/barrier_closure.h"
 #include "base/bit_cast.h"
 #include "base/compiler_specific.h"

@@ -1,17 +1,5 @@
 --- image_decoder_fuzzer_utils.cc	2025-10-20 19:53:01.214200983 +0800
 +++ image_decoder_fuzzer_utils.cc	2025-10-16 16:07:40.115536595 +0800
-@@ -2,10 +2,11 @@
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
- #include "third_party/blink/renderer/platform/image-decoders/image_decoder_fuzzer_utils.h"
- 
-+#include "arkweb/chromium_ext/blink/renderer/platform/image_decoders/heif/heif_image_decoder.h"
- #include "third_party/blink/renderer/platform/graphics/color_behavior.h"
- #include "third_party/blink/renderer/platform/image-decoders/bmp/bmp_image_decoder.h"
- #include "third_party/blink/renderer/platform/image-decoders/image_decoder.h"
- #include "third_party/blink/renderer/platform/image-decoders/jpeg/jpeg_image_decoder.h"
- #include "third_party/blink/renderer/platform/image-decoders/png/png_image_decoder.h"
 @@ -42,20 +43,35 @@
      case DecoderType::kJpegDecoder: {
        cc::AuxImage aux_image_type =
@@ -33,19 +21,3 @@
        return std::make_unique<PNGImageDecoder>(
            option, decoding_option, behavior, max_decoded_bytes, offset);
      }
-+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-+    case DecoderType::kHeifDecoder: {
-+      ImageDecoder::HighBitDepthDecodingOption decoding_option =
-+          fdp.ConsumeBool() ? ImageDecoder::kDefaultBitDepth
-+                            : ImageDecoder::kHighBitDepthToHalfFloat;
-+      auto rawValue = fdp.ConsumeIntegralInRange(0, 2);
-+      ImageDecoder::AnimationOption animation_option = static_cast<ImageDecoder::AnimationOption>(rawValue);
-+      return std::make_unique<HEIFImageDecoder>(
-+          option, decoding_option, behavior, max_decoded_bytes, animation_option);
-+    }
-+#endif
-   }
- }
- 
- void FuzzDecoder(DecoderType decoder_type, FuzzedDataProvider& fdp) {
-   auto decoder = CreateImageDecoder(decoder_type, fdp);

@@ -1,0 +1,62 @@
+{
+  "conflict_file": "third_party/blink/renderer/platform/exported/video_capture/web_video_capture_impl_manager.cc.rej",
+  "source_file": "third_party/blink/renderer/platform/exported/video_capture/web_video_capture_impl_manager.cc",
+  "analysis": {
+    "total_hunks": 2,
+    "resolved_hunks": 2,
+    "unresolved_hunks": 0,
+    "rej_file_integrity": "maintained"
+  },
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "location": "StartCapture function (around line 126-132)",
+      "risk_level": "低",
+      "change_type": "添加日志语句",
+      "added_lines": [
+        "LOG(INFO) << \"WebVideoCaptureImplManager::StartCapture \"",
+        "            << params.requested_format.pixel_format;"
+      ],
+      "removed_lines": [],
+      "conflict_cause": "Arkweb132在StartCapture函数中添加了调试日志，用于记录视频捕获的像素格式信息",
+      "resolution_strategy": "精确应用添加的日志语句，将其插入到DCHECK检查之后、client_id分配之前",
+      "confidence": "高",
+      "anchor_found": true,
+      "status": "已解决",
+      "detailed_process": "使用DCHECK检查和client_id分配作为锚点，成功定位插入位置并应用修改"
+    },
+    {
+      "hunk_number": 2,
+      "location": "RequestRefreshFrame function (around line 141-147)",
+      "risk_level": "低",
+      "change_type": "添加日志语句",
+      "added_lines": [
+        "LOG(INFO) << \"WebVideoCaptureImplManager::StopCapture id \" << id",
+        "            << \", session ID: \" << &DeviceEntry::session_id;"
+      ],
+      "removed_lines": [],
+      "conflict_cause": "Arkweb132在RequestRefreshFrame函数中添加了调试日志，但日志消息错误地使用了'StopCapture'而不是'RequestRefreshFrame'",
+      "resolution_strategy": "保持原有日志内容不变，严格按照.rej文件要求添加到DCHECK检查之后、设备查找之前",
+      "confidence": "高",
+      "anchor_found": true,
+      "status": "已解决",
+      "detailed_process": "使用DCHECK检查和设备查找作为锚点，成功定位并应用修改。注意：日志消息内容与函数名不匹配，但保持原样不作修改"
+    }
+  ],
+  "summary": {
+    "processing_result": "成功解决所有冲突",
+    "modifications_applied": 2,
+    "modifications_skipped": 0,
+    "total_changes": 2,
+    "change_categories": {
+      "日志添加": 2
+    },
+    "risk_assessment": "所有修改都是添加日志语句，风险较低，不会影响核心功能逻辑",
+    "compliance": {
+      "rej_file_unchanged": true,
+      "no_context_added": true,
+      "exact_modifications": true,
+      "correct_directory": true
+    }
+  }
+}

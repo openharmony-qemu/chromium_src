@@ -6,6 +6,8 @@
 
 #include "core/fxcrt/fx_number.h"
 
+#include <ctype.h>
+
 #include <limits>
 #include <variant>
 

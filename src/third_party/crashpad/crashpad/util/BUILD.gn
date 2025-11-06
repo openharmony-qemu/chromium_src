@@ -14,9 +14,14 @@
 
 import("../build/crashpad_buildconfig.gni")
 import("net/tls.gni")
+import("//arkweb/build/features/features.gni")
 
 if (crashpad_is_in_chromium) {
   import("//build/config/sanitizers/sanitizers.gni")
+}
+
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
 }
 
 if (crashpad_is_apple && !crashpad_is_tvos) {
@@ -607,6 +612,8 @@ crashpad_static_library("util") {
   ]
 
   deps = [ "$mini_chromium_source_parent:base" ]
+
+  deps += ["//third_party:huawei_securec" ]
 
   configs = [ "../build:flock_always_supported_defines" ]
 

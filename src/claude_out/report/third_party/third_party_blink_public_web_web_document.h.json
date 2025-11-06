@@ -1,0 +1,56 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/blink/public/web/web_document.h.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/blink/public/web/web_document.h",
+    "处理时间": "2025-11-04"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk详情": [
+    {
+      "hunk编号": 1,
+      "冲突原因": "Arkweb 132版本针对Web文档类添加了ArkWeb扩展和阅读器模式的条件编译支持",
+      "风险等级": "低",
+      "分析过程": "通过.rej文件分析，需要在源文件中添加两个条件编译块：1) IS_ARKWEB_EXT条件下的头文件包含，2) ARKWEB_READER_MODE条件下的头文件包含和结构体声明。使用源文件中的#include \"third_party/skia/include/core/SkColor.h\"作为锚点精确定位插入位置。",
+      "修改内容": {
+        "添加行数": 11,
+        "删除行数": 0,
+        "具体添加": [
+          "#if BUILDFLAG(IS_ARKWEB_EXT)",
+          "#include \"arkweb/ohos_nweb_ex/build/features/features.h\"",
+          "#endif",
+          "",
+          "#if BUILDFLAG(ARKWEB_READER_MODE)",
+          "#include \"arkweb/chromium_ext/third_party/blink/public/mojom/dom_distiller/reader_mode_config.mojom.h\"",
+          "#endif",
+          "",
+          "#if BUILDFLAG(ARKWEB_READER_MODE)",
+          "struct WebDistillabilityMatchInfo;",
+          "#endif"
+        ]
+      },
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "应用位置": {
+        "第一处插入": "第50行后，SkColor头文件包含之后",
+        "第二处插入": "第77行后，WebDistillabilityFeatures结构体声明之后"
+      }
+    }
+  ],
+  "验证信息": {
+    ".rej文件完整性": "保持原样，未被修改",
+    "语法检查": "通过，所有添加的代码都符合C++语法规范",
+    "编译检查": "应该能够正常编译，条件编译指令使用正确"
+  },
+  "处理策略说明": {
+    "定位方法": "使用.rej文件中的上下文行作为锚点，在源文件中找到对应位置",
+    "应用原则": "严格遵守'不添加上下文'原则，只添加以+开头的行，忽略所有上下文行",
+    "扩展定位": "本案例无需扩展定位，通过源文件即可准确定位",
+    "风险评估": "添加的都是条件编译代码，不会影响现有功能的稳定性"
+  },
+  "总结": "成功处理了web_document.h.rej文件中的唯一hunk，将Arkweb 132版本的条件编译支持精确应用到Arkweb 141版本中。所有修改都已原子化应用，.rej文件保持完整未被修改，符合所有处理要求。"
+}

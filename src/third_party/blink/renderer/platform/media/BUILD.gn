@@ -85,6 +85,11 @@ component("media") {
     "web_source_buffer_impl.h",
   ]
 
+  if (arkweb_media) {
+    import("//arkweb/chromium_ext/third_party/blink/renderer/platform/media/arkweb_blink_renderer_platform_media_ext.gni")
+    sources += arkweb_blink_renderer_platform_media_sources
+  }
+
   configs += [
     "//third_party/blink/renderer/platform:blink_platform_config",
     "//third_party/blink/renderer/platform:blink_platform_implementation",

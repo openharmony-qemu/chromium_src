@@ -1,0 +1,72 @@
+{
+  "file_info": {
+    "rej_file": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/platform/widget/input/input_handler_proxy.h.rej",
+    "source_file": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/platform/widget/input/input_handler_proxy.h",
+    "chromium_132_baseline": "/home/sujiahao/code/chromium_132_baseline/src/third_party/blink/renderer/platform/widget/input/input_handler_proxy.h",
+    "arkweb_132": "/home/sujiahao/code/arkweb_132/src/third_party/blink/renderer/platform/widget/input/input_handler_proxy.h"
+  },
+  "processing_statistics": {
+    "total_hunks": 2,
+    "successfully_resolved_hunks": 2,
+    "unresolved_hunks": 0,
+    "rej_file_integrity_maintained": true,
+    "no_auxiliary_files_created": true
+  },
+  "hunks_analysis": [
+    {
+      "hunk_id": 1,
+      "description": "添加三个 Arkweb 特定的头文件包含",
+      "line_range": "3-24",
+      "risk_level": "低风险",
+      "additions": [
+        "+#include \"arkweb/build/features/features.h\"",
+        "+#include \"third_party/blink/public/mojom/widget/platform_widget.mojom-blink.h\"",
+        "+#include \"third_party/blink/renderer/platform/widget/input/input_handler_proxy_utils.h\""
+      ],
+      "deletions": [],
+      "conflict_reason": "Arkweb 132 在 chromium 132 基础上添加了三个特定的头文件包含，这些在 chromium 141 版本中不存在",
+      "resolution_strategy": "精确定位添加位置，按照原始顺序在适当位置添加每个包含语句",
+      "resolution_status": "已解决",
+      "confidence_level": "高",
+      "modifications_made": [
+        {
+          "line_after_memory": "在第10行添加了 #include \"arkweb/build/features/features.h\"",
+          "after_web_gesture_event": "在第21行添加了 #include \"third_party/blink/public/mojom/widget/platform_widget.mojom-blink.h\"",
+          "after_platform_export": "在第24行添加了 #include \"third_party/blink/renderer/platform/widget/input/input_handler_proxy_utils.h\""
+        }
+      ],
+      "analysis_notes": "这些都是 Arkweb 特定的头文件包含，用于支持 Arkweb 的自定义功能。添加位置根据代码逻辑和包含顺序精确确定。"
+    },
+    {
+      "hunk_id": 2,
+      "description": "在 EventDispositionCallback 定义后添加空行",
+      "line_range": "29-40",
+      "risk_level": "无风险",
+      "additions": [
+        "+"  // 空行
+      ],
+      "deletions": [],
+      "conflict_reason": "Arkweb 132 在 EventDispositionCallback 定义后添加了一个空行，这在 chromium 141 版本中被移除",
+      "resolution_strategy": "在 EventDispositionCallback 定义结束后立即添加空行",
+      "resolution_status": "已解决",
+      "confidence_level": "高",
+      "modifications_made": [
+        {
+          "after_callback_definition": "在第165行 >; 后添加了一个空行，保持代码格式一致性"
+        }
+      ],
+      "analysis_notes": "这是一个纯粹的格式化修改，添加空行有助于提高代码可读性，不会影响功能逻辑。"
+    }
+  ],
+  "summary": {
+    "overall_risk_assessment": "低风险",
+    "compatibility_impact": "这些修改都是 Arkweb 特定的功能支持，不会影响与 chromium 标准版本的兼容性",
+    "functional_impact": "添加的头文件包含了 Arkweb 的自定义功能，如手势处理、输入法控制等",
+    "code_quality_impact": "格式修改提高了代码可读性，没有引入任何潜在问题",
+    "verification_required": [
+      "确认添加的头文件在编译环境中存在",
+      "验证 Arkweb 特定功能在新的头文件包含下正常工作"
+    ],
+    "final_result": "所有 hunks 都已成功解决，严格遵守了不添加上下文的黄金法则，只添加了 + 开头的行，保持了 .rej 文件的完整性"
+  }
+}

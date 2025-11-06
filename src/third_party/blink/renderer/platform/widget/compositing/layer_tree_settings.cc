@@ -34,6 +34,8 @@
 #include "ui/native_theme/native_theme_utils.h"
 #include "ui/native_theme/overlay_scrollbar_constants.h"
 
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/widget/compositing/layer_tree_settings_utils.h"
+
 namespace blink {
 
 namespace {
@@ -172,7 +174,7 @@ cc::ManagedMemoryPolicy GetGpuMemoryPolicy(
     return actual;
   }
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_PERFORMANCE_MEMORY_THRESHOLD)
   if (base::SysInfo::IsLowEndDevice() ||
       base::SysInfo::AmountOfPhysicalMemory().InMiB() < 2000) {
     actual.bytes_limit_when_visible = 96 * 1024 * 1024;
@@ -212,6 +214,10 @@ cc::ManagedMemoryPolicy GetGpuMemoryPolicy(
 
   actual.bytes_limit_when_visible = mb_limit_when_visible * 1024 * 1024;
 #endif
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  SetMaxVisibleBytes(actual);
+#endif
+
   return actual;
 }
 
@@ -241,7 +247,7 @@ cc::LayerTreeSettings GenerateLayerTreeSettings(
   settings.enable_checker_imaging =
       !cmd.HasSwitch(::switches::kDisableCheckerImaging) && is_threaded;
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_FLING)
   // We can use a more aggressive limit on Android since decodes tend to take
   // longer on these devices.
   settings.min_image_bytes_to_checker = 512 * 1024;  // 512kB
@@ -480,6 +486,17 @@ cc::LayerTreeSettings GenerateLayerTreeSettings(
     // raster-on-demand, and use 50% of the memory otherwise.
     settings.max_memory_for_prepaint_percentage = 50;
   }
+#if BUILDFLAG(ARKWEB_SCROLL_PERFORMANCE)
+  ConfigureOverlayScrollbarSettings(settings);
+#endif  // BUILDFLAG(ARKWEB_SCROLL_PERFORMANCE)
+
+#elif BUILDFLAG(ARKWEB_FLING)
+  bool using_low_memory_policy =
+      base::SysInfo::IsLowEndDevice() && !IsSmallScreen(screen_size);
+  AdjustGraphicsSettings(screen_size, settings, using_low_memory_policy);
+#if BUILDFLAG(IS_ARKWEB_EXT)
+  SetEnableDeleteUnusedResourcesDelay(settings);
+#endif
 
 #else   // BUILDFLAG(IS_ANDROID)
   const bool using_low_memory_policy = base::SysInfo::IsLowEndDevice();

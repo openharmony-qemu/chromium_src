@@ -176,10 +176,9 @@ TEST_F(PDFEditImgTest, GetSetImageMatrix) {
 }
 
 TEST_F(PDFEditImgTest, Bug2132) {
-  static constexpr int kExpectedWidth = 200;
-  static constexpr int kExpectedHeight = 300;
-  static constexpr char kExpectedChecksum[] =
-      "617b1d57c30c516beee86e0781ff7810";
+  constexpr int kExpectedWidth = 200;
+  constexpr int kExpectedHeight = 300;
+  constexpr char kExpectedChecksum[] = "617b1d57c30c516beee86e0781ff7810";
 
   ASSERT_TRUE(OpenDocument("bug_2132.pdf"));
   ScopedPage page = LoadScopedPage(0);
@@ -224,10 +223,9 @@ TEST_F(PDFEditImgTest, Bug2132) {
 }
 
 TEST_F(PDFEditImgTest, GetAndSetMatrixForFormWithImage) {
-  static constexpr int kExpectedWidth = 200;
-  static constexpr int kExpectedHeight = 300;
-  static constexpr char kExpectedChecksum[] =
-      "fcb9007fd901d2052e2bd1c147b82800";
+  constexpr int kExpectedWidth = 200;
+  constexpr int kExpectedHeight = 300;
+  constexpr char kExpectedChecksum[] = "fcb9007fd901d2052e2bd1c147b82800";
 
   ASSERT_TRUE(OpenDocument("form_object_with_image.pdf"));
   ScopedPage page = LoadScopedPage(0);

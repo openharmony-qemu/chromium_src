@@ -566,6 +566,10 @@ class CORE_EXPORT Page final : public GarbageCollected<Page>,
   void SetCanvasNoiseToken(std::optional<uint64_t> canvas_noise_token);
   const std::optional<uint64_t> CanvasNoiseToken();
 
+  PageUtils* page_utils() {
+    return page_utils_.get();
+  }
+
  private:
   friend class ScopedPagePauser;
   class CloseTaskHandler;

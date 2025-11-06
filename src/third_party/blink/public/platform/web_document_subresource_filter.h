@@ -5,8 +5,13 @@
 #ifndef THIRD_PARTY_BLINK_PUBLIC_PLATFORM_WEB_DOCUMENT_SUBRESOURCE_FILTER_H_
 #define THIRD_PARTY_BLINK_PUBLIC_PLATFORM_WEB_DOCUMENT_SUBRESOURCE_FILTER_H_
 
+#include "arkweb/build/features/features.h"
 #include "components/subresource_filter/core/common/scoped_rule.h"
 #include "third_party/blink/public/mojom/fetch/fetch_api_request.mojom-shared.h"
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "url/origin.h"
+#endif
 
 namespace blink {
 

@@ -1,0 +1,46 @@
+{
+  "conflict_file": "third_party/pdfium/xfa/fxfa/cxfa_textlayout.cpp.rej",
+  "source_file": "third_party/pdfium/xfa/fxfa/cxfa_textlayout.cpp",
+  "analysis_time": "2025-11-05",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "preserved",
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "target_line": 181,
+      "description": "将 NOTREACHED() 宏替换为 NOTREACHED_NORETURN()",
+      "removed_lines": [
+        "NOTREACHED();"
+      ],
+      "added_lines": [
+        "NOTREACHED_NORETURN();"
+      ],
+      "risk_assessment": "低风险 - 这是一个标准的宏替换，NOTREACHED_NORETURN() 是 Chromium 中推荐的 noreturn 版本，用于标记不应该到达的代码路径。",
+      "conflict_reason": "Chromium 141 中更新了断言宏的使用规范，要求使用 noreturn 版本的宏来提供更好的编译器优化和静态分析支持。",
+      "analysis_process": "1. 解析 hunk 识别出需要删除 NOTREACHED() 并添加 NOTREACHED_NORETURN()\n2. 在源文件第195行找到了匹配的 NOTREACHED() 调用\n3. 确认上下文匹配：default 分支中的断言调用\n4. 精确执行原子化替换操作",
+      "confidence": "高置信度 - 代码上下文完全匹配，变量名差异（m_pBreak vs break_）是代码重构的正常结果",
+      "resolution_strategy": "直接应用 - 将第195行的 NOTREACHED() 替换为 NOTREACHED_NORETURN()",
+      "status": "已解决",
+      "final_verification": "修改已成功应用，源文件第195行现在使用 NOTREACHED_NORETURN() 宏"
+    }
+  ],
+  "summary": {
+    "modification_type": "宏替换优化",
+    "compatibility_impact": "无 - 这是向后兼容的改进",
+    "build_impact": "正面 - 提供更好的编译器优化机会",
+    "recommendations": [
+      "建议验证编译过程中 NOTREACHED_NORETURN() 宏的定义是否正确",
+      "确认相关头文件包含是否完整"
+    ]
+  },
+  "compliance_check": {
+    "no_context_lines_added": true,
+    "no_script_files_created": true,
+    "no_auxiliary_files_created": true,
+    "rej_file_unmodified": true,
+    "modifications_restricted_to_plus_minus_lines": true,
+    "report_location_valid": true
+  }
+}

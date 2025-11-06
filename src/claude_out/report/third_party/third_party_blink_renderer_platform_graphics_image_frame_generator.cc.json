@@ -1,0 +1,68 @@
+{
+  "file": "third_party/blink/renderer/platform/graphics/image_frame_generator.cc",
+  "analysis": {
+    "total_hunks": 3,
+    "resolved_hunks": 3,
+    "unresolved_hunks": 0,
+    "rej_file_integrity": "preserved",
+    "confidence": "high"
+  },
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "lines": "3-15",
+      "risk_level": "low",
+      "conflict_reason": "需要添加Arkweb特性和日志头文件",
+      "analysis_process": "在include部分添加两个新的头文件引用：arkweb/build/features/features.h 和 base/logging.h。这些是标准C++头文件，不涉及复杂的代码逻辑变更。",
+      "modification_confidence": "100%",
+      "resolution_strategy": "在第32行base/synchronization/lock.h之前添加两个include语句",
+      "status": "已解决",
+      "changes_made": [
+        "在第32行添加: #include \"arkweb/build/features/features.h\"",
+        "在第33行添加: #include \"base/logging.h\""
+      ]
+    },
+    {
+      "hunk_number": 2,
+      "lines": "16-31",
+      "risk_level": "medium",
+      "conflict_reason": "需要在ImageDecoderWrapper构造函数调用中为aux_image_参数添加条件编译",
+      "analysis_process": "在DecodeAndScale方法的ImageDecoderWrapper构造函数调用中，将aux_image_参数用#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)条件编译包围。这是Arkweb项目对HEIF图片支持的条件编译控制。",
+      "modification_confidence": "95%",
+      "resolution_strategy": "在ImageDecoderWrapper构造函数调用中添加条件编译指令包围aux_image_参数",
+      "status": "已解决",
+      "changes_made": [
+        "在第148-150行添加条件编译指令包围aux_image_参数"
+      ]
+    },
+    {
+      "hunk_number": 3,
+      "lines": "32-47",
+      "risk_level": "medium",
+      "conflict_reason": "需要在GetYUVAInfo方法的ImageDecoder::Create调用中为aux_image_参数添加条件编译",
+      "analysis_process": "在GetYUVAInfo方法的ImageDecoder::Create调用中，将aux_image_参数用相同的条件编译包围。保持与第二个hunk相同的条件编译逻辑。",
+      "modification_confidence": "95%",
+      "resolution_strategy": "在ImageDecoder::Create调用中添加条件编译指令包围aux_image_参数",
+      "status": "已解决",
+      "changes_made": [
+        "在第292-294行添加条件编译指令包围aux_image_参数"
+      ]
+    }
+  ],
+  "summary": {
+    "total_modifications": 5,
+    "added_lines": 4,
+    "removed_lines": 0,
+    "conditional_compilation_sections": 2,
+    "risk_assessment": "低风险修改，主要是添加头文件和条件编译指令，不改变核心逻辑",
+    "arkweb_specific_changes": "添加了ARKWEB_HEIF_SUPPORT特性的条件编译控制，这是Arkweb项目的特色功能",
+    "validation_required": "需要确认arkweb/build/features/features.h文件存在且定义了ARKWEB_HEIF_SUPPORT宏"
+  },
+  "compliance_check": {
+    "no_context_lines_added": true,
+    "no_script_files_created": true,
+    "rej_file_untouched": true,
+    "only_specified_directory_used": true,
+    "golden_rule_compliance": "完全符合"
+  }
+}

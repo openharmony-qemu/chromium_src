@@ -328,6 +328,9 @@ fuzzer_test("sequence_manager_fuzzer") {
     "//third_party/blink/renderer/platform:blink_fuzzer_test_support",
     "//third_party/blink/renderer/platform:test_support",
     "//third_party/libprotobuf-mutator",
+    "//cef:libcef_static",
+    "//ohos_nweb:cef_nweb",
+    "//ohos_nweb:nweb_sources",
   ]
 }
 

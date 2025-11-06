@@ -74,6 +74,9 @@ class CORE_EXPORT StyleCascade {
   struct FunctionContext;
 
  public:
+#if BUILDFLAG(IS_ARKWEB)
+  friend class StyleCascadeUtil;
+#endif
   StyleCascade(StyleResolverState& state) : state_(state) {}
   StyleCascade(const StyleCascade&) = delete;
   StyleCascade& operator=(const StyleCascade&) = delete;

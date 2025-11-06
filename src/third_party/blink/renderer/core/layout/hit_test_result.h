@@ -24,6 +24,7 @@
 
 #include <tuple>
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/renderer/core/core_export.h"
 #include "third_party/blink/renderer/core/editing/forward.h"
 #include "third_party/blink/renderer/core/layout/geometry/physical_rect.h"
@@ -58,9 +59,16 @@ class PhysicalBoxFragment;
 class ScrollableArea;
 class Scrollbar;
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+class HitTestResultUtils;
+#endif
 class CORE_EXPORT HitTestResult {
   DISALLOW_NEW();
 
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  friend class HitTestResultUtils;
+  std::unique_ptr<HitTestResultUtils> imp_utils_ = nullptr;
+#endif
  public:
   using NodeSet = GCedHeapLinkedHashSet<Member<Node>>;
 

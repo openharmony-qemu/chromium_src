@@ -40,6 +40,7 @@
 #include <limits>
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/compiler_specific.h"
 #include "base/logging.h"
 #include "base/memory/raw_ptr.h"

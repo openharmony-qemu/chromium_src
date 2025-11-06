@@ -49,6 +49,12 @@
 #include "third_party/blink/renderer/platform/instrumentation/use_counter.h"
 #include "ui/gfx/geometry/size_conversions.h"
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+#include "base/logging.h"
+#include "third_party/blink/renderer/core/html/html_plugin_element.h"
+#endif  // BUILDFLAG(ARKWEB_SAME_LAYER)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/html/html_plugin_element_utils.h"
+
 namespace blink {
 
 LayoutImage::LayoutImage(Element* element) : LayoutReplaced(element) {}

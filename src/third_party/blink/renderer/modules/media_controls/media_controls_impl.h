@@ -153,6 +153,11 @@ class MODULES_EXPORT MediaControlsImpl final : public HTMLDivElement,
   // Methods related to the playback speed menu.
   void TogglePlaybackSpeedList();
   bool PlaybackSpeedListIsWanted();
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  bool PictureInPictureButtonIsWanted() const;
+  bool DownloadButtonIsWanted() const;
+  bool ShouldShowVideoControlsHM() const;
+#endif
 
   // Methods related to the track selection menu.
   void ToggleTrackSelectionList(WebMediaPlayer::TrackType);

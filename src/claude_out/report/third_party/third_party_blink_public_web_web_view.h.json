@@ -1,0 +1,67 @@
+{
+  "文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/blink/public/web/web_view.h",
+  "冲突文件": "/home/sujiahao/code/arkweb_141/src/third_party/blink/public/web/web_view.h.rej",
+  "总hunk数量": 5,
+  "成功解决的hunk数量": 5,
+  "未能解决的hunk数量": 0,
+  ".rej文件保持完整未被修改": true,
+  "hunks处理详情": [
+    {
+      "hunk序号": 1,
+      "描述": "添加arkweb功能特性头文件引用",
+      "风险等级": "低",
+      "冲突原因": "Arkweb132在文件头部添加了arkweb/build/features/features.h头文件引用，在Chromium141中该引用缺失",
+      "分析过程": "通过分析.rej文件第9行，发现需要添加#include \"arkweb/build/features/features.h\"。在源文件中找到对应位置（#include <optional>之后），成功添加该头文件引用。",
+      "修改置信度": "高",
+      "处理策略": "已解决",
+      "具体操作": "在第35行后添加了#include \"arkweb/build/features/features.h\""
+    },
+    {
+      "hunk序号": 2,
+      "描述": "添加页面滚动和输入事件相关方法",
+      "风险等级": "中",
+      "冲突原因": "Arkweb132添加了页面滚动相关的虚拟方法，包括GetScrollOffset、GetScrollBottom和SetScrollOffset方法，这些方法在Chromium141中不存在",
+      "分析过程": "分析.rej文件第21-28行，发现需要添加三个条件编译块：ARKWEB_PAGE_UP_DOWN功能块（GetScrollOffset和GetScrollBottom方法）和ARKWEB_INPUT_EVENTS功能块（SetScrollOffset方法）。在源文件的IsFencedFrameRoot方法后成功定位并添加这些方法。",
+      "修改置信度": "高",
+      "处理策略": "已解决",
+      "具体操作": "在第476行后添加了ARKWEB_PAGE_UP_DOWN和ARKWEB_INPUT_EVENTS条件编译块，包含相应的虚拟方法声明"
+    },
+    {
+      "hunk序号": 3,
+      "描述": "添加同步渲染相关方法",
+      "风险等级": "低",
+      "冲突原因": "Arkweb132添加了UpdateDrawRect方法用于同步渲染功能，在Chromium141中该方法缺失",
+      "分析过程": "分析.rej文件第35-37行，发现需要添加ARKWEB_SYNC_RENDER条件编译块，包含UpdateDrawRect方法。在源文件的SetSupportsDraggableRegions方法后成功定位并添加该方法。",
+      "修改置信度": "高",
+      "处理策略": "已解决",
+      "具体操作": "在第490行后添加了ARKWEB_SYNC_RENDER条件编译块，包含UpdateDrawRect方法声明"
+    },
+    {
+      "hunk序号": 4,
+      "描述": "添加日志报告相关方法",
+      "风险等级": "低",
+      "冲突原因": "Arkweb132添加了严格日志模式相关的静态方法，在Chromium141中这些方法不存在",
+      "分析过程": "分析.rej文件第44-47行，发现需要添加ARKWEB_LOGGER_REPORT条件编译块，包含SetStrictLogMode和IsStrictLogMode静态方法。在源文件的GetWebViewCount静态方法后成功定位并添加这些方法。",
+      "修改置信度": "高",
+      "处理策略": "已解决",
+      "具体操作": "在第499行后添加了ARKWEB_LOGGER_REPORT条件编译块，包含SetStrictLogMode和IsStrictLogMode静态方法声明"
+    },
+    {
+      "hunk序号": 5,
+      "描述": "添加广告拦截相关方法",
+      "风险等级": "中",
+      "冲突原因": "Arkweb132添加了广告拦截功能相关的虚拟方法，在Chromium141中这些方法缺失",
+      "分析过程": "分析.rej文件第54-57行，发现需要添加ARKWEB_ADBLOCK条件编译块，包含OnSetAdBlockEnable和GetAdBlockEnableForSite虚拟方法。在源文件的SetPageAttributionSupport方法后成功定位并添加这些方法。",
+      "修改置信度": "高",
+      "处理策略": "已解决",
+      "具体操作": "在第509行后添加了ARKWEB_ADBLOCK条件编译块，包含OnSetAdBlockEnable和GetAdBlockEnableForSite虚拟方法声明"
+    }
+  ],
+  "处理总结": "所有5个hunks都已成功应用到Arkweb141源文件中。每个hunk都通过精确定位找到了合适的插入位置，并严格遵循了只添加+行、删除-行的原则，没有添加任何上下文行。所有修改都保持了原有的代码结构和条件编译格式。",
+  "验证状态": {
+    "所有hunks已应用": true,
+    ".rej文件完整": true,
+    "源文件修改正确": true,
+    "无语法错误": true
+  }
+}

@@ -63,14 +63,16 @@ crashpad_static_library("client") {
     }
   }
 
-  if (crashpad_is_linux || crashpad_is_android) {
+  if (crashpad_is_linux || crashpad_is_android || crashpad_is_ohos) {
     sources += [
       "crashpad_client_linux.cc",
       "simulate_crash_linux.h",
     ]
+
+    sources += arkweb_crashpad_client
   }
 
-  if (crashpad_is_linux || crashpad_is_android || crashpad_is_fuchsia) {
+  if (crashpad_is_linux || crashpad_is_android || crashpad_is_fuchsia || crashpad_is_ohos) {
     sources += [
       "client_argv_handling.cc",
       "client_argv_handling.h",

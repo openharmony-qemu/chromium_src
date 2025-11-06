@@ -23,6 +23,7 @@
 
 #include <stdint.h>
 
+#include "arkweb/build/features/features.h"
 #include "base/files/file_path.h"
 #include "build/build_config.h"
 #include "util/file/file_io.h"

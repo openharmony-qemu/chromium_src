@@ -33,6 +33,7 @@
 #include "third_party/blink/renderer/platform/media/url_index.h"
 #include "third_party/blink/renderer/platform/media/video_frame_compositor.h"
 #include "third_party/blink/renderer/platform/media/web_media_player_impl.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/media/web_media_player_impl_ext.h"
 
 namespace blink {
 
@@ -103,7 +104,7 @@ std::unique_ptr<WebMediaPlayer> WebMediaPlayerBuilder::Build(
            frame);
   auto video_frame_compositor = std::make_unique<VideoFrameCompositor>(
       video_frame_compositor_task_runner, std::move(video_frame_submitter));
-  return std::make_unique<WebMediaPlayerImpl>(
+  return std::make_unique<WebMediaPlayerImplExt>(
       frame, static_cast<MediaPlayerClient*>(client), encrypted_client,
       delegate, std::move(factory_selector), url_index_.get(),
       std::move(video_frame_compositor), std::move(media_log), player_id,

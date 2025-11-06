@@ -242,6 +242,11 @@ class CORE_EXPORT LayoutBox : public LayoutBoxModelObject {
     return FirstLineHeight();
   }
 
+  virtual LayoutPoint Location() const {
+    NOT_DESTROYED();
+    return frame_location_;
+  }
+
   // Return the size of all fragments stitched together in the block direction.
   //
   // <div style="columns:2; column-fill:auto; height:100px;">

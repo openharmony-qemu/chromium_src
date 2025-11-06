@@ -10,6 +10,7 @@
 #include <set>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/span.h"
 #include "base/functional/callback.h"
 #include "base/i18n/rtl.h"

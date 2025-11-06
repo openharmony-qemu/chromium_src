@@ -4,6 +4,7 @@
 
 #include "third_party/blink/renderer/modules/webcodecs/image_decoder_core.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "base/logging.h"
 #include "base/metrics/histogram_functions.h"

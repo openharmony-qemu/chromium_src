@@ -15,6 +15,7 @@
 #include <optional>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/bits.h"
 #include "base/compiler_specific.h"
 #include "base/containers/adapters.h"

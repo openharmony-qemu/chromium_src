@@ -1,0 +1,36 @@
+{
+  "file": "third_party/blink/renderer/core/page/context_menu_controller.h",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "maintained",
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "status": "已解决",
+      "risk_level": "低",
+      "conflict_cause": "Arkweb扩展需要添加条件编译代码和修改类继承结构",
+      "analysis_process": "分析.rej文件发现需要添加Arkweb特性的条件编译代码，包括包含头文件、前向声明、友元类声明和虚函数，同时需要移除类的final关键字以支持继承",
+      "modification_confidence": "高",
+      "resolution_strategy": "原子化应用所有修改：1)在开头添加arkweb/features.h包含 2)在类声明前添加ContextMenuControllerExt前向声明 3)移除类定义中的final关键字 4)在Trace函数后添加友元类和虚函数声明",
+      "applied_changes": [
+        {"line": 29, "action": "添加", "content": "#include \"arkweb/build/features/features.h\""},
+        {"line": 47, "action": "添加", "content": "#if BUILDFLAG(IS_ARKWEB)"},
+        {"line": 48, "action": "添加", "content": "class ContextMenuControllerExt;"},
+        {"line": 49, "action": "添加", "content": "#endif"},
+        {"line": 51, "action": "修改", "content": "移除final关键字"},
+        {"line": 61, "action": "添加", "content": "#if BUILDFLAG(IS_ARKWEB)"},
+        {"line": 62, "action": "添加", "content": "friend class ContextMenuControllerExt;"},
+        {"line": 63, "action": "添加", "content": "virtual ContextMenuControllerExt* AsContextMenuControllerExt() { return nullptr; }"},
+        {"line": 64, "action": "添加", "content": "#endif"}
+      ]
+    }
+  ],
+  "summary": {
+    "success_rate": "100%",
+    "total_modifications": 8,
+    "added_lines": 7,
+    "removed_keywords": 1,
+    "final_status": "所有修改已成功应用到源文件，.rej文件保持完整未被修改"
+  }
+}

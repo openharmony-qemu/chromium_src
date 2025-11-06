@@ -1,0 +1,238 @@
+{
+  "file_path": "third_party/pdfium/core/fpdfapi/parser/cpdf_object_unittest.cpp",
+  "analysis_timestamp": "2025-11-05T00:00:00Z",
+  "summary": {
+    "total_hunks": 20,
+    "resolved_hunks": 20,
+    "unresolved_hunks": 0,
+    "resolution_rate": "100%",
+    "rej_file_integrity": "maintained"
+  },
+  "conflict_analysis": {
+    "root_cause": "C++代码风格升级：从Chromium 132到141版本，移除static constexpr中的static关键字",
+    "modification_type": "代码现代化改进",
+    "risk_assessment": "低风险 - 纯语法优化，不影响功能逻辑"
+  },
+  "hunks_details": [
+    {
+      "hunk_id": 1,
+      "lines": "9-10",
+      "test_function": "PDFObjectsTest.GetString",
+      "change": "static constexpr auto direct_obj_results → constexpr auto direct_obj_results",
+      "context": "直接对象测试结果数组",
+      "resolution_status": "已解决",
+      "confidence": "高",
+      "risk_level": "极低"
+    },
+    {
+      "hunk_id": 2,
+      "lines": "19-20",
+      "test_function": "PDFObjectsTest.GetString",
+      "change": "static constexpr auto indirect_obj_results → constexpr auto indirect_obj_results",
+      "context": "间接引用对象测试结果数组",
+      "resolution_status": "已解决",
+      "confidence": "高",
+      "risk_level": "极低"
+    },
+    {
+      "hunk_id": 3,
+      "lines": "28-29",
+      "test_function": "PDFObjectsTest.GetUnicodeText",
+      "change": "static constexpr auto direct_obj_results → constexpr auto direct_obj_results",
+      "context": "Unicode文本测试结果数组",
+      "resolution_status": "已解决",
+      "confidence": "高",
+      "risk_level": "极低"
+    },
+    {
+      "hunk_id": 4,
+      "lines": "41-42",
+      "test_function": "PDFObjectsTest.GetNumber",
+      "change": "static constexpr auto direct_obj_results → constexpr auto direct_obj_results",
+      "context": "数字测试结果数组",
+      "resolution_status": "已解决",
+      "confidence": "高",
+      "risk_level": "极低"
+    },
+    {
+      "hunk_id": 5,
+      "lines": "50-51",
+      "test_function": "PDFObjectsTest.GetNumber",
+      "change": "static constexpr auto indirect_obj_results → constexpr auto indirect_obj_results",
+      "context": "间接引用数字测试结果数组",
+      "resolution_status": "已解决",
+      "confidence": "高",
+      "risk_level": "极低"
+    },
+    {
+      "hunk_id": 6,
+      "lines": "58-59",
+      "test_function": "PDFObjectsTest.GetInteger",
+      "change": "static constexpr auto direct_obj_results → constexpr auto direct_obj_results",
+      "context": "整数测试结果数组",
+      "resolution_status": "已解决",
+      "confidence": "高",
+      "risk_level": "极低"
+    },
+    {
+      "hunk_id": 7,
+      "lines": "67-68",
+      "test_function": "PDFObjectsTest.GetInteger",
+      "change": "static constexpr auto indirect_obj_results → constexpr auto indirect_obj_results",
+      "context": "间接引用整数测试结果数组",
+      "resolution_status": "已解决",
+      "confidence": "高",
+      "risk_level": "极低"
+    },
+    {
+      "hunk_id": 8,
+      "lines": "80-81",
+      "test_function": "PDFObjectsTest.SetString",
+      "change": "static constexpr auto set_values → constexpr auto set_values",
+      "context": "字符串设置测试值数组",
+      "resolution_status": "已解决",
+      "confidence": "高",
+      "risk_level": "极低"
+    },
+    {
+      "hunk_id": 9,
+      "lines": "83-84",
+      "test_function": "PDFObjectsTest.SetString",
+      "change": "static constexpr auto expected → constexpr auto expected",
+      "context": "字符串设置期望结果数组",
+      "resolution_status": "已解决",
+      "confidence": "高",
+      "risk_level": "极低"
+    },
+    {
+      "hunk_id": 10,
+      "lines": "96-97",
+      "test_function": "PDFArrayTest.GetMatrix",
+      "change": "static constexpr auto elems → constexpr auto elems",
+      "context": "矩阵测试元素数组",
+      "resolution_status": "已解决",
+      "confidence": "高",
+      "risk_level": "极低"
+    },
+    {
+      "hunk_id": 11,
+      "lines": "109-110",
+      "test_function": "PDFArrayTest.GetRect",
+      "change": "static constexpr auto elems → constexpr auto elems",
+      "context": "矩形测试元素数组",
+      "resolution_status": "已解决",
+      "confidence": "高",
+      "risk_level": "极低"
+    },
+    {
+      "hunk_id": 12,
+      "lines": "122-123",
+      "test_function": "PDFArrayTest.GetTypeAt",
+      "change": "static constexpr auto vals → constexpr auto vals",
+      "context": "布尔数组测试值",
+      "resolution_status": "已解决",
+      "confidence": "高",
+      "risk_level": "极低"
+    },
+    {
+      "hunk_id": 13,
+      "lines": "135-136",
+      "test_function": "PDFArrayTest.GetTypeAt",
+      "change": "static constexpr auto vals → constexpr auto vals",
+      "context": "整数数组测试值",
+      "resolution_status": "已解决",
+      "confidence": "高",
+      "risk_level": "极低"
+    },
+    {
+      "hunk_id": 14,
+      "lines": "148-149",
+      "test_function": "PDFArrayTest.GetTypeAt",
+      "change": "static constexpr auto vals → constexpr auto vals",
+      "context": "浮点数数组测试值",
+      "resolution_status": "已解决",
+      "confidence": "高",
+      "risk_level": "极低"
+    },
+    {
+      "hunk_id": 15,
+      "lines": "155-156",
+      "test_function": "PDFArrayTest.GetTypeAt",
+      "change": "static constexpr auto expected_str → constexpr auto expected_str",
+      "context": "期望字符串测试结果",
+      "resolution_status": "已解决",
+      "confidence": "高",
+      "risk_level": "极低"
+    },
+    {
+      "hunk_id": 16,
+      "lines": "168-169",
+      "test_function": "PDFArrayTest.GetTypeAt",
+      "change": "static constexpr auto vals → constexpr auto vals",
+      "context": "字符串和名称数组测试值",
+      "resolution_status": "已解决",
+      "confidence": "高",
+      "risk_level": "极低"
+    },
+    {
+      "hunk_id": 17,
+      "lines": "181-182",
+      "test_function": "PDFArrayTest.GetTypeAt",
+      "change": "static constexpr auto expected_str → constexpr auto expected_str",
+      "context": "混合数组期望字符串结果",
+      "resolution_status": "已解决",
+      "confidence": "高",
+      "risk_level": "极低"
+    },
+    {
+      "hunk_id": 18,
+      "lines": "185-186",
+      "test_function": "PDFArrayTest.GetTypeAt",
+      "change": "static constexpr auto expected_int → constexpr auto expected_int, static constexpr auto expected_float → constexpr auto expected_float",
+      "context": "混合数组期望整数和浮点数结果",
+      "resolution_status": "已解决",
+      "confidence": "高",
+      "risk_level": "极低"
+    },
+    {
+      "hunk_id": 19,
+      "lines": "201-202",
+      "test_function": "PDFArrayTest.AddNumber",
+      "change": "static constexpr auto vals → constexpr auto vals",
+      "context": "添加数字测试值数组",
+      "resolution_status": "已解决",
+      "confidence": "高",
+      "risk_level": "极低"
+    },
+    {
+      "hunk_id": 20,
+      "lines": "214-215",
+      "test_function": "PDFArrayTest.AddInteger",
+      "change": "static constexpr auto vals → constexpr auto vals",
+      "context": "添加整数测试值数组",
+      "resolution_status": "已解决",
+      "confidence": "高",
+      "risk_level": "极低"
+    }
+  ],
+  "technical_analysis": {
+    "code_impact": "所有修改均为编译器优化相关，不影响运行时行为",
+    "compatibility": "符合C++14/17标准，向前兼容",
+    "compilation_impact": "可能轻微改善编译时间和内存使用",
+    "test_coverage": "涉及所有PDF对象类型的单元测试",
+    "maintainability": "代码风格现代化，提高可维护性"
+  },
+  "validation_results": {
+    "rej_file_preserved": true,
+    "all_modifications_applied": true,
+    "no_context_corruption": true,
+    "syntax_integrity": "maintained",
+    "test_structure_preserved": true
+  },
+  "conclusion": {
+    "status": "冲突完全解决",
+    "overall_risk": "极低",
+    "recommendation": "建议运行测试套件验证修改正确性",
+    "next_steps": "继续处理其他冲突文件"
+  }
+}

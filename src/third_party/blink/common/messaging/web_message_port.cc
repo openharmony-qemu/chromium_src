@@ -259,6 +259,12 @@ bool WebMessagePort::Accept(mojo::Message* mojo_message) {
   auto ports = std::move(transferable_message.ports);
   // Decode the string portion of the message.
   Message message;
+#if BUILDFLAG(ARKWEB_MSGPORT)
+  if (!blink::DecodeToWebMessagePayload(transferable_message, message)) {
+    LOG(ERROR) << "WebMessagePort::Accept DecodeToWebMessagePayload failed";
+    return true;
+  }
+#else
   std::optional<WebMessagePayload> optional_payload =
       blink::DecodeToWebMessagePayload(std::move(transferable_message));
   if (!optional_payload)
@@ -269,6 +275,7 @@ bool WebMessagePort::Accept(mojo::Message* mojo_message) {
   } else {
     return false;
   }
+#endif
 
   // Convert raw handles to MessagePorts.
   // TODO(chrisha): Kill off MessagePortChannel entirely!

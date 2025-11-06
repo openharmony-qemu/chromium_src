@@ -31,9 +31,17 @@
 #include "third_party/blink/renderer/core/paint/paint_layer.h"
 #include "third_party/blink/renderer/core/paint/video_painter.h"
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/layout/layout_video_for_include.cc"
+#endif
+
 namespace blink {
 
-LayoutVideo::LayoutVideo(HTMLVideoElement* video) : LayoutMedia(video) {}
+LayoutVideo::LayoutVideo(HTMLVideoElement* video) : LayoutMedia(video) {
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  MediaElement()->html_media_element_utils_.NotifyVideoVisible(true);
+#endif  // ARKWEB_VIDEO_ASSISTANT
+}
 
 LayoutVideo::~LayoutVideo() = default;
 
@@ -180,6 +188,16 @@ PhysicalRect LayoutVideo::ReplacedContentRectFrom(
   PhysicalRect replaced_content_rect =
       LayoutMedia::ReplacedContentRectFrom(base_content_rect);
   if (GetDisplayMode() == kVideo) {
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+    if (const auto* player = MediaElement()->GetWebMediaPlayer()) {
+      if (player->IsUsingCustomRenderer()) {
+        auto base_content_size = base_content_rect.size;
+
+        return PreSnappedRectForPersistentSizing(
+            ComputeReplacedContentRect(base_content_rect, &base_content_size));
+      }
+    }
+#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
     // Video codecs may need to restart from an I-frame when the output is
     // resized. Round size in advance to avoid 1px snap difference.
     replaced_content_rect =

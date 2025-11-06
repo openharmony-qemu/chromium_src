@@ -48,6 +48,13 @@ class CORE_EXPORT HTMLEmbedElement final : public HTMLPlugInElement {
     return FrameOwnerElementType::kEmbed;
   }
 
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  bool IsNativeType() const override {
+    return Utils()->CheckNativeType(web_pref::kEmbedTag);
+  }
+  void NativeEmbedOverlay(const AttributeModificationParams& params);
+#endif
+
   const V8UnionTrustedScriptURLOrUSVString* src();
   void setSrc(const V8UnionTrustedScriptURLOrUSVString*, ExceptionState&);
 

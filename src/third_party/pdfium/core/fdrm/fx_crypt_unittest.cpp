@@ -115,7 +115,7 @@ TEST(FXCRYPT, ContextWithLongData) {
   pdfium::span<const uint8_t> data_span = pdfium::span(data);
   uint32_t total = 0;
   while (total < length) {
-    static constexpr uint32_t kChunkLen = 4097;  // intentionally not 2^k.
+    constexpr uint32_t kChunkLen = 4097;  // intentionally not 2^k.
     uint32_t len = std::min(kChunkLen, length - total);
     CRYPT_MD5Update(&ctx, data_span.subspan(total, len));
     total += len;

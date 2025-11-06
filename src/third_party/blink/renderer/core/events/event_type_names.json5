@@ -380,6 +380,7 @@
     "writeend",
     "writestart",
     "zoom",
+    "videofreeze",
     "zoomlevelchange",
   ],
 }

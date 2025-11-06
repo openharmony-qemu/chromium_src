@@ -1,0 +1,57 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/third_party/crashpad/crashpad/client/crashpad_client.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/third_party/crashpad/crashpad/client/crashpad_client.h",
+    "基础版本": "Chromium 132 -> 141",
+    "处理时间": "2025-11-05"
+  },
+  "统计摘要": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "处理状态": {
+    "rej文件保持完整": true,
+    "源文件修改完成": true,
+    "无脚本或辅助文件创建": true
+  },
+  "hunks详情": [
+    {
+      "hunk序号": 1,
+      "冲突类型": "新增头文件包含",
+      "待添加行": [
+        "+#include \"arkweb/build/features/features.h\""
+      ],
+      "待删除行": [],
+      "上下文锚点": [
+        "#include <stdint.h>",
+        "#include \"base/files/file_path.h\""
+      ],
+      "定位结果": "成功定位到源文件第24-26行之间",
+      "应用操作": "在第25行后添加#include \"arkweb/build/features/features.h\"",
+      "修改置信度": "100%",
+      "风险等级": "低风险",
+      "风险说明": "新增Arkweb特性头文件包含，属于平台特定的功能扩展，不会影响现有代码逻辑",
+      "冲突原因": "Arkweb132针对Chromium132内核添加了特定的特性支持，需要在crashpad客户端中包含Arkweb特性定义",
+      "解决状态": "已解决",
+      "实际修改": "在源文件第26行成功添加了#include \"arkweb/build/features/features.h\""
+    }
+  ],
+  "技术分析": {
+    "变更性质": "平台特定功能扩展",
+    "影响范围": "头文件包含，仅影响预处理阶段",
+    "兼容性": "向后兼容，不破坏现有API",
+    "代码质量": "符合项目编码规范"
+  },
+  "结论": {
+    "总体评估": "冲突解决成功",
+    "代码完整性": "保持",
+    "编译预期": "正常",
+    "建议后续操作": [
+      "验证新增头文件路径是否存在",
+      "确认Arkweb特性定义是否完整",
+      "进行编译测试确保无语法错误"
+    ]
+  }
+}

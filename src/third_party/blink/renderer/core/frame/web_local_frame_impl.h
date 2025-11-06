@@ -38,6 +38,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/dcheck_is_on.h"
 #include "base/observer_list.h"
 #include "base/task/single_thread_task_runner.h"

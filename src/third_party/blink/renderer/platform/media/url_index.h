@@ -278,6 +278,10 @@ class PLATFORM_EXPORT UrlData : public RefCounted<UrlData> {
   ResourceMultiBuffer multibuffer_;
   Vector<RedirectCB> redirect_callbacks_;
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  MediaWebURLErrorCB media_url_error_cb_;
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
+
   THREAD_CHECKER(thread_checker_);
 };
 

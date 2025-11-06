@@ -269,7 +269,7 @@ void CJX_EventPseudoModel::Property(v8::Isolate* pIsolate,
                      bSetting);
       break;
     case XFA_Event::NewText:
-      NOTREACHED();
+      NOTREACHED_NORETURN();
     case XFA_Event::PreviousContentType:
       StringProperty(pIsolate, pValue, &pEventParam->prev_content_type_,
                      bSetting);

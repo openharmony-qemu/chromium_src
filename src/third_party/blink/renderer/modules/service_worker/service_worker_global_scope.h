@@ -812,6 +812,16 @@ class MODULES_EXPORT ServiceWorkerGlobalScope final
     String token;
     mojo::PendingRemote<network::mojom::blink::URLLoaderFactory>
         url_loader_factory;
+#if defined(__clang__) && (__clang_major__ < 17)
+    RaceNetworkRequestInfo(
+        int fetch_event_id,
+        String token,
+        mojo::PendingRemote<network::mojom::blink::URLLoaderFactory>
+            url_loader_factory)
+        : fetch_event_id(fetch_event_id),
+          token(token),
+          url_loader_factory(std::move(url_loader_factory)) {}
+#endif
   };
   // TODO(crbug.com/918702) HashMap cannot use base::UnguessableToken as a
   // key. As a workaround uses String as a key instead.

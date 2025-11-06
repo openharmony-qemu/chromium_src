@@ -4,6 +4,7 @@
 
 #include "third_party/blink/renderer/core/input/mouse_event_manager.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/metrics/histogram_functions.h"
 #include "build/build_config.h"
 #include "third_party/blink/public/platform/web_input_event_result.h"
@@ -756,6 +757,9 @@ void MouseEventManager::FocusDocumentView() {
 WebInputEventResult MouseEventManager::HandleMouseDraggedEvent(
     const MouseEventWithHitTestResults& event) {
   TRACE_EVENT0("blink", "MouseEventManager::handleMouseDraggedEvent");
+#if BUILDFLAG(ARKWEB_AI)
+  AsMouseEventManagerExt()->HandleCreateOverlayWhenDrag(event);
+#endif
 
   bool is_pen = (event.Event().pointer_type ==
                      blink::WebPointerProperties::PointerType::kPen ||

@@ -2579,6 +2579,9 @@ void LocalDOMWindow::Trace(Visitor* visitor) const {
   visitor->Trace(fence_);
   visitor->Trace(crash_report_storage_);
   visitor->Trace(closewatcher_stack_);
+#if BUILDFLAG(ARKWEB_SCROLLBAR_AVOID_AREA)
+  visitor->Trace(arkWeb_);
+#endif // ARKWEB_SCROLLBAR_AVOID_AREA
   visitor->Trace(soft_navigation_heuristics_);
   UniversalGlobalScope::Trace(visitor);
   DOMWindow::Trace(visitor);

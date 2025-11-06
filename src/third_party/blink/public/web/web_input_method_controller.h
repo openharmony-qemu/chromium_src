@@ -7,14 +7,24 @@
 
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/public/platform/web_text_input_info.h"
 #include "third_party/blink/public/web/web_range.h"
 #include "third_party/blink/public/web/web_widget.h"
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
+#endif
 #include "ui/base/ime/ime_text_span.h"
 
 namespace gfx {
 class Rect;
 }  // namespace gfx
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+namespace WTF {
+class String;
+}
+#endif
 
 namespace blink {
 

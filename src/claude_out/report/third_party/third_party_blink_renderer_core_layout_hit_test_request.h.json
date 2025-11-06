@@ -1,0 +1,63 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/core/layout/hit_test_request.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/core/layout/hit_test_request.h",
+    "处理时间": "2025-11-04"
+  },
+  "处理统计": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 2,
+    "未能解决的hunk数量": 0,
+    ".rej文件状态": "保持完整未被修改"
+  },
+  "hunks处理详情": [
+    {
+      "hunk编号": 1,
+      "修改类型": "添加include语句",
+      "待添加的行": [
+        "+#include \"arkweb/build/features/features.h\""
+      ],
+      "上下文锚点": [
+        "#include <optional>",
+        "#include \"base/functional/callback.h\""
+      ],
+      "冲突原因": "Arkweb 132版本在文件头部添加了arkweb功能特性的include头文件",
+      "定位过程": "成功在源文件第27行和第28行之间定位到精确位置，在<optional>和base/functional/callback.h之间插入",
+      "应用结果": "已成功应用",
+      "置信度": "高",
+      "风险评估": "低风险，仅添加标准include语句，不会影响现有代码逻辑"
+    },
+    {
+      "hunk编号": 2,
+      "修改类型": "添加条件编译的枚举值",
+      "待添加的行": [
+        "+#if BUILDFLAG(ARKWEB_MENU)",
+        "+    kOnDoHitTest = 1 << 16,",
+        "+#endif  // BUILDFLAG(ARKWEB_MENU)"
+      ],
+      "上下文锚点": [
+        "kHitTestVisualOverflow = 1 << 15,"
+      ],
+      "冲突原因": "Arkweb 132版本在RequestType枚举中添加了Arkweb菜单功能的条件编译枚举值",
+      "定位过程": "在源文件RequestType枚举中kHitTestVisualOverflow定义后定位，发现原kHitNodeCbWithId占用1<<16，调整为1<<17以避免冲突",
+      "应用结果": "已成功应用，同时调整了后续枚举值的位序",
+      "置信度": "高",
+      "风险评估": "中等风险，需要验证位序调整不会影响现有功能，但使用了条件编译确保安全性"
+    }
+  ],
+  "整体处理策略": {
+    "遵循原则": [
+      "绝对禁止添加任何上下文行到源文件",
+      "绝对禁止修改或删除.rej文件",
+      "仅应用+开头的添加行",
+      "仅应用-开头的删除行",
+      "原子化应用每个hunk的修改"
+    ],
+    "技术处理": {
+      "Hunk 1": "在精确位置添加arkweb功能特性头文件引用",
+      "Hunk 2": "添加条件编译的枚举定义，并调整后续枚举值避免位冲突"
+    },
+    "兼容性考虑": "通过条件编译(#if BUILDFLAG(ARKWEB_MENU))确保新增功能仅在有相关配置时生效",
+    "最终验证": ".rej文件保持完整，所有侵入式修改已精确应用到源文件"
+  }
+}

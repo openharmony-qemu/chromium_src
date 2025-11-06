@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 
+#include "arkweb/build/features/features.h"
 #include "third_party/blink/public/mojom/v8_cache_options.mojom-blink.h"
 #include "third_party/blink/renderer/bindings/core/v8/script_source_location_type.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_compile_hints_common.h"
@@ -17,6 +18,7 @@
 #include "third_party/blink/renderer/platform/wtf/forward.h"
 #include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 #include "v8/include/v8.h"
+#include "third_party/blink/renderer/platform/loader/fetch/script_cached_metadata_handler.h"
 
 namespace blink {
 

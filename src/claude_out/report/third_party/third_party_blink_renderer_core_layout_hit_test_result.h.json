@@ -1,0 +1,85 @@
+{
+  "conflict_file": "third_party/blink/renderer/core/layout/hit_test_result.h.rej",
+  "source_file": "third_party/blink/renderer/core/layout/hit_test_result.h",
+  "total_hunks": 2,
+  "resolved_hunks": 2,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "intact",
+  "analysis": {
+    "summary": "该冲突涉及Arkweb在HitTestResult类中添加的拖拽功能相关代码，包括特性头文件包含、友元类声明和成员变量定义。",
+    "hunks": [
+      {
+        "hunk_id": 1,
+        "lines": "3-15",
+        "risk_level": "低",
+        "confidence": "高",
+        "description": "添加arkweb build features头文件包含",
+        "analysis": "需要在include <tuple>后添加arkweb特性头文件。这个修改风险很低，因为只是在文件顶部添加一个包含语句，不会影响现有代码结构。",
+        "changes": [
+          {
+            "type": "addition",
+            "line": 9,
+            "content": "#include \"arkweb/build/features/features.h\""
+          }
+        ],
+        "resolution": "已成功应用修改",
+        "status": "已解决"
+      },
+      {
+        "hunk_id": 2,
+        "lines": "15-30",
+        "risk_level": "中",
+        "confidence": "高",
+        "description": "添加ARKWEB_DRAG_DROP相关的条件编译代码",
+        "analysis": "需要添加HitTestResultUtils前向声明、友元类和成员变量。这个修改涉及类内部结构的变更，但由于使用了条件编译，默认情况下不会激活，风险中等。",
+        "changes": [
+          {
+            "type": "addition",
+            "line": 21,
+            "content": "#if BUILDFLAG(ARKWEB_DRAG_DROP)"
+          },
+          {
+            "type": "addition",
+            "line": 22,
+            "content": "class HitTestResultUtils;"
+          },
+          {
+            "type": "addition",
+            "line": 23,
+            "content": "#endif"
+          },
+          {
+            "type": "addition",
+            "line": 27,
+            "content": "#if BUILDFLAG(ARKWEB_DRAG_DROP)"
+          },
+          {
+            "type": "addition",
+            "line": 28,
+            "content": "  friend class HitTestResultUtils;"
+          },
+          {
+            "type": "addition",
+            "line": 29,
+            "content": "  std::unique_ptr<HitTestResultUtils> imp_utils_ = nullptr;"
+          },
+          {
+            "type": "addition",
+            "line": 30,
+            "content": "#endif"
+          }
+        ],
+        "resolution": "已成功应用修改，包括前向声明在类定义前和友元类/成员变量在类内部",
+        "status": "已解决"
+      }
+    ],
+    "conflict_cause": "Arkweb132在Chromium132基础上添加了拖拽功能的侵入式修改，包括特性头文件包含和HitTestResult类的扩展，在升级到Chromium141时这些修改产生了冲突。",
+    "modification_strategy": "严格按照.rej文件中定义的+/-行进行修改，不添加任何上下文行。将arkweb特性头文件添加到include部分，将HitTestResultUtils相关代码通过条件编译方式集成到HitTestResult类中。",
+    "final_verification": {
+      "rej_file_unchanged": true,
+      "all_modifications_applied": true,
+      "no_context_pollution": true,
+      "compilation_risk": "低风险，所有修改都通过条件编译保护"
+    }
+  }
+}

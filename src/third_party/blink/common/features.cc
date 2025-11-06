@@ -988,6 +988,16 @@ BASE_FEATURE(GetUserMediaDeferredDeviceSettingsSelection,
              base::FEATURE_ENABLED_BY_DEFAULT);
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+BASE_FEATURE(kEnableOcrTextRecognition,
+             "EnableOcrTextRecognition",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+
+bool IsEnableOcrTextRecognition() {
+  return base::FeatureList::IsEnabled(kEnableOcrTextRecognition);
+}
+#endif  // BUILDFLAG(IS_OHOS)
+
 BASE_FEATURE_PARAM(std::string,
                    kHTMLParserYieldEventNameForPause,
                    &kHTMLParserYieldByUserTiming,
@@ -1858,9 +1868,9 @@ BASE_FEATURE(PreferCompositingToLCDText,
 #endif
 );
 
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 BASE_FEATURE(PrefetchFontLookupTables,
-#if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
              base::FEATURE_DISABLED_BY_DEFAULT
 #else
              base::FEATURE_ENABLED_BY_DEFAULT
@@ -2439,7 +2449,7 @@ BASE_FEATURE(WebAudioAllowDenormalInProcessing,
 // The feature is disabled on Android for WebView API issue discussed at
 // https://crbug.com/942440.
 BASE_FEATURE(WebFontsCacheAwareTimeoutAdaption,
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
              base::FEATURE_DISABLED_BY_DEFAULT
 #else
              base::FEATURE_ENABLED_BY_DEFAULT

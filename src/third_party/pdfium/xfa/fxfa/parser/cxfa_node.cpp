@@ -3938,7 +3938,7 @@ std::optional<float> CXFA_Node::FindSplitPos(CXFA_FFDocView* pDocView,
           fStartOffset += (fHeight - fTextHeight + fSpaceAbove);
           break;
         default:
-          NOTREACHED();
+          NOTREACHED_NORETURN();
       }
     }
     if (fStartOffset < 0.1f) {

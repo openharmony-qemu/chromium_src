@@ -70,6 +70,9 @@
 #include "third_party/blink/renderer/platform/wtf/cross_thread_functional.h"
 #include "third_party/blink/renderer/platform/wtf/ref_counted.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/loader/fetch/url_loader/resource_request_sender_ext.cc"
+#endif
 namespace blink {
 
 template <>
@@ -196,7 +199,12 @@ void ResourceRequestSender::SendSync(
                           CrossThreadUnretained(terminate_sync_load_event),
                           timeout, std::move(download_to_blob_registry),
                           cors_exempt_header_list,
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+                          std::move(resource_load_info_notifier_wrapper),
+                          CrossThreadUnretained(render_thread)));
+#else
                           std::move(resource_load_info_notifier_wrapper)));
+#endif
 
   // `redirect_or_response_event` will signal when each redirect completes, and
   // when the final response is complete.

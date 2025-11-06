@@ -7670,6 +7670,12 @@ bool AXObject::OnNativeClickAction() {
   if (IsTextField())
     return OnNativeFocusAction();
 
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  if (RoleValue() == ax::mojom::blink::Role::kVideo) {
+    OnNativeFocusAction();
+  }
+#endif
+
   Element* element = GetClosestElement();
 
   if (element) {

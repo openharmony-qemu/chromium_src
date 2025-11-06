@@ -4,6 +4,7 @@
 
 #include "third_party/blink/public/common/web_preferences/web_preferences.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/strings/string_util.h"
 #include "base/strings/utf_string_conversions.h"
 #include "build/build_config.h"
@@ -11,6 +12,10 @@
 #include "third_party/blink/public/mojom/v8_cache_options.mojom.h"
 #include "third_party/blink/public/mojom/webpreferences/web_preferences.mojom.h"
 #include "ui/base/ui_base_switches_util.h"
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
 
 namespace blink {
 
@@ -20,8 +25,43 @@ using blink::mojom::EffectiveConnectionType;
 
 // "Zyyy" is the ISO 15924 script code for undetermined script aka Common.
 const char kCommonScript[] = "Zyyy";
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+const char kObjectTag[] = "object";
+const char kEmbedTag[] = "embed";
+const char kNativeType[] = "native/";
+#endif
 
-WebPreferences::WebPreferences() {
+WebPreferences::WebPreferences()
+    :
+#if BUILDFLAG(ARKWEB_COPY_OPTION)
+      copy_option(mojom::CopyOptionMode::CROSS_DEVICE),
+#endif  // BUILDFLAG(ARKWEB_COPY_OPTION)
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+      scroll_enabled(true),
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+      native_embed_mode_enabled(false),
+      intrinsic_size_enabled(false),
+      css_display_change_enabled(false),
+      embed_tag(kEmbedTag),
+      embed_tag_type(kNativeType),
+#endif
+
+#if BUILDFLAG(ARKWEB_CSS_FONT)
+      font_weight_scale(1.0f),
+#endif
+
+#if BUILDFLAG(ARKWEB_ZOOM)
+      text_zoom_factor(1.0f),
+#endif
+#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+      contextmenu_customization_enabled(false),
+#endif  // BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+      scrollbar_color(0),
+#endif  // ARKWEB_SCROLLBAR
+      touch_drag_drop_enabled(IsTouchDragDropEnabled()) {
   standard_font_family_map[web_pref::kCommonScript] = u"Times New Roman";
 #if BUILDFLAG(IS_MAC)
   fixed_font_family_map[web_pref::kCommonScript] = u"Menlo";

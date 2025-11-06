@@ -1,0 +1,35 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/third_party/blink/public/platform/web_document_subresource_filter.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/third_party/blink/public/platform/web_document_subresource_filter.h",
+    "处理时间": "2025-11-04"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk详情": [
+    {
+      "hunk编号": 1,
+      "风险等级": "低",
+      "冲突原因": "Arkweb132 需要添加ARKWEB_ADBLOCK特性相关的头文件包含",
+      "分析过程": "通过分析.rej文件内容，识别出需要添加的include语句：\n1. #include \"arkweb/build/features/features.h\"\n2. 条件编译块 #if BUILDFLAG(ARKWEB_ADBLOCK) ... #endif 包含 #include \"url/origin.h\"\n\n在源文件中精确定位到了合适的位置进行插入，这些添加与源文件现有的ARKWEB_ADBLOCK条件编译块保持一致。",
+      "修改置信度": "高",
+      "解决策略": "精确应用",
+      "处理状态": "已解决",
+      "具体操作": [
+        "在源文件第8行添加: #include \"arkweb/build/features/features.h\"",
+        "在源文件第12-14行添加条件编译块: \n#if BUILDFLAG(ARKWEB_ADBLOCK)\n#include \"url/origin.h\"\n#endif"
+      ]
+    }
+  ],
+  "验证信息": {
+    ".rej文件保持完整": true,
+    "未修改.rej文件": true,
+    "未创建脚本文件": true,
+    "仅在指定目录创建JSON报告": true
+  },
+  "总结": "成功处理了1个hunk，所有侵入式修改都已精确应用到源文件中。修改内容主要是为ARKWEB_ADBLOCK特性添加必要的头文件包含，与现有代码结构保持一致，不会引入编译风险。"
+}

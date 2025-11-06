@@ -59,6 +59,12 @@ WebString WebFormElement::Method() const {
   return ConstUnwrap<HTMLFormElement>()->method();
 }
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+uint64_t WebFormElement::UniqueRendererFormId() const {
+  return ConstUnwrap<HTMLFormElement>()->UniqueRendererFormId();
+}
+#endif
+
 std::vector<WebFormControlElement> WebFormElement::GetFormControlElements()
     const {
   const HTMLFormElement* form = ConstUnwrap<HTMLFormElement>();

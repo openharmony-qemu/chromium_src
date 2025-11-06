@@ -30,6 +30,7 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/to_vector.h"
 #include "base/feature_list.h"
 #include "base/metrics/field_trial_params.h"
@@ -842,6 +843,10 @@ bool ContextMenuController::ShowContextMenu(LocalFrame* frame,
     }
     data.link_text = anchor->innerText().Utf8();
   }
+
+#if BUILDFLAG(IS_ARKWEB)
+  AsContextMenuControllerExt()->HandleArkWebContextMenu(data, frame, result, selected_frame, source_type);
+#endif
 
   data.selection_rect = ComputeSelectionRect(selected_frame);
   data.source_type = source_type;

@@ -13,6 +13,7 @@
 #include <string_view>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/cancelable_callback.h"
 #include "base/compiler_specific.h"
 #include "base/memory/raw_ptr.h"
@@ -130,6 +131,17 @@ class PLATFORM_EXPORT WebMediaPlayerImpl
       public media::DemuxerManager::Client,
       public WebSurfaceLayerBridgeObserver {
  public:
+  friend class WebMediaPlayerImplExt;
+  friend class WebMediaPlayerImplUtils;
+
+  virtual blink::WebMediaPlayerImplExt* AsWebMediaPlayerImplExt() {
+    return nullptr;
+  }
+  virtual base::WeakPtr<WebMediaPlayerImplExt> WebMediaPlayerImplExtWeakThis() {
+    return nullptr;
+  }
+  std::unique_ptr<WebMediaPlayerImplUtils> webMediaPlayerImplUtils_;
+
   // Constructs a WebMediaPlayer implementation using Chromium's media stack.
   // |delegate| and |renderer_factory_selector| must not be null.
   WebMediaPlayerImpl(
@@ -281,8 +293,17 @@ class PLATFORM_EXPORT WebMediaPlayerImpl
   void OnDisplayTypeChanged(WebMediaPlayer::DisplayType display_type) override;
 
   // WebMediaPlayerDelegate::Observer implementation.
+#if !BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
   void OnPageHidden() override;
+#else
+  void OnPageHidden(bool storing_in_bfcache) override;
+#endif
+
+#if !BUILDFLAG(ARKWEB_BFCACHE)
   void OnPageShown() override;
+#else
+  void OnPageShown(bool restoring_in_bfcache) override;
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
   void OnFrameHidden() override;
   void OnFrameShown() override;
   void OnIdleTimeout() override;
@@ -347,6 +368,12 @@ class PLATFORM_EXPORT WebMediaPlayerImpl
     return is_background_suspend_enabled_;
   }
 
+#if BUILDFLAG(ARKWEB_PIP)
+  void PipEnable(bool enable) override;
+#endif
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  enum DmaBufferState { kHaveExist, kHaveRecycled };
+#endif
   // Distinct states that |delegate_| can be in. (Public for testing.)
   enum class DelegateState {
     GONE,

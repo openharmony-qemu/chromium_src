@@ -91,6 +91,10 @@ class CORE_EXPORT LayoutVideo final : public LayoutMedia {
   }
   CompositingReasons AdditionalCompositingReasons() const override;
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void WillBeDestroyed() override;
+#endif  // ARKWEB_VIDEO_ASSISTANT
+
   PhysicalNaturalSizingInfo natural_dimensions_ =
       PhysicalNaturalSizingInfo::None();
 };

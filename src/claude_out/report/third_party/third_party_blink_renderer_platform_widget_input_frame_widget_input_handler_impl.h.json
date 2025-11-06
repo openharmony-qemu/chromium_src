@@ -1,0 +1,44 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/platform/widget/input/frame_widget_input_handler_impl.h.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/platform/widget/input/frame_widget_input_handler_impl.h",
+    "处理时间": "2025-11-05"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "rej文件完整性": "保持完整未被修改"
+  },
+  "hunk详情": [
+    {
+      "hunk索引": 1,
+      "原始行范围": "107-115",
+      "冲突原因": "Arkweb132在FrameWidgetInputHandlerImpl类中添加了ARKWEB_EXT_FREE_COPY条件编译的ShowFreeCopyMenu方法，但在升级到Arkweb141时此修改未被自动合并",
+      "待添加内容": [
+        "#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)",
+        "  void ShowFreeCopyMenu() override;",
+        "#endif"
+      ],
+      "待删除内容": [],
+      "分析过程": "使用.rej文件中的上下文锚点（MoveCaret函数声明）精确定位到源文件中的对应位置。在源文件第110行MoveCaret函数后成功定位插入点。",
+      "定位策略": "基于函数声明模式的匹配，使用MoveCaret函数作为主要锚点，结合IS_IOS条件编译块作为辅助定位",
+      "修改置信度": "高",
+      "应用结果": "成功",
+      "风险评估": "低风险。这是一个条件编译的方法声明，仅在ARKWEB_EXT_FREE_COPY宏定义时生效，不会影响现有功能",
+      "实际修改": {
+        "插入位置": "第110行后",
+        "添加内容": "#if BUILDFLAG(ARKWEB_EXT_FREE_COPY)\n  void ShowFreeCopyMenu() override;\n#endif"
+      }
+    }
+  ],
+  "整体风险评估": "本次冲突解决的总体风险为低。所有修改都是Arkweb特有的条件编译功能添加，不会影响Chromium基础功能。修改严格遵循了只添加+/-行、不添加上下文的原则。",
+  "处理原则遵循": {
+    "未添加上下文行": true,
+    "未生成脚本文件": true,
+    "未修改rej文件": true,
+    "仅在源文件中应用修改": true,
+    "保持了代码结构完整性": true
+  },
+  "建议": "建议后续编译时验证ARKWEB_EXT_FREE_COPY功能是否正常工作，确保新增的ShowFreeCopyMenu方法在相应的mojom接口中也有定义。"
+}

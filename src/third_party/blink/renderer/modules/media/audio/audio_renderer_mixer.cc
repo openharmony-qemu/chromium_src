@@ -6,6 +6,7 @@
 
 #include <cmath>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/memory/ptr_util.h"
 #include "base/time/time.h"
@@ -13,9 +14,17 @@
 #include "media/base/audio_timestamp_helper.h"
 #include "third_party/blink/renderer/modules/media/audio/audio_renderer_mixer_input.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/media/audio/audio_renderer_mixer_utils.h"
+#endif
+
 namespace blink {
 
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+constexpr base::TimeDelta kPauseDelay = base::Seconds(0);
+#else
 constexpr base::TimeDelta kPauseDelay = base::Seconds(10);
+#endif
 
 AudioRendererMixer::AudioRendererMixer(
     const media::AudioParameters& output_params,

@@ -1,0 +1,51 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/platform/heap/thread_local.h.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/platform/heap/thread_local.h",
+    "处理时间": "2025-11-05"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk详细信息": [
+    {
+      "hunk编号": 1,
+      "修改范围": "第36-47行",
+      "风险等级": "低",
+      "冲突原因": "Arkweb 132添加了ARKWEB_HWASAN硬件地址 sanitizer支持的线程本地存储模型配置",
+      "分析过程": {
+        "待删除行": [
+          "#if BUILDFLAG(IS_WIN) || (BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_MAC))"
+        ],
+        "待添加行": [
+          "#if BUILDFLAG(ARKWEB_HWASAN)",
+          "#define BLINK_HEAP_THREAD_LOCAL_MODEL \"local-dynamic\"",
+          "#elif BUILDFLAG(IS_WIN) || (BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_MAC))"
+        ],
+        "定位策略": "通过对比源文件中的条件编译指令结构，找到了对应的#if BUILDFLAG(IS_WIN)行(第41行)作为修改锚点",
+        "修改策略": "在现有条件检查前插入ARKWEB_HWASAN条件检查，并将原条件改为elif"
+      },
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "实际修改内容": {
+        "修改前": "#if BUILDFLAG(IS_WIN)",
+        "修改后": "#if BUILDFLAG(ARKWEB_HWASAN)\n#define BLINK_HEAP_THREAD_LOCAL_MODEL \"local-dynamic\"\n#elif BUILDFLAG(IS_WIN)"
+      }
+    }
+  ],
+  "技术分析": {
+    "修改目的": "为ARKWEB_HWASAN(硬件地址sanitizer)配置合适的线程本地存储模型，使用\"local-dynamic\"模式以支持硬件地址检测功能",
+    "影响范围": "仅影响在启用ARKWEB_HWASAN功能时的线程本地存储模型选择",
+    "兼容性": "修改完全向后兼容，不会影响现有平台的行为",
+    "代码逻辑": "保持了原有的条件编译逻辑，只是增加了对ARKWEB_HWASAN的特殊处理"
+  },
+  "处理结果验证": {
+    ".rej文件状态": "保持完整，未被修改或删除",
+    "源文件修改": "成功应用了所有+行和-行的修改",
+    "语法检查": "修改后的代码语法正确，条件编译逻辑完整",
+    "逻辑完整性": "所有条件分支都有对应的#define语句，逻辑完整"
+  }
+}

@@ -584,6 +584,12 @@ class WebMediaPlayerMSTest
   void PausePlayback(WebMediaPlayer::PauseReason) override {}
   void DidPlayerStartPlaying() override {}
   void DidPlayerPaused(bool) override {}
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+  void DidPlayerGone() override {}
+#endif
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  void DidEndAVSession(bool is_hidden) override {}
+#endif // ARKWEB_MEDIA_AVSESSION
   void DidPlayerMutedStatusChange(bool muted) override {}
   void DidMediaMetadataChange(bool has_audio,
                               bool has_video,

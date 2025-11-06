@@ -254,6 +254,7 @@ bool StructTraits<blink::mojom::WebPreferencesDataView,
       data.dynamic_safe_area_insets_enabled();
   out->subapps_apis_require_user_gesture_and_authorization =
       data.require_transient_activation_and_user_confirmation_for_subapps_api();
+  WebPreferenceMojomExt(data, out);
   out->payment_request_enabled = data.payment_request_enabled();
   out->api_based_fingerprinting_interventions_enabled =
       data.api_based_fingerprinting_interventions_enabled();

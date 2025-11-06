@@ -10,6 +10,7 @@
 #include <optional>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/enum_set.h"
 #include "third_party/blink/public/common/common_export.h"
 #include "third_party/blink/public/mojom/scheduler/web_scheduler_tracked_feature.mojom-shared.h"

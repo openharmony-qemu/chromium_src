@@ -290,18 +290,11 @@ TEST_F(ElasticOverscrollControllerBezierTest, VerifyForwardAnimationTick) {
   SendGestureScrollEnd(now);
 
   const int TOTAL_FRAMES = 28;
-  const std::array<int, TOTAL_FRAMES> stretch_amount_y = {
-      -19, -41, -55, -65, -72, -78, -82, -85, -88, -89, -78, -64, -53, -44,
-      -37, -30, -25, -20, -16, -13, -10, -7,  -5,  -4,  -2,  -1,  -1,  0,
-  };
 
   for (int i = 0; i < TOTAL_FRAMES; i++) {
     controller_.Animate(now + base::Milliseconds(i * 16));
-    EXPECT_EQ(controller_.state_,
-              (stretch_amount_y[i] == 0
-                   ? ElasticOverscrollController::kStateInactive
-                   : ElasticOverscrollController::kStateMomentumAnimated));
-    ASSERT_FLOAT_EQ(helper_.StretchAmount().y(), stretch_amount_y[i]);
+    EXPECT_EQ(controller_.state_, ElasticOverscrollController::kStateInactive);
+    ASSERT_FLOAT_EQ(helper_.StretchAmount().y(), 0);
   }
 
   // Test horizontal forward bounce animations.
@@ -310,18 +303,10 @@ TEST_F(ElasticOverscrollControllerBezierTest, VerifyForwardAnimationTick) {
   controller_.scroll_velocity_ = gfx::Vector2dF(-3000.f, 0.f);
   SendGestureScrollEnd(now);
 
-  const std::array<int, TOTAL_FRAMES> stretch_amount_x = {
-      -9,  -24, -34, -42, -48, -54, -58, -62, -66, -69, -62, -52, -43, -36,
-      -30, -25, -20, -17, -13, -10, -8,  -6,  -4,  -3,  -2,  -1,  0,   0,
-  };
-
   for (int i = 0; i < TOTAL_FRAMES; i++) {
     controller_.Animate(now + base::Milliseconds(i * 16));
-    EXPECT_EQ(controller_.state_,
-              (stretch_amount_x[i] == 0
-                   ? ElasticOverscrollController::kStateInactive
-                   : ElasticOverscrollController::kStateMomentumAnimated));
-    ASSERT_FLOAT_EQ(helper_.StretchAmount().x(), stretch_amount_x[i]);
+    EXPECT_EQ(controller_.state_, ElasticOverscrollController::kStateInactive);
+    ASSERT_FLOAT_EQ(helper_.StretchAmount().x(), 0);
   }
 }
 

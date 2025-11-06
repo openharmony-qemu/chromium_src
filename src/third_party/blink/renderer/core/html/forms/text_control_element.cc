@@ -71,6 +71,10 @@
 #include "third_party/blink/renderer/platform/wtf/text/string_buffer.h"
 #include "third_party/blink/renderer/platform/wtf/text/string_builder.h"
 
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/instrumentation/resource_coordinator/document_resource_coordinator_utils.h"
+#include "third_party/blink/renderer/core/html/forms/html_form_element.h"
+#endif
 namespace blink {
 
 namespace {

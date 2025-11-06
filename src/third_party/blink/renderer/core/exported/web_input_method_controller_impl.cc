@@ -6,6 +6,8 @@
 
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/ime/arkweb_input_method_controller_utils.h"
 #include "third_party/blink/public/platform/web_string.h"
 #include "third_party/blink/public/web/web_plugin.h"
 #include "third_party/blink/public/web/web_range.h"

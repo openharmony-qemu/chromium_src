@@ -1,0 +1,67 @@
+{
+  "file_path": "third_party/pdfium/fxjs/xfa/cfxjse_formcalc_context.cpp",
+  "total_hunks": 2,
+  "resolved_hunks": 2,
+  "unresolved_hunks": 0,
+  "rej_file_intact": true,
+  "analysis": {
+    "summary": "所有冲突均已成功解决",
+    "hunks": [
+      {
+        "hunk_number": 1,
+        "line_range": "521-523",
+        "resolution_status": "已解决",
+        "risk_level": "低",
+        "conflict_cause": "变量名重命名和API调用方式变更",
+        "analysis_process": "将 guid_span 重命名为 pBuf，并修改了 FXSYS_IntToTwoHexChars 的调用方式，从 subspan 改为直接传递指针",
+        "modification_confidence": "高",
+        "resolution_strategy": "精确匹配源文件中的变量名和函数调用，进行了原子化修改",
+        "changes_made": [
+          {
+            "type": "变量重命名",
+            "old": "guid_span",
+            "new": "pBuf"
+          },
+          {
+            "type": "API调用修改",
+            "old": "guid_span[out_index++] = L'-';",
+            "new": "pBuf[out_index++] = L'-';"
+          },
+          {
+            "type": "API调用修改",
+            "old": "FXSYS_IntToTwoHexChars(data[i], guid_span.subspan(out_index, 2u));",
+            "new": "FXSYS_IntToTwoHexChars(data[i], &pBuf[out_index]);"
+          }
+        ]
+      },
+      {
+        "hunk_number": 2,
+        "line_range": "1076-1079",
+        "resolution_status": "已解决",
+        "risk_level": "低",
+        "conflict_cause": "变量名重命名和字符串转换方法变更",
+        "analysis_process": "将变量 value 重命名为 bsValue，并将 StringToInt 调用改为 FXSYS_atoi",
+        "modification_confidence": "高",
+        "resolution_strategy": "精确匹配源文件中的变量名和函数调用，进行了原子化修改",
+        "changes_made": [
+          {
+            "type": "变量重命名",
+            "old": "value",
+            "new": "bsValue"
+          },
+          {
+            "type": "API调用修改",
+            "old": "StringToInt(value.AsStringView())",
+            "new": "FXSYS_atoi(bsValue.c_str())"
+          }
+        ]
+      }
+    ]
+  },
+  "final_verification": {
+    "rej_file_preserved": true,
+    "source_file_modified": true,
+    "all_hunks_processed": true,
+    "no_additional_files_created": true
+  }
+}

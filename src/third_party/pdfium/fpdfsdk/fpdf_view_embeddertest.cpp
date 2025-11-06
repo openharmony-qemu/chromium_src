@@ -1757,8 +1757,8 @@ TEST_F(FPDFViewEmbedderTest, MAYBE_LargeImageDoesNotRenderBlank) {
   ScopedPage page = LoadScopedPage(0);
   ASSERT_TRUE(page);
 
-  static constexpr int kWidth = 40000;
-  static constexpr int kHeight = 100;
+  constexpr int kWidth = 40000;
+  constexpr int kHeight = 100;
   TestRenderPageBitmapWithMatrix(page.get(), kWidth, kHeight,
                                  {1000, 0, 0, 1, 0, 0}, {0, 0, kWidth, kHeight},
                                  kChecksum);
@@ -2171,8 +2171,8 @@ TEST_F(FPDFViewEmbedderTest, RenderTransparencyOnWhiteBackground) {
   ScopedPage page = LoadScopedPage(0);
   ASSERT_TRUE(page);
 
-  static constexpr int kWidth = 200;
-  static constexpr int kHeight = 200;
+  constexpr int kWidth = 200;
+  constexpr int kHeight = 200;
   EXPECT_EQ(kWidth, static_cast<int>(FPDF_GetPageWidthF(page.get())));
   EXPECT_EQ(kHeight, static_cast<int>(FPDF_GetPageHeightF(page.get())));
   EXPECT_TRUE(FPDFPage_HasTransparency(page.get()));
@@ -2183,13 +2183,13 @@ TEST_F(FPDFViewEmbedderTest, RenderTransparencyOnWhiteBackground) {
                         /*start_y=*/0, kWidth, kHeight, /*rotate=*/0,
                         /*flags=*/0);
   // TODO(crbug.com/1302355): This page should not render blank.
-  EXPECT_EQ(pdfium::kBlankPage200By200Checksum, HashBitmap(bitmap.get()));
+  EXPECT_EQ("eee4600ac08b458ac7ac2320e225674c", HashBitmap(bitmap.get()));
 }
 
 TEST_F(FPDFViewEmbedderTest, Bug2112) {
-  static constexpr int kWidth = 595;
-  static constexpr int kHeight = 842;
-  static constexpr int kStride = kWidth * 3;
+  constexpr int kWidth = 595;
+  constexpr int kHeight = 842;
+  constexpr int kStride = kWidth * 3;
   std::vector<uint8_t> vec(kStride * kHeight);
   ScopedFPDFBitmap bitmap(FPDFBitmap_CreateEx(kWidth, kHeight, FPDFBitmap_BGR,
                                               vec.data(), kStride));

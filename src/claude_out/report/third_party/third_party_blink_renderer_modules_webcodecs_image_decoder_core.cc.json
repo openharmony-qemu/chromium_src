@@ -1,0 +1,52 @@
+{
+  "conflict_file": "third_party/blink/renderer/modules/webcodecs/image_decoder_core.cc.rej",
+  "source_file": "third_party/blink/renderer/modules/webcodecs/image_decoder_core.cc",
+  "analysis": {
+    "total_hunks": 1,
+    "resolved_hunks": 1,
+    "unresolved_hunks": 0,
+    "hunks": [
+      {
+        "hunk_number": 1,
+        "status": "已解决",
+        "risk_assessment": "低风险 - 简单的 include 添加，不影响核心逻辑",
+        "conflict_reason": "Arkweb132 在 Chromium132 基础上添加了自定义的 features 头文件包含，而 Arkweb141 源代码中缺失这个包含",
+        "analysis_process": {
+          "待添加行": [
+            "#include \"arkweb/build/features/features.h\""
+          ],
+          "待删除行": [],
+          "定位锚点": "#include \"third_party/blink/renderer/modules/webcodecs/image_decoder_core.h\"",
+          "定位策略": "使用 .rej 文件中提供的上下文行作为锚点，在源文件第5行后精确找到匹配位置",
+          "应用结果": "成功在第7行添加了 #include \"arkweb/build/features/features.h\""
+        },
+        "confidence_level": "高",
+        "resolution_strategy": "直接应用：在 #include \"third_party/blink/renderer/modules/webcodecs/image_decoder_core.h\" 后面添加指定的 include 行",
+        "manual_review_required": false
+      }
+    ],
+    "summary": {
+      "conflict_type": "头文件包含冲突",
+      "modification_type": "添加 include 语句",
+      "complexity": "简单",
+      "overall_risk": "低",
+      "arkweb_customization": true,
+      "description": "这是一个典型的 Arkweb 定制化修改，在原有的 Chromium 代码基础上添加了 Arkweb 特性的头文件包含"
+    }
+  },
+  "compliance": {
+    "rej_file_integrity": "完整保留，未被修改或删除",
+    "golden_rule_compliance": "完全符合，仅添加了 + 开头的行，未添加任何上下文行",
+    "no_script_files_created": "合规，未创建任何脚本文件",
+    "no_auxiliary_files_created": "合规，仅在指定目录创建 JSON 报告",
+    "modification_location": "仅在源文件中进行直接修改",
+    "atomic_application": "成功执行原子化应用修改"
+  },
+  "verification": {
+    "rej_file_unchanged": true,
+    "source_file_modified": true,
+    "modification_applied": "#include \"arkweb/build/features/features.h\" 已成功添加到第7行",
+    "syntax_valid": true,
+    "compilation_impact": "极小，仅添加一个头文件包含"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/skia/src/image/SkSurface_Raster.cpp.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/skia/src/image/SkSurface_Raster.cpp",
+    "处理时间": "2025-11-05",
+    "Chromium版本": "132 -> 141升级"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "Hunk处理详情": [
+    {
+      "hunk编号": 1,
+      "hunk位置": "@@ -155,10 +157,28 @@",
+      "冲突原因": "Arkweb132在SkSurface_Raster类中添加了条件编译的拖拽功能支持（ARKWEB_DRAG_DROP），该功能在Chromium 141基线中不存在",
+      "风险分析": {
+        "风险等级": "低",
+        "原因": "该修改是条件编译的功能添加（#if BUILDFLAG(ARKWEB_DRAG_DROP)），仅在启用拖拽功能时才会编译，不会影响现有功能的稳定性",
+        "影响范围": "仅影响启用ARKWEB_DRAG_DROP功能的构建配置",
+        "人工复查要点": "确认BUILDFLAG(ARKWEB_DRAG_DROP)宏定义正确，新增的MakeRaster函数参数和实现与现有API兼容"
+      },
+      "待添加行数": 15,
+      "待删除行数": 0,
+      "分析过程": "通过锚点函数'onCapabilities()'精确定位到插入位置，在Arkweb 141源文件的第182行之后成功插入所有待添加代码",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "处理策略": "在SkSurface_Raster::onCapabilities()函数之后插入条件编译的MakeRaster函数实现",
+      "代码上下文匹配度": "完美匹配",
+      "锚点验证": {
+        "上锚点": "sk_sp<const SkCapabilities> SkSurface_Raster::onCapabilities() { - 找到",
+        "下锚点": "namespace SkSurfaces { - 找到",
+        "定位精度": "行级别精确定位"
+      }
+    }
+  ],
+  "总体评估": {
+    "代码质量影响": "正面",
+    "功能完整性": "保持了Arkweb132的拖拽功能特性",
+    "兼容性": "与Chromium 141基线完全兼容，采用条件编译避免冲突",
+    "维护建议": "建议在后续升级中保持条件编译模式，确保功能开关的有效性"
+  },
+  "合规性检查": {
+    ".rej文件完整性": "✓ 保持完整未被修改",
+    "修改范围": "✓ 仅添加了+标记的行，未添加任何上下文行",
+    "文件创建": "✓ 仅创建了指定的JSON报告文件",
+    "黄金法则遵守": "✓ 严格遵守了不添加上下文的铁律"
+  }
+}

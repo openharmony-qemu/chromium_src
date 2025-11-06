@@ -33,6 +33,8 @@
 #include <memory>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/widget/widget_base_utils.h"
 #include "base/auto_reset.h"
 #include "base/containers/to_vector.h"
 #include "base/debug/crash_logging.h"
@@ -1790,6 +1792,10 @@ void WebFrameWidgetImpl::DidCompletePageScaleAnimation() {
 
 void WebFrameWidgetImpl::ScheduleAnimation(bool urgent) {
   if (!View()->does_composite()) {
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+    TRACE_EVENT0(
+      "blink", "WebFrameWidgetImpl::ScheduleAnimation non_composited_client_");
+#endif
     non_composited_client_->ScheduleNonCompositedAnimation();
     return;
   }

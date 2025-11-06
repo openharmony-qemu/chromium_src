@@ -1,0 +1,22 @@
+{
+  "文件路径": "third_party/blink/renderer/core/editing/selection_controller.cc",
+  "处理时间": "2025-11-04T22:23:00Z",
+  "总hunk数量": 1,
+  "成功解决的hunk数量": 1,
+  "未能解决的hunk数量": 0,
+  ".rej文件完整性": "保持未被修改",
+  "hunks": [
+    {
+      "hunk编号": 1,
+      "解决状态": "已解决",
+      "风险等级": "低",
+      "冲突原因": "Arkweb132需要在第32行添加arkweb/build/features/features.h头文件包含，但在Chromium141升级过程中此修改被冲突",
+      "分析过程": "通过分析.rej文件发现需要添加一个include语句。使用上下文锚点'#include \"third_party/blink/renderer/core/editing/selection_controller.h\"'和'#include \"base/auto_reset.h\"'精确定位到源文件中的插入位置（第32行），成功应用了修改。",
+      "修改置信度": "高",
+      "处理策略": "直接在源文件第32行添加了#include \"arkweb/build/features/features.h\"语句",
+      "具体修改": "在#include \"third_party/blink/renderer/core/editing/selection_controller.h\"和#include \"base/auto_reset.h\"之间插入新的include语句",
+      "应用结果": "成功应用，修改后代码结构完整，语法正确"
+    }
+  ],
+  "总结": "所有冲突已成功解决。本次处理涉及1个简单的头文件包含添加，风险较低，置信度高。修改已应用到源文件中，.rej文件保持完整未被修改。"
+}

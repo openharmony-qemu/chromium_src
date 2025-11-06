@@ -1,0 +1,74 @@
+{
+  "file_path": "third_party/blink/renderer/core/loader/resource/image_resource.h",
+  "conflict_analysis": {
+    "total_hunks": 3,
+    "resolved_hunks": 3,
+    "unresolved_hunks": 0,
+    "rej_file_integrity": "preserved"
+  },
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "description": "添加 arkweb/build/features/features.h 包含文件",
+      "changes": {
+        "added": ["#include \"arkweb/build/features/features.h\""],
+        "removed": []
+      },
+      "risk_level": "低",
+      "risk_description": "添加包含文件风险较低，该文件提供了 ARKWEB_INJECT_OFFLINE_RESOURCE 等编译时特性开关的定义",
+      "conflict_reason": "Chromium 141 版本中文件头结构发生变化，原有的包含文件位置需要重新定位",
+      "analysis_process": "通过对比源文件中的 #define 位置，在 include 部分添加了所需的头文件",
+      "confidence": 100,
+      "resolution_status": "已解决",
+      "location_applied": "第26行，在 #define 之后添加"
+    },
+    {
+      "hunk_id": 2,
+      "description": "添加 ImageResourceUtils 友元类声明",
+      "changes": {
+        "added": ["friend class ImageResourceUtils;"],
+        "removed": []
+      },
+      "risk_level": "低",
+      "risk_description": "添加友元类声明属于 C++ 访问控制修改，不会影响类的内存布局或运行时行为",
+      "conflict_reason": "Arkweb 132 中的友元类声明在合并到 Chromium 141 时丢失",
+      "analysis_process": "在类的 public 部分开头添加了友元类声明，确保 ImageResourceUtils 类可以访问 ImageResource 的私有成员",
+      "confidence": 100,
+      "resolution_status": "已解决",
+      "location_applied": "第66行，ImageResource 类的 public 部分开头"
+    },
+    {
+      "hunk_id": 3,
+      "description": "添加条件编译的成员变量 imageResourceUtils",
+      "changes": {
+        "added": [
+          "#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)",
+          "  std::unique_ptr<ImageResourceUtils> imageResourceUtils;",
+          "#endif"
+        ],
+        "removed": []
+      },
+      "risk_level": "中等",
+      "risk_description": "添加成员变量会改变类的内存布局，但由于使用了条件编译和智能指针，风险可控",
+      "conflict_reason": "Chromium 141 版本中类结构发生变化，静态函数后需要重新定位成员变量的插入位置",
+      "analysis_process": "在静态函数 CreateForTest 后、其他成员前添加了条件编译的成员变量，确保了逻辑的正确性",
+      "confidence": 100,
+      "resolution_status": "已解决",
+      "location_applied": "第75-77行，在 CreateForTest 函数声明后"
+    }
+  ],
+  "overall_assessment": {
+    "success_rate": "100%",
+    "total_modifications": 3,
+    "added_lines": 7,
+    "removed_lines": 0,
+    "compilation_impact": "需要确保 arkweb/build/features/features.h 文件存在并提供 ARKWEB_INJECT_OFFLINE_RESOURCE 宏定义",
+    "runtime_impact": "条件编译的成员变量仅在启用 ARKWEB_INJECT_OFFLINE_RESOURCE 特性时生效，对默认行为无影响"
+  },
+  "verification": {
+    "rej_file_status": "完整保留，未被修改",
+    "source_file_modified": "已应用所有三个 hunk 的修改",
+    "modification_accuracy": "严格按照 .rej 文件中的 +/- 行应用，未添加任何上下文行",
+    "compliance_check": "完全符合黄金法则：仅应用 +/- 行，未生成脚本文件，未修改 .rej 文件"
+  }
+}

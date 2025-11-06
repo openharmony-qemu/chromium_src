@@ -2568,7 +2568,7 @@ void Node::RemovedFrom(ContainerNode& insertion_point) {
       ClearChildNeedsStyleInvalidation();
     }
     ClearFlag(kIsConnectedFlag);
-#if DCHECK_IS_ON()
+#if DCHECK_IS_ON() || BUILDFLAG(IS_ARKWEB)
     insertion_point.GetDocument().DecrementNodeCount();
 #endif
   }

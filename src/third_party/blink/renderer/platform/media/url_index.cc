@@ -20,6 +20,9 @@
 #include "third_party/blink/renderer/platform/wtf/vector.h"
 
 namespace blink {
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/platform/media/url_index_for_include.cc"
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
 const int kBlockSizeShift = 15;  // 1<<15 == 32kb
 const int kUrlMappingTimeoutSeconds = 300;

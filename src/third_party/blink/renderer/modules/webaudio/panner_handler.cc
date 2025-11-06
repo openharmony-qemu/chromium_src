@@ -6,6 +6,7 @@
 
 #include <array>
 
+#include "arkweb/build/features/features.h"
 #include "base/compiler_specific.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/synchronization/lock.h"

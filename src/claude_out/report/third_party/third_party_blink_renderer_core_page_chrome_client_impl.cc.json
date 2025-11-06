@@ -1,0 +1,72 @@
+{
+  "conflict_file": "third_party/blink/renderer/core/page/chrome_client_impl.cc.rej",
+  "source_file": "third_party/blink/renderer/core/page/chrome_client_impl.cc",
+  "analysis_timestamp": "2025-11-04",
+  "total_hunks": 2,
+  "resolved_hunks": 2,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "maintained",
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "location": "DidChangeSelectionInSelectControl函数 (第1460-1474行)",
+      "risk_level": "低风险",
+      "conflict_reason": "Arkweb 132在表单选择变更时添加了活动状态监控逻辑，Chromium 141版本中该函数结构略有变化",
+      "analysis_process": "通过对比源文件和.rej文件，找到了精确的插入位置。该hunk涉及ResourceCoordinator的调用，用于监控表单交互状态。",
+      "confidence": 95,
+      "modification_type": "插入代码块",
+      "added_lines": 7,
+      "removed_lines": 0,
+      "status": "已解决",
+      "code_context": "在函数末尾的}之前插入了ARKWEB_ACTIVITY_STATE条件编译块",
+      "dependencies": [
+        "BUILDFLAG(ARKWEB_ACTIVITY_STATE)",
+        "Document::GetResourceCoordinator()",
+        "coordinator_utils_->OnFormEditingStateChanged()"
+      ]
+    },
+    {
+      "hunk_number": 2,
+      "location": "DidUpdateBrowserControls函数 (第1504-1518行)",
+      "risk_level": "中等风险",
+      "conflict_reason": "Arkweb 132在浏览器控件更新时添加了扩展控件逻辑，涉及滚动条更新机制",
+      "analysis_process": "成功定位到DidUpdateBrowserControls函数，在web_view_->DidUpdateBrowserControls()调用后插入了扩展逻辑。该修改涉及命令行开关检查和滚动条更新。",
+      "confidence": 90,
+      "modification_type": "插入代码块",
+      "added_lines": 9,
+      "removed_lines": 0,
+      "status": "已解决",
+      "code_context": "在函数末尾的}之前插入了ARKWEB_EXT_TOPCONTROLS条件编译块",
+      "dependencies": [
+        "BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)",
+        "base::CommandLine::ForCurrentProcess()",
+        "switches::kEnableNwebExTopControls",
+        "AsPaintLayerScrollableAreaExt()->UpdateScrollbar()"
+      ],
+      "potential_issues": [
+        "AsPaintLayerScrollableAreaExt()是Arkweb扩展方法，需要确保PaintLayerScrollableArea类已正确扩展",
+        "UpdateScrollbar()方法需要在扩展类中正确实现"
+      ]
+    }
+  ],
+  "summary": {
+    "overall_risk": "低-中等风险",
+    "success_rate": "100%",
+    "key_modifications": [
+      "恢复了Arkweb的活动状态监控功能",
+      "恢复了Arkweb的扩展控件滚动条更新功能"
+    ],
+    "testing_recommendations": [
+      "测试表单选择变更时的活动状态记录",
+      "测试浏览器控件更新时的滚动条行为",
+      "验证条件编译标志在构建时正确设置"
+    ],
+    "compliance": {
+      "no_context_lines_added": true,
+      "rej_file_unmodified": true,
+      "no_scripts_created": true,
+      "no_auxiliary_files": true,
+      "exact_modification_applied": true
+    }
+  }
+}

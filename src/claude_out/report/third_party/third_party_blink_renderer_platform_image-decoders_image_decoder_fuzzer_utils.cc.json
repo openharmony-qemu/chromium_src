@@ -1,0 +1,87 @@
+{
+  "文件信息": {
+    "路径": "third_party/blink/renderer/platform/image-decoders/image_decoder_fuzzer_utils.cc",
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/platform/image-decoders/image_decoder_fuzzer_utils.cc.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/platform/image-decoders/image_decoder_fuzzer_utils.cc"
+  },
+  "处理统计": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 2,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunks详细信息": [
+    {
+      "hunk序号": 1,
+      "位置描述": "第8-9行，include声明部分",
+      "冲突原因": "Arkweb 132添加了HEIF解码器头文件引用，但在Arkweb 141中缺失",
+      "风险分析": "低风险 - 添加头文件引用不会影响现有代码逻辑，仅为新增功能的准备工作",
+      "分析过程": "通过.rej文件识别到需要添加的include行，定位到源文件中第7行和第8行之间的位置，精确插入HEIF头文件引用",
+      "修改内容": {
+        "添加的行": [
+          "#include \"arkweb/chromium_ext/blink/renderer/platform/image_decoders/heif/heif_image_decoder.h\""
+        ],
+        "删除的行": []
+      },
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "验证结果": "成功在第7行后插入HEIF头文件引用，位置准确"
+    },
+    {
+      "hunk序号": 2,
+      "位置描述": "第20-46行，CreateImageDecoder函数中的JPEG和PNG解码器部分",
+      "冲突原因": "Arkweb 132对JPEG解码器参数进行了条件编译修改，并添加了完整的HEIF解码器支持，但在Arkweb 141中这些修改缺失",
+      "风险分析": "中等风险 - 涉及解码器构造函数参数修改和新增解码器case分支，需要确保参数匹配和逻辑完整性",
+      "分析过程": "识别到需要在JPEG解码器构造函数中对aux_image_type参数进行条件编译，并在PNG解码器后添加完整的HEIF解码器支持。通过分析源文件结构，准确定位到JPEG解码器的return语句和PNG解码器case之后的位置",
+      "修改内容": {
+        "添加的行": [
+          "#if !BUILDFLAG(ARKWEB_HEIF_SUPPORT)",
+          "          GetAuxImageType(fdp),",
+          "#endif",
+          "",
+          "#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)",
+          "    case DecoderType::kHeifDecoder: {",
+          "      ImageDecoder::HighBitDepthDecodingOption decoding_option =",
+          "          fdp.ConsumeBool() ? ImageDecoder::kDefaultBitDepth",
+          "                            : ImageDecoder::kHighBitDepthToHalfFloat;",
+          "      auto rawValue = fdp.ConsumeIntegralInRange(0, 2);",
+          "      ImageDecoder::AnimationOption animation_option = static_cast<ImageDecoder::AnimationOption>(rawValue);",
+          "      return std::make_unique<HEIFImageDecoder>(",
+          "          GetAlphaOption(fdp), decoding_option, GetColorBehavior(fdp),",
+          "          /*max_decoded_bytes=*/fdp.ConsumeIntegral<uint32_t>(), animation_option);",
+          "    }",
+          "#endif"
+        ],
+        "删除的行": []
+      },
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "验证结果": "成功在JPEG解码器中添加条件编译，并在PNG解码器后添加完整的HEIF解码器支持"
+    }
+  ],
+  "整体分析": {
+    "冲突根本原因": "Arkweb 132到Arkweb 141升级过程中，HEIF图像解码器支持的侵入式修改未能正确合并到新版本中",
+    "主要变更类型": "新增HEIF解码器功能支持，包括头文件引用、条件编译参数修改和完整解码器实现",
+    "代码影响范围": "图像解码器工厂函数，影响JPEG解码器参数传递和新增HEIF格式支持",
+    "编译风险评估": "低 - 修改内容语法正确，条件编译逻辑清晰，参数类型匹配",
+    "运行时风险评估": "低 - 仅在启用ARKWEB_HEIF_SUPPORT时激活新功能，不影响现有解码器功能"
+  },
+  "处理策略总结": {
+    "策略类型": "原子化应用策略",
+    "执行过程": "严格按照.rej文件中的+/-行进行精确添加，不引入任何上下文行",
+    "关键成功因素": "准确定位插入点，保持代码结构完整性，确保条件编译逻辑正确",
+    "质量控制": "通过仔细对比.rej文件和源文件，确保每个修改都精确对应原始侵入式修改意图"
+  },
+  "最终验证": {
+    ".rej文件完整性": "确认.rej文件保持完整，未被修改或删除",
+    "源文件修改验证": "所有.rej文件中的+行均已成功应用到源文件中",
+    "代码语法检查": "修改后的代码语法正确，C++结构完整",
+    "编译兼容性": "修改内容使用标准的条件编译模式，与Chromium构建系统兼容"
+  },
+  "建议后续操作": [
+    "验证HEIFImageDecoder类的存在性和接口兼容性",
+    "确认BUILDFLAG(ARKWEB_HEIF_SUPPORT)的定义位置和作用范围",
+    "在启用HEIF支持的配置下进行编译测试",
+    "运行图像解码相关的单元测试验证功能正确性"
+  ]
+}

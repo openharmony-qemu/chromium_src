@@ -161,6 +161,10 @@ class PLATFORM_EXPORT Resource : public GarbageCollected<Resource>,
   Resource& operator=(const Resource&) = delete;
   ~Resource() override;
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+  int request_id_perf_stat_;
+#endif
+
   void Trace(Visitor*) const override;
 
   virtual TextEncoding Encoding() const { return TextEncoding(); }
@@ -635,6 +639,10 @@ class PLATFORM_EXPORT Resource : public GarbageCollected<Resource>,
   scoped_refptr<SharedBuffer> data_;
 
   WebScopedVirtualTimePauser virtual_time_pauser_;
+
+#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
+  SelfKeepAlive<Resource> self_keep_alive_;
+#endif
 };
 
 class ResourceFactory {

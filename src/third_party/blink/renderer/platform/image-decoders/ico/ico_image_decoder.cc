@@ -6,8 +6,10 @@
 
 #include <algorithm>
 
+#include "arkweb/build/features/features.h"
 #include "base/compiler_specific.h"
 #include "third_party/blink/renderer/platform/image-decoders/png/png_decoder_factory.h"
+#include "third_party/blink/renderer/platform/image-decoders/png/png_image_decoder.h"
 #include "third_party/blink/renderer/platform/wtf/text/atomic_string.h"
 
 namespace blink {

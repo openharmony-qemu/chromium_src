@@ -1,0 +1,59 @@
+{
+  "file_info": {
+    "conflict_file": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/platform/image-decoders/image_decoder_fuzzer_utils.h.rej",
+    "source_file": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/platform/image-decoders/image_decoder_fuzzer_utils.h",
+    "base_file_chromium132": "/home/sujiahao/code/chromium_132_baseline/src/third_party/blink/renderer/platform/image-decoders/image_decoder_fuzzer_utils.h",
+    "arkweb132_file": "/home/sujiahao/code/arkweb_132/src/third_party/blink/renderer/platform/image-decoders/image_decoder_fuzzer_utils.h"
+  },
+  "processing_summary": {
+    "total_hunks": 1,
+    "resolved_hunks": 1,
+    "unresolved_hunks": 0,
+    "rej_file_integrity": "preserved"
+  },
+  "hunks_analysis": [
+    {
+      "hunk_id": 1,
+      "lines_range": "13-22",
+      "additions": [
+        "#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)",
+        "  kHeifDecoder,",
+        "#endif"
+      ],
+      "deletions": [],
+      "risk_assessment": "低风险",
+      "conflict_cause": "Arkweb132 在 DecoderType 枚举中添加了 HEIF 解码器支持，但在升级到 Chromium 141 时该修改与新的 kCrabbyAvifDecoder 条目产生冲突",
+      "analysis_process": "1. 解析 .rej 文件识别出需要添加的条件编译代码块\n2. 在源文件中定位到 DecoderType 枚举定义\n3. 识别 kPngDecoder 后面是理想的插入位置\n4. 成功在 kPngDecoder, 后面添加了 HEIF 解码器的条件编译支持",
+      "modification_confidence": "高",
+      "resolution_strategy": "精确插入",
+      "anchor_context": {
+        "before": "  kPngDecoder,",
+        "after": "  kCrabbyAvifDecoder,"
+      },
+      "status": "已解决",
+      "verification": "修改已应用到源文件第18-20行，保持代码结构完整性"
+    }
+  ],
+  "technical_details": {
+    "modification_type": "枚举扩展",
+    "feature_added": "HEIF 图像格式支持",
+    "conditional_compilation": "BUILDFLAG(ARKWEB_HEIF_SUPPORT)",
+    "compatibility_impact": "无破坏性变更",
+    "code_style_compliance": "符合现有代码风格"
+  },
+  "compliance_verification": {
+    "golden_rule_observed": "是",
+    "no_context_lines_added": "是",
+    "no_script_files_created": "是",
+    "no_auxiliary_files_created": "是",
+    "rej_file_untouched": "是",
+    "specified_directory_only": "是"
+  },
+  "final_status": {
+    "completion_status": "成功",
+    "all_hunks_processed": true,
+    "source_file_modified": true,
+    "rej_file_preserved": true,
+    "ready_for_build": true
+  }
+}

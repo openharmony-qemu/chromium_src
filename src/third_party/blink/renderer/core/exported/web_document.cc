@@ -76,6 +76,11 @@
 #include "third_party/blink/renderer/platform/loader/fetch/resource_fetcher.h"
 #include "third_party/blink/renderer/platform/weborigin/security_origin.h"
 #include "third_party/blink/renderer/platform/wtf/casting.h"
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "arkweb/chromium_ext/third_party/blink/renderer/core/dom/document_recognise_util.h"
+#endif
+
 #include "ui/accessibility/ax_mode.h"
 
 namespace {

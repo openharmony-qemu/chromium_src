@@ -1922,11 +1922,12 @@
         "default": "test",
       },
     },
+    // ARKWEB_PIP not support DocumentPictureInPictureAPI yet.
     {
       name: "DocumentPictureInPictureAPI",
       status: {
         "Android": "",
-        "default": "stable",
+        "default": "test",
       },
     },
     // Enables `preferInitialWindowPlacement` Document PiP option to skip
@@ -2745,7 +2746,10 @@
       name: "ImplicitRootScroller",
       public: true,
       settable_from_internals: true,
+      // #if BUILDFLAG(ARKWEB_SCROLL_PERFORMANCE)
       status: {"Android": "stable"},
+      // status: {"Android": "stable", "default": "stable"},
+      // #endif  // BUILDFLAG(ARKWEB_SCROLL_PERFORMANCE)
       base_feature: "none",
     },
 
@@ -3204,7 +3208,7 @@
     // "experimental" is the support on other platforms.
     {
       name: "MiddleClickAutoscroll",
-      status: "test",
+      status: "stable",
     },
     // Killswitch for crbug.com/40062462 fix.
     {
@@ -3293,11 +3297,11 @@
     {
       name: "NetInfoDownlinkMax",
       public: true,
-      // Only Android, ChromeOS support NetInfo downlinkMax, type and ontypechange now
+      // Only Android, ChromeOS support NetInfo downlinkMax, type and ontypechange now,add ohos
       status: {
         "Android": "stable",
         "ChromeOS": "stable",
-        "default": "experimental",
+        "default": "stable",
       },
       base_feature: "none",
     },
@@ -3396,7 +3400,9 @@
     },
     {
       name: "OrientationEvent",
-      status: {"Android": "stable"},
+      // BUILDFLAG(ARKWEB_WPT)
+      // status: {"Android": "stable"},
+      status: "stable",
     },
     {
       name: "OriginAPI",
@@ -5868,6 +5874,12 @@
       // If enabled, the `getDisplayMedia()` family of APIs will ask for NV12
       // frames, which should trigger a zero-copy path in the tab capture code.
       name: "ZeroCopyTabCapture",
-    }
+    },
+    {
+      // js API `window.arkWeb.scrollbarAvoidAreaTop` and `window.arkWeb.scrollbarAvoidAreaBottom`
+      // for setting the margin of vertical scrollbar avoid area in browser
+      name:  "ArkWeb",
+      status: "experimental",
+    },
   ],
 }

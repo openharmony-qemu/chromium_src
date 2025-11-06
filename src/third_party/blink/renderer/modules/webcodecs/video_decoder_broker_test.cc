@@ -134,6 +134,17 @@ class FakeInterfaceFactory : public media::mojom::InterfaceFactory {
         std::move(receiver));
   }
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void CreateCustomMediaPlayerRenderer(
+      mojo::PendingRemote<
+          media::mojom::CustomMediaPlayerRendererClientExtension>
+          client_extension,
+      mojo::PendingReceiver<media::mojom::Renderer> renderer,
+      mojo::PendingReceiver<media::mojom::MediaPlayerRendererExtension>
+          renderer_extension,
+      int32_t player_id) override {}
+#endif  // ARKWEB_UNITTESTS
+
   // Stub out other mojom::InterfaceFactory interfaces.
 #if BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
   void CreateVideoDecoderWithTracker(

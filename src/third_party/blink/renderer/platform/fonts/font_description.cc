@@ -91,6 +91,9 @@ FontDescription::FontDescription()
       adjusted_size_(0),
       letter_spacing_(Length(0, Length::kFixed)),
       word_spacing_(Length(0, Length::kFixed)),
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+      fixed_font_size_(0),
+#endif
       font_selection_request_(kNormalWeightValue,
                               kNormalWidthValue,
                               kNormalSlopeValue) {

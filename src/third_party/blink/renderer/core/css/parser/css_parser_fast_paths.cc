@@ -13,6 +13,7 @@
 #include <arm_neon.h>
 #endif
 
+#include "arkweb/build/features/features.h"
 #include "base/compiler_specific.h"
 #include "base/containers/span.h"
 #include "build/build_config.h"

@@ -29,7 +29,6 @@
 #include <array>
 
 #include "base/auto_reset.h"
-#include "media/base/media_switches.h"
 #include "third_party/blink/public/platform/platform.h"
 #include "third_party/blink/public/platform/task_type.h"
 #include "third_party/blink/public/platform/user_metrics_action.h"
@@ -115,6 +114,11 @@
 #include "third_party/blink/renderer/platform/web_test_support.h"
 #include "third_party/blink/renderer/platform/wtf/text/strcat.h"
 #include "ui/gfx/geometry/size.h"
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#include "arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/media_controls_impl_for_include.cc"
+#include "base/ohos/sys_info_utils_ext.h"
+#endif // ARKWEB_VIDEO_ASSISTANT
 
 namespace blink {
 
@@ -668,7 +672,7 @@ void MediaControlsImpl::InitializeControls() {
   ParserAppendChild(text_track_list_);
 
   playback_speed_list_ =
-      MakeGarbageCollected<MediaControlPlaybackSpeedListElement>(*this);
+      MakeGarbageCollected<MediaControlPlaybackSpeedListElementExt>(*this);
   ParserAppendChild(playback_speed_list_);
 
   video_track_selector_list_ =
@@ -724,18 +728,32 @@ void MediaControlsImpl::InitializeControls() {
           MakeGarbageCollected<MediaControlTrackSelectorMenuButtonElement>(
               *this, WebMediaPlayer::TrackType::kAudioTrack)));
 
+  #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (!ShouldShowVideoControlsHM()) {
+#endif
   if (picture_in_picture_button_) {
     overflow_list_->ParserAppendChild(
         picture_in_picture_button_->CreateOverflowElement(
             MakeGarbageCollected<MediaControlPictureInPictureButtonElement>(
                 *this)));
   }
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  }
+#endif
 
   // Set the default CSS classes.
   UpdateCSSClassFromState();
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (ShouldShowVideoControlsHM() && mediaControlsImplUtils_) {
+    mediaControlsImplUtils_->UpdateDeviceCSSClassExt();
+  }
+#endif // ARKWEB_VIDEO_ASSISTANT
 }
 
 void MediaControlsImpl::PopulatePanel() {
+  if (mediaControlsImplUtils_->PopulatePanelExtVideoAssistant()) {
+    return;
+  }
   // Clear the panels.
   panel_->SetInnerHTMLWithoutTrustedTypes("");
   if (media_button_panel_)
@@ -743,7 +761,11 @@ void MediaControlsImpl::PopulatePanel() {
 
   Element* button_panel = panel_;
   if (ShouldShowVideoControls()) {
+#if BUILDFLAG(ARKWEB_MEDIA)
+    mediaControlsImplUtils_->PopulatePanelExt();
+#else
     MaybeParserAppendChild(panel_, scrubbing_message_);
+#endif
     if (display_cutout_fullscreen_button_)
       panel_->ParserAppendChild(display_cutout_fullscreen_button_);
 
@@ -1475,6 +1497,7 @@ void MediaControlsImpl::UpdateOverflowMenuWanted() const {
       std::make_pair(video_track_selector_button_.Get(), false),
       std::make_pair(audio_track_selector_button_.Get(), false),
   };
+  mediaControlsImplUtils_->UpdateOverflowMenuWantedExt(row_elements);
 
   // These are the elements in order of priority that take up vertical room.
   MediaControlElementBase* column_elements[] = {
@@ -2401,6 +2424,12 @@ void MediaControlsImpl::HidePopupMenu() {
     ToggleTrackSelectionList(WebMediaPlayer::TrackType::kAudioTrack);
   }
 }
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void MediaControlsImpl::HidePlaybackSpeedList() {
+  playback_speed_list_->SetIsWanted(false);
+}
+#endif
 
 void MediaControlsImpl::VolumeSliderWantedTimerFired(TimerBase*) {
   volume_slider_->OpenSlider();

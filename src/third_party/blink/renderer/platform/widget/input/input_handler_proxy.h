@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/raw_ptr.h"
 #include "base/time/time.h"
 #include "base/types/optional_ref.h"
@@ -17,8 +18,10 @@
 #include "cc/paint/element_id.h"
 #include "third_party/blink/public/common/input/web_coalesced_input_event.h"
 #include "third_party/blink/public/common/input/web_gesture_event.h"
+#include "third_party/blink/public/mojom/widget/platform_widget.mojom-blink.h"
 #include "third_party/blink/public/platform/web_common.h"
 #include "third_party/blink/renderer/platform/platform_export.h"
+#include "third_party/blink/renderer/platform/widget/input/input_handler_proxy_utils.h"
 
 namespace base {
 class TickClock;
@@ -160,6 +163,7 @@ class PLATFORM_EXPORT InputHandlerProxy : public cc::InputHandlerClient,
       std::unique_ptr<DidOverscrollParams>,
       const blink::WebInputEventAttribution&,
       std::unique_ptr<cc::EventMetrics> metrics)>;
+
   // Virtual for mocking in tests.
   virtual void HandleInputEventWithLatencyInfo(
       std::unique_ptr<blink::WebCoalescedInputEvent> event,

@@ -1,0 +1,40 @@
+{
+  "文件路径": "third_party/blink/public/common/context_menu_data/untrustworthy_context_menu_params.h",
+  "分析时间": "2025-11-04 21:32:00",
+  "总hunk数量": 1,
+  "成功解决的hunk数量": 1,
+  "未能解决的hunk数量": 0,
+  ".rej文件状态": "保持完整未被修改",
+  "hunks": [
+    {
+      "hunk编号": 1,
+      "hunk范围": "第10-25行",
+      "解决状态": "已解决",
+      "风险级别": "低",
+      "冲突原因": "Arkweb 132版本添加了3个新的include语句，这些在Arkweb 141基线版本中不存在",
+      "分析过程": "该hunk需要添加3个include语句：1) arkweb/build/features/features.h，2) ui/base/ui_base_types.h，3) 条件编译的arkweb/ohos_nweb_ex/build/features/features.h。通过上下文锚点精确定位到了插入位置。",
+      "修改置信度": "高",
+      "处理策略": "直接应用修改",
+      "具体操作": [
+        {
+          "操作类型": "添加",
+          "位置": "第15行前",
+          "内容": "#include \"arkweb/build/features/features.h\""
+        },
+        {
+          "操作类型": "添加",
+          "位置": "第23行后",
+          "内容": "#include \"ui/base/ui_base_types.h\""
+        },
+        {
+          "操作类型": "添加",
+          "位置": "第25行后",
+          "内容": "#if BUILDFLAG(IS_ARKWEB_EXT)\n#include \"arkweb/ohos_nweb_ex/build/features/features.h\"\n#endif"
+        }
+      ],
+      "注意事项": "这些include语句是为Arkweb扩展功能提供的特征定义，属于侵入式修改的必要部分"
+    }
+  ],
+  "总结": "成功处理了1个hunk，所有修改都已应用到源文件中。修改仅涉及include语句的添加，不涉及逻辑代码变更，风险较低。.rej文件保持完整未被修改。",
+  "应用后的文件状态": "已成功添加所有必要的include语句，包括arkweb特征定义和条件编译头文件"
+}

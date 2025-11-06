@@ -26,6 +26,7 @@
 #ifndef THIRD_PARTY_BLINK_RENDERER_CORE_PAGE_CONTEXT_MENU_CONTROLLER_H_
 #define THIRD_PARTY_BLINK_RENDERER_CORE_PAGE_CONTEXT_MENU_CONTROLLER_H_
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/scoped_refptr.h"
 #include "third_party/blink/public/common/input/web_menu_source_type.h"
 #include "third_party/blink/public/mojom/context_menu/context_menu.mojom-blink.h"
@@ -43,8 +44,11 @@ class MouseEvent;
 class Page;
 struct ContextMenuData;
 struct Impression;
+#if BUILDFLAG(IS_ARKWEB)
+class ContextMenuControllerExt;
+#endif
 
-class CORE_EXPORT ContextMenuController final
+class CORE_EXPORT ContextMenuController
     : public GarbageCollected<ContextMenuController>,
       public mojom::blink::ContextMenuClient {
  public:
@@ -54,6 +58,10 @@ class CORE_EXPORT ContextMenuController final
   ~ContextMenuController() override;
   void Trace(Visitor*) const;
 
+#if BUILDFLAG(IS_ARKWEB)
+  friend class ContextMenuControllerExt;
+  virtual ContextMenuControllerExt* AsContextMenuControllerExt() { return nullptr; }
+#endif
   void ClearContextMenu();
 
   void DocumentDetached(Document*);

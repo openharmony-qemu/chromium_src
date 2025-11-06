@@ -1,0 +1,30 @@
+{
+  "conflict_file": "third_party/blink/public/common/context_menu_data/context_menu_data.h",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "intact",
+  "analysis": {
+    "hunk_1": {
+      "risk_level": "低风险",
+      "conflict_reason": "Arkweb 132在头文件中添加了两个包含文件：arkweb/build/features/features.h 和条件编译的arkweb/ohos_nweb_ex/build/features/features.h。这些是Arkweb特有的功能定义文件，在升级到Chromium 141时需要重新集成。",
+      "analysis_process": "通过分析.rej文件中的hunk，识别出需要添加的include语句。使用上下文行作为锚点，在源文件中找到了对应的include区域。成功在正确的位置添加了所需的include语句和条件编译块。",
+      "modification_confidence": "高置信度",
+      "resolution_strategy": "成功应用修改：1) 在services/network/public/mojom/referrer_policy.mojom-shared.h之前添加了arkweb/build/features/features.h；2) 在所有include语句之后、namespace之前添加了条件编译块#if BUILDFLAG(IS_ARKWEB_EXT)和对应的include语句。所有修改都严格按照.rej文件中的+行内容执行，没有添加任何额外的上下文。",
+      "status": "已解决",
+      "changes_applied": [
+        "添加了: #include \"arkweb/build/features/features.h\"",
+        "添加了: #if BUILDFLAG(IS_ARKWEB_EXT)",
+        "添加了: #include \"arkweb/ohos_nweb_ex/build/features/features.h\"",
+        "添加了: #endif"
+      ]
+    }
+  },
+  "summary": {
+    "conflict_type": "包含文件添加",
+    "arkweb_modifications": "添加了Arkweb特有的功能定义头文件包含",
+    "chromium_base_changes": "Chromium 141中include顺序略有不同，新增了annotation.mojom-shared.h，但不影响Arkweb的修改",
+    "resolution_result": "所有修改已成功应用到源文件中，保持了.rej文件的完整性",
+    "verification_required": false
+  }
+}

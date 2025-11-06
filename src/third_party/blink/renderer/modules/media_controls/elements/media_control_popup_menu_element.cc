@@ -240,7 +240,6 @@ MediaControlPopupMenuElement::MediaControlPopupMenuElement(
 void MediaControlPopupMenuElement::SetPosition() {
   // The popup is positioned slightly on the inside of the bottom right
   // corner.
-  static constexpr int kPopupMenuMarginPx = 4;
   static const char kImportant[] = "important";
   static const char kPx[] = "px";
 
@@ -250,6 +249,12 @@ void MediaControlPopupMenuElement::SetPosition() {
   DCHECK(bounding_client_rect);
   DCHECK(dom_window);
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  if (GetMediaControls().ShouldShowVideoControlsHM()) {
+    elementUtils_.SetPopupAnchorHM(bounding_client_rect, dom_window);
+  } else {
+#endif
+  static constexpr int kPopupMenuMarginPx = 4;
   String bottom_str_value =
       String::Number(dom_window->innerHeight() -
                      bounding_client_rect->bottom() + kPopupMenuMarginPx) +

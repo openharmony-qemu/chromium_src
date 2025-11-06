@@ -1,0 +1,51 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/core/html/html_object_element.cc.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/core/html/html_object_element.cc",
+    "处理时间": "2025-11-04"
+  },
+  "总体统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk详情": [
+    {
+      "hunk编号": 1,
+      "冲突位置": "第43-48行附近",
+      "待添加行数": 3,
+      "待删除行数": 0,
+      "修改类型": "插入条件编译包含语句",
+      "风险评估": "低风险",
+      "风险描述": "添加的 Arkweb 条件编译包含语句被正确地插入到适当的include块末尾，不会影响现有代码结构",
+      "冲突原因": "Arkweb 132 中的条件编译包含语句在升级到 Arkweb 141 时未能自动合并",
+      "解决状态": "已解决",
+      "置信度": "高",
+      "定位过程": "使用 .rej 文件中的上下文锚点（mime_type_registry.h 包含语句和 namespace 声明）成功定位到源文件中的正确位置",
+      "应用过程": "在第47行的 mime_type_registry.h 包含语句后，添加了缺失的 runtime_enabled_features.h 包含语句，然后插入了 Arkweb 的条件编译包含语句块",
+      "最终操作": [
+        "添加: #include \"third_party/blink/renderer/platform/runtime_enabled_features.h\"",
+        "添加: #if BUILDFLAG(ARKWEB_SAME_LAYER)",
+        "添加: #include \"arkweb/chromium_ext/third_party/blink/renderer/core/html/html_object_element_for_include.cc\"",
+        "添加: #endif"
+      ]
+    }
+  ],
+  "处理策略总结": {
+    "主要策略": "上下文锚点定位 + 原子化应用",
+    "成功因素": [
+      "源文件中存在清晰的上下文锚点",
+      "修改内容仅为添加操作，无删除操作",
+      "位置选择在 include 块的末尾，符合代码组织规范"
+    ],
+    "验证结果": "所有 Arkweb 侵入式修改已成功应用到源文件中，代码结构保持完整"
+  },
+  "合规性检查": {
+    ".rej文件保持完整": true,
+    "未生成脚本文件": true,
+    "未创建辅助文件": true,
+    "仅在指定目录创建JSON报告": true,
+    "严格遵循黄金法则": true
+  }
+}

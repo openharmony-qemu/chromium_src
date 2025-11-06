@@ -208,6 +208,7 @@ blink_platform_sources("loader") {
     "//third_party/blink/renderer/platform/instrumentation",
     "//third_party/blink/renderer/platform/network",
     "//third_party/blink/renderer/platform/scheduler",
+    "//cef/libcef/common/mojom",
   ]
   public_deps = [
     "//third_party/blink/public/mojom:mojom_platform_headers",

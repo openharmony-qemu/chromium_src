@@ -68,6 +68,10 @@ class BLINK_PLATFORM_EXPORT WebRuntimeFeatures : public WebRuntimeFeaturesBase {
 
   static void EnableOverlayScrollbars(bool);
   static void EnableFluentScrollbars(bool);
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+  // advanced security mode feature
+  static void EnableNonAdvancedSecurityMode(bool);
+#endif
   static void EnableFluentOverlayScrollbars(bool);
 
   static void EnableLocalNetworkAccessWebRTC(bool);

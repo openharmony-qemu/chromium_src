@@ -1,0 +1,77 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/platform/widget/input/widget_input_handler_impl.cc.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/third_party/blink/renderer/platform/widget/input/widget_input_handler_impl.cc",
+    "Chromium基线版本": 132,
+    "Arkweb目标版本": 141
+  },
+  "处理统计": {
+    "总hunk数量": 3,
+    "成功解决的hunk数量": 3,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "Hunk处理详情": [
+    {
+      "hunk编号": 1,
+      "位置": "第9-10行之间",
+      "变更类型": "添加头文件引用",
+      "添加内容": "#include \"arkweb/chromium_ext/third_party/blink/renderer/platform/widget/input/arkweb_widget_input_handler_impl_ext.h\"",
+      "冲突原因": "Arkweb的扩展头文件在Chromium 141中不存在，需要手动添加",
+      "分析过程": "根据.rej文件中的指示，在源文件的include部分添加Arkweb扩展头文件",
+      "修改置信度": "高",
+      "风险等级": "低 - 仅添加头文件引用，不影响现有代码逻辑",
+      "最终处理策略": "在第8行和第10行之间插入Arkweb扩展头文件引用",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 2,
+      "位置": "DispatchEvent方法开始处（第173行）",
+      "变更类型": "添加条件日志代码",
+      "添加内容": [
+        "#if BUILDFLAG(ARKWEB_INPUT_EVENTS)",
+        "  if (InputEventOhos::FilterLogEvent(event->Event())) {",
+        "    LOG(INFO) << \"WidgetInputHandlerImpl::DispatchEvent type:\"",
+        "              << InputEventOhos::GetWebEventName(event->Event());",
+        "  }",
+        "#endif"
+      ],
+      "冲突原因": "Arkweb针对OpenHarmony平台添加了事件日志功能，需要集成到Chromium 141",
+      "分析过程": "在DispatchEvent方法的开始处，TRACE_EVENT之前插入Arkweb事件日志代码",
+      "修改置信度": "高",
+      "风险等级": "中低 - 添加了条件编译的日志代码，仅在ARKWEB_INPUT_EVENTS宏启用时生效",
+      "最终处理策略": "在方法开始处插入条件日志代码块",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 3,
+      "位置": "DispatchNonBlockingEvent方法开始处（第189行）",
+      "变更类型": "添加条件日志代码",
+      "添加内容": [
+        "#if BUILDFLAG(ARKWEB_INPUT_EVENTS)",
+        "  if (InputEventOhos::FilterLogEvent(event->Event())) {",
+        "    LOG(INFO) << \"WidgetInputHandlerImpl::DispatchNonBlockingEvent type:\"",
+        "              << InputEventOhos::GetWebEventName(event->Event());",
+        "  }",
+        "#endif"
+      ],
+      "冲突原因": "Arkweb针对OpenHarmony平台添加了事件日志功能，需要集成到Chromium 141的非阻塞事件处理中",
+      "分析过程": "在DispatchNonBlockingEvent方法的开始处，TRACE_EVENT之前插入Arkweb事件日志代码",
+      "修改置信度": "高",
+      "风险等级": "中低 - 添加了条件编译的日志代码，仅在ARKWEB_INPUT_EVENTS宏启用时生效",
+      "最终处理策略": "在方法开始处插入条件日志代码块",
+      "解决状态": "已解决"
+    }
+  ],
+  "整体风险评估": {
+    "风险等级": "中低",
+    "风险描述": "所有修改都是条件编译的Arkweb扩展功能，仅在特定宏启用时生效。添加的代码主要用于OpenHarmony平台的输入事件日志记录，不会影响Chromium原有功能的正常运行。",
+    "潜在影响": "如果ARKWEB_INPUT_EVENTS宏未定义，所有添加的代码都不会被编译，不会有任何影响。如果宏被定义，会增加日志输出用于调试输入事件。"
+  },
+  "验证信息": {
+    ".rej文件完整性": "已确认.rej文件保持完整，未被修改或删除",
+    "源文件修改验证": "所有变更已按照.rej文件要求精确应用到源文件",
+    "上下文污染检查": "无任何上下文行被错误添加到源文件中",
+    "原子化应用确认": "所有hunk的变更都已原子化应用，仅添加了+号开头的行"
+  }
+}

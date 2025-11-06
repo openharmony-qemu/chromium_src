@@ -1,0 +1,52 @@
+{
+  "文件信息": {
+    "冲突文件": "third_party/blink/renderer/core/css/resolver/style_adjuster.cc.rej",
+    "源文件": "third_party/blink/renderer/core/css/resolver/style_adjuster.cc",
+    "处理时间": "2025-11-04"
+  },
+  "总体统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk详情": [
+    {
+      "hunk序号": 1,
+      "位置": "第1175-1183行",
+      "实际位置": "第1229行",
+      "风险等级": "低风险",
+      "冲突原因": "Arkweb高级安全模式条件编译代码未正确集成到Chromium 141版本中",
+      "分析过程": "通过读取源文件找到了对应的MathMLElement条件判断语句，在第1229行发现了需要修改的代码位置",
+      "修改内容": {
+        "删除行": [
+          "} else if (IsA<MathMLElement>(element)) {"
+        ],
+        "添加行": [
+          "#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)",
+          "  } else if (IsA<MathMLElement>(element) && !Cssutils::IsMathFormulaDisabledMode()) {",
+          "#else",
+          "  } else if (IsA<MathMLElement>(element)) {",
+          "#endif"
+        ]
+      },
+      "修改置信度": "高",
+      "解决策略": "原子化应用修改，精确替换目标行",
+      "解决状态": "已解决",
+      "代码逻辑说明": "在Arkweb高级安全模式下，只有当数学公式模式未被禁用时才处理MathMLElement的样式调整"
+    }
+  ],
+  "合规性检查": {
+    "rej文件保持完整": true,
+    "未创建脚本文件": true,
+    "未创建辅助工具文件": true,
+    "仅在指定目录创建报告": true,
+    "严格遵守黄金法则": true
+  },
+  "技术分析": {
+    "修改类型": "条件编译集成",
+    "影响范围": "MathMLElement样式调整逻辑",
+    "兼容性": "向后兼容，通过条件编译保证不同构建配置的正确性",
+    "安全考虑": "高级安全模式下的数学公式功能控制"
+  }
+}

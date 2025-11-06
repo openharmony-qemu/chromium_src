@@ -1,0 +1,42 @@
+{
+  "文件路径": "third_party/pdfium/core/fpdfapi/font/cpdf_cmapparser.cpp",
+  "rej文件路径": "third_party/pdfium/core/fpdfapi/font/cpdf_cmapparser.cpp.rej",
+  "分析时间": "2025-11-05",
+  "总体统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "rej文件完整性验证": {
+    "rej文件保持完整": true,
+    "未被修改或删除": true
+  },
+  "hunks详情": [
+    {
+      "hunk编号": 1,
+      "位置信息": "第147-170行的GetCode函数",
+      "风险等级": "低",
+      "冲突原因": "Arkweb132将自定义的字符检查函数FXSYS_IsHexDigit和FXSYS_IsDecimalDigit替换为标准C库函数isxdigit和isdigit，并修改了参数传递方式",
+      "分析过程": "通过检查源文件发现ctype.h已被包含（第9行），标准库函数可用。定位到需要修改的两个循环：处理十六进制字符的循环和处理十进制字符的循环。",
+      "修改内容": {
+        "删除的行": [
+          "for (size_t i = 1; i < word.GetLength() && FXSYS_IsHexDigit(word[i]); ++i) {",
+          "for (size_t i = 0; i < word.GetLength() && FXSYS_IsDecimalDigit(word.CharAt(i)); ++i) {",
+          "    num = num * 10 + FXSYS_DecimalCharToInt(word.CharAt(i));"
+        ],
+        "添加的行": [
+          "for (size_t i = 1; i < word.GetLength() && isxdigit(word[i]); ++i) {",
+          "for (size_t i = 0; i < word.GetLength() && isdigit(word[i]); ++i) {",
+          "    num = num * 10 + FXSYS_DecimalCharToInt(static_cast<wchar_t>(word[i]));"
+        ]
+      },
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "处理策略": "精确应用修改：1) 将FXSYS_IsHexDigit替换为isxdigit 2) 将FXSYS_IsDecimalDigit替换为isdigit，并将word.CharAt(i)改为word[i]，添加static_cast<wchar_t>类型转换",
+      "语法验证": "通过，修改后的代码语法正确，符合C++标准",
+      "逻辑验证": "通过，功能保持一致，只是将自定义函数替换为标准库函数"
+    }
+  ],
+  "总结": "所有hunks已成功解决。修改将自定义字符检查函数替换为标准C库函数，提高了代码的可移植性和标准化程度。所有修改严格遵守了'不添加上下文'的铁律，只应用了.rej文件中定义的+/-行。"
+}

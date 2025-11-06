@@ -1,0 +1,54 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/url/gurl.h.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/url/gurl.h",
+    "处理时间": "2025-11-05"
+  },
+  "处理总结": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk处理详情": [
+    {
+      "hunk索引": 1,
+      "修改类型": "添加包含语句",
+      "待添加行": [
+        "#include \"arkweb/build/features/features.h\""
+      ],
+      "待删除行": [],
+      "锚点上下文": [
+        "#include <string_view>",
+        "",
+        "#include \"base/component_export.h\""
+      ],
+      "解决状态": "已解决",
+      "置信度": "高",
+      "风险等级": "低",
+      "处理策略": "精确匹配锚点位置，在第14行后添加arkweb features包含语句",
+      "应用结果": "成功在指定位置添加#include \"arkweb/build/features/features.h\"",
+      "风险说明": "此修改为添加包含语句，风险极低。该包含语句用于Arkweb特性条件编译，与现有第265行的BUILDFLAG(ARKWEB_RECOURCE_SCHEME)宏使用相匹配。"
+    }
+  ],
+  "冲突原因分析": {
+    "主要冲突": "Arkweb 132版本在gurl.h中添加了arkweb/build/features/features.h包含语句，但在Arkweb 141版本中该包含语句缺失",
+    "根本原因": "从Chromium 132升级到141时，包含语句的合并冲突导致侵入式修改未能正确应用",
+    "影响范围": "影响Arkweb特有功能的条件编译，如资源方案和代码缓存功能"
+  },
+  "代码完整性验证": {
+    "语法检查": "通过，添加的包含语句语法正确",
+    "依赖关系": "与现有第265行的BUILDFLAG宏使用保持一致",
+    "编译兼容性": "预期兼容，该包含文件定义了所需的ARKWEB_*构建标志"
+  },
+  "合规性检查": {
+    ".rej文件完整性": "保持完整，未被修改或删除",
+    "无上下文添加": "严格遵守，仅添加了+开头的行",
+    "无脚本生成": "严格遵守，未生成任何脚本文件",
+    "路径合规": "报告文件创建在指定目录 /home/sujiahao/code/arkweb_141/src/claude_out/report/url/"
+  },
+  "最终处理状态": {
+    "状态": "成功完成",
+    "说明": "所有hunk已成功应用到源文件中，.rej文件保持完整，符合所有处理要求"
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/sandbox/policy/switches.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/sandbox/policy/switches.h",
+    "文件类型": "C++头文件",
+    "模块": "sandbox/policy/switches"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk分析": [
+    {
+      "hunk序号": 1,
+      "冲突原因": "Arkweb 132在头文件中添加了arkweb/features头文件引用，但Arkweb 141中缺失此引用",
+      "待添加行": [
+        "#include \"arkweb/build/features/features.h\""
+      ],
+      "待删除行": [],
+      "定位状态": "成功定位",
+      "锚点匹配": "完全匹配",
+      "应用状态": "已成功应用",
+      "风险等级": "低",
+      "风险说明": "添加头文件引用是安全的侵入式修改，不会破坏现有代码结构，只是引入了Arkweb特定的功能声明",
+      "置信度": "高",
+      "置信度说明": "上下文行完全匹配，插入位置明确，修改意图清晰"
+    }
+  ],
+  "处理过程": {
+    "步骤1_解析hunk": "成功识别出1个待添加行，0个待删除行",
+    "步骤2_精确定位": "在源文件第8-9行之间找到了完全匹配的上下文锚点",
+    "步骤3_原子化应用": "在第8行后成功添加了arkweb/build/features/features.h头文件引用",
+    "步骤4_验证结果": "修改后代码结构完整，头文件引用顺序合理"
+  },
+  "代码变更": {
+    "修改前": {
+      "第8行": "#include \"build/build_config.h\"",
+      "第9行": "#include \"sandbox/policy/export.h\""
+    },
+    "修改后": {
+      "第8行": "#include \"build/build_config.h\"",
+      "第9行": "#include \"arkweb/build/features/features.h\"",
+      "第10行": "#include \"sandbox/policy/export.h\""
+    }
+  },
+  "合规性检查": {
+    ".rej文件完整性": "保持完整，未被修改或删除",
+    "上下文行处理": "严格按照黄金法则，未添加任何上下文行到源文件",
+    "文件创建限制": "仅在指定目录创建JSON报告文件，未创建任何脚本或辅助文件",
+    "修改操作": "仅执行了添加+开头的行，无其他违规操作"
+  },
+  "结论": {
+    "任务状态": "完全成功",
+    "冲突解决": "所有hunk都已成功解决",
+    "代码完整性": "保持良好",
+    "后续建议": "建议编译验证添加的头文件路径是否正确，确保arkweb/build/features/features.h文件存在"
+  }
+}

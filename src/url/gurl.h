@@ -12,6 +12,7 @@
 #include <string>
 #include <string_view>
 
+#include "arkweb/build/features/features.h"
 #include "base/component_export.h"
 #include "base/trace_event/base_tracing_forward.h"
 #include "url/third_party/mozilla/url_parse.h"

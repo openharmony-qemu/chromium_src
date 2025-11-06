@@ -1,0 +1,55 @@
+{
+  "file_path": "mojo/public/cpp/bindings/sync_call_restrictions.h",
+  "analysis_timestamp": "2025-11-05",
+  "total_hunks": 2,
+  "resolved_hunks": 2,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "完整未被修改",
+  "hunks_analysis": [
+    {
+      "hunk_number": 1,
+      "description": "在content namespace中添加NativeTextureFactory类的前向声明",
+      "risk_level": "低",
+      "conflict_cause": "Arkweb 132中针对ARKWEB_SAME_LAYER编译标志的条件编译支持在Arkweb 141中缺失",
+      "analysis_process": "通过分析.rej文件发现需要在content namespace中添加条件编译的前向声明。在源文件第30行#endif之后、第31行namespace content结束之前找到了准确的插入位置。",
+      "modification_confidence": "高",
+      "resolution_strategy": "原子化应用：在content namespace中添加#if BUILDFLAG(ARKWEB_SAME_LAYER)条件编译块，包含NativeTextureFactory类的前向声明。",
+      "status": "已解决",
+      "lines_added": [
+        "#if BUILDFLAG(ARKWEB_SAME_LAYER)",
+        "class NativeTextureFactory;",
+        "#endif"
+      ],
+      "lines_removed": []
+    },
+    {
+      "hunk_number": 2,
+      "description": "添加ui::CompositorUtils作为SyncCallRestrictions类的friend class",
+      "risk_level": "低",
+      "conflict_cause": "Arkweb 132中添加的ui::CompositorUtils friend class声明在Arkweb 141中缺失",
+      "analysis_process": "通过分析.rej文件发现需要添加friend class ui::CompositorUtils声明。在源文件第128行friend class ui::Compositor之后找到了准确的插入位置。注意：源文件第146-148行已经存在content::NativeTextureFactory的friend声明，说明这个类已经在项目中使用。",
+      "modification_confidence": "高",
+      "resolution_strategy": "原子化应用：在friend class ui::Compositor;之后添加friend class ui::CompositorUtils;声明。",
+      "status": "已解决",
+      "lines_added": [
+        "  friend class ui::CompositorUtils;"
+      ],
+      "lines_removed": []
+    }
+  ],
+  "summary": {
+    "overall_status": "成功",
+    "modifications_applied": 2,
+    "compilation_impact": "最小，仅添加了条件编译的前向声明和friend class声明",
+    "arkweb_specific_features": "ARKWEB_SAME_LAYER条件编译支持，ui::CompositorUtils同步调用权限",
+    "validation_needed": "建议验证ARKWEB_SAME_LAYER编译标志是否在项目中正确定义"
+  },
+  "compliance_check": {
+    "rej_file_modified": false,
+    "script_files_created": false,
+    "auxiliary_files_created": false,
+    "modifications_outside_target": false,
+    "context_lines_added": false,
+    "only_plus_minus_lines_processed": true
+  }
+}

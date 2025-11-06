@@ -15,6 +15,7 @@ enum IPCMessageStart {
   AutomationMsgStart = 0,
   TestMsgStart,
   WorkerMsgStart,
+  OhGinJavascriptBridgeMsgStart,
   LastIPCMsgStart  // Must come last.
 };
 

@@ -109,7 +109,11 @@ base::ProcessId GetSelfPID() {
   if (int global_pid = Channel::GetGlobalPid())
     return global_pid;
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+if BUILDFLAG(IS_ARKWEB)
+  return base::GetCurrentRealPid();
+#else
   return base::GetCurrentProcId();
+#endif  // BUILDFLAG(IS_ARKWEB)
 }
 
 }  // namespace

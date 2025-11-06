@@ -158,8 +158,7 @@ void ReceiverSetState::SetDispatchContext(void* context,
 
 void ReceiverSetState::OnDisconnect(ReceiverId id,
                                     uint32_t custom_reason_code,
-                                    const std::string& description,
-                                    MojoResult error_result) {
+                                    const std::string& description) {
   auto it = entries_.find(id);
   CHECK(it != entries_.end());
 

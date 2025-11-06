@@ -1,0 +1,25 @@
+{
+  "文件路径": "ipc/ipc_message_start.h",
+  "分析时间": "2025-11-05",
+  "总hunk数量": 1,
+  "成功解决的hunk数量": 0,
+  "未能解决的hunk数量": 1,
+  "rej文件完整性": "保持完整未被修改",
+  "hunks分析": [
+    {
+      "hunk索引": 1,
+      "解决状态": "未解决",
+      "风险等级": "高",
+      "冲突原因": "源文件枚举结构与.rej文件期望的上下文严重不匹配",
+      "分析过程": ".rej文件显示期望的枚举包含NaClMsgStart、PpapiMsgStart、NaClHostMsgStart等项，但源文件只有AutomationMsgStart、TestMsgStart、WorkerMsgStart、LastIPCMsgStart四个基本项。OhGinJavascriptBridgeMsgStart的插入位置无法精确定位。",
+      "待添加行": [
+        "  OhGinJavascriptBridgeMsgStart,"
+      ],
+      "待删除行": [],
+      "修改置信度": "低",
+      "处理策略": "无法应用",
+      "详细说明": "由于源文件中缺少.rej文件期望的上下文锚点（如NaClMsgStart、PpapiMsgStart等），无法确定OhGinJavascriptBridgeMsgStart应该插入的具体位置。强行插入可能导致枚举结构错乱或语法错误。需要人工介入确定正确的插入位置。"
+    }
+  ],
+  "总结": "该冲突文件包含1个hunk，由于源文件与.rej文件期望的代码结构差异过大，无法自动应用修改。建议人工审查并手动确定OhGinJavascriptBridgeMsgStart枚举项的正确插入位置。"
+}

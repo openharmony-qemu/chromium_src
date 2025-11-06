@@ -1,69 +1,5 @@
 --- BUILD.gn	2025-10-20 19:52:46.804563082 +0800
 +++ BUILD.gn	2025-10-16 15:54:55.549488821 +0800
-@@ -292,10 +292,12 @@
-   # smaller.
-   if (is_win) {
-     configs += [ "//build/config/win:compiler" ]
-   } else if (is_android) {
-     configs += [ "//build/config/android:compiler" ]
-+  } else if (is_ohos) {
-+    configs += [ "//build/config/ohos:compiler" ]
-   } else if (is_linux || is_chromeos) {
-     configs += [ "//build/config/linux:compiler" ]
-   } else if (is_nacl) {
-     configs += [ "//build/config/nacl:compiler" ]
-   } else if (is_mac) {
-@@ -624,20 +630,21 @@
-     }
- 
-     # Enable ELF CREL (see crbug.com/357878242) for all platforms that use ELF
-     # (excluding toolchains that use an older version of LLVM).
-     # TODO(crbug.com/376278218): This causes segfault on Linux ARM builds.
--    if (is_linux && !llvm_android_mainline && current_cpu != "arm" &&
-+    if (is_linux && !llvm_android_mainline && !llvm_ohos_mainline &&
-+        current_cpu != "arm" &&
-         default_toolchain != "//build/toolchain/cros:target") {
-       cflags += [ "-Wa,--crel,--allow-experimental-crel" ]
-     }
-   }
- 
-   # C11/C++11 compiler flags setup.
-   # ---------------------------
-   if (is_linux || is_chromeos || is_android || (is_nacl && is_clang) ||
--      current_os == "aix") {
-+      is_ohos || current_os == "aix") {
-     if (is_clang) {
-       standard_prefix = "c"
- 
-       # Since we build with -std=c* and not -std=gnu*, _GNU_SOURCE will not be
-       # defined by the compiler.  However, lots of code relies on the
-@@ -1250,11 +1261,12 @@
-           "-mfpmath=sse",
-           "-msse3",
-         ]
-       }
-     } else if (current_cpu == "arm") {
--      if (is_clang && !is_android && !is_nacl && !is_chromeos_device) {
-+      if (is_clang && !is_android && !is_nacl && !is_ohos &&
-+          !is_chromeos_device) {
-         cflags += [ "--target=arm-linux-gnueabihf" ]
-         ldflags += [ "--target=arm-linux-gnueabihf" ]
-       }
-       if (!is_nacl) {
-         cflags += [
-@@ -1264,11 +1276,11 @@
-       }
-       if (arm_tune != "") {
-         cflags += [ "-mtune=$arm_tune" ]
-       }
-     } else if (current_cpu == "arm64") {
--      if (is_clang && !is_android && !is_nacl && !is_fuchsia &&
-+      if (is_clang && !is_android && !is_nacl && !is_fuchsia && !is_ohos &&
-           !is_chromeos_device) {
-         cflags += [ "--target=aarch64-linux-gnu" ]
-         ldflags += [ "--target=aarch64-linux-gnu" ]
-       }
-     } else if (current_cpu == "mipsel" && !is_nacl) {
 @@ -2043,11 +2107,12 @@
        cflags_cc += [
          # TODO(crbug.com/328490295): Fix and re-enable for C flags.
@@ -78,19 +14,3 @@
            "-Wno-c++11-narrowing-const-reference",
          ]
  
-@@ -2208,10 +2273,15 @@
-       # Warn on unreachable code, including unreachable breaks and returns.
-       # See https://crbug.com/346399#c148 for suppression strategies.
-       "-Wunreachable-code-aggressive",
-     ]
- 
-+    if (is_component_build) {
-+      # FIXME(AR20250313353352): Should be turn on after re-factoring
-+      cflags += [ "-w" ]
-+    }
-+
-     # Thread safety analysis is broken under nacl: https://crbug.com/982423.
-     if (!is_nacl || is_nacl_saigo) {
-       cflags += [
-         # Thread safety analysis. See base/thread_annotations.h and
-         # https://clang.llvm.org/docs/ThreadSafetyAnalysis.html

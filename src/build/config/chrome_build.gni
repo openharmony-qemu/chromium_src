@@ -39,6 +39,10 @@ declare_args() {
     # code for standalone WebView targets.
     enable_new_standalone_webview_settings = true
   }
+
+  if (is_ohos) {
+    ohos_build_target = "chromium"
+  }
 }
 
 # Ensure !is_android implies !is_high_end_android.

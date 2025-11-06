@@ -1,0 +1,56 @@
+{
+  "文件路径": "build/config/sanitizers/BUILD.gn",
+  "冲突文件": "build/config/sanitizers/BUILD.gn.rej",
+  "处理时间": "2025-11-05",
+  "分析结果": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    ".rej文件完整性": "保持完整未被修改"
+  },
+  "hunks详情": [
+    {
+      "hunk编号": 1,
+      "位置": "@@ -315,12 +317,14 @@",
+      "解决状态": "已解决",
+      "变更类型": "添加条件判断",
+      "待添加行": [
+        "+    if (!is_ohos) {",
+        "+    }"
+      ],
+      "待删除行": [],
+      "风险分析": {
+        "风险等级": "低",
+        "原因": "为OpenHarmony系统添加条件判断，避免在OHOS平台上执行sanitizer官方构建限制的assert检查。这是一个平台适配性修改，不会影响其他平台的构建逻辑。",
+        "潜在影响": "在OpenHarmony平台上，即使在官方构建中也可以使用sanitizer功能，这可能是OHOS平台的特殊需求。"
+      },
+      "冲突原因": "Arkweb132版本针对OpenHarmony平台添加了特殊条件判断，将官方构建中的sanitizer限制检查包装在`if (!is_ohos)`条件中。这是为了适应OHOS平台的特殊构建需求。",
+      "定位过程": {
+        "方法": "使用上下文锚点精确定位",
+        "锚点内容": [
+          "if (using_sanitizer) {",
+          "assert(is_clang, \"sanitizers only supported with clang\")",
+          "assert(current_toolchain != default_toolchain || !is_official_build,",
+          "\"sanitizers not supported in official builds\")"
+        ],
+        "成功定位": true
+      },
+      "修改置信度": {
+        "等级": "高",
+        "原因": "上下文匹配度100%，修改意图明确，逻辑结构清晰"
+      },
+      "应用修改": {
+        "源文件行号": 302-305,
+        "修改前": "    assert(current_toolchain != default_toolchain || !is_official_build,\n           \"sanitizers not supported in official builds\")",
+        "修改后": "    if (!is_ohos) {\n    assert(current_toolchain != default_toolchain || !is_official_build,\n           \"sanitizers not supported in official builds\")\n    }"
+      }
+    }
+  ],
+  "总结": {
+    "处理策略": "直接应用修改",
+    "修改性质": "平台适配性增强",
+    "技术合理性": "合理",
+    "人工复查建议": "建议验证在OpenHarmony平台上sanitizer功能是否正常工作，以及官方构建限制是否应该继续适用",
+    "合规性": "严格遵循黄金法则，仅添加+开头的行，未修改.rej文件，未创建任何脚本文件"
+  }
+}

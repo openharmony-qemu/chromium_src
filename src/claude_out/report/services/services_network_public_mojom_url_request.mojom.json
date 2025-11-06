@@ -1,0 +1,82 @@
+{
+  "文件路径": "services/network/public/mojom/url_request.mojom",
+  "处理时间": "2025-11-06",
+  "总体统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "rej文件完整性": {
+    "状态": "保持完整",
+    "说明": ".rej文件在处理过程中未被修改或删除"
+  },
+  "hunks详细信息": [
+    {
+      "hunk索引": 1,
+      "状态": "已解决",
+      "风险等级": "低",
+      "冲突原因": "Arkweb 132 在 URLRequest 结构体中添加了多个条件编译字段，这些字段在 Arkweb 141 中缺失",
+      "修改说明": "在 URLRequest 结构体的 shared_dictionary_writer_enabled 字段后添加了 Arkweb 特有的条件编译字段",
+      "添加的字段": [
+        {
+          "字段名": "is_download_request",
+          "条件编译": "[EnableIf=arkweb_ex_download]",
+          "类型": "bool",
+          "默认值": "false",
+          "用途": "标识是否为下载请求"
+        },
+        {
+          "字段名": "allow_preload_record",
+          "条件编译": "[EnableIf=arkweb_prp_preload]",
+          "类型": "bool",
+          "用途": "允许预加载记录"
+        },
+        {
+          "字段名": "main_url",
+          "条件编译": "[EnableIf=arkweb_prp_preload]",
+          "类型": "url.mojom.Url",
+          "用途": "主URL"
+        },
+        {
+          "字段名": "is_preflight",
+          "条件编译": "[EnableIf=arkweb_prp_preload]",
+          "类型": "bool",
+          "用途": "标识是否为预检请求"
+        },
+        {
+          "字段名": "is_sync_mode",
+          "条件编译": "[EnableIf=arkweb_resource_interception]",
+          "类型": "bool",
+          "用途": "标识是否为同步模式"
+        },
+        {
+          "字段名": "usage_scenario_",
+          "条件编译": "[EnableIf=arkweb_logger_report]",
+          "类型": "int32",
+          "用途": "使用场景标识"
+        }
+      ],
+      "定位过程": {
+        "上下文锚点": "shared_dictionary_writer_enabled = false;",
+        "源文件位置": "第619行",
+        "插入位置": "socket_tag字段之前"
+      },
+      "修改置信度": "高",
+      "处理策略": "精确匹配上下文后应用所有+开头的行",
+      "语法验证": "通过，所有字段语法正确"
+    }
+  ],
+  "代码质量评估": {
+    "结构完整性": "保持良好",
+    "语法正确性": "通过验证",
+    "条件编译一致性": "符合Arkweb项目规范",
+    "命名规范": "符合现有代码风格"
+  },
+  "潜在风险评估": {
+    "兼容性风险": "低 - 所有添加的字段都使用条件编译，不会影响现有功能",
+    "编译风险": "低 - 字段定义语法正确，位置合适",
+    "运行时风险": "低 - 新字段都有默认值或条件编译保护"
+  },
+  "总结": "成功将Arkweb 132中的侵入式修改集成到Arkweb 141中，所有字段都已正确添加到URLRequest结构体中。修改保持了代码的结构完整性和语法正确性，没有引入任何语法错误或逻辑断裂。"
+}

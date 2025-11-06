@@ -372,6 +372,11 @@ void URLLoaderFactory::CreateLoaderAndStartWithSyncClient(
             resource_request.trusted_params->accept_ch_frame_observer));
   }
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  std::shared_ptr<ohos_prp_preload::PRPPRequestLoader> prpp_loader;
+  std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info;
+  factoryUtils_->PreloadRequestInit(resource_request, prpp_loader,  preload_info);
+#endif
   auto loader = std::make_unique<URLLoader>(
       *this,
       base::BindOnce(&cors::CorsURLLoaderFactory::DestroyURLLoader,
@@ -390,7 +395,16 @@ void URLLoaderFactory::CreateLoaderAndStartWithSyncClient(
       *context_->GetSharedResourceChecker(),
       context_->MaybeCreateDurableMessage(
           resource_request.throttling_profile_id,
-          resource_request.devtools_request_id));
+          resource_request.devtools_request_id)
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+,
+      prpp_loader,
+      factoryUtils_->weak_prpp_req_loader_fac_.get()
+          ? factoryUtils_->weak_prpp_req_loader_fac_.get()->GetMainUrl()
+          : "",
+      preload_info
+#endif
+      );
 
   cors_url_loader_factory_->OnURLLoaderCreated(std::move(loader));
 }

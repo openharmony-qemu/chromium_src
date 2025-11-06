@@ -5,6 +5,7 @@
 import("//build/config/ozone.gni")
 import("//components/viz/common/debugger/viz_debugger.gni")
 import("//mojo/public/tools/bindings/mojom.gni")
+import("//arkweb/build/features/features.gni")
 
 mojom("mojom") {
   sources = [ "viz_main.mojom" ]

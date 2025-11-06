@@ -235,6 +235,11 @@ void P2PSocketManager::AddAcceptedConnection(
 }
 
 void P2PSocketManager::DestroySocket(P2PSocket* socket) {
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  if (sockets_.size() > kHalfOfMaxSimultaneousSockets) {
+    LOG(ERROR) << "DestroySocket, size is " << sockets_.size();
+  }
+#endif
   auto iter = sockets_.find(socket);
   CHECK(iter != sockets_.end());
   sockets_.erase(iter);

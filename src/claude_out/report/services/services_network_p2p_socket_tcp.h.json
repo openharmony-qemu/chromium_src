@@ -1,0 +1,35 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/services/network/p2p/socket_tcp.h.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/services/network/p2p/socket_tcp.h",
+    "处理时间": "2025-11-06"
+  },
+  "总体统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0
+  },
+  "hunk处理详情": [
+    {
+      "hunk编号": 1,
+      "冲突原因": "Arkweb 132中P2PSocketStunTcp类的DoSend函数使用rtc::PacketOptions参数，而Arkweb 141使用webrtc::AsyncSocketPacketOptions参数，并且存在一个多余的空行需要删除",
+      "风险分析": "低风险。这个hunk主要涉及API参数类型的更新和代码格式调整，是Chromium版本升级过程中的正常变更",
+      "修改内容": {
+        "待删除行": ["空行（第9行）"],
+        "待添加行": [],
+        "待修改行": ["DoSend函数参数从rtc::PacketOptions改为webrtc::AsyncSocketPacketOptions"]
+      },
+      "分析过程": "1. 检查源文件第170-180行范围\n2. 发现DoSend函数已经使用了webrtc::AsyncSocketPacketOptions参数类型\n3. 源文件中ProcessInput函数后没有空行，说明空行删除已生效\n4. 确认hunk中描述的修改已经完全应用",
+      "修改置信度": "高",
+      "最终处理策略": "无需修改 - hunk中描述的所有变更已经在源文件中正确应用",
+      "解决状态": "已解决"
+    }
+  ],
+  "处理总结": {
+    "成功应用所有hunk修改": true,
+    ".rej文件完整性": "已保持完整，未被修改",
+    "代码完整性": "源文件保持原有结构，所有必要修改已正确应用",
+    "主要变更类型": "API参数类型更新（rtc::PacketOptions → webrtc::AsyncSocketPacketOptions）",
+    "建议": "这是一个标准的Chromium版本升级冲突，相关修改已经正确应用到源文件中，无需进一步处理"
+  }
+}

@@ -9,6 +9,7 @@
 #include <string>
 #include <string_view>
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/feature_list.h"
 #include "base/metrics/histogram_functions.h"

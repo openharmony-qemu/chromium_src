@@ -618,6 +618,9 @@ struct URLRequest {
   // CompressionDictionaryTransport feature.
   bool shared_dictionary_writer_enabled = false;
 
+  // True for download request.
+  [EnableIf=arkweb_ex_download]
+  bool is_download_request = false;
   // If true, disables content decoding (e.g., gzip, brotli) within the network
   // service for this request. The client becomes responsible for decoding the
   // response body and setting `decoded_body_length` of
@@ -627,6 +630,23 @@ struct URLRequest {
   // The socket tag to associate this request with. This is typically set by the
   // embedder.
   SocketTag socket_tag;
+
+  [EnableIf=arkweb_prp_preload]
+  bool allow_preload_record;
+
+  [EnableIf=arkweb_prp_preload]
+  url.mojom.Url main_url;
+
+  [EnableIf=arkweb_prp_preload]
+  bool is_preflight;
+
+  [EnableIf=arkweb_resource_interception]
+  bool is_sync_mode;
+
+  // #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  [EnableIf=arkweb_logger_report]
+  int32 usage_scenario_;
+  // #endif
 
   // Whether this request is allowed to register new device bound
   // sessions or process challenges for existing device bound sessions

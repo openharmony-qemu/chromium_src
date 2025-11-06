@@ -1,0 +1,64 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/services/network/sec_header_helpers.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/services/network/sec_header_helpers.h",
+    "Chromium 132 基线": "/home/sujiahao/code/chromium_132_baseline/src/services/network/sec_header_helpers.h",
+    "Arkweb 132 代码": "/home/sujiahao/code/arkweb_132/src/services/network/sec_header_helpers.h"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "Hunk分析": [
+    {
+      "hunk索引": 1,
+      "冲突原因": "Arkweb 132 在文件头添加了Arkweb特定的包含文件和条件编译指令，这些在Chromium 141中不存在",
+      "风险等级": "低风险",
+      "风险说明": "添加的包含文件和条件编译是标准做法，不会影响核心功能",
+      "修改置信度": "高",
+      "置信度说明": "上下文匹配度高，位置明确，修改意图清晰",
+      "待添加行": [
+        "#include \"arkweb/build/features/features.h\"",
+        "#if BUILDFLAG(IS_ARKWEB)",
+        "#include \"arkweb/chromium_ext/services/network/sec_header_helpers_for_include.h\"",
+        "#endif"
+      ],
+      "待删除行": [],
+      "锚点上下文": [
+        "#ifndef SERVICES_NETWORK_SEC_HEADER_HELPERS_H_",
+        "#define SERVICES_NETWORK_SEC_HEADER_HELPERS_H_",
+        "#include \"base/component_export.h\"",
+        "#include \"services/network/public/mojom/fetch_api.mojom-forward.h\"",
+        "#include \"url/gurl.h\""
+      ],
+      "定位策略": "使用头文件包含区域的上下文作为锚点，在合适位置插入Arkweb特定的包含语句",
+      "解决状态": "已解决",
+      "解决过程": [
+        "1. 在第8行后添加了arkweb/build/features/features.h包含文件",
+        "2. 在#include \"url/gurl.h\"后添加了条件编译块#if BUILDFLAG(IS_ARKWEB)",
+        "3. 在条件编译块内添加了arkweb扩展头文件的包含",
+        "4. 正确关闭了条件编译块#endif"
+      ],
+      "修改位置": "第8行和第12行之后",
+      "语法验证": "通过",
+      "逻辑验证": "通过"
+    }
+  ],
+  "处理总结": {
+    "总体评估": "成功",
+    "关键发现": "Arkweb 132添加了标准的功能特定包含文件，用于支持Arkweb扩展功能",
+    "潜在影响": "最小影响，仅为添加条件编译的包含文件，不影响现有代码逻辑",
+    "建议后续检查": [
+      "确认arkweb/build/features/features.h文件存在",
+      "确认arkweb/chromium_ext/services/network/sec_header_helpers_for_include.h文件存在"
+    ]
+  },
+  "合规性声明": {
+    ".rej文件完整性": "已确认.rej文件保持完整，未被修改或删除",
+    "遵循黄金法则": "严格遵循，仅添加+行，未添加任何上下文行",
+    "无辅助文件创建": "确认未创建任何脚本文件或辅助工具",
+    "路径合规性": "仅在指定目录创建JSON报告文件"
+  }
+}

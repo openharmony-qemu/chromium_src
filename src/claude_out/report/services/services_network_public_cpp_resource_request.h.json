@@ -1,0 +1,89 @@
+{
+  "file_path": "/home/sujiahao/code/arkweb_141/src/services/network/public/cpp/resource_request.h",
+  "conflict_file": "/home/sujiahao/code/arkweb_141/src/services/network/public/cpp/resource_request.h.rej",
+  "analysis": {
+    "total_hunks": 2,
+    "resolved_hunks": 2,
+    "unresolved_hunks": 0,
+    "rej_file_integrity": "maintained",
+    "processing_timestamp": "2025-11-06"
+  },
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "location": "第151行后",
+      "description": "添加性能网络跟踪字段",
+      "modification_type": "插入",
+      "changes": [
+        {
+          "type": "add",
+          "lines": [
+            "#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)",
+            "  int request_id_perf_stat_;",
+            "#endif"
+          ]
+        }
+      ],
+      "risk_analysis": {
+        "level": "低",
+        "reasoning": "仅在特定编译宏条件下添加一个整型成员变量，不涉及函数逻辑或复杂类型",
+        "impact": "内存布局轻微变化，仅在启用ARKWEB_PERFORMANCE_NETWORK_TRACE时生效"
+      },
+      "conflict_cause": "Chromium 141版本中ARKweb的性能网络跟踪特性未集成",
+      "resolution_strategy": "精确定位到bool SavesCookies() const;之后插入，保持代码结构一致性",
+      "confidence_level": "高",
+      "status": "已解决"
+    },
+    {
+      "hunk_id": 2,
+      "location": "第269行prefetch_token字段后",
+      "description": "添加多个ARKweb特性相关字段",
+      "modification_type": "插入",
+      "changes": [
+        {
+          "type": "add",
+          "lines": [
+            "#if BUILDFLAG(ARKWEB_PRP_PRELOAD)",
+            "  bool allow_preload_record = false;",
+            "  GURL main_url;",
+            "  bool is_preflight = false;",
+            "#endif",
+            "",
+            "#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)",
+            "  bool is_sync_mode = false;",
+            "#endif",
+            "#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)",
+            "  bool is_download_request = false;",
+            "#endif  //  ARKWEB_EX_DOWNLOAD",
+            "",
+            "#if BUILDFLAG(ARKWEB_LOGGER_REPORT)",
+            "  int32_t usage_scenario_ = 99;",
+            "#endif"
+          ]
+        }
+      ],
+      "risk_analysis": {
+        "level": "低",
+        "reasoning": "所有新增字段都在条件编译宏保护下，不会影响默认构建",
+        "impact": "添加了4个特性模块的相关字段，仅在对应特性启用时生效"
+      },
+      "conflict_cause": "Chromium 141版本中ARKweb的PRP预加载、资源拦截、扩展下载和日志报告特性未集成",
+      "resolution_strategy": "精确定位到std::optional<base::UnguessableToken> prefetch_token;之后插入，确保字段在合适的位置",
+      "confidence_level": "高",
+      "status": "已解决"
+    }
+  ],
+  "summary": {
+    "processing_result": "成功",
+    "arkweb_features_added": [
+      "ARKWEB_PERFORMANCE_NETWORK_TRACE - 性能网络跟踪统计ID",
+      "ARKWEB_PRP_PRELOAD - 预加载相关配置",
+      "ARKWEB_RESOURCE_INTERCEPTION - 资源拦截同步模式",
+      "ARKWEB_EX_DOWNLOAD - 扩展下载请求标识",
+      "ARKWEB_LOGGER_REPORT - 使用场景日志报告"
+    ],
+    "code_integrity": "保持良好",
+    "build_impact": "仅在启用对应ARKweb特性时生效，对默认构建无影响",
+    "compliance": "严格遵守了黄金法则，仅添加+标记的行，未添加任何上下文行，未生成脚本文件"
+  }
+}

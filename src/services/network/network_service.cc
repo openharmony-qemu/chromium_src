@@ -692,6 +692,9 @@ void NetworkService::StartNetLog(base::File file,
                                  net::NetLogCaptureMode capture_mode,
                                  base::Value::Dict constants,
                                  std::optional<base::TimeDelta> duration) {
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "NetworkService::StartNetLog";
+#endif
   if (max_total_size == net::FileNetLogObserver::kNoLimit) {
     StartNetLogUnbounded(std::move(file), capture_mode, std::move(constants));
   } else {
@@ -765,6 +768,11 @@ void NetworkService::ConfigureStubHostResolver(
   host_resolver_manager_->SetInsecureDnsClientEnabled(
       insecure_dns_client_enabled, additional_dns_types_enabled);
 
+#if BUILDFLAG(ARKWEB_HTTP_DNS)
+  net::DnsConfigOverrides overrides =
+      AsArkWebNetworkServiceExt()->ConfigureStubHostResolverExt(
+          secure_dns_mode, dns_over_https_config);
+#else
   // Configure DNS over HTTPS.
   DCHECK(dns_config_overrides_set_by_ == FunctionTag::None ||
          dns_config_overrides_set_by_ ==
@@ -775,6 +783,7 @@ void NetworkService::ConfigureStubHostResolver(
   overrides.secure_dns_mode = secure_dns_mode;
   overrides.allow_dns_over_https_upgrade =
       base::FeatureList::IsEnabled(features::kDnsOverHttpsUpgrade);
+#endif  // BUILDFLAG(ARKWEB_HTTP_DNS)
 
   host_resolver_manager_->SetDnsConfigOverrides(overrides);
 

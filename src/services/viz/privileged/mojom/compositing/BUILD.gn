@@ -70,6 +70,12 @@ mojom("compositing") {
   if (is_android || is_chromeos) {
     enabled_features += [ "can_set_refresh_rate" ]
   }
+  if (arkweb_composite_render) {
+    enabled_features += [ "arkweb_composite_render" ]
+  }
+  if (arkweb_blank_optimize) {
+    enabled_features += [ "arkweb_blank_optimize" ]
+  }
 
   shared_cpp_typemaps = [
     {
@@ -116,4 +122,12 @@ mojom("compositing") {
       ]
 
   blink_cpp_typemaps = shared_cpp_typemaps
+
+  enabled_features += ["arkweb_occluded_opt"]
+  enabled_features += ["arkweb_video_ltpo"]
+  enabled_features += ["arkweb_performance_jitter"]
+  enabled_features += ["arkweb_maximize_resize"]
+  enabled_features += ["arkweb_pip"]
+  enabled_features += ["arkweb_same_layer"]
+  enabled_features += ["arkweb_vsync_schedule"]
 }

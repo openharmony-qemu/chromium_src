@@ -1,0 +1,56 @@
+{
+  "conflict_file": "services/network/public/mojom/url_loader.mojom.rej",
+  "source_file": "services/network/public/mojom/url_loader.mojom",
+  "processing_summary": {
+    "total_hunks": 1,
+    "resolved_hunks": 1,
+    "unresolved_hunks": 0,
+    "rej_file_integrity": "保持完整未被修改"
+  },
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "status": "已解决",
+      "confidence": "高",
+      "risk_assessment": "低风险 - 这是一个标准的Mojom接口方法添加，使用了条件编译[EnableIf=arkweb_resource_interception]，不会影响现有功能",
+      "conflict_cause": "Arkweb132在URLLoaderClient接口中添加了OnTransferDataWithSharedMemory方法用于共享内存数据传输，在升级到Chromium141时需要重新应用这个修改",
+      "analysis_process": "通过分析.rej文件中的hunk，识别出需要在OnReceiveResponse方法后添加OnTransferDataWithSharedMemory方法。使用OnReceiveResponse和OnReceiveRedirect作为定位锚点，成功在源文件中找到精确位置",
+      "resolution_strategy": "直接应用修改 - 在OnReceiveResponse方法和OnReceiveRedirect方法之间插入新的接口方法",
+      "applied_changes": [
+        {
+          "line_number": 79,
+          "operation": "添加",
+          "content": "[EnableIf=arkweb_resource_interception]"
+        },
+        {
+          "line_number": 80,
+          "operation": "添加",
+          "content": "OnTransferDataWithSharedMemory(mojo_base.mojom.ReadOnlySharedMemoryRegion region, uint64 buffer_size);"
+        }
+      ],
+      "verification": "修改成功应用到源文件第79-80行，语法正确，接口定义完整，与现有代码风格一致"
+    }
+  ],
+  "technical_details": {
+    "interface_affected": "URLLoaderClient",
+    "method_added": "OnTransferDataWithSharedMemory",
+    "condition_attribute": "arkweb_resource_interception",
+    "parameters": [
+      {
+        "name": "region",
+        "type": "mojo_base.mojom.ReadOnlySharedMemoryRegion"
+      },
+      {
+        "name": "buffer_size",
+        "type": "uint64"
+      }
+    ],
+    "dependency_check": "源文件已包含必要的import: import \"mojo/public/mojom/base/shared_memory.mojom\"; (第14-15行)"
+  },
+  "final_verification": {
+    "rej_file_status": "完整保留，未被修改",
+    "source_file_modified": "是，成功添加了OnTransferDataWithSharedMemory方法",
+    "syntax_check": "通过，Mojom语法正确",
+    "compilation_impact": "预计无负面影响，条件编译确保仅在启用arkweb_resource_interception时生效"
+  }
+}

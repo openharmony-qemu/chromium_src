@@ -18,6 +18,8 @@
 #include "net/ssl/client_cert_store_win.h"
 #elif BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_IOS)
 #include "net/ssl/client_cert_store_mac.h"
+#elif BUILDFLAG(IS_OHOS)
+#include "net/ssl/client_cert_store_ohos.h"
 #endif
 
 namespace remoting {
@@ -122,6 +124,8 @@ std::unique_ptr<net::ClientCertStore> CreateClientCertStoreInstance() {
       base::BindRepeating(&OpenLocalMachineCertStore));
 #elif BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_IOS)
   return std::make_unique<net::ClientCertStoreMac>();
+#elif BUILDFLAG(IS_OHOS)
+  return std::make_unique<net::ClientCertStoreOHOS>();
 #else
   // OpenSSL does not use the ClientCertStore infrastructure.
   return nullptr;

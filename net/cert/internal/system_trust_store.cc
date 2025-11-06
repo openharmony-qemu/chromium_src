@@ -40,6 +40,8 @@
 #include "net/cert/internal/trust_store_win.h"
 #elif BUILDFLAG(IS_ANDROID)
 #include "net/cert/internal/trust_store_android.h"
+#elif BUILDFLAG(IS_OHOS)
+#include "net/cert/internal/trust_store_ohos.h"
 #endif
 
 #if BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)
@@ -379,6 +381,32 @@ void InitializeTrustStoreAndroid() {
 void InitializeTrustStoreAndroid() {}
 
 #endif  // CHROME_ROOT_STORE_SUPPORTED
+
+#elif BUILDFLAG(IS_OHOS)
+
+namespace {
+TrustStoreOhos* GetGlobalTrustStoreOhosForCRS() {
+  static base::NoDestructor<TrustStoreOhos> static_trust_store_ohos;
+  return static_trust_store_ohos.get();
+}
+
+void InitializeTrustStoreForCRSOnWorkerThread() {
+  GetGlobalTrustStoreOhosForCRS()->Initialize();
+}
+}  // namespace
+
+std::unique_ptr<SystemTrustStore> CreateSslSystemTrustStoreChromeRoot(
+    std::unique_ptr<TrustStoreChrome> chrome_root) {
+  return std::make_unique<SystemTrustStoreChromeWithUnOwnedSystemStore>(
+      std::move(chrome_root), GetGlobalTrustStoreOhosForCRS());
+}
+
+void InitializeTrustStoreOhosSystem() {
+  base::ThreadPool::PostTask(
+      FROM_HERE,
+      {base::MayBlock(), base::TaskShutdownBehavior::CONTINUE_ON_SHUTDOWN},
+      base::BindOnce(&InitializeTrustStoreForCRSOnWorkerThread));
+}
 
 #endif
 

@@ -16,17 +16,17 @@
 namespace net {
 class SSLCertRequestInfo;
 
-class NET_EXPORT ClientCertStoreOHOS : public ClientCertStore {
+class NET_EXPORT ClientCertStoreOhos : public ClientCertStore {
  public:
   using CertificateStore =
       std::map<std::string, std::pair<bssl::UniquePtr<X509>, std::string>>;
 
-  ClientCertStoreOHOS();
+  ClientCertStoreOhos();
 
-  ClientCertStoreOHOS(const ClientCertStoreOHOS&) = delete;
-  ClientCertStoreOHOS& operator=(const ClientCertStoreOHOS&) = delete;
+  ClientCertStoreOhos(const ClientCertStoreOhos&) = delete;
+  ClientCertStoreOhos& operator=(const ClientCertStoreOhos&) = delete;
 
-  ~ClientCertStoreOHOS() override;
+  ~ClientCertStoreOhos() override;
 
   // ClientCertStore:
   void GetClientCerts(scoped_refptr<const SSLCertRequestInfo> cert_request_info,
@@ -54,7 +54,7 @@ class NET_EXPORT ClientCertStoreOHOS : public ClientCertStore {
   void OnClientCertsResponse(ClientCertListCallback callback,
                              ClientCertIdentityList identities);
 
-  base::WeakPtrFactory<ClientCertStoreOHOS> weak_factory_{this};
+  base::WeakPtrFactory<ClientCertStoreOhos> weak_factory_{this};
 };
 
 }  // namespace net

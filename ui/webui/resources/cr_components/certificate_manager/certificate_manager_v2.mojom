@@ -59,7 +59,7 @@ enum CertificateSource {
 
   // Enterprise provisioned client certificates. Only enabled on platforms
   // where that feature is available.
-  [EnableIf=is_linux|is_mac|is_win] kProvisionedClientCert,
+  [EnableIf=is_linux|is_mac|is_win|is_ohos] kProvisionedClientCert,
 
   // Extension provided client certificates.
   [EnableIf=is_chromeos] kExtensionsClientCert,
@@ -150,7 +150,7 @@ interface CertificateManagerPageHandler {
       => (ActionResult? result);
 
   // Show the platform's native certificate management UI.
-  [EnableIf=is_mac|is_win]
+  [EnableIf=is_mac|is_win|is_ohos]
   ShowNativeManageCertificates();
 
   // Set whether to use the OS imported certs or not.

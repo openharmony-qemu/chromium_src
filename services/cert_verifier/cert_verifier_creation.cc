@@ -153,6 +153,13 @@ class CertVerifyProcFactoryImpl : public net::CertVerifyProcFactory {
     // tests that don't use threads otherwise.
     net::InitializeTrustStoreAndroid();
 #endif
+#if BUILDFLAG(IS_OHOS)
+    // Start initialization of TrustStoreOHOS on a separate thread if it hasn't
+    // been done already. We do this here instead of in the TrustStoreOHOS
+    // constructor to avoid any unnecessary threading in unit tests that don't
+    // use threads otherwise.
+    net::InitializeTrustStoreOhosSystem();
+#endif
     return net::CreateCertVerifyProcBuiltin(
         std::move(cert_net_fetcher), std::move(crl_set), std::move(ct_verifier),
         std::move(ct_policy_enforcer), std::move(trust_store), instance_params,
@@ -196,7 +203,7 @@ ConvertMojoListToInternalList(
 
 bool IsUsingCertNetFetcher() {
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA) ||      \
-    BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED) || BUILDFLAG(IS_OHOS)
+    BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)
   return true;
 #else
   return false;

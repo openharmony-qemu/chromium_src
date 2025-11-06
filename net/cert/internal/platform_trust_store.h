@@ -7,6 +7,7 @@
 
 #include <vector>
 
+#include "build/build_config.h"
 #include "net/base/net_export.h"
 #include "third_party/boringssl/src/pki/parsed_certificate.h"
 #include "third_party/boringssl/src/pki/trust_store.h"
@@ -36,6 +37,10 @@ class NET_EXPORT PlatformTrustStore : public bssl::TrustStore {
   };
 
   virtual std::vector<CertWithTrust> GetAllUserAddedCerts() = 0;
+
+#if BUILDFLAG(IS_OHOS)
+  virtual void UpdateCerts() = 0;
+#endif
 };
 
 }  // namespace net

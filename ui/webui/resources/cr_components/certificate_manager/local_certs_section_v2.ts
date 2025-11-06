@@ -228,7 +228,7 @@ export class LocalCertsSectionV2Element extends LocalCertsSectionV2ElementBase {
         this.certManagementMetadata_.showUserCertsUi;
   }
 
-  // <if expr="is_win or is_macosx">
+  // <if expr="is_win or is_macosx or is_ohos">
   private onManageCertsExternal_() {
     const proxy = CertificatesV2BrowserProxy.getInstance();
     proxy.handler.showNativeManageCertificates();

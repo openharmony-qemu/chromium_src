@@ -16,8 +16,8 @@ CertManagerAdapter& CertManagerAdapter::GetInstance() {
   return instance;
 }
 
-CertManagerAdapter::CertInfoList CertManagerAdapter::ListCertsInfo() {
-  TRACE_EVENT_0("CertManagerAdapter::ListCertsInfo");
+CertManagerAdapter::CertInfoList CertManagerAdapter::GetAllUserTrustedCertificates() {
+  TRACE_EVENT_0("CertManagerAdapter::GetAllUserTrustedCertificates");
   auto promise = std::make_shared<std::promise<bool>>();
   auto cert_infos = std::make_shared<CertInfoList>();
   std::function<void(aki::Value, int32_t)> callback =
@@ -37,13 +37,13 @@ CertManagerAdapter::CertInfoList CertManagerAdapter::ListCertsInfo() {
   };
 
   auto func = ohos::adapter::GetJSFunction(
-      "CertManagerAdapter.GetAllPrivateCertificates");
+      "CertManagerAdapter.GetAllUserTrustedCertificates");
   if (func) {
     func->Invoke<void>(callback);
     auto future = promise->get_future();
     auto status = future.wait_for(std::chrono::seconds(kListCertsInfoWaitTime));
     if (status == std::future_status::timeout) {
-      LOGE("CertManagerAdapter.ListCertsInfo Wait timeout");
+      LOGE("CertManagerAdapter.GetAllUserTrustedCertificates Wait timeout");
       return *cert_infos;
     }
   }

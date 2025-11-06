@@ -41,7 +41,7 @@ class ADAPTER_EXPORT_API CertManagerAdapter {
 
   using CertInfoList = std::vector<OhosCertInfo>;
 
-  virtual CertInfoList ListCertsInfo();
+  CertInfoList GetAllUserTrustedCertificates();
   CertInfoList ListCACertsInfo(const std::string& pathDir);
   int32_t GetUserId();
   virtual int InstallPersonalCert(std::shared_ptr<char[]> cert_data,

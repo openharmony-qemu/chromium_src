@@ -78,6 +78,7 @@ class UnverifiedRulesetDealer;
 namespace subresource_filter {
 class MemoryMappedRuleset;
 class UnverifiedRulesetDealer;
+class UserUnverifiedRulesetDealer;
 }
 
 namespace url {
@@ -87,6 +88,8 @@ class Origin;
 namespace web_cache {
 class WebCacheImpl;
 }
+
+class ArkWebChromeContentRendererClientExt;
 
 class ChromeContentRendererClient
     : public content::ContentRendererClient,
@@ -291,6 +294,8 @@ class ChromeContentRendererClient
 #endif
   std::unique_ptr<subresource_filter::UnverifiedRulesetDealer>
       subresource_filter_ruleset_dealer_;
+  std::unique_ptr<subresource_filter::UserUnverifiedRulesetDealer>
+      subresource_filter_user_ruleset_dealer_;
   std::unique_ptr<fingerprinting_protection_filter::UnverifiedRulesetDealer>
       fingerprinting_protection_ruleset_dealer_;
   scoped_refptr<const subresource_filter::MemoryMappedRuleset>

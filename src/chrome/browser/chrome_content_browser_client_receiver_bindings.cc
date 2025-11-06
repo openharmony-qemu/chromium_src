@@ -96,6 +96,11 @@
 #include "chrome/browser/media/android/cdm/media_drm_storage_factory.h"
 #endif
 
+#if BUILDFLAG(ENABLE_MOJO_CDM) && \
+    BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
+#include "chrome/browser/media/ohos/cdm/media_drm_storage_factory.h"
+#endif
+
 #if BUILDFLAG(ENABLE_SPELLCHECK)
 #include "chrome/browser/spellchecker/spell_check_initialization_host_impl.h"
 #include "components/spellcheck/common/spellcheck.mojom.h"
@@ -351,9 +356,18 @@ void ChromeContentBrowserClient::RegisterBrowserInterfaceBindersForFrame(
   chrome::internal::PopulateChromeFrameBinders(map, render_frame_host);
   chrome::internal::PopulateChromeWebUIFrameBinders(map, render_frame_host);
 
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  map->Add<dom_distiller::mojom::DistillabilityService>(
+      base::BindRepeating(&BindDistillabilityService));
+#endif
+
 #if BUILDFLAG(ENABLE_EXTENSIONS_CORE)
   const GURL& site = render_frame_host->GetSiteInstance()->GetSiteURL();
-  if (!site.SchemeIs(extensions::kExtensionScheme))
+  if (!site.SchemeIs(extensions::kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      && !site.SchemeIs(extensions::kArkwebExtensionScheme)
+#endif
+  )
     return;
 
   content::BrowserContext* browser_context =
@@ -644,6 +658,18 @@ void ChromeContentBrowserClient::
             BindReceiver(std::move(receiver), render_frame_host);
       },
       &render_frame_host));
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  associated_registry.AddInterface<
+      subresource_filter::mojom::UserSubresourceFilterHost>(base::BindRepeating(
+      [](content::RenderFrameHost* render_frame_host,
+         mojo::PendingAssociatedReceiver<
+             subresource_filter::mojom::UserSubresourceFilterHost> receiver) {
+        subresource_filter::ArkWebContentSubresourceFilterThrottleManagerExt::
+            BindUserReceiver(std::move(receiver), render_frame_host);
+      },
+      &render_frame_host));
+#endif
 
   Profile* profile =
       Profile::FromBrowserContext(render_frame_host.GetBrowserContext());

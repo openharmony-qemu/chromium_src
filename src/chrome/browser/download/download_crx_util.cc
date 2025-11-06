@@ -73,6 +73,11 @@ std::unique_ptr<ExtensionInstallPrompt> CreateExtensionInstallPrompt(
       }
       web_contents = browser->tab_strip_model()->GetActiveWebContents();
     }
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    if (!web_contents) {
+      return std::make_unique<ExtensionInstallPrompt>(profile, nullptr);
+    }
+#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
     return std::make_unique<ExtensionInstallPrompt>(web_contents);
   }
 #else

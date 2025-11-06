@@ -50,6 +50,10 @@ class ActiveTabPermissionGranter
   // Clears tab-specific permissions for all extensions. Used only for testing.
   void RevokeForTesting();
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void SetTabId(int id) { tab_id_ = id; }
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
  private:
   friend class content::WebContentsUserData<ActiveTabPermissionGranter>;
 

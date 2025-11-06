@@ -1,0 +1,36 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/chrome/browser/extensions/extension_action_runner.cc.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/chrome/browser/extensions/extension_action_runner.cc",
+    "处理时间": "2025-11-04"
+  },
+  "总体统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "处理状态": {
+    ".rej文件完整性": "已保持完整，未被修改",
+    "处理原则": "严格遵守黄金法则，仅添加+行，删除-行，未添加任何上下文"
+  },
+  "hunks详情": [
+    {
+      "hunk序号": 1,
+      "hunk范围": "第49-54行附近",
+      "待添加的行": [
+        "#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)",
+        "#include \"chrome/browser/extensions/extension_tab_util.h\"",
+        "#endif"
+      ],
+      "待删除的行": [],
+      "风险分析": "低风险。添加了一个条件编译的包含语句，使用ARKWEB_ARKWEB_EXTENSIONS编译标志控制，不会影响现有功能。",
+      "冲突原因": "Arkweb132针对扩展功能添加了Arkweb特定的条件编译支持，在升级到Chromium141时需要重新集成这些修改。",
+      "分析过程": "1. 识别上下文锚点：'url/origin.h'包含和namespace声明 2. 在源文件中找到匹配位置 3. 确认在第51行后插入修改 4. 验证源文件第21行已有extension_tab_util.h的普通包含，但这不会造成冲突，因为条件编译会在不同条件下生效。",
+      "修改置信度": "高",
+      "最终策略": "成功应用",
+      "处理结果": "已在源文件第51行后成功添加了ARKWEB_ARKWEB_EXTENSIONS条件编译块，包含extension_tab_util.h头文件。"
+    }
+  ],
+  "处理总结": "成功处理了所有1个hunk。添加了Arkweb特定的条件编译支持，保持了代码的一致性。所有修改都严格按照黄金法则执行，未添加任何上下文行，保持了.rej文件的完整性。"
+}

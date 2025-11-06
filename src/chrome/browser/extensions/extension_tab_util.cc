@@ -104,7 +104,12 @@
 #endif
 
 #if BUILDFLAG(ENABLE_CEF)
+#include "cef/ohos_cef_ext/libcef/browser/chrome/extensions/arkweb_chrome_extension_util_ext.h"
 #include "cef/libcef/browser/chrome/extensions/chrome_extension_util.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/chrome/browser/extensions/extension_tab_util_for_include.cc"
 #endif
 
 using content::NavigationEntry;
@@ -384,7 +389,11 @@ base::expected<base::Value::Dict, std::string> ExtensionTabUtil::OpenTab(
 
   // We can't load extension URLs into incognito windows unless the extension
   // uses split mode. Special case to fall back to a tabbed window.
-  if (url.SchemeIs(kExtensionScheme) &&
+  if ((url.SchemeIs(kExtensionScheme)
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+       || url.SchemeIs(kArkwebExtensionScheme)
+#endif
+           ) &&
       (!extension || !IncognitoInfo::IsSplitMode(extension)) &&
       browser->profile()->IsOffTheRecord()) {
     Profile* original_profile = browser->profile()->GetOriginalProfile();
@@ -662,6 +671,10 @@ api::tabs::Tab ExtensionTabUtil::CreateTabObject(
       tab_object.opener_tab_id = GetTabIdForExtensions(opener->GetContents());
     }
   }
+#endif
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  UpdateWithNWebExtensionTabInfo(tab_object);
 #endif
 
   ScrubTabForExtension(extension, contents, &tab_object, scrub_tab_behavior);

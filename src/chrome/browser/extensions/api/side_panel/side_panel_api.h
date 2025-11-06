@@ -100,6 +100,7 @@ class SidePanelOpenFunction : public SidePanelApiFunction {
   ~SidePanelOpenFunction() override = default;
   ResponseAction RunFunction() override;
 };
+#endif // ARKWEB_ARKWEB_EXTENSIONS
 
 class SidePanelGetLayoutFunction : public SidePanelApiFunction {
  public:

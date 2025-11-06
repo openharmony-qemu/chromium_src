@@ -1,0 +1,39 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/chrome/browser/extensions/chrome_extension_web_contents_observer.cc.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/chrome/browser/extensions/chrome_extension_web_contents_observer.cc",
+    "处理时间": "2025-11-04"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk详情": [
+    {
+      "hunk编号": 1,
+      "行号范围": "5-15",
+      "冲突原因": "Arkweb132版本在include部分添加了arkweb/features.h头文件引用，但在Arkweb141版本中此修改未自动合并",
+      "风险分析": "低风险。这是一个简单的头文件添加，用于支持Arkweb扩展功能特性。不添加此头文件可能导致编译错误或功能缺失。",
+      "修改操作": {
+        "添加行数": 1,
+        "删除行数": 0,
+        "添加内容": "#include \"arkweb/build/features/features.h\"",
+        "删除内容": "无"
+      },
+      "定位过程": "使用上下文锚点定位：在第8行('#include <string>')之后，第10行('#include \"base/command_line.h\"')之前成功找到插入位置",
+      "应用策略": "直接在源文件第9行（空行后）添加指定的include语句",
+      "解决状态": "已解决",
+      "置信度": "高",
+      "验证结果": "修改成功应用，include语句已添加到正确位置"
+    }
+  ],
+  "合规性验证": {
+    ".rej文件完整性": "已确认.rej文件保持完整，未被修改或删除",
+    "无上下文添加": "已确认只添加了+开头的行，未添加任何上下文行",
+    "无脚本创建": "已确认未创建任何脚本文件或辅助工具",
+    "路径合规": "已确认只在指定目录创建JSON报告文件"
+  },
+  "总结": "成功处理了1个hunk的冲突，将Arkweb132的侵入式修改精确应用到Arkweb141源文件中。所有修改都遵循了黄金法则，保持了代码的完整性和准确性。"
+}

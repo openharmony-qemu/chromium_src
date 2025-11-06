@@ -136,6 +136,12 @@ CrxInstaller::CrxInstaller(content::BrowserContext* context,
   CHECK(!profile_->IsOffTheRecord());
   profile_observation_.Observe(profile_);
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (client_) {
+    client_->install_ui()->SetSkipPostInstallUI(true);
+  }
+#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+
   // Observe for browser shutdown. Unretained is safe because the callback
   // subscription is owned by this object.
   on_browser_terminating_subscription_ =
@@ -151,6 +157,11 @@ CrxInstaller::CrxInstaller(content::BrowserContext* context,
         approval->use_app_installed_bubble);
     client_->install_ui()->SetSkipPostInstallUI(approval->skip_post_install_ui);
   }
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (client_) {
+    client_->install_ui()->SetSkipPostInstallUI(true);
+  }
+#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 
   if (approval->skip_install_dialog) {
     // Mark the extension as approved, but save the expected manifest and ID
@@ -192,7 +203,13 @@ void CrxInstaller::InstallCrx(const base::FilePath& source_file) {
 }
 
 void CrxInstaller::InstallCrxFile(const CRXFileInfo& source_file) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  LOG(INFO) << "CrxInstaller::InstallCrxFile";
+#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   if (!profile_ || browser_terminating_) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    LOG(INFO) << "exit CrxInstaller::InstallCrxFile, !service";
+#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
     return;
   }
 
@@ -434,12 +451,20 @@ std::optional<CrxInstallError> CrxInstaller::AllowInstall(
       // from the gallery.
       // TODO(erikkay) Apply this rule for paid extensions and themes as well.
       if (UpdatesFromWebstore(*extension)) {
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+        return CrxInstallError(
+            CrxInstallErrorType::OTHER,
+            CrxInstallErrorDetail::NOT_INSTALLED_FROM_GALLERY,
+            l10n_util::GetStringUTF16(
+                IDS_EXTENSIONS_LOAD_ERROR_HEADING));
+#else
         return CrxInstallError(
             CrxInstallErrorType::OTHER,
             CrxInstallErrorDetail::NOT_INSTALLED_FROM_GALLERY,
             l10n_util::GetStringFUTF16(
                 IDS_EXTENSION_INSTALL_GALLERY_ONLY,
                 l10n_util::GetStringUTF16(IDS_EXTENSION_WEB_STORE_TITLE)));
+#endif // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
       }
 
       // For self-hosted apps, verify that the entire extent is on the same

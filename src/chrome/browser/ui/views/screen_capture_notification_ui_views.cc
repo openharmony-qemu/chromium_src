@@ -54,6 +54,9 @@ namespace {
 
 const int kHorizontalMargin = 10;
 const float kWindowAlphaValue = 0.96f;
+#if BUILDFLAG(IS_OHOS)
+const gfx::Size kOhosMinimumWindowSize = gfx::Size(300, 90);
+#endif
 
 using content::DesktopMediaID;
 using UserInteraction = GetDisplayMediaUserInteractionWithControls;

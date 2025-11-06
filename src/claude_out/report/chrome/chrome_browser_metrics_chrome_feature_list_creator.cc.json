@@ -1,0 +1,72 @@
+{
+  "文件路径": "chrome/browser/metrics/chrome_feature_list_creator.cc",
+  "rej文件": "chrome/browser/metrics/chrome_feature_list_creator.cc.rej",
+  "分析时间": "2025-11-04",
+  "统计信息": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk详情": [
+    {
+      "hunk编号": 1,
+      "位置信息": "@@ -64,10 +64,32 @@",
+      "冲突原因": "Arkweb 132 在 Chromium 132 的基础上添加了多个 Arkweb 特定的 #include 语句，这些在 Chromium 141 的 Arkweb 141 版本中缺失",
+      "风险分析": "低风险 - 纯粹的 include 语句添加，不涉及逻辑修改",
+      "待添加行数": 21,
+      "待删除行数": 0,
+      "修改类型": "添加头文件包含",
+      "置信度": "高 - 锚点匹配完美，定位准确",
+      "分析过程": "通过识别 .rej 文件中的 #endif // BUILDFLAG(IS_CHROMEOS) 锚点，在源文件第65行找到完美匹配，在namespace { 声明前插入所有必需的 include 语句",
+      "处理策略": "在源文件第65行后添加所有21行 #include 语句",
+      "解决状态": "已解决",
+      "应用位置": "第65行后，namespace { 之前",
+      "修改内容": {
+        "添加的行": [
+          "#include \"components/subresource_filter/content/browser/ohos_adblock_config.h\"",
+          "#include \"components/subresource_filter/core/browser/ruleset_version.h\"",
+          "#include \"components/subresource_filter/core/browser/user_ruleset_version.h\"",
+          "#include \"components/subresource_filter/core/common/constants.h\"",
+          "",
+          "#if BUILDFLAG(ARKWEB_EDM_POLICY)",
+          "#include \"cef/ohos_cef_ext/libcef/browser/policy/browser_policy_handler.h\"",
+          "#endif",
+          "#if BUILDFLAG(ARKWEB_ADBLOCK)",
+          "#include \"arkweb/chromium_ext/components/prefs/migration_filter.h\"",
+          "#endif // BUILDFLAG(ARKWEB_ADBLOCK)",
+          "",
+          "#if BUILDFLAG(ARKWEB_READER_MODE)",
+          "#include \"arkweb/ohos_nweb_ex/overrides/cef/libcef/browser/alloy/global_reader_mode_data_manager.h\"",
+          "#endif",
+          "",
+          "#if BUILDFLAG(IS_ARKWEB_EXT)",
+          "#if BUILDFLAG(ARKWEB_SAFEBROWSING)",
+          "#include \"arkweb/chromium_ext/chrome/browser/metrics/chrome_feature_list_creator_for_include.cpp\"",
+          "#endif",
+          "#endif",
+          ""
+        ]
+      }
+    }
+  ],
+  "整体分析": {
+    "冲突类型": "头文件包含冲突",
+    "主要修改内容": "添加 Arkweb 特定的头文件包含",
+    "影响范围": "编译时依赖，不影响运行时逻辑",
+    "风险评估": "低风险 - 仅添加 include 语句，保持原有逻辑不变",
+    "兼容性": "良好 - 所有添加的内容都使用条件编译，不会影响其他平台"
+  },
+  "处理结果": {
+    "rej文件完整性": "完整保留，未被修改",
+    "源文件修改状态": "已成功应用所有修改",
+    "验证状态": "修改已应用到正确位置",
+    "最终建议": "建议编译测试以确保所有头文件路径正确"
+  },
+  "技术细节": {
+    "定位方法": "使用上下文锚点 #endif // BUILDFLAG(IS_CHROMEOS) 精确定位",
+    "应用原则": "严格遵循只添加+行、删除-行的原则，不添加任何上下文",
+    "代码风格": "保持原有代码风格和格式",
+    "条件编译": "所有添加的 include 都使用适当的 BUILDFLAG 条件编译"
+  }
+}

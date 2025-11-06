@@ -1,0 +1,54 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/chrome/browser/browser_process_impl.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/chrome/browser/browser_process_impl.h",
+    "处理时间": "2025-11-04"
+  },
+  "统计信息": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0
+  },
+  "rej文件完整性": {
+    "状态": "保持完整",
+    "说明": ".rej文件未被修改或删除，完全保持原始状态"
+  },
+  "hunks详情": [
+    {
+      "hunk_id": 1,
+      "位置": "第266-276行",
+      "冲突原因": "Arkweb132在CreateSubresourceFilterRulesetService()后添加了空行和CreateFingerprintingProtectionRulesetService()函数声明",
+      "风险分析": {
+        "风险等级": "低",
+        "风险描述": "添加空行和函数声明，不会影响代码逻辑，只需要确保格式一致"
+      },
+      "处理过程": {
+        "步骤1-解析": {
+          "待添加行": [
+            "+ (空行)",
+            "+ void CreateFingerprintingProtectionRulesetService();"
+          ],
+          "待删除行": []
+        },
+        "步骤2-定位": {
+          "锚点行": "void CreateSubresourceFilterRulesetService();",
+          "定位结果": "在源文件第271行找到匹配",
+          "发现": "CreateFingerprintingProtectionRulesetService()已存在于源文件第272行"
+        },
+        "步骤3-原子化应用": {
+          "执行操作": "在CreateSubresourceFilterRulesetService()后添加一个空行",
+          "应用结果": "成功应用，格式与.rej文件要求一致"
+        }
+      },
+      "解决状态": "已解决",
+      "置信度": "高",
+      "处理策略": "部分应用 - CreateFingerprintingProtectionRulesetService()已存在，只添加空行"
+    }
+  ],
+  "总结": {
+    "整体状态": "成功解决",
+    "主要修改": "添加了一个空行以保持代码格式一致性",
+    "代码完整性": "保持良好，所有必要的函数声明都已存在",
+    "兼容性": "与Arkweb132的侵入式修改完全兼容"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "文件路径": "chrome/browser/component_updater/afp_blocked_domain_list_component_installer.cc",
+  "处理时间": "2025-11-04",
+  "总hunk数量": 1,
+  "成功解决的hunk数量": 1,
+  "未能解决的hunk数量": 0,
+  "rej文件完整性": "保持完整未被修改",
+  "hunks详情": [
+    {
+      "hunk_id": 1,
+      "行号范围": "91-105",
+      "风险等级": "低",
+      "冲突原因": "Arkweb132在ComponentReady方法中添加了条件编译指令#if !BUILDFLAG(ARKWEB_ADBLOCK)来控制ruleset服务的调用",
+      "分析过程": "通过解析rej文件，发现需要在源文件的第95-97行周围添加条件编译指令。使用上下文行'subresource_filter::RulesetService* ruleset_service ='作为锚点精确定位到源文件中的对应位置。",
+      "修改内容": {
+        "添加的行": [
+          "#if !BUILDFLAG(ARKWEB_ADBLOCK)",
+          "#endif"
+        ],
+        "删除的行": []
+      },
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "应用位置": "源文件第95-99行",
+      "目的说明": "让ruleset服务相关代码在ARKWEB_ADBLOCK未定义时才编译，这是Arkweb的特化修改"
+    }
+  ],
+  "总体评估": {
+    "复杂度": "简单",
+    "风险级别": "低",
+    "修改影响": "仅影响条件编译范围，不改变核心逻辑",
+    "建议": "修改已正确应用，建议验证ARKWEB_ADBLOCK宏的定义是否正确"
+  },
+  "处理策略说明": {
+    "定位策略": "使用最小上下文锚点精确定位",
+    "应用原则": "严格只应用+/-行，不添加任何上下文",
+    "完整性检查": ".rej文件保持完整未被修改"
+  }
+}

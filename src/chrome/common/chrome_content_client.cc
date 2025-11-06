@@ -93,6 +93,10 @@
 #include "chrome/common/media/chrome_media_drm_bridge_client.h"
 #endif
 
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
+#include "chrome/common/media/chrome_media_drm_bridge_client_ohos.h"
+#endif
+
 namespace {
 
 }  // namespace
@@ -200,12 +204,18 @@ void ChromeContentClient::AddAdditionalSchemes(Schemes* schemes) {
 
 #if BUILDFLAG(ENABLE_EXTENSIONS_CORE)
   schemes->extension_schemes.push_back(extensions::kExtensionScheme);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  schemes->extension_schemes.push_back(extensions::kArkwebExtensionScheme);
+#endif
 #endif
 
   schemes->isolated_app_schemes.push_back(chrome::kIsolatedAppScheme);
 
 #if BUILDFLAG(ENABLE_EXTENSIONS_CORE)
   schemes->savable_schemes.push_back(extensions::kExtensionScheme);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  schemes->savable_schemes.push_back(extensions::kArkwebExtensionScheme);
+#endif
 #endif
   schemes->savable_schemes.push_back(chrome::kChromeSearchScheme);
   schemes->savable_schemes.push_back(dom_distiller::kDomDistillerScheme);
@@ -241,6 +251,11 @@ void ChromeContentClient::AddAdditionalSchemes(Schemes* schemes) {
   schemes->cors_enabled_schemes.push_back(extensions::kExtensionScheme);
 
   schemes->csp_bypassing_schemes.push_back(extensions::kExtensionScheme);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  schemes->service_worker_schemes.push_back(extensions::kArkwebExtensionScheme);
+  schemes->cors_enabled_schemes.push_back(extensions::kArkwebExtensionScheme);
+  schemes->csp_bypassing_schemes.push_back(extensions::kArkwebExtensionScheme);
+#endif
 #endif
 
 #if BUILDFLAG(IS_CHROMEOS)

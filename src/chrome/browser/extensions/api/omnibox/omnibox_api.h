@@ -43,6 +43,9 @@ class Image;
 namespace extensions {
 
 // Event router class for events related to the omnibox API.
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "cef/ohos_cef_ext/libcef/browser/extensions/api/omnibox/omnibox_api_for_include_file.cc"
+#else
 class ExtensionOmniboxEventRouter {
  public:
   static constexpr size_t kMaxSuggestionActions = 7;
@@ -93,6 +96,7 @@ class ExtensionOmniboxEventRouter {
                                const std::string& action_name,
                                const std::string& content);
 };
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 class OmniboxSendSuggestionsFunction : public ExtensionFunction {
  public:

@@ -58,6 +58,7 @@
 
 #include "base/android/jni_string.h"
 #include "base/android/scoped_java_ref.h"
+#include "base/no_destructor.h"
 #include "chrome/browser/enterprise/connectors/connectors_service.h"
 #include "chrome/browser/profiles/profile.h"
 #include "chrome/browser/ui/managed_ui.h"
@@ -149,6 +150,15 @@ void OnManagementIconReceived(
   }
   std::move(callback).Run(icon);
 }
+
+#if BUILDFLAG(IS_OHOS)
+base::Value::List getList(GURL url) {
+  if (*g_tempurl == url) {
+    return std::move(*g_templist);
+  }
+  return base::Value::List();
+}
+#endif  // BUILDFLAG(IS_OHOS)
 
 // Expected to be called when Management is set and enterprise badging is
 // enabled. Returns:
@@ -248,6 +258,13 @@ net::NetworkTrafficAnnotationTag GetTrafficAnnotationForPolicy(
   }
 }
 }  // namespace
+
+#if BUILDFLAG(IS_OHOS)
+void SetTemplistForOhosTest(base::Value::List list, GURL url) {
+  *g_tempurl = std::move(url);
+  *g_templist = std::move(list);
+}
+#endif  // BUILDFLAG(IS_OHOS)
 
 bool IsBrowserManaged(Profile* profile) {
   DCHECK(profile);

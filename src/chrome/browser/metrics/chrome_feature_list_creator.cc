@@ -64,6 +64,28 @@
 #include "chromeos/ash/components/dbus/dbus_thread_manager.h"
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
+#include "components/subresource_filter/content/browser/ohos_adblock_config.h"
+#include "components/subresource_filter/core/browser/ruleset_version.h"
+#include "components/subresource_filter/core/browser/user_ruleset_version.h"
+#include "components/subresource_filter/core/common/constants.h"
+
+#if BUILDFLAG(ARKWEB_EDM_POLICY)
+#include "cef/ohos_cef_ext/libcef/browser/policy/browser_policy_handler.h"
+#endif
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "arkweb/chromium_ext/components/prefs/migration_filter.h"
+#endif // BUILDFLAG(ARKWEB_ADBLOCK)
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "arkweb/ohos_nweb_ex/overrides/cef/libcef/browser/alloy/global_reader_mode_data_manager.h"
+#endif
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#if BUILDFLAG(ARKWEB_SAFEBROWSING)
+#include "arkweb/chromium_ext/chrome/browser/metrics/chrome_feature_list_creator_for_include.cpp"
+#endif
+#endif
+
 namespace {
 
 // Returns a list of extra switch-dependent feature overrides to be applied

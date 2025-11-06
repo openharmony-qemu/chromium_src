@@ -92,9 +92,11 @@ void AntiFingerprintingBlockedDomainListComponentInstallerPolicy::
       install_dir.Append(subresource_filter::kUnindexedRulesetLicenseFileName);
   subresource_filter::RulesetService* ruleset_service =
       g_browser_process->fingerprinting_protection_ruleset_service();
+#if !BUILDFLAG(ARKWEB_ADBLOCK)
   if (ruleset_service != nullptr) {
     ruleset_service->IndexAndStoreAndPublishRulesetIfNeeded(ruleset_info);
   }
+#endif
 }
 
 void WriteMetrics(InstallationResult result) {

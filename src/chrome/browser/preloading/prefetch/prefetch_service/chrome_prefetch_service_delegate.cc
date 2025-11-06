@@ -4,6 +4,7 @@
 
 #include "chrome/browser/preloading/prefetch/prefetch_service/chrome_prefetch_service_delegate.h"
 
+#include "arkweb/build/features/features.h"
 #include "chrome/browser/battery/battery_saver.h"
 #include "chrome/browser/data_saver/data_saver.h"
 #if BUILDFLAG(IS_ANDROID)

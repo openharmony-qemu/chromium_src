@@ -104,6 +104,10 @@ class TabsEventRouter : public TabStripModelObserver,
   void OnIsAutoDiscardableChanged(
       const performance_manager::PageNode* page_node) override;
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "cef/ohos_cef_ext/libcef/browser/extensions/api/tabs/tabs_event_router_for_include_file.cc"
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
  private:
   // Methods called from OnTabStripModelChanged.
   void DispatchTabInsertedAt(TabStripModel* tab_strip_model,

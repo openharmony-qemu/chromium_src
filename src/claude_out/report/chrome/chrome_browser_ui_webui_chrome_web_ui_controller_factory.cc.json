@@ -1,0 +1,44 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc",
+    "处理时间": "2025-11-04"
+  },
+  "统计信息": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk详情": [
+    {
+      "hunk编号": 1,
+      "位置信息": "@@ -151,10 +151,14 @@",
+      "风险等级": "低",
+      "冲突原因": "Arkweb 132 中针对 ARKWEB_NETWORK_LOAD 特性的条件编译包含语句在 Arkweb 141 中缺失",
+      "修改类型": "新增代码",
+      "待添加的行": [
+        "#if BUILDFLAG(ARKWEB_NETWORK_LOAD)",
+        "#include \"cef/ohos_cef_ext/libcef//browser/net/ohos_net_export_ui.h\"",
+        "#endif"
+      ],
+      "待删除的行": [],
+      "分析过程": ".rej 文件显示需要在第151行附近添加 ARKWEB_NETWORK_LOAD 相关的条件编译包含语句。通过检查源文件发现在第146-148行（using 声明前）是最合适的插入位置。这个位置符合 C++ 代码组织规范，将条件编译的 include 语句放在其他条件编译块之后，using 声明之前。",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "实际应用位置": "第146-148行",
+      "应用结果": "成功在源文件中应用了修改，添加了 ARKWEB_NETWORK_LOAD 条件编译包含语句"
+    }
+  ],
+  "整体评估": {
+    "代码完整性": "保持良好",
+    "语法正确性": "无语法错误",
+    "逻辑一致性": "符合预期",
+    "编译兼容性": "应该能够正常编译"
+  },
+  "验证信息": {
+    ".rej文件完整性": "已验证，.rej 文件保持完整未被修改",
+    "源文件修改状态": "已成功应用所有 hunk 修改",
+    "是否符合黄金法则": "是，严格按照黄金法则执行，仅添加了 + 开头的行，未添加任何上下文行"
+  }
+}

@@ -7,6 +7,9 @@
 
 #include "components/history/core/browser/history_types.h"
 #include "extensions/browser/extension_function.h"
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "ohos_nweb/src/capi/web_extension_top_sites_items.h"
+#endif
 #include "extensions/buildflags/buildflags.h"
 
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));

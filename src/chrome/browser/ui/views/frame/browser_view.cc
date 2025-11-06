@@ -363,6 +363,10 @@
 #include "chrome/browser/ui/views/frame/webui_tab_strip_container_view.h"
 #endif  // BUILDFLAG(ENABLE_WEBUI_TAB_STRIP)
 
+#if BUILDFLAG(IS_OHOS)
+#include "ui/base/layout.h"
+#endif
+
 #if BUILDFLAG(ENABLE_GLIC)
 #include "chrome/browser/glic/public/glic_enabling.h"
 #include "chrome/browser/glic/public/glic_keyed_service.h"
@@ -391,6 +395,11 @@ constexpr char kTabLoadingSmoothnessHistogramName[] =
 void RecordTabLoadingSmoothness(int smoothness) {
   UMA_HISTOGRAM_PERCENTAGE(kTabLoadingSmoothnessHistogramName, smoothness);
 }
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+// Width of the window control button in the upper right corner
+const int kWindowControlButtonsWidth = 100;
 #endif
 
 // See SetDisableRevealerDelayForTesting().

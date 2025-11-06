@@ -1,0 +1,53 @@
+{
+  "file_info": {
+    "conflict_file": "/home/sujiahao/code/arkweb_141/src/chrome/browser/ui/webui/settings/downloads_handler.h.rej",
+    "source_file": "/home/sujiahao/code/arkweb_141/src/chrome/browser/ui/webui/settings/downloads_handler.h",
+    "baseline_file": "/home/sujiahao/code/chromium_132_baseline/src/chrome/browser/ui/webui/settings/downloads_handler.h",
+    "arkweb_132_file": "/home/sujiahao/code/arkweb_132/src/chrome/browser/ui/webui/settings/downloads_handler.h"
+  },
+  "processing_summary": {
+    "total_hunks": 1,
+    "resolved_hunks": 1,
+    "unresolved_hunks": 0,
+    "rej_file_integrity": "preserved"
+  },
+  "hunks_analysis": [
+    {
+      "hunk_number": 1,
+      "lines_range": "@@ -51,11 +51,11 @@",
+      "modification_analysis": {
+        "removals": [
+          {
+            "line": 9,
+            "content": "#if BUILDFLAG(IS_CHROMEOS_ASH)",
+            "operation": "remove"
+          }
+        ],
+        "additions": [
+          {
+            "line": 10,
+            "content": "#if BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_OHOS)",
+            "operation": "add"
+          }
+        ]
+      },
+      "risk_assessment": "低风险 - 这是一个标准的平台条件编译扩展，添加了对OHOS平台的编译支持。不会影响现有功能逻辑，仅在OHOS平台编译时包含相关代码。",
+      "conflict_cause": "Arkweb 132针对OHOS平台进行了平台适配，添加了BUILDFLAG(IS_OHOS)条件编译标志。在升级到Chromium 141时，原有的条件编译宏发生了变化，导致冲突。",
+      "analysis_process": "1. 解析rej文件识别出需要添加的OHOS平台支持\n2. 定位源文件中对应的条件编译语句\n3. 发现源文件使用IS_CHROMEOS而非IS_CHROMEOS_ASH\n4. 根据原子化应用原则，直接添加OHOS条件而不修改现有的CHROMEOS条件",
+      "modification_confidence": 0.9,
+      "resolution_strategy": "已应用 - 在源文件第55行将条件编译从#if BUILDFLAG(IS_CHROMEOS)修改为#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)，保持了原有的CHROMEOS支持并添加了OHOS支持。",
+      "final_status": "已解决"
+    }
+  ],
+  "final_verification": {
+    "rej_file_integrity": "verified_preserved",
+    "source_file_modified": true,
+    "modifications_applied": [
+      {
+        "line": 55,
+        "change": "Added || BUILDFLAG(IS_OHOS) to conditional compilation directive",
+        "impact": "Extends compilation support to OHOS platform while maintaining existing functionality"
+      }
+    ]
+  }
+}

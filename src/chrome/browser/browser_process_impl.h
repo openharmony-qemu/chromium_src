@@ -269,6 +269,7 @@ class BrowserProcessImpl : public BrowserProcess,
   void CreateSafeBrowsingService();
 #endif
   void CreateSubresourceFilterRulesetService();
+
   void CreateFingerprintingProtectionRulesetService();
   void CreateOptimizationGuideService();
   void CreateStatusTray();

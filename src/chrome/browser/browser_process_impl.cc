@@ -261,6 +261,10 @@
 #include "components/password_manager/core/browser/password_manager_switches.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+#include "ohos_cef_ext/libcef/browser/subresource_filter/adblock_ruleset_manager.h"
+#endif
+
 #if BUILDFLAG(SAFE_BROWSING_AVAILABLE)
 #include "chrome/browser/safe_browsing/safe_browsing_service.h"
 #endif
@@ -932,7 +936,7 @@ GpuModeManager* BrowserProcessImpl::gpu_mode_manager() {
 
 void BrowserProcessImpl::CreateDevToolsProtocolHandler() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
   auto maybe_remote_debugging_server =
       RemoteDebuggingServer::GetInstance(local_state_.get());
   if (maybe_remote_debugging_server.has_value()) {

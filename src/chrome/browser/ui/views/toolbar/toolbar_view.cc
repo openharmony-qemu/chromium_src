@@ -229,7 +229,8 @@ END_METADATA
 DEFINE_CLASS_ELEMENT_IDENTIFIER_VALUE(ToolbarView, kToolbarElementId);
 DEFINE_CLASS_ELEMENT_IDENTIFIER_VALUE(ToolbarView, kToolbarContainerElementId);
 
-ToolbarView::ToolbarView(Browser* browser, BrowserView* browser_view,
+ToolbarView::ToolbarView(Browser* browser,
+                         BrowserView* browser_view,
                          std::optional<DisplayMode> display_mode)
     : AnimationDelegateViews(this),
       browser_(browser),

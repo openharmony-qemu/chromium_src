@@ -213,14 +213,22 @@
 #include "ui/ozone/public/ozone_platform.h"
 #endif  // BUILDFLAG(IS_OZONE)
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/chrome/app/chrome_main_delegate_for_include.cc"
+#endif
+
 base::LazyInstance<ChromeContentGpuClient>::DestructorAtExit
     g_chrome_content_gpu_client = LAZY_INSTANCE_INITIALIZER;
+#if BUILDFLAG(IS_ARKWEB)
+base::LazyInstance<ArkWebChromeContentRendererClientExt>::DestructorAtExit
+#else
 base::LazyInstance<ChromeContentRendererClient>::DestructorAtExit
+#endif
     g_chrome_content_renderer_client = LAZY_INSTANCE_INITIALIZER;
 
 const char* const ChromeMainDelegate::kNonWildcardDomainNonPortSchemes[] = {
 #if BUILDFLAG(ENABLE_EXTENSIONS)
-    extensions::kExtensionScheme,
+    extensions::kExtensionScheme,      extensions::kArkwebExtensionScheme,
 #endif
     chrome::kChromeSearchScheme,       chrome::kIsolatedAppScheme,
     content::kChromeDevToolsScheme,    content::kChromeUIScheme,
@@ -386,7 +394,7 @@ void HandleHelpSwitches(const base::CommandLine& command_line) {
 }
 #endif  // BUILDFLAG(IS_LINUX)
 
-#if !BUILDFLAG(IS_MAC) && !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_MAC) && !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
 void SIGTERMProfilingShutdown(int signal) {
   content::Profiling::Stop();
   struct sigaction sigact;
@@ -520,7 +528,7 @@ struct MainFunction {
   int (*function)(content::MainFunctionParams);
 };
 
-#if !BUILDFLAG(ENABLE_CEF)
+// #if !BUILDFLAG(ENABLE_CEF)
 // Initializes the user data dir. Must be called before InitializeLocalState().
 void InitializeUserDataDir(base::CommandLine* command_line) {
 #if BUILDFLAG(IS_WIN)
@@ -595,8 +603,9 @@ void InitializeUserDataDir(base::CommandLine* command_line) {
 
     // The browser process (which is identified by an empty |process_type|) will
     // handle the error later; other processes that need the dir crash here.
-    CHECK(process_type.empty()) << "Unable to get the user data directory "
-                                << "for process type: " << process_type;
+    // TODO: IS_OHOS
+    // CHECK(process_type.empty()) << "Unable to get the user data directory "
+    //                            << "for process type: " << process_type;
   }
 
   // Append the fallback user data directory to the commandline. Otherwise,
@@ -613,9 +622,9 @@ void InitializeUserDataDir(base::CommandLine* command_line) {
 
 #endif  // BUILDFLAG(IS_WIN)
 }
-#endif  // !BUILDFLAG(ENABLE_CEF)
+// #endif  // !BUILDFLAG(ENABLE_CEF)
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
 void InitLogging(const std::string& process_type) {
   logging::OldFileDeletionState file_state = logging::APPEND_TO_OLD_LOG_FILE;
   if (process_type.empty()) {
@@ -634,7 +643,7 @@ void InitLogging(const std::string& process_type) {
   }
 #endif  // BUILDFLAG(IS_CHROMEOS)
 }
-#endif  // !BUILDFLAG(IS_ANDROID)
+#endif  // !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
 
 void RecordMainStartupMetrics(const StartupTimestamps& timestamps) {
   const base::TimeTicks now = base::TimeTicks::Now();
@@ -850,7 +859,10 @@ std::optional<int> ChromeMainDelegate::PostEarlyInitialization(
       chrome_feature_list_creator, GetResourceBundleDelegate(),
       invoked_in_browser->is_running_test);
   chrome_feature_list_creator->SetApplicationLocale(actual_locale);
+#if !BUILDFLAG(IS_OHOS)
+  // TODO:OHOS
   chrome_feature_list_creator->OverrideCachedUIStrings();
+#endif
 
   // On Chrome OS, initialize D-Bus clients that depend on feature list.
 #if BUILDFLAG(IS_CHROMEOS)
@@ -1348,7 +1360,7 @@ void ChromeMainDelegate::PreSandboxStartup() {
                                           chrome::DIR_INTERNAL_PLUGINS,
                                           chrome::DIR_USER_DATA);
 
-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_WIN)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_WIN) && !BUILDFLAG(IS_OHOS)
   // Android does InitLogging when library is loaded. Skip here.
   // For windows we call InitLogging when the sandbox is initialized.
   InitLogging(process_type);

@@ -5,7 +5,7 @@
 import("//build/config/chromeos/args.gni")
 import("//build/config/ozone.gni")
 
-assert(is_win || is_mac || is_linux || is_chromeos || is_android)
+assert(is_win || is_mac || is_linux || is_chromeos || is_android || is_ohos)
 
 source_set("blocked_content") {
   sources = [

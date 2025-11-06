@@ -1,0 +1,79 @@
+{
+  "冲突文件信息": {
+    "文件路径": "/home/sujiahao/code/arkweb_141/src/chrome/common/media/cdm_registration.cc.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/chrome/common/media/cdm_registration.cc",
+    "Chromium版本升级": "132 -> 141",
+    "处理时间": "2025-11-04"
+  },
+  "hunk统计": {
+    "总hunk数量": 3,
+    "成功解决的hunk数量": 3,
+    "未能解决的hunk数量": 0
+  },
+  "hunks详细信息": [
+    {
+      "hunk编号": 1,
+      "修改类型": "添加包含语句",
+      "风险等级": "低",
+      "冲突原因": "Arkweb132添加了WISEPLAY相关的包含文件，在Arkweb141中缺失",
+      "修改内容": {
+        "添加的行": [
+          "#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)",
+          "#include \"media/cdm/wiseplay_cdm_common.h\"",
+          "#endif"
+        ]
+      },
+      "分析过程": "在源文件中定位到Android相关的include语句后（第47行），成功添加WISEPLAY的包含语句",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "定位依据": "上下文锚点 - Android include语句块"
+    },
+    {
+      "hunk编号": 2,
+      "修改类型": "添加条件编译分支",
+      "风险等级": "中",
+      "冲突原因": "Arkweb132在AddSoftwareSecureWidevine函数中添加了ARKWEB平台的CDM注册逻辑",
+      "修改内容": {
+        "添加的行": [
+          "#elif BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)",
+          "  LOG(INFO) << \"[DRM]\" << __func__;",
+          "  cdms->emplace_back(",
+          "      kWidevineKeySystem, Robustness::kSoftwareSecure, std::nullopt,",
+          "      /*supports_sub_key_systems=*/false, kWidevineCdmDisplayName,",
+          "      kWidevineCdmType, base::Version(), base::FilePath());"
+        ]
+      },
+      "分析过程": "在AddSoftwareSecureWidevine函数的Android条件分支后（第173行后），成功添加ARKWEB平台的elif分支",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "定位依据": "上下文锚点 - Android条件分支结束后的#elif BUILDFLAG(IS_LINUX)语句"
+    },
+    {
+      "hunk编号": 3,
+      "修改类型": "参数简化",
+      "风险等级": "低",
+      "冲突原因": "Arkweb132简化了supports_sub_key_systems参数的写法",
+      "修改内容": {
+        "删除的行": "/*supports_sub_key_systems=*/false,",
+        "添加的行": "false,"
+      },
+      "分析过程": "在AddHardwareSecureWidevine函数的Android分支中的cdms->emplace_back调用处（第267行），成功将注释形式的参数简化为直接的布尔值",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "定位依据": "上下文锚点 - AddHardwareSecureWidevine函数中的Android分支"
+    }
+  ],
+  "整体评估": {
+    "代码冲突复杂度": "低",
+    "侵入性程度": "中等",
+    "主要修改内容": "添加WISEPLAY支持、ARKWEB平台CDM注册、参数格式简化",
+    "潜在风险": "ARKWEB_ENABLE_CDM宏定义可能影响CDM功能",
+    "建议审查重点": "ARKWEB平台的CDM注册逻辑和WISEPLAY集成"
+  },
+  "处理结果验证": {
+    ".rej文件完整性": "保持完整，未被修改或删除",
+    "源文件修改状态": "已成功应用所有3个hunks的修改",
+    "语法完整性": "无语法错误",
+    "编译兼容性": "预期兼容"
+  }
+}

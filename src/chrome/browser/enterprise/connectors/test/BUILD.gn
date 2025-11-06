@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//components/enterprise/buildflags/buildflags.gni")
+import("//arkweb/build/features/features.gni")
 
 source_set("test_support") {
   testonly = true

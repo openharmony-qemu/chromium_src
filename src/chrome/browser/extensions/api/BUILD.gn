@@ -80,6 +80,10 @@ group("api_implementations") {
       "//chrome/browser/extensions/api/webrtc_desktop_capture_private",
     ]
 
+    if (enable_mdns) {
+      public_deps += [ "//chrome/browser/extensions/api/mdns" ]
+    }
+
     if (enable_pdf) {
       public_deps += [ "//chrome/browser/extensions/api/pdf_viewer_private" ]
     }

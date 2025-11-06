@@ -1,36 +1,5 @@
 --- extensions_ui.cc	2025-10-20 19:52:51.028964803 +0800
 +++ extensions_ui.cc	2025-10-16 15:57:01.886010420 +0800
-@@ -62,10 +63,14 @@
- 
- #if BUILDFLAG(IS_CHROMEOS_ASH)
- #include "chrome/browser/ash/crosapi/browser_util.h"
- #endif
- 
-+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-+#include "chrome/browser/ui/webui/extensions/extensions_ui_ext.h"
-+#endif
-+
- namespace extensions {
- 
- namespace {
- 
- constexpr char kInDevModeKey[] = "inDevMode";
-@@ -410,10 +415,15 @@
-       {"kioskDisableBailout",
-        IDS_EXTENSIONS_KIOSK_DISABLE_BAILOUT_SHORTCUT_LABEL},
-       {"kioskDisableBailoutWarningTitle",
-        IDS_EXTENSIONS_KIOSK_DISABLE_BAILOUT_SHORTCUT_WARNING_TITLE},
- #endif
-+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-+      {"toolbarDevModeConfirmation", IDS_EXTENSIONS_DEVELOPER_MODE_CONFIRMATION},
-+      {"toolbarDevModeConfirm", IDS_EXTENSIONS_DEVELOPER_MODE_CONFIRM},
-+      {"toolbarDevModeCancel", IDS_EXTENSIONS_DEVELOPER_MODE_CANCEL},
-+#endif
-   };
-   source->AddLocalizedStrings(kLocalizedStrings);
- 
-   // Add localized generic strings that need '&' to be removed from them.
-   webui::AddLocalizedString(source, "edit", IDS_EDIT);
 @@ -468,15 +478,20 @@
        extension_permissions_constants::kShowAccessRequestsInToolbarHelpURL);
    source->AddBoolean(

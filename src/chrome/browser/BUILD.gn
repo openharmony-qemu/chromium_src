@@ -116,7 +116,7 @@ buildflag_header("buildflags") {
 
   # Android and ChromeOS don't support multiple browser processes, so they don't
   # employ ProcessSingleton.
-  if (is_android || is_chromeos) {
+  if (is_android || is_chromeos || is_ohos) {
     flags += [ "ENABLE_PROCESS_SINGLETON=false" ]
   } else {
     flags += [ "ENABLE_PROCESS_SINGLETON=true" ]
@@ -138,6 +138,10 @@ source_set("browser_process") {
     "//components/safe_browsing:buildflags",
     "//media:media_buildflags",
   ]
+
+  if (arkweb_adblock) {
+    sources += arkweb_browser_process_sources
+  }
 }
 
 source_set("main_extra_parts") {
@@ -1696,6 +1700,14 @@ static_library("browser") {
     "webid/federated_identity_permission_context_factory.h",
     "webid/identity_provider_permission_request.cc",
   ]
+
+  if (arkweb_password_autofill) {
+    sources += arkweb_chrome_browser_password_manager_sources
+  }
+
+  if (arkweb_adblock) {
+    sources += arkweb_browser_process_impl_sources
+  }
 
   if (is_chromeos) {
     sources += [
@@ -6800,7 +6812,7 @@ static_library("browser") {
     deps += [ "//chrome/browser/enterprise/connectors/device_trust/common" ]
   }
 
-  if (is_linux || is_win || is_mac || is_chromeos) {
+  if (is_linux || is_win || is_mac || is_chromeos || arkweb_asan) {
     sources += [
       "enterprise/connectors/device_trust/device_trust_connector_service.cc",
       "enterprise/connectors/device_trust/device_trust_connector_service.h",
@@ -6876,6 +6888,25 @@ static_library("browser") {
       "enterprise/connectors/reporting/reporting_event_router_factory.cc",
       "enterprise/connectors/reporting/reporting_event_router_factory.h",
     ]
+    if (is_ohos && safe_browsing_mode == 0) {
+      if (arkweb_asan) {
+        sources -= [
+          "enterprise/connectors/analysis/page_print_analysis_request.cc",
+          "enterprise/connectors/analysis/page_print_analysis_request.h",
+          "enterprise/connectors/analysis/files_request_handler.cc",
+          "enterprise/connectors/analysis/files_request_handler.h",
+          "enterprise/connectors/analysis/content_analysis_delegate.cc",
+          "enterprise/connectors/analysis/content_analysis_delegate.h",
+        ]
+        sources += [
+          arkweb_chrome_enterprise_connectors_analysis
+        ]
+      }
+      sources -= [
+        "safe_browsing/generated_safe_browsing_pref.cc",
+        "safe_browsing/generated_safe_browsing_pref.h",
+      ]
+    }
     deps += [
       "//chrome/browser/enterprise/data_protection",
       "//components/enterprise/common/proto:chrome_reporting_entity",
@@ -7166,6 +7197,29 @@ static_library("browser") {
         "//components/os_crypt/async/browser:secret_portal_key_provider",
       ]
     }
+  }
+
+  if (is_ohos) {
+    sources += [
+      "first_run/upgrade_util_linux.cc",
+      "first_run/upgrade_util_linux.h",
+      "//arkweb/chromium_ext/chrome/browser/shell_integration_ohos.cc",
+      "//arkweb/chromium_ext/chrome/browser/platform_util_ohos.cc",
+      "//arkweb/chromium_ext/chrome/browser/icon_loader_ohos.cc",
+    ]
+    if (arkweb_asan) {
+      sources += [
+        "shell_integration_linux.cc",
+        "shell_integration_linux.h",
+      ]
+    }
+    deps += [
+      "//chrome/app/theme:chrome_unscaled_resources_grit"
+    ]
+  }
+
+    if (arkweb_asan) {
+    sources -= []
   }
 
   if (is_arkweb) {
@@ -8484,6 +8538,13 @@ static_library("browser") {
     deps += [ "//components/server_certificate_database" ]
   }
 
+  if (is_ohos) {
+    sources += [
+      #"//arkweb/chromium_ext/chrome/browser/certificate_manager_model_ohos.cc",
+      #"//arkweb/chromium_ext/chrome/browser/certificate_manager_model_ohos.h"
+    ]
+  }
+
   if (use_udev) {
     deps += [ "//device/udev_linux" ]
   }
@@ -8592,6 +8653,14 @@ static_library("browser") {
 
   if (enable_reporting) {
     deps += [ "//components/tpcd/enterprise_reporting" ]
+  }
+
+  if (enable_arkweb) {
+    deps += [ "//arkweb/build/features" ]
+  }
+
+  if (enable_arkweb) {
+    public_deps += [ "//arkweb/build/features" ]
   }
 
   if (enable_builtin_search_provider_assets) {
@@ -8910,7 +8979,7 @@ static_library("browser_generated_files") {
     arflags = [ "/llvmlibempty" ]
     public_deps += [ "//chrome/browser/ui/startup:buildflags" ]
   }
-  if (is_win || is_mac || is_linux) {
+  if (is_win || is_mac || is_linux || is_ohos) {
     public_deps += [
       "//chrome/browser/enterprise/connectors/device_trust/attestation/common/proto:attestation_ca_proto",
       "//chrome/browser/enterprise/connectors/device_trust/attestation/common/proto:google_key_proto",
@@ -8920,7 +8989,7 @@ static_library("browser_generated_files") {
       "//chrome/browser/ui/webui/whats_new:mojo_bindings",
     ]
   }
-  if (is_win || is_mac || is_linux || is_chromeos) {
+  if (is_win || is_mac || is_linux || is_chromeos || is_ohos) {
     public_deps +=
         [ "//ui/webui/resources/cr_components/help_bubble:mojo_bindings" ]
   }

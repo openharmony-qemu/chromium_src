@@ -535,6 +535,11 @@ views::View::DropCallback BookmarkMenuDelegate::GetDropCallback(
       GetDropParams(menu, &position);
   CHECK(drop_params);
 
+#if BUILDFLAG(IS_OHOS)
+  const OSExchangeData& data = event.data();
+  drop_data_.Read(data);
+#endif
+
   std::unique_ptr<BookmarkModelDropObserver> drop_observer =
       std::make_unique<BookmarkModelDropObserver>(
           browser_, std::move(drop_data_), drop_params->drop_parent,

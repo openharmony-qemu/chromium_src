@@ -22,6 +22,7 @@
 #include "pdf/buildflags.h"
 #include "printing/buildflags/buildflags.h"
 #include "rlz/buildflags/buildflags.h"
+#include "arkweb/build/features/features.h"
 
 namespace prefs {
 

@@ -1,0 +1,49 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/chrome/browser/extensions/api/declarative_content/declarative_content_is_bookmarked_condition_tracker.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/chrome/browser/extensions/api/declarative_content/declarative_content_is_bookmarked_condition_tracker.h",
+    "处理时间": "2025-11-04"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0
+  },
+  "hunk分析": [
+    {
+      "hunk_id": 1,
+      "位置信息": "@@ -16,10 +16,15 @@",
+      "待添加行": [
+        "#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)",
+        "#include \"arkweb/chromium_ext/chrome/browser/extensions/api/declarative_content/declarative_content_is_bookmarked_condition_delegate.h\"",
+        "#include \"base/memory/weak_ptr.h\"",
+        "#endif"
+      ],
+      "待删除行": [],
+      "风险等级": "低",
+      "风险说明": "添加了条件编译指令和头文件包含，这些是Arkweb扩展所需的依赖项。由于使用了条件编译，不会影响标准Chromium构建。",
+      "冲突原因": "Arkweb项目需要额外的头文件来支持扩展功能，这些头文件在标准Chromium中不存在。",
+      "分析过程": "通过上下文锚点定位到源文件中正确的include区域，在extensions/common/extension.h之后、static_assert之前添加了条件编译的include语句。",
+      "修改置信度": "高",
+      "解决策略": "精确应用",
+      "解决状态": "已解决",
+      "定位过程": "使用上下文锚点#include \"extensions/common/extension.h\"和static_assert语句精确定位插入位置。",
+      "应用结果": "成功在源文件第20行后添加了条件编译的include语句，保持了代码结构的完整性。"
+    }
+  ],
+  "处理策略总结": {
+    "主要策略": "原子化应用",
+    "遵循原则": [
+      "严格不添加上下文行",
+      "仅应用+和-开头的行",
+      "保持.rej文件完整性"
+    ],
+    "技术细节": "通过条件编译指令#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)确保新增代码仅在Arkweb构建时生效，不影响标准Chromium功能。"
+  },
+  "验证信息": {
+    ".rej文件完整性": "已确认保持原样，未被修改或删除",
+    "源文件修改状态": "已成功应用修改",
+    "编译兼容性": "新增代码使用条件编译，不会破坏标准构建"
+  },
+  "结论": "冲突已成功解决，所有hunk都已精确应用到源文件中，保持了代码库的完整性和一致性。"
+}

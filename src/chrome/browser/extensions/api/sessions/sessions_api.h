@@ -33,6 +33,7 @@ namespace extensions {
 
 class SessionId;
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 class SessionsGetRecentlyClosedFunction : public ExtensionFunction {
  protected:
   ~SessionsGetRecentlyClosedFunction() override = default;
@@ -73,6 +74,7 @@ class SessionsGetDevicesFunction : public ExtensionFunction {
       const sync_sessions::SyncedSession* session);
 };
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 class SessionsRestoreFunction : public ExtensionFunction {
  protected:
   ~SessionsRestoreFunction() override = default;

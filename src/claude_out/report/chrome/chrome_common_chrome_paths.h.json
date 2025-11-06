@@ -1,0 +1,66 @@
+{
+  "file_path": "chrome/common/chrome_paths.h",
+  "analysis_timestamp": "2025-11-04",
+  "total_hunks": 1,
+  "resolved_hunks": 0,
+  "unresolved_hunks": 1,
+  "rej_file_integrity": {
+    "status": "preserved",
+    "modified": false,
+    "deleted": false
+  },
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "line_range": "8-16",
+      "status": "unresolved",
+      "risk_level": "medium",
+      "conflict_cause": "条件编译标志不匹配和上下文差异",
+      "analysis_process": "分析.rej文件中的hunk，发现要修改的条件编译语句使用了ENABLE_EXTENSIONS标志，但源文件中对应位置使用的是ENABLE_EXTENSIONS_CORE标志。两者上下文结构不同，无法精确匹配。",
+      "modifications_required": {
+        "deletions": [
+          "    (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_MAC))"
+        ],
+        "additions": [
+          "    (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_MAC) || \\",
+          "     BUILDFLAG(IS_OHOS))"
+        ]
+      },
+      "positioning_attempt": {
+        "initial_context_used": [
+          "#if BUILDFLAG(ENABLE_EXTENSIONS) && \\",
+          "  DIR_NATIVE_MESSAGING,       // System directory where native messaging host",
+          "                              // manifest files are stored.",
+          "  DIR_USER_NATIVE_MESSAGING,  // Directory with Native Messaging Hosts",
+          "                              // installed per-user.",
+          "#endif"
+        ],
+        "search_result": "源文件中未找到使用ENABLE_EXTENSIONS标志的对应代码块",
+        "found_similar_code": "在第109-116行找到使用ENABLE_EXTENSIONS_CORE标志的类似代码块，但条件表达式已包含BUILDFLAG(IS_ANDROID)"
+      },
+      "resolution_strategy": "无法应用",
+      "failure_reason": "上下文不匹配 - .rej文件中的条件编译标志ENABLE_EXTENSIONS在源文件中不存在，源文件使用的是ENABLE_EXTENSIONS_CORE。强行应用会导致编译错误，因为两个标志可能有不同的定义和作用范围。",
+      "manual_review_required": true,
+      "review_notes": "需要人工检查：(1) ENABLE_EXTENSIONS和ENABLE_EXTENSIONS_CORE两个标志的定义和用途差异；(2) OHOS平台是否需要在现有的ENABLE_EXTENSIONS_CORE条件中添加；(3) 或者需要创建新的条件编译块专门处理OHOS平台的native messaging功能。"
+    }
+  ],
+  "summary": {
+    "file_status": "部分冲突解决失败",
+    "automated_resolution_possible": false,
+    "requires_manual_intervention": true,
+    "risk_assessment": "中等风险 - OHOS平台支持可能未正确集成到新的代码结构中",
+    "recommendations": [
+      "确认ENABLE_EXTENSIONS和ENABLE_EXTENSIONS_CORE标志的具体定义和差异",
+      "验证OHOS平台native messaging功能的需求和实现方式",
+      "考虑是否需要在现有的ENABLE_EXTENSIONS_CORE条件中添加IS_OHOS支持",
+      "或者创建专门的OHOS平台条件编译块"
+    ]
+  },
+  "compliance_statement": {
+    "golden_rule_observed": "严格遵守了'不添加上下文'的铁律，未将任何上下文行写入源文件",
+    "no_scripts_generated": "未生成任何脚本文件",
+    "no_auxiliary_files": "未创建除指定JSON报告外的任何辅助文件",
+    "rej_file_preserved": ".rej文件保持完整，未被修改或删除",
+    "modifications_limited": "仅执行添加+行和删除-行的原子化操作"
+  }
+}

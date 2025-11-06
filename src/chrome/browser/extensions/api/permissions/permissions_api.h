@@ -13,6 +13,10 @@
 #include "extensions/common/permissions/permission_set.h"
 #include "ui/gfx/native_widget_types.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "ohos_nweb/src/capi/browser_service/nweb_extension_prompt_types.h"
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 namespace extensions {
@@ -125,6 +129,7 @@ class PermissionsRequestFunction : public ExtensionFunction {
   // also SetAutoConfirmForTests()).
   std::unique_ptr<const PermissionSet> prompted_permissions_for_testing_;
 };
+#endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 // chrome.permissions.addHostAccessRequest
 class PermissionsAddHostAccessRequestFunction : public ExtensionFunction {

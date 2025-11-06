@@ -443,3 +443,16 @@ void BrowserList::RemoveBrowserFrom(Browser* browser,
     browser_list->erase(remove_browser);
   }
 }
+
+#if BUILDFLAG(IS_OHOS)
+gfx::AcceleratedWidget BrowserList::GetLastActiveAcceleratedWidget() const {
+  Browser* browser = GetLastActive();
+  if (browser && browser->window()) {
+    aura::Window* native_window = browser->window()->GetNativeWindow();
+    if (native_window && native_window->GetHost()) {
+      return native_window->GetHost()->GetAcceleratedWidget();
+    }
+  }
+  return 0;
+}
+#endif

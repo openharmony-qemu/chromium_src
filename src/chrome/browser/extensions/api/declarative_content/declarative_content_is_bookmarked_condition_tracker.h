@@ -19,6 +19,11 @@
 #include "extensions/buildflags/buildflags.h"
 #include "extensions/common/extension.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/chrome/browser/extensions/api/declarative_content/declarative_content_is_bookmarked_condition_delegate.h"
+#include "base/memory/weak_ptr.h"
+#endif
+
 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE));
 
 namespace base {

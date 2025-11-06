@@ -1,0 +1,67 @@
+{
+  "file_path": "chrome/browser/enterprise/connectors/test/BUILD.gn",
+  "rej_file": "chrome/browser/enterprise/connectors/test/BUILD.gn.rej",
+  "total_hunks": 2,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 1,
+  "rej_file_integrity": "maintained",
+  "analysis": {
+    "conflict_cause": "Arkweb 132 到 Arkweb 141 版本升级中的代码结构差异",
+    "modification_intent": "添加 Arkweb 特定的功能支持和测试配置"
+  },
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "line_range": "9",
+      "resolution_status": "已解决",
+      "confidence": "高",
+      "risk_level": "低",
+      "modification_type": "添加import语句",
+      "changes": {
+        "added": [
+          "import(\"//arkweb/build/features/features.gni\")"
+        ],
+        "removed": []
+      },
+      "analysis_process": "在源文件第5行后成功添加了Arkweb功能特性的import语句，该修改是安全的配置引入",
+      "application_result": "成功应用，在现有enterprise buildflags import后添加了arkweb features import"
+    },
+    {
+      "hunk_id": 2,
+      "line_range": "22",
+      "resolution_status": "未解决",
+      "confidence": "低",
+      "risk_level": "高",
+      "modification_type": "条件判断修改",
+      "changes": {
+        "added": [
+          "  if (is_win || is_linux || is_mac || is_chromeos_lacros || arkweb_test) {"
+        ],
+        "removed": [
+          "  if (is_win || is_linux || is_mac || is_chromeos_lacros) {"
+        ]
+      },
+      "analysis_process": "在源文件中未找到匹配的条件判断语句。该hunk涉及的management_context_mixin相关代码结构在Arkweb 141版本中可能已被重构或移动到其他位置",
+      "location_failure_reason": "源文件中不存在以'if (is_win || is_linux || is_mac || is_chromeos_lacros)'开头的条件语句，也未找到management_context_mixin相关的代码结构",
+      "extended_search_attempted": true,
+      "extended_search_result": "由于权限限制无法访问参考文件进行扩展上下文分析",
+      "final_reason": "无法定位到匹配的代码结构，强行应用可能导致语法错误或逻辑断裂",
+      "manual_review_required": "需要人工检查该功能是否已经在Arkweb 141中以其他方式实现，或者需要根据新的代码结构调整修改位置"
+    }
+  ],
+  "summary": {
+    "successful_modifications": 1,
+    "failed_modifications": 1,
+    "overall_risk": "中等",
+    "recommendations": [
+      "已成功添加arkweb features import语句",
+      "第二个hunk需要人工复查，可能需要查找management_context_mixin相关功能在Arkweb 141中的新位置",
+      "建议检查是否需要在其他BUILD.gn文件中添加arkweb_test条件支持"
+    ],
+    "next_steps": [
+      "人工验证第一个修改的正确性",
+      "查找management_context_mixin相关代码的新位置",
+      "根据新的代码结构调整第二个hunk的修改位置"
+    ]
+  }
+}

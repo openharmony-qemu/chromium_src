@@ -62,6 +62,10 @@
 #include "chrome/browser/win/mica_titlebar.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "chrome/browser/ui/layout_constants.h"
+#endif
+
 namespace {
 #if BUILDFLAG(IS_MAC)
 // Keep in sync with web_app_frame_toolbar_browsertest.cc

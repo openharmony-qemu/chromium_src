@@ -261,6 +261,14 @@ ExtensionActionSetIconFunction::RunExtensionAction() {
     }
 
     extension_action_->SetIcon(tab_id_, icon_image);
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    LOG(INFO) << "ExtensionActionSetIconFunction::RunExtensionAction";
+    OHOS::NWeb::NWebExtensionActionCefDelegate::GetInstance()->OnSetIcon(
+        extension()->id(), icon_image, tab_id_,
+        OHOS::NWeb::GetExtensionContextType(browser_context()),
+        include_incognito_information());
+#endif
   } else if (details_->FindInt("iconIndex")) {
     // Obsolete argument: ignore it.
     return RespondNow(NoArguments());
@@ -352,6 +360,19 @@ ExtensionActionSetBadgeBackgroundColorFunction::RunExtensionAction() {
   }
   extension_action_->SetBadgeBackgroundColor(tab_id_, color);
   NotifyChange();
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  NWebExtensionActionSetBadgeBackgroundColorDetails details;
+  if (tab_id_ != ExtensionAction::kDefaultTabId) {
+    details.tabId = tab_id_;
+  }
+  details.color = {SkColorGetR(color), SkColorGetG(color), SkColorGetB(color),
+                   SkColorGetA(color)};
+  OHOS::NWeb::NWebExtensionActionCefDelegate::GetInstance()
+      ->OnSetBadgeBackgroundColor(
+          extension()->id(), details,
+          OHOS::NWeb::GetExtensionContextType(browser_context()),
+          include_incognito_information());
+#endif
   return RespondNow(NoArguments());
 }
 
@@ -370,6 +391,19 @@ ActionSetBadgeTextColorFunction::RunExtensionAction() {
   }
   extension_action_->SetBadgeTextColor(tab_id_, color);
   NotifyChange();
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  NWebExtensionActionSetBadgeTextColorDetails details;
+  if (tab_id_ != ExtensionAction::kDefaultTabId) {
+    details.tabId = tab_id_;
+  }
+  details.color = {SkColorGetR(color), SkColorGetG(color), SkColorGetB(color),
+                   SkColorGetA(color)};
+  OHOS::NWeb::NWebExtensionActionCefDelegate::GetInstance()
+      ->OnSetBadgeTextColor(
+          extension()->id(), details,
+          OHOS::NWeb::GetExtensionContextType(browser_context()),
+          include_incognito_information());
+#endif
   return RespondNow(NoArguments());
 }
 
@@ -459,6 +493,7 @@ ExtensionFunction::ResponseAction ActionGetUserSettingsFunction::Run() {
   // TODO(crbug.com/360916928): Today, no action APIs are compiled.
   // Unfortunately, this means we miss out on the compiled types, which would be
   // rather helpful here.
+#endif
   base::Value::Dict ui_settings;
   ui_settings.Set("isOnToolbar", is_pinned);
 

@@ -439,7 +439,7 @@ void ExtensionUpdater::CheckNow(CheckParams params) {
 
   int request_id = next_request_id_++;
 
-  VLOG(2) << "Starting update check " << request_id;
+  LOG(INFO) << "Starting update check " << request_id;
   if (params.ids.empty()) {
     NotifyStarted();
   }
@@ -844,7 +844,7 @@ bool ExtensionUpdater::CanUseUpdateService(
 void ExtensionUpdater::InstallCRXFile(FetchedCRXFile crx_file) {
   std::set<int> request_ids;
 
-  VLOG(2) << "updating " << crx_file.info.extension_id << " with "
+  LOG(INFO) << "updating " << crx_file.info.extension_id << " with "
           << crx_file.info.path.value();
 
   // The delegate is now responsible for cleaning up the temp file at
@@ -1053,7 +1053,7 @@ void ExtensionUpdater::NotifyIfFinished(int request_id) {
   if (!request.in_progress_ids.empty() || request.awaiting_update_service) {
     return;  // This request is not done yet.
   }
-  VLOG(2) << "Finished update check " << request_id;
+  LOG(INFO) << "Finished update check " << request_id;
   if (!request.callback.is_null()) {
     std::move(request.callback).Run();
   }

@@ -193,6 +193,10 @@
 #include "chrome/browser/ui/browser.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+#include "libcef/browser/autofill/oh_autofill_client.h"
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
 using password_manager::CredentialCache;
 using password_manager::PasswordCredentialFillerImpl;
@@ -377,6 +381,8 @@ bool ChromePasswordManagerClient::PromptUserToSaveOrUpdatePassword(
 
   save_update_password_message_delegate_.DisplaySaveUpdatePasswordPrompt(
       web_contents(), std::move(form_to_save), update_password, this);
+#elif BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  AsChromePasswordManagerClientExt()->ArkPromptUserToSaveOrUpdatePassword(std::move(form_to_save));
 #else
   PasswordsClientUIDelegate* manage_passwords_ui_controller =
       PasswordsClientUIDelegateFromWebContents(web_contents());
@@ -589,7 +595,11 @@ void ChromePasswordManagerClient::ShowKeyboardReplacingSurface(
     password_manager::PasswordManagerDriver* driver,
     const autofill::PasswordSuggestionRequest& request) {
   password_manager::ContentPasswordManagerDriver* content_driver =
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+      static_cast<password_manager::ContentPasswordManagerDriverExt*>(driver);
+#else
       static_cast<password_manager::ContentPasswordManagerDriver*>(driver);
+#endif
 
   if (keyboard_replacing_surface_visibility_controller_ &&
       !keyboard_replacing_surface_visibility_controller_->CanBeShown()) {
@@ -916,7 +926,8 @@ void ChromePasswordManagerClient::PasswordWasAutofilled(
   manage_passwords_ui_controller->OnPasswordAutofilled(best_matches, origin,
                                                        federated_matches);
 #endif
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS_ASH) || \
+    BUILDFLAG(IS_OHOS)
   if (was_autofilled_on_pageload &&
       !IsAuthenticatorRequestWindowUrl(GetLastCommittedURL()) &&
       password_manager_util::

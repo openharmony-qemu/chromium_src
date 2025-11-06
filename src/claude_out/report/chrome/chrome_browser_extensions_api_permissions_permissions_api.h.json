@@ -1,0 +1,51 @@
+{
+  "文件路径": "chrome/browser/extensions/api/permissions/permissions_api.h",
+  "处理时间": "2025-11-04",
+  "总hunk数量": 2,
+  "成功解决的hunk数量": 2,
+  "未能解决的hunk数量": 0,
+  "rej文件保持完整": true,
+  "hunks": [
+    {
+      "hunk编号": 1,
+      "解决状态": "已解决",
+      "风险等级": "低",
+      "冲突原因": "Arkweb 132 在文件头部添加了 ARKWEB_ARKWEB_EXTENSIONS 条件编译的头文件包含",
+      "分析过程": "通过分析 .rej 文件中的第一个 hunk，识别出需要添加三个条件编译行：#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)、#include \"ohos_nweb/src/capi/browser_service/nweb_extension_prompt_types.h\" 和 #endif。使用源文件中的 #include \"ui/gfx/native_widget_types.h\" 和 static_assert(BUILDFLAG(ENABLE_EXTENSIONS_CORE)) 作为定位锚点，在第14行后成功插入这三个条件编译行。",
+      "修改置信度": "高",
+      "处理策略": "精确定位源文件中 #include \"ui/gfx/native_widget_types.h\" 后的位置，添加三个条件编译行，严格只添加 + 开头的行，不添加任何上下文行。",
+      "应用位置": "第16-18行",
+      "添加内容": [
+        "#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)",
+        "#include \"ohos_nweb/src/capi/browser_service/nweb_extension_prompt_types.h\"",
+        "#endif  // ARKWEB_ARKWEB_EXTENSIONS"
+      ]
+    },
+    {
+      "hunk编号": 2,
+      "解决状态": "已解决",
+      "风险等级": "低",
+      "冲突原因": "Arkweb 132 为 PermissionsRequestFunction 类添加了条件编译结束符",
+      "分析过程": "通过分析 .rej 文件中的第二个 hunk，识别出需要添加一个条件编译结束符：#endif  // ARKWEB_ARKWEB_EXTENSIONS。根据源文件结构，发现在第57行有 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS) 开始条件编译，在第131行的 PermissionsRequestFunction 类定义结束后需要添加对应的结束符。使用类定义结束符 }; 作为定位锚点，成功插入条件编译结束符。",
+      "修改置信度": "高",
+      "处理策略": "精确定位 PermissionsRequestFunction 类定义结束后的位置，添加条件编译结束符，严格只添加 + 开头的行，不添加任何上下文行。",
+      "应用位置": "第132行",
+      "添加内容": [
+        "#endif  // ARKWEB_ARKWEB_EXTENSIONS"
+      ]
+    }
+  ],
+  "总结": {
+    "处理结果": "全部成功",
+    "代码完整性": "保持良好",
+    "条件编译结构": "完整匹配",
+    "潜在风险": "无重大风险",
+    "建议": "建议编译验证 ARKWEB_ARKWEB_EXTENSIONS 条件编译的正确性"
+  },
+  "验证状态": {
+    "rej文件未被修改": true,
+    "源文件修改完成": true,
+    "无上下文污染": true,
+    "严格遵守黄金法则": true
+  }
+}

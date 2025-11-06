@@ -1756,6 +1756,7 @@ void DownloadsGetFileIconFunction::OnIconURLExtracted(const std::string& url) {
   RecordApiFunctions(DownloadsFunctionName::kDownloadsFunctionGetFileIcon);
   Respond(WithArguments(url));
 }
+#endif
 
 ExtensionDownloadsEventRouter::ExtensionDownloadsEventRouter(
     Profile* profile,

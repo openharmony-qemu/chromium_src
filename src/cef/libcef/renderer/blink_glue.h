@@ -126,6 +126,11 @@ BLINK_EXPORT bool HasPluginFrameOwner(blink::WebLocalFrame* frame);
 BLINK_EXPORT void StartNavigation(blink::WebLocalFrame* frame,
                                   const blink::WebURLRequest& request);
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+BLINK_EXPORT extern const int64_t kInvalidFrameId;
+BLINK_EXPORT void PenTouchInputFocus(blink::WebNode webNode);
+#endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+
 // Sets whether select popup menus should be rendered by the browser.
 BLINK_EXPORT void SetUseExternalPopupMenus(blink::WebView* view, bool value);
 

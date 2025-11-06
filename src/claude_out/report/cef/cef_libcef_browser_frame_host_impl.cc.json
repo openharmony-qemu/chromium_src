@@ -1,0 +1,63 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/cef/libcef/browser/frame_host_impl.cc.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/cef/libcef/browser/frame_host_impl.cc",
+    "Chromium 132 基线版本": "/home/sujiahao/code/chromium_132_baseline/src/cef/libcef/browser/frame_host_impl.cc",
+    "Arkweb 132 代码": "/home/sujiahao/code/arkweb_132/src/cef/libcef/browser/frame_host_impl.cc"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "rej文件完整性": {
+    "状态": "保持完整",
+    "说明": "rej文件未被修改或删除，完全符合要求"
+  },
+  "hunks详细分析": [
+    {
+      "hunk索引": 1,
+      "冲突原因": "Arkweb 132 在源文件头部添加了ARKWEB和ARKWEB_NETWORK_LOAD相关的include文件，这些在Arkweb 141中缺失",
+      "风险等级": "低风险",
+      "风险说明": "添加的include文件不会影响现有功能，只是为ARKWEB特有功能提供必要的头文件支持",
+      "上下文定位": "成功定位到源文件第26-27行之间，在'#include \"services/service_manager/public/cpp/interface_provider.h\"'和'namespace {'之间",
+      "修改内容": {
+        "添加的行": [
+          "#if BUILDFLAG(IS_ARKWEB)",
+          "#include \"cef/ohos_cef_ext/libcef/browser/ark_web_frame_host_impl.h\"",
+          "#include \"libcef/common/arkweb_request_impl_ext.h\"",
+          "#endif",
+          "",
+          "#if BUILDFLAG(ARKWEB_NETWORK_LOAD)",
+          "#include \"base/command_line.h\"",
+          "#include \"content/browser/renderer_host/frame_tree.h\"",
+          "#include \"content/public/common/content_switches.h\"",
+          "#endif"
+        ],
+        "删除的行": []
+      },
+      "分析过程": "1. 识别出.rej文件中的10个添加行（以+开头）\n2. 使用上下文行'#include \"services/service_manager/public/cpp/interface_provider.h\"'和'namespace {'作为锚点在源文件中精确定位\n3. 在第26行后成功插入所有ARKWEB相关的include文件\n4. 保持了代码格式和条件编译结构的完整性",
+      "修改置信度": "高",
+      "置信度说明": "上下文锚点明确匹配，修改内容为标准的include文件添加，不会引起语法错误",
+      "解决策略": "直接应用",
+      "最终状态": "已解决"
+    }
+  ],
+  "总体评估": {
+    "处理难度": "简单",
+    "代码质量影响": "正面，恢复了ARKWEB项目所需的功能支持",
+    "编译风险评估": "低风险，添加的include文件都有条件编译保护",
+    "功能完整性": "恢复了Arkweb 132中的ARKWEB特有功能支持",
+    "建议": "建议编译时确认BUILDFLAG(IS_ARKWEB)和BUILDFLAG(ARKWEB_NETWORK_LOAD)宏定义正确配置"
+  },
+  "合规性检查": {
+    "第一性原则遵守情况": "完全遵守",
+    "未添加上下文行": "✓ 符合要求",
+    "未生成脚本文件": "✓ 符合要求",
+    "未创建辅助文件": "✓ 符合要求",
+    "未使用外部工具": "✓ 符合要求",
+    "仅在指定目录创建文件": "✓ 符合要求",
+    "rej文件保持完整": "✓ 符合要求"
+  }
+}

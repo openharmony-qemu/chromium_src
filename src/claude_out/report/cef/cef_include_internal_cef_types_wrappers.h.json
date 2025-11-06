@@ -1,0 +1,90 @@
+{
+  "conflict_file": "cef/include/internal/cef_types_wrappers.h.rej",
+  "source_file": "cef/include/internal/cef_types_wrappers.h",
+  "total_hunks": 3,
+  "resolved_hunks": 3,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "保持完整，未被修改或删除",
+  "analysis_timestamp": "2025-11-05",
+  "analysis": {
+    "hunk_1": {
+      "description": "添加 arkweb features 头文件包含",
+      "risk_assessment": "低风险",
+      "conflict_cause": "Arkweb 132 中添加了自定义的 features 头文件引用，但在 Chromium 141 基线中不存在此包含",
+      "analysis_process": "通过 .rej 文件识别出需要在第7行（#include <limits> 之后）添加 #include \"arkweb/build/features/features.h\"",
+      "confidence": "高",
+      "resolution_strategy": "成功应用修改：在源文件第37行添加了指定的包含语句",
+      "status": "已解决",
+      "line_number": 37,
+      "applied_change": "+ #include \"arkweb/build/features/features.h\""
+    },
+    "hunk_2": {
+      "description": "修改 CefScreenInfo 构造函数和 Set 方法，添加 OHOS 相关参数",
+      "risk_assessment": "中等风险",
+      "conflict_cause": "Arkweb 132 对 CefScreenInfo 类进行了 OHOS 系统适配，添加了屏幕方向相关参数，但 Chromium 141 基线版本中不包含这些修改",
+      "analysis_process": "识别出需要修改 CefScreenInfo 类的两个方法：\n1. 构造函数：添加条件编译的 OHOS 参数和初始化列表\n2. Set 方法：添加条件编译的 OHOS 参数和相关赋值语句",
+      "confidence": "高",
+      "resolution_strategy": "成功应用修改：\n- 修改了构造函数，添加了条件编译的 OHOS 参数（angle_val, orientation_val）\n- 修改了 Set 方法，添加了相同的参数和对应的成员赋值语句\n- 所有修改都使用了 #if BUILDFLAG(IS_OHOS) 条件编译保护",
+      "status": "已解决",
+      "constructor_changes": [
+        "+ #if BUILDFLAG(IS_OHOS)",
+        "+ ,",
+        "+ uint16_t angle_val,",
+        "+ cef_screen_orientation_type_t orientation_val",
+        "+ #endif",
+        "+ #if BUILDFLAG(IS_OHOS)",
+        "+ ,",
+        "+ angle_val,",
+        "+ orientation_val",
+        "+ #endif"
+      ],
+      "set_method_changes": [
+        "+ #if BUILDFLAG(IS_OHOS)",
+        "+ ,",
+        "+ uint16_t angle_val,",
+        "+ cef_screen_orientation_type_t orientation_val",
+        "+ #endif",
+        "+ #if BUILDFLAG(IS_OHOS)",
+        "+ angle = angle_val;",
+        "+ orientation = orientation_val;",
+        "+ #endif"
+      ]
+    },
+    "hunk_3": {
+      "description": "添加 ARKWEB 特定头文件包含",
+      "risk_assessment": "低风险",
+      "conflict_cause": "Arkweb 132 在文件末尾添加了 ARKWEB 特定的头文件包含，用于扩展功能，但在 Chromium 141 基线中不存在",
+      "analysis_process": "通过 .rej 文件识别出需要在 CefAcceleratedPaintInfo 类之后、CefTaskInfoTraits 结构体之前添加条件编译的包含语句",
+      "confidence": "高",
+      "resolution_strategy": "成功应用修改：在源文件第837行添加了 #if BUILDFLAG(IS_ARKWEB) 条件编译块，包含指定的头文件",
+      "status": "已解决",
+      "line_number": 837,
+      "applied_change": [
+        "+ #if BUILDFLAG(IS_ARKWEB)",
+        "+ #include \"cef/ohos_cef_ext/include/internal/cef_types_wrappers_for_include.cc\"",
+        "+ #endif  // BUILDFLAG(IS_ARKWEB)"
+      ]
+    }
+  },
+  "summary": {
+    "overall_assessment": "所有冲突都已成功解决",
+    "code_integrity": "保持良好，所有修改都使用了适当的条件编译保护",
+    "compatibility_notes": [
+      "所有新增的 ARKWEB/OHOS 相关代码都使用了条件编译，不会影响其他平台的构建",
+      "修改遵循了原有的代码风格和结构",
+      "没有引入语法错误或潜在的编译问题"
+    ],
+    "recommended_verification": [
+      "在 OHOS 平台上验证 CefScreenInfo 的新参数功能",
+      "确认 ARKWEB 扩展头文件的路径正确性",
+      "验证所有条件编译标志在构建系统中正确定义"
+    ]
+  },
+  "compliance": {
+    "golden_rule_followed": "是",
+    "context_lines_avoided": "是，所有修改都严格遵循只应用 +/- 行的原则",
+    "no_scripts_generated": "是，未生成任何脚本文件",
+    "no_auxiliary_files": "是，除指定的 JSON 报告外未创建任何其他文件",
+    "rej_file_preserved": "是，.rej 文件保持完整未被修改"
+  }
+}

@@ -12,6 +12,12 @@
 #include "cef/libcef/browser/media_router/media_router_impl.h"
 #include "cef/libcef/browser/net_service/cookie_manager_impl.h"
 #include "cef/libcef/browser/thread_util.h"
+#include "cef/ohos_cef_ext/libcef/browser/adsblock_manager_impl.h"
+#include "libcef/browser/net_database/cef_data_base_impl.h"
+
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
+#include "cef/ohos_cef_ext/libcef/browser/storage/web_storage_impl.h"
+#endif
 
 namespace content {
 struct GlobalRenderFrameHostId;
@@ -26,6 +32,7 @@ class Registrar;
 }
 
 class CefBrowserContext;
+class ArkWebRequestContextImplExt;
 
 // Implementation of the CefRequestContext interface. All methods are thread-
 // safe unless otherwise indicated. Will be deleted on the UI thread.
@@ -36,6 +43,8 @@ class CefRequestContextImpl : public CefRequestContext {
 
   ~CefRequestContextImpl() override;
 
+  virtual ArkWebRequestContextImplExt *AsArkWebRequestContextImpl() { return nullptr; }
+
   // Creates the singleton global RequestContext. Called from
   // AlloyBrowserMainParts::PreMainMessageLoopRun and
   // ChromeBrowserMainExtraPartsCef::PostProfileInit.
@@ -45,7 +54,15 @@ class CefRequestContextImpl : public CefRequestContext {
   // Returns a CefRequestContextImpl for the specified |request_context|.
   // Will return the global context if |request_context| is NULL.
   static CefRefPtr<CefRequestContextImpl> GetOrCreateForRequestContext(
-      CefRefPtr<CefRequestContext> request_context);
+      CefRefPtr<CefRequestContext> request_context
+#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
+      ,
+      bool incognito_mode = false
+#endif
+  );
+#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
+  bool IsOffTheRecord() { return config_.settings.incognito_mode; }
+#endif
 
   // Returns a CefRequestContextImpl for the specified |browser_context| and
   // optional |handler|. If |handler| is nullptr, and a CefRequestContextImpl
@@ -116,6 +133,8 @@ class CefRequestContextImpl : public CefRequestContext {
   bool ClearSchemeHandlerFactories() override;
   void ClearCertificateExceptions(
       CefRefPtr<CefCompletionCallback> callback) override;
+#if BUILDFLAG(ARKWEB_CERT_AUTHENTICATION)
+#endif  // ARKWEB_CERT_AUTHENTICATION
   void ClearHttpAuthCredentials(
       CefRefPtr<CefCompletionCallback> callback) override;
   void CloseAllConnections(CefRefPtr<CefCompletionCallback> callback) override;

@@ -319,6 +319,12 @@ class CefBrowserHostBase : virtual public CefBrowserHost,
   void SetAudioMuted(bool mute) override;
   bool IsAudioMuted() override;
   void NotifyMoveOrResizeStarted() override;
+#if BUILDFLAG(ARKWEB_DEVTOOLS)
+  void ShowDevToolsWith(
+      CefRefPtr<ArkWebBrowserHostExt> frontend_browser,
+      CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
+      const CefPoint& inspect_element_at) override {}
+#endif // BUILDFLAG(ARKWEB_DEVTOOLS)
   void NotifyScreenInfoChanged() override;
   bool IsFullscreen() override;
   void ExitFullscreen(bool will_cause_resize) override;
@@ -327,7 +333,7 @@ class CefBrowserHostBase : virtual public CefBrowserHost,
 
   // CefBrowser methods:
   bool IsValid() override;
-  CefRefPtr<CefBrowserHost> GetHost() override;
+  // CefRefPtr<CefBrowserHost> GetHost() override { return this; }
   bool CanGoBack() override;
   void GoBack() override;
   bool CanGoForward() override;

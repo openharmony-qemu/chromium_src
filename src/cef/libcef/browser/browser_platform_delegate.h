@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback_forward.h"
 #include "base/memory/raw_ptr.h"
 #include "cef/include/cef_client.h"
@@ -16,11 +17,17 @@
 #include "cef/include/internal/cef_types.h"
 #include "cef/include/views/cef_browser_view.h"
 #include "cef/libcef/renderer/browser_config.h"
+#include "cef/ohos_cef_ext/include/arkweb_render_handler_ext.h"
+#include "content/common/native_embed_first_paint_event.h"
 #include "third_party/blink/public/common/page/drag_operation.h"
 #include "third_party/blink/public/mojom/drag/drag.mojom-forward.h"
 #include "third_party/skia/include/core/SkColor.h"
 #include "ui/base/dragdrop/mojom/drag_drop_types.mojom-forward.h"
 #include "ui/base/window_open_disposition.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 class GURL;
 
@@ -377,8 +384,35 @@ class CefBrowserPlatformDelegate {
   virtual void Find(const CefString& searchText,
                     bool forward,
                     bool matchCase,
-                    bool findNext);
+                    bool findNext
+#if BUILDFLAG(ARKWEB_FIND_IN_PAGE)
+                    ,
+                    bool new_session = false
+#endif
+  );
   virtual void StopFinding(bool clearSelection);
+
+#if BUILDFLAG(ARKWEB_PIP)
+  virtual void OnPip(int status,
+                     int delegate_id,
+                     int child_id,
+                     int frame_routing_id,
+                     int width,
+                     int height) {}
+  virtual void SetPipNativeWindow(int delegate_id,
+                                  int child_id,
+                                  int frame_routing_id,
+                                  cef_native_window_t window);
+  virtual void SendPipEvent(int delegate_id,
+                            int child_id,
+                            int frame_routing_id,
+                            int event);
+  virtual void OnPipEvent(int event);
+#endif
+#if BUILDFLAG(ARKWEB_PDF)
+  virtual void OnPdfScrollAtBottom(const std::string& url) {}
+  virtual void OnPdfLoadEvent(int32_t result, const std::string& url) {}
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   virtual bool IsMovePictureInPictureEnabled() const;
 

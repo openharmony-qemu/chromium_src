@@ -40,12 +40,19 @@
 
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+#include "cef/ohos_cef_ext/include/cef_adsblock_manager.h"
+#include "cef/ohos_cef_ext/include/cef_data_base.h"
 #include "include/cef_callback.h"
 #include "include/cef_cookie.h"
 #include "include/cef_media_router.h"
 #include "include/cef_preference.h"
 #include "include/cef_registration.h"
 #include "include/cef_values.h"
+
+#if BUILDFLAG(ARKWEB_WEBSTORAGE)
+#include "cef/ohos_cef_ext/include/cef_web_storage.h"
+#endif  // BUILDFLAG(IS_OHOS)
 
 class CefRequestContextHandler;
 class CefSchemeHandlerFactory;

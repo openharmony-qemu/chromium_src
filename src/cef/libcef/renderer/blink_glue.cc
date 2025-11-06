@@ -318,6 +318,22 @@ void StartNavigation(blink::WebLocalFrame* frame,
       .StartNavigation(frame_load_request, blink::WebFrameLoadType::kStandard);
 }
 
+#if defined(OHOS_INPUT_EVENTS)
+void PenTouchInputFocus(blink::WebNode webNode) {
+  blink::Node* node = webNode.Unwrap<blink::Node>();
+  if (!node->IsElementNode()) {
+    return;
+  }
+  blink::Element* element = blink::To<blink::Element>(node);
+  if (!element) {
+    return;
+  }
+  element->Focus();
+}
+#endif // defined(OHOS_INPUT_EVENTS)
+
+#include "cef/ohos_cef_ext/libcef/renderer/blink_glue_for_include.cc"
+
 void SetUseExternalPopupMenus(blink::WebView* view, bool value) {
   static_cast<blink::WebViewImpl*>(view)
       ->GetPage()

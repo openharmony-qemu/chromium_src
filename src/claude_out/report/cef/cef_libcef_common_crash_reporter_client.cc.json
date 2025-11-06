@@ -1,0 +1,84 @@
+{
+  "conflict_file": "cef/libcef/common/crash_reporter_client.cc.rej",
+  "source_file": "cef/libcef/common/crash_reporter_client.cc",
+  "total_hunks": 2,
+  "resolved_hunks": 2,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "保持完整未被修改",
+  "analysis": {
+    "summary": "所有hunk均已成功解决，无遗留冲突",
+    "hunks": [
+      {
+        "hunk_id": 1,
+        "line_range": "629-642",
+        "description": "添加GetCrashMetricsLocation方法",
+        "changes": {
+          "additions": [
+            "bool CefCrashReporterClient::GetCrashMetricsLocation(",
+            "    std::wstring* metrics_dir) {",
+            "  return GetDefaultUserDataDirectory(metrics_dir, base::UTF8ToWide(app_name_));",
+            "}"
+          ],
+          "deletions": []
+        },
+        "risk_level": "低",
+        "risk_description": "新增方法，风险较低。添加了新的Crash指标位置获取方法，使用现有的GetDefaultUserDataDirectory函数",
+        "conflict_reason": "Arkweb132中新增的方法在Arkweb141基线版本中不存在",
+        "modification_confidence": "高",
+        "resolution_strategy": "成功定位到第630行后添加新方法",
+        "anchor_context": [
+          "return GetDefaultCrashDumpLocation(crash_dir, base::UTF8ToWide(app_name_));",
+          "}"
+        ],
+        "applied_changes": {
+          "status": "已解决",
+          "location": "第630行后",
+          "applied_at": "630-636行"
+        }
+      },
+      {
+        "hunk_id": 2,
+        "line_range": "654-657",
+        "description": "修改GetCrashDumpLocation返回路径，添加Arkweb crashpad支持",
+        "changes": {
+          "additions": [
+            "#if BUILDFLAG(ARKWEB_CRASHPAD)",
+            "  return base::PathService::Get(base::DIR_OHOS_CRASHPAD, crash_dir);",
+            "#else",
+            "  return base::PathService::Get(chrome::DIR_CRASH_DUMPS, crash_dir);",
+            "#endif  // BUILDFLAG(ARKWEB_CRASHPAD)"
+          ],
+          "deletions": [
+            "return base::PathService::Get(chrome::DIR_CRASH_DUMPS, crash_dir);"
+          ]
+        },
+        "risk_level": "中",
+        "risk_description": "修改核心crash dump路径获取逻辑，影响crash存储位置。通过条件编译支持Arkweb crashpad特有路径",
+        "conflict_reason": "Arkweb132中对crash dump路径的特殊定制在Arkweb141基线版本中缺失",
+        "modification_confidence": "高",
+        "resolution_strategy": "成功定位到第653行进行条件编译替换",
+        "anchor_context": [
+          "if (const auto& val = env->GetVar(\"BREAKPAD_DUMP_LOCATION\")) {",
+          "    base::PathService::Override(chrome::DIR_CRASH_DUMPS,",
+          "                                base::FilePath::FromUTF8Unsafe(*val));",
+          "  }"
+        ],
+        "applied_changes": {
+          "status": "已解决",
+          "location": "第653行",
+          "applied_at": "653-657行"
+        }
+      }
+    ]
+  },
+  "final_status": {
+    "success": true,
+    "message": "冲突解决完成，所有侵入式修改已成功应用到源文件中",
+    "validation": {
+      "rej_file_intact": true,
+      "source_file_modified": true,
+      "all_hunks_processed": true,
+      "no_context_pollution": true
+    }
+  }
+}

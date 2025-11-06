@@ -56,6 +56,11 @@ class CefBrowserInfoManager : public content::RenderProcessHostObserver {
   // Returns this singleton instance of this class.
   static CefBrowserInfoManager* GetInstance();
 
+#if BUILDFLAG(IS_ARKWEB)
+  friend class ArkwebBrowserInfoManagerUtils;
+  ArkwebBrowserInfoManagerUtils* GetUtils();
+#endif
+
   // Called immediately before a new CefBrowserHost implementation is created
   // directly.
   scoped_refptr<CefBrowserInfo> CreateBrowserInfo(

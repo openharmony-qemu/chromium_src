@@ -8,6 +8,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/task/single_thread_task_runner.h"
 #include "chrome/renderer/chrome_content_renderer_client.h"
@@ -17,9 +18,16 @@ struct BrowserConfig;
 }
 
 class CefRenderManager;
+class ArkWebContentRendererClientCefExt;
 
 // CEF override of ChromeContentRendererClient.
+#if BUILDFLAG(ARKWEB_ADBLOCK) || BUILDFLAG(ARKWEB_NETWORK_BASE) || \
+    BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
+class ChromeContentRendererClientCef
+    : public ArkWebChromeContentRendererClientExt {
+#else
 class ChromeContentRendererClientCef : public ChromeContentRendererClient {
+#endif
  public:
   ChromeContentRendererClientCef();
 
@@ -29,6 +37,11 @@ class ChromeContentRendererClientCef : public ChromeContentRendererClient {
       const ChromeContentRendererClientCef&) = delete;
 
   ~ChromeContentRendererClientCef() override;
+
+  virtual ArkWebContentRendererClientCefExt*
+  AsArkWebContentRendererClientCef() {
+    return nullptr;
+  }
 
   // Render thread task runner.
   base::SingleThreadTaskRunner* render_task_runner() const {
@@ -51,6 +64,7 @@ class ChromeContentRendererClientCef : public ChromeContentRendererClient {
   void ExposeInterfacesToBrowser(mojo::BinderMap* binders) override;
 
  private:
+  friend class ArkWebContentRendererClientCefExt;
   void OnBrowserCreated(blink::WebView* web_view,
                         const cef::BrowserConfig& config);
 
@@ -58,5 +72,7 @@ class ChromeContentRendererClientCef : public ChromeContentRendererClient {
 
   scoped_refptr<base::SingleThreadTaskRunner> render_task_runner_;
 };
+
+#include "cef/ohos_cef_ext/libcef/renderer/arkweb_content_renderer_client_cef_ext.h"
 
 #endif  // CEF_LIBCEF_RENDERER_CHROME_CHROME_CONTENT_RENDERER_CLIENT_CEF_

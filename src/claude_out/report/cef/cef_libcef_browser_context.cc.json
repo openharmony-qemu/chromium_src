@@ -1,0 +1,65 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/cef/libcef/browser/context.cc.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/cef/libcef/browser/context.cc",
+    "处理时间": "2025-11-05"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "处理结果": {
+    "rej文件状态": "保持完整，未被修改",
+    "源文件修改状态": "已成功应用修改"
+  },
+  "hunks详情": [
+    {
+      "hunk索引": 1,
+      "修改类型": "添加include语句",
+      "待添加行数": 1,
+      "待删除行数": 0,
+      "风险等级": "低",
+      "冲突原因": "Arkweb 132 在文件头部添加了arkweb/build/features/features.h的include，但该修改在Chromium 141升级过程中产生了冲突",
+      "分析过程": {
+        "步骤1_解析hunk": {
+          "待添加行": [
+            "#include \"arkweb/build/features/features.h\""
+          ],
+          "锚点上下文": [
+            "#include <memory>",
+            "#include \"base/files/file_util.h\""
+          ]
+        },
+        "步骤2_精确定位": {
+          "定位策略": "使用锚点上下文在源文件中查找匹配位置",
+          "定位结果": "成功在源文件第7-9行找到匹配的锚点上下文",
+          "定位置信度": "高"
+        },
+        "步骤3_原子化应用": {
+          "应用状态": "成功",
+          "修改位置": "第8行",
+          "具体操作": "在#include <memory>和#include \"base/files/file_util.h\"之间添加了arkweb/build/features/features.h的include语句"
+        }
+      },
+      "修改置信度": "高",
+      "处理策略": "直接应用",
+      "人工复查建议": "此修改为标准的include语句添加，用于引入Arkweb的特性定义。修改位置合理，风险较低。建议确认arkweb/build/features/features.h文件是否存在且路径正确。"
+    }
+  ],
+  "总体评估": {
+    "处理结果": "完全成功",
+    "代码污染风险": "无",
+    "语法完整性": "保持良好",
+    "建议后续操作": "1. 编译测试确认include路径正确 2. 运行相关测试确保功能正常 3. 检查arkweb/build/features/features.h中定义的特性是否按预期工作"
+  },
+  "合规性检查": {
+    "第一性原则遵守情况": "完全遵守",
+    "未添加上下文行": "确认",
+    "未生成脚本文件": "确认",
+    "未创建辅助文件": "确认",
+    "rej文件完整性": "确认保持",
+    "JSON报告路径": "符合要求的唯一指定路径"
+  }
+}

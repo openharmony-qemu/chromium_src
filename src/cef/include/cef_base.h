@@ -35,7 +35,6 @@
 #include "include/base/cef_build.h"
 #endif
 
-#include "include/base/cef_atomic_ref_count.h"
 #include "include/base/cef_macros.h"
 
 // Bring in common C++ type definitions used by CEF consumers.

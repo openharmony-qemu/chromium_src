@@ -1549,9 +1549,13 @@ void CefRenderWidgetHostViewOSR::SendMouseWheelEvent(
   if (render_widget_host_ && render_widget_host_->GetView()) {
     blink::WebMouseWheelEvent mouse_wheel_event(event);
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+    arkweb_rwhv_osr_utils_->SendMouseWheelEventEx(mouse_wheel_event);
+#else
     mouse_wheel_phase_handler_.SendWheelEndForTouchpadScrollingIfNeeded(false);
     mouse_wheel_phase_handler_.AddPhaseIfNeededAndScheduleEndEvent(
         mouse_wheel_event, false, /*is_fling_capable=*/false);
+#endif
 
     if (ShouldRouteEvents()) {
       render_widget_host_->delegate()

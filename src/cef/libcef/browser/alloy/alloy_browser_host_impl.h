@@ -109,6 +109,11 @@ class AlloyBrowserHostImpl : public ArkWebBrowserHostExtImpl,
   bool IsWindowRenderingDisabled() override;
   void WasResized() override;
   void WasHidden(bool hidden) override;
+
+#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
+  void SetEnableHalfFrameRate(bool enabled) override;
+#endif
+
   void Invalidate(PaintElementType type) override;
   void SendExternalBeginFrame() override;
   void SendTouchEvent(const CefTouchEvent& event) override;

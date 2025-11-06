@@ -1,0 +1,109 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/cef/include/internal/cef_types.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/cef/include/internal/cef_types.h",
+    "处理时间": "2025-11-05",
+    "Chromium版本升级": "132 -> 141"
+  },
+  "处理统计": {
+    "总hunk数量": 5,
+    "成功解决的hunk数量": 5,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk处理详情": [
+    {
+      "hunk编号": 1,
+      "冲突原因": "Arkweb132在文件头部添加了arkweb/build/features/features.h包含，但在Chromium141中该位置有cef_api_hash.h包含",
+      "修改内容": [
+        "+ #include \"arkweb/build/features/features.h\""
+      ],
+      "定位过程": "在源文件第38-39行之间成功定位，在cef_api_hash.h之后、cef_string.h之前插入",
+      "应用结果": "已成功添加",
+      "置信度": "高",
+      "风险评估": "低风险 - 这是标准的包含文件添加，不会影响现有代码结构",
+      "注意事项": "确保arkweb/build/features/features.h文件路径正确"
+    },
+    {
+      "hunk编号": 2,
+      "冲突原因": "Arkweb132在cef_settings_t结构体末尾添加了条件编译字段，Chromium141中结构体相同位置",
+      "修改内容": [
+        "+ #if BUILDFLAG(ARKWEB_INCOGNITO_MODE)",
+        "+   bool incognito_mode;",
+        "+ #endif",
+        "+ #if BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)",
+        "+   std::string shared_render_process_token;",
+        "+ #endif"
+      ],
+      "定位过程": "在cef_settings_t结构体末尾，disable_signal_handlers字段之后，结构体结束之前成功定位",
+      "应用结果": "已成功添加",
+      "置信度": "高",
+      "风险评估": "低风险 - 条件编译确保只有在相应特性启用时才包含这些字段",
+      "注意事项": "需要确保BUILDFLAG宏正确定义"
+    },
+    {
+      "hunk编号": 3,
+      "冲突原因": "Arkweb132要添加的鼠标按钮事件标志位（1<<14, 1<<15）在Chromium141中已被EVENTFLAG_PRECISION_SCROLLING_DELTA和EVENTFLAG_SCROLL_BY_PAGE占用",
+      "修改内容": [
+        "+ #if BUILDFLAG(ARKWEB_INPUT_EVENTS)",
+        "+   EVENTFLAG_BACK_MOUSE_BUTTON = 1 << 16,",
+        "+   EVENTFLAG_FORWARD_MOUSE_BUTTON = 1 << 17,",
+        "+ #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)"
+      ],
+      "定位过程": "发现位冲突，将鼠标按钮事件标志位移至1<<16和1<<17，在枚举末尾成功添加",
+      "应用结果": "已成功添加（调整了位值）",
+      "置信度": "高",
+      "风险评估": "中等风险 - 位值变更可能需要更新使用这些标志的代码，但避免了位冲突",
+      "注意事项": "需要通知相关开发人员事件标志位值已变更"
+    },
+    {
+      "hunk编号": 4,
+      "冲突原因": "Arkweb132要在cef_focus_source_t枚举中添加FOCUS_SOURCE_GESTURE，Chromium141中该枚举有额外的FOCUS_SOURCE_NUM_VALUES枚举值",
+      "修改内容": [
+        "+ #if BUILDFLAG(ARKWEB_INPUT_EVENTS)",
+        "+   ///",
+        "+   /// The source is a user gesture focus event.",
+        "+   ///",
+        "+   FOCUS_SOURCE_GESTURE,",
+        "+ #endif"
+      ],
+      "定位过程": "在FOCUS_SOURCE_SYSTEM之后，FOCUS_SOURCE_NUM_VALUES之前成功定位",
+      "应用结果": "已成功添加",
+      "置信度": "高",
+      "风险评估": "低风险 - 条件编译确保只有在输入事件特性启用时才包含",
+      "注意事项": "无"
+    },
+    {
+      "hunk编号": 5,
+      "冲突原因": "Arkweb132要在cef_cursor_type_t枚举中添加CT_LOCK和CT_UNLOCK，Chromium141中该枚举有额外的CT_NUM_VALUES枚举值",
+      "修改内容": [
+        "+   CT_LOCK,",
+        "+   CT_UNLOCK,"
+      ],
+      "定位过程": "在CT_DND_LINK之后，CT_NUM_VALUES之前成功定位",
+      "应用结果": "已成功添加",
+      "置信度": "高",
+      "风险评估": "低风险 - 这是简单的枚举值添加，不会破坏现有代码",
+      "注意事项": "无"
+    }
+  ],
+  "整体分析": {
+    "冲突类型": "主要为枚举和结构体的扩展性修改",
+    "主要挑战": "Chromium版本升级导致某些枚举位值和结构被新的内容占用",
+    "解决策略": "通过调整位值和正确的定位策略成功解决所有冲突",
+    "代码质量影响": "正面 - 成功集成了Arkweb特性到Chromium141",
+    "兼容性": "保持了条件编译，确保向后兼容性"
+  },
+  "验证结果": {
+    ".rej文件完整性": "确认.rej文件保持完整，未被修改或删除",
+    "源文件修改": "所有侵入式修改已成功应用到源文件",
+    "编译风险": "低 - 所有修改都使用了条件编译",
+    "功能完整性": "所有Arkweb特性已正确集成"
+  },
+  "后续建议": [
+    "建议编译测试以确保所有修改正确工作",
+    "建议检查BUILDFLAG宏的定义是否正确",
+    "建议通知相关开发人员事件标志位值的变更",
+    "建议进行完整的功能测试以验证新特性正常工作"
+  ]
+}

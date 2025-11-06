@@ -20,6 +20,9 @@
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/render_widget_host_view.h"
 #include "third_party/blink/public/mojom/context_menu/context_menu.mojom.h"
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+#include "cef/ohos_cef_ext/libcef/browser/menu_manager_for_include.cc"
+#endif  // #if BUILDFLAG(ARKWEB_CLIPBOARD)
 
 #if BUILDFLAG(IS_WIN)
 #include "chrome/browser/spellchecker/spellcheck_factory.h"
@@ -160,6 +163,10 @@ bool CefMenuManager::CreateContextMenu(const content::ContextMenuParams& params,
 #endif
 
   model_->Clear();
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  UpdateMenuEditStateFlags(params_);
+#endif  // #if BUILDFLAG(ARKWEB_CLIPBOARD)
 
   // Create the default menu model.
   CreateDefaultModel();

@@ -253,8 +253,6 @@ void SaveCookiesOnUIThread(
                              net::CookieAccessResult(std::move(status)));
 }
 
-}  // namespace
-
 bool IsCookieableScheme(
     const GURL& url,
     const std::optional<std::vector<std::string>>& cookieable_schemes) {
@@ -281,22 +279,47 @@ bool IsCookieableScheme(
 
 void LoadCookies(const CefBrowserContext::Getter& browser_context_getter,
                  const network::ResourceRequest& request,
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+                 const std::optional<GURL>& new_url,
+                 bool is_off_the_record,
+                 const net::IsolationInfo& isolation_info,
+#endif
                  const AllowCookieCallback& allow_cookie_callback,
                  DoneCookieCallback done_callback) {
   CEF_REQUIRE_IOT();
 
+#if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
+  CefRefPtr<CefCookieManagerImplExt> cookie_manager =
+    CefCookieManagerImplExt::GetInstance(is_off_the_record);
+#endif
   if ((request.load_flags & net::LOAD_DO_NOT_SEND_COOKIES) ||
       request.credentials_mode == network::mojom::CredentialsMode::kOmit ||
-      request.url.IsAboutBlank()) {
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+      new_url.value_or(request.url).IsAboutBlank()
+#else
+      request.url.IsAboutBlank()
+#endif
+#if BUILDFLAG(IS_ARKWEB)
+      || !request.SendsCookies()
+#endif
+#if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
+      || (cookie_manager && !cookie_manager->CanSaveOrLoadCookies(request))
+#endif
+
+  ) {
     // Continue immediately without loading cookies.
     std::move(done_callback).Run(0, {});
     return;
   }
 
   net::CookiePartitionKeyCollection partition_key_collection;
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (!isolation_info.IsEmpty()) {
+#else
   if (request.trusted_params.has_value() &&
       !request.trusted_params->isolation_info.IsEmpty()) {
     const auto& isolation_info = request.trusted_params->isolation_info;
+#endif
     partition_key_collection = net::CookiePartitionKeyCollection(
         net::CookiePartitionKey::FromNetworkIsolationKey(
             isolation_info.network_isolation_key(), request.site_for_cookies,
@@ -304,16 +327,51 @@ void LoadCookies(const CefBrowserContext::Getter& browser_context_getter,
             isolation_info.IsMainFrameRequest()));
   }
 
+#if BUILDFLAG(ARKWEB_COOKIE)
+#if !BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)
+  CefRefPtr<CefCookieManagerImplExt> cookie_manager =
+      CefCookieManagerImplExt::GetInstance(is_off_the_record);
+#endif
+  if (cookie_manager && cookie_manager->SupportAsyncThreadCookieLoad()) {
+    cookie_manager->LoadCookiesOnAsyncThread(
+        new_url.value_or(request.url),
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+        GetCookieOptions(request, /*for_loading_cookies=*/true, new_url,
+                         is_off_the_record),
+#else
+        GetCookieOptions(request, /*for_loading_cookies=*/true, new_url),
+#endif
+        std::move(partition_key_collection),
+        base::BindOnce(GetCookieListCallback, allow_cookie_callback,
+                       std::move(done_callback)));
+    return;
+  }
+#endif
   CEF_POST_TASK(
       CEF_UIT,
-      base::BindOnce(LoadCookiesOnUIThread, browser_context_getter, request.url,
-                     GetCookieOptions(request, /*for_loading_cookies=*/true),
-                     std::move(partition_key_collection), allow_cookie_callback,
-                     std::move(done_callback)));
+      base::BindOnce(
+          LoadCookiesOnUIThread, browser_context_getter,
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+          new_url.value_or(request.url),
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+          GetCookieOptions(request, /*for_loading_cookies=*/true, new_url,
+                           is_off_the_record),
+#else
+          GetCookieOptions(request, /*for_loading_cookies=*/true, new_url),
+#endif
+#else
+          request.url, GetCookieOptions(request, /*for_loading_cookies=*/true),
+#endif
+                      std::move(partition_key_collection), allow_cookie_callback,
+                      std::move(done_callback)));
 }
 
 void SaveCookies(const CefBrowserContext::Getter& browser_context_getter,
                  const network::ResourceRequest& request,
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+                 bool is_off_the_record,
+                 const net::IsolationInfo& isolation_info,
+#endif
                  net::HttpResponseHeaders* headers,
                  const AllowCookieCallback& allow_cookie_callback,
                  DoneCookieCallback done_callback) {
@@ -321,7 +379,11 @@ void SaveCookies(const CefBrowserContext::Getter& browser_context_getter,
 
   if (request.credentials_mode == network::mojom::CredentialsMode::kOmit ||
       request.url.IsAboutBlank() || !headers ||
-      !headers->HasHeader(net_service::kHTTPSetCookieHeaderName)) {
+      !headers->HasHeader(net_service::kHTTPSetCookieHeaderName)
+#if BUILDFLAG(IS_ARKWEB)
+      || !request.SavesCookies()
+#endif
+  ) {
     // Continue immediately without saving cookies.
     std::move(done_callback).Run(0, {});
     return;

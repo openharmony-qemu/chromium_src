@@ -149,9 +149,17 @@ LoginDelegate::LoginDelegate(
   }
 
   // |callback| needs to be executed asynchronously.
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  CEF_POST_TASK(CEF_UIT, base::BindOnce(&LoginDelegate::Start,
+                                        weak_ptr_factory_.GetWeakPtr(), browser,
+                                        auth_info, request_id,
+                                        is_request_for_main_frame,
+                                        origin_url, response_headers));
+#else
   CEF_POST_TASK(CEF_UIT, base::BindOnce(&LoginDelegate::Start,
                                         weak_ptr_factory_.GetWeakPtr(), browser,
                                         auth_info, request_id, origin_url));
+#endif
 }
 
 void LoginDelegate::Continue(const CefString& username,

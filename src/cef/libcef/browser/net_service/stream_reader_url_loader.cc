@@ -665,6 +665,12 @@ void StreamReaderURLLoader::HeadersComplete(int orig_status_code,
                                          &status_text, &mime_type, &charset,
                                          &content_length, &extra_headers);
 
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+  LOG(DEBUG) << "intercept StreamReaderURLLoader::HeadersComplete"
+             << " request_id_=" << request_id_ << " status_code=" << status_code
+             << " status_text=" << status_text << " mime_type=" << mime_type
+             << " charset=" << charset << " content_length=" << content_length;
+#endif
   if (status_code < 0) {
     // Early exit if the handler reported an error.
     RequestComplete(status_code);
@@ -678,14 +684,27 @@ void StreamReaderURLLoader::HeadersComplete(int orig_status_code,
   // blink depends this to caculate the request completion time.
   pending_response->load_timing.request_start = now;
 
+#if BUILDFLAG(ARKWEB_API_PER)
+  loader_utils_->HandleResponseDataID(pending_response, extra_headers);
+#endif
+
   auto headers = MakeResponseHeaders(
       status_code, status_text, mime_type, charset, content_length,
       extra_headers, false /* allow_existing_header_override */);
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  loader_utils_->CheckStatusCode(status_code, mime_type, headers);
+#endif
   pending_response->headers = headers;
 
   if (content_length >= 0) {
     pending_response->content_length = content_length;
   }
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (mime_type.empty()) {
+    headers->GetMimeTypeAndCharset(&mime_type, &charset);
+  }
+#endif
 
   if (!mime_type.empty()) {
     pending_response->mime_type = mime_type;

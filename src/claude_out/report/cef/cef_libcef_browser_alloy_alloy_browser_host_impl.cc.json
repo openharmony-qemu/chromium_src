@@ -1,0 +1,162 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/cef/libcef/browser/alloy/alloy_browser_host_impl.cc.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/cef/libcef/browser/alloy/alloy_browser_host_impl.cc",
+    "处理时间": "2025-11-05"
+  },
+  "处理统计": {
+    "总hunk数量": 9,
+    "成功解决的hunk数量": 8,
+    "未能解决的hunk数量": 1,
+    ".rej文件保持完整": true
+  },
+  "hunk处理详情": [
+    {
+      "hunk编号": 1,
+      "位置": "WasHidden方法",
+      "修改内容": "添加ARKWEB_OCCLUDED_OPT条件编译块和日志输出",
+      "风险等级": "低",
+      "冲突原因": "Arkweb132在WasHidden方法中添加了遮挡优化功能",
+      "分析过程": "成功定位到WasHidden方法，在方法开头和中间分别添加了条件编译代码",
+      "修改置信度": "高",
+      "处理策略": "已解决",
+      "具体修改": [
+        "在方法开头添加LOG(DEBUG)输出",
+        "在platform_delegate调用前添加AsAlloyBrowserHostImplExt调用",
+        "在方法后添加include文件"
+      ]
+    },
+    {
+      "hunk编号": 2,
+      "位置": "NotifyScreenInfoChanged方法",
+      "修改内容": "添加ARKWEB_SLIDE_LTPO条件编译块",
+      "风险等级": "中",
+      "冲突原因": "方法在Chromium 141中不存在或已被重命名",
+      "分析过程": "在源文件中无法找到NotifyScreenInfoChanged方法，可能在新版本中被移除或重命名",
+      "修改置信度": "低",
+      "处理策略": "未解决",
+      "具体修改": [],
+      "失败原因": "无法在Chromium 141源文件中定位到NotifyScreenInfoChanged方法"
+    },
+    {
+      "hunk编号": 3,
+      "位置": "IsBackForwardCacheSupported方法",
+      "修改内容": "添加ARKWEB_BFCACHE条件编译逻辑",
+      "风险等级": "低",
+      "冲突原因": "Arkweb132修改了BFCache支持逻辑",
+      "分析过程": "成功定位到方法，替换了简单的return true为条件编译逻辑",
+      "修改置信度": "高",
+      "处理策略": "已解决",
+      "具体修改": [
+        "添加BUILDFLAG(ARKWEB_BFCACHE)条件编译",
+        "添加命令行开关检查",
+        "保留原有的禁用注释"
+      ]
+    },
+    {
+      "hunk编号": 4,
+      "位置": "IsPrerender2Supported方法",
+      "修改内容": "添加ARKWEB_NETWORK_LOAD条件编译逻辑",
+      "风险等级": "低",
+      "冲突原因": "Arkweb132修改了预渲染支持逻辑",
+      "分析过程": "成功定位到方法，替换了返回值为条件编译逻辑",
+      "修改置信度": "高",
+      "处理策略": "已解决",
+      "具体修改": [
+        "添加BUILDFLAG(ARKWEB_NETWORK_LOAD)条件编译",
+        "添加kEnableNwebEx开关检查",
+        "修改返回值为kPreloadingUnsupportedByWebContents"
+      ]
+    },
+    {
+      "hunk编号": 5,
+      "位置": "EnterPictureInPicture方法",
+      "修改内容": "添加ARKWEB_PIP条件编译调用",
+      "风险等级": "低",
+      "冲突原因": "Arkweb132添加了画中画状态跟踪",
+      "分析过程": "成功定位到方法，在返回前添加了SetPipActive调用",
+      "修改置信度": "高",
+      "处理策略": "已解决",
+      "具体修改": [
+        "添加BUILDFLAG(ARKWEB_PIP)条件编译",
+        "在返回前调用SetPipActive(true)"
+      ]
+    },
+    {
+      "hunk编号": 6,
+      "位置": "ExitPictureInPicture方法",
+      "修改内容": "添加ARKWEB_PIP条件编译调用",
+      "风险等级": "低",
+      "冲突原因": "Arkweb132添加了画中画状态跟踪",
+      "分析过程": "成功定位到方法，在ExitPictureInPicture调用前添加了SetPipActive调用",
+      "修改置信度": "高",
+      "处理策略": "已解决",
+      "具体修改": [
+        "添加BUILDFLAG(ARKWEB_PIP)条件编译",
+        "在ExitPictureInPicture调用前调用SetPipActive(false)"
+      ]
+    },
+    {
+      "hunk编号": 7,
+      "位置": "RendererUnresponsive方法",
+      "修改内容": "添加ARKWEB_RENDERER_ANR_DUMP条件编译逻辑",
+      "风险等级": "中",
+      "冲突原因": "Arkweb132修改了渲染器无响应处理逻辑，且方法签名有变化",
+      "分析过程": "成功定位到方法，通过条件编译处理了方法签名的差异",
+      "修改置信度": "高",
+      "处理策略": "已解决",
+      "具体修改": [
+        "添加BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)条件编译处理方法签名",
+        "在ARKWEB条件下调用implUtils->handleRendererUnresponsive",
+        "保留原有hang_monitor调用"
+      ]
+    },
+    {
+      "hunk编号": 8,
+      "位置": "RendererResponsive方法",
+      "修改内容": "添加ARKWEB_RENDERER_ANR_DUMP条件编译逻辑",
+      "风险等级": "低",
+      "冲突原因": "Arkweb132修改了渲染器响应处理逻辑",
+      "分析过程": "成功定位到方法，替换了原有调用为条件编译逻辑",
+      "修改置信度": "高",
+      "处理策略": "已解决",
+      "具体修改": [
+        "添加BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)条件编译",
+        "在ARKWEB条件下调用OnRenderProcessResponding",
+        "保留原有hang_monitor调用"
+      ]
+    },
+    {
+      "hunk编号": 9,
+      "位置": "OnAudioStateChanged方法",
+      "修改内容": "添加ARKWEB_MEDIA_MUTE_AUDIO条件编译逻辑",
+      "风险等级": "低",
+      "冲突原因": "Arkweb132添加了音频状态变化的媒体处理",
+      "分析过程": "成功定位到方法，在方法开头添加了条件编译的媒体处理逻辑",
+      "修改置信度": "高",
+      "处理策略": "已解决",
+      "具体修改": [
+        "添加BUILDFLAG(ARKWEB_MEDIA_MUTE_AUDIO)条件编译",
+        "添加LOG和LOG_FEEDBACK日志输出",
+        "添加client_->AsArkWebClient()->GetMediaHandler调用"
+      ]
+    }
+  ],
+  "总体评估": {
+    "成功率": "88.9% (8/9)",
+    "主要风险": "NotifyScreenInfoChanged方法无法定位，可能需要手动处理",
+    "代码完整性": "良好，大部分Arkweb132的侵入式修改已成功集成",
+    "建议后续步骤": [
+      "手动检查NotifyScreenInfoChanged相关功能是否在新版本中有替代实现",
+      "验证所有条件编译宏（BUILDFLAG）在构建环境中是否正确定义",
+      "测试修改后的功能是否正常工作"
+    ]
+  },
+  "遵循原则确认": {
+    "未添加上下文行": true,
+    "未生成脚本文件": true,
+    "未创建辅助文件": true,
+    "未修改.rej文件": true,
+    "仅在指定目录创建JSON报告": true
+  }
+}

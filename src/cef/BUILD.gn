@@ -968,6 +968,18 @@ source_set("libcef_static") {
     "//third_party/crashpad/crashpad",
   ]
 
+  # OHOS Exteneded sources
+  sources += libcef_arkweb_sources
+  include_dirs += ["//cef/ohos_cef_ext" ]
+
+  deps = [
+      "//components/subresource_filter/content/browser",
+      "//components/subresource_filter/core/browser",
+      "//components/subresource_filter/tools/ruleset_converter:support",
+      "//components/url_pattern_index/proto:url_pattern_index",
+      "//third_party/protobuf:protobuf_lite",
+  ]
+
   public_deps = [
     # Bring in feature flag defines.
     "//cef/libcef/features:buildflags",
@@ -975,8 +987,14 @@ source_set("libcef_static") {
     "//base",
     "//third_party/abseil-cpp:absl",
   ]
+  if (arkweb_unittests) {
+    public_deps += [
+      # Support ohos_nweb include paths.
+      "//ohos_nweb:nweb_sources",
+    ]
+  }
 
-  deps = [
+  deps += [
     ":cef_make_headers",
     "libcef/common/mojom",
 
@@ -1476,18 +1494,6 @@ config("libcef_dll_wrapper_config") {
     ldflags += [ "/DELAYLOAD:libcef.dll" ]
   }
 
-  # Build using the minimum C++ version supported by the CEF binary distribution.
-  # Chromium (and libcef) may build with a newer C++ version so this helps to
-  # avoid accidental usage of new/unsupported language features in sample apps.
-  # For Chromium defaults see //build/config/compiler/BUILD.gn.
-  if (is_win) {
-    cflags_cc = [ "/std:c++17" ]
-  } else {
-    cflags_cc = [ "-std=c++17" ]
-  }
-  if (is_mac) {
-    cflags_objcc = [ "-std=c++17" ]
-  }
 
   if (cef_api_version != "") {
     defines = [ "CEF_API_VERSION=$cef_api_version" ]
@@ -1656,6 +1662,11 @@ grit_strings("cef_strings") {
   source = "libcef/resources/cef_strings.grd"
   outputs = [ "grit/cef_strings.h" ]
   locales = platform_pak_locales + [ "fake-bidi" ]
+
+  #ifdef arkweb_i18n
+  if (arkweb_i18n) {
+    all_locales += extra_locales
+  }
 }
 
 # Included in resources.pak via //chrome/chrome_paks.gni.

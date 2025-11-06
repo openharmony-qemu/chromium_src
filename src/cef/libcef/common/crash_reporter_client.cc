@@ -630,6 +630,11 @@ bool CefCrashReporterClient::GetCrashDumpLocation(std::wstring* crash_dir) {
   return GetDefaultCrashDumpLocation(crash_dir, base::UTF8ToWide(app_name_));
 }
 
+bool CefCrashReporterClient::GetCrashMetricsLocation(
+    std::wstring* metrics_dir) {
+  return GetDefaultUserDataDirectory(metrics_dir, base::UTF8ToWide(app_name_));
+}
+
 #elif BUILDFLAG(IS_POSIX)
 
 void CefCrashReporterClient::GetProductInfo(ProductInfo* product_info) {
@@ -645,7 +650,11 @@ bool CefCrashReporterClient::GetCrashDumpLocation(base::FilePath* crash_dir) {
     base::PathService::Override(chrome::DIR_CRASH_DUMPS,
                                 base::FilePath::FromUTF8Unsafe(*val));
   }
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  return base::PathService::Get(base::DIR_OHOS_CRASHPAD, crash_dir);
+#else
   return base::PathService::Get(chrome::DIR_CRASH_DUMPS, crash_dir);
+#endif  // BUILDFLAG(ARKWEB_CRASHPAD)
 }
 
 #endif  // !BUILDFLAG(IS_POSIX)

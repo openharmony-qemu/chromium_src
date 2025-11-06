@@ -36,6 +36,7 @@
 #include <stdint.h>
 
 #include "include/cef_api_hash.h"
+#include "arkweb/build/features/features.h"
 #include "include/internal/cef_string.h"
 #include "include/internal/cef_string_list.h"
 #include "include/internal/cef_time.h"
@@ -503,6 +504,12 @@ typedef struct _cef_settings_t {
   /// Specify whether signal handlers must be disabled on POSIX systems.
   ///
   int disable_signal_handlers;
+#if BUILDFLAG(ARKWEB_INCOGNITO_MODE)
+  bool incognito_mode;
+#endif
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
+  std::string shared_render_process_token;
+#endif
 } cef_settings_t;
 
 ///
@@ -2591,6 +2598,12 @@ typedef enum {
   /// The source is a system-generated focus event.
   ///
   FOCUS_SOURCE_SYSTEM,
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  ///
+  /// The source is a user gesture focus event.
+  ///
+  FOCUS_SOURCE_GESTURE,
+#endif
 
   FOCUS_SOURCE_NUM_VALUES,
 } cef_focus_source_t;
@@ -2888,6 +2901,8 @@ typedef enum {
   CT_DND_MOVE,
   CT_DND_COPY,
   CT_DND_LINK,
+  CT_LOCK,
+  CT_UNLOCK,
   CT_NUM_VALUES,
 } cef_cursor_type_t;
 

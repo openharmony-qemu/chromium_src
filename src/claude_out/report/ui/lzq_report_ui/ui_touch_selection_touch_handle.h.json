@@ -1,0 +1,109 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/ui/touch_selection/touch_handle.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/ui/touch_selection/touch_handle.h",
+    "处理时间": "2025-11-06"
+  },
+  "处理统计": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 2,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "rej文件完整性": {
+    "状态": "保持完整",
+    "说明": ".rej文件未被修改或删除，完全符合黄金法则要求"
+  },
+  "hunk详细分析": [
+    {
+      "hunk编号": 1,
+      "冲突位置": "第8-14行（include部分）",
+      "冲突原因": "Arkweb132版本添加了Arkweb扩展相关的头文件引用",
+      "风险分析": {
+        "风险等级": "低",
+        "分析": "添加的include语句都使用了条件编译，不会影响现有代码逻辑",
+        "潜在影响": "仅当BUILDFLAG(IS_ARKWEB_EXT)为真时才会包含额外头文件"
+      },
+      "修改内容": {
+        "添加的行": [
+          "#include \"arkweb/build/features/features.h\"",
+          "#include \"build/build_config.h\"",
+          "#if BUILDFLAG(IS_ARKWEB_EXT)",
+          "#include \"arkweb/ohos_nweb_ex/build/features/features.h\"",
+          "#endif"
+        ],
+        "删除的行": []
+      },
+      "定位策略": {
+        "锚点上下文": "#include <memory> 和 #include \"base/memory/raw_ptr.h\"",
+        "定位结果": "精确匹配，成功定位到第8-15行之间",
+        "定位置信度": "高"
+      },
+      "处理过程": {
+        "步骤1": "解析hunk识别出5个待添加的include语句",
+        "步骤2": "使用上下文锚点在源文件中找到对应位置",
+        "步骤3": "在第8行后添加所有include语句",
+        "步骤4": "验证修改后的代码结构正确"
+      },
+      "解决状态": "已解决",
+      "置信度": "高",
+      "人工复查建议": "检查新增的include路径是否存在于构建系统中"
+    },
+    {
+      "hunk编号": 2,
+      "冲突位置": "第70-73行（TouchHandleDrawable类）",
+      "冲突原因": "Arkweb132版本为TouchHandleDrawable接口添加了SetEdge方法支持",
+      "风险分析": {
+        "风险等级": "低",
+        "分析": "纯虚函数声明，使用条件编译保护，不会破坏现有接口",
+        "潜在影响": "仅当BUILDFLAG(ARKWEB_MENU)为真时才会添加新的虚函数"
+      },
+      "修改内容": {
+        "添加的行": [
+          "#if BUILDFLAG(ARKWEB_MENU)",
+          "// Sets the Selection left-handle-start or right-handle-end's edge.",
+          "virtual void SetEdge(const gfx::PointF& top, const gfx::PointF& bottom) = 0;",
+          "#endif"
+        ],
+        "删除的行": []
+      },
+      "定位策略": {
+        "锚点上下文": "GetDrawableHorizontalPaddingRatio方法声明和ANDROID条件编译块",
+        "定位结果": "精确匹配，成功定位到第68-75行之间",
+        "定位置信度": "高"
+      },
+      "处理过程": {
+        "步骤1": "解析hunk识别出SetEdge纯虚函数声明",
+        "步骤2": "在TouchHandleDrawable类中找到GetDrawableHorizontalPaddingRatio方法",
+        "步骤3": "在该方法后添加条件编译的SetEdge方法声明",
+        "步骤4": "确保与现有ANDROID条件编译块不冲突"
+      },
+      "解决状态": "已解决",
+      "置信度": "高",
+      "人工复查建议": "验证SetEdge方法的参数和返回值是否符合预期接口设计"
+    }
+  ],
+  "总体分析": {
+    "冲突类型": "功能扩展性冲突",
+    "主要特点": "Arkweb132版本添加了条件编译的功能扩展",
+    "解决难度": "低",
+    "代码质量影响": "正面，增加了功能扩展性",
+    "编译兼容性": "良好，使用条件编译确保向后兼容"
+  },
+  "处理策略总结": {
+    "使用的策略": ["原子化应用", "精确定位", "上下文锚点"],
+    "未使用的策略": ["扩展查找", "人工干预"],
+    "遵循的原则": [
+      "绝对禁止添加上下文行",
+      "绝对禁止修改.rej文件",
+      "绝对禁止创建脚本文件",
+      "仅在指定目录创建JSON报告"
+    ]
+  },
+  "验证结果": {
+    "语法检查": "通过，无语法错误",
+    "编译兼容性": "预期良好，条件编译保护",
+    "接口一致性": "保持一致，仅添加新的可选接口",
+    "代码风格": "符合现有代码风格"
+  }
+}

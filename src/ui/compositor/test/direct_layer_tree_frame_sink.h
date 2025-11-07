@@ -67,6 +67,9 @@ class DirectLayerTreeFrameSink : public cc::LayerTreeFrameSink,
   void DisplayAddChildWindowToBrowser(
       gpu::SurfaceHandle child_window) override {}
   void SetWideColorEnabled(bool enabled) override {}
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  void RestoreRenderFit(const viz::FrameSinkId& frame_sink_id) override {}
+#endif // ARKWEB_MAXIMIZE_RESIZE
 
  private:
   // viz::mojom::CompositorFrameSinkClient implementation:

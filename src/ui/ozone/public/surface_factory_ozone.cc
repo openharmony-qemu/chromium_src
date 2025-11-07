@@ -8,6 +8,7 @@
 
 #include <memory>
 
+#include "base/logging.h"
 #include "base/command_line.h"
 #include "base/notimplemented.h"
 #include "gpu/vulkan/buildflags.h"

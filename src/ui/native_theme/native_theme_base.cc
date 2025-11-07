@@ -9,6 +9,8 @@
 #include <memory>
 #include <variant>
 
+#include "arkweb/build/features/features.h"
+
 #include "base/check.h"
 #include "base/command_line.h"
 #include "base/compiler_specific.h"
@@ -303,7 +305,11 @@ void NativeThemeBase::Paint(cc::PaintCanvas* canvas,
     case kScrollbarVerticalThumb:
       PaintScrollbarThumb(canvas, color_provider, part, state, rect,
                           std::get<ScrollbarThumbExtraParams>(extra),
-                          color_scheme);
+                          color_scheme
+#if BUILDFLAG(ARKWEB_SCROLLBAR)
+                          , std::get<ScrollbarThumbExtraParams>(extra).scrollbar_color
+#endif // ARKWEB_SCROLLBAR
+);
       break;
     case kScrollbarHorizontalTrack:
     case kScrollbarVerticalTrack:

@@ -153,7 +153,7 @@ bool LoadDefaultEGLGLES2Bindings(
     return true;
 #else
     base::FilePath module_path;
-#if !BUILDFLAG(IS_FUCHSIA)
+#if !BUILDFLAG(IS_FUCHSIA) && !BUILDFLAG(IS_OHOS)
     if (!base::PathService::Get(base::DIR_ASSETS, &module_path))
       return false;
 #endif

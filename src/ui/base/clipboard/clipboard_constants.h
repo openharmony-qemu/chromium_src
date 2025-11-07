@@ -160,6 +160,11 @@ inline constexpr int kMaxRegisteredClipboardFormats = 100;
 inline constexpr char kWebClipboardFormatPrefix[] = "web ";
 inline constexpr char16_t kWebClipboardFormatPrefix16[] = u"web ";
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
+extern const char kMimeTypeOHOSCustomData[];
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
 }  // namespace ui
 
 #endif  // UI_BASE_CLIPBOARD_CLIPBOARD_CONSTANTS_H_

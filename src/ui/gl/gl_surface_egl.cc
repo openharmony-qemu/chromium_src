@@ -40,6 +40,10 @@
 #include "ui/gl/scoped_make_current.h"
 #include "ui/gl/sync_control_vsync_provider.h"
 
+#if BUILDFLAG(ARKWEB_DFX_DUMP)
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
+
 using ui::GetLastEGLErrorString;
 
 namespace gl {
@@ -307,6 +311,10 @@ GLSurfaceEGL::~GLSurfaceEGL() {
   CHECK(!HasWeakPtrs());
 }
 
+#if BUILDFLAG(ARKWEB_DRDC)
+std::string gl::NativeViewGLSurfaceEGL::gpu_version_ = "";
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
 NativeViewGLSurfaceEGL::NativeViewGLSurfaceEGL(
     GLDisplayEGL* display,
@@ -317,7 +325,9 @@ NativeViewGLSurfaceEGL::NativeViewGLSurfaceEGL(
       scoped_window_(std::move(scoped_window)),
       video_encoder_input_(video_encoder_input),
       window_(scoped_window_.a_native_window()),
-      vsync_provider_external_(std::move(vsync_provider)) {}
+      vsync_provider_external_(std::move(vsync_provider)) {
+        arkweb_surface_utils_ = new ArkwebGlSurfaceEglUtils();
+      }
 #else
 NativeViewGLSurfaceEGL::NativeViewGLSurfaceEGL(
     GLDisplayEGL* display,
@@ -332,8 +342,21 @@ NativeViewGLSurfaceEGL::NativeViewGLSurfaceEGL(
     size_ = gfx::Rect(windowRect).size();
   }
 #endif
+  enable_replace_swap_buffer_output_ = arkweb_surface_utils_->CheckSwapBufferOutputFlag();
+#if BUILDFLAG(ARKWEB_DRDC)
+  if (gpu_version_.empty()) {
+    const char* renderer = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
+    gpu_version_ = renderer ? renderer : "Unknown";
+  }
+#endif
 }
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ARKWEB_DRDC) //static
+std::string NativeViewGLSurfaceEGL::GetGLRenderer() {
+  return gpu_version_;
+}
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
 EGLConfig NativeViewGLSurfaceEGL::GetConfig() {

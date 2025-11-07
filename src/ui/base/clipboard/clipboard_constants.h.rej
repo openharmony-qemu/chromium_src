@@ -25,17 +25,3 @@
  
  #if !BUILDFLAG(IS_APPLE)
  // TODO(dcheng): This name is temporary. See crbug.com/106449.
-@@ -148,8 +150,13 @@
- 
- // Web prefix for web custom format types.
- COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
- extern const char kWebClipboardFormatPrefix[];
- 
-+#if BUILDFLAG(ARKWEB_CLIPBOARD)
-+COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
-+extern const char kMimeTypeOHOSCustomData[];
-+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
-+
- }  // namespace ui
- 
- #endif  // UI_BASE_CLIPBOARD_CLIPBOARD_CONSTANTS_H_

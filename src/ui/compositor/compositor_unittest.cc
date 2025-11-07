@@ -20,6 +20,14 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ui/base/ui_base_features.h"
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#define private public
+#endif  // ARKWEB_UNITTESTS
+#include "ui/compositor/compositor.h"
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+#undef private
+#include "cc/test/fake_layer_tree_frame_sink.h"
+#endif  // ARKWEB_UNITTESTS
 #include "ui/compositor/compositor_metrics_tracker.h"
 #include "ui/compositor/layer.h"
 #include "ui/compositor/layer_delegate.h"
@@ -27,9 +35,12 @@
 #include "ui/compositor/test/in_process_context_factory.h"
 #include "ui/compositor/test/test_context_factories.h"
 #include "ui/display/types/display_constants.h"
+#include "arkweb/chromium_ext/ui/compositor/compositor_utils.h"
 
-using testing::Mock;
 using testing::_;
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+using testing::Mock;
+#endif  // ARKWEB_UNITTESTS
 
 namespace ui {
 namespace {
@@ -636,6 +647,57 @@ TEST_F(CompositorTestWithMessageLoop, CompositorVisibilityChanges) {
 
   compositor()->RemoveObserver(&observer);
 }
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+TEST_F(CompositorTestWithMessageLoop, SetCurrentFrameSinkId1) {
+  testing::internal::CaptureStderr();
+  const viz::FrameSinkId id;
+  auto frame_sink = cc::FakeLayerTreeFrameSink::Create3d();
+  mojo::AssociatedRemote<viz::mojom::DisplayPrivate> display_private;
+  mojo::PendingAssociatedReceiver<viz::mojom::DisplayPrivate> remote =
+      display_private.BindNewEndpointAndPassDedicatedReceiver();
+  compositor()->SetLayerTreeFrameSink(std::move(frame_sink),
+                                      std::move(display_private));
+  compositor()->compositor_utils_->SetCurrentFrameSinkId(id);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_EQ(
+      log_output.find("Compositor::SetCurrentDisplay display_private error"),
+      std::string::npos);
+}
+
+TEST_F(CompositorTestWithMessageLoop, SetCurrentFrameSinkId2) {
+  testing::internal::CaptureStderr();
+  const viz::FrameSinkId id;
+  compositor()->compositor_utils_->SetCurrentFrameSinkId(id);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(
+      log_output.find("Compositor::SetCurrentDisplay display_private error"),
+      std::string::npos);
+}
+
+TEST_F(CompositorTestWithMessageLoop, SetShouldFrameSubmissionBeforeDraw1) {
+  compositor()->compositor_utils_->SetShouldFrameSubmissionBeforeDraw(true);
+  EXPECT_FALSE(compositor()->display_private_);
+}
+
+TEST_F(CompositorTestWithMessageLoop, SetDrawRect1) {
+  auto frame_sink = cc::FakeLayerTreeFrameSink::Create3d();
+  mojo::AssociatedRemote<viz::mojom::DisplayPrivate> display_private;
+  mojo::PendingAssociatedReceiver<viz::mojom::DisplayPrivate> remote =
+      display_private.BindNewEndpointAndPassDedicatedReceiver();
+  compositor()->SetLayerTreeFrameSink(std::move(frame_sink),
+                                      std::move(display_private));
+  gfx::Rect rect = gfx::Rect(0, 0, 256, 256);
+  compositor()->compositor_utils_->SetDrawRect(rect);
+  EXPECT_TRUE(compositor()->display_private_);
+}
+
+TEST_F(CompositorTestWithMessageLoop, SetDrawRect2) {
+  gfx::Rect rect = gfx::Rect(0, 0, 256, 256);
+  compositor()->compositor_utils_->SetDrawRect(rect);
+  EXPECT_FALSE(compositor()->display_private_);
+}
+#endif  // ARKWEB_UNITTESTS
 
 class CompositorPropertyTreeDelegateTest
     : public CompositorTestWithMessageLoop {

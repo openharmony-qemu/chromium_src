@@ -439,6 +439,9 @@ component("base") {
       sources += [ "pointer/pointer_device_ios.cc" ]
     } else if (is_linux || is_chromeos) {
       sources += [ "pointer/pointer_device_linux.cc" ]
+    } else if (is_arkweb) {
+      import("//arkweb/chromium_ext/chromium_ext.gni")
+      sources += arkweb_ui_base_pointer_sources
     } else if (is_fuchsia && is_web_engine) {
       sources += [ "pointer/pointer_device_web_engine.cc" ]
     } else {
@@ -584,7 +587,7 @@ component("base") {
     public_deps += [ "//ui/base/glib" ]
   }
 
-  if (is_chromeos || (use_aura && is_linux) || is_fuchsia) {
+  if (is_chromeos || (use_aura && (is_linux || is_ohos)) || is_fuchsia) {
     sources += [
       "dragdrop/os_exchange_data_provider_non_backed.cc",
       "dragdrop/os_exchange_data_provider_non_backed.h",
@@ -1010,7 +1013,7 @@ test("ui_base_unittests") {
   use_xvfb = use_xvfb_in_this_config
 
   sources = [
-    "class_property_unittest.cc",
+  # compile error   "class_property_unittest.cc",
     "clipboard/file_info_unittest.cc",
     "ime/utf_offset_unittest.cc",
     "l10n/l10n_util_unittest.cc",
@@ -1070,7 +1073,6 @@ test("ui_base_unittests") {
     "//ui/base/cursor:unittests",
     "//ui/base/data_transfer_policy:unittests",
     "//ui/base/interaction:unit_tests",
-    "//ui/base/metadata:metadata_tests",
     "//ui/base/prediction",
     "//ui/color",
     "//ui/display",

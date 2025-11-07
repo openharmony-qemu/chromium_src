@@ -19,6 +19,7 @@
 #include "ui/touch_selection/touch_handle.h"
 #include "ui/touch_selection/touch_handle_orientation.h"
 #include "ui/touch_selection/ui_touch_selection_export.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID)
 namespace cc::slim {
@@ -28,6 +29,10 @@ class Layer;
 
 namespace ui {
 class MotionEvent;
+#if BUILDFLAG(IS_ARKWEB)
+  class TouchSelectionControllerExt;
+  class TouchSelectionControllerUtils;
+#endif
 
 // Interface through which |TouchSelectionController| issues selection-related
 // commands, notifications and requests.
@@ -310,8 +315,17 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionController
 
   // Whether a swipe-to-move-cursor gesture is activated.
   bool swipe_to_move_cursor_activated_ = false;
+#if BUILDFLAG(ARKWEB_MENU)
+  bool is_first_drag_ = false;
+#endif
+#if BUILDFLAG(IS_ARKWEB)
+  std::unique_ptr<TouchSelectionControllerUtils> utils_;
+#endif
 };
 
 }  // namespace ui
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/ui/touch_selection/touch_selection_controller_ext.h"
+#endif
 #endif  // UI_TOUCH_SELECTION_TOUCH_SELECTION_CONTROLLER_H_

@@ -4,6 +4,7 @@
 
 #include "ui/ozone/common/native_pixmap_egl_binding.h"
 
+#include "arkweb/build/features/features.h"
 #include <array>
 
 #include "base/logging.h"
@@ -11,8 +12,13 @@
 #include "base/notreached.h"
 #include "ui/gfx/buffer_format_util.h"
 #include "ui/gl/gl_bindings.h"
+#include "ui/gl/buffer_format_utils.h"
 #include "ui/gl/gl_surface_egl.h"
 #include "ui/gl/scoped_binders.h"
+
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+#include "ui/gl/ohos/native_buffer_utils.h"
+#endif
 
 namespace ui {
 

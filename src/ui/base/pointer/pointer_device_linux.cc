@@ -10,6 +10,10 @@
 
 #include "ui/events/devices/device_data_manager.h"
 
+#if BUILDFLAG(ARKWEB_FLING)
+#include "arkweb/chromium_ext/ui/base/pointer/pointer_device_linux_for_include.cc"
+#endif
+
 namespace ui {
 
 namespace {

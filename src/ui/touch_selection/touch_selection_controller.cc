@@ -6,12 +6,24 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
+#include "build/build_config.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/auto_reset.h"
 #include "base/check_op.h"
 #include "base/metrics/user_metrics.h"
 #include "base/notreached.h"
 #include "build/build_config.h"
 #include "ui/touch_selection/touch_selection_metrics.h"
+
+#if BUILDFLAG(ARKWEB_MENU)
+#include "base/logging.h"
+#endif
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/ui/touch_selection/touch_selection_controller_utils.h"
+#endif
 
 namespace ui {
 namespace {
@@ -721,7 +733,11 @@ bool TouchSelectionController::ActivateInsertionIfNecessary() {
   DCHECK_NE(SELECTION_ACTIVE, active_status_);
 
   if (!insertion_handle_) {
+#if BUILDFLAG(ARKWEB_MENU)
+    insertion_handle_ = std::make_unique<TouchHandleExt>(
+#else
     insertion_handle_ = std::make_unique<TouchHandle>(
+#endif
         this, TouchHandleOrientation::CENTER, viewport_rect_);
   }
 

@@ -581,6 +581,13 @@ test("gl_unittests") {
     "//ui/platform_window:platform_impls",
   ]
 
+  if (arkweb_unittests) {
+    include_dirs = ohos_src_includes
+    import("//arkweb/chromium_ext/ui/gl/arkweb_ui_gl_unittests_ext.gni")
+    deps += arkweb_unittests_deps
+    sources += arkweb_unittests_sources
+  }
+
   data_deps = [ "//testing/buildbot/filters:gl_unittests_filters" ]
 
   if (is_win) {

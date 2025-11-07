@@ -6,10 +6,17 @@
 #define UI_NATIVE_THEME_NATIVE_THEME_AURA_H_
 
 #include "base/component_export.h"
+#include "base/memory/raw_ptr.h"
 #include "base/no_destructor.h"
 #include "ui/native_theme/native_theme_base.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/ui/native_theme/native_theme_aura_utils.h"
+#endif
 
 namespace ui {
+#if BUILDFLAG(IS_ARKWEB)
+  class NativeThemeAuraUtils;
+#endif
 
 // Aura implementation of native theme support.
 class COMPONENT_EXPORT(NATIVE_THEME) NativeThemeAura : public NativeThemeBase {
@@ -17,6 +24,9 @@ class COMPONENT_EXPORT(NATIVE_THEME) NativeThemeAura : public NativeThemeBase {
   friend class NativeTheme;
   friend class NativeThemeAuraTest;
   friend class base::NoDestructor<NativeThemeAura>;
+#if BUILDFLAG(IS_ARKWEB)
+  friend class NativeThemeAuraUtils;
+#endif
 
   NativeThemeAura(bool use_overlay_scrollbars,
                   bool should_only_use_dark_colors,

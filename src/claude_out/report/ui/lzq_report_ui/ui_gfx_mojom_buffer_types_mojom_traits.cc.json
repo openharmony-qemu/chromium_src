@@ -1,0 +1,57 @@
+{
+  "文件路径": "/home/sujiahao/code/arkweb_141/src/ui/gfx/mojom/buffer_types_mojom_traits.cc.rej",
+  "源文件路径": "/home/sujiahao/code/arkweb_141/src/ui/gfx/mojom/buffer_types_mojom_traits.cc",
+  "处理时间": "2025-11-06",
+  "总体统计": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 0,
+    "未能解决的hunk数量": 2,
+    "解决成功率": "0%"
+  },
+  "rej文件保持完整": true,
+  "hunks详情": [
+    {
+      "hunk索引": 1,
+      "风险等级": "高",
+      "冲突原因": "源文件缺少预期的复杂GpuMemoryBufferHandle处理逻辑",
+      "待添加行": [
+        "+#include \"arkweb/build/features/features.h\""
+      ],
+      "待删除行": [],
+      "分析过程": "rej文件期望在第10行后添加features.h头文件包含，但当前源文件在第10行是空白行，后续的代码结构完全不匹配rej文件预期的复杂逻辑。源文件是一个简化的版本，缺少Android硬件缓冲区处理代码。",
+      "修改置信度": "低",
+      "最终处理策略": "无法应用",
+      "详细说明": "由于源文件结构完全不匹配rej文件的期望，强行添加此include可能导致编译错误。rej文件似乎基于一个包含复杂GpuMemoryBuffer处理逻辑的文件版本，而当前源文件是简化版本。"
+    },
+    {
+      "hunk索引": 2,
+      "风险等级": "极高",
+      "冲突原因": "源文件完全缺少预期的switch语句和Android硬件缓冲区处理逻辑",
+      "待添加行": [
+        "+#if BUILDFLAG(ARKWEB_VULKAN)",
+        "+    case gfx::OHOS_NATIVE_BUFFER: {",
+        "+    }",
+        "+#endif"
+      ],
+      "待删除行": [],
+      "分析过程": "rej文件期望在一个switch语句中添加OHOS_NATIVE_BUFFER case的处理逻辑，但源文件中完全不存在这样的switch语句。rej文件期望的代码上下文涉及复杂的Android硬件缓冲区处理逻辑，包括NativePixmapHandle和AndroidHardwareBufferHandle的处理，这些在当前源文件中都不存在。",
+      "修改置信度": "极低",
+      "最终处理策略": "无法应用",
+      "详细说明": "此hunk无法应用的原因是：1) 源文件中不存在预期的switch语句；2) 源文件缺少Android硬件缓冲区相关的所有代码逻辑；3) OHOS_NATIVE_BUFFER枚举值可能未定义；4) 周围的代码上下文完全缺失。强行应用会导致严重的语法错误和编译失败。"
+    }
+  ],
+  "总体评估": {
+    "冲突严重程度": "极高",
+    "主要问题": "源文件与rej文件期望的代码结构完全不匹配",
+    "建议处理方式": "需要人工介入，确定正确的代码版本或重新设计Arkweb 141中的相应功能",
+    "技术风险": "如果强行应用修改，极有可能导致编译失败和运行时错误",
+    "代码完整性影响": "rej文件中的修改涉及Arkweb的Vulkan和OHOS原生缓冲区支持功能，这些是重要的平台特定功能"
+  },
+  "处理原则遵循情况": {
+    "未修改rej文件": true,
+    "未创建脚本文件": true,
+    "未创建辅助文件": true,
+    "仅在指定目录创建报告": true,
+    "严格遵循原子化操作": true
+  }
+}

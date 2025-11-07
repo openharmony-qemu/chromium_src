@@ -1,0 +1,72 @@
+{
+  "file_path": "ui/native_theme/native_theme.h",
+  "analysis_timestamp": "2025-11-06",
+  "total_hunks": 2,
+  "resolved_hunks": 2,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "preserved",
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "description": "在 namespace cc 声明前添加空行",
+      "conflict_cause": "Arkweb 132 在 include 语句和 namespace 声明之间有额外的空行，而 Arkweb 141 没有这个空行",
+      "risk_analysis": "无风险。这是一个纯粹的格式化修改，添加空行不会影响代码逻辑或编译",
+      "analysis_process": "通过识别 .rej 文件中的 '+' 行（空行）和上下文锚点（include 语句和 namespace 声明），在源文件的第30行后成功定位并插入空行",
+      "modification_confidence": "高",
+      "resolution_strategy": "精确定位 - 在 include \"ui/native_theme/native_theme_observer.h\" 后的第30行空行后，再添加一个空行",
+      "status": "已解决",
+      "applied_changes": [
+        {
+          "line": 31,
+          "action": "插入空行",
+          "content": ""
+        }
+      ]
+    },
+    {
+      "hunk_number": 2,
+      "description": "在 ScrollbarThumbExtraParams 结构体中添加 Arkweb 特定的 scrollbar_color 字段",
+      "conflict_cause": "Arkweb 132 在 ScrollbarThumbExtraParams 结构体中添加了 ARKWEB_SCROLLBAR 条件编译的 scrollbar_color 字段，而 Arkweb 141 基线版本中没有这个字段",
+      "risk_analysis": "低风险。这是一个条件编译的字段添加，只有在 ARKWEB_SCROLLBAR 宏定义时才会生效。不会破坏现有代码结构",
+      "analysis_process": "通过识别 .rej 文件中的 '+' 行（#if 条件编译块和 SkColor scrollbar_color 字段声明），使用结构体结束符 '};' 作为锚点，在 is_web_test 字段后成功插入新的条件编译字段",
+      "modification_confidence": "高",
+      "resolution_strategy": "结构体扩展 - 在 ScrollbarThumbExtraParams 结构体的 is_web_test 字段后，结构体结束符前添加 ARKWEB_SCROLLBAR 条件编译的 scrollbar_color 字段",
+      "status": "已解决",
+      "applied_changes": [
+        {
+          "line": 305,
+          "action": "插入",
+          "content": "#if BUILDFLAG(ARKWEB_SCROLLBAR)"
+        },
+        {
+          "line": 306,
+          "action": "插入",
+          "content": "    SkColor scrollbar_color;"
+        },
+        {
+          "line": 307,
+          "action": "插入",
+          "content": "#endif // ARKWEB_SCROLLBAR"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "success_rate": "100%",
+    "total_modifications": 4,
+    "modifications_by_type": {
+      "空行插入": 1,
+      "条件编译块插入": 3
+    },
+    "arkweb_specific_features": [
+      "ARKWEB_SCROLLBAR 宏条件编译的滚动条颜色支持"
+    ],
+    "compliance_notes": {
+      "context_added": false,
+      "scripts_generated": false,
+      "rej_file_modified": false,
+      "auxiliary_files_created": false,
+      "modifications_restricted_to_source_file": true
+    }
+  }
+}

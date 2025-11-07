@@ -1902,6 +1902,19 @@ void URLRequestHttpJob::ContinueDespiteLastError() {
 
   DCHECK(!response_info_) << "should not have a response yet";
   DCHECK(!override_response_headers_);
+
+  restarted_++;
+  if (restarted_ > 10 && ssl_error_) {
+    base::SingleThreadTaskRunner::GetCurrentDefault()->PostDelayedTask(
+      FROM_HERE, base::BindOnce(&URLRequestHttpJob::ContinueDespiteLastErrorInternal,
+                                weak_factory_.GetWeakPtr()), base::Milliseconds(100));
+    ssl_error_ = false;
+    return;
+  }
+  ContinueDespiteLastErrorInternal();
+}
+
+void URLRequestHttpJob::ContinueDespiteLastErrorInternal() {
   receive_headers_end_ = base::TimeTicks();
 
   ResetTimer();

@@ -153,7 +153,7 @@ class ClipboardOHOSInternal {
     void OnPasteboardChanged() override {
       if (clipboard_internal_) {
         LOG(INFO) << "Inform Clipboard Changed";
-        clipboard_internal_->SetClipboardState(ClipboardState::kOutOfDate);
+        clipboard_internal_->OnPasteboardChanged();
       }
     }
 
@@ -193,6 +193,11 @@ class ClipboardOHOSInternal {
 
   const ClipboardSequenceNumberToken& sequence_number() const {
     return sequence_number_;
+  }
+
+  void OnPasteboardChanged() {
+    SetClipboardState(ClipboardState::kOutOfDate);
+    sequence_number_ = ClipboardSequenceNumberToken();
   }
   // Returns the current clipboard data, which may be nullptr if nothing has
   // been written since the last Clear().

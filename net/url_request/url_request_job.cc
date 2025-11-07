@@ -401,6 +401,7 @@ void URLRequestJob::NotifyCertificateRequested(
 void URLRequestJob::NotifySSLCertificateError(int net_error,
                                               const SSLInfo& ssl_info,
                                               bool fatal) {
+  ssl_error_ = true;
   request_->NotifySSLCertificateError(net_error, ssl_info, fatal);
 }
 

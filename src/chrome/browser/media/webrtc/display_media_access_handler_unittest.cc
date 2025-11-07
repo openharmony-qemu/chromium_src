@@ -161,13 +161,17 @@ class DisplayMediaAccessHandlerTest : public ChromeRenderViewHostTestHarness {
       blink::mojom::MediaStreamRequestResult* request_result,
       blink::mojom::StreamDevices& devices_result,
       bool request_audio,
-      bool expect_result = true) {
+      bool expect_result = true,
+      bool expect_picker = true,
+      std::optional<content::MediaStreamRequest> request = std::nullopt) {
     SetTestFlags({{true /* expect_screens */, true /* expect_windows*/,
                    true /* expect_tabs */, /* expect_current_tab, */ false,
                    request_audio,
                    fake_desktop_media_id_response /* selected_source */}});
 
-    content::MediaStreamRequest request = MakeRequest(request_audio);
+    if (!request.has_value()) {
+      request = MakeRequest(request_audio);
+    }
 
     base::RunLoop wait_loop;
     content::MediaResponseCallback callback;
@@ -180,19 +184,19 @@ class DisplayMediaAccessHandlerTest : public ChromeRenderViewHostTestHarness {
       callback = mock_callback.Get();
     }
 
-    access_handler_->HandleRequest(web_contents(), request, std::move(callback),
-                                   nullptr /* extension */);
+    access_handler_->HandleRequest(
+        web_contents(), *request, std::move(callback), nullptr /* extension */);
     if (expect_result) {
       wait_loop.Run();
     } else {
       wait_loop.RunUntilIdle();
     }
 
-    EXPECT_TRUE(test_flags_[0].picker_created);
+    EXPECT_EQ(test_flags_[0].picker_created, expect_picker);
 
     picker_factory_ = nullptr;
     access_handler_.reset();
-    EXPECT_TRUE(test_flags_[0].picker_deleted);
+    EXPECT_EQ(test_flags_[0].picker_deleted, expect_picker);
   }
 
   void NotifyWebContentsDestroyed() {
@@ -686,6 +690,68 @@ TEST_F(DisplayMediaAccessHandlerTest,
       /*with_audio=*/true,
       /*expected_result=*/blink::mojom::MediaStreamRequestResult::OK,
       /*expected_number_of_devices=*/2u);
+}
+
+class DisplayMediaAccessHandlerActiveRfhTest
+    : public DisplayMediaAccessHandlerTest,
+      public testing::WithParamInterface<bool> {
+ public:
+  DisplayMediaAccessHandlerActiveRfhTest() : active_rfh_(GetParam()) {}
+  ~DisplayMediaAccessHandlerActiveRfhTest() override = default;
+
+  void SetUp() override {
+    DisplayMediaAccessHandlerTest::SetUp();
+    Navigate("https://a.com");
+  }
+
+  void Navigate(const std::string& url) {
+    std::unique_ptr<content::NavigationSimulator> navigation =
+        content::NavigationSimulator::CreateBrowserInitiated(GURL(url),
+                                                             web_contents());
+    navigation->Commit();
+  }
+
+  void DeactivateMainRfh() {
+    // Cross-origin navigation will deactivate the previous RFH.
+    Navigate("https://b.com");
+  }
+
+ protected:
+  const bool active_rfh_;
+};
+
+INSTANTIATE_TEST_SUITE_P(,
+                         DisplayMediaAccessHandlerActiveRfhTest,
+                         testing::Bool());
+
+TEST_P(DisplayMediaAccessHandlerActiveRfhTest, ProcessRequest) {
+  blink::mojom::MediaStreamRequestResult result;
+  blink::mojom::StreamDevices devices;
+  const content::DesktopMediaID media_id(
+      content::DesktopMediaID::TYPE_WEB_CONTENTS,
+      content::DesktopMediaID::kNullId, GetWebContentsMediaCaptureId());
+
+  // Lock in the RFH for use after deactivation. (If `!active_rfh_`; otherwise
+  // it stays active.)
+  const bool request_audio = false;
+  content::MediaStreamRequest request = MakeRequest(request_audio);
+  request.render_process_id =
+      web_contents()->GetPrimaryMainFrame()->GetProcess()->GetDeprecatedID();
+  request.render_frame_id =
+      web_contents()->GetPrimaryMainFrame()->GetRoutingID();
+
+  if (!active_rfh_) {
+    DeactivateMainRfh();
+  }
+
+  ProcessRequest(media_id, &result, devices, request_audio,
+                 /*expect_result=*/true, /*expect_picker=*/active_rfh_,
+                 request);
+
+  EXPECT_EQ(result,
+            active_rfh_
+                ? blink::mojom::MediaStreamRequestResult::OK
+                : blink::mojom::MediaStreamRequestResult::INVALID_STATE);
 }
 
 #if BUILDFLAG(IS_CHROMEOS)

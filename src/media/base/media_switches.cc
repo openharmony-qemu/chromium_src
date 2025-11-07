@@ -664,7 +664,12 @@ BASE_FEATURE(SuspendMediaForFrozenFrames, base::FEATURE_ENABLED_BY_DEFAULT);
 
 // Disables the real audio output stream after silent audio has been delivered
 // for too long. Should save quite a bit of power in the muted video case.
+#if BUILDFLAG(ARKWEB_WEBRTC)
+BASE_FEATURE(SuspendMutedAudio,
+             base::FEATURE_DISABLED_BY_DEFAULT);
+#else
 BASE_FEATURE(SuspendMutedAudio, base::FEATURE_ENABLED_BY_DEFAULT);
+#endif
 
 // Enables the Unified Autoplay policy by overriding the platform's default
 // autoplay policy.
@@ -1040,6 +1045,10 @@ BASE_FEATURE(UseAudioManagerMaxChannelLayout,
              base::FEATURE_DISABLED_BY_DEFAULT);
 
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ARKWEB_MEDIA)
+BASE_FEATURE(kCanPlayHls, "CanPlayHls", base::FEATURE_ENABLED_BY_DEFAULT);
+#endif
 
 #if BUILDFLAG(ENABLE_HLS_DEMUXER)
 BASE_FEATURE(BuiltInHlsPlayer,

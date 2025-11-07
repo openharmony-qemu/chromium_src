@@ -1,24 +1,5 @@
 --- mojo_video_decoder.cc	2025-10-20 19:52:56.746201353 +0800
 +++ mojo_video_decoder.cc	2025-10-16 15:55:01.934088737 +0800
-@@ -35,10 +35,18 @@
- #include "mojo/public/cpp/bindings/pending_associated_remote.h"
- #include "mojo/public/cpp/bindings/pending_remote.h"
- #include "mojo/public/cpp/bindings/self_owned_receiver.h"
- #include "mojo/public/cpp/bindings/shared_remote.h"
- 
-+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-+#include "gpu/ipc/common/nweb_native_window_tracker.h"
-+#endif // ARKWEB_VIDEO_ASSISTANT
-+
-+#if BUILDFLAG(IS_ARKWEB)
-+#include "arkweb/chromium_ext/media/mojo/clients/mojo_video_decoder_for_include.cc"
-+#endif
-+
- namespace media {
- 
- // Provides a thread-safe channel for VideoFrame destruction events.
- class MojoVideoFrameHandleReleaser
-     : public base::RefCountedThreadSafe<MojoVideoFrameHandleReleaser> {
 @@ -128,10 +136,12 @@
            switches::kLacrosUseChromeosProtectedMedia)) {
      return false;

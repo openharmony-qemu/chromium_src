@@ -72,6 +72,15 @@ class InterfaceFactoryImpl final
       const base::UnguessableToken& overlay_plane_id,
       mojo::PendingReceiver<mojom::Renderer> receiver) final;
 #endif
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  void CreateCustomMediaPlayerRenderer(
+      mojo::PendingRemote<mojom::CustomMediaPlayerRendererClientExtension>
+          client_extension_ptr,
+      mojo::PendingReceiver<mojom::Renderer> receiver,
+      mojo::PendingReceiver<mojom::MediaPlayerRendererExtension>
+          renderer_extension_receiver,
+      int player_id) final;
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 #if BUILDFLAG(IS_ANDROID)
   void CreateFlingingRenderer(
       const std::string& presentation_id,

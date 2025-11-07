@@ -417,6 +417,10 @@ MEDIA_EXPORT BASE_DECLARE_FEATURE(kAllowMediaCodecSoftwareDecoder);
 MEDIA_EXPORT BASE_DECLARE_FEATURE(kUseAudioManagerMaxChannelLayout);
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(ARKWEB_MEDIA)
+MEDIA_EXPORT BASE_DECLARE_FEATURE(kCanPlayHls);
+#endif
+
 #if BUILDFLAG(ENABLE_HLS_DEMUXER)
 // This feature enables chrome's built-in HLS parser and demuxer instead of
 // Android's MediaPlayer based implementation. When this feature is enabled,

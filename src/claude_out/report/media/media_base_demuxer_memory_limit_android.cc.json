@@ -1,0 +1,55 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/media/base/demuxer_memory_limit_android.cc.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/media/base/demuxer_memory_limit_android.cc",
+    "处理时间": "2025-11-06"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决状态": "全部解决"
+  },
+  "rej文件完整性": {
+    "状态": "保持完整",
+    "说明": ".rej文件未被修改或删除，完全符合要求"
+  },
+  "hunk详情": [
+    {
+      "hunk索引": 1,
+      "修改内容": {
+        "待删除行": [
+          "base::SysInfo::AmountOfPhysicalMemoryMB() <= 512"
+        ],
+        "待添加行": [
+          "#if !BUILDFLAG(ARKWEB_MEDIA)",
+          "constexpr int kPhysicalMemoryLow = 512;",
+          "base::SysInfo::AmountOfPhysicalMemoryMB() <= kPhysicalMemoryLow",
+          "#endif"
+        ]
+      },
+      "冲突原因分析": "Chromium 132到141版本间API发生变化：1) AmountOfPhysicalMemoryMB() 被替换为 AmountOfPhysicalMemory().InMiB()；2) BuildInfo::GetInstance()->sdk_int() 被替换为 android_info::sdk_int()",
+      "处理过程": {
+        "定位方法": "通过代码逻辑匹配找到对应位置（源文件第26-29行）",
+        "适配策略": "保持.rej文件中的核心修改逻辑（添加ARKWEB_MEDIA条件编译和使用常量），但适配新的API",
+        "应用结果": "成功应用所有修改，代码结构完整"
+      },
+      "风险评估": "低风险",
+      "风险说明": "修改涉及条件编译和常量定义，在非ARKWEB_MEDIA构建中行为不变，在ARKWEB_MEDIA构建中跳过内存限制检查。这是Arkweb的标准修改模式。",
+      "置信度": "高",
+      "置信度说明": "虽然API发生变化，但修改意图明确，代码逻辑清晰，能够准确适配到新版本",
+      "最终状态": "已解决"
+    }
+  ],
+  "总结": {
+    "处理策略": "精确应用.rej文件中的核心修改，同时适配Chromium 141的新API",
+    "修改效果": "成功添加ARKWEB_MEDIA条件编译，将硬编码的512值提取为常量kPhysicalMemoryLow",
+    "合规性检查": {
+      "未添加上下文行": "符合",
+      "未生成脚本文件": "符合",
+      "未创建辅助文件": "符合",
+      "仅修改指定源文件": "符合",
+      "保持.rej文件完整": "符合"
+    }
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "文件路径": "/home/sujiahao/code/arkweb_141/src/media/ffmpeg/ffmpeg_common.cc",
+  "rej文件路径": "/home/sujiahao/code/arkweb_141/src/media/ffmpeg/ffmpeg_common.cc.rej",
+  "处理摘要": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk处理详情": [
+    {
+      "hunk_id": 1,
+      "位置": "@@ -1021,13 +1021,13 @@",
+      "函数名": "GetAllowedAudioDecoders()",
+      "解决状态": "已解决",
+      "风险等级": "低",
+      "变更类型": "文本修改",
+      "待删除的行": [
+        "-    // This should match the configured lists in //third_party/ffmpeg.",
+        "-        \"vorbis,libopus,flac,pcm_u8,pcm_s16le,pcm_s24le,pcm_s32le,pcm_f32le,\""
+      ],
+      "待添加的行": [
+        "+    // This should match the configured list in //third_party/ffmpeg.",
+        "+        \"vorbis,libopus,flac,pcm_u8,pcm_s161e,pcm_s241e,pcm_s321e,pcm_f321e,\""
+      ],
+      "处理过程": {
+        "定位策略": "使用函数签名和注释作为锚点进行精确定位",
+        "定位结果": "成功在源文件中找到对应的GetAllowedAudioDecoders()函数",
+        "应用方式": "分别应用注释变更和字符串内容变更",
+        "冲突原因": "源文件使用了constexpr std::string_view和预处理器宏，与.rej中期望的传统字符串拼接方式结构不同",
+        "解决方案": "保持源文件的结构不变，仅修改字符串内容"
+      },
+      "变更分析": {
+        "注释变更": {
+          "说明": "将'lists'改为'list'，语法修正",
+          "影响": "纯注释变更，无功能性影响",
+          "置信度": "高"
+        },
+        "字符串变更": {
+          "说明": "修改PCM编码器命名规范：pcm_s16le->pcm_s161e, pcm_s24le->pcm_s241e, pcm_s32le->pcm_s321e, pcm_f32le->pcm_f321e",
+          "影响": "音频解码器配置的命名约定变更",
+          "置信度": "高",
+          "潜在风险": "需要确保这些命名变更与FFmpeg配置保持一致"
+        }
+      },
+      "最终验证": {
+        "修改前": "pcm_s16le,pcm_s24le,pcm_s32le,pcm_f32le",
+        "修改后": "pcm_s161e,pcm_s241e,pcm_s321e,pcm_f321e",
+        "语法检查": "通过",
+        "结构完整性": "保持良好"
+      }
+    }
+  ],
+  "整体评估": {
+    "处理质量": "成功",
+    "代码污染风险": "低",
+    "语法完整性": "保持",
+    "逻辑一致性": "保持",
+    "rej文件完整性": "确认未被修改"
+  },
+  "建议": {
+    "人工复核重点": [
+      "确认PCM编码器命名变更与项目FFmpeg配置一致",
+      "验证新的命名规范不会破坏现有的音频解码功能",
+      "检查是否有其他相关文件需要同步更新"
+    ],
+    "测试建议": [
+      "运行音频解码相关测试用例",
+      "验证各种PCM格式的兼容性"
+    ]
+  },
+  "合规性检查": {
+    "黄金法则遵守情况": "完全遵守",
+    "是否添加上下文行": "否",
+    "是否创建脚本文件": "否",
+    "是否修改rej文件": "否",
+    "报告路径合规": "是"
+  }
+}

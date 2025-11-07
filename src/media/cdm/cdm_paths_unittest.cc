@@ -13,6 +13,7 @@
 #include "build/build_config.h"
 #include "media/media_buildflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "arkweb/build/features/features.h"
 
 namespace media {
 

@@ -325,6 +325,10 @@ class MEDIA_EXPORT DecoderStream {
 
   int fallback_buffers_being_decoded_ = 0;
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  VideoDecoderChangedCB decoder_changed_cb_;
+#endif // ARKWEB_VIDEO_ASSISTANT
+
   // Last timestamp seen by DecodeInternal(), used for average duration when
   // explicit duration information is missing.
   base::TimeDelta last_buffer_timestamp_ = kNoTimestamp;

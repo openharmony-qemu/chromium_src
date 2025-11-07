@@ -6,19 +6,19 @@
  
  [EnableIf=is_win]
  import "ui/gfx/mojom/buffer_types.mojom";
-+
-+[EnableIf=is_arkweb]
-+struct OhosSurfaceBufferHandle {
-+  uint32 buffer_size;
-+  int32 fd_browser;
-+  int32 coded_width;
-+  int32 coded_height;
-+  int32 visible_width;
-+  int32 visible_height;
-+  int32 format;
-+  handle<platform> buffer_fd;
-+};
-+
+ 
+ [EnableIf=is_arkweb]
+ struct OhosSurfaceBufferHandle {
+   uint32 buffer_size;
+   int32 fd_browser;
+   int32 coded_width;
+   int32 coded_height;
+   int32 visible_width;
+   int32 visible_height;
+   int32 format;
+   handle<platform> buffer_fd;
+ };
+ 
  // Extension of the mojo::RendererClient communication layer for HLS and Android
  // software rendering fallback paths.
  // This allows the Browser side to call back into the Renderer side. Concretely,

@@ -64,6 +64,12 @@ void MojoRendererService::Initialize(
   state_ = STATE_INITIALIZING;
 
   DCHECK(streams.has_value());
+#if BUILDFLAG(ARKWEB_MEDIA)
+  if (!streams.has_value()) {
+    std::move(callback).Run(false);
+    return;
+  }
+#endif
   media_resource_ = std::make_unique<MediaResourceShim>(
       std::move(*streams),
       base::BindOnce(&MojoRendererService::OnAllStreamsReady, weak_this_,

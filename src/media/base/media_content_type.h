@@ -30,6 +30,9 @@ enum class MediaContentType {
   kAmbient,
   // The maximum number of media content types.
   kMax = kAmbient,
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  kInvalid,
+#endif
 };
 
 // Utility function for deciding the MediaContentType of a player based on its

@@ -60,6 +60,10 @@ class LegacyGpuMemoryBufferForVideo;
 
 namespace media {
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+class OHOSMediaCodecBridgeImplTest;
+#endif
+
 class MEDIA_EXPORT VideoFrame : public base::RefCountedThreadSafe<VideoFrame> {
  public:
   REQUIRE_ADOPTION_FOR_REFCOUNTED_TYPE();
@@ -70,7 +74,17 @@ class MEDIA_EXPORT VideoFrame : public base::RefCountedThreadSafe<VideoFrame> {
   static constexpr size_t kFrameAddressAlignment =
       VideoFrameLayout::kBufferAddressAlignment;
 
-  static constexpr size_t kMaxPlanes = 4;
+  enum {
+    kMaxPlanes = 4,
+
+    kYPlane = 0,
+    kARGBPlane = kYPlane,
+    kUPlane = 1,
+    kUVPlane = kUPlane,
+    kVPlane = 2,
+    kAPlaneTriPlanar = kVPlane,
+    kAPlane = 3,
+  };
 
   enum Plane : uint8_t {
     kY = 0,
@@ -690,6 +704,10 @@ class MEDIA_EXPORT VideoFrame : public base::RefCountedThreadSafe<VideoFrame> {
   }
 #endif
 
+#if BUILDFLAG(ARKWEB_MEDIA_CODEC)
+  std::vector<size_t> GetPlaneSize() { return CalculatePlaneSize(); }
+#endif
+
   // Returns pointer to the data in the visible region of the frame, for
   // IsMappable() storage types. The returned pointer is offset into the
   // plane buffer specified by visible_rect().origin(). Memory is owned by
@@ -978,6 +996,11 @@ class MEDIA_EXPORT VideoFrame : public base::RefCountedThreadSafe<VideoFrame> {
 
   // Allocation which makes up |data_| planes for self-allocated frames.
   std::unique_ptr<uint8_t, base::UncheckedFreeDeleter> private_data_;
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  friend class ConvertAndScaleFrameTest;
+  friend class OHOSMediaCodecBridgeImplTest;
+#endif
 
   // Only used by tests.
   // Some tests creates VideoFrame with a Mappable shared image which it does

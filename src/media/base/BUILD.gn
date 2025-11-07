@@ -467,6 +467,10 @@ source_set("base") {
     deps += [ "//third_party/libaom" ]
   }
 
+  if (enable_arkweb) {
+    deps += [ "//arkweb//build/features" ]
+  }
+
   if (is_mac) {
     frameworks = [
       "CoreVideo.framework",
@@ -725,6 +729,30 @@ source_set("unit_tests") {
 
   if (is_castos) {
     sources += [ "demuxer_memory_limit_cast_unittest.cc" ]
+  }
+
+  defines = []
+  if (arkweb_unittests) {
+    import("//arkweb/chromium_ext/chromium_ext.gni")
+    include_dirs = [
+      "//arkweb/ohos_adapter_ndk/interfaces",
+      "//third_party/ohos_ndk/includes/ohos_adapter"
+    ]
+    sources += arkweb_media_base_unittest_sources
+    sources += arkweb_media_adapter_unittest_sources
+    sources += arkweb_media_gpu_unittest_sources
+    sources += arkweb_media_filters_ohos_unittest_sources
+    sources += arkweb_media_third_party_unittest_sources
+    sources += arkweb_media_adapter_mock_sources
+    if (arkweb_enable_cdm) {
+      sources += arkweb_cdm_unittest_sources
+    }
+    sources += arkweb_media_mojo_services_unittest_sources
+    deps += [
+      "//arkweb/ohos_adapter_ndk:adapter_ndk",
+      "//content/test:test_support"
+    ]
+    defines += [ "IS_MEDIA_IMPL" ]
   }
 
   # TODO(crbug.com/40031409): Fix code that adds exit-time destructors and

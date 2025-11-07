@@ -32,6 +32,10 @@
 #include "media/mojo/services/playback_events_recorder.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+#include "arkweb/ohos_nweb/src/sysevent/event_reporter.h"
+#endif
+
 namespace media {
 
 namespace {
@@ -47,6 +51,9 @@ MediaPlayerUkmId GetNextMediaPlayerUkmId() {
 }
 
 constexpr char kInvalidInitialize[] = "Initialize() was not called correctly.";
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+constexpr int DEFAULT_VIDEO_ERROR_CODE = 0;
+#endif
 
 
 MediaMetricsProvider::PipelineInfo::PipelineInfo(bool is_incognito)

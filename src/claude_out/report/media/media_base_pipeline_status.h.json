@@ -1,0 +1,54 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/media/base/pipeline_status.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/media/base/pipeline_status.h",
+    "处理时间": "2025-11-06"
+  },
+  "总体统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk详情": [
+    {
+      "hunk编号": 1,
+      "冲突原因": "Arkweb 132中的ARKWEB_CUSTOM_VIDEO_PLAYER条件编译块在升级到Arkweb 141时与新增的DEMUXER_ERROR_BITSTREAM_CONVERSION_FAILED和PIPELINE_ERROR_OUT_OF_MEMORY状态码产生冲突",
+      "风险分析": "中等风险 - 修改涉及枚举值和条件编译，但保持了现有结构的完整性",
+      "分析过程": "1. 解析.rej文件发现需要在PIPELINE_ERROR_DISCONNECTED = 24之后插入ARKWEB_CUSTOM_VIDEO_PLAYER条件编译块\n2. 源文件中在PIPELINE_ERROR_DISCONNECTED之后新增了DEMUXER_ERROR_BITSTREAM_CONVERSION_FAILED = 25和PIPELINE_ERROR_OUT_OF_MEMORY = 26\n3. 使用条件编译#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)将Arkweb的自定义错误码与Chromium 141新增的错误码分开处理",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "处理策略": "使用条件编译将Arkweb的自定义错误码(PIPELINE_ERROR_INITIALIZATION_FAILED_CUSTOM_PLAYER = 25)与Chromium 141新增的错误码(DEMUXER_ERROR_BITSTREAM_CONVERSION_FAILED = 25, PIPELINE_ERROR_OUT_OF_MEMORY = 26)分离，确保在启用ARKWEB_CUSTOM_VIDEO_PLAYER时使用自定义的错误码和PIPELINE_STATUS_MAX，否则使用Chromium 141的新增错误码",
+      "应用的具体修改": {
+        "添加的行": [
+          "#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)",
+          "  PIPELINE_ERROR_INITIALIZATION_FAILED_CUSTOM_PLAYER = 25,",
+          "  // Must be equal to the largest value ever logged.",
+          "  PIPELINE_STATUS_MAX = PIPELINE_ERROR_INITIALIZATION_FAILED_CUSTOM_PLAYER,",
+          "#else",
+          "#endif // ARKWEB_CUSTOM_VIDEO_PLAYER"
+        ],
+        "被条件编译包含的原有行": [
+          "  // Bitstream format conversion related errors.",
+          "  DEMUXER_ERROR_BITSTREAM_CONVERSION_FAILED = 25,",
+          "",
+          "  // Issued when a component in the pipeline runs out of memory.",
+          "  PIPELINE_ERROR_OUT_OF_MEMORY = 26,",
+          "",
+          "  // Must be equal to the largest value ever logged.",
+          "  PIPELINE_STATUS_MAX = PIPELINE_ERROR_OUT_OF_MEMORY,"
+        ]
+      }
+    }
+  ],
+  "最终验证": {
+    ".rej文件状态": "保持完整，未被修改或删除",
+    "源文件修改状态": "成功应用了冲突修改，保持了代码结构的完整性",
+    "编译兼容性": "条件编译确保了在启用/禁用ARKWEB_CUSTOM_VIDEO_PLAYER时都能正常编译"
+  },
+  "技术说明": {
+    "修改类型": "条件编译冲突解决",
+    "影响范围": "PipelineStatusCodes枚举定义",
+    "向后兼容性": "完全兼容，通过条件编译确保不同配置下的正确行为"
+  }
+}

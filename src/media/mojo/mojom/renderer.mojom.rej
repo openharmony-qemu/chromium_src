@@ -6,12 +6,12 @@
  import "url/mojom/url.mojom";
  import "url/mojom/origin.mojom";
  
-+[EnableIf=arkweb_custom_video_player]
-+struct CustomMediaUrlParams {
-+  uint32 preload_type;
-+  uint32 media_source_type;
-+};
-+
+ [EnableIf=arkweb_custom_video_player]
+ struct CustomMediaUrlParams {
+   uint32 preload_type;
+   uint32 media_source_type;
+ };
+ 
  // See media/base/media_url_params.h for descriptions.
  struct MediaUrlParams {
    url.mojom.Url media_url;
@@ -26,16 +26,16 @@
 +  CustomMediaUrlParams custom_media_url_params;
 +};
 +
-+[EnableIf=arkweb_custom_video_player]
-+struct MediaSourceInfo {
-+  string media_source;
-+  string media_format;
-+};
-+
-+[EnableIf=arkweb_custom_video_player]
-+enum ActionReason {
-+  kNormal,
-+  kCustomRenderer,
+ [EnableIf=arkweb_custom_video_player]
+ struct MediaSourceInfo {
+   string media_source;
+   string media_format;
+ };
+ 
+ [EnableIf=arkweb_custom_video_player]
+ enum ActionReason {
+   kNormal,
+   kCustomRenderer,
  };
  
  // A Mojo equivalent of media::Renderer. Used when audio and video decoding

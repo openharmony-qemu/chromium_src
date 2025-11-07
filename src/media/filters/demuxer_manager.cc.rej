@@ -1,18 +1,5 @@
 --- demuxer_manager.cc	2025-10-20 19:52:56.662200059 +0800
 +++ demuxer_manager.cc	2025-10-16 15:55:01.858169989 +0800
-@@ -30,11 +30,11 @@
- 
- namespace media {
- 
- namespace {
- 
--#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID)
-+#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA_HLS)
- 
- // These values are persisted to logs. Entries should not be renumbered and
- // numeric values should never be reused.
- enum class MimeType {
-   kOtherMimeType = 0,
 @@ -94,10 +94,14 @@
  
    return MimeType::kOtherMimeType;
@@ -47,9 +34,9 @@
    return url.SchemeIsFile() || url.SchemeIsFileSystem() ||
           url.SchemeIs(url::kContentScheme) ||
           url.SchemeIs(url::kContentIDScheme) ||
-+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-+         url.SchemeIs("arkweb-extension") ||
-+#endif
+ #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+          url.SchemeIs("arkweb-extension") ||
+ #endif
           url.SchemeIs("chrome-extension");
  }
  #endif
@@ -77,43 +64,43 @@
    }
  }
  
-+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-+void DemuxerManager::RestartClientForPrimitive() {
-+  if (client_) {
-+    client_->RestartForPrimitive();
-+  } else {
-+    LOG(WARNING) << "RestartClientForPrimitive failed";
-+  }
-+}
-+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
-+
+ #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+ void DemuxerManager::RestartClientForPrimitive() {
+   if (client_) {
+     client_->RestartForPrimitive();
+   } else {
+     LOG(WARNING) << "RestartClientForPrimitive failed";
+   }
+ }
+ #endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+ 
  void DemuxerManager::OnPipelineError(PipelineStatus error) {
    DCHECK(client_);
  
-+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-+  if (error == PIPELINE_ERROR_INITIALIZATION_FAILED_CUSTOM_PLAYER) {
-+    if (client_) {
-+      client_->StopForDemuxerReset();
-+    }
-+    if (data_source_) {
-+      data_source_->Stop();
-+    }
-+
-+    FreeResourcesAfterMediaThreadWait(base::BindOnce(
-+        &DemuxerManager::RestartClientForPrimitive, weak_factory_.GetWeakPtr()));
-+    return;
-+  }
-+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
-+
-+#if BUILDFLAG(ARKWEB_MEDIA)
-+  LOG(INFO) << "OhMedia::OnError PipelineStatus = " << (int)error.code();
-+#endif // BUILDFLAG(ARKWEB_MEDIA)
-+
-+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-+  LOG_FEEDBACK(INFO) << "OhMedia::OnError PipelineStatus = "
-+                     << (int)error.code();
-+#endif
-+
+ #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+   if (error == PIPELINE_ERROR_INITIALIZATION_FAILED_CUSTOM_PLAYER) {
+     if (client_) {
+       client_->StopForDemuxerReset();
+     }
+     if (data_source_) {
+       data_source_->Stop();
+     }
+ 
+     FreeResourcesAfterMediaThreadWait(base::BindOnce(
+         &DemuxerManager::RestartClientForPrimitive, weak_factory_.GetWeakPtr()));
+     return;
+   }
+ #endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+ 
+ #if BUILDFLAG(ARKWEB_MEDIA)
+   LOG(INFO) << "OhMedia::OnError PipelineStatus = " << (int)error.code();
+ #endif // BUILDFLAG(ARKWEB_MEDIA)
+ 
+ #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+   LOG_FEEDBACK(INFO) << "OhMedia::OnError PipelineStatus = "
+                      << (int)error.code();
+ #endif
+ 
    if (!fallback_allowed_) {
      return client_->OnError(std::move(error));
    }
@@ -125,19 +112,6 @@
    if (can_play_hls && error == DEMUXER_ERROR_DETECTED_HLS) {
      PipelineStatus reset_status =
          SelectHlsFallbackMechanism(client_->IsSecurityOriginCryptographic());
-@@ -188,11 +231,11 @@
-     FreeResourcesAfterMediaThreadWait(base::BindOnce(
-         &DemuxerManager::RestartClientForHLS, weak_factory_.GetWeakPtr()));
- 
-     return;
-   }
--#endif  // BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID)
-+#endif  // BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA_HLS)
- 
-   client_->OnError(std::move(error));
- }
- 
- void DemuxerManager::FreeResourcesAfterMediaThreadWait(base::OnceClosure cb) {
 @@ -225,11 +268,11 @@
  
  const GURL& DemuxerManager::LoadedUrl() const {

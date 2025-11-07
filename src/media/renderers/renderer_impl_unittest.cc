@@ -1113,4 +1113,8 @@ TEST_F(RendererImplTest, SuppressAudioTracks) {
   Mock::VerifyAndClearExpectations(&time_source_);
 }
 
+#if BUILDFLAG(ARKWEB_TEST)
+#include "media/renderers/renderer_impl_for_include_unitttest.cc"
+#endif // ARKWEB_TEST
+
 }  // namespace media

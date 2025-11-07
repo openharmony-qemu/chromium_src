@@ -5,6 +5,10 @@
 import("//media/gpu/args.gni")
 import("//media/media_options.gni")
 
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
 if (media_use_symphonia) {
   rust_static_library("symphonia_glue") {
     # Needed because CXX generates unsafe code, for example using export_name

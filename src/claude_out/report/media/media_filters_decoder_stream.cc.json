@@ -1,0 +1,68 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/media/filters/decoder_stream.cc.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/media/filters/decoder_stream.cc",
+    "处理时间": "2025-11-06"
+  },
+  "统计信息": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "rej文件完整性确认": {
+    "状态": "保持完整",
+    "说明": ".rej文件未被修改或删除，完全符合要求"
+  },
+  "hunk详情": [
+    {
+      "hunk索引": 1,
+      "冲突原因": "Arkweb132版本在chromium132基础上添加了条件编译的include语句，用于集成Arkweb特定的解码器流功能",
+      "风险等级": "低",
+      "风险说明": "添加的条件编译include语句不会影响原有代码逻辑，仅在编译时根据BUILDFLAG(IS_ARKWEB)标志决定是否包含Arkweb扩展功能",
+      "修改内容": {
+        "待添加行": [
+          "#if BUILDFLAG(IS_ARKWEB)",
+          "#include \"arkweb/chromium_ext/media/filters/decoder_stream_for_include.cc\"",
+          "#endif"
+        ],
+        "待删除行": []
+      },
+      "定位过程": {
+        "原始上下文": "在#include \"media/filters/decrypting_demuxer_stream.h\"之后，namespace media {之前",
+        "定位策略": "使用最小上下文锚点，精确匹配源文件中的include顺序",
+        "定位结果": "成功定位到源文件第28行后的正确位置"
+      },
+      "应用结果": {
+        "状态": "成功应用",
+        "修改位置": "第29-31行",
+        "修改说明": "在decrypting_demuxer_stream.h include之后，perfetto/tracking/track.h include之前添加了Arkweb条件编译块"
+      },
+      "置信度": "高",
+      "置信度说明": "1. 上下文匹配度100%，include语句顺序完全一致 2. 修改逻辑清晰，符合条件编译最佳实践 3. 不涉及代码逻辑变更，仅添加include语句"
+    }
+  ],
+  "处理策略总结": {
+    "主要策略": "原子化应用",
+    "执行过程": [
+      "解析.rej文件，识别出唯一的hunk包含3个待添加行",
+      "使用最小上下文锚点在源文件中精确定位",
+      "严格遵循黄金法则，仅添加+开头的行，忽略所有上下文行",
+      "直接在源文件中应用修改，不创建任何脚本或辅助文件"
+    ],
+    "合规性检查": {
+      "是否修改.rej文件": "否",
+      "是否创建脚本文件": "否",
+      "是否创建辅助工具": "否",
+      "是否在指定目录外创建文件": "否",
+      "是否添加上下文行": "否",
+      "整体合规性": "完全合规"
+    }
+  },
+  "最终验证": {
+    "源文件状态": "修改成功",
+    "编译兼容性": "良好，添加的条件编译不会影响现有编译流程",
+    "功能影响": "仅在Arkweb编译环境下生效，对标准Chromium编译无影响",
+    "代码质量": "保持原有代码结构和逻辑完整性"
+  }
+}

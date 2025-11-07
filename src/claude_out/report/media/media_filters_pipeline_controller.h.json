@@ -1,0 +1,65 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/media/filters/pipeline_controller.h.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/media/filters/pipeline_controller.h",
+    "分析时间": "2025-11-06"
+  },
+  "冲突解决统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk详情": [
+    {
+      "hunk序号": 1,
+      "冲突原因": "Arkweb132到Arkweb141版本升级时，Arkweb特有的功能增强代码未能自动合并",
+      "风险等级": "低风险",
+      "风险说明": "所有修改都是Arkweb特有的条件编译代码块，不会影响标准Chromium功能",
+      "代码变更": {
+        "添加行数": 9,
+        "删除行数": 0,
+        "具体变更": [
+          "添加ARKWEB_CUSTOM_VIDEO_PLAYER条件块：SetMediaPlayerState和SetPlaybackRateWithReason方法声明",
+          "添加ARKWEB_PIP条件块：PipEnable方法声明",
+          "添加ARKWEB_MEDIA_DMABUF条件块：RecycleDmaBuffer和ResumeDmaBuffer方法声明"
+        ]
+      },
+      "定位过程": {
+        "使用锚点": "FireOnTrackChangeCompleteForTesting方法声明和private关键字",
+        "定位策略": "在FireOnTrackChangeCompleteForTesting方法后，private关键字前插入Arkweb特有方法",
+        "定位结果": "成功定位到第168-179行区间"
+      },
+      "分析过程": {
+        "上下文匹配": "完美匹配.rej文件中的上下文行",
+        "代码逻辑": "插入的方法声明都是public接口，符合类的组织结构",
+        "条件编译": "所有修改都被BUILDFLAG条件编译保护，只在特定Arkweb配置下生效"
+      },
+      "修改置信度": "高",
+      "处理策略": "原子化应用",
+      "解决状态": "已解决"
+    }
+  ],
+  "技术分析": {
+    "修改类型": "功能增强",
+    "影响范围": "仅影响Arkweb特有功能模块",
+    "兼容性": "与Chromium 141基线完全兼容",
+    "代码质量": "符合现有代码风格和架构设计"
+  },
+  "合规性验证": {
+    ".rej文件完整性": "已验证，保持原样未被修改",
+    "遵循原则": [
+      "严格禁止添加上下文行",
+      "严格禁止生成脚本文件",
+      "严格禁止修改.rej文件",
+      "仅在指定位置创建JSON报告"
+    ],
+    "操作合规": "完全合规"
+  },
+  "总结": {
+    "处理结果": "成功将Arkweb132的侵入式修改精确应用到Arkweb141源文件中",
+    "代码质量": "保持了原有代码的结构和风格",
+    "功能完整性": "Arkweb特有功能模块得到完整保留",
+    "风险控制": "所有修改都是条件编译，不会影响标准Chromium功能"
+  }
+}

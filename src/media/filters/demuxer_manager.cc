@@ -31,7 +31,7 @@ namespace media {
 
 namespace {
 
-#if BUILDFLAG(ENABLE_HLS_DEMUXER)
+#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
 
 // These values are persisted to logs. Entries should not be renumbered and
 // numeric values should never be reused.
@@ -102,6 +102,9 @@ bool IsLocalFile(const GURL& url) {
   return url.SchemeIsFile() || url.SchemeIsFileSystem() ||
          url.SchemeIs(url::kContentScheme) ||
          url.SchemeIs(url::kContentIDScheme) ||
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+         url.SchemeIs("arkweb-extension") ||
+#endif
          url.SchemeIs("chrome-extension");
 }
 #endif
@@ -140,8 +143,42 @@ void DemuxerManager::RestartClientForHLS() {
   }
 }
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+void DemuxerManager::RestartClientForPrimitive() {
+  if (client_) {
+    client_->RestartForPrimitive();
+  } else {
+    LOG(WARNING) << "RestartClientForPrimitive failed";
+  }
+}
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+
 void DemuxerManager::OnPipelineError(PipelineStatus error) {
   DCHECK(client_);
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  if (error == PIPELINE_ERROR_INITIALIZATION_FAILED_CUSTOM_PLAYER) {
+    if (client_) {
+      client_->StopForDemuxerReset();
+    }
+    if (data_source_) {
+      data_source_->Stop();
+    }
+
+    FreeResourcesAfterMediaThreadWait(base::BindOnce(
+        &DemuxerManager::RestartClientForPrimitive, weak_factory_.GetWeakPtr()));
+    return;
+  }
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+
+#if BUILDFLAG(ARKWEB_MEDIA)
+  LOG(INFO) << "OhMedia::OnError PipelineStatus = " << (int)error.code();
+#endif // BUILDFLAG(ARKWEB_MEDIA)
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "OhMedia::OnError PipelineStatus = "
+                     << (int)error.code();
+#endif
 
   if (!fallback_allowed_) {
     return client_->OnError(std::move(error));
@@ -178,7 +215,7 @@ void DemuxerManager::OnPipelineError(PipelineStatus error) {
 
     return;
   }
-#endif  // BUILDFLAG(ENABLE_HLS_DEMUXER)
+#endif  // BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(ARKWEB_MEDIA_HLS)
 
   client_->OnError(std::move(error));
 }

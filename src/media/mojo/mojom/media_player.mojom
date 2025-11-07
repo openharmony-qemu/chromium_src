@@ -114,6 +114,48 @@ interface MediaPlayer {
   // always takes precedence. Previous ones are immediately run with `false`.
   RequestVisibility() => (bool has_sufficiently_visible_video);
 
+  [EnableIf=arkweb_custom_video_player]
+  RequestEnterFullscreen();
+
+  [EnableIf=arkweb_custom_video_player]
+  RequestExitFullscreen();
+
+  [EnableIf=arkweb_video_assistant]
+  SetPlaybackRate(double playback_rate);
+
+  [EnableIf=arkweb_video_assistant]
+  RequestDownloadUrl();
+
+  [EnableIf=arkweb_video_assistant]
+  HidePlaybackSpeedList();
+
+  [EnableIf=arkweb_video_assistant]
+  SetVideoSurface(int32 widget_id);
+
+  [EnableIf=arkweb_pip]
+  PipEnable(bool enable);
+
+  [EnableIf=arkweb_pip]
+  PipDown(bool enable);
+
+  [EnableIf=arkweb_pip]
+  RequestExitPictureInPicture();
+
+  [EnableIf=arkweb_pip]
+  NotifyPipResize();
+
+  [EnableIf=arkweb_pip]
+  PipRequestPlay();
+
+  [EnableIf=arkweb_video_assistant]
+  SetVolume(double volume);
+
+  [Sync, EnableIf=arkweb_video_assistant]
+  GetVolume() => (double volume);
+
+  [EnableIf=arkweb_media_memory_pressure]
+  NotifyMemoryLevel(int32 level);
+
   // Request the media player to record auto picture in picture related
   // information. This information helps identify why a request to enter
   // picture in picture automatically is denied/accepted.

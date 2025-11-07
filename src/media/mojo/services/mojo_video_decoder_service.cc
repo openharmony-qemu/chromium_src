@@ -36,6 +36,10 @@
 #include "mojo/public/cpp/system/handle.h"
 #include "third_party/perfetto/include/perfetto/tracing/track.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/media/mojo/services/mojo_video_decoder_service_for_include.cc"
+#endif
+
 namespace media {
 
 namespace {

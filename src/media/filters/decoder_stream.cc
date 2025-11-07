@@ -26,6 +26,9 @@
 #include "media/base/video_decoder.h"
 #include "media/base/video_frame.h"
 #include "media/filters/decrypting_demuxer_stream.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/media/filters/decoder_stream_for_include.cc"
+#endif
 #include "third_party/perfetto/include/perfetto/tracing/track.h"
 
 namespace media {

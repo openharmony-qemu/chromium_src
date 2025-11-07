@@ -1,0 +1,67 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/media/renderers/video_renderer_impl_unittest.cc.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/media/renderers/video_renderer_impl_unittest.cc",
+    "Chromium 132 基线": "/home/sujiahao/code/chromium_132_baseline/src/media/renderers/video_renderer_impl_unittest.cc",
+    "Arkweb 132 代码": "/home/sujiahao/code/arkweb_132/src/media/renderers/video_renderer_impl_unittest.cc"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0
+  },
+  "处理结果": {
+    ".rej文件保持完整未被修改": true,
+    "所有hunk都已成功处理": true
+  },
+  "hunks详情": [
+    {
+      "hunk序号": 1,
+      "位置信息": {
+        "原始位置": "第41-51行",
+        "变更类型": "删除include"
+      },
+      "变更内容": {
+        "待删除的行": [
+          "#include \"media/renderers/video_renderer_impl.h\""
+        ],
+        "待添加的行": [],
+        "上下文行": [
+          "#include \"media/base/mock_filters.h\"",
+          "#include \"media/base/null_video_sink.h\"",
+          "#include \"media/base/test_helpers.h\"",
+          "#include \"media/base/video_frame.h\"",
+          "#include \"media/base/wall_clock_time_source.h\"",
+          "#include \"media/video/mock_gpu_memory_buffer_video_frame_pool.h\"",
+          "#include \"testing/gtest/include/gtest/gtest.h\""
+        ]
+      },
+      "风险分析": {
+        "风险等级": "低",
+        "风险描述": "删除重复的include语句，风险极低。Arkweb 141版本在条件编译块中已经包含了这个include，删除顶部的重复include是安全的。"
+      },
+      "冲突原因": {
+        "主要原因": "Chromium 141版本重构了include结构",
+        "详细分析": "从Chromium 132到141，include结构进行了优化，删除了重复的video_renderer_impl.h include，因为它在条件编译块中已经存在。"
+      },
+      "定位过程": {
+        "定位成功": true,
+        "定位方法": "使用上下文精确定位到源文件第5行",
+        "匹配度": "100%"
+      },
+      "应用结果": {
+        "处理状态": "已解决",
+        "应用时间": "2025-11-06",
+        "修改描述": "成功删除了源文件第5行的重复include语句",
+        "置信度": "100%"
+      }
+    }
+  ],
+  "整体分析": {
+    "修改性质": "Include清理",
+    "影响范围": "编译时间优化",
+    "向后兼容性": "完全兼容",
+    "测试建议": "运行基础编译测试验证include结构正确性"
+  },
+  "总结": "成功处理了1个hunk，删除了重复的include语句。这是Chromium 141版本的include结构优化，不会影响功能，只是提高了编译效率。所有修改都已精确应用到源文件中。"
+}

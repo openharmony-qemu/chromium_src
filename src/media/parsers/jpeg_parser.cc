@@ -536,7 +536,6 @@ bool ParseJpegPicture(base::span<const uint8_t> buffer,
 
   auto reader = base::SpanReader(buffer);
   *result = {};
-
   uint8_t marker1;
   uint8_t marker2;
   READ_U8_OR_RETURN_FALSE(marker1);

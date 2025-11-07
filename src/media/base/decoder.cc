@@ -85,6 +85,10 @@ std::string GetDecoderName(AudioDecoderType type) {
       return "AudioToolboxAudioDecoder";
     case AudioDecoderType::kMediaFoundation:
       return "MediaFoundationAudioDecoder";
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
+    case AudioDecoderType::kOhos:
+      return "OHOSAudioDecoder";
+#endif
     case AudioDecoderType::kSymphonia:
       return "SymphoniaAudioDecoder";
   }

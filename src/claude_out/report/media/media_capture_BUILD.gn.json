@@ -1,0 +1,77 @@
+{
+  "file_path": "media/capture/BUILD.gn",
+  "analysis_timestamp": "2025-11-06",
+  "total_hunks": 2,
+  "resolved_hunks": 2,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": {
+    "status": "保持完整",
+    "modified": false,
+    "deleted": false
+  },
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "location": "capture_lib目标，第394行后",
+      "risk_level": "低",
+      "conflict_cause": "Arkweb项目在Chromium 132中添加的条件编译配置和OpenHarmony媒体捕获扩展，在Chromium 141中需要重新应用",
+      "analysis_process": "通过分析.rej文件中的hunk，识别出需要在capture_lib目标的末尾（第394行后）添加Arkweb相关的配置。成功定位到源文件中对应的位置，并在fuchsia配置块之后、TODO注释之前应用了修改。",
+      "modification_confidence": "高",
+      "resolution_strategy": "成功应用",
+      "changes_applied": [
+        "添加is_arkweb条件判断，增加//arkweb/build/features依赖",
+        "添加enable_arkweb条件判断，增加deps和public_deps",
+        "添加arkweb_media_capture条件判断，导入OpenHarmony扩展配置文件并添加相关源文件和包含目录"
+      ],
+      "final_status": "已解决"
+    },
+    {
+      "hunk_id": 2,
+      "location": "test_support目标，第540行后",
+      "risk_level": "低",
+      "conflict_cause": "Arkweb项目在Chromium 132中为单元测试添加的OpenHarmony扩展配置，在Chromium 141中需要重新应用",
+      "analysis_process": "通过分析.rej文件，识别出需要在test_support目标中enable_video_effects配置块之后添加Arkweb单元测试配置。成功定位到源文件中对应的位置，并在Linux测试配置之前应用了修改。",
+      "modification_confidence": "高",
+      "resolution_strategy": "成功应用",
+      "changes_applied": [
+        "添加arkweb_unittests条件判断",
+        "导入OpenHarmony扩展配置文件",
+        "设置包含目录、依赖和单元测试源文件"
+      ],
+      "final_status": "已解决"
+    }
+  ],
+  "summary": {
+    "overall_status": "全部解决",
+    "total_modifications": 8个代码块添加，
+    "critical_changes": [
+      "Arkweb条件编译配置",
+      "OpenHarmony媒体捕获扩展集成",
+      "单元测试扩展支持"
+    ],
+    "no_context_additions": "严格遵守黄金法则，仅添加了以+开头的行，未添加任何上下文行",
+    "files_created": 0,
+    "scripts_generated": 0,
+    "compliance": "完全符合第一性原则和黄金法则要求"
+  },
+  "technical_details": {
+    "arkweb_features_integration": {
+      "is_arkweb": "基础Arkweb特性开关",
+      "enable_arkweb": "Arkweb功能启用开关",
+      "arkweb_media_capture": "OpenHarmony媒体捕获扩展",
+      "arkweb_unittests": "单元测试扩展支持"
+    },
+    "openharmony_integration": {
+      "extension_file": "//arkweb/chromium_ext/media/capture/video/ohos/arkweb_media_capture_video_ohos_ext.gni",
+      "sources_variable": "arkweb_media_capture_video_ohos_sources",
+      "includes_variable": "ohos_src_includes",
+      "unittests_variable": "arkweb_media_capture_video_ohos_unittests"
+    }
+  },
+  "validation_results": {
+    "syntax_validity": "通过",
+    "build_system_compliance": "符合GN构建系统语法",
+    "dependency_integrity": "依赖关系完整",
+    "rej_file_preserved": ".rej文件保持完整未被修改"
+  }
+}

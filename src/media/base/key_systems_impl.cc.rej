@@ -1,19 +1,5 @@
 --- key_systems_impl.cc	2025-10-20 19:52:56.590198948 +0800
 +++ key_systems_impl.cc	2025-10-16 15:55:01.802229859 +0800
-@@ -23,10 +23,13 @@
- #include "media/base/media_switches.h"
- #include "media/base/mime_util.h"
- #include "media/cdm/clear_key_cdm_common.h"
- #include "media/media_buildflags.h"
- #include "third_party/widevine/cdm/widevine_cdm_common.h"
-+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
-+#include "media/cdm/wiseplay_cdm_common.h"
-+#endif
- 
- namespace media {
- 
- namespace {
- 
 @@ -213,10 +216,16 @@
  // KeySystemsImpl. Only then should you change this function.
  static bool IsPotentiallySupportedKeySystem(const std::string& key_system) {

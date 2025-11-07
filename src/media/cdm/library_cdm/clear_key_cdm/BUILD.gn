@@ -48,6 +48,13 @@ loadable_module("clear_key_cdm_bin") {
     deps += [ "//third_party/ffmpeg" ]
   }
 
+  if (arkweb_unittests) {
+    deps += [
+      "//content/public/renderer:renderer_sources",
+      "//cef:libcef_static"
+    ]
+  }
+
   # TODO(crbug.com/40031409): Fix code that adds exit-time destructors and
   # enable the diagnostic by removing this line.
   configs += [ "//build/config/compiler:no_exit_time_destructors" ]

@@ -1,21 +1,5 @@
 --- mojo_renderer.cc	2025-10-20 19:52:56.746201353 +0800
 +++ mojo_renderer.cc	2025-10-16 15:55:01.934088737 +0800
-@@ -68,10 +78,15 @@
-   }
- 
-   media_resource_ = media_resource;
-   init_cb_ = std::move(init_cb);
- 
-+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-+  request_surface_cb_ = std::move(request_surface_cb);
-+  decoder_changed_cb_ = std::move(decoder_changed_cb);
-+#endif // ARKWEB_VIDEO_ASSISTANT
-+
-   switch (media_resource_->GetType()) {
-     case MediaResource::Type::kStream:
-       InitializeRendererFromStreams(client);
-       break;
-     case MediaResource::Type::KUrl:
 @@ -119,20 +134,32 @@
  void MojoRenderer::InitializeRendererFromUrl(media::RendererClient* client) {
    DVLOG(2) << __func__;

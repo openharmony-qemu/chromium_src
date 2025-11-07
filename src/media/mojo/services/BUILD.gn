@@ -118,6 +118,9 @@ component("services") {
     sources += [ "gpu_mojo_media_client_mac.cc" ]
   } else if (is_win) {
     sources += [ "gpu_mojo_media_client_win.cc" ]
+  } else if (arkweb_heif_support || arkweb_enable_cdm) {
+    import("//arkweb/chromium_ext/media/mojo/services/arkweb_media_mojo_services_ext.gni")
+    sources += arkweb_media_mojo_services_sources
   } else if (use_linux_video_acceleration) {
     if (is_linux) {
       sources += [ "gpu_mojo_media_client_linux.cc" ]

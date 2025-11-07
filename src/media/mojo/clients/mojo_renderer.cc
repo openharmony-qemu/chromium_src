@@ -70,6 +70,11 @@ void MojoRenderer::Initialize(MediaResource* media_resource,
   media_resource_ = media_resource;
   init_cb_ = std::move(init_cb);
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  request_surface_cb_ = std::move(request_surface_cb);
+  decoder_changed_cb_ = std::move(decoder_changed_cb);
+#endif // ARKWEB_VIDEO_ASSISTANT
+
   // Create mojom::DemuxerStream for each demuxer stream and bind its lifetime
   // to the pipe.
   std::vector<DemuxerStream*> streams = media_resource_->GetAllStreams();

@@ -166,6 +166,18 @@ class MEDIA_EXPORT PipelineController {
   // OnceCallback, and doesn't play nicely with gmock.
   void FireOnTrackChangeCompleteForTesting(State set_to);
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  void SetMediaPlayerState(bool is_suspend, int suspend_type = 0);
+  void SetPlaybackRateWithReason(double playback_rate, ActionReason reason);
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+#if BUILDFLAG(ARKWEB_PIP)
+  void PipEnable(bool enable);
+#endif
+#if BUILDFLAG(ARKWEB_MEDIA_DMABUF)
+  void RecycleDmaBuffer();
+  void ResumeDmaBuffer();
+#endif  // ARKWEB_MEDIA_DMABUF
+
   // Sets a flag indicating whether to render muted audio to the active sink or
   // switch to a null sink.
   void SetRenderMutedAudio(bool render_muted_audio);

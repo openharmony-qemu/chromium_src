@@ -7,6 +7,7 @@
 
 #include <vector>
 
+#include "base/time/time.h"
 #include "media/base/demuxer_stream.h"
 #include "media/base/media_export.h"
 
@@ -39,6 +40,13 @@ class MEDIA_EXPORT MediaResource {
   // A helper function that return the first stream of the given `type` if one
   // exists or a null pointer if there is no streams of that type.
   DemuxerStream* GetFirstStream(DemuxerStream::Type type);
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  virtual void ForwardBufferedEndTimeChangeToDemuxerHost(
+      base::TimeDelta buffered_time) {}
+  virtual void SetPreloadType(uint32_t preload_type) {}
+  virtual void SetMediaSourceType(uint32_t media_source_type) {}
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 };
 
 }  // namespace media

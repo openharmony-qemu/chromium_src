@@ -1,0 +1,41 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/media/renderers/video_renderer_impl.cc.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/media/renderers/video_renderer_impl.cc",
+    "处理时间": "2025-11-06"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0
+  },
+  "hunks处理详情": [
+    {
+      "hunk序号": 1,
+      "解决状态": "已解决",
+      "冲突原因": "Arkweb132在chromium132基础上添加了ARKWEB条件编译头文件包含",
+      "风险分析": "低风险。这是一个标准的条件编译包含，仅在BUILDFLAG(IS_ARKWEB)为真时包含额外的头文件，不会影响现有的代码逻辑",
+      "分析过程": "通过.rej文件中的上下文行精确定位到源文件中的对应位置。锚点行'#include \"media/base/video_frame.h\"'和'#include \"third_party/perfetto/include/perfetto/tracing/track.h\"'在源文件中都存在，定位准确",
+      "修改置信度": "高",
+      "处理策略": "在'#include \"media/base/video_frame.h\"'之后添加三行条件编译代码：#if BUILDFLAG(IS_ARKWEB)、#include \"arkweb/chromium_ext/media/renderers/video_renderer_impl_for_include.cc\"、#endif",
+      "添加的行": [
+        "#if BUILDFLAG(IS_ARKWEB)",
+        "#include \"arkweb/chromium_ext/media/renderers/video_renderer_impl_for_include.cc\"",
+        "#endif"
+      ],
+      "删除的行": []
+    }
+  ],
+  "整体评估": {
+    "处理结果": "成功",
+    "代码完整性": "保持良好",
+    "潜在风险": "极低",
+    "建议": "修改已成功应用，代码结构完整，建议进行编译测试验证"
+  },
+  "合规性验证": {
+    ".rej文件保持完整": true,
+    "未生成脚本文件": true,
+    "仅在指定目录创建JSON报告": true,
+    "严格遵守不添加上下文原则": true
+  }
+}

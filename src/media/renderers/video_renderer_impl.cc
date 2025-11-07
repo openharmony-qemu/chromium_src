@@ -26,6 +26,9 @@
 #include "media/base/pipeline_status.h"
 #include "media/base/renderer_client.h"
 #include "media/base/video_frame.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/media/renderers/video_renderer_impl_for_include.cc"
+#endif
 #include "third_party/perfetto/include/perfetto/tracing/track.h"
 
 namespace media {

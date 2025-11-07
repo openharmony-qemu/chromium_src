@@ -30,6 +30,9 @@
 #include "media/base/video_decoder_config.h"
 #include "media/base/video_renderer.h"
 #include "media/base/wall_clock_time_source.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/media/renderers/renderer_impl_for_include.cc"
+#endif
 #include "third_party/perfetto/include/perfetto/tracing/track.h"
 
 namespace media {

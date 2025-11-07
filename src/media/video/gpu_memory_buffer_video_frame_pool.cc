@@ -778,6 +778,7 @@ void GpuMemoryBufferVideoFramePool::PoolImpl::CreateHardwareFrame(
   if (frame_copy_requests_.size() == 1u) {
     StartCopy();
   }
+#endif
 }
 
 bool GpuMemoryBufferVideoFramePool::PoolImpl::OnMemoryDump(

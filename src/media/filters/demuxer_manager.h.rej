@@ -1,43 +1,16 @@
 --- demuxer_manager.h	2025-10-20 19:52:56.662200059 +0800
 +++ demuxer_manager.h	2025-10-16 15:55:01.858169989 +0800
-@@ -73,10 +74,13 @@
-     virtual void OnError(media::PipelineStatus status) = 0;
- 
-     // Used for controlling the client when a demuxer swap happens.
-     virtual void StopForDemuxerReset() = 0;
-     virtual void RestartForHls() = 0;
-+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-+    virtual void RestartForPrimitive() = 0;
-+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
- 
-     virtual bool IsSecurityOriginCryptographic() const = 0;
- 
- #if BUILDFLAG(ENABLE_FFMPEG) || BUILDFLAG(ENABLE_HLS_DEMUXER)
-     virtual void AddMediaTrack(const media::MediaTrack&) = 0;
-@@ -124,11 +128,11 @@
-   void InvalidateWeakPtrs();
- 
-   void OnPipelineError(PipelineStatus error);
-   void SetLoadedUrl(GURL url);
-   const GURL& LoadedUrl() const;
--#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID)
-+#if BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_MEDIA_HLS)
-   void PopulateHlsHistograms(bool cryptographic_url);
-   PipelineStatus SelectHlsFallbackMechanism(bool cryptographic_url);
- #endif  // BUILDFLAG(ENABLE_HLS_DEMUXER) || BUILDFLAG(IS_ANDROID)
-   void DisallowFallback();
- 
 @@ -143,16 +147,21 @@
    // if a demuxer couldn't be created.
    PipelineStatus CreateDemuxer(
        bool load_media_source,
        DataSource::Preload preload,
        bool needs_first_frame,
-+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-+      bool should_create_custom_renderer,
-+      uint32_t initial_preload,
-+      uint32_t media_source_type,
-+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+ #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+       bool should_create_custom_renderer,
+       uint32_t initial_preload,
+       uint32_t media_source_type,
+ #endif // ARKWEB_CUSTOM_VIDEO_PLAYER
        DemuxerCreatedCB on_demuxer_created,
        base::flat_map<std::string, std::string> headers);
  

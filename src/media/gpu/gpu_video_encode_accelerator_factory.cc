@@ -210,6 +210,9 @@ std::vector<VEAFactoryFunction> GetVEAFactoryFunctions(
     vea_factory_functions->push_back(base::BindRepeating(&CreateFuchsiaVEA));
   }
 #endif
+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
+  vea_factory_functions->push_back(base::BindRepeating(&CreateOHOSVEA));
+#endif
   return *vea_factory_functions;
 }
 

@@ -20,7 +20,6 @@
 #include "content/public/browser/storage_partition.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/content_client.h"
-#include "media/audio/ohos/ohos_audio_focus_controller.h"
 #include "media/base/timestamp_constants.h"
 #include "media/mojo/mojom/renderer_extensions.mojom.h"
 
@@ -360,23 +359,6 @@ void OHOSMediaPlayerRenderer::OnPlayerSeekBack(base::TimeDelta back_time) {
   }
   LOG(INFO) << "SEEK_CLOSEST failure and seek back time: " << back_time;
   mediaSession->SeekTo(back_time);
-}
-
-void OHOSMediaPlayerRenderer::SuspendOtherPlaybacks() {
-  if (web_contents_.get() == nullptr) {
-    LOG(ERROR) << "web contents is nullptr";
-    return;
-  }
-
-  MediaSessionImpl* mediaSession = MediaSessionImpl::FromWebContents(web_contents_.get());
-  if (mediaSession == nullptr) {
-    LOG(ERROR) << "get mediaSession is nullptr";
-    return;
-  }
-  if (mediaSession->audioExclusive_) {
-    WebContentsImpl* webContentsImpl = static_cast<WebContentsImpl*>(web_contents_.get());
-    media::OHOSAudioFocusController::SuspendOtherPlaybacks(webContentsImpl);
-  }
 }
 
 base::TimeDelta OHOSMediaPlayerRenderer::GetMediaTime() {

@@ -54,8 +54,6 @@ class MEDIA_EXPORT OHOSMediaPlayerBridge {
     virtual void OnPlayerSeekBack(base::TimeDelta back_time) = 0;
 
     virtual OHOSMediaResourceGetter* GetMediaResourceGetter() = 0;
-    
-    virtual void SuspendOtherPlaybacks() {};
   };
 
   enum MediaErrorType {

@@ -89,7 +89,6 @@ class CONTENT_EXPORT OHOSMediaPlayerRenderer
   void OnWebContentsDestroyed();
   void OnAudioStateChanged(bool isAudible) override;
   void OnPlayerSeekBack(base::TimeDelta back_time) override;
-  void SuspendOtherPlaybacks() override;
   bool isNeedResume(int32_t resumeInterval);
   // media::mojom::MediaPlayerRendererExtension implementation.
   //

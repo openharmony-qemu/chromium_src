@@ -468,36 +468,4 @@ TEST_F(OHOSAudioFocusControllerTest, CheckGetMediaPlayerMuteStateOnUIThread02) {
   EXPECT_EQ(res, false);
 }
 
-TEST_F(OHOSAudioFocusControllerTest, CheckSuspendOtherPlaybacksUIThread01) {
-  auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
-  EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
-  AudioParameters params(
-      AudioParameters::AUDIO_FAKE,
-      ChannelLayoutConfig::Guess(kDefaultChannelCount), kDefaultSampleRate,
-      kMinimumInputBufferSize);
-  testing::internal::CaptureStderr();
-  OHOSAudioFocusController::CheckSuspendOtherPlaybacksUIThread(nullptr);
-  std::string log_output = testing::internal::GetCapturedStderr();
-  EXPECT_NE(log_output.find("CheckSuspendOtherPlaybacksUIThread webContentsImpl is null"), std::string::npos);
-}
-
-TEST_F(OHOSAudioFocusControllerTest, CheckSuspendOtherPlaybacksUIThread02) {
-  auto mock_player_adapter = std::make_unique<MockPlayerAdapter>();
-  EXPECT_CALL(*mock_player_adapter, Play()).Times(0);
-  AudioParameters params(
-      AudioParameters::AUDIO_FAKE,
-      ChannelLayoutConfig::Guess(kDefaultChannelCount), kDefaultSampleRate,
-      kMinimumInputBufferSize);
-  SetAudioParametersId(params);
-  content::RenderFrameHost* renderFrameHost =
-        content::RenderFrameHost::FromID(params.render_process_id(), params.render_frame_id());
-  content::WebContents* webContents = content::WebContents::FromRenderFrameHost(renderFrameHost);
-  testing::internal::CaptureStderr();
-  OHOSAudioFocusController::CheckSuspendOtherPlaybacksUIThread(static_cast<content::WebContentsImpl*>(webContents));
-  std::string log_output = testing::internal::GetCapturedStderr();
-  EXPECT_EQ(log_output.find("CheckSuspendOtherPlaybacksUIThread webContents is null"), std::string::npos);
-  EXPECT_EQ(log_output.find("CheckSuspendOtherPlaybacksUIThread MediaSession "
-                            "not available for WebContents"), std::string::npos);
-}
-
 } // namespace media

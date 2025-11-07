@@ -15,7 +15,7 @@
 #include "media/audio/ohos/ohos_audio_focus_controller.h"
 
 namespace media {
-
+std::vector<AudioParameters> OHOSAudioOutputStream::audioParameterSet_ = {};
 CallbackSharedWrapper<OHOSAudioOutputCallback> OHOSAudioOutputStream::callback_wrapper_;
 
 OHOSAudioOutputStream::OHOSAudioOutputStream(OHOSAudioManager* manager,
@@ -328,10 +328,29 @@ bool OHOSAudioOutputStream::isNeedResume(int32_t resumeInterval) {
 
 // LCOV_EXCL_START
 void OHOSAudioOutputStream::SuspendOtherMediaSession() {
-  if (GetInterruptMode() && !IsPreloadOrMutedMediaMode()) {
-    LOG(INFO) << "MediaSession is suspending the audio in other web.";
-    OHOSAudioFocusController::SuspendOtherPlaybacks(parameters_);
+  auto it = OHOSAudioOutputStream::audioParameterSet_.begin();
+  while (it != OHOSAudioOutputStream::audioParameterSet_.end()) {
+    if (!(*it).IsValid() || ((*it).render_process_id() <= 0 || (*it).render_frame_id() <= 0)) {
+      LOG(ERROR) << "OHOSAudioOutputStream::Start parameter is not valid.";
+      it = OHOSAudioOutputStream::audioParameterSet_.erase(it);
+      continue;
+    }
+    if ((*it).render_process_id() == parameters_.render_process_id() &&
+        (*it).render_frame_id() == parameters_.render_frame_id()) {
+      LOG(INFO) << "skip mediaSession control because of same audioparameters.";
+      it++;
+      continue;
+    }
+    if (GetInterruptMode() && !IsPreloadOrMutedMediaMode()) {
+      LOG(INFO) << "MediaSession is suspending the audio in other web.";
+      main_task_runner_->PostTask(
+          FROM_HERE,
+          base::BindOnce(OHOSAudioFocusController::OnSuspend, (*it)));
+    }
+    it++;
   }
+
+  OHOSAudioOutputStream::audioParameterSet_.emplace_back(parameters_);
 }
 // LCOV_EXCL_STOP
 
@@ -362,6 +381,11 @@ void OHOSAudioOutputStream::Stop() {
   base::AutoLock lock(lock_);
   StopTimer();
   running_ = false;
+  auto it = std::find(OHOSAudioOutputStream::audioParameterSet_.begin(),
+                      OHOSAudioOutputStream::audioParameterSet_.end(), parameters_);
+  if (it != OHOSAudioOutputStream::audioParameterSet_.end()) {
+    OHOSAudioOutputStream::audioParameterSet_.erase(it);
+  }
   if (!audio_renderer_) {
     LOG(ERROR) << "OHOSAudioOutputStream::Stop. audio_renderer_ is nullptr";
     return;

@@ -107,6 +107,10 @@ public:
   virtual double GetBorderRadiusBottomRight() = 0;
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  virtual void SetClipboardSitePermissionEnabled(bool) = 0;
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
 #if BUILDFLAG(ARKWEB_MENU)
   virtual void SetTouchHandleExistState(bool) = 0;
   virtual bool IsTouchHandleExist() = 0;

@@ -267,7 +267,12 @@ void PermissionServiceImpl::RequestPermissionsInternal(
     BrowserContext* browser_context,
     const std::vector<PermissionDescriptorPtr>& permissions,
     PermissionRequestDescription request_description,
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+    RequestPermissionsCallback callback,
+    bool permissions_policy_verification) {
+#else
     RequestPermissionsCallback callback) {
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
   std::unique_ptr<PendingRequest> pending_request =
       std::make_unique<PendingRequest>(request_description.permissions,
                                        std::move(callback));
@@ -290,6 +295,14 @@ void PermissionServiceImpl::RequestPermissionsInternal(
             context_->render_frame_host(), request_description,
             base::BindOnce(&PermissionServiceImpl::OnRequestPermissionsResponse,
                            weak_factory_.GetWeakPtr(), pending_request_id));
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  } else if (!permissions_policy_verification) {
+    PermissionControllerImpl::FromBrowserContext(browser_context)
+        ->RequestPermissionsSkipPermissionsPolicy(
+            context_->render_frame_host(), std::move(request_description),
+            base::BindOnce(&PermissionServiceImpl::OnRequestPermissionsResponse,
+                          weak_factory_.GetWeakPtr(), pending_request_id));
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
   } else {
     PermissionControllerImpl::FromBrowserContext(browser_context)
         ->RequestPermissionsFromCurrentDocument(
@@ -309,7 +322,11 @@ void PermissionServiceImpl::OnRequestPermissionsResponse(
 
 void PermissionServiceImpl::HasPermission(PermissionDescriptorPtr permission,
                                           PermissionStatusCallback callback) {
+#if BUILDFLAG(ARKWEB_CLIPBOARD) && BUILDFLAG(ARKWEB_NWEB_EX)
+  HasPermissionAsync(std::move(permission), std::move(callback));
+#else
   std::move(callback).Run(GetPermissionStatus(permission));
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD) && BUILDFLAG(ARKWEB_NWEB_EX)
 }
 
 void PermissionServiceImpl::RevokePermission(
@@ -498,3 +515,7 @@ void PermissionServiceImpl::ReceivedBadMessage() {
 }
 
 }  // namespace content
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+#include "arkweb/chromium_ext/content/browser/permissions/permission_service_impl_for_include.cc"
+#endif  // ARKWEB_CLIPBOARD

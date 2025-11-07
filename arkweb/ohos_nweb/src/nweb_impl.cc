@@ -337,6 +337,10 @@ std::vector<std::string> g_browser_args = {};
 int32_t g_browser_service_sdk_api_level = 0;
 #endif  // BUILDFLAG(ARKWEB_NWEB_EX)
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+bool g_clipboard_site_permission_enabled = false;
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
 #if BUILDFLAG(ARKWEB_SITE_ISOLATION)
 enum class SiteIsolationInitMode{
   INIT,
@@ -7306,6 +7310,16 @@ void NWebImpl::SetSocketIdleTimeout(int32_t timeout) {
   content::GetNetworkService()->SetSocketIdleTimeout(timeout);
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+void NWebImpl::SetClipboardSitePermissionEnabled(bool enable) {
+  g_clipboard_site_permission_enabled = enable;
+}
+
+bool NWebImpl::IsClipboardSitePermissionEnabled() {
+  return g_clipboard_site_permission_enabled;
+}
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 
 void NWebImpl::StopFling() {
   if (nweb_delegate_ == nullptr) {

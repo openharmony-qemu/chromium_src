@@ -152,6 +152,10 @@ class CONTENT_EXPORT PermissionControllerDelegate {
       base::OnceCallback<void(blink::mojom::PermissionStatus)> callback) {}
 #endif // ARKWEB_NOTIFICATION
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  virtual bool IsClipboardSitePermissionEnabled() { return false; }
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
   void SetSubscriptions(
       content::PermissionController::SubscriptionsMap* subscriptions);
   content::PermissionController::SubscriptionsMap* subscriptions();

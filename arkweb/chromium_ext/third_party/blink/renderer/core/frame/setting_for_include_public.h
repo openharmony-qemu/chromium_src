@@ -156,4 +156,13 @@
   }
 #endif  // BUILDFLAG(ARKWEB_MENU)
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  void SetClipboardSitePermissionEnabled(bool enable) {
+    clipboard_site_permission_enabled_ = enable;
+  }
+  bool GetClipboardSitePermissionEnabled() {
+    return clipboard_site_permission_enabled_;
+  }
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
 #endif

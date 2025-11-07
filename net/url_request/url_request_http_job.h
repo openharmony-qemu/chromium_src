@@ -274,6 +274,8 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
   void InitPreloadInfoAndSetToTransaction();
 #endif
 
+  void ContinueDespiteLastErrorInternal();
+
   RequestPriority priority_ = DEFAULT_PRIORITY;
 
   HttpRequestInfo request_info_;
@@ -354,6 +356,8 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
   int original_net_error_ = 0;
   RetryState state_ = RetryState::INIT;
 #endif
+
+  int restarted_ = 0;
 
   base::WeakPtrFactory<URLRequestHttpJob> weak_factory_{this};
 };

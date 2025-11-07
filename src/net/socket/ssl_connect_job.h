@@ -229,6 +229,11 @@ class NET_EXPORT_PRIVATE SSLConnectJob : public ConnectJob,
   // flow. `endpoint_result_` will then contain the endpoint to reconnect to.
   std::optional<std::vector<uint8_t>> ech_retry_configs_;
 
+#if BUILDFLAG(ARKWEB_EX_NETWORK_CONNECTION)
+  // Only for transport_connect_job
+  int timeout_override_for_nested_job_{0};
+#endif
+
   // If not empty, the intersection of the client's trusted TLS Trust Anchor IDs
   // with those advertised by the server during the handshake, in wire format.
   // This is the set of Trust Anchor IDs to advertise in the ClientHello when

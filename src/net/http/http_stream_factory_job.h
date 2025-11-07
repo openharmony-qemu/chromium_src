@@ -483,6 +483,10 @@ class HttpStreamFactory::Job
 
   std::unique_ptr<SpdySessionPool::SpdySessionRequest> spdy_session_request_;
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  bool from_preload_ = false;
+#endif
+
   // Keeps track of the connection management config.
   std::optional<ConnectionManagementConfig> management_config_;
 

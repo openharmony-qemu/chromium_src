@@ -327,7 +327,11 @@ std::unique_ptr<CanonicalCookie> CanonicalCookie::Create(
     return nullptr;
   }
 
+  #if BUILDFLAG(ARKWEB_COOKIE)
+  ParsedCookie parsed_cookie(cookie_line, block_truncated, status);
+#else // BUILDFLAG(ARKWEB_COOKIE)
   ParsedCookie parsed_cookie(cookie_line, status);
+#endif // BUILDFLAG(ARKWEB_COOKIE)
 
   static base::MetricsSubSampler metrics_subsampler;
   bool collect_metrics =

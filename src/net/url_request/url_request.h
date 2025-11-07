@@ -1292,6 +1292,12 @@ class NET_EXPORT URLRequest : public base::SupportsUserData {
 
   base::RepeatingCallback<void(const device_bound_sessions::SessionAccess&)>
       device_bound_session_access_callback_;
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  HttpTransaction::UpdateResRequestInfoCallback update_res_request_info_callback_;
+  bool allow_preload_record_ = false;
+  GURL main_url_;
+  std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info_;
+#endif
 
   // Whether the request is allowed to register new device-bound sessions
   bool allows_device_bound_session_registration_ = false;

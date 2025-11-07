@@ -1,0 +1,74 @@
+{
+  "file_path": "net/base/network_change_notifier_passive.h",
+  "rej_file": "/home/sujiahao/code/arkweb_141/src/net/base/network_change_notifier_passive.h.rej",
+  "source_file": "/home/sujiahao/code/arkweb_141/src/net/base/network_change_notifier_passive.h",
+  "hunks_total": 1,
+  "hunks_resolved": 1,
+  "hunks_unresolved": 0,
+  "rej_file_integrity": "verified",
+  "analysis": {
+    "conflict_reason": "Arkweb132在基于Chromium132内核开发时，为NetworkChangeNotifierPassive类添加了自定义的include语句和继承关系修改。这些修改在升级到Chromium141内核时产生了冲突，因为源文件的include顺序和类继承关系发生了变化。",
+    "risk_assessment": "中等风险。包含头文件的添加可能会引入新的依赖关系，类继承关系的修改可能会影响虚函数的调用顺序。但从代码结构来看，ArkwebNetworkChangeNotifierExt应该是NetworkChangeNotifier的扩展子类，继承关系变化相对安全。",
+    "confidence": "高",
+    "modification_strategy": "原子化应用修改策略：严格按照.rej文件中的+/-行进行添加和删除操作，不添加任何额外的上下文行。"
+  },
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "lines_range": "15-38",
+      "status": "已解决",
+      "modifications": {
+        "added_lines": [
+          "#include \"arkweb/build/features/features.h\"",
+          "#if BUILDFLAG(IS_ARKWEB_EXT)",
+          "#include \"arkweb/ohos_nweb_ex/build/features/features.h\"",
+          "#endif",
+          "#include \"arkweb/chromium_ext/net/base/arkweb_network_change_notifier_ext.h\"",
+          "#include \"third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h\""
+        ],
+        "removed_lines": [
+          "class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier {"
+        ],
+        "modified_lines": [
+          "class NET_EXPORT NetworkChangeNotifierPassive : public ArkwebNetworkChangeNotifierExt {"
+        ]
+      },
+      "location_analysis": {
+        "anchor_context": [
+          "#if BUILDFLAG(IS_LINUX)",
+          "#include \"net/base/address_map_cache_linux.h\"",
+          "#endif",
+          "namespace net {"
+        ],
+        "target_location": "在第19行和第30行之间添加include语句，在第38行修改类继承关系",
+        "precision": "精确定位成功"
+      },
+      "processing_details": {
+        "initial_locate_success": true,
+        "extended_search_required": false,
+        "application_success": true,
+        "syntax_check": "通过",
+        "compilation_risk": "低"
+      },
+      "risk_analysis": {
+        "technical_risk": "新增的include语句可能引入编译依赖，需要确保相关头文件在Chromium141版本中可用。类继承关系修改需要确保ArkwebNetworkChangeNotifierExt在141版本中兼容。",
+        "business_risk": "这些修改是Arkweb特有的扩展功能，主要用于支持OpenHarmony系统的网络特性，对核心功能影响有限。",
+        "mitigation": "编译时需要验证新增头文件的可用性和API兼容性。"
+      }
+    }
+  ],
+  "summary": {
+    "total_modifications": {
+      "adds": 6,
+      "removes": 1,
+      "modifies": 1
+    },
+    "final_result": "所有hunk已成功应用到源文件中，修改严格遵循原子化应用原则，未添加任何额外的上下文行。.rej文件保持完整未被修改。",
+    "verification_status": {
+      "rej_file_integrity": "verified",
+      "source_file_modified": true,
+      "no_additional_context_added": true,
+      "atomic_operations_completed": true
+    }
+  }
+}

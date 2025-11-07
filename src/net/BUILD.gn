@@ -16,6 +16,15 @@ import("//third_party/protobuf/proto_library.gni")
 import("//tools/grit/grit_rule.gni")
 import("//url/features.gni")
 
+if (is_arkweb) {
+  import("//arkweb/build/features/features.gni")
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
+if (defined(is_arkweb_ext) && is_arkweb_ext) {
+  import("//arkweb/ohos_nweb_ex/build/features/features.gni")
+}
+
 if (is_android) {
   import("//build/config/android/config.gni")
   import("//build/config/android/rules.gni")
@@ -26,6 +35,9 @@ if (is_android) {
 } else if (is_ios) {
   import("//build/config/apple/mobile_config.gni")
   import("//build/config/ios/bundle_data_from_filelist.gni")
+} else if (is_ohos) {
+  import("//build/config/ohos/abi.gni")
+  import("//build/config/ohos/config.gni")
 }
 
 # Android:
@@ -1170,6 +1182,11 @@ component("net") {
     "//net/http:transport_security_state_generated_files",
     "//third_party/simdutf",
   ]
+  if (defined(is_arkweb) && is_arkweb) {
+    deps += [
+      "//base:base_static",
+    ]
+  }
 
   public_deps = [
     ":disk_cache_buildflags",
@@ -3073,7 +3090,24 @@ target(_test_target_type, "net_unittests") {
     "url_request/url_request_job_unittest.cc",
     "url_request/url_request_quic_unittest.cc",
     "url_request/url_request_unittest.cc",
+    "//arkweb/chromium_ext/net/socket/arkweb_transport_connect_job_ext_unittest.cc",
+    "//arkweb/chromium_ext/net/url_request/url_requesrt_context_ext_unittest.cc"
   ]
+  ldflags = []
+  if (is_arkweb) {
+    sources += arkweb_net_cert_unittest_sources
+    ldflags += [
+      "-Wl,--wrap=BIO_new_mem_buf",
+      "-Wl,--wrap=X509_STORE_CTX_new",
+    ]
+    include_dirs = [
+      "//third_party/ohos_ndk/includes/ohos_adapter",
+    ]
+  }
+  if (arkweb_prp_preload) {
+    import("//arkweb/chromium_ext/net/base/arkweb_net_base_ext.gni")
+    sources += arkweb_net_base_ext_unittest_sources
+  }
 
   if (is_android) {
     sources += [
@@ -3147,6 +3181,19 @@ target(_test_target_type, "net_unittests") {
   if (disable_zstd_filter) {
     defines += [ "NET_DISABLE_ZSTD" ]
   }
+  if (is_ohos) {
+    sources += [
+      "//arkweb/chromium_ext/net/cert/test_root_certs_ohos.cc",
+      "//net/tools/transport_security_state_generator/cert_util.cc",
+    ]
+    defines += [ "NET_UNITTESTS_OHOS_ENABLE" ]
+  }
+  if (defined(arkweb_ext_http_dns_fallback) && arkweb_ext_http_dns_fallback || is_ohos) {
+    ldflags += [
+      "-Wl,--wrap=OH_NetConn_GetDefaultNet",
+      "-Wl,--wrap=OH_NetConn_GetConnectionProperties",
+    ]
+  }
 
   fuzztests = [
     "PickleTest.FuzzRoundTrip",
@@ -3219,6 +3266,11 @@ target(_test_target_type, "net_unittests") {
 
   if (is_android || is_chromeos) {
     sources += [ "base/network_change_notifier_passive_unittest.cc" ]
+  }
+  if (is_arkweb) {
+    sources += [
+      "//arkweb/chromium_ext/net/base/network_change_notifier_passive_for_include_unittest.cc",
+    ]
   }
 
   if (enable_reporting) {

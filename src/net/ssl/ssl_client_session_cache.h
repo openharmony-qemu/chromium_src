@@ -56,6 +56,9 @@ class NET_EXPORT SSLClientSessionCache {
     std::optional<IPAddress> dest_ip_addr;
     NetworkAnonymizationKey network_anonymization_key;
     PrivacyMode privacy_mode = PRIVACY_MODE_DISABLED;
+#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
+    bool disable_legacy_crypto = false;
+#endif
     SessionUsage session_usage = SessionUsage::kDestination;
     ProxyChain proxy_chain = ProxyChain::Direct();
     size_t proxy_chain_index = 0;

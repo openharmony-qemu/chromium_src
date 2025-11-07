@@ -20,6 +20,10 @@
 #include "net/dns/public/secure_dns_mode.h"
 #include "net/dns/record_rdata.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace net {
 
 class DnsResponse;

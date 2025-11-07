@@ -141,7 +141,12 @@ int PreconnectSocketsForHttpRequest(
     const NetLogWithSource& net_log,
     int num_preconnect_streams,
     bool fail_if_alias_requires_proxy_override,
-    CompletionOnceCallback callback);
+    CompletionOnceCallback callback
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+,
+    bool from_preload = false
+#endif
+    );
 
 }  // namespace net
 

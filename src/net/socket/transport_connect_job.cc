@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "net/socket/transport_connect_job.h"
+#include "arkweb/chromium_ext/net/socket/arkweb_transport_connect_job_ext.h"
 
 #include <memory>
 #include <set>
@@ -52,19 +53,27 @@ HostPortPair ToLegacyDestinationEndpoint(
   return std::get<HostPortPair>(endpoint);
 }
 
-}  // namespace
-
 TransportSocketParams::TransportSocketParams(
     Endpoint destination,
     NetworkAnonymizationKey network_anonymization_key,
     SecureDnsPolicy secure_dns_policy,
     OnHostResolutionCallback host_resolution_callback,
-    base::flat_set<std::string> supported_alpns)
+    base::flat_set<std::string> supported_alpns
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+    ,
+    bool secure_dns_only
+#endif
+    )
     : destination_(std::move(destination)),
       network_anonymization_key_(std::move(network_anonymization_key)),
       secure_dns_policy_(secure_dns_policy),
       host_resolution_callback_(std::move(host_resolution_callback)),
-      supported_alpns_(std::move(supported_alpns)) {
+      supported_alpns_(std::move(supported_alpns))
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+      ,
+      secure_dns_only_(secure_dns_only)
+#endif
+{
 #if DCHECK_IS_ON()
   auto* scheme_host_port = std::get_if<url::SchemeHostPort>(&destination_);
   if (scheme_host_port) {
@@ -266,6 +275,11 @@ int TransportConnectJob::DoResolveHost() {
   HostResolver::ResolveHostParameters parameters;
   parameters.initial_priority = priority();
   parameters.secure_dns_policy = params_->secure_dns_policy();
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  if (host_resolver()->CanUseSecureDnsFallback()) {
+    parameters.only_use_secure_fallback = params_->secure_dns_only();
+  }
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
   if (std::holds_alternative<url::SchemeHostPort>(params_->destination())) {
     request_ = host_resolver()->CreateRequest(
         std::get<url::SchemeHostPort>(params_->destination()),

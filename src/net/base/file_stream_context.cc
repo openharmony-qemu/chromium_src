@@ -21,6 +21,10 @@
 #include "net/base/apple/guarded_fd.h"
 #endif  // BUILDFLAG(IS_MAC)
 
+#if BUILDFLAG(IS_OHOS) && BUILDFLAG(ARKWEB_FILE_UPLOAD)
+#include "arkweb/chromium_ext/base/datashare_uri_utils.h"
+#endif
+
 #if BUILDFLAG(IS_WIN)
 #include <windows.h>
 #endif

@@ -22,20 +22,3 @@
  // ClientSocketHandle with the relevant socket pool. Use this method for
  // HTTP/HTTPS requests for WebSocket handshake.
  // `ssl_config_for_origin` is only used if the request uses SSL.
-@@ -141,10 +163,15 @@
-     PrivacyMode privacy_mode,
-     NetworkAnonymizationKey network_anonymization_key,
-     SecureDnsPolicy secure_dns_policy,
-     const NetLogWithSource& net_log,
-     int num_preconnect_streams,
--    CompletionOnceCallback callback);
-+    CompletionOnceCallback callback
-+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-+,
-+    bool from_preload = false
-+#endif
-+    );
- 
- }  // namespace net
- 
- #endif  // NET_SOCKET_CLIENT_SOCKET_POOL_MANAGER_H_

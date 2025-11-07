@@ -1,0 +1,53 @@
+{
+  "文件路径": "/home/sujiahao/code/arkweb_141/src/net/socket/stream_socket.h",
+  "处理时间": "2025-11-06",
+  "总hunk数量": 1,
+  "成功解决的hunk数量": 1,
+  "未能解决的hunk数量": 0,
+  "rej文件状态": "保持完整未被修改",
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "在rej文件中的行数": "3-18",
+      "冲突类型": "添加新功能",
+      "风险等级": "低",
+      "修改内容": {
+        "添加行": [
+          "#if BUILDFLAG(ARKWEB_PRP_PRELOAD)",
+          "virtual void SetFromPreload(bool from_preload);",
+          "virtual bool IsFromPreload() const;",
+          "private:",
+          "bool from_preload_ = false;",
+          "#endif"
+        ],
+        "删除行": []
+      },
+      "冲突原因": "Arkweb 132 在 StreamSocket 类中添加了预加载功能的虚拟方法和成员变量，但在升级到 Arkweb 141 时这些修改未自动合并",
+      "分析过程": "通过分析.rej文件，识别出需要在ApplySocketTag方法后添加Arkweb特定的预加载功能代码。使用ApplySocketTag方法作为锚点精确定位插入位置。",
+      "修改置信度": "高",
+      "解决策略": "在ApplySocketTag虚拟方法声明之后、类定义结束之前添加Arkweb预加载相关的条件编译代码块",
+      "解决状态": "已解决",
+      "人工复查要点": [
+        "确认BUILDFLAG(ARKWEB_PRP_PRELOAD)宏定义在构建系统中存在",
+        "验证SetFromPreload和IsFromPreload方法在实现类中有对应实现",
+        "确认from_preload_成员变量的访问权限合适"
+      ]
+    }
+  ],
+  "总结": {
+    "处理结果": "成功",
+    "代码质量影响": "添加了Arkweb特定的预加载功能接口，对现有代码无破坏性影响",
+    "注意事项": [
+      "所有添加的代码都在条件编译块#if BUILDFLAG(ARKWEB_PRP_PRELOAD)内，不会影响标准构建",
+      "新增的虚拟方法需要在派生类中实现",
+      "private成员变量from_preload_需要在构造函数中初始化（已在声明中初始化）"
+    ],
+    "合规性检查": {
+      "未添加上下文": true,
+      "未生成脚本文件": true,
+      "未修改.rej文件": true,
+      "仅在指定目录创建报告": true,
+      "文件路径符合要求": true
+    }
+  }
+}

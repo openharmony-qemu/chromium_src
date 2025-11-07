@@ -364,6 +364,11 @@ class NET_EXPORT_PRIVATE URLRequestHttpJob : public URLRequestJob {
   // started.
   FirstPartySetMetadata first_party_set_metadata_;
 
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  int original_net_error_ = 0;
+  RetryState state_ = RetryState::INIT;
+#endif
+
   // The number of times this request was deferred due to a Device Bound
   // Session.
   size_t device_bound_session_deferral_count_ = 0;

@@ -38,6 +38,10 @@
 #include "net/log/net_log_with_source.h"
 #include "url/scheme_host_port.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace net {
 
 class AddressList;
@@ -569,6 +573,10 @@ class NET_EXPORT HostResolver {
   virtual HostResolverManager* GetManagerForTesting();
   virtual const URLRequestContext* GetContextForTesting() const;
   virtual handles::NetworkHandle GetTargetNetworkForTesting() const;
+
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  virtual bool CanUseSecureDnsFallback() const { return false; }
+#endif
 
   // Creates a new HostResolver. `manager` must outlive the returned resolver.
   //

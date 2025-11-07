@@ -382,6 +382,10 @@ class HttpStreamFactory::JobController
   // It will be nulled when the |request_| is finished.
   raw_ptr<Job> bound_job_ = nullptr;
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  bool from_preload_ = false;
+#endif
+
   // Keeps track of the connection keepalive info.
   std::optional<ConnectionManagementConfig> management_config_;
 

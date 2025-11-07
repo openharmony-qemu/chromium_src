@@ -28,6 +28,7 @@
 #include "net/dns/public/secure_dns_mode.h"
 #include "net/dns/resolve_context.h"
 #include "net/log/net_log_with_source.h"
+#include "arkweb/chromium_ext/net/dns/arkweb_host_resolver_dns_task_ext.h"
 
 namespace net {
 
@@ -43,6 +44,7 @@ class HostResolverInternalErrorResult;
 // transactions are scheduled separately and started separately.
 class NET_EXPORT_PRIVATE HostResolverDnsTask final {
  public:
+  friend class ArkWebHostResolverDnsTaskExt;
   using Results = std::set<std::unique_ptr<HostResolverInternalResult>>;
   using ResultRefs = std::set<const HostResolverInternalResult*>;
 

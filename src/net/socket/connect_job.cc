@@ -229,6 +229,10 @@ void ConnectJob::StopTimerAndLogConnectCompletion(int net_error) {
   timer_.Stop();
 
   connect_timing_.connect_end = base::TimeTicks::Now();
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "connectEnd", connect_timing_.connect_end);
+#endif
   net_log().EndEventWithNetErrorCode(net_log_connect_event_type_, net_error);
 }
 

@@ -134,10 +134,23 @@
 #include <net/if.h>
 #include "net/base/sys_addrinfo.h"
 #if BUILDFLAG(IS_ANDROID)
-#else  // !BUILDFLAG(IS_ANDROID)
+#include "net/android/network_library.h"
+#elif BUILDFLAG(IS_OHOS)
+#else
 #include <ifaddrs.h>
 #endif  // BUILDFLAG(IS_ANDROID)
 #endif  // BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
+
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "base/command_line.h"
+#endif
+
+#include "arkweb/chromium_ext/net/dns/host_resolver_manager_for_include.cc"
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "url/ohos/log_utils.h"
+#endif
 
 namespace net {
 
@@ -1465,6 +1478,13 @@ void HostResolverManager::CreateTaskSequence(
       // If no external source allowed, a job should not be created or started
       break;
   }
+
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  if (secure_dns_policy == SecureDnsPolicy::kBootstrap &&
+      out_tasks->back() == TaskType::SECURE_DNS_FALLBACK) {
+    out_tasks->pop_back();
+  }
+#endif
 
   // `HOST_RESOLVER_CANONNAME` is only supported through system resolution.
   if (job_key.flags & HOST_RESOLVER_CANONNAME) {

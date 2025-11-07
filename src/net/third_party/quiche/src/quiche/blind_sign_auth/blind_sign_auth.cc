@@ -14,6 +14,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "absl/algorithm/container.h"
 #include "absl/cleanup/cleanup.h"
 #include "absl/functional/bind_front.h"
@@ -47,7 +48,11 @@ std::string OmitDefault(T value) {
 constexpr absl::string_view kAttestationProtoTypeUrl =
     "type.googleapis.com/privacy.ppn.AndroidAttestationData";
 constexpr absl::string_view kIssuerHostname =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://x.x.x";
+#else
     "https://ipprotection-ppissuer.googleapis.com";
+#endif
 constexpr size_t kExpectedExtensionTypesSize = 5;
 constexpr std::array<const uint16_t, kExpectedExtensionTypesSize>
     kExpectedExtensionTypes = {0x0001, 0x0002, 0xF001, 0xF002, 0xF003};

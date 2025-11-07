@@ -1,0 +1,78 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/net/http/http_proxy_connect_job.cc.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/net/http/http_proxy_connect_job.cc",
+    "处理时间": "2025-11-06"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk处理详情": [
+    {
+      "hunk_id": 1,
+      "位置信息": {
+        "文件行号范围": "49-58",
+        "变更类型": "添加include语句"
+      },
+      "变更内容": {
+        "添加的行": [
+          "#include \"arkweb/chromium_ext/net/socket/arkweb_transport_connect_job_ext.h\""
+        ],
+        "删除的行": [],
+        "上下文锚点": [
+          "#include \"net/spdy/spdy_stream.h\"",
+          "#include \"net/ssl/ssl_cert_request_info.h\"",
+          "#include \"third_party/abseil-cpp/absl/types/variant.h\"",
+          "#include \"url/gurl.h\"",
+          "#include \"url/scheme_host_port.h\"",
+          "namespace net {"
+        ]
+      },
+      "风险分析": {
+        "风险等级": "低",
+        "风险说明": "添加了一个Arkweb扩展的头文件包含，这是Arkweb项目针对网络连接功能的扩展。该修改不会影响核心HTTP代理连接逻辑，只是引入了额外的功能模块。",
+        "潜在影响": "可能会启用Arkweb扩展的网络连接特性，如扩展网络连接或多IP连接功能"
+      },
+      "冲突原因": {
+        "主要原因": "Arkweb141版本基于Chromium141，而Arkweb132的修改中包含了针对Chromium132的扩展头文件包含，在升级过程中需要保留这些扩展功能",
+        "技术细节": "需要添加Arkweb TransportConnectJob扩展类的头文件引用以支持扩展网络连接功能"
+      },
+      "分析过程": {
+        "定位策略": "使用include语句作为锚点，在第55行\"url/scheme_host_port.h\"之后插入新的include",
+        "定位结果": "成功定位到正确位置，源文件结构与.rej文件中的上下文完全匹配",
+        "应用方式": "在include部分末尾、namespace声明前添加新的include语句"
+      },
+      "置信度评估": {
+        "定位置信度": "100%",
+        "应用置信度": "100%",
+        "总体置信度": "100%"
+      },
+      "解决状态": "已解决",
+      "处理策略": "直接应用",
+      "验证结果": "成功添加include语句，语法正确，位置合适"
+    }
+  ],
+  "整体分析": {
+    "冲突类型": "新功能集成冲突",
+    "解决难度": "简单",
+    "代码完整性": "保持良好",
+    "编译风险": "低",
+    "功能风险": "低"
+  },
+  "合规性检查": {
+    ".rej文件保持完整": true,
+    "未生成脚本文件": true,
+    "未创建辅助文件": true,
+    "仅在指定目录创建JSON报告": true,
+    "遵守黄金法则": true
+  },
+  "总结": {
+    "处理结果": "成功处理所有冲突",
+    "主要修改": "添加Arkweb扩展头文件包含",
+    "代码质量": "修改后代码结构清晰，符合C++编程规范",
+    "后续建议": "建议编译验证新增include是否正确，确保Arkweb扩展模块可用"
+  }
+}

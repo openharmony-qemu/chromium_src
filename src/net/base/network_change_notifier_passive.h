@@ -18,6 +18,15 @@
 #include "net/base/address_map_cache_linux.h"
 #endif
 
+#include "arkweb/build/features/features.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
+#include "arkweb/chromium_ext/net/base/arkweb_network_change_notifier_ext.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+
 namespace net {
 
 // A NetworkChangeNotifier that needs to be told about network changes by some
@@ -26,7 +35,7 @@ namespace net {
 // changes, but other processes want to add observers for network state. It's
 // also useful on Linux where listening for network state changes in a sandboxed
 // process requires loosening the sandbox policy too much.
-class NET_EXPORT NetworkChangeNotifierPassive : public NetworkChangeNotifier {
+class NET_EXPORT NetworkChangeNotifierPassive : public ArkwebNetworkChangeNotifierExt {
  public:
   NetworkChangeNotifierPassive(
       NetworkChangeNotifier::ConnectionType initial_connection_type,

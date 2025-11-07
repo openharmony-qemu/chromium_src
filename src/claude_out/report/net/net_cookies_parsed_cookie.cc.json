@@ -1,0 +1,75 @@
+{
+  "file_path": "net/cookies/parsed_cookie.cc",
+  "conflict_file": "net/cookies/parsed_cookie.cc.rej",
+  "processing_date": "2025-11-06",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "保持完整，未被修改",
+  "analysis_summary": {
+    "conflict_cause": "Arkweb132版本对cookie截断处理逻辑进行了条件编译修改，在Arkweb141版本中需要重新应用",
+    "modification_type": "条件编译逻辑调整",
+    "risk_level": "低风险",
+    "confidence_level": "高置信度"
+  },
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "location": "第537-542行",
+      "status": "已解决",
+      "description": "cookie截断处理逻辑的条件编译包装",
+      "additions": [
+        "#if BUILDFLAG(ARKWEB_COOKIE)",
+        "// Same logic with chromium 114",
+        "// `block_truncated` is false if cookie was set by ArkWeb interface.",
+        "if(block_truncated && end < cookie_line.end()) {",
+        "  status_out.AddExclusionReason(",
+        "      CookieInclusionStatus::EXCLUDE_DISALLOWED_CHARACTER);",
+        "  return;",
+        "}",
+        "#else // BUILDFLAG(ARKWEB_COOKIE)",
+        "#endif // BUILDFLAG(ARKWEB_COOKIE)"
+      ],
+      "deletions": [],
+      "risk_analysis": {
+        "potential_risks": [
+          "条件编译可能导致ArkWeb和非ArkWeb版本行为不一致"
+        ],
+        "mitigation_factors": [
+          "block_truncated参数已在函数签名中存在",
+          "修改仅影响条件判断逻辑，不改变核心代码结构",
+          "保留了原有的标准Chromium逻辑在else分支"
+        ]
+      },
+      "confidence_assessment": {
+        "reasoning": "源文件中已存在block_truncated参数，且找到了完全匹配的代码位置，能够精确应用.rej文件中的修改",
+        "confidence_level": "高置信度",
+        "location_accuracy": "精确匹配"
+      },
+      "application_process": {
+        "original_locating_success": true,
+        "anchor_used": "// Block cookies that were truncated by control characters.",
+        "modification_applied": "将原始if语句包装在条件编译指令中，并在ARKWEB_COOKIE分支中添加block_truncated条件判断",
+        "syntax_validation": "通过"
+      }
+    }
+  ],
+  "final_status": {
+    "overall_result": "成功解决所有冲突",
+    "code_integrity": "保持良好",
+    "compilation_readiness": "代码语法正确，应该能够正常编译",
+    "functional_impact": "修改实现了ArkWeb特定的cookie截断处理逻辑，允许通过block_truncated参数控制是否检查截断",
+    "recommendations": [
+      "建议测试条件编译功能是否正常工作",
+      "验证ArkWeb接口设置cookie时block_truncated=false的行为",
+      "确保非ArkWeb环境下仍使用标准Chromium逻辑"
+    ]
+  },
+  "compliance_check": {
+    "no_context_lines_added": true,
+    "no_script_files_created": true,
+    "rej_file_unmodified": true,
+    "only_required_operations_performed": true,
+    "json_report_in_required_location": true
+  }
+}

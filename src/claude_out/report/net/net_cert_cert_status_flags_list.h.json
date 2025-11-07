@@ -1,0 +1,69 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/net/cert/cert_status_flags_list.h.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/net/cert/cert_status_flags_list.h",
+    "文件类型": "C++头文件",
+    "处理时间": "2025-11-06"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决率": "100%"
+  },
+  "Hunk详细分析": [
+    {
+      "Hunk索引": 1,
+      "范围信息": "@@ -46,5 +49,11 @@",
+      "风险等级": "中等",
+      "冲突原因": "Arkweb132在Chromium132基础上添加了OHOS特定的证书状态标志定义，而Arkweb141的源文件结构发生了变化，特别是bit位的分配发生了变化",
+      "修改内容": {
+        "待删除的行": [],
+        "待添加的行": [
+          "#if BUILDFLAG(IS_OHOS)",
+          "CERT_STATUS_FLAG(DEPTH_ZERO_SELF_SIGNED_CERT, 1 << 27)",
+          "//a legacy TLS version is allowed, but needs to be warned",
+          "CERT_STATUS_FLAG(LEGACY_TLS, 1 << 28)",
+          "#endif"
+        ]
+      },
+      "定位过程": {
+        "原始锚点": [
+          "// Bits 24 - 31 are for errors.",
+          "CERT_STATUS_FLAG(CERTIFICATE_TRANSPARENCY_REQUIRED, 1 << 24)",
+          "CERT_STATUS_FLAG(SYMANTEC_LEGACY, 1 << 25)",
+          "CERT_STATUS_FLAG(KNOWN_INTERCEPTION_BLOCKED, 1 << 26)",
+          "// Bit 27 was CERT_STATUS_LEGACY_TLS."
+        ],
+        "实际匹配情况": "在源文件中找到了大部分锚点，但发现一个重要差异：源文件中'CERT_STATUS_FLAG(SYMANTEC_LEGACY, 1 << 25)'被注释为'// Bit 25 was CERT_STATUS_SYMANTEC_LEGACY'",
+        "最终定位位置": "在第51行'// Bit 27 was CERT_STATUS_LEGACY_TLS.'之后插入修改内容"
+      },
+      "应用结果": {
+        "状态": "已成功应用",
+        "修改置信度": "高",
+        "实际修改内容": "在第51行后添加了5行OHOS条件编译代码，包括DEPTH_ZERO_SELF_SIGNED_CERT和LEGACY_TLS两个证书状态标志定义",
+        "发现的潜在问题": "存在bit位冲突：新添加的'CERT_STATUS_FLAG(LEGACY_TLS, 1 << 28)'与源文件中已有的'CERT_STATUS_FLAG(SELF_SIGNED_LOCAL_NETWORK, 1 << 28)'使用了相同的bit位28",
+        "问题处理方式": "严格遵守黄金法则，完全按照.rej文件内容应用修改，未调整bit位冲突"
+      },
+      "风险评估": {
+        "语法风险": "低 - 添加的代码语法正确，使用了标准的条件编译语法",
+        "逻辑风险": "中等 - bit位28的冲突可能导致在OHOS平台上出现证书状态标志冲突",
+        "编译风险": "低 - 条件编译确保代码只在OHOS平台生效",
+        "运行时风险": "中等 - 如果两个使用相同bit位的标志同时生效，可能导致证书状态判断错误"
+      }
+    }
+  ],
+  "总结分析": {
+    "冲突根源": "Arkweb从Chromium 132升级到141时，证书状态标志的bit位分配发生了变化，特别是增加了新的标志定义，导致原有OHOS特定的修改无法直接应用",
+    "主要挑战": "源文件结构变化导致需要重新定位插入位置，以及bit位分配冲突",
+    "解决策略": "基于最小上下文精确定位，严格按照.rej文件内容应用修改",
+    "遗留问题": "bit位28的冲突需要在后续版本中协调解决",
+    "建议后续处理": "建议在完整编译测试中检查OHOS平台的证书状态功能是否正常工作，并考虑在后续版本中重新分配bit位以避免冲突"
+  },
+  "合规性验证": {
+    ".rej文件完整性": "确认保持完整，未被修改或删除",
+    "遵守黄金法则": "确认严格按照要求执行，只添加了+开头的行，未添加任何上下文行",
+    "文件创建限制": "确认只在指定目录创建JSON报告文件，未创建任何脚本文件或辅助工具",
+    "修改范围": "确认只在源文件中进行必要的添加操作"
+  }
+}

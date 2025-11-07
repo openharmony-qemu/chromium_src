@@ -1,0 +1,43 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/net/http/http_stream_factory.h.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/net/http/http_stream_factory.h",
+    "处理时间": "2025-11-06"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk处理详情": [
+    {
+      "hunk索引": 1,
+      "文件行号范围": "168-178",
+      "冲突原因": "Arkweb132版本为PreconnectStreams方法添加了条件编译的from_preload参数，在Chromium 141版本升级过程中需要重新应用这个侵入式修改",
+      "风险分析": "低风险。这是一个纯添加性的功能增强，通过条件编译宏ARKWEB_PRP_PRELOAD控制，不会影响现有代码逻辑。添加的from_preload参数有默认值false，保持了向后兼容性。",
+      "待删除行": [
+        "void PreconnectStreams(int num_streams, HttpRequestInfo& info);"
+      ],
+      "待添加行": [
+        "void PreconnectStreams(int num_streams, HttpRequestInfo& info",
+        "#if BUILDFLAG(ARKWEB_PRP_PRELOAD)",
+        ",",
+        "                         bool from_preload = false",
+        "#endif",
+        "  );"
+      ],
+      "定位过程": "通过源文件第173行的PreconnectStreams方法声明精确定位，与.rej文件中要删除的行完全匹配",
+      "修改置信度": "高",
+      "解决策略": "直接应用",
+      "处理结果": "已成功应用修改",
+      "人工复查建议": "建议检查ARKWEB_PRP_PRELOAD编译标志在项目中的定义位置，确保该功能在需要的构建配置中被正确启用"
+    }
+  ],
+  "完整性验证": {
+    ".rej文件状态": "保持完整，未被修改或删除",
+    "源文件修改状态": "已应用所有侵入式修改",
+    "代码语法检查": "通过，修改后的代码符合C++语法规范"
+  },
+  "总结": "本次冲突解决任务成功完成。所有1个hunk都被成功应用到源文件中，没有出现无法解决的冲突。修改保持了代码的向后兼容性和语法正确性。"
+}

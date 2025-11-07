@@ -1,0 +1,41 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/net/http/http_stream_factory_job.cc.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/net/http/http_stream_factory_job.cc",
+    "处理时间": "2025-11-06"
+  },
+  "处理统计": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 0,
+    "未能解决的hunk数量": 2,
+    ".rej文件保持完整": true
+  },
+  "hunks详情": [
+    {
+      "hunk编号": 1,
+      "位置": "第777行附近",
+      "冲突原因": "Arkweb132在PreconnectSocketsForHttpRequest调用中添加了from_preload_参数，但Arkweb141中的函数签名和from_preload_变量定义不匹配",
+      "风险分析": "高风险 - from_preload_变量在头文件中未找到明确声明，强行应用会导致编译错误",
+      "分析过程": "1. 在源文件第793-798行定位到PreconnectSocketsForHttpRequest调用\n2. 检查头文件发现只有SetFromPreload方法声明，未找到from_preload_成员变量\n3. 尝试搜索ARKWEB_PRP_PRELOAD条件编译，发现相关功能不完整\n4. 结论：由于缺少必要的变量定义，无法安全应用修改",
+      "修改置信度": "低",
+      "解决状态": "未解决",
+      "处理策略": "拒绝应用 - 缺少from_preload_变量定义，应用修改会导致编译失败"
+    },
+    {
+      "hunk编号": 2,
+      "位置": "第798行附近",
+      "冲突原因": "Arkweb132在InitSocketHandleForHttpRequest调用中添加了secure_dns_only和from_preload_参数，但Arkweb141中的函数签名不匹配",
+      "风险分析": "高风险 - request_info_.secure_dns_only可能不存在，且from_preload_变量未定义",
+      "分析过程": "1. 在源文件第818-823行定位到InitSocketHandleForHttpRequest调用\n2. 检查发现request_info_.secure_dns_only字段可能不存在于新版本\n3. from_preload_变量同样未定义\n4. ARKWEB_EX_HTTP_DNS_FALLBACK条件编译标志相关功能不完整\n5. 结论：缺少必要的变量和字段定义，无法安全应用修改",
+      "修改置信度": "低",
+      "解决状态": "未解决",
+      "处理策略": "拒绝应用 - 缺少secure_dns_only字段和from_preload_变量定义，应用修改会导致编译失败"
+    }
+  ],
+  "整体分析": {
+    "冲突根本原因": "Arkweb132的侵入式修改依赖于特定的条件编译标志和成员变量，这些在Arkweb141版本中可能已被移除、重命名或重构",
+    "技术风险": "编译错误、运行时错误、功能异常",
+    "建议处理方式": "需要人工审查这些Arkweb特定功能的实现状态，确认是否在新版本中仍然需要，以及正确的实现方式",
+    "处理限制说明": "严格遵守黄金法则，未添加任何上下文行，仅尝试应用+/-行，由于缺少必要定义而无法完成修改"
+  }
+}

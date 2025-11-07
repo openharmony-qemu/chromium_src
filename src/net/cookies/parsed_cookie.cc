@@ -534,12 +534,22 @@ void ParsedCookie::ParseTokenValuePairs(std::string_view cookie_line,
   // Then we can log any unexpected terminators.
   std::string_view::iterator end = FindFirstTerminator(cookie_line);
 
+  #if BUILDFLAG(ARKWEB_COOKIE)
+  // Same logic with chromium 114
+  // `block_truncated` is false if cookie was set by ArkWeb interface.
+  if(block_truncated && end < cookie_line.end()) {
+    status_out.AddExclusionReason(
+        CookieInclusionStatus::EXCLUDE_DISALLOWED_CHARACTER);
+    return;
+  }
+#else // BUILDFLAG(ARKWEB_COOKIE)
   // Block cookies that were truncated by control characters.
   if (end < cookie_line.end()) {
     status_out.AddExclusionReason(
         CookieInclusionStatus::ExclusionReason::EXCLUDE_DISALLOWED_CHARACTER);
     return;
   }
+#endif // BUILDFLAG(ARKWEB_COOKIE)
 
   // Exit early for an empty cookie string.
   if (it == end) {

@@ -41,6 +41,9 @@ enum class CTPolicyCompliance;
 }
 
 class X509Certificate;
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+class ArkWebTransportSecurityStateExt;
+#endif  // BUILDFLAG(ARKWEB_NETWORK_BASE)
 
 void NET_EXPORT_PRIVATE SetTransportSecurityStateSourceForTesting(
     const TransportSecurityStateSource* source);

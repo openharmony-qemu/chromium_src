@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/chromium_ext/net/url_request/url_request_context_ext.h"
 #include "base/check_op.h"
 #include "base/compiler_specific.h"
 #include "base/notimplemented.h"

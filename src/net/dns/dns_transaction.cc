@@ -1458,6 +1458,11 @@ class DnsTransactionImpl final : public DnsTransaction {
     size_t doh_server_index = dns_server_iterator_->GetNextAttemptIndex();
 
     uint32_t attempt_number = attempts_.size();
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+    if (resolve_context_->IsHttpsDnsFallbackEnabled()) {
+      LOG(INFO) << "DOH-Fallback make http fallback attempt for " << hostname_;
+    }
+#endif
     ConstructDnsHTTPAttempt(session_.get(), doh_server_index, qnames_.front(),
                             qtype_, opt_rdata_, &attempts_,
                             resolve_context_->url_request_context(),

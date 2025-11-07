@@ -583,11 +583,21 @@ void VideoPictureInPictureWindowControllerImpl::MediaStoppedPlaying(
 
   if (!active_session_ || active_session_->player_id() != media_player_id)
     return;
-
+#if BUILDFLAG(ARKWEB_PIP)
+  if (GetWebContentsImpl() && GetWebContentsImpl()->AsWebContentsImplExt()) {
+    GetWebContentsImpl()->AsWebContentsImplExt()->OnPip(PIP_STATE_PAUSE,
+      media_player_id.delegate_id,
+      media_player_id.frame_routing_id.child_id,
+      media_player_id.frame_routing_id.frame_routing_id, 0, 0);
+  }
+#endif
   UpdatePlaybackState();
 }
 
 void VideoPictureInPictureWindowControllerImpl::WebContentsDestroyed() {
+#if BUILDFLAG(ARKWEB_PIP)
+  WebContentsDestroyedExt();
+#endif
   if (window_)
     window_->Close();
 }
@@ -595,7 +605,9 @@ void VideoPictureInPictureWindowControllerImpl::WebContentsDestroyed() {
 void VideoPictureInPictureWindowControllerImpl::OnLeavingPictureInPicture(
     bool should_pause_video) {
   DCHECK(active_session_);
-
+#if BUILDFLAG(ARKWEB_PIP)
+  OnLeavingPictureInPictureExt(should_pause_video);
+#else
   if (IsPlayerActive() && should_pause_video) {
     // Pause the current video so there is only one video playing at a time.
     active_session_->GetMediaPlayerRemote()->RequestPause(
@@ -604,6 +616,7 @@ void VideoPictureInPictureWindowControllerImpl::OnLeavingPictureInPicture(
 
   active_session_->Shutdown();
   active_session_ = nullptr;
+#endif
   pip_session_media_position_ = std::nullopt;
 }
 

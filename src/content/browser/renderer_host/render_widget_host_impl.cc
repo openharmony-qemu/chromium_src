@@ -434,6 +434,13 @@ RenderWidgetHostImpl::RenderWidgetHostImpl(
   CHECK(frame_token_message_queue_);
   frame_token_message_queue_->Init(this);
 
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+  // Timeout for pc is 15s, if mobileDevice, we kepp it same with android.
+  if (base::ohos::IsMobileDevice()) {
+    hung_renderer_delay_ = base::Seconds(5);
+  }
+#endif
+
   CHECK(delegate_);
   CHECK_NE(IPC::mojom::kRoutingIdNone, routing_id_);
   CHECK(base::ThreadPoolInstance::Get());
@@ -2500,6 +2507,9 @@ void RenderWidgetHostImpl::Destroy(bool also_delete) {
 
 void RenderWidgetHostImpl::OnInputEventAckTimeout(
     base::TimeTicks ack_timeout_ts) {
+#if BUILDFLAG(IS_OHOS)
+  LOG(ERROR) << "OnInputEventAckTimeout";
+#endif
   if (is_hidden_) {
     return;
   }
@@ -2517,6 +2527,11 @@ void RenderWidgetHostImpl::OnInputEventAckTimeout(
       base::BindRepeating(
           &RenderWidgetHostImpl::RestartRenderInputRouterInputEventAckTimeout,
           weak_factory_.GetWeakPtr()));
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "InputEventAckTimeout[flight count]"
+                     << in_flight_event_count_;
+#endif
 }
 
 void RenderWidgetHostImpl::RendererIsUnresponsive(

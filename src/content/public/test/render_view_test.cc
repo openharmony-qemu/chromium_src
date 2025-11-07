@@ -913,7 +913,15 @@ void RenderViewTest::GoToOffset(int offset,
       network::mojom::CSPDisposition::CHECK, std::vector<int>(), std::string(),
       false /* is_history_navigation_in_new_child_frame */,
       base::TimeTicks() /* input_start */,
-      network::mojom::RequestDestination::kDocument);
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+      network::mojom::RequestDestination::kDocument, ""
+#else
+      network::mojom::RequestDestination::kDocument
+#endif
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+      , false
+#endif
+      );
   auto commit_params = blink::CreateCommitNavigationParams();
   commit_params->page_state = state.ToEncodedData();
   commit_params->nav_entry_id = pending_index + 1;

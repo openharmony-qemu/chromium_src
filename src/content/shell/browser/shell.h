@@ -20,6 +20,9 @@
 #include "content/shell/browser/shell_platform_delegate.h"
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/native_widget_types.h"
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+enum class RendererIsUnresponsiveReason;
+#endif
 
 class GURL;
 

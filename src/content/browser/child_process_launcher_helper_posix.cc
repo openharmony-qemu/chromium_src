@@ -63,6 +63,11 @@ std::unique_ptr<PosixFileDescriptorInfo> CreateDefaultPosixFilesToMap(
 // Mac shared memory doesn't use file descriptors.
 #if !BUILDFLAG(IS_APPLE)
   const bool share_channel_fd = true;
+#if BUILDFLAG(IS_ARKWEB)
+  int fd = base::FieldTrialListUtils::GetFieldTrialDescriptor();
+  DCHECK_NE(fd, -1);
+  files_to_register->Share(kFieldTrialDescriptor, fd);
+#endif
   if (share_channel_fd) {
     DCHECK(mojo_channel_remote_endpoint.is_valid());
     files_to_register->Share(

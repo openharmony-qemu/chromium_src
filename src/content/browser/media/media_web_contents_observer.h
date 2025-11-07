@@ -120,6 +120,11 @@ class CONTENT_EXPORT MediaWebContentsObserver
   void RenderFrameDeleted(RenderFrameHost* render_frame_host) override;
   void MediaPictureInPictureChanged(bool is_picture_in_picture) override;
   void DidUpdateAudioMutingState(bool muted) override;
+
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+    // Set whether to the HTML play can be used to control media
+  void SetHtmlPlayEnabled(bool enabled) override;
+#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
   void DidStartNavigation(NavigationHandle* navigation_handle) override;
   void RenderFrameHostChanged(RenderFrameHost* old_host,
                               RenderFrameHost* new_host) override;

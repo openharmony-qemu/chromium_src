@@ -1,0 +1,69 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/content/browser/browser_main_loop.cc.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/content/browser/browser_main_loop.cc",
+    "处理时间": "2025-11-05",
+    "Chromium版本升级": "132 -> 141"
+  },
+  "总体统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "rej文件完整性验证": {
+    "状态": "保持完整未被修改",
+    "验证结果": "通过"
+  },
+  "hunks详细信息": [
+    {
+      "hunk序号": 1,
+      "描述": "添加data_decoder_service.h头文件包含",
+      "冲突原因": "Arkweb132版本在chromium132基础上添加了data_decoder_service.h的包含，但在升级到chromium141的Arkweb141版本中这个修改丢失了",
+      "风险等级": "低",
+      "待添加行": [
+        "#include \"services/data_decoder/data_decoder_service.h\""
+      ],
+      "待删除行": [],
+      "定位过程": {
+        "使用的上下文锚点": [
+          "#include \"services/audio/service.h\"",
+          "#include \"services/data_decoder/public/cpp/service_provider.h\""
+        ],
+        "定位策略": "使用audio service.h之后的数据_decoder相关头文件序列作为定位锚点",
+        "定位结果": "成功定位到第152行位置"
+      },
+      "应用过程": {
+        "执行的操作": "在第151行#include \"services/audio/service.h\"之后添加了#include \"services/data_decoder/data_decoder_service.h\"",
+        "修改置信度": "高",
+        "代码逻辑一致性": "修改后保持了data_decoder相关头文件的逻辑分组"
+      },
+      "解决状态": "已解决",
+      "验证结果": {
+        "语法检查": "通过",
+        "逻辑检查": "通过",
+        "编译兼容性": "预期通过"
+      }
+    }
+  ],
+  "处理策略总结": {
+    "主要策略": "精确匹配上下文锚点，原子化应用修改",
+    "关键决策": "使用data_decoder相关头文件的逻辑分组作为定位依据",
+    "质量保证": {
+      "遵循黄金法则": "是",
+      "未添加上下文行": "是",
+      "未生成脚本文件": "是",
+      "未修改.rej文件": "是"
+    }
+  },
+  "建议": {
+    "人工复查重点": [
+      "验证添加的data_decoder_service.h头文件在后续编译中是否正常工作",
+      "确认该头文件的包含顺序符合项目规范"
+    ],
+    "后续测试": [
+      "编译测试确保没有编译错误",
+      "运行相关单元测试验证data_decoder功能正常"
+    ]
+  }
+}

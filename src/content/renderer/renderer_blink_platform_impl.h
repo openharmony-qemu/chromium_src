@@ -271,6 +271,9 @@ class CONTENT_EXPORT RendererBlinkPlatformImpl : public BlinkPlatformImpl {
   // Tells this platform that the renderer is locked to a site (i.e., a scheme
   // plus eTLD+1, such as https://google.com), or to a more specific origin.
   void SetIsLockedToSite();
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  void SetDrawMode(int mode);
+#endif
 
   void set_webui_resource_to_code_cache_id_map(
       const base::flat_map<GURL, int>& resource_map) {

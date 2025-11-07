@@ -66,11 +66,16 @@ class MediaSessionImplVisibilityBrowserTest;
 class MediaSessionPlayerObserver;
 class MediaSessionServiceImpl;
 class MediaSessionServiceImplBrowserTest;
+class MediaSessionImplUtils;
 class VideoPictureInPictureWindowControllerImpl;
 
 #if BUILDFLAG(IS_ANDROID)
 class MediaSessionAndroid;
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+class MediaSessionOHOS;
+#endif  // BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
 
 // MediaSessionImpl is the implementation of MediaSession. It manages the media
 // session and audio focus for a given WebContents. It is requesting the audio
@@ -817,6 +822,12 @@ class MediaSessionImpl : public MediaSession,
   // `MaybeGuardDurationUpdate()` for details on duration changes.
   bool is_considered_live_ = false;
 
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+ public:
+  base::WeakPtrFactory<content::MediaSessionImpl> weakMediaSessionFactory_;
+#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
+
+ private:
   // The last auto picture-in-picture information that was sent to players.
   std::optional<media::PictureInPictureEventsInfo::AutoPipInfo>
       last_auto_picture_in_picture_info_;
@@ -828,4 +839,5 @@ class MediaSessionImpl : public MediaSession,
 
 }  // namespace content
 
+#include "arkweb/chromium_ext/content/browser/media/session/media_session_impl_utils.h"
 #endif  // CONTENT_BROWSER_MEDIA_SESSION_MEDIA_SESSION_IMPL_H_

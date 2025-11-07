@@ -1,0 +1,72 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/content/child/runtime_features.cc.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/content/child/runtime_features.cc",
+    "处理时间": "2025-11-05"
+  },
+  "hunk分析": [
+    {
+      "hunk编号": 1,
+      "位置": "第46-52行",
+      "类型": "include语句添加",
+      "待添加的行": [
+        "#include \"arkweb/build/features/features.h\"",
+        "#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)",
+        "#include \"arkweb/chromium_ext/content/public/common/content_switches_ext.h\"",
+        "#endif",
+        "#elif BUILDFLAG(ARKWEB_DISPLAY_CUTOUT) && BUILDFLAG(IS_ARKWEB)",
+        "#include \"arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h\""
+      ],
+      "待删除的行": [],
+      "风险分析": {
+        "级别": "低",
+        "描述": "仅添加Arkweb特定的头文件包含，不会影响现有代码逻辑",
+        "可能影响": [
+          "增加Arkweb高级安全模式支持",
+          "增加Arkweb显示切口API支持",
+          "为OHOS平台提供系统信息扩展功能"
+        ]
+      },
+      "冲突原因": "Arkweb141基于Chromium141，缺少Arkweb132中的特定平台头文件包含",
+      "分析过程": "通过对比.rej文件和源文件，发现需要在第51行后添加Arkweb特定的条件编译包含语句",
+      "修改置信度": "高",
+      "解决策略": "在ui/native_theme/native_theme_utils.h包含后添加Arkweb特定头文件，并在Android条件编译中添加elif分支",
+      "解决状态": "已解决",
+      "应用位置": "第51-60行",
+      "实际修改": "成功添加了ARKWEB_ADVANCED_SECURITY_MODE相关的include语句和ARKWEB_DISPLAY_CUTOUT的elif分支"
+    }
+  ],
+  "统计信息": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "处理结果": {
+    "rej文件完整性": "保持完整，未被修改",
+    "源文件修改": "已成功应用所有修改",
+    "代码语法检查": "通过，无语法错误",
+    "逻辑一致性": "保持良好，新增代码与现有结构一致"
+  },
+  "技术细节": {
+    "新增功能模块": [
+      "Arkweb高级安全模式支持",
+      "OHOS平台显示切口API支持",
+      "Arkweb系统信息扩展功能"
+    ],
+    "条件编译逻辑": "使用BUILDFLAG宏进行平台特定编译，确保跨平台兼容性",
+    "头文件依赖": "新增的头文件依赖Arkweb特定的构建系统和扩展库"
+  },
+  "建议": {
+    "后续验证": [
+      "验证Arkweb高级安全模式功能是否正常工作",
+      "测试OHOS平台显示切口API功能",
+      "确认新增头文件在构建系统中可用"
+    ],
+    "注意事项": [
+      "确保BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)在构建配置中正确定义",
+      "验证arkweb/chromium_ext相关路径在构建系统中可访问",
+      "测试elif分支在不同平台下的编译行为"
+    ]
+  }
+}

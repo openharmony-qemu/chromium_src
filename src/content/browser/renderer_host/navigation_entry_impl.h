@@ -128,7 +128,7 @@ class CONTENT_EXPORT NavigationEntryImpl : public NavigationEntry {
   const GURL& GetURL() const override;
   void SetBaseURLForDataURL(const GURL& url) override;
   const GURL& GetBaseURLForDataURL() override;
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
   void SetDataURLAsString(
       scoped_refptr<base::RefCountedString> data_url) override;
   const scoped_refptr<const base::RefCountedString>& GetDataURLAsString()
@@ -140,6 +140,7 @@ class CONTENT_EXPORT NavigationEntryImpl : public NavigationEntry {
   const GURL& GetVirtualURL() const override;
   void SetTitle(std::u16string title) override;
   const std::u16string& GetTitle() override;
+  bool GetIsRealTitle() override;
   void SetApplicationTitle(const std::u16string& application_title) override;
   const std::optional<std::u16string>& GetApplicationTitle() override;
   void SetPageState(const blink::PageState& state,

@@ -1,0 +1,47 @@
+{
+  "文件路径": "/home/sujiahao/code/arkweb_141/src/content/public/common/BUILD.gn",
+  "冲突文件": "/home/sujiahao/code/arkweb_141/src/content/public/common/BUILD.gn.rej",
+  "处理时间": "2025-11-06",
+  "总体统计": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 2,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk处理详情": [
+    {
+      "hunk序号": 1,
+      "冲突原因": "Arkweb 132 中添加了arkweb相关的import语句，在Arkweb 141中这些修改需要重新应用",
+      "风险分析": "低风险 - 仅为添加import语句，不会影响现有代码逻辑",
+      "分析过程": "识别到需要添加两个arkweb相关的import语句和一个条件import块。在源文件中准确定位到import区域，成功应用了所有修改。",
+      "修改置信度": "高 - 源文件中的对应结构清晰，修改点明确",
+      "应用的具体修改": [
+        "import(\"//arkweb/build/features/features.gni\")",
+        "import(\"//arkweb/chromium_ext/chromium_ext.gni\")",
+        "if (defined(is_arkweb_ext) && is_arkweb_ext) { import(\"//arkweb/ohos_nweb_ex/build/features/features.gni\") }"
+      ],
+      "解决状态": "已解决"
+    },
+    {
+      "hunk序号": 2,
+      "冲突原因": "Arkweb 132 中在static_switches和switches两个target中添加了arkweb特定的配置和源文件，需要重新应用",
+      "风险分析": "中等风险 - 涉及源文件和配置的修改，但使用了条件编译，不会影响普通构建",
+      "分析过程": "在static_switches target中添加了is_arkweb条件块，在switches target中添加了is_arkweb条件块和use_libfuzzer配置块。所有修改都准确应用到对应位置。",
+      "修改置信度": "高 - 目标结构清晰，修改点明确，使用了标准的条件编译模式",
+      "应用的具体修改": [
+        "在static_switches target中添加: if (is_arkweb) { sources += arkweb_content_public_common_sources }",
+        "在switches target中添加: if (is_arkweb) { sources += arkweb_content_public_common_sources; visibility += [ \"//storage:storage_unittests\" ] }",
+        "在switches target中添加: if (use_libfuzzer) { configs -= [ \"//build/config/gcc:symbol_visibility_hidden\" ]; configs += [ \"//build/config/gcc:symbol_visibility_default\" ] }"
+      ],
+      "解决状态": "已解决"
+    }
+  ],
+  "合规性确认": {
+    ".rej文件保持完整未被修改": true,
+    "未创建任何脚本文件": true,
+    "仅在指定目录创建JSON报告": true,
+    "严格遵循不添加上下文原则": true,
+    "原子化应用修改": true
+  },
+  "最终结论": "所有hunk都已成功应用到源文件中，修改保持了arkweb代码的特性，同时确保与Arkweb 141的兼容性。所有修改都使用了条件编译，确保不会影响非arkweb构建流程。"
+}

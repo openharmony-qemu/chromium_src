@@ -2355,6 +2355,22 @@ class CONTENT_EXPORT ContentBrowserClient {
                                         bool* ignore_navigation);
 #endif
 
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+  virtual std::string OverrideErrorPage(
+    FrameTreeNodeId frame_tree_node_id,
+    bool browser_initiated,
+    const GURL& gurl,
+    const std::string& request_method,
+    bool has_user_gesture,
+    bool is_redirect,
+    bool is_outermost_main_frame,
+    int error_code,
+    const std::string& error_text,
+    bool is_prerendering,
+    ui::PageTransition transition,
+    std::string* html);
+#endif
+
   // Returns true if navigation can synchronously continue if the frame being
   // navigated (and all child frames) do not have beforeunload handlers.
   //
@@ -3345,6 +3361,10 @@ class CONTENT_EXPORT ContentBrowserClient {
   virtual bool ShouldDispatchPagehideDuringCommit(
       BrowserContext* browser_context,
       const GURL& destination_url);
+
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  virtual std::string GetUAStringForHost(const std::string& host);
+#endif
 
   // Called when the tracing service is started.
   virtual void OnTracingServiceStarted() {}

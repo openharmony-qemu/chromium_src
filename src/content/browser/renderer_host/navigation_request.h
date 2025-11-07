@@ -126,6 +126,12 @@ class CONTENT_EXPORT NavigationRequest
       private network::mojom::SharedDictionaryAccessObserver,
       public network::mojom::DeviceBoundSessionAccessObserver {
  public:
+  friend class NavigationRequestUtils;
+  std::unique_ptr<NavigationRequestUtils> nav_request_utils_;
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+  // True if ignoring Cache-Control: no-store
+  bool load_ignore_cache_params = false;
+#endif
   // Keeps track of the various stages of a NavigationRequest.
   // To see what state transitions are allowed, see |SetState|.
   enum NavigationState {
@@ -1473,6 +1479,24 @@ class CONTENT_EXPORT NavigationRequest
 
   void set_force_no_https_upgrade() { force_no_https_upgrade_ = true; }
 
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+  void ohos_set_https_upgrade(bool is_force_no_https_upgrade) {
+    force_no_https_upgrade_ = is_force_no_https_upgrade;
+  }
+
+  void ohos_set_url_typed_with_http_scheme(bool url_typed_with_http_scheme) {
+    url_typed_with_http_scheme_ = url_typed_with_http_scheme;
+  }
+
+  bool is_url_typed_with_http_scheme() const {
+    return url_typed_with_http_scheme_;
+  }
+
+  bool is_force_no_https_upgrade() const {
+    return force_no_https_upgrade_;
+  }
+#endif
+
   bool was_reset_for_cross_document_restart() const {
     return was_reset_for_cross_document_restart_;
   }
@@ -1698,6 +1722,9 @@ class CONTENT_EXPORT NavigationRequest
   // value will be returned.
   PrerenderHostId GetPrerenderHostId() const;
 
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  void EnableRedirectAbortCancel();
+#endif
  private:
   friend class NavigationRequestTest;
   FRIEND_TEST_ALL_PREFIXES(NavigationRequestTest, SanitizeRedirectsForCommit);

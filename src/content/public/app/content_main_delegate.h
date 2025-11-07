@@ -11,6 +11,7 @@
 #include <variant>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/notreached.h"
 #include "build/build_config.h"
 #include "content/common/content_export.h"

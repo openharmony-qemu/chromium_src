@@ -27,6 +27,7 @@
 #include "services/network/public/cpp/sequence_manager_configurator.h"
 #include "services/tracing/public/cpp/trace_startup.h"
 #include "third_party/blink/public/common/features.h"
+#include "content/public/common/content_switches.h"
 
 #if BUILDFLAG(CLANG_PROFILING_INSIDE_SANDBOX)
 #include "base/test/clang_profiling.h"
@@ -127,7 +128,7 @@ ChildProcess::ChildProcess(base::ThreadType io_thread_type,
   base::Thread::Options thread_options(base::MessagePumpType::IO, 0);
   thread_options.thread_type = io_thread_type;
 // TODO(crbug.com/40226692): Figure out whether IS_ANDROID can be lifted here.
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || (BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SCROLL_PERFORMANCE))
   // TODO(reveman): Remove this in favor of setting it explicitly for each type
   // of process.
   thread_options.thread_type = base::ThreadType::kDisplayCritical;
@@ -148,12 +149,15 @@ ChildProcess::ChildProcess(base::ThreadType io_thread_type,
 
   CHECK(io_thread_->StartWithOptions(std::move(thread_options)));
   io_thread_runner_ = io_thread_->task_runner();
+  implUtils = new ChildProcessUtils(this);
 }
 
 ChildProcess::ChildProcess(
     scoped_refptr<base::SingleThreadTaskRunner> io_thread_runner)
     : resetter_(&child_process, this, nullptr),
-      io_thread_runner_(std::move(io_thread_runner)) {}
+      io_thread_runner_(std::move(io_thread_runner)) {
+  implUtils = new ChildProcessUtils(this);
+}
 
 ChildProcess::~ChildProcess() {
   DCHECK_EQ(child_process, this);

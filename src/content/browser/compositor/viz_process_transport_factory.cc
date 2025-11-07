@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/chromium_ext/components/viz/host/host_frame_sink_manager_utils.h"
 #include "base/command_line.h"
 #include "base/debug/dump_without_crashing.h"
 #include "base/functional/bind.h"
@@ -16,6 +17,7 @@
 #include "base/task/single_thread_task_runner.h"
 #include "base/threading/platform_thread.h"
 #include "base/time/time.h"
+#include "base/trace_event/trace_event.h"
 #include "build/build_config.h"
 #include "cc/mojo_embedder/async_layer_tree_frame_sink.h"
 #include "cc/raster/single_thread_task_graph_runner.h"

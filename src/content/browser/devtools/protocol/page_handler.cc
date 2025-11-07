@@ -520,6 +520,8 @@ PageHandler::PageHandler(
       prepare_for_reload_callback_(std::move(prepare_for_reload_callback)) {
 #if BUILDFLAG(IS_ANDROID)
   constexpr auto kScreencastPixelFormat = media::PIXEL_FORMAT_I420;
+#elif (BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_DEVTOOLS))
+  constexpr auto kScreencastPixelFormat = media::PIXEL_FORMAT_I420;
 #else
   constexpr auto kScreencastPixelFormat = media::PIXEL_FORMAT_ARGB;
 #endif
@@ -2010,6 +2012,12 @@ Page::BackForwardCacheNotRestoredReason BlocklistedFeatureToProtocol(
       return Page::BackForwardCacheNotRestoredReasonEnum::UnloadHandler;
     case WebSchedulerTrackedFeature::kParserAborted:
       return Page::BackForwardCacheNotRestoredReasonEnum::ParserAborted;
+#if BUILDFLAG(ARKWEB_BFCACHE)
+    case WebSchedulerTrackedFeature::kEnableCacheNativeEmbed:
+      return "EnableCacheNativeEmbed";
+    case WebSchedulerTrackedFeature::kEnableCacheMediaTakeOver:
+      return "EnableCacheMediaTakeOver";
+#endif
     case WebSchedulerTrackedFeature::kWebAuthentication:
       return Page::BackForwardCacheNotRestoredReasonEnum::
           ContentWebAuthenticationAPI;

@@ -1,0 +1,50 @@
+{
+  "conflict_file": "/home/sujiahao/code/arkweb_141/src/content/browser/renderer_host/render_process_host_impl.h.rej",
+  "source_file": "/home/sujiahao/code/arkweb_141/src/content/browser/renderer_host/render_process_host_impl.h",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "保持完整未被修改",
+  "analysis": {
+    "conflict_cause": "Arkweb 132版本中添加的Arkweb特有功能在Arkweb 141版本中缺失",
+    "risk_assessment": "低风险。添加的都是Arkweb特有条件编译代码，不会影响标准Chromium功能",
+    "modification_confidence": "高。成功精确定位到IOThreadHostImpl类中的正确位置进行插入",
+    "resolution_strategy": "严格遵循'不添加上下文'原则，仅添加.rej文件中以+开头的行"
+  },
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "resolution_status": "已解决",
+      "location": "render_process_host_impl.h:1017-1030",
+      "changes": [
+        {
+          "type": "添加",
+          "line_range": "1021-1025",
+          "content": "#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)\n    void ReportKeyThread(int32_t status, int32_t process_id, int32_t thread_id, int32_t role) override;\n    void ReportKeyThreadIds(int32_t status, int32_t process_id,\n    const std::vector<int32_t>& thread_ids, int32_t role) override;\n#endif"
+        },
+        {
+          "type": "添加",
+          "line_range": "1027-1029",
+          "content": "#if BUILDFLAG(ARKWEB_DFX_TRACING)\n    void ReportHisyevent(int64_t block_time, const std::string& mode) override;\n#endif"
+        }
+      ],
+      "detailed_process": {
+        "context_analysis": "在IOThreadHostImpl类的private部分中，成功找到静态方法BindHostReceiverOnUIThread和成员变量render_process_id_之间的正确插入点",
+        "positioning_confidence": "高。使用上下文行精确定位，无需参考其他版本文件",
+        "applied_modifications": "严格按照.rej文件中的+行添加了3个条件编译函数声明，包括Arkweb性能调度和Arkweb DFX追踪功能",
+        "verification": "添加后的代码语法正确，条件编译指令完整，函数声明格式与周围代码保持一致"
+      }
+    }
+  ],
+  "summary": {
+    "success": true,
+    "compilation_risk": "极低",
+    "functional_impact": "仅影响Arkweb特有功能，不影响标准Chromium行为",
+    "code_quality": "添加的代码与现有代码风格保持一致，条件编译确保了功能的可选性",
+    "final_verification": {
+      "rej_file_status": "完整保留",
+      "source_file_modified": "仅在指定位置添加了Arkweb特有函数声明",
+      "syntax_validation": "通过"
+    }
+  }
+}

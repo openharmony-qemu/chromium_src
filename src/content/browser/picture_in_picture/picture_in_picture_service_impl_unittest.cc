@@ -159,12 +159,33 @@ class PictureInPictureMediaPlayerReceiver : public media::mojom::MediaPlayer {
   void RequestMediaRemoting() override {}
   void RequestVisibility(
       RequestVisibilityCallback request_visibility_callback) override {}
+#if BUILDFLAG(ARKWEB_PIP)
+  void PipEnable(bool enable) override { pip_enable_calls_.push_back(enable); }
+  void PipDown(bool state) override {}
+  void RequestExitPictureInPicture() override {}
+  void NotifyPipResize() override {}
+  void PipRequestPlay() override {}
+#endif
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void SetHtmlPlayEnabled(bool enabled) override {}
+  void RequestEnterFullscreen() override {}
+  void RequestExitFullscreen() override {}
+  void SetPlaybackRate(double playback_rate) override {}
+  void RequestDownloadUrl() override {}
+  void HidePlaybackSpeedList() override {}
+  void SetVideoSurface(int32_t widget_id) override {}
+  void SetVolume(double volume) override {}
+  void GetVolume(GetVolumeCallback callback) override {}
+#endif
   void RecordAutoPictureInPictureInfo(
       const media::PictureInPictureEventsInfo::AutoPipInfo&
           auto_picture_in_picture_info) override {}
 
  private:
   mojo::AssociatedReceiver<media::mojom::MediaPlayer> receiver_{this};
+  std::vector<bool> pip_enable_calls_;
+  std::vector<bool> request_pause_calls_;
 };
 
 class PictureInPictureServiceImplTest : public RenderViewHostImplTestHarness {

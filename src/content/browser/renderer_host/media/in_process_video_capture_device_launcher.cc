@@ -36,6 +36,7 @@
 #include "media/capture/video/video_frame_receiver_on_task_runner.h"
 #include "services/video_effects/public/cpp/buildflags.h"
 #include "third_party/blink/public/common/mediastream/media_stream_request.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(ENABLE_VIDEO_EFFECTS)
 #include "services/video_effects/public/mojom/video_effects_processor.mojom-forward.h"
@@ -208,7 +209,11 @@ DesktopCaptureImplementation CreatePlatformDependentVideoCaptureDevice(
 #endif  // BUILDFLAG(IS_MAC)
 
 #if !BUILDFLAG(IS_IOS)
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+  if ((device_out = DesktopCaptureDevice::Create(desktop_id, is_picker_show, nweb_id))) {
+#else
   if ((device_out = DesktopCaptureDevice::Create(desktop_id))) {
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
     return kLegacyDesktopCaptureDevice;
   }
 #endif  // !BUILDFLAG(IS_IOS)
@@ -246,6 +251,9 @@ void InProcessVideoCaptureDeviceLauncher::LaunchDeviceAsync(
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
   DCHECK(state_ == State::READY_TO_LAUNCH);
 
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  LOG(INFO) << "InProcessVideoCaptureDeviceLauncher::LaunchDeviceAsync";
+#endif // BUILDFLAG(ARKWEB_WEBRTC)
   if (receiver_on_io_thread) {
     std::ostringstream string_stream;
     string_stream
@@ -398,6 +406,9 @@ InProcessVideoCaptureDeviceLauncher::CreateDeviceClient(
           requested_buffer_type, buffer_pool_max_buffer_count);
 #endif
 
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  LOG(ERROR) << "CreateDeviceClient ";
+#endif // BUILDFLAG(ARKWEB_WEBRTC)
 #if BUILDFLAG(IS_CHROMEOS)
   return std::make_unique<media::VideoCaptureDeviceClient>(
       std::move(receiver), std::move(buffer_pool),

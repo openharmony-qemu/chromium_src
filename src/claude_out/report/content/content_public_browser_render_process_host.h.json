@@ -1,0 +1,88 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/content/public/browser/render_process_host.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/content/public/browser/render_process_host.h",
+    "处理时间": "2025-11-06"
+  },
+  "总体处理结果": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 2,
+    "未能解决的hunk数量": 0,
+    "解决状态": "全部解决",
+    ".rej文件完整性": "保持完整未被修改"
+  },
+  "hunk详情": [
+    {
+      "hunk编号": 1,
+      "定位位置": "第508行 GetLastInitTime() 方法后",
+      "待添加内容": [
+        "#if BUILDFLAG(IS_ARKWEB)",
+        "  virtual bool IsProcessBackgrounded() { return false; }",
+        "  virtual const base::TimeTicks& ProcessBackgroundTime() = 0;",
+        "#endif",
+        "#if BUILDFLAG(ARKWEB_THEME_FONT)",
+        "  virtual void OnThemeFontChange() {}",
+        "#endif"
+      ],
+      "待删除内容": [],
+      "冲突原因": "Arkweb141 需要在基类中添加进程背景状态检查和主题字体变更的虚函数接口",
+      "风险分析": "低风险。这些是纯虚函数或空实现的虚函数，添加到接口中不会破坏现有实现。所有函数都有适当的编译条件保护。",
+      "修改置信度": "高",
+      "解决策略": "直接应用修改，在 GetLastInitTime() 方法后插入所有带 + 前缀的行",
+      "处理结果": "成功解决",
+      "实际修改位置": "第508-519行"
+    },
+    {
+      "hunk编号": 2,
+      "定位位置": "第886行 GetCurrentRenderProcessCountForTesting() 方法后及类结束前",
+      "待添加内容": [
+        "#if BUILDFLAG(ARKWEB_I18N)",
+        "  static void OnLocaleChangedToRenderer(const std::string& update_locale);",
+        "#endif",
+        "#if BUILDFLAG(IS_ARKWEB)",
+        "  static void SetRenderProcessMode(RenderProcessMode mode);",
+        "  static RenderProcessMode render_process_mode();",
+        "  enum class RenderType {",
+        "    kExtension = 0,",
+        "    kPdf = 1,",
+        "    kWebUI = 2,",
+        "  };",
+        "  std::map<RenderType, unsigned> special_render_numbers_ {",
+        "    {RenderType::kExtension, 0},",
+        "    {RenderType::kPdf, 0},",
+        "    {RenderType::kWebUI, 0},",
+        "  };",
+        "#endif"
+      ],
+      "待删除内容": [],
+      "冲突原因": "Arkweb141 需要添加国际化支持和渲染进程管理相关的静态方法和成员变量",
+      "风险分析": "中低风险。添加了成员变量 special_render_numbers_ 可能需要构造函数初始化，但作为 map 类型有默认构造函数。静态方法不会影响实例状态。",
+      "修改置信度": "高",
+      "解决策略": "分两步应用：1）在 GetCurrentRenderProcessCountForTesting() 后添加国际化方法；2）在类结束前添加渲染进程管理相关代码",
+      "处理结果": "成功解决",
+      "实际修改位置": "第888-890行和第902-917行"
+    }
+  ],
+  "遵守原则验证": {
+    "绝对禁止项目检查": {
+      "未写入上下文行": "✓ 遵守",
+      "未生成脚本文件": "✓ 遵守",
+      "未创建辅助文件": "✓ 遵守",
+      "未使用外部工具": "✓ 遵守",
+      "未在指定目录外创建文件": "✓ 遵守",
+      "未修改或删除.rej文件": "✓ 遵守"
+    },
+    "唯一允许操作检查": {
+      "仅添加带+前缀的行": "✓ 遵守",
+      "仅删除带-前缀的行": "✓ 遵守（无删除操作）",
+      "仅在指定目录创建JSON报告": "✓ 遵守"
+    }
+  },
+  "总结": {
+    "处理状态": "成功完成",
+    "主要修改类型": "Arkweb 特定功能接口扩展",
+    "修改性质": "侵入式修改集成",
+    "代码完整性": "保持良好",
+    "编译兼容性": "预期兼容，所有修改都有适当的编译条件保护"
+  }
+}

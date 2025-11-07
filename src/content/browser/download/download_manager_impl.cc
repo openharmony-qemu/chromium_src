@@ -211,7 +211,11 @@ class DownloadItemFactoryImpl : public download::DownloadItemFactory {
       download::DownloadItemImplDelegate* delegate,
       uint32_t download_id,
       const download::DownloadCreateInfo& info) override {
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+    return new download::ArkWebDownloadItemImplExt(delegate, download_id, info);
+#else
     return new download::DownloadItemImpl(delegate, download_id, info);
+#endif
   }
 
   download::DownloadItemImpl* CreateSavePageItem(
@@ -223,7 +227,11 @@ class DownloadItemFactoryImpl : public download::DownloadItemFactory {
       const std::string& mime_type,
       download::DownloadJob::CancelRequestCallback cancel_request_callback)
       override {
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+    return new download::ArkWebDownloadItemImplExt(delegate, download_id, path,
+#else
     return new download::DownloadItemImpl(delegate, download_id, path,
+#endif
                                           display_name, url, mime_type,
                                           std::move(cancel_request_callback));
   }

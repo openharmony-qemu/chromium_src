@@ -9,6 +9,7 @@
 #include <memory>
 #include <set>
 
+#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "base/gtest_prod_util.h"
 #include "base/memory/raw_ptr.h"
@@ -693,6 +694,11 @@ class CONTENT_EXPORT BackForwardCacheImpl
     // (instead of the reasons for the whole tree).
     std::optional<EvictionInfo> eviction_info_;
   };
+
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  int size_ = -1;
+  int time_to_live_ = 600;
+#endif
 
   std::optional<size_t> embedder_supplied_cache_size_;
   std::optional<base::TimeDelta> embedder_supplied_time_to_live_;

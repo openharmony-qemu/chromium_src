@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/base_switches.h"
 #include "base/check_op.h"
@@ -271,6 +272,26 @@
 #include "content/public/browser/document_picture_in_picture_window_controller.h"
 #include "content/public/browser/picture_in_picture_window_controller.h"
 #endif  // !BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
+#include "arkweb/chromium_ext/content/browser/display_cutout/display_cutout_host_ohos.h"
+#include "arkweb/chromium_ext/content/browser/media/ohos/native_web_contents_observer.h"
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/browser/web_contents/web_contents_impl_utils.h"
+#include "content/public/browser/message_port_provider.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_CSS_INPUT_TIME)
+#include "content/browser/ohos/date_time_chooser_ohos.h"
+#endif  // ARKWEB_CSS_INPUT_TIME
+
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+#include "arkweb/chromium_ext/chrome/browser/ssl/ohos_https_upgrades_helper.h"
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif
 
 #if BUILDFLAG(IS_IOS) && !BUILDFLAG(IS_IOS_TVOS)
 #include "content/browser/ios/nfc_host.h"
@@ -1426,7 +1447,9 @@ WebContentsImpl::WebContentsImpl(BrowserContext* browser_context)
   WebContentsOfBrowserContext::Attach(*this);
   node_.SetFocusedFrameTree(&primary_frame_tree_);
 #if BUILDFLAG(IS_ANDROID)
-  safe_area_insets_host_ = SafeAreaInsetsHost::Create(this);
+  safe_area_insets_host_ = std::make_unique<DisplayCutoutHostImpl>(this);
+#elif BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
+  safe_area_insets_host_ = std::make_unique<DisplayCutoutHostOhos>(this);
 #endif
 
   auto* const native_theme = ui::NativeTheme::GetInstanceForWeb();
@@ -2554,7 +2577,7 @@ bool WebContentsImpl::IsFullAccessibilityModeForTesting() {
   return accessibility_mode_ == ui::kAXModeDefaultForTests;
 }
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT) || BUILDFLAG(IS_ANDROID)
 
 void WebContentsImpl::SetDisplayCutoutSafeArea(gfx::Insets insets) {
   OPTIONAL_TRACE_EVENT0("content", "WebContentsImpl::SetDisplayCutoutSafeArea");
@@ -2590,6 +2613,10 @@ const std::u16string& WebContentsImpl::GetTitle() {
   }
 
   return GetNavigationEntryForTitle()->GetTitleForDisplay();
+}
+
+bool WebContentsImpl::GetIsRealTitle() {
+  return GetNavigationEntryForTitle()->GetIsRealTitle();
 }
 
 const std::optional<std::u16string>& WebContentsImpl::GetApplicationTitle() {
@@ -3751,11 +3778,20 @@ const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences(
   prefs.prefers_reduced_transparency = prefers_reduced_transparency_;
   prefs.inverted_colors = inverted_colors_;
 
+#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
+  if (GetRenderViewHost() && GetRenderViewHost()->GetProcess() &&
+      ChildProcessSecurityPolicyImpl::GetInstance()->HasWebUIBindings(
+          GetRenderViewHost()->GetProcess()->GetID())) {
+    prefs.loads_images_automatically = true;
+    prefs.javascript_enabled = true;
+  }
+#else
   if (ChildProcessSecurityPolicyImpl::GetInstance()->HasWebUIBindings(
           GetRenderViewHost()->GetProcess()->GetDeprecatedID())) {
     prefs.loads_images_automatically = true;
     prefs.javascript_enabled = true;
   }
+#endif
 
   prefs.viewport_enabled = command_line.HasSwitch(switches::kEnableViewport);
 
@@ -3928,6 +3964,34 @@ const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences(
 
   GetContentClient()->browser()->OverrideWebPreferences(
       this, *main_frame->GetSiteInstance(), &prefs);
+
+#if BUILDFLAG(ARKWEB_USERAGENT) || BUILDFLAG(ARKWEB_EXT_UA)
+  if (!(AsWebContentsImplExt()->user_agent_.empty()) &&
+      GetUserAgentOverride().from_app) {
+    bool is_desktop = (AsWebContentsImplExt()->user_agent_.find("Mobile") ==
+                       std::string::npos);
+    prefs.viewport_meta_enabled = !is_desktop;
+  } else {
+    prefs.viewport_meta_enabled = true;
+  }
+#else
+  prefs.viewport_meta_enabled = true;
+#endif
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  prefs.video_assistant_enabled =
+      AsWebContentsImplExt()->video_assistant_ ? AsWebContentsImplExt()->video_assistant_->Enabled() : false;
+  prefs.custom_media_player_enabled = AsWebContentsImplExt()->custom_media_player_enabled_;
+#endif  // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  prefs.media_resume_from_bfcache_page = AsWebContentsImplExt()->media_resume_from_bfcache_page_;
+#endif // BUILDFLAG(ARKWEB_BFCACHE)
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  prefs.usage_scenario = usage_scenario_type;
+#endif
+
   return prefs;
 }
 
@@ -4453,9 +4517,6 @@ void WebContentsImpl::RenderWidgetCreated(
   OPTIONAL_TRACE_EVENT1("content", "WebContentsImpl::RenderWidgetCreated",
                         "render_widget_host", render_widget_host);
   created_widgets_[render_widget_host->GetFrameSinkId()] = render_widget_host;
-
-  observers_.NotifyObservers(
-      &WebContentsObserver::RenderWidgetCreated, render_widget_host);
 }
 
 void WebContentsImpl::RenderWidgetDeleted(
@@ -9530,7 +9591,15 @@ PrerenderHostRegistry* WebContentsImpl::GetPrerenderHostRegistry() {
   return prerender_host_registry_.get();
 }
 
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
 void WebContentsImpl::DidStartLoading(FrameTreeNode* frame_tree_node) {
+  DidStartLoading(frame_tree_node, false);
+}
+void WebContentsImpl::DidStartLoading(FrameTreeNode* frame_tree_node,
+                                      bool should_show_loading_ui) {
+#else
+void WebContentsImpl::DidStartLoading(FrameTreeNode* frame_tree_node) {
+#endif
   OPTIONAL_TRACE_EVENT1("content", "WebContentsImpl::DidStartLoading",
                         "frame_tree_node", frame_tree_node);
 
@@ -9539,6 +9608,11 @@ void WebContentsImpl::DidStartLoading(FrameTreeNode* frame_tree_node) {
                     "Primary Main FrameTreeNode id",
                     GetPrimaryFrameTree().root()->frame_tree_node_id());
   SCOPED_UMA_HISTOGRAM_TIMER("WebContentsObserver.DidStartLoading");
+
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+  implUtils_->UpdateMainFrameLoadingControlsState(frame_tree_node, should_show_loading_ui);
+#endif
+
   observers_.NotifyObservers(&WebContentsObserver::DidStartLoading);
 
   // Reset the focus state from DidStartNavigation to false if a new load starts
@@ -11974,10 +12048,13 @@ void WebContentsImpl::RenderFrameHostStateChanged(
     LifecycleState old_state,
     LifecycleState new_state) {
   DCHECK_NE(old_state, new_state);
+#if !BUILDFLAG(ARKWEB_BFCACHE)
+  // TODO(browser): fix crash temporarily.
   OPTIONAL_TRACE_EVENT("content",
                        "WebContentsImpl::RenderFrameHostStateChanged",
                        "render_frame_host", render_frame_host, "old_state",
                        old_state, "new_state", new_state);
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
   if (old_state == LifecycleState::kActive && !render_frame_host->GetParent()) {
@@ -12185,7 +12262,12 @@ std::unique_ptr<PrerenderHandle> WebContentsImpl::StartPrerendering(
                                  const std::optional<UrlMatchType>&)>
         url_match_predicate,
     base::RepeatingCallback<void(NavigationHandle&)>
-        prerender_navigation_handle_callback,
+        prerender_navigation_handle_callback
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+    ,
+    const char* extra_headers
+#endif
+    ,
     bool allow_reuse) {
   PrerenderAttributes attributes(
       prerendering_url, trigger_type, embedder_histogram_suffix,
@@ -12205,6 +12287,11 @@ std::unique_ptr<PrerenderHandle> WebContentsImpl::StartPrerendering(
   CHECK(additional_headers.IsEmpty())
       << "additional_headers is supported only on Android WebView.";
 #endif  // BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (extra_headers) {
+    attributes.extra_headers = extra_headers;
+  }
+#endif
   attributes.holdback_status_override = holdback_status_override;
 
   FrameTreeNodeId frame_tree_node_id =

@@ -20,11 +20,13 @@
 #include "media/base/picture_in_picture_events_info.h"
 #include "services/media_session/public/cpp/media_position.h"
 #include "services/media_session/public/mojom/media_session.mojom.h"
+#include "arkweb/build/features/features.h"
 
 namespace content {
 
 class MediaSessionImpl;
 class WebContentsImpl;
+class MediaSessionControllerExt;
 
 // Helper class for controlling a single player's MediaSession instance.  Sends
 // browser side MediaSession commands back to a player hosted in the renderer

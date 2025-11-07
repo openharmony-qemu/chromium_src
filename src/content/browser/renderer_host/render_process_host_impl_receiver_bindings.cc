@@ -140,6 +140,12 @@ void RenderProcessHostImpl::RegisterMojoInterfaces() {
       },
       GetDeprecatedID(), widget_helper_));
 
+#if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+  arkweb_render_process_host_impl_utils_->AddHostUIThreadInterface(registry.get());
+#endif  // BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  arkweb_render_process_host_impl_utils_->AddDFXToUIThreadInterface(registry.get());
+#endif
   AddUIThreadInterface(
       registry.get(),
       base::BindRepeating(

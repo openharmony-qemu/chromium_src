@@ -284,11 +284,20 @@
 #include "content/public/common/profiling_utils.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "base/ohos/logger.h"
+#include "content/public/common/content_switches.h"
+#endif
+
 // VLOG additional statements in Fuchsia release builds.
 #if BUILDFLAG(IS_FUCHSIA)
 #define MAYBEVLOG VLOG
 #else
 #define MAYBEVLOG DVLOG
+#endif
+
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+size_t g_max_renderer_count_override = 0;
 #endif
 
 namespace content {
@@ -297,9 +306,11 @@ namespace {
 
 using perfetto::protos::pbzero::ChromeTrackEvent;
 
+#if !BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
 // Stores the maximum number of renderer processes the content module can
 // create. Only applies if it is set to a non-zero value.
 size_t g_max_renderer_count_override = 0;
+#endif
 
 bool g_run_renderer_in_process = false;
 
@@ -1567,8 +1578,13 @@ RenderProcessHost* RenderProcessHostImpl::CreateRenderProcessHost(
     flags |= RenderProcessFlags::kDisallowV8FeatureFlagOverrides;
   }
 
+#if BUILDFLAG(IS_ARKWEB)
+  return new ArkwebRenderProcessHostImplExt(browser_context, storage_partition_impl,
+                                   flags);
+#else
   return new RenderProcessHostImpl(browser_context, storage_partition_impl,
                                    flags);
+#endif
 }
 
 // static
@@ -3704,6 +3720,23 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
 #if BUILDFLAG(IS_CHROMEOS)
       switches::kSchedulerBoostUrgent,
 #endif
+#if BUILDFLAG(IS_OHOS)
+      switches::kBundleInstallationDir,
+#endif
+#if BUILDFLAG(IS_ARKWEB)
+      switches::kBundleName,
+      switches::kPixelRatio,
+      switches::kOhSchemeHandlerCustomScheme,
+      switches::kOhosEnableVulkan,
+      switches::kDisableMobileStyleSheet,
+      switches::kDisableNextPreviousFlag,
+#endif
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+      switches::kAdSecValue,
+#endif
+#if BUILDFLAG(ARKWEB_GWP_ASAN)
+      switches::kOhosEnableGwpAsanType,
+#endif
   };
   renderer_cmd->CopySwitchesFrom(browser_cmd, kSwitchNames);
 
@@ -4017,10 +4050,34 @@ void RenderProcessHostImpl::OnChannelConnected(int32_t peer_pid) {
 #endif
 
     ProvideSwapFileForRenderer();
+#if BUILDFLAG(ARKWEB_THEME_FONT)
+    if (auto* theme_font = ArkwebRenderProcessHostImplUtils::EnsureThemeFont()) {
+      ArkwebRenderProcessHostImplUtils::UpdateThemeFontFile(this, theme_font->font_file.Duplicate());
+    }
+#endif
   }
 
 #if BUILDFLAG(CLANG_PROFILING_INSIDE_SANDBOX)
   child_process_->SetProfilingFile(OpenProfilingFile());
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableLoggerReport)) {
+    // LOG(URL) only be called at no privacy mode.The variable of whether the
+    // mode is private or not named g_is_strict_log_mode_ is passed to the
+    // child process to help child process judge whether the LOG(URL) can be
+    // called.
+    child_process_->SetStrictLogMode(GetBrowserContext()->IsOffTheRecord());
+  }
+#endif
+
+#if BUILDFLAG(ARKWEB_READER_MODE) && !defined(COMPONENT_BUILD)
+  if (AsArkwebRenderProcessHostImplExt()) {
+    AsArkwebRenderProcessHostImplExt()->UpdateReaderModeConfig(
+        nweb_ex::AlloyBrowserReaderModeConfig::GetInstance()
+            ->GetReaderModeConfigData());
+  }
 #endif
 }
 
@@ -4697,6 +4754,12 @@ bool RenderProcessHostImpl::IsSuitableHost(
       return false;
     }
 
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+    if (url_is_for_web_ui) {
+      return host->special_render_numbers_[RenderType::kWebUI] > 0;
+    }
+#endif
+
     if (process_lock.IsLockedToSite()) {
       // If this process is locked to a site, it cannot be reused for a
       // destination that doesn't require a dedicated process, even for the
@@ -4858,7 +4921,11 @@ size_t RenderProcessHostImpl::GetProcessCountForLimit() {
   size_t process_count_to_ignore =
       GetContentClient()->browser()->GetProcessCountToIgnoreForLimit();
   CHECK_LE(process_count_to_ignore, RenderProcessHostImpl::GetCount());
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+  return ArkwebRenderProcessHostImplUtils::GetProcessCountForLimitArkweb(process_count_to_ignore);
+#else
   return RenderProcessHostImpl::GetCount() - process_count_to_ignore;
+#endif  // BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
 }
 
 // static
@@ -5170,9 +5237,13 @@ RenderProcessHost* RenderProcessHostImpl::GetProcessHostForSiteInstance(
 
   // Make sure the chosen process is in the correct StoragePartition for the
   // SiteInstance.
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+  if (!base::ohos::IsWearableDevice()) {
   CHECK(render_process_host->InSameStoragePartition(
       browser_context->GetStoragePartition(site_instance,
                                            false /* can_create */)));
+  }
+#endif
 
   base::UmaHistogramEnumeration(
       "BrowserRenderProcessHost.SiteInstanceRenderProcessAssignment",

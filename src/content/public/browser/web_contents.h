@@ -58,6 +58,10 @@
 #include "ui/gfx/native_widget_types.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
 #include "content/public/browser/android/child_process_importance.h"
 #include "content/public/browser/android/selection_popup_delegate.h"
@@ -65,6 +69,8 @@
 #endif
 
 class StorageAccessGrantPermissionContext;
+
+#include "arkweb/chromium_ext/content/public/browser/web_contents_for_include_file.cc"
 
 namespace base {
 class FilePath;
@@ -134,8 +140,8 @@ class ScreenOrientationDelegate;
 class SiteInstance;
 class UnownedInnerWebContentsClient;
 class WebContentsDelegate;
-class WebContentsView;
 class WebUI;
+class WebContentsView;
 struct DropData;
 struct MHTMLGenerationParams;
 class PreloadingAttempt;
@@ -658,7 +664,6 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   // other words, it must be a valid HTTP header value).
   virtual void SetUserAgentOverride(const blink::UserAgentOverride& ua_override,
                                     bool override_in_new_tabs) = 0;
-
   virtual const blink::UserAgentOverride& GetUserAgentOverride() = 0;
 
   // Updates all renderers to start sending subresource notifications since a
@@ -1723,7 +1728,12 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
                                    const std::optional<UrlMatchType>&)>
           url_match_predicate,
       base::RepeatingCallback<void(NavigationHandle&)>
-          prerender_navigation_handle_callback,
+          prerender_navigation_handle_callback
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+,
+      const char* extra_headers = nullptr
+#endif
+          ,
       bool allow_reuse) = 0;
 
   // Cancels all prerendering hosted on this WebContents.
@@ -1778,6 +1788,15 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   // `kInvalidNetworkHandle` indicates that the current default network will
   // be bound.
   virtual net::handles::NetworkHandle GetTargetNetwork() = 0;
+#if BUILDFLAG(ARKWEB_BGTASK)
+  virtual void OnBrowserForeground() = 0;
+  virtual void OnBrowserBackground() = 0;
+#endif
+#include "arkweb/chromium_ext/content/public/browser/web_contents_for_include.cc"
+
+#if BUILDFLAG(ARKWEB_PIP)
+  virtual void OnPipEvent(int event) = 0;
+#endif
 
   // Returns true if `this` is a partitioned popin. If you are calling this to
   // check if a `RenderFrameHost` should be partitioned due to being in a popin,

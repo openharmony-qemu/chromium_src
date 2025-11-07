@@ -583,6 +583,9 @@ void CdmRegistryImpl::LazyInitializeCapability(
   }
 #elif BUILDFLAG(IS_ANDROID)
   GetAndroidCdmCapability(key_system, robustness, std::move(cdm_capability_cb));
+#elif BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
+  LOG(INFO) << "[DRM]" << __func__;
+  GetOHOSCdmCapability(key_system, robustness, std::move(cdm_capability_cb));
 #else
   std::move(cdm_capability_cb)
       .Run(base::unexpected(media::CdmCapabilityQueryStatus::kUnknown));
@@ -593,6 +596,9 @@ void CdmRegistryImpl::OnCapabilityInitialized(
     const std::string& key_system,
     const CdmInfo::Robustness robustness,
     media::CdmCapabilityOrStatus cdm_capability_or_status) {
+  LOG(INFO) << "[DRM]" << __func__<< ": key_system=" << key_system
+           << ", robustness=" << robustness
+           << ", cdm_capability=" << (cdm_capability_or_status ? "yes" : "no");
   DVLOG(1) << __func__ << ": key_system=" << key_system
            << ", robustness=" << robustness << ", cdm_capability_or_status="
            << cdm_capability_or_status.ToString();
@@ -674,6 +680,7 @@ void CdmRegistryImpl::UpdateAndNotifyKeySystemCapabilities() {
 
 std::set<std::string> CdmRegistryImpl::GetSupportedKeySystems() const {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  LOG(INFO) << "[DRM]" << __func__;
 
   std::set<std::string> supported_key_systems;
   for (const auto& cdm : cdms_) {

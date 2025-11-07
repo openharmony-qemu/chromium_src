@@ -96,7 +96,11 @@ const int32_t kSendBufferSizeForDevTools = 256 * 1024 * 1024;  // 256Mb
 const int32_t kReceiveBufferSizeForDevTools = 100 * 1024 * 1024;  // 100Mb
 
 const char kRemoteUrlPattern[] =
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+    "https://x.x.x/%s/%s.html";
+else
     "https://chrome-devtools-frontend.appspot.com/serve_rev/%s/%s.html";
+#endif
 
 constexpr net::NetworkTrafficAnnotationTag
     kDevtoolsHttpHandlerTrafficAnnotation =

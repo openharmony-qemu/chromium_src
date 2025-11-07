@@ -4,6 +4,7 @@
 
 #include "content/browser/renderer_host/back_forward_cache_metrics.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/debug/crash_logging.h"
 #include "base/debug/dump_without_crashing.h"
 #include "base/metrics/histogram_functions.h"

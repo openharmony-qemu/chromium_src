@@ -478,6 +478,57 @@ WebContentsDelegate::GetBackForwardTransitionFallbackUXConfig() {
 }
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+std::unique_ptr<CustomMediaPlayer> WebContentsDelegate::CreateCustomMediaPlayer(
+    std::unique_ptr<CustomMediaPlayerListener> listener,
+    const MediaInfo& media_info) {
+  return nullptr;
+}
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+void WebContentsDelegate::OnShowToast(double duration,
+                                      const std::string& toast) {}
+
+void WebContentsDelegate::OnShowVideoAssistant(
+    const std::string& videoAssistantItems) {}
+
+void WebContentsDelegate::OnReportStatisticLog(const std::string& content) {}
+#endif  // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+void WebContentsDelegate::WebExtensionUpdateTab(
+    int32_t tab_id,
+    const NWebExtensionTabUpdateProperties* update_properties) {}
+
+#endif
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+std::unique_ptr<VideoAssistant> WebContentsDelegate::CreateVideoAssistant() {
+  return std::make_unique<VideoAssistant>();
+}
+void WebContentsDelegate::PopluateVideoAssistantConfig(
+    const std::string& url,
+    media::mojom::VideoAssistantConfigPtr& config) {}
+void WebContentsDelegate::OnVideoPlaying(
+    media::mojom::VideoAttributesForVASTPtr video_attributes) {}
+void WebContentsDelegate::OnUpdateVideoAttributes(
+    media::mojom::VideoAttributesForVASTPtr video_attributes) {}
+
+std::unique_ptr<MediaPlayerListener>
+WebContentsDelegate::OnFullScreenOverlayEnter(
+    media::mojom::MediaInfoForVASTPtr media_info,
+    const MediaPlayerId& media_player_id) {
+  return nullptr;
+}
+#endif  // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+bool WebContentsDelegate::IsForDistillerPage() {
+  return false;
+}
+#endif
+
 std::vector<blink::mojom::RelatedApplicationPtr>
 WebContentsDelegate::GetSavedRelatedApplications(WebContents* web_contents) {
   return {};

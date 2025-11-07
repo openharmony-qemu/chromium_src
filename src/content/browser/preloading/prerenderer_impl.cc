@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "base/compiler_specific.h"
+#include "arkweb/build/features/features.h"
 #include "base/feature_list.h"
 #include "base/strings/stringprintf.h"
 #include "content/browser/preloading/prefetch/no_vary_search_helper.h"

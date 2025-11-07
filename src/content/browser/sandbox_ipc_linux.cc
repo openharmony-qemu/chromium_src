@@ -12,6 +12,7 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 
+#include "arkweb/build/features/features.h"
 #include "base/command_line.h"
 #include "base/compiler_specific.h"
 #include "base/containers/span.h"

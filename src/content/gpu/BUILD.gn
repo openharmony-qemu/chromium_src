@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//arkweb/build/features/features.gni")
 import("//build/config/cast.gni")
 import("//build/config/ui.gni")
 import("//gpu/vulkan/features.gni")
@@ -82,6 +83,10 @@ target(link_target_type, "gpu_sources") {
     "//ui/gl/init",
     "//ui/latency/ipc",
   ]
+
+  if (arkweb_oop_gpu_process) {
+    deps += [ "//arkweb/build/features" ]
+  }
 
   if (!is_chromeos || !is_chrome_branded) {
     deps += [

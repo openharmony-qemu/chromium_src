@@ -1822,6 +1822,18 @@ RenderFrameHostManager::GetFrameHostForNavigation(
   // Now compute the SiteInstance to use for the navigation.
   IsSameSiteGetter is_same_site_getter(is_same_site);
   std::string site_instance_reason;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  std::string valid_reason;
+  scoped_refptr<SiteInstanceImpl> dest_site_instance =
+      GetSiteInstanceForNavigationRequest(request, is_same_site_getter,
+                                          browsing_context_group_swap,
+                                          &valid_reason);
+  if (!valid_reason.empty()) {
+    LOG_FEEDBACK(INFO)
+        << "OHBFCACHE: GetSiteInstanceForNavigationRequest reason="
+        << valid_reason;
+  }
+#else
   std::string* reason_output =
       base::FeatureList::IsEnabled(features::kHoldbackDebugReasonStringRemoval)
           ? &site_instance_reason
@@ -1830,10 +1842,16 @@ RenderFrameHostManager::GetFrameHostForNavigation(
       GetSiteInstanceForNavigationRequest(request, is_same_site_getter,
                                           browsing_context_group_swap,
                                           reason_output);
+#endif
   if (reason && base::FeatureList::IsEnabled(
                     features::kHoldbackDebugReasonStringRemoval)) {
     reason->append(site_instance_reason);
   }
+
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
+  ArkWebGetFrameHostForNavigation(delegate_->SharedRenderProcessToken(),
+                                  dest_site_instance.get());
+#endif  // BUILDFLAG(ARKWEB_RENDER_PROCESS_SHARE)
 
   // A subframe should always be in the same BrowsingInstance as the parent
   // (see also https://crbug.com/1107269).

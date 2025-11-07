@@ -465,6 +465,13 @@ class CONTENT_EXPORT RenderThreadImpl
   void SetIsCrossOriginIsolated(bool value) override;
   void SetIsWebSecurityDisabled(bool value) override;
   void SetIsIsolatedContext(bool value) override;
+#if BUILDFLAG(ARKWEB_SYNC_RENDER)
+  void SetDrawMode(int mode, base::PassKey<AgentSchedulingGroup>);
+#endif
+
+#if BUILDFLAG(ARKWEB_THEME_FONT)
+  void UpdateThemeFontFile(base::File theme_font) override;
+#endif
   void SetWebUIResourceUrlToCodeCacheMap(
       const base::flat_map<GURL, int>& resource_map) override;
   void OnMemoryPressure(

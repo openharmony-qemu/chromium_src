@@ -17,7 +17,11 @@ namespace content {
 // TODO(jam): some of these don't below in the content layer, but are accessed
 // from there.
 inline constexpr char kChromeDevToolsScheme[] = "devtools";
+#if (BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_DEVTOOLS))
+inline constexpr char kChromeErrorScheme[] = "arkweb-error";
+#else
 inline constexpr char kChromeErrorScheme[] = "chrome-error";
+#endif
 inline constexpr char kChromeUIScheme[] = "chrome";  // Used for WebUIs.
 inline constexpr char kChromeNativeScheme[] = "chrome-native";
 inline constexpr char kChromeUIUntrustedScheme[] = "chrome-untrusted";

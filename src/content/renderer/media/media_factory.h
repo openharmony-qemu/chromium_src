@@ -69,17 +69,35 @@ class MediaLog;
 class MediaObserver;
 class RemotePlaybackClientWrapper;
 class RendererWebMediaPlayerDelegate;
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+class RendererWebNativeDelegate;
+#endif
 }  // namespace media
 
-namespace content {
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+namespace blink {
+  class WebVideoFrameSubmitter;
+}
 
+namespace content {
+  class RenderFrame;
+}
+#endif
+
+namespace content {
+class RenderFrame;
 class RenderFrameImpl;
 class MediaInterfaceFactory;
 struct RenderFrameMediaPlaybackOptions;
+class ArkwebMediaFactoryExt;
+class ArkwebMediaFactoryUtils;
 
 // Assist to RenderFrameImpl in creating various media clients.
 class MediaFactory {
  public:
+
+  friend class ArkwebMediaFactoryExt;
+  friend class ArkwebMediaFactoryUtils;
   // Create a MediaFactory to assist the |render_frame| with media tasks.
   // |request_routing_token_cb| bound to |render_frame| IPC functions for
   // obtaining overlay tokens.

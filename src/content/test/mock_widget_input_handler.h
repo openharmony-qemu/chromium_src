@@ -265,6 +265,10 @@ class MockWidgetInputHandler : public blink::mojom::WidgetInputHandler {
       std::optional<std::unique_ptr<blink::WebCoalescedInputEvent>>
           original_event_for_gesture,
       DispatchEventCallback callback) override;
+#if BUILDFLAG(IS_ARKWEB)
+  void TryStartFling() override {}
+  void TryFinishFling() override {}
+#endif
   void DispatchNonBlockingEvent(
       std::unique_ptr<blink::WebCoalescedInputEvent> event) override;
   void WaitForInputProcessed(WaitForInputProcessedCallback callback) override;
@@ -286,7 +290,18 @@ class MockWidgetInputHandler : public blink::mojom::WidgetInputHandler {
       bool animate,
       const std::optional<cc::BrowserControlsOffsetTagModifications>&
           offset_tag_modifications) override;
-
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  void SetGestureEventResult(bool result,
+                             bool stopPropagation,
+                             int32_t fingerId) override {}
+  void SetNativeEmbedMode(bool flag) override {}
+  void AttachSoftwareCompositorOhos(::mojo::PendingReceiver<::blink::mojom::SoftwareCompositorOhos>
+    compositor_request) override {}
+  void ScrollBy(float delta_x, float delta_y) override {}
+  void SetMouseEventResult(bool result, bool stopPropagation) override {}
+  void SetBypassVsyncCondition(int32_t condition) override {}
+  void SetEnableCustomVideoPlayer(bool flag) override {}
+#endif
   void FlushReceiverForTesting();
 
   using MessageVector = std::vector<std::unique_ptr<DispatchedMessage>>;

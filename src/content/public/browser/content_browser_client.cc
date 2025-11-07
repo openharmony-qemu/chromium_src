@@ -13,6 +13,7 @@
 #include "base/feature_list.h"
 #include "base/files/file_path.h"
 #include "base/functional/callback_helpers.h"
+#include "base/logging.h"
 #include "base/no_destructor.h"
 #include "base/notimplemented.h"
 #include "base/notreached.h"
@@ -93,6 +94,7 @@
 #include "ui/shell_dialogs/select_file_policy.h"
 #include "url/gurl.h"
 #include "url/origin.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "content/public/browser/tts_environment_android.h"
@@ -104,6 +106,10 @@
 #if BUILDFLAG(ENABLE_VIDEO_EFFECTS)
 #include "services/video_effects/public/mojom/video_effects_processor.mojom-forward.h"
 #endif  // BUILDFLAG(ENABLE_VIDEO_EFFECTS)
+
+#if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
+#include "base/system/sys_info.h"
+#endif
 
 using AttributionReportType =
     content::ContentBrowserClient::AttributionReportingOsRegistrar;
@@ -1269,6 +1275,24 @@ bool ContentBrowserClient::ShouldOverrideUrlLoading(
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+std::string ContentBrowserClient::OverrideErrorPage(
+    FrameTreeNodeId frame_tree_node_id,
+    bool browser_initiated,
+    const GURL& gurl,
+    const std::string& request_method,
+    bool has_user_gesture,
+    bool is_redirect,
+    bool is_outermost_main_frame,
+    int error_code,
+    const std::string& error_text,
+    bool is_prerendering,
+    ui::PageTransition transition,
+    std::string* html) {
+  return "";
+}
+#endif
+
 bool ContentBrowserClient::SupportsAvoidUnnecessaryBeforeUnloadCheckSync() {
   return true;
 }
@@ -1989,6 +2013,12 @@ bool ContentBrowserClient::ShouldDispatchPagehideDuringCommit(
     const GURL& destination_url) {
   return true;
 }
+
+#if BUILDFLAG(ARKWEB_USERAGENT)
+std::string ContentBrowserClient::GetUAStringForHost(const std::string& host) {
+  return GetUserAgent();
+}
+#endif
 
 std::optional<network::CrossOriginEmbedderPolicy>
 ContentBrowserClient::MaybeOverrideLocalURLCrossOriginEmbedderPolicy(

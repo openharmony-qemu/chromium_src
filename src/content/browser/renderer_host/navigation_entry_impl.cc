@@ -535,6 +535,10 @@ const std::u16string& NavigationEntryImpl::GetTitle() {
   return title_;
 }
 
+bool NavigationEntryImpl::GetIsRealTitle() {
+  return !title_.empty();
+}
+
 void NavigationEntryImpl::SetApplicationTitle(
     const std::u16string& application_title) {
   application_title_ = application_title;
@@ -930,7 +934,15 @@ NavigationEntryImpl::ConstructCommonNavigationParams(
       false /* has_text_fragment_token */,
       network::mojom::CSPDisposition::CHECK, std::vector<int>(), std::string(),
       false /* is_history_navigation_in_new_child_frame */, input_start,
-      network::mojom::RequestDestination::kEmpty);
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+      network::mojom::RequestDestination::kEmpty, ""
+#else
+      network::mojom::RequestDestination::kEmpty
+#endif
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+      , false
+#endif
+      );
 }
 
 blink::mojom::CommitNavigationParamsPtr
@@ -1023,6 +1035,9 @@ NavigationEntryImpl::ConstructCommitNavigationParams(
           /*cookie_deprecation_label=*/std::nullopt,
           /*visited_link_salt=*/std::nullopt,
           /*local_surface_id=*/std::nullopt,
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+          false, /* site_adblock_enabled */
+#endif
           /*initial_permission_statuses=*/std::nullopt,
           /*should_skip_screenshot*/ false,
           /*force_new_document_sequence_number=*/false,

@@ -585,6 +585,7 @@ MediaFactory::CreateRendererFactorySelector(
                                      std::move(factory));
   }
 
+  media_factory_utils_->AddOhosAndCustomMediaFactory(factory_selector.get(), render_thread);
 #if BUILDFLAG(IS_ANDROID)
   // FlingingRendererClientFactory (FRCF) setup.
   auto flinging_factory = std::make_unique<FlingingRendererClientFactory>(

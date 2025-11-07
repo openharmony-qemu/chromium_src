@@ -1,0 +1,54 @@
+{
+  "file_path": "/home/sujiahao/code/arkweb_141/src/content/test/mock_clipboard_host.h",
+  "rej_file_path": "/home/sujiahao/code/arkweb_141/src/content/test/mock_clipboard_host.h.rej",
+  "analysis": {
+    "conflict_reason": "Arkweb 132 在 MockClipboardHost 类中添加了 ARKWEB_CLIPBOARD 条件编译的两个新方法（OnClipboardDataGuard 和 UpdateClipboardData），这些修改在 Arkweb 141 版本中产生了冲突。",
+    "hunk_analysis": [
+      {
+        "hunk_id": 1,
+        "line_range": "70-79",
+        "additions": [
+          "#if BUILDFLAG(ARKWEB_CLIPBOARD)",
+          "  void OnClipboardDataGuard(bool status,",
+          "                            OnClipboardDataGuardCallback callback) override;",
+          "  void UpdateClipboardData(UpdateClipboardDataCallback callback) override {}",
+          "#endif"
+        ],
+        "deletions": [],
+        "context_lines_used_for_location": [
+          "  void WriteStringToFindPboard(const std::u16string& text) override;",
+          "  void GetPlatformPermissionState(",
+          "      GetPlatformPermissionStateCallback callback) override;",
+          "#endif",
+          " private:"
+        ],
+        "location_strategy": "使用 IS_MAC 条件编译块和 private: 标签作为锚点精确定位插入位置",
+        "modification_confidence": "高",
+        "risk_assessment": "低风险 - 新增的方法有明确的条件编译保护（ARKWEB_CLIPBOARD），不会影响现有功能",
+        "description": "在 IS_MAC 条件编译块之后、private: 之前插入 ARKWEB_CLIPBOARD 相关的两个新方法声明"
+      }
+    ]
+  },
+  "resolution_summary": {
+    "total_hunks": 1,
+    "resolved_hunks": 1,
+    "unresolved_hunks": 0,
+    "resolution_status": "全部解决",
+    "final_result": "成功将 Arkweb 132 中的 ARKWEB_CLIPBOARD 相关修改集成到 Arkweb 141 版本中"
+  },
+  "verification": {
+    "rej_file_integrity": "保持完整，未被修改",
+    "source_file_modified": true,
+    "modifications_applied": [
+      "在 WriteStringToFindPboard 方法后添加了 OnClipboardDataGuard 方法声明",
+      "在 OnClipboardDataGuard 方法后添加了 UpdateClipboardData 方法声明",
+      "所有新增代码都用 ARKWEB_CLIPBOARD 条件编译包围"
+    ]
+  },
+  "final_verification": {
+    "rej_file_preserved": true,
+    "syntax_validation": "通过 - 插入的 C++ 语法正确，方法声明符合标准格式",
+    "logical_validation": "通过 - 新增方法与现有 ClipboardHost 接口保持一致的风格",
+    "compilation_impact": "最小 - 只有在 ARKWEB_CLIPBOARD 宏定义时才会编译新增代码"
+  }
+}

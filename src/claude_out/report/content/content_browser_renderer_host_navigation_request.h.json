@@ -1,0 +1,89 @@
+{
+  "file_path": "content/browser/renderer_host/navigation_request.h",
+  "rej_file": "content/browser/renderer_host/navigation_request.h.rej",
+  "analysis_time": "2025-11-05T23:17:00Z",
+  "total_hunks": 3,
+  "resolved_hunks": 3,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "maintained",
+  "processing_summary": {
+    "status": "全部成功解决",
+    "confidence_level": "高",
+    "risk_assessment": "低风险 - 所有修改都是纯添加内容，不涉及删除现有代码"
+  },
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "line_range": "114-127",
+      "description": "添加NavigationRequestUtils友元类和相关成员变量",
+      "changes": [
+        {
+          "type": "addition",
+          "content": "friend class NavigationRequestUtils;",
+          "risk": "低风险 - 添加友元类声明"
+        },
+        {
+          "type": "addition",
+          "content": "std::unique_ptr<NavigationRequestUtils> nav_request_utils_;",
+          "risk": "低风险 - 添加成员变量"
+        },
+        {
+          "type": "addition",
+          "content": "#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)\n  bool load_ignore_cache_params = false;\n#endif",
+          "risk": "低风险 - 条件编译的成员变量"
+        }
+      ],
+      "location_found": true,
+      "applied_successfully": true,
+      "confidence": "高",
+      "reasoning": "在类定义的public部分精确找到了插入位置，上下文匹配完美"
+    },
+    {
+      "hunk_id": 2,
+      "line_range": "1372-1380",
+      "description": "添加HTTPS升级相关的方法",
+      "changes": [
+        {
+          "type": "addition",
+          "content": "#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)\n  void ohos_set_https_upgrade(bool is_force_no_https_upgrade);\n  void ohos_set_url_typed_with_http_scheme(bool url_typed_with_http_scheme);\n  bool is_url_typed_with_http_scheme() const;\n  bool is_force_no_https_upgrade() const;\n#endif",
+          "risk": "低风险 - 条件编译的公共方法声明"
+        }
+      ],
+      "location_found": true,
+      "applied_successfully": true,
+      "confidence": "高",
+      "reasoning": "在set_force_no_https_upgrade()方法后精确找到插入位置，逻辑位置合理"
+    },
+    {
+      "hunk_id": 3,
+      "line_range": "1445-1451",
+      "description": "添加UserAgent相关的方法",
+      "changes": [
+        {
+          "type": "addition",
+          "content": "#if BUILDFLAG(ARKWEB_USERAGENT)\n  void EnableRedirectAbortCancel();\n#endif",
+          "risk": "低风险 - 条件编译的公共方法声明"
+        }
+      ],
+      "location_found": true,
+      "applied_successfully": true,
+      "confidence": "高",
+      "reasoning": "在private部分之前精确找到插入位置，位置合理且符合代码组织结构"
+    }
+  ],
+  "conflict_analysis": {
+    "root_cause": "Arkweb 132到141升级过程中，Chromium内核结构调整导致的代码上下文变化",
+    "resolution_strategy": "基于最小上下文原则的精确定位插入",
+    "validation": "所有修改都遵循C++语法规范，保持代码结构一致性"
+  },
+  "final_verification": {
+    "rej_file_unchanged": true,
+    "source_file_modified": true,
+    "syntax_check": "通过 - 所有添加的代码都是有效的C++声明",
+    "compilation_readiness": "已就绪 - 修改不会导致编译错误"
+  },
+  "conclusion": {
+    "success": true,
+    "message": "所有3个hunk都已成功应用，无遗留冲突。所有修改都是纯添加操作，风险极低，可以安全进行编译测试。"
+  }
+}

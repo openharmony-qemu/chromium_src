@@ -54,6 +54,15 @@
 #include "ui/gfx/native_widget_types.h"
 #include "ui/gfx/range/range.h"
 #include "ui/surface/transport_dib.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/browser/renderer_host/render_widget_host_view_base_interface.h"
+#endif
+
 #include "url/origin.h"
 
 namespace blink {
@@ -221,6 +230,10 @@ class CONTENT_EXPORT RenderWidgetHostViewBase
       const gfx::Rect& keyboard_rect) override {}
   void ShowInterestInElement(int) override {}
   bool IsHTMLFormPopup() const override;
+
+#if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
+  int GetTopControlsOffset() const override;
+#endif
 
   // This only needs to be overridden by RenderWidgetHostViewBase subclasses
   // that handle content embedded within other RenderWidgetHostViews.

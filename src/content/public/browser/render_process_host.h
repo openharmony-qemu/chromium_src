@@ -507,6 +507,17 @@ class CONTENT_EXPORT RenderProcessHost : public RenderProcessHostOhos,
   // a crash.
   virtual const base::TimeTicks& GetLastInitTime() = 0;
 
+#if BUILDFLAG(IS_ARKWEB)
+  // Returns true if this process currently has backgrounded priority.
+  virtual bool IsProcessBackgrounded() { return false; }
+
+  virtual const base::TimeTicks& ProcessBackgroundTime() = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_THEME_FONT)
+  virtual void OnThemeFontChange() {}
+#endif
+
   // Returns the priority of this process.
   virtual base::Process::Priority GetPriority() const = 0;
 
@@ -874,6 +885,10 @@ class CONTENT_EXPORT RenderProcessHost : public RenderProcessHostOhos,
   // Counts current RenderProcessHost(s), ignoring all spare processes.
   static int GetCurrentRenderProcessCountForTesting();
 
+#if BUILDFLAG(ARKWEB_I18N)
+  static void OnLocaleChangedToRenderer(const std::string& update_locale);
+#endif
+
   // Allows tests to override host interface binding behavior. Any interface
   // binding request which would normally pass through the RPH's internal
   // IOThreadHostImpl::BindHostReceiver() will pass through |callback| first if
@@ -883,6 +898,23 @@ class CONTENT_EXPORT RenderProcessHost : public RenderProcessHostOhos,
                                    mojo::GenericPendingReceiver* receiver)>;
   static void InterceptBindHostReceiverForTesting(
       BindHostReceiverInterceptor callback);
+
+#if BUILDFLAG(IS_ARKWEB)
+  static void SetRenderProcessMode(RenderProcessMode mode);
+  static RenderProcessMode render_process_mode();
+
+  enum class RenderType {
+    kExtension = 0,
+    kPdf = 1,
+    kWebUI = 2,
+  };
+
+  std::map<RenderType, unsigned> special_render_numbers_ {
+    {RenderType::kExtension, 0},
+    {RenderType::kPdf, 0},
+    {RenderType::kWebUI, 0},
+  };
+#endif
 };
 
 }  // namespace content

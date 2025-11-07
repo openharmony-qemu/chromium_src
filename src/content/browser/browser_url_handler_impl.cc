@@ -6,6 +6,7 @@
 
 #include <stddef.h>
 
+#include "arkweb/build/features/features.h"
 #include <algorithm>
 
 #include "base/strings/string_util.h"

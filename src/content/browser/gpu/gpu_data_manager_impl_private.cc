@@ -510,12 +510,25 @@ void GpuDataManagerImplPrivate::StartUmaTimer() {
       &GpuDataManagerImplPrivate::RecordCompositingMode);
 }
 
+#if BUILDFLAG(IS_OHOS)
+void SetVulkanIcdAddress()
+{
+  // Set the configuration file lookup address of swiftshader
+  // used by local libvulkan
+  base::FilePath result;
+  CHECK(base::PathService::Get(base::DIR_OHOS_APP_DATA, &result));
+  if (setenv("OHOS_VULKAN_ICD", result.value().c_str(), 1) != 0) {
+    LOG(ERROR) << "set env OHOS_VULKAN_ICD fail";
+  }
+}
+#endif
+
 void GpuDataManagerImplPrivate::InitializeGpuModes() {
   DCHECK_EQ(gpu::GpuMode::UNKNOWN, gpu_mode_);
   // Android and Chrome OS can't switch to software compositing. If the GPU
   // process initialization fails or GPU process is too unstable then crash the
   // browser process to reset everything.
-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
   fallback_modes_.push_back(gpu::GpuMode::DISPLAY_COMPOSITOR);
   if (SoftwareGLAllowed()) {
     fallback_modes_.push_back(gpu::GpuMode::SOFTWARE_GL);
@@ -526,6 +539,9 @@ void GpuDataManagerImplPrivate::InitializeGpuModes() {
   if (command_line->HasSwitch(switches::kDisableGpu)) {
     // Chomecast audio-only builds run with the flag --disable-gpu. The GPU
     // process should not access hardware GPU in this case.
+#if BUILDFLAG(IS_OHOS)
+    SetVulkanIcdAddress();
+#endif
 #if BUILDFLAG(IS_CASTOS)
 #if BUILDFLAG(IS_CAST_AUDIO_ONLY)
     fallback_modes_.clear();

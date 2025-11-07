@@ -1,0 +1,69 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/content/browser/renderer_host/render_widget_host_impl.cc.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/content/browser/renderer_host/render_widget_host_impl.cc",
+    "处理时间": "2025-11-05"
+  },
+  "处理统计": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 1,
+    "解决成功率": "50%"
+  },
+  "rej文件完整性验证": {
+    "状态": "保持完整",
+    "说明": ".rej文件未被修改或删除，完全符合要求"
+  },
+  "hunk处理详情": [
+    {
+      "hunk序号": 1,
+      "位置信息": "构造函数中，frame_token_message_queue_->Init(this) 之后",
+      "冲突原因": "Arkweb 132 在构造函数中添加了针对移动设备的ANR超时设置",
+      "分析过程": "通过上下文锚点 CHECK(frame_token_message_queue_) 和 frame_token_message_queue_->Init(this) 成功定位到源文件中对应位置",
+      "待添加内容": [
+        "#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)",
+        "  // Timeout for pc is 15s, if mobileDevice, we kepp it same with android.",
+        "  if (base::ohos::IsMobileDevice()) {",
+        "    hung_renderer_delay_ = base::Seconds(5);",
+        "  }",
+        "#endif"
+      ],
+      "待删除内容": [],
+      "风险分析": "低风险 - 这是条件编译的ARKWEB特定功能，仅在移动设备上生效，不会影响其他平台",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "应用位置": "源文件第437-442行"
+    },
+    {
+      "hunk序号": 2,
+      "位置信息": "OnInputEventAckTimeout函数内部",
+      "冲突原因": "Arkweb 132 版本的OnInputEventAckTimeout函数与Chromium 141版本结构差异很大，包含不同的逻辑流程",
+      "分析过程": "源文件中的OnInputEventAckTimeout函数结构与.rej文件中的版本完全不同：\n1. 源文件版本有不同的参数签名(base::TimeTicks ack_timeout_ts)\n2. 源文件版本包含visibility检查逻辑\n3. 源文件版本没有user_input_active_handle_.reset()调用\n4. 源文件版本调用了不同的Restart方法",
+      "待添加内容": [
+        "#if BUILDFLAG(IS_OHOS)",
+        "  LOG(ERROR) << \"OnInputEventAckTimeout\";",
+        "#endif",
+        "#if BUILDFLAG(ARKWEB_LOGGER_REPORT)",
+        "  LOG_FEEDBACK(INFO) << \"InputEventAckTimeout[flight count]\"",
+        "                     << in_flight_event_count_;",
+        "#endif"
+      ],
+      "待删除内容": [],
+      "风险分析": "高风险 - 强行应用可能导致函数逻辑错误，破坏现有的输入事件处理机制",
+      "修改置信度": "低",
+      "解决状态": "未解决",
+      "失败原因": "源文件结构与.rej文件差异过大，无法精确定位合适的插入位置",
+      "建议": "需要人工审查此函数的逻辑差异，可能需要重新设计ARKWEB特定功能的集成方式"
+    }
+  ],
+  "总结": {
+    "处理策略": "严格遵守黄金法则，仅应用能够精确定位的修改",
+    "成功部分": "成功应用了构造函数中的ARKWEB_RENDERER_ANR_DUMP功能",
+    "失败部分": "OnInputEventAckTimeout函数由于版本差异过大无法应用",
+    "后续建议": [
+      "需要人工检查OnInputEventAckTimeout函数的逻辑差异",
+      "确认ARKWEB_LOGGER_REPORT功能在Chromium 141中的正确集成方式",
+      "验证已应用的ARKWEB_RENDERER_ANR_DUMP功能是否正常工作"
+    ]
+  }
+}

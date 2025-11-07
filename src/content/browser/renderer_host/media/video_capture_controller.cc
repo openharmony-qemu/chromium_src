@@ -34,6 +34,7 @@
 #include "media/capture/video/video_capture_device_client.h"
 #include "media/capture/video/video_capture_metrics.h"
 #include "services/video_effects/public/cpp/buildflags.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(ENABLE_VIDEO_EFFECTS)
 #include "services/video_effects/public/mojom/video_effects_processor.mojom.h"
@@ -274,8 +275,12 @@ void VideoCaptureController::AddClient(
   }
 
   // Do nothing if this client has called AddClient before.
-  if (FindClient(id, event_handler, controller_clients_))
+  if (FindClient(id, event_handler, controller_clients_)) {
+#if BUILDFLAG(ARKWEB_WEBRTC)
+    LOG(INFO) << "client is already added";
+#endif // BUILDFLAG(ARKWEB_WEBRTC)
     return;
+  }
 
   // If the device has reported OnStarted event, report it to this client here.
   if (state_ == State::kStarted) {
@@ -577,6 +582,9 @@ void VideoCaptureController::OnBufferRetired(int buffer_id) {
 
 void VideoCaptureController::OnError(media::VideoCaptureError error) {
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  EmitLogMessage(__func__, 1);
+#endif // BUILDFLAG(ARKWEB_WEBRTC)
   state_ = State::kError;
   PerformForClientsWithOpenSession(base::BindRepeating(&CallOnError, error));
 }

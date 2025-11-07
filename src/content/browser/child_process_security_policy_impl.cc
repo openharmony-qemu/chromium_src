@@ -635,6 +635,13 @@ class ChildProcessSecurityPolicyImpl::SecurityState {
       return HasPermissionsForContentUri(file, permissions);
     }
 #endif
+#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
+    auto bundleName = OHOS::NWeb::OhosAdapterHelper::GetInstance().
+         GetSystemPropertiesInstance().GetBundleName();
+    if (file.IsDataShareUri(bundleName)) {
+      return HasPermissionsForDatashareUri(file, permissions);
+    }
+#endif
     if (!permissions || file.empty() || !file.IsAbsolute()) {
       return false;
     }

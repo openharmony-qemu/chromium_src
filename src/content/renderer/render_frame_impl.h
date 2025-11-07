@@ -185,6 +185,8 @@ class MHTMLPartsGenerationDelegateImpl;
 class NavigationClient;
 class RenderAccessibilityManager;
 class RenderFrameObserver;
+class ArkwebMediaFactoryExt;
+class RenderFrameImplUtils;
 
 class CONTENT_EXPORT RenderFrameImpl
     : public RenderFrame,
@@ -193,9 +195,14 @@ class CONTENT_EXPORT RenderFrameImpl
       public mojom::Frame,
       mojom::FrameBindingsControl,
       mojom::MhtmlFileWriter,
+#if BUILDFLAG(IS_ARKWEB)
+      public blink::WebLocalFrameClientExt,
+#else
       public blink::WebLocalFrameClient,
+#endif
       service_manager::mojom::InterfaceProvider {
  public:
+  friend class RenderFrameImplUtils;
   // Creates a new RenderFrame as the main frame of `web_view`. Note that not
   // all main RenderFrame creation uses this function. `CreateMainFrame()`
   // is used to create a RenderFrame that is immediately attached as the main
@@ -828,6 +835,37 @@ class CONTENT_EXPORT RenderFrameImpl
   // committing a navigation, but in some cases (about:srcdoc, initial empty
   // document) it may be inherited from the parent or opener.
   blink::ChildURLLoaderFactoryBundle* GetLoaderFactoryBundle() override;
+#if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
+  void AddNamedObject(const std::string& name,
+                      int32_t object_id,
+                      base::Value::List async_method_list,
+                      bool need_update) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void NotifyLcpForBlankless() override;
+  void SendBlanklessKeyToRenderFrame(uint32_t nweb_id,
+                                     uint64_t blankless_key,
+                                     uint64_t frame_sink_id,
+                                     int64_t pref_hash) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  void PageLoadStartLoggerReport(blink::WebDocumentLoader* document_loader);
+  void ContentLoadFailedLoggerReport();
+  void PageLoadFinishedLoggerReport();
+#endif
+#if BUILDFLAG(ARKWEB_TEST)
+  bool web_frame_widget_test_mode = false;
+  blink::WebFrameWidget* web_frame_widget_test = nullptr;
+  void SetLocalRootWebFrameWidgetForTest(blink::WebFrameWidget* widget);
+  bool web_view_test_mode = false;
+  blink::WebView* web_view_test = nullptr;
+  void SetWebViewForTest(blink::WebView* web_view);
+#endif
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  bool IsOffscreen();
+#endif
 
   void SetNewFeatureUsageCallback(NewFeatureUsageCallback callback) override;
 
@@ -1225,6 +1263,18 @@ class CONTENT_EXPORT RenderFrameImpl
   // Resets membmers that are needed for the duration of commit (time between
   // CommitNavigation() and DidCommitNavigation().
   void ResetMembersUsedForDurationOfCommit();
+
+#if BUILDFLAG(ARKWEB_MULTI_WINDOW)
+  bool GetNewWindowWebView(const GURL& target_url,
+                           blink::WebNavigationPolicy policy,
+                           bool allow_popup);
+#endif
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  void DidSubresourceFiltered() override;
+  void OnUpdateAdBlockEnabledToRender(bool site_adblock_enabled) override;
+  bool GetGlobalAdblockEnabled() override;
+#endif
 
   // Actual implementation of AbortClientNavigation(), as one may be deferred in
   // case the page is being instrumented by devtools,
@@ -1647,6 +1697,21 @@ class CONTENT_EXPORT RenderFrameImpl
   // Set if this RenderFrameImpl is for a main frame which is not top-level.
   const bool is_for_nested_main_frame_;
 
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  uint32_t nweb_id_ = 0;
+  uint64_t blankless_key_ = base::ohos::BlanklessController::INVALID_BLANKLESS_KEY;
+  uint64_t frame_sink_id_ = 0;
+  int64_t pref_hash_ = 0;
+#endif
+
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  bool viewport_meta_enabled_{false};
+#endif
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  bool is_offscreen_{false};
+#endif
+  raw_ptr<RenderFrameImplUtils> implUtils;
+
   // Used by DevTools to defer async client navigations for the duration of
   // handling a CDP command.
   ClientNavigationThrottler client_navigation_throttler_;
@@ -1656,4 +1721,5 @@ class CONTENT_EXPORT RenderFrameImpl
 
 }  // namespace content
 
+#include "arkweb/chromium_ext/content/renderer/media/ohos/arkweb_media_factory_ext.h"
 #endif  // CONTENT_RENDERER_RENDER_FRAME_IMPL_H_

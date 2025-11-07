@@ -37,6 +37,7 @@
 #include "media/base/media_switches.h"
 #include "media/base/picture_in_picture_events_info.h"
 #include "mojo/public/cpp/bindings/callback_helpers.h"
+#include "ohos_nweb/src/sysevent/event_reporter.h"
 #include "services/media_session/public/cpp/media_image_manager.h"
 #include "services/media_session/public/mojom/audio_focus.mojom.h"
 #include "third_party/blink/public/common/features.h"
@@ -268,6 +269,9 @@ void MediaSessionImpl::WebContentsDestroyed() {
   normal_players_.clear();
   one_shot_players_.clear();
   ambient_players_.clear();
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  players_mute_state_.clear();
+#endif
 
   AbandonSystemAudioFocusIfNeeded();
 
@@ -524,11 +528,23 @@ bool MediaSessionImpl::AddPlayer(MediaSessionPlayerObserver* observer,
 
 void MediaSessionImpl::RemovePlayer(MediaSessionPlayerObserver* observer,
                                     int player_id) {
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  bool has_normal_player = normal_players_.size() > 0;
+#endif // ARKWEB_MEDIA_AVSESSION
   const PlayerIdentifier identifier(observer, player_id);
   normal_players_.erase(identifier);
   one_shot_players_.erase(identifier);
   ambient_players_.erase(identifier);
   hidden_players_.erase(identifier);
+
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  players_mute_state_.erase(player_id);
+#endif
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  if (has_normal_player && (normal_players_.size() == 0)) {
+    SetWebviewShow(false, false);
+  }
+#endif // ARKWEB_MEDIA_AVSESSION
 
   if (guarding_player_id_ && *guarding_player_id_ == identifier)
     ResetDurationUpdateGuard();
@@ -542,6 +558,9 @@ void MediaSessionImpl::RemovePlayer(MediaSessionPlayerObserver* observer,
 }
 
 void MediaSessionImpl::RemovePlayers(MediaSessionPlayerObserver* observer) {
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  bool has_normal_player = normal_players_.size() > 0;
+#endif // ARKWEB_MEDIA_AVSESSION
   std::erase_if(normal_players_, [observer](const auto& player) {
     return player.first.observer == observer;
   });
@@ -553,6 +572,12 @@ void MediaSessionImpl::RemovePlayers(MediaSessionPlayerObserver* observer) {
   base::EraseIf(ambient_players_, [observer](const auto& player) {
     return player.observer == observer;
   });
+
+#if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
+  if (has_normal_player && (normal_players_.size() == 0)) {
+    SetWebviewShow(false, false);
+  }
+#endif // ARKWEB_MEDIA_AVSESSION
 
   if (guarding_player_id_ && guarding_player_id_->observer == observer)
     ResetDurationUpdateGuard();
@@ -895,6 +920,9 @@ void MediaSessionImpl::RemoveAllPlayersForTest() {
   normal_players_.clear();
   one_shot_players_.clear();
   ambient_players_.clear();
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+  players_mute_state_.clear();
+#endif
   AbandonSystemAudioFocusIfNeeded();
 }
 
@@ -990,7 +1018,12 @@ MediaSessionImpl::MediaSessionImpl(WebContents* web_contents)
       desired_audio_focus_type_(AudioFocusType::kGainTransientMayDuck),
       is_ducking_(false),
       ducking_volume_multiplier_(kDefaultDuckingVolumeMultiplier),
-      routed_service_(nullptr) {
+      routed_service_(nullptr)
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
+      , weakMediaSessionFactory_(this)
+#endif // BUILDFLAG(ARKWEB_MEDIA_POLICY)
+{
+  implUtils_ = new MediaSessionImplUtils(this);
 #if BUILDFLAG(IS_ANDROID)
   session_android_ = std::make_unique<MediaSessionAndroid>(this);
   should_throttle_duration_update_ = true;
@@ -1001,6 +1034,13 @@ MediaSessionImpl::MediaSessionImpl(WebContents* web_contents)
         (std::clamp(media::kAudioDuckingAttenuation.Get(), 0, 100) / 100.0);
   }
 #endif  // BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_MEDIA_MEMORY_PRESSURE)
+  memory_pressure_listener_ = std::make_unique<base::MemoryPressureListener>(
+              FROM_HERE,
+              base::BindRepeating(&MediaSessionImpl::OnMemoryPressure,
+                                  weakMediaSessionFactory_.GetWeakPtr()));
+#endif  // ARKWEB_MEDIA_MEMORY_PRESSURE
+  CreateSessionOhos();
   if (web_contents && web_contents->GetPrimaryMainFrame() &&
       web_contents->GetPrimaryMainFrame()->GetView()) {
     focused_ = web_contents->GetPrimaryMainFrame()->GetView()->HasFocus();

@@ -68,6 +68,28 @@ scoped_refptr<base::SingleThreadTaskRunner> GetTaskRunnerForAndroidMainThread(
 }
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+scoped_refptr<base::SingleThreadTaskRunner> GetTaskRunnerForOHOSMainThread(
+    ::TaskTraits ohos_traits) {
+  BrowserTaskTraits traits;
+  switch (ohos_traits) {
+    case ::TaskTraits::UI_BEST_EFFORT:
+      traits = {base::TaskPriority::BEST_EFFORT};
+      break;
+    case ::TaskTraits::UI_USER_VISIBLE:
+      traits = {base::TaskPriority::USER_VISIBLE};
+      break;
+    case ::TaskTraits::UI_USER_BLOCKING:
+      traits = {base::TaskPriority::USER_BLOCKING};
+      break;
+    default:
+      traits = {};
+  }
+  return g_browser_task_executor->GetUIThreadTaskRunner(traits);
+}
+#endif
+
+
 }  // namespace
 
 scoped_refptr<base::SingleThreadTaskRunner> BrowserTaskExecutor::GetTaskRunner(

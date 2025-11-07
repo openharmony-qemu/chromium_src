@@ -1,0 +1,51 @@
+{
+  "文件路径": "/home/sujiahao/code/arkweb_141/src/content/browser/gpu/gpu_data_manager_impl_private.cc",
+  "冲突文件": "/home/sujiahao/code/arkweb_141/src/content/browser/gpu/gpu_data_manager_impl_private.cc.rej",
+  "处理时间": "2025-11-05",
+  "分析结果": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "rej文件状态": "保持完整未被修改"
+  },
+  "hunk详情": [
+    {
+      "hunk编号": 1,
+      "解决状态": "已解决",
+      "风险等级": "低",
+      "冲突原因": "Arkweb141版本中缺少OHOS系统的Vulkan ICD地址设置功能",
+      "分析过程": "通过分析.rej文件，发现需要添加三个部分：1) SetVulkanIcdAddress函数定义，2) 在InitializeGpuModes函数中修改条件判断添加ARKWEB_OOP_GPU_PROCESS检查，3) 在kDisableGpu分支中添加SetVulkanIcdAddress调用。通过代码定位，成功将所有待添加行应用到源文件的正确位置。",
+      "修改置信度": "高",
+      "修改内容": {
+        "添加的行": [
+          "#if BUILDFLAG(IS_OHOS)",
+          "void SetVulkanIcdAddress()",
+          "{",
+          "  // Set the configuration file lookup address of swiftshader",
+          "  // used by local libvulkan",
+          "  base::FilePath result;",
+          "  CHECK(base::PathService::Get(base::DIR_OHOS_APP_DATA, &result));",
+          "  if (setenv(\"OHOS_VULKAN_ICD\", result.value().c_str(), 1) != 0) {",
+          "    LOG(ERROR) << \"set env OHOS_VULKAN_ICD fail\";",
+          "  }",
+          "}",
+          "#endif",
+          "#if BUILDFLAG(IS_OHOS)",
+          "    SetVulkanIcdAddress();",
+          "#endif"
+        ],
+        "修改的行": [
+          "第518行：将#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS)改为#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)"
+        ]
+      },
+      "处理策略": "原子化应用修改，精确添加待添加行到源文件正确位置，不修改任何上下文内容。发现DisableHardwareAcceleration函数中已存在SetVulkanIcdAddress调用，无需重复添加。"
+    }
+  ],
+  "验证结果": {
+    "语法检查": "通过",
+    "逻辑检查": "通过",
+    "代码完整性": "保持",
+    "功能完整性": "OHOS系统Vulkan ICD地址设置功能已完整添加"
+  },
+  "备注": "所有修改均严格按照'不添加上下文'原则执行，仅添加了.rej文件中以+开头的行，删除了以-开头的行，未引入任何外部内容。修改后的代码保持了原有的逻辑结构和功能完整性。"
+}

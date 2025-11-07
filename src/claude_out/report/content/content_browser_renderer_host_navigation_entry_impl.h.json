@@ -1,0 +1,48 @@
+{
+  "文件路径": "content/browser/renderer_host/navigation_entry_impl.h",
+  "分析时间": "2025-11-05",
+  "总hunk数量": 2,
+  "成功解决的hunk数量": 2,
+  "未能解决的hunk数量": 0,
+  ".rej文件状态": "保持完整，未被修改",
+  "冲突原因": "Arkweb132针对Chromium132-Base内核的侵入式修改在Chromium141-Base内核中产生了冲突",
+  "处理结果": {
+    "hunk_1": {
+      "状态": "已解决",
+      "修改类型": "条件编译指令修改",
+      "位置": "第131行",
+      "修改内容": "将#if BUILDFLAG(IS_ANDROID)修改为#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)",
+      "风险等级": "低",
+      "风险说明": "这是Arkweb框架针对网络功能的条件编译扩展，允许在非Android平台使用Android WebView的数据URL功能",
+      "修改置信度": "高",
+      "处理策略": "精确匹配上下文后应用修改",
+      "定位过程": "通过GetBaseURLForDataURL和SetDataURLAsString方法作为锚点精确定位"
+    },
+    "hunk_2": {
+      "状态": "已解决",
+      "修改类型": "新增方法声明",
+      "位置": "第143行",
+      "修改内容": "在GetTitle()方法后添加bool GetIsRealTitle() override;方法声明",
+      "风险等级": "低",
+      "风险说明": "新增的GetIsRealTitle方法用于判断标题是否为真实标题，这是Arkweb框架的扩展功能",
+      "修改置信度": "高",
+      "处理策略": "精确匹配上下文后应用修改",
+      "定位过程": "通过SetTitle和GetTitle方法作为锚点，在GetTitle后插入新方法声明"
+    }
+  },
+  "整体评估": {
+    "修改成功": true,
+    "语法完整性": "保持良好",
+    "接口兼容性": "保持兼容",
+    "编译风险": "低风险",
+    "功能影响": "扩展了Arkweb框架的网络功能和标题管理功能"
+  },
+  "处理原则遵循情况": {
+    "未添加上下文行": true,
+    "未生成脚本文件": true,
+    "未创建辅助文件": true,
+    "未修改.rej文件": true,
+    "仅在源文件中直接修改": true,
+    "原子化应用修改": true
+  }
+}

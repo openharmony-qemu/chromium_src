@@ -1,0 +1,120 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/content/renderer/render_frame_impl.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/content/renderer/render_frame_impl.h",
+    "处理时间": "2025-11-06",
+    "升级版本": "Chromium 132 -> 141"
+  },
+  "统计信息": {
+    "总hunk数量": 7,
+    "成功解决的hunk数量": 7,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk处理详情": [
+    {
+      "hunk编号": 1,
+      "描述": "添加ArkwebMediaFactoryExt和RenderFrameImplUtils类声明",
+      "冲突原因": "Arkweb 132版本添加了两个新的前置声明类，但在Chromium 141基线中不存在",
+      "分析过程": "在源文件第187-189行找到了RenderFrameObserver类声明后的合适位置，使用该类声明作为锚点进行定位",
+      "修改内容": "在RenderFrameObserver类声明后添加了两个前置声明",
+      "风险等级": "低",
+      "置信度": "高",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 2,
+      "描述": "修改RenderFrameImpl类继承关系，添加条件编译",
+      "冲突原因": "Arkweb 132版本根据IS_ARKWEB宏决定继承WebLocalFrameClient或WebLocalFrameClientExt",
+      "分析过程": "在源文件第198行找到了WebLocalFrameClient继承声明，使用该位置作为锚点，替换为条件编译形式",
+      "修改内容": "将单一继承替换为#if BUILDFLAG(IS_ARKWEB)条件编译，根据宏选择不同的基类",
+      "风险等级": "中",
+      "置信度": "高",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 3,
+      "描述": "添加RenderFrameImplUtils类的friend声明",
+      "冲突原因": "Arkweb 132版本添加了友元类声明以允许RenderFrameImplUtils访问私有成员",
+      "分析过程": "在源文件第205行找到了public:关键字后的合适位置，添加friend声明",
+      "修改内容": "在public访问修饰符后添加了friend class RenderFrameImplUtils;",
+      "风险等级": "低",
+      "置信度": "高",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 4,
+      "描述": "添加多个Arkweb特性相关的方法声明",
+      "冲突原因": "Arkweb 132版本在public部分添加了JavaScript桥接、空白优化、日志报告、测试模式、扩展等多个特性的方法",
+      "分析过程": "在源文件第837行找到了GetLoaderFactoryBundle方法后的合适位置，使用该方法作为锚点进行定位",
+      "修改内容": "添加了ARKWEB_JAVASCRIPT_BRIDGE、ARKWEB_BLANK_OPTIMIZE、ARKWEB_LOGGER_REPORT、ARKWEB_TEST、ARKWEB_ARKWEB_EXTENSIONS等特性相关的完整方法声明",
+      "风险等级": "中",
+      "置信度": "高",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 5,
+      "描述": "添加protected部分的多个Arkweb特性相关方法",
+      "冲突原因": "Arkweb 132版本在protected部分添加了多窗口和广告拦截特性的方法",
+      "分析过程": "在源文件第1265行找到了ResetMembersUsedForDurationOfCommit方法后的合适位置",
+      "修改内容": "添加了ARKWEB_MULTI_WINDOW和ARKWEB_ADBLOCK特性相关的方法声明",
+      "风险等级": "中",
+      "置信度": "高",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 6,
+      "描述": "添加多个Arkweb特性相关的私有成员变量",
+      "冲突原因": "Arkweb 132版本添加了空白优化、用户代理、扩展特性相关的私有成员变量",
+      "分析过程": "在源文件第1698行找到了is_for_nested_main_frame_成员后的合适位置",
+      "修改内容": "添加了ARKWEB_BLANK_OPTIMIZE、ARKWEB_USERAGENT、ARKWEB_ARKWEB_EXTENSIONS特性相关的成员变量和RenderFrameImplUtils指针",
+      "风险等级": "中",
+      "置信度": "高",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk编号": 7,
+      "描述": "添加文件末尾的include语句",
+      "冲突原因": "Arkweb 132版本在文件末尾添加了arkweb_media_factory_ext.h的头文件包含",
+      "分析过程": "在源文件末尾namespace content结束后找到了合适位置",
+      "修改内容": "在namespace content结束后、endif宏前添加了#include语句",
+      "风险等级": "低",
+      "置信度": "高",
+      "解决状态": "已解决"
+    }
+  ],
+  "整体风险评估": {
+    "总体风险等级": "中等",
+    "主要风险点": [
+      "条件编译的继承关系可能影响多态行为",
+      "多个特性模块的集成可能产生交互影响",
+      "私有成员变量的添加可能影响内存布局"
+    ],
+    "建议验证措施": [
+      "确认IS_ARKWEB宏在构建时正确定义",
+      "验证WebLocalFrameClientExt接口与WebLocalFrameClient的兼容性",
+      "检查所有新增的BUILDFLAG宏在构建系统中正确配置",
+      "验证新增方法不会与Chromium 141的其他特性冲突"
+    ]
+  },
+  "技术特点": {
+    "侵入式修改类型": "增量式功能扩展",
+    "主要涉及特性": [
+      "JavaScript桥接 (ARKWEB_JAVASCRIPT_BRIDGE)",
+      "空白优化 (ARKWEB_BLANK_OPTIMIZE)",
+      "日志报告 (ARKWEB_LOGGER_REPORT)",
+      "测试支持 (ARKWEB_TEST)",
+      "扩展支持 (ARKWEB_ARKWEB_EXTENSIONS)",
+      "多窗口支持 (ARKWEB_MULTI_WINDOW)",
+      "广告拦截 (ARKWEB_ADBLOCK)",
+      "用户代理优化 (ARKWEB_USERAGENT)"
+    ],
+    "编译条件": 所有修改均使用BUILDFLAG宏进行条件编译
+  },
+  "文件状态": {
+    ".rej文件保持完整": true,
+    "源文件修改完成": true,
+    "语法完整性": "已保持",
+    "代码风格一致性": "已保持"
+  }
+}

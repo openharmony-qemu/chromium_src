@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/circular_deque.h"
 #include "base/containers/enum_set.h"
 #include "base/containers/flat_map.h"

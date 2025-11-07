@@ -122,6 +122,10 @@ class CONTENT_EXPORT NavigationURLLoaderImpl
   bool SetNavigationTimeout(base::TimeDelta timeout) override;
   void CancelNavigationTimeout() override;
 
+#if BUILDFLAG(ARKWEB_USERAGENT)
+  void EnableRedirectAbortCancel() override;
+#endif
+
   void TriggerTimeoutForTesting();
   const network::ResourceRequest& GetResourceRequestForTesting() const;
 

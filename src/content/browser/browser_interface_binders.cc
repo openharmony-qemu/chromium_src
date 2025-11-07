@@ -1163,6 +1163,16 @@ void PopulateFrameBinders(RenderFrameHostImpl* host, mojo::BinderMap* map) {
   }
 }
 
+#if BUILDFLAG(ARKWEB_CRASHPAD)
+  map->Add<dfx::mojom::DfxReporter>(base::BindRepeating(
+      [](RenderFrameHostImpl *host,
+         mojo::PendingReceiver<dfx::mojom::DfxReporter> receiver) {
+        DfxReporterImpl::ProcessPendingReceiver(receiver);
+      },
+      host));
+#endif
+}
+
 void PopulateBinderMapWithContext(
     RenderFrameHostImpl* host,
     mojo::BinderMapWithContext<RenderFrameHost*>* map) {
@@ -1257,6 +1267,11 @@ void PopulateBinderMapWithContext(
   map->Add<blink::mojom::TextSuggestionHost>(
       &EmptyBinderForFrame<blink::mojom::TextSuggestionHost>);
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ARKWEB_CSS_INPUT_TIME)
+  map->Add<blink::mojom::DateTimeChooser>(
+      base::BindRepeating(&BindDateTimeChooserForFrame));
+#endif
 
   map->Add<blink::mojom::Authenticator>(
       [](RenderFrameHost* host,

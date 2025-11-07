@@ -149,6 +149,7 @@
 #include "net/socket/client_socket_factory.h"
 #include "net/ssl/ssl_config_service.h"
 #include "services/audio/service.h"
+#include "services/data_decoder/data_decoder_service.h"
 #include "services/data_decoder/public/cpp/service_provider.h"
 #include "services/data_decoder/public/mojom/data_decoder_service.mojom.h"
 #include "services/network/public/cpp/network_switches.h"

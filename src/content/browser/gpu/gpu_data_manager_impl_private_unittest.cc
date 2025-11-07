@@ -488,7 +488,7 @@ TEST_F(GpuDataManagerImplPrivateTest, FallbackFromGraphite) {
 // not support falling back to software from Vulkan.
 // Explicitly disable SkiaGraphite for tests that run with Ganesh as some
 // platforms have started shipping Graphite.
-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_IOS)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_IOS) && !BUILDFLAG(IS_OHOS)
 #if !BUILDFLAG(IS_FUCHSIA)
 TEST_F(GpuDataManagerImplPrivateTest, NoDefaultFallbackToSwiftShaderForGanesh) {
   base::CommandLine::ForCurrentProcess()->AppendSwitch(
@@ -732,7 +732,7 @@ TEST_F(GpuDataManagerImplPrivateTest, VulkanInitializationFails) {
         // !BUILDFLAG(IS_IOS)
 }
 
-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_IOS)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_IOS) && !BUILDFLAG(IS_OHOS)
 TEST_F(GpuDataManagerImplPrivateTest, FallbackFromVulkanWithGLDisabled) {
   base::test::ScopedFeatureList feature_list;
   feature_list.InitWithFeatures({features::kVulkan},

@@ -40,6 +40,7 @@
 #include "media/capture/video/video_capture_device.h"
 #include "services/video_effects/public/cpp/buildflags.h"
 #include "third_party/blink/public/common/mediastream/media_stream_request.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(ENABLE_VIDEO_EFFECTS)
 #include "services/video_effects/public/mojom/video_effects_processor.mojom-forward.h"
@@ -316,8 +317,12 @@ void VideoCaptureManager::QueueStartDevice(
                                 std::move(video_effects_processor),
 #endif
                                 std::move(readonly_video_effects_manager)));
-  if (device_start_request_queue_.size() == 1)
+  if (device_start_request_queue_.size() == 1) {
+#if BUILDFLAG(ARKWEB_WEBRTC)
+    EmitLogMessage("VideoCaptureManager::QueueStartDevice", 1);
+#endif // BUILDFLAG(ARKWEB_WEBRTC)
     ProcessDeviceStartRequestQueue();
+  }
 }
 
 void VideoCaptureManager::DoStopDevice(VideoCaptureController* controller) {

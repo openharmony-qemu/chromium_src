@@ -648,6 +648,16 @@ bool PrerenderHost::StartPrerendering() {
 
   CHECK_GE(navigation_request->state(),
            NavigationRequest::WAITING_FOR_RENDERER_RESPONSE);
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  // Update headers in begin_params_,
+  // which is used to be compared before prerenderring page is activated.
+  if (begin_params_ &&
+    base::CommandLine::ForCurrentProcess()->HasSwitch(::switches::kEnableNwebEx)) {
+    begin_params_->headers = navigation_request->begin_params().headers;
+  }
+#endif
+
   return true;
 }
 
@@ -984,6 +994,17 @@ bool PrerenderHost::AreInitialPrerenderNavigationParamsCompatibleWithNavigation(
   bool allow_partial_mismatch =
       web_contents_->GetDelegate()->ShouldAllowPartialParamMismatchOfPrerender2(
           navigation_request);
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  // Allow prerender page by API(embedder) and activate the page by the address
+  // bar. Relaxes checks in this situation.
+  allow_partial_mismatch =
+      (allow_partial_mismatch ||
+       (((navigation_request.common_params().transition &
+          ~ui::PAGE_TRANSITION_CLIENT_REDIRECT) ==
+         (ui::PAGE_TRANSITION_TYPED | ui::PAGE_TRANSITION_FROM_ADDRESS_BAR)) &&
+        common_params_->transition ==
+            (ui::PAGE_TRANSITION_TYPED | ui::PAGE_TRANSITION_FROM_API)));
+#endif
   // Compare BeginNavigationParams.
   ActivationNavigationParamsMatch result =
       AreBeginNavigationParamsCompatibleWithNavigation(

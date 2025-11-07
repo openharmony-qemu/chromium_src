@@ -7,6 +7,7 @@
 #include <optional>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/bind.h"
 #include "content/browser/permissions/permission_service_context.h"
 #include "content/browser/permissions/permission_util.h"

@@ -70,6 +70,10 @@ namespace content {
 
 using testing::Optional;
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+const std::string& TEST_STRING_URL = "https:www.example.com";
+#endif
+
 class NavigationURLLoaderImplTest : public testing::Test {
  public:
   NavigationURLLoaderImplTest()
@@ -199,7 +203,14 @@ class NavigationURLLoaderImplTest : public testing::Test {
             false /* allow_cookies_from_browser */, 0 /* navigation_id */,
             false /* shared_storage_writable */,
             is_ad_tagged /* is_ad_tagged */,
-            false /* force_no_https_upgrade */));
+            false /* force_no_https_upgrade */
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+            ,
+            /*std::shared_ptr<ohos_prp_preload::PRPPRequestLoader>*/ nullptr,
+            /*const std::string&*/ TEST_STRING_URL,
+            /*std::shared_ptr<ohos_prp_preload::PRRequestInfo>*/ nullptr
+#endif
+            ));
 
     return std::make_unique<NavigationURLLoaderImpl>(
         browser_context_.get(), browser_context_->GetDefaultStoragePartition(),

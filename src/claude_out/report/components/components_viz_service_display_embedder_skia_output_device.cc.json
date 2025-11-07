@@ -1,0 +1,69 @@
+{
+  "file_path": "components/viz/service/display_embedder/skia_output_device.cc",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "status": "已解决",
+      "risk_level": "低风险",
+      "conflict_reason": "在Chromium 141中，include结构发生变化，arkweb特征头文件的包含位置与源文件不匹配",
+      "analysis_process": {
+        "rej_content": {
+          "line_range": "5-15",
+          "added_lines": [
+            "+#include \"arkweb/build/features/features.h\""
+          ],
+          "removed_lines": [],
+          "context_lines": [
+            "@@ -5,10 +5,11 @@",
+            "#include \"components/viz/service/display_embedder/skia_output_device.h\"",
+            "",
+            "#include <algorithm>",
+            "#include <utility>",
+            "",
+            "#include \"base/check_op.h\"",
+            "#include \"base/notreached.h\"",
+            "#include \"gpu/command_buffer/service/memory_tracking.h\""
+          ]
+        },
+        "source_file_analysis": {
+          "target_location": {
+            "line_before": 8,
+            "content_before": "#include <utility>",
+            "line_after": 11,
+            "content_after": "#include \"base/check_op.h\"",
+            "found": true
+          }
+        },
+        "resolution_strategy": {
+          "method": "精确匹配插入",
+          "confidence": "高",
+          "insert_position": "在#include <utility>和#include \"base/check_op.h\"之间",
+          "success": true
+        }
+      },
+      "modification_details": {
+        "action": "添加",
+        "modified_content": "#include \"arkweb/build/features/features.h\"",
+        "line_number": 10,
+        "modification_successful": true
+      }
+    }
+  ],
+  "summary": {
+    "processing_status": "成功",
+    "total_modifications": 1,
+    "successful_additions": 1,
+    "successful_deletions": 0,
+    "rej_file_integrity": "完整未被修改",
+    "code_quality_impact": "无负面影响，正确添加了arkweb特征头文件包含"
+  },
+  "technical_notes": {
+    "modification_type": "include添加",
+    "feature_flag": "BUILDFLAG(ARKWEB_DFX_TRACING)等arkweb相关功能标志",
+    "compatibility": "与现有代码完全兼容",
+    "build_impact": "确保arkweb特定功能能够正确编译"
+  }
+}

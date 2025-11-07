@@ -81,11 +81,15 @@ class DistillerPageWebContents : public DistillerPage,
   DistillerPageWebContents(const DistillerPageWebContents&) = delete;
   DistillerPageWebContents& operator=(const DistillerPageWebContents&) = delete;
 
+  virtual DistillerPageWebContentsExt* AsExt() {
+    return nullptr;
+  }
  protected:
   void DistillPageImpl(const GURL& url, const std::string& script) override;
 
  private:
   friend class TestDistillerPageWebContents;
+  friend class DistillerPageWebContentsExt;
 
   enum State {
     // The page distiller is idle.

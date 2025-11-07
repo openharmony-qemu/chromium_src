@@ -119,6 +119,9 @@ class PasswordReuseManager;
 class PasswordStoreInterface;
 class SmsOtpBackend;
 class WebAuthnCredentialsDelegate;
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+class PasswordManagerClientExt;
+#endif
 struct PasswordForm;
 
 enum class ErrorMessageFlowType { kSaveFlow, kFillFlow };
@@ -547,7 +550,7 @@ class PasswordManagerClient {
   virtual void TriggerSignIn(signin_metrics::AccessPoint access_point) const;
 
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || \
-    BUILDFLAG(IS_CHROMEOS)
+    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
   // Shows the bubble with the details of the `form`.
   virtual void OpenPasswordDetailsBubble(
       const password_manager::PasswordForm& form) = 0;
@@ -557,9 +560,9 @@ class PasswordManagerClient {
   virtual void MaybeShowSavePasswordPrimingPromo(const GURL& current_url) = 0;
 
 #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) ||
-        // BUILDFLAG(IS_CHROMEOS)
+        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 
-#if !BUILDFLAG(IS_IOS)
+#if !BUILDFLAG(IS_IOS) || BUILDFLAG(IS_OHOS)
   // Creates and show the cross domain confirmation popup.
   virtual std::unique_ptr<PasswordCrossDomainConfirmationPopupController>
   ShowCrossDomainConfirmationPopup(const gfx::RectF& element_bounds,
@@ -568,7 +571,7 @@ class PasswordManagerClient {
                                    const std::u16string& password_hostname,
                                    bool show_warning_text,
                                    base::OnceClosure confirmation_callback) = 0;
-#endif  // !BUILDFLAG(IS_IOS)
+#endif  // !BUILDFLAG(IS_IOS) || BUILDFLAG(IS_OHOS)
 
   virtual password_manager::LeakDetectionInitiator GetLeakDetectionInitiator();
 
@@ -581,4 +584,7 @@ class PasswordManagerClient {
 
 }  // namespace password_manager
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+#include "arkweb/chromium_ext/components/password_manager/core/browser/password_manager_client_ext.h"
+#endif
 #endif  // COMPONENTS_PASSWORD_MANAGER_CORE_BROWSER_PASSWORD_MANAGER_CLIENT_H_

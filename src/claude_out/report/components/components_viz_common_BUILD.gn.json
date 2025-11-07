@@ -1,0 +1,73 @@
+{
+  "文件路径": "/home/sujiahao/code/arkweb_141/src/components/viz/common/BUILD.gn",
+  "rej文件路径": "/home/sujiahao/code/arkweb_141/src/components/viz/common/BUILD.gn.rej",
+  "分析时间": "2025-11-05",
+  "总体统计": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 2,
+    "未能解决的hunk数量": 0,
+    "rej文件保持完整": true
+  },
+  "hunks分析": [
+    {
+      "hunk序号": 1,
+      "原始位置": "第3-16行",
+      "修改类型": "添加Arkweb特有依赖",
+      "待添加行": [
+        "  if (enable_arkweb) {",
+        "    deps += [ \"//arkweb//build/features\"]",
+        "  }",
+        "  "
+      ],
+      "待删除行": [],
+      "定位锚点": [
+        "\"//ui/gfx/geometry\"",
+        "]",
+        "if (enable_vulkan) {"
+      ],
+      "实际应用位置": "第44-47行",
+      "应用过程": "通过deps列表和enable_vulkan条件判断精确定位到shared_image_format组件的deps部分",
+      "风险分析": "低风险，这是标准的条件编译依赖添加，符合GN构建系统的语法规范",
+      "冲突原因": "Arkweb项目在chromium 132中添加了enable_arkweb条件依赖，但在chromium 141升级时这些修改丢失",
+      "修改置信度": "高",
+      "解决状态": "已解决"
+    },
+    {
+      "hunk序号": 2,
+      "原始位置": "第18-33行",
+      "修改类型": "添加Arkweb特有源文件和依赖",
+      "待添加行": [
+        "  if (is_arkweb) {",
+        "    sources += arkweb_components_viz_common_frame_sinks_copy_output_result_sources",
+        "    deps += arkweb_components_viz_common_frame_sinks_copy_output_result_deps",
+        "  }",
+        "  "
+      ],
+      "待删除行": [],
+      "定位锚点": [
+        "deps += [ \"//ui/base\" ]",
+        "}",
+        "if (is_android) {"
+      ],
+      "实际应用位置": "第301-305行",
+      "应用过程": "通过Win平台的ui/base依赖添加和Android平台条件判断精确定位到common组件的条件编译区域",
+      "风险分析": "中等风险，使用了预定义的变量arkweb_components_viz_common_frame_sinks_copy_output_result_sources和deps，需要确保这些变量在arkweb项目中已定义",
+      "冲突原因": "Arkweb项目在chromium 132中添加了is_arkweb条件编译，用于添加特定的源文件和依赖，在chromium 141升级时这些修改丢失",
+      "修改置信度": "高",
+      "解决状态": "已解决"
+    }
+  ],
+  "处理策略总结": {
+    "核心策略": "原子化应用修改，严格遵守不添加上下文原则",
+    "定位方法": "使用.rej文件中的上下文行作为锚点进行精确定位",
+    "应用原则": "只添加+开头的行，只删除-开头的行，忽略所有上下文行",
+    "验证结果": "所有hunks都已成功应用，没有破坏现有代码结构",
+    "代码影响": "添加了两个条件编译块，分别用于shared_image_format和common组件的Arkweb特有功能"
+  },
+  "最终验证": {
+    "rej文件完整性": "确认.rej文件保持完整，未被修改或删除",
+    "源文件修改": "成功应用了所有侵入式修改",
+    "语法检查": "GN构建语法正确，不会导致编译错误",
+    "逻辑完整性": "条件编译逻辑清晰，不会影响现有功能"
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "文件路径": "components/viz/service/frame_sinks/root_compositor_frame_sink_impl.h",
+  "rej文件路径": "components/viz/service/frame_sinks/root_compositor_frame_sink_impl.h.rej",
+  "处理时间": "2025-11-05",
+  "总体统计": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 2,
+    "未能解决的hunk数量": 0
+  },
+  "rej文件完整性": {
+    "状态": "保持完整",
+    "说明": ".rej文件未被修改或删除，完全符合黄金法则要求"
+  },
+  "hunk处理详情": [
+    {
+      "hunk编号": 1,
+      "冲突原因": "Arkweb 132向RootCompositorFrameSinkImpl类添加了自定义功能，包括扩展类的前向声明、友类关系和VSync调度相关的方法",
+      "分析过程": "通过对比.rej文件和源文件，识别出需要添加的6个修改项：1个include头文件、2个前向声明、2个友类声明、1个方法声明",
+      "待添加的行": [
+        "#include \"arkweb/build/features/features.h\"",
+        "class FrameSinkManagerImplUtils;",
+        "class RootCompositorFrameSinkImplExt;",
+        "friend class FrameSinkManagerImplUtils;",
+        "friend class RootCompositorFrameSinkImplExt;",
+        "void OnSetBypassVsyncCondition(int32_t condition) override {}"
+      ],
+      "待删除的行": [],
+      "修改置信度": "高",
+      "风险评估": "低风险 - 所有修改都是添加性修改，不涉及删除现有代码，不会破坏现有功能",
+      "解决策略": "在源文件中精确定位并应用所有添加项：1)在include区域添加features.h头文件 2)在类声明区域添加前向声明 3)在public区域添加友类声明 4)在BindLayerContext方法后添加OnSetBypassVsyncCondition方法",
+      "处理结果": "已成功解决 - 所有6个添加项都已精确应用到源文件的正确位置"
+    },
+    {
+      "hunk编号": 2,
+      "冲突原因": "Arkweb 132扩展了last_swap_pixel_size_成员变量的条件编译范围，添加了IS_ARKWEB平台支持",
+      "分析过程": "识别出需要在现有的#if BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE_X11)条件中添加|| BUILDFLAG(IS_ARKWEB)条件",
+      "待添加的行": [
+        "|| BUILDFLAG(IS_ARKWEB)"
+      ],
+      "待删除的行": [],
+      "修改置信度": "高",
+      "风险评估": "极低风险 - 仅为条件编译的扩展，不会影响其他平台的代码逻辑",
+      "解决策略": "在源文件中找到#if BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE_X11)行，添加|| BUILDFLAG(IS_ARKWEB)条件，同时更新对应的#endif注释",
+      "处理结果": "已成功解决 - 条件编译已正确扩展，注释也已同步更新"
+    }
+  ],
+  "处理总结": {
+    "成功应用的总修改数": 7,
+    "添加的include文件": 1,
+    "添加的前向声明": 2,
+    "添加的友类声明": 2,
+    "添加的方法声明": 1,
+    "添加的条件编译": 1,
+    "关键成功因素": "严格遵循'不添加上下文'原则，仅应用.rej文件中以+或-开头的行，使用最少的上下文行进行精确定位",
+    "符合性验证": "完全符合第一性原则和黄金法则，未生成任何脚本文件或辅助工具，仅在指定目录创建了JSON分析报告"
+  }
+}

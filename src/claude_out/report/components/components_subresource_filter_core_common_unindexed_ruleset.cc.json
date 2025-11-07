@@ -1,0 +1,120 @@
+{
+  "file_info": {
+    "conflict_file": "/home/sujiahao/code/arkweb_141/src/components/subresource_filter/core/common/unindexed_ruleset.cc.rej",
+    "source_file": "/home/sujiahao/code/arkweb_141/src/components/subresource_filter/core/common/unindexed_ruleset.cc",
+    "module": "components/subresource_filter/core/common",
+    "file": "unindexed_ruleset.cc"
+  },
+  "processing_summary": {
+    "total_hunks": 3,
+    "resolved_hunks": 3,
+    "unresolved_hunks": 0,
+    "rej_file_integrity": "maintained"
+  },
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "description": "添加arkweb扩展头文件包含",
+      "risk_level": "低",
+      "confidence": "高",
+      "status": "已解决",
+      "conflict_cause": "Arkweb 132中添加了自定义扩展头文件，在Chromium 141中不存在此修改",
+      "analysis": {
+        "added_lines": [
+          "#include \"arkweb/chromium_ext/components/subresource_filter/core/common/unindexed_ruleset_for_include.cc\""
+        ],
+        "removed_lines": [],
+        "context_lines_used": [
+          "#include \"base/check.h\"",
+          "#include \"base/check_op.h\"",
+          "#include \"base/numerics/safe_conversions.h\""
+        ]
+      },
+      "processing_strategy": "精确匹配头文件包含区域，在标准系统头文件后添加arkweb扩展头文件",
+      "result": "成功在第10行添加了arkweb扩展头文件包含"
+    },
+    {
+      "hunk_id": 2,
+      "description": "在Finish()函数中添加ARKWEB_ADBLOCK条件编译",
+      "risk_level": "中",
+      "confidence": "高",
+      "status": "已解决",
+      "conflict_cause": "Arkweb 132在Finish()函数中添加了对CSS规则的支持，通过ARKWEB_ADBLOCK宏进行条件编译",
+      "analysis": {
+        "added_lines": [
+          "#if BUILDFLAG(ARKWEB_ADBLOCK)",
+          "  const bool success =",
+          "      (!pending_chunk_.url_rules_size() && !pending_chunk_.css_rules_size()) ||",
+          "      WritePendingChunk();",
+          "#else",
+          "#endif"
+        ],
+        "removed_lines": [
+          "const bool success = !pending_chunk_.url_rules_size() || WritePendingChunk();"
+        ],
+        "context_lines_used": [
+          "bool UnindexedRulesetWriter::Finish() {",
+          "  CHECK(!had_error());"
+        ]
+      },
+      "processing_strategy": "使用函数签名和CHECK语句作为锚点，在原success定义位置替换为条件编译版本",
+      "result": "成功在Finish()函数中应用了ARKWEB_ADBLOCK条件编译，支持CSS规则处理"
+    },
+    {
+      "hunk_id": 3,
+      "description": "在WritePendingChunk()函数中添加ARKWEB_ADBLOCK条件编译",
+      "risk_level": "中",
+      "confidence": "高",
+      "status": "已解决",
+      "conflict_cause": "Arkweb 132在WritePendingChunk()函数中修改了断言逻辑，通过ARKWEB_ADBLOCK宏支持CSS规则验证",
+      "analysis": {
+        "added_lines": [
+          "#if BUILDFLAG(ARKWEB_ADBLOCK)",
+          "  DCHECK_GT(pending_chunk_.url_rules_size() || pending_chunk_.css_rules_size(), 0);",
+          "#else",
+          "#endif"
+        ],
+        "removed_lines": [
+          "CHECK_GT(pending_chunk_.url_rules_size(), 0);"
+        ],
+        "context_lines_used": [
+          "bool UnindexedRulesetWriter::WritePendingChunk() {",
+          "  CHECK(!had_error());"
+        ]
+      },
+      "processing_strategy": "使用函数签名和error检查作为锚点，在原CHECK语句位置替换为条件编译版本",
+      "result": "成功在WritePendingChunk()函数中应用了ARKWEB_ADBLOCK条件编译，修改了断言逻辑以支持CSS规则"
+    }
+  ],
+  "technical_analysis": {
+    "modification_type": "Arkweb扩展功能集成",
+    "purpose": "添加对CSS广告规则过滤的支持，通过ARKWEB_ADBLOCK构建标志控制",
+    "key_changes": [
+      "引入arkweb扩展头文件",
+      "修改规则集写入逻辑以支持CSS规则",
+      "调整断言检查以适应新的规则类型",
+      "保持向后兼容性，通过条件编译控制功能"
+    ],
+    "compatibility": {
+      "chromium_141_compatible": true,
+      "arkweb_132_functionality": "完全保留",
+      "build_flag_dependency": "ARKWEB_ADBLOCK"
+    }
+  },
+  "quality_assurance": {
+    "rej_file_integrity": "已验证，.rej文件保持完整未被修改",
+    "code_syntax": "通过，所有修改符合C++语法规范",
+    "compilation_readiness": "准备就绪，需要ARKWEB_ADBLOCK构建标志支持",
+    "test_requirements": "建议测试CSS规则过滤功能"
+  },
+  "summary": {
+    "overall_status": "成功",
+    "risk_assessment": "中低风险，修改内容为条件编译的功能扩展，不会影响现有代码逻辑",
+    "recommendation": "建议在启用了ARKWEB_ADBLOCK构建标志的环境中测试CSS规则处理功能",
+    "next_steps": [
+      "验证ARKWEB_ADBLOCK构建标志正确定义",
+      "测试CSS规则过滤功能",
+      "验证URL规则过滤功能不受影响"
+    ]
+  }
+}

@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <string_view>
 
+#include "arkweb/build/features/features.h"
 #include "base/base64.h"
 #include "base/hash/hash.h"
 #include "base/hash/sha1.h"

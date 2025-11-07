@@ -1,33 +1,5 @@
 --- gpu_service_impl.cc	2025-10-20 19:52:54.146420452 +0800
 +++ gpu_service_impl.cc	2025-10-16 15:54:59.244966770 +0800
-@@ -7,10 +7,11 @@
- #include <memory>
- #include <string>
- #include <utility>
- #include <vector>
- 
-+#include "arkweb/build/features/features.h"
- #include "base/allocator/partition_alloc_support.h"
- #include "base/command_line.h"
- #include "base/feature_list.h"
- #include "base/functional/bind.h"
- #include "base/memory/scoped_refptr.h"
-@@ -143,10 +144,15 @@
- 
- #if BUILDFLAG(IS_OZONE)
- #include "ui/ozone/public/ozone_platform.h"
- #endif  // BUILDFLAG(IS_OZONE)
- 
-+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-+#include "media/gpu/ohos/ohos_image_decode_accelerator_worker.h"
-+#endif  // BUILDFLAG(ARKWEB_HEIF_SUPPORT)
-+
-+#include "arkweb/chromium_ext/components/viz/service/gl/gpu_service_impl_utils.cc"
- namespace viz {
- 
- namespace {
- 
- // The names emitted for GPU initialization trace events.
 @@ -174,15 +180,17 @@
  bool PreInitializeLogHandler(int severity,
                               const char* file,

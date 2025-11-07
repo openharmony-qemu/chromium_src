@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/chromium_ext/components/viz/service/display/display_scheduler_utils.h"
 #include "base/auto_reset.h"
 #include "base/memory/raw_ptr.h"
 #include "base/metrics/histogram_macros.h"
@@ -17,6 +18,9 @@
 #include "base/trace_event/trace_event.h"
 #include "components/viz/common/features.h"
 #include "components/viz/service/performance_hint/hint_session.h"
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
 #include "third_party/perfetto/include/perfetto/tracing/track.h"
 
 namespace viz {
@@ -30,6 +34,14 @@ base::TimeDelta ComputeAdpfTarget(const BeginFrameArgs& args) {
     return deadline.latch_delta * 3 / 4;
   }
   return base::Milliseconds(12);
+}
+
+bool DrawImmediatelyWhenInteractive() {
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+  if (!base::ohos::IsPcDevice() && !base::ohos::IsTabletDevice())
+    return false;
+#endif
+  return features::ShouldDrawImmediatelyWhenInteractive();
 }
 
 bool AdpfCanUseSetThreads() {

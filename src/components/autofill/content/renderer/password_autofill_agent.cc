@@ -556,7 +556,9 @@ bool IsSubmitElement(WebFormControlElement element) {
              blink::mojom::FormControlType::kInputSubmit;
 }
 
+#if !BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 }  // namespace
+#endif
 
 // During prerendering, we do not want the renderer to send messages to the
 // corresponding driver. Since we use a channel associated interface, we still
@@ -635,6 +637,18 @@ class PasswordAutofillAgent::DeferringPasswordManagerDriver
     DeferMsg(&mojom::PasswordManagerDriver::CheckSafeBrowsingReputation,
              form_action, frame_url);
   }
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  void OnRequestAutofill(
+      FormRendererId form_id,
+      mojom::OhosPasswordFormAutofillState state,
+      const InputFillRequestData & username_data,
+      const InputFillRequestData & password_data) override {
+    DeferMsg(&mojom::PasswordManagerDriver::OnRequestAutofill,
+             form_id, state, username_data, password_data);
+  }
+#endif
+
   void FocusedInputChanged(
       FieldRendererId focused_field_id,
       mojom::FocusedFieldType focused_field_type) override {
@@ -1387,6 +1401,14 @@ void PasswordAutofillAgent::MaybeCheckSafeBrowsingReputation(
   GetPasswordManagerDriver().CheckSafeBrowsingReputation(action_url, frame_url);
 #endif
 }
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+// mojom::PasswordAutofillAgent:
+void PasswordAutofillAgent::SetParsedPasswordForm(
+    const PasswordFormFillData& form_data) {
+  AsPasswordAutofillAgentExt()->SetParsedPasswordFormExt(form_data);
+}
+#endif
 
 void PasswordAutofillAgent::ShowSuggestions(
     const PasswordSuggestionRequest& password_request) {

@@ -1,0 +1,113 @@
+{
+  "file_path": "components/enterprise/buildflags/buildflags.gni",
+  "rej_file_path": "components/enterprise/buildflags/buildflags.gni.rej",
+  "total_hunks": 5,
+  "resolved_hunks": 5,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "confirmed_intact",
+  "analysis": {
+    "conflict_cause": "Arkweb132在chromium132-Base内核上做了针对OpenHarmony系统(is_ohos)和arkweb_asan特性的侵入式修改，这些修改在升级到chromium141-Base内核时产生了冲突。",
+    "modification_intent": "为Arkweb项目添加对OpenHarmony操作系统的支持，并集成arkweb_asan特性到企业功能标志中。"
+  },
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "description": "添加arkweb特性导入",
+      "risk_level": "low",
+      "confidence": "high",
+      "status": "resolved",
+      "modifications": {
+        "added_lines": [
+          "import(\"//arkweb/build/features/features.gni\")"
+        ],
+        "removed_lines": [],
+        "anchor_context": "位于其他import语句之后，declare_args()之前"
+      },
+      "analysis": "此修改用于引入Arkweb项目的特性定义文件，为后续使用is_ohos和arkweb_asan变量做准备。定位精确，无风险。"
+    },
+    {
+      "hunk_id": 2,
+      "description": "修改enterprise_cloud_content_analysis支持OpenHarmony",
+      "risk_level": "low",
+      "confidence": "high",
+      "status": "resolved",
+      "modifications": {
+        "added_lines": [
+          "is_win || is_mac || is_linux || is_chromeos || is_ohos"
+        ],
+        "removed_lines": [
+          "is_win || is_mac || is_linux || is_chromeos"
+        ],
+        "anchor_context": "enterprise_cloud_content_analysis变量定义"
+      },
+      "analysis": "将OpenHarmony操作系统添加到企业云内容分析支持的平台列表中。修改逻辑清晰，符合代码结构。"
+    },
+    {
+      "hunk_id": 3,
+      "description": "修改enterprise_data_controls支持OpenHarmony",
+      "risk_level": "low",
+      "confidence": "high",
+      "status": "resolved",
+      "modifications": {
+        "added_lines": [
+          "is_win || is_mac || is_linux || is_chromeos || is_android || is_ios || is_ohos"
+        ],
+        "removed_lines": [
+          "is_win || is_mac || is_linux || is_chromeos || is_android || is_ios"
+        ],
+        "anchor_context": "enterprise_data_controls变量定义"
+      },
+      "analysis": "将OpenHarmony操作系统添加到企业数据控制支持的平台列表中。Arkweb141已包含is_android和is_ios，修改后完整支持OpenHarmony。"
+    },
+    {
+      "hunk_id": 4,
+      "description": "修改enterprise_client_certificates使用arkweb_asan替代is_android",
+      "risk_level": "medium",
+      "confidence": "high",
+      "status": "resolved",
+      "modifications": {
+        "added_lines": [
+          "is_win || is_mac || is_linux || arkweb_asan"
+        ],
+        "removed_lines": [
+          "is_win || is_mac || is_linux || is_android"
+        ],
+        "anchor_context": "enterprise_client_certificates变量定义"
+      },
+      "analysis": "使用arkweb_asan特性替代is_android平台支持。这表明Arkweb项目可能通过arkweb_asan标志来控制客户端证书支持，而不是简单依赖平台判断。需要确保arkweb_asan变量在导入的特性文件中已定义。"
+    },
+    {
+      "hunk_id": 5,
+      "description": "修改enterprise_watermark支持OpenHarmony",
+      "risk_level": "low",
+      "confidence": "high",
+      "status": "resolved",
+      "modifications": {
+        "added_lines": [
+          "toolkit_views && (is_win || is_mac || is_linux || is_chromeos || is_ohos) &&"
+        ],
+        "removed_lines": [
+          "toolkit_views && (is_win || is_mac || is_linux || is_chromeos) &&"
+        ],
+        "anchor_context": "enterprise_watermark变量定义"
+      },
+      "analysis": "将OpenHarmony添加到企业水印功能支持的平台列表中。定位准确，保持了原有的!is_castos条件。"
+    }
+  ],
+  "summary": {
+    "overall_risk": "low_to_medium",
+    "resolution_strategy": "precise_application",
+    "compliance_status": "fully_compliant",
+    "next_steps": [
+      "验证//arkweb/build/features/features.gni文件存在并包含所需的is_ohos和arkweb_asan变量定义",
+      "确认编译系统能正确处理新增的OpenHarmony平台条件",
+      "测试企业功能在OpenHarmony平台上的正确行为"
+    ]
+  },
+  "verification": {
+    "rej_file_unmodified": true,
+    "source_file_modified_successfully": true,
+    "no_context_lines_added": true,
+    "no_script_files_created": true
+  }
+}

@@ -55,7 +55,7 @@ void SetNonCanonicalAccessAddress(
   UNSAFE_TODO(memset(context->x86_64, 0, sizeof(*context->x86_64)));
 #endif  // defined(ARCH_CPU_X86_64)
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_GWP_ASAN)
   exception.SetException(SIGSEGV);
 #if defined(ARCH_CPU_X86_64)
   exception.SetExceptionInfo(SI_KERNEL);

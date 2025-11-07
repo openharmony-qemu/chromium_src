@@ -259,7 +259,12 @@ class VIZ_SERVICE_EXPORT SkiaOutputDevice {
       const gfx::Size& size,
       OutputSurfaceFrame frame,
       const std::optional<gfx::Rect>& damage_area = std::nullopt,
-      std::vector<gpu::Mailbox> released_overlays = {});
+      std::vector<gpu::Mailbox> released_overlays = {}
+#if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
+      ,
+      const gpu::Mailbox& primary_plane_mailbox = gpu::Mailbox()
+#endif
+      );
 
   OutputSurface::Capabilities capabilities_;
 

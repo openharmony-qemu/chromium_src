@@ -136,6 +136,7 @@ CompositorFrameSinkSupport::CompositorFrameSinkSupport(
       allow_copy_output_requests_(is_root) {
   // This may result in SetBeginFrameSource() being called.
   frame_sink_manager_->RegisterCompositorFrameSinkSupport(frame_sink_id_, this);
+  supportUtils = std::make_unique<CompositorFrameSinkSupportUtils>(this);
 }
 
 CompositorFrameSinkSupport::~CompositorFrameSinkSupport() {
@@ -727,12 +728,25 @@ SubmitResult CompositorFrameSinkSupport::MaybeSubmitCompositorFrame(
             frame.metadata.begin_frame_ack.trace_id);
       });
 
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
+                    std::to_string(frame.metadata.begin_frame_ack.trace_id), "step", "ReceiveCompositorFrame");
+#endif
+
   DCHECK(local_surface_id.is_valid());
   DCHECK(!frame.render_pass_list.empty());
   DCHECK(!frame.size_in_pixels().IsEmpty());
 
   CHECK(callback_received_begin_frame_);
   CHECK(callback_received_receive_ack_);
+
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+  auto frame_size = frame.size_in_pixels();
+#endif // ARKWEB_MAXIMIZE_RESIZE
+
+#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
+  supportUtils->flingSlideMaybeSubmitCompositorFrame(frame);
+#endif
 
   begin_frame_tracker_.ReceivedAck(frame.metadata.begin_frame_ack);
   pending_frames_++;

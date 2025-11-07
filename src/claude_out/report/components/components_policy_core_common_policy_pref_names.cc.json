@@ -1,0 +1,42 @@
+{
+  "conflict_file": "components/policy/core/common/policy_pref_names.cc.rej",
+  "source_file": "components/policy/core/common/policy_pref_names.cc",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "保持完整",
+  "analysis": {
+    "conflict_reason": "在从Chromium 132升级到141的过程中，Arkweb 132版本针对Chrome OS相关的条件编译块末尾添加了ARKWEB_EDM_POLICY的特定代码，而Arkweb 141中缺少这部分修改导致冲突。",
+    "risk_assessment": "低风险。添加的代码是Arkweb的企业设备管理策略配置，使用条件编译指令`#if BUILDFLAG(ARKWEB_EDM_POLICY)`保护，仅在启用Arkweb EDM策略时编译，不会影响标准Chromium功能。",
+    "hunks": [
+      {
+        "hunk_number": 1,
+        "location": "第197行#endif之后，第199行注释之前",
+        "additions": [
+          "#if BUILDFLAG(ARKWEB_EDM_POLICY)",
+          "const char kBrowserPolicyVersion[] = \"policy.browser_policy_version\";",
+          "#endif"
+        ],
+        "deletions": [],
+        "resolution_strategy": "精确定位插入",
+        "confidence": "高",
+        "status": "已解决",
+        "detailed_process": "通过上下文锚点（kFloatingWorkspaceEnabled定义和后续的#endif）成功定位到插入位置，在Chrome OS条件编译块结束后添加了ARKWEB_EDM_POLICY的条件编译块，包含了浏览器策略版本配置常量。",
+        "final_action": "在第197行#endif后、第199行注释前成功添加了三行代码"
+      }
+    ]
+  },
+  "summary": {
+    "total_changes_applied": 3,
+    "lines_added": 3,
+    "lines_deleted": 0,
+    "resolution_success_rate": "100%",
+    "compliance_check": {
+      "no_context_lines_added": true,
+      "no_script_files_created": true,
+      "no_auxiliary_files_created": true,
+      "rej_file_untouched": true,
+      "output_path_valid": true
+    }
+  }
+}

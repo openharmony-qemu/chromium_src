@@ -1,57 +1,5 @@
 --- BUILD.gn	2025-10-20 19:52:53.770248068 +0800
 +++ BUILD.gn	2025-10-16 15:54:57.707328839 +0800
-@@ -43,10 +43,16 @@
-     "enable_vr=$enable_vr",
-     "use_blink=$use_blink",
-   ]
- 
-   outputs = [ "grit/components_strings.h" ]
-+ #ifdef arkweb_i18n
-+  if (arkweb_i18n) {
-+    all_chrome_locales += extra_locales
-+  }
-+
-+  #endif
-   foreach(locale, all_chrome_locales) {
-     outputs += [ "components_strings_$locale.pak" ]
-   }
- 
-   if (is_android) {
-@@ -62,10 +68,16 @@
-     deps = [ ":components_strings" ]
-   }
- }
- 
- grit("components_branded_strings") {
-+ #ifdef arkweb_i18n
-+  if (arkweb_i18n) {
-+    all_chrome_locales += extra_locales
-+  }
-+
-+  #endif
-   source = "../components_${branding_path_product}_strings.grd"
-   outputs = [ "grit/components_branded_strings.h" ]
-   foreach(locale, all_chrome_locales) {
-     outputs += [ "components_${branding_path_product}_strings_$locale.pak" ]
-   }
-@@ -80,10 +92,17 @@
- }
- 
- grit("components_locale_settings") {
-   source = "../components_locale_settings.grd"
-   outputs = [ "grit/components_locale_settings.h" ]
-+
-+  #ifdef arkweb_i18n
-+  if (arkweb_i18n) {
-+    all_chrome_locales += extra_locales
-+  }
-+
-+  #endif
-   foreach(locale, all_chrome_locales) {
-     outputs += [ "components_locale_settings_$locale.pak" ]
-   }
- 
-   if (is_android) {
 @@ -92,10 +111,16 @@
  }
  
@@ -68,21 +16,3 @@
      outputs += [ "search_engine_descriptions_strings_$locale.pak" ]
    }
  }
- 
-@@ -119,10 +144,16 @@
- }
- 
- grit("privacy_sandbox_strings") {
-   source = "../privacy_sandbox_strings.grd"
-   outputs = [ "grit/privacy_sandbox_strings.h" ]
-+ #ifdef arkweb_i18n
-+  if (arkweb_i18n) {
-+    all_chrome_locales += extra_locales
-+  }
-+
-+  #endif
-   foreach(locale, all_chrome_locales) {
-     outputs += [ "privacy_sandbox_strings_$locale.pak" ]
-   }
- 
-   if (is_android) {

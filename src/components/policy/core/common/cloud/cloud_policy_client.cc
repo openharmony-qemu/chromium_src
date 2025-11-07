@@ -8,6 +8,7 @@
 #include <utility>
 #include <variant>
 
+#include "arkweb/build/features/features.h"
 #include "base/check.h"
 #include "base/containers/contains.h"
 #include "base/feature_list.h"
@@ -1099,6 +1100,10 @@ void CloudPolicyClient::UploadSecurityEventReport(bool include_device_info,
                                                   ResultCallback callback) {
   DCHECK(!base::FeatureList::IsEnabled(
       policy::kUploadRealtimeReportingEventsUsingProto));
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+  std::move(callback).Run(CloudPolicyClient::Result(NotRegistered()));
+  return;
+#endif
 
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 

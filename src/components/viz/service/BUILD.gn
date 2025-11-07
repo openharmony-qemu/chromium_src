@@ -10,6 +10,11 @@ import("//media/gpu/args.gni")
 import("//skia/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//third_party/jni_zero/jni_zero.gni")
+import("//arkweb/build/features/features.gni")
+
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
 
 config("viz_service_implementation") {
 }
@@ -188,12 +193,16 @@ viz_component("service") {
     "frame_sinks/compositor_frame_sink_impl.h",
     "frame_sinks/compositor_frame_sink_support.cc",
     "frame_sinks/compositor_frame_sink_support.h",
+    "//arkweb/chromium_ext/components/viz/service/frame_sinks/compositor_frame_sink_support_utils.cc",
+    "//arkweb/chromium_ext/components/viz/service/frame_sinks/compositor_frame_sink_support_utils.h",
     "frame_sinks/frame_counter.cc",
     "frame_sinks/frame_counter.h",
     "frame_sinks/frame_sink_bundle_impl.cc",
     "frame_sinks/frame_sink_bundle_impl.h",
     "frame_sinks/frame_sink_manager_impl.cc",
     "frame_sinks/frame_sink_manager_impl.h",
+    "//arkweb/chromium_ext/components/viz/service/frame_sinks/frame_sink_manager_impl_utils.cc",
+    "//arkweb/chromium_ext/components/viz/service/frame_sinks/frame_sink_manager_impl_utils.h",
     "frame_sinks/frame_sink_observer.h",
     "frame_sinks/gmb_video_frame_pool_context_provider.h",
     "frame_sinks/gmb_video_frame_pool_context_provider_impl.cc",
@@ -352,6 +361,20 @@ viz_component("service") {
     "//ui/gfx/geometry",
     "//ui/latency",
   ]
+
+  if (arkweb_oop_gpu_process) {
+    deps += [ "//arkweb/build/features" ]
+  }
+
+  if (arkweb_slide_ltpo) {
+    import("//arkweb/chromium_ext/base/arkweb_base_ext.gni")
+    sources += arkweb_base_ohos_ltpo_sources
+  }
+
+  if (arkweb_d_vsync) {
+    import("//arkweb/chromium_ext/base/arkweb_base_ext.gni")
+    sources += arkweb_base_ohos_d_vsync_sources
+  }
 
   if (is_chromeos) {
     sources += [

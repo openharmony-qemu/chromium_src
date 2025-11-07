@@ -45,6 +45,9 @@ class YUVReadbackTest : public testing::Test {
  protected:
   YUVReadbackTest() : context_(std::make_unique<gpu::GLInProcessContext>()) {
     gpu::ContextCreationAttribs attributes;
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+    ARKWEB_UNITTESTS_INIT_DISPLAY();
+#endif
     auto result = context_->Initialize(
         TestGpuServiceHolder::GetInstance()->task_executor(), attributes,
         gpu::SharedMemoryLimits());

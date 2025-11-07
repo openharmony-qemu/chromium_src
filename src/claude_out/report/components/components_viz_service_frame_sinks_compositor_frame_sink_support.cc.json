@@ -1,0 +1,66 @@
+{
+  "file_path": "components/viz/service/frame_sinks/compositor_frame_sink_support.cc",
+  "total_hunks": 2,
+  "resolved_hunks": 2,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "保持完整未被修改",
+  "analysis_summary": "所有hunk均已成功应用到源文件中，没有发现无法解决的冲突",
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "lines_range": "133-140",
+      "risk_level": "低风险",
+      "conflict_reason": "构造函数初始化列表中缺少CompositorFrameSinkSupportUtils对象的初始化",
+      "analysis_process": "通过分析源文件构造函数结构，在RegisterCompositorFrameSinkSupport调用后添加了supportUtils初始化代码",
+      "confidence": "高置信度",
+      "resolution_strategy": "成功应用",
+      "added_lines": [
+        "  supportUtils = std::make_unique<CompositorFrameSinkSupportUtils>(this);"
+      ],
+      "removed_lines": [],
+      "anchor_points": [
+        "allow_copy_output_requests_(is_root) {",
+        "frame_sink_manager_->RegisterCompositorFrameSinkSupport(frame_sink_id_, this);"
+      ]
+    },
+    {
+      "hunk_number": 2,
+      "lines_range": "803-847",
+      "risk_level": "中等风险",
+      "conflict_reason": "MaybeSubmitCompositorFrame函数中缺少Arkweb特有的性能优化和跟踪代码",
+      "analysis_process": "在TRACE_EVENT块后添加了OHOS_TRACE_EVENT2跟踪代码，在begin_frame_tracker_.ReceivedAck调用前添加了ARKWEB_MAXIMIZE_RESIZE和ARKWEB_FLING && ARKWEB_SLIDE条件编译代码块",
+      "confidence": "高置信度",
+      "resolution_strategy": "成功应用",
+      "added_lines": [
+        "#if BUILDFLAG(ARKWEB_DFX_TRACING)",
+        "  OHOS_TRACE_EVENT2(\"viz,benchmark\", \"Graphics.Pipeline\", \"trace_id\",",
+        "                    std::to_string(frame.metadata.begin_frame_ack.trace_id), \"step\", \"ReceiveCompositorFrame\");",
+        "#endif",
+        "#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)",
+        "  auto frame_size = frame.size_in_pixels();",
+        "#endif // ARKWEB_MAXIMIZE_RESIZE",
+        "#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)",
+        "  supportUtils->flingSlideMaybeSubmitCompositorFrame(frame);",
+        "#endif"
+      ],
+      "removed_lines": [],
+      "anchor_points": [
+        "data->set_surface_frame_trace_id(",
+        "frame.metadata.begin_frame_ack.trace_id);",
+        "});",
+        "DCHECK(local_surface_id.is_valid());",
+        "CHECK(callback_received_begin_frame_);",
+        "CHECK(callback_received_receive_ack_);",
+        "begin_frame_tracker_.ReceivedAck(frame.metadata.begin_frame_ack);"
+      ],
+      "additional_verification": "验证了frame_size变量在函数后续代码中确实被使用（line 979）"
+    }
+  ],
+  "final_status": {
+    "all_hunks_processed": true,
+    "modifications_applied": 9行新增代码",
+    "syntax_verification": "通过检查，所有添加的代码语法正确",
+    "context_verification": "所有添加的代码都位于正确的逻辑位置",
+    "compilation_compatibility": "预计编译无问题，所有条件编译指令都有对应的头文件支持"
+  }
+}

@@ -208,6 +208,10 @@ bool IsDistillablePageAdaboost(blink::WebDocument& doc,
   return is_distillable;
 }
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/components/dom_distiller/content/renderer/distillability_agent_for_include.cc"
+#endif
+
 bool IsDistillablePage(blink::WebDocument& doc,
                        bool is_last,
                        bool& is_long_article,
@@ -283,11 +287,16 @@ void DistillabilityAgent::DidMeaningfulLayout(
     return;
   bool is_long_article = false;
   bool is_mobile_friendly = false;
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "arkweb/chromium_ext/components/dom_distiller/content/renderer/distillability_agent_for_include_after.cc"
+#else
   bool is_distillable =
       IsDistillablePage(doc, is_last, is_long_article, is_mobile_friendly,
                         render_frame(), dump_info_, ukm_recorder_.get());
   distillability_service->NotifyIsDistillable(
       is_distillable, is_last, is_long_article, is_mobile_friendly);
+#endif
 }
 
 DistillabilityAgent::~DistillabilityAgent() = default;

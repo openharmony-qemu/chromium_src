@@ -85,7 +85,7 @@ ContentSubresourceFilterThrottleManager::CreateForNewPage(
     return nullptr;
   }
 
-  return std::make_unique<ContentSubresourceFilterThrottleManager>(
+  return std::make_unique<ArkWebContentSubresourceFilterThrottleManagerExt>(
       profile_context, database_manager, dealer_handle, web_contents_helper,
       initiating_navigation_handle);
 }
@@ -220,6 +220,17 @@ ContentSubresourceFilterThrottleManager::ActivationStateForNextCommittedLoad(
   // Main frame throttles with disabled page-level activation will not have
   // associated filters.
   ActivationStateComputingNavigationThrottle* throttle = it->second;
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  if (navigation_handle && !navigation_handle->IsDownload() &&
+      navigation_handle->IsInMainFrame() &&
+      navigation_handle->GetURL().SchemeIsHTTPOrHTTPS() &&
+      navigation_handle->GetWebContents()) {
+    return AsArkWebContentSubresourceFilterThrottleManagerExt()->AdBlockActivationStateForNextCommittedLoad(
+        navigation_handle, throttle);
+  }
+#endif
+
   AsyncDocumentSubresourceFilter* filter = throttle->filter();
   if (!filter) {
     return mojom::ActivationState();
@@ -344,8 +355,13 @@ void ContentSubresourceFilterThrottleManager::DidFinishInFrameNavigation(
     current_committed_load_has_notified_disallowed_load_ = false;
     statistics_.reset();
     if (filter) {
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+      statistics_ = std::make_unique<PageLoadStatisticsExt>(
+          filter->activation_state(), navigation_handle->GetWebContents());
+#else
       statistics_ = std::make_unique<PageLoadStatistics>(
           filter->activation_state(), kSafeBrowsingRulesetConfig.uma_tag);
+#endif // BUILDFLAG(ARKWEB_ADBLOCK)
       if (filter->activation_state().enable_logging) {
         CHECK(filter->activation_state().activation_level !=
               mojom::ActivationLevel::kDisabled);
@@ -354,6 +370,12 @@ void ContentSubresourceFilterThrottleManager::DidFinishInFrameNavigation(
             kActivationConsoleMessage);
       }
     }
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+    else {
+      AsArkWebContentSubresourceFilterThrottleManagerExt()->StatisticActivationState(navigation_handle);
+    }
+#endif
+
     RecordUmaHistogramsForRootNavigation(
         navigation_handle,
         filter ? filter->activation_state().activation_level
@@ -461,6 +483,10 @@ void ContentSubresourceFilterThrottleManager::DidFinishLoad(
     return;
   }
   statistics_->OnDidFinishLoad();
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  AsArkWebContentSubresourceFilterThrottleManagerExt()->ReportSubresourceMap(render_frame_host, validated_url);
+#endif  // BUILDFLAG(ARKWEB_ADBLOCK)
 }
 
 void ContentSubresourceFilterThrottleManager::DidBecomePrimaryPage() {
@@ -497,6 +523,15 @@ void ContentSubresourceFilterThrottleManager::OnPageActivationComputed(
   if (it == ongoing_activation_throttles_.end()) {
     return;
   }
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  if (navigation_handle && !navigation_handle->IsDownload() &&
+      navigation_handle->IsInMainFrame() &&
+      navigation_handle->GetURL().SchemeIsHTTPOrHTTPS() &&
+      navigation_handle->GetWebContents()) {
+    return AsArkWebContentSubresourceFilterThrottleManagerExt()->OnPageAdBlockActivationState(navigation_handle);
+  }
+#endif
 
   // The subresource filter normally operates in DryRun mode, disabled
   // activation should only be supplied in cases where DryRun mode is not

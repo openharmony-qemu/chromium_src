@@ -28,6 +28,10 @@
 #include "crypto/secure_util.h"
 #include "crypto/signature_verifier.h"
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+#include "arkweb/chromium_ext/components/crx_file/crx_key_service.h"
+#endif // ARKWEB_ARKWEB_EXTENSIONS
+
 namespace crx_file {
 
 namespace {
@@ -96,6 +100,30 @@ bool ReadHashAndVerifyArchive(base::File* file,
   // failure.
   return len.has_value() && len.value() == 0;
 }
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+using ByteVec = std::vector<uint8_t>;
+
+struct VectorHash {
+  size_t operator()(const ByteVec& v) const noexcept {
+    uint64_t h = 1469598103934665603ull;
+    for (auto b : v) {
+      h ^= b;
+      h *= 1099511628211ull;
+    }
+    return h;
+  }
+};
+
+std::unordered_set<ByteVec, VectorHash> BuildAllowedPublisherSet() {
+  auto hashes = CrxKeyService::GetInstance()->GetCrx3PublicKeyHashes();
+  if (hashes.empty()) {
+    hashes.emplace_back(std::begin(kPublisherKeyHash),
+                        std::end(kPublisherKeyHash));
+  }
+  return std::unordered_set<ByteVec, VectorHash>(hashes.begin(), hashes.end());
+}
+#endif  // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 
 // The remaining contents of a Crx3 file are [header-size][header][archive].
 // [header] is an encoded protocol buffer and contains both a signed and
@@ -192,9 +220,15 @@ VerifierResult VerifyCrx3(
       }
       auto key_hash = crypto::hash::Sha256(key);
       required_key_set.erase(key_hash);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+      found_publisher_key = found_publisher_key ||
+                            (allowed_set.find(key_hash) != allowed_set.end());
+#else
+      DCHECK_EQ(accept_publisher_test_key, publisher_test_key.has_value());
       found_publisher_key =
           found_publisher_key || key_hash == kPublisherKeyHash ||
           (accept_publisher_test_key && key_hash == kPublisherTestKeyHash);
+#endif // ARKWEB_ARKWEB_EXTENSIONS
       auto v = std::make_unique<crypto::SignatureVerifier>();
       if (!v->VerifyInit(proof_type.second, base::as_byte_span(sig),
                          base::as_byte_span(key))) {

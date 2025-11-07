@@ -1,55 +1,5 @@
 --- crx_verifier.cc	2025-10-20 19:52:52.845821030 +0800
 +++ crx_verifier.cc	2025-10-20 19:31:26.800032116 +0800
-@@ -31,10 +31,14 @@
- #include "crypto/secure_hash.h"
- #include "crypto/secure_util.h"
- #include "crypto/sha2.h"
- #include "crypto/signature_verifier.h"
- 
-+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-+#include "arkweb/chromium_ext/components/crx_file/crx_key_service.h"
-+#endif // ARKWEB_ARKWEB_EXTENSIONS
-+
- namespace crx_file {
- 
- namespace {
- 
- // The SHA256 hash of the DER SPKI "ecdsa_2017_public" Crx3 key.
-@@ -96,10 +100,34 @@
-     }
-   }
-   return len == 0;
- }
- 
-+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-+using ByteVec = std::vector<uint8_t>;
-+
-+struct VectorHash {
-+  size_t operator()(const ByteVec& v) const noexcept {
-+    uint64_t h = 1469598103934665603ull;
-+    for (auto b : v) {
-+      h ^= b;
-+      h *= 1099511628211ull;
-+    }
-+    return h;
-+  }
-+};
-+
-+std::unordered_set<ByteVec, VectorHash> BuildAllowedPublisherSet() {
-+  auto hashes = CrxKeyService::GetInstance()->GetCrx3PublicKeyHashes();
-+  if (hashes.empty()) {
-+    hashes.emplace_back(std::begin(kPublisherKeyHash),
-+                        std::end(kPublisherKeyHash));
-+  }
-+  return std::unordered_set<ByteVec, VectorHash>(hashes.begin(), hashes.end());
-+}
-+#endif  // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-+
- // The remaining contents of a Crx3 file are [header-size][header][archive].
- // [header] is an encoded protocol buffer and contains both a signed and
- // unsigned section. The unsigned section contains a set of key/signature pairs,
- // and the signed section is the encoding of another protocol buffer. All
- // signatures cover [prefix][signed-header-size][signed-header][archive].
 @@ -181,17 +209,21 @@
        std::pair<ProofFetcher, crypto::SignatureVerifier::SignatureAlgorithm>>
        proof_types = {
@@ -72,23 +22,3 @@
    // Initialize all verifiers and update them with
    // [prefix][signed-header-size][signed-header].
    // Clear any elements of required_key_set that are encountered, and watch for
-@@ -204,14 +236,19 @@
-         public_key_bytes = key;
-       }
-       std::vector<uint8_t> key_hash(crypto::kSHA256Length);
-       crypto::SHA256HashString(key, key_hash.data(), key_hash.size());
-       required_key_set.erase(key_hash);
-+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-+      found_publisher_key = found_publisher_key ||
-+                            (allowed_set.find(key_hash) != allowed_set.end());
-+#else
-       DCHECK_EQ(accept_publisher_test_key, publisher_test_key.has_value());
-       found_publisher_key =
-           found_publisher_key || key_hash == publisher_key ||
-           (accept_publisher_test_key && key_hash == *publisher_test_key);
-+#endif // ARKWEB_ARKWEB_EXTENSIONS
-       auto v = std::make_unique<crypto::SignatureVerifier>();
-       static_assert(sizeof(unsigned char) == sizeof(uint8_t),
-                     "Unsupported char size.");
-       if (!v->VerifyInit(proof_type.second,
-                          base::as_bytes(base::make_span(sig)),

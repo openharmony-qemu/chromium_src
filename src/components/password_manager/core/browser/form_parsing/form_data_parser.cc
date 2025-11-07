@@ -37,6 +37,16 @@
 #include "components/password_manager/core/common/password_manager_constants.h"
 #include "components/password_manager/core/common/password_manager_features.h"
 #include "components/password_manager/core/common/password_manager_util.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_EXT_PASSWORD)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "base/base_switches.h"
+#include "base/command_line.h"
+#endif
 #include "services/metrics/public/cpp/ukm_builders.h"
 
 using autofill::FieldGlobalId;
@@ -1535,6 +1545,10 @@ FormParsingResult FormDataParser::ParseAndReturnParsingResult(
        FieldValueIsTooShortForSaving(significant_fields.new_password))) {
     significant_fields.is_fallback = true;
   }
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  LOG(INFO) << "[Autofill] Username detection method:"
+            << static_cast<int>(method);
+#endif
   return FormParsingResult(
       AssemblePasswordForm(
           form_data, significant_fields, std::move(all_alternative_passwords),

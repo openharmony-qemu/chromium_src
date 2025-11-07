@@ -57,10 +57,15 @@ DistillerImpl::DistillerImpl(
     : distiller_url_fetcher_factory_(distiller_url_fetcher_factory),
       dom_distiller_options_(dom_distiller_options),
       max_pages_in_article_(kMaxPagesInArticle),
-      destruction_allowed_(true) {}
+      destruction_allowed_(true) {
+  impl_utils_ = std::make_unique<DistillerImplUtils>(this);
+}
 
 DistillerImpl::~DistillerImpl() {
   DCHECK(destruction_allowed_);
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  AbortDistill();
+#endif // ARKWEB_READER_MODE
 }
 
 void DistillerImpl::SetMaxNumPagesInArticle(size_t max_num_pages) {

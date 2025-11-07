@@ -776,6 +776,16 @@ void PageLoadTracker::FailedProvisionalLoad(
       navigation_handle->GetNetExtendedErrorCode(),
       navigation_handle->GetErrorNavigationTrigger(),
       navigation_handle->GetNavigationDiscardReason().value());
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+  LOG(INFO) << "event_message: FailedProvisionalLoad source_id: " << source_id_
+            << " navigation_handle id: " << navigation_handle->GetNavigationId();
+#endif // BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  LOG_FEEDBACK(INFO) << "event_message: FailedProvisionalLoad source_id: "
+                     << source_id_ << " navigation_handle id: "
+                     << navigation_handle->GetNavigationId();
+#endif
 }
 
 void PageLoadTracker::DidUpdateNavigationHandleTiming(

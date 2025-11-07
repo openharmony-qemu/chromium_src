@@ -52,8 +52,6 @@ void ForEachRenderFrameHostWithinSameWebContents(
       });
 }
 
-}  // namespace
-
 struct JsObject {
   JsObject(const std::u16string& name,
            origin_matcher::OriginMatcher allowed_origin_rules,

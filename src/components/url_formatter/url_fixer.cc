@@ -629,7 +629,13 @@ GURL FixupURLInternal(const std::string& text,
   bool devtools_url = (scheme == kDevToolsScheme);
   if (chrome_url || devtools_url || url::IsStandard(scheme)) {
     // Replace the about: scheme with the chrome: scheme.
-    std::string url(scheme == url::kAboutScheme ? kChromeUIScheme : scheme);
+    std::string url(scheme == url::kAboutScheme ?
+#if BUILDFLAG(IS_ARKWEB)
+                                                kArkWebUIScheme
+#else
+                                                kChromeUIScheme
+#endif
+                                                : scheme);
     url.append(url::kStandardSchemeSeparator);
 
     // We need to check whether the |username| is valid because it is our

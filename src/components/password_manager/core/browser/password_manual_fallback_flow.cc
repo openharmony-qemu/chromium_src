@@ -403,7 +403,8 @@ void PasswordManualFallbackFlow::MaybeAuthenticateBeforeFilling(
         base::BindOnce(&PasswordManualFallbackFlow::OnBiometricReauthCompleted,
                        weak_ptr_factory_.GetWeakPtr(), std::move(fill_fields));
 
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
     const std::u16string origin = base::UTF8ToUTF16(GetShownOrigin(
         url::Origin::Create(password_manager_driver_->GetLastCommittedURL())));
     message =
@@ -440,7 +441,7 @@ void PasswordManualFallbackFlow::EnsureCrossDomainPasswordUsageGetsConsent(
     const Suggestion::PasswordSuggestionDetails& payload,
     base::OnceClosure on_allowed) {
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || \
-    BUILDFLAG(IS_CHROMEOS)
+    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
   if (payload.is_cross_domain) {
     CHECK(payload.display_signon_realm);
     cross_domain_confirmation_popup_controller_ =
@@ -452,7 +453,7 @@ void PasswordManualFallbackFlow::EnsureCrossDomainPasswordUsageGetsConsent(
     return;
   }
 #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) ||
-        // BUILDFLAG(IS_CHROMEOS)
+        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 
   std::move(on_allowed).Run();
 }

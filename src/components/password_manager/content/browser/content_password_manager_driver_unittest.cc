@@ -317,7 +317,7 @@ TEST_P(ContentPasswordManagerDriverTest, SendLoggingStateAfterLogManagerReady) {
   EXPECT_CALL(password_manager_client_, GetCurrentLogManager())
       .WillOnce(Return(nullptr));
   std::unique_ptr<ContentPasswordManagerDriver> driver(
-      new ContentPasswordManagerDriver(main_rfh(), &password_manager_client_));
+      new ContentPasswordManagerDriverExt(main_rfh(), &password_manager_client_));
   // Because log manager is not ready yet, should have no logging state sent.
   EXPECT_FALSE(WasLoggingActivationMessageSent(nullptr));
 
@@ -538,10 +538,14 @@ TEST_F(ContentPasswordManagerDriverTest,
 
   // Verify autofill can not be triggered by browser side.
   std::unique_ptr<ContentPasswordManagerDriver> driver(
-      std::make_unique<ContentPasswordManagerDriver>(
+      std::make_unique<ContentPasswordManagerDriverExt>(
           credentialless_rfh_1, &password_manager_client_));
   driver->PropagateFillDataOnParsingCompletion(GetTestPasswordFormFillData());
   base::RunLoop().RunUntilIdle();
 }
 
 }  // namespace password_manager
+
+#if BUILDFLAG(ARKWEB_TEST)
+#include "arkweb/chromium_ext/components/password_manager/content/browser/content_password_manager_driver_ext_unittest.cc"
+#endif

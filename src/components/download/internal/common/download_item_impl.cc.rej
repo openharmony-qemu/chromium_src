@@ -1,41 +1,5 @@
 --- download_item_impl.cc	2025-10-20 19:52:52.885839742 +0800
 +++ download_item_impl.cc	2025-10-16 15:54:56.704402221 +0800
-@@ -63,22 +63,35 @@
- #include "net/http/http_status_code.h"
- #include "net/traffic_annotation/network_traffic_annotation.h"
- #include "net/url_request/referrer_policy.h"
- #include "services/metrics/public/cpp/ukm_source_id.h"
- 
-+#if BUILDFLAG(IS_ARKWEB_EXT)
-+#include "arkweb/ohos_nweb_ex/build/features/features.h"
-+#endif
-+
- #if BUILDFLAG(IS_ANDROID)
- #include "components/download/internal/common/android/download_collection_bridge.h"
- #endif  // BUILDFLAG(IS_ANDROID)
- 
- #if BUILDFLAG(IS_MAC)
- #include "base/mac/mac_util.h"
- #endif  // BUILDFLAG(IS_MAC)
- 
-+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-+#include "base/command_line.h"
-+#include "content/public/common/content_switches.h"
-+#endif
-+
- namespace download {
- 
- namespace {
- 
-+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
-+const char kRequestMethod[] = "request_method";
-+#endif
-+
- void DeleteDownloadedFileDone(base::WeakPtr<DownloadItemImpl> item,
-                               base::OnceCallback<void(bool)> callback,
-                               bool success) {
-   if (success && item.get())
-     item->OnDownloadedFileRemoved();
 @@ -2134,19 +2208,25 @@
                                    download_source_);
    }

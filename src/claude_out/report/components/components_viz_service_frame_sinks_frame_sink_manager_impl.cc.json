@@ -1,0 +1,139 @@
+{
+  "conflict_file": "components/viz/service/frame_sinks/frame_sink_manager_impl.cc.rej",
+  "source_file": "components/viz/service/frame_sinks/frame_sink_manager_impl.cc",
+  "total_hunks": 6,
+  "resolved_hunks": 6,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "maintained",
+  "analysis": {
+    "hunk_1": {
+      "description": "添加 arkweb frame_sink_manager_impl_utils.h 头文件引用",
+      "location": "第8行后",
+      "additions": [
+        "#include \"arkweb/chromium_ext/components/viz/service/frame_sinks/frame_sink_manager_impl_utils.h\""
+      ],
+      "deletions": [],
+      "risk": "低风险 - 标准头文件添加",
+      "confidence": "高",
+      "status": "已解决",
+      "reasoning": "在源文件第8行后成功添加了所需的头文件引用"
+    },
+    "hunk_2": {
+      "description": "添加 arkweb features.h 和 root_compositor_frame_sink_impl_ext.h 头文件引用",
+      "location": "第18行后",
+      "additions": [
+        "#include \"arkweb/build/features/features.h\"",
+        "#include \"arkweb/chromium_ext/components/viz/service/frame_sinks/root_compositor_frame_sink_impl_ext.h\""
+      ],
+      "deletions": [],
+      "risk": "低风险 - 标准头文件添加",
+      "confidence": "高",
+      "status": "已解决",
+      "reasoning": "在源文件第18行后成功添加了所需的头文件引用"
+    },
+    "hunk_3": {
+      "description": "添加重复的 arkweb features.h 头文件引用",
+      "location": "第31行后",
+      "additions": [
+        "#include \"arkweb/build/features/features.h\""
+      ],
+      "deletions": [],
+      "risk": "低风险 - 重复头文件引用，编译器会处理",
+      "confidence": "高",
+      "status": "已解决",
+      "reasoning": "在源文件第31行后成功添加了重复的 features.h 引用"
+    },
+    "hunk_4": {
+      "description": "在构造函数中初始化 managerImplUtils 成员变量",
+      "location": "构造函数内，第43行后",
+      "additions": [
+        "  managerImplUtils = std::make_unique<FrameSinkManagerImplUtils>(this);"
+      ],
+      "deletions": [],
+      "risk": "中风险 - 需要确保 FrameSinkManagerImplUtils 类存在且接口匹配",
+      "confidence": "高",
+      "status": "已解决",
+      "reasoning": "在构造函数中成功添加了 managerImplUtils 的初始化代码"
+    },
+    "hunk_5": {
+      "description": "添加 ARKWEB_OCCLUDED_OPT 相关的帧率控制方法",
+      "location": "文件末尾，第1255行后",
+      "additions": [
+        "#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)",
+        "void FrameSinkManagerImpl::SetEnableLowerFrameRate(",
+        "    bool enabled,",
+        "    const FrameSinkId& frame_sink_id) {",
+        "    managerImplUtils->SetEnableLowerFrameRate(enabled, frame_sink_id);",
+        "}",
+        "",
+        "void FrameSinkManagerImpl::SetEnableHalfFrameRate(",
+        "    bool enabled,",
+        "    const FrameSinkId& frame_sink_id) {",
+        "    managerImplUtils->SetEnableHalfFrameRate(enabled, frame_sink_id);",
+        "  }",
+        "#endif"
+      ],
+      "deletions": [],
+      "risk": "中风险 - 需要确保 managerImplUtils 对象有相应的方法",
+      "confidence": "高",
+      "status": "已解决",
+      "reasoning": "成功在文件末尾添加了 ARKWEB_OCCLUDED_OPT 条件编译的方法实现"
+    },
+    "hunk_6": {
+      "description": "添加 ARKWEB_VIDEO_LTPO、ARKWEB_PIP、ARKWEB_BLANK_OPTIMIZE 相关方法",
+      "location": "文件末尾，ARKWEB_OCCLUDED_OPT 方法后",
+      "additions": [
+        "#if BUILDFLAG(ARKWEB_VIDEO_LTPO)",
+        "void FrameSinkManagerImpl::UpdateVSyncFrequency(",
+        "    const FrameSinkId& frame_sink_id,",
+        "    uint32_t client_id) {",
+        "    managerImplUtils->UpdateVSyncFrequency(frame_sink_id, client_id);",
+        "}",
+        "void FrameSinkManagerImpl::ResetVSyncFrequency(",
+        "    const FrameSinkId& frame_sink_id) {",
+        "    managerImplUtils->ResetVSyncFrequency(frame_sink_id);",
+        "}",
+        "#endif",
+        "",
+        "#if BUILDFLAG(ARKWEB_PIP)",
+        "void FrameSinkManagerImpl::SetPipActive(",
+        "    bool active,",
+        "    const FrameSinkId& frame_sink_id) {",
+        "    managerImplUtils->SetPipActive(active, frame_sink_id);",
+        "}",
+        "#endif",
+        "",
+        "#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)",
+        "void FrameSinkManagerImpl::ClearBlanklessSnapshotInfo(uint64_t blankless_key) {",
+        "  managerImplUtils->ClearBlanklessSnapshotInfo(blankless_key);",
+        "}",
+        "#endif"
+      ],
+      "deletions": [],
+      "risk": "中风险 - 需要确保 managerImplUtils 对象有相应的方法",
+      "confidence": "高",
+      "status": "已解决",
+      "reasoning": "成功在文件末尾添加了其他 ARKWEB 功能的条件编译方法实现"
+    }
+  },
+  "summary": {
+    "overall_risk": "中风险",
+    "main_concerns": [
+      "需要确保 managerImplUtils 成员变量在类头文件中已声明",
+      "需要确保 FrameSinkManagerImplUtils 类存在并提供所有调用的方法",
+      "重复的 features.h 包含可能表明 include 组织需要优化"
+    ],
+    "next_steps": [
+      "验证 FrameSinkManagerImplUtils 类的接口兼容性",
+      "确认类头文件中 managerImplUtils 成员变量的声明",
+      "检查编译时是否有符号解析问题"
+    ],
+    "compliance": {
+      "no_context_added": true,
+      "no_scripts_created": true,
+      "rej_file_preserved": true,
+      "only_json_report_created": true,
+      "exact_path_followed": true
+    }
+  }
+}

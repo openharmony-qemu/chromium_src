@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/containers/adapters.h"
 #include "base/functional/bind.h"

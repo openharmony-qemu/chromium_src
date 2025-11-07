@@ -45,12 +45,20 @@ constexpr base::TimeDelta kTimeout = base::Milliseconds(5000);
 constexpr char kContentType[] = "application/json; charset=UTF-8";
 // OAuth name.
 constexpr char kOAuthName[] = "shared_data_preview";
+#if BUILDFLAG(IS_ARKWEB)
+  constexpr char kOAuthScope[] = "https://***/";
+#else
 // OAuth scope of the server.
 constexpr char kOAuthScope[] = "https://www.googleapis.com/auth/chromesync";
+#endif
 
+#if BUILDFLAG(IS_ARKWEB)
+constexpr char kDefaultServiceBaseUrl[] = "https://***/";
+#else
 // Server addresses to get preview data.
 constexpr char kDefaultServiceBaseUrl[] =
     "https://staging-chromesyncsharedentities-pa.googleapis.com/v1";
+#endif
 constexpr char kAutopushServiceBaseUrl[] =
     "https://autopush-chromesyncsharedentities-pa.sandbox.googleapis.com/v1";
 constexpr char kStableAndBetaServiceBaseUrl[] =

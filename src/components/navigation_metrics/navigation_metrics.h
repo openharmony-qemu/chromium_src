@@ -5,6 +5,8 @@
 #ifndef COMPONENTS_NAVIGATION_METRICS_NAVIGATION_METRICS_H_
 #define COMPONENTS_NAVIGATION_METRICS_NAVIGATION_METRICS_H_
 
+#include "base/feature_list.h"
+
 class GURL;
 
 namespace profile_metrics {

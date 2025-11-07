@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <utility>
 
+#include "arkweb/build/features/features.h"
 #include "base/check_op.h"
 #include "base/notimplemented.h"
 #include "base/task/common/task_annotator.h"

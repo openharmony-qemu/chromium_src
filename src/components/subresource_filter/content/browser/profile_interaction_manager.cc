@@ -106,6 +106,7 @@ void ProfileInteractionManager::OnAdsViolationTriggered(
 
   profile_context_->ads_intervention_manager()
       ->TriggerAdsInterventionForUrlOnSubsequentLoads(url, triggered_violation);
+#endif
 
   ads_violation_triggered_for_last_committed_navigation_ = true;
 }
@@ -114,6 +115,9 @@ mojom::ActivationLevel ProfileInteractionManager::OnPageActivationComputed(
     content::NavigationHandle* navigation_handle,
     mojom::ActivationLevel initial_activation_level,
     ActivationDecision* decision) {
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  return OnPageActivationComputedExt(navigation_handle, initial_activation_level);
+#else
   CHECK(IsInSubresourceFilterRoot(navigation_handle));
 
   mojom::ActivationLevel effective_activation_level = initial_activation_level;
@@ -141,6 +145,7 @@ mojom::ActivationLevel ProfileInteractionManager::OnPageActivationComputed(
   }
 
   return effective_activation_level;
+#endif
 }
 
 void ProfileInteractionManager::MaybeShowNotification() {
@@ -150,8 +155,14 @@ void ProfileInteractionManager::MaybeShowNotification() {
   CHECK(page_->IsPrimary());
 
   const GURL& top_level_url = page_->GetMainDocument().GetLastCommittedURL();
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  if (profile_context_ &&
+      profile_context_->settings_manager()->ShouldShowUIForSite(
+          top_level_url)) {
+#else
   if (profile_context_->settings_manager()->ShouldShowUIForSite(
           top_level_url)) {
+#endif
 #if BUILDFLAG(IS_ANDROID)
     if (messages::MessageDispatcherBridge::Get()
             ->IsMessagesEnabledForEmbedder()) {

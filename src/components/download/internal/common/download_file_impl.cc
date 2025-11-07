@@ -210,7 +210,6 @@ DownloadFileImpl::DownloadFileImpl(
 
 DownloadFileImpl::~DownloadFileImpl() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-
   TRACE_EVENT_END("download",
                   /* DownloadFileActive */ perfetto::Track(download_id_));
 }
@@ -672,10 +671,14 @@ void DownloadFileImpl::StreamActive(SourceStream* source_stream,
             CalculateBytesToWrite(source_stream, incoming_data_size,
                                   &bytes_to_validate, &bytes_to_write);
         DCHECK_GE(incoming_data_size, bytes_to_write);
+        LOG(DEBUG) << "DownloadFileImpl::StreamActive called";
         reason = ValidateAndWriteDataToFile(
             source_stream->offset() + source_stream->bytes_read(),
             incoming_data->span().first(bytes_to_validate),
             incoming_data->span().subspan(bytes_to_validate, bytes_to_write));
+#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)
+        AsArkWebDownloadFileImplExt()->ReadAndRunCallbackIfDataReady();
+#endif
         bytes_seen_ += bytes_to_write;
         total_incoming_data_size += incoming_data_size;
         if (reason == DOWNLOAD_INTERRUPT_REASON_NONE) {

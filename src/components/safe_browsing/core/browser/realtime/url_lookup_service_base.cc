@@ -6,6 +6,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/base64url.h"
 #include "base/logging.h"
 #include "base/metrics/histogram_functions.h"

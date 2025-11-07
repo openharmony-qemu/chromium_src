@@ -9,6 +9,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/containers/flat_map.h"
 #include "base/gtest_prod_util.h"
 #include "base/memory/raw_ptr.h"
@@ -188,6 +189,27 @@ class COMPONENT_EXPORT(INPUT) InputRouterImpl
   bool IsWheelScrollInProgress() override;
   bool IsAutoscrollInProgress() override;
 
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) override {}
+#endif
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  void SetGestureEventResult(bool result,
+    bool stopPropagation, int32_t fingerId) override {}
+
+  void SetNativeEmbedMode(bool flag) override {}
+  void SetMouseEventResult(bool result, bool stopPropagation) override {}
+  void SetEnableCustomVideoPlayer(bool flag) override {}
+#endif
+
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  void ScrollBy(float delta_x, float delta_y) override {}
+#endif
+
+#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
+  void SetBypassVsyncCondition(int32_t condition) override {}
+#endif
+
   // TouchpadPinchEventQueueClient
   void SendMouseWheelEventForPinchImmediately(
       const blink::WebGestureEvent& pinch_event,
@@ -294,7 +316,6 @@ class COMPONENT_EXPORT(INPUT) InputRouterImpl
   // The host receiver associated with the widget input handler from
   // the widget.
   mojo::Receiver<blink::mojom::WidgetInputHandlerHost> host_receiver_{this};
-
   // The last touch move event that was received. If the
   // kSendEmptyGestureScrollUpdate flag is enabled, `last_touch_move_event_` is
   // stored until a gesture scroll update event is received and the two are sent

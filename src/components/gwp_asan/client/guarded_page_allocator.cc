@@ -30,7 +30,7 @@
 #include "partition_alloc/gwp_asan_support.h"
 #include "third_party/boringssl/src/include/openssl/rand.h"
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS) || BUILDFLAG(ARKWEB_GWP_ASAN)
 #include "components/crash/core/app/crashpad.h"  // nogncheck
 #endif
 

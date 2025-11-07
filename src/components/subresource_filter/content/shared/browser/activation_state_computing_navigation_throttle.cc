@@ -39,8 +39,10 @@ ActivationStateComputingNavigationThrottle::CreateForChild(
     const mojom::ActivationState& parent_activation_state,
     std::string_view uma_tag) {
   CHECK(!IsInSubresourceFilterRoot(&registry.GetNavigationHandle()));
+#if !BUILDFLAG(ARKWEB_ADBLOCK)
   CHECK_NE(mojom::ActivationLevel::kDisabled,
            parent_activation_state.activation_level);
+#endif
   CHECK(ruleset_handle);
   return base::WrapUnique(new ActivationStateComputingNavigationThrottle(
       registry, parent_activation_state, ruleset_handle, uma_tag));
@@ -65,8 +67,14 @@ void ActivationStateComputingNavigationThrottle::
         VerifiedRuleset::Handle* ruleset_handle,
         const mojom::ActivationState& page_activation_state) {
   CHECK(IsInSubresourceFilterRoot(navigation_handle()));
+#if !BUILDFLAG(ARKWEB_ADBLOCK)
   CHECK_NE(mojom::ActivationLevel::kDisabled,
            page_activation_state.activation_level);
+#endif
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  LOG(DEBUG) << "[AdBlock] NotifyPageActivationWithRuleset activation_level:"
+             << page_activation_state.activation_level;
+#endif
   parent_activation_state_ = page_activation_state;
   CHECK(ruleset_handle);
   ruleset_handle_ = ruleset_handle->AsWeakPtr();

@@ -1,0 +1,66 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/components/device_signals/core/common/signals_features.cc.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/components/device_signals/core/common/signals_features.cc",
+    "文件类型": "C++源文件"
+  },
+  "处理统计": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 2,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk处理详情": [
+    {
+      "hunk编号": 1,
+      "修改类型": "条件编译指令修改",
+      "风险等级": "低风险",
+      "冲突原因": "Arkweb132在条件编译指令中添加了ARKWEB_ASAN宏定义，但在Arkweb141中对应位置使用的是IS_CHROMEOS而非IS_CHROMEOS_ASH",
+      "分析过程": "通过比较.rej文件和源文件，发现在第57-58行存在条件编译指令。源文件使用BUILDFLAG(IS_CHROMEOS)，而.rej文件期望使用BUILDFLAG(IS_CHROMEOS_ASH)。根据上下文匹配，将BUILDFLAG(ARKWEB_ASAN)添加到现有条件中",
+      "修改内容": {
+        "待删除行": "BUILDFLAG(IS_CHROMEOS_ASH)",
+        "待添加行": "BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(ARKWEB_ASAN)",
+        "实际执行": "在现有条件中添加了 || BUILDFLAG(ARKWEB_ASAN)"
+      },
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "应用位置": "第58行",
+      "备注": "成功将ARKWEB_ASAN条件编译宏添加到现有条件指令中"
+    },
+    {
+      "hunk编号": 2,
+      "修改类型": "条件编译注释修改",
+      "风险等级": "低风险",
+      "冲突原因": "与Hunk 1相同的ARKWEB_ASAN宏定义需要同步更新到对应的注释中",
+      "分析过程": "在源文件第69-70行找到对应的条件编译注释，与Hunk 1的修改保持一致，在注释中也添加ARKWEB_ASAN条件",
+      "修改内容": {
+        "待删除行": "// BUILDFLAG(IS_CHROMEOS_ASH)",
+        "待添加行": "// BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(ARKWEB_ASAN)",
+        "实际执行": "在现有注释中添加了 || BUILDFLAG(ARKWEB_ASAN)"
+      },
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "应用位置": "第70行",
+      "备注": "成功在条件编译注释中同步添加了ARKWEB_ASAN宏定义"
+    }
+  ],
+  "整体分析": {
+    "冲突类型": "条件编译宏定义冲突",
+    "主要变更": "添加ARKWEB_ASAN宏定义支持",
+    "风险评估": "低风险 - 仅添加条件编译宏，不影响核心逻辑",
+    "代码兼容性": "良好 - 保持了现有代码结构和逻辑",
+    "功能影响": "扩展了设备信号功能的适用范围到ARKWEB_ASAN构建配置"
+  },
+  "验证信息": {
+    ".rej文件完整性": "已确认.rej文件保持完整未被修改",
+    "源文件修改验证": "已成功应用所有hunk修改",
+    "语法正确性": "修改后的代码语法正确",
+    "逻辑一致性": "条件编译指令与注释保持一致"
+  },
+  "处理策略总结": {
+    "定位策略": "使用上下文行精确定位修改位置",
+    "应用策略": "原子化应用修改，仅添加/删除指定行",
+    "验证策略": "确保语法正确性和逻辑一致性",
+    "合规性": "严格遵守黄金法则，未添加任何上下文行"
+  }
+}

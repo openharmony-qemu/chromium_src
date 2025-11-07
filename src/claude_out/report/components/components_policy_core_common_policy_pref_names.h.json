@@ -1,0 +1,53 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/components/policy/core/common/policy_pref_names.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/components/policy/core/common/policy_pref_names.h",
+    "Chromium132基线": "/home/sujiahao/code/chromium_132_baseline/src/components/policy/core/common/policy_pref_names.h",
+    "Arkweb132代码": "/home/sujiahao/code/arkweb_132/src/components/policy/core/common/policy_pref_names.h"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk详情": [
+    {
+      "hunk索引": 1,
+      "修改类型": "添加Arkweb EDM策略支持",
+      "风险等级": "低",
+      "冲突原因": "Arkweb 132中添加了ARKWEB_EDM_POLICY条件编译块来支持浏览器策略版本功能，但在Arkweb 141的源文件中缺失",
+      "分析过程": "通过分析.rej文件发现需要在ChromeOS条件编译块后添加Arkweb EDM策略的extern声明。使用上下文锚点（kDownloadRestrictions[]和ChromeOS条件块）精确定位到源文件中第95行之后的位置。",
+      "待添加行": [
+        "#if BUILDFLAG(ARKWEB_EDM_POLICY)",
+        "extern const char kBrowserPolicyVersion[];",
+        "#endif"
+      ],
+      "待删除行": [],
+      "定位锚点": [
+        "extern const char kDownloadRestrictions[];",
+        "#if BUILDFLAG(IS_CHROMEOS)块",
+        "}  // namespace policy_prefs"
+      ],
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "最终位置": "源文件第96-98行",
+      "应用策略": "精确位置插入，在ChromeOS条件编译块结束后、BuiltInAIAPIsEnabled声明前插入EDM策略条件编译块"
+    }
+  ],
+  "整体分析": {
+    "主要变更类型": "Arkweb EDM策略功能扩展",
+    "代码复杂度": "低",
+    "潜在风险": "极低，仅为条件编译的extern声明添加，不影响现有逻辑",
+    "代码质量影响": "正面，恢复了Arkweb EDM策略功能支持",
+    "编译影响": "无，仅在ARKWEB_EDM_POLICY宏定义时生效"
+  },
+  "合规性验证": {
+    ".rej文件保持完整": true,
+    "未生成脚本文件": true,
+    "未创建辅助文件": true,
+    "仅在指定目录创建报告": true,
+    "严格遵守'不添加上下文'原则": true
+  },
+  "处理总结": "成功处理了1个hunk，将Arkweb 132中的EDM策略支持代码精确地应用到Arkweb 141源文件中。修改涉及添加一个条件编译块，用于声明kBrowserPolicyVersion策略变量。整个过程严格遵守了'不添加上下文'的铁律，仅应用了以+开头的行，保持了代码的纯净性和安全性。"
+}

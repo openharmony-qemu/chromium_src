@@ -4,13 +4,18 @@
 
 #include "components/input/fling_controller.h"
 
+#include "arkweb/build/features/features.h"
 #include "base/time/default_tick_clock.h"
 #include "base/time/time.h"
 #include "base/trace_event/trace_event.h"
+#include "content/public/browser/browser_thread.h"
 #include "components/input/features.h"
 #include "third_party/perfetto/include/perfetto/tracing/track.h"
 #include "ui/events/base_event_utils.h"
 #include "ui/events/gestures/blink/web_gesture_curve_impl.h"
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/components/input/fling_controller_for_include_impl.h"
+#endif
 
 using blink::WebInputEvent;
 using blink::WebGestureEvent;

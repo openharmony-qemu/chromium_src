@@ -101,7 +101,8 @@ bool InitializeCrashpadImpl(bool initial_client,
 #endif  // BUILDFLAG(GOOGLE_CHROME_BRANDING)
            process_type == "GCPW Installer" || process_type == "GCPW DLL" ||
            process_type == "elevated-tracing-service");
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+      BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
     DCHECK(browser_process);
 #else
 #error Port.
@@ -268,7 +269,7 @@ void SetUploadConsent(bool consent) {
 
 #endif  // !BUILDFLAG(IS_CHROMEOS)
 
-#if !BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_ARKWEB)
 void DumpWithoutCrashing() {
   CRASHPAD_SIMULATE_CRASH();
 }

@@ -68,6 +68,10 @@
 #include "services/metrics/public/cpp/ukm_source_id.h"
 #include "third_party/perfetto/include/perfetto/tracing/track.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
 #include "components/download/internal/common/android/download_collection_bridge.h"
 #endif  // BUILDFLAG(IS_ANDROID)
@@ -76,9 +80,18 @@
 #include "base/mac/mac_util.h"
 #endif  // BUILDFLAG(IS_MAC)
 
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+#include "base/command_line.h"
+#include "content/public/common/content_switches.h"
+#endif
+
 namespace download {
 
 namespace {
+
+#if BUILDFLAG(ARKWEB_EX_DOWNLOAD)
+const char kRequestMethod[] = "request_method";
+#endif
 
 void DeleteDownloadedFileDone(base::WeakPtr<DownloadItemImpl> item,
                               base::OnceCallback<void(bool)> callback,

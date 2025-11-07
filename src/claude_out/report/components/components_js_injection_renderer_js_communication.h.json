@@ -1,0 +1,94 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/components/js_injection/renderer/js_communication.h.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/components/js_injection/renderer/js_communication.h",
+    "处理时间": "2025-11-05"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0
+  },
+  "冲突原因分析": {
+    "主要冲突原因": "Arkweb 132版本中的侵入式修改在Chromium 141基线中需要重新集成",
+    "变更类型": "Arkweb特定的功能增强和架构调整",
+    "影响范围": "JS注入通信模块的类声明和成员变量"
+  },
+  "hunks详情": [
+    {
+      "hunk索引": 1,
+      "解决状态": "已解决",
+      "风险等级": "低风险",
+      "置信度": "高",
+      "修改内容": {
+        "添加的行数": 7,
+        "删除的行数": 0,
+        "具体修改": [
+          {
+            "操作": "添加",
+            "内容": "#include \"arkweb/build/features/features.h\"",
+            "位置": "第18行后",
+            "用途": "引入Arkweb构建特性标志"
+          },
+          {
+            "操作": "添加",
+            "内容": "class JsCommunicationUtils;",
+            "位置": "第28行后",
+            "用途": "前向声明JsCommunicationUtils类"
+          },
+          {
+            "操作": "添加",
+            "内容": "friend class JsCommunicationUtils;",
+            "位置": "第35行后",
+            "用途": "声明友元类用于访问私有成员"
+          },
+          {
+            "操作": "添加",
+            "内容": "std::unique_ptr<JsCommunicationUtils> implUtils_;",
+            "位置": "第36行后",
+            "用途": "添加JsCommunicationUtils实现对象"
+          },
+          {
+            "操作": "添加",
+            "内容": "#if BUILDFLAG(ARKWEB_JSPROXY)\n  std::vector<std::unique_ptr<DocumentStartJavaScript>> swap_scripts_;\n#endif",
+            "位置": "第103行后",
+            "用途": "添加条件编译的JS代理脚本存储"
+          }
+        ]
+      },
+      "定位过程": {
+        "使用的锚点": [
+          "#include \"third_party/blink/public/platform/web_string.h\"",
+          "class JsBinding;",
+          "class JsCommunication",
+          "bool inside_did_clear_window_object_ = false;",
+          "std::vector<std::unique_ptr<DocumentStartJavaScript>> scripts_;"
+        ],
+        "定位成功率": "100%"
+      },
+      "风险评估": {
+        "语法风险": "无语法风险，所有添加的内容都是合法的C++代码",
+        "逻辑风险": "低风险，主要是添加新功能和声明，不影响现有逻辑",
+        "编译风险": "无编译风险，包含头文件和条件编译使用正确的语法",
+        "依赖风险": "需要确保arkweb/build/features/features.h文件存在"
+      }
+    }
+  ],
+  "处理策略": {
+    "原子化应用": "严格遵循原子化应用原则，只添加+开头的行",
+    "上下文处理": "严格遵守不添加上下文原则，仅应用必要的修改",
+    "rej文件保护": "确保.rej文件保持完整未被修改",
+    "文件完整性": "源文件结构和语法保持完整"
+  },
+  "验证结果": {
+    "rej文件完整性": "✓ 保持完整未被修改",
+    "源文件语法": "✓ 语法正确",
+    "代码结构": "✓ 结构完整",
+    "编译兼容性": "✓ 兼容现有代码结构"
+  },
+  "建议后续操作": {
+    "编译验证": "建议进行编译测试以确保所有依赖项正确",
+    "功能测试": "建议测试JS注入和代理功能是否正常工作",
+    "依赖检查": "确认arkweb/build/features/features.h文件存在并可访问"
+  }
+}

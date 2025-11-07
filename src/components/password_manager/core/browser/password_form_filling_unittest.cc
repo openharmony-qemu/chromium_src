@@ -202,7 +202,8 @@ TEST_F(PasswordFormFillingTest, Autofill) {
   EXPECT_CALL(driver_, PropagateFillDataOnParsingCompletion)
       .WillOnce(SaveArg<0>(&fill_data));
   EXPECT_CALL(client_, PasswordWasAutofilled);
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
   EXPECT_CALL(feature_manager_, IsBiometricAuthenticationBeforeFillingEnabled)
       .WillOnce(Return(true));
 #endif
@@ -288,7 +289,8 @@ TEST_F(PasswordFormFillingTest, TestFillOnLoadSuggestion) {
     EXPECT_CALL(driver_, PropagateFillDataOnParsingCompletion)
         .WillOnce(SaveArg<0>(&fill_data));
     EXPECT_CALL(client_, PasswordWasAutofilled);
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
     EXPECT_CALL(feature_manager_, IsBiometricAuthenticationBeforeFillingEnabled)
         .WillOnce(Return(true));
 #endif

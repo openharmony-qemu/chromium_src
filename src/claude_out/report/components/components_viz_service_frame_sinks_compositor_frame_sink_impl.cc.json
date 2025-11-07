@@ -1,0 +1,39 @@
+{
+  "file_path": "components/viz/service/frame_sinks/compositor_frame_sink_impl.cc",
+  "analysis_summary": {
+    "total_hunks": 1,
+    "resolved_hunks": 1,
+    "unresolved_hunks": 0,
+    "rej_file_integrity": "maintained"
+  },
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "line_range": "147-155",
+      "resolution_status": "已解决",
+      "confidence": "高",
+      "risk_assessment": "低风险",
+      "conflict_cause": "Arkweb 132版本中的SetAutoNeedsBeginFrame()方法在Chromium 141版本中被重构到SetParams()方法内部，导致上下文不匹配",
+      "analysis_process": "通过分析.rej文件中的上下文，识别出需要在SetAutoNeedsBeginFrame()方法后添加OnSetBypassVsyncCondition()方法，以及在SubmitCompositorFrame()方法中添加系统事件报告代码。由于源文件中SetAutoNeedsBeginFrame()已被重构，选择了在SetParams()方法后添加新方法的位置。",
+      "modifications_applied": [
+        {
+          "action": "添加",
+          "location": "SetParams()方法后，第164-168行",
+          "code": "#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)\nvoid CompositorFrameSinkImpl::OnSetBypassVsyncCondition(int32_t condition) {\n  compositor_frame_sink_impl_util_->OnSetBypassVsyncCondition(condition);\n}\n#endif"
+        },
+        {
+          "action": "添加",
+          "location": "SubmitCompositorFrame()方法内，DCHECK检查后，第177-179行",
+          "code": "#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)\n  compositor_frame_sink_impl_util_->SubmitCompositorFrameUtils(frame.metadata);\n#endif"
+        }
+      ],
+      "resolution_strategy": "基于代码逻辑推断和上下文匹配，在适当位置插入Arkweb特有的扩展功能代码"
+    }
+  ],
+  "final_verification": {
+    "rej_file_integrity": "已验证，.rej文件保持完整未被修改",
+    "source_file_modified": "是，已成功应用所有修改",
+    "code_integrity": "保持良好，修改后的代码语法正确且符合原有代码风格",
+    "arkweb_features": "成功集成了ARKWEB_VSYNC_SCHEDULE和ARKWEB_REPORT_SYS_EVENT两个特性"
+  }
+}

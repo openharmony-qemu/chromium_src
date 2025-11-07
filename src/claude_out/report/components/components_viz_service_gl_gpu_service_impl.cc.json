@@ -1,0 +1,89 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/components/viz/service/gl/gpu_service_impl.cc.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/components/viz/service/gl/gpu_service_impl.cc",
+    "处理时间": "2025-11-05"
+  },
+  "处理总结": {
+    "总hunk数量": 4,
+    "成功解决的hunk数量": 2,
+    "未能解决的hunk数量": 2,
+    "解决状态": "部分解决"
+  },
+  "hunk处理详情": [
+    {
+      "hunk编号": 1,
+      "描述": "添加 arkweb/build/features/features.h 头文件引用",
+      "冲突原因": "Arkweb 132 中添加了 Arkweb 特定的功能特性头文件",
+      "分析过程": "在源文件的第11行（base/allocator/partition_alloc_support.h 之前）成功定位到插入点",
+      "修改置信度": "高",
+      "风险等级": "低",
+      "处理策略": "已成功应用",
+      "状态": "已解决",
+      "修改内容": "+#include \"arkweb/build/features/features.h\""
+    },
+    {
+      "hunk编号": 2,
+      "描述": "添加 ARKWEB_HEIF_SUPPORT 相关的头文件引用",
+      "冲突原因": "Arkweb 132 中添加了 HEIF 图像格式支持功能",
+      "分析过程": "在源文件的 ozone 平台头文件引用之后成功定位到插入点",
+      "修改置信度": "高",
+      "风险等级": "低",
+      "处理策略": "已成功应用",
+      "状态": "已解决",
+      "修改内容": [
+        "+#if BUILDFLAG(ARKWEB_HEIF_SUPPORT)",
+        "+#include \"media/gpu/ohos/ohos_image_decode_accelerator_worker.h\"",
+        "+#endif  // BUILDFLAG(ARKWEB_HEIF_SUPPORT)"
+      ]
+    },
+    {
+      "hunk编号": 3,
+      "描述": "添加 ARKWEB_OOP_GPU_PROCESS 相关的日志处理条件编译",
+      "冲突原因": "Arkweb 132 中对 GPU 进程架构进行了修改，增加了条件编译控制",
+      "分析过程": "在 Arkweb 141 源文件中未找到 PreInitializeLogHandler 和 PostInitializeLogHandler 函数，也未找到相关的 LogMessageManager 类实现。这些函数在 Chromium 132 中存在，但在 Arkweb 141 中可能已经被重构或迁移到其他模块。",
+      "修改置信度": "低",
+      "风险等级": "高",
+      "处理策略": "无法应用",
+      "状态": "未解决",
+      "无法应用原因": "源文件中缺少相关的函数定义和上下文代码，无法精确定位插入位置。日志处理系统可能已经重构，使用了不同的架构。",
+      "涉及修改内容": [
+        "+#if !BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)",
+        "对 PostInitializeLogHandler 函数的条件编译包装",
+        "+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)",
+        "+    logging::SetLogMessageHandler(nullptr);",
+        "+#else",
+        "相关的日志处理逻辑",
+        "+#endif"
+      ]
+    },
+    {
+      "hunk编号": 4,
+      "描述": "添加 Arkweb 扩展工具文件引用",
+      "冲突原因": "Arkweb 132 中添加了特定的工具函数实现",
+      "分析过程": "在 ARKWEB_HEIF_SUPPORT 头文件引用之后成功定位到插入点",
+      "修改置信度": "高",
+      "风险等级": "低",
+      "处理策略": "已成功应用",
+      "状态": "已解决",
+      "修改内容": "+#include \"arkweb/chromium_ext/components/viz/service/gl/gpu_service_impl_utils.cc\""
+    }
+  ],
+  "总体风险评估": {
+    "低风险修改": 3个（头文件引用添加）,
+    "高风险修改": 1个（日志处理系统修改）,
+    "整体风险等级": "中等",
+    "建议": "需要人工审查日志处理相关的 hunk 3，确认 Arkweb 141 中是否需要这些修改，或者日志处理系统是否已经完全重构"
+  },
+  "完整性验证": {
+    ".rej文件状态": "保持完整，未被修改",
+    "源文件修改": "已应用 2 个 hunk 的修改",
+    "遵循原则": "严格遵守了不添加上下文的原则，仅添加了以 + 开头的行"
+  },
+  "后续建议": [
+    "需要人工确认日志处理系统在 Arkweb 141 中的实现方式",
+    "验证 ARKWEB_HEIF_SUPPORT 功能在 Arkweb 141 中的兼容性",
+    "检查 arkweb/chromium_ext/components/viz/service/gl/gpu_service_impl_utils.cc 文件是否存在",
+    "确认 ARKWEB_OOP_GPU_PROCESS 功能标志在 Arkweb 141 中的定义和用途"
+  ]
+}

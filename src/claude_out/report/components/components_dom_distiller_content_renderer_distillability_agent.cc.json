@@ -1,0 +1,78 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/components/dom_distiller/content/renderer/distillability_agent.cc.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/components/dom_distiller/content/renderer/distillability_agent.cc",
+    "文件类型": "C++源代码",
+    "组件": "components/dom_distiller/content/renderer/"
+  },
+  "处理统计": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 2,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunks处理详情": [
+    {
+      "hunk编号": 1,
+      "位置": "@@ -166,10 +186,14 @@",
+      "冲突原因": "Arkweb 132中的侵入式修改在Arkweb 141中产生了冲突",
+      "待添加行": [
+        "#if BUILDFLAG(IS_ARKWEB)",
+        "#include \"arkweb/chromium_ext/components/dom_distiller/content/renderer/distillability_agent_for_include.cc\"",
+        "#endif"
+      ],
+      "待删除行": [],
+      "定位策略": "使用函数结束后的上下文作为锚点",
+      "修改位置": "第233行IsDistillablePage函数结束后",
+      "风险分析": "低风险 - 这是标准的条件编译指令，用于包含Arkweb特定的扩展代码",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "处理过程": "通过分析源代码结构，在IsDistillablePage函数结束后添加了条件编译指令，用于包含Arkweb特定的实现文件"
+    },
+    {
+      "hunk编号": 2,
+      "位置": "@@ -235,15 +269,20 @@",
+      "冲突原因": "Arkweb 132中的阅读器模式条件编译在Arkweb 141中产生了冲突",
+      "待添加行": [
+        "",
+        "#if BUILDFLAG(ARKWEB_READER_MODE)",
+        "#include \"arkweb/chromium_ext/components/dom_distiller/content/renderer/distillability_agent_for_include_after.cc\"",
+        "#else",
+        "bool is_distillable =",
+        "    IsDistillablePage(doc, is_last, is_long_article, is_mobile_friendly,",
+        "                      render_frame(), dump_info_, ukm_recorder_.get());",
+        "distillability_service->NotifyIsDistillable(",
+        "    is_distillable, is_last, is_long_article, is_mobile_friendly);",
+        "#endif"
+      ],
+      "待删除行": [],
+      "定位策略": "使用变量声明和函数调用的上下文作为锚点",
+      "修改位置": "第289行bool is_mobile_friendly = false;之后",
+      "风险分析": "中等风险 - 这个修改影响了页面可蒸馏性检查的核心逻辑，通过条件编译来区分标准实现和Arkweb特定的阅读器模式实现",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "处理过程": "在变量声明后添加了条件编译指令，根据ARKWEB_READER_MODE宏来决定使用标准的蒸馏逻辑还是Arkweb特定的实现"
+    }
+  ],
+  "技术分析": {
+    "修改类型": "条件编译指令添加",
+    "影响范围": "页面内容蒸馏功能",
+    "兼容性": "向后兼容，通过编译宏控制",
+    "代码完整性": "保持良好，语法结构完整"
+  },
+  "验证结果": {
+    ".rej文件完整性": "确认保持完整未被修改",
+    "源文件语法": "语法检查通过",
+    "编译兼容性": "预期兼容，使用标准条件编译模式"
+  },
+  "处理策略总结": {
+    "整体策略": "严格按照.rej文件中的hunk定义，精确应用+行和-行操作",
+    "遵守原则": [
+      "未添加任何上下文行",
+      "未生成任何脚本文件",
+      "未修改.rej文件",
+      "仅在指定位置创建JSON报告"
+    ],
+    "处理质量": "所有hunk均已成功应用，代码结构完整，预期编译无问题"
+  }
+}

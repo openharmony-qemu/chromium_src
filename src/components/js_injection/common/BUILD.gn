@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//mojo/public/tools/bindings/mojom.gni")
+import("//build/config/features.gni")
 
 mojom("common_mojom") {
   sources = [ "interfaces.mojom" ]

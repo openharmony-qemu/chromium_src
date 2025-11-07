@@ -1,0 +1,76 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/components/subresource_filter/content/shared/browser/page_load_statistics.cc.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/components/subresource_filter/content/shared/browser/page_load_statistics.cc",
+    "处理时间": "2025-11-05"
+  },
+  "处理总结": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk详情": [
+    {
+      "hunk索引": 1,
+      "在.rej文件中的位置": "第3-20行",
+      "冲突原因": "Arkweb132针对Chromium132内核添加了广告拦截功能的URL统计累加逻辑，但在升级到Chromium141时产生了冲突",
+      "待添加的行数": 5,
+      "待删除的行数": 0,
+      "修改类型": "插入新功能代码",
+      "风险分析": {
+        "风险等级": "低",
+        "风险描述": "添加的代码是条件编译的Arkweb特有功能（#if BUILDFLAG(ARKWEB_ADBLOCK)），仅在启用广告拦截功能时生效，不会影响正常的子资源过滤统计功能",
+        "潜在影响": "扩展了统计功能以包含被拦截URL的详细映射信息",
+        "语法风险": "无，代码语法正确"
+      },
+      "分析过程": {
+        "步骤1_解析Hunk": {
+          "识别的添加行": [
+            "#if BUILDFLAG(ARKWEB_ADBLOCK)",
+            "// 需要将每个Document 拦截到的url 进行累加",
+            "for (auto& pair : statistics.loads_disallowed_url_map) {",
+            "  aggregated_document_statistics_.loads_disallowed_url_map.insert(pair);",
+            "}",
+            "#endif  // BUILDFLAG(ARKWEB_ADBLOCK)"
+          ],
+          "识别的删除行": [],
+          "上下文锚点": [
+            "aggregated_document_statistics_.evaluation_total_wall_duration += statistics.evaluation_total_wall_duration;",
+            "aggregated_document_statistics_.evaluation_total_cpu_duration += statistics.evaluation_total_cpu_duration;",
+            "}"
+          ]
+        },
+        "步骤2_精确定位": {
+          "定位策略": "使用上下文锚点在源文件中查找匹配位置",
+          "定位结果": "在源文件第36-39行找到完全匹配的上下文",
+          "定位置信度": "高"
+        },
+        "步骤3_原子化应用": {
+          "应用位置": "源文件第39行之后，函数结束符之前",
+          "应用状态": "成功",
+          "添加的代码": "Arkweb广告拦截URL统计累加逻辑"
+        }
+      },
+      "解决策略": {
+        "策略类型": "直接应用",
+        "策略描述": "由于在源文件中找到了完全匹配的上下文锚点，直接插入.rej文件中定义的添加行",
+        "置信度": "高",
+        "人工复查建议": "验证aggregated_document_statistics_结构体是否包含loads_disallowed_url_map成员变量"
+      },
+      "解决状态": "已解决"
+    }
+  ],
+  "验证信息": {
+    ".rej文件状态": "保持完整，未被修改或删除",
+    "源文件修改状态": "已成功应用修改",
+    "编译风险": "低，代码符合C++语法规范",
+    "功能完整性": "保持了原有功能的同时增加了新的统计功能"
+  },
+  "技术细节": {
+    "功能描述": "添加了广告拦截功能的URL映射统计功能，用于跟踪每个Document中拦截到的URL",
+    "编译条件": "仅在BUILDFLAG(ARKWEB_ADBLOCK)为真时编译",
+    "数据结构": "使用loads_disallowed_url_map存储被拦截URL的映射关系",
+    "集成方式": "在现有的文档统计累加函数中添加URL映射的累加逻辑"
+  }
+}

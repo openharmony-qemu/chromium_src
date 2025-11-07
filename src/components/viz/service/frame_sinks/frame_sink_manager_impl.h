@@ -67,6 +67,7 @@ class HintSessionFactory;
 class InputManager;
 class OutputSurfaceProvider;
 class SharedImageInterfaceProvider;
+class FrameSinkManagerImplUtils;
 struct VideoCaptureTarget;
 
 // FrameSinkManagerImpl manages BeginFrame hierarchy. This is the implementation
@@ -81,6 +82,9 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
       public SurfaceManagerDelegate,
       public HitTestDataProvider {
  public:
+  friend class FrameSinkManagerImplUtils;
+  std::unique_ptr<FrameSinkManagerImplUtils> managerImplUtils;
+
   struct VIZ_SERVICE_EXPORT InitParams {
     explicit InitParams(
         OutputSurfaceProvider* output_surface_provider = nullptr,
@@ -397,6 +401,26 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
   }
 
   void RequestBeginFrameForGpuService(bool toggle);
+
+#if BUILDFLAG(ARKWEB_OCCLUDED_OPT)
+  void SetEnableLowerFrameRate(bool enabled,
+                               const FrameSinkId& frame_sink_id) override;
+  void SetEnableHalfFrameRate(bool enabled,
+                               const FrameSinkId& frame_sink_id) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_VIDEO_LTPO)
+  void UpdateVSyncFrequency(const FrameSinkId& frame_sink_id, uint32_t client_id) override;
+  void ResetVSyncFrequency(const FrameSinkId& frame_sink_id) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_PIP)
+  void SetPipActive(bool active, const FrameSinkId& frame_sink_id) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  void ClearBlanklessSnapshotInfo(uint64_t blankless_key) override;
+#endif
 
   GpuServiceImpl* GetGpuService();
 

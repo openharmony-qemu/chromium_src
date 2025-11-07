@@ -1,0 +1,108 @@
+{
+  "file_path": "components/cdm/renderer/key_system_support_update.cc",
+  "rej_file_path": "components/cdm/renderer/key_system_support_update.cc.rej",
+  "analysis_timestamp": "2025-11-05",
+  "total_hunks": 4,
+  "resolved_hunks": 4,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": {
+    "status": "保持完整",
+    "modified": false,
+    "deleted": false
+  },
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "line_range": "3-18",
+      "location": "文件头部include部分",
+      "changes": {
+        "added_lines": [
+          "#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)",
+          "#include \"components/cdm/renderer/wiseplay_key_system_info.h\"",
+          "#include \"media/cdm/wiseplay_cdm_common.h\"",
+          "#endif"
+        ],
+        "removed_lines": []
+      },
+      "risk_assessment": "低风险",
+      "conflict_cause": "新增WisePlay DRM支持的包含文件",
+      "analysis_process": "在Android条件编译块之后成功添加了WisePlay相关的包含文件",
+      "confidence": "高",
+      "resolution_status": "已解决",
+      "applied_at_lines": "45-48"
+    },
+    {
+      "hunk_id": 2,
+      "line_range": "19-33",
+      "location": "AddWidevine函数 - 软件安全能力处理部分",
+      "changes": {
+        "added_lines": [
+          "      LOG(INFO) << \"[DRM]\" << __func__;",
+          "  LOG(INFO) << \"[DRM]\" << __func__;"
+        ],
+        "removed_lines": []
+      },
+      "risk_assessment": "低风险",
+      "conflict_cause": "在软件安全能力检查点添加DRM调试日志",
+      "analysis_process": "成功在临时会话检查返回前和软件安全能力处理后添加了调试日志",
+      "confidence": "高",
+      "resolution_status": "已解决",
+      "applied_at_lines": "348, 355"
+    },
+    {
+      "hunk_id": 3,
+      "line_range": "34-59",
+      "location": "AddWidevine函数 - 硬件安全能力处理部分",
+      "changes": {
+        "added_lines": [
+          "    LOG(INFO) << \"[DRM]\" << __func__;",
+          "    LOG(INFO) << \"[DRM]\" << __func__;"
+        ],
+        "removed_lines": []
+      },
+      "risk_assessment": "低风险",
+      "conflict_cause": "在硬件安全能力检查点添加DRM调试日志",
+      "analysis_process": "成功在Windows硬件安全代码处理和硬件安全能力未支持时添加了调试日志",
+      "confidence": "高",
+      "resolution_status": "已解决",
+      "applied_at_lines": "369, 380"
+    },
+    {
+      "hunk_id": 4,
+      "line_range": "60-78",
+      "location": "AddWidevine函数 - 强度配置部分",
+      "changes": {
+        "added_lines": [
+          "#elif BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)",
+          "  max_audio_robustness = Robustness::SW_SECURE_DECODE;",
+          "  max_video_robustness = Robustness::SW_SECURE_DECODE;",
+          "  LOG(INFO) << \"[DRM]\" << __func__;"
+        ],
+        "removed_lines": []
+      },
+      "risk_assessment": "中风险",
+      "conflict_cause": "为Arkweb平台添加特定的DRM强度配置",
+      "analysis_process": "成功在Android平台条件分支后添加了Arkweb特定的DRM强度配置和调试日志",
+      "confidence": "高",
+      "resolution_status": "已解决",
+      "applied_at_lines": "411-414"
+    }
+  ],
+  "summary": {
+    "modification_type": "新增Arkweb DRM支持功能",
+    "main_changes": [
+      "添加WisePlay DRM支持的相关包含文件",
+      "在关键DRM检查点添加调试日志以便追踪",
+      "为Arkweb平台配置特定的DRM安全强度参数"
+    ],
+    "impact_assessment": "这些修改为Arkweb平台添加了完整的DRM支持，包括WisePlay DRM集成和专门的日志追踪功能，不会影响现有平台的功能",
+    "compliance_check": {
+      "no_context_lines_added": true,
+      "no_script_files_created": true,
+      "no_auxiliary_files_created": true,
+      "only_json_report_created": true,
+      "rej_file_preserved": true,
+      "modifications_applied_to_source_only": true
+    }
+  }
+}

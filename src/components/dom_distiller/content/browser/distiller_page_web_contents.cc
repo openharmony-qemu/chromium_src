@@ -29,6 +29,8 @@
 #include "ui/display/screen.h"
 #include "url/gurl.h"
 
+#include "arkweb/chromium_ext/components/dom_distiller/content/browser/distiller_page_web_contents_ext.h"
+
 namespace dom_distiller {
 
 namespace {
@@ -230,17 +232,25 @@ void DistillerPageWebContents::DidFinishNavigation(
     content::WebContentsObserver::Observe(nullptr);
     DCHECK(state_ == LOADING_PAGE || state_ == EXECUTING_JAVASCRIPT);
     state_ = PAGELOAD_FAILED;
+  #if BUILDFLAG(ARKWEB_READER_MODE)
+    if (AsExt()) AsExt()->OnWebContentsDistillationFailed(net::ErrorToShortString(navigation_handle->GetNetErrorCode()));
+#else
     OnWebContentsDistillationDone(GURL(), base::TimeTicks(), base::Value());
+#endif // ARKWEB_READER_MODE
   }
 }
 
 void DistillerPageWebContents::ExecuteJavaScript() {
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  if (AsExt() && AsExt()->ExecuteJavaScriptExt()) return;
+#else
   DCHECK_EQ(LOADING_PAGE, state_);
   state_ = EXECUTING_JAVASCRIPT;
   content::WebContentsObserver::Observe(nullptr);
   // Stop any pending navigation since the intent is to distill the current
   // page.
   source_page_handle_->web_contents()->Stop();
+#endif // ARKWEB_READER_MODE
   RunIsolatedJavaScript(
       &TargetRenderFrameHost(), script_,
       base::BindOnce(&DistillerPageWebContents::OnWebContentsDistillationDone,

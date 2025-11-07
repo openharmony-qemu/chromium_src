@@ -195,6 +195,9 @@ void CheckUserAgentStringOrdering(bool mobile_device) {
   // Fuchsia
   ASSERT_EQ(1u, pieces.size());
   ASSERT_EQ("Fuchsia", pieces[0]);
+#elif BUILDFLAG(IS_OHOS)
+  ASSERT_EQ(2u, pieces.size());
+  ASSERT_EQ("OHOS", pieces[0]);
 #elif BUILDFLAG(IS_IOS)
   // Post-UA Reduction there are two possible <unifiedPlatform> values for iOS,
   // depending on whether this is an iPad or not:
@@ -346,6 +349,8 @@ class UserAgentUtilsTest : public testing::Test,
         "Macintosh; Intel Mac OS X 10_15_7";
 #elif BUILDFLAG(IS_WIN)
         "Windows NT 10.0; Win64; x64";
+#elif BUILDFLAG(IS_OHOS)
+        "OHOS; OHOS x86_64";
 #elif BUILDFLAG(IS_ANDROID)
         "Linux; Android 10; K";
 #elif BUILDFLAG(IS_IOS)

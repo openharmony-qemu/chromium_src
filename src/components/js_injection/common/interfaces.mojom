@@ -34,6 +34,16 @@ struct DocumentStartJavaScript {
   origin_matcher.mojom.OriginMatcher origin_matcher;
 };
 
+// DocumentEndJavaScript struct contains the JavaScript snippet |script| and
+// the corresponding |origin_matcher|. We will run the script if the frame's
+// origin matches any rules in the |origin_matcher| when document end.
+[EnableIf=arkweb_js_on_document_end]
+struct DocumentEndJavaScript {
+  int32 script_id;
+  mojo_base.mojom.String16 script;
+  origin_matcher.mojom.OriginMatcher origin_matcher;
+};
+
 // The ArrayBuffer arm of the JsWebMessage union below, which contains the
 // ArrayBuffer payload sent between JavaScript and browser.
 struct JsWebMessageArrayBufferValue {

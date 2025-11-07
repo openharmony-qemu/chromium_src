@@ -1,0 +1,62 @@
+{
+  "conflict_file": "skia_output_device_buffer_queue_unittest.cc.rej",
+  "source_file": "components/viz/service/display_embedder/skia_output_device_buffer_queue_unittest.cc",
+  "analysis_date": "2025-11-05",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "verified_intact",
+  "hunks_analysis": [
+    {
+      "hunk_number": 1,
+      "location": "第324行附近，SetUpOnGpu()函数中",
+      "risk_level": "低风险",
+      "conflict_reason": "Arkweb132在测试设置中添加了OpenGL初始化代码，用于ARKWEB单元测试环境",
+      "modification_intent": "在GPU测试设置时初始化OpenGL环境，确保测试在ARKWEB环境下正常运行",
+      "lines_to_add": [
+        "#if BUILDFLAG(ARKWEB_UNITTESTS)",
+        "    gl::init::InitializeGLNoExtensionsOneOff(",
+        "      /*init_bindings=*/true, /*gpu_preference=*/gl::GpuPreference::kDefault);",
+        "#endif"
+      ],
+      "lines_to_remove": [],
+      "context_analysis": {
+        "before_context": "void ReleaseOverlays(std::vector<gpu::Mailbox> overlays) {",
+        "after_context": "presenter_ = base::MakeRefCounted<MockPresenter>();",
+        "function_context": "SkiaOutputDeviceBufferQueueTest::SetUpOnGpu()"
+      },
+      "confidence_score": "高置信度",
+      "positioning_strategy": "使用函数名和presenter_初始化代码作为精确定位锚点",
+      "application_result": "成功应用",
+      "resolution_status": "已解决",
+      "verification_details": {
+        "target_location_found": true,
+        "modification_applied": true,
+        "syntax_verification": "通过",
+        "context_integrity": "保持"
+      },
+      "final_state": "修改已成功应用到源文件第299-303行，OpenGL初始化代码已正确插入到SetUpOnGpu()函数开始处"
+    }
+  ],
+  "summary": {
+    "overall_confidence": "高置信度",
+    "modification_type": "功能性添加 - ARKWEB单元测试支持",
+    "code_quality_impact": "正面 - 增强测试环境兼容性",
+    "functional_impact": "为ARKWEB单元测试提供必要的OpenGL初始化",
+    "backward_compatibility": "完全兼容 - 使用条件编译确保仅在ARKWEB测试环境生效",
+    "integration_complexity": "低 - 简单的条件编译代码块"
+  },
+  "technical_details": {
+    "build_flag_dependency": "BUILDFLAG(ARKWEB_UNITTESTS)",
+    "gl_api_dependency": "ui/gl/init/gl_factory.h (已包含在文件头部)",
+    "modification_scope": "局部函数修改",
+    "test_framework": "GPU测试框架增强"
+  },
+  "validation_summary": {
+    "rej_file_preserved": true,
+    "source_file_modified": true,
+    "syntax_correctness": "验证通过",
+    "context_alignment": "完全匹配",
+    "functional_integrity": "保持"
+  }
+}

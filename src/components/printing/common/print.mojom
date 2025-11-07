@@ -430,4 +430,13 @@ interface PrintManagerHost {
   [EnableIf=enable_print_preview]
   SetAccessibilityTree(
       int32 cookie, ax.mojom.AXTreeUpdate accessibility_tree);
+
+  [EnableIf=arkweb_print]
+  PrintRequested() => ();
+
+  [EnableIf=arkweb_print, Sync]
+  CheckCancel() => (bool cancel);
+
+  [EnableIf=arkweb_print]
+  PrintPdfRequested();
 };

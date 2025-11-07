@@ -343,7 +343,11 @@ void SubresourceFilterAgent::ConstructFilter(
   filter_for_last_created_document_.reset();
 
   if (activation_state.activation_level == mojom::ActivationLevel::kDisabled ||
-      !ruleset_dealer_->IsRulesetFileAvailable()) {
+      !ruleset_dealer_->IsRulesetFileAvailable()
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+      || activation_state.user_subresource_filter_replace
+#endif
+      ) {
     return;
   }
 

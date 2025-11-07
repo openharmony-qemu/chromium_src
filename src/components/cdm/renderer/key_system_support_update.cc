@@ -42,6 +42,11 @@
 #include "components/cdm/renderer/android_key_system_info.h"
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
+#include "components/cdm/renderer/wiseplay_key_system_info.h"
+#include "media/cdm/wiseplay_cdm_common.h"
+#endif
+
 #if BUILDFLAG(ENABLE_PLAYREADY)
 #include "components/cdm/common/playready_cdm_common.h"
 #include "components/cdm/renderer/playready_key_system_info.h"
@@ -340,12 +345,14 @@ void AddWidevine(const media::KeySystemCapability& capability,
         can_persist_data, sw_secure_capability.session_types);
     if (!base::Contains(session_types, CdmSessionType::kTemporary)) {
       DVLOG(1) << "Temporary sessions must be supported.";
+      LOG(INFO) << "[DRM]" << __func__;
       return;
     }
     DVLOG(2) << "Software secure Widevine supported";
   } else {
     DVLOG(2) << "Software secure Widevine NOT supported";
   }
+  LOG(INFO) << "[DRM]" << __func__;
 
   if (capability.hw_cdm_capability_or_status.has_value()) {
     const auto& hw_secure_capability =
@@ -359,6 +366,7 @@ void AddWidevine(const media::KeySystemCapability& capability,
         GetSupportedCodecs(hw_secure_capability,
                            /*requires_clear_lead_support=*/false);
 #endif  // BUILDFLAG(IS_WIN)
+    LOG(INFO) << "[DRM]" << __func__;
 
     hw_secure_encryption_schemes = hw_secure_capability.encryption_schemes;
     hw_secure_session_types = UpdatePersistentLicenseSupport(
@@ -369,6 +377,7 @@ void AddWidevine(const media::KeySystemCapability& capability,
     }
     DVLOG(2) << "Hardware secure Widevine supported";
   } else {
+    LOG(INFO) << "[DRM]" << __func__;
     DVLOG(2) << "Hardware secure Widevine NOT supported";
   }
 
@@ -399,6 +408,10 @@ void AddWidevine(const media::KeySystemCapability& capability,
   // On Android we support hardware secure if possible.
   max_audio_robustness = Robustness::HW_SECURE_CRYPTO;
   max_video_robustness = Robustness::HW_SECURE_ALL;
+#elif BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
+  max_audio_robustness = Robustness::SW_SECURE_DECODE;
+  max_video_robustness = Robustness::SW_SECURE_DECODE;
+  LOG(INFO) << "[DRM]" << __func__;
 #elif BUILDFLAG(IS_WIN)
   if (base::FeatureList::IsEnabled(
           media::kHardwareSecureDecryptionExperiment)) {

@@ -30,6 +30,9 @@ CompositorFrameMetadata::CompositorFrameMetadata(
       scrollable_viewport_size(other.scrollable_viewport_size),
       visible_viewport_size(other.visible_viewport_size),
       content_color_usage(other.content_color_usage),
+#if BUILDFLAG(ARKWEB_FLING) && BUILDFLAG(ARKWEB_SLIDE)
+      is_scrolling(other.is_scrolling),
+#endif
       may_contain_video(other.may_contain_video),
       is_handling_interaction(other.is_handling_interaction),
       is_handling_animation(other.is_handling_animation),

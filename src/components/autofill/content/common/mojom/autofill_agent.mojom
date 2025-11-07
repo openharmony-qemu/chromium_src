@@ -183,6 +183,10 @@ interface PasswordAutofillAgent {
   // logging the decisions made about saving the password.
   SetLoggingState(bool active);
 
+  // Called when autofill is cancelled, will try to pull up the IME soft keyboard.
+  [EnableIf=arkweb_password_autofill]
+  AutofillSurfaceClosed(bool show_virtual_keyboard);
+
   // Triggers a form submission on the last interacted element.
   [EnableIf=is_android]
   TriggerFormSubmission();

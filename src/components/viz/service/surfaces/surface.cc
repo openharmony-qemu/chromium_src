@@ -32,8 +32,15 @@
 #include "components/viz/service/surfaces/surface_manager.h"
 #include "components/viz/service/viz_service_export.h"
 #include "third_party/perfetto/include/perfetto/tracing/track.h"
+#if BUILDFLAG(ARKWEB_SUPPORTS_DAMAGE_REGION)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "gpu/config/gpu_finch_features.h"
+#endif
 #include "ui/gfx/presentation_feedback.h"
 #include "ui/gfx/swap_result.h"
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#endif
 
 namespace viz {
 

@@ -1,0 +1,76 @@
+{
+  "file_path": "components/subresource_filter/content/renderer/web_document_subresource_filter_impl.h",
+  "total_hunks": 2,
+  "resolved_hunks": 2,
+  "unresolved_hunks": 0,
+  "rej_file_intact": true,
+  "analysis": {
+    "conflict_cause": "Arkweb132版本中添加的ARKWEB_ADBLOCK相关功能在升级到Chromium141时产生了冲突",
+    "modification_type": "条件编译功能扩展",
+    "risk_assessment": "低风险 - 纯粹的功能扩展添加，不修改现有逻辑"
+  },
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "status": "已解决",
+      "confidence": 95,
+      "description": "添加ARKWEB_ADBLOCK条件编译方法声明",
+      "risk_level": "低",
+      "modification_details": {
+        "added_lines": [
+          "#if BUILDFLAG(ARKWEB_ADBLOCK)",
+          "void ClearStatistics() override;",
+          "std::unique_ptr<std::string> GetElementHidingSelectors(const blink::WebURL& document_url, bool need_generic_selectors) override;",
+          "bool HasGenericHideTypeOption(const blink::WebURL& document_url, const url::Origin& parent_document_origin) override;",
+          "bool HasElemHideTypeOption(const blink::WebURL& document_url, const url::Origin& parent_document_origin) override;",
+          "bool HasDocumentTypeOption(const blink::WebURL& document_url, const url::Origin& parent_document_origin) override;",
+          "void DidMatchCssRule(const blink::WebURL& document_url, const std::string& dom_path, bool is_for_report = false) override;",
+          "bool GetDidFinishLoad() override;",
+          "void SetDidFinishLoad(bool did_load_finished) override;",
+          "std::unique_ptr<std::vector<std::string>> GetUserDomPathSelectors(const blink::WebURL& document_url, bool need_generic_selectors) override;",
+          "void set_activation_state(bool enabled) override;",
+          "#endif"
+        ],
+        "removed_lines": [],
+        "location": "在GetLoadPolicy方法之后，GetLoadPolicyForWebSocketConnect方法之前"
+      },
+      "positioning_strategy": "使用方法签名作为锚点精确定位插入位置"
+    },
+    {
+      "hunk_number": 2,
+      "status": "已解决",
+      "confidence": 98,
+      "description": "修改filter_成员变量为条件编译版本",
+      "risk_level": "低",
+      "modification_details": {
+        "added_lines": [
+          "#if BUILDFLAG(ARKWEB_ADBLOCK)",
+          "  DocumentSubresourceFilterExt filter_;",
+          "#else",
+          "  DocumentSubresourceFilter filter_;",
+          "#endif"
+        ],
+        "removed_lines": [
+          "DocumentSubresourceFilter filter_;"
+        ],
+        "location": "私有成员变量区域，替换原有filter_声明"
+      },
+      "positioning_strategy": "直接替换原有成员变量声明，使用activation_state_和first_disallowed_load_callback_作为上下文锚点"
+    }
+  ],
+  "final_verification": {
+    "rej_file_preserved": true,
+    "syntax_integrity": "保持完整 - 所有添加的代码遵循C++语法规范",
+    "compilation_readiness": "准备就绪 - 需要DocumentSubresourceFilterExt类的定义",
+    "dependencies": [
+      "需要确保BUILDFLAG(ARKWEB_ADBLOCK)宏已定义",
+      "需要DocumentSubresourceFilterExt类的完整定义"
+    ]
+  },
+  "summary": {
+    "operation_type": "冲突解决 - Arkweb扩展功能集成",
+    "success_rate": "100%",
+    "overall_risk": "低",
+    "人工_review建议": "验证DocumentSubresourceFilterExt类在项目中可用，确认BUILDFLAG(ARKWEB_ADBLOCK)编译标志配置正确"
+  }
+}

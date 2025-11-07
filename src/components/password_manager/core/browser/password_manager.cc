@@ -573,18 +573,20 @@ void PasswordManager::RegisterProfilePrefs(
   registry->RegisterBooleanPref(prefs::kUpmUnmigratedPasswordsExported, false);
 #endif  // BUILDFLAG(IS_ANDROID)
 
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
   registry->RegisterIntegerPref(
       prefs::kBiometricAuthBeforeFillingPromoShownCounter, 0);
   registry->RegisterBooleanPref(prefs::kHasUserInteractedWithBiometricAuthPromo,
                                 false);
-#endif  // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#endif  // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
+        // BUILDFLAG(IS_OHOS)
 #if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(IS_CHROMEOS)
+    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
   registry->RegisterBooleanPref(prefs::kBiometricAuthenticationBeforeFilling,
                                 false);
 #endif  // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID) ||
-        // BUILDFLAG(IS_CHROMEOS)
+        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 #if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS)  // Desktop
   registry->RegisterListPref(prefs::kPasswordManagerPromoCardsList);
 #endif  // BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS)
@@ -1536,6 +1538,9 @@ void PasswordManager::OnPasswordFormsRendered(
 }
 
 void PasswordManager::OnLoginSuccessful() {
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  LOG(INFO) << "[Autofill] Login Successful.";
+#endif
   std::unique_ptr<BrowserSavePasswordProgressLogger> logger =
       GetLoggerIfAvailable(client_);
   if (logger) {
@@ -1580,6 +1585,9 @@ void PasswordManager::OnLoginSuccessful() {
   RecordMetricsForLoginWithChangedPassword(client_, *submitted_manager,
                                            /*login_successful=*/true);
 
+// OH password autofill does not need to store the password in the chromium and
+// does not need to check is able to save passwords.
+#if !BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
   bool able_to_save_passwords =
       password_manager_util::IsAbleToSavePasswords(client_);
   UMA_HISTOGRAM_BOOLEAN("PasswordManager.AbleToSavePasswordsOnSuccessfulLogin",
@@ -1587,6 +1595,7 @@ void PasswordManager::OnLoginSuccessful() {
   if (!submitted_manager->IsPasswordUpdate() && !able_to_save_passwords) {
     return;
   }
+#endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 
   // Check for leaks only if there are no muted credentials and it is not a
   // single username submission (a leak warning may offer an automated password

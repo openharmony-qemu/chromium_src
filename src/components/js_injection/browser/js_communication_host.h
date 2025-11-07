@@ -15,6 +15,7 @@
 #include "components/origin_matcher/origin_matcher.h"
 #include "content/public/browser/global_routing_id.h"
 #include "content/public/browser/web_contents_observer.h"
+#include "arkweb/build/features/features.h"
 
 namespace content {
 class RenderFrameHost;
@@ -24,6 +25,7 @@ namespace js_injection {
 
 struct JsObject;
 class WebMessageHostFactory;
+class JsCommunicationHostUtils;
 
 struct DocumentStartJavaScript {
   DocumentStartJavaScript(std::u16string script,

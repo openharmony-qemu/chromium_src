@@ -226,7 +226,11 @@ class ContentPasswordManagerDriver
   const raw_ptr<content::RenderFrameHost> render_frame_host_;
   const raw_ptr<PasswordManagerClient> client_;
   PasswordGenerationFrameHelper password_generation_helper_;
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  PasswordAutofillManagerExt password_autofill_manager_;
+#else
   PasswordAutofillManager password_autofill_manager_;
+#endif
 
   int id_;
 

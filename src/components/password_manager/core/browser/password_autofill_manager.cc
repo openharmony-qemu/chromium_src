@@ -750,7 +750,8 @@ void PasswordAutofillManager::OnPasswordCredentialSuggestionAccepted(
       &PasswordAutofillManager::OnBiometricReauthCompleted,
       weak_ptr_factory_.GetWeakPtr(), std::move(fill_suggestion_callback));
 
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
   const std::u16string origin = base::UTF8ToUTF16(GetShownOrigin(
       url::Origin::Create(password_manager_driver_->GetLastCommittedURL())));
   message =

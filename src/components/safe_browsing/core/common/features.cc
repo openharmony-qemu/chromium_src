@@ -255,7 +255,12 @@ constexpr base::FeatureParam<std::string> kHashPrefixRealTimeLookupsRelayUrl{
     &kHashPrefixRealTimeLookups,
     "SafeBrowsingHashPrefixRealTimeLookupsRelayUrl",
     /*default_value=*/
-    "https://google-ohttp-relay-safebrowsing.fastly-edge.com/"};
+#if BUILDFLAG(ARKWEB_PRIVACY_COMPLIANCE)
+      "https://x.x.x"
+#else
+      "https://google-ohttp-relay-safebrowsing.fastly-edge.com/"
+#endif
+};
 
 BASE_FEATURE(kHashPrefixRealTimeLookupsSamplePing,
              "SafeBrowsingHashPrefixRealTimeLookupsSamplePing",

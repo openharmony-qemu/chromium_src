@@ -22,8 +22,18 @@ WebCacheManager::WebCacheManager() {
        !iter.IsAtEnd(); iter.Advance()) {
     Add(iter.GetCurrentValue()->GetDeprecatedID());
   }
+#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
+  webCacheManagerUtils = new WebCacheManagerUtils(this);
+#endif
 }
+
+#if BUILDFLAG(ARKWEB_INJECT_OFFLINE_RESOURCE)
+WebCacheManager::~WebCacheManager() {
+  delete webCacheManagerUtils;
+}
+#else
 WebCacheManager::~WebCacheManager() = default;
+#endif
 
 void WebCacheManager::Add(int renderer_id) {
   renderers_.insert(renderer_id);

@@ -30,6 +30,7 @@
 #include "components/prefs/json_pref_store.h"
 #include "components/prefs/pref_notifier_impl.h"
 #include "components/prefs/pref_registry.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "components/prefs/android/pref_service_android.h"
@@ -524,13 +525,9 @@ void PrefService::SetUserPrefValue(std::string_view path,
 
   const Preference* pref = FindPreference(path);
   if (!pref) {
-    DUMP_WILL_BE_NOTREACHED()
-        << "Trying to write an unregistered pref: " << path;
     return;
   }
   if (pref->GetType() != new_value.type()) {
-    NOTREACHED() << "Trying to set pref " << path << " of type "
-                 << pref->GetType() << " to value of type " << new_value.type();
   }
 
   user_pref_store_->SetValue(path, std::move(new_value), GetWriteFlags(pref));

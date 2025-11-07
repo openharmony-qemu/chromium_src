@@ -8,6 +8,7 @@
 
 #include <utility>
 
+#include "arkweb/chromium_ext/components/input/arkweb_input_router_impl_utils.h"
 #include "base/command_line.h"
 #include "base/functional/bind.h"
 #include "base/metrics/histogram_macros.h"
@@ -193,6 +194,9 @@ void InputRouterImpl::SendGestureEvent(
 
   GestureEventWithLatencyInfo gesture_event(original_gesture_event);
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  arkweb_input_router_impl_utils_->SendGestureEventEx(gesture_event);
+#endif
   if (gesture_event_queue_.PassToFlingController(gesture_event)) {
     TRACE_EVENT_INSTANT0("input", "FilteredForFling", TRACE_EVENT_SCOPE_THREAD);
     std::move(dispatch_callback)
@@ -665,15 +669,25 @@ void InputRouterImpl::FilterAndSendWebInputEvent(
     const ui::LatencyInfo& latency_info,
     blink::mojom::WidgetInputHandler::DispatchEventCallback callback,
     DispatchToRendererCallback& dispatch_callback) {
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  arkweb_input_router_impl_utils_->TracingAndSceneReport(input_event, latency_info);
+#else
   TRACE_EVENT1("input", "InputRouterImpl::FilterAndSendWebInputEvent", "type",
                WebInputEvent::GetName(input_event.GetType()));
 
+#endif
   output_stream_validator_.Validate(input_event);
   blink::mojom::InputEventResultState filtered_state =
       client_->FilterInputEvent(input_event, latency_info);
   if (WasHandled(filtered_state)) {
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+    LOG(INFO) << "event was filtered for " << InputEventResultStateToString(filtered_state);
+    TRACE_EVENT1("input", "InputEventFiltered", "filtered_state",
+                 InputEventResultStateToString(filtered_state));
+#else
     TRACE_EVENT_INSTANT0("input", "InputEventFiltered",
                          TRACE_EVENT_SCOPE_THREAD);
+#endif
     std::move(dispatch_callback)
         .Run(input_event, DispatchToRendererResult::kNotDispatched);
     if (filtered_state != blink::mojom::InputEventResultState::kUnknown) {
@@ -683,6 +697,9 @@ void InputRouterImpl::FilterAndSendWebInputEvent(
     return;
   }
 
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  arkweb_input_router_impl_utils_->ProcessFilteredEvent(input_event);
+#endif
   std::move(dispatch_callback)
       .Run(input_event, DispatchToRendererResult::kDispatched);
 

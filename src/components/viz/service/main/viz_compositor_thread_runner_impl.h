@@ -29,6 +29,7 @@ class GmbVideoFramePoolContextProvider;
 class HintSessionFactory;
 class OutputSurfaceProvider;
 class SharedImageInterfaceProvider;
+class VizCompositorThreadRunnerImplUtils;
 
 #if BUILDFLAG(IS_ANDROID)
 using VizCompositorThreadType = base::android::JavaHandlerThread;

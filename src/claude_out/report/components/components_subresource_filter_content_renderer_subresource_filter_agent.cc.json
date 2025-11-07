@@ -1,0 +1,70 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/components/subresource_filter/content/renderer/subresource_filter_agent.cc.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/components/subresource_filter/content/renderer/subresource_filter_agent.cc",
+    "Chromium 132 基线版本": "/home/sujiahao/code/chromium_132_baseline/src/components/subresource_filter/content/renderer/subresource_filter_agent.cc",
+    "Arkweb 132 代码": "/home/sujiahao/code/arkweb_132/src/components/subresource_filter/content/renderer/subresource_filter_agent.cc"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "rej文件完整性验证": {
+    "状态": "完整未修改",
+    "验证结果": ".rej文件在处理过程中保持原样，未被修改或删除"
+  },
+  "hunks详细信息": [
+    {
+      "hunk编号": 1,
+      "位置信息": "@@ -336,13 +339,17 @@",
+      "风险等级": "低风险",
+      "冲突原因": "Arkweb 132 在条件判断中添加了ARKWEB_ADBLOCK宏相关的条件检查，用于支持用户自定义子资源过滤器替换功能",
+      "分析过程": {
+        "步骤1_解析hunk": {
+          "待删除行": [
+            "-      !ruleset_dealer_->IsRulesetFileAvailable()"
+          ],
+          "待添加行": [
+            "+      !ruleset_dealer_->IsRulesetFileAvailable()",
+            "+#if BUILDFLAG(ARKWEB_ADBLOCK)",
+            "+      || activation_state.user_subresource_filter_replace",
+            "+#endif",
+            "+      ) {",
+            "+  }"
+          ],
+          "其他修改": "删除了一个空行并添加了闭合大括号"
+        },
+        "步骤2_精确定位": {
+          "定位策略": "使用ConstructFilter函数中的条件判断作为锚点",
+          "锚点代码": "if (activation_state.activation_level == mojom::ActivationLevel::kDisabled ||",
+          "定位结果": "成功在源文件第345-352行找到完全匹配的代码块",
+          "置信度": "高"
+        },
+        "步骤3_原子化应用": {
+          "应用状态": "成功",
+          "修改内容": "在现有的if条件中添加了ARKWEB_ADBLOCK宏条件检查",
+          "代码结构": "保持了原有的代码逻辑结构，只是扩展了条件判断",
+          "语法检查": "通过，没有引入语法错误"
+        }
+      },
+      "修改详情": {
+        "原始代码": "if (activation_state.activation_level == mojom::ActivationLevel::kDisabled ||\n      !ruleset_dealer_->IsRulesetFileAvailable()) {\n    return;",
+        "修改后代码": "if (activation_state.activation_level == mojom::ActivationLevel::kDisabled ||\n      !ruleset_dealer_->IsRulesetFileAvailable()\n#if BUILDFLAG(ARKWEB_ADBLOCK)\n      || activation_state.user_subresource_filter_replace\n#endif\n      ) {\n    return;\n  }",
+        "功能说明": "添加了对用户自定义子资源过滤器替换功能的检查，当启用此功能时跳过过滤器创建"
+      },
+      "解决状态": "已解决",
+      "修改置信度": "高",
+      "人工复查建议": "建议确认ARKWEB_ADBLOCK宏的定义位置和user_subresource_filter_replace字段的含义，确保新增逻辑与现有代码架构兼容"
+    }
+  ],
+  "总体评估": {
+    "冲突复杂度": "简单",
+    "修改影响范围": "局部，仅影响ConstructFilter函数的条件判断逻辑",
+    "代码质量": "良好，使用了条件编译宏确保新功能的可选性",
+    "兼容性": "向后兼容，不会影响现有功能",
+    "处理策略": "精确应用，无额外修改"
+  },
+  "总结": "本次冲突解决成功完成。.rej文件中的1个hunk已全部应用到源文件中，添加了Arkweb特有的广告拦截功能条件检查。修改过程严格遵守了黄金法则，只应用了带+/-前缀的行，未添加任何上下文行，未生成脚本文件，保持了.rej文件的完整性。"
+}

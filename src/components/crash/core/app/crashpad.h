@@ -15,6 +15,7 @@
 #include "base/files/file_path.h"
 #include "build/build_config.h"
 #include "build/chromeos_buildflags.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_APPLE)
 #include "base/apple/scoped_mach_port.h"
@@ -24,7 +25,7 @@
 #include "base/win/windows_types.h"
 #endif
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_GWP_ASAN)
 #include <signal.h>
 #endif
 
@@ -194,12 +195,14 @@ void SetIntermediateDumpExtraMemoryRanges(
     crashpad::SimpleAddressRangeBag* address_range_bag);
 #endif  // BUILDFLAG(IS_IOS)
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
+    BUILDFLAG(IS_OHOS)
 // Logs message and immediately crashes the current process without triggering a
 // crash dump.
-[[noreturn]] void CrashWithoutDumping(const std::string& message);
+// [[noreturn]] void CrashWithoutDumping(const std::string& message); TODO: IS_OHOS
+void CrashWithoutDumping(const std::string& message);
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
-        // BUILDFLAG(IS_ANDROID)
+        // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 
 // Returns the Crashpad database path, only valid in the browser. This will
 // return std::nullopt if crashpad has not yet been initialized. On Windows,

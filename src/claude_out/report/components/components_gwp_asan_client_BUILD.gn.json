@@ -1,0 +1,34 @@
+{
+  "file_path": "components/gwp_asan/client/BUILD.gn",
+  "analysis_timestamp": "2025-11-05",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "maintained",
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "original_lines": {
+        "removed": ["if (is_android) {"],
+        "added": ["if (is_android || is_arkweb) {"]
+      },
+      "resolution_status": "已解决",
+      "risk_level": "低风险",
+      "conflict_cause": "Arkweb141 中条件判断已从单独的 is_android 扩展为 is_android || is_ios，需要将 is_arkweb 条件正确添加到现有逻辑中",
+      "analysis_process": "通过解析 .rej 文件识别出需要将 is_arkweb 条件添加到 Android 条件判断中。在源文件中发现条件已经发展为 is_android || is_ios，因此将 is_arkweb 追加到现有条件中形成 is_android || is_ios || is_arkweb",
+      "modification_confidence": "高置信度",
+      "resolution_strategy": "将 is_arkweb 条件添加到现有的条件判断中，保持代码逻辑一致性",
+      "final_change": {
+        "before": "if (is_android || is_ios) {",
+        "after": "if (is_android || is_ios || is_arkweb) {"
+      }
+    }
+  ],
+  "summary": {
+    "successful_resolutions": 1,
+    "failed_resolutions": 0,
+    "total_changes_applied": 1,
+    "compliance_status": "严格遵守黄金法则，仅添加/删除指定行，未添加任何上下文",
+    "rej_file_preserved": true
+  }
+}

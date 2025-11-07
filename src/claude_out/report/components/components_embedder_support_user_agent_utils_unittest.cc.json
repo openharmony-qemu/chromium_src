@@ -1,0 +1,47 @@
+{
+  "conflict_file": "components/embedder_support/user_agent_utils_unittest.cc.rej",
+  "source_file": "components/embedder_support/user_agent_utils_unittest.cc",
+  "analysis": {
+    "total_hunks": 2,
+    "resolved_hunks": 2,
+    "unresolved_hunks": 0,
+    "rej_file_integrity": "maintained"
+  },
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "description": "为OHOS平台添加User-Agent字符串支持",
+      "risk_level": "低",
+      "conflict_reason": "Arkweb132在chromium132基础上添加了OHOS平台的User-Agent字符串定义，但在chromium141版本中这些修改不存在",
+      "analysis_process": "通过分析.rej文件中的上下文，发现在预编译宏#elif BUILDFLAG(IS_WIN)和#elif BUILDFLAG(IS_ANDROID)之间需要插入OHOS平台的User-Agent字符串定义。精确定位到源文件第348行后，成功应用了修改。",
+      "modification_confidence": "高",
+      "resolution_strategy": "在源文件第348行\"Windows NT 10.0; Win64; x64\"之后插入两行：#elif BUILDFLAG(IS_OHOS)和\"OHOS; OHOS x86_64\"",
+      "status": "已解决",
+      "changes_applied": [
+        "添加: #elif BUILDFLAG(IS_OHOS)",
+        "添加: \"OHOS; OHOS x86_64\""
+      ]
+    },
+    {
+      "hunk_id": 2,
+      "description": "为OHOS平台添加User-Agent测试断言",
+      "risk_level": "低",
+      "conflict_reason": "Arkweb132在chromium132基础上添加了OHOS平台的测试断言，用于验证User-Agent字符串格式，但在chromium141版本中这些测试代码不存在",
+      "analysis_process": "通过分析.rej文件中的上下文，发现在Fuchsia平台测试代码和iOS平台测试代码之间需要插入OHOS平台的测试断言。精确定位到源文件第197行ASSERT_EQ(\"Fuchsia\", pieces[0]);之后，成功应用了修改。",
+      "modification_confidence": "高",
+      "resolution_strategy": "在源文件第197行Fuchsia平台测试代码之后插入三行：#elif BUILDFLAG(IS_OHOS)、ASSERT_EQ(2u, pieces.size());和ASSERT_EQ(\"OHOS\", pieces[0]);",
+      "status": "已解决",
+      "changes_applied": [
+        "添加: #elif BUILDFLAG(IS_OHOS)",
+        "添加: ASSERT_EQ(2u, pieces.size());",
+        "添加: ASSERT_EQ(\"OHOS\", pieces[0]);"
+      ]
+    }
+  ],
+  "summary": {
+    "processing_result": "所有hunks均已成功解决",
+    "code_integrity": "修改后的代码保持了原有的结构和逻辑，没有引入语法错误",
+    "platform_support": "成功为OHOS平台添加了User-Agent字符串支持和相应的测试断言",
+    "compliance": "严格遵循了黄金法则，只添加了以+开头的行，未修改任何上下文行，未生成任何脚本文件，.rej文件保持完整"
+  }
+}

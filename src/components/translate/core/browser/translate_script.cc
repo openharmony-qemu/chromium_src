@@ -32,8 +32,12 @@ const int kExpirationDelayDays = 1;
 
 }  // namespace
 
+#if BUILDFLAG(IS_ARKWEB)
+const char TranslateScript::kScriptURL[] = "https://x.x.x.x";
+#else
 const char TranslateScript::kScriptURL[] =
     "https://translate.googleapis.com/translate_a/element.js";
+#endif // BUILDFLAG(IS_ARKWEB)
 
 const char TranslateScript::kRequestHeaderName[] =
     "Google-Translate-Element-Mode";

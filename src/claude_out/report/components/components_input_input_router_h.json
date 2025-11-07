@@ -1,0 +1,112 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/components/input/input_router.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/components/input/input_router.h",
+    "处理时间": "2025-11-05"
+  },
+  "统计信息": {
+    "总hunk数量": 5,
+    "成功解决的hunk数量": 5,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk处理详情": [
+    {
+      "hunk编号": 1,
+      "类型": "添加包含文件",
+      "待添加行": [
+        "#include \"arkweb/build/features/features.h\""
+      ],
+      "定位依据": "在 <optional> 包含之后，base/component_export.h 包含之前",
+      "应用位置": "第10行",
+      "解决状态": "已解决",
+      "风险分析": "低风险 - 标准头文件包含，添加了ArkWeb特性开关支持",
+      "置信度": "高",
+      "备注": "成功定位到合适位置，不影响现有包含结构"
+    },
+    {
+      "hunk编号": 2,
+      "类型": "添加虚函数声明",
+      "待添加行": [
+        "#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)",
+        "  virtual void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) = 0;",
+        "#endif"
+      ],
+      "定位依据": "在 SendWheelEvent 方法之后，KeyboardEventCallback 定义之前",
+      "应用位置": "第64-66行",
+      "解决状态": "已解决",
+      "风险分析": "低风险 - 条件编译的虚函数，用于丢帧报告功能",
+      "置信度": "高",
+      "备注": "使用了条件编译确保只在启用ARKWEB_REPORT_LOSS_FRAME时生效"
+    },
+    {
+      "hunk编号": 3,
+      "类型": "添加虚函数组",
+      "待添加行": [
+        "#if BUILDFLAG(ARKWEB_SAME_LAYER)",
+        "  virtual void SetGestureEventResult(bool result, bool stopPropagation, int32_t fingerId) = 0;",
+        "  virtual void SetNativeEmbedMode(bool flag) = 0;",
+        "  virtual void SetMouseEventResult(bool result, bool stopPropagation) = 0;",
+        "  virtual void SetEnableCustomVideoPlayer(bool flag) = 0;",
+        "#endif"
+      ],
+      "定位依据": "在 WaitForInputProcessed 方法之后，private 段之前",
+      "应用位置": "第128-135行",
+      "解决状态": "已解决",
+      "风险分析": "中风险 - 添加了4个新方法用于同层渲染相关功能，但使用条件编译隔离",
+      "置信度": "高",
+      "备注": "所有方法都使用条件编译，确保只在启用ARKWEB_SAME_LAYER时生效"
+    },
+    {
+      "hunk编号": 4,
+      "类型": "添加虚函数",
+      "待添加行": [
+        "#if BUILDFLAG(ARKWEB_INPUT_EVENTS)",
+        "  virtual void ScrollBy(float delta_x, float delta_y) = 0;",
+        "#endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)"
+      ],
+      "定位依据": "在 ARKWEB_SAME_LAYER 代码块之后，private 段之前",
+      "应用位置": "第137-139行",
+      "解决状态": "已解决",
+      "风险分析": "低风险 - 添加滚动功能支持，使用条件编译隔离",
+      "置信度": "高",
+      "备注": "成功定位到合适位置，功能独立且条件编译"
+    },
+    {
+      "hunk编号": 5,
+      "类型": "添加虚函数",
+      "待添加行": [
+        "#if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)",
+        "  virtual void SetBypassVsyncCondition(int32_t condition) = 0;",
+        "#endif"
+      ],
+      "定位依据": "在 ARKWEB_INPUT_EVENTS 代码块之后，private 段之前",
+      "应用位置": "第140-142行",
+      "解决状态": "已解决",
+      "风险分析": "低风险 - 添加垂直同步调度功能，使用条件编译隔离",
+      "置信度": "高",
+      "备注": "成功定位到合适位置，功能独立且条件编译"
+    }
+  ],
+  "冲突原因分析": {
+    "主要原因": "ArkWeb 132基于Chromium 132内核进行了大量侵入式修改，主要包括：\n1. 添加了ArkWeb特性开关头文件包含\n2. 添加了多个条件编译的虚函数方法，支持ArkWeb特有的功能\n3. 这些修改在升级到Chromium 141时产生了上下文不匹配的冲突",
+    "修改类型": "主要是功能增强型添加，所有新增代码都使用BUILDFLAG条件编译进行隔离",
+    "影响范围": "InputRouter接口类，新增了5组不同的功能方法"
+  },
+  "处理过程总结": {
+    "策略": "严格遵循黄金法则，只处理+/-行，不添加任何上下文",
+    "定位方法": "使用代码结构和函数签名作为锚点进行精确定位",
+    "应用方式": "原子化应用每个hunk的修改，确保不引入额外内容",
+    "结果验证": "所有5个hunk都成功应用到源文件中，保持了代码的完整性"
+  },
+  "最终验证": {
+    "源文件完整性": "保持完整，所有修改都正确应用",
+    "rej文件状态": "保持完整，未被修改或删除",
+    "编译兼容性": "所有新增代码都使用条件编译，不会影响现有构建",
+    "功能隔离": "通过BUILDFLAG确保ArkWeb特定功能只在启用时生效"
+  },
+  "风险评估": {
+    "整体风险": "低到中等 - 所有修改都使用条件编译隔离，但在实际使用时需要确保相关的BUILDFLAG正确定义",
+    "建议措施": "1. 确保arkweb/build/features/features.h文件存在且包含所有必要的BUILDFLAG定义\n2. 在构建系统中正确配置相关的ArkWeb特性开关\n3. 对新增的虚函数提供相应的实现"
+  }
+}

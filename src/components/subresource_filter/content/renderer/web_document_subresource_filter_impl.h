@@ -73,6 +73,39 @@ class WebDocumentSubresourceFilterImpl final
   LoadPolicy GetLoadPolicy(const blink::WebURL& resourceUrl,
                            network::mojom::RequestDestination,
                            ScopedRule* out_rule) override;
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  void ClearStatistics() override;
+
+  std::unique_ptr<std::string> GetElementHidingSelectors(
+      const blink::WebURL& document_url,
+      bool need_generic_selectors) override;
+
+  bool HasGenericHideTypeOption(
+      const blink::WebURL& document_url,
+      const url::Origin& parent_document_origin) override;
+
+  bool HasElemHideTypeOption(
+      const blink::WebURL& document_url,
+      const url::Origin& parent_document_origin) override;
+
+  bool HasDocumentTypeOption(
+      const blink::WebURL& document_url,
+      const url::Origin& parent_document_origin) override;
+
+  void DidMatchCssRule(const blink::WebURL& document_url,
+                       const std::string& dom_path,
+                       bool is_for_report = false) override;
+
+  bool GetDidFinishLoad() override;
+
+  void SetDidFinishLoad(bool did_load_finished) override;
+
+  std::unique_ptr<std::vector<std::string>> GetUserDomPathSelectors(
+      const blink::WebURL& document_url,
+      bool need_generic_selectors) override;
+
+  void set_activation_state(bool enabled) override;
+#endif
   LoadPolicy GetLoadPolicyForWebSocketConnect(
       const blink::WebURL& url) override;
   LoadPolicy GetLoadPolicyForWebTransportConnect(
@@ -95,7 +128,11 @@ class WebDocumentSubresourceFilterImpl final
       ScopedRule* out_rule = nullptr);
 
   mojom::ActivationState activation_state_;
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  DocumentSubresourceFilterExt filter_;
+#else
   DocumentSubresourceFilter filter_;
+#endif
   base::OnceClosure first_disallowed_load_callback_;
   base::WeakPtrFactory<WebDocumentSubresourceFilterImpl> weak_ptr_factory_{
       this};

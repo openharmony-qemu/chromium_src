@@ -8,6 +8,7 @@ if (is_android) {
   import("//build/config/android/rules.gni")
 }
 import("//components/optimization_guide/features.gni")
+import("//arkweb/build/features/features.gni")
 
 # bloomfilter is isolated because of the allowlisted murmurhash3 dep.
 source_set("bloomfilter") {

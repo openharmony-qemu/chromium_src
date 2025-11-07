@@ -1,0 +1,57 @@
+{
+  "file_path": "components/viz/service/display/renderer_pixeltest.cc",
+  "total_hunks": 2,
+  "resolved_hunks": 2,
+  "unresolved_hunks": 0,
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "line_range": "71-73",
+      "change_type": "添加条件编译头文件包含",
+      "risk_level": "低风险",
+      "confidence": "高",
+      "status": "已解决",
+      "description": "添加了ARKWEB_UNITTESTS条件编译的扩展头文件包含",
+      "added_lines": [
+        "#if BUILDFLAG(ARKWEB_UNITTESTS)",
+        "#include \"arkweb/chromium_ext/components/viz/service/display/renderer_pixeltest_ext.h\"",
+        "#endif"
+      ],
+      "removed_lines": [],
+      "conflict_reason": "Arkweb141缺少针对单元测试的扩展头文件包含",
+      "analysis_process": "通过在include区域末尾添加条件编译块，仅在ARKWEB_UNITTESTS启用时包含扩展头文件，避免了与原有代码的冲突",
+      "modification_strategy": "直接在include区域末尾添加条件编译的include语句"
+    },
+    {
+      "hunk_id": 2,
+      "line_range": "6348-6356",
+      "change_type": "添加条件编译的单元测试处理逻辑",
+      "risk_level": "低风险",
+      "confidence": "高",
+      "status": "已解决",
+      "description": "在Basic函数开始处添加ARKWEB_UNITTESTS条件编译，提供替代的测试执行路径",
+      "added_lines": [
+        "#if BUILDFLAG(ARKWEB_UNITTESTS)",
+        "    ARKWEB_UNITTESTS_BASIC();",
+        "#else",
+        "    if (this->src_color_space_.IsToneMappedByDefault() &&",
+        "        !this->dst_color_space_.IsHDR()) {",
+        "      GTEST_SKIP() << \"Skipping tonemapped src for non-hdr dst\";",
+        "    }",
+        "#endif"
+      ],
+      "removed_lines": [],
+      "conflict_reason": "Arkweb141在Basic函数中缺少针对单元测试的特殊处理逻辑",
+      "analysis_process": "通过条件编译提供两种执行路径：ARKWEB环境使用ARKWEB_UNITTESTS_BASIC()宏，标准环境保持原有的色调映射检查逻辑",
+      "modification_strategy": "在函数开始处添加条件编译块，保持原有逻辑完整性"
+    }
+  ],
+  "overall_assessment": {
+    "risk_level": "低风险",
+    "success_rate": "100%",
+    "code_impact": "所有修改都采用了条件编译方式，不会影响非ARKWEB环境的功能",
+    "compliance_status": "严格遵守黄金法则，仅添加+开头的行，未添加任何上下文行",
+    "rej_file_status": "保持完整未被修改"
+  },
+  "summary": "成功解决了所有2个hunk的冲突。所有修改都是通过添加条件编译块来实现，确保了ARKWEB扩展功能与标准Chromium代码的兼容性。修改风险低，置信度高，不会影响原有功能的正常运行。"
+}

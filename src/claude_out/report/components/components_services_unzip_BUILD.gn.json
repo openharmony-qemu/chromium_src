@@ -1,0 +1,33 @@
+{
+  "文件路径": "/home/sujiahao/code/arkweb_141/src/components/services/unzip/BUILD.gn",
+  "冲突文件": "/home/sujiahao/code/arkweb_141/src/components/services/unzip/BUILD.gn.rej",
+  "分析时间": "2025-11-05",
+  "总体统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 0,
+    "未能解决的hunk数量": 1
+  },
+  "hunks分析": [
+    {
+      "hunk编号": 1,
+      "冲突行范围": "第23-33行",
+      "待删除行": [
+        "testonly = !is_ios"
+      ],
+      "待添加行": [
+        "testonly = !is_ios && !is_arkweb"
+      ],
+      "解决状态": "未解决",
+      "风险等级": "中等",
+      "冲突原因": "源文件中不存在目标修改行 'testonly = !is_ios'，Chromium 141版本已移除此限制",
+      "分析过程": "1. 检查源文件中in_process目标（第27-45行）\n2. 发现源文件没有testonly = !is_ios行\n3. Chromium 141版本的注释表明已移除testonly限制，支持单进程嵌入器\n4. 无法定位到需要修改的目标行",
+      "修改置信度": "低",
+      "处理策略": "无法应用 - 源文件中不存在需要修改的testonly行。Arkweb 132的修改意图是在testonly条件中添加!is_arkweb限制，但Chromium 141版本已完全移除testonly限制，强行添加可能导致架构冲突。",
+      "建议人工复查": "建议检查Arkweb项目是否真的需要在Chromium 141中保持testonly限制，或者是否可以适配Chromium 141的新架构（移除testonly限制）"
+    }
+  ],
+  "rej文件状态": "保持完整，未被修改",
+  "源文件状态": "未被修改",
+  "技术背景": "这个冲突反映了Chromium从132到141版本的架构变化，in_process解压缩功能从限制性使用（仅测试和iOS）变为更通用的单进程嵌入器支持",
+  "建议解决方案": "需要项目架构师决策：1）适配Chromium 141新架构，移除testonly限制；2）或手动添加适合的testonly条件来满足Arkweb项目需求"
+}

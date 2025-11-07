@@ -140,7 +140,8 @@ class PasswordManagerUtilTest : public testing::Test {
     pref_service_.registry()->RegisterBooleanPref(
         password_manager::prefs::kAutoSignInEnabledGMS, true);
 #endif
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
     pref_service_.registry()->RegisterBooleanPref(
         password_manager::prefs::kHadBiometricsAvailable, false);
     pref_service_.registry()->RegisterBooleanPref(

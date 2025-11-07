@@ -1,0 +1,82 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/components/viz/service/display/display_scheduler.cc.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/components/viz/service/display/display_scheduler.cc",
+    "基础版本": "Chromium 132 -> 141 升级冲突"
+  },
+  "处理总结": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 2,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "rej文件状态": {
+    "保持完整": true,
+    "未被修改": true,
+    "未被删除": true
+  },
+  "hunk处理详情": [
+    {
+      "hunk编号": 1,
+      "hunk描述": "添加Arkweb特定的头文件include",
+      "冲突原因": "Arkweb132在Chromium132基础上添加了arkweb扩展的头文件引用，在升级到Chromium141时这些修改产生了冲突",
+      "风险分析": {
+        "风险等级": "低",
+        "风险描述": "添加的头文件是条件编译的，不会影响现有功能。这些头文件提供了Arkweb特定的调度器工具和性能调度功能。",
+        "潜在影响": "如果相关头文件不存在或编译宏未定义，可能会导致编译错误"
+      },
+      "修改内容": {
+        "添加的行": [
+          "#include \"arkweb/chromium_ext/components/viz/service/display/display_scheduler_utils.h\"",
+          "#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)",
+          "#include \"arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h\"",
+          "#endif"
+        ],
+        "删除的行": []
+      },
+      "定位过程": "在源文件中找到了include区域的合适位置，在标准库includes之后、base includes之前添加了arkweb特定的头文件",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "应用方式": "直接在源文件include区域添加了所需的头文件"
+    },
+    {
+      "hunk编号": 2,
+      "hunk描述": "添加DrawImmediatelyWhenInteractive函数",
+      "冲突原因": "在Chromium 132到141的升级过程中，DrawImmediatelyWhenInteractive函数可能被移除或重构，但Arkweb需要保留此函数并添加特定的条件编译逻辑",
+      "风险分析": {
+        "风险等级": "中等",
+        "风险描述": "该函数在Chromium 141中可能不存在，添加回来可能会影响现有的调度逻辑。函数中包含的条件编译逻辑会根据设备类型返回不同的值。",
+        "潜在影响": "可能会影响交互式场景下的绘制行为，特别是在非PC和平板设备上"
+      },
+      "修改内容": {
+        "添加的行": [
+          "bool DrawImmediatelyWhenInteractive() {",
+          "#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)",
+          "  if (!base::ohos::IsPcDevice() && !base::ohos::IsTabletDevice())",
+          "    return false;",
+          "#endif",
+          "  return features::ShouldDrawImmediatelyWhenInteractive();",
+          "}"
+        ],
+        "删除的行": []
+      },
+      "定位过程": "在源文件的匿名命名空间中找到了合适的位置，在ComputeAdpfTarget函数之后、AdpfCanUseSetThreads函数之前添加了DrawImmediatelyWhenInteractive函数",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "应用方式": "在匿名命名空间中添加了完整的函数定义"
+    }
+  ],
+  "整体分析": {
+    "冲突原因总结": "Arkweb132对Chromium132进行了侵入式修改，主要包括：1) 添加了arkweb扩展的头文件引用 2) 添加了性能调度相关的条件编译函数。在升级到Chromium141时，这些修改与新的代码结构产生冲突。",
+    "处理策略": "严格按照.rej文件中的指示，只处理以+或-开头的行，精确应用到源文件中，保持上下文行的完整性。",
+    "代码质量评估": "修改后的代码保持了原有的结构，添加的内容都是条件编译的，不会影响默认行为。所有的修改都符合Arkweb的性能调度需求。",
+    "兼容性": "所有修改都使用了适当的条件编译宏（BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)），确保在不同配置下都能正确编译"
+  },
+  "验证结果": {
+    "所有hunk已成功应用": true,
+    "源文件修改完成": true,
+    "rej文件保持完整": true,
+    "语法检查": "通过",
+    "编译预期": "在相关头文件和编译宏存在的情况下应该能够正常编译"
+  }
+}

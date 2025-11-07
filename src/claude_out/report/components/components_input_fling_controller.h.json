@@ -1,0 +1,58 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/components/input/fling_controller.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/components/input/fling_controller.h",
+    "文件类型": "C++ 头文件",
+    "升级路径": "Chromium 132 -> 141"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk处理详情": [
+    {
+      "hunk序号": 1,
+      "冲突原因": "Arkweb132在chromium132基础上添加了ARKWEB特有的头文件包含和条件编译指令",
+      "风险等级": "低风险",
+      "风险描述": "添加了Arkweb特有的features头文件和条件编译的atomic包含，这些是Arkweb项目的定制化功能",
+      "分析过程": "根据.rej文件中的hunk内容，需要添加4行代码：\n1. #include \"arkweb/build/features/features.h\" - Arkweb特性定义头文件\n2. #if BUILDFLAG(ARKWEB_D_VSYNC) - 条件编译开始\n3. #include <atomic> - 原子操作头文件\n4. #endif - 条件编译结束\n\n通过分析源文件结构，准确定位到插入位置：\n- arkweb/build/features/features.h 包含在其他系统包含之前\n- 条件编译的atomic包含放在最后一个include之后，namespace之前",
+      "修改内容": {
+        "添加的行": [
+          "#include \"arkweb/build/features/features.h\"",
+          "#if BUILDFLAG(ARKWEB_D_VSYNC)",
+          "#include <atomic>",
+          "#endif"
+        ],
+        "删除的行": [],
+        "修改置信度": "高"
+      },
+      "定位策略": "使用上下文锚点精确定位",
+      "锚点匹配": "成功匹配到源文件中的相应位置",
+      "解决状态": "已解决",
+      "验证结果": "代码语法正确，逻辑完整"
+    }
+  ],
+  "处理策略总结": {
+    "主要策略": "原子化应用修改",
+    "遵循原则": [
+      "只添加+开头的行",
+      "不添加任何上下文行",
+      "保持.rej文件完整性",
+      "直接在源文件中精确修改"
+    ],
+    "技术特点": "通过最小上下文锚点定位，确保修改的准确性和最小侵入性"
+  },
+  "文件完整性验证": {
+    ".rej文件状态": "保持完整，未被修改或删除",
+    "源文件状态": "已成功应用所有修改",
+    "语法检查": "通过",
+    "编译风险": "低风险"
+  },
+  "最终结论": {
+    "处理结果": "成功解决所有冲突",
+    "代码质量": "保持原有代码结构，正确集成Arkweb定制功能",
+    "升级建议": "可以进行后续编译测试，预计不会出现编译错误"
+  }
+}

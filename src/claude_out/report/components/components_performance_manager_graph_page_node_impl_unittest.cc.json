@@ -1,0 +1,56 @@
+{
+  "file_path": "components/performance_manager/graph/page_node_impl_unittest.cc.rej",
+  "analysis": {
+    "total_hunks": 1,
+    "resolved_hunks": 1,
+    "unresolved_hunks": 0,
+    "rej_file_integrity": "保持完整，未被修改"
+  },
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "description": "在MockPageNodeObserver类中添加Arkweb后台任务相关的Mock方法",
+      "risk_level": "低",
+      "conflict_reason": "Arkweb141中缺少针对ARKWEB_BGTASK功能的Mock方法定义",
+      "analysis_process": {
+        "target_location": "mock_page_node_observer.h文件中的LenientMockPageNodeObserver类",
+        "anchor_context": "OnAboutToBeDiscarded方法",
+        "modification_type": "添加条件编译的Mock方法",
+        "lines_to_add": [
+          "#if BUILDFLAG(ARKWEB_BGTASK)",
+          "  MOCK_METHOD(void, SetBrowserForeground, (const PageNode*), (override));",
+          "  MOCK_METHOD(void, SetBrowserBackground, (const PageNode*), (override));",
+          "#endif"
+        ]
+      },
+      "confidence": 100,
+      "resolution_strategy": "精确应用",
+      "status": "已解决",
+      "actual_modification": {
+        "file_modified": "/home/sujiahao/code/arkweb_141/src/components/performance_manager/test_support/graph/mock_page_node_observer.h",
+        "location": "OnAboutToBeDiscarded方法之后，类定义结束之前",
+        "added_lines": 4,
+        "preserved_context": "类结构完整性得到保持"
+      }
+    }
+  ],
+  "summary": {
+    "overall_status": "成功完成",
+    "total_modifications": 4行添加，
+    "syntax_check": "通过，添加的条件编译和Mock方法语法正确",
+    "logic_check": "通过，新增方法与现有的PageNodeObserver接口保持一致",
+    "compliance": {
+      "no_context_added": true,
+      "no_script_files_created": true,
+      "no_auxiliary_files_created": true,
+      "rej_file_preserved": true,
+      "only_json_report_created": true
+    }
+  },
+  "technical_details": {
+    "arkweb_feature": "ARKWEB_BGTASK - 后台任务管理功能",
+    "integration_method": "条件编译方式集成，确保仅在启用ARKWEB_BGTASK时编译",
+    "interface_consistency": "新增方法遵循现有Mock方法的命名和参数约定",
+    "test_impact": "为PageNode的后台状态变化测试提供了Mock支持"
+  }
+}

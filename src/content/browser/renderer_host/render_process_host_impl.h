@@ -1018,6 +1018,15 @@ class CONTENT_EXPORT RenderProcessHostImpl
         base::WeakPtr<RenderProcessHostImpl> weak_host,
         mojo::GenericPendingReceiver receiver);
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+    void ReportKeyThread(int32_t status, int32_t process_id, int32_t thread_id, int32_t role) override;
+    void ReportKeyThreadIds(int32_t status, int32_t process_id,
+    const std::vector<int32_t>& thread_ids, int32_t role) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+    void ReportHisyevent(int64_t block_time, const std::string& mode) override;
+#endif
     const ChildProcessId render_process_id_;
     const base::WeakPtr<RenderProcessHostImpl> weak_host_;
     std::unique_ptr<service_manager::BinderRegistry> binders_;

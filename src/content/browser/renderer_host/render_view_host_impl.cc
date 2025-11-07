@@ -645,6 +645,11 @@ bool RenderViewHostImpl::CreateRenderView(
             .AsMojom();
   }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  params->is_offscreen =
+      extensions::GetViewType(WebContents::FromRenderFrameHost(main_rfh)) ==
+      extensions::mojom::ViewType::kOffscreenDocument;
+#endif
   if (base::FeatureList::IsEnabled(features::kSetHistoryInfoOnViewCreation)) {
     params->history_index =
         frame_tree()->controller().GetLastCommittedEntryIndex();

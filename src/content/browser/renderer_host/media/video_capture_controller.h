@@ -26,6 +26,10 @@
 #include "mojo/public/cpp/bindings/remote.h"
 #include "services/video_effects/public/cpp/buildflags.h"
 #include "third_party/blink/public/common/mediastream/media_stream_request.h"
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
+#include "video_capture_manager.h"
+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
 
 #if BUILDFLAG(ENABLE_VIDEO_EFFECTS)
 #include "services/video_effects/public/mojom/video_effects_processor.mojom-forward.h"

@@ -48,10 +48,16 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/image/image_skia.h"
 #include "ui/gfx/native_widget_types.h"
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_PRECOMPILE)
+#include "content/browser/code_cache/oh_code_cache.h"
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
 #include "third_party/jni_zero/jni_zero.h"
 #endif
+
+#include "arkweb/chromium_ext/content/public/browser/render_frame_host_ohos.h"
 
 class GURL;
 
@@ -143,7 +149,8 @@ class Page;
 // higher-level dependencies. In short: code that uses RenderFrameHost must be
 // back-forward cache aware, and code that does not use RenderFrameHost should
 // not have to be back-forward cache aware.
-class CONTENT_EXPORT RenderFrameHost : public IPC::Listener {
+class CONTENT_EXPORT RenderFrameHost : public RenderFrameHostOhos,
+                                       public IPC::Listener {
   // Do not remove this macro!
   // The macro is maintained by the memory safety team.
   ADVANCED_MEMORY_SAFETY_CHECKS();
@@ -1192,6 +1199,10 @@ class CONTENT_EXPORT RenderFrameHost : public IPC::Listener {
   // TODO(crbug.com/346386726): Delete this method once we have solidified the
   //   lifetime expectations of the PolicyContainerHost object.
   virtual bool HasPolicyContainerHost() const = 0;
+
+#if BUILDFLAG(ARKWEB_DRAG_DROP)
+  virtual void OnClearContextMenu() = 0;
+#endif // BUILDFLAG(ARKWEB_DRAG_DROP)
 
   // Returns the cross origin embedder policy for this frame. Must have a
   // non-null PolicyContainerHost, otherwise a crash will occur.

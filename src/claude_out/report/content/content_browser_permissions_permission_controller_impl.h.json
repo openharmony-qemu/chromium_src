@@ -1,0 +1,41 @@
+{
+  "文件路径": "content/browser/permissions/permission_controller_impl.h",
+  "总hunk数量": 1,
+  "成功解决的hunk数量": 1,
+  "未能解决的hunk数量": 0,
+  ".rej文件状态": "保持完整未被修改",
+  "处理结果": "所有冲突已成功解决",
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "行号范围": 138-157,
+      "解决状态": "已解决",
+      "风险级别": "低",
+      "冲突原因": "Arkweb132在PermissionControllerImpl类中添加了ARKWEB_NOTIFICATION条件编译的GetPermissionStatusAsync方法，该方法在Chromium141中不存在",
+      "分析过程": "通过上下文锚点（两个GetPermissionResultForOriginWithoutContext重载函数）精确定位到插入位置。这些函数在源文件的第144-150行，与.rej文件中的上下文完全匹配。",
+      "修改内容": {
+        "添加的行": [
+          "#if BUILDFLAG(ARKWEB_NOTIFICATION)",
+          "  void GetPermissionStatusAsync(",
+          "      blink::PermissionType permission,",
+          "      bool isFromDocument,",
+          "      void* render_host,",
+          "      const url::Origin& origin,",
+          "      base::OnceCallback<void(blink::mojom::PermissionStatus)> callback) override;",
+          "#endif // ARKWEB_NOTIFICATION"
+        ],
+        "删除的行": []
+      },
+      "修改置信度": "100%",
+      "处理策略": "基于精确的上下文匹配，在第二个GetPermissionResultForOriginWithoutContext函数后添加条件编译块",
+      "应用位置": "源文件第150行后",
+      "代码影响": "添加了一个Arkweb特有的异步权限状态查询方法，仅当ARKWEB_NOTIFICATION编译标志启用时生效"
+    }
+  ],
+  "验证信息": {
+    "修改后的源文件": "已验证代码结构正确，条件编译块完整",
+    ".rej文件完整性": "已确认.rej文件保持原样，未被修改",
+    "编译兼容性": "添加的方法声明符合类声明语法，不会影响编译"
+  },
+  "总结": "成功将Arkweb132的侵入式修改集成到Chromium141基线版本中。添加的GetPermissionStatusAsync方法为Arkweb的通知功能提供了异步权限查询能力，通过条件编译确保仅在需要时启用。"
+}

@@ -9,6 +9,7 @@
 
 #include "base/functional/callback.h"
 #include "base/time/time.h"
+#include "arkweb/build/features/features.h"
 #include "media/base/picture_in_picture_events_info.h"
 
 namespace media {

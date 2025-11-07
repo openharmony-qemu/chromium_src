@@ -317,6 +317,7 @@ std::vector<GpuFeatureData> GetGpuFeatureData(
                         base::FeatureList::IsEnabled(::features::kTreesInViz)
                             ? gpu::kGpuFeatureStatusEnabled
                             : gpu::kGpuFeatureStatusDisabled);
+#endif
   return features;
 }
 

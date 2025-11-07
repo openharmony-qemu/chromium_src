@@ -657,7 +657,15 @@ blink::mojom::CommonNavigationParamsPtr MakeCommonNavigationParams(
       info->should_check_main_world_content_security_policy,
       info->initiator_origin_trial_features, info->href_translate.Latin1(),
       is_history_navigation_in_new_child_frame, info->input_start,
-      request_destination);
+#if BUILDFLAG(ARKWEB_NETWORK_BASE)
+      request_destination, ""
+#else
+      request_destination
+#endif
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+      , false
+#endif
+      );
 }
 
 WebFrameLoadType NavigationTypeToLoadType(
@@ -1576,6 +1584,9 @@ RenderFrameImpl* RenderFrameImpl::CreateMainFrame(
     blink::mojom::FrameReplicationStatePtr replication_state,
     const base::UnguessableToken& devtools_frame_token,
     mojom::CreateLocalMainFrameParamsPtr params,
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    bool is_offscreen,
+#endif
     const blink::WebURL& base_url) {
   // A main frame RenderFrame must have a RenderWidget.
   DCHECK_NE(IPC::mojom::kRoutingIdNone, params->widget_params->routing_id);
@@ -1585,6 +1596,11 @@ RenderFrameImpl* RenderFrameImpl::CreateMainFrame(
       std::move(params->frame),
       std::move(params->associated_interface_provider_remote),
       devtools_frame_token, is_for_nested_main_frame);
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if (render_frame) {
+    render_frame->is_offscreen_ = is_offscreen;
+  }
+#endif
 
   WebLocalFrame* web_frame = WebLocalFrame::CreateMainFrame(
       web_view, render_frame, render_frame->blink_interface_registry_.get(),
@@ -2594,6 +2610,7 @@ void RenderFrameImpl::CommitNavigation(
     mojom::CookieManagerInfoPtr cookie_manager_info,
     mojom::StorageInfoPtr storage_info,
     mojom::NavigationClient::CommitNavigationCallback commit_callback) {
+  LOG(INFO) << "RenderFrameImpl::CommitNavigation " << devtools_navigation_token.ToString();
   RendererNavigationMetricsManager::Instance().MarkCommitStart(
       commit_params->navigation_metrics_token);
   if (!response_head->client_side_content_decoding_types.empty()) {
@@ -3106,6 +3123,12 @@ void RenderFrameImpl::CommitFailedNavigation(
   std::string* error_html_ptr = &error_html;
   if (error_code == net::ERR_HTTP_RESPONSE_CODE_FAILURE) {
     DCHECK_NE(commit_params->http_response_code, -1);
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+    if (error_page_content && common_params->is_override_error_page) {
+      error_html = error_page_content.value();
+      error_html_ptr = nullptr;
+    }
+#endif
     GetContentClient()->renderer()->PrepareErrorPageForHttpStatusError(
         this, error, navigation_params->http_method.Ascii(),
         commit_params->http_response_code,
@@ -5751,6 +5774,12 @@ void RenderFrameImpl::BeginNavigation(
     SynchronouslyCommitAboutBlankForBug778318(std::move(info));
     return;
   }
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  if (IsMainFrame()) {
+    LOG_FEEDBACK(INFO) << "Begin navigation routing_id: " << routing_id_;
+  }
+#endif
 
   if (!frame_->WillStartNavigation(*info)) {
     return;

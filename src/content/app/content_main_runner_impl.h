@@ -55,6 +55,10 @@ class CONTENT_EXPORT ContentMainRunnerImpl : public ContentMainRunner {
   int RunBrowser(MainFunctionParams main_function_params,
                  bool start_minimal_browser);
 
+#if BUILDFLAG(IS_ARKWEB)
+  bool RunRenderRemoteProxy(const base::CommandLine& command_line);
+#endif
+
   bool is_browser_main_loop_started_ = false;
 
   std::unique_ptr<

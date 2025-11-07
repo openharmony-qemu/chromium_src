@@ -157,6 +157,9 @@ class CONTENT_EXPORT DownloadManagerDelegate {
       bool is_content_initiated,
       WebContents* web_contents);
 
+#if BUILDFLAG(IS_OHOS)
+  virtual void ResetDownloadPath() {}
+#endif
   // Retrieve the directories to save html pages and downloads to.
   virtual void GetSaveDir(BrowserContext* browser_context,
                           base::FilePath* website_save_dir,

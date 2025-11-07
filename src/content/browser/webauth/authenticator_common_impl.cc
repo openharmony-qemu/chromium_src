@@ -1770,11 +1770,15 @@ void AuthenticatorCommonImpl::ContinueGetAssertionAfterRpIdCheck(
   req_state_->request_delegate->SetCredentialIdFilter(
       public_key_options->allow_credentials);
   if (options->mediation == Mediation::CONDITIONAL) {
+#if BUILDFLAG(ARKWEB_FIDO)
+    // No need to strip allowCredentials for OHOS.
+#else
     // Conditional mediation requests can only be fulfilled by discoverable
     // credentials. The provided allowCredentials list is stripped and will be
     // used to filter returned passkeys
     public_key_options->allow_credentials =
         std::vector<device::PublicKeyCredentialDescriptor>();
+#endif // BUILDFLAG(ARKWEB_FIDO)
   }
 
   if (public_key_options->allow_credentials.empty()) {
@@ -1812,6 +1816,10 @@ void AuthenticatorCommonImpl::ContinueGetAssertionAfterRpIdCheck(
       req_state_->client_data_json, options->public_key, req_state_->app_id);
   auto* ctap_get_assertion_request =
       &std::get<device::CtapGetAssertionRequest>(req_state_->ctap_request);
+#if BUILDFLAG(ARKWEB_FIDO)
+  ctap_get_assertion_request->extra = CreateCtapGetAssertionRequestExtra(
+      caller_origin, options);
+#endif // BUILDFLAG(ARKWEB_FIDO)
 
   req_state_->request_options.emplace<device::CtapGetAssertionOptions>();
   auto* ctap_get_assertion_options =

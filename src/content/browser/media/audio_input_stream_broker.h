@@ -65,7 +65,11 @@ class CONTENT_EXPORT AudioInputStreamBroker final
   void Cleanup();
 
   const std::string device_id_;
+#if BUILDFLAG(ARKWEB_MEDIA_POLICY)
   media::AudioParameters params_;
+#else
+  const media::AudioParameters params_;
+#endif // defined(OHOS_MEDIA_POLICY)
   const base::UnguessableToken group_id_;
   const uint32_t shared_memory_count_;
   const bool enable_agc_;

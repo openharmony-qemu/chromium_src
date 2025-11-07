@@ -221,6 +221,10 @@ class ChildThreadImpl : public IPC::Listener, virtual public ChildThread {
   // implementation of the mojom ChildProcess interface.
   scoped_refptr<IOThreadState> io_thread_state_;
 
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+  bool webkit_inited_ = false;
+#endif
+
   std::unique_ptr<ChildPerformanceCoordinator> performance_coordinator_;
 
   base::WeakPtrFactory<ChildThreadImpl> weak_factory_{this};

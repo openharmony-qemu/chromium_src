@@ -772,6 +772,9 @@ class CONTENT_EXPORT RenderFrameHostImpl
   gfx::NativeWindow GetTopLevelNativeWindow() override;
   bool CanFireAccessibilityEvents() const override;
   bool AccessibilityIsRootFrame() const override;
+#if BUILDFLAG(ARKWEB_ACCESSIBILITY)
+  RenderFrameHostImpl* AccessibilityRenderFrameHost() override;
+#endif
   bool ShouldSuppressAXLoadComplete() override;
   WebContentsAccessibility* AccessibilityGetWebContentsAccessibility() override;
   bool AccessibilityIsWebContentSource() override;
@@ -3193,6 +3196,10 @@ class CONTENT_EXPORT RenderFrameHostImpl
   // used on primary main frames.
   bool IsPageReadyToBeClosed();
 
+#if BUILDFLAG(ARKWEB_DISATCH_BEFORE_UNLOAD)
+  bool IsJsDialogShowOrBeforeUnloadTimedOut();
+#endif // ARKWEB_DISATCH_BEFORE_UNLOAD
+
   // Retrieves the information about the cookie changes that are observed on the
   // last committed document.
   CookieChangeListener::CookieChangeInfo GetCookieChangeInfo();
@@ -3204,6 +3211,10 @@ class CONTENT_EXPORT RenderFrameHostImpl
   // Records metrics on sudden termination handlers found in this frame and
   // subframes.
   void RecordNavigationSuddenTerminationHandlers();
+
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+  void UpdateAdBlockEnabledToRender(bool site_adblock_enabled);
+#endif
 
   // Returns the devtools_navigation_token (see
   // NavigationRequest::devtools_navigation_token()) associated with the last
@@ -3339,6 +3350,40 @@ class CONTENT_EXPORT RenderFrameHostImpl
   bool IsFullCookieAccessAllowed() override;
 
   void SimulateDiscardShutdownKeepAliveTimeoutForTesting();
+#if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
+  void AddNamedObject(const std::string& name,
+                      int32_t object_id,
+                      base::Value::List& async_method_list,
+                      bool need_update);
+#endif
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  void OnDetectedBlankScreen(const std::string& url,
+                             int32_t blankScreenReason,
+                             int32_t detectedContentfulNodesCount) override;
+  void DetectBlankScreen(const std::string& url);
+  void SetBlankScreenDetectionConfig(
+      bool enable,
+      const std::vector<double>& detectionTiming,
+      const std::vector<int32_t>& detectionMethods,
+      int32_t contentfulNodesCountThreshold);
+#endif
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+  void CommitFailedNavigation(
+    mojom::NavigationClient* navigation_client,
+    NavigationRequest* navigation_request,
+    blink::mojom::CommonNavigationParamsPtr common_params,
+    blink::mojom::CommitNavigationParamsPtr commit_params,
+    bool has_stale_copy_in_cache,
+    int error_code,
+    int extended_error_code,
+    const net::ResolveErrorInfo& resolve_error_info,
+    const std::optional<std::string>& error_page_content,
+    std::unique_ptr<blink::PendingURLLoaderFactoryBundle> subresource_loaders,
+    const blink::DocumentToken& document_token,
+    blink::mojom::PolicyContainerPtr policy_container,
+    mojom::AlternativeErrorPageOverrideInfoPtr alternative_error_page_info,
+    mojom::NavigationClient::CommitFailedNavigationCallback callback);
+#endif
 
   // Returns true if no frame ancestors of a sandboxed context are cross-site
   // with `frame_origin` (or its precursor if opaque).
@@ -4501,6 +4546,11 @@ class CONTENT_EXPORT RenderFrameHostImpl
   // process. Shutdown may be reattempted if unsuccessful to give outstanding
   // keep-alive requests a chance to resolve before timing out.
   void CleanupRenderProcessForDiscardIfPossible();
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  net::Error GetNetErrorCode() override;
+  net::Error net_error_{net::Error::OK};
+#endif // ARKWEB_READER_MODE
 
   blink::mojom::PermissionStatus GetCombinedPermissionStatus(
       blink::PermissionType permission_type);

@@ -344,10 +344,20 @@
 #include "content/browser/renderer_host/render_view_host_delegate_view.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "content/browser/web_contents/web_contents_impl.h"
+#include "content/public/browser/web_contents.h"
+#include "url/ohos/log_utils.h"
+#endif
+
 #if AX_FAIL_FAST_BUILD()
 #include "base/command_line.h"
 #include "content/public/browser/ax_inspect_factory.h"
 #include "ui/accessibility/accessibility_switches.h"
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/browser/renderer_host/render_frame_host_impl_for_include.cc"
 #endif
 
 namespace features {
@@ -3038,15 +3048,25 @@ void RenderFrameHostImpl::WillLeaveBackForwardCacheInternal() {
 #if BUILDFLAG(IS_P2P_ENABLED)
   GetProcess()->ResumeSocketManagerForRenderFrameHost(GetGlobalId());
 #endif  // BUILDFLAG(IS_P2P_ENABLED)
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  if (delegate_) {
+    delegate_->OnRenderFrameHostLeaveBackForwardCache(GetGlobalId());
+  }
+#endif  // BUILDFLAG(ARKWEB_SAME_LAYER)
 }
 
 void RenderFrameHostImpl::StartBackForwardCacheEvictionTimer() {
   DCHECK(IsInBackForwardCache());
   base::TimeDelta evict_after =
+#if BUILDFLAG(ARKWEB_BFCACHE)
+      GetBackForwardCache().ArkWebGetTimeToLiveInBackForwardCache();
+#else
       GetBackForwardCache().GetTimeToLiveInBackForwardCache(
           LoadedWithCacheControlNoStoreHeader()
               ? BackForwardCacheImpl::kInCCNSContext
               : BackForwardCacheImpl::kNotInCCNSContext);
+#endif
 
   back_forward_cache_eviction_timer_.SetTaskRunner(
       GetBackForwardCache().GetTaskRunner());
@@ -13732,7 +13752,13 @@ RenderFrameHostImpl::CreateURLLoaderFactoryParamsForMainWorld(
       config.GetDipReporter(), GetProcess(),
       config.trust_token_issuance_policy(),
       config.trust_token_redemption_policy(), config.cookie_setting_overrides(),
-      debug_tag);
+      debug_tag
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+      ,
+      config.main_url(),
+      config.addr_web_handle()
+#endif
+      );
 }
 
 bool RenderFrameHostImpl::CreateNetworkServiceDefaultFactoryAndObserve(
@@ -16354,6 +16380,10 @@ void RenderFrameHostImpl::SendCommitNavigation(
     const blink::DocumentToken& document_token,
     const base::UnguessableToken& devtools_navigation_token) {
   TRACE_EVENT0("navigation", "RenderFrameHostImpl::SendCommitNavigation");
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+  int64_t start_time = RenderFrameImplUtils::GetCurrentTimestampMS();
+  GetMojomFrameInRenderer()->SendCommitNavigationTime(start_time);
+#endif
   UpdateOrDisableCompositorMetricRecorder();
 
   base::ElapsedTimer timer;
@@ -16553,6 +16583,16 @@ void RenderFrameHostImpl::SendCommitFailedNavigation(
 
   {
     auto scope = MakeUrgentMessageScopeIfNeeded();
+#if BUILDFLAG(ARKWEB_ERROR_PAGE)
+    CommitFailedNavigation(navigation_client, navigation_request, std::move(common_params),
+      std::move(commit_params), has_stale_copy_in_cache, error_code,
+      extended_error_code, navigation_request->GetResolveErrorInfo(),
+      error_page_content, std::move(subresource_loader_factories), document_token,
+      std::move(policy_container),
+      GetContentClient()->browser()->GetAlternativeErrorPageOverrideInfo(
+        navigation_request->GetURL(), this, GetBrowserContext(), error_code),
+        BuildCommitFailedNavigationCallback(navigation_request));
+#else
     navigation_client->CommitFailedNavigation(
         std::move(common_params), std::move(commit_params),
         has_stale_copy_in_cache, error_code, extended_error_code,
@@ -16563,6 +16603,7 @@ void RenderFrameHostImpl::SendCommitFailedNavigation(
             navigation_request->GetURL(), this, GetBrowserContext(),
             error_code),
         BuildCommitFailedNavigationCallback(navigation_request));
+#endif
   }
 }
 

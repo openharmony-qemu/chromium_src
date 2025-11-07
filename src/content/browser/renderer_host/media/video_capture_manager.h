@@ -39,6 +39,7 @@
 #include "mojo/public/cpp/bindings/remote.h"
 #include "services/video_effects/public/cpp/buildflags.h"
 #include "ui/gfx/native_widget_types.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(ENABLE_VIDEO_EFFECTS)
 #include "services/video_effects/public/mojom/video_effects_processor.mojom-forward.h"
@@ -51,6 +52,7 @@
 namespace content {
 class VideoCaptureController;
 class VideoCaptureControllerEventHandler;
+class VideoCaptureManagerExt;
 
 // VideoCaptureManager is used to open/close, start/stop, enumerate available
 // video capture devices, and manage VideoCaptureController's.

@@ -5,6 +5,11 @@
 import("//build/config/features.gni")
 import("//content/public/common/features.gni")
 import("//media/media_options.gni")
+import("//arkweb/build/features/features.gni")
+
+if (is_arkweb) {
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
 
 # See //content/BUILD.gn for how this works.
 group("renderer") {

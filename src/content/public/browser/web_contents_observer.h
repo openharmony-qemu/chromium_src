@@ -37,6 +37,7 @@
 #include "third_party/skia/include/core/SkColor.h"
 #include "ui/base/page_transition_types.h"
 #include "ui/base/window_open_disposition.h"
+#include "arkweb/build/features/features.h"
 
 class GURL;
 
@@ -884,6 +885,14 @@ class CONTENT_EXPORT WebContentsObserver : public base::CheckedObserver {
       const MediaPlayerInfo& video_type,
       const MediaPlayerId& id,
       WebContentsObserver::MediaStoppedReason reason) {}
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+  virtual void MediaPlayerGone(
+      const MediaPlayerInfo& video_type,
+      const MediaPlayerId& id) {}
+#endif
+#if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
+  virtual void OneShotMediaPlayerStopped() {}
+#endif
 
   // Invoked when the set of tracks in the media has changed. Possible reasons
   // include adding/removing a track via MediaStream.addTrack()/removeTrack().
@@ -999,6 +1008,11 @@ class CONTENT_EXPORT WebContentsObserver : public base::CheckedObserver {
   // Called when WebContents received a request to vibrate the page.
   virtual void VibrationRequested() {}
 
+#if BUILDFLAG(ARKWEB_ACTIVITY_STATE)
+  // Called when form editing state changed
+  virtual void OnFormEditingStateChanged(bool state, uint64_t form_id) {}
+#endif
+
   // Called when a first contentful paint happened in the primary main frame.
   virtual void OnFirstContentfulPaintInPrimaryMainFrame() {}
 
@@ -1016,7 +1030,21 @@ class CONTENT_EXPORT WebContentsObserver : public base::CheckedObserver {
 
   WebContents* web_contents() const;
 
+#if BUILDFLAG(ARKWEB_CSS_INPUT_TIME)
+  virtual void OpenDateTimeChooser() {}
+  virtual void CloseDateTimeChooser() {}
+#endif
+
+#if BUILDFLAG(ARKWEB_BGTASK)
+  virtual void OnBrowserForeground() {}
+  virtual void OnBrowserBackground() {}
+#endif
+
+#if BUILDFLAG(ARKWEB_TEST)
+ public:
+#else
  protected:
+#endif  // ARKWEB_TEST
   // Use this constructor when the object is tied to a single WebContents for
   // its entire lifetime.
   explicit WebContentsObserver(WebContents* web_contents);

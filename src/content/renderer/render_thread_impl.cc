@@ -273,9 +273,11 @@ BASE_FEATURE(kUseThreadPoolForMediaTaskRunner,
 
 // Updates the crash key for whether this renderer is foregrounded.
 void UpdateForegroundCrashKey(bool foreground) {
+#if !BUILDFLAG(ARKWEB_BUGFIX_CRASH)
   static auto* const crash_key = base::debug::AllocateCrashKeyString(
       "renderer_foreground", base::debug::CrashKeySize::Size32);
   base::debug::SetCrashKeyString(crash_key, base::ToString(foreground));
+#endif
 }
 
 // Hook that allows single-sample metric code from //components/metrics to

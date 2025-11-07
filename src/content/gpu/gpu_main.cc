@@ -125,6 +125,16 @@
 #include "media/gpu/vaapi/vaapi_wrapper.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "content/common/gpu_pre_sandbox_hook_linux.h"
+#include "sandbox/policy/linux/sandbox_linux.h"
+#include "sandbox/policy/sandbox_type.h"
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/gpu/gpu_main_ext.h"
+#endif
+
 namespace content {
 
 namespace {
@@ -137,6 +147,8 @@ bool StartSandboxLinux(gpu::GpuWatchdogThread*,
 bool StartSandboxAndroid(gpu::GpuWatchdogThread*);
 #elif BUILDFLAG(IS_WIN)
 bool StartSandboxWindows(const sandbox::SandboxInterfaceInfo*);
+#elif BUILDFLAG(IS_OHOS)
+bool StartSandboxOHOS(gpu::GpuWatchdogThread*);
 #endif
 
 class ContentSandboxHelper : public gpu::GpuSandboxHelper {
@@ -197,6 +209,12 @@ class ContentSandboxHelper : public gpu::GpuSandboxHelper {
     return StartSandboxWindows(sandbox_info_);
 #elif BUILDFLAG(IS_MAC)
     return sandbox::Seatbelt::IsSandboxed();
+#elif BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+    return false;
+#else
+    return StartSandboxOHOS(watchdog_thread);
+#endif
 #elif BUILDFLAG(IS_ANDROID)
     if (base::FeatureList::IsEnabled(
             sandbox::policy::features::kAndroidGpuSandbox)) {

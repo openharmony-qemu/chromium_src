@@ -1513,6 +1513,9 @@ base::WeakPtr<NavigationHandle> NavigationControllerImpl::LoadURLWithParams(
   TRACE_EVENT1("browser,navigation",
                "NavigationControllerImpl::LoadURLWithParams", "url",
                params.url.possibly_invalid_spec());
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+  OhPageLoadMetricsObserver::OnNavigationStart();
+#endif
 
   if (IsDebugURL(params.url)) {
     // Browser-debug URLs won't go through NavigationThrottles so we have to
@@ -4014,6 +4017,10 @@ base::WeakPtr<NavigationHandle> NavigationControllerImpl::NavigateWithoutEntry(
   // will be updated when the BeforeUnload ack is received.
   const auto navigation_start_time = base::TimeTicks::Now();
 
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "navigationStart", navigation_start_time);
+#endif
   std::unique_ptr<NavigationRequest> request =
       CreateNavigationRequestFromLoadParams(
           node, params, override_user_agent, should_replace_current_entry,
@@ -4021,6 +4028,9 @@ base::WeakPtr<NavigationHandle> NavigationControllerImpl::NavigateWithoutEntry(
           reload_type, pending_entry_, pending_entry_->GetFrameEntry(node),
           actual_navigation_start, navigation_start_time);
 
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+  request->load_ignore_cache_params = params.load_ignore_cache_params;
+#endif
   // If the navigation couldn't start, return immediately and discard the
   // pending NavigationEntry.
   if (!request) {
@@ -4411,11 +4421,14 @@ NavigationControllerImpl::CreateNavigationRequestFromLoadParams(
           /*cookie_deprecation_label=*/std::nullopt,
           /*visited_link_salt=*/std::nullopt,
           /*local_surface_id=*/std::nullopt,
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+          false, /* site_adblock_enabled */
           node->current_frame_host()->GetCachedPermissionStatuses(),
           /*should_skip_screentshot=*/false,
           /*force_new_document_sequence_number=*/false,
           /*navigation_metrics_token=*/base::UnguessableToken::Create());
-#if BUILDFLAG(IS_ANDROID)
+#endif
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_BASE)
   if (ValidateDataURLAsString(params.data_url_as_string)) {
     commit_params->data_url_as_string = params.data_url_as_string->as_string();
   }
@@ -4450,9 +4463,14 @@ NavigationControllerImpl::CreateNavigationRequestFromLoadParams(
   navigation_request->set_force_new_browsing_instance(
       params.force_new_browsing_instance);
   navigation_request->set_force_new_compositor(params.force_new_compositor);
+#if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
+    navigation_request->ohos_set_https_upgrade(params.force_no_https_upgrade);
+    navigation_request->ohos_set_url_typed_with_http_scheme(params.url_typed_with_http_scheme);
+#else
   if (params.force_no_https_upgrade) {
     navigation_request->set_force_no_https_upgrade();
   }
+#endif
   return navigation_request;
 }
 

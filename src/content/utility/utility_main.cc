@@ -169,6 +169,8 @@ std::vector<std::string> GetNetworkContextsParentDirectories() {
 }
 
 bool ShouldUseAmdGpuPolicy(sandbox::mojom::Sandbox sandbox_type) {
+// Amd gpu is not supported on ohos
+#if !BUILDFLAG(IS_OHOS)
 #if BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION) || \
     BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
   const bool obtain_gpu_info =
@@ -184,9 +186,11 @@ bool ShouldUseAmdGpuPolicy(sandbox::mojom::Sandbox sandbox_type) {
   }
 #endif  // BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION) ||
         // BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
+#endif  // !BUILDFLAG(IS_OHOS)
+
   return false;
 }
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 
 #if BUILDFLAG(IS_WIN)
 // Handle pre-lockdown sandbox hooks
@@ -297,7 +301,7 @@ int UtilityMain(MainFunctionParams parameters) {
     CHECK(on_device_model::PreSandboxInit());
   }
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 
 #if BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION) && BUILDFLAG(USE_VAAPI)
   // Regardless of the sandbox status, the VaapiWrapper needs to be initialized
@@ -336,10 +340,12 @@ int UtilityMain(MainFunctionParams parameters) {
     case sandbox::mojom::Sandbox::kAudio:
       pre_sandbox_hook = base::BindOnce(&audio::AudioPreSandboxHook);
       break;
+#if !BUILDFLAG(IS_OHOS)
     case sandbox::mojom::Sandbox::kOnDeviceModelExecution:
       on_device_model::AddSandboxLinuxOptions(sandbox_options);
       pre_sandbox_hook = base::BindOnce(&on_device_model::PreSandboxHook);
       break;
+#endif  // !BUILDFLAG(IS_OHOS)
     case sandbox::mojom::Sandbox::kSpeechRecognition:
       pre_sandbox_hook =
           base::BindOnce(&speech::SpeechRecognitionPreSandboxHook);
@@ -379,12 +385,14 @@ int UtilityMain(MainFunctionParams parameters) {
           base::BindOnce(&media::HardwareVideoDecodingPreSandboxHook);
       break;
 #endif  // BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
+#if !BUILDFLAG(IS_OHOS)
 #if BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION)
     case sandbox::mojom::Sandbox::kHardwareVideoEncoding:
       pre_sandbox_hook =
           base::BindOnce(&media::HardwareVideoEncodingPreSandboxHook);
       break;
 #endif  // BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION)
+#endif
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 #if BUILDFLAG(IS_CHROMEOS)
     case sandbox::mojom::Sandbox::kIme:

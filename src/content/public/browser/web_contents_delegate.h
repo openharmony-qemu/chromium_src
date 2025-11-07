@@ -45,11 +45,24 @@
 #include "ui/base/window_open_disposition.h"
 #include "ui/gfx/geometry/rect_f.h"
 #include "ui/gfx/native_widget_types.h"
+#include "arkweb/build/features/features.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/scoped_java_ref.h"
 #include "content/public/browser/back_forward_transition_animation_manager.h"
 #endif
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+#include "arkweb/chromium_ext/content/public/browser/native_embed_info.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+#include "media/mojo/mojom/media_player.mojom-forward.h"
+#endif // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_READER_MODE)
+#include "components/dom_distiller/content/common/mojom/distillability_service.mojom.h"
+#endif  // ARKWEB_READER_MODE
 
 class GURL;
 
@@ -113,6 +126,19 @@ struct DropData;
 struct MediaPlayerWatchTime;
 struct OpenURLParams;
 struct Referrer;
+
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+class CustomMediaPlayer;
+class CustomMediaPlayerListener;
+struct MediaInfo;
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
+
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+class MediaPlayerController;
+class MediaPlayerListener;
+class VideoAssistant;
+struct MediaPlayerId;
+#endif  // ARKWEB_VIDEO_ASSISTANT
 
 enum class KeyboardEventProcessingResult;
 
@@ -890,6 +916,19 @@ class CONTENT_EXPORT WebContentsDelegate {
   virtual BackForwardTransitionAnimationManager::FallbackUXConfig
   GetBackForwardTransitionFallbackUXConfig();
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/public/browser/web_contents_delegate_for_include.h"
+#endif  // BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(ARKWEB_PIP)
+  virtual void OnPipEvent(int event) {}
+  virtual void OnPip(int status,
+                     int delegate_id,
+                     int child_id,
+                     int frame_routing_id,
+                     int width,
+                     int height) {}
+#endif
 
   // Returns the saved related_applications web app manifest field associated
   // with the given `web_contents`. The information is saved via the

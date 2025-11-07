@@ -74,7 +74,13 @@ network::mojom::URLLoaderFactoryParamsPtr CreateParams(
         trust_token_redemption_policy,
     net::CookieSettingOverrides cookie_setting_overrides,
     std::string_view debug_tag,
-    bool require_cross_site_request_for_cookies,
+    bool require_cross_site_request_for_cookies
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+,
+    const GURL& main_url = GURL(),
+    uint64_t addr_web_handle = 0
+#endif
+    ,
     bool is_for_service_worker) {
   DCHECK(process);
 
@@ -188,7 +194,13 @@ URLLoaderFactoryParamsHelper::CreateForFrame(
       NetworkServiceDevToolsObserver::MakeSelfOwned(frame->frame_tree_node()),
       frame->CreateDeviceBoundSessionObserver(), trust_token_issuance_policy,
       trust_token_redemption_policy, cookie_setting_overrides, debug_tag,
-      /*require_cross_site_request_for_cookies=*/false,
+      /*require_cross_site_request_for_cookies=*/false
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+,
+      main_url,
+      addr_web_handle
+#endif
+      ,
       /*is_for_service_worker=*/false);
 }
 

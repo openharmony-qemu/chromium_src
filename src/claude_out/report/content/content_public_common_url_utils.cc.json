@@ -1,0 +1,42 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/content/public/common/url_utils.cc.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/content/public/common/url_utils.cc",
+    "处理时间": "2025-11-06"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "rej文件完整性": "保持完整未被修改"
+  },
+  "hunk处理详情": [
+    {
+      "hunk索引": 1,
+      "位置信息": "第29-35行，HasWebUIOrigin函数",
+      "冲突原因": "Arkweb132在HasWebUIOrigin函数中添加了对ArkWebUIScheme的支持，使用了条件编译宏BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)",
+      "待删除行": [
+        "origin.scheme() == content::kChromeDevToolsScheme;"
+      ],
+      "待添加行": [
+        "origin.scheme() == content::kChromeDevToolsScheme",
+        "#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)",
+        "         || origin.scheme() == content::kArkWebUIScheme",
+        "#endif",
+        "      ;"
+      ],
+      "风险分析": "低风险。这是一个典型的扩展功能添加，通过条件编译宏控制，在没有定义ARKWEB_ARKWEB_EXTENSIONS时不会影响原有功能。修改只是增加了对ArkWebUI scheme的支持，保持了向后兼容性。",
+      "分析过程": "1. 识别hunk目标：HasWebUIOrigin函数的返回语句\n2. 在源文件中精确定位：第29-37行\n3. 验证上下文匹配：函数签名和现有scheme检查完全匹配\n4. 应用原子化修改：删除原始行末尾的分号，添加条件编译的ArkWebUI scheme支持",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "定位方式": "精确匹配 - 函数签名和上下文完全一致"
+    }
+  ],
+  "整体评估": {
+    "复杂性": "简单",
+    "风险等级": "低",
+    "修改类型": "功能扩展 - 添加新的UI scheme支持",
+    "回归风险": "极低",
+    "建议": "修改成功完成，建议在编译时验证ARKWEB_ARKWEB_EXTENSIONS宏的定义是否正确"
+  }
+}

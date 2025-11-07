@@ -386,6 +386,13 @@ class CONTENT_EXPORT RenderFrameObserver {
   explicit RenderFrameObserver(RenderFrame* render_frame);
   virtual ~RenderFrameObserver();
 
+#if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)
+  virtual void AddNamedObject(const std::string& name,
+                              int32_t object_id,
+                              base::Value::List& async_method_list,
+                              bool need_update) {}
+#endif
+
  private:
   friend class RenderFrameImpl;
 

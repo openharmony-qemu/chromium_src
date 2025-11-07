@@ -1,17 +1,5 @@
 --- desktop_capture_device.cc	2025-10-20 19:52:54.326502231 +0800
 +++ desktop_capture_device.cc	2025-10-16 15:54:59.456740120 +0800
-@@ -53,10 +53,11 @@
- #include "third_party/webrtc/modules/desktop_capture/desktop_capturer.h"
- #include "third_party/webrtc/modules/desktop_capture/desktop_frame.h"
- #include "third_party/webrtc/modules/desktop_capture/fake_desktop_capturer.h"
- #include "third_party/webrtc/modules/desktop_capture/mouse_cursor_monitor.h"
- #include "ui/gfx/icc_profile.h"
-+#include "arkweb/build/features/features.h"
- 
- namespace content {
- 
- namespace {
- 
 @@ -642,11 +646,16 @@
      first_ref_time_ = now;
    client_->OnIncomingCapturedData(
@@ -30,36 +18,3 @@
  
    ScheduleNextCaptureFrame();
  }
-@@ -748,12 +757,17 @@
- base::TimeTicks DesktopCaptureDevice::Core::NowTicks() const {
-   return tick_clock_ ? tick_clock_->NowTicks() : base::TimeTicks::Now();
- }
- 
- // static
-+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
-+std::unique_ptr<media::VideoCaptureDevice> DesktopCaptureDevice::Create(
-+    const DesktopMediaID& source, bool is_picker_show, int nweb_id) {
-+#else
- std::unique_ptr<media::VideoCaptureDevice> DesktopCaptureDevice::Create(
-     const DesktopMediaID& source) {
-+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
-   VLOG(1) << __func__ << "(source=" << source.ToString() << ")";
-   auto options = desktop_capture::CreateDesktopCaptureOptions();
-   std::unique_ptr<webrtc::DesktopCapturer> capturer;
-   std::unique_ptr<media::VideoCaptureDevice> result;
- 
-@@ -812,10 +826,14 @@
-     return result;
-   }
- 
-   switch (source.type) {
-     case DesktopMediaID::TYPE_SCREEN: {
-+#if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)
-+      options.set_picker_show(is_picker_show);
-+      options.set_nweb_id(nweb_id);
-+#endif  // defined(ARKWEB_EX_SCREEN_CAPTURE)
-       std::unique_ptr<webrtc::DesktopCapturer> screen_capturer(
-           webrtc::DesktopCapturer::CreateScreenCapturer(options));
-       if (screen_capturer && screen_capturer->SelectSource(source.id)) {
-         capturer = std::make_unique<webrtc::DesktopAndCursorComposer>(
-             std::move(screen_capturer), options);

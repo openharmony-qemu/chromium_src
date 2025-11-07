@@ -195,7 +195,11 @@ auto RunNetworkService(
   if (GetNetworkBinderCreationCallbackForTesting()) {
     std::move(GetNetworkBinderCreationCallbackForTesting()).Run(binders.get());
   }
+#if BUILDFLAG(IS_ARKWEB)
+  return std::make_unique<network::ArkWebNetworkServiceExt>(
+#else
   return std::make_unique<network::NetworkService>(
+#endif
       std::move(binders), std::move(receiver),
       /*delay_initialization_until_set_client=*/true);
 }

@@ -572,6 +572,9 @@ class NavigationController {
   // Existing code polls for this but an API would make this more ergonomic.
   virtual WeakNavigationHandleVector GoBack() = 0;
   virtual WeakNavigationHandleVector GoForward() = 0;
+#if BUILDFLAG(ARKWEB_NETWORK_CONNINFO)
+   virtual const std::string& GetOriginalUrl() = 0;
+#endif // BUILDFLAG(ARKWEB_NETWORK_CONNINFO)
 
   // Navigates to the specified absolute index. Should only be used for
   // browser-initiated navigations.

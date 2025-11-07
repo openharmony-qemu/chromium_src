@@ -1,0 +1,62 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/content/public/browser/navigation_entry.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/content/public/browser/navigation_entry.h",
+    "处理时间": "2025-11-06"
+  },
+  "统计信息": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0
+  },
+  "rej文件完整性": {
+    "状态": "保持完整",
+    "说明": ".rej文件未被修改或删除，完全符合黄金法则要求"
+  },
+  "hunks处理详情": [
+    {
+      "hunk_index": 1,
+      "位置信息": {
+        "起始行号": 107,
+        "变更上下文": "SetTitle和GetTitle方法之后"
+      },
+      "变更内容": {
+        "待添加行": [
+          "virtual bool GetIsRealTitle() = 0;"
+        ],
+        "待删除行": []
+      },
+      "冲突原因": "Arkweb 132在NavigationEntry类中添加了GetIsRealTitle虚方法，但在升级到Chromium 141时该修改产生冲突",
+      "分析过程": {
+        "定位策略": "使用SetTitle和GetTitle方法作为上下文锚点",
+        "定位结果": "在源文件第111行GetTitle方法后成功找到插入位置",
+        "扩展查找": "未需要进行扩展查找，直接定位成功"
+      },
+      "风险评估": {
+        "风险等级": "低",
+        "风险描述": "添加新的纯虚函数声明，不会影响现有代码结构，仅需要在实现类中提供对应实现",
+        "潜在影响": "继承NavigationEntry的类需要实现GetIsRealTitle方法"
+      },
+      "修改置信度": {
+        "置信度": "高",
+        "理由": "1) 上下文匹配度高 2) 变更类型简单明确 3) 插入位置逻辑合理"
+      },
+      "处理策略": {
+        "策略": "精确插入",
+        "执行状态": "成功完成",
+        "具体操作": "在第111行GetTitle方法声明后插入GetIsRealTitle虚函数声明"
+      },
+      "最终状态": "已解决"
+    }
+  ],
+  "处理总结": {
+    "任务完成度": "100%",
+    "法规遵循": {
+      "黄金法则遵循": "完全遵循，未添加任何上下文行",
+      "文件创建限制": "仅在指定目录创建JSON报告文件",
+      "脚本生成禁止": "未生成任何脚本文件",
+      "rej文件保护": ".rej文件保持完整未被修改"
+    },
+    "技术说明": "成功将Arkweb 132中的GetIsRealTitle方法声明集成到Arkweb 141的NavigationEntry类中，保持了代码的向后兼容性"
+  }
+}

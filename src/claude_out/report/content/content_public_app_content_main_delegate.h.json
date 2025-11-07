@@ -1,0 +1,55 @@
+{
+  "文件信息": {
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/content/public/app/content_main_delegate.h",
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/content/public/app/content_main_delegate.h.rej",
+    "处理时间": "2025-11-06",
+    "任务描述": "Arkweb 132到141版本升级中的侵入式修改集成"
+  },
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk处理详情": [
+    {
+      "hunk序号": 1,
+      "冲突原因": "Arkweb 132版本需要包含自定义的features头文件，但在Arkweb 141版本中此include缺失",
+      "风险分析": "低风险 - 这是一个简单的include添加，用于引入Arkweb自定义的特性定义",
+      "修改内容": {
+        "待添加行": [
+          "#include \"arkweb/build/features/features.h\""
+        ],
+        "待删除行": []
+      },
+      "定位策略": {
+        "锚点选择": [
+          "#include <vector>",
+          "#include \"build/build_config.h\""
+        ],
+        "定位结果": "成功定位到源文件第13行（空行）处"
+      },
+      "分析过程": {
+        "步骤1_解析hunk": "识别出需要在标准库includes后添加arkweb features头文件",
+        "步骤2_精确定位": "在源文件中找到了匹配的上下文：#include <vector>（第12行）和#include \"build/build_config.h\"（第16行）之间的空行",
+        "步骤3_原子化应用": "在目标位置精确添加了include语句",
+        "置信度评估": "高置信度 - include语句的位置明确，上下文匹配度100%"
+      },
+      "最终策略": "已成功应用",
+      "人工复查建议": "确认arkweb/build/features/features.h文件在构建系统中可用"
+    }
+  ],
+  "合规性验证": {
+    ".rej文件完整性": "已验证，.rej文件保持原样未被修改或删除",
+    "上下文行污染检查": "通过，未添加任何不带符号的上下文行",
+    "脚本文件创建检查": "通过，未创建任何脚本文件或辅助工具",
+    "文件创建位置验证": "通过，仅在指定目录创建JSON报告文件",
+    "修改操作验证": "通过，仅执行了添加+行的操作"
+  },
+  "总结": {
+    "任务完成状态": "已完成",
+    "主要修改": "添加了Arkweb自定义features头文件的include",
+    "代码完整性": "保持良好，修改后的代码结构完整",
+    "后续建议": "建议构建测试确保新增的include路径正确"
+  }
+}

@@ -13,6 +13,12 @@
 #include <utility>
 
 #include "ash/constants/ash_switches.h"
+#include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/base/process/process_handle_posix_ex.h"
+#include "arkweb/chromium_ext/content/browser/renderer_host/arkweb_render_process_host_impl_utils.h"
+#if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
+#include "arkweb/chromium_ext/third_party/crashpad/crashpad/util/linux/crashpad_dfx.h"
+#endif
 #include "base/base64.h"
 #include "base/base_switches.h"
 #include "base/command_line.h"
@@ -263,6 +269,12 @@ static const char* const kSwitchNames[] = {
     switches::kRaiseTimerFrequency,
     switches::kUseRedistributableDirectML,
 #endif  // BUILDFLAG(IS_WIN)
+#if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
+    switches::kOhosEnableDrDc,
+#endif
+#if BUILDFLAG(ARKWEB_VULKAN)
+    switches::kOhosEnableVulkan,
+#endif
     switches::kBackgroundThreadPoolFieldTrial,
     switches::kEnableANGLEFeatures,
     switches::kDelegatedInkRenderer,
@@ -1217,6 +1229,8 @@ bool GpuProcessHost::GpuAccessAllowed() const {
 void GpuProcessHost::DisableGpuCompositing() {
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS)
   DLOG(ERROR) << "Can't disable GPU compositing";
+#elif BUILDFLAG(IS_ARKWEB)
+  LOG(ERROR) << "Can't disable GPU compositing";
 #else
   // TODO(crbug.com/40565996): The switch from GPU to software compositing
   // should be handled here instead of by ImageTransportFactory.

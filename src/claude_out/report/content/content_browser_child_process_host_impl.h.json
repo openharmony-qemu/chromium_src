@@ -1,0 +1,52 @@
+{
+  "file_path": "content/browser/child_process_host_impl.h",
+  "analysis_date": "2025-11-05",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "verified",
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "status": "已解决",
+      "risk_level": "低",
+      "confidence": "高",
+      "conflict_reason": "Arkweb 132 中添加的性能调度和DFX跟踪功能在 Arkweb 141 中缺失",
+      "analysis_process": "分析 .rej 文件发现需要在 mojom::ChildProcessHost implementation 部分添加 Arkweb 特定的方法声明。通过对比源文件内容，在第 96-98 行找到了对应的接口实现区域，准确匹配了插入位置。",
+      "modifications": {
+        "added": [
+          "#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)",
+          "void ReportKeyThread(int32_t status, int32_t process_id, int32_t thread_id, int32_t role) override;",
+          "void ReportKeyThreadIds(int32_t status, int32_t process_id, const std::vector<int32_t>& thread_ids, int32_t role) override {}",
+          "#endif",
+          "#if BUILDFLAG(ARKWEB_DFX_TRACING)",
+          "void ReportHisyevent(int64_t block_time, const std::string& mode) override;",
+          "#endif"
+        ],
+        "removed": []
+      },
+      "strategy": "直接在 mojom::ChildProcessHost implementation 部分的现有方法声明后添加 Arkweb 特定的条件编译方法声明",
+      "validation": "修改后代码结构保持完整，方法声明位置正确，符合类的声明格式"
+    }
+  ],
+  "summary": {
+    "total_modifications": {
+      "added_lines": 7,
+      "removed_lines": 0
+    },
+    "arkweb_features_added": [
+      "ARKWEB_PERFORMANCE_SCHEDULING - 性能调度相关接口",
+      "ARKWEB_DFX_TRACING - DFX跟踪相关接口"
+    ],
+    "build_flags_required": [
+      "BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)",
+      "BUILDFLAG(ARKWEB_DFX_TRACING)"
+    ]
+  },
+  "final_verification": {
+    "rej_file_unchanged": true,
+    "source_file_modified": true,
+    "compilation_risk": "低",
+    "functional_risk": "低"
+  }
+}

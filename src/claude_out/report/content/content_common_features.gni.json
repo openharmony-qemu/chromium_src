@@ -1,0 +1,67 @@
+{
+  "文件信息": {
+    "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/content/common/features.gni.rej",
+    "源文件路径": "/home/sujiahao/code/arkweb_141/src/content/common/features.gni",
+    "处理时间": "2025-11-06"
+  },
+  "处理总结": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    ".rej文件完整性": "保持完整，未被修改"
+  },
+  "hunk详情": [
+    {
+      "hunk索引": 1,
+      "解决状态": "已解决",
+      "修改置信度": "高",
+      "风险等级": "低",
+      "冲突原因": "Arkweb 132向Chromium 132基线添加了arkweb特定功能和配置",
+      "修改内容": {
+        "添加的行": [
+          "import(\"//ppapi/buildflags/buildflags.gni\")",
+          "if (is_arkweb) {",
+          "  import(\"//arkweb/build/features/features.gni\")",
+          "}",
+          "use_external_popup_menu = is_android || (is_apple && use_blink) || arkweb_html_select",
+          "mbi_mode = is_linux || is_chromeos || is_mac || is_win || is_android || is_arkweb",
+          "content_enable_legacy_ipc = is_android || enable_ppapi || is_arkweb"
+        ],
+        "删除的行": [
+          "use_external_popup_menu = is_android || (is_apple && use_blink)",
+          "mbi_mode = is_linux || is_chromeos || is_mac || is_win || is_android",
+          "content_enable_legacy_ipc = is_android || enable_ppapi"
+        ]
+      },
+      "处理过程": {
+        "原始定位成功": "是",
+        "锚点匹配": "成功匹配到import语句和declare_args块",
+        "应用策略": "原子化应用所有+和-行，未添加任何上下文",
+        "语法检查": "通过，GN语法结构完整"
+      },
+      "分析说明": {
+        "变更目的": "为Arkweb项目添加特定的功能支持和配置选项",
+        "关键特征": [
+          "添加arkweb条件判断和特性导入",
+          "扩展MBI模式支持以包含arkweb",
+          "为arkweb添加HTML选择器支持",
+          "为arkweb启用传统IPC支持"
+        ],
+        "潜在影响": "这些修改使Arkweb能够根据is_arkweb标志启用特定功能，不影响标准Chromium构建"
+      }
+    }
+  ],
+  "合规性检查": {
+    "未生成脚本文件": "是",
+    "未创建辅助文件": "是",
+    "未修改.rej文件": "是",
+    "仅在源文件中操作": "是",
+    "遵守黄金法则": "是"
+  },
+  "人工复查建议": [
+    "验证arkweb_html_select变量在arkweb/build/features/features.gni中是否定义",
+    "确认is_arkweb构建标志在Arkweb构建系统中正确设置",
+    "检查MBI模式在Arkweb环境下的兼容性",
+    "验证legacy IPC功能在Arkweb中的必要性"
+  ]
+}

@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/auto_reset.h"
 #include "base/check_is_test.h"
 #include "base/command_line.h"
@@ -1450,6 +1451,9 @@ std::unique_ptr<NavigationRequest> NavigationRequest::CreateRendererInitiated(
           /*cookie_deprecation_label=*/std::nullopt,
           /*visited_link_salt=*/std::nullopt,
           /*local_surface_id=*/std::nullopt,
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+          false, /* site_adblock_enabled */
+#endif
           frame_tree_node->current_frame_host()->GetCachedPermissionStatuses(),
           /*should_skip_screenshot=*/false,
           /*force_new_document_sequence_number=*/false,
@@ -1614,7 +1618,10 @@ NavigationRequest::CreateForSynchronousRendererCommit(
           /*cookie_deprecation_label=*/std::nullopt,
           /*visited_link_salt=*/std::nullopt,
           /*local_surface_id=*/std::nullopt,
-          render_frame_host->GetCachedPermissionStatuses(),
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+          false, /* site_adblock_enabled */
+#endif
+          frame_tree_node->current_frame_host()->GetCachedPermissionStatuses(),
           /*should_skip_screenshot=*/false,
           /*force_new_document_sequence_number=*/false,
           /*navigation_metrics_token=*/base::UnguessableToken::Create());
@@ -1759,6 +1766,7 @@ NavigationRequest::NavigationRequest(
       request_method_(common_params_->method),
       prerender_host_id_(
           GetPrerenderHostRegistry().GetPrerenderHostIdForNavigation(this)) {
+      nav_request_utils_ = std::make_unique<NavigationRequestUtils>(this);
   TRACE_EVENT("navigation", "NavigationRequest::NavigationRequest",
               perfetto::Flow::FromPointer(this), "navigation_request", this);
   CHECK(!common_params_->initiator_base_url ||
@@ -2755,12 +2763,29 @@ void NavigationRequest::OnFencedFrameURLMappingComplete(
                           // destroyed `this`.
 }
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "arkweb/chromium_ext/content/browser/renderer_host/navigation_request_for_include.cc"
+#endif
+
 void NavigationRequest::BeginNavigationImpl() {
   TRACE_EVENT("navigation", "NavigationRequest::BeginNavigationImpl",
               perfetto::Flow::FromPointer(this));
   base::ElapsedTimer timer;
   SetState(WILL_START_NAVIGATION);
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+  if (frame_tree_node_->IsMainFrame()) {
+    LOG(INFO) << "event_message: "
+              << " is_browser_initiated_: "
+              << commit_params_->is_browser_initiated
+              << " was_redirected_: " << was_redirected_
+              << " " << devtools_navigation_token_;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    StartNavigationExt();
+#endif
+  }
+#endif
+
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_NETWORK_LOAD)
   base::WeakPtr<NavigationRequest> this_ptr(weak_factory_.GetWeakPtr());
   bool should_override_url_loading = false;
 
@@ -5943,6 +5968,12 @@ void NavigationRequest::OnRedirectChecksComplete(
                           std::move(cors_exempt_headers));
 }
 
+#if BUILDFLAG(ARKWEB_USERAGENT)
+void NavigationRequest::EnableRedirectAbortCancel() {
+  loader_->EnableRedirectAbortCancel();
+}
+#endif
+
 void NavigationRequest::OnFailureChecksComplete(
     NavigationThrottle::ThrottleCheckResult result) {
   TRACE_EVENT("navigation", "NavigationRequest::OnFailureChecksComplete",
@@ -6013,6 +6044,13 @@ void NavigationRequest::OnWillProcessResponseChecksComplete(
           frame_tree_node_->navigator().controller().GetBrowserContext();
       DownloadManagerImpl* download_manager = static_cast<DownloadManagerImpl*>(
           browser_context->GetDownloadManager());
+#if BUILDFLAG(ARKWEB_ADBLOCK)
+      // Download maybe start request in the same frame_tree_node and will not
+      // commit navigation, restore the last committed adblock switch here.
+
+      frame_tree_node_->set_adblock_enabled(
+          frame_tree_node_->is_adblock_enabled_last_committed());
+#endif
       if (!response_head_->client_side_content_decoding_types.empty()) {
         CHECK(base::FeatureList::IsEnabled(
             network::features::kRendererSideContentDecoding));

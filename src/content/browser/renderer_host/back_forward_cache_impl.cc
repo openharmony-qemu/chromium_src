@@ -216,6 +216,14 @@ WebSchedulerTrackedFeatures GetDisallowedWebSchedulerTrackedFeatures() {
           WebSchedulerTrackedFeature::kWebTransport,
           WebSchedulerTrackedFeature::kWebXR,
           WebSchedulerTrackedFeature::kParserAborted,
+#if BUILDFLAG(ARKWEB_BFCACHE)
+          // kEnableCacheNativeEmbed can allow use native embed web pages enter BFCache
+          // and can be set by command line --enable-cache-native-embed before web engine init.
+          // kEnableCacheMediaTakeOver can allow use media take over web pages enter BFCache
+          // and can be set by command line --enable-cache-media-take-over before web engine init.
+          WebSchedulerTrackedFeature::kEnableCacheNativeEmbed,
+          WebSchedulerTrackedFeature::kEnableCacheMediaTakeOver,
+#endif
           WebSchedulerTrackedFeature::kSharedWorkerMessage};
 }
 WebSchedulerTrackedFeatures GetInjectionWebSchedulerTrackedFeatures() {
@@ -1316,6 +1324,16 @@ void BackForwardCacheImpl::EnforceCacheSizeLimit() {
         GetForegroundedEntriesCacheSize(),
         BackForwardCacheMetrics::NotRestoredReason::kForegroundCacheLimit);
   }
+
+#if BUILDFLAG(ARKWEB_BFCACHE)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableBFCache)) {
+    EnforceCacheSizeLimitInternal(this->size_,
+                                  /*foregrounded_only=*/false);
+    return;
+  }
+#endif
+
   EnforceCacheSizeLimitInternal(
       GetCacheSize(), BackForwardCacheMetrics::NotRestoredReason::kCacheLimit);
 }

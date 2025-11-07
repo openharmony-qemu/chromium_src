@@ -55,6 +55,7 @@
 #include "ui/accessibility/ax_mode.h"
 #include "ui/base/clipboard/clipboard_metadata.h"
 #include "ui/base/window_open_disposition.h"
+#include "content/browser/renderer_host/render_frame_host_delegate_ext.h"
 
 #if BUILDFLAG(IS_WIN)
 #include "ui/gfx/native_widget_types.h"
@@ -62,6 +63,10 @@
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/scoped_java_ref.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+#include "arkweb/chromium_ext/content/browser/renderer_host/render_frame_host_delegate_ext.h"
 #endif
 
 #if BUILDFLAG(IS_ANDROID) || (BUILDFLAG(IS_IOS) && !BUILDFLAG(IS_IOS_TVOS))

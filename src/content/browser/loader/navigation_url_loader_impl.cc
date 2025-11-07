@@ -1611,6 +1611,11 @@ void NavigationURLLoaderImpl::CallOnReceivedResponse(
   ParseHeaders(url_, std::move(head), std::move(on_receive_response),
                /*clear_parsed_headers_for_testing=*/false);
 }
+#if BUILDFLAG(ARKWEB_USERAGENT)
+void NavigationURLLoaderImpl::EnableRedirectAbortCancel() {
+  redirect_abort_cancel_ = true;
+}
+#endif
 
 void NavigationURLLoaderImpl::OnReceiveRedirect(
     const net::RedirectInfo& redirect_info,
@@ -1629,11 +1634,25 @@ void NavigationURLLoaderImpl::OnReceiveRedirect(
   if (!bypass_redirect_checks &&
       !IsSafeRedirectTarget(url_, redirect_info.new_url)) {
     error = net::ERR_UNSAFE_REDIRECT;
-  } else if (--redirect_limit_ == 0) {
+  } else if (
+#if BUILDFLAG(ARKWEB_USERAGENT)
+      redirect_abort_cancel_ ||
+#endif
+      (--redirect_limit_ == 0)) {
+#if BUILDFLAG(ARKWEB_USERAGENT)
+    LOG(DEBUG) << "NavigationURLLoaderImpl::OnReceiveRedirect "
+                  "redirect_limit_ is "
+               << redirect_limit_ << " redirect_abort_cancel_ is "
+               << redirect_abort_cancel_;
+#endif
+
     error = net::ERR_TOO_MANY_REDIRECTS;
     if (redirect_info.is_signed_exchange_fallback_redirect) {
       UMA_HISTOGRAM_BOOLEAN("SignedExchange.FallbackRedirectLoop", true);
     }
+#if BUILDFLAG(ARKWEB_USERAGENT)
+      redirect_abort_cancel_ = false;
+#endif
   }
   if (error != net::OK) {
     if (loader_holder_.url_loader()) {

@@ -16,6 +16,8 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+#include "base/allocator/partition_allocator/src/partition_alloc/partition_alloc_buildflags.h"
 #include "base/auto_reset.h"
 #include "base/callback_list.h"
 #include "base/containers/flat_map.h"
@@ -99,6 +101,10 @@
 #include "ui/color/color_provider_source_observer.h"
 #include "ui/gfx/geometry/size.h"
 #include "ui/native_theme/native_theme_observer.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
 #include "content/public/browser/android/child_process_importance.h"
@@ -225,11 +231,17 @@ class CONTENT_EXPORT WebContentsImpl
       public input::RenderWidgetHostInputEventRouter::Delegate {
  public:
   class FriendWrapper;
+  friend class WebContentsImplExt;
+  friend class WebContentsImplUtils;
 
   WebContentsImpl(const WebContentsImpl&) = delete;
   WebContentsImpl& operator=(const WebContentsImpl&) = delete;
 
   ~WebContentsImpl() override;
+
+  virtual content::WebContentsImplExt* AsWebContentsImplExt() {
+    return nullptr;
+  }
 
   static std::unique_ptr<WebContentsImpl> CreateWithOpener(
       const WebContents::CreateParams& params,
@@ -435,6 +447,7 @@ class CONTENT_EXPORT WebContentsImpl
   bool IsWebContentsOnlyAccessibilityModeForTesting() override;
   bool IsFullAccessibilityModeForTesting() override;
   const std::u16string& GetTitle() override;
+  bool GetIsRealTitle() override;
   const std::optional<std::u16string>& GetApplicationTitle() override;
   void UpdateTitleForEntry(NavigationEntry* entry,
                            const std::u16string& title) override;
@@ -1031,7 +1044,12 @@ class CONTENT_EXPORT WebContentsImpl
       PreloadingAttempt* preloading_attempt,
       base::RepeatingCallback<bool(const GURL&,
                                    const std::optional<UrlMatchType>&)>,
-      base::RepeatingCallback<void(NavigationHandle&)>,
+      base::RepeatingCallback<void(NavigationHandle&)>
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+,
+      const char* extra_headers = nullptr
+#endif
+      ,
       bool allow_reuse) override;
   void CancelAllPrerendering() override;
   bool IsAllowedToStartPrerendering() override;
@@ -1562,8 +1580,14 @@ class CONTENT_EXPORT WebContentsImpl
   // Recomputes only the "fast" preferences (those not requiring slow
   // platform/device polling); the remaining "slow" ones are recomputed only if
   // the preference cache is empty.
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  const blink::web_pref::WebPreferences ComputeWebPreferences(
+      int32_t usage_scenario_type = 99);
+#else
   const blink::web_pref::WebPreferences ComputeWebPreferences(
       RenderFrameHostImpl* main_frame);
+#endif
 
   // Certain WebXr modes integrate with Viz as a compositor directly, and thus
   // have their own FrameSinkId that typically renders fullscreen, obscuring
@@ -1639,7 +1663,11 @@ class CONTENT_EXPORT WebContentsImpl
   // PassKey requirements.
   GURL GetPartitionedPopinEmbedderOriginForTesting() const;
 
+#if BUILDFLAG(ARKWEB_TEST)
+ public:
+#else
  private:
+#endif  // ARKWEB_TEST
   using FrameTreeIterationCallback = base::FunctionRef<void(FrameTree&)>;
   using RenderViewHostIterationCallback =
       base::RepeatingCallback<void(RenderViewHostImpl*)>;
@@ -2634,7 +2662,11 @@ class CONTENT_EXPORT WebContentsImpl
   bool should_override_user_agent_in_new_tabs_ = false;
 
   // Gets notified about changes in viewport fit events.
+#if BUILDFLAG(ARKWEB_DISPLAY_CUTOUT)
+  std::unique_ptr<DisplayCutoutHostOhos> safe_area_insets_host_;
+#else
   std::unique_ptr<SafeAreaInsetsHost> safe_area_insets_host_;
+#endif
 
   // Stores a set of frames that are fullscreen.
   // See https://fullscreen.spec.whatwg.org.

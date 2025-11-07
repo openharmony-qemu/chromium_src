@@ -1,0 +1,47 @@
+{
+  "文件路径": "/home/sujiahao/code/arkweb_141/src/content/browser/renderer_host/input/mock_input_router_client.h",
+  "冲突文件路径": "/home/sujiahao/code/arkweb_141/src/content/browser/renderer_host/input/mock_input_router_client.h.rej",
+  "处理统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决状态": "完全解决"
+  },
+  "hunk分析": [
+    {
+      "hunk编号": 1,
+      "在.rej文件中的行号范围": "第9-11行",
+      "风险等级": "低",
+      "冲突原因": "Arkweb在MockInputRouterClient类中添加了动态丢帧事件处理方法DynamicFrameLossEvent，该方法通过ARKWEB_REPORT_LOSS_FRAME编译标志条件编译，在升级到Chromium 141时这个方法声明未被正确集成",
+      "分析过程": "通过分析.rej文件，发现这是一个新增的方法声明，包含一个条件编译块。在源文件中找到了上下文锚点：OnStartStylusWriting()方法声明和后续的GetDispatchToRendererCallback()方法声明。根据.rej文件的要求，需要在OnStartStylusWriting()方法之后插入新的条件编译块。",
+      "识别的待添加行": [
+        "#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)",
+        "  void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) override {}",
+        "#endif"
+      ],
+      "识别的待删除行": [],
+      "修改置信度": "高",
+      "定位策略": "使用OnStartStylusWriting()方法声明作为前置锚点，成功定位到插入位置",
+      "解决状态": "已解决",
+      "最终处理策略": "在源文件的第63行void OnStartStylusWriting() override;之后精确插入了.rej文件中定义的3行代码，严格遵守了不添加上下文的原则，只添加了以+开头的行"
+    }
+  ],
+  "整体评估": {
+    "文件修改风险": "低",
+    "代码完整性": "保持",
+    "语法正确性": "通过检查",
+    "编译兼容性": "兼容"
+  },
+  "遵循原则确认": {
+    "rej文件保持完整未被修改": true,
+    "未添加任何上下文行": true,
+    "未创建任何脚本文件": true,
+    "未修改或删除.rej文件": true,
+    "仅在指定目录创建JSON报告": true
+  },
+  "验证结果": {
+    ".rej文件完整性": "已确认保持完整",
+    "源文件修改": "已成功应用所有hunk",
+    "代码语法": "检查通过"
+  }
+}

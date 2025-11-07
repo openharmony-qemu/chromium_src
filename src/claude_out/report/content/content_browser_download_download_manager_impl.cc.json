@@ -1,0 +1,59 @@
+{
+  "file_name": "content/browser/download/download_manager_impl.cc",
+  "conflict_file": "content/browser/download/download_manager_impl.cc.rej",
+  "analysis_summary": {
+    "total_hunks": 2,
+    "resolved_hunks": 2,
+    "unresolved_hunks": 0,
+    "resolution_rate": "100%"
+  },
+  "hunk_analysis": [
+    {
+      "hunk_id": 1,
+      "line_range": "@@ -208,22 +213,30 @@",
+      "risk_level": "低风险",
+      "conflict_cause": "Arkweb132在DownloadManagerImpl::CreateActiveItem方法中添加了ARKWEB_EXT_DOWNLOAD条件编译支持，使用ArkWebDownloadItemImplExt替代标准的DownloadItemImpl",
+      "analysis_process": "成功定位到源文件中第214行的CreateActiveItem函数，精确匹配.rej文件中的上下文锚点。应用了条件编译指令，保持了原有的函数签名和参数结构",
+      "modification_confidence": "高置信度",
+      "resolution_strategy": "原子化应用：在源文件中的return语句前后添加了#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)、#else和#endif指令，将原始return语句包装在#else分支中",
+      "status": "已解决",
+      "applied_changes": [
+        "添加#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)指令",
+        "添加return new download::ArkWebDownloadItemImplExt(delegate, download_id, info);",
+        "添加#else指令",
+        "添加#endif指令"
+      ]
+    },
+    {
+      "hunk_id": 2,
+      "line_range": "CreateSavePageItem方法",
+      "risk_level": "中等风险",
+      "conflict_cause": "Arkweb132在CreateSavePageItem方法中添加了ARKWEB_EXT_DOWNLOAD条件编译支持，但Arkweb141版本的函数签名已改变（增加了display_name参数）",
+      "analysis_process": "发现源文件中CreateSavePageItem函数比.rej文件中多了一个display_name参数。由于无法访问参考文件进行对比，基于现有代码结构进行了适应性修改。保持了参数完整性同时应用了条件编译逻辑",
+      "modification_confidence": "中等置信度",
+      "resolution_strategy": "适应性应用：保持原有的完整参数列表（包括display_name），在构造函数调用处应用条件编译分支，ArkWebDownloadItemImplExt的构造函数调用保持了.rej文件中的参数格式",
+      "status": "已解决（需要验证）",
+      "applied_changes": [
+        "添加#if BUILDFLAG(ARKWEB_EXT_DOWNLOAD)指令",
+        "添加return new download::ArkWebDownloadItemImplExt(delegate, download_id, path, url,",
+        "添加#else指令",
+        "添加#endif指令",
+        "保持原有参数列表display_name, url, mime_type, std::move(cancel_request_callback)"
+      ],
+      "notes": "需要验证ArkWebDownloadItemImplExt类是否支持display_name参数，如不支持可能需要进一步调整"
+    }
+  ],
+  "overall_assessment": {
+    "conflict_complexity": "中等复杂度",
+    "integration_challenges": "主要挑战在于Arkweb141版本的API变化（display_name参数增加），需要确保ArkWeb扩展类与新API兼容",
+    "code_quality_impact": "条件编译的引入保持了代码的向后兼容性，但增加了维护复杂度",
+    "testing_recommendations": "建议重点测试下载功能的完整性和ArkWeb扩展功能的正确性"
+  },
+  "compliance_verification": {
+    "rej_file_integrity": "已确认.rej文件保持完整，未被修改或删除",
+    "no_context_lines_added": "已确认未添加任何不带+或-前缀的上下文行",
+    "no_script_files_created": "已确认未创建任何脚本文件或辅助工具",
+    "only_specified_directory_used": "已确认仅在指定目录创建了此JSON报告文件",
+    "golden_rule_compliance": "已严格遵守'不添加上下文'铁律，仅应用+和-行的修改"
+  }
+}

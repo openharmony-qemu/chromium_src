@@ -455,6 +455,7 @@ class FileURLLoader : public network::mojom::URLLoader {
                    int32_t intra_priority_value) override {}
 
  private:
+  friend class FileURLLoaderUtils;
   // Used to save outstanding redirect data while waiting for FollowRedirect
   // to be called. Values default to their most restrictive in case they are
   // not set.

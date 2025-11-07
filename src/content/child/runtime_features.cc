@@ -49,9 +49,14 @@
 #include "ui/gl/gl_switches.h"
 #include "ui/native_theme/features/native_theme_features.h"
 #include "ui/native_theme/native_theme_utils.h"
+#if BUILDFLAG(ARKWEB_ADVANCED_SECURITY_MODE)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/android_info.h"
+#elif BUILDFLAG(ARKWEB_DISPLAY_CUTOUT) && BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
 #endif
 
 #if BUILDFLAG(ENABLE_VR)

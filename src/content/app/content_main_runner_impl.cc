@@ -17,6 +17,7 @@
 #include <variant>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/allocator/allocator_check.h"
 #include "base/allocator/partition_alloc_support.h"
 #include "base/android/background_thread_pool_field_trial.h"
@@ -203,6 +204,10 @@
 
 #if defined(ADDRESS_SANITIZER)
 #include "base/debug/asan_service.h"
+#endif
+
+#if BUILDFLAG(IS_ARKWEB)
+#include "content/renderer/render_remote_proxy_ohos.h"
 #endif
 
 namespace content {
@@ -1086,6 +1091,13 @@ NO_STACK_PROTECTOR int ContentMainRunnerImpl::Run() {
   bool needs_startup_tracing_after_sandbox_init = false;
   if (!process_type.empty()) {
     if (process_type != switches::kZygoteProcess) {
+      // Zygotes will run this at a later point in time when the command line
+      // has been updated.
+#if BUILDFLAG(IS_ARKWEB)
+      if (!RunRenderRemoteProxy(*command_line)) {
+        return -1;
+      }
+#endif
       if (delegate_->ShouldCreateFeatureList(
               ContentMainDelegate::InvokedInChildProcess())) {
         InitializeFieldTrialAndFeatureList();

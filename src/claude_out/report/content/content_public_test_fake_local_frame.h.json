@@ -1,0 +1,71 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/content/public/test/fake_local_frame.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/content/public/test/fake_local_frame.h",
+    "处理时间": "2025-11-06"
+  },
+  "总体统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0
+  },
+  "hunk详情": [
+    {
+      "hunk索引": 1,
+      "风险等级": "低风险",
+      "解决状态": "已解决",
+      "冲突原因": "Arkweb132 针对单元测试和空白屏幕检测功能添加了两个条件编译块，包含四个新的方法实现",
+      "分析过程": "通过分析.rej文件内容，识别出需要在UpdatePrerenderURL方法后添加ARKWEB_UNITTESTS和ARKWEB_BLANK_SCREEN_DETECTION两个条件编译块",
+      "修改位置": "第184-185行之间，在UpdatePrerenderURL和GetScrollPosition方法之间插入",
+      "添加内容统计": {
+        "ARKWEB_UNITTESTS块方法数量": 3,
+        "ARKWEB_BLANK_SCREEN_DETECTION块方法数量": 1,
+        "总新增行数": 24
+      },
+      "修改置信度": "高",
+      "处理策略": "精确定位并应用所有+开头的行到源文件的正确位置",
+      "验证结果": "成功添加所有条件编译块和方法实现，代码格式正确，语法无误"
+    }
+  ],
+  "新增方法详情": {
+    "ARKWEB_UNITTESTS模块": [
+      {
+        "方法名": "JavaScriptExecuteRequestExt",
+        "功能": "扩展的JavaScript执行请求，支持文件句柄和脚本长度参数",
+        "参数": ["fd_handle", "scriptLength", "wants_result", "callback"],
+        "返回类型": "void",
+        "实现状态": "空实现"
+      },
+      {
+        "方法名": "GetImageFromCache",
+        "功能": "从缓存中获取图像",
+        "参数": ["url", "callback"],
+        "返回类型": "void",
+        "实现状态": "空实现"
+      },
+      {
+        "方法名": "GenerateCodeCache",
+        "功能": "生成代码缓存",
+        "参数": ["url", "script", "cache_options", "callback"],
+        "返回类型": "void",
+        "实现状态": "空实现"
+      }
+    ],
+    "ARKWEB_BLANK_SCREEN_DETECTION模块": [
+      {
+        "方法名": "DetectBlankScreen",
+        "功能": "检测空白屏幕",
+        "参数": ["url", "detection_timing", "detection_methods", "contentful_nodes_count_threshold"],
+        "返回类型": "void",
+        "实现状态": "空实现"
+      }
+    ]
+  },
+  "合规性检查": {
+    ".rej文件完整性": "保持完整，未被修改或删除",
+    "上下文行处理": "严格遵守黄金法则，未添加任何不带+/-前缀的上下文行",
+    "文件创建限制": "仅在指定目录创建JSON报告，未创建任何脚本或辅助文件",
+    "修改范围": "仅添加+开头的行，未删除任何行"
+  },
+  "总结": "成功处理了1个hunk的冲突，将Arkweb132的单元测试和空白屏幕检测功能集成到Arkweb141版本中。所有修改均为Arkweb特有的条件编译功能，不会影响标准Chromium功能。代码修改位置准确，语法正确，符合C++编码规范。"
+}

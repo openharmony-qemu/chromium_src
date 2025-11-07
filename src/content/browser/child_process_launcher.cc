@@ -353,6 +353,10 @@ RenderProcessPriority::RenderProcessPriority(
     ,
     ChildProcessImportance importance
 #endif
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+    ,
+    base::TimeTicks background_time
+#endif
 #if !BUILDFLAG(IS_ANDROID)
     ,
     std::optional<base::Process::Priority> priority_override
@@ -371,6 +375,10 @@ RenderProcessPriority::RenderProcessPriority(
 #if BUILDFLAG(IS_ANDROID)
       ,
       importance(importance)
+#endif
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+      ,
+      background_time(background_time)
 #endif
 #if !BUILDFLAG(IS_ANDROID)
       ,

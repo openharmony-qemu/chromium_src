@@ -375,6 +375,8 @@ class NET_EXPORT URLRequestJob {
   // The request that initiated this job. This value will never be nullptr.
   const raw_ptr<URLRequest> request_;
 
+  bool ssl_error_ = false;
+
  private:
   class URLRequestJobSourceStream;
 

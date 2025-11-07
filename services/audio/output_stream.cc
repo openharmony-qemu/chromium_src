@@ -441,11 +441,18 @@ void OutputStream::SendLogMessage(const char* format, ...) {
     return;
   va_list args;
   va_start(args, format);
+#if BUILDFLAG(ARKWEB_MEDIA)
+  log_->OnLogMessage(
+      "audio::OS::" + base::StringPrintV(format, args) +
+      base::StringPrintf(" [controller_hash=%016x]", 
+                         base::FastHash(base::byte_span_from_ref(&controller_))));  
+#else    
   log_->OnLogMessage(
       "audio::OS::" + base::StringPrintV(format, args) +
       base::StringPrintf(" [controller=0x%" PRIXPTR "]",
                          reinterpret_cast<uintptr_t>(&controller_)));
-  va_end(args);
+#endif  // ARKWEB_MEDIA                         
+  va_end(args);  
 }
 
 // Static

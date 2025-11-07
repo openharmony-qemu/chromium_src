@@ -25,6 +25,9 @@
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_util.h"
 #include "base/time/time.h"
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+#include "base/trace_event/trace_event.h"
+#endif
 #include "base/timer/timer.h"
 #include "base/values.h"
 #include "build/build_config.h"
@@ -382,6 +385,10 @@ int HttpNetworkTransaction::Start(const HttpRequestInfo* request_info,
   if (request_info->load_flags & LOAD_ONLY_FROM_CACHE) {
     return ERR_CACHE_MISS;
   }
+
+#if BUILDFLAG(ARKWEB_EXT_LOG_MESSAGE)
+  AsArkWebHttpNetworkTransactionExt()->StartRecording();
+#endif
 
   DCHECK(request_info->traffic_annotation.is_valid());
   DCHECK(request_info->IsConsistent());
@@ -1016,6 +1023,14 @@ int HttpNetworkTransaction::DoLoop(int result) {
       case STATE_CREATE_STREAM_COMPLETE:
         rv = DoCreateStreamComplete(rv);
         break;
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+      case STATE_CREATE_FALLBACK_STREAM_WITH_SECURE_DNS_ONLY:
+        rv = AsArkWebHttpNetworkTransactionExt()->DoCreateFallbackStreamWithSecureDnsOnly();
+        break;
+      case STATE_CREATE_FALLBACK_STREAM_WITH_SECURE_DNS_ONLY_COMPLETE:
+        rv = AsArkWebHttpNetworkTransactionExt()->DoCreateFallbackStreamWithSecureDnsOnlyComplete(rv);
+        break;
+#endif
       case STATE_CONNECTED_CALLBACK:
         rv = DoConnectedCallback();
         break;
@@ -1107,6 +1122,11 @@ int HttpNetworkTransaction::DoLoop(int result) {
 }
 
 int HttpNetworkTransaction::DoCreateStream() {
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+  if (request_) {
+    TRACE_EVENT1("net", "HttpNetworkTransaction::DoCreateStream", "url", request_->url.spec());
+  }
+#endif
   TRACE_EVENT("net", "HttpNetworkTransaction::CreateStream",
               NetLogWithSourceToFlow(net_log_), "retry_attempts",
               retry_attempts_, "num_restarts", num_restarts_);
@@ -1143,6 +1163,11 @@ int HttpNetworkTransaction::DoCreateStream() {
 }
 
 int HttpNetworkTransaction::DoCreateStreamComplete(int result) {
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+  if (request_) {
+    TRACE_EVENT1("net", "HttpNetworkTransaction::DoCreateStreamComplete", "url", request_->url.spec());
+  }
+#endif
   CHECK(stream_request_);
   TRACE_EVENT(
       "net", "HttpNetworkTransaction::CreateStreamComplete",
@@ -1520,6 +1545,10 @@ int HttpNetworkTransaction::DoSendRequest() {
   TRACE_EVENT("net", "HttpNetworkTransaction::SendRequest",
               NetLogWithSourceToFlow(net_log_));
   send_start_time_ = base::TimeTicks::Now();
+#if BUILDFLAG(ARKWEB_NETWORK_DFX)
+  TRACE_EVENT1("navigation", "PAGE_LOAD_TIME",
+               "requestStart", send_start_time_);
+#endif
   next_state_ = STATE_SEND_REQUEST_COMPLETE;
 
   if (base::FeatureList::IsEnabled(kLogDuplicateRequests) &&
@@ -1532,6 +1561,11 @@ int HttpNetworkTransaction::DoSendRequest() {
 }
 
 int HttpNetworkTransaction::DoSendRequestComplete(int result) {
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+  if (request_) {
+    TRACE_EVENT1("net", "HttpNetworkTransaction::DoSendRequestComplete", "url", request_->url.spec());
+  }
+#endif
   TRACE_EVENT("net", "HttpNetworkTransaction::SendRequestComplete",
               NetLogWithSourceToFlow(net_log_), "result", result);
   send_end_time_ = base::TimeTicks::Now();

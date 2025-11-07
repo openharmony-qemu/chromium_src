@@ -41,6 +41,11 @@
 #include "net/ssl/ssl_config_service.h"
 #include "net/url_request/url_request.h"
 #include "net/url_request/url_request_job_factory.h"
+
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 #include "url/gurl_debug.h"
 
 #if BUILDFLAG(ENABLE_REPORTING)

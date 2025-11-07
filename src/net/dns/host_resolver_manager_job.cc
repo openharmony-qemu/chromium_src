@@ -806,6 +806,10 @@ void HostResolverManager::Job::OnDnsTaskComplete(
   }
 
   base::TimeDelta duration = tick_clock_->NowTicks() - start_time;
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+  AsArkWebHostResolverManagerJobExt()->ReportDnsFallBackTaskResult(results,
+                                                                   duration);
+#endif
   if (legacy_results.error() != OK) {
     OnDnsTaskFailure(dns_task_->AsWeakPtr(), duration, allow_fallback,
                      legacy_results, secure);

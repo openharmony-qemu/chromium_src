@@ -1,0 +1,48 @@
+{
+  "file_path": "net/cookies/cookie_store_test_helpers.h",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": {
+    "status": "保持完整",
+    "modified": false,
+    "deleted": false
+  },
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "line_range": "93-105",
+      "resolution_status": "已解决",
+      "confidence_level": "高",
+      "risk_assessment": "低风险",
+      "conflict_cause": "Arkweb132 在 DelayedCookieMonster 类中添加了 AddCookieableSchemes 方法，而 Arkweb141 基线代码中缺少此方法",
+      "analysis_process": "通过分析 .rej 文件中的 hunk，识别出需要在 SetCookieableSchemes 方法后添加 AddCookieableSchemes 方法声明。使用 SetCookieableSchemes 方法签名和 private 关键字作为定位锚点，准确找到了插入位置。",
+      "modification_details": {
+        "added_lines": [
+          "  void AddCookieableSchemes(const std::vector<std::string>& schemes,",
+          "                            SetCookieableSchemesCallback callback) override;"
+        ],
+        "removed_lines": [],
+        "insertion_point": "第105行 SetCookieableSchemes 方法之后，第107行 private: 关键字之前"
+      },
+      "verification": "修改后的代码语法正确，方法签名符合类的接口设计模式，与周围的代码风格保持一致"
+    }
+  ],
+  "summary": {
+    "conflict_resolution": "成功",
+    "code_integrity": "保持良好",
+    "syntax_correctness": "通过验证",
+    "api_compatibility": "保持兼容",
+    "recommendations": [
+      "建议验证 AddCookieableSchemes 方法的实现是否存在于对应的 .cc 文件中",
+      "建议确认该方法在测试代码中的使用情况"
+    ]
+  },
+  "compliance": {
+    "context_rule_adherence": "严格遵守 - 未添加任何上下文行",
+    "script_generation": "未生成任何脚本文件",
+    "auxiliary_files": "未创建任何辅助文件",
+    "rej_file_modification": "未修改 .rej 文件",
+    "path_restrictions": "严格遵守 - 仅在指定目录创建 JSON 报告"
+  }
+}

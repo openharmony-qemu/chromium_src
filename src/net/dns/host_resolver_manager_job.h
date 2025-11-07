@@ -36,6 +36,9 @@ class ResolveContext;
 class HostResolverInternalResult;
 class HostResolverMdnsTask;
 class HostResolverNat64Task;
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+class ArkWebHostResolverManagerJobExt;
+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
 
 // Key used to identify a HostResolverManager::Job.
 struct HostResolverManager::JobKey {

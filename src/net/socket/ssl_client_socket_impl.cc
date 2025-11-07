@@ -747,12 +747,26 @@ int SSLClientSocketImpl::Init() {
   SSL_set_mode(ssl_.get(),
                SSL_MODE_CBC_RECORD_SPLITTING | SSL_MODE_ENABLE_FALSE_START);
 
+#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
+  // Use BoringSSL defaults, but disable HMAC-SHA1 ciphers in ECDSA.
+  // These are the remaining CBC-mode ECDSA ciphers.
+  std::string command("ALL:!aPSK:!ECDSA+SHA1");
+
+  if (ssl_config_.require_ecdhe) {
+    command.append(":!kRSA");
+  }
+
+  if (ssl_config_.disable_sha1_server_signatures) {
+    command.append(":!3DES");
+  }
+#else
   // Use BoringSSL defaults, but disable 3DES and HMAC-SHA1 ciphers in ECDSA.
   // These are the remaining CBC-mode ECDSA ciphers.
   std::string command("ALL:!aPSK:!ECDSA+SHA1:!3DES");
 
   if (ssl_config_.require_ecdhe)
     command.append(":!kRSA");
+#endif
 
   // Remove any disabled ciphers.
   for (uint16_t id : context_->config().disabled_cipher_suites) {
@@ -1183,6 +1197,10 @@ ssl_verify_result_t SSLClientSocketImpl::HandleVerifyResult() {
 
   cert_verifier_request_.reset();
 
+#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
+  SSL_set_enforce_rsa_key_usage(
+      ssl_.get(), server_cert_verify_result_.is_issued_by_known_root);
+#endif
   // If the connection was good, check HPKP and CT status simultaneously,
   // but prefer to treat the HPKP error as more serious, if there was one.
   if (result == OK || result == ERR_CERTIFICATE_TRANSPARENCY_REQUIRED) {
@@ -1212,9 +1230,36 @@ ssl_verify_result_t SSLClientSocketImpl::HandleVerifyResult() {
     }
   }
 
+#if BUILDFLAG(IS_ARKWEB)
+  // If no other errors occurred, check whether the connection used a legacy
+  SSLInfo ssl_info;
+  bool has_ssl_info = GetSSLInfo(&ssl_info);
+  DCHECK(has_ssl_info);
+  uint16_t cipher_suite =
+      SSLConnectionStatusToCipherSuite(ssl_info.connection_status);
+  if (result == OK &&
+      (SSL_version(ssl_.get()) < kDefaultSSLVersionMinWarn ||
+        cipher_suite == k3DESCipher)) {
+    server_cert_verify_result_.cert_status |= CERT_STATUS_LEGACY_TLS;
+
+    // Only set the resulting net error if it hasn't been previously bypassed.
+    if (!IsAllowedBadCert(server_cert_.get(), nullptr))
+#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
+      result = ERR_SSL_OBSOLETE_VERSION_OR_CIPHER;
+#else
+      result = ERR_SSL_VERSION_OR_CIPHER_MISMATCH;
+#endif
+  }
+#endif
+
   is_fatal_cert_error_ =
       IsCertStatusError(server_cert_verify_result_.cert_status) &&
       result != ERR_CERT_KNOWN_INTERCEPTION_BLOCKED &&
+#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
+      result != ERR_SSL_OBSOLETE_VERSION_OR_CIPHER &&
+#elif BUILDFLAG(IS_OHOS)
+      result != ERR_SSL_VERSION_OR_CIPHER_MISMATCH &&
+#endif
       context_->transport_security_state()->ShouldSSLErrorsBeFatal(
           host_and_port_.host());
 
@@ -1630,6 +1675,9 @@ SSLClientSessionCache::Key SSLClientSocketImpl::GetSessionCacheKey(
     key.network_anonymization_key = ssl_config_.network_anonymization_key;
   }
   key.privacy_mode = ssl_config_.privacy_mode;
+#if BUILDFLAG(ARKWEB_SSL_AUTH_ALGO)
+  key.disable_legacy_crypto = ssl_config_.disable_sha1_server_signatures;
+#endif
   key.proxy_chain = ssl_config_.proxy_chain;
   key.proxy_chain_index = ssl_config_.proxy_chain_index;
   key.session_usage = ssl_config_.session_usage;

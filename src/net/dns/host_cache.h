@@ -82,11 +82,28 @@ class NET_EXPORT HostCache {
                       key->secure);
     }
 
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+    static auto GetTuple2(const Key* key) {
+      return std::tie(key->dns_query_type, key->host_resolver_flags, key->host,
+                      key->host_resolver_source);
+    }
+#endif
+
     bool operator==(const Key& other) const {
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+      if (external_added || other.external_added) {
+        return GetTuple2(this) == GetTuple2(&other);
+      }
+#endif
       return GetTuple(this) == GetTuple(&other);
     }
 
     bool operator<(const Key& other) const {
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+      if (external_added || other.external_added) {
+        return GetTuple2(this) < GetTuple2(&other);
+      }
+#endif
       return GetTuple(this) < GetTuple(&other);
     }
 
@@ -96,6 +113,10 @@ class NET_EXPORT HostCache {
     HostResolverSource host_resolver_source = HostResolverSource::ANY;
     NetworkAnonymizationKey network_anonymization_key;
     bool secure = false;
+    bool external_added = false;
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+    bool external_added = false;
+#endif
   };
 
   struct NET_EXPORT EntryStaleness {

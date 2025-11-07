@@ -542,7 +542,7 @@ base::cstring_view NetworkChangeNotifier::IPAddressChangeTypeToString(
   return kChangeTypeNames[type];
 }
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(ARKWEB_NETWORK_BASE)
 // static
 AddressMapOwnerLinux* NetworkChangeNotifier::GetAddressMapOwner() {
   return g_network_change_notifier

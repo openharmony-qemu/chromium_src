@@ -1,0 +1,76 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/net/dns/host_resolver_manager.cc.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/net/dns/host_resolver_manager.cc",
+    "处理时间": "2025-11-06"
+  },
+  "处理统计": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 2,
+    "未能解决的hunk数量": 0
+  },
+  "hunk详情": [
+    {
+      "hunk编号": 1,
+      "行范围": "133-147",
+      "冲突原因": "Arkweb132针对不同平台的条件编译进行了侵入式修改，添加了对OHOS平台的支持和多个ARKWEB特定功能的include声明",
+      "分析过程": "通过源文件定位到BUILDFLAG(IS_ANDROID)条件编译块，识别需要删除的#else注释和需要添加的include声明。所有添加的行都严格遵循.rej文件中的+行内容，未添加任何额外的上下文。",
+      "修改内容": {
+        "删除的行": ["#else  // !BUILDFLAG(IS_ANDROID)"],
+        "添加的行": [
+          "#include \"base/android/build_info.h\"",
+          "#include \"net/android/network_library.h\"",
+          "#elif BUILDFLAG(IS_OHOS)",
+          "#else",
+          "#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)",
+          "#include \"arkweb/chromium_ext/content/public/common/content_switches_ext.h\"",
+          "#include \"base/command_line.h\"",
+          "#endif",
+          "#include \"arkweb/chromium_ext/net/dns/host_resolver_manager_for_include.cc\"",
+          "#if BUILDFLAG(ARKWEB_LOGGER_REPORT)",
+          "#include \"url/ohos/log_utils.h\"",
+          "#endif"
+        ]
+      },
+      "修改置信度": "高",
+      "风险等级": "低",
+      "解决状态": "已解决",
+      "风险说明": "添加的include语句都是Arkweb项目特有的扩展功能，与平台适配和HTTP DNS回退相关。风险较低，因为这些都是有条件的编译，只在特定构建配置下生效。"
+    },
+    {
+      "hunk编号": 2,
+      "行范围": "1394-1450",
+      "冲突原因": "Arkweb132在任务类型解析逻辑中添加了HTTP DNS回退的特殊处理逻辑",
+      "分析过程": "通过搜索HOST_RESOLVER_CANONNAME定位到目标区域，在switch语句结束后、HOST_RESOLVER_CANONNAME检查前插入了条件编译的回退处理逻辑。定位准确，应用成功。",
+      "修改内容": {
+        "删除的行": [],
+        "添加的行": [
+          "#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)",
+          "  if (secure_dns_policy == SecureDnsPolicy::kBootstrap &&",
+          "      out_tasks->back() == TaskType::SECURE_DNS_FALLBACK) {",
+          "    out_tasks->pop_back();",
+          "  }",
+          "#endif"
+        ]
+      },
+      "修改置信度": "高",
+      "风险等级": "低",
+      "解决状态": "已解决",
+      "风险说明": "添加的逻辑是有条件编译的HTTP DNS回退处理，只在特定的安全DNS策略和任务类型下执行。这是一个防御性的修改，用于优化DNS解析行为。"
+    }
+  ],
+  "总体评估": {
+    "修改成功率": "100%",
+    "整体风险": "低",
+    "兼容性": "良好",
+    "说明": "所有修改都是有条件编译的Arkweb特定功能，不会影响标准Chromium代码的逻辑。修改内容主要集中在平台适配和DNS解析优化方面。"
+  },
+  "合规性检查": {
+    ".rej文件完整性": "保持完整，未被修改或删除",
+    "上下文添加": "未添加任何.rej文件中未出现的上下文行",
+    "脚本文件": "未创建任何脚本文件",
+    "辅助文件": "未创建任何辅助工具文件",
+    "修改范围": "仅在源文件中进行了精确的+/-行操作",
+    "报告路径": "/home/sujiahao/code/arkweb_141/src/claude_out/report/net/net_dns_host_resolver_manager.cc.json"
+  }
+}

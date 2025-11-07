@@ -1,0 +1,67 @@
+{
+  "文件路径": "/home/sujiahao/code/arkweb_141/src/net/socket/client_socket_pool_manager.h",
+  "冲突文件": "/home/sujiahao/code/arkweb_141/src/net/socket/client_socket_pool_manager.h.rej",
+  "处理摘要": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 2,
+    "未能解决的hunk数量": 0,
+    ".rej文件保持完整": true
+  },
+  "hunk分析": [
+    {
+      "hunk序号": 1,
+      "冲突位置": "第104-119行",
+      "影响函数": "InitSocketHandleForHttpRequest",
+      "冲突原因": "Arkweb132为该函数添加了两个条件编译参数：secure_dns_only和from_preload，但Arkweb141中的函数签名已经发生变化",
+      "风险等级": "中等",
+      "分析过程": "该hunk需要修改InitSocketHandleForHttpRequest函数声明，移除原有的proxy_auth_callback参数行，并添加两个条件编译的参数块。通过定位函数签名，我成功找到了在Arkweb141中对应的函数位置，并应用了所需的修改。",
+      "修改置信度": "高",
+      "处理策略": "已解决",
+      "具体操作": [
+        "移除原有的'const ClientSocketPool::ProxyAuthCallback& proxy_auth_callback);'行",
+        "添加'const ClientSocketPool::ProxyAuthCallback& proxy_auth_callback'行（无分号）",
+        "添加ARKWEB_EX_HTTP_DNS_FALLBACK条件编译块，包含bool secure_dns_only = false参数",
+        "添加ARKWEB_PRP_PRELOAD条件编译块，包含bool from_preload = false参数",
+        "添加正确的结束分号');'"
+      ],
+      "潜在风险": "修改后的函数签名可能与Chromium 141基线的其他调用位置不兼容，需要确保所有调用点都进行了相应更新"
+    },
+    {
+      "hunk序号": 2,
+      "冲突位置": "第139-156行",
+      "影响函数": "PreconnectSocketsForHttpRequest",
+      "冲突原因": "Arkweb132为该函数添加了from_preload条件编译参数，但Arkweb141中的函数签名已经包含fail_if_alias_requires_proxy_override参数",
+      "风险等级": "中等",
+      "分析过程": "该hunk需要修改PreconnectSocketsForHttpRequest函数声明，移除原有的callback参数行，并添加from_preload条件编译参数。我成功定位到函数位置，并应用了所需修改，同时保留了函数的其他参数。",
+      "修改置信度": "高",
+      "处理策略": "已解决",
+      "具体操作": [
+        "移除原有的'CompletionOnceCallback callback);'行",
+        "添加'CompletionOnceCallback callback'行（无分号）",
+        "添加ARKWEB_PRP_PRELOAD条件编译块，包含bool from_preload = false参数",
+        "添加正确的结束分号');'"
+      ],
+      "潜在风险": "修改后的函数签名可能与现有调用代码不兼容，需要检查所有调用PreconnectSocketsForHttpRequest的地方是否需要更新"
+    }
+  ],
+  "总体评估": {
+    "冲突解决状态": "全部解决",
+    "主要变更类型": "函数签名修改，添加条件编译参数",
+    "代码兼容性风险": "中等",
+    "建议后续检查": [
+      "检查所有调用InitSocketHandleForHttpRequest的代码位置",
+      "检查所有调用PreconnectSocketsForHttpRequest的代码位置",
+      "确保新增的条件编译参数在调用时正确传递",
+      "验证ARKWEB_EX_HTTP_DNS_FALLBACK和ARKWEB_PRP_PRELOAD编译标志在构建系统中正确配置"
+    ],
+    "验证建议": "建议进行完整的编译测试，确保所有依赖这些函数的模块都能正确编译和链接"
+  },
+  "处理原则遵循": {
+    "未添加上下文行": true,
+    "未修改.rej文件": true,
+    "未创建脚本文件": true,
+    "未使用外部工具": true,
+    "仅在指定目录创建JSON报告": true,
+    "原子化应用变更": true
+  }
+}

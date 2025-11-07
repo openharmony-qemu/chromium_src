@@ -487,4 +487,10 @@ void HttpNetworkSession::OnResume() {
   power_suspended_ = false;
 }
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+bool HttpNetworkSession::is_strict_log_mode() {
+  return is_strict_log_mode_;
+}
+#endif
+
 }  // namespace net

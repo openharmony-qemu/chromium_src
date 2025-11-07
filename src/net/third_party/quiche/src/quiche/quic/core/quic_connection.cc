@@ -102,6 +102,11 @@
 #include "quiche/common/quiche_mem_slice.h"
 #include "quiche/common/quiche_text_utils.h"
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+#include "base/base_switches.h"
+#include "base/command_line.h"
+#endif
+
 namespace quic {
 
 class QuicDecrypter;

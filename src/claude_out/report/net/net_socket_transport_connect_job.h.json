@@ -1,0 +1,40 @@
+{
+  "文件路径": "net/socket/transport_connect_job.h",
+  "处理时间": "2025-11-06",
+  "总hunk数量": 1,
+  "成功解决的hunk数量": 1,
+  "未能解决的hunk数量": 0,
+  ".rej文件状态": "保持完整，未被修改",
+  "详细处理过程": [
+    {
+      "hunk编号": 1,
+      "冲突原因": "Arkweb132在chromium132基础上添加了ArkWeb扩展相关的头文件包含和前置声明，这些修改在升级到chromium141时产生了冲突",
+      "风险等级": "低",
+      "分析过程": "通过分析.rej文件发现需要添加4行代码：1) 条件编译指令 #if BUILDFLAG(IS_ARKWEB_EXT)，2) 头文件包含 #include \"arkweb/ohos_nweb_ex/build/features/features.h\"，3) 条件编译结束指令 #endif，4) 前置声明 class ArkWebTransportConnectJobExt;。使用namespace声明前作为锚点进行精确定位。",
+      "修改内容": {
+        "添加的行": [
+          "#if BUILDFLAG(IS_ARKWEB_EXT)",
+          "#include \"arkweb/ohos_nweb_ex/build/features/features.h\"",
+          "#endif",
+          "class ArkWebTransportConnectJobExt;"
+        ],
+        "删除的行": []
+      },
+      "定位策略": "使用namespace net声明前的include区域作为锚点，在url/scheme_host_port.h包含后添加条件编译包含，在namespace内部添加前置声明",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "人工复查要点": [
+        "确认 #if BUILDFLAG(IS_ARKWEB_EXT) 条件编译逻辑与项目其他部分一致",
+        "验证头文件路径 \"arkweb/ohos_nweb_ex/build/features/features.h\" 在项目中存在",
+        "检查前置声明 ArkWebTransportConnectJobExt 与实际类定义匹配"
+      ]
+    }
+  ],
+  "总体评估": {
+    "修改复杂度": "简单",
+    "引入风险": "低风险，仅添加了条件编译的头文件包含和类前置声明",
+    "代码完整性": "修改后的代码保持了良好的结构和可读性",
+    "编译影响": "添加的头文件包含仅在ArkWeb扩展编译时生效，对标准编译无影响"
+  },
+  "最终处理策略": "成功应用了.rej文件中的所有侵入式修改，严格遵循了不添加上下文的原则，只添加了以+开头的行。修改后的代码为ArkWeb扩展提供了必要的头文件包含和前置声明支持。"
+}

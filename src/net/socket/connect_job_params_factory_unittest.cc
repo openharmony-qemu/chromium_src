@@ -548,7 +548,12 @@ TEST_P(ConnectJobParamsFactoryTest, HttpEndpointViaQuicProxy) {
       /*allowed_bad_certs=*/{}, alpn_mode(),
       /*force_tunnel=*/false, privacy_mode(), OnHostResolutionCallback(),
       kEndpointNak, secure_dns_policy(), disable_cert_network_fetches(),
-      &common_connect_job_params_, kProxyDnsNak);
+      &common_connect_job_params_, kProxyDnsNak
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+      ,
+      /*secure_dns_only=*/false
+#endif
+      );
 
   auto http_proxy_socket_params = ExpectHttpProxySocketParams(params);
   SSLConfig quic_ssl_config = SSLConfigForProxy(proxy_chain, 0);
@@ -636,7 +641,12 @@ TEST_P(ConnectJobParamsFactoryTest, HttpsEndpointViaQuicProxy) {
       /*allowed_bad_certs=*/{}, alpn_mode(),
       /*force_tunnel=*/false, privacy_mode(), OnHostResolutionCallback(),
       kEndpointNak, secure_dns_policy(), disable_cert_network_fetches(),
-      &common_connect_job_params_, kProxyDnsNak);
+      &common_connect_job_params_, kProxyDnsNak
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+      ,
+      /*secure_dns_only=*/false
+#endif
+      );
 
   auto endpoint_ssl_socket_params = ExpectSSLSocketParams(params);
   SSLConfig endpoint_ssl_config = SSLConfigForEndpoint(proxy_chain, 1);
@@ -1018,7 +1028,12 @@ TEST_P(ConnectJobParamsFactoryTest, HttpsEndpointViaQuicProxyViaQuicProxy) {
       /*allowed_bad_certs=*/{}, alpn_mode(),
       /*force_tunnel=*/false, privacy_mode(), OnHostResolutionCallback(),
       kEndpointNak, secure_dns_policy(), disable_cert_network_fetches(),
-      &common_connect_job_params_, kProxyDnsNak);
+      &common_connect_job_params_, kProxyDnsNak
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+      ,
+      /*secure_dns_only=*/false
+#endif
+      );
 
   auto endpoint_ssl_socket_params = ExpectSSLSocketParams(params);
   SSLConfig endpoint_ssl_config = SSLConfigForEndpoint(proxy_chain, 2);
@@ -1062,7 +1077,12 @@ TEST_P(ConnectJobParamsFactoryTest, HttpsEndpointViaMixedProxyChain) {
       /*allowed_bad_certs=*/{}, alpn_mode(),
       /*force_tunnel=*/false, privacy_mode(), OnHostResolutionCallback(),
       kEndpointNak, secure_dns_policy(), disable_cert_network_fetches(),
-      &common_connect_job_params_, kProxyDnsNak);
+      &common_connect_job_params_, kProxyDnsNak
+#if BUILDFLAG(ARKWEB_EXT_HTTP_DNS_FALLBACK)
+      ,
+      /*secure_dns_only=*/false
+#endif
+      );
 
   auto endpoint_ssl_socket_params = ExpectSSLSocketParams(params);
   SSLConfig endpoint_ssl_config = SSLConfigForEndpoint(proxy_chain, 4);

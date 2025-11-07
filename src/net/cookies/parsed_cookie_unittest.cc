@@ -445,7 +445,7 @@ TEST(ParsedCookieTest, EnforceSizeConstraints) {
   EXPECT_TRUE(pc20.IsValid());
   EXPECT_EQ("/" + almost_max_path, pc20.Path());
 
-  ParsedCookie pc21("name=value; path=" + too_long_path, &status);
+  ParsedCookie pc21("name=value; path=" + too_long_path, true, &status);
   EXPECT_TRUE(pc21.IsValid());
   EXPECT_FALSE(pc21.Path());
   EXPECT_TRUE(

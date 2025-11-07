@@ -10,6 +10,7 @@
 #include <ostream>
 #include <string>
 
+#include "arkweb/build/features/features.h"
 #include "base/unguessable_token.h"
 #include "net/base/net_export.h"
 #include "net/base/network_isolation_key.h"
@@ -212,6 +213,10 @@ class NET_EXPORT NetworkAnonymizationKey {
 
   // for non-opaque origins.
   std::optional<base::UnguessableToken> nonce_;
+
+#if BUILDFLAG(ARKWEB_CUSTOM_DNS)
+  bool should_check_top_frame_site_ = true;
+#endif
 
   NetworkIsolationPartition network_isolation_partition_;
 };

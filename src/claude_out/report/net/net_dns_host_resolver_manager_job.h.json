@@ -1,0 +1,38 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/net/dns/host_resolver_manager_job.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/net/dns/host_resolver_manager_job.h",
+    "处理时间": "2025-11-06"
+  },
+  "处理总结": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "rej文件保持完整": true
+  },
+  "hunks详情": [
+    {
+      "hunk索引": 1,
+      "解决状态": "已解决",
+      "风险等级": "低",
+      "冲突原因": "Arkweb扩展需要添加前置声明ArkWebHostResolverManagerJobExt类",
+      "分析过程": "通过分析rej文件，发现需要添加ArkWebHostResolverManagerJobExt类的前置声明。使用上下文锚点'class HostResolverNat64Task;'和注释'// Key used to identify a HostResolverManager::Job.'成功定位到源文件中的准确位置（第38行后）。",
+      "修改置信度": "高",
+      "应用策略": "在class HostResolverNat64Task;声明之后添加ArkWeb扩展的前置声明代码块，包含条件编译指令#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)",
+      "添加内容": [
+        "#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)",
+        "class ArkWebHostResolverManagerJobExt;",
+        "#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)"
+      ],
+      "删除内容": [],
+      "最终结果": "成功将ArkWeb扩展的前置声明插入到源文件的正确位置，保持了代码结构的完整性"
+    }
+  ],
+  "处理策略说明": {
+    "定位方法": "使用rej文件中提供的上下文锚点进行精确定位",
+    "应用原则": "严格遵循'不添加上下文'原则，只应用以+开头的添加行和以-开头的删除行",
+    "原子化操作": "每个hunk独立处理，避免相互影响",
+    "完整性验证": "通过grep命令验证修改内容已正确应用到源文件中"
+  },
+  "结论": "冲突成功解决，ArkWeb扩展代码已正确集成到Arkweb141代码库中"
+}

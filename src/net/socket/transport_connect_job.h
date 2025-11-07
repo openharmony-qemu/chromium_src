@@ -29,11 +29,16 @@
 #include "net/socket/connection_attempts.h"
 #include "url/scheme_host_port.h"
 
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
 namespace net {
 
 class NetLogWithSource;
 class SocketTag;
 class TransportConnectSubJob;
+class ArkWebTransportConnectJobExt;
 
 class NET_EXPORT_PRIVATE TransportSocketParams
     : public base::RefCounted<TransportSocketParams> {

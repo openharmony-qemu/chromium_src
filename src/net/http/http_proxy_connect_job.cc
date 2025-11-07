@@ -53,6 +53,7 @@
 #include "net/ssl/ssl_cert_request_info.h"
 #include "url/gurl.h"
 #include "url/scheme_host_port.h"
+#include "arkweb/chromium_ext/net/socket/arkweb_transport_connect_job_ext.h"
 
 namespace net {
 

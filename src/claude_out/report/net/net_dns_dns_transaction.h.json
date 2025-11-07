@@ -1,0 +1,38 @@
+{
+  "file_path": "net/dns/dns_transaction.h",
+  "total_hunks": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": {
+    "status": "保持完整",
+    "modified": false,
+    "deleted": false
+  },
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "line_range": "19-28",
+      "resolution_status": "已解决",
+      "risk_level": "低",
+      "conflict_reason": "Arkweb132在文件头部添加了ARKWEB扩展的条件编译包含语句，这在Chromium141版本中不存在",
+      "analysis_process": "通过分析.rej文件发现需要添加三个行：#if BUILDFLAG(IS_ARKWEB_EXT)、#include语句和#endif。使用include语句序列作为锚点精确定位到net/dns/record_rdata.h之后的插入点。",
+      "modification_confidence": "高",
+      "resolution_strategy": "直接应用修改：在net/dns/record_rdata.h之后和namespace net之前添加了三行条件编译代码",
+      "added_lines": [
+        "#if BUILDFLAG(IS_ARKWEB_EXT)",
+        "#include \"arkweb/ohos_nweb_ex/build/features/features.h\"",
+        "#endif"
+      ],
+      "removed_lines": [],
+      "anchor_context": {
+        "before": "#include \"net/dns/record_rdata.h\"",
+        "after": "namespace net {"
+      }
+    }
+  ],
+  "summary": {
+    "description": "成功解决了DNS事务头文件中的冲突，添加了Arkweb扩展的条件编译包含语句",
+    "impact_assessment": "修改影响较小，仅在ARKWEB扩展编译时包含额外的头文件，不会影响标准编译流程",
+    "validation_required": "需要确认arkweb/ohos_nweb_ex/build/features/features.h路径在Arkweb141构建系统中存在"
+  }
+}

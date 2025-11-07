@@ -66,6 +66,7 @@ class NetLog;
 class NetworkIsolationKey;
 class NoVarySearchCacheStorageFileOperations;
 struct HttpRequestInfo;
+class HttpTransactionUtils;
 
 class NET_EXPORT HttpCache : public HttpTransactionFactory {
  public:

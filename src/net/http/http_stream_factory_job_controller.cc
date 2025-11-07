@@ -924,8 +924,16 @@ int HttpStreamFactory::JobController::DoCreateJobs() {
             enable_ip_based_pooling_for_h2_, net_log_.net_log(),
             NextProto::kProtoUnknown, quic::ParsedQuicVersion::Unsupported(),
             management_config_);
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+        preconnect_backup_job_->SetFromPreload(from_preload_);
+#endif
       }
     }
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+    main_job_->SetFromPreload(from_preload_);
+#endif
+
     main_job_->Preconnect(num_streams_);
     return OK;
   }

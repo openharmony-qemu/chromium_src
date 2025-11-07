@@ -20,7 +20,11 @@
 #include "net/base/network_handle.h"
 #include "third_party/perfetto/include/perfetto/tracing/track.h"
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
+
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 #include "net/base/address_map_linux.h"
 #endif
 
@@ -30,6 +34,7 @@ class NetworkChangeNotifierFactory;
 struct NetworkInterface;
 class SystemDnsConfigChangeNotifier;
 typedef std::vector<NetworkInterface> NetworkInterfaceList;
+class ArkwebNetworkChangeNotifierExt;
 
 namespace internal {
 #if BUILDFLAG(IS_FUCHSIA)

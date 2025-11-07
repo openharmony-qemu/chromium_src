@@ -653,6 +653,18 @@ class NET_EXPORT_PRIVATE HttpCache::Transaction : public HttpTransaction {
   void BeginDiskCacheAccessTimeCount();
   void EndDiskCacheAccessTimeCount(DiskCacheAccessType type);
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  void SetUpdateResRequestInfoCallback(
+      HttpTransaction::UpdateResRequestInfoCallback callback) override {
+    update_res_request_info_callback_ = std::move(callback);
+  }
+
+  void SetPreloadInfo(
+      const std::shared_ptr<ohos_prp_preload::PRRequestInfo>& preload_info) override {
+    preload_info_ = preload_info;
+  }
+#endif
+
   void RecordEntrySizeHistograms(const disk_cache::Entry& entry);
 
   // Returns true if the current transaction is in-scope for No-Vary-Search

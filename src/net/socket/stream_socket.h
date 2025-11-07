@@ -148,6 +148,15 @@ class NET_EXPORT StreamSocket : public Socket {
   // the tag would inadvertently affect other streams; calling ApplySocketTag()
   // in this case will result in NOTREACHED().
   virtual void ApplySocketTag(const SocketTag& tag) = 0;
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  virtual void SetFromPreload(bool from_preload);
+
+  virtual bool IsFromPreload() const;
+
+ private:
+  bool from_preload_ = false;
+#endif
 };
 
 }  // namespace net

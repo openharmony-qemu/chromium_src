@@ -1,0 +1,37 @@
+{
+  "文件路径": "/home/sujiahao/code/arkweb_141/src/net/dns/host_resolver.h",
+  "rej文件路径": "/home/sujiahao/code/arkweb_141/src/net/dns/host_resolver.h.rej",
+  "处理时间": "2025-11-06",
+  "总hunk数量": 2,
+  "成功解决的hunk数量": 2,
+  "未能解决的hunk数量": 0,
+  "rej文件保持完整": true,
+  "hunks详情": [
+    {
+      "hunk序号": 1,
+      "冲突原因": "Arkweb132在chromium132基础上添加了Arkweb扩展特定的条件编译包含文件",
+      "风险分析": "低风险 - 这是一个标准的条件编译包含，仅在Arkweb扩展模式下生效，不会影响正常的Chromium代码路径",
+      "分析过程": "通过分析.rej文件发现需要在第39行（#include \"url/scheme_host_port.h\"之后添加Arkweb扩展的条件编译包含。该包含被BUILDFLAG(IS_ARKWEB_EXT)宏保护，只有在Arkweb扩展模式下才会被编译。",
+      "修改置信度": "高 - 位置明确，上下文匹配，逻辑合理",
+      "解决策略": "在源文件第39行后添加了三个新行：#if BUILDFLAG(IS_ARKWEB_EXT)、#include \"arkweb/ohos_nweb_ex/build/features/features.h\"、#endif",
+      "解决状态": "已解决",
+      "应用位置": "第41-43行"
+    },
+    {
+      "hunk序号": 2,
+      "冲突原因": "Arkweb132在HostResolver类中添加了HTTP DNS回退功能的虚函数声明",
+      "风险分析": "低风险 - 这是一个新增的虚函数，有条件编译保护，默认返回false，不会破坏现有接口兼容性",
+      "分析过程": "通过分析.rej文件发现需要在GetTargetNetworkForTesting()虚函数后添加一个新的虚函数CanUseSecureDnsFallback()。该函数被BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)宏保护，用于HTTP DNS回退功能。",
+      "修改置信度": "高 - 位置明确，函数签名清晰，逻辑合理",
+      "解决策略": "在源文件第575行（GetTargetNetworkForTesting函数声明后）添加了条件编译块，包含新的虚函数声明",
+      "解决状态": "已解决",
+      "应用位置": "第577-579行"
+    }
+  ],
+  "总结": {
+    "冲突解决成功": "所有2个hunk都已成功应用到源文件中",
+    "代码完整性": "保持 - 所有修改都使用条件编译，不会影响原有功能",
+    "兼容性": "良好 - 新增的Arkweb特定功能有适当的编译保护",
+    "风险等级": "低 - 修改仅影响Arkweb扩展功能，对基础Chromium代码无影响"
+  }
+}

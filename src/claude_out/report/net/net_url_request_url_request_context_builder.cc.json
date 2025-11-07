@@ -1,0 +1,40 @@
+{
+  "文件路径": "/home/sujiahao/code/arkweb_141/src/net/url_request/url_request_context_builder.cc",
+  "冲突文件": "/home/sujiahao/code/arkweb_141/src/net/url_request/url_request_context_builder.cc.rej",
+  "处理时间": "2025-11-06",
+  "总hunk数量": 1,
+  "成功解决的hunk数量": 1,
+  "未能解决的hunk数量": 0,
+  "rej文件完整性": "已保持原样，未修改",
+  "hunks": [
+    {
+      "hunk编号": 1,
+      "描述": "添加Arkweb扩展头文件",
+      "冲突原因": "Arkweb 132版本中添加了Arkweb扩展头文件，在升级到Arkweb 141时产生了冲突",
+      "待添加行": [
+        "#include \"arkweb/chromium_ext/net/url_request/url_request_context_ext.h\""
+      ],
+      "待删除行": [],
+      "风险分析": "低风险。这是一个标准的头文件包含语句，用于引入Arkweb的扩展功能。该修改不会影响现有代码逻辑，只是添加了额外的功能支持。",
+      "分析过程": "1. 解析hunk：识别到需要添加一行include语句\n2. 精确定位：在源文件第11行找到合适的插入位置（在vector include之后，base include之前）\n3. 原子化应用：直接在指定位置添加了include语句",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "修改策略": "在包含vector头文件后、base头文件前添加Arkweb扩展头文件",
+      "位置信息": "源文件第13行",
+      "结果验证": "成功添加include语句，代码结构完整"
+    }
+  ],
+  "总结": {
+    "整体风险": "低风险",
+    "处理质量": "成功应用了所有hunk的修改",
+    "代码质量": "修改后的代码保持良好的结构和可读性",
+    "兼容性": "添加的Arkweb扩展头文件与现有代码兼容，不会破坏原有功能"
+  },
+  "处理原则遵守": {
+    "不添加上下文": "严格遵守",
+    "不创建脚本文件": "严格遵守",
+    "不修改rej文件": "严格遵守",
+    "仅添加+行删除-行": "严格遵守",
+    "指定目录创建报告": "严格遵守"
+  }
+}

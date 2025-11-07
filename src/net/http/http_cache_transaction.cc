@@ -38,6 +38,9 @@
 #include "base/strings/string_util.h"  // For EqualsCaseInsensitiveASCII.
 #include "base/task/single_thread_task_runner.h"
 #include "base/time/clock.h"
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+#include "base/trace_event/trace_event.h"
+#endif
 #include "base/time/time.h"
 #include "base/trace_event/common/trace_event_common.h"
 #include "base/trace_event/trace_event.h"
@@ -145,6 +148,7 @@ HttpCache::Transaction::Transaction(RequestPriority priority, HttpCache* cache)
       priority_(priority),
       cache_(cache->GetWeakPtr()),
       read_no_vary_search_cache_(cache->no_vary_search_cache_) {
+  http_transation_utils_ = new HttpTransactionUtils(this);
   io_callback_ = base::BindRepeating(&Transaction::OnIOComplete,
                                      weak_factory_.GetWeakPtr());
   cache_io_callback_ = base::BindRepeating(&Transaction::OnCacheIOComplete,
@@ -2574,6 +2578,11 @@ int HttpCache::Transaction::DoCacheReadData() {
     DCHECK(InWriters() || entry_->TransactionInReaders(this));
   }
 
+#if BUILDFLAG(ARKWEB_PERFORMANCE_NETWORK_TRACE)
+  TRACE_EVENT1("net", "HttpCache::Transaction::DoCacheReadData",
+               "url", request_ ? request_->url.spec() : "");
+#endif
+
   TRACE_EVENT_INSTANT(TRACE_DISABLED_BY_DEFAULT("net"), "DoCacheReadData",
                       track_for_state_change_, "read_offset", read_offset_,
                       "read_buf_len", read_buf_len_);
@@ -2808,6 +2817,12 @@ int HttpCache::Transaction::BeginCacheValidation() {
         RestartCacheEntryAction::kErase,
         NoVarySearchUseResult::kIncompleteBody);
   }
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  if (request_ && request_->allow_preload_record && preload_info_ && skip_validation) {
+    http_transation_utils_->UpdateCacheInfo(response_);
+  }
+#endif
 
   // Handle Stale-While-Revalidate if the client supports it.
   // This is not done for truncated entries since they need validation in order

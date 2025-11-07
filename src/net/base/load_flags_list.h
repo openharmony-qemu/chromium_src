@@ -15,6 +15,8 @@
 // expanded differently in some places (for example, to automatically
 // map a load flag value to its symbolic name).
 //
+#include "arkweb/build/features/features.h"
+//
 // Load flags can be provided by potentially compromised renderer processes.
 // If adding new behavior that does not need to be triggered by a renderer,
 // please prefer not to add a LoadFlag.

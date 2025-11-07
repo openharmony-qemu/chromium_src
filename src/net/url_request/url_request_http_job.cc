@@ -110,11 +110,26 @@
 #include "net/android/network_library.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+#include "base/command_line.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#endif
+
 #if BUILDFLAG(ENABLE_DEVICE_BOUND_SESSIONS)
 #include "net/device_bound_sessions/registration_fetcher_param.h"
 #include "net/device_bound_sessions/session_challenge_param.h"
 #include "net/device_bound_sessions/session_service.h"
 #endif  // BUILDFLAG(ENABLE_DEVICE_BOUND_SESSIONS)
+
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+#include "arkweb/chromium_ext/net/base/page_res_request_info.h"
+#endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "arkweb/chromium_ext/base/ohos/sys_info_utils_ext.h"
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "base/command_line.h"
+#endif
 
 namespace net {
 
@@ -491,6 +506,16 @@ void URLRequestHttpJob::Start() {
   request_info_.idempotency = request_->GetIdempotency();
 #if BUILDFLAG(ENABLE_REPORTING)
   request_info_.reporting_upload_depth = request_->reporting_upload_depth();
+#endif
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          switches::kEnableLoggerReport)) {
+    request_info_.usage_scenario_ = request_->usage_scenario();
+  }
+#endif
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  request_info_.allow_preload_record = request_->allow_preload_record();
+  request_info_.main_url = request_->main_url();
 #endif
   request_info_.is_shared_resource = request_->is_shared_resource();
 

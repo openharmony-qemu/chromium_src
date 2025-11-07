@@ -144,6 +144,15 @@ struct NET_EXPORT HttpRequestInfo {
   // request does not use a shared dictionary.
   SharedDictionaryGetter dictionary_getter;
 
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+  bool allow_preload_record = true;
+  GURL main_url;
+#endif
+
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  int32_t usage_scenario_ = 99;
+#endif
+
   // Used to notify when a reconnect-attempt may be invoked (e.g. when a
   // connection was closed, or when the connection could not be established).
   std::optional<ConnectionManagementConfig> connection_management_config;

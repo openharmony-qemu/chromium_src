@@ -487,6 +487,7 @@ class NET_EXPORT_PRIVATE TransportClientSocketPool
     }
 
    private:
+    friend class TransportClientSocketPoolUtils;
     // Returns the iterator's unbound request after removing it from
     // the queue. Expects the Group to pass SanityCheck() when called.
     std::unique_ptr<Request> RemoveUnboundRequest(

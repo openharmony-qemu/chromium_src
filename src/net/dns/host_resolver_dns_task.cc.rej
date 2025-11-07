@@ -1,53 +1,5 @@
 --- host_resolver_dns_task.cc	2025-10-20 19:52:57.114206319 +0800
 +++ host_resolver_dns_task.cc	2025-10-16 15:55:02.693276217 +0800
-@@ -22,10 +22,16 @@
- #include "net/dns/host_resolver_cache.h"
- #include "net/dns/host_resolver_internal_result.h"
- #include "net/dns/public/util.h"
- #include "third_party/abseil-cpp/absl/types/variant.h"
- 
-+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-+#include "base/base_switches.h"
-+#include "base/command_line.h"
-+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
-+#endif
-+
- namespace net {
- 
- namespace {
- 
- DnsResponse CreateFakeEmptyResponse(std::string_view hostname,
-@@ -291,19 +307,30 @@
-     query_types.Remove(DnsQueryType::HTTPS);
-     transactions_needed_.emplace_back(DnsQueryType::HTTPS,
-                                       TransactionErrorBehavior::kFatalOrEmpty);
-   }
- 
-+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-+  int ip_address_transactions = 0;
-+#endif
-   // Give AAAA/A queries a head start by pushing them to the queue first.
-   constexpr DnsQueryType kHighPriorityQueries[] = {DnsQueryType::AAAA,
-                                                    DnsQueryType::A};
-   for (DnsQueryType high_priority_query : kHighPriorityQueries) {
-     if (query_types.Has(high_priority_query)) {
-       query_types.Remove(high_priority_query);
-       transactions_needed_.emplace_back(high_priority_query);
-+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-+      ip_address_transactions++;
-+#endif
-     }
-   }
-+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-+  if (!secure_ && ip_address_transactions == 2) {
-+    need_to_sniff_ip_result_ = true;
-+  }
-+#endif
-   for (DnsQueryType remaining_query : query_types) {
-     if (remaining_query == DnsQueryType::HTTPS) {
-       // Ignore errors for these types. In most cases treating them normally
-       // would only result in fallback to resolution without querying the
-       // type. Instead, synthesize empty results.
 @@ -803,10 +830,14 @@
          // Only expect address query types with multiple transactions.
          NOTREACHED();
@@ -63,29 +15,3 @@
    OnTransactionsFinished(SingleTransactionResults(
        transaction_info.type, std::move(transaction_results)));
  }
-@@ -908,14 +939,25 @@
-   }
- 
-   DCHECK_NE(OK, net_error);
-   HostCache::Entry results(net_error, HostCache::Entry::SOURCE_UNKNOWN, ttl);
- 
-+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-+  // 仅A/AAAA类型的transaction的两种情况需要调OnTransactionsFinished()并return
-+  // 1）第一个transaction失败，需要等待第二个transaction
-+  // 2）第一个transaction成功，第二个transaction失败
-+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-+          switches::kEnableNwebExHttpDnsFallback) &&
-+      allow_fallback) {
-+    utils->ArkWebFailedTransaction(net_error, failed_transaction_type);
-+  } else if (allow_fallback && AnyPotentiallyFatalTransactionsRemain()) {
-+#else
-   // On non-fatal errors, if any potentially fatal transactions remain, need
-   // to defer ending the task in case any of those remaining transactions end
-   // with a fatal failure.
-   if (allow_fallback && AnyPotentiallyFatalTransactionsRemain()) {
-+#endif  // BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-     saved_results_ = std::move(results);
-     saved_results_is_failure_ = true;
- 
-     CancelNonFatalTransactions();
-     OnTransactionsFinished(/*single_transaction_results=*/std::nullopt);

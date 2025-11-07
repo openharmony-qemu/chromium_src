@@ -32,6 +32,11 @@
 #include "net/disk_cache/simple/simple_file_enumerator.h"
 #include "net/disk_cache/simple/simple_util.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "base/ohos/sys_info_utils_ext.h"
+#endif
+
 #if BUILDFLAG(ENABLE_DISK_CACHE_SQL_BACKEND)
 #include "net/disk_cache/sql/sql_backend_impl.h"
 #endif  // ENABLE_DISK_CACHE_SQL_BACKEND

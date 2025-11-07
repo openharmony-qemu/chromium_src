@@ -1,0 +1,44 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/ui/events/devices/device_data_manager.cc.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/ui/events/devices/device_data_manager.cc",
+    "处理时间": "2025-11-06"
+  },
+  "总体统计": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunk详情": [
+    {
+      "hunk索引": 1,
+      "风险等级": "低",
+      "冲突原因": "Arkweb132在chromium132基础上添加了arkweb_device_data_manager_utils.h头文件包含，但在升级到chromium141时该修改被拒绝",
+      "分析过程": "通过.rej文件分析，发现需要在第9行添加arkweb_device_data_manager_utils.h头文件包含。使用原始头文件包含作为锚点进行精确定位，在源文件的第7行成功找到对应位置。",
+      "修改内容": {
+        "添加行": [
+          "#include \"arkweb/chromium_ext/ui/events/devices/arkweb_device_data_manager_utils.h\""
+        ],
+        "删除行": []
+      },
+      "定位策略": "使用#include \"ui/events/devices/device_data_manager.h\"和#include <algorithm>作为上下文锚点，在两者之间插入新的include语句",
+      "修改置信度": "高",
+      "解决状态": "已解决",
+      "验证结果": "修改已成功应用，include语句已正确添加到源文件中"
+    }
+  ],
+  "代码完整性验证": {
+    "语法检查": "通过",
+    "逻辑完整性": "保持",
+    "Arkweb特性": "已恢复arkweb_device_data_manager_utils.h头文件包含"
+  },
+  "合规性检查": {
+    ".rej文件完整性": "保持未被修改",
+    "遵循黄金法则": "是",
+    "未创建脚本文件": "是",
+    "未创建辅助文件": "是",
+    "仅在指定目录创建JSON报告": "是"
+  },
+  "结论": "所有冲突已成功解决，源文件已正确应用Arkweb132的侵入式修改，.rej文件保持完整未被修改。"
+}

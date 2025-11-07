@@ -4,6 +4,7 @@
 
 #include "ui/events/devices/device_data_manager.h"
 
+#include "arkweb/chromium_ext/ui/events/devices/arkweb_device_data_manager_utils.h"
 #include <algorithm>
 
 #include "base/at_exit.h"

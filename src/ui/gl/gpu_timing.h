@@ -9,6 +9,7 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
 #include "ui/gl/gl_export.h"

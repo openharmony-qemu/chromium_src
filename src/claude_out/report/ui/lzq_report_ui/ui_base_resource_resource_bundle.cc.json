@@ -1,0 +1,58 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/ui/base/resource/resource_bundle.cc.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/ui/base/resource/resource_bundle.cc",
+    "处理时间": "2025-11-06"
+  },
+  "总结": {
+    "总hunk数量": 2,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 1,
+    "rej文件完整性": "保持完整，未被修改"
+  },
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "位置": "第3-15行",
+      "函数": "LocaleDataPakExists",
+      "冲突原因": "函数签名从Chromium 132到Chromium 141发生了变化，从 `bool ResourceBundle::LocaleDataPakExists(const std::string& locale)` 变为 `bool ResourceBundle::LocaleDataPakExists(std::string_view locale, Gender gender)`",
+      "待添加的行": [
+        "#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)",
+        "  return LocaleDataPakExistsExt(locale);",
+        "#else",
+        "#endif"
+      ],
+      "待删除的行": [],
+      "风险分析": "中等风险 - LocaleDataPakExistsExt函数期望const std::string&参数，但当前函数使用std::string_view, Gender参数，直接应用会导致编译错误",
+      "修改置信度": "低",
+      "处理策略": "无法应用 - 需要函数参数适配，LocaleDataPakExistsExt需要支持新的参数签名，或者需要重载函数来处理参数转换",
+      "详细处理过程": "1. 在源文件中找到LocaleDataPakExists函数(第405行) 2. 发现函数签名与rej文件中的签名不匹配 3. 检查LocaleDataPakExistsExt函数定义，确认它只接受const std::string&参数 4. 由于参数类型和数量不匹配，无法直接应用修改"
+    },
+    {
+      "hunk_id": 2,
+      "位置": "第20-36行",
+      "函数": "GetLocaleFilePath",
+      "冲突原因": "Arkweb平台需要使用不同的路径服务目录和路径格式",
+      "待添加的行": [
+        "#if !BUILDFLAG(IS_ARKWEB)",
+        "#else",
+        "  if (base::PathService::Get(base::DIR_ASSETS, &locale_file_path)) {",
+        "    locale_file_path = locale_file_path.AppendASCII(",
+        "        std::string(\"locales/\") + app_locale + kPakFileExtension);",
+        "  }",
+        "#endif"
+      ],
+      "待删除的行": [],
+      "风险分析": "低风险 - 条件编译指令确保了平台特定的代码路径，不会影响现有功能",
+      "修改置信度": "高",
+      "处理策略": "已成功应用 - 在第498-508行精确插入条件编译指令，Arkweb平台使用base::DIR_ASSETS和\"locales/\"前缀路径格式",
+      "详细处理过程": "1. 在源文件第498行定位到if (base::PathService::Get(ui::DIR_LOCALES, &locale_file_path))语句 2. 确认上下文匹配 3. 在第498行前添加#if !BUILDFLAG(IS_ARKWEB) 4. 在第502行后添加#else分支，包含Arkweb特定的路径构建逻辑 5. 在第508行添加#endif结束条件编译"
+    }
+  ],
+  "总体评估": {
+    "成功率": "50% (1/2 hunks成功应用)",
+    "主要问题": "Chromium版本升级导致函数签名变化，需要参数适配工作",
+    "建议后续工作": "1. 为Hunk 1创建参数适配函数或重载 2. 考虑修改LocaleDataPakExistsExt以支持新的参数格式 3. 进行充分的测试以确保Arkweb平台功能正常",
+    "代码质量": "已应用的修改遵循了Arkweb平台的条件编译模式，保持了代码的可读性和可维护性"
+  }
+}

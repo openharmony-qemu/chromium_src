@@ -234,6 +234,12 @@ DataPack::LoadFromPathInternal(const base::FilePath& path) {
 }
 
 bool DataPack::LoadFromPath(const base::FilePath& path) {
+#if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
+  // If the hap package is not decompressed, the directory does not exist.
+  if (path.empty() || !base::PathExists(path)) {
+    return DataPackUtil::LoadFromPathExt(this, path);
+  }
+#endif
   return LoadFromPathWithError(path).has_value();
 }
 

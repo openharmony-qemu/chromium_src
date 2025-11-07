@@ -41,6 +41,9 @@ class TestAXPlatformTreeManagerDelegate : public AXPlatformTreeManagerDelegate {
   bool ShouldSuppressAXLoadComplete() override;
   content::WebContentsAccessibility*
     AccessibilityGetWebContentsAccessibility() override;
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+  content::RenderFrameHostImpl* AccessibilityRenderFrameHost() override;
+#endif
   bool AccessibilityIsWebContentSource() override;
 
   bool is_root_frame_;

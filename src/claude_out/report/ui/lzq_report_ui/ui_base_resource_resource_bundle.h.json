@@ -1,0 +1,62 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/ui/base/resource/resource_bundle.h.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/ui/base/resource/resource_bundle.h",
+    "处理时间": "2025-11-06"
+  },
+  "处理总结": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决状态": "全部解决",
+    ".rej文件保持完整": true
+  },
+  "hunks详情": [
+    {
+      "hunk序号": 1,
+      "位置信息": "@@ -421,10 +421,16 @@",
+      "解决状态": "已解决",
+      "冲突原因": "Arkweb 132 在 Chromium 132 基础上添加了 ARKWEB_TEST 条件编译的测试函数 SetLoadedLocaleForTesting，该修改在升级到 Chromium 141 时需要重新应用",
+      "修改内容": {
+        "添加的行": [
+          "#if BUILDFLAG(ARKWEB_TEST)",
+          "  void SetLoadedLocaleForTesting(const std::string& locale) {",
+          "    loaded_locale_ = locale;",
+          "  }",
+          "#endif"
+        ],
+        "删除的行": []
+      },
+      "分析过程": {
+        "定位策略": "使用上下文锚点 get_can_override_locale_string_resources_for_test() 函数和 private: 关键字进行精确定位",
+        "锚点匹配": "在源文件第458-465行找到完全匹配的上下文",
+        "插入位置": "在第462行空行处插入新代码块",
+        "置信度": "100%"
+      },
+      "风险评估": {
+        "语法风险": "低 - 添加的代码符合 C++ 语法规范",
+        "逻辑风险": "低 - 仅为测试辅助函数，不影响核心逻辑",
+        "编译风险": "低 - 使用条件编译，仅在 ARKWEB_TEST 定义时生效",
+        "整体风险": "低风险，可以安全应用"
+      },
+      "处理策略": {
+        "策略": "原子化应用",
+        "执行结果": "成功在第462-467行添加了 ARKWEB_TEST 条件编译的测试函数",
+        "验证方法": "代码审查确认插入位置准确，语法正确"
+      }
+    }
+  ],
+  "结论": {
+    "整体处理结果": "成功",
+    "代码完整性": "保持",
+    "功能影响": "最小化，仅添加测试辅助函数",
+    "建议": "建议编译测试验证 ARKWEB_TEST 条件下的功能正常"
+  },
+  "合规性验证": {
+    "未添加上下文": true,
+    "未生成脚本文件": true,
+    "未创建辅助文件": true,
+    "未修改.rej文件": true,
+    "仅在指定目录创建JSON报告": true
+  }
+}

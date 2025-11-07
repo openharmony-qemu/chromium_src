@@ -1,0 +1,70 @@
+{
+  "文件信息": {
+    "冲突文件": "/home/sujiahao/code/arkweb_141/src/ui/ozone/common/gl_surface_egl_readback.cc.rej",
+    "源文件": "/home/sujiahao/code/arkweb_141/src/ui/ozone/common/gl_surface_egl_readback.cc",
+    "处理时间": "2025-11-06"
+  },
+  "统计信息": {
+    "总hunk数量": 1,
+    "成功解决的hunk数量": 1,
+    "未能解决的hunk数量": 0,
+    "解决成功率": "100%"
+  },
+  "hunks": [
+    {
+      "hunk编号": 1,
+      "风险等级": "低",
+      "冲突原因": "Arkweb针对OHOS系统的OpenGL像素读取格式特殊化处理",
+      "分析过程": "通过分析.rej文件发现，需要在glReadPixels调用周围添加条件编译指令，针对OHOS系统使用GL_RGBA格式，其他平台使用GL_BGRA格式。源文件中存在对应的glReadPixels调用（第104-105行），格式为GL_BGRA_EXT，与.rej文件中的待删除内容匹配。通过上下文定位成功找到修改位置。",
+      "修改置信度": "高",
+      "解决策略": "原子化应用",
+      "处理状态": "已解决",
+      "详细操作": [
+        {
+          "操作类型": "删除",
+          "行号": "104-105",
+          "内容": "glReadPixels(0, 0, size.width(), size.height(), GL_BGRA_EXT, GL_UNSIGNED_BYTE, buffer.data());"
+        },
+        {
+          "操作类型": "添加",
+          "行号": "104",
+          "内容": "#if BUILDFLAG(IS_OHOS)"
+        },
+        {
+          "操作类型": "添加",
+          "行号": "105",
+          "内容": "  glReadPixels(0, 0, size.width(), size.height(), GL_RGBA, GL_UNSIGNED_BYTE, buffer.data());"
+        },
+        {
+          "操作类型": "添加",
+          "行号": "107",
+          "内容": "#else"
+        },
+        {
+          "操作类型": "添加",
+          "行号": "108-109",
+          "内容": "  glReadPixels(0, 0, size.width(), size.height(), GL_BGRA, GL_UNSIGNED_BYTE, buffer.data());"
+        },
+        {
+          "操作类型": "添加",
+          "行号": "110",
+          "内容": "#endif"
+        }
+      ],
+      "上下文锚点": [
+        "CHECK_GE(buffer.size() / base::checked_cast<size_t>(size.width()),",
+        "base::checked_cast<size_t>(size.height()));",
+        "if (read_fbo)",
+        "glBindFramebufferEXT(GL_READ_FRAMEBUFFER, read_fbo);"
+      ]
+    }
+  ],
+  "处理原则验证": {
+    "是否修改.rej文件": "否",
+    "是否创建脚本文件": "否",
+    "是否添加上下文行": "否",
+    "是否仅使用+/-行": "是",
+    "是否在指定目录创建JSON报告": "是"
+  },
+  "总结": "成功处理了1个hunk，为Arkweb项目添加了针对OHOS系统的OpenGL像素读取格式条件编译支持。修改严格遵循了黄金法则，仅应用了.rej文件中定义的+/-行，未添加任何上下文内容。所有修改均已原子化应用到源文件中，.rej文件保持完整未被修改。"
+}

@@ -7,6 +7,11 @@ import("//build/config/features.gni")
 import("//build/config/ui.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 
+if (is_arkweb) {
+  import("//arkweb/build/features/features.gni")
+  import("//arkweb/chromium_ext/chromium_ext.gni")
+}
+
 if (is_ios) {
   import("//build/config/apple/mobile_config.gni")  # For `target_platform`
 }
@@ -314,6 +319,11 @@ source_set("clipboard_test") {
         "//ui/ozone:platform",
       ]
     }
+  }
+  if (is_arkweb) {
+    sources -= [
+      "clipboard_non_backed_unittest.cc",
+    ]
   }
 
   # TODO(crbug.com/40031409): Fix code that adds exit-time destructors and

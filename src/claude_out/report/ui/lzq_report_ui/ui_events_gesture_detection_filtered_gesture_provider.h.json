@@ -1,0 +1,68 @@
+{
+  "conflict_file": "ui/events/gesture_detection/filtered_gesture_provider.h.rej",
+  "source_file": "ui/events/gesture_detection/filtered_gesture_provider.h",
+  "analysis_result": {
+    "total_hunks": 1,
+    "resolved_hunks": 1,
+    "unresolved_hunks": 0,
+    "hunks": [
+      {
+        "hunk_number": 1,
+        "status": "已解决",
+        "confidence": "高",
+        "risk_assessment": "低风险",
+        "conflict_reason": "Arkweb132在FilteredGestureProvider类中添加了两个条件编译的方法声明：ResetDetection(bool is_lost_focus)和OnAITextSelected()，这些修改在升级到Chromium 141时产生了冲突。",
+        "analysis_process": {
+          "identified_additions": [
+            {
+              "line": "#if BUILDFLAG(ARKWEB_DRAG_DROP)",
+              "purpose": "开始拖拽功能条件编译块"
+            },
+            {
+              "line": "  void ResetDetection(bool is_lost_focus);",
+              "purpose": "声明带参数的ResetDetection重载方法，用于拖拽功能"
+            },
+            {
+              "line": "#endif",
+              "purpose": "结束拖拽功能条件编译块"
+            },
+            {
+              "line": "#if BUILDFLAG(ARKWEB_AI)",
+              "purpose": "开始AI功能条件编译块"
+            },
+            {
+              "line": "  void OnAITextSelected();",
+              "purpose": "声明AI文本选择相关方法"
+            },
+            {
+              "line": "#endif",
+              "purpose": "结束AI功能条件编译块"
+            }
+          ],
+          "identified_deletions": [],
+          "positioning_strategy": "通过分析源文件结构，找到合适的位置插入新的方法声明：1）ARKWEB_DRAG_DROP相关代码插入在SendSynthesizedEndEvents()方法后，ResetDetection()方法前；2）ARKWEB_AI相关代码插入在GetCurrentDownEvent()方法后，GetLastEventWithoutHistory()方法前。",
+          "application_result": "成功应用所有修改，代码结构保持一致，没有语法错误。"
+        }
+      }
+    ],
+    "summary": {
+      "modifications_applied": [
+        "在SendSynthesizedEndEvents()后添加了ARKWEB_DRAG_DROP条件编译块",
+        "在GetCurrentDownEvent()后添加了ARKWEB_AI条件编译块"
+      ],
+      "rej_file_integrity": "保持完整，未被修改",
+      "code_integrity": "修改后代码结构完整，条件编译块正确嵌套，方法声明位置合理",
+      "overall_assessment": "冲突成功解决，所有Arkweb132的侵入式修改都已正确应用到Arkweb141中"
+    }
+  },
+  "metadata": {
+    "processing_timestamp": "2025-11-06",
+    "principles_followed": [
+      "未添加任何上下文行到源文件",
+      "仅添加了+开头的行",
+      "未生成任何脚本文件",
+      "未修改.rej文件",
+      "仅在指定目录创建JSON报告"
+    ]
+  }
+}

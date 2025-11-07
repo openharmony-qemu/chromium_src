@@ -1504,8 +1504,13 @@ unsigned int XKeyCodeForWindowsKeyCode(ui::KeyboardCode key_code,
   // crbug.com/386066 and crbug.com/390263 are examples of problems
   // associated with this.
   //
+#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
+  return static_cast<uint8_t>(
+      connection->KeysymToKeycode(XKeysymForWindowsKeyCode(key_code, false, false)));
+#else
   return static_cast<uint8_t>(
       connection->KeysymToKeycode(XKeysymForWindowsKeyCode(key_code, false)));
+#endif
 }
 
 uint32_t GetXI2StateFromEvent(const x11::Input::DeviceEvent& xievent) {

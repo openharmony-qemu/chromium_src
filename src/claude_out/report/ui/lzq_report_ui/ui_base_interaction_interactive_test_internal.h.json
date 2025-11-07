@@ -1,0 +1,53 @@
+{
+  "文件路径": "/home/sujiahao/code/arkweb_141/src/ui/base/interaction/interactive_test_internal.h",
+  "rej文件路径": "/home/sujiahao/code/arkweb_141/src/ui/base/interaction/interactive_test_internal.h.rej",
+  "处理时间": "2025-11-06",
+  "总hunk数量": 2,
+  "成功解决的hunk数量": 0,
+  "未能解决的hunk数量": 2,
+  "rej文件保持完整": true,
+  "hunks": [
+    {
+      "hunk索引": 1,
+      "源文件行号范围": 476,
+      "描述": "ReturnTypeOf模板类型定义的clang版本兼容性修改",
+      "风险等级": "低",
+      "冲突原因": "在Chromium 141版本中，相关的模板类型定义可能已被移除或重构",
+      "待添加的行": [
+        "#if defined(__clang__) && (__clang_major__ < 17)",
+        "using ReturnTypeOf = typename MaybeBindTypeHelper<F>::ReturnType;",
+        "#else",
+        "#endif"
+      ],
+      "待删除的行": [],
+      "分析过程": "1. 解析rej文件发现需要添加clang版本兼容的条件编译指令\n2. 在源文件中搜索ReturnTypeOf和MaybeBindTypeHelper相关代码\n3. 源文件中未找到任何相关代码，表明这些类型定义在Chromium 141中可能已被移除或重构\n4. 尝试查找ArgsExtractor结构体等上下文代码，也未在源文件中找到",
+      "修改置信度": "无法应用",
+      "处理策略": "无法应用",
+      "详细说明": "由于源文件中不存在ReturnTypeOf和MaybeBindTypeHelper相关的任何代码，且无法定位到合适的插入位置，此hunk无法应用。这可能是因为在Chromium 132到141的升级过程中，这些模板类型定义已被完全移除或重构为不同的形式。"
+    },
+    {
+      "hunk索引": 2,
+      "源文件行号范围": 545,
+      "描述": "MatcherTypeFor模板类型定义的clang版本兼容性修改",
+      "风险等级": "低",
+      "冲突原因": "在Chromium 141版本中，相关的模板类型定义可能已被移除或重构",
+      "待添加的行": [
+        "#if defined(__clang__) && (__clang_major__ < 17)",
+        "using MatcherTypeFor = typename MatcherTypeHelper<std::decay_t<T>>::ActualType;",
+        "#else",
+        "#endif"
+      ],
+      "待删除的行": [],
+      "分析过程": "1. 解析rej文件发现需要添加clang版本兼容的条件编译指令\n2. 在源文件中搜索MatcherTypeFor和MatcherTypeHelper相关代码\n3. 源文件中未找到任何相关代码，表明这些类型定义在Chromium 141中可能已被移除或重构\n4. 尝试查找其他匹配器相关的模板代码，也未找到合适的上下文",
+      "修改置信度": "无法应用",
+      "处理策略": "无法应用",
+      "详细说明": "由于源文件中不存在MatcherTypeFor和MatcherTypeHelper相关的任何代码，且无法定位到合适的插入位置，此hunk无法应用。这可能是因为在Chromium 132到141的升级过程中，这些模板类型定义已被完全移除或重构为不同的形式。"
+    }
+  ],
+  "总体评估": {
+    "冲突解决成功率": "0%",
+    "主要问题": "所有hunk都涉及在Chromium 141版本中已不存在或已重构的模板类型定义",
+    "建议后续处理": "需要进一步分析Chromium 141中的相关代码重构，确定这些类型定义的新位置或替代实现方式",
+    "风险评估": "由于无法找到对应的代码位置，强行应用修改可能导致编译错误或逻辑问题"
+  }
+}

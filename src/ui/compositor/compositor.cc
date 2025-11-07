@@ -12,6 +12,8 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
+#include "arkweb/chromium_ext/components/viz/host/host_frame_sink_manager_utils.h"
 #include "base/check.h"
 #include "base/command_line.h"
 #include "base/containers/contains.h"
@@ -72,10 +74,13 @@
 #include "ui/gfx/presentation_feedback.h"
 #include "ui/gfx/switches.h"
 #include "ui/gl/gl_switches.h"
+#include "arkweb/build/features/features.h"
 
-#if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ARKWEB)
 #include "mojo/public/cpp/bindings/sync_call_restrictions.h"
 #endif
+
+#include "arkweb/chromium_ext/ui/compositor/compositor_utils.h"
 
 namespace ui {
 
@@ -111,6 +116,7 @@ Compositor::Compositor(const viz::FrameSinkId& frame_sink_id,
       frame_sink_id_, this, viz::ReportFirstSurfaceActivation::kYes);
   host_frame_sink_manager->SetFrameSinkDebugLabel(frame_sink_id_, "Compositor");
   root_cc_layer_ = cc::Layer::Create();
+  compositor_utils_ = std::make_unique<CompositorUtils>(this);
 
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
 
@@ -1152,5 +1158,13 @@ void Compositor::CheckPropertyTrees() const {
   }
 #endif
 }
+
+#if BUILDFLAG(ARKWEB_MAXIMIZE_RESIZE)
+void Compositor::RestoreRenderFit() {
+  if (delegate_) {
+    delegate_->RestoreRenderFit();
+  }
+}
+#endif // ARKWEB_MAXIMIZE_RESIZE
 
 }  // namespace ui

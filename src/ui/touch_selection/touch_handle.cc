@@ -188,17 +188,30 @@ bool TouchHandle::WillHandleTouchEvent(const MotionEvent& event) {
                      kMaxTouchMajorForHitTesting) *
           0.5f;
       const gfx::RectF drawable_bounds = drawable_->GetVisibleBounds();
+#if BUILDFLAG(ARKWEB_MENU)
+      is_show_handle_ = client_ && client_->IsShowHandle();
+#endif
       // Only use the touch radius for targeting if the touch is at or below
       // the drawable area. This makes it easier to interact with the line of
       // text above the drawable.
       if (touch_point.y() < drawable_bounds.y() ||
+#if BUILDFLAG(ARKWEB_MENU)
+          !RectIntersectsCircle(drawable_bounds, touch_point, touch_radius) ||
+          !(event.FromOverlay() || !is_show_handle_) || (continuous_touch_nums_ > 1)) {
+#else
           !RectIntersectsCircle(drawable_bounds, touch_point, touch_radius)) {
+#endif  // #if BUILDFLAG(ARKWEB_MENU)
         EndDrag();
         return false;
       }
       touch_down_position_ = touch_point;
       touch_drag_offset_ = focus_bottom_ - touch_down_position_;
       touch_down_time_ = event.GetEventTime();
+#if BUILDFLAG(ARKWEB_MENU)
+      if (orientation_ == TouchHandleOrientation::LEFT) {
+        touch_drag_offset_ = focus_top_ - touch_down_position_;
+      }
+#endif // BUILDFLAG(ARKWEB_MENU)
       BeginDrag();
     } break;
 
@@ -207,9 +220,13 @@ bool TouchHandle::WillHandleTouchEvent(const MotionEvent& event) {
       is_drag_within_tap_region_ &=
           client_->IsWithinTapSlop(touch_down_position_ - touch_move_position);
 
+#if BUILDFLAG(ARKWEB_MENU)
+      client_->OnDragUpdate(*this, touch_move_position);
+#else
       // Note that we signal drag update even if we're inside the tap region,
       // as there are cases where characters are narrower than the slop length.
       client_->OnDragUpdate(*this, touch_move_position + touch_drag_offset_);
+#endif // BUILDFLAG(ARKWEB_MENU)
     } break;
 
     case MotionEvent::Action::UP: {

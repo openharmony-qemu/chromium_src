@@ -7,6 +7,11 @@
 
 #include <memory>
 
+#include "arkweb/build/features/features.h"
+#include "build/build_config.h"
+#if BUILDFLAG(IS_ARKWEB_EXT)
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+#endif
 #include "base/memory/raw_ptr.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
@@ -61,6 +66,11 @@ class UI_TOUCH_SELECTION_EXPORT TouchHandleDrawable {
 
   // Returns the transparent horizontal padding ratio of the handle drawable.
   virtual float GetDrawableHorizontalPaddingRatio() const = 0;
+
+#if BUILDFLAG(ARKWEB_MENU)
+  // Sets the Selection left-handle-start or right-handle-end's edge.
+  virtual void SetEdge(const gfx::PointF& top, const gfx::PointF& bottom) = 0;
+#endif
 
 #if BUILDFLAG(IS_ANDROID)
   virtual void OnUpdateNativeViewTree(gfx::NativeView parent_native_view,

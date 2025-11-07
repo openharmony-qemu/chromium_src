@@ -1,0 +1,57 @@
+{
+  "file_path": "ui/accessibility/ax_role_properties.h",
+  "conflict_file": "ui/accessibility/ax_role_properties.h.rej",
+  "analysis_timestamp": "2025-11-06",
+  "hunk_count": 1,
+  "resolved_hunks": 1,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "intact",
+  "conflict_analysis": {
+    "summary": "Arkweb 141版本升级冲突涉及OHOS平台的可访问性功能扩展",
+    "root_cause": "Arkweb 132中添加了OHOS平台特定的控制检查函数IsControlOnOHOS，在Arkweb 141中需要进行合并",
+    "risk_assessment": "低风险 - 添加了新的平台特定函数，不影响现有功能",
+    "modification_confidence": "高 - 代码添加位置明确，逻辑清晰"
+  },
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "status": "resolved",
+      "lines_to_add": [
+        "// Returns true if the provided role is a control on the OHOS platform.",
+        "#if BUILDFLAG(ARKWEB_ACCESSIBILITY)",
+        "AX_BASE_EXPORT bool IsControlOnOHOS(const ax::mojom::Role role,",
+        "                                       bool isFocusable);",
+        "#endif"
+      ],
+      "lines_to_remove": [],
+      "anchor_context": {
+        "before": "AX_BASE_EXPORT bool IsControlOnAndroid(const ax::mojom::Role role, bool isFocusable);",
+        "after": "// Returns true if the provided role is a container on the Android platform,"
+      },
+      "resolution_strategy": "在Android平台控制检查函数后添加OHOS平台对应的函数声明",
+      "confidence": "high",
+      "risk_level": "low"
+    }
+  ],
+  "final_status": {
+    "total_hunks": 1,
+    "successfully_resolved": 1,
+    "failed_to_resolve": 0,
+    "resolution_rate": "100%",
+    "rej_file_preserved": true,
+    "source_file_modified": true,
+    "compilation_impact": "需要实现对应的函数定义文件",
+    "recommendations": [
+      "确保在对应的.cc文件中实现IsControlOnOHOS函数",
+      "验证BUILDFLAG(ARKWEB_ACCESSIBILITY)宏定义正确",
+      "进行编译测试确保新函数声明不产生编译错误"
+    ]
+  },
+  "technical_details": {
+    "feature": "OHOS平台可访问性支持",
+    "function_signature": "bool IsControlOnOHOS(const ax::mojom::Role role, bool isFocusable)",
+    "conditional_compilation": "通过BUILDFLAG(ARKWEB_ACCESSIBILITY)控制",
+    "platform_scope": "OHOS平台特定的控制检查逻辑",
+    "integration_point": "与Android平台的IsControlOnAndroid函数并列"
+  }
+}

@@ -101,6 +101,10 @@ test("ui_touch_selection_unittests") {
     "touch_selection_controller_unittest.cc",
   ]
 
+  if (is_arkweb) {
+    sources += arkweb_ui_touch_selection_unitest_sources
+  }
+
   deps = [
     ":test_support",
     ":touch_selection",
@@ -111,6 +115,7 @@ test("ui_touch_selection_unittests") {
     "//ui/events:test_support",
     "//ui/gfx",
     "//ui/gfx:test_support",
+    "//content/public/common:static_switches"
   ]
 
   data_deps = [ "//third_party/angle:includes" ]

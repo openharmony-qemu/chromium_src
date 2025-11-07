@@ -1,0 +1,72 @@
+{
+  "file_path": "ui/touch_selection/touch_selection_controller.h",
+  "analysis_timestamp": "2025-11-06",
+  "total_hunks": 4,
+  "resolved_hunks": 4,
+  "unresolved_hunks": 0,
+  "rej_file_integrity": "maintained",
+  "hunks": [
+    {
+      "hunk_id": 1,
+      "description": "添加arkweb/features.h头文件包含",
+      "risk_level": "低",
+      "conflict_reason": "Arkweb132在文件头部添加了arkweb特性头文件，但在Arkweb141中缺失",
+      "analysis_process": "通过在#include \"ui/touch_selection/ui_touch_selection_export.h\"后添加#include \"arkweb/build/features/features.h\"解决冲突",
+      "confidence": 100,
+      "resolution_strategy": "直接添加+行，在正确的include位置插入arkweb features头文件",
+      "status": "已解决"
+    },
+    {
+      "hunk_id": 2,
+      "description": "在namespace ui中添加前向声明",
+      "risk_level": "低",
+      "conflict_reason": "Arkweb132在namespace ui开始处添加了Event类前向声明和ARKWEB条件编译的前向声明",
+      "analysis_process": "在namespace ui的开始位置，在class MotionEvent;声明后添加了class Event;声明和ARKWEB条件编译块",
+      "confidence": 100,
+      "resolution_strategy": "直接添加+行，在namespace ui中正确位置插入前向声明",
+      "status": "已解决"
+    },
+    {
+      "hunk_id": 3,
+      "description": "在TouchSelectionController类末尾添加成员变量",
+      "risk_level": "中",
+      "conflict_reason": "Arkweb132在类定义末尾添加了ARKWEB_MENU条件编译的is_first_drag_成员和TouchSelectionSessionMetricsRecorder、utils_等成员",
+      "analysis_process": "在show_touch_handles_成员变量后添加了所有必需的成员变量，包括条件编译块",
+      "confidence": 100,
+      "resolution_strategy": "直接添加+行，在类定义的合适位置插入新的成员变量",
+      "status": "已解决"
+    },
+    {
+      "hunk_id": 4,
+      "description": "在文件末尾添加arkweb扩展头文件包含",
+      "risk_level": "低",
+      "conflict_reason": "Arkweb132在文件末尾namespace结束后添加了ARKWEB条件编译的扩展头文件包含",
+      "analysis_process": "在}  // namespace ui后和最终的#endif前添加了ARKWEB条件编译的include",
+      "confidence": 100,
+      "resolution_strategy": "直接添加+行，在文件末尾正确位置插入扩展头文件包含",
+      "status": "已解决"
+    }
+  ],
+  "summary": {
+    "conflict_resolution_success_rate": "100%",
+    "modifications_applied": [
+      "添加了arkweb/build/features/features.h头文件包含",
+      "添加了Event类和ARKWEB相关的前向声明",
+      "添加了is_first_drag_、session_metrics_recorder_、utils_等成员变量",
+      "添加了arkweb扩展头文件包含"
+    ],
+    "arkweb_features_integrated": [
+      "BUILDFLAG(IS_ARKWEB)条件编译支持",
+      "BUILDFLAG(ARKWEB_MENU)菜单特性支持",
+      "TouchSelectionControllerExt扩展支持",
+      "TouchSelectionControllerUtils工具类支持"
+    ],
+    "compliance_statement": {
+      "golden_rule_compliance": "严格遵守黄金法则，未添加任何上下文行",
+      "no_script_generation": "未生成任何脚本文件",
+      "no_auxiliary_files": "除指定JSON报告外未创建任何辅助文件",
+      "rej_file_preservation": ".rej文件保持完整未被修改",
+      "atomic_modifications": "所有修改均为原子化操作，仅添加+行和删除-行"
+    }
+  }
+}

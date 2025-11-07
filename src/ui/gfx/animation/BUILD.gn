@@ -81,7 +81,7 @@ component("animation") {
     deps += [ "//ui/accessibility:ax_base_android" ]
   }
 
-  if (is_linux) {
+  if (is_linux || is_ohos) {
     deps += [ "//ui/linux:linux_ui" ]
   }
 

@@ -154,6 +154,9 @@ void OptimizingCompileTaskExecutor::RunCompilationJob(
   TRACE_EVENT_WITH_FLOW0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                          "V8.OptimizeBackground", job->trace_id(),
                          TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT);
+#ifdef OHOS_JS_ENGINE
+        auto trace = HiTrace("RCS_v8.compile_V8.OptimizeBackground");
+#endif
   TimerEventScope<TimerEventRecompileConcurrent> timer(isolate);
 
   if (recompilation_delay_ != 0) {

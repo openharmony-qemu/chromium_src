@@ -396,6 +396,13 @@ class V8_EXPORT_PRIVATE Scope : public NON_EXPORTED_BASE(ZoneObject) {
     return has_await_using_declaration_;
   }
 
+#ifdef OHOS_JS_ENGINE
+  void set_has_never_hide_base_std_hint() {
+    has_never_hide_base_std_hint_ = true;
+  }
+  bool has_never_hide_base_std_hint() { return has_never_hide_base_std_hint_; }
+#endif
+
   bool has_context_cells() const { return has_context_cells_; }
 
   bool is_wrapped_function() const {
@@ -854,6 +861,10 @@ class V8_EXPORT_PRIVATE Scope : public NON_EXPORTED_BASE(ZoneObject) {
   // If the scope was generated for wrapped function syntax, which will affect
   // its UniqueIdInScript.
   bool is_wrapped_function_ : 1;
+#ifdef OHOS_JS_ENGINE
+  // True if the with scope has @optNeverHideBaseStd compile hint.
+  bool has_never_hide_base_std_hint_ : 1;
+#endif
 
   // The context associated with the scope might have context cells.
   bool has_context_cells_ : 1;

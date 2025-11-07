@@ -396,6 +396,11 @@ class ActivationsFinder : public ThreadVisitor {
           static_assert(!kAllCodeObjectsLiveInTrustedSpace);
           DCHECK_IMPLIES(code.SafeEquals(topmost_), safe_to_deopt_);
           static_assert(SafepointEntry::kNoTrampolinePC == -1);
+#ifdef OHOS_JS_ENGINE
+          if (trampoline_pc < 0) {
+            PrintCodeState(code, trampoline_pc);
+          }
+#endif
           CHECK_GE(trampoline_pc, 0);
           Address new_pc = code->instruction_start() + trampoline_pc;
           if (it.frame()->InFastCCall()) {

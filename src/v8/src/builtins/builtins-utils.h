@@ -148,6 +148,7 @@ static_assert(BuiltinArguments::kNumExtraArgsWithReceiver ==
   V8_WARN_UNUSED_RESULT static Tagged<Object> Builtin_Impl_##name(         \
       BuiltinArguments args, Isolate* isolate)
 
+#ifndef OHOS_JS_ENGINE
 #define BUILTIN_NO_RCS(name)                                               \
   V8_WARN_UNUSED_RESULT static Tagged<Object> Builtin_Impl_##name(         \
       BuiltinArguments args, Isolate* isolate);                            \
@@ -156,12 +157,28 @@ static_assert(BuiltinArguments::kNumExtraArgsWithReceiver ==
       int args_length, Address* args_object, Isolate* isolate) {           \
     DCHECK(isolate->context().is_null() || IsContext(isolate->context())); \
     BuiltinArguments args(args_length, args_object);                       \
+    return BUILTIN_CONVERT_RESULT(Builtin_Impl_##name(args, isolate));     \
+  }                                                                        \
+                                                                           \
+  V8_WARN_UNUSED_RESULT static Tagged<Object> Builtin_Impl_##name(         \
+      BuiltinArguments args, Isolate* isolate)
+#else
+#define BUILTIN_NO_RCS(name)                                               \
+  V8_WARN_UNUSED_RESULT static Tagged<Object> Builtin_Impl_##name(         \
+      BuiltinArguments args, Isolate* isolate);                            \
+                                                                           \
+  V8_WARN_UNUSED_RESULT Address Builtin_##name(                            \
+      int args_length, Address* args_object, Isolate* isolate) {           \
+    DCHECK(isolate->context().is_null() || IsContext(isolate->context())); \
+    BuiltinArguments args(args_length, args_object);                       \
+    auto trace = HiTrace("RCS_v8.runtime_V8.Builtin_" #name);              \
     CHECK_BUILTIN_SANDBOXING_MODE()                                        \
     return BUILTIN_CONVERT_RESULT(Builtin_Impl_##name(args, isolate));     \
   }                                                                        \
                                                                            \
   V8_WARN_UNUSED_RESULT static Tagged<Object> Builtin_Impl_##name(         \
       BuiltinArguments args, Isolate* isolate)
+#endif
 
 #ifdef V8_RUNTIME_CALL_STATS
 #define BUILTIN(name) BUILTIN_RCS(name)

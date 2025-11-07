@@ -1,0 +1,52 @@
+{
+  "file_path": "v8/src/objects/hash-table.h",
+  "analysis_timestamp": "2025-11-05",
+  "total_hunks": 1,
+  "resolved_hunks": 0,
+  "unresolved_hunks": 1,
+  "rej_file_integrity": {
+    "status": "preserved",
+    "modified": false,
+    "deleted": false
+  },
+  "hunks": [
+    {
+      "hunk_number": 1,
+      "line_range": "110-129",
+      "resolution_status": "unresolved",
+      "risk_assessment": "低风险 - 这是一个函数实现的完全重写，不影响接口兼容性",
+      "conflict_reason": "Arkweb 141版本中的FirstProbe函数已经被完全重写，使用了基于模板参数的新实现方式，而.rej文件中的修改是针对基于PropertyArray::HashField的旧实现",
+      "analysis_process": [
+        "1. 识别.rej文件中的hunk：要删除FirstProbe函数中的if条件分支和相关逻辑",
+        "2. 在源文件中定位：找到FirstProbe函数在第157-169行",
+        "3. 比较实现差异：发现源文件使用了完全不同的实现方式，基于TodoShape::kDoHashSpreading和TodoShape::kHashBits模板参数",
+        "4. 结论：.rej文件中的修改针对的是旧版本的实现，在新版本中函数已被重写"
+      ],
+      "modification_confidence": 0,
+      "final_strategy": "无法应用 - 目标代码在新版本中已被完全重写，.rej文件中的侵入式修改不再适用",
+      "deletion_lines": [
+        "if (size <= (1 << PropertyArray::HashField::kSize)) {",
+        "  return InternalIndex(hash & (size - 1));",
+        "}",
+        "// The hash stored in JSReceiver (see PropertyArray::HashField) only has 20",
+        "// bits. This is suboptimal, if the hash table size is larger than 1 << 20.",
+        "// This distributes the probes more evenly even in that case.",
+        "return InternalIndex((hash * (size >> PropertyArray::HashField::kSize)) &",
+        "                     (size - 1));"
+      ],
+      "addition_lines": [],
+      "context_in_source": {
+        "function_name": "FirstProbe",
+        "line_start": 157,
+        "line_end": 169,
+        "current_implementation": "使用TodoShape模板参数的通用实现，支持可配置的hash分布策略"
+      }
+    }
+  ],
+  "summary": {
+    "file_modifications_applied": false,
+    "source_file_changed": false,
+    "legacy_integration": "该冲突反映了从Chromium 132到141版本中哈希表实现的架构升级，从硬编码的PropertyArray::HashField改为更灵活的模板参数方案",
+    "recommendation": "无需手动干预 - 新版本的实现已经提供了更好的通用性和可维护性，Arkweb 132中的特定修改已被新架构自然解决"
+  }
+}

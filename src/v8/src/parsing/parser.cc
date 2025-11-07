@@ -3003,6 +3003,9 @@ bool Parser::SkipFunction(const AstRawString* function_name, FunctionKind kind,
   // With no cached data, we partially parse the function, without building an
   // AST. This gathers the data needed to build a lazy function.
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"), "V8.PreParse");
+#ifdef OHOS_JS_ENGINE
+  auto trace = HiTrace("RCS_v8.compile_V8.PreParse");
+#endif
 
   std::optional<base::ElapsedTimer> timer;
   if (v8_flags.enable_preparser_ablation &&

@@ -80,7 +80,7 @@ class SamplingHeapProfiler;
 
 namespace api_internal {
 // Called when ToLocalChecked is called on an empty Local.
-V8_EXPORT void ToLocalEmpty();
+V8_EXPORT JSVM_EXPORT void ToLocalEmpty();
 
 #ifdef V8_ENABLE_CHECKS
 template <typename T, typename V = Value>
@@ -116,7 +116,7 @@ void TypeCheckLocal(V* value) {
  * handle and may deallocate it.  The behavior of accessing a handle
  * for which the handle scope has been deleted is undefined.
  */
-class V8_EXPORT V8_NODISCARD HandleScope {
+class V8_EXPORT JSVM_EXPORT V8_NODISCARD HandleScope {
  public:
   V8_INLINE explicit HandleScope(Isolate* isolate);
 

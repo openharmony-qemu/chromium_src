@@ -388,6 +388,9 @@ void Scope::SetDefaults() {
 
   is_wrapped_function_ = false;
 
+#ifdef OHOS_JS_ENGINE
+  has_never_hide_base_std_hint_ = false;
+#endif
   has_context_cells_ = (is_script_scope() && v8_flags.script_context_cells) ||
                        (is_function_scope() && v8_flags.function_context_cells);
 
@@ -458,6 +461,11 @@ Scope* Scope::DeserializeScopeChain(IsolateT* isolate, Zone* zone,
         outer_scope = zone->New<Scope>(zone, WITH_SCOPE, ast_value_factory,
                                        handle(scope_info, isolate));
       }
+#ifdef OHOS_JS_ENGINE
+      if (scope_info->HasNeverHideBaseStdHint()) {
+        outer_scope->set_has_never_hide_base_std_hint();
+      }
+#endif
     } else if (scope_info->is_script_scope()) {
       // If we reach a script scope, it's the outermost scope. Install the
       // scope info of this script context onto the existing script scope to
@@ -2135,10 +2143,19 @@ Variable* Scope::Lookup(VariableProxy* proxy, Scope* scope,
         return LookupSloppyEval(proxy, scope, outer_scope_end, cache_scope,
                                 force_context_allocation);
       }
+#ifdef OHOS_JS_ENGINE
+      if (V8_UNLIKELY(scope->is_with_scope() &&
+                      !(proxy->raw_name()->is_base_std_builtin_name() &&
+                        scope->has_never_hide_base_std_hint()))) {
+        return LookupWith(proxy, scope, outer_scope_end, cache_scope,
+                          force_context_allocation);
+      }
+#else
       if (scope->is_with_scope()) {
         return LookupWith(proxy, scope, outer_scope_end, cache_scope,
                           force_context_allocation);
       }
+#endif
       CHECK_EQ(mode, kDeserializedScope);
       CHECK(scope->is_debug_evaluate_scope());
       return cache_scope->NonLocal(proxy->raw_name(), VariableMode::kDynamic);

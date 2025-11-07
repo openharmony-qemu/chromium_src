@@ -442,6 +442,9 @@ V8_WARN_UNUSED_RESULT MaybeHandle<Object> Invoke(Isolate* isolate,
       SealHandleScope shs(isolate);
 
       RCS_SCOPE(isolate, RuntimeCallCounterId::kJS_Execution);
+#ifdef OHOS_JS_ENGINE
+      auto trace = HiTrace("RCS_JS_Execution");
+#endif
       value = Tagged<Object>(
           stub_entry.Call(isolate->isolate_data()->isolate_root(), orig_func,
                           func, recv, JSParameterCount(argc), argv));
@@ -461,6 +464,9 @@ V8_WARN_UNUSED_RESULT MaybeHandle<Object> Invoke(Isolate* isolate,
       SealHandleScope shs(isolate);
 
       RCS_SCOPE(isolate, RuntimeCallCounterId::kJS_Execution);
+#ifdef OHOS_JS_ENGINE
+      auto trace = HiTrace("RCS_JS_Execution");
+#endif
       value = Tagged<Object>(stub_entry.Call(
           isolate->isolate_data()->isolate_root(), params.microtask_queue));
     }

@@ -31,6 +31,12 @@ bool ScopeInfo::HasSimpleParameters() const {
   return HasSimpleParametersBit::decode(Flags());
 }
 
+#ifdef OHOS_JS_ENGINE
+bool ScopeInfo::HasNeverHideBaseStdHint() const {
+  return HasNeverHideBaseStdHintBit::decode(Flags());
+}
+#endif
+
 bool ScopeInfo::HasContextCells() const {
   return HasContextCellsBit::decode(Flags());
 }

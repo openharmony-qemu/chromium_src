@@ -163,6 +163,22 @@ constexpr bool RuntimeFunctionFullNameCanTriggerGC(
 }
 }  // namespace detail
 
+
+#ifndef OHOS_JS_ENGINE
+#define RUNTIME_FUNCTION_RETURNS_TYPE(Type, InternalType, Convert, Name)   \
+  static V8_INLINE InternalType __RT_impl_##Name(RuntimeArguments args,    \
+                                                 Isolate* isolate);        \
+  RUNTIME_ENTRY_WITH_RCS(Type, InternalType, Convert, Name)                \
+  Type Name(int args_length, Address* args_object, Isolate* isolate) {     \
+    DCHECK(isolate->context().is_null() || IsContext(isolate->context())); \
+    CLOBBER_DOUBLE_REGISTERS();                                            \
+    TEST_AND_CALL_RCS(Name)                                                \
+    RuntimeArguments args(args_length, args_object);                       \
+    return Convert(__RT_impl_##Name(args, isolate));                       \
+  }                                                                        \
+                                                                           \
+  static InternalType __RT_impl_##Name(RuntimeArguments args, Isolate* isolate)
+#else
 #define RUNTIME_FUNCTION_RETURNS_TYPE(Type, InternalType, Convert, Name)   \
   static V8_INLINE InternalType __RT_impl_##Name(RuntimeArguments args,    \
                                                  Isolate* isolate);        \
@@ -172,6 +188,10 @@ constexpr bool RuntimeFunctionFullNameCanTriggerGC(
     DCHECK(isolate->IsOnCentralStack());                                   \
     CLOBBER_DOUBLE_REGISTERS();                                            \
     TEST_AND_CALL_RCS(Name)                                                \
+    auto trace = HiTrace("RCS_V8.Runtime_" #Name);                         \
+    if (V8_UNLIKELY(v8::internal::rcs_enable)) {                           \
+      HITRACE_RCS_SCOPE(isolate, RuntimeCallCounterId::k##Name);           \
+    }                                                                      \
     RuntimeArguments args(args_length, args_object);                       \
     if constexpr (detail::RuntimeFunctionFullNameCanTriggerGC(             \
                       detail::RuntimeFunctionFullName::k##Name)) {         \
@@ -183,7 +203,7 @@ constexpr bool RuntimeFunctionFullNameCanTriggerGC(
   }                                                                        \
                                                                            \
   static InternalType __RT_impl_##Name(RuntimeArguments args, Isolate* isolate)
-
+#endif
 #ifdef DEBUG
 #define BUILTIN_CONVERT_RESULT(x) (isolate->VerifyBuiltinsResult(x)).ptr()
 #define BUILTIN_CONVERT_RESULT_PAIR(x) isolate->VerifyBuiltinsResult(x)

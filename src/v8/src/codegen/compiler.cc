@@ -1079,6 +1079,9 @@ bool CompileTurbofan_NotConcurrent(Isolate* isolate,
   RCS_SCOPE(isolate, RuntimeCallCounterId::kOptimizeSynchronous);
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                "V8.OptimizeNonConcurrent");
+#ifdef OHOS_JS_ENGINE
+  auto trace = HiTrace("RCS_v8.compile_V8.OptimizeNonConcurrent");
+#endif
 
   if (!PrepareJobWithHandleScope(job, isolate, compilation_info,
                                  ConcurrencyMode::kSynchronous)) {
@@ -4444,6 +4447,9 @@ void Compiler::FinalizeTurbofanCompilationJob(TurbofanCompilationJob* job,
   TRACE_EVENT_WITH_FLOW0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                          "V8.OptimizeConcurrentFinalize", job->trace_id(),
                          TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT);
+#ifdef OHOS_JS_ENGINE
+  auto trace = HiTrace("RCS_v8.compile_V8.OptimizeConcurrentFinalize");
+#endif
 
   DirectHandle<JSFunction> function = compilation_info->closure();
   DirectHandle<SharedFunctionInfo> shared = compilation_info->shared_info();

@@ -44,6 +44,8 @@
 #include "src/diagnostics/etw-jit-win.h"
 #endif  // V8_ENABLE_ETW_STACK_WALKING
 
+#include "../../../arkweb/chromium_ext/v8/ohlog.h"
+
 namespace v8 {
 namespace internal {
 
@@ -51,6 +53,9 @@ namespace internal {
 v8::Platform* V8::platform_ = nullptr;
 const OOMDetails V8::kNoOOMDetails{false, nullptr};
 const OOMDetails V8::kHeapOOM{true, nullptr};
+#ifdef OHOS_JS_ENGINE
+bool rcs_enable = false;
+#endif
 
 namespace {
 enum class V8StartupState {

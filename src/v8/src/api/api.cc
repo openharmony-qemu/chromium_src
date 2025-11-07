@@ -1153,6 +1153,21 @@ i::DirectHandle<i::FunctionTemplateInfo> FunctionTemplateNew(
 }
 }  // namespace
 
+#ifdef OHOS_JS_ENGINE
+bool FunctionTemplate::Inherit(v8::Local<Function> parentFunc) {
+  auto i_function =
+      i::Cast<i::JSFunction>(v8::Utils::OpenDirectHandle(*parentFunc));
+  if (!i_function->shared()->IsApiFunction()) {
+      return false;
+  }
+  auto info = Utils::OpenHandle(this);
+  i::Isolate* i_isolate = info->GetIsolateChecked();
+  i::Handle<i::FunctionTemplateInfo> funcInfo(i_function->shared()->api_func_data(), i_isolate);
+  Inherit(v8::Utils::ToLocal(funcInfo));
+  return true;
+}
+#endif
+
 void FunctionTemplate::Inherit(v8::Local<FunctionTemplate> value) {
   auto info = Utils::OpenDirectHandle(this);
   EnsureNotPublished(info, "v8::FunctionTemplate::Inherit");
@@ -2749,6 +2764,9 @@ MaybeLocal<Script> ScriptCompiler::Compile(Local<Context> context,
   TRACE_EVENT_CALL_STATS_SCOPED(i_isolate, "v8", "V8.ScriptCompiler");
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                "V8.CompileStreamedScript");
+#ifdef OHOS_JS_ENGINE
+  auto trace = HiTrace("RCS_v8.compile_V8.CompileStreamedScript");
+#endif
   i::DirectHandle<i::SharedFunctionInfo> sfi;
   if (!CompileStreamedSource(i_isolate, v8_source, full_source_string, origin)
            .ToHandle(&sfi)) {
@@ -2769,6 +2787,9 @@ MaybeLocal<Module> ScriptCompiler::CompileModule(
   TRACE_EVENT_CALL_STATS_SCOPED(i_isolate, "v8", "V8.ScriptCompiler");
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                "V8.CompileStreamedModule");
+#ifdef OHOS_JS_ENGINE
+  auto trace = HiTrace("RCS_v8.compile_V8.CompileStreamedModule");
+#endif
   i::DirectHandle<i::SharedFunctionInfo> sfi;
   if (!CompileStreamedSource(i_isolate, v8_source, full_source_string, origin)
            .ToHandle(&sfi)) {

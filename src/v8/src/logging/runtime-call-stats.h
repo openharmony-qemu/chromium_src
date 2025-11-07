@@ -14,7 +14,7 @@
 #include "src/init/heap-symbols.h"
 #include "src/runtime/runtime.h"
 
-#ifdef V8_RUNTIME_CALL_STATS
+#if defined(V8_RUNTIME_CALL_STATS) || defined(HITRACE_RUNTIME_CALL_STATS)
 
 #include "src/base/atomic-utils.h"
 #include "src/base/platform/platform.h"
@@ -522,7 +522,7 @@ enum class RuntimeCallCounterId {
   // clang-format on
 };
 
-#ifdef V8_RUNTIME_CALL_STATS
+#if defined(V8_RUNTIME_CALL_STATS) || defined(HITRACE_RUNTIME_CALL_STATS)
 
 class RuntimeCallCounter final {
  public:

@@ -13540,7 +13540,13 @@ InlinedAllocation* MaglevGraphBuilder::BuildInlinedAllocation(
               CreateHeapNumber(node->Cast<Float64Constant>()->value()),
               allocation_type);
         } else {
-          value_to_push = GetTaggedValue(node);
+          ValueNode* new_node = GetTaggedValue(node);
+          if (new_node != node && new_node->properties().can_allocate()) {
+            // TODO(olivf): Remove this and instead always clear when we
+            // emit an allocating instruction.
+            ClearCurrentAllocationBlock();
+          }
+          value_to_push = new_node;
         }
         values.push_back(value_to_push);
       });

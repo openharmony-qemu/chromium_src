@@ -413,6 +413,9 @@ void LazyCompileDispatcher::DoBackgroundWork(JobDelegate* delegate) {
 
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("v8.compile"),
                "V8.LazyCompileDispatcherDoBackgroundWork");
+#ifdef OHOS_JS_ENGINE
+  auto trace = HiTrace("RCS_v8.compile_V8.LazyCompileDispatcherDoBackgroundWork");
+#endif
 
   LocalIsolate isolate(isolate_, ThreadKind::kBackground);
   UnparkedScope unparked_scope(&isolate);

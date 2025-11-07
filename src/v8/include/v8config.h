@@ -870,8 +870,15 @@ V8 shared library set USING_V8_SHARED.
 // Setup for Linux shared library export.
 #if (V8_HAS_ATTRIBUTE_VISIBILITY && \
      (defined(BUILDING_V8_SHARED) || USING_V8_SHARED))
+# ifdef OHOS_JS_ENGINE
+#  define JSVM_EXPORT __attribute__((visibility("default")))
+#  define V8_EXPORT
+# else
+#  define JSVM_EXPORT
 # define V8_EXPORT __attribute__((visibility("default")))
+# endif
 #else
+# define JSVM_EXPORT
 # define V8_EXPORT
 # endif  // V8_HAS_ATTRIBUTE_VISIBILITY && ...
 

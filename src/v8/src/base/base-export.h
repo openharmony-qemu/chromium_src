@@ -20,7 +20,7 @@
 #else  // !V8_OS_WIN
 
 // Setup for Linux shared library export.
-#if defined(BUILDING_V8_BASE_SHARED) || USING_V8_BASE_SHARED
+#if (defined(BUILDING_V8_BASE_SHARED) || USING_V8_BASE_SHARED) && !defined(OHOS_JS_ENGINE)
 #define V8_BASE_EXPORT __attribute__((visibility("default")))
 #else
 #define V8_BASE_EXPORT

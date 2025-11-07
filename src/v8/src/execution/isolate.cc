@@ -5668,6 +5668,9 @@ bool Isolate::Init(SnapshotData* startup_snapshot_data,
   date_cache_ = new DateCache();
   interpreter_ = new interpreter::Interpreter(this);
   bigint_processor_ = bigint::Processor::New(new BigIntPlatform(this));
+#ifdef OHOS_JS_ENGINE
+  enum_times_cache_ = new EnumTimesCache();
+#endif
 
   if (is_shared_space_isolate()) {
     global_safepoint_ = std::make_unique<GlobalSafepoint>(this);

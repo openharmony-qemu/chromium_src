@@ -231,9 +231,7 @@ std::unique_ptr<FFmpegDemuxerStream> FFmpegDemuxerStream::Create(
       MEDIA_LOG(DEBUG, media_log) << "Warning, FFmpegDemuxer failed to create "
                                      "a valid/supported audio decoder "
                                      "configuration from muxed stream, config:"
-                                  << video_config->AsHumanReadableString()
-                                  << " OhMedia::FFmpegDemuxer unsupported video decoder type with codec "
-                                  << (int)video_config->codec();
+                                  << audio_config->AsHumanReadableString();
       return nullptr;
     }
 

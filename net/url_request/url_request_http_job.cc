@@ -1903,6 +1903,7 @@ void URLRequestHttpJob::ContinueDespiteLastError() {
   DCHECK(!response_info_) << "should not have a response yet";
   DCHECK(!override_response_headers_);
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   restarted_++;
   if (restarted_ > 10 && ssl_error_) {
     base::SingleThreadTaskRunner::GetCurrentDefault()->PostDelayedTask(
@@ -1915,6 +1916,7 @@ void URLRequestHttpJob::ContinueDespiteLastError() {
 }
 
 void URLRequestHttpJob::ContinueDespiteLastErrorInternal() {
+#endif
   receive_headers_end_ = base::TimeTicks();
 
   ResetTimer();

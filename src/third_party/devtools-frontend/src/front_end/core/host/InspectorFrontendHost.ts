@@ -186,7 +186,7 @@ export class InspectorFrontendHostStub implements InspectorFrontendHostAPI {
   }
 
   openInNewTab(url: Platform.DevToolsPath.UrlString): void {
-    if (Common.ParseURL.schemeIs(url, 'javascript:')) {
+    if (Common.ParsedURL.schemeIs(url, 'javascript:')) {
       return;
     }
     window.open(url, '_blank');

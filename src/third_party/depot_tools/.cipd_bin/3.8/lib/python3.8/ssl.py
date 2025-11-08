@@ -1487,7 +1487,7 @@ def get_server_certificate(addr, ssl_version=PROTOCOL_TLS, ca_certs=None):
 
 def get_protocol_name(protocol_code):
     return _PROTOCOL_NAMES.get(protocol_code, '<unknown>')
-# Copyright 2018 The Chromium Authors
+# Copyright 2018 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 #

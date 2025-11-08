@@ -1,0 +1,15 @@
+--- translator.py	2025-11-08 15:41:42.821705040 +0800
++++ translator.py	2025-11-08 15:04:33.366881381 +0800
+@@ -97,11 +97,11 @@
+ 
+ # add include files to be processed
+ header.set_root_directory(cpp_header_dir)
+ excluded_files = ['cef_api_hash.h', 'cef_application_mac.h', 'cef_version.h']
+ header.add_directory(cpp_header_dir, excluded_files)
+-header.add_directory(cpp_header_test_dir)
++# header.add_directory(cpp_header_test_dir)
+ header.add_directory(cpp_header_views_dir)
+ 
+ # Track the number of files that were written.
+ writect = 0
+ 

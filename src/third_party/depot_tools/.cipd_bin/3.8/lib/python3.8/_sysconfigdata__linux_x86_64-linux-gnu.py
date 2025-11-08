@@ -13,7 +13,7 @@ build_time_vars = {'ABIFLAGS': '',
  'BINLIBDEST': '[INSTALL_PREFIX]/lib/python3.8',
  'BLDLIBRARY': 'libpython3.8.a',
  'BLDSHARED': '/opt/rh/devtoolset-10/root/usr/bin/gcc -pthread -shared '
-              '-L/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib',
+              '-L/work/deps_prefix/lib',
  'BUILDEXE': '',
  'BUILDPYTHON': 'python',
  'BUILD_GNU_TYPE': 'x86_64-pc-linux-gnu',
@@ -23,44 +23,40 @@ build_time_vars = {'ABIFLAGS': '',
  'CFLAGS': '-Wno-unused-result -Wsign-compare -DNDEBUG -g -fwrapv -O3 -Wall',
  'CFLAGSFORSHARED': '',
  'CFLAGS_ALIASING': '',
+ 'CFLAGS_NODIST': '',
  'CONFIGFILES': 'configure configure.ac acconfig.h pyconfig.h.in '
                 'Makefile.pre.in',
  'CONFIGURE_CFLAGS': '',
  'CONFIGURE_CFLAGS_NODIST': '-std=c99 -Wextra -Wno-unused-result '
                             '-Wno-unused-parameter '
                             '-Wno-missing-field-initializers '
-                            '-Wstrict-prototypes '
                             '-Werror=implicit-function-declaration',
- 'CONFIGURE_CPPFLAGS': '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/include',
- 'CONFIGURE_LDFLAGS': '-L/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib',
- 'CONFIGURE_LDFLAGS_NODIST': '-Wl,--version-script=/b/s/w/ir/cache/pkgbuild/cpython38_from_spec_def+bcj374ghs6sb4rv67gnch64lk4/contents/gnu_version_script.txt',
- 'CONFIG_ARGS': "'--prefix' "
-                "'[INSTALL_PREFIX]' "
-                "'--host=x86_64-linux-gnu' '--disable-shared' '--enable-ipv6' "
-                "'--with-openssl=/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix' "
-                "'--with-libs=-lpthread -lrt -l:libcrypt.a' "
-                "'--without-ensurepip' '--with-dbmliborder=bdb:gdbm' "
-                "'--enable-optimizations' '--build=x86_64-linux-gnu' "
-                "'--without-system-ffi' 'build_alias=x86_64-linux-gnu' "
-                "'host_alias=x86_64-linux-gnu' "
+ 'CONFIGURE_CPPFLAGS': '-I/work/deps_prefix/include',
+ 'CONFIGURE_LDFLAGS': '-L/work/deps_prefix/lib',
+ 'CONFIGURE_LDFLAGS_NODIST': '',
+ 'CONFIG_ARGS': "'--prefix' '[INSTALL_PREFIX]' '--host=x86_64-linux-gnu' "
+                "'--disable-shared' '--enable-ipv6' "
+                "'--enable-py-version-override=3.8.10+chromium.25' "
+                "'--with-openssl=/work/deps_prefix' '--with-libs=-lpthread "
+                "-lrt -l:libcrypt.a' '--without-ensurepip' '--with-fpectl' "
+                "'--with-dbmliborder=bdb:gdbm' '--enable-optimizations' "
+                "'--build=x86_64-linux-gnu' '--without-system-ffi' "
+                "'build_alias=x86_64-linux-gnu' 'host_alias=x86_64-linux-gnu' "
                 "'CC=/opt/rh/devtoolset-10/root/usr/bin/gcc' "
-                "'LDFLAGS=-L/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib' "
-                "'CPPFLAGS=-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/include' "
+                "'LDFLAGS=-L/work/deps_prefix/lib' "
+                "'CPPFLAGS=-I/work/deps_prefix/include' "
                 "'CPP=/opt/rh/devtoolset-10/root/usr/bin/cpp' "
-                "'PKG_CONFIG_PATH=/b/s/w/ir/cache/pkgbuild/libffi-lf60d0n8vtnadl4353tqnb0vbg/contents/lib/pkgconfig:/b/s/w/ir/cache/pkgbuild/libuuid-g9k8a8p0t5m03uaq9e3o9pf80k/contents/lib/pkgconfig:/b/s/w/ir/cache/pkgbuild/sqlite-1odqiv48sm70k8g9gvmdbtved0/contents/lib/pkgconfig:/b/s/w/ir/cache/pkgbuild/xzutils-a36q5vh7crnvgm78o4bvhk4mn8/contents/lib/pkgconfig:/b/s/w/ir/cache/pkgbuild/zlib-gnj4t0krj4u8sj7ibt5453d7uc/contents/lib/pkgconfig:/b/s/w/ir/cache/pkgbuild/nsl-3kgb8m5ej6oao3pbmkhffputko/contents/lib/pkgconfig'",
+                "'PKG_CONFIG_PATH=/usr/cross/lib/pkgconfig'",
  'CONFINCLUDEDIR': '[INSTALL_PREFIX]/include',
  'CONFINCLUDEPY': '[INSTALL_PREFIX]/include/python3.8',
  'COREPYTHONPATH': '',
- 'COVERAGE_INFO': '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/src/coverage.info',
- 'COVERAGE_REPORT': '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/src/lcov-report',
+ 'COVERAGE_INFO': '/work/checkout/coverage.info',
+ 'COVERAGE_REPORT': '/work/checkout/lcov-report',
  'COVERAGE_REPORT_OPTIONS': '--no-branch-coverage --title "CPython lcov '
                             'report"',
- 'CPPFLAGS': '-I. -I./Include '
-             '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/include',
+ 'CPPFLAGS': '-I. -I./Include -I/work/deps_prefix/include',
  'CXX': '/opt/rh/devtoolset-10/root/usr/bin/g++ -pthread',
- 'DESTDIRS': '[INSTALL_PREFIX] '
-             '[INSTALL_PREFIX]/lib '
-             '[INSTALL_PREFIX]/lib/python3.8 '
+ 'DESTDIRS': '[INSTALL_PREFIX] [INSTALL_PREFIX]/lib [INSTALL_PREFIX]/lib/python3.8 '
              '[INSTALL_PREFIX]/lib/python3.8/lib-dynload',
  'DESTLIB': '[INSTALL_PREFIX]/lib/python3.8',
  'DESTPATH': '',
@@ -303,7 +299,7 @@ build_time_vars = {'ABIFLAGS': '',
  'HAVE_MAKEDEV': 1,
  'HAVE_MBRTOWC': 1,
  'HAVE_MEMFD_CREATE': 0,
- 'HAVE_MEMORY_H': 0,
+ 'HAVE_MEMORY_H': 1,
  'HAVE_MEMRCHR': 1,
  'HAVE_MKDIRAT': 1,
  'HAVE_MKFIFO': 1,
@@ -522,10 +518,8 @@ build_time_vars = {'ABIFLAGS': '',
  'HAVE_ZLIB_COPY': 1,
  'HAVE__GETPTY': 0,
  'HOST_GNU_TYPE': 'x86_64-pc-linux-gnu',
- 'INCLDIRSTOMAKE': '[INSTALL_PREFIX]/include '
-                   '[INSTALL_PREFIX]/include '
-                   '[INSTALL_PREFIX]/include/python3.8 '
-                   '[INSTALL_PREFIX]/include/python3.8',
+ 'INCLDIRSTOMAKE': '[INSTALL_PREFIX]/include [INSTALL_PREFIX]/include '
+                   '[INSTALL_PREFIX]/include/python3.8 [INSTALL_PREFIX]/include/python3.8',
  'INCLUDEDIR': '[INSTALL_PREFIX]/include',
  'INCLUDEPY': '[INSTALL_PREFIX]/include/python3.8',
  'INSTALL': '/usr/bin/install -c',
@@ -537,16 +531,17 @@ build_time_vars = {'ABIFLAGS': '',
  'IO_H': 'Modules/_io/_iomodule.h',
  'IO_OBJS': '\\',
  'LDCXXSHARED': '/opt/rh/devtoolset-10/root/usr/bin/g++ -pthread -shared',
- 'LDFLAGS': '-L/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib',
+ 'LDFLAGS': '-L/work/deps_prefix/lib',
+ 'LDFLAGS_NODIST': '',
  'LDLIBRARY': 'libpython3.8.a',
  'LDLIBRARYDIR': '',
  'LDSHARED': '/opt/rh/devtoolset-10/root/usr/bin/gcc -pthread -shared '
-             '-L/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib',
+             '-L/work/deps_prefix/lib',
  'LDVERSION': '3.8',
  'LIBC': '',
  'LIBDEST': '[INSTALL_PREFIX]/lib/python3.8',
  'LIBDIR': '[INSTALL_PREFIX]/lib',
- 'LIBFFI_INCLUDEDIR': '/b/s/w/ir/cache/pkgbuild/libffi-lf60d0n8vtnadl4353tqnb0vbg/contents/lib/libffi-3.2.1/include',
+ 'LIBFFI_INCLUDEDIR': '/usr/cross/lib/libffi-3.2.1/include',
  'LIBM': '-lm',
  'LIBOBJDIR': 'Python/',
  'LIBOBJS': '',
@@ -566,47 +561,41 @@ build_time_vars = {'ABIFLAGS': '',
  'LLVM_PROF_FILE': '',
  'LLVM_PROF_MERGER': 'true',
  'LN': 'ln',
- 'LOCALMODLIBS': '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libbz2.a '
-                 '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libreadline.a '
-                 '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libpanelw.a '
-                 '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libncursesw.a '
-                 '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libsqlite3.a '
-                 '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libz.a '
-                 '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/liblzma.a '
-                 '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libssl.a '
-                 '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libcrypto.a '
-                 '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libuuid.a '
-                 '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libnsl.a '
-                 '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libffi.a                     '
+ 'LOCALMODLIBS': '/work/deps_prefix/lib/libbz2.a '
+                 '/work/deps_prefix/lib/libreadline.a '
+                 '/work/deps_prefix/lib/libpanelw.a '
+                 '/work/deps_prefix/lib/libncursesw.a '
+                 '/work/deps_prefix/lib/libsqlite3.a '
+                 '/work/deps_prefix/lib/libz.a /work/deps_prefix/lib/liblzma.a '
+                 '/work/deps_prefix/lib/libssl.a '
+                 '/work/deps_prefix/lib/libcrypto.a '
+                 '/work/deps_prefix/lib/libuuid.a '
+                 '/work/deps_prefix/lib/libnsl.a '
+                 '/work/deps_prefix/lib/libffi.a                     '
                  '-DPy_BUILD_CORE_MODULE     '
                  '-DPy_BUILD_CORE_MODULE                                         '
                  '-DPy_BUILD_CORE_MODULE          '
-                 '-L/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/termcap   '
-                 "'-DHAVE_NCURSESW=1' "
-                 '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/include/ncursesw '
-                 "-DNCURSES_WIDECHAR=1  '-DHAVE_NCURSESW=1' "
-                 '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/include/ncursesw '
-                 '-DNCURSES_WIDECHAR=1      '
-                 '-L/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib '
-                 '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/include  '
-                 '-L/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib '
-                 '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/include              '
+                 "-L/work/deps_prefix/lib/termcap   '-DHAVE_NCURSESW=1' "
+                 '-I/work/deps_prefix/include/ncursesw -DNCURSES_WIDECHAR=1  '
+                 "'-DHAVE_NCURSESW=1' -I/work/deps_prefix/include/ncursesw "
+                 '-DNCURSES_WIDECHAR=1      -L/work/deps_prefix/lib '
+                 '-I/work/deps_prefix/include  -L/work/deps_prefix/lib '
+                 '-I/work/deps_prefix/include              '
                  '\'-DMODULE_NAME="sqlite3"\' '
                  "'-DSQLITE_OMIT_LOAD_EXTENSION=1' "
-                 '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/src/Modules/Modules/_sqlite           '
+                 '-I/work/checkout/Modules/Modules/_sqlite           '
                  "-DUSE_ZLIB_CRC32      '-DHAVE_EXPAT_CONFIG_H=1' "
                  "'-DXML_POOR_ENTROPY=1' '-DUSE_PYEXPAT_CAPI=None' "
-                 '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/src/Modules/expat '
-                 "-Wno-unreachable-code  '-DHAVE_EXPAT_CONFIG_H=1' "
-                 "'-DXML_POOR_ENTROPY=1' '-DUSE_PYEXPAT_CAPI=None' "
-                 '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/src/Modules/expat                '
+                 '-I/work/checkout/Modules/expat -Wno-unreachable-code  '
+                 "'-DHAVE_EXPAT_CONFIG_H=1' '-DXML_POOR_ENTROPY=1' "
+                 "'-DUSE_PYEXPAT_CAPI=None' "
+                 '-I/work/checkout/Modules/expat                '
                  "'-DCONFIG_64=1' '-DASM=1' "
-                 '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/src/Modules/_decimal/libmpdec    '
-                 '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/src/Modules/Modules/_multiprocessing  '
-                 '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/src/Modules/Modules/_multiprocessing  '
-                 '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/include/uuid  '
-                 "'-DPy_LIMITED_API=0x03050000'   "
-                 '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/include '
+                 '-I/work/checkout/Modules/_decimal/libmpdec    '
+                 '-I/work/checkout/Modules/Modules/_multiprocessing  '
+                 '-I/work/checkout/Modules/Modules/_multiprocessing  '
+                 '-I/work/deps_prefix/include/uuid  '
+                 "'-DPy_LIMITED_API=0x03050000'   -I/work/deps_prefix/include "
                  '-DHAVE_FFI_PREP_CIF_VAR=1 -DHAVE_FFI_PREP_CLOSURE_LOC=1 '
                  '-DHAVE_FFI_CLOSURE_ALLOC=1',
  'MACHDEP': 'linux',
@@ -615,7 +604,7 @@ build_time_vars = {'ABIFLAGS': '',
  'MACOSX_DEPLOYMENT_TARGET': '',
  'MAINCC': '/opt/rh/devtoolset-10/root/usr/bin/gcc -pthread',
  'MAJOR_IN_MKDEV': 0,
- 'MAJOR_IN_SYSMACROS': 1,
+ 'MAJOR_IN_SYSMACROS': 0,
  'MAKESETUP': './Modules/makesetup',
  'MANDIR': '[INSTALL_PREFIX]/share/man',
  'MKDIR_P': '/usr/bin/mkdir -p',
@@ -638,48 +627,37 @@ build_time_vars = {'ABIFLAGS': '',
                    '_stat  time  _thread  _locale  _io  faulthandler  '
                    '_tracemalloc  _symtable  xxsubtype',
  'MODDISABLED_NAMES': '',
- 'MODLIBS': '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libbz2.a '
-            '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libreadline.a '
-            '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libpanelw.a '
-            '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libncursesw.a '
-            '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libsqlite3.a '
-            '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libz.a '
-            '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/liblzma.a '
-            '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libssl.a '
-            '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libcrypto.a '
-            '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libuuid.a '
-            '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libnsl.a '
-            '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libffi.a                     '
-            '-DPy_BUILD_CORE_MODULE     '
+ 'MODLIBS': '/work/deps_prefix/lib/libbz2.a '
+            '/work/deps_prefix/lib/libreadline.a '
+            '/work/deps_prefix/lib/libpanelw.a '
+            '/work/deps_prefix/lib/libncursesw.a '
+            '/work/deps_prefix/lib/libsqlite3.a /work/deps_prefix/lib/libz.a '
+            '/work/deps_prefix/lib/liblzma.a /work/deps_prefix/lib/libssl.a '
+            '/work/deps_prefix/lib/libcrypto.a /work/deps_prefix/lib/libuuid.a '
+            '/work/deps_prefix/lib/libnsl.a '
+            '/work/deps_prefix/lib/libffi.a                     '
             '-DPy_BUILD_CORE_MODULE                                         '
             '-DPy_BUILD_CORE_MODULE          '
-            '-L/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/termcap   '
-            "'-DHAVE_NCURSESW=1' "
-            '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/include/ncursesw '
+            '-DPy_BUILD_CORE_MODULE          -L/work/deps_prefix/lib/termcap   '
+            "'-DHAVE_NCURSESW=1' -I/work/deps_prefix/include/ncursesw "
             "-DNCURSES_WIDECHAR=1  '-DHAVE_NCURSESW=1' "
-            '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/include/ncursesw '
-            '-DNCURSES_WIDECHAR=1      '
-            '-L/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib '
-            '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/include  '
-            '-L/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib '
-            '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/include              '
+            '-I/work/deps_prefix/include/ncursesw -DNCURSES_WIDECHAR=1      '
+            '-L/work/deps_prefix/lib -I/work/deps_prefix/include  '
+            '-L/work/deps_prefix/lib -I/work/deps_prefix/include              '
             '\'-DMODULE_NAME="sqlite3"\' \'-DSQLITE_OMIT_LOAD_EXTENSION=1\' '
-            '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/src/Modules/Modules/_sqlite           '
+            '-I/work/checkout/Modules/Modules/_sqlite           '
             "-DUSE_ZLIB_CRC32      '-DHAVE_EXPAT_CONFIG_H=1' "
             "'-DXML_POOR_ENTROPY=1' '-DUSE_PYEXPAT_CAPI=None' "
-            '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/src/Modules/expat '
-            "-Wno-unreachable-code  '-DHAVE_EXPAT_CONFIG_H=1' "
-            "'-DXML_POOR_ENTROPY=1' '-DUSE_PYEXPAT_CAPI=None' "
-            '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/src/Modules/expat                '
-            "'-DCONFIG_64=1' '-DASM=1' "
-            '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/src/Modules/_decimal/libmpdec    '
-            '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/src/Modules/Modules/_multiprocessing  '
-            '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/src/Modules/Modules/_multiprocessing  '
-            '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/include/uuid  '
-            "'-DPy_LIMITED_API=0x03050000'   "
-            '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/include '
-            '-DHAVE_FFI_PREP_CIF_VAR=1 -DHAVE_FFI_PREP_CLOSURE_LOC=1 '
-            '-DHAVE_FFI_CLOSURE_ALLOC=1',
+            '-I/work/checkout/Modules/expat -Wno-unreachable-code  '
+            "'-DHAVE_EXPAT_CONFIG_H=1' '-DXML_POOR_ENTROPY=1' "
+            "'-DUSE_PYEXPAT_CAPI=None' "
+            "-I/work/checkout/Modules/expat                '-DCONFIG_64=1' "
+            "'-DASM=1' -I/work/checkout/Modules/_decimal/libmpdec    "
+            '-I/work/checkout/Modules/Modules/_multiprocessing  '
+            '-I/work/checkout/Modules/Modules/_multiprocessing  '
+            "-I/work/deps_prefix/include/uuid  '-DPy_LIMITED_API=0x03050000'   "
+            '-I/work/deps_prefix/include -DHAVE_FFI_PREP_CIF_VAR=1 '
+            '-DHAVE_FFI_PREP_CLOSURE_LOC=1 -DHAVE_FFI_CLOSURE_ALLOC=1',
  'MODOBJS': 'Modules/_struct.o  Modules/arraymodule.o  '
             'Modules/_contextvarsmodule.o  Modules/mathmodule.o '
             'Modules/_math.o  Modules/cmathmodule.o Modules/_math.o  '
@@ -739,18 +717,18 @@ build_time_vars = {'ABIFLAGS': '',
  'MODULE_OBJS': '\\',
  'MOD_ATTACHMENTS___curses': '-DNCURSES_WIDECHAR=1',
  'MOD_ATTACHMENTS___curses_panel': '-DNCURSES_WIDECHAR=1',
- 'MOD_COMMON_ATTACH': '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libbz2.a '
-                      '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libreadline.a '
-                      '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libpanelw.a '
-                      '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libncursesw.a '
-                      '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libsqlite3.a '
-                      '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libz.a '
-                      '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/liblzma.a '
-                      '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libssl.a '
-                      '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libcrypto.a '
-                      '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libuuid.a '
-                      '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libnsl.a '
-                      '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib/libffi.a',
+ 'MOD_COMMON_ATTACH': '/work/deps_prefix/lib/libbz2.a '
+                      '/work/deps_prefix/lib/libreadline.a '
+                      '/work/deps_prefix/lib/libpanelw.a '
+                      '/work/deps_prefix/lib/libncursesw.a '
+                      '/work/deps_prefix/lib/libsqlite3.a '
+                      '/work/deps_prefix/lib/libz.a '
+                      '/work/deps_prefix/lib/liblzma.a '
+                      '/work/deps_prefix/lib/libssl.a '
+                      '/work/deps_prefix/lib/libcrypto.a '
+                      '/work/deps_prefix/lib/libuuid.a '
+                      '/work/deps_prefix/lib/libnsl.a '
+                      '/work/deps_prefix/lib/libffi.a',
  'MOD_DEFINES___curses': "'-DHAVE_NCURSESW=1'",
  'MOD_DEFINES___curses_panel': "'-DHAVE_NCURSESW=1'",
  'MOD_DEFINES___decimal': "'-DCONFIG_64=1' '-DASM=1'",
@@ -784,24 +762,24 @@ build_time_vars = {'ABIFLAGS': '',
  'MOD_INCLUDES___contextvars': '',
  'MOD_INCLUDES___crypt': '',
  'MOD_INCLUDES___csv': '',
- 'MOD_INCLUDES___ctypes': '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/include',
+ 'MOD_INCLUDES___ctypes': '-I/work/deps_prefix/include',
  'MOD_INCLUDES___ctypes_test': '',
- 'MOD_INCLUDES___curses': '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/include/ncursesw',
- 'MOD_INCLUDES___curses_panel': '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/include/ncursesw',
+ 'MOD_INCLUDES___curses': '-I/work/deps_prefix/include/ncursesw',
+ 'MOD_INCLUDES___curses_panel': '-I/work/deps_prefix/include/ncursesw',
  'MOD_INCLUDES___datetime': '',
- 'MOD_INCLUDES___decimal': '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/src/Modules/_decimal/libmpdec',
- 'MOD_INCLUDES___elementtree': '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/src/Modules/expat',
- 'MOD_INCLUDES___hashlib': '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/include',
+ 'MOD_INCLUDES___decimal': '-I/work/checkout/Modules/_decimal/libmpdec',
+ 'MOD_INCLUDES___elementtree': '-I/work/checkout/Modules/expat',
+ 'MOD_INCLUDES___hashlib': '-I/work/deps_prefix/include',
  'MOD_INCLUDES___heapq': '',
  'MOD_INCLUDES___json': '',
  'MOD_INCLUDES___lsprof': '',
  'MOD_INCLUDES___lzma': '',
  'MOD_INCLUDES___md5': '',
  'MOD_INCLUDES___multibytecodec': '',
- 'MOD_INCLUDES___multiprocessing': '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/src/Modules/Modules/_multiprocessing',
+ 'MOD_INCLUDES___multiprocessing': '-I/work/checkout/Modules/Modules/_multiprocessing',
  'MOD_INCLUDES___opcode': '',
  'MOD_INCLUDES___pickle': '',
- 'MOD_INCLUDES___posixshmem': '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/src/Modules/Modules/_multiprocessing',
+ 'MOD_INCLUDES___posixshmem': '-I/work/checkout/Modules/Modules/_multiprocessing',
  'MOD_INCLUDES___posixsubprocess': '',
  'MOD_INCLUDES___queue': '',
  'MOD_INCLUDES___random': '',
@@ -810,15 +788,15 @@ build_time_vars = {'ABIFLAGS': '',
  'MOD_INCLUDES___sha3': '',
  'MOD_INCLUDES___sha512': '',
  'MOD_INCLUDES___socket': '',
- 'MOD_INCLUDES___sqlite3': '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/src/Modules/Modules/_sqlite',
- 'MOD_INCLUDES___ssl': '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/include',
+ 'MOD_INCLUDES___sqlite3': '-I/work/checkout/Modules/Modules/_sqlite',
+ 'MOD_INCLUDES___ssl': '-I/work/deps_prefix/include',
  'MOD_INCLUDES___statistics': '',
  'MOD_INCLUDES___struct': '',
  'MOD_INCLUDES___testbuffer': '',
  'MOD_INCLUDES___testimportmultiple': '',
  'MOD_INCLUDES___testinternalcapi': '',
  'MOD_INCLUDES___testmultiphase': '',
- 'MOD_INCLUDES___uuid': '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/include/uuid',
+ 'MOD_INCLUDES___uuid': '-I/work/deps_prefix/include/uuid',
  'MOD_INCLUDES___xxsubinterpreters': '',
  'MOD_INCLUDES___xxtestfuzz': '',
  'MOD_INCLUDES__array': '',
@@ -833,7 +811,7 @@ build_time_vars = {'ABIFLAGS': '',
  'MOD_INCLUDES__ossaudiodev': '',
  'MOD_INCLUDES__parser': '',
  'MOD_INCLUDES__pwd': '',
- 'MOD_INCLUDES__pyexpat': '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/src/Modules/expat',
+ 'MOD_INCLUDES__pyexpat': '-I/work/checkout/Modules/expat',
  'MOD_INCLUDES__readline': '',
  'MOD_INCLUDES__resource': '',
  'MOD_INCLUDES__select': '',
@@ -849,8 +827,8 @@ build_time_vars = {'ABIFLAGS': '',
  'MVWDELCH_IS_EXPRESSION': 1,
  'NO_AS_NEEDED': '-Wl,--no-as-needed',
  'OBJECT_OBJS': '\\',
- 'OPENSSL_INCLUDES': '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/include',
- 'OPENSSL_LDFLAGS': '-L/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib',
+ 'OPENSSL_INCLUDES': '-I/work/deps_prefix/include',
+ 'OPENSSL_LDFLAGS': '-L/work/deps_prefix/lib',
  'OPENSSL_LIBS': '-lssl -lcrypto',
  'OPT': '-DNDEBUG -g -fwrapv -O3 -Wall',
  'OTHER_LIBTOOL_OPT': '',
@@ -886,44 +864,36 @@ build_time_vars = {'ABIFLAGS': '',
                              '-fwrapv -O3 -Wall -std=c99 -Wextra '
                              '-Wno-unused-result -Wno-unused-parameter '
                              '-Wno-missing-field-initializers '
-                             '-Wstrict-prototypes '
                              '-Werror=implicit-function-declaration '
-                             '-fprofile-use -fprofile-correction '
                              '-I./Include/internal -I. -I./Include '
-                             '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/include '
+                             '-I/work/deps_prefix/include '
                              '-DPy_BUILD_CORE_BUILTIN',
  'PY_CFLAGS': '-Wno-unused-result -Wsign-compare -DNDEBUG -g -fwrapv -O3 -Wall',
  'PY_CFLAGS_NODIST': '-std=c99 -Wextra -Wno-unused-result '
                      '-Wno-unused-parameter -Wno-missing-field-initializers '
-                     '-Wstrict-prototypes '
-                     '-Werror=implicit-function-declaration -fprofile-use '
-                     '-fprofile-correction -I./Include/internal',
+                     '-Werror=implicit-function-declaration  '
+                     '-I./Include/internal',
  'PY_COERCE_C_LOCALE': 1,
  'PY_CORE_CFLAGS': '-Wno-unused-result -Wsign-compare -DNDEBUG -g -fwrapv -O3 '
                    '-Wall -std=c99 -Wextra -Wno-unused-result '
                    '-Wno-unused-parameter -Wno-missing-field-initializers '
-                   '-Wstrict-prototypes -Werror=implicit-function-declaration '
-                   '-fprofile-use -fprofile-correction -I./Include/internal '
-                   '-I. -I./Include '
-                   '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/include '
-                   '-DPy_BUILD_CORE',
- 'PY_CORE_LDFLAGS': '-L/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib '
-                    '-Wl,--version-script=/b/s/w/ir/cache/pkgbuild/cpython38_from_spec_def+bcj374ghs6sb4rv67gnch64lk4/contents/gnu_version_script.txt',
- 'PY_CPPFLAGS': '-I. -I./Include '
-                '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/include',
+                   '-Werror=implicit-function-declaration  '
+                   '-I./Include/internal -I. -I./Include '
+                   '-I/work/deps_prefix/include -DPy_BUILD_CORE',
+ 'PY_CORE_LDFLAGS': '-L/work/deps_prefix/lib',
+ 'PY_CPPFLAGS': '-I. -I./Include -I/work/deps_prefix/include',
  'PY_FORMAT_SIZE_T': '"z"',
- 'PY_LDFLAGS': '-L/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/lib',
- 'PY_LDFLAGS_NODIST': '-Wl,--version-script=/b/s/w/ir/cache/pkgbuild/cpython38_from_spec_def+bcj374ghs6sb4rv67gnch64lk4/contents/gnu_version_script.txt',
+ 'PY_LDFLAGS': '-L/work/deps_prefix/lib',
+ 'PY_LDFLAGS_NODIST': '',
  'PY_SSL_DEFAULT_CIPHERS': 1,
  'PY_SSL_DEFAULT_CIPHER_STRING': 0,
  'PY_STDMODULE_CFLAGS': '-Wno-unused-result -Wsign-compare -DNDEBUG -g -fwrapv '
                         '-O3 -Wall -std=c99 -Wextra -Wno-unused-result '
                         '-Wno-unused-parameter -Wno-missing-field-initializers '
-                        '-Wstrict-prototypes '
-                        '-Werror=implicit-function-declaration -fprofile-use '
-                        '-fprofile-correction -I./Include/internal -I. '
-                        '-I./Include '
-                        '-I/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/3pp_prefix/include',
+                        '-Werror=implicit-function-declaration  '
+                        '-I./Include/internal -I. -I./Include '
+                        '-I/work/deps_prefix/include',
+ 'PY_VERSION_OVERRIDE': '"3.8.10+chromium.25"',
  'Py_DEBUG': 0,
  'Py_ENABLE_SHARED': 0,
  'Py_HASH_ALGORITHM': 0,
@@ -997,10 +967,10 @@ build_time_vars = {'ABIFLAGS': '',
  'WITH_VALGRIND': 0,
  'X87_DOUBLE_ROUNDING': 0,
  'XMLLIBSUBDIRS': 'xml xml/dom xml/etree xml/parsers xml/sax',
- 'abs_builddir': '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/src',
- 'abs_srcdir': '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/src',
+ 'abs_builddir': '/work/checkout',
+ 'abs_srcdir': '/work/checkout',
  'datarootdir': '[INSTALL_PREFIX]/share',
  'exec_prefix': '[INSTALL_PREFIX]',
  'prefix': '[INSTALL_PREFIX]',
  'srcdir': '.',
- 'srcroot': '/b/s/w/ir/cache/pkgbuild/temp/cpython38-i8q3naku9hhl284cgv6fmk317c-1428562724/src'}
+ 'srcroot': '/work/checkout'}

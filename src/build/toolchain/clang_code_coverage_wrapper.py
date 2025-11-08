@@ -71,6 +71,7 @@ _COVERAGE_FLAGS = [
     # MacOS. Please refer to crbug.com/796290 for more details.
     '-mllvm',
     '-limited-coverage-experimental=true',
+    '--coverage',
 ]
 
 # Files that should not be built with coverage flags by default.

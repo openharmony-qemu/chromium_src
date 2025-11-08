@@ -211,6 +211,12 @@ def _optimize(in_folder, args):
 
   external_paths = args.external_paths or []
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  if "chrome/browser/resources/extensions" in in_folder:
+    excludes = [e for e in excludes if "chrome:" not in e]
+    external_paths = [p for p in external_paths if "chrome:" not in p]
+#endif
+
   if args.rollup_config:
     # Use configuration provided from the caller.
     rollup_config_file = args.rollup_config
@@ -251,7 +257,10 @@ def main(argv):
   args.out_folder = os.path.normpath(args.out_folder)
   scheme_end_index = args.host.find('://')
   if (scheme_end_index == -1):
-    args.host_url = 'chrome://%s/' % args.host
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+    args.host_url = 'arkweb://%s/' % args.host
+    # #else args.host_url = 'chrome://%s/' % args.host
+#endif
   else:
     args.host_url = args.host
 

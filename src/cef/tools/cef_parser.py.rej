@@ -1,0 +1,38 @@
+--- cef_parser.py	2025-11-08 15:41:42.810275507 +0800
++++ cef_parser.py	2025-11-08 15:04:33.363050545 +0800
+@@ -858,11 +864,21 @@
+     self.attribs = str_to_dict(attrib)
+     self.name = name
+     self.parent_name = parent_name
+     self.comment = comment
+     self.includes = includes
+-    self.forward_declares = forward_declares
++    self.forward_declares = [ y for y in forward_declares if y not in (
++      "CefClient",
++      "CefBrowserHost", "CefResourceHandlerExt",
++      "ArkWebResourceRequestHandlerExt","CefMediaPlayerListenerForVAST","CefMediaPlayerController","CefWebExtensionApiHandler",
++      "ArkWebBrowserExt", "ArkWebBrowserHostExt", "CefBrowserHostBase",
++      "ArkWebClientExt", "ArkWebLoadHandlerExt", "ArkWebRenderHandlerExt",
++      "ArkWebRequestImplExt","ArkwebFrameExt", "CefFrameHostImpl", "CefCookieManagerExt",
++      "CefDownloadItemExt", "ArkWebRenderWidgetHostViewOSRExt", "CefDialogHandlerExt",
++      "ArkWebDisplayHandlerExt", "CefContextMenuHandlerExt", "CefContextMenuParamsExt",
++      "CefAppExt", "CefSelectClientCertificateCallbackExt", "CefRequestHandlerExt",
++      "CefOpenAppLinkCallback")]
+ 
+     # extract typedefs
+     p = re.compile(
+         r'\n' + _cre_space + r'typedef' + _cre_space + _cre_typedef + r';',
+         re.MULTILINE | re.DOTALL)
+@@ -2123,10 +2159,12 @@
+       result += self.get_result_ptr_type(defined_structs)
+     elif self.is_result_struct():
+       result += self.get_result_struct_type(defined_structs)
+     elif self.is_result_string():
+       result += self.get_result_string_type()
++    elif self.is_result_std_string():
++      result += self.get_result_std_string_type()
+     elif self.is_result_map():
+       resdict = self.get_result_map_type(defined_structs)
+       if resdict['format'] == 'single' or resdict['format'] == 'multi':
+         result += resdict['value']
+       else:

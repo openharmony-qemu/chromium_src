@@ -1,0 +1,112 @@
+# 每个 section 对应一个警告类型
+
+[general]
+suggestion = "暂无通用建议，请根据具体警告信息和代码上下文进行分析。"
+
+["-Wextra-semi"]
+suggestion = "移除成员函数或结构体定义末尾多余的分号。"
+
+["-Wexit-time-destructors"]
+suggestion = """
+使用 base::NoDestructor 包装静态对象，确保退出阶段析构函数不会被执行。当用于单例类T时，必须在类T中声明 base::NoDestructor<T> 为友元类以访问私有构造函数。
+使用时需包含头文件： #include "base/no_destructor.h"
+"""
+
+["-Wsign-conversion"]
+suggestion = "使用显式转换 (static_cast) 消除有符号 / 无符号转换歧义，并确认数值不溢出。"
+
+["-Wsign-compare"]
+suggestion = "统一比较双方的类型（例如都转成 size_t 或加 static_cast），避免符号差异。"
+
+["-Wnon-c-typedef-for-linkage"]
+suggestion = "为匿名的 struct / class 添加命名标签，确保 C 链接兼容性。"
+
+["-Wimplicit-fallthrough"]
+suggestion = "在有意贯穿的 case 处添加 [[fallthrough]];，否则补上 break。"
+
+["-Wunused-parameter"]
+suggestion = "删除未使用参数或以 (void)param; / [[maybe_unused]] 标注；必要时在实现中使用参数。"
+
+["-Wunused-variable"]
+suggestion = "移除未使用变量，或以 [[maybe_unused]]/ (void)var; 标注；若仅调试使用，放入条件编译或 DCHECK 相关代码。"
+
+["-Wshadow"]
+suggestion = "避免名称遮蔽：重命名局部变量或成员变量，保持作用域内唯一、清晰的命名。"
+
+["-Wreorder"]
+suggestion = "按照成员在类中声明的顺序重排构造函数初始化列表，消除初始化顺序不一致。"
+
+["-Wmissing-field-initializers"]
+suggestion = "显式初始化聚合类型的所有字段，或提供合适的构造函数/默认值。"
+
+["-Wdeprecated-declarations"]
+suggestion = "替换为推荐的新 API；若暂时无法替换，封装调用并记录技术债，避免继续扩散。"
+
+["-Wold-style-cast"]
+suggestion = "用 C++ 强制转换：static_cast/const_cast/reinterpret_cast/dynamic_cast 替换 C 风格转换。"
+
+["-Wformat"]
+suggestion = "修正格式化字符串与参数类型匹配；指针用 %p，size_t 用 %zu（或 PRI 宏），避免未定义行为。"
+
+["-Wformat-security"]
+suggestion = "使用常量格式字符串，不要将外部输入直接作为格式；对外部输入当作普通参数传入。"
+
+["-Wunreachable-code"]
+suggestion = "删除不可达代码或重构控制流；若为断言后的保护，可用注释/断言宏标注意图并移除死代码。"
+
+["-Wrange-loop-construct"]
+suggestion = "避免不必要拷贝：对不修改的元素使用 'const auto&'；需要转移时使用 'auto&&' 并配合 std::move。"
+
+["-Wreturn-type"]
+suggestion = "确保所有控制路径返回值；无法返回时使用 [[noreturn]]/throw，或在末尾补充合适的 return。"
+
+["-Wswitch"]
+suggestion = "补全 switch 分支或添加默认分支；对 enum 类型建议穷尽所有枚举项，以便静态检查。"
+
+["-Wswitch-enum"]
+suggestion = "枚举类 switch 应覆盖所有枚举值；若故意不处理某些值，添加注释或默认分支并记录。"
+
+["-Wenum-compare"]
+suggestion = "避免不同枚举类型直接比较；必要时转换为相同的底层整型或统一枚举类型。"
+
+["-Wconversion"]
+suggestion = "显式进行安全的类型转换，并在转换前做边界检查，避免精度丢失或溢出。"
+
+["-Wimplicit-float-conversion"]
+suggestion = "添加显式浮点转换或使用带后缀的字面量（如 1.0f）；避免隐式从 double 转 float。"
+
+["-Wparentheses"]
+suggestion = "用括号明确表达式优先级；避免因 &&、||、位运算与比较混用导致的歧义。"
+
+["-Wlogical-op-parentheses"]
+suggestion = "为复合逻辑表达式添加括号，明确分组与短路逻辑，避免潜在的逻辑错误。"
+
+["-Wbitwise-op-parentheses"]
+suggestion = "为位运算与逻辑/比较混合表达式添加括号，确保按预期顺序求值。"
+
+["-Wdelete-non-virtual-dtor"]
+suggestion = "含多态的基类应声明虚析构函数，或避免通过基类指针删除派生对象。"
+
+["-Winconsistent-missing-override"]
+suggestion = "派生类中重写的虚函数添加 'override' 关键字，保持接口一致性与可读性。"
+
+["-Wclass-memaccess"]
+suggestion = "不要对非平凡类型使用 memset/memcpy；改用构造函数、赋值或 std::copy/算法接口。"
+
+["-Wmaybe-uninitialized"]
+suggestion = "为变量提供确定的初始值，或调整控制流保证使用前已初始化。"
+
+["-Wtautological-compare"]
+suggestion = "修正永真/永假的比较（如无符号与 0 比较 < 0）；统一类型或修改条件。"
+
+["-Wnull-dereference"]
+suggestion = "在解引用前检查指针非空（if/assert）；可用引用或智能指针加强所有权与空值约束。"
+
+["-Wc99-designator"]
+suggestion = "C++ 代码避免 C99 指定初始化；使用构造函数或按成员声明顺序的聚合初始化替代。"
+
+["-Waddress-of-packed-member"]
+suggestion = "避免获取 packed 成员的地址；必要时先拷贝到对齐的临时对象再取址。"
+
+["-Wdouble-promotion"]
+suggestion = "保持一致的浮点类型；必要时显式转换，或以 double 计算再按需转换。"

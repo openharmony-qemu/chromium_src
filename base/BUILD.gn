@@ -1007,6 +1007,14 @@ component("base") {
       "threading/thread_type_delegate.h",
     ]
   }
+  if (is_ohos) {
+    sources -= [
+      "files/scoped_file_linux.cc",
+    ]
+    sources += [
+      "files/scoped_file_ohos.cc",
+    ]
+  }
 
   if (enable_arkweb) {
     sources += arkweb_metrics_sources

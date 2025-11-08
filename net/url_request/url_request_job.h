@@ -375,6 +375,10 @@ class NET_EXPORT URLRequestJob {
   // The request that initiated this job. This value will never be nullptr.
   const raw_ptr<URLRequest> request_;
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  bool ssl_error_ = false;
+#endif
+
  private:
   class URLRequestJobSourceStream;
 

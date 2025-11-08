@@ -205,6 +205,8 @@
 /arkweb/ohos_nweb/src/cef_delegate/custom_media_player_impl.cc @d0ub1eh @whuqincheng
 /arkweb/ohos_nweb/src/cef_delegate/nweb_full_screen_exit_handler_impl.cc @d0ub1eh @whuqincheng
 /arkweb/ohos_nweb/src/cef_delegate/nweb_image_options_impl.cc @d0ub1eh @whuqincheng
+/arkweb/chromium_ext/media @d0ub1eh @whuqinchen
+
 
 /ui/ozone/platform/drm/ @d0ub1eh @whuqincheng
 /tools/perf/page_sets/media_cases/ @d0ub1eh @whuqincheng

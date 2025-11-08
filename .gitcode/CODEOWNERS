@@ -194,6 +194,58 @@
 /base/fuchsia/filtered_service_directory.* @ringking0
 /apps/ @ringking0
 
+# MultiMedia
+/arkweb/ohos_adapter_ndk/audio_adapter/ @d0ub1eh @whuqincheng
+/arkweb/ohos_adapter_ndk/camera_adapter/ @d0ub1eh @whuqincheng
+/arkweb/ohos_adapter_ndk/media_adapter/ @d0ub1eh @whuqincheng
+/arkweb/ohos_adapter_ndk/ohos_image_adapter/ @d0ub1eh @whuqincheng
+/arkweb/ohos_adapter_ndk/screen_capture_adapter/ @d0ub1eh @whuqincheng
+/arkweb/ohos_nweb/src/napi/nweb_screencapture_delegate_callback.h @d0ub1eh @whuqincheng
+/arkweb/ohos_nweb/src/native_media_player/ @d0ub1eh @whuqincheng
+/arkweb/ohos_nweb/src/cef_delegate/custom_media_player_impl.cc @d0ub1eh @whuqincheng
+/arkweb/ohos_nweb/src/cef_delegate/nweb_full_screen_exit_handler_impl.cc @d0ub1eh @whuqincheng
+/arkweb/ohos_nweb/src/cef_delegate/nweb_image_options_impl.cc @d0ub1eh @whuqincheng
+/arkweb/chromium_ext/media @d0ub1eh @whuqinchen
+
+
+/ui/ozone/platform/drm/ @d0ub1eh @whuqincheng
+/tools/perf/page_sets/media_cases/ @d0ub1eh @whuqincheng
+/tools/metrics/histograms/metadata/media/ @d0ub1eh @whuqincheng
+/tools/media_engagement_preload/ @d0ub1eh @whuqincheng
+/services/video_effects/ @d0ub1eh @whuqincheng
+/services/video_capture/ @d0ub1eh @whuqincheng
+/services/media_session/ @d0ub1eh @whuqincheng
+/services/image_annotation/ @d0ub1eh @whuqincheng
+/services/audio/ @d0ub1eh @whuqincheng
+/remoting/ @d0ub1eh @whuqincheng
+/media/ @d0ub1eh @whuqincheng
+/extensions/browser/api/media_perception_private/ @d0ub1eh @whuqincheng
+/content/renderer/media/ @d0ub1eh @whuqincheng
+/content/common/media/ @d0ub1eh @whuqincheng
+/content/browser/webrtc/ @d0ub1eh @whuqincheng
+/content/browser/resources/media/ @d0ub1eh @whuqincheng
+/content/browser/renderer_host/media/ @d0ub1eh @whuqincheng
+/content/browser/media/webaudio/ @d0ub1eh @whuqincheng
+/content/browser/media/ @d0ub1eh @whuqincheng
+/components/translate/ @d0ub1eh @whuqincheng
+/components/test/data/webp_transcode/ @d0ub1eh @whuqincheng
+/components/system_media_controls/ @d0ub1eh @whuqincheng
+/components/resources/translate_resources.grdp @d0ub1eh @whuqincheng
+/components/page_image_service/ @d0ub1eh @whuqincheng
+/components/translate_strings.grdp @d0ub1eh @whuqincheng
+/components/media_message_center_strings.grdp @d0ub1eh @whuqincheng
+/components/global_media_controls_strings.grdp @d0ub1eh @whuqincheng
+/components/media_router/common/providers/cast/certificate/
+/components/media_message_center/ @d0ub1eh @whuqincheng
+/components/media_effects/ @d0ub1eh @whuqincheng
+/components/media_device_salt/ @d0ub1eh @whuqincheng
+/components/media_control/ @d0ub1eh @whuqincheng
+/components/global_media_controls/ @d0ub1eh @whuqincheng
+/components/chromeos_camera/ @d0ub1eh @whuqincheng
+/components/cdm/ @d0ub1eh @whuqincheng
+/components/cast_streaming/ @d0ub1eh @whuqincheng
+/chromecast/media/ @d0ub1eh @whuqincheng
+
 # DFX
 /arkweb/ohos_nweb/src/capi/nweb_logger_callback.h @StringChen
 /arkweb/ohos_nweb/src/capi/nweb_logger_report_event_callback.h @StringChen

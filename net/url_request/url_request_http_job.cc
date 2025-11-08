@@ -135,6 +135,8 @@
 
 namespace {
 
+const size_t kDelayRetryThreshold = 10;
+
 // These values are persisted to logs. Entries should not be renumbered and
 // numeric values should never be reused.
 enum class TpcdHeaderStatus {
@@ -1905,7 +1907,7 @@ void URLRequestHttpJob::ContinueDespiteLastError() {
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   restarted_++;
-  if (restarted_ > 10 && ssl_error_) {
+  if (restarted_ > kDelayRetryThreshold && ssl_error_) {
     base::SingleThreadTaskRunner::GetCurrentDefault()->PostDelayedTask(
       FROM_HERE, base::BindOnce(&URLRequestHttpJob::ContinueDespiteLastErrorInternal,
                                 weak_factory_.GetWeakPtr()), base::Milliseconds(100));

@@ -1034,7 +1034,17 @@ class obj_class:
     self.parent_name = parent_name
     self.comment = comment
     self.includes = includes
-    self.forward_declares = forward_declares
+    self.forward_declares = [ y for y in forward_declares if y not in (
+      "CefClient",
+      "CefBrowserHost", "CefResourceHandlerExt",
+      "ArkWebResourceRequestHandlerExt","CefMediaPlayerListenerForVAST","CefMediaPlayerController","CefWebExtensionApiHandler",
+      "ArkWebBrowserExt", "ArkWebBrowserHostExt", "CefBrowserHostBase",
+      "ArkWebClientExt", "ArkWebLoadHandlerExt", "ArkWebRenderHandlerExt",
+      "ArkWebRequestImplExt","ArkwebFrameExt", "CefFrameHostImpl", "CefCookieManagerExt",
+      "CefDownloadItemExt", "ArkWebRenderWidgetHostViewOSRExt", "CefDialogHandlerExt",
+      "ArkWebDisplayHandlerExt", "CefContextMenuHandlerExt", "CefContextMenuParamsExt",
+      "CefAppExt", "CefSelectClientCertificateCallbackExt", "CefRequestHandlerExt",
+      "CefOpenAppLinkCallback")]
 
     self._validate_attribs()
 
@@ -2487,6 +2497,8 @@ class obj_analysis:
       result += self.get_result_struct_type(defined_structs, version_finder)
     elif self.is_result_string():
       result += self.get_result_string_type()
+    elif self.is_result_std_string():
+      result += self.get_result_std_string_type()
     elif self.is_result_map():
       resdict = self.get_result_map_type(defined_structs)
       if resdict['format'] == 'single' or resdict['format'] == 'multi':

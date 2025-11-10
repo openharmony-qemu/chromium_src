@@ -893,7 +893,7 @@ TEST_F(WebContentsViewAuraTest, RejectDragFromOutsideView) {
       view->GetContentNativeView()->GetBoundsInScreen();
 
   DropData drop_data;
-  drop_data.url_infos = {ui::ClipboardUrlInfo{GURL(kGoogleUrl), u""}};
+  drop_data.url = GURL(kGoogleUrl);
 
 #if BUILDFLAG(IS_CHROMEOS)
   // This condition is needed to avoid calling WebContentsViewAura::EndDrag

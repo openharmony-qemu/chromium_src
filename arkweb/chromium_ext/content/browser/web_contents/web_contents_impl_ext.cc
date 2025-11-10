@@ -141,6 +141,15 @@ void WebContentsImplExt::CloseCamera(int nWebID) {
   videoCaptureManager->AsVideoCaptureManagerExt()->CloseCamera(nWebID);
 }
 
+#if BUILDFLAG(ARKWEB_WEBRTC)
+void WebContentsImplExt::OnCameraCaptureStateChanged(int original_state,
+                                              int new_state) {
+  if (delegate_) {
+    delegate_->OnCameraCaptureStateChanged(original_state, new_state);
+  }
+}
+#endif
+
 // LCOV_EXCL_START
 int WebContentsImplExt::GetNWebId() {
   return nWebID_;

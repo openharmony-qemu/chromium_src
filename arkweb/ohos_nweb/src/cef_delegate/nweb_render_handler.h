@@ -178,11 +178,9 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
                      DragOperationsMask allowed_ops,
                      int x,
                      int y) override;
+  void SetIrregularDragBackground(bool is_irregular_background);
   void FreePixlMapData();
   void NotifySelectAllClicked(bool select_all) override;
-  void SelectionBoundsChanged(const CefRect& anchor_rect,
-                              const CefRect& focus_rect,
-                              bool is_anchor_first) override;
 #endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
 
 #if BUILDFLAG(IS_OHOS)
@@ -356,11 +354,8 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
   CefRefPtr<CefDragData> drag_data_ = nullptr;
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
   std::shared_ptr<NWebDragData> nweb_drag_data_ = nullptr;
+  bool is_irregular_drag_background_ = true;
   bool select_all_ = false;
-  CefPoint start_edge_top_;
-  CefPoint start_edge_bottom_;
-  CefPoint end_edge_top_;
-  CefPoint end_edge_bottom_;
 #endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)

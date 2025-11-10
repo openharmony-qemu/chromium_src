@@ -155,41 +155,41 @@ namespace ui {
 
 bool DataPackUtil::LoadFromPathExt(raw_ptr<DataPack> dataPackObj, const base::FilePath& path) {
   std::string pathHap;
+  std::string pathPrint;
   if (GetPathFromHap(dataPackObj->resource_scale_factor_, path, pathHap)) {
     auto resourceInstance =
         OHOS::NWeb::OhosAdapterHelper::GetInstance().GetResourceAdapter();
 
     std::shared_ptr<OHOS::NWeb::OhosFileMapper> fileMapper =
       resourceInstance->GetRawFileMapper(pathHap, true);
-
+    SwapPathName(pathHap, pathPrint, "chrome", "arkweb");
     if (!fileMapper) {
       LOG(ERROR) << "DataPack::LoadFromPath couldn't data file: "
-                  << pathHap.c_str();
+                 << pathPrint.c_str();
       return false;
     }
 
-    LOG(INFO) << "DataPack::LoadFromPath " << pathHap.c_str()
+    LOG(INFO) << "DataPack::LoadFromPath " << pathPrint.c_str()
               << ", data file length: " << fileMapper->GetDataLen();
 
     std::unique_ptr<base::MemoryMappedFile> mmap =
-        std::make_unique<base::MemoryMappedFile>();
-    mmap->SetOhosFileMapper(fileMapper);
-    if (MmapHasGzipHeader(mmap.get())) {
-      std::string_view compressed(reinterpret_cast<char*>(mmap->data()),
-                                    mmap->length());
       std::string data;
       if (!compression::GzipUncompress(compressed, &data)) {
         LOG(ERROR) << "Failed to unzip compressed datapack: "
-                    << pathHap.c_str();
+                   << pathPrint.c_str();
 
         return false;
       }
-      return dataPackObj->LoadImpl(std::make_unique<DataPack::StringDataSource>(std::move(data)));;
-    }
-    return dataPackObj->LoadImpl(std::make_unique<DataPack::MemoryMappedDataSource>(std::move(mmap)));;
-  } else {
-    LOG(ERROR) << "LoadFromPath failed file not exist";
-    return false;
+  }
+}
+
+void DataPackUtil::SwapPathName(const std::string& origin, std::string& copy,
+                                const std::string& from, const std::string& to) {
+  copy = origin;
+  size_t start_pos = 0;
+  while ((start_pos = copy.find(from, start_pos)) != std::string::npos) {
+    copy.replace(start_pos, from.length(), to);
+    start_pos += to.length();
   }
 }
 

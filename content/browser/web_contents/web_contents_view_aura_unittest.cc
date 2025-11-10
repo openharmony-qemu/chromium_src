@@ -861,7 +861,7 @@ TEST_F(WebContentsViewAuraTest, RejectDragFromHiddenWebContents) {
   WebContentsViewAura* view = GetView();
 
   DropData drop_data;
-  drop_data.url_infos = {ui::ClipboardUrlInfo{GURL(kGoogleUrl), u""}};
+  drop_data.url = GURL(kGoogleUrl);
 
   view->GetContentNativeView()->Hide();
   view->StartDragging(drop_data, url::Origin::Create(GURL(kGoogleUrl)),

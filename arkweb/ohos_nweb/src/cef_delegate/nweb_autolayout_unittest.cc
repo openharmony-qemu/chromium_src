@@ -18,9 +18,418 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <sstream>
- 
+#include <vector>
+
+#include "arkweb/ohos_adapter_ndk/interfaces/mock/mock_ohos_adapter_helper.h"
+#include "arkweb/ohos_adapter_ndk/interfaces/mock/mock_system_properties_adapter.h"
+#include "base/files/file_util.h"
+#include "base/files/scoped_temp_dir.h"
+#include "cef/include/cef_browser.h"
+#include "cef/include/cef_browser_host.h"
+#include "cef/include/cef_client.h"
+#include "cef/include/cef_dom.h"
+#include "cef/include/cef_frame.h"
+#include "cef/include/cef_process_message.h"
+#include "cef/include/cef_request.h"
+#include "cef/include/cef_string_visitor.h"
+#include "cef/include/cef_values.h"
+#include "cef/include/cef_v8.h"
+
 using namespace testing;
- 
+using ::testing::HasSubstr;
+using ::testing::InSequence;
+using ::testing::Return;
+using ::testing::ReturnRef;
+using ::testing::StartsWith;
+
+namespace {
+
+class SimpleCefValue : public CefValue {
+ public:
+  explicit SimpleCefValue(std::string value) : value_(std::move(value)) {}
+
+  bool IsValid() override { return true; }
+  bool IsOwned() override { return true; }
+  bool IsReadOnly() override { return false; }
+  bool IsSame(CefRefPtr<CefValue> that) override {
+    return that.get() && that->GetType() == GetType() &&
+           that->GetString() == value_;
+  }
+  bool IsEqual(CefRefPtr<CefValue> that) override { return IsSame(that); }
+  CefRefPtr<CefValue> Copy() override { return new SimpleCefValue(value_); }
+  Type GetType() override { return VTYPE_STRING; }
+  bool GetBool() override { return value_ == "true"; }
+  int GetInt() override { return 0; }
+  double GetDouble() override { return 0.0; }
+  CefString GetString() override { return CefString(value_); }
+  CefRefPtr<CefBinaryValue> GetBinary() override { return nullptr; }
+  CefRefPtr<CefDictionaryValue> GetDictionary() override { return nullptr; }
+  CefRefPtr<CefListValue> GetList() override { return nullptr; }
+  bool SetNull() override {
+    value_.clear();
+    return true;
+  }
+  bool SetBool(bool value) override {
+    value_ = value ? "true" : "false";
+    return true;
+  }
+  bool SetInt(int) override { return false; }
+  bool SetDouble(double) override { return false; }
+  bool SetString(const CefString& value) override {
+    value_ = value.ToString();
+    return true;
+  }
+  bool SetBinary(CefRefPtr<CefBinaryValue>) override { return false; }
+  bool SetDictionary(CefRefPtr<CefDictionaryValue>) override { return false; }
+  bool SetList(CefRefPtr<CefListValue>) override { return false; }
+
+ private:
+  std::string value_;
+
+  IMPLEMENT_REFCOUNTING(SimpleCefValue);
+};
+
+class BoolCefValue : public CefValue {
+ public:
+  explicit BoolCefValue(bool value) : value_(value) {}
+
+  bool IsValid() override { return true; }
+  bool IsOwned() override { return true; }
+  bool IsReadOnly() override { return false; }
+  bool IsSame(CefRefPtr<CefValue> that) override {
+    return that.get() && that->GetType() == GetType() &&
+           that->GetBool() == value_;
+  }
+  bool IsEqual(CefRefPtr<CefValue> that) override { return IsSame(that); }
+  CefRefPtr<CefValue> Copy() override { return new BoolCefValue(value_); }
+  Type GetType() override { return VTYPE_BOOL; }
+  bool GetBool() override { return value_; }
+  int GetInt() override { return value_ ? 1 : 0; }
+  double GetDouble() override { return value_ ? 1.0 : 0.0; }
+  CefString GetString() override { return CefString(value_ ? "true" : "false"); }
+  CefRefPtr<CefBinaryValue> GetBinary() override { return nullptr; }
+  CefRefPtr<CefDictionaryValue> GetDictionary() override { return nullptr; }
+  CefRefPtr<CefListValue> GetList() override { return nullptr; }
+  bool SetNull() override { return false; }
+  bool SetBool(bool value) override {
+    value_ = value;
+    return true;
+  }
+  bool SetInt(int value) override {
+    value_ = value != 0;
+    return true;
+  }
+  bool SetDouble(double value) override {
+    value_ = value != 0.0;
+    return true;
+  }
+  bool SetString(const CefString& value) override {
+    value_ = value.ToString() == "true";
+    return true;
+  }
+  bool SetBinary(CefRefPtr<CefBinaryValue>) override { return false; }
+  bool SetDictionary(CefRefPtr<CefDictionaryValue>) override { return false; }
+  bool SetList(CefRefPtr<CefListValue>) override { return false; }
+
+ private:
+  bool value_;
+
+  IMPLEMENT_REFCOUNTING(BoolCefValue);
+};
+
+class RecordingCefFrame : public CefFrame {
+ public:
+  struct ScriptCall {
+    std::string code;
+    std::string url;
+    int line;
+  };
+
+  void SetBrowser(CefRefPtr<CefBrowser> browser) { browser_ = browser; }
+  void SetURL(const std::string& url) { url_ = url; }
+  void SetIsMain(bool is_main) { is_main_ = is_main; }
+
+  const std::vector<ScriptCall>& script_calls() const { return script_calls_; }
+
+  bool IsValid() override { return true; }
+  CefRefPtr<CefBrowser> GetBrowser() override { return browser_; }
+  int64 GetIdentifier() override { return 1; }
+  bool IsMain() override { return is_main_; }
+  bool IsFocused() override { return false; }
+  CefString GetName() override { return CefString("recording_frame"); }
+  CefString GetURL() override { return CefString(url_); }
+  CefRefPtr<CefFrame> GetParent() override { return nullptr; }
+  void GetSource(CefRefPtr<CefStringVisitor>) override {}
+  void GetText(CefRefPtr<CefStringVisitor>) override {}
+  void LoadRequest(CefRefPtr<CefRequest>) override {}
+  void LoadURL(const CefString& url) override { url_ = url.ToString(); }
+  void ExecuteJavaScript(const CefString& code,
+                         const CefString& url,
+                         int line) override {
+    script_calls_.push_back({code.ToString(), url.ToString(), line});
+  }
+  void Undo() override {}
+  void Redo() override {}
+  void Cut() override {}
+  void Copy() override {}
+  void Paste() override {}
+  void Delete() override {}
+  void SelectAll() override {}
+  void ViewSource() override {}
+  void VisitDOM(CefRefPtr<CefDOMVisitor>) override {}
+  CefRefPtr<CefV8Context> GetV8Context() override { return nullptr; }
+  void SendProcessMessage(CefProcessId,
+                          CefRefPtr<CefProcessMessage>) override {}
+
+ private:
+  CefRefPtr<CefBrowser> browser_;
+  std::string url_{"https://example.test"};
+  bool is_main_{true};
+  std::vector<ScriptCall> script_calls_;
+
+  IMPLEMENT_REFCOUNTING(RecordingCefFrame);
+};
+
+class RecordingCefBrowserHost : public CefBrowserHost {
+ public:
+  void SetBrowser(CefRefPtr<CefBrowser> browser) { browser_ = browser; }
+
+  const std::vector<std::string>& executed_scripts() const {
+    return executed_scripts_;
+  }
+  CefRefPtr<CefJavaScriptResultCallback> captured_callback() const {
+    return captured_callback_;
+  }
+  bool last_extension_flag() const { return last_extension_flag_; }
+
+  void Reset() {
+    executed_scripts_.clear();
+    captured_callback_ = nullptr;
+    last_extension_flag_ = false;
+  }
+
+  CefRefPtr<CefBrowser> GetBrowser() override { return browser_; }
+  void CloseBrowser(bool) override {}
+  void SetFocus(bool) override {}
+  CefWindowHandle GetWindowHandle() override { return 0; }
+  CefWindowHandle GetOpenerWindowHandle() override { return 0; }
+  bool HasView() override { return true; }
+  CefRefPtr<CefClient> GetClient() override { return nullptr; }
+  CefRefPtr<CefRequestContext> GetRequestContext() override { return nullptr; }
+  double GetZoomLevel() override { return 0.0; }
+  void SetZoomLevel(double) override {}
+  void RunFileDialog(FileDialogMode,
+                     const CefString&,
+                     const CefString&,
+                     const std::vector<CefString>&,
+                     CefRefPtr<CefRunFileDialogCallback>) override {}
+  void StartDownload(const CefString&) override {}
+  void DownloadImage(const CefString&,
+                     bool,
+                     uint32_t,
+                     bool,
+                     CefRefPtr<CefDownloadImageCallback>) override {}
+  void Print() override {}
+  void PrintToPDF(const CefString&,
+                  const CefPdfPrintSettings&,
+                  CefRefPtr<CefPdfPrintCallback>) override {}
+  void Find(const CefString&, bool, bool, bool) override {}
+  void StopFinding(bool) override {}
+  void ShowDevTools(const CefWindowInfo&,
+                    CefRefPtr<CefClient>,
+                    const CefBrowserSettings&,
+                    const CefPoint&) override {}
+  void CloseDevTools() override {}
+  bool HasDevTools() override { return false; }
+  bool SendDevToolsMessage(const void*, size_t) override { return false; }
+  int ExecuteDevToolsMethod(int,
+                            const CefString&,
+                            CefRefPtr<CefDictionaryValue>) override {
+    return 0;
+  }
+  CefRefPtr<CefRegistration> AddDevToolsMessageObserver(
+      CefRefPtr<CefDevToolsMessageObserver>) override {
+    return nullptr;
+  }
+  void GetNavigationEntries(CefRefPtr<CefNavigationEntryVisitor>,
+                            bool) override {}
+  void ReplaceMisspelling(const CefString&) override {}
+  void AddWordToDictionary(const CefString&) override {}
+  bool IsWindowRenderingDisabled() override { return false; }
+  void WasResized() override {}
+  void WasHidden(bool) override {}
+  void WasOccluded(bool) override {}
+  void OnWindowShow() override {}
+  void OnWindowHide() override {}
+  void OnOnlineRenderToForeground() override {}
+  void SendTouchEventList(const std::vector<CefTouchEvent>&) override {}
+  void NotifyScreenInfoChanged() override {}
+  void Invalidate(PaintElementType) override {}
+  void SendExternalBeginFrame() override {}
+  void SendKeyEvent(const CefKeyEvent&) override {}
+  void SendMouseClickEvent(const CefMouseEvent&,
+                           cef_mouse_button_type_t,
+                           bool,
+                           int) override {}
+  void SendMouseMoveEvent(const CefMouseEvent&, bool) override {}
+  void SendMouseWheelEvent(const CefMouseEvent&, int, int) override {}
+  void SendTouchEvent(const CefTouchEvent&) override {}
+  void SendCaptureLostEvent() override {}
+  void NotifyMoveOrResizeStarted() override {}
+  int GetWindowlessFrameRate() override { return 0; }
+  void SetWindowlessFrameRate(int) override {}
+  void ImeSetComposition(
+      const CefString&,
+      const std::vector<CefCompositionUnderline>&,
+      const CefRange&,
+      const CefRange&) override {}
+  void ImeCommitText(const CefString&,
+                     const CefRange&,
+                     int) override {}
+  void ImeFinishComposingText(bool) override {}
+  void ImeCancelComposition() override {}
+  void DragTargetDragEnter(CefRefPtr<CefDragData>,
+                           const CefMouseEvent&,
+                           DragOperationsMask) override {}
+  void DragTargetDragOver(const CefMouseEvent&,
+                          DragOperationsMask) override {}
+  void DragTargetDragLeave() override {}
+  void DragTargetDrop(const CefMouseEvent&) override {}
+  void DragSourceEndedAt(int, int, DragOperationsMask) override {}
+  void DragSourceSystemDragEnded() override {}
+  CefRefPtr<CefNavigationEntry> GetVisibleNavigationEntry() override {
+    return nullptr;
+  }
+  void SetAccessibilityState(cef_state_t) override {}
+  void SetAutoResizeEnabled(bool,
+                            const CefSize&,
+                            const CefSize&) override {}
+  void SetAudioMuted(bool) override {}
+  bool IsAudioMuted() override { return false; }
+  void ExecuteJavaScript(const std::string& code,
+                         CefRefPtr<CefJavaScriptResultCallback> callback,
+                         bool extension) override {
+    executed_scripts_.push_back(code);
+    captured_callback_ = callback;
+    last_extension_flag_ = extension;
+  }
+  void SetNativeWindow(cef_native_window_t) override {}
+  void SetVirtualPixelRatio(float) override {}
+  float GetVirtualPixelRatio() override { return 1.0f; }
+  void SetZoomLevelDisabled(bool) override {}
+  bool IsZoomLevelDisabled() override { return false; }
+  void ClearHistory() override {}
+  void ExitFullScreen() override {}
+  void SetAudioExclusive(bool) override {}
+  void SetBackgroundColor(uint32_t) override {}
+
+ private:
+  CefRefPtr<CefBrowser> browser_;
+  std::vector<std::string> executed_scripts_;
+  CefRefPtr<CefJavaScriptResultCallback> captured_callback_;
+  bool last_extension_flag_{false};
+
+  IMPLEMENT_REFCOUNTING(RecordingCefBrowserHost);
+};
+
+class RecordingCefBrowser : public CefBrowser {
+ public:
+  RecordingCefBrowser(CefRefPtr<CefBrowserHost> host,
+                      CefRefPtr<CefFrame> main_frame)
+      : host_(host), main_frame_(main_frame) {}
+
+  CefRefPtr<CefBrowserHost> GetHost() override { return host_; }
+  CefRefPtr<CefFrame> GetMainFrame() override { return main_frame_; }
+  CefRefPtr<CefFrame> GetFocusedFrame() override { return main_frame_; }
+  bool IsValid() override { return true; }
+  bool IsPopup() override { return false; }
+  bool HasDocument() override { return true; }
+  bool CanGoBack() override { return false; }
+  void GoBack() override {}
+  bool CanGoForward() override { return false; }
+  void GoForward() override {}
+  bool IsLoading() override { return false; }
+  void Reload() override {}
+  void ReloadIgnoreCache() override {}
+  void StopLoad() override {}
+  int GetIdentifier() override { return 1; }
+  bool IsSame(CefRefPtr<CefBrowser> that) override {
+    return that.get() == this;
+  }
+  void SetFocus(bool) override {}
+  CefRefPtr<CefClient> GetClient() override { return nullptr; }
+  CefRefPtr<CefRequestContext> GetRequestContext() override { return nullptr; }
+  bool CanZoom(cef_zoom_command_t) override { return false; }
+  void Zoom(cef_zoom_command_t) override {}
+  double GetDefaultZoomLevel() override { return 0.0; }
+  double GetZoomLevel() override { return 0.0; }
+  void SetZoomLevel(double) override {}
+  CefRefPtr<CefFrame> GetFrameByIdentifier(const CefString&) override {
+    return nullptr;
+  }
+  CefRefPtr<CefFrame> GetFrameByName(const CefString&) override {
+    return nullptr;
+  }
+  size_t GetFrameCount() override { return 1; }
+  void GetFrameIdentifiers(std::vector<CefString>&) override {}
+  void GetFrameNames(std::vector<CefString>&) override {}
+  bool NeedToFireBeforeUnloadOrUnloadEvents() override { return false; }
+  void DispatchBeforeUnload() override {}
+  CefRefPtr<CefFrame> CreatePrepressSubFrame(const CefString&,
+                                             const CefString&,
+                                             const CefString&) override {
+    return nullptr;
+  }
+  CefRefPtr<CefFrame> CreateChildFrame(const CefString&,
+                                       const CefString&,
+                                       const CefString&,
+                                       bool,
+                                       bool,
+                                       const CefString&,
+                                       CefRefPtr<CefDictionaryValue>,
+                                       CefRefPtr<CefFrame>) override {
+    return nullptr;
+  }
+  CefRefPtr<CefFrame> GetFrame(const CefString&) override { return nullptr; }
+  CefRefPtr<CefFrame> GetFrame(int64) override { return nullptr; }
+  void VisitAllFrames(CefRefPtr<CefFrameVisitor>) override {}
+  void VisitAllFrames(CefFrameVisitor*) override {}
+  void VisitAllFramesWithContext(CefRefPtr<CefFrameVisitorWithContext>,
+                                 CefRefPtr<CefRequestContext>) override {}
+  void CloseBrowser(bool) override {}
+  bool TryCloseBrowser() override { return true; }
+  bool IsReadyToBeClosed() override { return true; }
+
+ private:
+  CefRefPtr<CefBrowserHost> host_;
+  CefRefPtr<CefFrame> main_frame_;
+
+  IMPLEMENT_REFCOUNTING(RecordingCefBrowser);
+};
+
+class ExposedNwebAutolayout : public NwebAutolayout {
+ public:
+  bool IsEnabled() const { return mEnable_; }
+  using NwebAutolayout::Initialize;
+};
+
+class ScopedAdapterInstance {
+ public:
+  explicit ScopedAdapterInstance(MockOhosAdapterHelper* helper) : helper_(helper) {
+    OhosAdapterHelper::SetInstance(helper_);
+  }
+
+  ~ScopedAdapterInstance() {
+    OhosAdapterHelper::SetInstance(nullptr);
+    delete helper_;
+  }
+
+ private:
+  MockOhosAdapterHelper* helper_;
+};
+
+}  // namespace
+
 const std::string g_valid_config = R"({
     "minMaskAreaRatioThreshold": 60,
     "opacityFilter": [10, 90],
@@ -644,6 +1053,90 @@ TEST_F(NwebAutolayoutTest, CheckWebContainer_EscapeLogic)
     EXPECT_TRUE(true);
 }
 
+TEST_F(NwebAutolayoutTest, CheckCCMandApplyRule_ExecutesExpectedScripts)
+{
+    mEnable_ = true;
+    mCCMConfig_.min_mask_area_ratio_threshold = 60;
+    mCCMConfig_.min_content_area_ratio_threshold = 20;
+    mCCMConfig_.scale_animation_duration = 120;
+    mCCMConfig_.opacity_filter = {15, 85};
+    mCCMConfig_.minScaleFactor = 70;
+
+    std::string pattern = "pattern_js";
+    std::string get_id = "getIdentifier();";
+    std::string get_page = "getPage();";
+    mAutoLayoutJSSource_ = "applyAutoLayout();";
+
+    base::Value::Dict rule;
+    rule.Set("id", "*");
+    base::Value::List rules;
+    rules.Append(std::move(rule));
+
+    WhitelistEntry entry;
+    entry.pattern = std::string_view(pattern);
+    entry.getID = std::string_view(get_id);
+    entry.getPage = std::string_view(get_page);
+    entry.appRuleInfos = std::move(rules);
+
+    mWListEntry_ = &entry;
+
+    CefRefPtr<RecordingCefFrame> frame = new RecordingCefFrame();
+    frame->SetURL("https://example.com");
+
+    CheckCCMandApplyRule(frame);
+
+    const auto& calls = frame->script_calls();
+    ASSERT_EQ(calls.size(), 4u);
+    EXPECT_EQ(calls[0].code, get_id);
+    EXPECT_EQ(calls[1].code, get_page);
+    EXPECT_EQ(calls[2].code, mAutoLayoutJSSource_);
+    EXPECT_THAT(calls[3].code,
+                StartsWith(std::string(ConfigConstants::kAutoLayoutBegin)));
+    EXPECT_THAT(calls[3].code,
+                HasSubstr(std::string(ConfigConstants::kAutoLayoutEnd)));
+    EXPECT_EQ(calls[0].url, "https://example.com");
+    EXPECT_EQ(calls[3].url, "https://example.com");
+
+    mWListEntry_ = nullptr;
+}
+
+TEST_F(NwebAutolayoutTest, CheckWebContainer_ExecutesPatternScriptWhenMainFrame)
+{
+    mEnable_ = true;
+    mPatternJSSource_ = "pattern`with$specials";
+
+    CefRefPtr<RecordingCefFrame> frame = new RecordingCefFrame();
+    frame->SetURL("https://frame-url.test");
+    frame->SetIsMain(true);
+
+    CefRefPtr<RecordingCefBrowserHost> host = new RecordingCefBrowserHost();
+    CefRefPtr<RecordingCefBrowser> browser = new RecordingCefBrowser(host, frame);
+    host->SetBrowser(browser);
+    frame->SetBrowser(browser);
+
+    CheckWebContainer(browser, frame);
+
+    const auto& scripts = host->executed_scripts();
+    ASSERT_EQ(scripts.size(), 1u);
+    EXPECT_EQ(scripts.front(), TestEscapeForJS(mPatternJSSource_));
+    EXPECT_FALSE(host->last_extension_flag());
+
+    CefRefPtr<CefJavaScriptResultCallback> callback = host->captured_callback();
+    ASSERT_NE(callback, nullptr);
+
+    callback->OnJavaScriptExeResult(new BoolCefValue(true));
+    callback->OnJavaScriptExeResult(new SimpleCefValue(""));
+    callback->OnJavaScriptExeResult(new SimpleCefValue("false"));
+    callback->OnJavaScriptExeResult(new SimpleCefValue("true"));
+}
+
+TEST_F(NwebAutolayoutTest, LoadAutoLayoutFromHap_DisablesFeatureWhenResourceMissing)
+{
+    mEnable_ = true;
+    LoadAutoLayoutFromHap();
+    EXPECT_FALSE(mEnable_);
+}
+
 TEST_F(NwebAutolayoutTest, ParseToplevelConfig_BoundaryValues)
 {
     // Test with boundary values for min_mask_area_ratio_threshold
@@ -763,5 +1256,71 @@ TEST_F(NwebAutolayoutTest, ParseToplevelConfig_OpacityFilterEdgeCases)
     EXPECT_TRUE(ParseToplevelConfig(root->GetDict()));
     EXPECT_EQ(mCCMConfig_.opacity_filter.first, 50);
     EXPECT_EQ(mCCMConfig_.opacity_filter.second, 50);
+}
+
+TEST(NwebAutolayoutSingletonTest, GetInstanceReturnsSingleton)
+{
+    auto instance1 = NwebAutolayout::GetInstance();
+    auto instance2 = NwebAutolayout::GetInstance();
+    EXPECT_NE(instance1, nullptr);
+    EXPECT_EQ(instance1, instance2);
+}
+
+TEST(NwebAutolayoutInitializeTest, InitializeDisablesWhenMinScaleNotPositive)
+{
+    auto helper = new MockOhosAdapterHelper();
+    ScopedAdapterInstance scoped(helper);
+    MockSystemPropertiesAdapter system_properties;
+
+    EXPECT_CALL(*helper, GetSystemPropertiesInstance())
+        .WillRepeatedly(ReturnRef(system_properties));
+    EXPECT_CALL(system_properties,
+                GetStringParameter(::testing::_, ::testing::_))
+        .WillOnce(Return("0"));
+
+    ExposedNwebAutolayout autolayout;
+    EXPECT_FALSE(autolayout.IsEnabled());
+}
+
+TEST(NwebAutolayoutInitializeTest, InitializeDisablesWhenConfigReadFails)
+{
+    auto helper = new MockOhosAdapterHelper();
+    ScopedAdapterInstance scoped(helper);
+    MockSystemPropertiesAdapter system_properties;
+
+    EXPECT_CALL(*helper, GetSystemPropertiesInstance())
+        .WillRepeatedly(ReturnRef(system_properties));
+    InSequence seq;
+    EXPECT_CALL(system_properties,
+                GetStringParameter(::testing::_, ::testing::_))
+        .WillOnce(Return("80"))
+        .WillOnce(Return("/nonexistent/autolayout_config.json"));
+
+    ExposedNwebAutolayout autolayout;
+    EXPECT_FALSE(autolayout.IsEnabled());
+}
+
+TEST(NwebAutolayoutInitializeTest, InitializeDisablesWhenJsonInvalid)
+{
+    base::ScopedTempDir temp_dir;
+    ASSERT_TRUE(temp_dir.CreateUniqueTempDir());
+    base::FilePath config_path = temp_dir.GetPath().AppendASCII("invalid_config.json");
+    const std::string invalid_json = "not-json";
+    ASSERT_TRUE(base::WriteFile(config_path, invalid_json));
+
+    auto helper = new MockOhosAdapterHelper();
+    ScopedAdapterInstance scoped(helper);
+    MockSystemPropertiesAdapter system_properties;
+
+    EXPECT_CALL(*helper, GetSystemPropertiesInstance())
+        .WillRepeatedly(ReturnRef(system_properties));
+    InSequence seq;
+    EXPECT_CALL(system_properties,
+                GetStringParameter(::testing::_, ::testing::_))
+        .WillOnce(Return("80"))
+        .WillOnce(Return(config_path.AsUTF8Unsafe()));
+
+    ExposedNwebAutolayout autolayout;
+    EXPECT_FALSE(autolayout.IsEnabled());
 }
 }

@@ -226,6 +226,15 @@ if [ "-${build_output}" != "-" ]; then
   build_dir="out/${build_output}/"
 fi
 
+if ! [ -d "${ROOT_DIR}"/"${build_dir}" ]; then
+  mkdir -p "${ROOT_DIR}"/"${build_dir}"
+fi
+log_file="${ROOT_DIR}/${build_dir}build.log"
+if [ -f "$log_file" ]; then
+  mv "$log_file" "${log_file%.*}_$(date -r "$log_file" +%Y%m%d%H%M%S).log"
+fi  
+exec > >(tee "$log_file") 2>&1
+
 case "${build_target}" in
   "w"|"${BUILD_TARGET_WEBVIEW}")
     build_target="${BUILD_TARGET_WEBVIEW}"
@@ -557,4 +566,4 @@ done < <(jq -c '. | to_entries[]' "$json_file")
 
 python3 $ROOT_DIR/arkweb/build/ninja2trace.py --ninja-log $ROOT_DIR/$build_dir/.ninja_log --trace-file $ROOT_DIR/$build_dir/build.trace --ninja-start-time "0" --duration-file $ROOT_DIR/$build_dir/sorted_action_duration.txt
 
-echo "build done"
+echo "Build completed. For more build information, see: $log_file"

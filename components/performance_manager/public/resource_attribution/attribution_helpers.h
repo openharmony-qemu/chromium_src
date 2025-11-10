@@ -93,7 +93,7 @@ void SplitResourceAmongFramesAndWorkers(
 
   std::set<const FrameNode*> frame_nodes;
   for (const FrameNode* f : process_node->GetFrameNodes()) {
-    if (!base::Contains(nodes_to_skip, f)) {
+    if (f && !base::Contains(nodes_to_skip, f)) {
       frame_nodes.insert(f);
     }
   }

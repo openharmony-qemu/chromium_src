@@ -93,7 +93,12 @@ void SplitResourceAmongFramesAndWorkers(
 
   std::set<const FrameNode*> frame_nodes;
   for (const FrameNode* f : process_node->GetFrameNodes()) {
-    if (f && !base::Contains(nodes_to_skip, f)) {
+#if BUILDFLAG(IS_ARKWEB)
+    if (!f) {
+      continue;
+    }
+#endif
+    if (!base::Contains(nodes_to_skip, f)) {
       frame_nodes.insert(f);
     }
   }

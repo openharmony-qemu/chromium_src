@@ -173,6 +173,11 @@ bool DataPackUtil::LoadFromPathExt(raw_ptr<DataPack> dataPackObj, const base::Fi
               << ", data file length: " << fileMapper->GetDataLen();
 
     std::unique_ptr<base::MemoryMappedFile> mmap =
+        std::make_unique<base::MemoryMappedFile>();
+    mmap->SetOhosFileMapper(fileMapper);
+    if (MmapHasGzipHeader(mmap.get())) {
+      std::string_view compressed(reinterpret_cast<char*>(mmap->data()),
+                                    mmap->length());
       std::string data;
       if (!compression::GzipUncompress(compressed, &data)) {
         LOG(ERROR) << "Failed to unzip compressed datapack: "
@@ -180,6 +185,12 @@ bool DataPackUtil::LoadFromPathExt(raw_ptr<DataPack> dataPackObj, const base::Fi
 
         return false;
       }
+  return dataPackObj->LoadImpl(std::make_unique<DataPack::StringDataSource>(std::move(data)));;
+    }
+    return dataPackObj->LoadImpl(std::make_unique<DataPack::MemoryMappedDataSource>(std::move(mmap)));;
+  } else {
+    LOG(ERROR) << "LoadFromPath failed file not exist";
+    return false;
   }
 }
 
@@ -192,5 +203,4 @@ void DataPackUtil::SwapPathName(const std::string& origin, std::string& copy,
     start_pos += to.length();
   }
 }
-
 }  // namespace ui

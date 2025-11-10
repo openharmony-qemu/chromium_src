@@ -8096,6 +8096,33 @@ TEST_F(NWebImplTest, OffscreenDocumentPermissionRequest001) {
                                                  resources, request_key);
   EXPECT_NE(NWebImpl::on_offscreen_document_permission_request_callback_, nullptr);
 }
+
+void OffscreenDocumentWindowNewEventCallback(
+    const char* extensionId,
+    const char* originUrl,
+    bool isAlert,
+    bool isUserTrigger,
+    const char* targetUrl) {}
+
+TEST_F(NWebImplTest, OffscreenDocumentWindowNewEvent001) {
+  const std::string extensionId = "extension-id";
+  const std::string originUrl = "arkweb-extension://extension-id/";
+  std::string targetUrl = "//xxxxxx/yyy/sss.html";
+  bool isAlert = false;
+  bool isUserTrigger = false;
+
+  nweb_impl_->OnOffscreenDocumentWindowNewEvent(
+      extensionId, originUrl, isAlert, isUserTrigger, targetUrl);
+  EXPECT_EQ(nweb_impl_->on_off_screen_window_new_callback_, nullptr);
+  nweb_impl_->on_off_screen_window_new_callback_ =
+      OffscreenDocumentWindowNewEventCallback;
+  nweb_impl_->OnOffscreenDocumentWindowNewEvent(
+      extensionId, originUrl, isAlert, isUserTrigger, targetUrl);
+  nweb_impl_->SetOnOffscreenDocumentWindowNewCallback(nullptr);
+  EXPECT_EQ(nweb_impl_->on_off_screen_window_new_callback_, nullptr);
+  nweb_impl_->SetOffscreenNWebId(0);
+  EXPECT_EQ(nweb_impl_->off_screen_nweb_id_, 0);
+}
 #endif  // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 }  // namespace OHOS::NWeb
                           

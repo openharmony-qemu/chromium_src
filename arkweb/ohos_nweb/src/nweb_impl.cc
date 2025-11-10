@@ -305,6 +305,9 @@ OnArkWebStaticOffscreenDocumentPromptFunc  OHOS::NWeb::NWebImpl::on_off_screen_p
 
 OnArkWebStaticOffscreenDocumentPermissionRequestFunc
     OHOS::NWeb::NWebImpl::on_offscreen_document_permission_request_callback_ = nullptr;
+OnArkWebStaticOffscreenDocumentWindowNewFunc
+    OHOS::NWeb::NWebImpl::on_off_screen_window_new_callback_ = nullptr;
+uint32_t OHOS::NWeb::NWebImpl::off_screen_nweb_id_ = 0;
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
@@ -4554,6 +4557,32 @@ void NWebImpl::DenyOffscreenDocumentPermission(int resources, int request_key) {
   LOG(INFO) << " func:" << __FUNCTION__;
   OffscreenPermissionRequestHandler::GetInstance()->Deny(resources,
                                                          request_key);
+}
+
+NO_SANITIZE("cfi")
+void NWebImpl::OnOffscreenDocumentWindowNewEvent(
+    const std::string& extensionId,
+    const std::string& originUrl,
+    bool isAlert,
+    bool isUserTrigger,
+    const std::string& targetUrl) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  if (on_off_screen_window_new_callback_) {
+    on_off_screen_window_new_callback_(
+        extensionId.c_str(), originUrl.c_str(),
+        isAlert, isUserTrigger, targetUrl.c_str());
+  }
+}
+
+void NWebImpl::SetOnOffscreenDocumentWindowNewCallback(
+    OnArkWebStaticOffscreenDocumentWindowNewFunc func) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  on_off_screen_window_new_callback_ = func;
+}
+
+void NWebImpl::SetOffscreenNWebId(uint32_t nweb_id) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  off_screen_nweb_id_ = nweb_id;
 }
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 

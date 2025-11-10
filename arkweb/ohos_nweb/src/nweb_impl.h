@@ -998,6 +998,16 @@ class NWebImpl : public NWeb {
       int request_key);
   static void GrantOffscreenDocumentPermission(int resources, int request_key);
   static void DenyOffscreenDocumentPermission(int resources, int request_key);
+  static void OnOffscreenDocumentWindowNewEvent(
+      const std::string& extensionId,
+      const std::string& originUrl,
+      bool isAlert,
+      bool isUserTrigger,
+      const std::string& targetUrl);
+  static void SetOnOffscreenDocumentWindowNewCallback(
+      OnArkWebStaticOffscreenDocumentWindowNewFunc func);
+  static void SetOffscreenNWebId(uint32_t nweb_id);
+  static void ResetOffscreenNWebId();
 #endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_AI)
@@ -1267,6 +1277,8 @@ class NWebImpl : public NWeb {
 
   static OnArkWebStaticOffscreenDocumentPermissionRequestFunc
       on_offscreen_document_permission_request_callback_;
+  static OnArkWebStaticOffscreenDocumentWindowNewFunc on_off_screen_window_new_callback_;
+  static uint32_t off_screen_nweb_id_;
 #endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)

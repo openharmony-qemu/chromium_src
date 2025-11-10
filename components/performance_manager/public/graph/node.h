@@ -52,9 +52,11 @@ class TypedNode : public Node {
   // Helper function for casting from the generic Node type to its underlying
   // public node type. This CHECKs that the cast is valid.
   static const PublicNodeClass* FromNode(const Node* node) {
+#if BUILDFLAG(IS_ARKWEB)
     if (!node) {
       return nullptr;
     }
+#endif
     CHECK_EQ(node->GetNodeType(), PublicNodeClass::Type());
     return reinterpret_cast<const PublicNodeClass*>(node);
   }

@@ -208,22 +208,16 @@ void OHOSAudioOutputStream::OnSuspend() {
 void OHOSAudioOutputStream::OneShotMediaPlayerStopped() {
   LOG(INFO) << __func__ << "[hash: "
             << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";
+  AudioParameters parameters = parameters_;
   if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
     if (!main_task_runner_) {
       LOG(ERROR) << "main_task_runner is nullptr";
       return;
     }
     main_task_runner_->PostTask(
-        FROM_HERE, base::BindOnce(
-                       [](base::WeakPtr<OHOSAudioOutputStream> self) {
-                         if (self && self->parameters_.IsValid()) {
-                           OHOSAudioFocusController::OneShotMediaPlayerStopped(
-                               self->parameters_);
-                         }
-                       },
-                       weak_factory_.GetWeakPtr()));
+        FROM_HERE, base::BindOnce(&OHOSAudioFocusController::OneShotMediaPlayerStopped, parameters));
   } else {
-    OHOSAudioFocusController::OneShotMediaPlayerStopped(parameters_);
+    OHOSAudioFocusController::OneShotMediaPlayerStopped(parameters);
   }
 }
 
@@ -238,6 +232,7 @@ void OHOSAudioOutputStream::OnResume() {
     LOG(ERROR) << "OHOSAudioOutputStream::OnResume parameters_ is not valid.";
     return;
   }
+  AudioParameters parameters = parameters_;
   if (OHOSAudioFocusController::IsSuspended(parameters_)) {
     if(isNeedResume(audioResumeInterval_)) {
       if (!main_task_runner_) {
@@ -245,14 +240,7 @@ void OHOSAudioOutputStream::OnResume() {
         return;
       }
       main_task_runner_->PostTask(
-          FROM_HERE,
-          base::BindOnce(
-              [](base::WeakPtr<OHOSAudioOutputStream> self) {
-                if (self && self->parameters_.IsValid()) {
-                  OHOSAudioFocusController::OnResume(self->parameters_);
-                }
-              },
-              weak_factory_.GetWeakPtr()));
+        FROM_HERE, base::BindOnce(&OHOSAudioFocusController::OnResume, parameters));
     }
     return;
   }

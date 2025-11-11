@@ -78,7 +78,7 @@ static const char* GetAllowedDemuxers() {
     std::vector<std::string> allowed_demuxers = {"ogg",  "matroska", "wav",
                                                  "flac", "mp3",      "mov"};
 #if BUILDFLAG(ARKWEB_MEDIA)
-    allowed_demuxers.insert(allowed_demuxers.end()m {"flv", "avi", "mpegts"});
+    allowed_demuxers.insert(allowed_demuxers.end(), {"flv", "avi", "mpegts"});
 #endif
 #if BUILDFLAG(USE_PROPRIETARY_CODECS)
     allowed_demuxers.push_back("aac");

@@ -193,7 +193,8 @@ bool SegmentationMultiBufferDataProvider::Available() const {
       return true;
     }
   }
-  if (fifo_vector_[read_index_].front()->data_size() == block_size()) {
+  if (!fifo_vector_[read_index_].front()->end_of_stream() &&
+    fifo_vector_[read_index_].front()->data_size() == block_size()) {
     return true;
   }
   return false;

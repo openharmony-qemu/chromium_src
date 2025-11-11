@@ -48,6 +48,7 @@ OHOSAudioOutputStream::OHOSAudioOutputStream(OHOSAudioManager* manager,
 // LCOV_EXCL_START
 OHOSAudioOutputStream::~OHOSAudioOutputStream() {
   LOG(INFO) << "OHOSAudioOutputStream::~OHOSAudioOutputStream";
+  std::unique_lock<std::shared_mutex> lock_audio_callback(OHOSAudioOutputCallback::GetAudioCallbackMutex());
   if (callback_index_ > 0) {
     callback_wrapper_.Clear(callback_index_);
     callback_index_ = 0;

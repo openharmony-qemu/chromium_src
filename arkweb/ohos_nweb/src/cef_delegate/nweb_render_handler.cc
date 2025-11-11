@@ -1062,6 +1062,16 @@ CefRect NWebRenderHandler::ConvertSelectAreaDisplayRatio(const CefRect& rect)
 void NWebRenderHandler::OnSelectAreaChanged(CefRect& select_area) {
   select_area = ConvertSelectAreaDisplayRatio(select_area);
 }
+
+void NWebRenderHandler::OnClippedSelectionBoundsChanged(const CefRect& rect, bool need_report) {
+    clipped_selection_bounds_ = rect;
+    if (!need_report) {
+        return;
+    }
+    if (auto handler = handler_.lock()) {
+        handler->OnClippedSelectionBoundsChanged(rect.x, rect.y, rect.width, rect.height);
+    }
+}
 #endif
 CefTouchHandleState NWebRenderHandler::ConvertTouchHandleDisplayRatio(
     const CefTouchHandleState& touch_handle) {

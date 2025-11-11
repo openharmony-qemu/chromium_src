@@ -1069,9 +1069,6 @@ bool GetMimeCacheTypeFromExtension(const std::string& ext,
       {"zsav", "application/x-spss-sav"},
       {"zst", "application/zstd"},
       {"zz", "application/zlib"},
-#if BUILDFLAG(ARKWEB_FILE_UPLOAD)
-      {"jxr","image/vnd.ms-photo"},
-#endif
   });
 
   // If first match fails, try matching lower case.

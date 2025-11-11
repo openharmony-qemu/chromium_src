@@ -1,0 +1,14 @@
+--- css_to_wrapper.py	2025-11-08 15:43:53.116928021 +0800
++++ css_to_wrapper.py	2025-11-08 15:04:24.651894996 +0800
+@@ -181,10 +181,11 @@
+   parser.add_argument('--in_folder', required=True)
+   parser.add_argument('--out_folder', required=True)
+   parser.add_argument('--in_files', required=True, nargs="*")
+   parser.add_argument('--minify', action='store_true')
+   parser.add_argument('--use_js', action='store_true')
++  parser.add_argument('--arkweb_as_default_scheme', action='store_true')
+   args = parser.parse_args(argv)
+ 
+   in_folder = path.normpath(path.join(_CWD, args.in_folder))
+   out_folder = path.normpath(path.join(_CWD, args.out_folder))
+   extension = '.js' if args.use_js else '.ts'

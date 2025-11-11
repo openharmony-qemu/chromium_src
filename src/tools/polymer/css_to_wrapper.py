@@ -179,7 +179,7 @@ def _extract_metadata(css_file):
           scheme_match = re.search(_SCHEME_REGEX, line)
           if scheme_match:
             scheme = line[scheme_match.end():]
-            assert scheme in ['chrome', 'relative']
+            assert scheme in ['chrome', 'relative', 'arkweb']
             metadata['scheme'] = scheme
 
         if _METADATA_END_REGEX in line:
@@ -289,6 +289,8 @@ def main(argv):
       scheme = 'chrome:'
     elif metadata['scheme'] == 'relative':
       scheme = ''
+    if args.arkweb_as_default_scheme and metadata['scheme'] == 'default':
+      scheme = 'arkweb:'
 
     substitutions = None
     if metadata['type'] == 'style':

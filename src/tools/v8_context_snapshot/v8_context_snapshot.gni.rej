@@ -1,0 +1,15 @@
+--- v8_context_snapshot.gni	2025-11-08 15:43:53.174195431 +0800
++++ v8_context_snapshot.gni	2025-11-08 15:04:24.682979585 +0800
+@@ -25,11 +25,11 @@
+ declare_args() {
+   # TODO(crbug.com/40539769): Enable the feature on more environments.
+   # Disable in mac and win cross builds since building Blink twice is slow.
+   use_v8_context_snapshot =
+       include_both_v8_snapshots ||
+-      (!is_chromeos && !is_android && !is_castos && !is_fuchsia &&
++      (!is_chromeos && !is_android && !is_castos && !is_fuchsia && !is_arkweb &&
+        # Android may build for both 64 bit and 32bit. When this happens, the
+        # v8_target_cpu will not equal the target_cpu (for example,
+        # v8_target_cpu == "arm" but target_os == "arm64").
+        (v8_target_cpu == target_cpu || target_os == "android") &&
+        !(host_toolchain == default_toolchain && is_msan) &&

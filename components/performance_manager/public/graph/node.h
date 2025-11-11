@@ -11,6 +11,10 @@
 #include "components/performance_manager/public/graph/node_state.h"
 #include "components/performance_manager/public/graph/node_type.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "base/logging.h"
+#endif
+
 namespace performance_manager {
 
 class Graph;
@@ -54,6 +58,7 @@ class TypedNode : public Node {
   static const PublicNodeClass* FromNode(const Node* node) {
 #if BUILDFLAG(IS_ARKWEB)
     if (!node) {
+      LOG(ERROR) << "FromNode::node is nullptr";
       return nullptr;
     }
 #endif

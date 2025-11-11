@@ -1287,6 +1287,13 @@ void FFmpegDemuxer::OnOpenContextDone(bool result) {
     return;
   }
 
+#if BUILDFLAG(ARKWEB_MEDIA)
+  if (glue_->format_context() && glue_->format_context()->iformat && glue_->format_context()->iformat->name &&
+      (strcmp(glue_->format_context()->iformat->name, "flv") == 0 ||
+       strcmp(glue_->format_context()->iformat->name, "mpegts") == 0)) {
+    glue_->format_context()->flags &= ~AVFMT_FLAG_NOH264PARSE;
+  }
+#endif
   // Fully initialize AVFormatContext by parsing the stream a little.
   blocking_task_runner_->PostTaskAndReplyWithResult(
       FROM_HERE,

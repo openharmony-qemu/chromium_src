@@ -256,3 +256,16 @@
 /arkweb/ohos_nweb/src/sysevent/ @StringChen
 
 # Framework
+
+# Compositor
+/ui/display/ @defeng20201 @LXinJie1
+/ui/compositor/ @defeng20201 @LXinJie1
+/ui/color/ @defeng20201 @LXinJie1
+/skia/ @defeng20201 @LXinJie1
+/gpu/ @defeng20201 @LXinJie1
+/content/gpu/ @defeng20201 @LXinJie1
+/content/browser/screen_details/
+/content/browser/gpu/
+/content/browser/resources/gpu/
+/content/browser/compositor/
+/components/viz/

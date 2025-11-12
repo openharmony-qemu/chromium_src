@@ -114,7 +114,7 @@ class OHOSAudioOutputStream : public AudioOutputStream {
 
   void SetStreamUsage();
 
-  void OneShotMediaPlayerStopped();
+  void OneShotMediaPlayerStopped(AudioParameters parameters);
 
   void StopTimer();
 

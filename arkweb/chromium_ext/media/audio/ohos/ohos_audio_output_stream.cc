@@ -176,7 +176,7 @@ void OHOSAudioOutputStream::OnSuspend() {
     LOG(ERROR) << "The playback is stopped. Exit OnSuspend.";
     return;
   }
-  if (OHOSAudioFocusController::IsActive(parameters_)) {
+  if (OHOSAudioFocusController::IsActive(parameters)) {
     if (audioResumeInterval_ != 0) {
       intervalSinceLastSuspend_ = std::time(nullptr);
     }
@@ -198,17 +198,16 @@ void OHOSAudioOutputStream::OnSuspend() {
     LOG(INFO) << "media session is not active. [hash: "
               << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-    if (OHOSAudioFocusController::HasOnlyOneShotPlayersPublic(parameters_)) {
-      OneShotMediaPlayerStopped();
+    if (OHOSAudioFocusController::HasOnlyOneShotPlayersPublic(parameters)) {
+      OneShotMediaPlayerStopped(parameters);
     }
 #endif
   }
 }
 
-void OHOSAudioOutputStream::OneShotMediaPlayerStopped() {
+void OHOSAudioOutputStream::OneShotMediaPlayerStopped(AudioParameters parameters) {
   LOG(INFO) << __func__ << "[hash: "
             << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";
-  AudioParameters parameters = parameters_;
   if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
     if (!main_task_runner_) {
       LOG(ERROR) << "main_task_runner is nullptr";

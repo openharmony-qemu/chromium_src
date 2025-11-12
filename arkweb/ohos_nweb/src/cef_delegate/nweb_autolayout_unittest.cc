@@ -154,7 +154,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   bool CanExecuteChromeCommand(int) override { return false; }
   void ExecuteChromeCommand(int, cef_window_open_disposition_t) override {}
   bool IsRenderProcessUnresponsive() override { return false; }
-  cef_runtime_style_t GetRuntimeStyle() override { return CEF_RUNTIME_STYLE_CHROME; }
+  cef_runtime_style_t GetRuntimeStyle() override { return CEF_RUNTIME_STYLE_DEFAULT; }
   void SetPopupWindow(cef_native_window_t) override {}
   void CreateToPDF(const CefPdfPrintSettings&, CefRefPtr<CefPdfValueCallback>) override {}
   void EnableVideoAssistant(bool) override {}

@@ -152,7 +152,8 @@ void OhosEventSource::OnMouseEvent(
   pointer_location_.SetPoint(mouse_event.x, mouse_event.y);
   if (mouse_event.action == OH_NATIVEXCOMPONENT_MOUSE_PRESS) {
     type = EventType::kMousePressed;
-  } else if (mouse_event.action == OH_NATIVEXCOMPONENT_MOUSE_RELEASE) {
+  } else if (mouse_event.action == OH_NATIVEXCOMPONENT_MOUSE_RELEASE ||
+             mouse_event.action == OH_NATIVEXCOMPONENT_MOUSE_CANCEL) {
     type = EventType::kMouseReleased;
   } else if (mouse_event.action == OH_NATIVEXCOMPONENT_MOUSE_MOVE) {
     OnMouseMoveEvent(widget_id, mouse_event, original_pointer_location, display_id);

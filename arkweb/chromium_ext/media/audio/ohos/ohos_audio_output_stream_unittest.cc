@@ -454,7 +454,10 @@ TEST_F(OHOSAudioOutputStreamTest, OnSuspend007) {
 
 TEST_F(OHOSAudioOutputStreamTest, OneShotMediaPlayerStopped001) {
   testing::internal::CaptureStderr();
-  stream_->OneShotMediaPlayerStopped();
+  auto params = AudioParameters(
+    AudioParameters::Format::AUDIO_PCM_LINEAR,
+    ChannelLayoutConfig::FromLayout<CHANNEL_LAYOUT_MONO>(), 8000, 160);
+  stream_->OneShotMediaPlayerStopped(params);
   std::string log_output = testing::internal::GetCapturedStderr();
   EXPECT_EQ(log_output.find("main_task_runner is nullptr"), std::string::npos);
 }

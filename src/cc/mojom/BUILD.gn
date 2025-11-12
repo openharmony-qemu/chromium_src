@@ -29,6 +29,8 @@ mojom("mojom") {
     "touch_action.mojom",
   ]
 
+  enabled_features = []
+
   if (is_android || is_ohos || is_arkweb) {
     enabled_features += [ "is_android_or_ios_or_arkweb" ]
     enabled_features += [ "arkweb_menu" ]

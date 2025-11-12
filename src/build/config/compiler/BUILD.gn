@@ -2416,6 +2416,7 @@ config("chromium_code") {
       cflags += [ "-w" ]
     }
 
+    cflags += [
       # Warn on GNU extensions.
       "-Wgnu",
 

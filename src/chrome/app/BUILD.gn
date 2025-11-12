@@ -86,7 +86,7 @@ grit_strings("generated_resources") {
   outputs = [ "grit/generated_resources.h" ]
 #ifdef arkweb_i18n
   if (arkweb_i18n) {
-    all_chrome_locales += extra_locales
+    locales = all_chrome_locales + extra_locales
   }
 
 #endif
@@ -116,7 +116,7 @@ grit_strings("branded_strings") {
   defines = chrome_grit_defines
 #ifdef arkweb_i18n
   if (arkweb_i18n) {
-    all_chrome_locales += extra_locales
+    locales = all_chrome_locales + extra_locales
   }
 
 #endif

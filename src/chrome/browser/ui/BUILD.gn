@@ -2824,16 +2824,6 @@ static_library("ui") {
       sources -= [
         "frame/window_frame_util.cc",
         "frame/window_frame_util.h",
-        "webui/signin/inline_login_handler.cc",
-        "webui/signin/inline_login_handler.h",
-        "webui/signin/signin_url_utils.cc",
-        "webui/signin/signin_url_utils.h",
-        "webui/signin/signin_web_dialog_ui.cc",
-        "webui/signin/signin_web_dialog_ui.h",
-        "webui/signin/sync_confirmation_handler.cc",
-        "webui/signin/sync_confirmation_handler.h",
-        "webui/signin/sync_confirmation_ui.cc",
-        "webui/signin/sync_confirmation_ui.h",
       ]
     }
     deps += [
@@ -3338,8 +3328,6 @@ static_library("ui") {
 
   if (is_ohos && !arkweb_asan) {
     sources -= [
-      "passwords/bubble_controllers/relaunch_chrome_bubble_controller.cc",
-      "passwords/bubble_controllers/relaunch_chrome_bubble_controller.h",
       "webui/password_manager/promo_cards/relaunch_chrome_promo.cc",
       "webui/password_manager/promo_cards/relaunch_chrome_promo.h",
     ]

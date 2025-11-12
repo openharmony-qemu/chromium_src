@@ -90,6 +90,8 @@ declare_args() {
 
   # Set to true to enable icu4x transliterator
   enable_rust_translit = false
+
+  enable_base_tracing = false
 }
 
 # Mutex priority inheritance is disabled by default due to security

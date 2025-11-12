@@ -55,7 +55,6 @@ group("oh_core_unittests") {
     "//media/midi:midi_unittests",
     "//media/mojo:media_mojo_unittests",
     "//media/capture:capture_unittests",
-    "//media/learning/mojo:media_learning_mojo_unittests",
     "//mojo:mojo_unittests",
     "//net:net_unittests",
     "//services:services_unittests",

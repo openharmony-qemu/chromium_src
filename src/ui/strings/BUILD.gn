@@ -24,7 +24,7 @@ grit_strings("ax_strings") {
 
 #ifdef arkweb_i18n
   if (arkweb_i18n) {
-    all_chrome_locales += extra_locales
+    locales = all_chrome_locales + extra_locales
   }
 
 #endif
@@ -35,7 +35,7 @@ grit_strings("auto_image_annotation_strings") {
   outputs = [ "grit/auto_image_annotation_strings.h" ]
 #ifdef arkweb_i18n
   if (arkweb_i18n) {
-    all_chrome_locales += extra_locales
+    locales = all_chrome_locales + extra_locales
   }
 
 #endif
@@ -47,7 +47,7 @@ grit_strings("ui_strings") {
 
 #ifdef arkweb_i18n
   if (arkweb_i18n) {
-    all_chrome_locales += extra_locales
+    locales = all_chrome_locales + extra_locales
   }
 
 #endif
@@ -59,7 +59,7 @@ grit_strings("app_locale_settings") {
 
 #ifdef arkweb_i18n
   if (arkweb_i18n) {
-    all_chrome_locales += extra_locales
+    locales = all_chrome_locales + extra_locales
   }
 
 #endif

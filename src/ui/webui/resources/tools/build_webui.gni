@@ -218,7 +218,7 @@ template("build_webui") {
 
         in_folder = "."
         out_folder = scheme_replaced_dir
-        in_files = invoker.static_files + invoker.non_web_component_files +
+        in_files = invoker.static_files + invoker.ts_files +
                    invoker.css_files + invoker.icons_html_files
       }
     }
@@ -435,11 +435,6 @@ template("build_webui") {
       out_folder = preprocess_dir
       in_files = invoker.css_files
       minify = optimize
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-      if (arkweb_arkweb_extensions) {
-        arkweb_as_default_scheme = true
-      }
-#endif
     }
   }
 

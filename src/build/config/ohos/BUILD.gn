@@ -206,7 +206,7 @@ config("runtime_library") {
       ldflags += [ "-L" + rebase_path(
                        "$ohos_toolchain_root/lib/aarch64-linux-ohos",
                        root_build_dir) ]
-      llvm_version = "19"
+      llvm_version = "21"
       ldflags +=
           [ "-L" + rebase_path(
                 "$ohos_toolchain_root/lib/clang/$llvm_version/lib/aarch64-linux-ohos",

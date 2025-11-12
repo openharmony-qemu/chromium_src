@@ -599,6 +599,12 @@ _simpletypes = {
     'CefThreadId': ['cef_thread_id_t', 'TID_UI'],
     'CefTime': ['cef_time_t', 'CefTime()'],
     'CefWindowHandle': ['cef_window_handle_t', 'kNullWindowHandle'],
+    # for IS_OHOS
+    'CefSelectPopupItem': ['cef_select_popup_item_t', 'CefSelectPopupItem()'],
+    'CefAutofillPopupItem': [
+        'cef_autofill_popup_item_t', 'CefAutofillPopupItem()'
+    ],
+    'std::string': ['char', '0']
 }
 
 
@@ -1028,7 +1034,17 @@ class obj_class:
     self.parent_name = parent_name
     self.comment = comment
     self.includes = includes
-    self.forward_declares = forward_declares
+    self.forward_declares = [ y for y in forward_declares if y not in (
+      "CefClient",
+      "CefBrowserHost", "CefResourceHandlerExt",
+      "ArkWebResourceRequestHandlerExt","CefMediaPlayerListenerForVAST","CefMediaPlayerController","CefWebExtensionApiHandler",
+      "ArkWebBrowserExt", "ArkWebBrowserHostExt", "CefBrowserHostBase",
+      "ArkWebClientExt", "ArkWebLoadHandlerExt", "ArkWebRenderHandlerExt",
+      "ArkWebRequestImplExt","ArkwebFrameExt", "CefFrameHostImpl", "CefCookieManagerExt",
+      "CefDownloadItemExt", "ArkWebRenderWidgetHostViewOSRExt", "CefDialogHandlerExt",
+      "ArkWebDisplayHandlerExt", "CefContextMenuHandlerExt", "CefContextMenuParamsExt",
+      "CefAppExt", "CefSelectClientCertificateCallbackExt", "CefRequestHandlerExt",
+      "CefOpenAppLinkCallback")]
 
     self._validate_attribs()
 
@@ -1846,6 +1862,12 @@ class obj_argument:
         return 'string_byref_const'
       return 'string_byref'
 
+    # std string type
+    if self.type.is_result_std_string() and self.type.is_byref():
+      if self.type.is_const():
+        return 'std_string_byref_const'
+      return 'std_string_byref'
+
     # *ptr type
     if self.type.is_result_ptr():
       prefix = self.type.get_result_ptr_type_prefix()
@@ -1951,6 +1973,9 @@ class obj_argument:
 
     if self.type.is_result_string():
       return 'string'
+
+    if self.type.is_result_std_string():
+      return 'std::string'
 
     if self.type.is_result_ptr():
       prefix = self.type.get_result_ptr_type_prefix()
@@ -2126,6 +2151,10 @@ class obj_analysis:
     # check for string values
     if value == "CefString":
       return {'result_type': 'string', 'result_value': None}
+
+    # check for std string values
+    if value == "std::string":
+      return {'result_type': 'std::string', 'result_value': None}
 
     # check for simple direct translations
     if value in _simpletypes.keys():
@@ -2325,6 +2354,10 @@ class obj_analysis:
     """ Returns true if this is a string type. """
     return (self.result_type == 'string')
 
+  def is_result_std_string(self):
+    """ Returns true if this is a std string type. """
+    return (self.result_type == 'std::string')
+
   def get_result_string_type(self):
     """ Return the string type. """
     if not self.has_name():
@@ -2337,6 +2370,9 @@ class obj_analysis:
       return 'cef_string_t*'
     # Const parameters use the const string struct.
     return 'const cef_string_t*'
+
+  def get_result_std_string_type(self):
+    return 'const char*'
 
   def is_result_vector(self):
     """ Returns true if this is a vector type. """
@@ -2461,6 +2497,8 @@ class obj_analysis:
       result += self.get_result_struct_type(defined_structs, version_finder)
     elif self.is_result_string():
       result += self.get_result_string_type()
+    elif self.is_result_std_string():
+      result += self.get_result_std_string_type()
     elif self.is_result_map():
       resdict = self.get_result_map_type(defined_structs)
       if resdict['format'] == 'single' or resdict['format'] == 'multi':

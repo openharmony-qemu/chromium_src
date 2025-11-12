@@ -50,7 +50,7 @@ void PDFDocumentHelper::HideHandleAndQuickMenuForPDF(bool hide_handles) {
     return;
   }
   
-  LOG(DEBUG) << "PDF hide handle and quick nenu: " << hide_handles;
+  LOG(DEBUG) << "PDF hide handle and quick menu: " << hide_handles;
   touch_selection_controller_client_manager_->
       HideHandleAndQuickMenuIfNecessary(hide_handles);
   if (!hide_handles) {

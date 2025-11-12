@@ -976,6 +976,7 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
   bool is_touching_ = false;
   bool is_scrolling_ = false;
   bool is_pinching_ = false;
+  std::atomic<bool> is_menu_hidden_{false};
 
   // Used for cancelable delayed task in `UpdateScroll()`.
   const scoped_refptr<base::SequencedTaskRunner> task_runner_;

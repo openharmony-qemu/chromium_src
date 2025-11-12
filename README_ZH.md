@@ -1,11 +1,12 @@
 # Chromium
 ## 简介
 ### 软件架构
-软件架构说明
-![](figures/Web-architecture_ZH.png "web软件架构图")
-* webview组件：OpenHarmony的UI组件。
-* nweb：基于CEF构建的OpenHarmony Web组件的Native引擎，主要构建Web组件浏览器内核的部分能力。
-* CEF：CEF全称Chromium Embedded Framework，是一个基于Google Chromium 的开源项目。
+
+![image.png](https://raw.gitcode.com/user-images/assets/8190112/ef12b34f-2be4-4a6e-9a87-ee4d7664f29c/image.png 'image.png')
+- Chromium:   Google 主导的开源 Web 浏览器项目，旨在构建更安全、更快、更稳定的 Web 平台的项目。多进程架构是Chromium 最核心的设计, 它将浏览器功能划分到多个独立的进程中,以实现安全性,稳定性和分层架构。
+- CEF：全称Chromium Embedded Framework，是一个基于Google Chromium 的开源项目。
+- Arkweb:  旨在将 Chromium Web 引擎集成到 OpenHarmony (OHOS) 操作系统中。它作为系统 `Web` 组件的基础，为 OHOS 应用程序提供强大的 Web 渲染能力。基于Chromium和CEF二次扩展，在原有功能的基础上，基于Openharmoy平台扩展了很多新性，如广告拦截，任务下载，输入框填充等。
+
 ## 使用说明
 1. 下载代码：以132_trunk为例，要下载其他分支代码，请替换-b之后的分支名，参数列表详见8。
     ```

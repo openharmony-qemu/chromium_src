@@ -471,12 +471,12 @@ void VideoRangeURLLoaderClient::DidReceiveData(base::span<const char> data) {
     }
 
     int last_block_size = fifo_ptr_->back()->data_size();
-    int to_append =
-        std::min<int>(data.size(), provider_->block_size() - last_block_size);
+    auto to_append =
+        std::min<int64_t>(data.size(), provider_->block_size() - last_block_size);
     DCHECK_GT(to_append, 0);
     errno_t result =
         memcpy_s(fifo_ptr_->back()->writable_data() + last_block_size,
-                 to_append, data.data(), to_append);
+                 static_cast<size_t>(to_append), data.data(), static_cast<size_t>(to_append));
     if (result != EOK) {
       LOG(INFO) << "VideoOpt: " << __func__
                 << " memcpy_s failed, errno = " << result

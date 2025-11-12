@@ -49,6 +49,7 @@ void EnvInputStateController::UpdateStateForTouchEvent(
       env_->SetTouchDown(touch_ids_down_ != 0);
       break;
 
+    case ui::EventType::kTouchCancelled:
 #if BUILDFLAG(IS_CHROMEOS)
       // Handle EventType::kTouchCancelled only if it has a native event.
       // ChromeOS exo touch drag relies on the ability to cancel touch

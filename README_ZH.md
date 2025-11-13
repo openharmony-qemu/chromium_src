@@ -1,8 +1,7 @@
 # Chromium
 ## 简介
 ### 软件架构
-
-![image.png](https://raw.gitcode.com/user-images/assets/8190112/ef12b34f-2be4-4a6e-9a87-ee4d7664f29c/image.png 'image.png')
+![image.png](https://raw.gitcode.com/user-images/assets/4371737/c396f50d-f9bd-41e9-bcbf-e395821e3b6f/image.png 'image.png')
 - Chromium:   Google 主导的开源 Web 浏览器项目，旨在构建更安全、更快、更稳定的 Web 平台的项目。多进程架构是Chromium 最核心的设计, 它将浏览器功能划分到多个独立的进程中,以实现安全性,稳定性和分层架构。
 - CEF：全称Chromium Embedded Framework，是一个基于Google Chromium 的开源项目。
 - Arkweb:  旨在将 Chromium Web 引擎集成到 OpenHarmony (OHOS) 操作系统中。它作为系统 `Web` 组件的基础，为 OHOS 应用程序提供强大的 Web 渲染能力。基于Chromium和CEF二次扩展，在原有功能的基础上，基于Openharmoy平台扩展了很多新性，如广告拦截，任务下载，输入框填充等。
@@ -127,8 +126,20 @@
 
     配套OpenHarmony 4.1 Beta1 分支：master114_20231218
 
-## 相关仓
-[chromium_cef](https://gitcode.com/openharmony-tpc/chromium_cef)
+## 其他相关代码仓地址：
 
-[chromium_third_party_ohos_nweb_hap](https://gitcode.com/openharmony-tpc/chromium_third_party_ohos_nweb_hap)
+[架构图中的Webview ts仓
+](https://gitcode.com/openharmony/interface_sdk-js/tree/master/api)
 
+[架构图中的Webview NDK仓
+](https://gitcode.com/openharmony/interface_sdk_c/tree/master/web)
+
+[架构图中的Web Component仓
+](https://gitcode.com/openharmony/arkui_ace_engine/tree/master/frameworks/core/components/web)
+
+[架构图中的web_webview仓
+](https://gitcode.com/openharmony/web_webview)
+
+[架构图中的Arkweb仓](https://gitcode.com/openharmony-sig/chromium_arkweb)
+
+[架构图中的CEF仓](https://gitcode.com/openharmony-tpc/chromium_cef)

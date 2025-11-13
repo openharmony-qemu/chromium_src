@@ -28,7 +28,7 @@ def check_paths_in_files(file_paths):
                 for line in file:
                     for item in check_list:
                         if item in line:
-                            print(f"文件 {file_path} 中含有违规字段{item}，请修改,代码中不能含有{check_list}")
+                            print(f"FAILED： {file_path} 中含有违规字段{item}，请修改,代码中不能含有{check_list}")
                             result = 1
                             break
     return result

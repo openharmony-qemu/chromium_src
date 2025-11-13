@@ -229,4 +229,14 @@ void NWebCookieManagerImpl::SetCookieAsync(
                             callback);
   }
 }
+
+std::vector<std::shared_ptr<NWebCookie>>
+    NWebCookieManagerImpl::GetAllCookie(bool incognitoMode) {
+  std::vector<std::shared_ptr<NWebCookie>> cookies;
+  if (delegate_ != nullptr) {
+    delegate_->GetAllCookie(incognitoMode, cookies);
+  }
+  return cookies;
+}
+
 }  // namespace OHOS::NWeb

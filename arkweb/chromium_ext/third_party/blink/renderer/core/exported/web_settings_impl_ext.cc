@@ -37,6 +37,12 @@ void WebSettingsImplExt::SetScrollBarColor(uint32_t value) {
 }
 #endif  // ARKWEB_SCROLLBAR
 
+#if BUILDFLAG(ARKWEB_AI)
+void WebSettingsImplExt::SetImageAnalyzerEnabled(bool enabled) {
+  settings_->SetImageAnalyzerEnabled(enabled);
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
 void WebSettingsImplExt::SetVerticalHideScrollbars(bool enabled) {
   settings_->SetVerticalHideScrollbars(enabled);

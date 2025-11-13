@@ -25,6 +25,13 @@
   bool GetScrollable() { return scroll_enabled_; }
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
+#if BUILDFLAG(ARKWEB_AI)
+  void SetImageAnalyzerEnabled(bool enabled) {
+    image_analyzer_enabled_ = enabled;
+  }
+  bool GetImageAnalyzerEnabled() { return image_analyzer_enabled_; }
+#endif  // BUILDFLAG(ARKWEB_AI)
+
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   void SetVerticalHideScrollbars(bool hide_vertical_scrollbars) {
     hide_vertical_scrollbars_ = hide_vertical_scrollbars;

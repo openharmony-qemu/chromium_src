@@ -39,6 +39,9 @@ class CORE_EXPORT WebSettingsImplExt final : public WebSettingsImpl {
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
   void SetScrollBarColor(uint32_t) override;
 #endif  // ARKWEB_SCROLLBAR
+#if BUILDFLAG(ARKWEB_AI)
+  void SetImageAnalyzerEnabled(bool) override;
+#endif  // BUILDFLAG(ARKWEB_AI)
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   void SetVerticalHideScrollbars(bool) override;
   void SetHorizontalHideScrollbars(bool) override;

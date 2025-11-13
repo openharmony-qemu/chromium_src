@@ -1,7 +1,7 @@
 # Chromium
 ## 简介
 ### 软件架构
-![image.png](https://raw.gitcode.com/user-images/assets/4371737/c396f50d-f9bd-41e9-bcbf-e395821e3b6f/image.png 'image.png')
+![image.png](https://raw.gitcode.com/user-images/assets/4371737/6cb23114-9683-47dd-9313-c395392cb0fc/image.png 'image.png')
 - Chromium:   Google 主导的开源 Web 浏览器项目，旨在构建更安全、更快、更稳定的 Web 平台的项目。多进程架构是Chromium 最核心的设计, 它将浏览器功能划分到多个独立的进程中,以实现安全性,稳定性和分层架构。
 - CEF：全称Chromium Embedded Framework，是一个基于Google Chromium 的开源项目。
 - Arkweb:  旨在将 Chromium Web 引擎集成到 OpenHarmony (OHOS) 操作系统中。它作为系统 `Web` 组件的基础，为 OHOS 应用程序提供强大的 Web 渲染能力。基于Chromium和CEF二次扩展，在原有功能的基础上，基于Openharmoy平台扩展了很多新性，如广告拦截，任务下载，输入框填充等。

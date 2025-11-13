@@ -223,7 +223,7 @@ bool HostControllersManager::Adb(const std::string& adb_path,
   // here creates an invalid adb command.
   std::vector<std::string> adb_command{adb_path};
   if (!device_serial.empty()) {
-    adb_command.push_back("-s");
+    adb_command.push_back("-t");
     adb_command.push_back(device_serial);
   }
   const std::vector<std::string> split_command = base::SplitString(
@@ -254,7 +254,7 @@ void HostControllersManager::RemoveAdbPortForDeviceIfNeeded(
   LOG(INFO) << "Device " << device_serial << " has no more ports.";
   device_serial_to_adb_port_map_.erase(device_serial);
   const std::string command =
-      base::StringPrintf("forward --remove tcp:%d", port);
+      base::StringPrintf("fport rm tcp:%d", port);
   std::string output;
   if (!Adb(adb_path, device_serial, command, &output)) {
     LOG(ERROR) << command << " failed. output: \"" << output << "\"";
@@ -291,7 +291,7 @@ int HostControllersManager::GetAdbPortForDevice(
   const int port = bind_socket.GetPort();
   bind_socket.Close();
   const std::string command = base::StringPrintf(
-      "forward tcp:%d localabstract:chrome_device_forwarder", port);
+      "fport tcp:%d localabstract:chrome_device_forwarder", port);
   std::string output;
   if (!Adb(adb_path, device_serial, command, &output)) {
     LOG(ERROR) << command << " failed. output: " << output;

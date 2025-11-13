@@ -219,6 +219,8 @@ def main(argv):
       file_mappings = json.loads(f.read())
       for url in file_mappings:
         path_mappings[url] = file_mappings[url]
+        if url.startswith("chrome:"):
+          path_mappings[url.replace("chrome:", "arkweb:")] = file_mappings[url]
 
   # Add target-specified mappings.
   if args.path_mappings is not None:

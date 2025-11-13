@@ -107,6 +107,9 @@ if (current_toolchain != host_toolchain || is_chromeos) {
   if (is_win) {
     _target_platform = "win32"
   }
+  if (is_ohos) {
+    _target_platform = "ohos"
+  }
 
   if (_target_platform != "") {
     grit_args += [

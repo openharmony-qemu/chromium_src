@@ -47,9 +47,9 @@ std::string ComputeLanguageByRegion(const std::string& region) {
     locale = (region == "HK" || region == "MO") ? "zh-HK" : "zh-TW";
     return locale;
   }
-  // Current system only support zh, bo, ug, en.
+
   if (systemLanguage.find("en") != std::string::npos) {
-    locale = "en-US";
+    locale = systemLanguage == "en-GB" ? systemLanguage : "en-US";
   } else if (systemLanguage.find("zh") != std::string::npos) {
     locale = "zh-CN";
   } else if (systemLanguage.find("bo") != std::string::npos) {

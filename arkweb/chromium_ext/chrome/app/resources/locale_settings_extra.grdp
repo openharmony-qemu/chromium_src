@@ -13,5 +13,6 @@
     <output filename="platform_locale_settings_kk.pak" type="data_package" lang="kk" />
     <output filename="platform_locale_settings_km.pak" type="data_package" lang="km" />
     <output filename="platform_locale_settings_uz.pak" type="data_package" lang="uz" />
+    <output filename="platform_locale_settings_lo.pak" type="data_package" lang="lo" />
   </if>
 </grit-part>

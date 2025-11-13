@@ -177,7 +177,7 @@ source_set("impl") {
 
 #if BUILDFLAG(ARKWEB_AUTOFILL)
   deps += [
-    "//cef/libcef/features",
+    "//cef/libcef/features:buildflags",
   ]
 
   if (enable_cef) {

@@ -89,9 +89,8 @@ component("cef_nweb") {
   deps = [
     "//ohos_glue:ohos_adapter_glue_source",
     "//third_party:huawei_securec",
-    "//cef/libcef/features",
+    "//cef/libcef/features:buildflags",
     "//cef/libcef/common/mojom",
-    "//components/js_injection/common",
     "//components/js_injection/common:common_mojom",
   ]
 
@@ -542,7 +541,7 @@ component("nweb_sources") {
     "//third_party/boringssl",
     "//third_party/icu",
     "//ohos_glue:ohos_nweb_glue_source",
-    "//cef/libcef/features",
+    "//cef/libcef/features:buildflags",
     "//arkweb/build/features",
   ]
 
@@ -648,7 +647,7 @@ shared_library("libarkweb_render") {
     "//cef:libarkweb_engine",
     ":check_ndk_symbol",
     "//sandbox:sandbox",
-    "//cef/libcef/features",
+    "//cef/libcef/features:buildflags",
   ]
 }
 

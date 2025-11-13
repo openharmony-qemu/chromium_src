@@ -357,6 +357,16 @@ void WebContentsImplExt::ShowFreeCopyMenu() {
 }
 
 #endif  // BUILDFLAG(ARKWEB_EXT_FREE_COPY)
+
+#if BUILDFLAG(ARKWEB_AI)
+void WebContentsImplExt::OnDataDetectorSelectText() {
+  auto* input_handler = GetFocusedFrameWidgetInputHandler();
+  if (!input_handler) {
+    return;
+  }
+  input_handler->OnDataDetectorSelectText();
+}
+#endif  // BUILDFLAG(ARKWEB_AI)
 // LCOV_EXCL_STOP
 
 RenderFrameHost* WebContentsImplExt::GetTargetFramesIncludingPending(

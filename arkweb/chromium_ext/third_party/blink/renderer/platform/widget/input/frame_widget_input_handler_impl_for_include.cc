@@ -52,5 +52,23 @@ void FrameWidgetInputHandlerImpl::ShowFreeCopyMenu() {
       widget_, main_thread_frame_widget_input_handler_));
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_AI)
+void FrameWidgetInputHandlerImpl::OnDataDetectorSelectText() {
+  RunOnMainThread(base::BindOnce(
+      [](base::WeakPtr<WidgetBase> widget,
+         base::WeakPtr<mojom::blink::FrameWidgetInputHandler> handler) {
+        LOG(INFO) << "Entering OnDataDetectorSelectText";
+        DCHECK_EQ(!!widget, !!handler);
+        if (!widget || !handler) {
+          LOG(INFO) << "Widget is null, returning early";
+          return;
+        }
+        HandlingState handling_state(widget, UpdateState::kIsSelectingRange);
+        handler->OnDataDetectorSelectText();
+      },
+      widget_, main_thread_frame_widget_input_handler_));
+}
+#endif  // BUILDFLAG(ARKWEB_AI)
 // LCOV_EXCL_STOP
 }  // namespace blink

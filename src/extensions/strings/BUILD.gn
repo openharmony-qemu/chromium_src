@@ -13,7 +13,7 @@ grit_strings("strings") {
 
 #ifdef arkweb_i18n
   if (arkweb_i18n) {
-    all_chrome_locales += extra_locales
+    locales = all_chrome_locales + extra_locales
   }
 
 #endif

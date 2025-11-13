@@ -24,7 +24,6 @@ component("ohos") {
 
   deps = [
     "//gpu/ipc/common",
-    "//gpu/ipc/common:vulkan_ycbcr_info",
     "//ui/gfx",
   ]
 

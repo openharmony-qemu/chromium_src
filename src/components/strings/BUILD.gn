@@ -42,7 +42,7 @@ grit_strings("components_strings") {
   outputs = [ "grit/components_strings.h" ]
 #ifdef arkweb_i18n
   if (arkweb_i18n) {
-    all_chrome_locales += extra_locales
+    locales = all_chrome_locales + extra_locales
   }
 
   #endif
@@ -60,7 +60,7 @@ if (is_android) {
 grit_strings("components_branded_strings") {
 #ifdef arkweb_i18n
   if (arkweb_i18n) {
-    all_chrome_locales += extra_locales
+    locales = all_chrome_locales + extra_locales
   }
 
   #endif
@@ -74,7 +74,7 @@ grit_strings("components_locale_settings") {
 
 #ifdef arkweb_i18n
   if (arkweb_i18n) {
-    all_chrome_locales += extra_locales
+    locales = all_chrome_locales + extra_locales
   }
 
   #endif
@@ -95,7 +95,7 @@ grit_strings("privacy_sandbox_strings") {
   outputs = [ "grit/privacy_sandbox_strings.h" ]
 #ifdef arkweb_i18n
   if (arkweb_i18n) {
-    all_chrome_locales += extra_locales
+    locales = all_chrome_locales + extra_locales
   }
 
   #endif

@@ -710,7 +710,7 @@ component("features") {
   ]
 }
 
-if (is_win || is_mac || is_linux || is_chromeos) {
+if (is_win || is_mac || is_linux || is_chromeos || is_ohos) {
   static_library("pixel_diff_test_support") {
     testonly = true
     sources = [

@@ -33,15 +33,15 @@
 +  OnFrameUpdate(OhosSurfaceBufferHandle ohosSurfaceBufferHandle);
 +};
 +
-+[EnableIf=arkweb_custom_video_player]
-+interface CustomMediaPlayerRendererClientExtension {
-+  OnVideoSizeChange(gfx.mojom.Size size);
-+  OnDurationChange(mojo_base.mojom.TimeDelta duration);
-+  UpdatePlaybackStatus(uint32 status);
-+  UpdateVolume(double volume);
-+  UpdateMuted(bool muted);
-+  UpdatePlaybackRate(double rate);
-+  UpdateBufferedEndTime(double buffered_time);
+ [EnableIf=arkweb_custom_video_player]
+ interface CustomMediaPlayerRendererClientExtension {
+   OnVideoSizeChange(gfx.mojom.Size size);
+   OnDurationChange(mojo_base.mojom.TimeDelta duration);
+   UpdatePlaybackStatus(uint32 status);
+   UpdateVolume(double volume);
+   UpdateMuted(bool muted);
+   UpdatePlaybackRate(double rate);
+   UpdateBufferedEndTime(double buffered_time);
  };
  
  // Extension of the mojo::Renderer communication layer for HLS and Android

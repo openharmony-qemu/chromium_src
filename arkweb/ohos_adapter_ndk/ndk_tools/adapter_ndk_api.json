@@ -232,7 +232,9 @@
                 "InputMethod_ErrorCode OH_InputMethodProxy_NotifyCursorUpdate(InputMethod_InputMethodProxy *inputMethodProxy, InputMethod_CursorInfo *cursorInfo)",
                 "InputMethod_ErrorCode OH_TextConfig_GetCursorInfo(InputMethod_TextConfig *config, InputMethod_CursorInfo **cursorInfo)",
                 "InputMethod_ErrorCode OH_TextConfig_SetSelection(InputMethod_TextConfig *config, int32_t start, int32_t end)",
-                "void OH_PrivateCommand_Destroy(InputMethod_PrivateCommand *command)"
+                "void OH_PrivateCommand_Destroy(InputMethod_PrivateCommand *command)",
+                "InputMethod_ErrorCode OH_AttachOptions_Destroy(InputMethod_AttachOptions *options)",
+                "InputMethod_AttachOptions *OH_AttachOptions_CreateWithRequestKeyboardReason(bool showkeyborad, InputMethod_RequestKeyboardReason requestKeyboardReason)"
             ]
         },
         "includes": []

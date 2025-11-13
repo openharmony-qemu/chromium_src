@@ -444,21 +444,6 @@ fuzzer_test("nweb_find_delegate_fuzzer") {
   ]
 }
 
-fuzzer_test("nweb_input_delegate_fuzzer") {
-  sources = [ "fuzztest/ohos_nweb/src/cef_delegate/nweb_input_delegate_fuzzer.cc" ]
-  include_dirs = [
-    "//cef",
-    "//cef/include",
-    "//ohos_nweb/include",
-    "//ohos_nweb/src",
-  ]
-  deps = [
-    "//cef:libcef_static",
-    "//ohos_nweb:cef_nweb",
-    "//ohos_nweb:nweb_sources",
-  ]
-}
-
 fuzzer_test("nweb_input_handler_fuzzer") {
   sources = [ "fuzztest/ohos_nweb/src/nweb_input_handler_fuzzer.cc" ]
   include_dirs = [

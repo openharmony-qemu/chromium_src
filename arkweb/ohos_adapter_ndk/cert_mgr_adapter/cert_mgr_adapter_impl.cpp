@@ -80,9 +80,9 @@ void InitDlopenFun() {
   static std::once_flag initFlag;
 std::call_once(initFlag, [](){
 #if defined(ARCH_CPU_ARM64)
-  base::FilePath cmFile("system/lib64/platformsdk/libohcert_manager.z.so");
+  base::FilePath cmFile("system/lib64/ndk/libohcert_manager.z.so");
 #else
-  base::FilePath cmFile("system/lib/platformsdk/libohcert_manager.z.so");
+  base::FilePath cmFile("system/lib/ndk/libohcert_manager.z.so");
 #endif
   void* dl = dlopen(cmFile.value().c_str(), RTLD_NOW);
   if (dl) {
@@ -93,9 +93,9 @@ std::call_once(initFlag, [](){
   }
  
 #if defined(ARCH_CPU_ARM64)
-  base::FilePath huksFile("system/lib64/platformsdk/libhuks_external_crypto.z.so");
+  base::FilePath huksFile("system/lib64/ndk/libhuks_external_crypto.z.so");
 #else
-  base::FilePath huksFile("system/lib/platformsdk/libhuks_external_crypto.z.so");
+  base::FilePath huksFile("system/lib/ndk/libhuks_external_crypto.z.so");
 #endif
   dl = dlopen(huksFile.value().c_str(), RTLD_NOW);
   if (dl) {

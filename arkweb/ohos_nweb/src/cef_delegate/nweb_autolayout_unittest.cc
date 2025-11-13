@@ -355,8 +355,6 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void EnableAdsBlock(bool) override {}
   int SetUrlTrustListWithErrMsg(const CefString&, CefString&) override { return 0; }
   void EnableSafeBrowsingDetection(bool, bool) override {}
-  void OnSafeBrowsingDetectionResult(int code, int policy,
-    const std::string& mappingType, const std::string& url) override {}
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   int InsertBackForwardEntry(int, const CefString&) override { return 0; }
   int UpdateNavigationEntryUrl(int, const CefString&) override { return 0; }

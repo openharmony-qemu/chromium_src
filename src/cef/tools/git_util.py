@@ -164,10 +164,10 @@ def git_apply_patch_file(patch_path, patch_dir):
 
   # Git apply fails silently if not run relative to a respository root.
   # Fallback to using the patch tool in that case.
-  if not is_checkout(patch_dir):
-    return _patch_apply_patch_string(patch_dir, patch_string)
+  # if not is_checkout(patch_dir):
+  #   return _patch_apply_patch_string(patch_dir, patch_string)
 
-  config = '-p0 --ignore-whitespace'
+  config = '-p1 --ignore-whitespace'
 
   # Output patch contents.
   cmd = '%s apply %s --numstat' % (git_exe, config)

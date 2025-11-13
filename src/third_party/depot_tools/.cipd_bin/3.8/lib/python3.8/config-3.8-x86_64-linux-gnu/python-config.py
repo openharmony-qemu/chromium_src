@@ -1,4 +1,4 @@
-#!/b/s/w/ir/cache/pkgbuild/cpython38-i8q3naku9hhl284cgv6fmk317c/contents/bin/python3.8
+#!/work/out/bin/python3.8
 # -*- python -*-
 
 # Keep this script in sync with python-config.sh.in

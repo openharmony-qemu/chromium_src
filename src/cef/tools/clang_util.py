@@ -10,6 +10,7 @@ import sys
 
 # Script directory.
 script_dir = os.path.dirname(__file__)
+root_dir = os.path.join(script_dir, os.pardir)
 cef_dir = os.path.join(script_dir, os.pardir)
 src_dir = os.path.abspath(os.path.join(cef_dir, os.pardir))
 llvm_bin_dir = os.path.join(src_dir,
@@ -19,6 +20,12 @@ if sys.platform == 'win32':
   # Force use of the clang-format version bundled with depot_tools.
   clang_format_exe = 'clang-format.bat'
   clang_exe = os.path.join(llvm_bin_dir, 'clang-cl.exe')
+elif sys.platform == 'linux':
+  # is_ohos
+  clang_format_exe = os.path.join(root_dir, os.pardir, 'buildtools', 'linux64', 'clang-format')
+  print('clang-format:' + clang_format_exe)
+  if os.path.exists(clang_format_exe) == False:
+      clang_format_exe = 'clang-format'
 else:
   clang_format_exe = 'clang-format'
   clang_exe = os.path.join(llvm_bin_dir, 'clang')

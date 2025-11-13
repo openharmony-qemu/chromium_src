@@ -1,0 +1,29 @@
+--- cef_api_hash.py	2025-11-08 15:41:42.806465663 +0800
++++ cef_api_hash.py	2025-11-08 15:04:33.363050545 +0800
+@@ -33,11 +33,11 @@
+     self.__debugdir = debugdir
+     self.__verbose = verbose
+     self.__debug_enabled = not (self.__debugdir is
+                                 None) and len(self.__debugdir) > 0
+ 
+-    self.platforms = ["windows", "mac", "linux"]
++    self.platforms = ["windows", "mac", "linux", "ohos"]
+ 
+     self.platform_files = {
+         # List of includes_win_capi from cef_paths2.gypi.
+         "windows": [
+             "internal/cef_app_win.h",
+@@ -48,10 +48,13 @@
+             "internal/cef_types_mac.h",
+         ],
+         # List of includes_linux_capi from cef_paths2.gypi.
+         "linux": [
+             "internal/cef_types_linux.h",
++        ],
++		"ohos": [
++            "internal/cef_types_linux.h",
+         ]
+     }
+ 
+     self.included_files = []
+ 

@@ -90,8 +90,6 @@ declare_args() {
 
   # Set to true to enable icu4x transliterator
   enable_rust_translit = false
-
-  enable_base_tracing = false
 }
 
 # Mutex priority inheritance is disabled by default due to security
@@ -2594,7 +2592,7 @@ component("base") {
       "trace_event/java_heap_dump_provider_android.h",
     ]
   }
-    if (enable_base_tracing && is_ohos && arkweb_dfx_tracing) {
+    if (is_ohos && arkweb_dfx_tracing) {
       include_dirs = [ "//third_party/ohos_ndk/includes/ohos_adapter" ]
       sources += [ "//arkweb/chromium_ext/base/trace_event/trace_event_ohos.cc" ] 
       sources += [ "//arkweb/chromium_ext/base/trace_event/trace_event_ohos.h" ]

@@ -287,7 +287,7 @@ NO_SANITIZE("cfi-icall") PlatformThreadId PlatformThread::CurrentRealId() {
     getProcTid = reinterpret_cast<GetProcXid>(dlsym(RTLD_DEFAULT, "getproctid"));
     CHECK(getProcTid);
   }
-  return getProcTid();
+  return PlatformThreadId(static_cast<pid_t>(getProcTid()));
 }
 #endif
 

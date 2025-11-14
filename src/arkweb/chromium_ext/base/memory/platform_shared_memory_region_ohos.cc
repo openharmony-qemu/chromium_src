@@ -50,12 +50,14 @@ PlatformSharedMemoryRegion PlatformSharedMemoryRegion::Take(
     return {};
 
 #if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
-  if (!CheckPlatformHandlePermissionsCorrespondToMode(fd.get(), mode, size)) {
+  auto check_result = CheckPlatformHandlePermissionsCorrespondToMode(fd.get(), mode, size);
+  if (!check_result.has_value()) {
     LOG(ERROR) << "check platform handle permission failed, fd = " << fd.get() << ", mode" \
       << static_cast<int>(mode) << ", size = " << size;
   }
 #else
-  CHECK(CheckPlatformHandlePermissionsCorrespondToMode(fd.get(), mode, size));
+  auto check_result = CheckPlatformHandlePermissionsCorrespondToMode(fd.get(), mode, size);
+  CHECK(check_result.has_value());
 #endif
 
   return PlatformSharedMemoryRegion(std::move(fd), mode, size, guid);
@@ -158,13 +160,14 @@ PlatformSharedMemoryRegion PlatformSharedMemoryRegion::Create(Mode mode,
   return PlatformSharedMemoryRegion(std::move(scoped_fd), mode, size, guid);
 }
 
-bool PlatformSharedMemoryRegion::CheckPlatformHandlePermissionsCorrespondToMode(
+expected<void, PlatformSharedMemoryRegion::TakeError>
+PlatformSharedMemoryRegion::CheckPlatformHandlePermissionsCorrespondToMode(
     PlatformSharedMemoryHandle handle,
     Mode mode,
     size_t size) {
   int prot = GetAshmemRegionProtectionMask(handle);
   if (prot < 0)
-    return false;
+    return unexpected(TakeError::kFailedToGetAshmemRegionProtectionMask);
 
   bool is_read_only = (prot & PROT_WRITE) == 0;
   bool expected_read_only = mode == Mode::kReadOnly;
@@ -173,10 +176,10 @@ bool PlatformSharedMemoryRegion::CheckPlatformHandlePermissionsCorrespondToMode(
     LOG(ERROR) << "Ashmem region has a wrong protection mask: it is"
                << (is_read_only ? " " : " not ") << "read-only but it should"
                << (expected_read_only ? " " : " not ") << "be";
-    return false;
+    return unexpected(TakeError::kExpectedReadOnlyButNot);
   }
 
-  return true;
+  return expected<void, PlatformSharedMemoryRegion::TakeError>();
 }
 
 PlatformSharedMemoryRegion::PlatformSharedMemoryRegion(

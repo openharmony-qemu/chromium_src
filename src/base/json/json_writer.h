@@ -66,11 +66,6 @@ BASE_EXPORT std::optional<std::string> WriteJsonWithOptions(
 class BASE_EXPORT JSONWriter {
  public:
   using enum JsonOptions;
-
-#if BUILDFLAG(IS_ARKWEB)
-  static constexpr auto OPTIONS_DOUBLE_AS_LONG =
-      JsonOptions::OPTIONS_DOUBLE_AS_LONG;
-#endif
   JSONWriter(const JSONWriter&) = delete;
   JSONWriter& operator=(const JSONWriter&) = delete;
 

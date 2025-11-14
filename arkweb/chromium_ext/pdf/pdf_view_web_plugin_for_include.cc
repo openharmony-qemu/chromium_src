@@ -99,7 +99,7 @@ void PdfViewWebPlugin::UpdateClientClippedSelectionBoundsForPDF(gfx::Rect& clipp
 
 void PdfViewWebPlugin::RefreshMenuWithTouchAndScroll() {
   bool is_menu_hidden = false;
-  if (!is_touching_ && !is_scrolling_) {
+  if (!is_touching_ && !is_scrolling_ && !is_pinching_) {
     is_menu_hidden = false;
   } else {
     is_menu_hidden = true;
@@ -147,6 +147,14 @@ void PdfViewWebPlugin::SetIsScrolling(bool is_scrolling) {
   if (!is_scrolling_) {
     paint_manager_.DoPaintAtScrollStopped();
   }
+}
+
+void PdfViewWebPlugin::SetIsPinching(bool is_pinching) {
+  if (is_pinching_ == is_pinching) {
+    return;
+  }
+  is_pinching_ = is_pinching;
+  RefreshMenuWithTouchAndScroll();
 }
 
 scoped_refptr<base::SequencedTaskRunner> PdfViewWebPlugin::GetTaskRunner() {

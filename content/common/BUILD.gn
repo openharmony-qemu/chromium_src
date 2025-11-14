@@ -601,6 +601,11 @@ mojom("mojo_bindings") {
   if (defined(arkweb_javascript_bridge) && arkweb_javascript_bridge) {
     enabled_features += [ "arkweb_javascript_bridge" ]
   }
+
+  if (defined(arkweb_ext_video_load_optimization) && arkweb_ext_video_load_optimization) {
+    enabled_features += [ "arkweb_ext_video_load_optimization" ]
+  }
+
   if (arkweb_blank_optimize) {
     enabled_features += [ "arkweb_blank_optimize" ]
   }

@@ -69,11 +69,7 @@ BASE_FEATURE(kHidePastePopupOnGSB,
 // case it breaks any applications in the wild.
 BASE_FEATURE(kHistoryInterventionSameDocumentFix,
              "HistoryInterventionSameDocumentFix",
-#if BUILDFLAG(ARKWEB_NETWORK_BASE)
-             base::FEATURE_DISABLED_BY_DEFAULT);
-#else
              base::FEATURE_ENABLED_BY_DEFAULT);
-#endif
 // When enabled, keyboard user activation will be verified by the browser side.
 BASE_FEATURE(kBrowserVerifiedUserActivationKeyboard,
              "BrowserVerifiedUserActivationKeyboard",

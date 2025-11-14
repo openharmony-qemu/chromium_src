@@ -239,13 +239,13 @@ void FirstScreenCalculator::RestartRecordingFirstScreenPaint() {
 void FirstScreenCalculator::GetPaintRects(std::vector<gfx::Rect>& paint_rects) {
   for (auto it = image_rects_map_.begin(); it != image_rects_map_.end(); ++it) {
     if (it->second.paint_time_.is_null()) {
-      break;
+      continue;
     }
     paint_rects.emplace_back(it->second.rect_);
   }
   for (auto it = text_paint_rect_.begin(); it != text_paint_rect_.end(); ++it) {
     if (it->paint_time_.is_null()) {
-      break;
+      continue;
     }
     paint_rects.emplace_back(it->rect_);
   }

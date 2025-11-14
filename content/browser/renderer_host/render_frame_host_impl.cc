@@ -11617,10 +11617,7 @@ void RenderFrameHostImpl::CommitNavigation(
                                    ->GetOrCreateWebPreferences()
                                    .usage_scenario;
       LOG(URL) << "event_message: commit navigation in main frame, routing_id: "
-               << routing_id_ << ", url: "
-               << url::LogUtils::ConvertUrl(
-                      common_params->url.possibly_invalid_spec(),
-                      usage_scenario);
+               << routing_id_ << ", url: " << common_params->url.possibly_invalid_spec();
     }
 #endif
   }

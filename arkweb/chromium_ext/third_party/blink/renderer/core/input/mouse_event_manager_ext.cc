@@ -166,8 +166,21 @@ void MouseEventManagerExt::GetAbsImageRect(gfx::RectF& abs_rect) {
   if (hit_image_node_ && hit_image_node_->isConnected() &&
       hit_image_node_->GetLayoutBox()) {
     LOG(INFO) << "getting layout box rect from hit_image_node_";
-    abs_rect =
+    gfx::RectF local_rect_f =
         hit_image_node_->GetLayoutBox()->AbsoluteContentQuad().BoundingBox();
+    LocalFrame* frame = hit_image_node_->GetDocument().GetFrame();
+    if (!frame || !frame->View()) {
+      LOG(INFO) << "frame or frame view is nullptr.";
+      hit_image_node_ = nullptr;
+      return;
+    }
+    LocalFrameView* view = frame->View();
+    gfx::PointF local_root_top_left =
+        view->ConvertToRootFrame(local_rect_f.origin());
+    gfx::PointF local_root_bottom_right =
+        view->ConvertToRootFrame(local_rect_f.bottom_right());
+
+    abs_rect = gfx::BoundingRect(local_root_top_left, local_root_bottom_right);
   } else {
     LOG(INFO) << "hit_image_node_ is nullptr or disconnected.";
     hit_image_node_ = nullptr;

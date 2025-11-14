@@ -472,6 +472,11 @@ void OHOSAudioDecoder::ClearInputQueue(DecoderStatus decode_status) {
 }
 
 void OHOSAudioDecoder::OnError(int32_t errorCode) {
+  if (task_runner_->RunsTasksInCurrentSequence()) {
+    task_runner_->PostTask(
+        FROM_HERE, base::BindOnce(&OHOSAudioDecoder::OnError, weak_factory_.GetSafeRef(), errorCode));
+    return;
+  }
   if (state_ != WAITING_FOR_MEDIA_CRYPTO && waiting_for_key_) {
     SetState(WAITING_FOR_MEDIA_CRYPTO);
   }

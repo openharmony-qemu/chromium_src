@@ -2085,8 +2085,7 @@ void URLLoader::ContinueOnResponseStarted() {
         LOG(URL)
             << "ContinueOnResponseStarted blocked by response, blocked_reason "
             << static_cast<int>(*blocked_reason) << ", url: "
-            << url::LogUtils::ConvertUrl(url_request_->url().spec(),
-                                         url_request_->usage_scenario());
+            << url_request_->url().spec();
       }
     }
 #endif
@@ -2145,8 +2144,7 @@ void URLLoader::ContinueOnResponseStarted() {
         LOG(URL) << "ContinueOnResponseStarted blocked the request for "
                     "Cross-Origin Read Blocking (CORB) blocked cross-origin "
                     "response, url: "
-                 << url::LogUtils::ConvertUrl(url_request_->url().spec(),
-                                              url_request_->usage_scenario());
+                 << url_request_->url().spec();
       }
 #endif
 #endif
@@ -2387,9 +2385,7 @@ void URLLoader::DidRead(int num_bytes,
             if (!is_strict_log_mode_) {
               LOG(URL) << "DidRead blocked the request for Cross-Origin Read "
                           "Blocking (CORB) blocked cross-origin response, url: "
-                       << url::LogUtils::ConvertUrl(
-                              url_request_->url().spec(),
-                              url_request_->usage_scenario());
+                       << url_request_->url().spec();
             }
       }
 #endif

@@ -871,6 +871,7 @@ void NWebInputMethodHandler::WebBlurKeyboardHideOnUI() {
 // LCOV_EXCL_STOP
 
 void NWebInputMethodHandler::InsertTextHandlerOnUI(const std::u16string& text) {
+  LOG(INFO) << "NWebInputMethodHandler::InsertTextHandlerOnUI text length:" << text.length();
   if (text.empty()) {
     LOG(ERROR) << "insert text empty!";
     return;

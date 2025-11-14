@@ -25,3 +25,14 @@ std::unique_ptr<blink::WebVideoFrameSubmitter> MediaFactory::CreateSubmitter(
         media_log, render_frame);
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+bool MediaFactory::SetNewsFeedPageFitted() {
+  LOG(INFO) << "VideoOpt: MediaFactory SetNewsFeedPageFitted";
+  news_feed_page_fitted_ = true;
+  if (media_player_builder_) {
+    media_player_builder_->SetNewsFeedPageFitted(news_feed_page_fitted_);
+  }
+  return true;
+}
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION

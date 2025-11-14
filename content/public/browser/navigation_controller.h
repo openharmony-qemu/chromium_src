@@ -261,7 +261,7 @@ class NavigationController {
     scoped_refptr<base::RefCountedString> data_url_as_string;
      
 #if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
-    // true if ignoring Cache-Control: no-store.load_ignore_cache_params 
+    // true if ignoring Cache-Control: no-store. 
     bool load_ignore_cache_params = false;
 #endif
 #endif

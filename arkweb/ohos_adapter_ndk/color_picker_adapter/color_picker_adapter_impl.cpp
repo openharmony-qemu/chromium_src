@@ -125,6 +125,13 @@ ColorPickerAdapterImpl::ColorPickerAdapterImpl() {
   library_handle_ = dlopen(COLOR_PICKER_SO_PATH.c_str(), RTLD_LAZY);
 }
 
+ColorPickerAdapterImpl::~ColorPickerAdapterImpl() {
+  if (library_handle_) {
+    dlclose(library_handle_);
+    library_handle_ = nullptr;
+  }
+}
+
 CallbackSharedWrapper<ColorPickerCallback>
     ColorPickerAdapterImpl::callback_wrapper_;
 

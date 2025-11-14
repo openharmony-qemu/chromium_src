@@ -37,6 +37,10 @@
 #include "arkweb/ohos_nweb/src/sysevent/event_reporter.h"
 #endif // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
 
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+#include "third_party/blink/renderer/core/html/media/html_video_element.h"
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
 namespace blink {
 namespace {
 extern std::string GetFormatFromType(std::string type);
@@ -550,4 +554,50 @@ void HTMLMediaElement::NotifyMemoryLevel(int32_t level) {
   }
 }
 #endif  // ARKWEB_MEDIA_MEMORY_PRESSURE
+
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+std::string HTMLMediaElement::videoId() {
+  return GetIdAttribute().Utf8();
+}
+
+uint16_t HTMLMediaElement::hbsMediaPreloadTime() {
+  if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
+    return video_element->hbsPreloadTime();
+  }
+  return UINT16_MAX;
+}
+
+uint16_t HTMLMediaElement::hbsMediaMaxCacheTime() {
+  if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
+    return video_element->hbsMaxCacheTime();
+  }
+  return UINT16_MAX;
+}
+
+uint16_t HTMLMediaElement::hbsMediaMinCacheTime() {
+  if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
+    return video_element->hbsMinCacheTime();
+  }
+  return UINT16_MAX;
+}
+
+uint16_t HTMLMediaElement::hbsMediaBitrate() {
+  if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
+    return video_element->hbsBitrate();
+  }
+  return UINT16_MAX;
+}
+
+uint16_t HTMLMediaElement::hbsMediaMoovSize() {
+  if (auto* video_element = DynamicTo<HTMLVideoElement>(this)) {
+    return video_element->hbsMoovSize();
+  }
+  return UINT16_MAX;
+}
+
+bool HTMLMediaElement::IsUseVideoLoadOptimization() const {
+  return GetDocument().IsUseVideoLoadOptimization();
+}
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
+
 }  // namespace blink

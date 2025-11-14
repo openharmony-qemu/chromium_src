@@ -38,6 +38,11 @@ typedef void (*OnArkWebStaticOffscreenDocumentPromptFunc)(const char* extensionI
                                                           const char* value,
                                                           const int requestId);
 
+typedef void (*OnArkWebStaticOffscreenDocumentWindowNewFunc)(const char* extensionId,
+                                                             const char* originUrl,
+                                                             bool isAlert,
+                                                             bool isUserTrigger,
+                                                             const char* targetUrl);
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

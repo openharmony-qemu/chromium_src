@@ -438,7 +438,9 @@ bool TouchSelectionController::WillHandleTouchEventImpl(
       return start_selection_handle_->WillHandleTouchEvent(event);
     }
 #if BUILDFLAG(ARKWEB_MENU)
-    AsTouchSelectionControllerExt()->HandleIfEndNotVisible(event);
+    if (AsTouchSelectionControllerExt()->IsEndHandleNotVisible(event)) {
+      return start_selection_handle_->WillHandleTouchEvent(event);
+    }
 #endif
 
     return end_selection_handle_->WillHandleTouchEvent(event);

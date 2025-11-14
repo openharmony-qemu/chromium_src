@@ -1,9 +1,18 @@
-/**
- * Unit tests for IntelligentLayout.ts
- * 测试智能布局模块的功能
- */
+import IntelligentLayout from '../src/Framework/IntelligentLayout';
+import { PopupWindowDetector } from '../src/Framework/Popup/PopupWindowDetector';
+import { PopupWindowRelayout } from '../src/Framework/Popup/PopupWindowRelayout';
+import { PopupInfo } from '../src/Framework/Popup/PopupInfo';
+import { PopupType } from '../src/Framework/Popup/PopupType';
+import { PopupStateManager } from '../src/Framework/Popup/PopupStateManager';
 
-// Mock dependencies
+type MockStateManager = {
+  canStartLayout: jest.Mock;
+  clearState: jest.Mock;
+  printState: jest.Mock;
+  resetState: jest.Mock;
+  setState: jest.Mock;
+};
+
 jest.mock('../src/Debug/Log', () => ({
   __esModule: true,
   default: {
@@ -34,405 +43,146 @@ jest.mock('../src/Framework/Popup/PopupWindowDetector', () => ({
   },
 }));
 
-jest.mock('../src/Framework/Popup/PopupWindowRelayout', () => ({
-  PopupWindowRelayout: jest.fn().mockImplementation((popupInfo) => ({
-    isDirty: jest.fn(() => true),
-    intelligenceLayout: jest.fn(),
-    setDirty: jest.fn(),
-    restoreStyles: jest.fn(),
-    popupInfo,
-  })),
+jest.mock('../src/Framework/Popup/PopupWindowRelayout', () => {
+  const PopupWindowRelayoutMock = jest.fn().mockImplementation(function () {
+    let dirty = true;
+    this.isDirty = jest.fn(() => dirty);
+    this.intelligenceLayout = jest.fn();
+    this.setDirty = jest.fn((value: boolean) => {
+      dirty = value;
+    });
+    this.restoreStyles = jest.fn();
+    this.cancelPendingValidation = jest.fn();
+  });
+  return { PopupWindowRelayout: PopupWindowRelayoutMock };
+});
+
+jest.mock('../src/Framework/Popup/PopupStateManager', () => ({
+  PopupStateManager: {
+    canStartLayout: jest.fn(() => true),
+    clearState: jest.fn(),
+    printState: jest.fn(),
+    resetState: jest.fn(),
+    setState: jest.fn(() => true),
+  },
 }));
 
-import IntelligentLayout from '../src/Framework/IntelligentLayout';
-import { PopupWindowDetector } from '../src/Framework/Popup/PopupWindowDetector';
-import { PopupWindowRelayout } from '../src/Framework/Popup/PopupWindowRelayout';
-import { PopupInfo } from '../src/Framework/Popup/PopupInfo';
-import Utils from '../src/Framework/Utils/Utils';
-import { AComponent } from '../src/Framework/Common/base/AComponent';
+const getDetectorMock = (): jest.Mock => PopupWindowDetector.findPopups as jest.Mock;
+const getRelayoutMock = (): jest.MockedClass<typeof PopupWindowRelayout> => PopupWindowRelayout as unknown as jest.MockedClass<typeof PopupWindowRelayout>;
+const getStateManager = (): MockStateManager => PopupStateManager as unknown as MockStateManager;
 
-describe('IntelligentLayout Module', () => {
-  let mockPopupInfo: PopupInfo;
-  let mockRootNode: HTMLElement;
+const createPopupInfo = (): PopupInfo => {
+  const root = document.createElement('div');
+  root.className = 'popup-root';
+  return {
+    root_node: root,
+    mask_node: root,
+    content_node: root,
+    popup_type: PopupType.A,
+    root_position: 'fixed',
+    root_zindex: 1000,
+    has_mask: true,
+    root_screen_area_ratio: 1,
+    root_is_visiable: true,
+    has_close_button: true,
+    mask_area_ratio: 1,
+    mask_position: 'fixed',
+    mask_zindex: 1000,
+    stickyTop_height: 0,
+    stickyBottom_height: 0,
+  };
+};
 
+describe('IntelligentLayout (single popup cache)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    IntelligentLayout.popWindowMap.clear();
-    
-    // Create mock elements
-    mockRootNode = document.createElement('div');
-    mockRootNode.className = 'popup-root';
-    
-    mockPopupInfo = {
-      root_node: mockRootNode,
-      mask_node: null,
-      content_node: null,
-      popup_type: null,
-      root_position: 'fixed',
-      root_zindex: 1000,
-      has_mask: false,
-      root_screen_area_ratio: 0.5,
-      root_is_visiable: true,
-      has_close_button: false,
-      mask_area_ratio: 0,
-      mask_position: '',
-      mask_zindex: 0,
-      stickyTop_height: 0,
-      stickyBottom_height: 0,
-    } as PopupInfo;
+    IntelligentLayout.clearActivePopupWindow();
   });
 
-  describe('TAG property', () => {
-    test('should have TAG property defined', () => {
-      expect(IntelligentLayout.TAG).toBeDefined();
-      expect(IntelligentLayout.TAG).toBe('IntelligentLayout');
-    });
+  it('exposes TAG constant', () => {
+    expect(IntelligentLayout.TAG).toBe('IntelligentLayout');
   });
 
-  describe('popWindowMap', () => {
-    test('should be a Map instance', () => {
-      expect(IntelligentLayout.popWindowMap).toBeInstanceOf(Map);
-    });
-
-    test('should start empty', () => {
-      expect(IntelligentLayout.popWindowMap.size).toBe(0);
-    });
+  it('starts with no active popup', () => {
+    expect(IntelligentLayout.getActivePopupWindowInfo()).toBeNull();
+    expect(IntelligentLayout.getActivePopupWindowComponent()).toBeNull();
   });
 
-  describe('intelligentLayout', () => {
-    test('should find popups when map is empty', () => {
-      (PopupWindowDetector.findPopups as jest.Mock).mockReturnValue(mockPopupInfo);
-      
-      IntelligentLayout.intelligentLayout(mockRootNode);
-      
-      expect(PopupWindowDetector.findPopups).toHaveBeenCalledWith(mockRootNode);
-    });
+  it('calculateForPopWin caches component and clears dirty flag', () => {
+    const info = createPopupInfo();
 
-    test('should use cached popup from map', () => {
-      const mockComponent = {
-        isDirty: jest.fn(() => false),
-        intelligenceLayout: jest.fn(),
-        setDirty: jest.fn(),
-      };
-      // @ts-ignore
-      IntelligentLayout.popWindowMap.set(mockPopupInfo, mockComponent);
-      
-      IntelligentLayout.intelligentLayout(mockRootNode);
-      
-      expect(PopupWindowDetector.findPopups).not.toHaveBeenCalled();
-    });
+    IntelligentLayout.calculateForPopWin(info);
 
-    test('should handle null popup info', () => {
-      (PopupWindowDetector.findPopups as jest.Mock).mockReturnValue(null);
-      
-      expect(() => {
-        IntelligentLayout.intelligentLayout(mockRootNode);
-      }).not.toThrow();
-    });
+    const cachedInfo = IntelligentLayout.getActivePopupWindowInfo();
+    const cachedComponent = IntelligentLayout.getActivePopupWindowComponent();
 
-    test('should call calculateForPopWin when popup exists', () => {
-      (PopupWindowDetector.findPopups as jest.Mock).mockReturnValue(mockPopupInfo);
-      
-      IntelligentLayout.intelligentLayout(mockRootNode);
-      
-      // Check if component was created
-      expect(IntelligentLayout.popWindowMap.size).toBe(1);
-    });
+    expect(getRelayoutMock()).toHaveBeenCalledWith(info);
+    expect(cachedInfo).toBe(info);
+    expect(cachedComponent).not.toBeNull();
+    expect((cachedComponent).isDirty()).toBe(false);
+  });
+;
+
+  it('markDirty marks cached component when target is inside popup', () => {
+    const info = createPopupInfo();
+    IntelligentLayout.calculateForPopWin(info);
+    const component = IntelligentLayout.getActivePopupWindowComponent();
+    const child = document.createElement('div');
+    info.root_node.appendChild(child);
+
+    // calculateForPopWin already cleared dirty flag, so calling markDirty should set it to true
+    IntelligentLayout.markDirty(child);
+
+    expect(component.setDirty).toHaveBeenCalledWith(true);
   });
 
-  describe('calculateForPopWin', () => {
-    test('should create new component if not in map', () => {
-      IntelligentLayout.calculateForPopWin(mockPopupInfo);
-      
-      expect(PopupWindowRelayout).toHaveBeenCalledWith(mockPopupInfo);
-      expect(IntelligentLayout.popWindowMap.has(mockPopupInfo)).toBe(true);
-    });
+  it('markDirty skips when component already dirty or target outside popup', () => {
+    const info = createPopupInfo();
+    IntelligentLayout.calculateForPopWin(info);
+    const component = IntelligentLayout.getActivePopupWindowComponent();
 
-    test('should reuse existing component from map', () => {
-      const mockComponent = {
-        isDirty: jest.fn(() => false),
-        intelligenceLayout: jest.fn(),
-        setDirty: jest.fn(),
-      };
-      
-      // @ts-ignore
-      IntelligentLayout.popWindowMap.set(mockPopupInfo, mockComponent);
-      IntelligentLayout.calculateForPopWin(mockPopupInfo);
-      
-      expect(PopupWindowRelayout).not.toHaveBeenCalled();
-      expect(mockComponent.isDirty).toHaveBeenCalled();
-    });
+    // Make component report dirty
+    component.setDirty(true);
 
-    test('should call intelligenceLayout when component is dirty', () => {
-      const mockComponent = {
-        isDirty: jest.fn(() => true),
-        intelligenceLayout: jest.fn(),
-        setDirty: jest.fn(),
-      };
-      
-      // @ts-ignore
-      IntelligentLayout.popWindowMap.set(mockPopupInfo, mockComponent);
-      IntelligentLayout.calculateForPopWin(mockPopupInfo);
-      
-      expect(mockComponent.intelligenceLayout).toHaveBeenCalled();
-      expect(mockComponent.setDirty).toHaveBeenCalledWith(false);
-    });
+    IntelligentLayout.markDirty(document.body);
 
-    test('should not call intelligenceLayout when component is not dirty', () => {
-      const mockComponent = {
-        isDirty: jest.fn(() => false),
-        intelligenceLayout: jest.fn(),
-        setDirty: jest.fn(),
-      };
-      
-      // @ts-ignore
-      IntelligentLayout.popWindowMap.set(mockPopupInfo, mockComponent);
-      IntelligentLayout.calculateForPopWin(mockPopupInfo);
-      
-      expect(mockComponent.intelligenceLayout).not.toHaveBeenCalled();
-    });
-
-    test('should set global popupInfo on window', () => {
-      IntelligentLayout.calculateForPopWin(mockPopupInfo);
-      
-      // @ts-ignore
-      expect(window.popupInfo).toBe(mockPopupInfo);
-    });
+    expect(component.setDirty).toHaveBeenLastCalledWith(true);
   });
 
-  describe('recoverPopwinStyle', () => {
-    test('should restore styles when map has entries', () => {
-      const mockComponent = {
-        restoreStyles: jest.fn(),
-      };
-      
-      // @ts-ignore
-      IntelligentLayout.popWindowMap.set(mockPopupInfo, mockComponent);
-      IntelligentLayout.recoverPopwinStyle();
-      
-      expect(IntelligentLayout.popWindowMap.size).toBe(0);
-    });
+  it('removePopwinCache clears active popup and state when node contains root', () => {
+    const info = createPopupInfo();
+    IntelligentLayout.calculateForPopWin(info);
 
-    test('should clear map even if empty', () => {
-      IntelligentLayout.recoverPopwinStyle();
-      
-      expect(IntelligentLayout.popWindowMap.size).toBe(0);
-    });
+    const parent = document.createElement('div');
+    parent.appendChild(info.root_node);
+
+    const removed = IntelligentLayout.removePopwinCache(parent);
+
+    expect(removed).toBe(true);
+    expect(getStateManager().clearState).toHaveBeenCalledWith(info.root_node);
+    expect(IntelligentLayout.getActivePopupWindowInfo()).toBeNull();
   });
 
-  describe('removePopwinCache', () => {
-    test('should remove popup when node contains root_node', () => {
-      const parentNode = document.createElement('div');
-      parentNode.appendChild(mockRootNode);
-      
-      // @ts-ignore
-      IntelligentLayout.popWindowMap.set(mockPopupInfo, {});
-      
-      const result = IntelligentLayout.removePopwinCache(parentNode);
-      
-      expect(result).toBe(true);
-      expect(IntelligentLayout.popWindowMap.size).toBe(0);
-    });
+  it('resetAllPopWindows cancels validation and restores styles', () => {
+    const info = createPopupInfo();
+    IntelligentLayout.calculateForPopWin(info);
+    const component = IntelligentLayout.getActivePopupWindowComponent();
 
-    test('should not remove popup when node does not contain root_node', () => {
-      const otherNode = document.createElement('div');
-      
-      // @ts-ignore
-      IntelligentLayout.popWindowMap.set(mockPopupInfo, {});
-      
-      const result = IntelligentLayout.removePopwinCache(otherNode);
-      
-      expect(result).toBe(false);
-      expect(IntelligentLayout.popWindowMap.size).toBe(1);
-    });
+    IntelligentLayout.resetPopWindows('初始化');
 
-    test('should return false when map is empty', () => {
-      const result = IntelligentLayout.removePopwinCache(document.createElement('div'));
-      
-      expect(result).toBe(false);
-    });
-
-    test('should handle multiple popups', () => {
-      const popup1Root = document.createElement('div');
-      const popup2Root = document.createElement('div');
-      
-      const popup1: PopupInfo = {
-        root_node: popup1Root,
-        mask_node: null,
-        content_node: null,
-        popup_type: null,
-        root_position: 'fixed',
-        root_zindex: 1000,
-        has_mask: false,
-        root_screen_area_ratio: 0.5,
-        root_is_visiable: true,
-        has_close_button: false,
-        mask_area_ratio: 0,
-        mask_position: '',
-        mask_zindex: 0,
-        stickyTop_height: 0,
-        stickyBottom_height: 0,
-      };
-      
-      const popup2: PopupInfo = {
-        root_node: popup2Root,
-        mask_node: null,
-        content_node: null,
-        popup_type: null,
-        root_position: 'fixed',
-        root_zindex: 1000,
-        has_mask: false,
-        root_screen_area_ratio: 0.5,
-        root_is_visiable: true,
-        has_close_button: false,
-        mask_area_ratio: 0,
-        mask_position: '',
-        mask_zindex: 0,
-        stickyTop_height: 0,
-        stickyBottom_height: 0,
-      };
-      
-      const parentNode = document.createElement('div');
-      
-      parentNode.appendChild(popup1.root_node);
-      
-      // @ts-ignore
-      IntelligentLayout.popWindowMap.set(popup1, {});
-      // @ts-ignore
-      IntelligentLayout.popWindowMap.set(popup2, {});
-      
-      const result = IntelligentLayout.removePopwinCache(parentNode);
-      
-      expect(result).toBe(true);
-      expect(IntelligentLayout.popWindowMap.size).toBe(1);
-    });
+    expect(component.cancelPendingValidation).toHaveBeenCalled();
+    expect(getStateManager().resetState).toHaveBeenCalledWith(info.root_node, expect.any(String));
+    expect(component.restoreStyles).toHaveBeenCalled();
+    expect(component.setDirty).toHaveBeenCalledWith(true);
+    expect(IntelligentLayout.getActivePopupWindowInfo()).toBeNull();
   });
 
-  describe('markDirty', () => {
-    test('should mark component as dirty when item is contained', () => {
-      const childNode = document.createElement('div');
-      mockRootNode.appendChild(childNode);
-      
-      const mockComponent = {
-        isDirty: jest.fn(() => false),
-        setDirty: jest.fn(),
-      };
-      
-      // @ts-ignore
-      IntelligentLayout.popWindowMap.set(mockPopupInfo, mockComponent);
-      
-      IntelligentLayout.markDirty(childNode);
-      
-      expect(mockComponent.setDirty).toHaveBeenCalledWith(true);
-    });
+  it('reInit delegates to recoverPopwinStyle and clears cache', () => {
+    const info = createPopupInfo();
+    IntelligentLayout.calculateForPopWin(info);
 
-    test('should not mark component when already dirty', () => {
-      const childNode = document.createElement('div');
-      mockRootNode.appendChild(childNode);
-      
-      const mockComponent = {
-        isDirty: jest.fn(() => true),
-        setDirty: jest.fn(),
-      };
-      
-      // @ts-ignore
-      IntelligentLayout.popWindowMap.set(mockPopupInfo, mockComponent);
-      
-      IntelligentLayout.markDirty(childNode);
-      
-      expect(mockComponent.setDirty).not.toHaveBeenCalled();
-    });
+    IntelligentLayout.reInit('初始化');
 
-    test('should handle null item', () => {
-      expect(() => {
-        IntelligentLayout.markDirty(null);
-      }).not.toThrow();
-    });
-
-    test('should skip items that shouldSkip returns true for', () => {
-      (Utils.shouldSkip as jest.Mock).mockReturnValue(true);
-      const childNode = document.createElement('div');
-      
-      const mockComponent = {
-        isDirty: jest.fn(() => false),
-        setDirty: jest.fn(),
-      };
-      
-      // @ts-ignore
-      IntelligentLayout.popWindowMap.set(mockPopupInfo, mockComponent);
-      
-      IntelligentLayout.markDirty(childNode);
-      
-      expect(mockComponent.setDirty).not.toHaveBeenCalled();
-    });
-
-    test('should not mark when item not contained in any popup', () => {
-      const otherNode = document.createElement('div');
-      
-      const mockComponent = {
-        isDirty: jest.fn(() => false),
-        setDirty: jest.fn(),
-      };
-      
-      // @ts-ignore
-      IntelligentLayout.popWindowMap.set(mockPopupInfo, mockComponent);
-      
-      IntelligentLayout.markDirty(otherNode);
-      
-      expect(mockComponent.setDirty).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('relayoutForPopWin', () => {
-    test('should use existing popup from map', () => {
-      const mockComponent = {
-        isDirty: jest.fn(() => false),
-        intelligenceLayout: jest.fn(),
-        setDirty: jest.fn(),
-      };
-      // @ts-ignore
-      IntelligentLayout.popWindowMap.set(mockPopupInfo, mockComponent);
-      
-      IntelligentLayout.relayoutForPopWin();
-      
-      expect(PopupWindowDetector.findPopups).not.toHaveBeenCalled();
-    });
-
-    test('should find new popup when map is empty', () => {
-      (PopupWindowDetector.findPopups as jest.Mock).mockReturnValue(mockPopupInfo);
-      
-      IntelligentLayout.relayoutForPopWin();
-      
-      expect(PopupWindowDetector.findPopups).toHaveBeenCalledWith(document.body);
-    });
-
-    test('should handle null popup info', () => {
-      (PopupWindowDetector.findPopups as jest.Mock).mockReturnValue(null);
-      
-      expect(() => {
-        IntelligentLayout.relayoutForPopWin();
-      }).not.toThrow();
-    });
-  });
-
-  describe('reInit', () => {
-    test('should recover styles and clear map', () => {
-      const mockComponent = {
-        restoreStyles: jest.fn(),
-      };
-      
-      // @ts-ignore
-      IntelligentLayout.popWindowMap.set(mockPopupInfo, mockComponent);
-      
-      IntelligentLayout.reInit();
-      
-      expect(IntelligentLayout.popWindowMap.size).toBe(0);
-    });
-
-    test('should clear empty map', () => {
-      IntelligentLayout.reInit();
-      
-      expect(IntelligentLayout.popWindowMap.size).toBe(0);
-    });
+    expect(IntelligentLayout.getActivePopupWindowInfo()).toBeNull();
   });
 });

@@ -27,6 +27,9 @@ inline constexpr char16_t kAboutScheme16[] = u"about";
 inline constexpr char kAndroidScheme[] = "android";
 inline constexpr char kBlobScheme[] = "blob";
 inline constexpr char16_t kBlobScheme16[] = u"blob";
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+inline constexpr char kChromeExtensionScheme[] = "chrome-extension";
+#endif
 inline constexpr char kChromeosSteamScheme[] = "chromeos-steam";
 inline constexpr char kContentScheme[] = "content";
 inline constexpr char16_t kContentScheme16[] = u"content";

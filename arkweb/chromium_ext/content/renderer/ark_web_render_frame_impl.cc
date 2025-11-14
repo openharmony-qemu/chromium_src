@@ -230,10 +230,7 @@ void RenderFrameImpl::PageLoadStartLoggerReport(
     if (!is_strict_log_mode) {
       int32_t usage_scenario = GetWebView()->GetSettings()->GetUsageScenario();
       LOG(URL) << "event_message: page load start, routing_id: " << routing_id_
-               << ", url: "
-               << url::LogUtils::ConvertUrl(
-                      document_loader->GetUrl().GetString().Utf8(),
-                      usage_scenario);
+               << ", url: " << document_loader->GetUrl().GetString().Utf8();
     }
   }
 }
@@ -254,9 +251,7 @@ void RenderFrameImpl::ContentLoadFailedLoggerReport() {
         int32_t usage_scenario =
             GetWebView()->GetSettings()->GetUsageScenario();
         LOG(URL) << "event_message: content load finished, routing_id: "
-                 << routing_id_ << ", url: "
-                 << url::LogUtils::ConvertUrl(GetLoadingUrl().spec(),
-                                              usage_scenario);
+                 << routing_id_ << ", url: " << GetLoadingUrl().spec();
       }
     }
   }
@@ -275,9 +270,7 @@ void RenderFrameImpl::PageLoadFinishedLoggerReport() {
     if (!is_strict_log_mode) {
       int32_t usage_scenario = GetWebView()->GetSettings()->GetUsageScenario();
       LOG(URL) << "event_message: page load finished, routing_id: "
-               << routing_id_ << ", url: "
-               << url::LogUtils::ConvertUrl(GetLoadingUrl().spec(),
-                                            usage_scenario);
+               << routing_id_ << ", url: " << GetLoadingUrl().spec();
     }
   }
 }

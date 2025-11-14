@@ -68,6 +68,7 @@ struct RunJavaScriptParam;
 #include "capi/nweb_extension_manager_callback.h"
 #include "capi/nweb_extension_context_menus_callback.h"
 #include "capi/nweb_offscreen_document_callback.h"
+#include "capi/nweb_offscreen_document_permission_request_callback.h"
 #include "capi/web_extension_tab_items.h"
 #include "ohos_nweb/src/capi/nweb_context_menus_on_clicked_data.h"
 #include "ohos_nweb/src/capi/web_extension_install_crx_items.h"
@@ -542,6 +543,10 @@ class NWebImpl : public NWeb {
 
   static void SetWebDestroyMode(WebDestroyMode mode);
 
+  static ScrollbarMode GetScrollbarMode();
+  static void SetScrollbarMode(ScrollbarMode mode);
+  static bool IsScrollbarModeChanged();
+
   void SetDelayDurationForBackgroundTabFreezing(int64_t delay);
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
   std::shared_ptr<NWebDragData> GetOrCreateDragData() override;
@@ -983,6 +988,26 @@ class NWebImpl : public NWeb {
   static void AlertHandle(const int requestId);
   static void ConfirmHandle(const bool type, const int requestId);
   static void PromptHandle(const bool type, const std::string& value, const int requestId);
+
+  static void SetOnOffscreenDocumentPermissionRequestCallback(
+      OnArkWebStaticOffscreenDocumentPermissionRequestFunc func);
+  static void OnOffscreenDocumentPermissionRequest(
+      const std::string& extension_id,
+      const std::string& origin_url,
+      int resources,
+      int request_key);
+  static void GrantOffscreenDocumentPermission(int resources, int request_key);
+  static void DenyOffscreenDocumentPermission(int resources, int request_key);
+  static void OnOffscreenDocumentWindowNewEvent(
+      const std::string& extensionId,
+      const std::string& originUrl,
+      bool isAlert,
+      bool isUserTrigger,
+      const std::string& targetUrl);
+  static void SetOnOffscreenDocumentWindowNewCallback(
+      OnArkWebStaticOffscreenDocumentWindowNewFunc func);
+  static void SetOffscreenNWebId(uint32_t nweb_id);
+  static void ResetOffscreenNWebId();
 #endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_AI)
@@ -1178,6 +1203,11 @@ class NWebImpl : public NWeb {
   static void SetSocketIdleTimeout(int32_t timeout);
 #endif
 
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+  static void SetClipboardSitePermissionEnabled(bool enable);
+  static bool IsClipboardSitePermissionEnabled();
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
@@ -1214,6 +1244,8 @@ class NWebImpl : public NWeb {
   bool is_richtext_value_ = false;
   static bool disableWebActivePolicy_;
   static WebDestroyMode webDestroyMode_;
+  static ScrollbarMode scrollbarMode_;
+  static bool scrollbarModeChanged_;
 
   bool incognito_mode_ = false;
   raw_ptr<void> window_;
@@ -1242,6 +1274,11 @@ class NWebImpl : public NWeb {
   static OnArkWebStaticOffscreenDocumentAlertFunc on_off_screen_alert_callback_;
   static OnArkWebStaticOffscreenDocumentConfirmFunc on_off_screen_confirm_callback_;
   static OnArkWebStaticOffscreenDocumentPromptFunc on_off_screen_prompt_callback_;
+
+  static OnArkWebStaticOffscreenDocumentPermissionRequestFunc
+      on_offscreen_document_permission_request_callback_;
+  static OnArkWebStaticOffscreenDocumentWindowNewFunc on_off_screen_window_new_callback_;
+  static uint32_t off_screen_nweb_id_;
 #endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_JAVASCRIPT_BRIDGE)

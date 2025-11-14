@@ -38,15 +38,13 @@ void ScrollableAreaUtils::SetOverlayScrollbarColor() {
     // set scrollbar color for overlay color theme
     if (scrollable_area_->overlay_scrollbar_color_scheme__ ==
         static_cast<unsigned>(mojom::blink::ColorScheme::kLight)) {
-      SkColor skDark = SkColorSetRGB(0x18, 0x24, 0x31);
-      SetScrollbarColor(skDark);
-      LOG(INFO) << "ScrollableArea::SetOverlayScrollbarColorScheme"
-                << " scrollbar color is RGB:0x18, 0x24, 0x31";
+      SetScrollbarColor(SK_ColorBLACK);
+      LOG(INFO)
+          << "ScrollableArea::SetOverlayScrollbarColorScheme SK_ColorBLACK";
     } else {
-      SkColor skLight = SkColorSetRGB(0xFF, 0xFF, 0xFF);
-      SetScrollbarColor(skLight);
-      LOG(INFO) << "ScrollableArea::SetOverlayScrollbarColorScheme"
-                << " scrollbar color is RGB:0xFF, 0xFF, 0xFF";
+      SetScrollbarColor(SK_ColorWHITE);
+      LOG(INFO)
+          << "ScrollableArea::SetOverlayScrollbarColorScheme SK_ColorWHITE";
     }
   }
 }

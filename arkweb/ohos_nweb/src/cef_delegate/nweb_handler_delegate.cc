@@ -964,6 +964,9 @@ void NWebHandlerDelegate::OnFrameCreated(CefRefPtr<CefBrowser> browser,
     frameInfo.parentId.clear();
   }
 
+  LOG(DEBUG) << "NWebHandlerDelegate::OnFrameCreated childId:" << frameInfo.id
+             << ", parentId:" << frameInfo.parentId;
+
   dispatcher_.OnFrameCreated(frameInfo);
 }
 
@@ -975,32 +978,21 @@ void NWebHandlerDelegate::OnFrameDetached(CefRefPtr<CefBrowser> browser,
     return;
   }
 
-  std::string frameRoutingId = frame->GetIdentifier().ToString();
-  int childId = 0;
-  std::string parentRoutingId;
-  int parentChildId = 0;
-  FrameInfos frameInfo;
+  CefRefPtr<CefFrameHostImpl> frameHost = static_cast<CefFrameHostImpl*>(frame.get());
+  auto globalId = frameHost->GetGlobalRenderFrameHostId();
 
-  if (!frame->IsMain()) {
-    CefRefPtr<CefFrame> parent = frame->GetParent();
-    if (parent) {
-      parentRoutingId = parent->GetIdentifier().ToString();
-      if (parent->GetBrowser() && parent->GetBrowser()->GetHost()) {
-        parentChildId = parent->GetBrowser()->GetHost()->GetIdentifier();
-      }
-      frameInfo.parentId = std::to_string(parentChildId) + "_" + parentRoutingId;
-    }
+  FrameInfos frameInfo;
+  frameInfo.id = std::to_string(globalId.child_id) + "_" + std::to_string(globalId.frame_routing_id);
+  if (CefRefPtr<CefFrameHostImpl> parent = static_cast<CefFrameHostImpl*>(frameHost->GetParent().get())) {
+    auto parentGlobalId = parent->GetGlobalRenderFrameHostId();
+    frameInfo.parentId = std::to_string(parentGlobalId.child_id) + "_" +
+                         std::to_string(parentGlobalId.frame_routing_id);
   } else {
     frameInfo.parentId.clear();
   }
 
-  if (browser->GetHost()) {
-    childId = browser->GetHost()->GetIdentifier();
-  } else {
-    LOG(ERROR) << "OnFrameDetached browser getHost failed.";
-    return;
-  }
-  frameInfo.id = std::to_string(childId) + "_" + frameRoutingId;
+  LOG(DEBUG) << "NWebHandlerDelegate::OnFrameDetached childId:" << frameInfo.id
+             << ", parentId:" << frameInfo.parentId;
 
   dispatcher_.OnFrameDetached(frameInfo);
 }
@@ -1851,6 +1843,14 @@ void NWebHandlerDelegate::OnLoadError(CefRefPtr<CefBrowser> browser,
   }
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      ::switches::kEnableNwebEx) &&
+      IsPrerendering(frame)) {
+    return;
+  }
+#endif
+
   if (nweb_handler_ != nullptr) {
     nweb_handler_->OnPageLoadError(error_code, error_text.ToString(),
                                    failed_url.ToString());
@@ -1954,7 +1954,7 @@ void NWebHandlerDelegate::OnRefreshAccessedHistory(
     return;
   }
 
-#ifdef OHOS_NETWORK_LOAD
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
       ::switches::kEnableNwebEx) &&
       IsPrerendering(frame)) {
@@ -3505,6 +3505,8 @@ bool NWebHandlerDelegate::OnFileDialog(
     const std::vector<CefString>& accept_filters,
     const std::vector<CefString>& accept_extensions,
     const std::vector<CefString>& accept_descriptions,
+    const CefString& start_in,
+    bool is_exclude_accept_all_options,
     bool capture,
     const std::vector<CefString>& mime_filters,
     CefRefPtr<CefFileDialogCallback> callback) {
@@ -3535,7 +3537,8 @@ bool NWebHandlerDelegate::OnFileDialog(
   std::shared_ptr<NWebFileSelectorParams> param =
       std::make_shared<FileSelectorParamsImpl>(
           file_mode, file_selector_title, accept_extensions,
-          default_file_path.ToString(), capture, mime_filters);
+          default_file_path.ToString(), capture, mime_filters, start_in.ToString(),
+          accept_descriptions, is_exclude_accept_all_options);
   std::shared_ptr<NWebStringVectorValueCallback> file_path_callback =
       std::make_shared<FileSelectorCallbackImpl>(callback);
   return nweb_handler_->OnFileSelectorShow(file_path_callback, param);

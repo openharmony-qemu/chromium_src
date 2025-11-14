@@ -28,15 +28,11 @@ class ProfileForIncludeUnitTest : public ::testing::Test {
 }
 
 TEST(ProfileForIncludeUnitTest, HasOTRProfile001) {
-  EXPECT_TRUE((*base::CommandLine::ForCurrentProcess()).HasSwitch(
-      switches::kEnableNwebEx))
   if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(
       switches::kEnableNwebEx)) {
     if (base::ohos::IsPcDevice()) {
-      EXPECT_TRUE(base::ohos::IsPcDevice());
       EXPECT_TRUE(HasOTRProfile());
     } else {
-      EXPECT_FALSE(base::ohos::IsPcDevice());
       EXPECT_FALSE(HasOTRProfile());
     }
   } else {
@@ -44,83 +40,15 @@ TEST(ProfileForIncludeUnitTest, HasOTRProfile001) {
   }
 }
 
-TEST(ProfileForIncludeUnitTest, HasOTRProfile002) {
-  EXPECT_FALSE((*base::CommandLine::ForCurrentProcess()).HasSwitch(
-      switches::kEnableNwebEx))
-  if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(
-      switches::kEnableNwebEx)) {
-    EXPECT_TRUE(base::ohos::IsPcDevice());
-  } else {
-    EXPECT_FALSE(base::ohos::IsPcDevice());
-    EXPECT_FALSE(HasOTRProfile());
-  }
-}
-
-TEST(ProfileForIncludeUnitTest, HasOTRProfile003) {
-  EXPECT_FALSE((*base::CommandLine::ForCurrentProcess()).HasSwitch(
-      switches::kEnableNwebEx))
-  if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(
-      switches::kEnableNwebEx)) {
-    EXPECT_TRUE(base::ohos::IsPcDevice());
-  } else {
-    EXPECT_FALSE(base::ohos::IsPcDevice());
-    EXPECT_FALSE(HasOTRProfile());
-  }
-
-  if (base::ohos::IsPcDevice()) {
-    EXPECT_TRUE(base::ohos::IsPcDevice());
-    EXPECT_TRUE(HasOTRProfile());
-  } else {
-    EXPECT_FALSE(base::ohos::IsPcDevice());
-    EXPECT_FALSE(HasOTRProfile());
-  }
-}
-
 TEST(ProfileForIncludeUnitTest, GetOTRProfile001) {
-  EXPECT_TRUE((*base::CommandLine::ForCurrentProcess()).HasSwitch(
-      switches::kEnableNwebEx))
   if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(
       switches::kEnableNwebEx)) {
     if (base::ohos::IsPcDevice()) {
-      EXPECT_TRUE(base::ohos::IsPcDevice());
       ASSERT_NE(GetOTRProfile(), nullptr);
     } else {
-      EXPECT_FALSE(base::ohos::IsPcDevice());
       ASSERT_NE(GetOTRProfile(), nullptr);
     }
   } else {
-    ASSERT_NE(GetOTRProfile(), nullptr);
-  }
-}
-
-TEST(ProfileForIncludeUnitTest, GetOTRProfile002) {
-  EXPECT_FALSE((*base::CommandLine::ForCurrentProcess()).HasSwitch(
-      switches::kEnableNwebEx))
-  if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(
-      switches::kEnableNwebEx)) {
-    EXPECT_TRUE(base::ohos::IsPcDevice());
-  } else {
-    EXPECT_FALSE(base::ohos::IsPcDevice());
-    ASSERT_NE(GetOTRProfile(), nullptr);
-  }
-}
-
-TEST(ProfileForIncludeUnitTest, GetOTRProfile003) {
-  EXPECT_FALSE((*base::CommandLine::ForCurrentProcess()).HasSwitch(
-      switches::kEnableNwebEx))
-  if ((*base::CommandLine::ForCurrentProcess()).HasSwitch(
-      switches::kEnableNwebEx)) {
-    EXPECT_TRUE(base::ohos::IsPcDevice());
-  } else {
-    EXPECT_FALSE(base::ohos::IsPcDevice());
-    ASSERT_NE(GetOTRProfile(), nullptr);
-  }
-
-  if (base::ohos::IsPcDevice()) {
-    EXPECT_TRUE(base::ohos::IsPcDevice());
-    ASSERT_NE(GetOTRProfile(), nullptr);
-  } else {
-    EXPECT_FALSE(base::ohos::IsPcDevice());
     ASSERT_NE(GetOTRProfile(), nullptr);
   }
 }

@@ -356,5 +356,57 @@ TEST_F(RenderThreadImplExtUnittest, OnChannelConnected_WithSwitch_WithLogHandler
             "maybe you runs in single process mode, log message handler had been setted by other"),
             std::string::npos);
 }
+ 
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+TEST_F(RenderThreadImplExtUnittest, VideoLoadOpt_UpdateOptimizationConfigTest) {
+  bool enable_ = true;
+  int preloadTime = 6;
+  int maxCacheTime = 9;
+  int minCacheTime = 3;
+  int moovSize = 200;
+  int bitRate = 800;
+  std::vector<std::string> support_domains;
+  std::string domainUrl = "https://www.baidu.com/";
+  support_domains.emplace_back(domainUrl);
+
+  thread_->UpdateVideoLoadOptimizationConfigData(enable_, preloadTime, minCacheTime, maxCacheTime,
+                                                moovSize, bitRate, support_domains);
+  EXPECT_EQ(thread_->GetVideoPreloadTimeDefault(), 6);
+  EXPECT_EQ(thread_->GetVideoMinCacheTimeDefault(), 3);
+  EXPECT_EQ(thread_->GetVideoMaxCacheTimeDefault(), 9);
+  EXPECT_EQ(thread_->GetVideoMoovSizeDefault(), 200);
+  EXPECT_EQ(thread_->GetVideoBitrateDefault(), 800);
+}
+
+
+TEST_F(RenderThreadImplExtUnittest, VideoLoadOpt_ConfigEnableTest) {
+  bool enable_ = true;
+  int preloadTime = 6;
+  int maxCacheTime = 9;
+  int minCacheTime = 3;
+  int moovSize = 200;
+  int bitRate = 800;
+  std::vector<std::string> support_domains;
+  std::string domainUrl = "https://www.baidu.com/";
+  std::string domainOtherUrl = "https://www.mgtv.com:8554/";
+  support_domains.emplace_back(domainUrl);
+  support_domains.emplace_back(domainOtherUrl);
+
+  thread_->UpdateVideoLoadOptimizationConfigData(enable_, preloadTime, minCacheTime, maxCacheTime,
+                                                moovSize, bitRate, support_domains);
+
+  std::string testBaiduUrl = "https://www.baidu.com/";
+  EXPECT_TRUE(thread_->IsVideoLoadOptimizationEnabled(testBaiduUrl));
+
+  std::string testMgtvUrl = "https://www.mgtv.com:8554/";
+  EXPECT_TRUE(thread_->IsVideoLoadOptimizationEnabled(testMgtvUrl));
+
+  std::string testMgtvUrl_Fir = "https://www.mgtv.com:8559/";
+  EXPECT_FALSE(thread_->IsVideoLoadOptimizationEnabled(testMgtvUrl_Fir));
+
+  std::string testMgtvUrl_Sec = "https://www.mgtv.com/";
+  EXPECT_FALSE(thread_->IsVideoLoadOptimizationEnabled(testMgtvUrl_Sec));  
+}
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
 }  // namespace content

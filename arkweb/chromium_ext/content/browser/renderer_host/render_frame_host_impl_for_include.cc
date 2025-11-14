@@ -406,6 +406,13 @@ void RenderFrameHostImpl::OnPdfLoadEvent(int32_t result, const std::string& url)
     delegate_->OnPdfLoadEvent(result, url);
   }
 }
+
+void RenderFrameHostImpl::SetIsPDF(bool is_pdf) {
+  auto* mojo_frame = GetMojomFrameInRenderer();
+  if (mojo_frame) {
+    mojo_frame->SetIsPDF(is_pdf);
+  }
+}
 #endif  // BUILDFLAG(ARKWEB_PDF)
 // LCOV_EXCL_STOP
 

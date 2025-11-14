@@ -188,6 +188,10 @@ void WebFrameWidgetImplExt::CreateOverlay(
     GetAbsImageRectCallback get_rect_callback,
     OnTextSelectedCallback callback,
     OnDestroyImageAnalyzerOverlayCallback destroy_callback) {
+  if (!ForTopMostMainFrame()) {
+    LOG(WARNING) << "CreateOverlay stopped: not top most main frame.";
+    return;
+  }
   get_rect_callback_ = std::move(get_rect_callback);
   on_text_selected_callback_ = std::move(callback);
   on_destroy_image_overlay_callback_ = std::move(destroy_callback);

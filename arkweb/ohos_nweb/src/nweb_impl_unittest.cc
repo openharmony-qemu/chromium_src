@@ -8068,5 +8068,61 @@ TEST_F(NWebImplTest, AbortDistill002) {
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
 }
 #endif  // BUILDFLAG(ARKWEB_READER_MODE)
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+void OnOffscreenDocumentPermissionRequestCallback(const char* extension_id,
+                                                  const char* origin_url,
+                                                  const int resources,
+                                                  const int request_key) {}
+
+TEST_F(NWebImplTest, OffscreenDocumentPermissionRequest001) {
+  const std::string extension_id = "extension-id";
+  const std::string origin_url = "arkweb-extension://extension-id/";
+  int resources =
+      static_cast<int>(OffscreenDocumentPermissionResourceType::VIDEO_CAPTURE);
+  int request_key = 1;
+
+  testing::internal::CaptureStderr();
+  NWebImpl::OnOffscreenDocumentPermissionRequest(extension_id, origin_url,
+                                                 resources, request_key);
+  std::string log_output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(log_output.find("callback is null"), std::string::npos);
+
+  NWebImpl::GrantOffscreenDocumentPermission(resources, request_key);
+  NWebImpl::DenyOffscreenDocumentPermission(resources, request_key);
+  NWebImpl::SetOnOffscreenDocumentPermissionRequestCallback(
+      OnOffscreenDocumentPermissionRequestCallback);
+  NWebImpl::OnOffscreenDocumentPermissionRequest(extension_id, origin_url,
+                                                 resources, request_key);
+  EXPECT_NE(NWebImpl::on_offscreen_document_permission_request_callback_, nullptr);
+}
+
+void OffscreenDocumentWindowNewEventCallback(
+    const char* extensionId,
+    const char* originUrl,
+    bool isAlert,
+    bool isUserTrigger,
+    const char* targetUrl) {}
+
+TEST_F(NWebImplTest, OffscreenDocumentWindowNewEvent001) {
+  const std::string extensionId = "extension-id";
+  const std::string originUrl = "arkweb-extension://extension-id/";
+  std::string targetUrl = "//xxxxxx/yyy/sss.html";
+  bool isAlert = false;
+  bool isUserTrigger = false;
+
+  nweb_impl_->OnOffscreenDocumentWindowNewEvent(
+      extensionId, originUrl, isAlert, isUserTrigger, targetUrl);
+  EXPECT_EQ(nweb_impl_->on_off_screen_window_new_callback_, nullptr);
+  nweb_impl_->on_off_screen_window_new_callback_ =
+      OffscreenDocumentWindowNewEventCallback;
+  nweb_impl_->OnOffscreenDocumentWindowNewEvent(
+      extensionId, originUrl, isAlert, isUserTrigger, targetUrl);
+  nweb_impl_->SetOnOffscreenDocumentWindowNewCallback(nullptr);
+  EXPECT_EQ(nweb_impl_->on_off_screen_window_new_callback_, nullptr);
+  nweb_impl_->SetOffscreenNWebId(0);
+  EXPECT_EQ(nweb_impl_->off_screen_nweb_id_, 0);
+}
+#endif  // BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 }  // namespace OHOS::NWeb
                           

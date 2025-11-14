@@ -940,6 +940,10 @@ Value::Dict::Dict(
       LOG(ERROR) << "Dict constructor, key:" << key << " value is nullptr";
       continue;
     }
+    if (value->type() > Type::LIST) {
+      LOG(ERROR) << "Dict constructor, key:" << key << ", value->type:" << static_cast<int>(value->type());
+      continue;
+    }
 #endif  // BUILDFLAG(ARKWEB_WEBSTORAGE)
     Set(key, value->Clone());
   }

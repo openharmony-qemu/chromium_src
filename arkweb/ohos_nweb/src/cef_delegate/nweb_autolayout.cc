@@ -106,7 +106,7 @@ static std::string EscapeForJS_TemplateLiteral(const std::string& s) {
 void NwebAutolayout::CheckCCMandApplyRule(CefRefPtr<CefFrame> frame) {
   ScopedTimeLogger timer("NwebAutolayout::CheckCCMandApplyRule");
   TRACE_EVENT("base", "NwebAutolayout::CheckCCMandApplyRule");
-  if (!mEnable_ || mWListEntry_ == nullptr) {
+  if (!mEnable_ || mWListEntry_ == nullptr || frame == nullptr) {
     return;
   }
   frame->ExecuteJavaScript(std::string(mWListEntry_->getID), frame->GetURL(), 0);

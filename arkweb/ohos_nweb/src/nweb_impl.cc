@@ -242,6 +242,7 @@ extern bool g_siteIsolationMode;
 #include "nweb_js_dialog_result_impl.h"
 #include "chrome/browser/extensions/api/debugger/extension_dev_tools_infobar_delegate.h"
 #include "arkweb/chromium_ext/components/crx_file/crx_key_service.h"
+#include "cef/ohos_cef_ext/libcef/browser/permission/offscreen_permission_request_handler.h"
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_USERAGENT)
@@ -301,6 +302,12 @@ OnReportStatisticLogFunc
 OnArkWebStaticOffscreenDocumentAlertFunc   OHOS::NWeb::NWebImpl::on_off_screen_alert_callback_ = nullptr;
 OnArkWebStaticOffscreenDocumentConfirmFunc OHOS::NWeb::NWebImpl::on_off_screen_confirm_callback_ = nullptr;
 OnArkWebStaticOffscreenDocumentPromptFunc  OHOS::NWeb::NWebImpl::on_off_screen_prompt_callback_ = nullptr;
+
+OnArkWebStaticOffscreenDocumentPermissionRequestFunc
+    OHOS::NWeb::NWebImpl::on_offscreen_document_permission_request_callback_ = nullptr;
+OnArkWebStaticOffscreenDocumentWindowNewFunc
+    OHOS::NWeb::NWebImpl::on_off_screen_window_new_callback_ = nullptr;
+uint32_t OHOS::NWeb::NWebImpl::off_screen_nweb_id_ = 0;
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
@@ -332,6 +339,10 @@ bool g_browser_service_api_enabled = false;
 std::vector<std::string> g_browser_args = {};
 int32_t g_browser_service_sdk_api_level = 0;
 #endif  // BUILDFLAG(ARKWEB_NWEB_EX)
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+bool g_clipboard_site_permission_enabled = false;
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 
 #if BUILDFLAG(ARKWEB_SITE_ISOLATION)
 enum class SiteIsolationInitMode{
@@ -828,7 +839,18 @@ void InitialWebEngineArgs(
   web_engine_args.emplace_back("--off-screen-frame-rate=60");
   web_engine_args.emplace_back("--no-unsandboxed-zygote");
   web_engine_args.emplace_back("--no-zygote");
-  web_engine_args.emplace_back("--enable-features=UseOzonePlatform");
+  if (OHOS::NWeb::NWebImpl::GetScrollbarMode() ==
+      OHOS::NWeb::ScrollbarMode::FORCE_DISPLAY_SCROLLBAR &&
+      OHOS::NWeb::NWebImpl::IsScrollbarModeChanged()) {
+    web_engine_args.emplace_back("--disable-features=OverlayScrollbar");
+  }
+  if (OHOS::NWeb::NWebImpl::GetScrollbarMode() ==
+      OHOS::NWeb::ScrollbarMode::OVERLAY_LAYOUT_SCROLLBAR &&
+      OHOS::NWeb::NWebImpl::IsScrollbarModeChanged()) {
+    web_engine_args.emplace_back("--enable-features=UseOzonePlatform,OverlayScrollbar");
+  } else {
+    web_engine_args.emplace_back("--enable-features=UseOzonePlatform");
+  }
   web_engine_args.emplace_back("-ozone-platform=headless");
   web_engine_args.emplace_back("--no-sandbox");
   web_engine_args.emplace_back("--use-mobile-user-agent");
@@ -1048,6 +1070,9 @@ bool NWebImpl::disableWebActivePolicy_ = false;
 void* NWebImpl::logger_report_event_callback_ = nullptr;
 
 WebDestroyMode NWebImpl::webDestroyMode_ = WebDestroyMode::NORMAL_MODE;
+
+ScrollbarMode NWebImpl::scrollbarMode_ = ScrollbarMode::OVERLAY_LAYOUT_SCROLLBAR;
+bool NWebImpl::scrollbarModeChanged_ = false;
 
 #if BUILDFLAG(ARKWEB_SOFTKEYBOARD_AVOID)
  WebSoftKeyboardBehaviorMode NWebImpl::keyboardBehaviorMode_ = WebSoftKeyboardBehaviorMode::DEFAULT;
@@ -2720,14 +2745,28 @@ void NWebImpl::JavaScriptOnDocumentStart(const ScriptItems& scriptItems) {
   if (nweb_delegate_ == nullptr) {
     return;
   }
-  return nweb_delegate_->JavaScriptOnDocumentStart(scriptItems);
+  nweb_delegate_->JavaScriptOnDocumentStart(scriptItems);
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      ::switches::kEnableNwebEx)) {
+    nweb_delegate_->CancelAllPrerendering();
+  }
+#endif
 }
 
 void NWebImpl::JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) {
   if (nweb_delegate_ == nullptr) {
     return;
   }
-  return nweb_delegate_->JavaScriptOnDocumentEnd(scriptItems);
+  nweb_delegate_->JavaScriptOnDocumentEnd(scriptItems);
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      ::switches::kEnableNwebEx)) {
+    nweb_delegate_->CancelAllPrerendering();
+  }
+#endif
 }
 
 void NWebImpl::JavaScriptOnDocumentStartByOrder(
@@ -3547,6 +3586,41 @@ WebDestroyMode NWebImpl::GetWebDestroyMode() {
 void NWebImpl::SetWebDestroyMode(WebDestroyMode mode) {
   WVLOG_I("NWebImpl set web destroy mode %{public}d", static_cast<int32_t>(mode));
   webDestroyMode_ = mode;
+}
+
+bool NWebImpl::IsScrollbarModeChanged() {
+  return scrollbarModeChanged_;
+}
+
+ScrollbarMode NWebImpl::GetScrollbarMode() {
+  return scrollbarMode_;
+}
+
+void NWebImpl::SetScrollbarMode(ScrollbarMode mode) {
+  WVLOG_I("NWebImpl set web scrollbar mode %{public}d", static_cast<int32_t>(mode));
+  if (!base::FeatureList::GetInstance() && !scrollbarModeChanged_) {
+    scrollbarModeChanged_ = true;
+    scrollbarMode_ = mode;
+    LOG(ERROR) << "FeatureList is null and save mode";
+    return;
+  }
+  const base::CommandLine& command_line =
+      *base::CommandLine::ForCurrentProcess();
+  std::string enableFeatures;
+  std::string disableFeatures;
+  base::FeatureList::GetInstance()->GetCommandLineFeatureOverrides(&enableFeatures, &disableFeatures);
+  LOG(INFO) << "enable:" << enableFeatures << " disable:" << disableFeatures;
+  std::string allFeatures = enableFeatures + disableFeatures;
+  if ((allFeatures.find("OverlayScrollbar") == std::string::npos)) {
+    if (mode == ScrollbarMode::OVERLAY_LAYOUT_SCROLLBAR) {
+      enableFeatures = "OverlayScrollbar";
+    } else {
+      disableFeatures = "OverlayScrollbar";
+    }
+    base::FeatureList::GetInstance()->InitFromCommandLine(enableFeatures, disableFeatures);
+    base::FeatureList::GetInstance()->GetCommandLineFeatureOverrides(&enableFeatures, &disableFeatures);
+    LOG(INFO) << "update enable:" << enableFeatures << " disable:" << disableFeatures;
+  }
 }
 
 void NWebImpl::SetDelayDurationForBackgroundTabFreezing(int64_t delay) {
@@ -4450,6 +4524,66 @@ void NWebImpl::PromptHandle(const bool type,
   }
 }
 
+void NWebImpl::SetOnOffscreenDocumentPermissionRequestCallback(
+    OnArkWebStaticOffscreenDocumentPermissionRequestFunc func) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  on_offscreen_document_permission_request_callback_ = func;
+}
+
+NO_SANITIZE("cfi")
+void NWebImpl::OnOffscreenDocumentPermissionRequest(
+    const std::string& extension_id,
+    const std::string& origin_url,
+    int resources,
+    int request_key) {
+  if (on_offscreen_document_permission_request_callback_) {
+    LOG(INFO) << " func:" << __FUNCTION__;
+    on_offscreen_document_permission_request_callback_(
+        extension_id.c_str(), origin_url.c_str(), resources, request_key);
+  } else {
+    LOG(ERROR) << __FUNCTION__ << " callback is null";
+    DenyOffscreenDocumentPermission(resources, request_key);
+  }
+}
+
+void NWebImpl::GrantOffscreenDocumentPermission(int resources,
+                                                int request_key) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  OffscreenPermissionRequestHandler::GetInstance()->Grant(resources,
+                                                          request_key);
+}
+
+void NWebImpl::DenyOffscreenDocumentPermission(int resources, int request_key) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  OffscreenPermissionRequestHandler::GetInstance()->Deny(resources,
+                                                         request_key);
+}
+
+NO_SANITIZE("cfi")
+void NWebImpl::OnOffscreenDocumentWindowNewEvent(
+    const std::string& extensionId,
+    const std::string& originUrl,
+    bool isAlert,
+    bool isUserTrigger,
+    const std::string& targetUrl) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  if (on_off_screen_window_new_callback_) {
+    on_off_screen_window_new_callback_(
+        extensionId.c_str(), originUrl.c_str(),
+        isAlert, isUserTrigger, targetUrl.c_str());
+  }
+}
+
+void NWebImpl::SetOnOffscreenDocumentWindowNewCallback(
+    OnArkWebStaticOffscreenDocumentWindowNewFunc func) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  on_off_screen_window_new_callback_ = func;
+}
+
+void NWebImpl::SetOffscreenNWebId(uint32_t nweb_id) {
+  LOG(INFO) << " func:" << __FUNCTION__;
+  off_screen_nweb_id_ = nweb_id;
+}
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
@@ -7205,6 +7339,16 @@ void NWebImpl::SetSocketIdleTimeout(int32_t timeout) {
   content::GetNetworkService()->SetSocketIdleTimeout(timeout);
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_CLIPBOARD)
+void NWebImpl::SetClipboardSitePermissionEnabled(bool enable) {
+  g_clipboard_site_permission_enabled = enable;
+}
+
+bool NWebImpl::IsClipboardSitePermissionEnabled() {
+  return g_clipboard_site_permission_enabled;
+}
+#endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 
 void NWebImpl::StopFling() {
   if (nweb_delegate_ == nullptr) {

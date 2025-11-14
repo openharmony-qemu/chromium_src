@@ -26,6 +26,9 @@
 #include "ui/gfx/image/image_skia.h"
 #include "ui/gfx/image/image_skia_rep.h"
 
+namespace extensions {
+class MockNWebExtensionActionCefDelegate;
+}
 namespace OHOS::NWeb {
 
 NWebExtensionActionIcon CreateFromImageSkiaReps(
@@ -92,8 +95,11 @@ class NWebExtensionActionCefDelegate {
       const std::string& extensionId);
 
  private:
-  static std::unique_ptr<NWebExtensionActionCefDelegate> instance;
-  static std::mutex mtx;
+  friend class ::extensions::MockNWebExtensionActionCefDelegate;
+  NWebExtensionActionCefDelegate() = default;
+  ~NWebExtensionActionCefDelegate() = default;
+  NWebExtensionActionCefDelegate(const NWebExtensionActionCefDelegate &) = delete;
+  NWebExtensionActionCefDelegate &operator=(const NWebExtensionActionCefDelegate &) = delete;
 };
 
 }  // namespace OHOS::NWeb

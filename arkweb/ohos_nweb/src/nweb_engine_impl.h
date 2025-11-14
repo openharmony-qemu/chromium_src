@@ -132,6 +132,7 @@ class NWebEngineImpl : public NWebEngine {
   void EnablePrivateNetworkAccess(bool enable) override;
   bool IsPrivateNetworkAccessEnabled() override;
   void SetWebDestroyMode(WebDestroyMode mode) override;
+  void SetScrollbarMode(ScrollbarMode mode) override;
 
 #if BUILDFLAG(ARKWEB_NETWORK_SERVICE)
   void SetSocketIdleTimeout(int32_t timeout) override;

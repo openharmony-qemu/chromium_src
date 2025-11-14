@@ -39,5 +39,6 @@ fuzzer_test("hitrace_adapter_fuzzer") {
     "//cef:libcef_static",
     "//ohos_nweb:cef_nweb",
     "//ohos_nweb:nweb_sources",
+    "//third_party:huawei_securec",
   ]
 }

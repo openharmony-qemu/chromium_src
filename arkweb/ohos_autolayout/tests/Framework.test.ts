@@ -299,14 +299,6 @@ describe('Framework Module', () => {
     });
   });
 
-  describe('recoverStyle', () => {
-    test('should call IntelligentLayout.recoverPopwinStyle', () => {
-      Framework.recoverStyle();
-      
-      expect(IntelligentLayout.recoverPopwinStyle).toHaveBeenCalled();
-    });
-  });
-
   describe('reInit', () => {
     test('should not reinit when not wide screen', () => {
       (Utils.isWideScreen as jest.Mock).mockReturnValue(false);

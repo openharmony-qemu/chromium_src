@@ -464,6 +464,8 @@ class CONTENT_EXPORT RenderFrameImpl
 #if BUILDFLAG(ARKWEB_PDF)
   void OnPdfScrollAtBottom(const std::string& url) override;
   void OnPdfLoadEvent(int32_t result, const std::string& url) override;
+  void SetIsPDF(bool is_pdf) override;
+  bool IsPDF() override;
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
@@ -482,6 +484,15 @@ class CONTENT_EXPORT RenderFrameImpl
   void ChangeVisibilityOfQuickMenu() override;
   void HideQuickMenu() override;
 #endif
+#if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
+  bool IsVideoLoadOptimizationEnabled(const std::string& url) override;
+  int GetVideoPreloadTimeDefault() const override;
+  int GetVideoMinCacheTimeDefault() const override;
+  int GetVideoMaxCacheTimeDefault() const override;
+  int GetVideoMoovSizeDefault() const override;
+  int GetVideoBitrateDefault() const override;
+  bool SetNewsFeedPageFitted() override;
+#endif // ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION
 
   // blink::mojom::AutoplayConfigurationClient implementation:
   void AddAutoplayFlags(const url::Origin& origin,
@@ -1352,6 +1363,10 @@ class CONTENT_EXPORT RenderFrameImpl
   // main frame or not. It remains accurate during destruction, even when
   // |frame_| has been invalidated.
   bool is_main_frame_;
+
+#if BUILDFLAG(ARKWEB_PDF)
+  bool is_pdf_ = false;
+#endif
 
   class UniqueNameFrameAdapter : public blink::UniqueNameHelper::FrameAdapter {
    public:

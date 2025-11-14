@@ -545,6 +545,11 @@ interface Frame {
   [EnableIf=arkweb_dfx_tracing]
   SendCommitNavigationTime(int64 start_time);
   // #endif
+
+  // #if BUILDFLAG(ARKWEB_PDF
+  [EnableIf=arkweb_pdf]
+  SetIsPDF(bool is_pdf);
+  // #endif
 };
 
 // Implemented by the frame (e.g. renderer processes).

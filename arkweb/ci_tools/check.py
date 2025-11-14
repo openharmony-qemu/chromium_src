@@ -24,13 +24,18 @@ def check_paths_in_files(file_paths):
     result = 0
     for file_path in file_paths:
         if os.path.exists(file_path):
+            check_result = False
             with open(file_path, 'r',encoding='utf-8',errors='ignore') as file:
                 for line in file:
                     for item in check_list:
                         if item in line:
-                            print(f"FAILED： {file_path} 中含有违规字段{item}，请修改,代码中不能含有{check_list}")
-                            result = 1
+                            if not check_result:
+                                print(f"FAILED： {file_path} 中含有违规字段{item}，请修改,代码中不能含有{check_list}")
+                                check_result = True
+                                result = 1
                             break
+                    if check_result:
+                        break
     return result
 
 result = check_paths_in_files(matched_paths)

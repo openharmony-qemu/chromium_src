@@ -957,6 +957,8 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
   bool scroll_at_bottom_status_ = false;
   gfx::Rect current_left_;
   gfx::Rect current_right_;
+
+  bool isPinching_ = false;
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
   base::WeakPtrFactory<PdfViewWebPlugin> weak_factory_{this};

@@ -27,6 +27,7 @@
 #include "base/types/optional_util.h"
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
+#include "ohos/adapter/common/shared_library.h"
 #include "ohos/adapter/file_manager/file_manager_adapter.h"
 #include "ohos/adapter/permission_manager/permission_manager_adapter.h"
 #include "skia/ext/skia_utils_base.h"
@@ -51,6 +52,8 @@ namespace {
 
 constexpr int kMaxUriDecodeLen = 2048;
 const std::string K_PASTEBOARD_LOG_TAG = "[OhosPasteboard] ";
+
+using PasteboardGetChangeCountFunc = uint32_t(OH_Pasteboard*);
 
 using InstanceRegistry = std::set<const ClipboardOHOS*, std::less<>>;
 InstanceRegistry* GetInstanceRegistry() {
@@ -88,7 +91,18 @@ Clipboard* Clipboard::Create() {
 
 class ClipboardOHOSInternal {
  public:
-  ClipboardOHOSInternal() { pasteboard_ = OH_Pasteboard_Create(); }
+  ClipboardOHOSInternal() : pasteboard_lib_("pasteboard") {
+    pasteboard_ = OH_Pasteboard_Create();
+    if (!pasteboard_lib_.IsLoaded()) {
+      LOG(ERROR) << K_PASTEBOARD_LOG_TAG << "pasteboard lib load failed";
+      return;
+    }
+    bool load_success = pasteboard_lib_.LoadFunction(&pasteboard_get_change_count_func_,
+                                                     "OH_Pasteboard_GetChangeCount");
+    if (!load_success) {
+      LOG(ERROR) << K_PASTEBOARD_LOG_TAG << "load OH_Pasteboard_GetChangeCount failed";
+    }
+  }
 
   ~ClipboardOHOSInternal() {
     if (pasteboard_ == nullptr) {
@@ -96,6 +110,7 @@ class ClipboardOHOSInternal {
       return;
     }
     OH_Pasteboard_Destroy(pasteboard_);
+    pasteboard_get_change_count_func_ = nullptr;
   }
 
   void WritePasteboard(OH_UdmfRecord*& udmf_record) {
@@ -130,8 +145,18 @@ class ClipboardOHOSInternal {
     data_.reset();
   }
 
+  __attribute__((no_sanitize("cfi", "cfi-icall")))
   const ClipboardSequenceNumberToken& sequence_number() const {
-    return sequence_number_;
+    if (pasteboard_get_change_count_func_ == nullptr) {
+      LOG(WARNING) << K_PASTEBOARD_LOG_TAG << "can not get OH_Pasteboard_GetChangeCount.";
+      return sequence_number_;
+    }
+    uint32_t sequence_number = pasteboard_get_change_count_func_(pasteboard_);
+    if (sequence_number != clipboard_sequence_.sequence_number) {
+      // Generate a unique token associated with the current sequence number.
+      clipboard_sequence_ = {sequence_number, ClipboardSequenceNumberToken()};
+    }
+    return clipboard_sequence_.token;
   }
   // Returns the current clipboard data, which may be nullptr if nothing has
   // been written since the last Clear().
@@ -1105,6 +1130,14 @@ class ClipboardOHOSInternal {
   bool promptDialogOpened_ = false;
 
   base::WeakPtrFactory<ClipboardOHOSInternal> weak_factory_{this};
+
+  // Mapping of OS-provided sequence number to a unique token.
+  mutable struct {
+    uint32_t sequence_number;
+    ClipboardSequenceNumberToken token;
+  } clipboard_sequence_;
+  ohos::adapter::common::SharedLibrary pasteboard_lib_;
+  PasteboardGetChangeCountFunc* pasteboard_get_change_count_func_;
 };
 
 class ClipboardDataBuilderOhos {

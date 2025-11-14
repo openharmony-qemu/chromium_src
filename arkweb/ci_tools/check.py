@@ -20,7 +20,7 @@ for project in root.findall("project"):
 print(matched_paths)
 
 check_list = ['system/app/ArkWebCore','system/app/ArkWebCoreLegacy','ArkWebCore.hap','ArkWebCoreLegacy.hap','com.huawei.hmos.arkwebcore','com.huawei.hmos.arkwebcorelegacy','ArkWebCore','ArkWebCoreLegacy']
-def check_paths_in_files(file_paths):
+def check_paths_in_files(file_paths,check_list):
     result = 0
     for file_path in file_paths:
         if os.path.exists(file_path):
@@ -38,7 +38,7 @@ def check_paths_in_files(file_paths):
                         break
     return result
 
-result = check_paths_in_files(matched_paths)
+result = check_paths_in_files(matched_paths,check_list)
 print(f"检查结果: {result}")
 exit(1 if result else 0)
     

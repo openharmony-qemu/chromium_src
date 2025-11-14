@@ -22,6 +22,7 @@
 #include "base/containers/span.h"
 #include "base/feature_list.h"
 #include "base/files/file_util.h"
+#include "base/logging.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/no_destructor.h"
 #include "base/posix/eintr_wrapper.h"
@@ -67,7 +68,7 @@ class URandomFd {
   const int fd_;
 };
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
 
 bool KernelSupportsGetRandom() {
   return base::SysInfo::KernelVersionNumber::Current() >=
@@ -108,7 +109,7 @@ BASE_FEATURE(kUseGetrandomForRandBytes,
 bool UseGetrandom() {
   return g_use_getrandom.load(std::memory_order_relaxed);
 }
-#elif (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ARKWEB)) && !BUILDFLAG(IS_NACL)
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ARKWEB)
 bool UseGetrandom() {
   return true;
 }

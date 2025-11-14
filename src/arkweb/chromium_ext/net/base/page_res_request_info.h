@@ -115,10 +115,10 @@ class PRRequestInfo {
   void set_load_flags(int load_flags) { load_flags_ = load_flags; }
   net::SecureDnsPolicy secure_dns_policy() const { return secure_dns_policy_; }
   void set_secure_dns_policy(net::SecureDnsPolicy secure_dns_policy) { secure_dns_policy_ = secure_dns_policy; }
-  std::optional<base::flat_set<net::SourceStream::SourceType>> accepted_stream_types() const {
+  std::optional<base::flat_set<net::SourceStreamType>> accepted_stream_types() const {
 	  return accepted_stream_types_;
   }
-  void set_accepted_stream_types(std::optional<base::flat_set<net::SourceStream::SourceType>> accepted_stream_types) {
+  void set_accepted_stream_types(std::optional<base::flat_set<net::SourceStreamType>> accepted_stream_types) {
 	  accepted_stream_types_ = accepted_stream_types;
   }
   bool upgrade_if_insecure() const { return upgrade_if_insecure_; }
@@ -238,7 +238,7 @@ class PRRequestInfo {
   net::HttpRequestHeaders extra_request_headers_;
   int load_flags_ { net::LOAD_NORMAL };
   net::SecureDnsPolicy secure_dns_policy_ { net::SecureDnsPolicy::kAllow };
-  std::optional<base::flat_set<net::SourceStream::SourceType>>
+  std::optional<base::flat_set<net::SourceStreamType>>
 	  accepted_stream_types_;
   bool upgrade_if_insecure_ { false };
   bool send_client_certs_ { true };

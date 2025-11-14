@@ -25,6 +25,7 @@
 #include "base/files/file_util.h"
 #include "base/logging.h"
 #include "base/notreached.h"
+#include "crypto/hash.h"
 #include "crypto/sha2.h"
 #include "net/cert/asn1_util.h"
 #include "net/cert/cert_net_fetcher.h"
@@ -152,7 +153,7 @@ int GetVerifiedChain(X509_STORE_CTX* ctx,
     i2d_X509(x509, &buf);
 
     auto cert_der_span =
-        base::make_span(cert_der, base::checked_cast<size_t>(cert_len));
+        std::span(cert_der, base::checked_cast<size_t>(cert_len));
     bssl::UniquePtr<CRYPTO_BUFFER> cert_buffer =
         net::x509_util::CreateCryptoBuffer(cert_der_span);
     if (cert_buffer == nullptr) {
@@ -658,8 +659,8 @@ bool VerifyFromOhosTrustManager(const std::vector<std::string>& cert_bytes,
       continue;
     }
 
-    HashValue sha256(HASH_VALUE_SHA256);
-    crypto::SHA256HashString(spki_bytes, sha256.data(), crypto::kSHA256Length);
+    SHA256HashValue sha256(
+        crypto::hash::Sha256(base::as_byte_span(spki_bytes)));
     verify_result->public_key_hashes.push_back(sha256);
 
     if (!verify_result->is_issued_by_known_root) {

@@ -89,11 +89,11 @@ struct ProcessMemoryInfo {
 #endif  // BUILDFLAG(IS_APPLE)
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(IS_FUCHSIA)
+    BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
   uint64_t rss_anon_bytes = 0;
   uint64_t vm_swap_bytes = 0;
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
-        // BUILDFLAG(IS_ANDROID)
+        // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 
 #if BUILDFLAG(IS_WIN)
   uint64_t private_bytes = 0;

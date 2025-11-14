@@ -6,6 +6,7 @@
 
 #include "base/logging.h"
 #include "base/numerics/safe_conversions.h"
+#include <span>
 
 #include <sys/mman.h>
 
@@ -25,7 +26,7 @@ std::optional<span<uint8_t>> PlatformSharedMemoryMapper::Map(
     return std::nullopt;
   }
 
-  return make_span(reinterpret_cast<uint8_t*>(address), size);
+  return std::span(reinterpret_cast<uint8_t*>(address), size);
 }
 
 void PlatformSharedMemoryMapper::Unmap(span<uint8_t> mapping) {

@@ -24,8 +24,8 @@ def check_paths_in_files(file_paths):
     result = 0
     for file_path in file_paths:
         if os.path.exists(file_path):
-            check_result = False
             with open(file_path, 'r',encoding='utf-8',errors='ignore') as file:
+                check_result = False
                 for line in file:
                     for item in check_list:
                         if item in line:

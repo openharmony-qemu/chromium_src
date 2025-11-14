@@ -20,19 +20,25 @@ for project in root.findall("project"):
 print(matched_paths)
 
 check_list = ['system/app/ArkWebCore','system/app/ArkWebCoreLegacy','ArkWebCore.hap','ArkWebCoreLegacy.hap','com.huawei.hmos.arkwebcore','com.huawei.hmos.arkwebcorelegacy','ArkWebCore','ArkWebCoreLegacy']
-def check_paths_in_files(file_paths):
+def check_paths_in_files(file_paths,check_list):
     result = 0
     for file_path in file_paths:
-        with open(file_path, 'r',encoding='utf-8',errors='ignore') as file:
-            for line in file:
-                for item in check_list:
-                    if item in line:
-                        print(f"文件 {file_path} 中含有违规字段{item}，请修改,代码中不能含有{check_list}")
-                        result = 1
+        if os.path.exists(file_path):
+            with open(file_path, 'r',encoding='utf-8',errors='ignore') as file:
+                check_result = False
+                for line in file:
+                    for item in check_list:
+                        if item in line:
+                            if not check_result:
+                                print(f"FAILED： {file_path} 中含有违规字段{item}，请修改,代码中不能含有{check_list}")
+                                check_result = True
+                                result = 1
+                            break
+                    if check_result:
                         break
     return result
 
-result = check_paths_in_files(matched_paths)
+result = check_paths_in_files(matched_paths,check_list)
 print(f"检查结果: {result}")
 exit(1 if result else 0)
     

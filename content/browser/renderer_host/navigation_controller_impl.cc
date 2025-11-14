@@ -4064,6 +4064,13 @@ NavigationControllerImpl::CreateNavigationRequestFromLoadParams(
     if (virtual_url.is_empty())
       virtual_url = url_to_load;
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD) && !defined(COMPONENT_BUILD)
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kEnableNwebEx) &&
+        OhosUrlRewriteController::IsRewriteUrlEnabled()) {
+      entry->SetVirtualURL(virtual_url);
+    }
+#endif
+
     CHECK(virtual_url == entry->GetVirtualURL());
 
     // This is a LOG and not a CHECK/DCHECK as URL rewrite has non-deterministic

@@ -738,6 +738,7 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
   void RefreshMenuWithTouchAndScroll();
   void SetIsScrolling(bool is_scrolling);
   void SetScrollStoppedAfterDelay();
+  void SetIsPinching(bool is_pinching);
 
   // Used for cancelable delayed task in `UpdateScroll()`.
   scoped_refptr<base::SequencedTaskRunner> GetTaskRunner();

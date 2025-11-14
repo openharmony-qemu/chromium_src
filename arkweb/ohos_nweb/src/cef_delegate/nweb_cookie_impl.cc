@@ -22,8 +22,7 @@ void NWebCookieImpl::SetCookieAttribute(const CefCookie& cookie) {
     samesite_policy_ = cookie.same_site;
     name_ = CefString(&cookie.name).ToString();
     if (cookie.has_expires) {
-      expires_date_ = base::UnlocalizedTimeFormatWithPattern(
-        CefBaseTime(cookie.expires), "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+      expires_date_ = base::TimeFormatHTTP(CefBaseTime(cookie.expires));
       is_session_cookie_ = false;
     } else {
       is_session_cookie_ = true;

@@ -73,7 +73,7 @@ class NWebCookieManagerDelegate : public NWebCookieManagerDelegateInterface {
                     bool incognitoMode,
                     bool includeHttpOnly,
                     std::shared_ptr<NWebLongValueCallback> callback) override;
-  void GetAllCookie(
+  void GetAllCookies(
       bool incognito_mode,
       std::vector<std::shared_ptr<NWebCookie>>& cookies) override;
 

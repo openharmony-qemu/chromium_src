@@ -75,7 +75,7 @@ class NWebCookieManagerDelegateInterface {
       bool incognitoMode,
       bool includeHttpOnly,
       std::shared_ptr<NWebLongValueCallback> callback) = 0;
-  virtual void GetAllCookie(
+  virtual void GetAllCookies(
       bool incognitoMode,
       std::vector<std::shared_ptr<NWebCookie>>& cookies) = 0;
 };

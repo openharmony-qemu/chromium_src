@@ -681,7 +681,7 @@ void NWebCookieManagerDelegate::DeleteCookieEntirely(
   }
 }
 
-void NWebCookieManagerDelegate::GetAllCookie(
+void NWebCookieManagerDelegate::GetAllCookies(
     bool incognito_mode,
     std::vector<std::shared_ptr<NWebCookie>>& cookies) {
   CefRefPtr<CefCookieManager> cookie_manager =

@@ -231,10 +231,10 @@ void NWebCookieManagerImpl::SetCookieAsync(
 }
 
 std::vector<std::shared_ptr<NWebCookie>>
-    NWebCookieManagerImpl::GetAllCookie(bool incognitoMode) {
+    NWebCookieManagerImpl::GetAllCookies(bool incognitoMode) {
   std::vector<std::shared_ptr<NWebCookie>> cookies;
   if (delegate_ != nullptr) {
-    delegate_->GetAllCookie(incognitoMode, cookies);
+    delegate_->GetAllCookies(incognitoMode, cookies);
   }
   return cookies;
 }

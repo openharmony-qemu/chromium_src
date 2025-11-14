@@ -36,6 +36,7 @@ class NWebSchemeHandlerFactory : public CefSchemeHandlerFactory {
       const std::string& scheme);
   static void ClearSchemeHandlers(const std::string& web_tag);
   static void ClearServiceWorkerSchemeHandler();
+  static void ClearAllSchemeHandlers(ArkWeb_SchemeHandler* scheme_handler);
 
   CefRefPtr<CefResourceHandler> Create(CefRefPtr<CefBrowser> browser,
                                        CefRefPtr<CefFrame> frame,
@@ -50,6 +51,7 @@ class NWebSchemeHandlerFactory : public CefSchemeHandlerFactory {
   void OnRequestStop(const ArkWeb_ResourceRequest* resource_request,
                      const std::string& web_tag,
                      bool from_service_worker);
+  void RemoveSchemeHandler(ArkWeb_SchemeHandler* scheme_handler);
 
  private:
   ArkWeb_SchemeHandler* FromTag(const std::string& web_tag);

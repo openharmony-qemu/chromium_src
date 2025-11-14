@@ -511,7 +511,7 @@ ARKWEB_EXPORT void OH_ArkWeb_DestroySchemeHandler(
     LOG(ERROR) << "scheme_handler scheme handler is nullptr.";
     return;
   }
-
+  OHOS::NWeb::NWebSchemeHandlerFactory::ClearAllSchemeHandlers(scheme_handler);
   delete scheme_handler;
 }
 

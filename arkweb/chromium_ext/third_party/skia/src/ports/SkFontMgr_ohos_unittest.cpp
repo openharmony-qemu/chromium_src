@@ -248,27 +248,27 @@ TEST_F(SkFontMgrOHOSTest, findTypeface) {
     auto fallbackItem = fallbackMap.find(SkString(""));
     ASSERT_NE(fallbackItem, nullptr);
 
-    auto* result1 = rawFontMgr->findTypeface(*fallbackItem, normalStyle, nullptr, 0, chineseChar);
+    sk_sp<SkTypeface> result1 = rawFontMgr->findTypeface(*fallbackItem, normalStyle, nullptr, 0, chineseChar);
     EXPECT_EQ(result1, nullptr);
 
-    auto* result2 = rawFontMgr->findTypeface(*fallbackItem, normalStyle, zhHans, 1, chineseChar);
+    sk_sp<SkTypeface> result2 = rawFontMgr->findTypeface(*fallbackItem, normalStyle, zhHans, 1, chineseChar);
     EXPECT_NE(result2, nullptr);
 
-    auto* result3 = rawFontMgr->findTypeface(*fallbackItem, normalStyle, zhHans, 1, quoteChar);
+    sk_sp<SkTypeface> result3 = rawFontMgr->findTypeface(*fallbackItem, normalStyle, zhHans, 1, quoteChar);
     EXPECT_NE(result3, nullptr);
 
-    auto* result4 = rawFontMgr->findTypeface(*fallbackItem, normalStyle, zhHans, 1, invalidChar);
+    sk_sp<SkTypeface> result4 = rawFontMgr->findTypeface(*fallbackItem, normalStyle, zhHans, 1, invalidChar);
     EXPECT_EQ(result4, nullptr);
 
-    auto* result5 = rawFontMgr->findTypeface(*fallbackItem, normalStyle, enUS, 1, 'A');
+    sk_sp<SkTypeface> result5 = rawFontMgr->findTypeface(*fallbackItem, normalStyle, enUS, 1, 'A');
     EXPECT_NE(result5, nullptr);
     
     FallbackSetPos mockItem{0, 0};
-    auto* result6 = rawFontMgr->findTypeface(mockItem, normalStyle, zhHans, 1, chineseChar);
+    sk_sp<SkTypeface> result6 = rawFontMgr->findTypeface(mockItem, normalStyle, zhHans, 1, chineseChar);
     EXPECT_EQ(result6, nullptr);
 
     const char* unsupportedLang[] = {"xx-YY"};
-    auto* result7 = rawFontMgr->findTypeface(*fallbackItem, normalStyle, unsupportedLang, 1, chineseChar);
+    sk_sp<SkTypeface> result7 = rawFontMgr->findTypeface(*fallbackItem, normalStyle, unsupportedLang, 1, chineseChar);
     EXPECT_EQ(result7, nullptr);
 }
 

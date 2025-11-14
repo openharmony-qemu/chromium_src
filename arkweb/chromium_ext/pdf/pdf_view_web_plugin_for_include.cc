@@ -98,11 +98,18 @@ void PdfViewWebPlugin::UpdateClientClippedSelectionBoundsForPDF(gfx::Rect& clipp
 }
 
 void PdfViewWebPlugin::RefreshMenuWithTouchAndScroll() {
+  bool is_menu_hidden = false;
   if (!is_touching_ && !is_scrolling_) {
-    pdf_host_->HideHandleAndQuickMenuForPDF(false);
+    is_menu_hidden = false;
   } else {
-    pdf_host_->HideHandleAndQuickMenuForPDF(true);
+    is_menu_hidden = true;
   }
+  bool expected_is_menu_hidden = is_menu_hidden_.load(std::memory_order_relaxed);
+  if (expected_is_menu_hidden == is_menu_hidden) {
+    return;
+  }
+  is_menu_hidden_.store(is_menu_hidden, std::memory_order_relaxed);
+  pdf_host_->HideHandleAndQuickMenuForPDF(is_menu_hidden);
 }
 
 void PdfViewWebPlugin::ForceSelectionChanged() {
@@ -124,11 +131,17 @@ void PdfViewWebPlugin::ForceSelectionChanged() {
 }
 
 void PdfViewWebPlugin::SetIsTouching(bool is_touching) {
+  if (is_touching_ == is_touching) {
+    return;
+  }
   is_touching_ = is_touching;
   RefreshMenuWithTouchAndScroll();
 }
 
 void PdfViewWebPlugin::SetIsScrolling(bool is_scrolling) {
+  if (is_scrolling_ == is_scrolling) {
+    return;
+  }
   is_scrolling_ = is_scrolling;
   RefreshMenuWithTouchAndScroll();
   if (!is_scrolling_) {

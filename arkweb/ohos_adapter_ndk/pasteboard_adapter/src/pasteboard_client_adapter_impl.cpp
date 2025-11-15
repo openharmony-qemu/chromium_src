@@ -633,9 +633,6 @@ bool PasteDataRecordAdapterImpl::GetImgData(std::shared_ptr<ClipBoardImageDataAd
     imageData->SetAlphaType(PixelToClipboardAlphaType(static_cast<PIXELMAP_ALPHA_TYPE>(alphaType)));
     imageData->SetColorType(PixelToClipBoardColorType(static_cast<PIXEL_FORMAT>(pixelFormat)));
 
-    WVLOG_I("GetImgData success: width=%{public}u, height=%{public}u, dataSize=%{public}zu, rowStride=%{public}u",
-        width, height, dataSize, rowStride);
-
     ReleaseMemory(udsPixelMap, options, pixelmapNative, imageInfo, "GetImgData ended");
     return true;
 }

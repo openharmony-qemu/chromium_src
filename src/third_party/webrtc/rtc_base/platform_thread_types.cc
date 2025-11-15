@@ -12,8 +12,12 @@
 
 // IWYU pragma: begin_keep
 #if defined(WEBRTC_LINUX)
+#if defined(OS_OHOS)
+#include <sys/prctl.h>
+#else
 #include <linux/prctl.h>
 #include <sys/prctl.h>
+#endif
 #include <sys/syscall.h>
 
 #if !defined(WEBRTC_ARCH_ARM) && !defined(WEBRTC_ARCH_ARM64)

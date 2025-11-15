@@ -31,6 +31,7 @@ class BLINK_PLATFORM_EXPORT WidgetBaseUtils {
 
 #if BUILDFLAG(IS_ARKWEB)
   void ReportForegroundThreadPool();
+  bool GetCmdValue();
 #endif
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   void SetZoomLevel(float magnify_delta, const gfx::Point& anchor);
@@ -64,6 +65,9 @@ class BLINK_PLATFORM_EXPORT WidgetBaseUtils {
   raw_ptr<WidgetBase> widget_base_;
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   int32_t requestKeyboardReason_ = 0;
+#endif
+#if BUILDFLAG(IS_ARKWEB)
+  bool cmd_value_ = false;
 #endif
   base::WeakPtrFactory<WidgetBaseUtils> weak_ptr_factory_{this};
 };

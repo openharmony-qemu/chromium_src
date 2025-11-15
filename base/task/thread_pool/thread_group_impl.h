@@ -120,6 +120,7 @@ class BASE_EXPORT ThreadGroupImpl : public ThreadGroup {
 #if BUILDFLAG(IS_ARKWEB)
   std::vector<scoped_refptr<base::internal::WorkerThread>> create_workers_ GUARDED_BY(lock_);
   std::vector<PlatformThreadId> destroy_workers_ids_ GUARDED_BY(lock_);
+  bool cmd_value_ = false;
 #endif
 
   size_t worker_sequence_num_ GUARDED_BY(lock_) = 0;

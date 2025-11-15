@@ -20,6 +20,11 @@
 #include "base/trace_event/base_tracing.h"
 #include "third_party/abseil-cpp/absl/container/inlined_vector.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
+#include "base/command_line.h"
+#endif
+
 namespace base {
 namespace internal {
 
@@ -225,6 +230,13 @@ ThreadGroupImpl::ThreadGroupImpl(std::string_view histogram_label,
                   std::move(delegate)),
       tracked_ref_factory_(this) {
   DCHECK(!thread_group_label_.empty());
+#if BUILDFLAG(IS_ARKWEB) && !BUILDFLAG(ARKWEB_TEST)
+  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
+  cmd_value_ = false;
+  if (command_line) {
+    cmd_value_ = command_line->HasSwitch(switches::kEnableReportThreadPoolForeg);
+  }
+#endif
 }
 
 void ThreadGroupImpl::Start(

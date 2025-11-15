@@ -111,4 +111,8 @@ const char  kEnableWebAudioBackgroundTask[] = "enable-web-audio-background-task"
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
 const char  kEnableReportCookieMonsterClient[] = "ohos-enable-report-cookie-monster-client";
 #endif // BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+
+#if BUILDFLAG(IS_ARKWEB)
+const char  kEnableReportThreadPoolForeg[] = "ohos-enable-report-thread-pool-foreg";
+#endif
 }  // namespace switches

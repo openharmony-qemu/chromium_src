@@ -27,6 +27,7 @@
 #include "cef/libcef/common/net_service/net_service_util.h"
 #include "cef/libcef/common/time_util.h"
 #include "net/cookies/canonical_cookie.h"
+#include "nweb_cookie_impl.h"
 #include "url/gurl.h"
 
 using namespace OHOS::NWeb;
@@ -679,4 +680,28 @@ void NWebCookieManagerDelegate::DeleteCookieEntirely(
     }
   }
 }
+
+void NWebCookieManagerDelegate::GetAllCookies(
+    bool incognito_mode,
+    std::vector<std::shared_ptr<NWebCookie>>& cookies) {
+  CefRefPtr<CefCookieManager> cookie_manager =
+      incognito_mode ? GetGlobalIncognitoCookieManager()
+                     : GetGlobalCookieManager();
+  if (cookie_manager == nullptr) {
+    LOG(ERROR) << "GetGlobalCookieManager failed";
+    return;
+  }
+  CefRefPtr<ReturnCookieVisitor> visitor = new ReturnCookieVisitor(nullptr, nullptr);
+  if (!cookie_manager->VisitAllCookies(visitor, true)) {
+    LOG(ERROR) << "VisitAllCookies failed";
+    return;
+  }
+  std::vector<CefCookie> cef_cookies = visitor->GetVisitorCookies();
+  for (auto cef_cookie : cef_cookies) {
+    std::shared_ptr<NWebCookieImpl> cookie = std::make_shared<NWebCookieImpl>();
+    cookie->SetCookieAttribute(cef_cookie);
+    cookies.push_back(cookie);
+  }
+}
+
 }  // namespace OHOS::NWeb

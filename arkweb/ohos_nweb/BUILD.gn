@@ -200,6 +200,8 @@ component("cef_nweb") {
     "src/sysevent/oh_web_performance_timing.h",
     "src/cef_delegate/nweb_extension_connect_native.cc",
     "src/cef_delegate/nweb_extension_connect_native.h",
+    "src/cef_delegate/nweb_cookie_impl.cc",
+    "src/cef_delegate/nweb_cookie_impl.h",
   ]
   if (defined(arkweb_logger_report) && arkweb_logger_report) {
     sources += [

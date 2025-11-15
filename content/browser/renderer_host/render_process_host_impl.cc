@@ -3552,6 +3552,9 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
 #if BUILDFLAG(ARKWEB_GWP_ASAN)
       switches::kOhosEnableGwpAsanType,
 #endif
+#if BUILDFLAG(IS_ARKWEB)
+      switches::kEnableReportThreadPoolForeg,
+#endif
   };
   renderer_cmd->CopySwitchesFrom(browser_cmd, kSwitchNames);
 

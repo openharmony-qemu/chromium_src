@@ -1,10 +1,22 @@
 # Chromium
 ## 简介
 ### 软件架构
-![image.png](https://raw.gitcode.com/user-images/assets/4371737/3d2c2890-a5e0-4507-834a-6771196f53b6/image.png 'image.png')
-- Chromium:   Google 主导的开源 Web 浏览器项目，旨在构建更安全、更快、更稳定的 Web 平台的项目。多进程架构是Chromium 最核心的设计, 它将浏览器功能划分到多个独立的进程中,以实现安全性,稳定性和分层架构。
-- CEF：全称Chromium Embedded Framework，是一个基于Google Chromium 的开源项目。
-- ArkWeb:  旨在将 Chromium Web 引擎集成到 OpenHarmony (OHOS) 操作系统中。它作为系统 `Web` 组件的基础，为 OHOS 应用程序提供强大的 Web 渲染能力。基于Chromium和CEF二次扩展，在原有功能的基础上，基于Openharmoy平台扩展了很多新性，如广告拦截，任务下载，输入框填充等。
+![image.png](https://raw.gitcode.com/user-images/assets/4371737/577bcea9-d529-4102-8483-9148995b2ae4/image.png 'image.png')
+
+架构图中CEF, ArkWeb仓和当前仓Chromium联合编译出Web内核，编译产物为NWeb.hap，通过二进制集成在openharmony系统中。
+
+Chromium是 Google 主导的开源 Web 浏览器项目，旨在构建更安全、更快、更稳定的 Web 平台的项目。多进程架构是Chromium 最核心的设计, 它将浏览器功能划分到多个独立的进程中，以实现安全性，稳定性。本仓是从上游社区的一个分支。
+
+Chromium总体采用分层架构，主要包含一下几个模块：
+
+- Chrome模块： Chrome浏览器特有的组件，包括标签页Tabs，设置Settings，工具栏Toolbar，导航栏Omnibox
+- Component模块： 可重用的功能集合，专注于特定的功能逻辑除了chrome浏览器外其他浏览器也可自行集成，包括自动填充Autofill，书签Bookmark，密码管理PasswordManager , 历史记录管理History。
+- Content模块：WebContents是 Content 层对一个“标签页”内容的核心抽象，最上层的 Chrome 通过持有和操作WebContents对象来命令Content层导航、停止加载、执行 JavaScript等。RenderProcessHost是浏览器进程中控制一个渲染器进程的对象，负责管理该渲染器进程的生命周期（启动、关闭）和所有与它的 IPC 通信。Process Launchers (进程启动器)这是负责启动和沙箱化所有其他辅助进程（GPU、Utility、Plugin、Zygote）的代码。IPC Handlers接收和响应来自所有子进程（渲染器、GPU 等）消息的端点。例如，当渲染器进程需要下载图片时，它会发送一个 IPC 消息，由浏览器进程中的 Resource Dispatcher 接收。Resource Dispatcher (资源转发器)负责接收渲染器进程发来的所有特权请求（如网络请求、文件访问），并安全地将它们分派给底层的 Platform 模块（如 net 库）去执行。
+- Blink模块：v8主要用来来解析和执行JavaScript 。cc负责将页面的各个图层进行合成。
+
+- Platform模块：net网络库负责所有网络协议（HTTP、QUIC、DNS）、Cookie 管理等。mojo为Chromium 现代的 IPC 进程间通信)框架。device提供访问底层硬件的 API（如 USB、蓝牙、传感器）。schedule:任务调度器，负责管理所有进程和线程上的任务队列。
+
+
 
 ## 使用说明
 1. 下载代码：以132_trunk为例，要下载其他分支代码，请替换-b之后的分支名，参数列表详见8。

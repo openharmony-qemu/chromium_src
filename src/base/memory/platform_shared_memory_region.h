@@ -90,7 +90,7 @@ class BASE_EXPORT PlatformSharedMemoryRegion {
   enum class TakeError {
     kExpectedReadOnlyButNot,
     kExpectedWritableButNot,
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
     kFailedToGetAshmemRegionProtectionMask,
 #endif
 #if BUILDFLAG(IS_APPLE)

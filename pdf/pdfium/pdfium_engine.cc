@@ -1208,6 +1208,12 @@ void PDFiumEngine::UpdateFocus(bool has_focus) {
     }
     KillFormFocus();
   }
+#if BUILDFLAG(ARKWEB_PDF)
+  // Clear selection when PDF lose focus.
+  if (!has_focus) {
+    ClearTextSelection();
+  }
+#endif  // BUILDFLAG(ARKWEB_PDF)
 }
 
 AccessibilityFocusInfo PDFiumEngine::GetFocusInfo() {

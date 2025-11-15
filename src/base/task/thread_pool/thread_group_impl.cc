@@ -628,7 +628,7 @@ void ThreadGroupImpl::WorkerDelegate::CleanupLockRequired(
   outer_->workers_.erase(worker_iter);
 
 #if BUILDFLAG(IS_ARKWEB)
-  if (worker->GetRealTid()) {
+  if (worker->GetRealTid() != kInvalidThreadId) {
     outer_->destroy_workers_ids_.push_back(worker->GetRealTid());
   }
 #endif

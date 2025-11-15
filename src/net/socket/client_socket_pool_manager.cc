@@ -126,7 +126,7 @@ int InitSocketPoolHelper(
     bool secure_dns_only = false
 #endif
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-,
+    ,
     bool from_preload = false
 #endif
   ) {
@@ -261,16 +261,17 @@ int InitSocketHandleForHttpRequest(
     const NetLogWithSource& net_log,
     ClientSocketHandle* socket_handle,
     CompletionOnceCallback callback,
-    const ClientSocketPool::ProxyAuthCallback& proxy_auth_callback
+    const ClientSocketPool::ProxyAuthCallback& proxy_auth_callback,
+    bool fail_if_alias_requires_proxy_override
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
     ,
     bool secure_dns_only
 #endif
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-,
+    ,
     bool from_preload
 #endif
-    , bool fail_if_alias_requires_proxy_override) {
+    ) {
   DCHECK(socket_handle);
   return InitSocketPoolHelper(
       std::move(endpoint), request_load_flags, request_priority, session,
@@ -356,11 +357,11 @@ int PreconnectSocketsForHttpRequest(
       ClientSocketPool::ProxyAuthCallback(),
       fail_if_alias_requires_proxy_override
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
-,
+      ,
       false
 #endif
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-,
+      ,
       from_preload
 #endif
     );

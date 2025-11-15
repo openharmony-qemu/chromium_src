@@ -105,7 +105,16 @@ int InitSocketHandleForHttpRequest(
     ClientSocketHandle* socket_handle,
     CompletionOnceCallback callback,
     const ClientSocketPool::ProxyAuthCallback& proxy_auth_callback,
-    bool fail_if_alias_requires_proxy_override);
+    bool fail_if_alias_requires_proxy_override
+#if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
+    ,
+    bool secure_dns_only = false
+#endif
+#if BUILDFLAG(ARKWEB_PRP_PRELOAD)
+    ,
+    bool from_preload = false
+#endif
+    );
 
 // A helper method that uses the passed in proxy information to initialize a
 // ClientSocketHandle with the relevant socket pool. Use this method for

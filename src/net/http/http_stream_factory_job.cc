@@ -826,7 +826,7 @@ int HttpStreamFactory::Job::DoInitConnectionImpl() {
       allowed_bad_certs_, request_info_.privacy_mode,
       request_info_.network_anonymization_key, request_info_.secure_dns_policy,
       request_info_.socket_tag, net_log_, connection_.get(), io_callback_,
-      proxy_auth_callback
+      proxy_auth_callback, /*fail_if_alias_requires_proxy_override_=*/false
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
       ,
       request_info_.secure_dns_only
@@ -834,8 +834,8 @@ int HttpStreamFactory::Job::DoInitConnectionImpl() {
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
       ,
       from_preload_
-#endif     
-      , /*fail_if_alias_requires_proxy_override_=*/false);
+#endif
+      );
 }
 
 int HttpStreamFactory::Job::DoInitConnectionImplQuic() {

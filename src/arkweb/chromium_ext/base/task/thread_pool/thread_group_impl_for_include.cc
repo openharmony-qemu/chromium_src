@@ -17,8 +17,8 @@ static void PushCreateWorkersTids(scoped_refptr<base::internal::WorkerThread>& w
                                   std::vector<int32_t>& create_workers_thread_ids_,
                                   std::vector<scoped_refptr<base::internal::WorkerThread>> remain_workers) {
   auto tid = worker->GetRealTid();
-  if (tid) {
-    create_workers_thread_ids_.push_back(tid);
+  if (tid != base::kInvalidThreadId) {
+    create_workers_thread_ids_.push_back(tid.raw());
   } else {
     remain_workers.push_back(worker);
   }
@@ -47,7 +47,7 @@ std::vector<int32_t> ReportDestroyWorkers() {
   std::vector<int32_t> destroy_workers_thread_ids_;
   if (destroy_workers_ids_.size()) {
     for (auto& tid : destroy_workers_ids_) {
-      destroy_workers_thread_ids_.push_back(tid);
+      destroy_workers_thread_ids_.push_back(tid.raw());
     }
     destroy_workers_ids_.clear();
   }

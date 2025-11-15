@@ -23,6 +23,7 @@
 #include "base/containers/span.h"
 #include "base/feature_list.h"
 #include "base/files/file_util.h"
+#include "base/logging.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/no_destructor.h"
 #include "base/posix/eintr_wrapper.h"
@@ -109,7 +110,7 @@ BASE_FEATURE(kUseGetrandomForRandBytes,
 bool UseGetrandom() {
   return g_use_getrandom.load(std::memory_order_relaxed);
 }
-#elif (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ARKWEB))
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ARKWEB)
 bool UseGetrandom() {
   return true;
 }

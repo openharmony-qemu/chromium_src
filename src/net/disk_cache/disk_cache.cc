@@ -8,6 +8,7 @@
 
 #include "arkweb/build/features/features.h"
 #include "base/barrier_closure.h"
+#include "base/command_line.h"
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
 #include "base/functional/bind.h"

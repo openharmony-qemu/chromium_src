@@ -113,7 +113,6 @@ class NET_EXPORT HostCache {
     HostResolverSource host_resolver_source = HostResolverSource::ANY;
     NetworkAnonymizationKey network_anonymization_key;
     bool secure = false;
-    bool external_added = false;
 #if BUILDFLAG(ARKWEB_CUSTOM_DNS)
     bool external_added = false;
 #endif

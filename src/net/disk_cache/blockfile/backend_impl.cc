@@ -138,7 +138,7 @@ class CacheThread : public base::Thread {
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
     ResSchedClientAdapter::ReportKeyThread(
         ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(),
-        GetThreadId(), ResSchedRoleAdapter::USER_INTERACT);
+        GetThreadId().raw(), ResSchedRoleAdapter::USER_INTERACT);
 #endif
   }
 
@@ -148,7 +148,7 @@ class CacheThread : public base::Thread {
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
     ResSchedClientAdapter::ReportKeyThread(
         ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentProcId(),
-        GetThreadId(), ResSchedRoleAdapter::USER_INTERACT);
+        GetThreadId().raw(), ResSchedRoleAdapter::USER_INTERACT);
 #endif
 
     Stop();

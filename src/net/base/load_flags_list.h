@@ -122,3 +122,8 @@ LOAD_FLAG(SHOULD_BYPASS_HSTS, 1 << 18)
 LOAD_FLAG(DO_NOT_SEND_COOKIES, 1 << 19)
 
 // See note at top of file about why adding LoadFlags is often a bad idea.
+
+#if BUILDFLAG(ARKWEB_NO_STATE_PREFETCH)
+// This load will ignoring Cache-Control: no-store
+LOAD_FLAG(IGNORE_CACHE_CONTROL, 1 << 20)
+#endif

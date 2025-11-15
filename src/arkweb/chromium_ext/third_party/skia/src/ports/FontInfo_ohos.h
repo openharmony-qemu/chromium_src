@@ -128,11 +128,11 @@ struct FontInfo {
   /*! To set axis values
    * \param count the count of axis
    * \param axis an array of SkFixed value
-   * \param range an array of AxisDefinition
+   * \param range an array of SkFontParameters::Variation::Axis
    */
   void setAxisSet(int count,
                   const SkFixed* axis,
-                  const SkFontScanner::AxisDefinition* range) {
+                  const SkFontParameters::Variation::Axis* range) {
     axisSet.axis.clear();
     axisSet.range.clear();
     for (int i = 0; i < count; i++) {
@@ -147,7 +147,7 @@ struct FontInfo {
     auto slant = style.slant();
     for (size_t i = 0; i < axisSet.axis.size(); i++) {
       auto value = SkFixedToScalar(axisSet.axis[i]);
-      auto tag = axisSet.range[i].fTag;
+      auto tag = axisSet.range[i].tag;
       if (tag == SkSetFourByteTag('w', 'g', 'h', 't')) {
         weight = SkScalarFloorToInt(value);
       } else if (tag == SkSetFourByteTag('w', 'd', 't', 'h')) {
@@ -168,7 +168,7 @@ struct FontInfo {
    */
   struct AxisSet {
     std::vector<SkFixed> axis;                         // the axis values
-    std::vector<SkFontScanner::AxisDefinition> range;  // the axis ranges
+    std::vector<SkFontParameters::Variation::Axis> range;  // the axis ranges
   } axisSet;                              // the axis values for a variable font
   std::unique_ptr<SkStreamAsset> stream;  // the data stream of font file
 };

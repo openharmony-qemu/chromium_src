@@ -46,7 +46,7 @@
 #include <cstring>
 #include <memory>
 
-#ifdef SK_BUILD_FOR_ANDROID
+#if defined(SK_BUILD_FOR_ANDROID) && !defined(OSOHOS)
 #include <sys/system_properties.h>
 #endif
 
@@ -394,7 +394,7 @@ void GrVkCaps::init(const GrContextOptions& contextOptions,
     // we do expect this to be a big win on tilers.
     //
     // On ARM devices we are seeing an average perf win of around 50%-60% across the board.
-    if (skgpu::kARM_VkVendor == properties.vendorID || kHisi_VkVendor == properties.vendorID) {
+    if (skgpu::kARM_VkVendor == properties.vendorID || skgpu::kHisi_VkVendor == properties.vendorID) {
         // We currently don't see any Vulkan devices that expose a memory type that supports
         // both lazy allocated and protected memory. So for simplicity we just disable the
         // use of memoryless attachments when using protected memory. In the future, if we ever
@@ -484,7 +484,8 @@ void GrVkCaps::applyDriverCorrectnessWorkarounds(const VkPhysicalDevicePropertie
     // above a certain api level. So this will just default to it being less which will enable
     // workarounds.
     int androidAPIVersion = 0;
-#if defined(SK_BUILD_FOR_ANDROID)
+#if defined(SK_BUILD_FOR_ANDROID) && !defined(OSOHOS)
+#define PROP_VALUE_MAX 92
     char androidAPIVersionStr[PROP_VALUE_MAX];
     int strLength = __system_property_get("ro.build.version.sdk", androidAPIVersionStr);
     // Defaults to zero since most checks care if it is greater than a specific value. So this will
@@ -500,7 +501,7 @@ void GrVkCaps::applyDriverCorrectnessWorkarounds(const VkPhysicalDevicePropertie
     }
 
     // On Mali galaxy s7 we see lots of rendering issues when we suballocate VkImages.
-    if ((skgpu::kARM_VkVendor == properties.vendorID && androidAPIVersion <= 28) || kHisi_VkVendor == properties.vendorID) {
+    if ((skgpu::kARM_VkVendor == properties.vendorID && androidAPIVersion <= 28) || skgpu::kHisi_VkVendor == properties.vendorID) {
         fShouldAlwaysUseDedicatedImageMemory = true;
     }
 
@@ -524,7 +525,7 @@ void GrVkCaps::applyDriverCorrectnessWorkarounds(const VkPhysicalDevicePropertie
 
     // On the Mali G76 and T880, the Perlin noise code needs to aggressively snap to multiples
     // of 1/255 to avoid artifacts in the double table lookup.
-    if (skgpu::kARM_VkVendor == properties.vendorID || kHisi_VkVendor  == properties.vendorID) {
+    if (skgpu::kARM_VkVendor == properties.vendorID || skgpu::kHisi_VkVendor  == properties.vendorID) {
         fShaderCaps->fPerlinNoiseRoundingFix = true;
     }
 
@@ -544,7 +545,7 @@ void GrVkCaps::applyDriverCorrectnessWorkarounds(const VkPhysicalDevicePropertie
         properties.vendorID == skgpu::kARM_VkVendor ||
         (properties.vendorID == skgpu::kGoogle_VkVendor &&
          properties.deviceID == kSwiftshader_DeviceID) ||
-        properties.vendorID == kHisi_VkVendor) {
+        properties.vendorID == skgpu::kHisi_VkVendor) {
         fMustLoadFullImageWithDiscardableMSAA = true;
     }
 
@@ -600,7 +601,7 @@ void GrVkCaps::applyDriverCorrectnessWorkarounds(const VkPhysicalDevicePropertie
 
     // On ARM indirect draws are broken on Android 9 and earlier. This was tested on a P30 and
     // Mate 20x running android 9.
-    if ((properties.vendorID == skgpu::kARM_VkVendor && androidAPIVersion <= 28) || kHisi_VkVendor == properties.vendorID) {
+    if ((properties.vendorID == skgpu::kARM_VkVendor && androidAPIVersion <= 28) || skgpu::kHisi_VkVendor == properties.vendorID) {
         fNativeDrawIndirectSupport = false;
     }
 
@@ -614,7 +615,7 @@ void GrVkCaps::applyDriverCorrectnessWorkarounds(const VkPhysicalDevicePropertie
 
     // ARM GPUs calculate `matrix * vector` in SPIR-V at full precision, even when the inputs are
     // RelaxedPrecision. Rewriting the multiply as a sum of vector*scalar fixes this. (skbug.com/40042841)
-    if (skgpu::kARM_VkVendor == properties.vendorID || kHisi_VkVendor == properties.vendorID) {
+    if (skgpu::kARM_VkVendor == properties.vendorID || skgpu::kHisi_VkVendor == properties.vendorID) {
         fShaderCaps->fRewriteMatrixVectorMultiply = true;
     }
 
@@ -698,7 +699,7 @@ void GrVkCaps::initGrCaps(const skgpu::VulkanInterface* vkInterface,
         }
     }
 
-    if (skgpu::kARM_VkVendor == properties.vendorID || kHisi_VkVendor == properties.vendorID) {
+    if (skgpu::kARM_VkVendor == properties.vendorID || skgpu::kHisi_VkVendor == properties.vendorID) {
         fShouldCollapseSrcOverToSrcWhenAble = true;
     }
 }

@@ -17,7 +17,8 @@
 #include "src/gpu/SkSLToBackend.h"
 #include "src/sksl/codegen/SkSLSPIRVCodeGenerator.h"
 
-#ifdef SK_BUILD_FOR_ANDROID
+/* 这块儿先去掉 */
+#if defined(SK_BUILD_FOR_ANDROID) && !defined(OSOHOS)
 #include <android/hardware_buffer.h>
 #endif
 
@@ -52,6 +53,7 @@ enum VkVendor {
     kARM_VkVendor = 0x13B5,
     kBroadcom_VkVendor = 0x14E4,
     kGoogle_VkVendor = 0x1AE0,
+    kHisi_VkVendor = 0x48,
     kImagination_VkVendor = 0x1010,
     kIntel_VkVendor = 0x8086,
     kKazan_VkVendor = 0x10003,

@@ -5,6 +5,8 @@
 #include "partition_alloc/partition_root.h"
 
 #include <cstdint>
+#include <algorithm>
+#include <array>
 
 #include "partition_alloc/build_config.h"
 #include "partition_alloc/buildflags.h"
@@ -485,13 +487,13 @@ static size_t PartitionPurgeSlotSpan(
   PA_DCHECK(slot_span->num_unprovisioned_slots < bucket_num_slots);
   size_t num_provisioned_slots =
       bucket_num_slots - slot_span->num_unprovisioned_slots;
-  char slot_usage[kMaxSlotCount];
+  std::array<char, kMaxSlotCount> slot_usage{};
 #if !PA_BUILDFLAG(IS_WIN)
   // The last freelist entry should not be discarded when using OS_WIN.
   // DiscardVirtualMemory makes the contents of discarded memory undefined.
   size_t last_slot = static_cast<size_t>(-1);
 #endif
-  memset(slot_usage, 1, num_provisioned_slots);
+  std::fill_n(slot_usage.begin(), num_provisioned_slots, 1);
   uintptr_t slot_span_start = internal::SlotSpanMetadata<
       internal::MetadataKind::kReadOnly>::ToSlotSpanStart(slot_span);
   // First, walk the freelist for this slot span and make a bitmap of which

@@ -35,8 +35,7 @@ void VideoCaptureHostUtils::SetRenderFrameHostId(GlobalRenderFrameHostId render_
 void VideoCaptureHostUtils::ReportStartScreenCaptureBind(int child_id) {
     if (!BrowserThread::CurrentlyOn(BrowserThread::UI)) {
         GetUIThreadTaskRunner({})->PostTask(FROM_HERE,
-        base::BindOnce(&VideoCaptureHostUtils::ReportStartScreenCaptureBind,
-                        base::unretained(this), child_id));
+        base::BindOnce(&VideoCaptureHostUtils::ReportStartScreenCaptureBind, child_id));
         return;
     }
     RenderProcessHost* host =
@@ -53,8 +52,7 @@ void VideoCaptureHostUtils::ReportStartScreenCaptureBind(int child_id) {
 void VideoCaptureHostUtils::ReportStopScreenCaptureBind(int child_id) {
     if (!BrowserThread::CurrentlyOn(BrowserThread::UI)) {
         GetUIThreadTaskRunner({})->PostTask(FROM_HERE,
-        base::BindOnce(VideoCaptureHostUtils::ReportStopScreenCaptureBind,
-                        base::unretained(this), child_id));
+        base::BindOnce(VideoCaptureHostUtils::ReportStopScreenCaptureBind, child_id));
         return;
     }
     RenderProcessHost* host =

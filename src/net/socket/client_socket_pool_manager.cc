@@ -129,7 +129,7 @@ int InitSocketPoolHelper(
     ,
     bool from_preload = false
 #endif
-    ) {
+  ) {
   DCHECK(endpoint.IsValid());
 
   session->ApplyTestingFixedPort(endpoint);
@@ -278,7 +278,8 @@ int InitSocketHandleForHttpRequest(
       proxy_info, allowed_bad_certs, privacy_mode,
       std::move(network_anonymization_key), secure_dns_policy, socket_tag,
       net_log, 0, socket_handle, HttpNetworkSession::NORMAL_SOCKET_POOL,
-      std::move(callback), proxy_auth_callback, fail_if_alias_requires_proxy_override
+      std::move(callback), proxy_auth_callback,
+      fail_if_alias_requires_proxy_override
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
       ,
       secure_dns_only
@@ -287,7 +288,7 @@ int InitSocketHandleForHttpRequest(
       ,
       from_preload
 #endif
-      );
+    );
 }
 
 int InitSocketHandleForWebSocketRequest(
@@ -353,7 +354,8 @@ int PreconnectSocketsForHttpRequest(
       std::move(network_anonymization_key), secure_dns_policy, SocketTag(),
       net_log, num_preconnect_streams, nullptr,
       HttpNetworkSession::NORMAL_SOCKET_POOL, std::move(callback),
-      ClientSocketPool::ProxyAuthCallback(), fail_if_alias_requires_proxy_override
+      ClientSocketPool::ProxyAuthCallback(),
+      fail_if_alias_requires_proxy_override
 #if BUILDFLAG(ARKWEB_EX_HTTP_DNS_FALLBACK)
       ,
       false
@@ -362,7 +364,7 @@ int PreconnectSocketsForHttpRequest(
       ,
       from_preload
 #endif
-      );
+    );
 }
 
 }  // namespace net

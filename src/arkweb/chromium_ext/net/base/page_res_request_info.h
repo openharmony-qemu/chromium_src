@@ -17,6 +17,7 @@
 #include "net/http/http_request_headers.h"
 #include "net/log/net_log_with_source.h"
 #include "net/url_request/redirect_info.h"
+#include "net/url_request/storage_access_status_cache.h"
 
 namespace {
   constexpr int32_t MAX_PRECONNECT_COUNT = 6;
@@ -234,7 +235,7 @@ class PRRequestInfo {
   std::optional<url::Origin> initiator_;
   std::string referrer_;
   std::string method_;
-  std::optional<net::cookie_util::StorageAccessStatus> storage_access_status_;
+  StorageAccessStatusCache storage_access_status_;
   net::HttpRequestHeaders extra_request_headers_;
   int load_flags_ { net::LOAD_NORMAL };
   net::SecureDnsPolicy secure_dns_policy_ { net::SecureDnsPolicy::kAllow };

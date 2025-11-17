@@ -55,6 +55,7 @@ using NamesMap = skia_private::THashMap<SkString, int>;
 using NamePathMap = skia_private::THashMap<SkString, SkString>;
 using Coordinate = SkFontArguments::VariationPosition::Coordinate;
 using AxisDefinitions = SkFontScanner::AxisDefinitions;
+using VariationPosition = SkFontScanner::VariationPosition;
 
 /*!
  * Error code definition
@@ -275,7 +276,7 @@ class FontConfig_OHOS {
                  Json::ValueType actual = Json::nullValue);
   static void sortTypefaceSet(std::shared_ptr<TypefaceSet>& typefaceSet);
   static uint32_t getVariableFontStyleDifference(const SkFontStyle& dstStyle,
-      const SkFontStyle& srcStyle, const std::vector<SkFontScanner::AxisDefinition>& srcAxisRange);
+      const SkFontStyle& srcStyle, const std::vector<SkFontScanner::AxisDefinitions>& srcAxisRange);
   static uint32_t getFontStyleDifference(const SkFontStyle& style1,
                                          const SkFontStyle& style2);
   static char* getFileData(const char* fname, int& size);

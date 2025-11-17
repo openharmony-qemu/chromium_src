@@ -60,7 +60,7 @@ std::unordered_map<ui::ResourceScaleFactor, std::string> kPakFileNameHapMap = {
      "resources/rawfile/chrome_200_percent.pak"}};
 
 static std::unordered_set<std::string> supportLocaleList = {
-#ifdef SUPPORT_MULTI_LANGUAGE
+#ifdef WEARABLE_SUPPORT_MULTI_LANGUAGE
   "ar.pak",
   "be.pak",
   "bg.pak",
@@ -115,7 +115,18 @@ static std::unordered_set<std::string> supportLocaleList = {
   "zh-HK.pak",
 #else
   "bo-CN.pak",
+  "de.pak",
+  "en-GB.pak",
   "en-US.pak",
+  "id.pak",
+  "it.pak",
+  "lo.pak",
+  "ms.pak",
+  "my.pak",
+  "pl.pak",
+  "pt-PT.pak",
+  "th.pak",
+  "tr.pak",
   "ug.pak",
   "zh-CN.pak",
   "zh-TW.pak",

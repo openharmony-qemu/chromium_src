@@ -132,6 +132,10 @@ class WebContentsImplExt : public WebContentsImpl {
   void ShowFreeCopyMenu() override;
 #endif
 
+#if BUILDFLAG(ARKWEB_AI)
+  void OnDataDetectorSelectText() override;
+#endif  // BUILDFLAG(ARKWEB_AI)
+
   RenderFrameHost* GetTargetFramesIncludingPending(int routing_id);
 
 #if BUILDFLAG(ARKWEB_MEDIA_POLICY)

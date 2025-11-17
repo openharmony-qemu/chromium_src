@@ -98,6 +98,10 @@ virtual void ShowFreeCopyMenu() = 0;
 virtual bool ShouldShowFreeCopyMenu() = 0;
 #endif
 
+#if BUILDFLAG(ARKWEB_AI)
+virtual void OnDataDetectorSelectText() {}
+#endif  // BUILDFLAG(ARKWEB_AI)
+
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 virtual void OnShareFile(const std::string& filePath,
                          const std::string& utdTypeId) = 0;

@@ -428,6 +428,12 @@ TEST_F(WebContentsImplExtTest, ShowFreeCopyMenu001) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_AI)
+TEST_F(WebContentsImplExtTest, OnDataDetectorSelectText001) {
+  ExtendContent()->OnDataDetectorSelectText();
+}
+#endif
+
 TEST_F(WebContentsImplExtTest, GetTargetFramesIncludingPending001) {
   int routing_id = 0;
   auto ptr = ExtendContent()->GetTargetFramesIncludingPending(routing_id);

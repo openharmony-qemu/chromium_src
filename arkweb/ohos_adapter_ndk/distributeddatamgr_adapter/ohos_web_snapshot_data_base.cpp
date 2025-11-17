@@ -424,7 +424,7 @@ __attribute__((no_sanitize("cfi", "cfi-icall"))) void OhosWebSnapshotDataBase::G
     cursor->getColumnIndex(cursor, SNAPSHOT_FILE_TIME_COL.c_str(), &snapShotFileTimeColumnIndex);
     int32_t preferenceHashColumnIndex;
     cursor->getColumnIndex(cursor, PREFERENCE_HASH_COL.c_str(), &preferenceHashColumnIndex);
-    std::vector<uint64_t> invalidKeys;
+    std::vector<int64_t> invalidKeys;
     int64_t currentTime = GetCurrentTime();
     int64_t allowedSnapshotTime = currentTime - MAXIMUM_TIME_LIMIT_MICRO_SECONDS;
     size_t size = 0;

@@ -31,6 +31,8 @@ public:
   void SetRenderFrameHostId(GlobalRenderFrameHostId render_frame_host_id);
   void ReportStartScreenCapture();
   void ReportStopScreenCapture();
+  void ReportStartScreenCaptureBind(int child_id);
+  void ReportStopScreenCaptureBind(int child_id);  
 #endif
 
 private:

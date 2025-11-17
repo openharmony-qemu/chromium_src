@@ -32,7 +32,7 @@ public:
   static void ReportStartScreenCaptureBind(int child_id);
   static void ReportStopScreenCaptureBind(int child_id);
   void ReportStartScreenCapture();
-  void ReportStopScreenCapture();  
+  void ReportStopScreenCapture();
 #endif
 
 private:

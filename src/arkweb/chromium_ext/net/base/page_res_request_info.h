@@ -106,8 +106,8 @@ class PRRequestInfo {
   void set_referrer(const std::string& referrer) { referrer_ = referrer; }
   const std::string& method() const { return method_; }
   void set_method(const std::string& method) { method_ = method; }
-  std::optional<net::cookie_util::StorageAccessStatus> storage_access_status() const { return storage_access_status_; }
-  void set_storage_access_status(std::optional<net::cookie_util::StorageAccessStatus> storage_access_status) {
+  net::StorageAccessStatusCache storage_access_status() const { return storage_access_status_; }
+  void set_storage_access_status(net::StorageAccessStatusCache storage_access_status) {
     storage_access_status_ = storage_access_status;
   }
   net::HttpRequestHeaders extra_request_headers();
@@ -235,7 +235,7 @@ class PRRequestInfo {
   std::optional<url::Origin> initiator_;
   std::string referrer_;
   std::string method_;
-  StorageAccessStatusCache storage_access_status_;
+  net::StorageAccessStatusCache storage_access_status_;
   net::HttpRequestHeaders extra_request_headers_;
   int load_flags_ { net::LOAD_NORMAL };
   net::SecureDnsPolicy secure_dns_policy_ { net::SecureDnsPolicy::kAllow };

@@ -18,7 +18,7 @@
 #include "ui/gfx/generic_shared_memory_id.h"
 #include "ui/gfx/geometry/rect.h"
 
-#if BUILDFLAG(IS_OZONE)
+#if BUILDFLAG(IS_OZONE) || BUILDFLAG(IS_OHOS)
 #include "ui/gfx/native_pixmap_handle.h"
 #elif BUILDFLAG(IS_APPLE)
 #include "ui/gfx/mac/io_surface.h"
@@ -60,6 +60,10 @@ enum GpuMemoryBufferType {
   DXGI_SHARED_HANDLE,
 #elif BUILDFLAG(IS_ANDROID)
   ANDROID_HARDWARE_BUFFER,
+#endif
+#if BUILDFLAG(ARKWEB_VULKAN)
+  OHOS_NATIVE_BUFFER,
+  GPU_MEMORY_BUFFER_TYPE_LAST = OHOS_NATIVE_BUFFER
 #endif
 };
 
@@ -151,6 +155,10 @@ struct COMPONENT_EXPORT(GFX) GpuMemoryBufferHandle {
 #elif BUILDFLAG(IS_APPLE)
   explicit GpuMemoryBufferHandle(ScopedIOSurface io_surface);
 #endif
+#if BUILDFLAG(ARKWEB_VULKAN)
+  explicit GpuMemoryBufferHandle(
+   gpu::ScopedNativeBufferHandle handle);
+#endif
   GpuMemoryBufferHandle(GpuMemoryBufferHandle&& other);
   GpuMemoryBufferHandle& operator=(GpuMemoryBufferHandle&& other);
   ~GpuMemoryBufferHandle();
@@ -241,6 +249,10 @@ struct COMPONENT_EXPORT(GFX) GpuMemoryBufferHandle {
 #if BUILDFLAG(IS_ANDROID)
   base::android::ScopedHardwareBufferHandle android_hardware_buffer;
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ARKWEB_VULKAN)
+  gpu::ScopedNativeBufferHandle ohos_hardware_buffer;
+#endif
 
  private:
   friend mojo::UnionTraits<mojom::GpuMemoryBufferPlatformHandleDataView,

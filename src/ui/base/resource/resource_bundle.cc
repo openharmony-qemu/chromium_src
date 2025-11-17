@@ -506,8 +506,10 @@ base::FilePath ResourceBundle::GetLocaleFilePath(std::string_view app_locale) {
   }
 #else
   if (base::PathService::Get(base::DIR_ASSETS, &locale_file_path)) {
-    locale_file_path = locale_file_path.AppendASCII(
-        std::string("locales/") + app_locale + kPakFileExtension);
+    std::string locale_path = "locales/";
+    locale_path += app_locale;
+    locale_path += kPakFileExtension;
+    locale_file_path = locale_file_path.AppendASCII(locale_path);
   }
 #endif
 

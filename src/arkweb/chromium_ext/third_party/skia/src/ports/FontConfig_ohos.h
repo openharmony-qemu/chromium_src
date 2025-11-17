@@ -245,10 +245,10 @@ class FontConfig_OHOS {
   int parseTtcIndex(const Json::Value& root, const SkString& familyName);
   void getAxisValues(const AxisDefinitions& axisDefinitions,
                      const VariationInfo& variation,
-                     FontInfo& font) const;
+                     FontInfo& font, VariationPosition& current) const;
   bool insertTtcFont(int count, FontInfo& font);
   bool insertVariableFont(const AxisDefinitions& axisDefinitions,
-                          FontInfo& font);
+                          FontInfo& font, VariationPosition& current);
   void addAxisToVariableFont(const AxisDefinitions& axisDefinitions, FontInfo& font);
 
   TypefaceSet* getTypefaceSet(const SkString& familyName,
@@ -276,7 +276,7 @@ class FontConfig_OHOS {
                  Json::ValueType actual = Json::nullValue);
   static void sortTypefaceSet(std::shared_ptr<TypefaceSet>& typefaceSet);
   static uint32_t getVariableFontStyleDifference(const SkFontStyle& dstStyle,
-      const SkFontStyle& srcStyle, const std::vector<SkFontScanner::AxisDefinitions>& srcAxisRange);
+      const SkFontStyle& srcStyle, const std::vector<SkFontParameters::Variation::Axis>& srcAxisRange);
   static uint32_t getFontStyleDifference(const SkFontStyle& style1,
                                          const SkFontStyle& style2);
   static char* getFileData(const char* fname, int& size);

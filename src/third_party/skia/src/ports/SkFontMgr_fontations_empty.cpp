@@ -74,7 +74,6 @@ protected:
                                            SkFontStyle style) const override {
         return nullptr;
     }
-
 #if BUILDFLAG(ARKWEB_THEME_FONT)
     void onInvalidateThemeFont(int fd) override {}
 #endif

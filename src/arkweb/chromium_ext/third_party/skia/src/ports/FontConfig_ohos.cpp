@@ -396,7 +396,7 @@ sk_sp<SkTypeface_OHOS> FontConfig_OHOS::matchFontStyle(
   for (int i = 0; i < count; i++) {
     const SkFontStyle& fontStyle = typefaceSet[i]->fontStyle();
     uint32_t diff = getFontStyleDifference(pattern, fontStyle);
-    const std::vector<SkFontScanner::AxisDefinition>& axisRange = typefaceSet[i]->getFontInfo()->axisSet.range;
+    const std::vector<SkFontParameters::Variation::Axis>& axisRange = typefaceSet[i]->getFontInfo()->axisSet.range;
     if (axisRange.size() > 0) {
       diff = getVariableFontStyleDifference(pattern, fontStyle, axisRange);
     }
@@ -415,7 +415,7 @@ sk_sp<SkTypeface_OHOS> FontConfig_OHOS::matchFontStyle(
  * \return The difference value of a specified variable style with the matching style
  */
 uint32_t FontConfig_OHOS::getVariableFontStyleDifference(const SkFontStyle& dstStyle,
-    const SkFontStyle& srcStyle, const std::vector<SkFontScanner::AxisDefinition>& srcAxisRange)
+    const SkFontStyle& srcStyle, const std::vector<SkFontParameters::Variation::Axis>& srcAxisRange)
 {
   int weight = srcStyle.weight();
   int width = srcStyle.width();
@@ -424,14 +424,14 @@ uint32_t FontConfig_OHOS::getVariableFontStyleDifference(const SkFontStyle& dstS
   static constexpr SkFourByteTag wdthTag = SkSetFourByteTag('w', 'd', 't', 'h');
 
   for (size_t j = 0; j < srcAxisRange.size(); j++) {
-    if (srcAxisRange[j].fTag == wghtTag) {
+    if (srcAxisRange[j].tag == wghtTag) {
       weight = SkTPin(dstStyle.weight(),
-                      SkScalarFloorToInt(srcAxisRange[j].fMinimum),
-                      SkScalarFloorToInt(srcAxisRange[j].fMaximum));
+                      SkScalarFloorToInt(srcAxisRange[j].min),
+                      SkScalarFloorToInt(srcAxisRange[j].max));
     }
-    if (srcAxisRange[j].fTag == wdthTag) {
-      int widthMin = SkFontDescriptor::SkFontStyleWidthForWidthAxisValue(srcAxisRange[j].fMinimum);
-      int widthMax = SkFontDescriptor::SkFontStyleWidthForWidthAxisValue(srcAxisRange[j].fMaximum);
+    if (srcAxisRange[j].tag == wdthTag) {
+      int widthMin = SkFontDescriptor::SkFontStyleWidthForWidthAxisValue(srcAxisRange[j].min);
+      int widthMax = SkFontDescriptor::SkFontStyleWidthForWidthAxisValue(srcAxisRange[j].max);
       width = SkTPin(dstStyle.width(), widthMin, widthMax);
     }
   }
@@ -1058,14 +1058,16 @@ void FontConfig_OHOS::dumpFallback() const {
  */
 void FontConfig_OHOS::getAxisValues(const AxisDefinitions& axisDefs,
                                     const VariationInfo& variation,
-                                    FontInfo& font) const {
+                                    FontInfo& font,
+                                    VariationPosition& current) const {
   SkFontArguments::VariationPosition position;
   position.coordinateCount = variation.axis.size();
   position.coordinates = variation.axis.data();
 
   int count = axisDefs.size();
   SkFixed axisValues[count];
-  SkFontScanner_FreeType::computeAxisValues(axisDefs, position, axisValues,
+  const SkFontArguments::VariationPosition currentPos{current.data(), current.size()};
+  SkFontScanner_FreeType::computeAxisValues(axisDefs, currentPos, position, axisValues,
                                             font.familyName, &font.style);
   font.axisSet.axis.clear();
   font.axisSet.range.clear();
@@ -1110,7 +1112,8 @@ bool FontConfig_OHOS::insertTtcFont(int count, FontInfo& font) {
  * corresponding font style set \return false, if the font is not variable
  */
 bool FontConfig_OHOS::insertVariableFont(const AxisDefinitions& axisDefs,
-                                         FontInfo& font) {
+                                         FontInfo& font,
+                                         VariationPosition& current) {
   const SkString& key = font.familyName;
   if (variationMap.find(key) == nullptr || axisDefs.size() == 0) {
     return false;
@@ -1123,7 +1126,7 @@ bool FontConfig_OHOS::insertVariableFont(const AxisDefinitions& axisDefs,
   const std::vector<VariationInfo>& variationSet = *(variationMap.find(key));
   for (unsigned int i = 0; i < variationSet.size(); i++) {
     FontInfo newFont(font);
-    getAxisValues(axisDefs, variationSet[i], newFont);
+    getAxisValues(axisDefs, variationSet[i], newFont, current);
     int width = font.style.width();
     SkFontStyle::Slant slant = font.style.slant();
     if (variationSet[i].width != -1) {
@@ -1213,12 +1216,13 @@ int FontConfig_OHOS::loadFont(const SkFontScanner& fontScanner,
   std::unique_ptr<SkStreamAsset> stream = SkStream::MakeFromFile(fname);
   int count = 1;
   SkFontScanner::AxisDefinitions axisDefs;
+  SkFontScanner::VariationPosition current;
   FontInfo font(fname, 0);
   if (stream == nullptr ||
       fontScanner.scanFile(stream.get(), &count) == false ||
       fontScanner.scanInstance(stream.get(), 0, 0, &font.familyName,
                                &font.style, &font.isFixedWidth,
-                               &axisDefs) == false) {
+                               &axisDefs, &current) == false) {
     int err = NO_ERROR;
     if (stream == nullptr) {
       err = ERROR_FONT_NOT_EXIST;
@@ -1250,7 +1254,7 @@ int FontConfig_OHOS::loadFont(const SkFontScanner& fontScanner,
   if (count > 1) {
     ret = insertTtcFont(count, font);
   } else if (axisDefs.size() > 0) {
-    ret = insertVariableFont(axisDefs, font);
+    ret = insertVariableFont(axisDefs, font, current);
     addAxisToVariableFont(axisDefs, font);
   }
   auto familyName = pathToFamily.find(SkString(fname));
@@ -1292,6 +1296,7 @@ int FontConfig_OHOS::loadFontBackup(const SkFontScanner& fontScanner, const char
     std::unique_ptr<SkStreamAsset> stream = SkStream::MakeFromFile(fname);
     int count = 1;
     SkFontScanner::AxisDefinitions axisDefs;
+    SkFontScanner::VariationPosition current;
     FontInfo font(fname, 0);
     if (stream == nullptr ||
         fontScanner.scanFile(stream.get(), &count) == false ||
@@ -1301,7 +1306,8 @@ int FontConfig_OHOS::loadFontBackup(const SkFontScanner& fontScanner, const char
                                  &font.familyName,
                                  &font.style,
                                  &font.isFixedWidth,
-                                 &axisDefs) == false) {
+                                 &axisDefs,
+                                 &current) == false) {
         int err = NO_ERROR;
         if (stream == nullptr) {
             err = ERROR_FONT_NOT_EXIST;
@@ -1328,7 +1334,7 @@ int FontConfig_OHOS::loadFontBackup(const SkFontScanner& fontScanner, const char
     if (count > 1) {
         ret = insertTtcFont(count, font);
     } else if (axisDefs.size() > 0) {
-        ret = insertVariableFont(axisDefs, font);
+        ret = insertVariableFont(axisDefs, font, current);
     }
     if (!ret) {
         SkString specifiedName;
@@ -1658,7 +1664,7 @@ void FontConfig_OHOS::InvalidateThemeFont(const SkFontScanner& fontScanner,
   int count = 0;
   if (stream == nullptr || !fontScanner.scanFile(stream.get(), &count) ||
       !fontScanner.scanInstance(stream.get(), 0, 0, &font.familyName,
-                                &font.style, &font.isFixedWidth, nullptr)) {
+                                &font.style, &font.isFixedWidth, nullptr, nullptr)) {
     themeFontTypeface.reset();
     return;
   }

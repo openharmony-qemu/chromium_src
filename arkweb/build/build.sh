@@ -480,10 +480,10 @@ if [ $buildgn = 1 ]; then
 
   third_party/depot_tools/gn gen $build_dir --export-compile-commands --args="$buildargs $buildarg_cpu $buildarg_musl $build_sysroot $build_product_name $GN_ARGS symbol_level=$SYMBOL_LEVEL $additional_gn_args"
   if [ "${build_target}" = "ohos_nweb_hap" ]; then
-    echo "extract build_metadata file and generate mojom_targets.gni"
-    python3 ${ROOT_DIR}/arkweb/build/collect_mojom_targets.py --search-root out/ --output ${ROOT_DIR}/${build_dir}mojom_targets.gni --threads 10
+    echo "extract build_metadata file and generate arkweb_prebuild.gni"
+    python3 ${ROOT_DIR}/arkweb/build/collect_prebuild_targets.py --search-root out/ --output ${ROOT_DIR}/${build_dir}arkweb_prebuild.gni --threads 10
     buildargs="${buildargs}
-      enable_mojom_gni=true"
+      arkweb_enable_prebuild=true"
     echo "generating args list:"
     echo "$buildargs $buildarg_cpu $buildarg_musl $build_sysroot $build_product_name $GN_ARGS symbol_level=$SYMBOL_LEVEL $additional_gn_args"
     third_party/depot_tools/gn gen $build_dir --export-compile-commands --args="$buildargs $buildarg_cpu $buildarg_musl $build_sysroot $build_product_name $GN_ARGS symbol_level=$SYMBOL_LEVEL $additional_gn_args"
@@ -505,12 +505,13 @@ fi
 export OHOS_BASE_SDK_HOME="${ROOT_DIR}/ohos_sdk"
 
 if [ "${build_target}" = "ohos_nweb_hap" ]; then
-  echo "third_party/depot_tools/ninja -C $build_dir -j$buildcount mojo_pre"
-  ninja_mojo_pre_start=$(date +%s)
-  third_party/depot_tools/ninja -C $build_dir -j$buildcount mojo_pre
-  ninja_mojo_pre_end=$(date +%s)
+  echo "third_party/depot_tools/ninja -C $build_dir -j$buildcount arkweb_prebuild"
+  ninja_prebuild_start=$(date +%s)
+  third_party/depot_tools/ninja -C $build_dir -j$buildcount arkweb_prebuild_buildflags
+  third_party/depot_tools/ninja -C $build_dir -j$buildcount arkweb_prebuild_mojom
+  ninja_prebuild_end=$(date +%s)
   echo "##############################################"
-  echo "ninja mojo_pre time cost: $(($ninja_mojo_pre_end - $ninja_mojo_pre_start))"
+  echo "ninja arkweb_prebuild time cost: $(($ninja_prebuild_end - $ninja_prebuild_start))"
   echo "##############################################"
 fi
 

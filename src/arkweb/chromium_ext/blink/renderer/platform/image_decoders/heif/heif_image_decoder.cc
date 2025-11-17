@@ -79,8 +79,8 @@ void HEIFImageDecoder::OnSetData(SegmentReader* data) {
   LOG(INFO) << "[HeifSupport] HEIFImageDecoder::OnSetData parse image size "
             << data->size();
   auto sk_data = data->GetAsSkData();
-  base::span<const uint8_t> encoded_data =
-      base::make_span(sk_data->bytes(), sk_data->size());
+  std::span<const uint8_t> encoded_data =
+      std::span(sk_data->bytes(), sk_data->size());
 
   OHOS::NWeb::OhosImageDecoderAdapter* decoder_adapter = GetDecoderAdapter();
   if (decoder_adapter == nullptr) {
@@ -260,8 +260,8 @@ bool HEIFImageDecoder::CanReusePreviousFrameBuffer(wtf_size_t index) const {
 }
 
 bool HEIFImageDecoder::MatchesHeifSignature(const sk_sp<SkData>& data) {
-  base::span<const uint8_t> encoded_data =
-      base::make_span(data->bytes(), data->size());
+  std::span<const uint8_t> encoded_data =
+      std::span(data->bytes(), data->size());
   if (!encoded_data.data()) {
     LOG(INFO) << "[HeifSupport] HEIFImageDecoder::MatchesHeifSignature, "
                  "encoded_data is null.";

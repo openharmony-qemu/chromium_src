@@ -289,7 +289,7 @@ bool HeadlessScreenOhos::Initialize() {
 
 void HeadlessScreenOhos::LayoutDisplays(std::vector<display::Display>& displays) {
   std::vector<display::Display> displays_remaining = displays;
-  auto primary_display_iter = base::ranges::find_if(
+  auto primary_display_iter = std::ranges::find_if(
       displays_remaining, [](const display::Display& display) {
         return display.native_origin().IsOrigin();
       });

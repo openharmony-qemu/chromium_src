@@ -200,7 +200,7 @@ class GL_EXPORT NativeViewGLSurfaceEGL : public GLSurfaceEGL,
   std::unique_ptr<GLSurfacePresentationHelper> presentation_helper_;
 
 #if BUILDFLAG(ARKWEB_DRDC)
-  static std::string gpu_version_;
+  static std::string& GetGpuVersion();
 #endif
 
   raw_ptr<ArkwebGlSurfaceEglUtils> arkweb_surface_utils_;

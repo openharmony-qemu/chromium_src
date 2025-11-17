@@ -16,6 +16,7 @@
 #include "arkweb/chromium_ext/content/browser/renderer_host/media/video_capture_host_utils.h"
 #include "content/public/browser/render_process_host.h"
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+#include "content/public/browser/browser_thread.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
 #endif
 
@@ -31,9 +32,14 @@ void VideoCaptureHostUtils::SetRenderFrameHostId(GlobalRenderFrameHostId render_
 }
 
 // LCOV_EXCL_START
-void VideoCaptureHostUtils::ReportStartScreenCapture() {
+void VideoCaptureHostUtils::ReportStartScreenCaptureBind(int child_id) {
+    if (!BrowserThread::CurrentlyOn(BrowserThread::UI)) {
+        GetUIThreadTaskRunner({})->PostTask(FROM_HERE,
+        base::BindOnce(&VideoCaptureHostUtils::ReportStartScreenCaptureBind, child_id));
+        return;
+    }
     RenderProcessHost* host =
-        RenderProcessHost::FromID(render_frame_host_id_.child_id);
+        RenderProcessHost::FromID(child_id);
     if (host) {
         LOG(INFO) << __func__
                 << " start screen capture, pid: " << host->GetProcess().Pid();
@@ -43,9 +49,14 @@ void VideoCaptureHostUtils::ReportStartScreenCapture() {
     }
 }
 
-void VideoCaptureHostUtils::ReportStopScreenCapture() {
+void VideoCaptureHostUtils::ReportStopScreenCaptureBind(int child_id) {
+    if (!BrowserThread::CurrentlyOn(BrowserThread::UI)) {
+        GetUIThreadTaskRunner({})->PostTask(FROM_HERE,
+        base::BindOnce(&VideoCaptureHostUtils::ReportStopScreenCaptureBind, child_id));
+        return;
+    }
     RenderProcessHost* host =
-        RenderProcessHost::FromID(render_frame_host_id_.child_id);
+        RenderProcessHost::FromID(child_id);
     if (host) {
         LOG(INFO) << __func__
                 << " stop screen capture, pid: " << host->GetProcess().Pid();
@@ -53,6 +64,14 @@ void VideoCaptureHostUtils::ReportStopScreenCapture() {
             OHOS::NWeb::ResSchedStatusAdapter::SCREEN_CAPTURE_STOP,
             host->GetProcess().Pid());
     }
+}
+
+void VideoCaptureHostUtils::ReportStartScreenCapture() {
+    ReportStartScreenCaptureBind(render_frame_host_id_.child_id);
+}
+
+void VideoCaptureHostUtils::ReportStopScreenCapture() {
+    ReportStopScreenCaptureBind(render_frame_host_id_.child_id);
 }
 // LCOV_EXCL_STOP
 #endif

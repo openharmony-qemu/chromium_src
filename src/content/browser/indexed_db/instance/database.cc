@@ -332,7 +332,7 @@ Status Database::ForceCloseAndRunTasks() {
 
 void Database::ScheduleOpenConnection(
     std::unique_ptr<PendingConnection> connection) {
-  bool is_accepting_connections = IsAcceptingConnections();
+  bool is_accepting_connections  = IsAcceptingConnections();
   DCHECK(is_accepting_connections);
   if (!is_accepting_connections) {
     LOG(ERROR) << " IsAcceptingConnections() is false. ";

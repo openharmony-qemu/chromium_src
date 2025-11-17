@@ -339,17 +339,17 @@ void OHOSAudioDecoder::SetCdm(CdmContext* cdm_context, InitCB init_cb) {
   ohos_crypto_context_ = cdm_context->GetOHOSMediaCryptoContext();
 
   event_cb_registration_ = cdm_context->RegisterEventCB(base::BindRepeating(
-      &OHOSAudioDecoder::OnCdmContextEvent, weak_factory_.GetWeakPtr()));
+      &OHOSAudioDecoder::OnCdmContextEvent, weak_factory_.GetSafeRef()));
 
   ohos_crypto_context_->SetOHOSMediaCryptoReadyCB(
       base::BindPostTaskToCurrentDefault(
           base::BindOnce(&OHOSAudioDecoder::OnMediaCryptoReady,
-                         weak_factory_.GetWeakPtr(), std::move(init_cb))));
+                         weak_factory_.GetSafeRef(), std::move(init_cb))));
 }
 
 void OHOSAudioDecoder::OnCdmContextEvent(CdmContext::Event event) {
   LOG(INFO) << "OHOSAudioDecoder::OnCdmContextEvent enter";
-  if (task_runner_->RunsTasksInCurrentSequence()) {
+  if (!task_runner_->RunsTasksInCurrentSequence()) {
     task_runner_->PostTask(
         FROM_HERE, base::BindOnce(&OHOSAudioDecoder::OnCdmContextEvent, weak_factory_.GetSafeRef(), event));
     return;
@@ -369,9 +369,10 @@ void OHOSAudioDecoder::OnCdmContextEvent(CdmContext::Event event) {
 void OHOSAudioDecoder::OnMediaCryptoReady(InitCB init_cb, void* session, bool requires_secure_video_codec) {
   TRACE_EVENT0("media", "OHOSAudioDecoder::OnMediaCryptoReady");
   LOG(INFO) << "OHOSAudioDecoder::OnMediaCryptoReady enter";
-  if (task_runner_->RunsTasksInCurrentSequence()) {
+  if (!task_runner_->RunsTasksInCurrentSequence()) {
     task_runner_->PostTask(
-        FROM_HERE, base::BindOnce(&OHOSAudioDecoder::OnMediaCryptoReady, weak_factory_.GetSafeRef(), init_cb, session, requires_secure_video_codec));
+        FROM_HERE, base::BindOnce(&OHOSAudioDecoder::OnMediaCryptoReady, weak_factory_.GetSafeRef(),
+                                  std::move(init_cb), session, requires_secure_video_codec));
     return;
   }
   if (session == nullptr) {
@@ -482,7 +483,7 @@ void OHOSAudioDecoder::ClearInputQueue(DecoderStatus decode_status) {
 }
 
 void OHOSAudioDecoder::OnError(int32_t errorCode) {
-  if (task_runner_->RunsTasksInCurrentSequence()) {
+  if (!task_runner_->RunsTasksInCurrentSequence()) {
     task_runner_->PostTask(
         FROM_HERE, base::BindOnce(&OHOSAudioDecoder::OnError, weak_factory_.GetSafeRef(), errorCode));
     return;

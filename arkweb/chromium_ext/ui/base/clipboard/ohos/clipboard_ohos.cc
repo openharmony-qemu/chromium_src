@@ -644,6 +644,10 @@ class ClipboardOHOSInternal {
       }
       if (imgFlag) {
         allFormat |= static_cast<int>(ClipboardInternalFormat::kPng);
+        auto pixels = imgData->GetData();
+        if (pixels) {
+          free(pixels);
+        }
       }
     }
 
@@ -666,8 +670,10 @@ class ClipboardOHOSInternal {
 
     if (record->GetImgData(imgData)) {
       SkImageInfo skImageInfo = MakeSkImageInfoFromPixelMap(imgData);
-      SkPixmap pixmap(skImageInfo, imgData->GetData(), imgData->GetRowBytes());
-      if (!img.installPixels(pixmap)) {
+      void* pixels = reinterpret_cast<void*>(imgData->GetData());
+      size_t rowBytes = imgData->GetRowBytes();
+      if (!img.installPixels(skImageInfo, pixels, rowBytes,
+                             [](void* addr, void* ctx) { free(addr); }, nullptr)) {
         LOG(ERROR) << "installPixels failed";
         return false;
       }

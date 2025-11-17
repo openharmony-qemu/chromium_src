@@ -590,9 +590,12 @@ bool PasteDataRecordAdapterImpl::GetImgData(std::shared_ptr<ClipBoardImageDataAd
     if (getPixelFormat_res != IMAGE_SUCCESS) {
         WVLOG_E("GetPixelFormat failed. error code is : %{public}d", getPixelFormat_res);
     }
-
     /* ndk16 OH_PixelmapNative_GetByteCount */
     size_t dataSize = static_cast<size_t>(width * height * 4);
+    WVLOG_I(
+        "GetImgData image info: width=%{public}u, height=%{public}u, "
+        "dataSize=%{public}zu",
+        width, height, dataSize);
     uint8_t* dataBuffer = static_cast<uint8_t *>(calloc(dataSize, sizeof(uint8_t)));
     if (dataBuffer == nullptr) {
         WVLOG_E("calloc dataBuffer failed");

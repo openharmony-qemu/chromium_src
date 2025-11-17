@@ -30,6 +30,7 @@ const std::string COLOR_PICKER_SO_PATH =
 const std::string FUNC_NAME = "HMS_GCP_StartColorPicker";
 const std::string FUNC_WITH_VALUE_NAME =
     "HMS_GCP_StartColorPickerWithColorValue";
+const int32_t STYLUS_OK = 0;
 
 typedef enum {
   /** an unknown color space */
@@ -147,7 +148,7 @@ void ColorPickerNotify(void* user_data,
       ColorPickerAdapterImpl::callback_wrapper_.GetCallback(callback_index);
 
   if (color_picker_callback) {
-    bool success = (code == 0);
+    bool success = (code == STYLUS_OK);
     HMS_GCP_Color color = color_info.color;
     uint32_t value = (color.alpha << 24) | (color.red << 16) |
                      (color.green << 8) | color.blue;
@@ -191,8 +192,12 @@ void ColorPickerAdapterImpl::StartColorPickerInternal(
   HMS_GCP_PickedColorInfo color_info;
   ColorPickerNotify(reinterpret_cast<void*>(callback_index_), color_info, 0);
 #else
-  start_color_picker_func(x, y, ColorPickerNotify,
-                          reinterpret_cast<void*>(callback_index_));
+  int32_t ret = start_color_picker_func(
+      x, y, ColorPickerNotify, reinterpret_cast<void*>(callback_index_));
+  if (ret != STYLUS_OK) {
+    WVLOG_E("ColorPickerAdapterImpl::StartColorPicker error");
+    color_picker_callback(false, 0);  // Notify error
+  }
 #endif
 }
 

@@ -801,7 +801,7 @@ bool OHOSAudioDecoder::OnDecodedFrame(const OutputBufferData& out) {
 // LCOV_EXCL_START
 void OHOSAudioDecoder::OnCodecLoopError() {
   LOG(ERROR) << "OHOSAudioDecoder::OnCodecLoopError";
-  if (task_runner_->RunsTasksInCurrentSequence()) {
+  if (!task_runner_->RunsTasksInCurrentSequence()) {
     task_runner_->PostTask(
         FROM_HERE, base::BindOnce(&OHOSAudioDecoder::OnCodecLoopError, weak_factory_.GetSafeRef()));
     return;

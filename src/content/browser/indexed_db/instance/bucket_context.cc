@@ -752,7 +752,7 @@ void BucketContext::Open(
   // open request had already made it to ConnectionCoordinator, it would be
   // pruned and errors reported: see `ShouldPruneForForceClose()`. So do that
   // here too.
-  if (!database_ptr || !database_ptr->IsAcceptingConnections()) {
+  if(!database_ptr->IsAcceptingConnections()) {
     connection->factory_client->OnError(
         DatabaseError(blink::mojom::IDBException::kAbortError,
                       "The connection was closed."));
@@ -761,9 +761,7 @@ void BucketContext::Open(
   }
 
   pending_connections_.push_back(connection->weak_factory.GetWeakPtr());
-  if (database_ptr) {
-    database_ptr->ScheduleOpenConnection(std::move(connection));
-  }
+  database_ptr->ScheduleOpenConnection(std::move(connection));
   OnConnectionPriorityUpdated();
 }
 

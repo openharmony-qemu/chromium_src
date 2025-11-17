@@ -6,12 +6,4 @@
 
 namespace metrics {
 
-// TODO:FIXME
-// static
-bool DriveMetricsProvider::HasSeekPenalty(const base::FilePath& path,
-                                          bool* has_seek_penalty) {
-  *has_seek_penalty = false;
-  return true;
-}
-
 }  // namespace metrics

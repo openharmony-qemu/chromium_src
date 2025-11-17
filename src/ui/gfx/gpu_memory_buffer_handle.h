@@ -31,6 +31,11 @@
 #include "base/android/scoped_hardware_buffer_handle.h"
 #endif
 
+#include "arkweb/build/features/features.h"
+#if BUILDFLAG(ARKWEB_VULKAN)
+#include "arkweb/chromium_ext/base/ohos/scoped_native_buffer_handle.h"
+#endif
+
 namespace mojo {
 template <typename, typename>
 struct StructTraits;

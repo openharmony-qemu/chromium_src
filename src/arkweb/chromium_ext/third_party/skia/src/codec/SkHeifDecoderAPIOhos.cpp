@@ -35,7 +35,7 @@ bool HeifDecoder::init(std::unique_ptr<SkStream> stream, HeifFrameInfo* heifInfo
         return false;
     }
 
-    base::span<const uint8_t> encodedData = base::make_span(skData->bytes(), skData->size());
+    std::span<const uint8_t> encodedData = std::span(skData->bytes(), skData->size());
     if (!getDecoderAdapter()->ParseImageInfo(encodedData.data(), (uint32_t)encodedData.size())) {
         LOG(ERROR) << "[HeifSupport] HeifDecoder::Init ParseImageInfo failed.";
         return false;

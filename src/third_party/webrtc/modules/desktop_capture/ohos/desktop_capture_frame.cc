@@ -25,7 +25,7 @@ bool DesktopCaptureFrame::Prepare(DesktopSize size) {
   if (!frame_) {
     std::unique_ptr<DesktopFrame> frame;
     if (factory_) {
-      frame = SharedMemoryDesktopFrame::Create(size, factory_);
+      frame = SharedMemoryDesktopFrame::Create(size, FOURCC_ARGB, factory_);
       if (!frame) {
         LOG(WARNING) << "cannot create a new DesktopFrame.";
         return false;

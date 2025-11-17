@@ -29,8 +29,13 @@ enum class AudioDecoderType : int {
   kPassthroughDTS = 9,   // Passthrough DTS audio
   kSymphonia = 10,       // Symphonia Rust-backed SymphoniaAudioDecoder.
 
+#if BUILDFLAG(IS_ARKWEB) && BUILDFLAG(ARKWEB_ENABLE_CDM)
+  kOhos = 11,
+  kMaxValue = kOhos,
+#else
   // Keep this at the end and equal to the last entry.
   kMaxValue = kSymphonia,
+#endif
 };
 
 // List of known VideoDecoder implementations; recorded to UKM, always add new

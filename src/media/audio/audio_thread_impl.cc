@@ -44,7 +44,7 @@ AudioThreadImpl::AudioThreadImpl()
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
   OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(
       OHOS::NWeb::ResSchedStatusAdapter::THREAD_CREATED,
-      base::GetCurrentRealPid(), thread_.GetThreadRealId(),
+      base::GetCurrentRealPid(), thread_.GetThreadRealId().raw(),
       OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_AUDIO);
 #endif
 
@@ -70,7 +70,7 @@ void AudioThreadImpl::Stop() {
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
   OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(
       OHOS::NWeb::ResSchedStatusAdapter::THREAD_DESTROYED,
-      base::GetCurrentRealPid(), thread_.GetThreadRealId(),
+      base::GetCurrentRealPid(), thread_.GetThreadRealId().raw(),
       OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_AUDIO);
 #endif
 

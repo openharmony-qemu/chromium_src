@@ -11,6 +11,7 @@
 #include <array>
 #include <cmath>
 
+#include "base/logging.h"
 #include "base/memory/raw_ptr.h"
 #include "base/numerics/angle_conversions.h"
 #include "base/timer/timer.h"

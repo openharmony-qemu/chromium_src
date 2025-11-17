@@ -489,9 +489,11 @@ bool CheckVulkanCompatibilities(
   return true;
 #endif
 #else   // BUILDFLAG(IS_ANDROID)
+#if !BUILDFLAG(ARKWEB_VULKAN)
    if (SkipVulkanBlocklist()) {
     return true;
   }
+#endif
 
 #if !BUILDFLAG(ARKWEB_VULKAN)
   if (IsBlockedByBuildInfo() && !ShouldBypassMediatekBlock(gpu_info)) {

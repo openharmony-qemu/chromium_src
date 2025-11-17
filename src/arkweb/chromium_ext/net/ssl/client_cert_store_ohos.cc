@@ -273,7 +273,7 @@ void ClientCertStoreOHOS::FilterCertsOnWorkerThread(
       bssl::UniquePtr<uint8_t> free_der_buf(der_buf);
       std::vector<uint8_t> buf(der_buf, der_buf + size);
       intermediates.push_back(x509_util::CreateCryptoBuffer(
-          base::make_span(buf.data(), buf.size())));
+          std::span(buf.data(), buf.size())));
     }
 
     // Retain a copy of the intermediates. Some deployments expect the client
@@ -322,7 +322,7 @@ void ClientCertStoreOHOS::GetPlatformCertsOnWorkerThread(
     X509Certificate::UnsafeCreateOptions options;
     options.printable_string_is_utf8 = true;
     auto cert = X509Certificate::CreateFromBytesUnsafeOptions(
-        base::make_span(cert_buf.data(), cert_buf.size()), options);
+        std::span(cert_buf.data(), cert_buf.size()), options);
     if (!cert) {
       LOG(ERROR)
           << "x509_util::CreateX509CertificateFromCERTCertificate failed";

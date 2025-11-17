@@ -80,8 +80,14 @@ enum PipelineStatusCodes : StatusCodeType {
   // Issued when a component in the pipeline runs out of memory.
   PIPELINE_ERROR_OUT_OF_MEMORY = 26,
 
+#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
+  PIPELINE_ERROR_INITIALIZATION_FAILED_CUSTOM_PLAYER = 27,
+  // Must be equal to the largest value ever logged.
+  PIPELINE_STATUS_MAX = PIPELINE_ERROR_INITIALIZATION_FAILED_CUSTOM_PLAYER,
+#else
   // Must be equal to the largest value ever logged.
   PIPELINE_STATUS_MAX = PIPELINE_ERROR_OUT_OF_MEMORY,
+#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 };
 
 struct PipelineStatusTraits {

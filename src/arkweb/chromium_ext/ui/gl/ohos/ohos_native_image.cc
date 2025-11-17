@@ -11,6 +11,7 @@
 #include "base/check.h"
 #include "base/command_line.h"
 #include "base/debug/crash_logging.h"
+#include "base/no_destructor.h"
 #include "gpu/ipc/common/nweb_native_window_tracker.h"
 #include "ui/gl/gl_bindings.h"
 
@@ -21,7 +22,10 @@ constexpr char kGpuProcess[] = "gpu-process";
 
 namespace gl {
 
-std::mutex g_mutex_native_image;
+std::mutex& GetNativeImageMutex() {
+  static base::NoDestructor<std::mutex> native_image_mutex;
+  return *native_image_mutex;
+}
 
 scoped_refptr<OhosNativeImage> OhosNativeImage::Create(int texture_id) {
   auto nativeImageAdapter =
@@ -48,7 +52,7 @@ OhosNativeImage::~OhosNativeImage() {
 void OhosNativeImage::SetFrameAvailableCallback(
     base::RepeatingClosure callback) {
   DCHECK(!frame_available_cb_);
-  std::lock_guard<std::mutex> lock(g_mutex_native_image);
+  std::lock_guard<std::mutex> lock(GetNativeImageMutex());
   frame_available_cb_ = std::move(callback);
   if (native_image_adapter_ != nullptr && listener_ == nullptr) {
     listener_ = std::make_shared<OHOS::NWeb::FrameAvailableListenerImpl>(this);

@@ -1649,25 +1649,28 @@ int FontConfig_OHOS::logErrInfo(int err,
 
 #if BUILDFLAG(ARKWEB_THEME_FONT)
 void FontConfig_OHOS::InvalidateThemeFont(const SkFontScanner& fontScanner,
-                                          int fd) {
-  sk_sp<SkData> data(SkData::MakeFromFD(fd));
-  std::unique_ptr<SkStreamAsset> stream =
-      (data ? std::make_unique<SkMemoryStream>(std::move(data)) : nullptr);
+                                          const std::vector<int>& fds) {
+  themeFontTypefaceSet.clear();
+  for (const int& fd : fds) {
+    sk_sp<SkData> data(SkData::MakeFromFD(fd));
+    std::unique_ptr<SkStreamAsset> stream =
+        (data ? std::make_unique<SkMemoryStream>(std::move(data)) : nullptr);
 
-  FontInfo font;
-  int count = 0;
-  if (stream == nullptr || !fontScanner.scanFile(stream.get(), &count) ||
-      !fontScanner.scanInstance(stream.get(), 0, 0, &font.familyName,
-                                &font.style, &font.isFixedWidth, nullptr)) {
-    themeFontTypeface.reset();
-    return;
+    FontInfo font;
+    int count = 0;
+    if (stream == nullptr || !fontScanner.scanFile(stream.get(), &count) ||
+        !fontScanner.scanInstance(stream.get(), 0, 0, &font.familyName,
+                                  &font.style, &font.isFixedWidth, nullptr)) {
+      LOG(ERROR) << "InvalidateThemeFont stream is null.";
+      continue;
+    }
+
+    font.stream = std::move(stream);
+    themeFontTypefaceSet.push_back(sk_make_sp<SkTypeface_OHOS>(SkString(), font));
   }
-
-  font.stream = std::move(stream);
-  themeFontTypeface = sk_make_sp<SkTypeface_OHOS>(SkString(), font);
 }
 
-SkTypeface_OHOS* FontConfig_OHOS::getThemeFontTypeface() const {
-  return themeFontTypeface.get();
+ThemeTypefaceSet FontConfig_OHOS::getThemeFontTypefaceSet() const {
+  return themeFontTypefaceSet;
 }
 #endif

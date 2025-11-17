@@ -3844,7 +3844,10 @@ void RenderProcessHostImpl::OnChannelConnected(int32_t peer_pid) {
     ProvideSwapFileForRenderer();
 #if BUILDFLAG(ARKWEB_THEME_FONT)
     if (auto* theme_font = ArkwebRenderProcessHostImplUtils::EnsureThemeFont()) {
-      ArkwebRenderProcessHostImplUtils::UpdateThemeFontFile(this, theme_font->font_file.Duplicate());
+      std::vector<base::File> font_files(theme_font->font_files.size());
+      std::transform(theme_font->font_files.begin(), theme_font->font_files.end(), font_files.begin(),
+            [] (const base::File& f) { return f.Duplicate(); });
+      ArkwebRenderProcessHostImplUtils::UpdateThemeFontFile(this, std::move(font_files));
     }
 #endif
   }

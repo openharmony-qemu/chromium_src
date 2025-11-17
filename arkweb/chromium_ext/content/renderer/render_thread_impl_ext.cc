@@ -185,9 +185,12 @@ void RenderThreadImpl::SetDrawMode(int mode, base::PassKey<AgentSchedulingGroup>
 #endif
 
 #if BUILDFLAG(ARKWEB_THEME_FONT)
-void RenderThreadImpl::UpdateThemeFontFile(base::File theme_font) {
+void RenderThreadImpl::UpdateThemeFontFile(const std::vector<base::File> theme_fonts) {
+  std::vector<int> fds(theme_fonts.size());
+  std::transform(theme_fonts.begin(), theme_fonts.end(), fds.begin(),
+      [] (const base::File& f) { return f.GetPlatformFile(); });
   blink::FontCache::Get().Invalidate();
-  skia::DefaultFontMgr().get()->InvalidateThemeFont(theme_font.GetPlatformFile());
+  skia::DefaultFontMgr().get()->InvalidateThemeFont(fds);
   blink::FontCache::Get().InvalidateSystemFontFamily();
 }
 #endif

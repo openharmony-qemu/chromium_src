@@ -414,6 +414,8 @@ const base::FilePath::CharType kAppThemeFlagFileName[] =
     FILE_PATH_LITERAL("flag");
 const base::FilePath::CharType kAppThemeFontsManifest[] =
     FILE_PATH_LITERAL("manifest.json");
+static const std::string kSrc = "src";
+static const std::string kSrcExt = "srcExt";
 
 std::unique_ptr<ThemeFont> ArkwebRenderProcessHostImplUtils::g_theme_font_ =
     nullptr;
@@ -424,7 +426,8 @@ bool ArkwebRenderProcessHostImplUtils::IsThemeFontValid() {
   if (!g_theme_font_ || !base::PathExists(g_theme_font_->flag_path) ||
       !base::PathExists(g_theme_font_->manifest_path) ||
       !base::PathExists(g_theme_font_->font_path) ||
-      !g_theme_font_->font_file.IsValid()) {
+      g_theme_font_->font_files.empty() ||
+      !g_theme_font_->font_files[0].IsValid()) {
     return false;
   }
 
@@ -475,14 +478,14 @@ ThemeFont* ArkwebRenderProcessHostImplUtils::EnsureThemeFont() {
   // {"id":"0","origin":"online","ttfFileSrc":"/absolute/path/themefont.ttf"}
   // {"id":"1","origin":"preset","ttfFileSrc":"/absolute/path/default.ttf"}
   const base::Value::Dict& dict = parsed_json->GetDict();
-  const std::string* absolte_font_path = dict.FindString("ttfFileSrc");
+  const std::string* absolte_font_path = dict.FindString(kSrc);
   if (!absolte_font_path || absolte_font_path->empty()) {
     LOG(ERROR) << "[themefont] manifest file has no ttfFileSrc tag";
     return nullptr;
   }
-
+  base::FilePath theme_font_path_ext = theme_font_path;
   base::FilePath font_path =
-      theme_font_path.Append(base::FilePath(*absolte_font_path).BaseName());
+      theme_font_path.Append(*absolte_font_path);
   if (!base::PathExists(font_path)) {
     LOG(ERROR) << "[themefont] font file not exist:" << font_path.value();
     return nullptr;
@@ -495,12 +498,32 @@ ThemeFont* ArkwebRenderProcessHostImplUtils::EnsureThemeFont() {
     return nullptr;
   }
 
+  const base::Value::List* font_ext_list = dict.FindList(kSrcExt);
+  std::vector<base::File> font_files;
+  font_files.push_back(std::move(font_file));
+  if (font_ext_list) {
+    for (const auto& key : *font_ext_list) {
+      const std::string font_ext = key.GetString();
+      base::FilePath tmp_path = theme_font_path_ext;
+      base::FilePath font_path_ext = tmp_path.Append(font_ext);
+      if (!base::PathExists(font_path_ext)) {
+        LOG(ERROR) << "[themefont] font file not exist:" << font_path_ext.value();
+        continue;
+      }
+      base::File font_file_ext(font_path_ext,
+                               base::File::FLAG_OPEN | base::File::FLAG_READ);
+      if (font_file_ext.IsValid()) {
+        font_files.push_back(std::move(font_file_ext));
+      }
+    }
+  }
+
   base::FilePath flag_path = theme_path.Append(kAppThemeFlagFileName);
   g_theme_font_ = std::make_unique<ThemeFont>();
   g_theme_font_->flag_path = flag_path;
   g_theme_font_->manifest_path = manifest_path;
   g_theme_font_->font_path = font_path;
-  g_theme_font_->font_file = std::move(font_file);
+  g_theme_font_->font_files = std::move(font_files);
 
   LOG(INFO) << "[themefont] valid font:" << font_path;
 
@@ -510,8 +533,8 @@ ThemeFont* ArkwebRenderProcessHostImplUtils::EnsureThemeFont() {
 
 void ArkwebRenderProcessHostImplUtils::UpdateThemeFontFile(
     RenderProcessHostImpl* host,
-    base::File font_file) {
-  host->GetRendererInterface()->UpdateThemeFontFile(std::move(font_file));
+    std::vector<base::File> font_files) {
+  host->GetRendererInterface()->UpdateThemeFontFile(std::move(font_files));
 }
 #endif
 

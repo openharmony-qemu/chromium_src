@@ -64,10 +64,13 @@ const base::TimeTicks& ArkwebRenderProcessHostImplExt::ProcessBackgroundTime() {
 #if BUILDFLAG(ARKWEB_THEME_FONT)
 void ArkwebRenderProcessHostImplExt::OnThemeFontChange() {
   if (auto* theme_font = ArkwebRenderProcessHostImplUtils::EnsureThemeFont()) {
+    std::vector<base::File> font_files(theme_font->font_files.size());
+    std::transform(theme_font->font_files.begin(), theme_font->font_files.end(), font_files.begin(),
+          [] (const base::File& f) { return f.Duplicate(); });
     ArkwebRenderProcessHostImplUtils::UpdateThemeFontFile(
-        this, theme_font->font_file.Duplicate());
+        this, std::move(font_files));
   } else {
-    ArkwebRenderProcessHostImplUtils::UpdateThemeFontFile(this, base::File());
+    ArkwebRenderProcessHostImplUtils::UpdateThemeFontFile(this, std::vector<base::File>());
   }
 }
 #endif

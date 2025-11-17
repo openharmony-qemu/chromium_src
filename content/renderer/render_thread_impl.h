@@ -510,7 +510,7 @@ class CONTENT_EXPORT RenderThreadImpl
 #endif
 
 #if BUILDFLAG(ARKWEB_THEME_FONT)
-  void UpdateThemeFontFile(base::File theme_font) override;
+  void UpdateThemeFontFile(const std::vector<base::File> theme_fonts) override;
 #endif
 
   void OnMemoryPressure(

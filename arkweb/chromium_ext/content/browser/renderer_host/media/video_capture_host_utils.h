@@ -29,10 +29,10 @@ public:
 
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
   void SetRenderFrameHostId(GlobalRenderFrameHostId render_frame_host_id);
+  static void ReportStartScreenCaptureBind(int child_id);
+  static void ReportStopScreenCaptureBind(int child_id);
   void ReportStartScreenCapture();
-  void ReportStopScreenCapture();
-  void ReportStartScreenCaptureBind(int child_id);
-  void ReportStopScreenCaptureBind(int child_id);  
+  void ReportStopScreenCapture();  
 #endif
 
 private:

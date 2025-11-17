@@ -122,6 +122,10 @@
 #include "nweb_core_value.h"
 #include "ohos_glue/base/include/ark_web_errno.h"
 
+#if BUILDFLAG(ARKWEB_AUTOLAYOUT)
+#include "nweb_autolayout.h"
+#endif
+
 namespace {
 static const float richtextDisplayRatio = 1.0;
 }
@@ -827,6 +831,15 @@ bool NWebDelegate::Init(bool is_enhance_surface,
   }
   GetBrowser()->GetHost()->SetNWebId(GetBrowser()->GetNWebId());
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
+#if BUILDFLAG(ARKWEB_AUTOLAYOUT)
+  base::ThreadPool::PostTask(
+      FROM_HERE,
+      base::BindOnce([]() {
+            LOG(DEBUG) << "Init NwebAutolayout::GetInstance()";
+            NwebAutolayout::GetInstance();
+      })
+  );
+#endif
   return true;
 }
 

@@ -3232,6 +3232,14 @@ void RenderFrameHostImpl::ExecuteJavaScript(const std::u16string& javascript,
                                                       std::move(callback));
 }
 
+#if BUILDFLAG(ARKWEB_FLING)
+void RenderFrameHostImpl::UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity) {
+  if (GetLocalRenderWidgetHost()) {
+    GetLocalRenderWidgetHost()->UpdateFlingVelocityLimit(velocity);
+  }
+}
+#endif
+
 void RenderFrameHostImpl::ExecuteJavaScriptInIsolatedWorld(
     const std::u16string& javascript,
     JavaScriptResultCallback callback,

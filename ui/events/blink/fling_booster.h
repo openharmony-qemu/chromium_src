@@ -30,6 +30,10 @@ class FlingBooster {
   void ObserveProgressFling(const gfx::Vector2dF& current_velocity);
   void Reset();
 
+#if BUILDFLAG(ARKWEB_FLING)
+  void UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity);
+#endif
+
  private:
   bool ShouldBoostFling(const blink::WebGestureEvent& fling_start_event);
 
@@ -59,6 +63,11 @@ class FlingBooster {
   // as a boost. This is used to calculate the velocity; if it's too slow we'll
   // avoid boosting.
   base::TimeTicks previous_boosting_scroll_timestamp_;
+
+#if BUILDFLAG(ARKWEB_FLING)
+  gfx::Vector2dF max_fling_velocity_{std::numeric_limits<float>::max(),
+                                     std::numeric_limits<float>::max()};
+#endif
 };
 
 }  // namespace ui

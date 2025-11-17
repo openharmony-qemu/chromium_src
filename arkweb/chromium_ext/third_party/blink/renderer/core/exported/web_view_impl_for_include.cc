@@ -351,6 +351,30 @@ bool WebViewImpl::GetAdBlockEnableForSite() {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_FLING)
+void WebViewImpl::UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity) {
+  if (!GetPage() || !(GetPage()->MainFrame())) {
+    LOG(DEBUG) << "[flingTracker] May not use a FlingTracker object "
+                    "associated with a Page that is not fully active.";
+    return;
+  }
+
+  if (velocity == limit_fling_velocity_) {
+    LOG(DEBUG) << "Store value hasn't change, no need to limit Velocity";
+    return;
+  }
+
+  limit_fling_velocity_ = velocity;
+
+  if (GetPage()->MainFrame()->IsLocalFrame()) {
+    DCHECK(local_main_frame_host_remote_);
+    if (local_main_frame_host_remote_) {
+      local_main_frame_host_remote_->UpdateFlingVelocityLimit(velocity);
+    }
+  }
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_ACTIVE_POLICY)
 void WebViewImpl::SetDelayDurationForBackgroundTabFreezing(
     int64_t millisecond) {

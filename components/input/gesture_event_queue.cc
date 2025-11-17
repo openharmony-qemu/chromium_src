@@ -233,6 +233,12 @@ void GestureEventQueue::SendScrollEndingEventsNow() {
   }
 }
 
+#if BUILDFLAG(ARKWEB_FLING)
+void GestureEventQueue::UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity) {
+  fling_controller_.UpdateFlingVelocityLimit(velocity);
+}
+#endif
+
 void GestureEventQueue::OnWheelEventAck(
     const MouseWheelEventWithLatencyInfo& event,
     blink::mojom::InputEventResultSource ack_source,

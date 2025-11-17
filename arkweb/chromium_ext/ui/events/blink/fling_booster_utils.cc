@@ -21,6 +21,7 @@
 #include "base/strings/string_number_conversions.h"
 #include "base/trace_event/trace_event.h"
 #if BUILDFLAG(ARKWEB_FLING)
+#include "base/logging.h"
 #include "base/system/sys_info.h"
 #include "base/ohos/sys_info_utils_ext.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
@@ -33,6 +34,8 @@ namespace ui {
 constexpr int kStartVelocityThreshold = 1500;
 
 #if BUILDFLAG(ARKWEB_FLING)
+constexpr gfx::Vector2dF kDefaultLimit{std::numeric_limits<float>::max(),
+                                       std::numeric_limits<float>::max()};
 constexpr float kMaxBoostFlingSpeed = 9000;
 #if BUILDFLAG(ARKWEB_PDF)
 constexpr float kMaxBoostFlingSpeedPdf = 5000;
@@ -40,9 +43,13 @@ constexpr float kMaxBoostFlingSpeedPdf = 5000;
 #endif // BUILDFLAG(ARKWEB_FLING)
 
 #if BUILDFLAG(ARKWEB_FLING)
-void LimitVelocity(gfx::Vector2dF &velocity)
+void LimitVelocity(gfx::Vector2dF &velocity, gfx::Vector2dF &max_fling_velocity)
 {
   if (base::ohos::IsPcDevice()) {
+    if (kDefaultLimit != max_fling_velocity) {
+        LOG(INFO) << "Fling Velocity has been limited";
+        return;
+    }
     float vx = velocity.x();
     float vy = velocity.y();
     if (vx > kMaxBoostFlingSpeed)
@@ -101,6 +108,41 @@ void ScaleVelocity(
       velocity.Scale(1.0f, NearZero(velocityScaleTmp) ? velocityScale : velocityScaleTmp);
     }
   }
+}
+
+void ShouldLimitFlingVelocity(gfx::Vector2dF &velocity,
+                              gfx::Vector2dF &max_fling_velocity_) {
+  float vx = velocity.x();
+  float vy = velocity.y();
+  bool is_pdf = base::ohos::SlidingObserver::GetInstance().IsPdf();
+
+  if (is_pdf) {
+    return;
+  }
+
+  if (std::abs(vx) < max_fling_velocity_.x() &&
+      std::abs(vy) < max_fling_velocity_.y()) {
+    LOG(DEBUG) << "No need to limit the current speed";
+    return;
+  }
+
+  if (vx < -max_fling_velocity_.x()) {
+    vx = -max_fling_velocity_.x();
+  } else if (vx > max_fling_velocity_.x()) {
+    vx = max_fling_velocity_.x();
+  }
+
+  if (vy < -max_fling_velocity_.y()) {
+    vy = -max_fling_velocity_.y();
+  } else if (vy > max_fling_velocity_.y()) {
+    vy = max_fling_velocity_.y();
+  }
+
+  LOG(INFO) << "fling velocity:" << velocity.ToString() << " -> "
+            << "[" << vx << " " << vy << "]";
+  velocity.set_x(vx);
+  velocity.set_y(vy);
+  TRACE_EVENT2("input", "Fling Velocity", "vx", velocity.x(), "vy", velocity.y());
 }
 #endif // BUILDFLAG(ARKWEB_FLING)
 }  // namespace ui

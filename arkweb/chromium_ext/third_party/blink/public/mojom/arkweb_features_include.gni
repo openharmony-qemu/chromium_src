@@ -145,6 +145,10 @@ if (arkweb_blank_screen_detection) {
   mojom_core_enabled_features += [ "arkweb_blank_screen_detection" ]
 }
 
+if (arkweb_fling) {
+  mojom_core_enabled_features += [ "arkweb_fling" ]
+}
+
 if (arkweb_get_scroll_offset) {
   mojom_core_enabled_features += [ "arkweb_get_scroll_offset" ]
 }

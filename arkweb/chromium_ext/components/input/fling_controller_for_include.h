@@ -32,5 +32,8 @@
 #if BUILDFLAG(IS_ARKWEB)
   void StopWebPageFling();
 #endif
+#if BUILDFLAG(ARKWEB_FLING)
+  void UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity);
+#endif
 
 #endif

@@ -283,3 +283,8 @@
 /components/viz/service/frame_sinks/video_capture/ @defeng20201 @LXinJie1
 /components/viz/host/client_frame_sink_video_capturer* @defeng20201 @LXinJie1
 /components/viz/common/hit_test/ @defeng20201 @LXinJie1
+
+#交互安全
+/arkweb/ohos_adapter_ndk/access_token_adapter/ @zhu-sheng-le
+/arkweb/ohos_adapter_ndk/inputmethodframework_adapter/ @zhu-sheng-le
+/arkweb/ohos_adapter_ndk/keystore_adapter/ @zhu-sheng-le

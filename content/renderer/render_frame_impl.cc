@@ -2841,8 +2841,7 @@ void RenderFrameImpl::CommitNavigation(
 #if BUILDFLAG(ARKWEB_USERAGENT)
   if (IsMainFrame() &&
       viewport_meta_enabled_ != GetBlinkPreferences().viewport_meta_enabled &&
-      (common_params->navigation_type ==
-           blink::mojom::NavigationType::RELOAD ||
+      (common_params->navigation_type == blink::mojom::NavigationType::RELOAD ||
        common_params->navigation_type ==
            blink::mojom::NavigationType::RELOAD_BYPASSING_CACHE)) {
     document_state->set_must_reset_scroll_and_scale_state(true);

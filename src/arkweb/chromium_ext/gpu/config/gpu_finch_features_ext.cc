@@ -16,6 +16,7 @@
 #include "gpu/config/gpu_finch_features.h"
 #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #include "arkweb/chromium_ext/gpu/config/gpu_finch_features_ext.h"
+#include "base/logging.h"
 
 namespace features {
 #if BUILDFLAG(ARKWEB_VULKAN)

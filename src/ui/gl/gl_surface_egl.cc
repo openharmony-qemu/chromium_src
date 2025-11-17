@@ -311,9 +311,6 @@ GLSurfaceEGL::~GLSurfaceEGL() {
   CHECK(!HasWeakPtrs());
 }
 
-#if BUILDFLAG(ARKWEB_DRDC)
-std::string gl::NativeViewGLSurfaceEGL::gpu_version_ = "";
-#endif
 
 #if BUILDFLAG(IS_ANDROID)
 NativeViewGLSurfaceEGL::NativeViewGLSurfaceEGL(
@@ -344,17 +341,24 @@ NativeViewGLSurfaceEGL::NativeViewGLSurfaceEGL(
 #endif
   enable_replace_swap_buffer_output_ = arkweb_surface_utils_->CheckSwapBufferOutputFlag();
 #if BUILDFLAG(ARKWEB_DRDC)
-  if (gpu_version_.empty()) {
+  if (GetGpuVersion().empty()) {
     const char* renderer = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
-    gpu_version_ = renderer ? renderer : "Unknown";
+    GetGpuVersion() = renderer ? renderer : "Unknown";
   }
 #endif
 }
 #endif  // BUILDFLAG(IS_ANDROID)
 
-#if BUILDFLAG(ARKWEB_DRDC) //static
+#if BUILDFLAG(ARKWEB_DRDC)
+// static
+std::string& NativeViewGLSurfaceEGL::GetGpuVersion() {
+  static base::NoDestructor<std::string> gpu_version;
+  return *gpu_version;
+}
+
+// static
 std::string NativeViewGLSurfaceEGL::GetGLRenderer() {
-  return gpu_version_;
+  return GetGpuVersion();
 }
 #endif
 

@@ -4,6 +4,7 @@
 
 #include "components/viz/client/frame_eviction_manager.h"
 #include "arkweb/build/features/features.h"
+#include "base/logging.h"
 
 #include <algorithm>
 
@@ -144,7 +145,7 @@ FrameEvictionManager::FrameEvictionManager()
       base::SysInfo::AmountOfPhysicalMemory().InGiBF() < 3.5f ? 1 : 5;
 #elif BUILDFLAG(ARKWEB_FLING)
       std::min(kOhosFramesMax, kOhosFramesBase +
-          (base::SysInfo::AmountOfPhysicalMemoryMB() / kPhysicalMemoryBlockSize));
+          static_cast<int>(base::SysInfo::AmountOfPhysicalMemory().InMiB() / kPhysicalMemoryBlockSize));
 #else
       std::min(
           5, static_cast<int>(

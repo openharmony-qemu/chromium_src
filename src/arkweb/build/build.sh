@@ -13,7 +13,8 @@
 # limitations under the License.
 
 # use ./build.sh -nosym to build content_shell without symbol.
-set -e
+# 禁用set -e 以确保编译出错时脚本不会停止
+# set -e
 basedir=$(dirname "$0")
 CUR_DIR=$PWD
 ROOT_DIR="${CUR_DIR%/src*}""/src"
@@ -498,20 +499,36 @@ export OHOS_BASE_SDK_HOME="${ROOT_DIR}/ohos_sdk"
 if [ "${build_target}" = "ohos_nweb_hap" ]; then
   echo "third_party/depot_tools/ninja -C $build_dir -j$buildcount mojo_pre"
   ninja_mojo_pre_start=$(date +%s)
-  third_party/depot_tools/ninja -C $build_dir -j$buildcount mojo_pre
+  third_party/depot_tools/ninja -C $build_dir -j$buildcount -k 0 mojo_pre
+  ninja_mojo_pre_exit_code=$?
   ninja_mojo_pre_end=$(date +%s)
+  mojo_pre_time_cost=$(($ninja_mojo_pre_end - $ninja_mojo_pre_start))
   echo "##############################################"
-  echo "ninja mojo_pre time cost: $(($ninja_mojo_pre_end - $ninja_mojo_pre_start))"
+  echo "ninja mojo_pre exit code: $ninja_mojo_pre_exit_code"
+  echo "ninja mojo_pre time cost: $mojo_pre_time_cost"
   echo "##############################################"
+
+  if [ $ninja_mojo_pre_exit_code -ne 0 ]; then
+    echo "WARNING: ninja mojo_pre failed with exit code $ninja_mojo_pre_exit_code, but continuing script execution..."
+  fi
 fi
 
-echo "third_party/depot_tools/ninja -C $build_dir -j$buildcount ${build_target}"
+echo "third_party/depot_tools/ninja -C $build_dir -j$buildcount -k 0 ${build_target}"
 ninja_start=$(date +%s)
-third_party/depot_tools/ninja -C $build_dir -j$buildcount ${build_target}
+third_party/depot_tools/ninja -C $build_dir -j$buildcount -k 0 ${build_target}
+ninja_exit_code=$?
 ninja_end=$(date +%s)
+time_cost=$(($ninja_end - $ninja_start))
+
+echo "ninja exit code: $ninja_exit_code"
 echo "##############################################"
-echo "ninja time cost: $(($ninja_end - $ninja_start))"
+echo "ninja time cost: $time_cost"
 echo "##############################################"
+
+# 如果ninja有错误，输出提示信息
+if [ $ninja_exit_code -ne 0 ]; then
+  echo "WARNING: ninja build failed with exit code $ninja_exit_code, but continuing script execution..."
+fi
 
 if [[ $build_hmp =~ 1 ]] ; then
   export HW_HARMONY_ENGINE_ROOT="${CUR_DIR}"

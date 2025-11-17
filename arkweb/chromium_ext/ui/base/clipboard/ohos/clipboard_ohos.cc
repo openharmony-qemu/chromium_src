@@ -644,6 +644,10 @@ class ClipboardOHOSInternal {
       }
       if (imgFlag) {
         allFormat |= static_cast<int>(ClipboardInternalFormat::kPng);
+        auto pixels = imgData->GetData();
+        if (pixels) {
+          free(pixels);
+        }
       }
     }
 

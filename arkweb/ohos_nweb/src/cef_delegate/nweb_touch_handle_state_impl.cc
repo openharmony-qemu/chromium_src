@@ -65,4 +65,8 @@ float NWebTouchHandleStateImpl::GetAlpha() {
 float NWebTouchHandleStateImpl::GetEdgeHeight() {
   return state_.edge_height;
 }
+
+bool NWebTouchHandleStateImpl::IsDragging() {
+  return state_.is_dragging;
+}
 }  // namespace OHOS::NWeb

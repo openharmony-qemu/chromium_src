@@ -51,7 +51,6 @@ VideoLayerExt::VideoLayerExt(VideoFrameProvider* provider,
                              RectChangeCallback callback)
     : VideoLayer(provider, transform),
       rect_change_callback_(std::move(callback)) {
-  SetMayContainVideo(true);
   DCHECK(provider_.Read(*this));
 }
 
@@ -62,7 +61,6 @@ VideoLayerExt::VideoLayerExt(VideoFrameProvider* provider,
     : VideoLayer(provider, transform),
       rect_change_callback_(std::move(callback)),
       rect_visibility_change_callback_(std::move(visibilitycallback)) {
-  SetMayContainVideo(true);
   DCHECK(provider_.Read(*this));
 }
 
@@ -75,7 +73,6 @@ VideoLayerExt::VideoLayerExt(VideoFrameProvider* provider,
       rect_change_callback_(std::move(callback)),
       rect_visibility_change_callback_(std::move(visibilitycallback)),
       layer_removed_visibility_callback_(std::move(layerRemovedCallback)) {
-  SetMayContainVideo(true);
   DCHECK(provider_.Read(*this));
 }
 

@@ -14,6 +14,7 @@
  */
 
 #include "arkweb/build/features/features.h"
+#include <unordered_set>
 
 #if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
 #include "base/command_line.h"
@@ -90,11 +91,11 @@ static std::unordered_set<std::string> supportLocaleList = {
 };
 
 #if BUILDFLAG(ARKWEB_HAP_DECOMPRESSED)
-bool LocaleDataPakExistsExt(const std::string& locale) {
+bool LocaleDataPakExistsExt(std::string_view locale) {
   const auto path = ResourceBundle::GetLocaleFilePath(locale);
   // If the hap package is not decompressed, the directory does not exist.
   if (path.empty() || !base::PathExists(path)) {
-    return supportLocaleList.count(locale) > 0;
+    return supportLocaleList.count(std::string(locale)) > 0;
   } else {
     return true;
   }

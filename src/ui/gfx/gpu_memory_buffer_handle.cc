@@ -115,6 +115,13 @@ GpuMemoryBufferHandle::GpuMemoryBufferHandle(
       android_hardware_buffer(std::move(handle)) {}
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(ARKWEB_VULKAN)
+GpuMemoryBufferHandle::GpuMemoryBufferHandle(
+   gpu::ScopedNativeBufferHandle  handle)
+    : type(GpuMemoryBufferType::OHOS_NATIVE_BUFFER),
+      ohos_hardware_buffer(std::move(handle)) {}
+#endif
+
 #if BUILDFLAG(IS_APPLE)
 GpuMemoryBufferHandle::GpuMemoryBufferHandle(ScopedIOSurface io_surface)
     : type(GpuMemoryBufferType::IO_SURFACE_BUFFER),

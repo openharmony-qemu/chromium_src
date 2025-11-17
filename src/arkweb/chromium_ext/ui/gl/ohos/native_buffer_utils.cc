@@ -7,6 +7,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file. 
 
+#include <GLES/gl.h>
+
 #include "ui/gl/ohos/native_buffer_utils.h"
 
 #include "ui/gl/gl_context.h"
@@ -21,7 +23,6 @@
 
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
-#include <GLES/gl.h>
 #include <GLES/glext.h>
 #include <sys/poll.h>
 

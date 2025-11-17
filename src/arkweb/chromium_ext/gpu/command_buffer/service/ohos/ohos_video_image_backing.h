@@ -10,7 +10,7 @@
 #include "gpu/command_buffer/service/ohos/ohos_image_backing.h"
 #include "gpu/command_buffer/service/ohos/native_image_texture_owner.h"
 #include "gpu/gpu_gles2_export.h"
-#include "gpu/ipc/common/vulkan_ycbcr_info.h"
+#include "gpu/ipc/common/vulkan_ycbcr_info_mojom_traits.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
 #include "ui/gl/ohos/native_buffer_utils.h"
 

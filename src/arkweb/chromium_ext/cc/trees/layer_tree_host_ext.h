@@ -24,6 +24,8 @@
 #include "arkweb/build/features/features.h"
 #include "cc/trees/layer_tree_host.h"
 #include "ui/gfx/geometry/rect.h"
+#include <unordered_set>
+#include <set>
 
 namespace cc {
 class CC_EXPORT LayerTreeHostExt : public LayerTreeHost {
@@ -43,7 +45,7 @@ class CC_EXPORT LayerTreeHostExt : public LayerTreeHost {
   void RegisterClippedVisualViewportSelectionBounds(
       const gfx::Rect& clipped_selection_bounds);
   const gfx::Rect& clipped_selection_bounds() {
-    return pending_commit_state()->clipped_selection_bounds;
+    return this->LayerTreeHost::pending_commit_state()->clipped_selection_bounds;
   }
 #endif
 
@@ -60,7 +62,7 @@ class CC_EXPORT LayerTreeHostExt : public LayerTreeHost {
 
 private:
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
-  std::unordered_set<int> visible_layer_ids_;
+  std::set<int> visible_layer_ids_;
 #endif
 };
 }  // namespace cc

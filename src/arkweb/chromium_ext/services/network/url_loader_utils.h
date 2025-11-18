@@ -19,6 +19,7 @@
 #include "base/memory/raw_ptr.h"
 #include "arkweb/build/features/features.h"
 #include "arkweb/chromium_ext/base/time/time_utils.h"
+#include "net/filter/source_stream_type.h"
 #include "net/url_request/url_request.h"
 #include "services/network/url_loader.h"
 #include "services/network/public/cpp/net_adapters.h"
@@ -60,7 +61,7 @@ class URLLoaderUtils {
       bool force_main_frame_for_same_site_cookies,
       net::SecureDnsPolicy secure_dns_policy,
       net::HttpRequestHeaders extra_request_headers,
-      const std::optional<std::vector<net::SourceStream::SourceType>>&
+      const std::optional<std::vector<net::SourceStreamType>>&
           accepted_stream_types,
       const std::optional<url::Origin>& initiator,
       net::RedirectInfo::FirstPartyURLPolicy first_party_url_policy,

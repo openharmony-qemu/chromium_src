@@ -392,18 +392,17 @@ void URLLoaderFactory::CreateLoaderAndStartWithSyncClient(
       std::move(devtools_observer), std::move(device_bound_session_observer),
       std::move(accept_ch_frame_observer),
       resource_request.shared_storage_writable_eligible,
-      *context_->GetSharedResourceChecker(),
-      context_->MaybeCreateDurableMessage(
-          resource_request.throttling_profile_id,
-          resource_request.devtools_request_id)
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
-,
       prpp_loader,
       factoryUtils_->weak_prpp_req_loader_fac_.get()
           ? factoryUtils_->weak_prpp_req_loader_fac_.get()->GetMainUrl()
           : "",
-      preload_info
+      preload_info,
 #endif
+      *context_->GetSharedResourceChecker(),
+      context_->MaybeCreateDurableMessage(
+          resource_request.throttling_profile_id,
+          resource_request.devtools_request_id)
       );
 
   cors_url_loader_factory_->OnURLLoaderCreated(std::move(loader));

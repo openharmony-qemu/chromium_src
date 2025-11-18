@@ -137,6 +137,7 @@ class COMPONENTS_DOWNLOAD_EXPORT ArkWebDownloadItemImplExt : public DownloadItem
       : DownloadItemImpl(delegate,
                          id,
                          path,
+                         path,  // Use path as display_name for now
                          url,
                          mime_type,
                          std::move(cancel_request_callback)) {}

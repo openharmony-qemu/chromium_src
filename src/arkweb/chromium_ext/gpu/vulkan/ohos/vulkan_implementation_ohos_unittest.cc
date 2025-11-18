@@ -18,7 +18,7 @@
 #include "arkweb/chromium_ext/gpu/ipc/common/nweb_native_window_tracker.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #define private public
-#include "gpu/ipc/common/vulkan_ycbcr_info.h"
+#include "gpu/vulkan/vulkan_ycbcr_info.h"
 #include "base/logging.h"
 
 

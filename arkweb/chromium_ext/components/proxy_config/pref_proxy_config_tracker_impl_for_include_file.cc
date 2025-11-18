@@ -176,8 +176,6 @@ PrefProxyConfigTrackerImpl::CreateTrackingProxyConfigService(
   proxy_config_service_impl_ = new ProxyConfigServiceImpl(
       std::move(base_service), active_config_state_,
       active_config_, profile);
-  VLOG(1) << this << ": set chrome proxy config service to "
-          << proxy_config_service_impl_;
 
   return std::unique_ptr<net::ProxyConfigService>(proxy_config_service_impl_);
 }

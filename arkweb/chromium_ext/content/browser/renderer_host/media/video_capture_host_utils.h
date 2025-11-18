@@ -18,6 +18,10 @@
 
 #include "arkweb/build/features/features.h"
 #include "content/public/browser/global_routing_id.h"
+#if BUILDFLAG(ARKWEB_WEBRTC)
+#include "content/browser/renderer_host/media/video_capture_controller_event_handler.h"
+#include "content/browser/renderer_host/media/video_capture_host.h"
+#endif
 
 namespace content {
 class VideoCaptureHost;
@@ -34,10 +38,17 @@ public:
   void ReportStartScreenCapture();
   void ReportStopScreenCapture();
 #endif
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  void OnCameraCaptureStateChanged(CameraCaptureState new_state);
+  void OnCameraCaptureStarted(const VideoCaptureControllerID& controller_id);
+#endif
 
 private:
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
   GlobalRenderFrameHostId render_frame_host_id_;
+#endif
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  CameraCaptureState camera_state_ = CameraCaptureState::NONE;
 #endif
 };
 }

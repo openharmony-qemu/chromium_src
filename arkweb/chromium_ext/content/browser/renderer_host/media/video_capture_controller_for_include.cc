@@ -24,6 +24,9 @@ void VideoCaptureController::PauseClientBySessionId(
     return;
   }
 
+  if (client->event_handler) {
+    client->event_handler->OnCameraCaptureStateChanged(CameraCaptureState::PAUSED);
+  }
   client->paused = true;
 }
 
@@ -41,7 +44,9 @@ void VideoCaptureController::ResumeClientBySessionId(
     DVLOG(1) << "Calling resume on unpaused client";
     return;
   }
-
+  if (client->event_handler) {
+    client->event_handler->OnCameraCaptureStateChanged(CameraCaptureState::ACTIVE);
+  }
   client->paused = false;
 }
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)

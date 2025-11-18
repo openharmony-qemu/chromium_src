@@ -297,6 +297,11 @@ void VideoCaptureHost::OnStarted(
     return;
   }
 
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  if (implUtils) {
+    implUtils->OnCameraCaptureStarted(controller_id);
+  }
+#endif
   auto it = device_id_to_observer_map_.find(controller_id);
   if (it != device_id_to_observer_map_.end()) {
     it->second->OnStateChanged(media::mojom::VideoCaptureResult::NewState(
@@ -638,4 +643,11 @@ void VideoCaptureHost::ConnectClient(const base::UnguessableToken session_id,
       std::move(done_cb), browser_context);
 }
 
+#if BUILDFLAG(ARKWEB_WEBRTC)
+void VideoCaptureHost::OnCameraCaptureStateChanged(CameraCaptureState new_state) {
+  if (implUtils) {
+    implUtils->OnCameraCaptureStateChanged(new_state);
+  }
+}
+#endif
 }  // namespace content

@@ -19,6 +19,10 @@
 #include "content/public/browser/browser_thread.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
 #endif
+#if BUILDFLAG(ARKWEB_WEBRTC)
+#include "content/public/browser/web_contents.h"
+#include "content/public/browser/render_frame_host.h"
+#endif
 
 namespace content {
 
@@ -74,5 +78,43 @@ void VideoCaptureHostUtils::ReportStopScreenCapture() {
     ReportStopScreenCaptureBind(render_frame_host_id_.child_id);
 }
 // LCOV_EXCL_STOP
+#endif
+
+#if BUILDFLAG(ARKWEB_WEBRTC)
+void VideoCaptureHostUtils::OnCameraCaptureStateChanged(CameraCaptureState new_state) {
+    if (camera_state_ == new_state) {
+        return;
+    }
+    RenderFrameHost* host = RenderFrameHost::FromID(render_frame_host_id_);
+    if (!host) {
+        LOG(ERROR) << "host is null.";
+        return;
+    }
+    content::WebContents* webContent =
+        content::WebContents::FromRenderFrameHost(host);
+    if (webContent) {
+        webContent->OnCameraCaptureStateChanged(static_cast<int>(camera_state_),
+                                                static_cast<int>(new_state));
+        camera_state_ = new_state;
+    }
+}
+
+void VideoCaptureHostUtils::OnCameraCaptureStarted(
+    const VideoCaptureControllerID& controller_id) {
+    if(!videoCaptureHost){
+        LOG(ERROR) << "videoCaptureHost is null.";
+        return;
+    }
+    if (videoCaptureHost->controllers_.find(controller_id) ==
+        videoCaptureHost->controllers_.end()) {
+        LOG(INFO) <<" videoCaptureHost->controllers_ not found. controller_id:" << controller_id.ToString();   
+        return;
+    }
+    auto it = videoCaptureHost->controllers_.find(controller_id);
+    if (it->second->stream_type() ==
+        blink::mojom::MediaStreamType::DEVICE_VIDEO_CAPTURE) {
+        OnCameraCaptureStateChanged(CameraCaptureState::ACTIVE);
+    }
+}
 #endif
 }

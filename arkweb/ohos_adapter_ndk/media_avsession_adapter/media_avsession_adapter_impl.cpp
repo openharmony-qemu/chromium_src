@@ -413,7 +413,13 @@ bool MediaAVSessionAdapterImpl::UpdateDuration(const std::shared_ptr<MediaAVSess
         return false;
     }
     if (duration_ != position->GetDuration()) {
-        AVMetadata_Result ret = OH_AVMetadataBuilder_SetDuration(builder_, position->GetDuration());
+        AVMetadata_Result ret = AVMETADATA_SUCCESS;
+        if (position->GetDuration() < INT64_MAX) {
+            ret = OH_AVMetadataBuilder_SetDuration(builder_, position->GetDuration());
+        } else {
+            ret = OH_AVMetadataBuilder_SetDuration(builder_, -1);
+        }
+        
         if (ret != AVMETADATA_SUCCESS) {
             WVLOG_E("UpdateDuration failed. ret: %{public}d", ret);
             return false;

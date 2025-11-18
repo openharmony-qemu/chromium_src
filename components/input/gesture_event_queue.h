@@ -143,6 +143,10 @@ class COMPONENT_EXPORT(INPUT) GestureEventQueue {
 
   bool IsFlingActiveForTest() { return FlingInProgressForTest(); }
 
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  void SetFocusWebId(int32_t nweb_id);
+#endif
+
  private:
   friend class GestureEventQueueTest;
   friend class MockRenderWidgetHost;

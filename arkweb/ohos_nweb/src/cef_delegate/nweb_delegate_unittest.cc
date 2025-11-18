@@ -365,4 +365,12 @@ TEST_F(NWebDelegateTest, OnTextSelected) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+TEST_F(NWebDelegateTest, SetFocusWebId) {
+  ASSERT_NE(nweb_delegate_, nullptr);
+  int32_t nweb_id = 1;
+  nweb_delegate_->SetFocusWebId(nweb_id);
+}
+#endif
+
 }  // namespace OHOS::NWeb

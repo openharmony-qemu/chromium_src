@@ -47,6 +47,9 @@ namespace input {
 #if BUILDFLAG(ARKWEB_D_VSYNC)
 std::atomic<int> FlingController::instance_count_ = 0;
 #endif
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+int32_t focus_nweb_id_ = 0;
+#endif
 
 #if BUILDFLAG(ARKWEB_FLING)
 FlingController::~FlingController() {
@@ -138,7 +141,7 @@ void FlingController::StartWebPageFling() {
   LOG(DEBUG) << "start web page fling";
   if (auto* host = content::GpuProcessHost::Get()) {
     if (auto* host_impl = host->gpu_host()) {
-      host_impl->StartMonitor();
+      host_impl->StartMonitor(focus_nweb_id_);
       TRACE_EVENT0("input", "DynamicFrameLossEvent Start");
       content::GetUIThreadTaskRunner({})->PostTask(
           FROM_HERE, base::BindOnce(&FlingController::DynamicFrameLossEvent,
@@ -242,6 +245,12 @@ void FlingController::StopWebPageFling() {
   }
   TRACE_EVENT0("input", "EndCurrentFling::SetNeedDVsync=false, reason=EndCurrentFling");
 #endif
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+void FlingController::SetFocusWebId(int32_t nweb_id) {
+  focus_nweb_id_ = nweb_id;
 }
 #endif
 }

@@ -32,5 +32,8 @@
 #if BUILDFLAG(IS_ARKWEB)
   void StopWebPageFling();
 #endif
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  void SetFocusWebId(int32_t nweb_id);
+#endif
 
 #endif

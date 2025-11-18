@@ -156,6 +156,8 @@ class ArkOhosAdapterHelperWrapper : public NWeb::OhosAdapterHelper {
 
   std::unique_ptr<NWeb::NetEventAdapter> CreateNetEventAdapter() override;
 
+  NWeb::HiAppeventAdapter& GetHiAppeventAdapterInstance() override;
+
  private:
   ArkWebRefPtr<ArkOhosAdapterHelper> ctocpp_;
 };

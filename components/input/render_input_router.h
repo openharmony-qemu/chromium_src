@@ -205,6 +205,10 @@ class COMPONENT_EXPORT(INPUT) RenderInputRouter
   void SetInputTargetClientForTesting(
       mojo::Remote<viz::mojom::InputTargetClient> input_target_client);
 
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  void SetFocusWebId(int32_t nweb_id);
+#endif
+
  private:
   friend content::MockRenderInputRouter;
 

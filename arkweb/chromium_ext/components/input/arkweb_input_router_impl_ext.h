@@ -51,6 +51,10 @@ class COMPONENT_EXPORT(INPUT) ArkwebInputRouterImplExt : public InputRouterImpl 
   void SetBypassVsyncCondition(int32_t condition) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  void SetFocusWebId(int32_t nweb_id) override;
+#endif
+
  private:
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
   void DynamicFrameLossEvent(const std::string& sceneId, bool isStart) override;

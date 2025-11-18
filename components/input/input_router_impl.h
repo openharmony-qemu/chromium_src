@@ -133,6 +133,10 @@ class COMPONENT_EXPORT(INPUT) InputRouterImpl
 
   bool IsFlingActiveForTest();
 
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  void SetFocusWebId(int32_t nweb_id) override {}
+#endif
+
  private:
   friend class content::InputRouterImplTest;
   friend class content::InputRouterImplTestBase;

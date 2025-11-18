@@ -2839,7 +2839,9 @@ void NWebImpl::OnFocus(const FocusReason& focusReason) {
     LOG(ERROR) << "nweb_delegate_ is nullptr.";
     return;
   }
-
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  nweb_delegate_->SetFocusWebId(nweb_id_);
+#endif
   if (nweb_delegate_->IsCustomKeyboard()) {
     LOG(INFO) << "WebCustomKeyboard NWebImpl::OnFocus";
     nweb_delegate_->GetCustomKeyboardHandler()->AttachFromWebStateChange(

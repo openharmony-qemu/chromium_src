@@ -69,7 +69,7 @@ class TestGpuService : public viz::mojom::GpuService {
   void ReportSlidingFrameRate(int32_t frame_rate) override {}
   void SetLTPOStrategy(int32_t strategy) override {}
   void DumpGpuInfo(DumpGpuInfoCallback callback) override {}
-  void StartMonitor() override {}
+  void StartMonitor(int32_t nweb_id) override {}
   void StopMonitor() override {}
   void SetIsFling(bool is_fling_enabled) override {}
   void SetIsScroll(bool is_scroll_enabled) override {}

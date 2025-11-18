@@ -45,15 +45,17 @@ TEST_F(DynamicFrameLossMonitorTest, GetInstance) {
 }
 
 TEST_F(DynamicFrameLossMonitorTest, StartMonitor_001) {
+  int32_t nweb_id = 1;
   dynamic_frame->is_monitoring_ = false;
-  dynamic_frame->StartMonitor();
+  dynamic_frame->StartMonitor(nweb_id);
   EXPECT_TRUE(dynamic_frame->is_monitoring_);
 }
 
 TEST_F(DynamicFrameLossMonitorTest, StartMonitor_002) {
+  int32_t nweb_id = 1;
   dynamic_frame->is_monitoring_ = false;
-  dynamic_frame->StartMonitor();
-  EXPECT_TRUE(dynamic_frame->is_monitoring_);
+  dynamic_frame->StartMonitor(nweb_id);
+  EXPECT_EQ(dynamic_frame->current_nweb_id_, nweb_id);
 }
 
 TEST_F(DynamicFrameLossMonitorTest, StopMonitor_001) {
@@ -162,9 +164,15 @@ TEST_F(DynamicFrameLossMonitorTest, OnSwapBuffer_004) {
   EXPECT_NE(24, dynamic_frame->max_app_frametime_);
 }
 
-TEST_F(DynamicFrameLossMonitorTest, Report_001) {
+TEST_F(DynamicFrameLossMonitorTest, ReportToHiAppEvent_001) {
+  dynamic_frame->max_app_frametime_ = 0;
+  dynamic_frame->ReportToHiAppEvent();
+  EXPECT_EQ(0, dynamic_frame->max_app_frametime_);
+}
+
+TEST_F(DynamicFrameLossMonitorTest, ReportToHiSysEvent_001) {
   dynamic_frame->total_app_missed_frames_ = 0;
-  dynamic_frame->Report();
+  dynamic_frame->ReportToHiSysEvent();
   EXPECT_EQ(0, dynamic_frame->total_app_missed_frames_);
 }
 

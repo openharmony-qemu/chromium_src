@@ -54,7 +54,6 @@
 #include "ui/gfx/buffer_format_util.h"
 #include "ui/gfx/buffer_types.h"
 #include "ui/gfx/color_space.h"
-#include "ui/gfx/gpu_memory_buffer.h"
 #include "arkweb/chromium_ext/gpu/ipc/service/shared_image_stub_ext.h"
 #include "arkweb/chromium_ext/gpu/ipc/service/image_decode_accelerator_stub_ext.h"
 
@@ -128,7 +127,7 @@ bool ImageDecodeAcceleratorStubExt::ProcessCompletedDecodeExt(mojom::ScheduleIma
 
   // Create an SkImage for each plane.
   const size_t num_planes =
-      completed_decode->handle.native_pixmap_handle.planes.size();
+      std::move(completed_decode->handle).native_pixmap_handle().planes.size();
   plane_sk_images.resize(num_planes);
   for (size_t plane = 0u; plane < num_planes; plane++) {
     gfx::Size plane_size = params.output_size;
@@ -137,8 +136,8 @@ bool ImageDecodeAcceleratorStubExt::ProcessCompletedDecodeExt(mojom::ScheduleIma
     // plane.
     gfx::GpuMemoryBufferHandle plane_handle;
     plane_handle.type = completed_decode->handle.type;
-    plane_handle.native_pixmap_handle.planes.push_back(
-        std::move(completed_decode->handle.native_pixmap_handle.planes[plane]));
+    std::move(plane_handle).native_pixmap_handle().planes.push_back(
+        std::move(std::move(completed_decode->handle).native_pixmap_handle().planes[plane]));
 
     // TODO: Right now, we only support RGBA8888 for the output of the decoder,
     // We need to support NV12 next.

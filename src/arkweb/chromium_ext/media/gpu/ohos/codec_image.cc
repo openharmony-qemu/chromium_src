@@ -14,6 +14,7 @@
 #include <memory>
 
 #include "base/functional/callback_helpers.h"
+#include "base/trace_event/trace_event.h"
 #include "gpu/command_buffer/service/gles2_cmd_decoder.h"
 #include "gpu/command_buffer/service/texture_manager.h"
 #include "gpu/config/gpu_finch_features.h"

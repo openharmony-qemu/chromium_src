@@ -5,6 +5,7 @@
 #include "gpu/command_buffer/service/shared_image/skia_vk_hw_video_native_buffer_image_representation.h"
 #include <utility>
 
+#include "base/trace_event/trace_event.h"
 #include "components/viz/common/gpu/vulkan_context_provider.h"
 #include "components/viz/common/resources/shared_image_format_utils.h"
 #include "gpu/command_buffer/common/shared_image_usage.h"
@@ -92,8 +93,7 @@ std::vector<sk_sp<SkSurface>> SkiaVkHWVideoNBImageRepresentation::BeginWriteAcce
 
   if (!surface_ || final_msaa_count != surface_msaa_count_ ||
       surface_props != surface_->props()) {
-    SkColorType sk_color_type = viz::ToClosestSkColorType(
-        true /*gpu_compositing=*/, format());
+    SkColorType sk_color_type = viz::ToClosestSkColorType(format());
     surface_ = SkSurfaces::WrapBackendTexture(
         gr_context, promise_texture_->backendTexture(), surface_origin(),
         final_msaa_count, sk_color_type, color_space().ToSkColorSpace(),

@@ -20,7 +20,7 @@
 #include "base/memory/raw_ptr.h"
 #include "ui/native_theme/native_theme.h"
 #include "ui/native_theme/native_theme_aura.h"
-#include "ui/native_theme/overlay_scrollbar_constants_aura.h"
+#include "ui/native_theme/overlay_scrollbar_constants.h"
 
 namespace ui {
 class NativeTheme;

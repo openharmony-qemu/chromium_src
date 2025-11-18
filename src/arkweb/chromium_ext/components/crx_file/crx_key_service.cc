@@ -55,7 +55,7 @@ void CrxKeyService::SetPublisherKeys(
     if (crx2_public_key_.empty()) {
       crx2_public_key_ = key;
     }
-    auto hash_array = crypto::SHA256Hash(base::as_bytes(base::make_span(key)));
+    auto hash_array = crypto::SHA256Hash(base::as_byte_span(key));
     std::vector<uint8_t> hash_vector(hash_array.begin(), hash_array.end());
     crx3_public_key_hashes_.push_back(hash_vector);
   }

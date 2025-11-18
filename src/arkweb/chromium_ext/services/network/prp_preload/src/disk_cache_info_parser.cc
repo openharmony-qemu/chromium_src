@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "arkweb/chromium_ext/services/network/prp_preload/src/disk_cache_info_parser.h"
+#include "base/logging.h"
 
 namespace ohos_prp_preload {
 using SetParamToJsonFunc = void (*)(const std::shared_ptr<PRRequestInfo>& info,
@@ -201,7 +202,7 @@ void DiskCacheInfoParser::SetAcceptedStreamTypesToJson(
     const std::shared_ptr<PRRequestInfo>& info,
     const std::string& param_name,
     base::Value::Dict& dict) {
-  std::optional<base::flat_set<net::SourceStream::SourceType>> accepted_stream_types =
+  std::optional<base::flat_set<net::SourceStreamType>> accepted_stream_types =
     info->accepted_stream_types();
   if (accepted_stream_types.has_value()) {
     base::Value::List accepted_stream_types_list;
@@ -220,10 +221,10 @@ bool DiskCacheInfoParser::GetAcceptedStreamTypesFromJson(
   const base::Value::List* accepted_stream_types_list =
       json.GetDict().FindList(param_name);
   if (accepted_stream_types_list != nullptr) {
-    std::vector<net::SourceStream::SourceType> accepted_stream_types;
+    std::vector<net::SourceStreamType> accepted_stream_types;
     for (const auto& accepted_stream_type : *accepted_stream_types_list) {
       accepted_stream_types.push_back(
-          static_cast<net::SourceStream::SourceType>(
+          static_cast<net::SourceStreamType>(
               accepted_stream_type.GetInt()));
     }
     if (accepted_stream_types.size()) {
@@ -1127,8 +1128,9 @@ void DiskCacheInfoParser::SetStorageAccessStatusToJson(
     const std::string& param_name,
     base::Value::Dict& dict)
 {
-  if (info->storage_access_status().has_value()) {
-    dict.Set(param_name, static_cast<int>(info->storage_access_status().value()));
+  if (info->storage_access_status().IsSet()) {
+    auto status = info->storage_access_status().GetStatusForThirdPartyContext();
+    dict.Set(param_name, static_cast<int>(status.value()));
   }
 }
 
@@ -1151,7 +1153,8 @@ bool DiskCacheInfoParser::GetStorageAccessStatusFromJson(
     return false;
   }
   info->set_storage_access_status(
-      static_cast<net::cookie_util::StorageAccessStatus>(storage_access_status.value()));
+      net::StorageAccessStatusCache(
+        static_cast<net::cookie_util::StorageAccessStatus>(storage_access_status.value())));
   return true;
 }
 

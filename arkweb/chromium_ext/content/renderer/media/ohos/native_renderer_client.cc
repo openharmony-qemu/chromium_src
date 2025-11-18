@@ -89,9 +89,9 @@ void NativeRenderClient::OnFrameAvailable() {
   auto unique_frame = media::VideoFrame::WrapVideoFrame(
       frame, frame->format(), frame->visible_rect(), frame->natural_size());
 
-  LOG(DEBUG) << "NativeEmbed OnFrameAvailable frame:" << frame
+  LOG(DEBUG) << "NativeEmbed OnFrameAvailable frame:" << std::hash<void*>()(&frame)
              << ", coded_size:" << frame->coded_size().ToString()
-             << ",unique_frame:" << unique_frame;
+             << ",unique_frame:" << std::hash<void*>()(&unique_frame);
   sink_->PaintSingleFrame(std::move(unique_frame));
 }
 

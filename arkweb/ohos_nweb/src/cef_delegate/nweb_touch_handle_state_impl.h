@@ -32,6 +32,7 @@ class NWebTouchHandleStateImpl : public NWebTouchHandleState {
   bool IsEnable() override;
   float GetAlpha() override;
   float GetEdgeHeight() override;
+  bool IsDragging() override;
 
  private:
   CefTouchHandleState state_;

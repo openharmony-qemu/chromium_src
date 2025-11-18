@@ -91,6 +91,17 @@ class CC_EXPORT SurfaceLayer : public Layer {
   bool RequiresSetNeedsDisplayOnHdrHeadroomChange() const override;
   void SetLayerTreeHost(LayerTreeHost* host) override;
 
+#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
+  void OnLayerBoundsUpdate(const gfx::Rect& bounds) override;
+#endif // ARKWEB_VIDEO_ASSISTANT
+
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  void OnLayerRectVisibilityChange(bool visibility) override;
+  void ResetLayerRectUpdateCallback();
+  void ResetLayerRectVisibilityChangeCallback();
+  void CleanupVisibilityForRemovedLayer(bool visibility) override;
+#endif
+
   const viz::SurfaceId& surface_id() const {
     return surface_range_.Read(*this).end();
   }
@@ -119,17 +130,6 @@ class CC_EXPORT SurfaceLayer : public Layer {
       uint8_t dirty_flag,
       const CommitState& commit_state,
       const ThreadUnsafeCommitState& unsafe_state) override;
-
-#if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-  void OnLayerBoundsUpdate(const gfx::Rect& bounds) override;
-#endif // ARKWEB_VIDEO_ASSISTANT
-
-#if BUILDFLAG(ARKWEB_SAME_LAYER)
-  void OnLayerRectVisibilityChange(bool visibility) override;
-  void ResetLayerRectUpdateCallback();
-  void ResetLayerRectVisibilityChangeCallback();
-  void CleanupVisibilityForRemovedLayer(bool visibility) override;
-#endif
 
  private:
   ~SurfaceLayer() override;

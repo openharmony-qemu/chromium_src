@@ -9,6 +9,7 @@
 
 #include "media/filters/ffmpeg_glue.h"
 
+#include "base/logging.h"
 #include "base/check_op.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/no_destructor.h"

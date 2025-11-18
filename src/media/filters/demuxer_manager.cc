@@ -330,17 +330,6 @@ PipelineStatus DemuxerManager::CreateDemuxer(
     return DEMUXER_ERROR_COULD_NOT_OPEN;
   }
 
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-  if (should_create_custom_renderer) {
-    SetDemuxer(CreateMediaUrlDemuxer(false, std::move(headers)));
-    demuxer_->SetPreloadType(initial_preload);
-    demuxer_->SetMediaSourceType(media_source_type);
-    return std::move(on_demuxer_created)
-        .Run(demuxer_.get(), Pipeline::StartType::kNormal,
-             /*is_streaming = */ false,
-             /*is_static = */ false);
-  }
-#endif // ARKWEB_CUSTOM_VIDEO_PLAYER
 
   // We can only do a universal suspend for posters, unless the flag is enabled.
   auto suspended_mode = Pipeline::StartType::kSuspendAfterMetadataForAudioOnly;

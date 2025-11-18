@@ -108,7 +108,7 @@ if (!enable_arkweb) {
   arkweb_asan = false
   arkweb_autofill = false
   arkweb_background_color = true
-  arkweb_bfcache = false
+  arkweb_bfcache = true
   arkweb_bugfix_crash = true
   arkweb_ca = false
   arkweb_cache = false

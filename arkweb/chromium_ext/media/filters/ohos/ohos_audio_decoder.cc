@@ -339,12 +339,12 @@ void OHOSAudioDecoder::SetCdm(CdmContext* cdm_context, InitCB init_cb) {
   ohos_crypto_context_ = cdm_context->GetOHOSMediaCryptoContext();
 
   event_cb_registration_ = cdm_context->RegisterEventCB(base::BindRepeating(
-      &OHOSAudioDecoder::OnCdmContextEvent, weak_factory_.GetSafeRef()));
+      &OHOSAudioDecoder::OnCdmContextEvent, weak_factory_.GetWeakPtr()));
 
   ohos_crypto_context_->SetOHOSMediaCryptoReadyCB(
       base::BindPostTaskToCurrentDefault(
           base::BindOnce(&OHOSAudioDecoder::OnMediaCryptoReady,
-                         weak_factory_.GetSafeRef(), std::move(init_cb))));
+                         weak_factory_.GetWeakPtr(), std::move(init_cb))));
 }
 
 void OHOSAudioDecoder::OnCdmContextEvent(CdmContext::Event event) {
@@ -469,6 +469,11 @@ bool OHOSAudioDecoder::CreateOhosDecoderLoop() {
 // LCOV_EXCL_STOP
 
 void OHOSAudioDecoder::SetState(State new_state) {
+  if (!task_runner_->RunsTasksInCurrentSequence()) {
+    task_runner_->PostTask(
+        FROM_HERE, base::BindOnce(&OHOSAudioDecoder::SetState, weak_factory_.GetSafeRef(), new_state));
+    return;
+  }
   LOG(INFO)<< "OHOSAudioDecoder::SetState state_: " << static_cast<int32_t>(state_)
     << " new_state: " << static_cast<int32_t>(new_state);
   state_ = new_state;

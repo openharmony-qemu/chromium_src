@@ -17,6 +17,8 @@
 
 #include <cstdint>
 
+#include "base/logging.h"
+
 extern "C" {
 void fdsan_exchange_owner_tag(int fd,
                               uint64_t expected_tag,
@@ -35,6 +37,8 @@ static uint64_t ScopedFDToTag(const ScopedFD& owner) {
 void ScopedFDCloseTraits::Acquire(const ScopedFD& owner, int fd) {
   if (fdsan_exchange_owner_tag) {
     fdsan_exchange_owner_tag(fd, 0, ScopedFDToTag(owner));
+  } else {
+    LOG(ERROR) << "Acquire fdsan_exchange_owner_tag is unavailable";
   }
 }
 
@@ -42,6 +46,8 @@ void ScopedFDCloseTraits::Acquire(const ScopedFD& owner, int fd) {
 void ScopedFDCloseTraits::Release(const ScopedFD& owner, int fd) {
   if (fdsan_exchange_owner_tag) {
     fdsan_exchange_owner_tag(fd, ScopedFDToTag(owner), 0);
+  } else {
+    LOG(ERROR) << "Release fdsan_exchange_owner_tag is unavailable";
   }
 }
 }  // namespace internal

@@ -77,7 +77,7 @@ int HiLogAdapterConsoleLog(uint32_t level, const char* tag, const char* fmt, va_
     Format(fmtStr);
     char buffer[MAX_LENGTH];
     vsnprintf_s(buffer, MAX_LENGTH, MAX_LENGTH - 1, fmtStr.c_str(), ap);
-    return OH_LOG_Print(LOG_APP, LOG_LEVELS[level], LOG_CONSOLE_DOMAIN, tag, STD_FORMAT.c_str(), buffer);
+    return OH_LOG_Print(LOG_APP, LOG_LEVELS[level], LOG_CONSOLE_DOMAIN, tag, STD_FORMAT.c_str(), buffer, MAX_LENGTH);
 }
 }
 

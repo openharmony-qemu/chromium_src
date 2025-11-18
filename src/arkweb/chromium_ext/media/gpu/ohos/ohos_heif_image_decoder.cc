@@ -15,6 +15,7 @@
 
 #include "media/gpu/ohos/ohos_heif_image_decoder.h"
 
+#include "base/logging.h"
 #include "base/files/scoped_file.h"
 #include "base/posix/eintr_wrapper.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"

@@ -74,7 +74,7 @@ OHOSVideoEncodeAccelerator::GetSupportedProfiles() {
 }
 // LCOV_EXCL_STOP
 
-bool OHOSVideoEncodeAccelerator::Initialize(
+EncoderStatus OHOSVideoEncodeAccelerator::Initialize(
     const Config& config,
     Client* client,
     std::unique_ptr<MediaLog> media_log) {
@@ -93,7 +93,7 @@ bool OHOSVideoEncodeAccelerator::Initialize(
     mime_type = "video/avc";
     frame_input_count = 1;
   } else {
-    return false;
+    return EncoderStatus(EncoderStatus::Codes::kEncoderUnsupportedProfile);
   }
 
   frame_size_ = config.input_visible_size;
@@ -101,7 +101,7 @@ bool OHOSVideoEncodeAccelerator::Initialize(
   media_codec_ = OHOSMediaCodecBridgeImpl::CreateVideoEncoder(mime_type);
   if (!media_codec_) {
     LOG(ERROR) << "fail to create encoder";
-    return false;
+    return EncoderStatus(EncoderStatus::Codes::kEncoderInitializationError);
   }
 
   CodecConfigPara config_para;
@@ -114,22 +114,22 @@ bool OHOSVideoEncodeAccelerator::Initialize(
                               base::SequencedTaskRunner::GetCurrentDefault()) !=
       CodecCodeAdapter::OK) {
     LOG(ERROR) << "fail to set encoder config";
-    return false;
+    return EncoderStatus(EncoderStatus::Codes::kEncoderUnsupportedConfig);
   }
 
   if (media_codec_->CreateInputSurface() != CodecCodeAdapter::OK) {
     LOG(ERROR) << "fail to create input surface";
-    return false;
+    return EncoderStatus(EncoderStatus::Codes::kEncoderInitializationError);
   }
 
   if (media_codec_->Prepare() != CodecCodeAdapter::OK) {
     LOG(ERROR) << "fail to prepare encoder";
-    return false;
+    return EncoderStatus(EncoderStatus::Codes::kEncoderInitializationError);
   }
 
   if (media_codec_->Start() != CodecCodeAdapter::OK) {
     LOG(ERROR) << "fail to prepare encoder";
-    return false;
+    return EncoderStatus(EncoderStatus::Codes::kEncoderInitializationError);
   }
 
   const size_t output_buffer_capacity = VideoFrame::AllocationSize(
@@ -139,7 +139,7 @@ bool OHOSVideoEncodeAccelerator::Initialize(
       base::BindOnce(&VideoEncodeAccelerator::Client::RequireBitstreamBuffers,
                      client_ptr_factory_->GetWeakPtr(), frame_input_count,
                      config.input_visible_size, output_buffer_capacity));
-  return true;
+  return EncoderStatus::Codes::kOk;
 }
 
 // LCOV_EXCL_START

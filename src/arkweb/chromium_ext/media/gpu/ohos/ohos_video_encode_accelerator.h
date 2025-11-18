@@ -48,7 +48,7 @@ class MEDIA_GPU_EXPORT OHOSVideoEncodeAccelerator
 
   // VideoEncodeAccelerator implementation.
   VideoEncodeAccelerator::SupportedProfiles GetSupportedProfiles() override;
-  bool Initialize(const Config& config,
+  EncoderStatus Initialize(const Config& config,
                   Client* client,
                   std::unique_ptr<MediaLog> media_log) override;
   void Encode(scoped_refptr<VideoFrame> frame, bool force_keyframe) override;

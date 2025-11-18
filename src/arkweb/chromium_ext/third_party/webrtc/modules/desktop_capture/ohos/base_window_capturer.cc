@@ -200,9 +200,10 @@ void BaseWindowCapturer::HandleBuffer() {
   if (factory_) {
     uint32_t frame_size =
         static_cast<uint32_t>(width * height * DesktopFrame::kBytesPerPixel);
+    auto shared_memory = factory_->CreateSharedMemory(frame_size);
     current_frame = std::make_unique<webrtc::SharedMemoryDesktopFrame>(
         webrtc::DesktopSize(width, height), frameStride,
-        factory_->CreateSharedMemory(frame_size).release());
+        std::move(shared_memory));
   } else {
     current_frame =
         std::make_unique<BasicDesktopFrame>(DesktopSize(width, height));

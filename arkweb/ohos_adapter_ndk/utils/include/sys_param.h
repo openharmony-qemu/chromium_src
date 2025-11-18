@@ -131,7 +131,7 @@ typedef void *CachedHandle;
 static inline const char *CachedParameterGetChanged(CachedHandle handle, int *changed)
 {
     struct CachedParameter_ *param = (struct CachedParameter_ *)handle;
-    if (param == NULL) {
+    if (param == NULL || param->workspace == NULL || param->workspace->area == NULL) {
         return NULL;
     }
     // no change, do not to find

@@ -1121,6 +1121,15 @@
             ]
         },
         "includes": []
+    },
+    "qos": {
+        "apiList": {
+            "12": [
+                "int OH_QoS_SetThreadQoS(QoS_Level level);",
+                "int OH_QoS_ResetThreadQoS();"
+            ]
+        },
+        "includes": []
     }
 
 

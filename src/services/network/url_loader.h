@@ -195,7 +195,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) URLLoader
       std::shared_ptr<ohos_prp_preload::PRPPRequestLoader> prpp_loader,
       const std::string& org_main_url,
       std::shared_ptr<ohos_prp_preload::PRRequestInfo> preload_info,
-+#endif
+#endif
       SharedResourceChecker& shared_resource_checker,
       base::WeakPtr<DevtoolsDurableMessage> devtools_durable_message);
 

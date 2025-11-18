@@ -163,7 +163,8 @@ void OHOSCaptureDelegate::OnBufferAvailable(
     client_->OnIncomingCapturedData(
         buffer->GetBufferAddr(), buffer->GetSize(), capture_format_,
         gfx::ColorSpace(), rotation, roration_info->GetIsFlipY() /* flip_y */,
-        now, timestamp, /*frame_feedback_id=*/std::nullopt);
+        now, timestamp, std::nullopt /* capture_begin_timestamp */,
+        std::nullopt /* metadata */);
   } else {
     LOG(DEBUG) << "OnBufferAvailable client is nullptr";
   }

@@ -67,7 +67,6 @@ SurfaceLayer::SurfaceLayer(UpdateSubmissionStateCB update_submission_state_callb
     LayerRemovedVisibilityCallback layerRemovedCallback)
     : update_submission_state_callback_(
       std::move(update_submission_state_callback)),
-      may_contain_video_(false),
       deadline_in_frames_(0u),
       stretch_content_to_fill_bounds_(false),
       surface_hit_testable_(false),

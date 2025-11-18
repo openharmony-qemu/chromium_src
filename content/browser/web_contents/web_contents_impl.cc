@@ -3615,6 +3615,7 @@ const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences() {
     bool is_desktop = (AsWebContentsImplExt()->user_agent_.find("Mobile") ==
                        std::string::npos);
     prefs.viewport_meta_enabled = !is_desktop;
+    LOG(INFO) << "userAgent is not empty, set metaViewport: " << prefs.viewport_meta_enabled;
   } else {
     prefs.viewport_meta_enabled = true;
   }

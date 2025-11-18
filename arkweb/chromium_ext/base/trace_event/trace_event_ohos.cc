@@ -20,7 +20,8 @@
 #include <chrono>
 
 #include "base/logging.h"
-#include "ohos_adapter_helper.h"
+
+#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
 
 using OHOS::NWeb::OhosAdapterHelper;
 constexpr char DEBUG_CATEGORY[] = "disabled-";
@@ -45,7 +46,6 @@ class TraceObserver : public OHOS::NWeb::SystemPropertiesObserver {
   TraceObserver& operator=(const TraceObserver&) = delete;
 };
 
-// LOVC_EXCL_START
 void StartObserveTraceEnable() {
 // todo: check webview
 #if BUILDFLAG(IS_ARKWEB_EXT)

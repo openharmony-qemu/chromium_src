@@ -83,6 +83,7 @@ TEST_F(MojoRendererTest, IsAudio) {
   EXPECT_TRUE(mojo_renderer_->IsAudio());
   Destroy();
 }
+
 #endif
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)

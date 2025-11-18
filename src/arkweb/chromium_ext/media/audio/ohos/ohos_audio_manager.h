@@ -49,7 +49,7 @@ class MEDIA_EXPORT OHOSAudioManager : public AudioManagerBase {
   void ReleaseInputStream(AudioInputStream* stream) override;
   std::string GetSelectAudioDeviceId();
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
-  const char* GetName() override;
+  const std::string_view GetName() override;
 
   // Implementation of AudioManagerBase.
   AudioOutputStream* MakeLinearOutputStream(

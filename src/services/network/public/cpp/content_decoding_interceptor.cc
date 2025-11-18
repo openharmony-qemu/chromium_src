@@ -191,7 +191,17 @@ class Interceptor : public network::mojom::URLLoaderClient,
     completion_status_ = status;
     MaybeSendOnComplete();
   }
-
+#if BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
+    // URLLoaderClient implementation for shared memory data transfer
+    void OnTransferDataWithSharedMemory(base::ReadOnlySharedMemoryRegion region,
+                                       uint64_t buffer_size) override {
+      // Forward the shared memory data to the destination client
+      if (destination_url_loader_client_) {
+        destination_url_loader_client_->OnTransferDataWithSharedMemory(
+            std::move(region), buffer_size);
+      }
+    }
+#endif  // BUILDFLAG(ARKWEB_RESOURCE_INTERCEPTION)
   // network::mojom::URLLoader implementation
   void FollowRedirect(
       const std::vector<std::string>& removed_headers,

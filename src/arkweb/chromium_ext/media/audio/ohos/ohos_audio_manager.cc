@@ -159,7 +159,7 @@ void OHOSAudioManager::GetAudioInputDeviceNames(
 }
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
 
-const char* OHOSAudioManager::GetName() {
+const std::string_view OHOSAudioManager::GetName() {
   return AUDIO_MANAGER_NAME;
 }
 

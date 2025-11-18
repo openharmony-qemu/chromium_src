@@ -32,6 +32,9 @@ const char kNativeType[] = "native/";
 #endif
 
 WebPreferences::WebPreferences()
+#if BUILDFLAG(ARKWEB_COPY_OPTION) || BUILDFLAG(ARKWEB_INPUT_EVENTS) || BUILDFLAG(ARKWEB_SAME_LAYER) || \
+    BUILDFLAG(ARKWEB_CSS_FONT) || BUILDFLAG(ARKWEB_ZOOM) || BUILDFLAG(ARKWEB_EXT_FREE_COPY) || \
+    BUILDFLAG(ARKWEB_SCROLLBAR)
     :
 #if BUILDFLAG(ARKWEB_COPY_OPTION)
       copy_option(mojom::CopyOptionMode::CROSS_DEVICE),
@@ -59,9 +62,12 @@ WebPreferences::WebPreferences()
       contextmenu_customization_enabled(false),
 #endif  // BUILDFLAG(ARKWEB_EXT_FREE_COPY)
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
-      scrollbar_color(0),
+      scrollbar_color(0)
 #endif  // ARKWEB_SCROLLBAR
-      touch_drag_drop_enabled(IsTouchDragDropEnabled()) {
+#endif  // BUILDFLAG(ARKWEB_COPY_OPTION) || BUILDFLAG(ARKWEB_INPUT_EVENTS) || BUILDFLAG(ARKWEB_SAME_LAYER) || \
+          // BUILDFLAG(ARKWEB_CSS_FONT) || BUILDFLAG(ARKWEB_ZOOM) || BUILDFLAG(ARKWEB_EXT_FREE_COPY) || \
+          // BUILDFLAG(ARKWEB_SCROLLBAR)
+    {
   standard_font_family_map[web_pref::kCommonScript] = u"Times New Roman";
 #if BUILDFLAG(IS_MAC)
   fixed_font_family_map[web_pref::kCommonScript] = u"Menlo";

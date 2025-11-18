@@ -327,8 +327,13 @@ TransportSecurityState::PKPStatus TransportSecurityState::CheckPublicKeyPins(
     const std::vector<SHA256HashValue>& public_key_hashes) {
 #if BUILDFLAG(ARKWEB_NETWORK_BASE)
   HostPortPair host_port_pair = HostPortPair::FromString(host);
+  HashValueVector converted_hashes;
+  converted_hashes.reserve(public_key_hashes.size());
+  for (const auto& sha256_hash : public_key_hashes) {
+    converted_hashes.emplace_back(sha256_hash);
+  }
   return AsArkWebTransportSecurityStateExt()->CheckPublicKeyPinsOhos(
-      host_port_pair, public_key_hashes);
+      host_port_pair, converted_hashes);
 #endif  // BUILDFLAG(ARKWEB_NETWORK_BASE)
   // Perform pin validation only if the server actually has public key pins.
   if (!HasPublicKeyPins(host)) {

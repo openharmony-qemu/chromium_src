@@ -121,13 +121,15 @@ sk_sp<SkTypeface> SkTypeface_OHOS::onMakeClone(
   if (axisCount > 0) {
     SkFontScanner_FreeType fontScanner;
     SkFontScanner_FreeType::AxisDefinitions axisDefs;
+    SkFontScanner::VariationPosition current;
     if (!fontScanner.scanInstance(stream.get(), ttcIndex, 0, &info.familyName,
-                                  &info.style, &info.isFixedWidth, &axisDefs)) {
+                                  &info.style, &info.isFixedWidth, &axisDefs, &current)) {
       return nullptr;
     }
     if (axisDefs.size() > 0) {
       SkFixed axis[axisDefs.size()];
-      fontScanner.computeAxisValues(axisDefs, args.getVariationDesignPosition(),
+      const SkFontArguments::VariationPosition currentPos{current.data(), current.size()};
+      fontScanner.computeAxisValues(axisDefs, currentPos, args.getVariationDesignPosition(),
                                     axis, info.familyName, &info.style);
       info.setAxisSet(std::min(axisCount, axisDefs.size()), axis, axisDefs.data());
       info.style = info.computeFontStyle();

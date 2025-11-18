@@ -16,6 +16,7 @@
 #include "components/viz/service/display/frame_dump_copy_output_request.h"
 
 #include "base/logging.h"
+#include "base/no_destructor.h"
 #include "components/viz/common/frame_sinks/copy_output_request.h"
 #include "components/viz/common/frame_sinks/copy_output_result.h"
 #include "components/viz/common/frame_sinks/copy_output_util.h"
@@ -26,9 +27,21 @@
 namespace viz {
 
 namespace {
-const std::string DUMP_FILE_PATH = "/data/storage/el2/base/haps/entry/files/";
-const std::string DUMP_FILE_PRE = "web_frame_";
-const std::string DUMP_FILE_TYPE = ".png";
+const std::string& GetDumpFilePath() {
+  static base::NoDestructor<std::string> dump_file_path("/data/storage/el2/base/haps/entry/files/");
+  return *dump_file_path;
+}
+
+const std::string& GetDumpFilePre() {
+  static base::NoDestructor<std::string> dump_file_pre("web_frame_");
+  return *dump_file_pre;
+}
+
+const std::string& GetDumpFileType() {
+  static base::NoDestructor<std::string> dump_file_type(".png");
+  return *dump_file_type;
+}
+
 const int MAX_DUMP_FRAME_SIZE = 1000;
 }  // namespace
 
@@ -41,16 +54,16 @@ FrameDumpCopyOutputRequest::FrameDumpCopyOutputRequest(
           base::BindOnce([](std::unique_ptr<CopyOutputResult> result) {
             uint64_t dump_frame_id =
                 result->DumpFrameId() % MAX_DUMP_FRAME_SIZE;
-            std::string dump_frame_path = DUMP_FILE_PATH;
+            std::string dump_frame_path = GetDumpFilePath();
             std::string debug_dump_path = result->DumpFramePath();
             if (!(debug_dump_path.empty())) {
               dump_frame_path = debug_dump_path;
             }
             std::string filename;
             filename.append(dump_frame_path);
-            filename.append(DUMP_FILE_PRE);
+            filename.append(GetDumpFilePre());
             filename.append(std::to_string(dump_frame_id));
-            filename.append(DUMP_FILE_TYPE);
+            filename.append(GetDumpFileType());
             SkFILEWStream file(filename.c_str());
             SkBitmap bitmap = result->ScopedAccessSkBitmap().bitmap();
             SkPngEncoder::Options opts;

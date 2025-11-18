@@ -12,7 +12,9 @@
 #include <sys/poll.h>
 
 #include "base/logging.h"
+#include "base/notimplemented.h"
 #include "base/task/bind_post_task.h"
+#include "base/trace_event/trace_event.h"
 #include "components/viz/common/gpu/vulkan_context_provider.h"
 #include "gpu/command_buffer/common/shared_image_usage.h"
 #include "gpu/command_buffer/service/abstract_texture_ohos.h"

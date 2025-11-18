@@ -36,14 +36,6 @@ base::TimeDelta ComputeAdpfTarget(const BeginFrameArgs& args) {
   return base::Milliseconds(12);
 }
 
-bool DrawImmediatelyWhenInteractive() {
-#if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-  if (!base::ohos::IsPcDevice() && !base::ohos::IsTabletDevice())
-    return false;
-#endif
-  return features::ShouldDrawImmediatelyWhenInteractive();
-}
-
 bool AdpfCanUseSetThreads() {
 #if BUILDFLAG(IS_ANDROID)
   return android_get_device_api_level() >= __ANDROID_API_U__ &&

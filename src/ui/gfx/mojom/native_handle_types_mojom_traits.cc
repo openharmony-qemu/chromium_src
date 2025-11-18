@@ -224,6 +224,11 @@ gfx::mojom::GpuMemoryBufferPlatformHandleDataView::Tag UnionTraits<
     case gfx::ANDROID_HARDWARE_BUFFER:
       return Tag::kAndroidHardwareBufferHandle;
 #endif  // BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(ARKWEB_VULKAN)
+    case gfx::OHOS_NATIVE_BUFFER:
+      // TODO: Implement proper OHOS native buffer handle serialization
+      return Tag::kSharedMemoryHandle;  // Temporary fallback
+#endif  // BUILDFLAG(ARKWEB_VULKAN)
   }
   NOTREACHED();
 }

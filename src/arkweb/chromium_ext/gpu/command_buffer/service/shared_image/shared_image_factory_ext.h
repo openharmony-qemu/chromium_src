@@ -21,7 +21,7 @@
 #include "gpu/ipc/common/surface_handle.h"
 #include "ui/gfx/buffer_types.h"
 #include "ui/gfx/gpu_extra_info.h"
-#include "ui/gfx/gpu_memory_buffer.h"
+#include "ui/gfx/gpu_memory_buffer_handle.h"
 #include "ui/gl/gl_bindings.h"
 
 #include "gpu/command_buffer/service/shared_image/shared_image_factory.h"

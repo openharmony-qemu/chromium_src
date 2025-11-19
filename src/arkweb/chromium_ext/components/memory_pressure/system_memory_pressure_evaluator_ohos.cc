@@ -9,7 +9,7 @@ namespace ohos {
 
 // FIXME: Specific functions will be adapted later.
 bool SystemMemoryPressureEvaluator::GetSystemMemoryInfo(
-    base::SystemMemoryInfoKB* mem_info) {
+    base::SystemMemoryInfo* mem_info) {
   return base::GetSystemMemoryInfo(mem_info);
 }
 

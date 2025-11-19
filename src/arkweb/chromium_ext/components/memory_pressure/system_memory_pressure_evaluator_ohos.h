@@ -19,7 +19,7 @@ class SystemMemoryPressureEvaluator
  protected:
   // This is just a wrapper for base:: function;
   // declared as virtual for unit testing
-  virtual bool GetSystemMemoryInfo(base::SystemMemoryInfoKB* mem_info);
+  virtual bool GetSystemMemoryInfo(base::SystemMemoryInfo* mem_info);
 };
 
 }  // namespace ohos

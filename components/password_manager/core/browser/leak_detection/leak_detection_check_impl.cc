@@ -296,12 +296,15 @@ void LeakDetectionCheckImpl::DoLeakRequest(
   payload_helper_.reset();
   encryption_key_ = std::move(data.encryption_key);
   request_ = network_request_factory_->CreateNetworkRequest();
+
+#if !BUILDFLAG(IS_OHOS)
   request_->LookupSingleLeak(
       url_loader_factory.get(), access_token, api_key, std::move(data.payload),
       TimeCallback(
           base::BindOnce(&LeakDetectionCheckImpl::OnLookupSingleLeakResponse,
                          weak_ptr_factory_.GetWeakPtr()),
           "PasswordManager.LeakDetection.ReceiveSingleLeakResponseTime"));
+#endif
 }
 
 void LeakDetectionCheckImpl::OnLookupSingleLeakResponse(

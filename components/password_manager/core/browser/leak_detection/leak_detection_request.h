@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 
+#include "build/build_config.h"
 #include "components/password_manager/core/browser/leak_detection/leak_detection_request_factory.h"
 #include "components/password_manager/core/browser/leak_detection/leak_detection_request_utils.h"
 
@@ -35,8 +36,13 @@ class LeakDetectionRequest : public LeakDetectionRequestInterface {
     kMaxValue = kParseError
   };
 
+#if BUILDFLAG(IS_OHOS)
+  static constexpr char kLookupSingleLeakEndpoint[] =
+      "https://xxx";
+#else
   static constexpr char kLookupSingleLeakEndpoint[] =
       "https://passwordsleakcheck-pa.googleapis.com/v1/leaks:lookupSingle";
+#endif
 
   LeakDetectionRequest();
   ~LeakDetectionRequest() override;

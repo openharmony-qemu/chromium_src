@@ -126,7 +126,7 @@ class UnboundWidgetInputHandler : public blink::mojom::WidgetInputHandler {
   void AttachSoftwareCompositorOhos(
     mojo::PendingReceiver<blink::mojom::SoftwareCompositorOhos>
         compositor_request) override {
-    NOTREACHED_IN_MIGRATION() << "Input request on unbound interface";
+    NOTREACHED() << "Input request on unbound interface";
   }
 #endif
 

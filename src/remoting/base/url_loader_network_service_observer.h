@@ -42,6 +42,8 @@ class UrlLoaderNetworkServiceObserver
                              int net_error,
                              const net::SSLInfo& ssl_info,
                              bool fatal,
+                             const GURL& origin_url,
+                             const std::string& referrer,
                              OnSSLCertificateErrorCallback response) override;
   void OnCertificateRequested(
       const std::optional<base::UnguessableToken>& window_id,

@@ -6,6 +6,7 @@
 
 #include "base/base_paths.h"
 #include "base/files/file_util.h"
+#include "base/notimplemented.h"
 #include "base/path_service.h"
 #include "base/strings/string_util.h"
 #include "build/branding_buildflags.h"

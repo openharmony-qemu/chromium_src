@@ -552,6 +552,7 @@ TEST_F(NWebHandlerDelegateTest, OnFileDialog) {
   std::vector<CefString> accept_extensions;
   std::vector<CefString> accept_descriptions;
   std::vector<CefString> mime_filters;
+  CefString accepts = u"";
   CefString start_in = u"";
   bool is_exclude_accept_all_options = false;
   bool capture = false;
@@ -560,7 +561,7 @@ TEST_F(NWebHandlerDelegateTest, OnFileDialog) {
 
   EXPECT_FALSE(delegate->OnFileDialog(browser_, FILE_DIALOG_OPEN, title,
                                       default_path, accept_filters, accept_extensions,
-                                      accept_descriptions, start_in, is_exclude_accept_all_options,
+                                      accept_descriptions, accepts, start_in, is_exclude_accept_all_options,
                                       capture, mime_filters, callback));
 }
 

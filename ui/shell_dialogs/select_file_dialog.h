@@ -141,6 +141,13 @@ class SHELL_DIALOGS_EXPORT SelectFileDialog
 
 #if BUILDFLAG(ARKWEB_FILE_UPLOAD)
     std::u16string start_in = u"";
+
+    struct AcceptFileType {
+      std::string mime_type;
+      std::vector<std::string> accept_type;
+    };
+
+    std::vector<std::vector<AcceptFileType>> accepts;
 #endif
 
     // Some implementations by default hide the extension of a file, in

@@ -15,16 +15,4 @@
 
 namespace media {
 
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-void InterfaceFactoryImpl::CreateCustomMediaPlayerRenderer(
-    mojo::PendingRemote<mojom::CustomMediaPlayerRendererClientExtension>
-        client_extension_ptr,
-    mojo::PendingReceiver<mojom::Renderer> receiver,
-    mojo::PendingReceiver<mojom::MediaPlayerRendererExtension>
-        renderer_extension_receiver,
-    int player_id) {
-  NOTREACHED();
-}
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
-
 }  // namespace media

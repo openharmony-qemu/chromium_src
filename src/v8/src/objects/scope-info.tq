@@ -87,9 +87,6 @@ bitfield struct ScopeFlags extends uint32 {
   is_empty: bool: 1 bit;
   is_wrapped_function: bool: 1 bit;
   has_context_cells: bool: 1 bit;
-  @if(OHOS_JS_ENGINE)
-  has_never_hide_base_std_hint: bool: 1 bit;
-  @end
 }
 
 struct PositionInfo {

@@ -1092,7 +1092,8 @@ void PasteBoardNotify(void* context, Pasteboard_NotifyType type)
     size_t callbackIndex = reinterpret_cast<size_t>(context);
     std::shared_ptr<PasteBoardCallback> pasteBoardCallback =
         PasteBoardClientAdapterImpl::callbackWrapper_.GetCallback(callbackIndex);
-    pasteBoardCallback->callback->OnPasteboardChanged();
+    if (pasteBoardCallback && pasteBoardCallback->callback)
+        pasteBoardCallback->callback->OnPasteboardChanged();
 }
 
 void PasteBoardFinalize(void* context)

@@ -17,7 +17,7 @@ namespace ui {
 using FileUrlMap = std::unordered_map<std::string, base::File>;
 class ClipboardOhosReadData {
  public:
-  ClipboardOhosReadData(OHOS::NWeb::PasteRecordVector& record_vector);
+  explicit ClipboardOhosReadData(OHOS::NWeb::PasteRecordVector& record_vector);
 
   std::unordered_map<std::string, base::File>& GetFileMap() {
     return file_map_;

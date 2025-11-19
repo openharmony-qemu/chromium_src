@@ -1,7 +1,7 @@
 # Chromium
 ## 简介
 ### 软件架构
-![image.png](https://raw.gitcode.com/user-images/assets/4371737/24369285-e967-4433-95ae-ecede62b7326/image.png 'image.png')
+![image.png](https://raw.gitcode.com/user-images/assets/4371737/71f65bf3-20bf-4c4b-a255-e385c5f75ba7/image.png 'image.png')
 
 架构图中CEF、ArkWeb仓和当前仓Chromium联合编译出Web内核，编译产物为NWeb.hap，通过二进制集成在OpenHarmony系统中。
 

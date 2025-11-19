@@ -831,7 +831,7 @@ export default class LayoutUtils{
         }
 
         // 2. 只要值不为 'none' 就触发的属性列表
-        const nonNoneProperties = [
+        const propertiesToCheck: (keyof CSSStyleDeclaration)[] = [
             'transform',
             'filter',
             'backdropFilter',
@@ -841,7 +841,7 @@ export default class LayoutUtils{
             'maskImage'
         ];
 
-        return nonNoneProperties.some(prop => style[prop] !== 'none');
+        return propertiesToCheck.some(prop => style[prop] !== 'none');
     }
 
     /**
@@ -935,7 +935,7 @@ export default class LayoutUtils{
     /**
      * 辅助方法：比较两个不同的兄弟层叠上下文
      */
-    private static compareSiblingContexts(ctxA: any, ctxB: any): number {
+    private static compareSiblingContexts(ctxA: StackingContextInfo, ctxB: StackingContextInfo): number {
         // 1. 优先比较 z-index 数值
         if (ctxA.zIndex > ctxB.zIndex) {
             Log.d(`'🔼 节点A在上' (zA=${ctxA.zIndex}, zB=${ctxB.zIndex})`, Tag.layoutUtils);

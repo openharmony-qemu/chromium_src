@@ -2531,6 +2531,15 @@ class CONTENT_EXPORT RenderFrameHostImpl
       uint32_t line_no,
       const std::optional<std::u16string>& source_id,
       const std::optional<std::u16string>& untrusted_stack_trace) override;
+#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+  void DidAddMessageToConsoleV2(
+      blink::mojom::ConsoleMessageLevel log_level,
+      blink::mojom::ConsoleMessageSource log_source,
+      const std::u16string& message,
+      uint32_t line_no,
+      const std::optional<std::u16string>& source_id,
+      const std::optional<std::u16string>& untrusted_stack_trace) override;
+#endif
   void FrameSizeChanged(const gfx::Size& frame_size) override;
   void DidChangeSrcDoc(const blink::FrameToken& child_frame_token,
                        const std::string& srcdoc_value) override;

@@ -25,6 +25,7 @@ class NWebConsoleLogImpl : public NWebConsoleLog {
   NWebConsoleLogImpl(int line_number,
                      std::string message,
                      NWebConsoleLogLevel log_level,
+                     NWebConsoleLogSource log_source,
                      std::string sourceId);
   ~NWebConsoleLogImpl() = default;
 
@@ -56,11 +57,20 @@ class NWebConsoleLogImpl : public NWebConsoleLog {
    */
   std::string SourceId() override;
 
+  /**
+   * @brief Get console log source
+   *
+   * @retval source
+   */
+  NWebConsoleLog::NWebConsoleLogSource Source() override;
+
  private:
   int line_number_ = 0;
   std::string log_;
   NWebConsoleLog::NWebConsoleLogLevel log_level_ =
       NWebConsoleLog::NWebConsoleLogLevel::UNKNOWN;
+  NWebConsoleLog::NWebConsoleLogSource log_source_ =
+      NWebConsoleLog::NWebConsoleLogSource::OTHER;
   std::string sourceId_;
 };
 

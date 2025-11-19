@@ -560,6 +560,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                               bool precomposed) override;
   bool OnConsoleMessage(CefRefPtr<CefBrowser> browser,
                         cef_log_severity_t level,
+                        int sourceType,
                         const CefString& message,
                         const CefString& source,
                         int line) override;

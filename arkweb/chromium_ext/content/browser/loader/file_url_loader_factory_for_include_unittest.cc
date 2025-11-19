@@ -14,8 +14,6 @@
  */
 
 #include "arkweb/build/features/features.h"
-// #include "arkweb/chromium_ext/base/base_switches_for_include.h"
-// #include "arkweb/chromium_ext/content/public/common/content_switches_ext.h"
 #include "arkweb/ohos_adapter_ndk/hiviewdfx_adapter/hitrace_adapter_impl.h"
 #include "arkweb/ohos_adapter_ndk/interfaces/mock/mock_ohos_adapter_helper.h"
 #include "base/base_switches.h"

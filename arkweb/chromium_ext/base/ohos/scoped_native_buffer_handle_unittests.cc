@@ -31,7 +31,8 @@ public:
   MOCK_METHOD(int, FreeEGLBuffer, (void* eglBuffer), (override));
   MOCK_METHOD(int, NativeBufferFromNativeWindowBuffer, (void* nativeWindowBuffer, void** nativeBuffer), (override));
   MOCK_METHOD(uint32_t, GetSeqNum, (void* nativeBuffer), (override));
-  MOCK_METHOD(void, Allocate, (const std::shared_ptr<NativeBufferConfigAdapter> bufferConfig, void** outBuffer), (override));
+  MOCK_METHOD(void, Allocate, (
+      const std::shared_ptr<NativeBufferConfigAdapter> bufferConfig, void** outBuffer), (override));
   MOCK_METHOD(void, Describe, (std::shared_ptr<NativeBufferConfigAdapter> bufferConfig, void* buffer), (override));
   MOCK_METHOD(int, Lock, (void* buffer, uint64_t usage, int32_t fence, void** out_virtual_address), (override));
   MOCK_METHOD(int, RecvHandleFromUnixSocket, (int socketFd, void** outBuffer), (override));

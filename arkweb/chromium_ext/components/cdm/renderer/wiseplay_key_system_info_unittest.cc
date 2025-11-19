@@ -35,9 +35,12 @@ const base::flat_set<CdmSessionType> kTestHwSecureSessionTypes = {
     CdmSessionType::kTemporary};
 const base::flat_set<CdmSessionType> kEmptySessionTypes = {};
 
-constexpr WiseplayKeySystemInfo::Robustness kTestMaxAudioRobustness = WiseplayKeySystemInfo::Robustness::HW_SECURE_CRYPTO;
-constexpr WiseplayKeySystemInfo::Robustness kTestMaxVideoRobustness = WiseplayKeySystemInfo::Robustness::HW_SECURE_ALL;
-constexpr WiseplayKeySystemInfo::Robustness kMinRobustness = WiseplayKeySystemInfo::Robustness::SW_SECURE_CRYPTO;
+constexpr WiseplayKeySystemInfo::Robustness kTestMaxAudioRobustness =
+    WiseplayKeySystemInfo::Robustness::HW_SECURE_CRYPTO;
+constexpr WiseplayKeySystemInfo::Robustness kTestMaxVideoRobustness =
+    WiseplayKeySystemInfo::Robustness::HW_SECURE_ALL;
+constexpr WiseplayKeySystemInfo::Robustness kMinRobustness =
+    WiseplayKeySystemInfo::Robustness::SW_SECURE_CRYPTO;
 
 class WiseplayKeySystemInfoTest : public testing::Test {
  protected:
@@ -143,18 +146,12 @@ TEST_F(WiseplayKeySystemInfoTest, GetSupportedHwSecureCodecs) {
 }
 
 TEST_F(WiseplayKeySystemInfoTest, GetRobustnessConfigRule) {
-  // Test ConvertRobustness paths
-  // Empty robustness
   EXPECT_EQ(key_system_info_.GetRobustnessConfigRule(
                 media::kWiseplayKeySystem, EmeMediaType::AUDIO, "", nullptr),
             EmeConfig::SupportedRule());  // EMPTY is valid
-
-  // Invalid robustness
   EXPECT_EQ(key_system_info_.GetRobustnessConfigRule(
                 media::kWiseplayKeySystem, EmeMediaType::VIDEO, "INVALID", nullptr),
             EmeConfig::UnsupportedRule());
-
-  // All valid robustness values
   const std::vector<std::pair<std::string, WiseplayKeySystemInfo::Robustness>> robustness_cases = {
       {"INVALID", WiseplayKeySystemInfo::Robustness::INVALID},
       {"SW_SECURE_CRYPTO", WiseplayKeySystemInfo::Robustness::SW_SECURE_CRYPTO},
@@ -162,14 +159,10 @@ TEST_F(WiseplayKeySystemInfoTest, GetRobustnessConfigRule) {
       {"HW_SECURE_CRYPTO", WiseplayKeySystemInfo::Robustness::HW_SECURE_CRYPTO},
       {"HW_SECURE_DECODE", WiseplayKeySystemInfo::Robustness::HW_SECURE_DECODE},
       {"HW_SECURE_ALL", WiseplayKeySystemInfo::Robustness::HW_SECURE_ALL}};
-
   for (const auto& [robustness_str, expected_robustness] : robustness_cases) {
     SCOPED_TRACE(robustness_str);
-
-    // Test audio robustness
     auto result = key_system_info_.GetRobustnessConfigRule(
         media::kWiseplayKeySystem, EmeMediaType::AUDIO, robustness_str, nullptr);
-
     if ((kTestMaxAudioRobustness == WiseplayKeySystemInfo::Robustness::HW_SECURE_CRYPTO &&
         expected_robustness == WiseplayKeySystemInfo::Robustness::SW_SECURE_DECODE) ||
         (kTestMaxAudioRobustness == WiseplayKeySystemInfo::Robustness::SW_SECURE_DECODE &&
@@ -182,11 +175,8 @@ TEST_F(WiseplayKeySystemInfoTest, GetRobustnessConfigRule) {
     } else {
       EXPECT_EQ(result, EmeConfig::SupportedRule());
     }
-
-    // Test video robustness
     result = key_system_info_.GetRobustnessConfigRule(
         media::kWiseplayKeySystem, EmeMediaType::VIDEO, robustness_str, nullptr);
-
     if ((kTestMaxVideoRobustness == WiseplayKeySystemInfo::Robustness::HW_SECURE_CRYPTO &&
         expected_robustness == WiseplayKeySystemInfo::Robustness::SW_SECURE_DECODE) ||
         (kTestMaxVideoRobustness == WiseplayKeySystemInfo::Robustness::SW_SECURE_DECODE &&
@@ -200,7 +190,9 @@ TEST_F(WiseplayKeySystemInfoTest, GetRobustnessConfigRule) {
       EXPECT_EQ(result, EmeConfig::SupportedRule());
     }
   }
+}
 
+TEST_F(WiseplayKeySystemInfoTest, GetRobustnessConfigRule02) {
   // Test HW_SECURE_CRYPTO vs SW_SECURE_DECODE incompatible case
   // Create a config where max robustness is HW_SECURE_CRYPTO
   WiseplayKeySystemInfo crypto_max_key_system(
@@ -284,7 +276,11 @@ TEST_F(WiseplayKeySystemInfoTest, GetPersistentLicenseSessionSupport) {
   // 2. Only non-hw-secure supported (current test config)
   EXPECT_EQ(key_system_info_.GetPersistentLicenseSessionSupport(),
             EmeConfig{.hw_secure_codecs = EmeConfigRuleState::kNotAllowed});
+}
 
+TEST_F(WiseplayKeySystemInfoTest, GetPersistentLicenseSessionSupport02) {
+  base::flat_set<CdmSessionType> hw_with_persistent = kTestHwSecureSessionTypes;
+  hw_with_persistent.insert(CdmSessionType::kPersistentLicense);
   // 3. Only hw-secure supported
   WiseplayKeySystemInfo hw_only_key_system(
       kTestCodecs,

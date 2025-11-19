@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include <cstdint>
-#include <stdint.h>
 #include <vector>
 #include "ohos_sdk/openharmony/native/llvm/bin/../include/libcxx-ohos/include/c++/v1/__ranges/lazy_split_view.h"
 #include "base/features.h"
@@ -25,6 +24,7 @@
 #include "arkweb/ohos_adapter_ndk/interfaces/mock/mock_ohos_adapter_helper.h"
 #include "arkweb/ohos_adapter_ndk/interfaces/mock/mock_system_properties_adapter.h"
 #include "arkweb/ohos_adapter_ndk/mock_ndk_api/include/mock_sys_info_util_ext.h"
+
 using namespace OHOS::NWeb;
 
 namespace {

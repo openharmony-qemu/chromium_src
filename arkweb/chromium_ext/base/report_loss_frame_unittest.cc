@@ -22,9 +22,6 @@
 
 namespace base {
 
-constexpr int64_t kVsyncPeriod_Normal = 16666667;
-constexpr int64_t kVsyncPeriod_default = 10000000;
-
 class ReportLossFrameTest : public ::testing::Test {
  protected:
   ReportLossFrame* reportLossFrame;
@@ -74,22 +71,22 @@ TEST_F(ReportLossFrameTest, Record002) {
 
 TEST_F(ReportLossFrameTest, Record003) {
   reportLossFrame->SetScrollState(ScrollMode::START);
-  reportLossFrame->SetVsyncPeriod(kVsyncPeriod_Normal);
+  reportLossFrame->SetVsyncPeriod(16666667);
   reportLossFrame->start_time_for_scroll_ =
       reportLossFrame->GetCurrentTimestampMS();
   reportLossFrame->start_time_ = reportLossFrame->start_time_for_scroll_;
-  std::this_thread::sleep_for(std::chrono::milliseconds(10)); // sleep 10ms
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
   reportLossFrame->Record();
   EXPECT_FALSE(reportLossFrame->need_report_);
 }
 
 TEST_F(ReportLossFrameTest, Record004) {
   reportLossFrame->SetScrollState(ScrollMode::START);
-  reportLossFrame->SetVsyncPeriod(kVsyncPeriod_Normal);
+  reportLossFrame->SetVsyncPeriod(16666667);
   reportLossFrame->start_time_for_scroll_ =
       reportLossFrame->GetCurrentTimestampMS();
   reportLossFrame->start_time_ = reportLossFrame->start_time_for_scroll_;
-  std::this_thread::sleep_for(std::chrono::milliseconds(50)); // sleep 50ms
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
   reportLossFrame->Record();
   EXPECT_TRUE(reportLossFrame->need_report_);
 }
@@ -100,7 +97,7 @@ TEST_F(ReportLossFrameTest, Record005) {
   reportLossFrame->start_time_for_scroll_ =
       reportLossFrame->GetCurrentTimestampMS();
   reportLossFrame->start_time_ = reportLossFrame->start_time_for_scroll_;
-  std::this_thread::sleep_for(std::chrono::milliseconds(120)); // sleep 120ms
+  std::this_thread::sleep_for(std::chrono::milliseconds(120));
   reportLossFrame->Record();
   EXPECT_TRUE(reportLossFrame->need_report_);
 }
@@ -111,7 +108,7 @@ TEST_F(ReportLossFrameTest, Record006) {
   reportLossFrame->start_time_for_scroll_ =
       reportLossFrame->GetCurrentTimestampMS();
   reportLossFrame->start_time_ = reportLossFrame->start_time_for_scroll_;
-  std::this_thread::sleep_for(std::chrono::milliseconds(180)); // sleep 180ms
+  std::this_thread::sleep_for(std::chrono::milliseconds(180));
   reportLossFrame->Record();
   EXPECT_TRUE(reportLossFrame->need_report_);
 }
@@ -122,7 +119,7 @@ TEST_F(ReportLossFrameTest, Record007) {
   reportLossFrame->start_time_for_scroll_ =
       reportLossFrame->GetCurrentTimestampMS();
   reportLossFrame->start_time_ = reportLossFrame->start_time_for_scroll_;
-  std::this_thread::sleep_for(std::chrono::milliseconds(300)); // sleep 300ms
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
   reportLossFrame->Record();
   EXPECT_TRUE(reportLossFrame->need_report_);
 }
@@ -133,7 +130,7 @@ TEST_F(ReportLossFrameTest, Record008) {
   reportLossFrame->start_time_for_scroll_ =
       reportLossFrame->GetCurrentTimestampMS();
   reportLossFrame->start_time_ = reportLossFrame->start_time_for_scroll_;
-  std::this_thread::sleep_for(std::chrono::milliseconds(400)); // sleep 400ms
+  std::this_thread::sleep_for(std::chrono::milliseconds(400));
   reportLossFrame->Record();
   EXPECT_TRUE(reportLossFrame->need_report_);
 }
@@ -144,7 +141,7 @@ TEST_F(ReportLossFrameTest, Record009) {
   reportLossFrame->start_time_for_scroll_ =
       reportLossFrame->GetCurrentTimestampMS();
   reportLossFrame->start_time_ = reportLossFrame->start_time_for_scroll_;
-  std::this_thread::sleep_for(std::chrono::milliseconds(500)); // sleep 500ms
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
   reportLossFrame->Record();
   EXPECT_TRUE(reportLossFrame->need_report_);
 }
@@ -155,7 +152,7 @@ TEST_F(ReportLossFrameTest, Record010) {
   reportLossFrame->start_time_for_scroll_ =
       reportLossFrame->GetCurrentTimestampMS();
   reportLossFrame->start_time_ = reportLossFrame->start_time_for_scroll_;
-  std::this_thread::sleep_for(std::chrono::milliseconds(800)); // sleep 800ms
+  std::this_thread::sleep_for(std::chrono::milliseconds(800));
   reportLossFrame->Record();
   EXPECT_TRUE(reportLossFrame->need_report_);
 }
@@ -166,7 +163,7 @@ TEST_F(ReportLossFrameTest, Record011) {
   reportLossFrame->start_time_for_scroll_ =
       reportLossFrame->GetCurrentTimestampMS();
   reportLossFrame->start_time_ = reportLossFrame->start_time_for_scroll_;
-  std::this_thread::sleep_for(std::chrono::milliseconds(1200)); // sleep 1200ms
+  std::this_thread::sleep_for(std::chrono::milliseconds(1200));
   reportLossFrame->Record();
   EXPECT_TRUE(reportLossFrame->need_report_);
 }

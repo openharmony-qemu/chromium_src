@@ -69,7 +69,6 @@ public:
     KURL url = ToKURL(url_root + filename.Utf8());
     std::string data_base_path = "third_party/blink/renderer/core/testing/data/";
     WebString data_path = WebString::FromUTF8(data_base_path + filename.Utf8());
-    LOG(INFO) << "MockUrl:" << data_path.Utf8();
     RegisterMockedURLLoadWithCustomResponse(url, response, data_path);
     return url;
   }

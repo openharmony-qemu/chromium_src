@@ -336,12 +336,10 @@ TEST_F(VideoCommonDataProviderTest, VideoOpt_OriginCorsModeTellTest) {
   Initialize(kHttpUrl, 0);
 
   const KURL& urlOrigin = GetOrigin();
-  LOG(INFO) << "VideoOpt: urlOrigin" << urlOrigin.GetString().Utf8();
   UrlData::CorsMode corsMode = GetCorsMode();
   MultiBufferBlockId blockId = GetTell();
 
   KURL kurl("http://foo.bar.com");
-  LOG(INFO) << "VideoOpt: kurl" << kurl.GetString().Utf8();
 
   EXPECT_EQ(corsMode, UrlData::CORS_UNSPECIFIED);
   EXPECT_EQ(blockId, 0);

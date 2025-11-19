@@ -205,6 +205,10 @@ VerifierResult VerifyCrx3(
           std::make_pair(rsa, crypto::SignatureVerifier::RSA_PKCS1_SHA256),
           std::make_pair(ecdsa, crypto::SignatureVerifier::ECDSA_SHA256)};
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  const auto allowed_set = BuildAllowedPublisherSet();
+#endif
+
   bool found_publisher_key = false;
 
   // Initialize all verifiers and update them with
@@ -218,8 +222,9 @@ VerifierResult VerifyCrx3(
       if (id_util::GenerateId(key) == declared_crx_id) {
         public_key_bytes = key;
       }
-      auto key_hash = crypto::hash::Sha256(key);
-      required_key_set.erase(key_hash);
+      auto key_hash_array = crypto::hash::Sha256(key);
+      ByteVec key_hash(key_hash_array.begin(), key_hash_array.end());
+      required_key_set.erase(key_hash_array);
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
       found_publisher_key = found_publisher_key ||
                             (allowed_set.find(key_hash) != allowed_set.end());

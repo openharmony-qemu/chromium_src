@@ -867,9 +867,11 @@ void AccessorAssembler::HandleLoadICSmiHandlerLoadNamedCase(
       TVARIABLE(Object, var_value);
       LoadPropertyFromDictionary<PropertyDictionary>(
           properties, var_name_index.value(), &var_details, &var_value);
+      ExpectedReceiverMode expected_receiver_mode =
+          p->IsLoadSuperIC() ? kExpectingAnyReceiver : kExpectingJSReceiver; 
       TNode<Object> value = CallGetterIfAccessor(
           var_value.value(), CAST(holder), var_details.value(), p->context(),
-          p->receiver(), p->name(), miss);
+          p->receiver(), expected_receiver_mode, p->name(), miss);
       exit_point->Return(value);
     }
   }
@@ -955,9 +957,12 @@ void AccessorAssembler::HandleLoadICSmiHandlerLoadNamedCase(
         CAST(holder), PropertyCell::kPropertyDetailsRawOffset));
     GotoIf(IsPropertyCellHole(value), miss);
 
-    exit_point->Return(CallGetterIfAccessor(value, CAST(holder), details,
-                                            p->context(), p->receiver(),
-                                            p->name(), miss));
+    ExpectedReceiverMode expected_receiver_mode =
+        p->IsLoadSuperIC() ? kExpectingAnyReceiver : kExpectingJSReceiver;
+
+    exit_point->Return(CallGetterIfAccessor(
+        value, CAST(holder), details, p->context(), p->receiver(),
+        expected_receiver_mode, p->name(), miss));
   }
 
   BIND(&interceptor);
@@ -1231,9 +1236,12 @@ void AccessorAssembler::HandleLoadICProtoHandler(
           TVARIABLE(Object, var_value);
           LoadPropertyFromDictionary<PropertyDictionary>(
               properties, name_index, &var_details, &var_value);
+          ExpectedReceiverMode expected_receiver_mode =
+              p->IsLoadSuperIC() ? kExpectingAnyReceiver : kExpectingJSReceiver;
           TNode<Object> value = CallGetterIfAccessor(
               var_value.value(), CAST(var_holder->value()), var_details.value(),
-              p->context(), p->receiver(), p->name(), miss);
+              p->context(), p->receiver(), expected_receiver_mode, p->name(),
+              miss);
           exit_point->Return(value);
         }
       },
@@ -2949,9 +2957,11 @@ void AccessorAssembler::GenericPropertyLoad(
 
   BIND(&if_found_on_lookup_start_object);
   {
+    ExpectedReceiverMode expected_receiver_mode =
+        p->IsLoadSuperIC() ? kExpectingAnyReceiver : kExpectingJSReceiver;
     TNode<Object> value = CallGetterIfAccessor(
         var_value.value(), lookup_start_object, var_details.value(),
-        p->context(), p->receiver(), p->name(), slow);
+        p->context(), p->receiver(), expected_receiver_mode, p->name(), slow);
     Return(value);
   }
 

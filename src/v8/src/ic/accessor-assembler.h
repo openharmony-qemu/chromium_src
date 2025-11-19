@@ -152,6 +152,15 @@ class V8_EXPORT_PRIVATE AccessorAssembler : public CodeStubAssembler {
       return receiver_;
     }
 
+    // This is useful for figuring out whether we know anything about receiver
+    // type. If |receiver| and |lookup_start_object| are different TNodes
+    // then this ICParameters object belongs to LoadSuperIC.
+    bool IsLoadSuperIC() const {
+      return lookup_start_object_.has_value()
+                 ? lookup_start_object_.value() != receiver_
+                 : true;
+    }
+
     bool IsEnumeratedKeyedLoad() const { return enum_index_ != std::nullopt; }
 
    private:
@@ -202,6 +211,11 @@ class V8_EXPORT_PRIVATE AccessorAssembler : public CodeStubAssembler {
       DCHECK_EQ(receiver_, lookup_start_object_);
       return receiver_;
     }
+
+    // This is useful for figuring out whether we know anything about receiver
+    // type. If |receiver| and |lookup_start_object| are different TNodes
+    // then this ICParameters object belongs to LoadSuperIC.
+    bool IsLoadSuperIC() const { return lookup_start_object_ != receiver_; }
 
    private:
     LazyNode<Context> context_;

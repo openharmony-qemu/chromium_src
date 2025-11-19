@@ -68,6 +68,9 @@ class HitTestRequest {
     kIgnoreZeroOpacityObjects = 1 << 14,
     kHitTestVisualOverflow = 1 << 15,
     kHitNodeCbWithId = 1 << 16,
+#if BUILDFLAG(ARKWEB_MENU)
+    kOnDoHitTest = 1 << 17,
+#endif  // BUILDFLAG(ARKWEB_MENU)
   };
 
   typedef unsigned HitTestRequestType;

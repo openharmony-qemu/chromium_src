@@ -16,8 +16,8 @@
 #ifndef HITRACE_ADAPTER_IMPL_H
 #define HITRACE_ADAPTER_IMPL_H
 
-#include "hitrace_adapter.h"
-
+#include "arkweb/ohos_adapter_ndk/interfaces/hitrace_adapter.h"
+#include "ohos_sdk/openharmony/native/sysroot/usr/include/hitrace/trace.h"
 namespace OHOS::NWeb {
 class HiTraceAdapterImpl : public HiTraceAdapter {
 public:
@@ -30,6 +30,9 @@ public:
     void FinishTrace() override;
 
     void StartAsyncTrace(const std::string& value, int32_t taskId, float limit = -1) override;
+
+    void StartTraceEx(HiTrace_Output_Level level, const std::string& name,
+      const std::string& value, float limit = -1) override;
 
     void FinishAsyncTrace(const std::string& value, int32_t taskId) override;
 

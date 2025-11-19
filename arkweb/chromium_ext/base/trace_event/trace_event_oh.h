@@ -50,4 +50,38 @@ std::string GetStringFromArgs(const char* name,
   args.values()[1].AppendAsString(args.types()[1], &str);
   return str;
 }
+
+template<typename T>
+std::string OHOSTracetoString(T&& value) {
+  if constexpr (std::is_same_v<std::decay_t<T>, std::string> || 
+                std::is_same_v<std::decay_t<T>, const char*> || 
+                std::is_same_v<std::decay_t<T>, char*>) {
+    return value;
+  } else {
+    return std::to_string(value);
+  }
+}
+
+template<typename... Args>
+std::string JoinKeyValueWithPipe(Args... args) {
+  std::ostringstream oss;
+  bool isKey = true;
+  std::string currentKey;
+  oss << "";
+  if (sizeof...(args) > 0 && ((sizeof...(args) % 2) == 0) ) { // args must even
+    auto process = [&](auto&& arg) {
+      if (isKey) {
+        currentKey = OHOSTracetoString(arg);
+      } else {
+        if (oss.tellp() != 0) oss << "|";
+        oss << currentKey << "=" << OHOSTracetoString(arg);
+      }
+      isKey = !isKey;
+    };
+    (process(args), ...);
+  }
+  
+  return oss.str();
+}
+
 #endif  // TRACE_EVENT_OH_H

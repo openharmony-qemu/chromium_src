@@ -22,6 +22,7 @@ namespace OHOS::NWeb {
 
 static std::unordered_map<OH_AudioCapturer*, AudioCapturerAdapterImpl*> captures_;
 static std::mutex capturesSetMutex_;
+std::shared_mutex AudioCapturerAdapterImpl::adapterMutex_;
 CallbackSharedWrapper<UserDataCallBack> AudioCapturerAdapterImpl::callback_wrapper_;
 
 const std::unordered_map<AudioAdapterSamplingRate, int32_t> SAMPLING_RATE_MAP = {
@@ -75,7 +76,18 @@ const int32_t DEFAULT_AUDIO_CHANNEL = 2;
 const OH_AudioStream_SourceType DEFAULT_SourceType = AUDIOSTREAM_SOURCE_TYPE_VOICE_RECOGNITION;
 } // namespace
 
+static AudioCapturerAdapterImpl* FindAudioCapturerAdapter(OH_AudioCapturer* capturer) {
+    std::unique_lock<std::mutex> lock(capturesSetMutex_);
+    auto it = captures_.find(capturer);
+    if (it == captures_.end()) {
+        WVLOG_E("AudioCapturerAdapterImpl cannot find capture, return");
+        return nullptr;
+    }
+    return it->second;
+}
+
 AudioCapturerAdapterImpl::~AudioCapturerAdapterImpl() {
+    std::unique_lock<std::shared_mutex> lock(adapterMutex_);
     if (callback_index_ > 0) {
         callback_wrapper_.Clear(callback_index_);
         callback_index_ = 0;
@@ -84,13 +96,10 @@ AudioCapturerAdapterImpl::~AudioCapturerAdapterImpl() {
 
 int32_t AudioCapturerAdapterImpl::OnReadData(OH_AudioCapturer* capturer, void* userData, void* buffer, int32_t length)
 {
-    {
-        std::unique_lock<std::mutex> lock(capturesSetMutex_);
-        auto it = captures_.find(capturer);
-        if (it == captures_.end()) {
-            WVLOG_E("AudioCapturerAdapterImpl OnReadData cannot find capture, return");
-            return -1;
-        }
+    AudioCapturerAdapterImpl* adapter = FindAudioCapturerAdapter(capturer);
+    if (!adapter) {
+        WVLOG_E("AudioCapturerAdapterImpl::OnReadData adapter is null");
+        return -1;
     }
     if (userData == nullptr) {
         return -1;
@@ -114,15 +123,11 @@ int32_t AudioCapturerAdapterImpl::OnReadData(OH_AudioCapturer* capturer, void* u
 int32_t AudioCapturerAdapterImpl::OnInterruptEvent(OH_AudioCapturer* capturer, void* userData,
                                                    OH_AudioInterrupt_ForceType type, OH_AudioInterrupt_Hint hint)
 {
-    AudioCapturerAdapterImpl* adapter = nullptr;
-    {
-        std::unique_lock<std::mutex> lock(capturesSetMutex_);
-        auto it = captures_.find(capturer);
-        if (it == captures_.end()) {
-            WVLOG_E("AudioCapturerAdapterImpl OnReadData cannot find capture, return");
-            return -1;
-        }
-        adapter = it->second;
+    std::shared_lock<std::shared_mutex> lock(AudioCapturerAdapterImpl::GetAdapterMutex());
+    AudioCapturerAdapterImpl* adapter = FindAudioCapturerAdapter(capturer);
+    if (!adapter) {
+        WVLOG_E("AudioCapturerAdapterImpl::OnInterruptEvent adapter is null");
+        return -1;
     }
     WVLOG_I("AudioCapturerAdapterImpl::OnInterruptEvent %{public}d", static_cast<int>(hint));
     if (hint == OH_AudioInterrupt_Hint::AUDIOSTREAM_INTERRUPT_HINT_RESUME && adapter != nullptr) {
@@ -130,6 +135,10 @@ int32_t AudioCapturerAdapterImpl::OnInterruptEvent(OH_AudioCapturer* capturer, v
         adapter->Start();
     }
     return 0;
+}
+
+std::shared_mutex& AudioCapturerAdapterImpl::GetAdapterMutex() {
+    return adapterMutex_;
 }
 
 int32_t AudioCapturerAdapterImpl::Create(

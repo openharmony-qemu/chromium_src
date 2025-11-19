@@ -939,6 +939,13 @@ void InputHandlerProxyUtils::NativeTouchCancelProcess(
           break;
     }
   }
+  int32_t changeIndex = GetTouchChangeIndex(touch_event);
+  if (!CheckFingerIdOutOfIndex(changeIndex)) {
+    int32_t finger_id = touch_event.touches[changeIndex].id;
+    std::shared_ptr<NativeEmbedEventQueue> touchEventQueue =
+        NativeTouchEventQueues_[finger_id];
+    touchEventQueue->SetStatus(INIT);
+  }
   SendToBlink(std::move(event_with_callback));
 }
 

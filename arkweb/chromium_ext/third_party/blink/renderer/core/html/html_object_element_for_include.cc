@@ -14,6 +14,7 @@
  */
 
 #include "third_party/blink/renderer/core/html/html_object_element.h"
+#include "third_party/blink/renderer/platform/graphics/compositing/paint_artifact_compositor.h"
 
 namespace blink {
 
@@ -33,11 +34,16 @@ void HTMLObjectElement::NativeEmbedOverlay(
     }
   }
   Utils()->SetNativeEmbedOverlayInfinity(new_overlay_infinity);
-  Utils()->SetNativeEmbedOverlay(new_overlay);
-  if (GetLayoutObject()) {
+  Utils()->SetNativeEmbedOverlay(new_overlay && !new_overlay_infinity);
+  if (auto* layout_object = GetLayoutObject()) {
     SetNeedsPluginUpdate(true);
-    GetLayoutObject()->SetNeedsLayoutAndFullPaintInvalidation(
+    layout_object->SetNeedsLayoutAndFullPaintInvalidation(
         "Arkwebnativestyle changed");
+    if (auto* view = GetDocument().View()) {
+      if (auto* compositor = view->GetPaintArtifactCompositor()) {
+        compositor->SetNeedsUpdate();
+      }
+    }
   }
 }
 

@@ -59,7 +59,7 @@ GURL PreconnectRunner::GetHSTSRedirect(
   if (!url_request_context->transport_security_state() ||
       !original_url.SchemeIs("http") ||
       !url_request_context->transport_security_state()->ShouldUpgradeToSSL(
-          original_url.host())) {
+          original_url.host(), false /* is_top_level_nav */)) {
     return original_url;
   }
 

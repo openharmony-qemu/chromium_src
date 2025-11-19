@@ -729,7 +729,7 @@ bool OHOSAudioDecoder::OnDecodedEos(const OutputBufferData& out) {
 }
 
 bool OHOSAudioDecoder::OnDecodedFrame(const OutputBufferData& out) {
-  if (out.size_ == 0U || out.index_ == OHOSAudioDecoderLoop::kInvalidBufferIndex
+  if (out.size_ == 0U || out.index_ == static_cast<uint32_t>(OHOSAudioDecoderLoop::kInvalidBufferIndex)
     || decoder_loop_ == nullptr || channel_count_ == 0) {
       LOG(ERROR) << "OHOSAudioDecoder::OnDecodedFrame buffer data is invalid";
       return false;

@@ -94,6 +94,12 @@ ResultExpr BaselinePolicyOhos::EvaluateSyscall(int sysno) const {
     bool override_and_allow = false;
     bool override_and_trap = false;
 
+#if defined(HWADDRESS_SANITIZER) && (defined(__aarch64__) || defined(__arm__))
+    if (sysno == __NR_process_vm_readv) {
+        return Allow();
+    }
+#endif
+
     switch (sysno) {
 #if defined(__arm__) || defined(__aarch64__)
     case __NR_fdatasync:

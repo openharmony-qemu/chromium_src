@@ -146,7 +146,7 @@ void PDFiumEngine::OnClickBookmark(const std::string& bookmark_id) {
 }
 
 gfx::PointF PDFiumEngine::ConverPageToScreen(int page_index, gfx::PointF point) {
-  if (page_index > layout_.page_count()) {
+  if (static_cast<size_t>(page_index) > layout_.page_count()) {
     return gfx::PointF();
   }
 

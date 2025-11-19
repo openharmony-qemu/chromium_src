@@ -11,10 +11,10 @@ Chromium总体采用分层架构，主要包含一下几个模块：
 
 - Chrome模块： Chrome浏览器特有的组件，包括标签页Tabs，设置Settings，工具栏Toolbar，导航栏Omnibox
 - Component模块： 可重用的功能集合，专注于特定的功能逻辑除了chrome浏览器外其他浏览器也可自行集成，包括自动填充Autofill，书签Bookmark，密码管理PasswordManager , 历史记录管理History。
-- Content模块：WebContents是 Content 层对一个“标签页”内容的核心抽象，最上层的 Chrome 通过持有和操作WebContents对象来命令Content层导航、停止加载、执行 JavaScript等。RenderProcessHost是浏览器进程中控制一个渲染器进程的对象，负责管理该渲染器进程的生命周期（启动、关闭）和所有与它的 IPC 通信。Process Launchers (进程启动器)这是负责启动和沙箱化所有其他辅助进程（GPU、Utility、Plugin、Zygote）的代码。IPC Handlers接收和响应来自所有子进程（渲染器、GPU 等）消息的端点。例如，当渲染器进程需要下载图片时，它会发送一个 IPC 消息，由浏览器进程中的 Resource Dispatcher 接收。Resource Dispatcher (资源转发器)负责接收渲染器进程发来的所有特权请求（如网络请求、文件访问），并安全地将它们分派给底层的 Platform 模块（如 net 库）去执行。
+- Content模块：WebContents是 Content 层对一个“标签页”内容的核心抽象，最上层的 Chrome 通过持有和操作WebContents对象来命令Content层导航、停止加载、执行 JavaScript等。RenderProcessHost是浏览器进程中控制一个渲染器进程的对象，负责管理该渲染器进程的生命周期（启动、关闭）和所有与它的 IPC 通信。Process Launchers (进程启动器)这是负责启动和沙箱化所有其他辅助进程（GPU、Utility、Plugin、Zygote）的代码。IPC Handlers接收和响应来自所有子进程（渲染器、GPU 等）消息的端点，当渲染器进程需要下载图片时，它会发送一个 IPC 消息，由浏览器进程中的 Resource Dispatcher 接收。Resource Dispatcher (资源转发器)负责接收渲染器进程发来的所有特权请求（如网络请求、文件访问），并安全地将它们分派给底层的 Platform 模块（如 net 库）去执行。
 - Blink模块：v8主要用来来解析和执行JavaScript 。cc负责将页面的各个图层进行合成。
 
-- Platform模块：net网络库负责所有网络协议（HTTP、QUIC、DNS）、Cookie 管理等。mojo为Chromium 现代的 IPC 进程间通信)框架。device提供访问底层硬件的 API（如 USB、蓝牙、传感器）。schedule:任务调度器，负责管理所有进程和线程上的任务队列。
+- Platform模块：net网络库负责所有网络协议（HTTP、QUIC、DNS）、Cookie 管理等。mojo为Chromium 现代的 IPC 进程间通信)框架。device提供访问底层硬件的 API（如 USB、蓝牙、传感器）。schedule任务调度器负责管理所有进程和线程上的任务队列。
 
 
 
@@ -149,7 +149,7 @@ Chromium总体采用分层架构，主要包含一下几个模块：
 [架构图中的Web Component仓
 ](https://gitcode.com/openharmony/arkui_ace_engine/tree/master/frameworks/core/components/web)
 
-[架构图中的web_webview仓
+[架构图中的Web_Webview仓
 ](https://gitcode.com/openharmony/web_webview)
 
 [架构图中的ArkWeb仓](https://gitcode.com/openharmony-sig/chromium_arkweb)

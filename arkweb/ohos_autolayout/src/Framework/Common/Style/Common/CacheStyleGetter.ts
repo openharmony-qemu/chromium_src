@@ -38,35 +38,25 @@ export class SpecificStyleCache {
 
     /**
      * 创建一个带缓存的方法
-     * 泛型说明:
-     * @template Args - 剩余参数的类型数组 (例如 getComputedStyle 可能有第二个参数)
-     * @template R - 原函数的返回值类型 (例如 number, DOMRect, CSSStyleDeclaration)
-     * @param fn 具体要执行的函数
+     * 注意函数的第一个参数会用作缓存的key
+     * @param fn 函数名称
      */
-    static createSpecStyleCache<Args extends unknown[], R>(
-        fn: (dom: HTMLElement, ...args: Args) => R
-    ): (dom: HTMLElement | null | undefined, ...args: Args) => R | undefined {
-        
-        // 1. 明确 Map 存储的是 DOM 节点到返回值 R 的映射
+    static createSpecStyleCache(fn: Function): Function {
         const cache = new Map();
         this.clearMap.set(cache, () => cache.clear());
 
-        // 2. 返回函数的签名与原函数保持逻辑一致 (除了 dom 可能为空的处理)
-        return function (dom: HTMLElement | null | undefined, ...args: Args): R | undefined {
-            // 3. 这里处理了 dom 为空的情况，所以返回值类型必须包含 undefined
+        return function (dom: HTMLElement, ...args: unknown[]) {
             if (!dom) {
                 Log.e('input null to CacheStyleGetter');
                 return undefined;
             }
 
-            // 4. 读取缓存
             const cacheRes = cache.get(dom);
-            if (cacheRes !== undefined) {
+
+            if (cacheRes) {
                 return cacheRes;
             }
 
-            // 5. 调用原函数：使用 call，显式传入 dom 和 展开的 args
-            // 这里的类型是安全的：dom 确定是 HTMLElement (经过上面判空)，args 类型由泛型保障
             const result = fn.call(null, dom, ...args);
 
             cache.set(dom, result);

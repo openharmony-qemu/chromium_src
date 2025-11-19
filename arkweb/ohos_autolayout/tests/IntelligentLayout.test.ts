@@ -104,7 +104,6 @@ describe('IntelligentLayout (single popup cache)', () => {
   });
 
   it('starts with no active popup', () => {
-    const info = createPopupInfo();
     expect(IntelligentLayout.getActivePopupWindowInfo()).toBeNull();
     expect(IntelligentLayout.getActivePopupWindowComponent()).toBeNull();
   });

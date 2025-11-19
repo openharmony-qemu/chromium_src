@@ -104,6 +104,7 @@ describe('IntelligentLayout (single popup cache)', () => {
   });
 
   it('starts with no active popup', () => {
+    const info = createPopupInfo();
     expect(IntelligentLayout.getActivePopupWindowInfo()).toBeNull();
     expect(IntelligentLayout.getActivePopupWindowComponent()).toBeNull();
   });
@@ -181,7 +182,7 @@ describe('IntelligentLayout (single popup cache)', () => {
     const info = createPopupInfo();
     IntelligentLayout.calculateForPopWin(info);
 
-    IntelligentLayout.reInit('初始化');
+    IntelligentLayout.reInit();
 
     expect(IntelligentLayout.getActivePopupWindowInfo()).toBeNull();
   });

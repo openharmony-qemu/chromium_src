@@ -3,7 +3,7 @@
 ### 软件架构
 ![image.png](https://raw.gitcode.com/user-images/assets/4371737/24369285-e967-4433-95ae-ecede62b7326/image.png 'image.png')
 
-架构图中CEF、ArkWeb仓和当前仓Chromium联合编译出Web内核，编译产物为NWeb.hap，通过二进制集成在openharmony系统中。
+架构图中CEF、ArkWeb仓和当前仓Chromium联合编译出Web内核，编译产物为NWeb.hap，通过二进制集成在OpenHarmony系统中。
 
 Chromium是 Google 主导的开源 Web 浏览器项目，旨在构建更安全、更快、更稳定的 Web 平台的项目。多进程架构是Chromium 最核心的设计, 它将浏览器功能划分到多个独立的进程中，以实现安全性，稳定性。本仓是从上游社区的一个分支。
 
@@ -16,7 +16,7 @@ Chromium总体采用分层架构，主要包含一下几个模块：
 
 - Platform模块：net网络库负责所有网络协议（HTTP、QUIC、DNS）、Cookie 管理等。mojo为Chromium 现代的 IPC 进程间通信)框架。device提供访问底层硬件的 API（如 USB、蓝牙、传感器）。schedule任务调度器负责管理所有进程和线程上的任务队列。
 
-- Hook模块：Hook并不是一个独立的模块，Hook指的是对原生Chromium各个模块像钩子一样的嵌入式修改的集合。通过对Chromium原生文件嵌入像钩子一样的小段修改，让相对独立的逻辑指向Arkweb仓的chromium_ext模块的独立文件。通过这种方式，能实现原生Chromium和Arkweb对Chromium定制的解耦，能有效避免对原生Chromium嵌入大段的修改，或者在本仓中新增Arkweb的文件。 Hook的方式通常有以下几种：1. 让原生类继承chromium_ext模块中的基类，扩展的功能都放在chromium_ext中的基类里。 2. 让原生类持有chromium_ext中的工具类，扩展的功能都放在chromium_ext中的工具类。3. 将扩展功能逻辑放到chromium_ext中独立文件，这类文件名通常以for_include结尾， 让原生类直接include该类型的文件进行扩展。
+- Hook模块：Hook并不是一个独立的模块，Hook指的是对原生Chromium各个模块像钩子一样的嵌入式修改的集合。通过对Chromium原生文件嵌入像钩子一样的小段修改，让其指向ArkWeb仓的chromium_ext模块的独立文件。通过这种方式，能有效避免对原生Chromium嵌入大段的修改，也避免了再本仓中新增不属于Chromium的ArkWeb的文件，实现了Chromium和Arkweb的解耦。 Hook的方式通常有以下几种：1. 让原生类继承chromium_ext模块中的基类，扩展的功能都放在chromium_ext中的基类里。 2. 让原生类持有chromium_ext中的工具类，扩展的功能都放在chromium_ext中的工具类。3. 将扩展功能逻辑放到chromium_ext中独立文件，这类文件名通常以for_include结尾， 让原生类直接include该类型的文件进行扩展。
 
 ## 使用说明
 1. 下载代码：以132_trunk为例，要下载其他分支代码，请替换-b之后的分支名，参数列表详见8。

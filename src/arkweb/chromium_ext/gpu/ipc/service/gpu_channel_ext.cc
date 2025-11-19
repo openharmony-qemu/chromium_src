@@ -77,7 +77,7 @@ int32_t GpuChannelExt::CreateNativeTexture(
     return -1;
   }
   scoped_refptr<StreamTexture> native_texture = StreamTexture::Create(
-      this, native_id, texture_owner_mode, std::move(receiver));
+      static_cast<GpuChannel*>(this), native_id, texture_owner_mode, std::move(receiver));
 
   if (!native_texture) {
     return -1;

@@ -90,7 +90,7 @@ enum Sandbox {
   [EnableIf=is_chromeos|is_linux|is_mac|is_win|is_ohos] kPrintBackend,
 
   // Like kUtility but allows loading of screen AI library.
-  [EnableIf=is_chromeos|is_linux|is_mac|is_win] kScreenAI,
+  [EnableIf=is_chromeos|is_linux|is_mac|is_win|is_ohos] kScreenAI,
 
   // |kXrCompositing| hosts XR Device Service on Windows.
   [EnableIf=is_win] kXrCompositing,

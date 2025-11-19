@@ -180,6 +180,7 @@ class CC_EXPORT SurfaceLayer : public Layer {
 #if BUILDFLAG(ARKWEB_TEST)
   friend class SurfaceLayerForIncludeTest;
 #endif
+#endif // ARKWEB_SAME_LAYER
 };
 
 }  // namespace cc

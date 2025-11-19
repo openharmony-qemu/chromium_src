@@ -64,13 +64,13 @@
 #endif  // BUILDFLAG(ENABLE_CROS_LIBASSISTANT)
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 #include "media/gpu/buildflags.h"    // nogncheck
 #include "media/media_buildflags.h"  // nogncheck
 #if BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
 #include "sandbox/policy/linux/bpf_hardware_video_decoding_policy_linux.h"
 #endif  // BUILDFLAG(ALLOW_OOP_VIDEO_DECODER)
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 
 #if BUILDFLAG(IS_LINUX)
 #include "sandbox/policy/linux/bpf_on_device_translation_policy_linux.h"

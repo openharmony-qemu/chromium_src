@@ -38,9 +38,9 @@
 #if BUILDFLAG(ARKWEB_PDF)
 #include "arkweb/chromium_ext/cc/input/input_handler_utils.h"
 #include "arkweb/chromium_ext/pdf/paint_manager_for_include.cc"
+#include "base/trace_event/trace_event.h"
 #endif
 
-#include "base/trace_event/trace_event.h"
 
 namespace chrome_pdf {
 
@@ -194,10 +194,10 @@ void PaintManager::EnsureCallbackPending() {
 
 #if BUILDFLAG(ARKWEB_PDF)
 void PaintManager::DoPaint(bool is_repainting) {
+  TRACE_EVENT0("media", "PaintManager::DoPaint");
 #else
 void PaintManager::DoPaint() {
 #endif
-  TRACE_EVENT0("media", "PaintManager::DoPaint");
   base::AutoReset<bool> auto_reset_in_paint(&in_paint_, true);
 
   std::vector<PaintReadyRect> ready_rects;

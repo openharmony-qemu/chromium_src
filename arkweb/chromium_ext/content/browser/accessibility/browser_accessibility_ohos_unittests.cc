@@ -111,13 +111,9 @@ class BrowserAccessibilityOHOSTest : public ::testing::Test {
 
 class RecordingAXDelegate : public ui::TestAXPlatformTreeManagerDelegate {
  public:
-  void AccessibilityPerformAction(const ui::AXActionData& data) override {
-    performed_actions_.push_back(data);
-  }
+  void AccessibilityPerformAction(const ui::AXActionData& data) override { performed_actions_.push_back(data); }
 
-  const std::vector<ui::AXActionData>& performed_actions() const {
-    return performed_actions_;
-  }
+  const std::vector<ui::AXActionData>& performed_actions() const { return performed_actions_; }
 
  private:
   std::vector<ui::AXActionData> performed_actions_;
@@ -4110,8 +4106,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_Scroll_OnSliderForwardBackward) {
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, slider);
   auto recording_delegate = std::make_unique<RecordingAXDelegate>();
   ui::AXPlatformTreeManagerDelegate* delegate_ptr = recording_delegate.get();
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
-      update, node_id_delegate_, delegate_ptr);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager =
+      std::make_unique<ui::BrowserAccessibilityManagerOHOS>(update, node_id_delegate_, delegate_ptr);
   auto* s = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(7601));
   ASSERT_NE(s, nullptr);
   s->Scroll(ax::mojom::Action::kScrollForward);
@@ -4149,8 +4145,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_Scroll_ContainerAllDirections_NoCr
 
   auto recording_delegate = std::make_unique<RecordingAXDelegate>();
   ui::AXPlatformTreeManagerDelegate* delegate_ptr = recording_delegate.get();
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager2 = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
-      update, node_id_delegate_, delegate_ptr);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager2 =
+      std::make_unique<ui::BrowserAccessibilityManagerOHOS>(update, node_id_delegate_, delegate_ptr);
   auto* n2 = static_cast<ui::BrowserAccessibilityOHOS*>(manager2->GetFromID(8451));
   ASSERT_NE(n2, nullptr);
 
@@ -4179,8 +4175,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_Scroll_OnNonScrollable_NoCrash) {
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, button);
   auto recording_delegate = std::make_unique<RecordingAXDelegate>();
   ui::AXPlatformTreeManagerDelegate* delegate_ptr = recording_delegate.get();
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
-      update, node_id_delegate_, delegate_ptr);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager =
+      std::make_unique<ui::BrowserAccessibilityManagerOHOS>(update, node_id_delegate_, delegate_ptr);
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(8621));
   ASSERT_NE(n, nullptr);
   n->Scroll(ax::mojom::Action::kScrollDown);
@@ -4314,8 +4310,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_Scroll_SliderMaxLessThanOrEqualMin
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, slider);
   auto recording_delegate = std::make_unique<RecordingAXDelegate>();
   ui::AXPlatformTreeManagerDelegate* delegate_ptr = recording_delegate.get();
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
-      update, node_id_delegate_, delegate_ptr);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager =
+      std::make_unique<ui::BrowserAccessibilityManagerOHOS>(update, node_id_delegate_, delegate_ptr);
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   n->Scroll(ax::mojom::Action::kScrollForward);
@@ -4341,8 +4337,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_Scroll_SliderDisabled) {
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, slider);
   auto recording_delegate = std::make_unique<RecordingAXDelegate>();
   ui::AXPlatformTreeManagerDelegate* delegate_ptr = recording_delegate.get();
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
-      update, node_id_delegate_, delegate_ptr);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager =
+      std::make_unique<ui::BrowserAccessibilityManagerOHOS>(update, node_id_delegate_, delegate_ptr);
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   n->Scroll(ax::mojom::Action::kScrollForward);
@@ -4367,8 +4363,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_Scroll_SliderInvalidAction) {
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, slider);
   auto recording_delegate = std::make_unique<RecordingAXDelegate>();
   ui::AXPlatformTreeManagerDelegate* delegate_ptr = recording_delegate.get();
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
-      update, node_id_delegate_, delegate_ptr);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager =
+      std::make_unique<ui::BrowserAccessibilityManagerOHOS>(update, node_id_delegate_, delegate_ptr);
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   n->Scroll(ax::mojom::Action::kDoDefault);
@@ -4394,8 +4390,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_Scroll_SliderWithStepValue) {
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, slider);
   auto recording_delegate = std::make_unique<RecordingAXDelegate>();
   ui::AXPlatformTreeManagerDelegate* delegate_ptr = recording_delegate.get();
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
-      update, node_id_delegate_, delegate_ptr);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager =
+      std::make_unique<ui::BrowserAccessibilityManagerOHOS>(update, node_id_delegate_, delegate_ptr);
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   n->Scroll(ax::mojom::Action::kScrollForward);
@@ -4423,8 +4419,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_Scroll_SliderWithoutStepValue) {
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, slider);
   auto recording_delegate = std::make_unique<RecordingAXDelegate>();
   ui::AXPlatformTreeManagerDelegate* delegate_ptr = recording_delegate.get();
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
-      update, node_id_delegate_, delegate_ptr);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager =
+      std::make_unique<ui::BrowserAccessibilityManagerOHOS>(update, node_id_delegate_, delegate_ptr);
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
 
@@ -4453,8 +4449,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_Scroll_SliderSameValueAfterUpdate)
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, slider);
   auto recording_delegate = std::make_unique<RecordingAXDelegate>();
   ui::AXPlatformTreeManagerDelegate* delegate_ptr = recording_delegate.get();
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
-      update, node_id_delegate_, delegate_ptr);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager =
+      std::make_unique<ui::BrowserAccessibilityManagerOHOS>(update, node_id_delegate_, delegate_ptr);
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
   n->Scroll(ax::mojom::Action::kScrollForward);
@@ -5914,8 +5910,8 @@ TEST_F(BrowserAccessibilityOHOSTest, Instance_OnLocationChanged) {
   ui::AXTreeUpdate update = ui::MakeAXTreeUpdateForTesting(root, button);
   auto recording_delegate = std::make_unique<RecordingAXDelegate>();
   ui::AXPlatformTreeManagerDelegate* delegate_ptr = recording_delegate.get();
-  std::unique_ptr<ui::BrowserAccessibilityManager> manager = std::make_unique<ui::BrowserAccessibilityManagerOHOS>(
-      update, node_id_delegate_, delegate_ptr);
+  std::unique_ptr<ui::BrowserAccessibilityManager> manager =
+      std::make_unique<ui::BrowserAccessibilityManagerOHOS>(update, node_id_delegate_, delegate_ptr);
   auto* n = static_cast<ui::BrowserAccessibilityOHOS*>(manager->GetFromID(2));
   ASSERT_NE(n, nullptr);
 

@@ -16,9 +16,9 @@
 #include <memory>
 
 #include <gtest/gtest.h>
-using namespace testing;
-
 #include "content/browser/code_cache/oh_code_cache.h"
+
+using namespace testing;
 
 namespace oh_code_cache {
 

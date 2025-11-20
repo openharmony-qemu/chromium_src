@@ -14,11 +14,9 @@
  */
 
 #include <memory>
-
+#include "content/browser/webauth/utils.h"
 #include <gtest/gtest.h>
 using namespace testing;
-
-#include "content/browser/webauth/utils.h"
 
 namespace content {
 

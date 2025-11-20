@@ -1161,7 +1161,7 @@ bool FunctionTemplate::Inherit(v8::Local<Function> parentFunc) {
       return false;
   }
   auto info = Utils::OpenHandle(this);
-  i::Isolate* i_isolate = info->GetIsolateChecked();
+  i::Isolate* i_isolate = i::Isolate::Current();
   i::Handle<i::FunctionTemplateInfo> funcInfo(i_function->shared()->api_func_data(), i_isolate);
   Inherit(v8::Utils::ToLocal(funcInfo));
   return true;
@@ -2531,7 +2531,7 @@ MaybeLocal<WasmModuleObject> WasmModuleObject::DeserializeOrCompile(
     MemorySpan<const uint8_t> wasm_cache_data, bool& cacheRejected) {
 #if V8_ENABLE_WEBASSEMBLY
   i::Isolate* i_isolate = reinterpret_cast<i::Isolate*>(v8_isolate);
-  i::MaybeHandle<i::WasmModuleObject> maybe_module =
+  i::MaybeDirectHandle<i::WasmModuleObject> maybe_module =
       i::wasm::DeserializeNativeModule(
           i_isolate,
           base::Vector<const uint8_t>(wasm_cache_data.data(),

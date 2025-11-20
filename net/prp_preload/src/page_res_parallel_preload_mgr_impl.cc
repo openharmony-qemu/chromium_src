@@ -55,16 +55,18 @@ void PRParallelPreloadMgrImpl::Init(
   bool inited = false;
   if (is_inited_.compare_exchange_strong(inited, true)) {
     sth_task_runner_ = base::ThreadPool::CreateSingleThreadTaskRunner(
-      {base::TaskPriority::USER_VISIBLE}, base::SingleThreadTaskRunnerThreadMode::DEDICATED);
-    if (sth_task_runner_ == nullptr) {
+        {base::TaskPriority::USER_VISIBLE},
+        base::SingleThreadTaskRunnerThreadMode::DEDICATED);
+    if (sth_task_runner_ == nullptr || net_task_runner == nullptr) {
       is_inited_.store(false);
       LOG(ERROR) << "PRPPreload.PRParallelPreloadMgrImpl::Init failed";
       return;
     }
+    net_task_runner_ = net_task_runner;
     sth_task_runner_->PostTask(
         FROM_HERE,
-        base::BindOnce(&ResParallelPreloadCtrler::InitDiskCacheBackendFactory, std::move(cache_path)));
-    net_task_runner_ = net_task_runner;
+        base::BindOnce(&ResParallelPreloadCtrler::InitDiskCacheBackendFactory,
+                       std::move(cache_path)));
   }
 }
 
@@ -74,7 +76,7 @@ void PRParallelPreloadMgrImpl::StartMainPage(
   base::WeakPtr<net::URLRequestContext> url_request_context,
   uint64_t addr_web_handle) {
   void* web_handle = reinterpret_cast<void*>(addr_web_handle);
-  if (url.empty() || web_handle == nullptr) {
+  if (url.empty() || url == "about:blank" || web_handle == nullptr) {
     LOG(ERROR) << "PRPPreload.PRParallelPreloadMgrImpl::StartMainPage failed, invalid args";
     return;
   }
@@ -97,14 +99,12 @@ void PRParallelPreloadMgrImpl::StartMainPage(
           url, network_anonymization_key, url_request_context, sth_task_runner_,
           net_task_runner_,
           base::BindRepeating(&PRParallelPreloadMgrImpl::OnRPPCtrlerTimeout,
-                              base::Unretained(this))));
-  if (rp_preload_ctrler == nullptr ||
-      !rp_preload_ctrler->Init(net_task_runner_, url_request_context)) {
-    LOG(ERROR) << "PRPPreload.PRParallelPreloadMgrImpl::StartMainPage new "
-                  "ResParallelPreloadCtrler failed";
+                              weak_factory_.GetWeakPtr())));
+  if (rp_preload_ctrler == nullptr) {
     return;
   }
-
+  rp_preload_ctrler->Init(net_task_runner_, url_request_context);
+  
   auto it_web = web_handle_pages_map_.find(web_handle);
   if (it_web != web_handle_pages_map_.end()) {
     if (it_web->second != url) {

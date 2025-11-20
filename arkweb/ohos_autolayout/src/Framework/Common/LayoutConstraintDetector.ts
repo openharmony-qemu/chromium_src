@@ -5,6 +5,19 @@ import LayoutUtils from '../Utils/LayoutUtils';
 import Log from '../../Debug/Log';
 import Tag from '../../Debug/Tag';
 
+interface SafeAreaInsets {
+    top: number;
+    left: number;
+    bottom: number;
+    right: number;
+}
+
+declare global {
+    interface Window {
+        safeAreaInsets?: SafeAreaInsets;
+    }
+}
+
 // 布局约束指标检测结果接口
 export interface LayoutConstraintMetrics {
     resultCode: number;               // 错误码，0表示通过
@@ -220,7 +233,7 @@ export class LayoutConstraintMetricsDetector {
             left: 0,
             bottom: 0,
             right: 0,
-            ...(window as any).safeAreaInsets // 兼容iOS安全区域
+            ...(window.safeAreaInsets || {}) // 兼容iOS安全区域
         };
         
         Log.d(`安全区域: L${safeArea.left} T${safeArea.top} R${safeArea.right} B${safeArea.bottom}`, Tag.layoutConstraintDetector);
@@ -294,7 +307,7 @@ export class LayoutConstraintMetricsDetector {
             left: 0,
             bottom: 0,
             right: 0,
-            ...(window as any).safeAreaInsets // 兼容iOS安全区域
+            ...(window.safeAreaInsets || {}) // 兼容iOS安全区域
         };
 
         // 计算有效屏幕边界（考虑安全区域）

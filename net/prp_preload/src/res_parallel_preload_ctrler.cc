@@ -33,40 +33,18 @@ void ResParallelPreloadCtrler::InitDiskCacheBackendFactory(const base::FilePath&
   }
 }
 
-bool ResParallelPreloadCtrler::Init(
+void ResParallelPreloadCtrler::Init(
     const scoped_refptr<base::SingleThreadTaskRunner>& net_task_runner,
     base::WeakPtr<net::URLRequestContext> url_request_context) {
-  if (g_disk_cache_backend_factory == nullptr) {
-    LOG(WARNING) << "PRPPreload.ResParallelPreloadCtrler::Init "
-                    "DiskCacheBackendFactory is null";
-    return false;
+  if (sth_task_runner_ == nullptr) {
+    return;
   }
-  res_req_info_updater_ =
-      base::WrapRefCounted(new (std::nothrow) ResRequestInfoUpdater(
-          url_, network_anonymization_key_, sth_task_runner_,
-          g_disk_cache_backend_factory,
-          base::BindRepeating(&ResParallelPreloadCtrler::OnResRequestInfoList,
-                              weak_factory_.GetWeakPtr())));
-  if (res_req_info_updater_ == nullptr) {
-    LOG(WARNING) << "PRPPreload.ResParallelPreloadCtrler::Init new "
-                    "ResRequestInfoUpdater failed";
-    return false;
-  }
-  res_preload_scheduler_ =
-      base::WrapRefCounted(new (std::nothrow) ResPreloadScheduler(
-          sth_task_runner_, net_task_runner, url_request_context));
-  if (res_preload_scheduler_ == nullptr) {
-    LOG(WARNING) << "PRPPreload.ResParallelPreloadCtrler::Init new "
-                    "ResPreloadScheduler failed";
-    return false;
-  }
-  return true;
+    sth_task_runner_->PostTask(FROM_HERE, base::BindOnce(&ResParallelPreloadCtrler::DoInit, weak_factory_.GetWeakPtr(),
+    net_task_runner, url_request_context));
 }
 
 void ResParallelPreloadCtrler::Start() {
-  if ((res_req_info_updater_ == nullptr) ||
-      (res_preload_scheduler_ == nullptr) ||
-      (sth_task_runner_ == nullptr)) {
+  if (sth_task_runner_ == nullptr) {
     return;
   }
   sth_task_runner_->PostTask(FROM_HERE,
@@ -78,9 +56,7 @@ void ResParallelPreloadCtrler::Start() {
 }
 
 void ResParallelPreloadCtrler::Stop() {
-  if ((res_req_info_updater_ == nullptr) ||
-      (res_preload_scheduler_ == nullptr) ||
-      (sth_task_runner_ == nullptr)) {
+  if (sth_task_runner_ == nullptr) {
     return;
   }
   sth_task_runner_->PostTask(FROM_HERE,
@@ -88,23 +64,54 @@ void ResParallelPreloadCtrler::Stop() {
 }
 
 void ResParallelPreloadCtrler::UpdateResRequestInfo(const std::shared_ptr<PRRequestInfo>& info) {
-  if ((res_req_info_updater_ == nullptr) || (res_preload_scheduler_ == nullptr)) {
+  if (sth_task_runner_ == nullptr) {
     return;
   }
   sth_task_runner_->PostTask(FROM_HERE, base::BindOnce(&ResParallelPreloadCtrler::DoUpdateResRequestInfo,
       weak_factory_.GetWeakPtr(), info));
 }
 
+void ResParallelPreloadCtrler::DoInit(
+    const scoped_refptr<base::SingleThreadTaskRunner>& net_task_runner,
+    base::WeakPtr<net::URLRequestContext> url_request_context) {
+  if (g_disk_cache_backend_factory == nullptr) {
+    LOG(WARNING) << "PRPPreload.ResParallelPreloadCtrler::DoInit DiskCacheBackendFactory is null";
+    return;
+  }
+  res_req_info_updater_ = base::WrapRefCounted(new (std::nothrow) ResRequestInfoUpdater(
+    url_, network_anonymization_key_, sth_task_runner_, g_disk_cache_backend_factory,
+    base::BindRepeating(&ResParallelPreloadCtrler::OnResRequestInfoList, weak_factory_.GetWeakPtr())));
+  if (res_req_info_updater_ == nullptr) {
+    LOG(WARNING) << "PRPPreload.ResParallelPreloadCtrler::DoInit new ResRequestInfoUpdater failed";
+    return;
+  }
+  res_preload_scheduler_ = base::WrapRefCounted(new (std::nothrow) ResPreloadScheduler(
+    sth_task_runner_, net_task_runner, url_request_context));
+  if (res_preload_scheduler_ == nullptr) {
+    LOG(WARNING) << "PRPPreload.ResParallelPreloadCtrler::DoInit new ResPreloadScheduler failed";
+    return;
+  }
+}
+ 
 void ResParallelPreloadCtrler::DoStart() {
+  if (res_req_info_updater_ == nullptr) {
+    return;
+  }
   res_req_info_updater_->Start();
 }
 
 void ResParallelPreloadCtrler::DoStop() {
+  if ((res_req_info_updater_ == nullptr) || (res_preload_scheduler_ == nullptr)) {
+    return;
+  }
   res_preload_scheduler_->StopPreload();
   res_req_info_updater_->Stop();
 }
 
 void ResParallelPreloadCtrler::DoUpdateResRequestInfo(const std::shared_ptr<PRRequestInfo>& info) {
+  if (res_req_info_updater_ == nullptr) {
+    return;
+  }
   res_req_info_updater_->UpdateResRequestInfo(info);
 }
 

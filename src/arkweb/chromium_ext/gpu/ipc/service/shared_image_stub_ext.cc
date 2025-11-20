@@ -35,6 +35,8 @@ SharedImageStubExt::SharedImageStubExt(GpuChannel* channel, int32_t route_id)
   : SharedImageStub(channel, route_id) {
 }
 
+SharedImageStubExt::~SharedImageStubExt() = default;
+
 #if BUILDFLAG(ARKWEB_HEIF_SUPPORT)
 bool SharedImageStubExt::CreateSharedImage(const Mailbox& mailbox,
                                         gfx::GpuMemoryBufferHandle handle,

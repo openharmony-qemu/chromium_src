@@ -110,7 +110,7 @@ const char* GmbTypeToString(gfx::GpuMemoryBufferType type) {
     case gfx::IO_SURFACE_BUFFER:
       return "platform";
 #endif
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || defined(OS_OHOS)
     case gfx::NATIVE_PIXMAP:
       return "platform";
 #endif
@@ -986,7 +986,7 @@ bool SharedImageFactory::RegisterBacking(
 
   gpu::Mailbox mailbox = shared_image->mailbox();
 #if BUILDFLAG(IS_ARKWEB)
-  if (shared_images_.find(shared_image) != shared_images_.end())
+  if (shared_images_.find(mailbox) != shared_images_.end())
     LOG(INFO) << "shared_image is exist, could not emplace again.";
 #endif
   shared_images_.emplace(std::move(mailbox), std::move(shared_image));

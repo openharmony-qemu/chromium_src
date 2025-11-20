@@ -16,8 +16,9 @@
 #ifndef HITRACE_ADAPTER_IMPL_H
 #define HITRACE_ADAPTER_IMPL_H
 
-#include "arkweb/ohos_adapter_ndk/interfaces/hitrace_adapter.h"
-#include "ohos_sdk/openharmony/native/sysroot/usr/include/hitrace/trace.h"
+#include "hitrace_adapter.h"
+#include "hitrace/trace.h"
+
 namespace OHOS::NWeb {
 class HiTraceAdapterImpl : public HiTraceAdapter {
 public:

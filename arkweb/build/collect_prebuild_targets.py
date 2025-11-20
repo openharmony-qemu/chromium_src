@@ -18,6 +18,7 @@ import os
 import subprocess
 import json
 import argparse
+import stat
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
@@ -82,7 +83,9 @@ def collect_all_labels(metadata_files, max_worker=8):
 
 
 def write_gni_file(output_path, mojom_labels, buildflag_header_labels):
-    with open(output_path, 'w', encoding='utf-8') as f:
+    flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+    modes = stat.S_IWUSR | stat.S_IRUSR
+    with os.fdopen(os.open(output_path, flags, modes), 'w', encoding='utf-8') as f:
         f.write("mojom_targets = [\n")
         for label in mojom_labels:
             f.write(f"  \"{label}\",\n")

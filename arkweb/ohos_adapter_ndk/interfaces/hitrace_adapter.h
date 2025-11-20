@@ -18,7 +18,7 @@
 
 #include <string>
 
-#include "ohos_sdk/openharmony/native/sysroot/usr/include/hitrace/trace.h"
+#include "hitrace/trace.h"
 
 namespace OHOS::NWeb {
 

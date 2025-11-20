@@ -69,20 +69,19 @@ PictureInPictureResult VideoPictureInPictureWindowControllerImpl::StartSessionEx
         GetContentClient()->browser()->CreateWindowForVideoPictureInPicture(
             this);
   }
-  LOG(INFO) << "PIC window_:" << window_;
   DCHECK(window_) << "Picture in Picture requires a valid window.";
 
   // If the window is closed by the system, then the picture in picture session
   // will end. The renderer must call `StartSession()` again.
   EmbedSurface(surface_id, natural_size);
   SetShowPlayPauseButton(show_play_pause_button);
-  if (GetWebContentsImpl() && GetWebContentsImpl()->AsWebContentsImplExt()) {
-    GetWebContentsImpl()->AsWebContentsImplExt()->OnPipEvent(PIP_STATE_ENTER);
-  }
   if (window_size) {
     *window_size = natural_size;
   }
-  GetWebContentsImpl()->SetHasPictureInPictureVideo(true);
+  if (GetWebContentsImpl() && GetWebContentsImpl()->AsWebContentsImplExt()) {
+    GetWebContentsImpl()->SetHasPictureInPictureVideo(true);
+    GetWebContentsImpl()->AsWebContentsImplExt()->OnPipEvent(PIP_STATE_ENTER);
+  }
   return result;
 }
 
@@ -92,11 +91,20 @@ void VideoPictureInPictureWindowControllerImpl::OnLeavingPictureInPictureExt(
   LOG(INFO) << "Pip Exit " << pip_media_player_id_.delegate_id
             << " " << pip_media_player_id_.frame_routing_id.child_id
             << " " << pip_media_player_id_.frame_routing_id.frame_routing_id;
+  if (!GetWebContentsImpl() || !GetWebContentsImpl()->AsWebContentsImplExt()) {
+    LOG(ERROR) << "Pip GetWebContentsImpl is null";
+    return;
+  }
   GetWebContentsImpl()->AsWebContentsImplExt()->OnPip(PIP_STATE_EXIT,
       pip_media_player_id_.delegate_id,
       pip_media_player_id_.frame_routing_id.child_id,
       pip_media_player_id_.frame_routing_id.frame_routing_id, 0, 0);
+  GetWebContentsImpl()->AsWebContentsImplExt()->OnPipEvent(PIP_STATE_EXIT);
 
+  if (!active_session_ || !active_session_->GetMediaPlayerRemote()) {
+    LOG(ERROR) << "Pip active_session_ is null";
+    return;
+  }
   active_session_->GetMediaPlayerRemote()->PipEnable(false);
 
   if (IsPlayerActive() && should_pause_video) {
@@ -104,12 +112,9 @@ void VideoPictureInPictureWindowControllerImpl::OnLeavingPictureInPictureExt(
 
     active_session_->GetMediaPlayerRemote()->PipEnable(false);
 
-    active_session_->GetMediaPlayerRemote()->RequestPause(
-        /*triggered_by_user=*/false);
+    active_session_->GetMediaPlayerRemote()->RequestPause(false);
   }
-  if (GetWebContentsImpl() && GetWebContentsImpl()->AsWebContentsImplExt()) {
-    GetWebContentsImpl()->AsWebContentsImplExt()->OnPipEvent(PIP_STATE_EXIT);
-  }
+
   active_session_->Shutdown();
   active_session_ = nullptr;
 }
@@ -117,7 +122,12 @@ void VideoPictureInPictureWindowControllerImpl::OnLeavingPictureInPictureExt(
 void VideoPictureInPictureWindowControllerImpl::OnPictureInPictureStateChanged(
     const MediaPlayerId& id, uint32_t state, int32_t width, int32_t height) {
   DCHECK(active_session_);
-  GetWebContentsImpl()->AsWebContentsImplExt()->OnPip(state, id.delegate_id,
+  if (!GetWebContentsImpl() || !GetWebContentsImpl()->AsWebContentsImplExt()) {
+    LOG(ERROR) << "Pip GetWebContentsImpl is null";
+    return;
+  }
+  GetWebContentsImpl()->AsWebContentsImplExt()->OnPip(state,
+                              id.delegate_id,
                               id.frame_routing_id.child_id,
                               id.frame_routing_id.frame_routing_id, width, height);
 }
@@ -127,6 +137,10 @@ void VideoPictureInPictureWindowControllerImpl::WebContentsDestroyedExt() {
   LOG(INFO) << "Pip Exit " << pip_media_player_id_.delegate_id
             << " " << pip_media_player_id_.frame_routing_id.child_id
             << " " << pip_media_player_id_.frame_routing_id.frame_routing_id;
+  if (!GetWebContentsImpl() || !GetWebContentsImpl()->AsWebContentsImplExt()) {
+    LOG(ERROR) << "Pip GetWebContentsImpl is null";
+    return;
+  }
   GetWebContentsImpl()->AsWebContentsImplExt()->OnPip(PIP_STATE_EXIT,
       pip_media_player_id_.delegate_id,
       pip_media_player_id_.frame_routing_id.child_id,

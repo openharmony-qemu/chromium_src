@@ -19,9 +19,11 @@
 namespace gpu {
 class SharedImageStub;
 
-class SharedImageStubExt : public SharedImageStub {
+class SharedImageStubExt final : public SharedImageStub {
 public:
   SharedImageStubExt(GpuChannel* channel, int32_t route_id);
+  ~SharedImageStubExt();
+
   gpu::SharedImageStubExt* AsSharedImageStubExt() {
     return this;
   }

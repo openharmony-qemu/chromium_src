@@ -152,3 +152,7 @@ if (arkweb_get_scroll_offset) {
 if (arkweb_bfcache) {
   mojom_core_enabled_features += [ "arkweb_bfcache" ]
 }
+
+if (arkweb_console_logging) {
+  mojom_core_enabled_features += [ "arkweb_console_logging" ]
+}

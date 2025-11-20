@@ -1191,7 +1191,11 @@ void SharedStorageWorkletHost::DidAddMessageToConsole(
   // Mimic what's being done for console outputs from Window context, which
   // manually triggers the observer method.
   static_cast<RenderFrameHostImpl&>(document_service_->render_frame_host())
+#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+      .DidAddMessageToConsoleV2(level, blink::mojom::ConsoleMessageSource::kOther, base::UTF8ToUTF16(message),
+#else
       .DidAddMessageToConsole(level, base::UTF8ToUTF16(message),
+#endif
                               /*line_no=*/0, /*source_id=*/{},
                               /*untrusted_stack_trace=*/{});
 }

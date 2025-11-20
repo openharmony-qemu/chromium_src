@@ -59,6 +59,12 @@ mojom("mojom") {
     ]
   }
 
+  if (is_arkweb) {
+    sources += [
+      "//arkweb/chromium_ext/services/device/public/mojom/business_risk_intelligent_detection.mojom",
+    ]
+  }
+
   cpp_typemaps = [
     {
       types = [

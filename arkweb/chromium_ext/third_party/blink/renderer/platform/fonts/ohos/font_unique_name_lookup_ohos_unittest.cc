@@ -140,5 +140,4 @@ TEST_F(FontUniqueNameLookupOhosTest, IsFontUniqueNameLookupReadyForSyncLookup003
   flag = lookup_.IsFontUniqueNameLookupReadyForSyncLookup();
   EXPECT_FALSE(flag);
 }
-
 }  // namespace blink

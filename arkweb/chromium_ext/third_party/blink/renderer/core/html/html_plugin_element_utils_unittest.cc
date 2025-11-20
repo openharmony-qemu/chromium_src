@@ -27,7 +27,6 @@
 #include "third_party/blink/renderer/core/html/html_plugin_element.h"
 
 namespace blink {
-
 class MockCcLayer : public cc::Layer {
  public:
   explicit MockCcLayer() : cc::Layer() {

@@ -25,7 +25,6 @@ class ServiceTransferCacheExtTest : public testing::Test {
 TEST_F(ServiceTransferCacheExtTest, CreateEntrySuccess) {
     auto surface = SkSurfaces::Raster(SkImageInfo::MakeN32Premul(10, 10));
     std::vector<sk_sp<SkImage>> images = {surface->makeImageSnapshot()};
-
     ASSERT_NE(surface, nullptr);
     ASSERT_FALSE(images.empty());
     ASSERT_NE(images[0], nullptr);
@@ -37,7 +36,6 @@ TEST_F(ServiceTransferCacheExtTest, CreateEntrySuccess) {
 TEST_F(ServiceTransferCacheExtTest, CreateDuplicateEntryFails) {
     auto surface = SkSurfaces::Raster(SkImageInfo::MakeN32Premul(10, 10));
     std::vector<sk_sp<SkImage>> images = {surface->makeImageSnapshot()};
-
     ASSERT_NE(surface, nullptr);
     ASSERT_FALSE(images.empty());
     ASSERT_NE(images[0], nullptr);
@@ -52,7 +50,6 @@ TEST_F(ServiceTransferCacheExtTest, CreateDuplicateEntryFails) {
 TEST_F(ServiceTransferCacheExtTest, CreateEntryUpdatesCacheSize) {
     auto surface = SkSurfaces::Raster(SkImageInfo::MakeN32Premul(10, 10));
     std::vector<sk_sp<SkImage>> images = {surface->makeImageSnapshot()};
-
     ASSERT_NE(surface, nullptr);
     ASSERT_FALSE(images.empty());
     ASSERT_NE(images[0], nullptr);
@@ -64,7 +61,6 @@ TEST_F(ServiceTransferCacheExtTest, CreateEntryUpdatesCacheSize) {
 TEST_F(ServiceTransferCacheExtTest, CreateEntryUpdatesImageCount) {
     auto surface = SkSurfaces::Raster(SkImageInfo::MakeN32Premul(10, 10));
     std::vector<sk_sp<SkImage>> images = {surface->makeImageSnapshot()};
-
     ASSERT_NE(surface, nullptr);
     ASSERT_FALSE(images.empty());
     ASSERT_NE(images[0], nullptr);

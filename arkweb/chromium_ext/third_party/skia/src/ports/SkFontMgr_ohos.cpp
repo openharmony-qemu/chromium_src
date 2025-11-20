@@ -109,14 +109,17 @@ sk_sp<SkTypeface> SkFontMgr_OHOS::onMatchFamilyStyle(
   }
 
 #if BUILDFLAG(ARKWEB_THEME_FONT)
-  auto* themeFontTypeface = fontConfig->getThemeFontTypeface();
-  if (styleIndex >= 0 && !isFallback && themeFontTypeface) {
-    return sk_ref_sp(themeFontTypeface);
+  auto themeFontTypefaceSet = fontConfig->getThemeFontTypefaceSet();
+  if (styleIndex >= 0 && !isFallback && !themeFontTypefaceSet.empty()) {
+    auto typeface = themeFontTypefaceSet[0];
+    return sk_ref_sp(typeface.get());
   }
-  if (styleIndex < 0 && themeFontTypeface) {
-    const FontInfo* fontInfo = themeFontTypeface->getFontInfo();
-    if (fontInfo && SkString(familyName) == fontInfo->familyName) {
-      return sk_ref_sp(themeFontTypeface);
+  if (styleIndex < 0 && !themeFontTypefaceSet.empty()) {
+    for (auto themeTypeface : themeFontTypefaceSet) {
+      const FontInfo* fontInfo = themeTypeface->getFontInfo();
+      if (fontInfo && SkString(familyName) == fontInfo->familyName) {
+        return sk_ref_sp(themeTypeface.get());
+      }
     }
   }
 #endif
@@ -146,6 +149,15 @@ sk_sp<SkTypeface> SkFontMgr_OHOS::onMatchFamilyStyleCharacter(
   if (fontConfig == nullptr) {
     return nullptr;
   }
+
+#if BUILDFLAG(ARKWEB_THEME_FONT)
+  auto themeFontTypefaceSet = fontConfig->getThemeFontTypefaceSet();
+  for (auto themeFontTypeface : themeFontTypefaceSet) {
+    if (themeFontTypeface->unicharToGlyph(character) != 0) {
+      return sk_ref_sp(themeFontTypeface.get());
+    }
+  }
+#endif
 
   const FallbackForMap& fallbackForMap = fontConfig->getFallbackForMap();
   const FallbackSet& fallbackSet = fontConfig->getFallbackSet();
@@ -501,9 +513,9 @@ sk_sp<SkTypeface> SkFontMgr_OHOS::makeTypeface(SkFontData* fontData) const {
 }
 
 #if BUILDFLAG(ARKWEB_THEME_FONT)
-void SkFontMgr_OHOS::onInvalidateThemeFont(int fd) {
+void SkFontMgr_OHOS::onInvalidateThemeFont(const std::vector<int>& fds) {
   if (fontConfig) {
-    fontConfig->InvalidateThemeFont(fontScanner, fd);
+    fontConfig->InvalidateThemeFont(fontScanner, fds);
   }
 }
 #endif

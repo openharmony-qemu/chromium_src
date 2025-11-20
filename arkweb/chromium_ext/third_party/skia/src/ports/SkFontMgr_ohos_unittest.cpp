@@ -522,7 +522,7 @@ TEST_F(SkFontMgrOHOSTest, onInvalidateThemeFont001) {
     beforeOnInvalidateThemeFont();
     ASSERT_GE(fontMgr->fontConfig, nullptr);
 
-    fontMgr->onInvalidateThemeFont(tempFd);
+    fontMgr->onInvalidateThemeFont(std::vector<int>{tempFd});
     afterOnInvalidateThemeFont();
 }
 
@@ -530,7 +530,7 @@ TEST_F(SkFontMgrOHOSTest, onInvalidateThemeFont002) {
     beforeOnInvalidateThemeFont();
     ASSERT_GE(fontMgr->fontConfig, nullptr);
 
-    fontMgr->onInvalidateThemeFont(-1);
+    fontMgr->onInvalidateThemeFont(std::vector<int>{-1});
     afterOnInvalidateThemeFont();
 }
 
@@ -538,9 +538,9 @@ TEST_F(SkFontMgrOHOSTest, onInvalidateThemeFont003) {
     beforeOnInvalidateThemeFont();
     ASSERT_GE(fontMgr->fontConfig, nullptr);
 
-    fontMgr->onInvalidateThemeFont(tempFd);
-    fontMgr->onInvalidateThemeFont(tempFd);
-    fontMgr->onInvalidateThemeFont(tempFd);
+    fontMgr->onInvalidateThemeFont(std::vector<int>{tempFd});
+    fontMgr->onInvalidateThemeFont(std::vector<int>{tempFd});
+    fontMgr->onInvalidateThemeFont(std::vector<int>{tempFd});
 
     afterOnInvalidateThemeFont();
 }
@@ -550,7 +550,7 @@ TEST_F(SkFontMgrOHOSTest, onInvalidateThemeFont004) {
     auto originalConfig = fontMgr->fontConfig;
 
     fontMgr->fontConfig = nullptr;
-    fontMgr->onInvalidateThemeFont(tempFd);
+    fontMgr->onInvalidateThemeFont(std::vector<int>{tempFd});
     fontMgr->fontConfig = originalConfig;
 
     afterOnInvalidateThemeFont();

@@ -271,13 +271,14 @@ TEST_F(RenderProcessHostImplUtilsTest, IsThemeFontValidTest6) {
   base::CreateDirectory(flag_path);
   base::CreateDirectory(font_path);
   base::WriteFile(manifest_path, "{}");
+  std::vector<base::File> font_files;
+  font_files.emplace_back(base::File(manifest_path, base::File::FLAG_OPEN | base::File::FLAG_READ));
   
   ArkwebRenderProcessHostImplUtils::g_theme_font_ = std::make_unique<ThemeFont>();
   ArkwebRenderProcessHostImplUtils::g_theme_font_->flag_path = flag_path;
   ArkwebRenderProcessHostImplUtils::g_theme_font_->manifest_path = manifest_path;
   ArkwebRenderProcessHostImplUtils::g_theme_font_->font_path = font_path;
-  ArkwebRenderProcessHostImplUtils::g_theme_font_->font_file = 
-    base::File(manifest_path, base::File::FLAG_OPEN | base::File::FLAG_READ);
+  ArkwebRenderProcessHostImplUtils::g_theme_font_->font_files = std::move(font_files);
   
   EXPECT_TRUE(ArkwebRenderProcessHostImplUtils::IsThemeFontValid());
 }
@@ -290,13 +291,14 @@ TEST_F(RenderProcessHostImplUtilsTest, EnsureThemeFont_AlreadyValid) {
   base::CreateDirectory(flag_path);
   base::CreateDirectory(font_path);
   base::WriteFile(manifest_path, "{}");
+  std::vector<base::File> font_files;
+  font_files.emplace_back(base::File(manifest_path, base::File::FLAG_OPEN | base::File::FLAG_READ));
   
   ArkwebRenderProcessHostImplUtils::g_theme_font_ = std::make_unique<ThemeFont>();
   ArkwebRenderProcessHostImplUtils::g_theme_font_->flag_path = flag_path;
   ArkwebRenderProcessHostImplUtils::g_theme_font_->manifest_path = manifest_path;
   ArkwebRenderProcessHostImplUtils::g_theme_font_->font_path = font_path;
-  ArkwebRenderProcessHostImplUtils::g_theme_font_->font_file =
-    base::File(manifest_path, base::File::FLAG_OPEN | base::File::FLAG_READ);
+  ArkwebRenderProcessHostImplUtils::g_theme_font_->font_files = std::move(font_files);
   
   EXPECT_TRUE(ArkwebRenderProcessHostImplUtils::IsThemeFontValid());
  
@@ -350,8 +352,8 @@ TEST_F(RenderProcessHostImplUtilsTest, EnsureThemeFontTest5) {
   base::CreateDirectory(theme_font_path);
   base::FilePath manifest_path(theme_font_path.Append(kAppThemeFontsManifest));
   std::string json_content = base::StringPrintf(
-    "{\"id\":\"%s\",\"origin\":\"%s\",\"ttfFileSrc\":\"%s",
-    "1", "preset", "/absolute/path/default.ttf");
+    "{\"id\":\"%s\",\"origin\":\"%s\",\"src\":\"%s",
+    "1", "preset", "default.ttf");
   EXPECT_EQ(base::WriteFile(manifest_path, json_content), true);
   LOG(INFO) << "manifest_path:" << manifest_path.FinalExtension();
   ThemeFont* result = ArkwebRenderProcessHostImplUtils::EnsureThemeFont();
@@ -370,7 +372,7 @@ TEST_F(RenderProcessHostImplUtilsTest, EnsureThemeFontTest6) {
   base::CreateDirectory(theme_font_path);
   base::FilePath manifest_path(theme_font_path.Append(kAppThemeFontsManifest));
   std::string json_content = base::StringPrintf(
-    "[\"id\",\"origin\",\"ttfFileSrc\"]");
+    "[\"id\",\"origin\",\"src\",\"srcExt\"]");
   EXPECT_EQ(base::WriteFile(manifest_path, json_content), true);
   LOG(INFO) << "manifest_path:" << manifest_path.Extension();
   ThemeFont* result = ArkwebRenderProcessHostImplUtils::EnsureThemeFont();
@@ -407,8 +409,8 @@ TEST_F(RenderProcessHostImplUtilsTest, EnsureThemeFontTest8) {
   base::CreateDirectory(theme_font_path);
   base::FilePath manifest_path(theme_font_path.Append(kAppThemeFontsManifest));
   std::string json_content = base::StringPrintf(
-    "{\"id\":\"%s\",\"origin\":\"%s\",\"ttfFileSrc\":\"%s\"}",
-    "1", "preset", "");
+    "{\"id\":\"%s\",\"origin\":\"%s\",\"src\":\"%s\",\"srcExt\":[\"%s\"]}",
+    "1", "preset", "", "");
   base::WriteFile(manifest_path, json_content);
   ThemeFont* result = ArkwebRenderProcessHostImplUtils::EnsureThemeFont();
   EXPECT_EQ(result, nullptr);
@@ -426,8 +428,8 @@ TEST_F(RenderProcessHostImplUtilsTest, EnsureThemeFontTest9) {
   base::CreateDirectory(theme_font_path);
   base::FilePath manifest_path(theme_font_path.Append(kAppThemeFontsManifest));
   std::string json_content = base::StringPrintf(
-    "{\"id\":\"%s\",\"origin\":\"%s\",\"ttfFileSrc\":\"%s\"}",
-    "1", "preset", "/absolute/path/default.ttf");
+    "{\"id\":\"%s\",\"origin\":\"%s\",\"ttfFileSrc\":\"%s\",\"srcExt\":[\"%s\"]}",
+    "1", "preset", "default.ttf", "default2.ttf");
   base::WriteFile(manifest_path, json_content);
   ThemeFont* result = ArkwebRenderProcessHostImplUtils::EnsureThemeFont();
   EXPECT_EQ(result, nullptr);
@@ -447,7 +449,7 @@ TEST_F(RenderProcessHostImplUtilsTest, EnsureThemeFontTest10) {
   base::FilePath font_file = theme_font_path.Append("valid_font.ttf");
   base::WriteFile(font_file, "");
   std::string json_content = base::StringPrintf(
-    "{\"id\":\"%s\",\"origin\":\"%s\",\"ttfFileSrc\":\"%s\"}",
+    "{\"id\":\"%s\",\"origin\":\"%s\",\"src\":\"%s\"}",
     "1", "preset", "valid_font.ttf");
   base::WriteFile(manifest_path, json_content);
   ThemeFont* result = ArkwebRenderProcessHostImplUtils::EnsureThemeFont();
@@ -455,6 +457,72 @@ TEST_F(RenderProcessHostImplUtilsTest, EnsureThemeFontTest10) {
   base::DeletePathRecursively(theme_flag_path);
   base::DeletePathRecursively(theme_font_path);
 }
+
+TEST_F(RenderProcessHostImplUtilsTest, EnsureThemeFontTest11) {
+  base::FilePath theme_path(kAppThemePathA);
+  base::FilePath theme_path_flag(kAppThemePathA);
+  base::FilePath theme_flag_path = theme_path_flag.Append(kAppThemeFlagFileName);
+  base::FilePath theme_font_path = theme_path.Append(kAppThemeFontsDirName);
+  base::CreateDirectory(theme_path);
+  base::CreateDirectory(theme_flag_path);
+  base::CreateDirectory(theme_font_path);
+  base::FilePath manifest_path(theme_font_path.Append(kAppThemeFontsManifest));
+  base::FilePath font_file = theme_font_path.Append("valid_font.ttf");
+  base::WriteFile(font_file, "");
+  std::string json_content = base::StringPrintf(
+    "{\"id\":\"%s\",\"origin\":\"%s\",\"src\":\"%s\",\"srcExt\":[\"%s\"]}",
+    "1", "preset", "valid_font.ttf", "");
+  base::WriteFile(manifest_path, json_content);
+  ThemeFont* result = ArkwebRenderProcessHostImplUtils::EnsureThemeFont();
+  EXPECT_NE(result, nullptr);
+  base::DeletePathRecursively(theme_flag_path);
+  base::DeletePathRecursively(theme_font_path);
+}
+
+TEST_F(RenderProcessHostImplUtilsTest, EnsureThemeFontTest12) {
+  base::FilePath theme_path(kAppThemePathA);
+  base::FilePath theme_path_flag(kAppThemePathA);
+  base::FilePath theme_flag_path = theme_path_flag.Append(kAppThemeFlagFileName);
+  base::FilePath theme_font_path = theme_path.Append(kAppThemeFontsDirName);
+  base::CreateDirectory(theme_path);
+  base::CreateDirectory(theme_flag_path);
+  base::CreateDirectory(theme_font_path);
+  base::FilePath manifest_path(theme_font_path.Append(kAppThemeFontsManifest));
+  base::FilePath font_file = theme_font_path.Append("valid_font.ttf");
+  base::WriteFile(font_file, "");
+  std::string json_content = base::StringPrintf(
+    "{\"id\":\"%s\",\"origin\":\"%s\",\"src\":\"%s\",\"srcExt\":[\"%s\"]}",
+    "1", "preset", "valid_font.ttf", "default2.ttf");
+  base::WriteFile(manifest_path, json_content);
+  ThemeFont* result = ArkwebRenderProcessHostImplUtils::EnsureThemeFont();
+  EXPECT_NE(result, nullptr);
+  base::DeletePathRecursively(theme_flag_path);
+  base::DeletePathRecursively(theme_font_path);
+}
+
+TEST_F(RenderProcessHostImplUtilsTest, EnsureThemeFontTest13) {
+  base::FilePath theme_path(kAppThemePathA);
+  base::FilePath theme_path_flag(kAppThemePathA);
+  base::FilePath theme_flag_path = theme_path_flag.Append(kAppThemeFlagFileName);
+  base::FilePath theme_font_path = theme_path.Append(kAppThemeFontsDirName);
+  base::CreateDirectory(theme_path);
+  base::CreateDirectory(theme_flag_path);
+  base::CreateDirectory(theme_font_path);
+  base::FilePath manifest_path(theme_font_path.Append(kAppThemeFontsManifest));
+  base::FilePath font_file = theme_font_path.Append("valid_font.ttf");
+  base::WriteFile(font_file, "");
+  base::FilePath font_file_ext = theme_font_path.Append("valid_font1.ttf");
+  base::WriteFile(font_file_ext, "");
+  std::string json_content = base::StringPrintf(
+    "{\"id\":\"%s\",\"origin\":\"%s\",\"src\":\"%s\",\"srcExt\":[\"%s\"]}",
+    "1", "preset", "valid_font.ttf", "valid_font1.ttf");
+  base::WriteFile(manifest_path, json_content);
+  ThemeFont* result = ArkwebRenderProcessHostImplUtils::EnsureThemeFont();
+  EXPECT_NE(result, nullptr);
+  base::DeletePathRecursively(theme_flag_path);
+  base::DeletePathRecursively(theme_font_path);
+}
+
 #endif
  
 #if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)

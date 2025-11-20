@@ -187,7 +187,7 @@ struct ThemeFont {
   base::FilePath flag_path;
   base::FilePath manifest_path;
   base::FilePath font_path;
-  base::File font_file;
+  std::vector<base::File> font_files;
 };
 #endif
 

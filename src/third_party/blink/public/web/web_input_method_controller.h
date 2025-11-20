@@ -20,12 +20,6 @@ namespace gfx {
 class Rect;
 }  // namespace gfx
 
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-namespace WTF {
-class String;
-}
-#endif
-
 namespace blink {
 
 class WebString;

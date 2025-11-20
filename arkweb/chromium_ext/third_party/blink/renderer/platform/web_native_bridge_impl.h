@@ -107,6 +107,7 @@ class BLINK_PLATFORM_EXPORT WebNativeBridgeImpl
   void RegisterContentsLayer(cc::Layer* layer) override;
   void UnregisterContentsLayer(cc::Layer* layer) override;
   void OnSurfaceIdUpdated(viz::SurfaceId surface_id) override;
+  void SetStretchContentToFillBounds(bool stretch_content_to_fill_bounds) override;
 
  private:
   // Switch to SurfaceLayer for same layer situation.

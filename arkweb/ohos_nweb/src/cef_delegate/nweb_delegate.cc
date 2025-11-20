@@ -5902,6 +5902,9 @@ void NWebDelegate::EnableMediaNetworkTrafficPrompt(bool enable) {
 void NWebDelegate::SetSurfaceDensity(const double& density) {
   display_ratio_ = density;
   SetVirtualPixelRatio(density);
+#if BUILDFLAG(ARKWEB_SAME_LAYER)
+  base::ohos::SetDevicePixelRatio(display_ratio_);
+#endif
   std::shared_ptr<DisplayAdapter> display =
       display_manager_adapter_->GetDefaultDisplay();
   LOG(INFO) << "SetSurfaceDensity: " << density;

@@ -38,6 +38,8 @@ class BLINK_PLATFORM_EXPORT WebNativeBridge {
   virtual int GetDelegateId() { return -1; }
 
   virtual gfx::Size NaturalSize() const = 0;
+
+  virtual void SetStretchContentToFillBounds(bool stretch_content_to_fill_bounds) = 0;
 };
 
 }  // namespace blink

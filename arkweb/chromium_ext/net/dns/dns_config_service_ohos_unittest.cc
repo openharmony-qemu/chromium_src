@@ -14,11 +14,9 @@
  */
 
 #include "net/dns/dns_config_service_ohos.h"
-
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
-
 #include <cstring>
 
 #include "base/test/task_environment.h"
@@ -113,7 +111,7 @@ class DnsConfigServiceOhosTest : public ::testing::Test {
            NetConn_ConnectionProperties* prop) -> int32_t {
       prop->dnsListSize = sizeof(kTestAddresses) / sizeof(kTestAddresses[0]);
       EXPECT_TRUE(prop->dnsListSize < NETCONN_MAX_ADDR_SIZE);
-      std::memcpy(prop->dnsList, kTestAddresses, sizeof(kTestAddresses));
+      memcpy_s(prop->dnsList, NETCONN_MAX_ADDR_SIZE, kTestAddresses, sizeof(kTestAddresses));
       return 0;
     };
   }
@@ -215,7 +213,7 @@ TEST_F(DnsConfigServiceOhosTest,
          NetConn_ConnectionProperties* prop) -> int32_t {
     prop->dnsListSize = sizeof(kTestInvalidAddresses) / sizeof(kTestInvalidAddresses[0]);
     EXPECT_TRUE(prop->dnsListSize < NETCONN_MAX_ADDR_SIZE);
-    std::memcpy(prop->dnsList, kTestInvalidAddresses, sizeof(kTestInvalidAddresses));
+    memcpy_s(prop->dnsList, NETCONN_MAX_ADDR_SIZE, kTestInvalidAddresses, sizeof(kTestInvalidAddresses));
     return 0;
   };
   auto nameservers = GetNameserversFromConnectProperties();

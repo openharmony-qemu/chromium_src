@@ -60,4 +60,3 @@ TEST(SurfaceLayerImplTest, OnLayerRectUpdate) {
 
 }  // namespace
 }  // namespace cc
-

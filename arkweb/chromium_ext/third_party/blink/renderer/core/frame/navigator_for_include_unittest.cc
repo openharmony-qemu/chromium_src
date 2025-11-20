@@ -58,4 +58,3 @@ TEST_F(NavigatorForIncludeTest, AppPackageName_NullCommandLine) {
   EXPECT_NE(base::CommandLine::ForCurrentProcess(), nullptr);
 }
 }  // namespace blink
-

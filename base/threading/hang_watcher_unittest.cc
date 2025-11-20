@@ -36,7 +36,6 @@
 
 using testing::ElementsAre;
 using testing::IsEmpty;
-
 #if BUILDFLAG(ARKWEB_CRASHPAD)
 void ReportRenderFreeze() {}
 #endif

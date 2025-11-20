@@ -3505,6 +3505,7 @@ bool NWebHandlerDelegate::OnFileDialog(
     const std::vector<CefString>& accept_filters,
     const std::vector<CefString>& accept_extensions,
     const std::vector<CefString>& accept_descriptions,
+    const CefString& accepts,
     const CefString& start_in,
     bool is_exclude_accept_all_options,
     bool capture,
@@ -3534,10 +3535,17 @@ bool NWebHandlerDelegate::OnFileDialog(
         break;
     }
   }
+  std::string default_name = default_file_path.ToString();
+  std::string default_path = start_in.ToString();
+  size_t pos = default_name.find_last_of('/');
+  if (pos != std::string::npos) {
+    default_path = default_name.substr(0, pos + 1);
+    default_name = default_name.substr(pos + 1);
+  }
   std::shared_ptr<NWebFileSelectorParams> param =
       std::make_shared<FileSelectorParamsImpl>(
           file_mode, file_selector_title, accept_extensions,
-          default_file_path.ToString(), capture, mime_filters, start_in.ToString(),
+          default_name, capture, mime_filters, accepts.ToString(), default_path,
           accept_descriptions, is_exclude_accept_all_options);
   std::shared_ptr<NWebStringVectorValueCallback> file_path_callback =
       std::make_shared<FileSelectorCallbackImpl>(callback);

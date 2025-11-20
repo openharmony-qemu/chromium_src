@@ -388,8 +388,8 @@ EncoderStatus ConvertAndScaleFrame(const VideoFrame& src_frame,
     } else {
       // Both resize and I420-to-NV12 conversion are required.
       // First, merge U and V planes into one, basically producing a NV12 frame.
-      const int tmp_uv_width = (src_frame.visible_rect().width() + 1) / 2;
-      const int tmp_uv_height = (src_frame.visible_rect().height() + 1) / 2;
+      const size_t tmp_uv_width = (src_frame.visible_rect().width() + 1) / 2;
+      const size_t tmp_uv_height = (src_frame.visible_rect().height() + 1) / 2;
       size_t tmp_buffer_size = tmp_uv_width * tmp_uv_height * 2;
       if (tmp_buf.size() < tmp_buffer_size) {
         tmp_buf.resize(tmp_buffer_size);
@@ -458,8 +458,8 @@ EncoderStatus ConvertAndScaleFrame(const VideoFrame& src_frame,
     } else {
       // Both resize and I420-to-NV12 conversion are required.
       // First, merge U and V planes into one, basically producing a NV12 frame.
-      const int tmp_uv_width = (src_frame.visible_rect().width() + 1) / 2;
-      const int tmp_uv_height = (src_frame.visible_rect().height() + 1) / 2;
+      const size_t tmp_uv_width = (src_frame.visible_rect().width() + 1) / 2;
+      const size_t tmp_uv_height = (src_frame.visible_rect().height() + 1) / 2;
       size_t tmp_buffer_size = tmp_uv_width * tmp_uv_height * 2;
       if (tmp_buf.size() < tmp_buffer_size) {
         tmp_buf.resize(tmp_buffer_size);

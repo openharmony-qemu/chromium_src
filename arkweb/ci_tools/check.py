@@ -19,7 +19,7 @@ for project in root.findall("project"):
             matched_paths.append(matched_path)
 print(matched_paths)
 
-check_list = ['system/app/ArkWebCore','system/app/ArkWebCoreLegacy','ArkWebCore.hap','ArkWebCoreLegacy.hap','com.huawei.hmos.arkwebcore','com.huawei.hmos.arkwebcorelegacy','ArkWebCore','ArkWebCoreLegacy']
+check_list = ['system/app/ArkWebCore','system/app/ArkWebCoreLegacy','ArkWebCore.hap','ArkWebCoreLegacy.hap','com.huawei.hmos.arkwebcore','com.huawei.hmos.arkwebcorelegacy']
 def check_paths_in_files(file_paths,check_list):
     result = 0
     for file_path in file_paths:

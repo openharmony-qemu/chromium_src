@@ -59,7 +59,7 @@ class SkFontMgr_OHOS : public SkFontMgr {
       SkFontStyle style) const override;
 
 #if BUILDFLAG(ARKWEB_THEME_FONT)
-  virtual void onInvalidateThemeFont(int fd) override;
+  virtual void onInvalidateThemeFont(const std::vector<int>& fds) override;
 #endif
 
  private:

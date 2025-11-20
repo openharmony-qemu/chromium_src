@@ -143,4 +143,7 @@ virtual std::string OnRewriteUrlForNavigation(const std::string& original_url,
                                               bool is_key_request) { return ""; }
 #endif
 
+#if BUILDFLAG(ARKWEB_WEBRTC)
+virtual void OnCameraCaptureStateChanged(int original_state, int new_state) {}
+#endif
 #endif  // ARKWEB_CHROMIUM_EXT_CONTENT_PUBLIC_BROWSER_WEB_CONTENTS_DELEGATE_FOR_INCLUDE_H_

@@ -2300,7 +2300,7 @@ TEST_F(FontConfig_OHOSTest, logErrInfo002) {
 }
 
 TEST_F(FontConfig_OHOSTest, InvalidateThemeFont001) {
-    fontConfig->InvalidateThemeFont(mockScanner, -1);
+    fontConfig->InvalidateThemeFont(mockScanner, std::vector<int>{-1});
 }
 
 TEST_F(FontConfig_OHOSTest, InvalidateThemeFont002) {
@@ -2308,7 +2308,7 @@ TEST_F(FontConfig_OHOSTest, InvalidateThemeFont002) {
     sk_sp<SkData> data(SkData::MakeFromFD(123));
     std::unique_ptr<SkStreamAsset> stream = std::make_unique<SkMemoryStream>(std::move(data));
     
-    fontConfig->InvalidateThemeFont(mockScanner, 123);
+    fontConfig->InvalidateThemeFont(mockScanner, std::vector<int>{123});
 }
 
 TEST_F(FontConfig_OHOSTest, checkNewFontengineISOKMock) {
@@ -2988,9 +2988,9 @@ TEST_F(FontConfig_OHOSTest, InvalidateThemeFont_ScanFileAndScanInstanceFalse) {
   base::File file(filePath, base::File::FLAG_OPEN | base::File::FLAG_READ);
   ASSERT_TRUE(file.IsValid());
 
-  fontConfig->InvalidateThemeFont(scanner, file.GetPlatformFile());
+  fontConfig->InvalidateThemeFont(scanner, std::vector<int>{file.GetPlatformFile()});
 
-  EXPECT_EQ(fontConfig->getThemeFontTypeface(), nullptr);
+  EXPECT_EQ(fontConfig->getThemeFontTypefaceSet().size(), 0);
   base::DeleteFile(filePath);
 }
 

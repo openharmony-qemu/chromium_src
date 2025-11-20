@@ -349,6 +349,11 @@ void OHOSAudioDecoder::SetCdm(CdmContext* cdm_context, InitCB init_cb) {
 
 void OHOSAudioDecoder::OnCdmContextEvent(CdmContext::Event event) {
   LOG(INFO) << "OHOSAudioDecoder::OnCdmContextEvent enter";
+  if (!task_runner_->RunsTasksInCurrentSequence()) {
+    task_runner_->PostTask(
+        FROM_HERE, base::BindOnce(&OHOSAudioDecoder::OnCdmContextEvent, weak_factory_.GetSafeRef(), event));
+    return;
+  }
   if (event != CdmContext::Event::kHasAdditionalUsableKey) {
     return;
   }
@@ -364,6 +369,12 @@ void OHOSAudioDecoder::OnCdmContextEvent(CdmContext::Event event) {
 void OHOSAudioDecoder::OnMediaCryptoReady(InitCB init_cb, void* session, bool requires_secure_video_codec) {
   TRACE_EVENT0("media", "OHOSAudioDecoder::OnMediaCryptoReady");
   LOG(INFO) << "OHOSAudioDecoder::OnMediaCryptoReady enter";
+  if (!task_runner_->RunsTasksInCurrentSequence()) {
+    task_runner_->PostTask(
+        FROM_HERE, base::BindOnce(&OHOSAudioDecoder::OnMediaCryptoReady, weak_factory_.GetSafeRef(),
+                                  std::move(init_cb), session, requires_secure_video_codec));
+    return;
+  }
   if (session == nullptr) {
     LOG(ERROR) << "OHOSAudioDecoder::OnMediaCryptoReady can't play encrypted stream";
     SetState(UNINITIALIZED);
@@ -458,6 +469,11 @@ bool OHOSAudioDecoder::CreateOhosDecoderLoop() {
 // LCOV_EXCL_STOP
 
 void OHOSAudioDecoder::SetState(State new_state) {
+  if (!task_runner_->RunsTasksInCurrentSequence()) {
+    task_runner_->PostTask(
+        FROM_HERE, base::BindOnce(&OHOSAudioDecoder::SetState, weak_factory_.GetSafeRef(), new_state));
+    return;
+  }
   LOG(INFO)<< "OHOSAudioDecoder::SetState state_: " << static_cast<int32_t>(state_)
     << " new_state: " << static_cast<int32_t>(new_state);
   state_ = new_state;
@@ -472,7 +488,7 @@ void OHOSAudioDecoder::ClearInputQueue(DecoderStatus decode_status) {
 }
 
 void OHOSAudioDecoder::OnError(int32_t errorCode) {
-  if (task_runner_->RunsTasksInCurrentSequence()) {
+  if (!task_runner_->RunsTasksInCurrentSequence()) {
     task_runner_->PostTask(
         FROM_HERE, base::BindOnce(&OHOSAudioDecoder::OnError, weak_factory_.GetSafeRef(), errorCode));
     return;
@@ -790,6 +806,11 @@ bool OHOSAudioDecoder::OnDecodedFrame(const OutputBufferData& out) {
 // LCOV_EXCL_START
 void OHOSAudioDecoder::OnCodecLoopError() {
   LOG(ERROR) << "OHOSAudioDecoder::OnCodecLoopError";
+  if (!task_runner_->RunsTasksInCurrentSequence()) {
+    task_runner_->PostTask(
+        FROM_HERE, base::BindOnce(&OHOSAudioDecoder::OnCodecLoopError, weak_factory_.GetSafeRef()));
+    return;
+  }
   SetState(ERROR);
   ClearInputQueue(DecoderStatus::Codes::kFailed);
 }

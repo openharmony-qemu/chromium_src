@@ -62,6 +62,10 @@ class CONTENT_EXPORT VideoCaptureHost
     virtual GlobalRenderFrameHostId GetRenderFrameHostId() const = 0;
   };
 
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  void OnCameraCaptureStateChanged(CameraCaptureState new_state) override;
+#endif
+
  private:
   friend class VideoCaptureTest;
   FRIEND_TEST_ALL_PREFIXES(VideoCaptureTest, IncrementMatchesDecrementCalls);

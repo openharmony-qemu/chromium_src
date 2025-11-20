@@ -5472,4 +5472,12 @@ std::string NWebHandlerDelegate::OnRewriteUrlForNavigation(const std::string& or
   return "";
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_WEBRTC)
+void NWebHandlerDelegate::OnCameraCaptureStateChanged(int original_state, int new_state) {
+  if (nweb_handler_) {
+    nweb_handler_->OnCameraCaptureStateChanged(original_state, new_state);
+  }
+}
+#endif
 }  // namespace OHOS::NWeb

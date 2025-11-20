@@ -45,7 +45,7 @@ export class SpecificStyleCache {
         const cache = new Map();
         this.clearMap.set(cache, () => cache.clear());
 
-        return function (dom: HTMLElement) {
+        return function (dom: HTMLElement, ...args: unknown[]) {
             if (!dom) {
                 Log.e('input null to CacheStyleGetter');
                 return undefined;
@@ -57,7 +57,7 @@ export class SpecificStyleCache {
                 return cacheRes;
             }
 
-            const result = fn.apply(null, arguments);
+            const result = fn.call(null, dom, ...args);
 
             cache.set(dom, result);
             return result;

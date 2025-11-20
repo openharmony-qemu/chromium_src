@@ -563,14 +563,24 @@ export default class ModifyObserver {
         if (!str || str === '0s' || str === '0ms') {
             return 0;
         }
-        const match = str.trim().match(/^([\d.]+)(s|ms)$/);
-        if (!match) {
-            Log.d(`无效的CSS时间格式: ${str}`, ModifyObserver.TAG);
-            return 0;
+        const timeParts = str.split(',')
+                            .map(part => part.trim())
+                            .filter(part => part.length > 0);
+        const timeRegex = /^([\d.]+)(s|ms)$/; 
+        let maxTime: number = 0;
+
+        for (const part of timeParts) {
+            const match = part.trim().match(timeRegex);
+            if (!match) {
+                Log.d(`无效的CSS时间格式: ${part}`, ModifyObserver.TAG);
+                return 0;
+            }
+            const [, num, unit] = match;
+            const msUnitTime = unit === 's' ? parseFloat(num) * 1000 : parseFloat(num);
+            maxTime = Math.max(maxTime, msUnitTime);
         }
-        const [, num, unit] = match;
-        const ms = unit === 's' ? parseFloat(num) * 1000 : parseFloat(num);
-        return ms;
+
+        return maxTime;
     }
   
     // 获取元素当前正在运行的动画总时长（animation + transition）

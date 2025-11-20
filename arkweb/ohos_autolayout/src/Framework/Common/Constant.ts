@@ -89,6 +89,7 @@ export default class Constant {
     static readonly sticky = 'sticky';
     static readonly absolute = 'absolute';
     static readonly static = 'static';
+    static readonly relative = 'relative';
 
     static readonly wrap = 'wrap';
     static readonly column = 'column';
@@ -118,6 +119,7 @@ export default class Constant {
 
     static readonly flexDelHeightThreshold = 2;
     static readonly truncateThreshold = 2;
+    static readonly centerCloseButtonThreshold = 5;
     
     static readonly ERR_CODE_GAPS = 100;
     static readonly ERR_CODE_OVERFLOW = 50;

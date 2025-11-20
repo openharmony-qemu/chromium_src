@@ -21,6 +21,7 @@ import os
 from pathlib import Path
 from typing import List, Tuple
 
+
 class TestFinder:
     """
     Finds test files in the source tree based on Chromium naming conventions.
@@ -50,6 +51,7 @@ class TestFinder:
             f"Test file for '{base_name}' not found in {self.search_root}.\n"
             f"Attempted suffixes: {self.suffixes}"
         )
+
 
 class GTestFilterGenerator:
     """
@@ -155,6 +157,7 @@ class FilterFileWriter:
                 f.write(f"{gtest_filter}\n")
         except IOError as e:
             raise RuntimeError(f"Unable to write to output file {output_path}: {e}") from e
+
 
 def main():
     """

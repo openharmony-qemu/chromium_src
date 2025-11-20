@@ -64,6 +64,9 @@ void CallOnError(media::VideoCaptureError error,
 
 void CallOnStarted(VideoCaptureControllerEventHandler* client,
                    const VideoCaptureControllerID& id) {
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  client->OnCameraCaptureStateChanged(CameraCaptureState::ACTIVE);
+#endif
   client->OnStarted(id);
 }
 
@@ -388,6 +391,13 @@ void VideoCaptureController::StopSession(
   if (client) {
     client->session_closed = true;
     client->opened = false;
+#if BUILDFLAG(ARKWEB_WEBRTC)
+    if (!client->event_handler) {
+      LOG(ERROR) << "client->event_handler is null.";
+      return;
+    }
+    client->event_handler->OnCameraCaptureStateChanged(CameraCaptureState::NONE);
+#endif
     client->event_handler->OnEnded(client->controller_id);
   }
 }

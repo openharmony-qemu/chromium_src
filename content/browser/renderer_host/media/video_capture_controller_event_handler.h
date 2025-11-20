@@ -31,6 +31,14 @@ struct ReadyBuffer {
   media::mojom::VideoFrameInfoPtr frame_info;
 };
 
+#if BUILDFLAG(ARKWEB_WEBRTC)
+enum class CameraCaptureState {
+  NONE = 0,
+  PAUSED = 1,
+  ACTIVE = 2,
+};
+#endif
+
 // VideoCaptureControllerEventHandler is the interface for
 // VideoCaptureController to notify clients about the events such as
 // BufferReady, FrameInfo, Error, etc.
@@ -83,6 +91,10 @@ class VideoCaptureControllerEventHandler {
   virtual void OnStarted(const VideoCaptureControllerID& id) = 0;
 
   virtual void OnStartedUsingGpuDecode(const VideoCaptureControllerID& id) = 0;
+
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  virtual void OnCameraCaptureStateChanged(CameraCaptureState new_state) {}
+#endif
 
  protected:
   virtual ~VideoCaptureControllerEventHandler() {}

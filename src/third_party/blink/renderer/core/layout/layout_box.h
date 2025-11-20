@@ -242,7 +242,7 @@ class CORE_EXPORT LayoutBox : public LayoutBoxModelObject {
     return FirstLineHeight();
   }
 
-  virtual LayoutPoint Location() const {
+  virtual PhysicalOffset Location() const {
     NOT_DESTROYED();
     return frame_location_;
   }

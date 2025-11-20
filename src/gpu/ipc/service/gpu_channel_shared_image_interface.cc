@@ -157,8 +157,10 @@ GpuChannelSharedImageInterface::CreateSharedImageForOhosVideo(
 
   shared_image_stub_->factory()->RegisterBacking(
       std::move(shared_image_backing));
+      
+  SharedImageInfo info(metadata, "DirectSIVideo");
   return base::WrapRefCounted<ClientSharedImage>(
-      new ClientSharedImage(mailbox, metadata, GenVerifiedSyncToken(), holder_,
+      new ClientSharedImage(mailbox, info, GenVerifiedSyncToken(), holder_,
                             GL_TEXTURE_EXTERNAL_OES));
 }
 #endif

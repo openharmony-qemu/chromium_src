@@ -173,7 +173,7 @@ class CORE_EXPORT V8CodeCache final {
                                 ScriptCachedMetadataHandler* cache_handler,
                                 size_t source_text_length,
                                 const KURL& source_url,
-                                const WTF::TextPosition& source_start_position,
+                                const blink::TextPosition& source_start_position,
                                 const char* trace_name,
                                 V8CodeCache::ProduceCacheOptions produce_cache_options);
 

@@ -38,7 +38,7 @@ class OHOSAudioCencInfoTest : public testing::Test {
 TEST_F(OHOSAudioCencInfoTest, GetKeyID_ShouldReturnKeyId_WhenCalled)
 {
   OHOSAudioCencInfo cenc;
-  uint8_t keyId[] = "keyId";
+  uint8_t keyId[10] = {0};
   cenc.SetKeyId(keyId);
   EXPECT_EQ(cenc.GetKeyId(), keyId);
 }
@@ -54,7 +54,7 @@ TEST_F(OHOSAudioCencInfoTest, GetKeyIDLen_ShouldReturnKeyIdLen_WhenCalled)
 TEST_F(OHOSAudioCencInfoTest, GetIv_ShouldReturnIv_WhenCalled)
 {
   OHOSAudioCencInfo cenc;
-  uint8_t iv[] = "iv";
+  uint8_t iv[10] = {0};
   cenc.SetIv(iv);
   EXPECT_EQ(cenc.GetIv(), iv);
 }
@@ -180,7 +180,8 @@ class AudioDecoderCallbackClientMock : public AudioDecoderCallback::Client {
 public:
   MOCK_METHOD(void, AddInputBuffer, (uint32_t index), (override));
 
-  MOCK_METHOD(void, AddOutputBuffer, (uint32_t index, uint8_t* bufferData, uint32_t size, int64_t pts, BufferFlag flag), (override));
+  MOCK_METHOD(void, AddOutputBuffer,
+      (uint32_t index, uint8_t* bufferData, uint32_t size, int64_t pts, BufferFlag flag), (override));
 
   MOCK_METHOD(void, UpdateOutputFormat, (), (override));
 

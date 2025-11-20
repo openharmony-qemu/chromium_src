@@ -11,11 +11,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Based on proxy_config_service_android.cc originally written by
- * Copyright (c) 2012 The Chromium Authors. All rights reserved.
- * Use of this source code is governed by a BSD-style license that can be
- * found in the LICENSE file.
  */
 
 #include "arkweb/ohos_adapter_ndk/interfaces/mock/mock_ohos_adapter_helper.h"
@@ -163,8 +158,7 @@ TEST_F(ArkWebTransportSecurityStateExtTest, CheckPublicKeyPinsOhos004) {
 TEST_F(ArkWebTransportSecurityStateExtTest, CheckPublicKeyPinsOhos005) {
   ArkWebTransportSecurityStateExt ext;
   HostPortPair host_port_pair("example.com", 443);
-  HashValue hash;
-  hash = HashValue(HASH_VALUE_SHA256);
+  HashValue hash(HASH_VALUE_SHA256);
   crypto::SHA256HashString("test_key", hash.data(), crypto::kSHA256Length);
   HashValueVector public_key_hashes = {hash};
   std::vector<std::string> pins = {"invalid_pin_format"};

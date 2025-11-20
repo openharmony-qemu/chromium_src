@@ -15,7 +15,7 @@
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
-#include <errno.h>
+#include <cerrno>
 
 #include "baseline_policy_ohos.h"
 #include "sandbox/linux/bpf_dsl/bpf_dsl.h"
@@ -52,16 +52,18 @@ bool IsErrorWith(const sandbox::bpf_dsl::ResultExpr& expr, int error_code) {
 bool IsCrash(const sandbox::bpf_dsl::ResultExpr& expr) {
     if (expr == CrashSIGSYS() || expr == CrashSIGSYSClone()
         || expr == CrashSIGSYSPrctl() || expr == CrashSIGSYSSockopt()
-            || expr == CrashSIGSYSIoctl() )
+            || expr == CrashSIGSYSIoctl() ) {
         return true;
+    }
     return false;
 }
 
 PolicyKind GetPolicyKind(const sandbox::bpf_dsl::ResultExpr& expr) {
-    if (IsAllow(expr)) return PolicyKind::Allow;
-    if (IsErrorWith(expr, EPERM) || IsErrorWith(expr, EINVAL) || IsErrorWith(expr, EACCES))
+    if (IsAllow(expr)) { return PolicyKind::Allow; }
+    if (IsErrorWith(expr, EPERM) || IsErrorWith(expr, EINVAL) || IsErrorWith(expr, EACCES)) {
         return PolicyKind::Error;
-    if (IsCrash(expr)) return PolicyKind::Crash;
+    }
+    if (IsCrash(expr)) { return PolicyKind::Crash; }
     return PolicyKind::Unknown;
 }
 
@@ -232,6 +234,7 @@ TEST_F(BaselinePolicyOhosTest, EvaluateSyscall_TEST31) {
     int sysno = __NR_write;
     EXPECT_EQ(GetPolicyKind(policy_->EvaluateSyscall(sysno)), PolicyKind::Unknown);
 }
+
 TEST_F(BaselinePolicyOhosTest, EvaluateSyscall_TEST32) {
     int sysno = __NR_writev;
     EXPECT_EQ(GetPolicyKind(policy_->EvaluateSyscall(sysno)), PolicyKind::Unknown);
@@ -256,6 +259,7 @@ TEST_F(BaselinePolicyOhosTest, EvaluateSyscall_TEST36) {
     int sysno = __NR_exit_group;
     EXPECT_EQ(GetPolicyKind(policy_->EvaluateSyscall(sysno)), PolicyKind::Unknown);
 }
+
 TEST_F(BaselinePolicyOhosTest, EvaluateSyscall_TEST37) {
     int sysno = __NR_wait4;
     EXPECT_EQ(GetPolicyKind(policy_->EvaluateSyscall(sysno)), PolicyKind::Unknown);
@@ -280,6 +284,7 @@ TEST_F(BaselinePolicyOhosTest, EvaluateSyscall_TEST41) {
     int sysno = __NR_rt_sigreturn;
     EXPECT_EQ(GetPolicyKind(policy_->EvaluateSyscall(sysno)), PolicyKind::Unknown);
 }
+
 TEST_F(BaselinePolicyOhosTest, EvaluateSyscall_TEST42) {
     int sysno = __NR_rt_sigtimedwait;
     EXPECT_EQ(GetPolicyKind(policy_->EvaluateSyscall(sysno)), PolicyKind::Unknown);
@@ -304,6 +309,7 @@ TEST_F(BaselinePolicyOhosTest, EvaluateSyscall_TEST46) {
     int sysno = __NR_getgid;
     EXPECT_EQ(GetPolicyKind(policy_->EvaluateSyscall(sysno)), PolicyKind::Unknown);
 }
+
 TEST_F(BaselinePolicyOhosTest, EvaluateSyscall_TEST47) {
     int sysno = __NR_getgroups;
     EXPECT_EQ(GetPolicyKind(policy_->EvaluateSyscall(sysno)), PolicyKind::Unknown);
@@ -328,6 +334,7 @@ TEST_F(BaselinePolicyOhosTest, EvaluateSyscall_TEST51) {
     int sysno = __NR_getsid;
     EXPECT_EQ(GetPolicyKind(policy_->EvaluateSyscall(sysno)), PolicyKind::Unknown);
 }
+
 TEST_F(BaselinePolicyOhosTest, EvaluateSyscall_TEST52) {
     int sysno = __NR_gettid;
     EXPECT_EQ(GetPolicyKind(policy_->EvaluateSyscall(sysno)), PolicyKind::Unknown);
@@ -352,6 +359,7 @@ TEST_F(BaselinePolicyOhosTest, EvaluateSyscall_TEST56) {
     int sysno = __NR_close;
     EXPECT_EQ(GetPolicyKind(policy_->EvaluateSyscall(sysno)), PolicyKind::Unknown);
 }
+
 TEST_F(BaselinePolicyOhosTest, EvaluateSyscall_TEST57) {
     int sysno = __NR_dup;
     EXPECT_EQ(GetPolicyKind(policy_->EvaluateSyscall(sysno)), PolicyKind::Unknown);
@@ -376,6 +384,7 @@ TEST_F(BaselinePolicyOhosTest, EvaluateSyscall_TEST61) {
     int sysno = __NR_memfd_create;
     EXPECT_EQ(GetPolicyKind(policy_->EvaluateSyscall(sysno)), PolicyKind::Unknown);
 }
+
 TEST_F(BaselinePolicyOhosTest, EvaluateSyscall_TEST62) {
     int sysno = __NR_faccessat;
     EXPECT_EQ(GetPolicyKind(policy_->EvaluateSyscall(sysno)), PolicyKind::Unknown);
@@ -456,6 +465,7 @@ TEST_F(BaselinePolicyOhosTest, EvaluateSyscall_TEST77) {
     EXPECT_EQ(GetPolicyKind(policy_->EvaluateSyscall(sysno)), PolicyKind::Unknown);
 }
 #endif
+
 #if defined(__arm__)
 TEST_F(BaselinePolicyOhosTest, EvaluateSyscall_TEST78) {
     int sysno = __NR_sched_getaffinity;
@@ -607,6 +617,7 @@ TEST_F(BaselinePolicyOhosTest, EvaluateSyscall_TEST107) {
     EXPECT_EQ(GetPolicyKind(policy_->EvaluateSyscall(sysno)), PolicyKind::Unknown);
 }
 #endif
+
 #if defined(__aarch64__)
 TEST_F(BaselinePolicyOhosTest, EvaluateSyscall_TEST108) {
     int sysno = __NR_getrlimit;
@@ -767,6 +778,7 @@ TEST_F(BaselinePolicyOhosTest, EvaluateSyscall_TEST138) {
     EXPECT_EQ(GetPolicyKind(policy_->EvaluateSyscall(sysno)), PolicyKind::Unknown);
 }
 #endif
+
 #if defined(__arm__)
 TEST_F(BaselinePolicyOhosTest, EvaluateSyscall_TEST139) {
     int sysno = __NR_sigaction;

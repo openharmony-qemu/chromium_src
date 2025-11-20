@@ -15,7 +15,7 @@
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
-#include <errno.h>
+#include <cerrno>
 
 #include "arkweb/chromium_ext/services/network/url_loader_ext.h"
 

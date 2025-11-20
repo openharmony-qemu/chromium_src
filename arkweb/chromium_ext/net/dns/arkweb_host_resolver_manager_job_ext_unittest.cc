@@ -23,9 +23,9 @@
 #include "net/traffic_annotation/network_traffic_annotation_test_helper.h"
 #define private public
 #define protected public
-#include "arkweb/chromium_ext/net/dns/arkweb_host_resolver_manager_job_ext.h"
 #include "net/dns/host_resolver_manager_job.h"
 #include "net/dns/host_resolver_manager_request_impl.h"
+#include "arkweb/chromium_ext/net/dns/arkweb_host_resolver_manager_job_ext.h"
 #undef protected
 #undef private
 #include "net/dns/dns_test_util.h"

@@ -70,7 +70,7 @@ class DragControllerExt final : public DragController {
  private:
 #if BUILDFLAG(ARKWEB_DRAG_DROP)
   bool is_dragging_;
-  WTF::StringBuilder origin_style_;
+  StringBuilder origin_style_;
   bool did_start_drag_image_effects_;
 #endif  // BUILDFLAG(ARKWEB_DRAG_DROP)
 };

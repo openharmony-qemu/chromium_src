@@ -46,7 +46,7 @@ class GPU_IPC_SERVICE_EXPORT SharedImageStub {
     return nullptr;
   }
 
-  ~SharedImageStub();
+  virtual ~SharedImageStub();
 
   using SharedImageDestructionCallback =
       base::OnceCallback<void(const gpu::SyncToken&)>;

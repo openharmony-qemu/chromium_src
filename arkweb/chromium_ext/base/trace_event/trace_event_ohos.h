@@ -21,6 +21,7 @@
 
 #include "arkweb/build/features/features.h"
 
+#include "hitrace/trace.h"
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
 bool IsOHOSBytraceEnable();
 #endif
@@ -49,7 +50,7 @@ class ScopedBytrace {
   ~ScopedBytrace();
 
   static void SendTraceEvent(const std::string& data);
-
+  static void SendTraceEventCommon(HiTrace_Output_Level level, const std::string& name, const std::string& data);
  private:
   std::string proc_;
 };
@@ -77,6 +78,8 @@ class ScopedOHOSBytrace {
       category_group != nullptr ? category_group : "disable-")
 
 #define BYTRACE_SCOPED_TRACE_EVENT(name) ScopedBytrace::SendTraceEvent(name)
+
+#define BYTRACE_SCOPED_TRACE_EVENT_COMMON(level, name, data) ScopedBytrace::SendTraceEventCommon(level, name, data)
 
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
 #define OHOS_BYTRACE_SCOPED_INIT() ScopedOHOSBytrace OHOS_BY_TRACE_NAME(bytrace)

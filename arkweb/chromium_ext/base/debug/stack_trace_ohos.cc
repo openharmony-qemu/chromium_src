@@ -115,8 +115,8 @@ char* itoa_r(intptr_t i, char* buf, size_t sz, int base, size_t padding) {
     }
 
     // Output the next digit.
-    *ptr++ = "0123456789abcdef"[j % base];
-    j /= base;
+    *ptr++ = "0123456789abcdef"[j % static_cast<uintptr_t>(base)];
+    j /= static_cast<uintptr_t>(base);
 
     if (padding > 0) {
       padding--;

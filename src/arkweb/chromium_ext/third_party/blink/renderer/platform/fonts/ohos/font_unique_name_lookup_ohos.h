@@ -38,7 +38,7 @@ class FontUniqueNameLookupOhos : public FontUniqueNameLookup {
       base::ReadOnlySharedMemoryRegion shared_memory_region);
 
   mojo::Remote<mojom::blink::FontUniqueNameLookup> ohos_font_lookup_service_;
-  WTF::Deque<NotifyFontUniqueNameLookupReady> pending_callbacks_;
+  Deque<NotifyFontUniqueNameLookupReady> pending_callbacks_;
   std::optional<bool> sync_available_;
 
   SEQUENCE_CHECKER(sequence_checker_);

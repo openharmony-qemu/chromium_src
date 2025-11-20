@@ -16,11 +16,11 @@ namespace {
 
 #ifdef OHOS_JS_ENGINE
 void MigrateSlowPropertiesIntoEnumCache(Isolate& isolate,
-                                        Handle<JSReceiver> receiver) {
+                                        DirectHandle<JSReceiver> receiver) {
   if (!IsJSObject(*receiver)) {
     return;
   }
-  Handle<JSObject> object = Cast<JSObject>(receiver);
+  DirectHandle<JSObject> object = Cast<JSObject>(receiver);
   if (V8_ENABLE_SWISS_NAME_DICTIONARY_BOOL ||
       !V8_ENABLE_ENUM_CACHE_FOR_SLOW_PROPERTIES_BOOL ||
       object->HasFastProperties() ||

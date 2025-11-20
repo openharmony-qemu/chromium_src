@@ -24,7 +24,6 @@
 #include "gpu/ipc/service/gpu_memory_buffer_factory.h"
 #include "ui/gfx/buffer_format_util.h"
 #include "ui/gfx/gpu_fence_handle.h"
-#include "ui/gfx/gpu_memory_buffer.h"
 #include "ui/gl/gl_context.h"
 #include "arkweb/chromium_ext/gpu/ipc/service/shared_image_stub_ext.h"
 #include "arkweb/chromium_ext/gpu/command_buffer/service/shared_image/shared_image_factory_ext.h"

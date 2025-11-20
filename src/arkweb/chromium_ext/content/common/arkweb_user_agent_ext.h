@@ -5,8 +5,6 @@
 #ifndef CONTENT_COMMON_ARKWEB_USER_AGENT_EXT_H_
 #define CONTENT_COMMON_ARKWEB_USER_AGENT_EXT_H_
 
-#include "content/public/common/user_agent.h"
-
 #include <stdint.h>
 
 #include "arkweb/build/features/features.h"
@@ -17,7 +15,6 @@
 #include "base/strings/stringprintf.h"
 #include "build/buildflag.h"
 #include "build/build_config.h"
-#include "build/util/chromium_git_revision.h"
 
 #if BUILDFLAG(IS_MAC)
 #include "base/mac/mac_util.h"

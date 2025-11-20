@@ -35,7 +35,7 @@ void CompositorGpuThreadUtils::CompositorGpuThreadDestruct(base::Thread* thread_
   if (type == kGpuProcess) {
     NWebNativeWindowTracker::Get()->g_browser_client_->ReportThread(
         ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentRealPid(),
-        thread_ptr->GetThreadRealId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+        thread_ptr->GetThreadRealId().raw(), ResSchedRoleAdapter::IMPORTANT_DISPLAY);
     return;
   }
 #endif // BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
@@ -46,7 +46,7 @@ void CompositorGpuThreadUtils::CompositorGpuThreadDestruct(base::Thread* thread_
       base::BindOnce(
           base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread),
           ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentRealPid(),
-          thread_ptr->GetThreadRealId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY));
+          thread_ptr->GetThreadRealId().raw(), ResSchedRoleAdapter::IMPORTANT_DISPLAY));
 #endif // // BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
 }
 
@@ -59,7 +59,7 @@ void CompositorGpuThreadUtils::CompositorGptThreadInitializeUtils(base::Thread* 
   if (type == kGpuProcess) {
       NWebNativeWindowTracker::Get()->g_browser_client_->ReportThread(
           ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentRealPid(),
-          thread_ptr->GetThreadRealId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY);
+          thread_ptr->GetThreadRealId().raw(), ResSchedRoleAdapter::IMPORTANT_DISPLAY);
       return;
   }
 #endif  // BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
@@ -70,7 +70,7 @@ void CompositorGpuThreadUtils::CompositorGptThreadInitializeUtils(base::Thread* 
       base::BindOnce(
           base::IgnoreResult(&ResSchedClientAdapter::ReportKeyThread),
           ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentRealPid(),
-          thread_ptr->GetThreadRealId(), ResSchedRoleAdapter::IMPORTANT_DISPLAY));
+          thread_ptr->GetThreadRealId().raw(), ResSchedRoleAdapter::IMPORTANT_DISPLAY));
 #endif  // BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
 }
 

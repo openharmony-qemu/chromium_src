@@ -12262,13 +12262,13 @@ std::unique_ptr<PrerenderHandle> WebContentsImpl::StartPrerendering(
                                  const std::optional<UrlMatchType>&)>
         url_match_predicate,
     base::RepeatingCallback<void(NavigationHandle&)>
-        prerender_navigation_handle_callback
+        prerender_navigation_handle_callback,
+    bool allow_reuse
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
     ,
     const char* extra_headers
 #endif
-    ,
-    bool allow_reuse) {
+    ) {
   PrerenderAttributes attributes(
       prerendering_url, trigger_type, embedder_histogram_suffix,
       /*speculation_rules_params=*/std::nullopt, content::Referrer(),

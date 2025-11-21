@@ -21,7 +21,7 @@
 namespace OHOS::NWeb {
 
 static std::unordered_map<OH_AudioCapturer*, AudioCapturerAdapterImpl*> captures_;
-static std::mutex capturesSetMutex_;
+static std::shared_mutex capturesSetMutex_;
 std::shared_mutex AudioCapturerAdapterImpl::adapterMutex_;
 CallbackSharedWrapper<UserDataCallBack> AudioCapturerAdapterImpl::callback_wrapper_;
 
@@ -77,7 +77,7 @@ const OH_AudioStream_SourceType DEFAULT_SourceType = AUDIOSTREAM_SOURCE_TYPE_VOI
 } // namespace
 
 static AudioCapturerAdapterImpl* FindAudioCapturerAdapter(OH_AudioCapturer* capturer) {
-    std::unique_lock<std::mutex> lock(capturesSetMutex_);
+    std::shared_lock<std::shared_mutex> lock(capturesSetMutex_);
     auto it = captures_.find(capturer);
     if (it == captures_.end()) {
         WVLOG_E("AudioCapturerAdapterImpl cannot find capture, return");
@@ -235,7 +235,7 @@ bool AudioCapturerAdapterImpl::Start()
     }
     auto ret = OH_AudioCapturer_Start(audio_capturer_);
     {
-        std::unique_lock<std::mutex> lock(capturesSetMutex_);
+        std::unique_lock<std::shared_mutex> lock(capturesSetMutex_);
         if (ret == AUDIOSTREAM_SUCCESS) {
             captures_.insert({audio_capturer_, this});
         }
@@ -250,7 +250,7 @@ bool AudioCapturerAdapterImpl::Stop()
         return false;
     }
     {
-        std::unique_lock<std::mutex> lock(capturesSetMutex_);
+        std::unique_lock<std::shared_mutex> lock(capturesSetMutex_);
         captures_.erase(audio_capturer_);
     }
     auto ret = OH_AudioCapturer_Stop(audio_capturer_);
@@ -264,7 +264,7 @@ bool AudioCapturerAdapterImpl::Release()
         return false;
     }
     {
-        std::unique_lock<std::mutex> lock(capturesSetMutex_);
+        std::unique_lock<std::shared_mutex> lock(capturesSetMutex_);
         captures_.erase(audio_capturer_);
     }
     auto ret = OH_AudioCapturer_Release(audio_capturer_);

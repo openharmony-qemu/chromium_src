@@ -21,13 +21,13 @@
 enum class DistillType: int32_t {
     NOVEL_BOOKDETAIL = 0,
     NOVEL_CONTENT = 1,
-    MAX,
+    UNKNOWN,
 };
 
 enum class FetchAction: int32_t {
     FORWARD = 0,
     BACKWARD = 1,
-    MAX,
+    UNKNOWN,
 };
 
 struct DistillOptions {
@@ -37,6 +37,6 @@ struct DistillOptions {
     std::string distill_url;
 };
 
-typedef void (*DistillCallback)(int32_t nweb_id, const char* guid, const char* distill_info);
+typedef void (*DistillCallback)(int32_t nweb_id, uint64_t request_id, const char* distill_info);
 
 #endif //OHOS_NWEB_SRC_WEB_EXTENSION_DISTILL_ITEM_H_

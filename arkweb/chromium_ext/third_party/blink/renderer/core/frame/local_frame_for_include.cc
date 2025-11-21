@@ -20,6 +20,9 @@
 #if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
 #include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/blank_screen_detector.h"
 #endif
+#if BUILDFLAG(ARKWEB_GET_SCROLL_OFFSET)
+#include "base/memory/safe_ref.h"
+#endif
 #if BUILDFLAG(IS_ARKWEB)
 #include "arkweb/chromium_ext/third_party/blink/renderer/core/editing/frame_selection_ext.h"
 #include "base/ohos/sys_info_utils_ext.h"
@@ -95,7 +98,7 @@ void LocalFrame::OnOverScrollOffsetChanged(float offset_x, float offset_y) {
     GetTaskRunner(TaskType::kInternalDefault)
         ->PostTask(FROM_HERE,
                    WTF::BindOnce(&LocalFrame::OnOverScrollOffsetChanged,
-                                 weak_local_frame_.GetWeakPtr(), offset_x, offset_y));
+                                 weak_local_frame_.GetSafeRef(), offset_x, offset_y));
   } else {
     GetLocalFrameHostRemote().OnOverScrollOffsetChanged(offset_x, offset_y);
   }

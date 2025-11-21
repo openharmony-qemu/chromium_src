@@ -3813,7 +3813,7 @@ test("base_unittests") {
       "//third_party/crashpad/crashpad/minidump",
       "//third_party/crashpad/crashpad/snapshot",
     ]
-    deps += ["//third_party:huawei_securec"]
+   deps += ["//third_party:huawei_securec"]
    }
   if (build_with_chromium) {
     deps += [ "allocator/partition_allocator/src/partition_alloc:unittests" ]

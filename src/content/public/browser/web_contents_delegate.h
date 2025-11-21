@@ -17,6 +17,7 @@
 #include "base/memory/scoped_refptr.h"
 #include "base/types/expected.h"
 #include "build/build_config.h"
+#include "components/autofill/core/browser/suggestions/suggestion.h"
 #include "content/common/content_export.h"
 #include "content/public/browser/eye_dropper.h"
 #include "content/public/browser/fullscreen_types.h"

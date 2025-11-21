@@ -16,8 +16,6 @@
 #ifndef ARKWEB_CHROMIUM_EXT_CONTENT_PUBLIC_BROWSER_WEB_CONTENTS_DELEGATE_FOR_INCLUDE_H_
 #define ARKWEB_CHROMIUM_EXT_CONTENT_PUBLIC_BROWSER_WEB_CONTENTS_DELEGATE_FOR_INCLUDE_H_
 
-#include "components/autofill/core/browser/suggestions/suggestion.h"
-
 #if BUILDFLAG(ARKWEB_ADBLOCK)
 virtual void OnAdsBlocked(
     const std::string& main_frame_url,

@@ -558,7 +558,6 @@ TEST_F(NWebHandlerDelegateTest, OnFileDialog) {
   bool capture = false;
   CefRefPtr<CefFileDialogCallback> callback;
 
-
   EXPECT_FALSE(delegate->OnFileDialog(browser_, FILE_DIALOG_OPEN, title,
                                       default_path, accept_filters, accept_extensions,
                                       accept_descriptions, accepts, start_in, is_exclude_accept_all_options,

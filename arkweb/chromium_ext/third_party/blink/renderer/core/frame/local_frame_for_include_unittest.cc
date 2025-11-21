@@ -27,6 +27,7 @@
 #include "arkweb/ohos_adapter_ndk/mock_ndk_api/include/mock_sys_info_util_ext.h"
 
 namespace blink {
+
 class LocalFrameUtilTest : public RenderingTest {
  protected:
   void SetUp() override {

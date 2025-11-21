@@ -16,7 +16,6 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <string.h>
 
 #include "base/logging.h"
 #include "cef/include/cef_request.h"

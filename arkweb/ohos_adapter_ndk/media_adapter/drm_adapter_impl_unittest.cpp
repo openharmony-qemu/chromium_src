@@ -121,7 +121,6 @@ void SessionIdTest::TearDown(void) {}
  * @tc.name: SessionIdTest_SessionId_001.
  * @tc.desc: test of SessionId :: CreateSessionId
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(SessionIdTest, SessionIdTest_SessionId_001)
 {
@@ -134,7 +133,6 @@ TEST_F(SessionIdTest, SessionIdTest_SessionId_001)
  * @tc.name: SessionIdTest_SessionId_002.
  * @tc.desc: test of SessionId :: CreateSessionId
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(SessionIdTest, SessionIdTest_SessionId_002)
 {
@@ -147,7 +145,6 @@ TEST_F(SessionIdTest, SessionIdTest_SessionId_002)
  * @tc.name: SessionIdTest_SessionId_003.
  * @tc.desc: test of SessionId :: emeId & keySetId & keySetIdLen
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(SessionIdTest, SessionIdTest_SessionId_003)
 {
@@ -163,7 +160,6 @@ TEST_F(SessionIdTest, SessionIdTest_SessionId_003)
  * @tc.name: SessionIdTest_SessionId_004.
  * @tc.desc: test of SessionId :: SetKeySetId
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(SessionIdTest, SessionIdTest_SessionId_004)
 {
@@ -197,7 +193,6 @@ void SessionInfoTest::TearDown(void)
  * @tc.name: SessionInfoTest_SessionInfo_001.
  * @tc.desc: test of SessionInfo :: mimeType
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(SessionInfoTest, SessionInfoTest_SessionInfo_001)
 {
@@ -209,7 +204,6 @@ TEST_F(SessionInfoTest, SessionInfoTest_SessionInfo_001)
  * @tc.name: SessionInfoTest_SessionInfo_002.
  * @tc.desc: test of SessionInfo :: SetKeyType & keyType
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(SessionInfoTest, SessionInfoTest_SessionInfo_002)
 {
@@ -221,7 +215,6 @@ TEST_F(SessionInfoTest, SessionInfoTest_SessionInfo_002)
  * @tc.name: SessionInfoTest_SessionInfo_003.
  * @tc.desc: test of SessionInfo :: sessionId
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(SessionInfoTest, SessionInfoTest_SessionInfo_003)
 {
@@ -248,7 +241,6 @@ void DrmCallbackImplTest::TearDown(void)
  * @tc.name: DrmCallbackImplTest_DrmCallbackImpl_002.
  * @tc.desc: test of DrmCallbackImpl :: OnSessionMessage
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_002)
 {
@@ -267,7 +259,6 @@ TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_002)
  * @tc.name: DrmCallbackImplTest_DrmCallbackImpl_003.
  * @tc.desc: test of DrmCallbackImpl :: OnProvisionRequest
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_003)
 {
@@ -285,7 +276,6 @@ TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_003)
  * @tc.name: DrmCallbackImplTest_DrmCallbackImpl_004.
  * @tc.desc: test of DrmCallbackImpl :: OnProvisioningComplete
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_004)
 {
@@ -301,7 +291,6 @@ TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_004)
  * @tc.name: DrmCallbackImplTest_DrmCallbackImpl_005.
  * @tc.desc: test of DrmCallbackImpl :: OnMediaKeySessionReady
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_005)
 {
@@ -318,7 +307,6 @@ TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_005)
  * @tc.name: DrmCallbackImplTest_DrmCallbackImpl_006.
  * @tc.desc: test of DrmCallbackImpl :: OnPromiseRejected
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_006)
 {
@@ -336,7 +324,6 @@ TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_006)
  * @tc.name: DrmCallbackImplTest_DrmCallbackImpl_007.
  * @tc.desc: test of DrmCallbackImpl :: OnPromiseResolved
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_007)
 {
@@ -353,7 +340,6 @@ TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_007)
  * @tc.name: DrmCallbackImplTest_DrmCallbackImpl_008.
  * @tc.desc: test of DrmCallbackImpl :: OnPromiseResolvedWithSession
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_008)
 {
@@ -371,7 +357,6 @@ TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_008)
  * @tc.name: DrmCallbackImplTest_DrmCallbackImpl_009.
  * @tc.desc: test of DrmCallbackImpl :: OnSessionClosed
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_009)
 {
@@ -388,7 +373,6 @@ TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_009)
  * @tc.name: DrmCallbackImplTest_DrmCallbackImpl_010.
  * @tc.desc: test of DrmCallbackImpl :: OnSessionKeysChange
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_010)
 {
@@ -413,7 +397,6 @@ TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_010)
  * @tc.name: DrmCallbackImplTest_DrmCallbackImpl_011.
  * @tc.desc: test of DrmCallbackImpl :: OnSessionExpirationUpdate
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_011)
 {
@@ -430,7 +413,6 @@ TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_011)
  * @tc.name: DrmCallbackImplTest_DrmCallbackImpl_012.
  * @tc.desc: test of DrmCallbackImpl :: OnStorageProvisioned
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_012)
 {
@@ -445,7 +427,6 @@ TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_012)
  * @tc.name: DrmCallbackImplTest_DrmCallbackImpl_013.
  * @tc.desc: test of DrmCallbackImpl :: OnStorageSaveInfo
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_013)
 {
@@ -465,7 +446,6 @@ TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_013)
  * @tc.name: DrmCallbackImplTest_DrmCallbackImpl_014.
  * @tc.desc: test of DrmCallbackImpl :: OnStorageLoadInfo
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_014)
 {
@@ -482,7 +462,6 @@ TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_014)
  * @tc.name: DrmCallbackImplTest_DrmCallbackImpl_015.
  * @tc.desc: test of DrmCallbackImpl :: OnStorageLoadInfo
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_015)
 {
@@ -499,7 +478,6 @@ TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_015)
  * @tc.name: DrmCallbackImplTest_DrmCallbackImpl_016.
  * @tc.desc: test of DrmCallbackImpl :: OnStorageLoadInfo
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_016)
 {
@@ -516,7 +494,6 @@ TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_016)
  * @tc.name: DrmCallbackImplTest_DrmCallbackImpl_017.
  * @tc.desc: test of DrmCallbackImpl::GetMediaKeySessionInfo
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_017)
 {
@@ -528,7 +505,6 @@ TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_017)
  * @tc.name: DrmCallbackImplTest_DrmCallbackImpl_019.
  * @tc.desc: test of DrmCallbackImpl :: OnStorageLoadInfo
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmCallbackImplTest, DrmCallbackImplTest_DrmCallbackImpl_019)
 {
@@ -558,7 +534,6 @@ void DrmAdapterImplTest::TearDown(void)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_001.
  * @tc.desc: test of DrmAdapterImpl :: IsSupported
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_001)
 {
@@ -575,7 +550,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_001)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_002.
  * @tc.desc: test of DrmAdapterImpl :: IsSupported2
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_002)
 {
@@ -594,7 +568,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_002)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_003.
  * @tc.desc: test of DrmAdapterImpl :: IsSupported3
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_003)
 {
@@ -613,7 +586,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_003)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_004.
  * @tc.desc: test of DrmAdapterImpl :: CreateKeySystem
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_004)
 {
@@ -662,7 +634,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_004)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_005.
  * @tc.desc: test of DrmAdapterImpl :: ReleaseMediaKeySystem
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_005)
 {
@@ -685,7 +656,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_005)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_006.
  * @tc.desc: test of DrmAdapterImpl :: CreateMediaKeySession
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_006)
 {
@@ -720,7 +690,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_006)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_007.
  * @tc.desc: test of DrmAdapterImpl :: ReleaseMediaKeySession
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_007)
 {
@@ -758,7 +727,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_007)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_008.
  * @tc.desc: test of DrmAdapterImpl :: ReleaseMediaKeySession
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_008)
 {
@@ -779,7 +747,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_008)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_009.
  * @tc.desc: test of DrmAdapterImpl :: SetConfigurationString
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_009)
 {
@@ -797,7 +764,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_009)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_010.
  * @tc.desc: test of DrmAdapterImpl :: GetConfigurationString
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_010)
 {
@@ -833,7 +799,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_010)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_011.
  * @tc.desc: test of DrmAdapterImpl :: SetConfigurationByteArray
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_011)
 {
@@ -852,7 +817,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_011)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_012.
  * @tc.desc: test of DrmAdapterImpl :: GetConfigurationByteArray
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_012)
 {
@@ -888,7 +852,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_012)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_013.
  * @tc.desc: test of DrmAdapterImpl :: GetMaxContentProtectionLevel
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_013)
 {
@@ -909,7 +872,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_013)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_014.
  * @tc.desc: test of DrmAdapterImpl :: ProcessKeySystemResponse
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_014)
 {
@@ -930,7 +892,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_014)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_015.
  * @tc.desc: test of DrmAdapterImpl :: GenerateMediaKeyRequest
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_015)
 {
@@ -959,7 +920,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_015)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_017.
  * @tc.desc: test of DrmAdapterImpl :: ClearMediaKeys
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_017)
 {
@@ -984,7 +944,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_017)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_019.
  * @tc.desc: test of DrmAdapterImpl :: GetCertificateStatus
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_019)
 {
@@ -1005,7 +964,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_019)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_020.
  * @tc.desc: test of DrmAdapterImpl :: PutSessionInfo & GetSessionInfo
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_020)
 {
@@ -1026,7 +984,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_020)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_022.
  * @tc.desc: test of DrmAdapterImpl :: RegistDrmCallback
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_022)
 {
@@ -1042,7 +999,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_022)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_023.
  * @tc.desc: test of DrmAdapterImpl :: GetSessionIdByEmeId
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_023)
 {
@@ -1068,7 +1024,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_023)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_024.
  * @tc.desc: test of DrmAdapterImpl :: RemoveSessionInfo
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_024)
 {
@@ -1089,7 +1044,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_024)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_026.
  * @tc.desc: test of DrmAdapterImpl :: SetKeyType
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_026)
 {
@@ -1114,7 +1068,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_026)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_027.
  * @tc.desc: test of DrmAdapterImpl :: SetKeySetId
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_027)
 {
@@ -1138,7 +1091,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_027)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_028.
  * @tc.desc: test of DrmAdapterImpl :: LoadSessionWithLoadedStorage
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_028)
 {
@@ -1152,7 +1104,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_028)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_029.
  * @tc.desc: test of DrmAdapterImpl :: LoadSessionWithLoadedStorage
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_029)
 {
@@ -1175,7 +1126,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_029)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_030.
  * @tc.desc: test of DrmAdapterImpl :: LoadSessionWithLoadedStorage
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_030)
 {
@@ -1198,7 +1148,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_030)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_031.
  * @tc.desc: test of DrmAdapterImpl :: LoadSessionWithLoadedStorage
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_031)
 {
@@ -1226,7 +1175,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_031)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_032.
  * @tc.desc: test of DrmAdapterImpl :: LoadSessionWithLoadedStorage
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_032)
 {
@@ -1254,7 +1202,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_032)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_033.
  * @tc.desc: test of DrmAdapterImpl :: HandleKeyUpdatedCallback
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_033)
 {
@@ -1275,7 +1222,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_033)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_035.
  * @tc.desc: test of DrmAdapterImpl :: ProcessKeySystemResponse
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_035)
 {
@@ -1294,7 +1240,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_035)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_039.
  * @tc.desc: test of DrmAdapterImpl :: SystemCallBackWithObj
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_039)
 {
@@ -1314,7 +1259,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_039)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_040.
  * @tc.desc: test of DrmAdapterImpl :: SystemCallBackWithObj
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_040)
 {
@@ -1339,7 +1283,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_040)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_041.
  * @tc.desc: test of DrmAdapterImpl :: SessionEventCallBackWithObj
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_041)
 {
@@ -1357,7 +1300,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_041)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_042.
  * @tc.desc: test of DrmAdapterImpl :: SessionKeyChangeCallBackWithObj
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_042)
 {
@@ -1374,7 +1316,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_042)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_043.
  * @tc.desc: test of DrmAdapterImpl :: GetSecurityLevel
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_043)
 {
@@ -1398,7 +1339,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_043)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_044.
  * @tc.desc: test of DrmAdapterImpl :: RequireSecureDecoderModule
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_044)
 {
@@ -1428,7 +1368,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_044)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_045.
  * @tc.desc: test of DrmAdapterImpl :: GetUUID
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_045)
 {
@@ -1450,7 +1389,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_045)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_046.
  * @tc.desc: test of DrmAdapterImpl :: StorageProvisionedResult
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_046)
 {
@@ -1480,7 +1418,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_046)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_047.
  * @tc.desc: test of DrmAdapterImpl :: StorageSaveInfoResult
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_047)
 {
@@ -1494,7 +1431,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_047)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_048.
  * @tc.desc: test of DrmAdapterImpl :: StorageSaveInfoResult
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_048)
 {
@@ -1508,7 +1444,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_048)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_055.
  * @tc.desc: test of DrmAdapterImpl :: CloseSession
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_055)
 {
@@ -1542,7 +1477,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_055)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_056.
  * @tc.desc: test of DrmAdapterImpl :: RemoveSession
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_056)
 {
@@ -1576,7 +1510,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_056)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_057.
  * @tc.desc: test of DrmAdapterImpl :: LoadSession
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_057)
 {
@@ -1598,7 +1531,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_057)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_058.
  * @tc.desc: test of DrmAdapterImpl :: UpdateSession
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_058)
 {
@@ -1634,7 +1566,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_058)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_059.
  * @tc.desc: test of DrmAdapterImpl::OnSessionExpirationUpdate
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_059)
 {
@@ -1685,7 +1616,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_059)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_060.
  * @tc.desc: test of DrmAdapterImpl::GetKeyRequest
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_060)
 {
@@ -1730,7 +1660,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_060)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_061.
  * @tc.desc: test of DrmAdapterImpl :: SessionEventCallBackWithObj
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_061)
 {
@@ -1768,7 +1697,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_061)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_062.
  * @tc.desc: test of DrmAdapterImpl :: SessionKeyChangeCallBackWithObj
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_062)
 {
@@ -1805,7 +1733,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_062)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_063.
  * @tc.desc: test of DrmAdapterImpl::StorageLoadInfoResult
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_063)
 {
@@ -1830,7 +1757,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_063)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_064.
  * @tc.desc: test of DrmAdapterImpl::ClearPersistentSessionInfoFroKeyRelease
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_064)
 {
@@ -1850,7 +1776,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_064)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_065.
  * @tc.desc: test of DrmAdapterImpl :: SystemCallBackWithObj
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_065)
 {
@@ -1875,7 +1800,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_065)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_066.
  * @tc.desc: test of DrmAdapterImpl :: SessionKeyChangeCallBackWithObj
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_066)
 {
@@ -1939,7 +1863,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_066)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_067.
  * @tc.desc: test of DrmAdapterImpl :: StorageSaveInfoResult
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_067)
 {
@@ -1985,7 +1908,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_067)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_068.
  * @tc.desc: test of DrmAdapterImpl::UpdateSessionResult
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_068)
 {
@@ -2011,7 +1933,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_068)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_069.
  * @tc.desc: test of DrmAdapterImpl::OnSessionExpirationUpdate
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_069)
 {
@@ -2062,7 +1983,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_069)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_070.
  * @tc.desc: test of DrmAdapterImpl::StorageClearInfoResult
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_070)
 {
@@ -2085,7 +2005,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_070)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_071.
  * @tc.desc: test of DrmAdapterImpl::UpdateSessionResult
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_071)
 {
@@ -2105,7 +2024,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_071)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_072.
  * @tc.desc: test of DrmAdapterImpl :: CloseSession
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_072)
 {
@@ -2138,7 +2056,6 @@ TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_072)
  * @tc.name: DrmAdapterImplTest_DrmAdapterImpl_073.
  * @tc.desc: test of DrmAdapterImpl::OnSessionExpirationUpdate
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(DrmAdapterImplTest, DrmAdapterImplTest_DrmAdapterImpl_073)
 {

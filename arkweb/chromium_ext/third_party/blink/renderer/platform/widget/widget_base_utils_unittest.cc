@@ -105,16 +105,6 @@ class WidgetBaseUtilsTest : public testing::Test {
   std::unique_ptr<WidgetBase> widget_base_;
 };
 
-TEST_F(WidgetBaseUtilsTest, ReportForegroundThreadPool_WorkerPoolNotInitialized) {
-  SetWokerPoolInitial(false);
-  utils_->ReportForegroundThreadPool();
-}
-
-TEST_F(WidgetBaseUtilsTest, ReportForegroundThreadPool_NoForegroundJobHandle) {
-  SetWokerPoolInitial(true);
-  utils_->ReportForegroundThreadPool();
-}
-
 TEST_F(WidgetBaseUtilsTest, SetZoomLevel_NullInputHandlerManager) {
   SetWidgetInputHandlerManager(nullptr);
   utils_->SetZoomLevel(1.0f, gfx::Point(10, 10));

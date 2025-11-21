@@ -50,7 +50,7 @@ class TestNativeLoader : public NativeLoader {
 
 class TestHTMLPlugInElement : public HTMLPlugInElement {
  public:
-  TestHTMLPlugInElement(Document& doc) 
+  explicit TestHTMLPlugInElement(Document& doc) 
       : HTMLPlugInElement(html_names::kEmbedTag, doc, CreateElementFlags()) {}
 
   TestNativeLoader* NativeLoader() const { return loader_; }
@@ -146,6 +146,5 @@ TEST_F(NativePainterTest, AllowSelectionDragImagePhase) {
   NativePainter painter(*layout_native_);
   painter.PaintReplaced(paint_info, PhysicalOffset());
 }
-
 }  // namespace
 }  // namespace blink

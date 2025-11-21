@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 
+#include "base/no_destructor.h"
 #include "arkweb/chromium_ext/content/common/arkweb_user_agent_ext.h"
 
 #if !defined(COMPONENT_BUILD)
@@ -12,19 +13,25 @@ namespace content {
 #if BUILDFLAG(ARKWEB_USERAGENT)
 #if BUILDFLAG(ARKWEB_TEST)
 std::atomic<bool> is_compatible_type_setted{false};
-static std::string compatible_device_type;
+std::string& g_compatible_device_ype() {
+  static base::NoDestructor<std::string> compatible_device_type;
+  return *compatible_device_type;
+}
 void SetArkwebUserAgentExtStateForTest(bool is_setted) {
   is_compatible_type_setted.store(is_setted, std::memory_order_relaxed);
 }
 
 void ResetArkwebUserAgentExtStateForTest() {
   SetArkwebUserAgentExtStateForTest(false);
-  compatible_device_type.clear();
+  g_compatible_device_ype().clear();
 }
 #else
 namespace {
 std::atomic<bool> is_compatible_type_setted{false};
-static std::string compatible_device_type;
+std::string& g_compatible_device_ype() {
+  static base::NoDestructor<std::string> compatible_device_type;
+  return *compatible_device_type;
+}
 }  // namespace
 #endif
 
@@ -68,17 +75,17 @@ std::string GetOhosFullname() {
   }
 
   if (!is_compatible_type_setted) {
-    compatible_device_type = base::ohos::CompatibleDeviceType();
+    g_compatible_device_ype() = base::ohos::CompatibleDeviceType();
     is_compatible_type_setted = true;
   }
 
-  if (!compatible_device_type.empty()) {
-    if (compatible_device_type == "Phone" || compatible_device_type == "PC" ||
-        compatible_device_type == "Tablet") {
-      LOG(DEBUG) << "compatible device type is: " << compatible_device_type;
-      device_type_string = compatible_device_type;
+  if (!g_compatible_device_ype().empty()) {
+    if (g_compatible_device_ype() == "Phone" || g_compatible_device_ype() == "PC" ||
+        g_compatible_device_ype() == "Tablet") {
+      LOG(DEBUG) << "compatible device type is: " << g_compatible_device_ype();
+      device_type_string = g_compatible_device_ype();
     } else {
-      LOG(DEBUG) << "unknown compatible device type: " << compatible_device_type;
+      LOG(DEBUG) << "unknown compatible device type: " << g_compatible_device_ype();
     }
   }
 
@@ -117,7 +124,7 @@ void SetProductString(std::string& user_agent) {
   std::string product_string = "";
 
   if (!is_compatible_type_setted) {
-    compatible_device_type = base::ohos::CompatibleDeviceType();
+    g_compatible_device_ype() = base::ohos::CompatibleDeviceType();
     is_compatible_type_setted = true;
   }
 
@@ -125,9 +132,9 @@ void SetProductString(std::string& user_agent) {
   if (base::ohos::IsMobileDevice()) {
     product_string += " Mobile";
   } else if (base::ohos::IsTabletDevice() &&
-             (compatible_device_type == "Phone")) {
+             (g_compatible_device_ype() == "Phone")) {
     product_string += " Mobile";
-  } else if (base::ohos::IsPcDevice() && (compatible_device_type == "Phone")) {
+  } else if (base::ohos::IsPcDevice() && (g_compatible_device_ype() == "Phone")) {
     product_string += " Mobile";
   }
 

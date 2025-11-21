@@ -46,7 +46,6 @@ class CaptivePortalTabHelperOhos
 
   ~CaptivePortalTabHelperOhos() override;
 
-  // content::WebContentsObserver:
   void DidStartNavigation(
       content::NavigationHandle* navigation_handle) override;
   void OnVisibilityChanged(content::Visibility visibility) override;

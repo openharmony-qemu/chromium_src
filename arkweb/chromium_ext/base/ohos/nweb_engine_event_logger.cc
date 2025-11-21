@@ -35,13 +35,13 @@ struct UploadData {
 };
 
 std::queue<std::shared_ptr<UploadData>>& GetUploadQueue() {
-  static std::queue<std::shared_ptr<UploadData>> upload_queue;
-  return upload_queue;
+  static NoDestructor<std::queue<std::shared_ptr<UploadData>>> upload_queue;
+  return *upload_queue;
 }
 
 std::mutex& GetQueueMutex() {
-  static std::mutex queue_mutex;
-  return queue_mutex;
+  static NoDestructor<std::mutex> queue_mutex;
+  return *queue_mutex;
 }
 
 class NWebEngineEventLogger {

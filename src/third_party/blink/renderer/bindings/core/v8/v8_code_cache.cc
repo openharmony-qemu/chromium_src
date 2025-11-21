@@ -757,7 +757,7 @@ void V8CodeCache::ProduceCacheUtils(v8::Isolate* isolate,
                                     ScriptCachedMetadataHandler* cache_handler,
                                     size_t source_text_length,
                                     const KURL& source_url,
-                                    const WTF::TextPosition& source_start_position,
+                                    const TextPosition& source_start_position,
                                     const char* trace_name,
                                     V8CodeCache::ProduceCacheOptions produce_cache_options) {
   ProduceCacheInternal(isolate, code_cache_host, unbound_script, cache_handler, source_text_length,

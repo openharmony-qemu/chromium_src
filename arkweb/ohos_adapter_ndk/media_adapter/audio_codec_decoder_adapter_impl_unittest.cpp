@@ -175,7 +175,6 @@ private:
  * @tc.desc: test of AudioDecoderCallbackManager::OnError() OnOutputFormatChanged() OnInputBufferAvailable()
              OnOutputBufferAvailable()
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(AudioDecoderCallbackImplTest, AudioDecoderCallbackImpl_NormalTest_001)
 {
@@ -228,7 +227,6 @@ TEST_F(AudioDecoderCallbackImplTest, AudioDecoderCallbackImpl_NormalTest_001)
  * @tc.name: AudioDecoderCallbackImpl_NormalTest_002.
  * @tc.desc: test of AudioDecoderCallbackManager
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(AudioDecoderCallbackImplTest, AudioDecoderCallbackImpl_NormalTest_002)
 {
@@ -284,7 +282,6 @@ TEST_F(AudioDecoderCallbackImplTest, AudioDecoderCallbackImpl_NormalTest_002)
  * @tc.name: AudioDecoderCallbackImpl_NormalTest_003.
  * @tc.desc: test of AudioDecoderCallbackManager
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(AudioDecoderCallbackImplTest, AudioDecoderCallbackImpl_NormalTest_003)
 {
@@ -377,7 +374,6 @@ void AudioCodecDecoderAdapterImplTest::SetCencInfoAboutClearHeaderAndPayLoadLens
  * @tc.name: AudioCodecDecoderAdapterImpl_CreateAudioDecoderByName_001.
  * @tc.desc: test of AudioCodecDecoderAdapterImpl::CreateAudioDecoderByName() CreateAudioDecoderByMime()
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(AudioCodecDecoderAdapterImplTest, AudioCodecDecoderAdapterImpl_CreateAudioDecoderByName_001)
 {
@@ -426,7 +422,6 @@ TEST_F(AudioCodecDecoderAdapterImplTest, AudioCodecDecoderAdapterImpl_CreateAudi
  * @tc.name: AudioCodecDecoderAdapterImpl_InvalidValueTest_002.
  * @tc.desc: test of InvalidValueScene in AudioCodecDecoderAdapterImpl
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(AudioCodecDecoderAdapterImplTest, AudioCodecDecoderAdapterImpl_InvalidValueTest_002)
 {
@@ -472,7 +467,6 @@ TEST_F(AudioCodecDecoderAdapterImplTest, AudioCodecDecoderAdapterImpl_InvalidVal
  * @tc.name: AudioCodecDecoderAdapterImpl_QueueInputBufferDec_003.
  * @tc.desc: test of InvalidValueScene in AudioCodecDecoderAdapterImpl
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(AudioCodecDecoderAdapterImplTest, AudioCodecDecoderAdapterImpl_QueueInputBufferDec_003)
 {
@@ -528,7 +522,6 @@ TEST_F(AudioCodecDecoderAdapterImplTest, AudioCodecDecoderAdapterImpl_QueueInput
  * @tc.name: AudioCodecDecoderAdapterImpl_NormalValueTest_004.
  * @tc.desc: test of NormalScene in AudioCodecDecoderAdapterImpl
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(AudioCodecDecoderAdapterImplTest, AudioCodecDecoderAdapterImpl_NormalValueTest_004)
 {
@@ -578,7 +571,6 @@ TEST_F(AudioCodecDecoderAdapterImplTest, AudioCodecDecoderAdapterImpl_NormalValu
  * @tc.name: AudioCodecDecoderAdapterImpl_NormalValueTest_005.
  * @tc.desc: test of NormalScene in AudioCodecDecoderAdapterImpl
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(AudioCodecDecoderAdapterImplTest, AudioCodecDecoderAdapterImpl_NormalValueTest_005)
 {
@@ -620,7 +612,6 @@ TEST_F(AudioCodecDecoderAdapterImplTest, AudioCodecDecoderAdapterImpl_NormalValu
  * @tc.name: AudioCodecDecoderAdapterImpl_NormalValueTest_006.
  * @tc.desc: test of NormalScene in AudioCodecDecoderAdapterImpl
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(AudioCodecDecoderAdapterImplTest, AudioCodecDecoderAdapterImpl_NormalValueTest_006)
 {

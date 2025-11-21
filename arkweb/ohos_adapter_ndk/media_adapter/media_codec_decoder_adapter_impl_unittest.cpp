@@ -171,7 +171,6 @@ void MediaCodecDecoderAdapterImplTest::SetCencInfoAboutClearHeaderAndPayLoadLens
  * @tc.name: MediaCodecDecoderAdapterImpl_CreateVideoDecoderByName_001.
  * @tc.desc: test of MediaCodecDecoderAdapterImpl::CreateVideoDecoderByName() CreateVideoDecoderByName()
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_CreateVideoDecoderByName_001)
 {
@@ -194,7 +193,6 @@ TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_CreateVide
  * @tc.name: MediaCodecDecoderAdapterImpl_InvalidValueTest_002.
  * @tc.desc: test of InvalidValueScene in MediaCodecDecoderAdapterImpl
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_InvalidValueTest_002)
 {
@@ -238,7 +236,6 @@ TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_InvalidVal
  * @tc.name: MediaCodecDecoderAdapterImpl_NormalTest_003.
  * @tc.desc: test of NormalScene in MediaCodecDecoderAdapterImpl
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_NormalTest_003)
 {
@@ -275,7 +272,6 @@ TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_NormalTest
  * @tc.name: MediaCodecDecoderAdapterImpl_SetCallbackDec_004.
  * @tc.desc: test of MediaCodecDecoderAdapterImpl::SetCallbackDec
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_SetCallbackDec_004)
 {
@@ -294,7 +290,6 @@ TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_SetCallbac
  * @tc.name: MediaCodecDecoderAdapterImpl_GetTypeOrFlag_005.
  * @tc.desc: test of MediaCodecDecoderAdapterImpl::GetBufferFlag() GetAVBufferFlag()
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_GetTypeOrFlag_005)
 {
@@ -319,7 +314,6 @@ TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_GetTypeOrF
  * @tc.desc: test of MediaCodecDecoderAdapterImpl::OnError() OnOutputFormatChanged() OnInputBufferAvailable()
  * OnOutputBufferAvailable()
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_OnError_006)
 {
@@ -360,7 +354,6 @@ TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_OnError_00
  * @tc.desc: test of MediaCodecDecoderAdapterImpl::SetAVCencInfo()
  * OnOutputBufferAvailable()
  * @tc.type: FUNC.
- * @tc.require:
  */
 TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_SetAVCencInfo_007)
 {
@@ -507,8 +500,8 @@ TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_SetOutputS
     EXPECT_CALL(OhosInterfaceMock::GetInstance(), OH_NativeWindow_NativeWindowHandleOpt(testing::_, testing::_,
         testing::_)).WillOnce(testing::Return(0));
     EXPECT_EQ(mediaCodecDecoderAdapterImpl_->SetOutputSurface(invalidWindow), DecoderAdapterCode::DECODER_ERROR);
-    OhosInterfaceMock::setSurface = false;
     OhosInterfaceMock::nativeWindowHandleOpt = false;
+    OhosInterfaceMock::setSurface = false;
 }
 
 TEST_F(MediaCodecDecoderAdapterImplTest, MediaCodecDecoderAdapterImpl_SetOutputSurface_016)

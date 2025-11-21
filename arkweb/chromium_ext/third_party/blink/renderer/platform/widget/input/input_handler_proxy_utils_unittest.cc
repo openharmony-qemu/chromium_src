@@ -69,7 +69,7 @@ using ::testing::AtLeast;
 
 class MockInputHandlerUtils : public cc::InputHandlerUtils {
  public:
-  MockInputHandlerUtils(cc::InputHandler* handler)
+  explicit MockInputHandlerUtils(cc::InputHandler* handler)
       : cc::InputHandlerUtils(handler){};
   ~MockInputHandlerUtils() {}
 
@@ -94,7 +94,7 @@ class MockLayerImpl : public cc::LayerImpl {
 
 class MockLayerImplUtils : public cc::LayerImplUtils {
  public:
-  MockLayerImplUtils(cc::LayerImpl* layer_impl)
+  explicit MockLayerImplUtils(cc::LayerImpl* layer_impl)
       : cc::LayerImplUtils(layer_impl){};
   ~MockLayerImplUtils(){};
 };
@@ -1818,13 +1818,15 @@ TEST_F(InputHandlerProxyUtilsTest,
 }
 
 TEST_F(InputHandlerProxyUtilsTest, HandleTouchStartIfHitVideo_InvalidFingerId) {
-  WebTouchEvent touch_event = CreateTouchEvent(WebInputEvent::Type::kTouchStart, 100, WebTouchPoint::State::kStatePressed);
+  WebTouchEvent touch_event = CreateTouchEvent(
+    WebInputEvent::Type::kTouchStart, 100, WebTouchPoint::State::kStatePressed);
 
   EXPECT_FALSE(utils_->HandleTouchStartIfHitVideo(touch_event));
 }
 
 TEST_F(InputHandlerProxyUtilsTest, HandleTouchStartIfHitVideo_HitVideoLayer) {
-  WebTouchEvent touch_event = CreateTouchEvent(WebInputEvent::Type::kTouchStart, 0, WebTouchPoint::State::kStatePressed);
+  WebTouchEvent touch_event = CreateTouchEvent(
+    WebInputEvent::Type::kTouchStart, 0, WebTouchPoint::State::kStatePressed);
 
   // Setup video layer hit
   EXPECT_CALL(*mock_input_handler_, handler_utils())
@@ -1842,7 +1844,8 @@ TEST_F(InputHandlerProxyUtilsTest, HandleTouchStartIfHitVideo_HitVideoLayer) {
 }
 
 TEST_F(InputHandlerProxyUtilsTest, HandleTouchStartIfHitVideo_NoHit) {
-  WebTouchEvent touch_event = CreateTouchEvent(WebInputEvent::Type::kTouchStart, 0, WebTouchPoint::State::kStatePressed);
+  WebTouchEvent touch_event = CreateTouchEvent(
+    WebInputEvent::Type::kTouchStart, 0, WebTouchPoint::State::kStatePressed);
 
   // No layer hit
   EXPECT_CALL(*mock_input_handler_, handler_utils())
@@ -1928,14 +1931,16 @@ TEST_F(InputHandlerProxyUtilsTest,
 
 TEST_F(InputHandlerProxyUtilsTest,
        HandleTouchStartIfHitNative_InvalidFingerId) {
-  WebTouchEvent touch_event = CreateTouchEvent(WebInputEvent::Type::kTouchStart, 100, WebTouchPoint::State::kStatePressed);
+  WebTouchEvent touch_event = CreateTouchEvent(
+    WebInputEvent::Type::kTouchStart, 100, WebTouchPoint::State::kStatePressed);
   EXPECT_FALSE(utils_->HandleTouchStartIfHitNative(touch_event));
   touch_event = CreateTouchEvent(WebInputEvent::Type::kTouchStart, -1, WebTouchPoint::State::kStatePressed);
   EXPECT_FALSE(utils_->HandleTouchStartIfHitNative(touch_event));
 }
 
 TEST_F(InputHandlerProxyUtilsTest, HandleTouchStartIfHitNative_HitNativeLayer) {
-  WebTouchEvent touch_event = CreateTouchEvent(WebInputEvent::Type::kTouchStart, 0, WebTouchPoint::State::kStatePressed);
+  WebTouchEvent touch_event = CreateTouchEvent(
+    WebInputEvent::Type::kTouchStart, 0, WebTouchPoint::State::kStatePressed);
 
   // Setup native layer hit
   EXPECT_CALL(*mock_input_handler_, handler_utils())
@@ -1950,7 +1955,8 @@ TEST_F(InputHandlerProxyUtilsTest, HandleTouchStartIfHitNative_HitNativeLayer) {
 }
 
 TEST_F(InputHandlerProxyUtilsTest, HandleTouchStartIfHitNative_NoHit) {
-  WebTouchEvent touch_event = CreateTouchEvent(WebInputEvent::Type::kTouchStart, 0, WebTouchPoint::State::kStatePressed);
+  WebTouchEvent touch_event = CreateTouchEvent(
+    WebInputEvent::Type::kTouchStart, 0, WebTouchPoint::State::kStatePressed);
 
   // No layer hit
   EXPECT_CALL(*mock_input_handler_utils_, GetNativeLayerImpl(_))

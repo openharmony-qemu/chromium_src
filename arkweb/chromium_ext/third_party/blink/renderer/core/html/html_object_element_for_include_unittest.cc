@@ -55,7 +55,8 @@ class HTMLObjectElementForIncludeTest : public RenderingTest {
     uintptr_t raw_addr = reinterpret_cast<uintptr_t>(raw_mem);
     uintptr_t aligned_addr = (raw_addr + alignment - 1) & ~(alignment - 1);
     char* aligned_ptr = reinterpret_cast<char*>(aligned_addr);
-    std::memcpy(aligned_ptr, str, len + 1);
+    size_t safe_copy_size = buffer_size - (aligned_addr - raw_addr);
+    memcpy_s(aligned_ptr, safe_copy_size, str, len + 1);
     AtomicString result(aligned_ptr);
     std::free(raw_mem);
     return result;

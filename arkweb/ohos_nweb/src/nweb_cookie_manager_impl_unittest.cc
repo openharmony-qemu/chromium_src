@@ -58,19 +58,26 @@ class MockNWebCookieManagerDelegate : public NWebCookieManagerDelegate {
   MOCK_METHOD(void, PutAcceptThirdPartyCookieEnabled, (bool accept), (override));
   MOCK_METHOD(bool, IsFileURLSchemeCookiesAllowed, (), (override));
   MOCK_METHOD(void, PutAcceptFileURLSchemeCookiesEnabled, (bool allow), (override));
-  MOCK_METHOD(void, ConfigCookie, (const std::string& url, const std::string& value, bool incognito_mode, bool includeHttpOnly, std::shared_ptr<NWebLongValueCallback> callback), (override));
-  MOCK_METHOD(void, SetCookie, (const std::string& url, const std::string& value, std::shared_ptr<NWebBoolValueCallback> callback), (override));
-  MOCK_METHOD(int, SetCookie, (const std::string& url, const std::string& value, bool incognito_mode, bool includeHttpOnly), (override));
-  MOCK_METHOD(void, ReturnCookie, (const std::string& url, bool incognito_mode, std::shared_ptr<NWebStringValueCallback> callback), (override));
+  MOCK_METHOD(void, ConfigCookie, (const std::string& url, const std::string& value, bool incognito_mode,
+              bool includeHttpOnly, std::shared_ptr<NWebLongValueCallback> callback), (override));
+  MOCK_METHOD(void, SetCookie, (const std::string& url, const std::string& value,
+              std::shared_ptr<NWebBoolValueCallback> callback), (override));
+  MOCK_METHOD(int, SetCookie, (const std::string& url, const std::string& value, bool incognito_mode,
+              bool includeHttpOnly), (override));
+  MOCK_METHOD(void, ReturnCookie, (const std::string& url, bool incognito_mode,
+              std::shared_ptr<NWebStringValueCallback> callback), (override));
   MOCK_METHOD(std::string, ReturnCookie, (const std::string& url, bool& is_valid, bool incognito_mode), (override));
-  MOCK_METHOD(std::string, ReturnCookieWithHttpOnly, (const std::string& url, bool& is_valid, bool incognito_mode, bool includeHttpOnly), (override));
+  MOCK_METHOD(std::string, ReturnCookieWithHttpOnly, (const std::string& url, bool& is_valid,
+              bool incognito_mode, bool includeHttpOnly), (override));
   MOCK_METHOD(void, ExistCookies, (std::shared_ptr<NWebBoolValueCallback> callback), (override));
   MOCK_METHOD(bool, ExistCookies, (bool incognito_mode), (override));
   MOCK_METHOD(void, Store, (std::shared_ptr<NWebBoolValueCallback> callback), (override));
   MOCK_METHOD(bool, Store, (), (override));
   MOCK_METHOD(void, DeleteSessionCookies, (std::shared_ptr<NWebBoolValueCallback> callback), (override));
-  MOCK_METHOD(void, DeleteCookieEntirely, (std::shared_ptr<NWebBoolValueCallback> callback, bool incognito_mode), (override));
-  MOCK_METHOD(int, SetCookieWithHttpOnly, (const std::string& url, const std::string& value, bool incognito_mode, bool includeHttpOnly), (override));
+  MOCK_METHOD(void, DeleteCookieEntirely, (std::shared_ptr<NWebBoolValueCallback> callback,
+              bool incognito_mode), (override));
+  MOCK_METHOD(int, SetCookieWithHttpOnly, (const std::string& url, const std::string& value,
+              bool incognito_mode, bool includeHttpOnly), (override));
 };
 
 class NWebCookieManagerImplTest : public Test {

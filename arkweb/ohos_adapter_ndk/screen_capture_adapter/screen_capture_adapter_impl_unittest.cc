@@ -1017,8 +1017,8 @@ TEST_F(
   OH_AVScreenCaptureBufferType bufferType =
       OH_AVScreenCaptureBufferType::OH_SCREEN_CAPTURE_BUFFERTYPE_VIDEO;
   int64_t timestamp = 0;
-  ScreenCaptureAdapterImpl::ScreenCaptureCallbackOnBufferAvailable(capture, buffer, bufferType, timestamp,
-                                         userData);
+  ScreenCaptureAdapterImpl::ScreenCaptureCallbackOnBufferAvailable(
+    capture, buffer, bufferType, timestamp, userData);
   EXPECT_FALSE(userData);
 }
 
@@ -1033,8 +1033,8 @@ TEST_F(
   OH_AVScreenCaptureBufferType bufferType =
       OH_AVScreenCaptureBufferType::OH_SCREEN_CAPTURE_BUFFERTYPE_VIDEO;
   int64_t timestamp = 0;
-  ScreenCaptureAdapterImpl::ScreenCaptureCallbackOnBufferAvailable(capture, buffer, bufferType, timestamp,
-                                         userData);
+  ScreenCaptureAdapterImpl::ScreenCaptureCallbackOnBufferAvailable(
+    capture, buffer, bufferType, timestamp, userData);
   EXPECT_FALSE(buffer);
 }
 
@@ -1104,8 +1104,8 @@ TEST_F(
   OH_AVScreenCaptureBufferType bufferType =
       OH_AVScreenCaptureBufferType::OH_SCREEN_CAPTURE_BUFFERTYPE_AUDIO_MIC;
   int64_t timestamp = 0;
-  ScreenCaptureAdapterImpl::ScreenCaptureCallbackOnBufferAvailable(capture, buffer, bufferType, timestamp,
-                                         userData);
+  ScreenCaptureAdapterImpl::ScreenCaptureCallbackOnBufferAvailable(
+    capture, buffer, bufferType, timestamp, userData);
   EXPECT_NE(
       bufferType,
       OH_AVScreenCaptureBufferType::OH_SCREEN_CAPTURE_BUFFERTYPE_AUDIO_INNER);

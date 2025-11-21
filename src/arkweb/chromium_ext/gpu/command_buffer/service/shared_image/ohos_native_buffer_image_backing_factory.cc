@@ -61,10 +61,10 @@ namespace gpu {
 namespace {
 const size_t bitsPerPixel = 32;
 
-constexpr viz::SharedImageFormat kSupportedFormats[6]{
-    viz::SinglePlaneFormat::kRGBA_8888, viz::SinglePlaneFormat::kRGB_565,
-    viz::SinglePlaneFormat::kBGR_565,   viz::SinglePlaneFormat::kRGBA_F16,
-    viz::SinglePlaneFormat::kRGBX_8888, viz::SinglePlaneFormat::kRGBA_1010102};
+constexpr viz::SharedImageFormat kSupportedFormats[5]{
+    viz::SinglePlaneFormat::kRGBA_8888, viz::SinglePlaneFormat::kBGR_565,
+    viz::SinglePlaneFormat::kRGBA_F16, viz::SinglePlaneFormat::kRGBX_8888,
+    viz::SinglePlaneFormat::kRGBA_1010102};
 
 // Returns whether the format is supported by NativeBuffer.
 //LCOV_EXCL_START
@@ -76,8 +76,6 @@ bool NativeBufferSupportedFormat(viz::SharedImageFormat format) {
 int ConvertToNativeBufferFormat(viz::SharedImageFormat format) {
   if (format == viz::SinglePlaneFormat::kRGBA_8888) {
     return NATIVEBUFFER_PIXEL_FMT_RGBA_8888;
-  } else if (format == viz::SinglePlaneFormat::kRGB_565) {
-    return NATIVEBUFFER_PIXEL_FMT_RGB_565;
   } else if (format == viz::SinglePlaneFormat::kBGR_565) {
     return NATIVEBUFFER_PIXEL_FMT_BGR_565;
   } else if (format == viz::SinglePlaneFormat::kRGBA_F16) {
@@ -157,8 +155,7 @@ OHOSNativeBufferImageBackingFactory::OHOSNativeBufferImageBackingFactory(
     const gles2::FeatureInfo* feature_info,
     const GpuPreferences& gpu_preferences)
     : SharedImageBackingFactory(kSupportedUsage),
-      use_passthrough_(gpu_preferences.use_passthrough_cmd_decoder &&
-                       gl::PassthroughCommandDecoderSupported()),
+      use_passthrough_(gpu_preferences.use_passthrough_cmd_decoder),
       gl_format_caps_(GLFormatCaps(feature_info)) {
   // Build the feature info for all the supported formats.
   for (auto format : kSupportedFormats) {

@@ -37,6 +37,9 @@ class WebString;
 
 class WebSettingsArkwebInterface {
 public:
+#if BUILDFLAG(ARKWEB_AI)
+  virtual void SetImageAnalyzerEnabled(bool) = 0;
+#endif  // BUILDFLAG(ARKWEB_AI)
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   virtual void SetVerticalHideScrollbars(bool) = 0;
   virtual void SetHorizontalHideScrollbars(bool) = 0;

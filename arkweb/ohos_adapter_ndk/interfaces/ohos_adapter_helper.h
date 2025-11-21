@@ -37,7 +37,6 @@
 #include "arkweb/ohos_adapter_ndk/interfaces/graphic_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/hisysevent_adapter.h"
 #include "arkweb/ohos_adapter_ndk/interfaces/hitrace_adapter.h"
-#include "third_party/ohos_ndk/includes/ohos_adapter/hitrace_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/imf_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/keystore_adapter.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/media_adapter.h"

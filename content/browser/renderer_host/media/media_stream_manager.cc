@@ -3668,7 +3668,11 @@ void MediaStreamManager::HandleAccessRequestResponse(
       int nweb_id = AsMediaStreamManagerExt()->GetNWebIdMatchStreamType(request->GetTargetRenderFrameHostId());
       if (device.type == MediaStreamType::DEVICE_VIDEO_CAPTURE ||
         device.type == MediaStreamType::DISPLAY_VIDEO_CAPTURE) {
-          video_capture_manager()->AsVideoCaptureManagerExt()->BindSessionIdToNWebId(device.session_id(), nweb_id);
+        video_capture_manager()->AsVideoCaptureManagerExt()->BindSessionIdToNWebId(device.session_id(), nweb_id);
+      }
+
+      if (blink::IsAudioInputMediaType(device.type)) {
+        audio_input_device_manager()->BindSessionIdToNWebId(device.session_id(), nweb_id);
       }
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
 

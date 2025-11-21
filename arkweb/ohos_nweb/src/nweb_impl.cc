@@ -7350,6 +7350,26 @@ bool NWebImpl::IsClipboardSitePermissionEnabled() {
 }
 #endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 
+#if BUILDFLAG(ARKWEB_WEBRTC)
+void NWebImpl::ResumeMicrophone() {
+  if (nweb_delegate_) {
+    nweb_delegate_->ResumeMicrophone();
+  }
+}
+
+void NWebImpl::StopMicrophone() {
+  if (nweb_delegate_) {
+    nweb_delegate_->StopMicrophone();
+  }
+}
+
+void NWebImpl::PauseMicrophone() {
+  if (nweb_delegate_) {
+    nweb_delegate_->PauseMicrophone();
+  }
+}
+#endif
+
 void NWebImpl::StopFling() {
   if (nweb_delegate_ == nullptr) {
     return;

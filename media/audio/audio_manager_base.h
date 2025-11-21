@@ -102,6 +102,16 @@ class MEDIA_EXPORT AudioManagerBase : public AudioManager {
   }
   int output_stream_count() const { return num_output_streams_; }
 
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  std::unordered_set<raw_ptr<AudioInputStream, CtnExperimental>>
+  GetInputStream() override {
+    if (input_streams_.size()) {
+      return input_streams_;
+    }
+    return {};
+  }
+#endif
+
  protected:
   AudioManagerBase(std::unique_ptr<AudioThread> audio_thread,
                    AudioLogFactory* audio_log_factory);

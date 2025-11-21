@@ -14,6 +14,7 @@
 #define CONTENT_BROWSER_RENDERER_HOST_MEDIA_AUDIO_INPUT_DEVICE_MANAGER_H_
 
 #include <map>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -51,6 +52,14 @@ class CONTENT_EXPORT AudioInputDeviceManager : public MediaStreamProvider {
   void UnregisterListener(MediaStreamProviderListener* listener) override;
   base::UnguessableToken Open(const blink::MediaStreamDevice& device) override;
   void Close(const base::UnguessableToken& session_id) override;
+
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  std::map<base::UnguessableToken, int> nWebId_;
+  mutable std::mutex NWebIdMutex_;
+  blink::mojom::MediaStreamType GetDeviceType(const base::UnguessableToken& session_id);
+  void BindSessionIdToNWebId(const base::UnguessableToken& sessionId, int nWebId);
+  std::map<base::UnguessableToken, int>& GetNWebIdMap();
+#endif
 
  private:
   ~AudioInputDeviceManager() override;

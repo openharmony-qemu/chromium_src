@@ -5,6 +5,7 @@
 #include "arkweb/chromium_ext/content/browser/renderer_host/media/media_stream_manager_ext.h"
 #include "content/browser/web_contents/web_contents_impl.h"
 
+#include "content/browser/renderer_host/media/audio_input_device_manager.h"
 namespace content {
 
 MediaStreamManagerExt::MediaStreamManagerExt(media::AudioSystem* audio_system)
@@ -176,6 +177,23 @@ int MediaStreamManagerExt::GetNWebIdMatchStreamType(GlobalRenderFrameHostId host
   auto* web_contents = static_cast<WebContentsImpl*>(WebContentsImpl::FromRenderFrameHostID(host_id));
   return web_contents ? web_contents->GetNWebId() : 0;
 }
+
+void MediaStreamManagerExt::CloseAudioCapture(int32_t nweb_id) {
+  if (!audio_input_device_manager()) {
+    LOG(ERROR) << "audio_input_device_manager() is nullptr.";
+    return;
+  }
+  auto& audio_nweb_id_map = audio_input_device_manager()->GetNWebIdMap();
+  for (auto& audio : audio_nweb_id_map) {
+    if (audio.second == nweb_id) {
+      blink::mojom::MediaStreamType type = audio_input_device_manager()->GetDeviceType(audio.first);
+      GetIOThreadTaskRunner({})->PostTask(
+        FROM_HERE, base::BindOnce(&MediaStreamManager::StopDevice,
+                                   weak_factory_.GetSafeRef(), type, audio.first));
+    }
+  }
+}
+
 #endif
 
 }

@@ -24,7 +24,6 @@
 #include "cc/trees/layer_tree_frame_sink_client.h"
 #include "components/viz/common/display/renderer_settings.h"
 #include "components/viz/common/surfaces/local_surface_id.h"
-#include "components/viz/service/display_embedder/server_shared_bitmap_manager.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "ui/gfx/geometry/transform.h"
 
@@ -81,7 +80,6 @@ class CC_MOJO_EMBEDDER_EXPORT SoftwareCompositorRendererOhos {
   raw_ptr<SoftwareCompositorRegistryOhos> registry_ = nullptr;
   raw_ptr<LayerTreeFrameSinkClient> client_ = nullptr;
 
-  std::unique_ptr<viz::ServerSharedBitmapManager> shared_bitmap_manager_;
   std::unique_ptr<viz::FrameSinkManagerImpl> frame_sink_manager_;
   std::unique_ptr<viz::CompositorFrameSinkSupport> root_support_;
   std::unique_ptr<SoftwareDisplayClientOhos> display_client_;

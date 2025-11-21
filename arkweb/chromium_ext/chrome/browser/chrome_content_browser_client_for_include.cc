@@ -416,10 +416,19 @@ bool ChromeContentBrowserClient::ShouldOverrideUrlLoading(
 
   if (auto client = browser_host->GetClient()) {
     if (auto handler = client->GetRequestHandler()) {
+      CefString extra_request_headers;
+      if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            switches::kEnableNwebEx) && is_prerendering) {
+        // We pass the `Sec-Purpose` header to tell the embedder that the navigation
+        // is for prerendering, within the existing API surface.
+        extra_request_headers = "Sec-Purpose: prefetch;prerender";
+      }
+
       *ignore_navigation =
           handler->AsCefRequestHandlerExt()->ShouldOverrideUrlLoading(
               browser_host.get(), gurl.possibly_invalid_spec(), request_method,
-              has_user_gesture, is_redirect, is_outermost_main_frame, "");
+              has_user_gesture, is_redirect, is_outermost_main_frame,
+              extra_request_headers);
       return true;
     }
   }

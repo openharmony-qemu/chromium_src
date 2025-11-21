@@ -199,7 +199,7 @@ void FrameNodeImpl::OnFormEditingStateChanged(uint64_t form_id, bool did_submit)
   if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
     content::GetUIThreadTaskRunner({})->PostTask(
         FROM_HERE, base::BindOnce(&FrameNodeImpl::OnFormEditingStateChanged,
-                                  weak_this_, form_id, did_submit));
+                                  GetWeakPtr(), form_id, did_submit));
   } else {
     LOG(INFO) << "FrameNodeImpl::OnFormEditingStateChanged id: " << form_id << "did submit: " << did_submit;
     content::GlobalRenderFrameHostId global_frame_routing_id = GetRenderFrameHostProxy().global_frame_routing_id();

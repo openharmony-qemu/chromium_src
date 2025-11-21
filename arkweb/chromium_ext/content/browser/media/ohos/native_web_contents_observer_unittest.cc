@@ -101,6 +101,8 @@ TEST_F(NativeWebContentsObserverTest, OnNativeBridgeAdded2) {
   ASSERT_NE(host_impl_->native_web_contents_observer_, nullptr);
   MockNativeBridgeObserver mock_observer;
   mojo::PendingAssociatedReceiver<media::mojom::NativeBridgeObserver> receiver;
+  auto remote = receiver.InitWithNewEndpointAndPassRemote();
+  EXPECT_TRUE(remote.is_valid());
   ASSERT_NO_FATAL_FAILURE(
       host_impl_->OnNativeBridgeAdded(std::move(receiver), 456));
 
@@ -410,7 +412,9 @@ TEST_F(NativeWebContentsObserverTest, BindNativeBridgeHost3) {
   GlobalRenderFrameHostId id1 = main_rfh()->GetGlobalId();
   GlobalRenderFrameHostId id2(1, 2);
   GlobalRenderFrameHostId id3(3, 4);
-  mojo::AssociatedRemote<media::mojom::NativeBridgeHost> r1, r2, r3;
+  mojo::AssociatedRemote<media::mojom::NativeBridgeHost> r1;
+  mojo::AssociatedRemote<media::mojom::NativeBridgeHost> r2;
+  mojo::AssociatedRemote<media::mojom::NativeBridgeHost> r3;
   auto rec1 = r1.BindNewEndpointAndPassReceiver();
   ASSERT_NO_FATAL_FAILURE(
       observer_->BindNativeBridgeHost(id1, std::move(rec1)));

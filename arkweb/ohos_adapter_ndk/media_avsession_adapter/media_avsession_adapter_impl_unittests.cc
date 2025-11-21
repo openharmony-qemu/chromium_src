@@ -16,7 +16,6 @@
 #include <bundle/native_interface_bundle.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-
 #include "base/logging.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "arkweb/ohos_adapter_ndk/mock_ndk_api/include/mock_ndk_api.h"
@@ -31,7 +30,6 @@ using namespace OHOS::NWeb;
 class MediaAVSessionMetadataAdapterMock : public MediaAVSessionMetadataAdapter {
  public:
   MediaAVSessionMetadataAdapterMock() = default;
-
   ~MediaAVSessionMetadataAdapterMock() = default;
 
   MOCK_METHOD1(SetTitle, void(const std::string& title));

@@ -443,9 +443,7 @@ TEST_F(VideoUrlLoaderImplTest, VideoOpt_UntrustedCheckMethods) {
   CheckMethodFails("TrAcE");
 }
 
-
-// This test is flaky on Windows and Android. See <http://crbug.com/471645>.
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_ARKWEB)
+#if BUILDFLAG(IS_ARKWEB)
 #define MAYBE_UntrustedCheckHeaders DISABLED_UntrustedCheckHeaders
 #else
 #define MAYBE_UntrustedCheckHeaders UntrustedCheckHeaders

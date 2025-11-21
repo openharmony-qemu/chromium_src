@@ -37,7 +37,7 @@ public:
 
 class TestConnection : public DirectPtraceConnection {
 public:
-    TestConnection(int pid) : pid_(pid) {}
+    explicit TestConnection(int pid) : pid_(pid) {}
     pid_t GetProcessID() override { return pid_; }
     bool ReadFileContents(const base::FilePath& path, std::string* contents) override {
         *contents = "test maps content";

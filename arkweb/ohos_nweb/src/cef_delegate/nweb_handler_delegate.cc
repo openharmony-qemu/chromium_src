@@ -305,6 +305,40 @@ NWebConsoleLog::NWebConsoleLogLevel ConvertConsoleMessageLevel(
   }
 }
 
+NWebConsoleLog::NWebConsoleLogSource ConvertConsoleMessageSource(
+    int message_source) {
+  switch (message_source) {
+    case 0:
+      return NWebConsoleLog::NWebConsoleLogSource::XML;
+    case 1:
+      return NWebConsoleLog::NWebConsoleLogSource::JAVASCRIPT;
+    case 2:
+      return NWebConsoleLog::NWebConsoleLogSource::NETWORK;
+    case 3:
+      return NWebConsoleLog::NWebConsoleLogSource::CONSOLEAPI;
+    case 4:
+      return NWebConsoleLog::NWebConsoleLogSource::STORAGE;
+    case 5:
+      return NWebConsoleLog::NWebConsoleLogSource::RENDERING;
+    case 6:
+      return NWebConsoleLog::NWebConsoleLogSource::SECURITY;
+    case 7:
+      return NWebConsoleLog::NWebConsoleLogSource::OTHER;
+    case 8:
+      return NWebConsoleLog::NWebConsoleLogSource::DEPRECATION;
+    case 9:
+      return NWebConsoleLog::NWebConsoleLogSource::WORKER;
+    case 10:
+      return NWebConsoleLog::NWebConsoleLogSource::VIOLATION;
+    case 11:
+      return NWebConsoleLog::NWebConsoleLogSource::INTERVENTION;
+    case 12:
+      return NWebConsoleLog::NWebConsoleLogSource::RECOMMENDATION;
+    default:
+      return NWebConsoleLog::NWebConsoleLogSource::OTHER;
+  }
+}
+
 NWebFileSelectorParams::FileSelectorMode ConvertFileSelectorMode(
     CefDialogHandler::FileDialogMode mode) {
   NWebFileSelectorParams::FileSelectorMode result_mode =
@@ -3079,15 +3113,18 @@ void NWebHandlerDelegate::OnReceivedTouchIconUrl(CefRefPtr<CefBrowser> browser,
 
 bool NWebHandlerDelegate::OnConsoleMessage(CefRefPtr<CefBrowser> browser,
                                            cef_log_severity_t level,
+                                           int source_type,
                                            const CefString& message,
                                            const CefString& source,
                                            int line) {
   if (nweb_handler_ != nullptr) {
     NWebConsoleLog::NWebConsoleLogLevel message_level =
         ConvertConsoleMessageLevel(level);
+    NWebConsoleLog::NWebConsoleLogSource message_source =
+        ConvertConsoleMessageSource(source_type);
     std::shared_ptr<NWebConsoleLog> console_log =
         std::make_shared<NWebConsoleLogImpl>(line, message.ToString(),
-                                             message_level, source.ToString());
+                                             message_level, message_source, source.ToString());
     return nweb_handler_->OnConsoleLog(console_log);
   }
   return false;
@@ -3505,6 +3542,7 @@ bool NWebHandlerDelegate::OnFileDialog(
     const std::vector<CefString>& accept_filters,
     const std::vector<CefString>& accept_extensions,
     const std::vector<CefString>& accept_descriptions,
+    const CefString& accepts,
     const CefString& start_in,
     bool is_exclude_accept_all_options,
     bool capture,
@@ -3534,10 +3572,17 @@ bool NWebHandlerDelegate::OnFileDialog(
         break;
     }
   }
+  std::string default_name = default_file_path.ToString();
+  std::string default_path = start_in.ToString();
+  size_t pos = default_name.find_last_of('/');
+  if (pos != std::string::npos) {
+    default_path = default_name.substr(0, pos + 1);
+    default_name = default_name.substr(pos + 1);
+  }
   std::shared_ptr<NWebFileSelectorParams> param =
       std::make_shared<FileSelectorParamsImpl>(
           file_mode, file_selector_title, accept_extensions,
-          default_file_path.ToString(), capture, mime_filters, start_in.ToString(),
+          default_name, capture, mime_filters, accepts.ToString(), default_path,
           accept_descriptions, is_exclude_accept_all_options);
   std::shared_ptr<NWebStringVectorValueCallback> file_path_callback =
       std::make_shared<FileSelectorCallbackImpl>(callback);

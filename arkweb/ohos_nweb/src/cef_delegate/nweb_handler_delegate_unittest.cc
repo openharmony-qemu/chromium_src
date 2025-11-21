@@ -552,7 +552,7 @@ TEST_F(NWebHandlerDelegateTest, OnFileDialog) {
   std::vector<CefString> accept_extensions;
   std::vector<CefString> accept_descriptions;
   std::vector<CefString> mime_filters;
-  CefString accepts = u"",
+  CefString accepts = u"";
   CefString start_in = u"";
   bool is_exclude_accept_all_options = false;
   bool capture = false;

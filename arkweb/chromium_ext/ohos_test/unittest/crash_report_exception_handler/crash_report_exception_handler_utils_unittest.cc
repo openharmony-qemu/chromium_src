@@ -25,7 +25,7 @@ namespace crashpad {
 
 class UserStreamDataSourceTest : public UserStreamDataSource {
 public:
-    UserStreamDataSourceTest(PtraceConnection* connection):
+    explicit UserStreamDataSourceTest(PtraceConnection* connection):
     connection_(connection) {}
  
     UserStreamDataSourceTest(const UserStreamDataSourceTest&) = delete;
@@ -40,7 +40,7 @@ private:
 
 class TestConnection : public DirectPtraceConnection {
 public:
-    TestConnection(int pid) : pid_(pid) {}
+    explicit TestConnection(int pid) : pid_(pid) {}
     pid_t GetProcessID() override { return pid_; }
     bool ReadFileContents(const base::FilePath& path, std::string* contents) override {
         *contents = "test maps content";

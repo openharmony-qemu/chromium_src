@@ -84,7 +84,7 @@ TEST_F(MediaSessionImplUtilsTest, PushBackMediaImage1) {
   std::vector<media_session::MediaImage> artwork(2);
   std::string poster = impl_->web_contents()->GetVideoPoster();
   utils_->PushBackMediaImage(artwork);
-  ASSERT_EQ(artwork.size(), 2u);
+  ASSERT_EQ(artwork.size(), 3u);
   EXPECT_EQ(GURL(poster), artwork.back().src);
 }
 

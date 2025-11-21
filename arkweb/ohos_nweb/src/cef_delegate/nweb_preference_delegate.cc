@@ -207,6 +207,10 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
   browser_settings.touch_handle_exist = touch_handle_exist_;
   browser_settings.viewport_scale = viewport_scale_;
 #endif  // BUILDFLAG(ARKWEB_MENU)
+#if BUILDFLAG(ARKWEB_AI)
+  browser_settings.image_analyzer_enabled =
+      GetImageAnalyzerEnabled() ? STATE_ENABLED : STATE_DISABLED;
+#endif
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   browser_settings.hide_horizontal_scrollbars =
       !IsHorizontalScrollBarAccess() ? STATE_ENABLED : STATE_DISABLED;
@@ -783,6 +787,17 @@ bool NWebPreferenceDelegate::GetPinchSmoothMode() {
 bool NWebPreferenceDelegate::IsMultiWindowAccess() {
   return multiWindow_access_;
 }
+
+#if BUILDFLAG(ARKWEB_AI)
+void NWebPreferenceDelegate::PutImageAnalyzerEnabled(bool enabled) {
+  image_analyzer_enabled_ = enabled;
+  WebPreferencesChanged();
+}
+
+bool NWebPreferenceDelegate::GetImageAnalyzerEnabled() {
+  return image_analyzer_enabled_;
+}
+#endif
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
 bool NWebPreferenceDelegate::IsHorizontalScrollBarAccess() {

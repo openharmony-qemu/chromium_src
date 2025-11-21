@@ -15,7 +15,7 @@
 
 #include "arkweb/chromium_ext/gpu/ipc/service/stream_texture_ohos.h"
 #include "gtest/gtest.h"
-#include <stdint.h>
+#include <cstdint>
 #include "gpu/ipc/service/gpu_channel.h"
 #include "base/run_loop.h"
 #include "base/test/test_simple_task_runner.h"

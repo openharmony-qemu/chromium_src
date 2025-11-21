@@ -168,6 +168,11 @@ class NWebPreferenceDelegate : public NWebPreference {
   void* GetPrintToken() { return token_; }
 #endif
 
+#if BUILDFLAG(ARKWEB_AI)
+  void PutImageAnalyzerEnabled(bool enabled) override;
+  bool GetImageAnalyzerEnabled() override;
+#endif
+
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   bool IsHorizontalScrollBarAccess() override;
   bool IsVerticalScrollBarAccess() override;
@@ -370,6 +375,9 @@ class NWebPreferenceDelegate : public NWebPreference {
 #endif
 #if BUILDFLAG(ARKWEB_PRINT)
   raw_ptr<void> token_ = nullptr;
+#endif
+#if BUILDFLAG(ARKWEB_AI)
+  bool image_analyzer_enabled_{true};
 #endif
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   bool horizontal_scrollBar_access_{true};

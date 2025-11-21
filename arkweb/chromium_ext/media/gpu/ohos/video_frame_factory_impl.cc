@@ -120,7 +120,7 @@ void VideoFrameFactoryImpl::CreateVideoFrame(
       weak_factory_.GetWeakPtr(), std::move(output_cb), timestamp, natural_size,
       !!codec_buffer_wait_coordinator_, pixel_format,
 #if BUILDFLAG(ARKWEB_PIP)
-      video_frame_copy_required_|IsPipEnable(),
+      video_frame_copy_required_ || IsPipEnable(),
 #else
       video_frame_copy_required_,
 #endif

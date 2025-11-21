@@ -4382,7 +4382,11 @@ void RenderFrameHostImpl::DidAddMessageToConsole(
   std::u16string updated_source_id;
   if (source_id.has_value())
     updated_source_id = *source_id;
+#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+  if (delegate_->DidAddMessageToConsole(this, log_level, blink::mojom::ConsoleMessageSource::kOther, message, line_no,
+#else
   if (delegate_->DidAddMessageToConsole(this, log_level, message, line_no,
+#endif
                                         updated_source_id,
                                         untrusted_stack_trace)) {
     return;

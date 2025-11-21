@@ -39,7 +39,7 @@ NWebExtensionSidePanelCefController::GetOptions(std::string extension_id,
   auto browser_context = GetActiveBrowserContext();
   auto registry = extensions::ExtensionRegistry::Get(browser_context);
   auto extension = registry->GetExtensionById(
-      extension_id, extensions::ExtensionRegistry::EVERYTHING));
+      extension_id, extensions::ExtensionRegistry::EVERYTHING);
   if (!extension) {
     LOG(INFO) << "failed to find extension,id is " << extension_id;
     return result;

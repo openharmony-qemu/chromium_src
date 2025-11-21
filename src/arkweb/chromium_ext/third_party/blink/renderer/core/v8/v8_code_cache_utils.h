@@ -31,10 +31,6 @@
 
 
 #if BUILDFLAG(ARKWEB_PRECOMPILE)
-namespace WTF {
-  class TextEncoding;
-  class TextPosition;
-}  // namespace WTF
 
 namespace blink {
 class CachedMetadata;

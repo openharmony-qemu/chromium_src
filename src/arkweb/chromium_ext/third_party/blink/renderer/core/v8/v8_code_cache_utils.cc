@@ -41,7 +41,7 @@ V8CodeCacheUtils::CacheError V8CodeCacheUtils::GenerateCodeCache(
       blink::SecurityOrigin::Create(source_url));
 
   auto cache_handler = MakeGarbageCollected<blink::ScriptCachedMetadataHandler>(
-      UTF8Encoding(), std::move(sender));
+      Utf8Encoding(), std::move(sender));
 
   V8CodeCacheUtils::CacheError error = GenerateCodeCacheInternal(
       script_state, script, source_url, cache_handler, cache_options);
@@ -79,7 +79,7 @@ V8CodeCacheUtils::CacheError V8CodeCacheUtils::GenerateCodeCacheInternal(
   auto code_cache_host =
       ExecutionContext::GetCodeCacheHostFromContext(execution_context);
 
-  WTF::TextPosition text_position(WTF::OrdinalNumber::First(), WTF::OrdinalNumber::First());
+  TextPosition text_position(OrdinalNumber::First(), OrdinalNumber::First());
   V8CodeCache::ProduceCacheUtils(isolate, code_cache_host, unbound_script, cache_handler,
                                  script_string.length(), source_url, text_position,
                                  "v8.precompile",

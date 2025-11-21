@@ -35,12 +35,13 @@
   DO_FIELD(cors_preflight_policy) __VA_ARGS__                  \
   DO_FIELD(originated_from_service_worker) __VA_ARGS__         \
   DO_FIELD(skip_service_worker) __VA_ARGS__                    \
-  DO_FIELD(corb_detachable) __VA_ARGS__                    \
+  DO_FIELD(corb_detachable) __VA_ARGS__                        \
   DO_FIELD(mode) __VA_ARGS__                                   \
   DO_FIELD(required_ip_address_space) __VA_ARGS__              \
   DO_FIELD(credentials_mode) __VA_ARGS__                       \
   DO_FIELD(redirect_mode) __VA_ARGS__                          \
   DO_FIELD(fetch_integrity) __VA_ARGS__                        \
+  DO_FIELD(expected_public_keys) __VA_ARGS__                       \
   DO_FIELD(destination) __VA_ARGS__                            \
   DO_FIELD(original_destination) __VA_ARGS__                   \
   DO_FIELD(request_body) __VA_ARGS__                           \
@@ -58,8 +59,6 @@
   DO_FIELD(upgrade_if_insecure) __VA_ARGS__                    \
   DO_FIELD(is_revalidating) __VA_ARGS__                        \
   DO_FIELD(throttling_profile_id) __VA_ARGS__                  \
-  DO_FIELD(custom_proxy_pre_cache_headers) __VA_ARGS__         \
-  DO_FIELD(custom_proxy_post_cache_headers) __VA_ARGS__        \
   DO_FIELD(fetch_window_id) __VA_ARGS__                        \
   DO_FIELD(devtools_request_id) __VA_ARGS__                    \
   DO_FIELD(devtools_stack_id) __VA_ARGS__                      \
@@ -80,6 +79,7 @@
   DO_FIELD(shared_dictionary_writer_enabled) __VA_ARGS__       \
   DO_FIELD(attribution_reporting_src_token) __VA_ARGS__        \
   DO_FIELD(is_ad_tagged) __VA_ARGS__                           \
+  DO_FIELD(client_side_content_decoding_enabled) __VA_ARGS__       \
   DO_FIELD(prefetch_token) __VA_ARGS__                         \
   DO_FIELD(allow_preload_record) __VA_ARGS__                   \
   DO_FIELD(main_url) __VA_ARGS__                               \
@@ -87,7 +87,11 @@
   DO_FIELD(is_sync_mode) __VA_ARGS__                           \
   DO_FIELD(is_download_request) __VA_ARGS__                    \
   DO_FIELD(usage_scenario_) __VA_ARGS__                        \
-  DO_FIELD(socket_tag)
+  DO_FIELD(socket_tag) __VA_ARGS__                                 \
+  DO_FIELD(keepalive_token) __VA_ARGS__                            \
+  DO_FIELD(allows_device_bound_session_registration) __VA_ARGS__   \
+  DO_FIELD(permissions_policy) __VA_ARGS__   \
+  DO_FIELD(fetch_retry_options)
 #endif  // BUILDFLAG(IS_ARKWEB)
 
 #if BUILDFLAG(IS_ARKWEB)
@@ -134,8 +138,8 @@ enum class FieldsForUma {
   kUpgradeIfInsecure = 39,
   kIsRevalidating = 40,
   kThrottlingProfileId = 41,
-  kCustomProxyPreCacheHeaders = 42,
-  kCustomProxyPostCacheHeaders = 43,
+  // kCustomProxyPreCacheHeaders = 42,
+  // kCustomProxyPostCacheHeaders = 43,
   kFetchWindowId = 44,
   kDevtoolsRequestId = 45,
   kDevtoolsStackId = 46,
@@ -156,7 +160,11 @@ enum class FieldsForUma {
   kSharedDictionaryWriterEnabled = 61,
   kAttributionReportingSrcToken = 62,
   kIsAdTagged = 63,
-  kMaxValue = kIsAdTagged,
+  kKeepaliveToken = 64,
+  kExpectedPublicKeys = 65,
+  kPermissionsPolicy = 66,
+  kClientSideContentDecodingEnabled = 67,
+  kMaxValue = kClientSideContentDecodingEnabled,
 };
 #endif
 // clang-format on

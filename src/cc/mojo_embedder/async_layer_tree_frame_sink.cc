@@ -166,7 +166,7 @@ bool AsyncLayerTreeFrameSink::BindToClient(LayerTreeFrameSinkClient* client) {
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
   async_layer_tree_frame_sink_utils_->BindToClientArkWebPerSch(compositor_frame_sink_ptr_,
-      base::PlatformThread::CurrentRealId(),
+      base::PlatformThread::CurrentRealId().truncate_to_int32_for_display_only(),
       base::GetCurrentRealPid());
 #endif
 

@@ -26,8 +26,7 @@ mojom::ActivationLevel OnPageActivationComputedExt(
     content::NavigationHandle* navigation_handle,
     mojom::ActivationLevel initial_activation_level) {
   LOG(DEBUG) << "[Adblock] OnPageActivationComputed url : ***";
-  CHECK(IsInSubresourceFilterRoot(navigation_handle),
-        base::NotFatalUntil::M129);
+  CHECK(IsInSubresourceFilterRoot(navigation_handle));
 
   mojom::ActivationLevel effective_activation_level = initial_activation_level;
   const GURL& url(navigation_handle->GetURL());

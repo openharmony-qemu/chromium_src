@@ -284,7 +284,7 @@ class WebContentsImplExt : public WebContentsImpl {
     cc::BrowserControlsState constraints,
     cc::BrowserControlsState current,
     bool animate,
-    const std::optional<cc::BrowserControlsOffsetTagsInfo>& offset_tags_info)
+    const std::optional<cc::BrowserControlsOffsetTagModifications>& offset_tag_modifications)
     override;
 #if BUILDFLAG(ARKWEB_PIP)
   MediaPlayerId GetMediaPlayerId(int delegate_id,

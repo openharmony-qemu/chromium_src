@@ -214,7 +214,7 @@ std::unique_ptr<BPFBasePolicy> SandboxSeccompBPF::PolicyForSandboxType(
     case sandbox::mojom::Sandbox::kOnDeviceTranslation:
       return std::make_unique<OnDeviceTranslationProcessPolicy>();
 #endif  // BUILDFLAG(IS_LINUX)
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
     case sandbox::mojom::Sandbox::kScreenAI:
       return std::make_unique<ScreenAIProcessPolicy>();
     case sandbox::mojom::Sandbox::kShapeDetection:
@@ -234,7 +234,7 @@ std::unique_ptr<BPFBasePolicy> SandboxSeccompBPF::PolicyForSandboxType(
       return GetGpuProcessSandbox(options, MremapPolicy::kBlock);
 #endif  // BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION)
 #endif
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 #if BUILDFLAG(IS_LINUX)
     case sandbox::mojom::Sandbox::kVideoEffects:
       return std::make_unique<ServiceProcessPolicy>();
@@ -319,7 +319,7 @@ void SandboxSeccompBPF::RunSandboxSanityChecks(
     case sandbox::mojom::Sandbox::kLibassistant:
 #endif  // BUILDFLAG(ENABLE_CROS_LIBASSISTANT)
 #endif  // BUILDFLAG(IS_CHROMEOS)
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
     case sandbox::mojom::Sandbox::kShapeDetection:
     case sandbox::mojom::Sandbox::kScreenAI:
 #endif

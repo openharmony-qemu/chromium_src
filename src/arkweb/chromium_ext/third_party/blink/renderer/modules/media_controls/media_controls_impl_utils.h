@@ -28,7 +28,7 @@ namespace blink {
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 constexpr int kDownloadIndexToRowColumns = 7;
 constexpr int kPlaybackSpeedIndexToRowColumns = 9;
-constexpr int kRowElementsCount = 10;
+constexpr int kRowElementsCount = 12;
 constexpr int kMediaControlsSizingMediumThresholdVideoAssitant = 600;
 constexpr int kMediaControlsSizingLargeThresholdVideoAssitant = 840;
 constexpr base::TimeDelta kScrubbingDelay = base::Seconds(1.0);

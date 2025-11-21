@@ -2481,7 +2481,7 @@ bool SkiaOutputSurfaceImplOnGpu::PresentFrame(OutputSurfaceFrame frame) {
 
 #if BUILDFLAG(ARKWEB_SWAP_BUFFER_TRACE)
   OHOS_TRACE_EVENT2("viz,benchmark", "Graphics.Pipeline", "trace_id",
-      std::to_string(frame->data.swap_trace_id), "step", "FinishBufferSwap");
+      std::to_string(frame.data.swap_trace_id), "step", "FinishBufferSwap");
 #endif
   output_device_->Present(frame.sub_buffer_rect, buffer_presented_callback_,
                           std::move(frame));

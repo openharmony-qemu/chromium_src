@@ -181,7 +181,7 @@ describe('IntelligentLayout (single popup cache)', () => {
     const info = createPopupInfo();
     IntelligentLayout.calculateForPopWin(info);
 
-    IntelligentLayout.reInit('初始化');
+    IntelligentLayout.reInit();
 
     expect(IntelligentLayout.getActivePopupWindowInfo()).toBeNull();
   });

@@ -30,6 +30,7 @@ const std::string COLOR_PICKER_SO_PATH =
 const std::string FUNC_NAME = "HMS_GCP_StartColorPicker";
 const std::string FUNC_WITH_VALUE_NAME =
     "HMS_GCP_StartColorPickerWithColorValue";
+const int32_t STYLUS_OK = 0;
 
 typedef enum {
   /** an unknown color space */
@@ -147,12 +148,13 @@ void ColorPickerNotify(void* user_data,
       ColorPickerAdapterImpl::callback_wrapper_.GetCallback(callback_index);
 
   if (color_picker_callback) {
-    bool success = (code == 0);
+    bool success = (code == STYLUS_OK);
     HMS_GCP_Color color = color_info.color;
     uint32_t value = (color.alpha << 24) | (color.red << 16) |
                      (color.green << 8) | color.blue;
     (*color_picker_callback)(success, value);
   }
+  ColorPickerAdapterImpl::callback_wrapper_.Clear(callback_index);
 }
 
 void ColorPickerAdapterImpl::StartColorPicker(
@@ -182,17 +184,20 @@ void ColorPickerAdapterImpl::StartColorPickerInternal(
     color_picker_callback(false, 0);  // Notify failure
     return;
   }
-  if (callback_index_ > 0) {
-    callback_wrapper_.Clear(callback_index_);
-  }
   callback_index_ = callback_wrapper_.AddCallback(
       std::make_shared<ColorPickerCallback>(color_picker_callback));
 #if defined(USE_LIBFUZZER) || BUILDFLAG(ARKWEB_TEST)
   HMS_GCP_PickedColorInfo color_info;
   ColorPickerNotify(reinterpret_cast<void*>(callback_index_), color_info, 0);
 #else
-  start_color_picker_func(x, y, ColorPickerNotify,
-                          reinterpret_cast<void*>(callback_index_));
+  WVLOG_I("ColorPickerAdapterImpl::StartColorPicker start");
+  int32_t ret = start_color_picker_func(
+      x, y, ColorPickerNotify, reinterpret_cast<void*>(callback_index_));
+  if (ret != STYLUS_OK) {
+    WVLOG_E("ColorPickerAdapterImpl::StartColorPicker error");
+    color_picker_callback(false, 0);  // Notify error
+    callback_wrapper_.Clear(callback_index_);
+  }
 #endif
 }
 

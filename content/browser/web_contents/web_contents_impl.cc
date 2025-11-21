@@ -3615,6 +3615,7 @@ const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences() {
     bool is_desktop = (AsWebContentsImplExt()->user_agent_.find("Mobile") ==
                        std::string::npos);
     prefs.viewport_meta_enabled = !is_desktop;
+    LOG(INFO) << "userAgent is not empty, set metaViewport: " << prefs.viewport_meta_enabled;
   } else {
     prefs.viewport_meta_enabled = true;
   }
@@ -9629,6 +9630,9 @@ void WebContentsImpl::OnFocusedElementChangedInFrame(
 bool WebContentsImpl::DidAddMessageToConsole(
     RenderFrameHostImpl* source_frame,
     blink::mojom::ConsoleMessageLevel log_level,
+#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+    blink::mojom::ConsoleMessageSource log_source,
+#endif
     const std::u16string& message,
     int32_t line_no,
     const std::u16string& source_id,
@@ -9643,7 +9647,11 @@ bool WebContentsImpl::DidAddMessageToConsole(
   if (!delegate_) {
     return false;
   }
+#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+  return delegate_->DidAddMessageToConsole(this, log_level, log_source, message, line_no,
+#else
   return delegate_->DidAddMessageToConsole(this, log_level, message, line_no,
+#endif
                                            source_id);
 }
 

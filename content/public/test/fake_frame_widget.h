@@ -102,7 +102,6 @@ class FakeFrameWidget : public blink::mojom::FrameWidget {
   void OnDestroyImageAnalyzerOverlay() override {}
   void OnFoldStatusChanged(uint32_t foldstatus) override {}
   void NotifyOverlayStateChanged() override {}
-  void OnDataDetectorSelectText() override {}
 #endif
 
   mojo::AssociatedReceiver<blink::mojom::FrameWidget> receiver_;

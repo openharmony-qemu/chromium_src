@@ -55,6 +55,9 @@ using NamesMap = skia_private::THashMap<SkString, int>;
 using NamePathMap = skia_private::THashMap<SkString, SkString>;
 using Coordinate = SkFontArguments::VariationPosition::Coordinate;
 using AxisDefinitions = SkFontScanner::AxisDefinitions;
+#if BUILDFLAG(ARKWEB_THEME_FONT)
+using ThemeTypefaceSet = std::vector<sk_sp<SkTypeface_OHOS>>;
+#endif
 
 /*!
  * Error code definition
@@ -133,8 +136,8 @@ class FontConfig_OHOS {
                                bool isFallback = false) const;
 
 #if BUILDFLAG(ARKWEB_THEME_FONT)
-  void InvalidateThemeFont(const SkFontScanner& fontScanner, int fd);
-  SkTypeface_OHOS* getThemeFontTypeface() const;
+  void InvalidateThemeFont(const SkFontScanner& fontScanner, const std::vector<int>& fds);
+  ThemeTypefaceSet getThemeFontTypefaceSet() const;
 #endif
 
 #if ENABLE_DEBUG
@@ -216,7 +219,7 @@ class FontConfig_OHOS {
       genericFamilySet;     // the font style set list of generic family
   FallbackSet fallbackSet;  // the font style set list of fallback family
 #if BUILDFLAG(ARKWEB_THEME_FONT)
-  sk_sp<SkTypeface_OHOS> themeFontTypeface;
+  ThemeTypefaceSet themeFontTypefaceSet;
 #endif
 
   NamesMap

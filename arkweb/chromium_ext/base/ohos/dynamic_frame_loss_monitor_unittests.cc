@@ -145,7 +145,7 @@ TEST_F(DynamicFrameLossMonitorTest, OnSwapBuffer_003) {
   dynamic_frame->is_monitoring_ = true;
   dynamic_frame->OnSwapBuffer();
   int64_t initialTime = dynamic_frame->prev_swap_buffer_time_;
-  dynamic_frame->prev_swap_buffer_time_ = initialTime + 100; // 100ms
+  dynamic_frame->prev_swap_buffer_time_ = initialTime + 100;
   dynamic_frame->OnSwapBuffer();
   EXPECT_TRUE(dynamic_frame->received_first_frame_);
   EXPECT_EQ(2, dynamic_frame->cached_buffer_number_);
@@ -155,9 +155,9 @@ TEST_F(DynamicFrameLossMonitorTest, OnSwapBuffer_004) {
   dynamic_frame->is_monitoring_ = true;
   dynamic_frame->OnSwapBuffer();
   int64_t initialTime = dynamic_frame->prev_swap_buffer_time_;
-  dynamic_frame->prev_swap_buffer_time_ = initialTime + 50; // 50ms
+  dynamic_frame->prev_swap_buffer_time_ = initialTime + 50;
   dynamic_frame->OnSwapBuffer();
-  dynamic_frame->prev_swap_buffer_time_ = initialTime + 150; // 150ms
+  dynamic_frame->prev_swap_buffer_time_ = initialTime + 150;
   dynamic_frame->OnSwapBuffer();
   EXPECT_NE(24, dynamic_frame->max_app_frametime_);
 }

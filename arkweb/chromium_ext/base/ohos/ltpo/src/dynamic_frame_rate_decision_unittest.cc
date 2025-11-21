@@ -186,7 +186,7 @@ TEST(DynamicFrameRateDecisionTest, UpdateFramePreferredRate011) {
   dynamixFrameRateDecision.UpdateFramePreferredRate();
   EXPECT_EQ(dynamixFrameRateDecision.cur_frame_rate_, 120);
 }
-  
+
 TEST(DynamicFrameRateDecisionTest, SetVisible001) {
   DynamicFrameRateDecision dynamixFrameRateDecision;
   // Assign dynamixFrameRateDecision.curent_task_runner_ a value of nullptr
@@ -483,7 +483,7 @@ TEST(DynamicFrameRateDecisionTest, SetVsyncEnabled003) {
   bool measuring_param = true;
   dynamixFrameRateDecision.SetVsyncEnabled(measuring_param);
   // The incoming argument is true ,dynamixFrameRateDecision.vsync_cnt_ is 1
-  EXPECT_EQ(dynamixFrameRateDecision.vsync_cnt_, 0);
+  EXPECT_EQ(dynamixFrameRateDecision.vsync_cnt_, 1);
 }
 
 TEST(DynamicFrameRateDecisionTest, SetVsyncEnabled004) {

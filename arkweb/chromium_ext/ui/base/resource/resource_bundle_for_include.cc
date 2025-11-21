@@ -26,7 +26,7 @@ static std::unordered_set<std::string> supportLocaleList = {
   "resources",
   "chrome_100_percent",
   "chrome_200_percent",
-#ifdef SUPPORT_MULTI_LANGUAGE
+#ifdef WEARABLE_SUPPORT_MULTI_LANGUAGE
   "ar",
   "be",
   "bg",
@@ -81,7 +81,18 @@ static std::unordered_set<std::string> supportLocaleList = {
   "zh-HK",
 #else
   "bo-CN",
+  "de",
+  "en-GB",
   "en-US",
+  "id",
+  "it",
+  "lo",
+  "ms",
+  "my",
+  "pl",
+  "pt-PT",
+  "th",
+  "tr",
   "ug",
   "zh-CN",
   "zh-TW",

@@ -592,14 +592,14 @@ DecoderAdapterCode MediaCodecDecoderAdapterImpl::SetAVCencInfoStruct(
         return DecoderAdapterCode::DECODER_ERROR;
     }
 
-    DrmSubsample subSamples[cencInfo->GetClearHeaderLens().size()];
+    std::vector<DrmSubsample> subSamples(cencInfo->GetClearHeaderLens().size());
     for (uint32_t i = 0; i < cencInfo->GetClearHeaderLens().size(); i++) {
         subSamples[i].clearHeaderLen = cencInfo->GetClearHeaderLens()[i];
         subSamples[i].payLoadLen = cencInfo->GetPayLoadLens()[i];
     }
     errNo = OH_AVCencInfo_SetSubsampleInfo(
         avCencInfo, cencInfo->GetEncryptedBlockCount(), cencInfo->GetSkippedBlockCount(),
-        cencInfo->GetFirstEncryptedOffset(), cencInfo->GetClearHeaderLens().size(), subSamples);
+        cencInfo->GetFirstEncryptedOffset(), cencInfo->GetClearHeaderLens().size(), subSamples.data());
     if (errNo != AV_ERR_OK) {
         WVLOG_E("MediaCodecDecoder set AVCencInfo subsampleInfo fail, errNo = %{public}u",
             static_cast<uint32_t>(errNo));

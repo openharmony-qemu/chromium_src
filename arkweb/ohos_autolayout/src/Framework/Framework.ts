@@ -132,7 +132,7 @@ export default class Framework {
         CSSSheetManage.reInit();
         
         Log.d('步骤2: 重新初始化智能布局模块', Framework.TAG);
-        IntelligentLayout.reInit('智能布局初始化');
+        IntelligentLayout.reInit();
         
         Log.d('步骤3: 重新初始化观察器处理器', Framework.TAG);
         ObserverHandler.reInit();

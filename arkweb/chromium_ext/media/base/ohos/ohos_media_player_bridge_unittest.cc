@@ -638,7 +638,7 @@ TEST_F(OHOSMediaPlayerBridgeTests, SeekInternal_003) {
   EXPECT_FALSE(bridge->seek_complete_);
   std::string log_output = testing::internal::GetCapturedStderr();
   ASSERT_NE(
-      log_output.find("OHOSMediaPlayerBridge::SeekTo mode=SEEK_PREVIOUS_SYNC"),
+      log_output.find("OHOSMediaPlayerBridge::SeekTo mode=FAKE_SEEK"),
       std::string::npos);
 }
 

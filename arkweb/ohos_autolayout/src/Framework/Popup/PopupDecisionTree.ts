@@ -318,75 +318,6 @@ export class PopupDecisionTree {
         return elArea > 0 ? (overlapWidth * overlapHeight / elArea) : 0;
     }
 
-    /**
-     * 获取给定节点的最上层子节点（或节点集合）
-     * @param {HTMLElement} parentNode - 父节点
-     * @return {HTMLElement[]} - 最上层的子节点数组（可能多个并列）
-     */
-    private static getTopmostChildren(parentNode: HTMLElement, popupInfo: PopupInfo): HTMLElement[] {
-        const children = Array.from(parentNode.children)
-        .filter(child => {
-            // 过滤掉不可见或未设置定位的元素
-            const style = window.getComputedStyle(child);
-            return style.display !== 'none' && 
-                style.visibility !== 'hidden' &&
-                child instanceof HTMLElement &&
-                // parseFloat(style.height) > 0 &&
-                // parseFloat(style.width) > 0 &&
-                parseFloat(style.opacity) === 1 &&
-                !Utils.isBackgroundSemiTransparent(style)
-        });
-    
-        if (children.length === 0) {
-            return [];
-        }
-        // 获取 mask 节点的 z-index
-        const maskStyle = window.getComputedStyle(popupInfo.mask_node);
-        let maskZIndex: string | number = maskStyle.zIndex;
-        if (popupInfo.popup_type === PopupType.C || popupInfo.popup_type === PopupType.A) {
-            maskZIndex = -1;
-        } else {
-            if (maskZIndex === 'auto') {
-                maskZIndex = 0; // auto 默认权重为 0
-            } else {
-                maskZIndex = parseInt(maskZIndex, 10);
-            }
-        }
-    
-        // 计算每个子节点的 z-index 权重
-        const weightedChildren = children.map(child => {
-            const style = window.getComputedStyle(child);
-            let zIndex: string|number = style.zIndex;
-        
-            // 处理 z-index: auto（按 DOM 顺序，后出现的权重更高）
-            if (zIndex === 'auto') {
-                zIndex = 0; // auto 默认权重为 0，但 DOM 顺序会影响最终比较
-            } else {
-                zIndex = parseInt(zIndex, 10);
-            }
-        
-            return { element: child as HTMLElement, zIndex: zIndex, domOrder: children.indexOf(child) };
-        });
-    
-        // 筛选出比 mask 节点 z-index 更大的节点（至少等于）
-        const filteredChildren = weightedChildren.filter(child => child.zIndex >= maskZIndex);
-    
-        // 按 z-index 降序 + DOM 顺序升序排序
-        filteredChildren.sort((a, b) => {
-            if (a.zIndex !== b.zIndex) {
-                return b.zIndex - a.zIndex; // z-index 大的在前
-            } else {
-                return b.domOrder - a.domOrder; // DOM 顺序靠后的在前
-            }
-        });
-
-        // 提取元素
-        const topmostChildren = filteredChildren.map(child => child.element);
-
-        Log.d(`topmostChildren 数量: ${topmostChildren.length}`, Tag.popupDecisionTree);
-        return topmostChildren;
-    }
-
     
     /**
      * 检查一个根节点 (rootNode) 是否包含一个“滚轮选择器”(Picker)。
@@ -423,7 +354,7 @@ export class PopupDecisionTree {
             // 特征 2: 检查统一内联高度的子元素
             if (!hasUniformInlineHeight) {
                 // 我们检查 *当前元素* 的 *子元素* 是否满足条件
-                hasUniformInlineHeight = this.checkUniformInlineHeight(element);
+                hasUniformInlineHeight = this.checkUniformHeight(element);
             }
 
             // 特征 3: 检查 'linear-gradient'
@@ -437,6 +368,11 @@ export class PopupDecisionTree {
             }
         }
 
+        Log.d(
+            `检测结果: 'picker' 类名=${hasPickerClass}, 统一内联高度=${hasUniformInlineHeight}, linear-gradient=${hasLinearGradient}`,
+            Tag.popupDecisionTree
+        );
+
         // 4. 最终裁决
         return hasPickerClass && hasUniformInlineHeight && hasLinearGradient;
     }
@@ -449,59 +385,84 @@ export class PopupDecisionTree {
     }
 
     /**
-     * 【辅助函数】检查单个元素的 *直接子元素* 是否具有统一的内联高度。
+     * 【辅助函数】检查单个元素的 *直接子元素* 是否具有统一的实际高度（Computed Height）。
+     * * @param element 要检查的 HTML 元素。
+     * @returns 如果所有子元素的计算高度相同，则返回 true。
      */
-    private static checkUniformInlineHeight(element: HTMLElement): boolean {
+    private static checkUniformHeight(element: HTMLElement): boolean {
         const children = element.children;
 
-        // 必须有至少2个子元素才能判断“统一性”
+        // 1. 必须有至少2个子元素才能判断“统一性”
         if (children.length < 2) {
             return false;
         }
 
-        // 检查第一个子元素
+        // --- 获取第一个子元素的实际计算高度 ---
         const firstChild = children[0] as HTMLElement;
-        // 必须有 style 属性且定义了内联 height
-        if (!firstChild.style || !firstChild.style.height) {
+        
+        // 使用 clientHeight 获取元素的可见高度（包含 padding，不包含 border, margin, 滚动条）
+        // 或者使用 getBoundingClientRect().height / offsetHeight，但 clientHeight 适用于获取元素内容高度的常见场景。
+        const firstChildHeight = firstChild.clientHeight;
+
+        // 如果第一个子元素的高度为 0，通常说明元素未渲染或被隐藏，不认为是有效的统一高度。
+        if (firstChildHeight === 0) {
             return false;
         }
-        
-        const firstChildHeight = firstChild.style.height;
 
-        // 遍历剩余子元素
+        // 2. 遍历剩余子元素，并比较它们的实际高度
         for (let i = 1; i < children.length; i++) {
             const child = children[i] as HTMLElement;
-            // 只要有一个子元素不匹配（或没有内联 height），就返回 false
-            if (!child.style || child.style.height !== firstChildHeight) {
+            const childHeight = child.clientHeight;
+
+            // 只要有一个子元素的实际高度与第一个子元素的高度不相等，就返回 false
+            if (childHeight !== firstChildHeight) {
                 return false;
             }
         }
 
-        // 如果循环完成，说明所有子元素都具有统一的内联高度
+        // 3. 如果循环完成，说明所有子元素都具有统一的实际高度
         return true;
     }
 
     /**
-     * 【辅助函数】检查单个元素的计算样式是否包含 'linear-gradient'。
+     * 【辅助函数】检查单个元素的计算样式是否包含 'linear-gradient' 
+     * 并且该渐变中包含半透明颜色（用于判断是否实现了虚化/渐隐效果）。
+     * @param element 要检查的 HTML 元素。
+     * @returns 如果找到包含半透明颜色的 linear-gradient，则返回 true。
      */
     private static checkLinearGradient(element: HTMLElement): boolean {
         const computedStyle = window.getComputedStyle(element);
+
+        // --- 增加对 mask-image 的检查 ---
         const bgImage = computedStyle.backgroundImage;
-    
-        // 1. 快速失败：如果连 "linear-gradient" 字符串都没有，直接返回 false
-        if (!bgImage.includes('linear-gradient')) {
-            return false;
+        const maskImage = computedStyle.maskImage;
+
+        // 将所有需要检查的属性值放入一个数组
+        const checkValues = [bgImage, maskImage].filter(Boolean) as string[];
+
+        for (const cssValue of checkValues) {
+            // 1. 快速失败：如果连 "linear-gradient" 字符串都没有，跳过
+            if (!cssValue.includes('linear-gradient')) {
+                continue;
+            }
+
+            // 2. 使用正则表达式提取所有可能的颜色值
+            const colorRegex = /(rgba?\(.*?\)|hsla?\(.*?\)|#\w{3,8}|transparent)/gi;
+            const foundColors = cssValue.match(colorRegex);
+
+            if (!foundColors) {
+                continue;
+            }
+
+            // 3. 检查是否有半透明颜色或 'transparent' 关键字
+            const isFaded = foundColors.some(color => Utils.isColorSemiTransparent(color));
+
+            if (isFaded) {
+                return true; // 只要在一个属性中找到，就返回 true
+            }
         }
 
-        // 2. 使用正则表达式提取所有可能的颜色值
-        const colorRegex = /(rgba?\(.*?\)|hsla?\(.*?\)|#\w{3,8}|transparent)/gi;
-        const foundColors = bgImage.match(colorRegex);
-
-        if (!foundColors) {
-            return false;
-        }
-
-        return foundColors.some(color => Utils.isColorSemiTransparent(color));
+        return false;
     }
 
     /**
@@ -544,8 +505,8 @@ export class PopupDecisionTree {
      * 特征3：该关闭按钮大小有限制。
      * @returns {boolean} 
      */
-    private static CheckCenterCloseButton(rootNode: HTMLElement, allNodes: HTMLElement[]): boolean {
-        const closeElements = PopupDecisionTree.getCloseButtons(rootNode, allNodes) as HTMLElement[];
+    private static CheckCenterCloseButton(contentNode: HTMLElement, allNodes: HTMLElement[]): boolean {
+        const closeElements = PopupDecisionTree.getCloseButtons(contentNode, allNodes) as HTMLElement[];
         if (closeElements.length < 1) {
             return false;
         }

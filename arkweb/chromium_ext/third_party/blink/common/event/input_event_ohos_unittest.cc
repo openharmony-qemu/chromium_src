@@ -12,8 +12,9 @@
  * limitations under the License.
  */
 
-#include "testing/gtest/include/gtest/gtest.h"
 #include "input_event_ohos.h"
+
+#include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/blink/public/common/input/web_touch_event.h"
 
 namespace blink {

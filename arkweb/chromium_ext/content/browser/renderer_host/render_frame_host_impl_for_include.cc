@@ -454,4 +454,40 @@ net::Error RenderFrameHostImpl::GetNetErrorCode() {
   return net_error_;
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_CONSOLE_LOGGING)
+void RenderFrameHostImpl::DidAddMessageToConsoleV2(
+    blink::mojom::ConsoleMessageLevel log_level,
+    blink::mojom::ConsoleMessageSource log_source,
+    const std::u16string& message,
+    uint32_t line_no,
+    const std::optional<std::u16string>& source_id,
+    const std::optional<std::u16string>& untrusted_stack_trace) {
+  std::u16string updated_source_id;
+  if (source_id.has_value())
+    updated_source_id = *source_id;
+  if (delegate_->DidAddMessageToConsole(this, log_level, log_source, message, line_no,
+                                        updated_source_id,
+                                        untrusted_stack_trace)) {
+    return;
+  }
+
+  // Pass through log severity only on builtin components pages to limit console
+  // spew.
+  const bool is_web_ui = HasWebUIScheme(GetMainFrame()->GetLastCommittedURL());
+  if (is_web_ui) {
+    DCHECK_EQ(GetMainFrame(), GetOutermostMainFrame())
+        << "The mainframe and outermost mainframe should be the same in WebUI.";
+  }
+  const bool is_builtin_component =
+      is_web_ui ||
+      GetContentClient()->browser()->IsBuiltinComponent(
+          GetProcess()->GetBrowserContext(), GetLastCommittedOrigin());
+  const bool is_off_the_record =
+      GetSiteInstance()->GetBrowserContext()->IsOffTheRecord();
+
+  LogConsoleMessage(log_level, message, line_no, is_builtin_component,
+                    is_off_the_record, updated_source_id);
+}
+#endif
 }  // namespace content

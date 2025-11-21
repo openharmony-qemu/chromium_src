@@ -23,12 +23,24 @@ group("arkweb_test_targets") {
     ]
 }
 
-group("mojo_pre") {
+group("arkweb_prebuild_buildflags") {
+  deps = []
+  
+  if (arkweb_enable_prebuild) {
+    import("$root_build_dir/arkweb_prebuild.gni")
+    if (defined(buildflag_header_targets) && buildflag_header_targets != []) {
+      deps += buildflag_header_targets
+    }
+  }
+}
+
+group("arkweb_prebuild_mojom") {
   testonly = true
   deps = []
-  if (enable_mojom_gni) {
-    import("$root_build_dir/mojom_targets.gni")
-    print("enable_mojom_gni is ok")
+  
+  if (arkweb_enable_prebuild) {
+    import("$root_build_dir/arkweb_prebuild.gni")
+    deps += [ ":arkweb_prebuild_buildflags" ]
     if (defined(mojom_targets) && mojom_targets != []) {
       deps += mojom_targets
     }

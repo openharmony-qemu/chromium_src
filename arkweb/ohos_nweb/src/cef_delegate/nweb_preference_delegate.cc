@@ -412,11 +412,13 @@ void NWebPreferenceDelegate::SetViewportScaleState(bool viewportScale) {
 #endif  // BUILDFLAG(ARKWEB_MENU)
 
 void NWebPreferenceDelegate::PutForceDarkModeEnabled(int forceDark) {
+  LOG(INFO) << "NWebPreferenceDelegate::PutForceDarkModeEnabled:" << forceDark;
   force_dark_mode_enabled_ = forceDark;
   WebPreferencesChanged();
 }
 
 void NWebPreferenceDelegate::PutDarkSchemeEnabled(int darkScheme) {
+  LOG(INFO) << "NWebPreferenceDelegate::PutDarkSchemeEnabled:" << darkScheme;
   dark_prefer_color_scheme_enabled_ = darkScheme;
   WebPreferencesChanged();
 }
@@ -906,8 +908,10 @@ bool NWebPreferenceDelegate::IsEnableCustomVideoPlayer() {
   return std::get<0>(native_video_player_config_);
 }
 #endif
+
 #if BUILDFLAG(ARKWEB_VIEWPORT)
 void NWebPreferenceDelegate::SetViewportEnable(bool enable) {
+  LOG(INFO) << "set metaViewport: " << enable;
   viewport_enabled_ = enable;
   WebPreferencesChanged();
 }

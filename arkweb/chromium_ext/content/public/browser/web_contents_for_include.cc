@@ -91,12 +91,17 @@ virtual void StopCamera(int nWebID) = 0;
 virtual void CloseCamera(int nWebID) = 0;
 virtual int GetNWebId() = 0;
 virtual void SetNWebId(int nWebID) = 0;
+virtual void OnCameraCaptureStateChanged(int original_state, int new_state) = 0;
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
 
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
 virtual void ShowFreeCopyMenu() = 0;
 virtual bool ShouldShowFreeCopyMenu() = 0;
 #endif
+
+#if BUILDFLAG(ARKWEB_AI)
+virtual void OnDataDetectorSelectText() {}
+#endif  // BUILDFLAG(ARKWEB_AI)
 
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 virtual void OnShareFile(const std::string& filePath,

@@ -139,4 +139,15 @@ template("buildflag_header") {
       public_deps = [ "//build:buildflag_header_h" ]
     }
   }
+
+  if (target_os == "ohos") {
+    build_metadata_filename = "$target_gen_dir/${target_name}.build_metadata"
+    build_metadata = {
+      target_name = target_name
+      label = get_label_info(":$target_name", "label_with_toolchain")
+      template_type = "buildflag_header"
+    }
+
+    write_file(build_metadata_filename, build_metadata, "json")
+  }
 }

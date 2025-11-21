@@ -119,7 +119,7 @@ class ArkwebRenderProcessHostImplUtils {
   static ThemeFont* EnsureThemeFont();
   static bool IsThemeFontValid();
   static void UpdateThemeFontFile(RenderProcessHostImpl* host,
-                                  base::File font_file);
+                                  std::vector<base::File> font_files);
 #endif
 
 #if BUILDFLAG(ARKWEB_RENDER_REMOVE_BINDER)

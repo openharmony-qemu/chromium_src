@@ -114,12 +114,6 @@ void RenderWidgetHostImplExt::OnOverlayStateChanged(const gfx::Rect& image_rect)
   }
   view->OnOverlayStateChanged(image_rect);
 }
-
-// LCOV_EXCL_START
-void RenderWidgetHostImplExt::OnDataDetectorSelectText() {
-  blink_frame_widget_->OnDataDetectorSelectText();
-}
-// LCOV_EXCL_STOP
 #endif
 
 #if BUILDFLAG(ARKWEB_DRAG_DROP)

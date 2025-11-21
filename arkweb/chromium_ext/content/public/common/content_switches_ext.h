@@ -118,6 +118,10 @@ CONTENT_EXPORT extern const char  kEnableWebAudioBackgroundTask[];
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
 CONTENT_EXPORT extern const char  kEnableReportCookieMonsterClient[];
 #endif // BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
+
+#if BUILDFLAG(IS_ARKWEB)
+CONTENT_EXPORT extern const char  kEnableReportThreadPoolForeg[];
+#endif
 }  // namespace switches
 
 #endif  // ARKWEB_CONTENT_PUBLIC_COMMON_CONTENT_SWITCHES_EXT_H_

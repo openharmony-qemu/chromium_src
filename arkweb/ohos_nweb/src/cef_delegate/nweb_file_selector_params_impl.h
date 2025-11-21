@@ -44,6 +44,7 @@ class FileSelectorParamsImpl : public NWebFileSelectorParams {
                          const std::string& default_filename,
                          bool is_capture,
                          const std::vector<CefString>& mime_type,
+                         const std::string& accepts,
                          const std::string& default_path,
                          const std::vector<CefString>& descriptions,
                          bool is_exclude_accept_all_options);
@@ -56,6 +57,7 @@ class FileSelectorParamsImpl : public NWebFileSelectorParams {
   const std::string DefaultPath() override;
   const DescriptionsList Descriptions() override;
   bool IsAcceptAllOptionExcluded() override;
+  const std::string Accepts() override;
 
  private:
   NWebFileSelectorParams::FileSelectorMode mode_;
@@ -64,6 +66,7 @@ class FileSelectorParamsImpl : public NWebFileSelectorParams {
   AcceptTypeList accept_type_;
   bool is_capture_;
   MimeTypeList mime_type_;
+  std::string accepts_ = "";
   std::string default_path_ = "";
   DescriptionsList descriptions_ = DescriptionsList();
   bool is_exclude_accept_all_options_ = false;

@@ -119,6 +119,7 @@
 #include "base/logging.h"
 #include "arkweb/chromium_ext/pdf/pdfium/pdfium_engine_for_include.cc"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#include "base/trace_event/trace_event.h"
 #endif
 
 using printing::ConvertUnit;
@@ -940,6 +941,9 @@ void PDFiumEngine::OnDocumentCanceled() {
 }
 
 void PDFiumEngine::FinishLoadingDocument() {
+#if BUILDFLAG(ARKWEB_PDF)
+  TRACE_EVENT0("media", "PDFiumEngine::FinishLoadingDocument");
+#endif
   // Note that doc_loader_->IsDocumentComplete() may not be true here if
   // called via `OnDocumentCanceled()`.
   DCHECK(doc());
@@ -1049,6 +1053,9 @@ bool PDFiumEngine::HandleInputEvent(const blink::WebInputEvent& event) {
   DCHECK(!defer_page_unload_);
   defer_page_unload_ = true;
   bool rv = false;
+#if BUILDFLAG(ARKWEB_PDF)
+  LOG(DEBUG) << "PDFiumEngine::HandleInputEvent " << static_cast<int>(event.GetType());
+#endif
   switch (event.GetType()) {
     case blink::WebInputEvent::Type::kMouseDown:
       rv = OnMouseDown(static_cast<const blink::WebMouseEvent&>(event));
@@ -1208,6 +1215,12 @@ void PDFiumEngine::UpdateFocus(bool has_focus) {
     }
     KillFormFocus();
   }
+#if BUILDFLAG(ARKWEB_PDF)
+  // Clear selection when PDF lose focus.
+  if (!has_focus) {
+    ClearTextSelection();
+  }
+#endif  // BUILDFLAG(ARKWEB_PDF)
 }
 
 AccessibilityFocusInfo PDFiumEngine::GetFocusInfo() {
@@ -2839,6 +2852,9 @@ gfx::Size PDFiumEngine::plugin_size() const {
 }
 
 void PDFiumEngine::LoadDocument() {
+#if BUILDFLAG(ARKWEB_PDF)
+  TRACE_EVENT0("media", "PDFiumEngine::LoadDocument");
+#endif
   // Check if the document is ready for loading. If it isn't just bail for now,
   // we will call LoadDocument() again later.
   if (!doc() && !doc_loader_->IsDocumentComplete()) {

@@ -571,7 +571,7 @@ TEST_F(ArkWebElideUrlExtTest, ParseInput_ContentScheme) {
   GURL canonicalized_url;
   
   UrlType result = ParseInput(input, &parts, &scheme, &canonicalized_url);
-  EXPECT_EQ(result, UrlType::URL);
+  EXPECT_EQ(result, UrlType::UNKNOWN);
   EXPECT_EQ(scheme, u"content");
 }
 

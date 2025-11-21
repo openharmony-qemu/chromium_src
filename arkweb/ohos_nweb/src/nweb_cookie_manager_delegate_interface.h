@@ -21,6 +21,7 @@
 
 #include "arkweb/build/features/features.h"
 #include "nweb_value_callback.h"
+#include "nweb_cookie_manager.h"
 
 namespace OHOS::NWeb {
 class NWebCookieManagerDelegateInterface {
@@ -74,6 +75,9 @@ class NWebCookieManagerDelegateInterface {
       bool incognitoMode,
       bool includeHttpOnly,
       std::shared_ptr<NWebLongValueCallback> callback) = 0;
+  virtual void GetAllCookies(
+      bool incognitoMode,
+      std::vector<std::shared_ptr<NWebCookie>>& cookies) = 0;
 };
 }  // namespace OHOS::NWeb
 #endif

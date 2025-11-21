@@ -177,7 +177,7 @@ interface Renderer {
   // Notify renderer that theme font has been changed.
   // ARKWEB_THEME_FONT
   [EnableIf=arkweb_theme_font]
-  UpdateThemeFontFile(mojo_base.mojom.File? theme_font);
+  UpdateThemeFontFile(array<mojo_base.mojom.File?> theme_fonts);
 
   //#ifdef ARKWEB_I18N
   [EnableIf=arkweb_i18n]

@@ -325,7 +325,7 @@ int32_t AudioCapturerAdapterImpl::GetFrameCount(uint32_t &frameCount)
     if (ret != AUDIOSTREAM_SUCCESS) {
         return AUDIO_ERROR;
     }
-    frameCount = frameCountValue;
+    frameCount = static_cast<uint32_t>(frameCountValue);
     return AUDIO_OK;
 }
 

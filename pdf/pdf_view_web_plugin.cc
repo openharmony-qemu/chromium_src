@@ -1875,9 +1875,9 @@ void PdfViewWebPlugin::HandleViewportMessage(const base::Value::Dict& message) {
 
 #if BUILDFLAG(ARKWEB_PDF)
   if (pinch_phase == PinchPhase::kNone || pinch_phase == PinchPhase::kEnd) {
-    is_pinching_ = false;
+    SetIsPinching(false);
   } else {
-    is_pinching_ = true;
+    SetIsPinching(true);
   }
 #endif  // BUILDFLAG(ARKWEB_PDF)
 

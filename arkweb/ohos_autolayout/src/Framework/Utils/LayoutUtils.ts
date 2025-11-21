@@ -247,10 +247,30 @@ export default class LayoutUtils{
         return isScrollableY && isOverFlow;
     }
 
-    static isOverflowScrollChild(node: HTMLElement, scrollNodes: HTMLElement[]): boolean {
-        return scrollNodes.some(scrollNode => {
-            return scrollNode.contains(node);
+    /**
+     * 检查一个节点是否是任意一个滚动容器的“子节点”（非自身）。
+     * @param node 要检查的节点
+     * @param scrollNodes 滚动容器列表
+     */
+    public static isOverflowScrollChild(node: HTMLElement, scrollNodes: HTMLElement[]): boolean {
+        const nodeIdentifier = node.className?.split(' ')[0] || node.tagName;
+        Log.d(`[isOverflowScrollChild] 检查节点 ${nodeIdentifier} 是否为 ${scrollNodes.length} 个滚动容器的子节点`, Tag.layoutUtils);
+    
+        const result = scrollNodes.some(scrollNode => {
+            const isNotSameNode = node !== scrollNode;
+            const isContained = scrollNode.contains(node);
+            const isMatch = isNotSameNode && isContained;
+        
+            if (isMatch) {
+                const scrollNodeIdentifier = scrollNode.className?.split(' ')[0] || scrollNode.tagName;
+                Log.d(`✅ 命中: 节点 ${nodeIdentifier} 是滚动容器 ${scrollNodeIdentifier} 的子节点`, Tag.layoutUtils);
+            }
+
+            return isMatch;
         });
+    
+        Log.d(`[isOverflowScrollChild] 检查 ${nodeIdentifier} 最终结果: ${result}`, Tag.layoutUtils);
+        return result;
     }
     
     /**
@@ -748,37 +768,112 @@ export default class LayoutUtils{
     }
 
     /**
-     * 判断元素是否创建层叠上下文
-     */
+         * 判断元素是否创建层叠上下文
+         */
     static isStackingContext(element: HTMLElement): boolean {
-        const style = window.getComputedStyle(element);
-        
-        // 特殊情况：根元素总是层叠上下文
+        // 1. 根元素检查 (最快路径)
         if (element === document.documentElement) {
             return true;
         }
-        // position + z-index ≠ auto
-        if (style.position !== 'static') {
-            if (style.zIndex !== 'auto') {
-                return true;
-            }
-        }
-        
-        // 其他创建层叠上下文的情况
-        if (parseFloat(style.opacity) < 1 ||
-            style.transform !== 'none' ||
-            style.filter !== 'none' ||
-            style.isolation === 'isolate' ||
-            style.mixBlendMode !== 'normal') {
-                return true;
-            }
 
-        if (style.willChange === 'z-index' || style.willChange.includes('transform') || 
-            style.willChange.includes('opacity')) {
-                return true;
-            }
-        
+        const style = window.getComputedStyle(element);
+
+        // 2. 依次执行各项检查策略
+        // 只要满足其中任意一项，即视为创建了层叠上下文
+        if (this.isPositionedStackingContext(style) ||
+            this.isLayoutChildStackingContext(element, style) ||
+            this.isCssPropertyStackingContext(style) ||
+            this.isWillChangeStackingContext(style) ||
+            this.isContainStackingContext(style)) {
+            return true;
+        }
+
+        Log.d(`节点${element.className}未创建层叠上下文链`, Tag.layoutUtils);
         return false;
+    }
+
+    /**
+     * 检查 Position 相关的层叠上下文规则
+     */
+    private static isPositionedStackingContext(style: CSSStyleDeclaration): boolean {
+        const position = style.position;
+        
+        // fixed 或 sticky
+        if (position === Constant.fixed || position === Constant.sticky) {
+            return true;
+        }
+
+        // absolute 或 relative 且 z-index 不为 auto
+        if ((position === Constant.absolute || position === Constant.relative) && style.zIndex !== 'auto') {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * 检查 Flex/Grid 子元素规则
+     */
+    private static isLayoutChildStackingContext(element: HTMLElement, style: CSSStyleDeclaration): boolean {
+        // 保持原有逻辑调用
+        return LayoutUtils.isFlexOrGridChildWithZIndex(element, style);
+    }
+
+    /**
+     * 检查常规 CSS 属性 (Opacity, Transform, Filter 等)
+     */
+    private static isCssPropertyStackingContext(style: CSSStyleDeclaration): boolean {
+        // 1. 数值或特定值检查
+        if (parseFloat(style.opacity) < 1 || 
+            style.mixBlendMode !== 'normal' || 
+            style.isolation === 'isolate') {
+            return true;
+        }
+
+        // 2. 只要值不为 'none' 就触发的属性列表
+        const propertiesToCheck: (keyof CSSStyleDeclaration)[] = [
+            'transform',
+            'filter',
+            'backdropFilter',
+            'perspective',
+            'clipPath',
+            'mask',
+            'maskImage'
+        ];
+
+        return propertiesToCheck.some(prop => style[prop] !== 'none');
+    }
+
+    /**
+     * 检查 will-change 属性
+     */
+    private static isWillChangeStackingContext(style: CSSStyleDeclaration): boolean {
+        const willChange = style.willChange;
+        return willChange === 'z-index' || 
+            willChange.includes('transform') || 
+            willChange.includes('opacity');
+    }
+
+    /**
+     * 检查 contain 属性
+     */
+    private static isContainStackingContext(style: CSSStyleDeclaration): boolean {
+        const contain = style.contain;
+        // 同样使用数组检查代替长串 ||
+        const keywords = ['layout', 'paint', 'strict', 'content'];
+        return keywords.some(keyword => contain.includes(keyword));
+    }
+
+    static isFlexOrGridChildWithZIndex(element: HTMLElement, style: CSSStyleDeclaration): boolean {
+        
+        const parent = element.parentElement;
+        if (!parent) {
+            return false;
+        }
+        const parentStyle = window.getComputedStyle(parent);
+        const isFlexOrGridContainer = parentStyle.display === 'flex' || parentStyle.display === 'inline-flex' ||
+                                        parentStyle.display === 'grid' || parentStyle.display === 'inline-grid';
+        return isFlexOrGridContainer && style.zIndex !== 'auto';
     }
 
     /**
@@ -796,44 +891,132 @@ export default class LayoutUtils{
      * 比较两个可见节点的层叠顺序
      * @returns 1: nodeA在上, -1: nodeB在上, 0: 同一层级或无法比较
      */
-    static compareZIndex(nodeA: HTMLElement, nodeB: HTMLElement): number{
+    static compareZIndex(nodeA: HTMLElement, nodeB: HTMLElement): number {
         Log.d(`========== 比较z-index层级 ==========`, Tag.layoutUtils);
         
+        // 1. 简单节点关系检查 (Guard Clauses)
         if (nodeA === nodeB) {
             Log.d(`✅ 相同节点`, Tag.layoutUtils);
             return 0;
         }
+        if (nodeA.contains(nodeB)) {
+            Log.d(`✅ a包含b`, Tag.layoutUtils);
+            return -1;
+        }
+        if (nodeB.contains(nodeA)) {
+            Log.d(`✅ b包含a`, Tag.layoutUtils);
+            return 1;
+        }
 
         const chainA = LayoutUtils.getStackingContextChain(nodeA);
         const chainB = LayoutUtils.getStackingContextChain(nodeB);
-        
         Log.d(`节点A层叠链长度: ${chainA.length}, 节点B层叠链长度: ${chainB.length}`, Tag.layoutUtils);
-        
-        // 找到第一个不同的层叠上下文祖先
+        Log.d('开始依次比较链上节点层级', Tag.layoutUtils);
+
+        // 2. 遍历比较层叠上下文链
         let i = 0;
         while (i < chainA.length && i < chainB.length) {
             const ctxA = chainA[i];
             const ctxB = chainB[i];
-            
-            if (ctxA.element !== ctxB.element) {
-                // 比较这两个兄弟层叠上下文的z-index
-                const result = ctxA.zIndex > ctxB.zIndex ? 1 : -1;
-                Log.d(`${result === 1 ? '🔼 节点A在上' : '🔽 节点B在上'} (zA=${ctxA.zIndex}, zB=${ctxB.zIndex})`, Tag.layoutUtils);
-                return result;
+
+            // 如果节点相同，说明还在共同祖先链上，继续向后寻找
+            if (ctxA.element === ctxB.element) {
+                i++;
+                continue;
             }
-            
-            // 如果是同一个层叠上下文，继续向叶子节点比较
-            i++;
+
+            // 3. 发现分歧点：委托给辅助方法进行比较并直接返回结果
+            return this.compareSiblingContexts(ctxA, ctxB);
+        }
+
+        return LayoutUtils.handleByChainPost(nodeA, nodeB, chainA, chainB);
+    }
+
+    /**
+     * 辅助方法：比较两个不同的兄弟层叠上下文
+     */
+    private static compareSiblingContexts(ctxA: StackingContextInfo, ctxB: StackingContextInfo): number {
+        // 1. 优先比较 z-index 数值
+        if (ctxA.zIndex > ctxB.zIndex) {
+            Log.d(`'🔼 节点A在上' (zA=${ctxA.zIndex}, zB=${ctxB.zIndex})`, Tag.layoutUtils);
+            return 1;
         }
         
+        if (ctxA.zIndex < ctxB.zIndex) {
+            Log.d(`'🔽 节点B在上' (zA=${ctxA.zIndex}, zB=${ctxB.zIndex})`, Tag.layoutUtils);
+            return -1;
+        }
+
+        // 2. z-index 相同，比较 DOM 文档流位置
+        // 注意：ctxA.element 和 ctxB.element 此时必然不同
+        const position = ctxA.element.compareDocumentPosition(ctxB.element);
+
+        if (position === Node.DOCUMENT_POSITION_FOLLOWING) {
+            Log.d(`🔽 节点B在上 (B在A后面)`, Tag.layoutUtils);
+            return -1; // B在A后面，B在上
+        }
+        
+        if (position === Node.DOCUMENT_POSITION_PRECEDING) {
+            Log.d(`🔼 节点A在上 (A在B后面)`, Tag.layoutUtils);
+            return 1; // A在B后面，A在上
+        }
+
+        Log.d(`⚠️ 无法比较`, Tag.layoutUtils);
+        return 0;
+    }
+
+    static handleByChainPost(nodeA: HTMLElement, nodeB: HTMLElement,
+        chainA: StackingContextInfo[], chainB: StackingContextInfo[]): number {
+        if (chainA.length < chainB.length) {
+            Log.d(`节点B的层级更深`, Tag.layoutUtils);
+            const bIndex = chainB[chainA.length].zIndex;
+            if (bIndex > 0) {
+                return -1;
+            } else if (bIndex < 0) {
+                return 1;
+            } else {
+                const position = nodeA.compareDocumentPosition(chainB[chainA.length].element);
+                if (position === Node.DOCUMENT_POSITION_FOLLOWING) {
+                    Log.d(`🔽 节点B在上 (B在A后面)`, Tag.layoutUtils);
+                    return -1; // B在A后面，B在上
+                } else if (position === Node.DOCUMENT_POSITION_PRECEDING) {
+                    Log.d(`🔼 节点A在上 (A在B后面)`, Tag.layoutUtils);
+                    return 1; // A在B后面，A在上
+                }
+                Log.d(`⚠️ 无法比较`, Tag.layoutUtils);
+                return 0;
+            }
+            
+        } else if (chainA.length > chainB.length) {
+            Log.d(`节点A的层级更深`, Tag.layoutUtils);
+            const aIndex = chainA[chainB.length].zIndex;
+            if (aIndex > 0) {
+                return 1;
+            } else if (aIndex < 0) {
+                return -1;
+            } else {
+                const position = chainA[chainB.length].element.compareDocumentPosition(nodeB);
+                if (position === Node.DOCUMENT_POSITION_FOLLOWING) {
+                    Log.d(`🔽 节点B在上 (B在A后面)`, Tag.layoutUtils);
+                    return -1; // B在A后面，B在上
+                } else if (position === Node.DOCUMENT_POSITION_PRECEDING) {
+                    Log.d(`🔼 节点A在上 (A在B后面)`, Tag.layoutUtils);
+                    return 1; // A在B后面，A在上
+                }
+                Log.d(`⚠️ 无法比较`, Tag.layoutUtils);
+                return 0;
+            }
+        }
+
         // 如果到达这里，说明在同一个层叠上下文中
         // 比较它们在DOM中的顺序（后来者居上）
         Log.d(`同一层叠上下文，比较DOM顺序`, Tag.layoutUtils);
+        
         const position = nodeA.compareDocumentPosition(nodeB);
-        if (position & Node.DOCUMENT_POSITION_FOLLOWING) {
+        if (position === Node.DOCUMENT_POSITION_FOLLOWING) {
             Log.d(`🔽 节点B在上 (B在A后面)`, Tag.layoutUtils);
             return -1; // B在A后面，B在上
-        } else if (position & Node.DOCUMENT_POSITION_PRECEDING) {
+        } else if (position === Node.DOCUMENT_POSITION_PRECEDING) {
             Log.d(`🔼 节点A在上 (A在B后面)`, Tag.layoutUtils);
             return 1; // A在B后面，A在上
         }
@@ -841,4 +1024,5 @@ export default class LayoutUtils{
         Log.d(`⚠️ 无法比较`, Tag.layoutUtils);
         return 0;
     }
+
 }

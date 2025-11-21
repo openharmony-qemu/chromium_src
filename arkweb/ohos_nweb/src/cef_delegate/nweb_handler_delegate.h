@@ -560,6 +560,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                               bool precomposed) override;
   bool OnConsoleMessage(CefRefPtr<CefBrowser> browser,
                         cef_log_severity_t level,
+                        int sourceType,
                         const CefString& message,
                         const CefString& source,
                         int line) override;
@@ -634,6 +635,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                     const std::vector<CefString>& accept_filters,
                     const std::vector<CefString>& accept_extensions,
                     const std::vector<CefString>& accept_descriptions,
+                    const CefString& accepts,
                     const CefString& start_in,
                     bool is_exclude_accept_all_options,
                     bool capture,
@@ -1047,6 +1049,10 @@ class NWebHandlerDelegate : public ArkWebClientExt,
                                         const std::string& referrer,
                                         int transition_type,
                                         bool is_key_request) override;
+#endif
+
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  void OnCameraCaptureStateChanged(int original_state, int new_state) override;
 #endif
 
  private:

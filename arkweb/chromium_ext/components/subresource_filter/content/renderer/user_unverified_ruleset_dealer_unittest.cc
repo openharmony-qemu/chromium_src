@@ -28,12 +28,8 @@ namespace subresource_filter {
 class MockAssociatedInterfaceRegistry
     : public blink::AssociatedInterfaceRegistry {
  public:
-  void AddInterface(const std::string& name, const Binder& binder) {
-    std::cout << "MockAssociatedInterfaceRegistry AddInterface " << name << std::endl;
-  }
-  void RemoveInterface(const std::string& name) {
-    std::cout << "MockAssociatedInterfaceRegistry RemoveInterface " << name << std::endl;
-  }
+  MOCK_METHOD(void, AddInterface, (const std::string&, const Binder&));
+  MOCK_METHOD(void, RemoveInterface, (const std::string&));
 };
 
 class UserUnverifiedRulesetDealerTest : public ::testing::Test {

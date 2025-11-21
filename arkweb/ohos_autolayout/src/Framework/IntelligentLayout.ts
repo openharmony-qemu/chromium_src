@@ -12,7 +12,7 @@ import { PopupLayoutState } from './Popup/PopupLayoutState';
 export default class IntelligentLayout {
     static TAG = Tag.intelligentLayout;
 
-    private static activePopupWindow: { popupInfo: PopupInfo | null; popupComponent: AComponent | null } = {
+    private static activePopupWindow: { popupInfo: PopupInfo | null; popupComponent: PopupWindowRelayout | null } = {
         popupInfo: null,
         popupComponent: null,
     };
@@ -21,11 +21,11 @@ export default class IntelligentLayout {
         return IntelligentLayout.activePopupWindow.popupInfo;
     }
 
-    public static getActivePopupWindowComponent(): AComponent | null {
+    public static getActivePopupWindowComponent(): PopupWindowRelayout | null {
         return IntelligentLayout.activePopupWindow.popupComponent;
     }
 
-    private static setActivePopupWindow(popupInfo: PopupInfo, component: AComponent): void {
+    private static setActivePopupWindow(popupInfo: PopupInfo, component: PopupWindowRelayout): void {
         IntelligentLayout.activePopupWindow = { popupInfo: popupInfo, popupComponent: component };
     }
 
@@ -135,10 +135,8 @@ export default class IntelligentLayout {
         Log.d(`处理弹窗: ${popupInfo.root_node?.className}`, IntelligentLayout.TAG);
         
         //  步骤1：取消组件的异步验证任务 及 恢复弹窗样式
-        if (component instanceof PopupWindowRelayout) {
-            component.cancelPendingValidation();
-            component.restoreStyles();
-        }
+        component.cancelPendingValidation();
+        component.restoreStyles();
         
         //  步骤2：重置弹窗状态为 IDLE
         PopupStateManager.resetState(popupInfo.root_node, reason);
@@ -152,7 +150,7 @@ export default class IntelligentLayout {
         Log.d('所有弹窗状态重置完成', IntelligentLayout.TAG);
     }
 
-    static reInit(reason: string): void {
-        IntelligentLayout.resetPopWindows(reason);
+    static reInit(): void {
+        IntelligentLayout.resetPopWindows('智能布局初始化');
     }
 }

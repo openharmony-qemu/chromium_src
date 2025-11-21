@@ -105,7 +105,7 @@ export class PopupWindowRelayout extends AComponent {
 
         // 判断flex布局是否需要对子节点设置flex-shrink:0，避免控件缩放导致的子节点高度压缩问题，也为了更好的计算高度。
         if (PopupStateManager.getState(this.popupInfo.root_node) === PopupLayoutState.IDLE) {
-            if (this.tryToFixFlexShrink(this.mComponent)) {
+            if (this.tryToFixFlexShrink()) {
                 PopupStateManager.setState(this.popupInfo.root_node, PopupLayoutState.PREPROCESSING, '预处理，修复flex')
                 return;
             }
@@ -117,6 +117,7 @@ export class PopupWindowRelayout extends AComponent {
 
         if (this.truncateNodes.length === 0) {
             Log.d(`未找到被截断的节点，无需布局调整`, Tag.popupRelayout);
+            PopupStateManager.setState(this.popupInfo.root_node, PopupLayoutState.IDLE, '无截断节点，恢复空闲状态');
             let metrics: LayoutConstraintMetrics = {
                 resultCode: -1,
                 errorMsg: 'no truncateNodes found',
@@ -135,12 +136,6 @@ export class PopupWindowRelayout extends AComponent {
 
         // step3: 计算缩放系数
         this.calScale();
-        DetectorInst.getInstance().recordOriginalPosition(this.popupInfo.content_node);
-        
-        if (this.scale > 1) {
-            Log.d(`缩放系数 ${this.scale.toFixed(3)} > 1，无需缩放`, Tag.popupRelayout);
-            return;
-        }
         Log.d(`计算缩放系数: ${this.scale.toFixed(3)}`, Tag.popupRelayout);
 
         // step4: 应用缩放系数
@@ -200,64 +195,56 @@ export class PopupWindowRelayout extends AComponent {
      */
     private getTopmostChildren(parentNode: HTMLElement, popup_type: number): HTMLElement[] {
         const children = Array.from(parentNode.children)
+                .filter(child => {
+                    // 过滤掉不可见或未设置定位的元素
+                    const style = window.getComputedStyle(child);
+                    return style.display !== 'none' &&
+                        style.visibility !== 'hidden' &&
+                        child instanceof HTMLElement &&
+                        parseFloat(style.opacity) === 1 &&
+                        !Utils.isBackgroundSemiTransparent(style)
+                }) as HTMLElement[];
+
+        // popupType为A或C的情况
+        if (popup_type === PopupType.C || popup_type === PopupType.A) {
+            Log.d('getTopmostChildren: print topmostChildren size = ' + children.length);
+            return children;
+        } 
+        
+        // popupType = B的情况
+        // 1. mask未创建层叠上下文，找mask dom顺序后的兄弟节点或者zIndex大于0（mask为auto，即0）的兄弟节点
+        if (!LayoutUtils.isStackingContext(this.popupInfo.mask_node)) {
+            const topNodes = children.filter(node => {
+                return LayoutUtils.compareZIndex(node, this.popupInfo.mask_node) >= 0;
+            })
+            Log.d('getTopmostChildren: print topmostChildren size = ' + topNodes.length);
+            return topNodes;
+        }
+
+        // 2. mask创建层叠上下文，从root所有节点下找创建层叠上下文的、并且显示在mask上方的节点（避免mask兄弟节点为auto的情况）
+        const allNodes: HTMLElement[] = this.traverseTree(parentNode, [])
             .filter(child => {
                 // 过滤掉不可见或未设置定位的元素
                 const style = window.getComputedStyle(child);
-                return style.display !== 'none' &&
+                return child !== parentNode && 
+                    !this.equivalentMask.contains(child) &&
+                    style.display !== 'none' &&
                     style.visibility !== 'hidden' &&
                     child instanceof HTMLElement &&
                     parseFloat(style.opacity) === 1 &&
-                    !Utils.isBackgroundSemiTransparent(style)
+                    !Utils.isBackgroundSemiTransparent(style) &&
+                    LayoutUtils.isStackingContext(child)
             });
-
-        if (children.length === 0) {
-            return [];
-        }
-        // 获取 mask 节点的 z-index
-        const maskStyle = window.getComputedStyle(this.popupInfo.mask_node);
-        let maskZIndex: string | number = maskStyle.zIndex;
-        if (popup_type === PopupType.C || popup_type === PopupType.A) {
-            maskZIndex = -1;
-        } else {
-            if (maskZIndex === 'auto') {
-                maskZIndex = 0; // auto 默认权重为 0
-            } else {
-                maskZIndex = parseInt(maskZIndex, 10);
-            }
-        }
-
-        // 计算每个子节点的 z-index 权重
-        const weightedChildren = children.map(child => {
-            const style = window.getComputedStyle(child);
-            let zIndex: string | number = style.zIndex;
-
-            // 处理 z-index: auto（按 DOM 顺序，后出现的权重更高）
-            if (zIndex === 'auto') {
-                zIndex = 0; // auto 默认权重为 0，但 DOM 顺序会影响最终比较
-            } else {
-                zIndex = parseInt(zIndex, 10);
-            }
-
-            return { element: child as HTMLElement, zIndex: zIndex, domOrder: children.indexOf(child) };
+        
+        // 过滤被包含节点
+        const filterNodes: HTMLElement[] = this.filterContainedNodes(allNodes);
+        // 寻找过滤后在mask之上的节点
+        const topNodes: HTMLElement[] = filterNodes.filter(node => {
+            return LayoutUtils.compareZIndex(node, this.popupInfo.mask_node) >= 0;
         });
-
-        // 筛选出比 mask 节点 z-index 更大的节点（至少等于）
-        const filteredChildren = weightedChildren.filter(child => child.zIndex >= maskZIndex);
-
-        // 按 z-index 降序 + DOM 顺序升序排序
-        filteredChildren.sort((a, b) => {
-            if (a.zIndex !== b.zIndex) {
-                return b.zIndex - a.zIndex; // z-index 大的在前
-            } else {
-                return b.domOrder - a.domOrder; // DOM 顺序靠后的在前
-            }
-        });
-
-        // 提取元素
-        const topmostChildren = filteredChildren.map(child => child.element);
-
-        Log.d('getTopmostChildren: print topmostChildren size = ' + topmostChildren.length);
-        return topmostChildren;
+        Log.d('getTopmostChildren: print topmostChildren size = ' + topNodes.length);
+        return topNodes;
+        
     }
 
     /**
@@ -331,8 +318,7 @@ export class PopupWindowRelayout extends AComponent {
 
         let oriHeight = this.maxBottom - this.minTop;
         let screenHeight = this.visualHeight;
-        this.scale = (screenHeight * 0.7) / oriHeight;
-        this.scale = Math.max(this.scale, this.minScaleFactor);
+        this.scale = Math.min(1, Math.max((screenHeight * 0.7) / oriHeight, this.minScaleFactor));
         Log.d(`PopWindow智能布局: calcScale = ${this.scale}, bottomNode: ${this.bottomNode.className}`);
     }
 
@@ -923,8 +909,7 @@ export class PopupWindowRelayout extends AComponent {
      * @param node 
      * @returns 是否需要修复，并执行了修复操作
      */
-    public tryToFixFlexShrink(node: HTMLElement): boolean {
-        let isNeedFix: boolean = false;
+    public tryToFixFlexShrink(): boolean {
         // 查找所有flex容器
         const flexContainers = [];
 
@@ -979,6 +964,15 @@ export class PopupWindowRelayout extends AComponent {
         }
         const closeButton = closeElements[0] as HTMLElement;
         Log.d(`找到关闭按钮: ${closeButton.className}`, Tag.popupRelayout);
+
+        const buttonRect = closeButton.getBoundingClientRect();
+        const windowCenterX = window.innerWidth / 2;
+        const buttonCenterX = buttonRect.left + buttonRect.width / 2;
+
+        // 检查关闭按钮的中心点是否在弹窗的中心点，如果不在中心点，直接返回
+        if (Math.abs(buttonCenterX - windowCenterX) > Constant.centerCloseButtonThreshold) {
+            return;
+        }
         
         const buttonStyle = getComputedStyle(closeButton);
         // 刷新needLayoutConstraintNodes

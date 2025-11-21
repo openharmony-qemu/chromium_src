@@ -67,6 +67,7 @@ class WebContentsImplExt : public WebContentsImpl {
   void CloseCamera(int nWebID) override;
   int GetNWebId() override;
   void SetNWebId(int nWebID) override;
+  void OnCameraCaptureStateChanged(int original_state, int new_state) override;
   int nWebID_ = 0;
 #endif  // defined(ARKWEB_WEBRTC)
 
@@ -131,6 +132,10 @@ class WebContentsImplExt : public WebContentsImpl {
   void NotifyContextMenuWillShow() override;
   void ShowFreeCopyMenu() override;
 #endif
+
+#if BUILDFLAG(ARKWEB_AI)
+  void OnDataDetectorSelectText() override;
+#endif  // BUILDFLAG(ARKWEB_AI)
 
   RenderFrameHost* GetTargetFramesIncludingPending(int routing_id);
 

@@ -206,7 +206,7 @@ void ArkwebDisplayUtils::SetDrawRect(const gfx::Rect& new_rect) {
   TRACE_EVENT1("viz", "Display::SetDrawRect", "new_rect", new_rect.ToString());
   draw_rect_ = new_rect;
   display_->current_surface_size_ = draw_rect_.size();
-  display_->scheduler_->SetNeedsOneBeginFrame(true);
+  display_->scheduler_->SetNeedsOneBeginFrame(BeginFrameArgs(), true);
   LOG(INFO) << "SetDrawRect new_rect=" << new_rect.ToString();
 }
 

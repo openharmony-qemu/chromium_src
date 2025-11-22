@@ -27,6 +27,8 @@ class PasteDataRecordAdapterImpl : public PasteDataRecordAdapter {
 public:
     PasteDataRecordAdapterImpl(OH_UdmfRecord* record,
                                bool need_destory_record);
+    PasteDataRecordAdapterImpl(OH_UdmfRecord* record,
+                               std::shared_ptr<OH_UdmfData> owner_data);
     PasteDataRecordAdapterImpl(const std::string& mimeType,
                                std::shared_ptr<std::string> htmlText,
                                std::shared_ptr<std::string> plainText);
@@ -66,6 +68,7 @@ private:
                        int result = 0);
     std::string HtmlToPlainText(const std::string& html);
     bool need_destory_record_ = true;
+    std::shared_ptr<OH_UdmfData> owner_data_ = nullptr;
 };
 
 class PasteDataAdapterImpl : public PasteDataAdapter {
@@ -83,7 +86,7 @@ public:
     std::size_t GetRecordCount() override;
     PasteRecordVector AllRecords() override;
 private:
-    OH_UdmfData* data_ = nullptr;
+    std::shared_ptr<OH_UdmfData> data_ = nullptr;
 };
 
 typedef struct {

@@ -38,6 +38,13 @@ PasteDataRecordAdapterImpl::PasteDataRecordAdapterImpl(
       need_destory_record_(need_destory_record) {}
 
 PasteDataRecordAdapterImpl::PasteDataRecordAdapterImpl(
+    OH_UdmfRecord* record,
+    std::shared_ptr<OH_UdmfData> owner_data)
+    : record_(record),
+      need_destory_record_(false),
+      owner_data_(std::move(owner_data)) {}
+
+PasteDataRecordAdapterImpl::PasteDataRecordAdapterImpl(
     const std::string& mimeType)
 {
     record_ = OH_UdmfRecord_Create();
@@ -376,11 +383,16 @@ std::vector<std::string> PasteDataRecordAdapterImpl::GetMimeTypes()
         WVLOG_E("record_ is nullptr");
         return std::vector<std::string>();
     }
-    unsigned int count;
+    unsigned int count = 0;
     char** types = OH_UdmfRecord_GetTypes(record_, &count);
     std::vector<std::string> stringVector;
+    if (types == nullptr || count == 0) {
+        return stringVector;
+    }
     for (unsigned int i = 0; i < count; i++) {
-        stringVector.push_back(std::string(types[i]));
+        if (types[i] != nullptr) {
+            stringVector.push_back(std::string(types[i]));
+        }
     }
     return stringVector;
 }
@@ -603,7 +615,7 @@ bool PasteDataRecordAdapterImpl::GetImgData(std::shared_ptr<ClipBoardImageDataAd
         return false;
     }
 
-    uint32_t* data = static_cast<uint32_t *>(calloc(dataSize, sizeof(uint32_t)));
+    uint32_t* data = static_cast<uint32_t *>(calloc(dataSize / sizeof(uint32_t), sizeof(uint32_t)));
     if (data == nullptr) {
         WVLOG_E("calloc data failed");
         ReleaseMemory(udsPixelMap, options, pixelmapNative, imageInfo);
@@ -659,7 +671,9 @@ std::shared_ptr<std::string> PasteDataRecordAdapterImpl::GetUri()
         return nullptr;
     }
 
-    return std::make_shared<std::string>(fileUri);
+    auto result = std::make_shared<std::string>(fileUri);
+    OH_UdsFileUri_Destroy(udsFileUri);
+    return result;
 }
 
 std::shared_ptr<PasteCustomData> PasteDataRecordAdapterImpl::GetCustomData()
@@ -706,15 +720,14 @@ OH_UdmfRecord* PasteDataRecordAdapterImpl::GetRecord()
 
 PasteDataAdapterImpl::PasteDataAdapterImpl()
 {
-    data_ = OH_UdmfData_Create();
+    data_.reset(OH_UdmfData_Create(), OH_UdmfData_Destroy);
 }
 
 PasteDataAdapterImpl::PasteDataAdapterImpl(
-    OH_UdmfData* data) : data_(data) {}
+    OH_UdmfData* data) : data_(std::shared_ptr<OH_UdmfData>(data, OH_UdmfData_Destroy)) {}
 
 PasteDataAdapterImpl::~PasteDataAdapterImpl()
 {
-    OH_UdmfData_Destroy(data_);
 }
 
 void PasteDataAdapterImpl::AddHtmlRecord(const std::string& html)
@@ -752,7 +765,7 @@ void PasteDataAdapterImpl::AddHtmlRecord(const std::string& html)
         return;
     }
 
-    int addRecord_res = OH_UdmfData_AddRecord(data_, record);
+    int addRecord_res = OH_UdmfData_AddRecord(data_.get(), record);
     if (addRecord_res != UDMF_E_OK) {
         WVLOG_E("AddRecord failed. error code is : %{public}d", addRecord_res);
     }
@@ -795,7 +808,7 @@ void PasteDataAdapterImpl::AddTextRecord(const std::string& text)
         return;
     }
 
-    int addRecord_res = OH_UdmfData_AddRecord(data_, record);
+    int addRecord_res = OH_UdmfData_AddRecord(data_.get(), record);
     if (addRecord_res != UDMF_E_OK) {
         WVLOG_E("AddRecord failed. error code is : %{public}d", addRecord_res);
     }
@@ -809,11 +822,16 @@ std::vector<std::string> PasteDataAdapterImpl::GetMimeTypes()
         return std::vector<std::string>();
     }
 
-    unsigned int count;
-    char** types = OH_UdmfData_GetTypes(data_, &count);
+    unsigned int count = 0;
+    char** types = OH_UdmfData_GetTypes(data_.get(), &count);
     std::vector<std::string> stringVector;
+    if (types == nullptr || count == 0) {
+        return stringVector;
+    }
     for (unsigned int i = 0; i < count; i++) {
-        stringVector.push_back(std::string(types[i]));
+        if (types[i] != nullptr) {
+            stringVector.push_back(std::string(types[i]));
+        }
     }
     return stringVector;
 }
@@ -830,7 +848,7 @@ std::shared_ptr<std::string> PasteDataAdapterImpl::GetPrimaryHtml()
         return nullptr;
     }
 
-    int getPrimaryHtml_res = OH_UdmfData_GetPrimaryHtml(data_, udsHtml);
+    int getPrimaryHtml_res = OH_UdmfData_GetPrimaryHtml(data_.get(), udsHtml);
     if (getPrimaryHtml_res != UDMF_E_OK) {
         WVLOG_E("GetPrimaryHtml failed. error code is : %{public}d", getPrimaryHtml_res);
         OH_UdsHtml_Destroy(udsHtml);
@@ -855,7 +873,7 @@ std::shared_ptr<std::string> PasteDataAdapterImpl::GetPrimaryText()
         return nullptr;
     }
 
-    int getPrimaryPlainText_res = OH_UdmfData_GetPrimaryPlainText(data_, udsPlainText);
+    int getPrimaryPlainText_res = OH_UdmfData_GetPrimaryPlainText(data_.get(), udsPlainText);
     if (getPrimaryPlainText_res != UDMF_E_OK) {
         WVLOG_E("GetPrimaryPlainText failed. error code is : %{public}d", getPrimaryPlainText_res);
         OH_UdsPlainText_Destroy(udsPlainText);
@@ -892,17 +910,17 @@ std::shared_ptr<PasteDataRecordAdapter> PasteDataAdapterImpl::GetRecordAt(
         return nullptr;
     }
 
-    OH_UdmfRecord* record = OH_UdmfData_GetRecord(data_, index);
+    OH_UdmfRecord* record = OH_UdmfData_GetRecord(data_.get(), index);
     if (record == nullptr) {
         WVLOG_E("GetRecord failed.");
         return nullptr;
     }
-    return std::make_shared<PasteDataRecordAdapterImpl>(record, false);
+    return std::make_shared<PasteDataRecordAdapterImpl>(record, data_);
 }
 
 std::size_t PasteDataAdapterImpl::GetRecordCount()
 {
-    return (data_ != nullptr) ? OH_UdmfData_GetRecordCount(data_) : 0;
+    return (data_ != nullptr) ? OH_UdmfData_GetRecordCount(data_.get()) : 0;
 }
 
 PasteRecordVector PasteDataAdapterImpl::AllRecords()
@@ -913,9 +931,9 @@ PasteRecordVector PasteDataAdapterImpl::AllRecords()
 
     PasteRecordVector result;
     unsigned int count;
-    OH_UdmfRecord** records = OH_UdmfData_GetRecords(data_, &count);
+    OH_UdmfRecord** records = OH_UdmfData_GetRecords(data_.get(), &count);
     for (unsigned int i = 0; i < count; i++) {
-        result.push_back(std::make_shared<PasteDataRecordAdapterImpl>(records[i], false));
+        result.push_back(std::make_shared<PasteDataRecordAdapterImpl>(records[i], data_));
     }
     return result;
 }
@@ -983,6 +1001,9 @@ bool PasteBoardClientAdapterImpl::GetPasteData(PasteRecordVector& data)
         WVLOG_E("get paste data failed. error code is : %{public}d", status);
         isLocalPaste_ = false;
         tokenId_ = 0;
+        if (getData != nullptr) {
+            OH_UdmfData_Destroy(getData);
+        }
         if (params != nullptr) {
             OH_Pasteboard_GetDataParams_Destroy(params);
         }
@@ -993,13 +1014,19 @@ bool PasteBoardClientAdapterImpl::GetPasteData(PasteRecordVector& data)
     OH_UdmfRecord** records = OH_UdmfData_GetRecords(getData, &count);
     if (records == nullptr) {
         WVLOG_E("GetRecord failed.");
+        if (getData != nullptr) {
+            OH_UdmfData_Destroy(getData);
+        }
         if (params != nullptr) {
             OH_Pasteboard_GetDataParams_Destroy(params);
         }
         return false;
     }
-    for (unsigned int i = 0; i < count; i++) {
-        data.push_back(std::make_shared<PasteDataRecordAdapterImpl>(records[i], false));
+    {
+        auto owner = std::shared_ptr<OH_UdmfData>(getData, OH_UdmfData_Destroy);
+        for (unsigned int i = 0; i < count; i++) {
+            data.push_back(std::make_shared<PasteDataRecordAdapterImpl>(records[i], owner));
+        }
     }
     isLocalPaste_ = OH_UdmfData_IsLocal(getData);
     if (params != nullptr) {

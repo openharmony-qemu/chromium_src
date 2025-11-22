@@ -41,7 +41,7 @@ static void SyncLoadContextExt(raw_ptr<SyncLoadContext> obj, content::RenderThre
   if (obj->report_manager_) {
     std::vector<int> tids;
     tids.push_back(base::GetCurrentRealPid());
-    tids.push_back(base::PlatformThread::CurrentRealId());
+    tids.push_back(base::PlatformThread::CurrentRealId().raw());
     obj->report_manager_->AddRtg(tids);
     obj->report_manager_->FetchBegin();
   }
@@ -73,10 +73,11 @@ void SyncLoadContext::OnTransferDataWithSharedMemory(
   LOG(DEBUG) << "shared-memory "
                 "SyncLoadContext::OnTransferDataWithSharedMemory, buffer_len:"
              << buffer_len;
+  auto data_span = base::span(buffer, buffer_len);
   if (!response_->data) {
-    response_->data = SharedBuffer::Create(buffer, buffer_len);
+    response_->data = SharedBuffer::Create(data_span);
   } else {
-    response_->data->Append(buffer, buffer_len);
+    response_->data->Append(data_span);
   }
   auto status = network::URLLoaderCompletionStatus(net::OK);
   status.completion_time = base::TimeTicks::Now();

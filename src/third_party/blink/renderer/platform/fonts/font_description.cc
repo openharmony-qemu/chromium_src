@@ -59,7 +59,11 @@ struct SameSizeAsFontDescription {
   scoped_refptr<FontPalette> palette_;
   scoped_refptr<FontVariantAlternates> font_variant_alternates_;
   AtomicString locale;
+#if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
+  float sizes[4];
+#else
   float sizes[3];
+#endif
   Length letter_spacing;
   Length word_spacing;
   FontSizeAdjust size_adjust_;

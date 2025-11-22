@@ -51,6 +51,9 @@ class UI_TOUCH_SELECTION_EXPORT TouchSelectionControllerClient {
   virtual void NotifyShowMagnifier() {}
   virtual bool IsShowHandle() { return false; }
 #endif
+#if BUILDFLAG(ARKWEB_PDF)
+  virtual void ClearTextSelection() {}
+#endif  // BUILDFLAG(ARKWEB_PDF)
 };
 
 // Controller for manipulating text selection via touch input.

@@ -86,6 +86,7 @@ class CONTENT_EXPORT TouchSelectionControllerClientManager {
   virtual void ResetResponsePendingInputEvent() {}
   virtual void UpdateQuickMenu() {}
   virtual void SetQuickMenuRequested(bool is_visible) {}
+  virtual void SetIsPdfDocument(bool is_pdf_document) {}
 #endif  // BUILDFLAG(ARKWEB_PDF)
 };
 

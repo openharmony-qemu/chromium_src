@@ -412,6 +412,9 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
                           const gfx::PointF& extent) override;
   void GetPdfBytes(uint32_t size_limit, GetPdfBytesCallback callback) override;
   void GetPageText(int32_t page_index, GetPageTextCallback callback) override;
+#if BUILDFLAG(ARKWEB_PDF)
+  void ClearTextSelection() override;
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   // UrlLoader::Client:
   bool IsValid() const override;
@@ -739,6 +742,7 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
   void SetIsScrolling(bool is_scrolling);
   void SetScrollStoppedAfterDelay();
   void SetIsPinching(bool is_pinching);
+  void ForceSelectionChangedAfterDelay();
 
   // Used for cancelable delayed task in `UpdateScroll()`.
   scoped_refptr<base::SequencedTaskRunner> GetTaskRunner();
@@ -982,7 +986,8 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
   // Used for cancelable delayed task in `UpdateScroll()`.
   const scoped_refptr<base::SequencedTaskRunner> task_runner_;
   SEQUENCE_CHECKER(sequence_checker_);
-  base::DelayedTaskHandle cancelable_delayed_task_ GUARDED_BY_CONTEXT(sequence_checker_);
+  base::DelayedTaskHandle cancelable_scroll_task_ GUARDED_BY_CONTEXT(sequence_checker_);
+  base::DelayedTaskHandle cancelable_selection_task_ GUARDED_BY_CONTEXT(sequence_checker_);
 
 #endif  // BUILDFLAG(ARKWEB_PDF)
 

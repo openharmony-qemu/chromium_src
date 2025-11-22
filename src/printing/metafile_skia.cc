@@ -495,7 +495,8 @@ bool MetafileSkia::OhosFinishDocument(std::function<bool()> checkCancel) {
       break;
     case mojom::SkiaDocumentType::kMSKP:
       SkSerialProcs procs = SerializationProcs(&data_->subframe_content_info,
-                                              data_->typeface_content_info);
+                                              data_->typeface_content_info,
+                                              data_->image_content_info);
       doc = SkMultiPictureDocument::Make(&stream, &procs);
       // It is safe to use base::Unretained(this) because the callback
       // is only used by `canvas` in the following loop which has shorter

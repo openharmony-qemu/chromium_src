@@ -1161,7 +1161,6 @@ void PopulateFrameBinders(RenderFrameHostImpl* host, mojo::BinderMap* map) {
             },
             base::Unretained(host)));
   }
-}
 
 #if BUILDFLAG(ARKWEB_CRASHPAD)
   map->Add<dfx::mojom::DfxReporter>(base::BindRepeating(

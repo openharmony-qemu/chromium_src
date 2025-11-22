@@ -396,10 +396,10 @@ void RemoteFontFaceSource::BeginLoadIfNeeded() {
           StrCat({"Slow network is detected. See "
                   "https://www.chromestatus.com/feature/5636954674692096 for "
                   "more details. Fallback font will be used while loading: ",
+#else
+          StrCat({"Slow network is detected. Fallback font will be used while loading: ",
+#endif // ARKWEB_DEVTOOLS
                   font->Url().ElidedString()})));
-+#else
-+          "Slow network is detected. Fallback font will be used while loading: " +
-+#endif // ARKWEB_DEVTOOLS
 
       // Set the loading priority to VeryLow only when all other clients agreed
       // that this font is not required for painting the text.

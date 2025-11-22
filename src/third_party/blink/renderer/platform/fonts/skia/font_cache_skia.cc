@@ -259,6 +259,9 @@ sk_sp<SkTypeface> FontCache::CreateTypeface(
       return typeface;
   }
 #endif  // BUILDFLAG(IS_ANDROID)
+  // TODO(https://crbug.com/1425390: Assign FontCache::font_manager_ in the
+  // ctor.
+  auto font_manager = font_manager_ ? font_manager_ : skia::DefaultFontMgr();
 #if BUILDFLAG(IS_OHOS)
   auto typeface = sk_sp<SkTypeface>(font_manager->matchFamilyStyle(
       name.empty() ? nullptr : name.c_str(), font_description.SkiaFontStyle()));

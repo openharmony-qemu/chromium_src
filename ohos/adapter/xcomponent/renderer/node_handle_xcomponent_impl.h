@@ -49,7 +49,7 @@ namespace ohos::adapter::xcomponent {
  * Or pass to InputEventCallback for chromium UI event processing
  * All of the function in this class MUST run in ArkUI Main Thread
  */
-class NodeHandleXComponentImpl : public XComponentBase {
+class ADAPTER_EXPORT_API NodeHandleXComponentImpl : public XComponentBase {
  public:
   explicit NodeHandleXComponentImpl(const std::string& id, XComponentType type);
   ~NodeHandleXComponentImpl();
@@ -62,9 +62,18 @@ class NodeHandleXComponentImpl : public XComponentBase {
   void SetSurfaceHolder(OH_ArkUI_SurfaceHolder* surface_holder);
   void SetSurfaceCallback(OH_ArkUI_SurfaceCallback* surface_callback);
   bool BindNativeXComponentNode(ArkUI_NodeContentHandle node_content_handle);
-  bool UnBindNativeXComponentNode(ArkUI_NodeContentHandle node_content_handle);
+  void RegisterCallBack();
+  void UnRegisterCallBack();
+  void RegisterPinchGestureEvent();
+  void RegisterPanGestureEvent();
+  void RegisterDoubleTapGestureEvent();
+  void UnregisterPinchGestureEvent();
+  void UnregisterPanGestureEvent();
+  void UnregisterDoubleTapGestureEvent();
+  ArkUI_GestureRecognizer* CreatePinchGesture();
+  ArkUI_GestureRecognizer* CreatePanGesture();
+  ArkUI_GestureRecognizer* CreateDoubleTapGesture();
 
-  // NodeHandleNativeEventListener
   void OnTouchEvent(const ArkUI_UIInputEvent* touch_event);
   void OnMouseEvent(const ArkUI_UIInputEvent* mouse_event);
   void OnKeyEvent(const ArkUI_UIInputEvent* key_event);
@@ -82,18 +91,23 @@ class NodeHandleXComponentImpl : public XComponentBase {
   void OnDragLeaveEvent();
   void OnDragEndEvent();
 
-  // GestureEventCallBack
   void OnPanEvent(const ArkUI_GestureEventActionType action_type,
                   const NodeHandlePanEvent& event);
   void OnPinchEvent(const ArkUI_GestureEventActionType pinch_step,
                     const NodeHandlePinchEvent& event);
-  void OnDoubleTapEvent(const NodeHandleTapEvent& tap_event);
+
+  void SendWindowMouseEventForTabDrag(
+      Input_MouseEvent* window_mouse_event) override;
+  void SendWindowTouchEventForTabDrag(
+      Input_TouchEvent* window_touch_event) override;
 
  private:
   ArkUI_NodeHandle node_handle_ = nullptr;
   OH_ArkUI_SurfaceHolder* surface_holder_ = nullptr;
   OH_ArkUI_SurfaceCallback* surface_callback_ = nullptr;
   std::shared_ptr<NodeHandleInputEventCallBack> event_callback_ = nullptr;
+
+  void EventReissueAfterRegisterInputEventCallBack();
 };
 
 }  // namespace ohos::adapter::xcomponent

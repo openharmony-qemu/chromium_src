@@ -38,6 +38,7 @@
 #include "third_party/skia/include/codec/SkEncodedImageFormat.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/src/codec/SkHeifCodec.h"
+#include "third_party/blink/renderer/platform/wtf/text/atomic_string.h"
 
 #if defined(ARCH_CPU_BIG_ENDIAN)
 #error Blink assumes a little-endian target.

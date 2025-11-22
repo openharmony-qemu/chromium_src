@@ -1055,6 +1055,10 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   void OnCameraCaptureStateChanged(int original_state, int new_state) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  void OnMicrophoneCaptureStateChanged(int original_state, int new_state) override;
+#endif
+
  private:
 #if BUILDFLAG(ARKWEB_JSPROXY)
   enum class JsRunTime{Start = 0, End = 1, HEAD_READY};

@@ -452,6 +452,9 @@ class NWebDelegateInterface
   virtual void StartCamera() = 0;
   virtual void StopCamera() = 0;
   virtual void CloseCamera() = 0;
+  virtual void ResumeMicrophone() = 0;
+  virtual void StopMicrophone() = 0;
+  virtual void PauseMicrophone() = 0;
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
 
 #if BUILDFLAG(ARKWEB_EX_SCREEN_CAPTURE)

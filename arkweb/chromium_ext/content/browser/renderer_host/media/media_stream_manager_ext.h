@@ -39,6 +39,7 @@ public:
 
 #if BUILDFLAG(ARKWEB_WEBRTC)
   int GetNWebIdMatchStreamType(GlobalRenderFrameHostId host_id);
+  void CloseAudioCapture(int32_t nweb_id); 
 #endif
 
   MediaStreamManagerExt* AsMediaStreamManagerExt() override {

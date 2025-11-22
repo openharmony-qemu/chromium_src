@@ -68,6 +68,11 @@ class WebContentsImplExt : public WebContentsImpl {
   int GetNWebId() override;
   void SetNWebId(int nWebID) override;
   void OnCameraCaptureStateChanged(int original_state, int new_state) override;
+  void ResumeMicrophone(int nWebID) override;
+  void StopMicrophone(int nWebID) override;
+  void PauseMicrophone(int nWebID) override;
+  void OnMicrophoneCaptureStateChanged(int original_state,
+                                       int new_state) override;
   int nWebID_ = 0;
 #endif  // defined(ARKWEB_WEBRTC)
 

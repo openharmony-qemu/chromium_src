@@ -50,6 +50,12 @@
 #include "content/browser/web_contents/web_contents_view.h"
 #include "content/public/browser/web_contents_delegate.h"
 
+#if BUILDFLAG(ARKWEB_WEBRTC)
+#include "arkweb/chromium_ext/media/audio/ohos/ohos_audio_input_stream.h"
+#include "content/browser/renderer_host/media/audio_input_device_manager.h"
+#include "media/audio/audio_manager.h"
+#endif
+
 namespace content {
 
 // LCOV_EXCL_START
@@ -146,6 +152,78 @@ void WebContentsImplExt::OnCameraCaptureStateChanged(int original_state,
                                               int new_state) {
   if (delegate_) {
     delegate_->OnCameraCaptureStateChanged(original_state, new_state);
+  }
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_WEBRTC)
+void WebContentsImplExt::ResumeMicrophone(int nWebID) {
+  if (nWebID < 0) {
+    LOG(ERROR) << "nWebID < 0.";
+    return;
+  }
+  auto audio_manager = BrowserMainLoop::GetInstance()->audio_manager();
+  if (!audio_manager) {
+    LOG(ERROR) << "audio_manager null";
+    return;
+  }
+  auto input_stream = audio_manager->GetInputStream();
+  if (!input_stream.size()) {
+    return;
+  }
+  for (auto it = input_stream.begin(); it != input_stream.end(); it++) {
+    if (media::OHOSAudioInputStream::GetNWebId((*it)->GetAudioParameters()) ==
+        nWebID) {
+      (*it)->ResumeMicrophone();
+    }
+  }
+}
+
+void WebContentsImplExt::StopMicrophone(int nWebID) {
+  if (nWebID < 0) {
+    LOG(ERROR) << "nWebID < 0.";
+    return;
+  }
+
+  auto media_stream_manager = 
+      BrowserMainLoop::GetInstance()->media_stream_manager();
+  if (!media_stream_manager) {
+    LOG(ERROR) << "media_stream_manager null";
+    return;
+  }
+
+  if (media_stream_manager->AsMediaStreamManagerExt()) {
+    media_stream_manager->AsMediaStreamManagerExt()->CloseAudioCapture(nWebID);
+  }
+}
+
+void WebContentsImplExt::PauseMicrophone(int nWebID) {
+  if (nWebID < 0) {
+    LOG(ERROR) << "nWebID < 0.";
+    return;
+  }
+  auto audio_manager = BrowserMainLoop::GetInstance()->audio_manager();
+  if (!audio_manager) {
+    LOG(ERROR) << "audio_manager null.";
+    return;
+  }
+  auto input_stream = audio_manager->GetInputStream();
+  if (!input_stream.size()) {
+    LOG(ERROR) << "input_stream is empty.";
+    return;
+  }
+  for (auto it = input_stream.begin(); it != input_stream.end(); it++) {
+    if (media::OHOSAudioInputStream::GetNWebId((*it)->GetAudioParameters()) ==
+        nWebID) {
+      (*it)->PauseMicrophone();
+    }
+  }
+}
+
+void WebContentsImplExt::OnMicrophoneCaptureStateChanged(int original_state,
+                                                         int new_state) {
+  if (delegate_) {
+    delegate_->OnMicrophoneCaptureStateChanged(original_state, new_state);
   }
 }
 #endif

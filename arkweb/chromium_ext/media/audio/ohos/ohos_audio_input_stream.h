@@ -51,6 +51,10 @@ class OHOSAudioInputStream : public AudioInputStream {
   void SetOutputDeviceForAec(const std::string& output_device_id) override;
   static int GetNWebId(const AudioParameters& params);
   static int GetNWebIdOnUIThread(const AudioParameters& params);
+  AudioParameters GetAudioParameters() override { return parameters_; }
+  void OnMicrophoneCaptureStateChanged(AudioCaptureState new_state) override;
+  void ResumeMicrophone() override;
+  void PauseMicrophone() override;
 
  private:
   class CaptureCallbackAdapter;
@@ -63,6 +67,7 @@ class OHOSAudioInputStream : public AudioInputStream {
   scoped_refptr<OHOSAudioCapturerSource> capturer_source_;
   double volume_ = 1.0;
   bool automatic_gain_control_ = false;
+  AudioCaptureState audio_capture_state_ = AudioCaptureState::NONE;
 
   std::unique_ptr<CaptureCallbackAdapter> base_callback_adapter_;
   scoped_refptr<BaseAudioCapturerSource> base_capturer_source_;

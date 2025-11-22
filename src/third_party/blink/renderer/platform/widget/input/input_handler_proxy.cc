@@ -584,6 +584,9 @@ void InputHandlerProxy::DispatchSingleInputEvent(
 
   current_overscroll_params_.reset();
 
+  WebInputEventAttribution attribution =
+      PerformEventAttribution(event_with_callback->event());
+
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   event_with_callback = proxy_utils_->OverScrollRunCallback(
       std::move(event_with_callback), monitored_latency_info, attribution);
@@ -602,7 +605,6 @@ void InputHandlerProxy::DispatchSingleInputEvent(
 #endif
 
   const WebInputEvent& event = event_with_callback->event();
-  WebInputEventAttribution attribution;
   switch (disposition) {
     case DID_NOT_HANDLE:
     case DID_NOT_HANDLE_NON_BLOCKING:

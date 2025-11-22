@@ -22,3 +22,11 @@ void ProfileManager::SetPersistSessionCookies(bool persist_session_cookies) {
   persist_session_cookies_ = persist_session_cookies;
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+void ProfileManager::OnOtrProfileAdded(Profile* profile) {
+  for (auto& observer : observers_) {
+    observer.OnOtrProfileAdded(profile);
+  }
+}
+#endif // ARKWEB_ARKWEB_EXTENSIONS

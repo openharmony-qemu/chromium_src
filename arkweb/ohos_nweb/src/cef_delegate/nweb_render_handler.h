@@ -84,6 +84,9 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
                                     const CefRange& selected_range,
                                     const CefRange& compositon_range) override;
 #endif  // BUILDFLAG(ARKWEB_INPUT_EVENTS)
+#if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
+  void SetViewportAvoidHeight(int32_t viewportAvoidHeight);
+#endif
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
   void SendDynamicFrameLossEvent(CefRefPtr<CefBrowser> browser,
                                  const CefString& sceneId,
@@ -103,9 +106,7 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
   void UpdateSecurityLayer(bool isNeedSecurityLayer) override;
   void UpdateTextFieldStatus(bool isShowKeyboard, bool isAttachIME) override;
 #endif
-#if BUILDFLAG(ARKWEB_VIEWPORT_AVOID)
-  void SetViewportAvoidHeight(int32_t viewportAvoidHeight);
-#endif
+
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
   void SetFillContent(const CefString& content) override;
 #endif

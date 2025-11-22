@@ -29,6 +29,7 @@
 #include "third_party/blink/public/common/features.h"
 #include "third_party/blink/public/web/web_local_frame_client.h"
 #include "third_party/blink/renderer/core/editing/selection_controller.h"
+#include "third_party/blink/renderer/core/frame/settings.h"
 #include "third_party/blink/renderer/core/frame/visual_viewport.h"
 #include "third_party/blink/renderer/core/frame/web_local_frame_impl.h"
 #include "third_party/blink/renderer/core/html/html_image_element.h"
@@ -93,11 +94,17 @@ void MouseEventManagerExt::StopCreateOverlayTimer() {
 
 void MouseEventManagerExt::HandleGestureCreateOverlay(
     const WebGestureEvent& gesture_event) {
+  if (!IsImageAnalyzerEnabled()) {
+    return;
+  }
   HandleCreateOverlay(gesture_event);
 }
 
 // LCOV_EXCL_START
 void MouseEventManagerExt::CreateOverlayCallback() {
+  if (!IsImageAnalyzerEnabled()) {
+    return;
+  }
   HandleCreateOverlay(last_mouse_drag_);
 }
 // LCOV_EXCL_STOP
@@ -332,6 +339,13 @@ void MouseEventManagerExt::CloseImageOverlayWhenMousePress(const MouseEventWithH
     LOG(INFO) << "HandleMousePressEvent CloseImageOverlay";
     CloseImageOverlay();
   }
+}
+
+bool MouseEventManagerExt::IsImageAnalyzerEnabled() {
+  if (!frame_ || !frame_->GetSettings()) {
+    return false;
+  }
+  return frame_->GetSettings()->GetImageAnalyzerEnabled();
 }
 
 // LCOV_EXCL_START

@@ -77,8 +77,7 @@ TEST_F(UserRulesetVersionTest, UserUnindexedRulesetInfo_Assignment) {
   EXPECT_EQ(info2.license_path.value(), FILE_PATH_LITERAL("/path/to/license"));
 
   // Test assignment operator
-  UserUnindexedRulesetInfo info3;
-  info3 = info1;
+  UserUnindexedRulesetInfo info3 = info1;
   EXPECT_EQ(info3.content_version, "version_1.0");
   EXPECT_EQ(info3.ruleset_path.value(), FILE_PATH_LITERAL("/path/to/ruleset"));
   EXPECT_EQ(info3.resource_id, kResourceId);

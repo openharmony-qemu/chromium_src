@@ -91,9 +91,9 @@ public:
     void TearDown() override {
         {
             base::AutoLock lock(buffer_gl_owner_->lock_);
-            // for (auto& entry : buffer_gl_owner_->image_refs_) {
-            //     delete entry.first;
-            // }
+            for (auto& entry : buffer_gl_owner_->image_refs_) {
+                delete entry.first;
+            }
             buffer_gl_owner_->image_refs_.clear();
         }
         buffer_gl_owner_ = nullptr;

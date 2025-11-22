@@ -18,7 +18,7 @@
 #include "gpu/ipc/service/gpu_channel_manager.h"
 #include "testing/gmock/include/gmock/gmock.h"
 
-#include <stdint.h>
+#include <cstdint>
 #include "base/run_loop.h"
 #include "base/test/test_simple_task_runner.h"
 #include "build/build_config.h"
@@ -35,7 +35,7 @@
 #include "gpu/ipc/service/gpu_channel.h"
 #undef private
 
-#define invalidNativeId -10000
+#define invalidNativeId (-10000)
 #define validNativeId 1
 
 namespace gpu {

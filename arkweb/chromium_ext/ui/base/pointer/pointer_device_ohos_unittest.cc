@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#include "arkweb/build/features/features.h"
 #include "ui/base/pointer/pointer_device.h"
+#include "arkweb/build/features/features.h"
 
 #include <gtest/gtest.h>
 #if BUILDFLAG(ARKWEB_TEST)

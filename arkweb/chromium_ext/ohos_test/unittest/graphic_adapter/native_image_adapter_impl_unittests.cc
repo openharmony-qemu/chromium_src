@@ -278,14 +278,15 @@ TEST_F(NativeImageAdapterImplTest, NativeImageAdapterImplTest_011)
     adapter->GetNativeWindowBufferSize(windowBuffer, &width, &height);
     EXPECT_EQ(width, static_cast<uint32_t>(0));
     EXPECT_EQ(height, static_cast<uint32_t>(0));
-
     BufferHandle handle;
     handle.width = 1;
     handle.height = 1;
+
     g_mock_OH_NativeWindow_GetBufferHandleFromNative = [&handle](OHNativeWindowBuffer* nativeWindowBuffer) {
         return &handle;
     };
     adapter->GetNativeWindowBufferSize(windowBuffer, &width, &height);
+
     EXPECT_EQ(width, handle.width);
     EXPECT_EQ(height, handle.height);
     g_mock_OH_NativeWindow_GetBufferHandleFromNative = nullptr;

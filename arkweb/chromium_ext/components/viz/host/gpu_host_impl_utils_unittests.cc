@@ -158,6 +158,7 @@ class GpuServiceMock : public mojom::GpuService {
 #endif
 };
 }
+
 class GpuHostImplTest : public testing::Test {
  public:
    GpuHostImplTest() = default;

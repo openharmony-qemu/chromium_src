@@ -149,7 +149,7 @@ class MockNWebInputMethodHandler : public NWebInputMethodHandler {
 };
 
 class MockNWebCreateInfo : public NWebCreateInfo {
- public:
+public:
   ~MockNWebCreateInfo() = default;
   MOCK_METHOD(uint32_t, GetWidth, (), (override));
   MOCK_METHOD(uint32_t, GetHeight, (), (override));
@@ -167,12 +167,12 @@ class MockNWebCreateInfo : public NWebCreateInfo {
 };
 
 class MockNWebAccessRequest : public NWebAccessRequest {
-  public:
-   ~MockNWebAccessRequest() = default;
-   MOCK_METHOD(std::string, Origin, (), (override));
-   MOCK_METHOD(int, ResourceAcessId, (), (override));
-   MOCK_METHOD(void, Agree, (int), (override));
-   MOCK_METHOD(void, Refuse, (), (override));
+public:
+  ~MockNWebAccessRequest() = default;
+  MOCK_METHOD(std::string, Origin, (), (override));
+  MOCK_METHOD(int, ResourceAcessId, (), (override));
+  MOCK_METHOD(void, Agree, (int), (override));
+  MOCK_METHOD(void, Refuse, (), (override));
 };
 
 class MockNWebJsProxyMethod : public OHOS::NWeb::NWebJsProxyMethod {

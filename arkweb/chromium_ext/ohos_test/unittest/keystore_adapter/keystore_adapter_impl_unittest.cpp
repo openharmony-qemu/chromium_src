@@ -58,11 +58,11 @@ TEST_F(KeystoreAdapterImplTest, KeystoreAdapterImplTest_InitParamSet_001)
     int32_t result = KeystoreAdapterImpl::GetInstance().InitParamSet(
         nullptr, decryptParams, sizeof(decryptParams) / sizeof(OH_Huks_Param));
     EXPECT_NE(result, 0);
-    result =
-        KeystoreAdapterImpl::GetInstance().InitParamSet(nullptr, nullptr, sizeof(decryptParams) / sizeof(OH_Huks_Param));
+    result = KeystoreAdapterImpl::GetInstance().InitParamSet(
+        nullptr, nullptr, sizeof(decryptParams) / sizeof(OH_Huks_Param));
     EXPECT_NE(result, 0);
-    result =
-        KeystoreAdapterImpl::GetInstance().InitParamSet(&paramSet, nullptr, sizeof(decryptParams) / sizeof(OH_Huks_Param));
+    result = KeystoreAdapterImpl::GetInstance().InitParamSet(
+        &paramSet, nullptr, sizeof(decryptParams) / sizeof(OH_Huks_Param));
     EXPECT_NE(result, 0);
     result = KeystoreAdapterImpl::GetInstance().InitParamSet(
         &paramSet, decryptParams, sizeof(decryptParams) / sizeof(OH_Huks_Param));

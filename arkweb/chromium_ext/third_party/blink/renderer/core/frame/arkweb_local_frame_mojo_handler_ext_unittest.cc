@@ -18,7 +18,6 @@
 #include "third_party/blink/renderer/core/testing/core_unit_test_helper.h"
 #include "third_party/blink/renderer/platform/heap/persistent.h"
 #include "third_party/blink/renderer/platform/testing/testing_platform_support.h"
-#include "third_party/blink/renderer/platform/wtf/text/wtf_string.h"
 
 
 namespace blink {
@@ -80,7 +79,7 @@ protected:
                 const WTF::String& url,
                 const WTF::String& script,
                 mojom::blink::CacheOptionsPtr cache_options,
-               LocalFrameMojoHandler:: GenerateCodeCacheCallback callback)
+               LocalFrameMojoHandler::GenerateCodeCacheCallback callback)
     {
         handler_->GenerateCodeCache(url, script,
                             std::move(cache_options), std::move(callback));
@@ -122,7 +121,6 @@ TEST_F(ArkWebLocalFrameMojoHandlerExtTest, GetImageFromCache_ValidUrl) {
 }
 
 TEST_F(ArkWebLocalFrameMojoHandlerExtTest, GetImageFromCache_EmptyUrl) {
-
     auto callback = base::BindOnce(&MockCallbackHelper::GetImageCallback,
                                     base::Unretained(mock_callback_.get()));
 
@@ -139,13 +137,13 @@ TEST_F(ArkWebLocalFrameMojoHandlerExtTest, GetImageFromCache_EmptyUrl) {
 TEST_F(ArkWebLocalFrameMojoHandlerExtTest, GenerateCodeCache_Success) {
 
     auto cache_options = mojom::blink::CacheOptions::New();
-    
+
     EXPECT_CALL(*mock_callback_, GenerateCodeCacheCallback(testing::Eq(0)))
         .Times(1);
-    
+
     auto callback = base::BindOnce(&MockCallbackHelper::GenerateCodeCacheCallback,
                                     base::Unretained(mock_callback_.get()));
-    
+
     GenerateCodeCacheTest(
         "https://example.com/script.js",
         "console.log('Hello World');",
@@ -156,13 +154,13 @@ TEST_F(ArkWebLocalFrameMojoHandlerExtTest, GenerateCodeCache_Success) {
 TEST_F(ArkWebLocalFrameMojoHandlerExtTest, GenerateCodeCache_EmptyScript) {
 
     auto cache_options = mojom::blink::CacheOptions::New();
-    
+
     EXPECT_CALL(*mock_callback_, GenerateCodeCacheCallback(testing::Eq(0)))
         .Times(1);
-    
+
     auto callback = base::BindOnce(&MockCallbackHelper::GenerateCodeCacheCallback,
                                     base::Unretained(mock_callback_.get()));
-    
+
     GenerateCodeCacheTest(
         "https://example.com/script.js",
         "",
@@ -170,16 +168,16 @@ TEST_F(ArkWebLocalFrameMojoHandlerExtTest, GenerateCodeCache_EmptyScript) {
         std::move(callback));
 }
 
-TEST_F(ArkWebLocalFrameMojoHandlerExtTest, GenerateCodeCache_Url) {
+TEST_F(ArkWebLocalFrameMojoHandlerExtTest, GenerateCodeCache_EmptyUrl) {
 
     auto cache_options = mojom::blink::CacheOptions::New();
-    
+
     EXPECT_CALL(*mock_callback_, GenerateCodeCacheCallback(testing::Eq(0)))
         .Times(1);
-    
+
     auto callback = base::BindOnce(&MockCallbackHelper::GenerateCodeCacheCallback,
                                     base::Unretained(mock_callback_.get()));
-    
+
     GenerateCodeCacheTest(
         "",
         "console.log('Hello World');",
@@ -191,18 +189,18 @@ TEST_F(ArkWebLocalFrameMojoHandlerExtTest, JavaScriptExecuteRequestExt_Success) 
 
     const std::string kTestScript = "1 + 2;";
     const uint64_t kScriptLength = kTestScript.size();
-    
+
     mojo::ScopedHandle script_handle = CreateMockHandle(kTestScript);
 
     auto callback = base::BindOnce(&MockCallbackHelper::JavaScriptCallback,
-                                    base::Unretained(mock_callback_.get()));
+                                base::Unretained(mock_callback_.get()));
 
     JavaScriptExecuteRequestExtTest(
         std::move(script_handle), 
         kScriptLength, 
         true,  // wants_result
         std::move(callback));
-    
+
     base::RunLoop().RunUntilIdle();
 }
 
@@ -210,16 +208,16 @@ TEST_F(ArkWebLocalFrameMojoHandlerExtTest, JavaScriptExecuteRequestExt_NoResult)
 
     const std::string kTestScript = "console.log('Hello');";
     const uint64_t kScriptLength = kTestScript.size();
-    
+
     mojo::ScopedHandle script_handle = CreateMockHandle(kTestScript);
 
     auto callback = base::BindOnce(&MockCallbackHelper::JavaScriptCallback,
-                                    base::Unretained(mock_callback_.get()));
+                                base::Unretained(mock_callback_.get()));
 
     JavaScriptExecuteRequestExtTest(
         std::move(script_handle), 
         kScriptLength, 
-        true,  // wants_result
+        false,  // wants_result
         std::move(callback));
     
     base::RunLoop().RunUntilIdle();

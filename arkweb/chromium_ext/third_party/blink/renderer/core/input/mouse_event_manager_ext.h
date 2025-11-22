@@ -87,6 +87,7 @@ class MouseEventManagerExt
   void OnDestroyImageAnalyzerOverlay();
   void OnFoldStatusChanged(uint32_t foldstatus);
   void CloseImageOverlayWhenMousePress(const MouseEventWithHitTestResults& event);
+  bool IsImageAnalyzerEnabled();
   void Trace(Visitor*) const override;
 #endif
 

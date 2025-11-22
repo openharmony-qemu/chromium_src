@@ -60,6 +60,7 @@ FileSelectorParamsImpl::FileSelectorParamsImpl(
     const std::string& default_filename,
     bool is_capture,
     const std::vector<CefString>& mime_type,
+    const std::string& accepts,
     const std::string& default_path,
     const std::vector<CefString>& descriptions,
     bool is_exclude_accept_all_options)
@@ -67,6 +68,7 @@ FileSelectorParamsImpl::FileSelectorParamsImpl(
       title_(title),
       default_filename_(default_filename),
       is_capture_(is_capture),
+      accepts_(accepts),
       default_path_(default_path),
       is_exclude_accept_all_options_(is_exclude_accept_all_options) {
   for (auto& c : accept_type) {
@@ -114,7 +116,11 @@ const DescriptionsList FileSelectorParamsImpl::Descriptions() {
  
 bool FileSelectorParamsImpl::IsAcceptAllOptionExcluded() {
   return is_exclude_accept_all_options_;
-}  
+}
+
+const std::string FileSelectorParamsImpl::Accepts() {
+  return accepts_;
+}
 
 void FileSelectorCallbackImpl::OnReceiveValue(
     const std::vector<std::string>& value) {

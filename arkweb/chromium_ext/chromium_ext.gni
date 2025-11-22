@@ -630,6 +630,10 @@ arkweb_components_subresource_filter_content_renderer_sources = [
   "//arkweb/chromium_ext/components/subresource_filter/content/renderer/user_unverified_ruleset_dealer.h"
 ]
 
+arkweb_components_cdm_render_unittest_sources = [
+  "//arkweb/chromium_ext/components/cdm/renderer/wiseplay_key_system_info_unittest.cc"
+]
+
 arkweb_components_subresource_filter_content_renderer_unittest_sources = [
   "//arkweb/chromium_ext/components/subresource_filter/content/renderer/user_subresource_filter_agent_unittest.cc",
   "//arkweb/chromium_ext/components/subresource_filter/content/renderer/user_unverified_ruleset_dealer_unittest.cc",

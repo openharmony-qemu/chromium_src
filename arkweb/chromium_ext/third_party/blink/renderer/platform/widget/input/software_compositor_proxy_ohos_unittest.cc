@@ -103,8 +103,9 @@ class WritableSharedMemoryRegionMock : public base::WritableSharedMemoryRegion {
 class MockSoftwareCompositorRendererOhos
     : public cc::mojo_embedder::SoftwareCompositorRendererOhos {
  public:
-  MockSoftwareCompositorRendererOhos(cc::mojo_embedder::AsyncLayerTreeFrameSink* sink,
-                                     cc::mojo_embedder::SoftwareCompositorRegistryOhos* registry)
+  MockSoftwareCompositorRendererOhos(
+    cc::mojo_embedder::AsyncLayerTreeFrameSink* sink,
+    cc::mojo_embedder::SoftwareCompositorRegistryOhos* registry)
       : cc::mojo_embedder::SoftwareCompositorRendererOhos(sink, registry) {}
   MockSoftwareCompositorRendererOhos(
       const MockSoftwareCompositorRendererOhos&) = delete;

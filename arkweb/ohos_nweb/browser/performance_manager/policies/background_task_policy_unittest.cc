@@ -62,6 +62,12 @@ class GraphMock : public performance_manager::GraphImpl {
     }
 };
 
+class TestableGraphMock: public GraphMock {
+public:
+    using GraphMock::lifecycle_state_;
+    void SetLifecycleStatePublic() { SetLifecycleState(); }
+};
+
 class PageNodeMock : public PageNode {
 public:
 
@@ -206,8 +212,8 @@ TEST(BackgroundTaskPolicyTEST, OnTakenFromGraph001) {
 
 TEST(BackgroundTaskPolicyTEST, OnTakenFromGraph002) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    GraphMock graph_mock;
-    graph_mock.SetLifecycleState();
+    TestableGraphMock graph_mock;
+    graph_mock.SetLifecycleStatePublic();
     background_task_policy->OnTakenFromGraph(&graph_mock);
 }
 
@@ -218,8 +224,8 @@ TEST(BackgroundTaskPolicyTEST, OnPassedToGraph001) {
 
 TEST(BackgroundTaskPolicyTEST, OnPassedToGraph002) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-    GraphMock graph_mock;
-    graph_mock.SetLifecycleState();
+    TestableGraphMock graph_mock;
+    graph_mock.SetLifecycleStatePublic();
     background_task_policy->OnPassedToGraph(&graph_mock);
 }
 
@@ -446,61 +452,61 @@ TEST(BackgroundTaskPolicyTEST, MaybeChangeBackgroundTask008) {
 #if BUILDFLAG(ARKWEB_BGTASK)
 TEST(BackgroundTaskPolicyTEST, SetBrowserForeground001) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-	PageNodeMock page_node_mock;
-	std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
+    PageNodeMock page_node_mock;
+    std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
     background_task_holder->back_ground = true;
-	background_task_policy->background_task_holder_ = std::move(background_task_holder);
+    background_task_policy->background_task_holder_ = std::move(background_task_holder);
     background_task_policy->SetBrowserForeground(&page_node_mock);
 }
 
 TEST(BackgroundTaskPolicyTEST, SetBrowserForeground002) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-	PageNodeMock page_node_mock;
-	std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
+    PageNodeMock page_node_mock;
+    std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
     background_task_holder->back_ground = false;
-	background_task_policy->background_task_holder_ = std::move(background_task_holder);
+    background_task_policy->background_task_holder_ = std::move(background_task_holder);
     background_task_policy->SetBrowserForeground(&page_node_mock);
 }
 
 TEST(BackgroundTaskPolicyTEST, SetBrowserBackground001) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-	PageNodeMock page_node_mock;
-	background_task_policy->media_playing_num_ = 1;
-	std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
+    PageNodeMock page_node_mock;
+    background_task_policy->media_playing_num_ = 1;
+    std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
     background_task_holder->back_ground = true;
-	background_task_policy->background_task_holder_ = std::move(background_task_holder);
+    background_task_policy->background_task_holder_ = std::move(background_task_holder);
     background_task_policy->SetBrowserBackground(&page_node_mock);
 }
 
 TEST(BackgroundTaskPolicyTEST, SetBrowserBackground002) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-	PageNodeMock page_node_mock;
-	background_task_policy->media_playing_num_ = 1;
-	std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
+    PageNodeMock page_node_mock;
+    background_task_policy->media_playing_num_ = 1;
+    std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
     background_task_holder->back_ground = false;
-	background_task_policy->background_task_holder_ = std::move(background_task_holder);
+    background_task_policy->background_task_holder_ = std::move(background_task_holder);
     background_task_policy->SetBrowserBackground(&page_node_mock);
 }
 
 TEST(BackgroundTaskPolicyTEST, SetBrowserBackground003) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-	PageNodeMock page_node_mock;
-	background_task_policy->media_playing_num_ = -1;
-	background_task_policy->audio_state_num_ = 1;
-	std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
+    PageNodeMock page_node_mock;
+    background_task_policy->media_playing_num_ = -1;
+    background_task_policy->audio_state_num_ = 1;
+    std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
     background_task_holder->back_ground = false;
-	background_task_policy->background_task_holder_ = std::move(background_task_holder);
+    background_task_policy->background_task_holder_ = std::move(background_task_holder);
     background_task_policy->SetBrowserBackground(&page_node_mock);
 }
 
 TEST(BackgroundTaskPolicyTEST, SetBrowserBackground004) {
     auto background_task_policy = std::make_shared<BackgroundTaskPolicy>();
-	PageNodeMock page_node_mock;
-	background_task_policy->media_playing_num_ = -1;
-	background_task_policy->audio_state_num_ = -1;
-	std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
+    PageNodeMock page_node_mock;
+    background_task_policy->media_playing_num_ = -1;
+    background_task_policy->audio_state_num_ = -1;
+    std::unique_ptr<BackgroundTaskHolderMock> background_task_holder = std::make_unique<BackgroundTaskHolderMock>();
     background_task_holder->back_ground = false;
-	background_task_policy->background_task_holder_ = std::move(background_task_holder);
+    background_task_policy->background_task_holder_ = std::move(background_task_holder);
     background_task_policy->SetBrowserBackground(&page_node_mock);
 }
 #endif

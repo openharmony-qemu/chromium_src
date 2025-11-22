@@ -19,6 +19,7 @@
 #include <memory>
 
 #include "arkweb/build/features/features.h"
+#include "arkweb/ohos_nweb/src/capi/nweb_prefetch_options.h"
 #include "cef/include/cef_base.h"
 #include "cef/include/cef_browser.h"
 #include "cef/ohos_cef_ext/include/arkweb_browser_ext.h"

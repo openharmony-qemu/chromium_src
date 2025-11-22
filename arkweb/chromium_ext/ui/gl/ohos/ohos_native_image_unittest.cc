@@ -20,7 +20,7 @@
 #undef private
 #undef protected
 
-#include <stdint.h>
+#include <cstdint>
 
 #include <array>
 #include <memory>

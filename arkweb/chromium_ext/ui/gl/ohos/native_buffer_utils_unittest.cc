@@ -15,7 +15,7 @@
 
 #include <array>
 #include <memory>
-#include <stdint.h>
+#include <cstdint>
 #include <string_view>
 #include <sys/eventfd.h>
 #include <poll.h>

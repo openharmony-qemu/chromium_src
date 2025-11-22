@@ -313,7 +313,8 @@ TEST_F(BlanklessControllerTest, ParseAppWhiteList001) {
   std::vector<char> buffer;
   controller.m_white_list_.ParseAppWhiteList(buffer);
   std::string log_output = testing::internal::GetCapturedStderr();
-  EXPECT_NE(log_output.find("blankless BlankOptWhiteList parse app file as invalid json format failed."), std::string::npos);
+  EXPECT_NE(log_output.find("blankless BlankOptWhiteList parse app file as invalid json format failed."),
+            std::string::npos);
 }
 
 TEST_F(BlanklessControllerTest, ParseAppWhiteList002) {
@@ -321,7 +322,8 @@ TEST_F(BlanklessControllerTest, ParseAppWhiteList002) {
   std::vector<char> buffer = {'1', '2'};
   controller.m_white_list_.ParseAppWhiteList(buffer);
   std::string log_output = testing::internal::GetCapturedStderr();
-  EXPECT_NE(log_output.find("blankless BlankOptWhiteList parse app file as invalid json format failed."), std::string::npos);
+  EXPECT_NE(log_output.find("blankless BlankOptWhiteList parse app file as invalid json format failed."),
+            std::string::npos);
 }
 
 TEST_F(BlanklessControllerTest, GetBaseUrl001) {
@@ -842,7 +844,6 @@ TEST_F(BlanklessControllerTest, Clear_All_ResetEverything)
   EXPECT_EQ(controller.GetWindowIdByNWebId(nweb_id1), 0u);
   EXPECT_EQ(controller.GetSystemTime(nweb_id1, blankless_key1), BlanklessController::INVALID_TIMESTAMP);
   EXPECT_EQ(controller.GetDumpTime(nweb_id1, blankless_key1), BlanklessController::INVALID_TIMESTAMP);
-
   BlanklessController::StatusInfo info = {};
   EXPECT_TRUE(controller.CheckStatusForTest(nweb_id1, info, false));
 }

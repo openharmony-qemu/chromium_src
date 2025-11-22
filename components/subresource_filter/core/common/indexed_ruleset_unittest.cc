@@ -432,10 +432,13 @@ TEST_F(SubresourceFilterIndexedRulesetTest, CssRuleApplies) {
 
 TEST_F(SubresourceFilterIndexedRulesetTest, CssRuleWithDomainApplies) {
   // generic rule applies to all urls
-  ASSERT_TRUE(AddSimpleAllowlistCssRuleWithDomain("?param_blocked=", "example.com", false, proto::RULE_SEMANTICS_BLOCKLIST));
-  ASSERT_TRUE(AddSimpleAllowlistCssRuleWithDomain("?param_blocked2=", "example.com", false, proto::RULE_SEMANTICS_BLOCKLIST));
+  ASSERT_TRUE(AddSimpleAllowlistCssRuleWithDomain("?param_blocked=", "example.com", false,
+                                                  proto::RULE_SEMANTICS_BLOCKLIST));
+  ASSERT_TRUE(AddSimpleAllowlistCssRuleWithDomain("?param_blocked2=", "example.com", false,
+                                                  proto::RULE_SEMANTICS_BLOCKLIST));
   ASSERT_TRUE(AddSimpleCssRule("?param_blocked=", proto::RULE_SEMANTICS_ALLOWLIST));
-  ASSERT_TRUE(AddSimpleAllowlistCssRuleWithDomain("?param_blocked=", "example.com", false, proto::RULE_SEMANTICS_ALLOWLIST));
+  ASSERT_TRUE(AddSimpleAllowlistCssRuleWithDomain("?param_blocked=", "example.com", false,
+                                                  proto::RULE_SEMANTICS_ALLOWLIST));
   Finish();
 
   EXPECT_EQ(LoadPolicy::DISALLOW, GetLoadCssPolicy("https://example.com"));
@@ -449,9 +452,11 @@ TEST_F(SubresourceFilterIndexedRulesetTest, CssRuleWithDomainWithGenericRule) {
   // generic rule applies to all urls
   ASSERT_TRUE(AddSimpleCssRule("?param_blocked="));
   ASSERT_TRUE(AddSimpleCssRule("?param_blocked2="));
-  ASSERT_TRUE(AddSimpleAllowlistCssRuleWithDomain("?param_blocked2=", "example.com", false, proto::RULE_SEMANTICS_BLOCKLIST));
+  ASSERT_TRUE(AddSimpleAllowlistCssRuleWithDomain("?param_blocked2=", "example.com", false,
+                                                  proto::RULE_SEMANTICS_BLOCKLIST));
   ASSERT_TRUE(AddSimpleCssRule("?param_blocked=", proto::RULE_SEMANTICS_ALLOWLIST));
-  ASSERT_TRUE(AddSimpleAllowlistCssRuleWithDomain("?param_blocked2=", "example.com", false, proto::RULE_SEMANTICS_ALLOWLIST));
+  ASSERT_TRUE(AddSimpleAllowlistCssRuleWithDomain("?param_blocked2=", "example.com", false,
+                                                  proto::RULE_SEMANTICS_ALLOWLIST));
   Finish();
 
   EXPECT_EQ(LoadPolicy::DISALLOW, GetLoadCssPolicy("https://example.com"));
@@ -463,7 +468,8 @@ TEST_F(SubresourceFilterIndexedRulesetTest, CssRuleWithDomainWithGenericRule) {
 
 TEST_F(SubresourceFilterIndexedRulesetTest, CssRuleWithDomainWithoutGenericRule) {
   ASSERT_TRUE(AddSimpleCssRule("?param_allow=", proto::RULE_SEMANTICS_ALLOWLIST));
-  ASSERT_TRUE(AddSimpleAllowlistCssRuleWithDomain("?param_blocked=", "example.com", false, proto::RULE_SEMANTICS_ALLOWLIST));
+  ASSERT_TRUE(AddSimpleAllowlistCssRuleWithDomain("?param_blocked=", "example.com", false,
+                                                  proto::RULE_SEMANTICS_ALLOWLIST));
   Finish();
 
   EXPECT_EQ(LoadPolicy::ALLOW, GetLoadCssPolicy("https://example.com"));
@@ -475,7 +481,8 @@ TEST_F(SubresourceFilterIndexedRulesetTest, CssRuleWithDomainDisableGenericRule)
   // generic rule applies to all urls
   ASSERT_TRUE(AddSimpleCssRule("?param_blocked="));
   ASSERT_TRUE(AddSimpleCssRule("?param_allow=", proto::RULE_SEMANTICS_ALLOWLIST));
-  ASSERT_TRUE(AddSimpleAllowlistCssRuleWithDomain("?param_blocked=", "example.com", false, proto::RULE_SEMANTICS_ALLOWLIST));
+  ASSERT_TRUE(AddSimpleAllowlistCssRuleWithDomain("?param_blocked=", "example.com", false,
+                                                  proto::RULE_SEMANTICS_ALLOWLIST));
   Finish();
 
   EXPECT_EQ(LoadPolicy::ALLOW, GetLoadCssPolicy("https://example.com", true));

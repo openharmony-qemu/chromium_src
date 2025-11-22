@@ -973,8 +973,7 @@ class AdAuctionServiceImplTest : public RenderViewHostTestHarness {
   }
 
   // Creates a new AdAuctionServiceImpl and use it to try and join
-  // `interest_group`. Waits for the operation to signal completion, and returns
-  // the value of `failed_well_known_check_result` passed the the callback.
+  // `interest_group`. Waits for the operation to signal completion.
   //
   // Creates a new AdAuctionServiceImpl with each call so the RFH can be
   // navigated between different sites. And AdAuctionServiceImpl only handles
@@ -982,27 +981,23 @@ class AdAuctionServiceImplTest : public RenderViewHostTestHarness {
   // use different RFHs as well).
   //
   // If `rfh` is nullptr, uses the main frame.
-  bool JoinInterestGroupAndFlush(const blink::InterestGroup& interest_group,
+  void JoinInterestGroupAndFlush(const blink::InterestGroup& interest_group,
                                  RenderFrameHost* rfh = nullptr) {
     mojo::Remote<blink::mojom::AdAuctionService> interest_service;
     AdAuctionServiceImpl::CreateMojoService(
         rfh ? rfh : main_rfh(), interest_service.BindNewPipeAndPassReceiver());
 
     base::RunLoop run_loop;
-    bool failed_well_known_check_result;
     interest_service->JoinInterestGroup(
         interest_group,
-        base::BindLambdaForTesting([&](bool failed_well_known_check) {
-          failed_well_known_check_result = failed_well_known_check;
-          run_loop.Quit();
-        }));
+        base::BindLambdaForTesting(
+            [&](bool failed_well_known_check) { run_loop.Quit(); }));
     run_loop.Run();
 
     // Pipe should not have been closed - if it is expected to be closed, use
     // JoinInterestGroupAndExpectBadMessage().
     EXPECT_TRUE(interest_service.is_bound());
     EXPECT_TRUE(interest_service.is_connected());
-    return failed_well_known_check_result;
   }
 
   // Attempts to join an interest group and expects the pipe to be closed and
@@ -1032,7 +1027,7 @@ class AdAuctionServiceImplTest : public RenderViewHostTestHarness {
 
   // Analogous to JoinInterestGroupAndFlush(), but leaves an interest
   // group instead of joining one.
-  bool LeaveInterestGroupAndFlush(const url::Origin& owner,
+  void LeaveInterestGroupAndFlush(const url::Origin& owner,
                                   const std::string& name,
                                   RenderFrameHost* rfh = nullptr) {
     mojo::Remote<blink::mojom::AdAuctionService> interest_service;
@@ -1040,20 +1035,16 @@ class AdAuctionServiceImplTest : public RenderViewHostTestHarness {
         rfh ? rfh : main_rfh(), interest_service.BindNewPipeAndPassReceiver());
 
     base::RunLoop run_loop;
-    bool failed_well_known_check_result;
     interest_service->LeaveInterestGroup(
         owner, name,
-        base::BindLambdaForTesting([&](bool failed_well_known_check) {
-          failed_well_known_check_result = failed_well_known_check;
-          run_loop.Quit();
-        }));
+        base::BindLambdaForTesting(
+            [&](bool failed_well_known_check) { run_loop.Quit(); }));
     run_loop.Run();
 
     // Pipe should not have been closed - if it is expected to be closed, use
     // LeaveInterestGroupAndExpectBadMessage().
     EXPECT_TRUE(interest_service.is_bound());
     EXPECT_TRUE(interest_service.is_connected());
-    return failed_well_known_check_result;
   }
 
   // Analogous to JoinInterestGroupAndExpectBadMessage(), but leaves an interest
@@ -1076,31 +1067,6 @@ class AdAuctionServiceImplTest : public RenderViewHostTestHarness {
         }));
     run_loop.Run();
     EXPECT_EQ(expected_bad_message, observer.WaitForBadMessage());
-  }
-
-  // Analogous to LeaveInterestGroupAndFlush(), but calls
-  // ClearOriginJoinedInterestGroups() instead.
-  bool ClearOriginJoinedInterestGroupsAndFlush(const url::Origin& owner,
-                                               RenderFrameHost* rfh = nullptr) {
-    mojo::Remote<blink::mojom::AdAuctionService> interest_service;
-    AdAuctionServiceImpl::CreateMojoService(
-        rfh ? rfh : main_rfh(), interest_service.BindNewPipeAndPassReceiver());
-
-    base::RunLoop run_loop;
-    bool failed_well_known_check_result;
-    interest_service->ClearOriginJoinedInterestGroups(
-        owner, /*interest_groups_to_keep=*/{},
-        base::BindLambdaForTesting([&](bool failed_well_known_check) {
-          failed_well_known_check_result = failed_well_known_check;
-          run_loop.Quit();
-        }));
-    run_loop.Run();
-
-    // Pipe should not have been closed - if it is expected to be closed, use
-    // LeaveInterestGroupAndExpectBadMessage().
-    EXPECT_TRUE(interest_service.is_bound());
-    EXPECT_TRUE(interest_service.is_connected());
-    return failed_well_known_check_result;
   }
 
   // Calls ClearOriginJoinedInterestGroups() with the provided parameters, and
@@ -9066,8 +9032,11 @@ TEST_F(AdAuctionServiceImplRestrictedPermissionsPolicyTest,
   constexpr char kInterestGroupName2[] = "group2";
   interest_group.owner = kOriginC;
   interest_group.name = kInterestGroupName2;
-  // "true" here means the join was blocked.
-  EXPECT_TRUE(JoinInterestGroupAndFlush(std::move(interest_group_2), subframe));
+  JoinInterestGroupAndExpectBadMessage(
+      std::move(interest_group_2),
+      "Unexpected request: Interest groups may only be joined or left when "
+      "feature join-ad-interest-group is enabled by Permissions Policy",
+      subframe);
   EXPECT_EQ(0, GetJoinCount(kOriginC, kInterestGroupName2));
 
   UpdateInterestGroupNoFlushForFrame(subframe);
@@ -9083,13 +9052,18 @@ TEST_F(AdAuctionServiceImplRestrictedPermissionsPolicyTest,
   EXPECT_EQ(group.bidding_url->spec(),
             base::StringPrintf("%s%s", kOriginStringC, kBiddingUrlPath));
 
-  // "true" here means the leave was blocked.
-  EXPECT_TRUE(
-      LeaveInterestGroupAndFlush(kOriginC, kInterestGroupName, subframe));
+  LeaveInterestGroupAndExpectBadMessage(
+      kOriginC, kInterestGroupName,
+      "Unexpected request: Interest groups may only be joined or left when "
+      "feature join-ad-interest-group is enabled by Permissions Policy",
+      subframe);
   EXPECT_EQ(1, GetJoinCount(kOriginC, kInterestGroupName));
 
-  // "true" here means the clear was blocked.
-  EXPECT_TRUE(ClearOriginJoinedInterestGroupsAndFlush(kOriginC, subframe));
+  ClearOriginJoinedInterestGroupsAndExpectBadMessage(
+      kOriginC,
+      "Unexpected request: Interest groups may only be joined or left when "
+      "feature join-ad-interest-group is enabled by Permissions Policy",
+      subframe);
   EXPECT_EQ(1, GetJoinCount(kOriginC, kInterestGroupName));
 }
 

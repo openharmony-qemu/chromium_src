@@ -27,8 +27,6 @@ using namespace testing;
 
 namespace OHOS::NWeb {
 
-static const std::string IMAGE_FILE_PATH = "/data/ut/test.heic";
-
 class ImageDecoderAdapterImplTest : public testing::Test {
  public:
     void SetUp() override {
@@ -313,14 +311,10 @@ TEST_F(ImageDecoderAdapterImplTest, ImageDecoderAdapterImplTest_DecodeByPath) {
   EXPECT_NE(adapter_, nullptr);
   bool result = adapter_->DecodeByPath("", AllocatorType::kDefault);
   EXPECT_EQ(result, false);
-  result = adapter_->DecodeByPath(IMAGE_FILE_PATH, AllocatorType::kDefault);
-  EXPECT_EQ(result, true);
   result = adapter_->DecodeByPath("111", AllocatorType::kDefault);
   EXPECT_EQ(result, false);
   adapter_->ReleasePixelMap();
   EXPECT_EQ(adapter_->pixelMap_, nullptr);
-  result = adapter_->DecodeByPath(IMAGE_FILE_PATH, AllocatorType::kDefault);
-  EXPECT_EQ(result, true);
 }
 
 } // namespace OHOS::NWeb

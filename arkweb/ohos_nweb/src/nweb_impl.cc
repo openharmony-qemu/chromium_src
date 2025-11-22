@@ -971,20 +971,23 @@ void InitialWebEngineArgs(
     web_engine_args.emplace_back(arg);
   }
 #endif  // BUILDFLAG(IS_ARKWEB_EXT)
-
+  
+  std::string oemmode = OHOS::NWeb::OhosAdapterHelper::GetInstance()
+                            .GetSystemPropertiesInstance().GetStringParameter("const.boot.oemmode", "");
+  LOG(INFO) << "const.boot.oemmode: " << oemmode;
   base::FilePath ohos_command_line_file(
     FILE_PATH_LITERAL("/data/storage/el1/bundle/arkwebcore/libs/ohos-command-line"));
-  if (base::PathExists(ohos_command_line_file)) {
+  if (oemmode == "rd" && base::PathExists(ohos_command_line_file)) {
     std::string ohos_command_line_content;
-    if (base::ReadFileToString(ohos_command_line_file, &ohos_command_line_content)) {
+      if (base::ReadFileToString(ohos_command_line_file, &ohos_command_line_content)) {
         std::vector<std::string> args = tokenizeQuotedArguments(ohos_command_line_content);
-        for (auto& arg : args) {
-          web_engine_args.emplace_back(arg);
-        }
-    }
-  LOG(INFO) << "ohos connamd line args analysis from ohos-command-line file succ.";
+          for (auto& arg : args) {
+            web_engine_args.emplace_back(arg);
+          }
+          LOG(INFO) << "ohos connamd line args analysis from ohos-command-line file succ.";
+      }  
   } else {
-    LOG(INFO) << "file ohos-command-line does not exist.";
+    LOG(INFO) << "oemmode is not rd or ohos-command-line does not exist.";
   }
 }
 #endif  // BUILDFLAG(ARKWEB_API_INIT_WEB_ENGINE)

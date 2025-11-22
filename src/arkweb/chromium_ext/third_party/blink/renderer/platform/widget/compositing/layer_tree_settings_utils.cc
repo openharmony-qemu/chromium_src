@@ -21,9 +21,8 @@
 #include "third_party/blink/public/platform/platform.h"
 #include "ui/base/ui_base_features.h"
 #include "ui/base/ui_base_switches.h"
-#include "ui/native_theme/native_theme_features.h"
 #include "ui/native_theme/native_theme_utils.h"
-#include "ui/native_theme/overlay_scrollbar_constants_aura.h"
+#include "ui/native_theme/overlay_scrollbar_constants.h"
 
 namespace blink {
 
@@ -88,7 +87,7 @@ void SetMaxVisibleBytes(cc::ManagedMemoryPolicy& actual)
         std::min(actual.bytes_limit_when_visible,
                  static_cast<size_t>(2000 * 1024 * 1024));
 #if BUILDFLAG(IS_ARKWEB)
-  } else if (base::SysInfo::AmountOfPhysicalMemoryMB() >= 2000) {
+  } else if (base::SysInfo::AmountOfPhysicalMemory().InMiB() >= 2000) {
     // It needs more tile memory for foldable phone.
     actual.bytes_limit_when_visible =
         std::max(actual.bytes_limit_when_visible,
@@ -133,9 +132,6 @@ void AdjustGraphicsSettings(const gfx::Size& screen_size,
         ui::kOverlayScrollbarThinningDuration;
     settings.scrollbar_flash_after_any_scroll_update = false;
   }
-
-  // TODO(danakj): Only do this on low end devices.
-  settings.create_low_res_tiling = true;
 }
 
 void SetEnableDeleteUnusedResourcesDelay(cc::LayerTreeSettings& settings)

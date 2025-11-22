@@ -32,6 +32,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#include "build/chromeos_buildflags.h"
 #include "content/public/common/content_descriptors.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/res_sched_client_adapter.h"
 #if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)

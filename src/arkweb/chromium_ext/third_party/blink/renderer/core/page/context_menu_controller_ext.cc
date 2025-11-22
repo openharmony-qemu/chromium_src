@@ -30,7 +30,7 @@
 #include "third_party/blink/public/web/web_element_collection.h"
 #include "third_party/blink/renderer/core/css/css_image_value.h"
 #include "third_party/blink/renderer/core/css/css_uri_value.h"
-#include "third_party/blink/renderer/core/dom/node_computed_style.h"
+#include "third_party/blink/renderer/core/editing/editing_utilities.h"
 #include "third_party/blink/renderer/core/editing/visible_position.h"
 #include "third_party/blink/renderer/core/frame/settings.h"
 #include "third_party/blink/renderer/core/frame/visual_viewport.h"
@@ -160,8 +160,7 @@ void ContextMenuControllerExt::FindImgUrl(ContextMenuData& data,
     // try to find image url
     data.src_url = GetChildImageUrlFromElement(
         blink::WebElement(result.URLElement()),
-        gfx::Point(point.ToLayoutPoint().X().ToInt(),
-                   point.ToLayoutPoint().Y().ToInt()));
+        ToRoundedPoint(point));
     if (!data.src_url.is_empty()) {
       data.has_image_contents = true;
     }
@@ -209,8 +208,7 @@ void ContextMenuControllerExt::GetImgUrl(HitTestResult& result,
       }
 
       // try to get background image url.
-      const ComputedStyle* style =
-          node->GetComputedStyleForElementOrLayoutObject();
+      const ComputedStyle* style = GetComputedStyleForElementOrLayoutObject(*node);
       if (!style || !style->HasBackgroundImage()) {
         continue;
       }

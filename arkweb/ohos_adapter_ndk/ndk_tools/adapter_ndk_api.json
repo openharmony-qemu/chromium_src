@@ -1130,6 +1130,14 @@
             ]
         },
         "includes": []
+    },
+    "file_uri": {
+        "apiList": {
+            "12": [
+                "FileManagement_ErrCode OH_FileUri_GetUriFromPath(const char *path, unsigned int length, char **result)"
+            ]
+        },
+        "includes":[]
     }
 
 

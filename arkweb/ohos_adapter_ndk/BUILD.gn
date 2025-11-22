@@ -83,6 +83,7 @@ component("adapter_ndk") {
     "multimodalinputnew_adapter/mmi_new_adapter_impl.h",
     "multimodalinputnew_adapter/mmi_new_adapter_impl.cpp",
     "pasteboard_adapter/src/pasteboard_client_adapter_impl.cpp",
+    "pasteboard_adapter/src/pasteboard_client_adapter_utils.cpp",
     "color_picker_adapter/color_picker_adapter_impl.h",
     "color_picker_adapter/color_picker_adapter_impl.cpp",
     "display_manager_adapter/native_display_manager_adapter_impl.h",

@@ -24,6 +24,7 @@
 #include <multimedia/image_framework/image/image_common.h>
 
 #include "AbilityKit/ability_runtime/application_context.h"
+#include "arkweb/ohos_adapter_ndk/pasteboard_adapter/include/pasteboard_client_adapter_utils.h"
 #include "arkweb/ohos_nweb/src/nweb_hilog.h"
 #include "ohos_adapter_helper.h"
 #include "third_party/bounds_checking_function/include/securec.h"
@@ -973,8 +974,16 @@ bool PasteBoardClientAdapterImpl::GetPasteData(PasteRecordVector& data)
         return false;
     }
 
+    char cacheUri[NATIVE_BUFFER_SIZE];
+    char* pcacheUri = cacheUri;
+    int uriRes = PasteboardClientAdapterUtils::GetUriFromPath(cacheDir, cacheDirLength, &pcacheUri);
+    if (uriRes != 0) {
+        WVLOG_E("GetPasteData failed at GetUri. error code is: %{public}d.", uriRes);
+        return false;
+    }
+
     OH_Pasteboard_GetDataParams_SetProgressIndicator(params, PASTEBOARD_DEFAULT);
-    OH_Pasteboard_GetDataParams_SetDestUri(params, cacheDir, cacheDirLength);
+    OH_Pasteboard_GetDataParams_SetDestUri(params, pcacheUri, strlen(pcacheUri));
     OH_Pasteboard_GetDataParams_SetFileConflictOptions(params, PASTEBOARD_OVERWRITE);
 
     int status = -1;

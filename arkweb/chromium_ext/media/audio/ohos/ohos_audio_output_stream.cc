@@ -41,6 +41,7 @@ OHOSAudioOutputStream::OHOSAudioOutputStream(OHOSAudioManager* manager,
   time_per_buffer_ = AudioTimestampHelper::FramesToTime(parameters_.frames_per_buffer(),
                                                         parameters_.sample_rate());
   main_task_runner_ = content::GetUIThreadTaskRunner({});
+  audio_task_runner_ = base::SingleThreadTaskRunner::GetCurrentDefault();
   audioResumeInterval_ = OHOSAudioFocusController::GetAudioResumeInterval(parameters_);
 }
 
@@ -159,11 +160,12 @@ void OHOSAudioOutputStream::OnSuspend() {
     LOG(ERROR) << "OHOSAudioOutputStream::OnSuspend parameters_ is not valid.";
     return;
   }
+  AudioParameters parameters = parameters_;
   if (!running_) {
     LOG(ERROR) << "The playback is stopped. Exit OnSuspend.";
     return;
   }
-  if (OHOSAudioFocusController::IsActive(parameters_)) {
+  if (OHOSAudioFocusController::IsActive(parameters)) {
     if (audioResumeInterval_ != 0) {
       intervalSinceLastSuspend_ = std::time(nullptr);
     }
@@ -171,30 +173,27 @@ void OHOSAudioOutputStream::OnSuspend() {
       LOG(INFO) << "main task runner is nullptr";
       return;
     }
-    auto suspendFunc = [](base::WeakPtr<OHOSAudioOutputStream> self) {
-      if (self && self->parameters_.IsValid()) {
-        OHOSAudioFocusController::OnSuspend(self->parameters_);
-      }
-    };
     main_task_runner_->PostTask(
-        FROM_HERE, base::BindOnce(suspendFunc, weak_factory_.GetWeakPtr()));
+        FROM_HERE, base::BindOnce(&OHOSAudioFocusController::OnSuspend, parameters));
     isSuspended_ = true;
     // After stopping playback, it is necessary to continue obtaining audio
     // data, which will trigger the pause action of the render process.
-    main_task_runner_->PostTask(
+    if (audio_task_runner_) {
+      audio_task_runner_->PostTask(
         FROM_HERE, base::BindOnce(&OHOSAudioOutputStream::PumpSamples,
                                   weak_factory_.GetWeakPtr()));
+    }
   } else {
     LOG(INFO) << "media session is not active. [hash: " << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";
 #if BUILDFLAG(ARKWEB_PERFORMANCE_PERSISTENT_TASK)
-    if (OHOSAudioFocusController::HasOnlyOneShotPlayersPublic(parameters_)) {
-      OneShotMediaPlayerStopped();
+    if (OHOSAudioFocusController::HasOnlyOneShotPlayersPublic(parameters)) {
+      OneShotMediaPlayerStopped(parameters);
     }
 #endif
   }
 }
 
-void OHOSAudioOutputStream::OneShotMediaPlayerStopped() {
+void OHOSAudioOutputStream::OneShotMediaPlayerStopped(AudioParameters parameters) {
   LOG(INFO) << __func__ << "[hash: " << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";
   if (!content::BrowserThread::CurrentlyOn(content::BrowserThread::UI)) {
     if (!main_task_runner_) {
@@ -202,16 +201,9 @@ void OHOSAudioOutputStream::OneShotMediaPlayerStopped() {
       return;
     }
     main_task_runner_->PostTask(
-        FROM_HERE, base::BindOnce(
-                       [](base::WeakPtr<OHOSAudioOutputStream> self) {
-                         if (self && self->parameters_.IsValid()) {
-                           OHOSAudioFocusController::OneShotMediaPlayerStopped(
-                               self->parameters_);
-                         }
-                       },
-                       weak_factory_.GetWeakPtr()));
+        FROM_HERE, base::BindOnce(&OHOSAudioFocusController::OneShotMediaPlayerStopped, parameters));
   } else {
-    OHOSAudioFocusController::OneShotMediaPlayerStopped(parameters_);
+    OHOSAudioFocusController::OneShotMediaPlayerStopped(parameters);
   }
 }
 
@@ -226,6 +218,7 @@ void OHOSAudioOutputStream::OnResume() {
     LOG(ERROR) << "OHOSAudioOutputStream::OnResume parameters_ is not valid.";
     return;
   }
+  AudioParameters parameters = parameters_;
   if (OHOSAudioFocusController::IsSuspended(parameters_)) {
     if(isNeedResume(audioResumeInterval_)) {
       if (!main_task_runner_) {
@@ -233,20 +226,15 @@ void OHOSAudioOutputStream::OnResume() {
         return;
       }
       main_task_runner_->PostTask(
-          FROM_HERE,
-          base::BindOnce(
-              [](base::WeakPtr<OHOSAudioOutputStream> self) {
-                if (self && self->parameters_.IsValid()) {
-                  OHOSAudioFocusController::OnResume(self->parameters_);
-                }
-              },
-              weak_factory_.GetWeakPtr()));
+        FROM_HERE, base::BindOnce(&OHOSAudioFocusController::OnResume, parameters));
     }
     return;
   }
-  if(callback_) {
+  if (callback_ && audio_task_runner_) {
     LOG(INFO) << "[Oneshot] try to restart stream";
-    Start(callback_);
+    audio_task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(&OHOSAudioOutputStream::Start,
+                                weak_factory_.GetWeakPtr(), callback_));
   }
 }
 // LCOV_EXCL_STOP
@@ -366,11 +354,7 @@ void OHOSAudioOutputStream::Start(AudioSourceCallback* callback) {
 void OHOSAudioOutputStream::Stop() {
   LOG(INFO) << "OHOSAudioOutputStream::Stop. [hash: " << std::hex << base::FastHash(base::byte_span_from_ref(this)) << "]";
   base::AutoLock lock(lock_);
-  if (main_task_runner_) {
-    main_task_runner_->PostTask(
-        FROM_HERE, base::BindOnce(&OHOSAudioOutputStream::StopTimer,
-                                  weak_factory_.GetWeakPtr()));
-  }
+  StopTimer();
   running_ = false;
   auto it = std::find(OHOSAudioOutputStream::audioParameterSet_.begin(),
                       OHOSAudioOutputStream::audioParameterSet_.end(), parameters_);

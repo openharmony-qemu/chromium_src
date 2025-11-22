@@ -131,10 +131,6 @@ class ScopeInfo : public TorqueGeneratedScopeInfo<ScopeInfo, HeapObject> {
 
   inline bool HasSimpleParameters() const;
 
-#ifdef OHOS_JS_ENGINE
-  inline bool HasNeverHideBaseStdHint() const;
-#endif
-
   inline bool HasContextCells() const;
 
   // Return the function_name if present.

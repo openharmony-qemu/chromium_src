@@ -871,7 +871,7 @@ v8::MaybeLocal<v8::Value> V8ScriptRunner::CallFunction(
           ToCoreString(isolate, function_name.As<v8::String>()).Ascii().c_str());
       TRACE_EVENT_END0("devtools.timeline", "FunctionName");
     }
-    std::unique_ptr<SourceLocation> location =
+    SourceLocation* location =
         CaptureSourceLocation(isolate, original_function);
     TRACE_EVENT_BEGIN2("devtools.timeline", "FunctionUrl", "url",
                       location->Url().Ascii().c_str(), "scriptId",

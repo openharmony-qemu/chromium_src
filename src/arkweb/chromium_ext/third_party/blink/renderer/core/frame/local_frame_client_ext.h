@@ -20,7 +20,7 @@
 #include "arkweb/build/features/features.h"
 
 #ifdef BUILDFLAG(ARKWEB_SAME_LAYER)
-#include "third_party/blink/renderer/core/layout/geometry/physical_offset.h"
+#include "third_party/blink/renderer/platform/geometry/physical_offset.h"
 #endif
 
 namespace blink {

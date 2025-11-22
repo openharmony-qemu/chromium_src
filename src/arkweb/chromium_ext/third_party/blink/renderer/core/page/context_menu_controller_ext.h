@@ -21,7 +21,7 @@
 #include "third_party/blink/public/common/input/web_menu_source_type.h"
 #include "third_party/blink/public/web/web_element.h"
 #include "third_party/blink/renderer/core/frame/local_frame.h"
-#include "third_party/blink/renderer/core/layout/geometry/physical_offset.h"
+#include "third_party/blink/renderer/platform/geometry/physical_offset.h"
 #include "third_party/blink/renderer/core/layout/hit_test_result.h"
 #include "third_party/blink/renderer/core/page/context_menu_controller.h"
 

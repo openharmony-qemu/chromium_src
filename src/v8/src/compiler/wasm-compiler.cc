@@ -412,11 +412,6 @@ Node* WasmGraphBuilder::BuildWasmCall(const Signature<T>* sig,
   return call;
 }
 
-Node* WasmGraphBuilder::MemBuffer(uint32_t mem_index, Node* index) {
-  DCHECK_NOT_NULL(index);
-  Node* mem_start = MemStart(mem_index);
-  return gasm_->IntAdd(mem_start, index);
-}
 
 // Only call this function for code which is not reused across instantiations,
 // as we do not patch the embedded js_context.

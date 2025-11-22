@@ -28,7 +28,7 @@ void OHOSMediaCryptoContextImpl::SetOHOSMediaCryptoReadyCB(
   }
 #if BUILDFLAG(ARKWEB_ENABLE_WISEPLAY)
   std::vector<uint8_t> scheme_uuid = media_drm_bridge_->GetSchemeUUID();
-  if (base::ranges::equal(scheme_uuid, kWiseplayUuid)) {
+  if (std::ranges::equal(scheme_uuid, kWiseplayUuid)) {
     LOG(INFO) << "[DRM]" << __func__ << ", Wiseplay.";
     media_drm_bridge_->SetOHOSMediaCryptoAndLicenseReadyCB(
         std::move(media_crypto_ready_cb));

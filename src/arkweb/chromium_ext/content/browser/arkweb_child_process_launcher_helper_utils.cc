@@ -115,7 +115,7 @@ ArkwebChildProcessLauncherHelperUtils::GetProcessStatusByExitCode(
         if (!known_dead) {
           return base::TERMINATION_STATUS_NORMAL_TERMINATION;
         }
-#if BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_CHROMEOS_LACROS)
+#if BUILDFLAG(IS_CHROMEOS_ASH)
         // On ChromeOS, only way a process gets kill by SIGKILL
         // is by oom-killer.
         return TERMINATION_STATUS_PROCESS_WAS_KILLED_BY_OOM;
@@ -154,7 +154,7 @@ ArkwebChildProcessLauncherHelperUtils::GetExitReasonByTerminationStatus(
     case base::TERMINATION_STATUS_PROCESS_WAS_KILLED:
       reason = "process was killed";
       break;
-#if BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_CHROMEOS_LACROS)
+#if BUILDFLAG(IS_CHROMEOS_ASH)
     case base::TERMINATION_STATUS_PROCESS_WAS_KILLED_BY_OOM:
       reason = "process out of memory";
       break;

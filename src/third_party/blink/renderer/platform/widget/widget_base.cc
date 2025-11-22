@@ -957,7 +957,7 @@ void WidgetBase::FinishRequestNewLayerTreeFrameSink(
       std::move(render_frame_metadata_observer_remote));
   #if BUILDFLAG(ARKWEB_SOFTWARE_COMPOSITOR)
   auto sink = std::make_unique<cc::mojo_embedder::AsyncLayerTreeFrameSink>(
-      std::move(context_provider), std::move(worker_context_provider_wrapper),
+      std::move(context_provider), std::move(worker_context_provider),
       gpu_channel_host->CreateClientSharedImageInterface(), params.get());
   sink->InitSoftwareCompositorRender(
       widget_input_handler_manager_->manager_utils()->GetSoftwareCompositorRegistryOhos());
@@ -1207,12 +1207,6 @@ void WidgetBase::UpdateTextInputStateInternal(bool show_virtual_keyboard,
 
     // Check whether the keyboard should always be hidden for the currently
     // focused element.
-#if BUILDFLAG(ARKWEB_INPUT_EVENTS)
-    if (always_hide_ime) {
-      LOG(INFO) << "UpdateTextInputStateInternal update always_hide_ime value:"
-                << always_hide_ime;
-    }
-#endif
     frame_widget->GetEditContextBoundsInWindow(&control_bounds,
                                                &selection_bounds);
     frame_widget->GetInputElementAttributes(input_atrributes);

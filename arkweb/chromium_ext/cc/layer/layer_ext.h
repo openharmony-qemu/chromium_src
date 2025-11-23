@@ -41,7 +41,7 @@ class LayerExt {
   }
 
   virtual bool NativeEmbedOverlayInfinity() {
-    return native_embed_overlay_;
+    return native_embed_overlay_infinity_;
   }
 
   virtual void SetNativeEmbedOverlayInfinity(bool native_embed_overlay_infinity) {

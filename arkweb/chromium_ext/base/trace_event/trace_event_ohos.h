@@ -86,4 +86,3 @@ class ScopedOHOSBytrace {
 #endif  // BUILDFLAG(ARKWEB_DFX_TRACING)
 
 #endif  // BASE_TRACE_EVENT_TRACE_EVENT_OHOS_H
-

@@ -291,7 +291,7 @@ void MouseEventManagerExt::HandleCreateOverlay(T const& targeted_event) {
         std::min(1.0f, KMaxAnalyzedImageDimension * 1.0f /
                            std::max(image_width, image_height));
     paint_image = Image::ResizeAndOrientImage(
-        paint_image, image->CurrentFrameOrientation(),
+        paint_image, image->Orientation(),
         gfx::Vector2dF(shrink_ratio, shrink_ratio));
     if (!paint_image.GetSwSkImage()) {
       LOG(ERROR) << "MouseEventManagerExt::CreateOverlay, downsampling failed.";
@@ -332,7 +332,6 @@ void MouseEventManagerExt::Trace(Visitor* visitor) const {
   visitor->Trace(hit_image_node_);
 #endif
   visitor->Trace(weak_factory_);
-  SynchronousMutationObserver::Trace(visitor);
 }
 // LCOV_EXCL_STOP
 

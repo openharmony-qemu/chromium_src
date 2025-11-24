@@ -43,7 +43,7 @@ private:
     std::unordered_set<int32_t> viewIndependentEvents_;
     raw_ptr<BrowserAccessibilityManagerOHOS> manager_;
     std::unordered_map<int64_t, int64_t> eventLastFiredTimes_;
-    std::unordered_map<int64_t, base::DelayedTaskHandle> pendingEvents_;
+    std::unordered_map<int64_t, base::OnceClosure> pendingEvents_;
 };
 
 // Manages a tree of BrowserAccessibility objects.
@@ -68,9 +68,9 @@ class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
      void FireAriaNotificationEvent(
       BrowserAccessibility* node,
       const std::string& announcement,
-      const std::string& notification_id,
+      ax::mojom::AriaNotificationPriority priority_property,
       ax::mojom::AriaNotificationInterrupt interrupt_property,
-      ax::mojom::AriaNotificationPriority priority_property) override {}
+      const std::string& type) override {}
 
   void FireFocusEvent(AXNode* node) override;
 

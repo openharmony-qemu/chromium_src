@@ -110,7 +110,7 @@ PaintImage ImageExt::ClipResizeAndOrientImage(
   }
 
   SkCanvas* canvas = surface->getCanvas();
-  canvas->concat(AffineTransformToSkMatrix(transform));
+  canvas->concat(transform.ToSkMatrix());
 
   SkRect dst_rect = SkRect::MakeIWH(clip_rect.width(), clip_rect.height());
   canvas->drawImageRect(image.GetSwSkImage(), gfx::RectToSkRect(clip_rect),

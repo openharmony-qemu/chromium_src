@@ -85,7 +85,7 @@ WebInputEventResult GestureManagerUtils::HandleGestureDragLongPress(
   }
 #endif
   if (gesture_manager_->mouse_event_manager_->HandleDragDropIfPossible(
-          targeted_event)) {
+          targeted_event, gesture_manager_->GetPointerIdFromWebGestureEvent(targeted_event.Event()))) {
     return WebInputEventResult::kHandledSystem;
   }
 

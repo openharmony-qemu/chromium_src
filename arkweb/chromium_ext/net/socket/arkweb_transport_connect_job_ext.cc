@@ -213,8 +213,8 @@ void ArkWebTransportConnectJobExt::NeedReportSuccessIp(const IPEndPoint& address
     return;
   }
 
-  size_t success_index = -1;
-  for (size_t i = 0; i < endpoint.ip_endpoints.size(); i++) {
+  int success_index = -1;
+  for (int i = 0; i < endpoint.ip_endpoints.size(); i++) {
     if (endpoint.ip_endpoints[i] == address) {
       success_index = i + 1;
       break;

@@ -100,7 +100,7 @@ class CONTENT_EXPORT NavigationURLLoader {
   // Called right after the loader is constructed.
   virtual void Start() = 0;
 #if BUILDFLAG(ARKWEB_USERAGENT)
-  virtual void EnableRedirectAbortCancel(){};
+  virtual void EnableRedirectAbortCancel() {}
 #endif
   // Called in response to OnRequestRedirected to continue processing the
   // request.

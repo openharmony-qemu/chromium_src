@@ -36,7 +36,7 @@ CSSStyleSheetResource* CSSStyleSheetResourceUtils::CreateForOfflineResource(
   ResourceLoaderOptions options(nullptr);
 
   TextResourceDecoderOptions decoder_options(
-      TextResourceDecoderOptions::kCSSContent, UTF8Encoding());
+      TextResourceDecoderOptions::kCSSContent, Utf8Encoding());
 
   return MakeGarbageCollected<CSSStyleSheetResource>(request, options,
                                                      decoder_options);

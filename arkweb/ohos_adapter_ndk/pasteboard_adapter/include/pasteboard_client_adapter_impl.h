@@ -26,8 +26,6 @@ namespace OHOS::NWeb {
 class PasteDataRecordAdapterImpl : public PasteDataRecordAdapter {
 public:
     PasteDataRecordAdapterImpl(OH_UdmfRecord* record,
-                               bool need_destory_record);
-    PasteDataRecordAdapterImpl(OH_UdmfRecord* record,
                                std::shared_ptr<OH_UdmfData> owner_data);
     PasteDataRecordAdapterImpl(const std::string& mimeType,
                                std::shared_ptr<std::string> htmlText,
@@ -67,8 +65,7 @@ private:
                        const std::string& optionType = "",
                        int result = 0);
     std::string HtmlToPlainText(const std::string& html);
-    bool need_destory_record_ = true;
-    std::shared_ptr<OH_UdmfData> owner_data_ = nullptr;
+    std::shared_ptr<OH_UdmfData> owner_data_ = nullptr; // Record shares lifetime with data owner to avoid premature destruction
 };
 
 class PasteDataAdapterImpl : public PasteDataAdapter {

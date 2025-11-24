@@ -29,19 +29,13 @@
 #include "third_party/bounds_checking_function/include/securec.h"
 
 #define FIRST_ELEMENT 0
-#define PLAINTEXT "text/plain"
 
 namespace OHOS::NWeb {
-PasteDataRecordAdapterImpl::PasteDataRecordAdapterImpl(
-    OH_UdmfRecord* record, bool need_destory_record)
-    : record_(record),
-      need_destory_record_(need_destory_record) {}
-
+// Adapter destroys record if it is not bound to an OH_UdmfData owner
 PasteDataRecordAdapterImpl::PasteDataRecordAdapterImpl(
     OH_UdmfRecord* record,
     std::shared_ptr<OH_UdmfData> owner_data)
     : record_(record),
-      need_destory_record_(false),
       owner_data_(std::move(owner_data)) {}
 
 PasteDataRecordAdapterImpl::PasteDataRecordAdapterImpl(
@@ -62,10 +56,10 @@ PasteDataRecordAdapterImpl::PasteDataRecordAdapterImpl(
 
 PasteDataRecordAdapterImpl::~PasteDataRecordAdapterImpl()
 {
-    if (!need_destory_record_) {
-        return;
+    // Destroy local record only when no owner_data_ is bound
+    if (owner_data_ == nullptr && record_ != nullptr) {
+        OH_UdmfRecord_Destroy(record_);
     }
-    OH_UdmfRecord_Destroy(record_);
 }
 
 std::shared_ptr<PasteDataRecordAdapter> PasteDataRecordAdapter::NewRecord(
@@ -1023,6 +1017,7 @@ bool PasteBoardClientAdapterImpl::GetPasteData(PasteRecordVector& data)
         return false;
     }
     {
+        // Bind OH_UdmfData to shared_ptr with custom deleter; records share its lifetime
         auto owner = std::shared_ptr<OH_UdmfData>(getData, OH_UdmfData_Destroy);
         for (unsigned int i = 0; i < count; i++) {
             data.push_back(std::make_shared<PasteDataRecordAdapterImpl>(records[i], owner));

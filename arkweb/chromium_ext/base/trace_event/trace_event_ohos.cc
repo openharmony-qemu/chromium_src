@@ -21,7 +21,7 @@
 
 #include "base/logging.h"
 
-#include "arkweb/ohos_adapter_ndk/interfaces/ohos_adapter_helper.h"
+#include "ohos_adapter_helper.h"
 
 using OHOS::NWeb::OhosAdapterHelper;
 constexpr char DEBUG_CATEGORY[] = "disabled-";
@@ -145,10 +145,6 @@ ScopedBytrace::ScopedBytrace(const std::string& proc) : proc_(proc) {}
 
 void ScopedBytrace::SendTraceEvent(const std::string& data) {
   OhosAdapterHelper::GetInstance().GetHiTraceAdapterInstance().StartTrace(data);
-}
-
-void ScopedBytrace::SendTraceEventCommon(HiTrace_Output_Level level, const std::string& name, const std::string& data) {
-  OhosAdapterHelper::GetInstance().GetHiTraceAdapterInstance().StartTraceEx(level, name, data);
 }
 
 ScopedBytrace::ScopedBytrace() {}

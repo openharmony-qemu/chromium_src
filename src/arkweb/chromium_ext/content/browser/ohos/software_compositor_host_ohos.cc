@@ -27,6 +27,7 @@
 #include "third_party/skia/include/core/SkRegion.h"
 #include "third_party/skia/include/core/SkStream.h"
 #include "third_party/skia/include/encode/SkPngEncoder.h"
+#include "content/public/browser/browser_thread.h"
 
 namespace content {
 
@@ -132,7 +133,7 @@ void SoftwareCompositorHostOhos::DemandDrawSwAsync(
   size_t buffer_size = info.computeByteSize(stride);
   if (SkImageInfo::ByteSizeOverflowed(buffer_size)) {
     LOG(ERROR) << "request snapshot size is too large make skia overflowed";
-    GetUIThreadTaskRunner({})->PostTask(
+    content::GetUIThreadTaskRunner({})->PostTask(
         FROM_HERE,
         base::BindOnce(std::move(callback), id, false, nullptr, 0, 0));
     return;
@@ -141,7 +142,7 @@ void SoftwareCompositorHostOhos::DemandDrawSwAsync(
   SetSharedMemory(stride, buffer_size);
   if (!software_draw_shm_) {
     LOG(ERROR) << "set shared memory error";
-    GetUIThreadTaskRunner({})->PostTask(
+    content::GetUIThreadTaskRunner({})->PostTask(
         FROM_HERE,
         base::BindOnce(std::move(callback), id, false, nullptr, 0, 0));
     return;

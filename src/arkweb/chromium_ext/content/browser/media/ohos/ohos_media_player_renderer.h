@@ -30,11 +30,9 @@ class OHOSMediaPlayerRendererWebContentsObserver;
 
 class CONTENT_EXPORT OHOSMediaPlayerRenderer
     : public media::Renderer,
-      public media::mojom::MediaPlayerRendererExtension,
       public media::OHOSMediaPlayerBridge::Client {
  public:
-  using RendererExtension = media::mojom::MediaPlayerRendererExtension;
-  using ClientExtension = media::mojom::MediaPlayerRendererClientExtension;
+  // Deprecated interfaces removed in Chromium 141
 
   OHOSMediaPlayerRenderer(const OHOSMediaPlayerRenderer&) = delete;
   OHOSMediaPlayerRenderer& operator=(const OHOSMediaPlayerRenderer&) = delete;
@@ -42,9 +40,7 @@ class CONTENT_EXPORT OHOSMediaPlayerRenderer
   OHOSMediaPlayerRenderer(
       int process_id,
       int routing_id,
-      WebContents* web_contents,
-      mojo::PendingReceiver<RendererExtension> renderer_extension_receiver,
-      mojo::PendingRemote<ClientExtension> client_extension_remote);
+      WebContents* web_contents);
 
   ~OHOSMediaPlayerRenderer() override;
 
@@ -96,13 +92,8 @@ class CONTENT_EXPORT OHOSMediaPlayerRenderer
   // Registers a request in the content::ScopedSurfaceRequestManager, and
   // returns the token associated to the request. The token can then be used to
   // complete the request via the gpu::ScopedSurfaceRequestConduit.
-  // A completed request will call back to OnScopedSurfaceRequestCompleted().
-  //
-  // NOTE: If a request is already pending, calling this method again will
-  // safely cancel the pending request before registering a new one.
-  void InitiateScopedSurfaceRequest(
-      InitiateScopedSurfaceRequestCallback callback) override;
-  void FinishPaint(int32_t fd) override;
+  // MediaPlayerRendererExtension methods removed in Chromium 141
+  // Surface request functionality no longer supported
 #if BUILDFLAG(ARKWEB_PIP)
   void PipEnable(bool enable) override;
 #endif
@@ -120,7 +111,7 @@ class CONTENT_EXPORT OHOSMediaPlayerRenderer
 
   void GetGrantMediaFileAccessDirs(std::vector<std::string>& grantMediaFileAccessDirs);
 
-  mojo::Remote<ClientExtension> client_extension_;
+  // ClientExtension remote removed in Chromium 141
 
   raw_ptr<media::RendererClient> renderer_client_ = nullptr;
 
@@ -150,13 +141,13 @@ class CONTENT_EXPORT OHOSMediaPlayerRenderer
 
   int native_window_id_ = -1;
 
-  std::unique_ptr<media::MediaUrlParams> url_params_;
+  // MediaUrlParams removed in Chromium 141
 
   base::WeakPtr<WebContents> web_contents_ = nullptr;
 
   time_t intervalSinceLastSuspend_;
 
-  mojo::Receiver<MediaPlayerRendererExtension> renderer_extension_receiver_;
+  // MediaPlayerRendererExtension receiver removed in Chromium 141
 
   media::PipelineStatusCallback init_cb_;
 

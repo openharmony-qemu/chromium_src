@@ -1329,7 +1329,7 @@ void BackForwardCacheImpl::EnforceCacheSizeLimit() {
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kEnableBFCache)) {
     EnforceCacheSizeLimitInternal(this->size_,
-                                  /*foregrounded_only=*/false);
+    BackForwardCacheMetrics::NotRestoredReason::kCacheLimitPrunedOnModerateMemoryPressure);
     return;
   }
 #endif

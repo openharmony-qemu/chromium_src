@@ -22,6 +22,7 @@
 #include "partition_alloc/partition_alloc_base/compiler_specific.h"
 #include "partition_alloc/partition_alloc_base/component_export.h"
 #include "partition_alloc/partition_alloc_base/debug/alias.h"
+#include "partition_alloc/partition_alloc_base/logging.h"
 #include "partition_alloc/partition_alloc_base/immediate_crash.h"
 #include "partition_alloc/partition_alloc_base/thread_annotations.h"
 #include "partition_alloc/partition_alloc_check.h"
@@ -1632,6 +1633,8 @@ size_t PartitionBucket::SlotSpanCommittedSize(PartitionRoot* root) const {
   // we end up with more regions that we could. The intent is to run a field
   // experiment, then change the default value, at which point we get the full
   // impact, so this is only temporary.
+  PA_LOG(INFO) << " Partition: fewer_memory_regions = "
+                  << root->settings.fewer_memory_regions;
   return root->settings.fewer_memory_regions
              ? (get_pages_per_slot_span() << PartitionPageShift())
              : get_bytes_per_span();

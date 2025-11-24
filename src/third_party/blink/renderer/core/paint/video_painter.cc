@@ -89,8 +89,8 @@ void VideoPainter::PaintReplaced(const PaintInfo& paint_info,
 #if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
       gfx::RectF rect(-replaced_rect.X().ToFloat(),
                       -replaced_rect.Y().ToFloat(),
-                      layout_video_.Size().width.ToFloat(),
-                      layout_video_.Size().height.ToFloat());
+                      layout_video_.StitchedSize().width.ToFloat(),
+                      layout_video_.StitchedSize().height.ToFloat());
       layer->layer_utils()->SetNativeRect(rect);
 #endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 

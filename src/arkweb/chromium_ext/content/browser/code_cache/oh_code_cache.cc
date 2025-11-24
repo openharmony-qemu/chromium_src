@@ -366,7 +366,7 @@ bool ResponseCache::DoUpdateMetadata() {
 
     std::string data = wait_to_write->ToString();
     if (!temp_file->WriteAtCurrentPosAndCheck(
-            base::as_bytes(base::make_span(data)))) {
+            base::as_bytes(base::span(data)))) {
       result = false;
       break;
     }
@@ -412,7 +412,7 @@ bool ResponseCache::DoWriteIntoFile(base::FilePath path, std::string data) {
   int64_t current_size = file->GetLength();
   file->Lock(base::File::LockMode::kExclusive);
   bool result =
-      file->WriteAndCheck(current_size, base::as_bytes(base::make_span(data)));
+      file->WriteAndCheck(current_size, base::as_bytes(base::span(data)));
   file->Unlock();
   file->Close();
 

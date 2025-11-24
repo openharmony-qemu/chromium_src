@@ -26,7 +26,7 @@
 class DfxReporterImpl : public dfx::mojom::DfxReporter {
 public:
   static constexpr uint16_t BYTES_TO_KB = 1024;
-  static constexpr std::string PAGE_MEM_LEAK = "PAGE_MEM_LEAK";
+  static constexpr char PAGE_MEM_LEAK[] = "PAGE_MEM_LEAK";
 
   DfxReporterImpl() {}
   ~DfxReporterImpl() override {}

@@ -275,7 +275,7 @@ void ImageRecordsManager::AssignPaintTimeToRegisteredQueuedRecords(
     auto it = pending_images_.find(record->Hash());
     if (it == pending_images_.end()) {
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-      image_record_manager_utils_.AssignPaintTimeToRegisteredQueuedRecordsForALCP(record->Hash(), presentation_timestamp);
+      image_record_manager_utils_.AssignPaintTimeToRegisteredQueuedRecordsForALCP(record->Hash(), presentation_timestamp, paint_timing_info);
 #endif
       continue;
     }
@@ -300,7 +300,7 @@ void ImageRecordsManager::AssignPaintTimeToRegisteredQueuedRecords(
 
 #if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
   image_record_manager_utils_.AssignImagePaintTimeFromRejectedImages(
-      presentation_timestamp, last_queued_frame_index);
+      presentation_timestamp, last_queued_frame_index, paint_timing_info);
 #endif
 }
 
@@ -683,9 +683,14 @@ ImageRecord* ImageRecordsManager::RecordFirstPaintAndMaybeCreateImageRecord(
   bool timing_needed_for_soft_nav = soft_navigation_context != nullptr;
 
   if (!timing_needed_for_lcp && !timing_needed_for_soft_nav) {
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+    image_record_manager_utils_.ALCPCalculate(record_id, visual_size, frame_visual_rect, root_visual_rect, bpp, soft_navigation_context);
+#endif
     return nullptr;
   }
-
+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
+  image_record_manager_utils_.ALCPProcessBeforeLcpRecord();
+#endif
   if (bpp < kMinimumEntropyForLCP) {
     return nullptr;
   }

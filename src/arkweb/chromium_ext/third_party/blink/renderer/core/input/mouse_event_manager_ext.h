@@ -54,6 +54,7 @@ class MouseEventManagerExt
   MouseEventManagerExt& operator=(const MouseEventManagerExt&) = delete;
   virtual ~MouseEventManagerExt();
   MouseEventManagerExt* AsMouseEventManagerExt() override { return this; }
+  const MouseEventManagerExt* AsMouseEventManagerExt() const override { return this; }
 #if BUILDFLAG(ARKWEB_UNITTESTS)
   friend class MouseEventManagerExtTest;
 #endif

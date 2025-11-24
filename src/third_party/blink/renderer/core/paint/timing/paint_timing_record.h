@@ -68,6 +68,9 @@ class CORE_EXPORT PaintTimingRecord
   void SetSoftNavigationContext(SoftNavigationContext* context) {
     soft_navigation_context_ = context;
   }
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+  LCPRectInfo* GetLCPRectInfo() const { return lcp_rect_info_.get(); }
+#endif
 
  private:
   const WeakMember<Node> node_;

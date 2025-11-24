@@ -55,35 +55,34 @@ bool ImageRecordsManagerUtils::CheckALCPRecord(const MediaRecordIdHash& record_i
         return false;
     }
     bool ret = false;
-    if (media_timing.IsPaintedFirstFrame() &&
-        RuntimeEnabledFeatures::LCPAnimatedImagesWebExposedEnabled()) {
-        if (record->media_timing && !record->media_timing->GetFirstVideoFrameTime().is_null()) {
+    if (media_timing.IsPaintedFirstFrame()) {
+        if (record->GetMediaTiming() && !record->GetMediaTiming()->GetFirstVideoFrameTime().is_null()) {
             // If this is a video record, then we can get the first frame time from the
             // MediaTiming object, and can use that to set the first frame time in the
             // ImageRecord object.
-            record->first_animated_frame_time = record->media_timing->GetFirstVideoFrameTime();
-        } else if (record->first_animated_frame_time.is_null()) {
+            record->SetFirstAnimatedFrameTime(record->GetMediaTiming()->GetFirstVideoFrameTime());
+        } else if (!record->HasFirstAnimatedFrameTime()) {
             // Otherwise, this is an animated images, and so we should wait for the
             // presentation callback to fire to set the first frame presentation time.
-            record->queue_animated_paint = true;
+            record->SetIsFirstAnimatedFramePaintTimingQueued(true);
             image_records_manager_.QueueToMeasurePaintTime(record, frame_index);
             ret = true;
         }
     }
 
-    if (!record->loaded && media_timing.IsSufficientContentLoadedForPaint()) {
+    if (!record->IsLoaded() && media_timing.IsSufficientContentLoadedForPaint()) {
         if (!style_image) {
             auto iter = image_records_manager_.image_finished_times_.find(record_id_hash);
             if (iter != image_records_manager_.image_finished_times_.end()) {
-                record->load_time = iter->value;
-                DCHECK(!record->load_time.is_null());
+                record->SetLoadTime(iter->value);
+                DCHECK(record->HasLoadTime());
             }
         } else {
             Document* document = image_records_manager_.frame_view_->GetFrame().GetDocument();
             if (document && document->domWindow()) {
-                record->load_time =
-                    ImageElementTiming::From(*document->domWindow()).GetBackgroundImageLoadTime(style_image);
-                record->origin_clean = style_image->IsOriginClean();
+                record->SetLoadTime(
+                    ImageElementTiming::From(*document->domWindow()).GetBackgroundImageLoadTime(style_image));
+                record->SetIsOriginClean(style_image->IsFromOriginCleanStyleSheet());
             }
         }
         image_records_manager_.OnImageLoadedInternal(record, frame_index);
@@ -96,11 +95,11 @@ bool ImageRecordsManagerUtils::CheckALCPRecord(const MediaRecordIdHash& record_i
 
 bool ImageRecordsManagerUtils::TakeIfHasALCP() {
     bool ret = false;
-    if (alcp_image_ && alcp_image_->recorded_size > 0) {
+    if (alcp_image_ && alcp_image_->RecordedSize() > 0) {
         ret = true;
     }
     TRACE_EVENT2("blink,benchmark", "blankless ImageRecordsManagerUtils::TakeIfHasALCP-",
-        "alcp_image size:", (alcp_image_ ? alcp_image_->recorded_size : 0), "ret:", ret);
+        "alcp_image size:", (alcp_image_ ? alcp_image_->RecordedSize() : 0), "ret:", ret);
     alcp_image_ = nullptr;
     return ret;
 }
@@ -119,25 +118,24 @@ void ImageRecordsManagerUtils::Trace(Visitor* visitor) const {
 }
 
 void ImageRecordsManagerUtils::AssignPaintTimeToRegisteredQueuedRecordsForALCP(
-    const MediaRecordIdHash& record_id_hash, const base::TimeTicks& timestamp) {
+    const MediaRecordIdHash& record_id_hash, const base::TimeTicks& timestamp, const DOMPaintTimingInfo& paint_timing_info) {
     auto it = alcp_pending_images_.find(record_id_hash);
     if (it == alcp_pending_images_.end() || !it->value) {
         return;
     }
     ImageRecord* record = it->value;
-    record->paint_time = timestamp;
+    record->SetPaintTime(timestamp, paint_timing_info);
     TRACE_EVENT2("blink", "ImageRecordsManagerUtils::AssignPaintTimeToRegisteredQueuedRecordsForALCP",
-        "lastest ALCP.size:", (alcp_image_ ? alcp_image_->recorded_size : 0), "opt alcp size:", record->recorded_size);
-    if (!alcp_image_ || alcp_image_->recorded_size < record->recorded_size) {
+        "lastest ALCP.size:", (alcp_image_ ? alcp_image_->RecordedSize() : 0), "opt alcp size:", record->RecordedSize());
+    if (!alcp_image_ || alcp_image_->RecordedSize() < record->RecordedSize()) {
         alcp_image_ = std::move(it->value);
     }
     alcp_pending_images_.erase(it);
 }
 
 void ImageRecordsManagerUtils::ALCPCalculate(const MediaRecordId& record_id, const uint64_t& visual_size,
-    const gfx::Rect& frame_visual_rect, const gfx::RectF& root_visual_rect, double bpp) {
-    if (base::FeatureList::IsEnabled(features::kExcludeLowEntropyImagesFromLCP) &&
-        bpp < features::kMinimumEntropyForLCP.Get()) {
+    const gfx::Rect& frame_visual_rect, const gfx::RectF& root_visual_rect, double bpp, SoftNavigationContext* soft_navigation_context) {
+    if (bpp < kMinimumEntropyForLCP) {
         return;
     }
 
@@ -160,9 +158,9 @@ void ImageRecordsManagerUtils::ALCPCalculate(const MediaRecordId& record_id, con
     DCHECK_GT(visual_size, 0u);
     Node* node = record_id.GetLayoutObject()->GetNode();
     DOMNodeId node_id = node->GetDomNodeId();
-    ImageRecord* record = MakeGarbageCollected<ImageRecord>(node_id, record_id.GetMediaTiming(), visual_size,
-        frame_visual_rect, root_visual_rect, record_id.GetHash());
-    alcp_pending_images_.insert(record->hash, record);
+    ImageRecord* record = MakeGarbageCollected<ImageRecord>(node, record_id.GetMediaTiming(), visual_size,
+        frame_visual_rect, root_visual_rect, record_id.GetHash(), soft_navigation_context);
+    alcp_pending_images_.insert(record->Hash(), record);
     accumulate_size_since_largest_ = 0;
     alcp_pending_images_added_ = true;
 }
@@ -180,9 +178,9 @@ uint64_t ImageRecordsManagerUtils::CalculateLatestALCPSize() const {
         return latest_lcp_size;
     }
     if (image_records_manager_.largest_painted_image_) {
-        latest_lcp_size = image_records_manager_.largest_painted_image_->recorded_size;
+        latest_lcp_size = image_records_manager_.largest_painted_image_->RecordedSize();
     } else if (image_records_manager_.largest_pending_image_) {
-        latest_lcp_size = image_records_manager_.largest_pending_image_->recorded_size;
+        latest_lcp_size = image_records_manager_.largest_pending_image_->RecordedSize();
     }
 
     // The latest ALCPSize is calculated by comparing the LCP size with the viewport size using a weighted ratio.
@@ -266,9 +264,9 @@ void ImageRecordsManagerUtils::AssignImagePaintTimeFromRecord(
         image_records_manager_.frame_view_->GetPaintTimingDetector()
             .GetFirstScreenCalculator();
     if (first_screen_calculator) {
-        if (record->lcp_rect_info_) {
+        if (record->GetLCPRectInfo()) {
             first_screen_calculator->AssignImagePaintTime(
-                record->hash, record->lcp_rect_info_->GetRootRectInfo(),
+                record->Hash(), record->GetLCPRectInfo()->GetRootRectInfo(),
                 timestamp);
         }
     }
@@ -276,7 +274,7 @@ void ImageRecordsManagerUtils::AssignImagePaintTimeFromRecord(
 
 void ImageRecordsManagerUtils::AssignImagePaintTimeFromRejectedImages(
     const base::TimeTicks& timestamp,
-    unsigned last_queued_frame_index) {
+    unsigned last_queued_frame_index, const DOMPaintTimingInfo& paint_timing_info) {
     auto first_screen_calculator =
         image_records_manager_.frame_view_->GetPaintTimingDetector()
             .GetFirstScreenCalculator();
@@ -286,28 +284,28 @@ void ImageRecordsManagerUtils::AssignImagePaintTimeFromRejectedImages(
             rejected_images_queued_for_paint_time_.pop_front();
             continue;
         }
-        if (record->frame_index > last_queued_frame_index) {
+        if (record->FrameIndex() > last_queued_frame_index) {
             break;
         }
-        if (record->queue_animated_paint) {
-            record->first_animated_frame_time = timestamp;
-            record->queue_animated_paint = false;
+        if (record->IsFirstAnimatedFramePaintTimingQueued()) {
+            record->SetFirstAnimatedFrameTime(timestamp);
+            record->SetIsFirstAnimatedFramePaintTimingQueued(false);
         }
 
-        auto it = rejected_image_records_.find(record->hash);
+        auto it = rejected_image_records_.find(record->Hash());
         rejected_images_queued_for_paint_time_.pop_front();
 
-        if (!record->loaded || !record->paint_time.is_null() ||
+        if (!record->IsLoaded() || record->HasPaintTime() ||
             it == rejected_image_records_.end()) {
             continue;
         }
 
-        record->paint_time = timestamp;
+        record->SetPaintTime(timestamp, paint_timing_info);
 
         if (first_screen_calculator) {
-            if (record->lcp_rect_info_) {
+            if (record->GetLCPRectInfo()) {
                first_screen_calculator->AssignImagePaintTime(
-                    record->hash, record->lcp_rect_info_->GetRootRectInfo(),
+                    record->Hash(), record->GetLCPRectInfo()->GetRootRectInfo(),
                     timestamp);
             }
         }
@@ -335,7 +333,7 @@ void ImageRecordsManagerUtils::QueueToMeasurePaintTimeForRejected(
     ImageRecord* record,
     unsigned current_frame_index) {
     CHECK(record);
-    record->frame_index = current_frame_index;
+    record->SetFrameIndex(current_frame_index);
     rejected_images_queued_for_paint_time_.push_back(record);
 }
 
@@ -361,12 +359,12 @@ bool ImageRecordsManagerUtils::OnFirstAnimatedFramePaintedForRejected(
     ImageRecord* record = it->value;
     DCHECK(record);
 
-    if (record->media_timing &&
-        !record->media_timing->GetFirstVideoFrameTime().is_null()) {
-        record->first_animated_frame_time =
-            record->media_timing->GetFirstVideoFrameTime();
-    } else if (record->first_animated_frame_time.is_null()) {
-        record->queue_animated_paint = true;
+    if (record->GetMediaTiming() &&
+        !record->GetMediaTiming()->GetFirstVideoFrameTime().is_null()) {
+        record->SetFirstAnimatedFrameTime(
+            record->GetMediaTiming()->GetFirstVideoFrameTime());
+    } else if (!record->HasFirstAnimatedFrameTime()) {
+        record->SetIsFirstAnimatedFramePaintTimingQueued(true);
         QueueToMeasurePaintTimeForRejected(record, current_frame_index);
         return true;
     }
@@ -389,20 +387,21 @@ void ImageRecordsManagerUtils::OnImageLoadedForRejected(
         auto finished_it =
             image_records_manager_.image_finished_times_.find(record_id_hash);
         if (finished_it != image_records_manager_.image_finished_times_.end()) {
-            record->load_time = finished_it->value;
-            DCHECK(!record->load_time.is_null());
+            record->SetLoadTime(finished_it->value);
+            DCHECK(record->HasLoadTime());
         }
     } else {
         Document* document =
             image_records_manager_.frame_view_->GetFrame().GetDocument();
         if (document && document->domWindow()) {
-            record->load_time = ImageElementTiming::From(*document->domWindow())
-                                    .GetBackgroundImageLoadTime(style_image);
-            record->origin_clean = style_image->IsOriginClean();
+            record->SetLoadTime(ImageElementTiming::From(*document->domWindow())
+                                    .GetBackgroundImageLoadTime(style_image));
+            record->SetIsOriginClean(style_image->IsFromOriginCleanStyleSheet());
         }
     }
 
-    image_records_manager_.SetLoaded(record);
+    CHECK(record);
+    record->MarkLoaded();
     QueueToMeasurePaintTimeForRejected(record, current_frame_index);
 }
 
@@ -451,13 +450,12 @@ void ImageRecordsManagerUtils::GetAddedEntryInLatestFrameByRejectedImage(
     const PropertyTreeStateOrAlias& current_paint_chunk_properties) {
     ImageRecord* rejected_record = GetRejectedImage(record_id_hash);
     if (rejected_record) {
-        if (media_timing.IsPaintedFirstFrame() &&
-            RuntimeEnabledFeatures::LCPAnimatedImagesWebExposedEnabled()) {
+        if (media_timing.IsPaintedFirstFrame()) {
             added_entry_in_latest_frame |=
                 OnFirstAnimatedFramePaintedForRejected(record_id_hash,
                                                        frame_index);
         }
-        if (!rejected_record->loaded &&
+        if (!rejected_record->IsLoaded() &&
             media_timing.IsSufficientContentLoadedForPaint()) {
             OnImageLoadedForRejected(record_id_hash, frame_index, style_image);
             added_entry_in_latest_frame = true;
@@ -484,8 +482,7 @@ void ImageRecordsManagerUtils::GetAddedEntryInLatestFrameByRejectedDueToSize(
     bool& added_entry_in_latest_frame,
     const StyleImage* style_image) {
     if (IsRejectedDueToSize(record_id_hash)) {
-        if (media_timing.IsPaintedFirstFrame() &&
-            RuntimeEnabledFeatures::LCPAnimatedImagesWebExposedEnabled()) {
+        if (media_timing.IsPaintedFirstFrame()) {
             added_entry_in_latest_frame |=
                 OnFirstAnimatedFramePaintedForRejected(record_id_hash,
                                                        frame_index);

@@ -17,7 +17,6 @@
 #define HITRACE_ADAPTER_IMPL_H
 
 #include "hitrace_adapter.h"
-#include "hitrace/trace.h"
 
 namespace OHOS::NWeb {
 class HiTraceAdapterImpl : public HiTraceAdapter {

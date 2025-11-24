@@ -20,44 +20,42 @@
 #include <utility>
 
 #include "arkweb/build/features/features.h"
-#include "base/base_export.h"
-
-#include "hitrace/trace.h"
-#if BUILDFLAG(ARKWEB_DFX_TRACING)
-BASE_EXPORT bool IsOHOSBytraceEnable();
-#endif
-
-BASE_EXPORT static bool isHiTraceEnable{false};
-BASE_EXPORT static bool isACETraceEnable{false};
-BASE_EXPORT void StartObserveTraceEnable();
-BASE_EXPORT bool IsBytraceEnable();
-BASE_EXPORT bool IsCategoryEnable(const char* category_group);
-BASE_EXPORT void StartBytrace(const std::string& value);
-BASE_EXPORT void FinishBytrace();
-BASE_EXPORT void StartAsyncBytrace(const std::string& value, int32_t taskId);
-BASE_EXPORT void FinishAsyncBytrace(const std::string& value, int32_t taskId);
-BASE_EXPORT void CountBytrace(const std::string& name, int64_t count);
 
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
-BASE_EXPORT void StartOHOSBytrace(const std::string& value);
-BASE_EXPORT void FinishOHOSBytrace();
-BASE_EXPORT void CountOHOSBytrace(const std::string& name, int64_t count);
+bool IsOHOSBytraceEnable();
 #endif
 
-class BASE_EXPORT ScopedBytrace {
+static bool isHiTraceEnable{false};
+static bool isACETraceEnable{false};
+void StartObserveTraceEnable();
+bool IsBytraceEnable();
+bool IsCategoryEnable(const char* category_group);
+void StartBytrace(const std::string& value);
+void FinishBytrace();
+void StartAsyncBytrace(const std::string& value, int32_t taskId);
+void FinishAsyncBytrace(const std::string& value, int32_t taskId);
+void CountBytrace(const std::string& name, int64_t count);
+
+#if BUILDFLAG(ARKWEB_DFX_TRACING)
+void StartOHOSBytrace(const std::string& value);
+void FinishOHOSBytrace();
+void CountOHOSBytrace(const std::string& name, int64_t count);
+#endif
+
+class ScopedBytrace {
  public:
   ScopedBytrace(const std::string& proc);
   ScopedBytrace();
   ~ScopedBytrace();
 
   static void SendTraceEvent(const std::string& data);
-  static void SendTraceEventCommon(HiTrace_Output_Level level, const std::string& name, const std::string& data);
+
  private:
   std::string proc_;
 };
 
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
-class BASE_EXPORT ScopedOHOSBytrace {
+class ScopedOHOSBytrace {
  public:
   ScopedOHOSBytrace(const std::string& proc);
   ScopedOHOSBytrace();
@@ -80,8 +78,6 @@ class BASE_EXPORT ScopedOHOSBytrace {
 
 #define BYTRACE_SCOPED_TRACE_EVENT(name) ScopedBytrace::SendTraceEvent(name)
 
-#define BYTRACE_SCOPED_TRACE_EVENT_COMMON(level, name, data) ScopedBytrace::SendTraceEventCommon(level, name, data)
-
 #if BUILDFLAG(ARKWEB_DFX_TRACING)
 #define OHOS_BYTRACE_SCOPED_INIT() ScopedOHOSBytrace OHOS_BY_TRACE_NAME(bytrace)
 
@@ -90,3 +86,4 @@ class BASE_EXPORT ScopedOHOSBytrace {
 #endif  // BUILDFLAG(ARKWEB_DFX_TRACING)
 
 #endif  // BASE_TRACE_EVENT_TRACE_EVENT_OHOS_H
+

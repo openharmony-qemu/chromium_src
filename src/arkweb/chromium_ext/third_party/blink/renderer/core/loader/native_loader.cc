@@ -296,8 +296,8 @@ void NativeLoader::Repaint() {
     layout_object->SetShouldDoFullPaintInvalidation();
   }
 
-  auto combined_callback = CrossThreadBindOnce(
-      &NativeLoader::ReportFirstPaintTime, WrapCrossThreadWeakPersistent(this));
+  auto combined_callback = WTF::BindOnce(
+      &NativeLoader::ReportFirstPaintTime, WrapWeakPersistent(this));
 
   auto* frame = CurrentFrame();
   if (!frame) {

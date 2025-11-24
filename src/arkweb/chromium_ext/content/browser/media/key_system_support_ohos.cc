@@ -66,7 +66,7 @@ void GetOHOSCdmCapability(const std::string& key_system,
   const bool is_secure = robustness == CdmInfo::Robustness::kHardwareSecure;
   if (!OHOSMediaDrmBridge::IsKeySystemSupported(key_system)) {
     LOG(INFO) << "[DRM] Key system " << key_system << " not supported.";
-    std::move(cdm_capability_cb).Run(std::nullopt);
+    std::move(cdm_capability_cb).Run(base::unexpected(media::CdmCapabilityQueryStatus::kUnsupportedKeySystem));
     return;
   }
   const std::vector<media::VideoCodecProfile> kAllProfiles = {};
@@ -100,7 +100,7 @@ void GetOHOSCdmCapability(const std::string& key_system,
     }
   }
   if (is_secure && capability.video_codecs.empty()) {
-    std::move(cdm_capability_cb).Run(std::nullopt);
+    std::move(cdm_capability_cb).Run(base::unexpected(media::CdmCapabilityQueryStatus::kHardwareSecureCodecNotSupported));
     return;
   }
   capability.encryption_schemes.insert(media::EncryptionScheme::kCenc);

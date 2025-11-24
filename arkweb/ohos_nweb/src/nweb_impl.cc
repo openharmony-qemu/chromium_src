@@ -422,6 +422,7 @@ static void PerformCrxInstallation(const std::string& file_path,
           extension_id = installer->extension()->id();
         }
         HandleExtensionInstallResult(callback, error, extension_id);
+        crx_file::CrxKeyService::GetInstance()->SetPublisherKeys({});
       }, callback, installer));
   installer->InstallCrx(base::FilePath(file_path));
 }
@@ -481,6 +482,7 @@ static void PerformCrxInstallationV2(const std::string& file_path,
           extension_id = installer->extension()->id();
         }
         HandleExtensionInstallResult(callback, error, extension_id);
+        crx_file::CrxKeyService::GetInstance()->SetPublisherKeys({});
       }, callback, installer));
   installer->InstallCrx(base::FilePath(file_path));
 }

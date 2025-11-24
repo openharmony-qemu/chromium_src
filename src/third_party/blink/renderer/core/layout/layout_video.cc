@@ -192,9 +192,10 @@ PhysicalRect LayoutVideo::ReplacedContentRectFrom(
     if (const auto* player = MediaElement()->GetWebMediaPlayer()) {
       if (player->IsUsingCustomRenderer()) {
         auto base_content_size = base_content_rect.size;
+        PhysicalNaturalSizingInfo sizing_info = PhysicalNaturalSizingInfo::MakeFixed(base_content_size);
 
         return PreSnappedRectForPersistentSizing(
-            ComputeReplacedContentRect(base_content_rect, &base_content_size));
+            ComputeReplacedContentRect(base_content_rect, sizing_info));
       }
     }
 #endif  // ARKWEB_CUSTOM_VIDEO_PLAYER

@@ -1077,8 +1077,7 @@
                 "void OH_HiTrace_StartTrace()",
                 "void OH_HiTrace_FinishAsyncTrace()",
                 "void OH_HiTrace_FinishTrace()",
-                "void OH_HiTrace_StartAsyncTrace()",
-                "void OH_HiTrace_StartTraceEx()"
+                "void OH_HiTrace_StartAsyncTrace()"
             ]
         },
         "includes": []

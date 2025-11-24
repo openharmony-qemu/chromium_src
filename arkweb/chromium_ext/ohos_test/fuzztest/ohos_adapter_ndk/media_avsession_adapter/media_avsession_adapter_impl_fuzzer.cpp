@@ -56,19 +56,19 @@ public:
     MediaAVSessionMetadataAdapterMock() = default;
     void SetTitle(const std::string& title) {}
 
-    std::string GetTitle() { return ""; }
+    std::string GetTitle() { return "test1"; }
 
     void SetArtist(const std::string& artist) {}
 
-    std::string GetArtist() { return ""; }
+    std::string GetArtist() { return "test2"; }
 
     void SetAlbum(const std::string& album) {}
 
-    std::string GetAlbum() { return ""; }
+    std::string GetAlbum() { return "test3"; }
 
     void SetImageUrl(const std::string& imageUrl) {}
 
-    std::string GetImageUrl() { return ""; }
+    std::string GetImageUrl() { return "test4"; }
 };
 
 class MediaAVSessionPositionAdapterMock : public MediaAVSessionPositionAdapter {
@@ -77,15 +77,15 @@ public:
 
     void SetDuration(int64_t duration) {}
 
-    int64_t GetDuration() { return 0; }
+    int64_t GetDuration() { return 20; }
 
     void SetElapsedTime(int64_t elapsedTime) {}
 
-    int64_t GetElapsedTime() { return 0; }
+    int64_t GetElapsedTime() { return 10; }
 
     void SetUpdateTime(int64_t updateTime) {}
 
-    int64_t GetUpdateTime() { return 0; }
+    int64_t GetUpdateTime() { return 10; }
 };
 
 bool MediaAVSessionAdapterImplFuzzTest(FuzzedDataProvider* fdp)

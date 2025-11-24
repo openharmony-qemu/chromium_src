@@ -17,6 +17,9 @@
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
+#if BUILDFLAG(IS_OHOS)
+#include "base/logging.h"
+#endif
 #include "base/memory/ptr_util.h"
 #include "base/memory/raw_ptr.h"
 #include "base/metrics/histogram_functions.h"
@@ -531,6 +534,13 @@ void VariationsService::EnsureLocaleEquals(const std::string& locale) {
     return;
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+  if (locale.empty()) {
+    LOG(ERROR) << "param locale is null";
+    return;
+  }
+#endif
+
   // Uses a CHECK rather than a DCHECK to ensure that issues are caught since
   // problems in this area may only appear in the wild due to official builds
   // and end user machines.
@@ -543,6 +553,9 @@ void VariationsService::EnsureLocaleEquals(const std::string& locale) {
     base::debug::ScopedCrashKeyString scoped_lhs(lhs_key, locale);
     base::debug::ScopedCrashKeyString scoped_rhs(
         rhs_key, field_trial_creator_.application_locale());
+#if BUILDFLAG(IS_OHOS)
+    LOG(ERROR) << "locale: " << locale << " application_locale: " << field_trial_creator_.application_locale();
+#endif
     CHECK_EQ(locale, field_trial_creator_.application_locale());
   }
 #endif

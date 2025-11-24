@@ -38,6 +38,7 @@ class DisplayCutoutHostOhos : public blink::mojom::DisplayCutoutHost {
 
   // blink::mojom::DisplayCutoutHost
   void NotifyViewportFitChanged(blink::mojom::ViewportFit value) override;
+  void NotifyComplexSafeAreaConstraintChanged(bool value) override;
 
   // Stores the updated viewport fit value for a |frame| and notifies observers
   // if it has changed.

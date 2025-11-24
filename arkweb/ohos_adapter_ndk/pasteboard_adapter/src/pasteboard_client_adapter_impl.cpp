@@ -383,6 +383,7 @@ std::vector<std::string> PasteDataRecordAdapterImpl::GetMimeTypes()
     if (types == nullptr || count == 0) {
         return stringVector;
     }
+    stringVector.reserve(count);
     for (unsigned int i = 0; i < count; i++) {
         if (types[i] != nullptr) {
             stringVector.push_back(std::string(types[i]));
@@ -822,6 +823,7 @@ std::vector<std::string> PasteDataAdapterImpl::GetMimeTypes()
     if (types == nullptr || count == 0) {
         return stringVector;
     }
+    stringVector.reserve(count);
     for (unsigned int i = 0; i < count; i++) {
         if (types[i] != nullptr) {
             stringVector.push_back(std::string(types[i]));
@@ -926,6 +928,7 @@ PasteRecordVector PasteDataAdapterImpl::AllRecords()
     PasteRecordVector result;
     unsigned int count;
     OH_UdmfRecord** records = OH_UdmfData_GetRecords(data_.get(), &count);
+    result.reserve(count);
     for (unsigned int i = 0; i < count; i++) {
         result.push_back(std::make_shared<PasteDataRecordAdapterImpl>(records[i], data_));
     }
@@ -1019,6 +1022,7 @@ bool PasteBoardClientAdapterImpl::GetPasteData(PasteRecordVector& data)
     {
         // Bind OH_UdmfData to shared_ptr with custom deleter; records share its lifetime
         auto owner = std::shared_ptr<OH_UdmfData>(getData, OH_UdmfData_Destroy);
+        data.reserve(count);
         for (unsigned int i = 0; i < count; i++) {
             data.push_back(std::make_shared<PasteDataRecordAdapterImpl>(records[i], owner));
         }

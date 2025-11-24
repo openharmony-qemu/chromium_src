@@ -138,10 +138,16 @@ source_set("generic_sensor") {
 
   if (is_ohos) {
     sources += [
+      "platform_sensor_accelerometer_ohos.cc",
+      "platform_sensor_accelerometer_ohos.h",
       "platform_sensor_ambient_light_ohos.cc",
       "platform_sensor_ambient_light_ohos.h",
+      "platform_sensor_gravity_ohos.cc",
+      "platform_sensor_gravity_ohos.h",
       "platform_sensor_gyroscope_ohos.cc",
       "platform_sensor_gyroscope_ohos.h",
+      "platform_sensor_magnetometer_ohos.cc",
+      "platform_sensor_magnetometer_ohos.h",
       "platform_sensor_ohos.cc",
       "platform_sensor_ohos.h",
       "platform_sensor_provider_ohos.cc",

@@ -237,6 +237,8 @@ Sensor_Type PlatformSensorOhos::MojoTypeToOhType(
       return SENSOR_TYPE_GRAVITY;
     case mojom::SensorType::GYROSCOPE:
       return SENSOR_TYPE_GYROSCOPE;
+    case mojom::SensorType::MAGNETOMETER:
+      return SENSOR_TYPE_MAGNETIC_FIELD;
     default:
       return SENSOR_TYPE_HEART_RATE;
   }

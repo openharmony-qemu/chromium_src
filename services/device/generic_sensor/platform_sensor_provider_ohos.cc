@@ -32,8 +32,18 @@
 #include <sensors/oh_sensor.h>
 
 #include "base/logging.h"
+#include "services/device/generic_sensor/absolute_orientation_euler_angles_fusion_algorithm_using_accelerometer_and_magnetometer.h"
+#include "services/device/generic_sensor/gravity_fusion_algorithm_using_accelerometer.h"
+#include "services/device/generic_sensor/linear_acceleration_fusion_algorithm_using_accelerometer.h"
+#include "services/device/generic_sensor/orientation_quaternion_fusion_algorithm_using_euler_angles.h"
+#include "services/device/generic_sensor/platform_sensor_accelerometer_ohos.h"
 #include "services/device/generic_sensor/platform_sensor_ambient_light_ohos.h"
+#include "services/device/generic_sensor/platform_sensor_fusion.h"
+#include "services/device/generic_sensor/platform_sensor_gravity_ohos.h"
 #include "services/device/generic_sensor/platform_sensor_gyroscope_ohos.h"
+#include "services/device/generic_sensor/platform_sensor_magnetometer_ohos.h"
+#include "services/device/generic_sensor/relative_orientation_euler_angles_fusion_algorithm_using_accelerometer.h"
+#include "services/device/generic_sensor/relative_orientation_euler_angles_fusion_algorithm_using_accelerometer_and_gyroscope.h"
 
 namespace device {
 
@@ -93,31 +103,105 @@ base::WeakPtr<PlatformSensorProvider> PlatformSensorProviderOhos::AsWeakPtr() {
   return weak_factory_.GetWeakPtr();
 }
 
-void PlatformSensorProviderOhos::CreateSensorInternal(
-    mojom::SensorType type,
-    CreateSensorCallback callback) {
-  // Determine whether the sensor exists.
+Sensor_Info* PlatformSensorProviderOhos::GetSenorInfo(mojom::SensorType type) {
   Sensor_Type type_ohos = PlatformSensorOhos::MojoTypeToOhType(type);
   auto sensor_iter = sensor_map_.find(type_ohos);
   if (sensor_iter == sensor_map_.end()) {
-    LOG(WARNING) << "This sensor does not exist on this device.";
+    LOG(WARNING) << "Sensor does not exist on this device. sensor type: "
+                 << PlatformSensorOhos::ToString(type);
+    return nullptr;
+  }
+  return sensor_iter->second;
+}
+
+bool PlatformSensorProviderOhos::IsFusionSensorType(
+    mojom::SensorType type) const {
+  switch (type) {
+    case mojom::SensorType::ABSOLUTE_ORIENTATION_EULER_ANGLES:
+    case mojom::SensorType::ABSOLUTE_ORIENTATION_QUATERNION:
+    case mojom::SensorType::RELATIVE_ORIENTATION_EULER_ANGLES:
+    case mojom::SensorType::RELATIVE_ORIENTATION_QUATERNION:
+      return true;
+    default:
+      return false;
+  }
+}
+
+void PlatformSensorProviderOhos::CreateFusionSensor(
+    mojom::SensorType type,
+    CreateSensorCallback callback) {
+  std::unique_ptr<PlatformSensorFusionAlgorithm> fusion_algorithm;
+  switch (type) {
+    case mojom::SensorType::ABSOLUTE_ORIENTATION_EULER_ANGLES:
+      fusion_algorithm = std::make_unique<
+          AbsoluteOrientationEulerAnglesFusionAlgorithmUsingAccelerometerAndMagnetometer>();
+      break;
+    case mojom::SensorType::ABSOLUTE_ORIENTATION_QUATERNION:
+      fusion_algorithm = std::make_unique<
+          OrientationQuaternionFusionAlgorithmUsingEulerAngles>(
+          true /* absolute */);
+      break;
+    case mojom::SensorType::RELATIVE_ORIENTATION_EULER_ANGLES:
+      if (GetSenorInfo(mojom::SensorType::GYROSCOPE)) {
+        fusion_algorithm = std::make_unique<
+            RelativeOrientationEulerAnglesFusionAlgorithmUsingAccelerometerAndGyroscope>();
+      } else {
+        fusion_algorithm = std::make_unique<
+            RelativeOrientationEulerAnglesFusionAlgorithmUsingAccelerometer>();
+      }
+      break;
+    case mojom::SensorType::RELATIVE_ORIENTATION_QUATERNION:
+      fusion_algorithm = std::make_unique<
+          OrientationQuaternionFusionAlgorithmUsingEulerAngles>(
+          false /* absolute */);
+      break;
+    default:
+      NOTREACHED();
+  }
+  PlatformSensorFusion::Create(AsWeakPtr(), std::move(fusion_algorithm),
+                               std::move(callback));
+}
+
+void PlatformSensorProviderOhos::CreateBaseSensor(
+    mojom::SensorType type,
+    CreateSensorCallback callback) {
+  // Determine whether the base sensor exists.
+  Sensor_Info* sensor_info = GetSenorInfo(type);
+  if (sensor_info == nullptr) {
+    LOG(ERROR) << "SensorInfo is nullptr. sensor type: "
+                 << PlatformSensorOhos::ToString(type);
     std::move(callback).Run(nullptr);
     return;
   }
 
-  // Create Sensors here.
   switch (type) {
+    case mojom::SensorType::ACCELEROMETER: {
+      auto sensor = base::MakeRefCounted<PlatformSensorAccelerometerOhos>(
+          GetSensorReadingSharedBufferForType(type), AsWeakPtr(), sensor_info);
+      std::move(callback).Run(std::move(sensor));
+      break;
+    }
     case mojom::SensorType::AMBIENT_LIGHT: {
       auto sensor = base::MakeRefCounted<PlatformSensorAmbientLightOhos>(
-          GetSensorReadingSharedBufferForType(type), AsWeakPtr(),
-          sensor_iter->second);
+          GetSensorReadingSharedBufferForType(type), AsWeakPtr(), sensor_info);
+      std::move(callback).Run(std::move(sensor));
+      break;
+    }
+    case mojom::SensorType::GRAVITY: {
+      auto sensor = base::MakeRefCounted<PlatformSensorGravityOhos>(
+          GetSensorReadingSharedBufferForType(type), AsWeakPtr(), sensor_info);
       std::move(callback).Run(std::move(sensor));
       break;
     }
     case mojom::SensorType::GYROSCOPE: {
       auto sensor = base::MakeRefCounted<PlatformSensorGyroscopeOhos>(
-          GetSensorReadingSharedBufferForType(type), AsWeakPtr(),
-          sensor_iter->second);
+          GetSensorReadingSharedBufferForType(type), AsWeakPtr(), sensor_info);
+      std::move(callback).Run(std::move(sensor));
+      break;
+    }
+    case mojom::SensorType::MAGNETOMETER: {
+      auto sensor = base::MakeRefCounted<PlatformSensorMagnetometerOhos>(
+          GetSensorReadingSharedBufferForType(type), AsWeakPtr(), sensor_info);
       std::move(callback).Run(std::move(sensor));
       break;
     }
@@ -127,6 +211,16 @@ void PlatformSensorProviderOhos::CreateSensorInternal(
       std::move(callback).Run(nullptr);
     }
   }
+}
+
+void PlatformSensorProviderOhos::CreateSensorInternal(
+    mojom::SensorType type,
+    CreateSensorCallback callback) {
+  if (IsFusionSensorType(type)) {
+    CreateFusionSensor(type, std::move(callback));
+    return;
+  }
+  CreateBaseSensor(type, std::move(callback));
 }
 
 }  // namespace device

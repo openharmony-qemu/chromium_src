@@ -50,7 +50,8 @@ class CONTENT_EXPORT NativeRendererClientFactory
       media::RequestOverlayInfoCB request_surface_cb,
       const gfx::ColorSpace& target_color_space) override;
 
-  media::MediaResource::Type GetRequiredMediaResourceType() override;
+  // Remove this method as MediaResource::Type is no longer available in Chromium 141
+  // media::MediaResource::Type GetRequiredMediaResourceType() override;
 
  private:
   GetNativeTextureWrapperCB get_native_texture_wrapper_cb_;

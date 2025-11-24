@@ -18,10 +18,9 @@ std::unique_ptr<blink::WebVideoFrameSubmitter> MediaFactory::CreateSubmitter(
     scoped_refptr<base::SingleThreadTaskRunner>
         main_thread_compositor_task_runner,
     const cc::LayerTreeSettings& settings,
-    media::MediaLog* media_log,
-    content::RenderFrame* render_frame)
+    media::MediaLog* media_log)
 {
     return ::CreateSubmitter(main_thread_compositor_task_runner, settings,
-        media_log, render_frame);
+        media_log);
 }
 #endif

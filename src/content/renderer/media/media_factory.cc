@@ -473,7 +473,7 @@ std::unique_ptr<blink::WebMediaPlayer> MediaFactory::CreateMediaPlayer(
   const bool use_surface_layer = features::UseSurfaceLayerForVideo();
   std::unique_ptr<blink::WebVideoFrameSubmitter> submitter =
       use_surface_layer ? CreateSubmitter(main_thread_compositor_task_runner,
-                                          settings, media_log.get())
+                                          settings, media_log.get(), render_frame_)
                         : nullptr;
 
   scoped_refptr<base::SequencedTaskRunner> media_task_runner =
@@ -783,7 +783,7 @@ MediaFactory::CreateWebMediaPlayerForMediaStream(
   const bool use_surface_layer = features::UseSurfaceLayerForVideo();
   std::unique_ptr<blink::WebVideoFrameSubmitter> submitter =
       use_surface_layer ? CreateSubmitter(main_thread_compositor_task_runner,
-                                          settings, media_log.get())
+                                          settings, media_log.get(), render_frame_)
                         : nullptr;
 
   return std::make_unique<blink::WebMediaPlayerMS>(

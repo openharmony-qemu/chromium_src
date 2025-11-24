@@ -40,24 +40,3 @@
        RuntimeEnabledFeatures::LCPAnimatedImagesWebExposedEnabled()) {
      added_entry_in_latest_frame_ |=
          records_manager_.OnFirstAnimatedFramePainted(record_id_hash,
-@@ -557,30 +632,60 @@
-   // If this cannot become an LCP candidate, no need to do anything else.
-   if (visual_size == 0u ||
-       (largest_painted_image_ &&
-        largest_painted_image_->recorded_size > visual_size)) {
-+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
-+    image_record_manager_utils_.InsertRejectedImageRecords(hash, record);
-+#endif
-+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-+    image_record_manager_utils_.ALCPCalculate(record_id, visual_size, frame_visual_rect, root_visual_rect, bpp);
-+#endif
-     return false;
-   }
-+#if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-+  image_record_manager_utils_.ALCPProcessBeforeLcpRecord();
-+#endif
-   if (base::FeatureList::IsEnabled(features::kExcludeLowEntropyImagesFromLCP) &&
-       bpp < features::kMinimumEntropyForLCP.Get()) {
-     return false;
-   }
- 

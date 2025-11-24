@@ -20,6 +20,8 @@
 #include "base/notreached.h"
 #include "third_party/blink/renderer/core/paint/timing/media_record_id.h"
 #include "third_party/blink/renderer/core/style/style_image.h"
+#include "third_party/blink/renderer/core/timing/performance_entry.h"
+#include "third_party/blink/renderer/core/timing/soft_navigation_context.h"
 #if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
 #include "third_party/blink/renderer/platform/heap/collection_support/heap_deque.h"
 #endif
@@ -55,11 +57,11 @@ class CORE_EXPORT ImageRecordsManagerUtils {
         }
     }
     void ALCPCalculate(const MediaRecordId& record_id, const uint64_t& visual_size,
-        const gfx::Rect& frame_visual_rect, const gfx::RectF& root_visual_rect, double bpp);
+        const gfx::Rect& frame_visual_rect, const gfx::RectF& root_visual_rect, double bpp, SoftNavigationContext* soft_navigation_context);
     void ALCPProcessBeforeLcpRecord();
     uint64_t CalculateLatestALCPSize() const;
     void AssignPaintTimeToRegisteredQueuedRecordsForALCP(const MediaRecordIdHash& record_id_hash,
-        const base::TimeTicks& timestamp);
+        const base::TimeTicks& timestamp, const DOMPaintTimingInfo& paint_timing_info);
     void ClearForALCP();
     void Trace(Visitor* visitor) const;
     void SetForBlankless();
@@ -68,7 +70,7 @@ class CORE_EXPORT ImageRecordsManagerUtils {
 #if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
     void AssignImagePaintTimeFromRejectedImages(
         const base::TimeTicks& timestamp,
-        unsigned last_queued_frame_index);
+        unsigned last_queued_frame_index, const DOMPaintTimingInfo& paint_timing_info);
     void AssignImagePaintTimeFromRecord(ImageRecord* record,
                                         const base::TimeTicks& timestamp);
     void RemoveRecordFromFirstScreenCalculator(

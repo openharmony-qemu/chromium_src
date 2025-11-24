@@ -18,6 +18,7 @@
 
 #include "arkweb/build/features/features.h"
 #include "base/synchronization/lock.h"
+#include "base/threading/platform_thread.h"
 #include "third_party/blink/renderer/modules/media/audio/audio_renderer_mixer.h"
 
 namespace blink {
@@ -28,10 +29,10 @@ public:
   AudioRendererMixerUtils(AudioRendererMixer* impl);
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-  void AudioRendererMixerShareInit(int media_tid);
-  void AudioRendererMixerShareDestroy(int audio_output_tid, int media_tid);
-  void AddMixerInputShareInit(int audio_output_tid, int media_tid);
-  void AddMixerInputShareRender(int audio_output_tid, int media_tid);
+  void AudioRendererMixerShareInit(base::PlatformThreadId media_tid);
+  void AudioRendererMixerShareDestroy(base::PlatformThreadId audio_output_tid, base::PlatformThreadId media_tid);
+  void AddMixerInputShareInit(base::PlatformThreadId audio_output_tid, base::PlatformThreadId media_tid);
+  void AddMixerInputShareRender(base::PlatformThreadId audio_output_tid, base::PlatformThreadId media_tid);
 #endif
 };
 

@@ -35,10 +35,13 @@ inline bool NearZero(const double num)
 }
 
 #if BUILDFLAG(ARKWEB_FLING)
-void LimitVelocity(gfx::Vector2dF &velocity);
+void LimitVelocity(gfx::Vector2dF &velocity,
+                   gfx::Vector2dF &max_fling_velocity);
 void ScaleVelocity(
     const blink::WebGestureEvent& fling_start,
     gfx::Vector2dF& velocity);
+void ShouldLimitFlingVelocity(gfx::Vector2dF &velocity,
+                              gfx::Vector2dF &max_fling_velocity_);
 #endif // BUILDFLAG(ARKWEB_FLING)
 
 }  // namespace ui

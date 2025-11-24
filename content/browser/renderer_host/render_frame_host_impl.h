@@ -502,6 +502,10 @@ class CONTENT_EXPORT RenderFrameHostImpl
                               const std::string& argument);
 #endif
 
+#if BUILDFLAG(ARKWEB_FLING)
+  void UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity) override;
+#endif
+
   void ExecuteJavaScriptInIsolatedWorld(const std::u16string& javascript,
                                         JavaScriptResultCallback callback,
                                         int32_t world_id) override;

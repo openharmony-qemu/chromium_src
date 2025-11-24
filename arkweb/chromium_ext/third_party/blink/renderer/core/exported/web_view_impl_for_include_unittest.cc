@@ -161,4 +161,21 @@ TEST_F(WebViewImplTest, OnSetAdBlockEnable_NullPageMainFrame) {
   web_view_impl_->GetPage()->SetMainFrame(main_frame);
 }
 
+TEST_F(WebViewImplTest, UpdateFlingVelocityLimitEq) {
+  gfx::Vector2dF velocity1{std::numeric_limits<float>::max(),
+                           std::numeric_limits<float>::max()};
+  gfx::Vector2dF velocity2{std::numeric_limits<float>::max(),
+                           std::numeric_limits<float>::max()};
+  web_view_impl_->UpdateFlingVelocityLimit(velocity1);
+  EXPECT_EQ(velocity1, velocity2);
+}
+
+TEST_F(WebViewImplTest, UpdateFlingVelocityLimitNEq) {
+  gfx::Vector2dF velocity1{5000, 5000};
+  gfx::Vector2dF velocity2{std::numeric_limits<float>::max(),
+                           std::numeric_limits<float>::max()};
+  web_view_impl_->UpdateFlingVelocityLimit(velocity1);
+  EXPECT_NE(velocity1, velocity2);
+}
+
 }  // namespace blink

@@ -17,6 +17,7 @@
 
 #include "content/browser/webauth/utils.h"
 #include "content/public/browser/content_browser_client.h"
+#include "content/public/browser/web_authentication_delegate.h"
 #include "content/public/common/content_client.h"
 
 namespace content {

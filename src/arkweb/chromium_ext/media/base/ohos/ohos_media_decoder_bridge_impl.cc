@@ -12,6 +12,7 @@
 #include <thread>
 
 #include "base/logging.h"
+#include "base/memory/ptr_util.h"
 #include "base/task/task_runner.h"
 #include "base/trace_event/trace_event.h"
 #include "base/memory/safe_ref.h"
@@ -71,7 +72,7 @@ MediaCodecDecoderBridgeImpl::CreateVideoDecoder(
     LOG(ERROR) << "OhosVideoDecoder::CreateCodec not supported type.";
     return nullptr;
   }
-  return absl::WrapUnique(new MediaCodecDecoderBridgeImpl(
+  return base::WrapUnique(new MediaCodecDecoderBridgeImpl(
       codec_type, config.on_buffers_available_cb));
 }
 

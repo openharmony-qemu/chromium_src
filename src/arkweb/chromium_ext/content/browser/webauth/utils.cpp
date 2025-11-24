@@ -63,7 +63,12 @@ device::CtapRequestExtraCommon CreateCtapRequestExtraCommon(
 {
     device::CtapRequestExtraCommon ret;
     ret.origin = caller_origin.Serialize();
-    ret.challenge = options->challenge;
+    if (options->challenge.has_value()) {
+        ret.challenge = *options->challenge;
+    } else {
+        LOG(ERROR) << "Challenge is null, challenge_url not supported in current implementation";
+        return device::CtapRequestExtraCommon();
+    }
     ret.mediation = Convert(options->mediation);
     if (options->timeout) {
         ret.timeout = *options->timeout;
@@ -106,7 +111,7 @@ blink::mojom::MakeCredentialAuthenticatorResponsePtr CreateMakeCredentialRespons
     common_info->client_data_json =
         response_data.response_extra->common.client_data_json;
     common_info->raw_id = response_data.response_extra->common.raw_id;
-    common_info->id = Base64UrlEncodeChallenge(common_info->raw_id);
+    common_info->id = Base64UrlEncodeOmitPadding(common_info->raw_id);
     common_info->authenticator_data =
         response_data.response_extra->common.authenticator_data;
     response->info = std::move(common_info);
@@ -134,7 +139,7 @@ blink::mojom::GetAssertionAuthenticatorResponsePtr CreateGetAssertionResponse(
     common_info->client_data_json =
         response_data.response_extra->common.client_data_json;
     common_info->raw_id = response_data.response_extra->common.raw_id;
-    common_info->id = Base64UrlEncodeChallenge(common_info->raw_id);
+    common_info->id = Base64UrlEncodeOmitPadding(common_info->raw_id);
     common_info->authenticator_data =
         response_data.response_extra->common.authenticator_data;
     response->info = std::move(common_info);

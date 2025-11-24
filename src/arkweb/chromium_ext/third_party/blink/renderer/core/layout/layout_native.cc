@@ -50,8 +50,9 @@ PhysicalRect LayoutNative::ReplacedContentRectFrom(
     const PhysicalRect& base_content_rect) const {
   NOT_DESTROYED();
 
+  PhysicalNaturalSizingInfo sizing_info = PhysicalNaturalSizingInfo::MakeFixed(PhysicalSize());
   return PreSnappedRectForPersistentSizing(
-      ComputeReplacedContentRect(base_content_rect));
+      ComputeReplacedContentRect(base_content_rect, sizing_info));
 }
 
 bool LayoutNative::SupportsAcceleratedRendering() const {

@@ -52,7 +52,7 @@ ScriptResource* ScriptResourceUtils::CreateForOfflineResource(
   ResourceLoaderOptions options(nullptr);
 
   TextResourceDecoderOptions decoder_options(
-      TextResourceDecoderOptions::kPlainTextContent, UTF8Encoding());
+      TextResourceDecoderOptions::kPlainTextContent, Utf8Encoding());
 
   auto script_type = is_module ? mojom::blink::ScriptType::kModule
                                : mojom::blink::ScriptType::kClassic;
@@ -60,7 +60,7 @@ ScriptResource* ScriptResourceUtils::CreateForOfflineResource(
       request, options, decoder_options, nullptr, ScriptResource::kAllowStreaming,
       nullptr, /*v8_compile_hints_producer=*/
       nullptr, /*v8_compile_hints_consumer=*/
-      v8_compile_hints::MagicCommentMode::kNever, script_type);
+      v8_compile_hints::MagicCommentMode::kNone, script_type);
 }
 #endif
 }

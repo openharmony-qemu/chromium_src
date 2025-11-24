@@ -618,16 +618,16 @@ bool PasteDataRecordAdapterImpl::GetImgData(std::shared_ptr<ClipBoardImageDataAd
         return false;
     }
     int readPixels_res = OH_PixelmapNative_ReadPixels(pixelmapNative, dataBuffer, &dataSize);
-    if (readPixels_res != IMAGE_SUCCESS) {
-        WVLOG_E("ReadPixels failed. error code is : %{public}d", readPixels_res);
-    } else {
-        if (memcpy_s(data, dataSize, dataBuffer, dataSize)) {
+    if (readPixels_res == IMAGE_SUCCESS) {
+        if (memcpy_s(data, dataSize, dataBuffer, dataSize) != EOK) {
             WVLOG_E("memcpy_s failed");
             ReleaseMemory(udsPixelMap, options, pixelmapNative, imageInfo);
             free(dataBuffer);
             free(data);
             return false;
         }
+    } else {
+        WVLOG_E("ReadPixels failed. error code is : %{public}d", readPixels_res);
     }
     free(dataBuffer);
     dataBuffer = nullptr;
@@ -877,6 +877,11 @@ std::shared_ptr<std::string> PasteDataAdapterImpl::GetPrimaryText()
     }
 
     const char* plainText = OH_UdsPlainText_GetContent(udsPlainText);
+    if (plainText == nullptr) {
+        WVLOG_E("GetPrimaryPlainText failed. plainText is nullptr.");
+        OH_UdsPlainText_Destroy(udsPlainText);
+        return nullptr;
+    }
     std::shared_ptr<std::string> primaryText = std::make_shared<std::string>(plainText);
     OH_UdsPlainText_Destroy(udsPlainText);
     return primaryText;

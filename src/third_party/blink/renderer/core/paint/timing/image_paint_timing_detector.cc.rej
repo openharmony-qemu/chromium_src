@@ -61,13 +61,3 @@
      return false;
    }
  
-+#if !BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
-   ImageRecord* record = CreateImageRecord(
-       *record_id.GetLayoutObject(), record_id.GetMediaTiming(), visual_size,
-       frame_visual_rect, root_visual_rect, record_id.GetHash());
-+#endif
-   AddPendingImage(record);
-   return true;
- }
- void ImageRecordsManager::AddPendingImage(ImageRecord* record) {
-   if (!largest_pending_image_ ||

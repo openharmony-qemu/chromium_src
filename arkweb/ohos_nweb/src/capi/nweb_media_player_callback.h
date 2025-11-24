@@ -16,9 +16,7 @@
 #ifndef OHOS_NWEB_SRC_NWEB_MEDIA_PLAYER_CLIENT_CALLBACK_H_
 #define OHOS_NWEB_SRC_NWEB_MEDIA_PLAYER_CLIENT_CALLBACK_H_
 
-#if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "ohos_nweb_ex/public/capi/nweb_basic_types.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {

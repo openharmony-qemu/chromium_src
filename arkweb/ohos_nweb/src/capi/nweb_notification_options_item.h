@@ -63,13 +63,10 @@ struct NWebNotificationOptionsItem {
   NWebNotificationOptionsItemIcon* icon;
 
   NWebNotificationOptionsItem() {
-    requireInteraction = false;
-    icon = nullptr;
     OH_LOG_INFO(LOG_APP, "NWebNotificationOptionsItem() is called");
   }
 
   ~NWebNotificationOptionsItem() {
-    delete icon;
     OH_LOG_INFO(LOG_APP, "~NWebNotificationOptionsItem() is called");
   }
 };

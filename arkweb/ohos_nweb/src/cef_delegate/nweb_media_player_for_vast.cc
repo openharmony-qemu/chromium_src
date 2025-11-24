@@ -5,6 +5,7 @@
 #include "ohos_nweb/src/cef_delegate/nweb_media_player_for_vast.h"
 
 #include <utility>
+
 #include "base/logging.h"
 #include "ohos_nweb/src/capi/nweb_media_player_callback.h"
 #include "ohos_nweb/src/capi/nweb_media_player_listener.h"
@@ -20,7 +21,7 @@ NWebMediaPlayerListenerForVAST::NWebMediaPlayerListenerForVAST(
     : arkweb_listener_(std::move(arkweb_listener)) {}
 
 NWebMediaPlayerListenerForVAST::~NWebMediaPlayerListenerForVAST() = default;
- 
+
 NO_SANITIZE("cfi-icall")
 void NWebMediaPlayerListenerForVAST::OnStatusChanged(uint32_t status) {
   if (arkweb_listener_ && arkweb_listener_.get()->on_status_changed) {
@@ -247,13 +248,11 @@ NO_SANITIZE("cfi-icall")
 void NWebMediaPlayerListenerForVAST::OnVolumeChanged(double volume)
 {
   LOG(INFO) << "NWebMediaPlayerListenerForVAST::OnVolumeChanged volume = " << volume;
-#if BUILDFLAG(IS_ARKWEB_EXT)
   if (arkweb_listener_ && arkweb_listener_.get()->on_volume_changed) {
     (arkweb_listener_.get()->on_volume_changed)(
         arkweb_listener_->nweb_id, volume);
     return;
   }
-#endif // IS_ARKWEB_EXT
   if (!nweb_listener_) {
     LOG(INFO) << "nweb_listener_ is null";
     return;

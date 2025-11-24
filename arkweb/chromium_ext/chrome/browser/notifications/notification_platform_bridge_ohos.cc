@@ -270,7 +270,7 @@ NWebNotificationOptionsItemIcon CreateFromImageSkiaReps(
       actionIcon.bitmaps[scale] =
           new (addr) NWebNotificationOptionsItemIconBitmap(
               CreateIconBitmapFromImage(rep.GetBitmap()));
-    }
+      }
 #endif
   }
   return actionIcon;
@@ -338,6 +338,7 @@ void NotificationPlatformBridgeOhos::Display(
   }
 
   options->requireInteraction = notification.never_timeout();
+
 #if defined(ADDRESS_SANITIZER) || defined(HWADDRESS_SANITIZER)
   NWebNotificationOptionsItemIcon icon = CreateFromImageSkiaReps(
       notification.icon().GetImage().AsImageSkia().image_reps());
@@ -360,7 +361,7 @@ void NotificationPlatformBridgeOhos::Display(
     DeleteNWebNotificationOptionsItemIcon(options->icon);
   } else {
     options->icon->bitmaps =
-       std::map<double, NWebNotificationOptionsItemIconBitmap*>();
+      std::map<double, NWebNotificationOptionsItemIconBitmap*>();
   }
 #endif // ARKWEB_NOTIFICATION
 }
@@ -417,7 +418,7 @@ void NotificationPlatformBridgeOhos::OnShowed(const std::string id) {
   PassThroughDelegate* delegate = static_cast<PassThroughDelegate*>(notification.delegate());
   if (!delegate) {
     return;
-  } 
+  }
   NotificationHandler* handler = NotificationDisplayServiceImpl::GetForProfile(delegate->GetProfile())
       ->GetNotificationHandler(delegate->GetNotificationType());
   if (handler) {

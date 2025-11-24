@@ -21,9 +21,10 @@
 #include "cef/ohos_cef_ext/libcef/browser/extensions/api/windows/cef_windows_event_router.h"
 #include "nweb_extension_utils.h"
 
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
+
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "ohos_nweb_ex/core/extension/nweb_extension_windows_dispatcher.h"
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
  
 namespace OHOS::NWeb {
@@ -177,16 +178,21 @@ bool NweExtensionWindowCefDelegate::HasOnRemoveWindowV2CallBack() {
 
 NO_SANITIZE("cfi-icall")
 bool NweExtensionWindowCefDelegate::OnCreateWindowV2(
-    const WebExtensionWindowCreateDataV2& create_date,
+    const WebExtensionWindowCreateData& create_date,
+    const WebExtensionWindowCreateDataV2& create_date_V2,
     WindowCreatedCallback callback) {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
 #else
+  if (!NweExtensionWindowCefDelegate::HasOnCreateWindowV2CallBack()) {
+    return NweExtensionWindowCefDelegate::OnCreateWindow(create_date, callback);
+  }
+
   static int request_id = 0;
   request_id++;
 
   g_window_created_map_[request_id] = std::move(callback);
-  if (!NWebExtensionWindowsDispatcher::OnCreateWindowV2(request_id, create_date)) {
+  if (!NWebExtensionWindowsDispatcher::OnCreateWindowV2(request_id, create_date_V2)) {
     g_window_created_map_.erase(request_id);
     return false;
   }

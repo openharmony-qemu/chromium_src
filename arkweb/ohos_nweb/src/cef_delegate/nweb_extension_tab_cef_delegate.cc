@@ -16,13 +16,13 @@
 #include "nweb_extension_tab_cef_delegate.h"
 
 #include <map>
+#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #include "base/logging.h"
 #include "chrome/browser/extensions/api/tabs/tabs_windows_api.h"
 #include "nweb_extension_utils.h"
 
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "ohos_nweb_ex/core/extension/nweb_extension_tabs_dispatcher.h"
-#include "arkweb/ohos_nweb_ex/build/features/features.h"
 #endif
 
 namespace OHOS::NWeb {

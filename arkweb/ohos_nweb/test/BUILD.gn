@@ -39,6 +39,7 @@ test("ohos_nweb_unittests") {
     "//ohos_glue:ohos_adapter_glue_source",
     "//third_party/boringssl",
     "//content/public/common",
+    "//ohos_nweb_ex:nweb_ex",
   ]
 
   if (enable_arkweb_ext) {

@@ -47,10 +47,10 @@ NWebExtensionSidePanelCefController::GetOptions(std::string extension_id,
   LOG(INFO) << "GetSidePanelService service pointer:" << service;
 
   auto options = service->GetOptions(*extension, tab_id);
-  result.enabled = *options.enabled;
-  result.tab_id = *options.tab_id;
+  result.enabled = options.enabled;
+  result.tab_id = options.tab_id;
   if (options.path.has_value()) {
-    result.path = extension->GetResourceURL(*options.path).spec();
+    result.path = extension->GetResourceURL(options.path.value()).spec();
   }
 
   return result;

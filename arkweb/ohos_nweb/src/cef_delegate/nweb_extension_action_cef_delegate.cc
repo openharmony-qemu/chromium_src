@@ -490,6 +490,7 @@ void NWebExtensionActionCefDelegate::OnSetBadgeText(
     return;
   }
 #endif
+
   if (!g_action_api_listener) {
     LOG(ERROR) << "No web extension action api listener";
     return;

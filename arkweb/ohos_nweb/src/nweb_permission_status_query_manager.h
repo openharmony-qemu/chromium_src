@@ -21,9 +21,7 @@
 
 #include "capi/nweb_permission_status_query_delegate_callback.h"
 #include "ohos_nweb/src/capi/nweb_permission_status_query.h"
-#if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "ohos_nweb_ex/public/capi/arkweb_permission_status_query.h"
-#endif
 
 namespace OHOS::NWeb {
 
@@ -32,11 +30,9 @@ class NWebPermissionStatusQueryManager {
   static void SetPermissionStatusQueryDelegate(
       struct NWebPermissionStatusQueryDelegateCallback* callback);
   static void QueryPermissionStatus(NWebPermissionStatusQuery* query);
-#if BUILDFLAG(ARKWEB_NWEB_EX)
   static void QueryPermissionStatus(ArkWebPermissionStatusQuery* query);
-#endif
 };
 
 }  // namespace OHOS::NWeb
 
-#endif // NWEB_KEY_EVENT_IMPL_H
+#endif  // NWEB_KEY_EVENT_IMPL_H

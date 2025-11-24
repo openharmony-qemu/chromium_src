@@ -56,6 +56,12 @@ std::string ComputeLanguageByRegion(const std::string& region) {
     locale = "bo-CN";
   } else if (systemLanguage.find("ug") != std::string::npos) {
     locale = "ug";
+  } else if (systemLanguage.find("my") != std::string::npos) {
+    locale = "my";
+  } else if (systemLanguage.find("ms") != std::string::npos) {
+    locale = "ms";
+  } else if (systemLanguage.find("lo") != std::string::npos) {
+    locale = "lo";
   }
   return locale;
 }

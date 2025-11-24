@@ -190,7 +190,7 @@ void HTMLMediaElement::UpdatePlaybackStatus(uint32_t status) {
   if (status) {
     PlayInternal();
   } else {
-    PauseInternal(PlayPromiseError::kPaused_PauseCalled);
+    PauseInternal(WebMediaPlayer::PauseReason::kPauseCalled);
   }
 }
 void HTMLMediaElement::UpdateVolume(double volume) {
@@ -217,7 +217,7 @@ gfx::Rect HTMLMediaElement::GetVideoRect() {
   if (GetLayoutObject() && GetLayoutObject()->IsBox()) {
     auto* layout_box = To<LayoutBox>(GetLayoutObject());
     return gfx::Rect(ToFlooredPoint(layout_box->Location()),
-                     ToFlooredSize(layout_box->Size()));
+                     ToFlooredSize(layout_box->StitchedSize()));
   }
   LOG(INFO) << "using default vidoe size";
 

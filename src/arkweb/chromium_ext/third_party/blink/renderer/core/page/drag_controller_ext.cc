@@ -21,7 +21,7 @@
 #include "third_party/blink/renderer/core/dom/document.h"
 #include "third_party/blink/renderer/core/dom/element.h"
 #include "third_party/blink/renderer/core/dom/node.h"
-#include "third_party/blink/renderer/core/dom/node_computed_style.h"
+#include "third_party/blink/renderer/core/editing/editing_utilities.h"
 #include "third_party/blink/renderer/core/editing/frame_selection.h"
 #include "third_party/blink/renderer/core/frame/local_frame.h"
 #include "third_party/blink/renderer/core/frame/visual_viewport.h"
@@ -218,7 +218,7 @@ void DragControllerExt::FindAndRemoveGrayStyle(Element* tempEle) {
   String styleAttr =
       String(AtomicString(tempEle->getAttribute(html_names::kStyleAttr)));
   size_t pos = styleAttr.Find(grayStyle);
-  if (pos != WTF::kNotFound) {
+  if (pos != kNotFound) {
     if (pos + grayStyle.length() == styleAttr.length()) {
       String oriStyle =
           styleAttr.replace((unsigned)pos, grayStyle.length(), "");
@@ -232,14 +232,14 @@ void DragControllerExt::FindAndRemoveGrayStyle(Element* tempEle) {
   }
 
   pos = styleAttr.Find(grayStyle1);
-  if (pos != WTF::kNotFound) {
+  if (pos != kNotFound) {
     String oriStyle = styleAttr.replace((unsigned)pos, grayStyle1.length(), "");
     tempEle->setAttribute(html_names::kStyleAttr, AtomicString(oriStyle));
     return;
   }
 
   pos = styleAttr.Find(grayStyle2);
-  if (pos != WTF::kNotFound) {
+  if (pos != kNotFound) {
     String oriStyle = styleAttr.replace((unsigned)pos, grayStyle2.length(), "");
     tempEle->setAttribute(html_names::kStyleAttr, AtomicString(oriStyle));
     return;
@@ -375,7 +375,7 @@ NO_SANITIZE("cfi") void DragControllerExt::StartDragImageEffects() {
     return;
   }
 
-  const ComputedStyle* style = node->GetComputedStyleForElementOrLayoutObject();
+  const ComputedStyle* style = GetComputedStyleForElementOrLayoutObject(*node);
   // no effects if the image already have an opacity style
   if (!style || style->HasOpacity()) {
     return;
@@ -416,7 +416,7 @@ NO_SANITIZE("cfi") void DragControllerExt::RestoreDragImageEffects() {
     return;
   }
 
-  const ComputedStyle* style = node->GetComputedStyleForElementOrLayoutObject();
+  const ComputedStyle* style = GetComputedStyleForElementOrLayoutObject(*node);
   if (!style) {
     return;
   }

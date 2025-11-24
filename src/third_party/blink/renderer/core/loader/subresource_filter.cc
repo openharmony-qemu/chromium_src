@@ -73,12 +73,14 @@ bool SubresourceFilter::AllowLoad(
 #if BUILDFLAG(ARKWEB_ADBLOCK)
   WebDocumentSubresourceFilter::LoadPolicy load_policy =
       WebDocumentSubresourceFilter::kAllow;
+  subresource_filter::ScopedRule rule;
 
   if (utils->GetAdBlockEnabledByPage()) {
     // TODO(csharrison): Implement a caching layer here which is a HashMap of
     // Pair<url string, context> -> LoadPolicy.
     load_policy =
-        subresource_filter_->GetLoadPolicy(resource_url, request_destination);
+        subresource_filter_->GetLoadPolicy(resource_url, request_destination,
+                                           /*out_rule=*/&rule);
   }
 #else
   // TODO(csharrison): Implement a caching layer here which is a HashMap of

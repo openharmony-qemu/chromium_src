@@ -65,7 +65,7 @@ void LocalFrameViewUtils::PerformLayoutOnPreload(Document* document) {
     LOG(ERROR) << "document is nullptr";
     return;
   }
-  document->Fetcher()->UpdateAllImageResourcePriorities();
+  document->Fetcher()->UpdateImagePrioritiesAndSpeculativeDecodes();
   if (!document->Url().GetString().Utf8().empty()) {
     LayoutBox* body_box = nullptr;
     const LayoutBox* html_box = nullptr;

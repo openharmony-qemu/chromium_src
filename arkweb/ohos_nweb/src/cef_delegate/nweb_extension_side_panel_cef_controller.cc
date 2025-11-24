@@ -46,7 +46,7 @@ NWebExtensionSidePanelCefController::GetOptions(std::string extension_id,
   }
 
   auto service = extensions::SidePanelService::Get(browser_context);
-  if (!extension) {
+  if (!service) {
     LOG(INFO) << "failed to get side panel service,id is " << extension_id;
     return result;
   }

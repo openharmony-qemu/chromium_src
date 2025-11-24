@@ -20,14 +20,11 @@
 #include "arkweb/ohos_adapter_ndk/utils/include/sys_param.h"
 
 #include <cstdlib>
-#include <securec.h>
 #include <sstream>
 #include <hitrace/trace.h>
 
 namespace OHOS::NWeb {
 constexpr static int DECIMAL_NUMERAL_SYSTEM = 10;
-constexpr static int HITRACE_TAGS_ENABLEFLAGS_LENGTH = 24;
-
 extern "C" __attribute__((weak)) void *CachedParameterCreate(const char *name, const char *defValue);
 
 HiTraceAdapterImpl& HiTraceAdapterImpl::GetInstance()
@@ -66,12 +63,6 @@ void HiTraceAdapterImpl::StartTrace(const std::string& value, float limit)
     OH_HiTrace_StartTrace(value.c_str());
 }
 
-void HiTraceAdapterImpl::StartTraceEx(HiTrace_Output_Level level, const std::string& name,
-    const std::string& value, float limit)
-{
-    OH_HiTrace_StartTraceEx(level, name.c_str(), value.c_str());
-}
-
 void HiTraceAdapterImpl::FinishTrace()
 {
     OH_HiTrace_FinishTrace();
@@ -96,22 +87,13 @@ bool HiTraceAdapterImpl::IsHiTraceEnable()
 {
 #if defined(OS_OHOS)
     static void* g_handle = CachedParameterCreate("debug.hitrace.tags.enableflags", "0");
-    int changed = 0;
-    const char *enable = CachedParameterGetChanged(g_handle, &changed);
-    if (!g_handle || !enable){
+    if (!g_handle) {
         return false;
     }
-    static bool hitrace_enable = true;
-    static char g_enable[HITRACE_TAGS_ENABLEFLAGS_LENGTH] = ""; 
-    if (strcmp(g_enable, enable) == 0) {
-        return hitrace_enable;
-    }
-    
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_handle, &changed);
     uint64_t tags = ConvertToUint64(enable, 0);
-    hitrace_enable = (tags & ARKWEB_HITRACE_ENABLE) != 0;
-    WVLOG_I("hitrace enableflags: %{public}d", hitrace_enable);
-    strcpy_s(g_enable, HITRACE_TAGS_ENABLEFLAGS_LENGTH, enable);
-    return hitrace_enable;
+    return (tags & ARKWEB_HITRACE_ENABLE) != 0;
 #else
     return true;
 #endif

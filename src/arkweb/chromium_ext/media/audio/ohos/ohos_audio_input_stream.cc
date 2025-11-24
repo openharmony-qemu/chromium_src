@@ -32,8 +32,7 @@ class OHOSAudioInputStream::CaptureCallbackAdapter
   void Capture(const AudioBus* audio_source,
                base::TimeTicks audio_capture_time,
                const AudioGlitchInfo& glitch_info,
-               double volume,
-               bool key_pressed) override {
+               double volume) override {
     callback_->OnData(audio_source, audio_capture_time, volume, glitch_info);
   }
 

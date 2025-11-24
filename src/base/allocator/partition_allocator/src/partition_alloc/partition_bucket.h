@@ -170,6 +170,8 @@ struct PartitionBucket {
   void InitializeSlotSpanForGwpAsan(
       SlotSpanMetadata<MetadataKind::kReadOnly>* slot_span,
       PartitionRoot* root);
+      
+  size_t SlotSpanCommittedSize(PartitionRoot* root) const;
 
  private:
   // Sets `this->can_store_raw_size`.

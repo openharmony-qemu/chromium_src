@@ -19,18 +19,6 @@
 #include "base/trace_event/trace_arguments.h"
 #include "base/trace_event/trace_event_ohos.h"
 
-#ifdef OHOS_TRACE_EVENT_COMMON
-#undef OHOS_TRACE_EVENT_COMMON
-#endif
-#define OHOS_TRACE_EVENT_COMMON(traceLevel, category_group, name, ...) \
-  BYTRACE_SCOPED_INIT(category_group);      \
-  do {                                      \
-    if (IsCategoryEnable(category_group)) { \
-      BYTRACE_SCOPED_TRACE_EVENT_COMMON(traceLevel, name, JoinKeyValueWithPipe(__VA_ARGS__)); \
-    } \
-  } while (0);                              \
-  INTERNAL_TRACE_EVENT_ADD_SCOPED(category_group, name, __VA_ARGS__)
-
 #ifdef TRACE_EVENT0
 #undef TRACE_EVENT0
 #endif

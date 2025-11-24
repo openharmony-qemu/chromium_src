@@ -51,4 +51,4 @@ private:
 };
 } // namespace OHOS::NWeb
 
-#endif // HITRACE_ADAPTER_IMPL_H 
+#endif // HITRACE_ADAPTER_IMPL_H

@@ -97,8 +97,8 @@ void LayoutImage::StyleDidChange(StyleDifference diff,
   auto* html_plugin_element = DynamicTo<HTMLPlugInElement>(GetNode());
   if (html_plugin_element && html_plugin_element->IsNativeType()
       && html_plugin_element->Utils()->CheckIntrinsicSizeEnable()) {
-    LayoutReplaced::IntrinsicSizeChanged();
-    LOG(DEBUG) << "LayoutImage::StyleDidChange set intrinsic size: " << IntrinsicSize().ToString().Utf8();
+    LayoutReplaced::NaturalSizeChanged();
+    LOG(DEBUG) << "LayoutImage::StyleDidChange set intrinsic size: " << ComputeNaturalSizingInfo().size.ToString().Utf8();
   }
 #endif  // BUILDFLAG(ARKWEB_SAME_LAYER)
 

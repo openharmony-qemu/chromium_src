@@ -275,7 +275,7 @@ void ImageRecordsManager::AssignPaintTimeToRegisteredQueuedRecords(
     auto it = pending_images_.find(record->Hash());
     if (it == pending_images_.end()) {
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
-      image_record_manager_utils_.AssignPaintTimeToRegisteredQueuedRecordsForALCP(record->hash, timestamp);
+      image_record_manager_utils_.AssignPaintTimeToRegisteredQueuedRecordsForALCP(record->Hash(), presentation_timestamp);
 #endif
       continue;
     }
@@ -647,9 +647,10 @@ ImageRecord* ImageRecordsManager::RecordFirstPaintAndMaybeCreateImageRecord(
   MediaRecordIdHash hash = record_id.GetHash();
   bool is_full_viewport = frame_view_->GetPaintTimingDetector().GetImagePaintTimingDetector().is_full_viewport_image();
 
-  ImageRecord *record = CreateImageRecord(
-      *record_id.GetLayoutObject(), record_id.GetMediaTiming(), visual_size,
-      frame_visual_rect, root_visual_rect, record_id.GetHash());
+  ImageRecord *record = MakeGarbageCollected<ImageRecord>(
+      record_id.GetLayoutObject()->GetNode(), record_id.GetMediaTiming(),
+      visual_size, frame_visual_rect, root_visual_rect, record_id.GetHash(),
+      soft_navigation_context);
 #endif
   // Don't process the image yet if it is invisible, as it may later become
   // visible, and potentially eligible to be an LCP candidate.
@@ -689,10 +690,12 @@ ImageRecord* ImageRecordsManager::RecordFirstPaintAndMaybeCreateImageRecord(
     return nullptr;
   }
 
+#if !BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
   ImageRecord* record = MakeGarbageCollected<ImageRecord>(
       record_id.GetLayoutObject()->GetNode(), record_id.GetMediaTiming(),
       visual_size, frame_visual_rect, root_visual_rect, record_id.GetHash(),
       soft_navigation_context);
+#endif
   AddPendingImage(record, is_recording_lcp);
   return record;
 }

@@ -160,6 +160,9 @@ void MouseEventManager::Trace(Visitor* visitor) const {
   visitor->Trace(element_under_mouse_);
   visitor->Trace(mouse_press_node_);
   visitor->Trace(mousedown_element_);
+#if BUILDFLAG(IS_ARKWEB)
+  AsMouseEventManagerExt()->Trace(visitor);
+#endif
 }
 
 MouseEventManager::MouseEventBoundaryEventDispatcher::

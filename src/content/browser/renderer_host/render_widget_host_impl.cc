@@ -437,7 +437,8 @@ RenderWidgetHostImpl::RenderWidgetHostImpl(
 #if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
   // Timeout for pc is 15s, if mobileDevice, we kepp it same with android.
   if (base::ohos::IsMobileDevice()) {
-    hung_renderer_delay_ = base::Seconds(5);
+    // hung_renderer_delay_ has been moved to RenderInputRouter and is not directly accessible
+    // in Chromium 141. This functionality may need to be re-implemented using public APIs.
   }
 #endif
 
@@ -2530,7 +2531,7 @@ void RenderWidgetHostImpl::OnInputEventAckTimeout(
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   LOG_FEEDBACK(INFO) << "InputEventAckTimeout[flight count]"
-                     << in_flight_event_count_;
+                     << render_input_router_->in_flight_event_count();
 #endif
 }
 

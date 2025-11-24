@@ -98,13 +98,13 @@ bool BaseFetchContext::CalculateIfAdSubresource(
   SubresourceFilter* filter = GetSubresourceFilter();
   const KURL& url = alias_url.has_value() ? alias_url.value() : request.Url();
 
-  #if BUILDFLAG(ARKWEB_ADBLOCK)
+#if BUILDFLAG(ARKWEB_ADBLOCK)
   SubresourceFilter* user_filter = GetUserSubresourceFilter();
   return request.IsAdResource() ||
          (filter &&
           filter->IsAdResource(url, request.GetRequestDestination(), out_rule)) ||
          (user_filter &&
-          user_filter->IsAdResource(url, request.GetRequestDestination()));
+          user_filter->IsAdResource(url, request.GetRequestDestination(), out_rule));
 #else
   return request.IsAdResource() ||
          (filter &&

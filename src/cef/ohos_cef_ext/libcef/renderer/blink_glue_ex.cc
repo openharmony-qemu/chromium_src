@@ -71,14 +71,14 @@ void GoBackOrForward(blink::WebView* view, int num_steps) {
       blink::To<blink::LocalFrame>(core_frame)
           ->GetLocalFrameHostRemote()
           .GoToEntryAtOffset(num_steps, true /* has_user_gesture */,
-                             std::nullopt);
+                             base::TimeTicks::Now(), std::nullopt);
     }
     if (num_steps < 0 && view->HistoryBackListCount() > 0) {
       blink::Frame* core_frame = blink::WebFrame::ToCoreFrame(*main_frame);
       blink::To<blink::LocalFrame>(core_frame)
           ->GetLocalFrameHostRemote()
           .GoToEntryAtOffset(num_steps, true /* has_user_gesture */,
-                             std::nullopt);
+                             base::TimeTicks::Now(), std::nullopt);
     }
   }
 }

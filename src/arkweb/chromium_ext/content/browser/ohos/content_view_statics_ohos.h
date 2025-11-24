@@ -16,6 +16,7 @@
 #ifndef CONTENT_CONTENT_VIEW_STATICS_OHOS_H_
 #define CONTENT_CONTENT_VIEW_STATICS_OHOS_H_
 
+#include <set>
 #include "base/check.h"
 #include "base/lazy_instance.h"
 #include "content/browser/renderer_host/render_process_host_impl.h"

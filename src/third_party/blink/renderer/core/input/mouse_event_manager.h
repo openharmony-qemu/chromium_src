@@ -41,6 +41,7 @@ class CORE_EXPORT MouseEventManager
   MouseEventManager(const MouseEventManager&) = delete;
   MouseEventManager& operator=(const MouseEventManager&) = delete;
   virtual MouseEventManagerExt* AsMouseEventManagerExt() { return nullptr; }
+  virtual const MouseEventManagerExt* AsMouseEventManagerExt() const { return nullptr; }
   void Trace(Visitor*) const;
 
   WebInputEventResult DispatchMouseEvent(

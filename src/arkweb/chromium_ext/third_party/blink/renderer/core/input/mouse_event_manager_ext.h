@@ -88,7 +88,7 @@ class MouseEventManagerExt
   void OnDestroyImageAnalyzerOverlay();
   void OnFoldStatusChanged(uint32_t foldstatus);
   void CloseImageOverlayWhenMousePress(const MouseEventWithHitTestResults& event);
-  void Trace(Visitor*) const override;
+  void Trace(Visitor*) const;
 #endif
 
 #if BUILDFLAG(IS_ARKWEB)

@@ -323,7 +323,6 @@ void MouseEventManagerExt::CloseImageOverlayWhenMousePress(const MouseEventWithH
 
 // LCOV_EXCL_START
 void MouseEventManagerExt::Trace(Visitor* visitor) const {
-  MouseEventManager::Trace(visitor);
   visitor->Trace(frame_);
   visitor->Trace(scroll_manager_);
   visitor->Trace(element_under_mouse_);

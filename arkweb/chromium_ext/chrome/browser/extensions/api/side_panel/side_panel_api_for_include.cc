@@ -13,7 +13,10 @@
  * limitations under the License.
  */
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "arkweb/ohos_nweb_ex/build/features/features.h"
+#include "ohos_nweb_ex/core/extension/nweb_extension_side_panel_dispatcher.h"
+#endif
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 #include "arkweb/ohos_nweb/src/nweb_common.h"
 #include "base/logging.h"

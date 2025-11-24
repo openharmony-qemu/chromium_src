@@ -18,8 +18,10 @@
 #include "base/logging.h"
 #include "nweb_common.h"
 #include "nweb_hilog.h"
+#if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "ohos_nweb_ex/core/permission_query/nweb_permission_query_dispatcher.h"
 #include "ohos_nweb_ex/public/capi/arkweb_permission_status_query.h"
+#endif
 
 namespace OHOS::NWeb {
 
@@ -48,9 +50,11 @@ void NWebPermissionStatusQueryManager::QueryPermissionStatus(
   g_permission_status_query_delegate_callback->onPermissionStatusQuery(query);
 }
 
+#if BUILDFLAG(ARKWEB_NWEB_EX)
 NO_SANITIZE("cfi-icall")
 void NWebPermissionStatusQueryManager::QueryPermissionStatus(
     ArkWebPermissionStatusQuery* query) {
   NWebPermissionQueryDispatcher::OnPermissionStatusQuery(query);
 }
+#endif
 }  // namespace OHOS::NWeb

@@ -605,7 +605,7 @@ void OHOSAudioDecoder::Reset(base::OnceClosure closure) {
   }
 
   audio_decoder_->StartDecoder();
-  timestamp_helper_->SetBaseTimestamp(kNoTimestamp);
+  timestamp_helper_->Reset();
   SetState(success ? READY : ERROR);
   task_runner_->PostTask(FROM_HERE, std::move(closure));
 }

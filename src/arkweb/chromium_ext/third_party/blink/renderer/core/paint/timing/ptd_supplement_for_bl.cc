@@ -44,15 +44,18 @@ void PTDSupplementForBL::OnInputOrScroll() {
 }
 
 void PTDSupplementForBL::RestartRecordingLCP() {
-    ptd_for_bl_->RestartRecordingLCP();
+    CHECK(false) << "Code commented out to fix compilation errors; related APIs were removed in Chromium 141.";
+    // ptd_for_bl_->RestartRecordingLCP();
 }
 
 void PTDSupplementForBL::SoftNavigationDetected(LocalDOMWindow* window) {
-    ptd_for_bl_->SoftNavigationDetected(window);
+    CHECK(false) << "Code commented out to fix compilation errors; related APIs were removed in Chromium 141.";
+    // ptd_for_bl_->SoftNavigationDetected(window);
 }
 
 void PTDSupplementForBL::RestartRecordingLCPToUkm() {
-    ptd_for_bl_->RestartRecordingLCPToUkm();
+    CHECK(false) << "Code commented out to fix compilation errors; related APIs were removed in Chromium 141.";
+    // ptd_for_bl_->RestartRecordingLCPToUkm();
 }
 
 void PTDSupplementForBL::ReportIgnoredContent() {
@@ -81,8 +84,9 @@ TextPaintTimingDetector& PTDSupplementForBL::GetTextPaintTimingDetector() const 
 void PTDSupplementForBL::StopRecordingLCP(bool stop) {
     is_stop_ = stop;
     if (!stop) {
-        ptd_for_bl_->RestartRecordingLCP();
-        ptd_for_bl_->record_lcp_to_metrics_ = true;
+        CHECK(false) << "Code commented out to fix compilation errors; related APIs were removed in Chromium 141.";
+        // ptd_for_bl_->RestartRecordingLCP();
+        // ptd_for_bl_->record_lcp_to_metrics_ = true;
     }
 }
 

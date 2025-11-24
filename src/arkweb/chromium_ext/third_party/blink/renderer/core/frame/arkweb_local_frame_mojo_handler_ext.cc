@@ -10,7 +10,6 @@
 #include "base/numerics/safe_conversions.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
-#include "cc/input/browser_controls_offset_tags_info.h"
 #include "services/network/public/cpp/url_loader_completion_status.h"
 #include "services/network/public/mojom/url_response_head.mojom.h"
 #include "third_party/blink/public/common/associated_interfaces/associated_interface_provider.h"

@@ -335,10 +335,9 @@ OHOSNativeBufferImageBackingFactory::MakeBackingWithValidateConfig(
     int dst_stride = configAdapterTmp->GetBufferStride();
     int src_stride = bytes_per_pixel * size.width();
 
-    size_t expected_size = src_stride * size.height();
-    if (pixel_data.size() != expected_size) {
+    if (pixel_data.size() != src_stride * size.height()) {
         LOG(ERROR) << "Invalid initial pixel data size: expected " 
-                   << expected_size << ", got " << pixel_data.size();
+                   << src_stride * size.height() << ", got " << pixel_data.size();
         return nullptr;
     }
 

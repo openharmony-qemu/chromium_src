@@ -17,7 +17,6 @@
 #define HITRACE_ADAPTER_IMPL_H
 
 #include "hitrace_adapter.h"
-#include "hitrace/trace.h"
 
 namespace OHOS::NWeb {
 class HiTraceAdapterImpl : public HiTraceAdapter {
@@ -31,9 +30,6 @@ public:
     void FinishTrace() override;
 
     void StartAsyncTrace(const std::string& value, int32_t taskId, float limit = -1) override;
-
-    void StartTraceEx(HiTrace_Output_Level level, const std::string& name,
-      const std::string& value, float limit = -1) override;
 
     void FinishAsyncTrace(const std::string& value, int32_t taskId) override;
 

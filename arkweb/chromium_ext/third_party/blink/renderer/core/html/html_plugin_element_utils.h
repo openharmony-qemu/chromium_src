@@ -49,10 +49,10 @@ class HTMLPlugInElementUtils {
   void SetNativeEmbedOverlayInfinity(bool native_embed_overlay_infinity);
   void ProcessParamChanges(const Vector<ParamChangeInfo>& changes);
   void ProcessBufferedParamChanges();
-  bool IsOverlay() {
+  bool IsOverlay() const {
     return native_embed_overlay_;
   }
-  bool IsOverlayInfinity() {
+  bool IsOverlayInfinity() const {
     return native_embed_overlay_infinity_;
   }
 #endif

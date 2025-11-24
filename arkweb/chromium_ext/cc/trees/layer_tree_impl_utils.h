@@ -21,7 +21,7 @@
 #include "cc/trees/layer_tree_impl.h"
 
 #if BUILDFLAG(ARKWEB_SYNC_RENDER)
-#define MAX_VIEWPORT_HEIGHT 9000
+#define MAX_VIEWPORT_HEIGHT 8000
 #endif
 
 namespace cc {

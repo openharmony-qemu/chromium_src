@@ -22,7 +22,6 @@
 #include "base/logging.h"
 #include "chrome/browser/extensions/extension_tab_util.h"
 #include "ohos_nweb/src/cef_delegate/nweb_extension_side_panel_cef_delegate.h"
-#include "ohos_nweb_ex/core/extension/nweb_extension_side_panel_dispatcher.h"
 #endif  // ARKWEB_ARKWEB_EXTENSIONS
 
 namespace extensions {

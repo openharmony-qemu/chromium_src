@@ -299,19 +299,20 @@ void RenderFrameHostImpl::ExecuteJavaScriptInFrames(
  
   RenderFrameHostImpl* initialFrame = this;
   ForEachRenderFrameHost(
-    [&javascript, &worldName, &initialFrame](RenderFrameHostImpl* rfh) {
+    [&javascript, &worldName, &initialFrame](RenderFrameHost* rfh) {
+    RenderFrameHostImpl* rfh_impl = static_cast<RenderFrameHostImpl*>(rfh);
     int32_t world_id = 0;
-    if (rfh == initialFrame) {
+    if (rfh_impl == initialFrame) {
       return;
     }
-    rfh->AllowInjectingJavaScript();
-    bool worldId_result = rfh->GetWorldId(worldName, &world_id); 
+    rfh_impl->AllowInjectingJavaScript();
+    bool worldId_result = rfh_impl->GetWorldId(worldName, &world_id); 
     if (worldId_result) {
-      rfh->GetAssociatedLocalFrame()->JavaScriptExecuteRequestInIsolatedWorld(
+      rfh_impl->GetAssociatedLocalFrame()->JavaScriptExecuteRequestInIsolatedWorld(
         javascript, false, world_id, JavaScriptResultCallback {});
     } else {
-      rfh->GetAssociatedLocalFrame()->JavaScriptExecuteRequest(javascript, false,
-                                                               JavaScriptResultCallback {});
+      rfh_impl->GetAssociatedLocalFrame()->JavaScriptExecuteRequest(javascript, false,
+                                                                   JavaScriptResultCallback {});
     }
   });
 }
@@ -373,7 +374,7 @@ void RenderFrameHostImpl::CommitFailedNavigation(
       std::move(common_params), std::move(commit_params),
       has_stale_copy_in_cache, error_code, extended_error_code,
       resolve_error_info, override_error_page_content, std::move(subresource_loaders),
-      document_token, std::move(policy_container),
+      document_token, base::UnguessableToken(), std::move(policy_container),
       std::move(alternative_error_page_info), std::move(callback));
 }
 #endif

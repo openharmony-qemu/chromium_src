@@ -26,7 +26,6 @@ void OnReleaseVideoFrame(scoped_refptr<content::NativeTextureFactory> factories,
                          const gpu::SyncToken& sync_token) {
   gpu::SharedImageInterface* sii = factories->SharedImageInterface();
   sii->DestroySharedImage(sync_token, std::move(shared_image));
-  sii->Flush();
 }
 }  // namespace
 
@@ -89,7 +88,7 @@ void NativeTextureWrapperImpl::CreateVideoFrame(
                               gpu::SHARED_IMAGE_USAGE_DISPLAY_READ |
                                   gpu::SHARED_IMAGE_USAGE_GLES2_READ |
                                   gpu::SHARED_IMAGE_USAGE_RASTER_READ,
-                              GL_TEXTURE_EXTERNAL_OES);
+                              GL_TEXTURE_EXTERNAL_OES, "NativeTextureWrapper");
 
   // The pixel format doesn't matter here as long as it's valid for texture
   // frames. But SkiaRenderer wants to ensure that the format of the resource

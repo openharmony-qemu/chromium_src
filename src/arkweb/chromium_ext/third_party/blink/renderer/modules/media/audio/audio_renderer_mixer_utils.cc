@@ -36,7 +36,7 @@ AudioRendererMixerUtils::AudioRendererMixerUtils(AudioRendererMixer* impl) {
 }
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-void AudioRendererMixerUtils::AudioRendererMixerShareInit(int media_tid) {
+void AudioRendererMixerUtils::AudioRendererMixerShareInit(base::PlatformThreadId media_tid) {
   // Here add a condition, when it is called by render, transfer the data to browser by mojom first
   // as render can execute script from outside.
   auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
@@ -53,7 +53,7 @@ void AudioRendererMixerUtils::AudioRendererMixerShareInit(int media_tid) {
 #endif
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-void AudioRendererMixerUtils::AudioRendererMixerShareDestroy(int audio_output_tid, int media_tid) {
+void AudioRendererMixerUtils::AudioRendererMixerShareDestroy(base::PlatformThreadId audio_output_tid, base::PlatformThreadId media_tid) {
   auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
       switches::kProcessType);
   if (type == switches::kRendererProcess) {
@@ -72,7 +72,7 @@ void AudioRendererMixerUtils::AudioRendererMixerShareDestroy(int audio_output_ti
 #endif
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-void AudioRendererMixerUtils::AddMixerInputShareInit(int audio_output_tid, int media_tid) {
+void AudioRendererMixerUtils::AddMixerInputShareInit(base::PlatformThreadId audio_output_tid, base::PlatformThreadId media_tid) {
   auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
       switches::kProcessType);
   if (type == switches::kRendererProcess) {
@@ -91,7 +91,7 @@ void AudioRendererMixerUtils::AddMixerInputShareInit(int audio_output_tid, int m
 #endif
 
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-void AudioRendererMixerUtils::AddMixerInputShareRender(int audio_output_tid, int media_tid) {
+void AudioRendererMixerUtils::AddMixerInputShareRender(base::PlatformThreadId audio_output_tid, base::PlatformThreadId media_tid) {
   auto type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
       switches::kProcessType);
   if (type == switches::kRendererProcess) {

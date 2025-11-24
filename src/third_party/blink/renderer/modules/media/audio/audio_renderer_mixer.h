@@ -14,6 +14,7 @@
 #include "base/memory/raw_ptr.h"
 #include "base/synchronization/lock.h"
 #include "base/thread_annotations.h"
+#include "base/threading/platform_thread.h"
 #include "base/time/time.h"
 #include "media/base/audio_converter.h"
 #include "media/base/audio_renderer_sink.h"
@@ -112,8 +113,8 @@ class BLINK_MODULES_EXPORT AudioRendererMixer
   // mixer and sink should no longer be reused.
   bool sink_error_ GUARDED_BY(lock_) = false;
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
-  int audio_output_tid_ GUARDED_BY(lock_);
-  int media_tid_ GUARDED_BY(lock_);
+  base::PlatformThreadId audio_output_tid_ GUARDED_BY(lock_);
+  base::PlatformThreadId media_tid_ GUARDED_BY(lock_);
 #endif
 };
 

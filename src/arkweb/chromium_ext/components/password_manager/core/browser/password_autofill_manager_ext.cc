@@ -71,8 +71,7 @@ PasswordFormFillData CreatePasswordFormFillDataWithoutPasswordInfo(
     // clicking on each password field so no need in any field identifiers.
     result.username_element_renderer_id =
         form_on_page.username_element_renderer_id;
-    result.username_may_use_prefilled_placeholder =
-        form_on_page.username_may_use_prefilled_placeholder;
+    // Note: username_may_use_prefilled_placeholder was removed in Chromium 141
 
     result.password_element_renderer_id =
         form_on_page.password_element_renderer_id;

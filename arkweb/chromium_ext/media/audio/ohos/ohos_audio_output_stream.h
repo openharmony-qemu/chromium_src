@@ -110,7 +110,7 @@ class OHOSAudioOutputStream : public AudioOutputStream {
 
   void SetStreamUsage();
 
-  void OneShotMediaPlayerStopped();
+  void OneShotMediaPlayerStopped(AudioParameters parameters);
 
   void StopTimer();
 
@@ -156,6 +156,8 @@ class OHOSAudioOutputStream : public AudioOutputStream {
   base::TimeDelta time_per_buffer_ = base::Microseconds(0);
 
   scoped_refptr<base::SingleThreadTaskRunner> main_task_runner_;
+
+  scoped_refptr<base::SingleThreadTaskRunner> audio_task_runner_;
 
   bool audioExclusive_ = false;
 

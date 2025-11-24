@@ -55,7 +55,10 @@ class MockMMIAdapter : public MMIAdapter {
               GetDeviceInfo,
               (int32_t, std::shared_ptr<MMIDeviceInfoAdapter>),
               (override));
-  MOCK_METHOD(int32_t, GetMaxTouchPoints, (), (override));
+  MOCK_METHOD(int32_t,
+              GetMaxTouchPoints,
+              (),
+              (override));
 };
 
 class MockNWebTouchPointInfo : public NWebTouchPointInfo {
@@ -101,7 +104,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   bool TryCloseBrowser() override { return false; }
 
-  #if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
   void SetBlankScreenDetectionConfig( 
       bool enable,
       const std::vector<double>& detectionTiming,
@@ -773,33 +776,33 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 #endif
   CefRefPtr<CefFrame> GetFrameByIdentifier(
       const CefString& identifier) override {  return nullptr; }
-  void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
-                             bool recursive, IsolatedWorld world,
-                             CefRefPtr<CefJavaScriptResultCallback> callback) override {}
 #if BUILDFLAG(ARKWEB_BGTASK)
   void OnBrowserForeground() override {}
   void OnBrowserBackground() override {}
 #endif
+  void RunJavaScriptInFrames(const std::string& jsString, FrameInfos rootFrame,
+                             bool recursive, IsolatedWorld world,
+                             CefRefPtr<CefJavaScriptResultCallback> callback) override {}
 #if BUILDFLAG(IS_ARKWEB)
   void EnableAppLinking(bool enable) override {}
   bool IsAppLinkingEnabled() const override { return false; }
 #endif
-#if BUILDFLAG(ARKWEB_READER_MODE)
-  void Distill(const std::string& guid, const DistillOptions& distill_options,
-    CefRefPtr<CefDistillCallback> callback) override {}
-  void AbortDistill() override {}
-#endif  // BUILDFLAG(ARKWEB_READER_MODE)
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   void GetFocusedFrameInfo(int32_t& frame_id, CefString& frame_url) override {}
 #endif  // ARKWEB_ARKWEB_EXTENSIONS
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  void Distill(uint64_t request_id, const DistillOptions& distill_options,
+    CefRefPtr<CefDistillCallback> callback) override {}
+  void AbortDistill() override {}
+#endif  // BUILDFLAG(ARKWEB_READER_MODE)
 #endif  // BUILDFLAG(IS_OHOS)
 #if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
   void LoadUrlWithParams(const std::string& url,
-                         const LoadUrlType load_type,
+                         const LoadUrlType& load_type,
                          const std::string& refer,
                          const std::string& headers,
                          const std::string& post_data,
-                         const bool allow_https_upgrade,
+                         const bool& allow_https_upgrade,
                          int32_t transition_type) override {}
   void EnableHttpsUpgrades(bool enable) override {}
 #endif

@@ -770,22 +770,23 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
       IsolatedWorld world,
       CefRefPtr<CefJavaScriptResultCallback> callback) override {}
 
-#if BUILDFLAG(ARKWEB_READER_MODE)
-  void Distill(const std::string& guid, const DistillOptions& distill_options,
-    CefRefPtr<CefDistillCallback> callback) override {}
-  void AbortDistill() override {}
-#endif // ARKWEB_READER_MODE
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
   void GetFocusedFrameInfo(int32_t& frame_id, CefString& frame_url) override {}
 #endif  // ARKWEB_ARKWEB_EXTENSIONS
 #if BUILDFLAG(ARKWEB_EXT_HTTPS_UPGRADES)
   void LoadUrlWithParams(const std::string& url,
-                         const LoadUrlType load_type,
+                         const LoadUrlType& load_type,
                          const std::string& refer,
                          const std::string& headers,
                          const std::string& post_data,
-                         const bool allow_https_upgrade,
+                         const bool& allow_https_upgrade,
                          int32_t transition_type) override {}
+  
+#if BUILDFLAG(ARKWEB_READER_MODE)
+  void Distill(uint64_t request_id, const DistillOptions& distill_options,
+    CefRefPtr<CefDistillCallback> callback) override {}
+  void AbortDistill() override {}
+#endif
   void EnableHttpsUpgrades(bool enable) override {}
 #endif
 

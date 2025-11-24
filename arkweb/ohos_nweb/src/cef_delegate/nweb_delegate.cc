@@ -857,7 +857,7 @@ bool NWebDelegate::Init(bool is_enhance_surface,
   }
 #if BUILDFLAG(ARKWEB_WEBRTC)
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
-    LOG(ERROR) << "can not get browser ,can not set NWeb id";
+    LOG(INFO) << "can not get browser ,can not set NWeb id";
     return true;
   }
   GetBrowser()->GetHost()->SetNWebId(GetBrowser()->GetNWebId());

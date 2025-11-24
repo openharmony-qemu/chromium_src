@@ -18,7 +18,7 @@
 #include "third_party/blink/renderer/core/paint/box_painter.h"
 #include "third_party/blink/renderer/core/paint/image_painter.h"
 #include "third_party/blink/renderer/core/paint/paint_info.h"
-#include "third_party/blink/renderer/platform/geometry/layout_point.h"
+#include "third_party/blink/renderer/platform/geometry/physical_offset.h"
 #include "third_party/blink/renderer/platform/graphics/paint/drawing_recorder.h"
 #include "third_party/blink/renderer/platform/graphics/paint/foreign_layer_display_item.h"
 #include "third_party/blink/renderer/platform/web_native_bridge.h"
@@ -80,8 +80,8 @@ void NativePainter::PaintReplaced(const PaintInfo& paint_info,
             layout_native_.PluginElement()->NativeLoader()->CcLayer()) {
       gfx::RectF rect(-replaced_rect.X().ToFloat(),
                       -replaced_rect.Y().ToFloat(),
-                      layout_native_.Size().width.ToFloat(),
-                      layout_native_.Size().height.ToFloat());
+                      layout_native_.StitchedSize().width.ToFloat(),
+                      layout_native_.StitchedSize().height.ToFloat());
       layer->layer_utils()->SetNativeRect(rect);
       layer->SetBounds(snapped_replaced_rect.size());
       layer->SetIsDrawable(true);

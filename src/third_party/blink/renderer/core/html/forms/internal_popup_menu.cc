@@ -668,15 +668,6 @@ void InternalPopupMenu::Dispose() {
 
 void InternalPopupMenu::Show(PopupMenu::ShowEventType type) {
   DCHECK(!popup_);
-#if BUILDFLAG(ARKWEB_HTML_SELECT)
-  taller_options_ =
-      (!base::ohos::IsPcDevice() && type == PopupMenu::kTouch) ||
-#else
-  taller_options_ =
-      type == PopupMenu::kTouch ||
-#endif
-      RuntimeEnabledFeatures::ForceTallerSelectPopupEnabled() ||
-      RuntimeEnabledFeatures::SelectOptionAccessibilityTargetSizeEnabled();
   popup_ = chrome_client_->OpenPagePopup(this);
 }
 

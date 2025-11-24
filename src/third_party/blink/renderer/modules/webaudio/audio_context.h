@@ -175,6 +175,21 @@ class MODULES_EXPORT AudioContext final
       const media::PictureInPictureEventsInfo::AutoPipInfo&
           auto_picture_in_picture_info) override {}
 
+  void SetHtmlPlayEnabled(bool enabled) override {}
+  void RequestEnterFullscreen() override {}
+  void RequestExitFullscreen() override {}
+  void SetPlaybackRate(double playback_rate) override {}
+  void RequestDownloadUrl() override {}
+  void HidePlaybackSpeedList() override {}
+  void SetVideoSurface(int32_t widget_id) override {}
+  void PipEnable(bool enable) override {}
+  void PipDown(bool enable) override {}
+  void RequestExitPictureInPicture() override {}
+  void NotifyPipResize() override {}
+  void PipRequestPlay() override {}
+  void SetVolume(double volume) override {}
+  void GetVolume(GetVolumeCallback callback) override {}
+
   // https://webaudio.github.io/web-audio-api/#AudioContext
   double baseLatency() const;
   double outputLatency() const;

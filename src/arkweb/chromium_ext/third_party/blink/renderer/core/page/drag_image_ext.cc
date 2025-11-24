@@ -40,10 +40,10 @@ gfx::Vector2dF DragImageExt::HwClampedImageScale(const gfx::Size& image_size,
   return image_scale;
 }
 
-WTF::String DragImageExt::filterNonPrintable(const WTF::String& input) {
-  WTF::StringBuilder result;
+String DragImageExt::filterNonPrintable(const String& input) {
+  StringBuilder result;
   for (unsigned i = 0; i < input.length(); ++i) {
-    if (WTF::unicode::IsPrintableChar(input[i])) {
+    if (unicode::IsPrintableChar(input[i])) {
       result.Append(input[i]);
     }
   }
@@ -83,7 +83,7 @@ std::unique_ptr<DragImage> DragImageExt::CreateClippedByVisualViewport(
   auto* bitmap_image = DynamicTo<BitmapImage>(image);
   if (should_respect_image_orientation == kRespectImageOrientation &&
       bitmap_image) {
-    orientation = bitmap_image->CurrentFrameOrientation();
+    orientation = bitmap_image->Orientation();
   }
 
   SkBitmap bm;

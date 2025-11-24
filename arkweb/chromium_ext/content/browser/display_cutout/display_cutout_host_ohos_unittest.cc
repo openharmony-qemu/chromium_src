@@ -17,7 +17,6 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-
 #include "base/test/task_environment.h"
 #include "content/browser/web_contents/web_contents_impl.h"
 #include "content/public/test/test_renderer_host.h"

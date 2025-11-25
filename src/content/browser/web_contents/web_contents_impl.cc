@@ -1470,6 +1470,7 @@ WebContentsImpl::WebContentsImpl(BrowserContext* browser_context)
   if (base::FeatureList::IsEnabled(network::features::kSharedStorageAPI)) {
     SharedStorageBudgetCharger::CreateForWebContents(this);
   }
+  implUtils_ = new WebContentsImplUtils(this);
 }
 
 WebContentsImpl::~WebContentsImpl() {
@@ -3693,8 +3694,13 @@ void WebContentsImpl::DidChangeVisibleSecurityState() {
       &WebContentsObserver::DidChangeVisibleSecurityState);
 }
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences(
+    int32_t usage_scenario_type) {
+#else
 const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences(
     RenderFrameHostImpl* main_frame) {
+#endif
   OPTIONAL_TRACE_EVENT0("browser", "WebContentsImpl::ComputeWebPreferences");
   CHECK(main_frame->is_main_frame());
 
@@ -3962,9 +3968,6 @@ const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences(
 
 #endif  // BUILDFLAG(IS_ANDROID)
 
-  GetContentClient()->browser()->OverrideWebPreferences(
-      this, *main_frame->GetSiteInstance(), &prefs);
-
 #if BUILDFLAG(ARKWEB_USERAGENT) || BUILDFLAG(ARKWEB_EXT_UA)
   if (!(AsWebContentsImplExt()->user_agent_.empty()) &&
       GetUserAgentOverride().from_app) {
@@ -3977,6 +3980,8 @@ const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences(
 #else
   prefs.viewport_meta_enabled = true;
 #endif
+  GetContentClient()->browser()->OverrideWebPreferences(
+      this, *main_frame->GetSiteInstance(), &prefs);
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   prefs.video_assistant_enabled =
@@ -3995,7 +4000,11 @@ const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences(
   return prefs;
 }
 
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+void WebContentsImpl::OnWebPreferencesChanged(int32_t usage_scenario_type) {
+#else
 void WebContentsImpl::OnWebPreferencesChanged() {
+#endif
   OPTIONAL_TRACE_EVENT0("content", "WebContentsImpl::OnWebPreferencesChanged");
 
   // This is defensive code to avoid infinite loops due to code run inside
@@ -4005,9 +4014,13 @@ void WebContentsImpl::OnWebPreferencesChanged() {
     return;
   }
   updating_web_preferences_ = true;
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+  SetWebPreferences(ComputeWebPreferences(usage_scenario_type));
+#else
   SetWebPreferences(ComputeWebPreferences(GetPrimaryMainFrame()));
+#endif
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_EXT_FORCE_ZOOM) || BUILDFLAG(ARKWEB_ZOOM)
   const bool force_enable_zoom_changed =
       (force_enable_zoom_ != web_preferences_->force_enable_zoom);
   force_enable_zoom_ = web_preferences_->force_enable_zoom;

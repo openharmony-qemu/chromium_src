@@ -131,13 +131,14 @@ class COMPONENTS_DOWNLOAD_EXPORT ArkWebDownloadItemImplExt : public DownloadItem
   ArkWebDownloadItemImplExt(DownloadItemImplDelegate* delegate,
                             uint32_t id,
                             const base::FilePath& path,
+                            const base::FilePath& display_name,
                             const GURL& url,
                             const std::string& mime_type,
                             DownloadJob::CancelRequestCallback cancel_request_callback)
       : DownloadItemImpl(delegate,
                          id,
                          path,
-                         path,  // Use path as display_name for now
+                         display_name,
                          url,
                          mime_type,
                          std::move(cancel_request_callback)) {}

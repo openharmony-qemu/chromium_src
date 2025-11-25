@@ -323,7 +323,7 @@ void CreateInProcessNetworkService(
     using namespace OHOS::NWeb;
     ResSchedClientAdapter::ReportKeyThread(
         ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(),
-        GetNetworkServiceDedicatedThread().GetThreadId(),
+        GetNetworkServiceDedicatedThread().GetThreadId().raw(),
         ResSchedRoleAdapter::USER_INTERACT);
 #endif
 #if BUILDFLAG(IS_ANDROID)

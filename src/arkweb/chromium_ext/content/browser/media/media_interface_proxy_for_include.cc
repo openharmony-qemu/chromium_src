@@ -24,25 +24,4 @@
 
 namespace content {
 
-#if BUILDFLAG(ARKWEB_CUSTOM_VIDEO_PLAYER)
-void MediaInterfaceProxy::CreateCustomMediaPlayerRenderer(
-    mojo::PendingRemote<media::mojom::CustomMediaPlayerRendererClientExtension>
-        client_extension_remote,
-    mojo::PendingReceiver<media::mojom::Renderer> receiver,
-    mojo::PendingReceiver<media::mojom::MediaPlayerRendererExtension>
-        renderer_extension_receiver,
-    int player_id) {
-  DCHECK(thread_checker_.CalledOnValidThread());
-
-  media::MojoRendererService::Create(
-      nullptr,
-      std::make_unique<OHOSCustomMediaPlayerRenderer>(
-          render_frame_host().GetProcess()->GetID(),
-          render_frame_host().GetRoutingID(), player_id,
-          WebContents::FromRenderFrameHost(&render_frame_host()),
-          std::move(renderer_extension_receiver),
-          std::move(client_extension_remote)),
-      std::move(receiver));
-}
-#endif  // ARKWEB_CUSTOM_VIDEO_PLAYER
 }  // namespace content

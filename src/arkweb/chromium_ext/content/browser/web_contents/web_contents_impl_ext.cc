@@ -1067,12 +1067,12 @@ void WebContentsImplExt::UpdateBrowserControlsState(
     cc::BrowserControlsState constraints,
     cc::BrowserControlsState current,
     bool animate,
-    const std::optional<cc::BrowserControlsOffsetTagsInfo>& offset_tags_info) {
+    const std::optional<cc::BrowserControlsOffsetTagModifications>& offset_tag_modifications) {
 #if BUILDFLAG(ARKWEB_EXT_TOPCONTROLS)
   AsWebContentsImplExt()->browser_controls_state_ = constraints;
 #endif
   WebContentsImpl::UpdateBrowserControlsState(constraints, current, animate,
-                                              offset_tags_info);
+                                              offset_tag_modifications);
 }
 
 #if BUILDFLAG(ARKWEB_PIP)

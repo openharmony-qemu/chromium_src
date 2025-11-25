@@ -120,10 +120,6 @@ std::vector<GpuFeatureData> GetGpuFeatureData(
           "Accelerated 2D canvas is unavailable: either disabled "
           "via blocklist or the command line."),
       true},
-    {"canvas_oop_rasterization",
-      SafeGetFeatureStatus(
-          gpu_feature_info, gpu::GPU_FEATURE_TYPE_CANVAS_OOP_RASTERIZATION,
-          command_line.HasSwitch(switches::kDisableAccelerated2dCanvas))},
     {"gpu_compositing",
       // TODO(rivr): Replace with a check to see which backend is used for
       // compositing; do the same for GPU rasterization if it's enabled. For
@@ -179,7 +175,7 @@ std::vector<GpuFeatureData> GetGpuFeatureData(
     {"raw_draw",
      GetFakeFeatureStatus(features::IsUsingRawDraw())},
     {"direct_rendering_display_compositor",
-     GetFakeFeatureStatus(features::IsDrDcEnabled())},
+     GetFakeFeatureStatus(features::IsDrDcEnabled(gpu_feature_info))},
     {"webgpu",
       SafeGetFeatureStatus(
           gpu_feature_info, gpu::GPU_FEATURE_TYPE_ACCELERATED_WEBGPU,

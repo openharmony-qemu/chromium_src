@@ -71,7 +71,7 @@ struct PlaybackSpeed {
 };
 
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
-constexpr auto kPlaybackSpeedsOhos[] = std::to_array<PlaybackSpeed>({
+constexpr auto kPlaybackSpeedsOhos = std::to_array<PlaybackSpeed>({
     {IDS_HW_MEDIA_VIDEO_PLAYBACK_SPEED_VALUE, 0.5},
     {IDS_HW_MEDIA_VIDEO_PLAYBACK_SPEED_VALUE, 0.75},
     {IDS_HW_MEDIA_VIDEO_PLAYBACK_SPEED_VALUE, 1.0},
@@ -251,7 +251,7 @@ Element* MediaControlPlaybackSpeedListElement::CreatePlaybackSpeedListItem(
   if (GetMediaControls().ShouldShowVideoControlsHM()) {
     playback_speed_label_span->setInnerText(playback_speed_label_hm);
     playback_speed_item->setAttribute(html_names::kAriaLabelAttr,
-                                      WTF::AtomicString(playback_speed_label_hm));
+                                      AtomicString(playback_speed_label_hm));
   } else {
 #endif
   playback_speed_label_span->setInnerText(playback_speed_label);
@@ -301,11 +301,11 @@ void MediaControlPlaybackSpeedListElement::RefreshPlaybackSpeedListMenu() {
   unsigned playbackSpeedsSize;
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   if (GetMediaControls().ShouldShowVideoControlsHM()) {
-    playbackSpeedsRef = kPlaybackSpeedsOhos;
+    playbackSpeedsRef = kPlaybackSpeedsOhos.data();
     playbackSpeedsSize = std::size(kPlaybackSpeedsOhos);
   } else {
 #endif
-  playbackSpeedsRef = kPlaybackSpeeds;
+  playbackSpeedsRef = kPlaybackSpeeds.data();
   playbackSpeedsSize = std::size(kPlaybackSpeeds);
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
   }

@@ -39,10 +39,10 @@ PictureInPictureResult VideoPictureInPictureWindowControllerImpl::StartSessionEx
   }
   result = GetWebContentsImpl()->EnterPictureInPicture();
   LOG(INFO) << "PIC :" << __func__ << " result:" << (int)result << " size:" << natural_size.ToString()
-           << " " << player_id.delegate_id << " " << player_id.frame_routing_id.child_id << " "
+           << " " << player_id.frame_routing_id.child_id << " " << player_id.frame_routing_id.child_id << " "
            << player_id.frame_routing_id.frame_routing_id;
   GetWebContentsImpl()->AsWebContentsImplExt()->OnPip(PIP_STATE_ENTER,
-                              player_id.delegate_id,
+                              player_id.frame_routing_id.child_id,
                               player_id.frame_routing_id.child_id,
                               player_id.frame_routing_id.frame_routing_id,
                               natural_size.width(),
@@ -89,11 +89,11 @@ PictureInPictureResult VideoPictureInPictureWindowControllerImpl::StartSessionEx
 void VideoPictureInPictureWindowControllerImpl::OnLeavingPictureInPictureExt(
     bool should_pause_video) {
   DCHECK(active_session_);
-  LOG(INFO) << "Pip Exit " << pip_media_player_id_.delegate_id
+  LOG(INFO) << "Pip Exit " << pip_media_player_id_.frame_routing_id.child_id
             << " " << pip_media_player_id_.frame_routing_id.child_id
             << " " << pip_media_player_id_.frame_routing_id.frame_routing_id;
   GetWebContentsImpl()->AsWebContentsImplExt()->OnPip(PIP_STATE_EXIT,
-      pip_media_player_id_.delegate_id,
+      pip_media_player_id_.frame_routing_id.child_id,
       pip_media_player_id_.frame_routing_id.child_id,
       pip_media_player_id_.frame_routing_id.frame_routing_id, 0, 0);
 
@@ -117,18 +117,18 @@ void VideoPictureInPictureWindowControllerImpl::OnLeavingPictureInPictureExt(
 void VideoPictureInPictureWindowControllerImpl::OnPictureInPictureStateChanged(
     const MediaPlayerId& id, uint32_t state, int32_t width, int32_t height) {
   DCHECK(active_session_);
-  GetWebContentsImpl()->AsWebContentsImplExt()->OnPip(state, id.delegate_id,
+  GetWebContentsImpl()->AsWebContentsImplExt()->OnPip(state, id.frame_routing_id.child_id,
                               id.frame_routing_id.child_id,
                               id.frame_routing_id.frame_routing_id, width, height);
 }
 
 void VideoPictureInPictureWindowControllerImpl::WebContentsDestroyedExt() {
   DCHECK(active_session_);
-  LOG(INFO) << "Pip Exit " << pip_media_player_id_.delegate_id
+  LOG(INFO) << "Pip Exit " << pip_media_player_id_.frame_routing_id.child_id
             << " " << pip_media_player_id_.frame_routing_id.child_id
             << " " << pip_media_player_id_.frame_routing_id.frame_routing_id;
   GetWebContentsImpl()->AsWebContentsImplExt()->OnPip(PIP_STATE_EXIT,
-      pip_media_player_id_.delegate_id,
+      pip_media_player_id_.frame_routing_id.child_id,
       pip_media_player_id_.frame_routing_id.child_id,
       pip_media_player_id_.frame_routing_id.frame_routing_id, 0, 0);
 }

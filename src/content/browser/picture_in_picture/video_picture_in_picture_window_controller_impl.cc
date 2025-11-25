@@ -566,7 +566,7 @@ void VideoPictureInPictureWindowControllerImpl::MediaStartedPlaying(
 #if BUILDFLAG(ARKWEB_PIP)
   if (GetWebContentsImpl() && GetWebContentsImpl()->AsWebContentsImplExt()) {
     GetWebContentsImpl()->AsWebContentsImplExt()->OnPip(PIP_STATE_PLAY,
-      media_player_id.delegate_id,
+      media_player_id.frame_routing_id.child_id,
       media_player_id.frame_routing_id.child_id,
       media_player_id.frame_routing_id.frame_routing_id, 0, 0);
   }
@@ -586,7 +586,7 @@ void VideoPictureInPictureWindowControllerImpl::MediaStoppedPlaying(
 #if BUILDFLAG(ARKWEB_PIP)
   if (GetWebContentsImpl() && GetWebContentsImpl()->AsWebContentsImplExt()) {
     GetWebContentsImpl()->AsWebContentsImplExt()->OnPip(PIP_STATE_PAUSE,
-      media_player_id.delegate_id,
+      media_player_id.frame_routing_id.child_id,
       media_player_id.frame_routing_id.child_id,
       media_player_id.frame_routing_id.frame_routing_id, 0, 0);
   }

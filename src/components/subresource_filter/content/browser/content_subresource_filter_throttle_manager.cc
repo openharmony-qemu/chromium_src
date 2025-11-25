@@ -687,7 +687,7 @@ ContentSubresourceFilterThrottleManager::
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)
     AsArkWebContentSubresourceFilterThrottleManagerExt()->AdBlockMaybeCreateActivationState(
-        navigation_handle, throttle);
+        &navigation_handle, throttle);
 #endif
 
     return throttle;

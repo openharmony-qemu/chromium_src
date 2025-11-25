@@ -129,7 +129,7 @@ public:
       base::WeakPtr<media::MediaObserver> media_observer,
       bool enable_instant_source_buffer_gc,
       bool embedded_media_experience_enabled,
-      mojo::PendingRemote<media::mojom::MediaMetricsProvider> metrics_provider,
+      mojo::PendingRemote<media::mojom::blink::MediaMetricsProvider> metrics_provider,
       CreateSurfaceLayerBridgeCB create_bridge_callback,
       scoped_refptr<viz::RasterContextProvider> raster_context_provider,
       bool use_surface_layer,

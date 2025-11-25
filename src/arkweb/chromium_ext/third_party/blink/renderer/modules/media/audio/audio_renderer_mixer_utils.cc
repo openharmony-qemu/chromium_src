@@ -43,11 +43,11 @@ void AudioRendererMixerUtils::AudioRendererMixerShareInit(base::PlatformThreadId
       switches::kProcessType);
   if (type == switches::kRendererProcess) {
     blink::ResSchedReportClient report_client(base::GetCurrentRealPid());
-    report_client.SendAudioData(0, base::GetCurrentRealPid(), media_tid);
+    report_client.SendAudioData(0, base::GetCurrentRealPid(), media_tid.raw());
   } else {
     OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
         OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_START,
-        base::GetCurrentRealPid(), media_tid);
+        base::GetCurrentRealPid(), media_tid.raw());
   }
 }
 #endif
@@ -58,15 +58,15 @@ void AudioRendererMixerUtils::AudioRendererMixerShareDestroy(base::PlatformThrea
       switches::kProcessType);
   if (type == switches::kRendererProcess) {
     blink::ResSchedReportClient report_client(base::GetCurrentRealPid());
-    report_client.SendAudioData(1, base::GetCurrentRealPid(), audio_output_tid);
-    report_client.SendAudioData(1, base::GetCurrentRealPid(), media_tid);
+    report_client.SendAudioData(1, base::GetCurrentRealPid(), audio_output_tid.raw());
+    report_client.SendAudioData(1, base::GetCurrentRealPid(), media_tid.raw());
   } else {
     OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
         OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_STOP,
-        base::GetCurrentRealPid(), audio_output_tid);
+        base::GetCurrentRealPid(), audio_output_tid.raw());
     OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
         OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_STOP,
-        base::GetCurrentRealPid(), media_tid);
+        base::GetCurrentRealPid(), media_tid.raw());
   }
 }
 #endif
@@ -77,15 +77,15 @@ void AudioRendererMixerUtils::AddMixerInputShareInit(base::PlatformThreadId audi
       switches::kProcessType);
   if (type == switches::kRendererProcess) {
     blink::ResSchedReportClient report_client(base::GetCurrentRealPid());
-    report_client.SendAudioData(1, base::GetCurrentRealPid(), audio_output_tid);
-    report_client.SendAudioData(1, base::GetCurrentRealPid(), media_tid);
+    report_client.SendAudioData(1, base::GetCurrentRealPid(), audio_output_tid.raw());
+    report_client.SendAudioData(1, base::GetCurrentRealPid(), media_tid.raw());
   } else {
     OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
         OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_STOP,
-        base::GetCurrentRealPid(), audio_output_tid);
+        base::GetCurrentRealPid(), audio_output_tid.raw());
     OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
         OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_STOP,
-        base::GetCurrentRealPid(), media_tid);
+        base::GetCurrentRealPid(), media_tid.raw());
   }
 }
 #endif
@@ -96,15 +96,15 @@ void AudioRendererMixerUtils::AddMixerInputShareRender(base::PlatformThreadId au
       switches::kProcessType);
   if (type == switches::kRendererProcess) {
     blink::ResSchedReportClient report_client(base::GetCurrentRealPid());
-    report_client.SendAudioData(1, base::GetCurrentRealPid(), audio_output_tid);
-    report_client.SendAudioData(1, base::GetCurrentRealPid(), media_tid);
+    report_client.SendAudioData(1, base::GetCurrentRealPid(), audio_output_tid.raw());
+    report_client.SendAudioData(1, base::GetCurrentRealPid(), media_tid.raw());
   } else {
     OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
         OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_STOP,
-        base::GetCurrentRealPid(), audio_output_tid);
+        base::GetCurrentRealPid(), audio_output_tid.raw());
     OHOS::NWeb::ResSchedClientAdapter::ReportAudioData(
         OHOS::NWeb::ResSchedStatusAdapter::AUDIO_STATUS_STOP,
-        base::GetCurrentRealPid(), media_tid);
+        base::GetCurrentRealPid(), media_tid.raw());
   }
 }
 #endif

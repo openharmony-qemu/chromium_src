@@ -1792,7 +1792,6 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   virtual void OnBrowserForeground() = 0;
   virtual void OnBrowserBackground() = 0;
 #endif
-#include "arkweb/chromium_ext/content/public/browser/web_contents_for_include.cc"
 
 #if BUILDFLAG(ARKWEB_PIP)
   virtual void OnPipEvent(int event) = 0;
@@ -1821,6 +1820,7 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   // (e.g., from a link click with `target="_blank"`, `window.open()`).
   virtual WindowOpenDisposition GetOriginalWindowOpenDisposition() const = 0;
 
+#include "arkweb/chromium_ext/content/public/browser/web_contents_for_include.cc"
  private:
   // This interface should only be implemented inside content.
   friend class WebContentsImpl;

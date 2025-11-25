@@ -4383,6 +4383,8 @@ void NWebImpl::UninstallExtension(const std::string& eid,
     return;
   }
 
+  service->RemoveForbidDisplayInSettings(eid);
+
   std::u16string error;
   const bool ok = service->UninstallExtension(
       eid, extensions::UNINSTALL_REASON_INTERNAL_MANAGEMENT, &error);

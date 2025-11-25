@@ -72,4 +72,12 @@ void ExtensionService::LoadForbidDisplayInSettingsExtensions() {
   }
 }
 
+void ExtensionService::RemoveForbidDisplayInSettings(
+    const ExtensionId& extension_id) {
+  if (forbid_display_in_settings_.find(extension_id) !=
+      forbid_display_in_settings_.end()) {
+    forbid_display_in_settings_.erase(extension_id);
+    extension_prefs_->SetNotDisplayInSettings(extension_id, false);
+  }
+}
 }  // namespace extensions

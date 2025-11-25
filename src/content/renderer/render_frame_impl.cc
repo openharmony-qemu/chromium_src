@@ -5777,7 +5777,7 @@ void RenderFrameImpl::BeginNavigation(
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   if (IsMainFrame()) {
-    LOG_FEEDBACK(INFO) << "Begin navigation routing_id: " << routing_id_;
+    LOG_FEEDBACK(INFO) << "Begin navigation frame_token: " << frame_token_;
   }
 #endif
 

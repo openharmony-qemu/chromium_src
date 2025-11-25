@@ -67,11 +67,10 @@ class OhosEventFilter {
 
   gfx::AcceleratedWidget pre_widget_id_ = -1;
   EventTimeStamp pre_timestamp_ = 0;
-  EventAction pre_mouse_event_action_ = OH_NATIVEXCOMPONENT_MOUSE_NONE;
-
-  EventAction pre_touch_event_action_ = OH_NATIVEXCOMPONENT_UNKNOWN;
-  EventAction mouse_move_action_ = OH_NATIVEXCOMPONENT_MOUSE_NONE;
-  EventAction touch_move_action_ = OH_NATIVEXCOMPONENT_UNKNOWN;
+  EventAction pre_mouse_event_action_;
+  EventAction pre_touch_event_action_;
+  EventAction mouse_move_action_;
+  EventAction touch_move_action_;
   TouchEventFinger pre_touch_finger_id_ = -1;
 
   bool CheckMouseEventInfoForFilter(gfx::AcceleratedWidget widget_id,

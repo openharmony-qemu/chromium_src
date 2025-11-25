@@ -31,6 +31,7 @@ import JsBindingUtils from '../utils/JsBindingUtils';
 import Inject from '../common/InjectModule';
 import lazy { AppWindowAdapter } from '../adapter/AppWindowAdapter';
 import type { NewWindowParam, PointCoordinate, WindowBound } from '../interface/CommonInterface';
+import { NodeContent } from '@kit.ArkUI';
 
 function implAppWindowAdapter(): AppWindowAdapter {
   return Inject.getOrCreate(AppWindowAdapter);
@@ -123,6 +124,10 @@ function shiftWindowTouchEvent(sourceId: number, targetId: number,
   implAppWindowAdapter().shiftWindowTouchEvent(sourceId, targetId, fingerId, callback);
 }
 
+function bind(id: string, callback: (nodeContent: NodeContent | undefined) => void) {
+  implAppWindowAdapter().bind(id, callback);
+}
+
 export class AppWindowAdapterBind {
   static bind() {
     JsBindingUtils.bindFunction("AppWindow.CreateWindow", createWindow);
@@ -145,5 +150,6 @@ export class AppWindowAdapterBind {
     JsBindingUtils.bindFunction("AppWindow.StartWindowMovingWithOffset", startWindowMovingWithOffset);
     JsBindingUtils.bindFunction("AppWindow.GetOriginWindowIds", getOriginWindowIds);
     JsBindingUtils.bindFunction("AppWindow.ShiftWindowTouchEvent", shiftWindowTouchEvent);
+    JsBindingUtils.bindFunction("AppWindow.Bind", bind);
   }
 }

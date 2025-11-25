@@ -66,6 +66,8 @@ class ADAPTER_EXPORT_API AccessibilityAdapter {
   void ShutDown();
 
   void Initialize(OH_NativeXComponent* native_xcomponent, std::string& id);
+  void Initialize(ArkUI_NodeHandle node, std::string& id);
+  void RegisterCallback(std::string& id);
   static int32_t FindAccessibilityNodeInfosById(
       const char* instance_id,
       int64_t element_id,

@@ -64,6 +64,7 @@ class OhosToplevelWindow : public OhosWindow,
       const gfx::Point& pointer_location_in_px) override;
 
   // PlatformWindow:
+  void Show(bool inactive) override;
   void Hide() override;
   void Close() override;
   bool IsVisible() const override;

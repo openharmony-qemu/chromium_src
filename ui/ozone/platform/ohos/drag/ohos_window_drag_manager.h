@@ -33,7 +33,6 @@
 #include <cstdint>
 #include <string>
 
-#include <ace/xcomponent/native_interface_xcomponent.h>
 #include <multimodalinput/oh_input_manager.h>
 
 #include "ohos/adapter/window/window_common.h"
@@ -45,7 +44,7 @@ const std::string kTouchDragTab = "touch";
 
 class OhosWindowDragManager {
  public:
-  OhosWindowDragManager();
+  OhosWindowDragManager() = default;
   OhosWindowDragManager(OhosWindowDragManager&&) = delete;
   OhosWindowDragManager& operator=(OhosWindowDragManager&&) = delete;
   OhosWindowDragManager(const OhosWindowDragManager&) = delete;
@@ -69,11 +68,14 @@ class OhosWindowDragManager {
   // window ids before and after event transfer
   int32_t shift_event_source_window_id_ = -1;
   int32_t shift_event_target_window_id_ = -1;
+  int32_t press_event_action_;
+  int32_t release_event_action_;
   // The finger id that requires event shift when touching drag a tab
   int32_t touch_drag_tab_finger_id_ = -1;
 
   bool IsTouchingDragTab() { return touch_drag_tab_finger_id_ >= 0; }
   std::string GetTabDragMethod();
+  void RefreshEventAction();
 };
 
 }  // namespace ui

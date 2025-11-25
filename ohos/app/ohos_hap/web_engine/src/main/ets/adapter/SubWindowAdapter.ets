@@ -64,8 +64,22 @@ export class SubWindowAdapter extends BaseAdapter {
   }
 
   @LogMethod
-  createSubWindow(param: NewWindowParam,
-    callback: (id: string) => void) {
+  createSubWindow(param: NewWindowParam) {
+    let parentId = param.parent_id
+    let fixedBounds = this.adjustBounds(parentId, param.bounds);
+    const para: Record<string, IParams> = {
+      'subWindowParams': {
+        id: param.window_id,
+        size: [fixedBounds.width, fixedBounds.height],
+        initColorRgb: param.init_color_argb,
+      }
+    };
+    let subStorage: LocalStorage = new LocalStorage(para);
+    this.createNewWindow(parentId, param.window_id, fixedBounds, subStorage);
+  }
+
+  @LogMethod
+  reuseSubWindow(param: NewWindowParam): string {
     let parentId = param.parent_id
     let fixedBounds = this.adjustBounds(parentId, param.bounds);
     const reusableWindow =
@@ -81,25 +95,15 @@ export class SubWindowAdapter extends BaseAdapter {
         this.moveSubWindow(reusableWindow.subWindow, fixedBounds.left, fixedBounds.top, parentId);
         reusableWindow.subWindow.showWindow()
           .catch((err: BusinessError) => {
+            reusableWindow.id = "";
             LogUtil.error(TAG, 'Failed to reuseSubWindow: ' + reusableWindow.id + ',err:' + JSON.stringify(err));
-            return;
           });
-        callback(reusableWindow.id);
-        return;
+        return reusableWindow.id;
       } catch (e) {
         LogUtil.error(TAG,'reuseSubWindow error' + reusableWindow.id);
       }
     }
-    const para: Record<string, IParams> = {
-      'subWindowParams': {
-        id: param.window_id,
-        callback: callback,
-        size: [fixedBounds.width, fixedBounds.height],
-        initColorRgb: param.init_color_argb,
-      }
-    };
-    let subStorage: LocalStorage = new LocalStorage(para);
-    this.createNewWindow(parentId, param.window_id, fixedBounds, subStorage);
+    return "";
   }
 
   private getParentWindow(parentId: string): window.Window | undefined {
@@ -221,9 +225,9 @@ export class SubWindowAdapter extends BaseAdapter {
       if (bounds.width > 0 && bounds.height > 0) {
         this.resizeSubWindow(windowClass, bounds.width, bounds.height);
       }
-      windowClass.loadContent('pages/SubWindow', subStorage, (err) => {
+      windowClass.loadContent(this.getContentPath(), subStorage, (err) => {
         if (err.code) {
-          LogUtil.error(TAG, 'Failed to load the content. Cause:' + JSON.stringify(err));
+          LogUtil.error(TAG, 'Failed to load the subwindow. Cause:' + JSON.stringify(err));
           return;
         }
         windowClass.setWindowFocusable(false)
@@ -238,6 +242,14 @@ export class SubWindowAdapter extends BaseAdapter {
       });
     } catch (exception) {
       LogUtil.error(TAG,'Failed to create sub window. Cause: ' + JSON.stringify(exception));
+    }
+  }
+
+  private getContentPath(): string {
+    if (this.nativeContext.IsSupportNodeHandleFeature()) {
+      return 'pages/NodeHandleSubWindow';
+    } else {
+      return 'pages/SubWindow';
     }
   }
 

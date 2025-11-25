@@ -111,7 +111,7 @@ class OhosWindowTest : public ::testing::Test {
   std::unique_ptr<base::test::TaskEnvironment> task_env_;
   std::unique_ptr<OhosWindowManager> window_manager_;
   std::unique_ptr<OhosWindowDragManager> window_drag_manager_;
-  std::unique_ptr<OhosEventSource> event_source_;
+  std::unique_ptr<OhosEventSourceBase> event_source_;
 };
 
 TEST_F(OhosWindowTest, ToplevelWindowCreate) {

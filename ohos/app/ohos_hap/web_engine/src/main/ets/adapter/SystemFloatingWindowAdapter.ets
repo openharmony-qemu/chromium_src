@@ -152,7 +152,7 @@ export class SystemFloatingWindowAdapter extends BaseAdapter {
         'startUri': startUri
       };
       let storage: LocalStorage = new LocalStorage(para);
-      windowClass.loadContent("pages/Index", storage, (err, data) => {
+      windowClass.loadContent(this.getContentPath(), storage, (err, data) => {
         let errCode: number = err.code;
         if (errCode) {
           LogUtil.error(TAG, 'Failed to load the content. Cause:' + JSON.stringify(err));
@@ -164,6 +164,14 @@ export class SystemFloatingWindowAdapter extends BaseAdapter {
           });
       })
     });
+  }
+
+  private getContentPath(): string {
+    if (this.nativeContext.IsSupportNodeHandleFeature()) {
+      return 'pages/NodeHandleWindow';
+    } else {
+      return 'pages/Index';
+    }
   }
 
   @LogMethod

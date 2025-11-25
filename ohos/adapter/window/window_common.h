@@ -51,6 +51,12 @@ enum class AbilityType {
   kTaskManagerAbility,
 };
 
+enum class AdapterType {
+  kAppWindow,
+  kSubWindow,
+  kSystemFloatingWindow,
+};
+
 struct NewWindowParam {
  public:
   std::string parent_id;
@@ -58,11 +64,11 @@ struct NewWindowParam {
   WindowRect bounds;
   std::string init_color_argb;
   bool hide_title_bar;
-  bool use_floating_window;
   bool use_dark_mode;
   bool caption_button_visible;
   AbilityType ability_type;
   std::string app_id;
+  AdapterType adapter_type{AdapterType::kAppWindow};
 };
 
 struct PointCoordinate {

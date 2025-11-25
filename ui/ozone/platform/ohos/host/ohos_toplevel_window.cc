@@ -46,7 +46,7 @@
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/native_widget_types.h"
 #include "ui/ozone/platform/ohos/common/ohos_util.h"
-#include "ui/ozone/platform/ohos/host/ohos_event_source.h"
+#include "ui/ozone/platform/ohos/host/ohos_event_source_base.h"
 #include "ui/ozone/platform/ohos/host/ohos_window_manager.h"
 
 namespace ui {
@@ -63,6 +63,11 @@ OhosToplevelWindow::OhosToplevelWindow(PlatformWindowDelegate* delegate,
 }
 
 OhosToplevelWindow::~OhosToplevelWindow() = default;
+
+void OhosToplevelWindow::Show(bool inactive) {
+  OhosWindow::BindNodeHandle();
+  OhosWindow::Show(inactive);
+}
 
 void OhosToplevelWindow::Hide() {
   OhosWindow::Hide();
@@ -552,7 +557,7 @@ void OhosToplevelWindow::DispatchHostWindowDragMovement(
     // During a single dragging, the mouse position within the window should not
     // change, the screen one changes when the mouse moves.
     gfx::Point screen_point =
-        reinterpret_cast<OhosEventSource*>(PlatformEventSource::GetInstance())
+        reinterpret_cast<OhosEventSourceBase*>(PlatformEventSource::GetInstance())
             ->GetCursorScreenPoint();
     gfx::Rect bounds(bounds_in_pixels_);
     if (state_ == PlatformWindowState::kMaximized) {

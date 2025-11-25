@@ -100,10 +100,11 @@ export interface NativeContext {
   OnDeviceModeChange: (id: string, event: ChangeEventType, status: window.WindowStatusType) => void;
   OnWindowDisplayIdChange: (id: string, displayId: number) => void;
   OnAvoidAreaChangeCallback: (statusBarHeight: number) => void;
+  OnAbilityStartedCB: (id: string) => void;
+  IsSupportNodeHandleFeature: () => boolean;
 }
 
 export interface IParams {
-  callback: (id: string) => void,
   id: string,
   size: number[], // [width, height]
   initColorRgb: string,
@@ -128,17 +129,17 @@ export const kAbilityMap = new Map<AbilityType, string>([
 export interface OhosDragParamToJs {
   text: string;
   url: string;
-  urlTitle: string;
+  url_title: string;
   html: string;
-  webImageFilePath: string;
-  bookmarkBuffer: ArrayBuffer;
-  webCustomBuffer: ArrayBuffer;
-  pixelMapBuffer: ArrayBuffer;
-  pixelMapWidth: number;
-  pixelMapHeight: number;
-  pixelMapTouchX: number;
-  pixelMapTouchY: number;
-  windowId: string;
+  web_image_file_path: string;
+  bookmark_buffer: ArrayBuffer;
+  web_custom_buffer: ArrayBuffer;
+  pixelmap_buffer: ArrayBuffer;
+  pixelmap_width: number;
+  pixelmap_height: number;
+  pixelmap_touch_x: number;
+  pixelmap_touch_y: number;
+  window_id: string;
 }
 
 export interface OhosDropData {

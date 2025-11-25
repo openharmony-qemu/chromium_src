@@ -37,6 +37,7 @@
 #include "content/public/browser/browser_thread.h"
 #include "ohos/adapter/accessibility/accessibility_delegate_ohos_registry.h"
 #include "ohos/adapter/cursor/cursor.h"
+#include "ohos/adapter/node_handle/node_handle_impl.h"
 #include "ohos/adapter/window/app_window_adapter.h"
 #include "ohos/adapter/window/system_floating_window_adapter.h"
 #include "ohos/adapter/xcomponent/adapter/window_adapter.h"
@@ -511,6 +512,15 @@ display::Display OhosWindow::GetCurrentDisplay() {
   NOTIMPLEMENTED_LOG_ONCE();
   display::Display current_display;
   return current_display;
+}
+
+void OhosWindow::BindNodeHandle() {
+  if (ohos::adapter::nodeHandle::NodeHandleImpl::GetInstance()
+          .IsSupportNodeHandle() &&
+      !is_ability_bound_) {
+    is_ability_bound_ =
+        AppWindowAdapter::GetInstance().Bind(GetWindowUniqueId());
+  }
 }
 
 }  // namespace ui

@@ -59,6 +59,8 @@ using AddSurfaceCallbackFunc = int32_t(OH_ArkUI_SurfaceHolder*,
 using SurfaceHolderDisposeFunc = void(OH_ArkUI_SurfaceHolder*);
 using SurfaceCallbackDisposeFunc = void(OH_ArkUI_SurfaceCallback*);
 using GetNativeWindowFunc = OHNativeWindow*(OH_ArkUI_SurfaceHolder*);
+using AccessibilityProviderCreateFunc =
+    ArkUI_AccessibilityProvider*(ArkUI_NodeHandle);
 
 class ADAPTER_EXPORT_API NodeHandleImpl {
  public:
@@ -143,6 +145,13 @@ class ADAPTER_EXPORT_API NodeHandleImpl {
    * FuncRetVal: OHNativeWindow*
    */
   OHNativeWindow* GetNativeWindow(OH_ArkUI_SurfaceHolder* surface_holder);
+  /*
+   * FuncName: OH_ArkUI_AccessibilityProvider_Create
+   * FuncParam: ArkUI_NodeHandle
+   * FuncRetVal: ArkUI_AccessibilityProvider*
+   */
+  ArkUI_AccessibilityProvider* AccessibilityProviderCreate(
+      ArkUI_NodeHandle node);
 
   bool IsSupportNodeHandle();
 
@@ -164,6 +173,8 @@ class ADAPTER_EXPORT_API NodeHandleImpl {
   SetSurfaceCreatedEventFunc* set_surface_created_event_func_ = nullptr;
   SetSurfaceChangedEventFunc* set_surface_changed_event_func_ = nullptr;
   SetSurfaceDestroyedEventFunc* set_surface_destroyed_event_func_ = nullptr;
+  AccessibilityProviderCreateFunc* accessibility_provider_create_func_ =
+      nullptr;
   common::SharedLibrary ace_ndk_lib_;
 };
 

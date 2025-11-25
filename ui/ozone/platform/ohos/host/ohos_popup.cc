@@ -49,6 +49,7 @@ OhosPopup::~OhosPopup() = default;
 void OhosPopup::Show(bool inactive) {
   DCHECK(parent_window());
 
+  OhosWindow::BindNodeHandle();
   OhosWindow::Show(inactive);
 
   if (menu_created_) {

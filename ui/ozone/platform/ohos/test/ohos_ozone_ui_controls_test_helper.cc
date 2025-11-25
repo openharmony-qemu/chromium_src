@@ -40,7 +40,7 @@
 #include "ui/events/platform/platform_event_source.h"
 #include "ui/events/pointer_details.h"
 #include "ui/events/types/event_type.h"
-#include "ui/ozone/platform/ohos/host/ohos_event_source.h"
+#include "ui/ozone/platform/ohos/host/ohos_event_source_base.h"
 
 namespace ui {
 // Mask of the buttons currently down.
@@ -75,7 +75,7 @@ void OhosOzoneUIControlsTestHelper::SendKeyEvents(gfx::AcceleratedWidget widget,
     return;
   }
   auto* event_source =
-      reinterpret_cast<OhosEventSource*>(PlatformEventSource::GetInstance());
+      reinterpret_cast<OhosEventSourceBase*>(PlatformEventSource::GetInstance());
 
   KeyEvent event(EventType::kKeyPressed, ui::VKEY_MENU, dom_code, key_event_types,
                  dom_key, ui::EventTimeForNow());

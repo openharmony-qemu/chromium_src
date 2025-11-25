@@ -43,13 +43,12 @@ if (is_ohos) {
       "//ohos/adapter/accessibility:accessibility",
       "//ohos/adapter/aki_hook:aki_hook",
       "//ohos/adapter/policy:policy",
-      "//ohos/adapter/window:window",
       "//ohos/adapter/battery:battery",
       "//ohos/adapter/bluetooth:bluetooth_adapter",
       "//ohos/adapter/browser:browser_adapter",
       "//ohos/adapter/cert_manager:cert_manager",
-      "//ohos/adapter/context_path:context_path_adapter",
       "//ohos/adapter/context:context_adapter",
+      "//ohos/adapter/context_path:context_path_adapter", 
       "//ohos/adapter/cursor:cursor",
       "//ohos/adapter/default_application:default_application",
       "//ohos/adapter/dev_config:dev_config",
@@ -70,6 +69,7 @@ if (is_ohos) {
       "//ohos/adapter/multiprocess:multiprocess",
       "//ohos/adapter/native_theme:native_theme",
       "//ohos/adapter/net:net",
+      "//ohos/adapter/node_handle:node_handle",
       "//ohos/adapter/notification:notification_adapter",
       "//ohos/adapter/ocr:ocr_adapter",
       "//ohos/adapter/ohos_i18n:ohos_i18n",
@@ -87,7 +87,8 @@ if (is_ohos) {
       "//ohos/adapter/tracing:tracing",
       "//ohos/adapter/web_app:web_app",
       "//ohos/adapter/web_entry:web_entry",
-      "//ohos/adapter/xcomponent:xcomponent",
+      "//ohos/adapter/window:window",
+      "//ohos/adapter/xcomponent:xcomponent"
     ]
 
     public_deps = [ "//third_party/aki:aki_jsbind" ]

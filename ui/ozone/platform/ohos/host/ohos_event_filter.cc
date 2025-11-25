@@ -32,6 +32,7 @@
 #include "ohos/adapter/xcomponent/event/window_event_filter_adapter.h"
 #include "ohos/adapter/xcomponent/xcomponent_manager.h"
 #include "ui/ozone/platform/ohos/host/ohos_window.h"
+#include "ohos/adapter/node_handle/node_handle_impl.h"
 
 namespace ui {
 
@@ -46,8 +47,18 @@ OhosEventFilter& OhosEventFilter::GetInstance() {
 }
 
 OhosEventFilter::OhosEventFilter() {
-  mouse_move_action_ = OH_NATIVEXCOMPONENT_MOUSE_MOVE;
-  touch_move_action_ = OH_NATIVEXCOMPONENT_MOVE;
+  if (ohos::adapter::nodeHandle::NodeHandleImpl::GetInstance()
+          .IsSupportNodeHandle()) {
+    mouse_move_action_ = UI_MOUSE_EVENT_ACTION_MOVE;
+    pre_mouse_event_action_ = UI_MOUSE_EVENT_ACTION_UNKNOWN;
+    touch_move_action_ = UI_TOUCH_EVENT_ACTION_MOVE;
+    pre_touch_event_action_ = UI_TOUCH_EVENT_ACTION_CANCEL;
+  } else {
+    mouse_move_action_ = OH_NATIVEXCOMPONENT_MOUSE_MOVE;
+    pre_mouse_event_action_ = OH_NATIVEXCOMPONENT_MOUSE_NONE;
+    touch_move_action_ = OH_NATIVEXCOMPONENT_MOVE;
+    pre_touch_event_action_ = OH_NATIVEXCOMPONENT_UNKNOWN;
+  }
 }
 
 bool OhosEventFilter::CheckFilterMouseEvent(

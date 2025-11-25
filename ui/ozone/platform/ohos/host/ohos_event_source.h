@@ -33,24 +33,18 @@
 #include <ace/xcomponent/native_interface_xcomponent.h>
 #include <multimodalinput/oh_input_manager.h>
 
-#include "base/memory/raw_ptr.h"
 #include "ohos/adapter/xcomponent/event/input_event_common.h"
-#include "ui/events/event.h"
-#include "ui/events/event_constants.h"
 #include "ui/events/keycodes/dom/dom_code.h"
-#include "ui/events/platform/platform_event_source.h"
 #include "ui/events/types/event_type.h"
 #include "ui/gfx/geometry/point_f.h"
 #include "ui/ozone/platform/ohos/drag/ohos_window_drag_manager.h"
-#include "ui/ozone/platform/ohos/host/ohos_window_observer.h"
-#include "ui/ozone/platform/ohos/host/ohos_window_manager.h"
+#include "ui/ozone/platform/ohos/host/ohos_event_source_base.h"
 
 namespace ui {
 
 using namespace ohos::adapter::xcomponent;
 
-class OhosEventSource : public PlatformEventSource,
-                        public OhosWindowObserver {
+class OhosEventSource : public OhosEventSourceBase {
  public:
   OhosEventSource(OhosEventSource&&) = delete;
   OhosEventSource& operator=(OhosEventSource&&) = delete;
@@ -58,17 +52,15 @@ class OhosEventSource : public PlatformEventSource,
   OhosEventSource& operator=(const OhosEventSource&) = delete;
   explicit OhosEventSource(OhosWindowManager* window_manager,
                            OhosWindowDragManager* window_drag_manager);
-  ~OhosEventSource() override;
+  ~OhosEventSource() override = default;
 
   void OnMouseEvent(const gfx::AcceleratedWidget widget_id,
                     const OH_NativeXComponent_MouseEvent& mouse_event,
                     const int32_t display_id,
                     const EventFlags key_flags);
-  void OnMouseHoverEvent(const gfx::AcceleratedWidget widget_id, const bool is_hover);
   void OnPanEvent(const PanAction action,
                   const gfx::AcceleratedWidget widget_id,
                   const PanEvent& ohos_event);
-  void OnKeyEvent(const gfx::AcceleratedWidget widget_id, ui::KeyEvent& key_event);
   void OnTouchEvent(const gfx::AcceleratedWidget widget_id,
                     const OH_NativeXComponent_TouchEvent& ohos_touch_event,
                     const OH_NativeXComponent_TouchPointToolType ohos_touch_point_tool_type,
@@ -77,28 +69,13 @@ class OhosEventSource : public PlatformEventSource,
   void OnPinchEvent(const std::string& pinch_step,
                     const gfx::AcceleratedWidget widget_id,
                     const PinchEvent& gesture_event);
-  void OnDragEnterEvent(const gfx::AcceleratedWidget widget_id,
-                        const ohos::adapter::OhosDropData& drop_data);
-  void OnDropEvent(const gfx::AcceleratedWidget widget_id,
-                   const ohos::adapter::OhosDropData& drop_data);
-  void OnDragLeaveEvent(const gfx::AcceleratedWidget widget_id);
-  void OnDragEndEvent(const gfx::AcceleratedWidget widget_id);
-  void OnDragMoveEvent(const gfx::AcceleratedWidget widget_id,
-                       const float window_x,
-                       const float window_y);
-
-  EventFlags GetKeyFlags() { return key_flags_; }
-  void UpdateKeyFlags(const EventFlags& key_flags);
 
   // OhosWindowObserver
   void OnWindowAdded(OhosWindow* window) override;
   void OnWindowRemoved(OhosWindow* window) override;
 
-  gfx::Point GetCursorScreenPoint();
-  void SimulateTouchUp(const gfx::AcceleratedWidget widget_id);
-  void ShiftWindowEvent(const gfx::AcceleratedWidget source_widget_id,
-                        const gfx::AcceleratedWidget target_widget_id);
-  void StartTabDragging(const gfx::AcceleratedWidget widget_id);
+  void SimulateTouchUp(const gfx::AcceleratedWidget widget_id) override;
+
   void SendWindowMouseEventForTabDrag(
       const gfx::AcceleratedWidget widget_id,
       std::shared_ptr<OH_NativeXComponent_MouseEvent> window_mouse_event,
@@ -109,35 +86,19 @@ class OhosEventSource : public PlatformEventSource,
       std::shared_ptr<OH_NativeXComponent_TouchEvent> window_touch_event,
       const TouchPointCoordinate& coordinate,
       const int32_t display_id);
-  void EndTabDragging();
-  void StartTabDraggingByTouch(const gfx::AcceleratedWidget widget_id,
-                               const int32_t finger_id);
 
  protected:
   void OnMouseMoveEvent(const gfx::AcceleratedWidget widget_id,
                         const OH_NativeXComponent_MouseEvent& mouse_event,
                         const gfx::PointF& original_location,
                         const int32_t display_id);
-  void SetTargetAndDispatchEvent(const gfx::AcceleratedWidget widget_id, Event& event);
-
- protected:
-  EventFlags pointer_flags_{EF_NONE};
-  EventFlags key_flags_{EF_NONE};
-  gfx::PointF pointer_location_;
-  gfx::PointF mouse_wheel_offset_;
-  gfx::PointF cursor_screen_point_;
-  bool is_fling_active_{false};
-  float last_scale_ = 1.0f;
 
  private:
   void CreateAndDispatchFlingEvent(const gfx::AcceleratedWidget widget_id,
                                    const PanEvent& ohos_event,
                                    const EventFlags& event_flags,
                                    const bool is_stop);
-  const raw_ptr<OhosWindowManager> window_manager_;
   std::shared_ptr<InputEventCallBack> event_callback_;
-  const raw_ptr<OhosWindowDragManager> window_drag_manager_;
-  void EndSourceDragIfNeeded();
   EventPointerType ConvertOHToolTypeToEventPointerType(
       OH_NativeXComponent_TouchPointToolType ohos_touch_point_tool_type);
   void PrepareXcomponentPointForTouchEvent(

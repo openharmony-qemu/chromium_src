@@ -38,19 +38,16 @@
 #include "ohos/adapter/drag_drop/drag_drop_ohos_adapter.h"
 #include "ohos/adapter/xcomponent/xcomponent_delegate.h"
 #include "ohos/adapter/xcomponent/event/input_event_common.h"
+#include "ohos/adapter/xcomponent/renderer/xcomponent_base.h"
 
 namespace ohos::adapter::xcomponent {
 
-class XComponentImpl {
+class XComponentImpl : public XComponentBase {
  public:
   explicit XComponentImpl(const std::string& id,
                           const std::string& type);
   ~XComponentImpl();
 
-  std::string GetId() { return id_; }
-  XComponentType GetType() { return type_; }
-  void SetWidget(int32_t widget_id) { widget_id_ = widget_id; }
-  int32_t GetWidget() const { return widget_id_; }
   void RegisterInputEventCallBack(std::shared_ptr<InputEventCallBack> callback);
   void Initialize(OH_NativeXComponent* component,
                   XComponentDelegate* delegate);
@@ -84,21 +81,13 @@ class XComponentImpl {
   void OnSurfaceChanged();
   void OnSurfaceDestroyed();
 
-  void SendWindowMouseEventForTabDrag(Input_MouseEvent* window_mouse_event);
-  void SendWindowTouchEventForTabDrag(Input_TouchEvent* window_touch_event);
+  void SendWindowTouchEventForTabDrag(Input_TouchEvent* window_touch_event) override;
+  void SendWindowMouseEventForTabDrag(Input_MouseEvent* window_mouse_event) override;
  private:
   OH_NativeXComponent* instance_ = nullptr;
-  XComponentDelegate* delegate_ = nullptr;
-  std::string id_;
-  XComponentType type_;
-  int32_t widget_id_;
   std::shared_ptr<InputEventCallBack> event_callback_ = nullptr;
   int32_t initial_width_;
   int32_t initial_height_;
-
-  bool is_event_reissuance_required_ = false;
-  bool has_hover_event_before_register_ = false;
-  bool is_hover_before_register_ = false;
 
   // XComponent callbacks
   OH_NativeXComponent_Callback surface_callback_;

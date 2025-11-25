@@ -87,7 +87,11 @@ export class WebBaseAbility extends UIAbility implements WebProxy {
   }
 
   protected getContentPath(): string {
-    return 'pages/Index';
+    if (this.nativeContext.IsSupportNodeHandleFeature()) {
+      return 'pages/NodeHandleWindow';
+    } else {
+      return 'pages/Index';
+    }
   }
 
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam) {

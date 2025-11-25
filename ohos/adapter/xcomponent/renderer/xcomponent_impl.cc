@@ -281,8 +281,8 @@ void OnHoverEventCB(OH_NativeXComponent* component, bool is_hover) {
 }
 
 XComponentImpl::XComponentImpl(const std::string& id,
-                               const std::string& type) {
-  this->id_ = id;
+                               const std::string& type)
+                               : XComponentBase(id) {
   this->type_ = ConvertXComponentType(type);
 
   surface_callback_ = {

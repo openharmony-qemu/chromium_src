@@ -135,7 +135,7 @@ void WindowEventFilterAdapter::SendMouseEventForTabDrag(
     Input_MouseEvent* window_mouse_event) {
   std::string xcomponent_id =
       xcomponent::WindowAdapter::GetInstance().GetWindowId(widget_id);
-  auto render = xcomponent::XComponentManager::GetInstance()->GetXComponent(
+  auto render = xcomponent::XComponentManager::GetInstance()->GetXComponentBase(
       xcomponent_id);
   if (render == nullptr) {
     LOGE("[OhosTabDrag] %{public}s can not get render: %{public}s",
@@ -150,7 +150,7 @@ void WindowEventFilterAdapter::SendTouchEventForTabDrag(
     Input_TouchEvent* window_touch_event) {
   std::string xcomponent_id =
       xcomponent::WindowAdapter::GetInstance().GetWindowId(widget_id);
-  auto render = xcomponent::XComponentManager::GetInstance()->GetXComponent(
+  auto render = xcomponent::XComponentManager::GetInstance()->GetXComponentBase(
       xcomponent_id);
   if (render == nullptr) {
     LOGE("[OhosTabDrag] %{public}s can not get render: %{public}s",
@@ -248,7 +248,8 @@ static bool FilterMouseEvent(Input_MouseEvent* mouse_event) {
 
 __attribute__((no_sanitize("cfi", "cfi-icall")))
 static bool FilterTouchEvent(Input_TouchEvent* touch_event) {
-  WindowEventFilterAdapter& window_event_filter = WindowEventFilterAdapter::GetInstance();
+  WindowEventFilterAdapter& window_event_filter =
+      WindowEventFilterAdapter::GetInstance();
   if (!window_event_filter.CanFilterWindowTouchEvent() ||
       touch_event == nullptr) {
     return false;
@@ -259,8 +260,7 @@ static bool FilterTouchEvent(Input_TouchEvent* touch_event) {
     int32_t origin_window_id =
         window_event_filter.GetWindowTouchEventWindowId(touch_event);
     int32_t widget_id =
-        window_event_filter.GetTargetWindowIdAfterShiftEvent(
-            origin_window_id);
+        window_event_filter.GetTargetWindowIdAfterShiftEvent(origin_window_id);
     if (widget_id <= 0) {
       widget_id = window_event_filter.GetDraggingTabWidgetId();
     }
@@ -274,14 +274,21 @@ __attribute__((no_sanitize("cfi", "cfi-icall")))
 void RegisterWindowEventFilter(int32_t origin_window_id) {
   WindowEventFilterAdapter& window_event_filter =
       WindowEventFilterAdapter::GetInstance();
-  if (!window_event_filter.CanFilterWindowMouseEvent()) {
-    LOGE(
-        "[OhosTabDrag]WindowEventFilterAdapter::RegisterWindowEventFilter"
-        " window_manager_lib is not loaded.");
-    return;
+  if (window_event_filter.CanFilterWindowMouseEvent()) {
+    window_event_filter.RegisterWindowMouseEventFilterForWindow(
+        origin_window_id);
+  } else {
+    LOGE("[OhosTabDrag] %{public}s, CanFilterWindowMouseEvent false",
+         __FUNCTION__);
   }
-  window_event_filter.RegisterWindowMouseEventFilterForWindow(origin_window_id);
-  window_event_filter.RegisterWindowTouchEventFilterForWindow(origin_window_id);
+
+  if (window_event_filter.CanFilterWindowTouchEvent()) {
+    window_event_filter.RegisterWindowTouchEventFilterForWindow(
+        origin_window_id);
+  } else {
+    LOGE("[OhosTabDrag] %{public}s, CanFilterWindowTouchEvent false",
+         __FUNCTION__);
+  }
 }
 
 __attribute__((no_sanitize("cfi", "cfi-icall")))

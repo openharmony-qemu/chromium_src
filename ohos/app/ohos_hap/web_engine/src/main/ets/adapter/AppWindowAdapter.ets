@@ -30,7 +30,7 @@
 import bundleManager from '@ohos.bundle.bundleManager';
 import { inject, injectable } from 'inversify';
 import { BusinessError } from '@ohos.base';
-import { display, window } from '@kit.ArkUI';
+import { display, NodeContent, window } from '@kit.ArkUI';
 import { deviceInfo } from '@kit.BasicServicesKit';
 import Want from '@ohos.app.ability.Want';
 import { BaseAdapter } from '../common/BaseAdapter';
@@ -43,6 +43,7 @@ import LaunchHelper from '../utils/LaunchHelper';
 import { ContextAdapter } from './ContextAdapter';
 import { DeviceInfoAdapter } from "../adapter/DeviceInfoAdapter";
 import { NativeThemeAdapter } from './NativeThemeAdapter';
+import { NodeHandleManager } from '../common/NodeHandleManager';
 
 const TAG: string = 'AppWindow';
 
@@ -56,18 +57,21 @@ export class AppWindowAdapter extends BaseAdapter {
   private ctxAdapter: ContextAdapter;
   private deviceInfoAdapter: DeviceInfoAdapter;
   private themeAdapter: NativeThemeAdapter;
+  private nodeHandleManager: NodeHandleManager;
 
   constructor(
     @inject(AbilityManager) abilityManager: AbilityManager,
     @inject(ContextAdapter) ctxAdapter: ContextAdapter,
     @inject(DeviceInfoAdapter) deviceInfoAdapter: DeviceInfoAdapter,
-    @inject(NativeThemeAdapter) themeAdapter: NativeThemeAdapter
+    @inject(NativeThemeAdapter) themeAdapter: NativeThemeAdapter,
+    @inject(NodeHandleManager) nodeHandleManager: NodeHandleManager
   ) {
     super();
     this.abilityManager = abilityManager;
     this.ctxAdapter = ctxAdapter;
     this.deviceInfoAdapter = deviceInfoAdapter;
     this.themeAdapter = themeAdapter;
+    this.nodeHandleManager = nodeHandleManager;
 
     try {
       bundleManager.getBundleInfoForSelf(this.bundleFlags).then((data) => {
@@ -472,5 +476,15 @@ export class AppWindowAdapter extends BaseAdapter {
       LogUtil.error(TAG, 'shiftWindowTouchEvent fail, sdkApiVersion is less than 20');
       callback(false);
     }
+  }
+
+  bind(id: string, callback: (nodeContent: NodeContent | undefined) => void) {
+    let nodeContent = this.nodeHandleManager.getNodeContent(id);
+    if (!nodeContent) {
+      LogUtil.warn(TAG, 'bind node handle with node content failed, not find node content for id' + id);
+      callback(undefined);
+      return;
+    }
+    callback(nodeContent);
   }
 };

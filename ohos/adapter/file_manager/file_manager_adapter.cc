@@ -112,4 +112,23 @@ void FileManagerAdapter::GetFileIconByFileTypeId(
   }
 }
 
-}  // namespace ohos
+void FileManagerAdapter::GetUriForPath(const char* path, std::string& uri) {
+  if (path == nullptr) {
+    LOGE("[FileManagerAdapter] %{public}s fail, path is null", __FUNCTION__);
+    return;
+  }
+  unsigned int path_length = strlen(path);
+  char* temp = nullptr;
+  FileManagement_ErrCode ret =
+      OH_FileUri_GetUriFromPath(path, path_length, &temp);
+  if (ret != ERR_OK) {
+    LOGE(
+        "[FileManagerAdapter] %{public}s fail, ret=%{public}d, path=%{public}s",
+        __FUNCTION__, ret, path);
+  } else {
+    uri = temp;
+    std::free(temp);
+    temp = nullptr;
+  }
+}
+}  // namespace ohos::adapter

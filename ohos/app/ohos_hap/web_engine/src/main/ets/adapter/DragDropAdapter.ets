@@ -64,7 +64,7 @@ export class DragDropAdapter extends BaseAdapter {
 
   @LogMethod
   startDrag(dragParams: OhosDragParamToJs, callback: (result: boolean) => void) {
-    this.dragSourceWindowId = dragParams.windowId;
+    this.dragSourceWindowId = dragParams.window_id;
     let uiContext = this.dragParamManager.getUiContext(this.dragSourceWindowId);
     if (!uiContext) {
       this.handleStartDragError(callback, 'uiContext not exist');
@@ -129,20 +129,20 @@ export class DragDropAdapter extends BaseAdapter {
   }
 
   private prepareDragInfo(dragParams: OhosDragParamToJs) : dragController.DragInfo | undefined {
-    if (dragParams.pixelMapTouchX > dragParams.pixelMapWidth
-      || dragParams.pixelMapTouchY > dragParams.pixelMapHeight) {
+    if (dragParams.pixelmap_touch_x > dragParams.pixelmap_width
+      || dragParams.pixelmap_touch_y > dragParams.pixelmap_height) {
       LogUtil.error(TAG, `startDrag fail: touch point param is invalid,
-                    touchX:${dragParams.pixelMapTouchX},
-                    touchY:${dragParams.pixelMapTouchY},
-                    width:${dragParams.pixelMapWidth},
-                    height:${dragParams.pixelMapHeight}`);
+                    touchX:${dragParams.pixelmap_touch_x},
+                    touchY:${dragParams.pixelmap_touch_y},
+                    width:${dragParams.pixelmap_width},
+                    height:${dragParams.pixelmap_height}`);
       return;
     }
     try {
       let touchX: Dimension =
-        ((dragParams.pixelMapTouchX / dragParams.pixelMapWidth) * 100 + '%') as Dimension;
+        ((dragParams.pixelmap_touch_x / dragParams.pixelmap_width) * 100 + '%') as Dimension;
       let touchY: Dimension =
-        ((dragParams.pixelMapTouchY / dragParams.pixelMapHeight) * 100 + '%') as Dimension;
+        ((dragParams.pixelmap_touch_y / dragParams.pixelmap_height) * 100 + '%') as Dimension;
       let unifiedData: UDC.UnifiedData | undefined;
       if (deviceInfo.sdkApiVersion >= 15) {
         unifiedData = this.dragParamManager.handleDragDataForEntries(dragParams);
@@ -171,12 +171,12 @@ export class DragDropAdapter extends BaseAdapter {
       editable: false,
       pixelFormat: image.PixelMapFormat.BGRA_8888,
       size: {
-        height: dragParams.pixelMapHeight,
-        width: dragParams.pixelMapWidth
+        height: dragParams.pixelmap_height,
+        width: dragParams.pixelmap_width
       }
     }
     try {
-      this.pixmap = await image.createPixelMap(dragParams.pixelMapBuffer, opts);
+      this.pixmap = await image.createPixelMap(dragParams.pixelmap_buffer, opts);
     } catch (error) {
       LogUtil.error(TAG, `pixelmap create fail :${JSON.stringify(error)}`);
       return;

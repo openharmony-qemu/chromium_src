@@ -31,6 +31,8 @@
 
 #include "base/logging.h"
 #include "ohos/adapter/context/context_adapter.h"
+#include "ohos/adapter/device_info/device_info.h"
+#include "ohos/adapter/node_handle/node_handle_impl.h"
 #include "ohos/adapter/window/app_window_adapter.h"
 #include "ohos/adapter/xcomponent/event/window_event_filter_adapter.h"
 
@@ -38,10 +40,8 @@ namespace ui {
 using WindowEventFilterAdapter = ohos::adapter::window::WindowEventFilterAdapter;
 using AppWindowAdapter = ohos::adapter::window::AppWindowAdapter;
 
-OhosWindowDragManager::OhosWindowDragManager() {
-}
-
 void OhosWindowDragManager::StartTabDragging(int32_t window_id) {
+  RefreshEventAction();
   WindowEventFilterAdapter::GetInstance().SetDraggingTabWidgetId(window_id);
 }
 
@@ -87,31 +87,22 @@ bool OhosWindowDragManager::IsSimulateEventWhenEventShift(
     return false;
   }
 
-  // window event type enum:
-  // OH_NATIVEXCOMPONENT_MOUSE_PRESS: 1
-  // OH_NATIVEXCOMPONENT_MOUSE_RELEASE: 2
-  // OH_NATIVEXCOMPONENT_DOWN: 0
-  // OH_NATIVEXCOMPONENT_UP: 1
-  int32_t press_action = OH_NATIVEXCOMPONENT_MOUSE_PRESS;
-  int32_t release_action = OH_NATIVEXCOMPONENT_MOUSE_RELEASE;
-  if (IsTouchingDragTab()) {
-    release_action = OH_NATIVEXCOMPONENT_UP;
-    press_action = OH_NATIVEXCOMPONENT_DOWN;
-  }
   if (shift_event_source_window_id_ == origin_window_id &&
-      event_action == release_action) {
+      event_action == release_event_action_) {
     LOG(WARNING) << "[OhosTabDrag] " << __FUNCTION__ << " source window "
                  << GetTabDragMethod()
                  << " up is filtered, shift_event_source_window_id_:"
-                 << shift_event_source_window_id_;
+                 << shift_event_source_window_id_
+                 << ",release_event_action_:" << release_event_action_;
     return true;
   }
   if (shift_event_target_window_id_ == origin_window_id &&
-      event_action == press_action) {
+      event_action == press_event_action_) {
     LOG(WARNING) << "[OhosTabDrag] " << __FUNCTION__ << " target window "
                  << GetTabDragMethod()
                  << " down is filtered, shift_event_target_window_id_:"
-                 << shift_event_target_window_id_;
+                 << shift_event_target_window_id_
+                 << ",press_event_action_:" << press_event_action_;
     return true;
   }
   return false;
@@ -127,17 +118,17 @@ bool OhosWindowDragManager::NeedSendWindowEventToUi(const int32_t widget_id,
   // When tab is dragging, after the touch event is transferred,
   // the events in the source window need to be intercepted,
   // and the target window cannot be affected
-  if (widget_id != WindowEventFilterAdapter::GetInstance().GetDraggingTabWidgetId()) {
-    LOG(WARNING) << "[OhosTabDrag] " << __FUNCTION__ << GetTabDragMethod() << " event is "
-                    "filtered when tab is dragging, widget_id:"
+  if (widget_id !=
+      WindowEventFilterAdapter::GetInstance().GetDraggingTabWidgetId()) {
+    LOG(WARNING) << "[OhosTabDrag] " << __FUNCTION__ << GetTabDragMethod()
+                 << " event is filtered when tab is dragging, widget_id:"
                  << widget_id << ", action:" << action;
     return false;
   }
   if (IsTouchingDragTab() && event_id != touch_drag_tab_finger_id_) {
     LOG(WARNING) << "[OhosTabDrag] " << __FUNCTION__
-                 << " touch event is filtered when current fingerId is not shift fingerId, "
-                    "current finger id:"
-                 << event_id
+                 << " touch event is filtered when current fingerId is not "
+                 << "shift fingerId, current finger id:" << event_id
                  << ", touch_drag_tab_finger_id_:" << touch_drag_tab_finger_id_;
     return false;
   }
@@ -158,6 +149,32 @@ std::string OhosWindowDragManager::GetTabDragMethod() {
     return kTouchDragTab;
   }
   return kMouseDragTab;
+}
+
+void OhosWindowDragManager::RefreshEventAction() {
+  // window event type enum:
+  // OH_NATIVEXCOMPONENT_MOUSE_PRESS: 1
+  // OH_NATIVEXCOMPONENT_MOUSE_RELEASE: 2
+  // OH_NATIVEXCOMPONENT_DOWN: 0
+  // OH_NATIVEXCOMPONENT_UP: 1
+  if (ohos::adapter::nodeHandle::NodeHandleImpl::GetInstance()
+          .IsSupportNodeHandle()) {
+    if (IsTouchingDragTab()) {
+      press_event_action_ = UI_TOUCH_EVENT_ACTION_DOWN;
+      release_event_action_ = UI_TOUCH_EVENT_ACTION_UP;
+    } else {
+      press_event_action_ = UI_MOUSE_EVENT_ACTION_PRESS;
+      release_event_action_ = UI_MOUSE_EVENT_ACTION_RELEASE;
+    }
+  } else {
+    if (IsTouchingDragTab()) {
+      release_event_action_ = OH_NATIVEXCOMPONENT_UP;
+      press_event_action_ = OH_NATIVEXCOMPONENT_DOWN;
+    } else {
+      press_event_action_ = OH_NATIVEXCOMPONENT_MOUSE_PRESS;
+      release_event_action_ = OH_NATIVEXCOMPONENT_MOUSE_RELEASE;
+    }
+  }
 }
 
 }  // namespace ui

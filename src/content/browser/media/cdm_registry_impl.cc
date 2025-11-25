@@ -598,7 +598,7 @@ void CdmRegistryImpl::OnCapabilityInitialized(
     media::CdmCapabilityOrStatus cdm_capability_or_status) {
   LOG(INFO) << "[DRM]" << __func__<< ": key_system=" << key_system
            << ", robustness=" << robustness
-           << ", cdm_capability=" << (cdm_capability_or_status ? "yes" : "no");
+           << ", cdm_capability_or_status=" << (cdm_capability_or_status.has_value() ? "yes" : "no");
   DVLOG(1) << __func__ << ": key_system=" << key_system
            << ", robustness=" << robustness << ", cdm_capability_or_status="
            << cdm_capability_or_status.ToString();

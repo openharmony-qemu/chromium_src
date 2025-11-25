@@ -27,7 +27,7 @@ public:
     ~HiAppeventAdapterImpl() override = default;
 
     void ReportDynamicStastic(const std::string& domain, const std::string& eventName,
-            int32_t eventType, HiAppeventAdapter::DynamicFrameDropInfo dynamicFrameDropInfo) override;
+            int32_t eventType, const HiAppeventAdapter::DynamicFrameDropInfo& dynamicFrameDropInfo) override;
 
 };
 } // namespace OHOS::NWeb

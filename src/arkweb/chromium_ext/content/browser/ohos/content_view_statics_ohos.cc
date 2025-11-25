@@ -26,7 +26,7 @@ void SuspendedProcessWatcherOHOS::PauseWebKitShardTimersFromOHOS() {
       LOG(INFO) << "PauseWebKitShardTimersFromOHOS host is nullptr.";
       continue;
     }
-    if (pause_processes_.insert(host->GetID()).second) {
+    if (pause_processes_.insert(static_cast<int>(host->GetID())).second) {
       host->AddObserver(this);
       host->GetRendererInterface()->SetWebKitSharedTimersSuspended(true);
     }

@@ -80,6 +80,10 @@ class MockInputRouter : public InputRouter {
   void SetBypassVsyncCondition(int32_t condition) override {}
 #endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+void SetFocusWebId(int32_t nweb_id) override {}
+#endif
+
   bool sent_mouse_event_;
   bool sent_wheel_event_;
   bool sent_keyboard_event_;

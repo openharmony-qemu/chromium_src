@@ -99,6 +99,7 @@
 #include "ohos_adapter/bridge/ark_window_adapter_wrapper.h"
 #include "color_picker_adapter/color_picker_adapter_impl.h"
 #include "pasteboard_adapter/include/pasteboard_client_adapter_impl.h"
+#include "hiviewdfx_adapter/hiappevent_adapter_impl.h"
 
 namespace OHOS::NWeb {
 #if BUILDFLAG(ARKWEB_TEST)
@@ -620,4 +621,7 @@ ArkOhosAdapterHelperWrapper::CreateNetEventAdapter() {
   return std::make_unique<NetEventAdapterImpl>();
 }
 
+NWeb::HiAppeventAdapter& ArkOhosAdapterHelperWrapper::GetHiAppeventAdapterInstance() {
+  return HiAppeventAdapterImpl::GetInstance();
+}
 }  // namespace OHOS::ArkWeb

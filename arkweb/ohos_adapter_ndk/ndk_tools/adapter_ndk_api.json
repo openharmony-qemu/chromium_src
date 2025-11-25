@@ -1138,7 +1138,17 @@
             ]
         },
         "includes":[]
+    },
+    "hiappevent_ndk": {
+        "apiList": {
+            "14": [
+                "ParamList OH_HiAppEvent_CreateParamList()",
+                "ParamList OH_HiAppEvent_AddInt64Param(ParamList list, const char* name, int64_t num)",
+                "ParamList OH_HiAppEvent_AddInt32Param(ParamList list, const char* name, int32_t num)",
+                "int OH_HiAppEvent_Write(const char* domain, const char* name, enum EventType type, const ParamList list)",
+                "void OH_HiAppEvent_DestroyParamList(ParamList list)"
+            ]
+        },
+        "includes": []
     }
-
-
 }

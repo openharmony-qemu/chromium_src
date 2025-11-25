@@ -257,7 +257,7 @@ interface GpuService {
 
   // start frame loss monitor during page sliding scene
   [EnableIf=arkweb_report_loss_frame]
-  StartMonitor();
+  StartMonitor(int32 nweb_id);
  
   // start frame loss monitor during page sliding scene
   [EnableIf=arkweb_report_loss_frame]

@@ -911,6 +911,10 @@ void AbortDistill() override;
   void EnableHttpsUpgrades(bool enable) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+void SetFocusWebId(int32_t nweb_id) override;
+#endif
+
  public:
   int argc_;
   RAW_PTR_EXCLUSION const char** argv_;

@@ -32,14 +32,15 @@ class DynamicFrameLossMonitor {
 
   static DynamicFrameLossMonitor& GetInstance();
 
-  void StartMonitor();
+  void StartMonitor(int32_t nweb_id);
   void StopMonitor();
   void OnSwapBuffer();
   void OnVsync();
 
  private:
   int64_t GetCurrentTimestampMS();
-  void Report();
+  void ReportToHiSysEvent();
+  void ReportToHiAppEvent();
   void ResetStatus();
 
   std::mutex monitor_mutex_;
@@ -70,6 +71,9 @@ class DynamicFrameLossMonitor {
 
   // the number of buffer, if cached_buffer_number < 0, it will be loss frame
   int32_t cached_buffer_number_ = 0;
+
+  // the id fo current nweb
+  int32_t current_nweb_id_ = 0;
 };
 }  // namespace ohos
 }  // namespace base

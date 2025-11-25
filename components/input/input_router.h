@@ -131,6 +131,10 @@ class InputRouter {
 #if BUILDFLAG(ARKWEB_VSYNC_SCHEDULE)
   virtual void SetBypassVsyncCondition(int32_t condition) = 0;
 #endif
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  virtual void SetFocusWebId(int32_t nweb_id) = 0;
+#endif
 };
 
 }  // namespace input

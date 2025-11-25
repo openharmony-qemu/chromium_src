@@ -742,7 +742,7 @@ std::vector<TargetHandler*> TargetHandler::ForAgentHost(
 
 void TargetHandler::Wire(UberDispatcher* dispatcher) {
   frontend_ = std::make_unique<Target::Frontend>(dispatcher->channel());
-  Target::Dispatcher::wire(dispatcher, this);
+  Target::Dispatcher::wire(dispatcher, static_cast<Target::Backend*>(this));
 }
 
 Response TargetHandler::Disable() {
@@ -856,17 +856,17 @@ void TargetHandler::SetAutoAttachInternal(bool auto_attach,
                                           bool flatten,
                                           base::OnceClosure callback) {
   for (auto& entry : auto_attach_related_targets_) {
-    entry.first->RemoveClient(this);
+    entry.first->RemoveClient(static_cast<TargetAutoAttacher::Client*>(this));
   }
   auto_attach_related_targets_.clear();
   flatten_auto_attach_ = flatten;
   if (auto_attach_) {
-    auto_attacher_->RemoveClient(this);
+    auto_attacher_->RemoveClient(static_cast<TargetAutoAttacher::Client*>(this));
   }
   auto_attach_ = auto_attach;
   wait_for_debugger_on_start_ = wait_for_debugger_on_start;
   if (auto_attach_) {
-    auto_attacher_->AddClient(this, wait_for_debugger_on_start,
+    auto_attacher_->AddClient(static_cast<TargetAutoAttacher::Client*>(this), wait_for_debugger_on_start,
                               std::move(callback));
   } else {
     while (!auto_attached_sessions_.empty()) {
@@ -884,9 +884,9 @@ void TargetHandler::UpdateAgentHostObserver() {
   }
   observing_agent_hosts_ = discover();
   if (observing_agent_hosts_) {
-    DevToolsAgentHost::AddObserver(this);
+    DevToolsAgentHost::AddObserver(static_cast<DevToolsAgentHostObserver*>(this));
   } else {
-    DevToolsAgentHost::RemoveObserver(this);
+    DevToolsAgentHost::RemoveObserver(static_cast<DevToolsAgentHostObserver*>(this));
   }
 }
 
@@ -1117,14 +1117,14 @@ void TargetHandler::AutoAttachRelated(
       std::make_pair(auto_attacher, wait_for_debugger_on_start));
   if (!inserted.second) {
     auto_attacher->UpdateWaitForDebuggerOnStart(
-        this, wait_for_debugger_on_start,
+        static_cast<TargetAutoAttacher::Client*>(this), wait_for_debugger_on_start,
         base::BindOnce(&AutoAttachRelatedCallback::sendSuccess,
                        std::move(callback)));
     inserted.first->second = wait_for_debugger_on_start;
     return;
   }
   auto_attacher->AddClient(
-      this, wait_for_debugger_on_start,
+      static_cast<TargetAutoAttacher::Client*>(this), wait_for_debugger_on_start,
       base::BindOnce(&AutoAttachRelatedCallback::sendSuccess,
                      std::move(callback)));
 }

@@ -96,8 +96,11 @@ class CONTENT_EXPORT DevToolsAgentHostImpl : public DevToolsAgentHost {
       return result;
     for (DevToolsSession* session : sessions_) {
       auto it = session->handlers().find(name);
-      if (it != session->handlers().end())
-        result.push_back(static_cast<Handler*>(it->second.get()));
+      if (it != session->handlers().end()) {
+        Handler* handler = dynamic_cast<Handler*>(it->second.get());
+        if (handler)
+          result.push_back(handler);
+      }
     }
     return result;
   }

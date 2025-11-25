@@ -45,7 +45,6 @@
 #include "media/base/media_log.h"
 #include "media/base/media_player_logging_id.h"
 #include "media/base/media_switches.h"
-#include "media/base/media_url_demuxer.h"
 #include "media/base/memory_dump_provider_proxy.h"
 #include "media/base/remoting_constants.h"
 #include "media/base/renderer.h"
@@ -57,9 +56,6 @@
 #include "media/filters/ffmpeg_demuxer.h"
 #include "media/filters/memory_data_source.h"
 #include "media/filters/pipeline_controller.h"
-#include "media/learning/common/learning_task_controller.h"
-#include "media/learning/common/media_learning_tasks.h"
-#include "media/learning/mojo/public/cpp/mojo_learning_task_controller.h"
 #include "media/media_buildflags.h"
 #include "media/mojo/mojom/media_metrics_provider.mojom-blink.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
@@ -68,8 +64,6 @@
 #include "net/http/http_request_headers.h"
 #include "net/url_request/url_request_job.h"
 #include "services/device/public/mojom/battery_monitor.mojom-blink.h"
-#include "third_party/blink/public/common/media/display_type.h"
-#include "third_party/blink/public/common/media/watch_time_reporter.h"
 #include "third_party/blink/public/common/thread_safe_browser_interface_broker_proxy.h"
 #include "third_party/blink/public/platform/web_audio_source_provider_impl.h"
 #include "third_party/blink/public/platform/web_content_decryption_module.h"
@@ -272,7 +266,7 @@ std::unique_ptr<media::Renderer> WebMediaPlayerImplUtils::CreateRendererExtConfi
             impl->media_task_runner_, impl->worker_task_runner_,
             impl->audio_source_provider_.get(), impl->compositor_.get(),
             std::move(request_overlay_info_cb), impl->client_->TargetColorSpace(),
-            impl->GetDelegateId());
+            impl->GetPlayerId());
     std::vector<media::Renderer::MediaSourceInfo> media_source_list;
     media::Renderer::MediaSourceInfo media_source_info;
     media_source_info.media_format = impl->client_->GetMediaFormat();
@@ -429,7 +423,7 @@ void WebMediaPlayerImplUtils::OnVideoNaturalSizeChangeExt() {
 #if BUILDFLAG(ARKWEB_MEDIA)
   if (!impl->paused_ && impl->IsPageHidden() && impl->ShouldPausePlaybackWhenHidden()) {
     LOG(INFO) << "OhMedia::WebMediaPlayerImpl::OnVideoNaturalSizeChange pause when hidden";
-    impl->Pause();
+    impl->Pause(blink::WebMediaPlayer::PauseReason::kPageHidden);
 
   }
 #endif

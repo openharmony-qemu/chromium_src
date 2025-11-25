@@ -6348,7 +6348,7 @@ void NWebDelegate::StopFling() {
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
 void NWebDelegate::SetFocusWebId(int32_t nweb_id) {
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
-    LOG(ERROR) << "SetFocusWebId( can not get browser";
+    LOG(ERROR) << "SetFocusWebId can not get browser";
     return;
   }
   GetBrowser()->GetHost()->SetFocusWebId(nweb_id);

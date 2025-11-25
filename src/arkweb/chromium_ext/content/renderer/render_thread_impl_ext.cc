@@ -191,12 +191,12 @@ void RenderThreadImpl::UpdateThemeFontFile(base::File theme_font) {
 #if BUILDFLAG(ARKWEB_I18N)
 void RenderThreadImpl::NotifyLocaleChanged(const std::string& locale) {
   if (!ui::ResourceBundle::HasSharedInstance() ||
-      !ui::ResourceBundle::LocaleDataPakExists(locale)) {
+      !ui::ResourceBundle::LocaleDataPakExists(locale, ui::ResourceBundle::Gender::kDefault)) {
     LOG(ERROR) << "render thread update locale failed";
     return;
   }
   std::string origin_locale =
-      ui::ResourceBundle::GetSharedInstance().GetLoadedLocaleForTesting();
+      ui::ResourceBundle::GetSharedInstance().GetLoadedLocale();
   if (origin_locale == locale) {
     LOG(WARNING) << "render thread no need to update locale";
     return;

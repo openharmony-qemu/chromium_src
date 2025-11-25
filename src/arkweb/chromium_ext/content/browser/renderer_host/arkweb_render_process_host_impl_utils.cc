@@ -134,7 +134,7 @@ size_t ArkwebRenderProcessHostImplUtils::GetMaxRendererProcessCountEx() {
 #else
         60;  // In MB
 #endif
-    max_count = base::SysInfo::AmountOfPhysicalMemoryMB() / 2;
+    max_count = base::SysInfo::AmountOfPhysicalMemory().InMiB() / 2;
     max_count /= kEstimatedWebContentsMemoryUsage;
 
     static constexpr size_t kMinRendererProcessCount = 3;

@@ -57,9 +57,7 @@ OHOSMediaPlayerRendererClientFactory::CreateRenderer(
       video_renderer_sink);
 }
 
-media::MediaResource::Type
-OHOSMediaPlayerRendererClientFactory::GetRequiredMediaResourceType() {
-  return media::MediaResource::Type::KUrl;
-}
+// Note: GetRequiredMediaResourceType() method removed in Chromium 141
+// MediaResource::Type enumeration no longer exists in the new architecture
 
 }  // namespace content

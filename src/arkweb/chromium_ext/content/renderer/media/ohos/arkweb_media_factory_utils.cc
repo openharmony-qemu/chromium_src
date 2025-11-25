@@ -66,7 +66,7 @@
 #include "third_party/blink/public/common/thread_safe_browser_interface_broker_proxy.h"
 #include "third_party/blink/public/platform/browser_interface_broker_proxy.h"
 #include "third_party/blink/public/platform/media/key_system_config_selector.h"
-#include "third_party/blink/public/platform/media/video_frame_compositor.h"
+#include "third_party/blink/renderer/platform/media/video_frame_compositor.h"
 #include "third_party/blink/public/platform/media/web_encrypted_media_client_impl.h"
 #include "third_party/blink/public/platform/media/web_media_player_builder.h"
 #include "third_party/blink/public/platform/platform.h"

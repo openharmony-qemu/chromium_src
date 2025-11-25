@@ -3787,7 +3787,7 @@ const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences(
 #if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
   if (GetRenderViewHost() && GetRenderViewHost()->GetProcess() &&
       ChildProcessSecurityPolicyImpl::GetInstance()->HasWebUIBindings(
-          GetRenderViewHost()->GetProcess()->GetID())) {
+          GetRenderViewHost()->GetProcess()->GetID().GetUnsafeValue())) {
     prefs.loads_images_automatically = true;
     prefs.javascript_enabled = true;
   }

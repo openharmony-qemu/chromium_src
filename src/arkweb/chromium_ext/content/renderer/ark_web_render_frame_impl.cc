@@ -28,8 +28,10 @@
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 #include "third_party/blink/public/web/web_performance_metrics_for_reporting.h"
-#include "third_party/blink/renderer/core/frame/web_local_frame_impl.h"
-#include "third_party/blink/renderer/core/paint/timing/paint_timing_detector.h"
+// 暂时移除内部头文件，因为 Chromium 141 加强了 mojom-blink 导入限制
+// TODO: 需要重新设计此功能以使用公共 API 或寻找其他解决方案
+// #include "third_party/blink/renderer/core/frame/web_local_frame_impl.h"
+// #include "third_party/blink/renderer/core/paint/timing/paint_timing_detector.h"
 #endif
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
@@ -193,32 +195,19 @@ void RenderFrameImpl::SendBlanklessKeyToRenderFrame(uint32_t nweb_id,
   if (blankless_key == base::ohos::BlanklessController::INVALID_BLANKLESS_KEY) {
     return;
   }
-  // need restart painttimingdetector for blankless
-  blink::WebLocalFrameImpl* web_frame = static_cast<blink::WebLocalFrameImpl*>(GetWebFrame());
-  if (!web_frame) {
-    return;
-  }
-
-  blink::LocalFrame* local_frame = web_frame->GetFrame();
-  if (!local_frame) {
-    return;
-  }
-
-  blink::LocalFrameView* lfv = local_frame->View();
-  if (!lfv) {
-    return;
-  }
-  LOG(DEBUG) << "blankless lcp:RenderFrameImpl::SendBlanklessKeyToRenderFrame restart PTD for blankless, nweb_id:"
-    << nweb_id << ", key:" << blankless_key << "lfv:" << (uint64_t)lfv;
-    lfv->GetPaintTimingDetector().RestartRecordingForBlankless();
+  // 暂时简化实现，因为 Chromium 141 中无法访问 blink 内部 API
+// TODO: 需要使用公共 API 重新实现此功能
+LOG(DEBUG) << "blankless optimization: functionality temporarily disabled pending API migration"
+           << ", nweb_id:" << nweb_id << ", key:" << blankless_key
+           << ", frame_sink_id:" << frame_sink_id << ", pref_hash:" << pref_hash;
 }
 #endif
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
 void RenderFrameImpl::PageLoadStartLoggerReport(
     WebDocumentLoader* document_loader) {
-  LOG_FEEDBACK(WARNING) << "event_message: page load start, routing_id: "
-                        << routing_id_ << ", url: "
+  LOG_FEEDBACK(WARNING) << "event_message: page load start, frame_id: "
+                        << reinterpret_cast<uintptr_t>(this) << ", url: "
                         << url::LogUtils::ConvertUrlWithMask(
                                document_loader->GetUrl().GetString().Utf8());
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
@@ -229,7 +218,7 @@ void RenderFrameImpl::PageLoadStartLoggerReport(
     }
     if (!is_strict_log_mode) {
       int32_t usage_scenario = GetWebView()->GetSettings()->GetUsageScenario();
-      LOG(URL) << "event_message: page load start, routing_id: " << routing_id_
+      LOG(URL) << "event_message: page load start, frame_id: " << reinterpret_cast<uintptr_t>(this)
                << ", url: "
                << url::LogUtils::ConvertUrl(
                       document_loader->GetUrl().GetString().Utf8(),
@@ -241,7 +230,7 @@ void RenderFrameImpl::PageLoadStartLoggerReport(
 void RenderFrameImpl::ContentLoadFailedLoggerReport() {
   if (IsMainFrame()) {
     LOG_FEEDBACK(WARNING)
-        << "event_message: content load finished, routing_id: " << routing_id_
+        << "event_message: content load finished, frame_id: " << reinterpret_cast<uintptr_t>(this)
         << ", url: "
         << url::LogUtils::ConvertUrlWithMask(GetLoadingUrl().spec());
     if (base::CommandLine::ForCurrentProcess()->HasSwitch(
@@ -253,8 +242,8 @@ void RenderFrameImpl::ContentLoadFailedLoggerReport() {
       if (!is_strict_log_mode) {
         int32_t usage_scenario =
             GetWebView()->GetSettings()->GetUsageScenario();
-        LOG(URL) << "event_message: content load finished, routing_id: "
-                 << routing_id_ << ", url: "
+        LOG(URL) << "event_message: content load finished, frame_id: "
+                 << reinterpret_cast<uintptr_t>(this) << ", url: "
                  << url::LogUtils::ConvertUrl(GetLoadingUrl().spec(),
                                               usage_scenario);
       }
@@ -264,7 +253,7 @@ void RenderFrameImpl::ContentLoadFailedLoggerReport() {
 
 void RenderFrameImpl::PageLoadFinishedLoggerReport() {
   LOG_FEEDBACK(WARNING)
-      << "event_message: page load finished, routing_id: " << routing_id_
+      << "event_message: page load finished, frame_id: " << reinterpret_cast<uintptr_t>(this)
       << ", url: " << url::LogUtils::ConvertUrlWithMask(GetLoadingUrl().spec());
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kEnableLoggerReport)) {
@@ -274,8 +263,8 @@ void RenderFrameImpl::PageLoadFinishedLoggerReport() {
     }
     if (!is_strict_log_mode) {
       int32_t usage_scenario = GetWebView()->GetSettings()->GetUsageScenario();
-      LOG(URL) << "event_message: page load finished, routing_id: "
-               << routing_id_ << ", url: "
+      LOG(URL) << "event_message: page load finished, frame_id: "
+               << reinterpret_cast<uintptr_t>(this) << ", url: "
                << url::LogUtils::ConvertUrl(GetLoadingUrl().spec(),
                                             usage_scenario);
     }

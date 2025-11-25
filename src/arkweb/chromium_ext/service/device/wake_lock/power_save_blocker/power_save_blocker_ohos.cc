@@ -12,23 +12,26 @@
 
 namespace device {
 
-class PowerSaveBlocker::Delegate
-    : public base::RefCountedThreadSafe<PowerSaveBlocker::Delegate> {
+class PowerSaveBlocker::Delegate {
  public:
-  Delegate(mojom::WakeLockType type) : type_(type) {}
+  Delegate() = default;
+  ~Delegate() = default;
 
   Delegate(const Delegate&) = delete;
   Delegate& operator=(const Delegate&) = delete;
+
+  // 初始化方法
+  void Init(mojom::WakeLockType type) {
+    type_ = type;
+  }
 
   void ApplyBlock(const int32_t& id);
   void RemoveBlock(const int32_t& id);
 
  private:
-  mojom::WakeLockType type_;
+  mojom::WakeLockType type_ = mojom::WakeLockType::kPreventAppSuspension;
   std::map<int32_t, mojom::WakeLockType> lock_map_;
   std::mutex lock_map_mutex_;
-  friend class base::RefCountedThreadSafe<Delegate>;
-  ~Delegate() {}
 };
 
 void PowerSaveBlocker::Delegate::ApplyBlock(const int32_t& id) {
@@ -80,24 +83,19 @@ PowerSaveBlocker::PowerSaveBlocker(
     mojom::WakeLockReason reason,
     const std::string& description,
     scoped_refptr<base::SequencedTaskRunner> ui_task_runner,
-    scoped_refptr<base::SingleThreadTaskRunner> blocking_task_runner,
     int32_t id)
-    : delegate_(new Delegate(type)),
-      ui_task_runner_(ui_task_runner),
-      blocking_task_runner_(blocking_task_runner),
+    : delegate_(std::move(ui_task_runner)),
       id_(id) {
+  // 使用SequenceBound AsyncCall方法初始化
+  delegate_.AsyncCall(&Delegate::Init).WithArgs(type);
 }
 
 PowerSaveBlocker::~PowerSaveBlocker() {
-  if (delegate_.get()) {
-    delegate_->RemoveBlock(id_);
-  }
+  delegate_.AsyncCall(&Delegate::RemoveBlock).WithArgs(id_);
 }
 
 void PowerSaveBlocker::InitDisplaySleepBlocker(const int32_t id) {
-  if (delegate_.get()) {
-    delegate_->ApplyBlock(id);
-  }
+  delegate_.AsyncCall(&Delegate::ApplyBlock).WithArgs(id);
 }
 
 }  // namespace device

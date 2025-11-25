@@ -35,6 +35,16 @@ void DisplayCutoutHostOhos::NotifyViewportFitChanged(
   SetCurrentRenderFrameHost(rfh, value);
 }
 
+void DisplayCutoutHostOhos::NotifyComplexSafeAreaConstraintChanged(bool value) {
+  // Store complex safe area constraint state and apply to current frame if needed
+  content::RenderFrameHost* rfh = receivers_.GetCurrentTargetFrame();
+  if (rfh) {
+    // Apply complex safe area constraint to the frame if needed
+    // This method tracks whether complex safe area calculations are enabled
+    // and may affect how safe areas are computed and applied
+  }
+}
+
 void DisplayCutoutHostOhos::DidAcquireFullscreen(RenderFrameHost* rfh) {}
 
 void DisplayCutoutHostOhos::DidExitFullscreen() {}

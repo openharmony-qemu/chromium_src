@@ -92,6 +92,10 @@ virtual void CloseCamera(int nWebID) = 0;
 virtual int GetNWebId() = 0;
 virtual void SetNWebId(int nWebID) = 0;
 virtual void OnCameraCaptureStateChanged(int original_state, int new_state) = 0;
+virtual void ResumeMicrophone(int nWebID) = 0;
+virtual void StopMicrophone(int nWebID) = 0;
+virtual void PauseMicrophone(int nWebID) = 0;
+virtual void OnMicrophoneCaptureStateChanged(int original_state, int new_state) = 0;
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
 
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)

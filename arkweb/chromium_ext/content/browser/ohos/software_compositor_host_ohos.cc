@@ -31,9 +31,9 @@
 namespace content {
 
 const float MAX_DRAW_SW_SIZE = 16000.0;
-const std::string DUMP_FILE_PATH = "/data/storage/el2/base/haps/entry/files/";
-const std::string DUMP_FILE_PRE = "web_frame_sceenshot_";
-const std::string DUMP_FILE_TYPE = ".png";
+const char DUMP_FILE_PATH[] = "/data/storage/el2/base/haps/entry/files/";
+const char DUMP_FILE_PRE[] = "web_frame_sceenshot_";
+const char DUMP_FILE_TYPE[] = ".png";
 
 struct SoftwareCompositorHostOhos::SharedMemoryWithSize {
   base::WritableSharedMemoryMapping shared_memory;

@@ -667,6 +667,9 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
   void StartCamera() override;
   void StopCamera() override;
   void CloseCamera() override;
+  void ResumeMicrophone() override;
+  void StopMicrophone() override;
+  void PauseMicrophone() override;
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
 
 #if BUILDFLAG(ARKWEB_DISCARD)

@@ -831,6 +831,12 @@ void InputRouterImpl::ForceSetTouchActionAuto() {
   ProcessDeferredGestureEventQueue();
 }
 
+#if BUILDFLAG(ARKWEB_FLING)
+void InputRouterImpl::UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity) {
+  gesture_event_queue_.UpdateFlingVelocityLimit(velocity);
+}
+#endif
+
 void InputRouterImpl::ForceResetTouchActionForTest() {
   touch_action_filter_.ForceResetTouchActionForTest();
 }

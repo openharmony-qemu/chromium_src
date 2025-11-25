@@ -558,6 +558,9 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(void, StartCamera, (), (override));
   MOCK_METHOD(void, StopCamera, (), (override));
   MOCK_METHOD(void, CloseCamera, (), (override));
+  MOCK_METHOD(void, ResumeMicrophone, (), (override));
+  MOCK_METHOD(void, StopMicrophone, (), (override));
+  MOCK_METHOD(void, PauseMicrophone, (), (override));
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
 
 #if BUILDFLAG(ARKWEB_PAGE_UP_DOWN)

@@ -227,6 +227,10 @@ class CONTENT_EXPORT RenderWidgetHostImpl
   }
 #endif // ARKWEB_MENU_HANDLE
 
+#if BUILDFLAG(ARKWEB_FLING)
+  void UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity);
+#endif
+
   // TODO(crbug.com/40169570): FrameTree and FrameTreeNode will not be const as
   // with prerenderer activation the page needs to move between FrameTreeNodes
   // and FrameTrees. As it's hard to make sure that all places handle this

@@ -246,6 +246,12 @@ void FlingController::StopWebPageFling() {
   TRACE_EVENT0("input", "EndCurrentFling::SetNeedDVsync=false, reason=EndCurrentFling");
 #endif
 }
+
+#if BUILDFLAG(ARKWEB_FLING)
+void FlingController::UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity) {
+  fling_booster_.UpdateFlingVelocityLimit(velocity);
+}
+#endif
 #endif
 
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)

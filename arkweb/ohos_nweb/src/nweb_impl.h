@@ -1208,6 +1208,12 @@ class NWebImpl : public NWeb {
   static bool IsClipboardSitePermissionEnabled();
 #endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  void ResumeMicrophone() override;
+  void StopMicrophone() override;
+  void PauseMicrophone() override;
+#endif
+
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
   void InitWebEngineArgs(std::shared_ptr<NWebEngineInitArgs> init_args);

@@ -121,6 +121,10 @@ class InputRouter {
   virtual void SetEnableCustomVideoPlayer(bool flag) = 0;
 #endif
 
+#if BUILDFLAG(ARKWEB_FLING)
+  virtual void UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity) = 0;
+#endif
+
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   virtual void ScrollBy(float delta_x, float delta_y) = 0;
 #endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)

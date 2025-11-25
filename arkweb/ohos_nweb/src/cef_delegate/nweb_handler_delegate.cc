@@ -5525,4 +5525,12 @@ void NWebHandlerDelegate::OnCameraCaptureStateChanged(int original_state, int ne
   }
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_WEBRTC)
+void NWebHandlerDelegate::OnMicrophoneCaptureStateChanged(int original_state, int new_state) {
+  if (nweb_handler_) {
+    nweb_handler_->OnMicrophoneCaptureStateChanged(original_state, new_state);
+  }
+}
+#endif
 }  // namespace OHOS::NWeb

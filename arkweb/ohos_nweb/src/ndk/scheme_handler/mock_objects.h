@@ -130,7 +130,7 @@ class MockArkWebRequestImplExt : public ArkWebRequestImplExt {
 
 class MockCefRequest : public CefRequest {
  public:
-  MockCefRequest(ArkWebCefPostDataStream* stream = nullptr) 
+  explicit MockCefRequest(ArkWebCefPostDataStream* stream = nullptr) 
       : mock_request_ext_(new MockArkWebRequestImplExt(stream)), 
         method_("GET"), 
         referrer_(""),

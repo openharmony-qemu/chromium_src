@@ -679,6 +679,14 @@ void RenderWidgetHostImpl::UpdatePriority() {
   }
 }
 
+#if BUILDFLAG(ARKWEB_FLING)
+void RenderWidgetHostImpl::UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity) {
+  if (input_router()) {
+    input_router()->UpdateFlingVelocityLimit(velocity);
+  }
+}
+#endif
+
 void RenderWidgetHostImpl::BindWidgetInterfaces(
     mojo::PendingAssociatedReceiver<blink::mojom::WidgetHost> widget_host,
     mojo::PendingAssociatedRemote<blink::mojom::Widget> widget) {

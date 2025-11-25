@@ -71,6 +71,10 @@ class MockInputRouter : public InputRouter {
   void SetEnableCustomVideoPlayer(bool flag) override {}
 #endif
 
+#if BUILDFLAG(ARKWEB_FLING)
+  void UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity) override {}
+#endif
+
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   void ScrollBy(float delta_x, float delta_y) override {}
   void SetBypassVsyncCondition(int32_t condition) override {}

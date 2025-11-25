@@ -17,6 +17,7 @@
 #include "base/debug/task_trace.h"
 #include "base/logging.h"
 #include "base/task/single_thread_task_runner.h"
+#include "base/no_destructor.h"
 
 namespace ohos {
 
@@ -37,8 +38,8 @@ constexpr LogType LOGTYPE_URL = 1;
 bool g_is_main_process_mode = false;
 
 scoped_refptr<base::SingleThreadTaskRunner>& GetTaskRunner() {
-  static scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
-  return task_runner_;
+  static base::NoDestructor<scoped_refptr<base::SingleThreadTaskRunner>> task_runner_;
+  return *task_runner_;
 }
 
 BASE_EXPORT void SetMainProcessMode(bool is_main_process) {
@@ -46,8 +47,8 @@ BASE_EXPORT void SetMainProcessMode(bool is_main_process) {
 }
 
 std::shared_ptr<NWebLoggerCallback>& GetLoggerCallBack() {
-  static std::shared_ptr<NWebLoggerCallback> logger_callback_ = nullptr;
-  return logger_callback_;
+  static base::NoDestructor<std::shared_ptr<NWebLoggerCallback>> logger_callback_(nullptr);
+  return *logger_callback_;
 }
 
 static const std::string TAG_PREFIX = "arkweb_";
@@ -62,9 +63,9 @@ std::string normalizeTag(const std::string& tag) {
     return tag;
   }
 
-  int unprefixedTagStart = 0;
+  size_t unprefixedTagStart = 0;
   if (StartWith(tag, DEPRECATED_TAG_PREFIX)) {
-    unprefixedTagStart = static_cast<int>(DEPRECATED_TAG_PREFIX.size());
+    unprefixedTagStart = DEPRECATED_TAG_PREFIX.size();
   }
 
   return TAG_PREFIX + tag.substr(unprefixedTagStart);

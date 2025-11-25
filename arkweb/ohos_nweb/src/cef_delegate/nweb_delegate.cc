@@ -857,7 +857,7 @@ bool NWebDelegate::Init(bool is_enhance_surface,
   }
 #if BUILDFLAG(ARKWEB_WEBRTC)
   if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
-    LOG(ERROR) << "can not get browser ,can not set NWeb id";
+    LOG(INFO) << "can not get browser ,can not set NWeb id";
     return true;
   }
   GetBrowser()->GetHost()->SetNWebId(GetBrowser()->GetNWebId());
@@ -3800,6 +3800,33 @@ void NWebDelegate::CloseCamera() {
   }
 
   GetBrowser()->GetHost()->CloseCamera();
+}
+
+void NWebDelegate::ResumeMicrophone() {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "ResumeMicrophone can not get browser";
+    return;
+  }
+
+  GetBrowser()->GetHost()->ResumeMicrophone();
+}
+
+void NWebDelegate::StopMicrophone() {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "StopMicrophone can not get browser";
+    return;
+  }
+
+  GetBrowser()->GetHost()->StopMicrophone();
+}
+
+void NWebDelegate::PauseMicrophone() {
+  if (GetBrowser() == nullptr || GetBrowser()->GetHost() == nullptr) {
+    LOG(ERROR) << "PauseMicrophone can not get browser";
+    return;
+  }
+
+  GetBrowser()->GetHost()->PauseMicrophone();
 }
 #endif  // BUILDFLAG(ARKWEB_WEBRTC)
 

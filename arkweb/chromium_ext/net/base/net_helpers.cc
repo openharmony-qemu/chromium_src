@@ -33,13 +33,13 @@ namespace net_service {
 namespace {
 
 #if BUILDFLAG(ARKWEB_NETWORK_BASE)
-static const std::string APP_READ_ONLY_PATH =
+static const char APP_READ_ONLY_PATH[] =
     "/data/storage/el1/bundle/entry/resources/resfile/";
 constexpr int32_t APPLICATION_API_12 = 12;
 #endif
 
 #if BUILDFLAG(ARKWEB_EXT_FILE_ACCESS)
-static const std::string APP_STORAGE_SANDBOX_PATH =
+static const char APP_STORAGE_SANDBOX_PATH[] =
     "/data/storage";
 #endif
 
@@ -188,12 +188,10 @@ bool IsSpecialFileUrl(const GURL& url) {
   if (GetApplicationApiVersion() >= APPLICATION_API_12) {
     if (base::StartsWith(url.path(), APP_READ_ONLY_PATH,
                          base::CompareCase::SENSITIVE)) {
-      LOG(INFO) << "Is special file url, the path is in: "
-                << APP_READ_ONLY_PATH;
+      LOG(INFO) << "Is special file url, the path is in APP_READ_ONLY_PATH";
       return true;
     }
-    LOG(INFO) << "Is not special file url, the path is not in: "
-              << APP_READ_ONLY_PATH;
+    LOG(INFO) << "Is not special file url, the path is not in APP_READ_ONLY_PATH";
     return false;
   }
 #endif  // BUILDFLAG(ARKWEB_NETWORK_BASE)

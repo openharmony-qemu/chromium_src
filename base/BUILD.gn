@@ -3725,9 +3725,6 @@ test("base_unittests") {
     ]
     sources += arkweb_content_browser_dfx_unittests_sources
     if (arkweb_test) {
-      configs += [
-        "//ohos_glue:ohos_glue_config",
-      ]
       sources += [
         "//arkweb/ohos_adapter_ndk/ndk_version.cc",
       ]

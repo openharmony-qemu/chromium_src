@@ -17,6 +17,10 @@
 #include "media/audio/audio_logging.h"
 #include "media/audio/audio_thread.h"
 #include "media/base/audio_parameters.h"
+#if BUILDFLAG(ARKWEB_WEBRTC)
+#include <unordered_set>
+#include "media/audio/audio_input_stream_data_interceptor.h"
+#endif
 
 namespace base {
 class SingleThreadTaskRunner;
@@ -187,6 +191,14 @@ class MEDIA_EXPORT AudioManager {
   // stopped from exactly one output stream. If multiple streams are starting
   // and stopping traces, the latency measurements will not be valid.
   void TraceAmplitudePeak(bool trace_start);
+
+#if BUILDFLAG(ARKWEB_WEBRTC)
+  virtual std::unordered_set<raw_ptr<AudioInputStream, CtnExperimental>>
+  GetInputStream() {
+    return {};
+  }
+  virtual std::string GetSelectAudioDeviceId() { return ""; }
+#endif
 
  protected:
   FRIEND_TEST_ALL_PREFIXES(AudioManagerTest, AudioDebugRecording);

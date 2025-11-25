@@ -48,7 +48,7 @@ void UpdateExt(cc::Layer& layer,
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
   else if (layer.NativeEmbedOverlayInfinity()) {
     layer_list_builder_for_infinity.Add(&layer);
-  } else if (layer.NativeEmbedOverlay()) {
+  } else if (layer.NativeEmbedOverlay() && !layer.NativeEmbedOverlayInfinity()) {
     layer_list_builder_for_overlay.Add(&layer);
   }
 #endif

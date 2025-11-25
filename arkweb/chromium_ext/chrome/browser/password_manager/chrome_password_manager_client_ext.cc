@@ -381,9 +381,18 @@ void ChromePasswordManagerClientExt::FillAccountSuggestion(
     const GURL& page_url,
     const std::u16string& username,
     const std::u16string& password) {
+  if (!web_contents()) {
+    LOG(ERROR) << "[Autofill] web_contents is nullptr";
+    return;
+  }
+  content::RenderFrameHost* rfh = web_contents()->GetFocusedFrame();
+  if (!rfh || !rfh->IsActive()) {
+    LOG(ERROR) << "[Autofill] rfh is nullptr or not active";
+    return;
+  }
   password_manager::ContentPasswordManagerDriver* driver =
       password_manager::ContentPasswordManagerDriver::GetForRenderFrameHost(
-          web_contents()->GetFocusedFrame());
+          rfh);
   if (!driver) {
     return;
   }

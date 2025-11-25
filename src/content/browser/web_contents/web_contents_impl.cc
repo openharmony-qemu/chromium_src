@@ -3696,7 +3696,7 @@ void WebContentsImpl::DidChangeVisibleSecurityState() {
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
 const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences(
-    int32_t usage_scenario_type) {
+    RenderFrameHostImpl* main_frame, int32_t usage_scenario_type) {
 #else
 const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences(
     RenderFrameHostImpl* main_frame) {
@@ -4015,7 +4015,7 @@ void WebContentsImpl::OnWebPreferencesChanged() {
   }
   updating_web_preferences_ = true;
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
-  SetWebPreferences(ComputeWebPreferences(usage_scenario_type));
+  SetWebPreferences(ComputeWebPreferences(GetPrimaryMainFrame(), usage_scenario_type));
 #else
   SetWebPreferences(ComputeWebPreferences(GetPrimaryMainFrame()));
 #endif

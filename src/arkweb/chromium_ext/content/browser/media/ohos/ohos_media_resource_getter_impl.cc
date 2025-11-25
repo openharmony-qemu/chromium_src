@@ -65,18 +65,21 @@ GetRestrictedCookieManagerForContext(
       top_frame_origin, site_for_cookies);
 
   mojo::PendingRemote<network::mojom::RestrictedCookieManager> pipe;
+  net::CookieSettingOverrides devtools_cookie_setting_overrides;
   static_cast<StoragePartitionImpl*>(storage_partition)
       ->CreateRestrictedCookieManager(
         network::mojom::RestrictedCookieManagerRole::NETWORK, request_origin,
         std::move(isolation_info),
         false /* is_service_worker = */,
-        render_frame_host ? render_frame_host->GetProcess()->GetID() : -1,
+        render_frame_host ? render_frame_host->GetProcess()->GetID().GetUnsafeValue() : -1,
         render_frame_host ? render_frame_host->GetRoutingID()
                           : MSG_ROUTING_NONE,
         render_frame_host ? render_frame_host->GetCookieSettingOverrides()
                           : net::CookieSettingOverrides(),
+        devtools_cookie_setting_overrides,
         pipe.InitWithNewPipeAndPassReceiver(),
-        render_frame_host ? render_frame_host->CreateCookieAccessObserver()
+        render_frame_host ? render_frame_host->CreateCookieAccessObserver(
+                      content::CookieAccessDetails::Source::kNonNavigation)
                           : mojo::NullRemote());
   return pipe;
 }
@@ -133,12 +136,13 @@ void OHOSMediaResourceGetterImpl::GetAuthCredentials(
     return;
   }
 
-  browser_context_->GetDefaultStoragePartition()
-      ->GetNetworkContext()
-      ->LookupServerBasicAuthCredentials(
-        url, render_frame_host->GetIsolationInfoForSubresources().network_anonymization_key(),
-        base::BindOnce(&OHOSMediaResourceGetterImpl::GetAuthCredentialsCallback,
-                       weak_factory_.GetWeakPtr(), std::move(callback)));
+  // NOTE: LookupServerBasicAuthCredentials was removed in Chromium 141.
+  // The authentication mechanism has been redesigned. This functionality
+  // needs to be reimplemented using the new authentication architecture.
+  // For now, return empty credentials to maintain compilation and reasonable behavior.
+  // TODO: Reimplement authentication credential retrieval using Chromium 141's new architecture.
+  GetAuthCredentialsCallback(std::move(callback), std::nullopt);
+  return;
 }
 
 void OHOSMediaResourceGetterImpl::GetCookies(
@@ -169,6 +173,7 @@ void OHOSMediaResourceGetterImpl::GetCookies(
   cookie_manager_ptr->GetCookiesString(
       url, site_for_cookies, top_frame_origin, storage_access_api_status,
       false /*get_version_shared_memory=*/, false /*is_ad_tagged=*/,
+      false /*apply_devtools_overrides=*/,
       false /*force_disable_third_party_cookies=*/,
       base::BindOnce(&ReturnResultOnUIThreadAndClosePipe,
                      std::move(cookie_manager), std::move(callback)));

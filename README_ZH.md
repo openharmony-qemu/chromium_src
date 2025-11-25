@@ -1,7 +1,7 @@
 # Chromium
 ## 简介
 ### 软件架构
-![image.png](https://raw.gitcode.com/user-images/assets/4371737/71f65bf3-20bf-4c4b-a255-e385c5f75ba7/image.png 'image.png')
+![image.png](https://raw.gitcode.com/user-images/assets/4371737/b0011c7e-79d7-458d-bc2d-8db46a3ffb1b/image.png 'image.png')
 
 架构图中CEF、ArkWeb仓和当前仓Chromium联合编译出Web内核，编译产物为NWeb.hap，通过二进制集成在OpenHarmony系统中。
 
@@ -131,12 +131,25 @@ Chromium总体采用分层架构，主要包含一下几个模块：
     99分支：chromium
 
     114分支：114_trunk
+  
+    132分支：132_trunk
 
     配套OpenHarmony 3.2Release分支：3.2_Release
 
     配套OpenHarmony 4.0Release分支：4.0_Release
+    
+    配套OpenHarmony 5.0.1Release分支：114_trunk_5.0.1-Release
+    
+    配套OpenHarmony 5.1.0Release分支：114_trunk_5.1.0-Release
+    
+    配套OpenHarmony 6.0Release分支：    132_trunk_6.0-Release
 
     配套OpenHarmony 4.1 Beta1 分支：master114_20231218
+    
+    配套OpenHarmony 5.0 Beta1 分支：master114_20231218
+    
+    配套OpenHarmony 6.0 Beta1 分支：132_trunk_6.0-Beta1
+    
 
 ## 其他相关代码仓地址：
 

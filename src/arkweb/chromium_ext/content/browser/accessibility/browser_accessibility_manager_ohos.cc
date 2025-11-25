@@ -761,18 +761,20 @@ void AccessibilityEventDispatcher::EnqueueEvent(int64_t accessibilityId,
     // |mEventThrottleDelays| delay window. Store this event, replacing any
     // events in |mPendingEvents| of the same |uuid|, and set a delay equal.
     if (pendingEvents_.find(uuid) != pendingEvents_.end() &&
-        pendingEvents_[uuid].IsValid()) {
-      pendingEvents_[uuid].CancelTask();
+        pendingEvents_[uuid]) {
+      // Cancel previous task by clearing the flag
+      pendingEvents_[uuid] = false;
     }
 
-    auto task = content::GetUIThreadTaskRunner({})->PostCancelableDelayedTask(
-        base::subtle::PostDelayedTaskPassKeyForTesting(), FROM_HERE,
+    // Post delayed task using new Chromium 141 API
+    content::GetUIThreadTaskRunner({})->PostDelayedTask(
+        FROM_HERE,
         base::BindOnce(&AccessibilityEventDispatcher::RunTask,
                        base::Unretained(this), accessibilityId, eventType,
                        uuid, argument),
         base::Milliseconds(eventLastFiredTimes_[uuid] +
                            eventThrottleDelays_[eventType] - now));
-    pendingEvents_[uuid] = std::move(task);
+    pendingEvents_[uuid] = true;
   }
 }
 
@@ -793,8 +795,8 @@ void AccessibilityEventDispatcher::RunTask(int64_t accessibilityId,
 
   // Remove any lingering callbacks and pending events regardless of success.
   if (pendingEvents_.find(uuid) != pendingEvents_.end() &&
-      pendingEvents_[uuid].IsValid()) {
-    pendingEvents_[uuid].CancelTask();
+      pendingEvents_[uuid]) {
+    pendingEvents_[uuid] = false;
   }
   pendingEvents_.erase(uuid);
 }

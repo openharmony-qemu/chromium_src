@@ -154,6 +154,12 @@ class NoStatePrefetchContents::WebContentsDelegateImpl
     }
   }
 
+#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
+  void WebExtensionUpdateTab(
+      int32_t tab_id,
+      const content::NWebExtensionTabUpdateProperties* update_properties) override {}
+#endif
+
  private:
   raw_ptr<NoStatePrefetchContents> no_state_prefetch_contents_;
 };

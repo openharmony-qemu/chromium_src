@@ -59,15 +59,15 @@ ParamList ConvertFrameDropInfoToHiappeventParams(HiAppeventAdapter::DynamicFrame
     return params;
 }
 
-void HiAppeventAdapterImpl::ReportDynamicStastic(const std::string& domain,
-    const std::string& eventName, int32_t eventType, HiAppeventAdapter::DynamicFrameDropInfo dynamicFrameDropInfo) {
+void HiAppeventAdapterImpl::ReportDynamicStastic(const std::string& domain, const std::string& eventName,
+        int32_t eventType, const HiAppeventAdapter::DynamicFrameDropInfo& dynamicFrameDropInfo) {
     EventType hiappevent_type = GetHiappeventType(eventType);
     ParamList hiappevent_params = ConvertFrameDropInfoToHiappeventParams(dynamicFrameDropInfo);
     int res = OH_HiAppEvent_Write(domain.c_str(), eventName.c_str(), hiappevent_type, hiappevent_params);
-    if (res == 0){
-        WVLOG_D("HiAppevent_Write fling_web_drop_frame Successfully");
+    if (res == 0) {
+        WVLOG_D("HiAppevent_Write %{public}s Successfully", eventName.c_str());
     } else {
-        WVLOG_D("HiAppevent_Write fling_web_drop_frame failed");
+        WVLOG_E("HiAppevent_Write %{public}s failed", eventName.c_str());
     }
     OH_HiAppEvent_DestroyParamList(hiappevent_params);
 }

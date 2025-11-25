@@ -692,7 +692,7 @@ void RenderInputRouter::SetInputTargetClientForTesting(
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
 void RenderInputRouter::SetFocusWebId(int32_t nweb_id) {
   if (input_router() == nullptr) {
-    LOG(ERROR) << "SetFocusWebId can not get nput_router";
+    LOG(ERROR) << "SetFocusWebId can not get input_router";
     return;
   }
   input_router()->SetFocusWebId(nweb_id);

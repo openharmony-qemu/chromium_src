@@ -367,8 +367,10 @@ std::string GetUnifiedPlatform() {
   return "Windows NT 10.0; Win64; x64";
 #elif BUILDFLAG(IS_FUCHSIA)
   return "Fuchsia";
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+#elif BUILDFLAG(IS_LINUX)
   return kUnifiedPlatformLinuxX64;
+#elif BUILDFLAG(IS_OHOS)
+  return "OHOS; OHOS x86_64";
 #elif BUILDFLAG(IS_IOS)
   if (ui::GetDeviceFormFactor() == ui::DEVICE_FORM_FACTOR_TABLET) {
     return "iPad; CPU iPad OS 14_0 like Mac OS X";

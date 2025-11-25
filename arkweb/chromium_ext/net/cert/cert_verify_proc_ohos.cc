@@ -178,14 +178,14 @@ int CertChainVerify(X509* server_cert[],
                     std::vector<std::string>* verified_chain) {
   X509_STORE_CTX* ctx = nullptr;
 
-  STACK_OF(X509)* ca_stack = sk_x509_new_null();
+  STACK_OF(X509)* ca_stack = sk_X509_new_null();
   if (ca_stack == nullptr) {
     LOG(ERROR) << "Create ca_stack failed";
     X509_d2i_free(server_cert, server_cert_sum);
     X509_STORE_free(ca_store);
     return X509_V_ERR_UNSPECIFIED;
   }
-
+ 
   for (int i = 1; i < server_cert_sum; i++) {
     sk_X509_push(ca_stack, server_cert[i]);
     X509_up_ref(server_cert[i]);

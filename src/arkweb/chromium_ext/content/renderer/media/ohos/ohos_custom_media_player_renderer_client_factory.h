@@ -53,7 +53,8 @@ class CONTENT_EXPORT OHOSCustomMediaPlayerRendererClientFactory
       media::RequestOverlayInfoCB request_surface_cb,
       const gfx::ColorSpace& target_color_space) override;
 
-  media::MediaResource::Type GetRequiredMediaResourceType() override;
+  // Note: GetRequiredMediaResourceType() method removed in Chromium 141
+  // MediaResource::Type enumeration no longer exists in the new architecture
 
   std::unique_ptr<media::Renderer> CreateCustomRenderer(
       const scoped_refptr<base::SequencedTaskRunner>& media_task_runner,

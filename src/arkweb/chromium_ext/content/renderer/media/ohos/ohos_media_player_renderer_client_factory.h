@@ -44,8 +44,8 @@ class CONTENT_EXPORT OHOSMediaPlayerRendererClientFactory
       media::RequestOverlayInfoCB request_surface_cb,
       const gfx::ColorSpace& target_color_space) override;
 
-  // The MediaPlayerRenderer uses a Type::URL.
-  media::MediaResource::Type GetRequiredMediaResourceType() override;
+  // Note: GetRequiredMediaResourceType() method removed in Chromium 141
+  // MediaResource::Type enumeration no longer exists in the new architecture
 
  private:
   GetNativeTextureWrapperCB get_native_texture_wrapper_cb_;

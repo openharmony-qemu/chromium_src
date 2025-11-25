@@ -71,10 +71,8 @@ OHOSCustomMediaPlayerRendererClientFactory::CreateRenderer(
       std::move(native_texture_wrapper), video_renderer_sink);
 }
 
-media::MediaResource::Type
-OHOSCustomMediaPlayerRendererClientFactory::GetRequiredMediaResourceType() {
-  return media::MediaResource::Type::KUrl;
-}
+// Note: GetRequiredMediaResourceType() method removed in Chromium 141
+// MediaResource::Type enumeration no longer exists in the new architecture
 
 std::unique_ptr<media::Renderer>
 OHOSCustomMediaPlayerRendererClientFactory::CreateCustomRenderer(

@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "arkweb/build/features/features.h"
 #include "base/base64.h"
 #include "base/check_op.h"
 #include "base/command_line.h"
@@ -69,6 +70,10 @@
 #include "third_party/perfetto/include/perfetto/tracing/traced_proto.h"
 #include "third_party/perfetto/include/perfetto/tracing/traced_value.h"
 #include "url/gurl.h"
+
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+#include "content/public/browser/render_process_host.h"
+#endif
 
 namespace content {
 
@@ -140,7 +145,12 @@ StoragePartition* BrowserContext::GetStoragePartition(
 StoragePartition* BrowserContext::GetStoragePartition(
     const StoragePartitionConfig& storage_partition_config,
     bool can_create) {
+#if BUILDFLAG(ARKWEB_RENDER_PROCESS_MODE)
+  if (IsOffTheRecord() && RenderProcessHost::render_process_mode() !=
+                              RenderProcessMode::SINGLE_MODE) {
+#else
   if (IsOffTheRecord()) {
+#endif
     // An off the record profile MUST only use in memory storage partitions.
     CHECK(storage_partition_config.in_memory());
   }

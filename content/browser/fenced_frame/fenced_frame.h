@@ -92,10 +92,11 @@ class CONTENT_EXPORT FencedFrame : public blink::mojom::FencedFrameOwnerHost,
   bool ShouldPreserveAbortedURLs() override;
   void UpdateOverridingUserAgent() override;
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-  std::string NotifyNavigationRewriteUrl(const std::string& original_url,
-                                         const std::string& referrer,
-                                         int transition_type,
-                                         bool is_key_request) override;
+  std::string NotifyNavigationRewriteUrl(
+        const std::string& original_url,
+        const std::string& referrer,
+        int transition_type,
+        bool is_key_request) override;
 #endif
 
   const raw_ptr<WebContentsImpl> web_contents_;

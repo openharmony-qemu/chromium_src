@@ -67,10 +67,11 @@ class GuestPageHolderImpl : public GuestPageHolder,
   bool ShouldPreserveAbortedURLs() override;
   void UpdateOverridingUserAgent() override;
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-  std::string NotifyNavigationRewriteUrl(const std::string& original_url,
-                                         const std::string& referrer,
-                                         int transition_type,
-                                         bool is_key_request) override;
+  std::string NotifyNavigationRewriteUrl(
+      const std::string& original_url,
+      const std::string& referrer,
+      int transition_type,
+      bool is_key_request) override;
 #endif
 
   ForwardingAudioStreamFactory* GetAudioStreamFactory();

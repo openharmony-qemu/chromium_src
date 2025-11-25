@@ -127,6 +127,7 @@
 
 #if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
 #include "content/browser/gpu/gpu_process_host.h"
+#include "arkweb/chromium_ext/gpu/ipc/common/nweb_native_window_tracker.h"
 #endif
 
 #if BUILDFLAG(IS_ARKWEB_EXT)
@@ -1383,7 +1384,14 @@ void NWebHandlerDelegate::OnBeforeClose(CefRefPtr<CefBrowser> browser) {
   } else {
     content::GpuProcessHost* host = content::GpuProcessHost::Get();
     if (host != nullptr && host->gpu_host() != nullptr && main_browser_ != nullptr && main_browser_->GetHost()) {
+      NWebNativeWindowTracker::GetInstance()->DestroyNativeWindow(
+        main_browser_->GetHost()->GetAcceleratedWidget(false));
       host->gpu_host()->DestroyNativeWindow(main_browser_->GetHost()->GetAcceleratedWidget(false));
+    } else {
+      LOG(ERROR) << "host|host->get_host()|main_browser_|main_browser_->GetHost() is nullptr";
+      if (NWebNativeWindowTracker::GetInstance()->CheckNativeWindow(window_)) {
+        NWebNativeWindowTracker::GetInstance()->DestroyNativeWindow(reinterpret_cast<intptr_t>(window_.get()));
+      }
     }
     OHOS::NWeb::OhosAdapterHelperExt::GetWindowAdapterNdkInstance()
         .DestroyNativeWindow(window_);

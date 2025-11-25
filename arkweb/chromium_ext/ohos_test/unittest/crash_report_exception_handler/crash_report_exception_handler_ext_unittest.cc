@@ -51,6 +51,7 @@ TEST_F(OhosDfxDataSourceTest, OhosDfxDataSourceTest001) {
     const char* test_data = "test_data";
     size_t data_size = strlen(test_data);
     OhosDfxDataSource source(KMinidumpStreamTypeOhosDfxInfo, test_data, data_size);
+
     TestDelegate delegate{};
     source.ReadStreamData(&delegate);
     source.ReadStreamData(nullptr);

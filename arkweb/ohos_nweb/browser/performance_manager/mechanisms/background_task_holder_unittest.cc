@@ -31,7 +31,6 @@ using namespace OHOS::NWeb;
 using namespace performance_manager;
 using namespace performance_manager::mechanism;
 
-
 class MockApplicationStateChangeCallback : public ApplicationStateChangeCallback {
 public:
     MockApplicationStateChangeCallback() = default;

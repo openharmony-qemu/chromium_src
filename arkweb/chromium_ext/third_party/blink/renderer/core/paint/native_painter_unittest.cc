@@ -60,7 +60,7 @@ class TestHTMLPlugInElement : public HTMLPlugInElement {
   LayoutEmbeddedContent* LayoutEmbeddedContentForJSBindings() const override {}
   LayoutEmbeddedContent* ExistingLayoutEmbeddedContent() const override {}
   void UpdatePluginInternal() override {}
-  
+
   FrameOwnerElementType OwnerType() const override {
     return FrameOwnerElementType::kNone;
   }
@@ -86,7 +86,7 @@ class NativePainterTest : public RenderingTest {
     return *static_cast<Document*>(
         web_view_helper_.LocalMainFrame()->GetDocument());
   }
-  
+
   Persistent<LayoutNative> layout_native_;
   Persistent<TestHTMLPlugInElement> plugin_element_;
   Persistent<TestNativeLoader> native_loader_;
@@ -104,11 +104,11 @@ TEST_F(NativePainterTest, SkipNonForegroundPhase) {
 
 TEST_F(NativePainterTest, MissingNativeLoader) {
   plugin_element_->SetNativeLoader(nullptr);
-  
+
   PaintController controller;
   GraphicsContext context(controller);
   PaintInfo paint_info(context, CullRect(), PaintPhase::kForeground, false);
-  
+
   NativePainter painter(*layout_native_);
   painter.PaintReplaced(paint_info, PhysicalOffset());
 }
@@ -120,7 +120,7 @@ TEST_F(NativePainterTest, PaintWithForeignLayer) {
   PaintController controller;
   GraphicsContext context(controller);
   PaintInfo paint_info(context, CullRect(), PaintPhase::kForeground, false);
-  
+
   NativePainter painter(*layout_native_);
   painter.PaintReplaced(paint_info, PhysicalOffset());
 }

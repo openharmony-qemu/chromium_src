@@ -1818,7 +1818,7 @@ void AuthenticatorCommonImpl::ContinueGetAssertionAfterRpIdCheck(
       &std::get<device::CtapGetAssertionRequest>(req_state_->ctap_request);
 #if BUILDFLAG(ARKWEB_FIDO)
   ctap_get_assertion_request->extra = CreateCtapGetAssertionRequestExtra(
-      caller_origin, options);
+      caller_origin, options->public_key);
 #endif // BUILDFLAG(ARKWEB_FIDO)
 
   req_state_->request_options.emplace<device::CtapGetAssertionOptions>();

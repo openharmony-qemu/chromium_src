@@ -15,6 +15,7 @@
 
 #include "arkweb/chromium_ext/content/gpu/in_process_gpu_thread_utils.h"
 
+#include "base/logging.h"
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
 #include <fstream>
 #include <dirent.h>

@@ -145,11 +145,11 @@ void DynamicFrameLossMonitor::ReportToHiAppEvent() {
       FROM_HERE, {base::TaskPriority::LOWEST},
       base::BindOnce(&ReportDynamicStasticToHiAppevent,
           DOMAIN, EVENT_NAME, EventType::STATISTIC, dynamicFrameDropInfo));
-  std::ostringsteam log_stream;
+  std::ostringstream log_stream;
   log_stream << "StartTime: " << start_time_
             <<", Duration: " << (stop_time_ - start_time_)
             << ", MaxAppFrametime: " << max_app_frametime_;
-  LOG(DEBUG) << log_stream.cstr();
+  LOG(DEBUG) << log_stream.str();
 }
 
 void DynamicFrameLossMonitor::ReportToHiSysEvent() {

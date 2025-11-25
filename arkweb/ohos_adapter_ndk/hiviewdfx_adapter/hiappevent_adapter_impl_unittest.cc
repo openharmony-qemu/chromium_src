@@ -28,7 +28,7 @@ class MockHiappevetAdapter : public HiAppeventAdapter {
 public:
     MOCK_METHOD(void, ReportDynamicStastic,
         (const std::string& domain, const std::string& eventName, int32_t eventType,
-        HiAppeventAdapter::DynamicFrameDropInfo dynamicFrameDropInfo), (override));
+        const HiAppeventAdapter::DynamicFrameDropInfo& dynamicFrameDropInfo), (override));
 };
 
 TEST_F(HiAppeventAdapterImplTest, GetInstanceTest) {

@@ -43,7 +43,7 @@ private:
     std::unordered_set<int32_t> viewIndependentEvents_;
     raw_ptr<BrowserAccessibilityManagerOHOS> manager_;
     std::unordered_map<int64_t, int64_t> eventLastFiredTimes_;
-    std::unordered_map<int64_t, base::OnceClosure> pendingEvents_;
+    std::unordered_map<int64_t, bool> pendingEvents_;
 };
 
 // Manages a tree of BrowserAccessibility objects.

@@ -999,7 +999,7 @@ void CanvasRenderingContext2D::PageVisibilityChanged() {
 
 #if BUILDFLAG(ARKWEB_CANVAS_COMMIT)
   if (page_is_visible) {
-    element->SetNeedsCommit();
+    element->SetNeedsCompositingUpdate();
   }
 #endif
 

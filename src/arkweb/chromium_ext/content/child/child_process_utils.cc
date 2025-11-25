@@ -48,7 +48,7 @@ void ChildProcessUtils::ReportIoThreadStatus(bool is_created, bool is_in_browser
   // directly. Otherwise, report key thread info to the browser process firstly.
   if (is_in_browser_process) {
     ResSchedClientAdapter::ReportKeyThread(status, base::GetCurrentRealPid(),
-                                           childProcess->io_thread_->GetThreadRealId(),
+                                           childProcess->io_thread_->GetThreadRealId().raw(),
                                            ResSchedRoleAdapter::USER_INTERACT);
   }
 #if BUILDFLAG(ARKWEB_OOP_GPU_PROCESS)
@@ -57,9 +57,9 @@ void ChildProcessUtils::ReportIoThreadStatus(bool is_created, bool is_in_browser
         NWebNativeWindowTracker::Get()->g_browser_client_) {
       LOG(DEBUG) << "get native window success pid:"
                  << base::GetCurrentRealPid()
-                 << ", tid = " << childProcess->io_thread_->GetThreadRealId();
+                 << ", tid = " << childProcess->io_thread_->GetThreadRealId().raw();
       NWebNativeWindowTracker::Get()->g_browser_client_->ReportThread(
-          status, base::GetCurrentRealPid(), childProcess->io_thread_->GetThreadRealId(),
+          status, base::GetCurrentRealPid(), childProcess->io_thread_->GetThreadRealId().raw(),
           ResSchedRoleAdapter::USER_INTERACT);
     }
   }
@@ -67,7 +67,7 @@ void ChildProcessUtils::ReportIoThreadStatus(bool is_created, bool is_in_browser
   else {
     childProcess->main_thread_->ReportKeyThread(
         static_cast<int32_t>(status), base::GetCurrentRealPid(),
-        childProcess->io_thread_->GetThreadRealId(),
+        childProcess->io_thread_->GetThreadRealId().raw(),
         static_cast<int32_t>(ResSchedRoleAdapter::USER_INTERACT));
   }
 }
@@ -88,7 +88,7 @@ void ChildProcessUtils::ReportCompositorKeyThread(bool is_created, bool is_in_br
                                      : ResSchedStatusAdapter::THREAD_DESTROYED;
   childProcess->main_thread_->ReportKeyThread(
       static_cast<int32_t>(status), base::GetCurrentRealPid(),
-      base::PlatformThread::CurrentRealId(),
+      base::PlatformThread::CurrentRealId().raw(),
       static_cast<int32_t>(ResSchedRoleAdapter::IMPORTANT_DISPLAY));
   LOG(DEBUG) << "child process pid: " << base::GetCurrentRealPid()
              << ", tid: " << base::PlatformThread::CurrentRealId()

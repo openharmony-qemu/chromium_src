@@ -37,8 +37,7 @@ UserRulesetPublisher::UserRulesetPublisher(
           ruleset_config)) {
   best_effort_task_runner_ =
       content::GetUIThreadTaskRunner({base::TaskPriority::BEST_EFFORT});
-  CHECK(best_effort_task_runner_->BelongsToCurrentThread(),
-        base::NotFatalUntil::M129);
+  CHECK(best_effort_task_runner_->BelongsToCurrentThread());
 }
 
 UserRulesetPublisher::~UserRulesetPublisher() = default;
@@ -58,8 +57,8 @@ void UserRulesetPublisher::TryOpenAndSetRulesetFile(
 
 void UserRulesetPublisher::PublishNewRulesetVersion(
     RulesetFilePtr ruleset_data) {
-  CHECK(ruleset_data, base::NotFatalUntil::M129);
-  CHECK(ruleset_data->IsValid(), base::NotFatalUntil::M129);
+  CHECK(ruleset_data);
+  CHECK(ruleset_data->IsValid());
   ruleset_data_.reset();
 
   // If Ad Tagging is running, then every request does a lookup and it's
@@ -93,7 +92,7 @@ VerifiedRulesetDealer::Handle* UserRulesetPublisher::GetRulesetDealer() {
 
 void UserRulesetPublisher::IndexAndStoreAndPublishRulesetIfNeeded(
     const UserUnindexedRulesetInfo& unindexed_ruleset_info) {
-  CHECK(ruleset_service_, base::NotFatalUntil::M129);
+  CHECK(ruleset_service_);
   ruleset_service_->IndexAndStoreAndPublishRulesetIfNeeded(
       unindexed_ruleset_info);
 }

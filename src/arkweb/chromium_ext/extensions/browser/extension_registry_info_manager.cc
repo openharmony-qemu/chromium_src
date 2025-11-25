@@ -17,9 +17,10 @@
 
 #include "base/logging.h"
 #include "base/no_destructor.h"
+#include "base/strings/stringprintf.h"
 #include "chrome/browser/extensions/menu_manager.h"
 #include "chrome/common/extensions/api/omnibox/omnibox_handler.h"
-#include "chrome/common/extensions/chrome_manifest_url_handlers.h"
+#include "extensions/common/manifest_handlers/chrome_url_overrides_handler.h"
 #include "chrome/common/extensions/manifest_handlers/settings_overrides_handler.h"
 #include "content/public/common/url_constants.h"
 #include "extensions/browser/extension_system.h"

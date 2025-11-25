@@ -782,7 +782,7 @@ GpuProcessHost::~GpuProcessHost() {
   if (in_process_gpu_thread_)
     OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(
         OHOS::NWeb::ResSchedStatusAdapter::THREAD_DESTROYED,
-        base::GetCurrentRealPid(), in_process_gpu_thread_->GetThreadRealId(),
+        base::GetCurrentRealPid(), in_process_gpu_thread_->GetThreadRealId().raw(),
         OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_DISPLAY);
 #endif
 
@@ -934,7 +934,7 @@ bool GpuProcessHost::Init() {
 #if BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
     OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(
         OHOS::NWeb::ResSchedStatusAdapter::THREAD_CREATED,
-        base::GetCurrentRealPid(), in_process_gpu_thread_->GetThreadRealId(),
+        base::GetCurrentRealPid(), in_process_gpu_thread_->GetThreadRealId().raw(),
         OHOS::NWeb::ResSchedRoleAdapter::IMPORTANT_DISPLAY);
 #endif
   } else if (!LaunchGpuProcess()) {

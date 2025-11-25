@@ -15,6 +15,7 @@
 
 #include "third_party/blink/renderer/modules/media_controls/elements/media_control_overflow_menu_list_element.h"
 #include "arkweb/chromium_ext/third_party/blink/renderer/modules/media_controls/elements/media_control_overflow_menu_list_element_utils.h"
+#include "third_party/blink/renderer/core/css_value_keywords.h"
 #include "third_party/blink/renderer/modules/media_controls/media_controls_impl.h"
 
 namespace blink {

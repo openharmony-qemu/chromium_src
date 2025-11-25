@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "base/notimplemented.h"
 #include "base/notreached.h"
 #include "components/storage_monitor/storage_monitor.h"
 

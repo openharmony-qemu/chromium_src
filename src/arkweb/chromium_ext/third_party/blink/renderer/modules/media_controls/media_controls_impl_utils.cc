@@ -207,7 +207,7 @@ void MediaControlsImplUtils::InitializeControlsExt() {
     LOG(ERROR) << "InitializeControlsExt entered_fullscreen_panel_ is nullptr";
     return;
   }
-  media_controls_impl_->entered_fullscreen_panel_->setInnerHTML("");
+  media_controls_impl_->entered_fullscreen_panel_->SetInnerHTMLWithoutTrustedTypes("");
   media_controls_impl_->ParserAppendChild(media_controls_impl_->entered_fullscreen_panel_);
 
   media_controls_impl_->entered_fullscreen_panel_->SetIsWanted(false);
@@ -225,14 +225,14 @@ void MediaControlsImplUtils::InitializeControlsExt() {
       LOG(ERROR) << "InitializeControlsExt top_row_panel_ is nullptr";
       return;
     }
-    media_controls_impl_->top_row_panel_->setInnerHTML("");
+    media_controls_impl_->top_row_panel_->SetInnerHTMLWithoutTrustedTypes("");
     media_controls_impl_->timeline_row_panel_ =
       MakeGarbageCollected<MediaControlTimelineRowPanelElement>(*media_controls_impl_);
     if (!(media_controls_impl_->timeline_row_panel_)) {
       LOG(ERROR) << "InitializeControlsExt timeline_row_panel_ is nullptr";
       return;
     }
-    media_controls_impl_->timeline_row_panel_->setInnerHTML("");
+    media_controls_impl_->timeline_row_panel_->SetInnerHTMLWithoutTrustedTypes("");
   }
 #endif // ARKWEB_VIDEO_ASSISTANT
 }
@@ -252,7 +252,7 @@ void MediaControlsImplUtils::PopulatePanelHM() {
     LOG(ERROR) << "PopulatePanelHM media_controls_impl_ is nullptr";
     return;
   }
-  media_controls_impl_->panel_->setInnerHTML("");
+  media_controls_impl_->panel_->SetInnerHTMLWithoutTrustedTypes("");
 
   MaybeParserAppendChild(media_controls_impl_->volume_control_container_, media_controls_impl_->volume_slider_);
   media_controls_impl_->volume_control_container_->ParserAppendChild(media_controls_impl_->mute_button_);
@@ -269,7 +269,7 @@ void MediaControlsImplUtils::PopulatePanelHM() {
 
   // top row panel
   if (media_controls_impl_->top_row_panel_) {
-    media_controls_impl_->top_row_panel_->setInnerHTML("");
+    media_controls_impl_->top_row_panel_->SetInnerHTMLWithoutTrustedTypes("");
     MediaControlElementsHelper::CreateDiv(
         AtomicString("-internal-media-controls-button-spacer"), media_controls_impl_->top_row_panel_);
     media_controls_impl_->top_row_panel_->ParserAppendChild(media_controls_impl_->volume_control_container_);
@@ -278,7 +278,7 @@ void MediaControlsImplUtils::PopulatePanelHM() {
   }
 
   if (media_controls_impl_->media_button_panel_) {
-    media_controls_impl_->media_button_panel_->setInnerHTML("");
+    media_controls_impl_->media_button_panel_->SetInnerHTMLWithoutTrustedTypes("");
   }
 
   // second panel
@@ -295,7 +295,7 @@ void MediaControlsImplUtils::PopulatePanelHM() {
   button_panel->ParserAppendChild(media_controls_impl_->play_button_);
 
   if (media_controls_impl_->timeline_row_panel_) {
-    media_controls_impl_->timeline_row_panel_->setInnerHTML("");
+    media_controls_impl_->timeline_row_panel_->SetInnerHTMLWithoutTrustedTypes("");
     media_controls_impl_->timeline_row_panel_->ParserAppendChild(media_controls_impl_->current_time_display_);
     media_controls_impl_->timeline_row_panel_->ParserAppendChild(media_controls_impl_->timeline_);
     media_controls_impl_->timeline_row_panel_->ParserAppendChild(media_controls_impl_->duration_display_);

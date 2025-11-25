@@ -45,7 +45,7 @@ BrowserProcessIOThread::~BrowserProcessIOThread() {
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
   ResSchedClientAdapter::ReportKeyThread(
       ResSchedStatusAdapter::THREAD_DESTROYED, base::GetCurrentProcId(),
-      GetThreadId(), ResSchedRoleAdapter::USER_INTERACT);
+      GetThreadId().raw(), ResSchedRoleAdapter::USER_INTERACT);
 #endif
   Stop();
 }
@@ -90,7 +90,7 @@ void BrowserProcessIOThread::Run(base::RunLoop* run_loop) {
 #if BUILDFLAG(ARKWEB_PERFORMANCE_INC_FREQ)
   ResSchedClientAdapter::ReportKeyThread(
       ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentProcId(),
-      GetThreadId(), ResSchedRoleAdapter::USER_INTERACT);
+      GetThreadId().raw(), ResSchedRoleAdapter::USER_INTERACT);
 #endif
 
   IOThreadRun(run_loop);

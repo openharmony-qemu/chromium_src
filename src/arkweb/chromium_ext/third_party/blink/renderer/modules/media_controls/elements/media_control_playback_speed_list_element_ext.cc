@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "base/metrics/histogram_functions.h"
+#include "base/strings/stringprintf.h"
 #include "third_party/blink/public/strings/grit/blink_strings.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_scroll_into_view_options.h"
 #include "third_party/blink/renderer/bindings/core/v8/v8_union_boolean_scrollintoviewoptions.h"

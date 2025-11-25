@@ -252,8 +252,13 @@ const blink::RendererPreferences& GuestPageHolderImpl::GetRendererPrefs() {
 const blink::web_pref::WebPreferences&
 GuestPageHolderImpl::GetWebPreferences() {
   if (!web_preferences_) {
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+    web_preferences_ = std::make_unique<blink::web_pref::WebPreferences>(
+        owner_web_contents_->ComputeWebPreferences(99));
+#else
     web_preferences_ = std::make_unique<blink::web_pref::WebPreferences>(
         owner_web_contents_->ComputeWebPreferences(GetGuestMainFrame()));
+#endif
   }
   return *web_preferences_;
 }

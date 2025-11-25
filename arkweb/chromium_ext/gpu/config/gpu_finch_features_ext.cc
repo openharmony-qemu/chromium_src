@@ -41,6 +41,12 @@ bool IsEnableVulkan()
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_VULKAN)
+BASE_FEATURE(kInsertVKEndSemaphore,
+             "InsertVKEndSemaphore",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+#endif
+
 #if BUILDFLAG(ARKWEB_DRDC)
 bool IsDrDcForVulkan()
 {

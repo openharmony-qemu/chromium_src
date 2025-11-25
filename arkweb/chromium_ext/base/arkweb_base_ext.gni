@@ -17,6 +17,8 @@ arkweb_base_ext_sources += [
   "//arkweb/chromium_ext/base/ohos/nweb_engine_event_logger.h",
   "//arkweb/chromium_ext/base/ohos/nweb_engine_event_logger_code.cc",
   "//arkweb/chromium_ext/base/ohos/nweb_engine_event_logger_code.h",
+  "//arkweb/chromium_ext/base/arkweb_report_statistics.cc",
+  "//arkweb/chromium_ext/base/arkweb_report_statistics.h",
 ]
 
 if (arkweb_file_upload) {

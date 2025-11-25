@@ -293,6 +293,8 @@ extern bool g_siteIsolationMode;
 #include "ohos_nweb_ex/core/static/nweb_static_dispatcher.h"
 #endif
 
+#include "arkweb/chromium_ext/base/arkweb_report_statistics.h"
+
 #if BUILDFLAG(ARKWEB_VIDEO_ASSISTANT)
 OnReportStatisticLogFunc
     OHOS::NWeb::NWebImpl::on_report_statistic_log_callback_ = nullptr;
@@ -1349,6 +1351,7 @@ bool NWebImpl::Init(std::shared_ptr<NWebCreateInfo> create_info) {
   if (!g_logger_callback_initialized) {
     g_logger_callback_initialized = true;
     base::ohos::SetUploadCallback(UploadCallback);
+    base::ohos::SetReportStatisticTaskRunner();
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
     NWebHandlerDelegate::RegisterLoggerCallback(g_logger_callback);
 #endif
@@ -4009,6 +4012,7 @@ void NWebImpl::OnReportStatisticLog(const std::string& content) {
 
 void NWebImpl::SetOnReportStatisticLogCallback(OnReportStatisticLogFunc func) {
   on_report_statistic_log_callback_ = func;
+  base::ohos::SetOnReportStatisticLogCallback(on_report_statistic_log_callback_);
 }
 
 void NWebImpl::CustomWebMediaPlayer(bool enable) {

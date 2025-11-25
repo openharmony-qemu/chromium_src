@@ -105,7 +105,7 @@ void FirstScreenCalculator::NotifyImagePaint(
   if (image_rects_map_.empty()) {
     image_rects_map_.insert(
         {record_id_hash,
-         {record->lcp_rect_info_->GetRootRectInfo(), record->paint_time}});
+         {record->GetLCPRectInfo()->GetRootRectInfo(), record->PaintTime()}});
     return;
   }
 
@@ -116,19 +116,19 @@ void FirstScreenCalculator::NotifyImagePaint(
       return;
     }
 
-    if (it->second.rect_ == record->lcp_rect_info_->GetRootRectInfo() &&
+    if (it->second.rect_ == record->GetLCPRectInfo()->GetRootRectInfo() &&
         rect_size < *viewport_size) {
       return;
     }
 
-    if (it->second.rect_.Contains(record->lcp_rect_info_->GetRootRectInfo()) &&
+    if (it->second.rect_.Contains(record->GetLCPRectInfo()->GetRootRectInfo()) &&
         rect_size < *viewport_size) {
       return;
     }
   }
   image_rects_map_.insert(
       {record_id_hash,
-       {record->lcp_rect_info_->GetRootRectInfo(), record->paint_time}});
+       {record->GetLCPRectInfo()->GetRootRectInfo(), record->PaintTime()}});
 }
 
 void FirstScreenCalculator::NotifyTextPaint(const TextRecord* record,
@@ -139,31 +139,31 @@ void FirstScreenCalculator::NotifyTextPaint(const TextRecord* record,
 
   if (text_paint_rect_.empty()) {
     text_paint_rect_.emplace_back(PaintRectInfo(
-        record->lcp_rect_info_->GetRootRectInfo(), record->paint_time));
+        record->GetLCPRectInfo()->GetRootRectInfo(), record->PaintTime()));
     RestartTimerForFirstScreenDetection(base::Milliseconds(DEFAULT_TASK_DELAY_MS));
     return;
   }
   for (auto it = text_paint_rect_.begin(); it != text_paint_rect_.end(); ++it) {
-    if (it->rect_ == record->lcp_rect_info_->GetRootRectInfo()) {
+    if (it->rect_ == record->GetLCPRectInfo()->GetRootRectInfo()) {
       return;
     }
 
-    if (it->rect_.Contains(record->lcp_rect_info_->GetRootRectInfo())) {
+    if (it->rect_.Contains(record->GetLCPRectInfo()->GetRootRectInfo())) {
       return;
     }
   }
 
   text_paint_rect_.emplace_back(PaintRectInfo(
-      record->lcp_rect_info_->GetRootRectInfo(), record->paint_time));
+      record->GetLCPRectInfo()->GetRootRectInfo(), record->PaintTime()));
 
   for (auto it = text_paint_rect_.begin(); it != text_paint_rect_.end(); ++it) {
-    if (it->rect_ != record->lcp_rect_info_->GetRootRectInfo() &&
-        record->lcp_rect_info_->GetRootRectInfo().Contains(it->rect_)) {
+    if (it->rect_ != record->GetLCPRectInfo()->GetRootRectInfo() &&
+        record->GetLCPRectInfo()->GetRootRectInfo().Contains(it->rect_)) {
       return;
     }
 
-    if (it->rect_ != record->lcp_rect_info_->GetRootRectInfo() &&
-        it->rect_.Intersects(record->lcp_rect_info_->GetRootRectInfo())) {
+    if (it->rect_ != record->GetLCPRectInfo()->GetRootRectInfo() &&
+        it->rect_.Intersects(record->GetLCPRectInfo()->GetRootRectInfo())) {
       return;
     }
   }

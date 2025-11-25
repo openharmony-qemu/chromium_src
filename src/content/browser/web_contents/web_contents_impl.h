@@ -1583,7 +1583,7 @@ class CONTENT_EXPORT WebContentsImpl
 
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
   const blink::web_pref::WebPreferences ComputeWebPreferences(
-      int32_t usage_scenario_type = 99);
+      RenderFrameHostImpl* main_frame, int32_t usage_scenario_type = 99);
 #else
   const blink::web_pref::WebPreferences ComputeWebPreferences(
       RenderFrameHostImpl* main_frame);

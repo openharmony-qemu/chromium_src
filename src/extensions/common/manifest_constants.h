@@ -196,6 +196,7 @@ inline constexpr char kBrowserActionCommandEvent[] = "_execute_browser_action";
 inline constexpr char kIncognitoNotAllowed[] = "not_allowed";
 inline constexpr char kIncognitoSplit[] = "split";
 inline constexpr char kIncognitoSpanning[] = "spanning";
+inline constexpr char kKeybindingPlatformOHOS[] = "ohos";
 inline constexpr char kLaunchContainerPanelDeprecated[] = "panel";
 inline constexpr char kLaunchContainerTab[] = "tab";
 inline constexpr char kLaunchContainerWindow[] = "window";

@@ -127,7 +127,7 @@ int64_t DynamicFrameLossMonitor::GetCurrentTimestampMS() {
 }
 
 void ReportDynamicStasticToHiAppevent(const std::string& domain, const std::string& eventName,
-    int32_t eventType, HiAppeventAdapter::DynamicFrameDropInfo dynamicFrameDropInfo) {
+    int32_t eventType, const HiAppeventAdapter::DynamicFrameDropInfo& dynamicFrameDropInfo) {
   OhosAdapterHelper::GetInstance().GetHiAppeventAdapterInstance().
         ReportDynamicStastic(domain, eventName, eventType, dynamicFrameDropInfo);
 }
@@ -145,9 +145,11 @@ void DynamicFrameLossMonitor::ReportToHiAppEvent() {
       FROM_HERE, {base::TaskPriority::LOWEST},
       base::BindOnce(&ReportDynamicStasticToHiAppevent,
           DOMAIN, EVENT_NAME, EventType::STATISTIC, dynamicFrameDropInfo));
-  LOG(DEBUG) << "StartTime: " + std::to_string(start_time_) +
-                   ", Duration: " + std::to_string(stop_time_ - start_time_) +
-                   ", MaxAppFrametime: " + std::to_string(max_app_frametime_);
+  std::ostringsteam log_stream;
+  log_stream << "StartTime: " << start_time_
+            <<", Duration: " << (stop_time_ - start_time_)
+            << ", MaxAppFrametime: " << max_app_frametime_;
+  LOG(DEBUG) << log_stream.cstr();
 }
 
 void DynamicFrameLossMonitor::ReportToHiSysEvent() {

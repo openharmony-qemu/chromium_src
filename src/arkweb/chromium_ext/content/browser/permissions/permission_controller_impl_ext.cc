@@ -26,12 +26,14 @@ void PermissionControllerImpl::GetPermissionStatusAsync(
     return;
   }
 
-  std::optional<blink::mojom::PermissionStatus> status =
-      permission_overrides_.Get(origin, permission);
-  if (status.has_value()) {
+  url::Origin embedding_origin = url::Origin(); 
+  std::optional<PermissionResult> result =
+      permission_overrides_.Get(origin, embedding_origin, permission);
+  if (result.has_value()) {
+    blink::mojom::PermissionStatus status = result->status;
     LOG(INFO) << "GetPermissionStatusAsync permission_overrides status="
-              << (int)(*status);
-    std::move(callback).Run(*status);
+              << (int)status;
+    std::move(callback).Run(status);
     return;
   }
 

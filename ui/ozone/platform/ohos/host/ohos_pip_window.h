@@ -79,6 +79,7 @@ class OhosPipWindow : public OhosWindow {
  private:
   PictureInPicture_PipConfig ConfigurePipWindow();
   void RegisterCallbacks();
+  bool StopPipController();
   void CloseInternal();
 
   void RegisterControlCallbacks();

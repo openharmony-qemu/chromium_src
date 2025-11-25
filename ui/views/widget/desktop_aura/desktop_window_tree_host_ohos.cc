@@ -104,7 +104,8 @@ void DesktopWindowTreeHostOhos::AddAdditionalInitProperties(
         params.pip_parent->GetHost()->GetAcceleratedWidget();
   }
 
-  if (params.name == "ScreenCaptureNotificationUIViews") {
+  if (params.name == "ScreenCaptureNotificationUIViews" ||
+      params.name == "MessageBoxView") {
     properties->ability_type = AbilityType::kStatelessAbility;
   } else if (params.name == "TaskManagerView") {
     properties->ability_type = AbilityType::kTaskManagerAbility;

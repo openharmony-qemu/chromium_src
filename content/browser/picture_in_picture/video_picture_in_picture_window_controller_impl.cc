@@ -276,8 +276,9 @@ PictureInPictureResult VideoPictureInPictureWindowControllerImpl::StartSession(
 #if BUILDFLAG(ARKWEB_PIP)
     pip_media_player_id_ = player_id;
     return StartSessionExt(
-      service, player_id, std::move(player_remote), surface_id, natural_size, show_play_pause_button,
-      std::move(observer), source_bounds, session_remote, window_size);
+        service, player_id, std::move(player_remote), surface_id, natural_size,
+        show_play_pause_button, std::move(observer), source_bounds,
+        session_remote, window_size);
 #else
   auto result = GetWebContentsImpl()->EnterPictureInPicture();
 

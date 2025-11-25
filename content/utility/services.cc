@@ -38,6 +38,7 @@
 #include "services/video_capture/public/mojom/video_capture_service.mojom.h"
 #include "services/video_capture/video_capture_service_impl.h"
 #include "services/video_effects/public/cpp/buildflags.h"
+#include "arkweb/chromium_ext/services/network/arkweb_network_service_ext.h"
 
 #if BUILDFLAG(ENABLE_VIDEO_EFFECTS)
 #include "services/video_effects/public/mojom/video_effects_service.mojom.h"  // nogncheck

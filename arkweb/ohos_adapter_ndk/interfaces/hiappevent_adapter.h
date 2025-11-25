@@ -16,7 +16,7 @@
 #ifndef HIAPPEVENT_ADAPTER_H
 #define HIAPPEVENT_ADAPTER_H
 
-#include "string"
+#include <string>
 
 namespace OHOS::NWeb {
 
@@ -30,7 +30,7 @@ public:
     };
 
     virtual void ReportDynamicStastic(const std::string& domain,
-        const std::string& eventName, int32_t evenType, DynamicFrameDropInfo dynamicFrameDropInfo) = 0;
+        const std::string& eventName, int32_t eventType, const DynamicFrameDropInfo& dynamicFrameDropInfo) = 0;
 
 protected:
     HiAppeventAdapter() = default;

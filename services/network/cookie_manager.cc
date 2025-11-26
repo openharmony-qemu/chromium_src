@@ -37,6 +37,7 @@
 
 #if BUILDFLAG(ARKWEB_COOKIE)
 #include "arkweb/chromium_ext/services/network/cookie_manager_for_include.cc"
+#include "arkweb/chromium_ext/net/base/net_helpers.h"
 #endif
 
 using CookieDeletionInfo = net::CookieDeletionInfo;
@@ -385,6 +386,11 @@ void CookieManager::ConfigureCookieSettings(
     const network::mojom::CookieManagerParams& params,
     CookieSettings* out) {
   out->set_block_third_party_cookies(params.block_third_party_cookies);
+#if BUILDFLAG(ARKWEB_COOKIE)
+  if (net_service::NetHelpers::IsThirdPartyCookieAllowed()) {
+    out->set_block_third_party_cookies(true);
+  }
+#endif
   out->set_mitigations_enabled_for_3pcd(params.mitigations_enabled_for_3pcd);
   out->set_tracking_protection_enabled_for_3pcd(
       params.tracking_protection_enabled_for_3pcd);

@@ -23,6 +23,10 @@
 #include "nweb_errors.h"
 #include "nweb_value_callback.h"
 
+#if BUILDFLAG(ARKWEB_COOKIE)
+#include "cef/ohos_cef_ext/libcef/browser/net_service/cookie_manager_impl_ext.h"
+#endif
+
 namespace OHOS::NWeb {
 class NWebCookieManagerDelegate : public NWebCookieManagerDelegateInterface {
  public:
@@ -84,6 +88,14 @@ class NWebCookieManagerDelegate : public NWebCookieManagerDelegateInterface {
 
   CefRefPtr<CefCookieManager> GetGlobalIncognitoCookieManager();
   CefRefPtr<CefCookieManager> incognito_cookie_manager_ = nullptr;
+
+#if BUILDFLAG(ARKWEB_COOKIE)
+  CefRefPtr<CefCookieManagerExt> GetUninitializedCookieManagerExt(
+      bool support_incognito);
+  CefRefPtr<CefCookieManagerExt> uninitialized_cookie_manager_ = nullptr;
+  CefRefPtr<CefCookieManagerExt> uninitialized_incognito_cookie_manager_ =
+      nullptr;
+#endif
 };
 }  // namespace OHOS::NWeb
 #endif

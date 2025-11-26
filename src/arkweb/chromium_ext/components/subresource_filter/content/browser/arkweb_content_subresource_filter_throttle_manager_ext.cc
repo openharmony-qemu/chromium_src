@@ -220,7 +220,7 @@ void ArkWebContentSubresourceFilterThrottleManagerExt::FrameIsUserAd() {
   // iframes, see `AdScriptDidCreateFencedFrame`.
   content::RenderFrameHost* render_frame_host =
       user_receiver_.GetCurrentTargetFrame();
-  CHECK(!render_frame_host->IsFencedFrameRoot(), base::NotFatalUntil::M129);
+  CHECK(!render_frame_host->IsFencedFrameRoot());
   OnFrameIsAd(user_receiver_.GetCurrentTargetFrame());
 }
 
@@ -250,10 +250,10 @@ void ArkWebContentSubresourceFilterThrottleManagerExt::UserAdScriptDidCreateFenc
 
   content::RenderFrameHost* owner_frame =
       user_receiver_.GetCurrentTargetFrame();
-  CHECK(owner_frame, base::NotFatalUntil::M129);
+  CHECK(owner_frame);
 
   auto* fenced_frame_root = content::RenderFrameHost::FromPlaceholderToken(
-      owner_frame->GetProcess()->GetID(), placeholder_token);
+      owner_frame->GetProcess()->GetID().GetUnsafeValue(), placeholder_token);
 
   if (!fenced_frame_root) {
     return;
@@ -274,8 +274,7 @@ void ArkWebContentSubresourceFilterThrottleManagerExt::UserAdScriptDidCreateFenc
   }
 
   CHECK(!base::Contains(tracked_ad_evidence_,
-                        fenced_frame_root->GetFrameTreeNodeId()),
-        base::NotFatalUntil::M129);
+                        fenced_frame_root->GetFrameTreeNodeId()));
   OnChildFrameWasCreatedByAdScript(fenced_frame_root);
 }
 
@@ -303,9 +302,9 @@ void ArkWebContentSubresourceFilterThrottleManagerExt::UserSetDocumentLoadStatis
 
 void ArkWebContentSubresourceFilterThrottleManagerExt::OnUserAdsViolationTriggered(
     mojom::AdsViolation violation) {
-  CHECK(page_, base::NotFatalUntil::M129);
+  CHECK(page_);
   CHECK_EQ(&GetSubresourceFilterRootPage(user_receiver_.GetCurrentTargetFrame()),
-           page_, base::NotFatalUntil::M129);
+           page_);
   OnAdsViolationTriggered(&page_->GetMainDocument(), violation);
 }
 #endif  // BUILDFLAG(ARKWEB_ADBLOCK)

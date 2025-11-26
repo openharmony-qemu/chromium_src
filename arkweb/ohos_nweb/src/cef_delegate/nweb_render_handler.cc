@@ -814,7 +814,7 @@ void NWebRenderHandler::OnTextSelectionChanged(CefRefPtr<CefBrowser> browser,
                                                 selected_range);
   }
   if (auto handler = handler_.lock()) {
-    handler->OnTouchSelectionChange(selected_text);
+    handler->OnTextSelectionChange(selected_text);
   }
 }
 

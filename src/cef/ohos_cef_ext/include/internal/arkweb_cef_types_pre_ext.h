@@ -173,6 +173,11 @@ typedef enum {
 ///
 typedef struct _cef_date_time_chooser_t {
   ///
+  /// Size of this structure.
+  ///
+  size_t size;
+
+  ///
   /// date time chooser type.
   ///
   cef_text_input_type_t dialog_type;
@@ -301,6 +306,11 @@ typedef enum {
 // Support date time suggestion.
 ///
 typedef struct _cef_date_time_suggestion_t {
+  ///
+  /// Size of this structure.
+  ///
+  size_t size;
+
   ///
   /// The date/time value represented as a double.
   ///

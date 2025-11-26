@@ -111,7 +111,8 @@ void PRPPRequestLoaderImpl::InitAndStartUrlRequest(const std::shared_ptr<PRReque
       &PRPPRequestLoaderImpl::SetRawResponseHeaders, weak_ptr_factory_.GetWeakPtr()));
   url_request_->SetEarlyResponseHeadersCallback(base::BindRepeating(
       &PRPPRequestLoaderImpl::NotifyEarlyResponse, weak_ptr_factory_.GetWeakPtr()));
-  url_request_->set_storage_access_status(info->storage_access_status());
+  url_request_->set_storage_access_status(
+      net::StorageAccessStatusCache(info->storage_access_status()));
   url_request_->cookie_setting_overrides().PutAll(info->cookie_setting_overrides());
   url_request_->set_ad_tagged(info->ad_tagged());
   url_request_->set_update_res_request_info_callback(

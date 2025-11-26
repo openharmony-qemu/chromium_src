@@ -2963,6 +2963,7 @@ void NWebDelegate::JavaScriptOnDocumentStart(const ScriptItems& scriptItems) {
 
 void NWebDelegate::JavaScriptOnDocumentStartByOrder(
     const ScriptItems& scriptItems,
+    const ScriptRegexItems& scriptRegexItems,
     const ScriptItemsByOrder& scriptItemsByOrder) {
   if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
     if (scriptItems.size() == 0) {

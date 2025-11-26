@@ -79,9 +79,10 @@ bool JsCommunicationUtils::MatchUrlRegexRules(blink::WebString& script,
   return false;
 }
 
-std::unique_ptr<DocumentJavaScriptRegexRules> JsCommunicationUtils::CreateDocumentJavaScriptRegexRules(
+std::unique_ptr<JsCommunicationUtils::DocumentJavaScriptRegexRules>
+JsCommunicationUtils::CreateDocumentJavaScriptRegexRules(
     const mojom::DocumentJavaScriptRegexRulesPtr& script_regex_rules_ptr) {
-  auto script_regex_rules = std::make_unique<DocumentJavaScriptRegexRules>();
+  auto script_regex_rules = std::make_unique<JsCommunicationUtils::DocumentJavaScriptRegexRules>();
   script_regex_rules->script_id = script_regex_rules_ptr->script_id;
   script_regex_rules->script = blink::WebString::FromUTF16(script_regex_rules_ptr->script);
 

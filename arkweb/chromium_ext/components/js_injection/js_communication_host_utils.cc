@@ -48,8 +48,8 @@ DocumentEndJavaScript::DocumentEndJavaScript(std::u16string script,
 #endif
 
 #if BUILDFLAG(ARKWEB_JSPROXY)
-DocumentJavaScriptRegexRules::DocumentJavaScriptRegexRules(std::u16string& script,
-    std::vector<std::pair<std::string, std::string>>& script_regex_rules,
+DocumentJavaScriptRegexRules::DocumentJavaScriptRegexRules(const std::u16string& script,
+    const std::vector<std::pair<std::string, std::string>>& script_regex_rules,
     int32_t script_id)
     : script_(script),
       script_regex_rules_(script_regex_rules),

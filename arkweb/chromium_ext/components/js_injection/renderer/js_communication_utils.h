@@ -60,7 +60,7 @@ class JsCommunicationUtils {
 
   bool MatchUrlRegexRules(blink::WebString& script,
     std::vector<std::unique_ptr<DocumentJavaScriptRegexRules>>& scripts_regex_rules);
-  std::unique_ptr<DocumentJavaScriptRegexRules> CreateDocumentJavaScriptRegexRules(
+  std::unique_ptr<JsCommunicationUtils::DocumentJavaScriptRegexRules> CreateDocumentJavaScriptRegexRules(
     const mojom::DocumentJavaScriptRegexRulesPtr& script_regex_rules_ptr);
  private:
   struct DocumentStartJavaScript {

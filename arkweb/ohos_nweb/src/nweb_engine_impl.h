@@ -142,6 +142,11 @@ class NWebEngineImpl : public NWebEngine {
   void SetSoftKeyboardBehaviorMode(WebSoftKeyboardBehaviorMode mode) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_COOKIE)
+  void LibraryLoaded(std::shared_ptr<NWebEngineInitArgs> init_args,
+                     bool lazy) override;
+#endif
+
  private:
   std::shared_ptr<NWebDataBase> nweb_data_base_ = nullptr;
   std::shared_ptr<NWebWebStorage> nweb_web_storage_ = nullptr;

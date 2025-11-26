@@ -312,6 +312,12 @@ OnArkWebStaticOffscreenDocumentWindowNewFunc
 uint32_t OHOS::NWeb::NWebImpl::off_screen_nweb_id_ = 0;
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
+#if BUILDFLAG(ARKWEB_COOKIE)
+std::shared_ptr<OHOS::NWeb::NWebEngineInitArgs>
+    OHOS::NWeb::NWebImpl::save_initargs_ = nullptr;
+bool OHOS::NWeb::NWebImpl::should_lazy_init_web_engine_ = false;
+#endif
+
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 #include "arkweb/chromium_ext/base/ohos/blankless/blankless_controller.h"
 #include "arkweb/chromium_ext/components/viz/host/blankless_data_controller.h"
@@ -1218,6 +1224,10 @@ void NWebImpl::InitializeWebEngine(
   NWebApplication::GetDefault()->InitializeCef(mainargs, settings);
   content::GetNetworkService();
 
+#if BUILDFLAG(ARKWEB_COOKIE)
+  should_lazy_init_web_engine_ = false;
+#endif
+
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(::switches::kEnableNwebExPassword)) {
     LOG(INFO) << "[Autofill] Migrate passwords to passwordVault start.";
@@ -1600,6 +1610,10 @@ bool NWebImpl::InitWebEngine(std::shared_ptr<NWebCreateInfo> create_info) {
     delete[] argv;
     return false;
   }
+
+#if BUILDFLAG(ARKWEB_COOKIE)
+  should_lazy_init_web_engine_ = false;
+#endif
 
 #if BUILDFLAG(ARKWEB_MENU)
   nweb_delegate_->SetIsRichText(is_richtext_value_);
@@ -7393,5 +7407,24 @@ void NWebImpl::StopFling() {
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
 void NWebImpl::EnableRewriteUrlForNavigation(bool enable) {
   OhosUrlRewriteController::EnableRewriteUrl(enable);
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_COOKIE)
+void NWebImpl::LibraryLoaded(std::shared_ptr<NWebEngineInitArgs> init_args,
+                             bool lazy) {
+  if (NWebApplication::GetDefault()->HasInitializedCef()) {
+    return;
+  }
+  save_initargs_ = init_args;
+  should_lazy_init_web_engine_ = lazy;
+}
+
+bool NWebImpl::ShouldLazyInitWebEngine() {
+  return should_lazy_init_web_engine_;
+}
+
+std::shared_ptr<NWebEngineInitArgs> NWebImpl::GetSaveInitargs() {
+  return save_initargs_;
 }
 #endif

@@ -368,4 +368,12 @@ void NWebEngineImpl::SetSocketIdleTimeout(int32_t timeout) {
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_COOKIE)
+void NWebEngineImpl::LibraryLoaded(
+    std::shared_ptr<NWebEngineInitArgs> init_args,
+    bool lazy) {
+  NWebImpl::LibraryLoaded(init_args, lazy);
+}
+#endif
+
 }  // namespace OHOS::NWeb

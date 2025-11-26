@@ -47,7 +47,7 @@ BASE_FEATURE(kSiteIsolationForOAuthSites,
 #endif
 );
 
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_SITE_ISOLATION)
 // kSiteIsolationMemoryThresholdsAndroid is checked before individual site
 // isolation mode base::Features (such as kSitePerProcess or
 // kSiteIsolationForPasswordSites), and (if enabled) can restrict those modes
@@ -67,7 +67,7 @@ const char kStrictSiteIsolationMemoryThresholdParamName[] =
     "strict_site_isolation_threshold_mb";
 const char kPartialSiteIsolationMemoryThresholdParamName[] =
     "partial_site_isolation_threshold_mb";
-#endif  // BUILDFLAG(IS_ANDROID)
+#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(ARKWEB_SITE_ISOLATION)
 
 // In order to have broader support for JavaScript optimizer exceptions, we'll
 // apply origin isolation on navigation for URLs that match rules in the

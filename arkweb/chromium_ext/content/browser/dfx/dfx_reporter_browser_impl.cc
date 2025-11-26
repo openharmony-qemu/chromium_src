@@ -62,10 +62,12 @@ void OnVideoMemoryUsageStatsUpdate(pid_t pid, const std::map<std::string, std::s
   }
 
   ReportMemTraceNLog(reportMap);
+#if !defined(COMPONENT_BUILD)
   if (isSysEvent) {
     ReportRendererMem(reportMap["type"], reportMap["pid"], reportMap["rss"], reportMap["pss"],
                       reportMap["js_heap_total"], reportMap["js_heap_used"], reportMap["gpu_mem"], reportMap["url"]);
   }
+#endif
 }
 
 void GetGpuUsage(pid_t pid, const std::map<std::string, std::string>& memMap, bool isSysEvent)
@@ -126,7 +128,9 @@ void DfxReporterImpl::ReportHiSysEvent(const std::string& eventName, const std::
 // the param `eventInfo` may be used in the future
 void FreezeReporterImpl::ReportRenderFreeze(const std::string& eventInfo)
 {
+#if !defined(COMPONENT_BUILD)
   ReportAppfreeze();
+#endif
 }
 
 // static

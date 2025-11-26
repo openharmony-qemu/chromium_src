@@ -56,17 +56,17 @@ OhosDfxDataSource::OhosDfxDataSource(uint32_t stream_type,
 {
   data_.resize(data_size);
   if (data_size) {
-	if (memcpy_s(data_.data(), data_size, data, data_size)) {
-		LOG(ERROR) << "[OhosDfxDataSource] memcpy failed";
-	}
+    if (memcpy_s(data_.data(), data_size, data, data_size)) {
+        LOG(ERROR) << "[OhosDfxDataSource] memcpy failed";
+    }
   }
 }
-// LOVC_EXCL_START
+
 size_t OhosDfxDataSource::StreamDataSize()
 {
   return data_.size();
 }
-// LOVC_EXCL_STOP
+
 bool OhosDfxDataSource::ReadStreamData(Delegate* delegate)
 {
   if (delegate == nullptr) {

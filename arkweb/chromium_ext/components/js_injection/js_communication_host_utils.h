@@ -46,6 +46,23 @@ struct DocumentEndJavaScript {
 };
 #endif
 
+#if BUILDFLAG(ARKWEB_JSPROXY)
+struct DocumentJavaScriptRegexRules {
+  DocumentJavaScriptRegexRules(const std::u16string& script,
+                               const std::vector<std::pair<std::string, std::string>>& script_regex_rules,
+                               int32_t script_id);
+
+  DocumentJavaScriptRegexRules(DocumentJavaScriptRegexRules&) = delete;
+  DocumentJavaScriptRegexRules& operator=(DocumentJavaScriptRegexRules&) = delete;
+  DocumentJavaScriptRegexRules(DocumentJavaScriptRegexRules&&) = default;
+  DocumentJavaScriptRegexRules& operator=(DocumentJavaScriptRegexRules&&) = default;
+ 
+  std::u16string script_;
+  std::vector<std::pair<std::string, std::string>> script_regex_rules_;
+  int32_t script_id_;
+};
+#endif
+
 class JsCommunicationHost;
 
 class JsCommunicationHostUtils {
@@ -61,26 +78,36 @@ class JsCommunicationHostUtils {
       const std::vector<std::string>& allowed_origin_rules);
   JsCommunicationHost::AddScriptResult AddDocumentEndPendingJavaScript(
       const std::u16string& script,
-      const std::vector<std::string>& allowed_origin_rules);
+      const std::vector<std::string>& allowed_origin_rules,
+      const std::vector<std::pair<std::string, std::string>>& script_regex_rules);
   bool RemoveDocumentEndJavaScript(int script_id);
   void NotifyFrameForAllDocumentEndsJavaScripts(
       content::RenderFrameHost* render_frame_host);
   void NotifyFrameForAddDocumentEndJavaScript(
       const DocumentEndJavaScript* script,
       content::RenderFrameHost* render_frame_host);
+  void NotifyFrameForAddDocumentEndJavaScriptRegexRules(
+      const DocumentJavaScriptRegexRules* script_regex_rules,
+      content::RenderFrameHost* render_frame_host);
   void NotifyFrameForRemoveDocumentEndJavaScript(
       int32_t script_id,
       content::RenderFrameHost* render_frame_host);
   void NotifyFrameForAddDocumentEndPendingJavaScript(
       const DocumentEndJavaScript* script,
+      const DocumentJavaScriptRegexRules* script_regex_rules,
       content::RenderFrameHost* render_frame_host);
   void CommitPendingJavascriptsAtDocumentEnd();
 
   std::vector<DocumentEndJavaScript> document_end_scripts_;
   std::vector<DocumentEndJavaScript> swap_document_end_scripts_;
+  std::vector<DocumentJavaScriptRegexRules> swap_end_scripts_regex_rules_;
+  std::vector<DocumentJavaScriptRegexRules> end_scripts_regex_rules_;
 #endif
 
 #if BUILDFLAG(ARKWEB_JSPROXY)
+  mojom::DocumentJavaScriptRegexRulesPtr ConvertToMojomScriptRegexRules(
+    const DocumentJavaScriptRegexRules* script_regex_rules);
+
   // Native side AddHeadReadyJavaScript, returns an error message if the
   // parameters didn't pass necessary checks.
   JsCommunicationHost::AddScriptResult AddHeadReadyJavaScript(
@@ -88,25 +115,35 @@ class JsCommunicationHostUtils {
       const std::vector<std::string>& allowed_origin_rules);
   JsCommunicationHost::AddScriptResult AddHeadReadyPendingJavaScript(
       const std::u16string& script,
-      const std::vector<std::string>& allowed_origin_rules);
+      const std::vector<std::string>& allowed_origin_rules,
+      const std::vector<std::pair<std::string, std::string>>& script_regex_rules);
 
   bool RemoveHeadReadyJavaScript(int script_id);
   void NotifyFrameForAddHeadReadyJavaScript(
       const DocumentStartJavaScript* script,
       content::RenderFrameHost* render_frame_host);
+  void NotifyFrameForAddHeadReadyJavaScriptRegexRules(
+      const DocumentJavaScriptRegexRules* script_regex_rules,
+      content::RenderFrameHost* render_frame_host);
   void CommitPendingJavascriptsAtHeadReady();
 
   std::vector<DocumentStartJavaScript> head_ready_scripts_;
   std::vector<DocumentStartJavaScript> swap_head_ready_scripts_;
-#endif
+  std::vector<DocumentJavaScriptRegexRules> swap_head_ready_regex_rules_;
+  std::vector<DocumentJavaScriptRegexRules> head_ready_regex_rules_;
 
-#if BUILDFLAG(ARKWEB_JSPROXY)
   JsCommunicationHost::AddScriptResult AddDocumentStartPendingJavaScript(
       const std::u16string& script,
-      const std::vector<std::string>& allowed_origin_rules);
+      const std::vector<std::string>& allowed_origin_rules,
+      const std::vector<std::pair<std::string, std::string>>& script_regex_rules);
   void CommitPendingJavascriptsAtDocumentStart();
+  void NotifyFrameForAddDocumentStartJavaScriptRegexRules(
+      const DocumentJavaScriptRegexRules* script_regex_rules,
+      content::RenderFrameHost* render_frame_host);
 
   std::vector<DocumentStartJavaScript> swap_document_start_scripts_;
+  std::vector<DocumentJavaScriptRegexRules> swap_start_scripts_regex_rules_;
+  std::vector<DocumentJavaScriptRegexRules> start_scripts_regex_rules_;
 #endif
 
 private:
@@ -115,12 +152,14 @@ private:
   void NotifyFrameForCommitForHeadReady(content::RenderFrameHost* render_frame_host);
   void NotifyFrameForAddHeadReadyPendingJavaScript(
       const DocumentStartJavaScript* script,
+      const DocumentJavaScriptRegexRules* script_regex_rules,
       content::RenderFrameHost* render_frame_host);
   void NotifyFrameForRemoveHeadReadyJavaScript(
       int32_t script_id,
       content::RenderFrameHost* render_frame_host);
   void NotifyFrameForAddDocumentStartPendingJavaScript(
     const DocumentStartJavaScript* script,
+    const DocumentJavaScriptRegexRules* script_regex_rules,
     content::RenderFrameHost* render_frame_host);
   void NotifyFrameForCommitForDocumentStart(content::RenderFrameHost* render_frame_host);
 #endif

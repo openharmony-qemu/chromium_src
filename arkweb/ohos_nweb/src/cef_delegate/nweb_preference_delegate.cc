@@ -1091,13 +1091,19 @@ void NWebPreferenceDelegate::PutJavaScriptOnDocumentStart(
 
 void NWebPreferenceDelegate::PutJavaScriptOnDocumentStartByOrder(
     const ScriptItems& scriptItems,
+    const ScriptRegexItems& scriptRegexItems,
     const ScriptItemsByOrder& scriptItemsByOrder) {
   script_items_start_ = scriptItems;
+  script_regex_items_start_ = scriptRegexItems;
   script_items_start_by_order_ = scriptItemsByOrder;
 }
 
 ScriptItems NWebPreferenceDelegate::GetJavaScriptOnDocumentStart() {
   return script_items_start_;
+}
+
+ScriptRegexItems NWebPreferenceDelegate::GetJavaScriptRegexItemsOnDocumentStart() {
+  return script_regex_items_start_;
 }
 
 ScriptItemsByOrder
@@ -1112,13 +1118,19 @@ void NWebPreferenceDelegate::PutJavaScriptOnDocumentEnd(
 
 void NWebPreferenceDelegate::PutJavaScriptOnDocumentEndByOrder(
     const ScriptItems& scriptItems,
+    const ScriptRegexItems& scriptRegexItems,
     const ScriptItemsByOrder& scriptItemsByOrder) {
   script_items_end_ = scriptItems;
+  script_regex_items_end_ = scriptRegexItems;
   script_items_end_by_order_ = scriptItemsByOrder;
 }
 
 ScriptItems NWebPreferenceDelegate::GetJavaScriptOnDocumentEnd() {
   return script_items_end_;
+}
+
+ScriptRegexItems NWebPreferenceDelegate::GetJavaScriptRegexItemsOnDocumentEnd() {
+  return script_regex_items_end_;
 }
 
 ScriptItemsByOrder NWebPreferenceDelegate::GetJavaScriptOnDocumentEndByOrder() {
@@ -1132,13 +1144,19 @@ void NWebPreferenceDelegate::PutJavaScriptOnHeadReady(
 
 void NWebPreferenceDelegate::PutJavaScriptOnHeadReadyByOrder(
     const ScriptItems& scriptItems,
+    const ScriptRegexItems& scriptRegexItems,
     const ScriptItemsByOrder& scriptItemsByOrder) {
   script_items_head_ready_ = scriptItems;
+  script_regex_items_head_ready_ = scriptRegexItems;
   script_items_head_ready_by_order_ = scriptItemsByOrder;
 }
 
 ScriptItems NWebPreferenceDelegate::GetJavaScriptOnHeadReady() {
   return script_items_head_ready_;
+}
+
+ScriptRegexItems NWebPreferenceDelegate::GetJavaScriptRegexItemsOnHeadReady() {
+  return script_regex_items_head_ready_;
 }
 
 ScriptItemsByOrder NWebPreferenceDelegate::GetJavaScriptOnHeadReadyByOrder() {

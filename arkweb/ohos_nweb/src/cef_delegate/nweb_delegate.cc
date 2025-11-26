@@ -2940,7 +2940,7 @@ void NWebDelegate::JavaScriptOnDocumentStart(const ScriptItems& scriptItems) {
     size_t count = 0;
     if (scriptItems.size() == 0) {
       GetBrowser()->GetHost()->JavaScriptOnDocumentStart("", std::vector<CefString>(),
-                                                         true);
+        std::vector<std::pair<CefString, CefString>>(), true);
     }
     for (auto item : scriptItems) {
       count++;
@@ -2952,7 +2952,7 @@ void NWebDelegate::JavaScriptOnDocumentStart(const ScriptItems& scriptItems) {
         scriptRules.push_back(cefRule);
       }
       GetBrowser()->GetHost()->JavaScriptOnDocumentStart(script, scriptRules,
-                                                         count == scriptItems.size());
+        std::vector<std::pair<CefString, CefString>>(), count == scriptItems.size());
     }
   } else if (preference_delegate_) {
     preference_delegate_->PutJavaScriptOnDocumentStart(scriptItems);
@@ -2967,7 +2967,7 @@ void NWebDelegate::JavaScriptOnDocumentStartByOrder(
   if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
     if (scriptItems.size() == 0) {
       GetBrowser()->GetHost()->JavaScriptOnDocumentStart("", std::vector<CefString>(),
-                                                         true);
+        std::vector<std::pair<CefString, CefString>>(), true);
     }
     size_t count = 0;
     for (const auto& item : scriptItemsByOrder) {
@@ -2982,12 +2982,22 @@ void NWebDelegate::JavaScriptOnDocumentStartByOrder(
         cefRule.FromString(rule);
         scriptRules.push_back(cefRule);
       }
-      GetBrowser()->GetHost()->JavaScriptOnDocumentStart(script, scriptRules,
+      std::vector<std::pair<CefString, CefString>> scriptRegexRules;
+      if (scriptRegexItems.find(item) != scriptRegexItems.end()) {
+        for (const std::pair<std::string, std::string>& regexRule : scriptRegexItems.at(item)) {
+          CefString cefDomainRule;
+          CefString cefRegexRule;
+          cefDomainRule.FromString(regexRule.first);
+          cefRegexRule.FromString(regexRule.second);
+          scriptRegexRules.push_back(std::make_pair(cefDomainRule, cefRegexRule));
+        }
+      }
+      GetBrowser()->GetHost()->JavaScriptOnDocumentStart(script, scriptRules, scriptRegexRules,
                                                          count == scriptItems.size());
     }
   } else if (preference_delegate_) {
     preference_delegate_->PutJavaScriptOnDocumentStartByOrder(
-        scriptItems, scriptItemsByOrder);
+        scriptItems, scriptRegexItems, scriptItemsByOrder);
   } else {
     LOG(ERROR) << "JavaScriptOnDocumentStartByOrder has failed";
   }
@@ -2995,11 +3005,12 @@ void NWebDelegate::JavaScriptOnDocumentStartByOrder(
 
 void NWebDelegate::JavaScriptOnDocumentEndByOrder(
     const ScriptItems& scriptItems,
+    const ScriptRegexItems& scriptRegexItems,
     const ScriptItemsByOrder& scriptItemsByOrder) {
   if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
     if (scriptItems.size() == 0) {
       GetBrowser()->GetHost()->JavaScriptOnDocumentEnd("", std::vector<CefString>(),
-                                                       true);
+        std::vector<std::pair<CefString, CefString>>(), true);
     }
     size_t count = 0;
     for (const auto& item : scriptItemsByOrder) {
@@ -3014,11 +3025,21 @@ void NWebDelegate::JavaScriptOnDocumentEndByOrder(
         cefRule.FromString(rule);
         scriptRules.push_back(cefRule);
       }
-      GetBrowser()->GetHost()->JavaScriptOnDocumentEnd(script, scriptRules,
+      std::vector<std::pair<CefString, CefString>> scriptRegexRules;
+      if (scriptRegexItems.find(item) != scriptRegexItems.end()) {
+        for (const std::pair<std::string, std::string>& regexRule : scriptRegexItems.at(item)) {
+          CefString cefDomainRule;
+          CefString cefRegexRule;
+          cefDomainRule.FromString(regexRule.first);
+          cefRegexRule.FromString(regexRule.second);
+          scriptRegexRules.push_back(std::make_pair(cefDomainRule, cefRegexRule));
+        }
+      }
+      GetBrowser()->GetHost()->JavaScriptOnDocumentEnd(script, scriptRules, scriptRegexRules,
                                                        count == scriptItems.size());
     }
   } else if (preference_delegate_) {
-    preference_delegate_->PutJavaScriptOnDocumentEndByOrder(scriptItems,
+    preference_delegate_->PutJavaScriptOnDocumentEndByOrder(scriptItems, scriptRegexItems,
                                                             scriptItemsByOrder);
   } else {
     LOG(ERROR) << "JavaScriptOnDocumentEndByOrder has failed";
@@ -3027,11 +3048,12 @@ void NWebDelegate::JavaScriptOnDocumentEndByOrder(
 
 void NWebDelegate::JavaScriptOnHeadReadyByOrder(
     const ScriptItems& scriptItems,
+    const ScriptRegexItems& scriptRegexItems,
     const ScriptItemsByOrder& scriptItemsByOrder) {
   if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
     if (scriptItems.size() == 0) {
       GetBrowser()->GetHost()->JavaScriptOnHeadReady("", std::vector<CefString>(),
-                                                     true);
+        std::vector<std::pair<CefString, CefString>>(), true);
     }
     size_t count = 0;
     for (const auto& item : scriptItemsByOrder) {
@@ -3047,11 +3069,21 @@ void NWebDelegate::JavaScriptOnHeadReadyByOrder(
         cefRule.FromString(rule);
         scriptRules.push_back(cefRule);
       }
-      GetBrowser()->GetHost()->JavaScriptOnHeadReady(script, scriptRules,
+      std::vector<std::pair<CefString, CefString>> scriptRegexRules;
+      if (scriptRegexItems.find(item) != scriptRegexItems.end()) {
+        for (const std::pair<std::string, std::string>& regexRule : scriptRegexItems.at(item)) {
+          CefString cefDomainRule;
+          CefString cefRegexRule;
+          cefDomainRule.FromString(regexRule.first);
+          cefRegexRule.FromString(regexRule.second);
+          scriptRegexRules.push_back(std::make_pair(cefDomainRule, cefRegexRule));
+        }
+      }
+      GetBrowser()->GetHost()->JavaScriptOnHeadReady(script, scriptRules, scriptRegexRules,
                                                      count == scriptItems.size());
     }
   } else if (preference_delegate_) {
-    preference_delegate_->PutJavaScriptOnHeadReadyByOrder(scriptItems,
+    preference_delegate_->PutJavaScriptOnHeadReadyByOrder(scriptItems, scriptRegexItems,
                                                           scriptItemsByOrder);
   } else {
     LOG(ERROR) << "JavaScriptOnHeadReadyByOrder has failed";
@@ -3109,7 +3141,7 @@ void NWebDelegate::JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) {
   if (GetBrowser() != nullptr && GetBrowser()->GetHost() != nullptr) {
     if (scriptItems.size() == 0) {
       GetBrowser()->GetHost()->JavaScriptOnDocumentEnd("", std::vector<CefString>(),
-                                                       true);
+        std::vector<std::pair<CefString, CefString>>(), true);
     }
     size_t count = 0;
     for (auto item : scriptItems) {
@@ -3122,7 +3154,7 @@ void NWebDelegate::JavaScriptOnDocumentEnd(const ScriptItems& scriptItems) {
         scriptRules.push_back(cefRule);
       }
       GetBrowser()->GetHost()->JavaScriptOnDocumentEnd(script, scriptRules,
-                                                       count == scriptItems.size());
+        std::vector<std::pair<CefString, CefString>>(), count == scriptItems.size());
     }
   } else if (preference_delegate_) {
     preference_delegate_->PutJavaScriptOnDocumentEnd(scriptItems);

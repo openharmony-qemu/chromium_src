@@ -625,6 +625,18 @@ class NWebImpl : public NWeb {
   void JavaScriptOnHeadReadyByOrder(
       const ScriptItems& scriptItems,
       const ScriptItemsByOrder& scriptItemsByOrder) override;
+  void JavaScriptOnDocumentStartByOrderV2(
+      const ScriptItems& scriptItems,
+      const ScriptRegexItems& scriptRegexItems,
+      const ScriptItemsByOrder& scriptItemsByOrder) override;
+  void JavaScriptOnDocumentEndByOrderV2(
+      const ScriptItems& scriptItems,
+      const ScriptRegexItems& scriptRegexItems,
+      const ScriptItemsByOrder& scriptItemsByOrder) override;
+  void JavaScriptOnHeadReadyByOrderV2(
+      const ScriptItems& scriptItems,
+      const ScriptRegexItems& scriptRegexItems,
+      const ScriptItemsByOrder& scriptItemsByOrder) override;
 #endif
 
   // For NWebEx

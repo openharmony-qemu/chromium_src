@@ -309,6 +309,11 @@ class PLATFORM_EXPORT VideoFrameCompositor : public media::VideoRendererSink,
       auto_open_close_;
   std::unique_ptr<WebVideoFrameSubmitter> submitter_;
 
+#if BUILDFLAG(ARKWEB_MEDIA_CAPABILITIES_ENHANCE)
+  int64_t last_frame_time_ = 0;
+  int64_t total_freeze_time_ = 0;
+  bool is_playing_ = false;
+#endif  // ARKWEB_MEDIA_CAPABILITIES_ENHANCE
   base::WeakPtrFactory<VideoFrameCompositor> weak_ptr_factory_{this};
 };
 

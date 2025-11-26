@@ -18,13 +18,15 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <sstream>
+#include "base/files/file_path.h"
 #include "arkweb/build/features/features.h"
 #include "cef/include/cef_base.h"
 #include "cef/include/cef_browser.h"
 #include "cef/ohos_cef_ext/include/arkweb_browser_ext.h"
 #include "include/cef_devtools_message_handler_delegate.h"
 #include "include/cef_urlrequest.h"
- 
+#include "ui/base/resource/resource_bundle.h"
+
 using namespace testing;
  
 const std::string g_valid_config = R"({
@@ -45,6 +47,8 @@ const std::string g_valid_config = R"({
 })";
  
 namespace OHOS::NWeb {
+
+class JSResultCallbackImpl;
 
 // Mock classes based on nweb_find_delegate_unittest.cc and nweb_preference_delegate_unittest.cc
 class MockCefBrowserHost : public ArkWebBrowserHostExt {
@@ -355,6 +359,8 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void EnableAdsBlock(bool) override {}
   int SetUrlTrustListWithErrMsg(const CefString&, CefString&) override { return 0; }
   void EnableSafeBrowsingDetection(bool, bool) override {}
+  void OnSafeBrowsingDetectionResult(int code, int policy,
+    const std::string& mappingType, const std::string& url) override {}
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   int InsertBackForwardEntry(int, const CefString&) override { return 0; }
   int UpdateNavigationEntryUrl(int, const CefString&) override { return 0; }
@@ -426,6 +432,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   bool Release() const override { return false; }
   bool HasOneRef() const override { return false; }
   bool HasAtLeastOneRef() const override { return false; }
+  int32_t GetLastCommittedEntryPageTransition() override { return 0; }
 };
 
 class MockCefBrowser : public CefBrowser {
@@ -956,71 +963,6 @@ TEST_F(NwebAutolayoutTest, Parse_MissingWhitelist)
     EXPECT_FALSE(Parse(*root));
 }
 
-// Helper to access static function in .cc file
-namespace {
-std::string TestEscapeForJS(const std::string& s) {
-    std::stringstream ss;
-    for (char c : s) {
-        switch (c) {
-            case '`':  ss << "\\`";  break;
-            case '\\': ss << "\\\\"; break;
-            case '$':  ss << "\\$";  break;
-            default:   ss << c;     break;
-        }
-    }
-    return ss.str();
-}
-}
-
-TEST_F(NwebAutolayoutTest, EscapeForJS_Backtick)
-{
-    std::string input = "test`quote";
-    std::string expected = "test\\`quote";
-    EXPECT_EQ(TestEscapeForJS(input), expected);
-}
-
-TEST_F(NwebAutolayoutTest, EscapeForJS_Backslash)
-{
-    std::string input = "test\\path";
-    std::string expected = "test\\\\path";
-    EXPECT_EQ(TestEscapeForJS(input), expected);
-}
-
-TEST_F(NwebAutolayoutTest, EscapeForJS_Dollar)
-{
-    std::string input = "test$variable";
-    std::string expected = "test\\$variable";
-    EXPECT_EQ(TestEscapeForJS(input), expected);
-}
-
-TEST_F(NwebAutolayoutTest, EscapeForJS_NormalText)
-{
-    std::string input = "normal text 123";
-    std::string expected = "normal text 123";
-    EXPECT_EQ(TestEscapeForJS(input), expected);
-}
-
-TEST_F(NwebAutolayoutTest, EscapeForJS_MixedSpecialChars)
-{
-    std::string input = "`hello\\world$var`";
-    std::string expected = "\\`hello\\\\world\\$var\\`";
-    EXPECT_EQ(TestEscapeForJS(input), expected);
-}
-
-TEST_F(NwebAutolayoutTest, EscapeForJS_EmptyString)
-{
-    std::string input = "";
-    std::string expected = "";
-    EXPECT_EQ(TestEscapeForJS(input), expected);
-}
-
-TEST_F(NwebAutolayoutTest, EscapeForJS_OnlySpecialChars)
-{
-    std::string input = "`\\$";
-    std::string expected = "\\`\\\\\\$";
-    EXPECT_EQ(TestEscapeForJS(input), expected);
-}
-
 TEST_F(NwebAutolayoutTest, CheckCCMandApplyRule_ValidStateWithNullFrame)
 {
     // Set up valid internal state
@@ -1353,29 +1295,75 @@ TEST_F(NwebAutolayoutTest, ParseWhitelist_NonDictEntry)
 
 TEST_F(NwebAutolayoutTest, CheckWebContainer_WithValidBrowserAndFrame)
 {
-    // Test line 323: browser != nullptr && frame != nullptr && frame->IsMain()
-    // Since we can't easily create real CefBrowser/CefFrame objects,
-    // we'll test what we can with the current setup
+    // Drive the second branch: browser != nullptr && frame != nullptr && frame->IsMain()
     mEnable_ = true;
-    mPatternJSSource_ = "test_pattern";
-    
-    // Test with null browser (already covered)
-    CheckWebContainer(nullptr, nullptr);
-    
-    // The branch at line 323 requires real CEF objects which are hard to mock
-    // without significant infrastructure. We verify the function doesn't crash.
-    EXPECT_TRUE(true);
+    mPatternJSSource_ = "test_pattern_with_\\`escape";
+
+    CefRefPtr<MockCefBrowserHost> host = new MockCefBrowserHost();
+    CefRefPtr<MockCefBrowser> browser = new MockCefBrowser(host);
+    CefRefPtr<MockCefFrame> frame = new MockCefFrame();
+
+    EXPECT_CALL(*frame, IsMain()).WillOnce(Return(true));
+    ON_CALL(*browser, GetHost()).WillByDefault(Return(host));
+
+    // Ensure ExecuteJavaScript is invoked with escaped pattern and callback.
+    EXPECT_CALL(*host, ExecuteJavaScript(StrEq("test_pattern_with_\\\\`escape"), _, false))
+        .Times(1);
+
+    CheckWebContainer(browser, frame);
+}
+
+TEST_F(NwebAutolayoutTest, JSResultCallbackImpl_Branches)
+{
+    // Set up mocks to capture the callback created inside CheckWebContainer.
+    CefRefPtr<MockCefBrowserHost> host = new MockCefBrowserHost();
+    CefRefPtr<MockCefBrowser> browser = new MockCefBrowser(host);
+    CefRefPtr<MockCefFrame> frame = new MockCefFrame();
+
+    ON_CALL(*frame, IsMain()).WillByDefault(Return(true));
+    ON_CALL(*frame, GetURL()).WillByDefault(Return("http://example.com"));
+
+    CefRefPtr<CefJavaScriptResultCallback> captured_callback;
+    EXPECT_CALL(*host, ExecuteJavaScript(_, _, _))
+        .WillOnce(DoAll(SaveArg<1>(&captured_callback)));
+
+    mEnable_ = true;
+    mPatternJSSource_ = "pattern";
+
+    CheckWebContainer(browser, frame);
+
+    ASSERT_TRUE(captured_callback);
+
+    // Cover ConvertCefValueToString default branch (non-string type).
+    CefRefPtr<CefValue> number_value = CefValue::Create();
+    number_value->SetInt(123);
+    captured_callback->OnJavaScriptExeResult(number_value);
+
+    // Cover early return path for empty/"false" data.
+    CefRefPtr<CefValue> false_value = CefValue::Create();
+    false_value->SetString("false");
+    captured_callback->OnJavaScriptExeResult(false_value);
+
+    // Cover data == "true" branch which invokes CheckCCMandApplyRule.
+    CefRefPtr<CefValue> true_value = CefValue::Create();
+    true_value->SetString("true");
+    captured_callback->OnJavaScriptExeResult(true_value);
 }
 
 TEST_F(NwebAutolayoutTest, LoadAutoLayoutFromHap_EmptyScript)
 {
-    // Test line 337: script_data.empty() branch
-    // This requires mocking ResourceBundle which is complex
-    // Since ResourceBundle may not be initialized in test environment,
-    // we skip this test to avoid crashes. The empty script case is
-    // already covered by the fact that mEnable_ gets set to false.
-    // If we want to test this properly, we'd need to mock ResourceBundle.
-    GTEST_SKIP() << "Skipping LoadAutoLayoutFromHap_EmptyScript - requires ResourceBundle mocking";
+    // Initialize a ResourceBundle instance with an empty pak path so
+    // GetRawDataResource returns an empty string_view and triggers the
+    // failure branch.
+    ui::ResourceBundle::CleanupSharedInstance();
+    ui::ResourceBundle::InitSharedInstanceWithPakPath(base::FilePath());
+
+    mEnable_ = true;
+    LoadAutoLayoutFromHap();
+
+    EXPECT_FALSE(mEnable_);
+
+    ui::ResourceBundle::CleanupSharedInstance();
 }
 
 TEST_F(NwebAutolayoutTest, Parse_WhitelistEmpty)

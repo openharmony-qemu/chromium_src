@@ -20,10 +20,12 @@
 #include "arkweb/chromium_ext/services/network/url_loader_ext.h"
 #include "services/network/public/cpp/resource_request.h"
 #include "net/url_request/url_request_context.h"
+#include "services/network/attribution/attribution_request_helper.h"
 #include "services/network/throttling/scoped_throttling_token.h"
 #include "services/network/shared_dictionary/shared_dictionary_manager.h"
 #include "services/network/public/cpp/header_util.h"
 #include "services/network/sec_header_helpers.h"
+#include "services/network/url_loader_util.h"
 
 #if BUILDFLAG(ARKWEB_PRP_PRELOAD)
 #include "arkweb/chromium_ext/services/network/prp_preload/include/page_res_parallel_preload_mgr.h"
@@ -162,7 +164,7 @@ void URLLoaderUtils::ConfigureRequestForRollback(
     bool force_main_frame_for_same_site_cookies,
     net::SecureDnsPolicy secure_dns_policy,
     net::HttpRequestHeaders extra_request_headers,
-    const std::optional<std::vector<net::SourceStream::SourceType>>&
+    const std::optional<std::vector<net::SourceStreamType>>&
         accepted_stream_types,
     const std::optional<url::Origin>& initiator,
     net::RedirectInfo::FirstPartyURLPolicy first_party_url_policy,
@@ -208,13 +210,20 @@ void URLLoaderUtils::ConfigureRequestForRollback(
   // is fixed.
   url_request_rollback_->cookie_setting_overrides() = cookie_setting_overrides;
   url_request_rollback_->SetLoadFlags(request_load_flags);
-  url_loader_->SetRequestCredentials(url);
+  url_loader_util::SetRequestCredentials(
+      url,
+      url_loader_->factory_params_->client_security_state,
+      url_loader_->request_mode_,
+      url_loader_->request_credentials_mode_,
+      initiator,
+      *url_request_rollback_);
   url_request_rollback_->set_storage_access_status(
       url_request_rollback_->CalculateStorageAccessStatus());
 
-  SetFetchMetadataHeaders(url_request_rollback_.get(), url_loader_->request_mode_,
-                          url_loader_->has_user_activation_, url_loader_->request_destination_, nullptr,
-                          *url_loader_->factory_params_, *url_loader_->origin_access_list_);
+  SetFetchMetadataHeaders(*url_request_rollback_.get(), url_loader_->request_mode_,
+                          url_loader_->has_user_activation_, url_loader_->request_destination_, std::nullopt,
+                          *url_loader_->factory_params_, *url_loader_->origin_access_list_,
+                          url_loader_->request_credentials_mode_);
 
   url_request_rollback_->set_first_party_url_policy(first_party_url_policy);
 
@@ -301,9 +310,7 @@ void URLLoaderUtils::InitUrlRequestForRollback(
       request.upgrade_if_insecure, /*upgrade_if_insecure=*/
       request.is_ad_tagged, /*is_ad_tagged=*/
       /*isolation_info=*/
-      url_loader_->GetIsolationInfo(url_loader_->factory_params_->isolation_info,
-          url_loader_->factory_params_->automatically_assign_isolation_info,
-          request),
+      url_loader_->factory_params_->isolation_info,
       /*force_main_frame_for_same_site_cookies=*/
       force_main_frame_for_same_site_cookies, secure_dns_policy,
       std::move(merged_headers), request.devtools_accepted_stream_types,
@@ -311,8 +318,7 @@ void URLLoaderUtils::InitUrlRequestForRollback(
       request.load_flags, /*request_load_flags=*/
       request.priority_incremental, /*priority_incremental=*/
       /*cookie_setting_overrides=*/
-      url_loader_->CalculateCookieSettingOverrides(url_loader_->factory_params_->cookie_setting_overrides,
-          request),
+      url_loader_->factory_params_->cookie_setting_overrides,
       /*shared_dictionary_getter=*/
       shared_dictionary_manager
           ? std::make_optional(
@@ -387,7 +393,6 @@ void URLLoaderUtils::RollbackFromPPRP()
 {
   url_loader_->url_request_ = url_request_rollback_;
   url_request_rollback_ = nullptr;
-  url_loader_->ProcessOutboundAttributionInterceptor();
 }
 
 void URLLoaderUtils::ResetUrlRequest(const std::shared_ptr<net::URLRequest>& url_request)

@@ -46,7 +46,7 @@ void MediaStreamManagerExt::StopScreenCapture(int32_t nweb_id,
   if(!BrowserThread::CurrentlyOn(BrowserThread::IO)){
     auto io_task_runner = GetIOThreadTaskRunner({});
     if(!io_task_runner){
-      LOG{ERROR}<<"StopScreenCapture io_task_runner is nullptr";
+      LOG(ERROR) << "StopScreenCapture io_task_runner is nullptr";
       return;
     }
     io_task_runner->PostTask(
@@ -77,7 +77,7 @@ void MediaStreamManagerExt::SetScreenCapturePickerShow() {
   if(!BrowserThread::CurrentlyOn(BrowserThread::IO)){
     auto io_task_runner = GetIOThreadTaskRunner({});
     if(!io_task_runner){
-      LOG{ERROR}<<"SetScreenCapturePickerShow io_task_runner is nullptr";
+      LOG(ERROR) << "SetScreenCapturePickerShow io_task_runner is nullptr";
       return;
     }
     io_task_runner->PostTask(
@@ -98,7 +98,7 @@ void MediaStreamManagerExt::DisableSessionReuse() {
   if(!BrowserThread::CurrentlyOn(BrowserThread::IO)){
     auto io_task_runner = GetIOThreadTaskRunner({});
     if(!io_task_runner){
-      LOG{ERROR}<<"DisableSessionReuse io_task_runner is nullptr";
+      LOG(ERROR) << "DisableSessionReuse io_task_runner is nullptr";
       return;
     }
     io_task_runner->PostTask(

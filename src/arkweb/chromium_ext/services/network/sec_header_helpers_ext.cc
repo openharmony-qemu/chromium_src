@@ -19,7 +19,7 @@ std::map<std::string, std::string> GetFetchMetadataHeaders(
     network::mojom::RequestMode mode,
     bool has_user_activation,
     network::mojom::RequestDestination dest,
-    const absl::optional<url::Origin>& initiator) {
+    const std::optional<url::Origin>& initiator) {
   std::map<std::string, std::string> headers;
   if (!IsUrlPotentiallyTrustworthy(target_url)) {
     return headers;
@@ -27,16 +27,33 @@ std::map<std::string, std::string> GetFetchMetadataHeaders(
 
   // Other requests default to `kSameOrigin`, and walk through the request's URL
   // chain to calculate the correct value.
-  auto header_value = SecFetchSiteValue::kSameOrigin;
+  auto header_value = net::OriginRelation::kSameOrigin;
   if (!initiator.has_value()) {
-    header_value = SecFetchSiteValue::kNoOrigin;
+    // 对于没有initiator的情况，保持header_value为kSameOrigin
+    // 后续会特殊处理为"none"
   } else {
-    header_value = std::max(header_value, GetHeaderValueForTargetAndInitiator(
-                                              target_url, initiator.value()));
+    header_value = std::max(header_value, net::GetOriginRelation(target_url, initiator.value()));
   }
 
-  headers[std::string(kSecFetchSite)] =
-      GetSecFetchSiteHeaderString(header_value);
+  // 转换为Sec-Fetch-Site头的值
+  if (!initiator.has_value()) {
+    headers[std::string(kSecFetchSite)] = "none";  // 对应原来的kNoOrigin
+  } else {
+    // 手动转换net::OriginRelation到字符串
+    std::string site_value;
+    switch (header_value) {
+      case net::OriginRelation::kSameOrigin:
+        site_value = "same-origin";
+        break;
+      case net::OriginRelation::kSameSite:
+        site_value = "same-site";
+        break;
+      case net::OriginRelation::kCrossSite:
+        site_value = "cross-site";
+        break;
+    }
+    headers[std::string(kSecFetchSite)] = site_value;
+  }
 
   headers[std::string(kSecFetchMode)] = RequestModeToString(mode);
 
@@ -48,6 +65,7 @@ std::map<std::string, std::string> GetFetchMetadataHeaders(
                                       ? "empty"
                                       : RequestDestinationToString(dest);
   headers[std::string(kSecFetchDest)] = destination_value;
+
   return headers;
 }
 #endif

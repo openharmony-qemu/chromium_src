@@ -16,7 +16,10 @@ Chromium总体采用分层架构，主要包含一下几个模块：
 
 - Platform模块：net网络库负责所有网络协议（HTTP、QUIC、DNS）、Cookie 管理等。mojo为Chromium 现代的 IPC 进程间通信)框架。device提供访问底层硬件的 API（如 USB、蓝牙、传感器）。schedule任务调度器负责管理所有进程和线程上的任务队列。
 
-- Hook模块：Hook并不是一个独立的模块，Hook指的是对原生Chromium各个模块像钩子一样的嵌入式修改的集合。通过对Chromium原生文件嵌入像钩子一样的小段修改，让其指向ArkWeb仓的chromium_ext模块的独立文件，这种方式能有效避免对Chromium原生文件嵌入大段的修改，也避免了再本仓中新增不属于Chromium的ArkWeb的文件，实现了Chromium和Arkweb的解耦。 Hook的方式通常有以下几种： 1. 在chromium_ext创建派生类继承Chromium中的原生基类，扩展功能放到chromium_ext的派生类中，创建实例时改为创建派生类实例。2. 让原生类持有chromium_ext中的工具类，扩展的功能都放在chromium_ext中的工具类。3. 将扩展功能逻辑提取为独立文件放到chromium_ext中，这类文件名通常以for_include结尾， 让原生类直接include该类型的文件进行扩展。
+- Hook模块：Hook并不是一个独立的模块，Hook指的是对原生Chromium各个模块像钩子一样的嵌入式修改的集合。通过对Chromium原生文件嵌入像钩子一样的小段修改，让其指向ArkWeb仓的chromium_ext模块的独立文件，这种方式能有效避免对Chromium原生文件嵌入大段的修改，也避免了再本仓中新增不属于Chromium的ArkWeb的文件，实现了Chromium和Arkweb的解耦。 Hook的方式通常有以下几种： 
+  - 1. 在chromium_ext目录下创建派生类继承Chromium中的原生基类，扩展功能放到chromium_ext中的派生类中，创建实例时改为创建派生类实例。如MouseEventManagerExt类，就是对原生类MouseEventManager的扩展。
+  - 2. 让原生类持有chromium_ext目录中的工具类，扩展的功能都放在chromium_ext中的工具类。如ArkwebChildProcessLauncherHelperUtils就是对原生类ArkwebChildProcessLauncherHelper的扩展，将子进程启动逻辑封装到了工具类中。
+  - 3. 将扩展功能逻辑提取为独立文件放到chromium_ext目录中，这类文件名通常以for_include结尾， 让原生类直接include该类型的文件进行扩展。如gpu_channel_for_include.cc文件，就是对gpu_channel.cc的扩展。
 
 ## 使用说明
 1. 下载代码：以132_trunk为例，要下载其他分支代码，请替换-b之后的分支名，参数列表详见8。

@@ -32,6 +32,11 @@
 #if BUILDFLAG(IS_ARKWEB)
   void StopWebPageFling();
 #endif
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  void SetFocusWebId(int32_t nweb_id);
+#endif
+
 #if BUILDFLAG(ARKWEB_FLING)
   void UpdateFlingVelocityLimit(const gfx::Vector2dF& velocity);
 #endif

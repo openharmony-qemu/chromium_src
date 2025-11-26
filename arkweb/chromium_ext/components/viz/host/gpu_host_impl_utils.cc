@@ -21,8 +21,8 @@
 namespace viz {
 
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
-void GpuHostImpl::StartMonitor() {
-  gpu_service_remote_->StartMonitor();
+void GpuHostImpl::StartMonitor(int32_t nweb_id) {
+  gpu_service_remote_->StartMonitor(nweb_id);
 }
 
 void GpuHostImpl::StopMonitor() {

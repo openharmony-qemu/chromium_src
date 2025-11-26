@@ -1271,6 +1271,10 @@ class MockNWebDelegate : public NWebDelegateInterface {
               (override));
   MOCK_METHOD(void, EnableHttpsUpgrades, (bool enable), (override));                               
 #endif
+
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+  MOCK_METHOD(void, SetFocusWebId, (int32_t nweb_id), (override));
+#endif 
 };
 }  // namespace OHOS::NWeb
 

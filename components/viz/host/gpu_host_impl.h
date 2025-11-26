@@ -236,7 +236,7 @@ class VIZ_HOST_EXPORT GpuHostImpl : public mojom::GpuHost
   void MaybeSendFontRenderParams();
 
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
-  void StartMonitor();
+  void StartMonitor(int32_t nweb_id);
   void StopMonitor();
 #endif
 

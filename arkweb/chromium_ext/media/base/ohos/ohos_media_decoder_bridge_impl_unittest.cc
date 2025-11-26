@@ -19,24 +19,24 @@
 #define private public
 #include "ohos_media_decoder_bridge_impl.h"
 #undef private
-#include "ohos_adapter_helper.h"
-#include "testing/gmock/include/gmock/gmock.h"
-#include "base/logging.h"
-#include "base/task/single_thread_task_executor.h"
-#include "base/task/task_runner.h"
-#include "base/trace_event/trace_event.h"
-#include "media/base/ohos/decoder_format_adapter_impl.h"
-#include "testing/gtest/include/gtest/gtest.h"
-#include "third_party/ohos_ndk/includes/ohos_adapter/adapter_base.h"
-
 #include "base/base_paths.h"
 #include "base/command_line.h"
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
 #include "base/location.h"
+#include "base/logging.h"
+#include "base/task/single_thread_task_executor.h"
+#include "base/task/task_runner.h"
 #include "base/threading/thread.h"
 #include "base/threading/thread_restrictions.h"
 #include "base/time/time.h"
+#include "base/trace_event/trace_event.h"
+#include "media/base/ohos/decoder_format_adapter_impl.h"
+#include "ohos_adapter_helper.h"
+#include "testing/gmock/include/gmock/gmock.h"
+#include "testing/gtest/include/gtest/gtest.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/adapter_base.h"
+
 
 using ::testing::_;
 using ::testing::AtLeast;
@@ -383,6 +383,10 @@ class MockOhosAdapterHelper : public OhosAdapterHelper {
               (),
               (override));
   MOCK_METHOD(ColorPickerAdapter&, GetColorPickerAdapter, (), (override));
+  MOCK_METHOD(HiAppeventAdapter&,
+              GetHiAppeventAdapterInstance,
+              (),
+              (override));
   static MockOhosAdapterHelper& GetInstance() {
     static MockOhosAdapterHelper instance;
     return instance;
@@ -501,8 +505,6 @@ class MediaCodecDecoderBridgeImplTest : public ::testing::Test {
   void SetVideoDecoder(std::unique_ptr<MediaCodecDecoderAdapter> decoder) {
     bridge_->videoDecoder_ = std::move(decoder);
   }
-
-  void SetIsFirstDecFrame(bool is_first_dec_frame) {}
 
   void SetIsRunning(bool is_running) { bridge_->isRunning_.store(is_running); }
 
@@ -1025,23 +1027,21 @@ TEST_F(MediaCodecDecoderBridgeImplTest,
 }
 
 TEST_F(MediaCodecDecoderBridgeImplTest, PushInbufferDec001) {
-  SetIsFirstDecFrame(true);
   auto mock_video_decoder = make_unique<MockMediaCodecDecoderAdapter>();
   uint32_t index = 0;
   uint32_t bufferSize = 1024;
   int64_t time = 100000000;
   EXPECT_CALL(*mock_video_decoder,
               QueueInputBufferDec(index, time, bufferSize, 0,
-                                  BufferFlag::CODEC_BUFFER_FLAG_CODEC_DATA))
+                                  BufferFlag::CODEC_BUFFER_FLAG_SYNC_FRAME))
       .WillOnce(Return(DecoderAdapterCode::DECODER_OK));
   EXPECT_CALL(*mock_video_decoder, ReleaseDecoder()).Times(1);
   SetVideoDecoder(std::move(mock_video_decoder));
-  auto result = PushInbufferDec(index, bufferSize, time, false);
+  auto result = PushInbufferDec(index, bufferSize, time, true);
   ASSERT_EQ(result, DecoderAdapterCode::DECODER_OK);
 }
 
 TEST_F(MediaCodecDecoderBridgeImplTest, PushInbufferDec002) {
-  SetIsFirstDecFrame(false);
   auto mock_video_decoder = make_unique<MockMediaCodecDecoderAdapter>();
   uint32_t index = 0;
   uint32_t bufferSize = 1024;
@@ -1212,7 +1212,7 @@ TEST_F(MediaCodecDecoderBridgeImplTest,
   auto mock_video_decoder = std::make_unique<MockMediaCodecDecoderAdapter>();
   EXPECT_CALL(*mock_video_decoder,
               QueueInputBufferDec(testing::_, testing::_, testing::_, 0,
-                                  BufferFlag::CODEC_BUFFER_FLAG_CODEC_DATA))
+                                  BufferFlag::CODEC_BUFFER_FLAG_NONE))
       .WillOnce(Return(DecoderAdapterCode::DECODER_OK));
   EXPECT_CALL(*mock_video_decoder, ReleaseDecoder()).Times(1);
   SetVideoDecoder(std::move(mock_video_decoder));
@@ -1430,15 +1430,6 @@ TEST_F(MediaCodecDecoderBridgeImplTest,
   void* window = nullptr;
   bridge_->DestoryNativeWindow(window);
   ASSERT_FALSE(window);
-}
-
-TEST_F(MediaCodecDecoderBridgeImplTest, OnError_ShouldReturn_WhenSignalIsNull) {
-  SetSignal(nullptr);
-  ErrorType errorType = ErrorType::CODEC_ERROR_INTERNAL;
-  int32_t errorCode = 12;
-  callback_->signal_ = nullptr;
-  callback_->OnError(errorType, errorCode);
-  ASSERT_EQ(callback_->signal_, nullptr);
 }
 
 TEST_F(MediaCodecDecoderBridgeImplTest, OnNeedInputData) {

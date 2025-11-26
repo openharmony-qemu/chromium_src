@@ -455,7 +455,7 @@ class VIZ_SERVICE_EXPORT GpuServiceImpl
 #endif
 
 #if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
-  void StartMonitor() override;
+  void StartMonitor(int32_t nweb_id) override;
   void StopMonitor() override;
 #endif
 

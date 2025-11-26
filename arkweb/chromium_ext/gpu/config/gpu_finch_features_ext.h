@@ -30,6 +30,10 @@ namespace features {
 bool IsEnableVulkan();
 #endif
 
+#if BUILDFLAG(ARKWEB_VULKAN)
+GPU_EXPORT BASE_DECLARE_FEATURE(kInsertVKEndSemaphore);
+#endif
+
 #if BUILDFLAG(ARKWEB_DRDC)
 bool IsDrDcForVulkan();
 #endif

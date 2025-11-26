@@ -201,4 +201,14 @@ void RenderWidgetHostImplExt::SendCurrentLanguage(const std::string& ans) {
 #endif
 // LCOV_EXCL_STOP
 
+#if BUILDFLAG(ARKWEB_REPORT_LOSS_FRAME)
+void RenderWidgetHostImplExt::SetFocusWebId(int32_t nweb_id) {
+  if (GetRenderInputRouter() == nullptr) {
+    LOG(ERROR) << "SetFocusWebId can not get RenderInputRouter";
+    return;
+  }
+  GetRenderInputRouter()->SetFocusWebId(nweb_id);
+}
+#endif
+
 }  // namespace content

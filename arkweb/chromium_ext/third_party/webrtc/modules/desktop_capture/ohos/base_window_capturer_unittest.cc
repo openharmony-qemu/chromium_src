@@ -264,6 +264,10 @@ class MockOhosAdapterHelper : public OHOS::NWeb::OhosAdapterHelper {
               GetColorPickerAdapter,
               (),
               (override));
+  MOCK_METHOD(HiAppeventAdapter&,
+              GetHiAppeventAdapterInstance,
+              (),
+              (override));
   static MockOhosAdapterHelper& GetInstance() {
     static MockOhosAdapterHelper instance;
     return instance;

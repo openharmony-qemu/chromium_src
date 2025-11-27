@@ -1877,14 +1877,6 @@ void NWebHandlerDelegate::OnLoadError(CefRefPtr<CefBrowser> browser,
   }
 #endif
 
-#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
-  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-      ::switches::kEnableNwebEx) &&
-      IsPrerendering(frame)) {
-    return;
-  }
-#endif
-
   if (nweb_handler_ != nullptr) {
     nweb_handler_->OnPageLoadError(error_code, error_text.ToString(),
                                    failed_url.ToString());
@@ -1912,6 +1904,7 @@ void NWebHandlerDelegate::OnLoadError(CefRefPtr<CefBrowser> browser,
 }
 
 void NWebHandlerDelegate::OnLoadErrorWithRequest(CefRefPtr<CefRequest> request,
+                                                 CefRefPtr<CefFrame> frame,
                                                  bool is_main_frame,
                                                  bool has_user_gesture,
                                                  int error_code,
@@ -1922,6 +1915,15 @@ void NWebHandlerDelegate::OnLoadErrorWithRequest(CefRefPtr<CefRequest> request,
     return;
   }
 #endif
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      ::switches::kEnableNwebEx) &&
+      IsPrerendering(frame)) {
+    return;
+  }
+#endif
+
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
   if (base::ohos::BlanklessController::CheckGlobalProperty() && error_code <= ERR_CONNECTION_CLOSED &&
       error_code != ERR_UNKNOWN_URL_SCHEME && error_code != ERR_NAME_NOT_RESOLVED) {

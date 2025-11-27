@@ -192,6 +192,10 @@ bool NWebDevToolsMessageHandlerImpl::ShowFileChooser(
     if (!CheckValid(handlerNativeApi_.get(),
                     &handlerNativeApi_->show_file_chooser_native_api)) {
       LOG(ERROR) << "ShowFileChooser failed, method is invalid";
+      for (uint32_t i = 0; i < accept_filters.size(); ++i) {
+        delete[] accept_filters_array[i];
+      }
+      delete[] accept_filters_array;
       return false;
     }
     bool result = (handlerNativeApi_.get()

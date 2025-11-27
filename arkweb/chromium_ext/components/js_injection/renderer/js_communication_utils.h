@@ -49,7 +49,7 @@ class JsCommunicationUtils {
       mojom::DocumentEndJavaScriptPtr& script_ptr,
       mojom::DocumentJavaScriptRegexRulesPtr& script_regex_rules_ptr);
   void AddPendingJavascriptAtHeadReady(
-      mojom::DocumentEndJavaScriptPtr& script_ptr,
+      mojom::DocumentStartJavaScriptPtr& script_ptr,
       mojom::DocumentJavaScriptRegexRulesPtr& script_regex_rules_ptr);
   void CommitPendingJavascriptsAtDocumentEnd();
   void CommitPendingJavascriptsAtHeadReady();

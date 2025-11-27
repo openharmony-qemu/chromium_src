@@ -12,34 +12,3 @@
  class SymmetricKey;
  }
  #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_APPLE)
-@@ -232,48 +256,68 @@
--#if BUILDFLAG(IS_LINUX)
-+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
-   // Returns a cached string of "peanuts". Is thread-safe.
-   crypto::SymmetricKey* GetPasswordV10();
- 
-   // Caches and returns the password from the KeyStorage or null if there is no
-   // service. Is thread-safe. Set `probe` to true if caller wishes to get
-   // nullptr back rather than crashing due to no config being set.
-   crypto::SymmetricKey* GetPasswordV11(bool probe);
- 
-   // For password_v10, nullptr means uninitialised.
-   std::unique_ptr<crypto::SymmetricKey> password_v10_cache_;
- 
-   // For password_v11, nullptr means no backend.
-   std::unique_ptr<crypto::SymmetricKey> password_v11_cache_;
-
-   bool is_password_v11_cached_ = false;
- 
-   // |config_| is used to initialise |password_v11_cache_| and then cleared.
-   std::unique_ptr<os_crypt::Config> config_;
- 
-   base::OnceCallback<std::unique_ptr<KeyStorageLinux>()>
-       storage_provider_factory_for_testing_;
--#endif  // BUILDFLAG(IS_LINUX)
-+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
- 
- #if BUILDFLAG(IS_WIN)
-   // Use mock key instead of a real encryption key. Used for testing.
-   bool use_mock_key_ = false;
- 

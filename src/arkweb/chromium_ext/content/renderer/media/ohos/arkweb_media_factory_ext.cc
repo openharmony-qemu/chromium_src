@@ -196,7 +196,7 @@ blink::WebNativeBridge* ArkwebMediaFactoryExt::CreateWebNativeBridge(
         std::move(handlers));
     std::unique_ptr<blink::WebVideoFrameSubmitter> submitter =
         CreateSubmitter(main_thread_compositor_task_runner, cc::LayerTreeSettings(),
-            media_log.get(), render_frame_);
+            media_log.get());
     submitter->SetHasNativeLayer(true);
     auto vfc = std::make_unique<blink::VideoFrameCompositor>(
         video_frame_compositor_task_runner, std::move(submitter));

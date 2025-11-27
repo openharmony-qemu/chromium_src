@@ -149,8 +149,7 @@ class MediaFactory {
     scoped_refptr<base::SingleThreadTaskRunner>
         main_thread_compositor_task_runner,
     const cc::LayerTreeSettings& settings,
-    media::MediaLog* media_log,
-    content::RenderFrame* render_frame);
+    media::MediaLog* media_log);
 #endif
 
  private:

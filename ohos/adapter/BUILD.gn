@@ -10,6 +10,8 @@ if (is_ohos) {
     sources = [
       "native_initializer.cc",
       "native_initializer.h",
+      "common/native_api/oh_window.h",
+      "common/native_api/ui_input_event.h",
       "common/trace.cc",
       "common/trace.h",
       "common/shared_library.cc",
@@ -76,12 +78,14 @@ if (is_ohos) {
     ]
 
     libs = [
+      "ace_ndk.z",
       "bundle_ndk.z",
       "c++_static",
       "child_process",
       "hilog_ndk.z",
       "hitrace_ndk.z",
       "native_window",
+      "native_window_manager",
       "time_service_ndk"
     ]
   }

@@ -37,6 +37,8 @@
 #include "base/functional/callback_helpers.h"
 #include "base/logging.h"
 #include "base/ohos/task_scheduler/task_runner_ohos.h"
+#include "ohos/adapter/common/native_api/ui_input_event.h"
+#include "ohos/adapter/cursor/cursor.h"
 #include "ohos/adapter/task_runner/main_thread_task_runner.h"
 #include "ohos/adapter/xcomponent/adapter/window_adapter.h"
 #include "ohos/adapter/xcomponent/event/window_event_filter_adapter.h"
@@ -220,10 +222,19 @@ void OhosEventSourceNodeHandle::OnMouseMoveEvent(
     LOG(WARNING) << "[multiinput]mouse move target window nullptr";
     return;
   }
-
-  if (pointer_location_.IsWithinDistance(original_location,
-                                         kMouseMoveLimitDistance)) {
-    return;
+  // At cursor locked state, the cursor position remains fixed,
+  // IsWithinDistance can not be used in this case.
+  if (ohos::adapter::common::SupportsGetRawDeltaFunc()) {
+    // An offset of 0 is considered as no movement
+    if (mouse_event_data.raw_delta_x == 0
+     && mouse_event_data.raw_delta_y == 0) {
+      return;
+    }
+  } else {
+    if (pointer_location_.IsWithinDistance(original_location,
+                                           kMouseMoveLimitDistance)) {
+      return;
+    }
   }
   if (mouse_event_data.screenX != 0 || mouse_event_data.screenY != 0) {
     // xcomponent BUG may send error data: screenX and screenY both 0
@@ -234,6 +245,12 @@ void OhosEventSourceNodeHandle::OnMouseMoveEvent(
   MouseEvent event(EventType::kMouseMoved, pointer_location_, pointer_location_,
                    EventTimeForNow(), flags, 0);
   event.set_display_id(display_id);
+  // Need to set movement data when cursor is locked
+  if (ohos::adapter::Cursor::GetInstance().IsCursorLocked()) {
+    gfx::Vector2dF raw_delta(mouse_event_data.raw_delta_x,
+                             mouse_event_data.raw_delta_y);
+    ui::MouseEvent::DispatcherApi(&event).set_movement(raw_delta);
+  }
   SetTargetAndDispatchEvent(widget_id, event);
 
   // Determine if the drag event needs to be ended if needed
@@ -423,6 +440,10 @@ void OhosEventSourceNodeHandle::SendWindowMouseEventForTabDragNodeHandle(
       mouse_event_data->x = mouse_event_data->screenX - window_bounds.x();
       mouse_event_data->y = mouse_event_data->screenY - window_bounds.y();
     }
+    mouse_event_data->raw_delta_x =
+      mouse_event_data->screenX - cursor_screen_point_.x();
+    mouse_event_data->raw_delta_y =
+      mouse_event_data->screenY - cursor_screen_point_.y();
     // When the tab page drag is complete, the tab page drag parameter is
     // cleared
     if (mouse_event_data->action == UI_MOUSE_EVENT_ACTION_RELEASE) {
@@ -460,6 +481,12 @@ void NodeHandleMouseEventCallback(const int32_t widget_id,
   mouse_event_data.button = OH_ArkUI_MouseEvent_GetMouseButton(mouse_event);
   mouse_event_data.timestamp = timestamp;
   mouse_event_data.action = action;
+  if (ohos::adapter::common::SupportsGetRawDeltaFunc()) {
+      mouse_event_data.raw_delta_x =
+        ohos::adapter::common::MouseEventGetRawDeltaX(mouse_event);
+      mouse_event_data.raw_delta_y =
+        ohos::adapter::common::MouseEventGetRawDeltaY(mouse_event);
+  }
 
   int32_t display_id = OH_ArkUI_UIInputEvent_GetTargetDisplayId(mouse_event);
   auto task = base::BindOnce(

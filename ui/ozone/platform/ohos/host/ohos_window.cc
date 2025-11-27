@@ -297,13 +297,13 @@ void OhosWindow::UpdateCursorShape(
                                                  hotspot.x(),
                                                  hotspot.y(),
                                                  buff};
-      ohos::adapter::SetCustomCursor(cursor_info);
+      ohos::adapter::Cursor::GetInstance().SetCustomCursor(cursor_info);
     } else {
       LOG(ERROR) << "read pixels failed";
     }
   } else {
     auto ohos_cursor_type = ConvertToOhosCursorType(platform_cursor->type());
-    ohos::adapter::SetCursor(GetWidget(), ohos_cursor_type);
+    ohos::adapter::Cursor::GetInstance().SetCursor(GetWidget(), ohos_cursor_type);
   }
   cursor_ = platform_cursor;
 }
@@ -418,7 +418,7 @@ void OhosWindow::OnPointerFocusChanged(const bool focused) {
     UpdateCursorShape(cursor_);
   } else if (cursor_->type() == mojom::CursorType::kNone) {
     // invisible cursor blur need to set visible
-    ohos::adapter::SetCursorVisible(true);
+    ohos::adapter::Cursor::GetInstance().SetCursorVisible(true);
   }
 }
 

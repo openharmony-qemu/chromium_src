@@ -25,6 +25,9 @@ class VIEWS_EXPORT DesktopWindowTreeHostOhos
 
   ~DesktopWindowTreeHostOhos() override;
 
+  void LockMouse(aura::Window* window) override;
+  void UnlockMouse(aura::Window* window) override;
+
  protected:
   // Overridden from DesktopWindowTreeHost:
   void OnNativeWidgetCreated(const Widget::InitParams& params) override;

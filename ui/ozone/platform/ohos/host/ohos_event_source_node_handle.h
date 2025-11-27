@@ -59,6 +59,8 @@ struct ArkUI_MouseEventData {
   float y;
   float screenX;
   float screenY;
+  float raw_delta_x;
+  float raw_delta_y;
   int64_t timestamp;
   int32_t action;
   int32_t button;

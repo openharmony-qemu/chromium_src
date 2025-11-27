@@ -5,6 +5,7 @@
 #include "ui/views/widget/desktop_aura/desktop_window_tree_host_ohos.h"
 
 #include "base/logging.h"
+#include "ohos/adapter/cursor/cursor.h"
 #include "ohos/adapter/xcomponent/adapter/window_adapter.h"
 #include "ui/aura/window_delegate.h"
 #include "ui/display/screen_ohos.h"
@@ -149,6 +150,54 @@ Widget::MoveLoopResult DesktopWindowTreeHostOhos::RunMoveLoop(
     GetContentWindow()->ReleaseCapture();
   }
   return result;
+}
+
+void DesktopWindowTreeHostOhos::LockMouse(aura::Window* window) {
+  if (window == nullptr || window->GetHost() == nullptr) {
+    LOG(ERROR)
+    << " [OhosCursorLock] " << __FUNCTION__
+    << " null window or invalid host";
+    WindowTreeHost::LockMouse(window);
+    return;
+  }
+  if (ohos::adapter::Cursor::GetInstance().SupportsCursorLock()) {
+    auto widget = window->GetHost()->GetAcceleratedWidget();
+    if (ohos::adapter::Cursor::GetInstance().LockCursor(widget)) {
+      WindowTreeHost::LockMouse(window);
+      LOG(INFO)
+        << " [OhosCursorLock] " << __FUNCTION__
+        << " LockCursor success at window: " << window->GetId();
+    } else {
+      LOG(ERROR) << "[OhosCursorLock] LockCursor failed ";
+    }
+  } else {
+    LOG(ERROR) << "[OhosCursorLock] LockCursor not support";
+    WindowTreeHost::LockMouse(window);
+  }
+}
+
+void DesktopWindowTreeHostOhos::UnlockMouse(aura::Window* window) {
+  if (window == nullptr || window->GetHost() == nullptr) {
+    LOG(ERROR)
+    << " [OhosCursorLock] " << __FUNCTION__
+    << " null window or invalid host";
+    WindowTreeHost::UnlockMouse(window);
+    return;
+  }
+  if (ohos::adapter::Cursor::GetInstance().SupportsCursorLock()) {
+    auto widget = window->GetHost()->GetAcceleratedWidget();
+    if (ohos::adapter::Cursor::GetInstance().UnlockCursor(widget)) {
+      WindowTreeHost::UnlockMouse(window);
+      LOG(INFO)
+        << " [OhosCursorLock] " << __FUNCTION__
+        << " UnlockCursor success at window: " << window->GetId();
+    } else {
+      LOG(ERROR) << "[OhosCursorLock] UnlockCursor failed ";
+    }
+  } else {
+    LOG(ERROR) << "[OhosCursorLock] LockCursor not support";
+    WindowTreeHost::UnlockMouse(window);
+  }
 }
 
 // static

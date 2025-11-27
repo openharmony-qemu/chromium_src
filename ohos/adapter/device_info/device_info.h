@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef OHOS_ADAPTER_DEVICE_INFO_DEVICE_INFO_H_
+#define OHOS_ADAPTER_DEVICE_INFO_DEVICE_INFO_H_
+
 #include "ohos/adapter/export.h"
 
 #include <string>
@@ -22,6 +25,7 @@ enum SdkVersion {
   SDK_VERSION_15 = 15,
   SDK_VERSION_19 = 19,
   SDK_VERSION_20 = 20,
+  SDK_VERSION_22 = 22,
 };
 
 enum class DeviceType {
@@ -46,3 +50,4 @@ private:
   static DeviceType device_type_;
 };
 }  // namespace ohos::adapter::device_info
+#endif  // OHOS_ADAPTER_DEVICE_INFO_DEVICE_INFO_H_

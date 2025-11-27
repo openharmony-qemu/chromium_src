@@ -63,10 +63,9 @@ class SoftwareDisplayClientOhos : public viz::DisplayClient {
   void DisplayAddChildWindowToBrowser(
       gpu::SurfaceHandle child_window) override {}
   void SetWideColorEnabled(bool enabled) override {}
-  void SetPreferredFrameInterval(base::TimeDelta interval) override {}
+  void SetPreferredFrameInterval(base::TimeDelta interval) {}
   base::TimeDelta GetPreferredFrameIntervalForFrameSinkId(
-      const viz::FrameSinkId& id,
-      viz::mojom::CompositorFrameSinkType* type) override {
+      const viz::FrameSinkId& id) {
     return viz::BeginFrameArgs::MinInterval();
   }
   void RestoreRenderFit(const viz::FrameSinkId& frame_sink_id) override {}
@@ -111,9 +110,8 @@ void SoftwareCompositorRendererOhos::BindToClient(
 
   registry_->RegisterSoftwareRenderer(this);
 
-  shared_bitmap_manager_ = std::make_unique<viz::ServerSharedBitmapManager>();
   frame_sink_manager_ = std::make_unique<viz::FrameSinkManagerImpl>(
-      viz::FrameSinkManagerImpl::InitParams(shared_bitmap_manager_.get()));
+      viz::FrameSinkManagerImpl::InitParams());
 
   constexpr bool root_support_is_root = true;
   root_support_ = std::make_unique<viz::CompositorFrameSinkSupport>(
@@ -130,12 +128,11 @@ void SoftwareCompositorRendererOhos::BindToClient(
   display_client_ = std::make_unique<SoftwareDisplayClientOhos>();
 
   display_ = std::make_unique<viz::Display>(
-      shared_bitmap_manager_.get(), /*shared_image_manager=*/nullptr,
-      /*sync_point_manager=*/nullptr,
+      /*shared_image_manager=*/nullptr,
       /*gpu_scheduler=*/nullptr, software_renderer_settings, &debug_settings_,
-      kRootFrameSinkId, nullptr /* gpu::GpuTaskSchedulerHelper */,
+      kRootFrameSinkId, nullptr /* gpu_dependency */,
       std::move(output_surface_), std::move(overlay_processor),
-      std::move(scheduler) /* scheduler */, nullptr /* current_task_runner */);
+      std::move(scheduler), nullptr /* current_task_runner */);
   display_->Initialize(display_client_.get(),
                        frame_sink_manager_->surface_manager());
   frame_sink_manager_->RegisterFrameSinkId(kRootFrameSinkId, false);
@@ -146,7 +143,6 @@ void SoftwareCompositorRendererOhos::BindToClient(
 // LCOV_EXCL_START
 void SoftwareCompositorRendererOhos::DetachFromClient() {
   registry_->UnregisterSoftwareRenderer(this);
-  shared_bitmap_manager_.reset();
   root_support_.reset();
   display_client_.reset();
   display_.reset();

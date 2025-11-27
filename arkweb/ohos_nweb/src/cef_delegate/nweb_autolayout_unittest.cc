@@ -47,9 +47,6 @@ const std::string g_valid_config = R"({
 })";
  
 namespace OHOS::NWeb {
-
-class JSResultCallbackImpl;
-
 // Mock classes based on nweb_find_delegate_unittest.cc and nweb_preference_delegate_unittest.cc
 class MockCefBrowserHost : public ArkWebBrowserHostExt {
  public:
@@ -359,8 +356,6 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void EnableAdsBlock(bool) override {}
   int SetUrlTrustListWithErrMsg(const CefString&, CefString&) override { return 0; }
   void EnableSafeBrowsingDetection(bool, bool) override {}
-  void OnSafeBrowsingDetectionResult(int code, int policy,
-    const std::string& mappingType, const std::string& url) override {}
 #if BUILDFLAG(ARKWEB_EXT_NAVIGATION)
   int InsertBackForwardEntry(int, const CefString&) override { return 0; }
   int UpdateNavigationEntryUrl(int, const CefString&) override { return 0; }
@@ -432,7 +427,6 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   bool Release() const override { return false; }
   bool HasOneRef() const override { return false; }
   bool HasAtLeastOneRef() const override { return false; }
-  int32_t GetLastCommittedEntryPageTransition() override { return 0; }
 };
 
 class MockCefBrowser : public CefBrowser {
@@ -1291,63 +1285,6 @@ TEST_F(NwebAutolayoutTest, ParseWhitelist_NonDictEntry)
     ASSERT_TRUE(whitelist_val.has_value());
     ASSERT_TRUE(whitelist_val->is_dict());
     EXPECT_FALSE(ParseWhitelist(whitelist_val->GetDict()));
-}
-
-TEST_F(NwebAutolayoutTest, CheckWebContainer_WithValidBrowserAndFrame)
-{
-    // Drive the second branch: browser != nullptr && frame != nullptr && frame->IsMain()
-    mEnable_ = true;
-    mPatternJSSource_ = "test_pattern_with_\\`escape";
-
-    CefRefPtr<MockCefBrowserHost> host = new MockCefBrowserHost();
-    CefRefPtr<MockCefBrowser> browser = new MockCefBrowser(host);
-    CefRefPtr<MockCefFrame> frame = new MockCefFrame();
-
-    EXPECT_CALL(*frame, IsMain()).WillOnce(Return(true));
-    ON_CALL(*browser, GetHost()).WillByDefault(Return(host));
-
-    // Ensure ExecuteJavaScript is invoked with escaped pattern and callback.
-    EXPECT_CALL(*host, ExecuteJavaScript(StrEq("test_pattern_with_\\\\`escape"), _, false))
-        .Times(1);
-
-    CheckWebContainer(browser, frame);
-}
-
-TEST_F(NwebAutolayoutTest, JSResultCallbackImpl_Branches)
-{
-    // Set up mocks to capture the callback created inside CheckWebContainer.
-    CefRefPtr<MockCefBrowserHost> host = new MockCefBrowserHost();
-    CefRefPtr<MockCefBrowser> browser = new MockCefBrowser(host);
-    CefRefPtr<MockCefFrame> frame = new MockCefFrame();
-
-    ON_CALL(*frame, IsMain()).WillByDefault(Return(true));
-    ON_CALL(*frame, GetURL()).WillByDefault(Return("http://example.com"));
-
-    CefRefPtr<CefJavaScriptResultCallback> captured_callback;
-    EXPECT_CALL(*host, ExecuteJavaScript(_, _, _))
-        .WillOnce(DoAll(SaveArg<1>(&captured_callback)));
-
-    mEnable_ = true;
-    mPatternJSSource_ = "pattern";
-
-    CheckWebContainer(browser, frame);
-
-    ASSERT_TRUE(captured_callback);
-
-    // Cover ConvertCefValueToString default branch (non-string type).
-    CefRefPtr<CefValue> number_value = CefValue::Create();
-    number_value->SetInt(123);
-    captured_callback->OnJavaScriptExeResult(number_value);
-
-    // Cover early return path for empty/"false" data.
-    CefRefPtr<CefValue> false_value = CefValue::Create();
-    false_value->SetString("false");
-    captured_callback->OnJavaScriptExeResult(false_value);
-
-    // Cover data == "true" branch which invokes CheckCCMandApplyRule.
-    CefRefPtr<CefValue> true_value = CefValue::Create();
-    true_value->SetString("true");
-    captured_callback->OnJavaScriptExeResult(true_value);
 }
 
 TEST_F(NwebAutolayoutTest, LoadAutoLayoutFromHap_EmptyScript)

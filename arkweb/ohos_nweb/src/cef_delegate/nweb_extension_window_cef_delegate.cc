@@ -177,16 +177,21 @@ bool NweExtensionWindowCefDelegate::HasOnRemoveWindowV2CallBack() {
 
 NO_SANITIZE("cfi-icall")
 bool NweExtensionWindowCefDelegate::OnCreateWindowV2(
-    const WebExtensionWindowCreateDataV2& create_date,
+    const WebExtensionWindowCreateData& create_date,
+    const WebExtensionWindowCreateDataV2& create_date_V2,
     WindowCreatedCallback callback) {
 #if !BUILDFLAG(ARKWEB_NWEB_EX)
   return false;
 #else
+  if (!NweExtensionWindowCefDelegate::HasOnCreateWindowV2CallBack()) {
+    return NweExtensionWindowCefDelegate::OnCreateWindow(create_date, callback);
+  }
+
   static int request_id = 0;
   request_id++;
 
   g_window_created_map_[request_id] = std::move(callback);
-  if (!NWebExtensionWindowsDispatcher::OnCreateWindowV2(request_id, create_date)) {
+  if (!NWebExtensionWindowsDispatcher::OnCreateWindowV2(request_id, create_date_V2)) {
     g_window_created_map_.erase(request_id);
     return false;
   }

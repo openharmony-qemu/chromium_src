@@ -39,4 +39,4 @@ class NWebPermissionStatusQueryManager {
 
 }  // namespace OHOS::NWeb
 
-#endif // NWEB_KEY_EVENT_IMPL_H
+#endif  // NWEB_KEY_EVENT_IMPL_H

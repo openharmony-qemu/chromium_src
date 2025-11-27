@@ -20,6 +20,7 @@
 #endif // ARKWEB_ARKWEB_EXTENSIONS
 
 #include "ohos_nweb/src/nweb_common.h"
+
 #if BUILDFLAG(ARKWEB_NWEB_EX)
 #include "ohos_nweb_ex/core/extension/nweb_extension_manager_dispatcher.h"
 #endif // ARKWEB_NWEB_EX
@@ -45,7 +46,8 @@ DeveloperPrivateOpenUrlFunction::Run() {
 
   if (IsNativeApiEnable()) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
-    NWebExtensionMangerDispatcher::OnExtensionOpenUrlCallBack(params->url);
+    NWebExtensionManagerDispatcher::OnExtensionOpenUrlCallBack(params->url,
+                                                              params->type);
 #endif
   } else {
     ExtensionRegistryInfoManager::OnExtensionOpenUrlCallBack(params->url);
@@ -63,18 +65,18 @@ ExtensionFunction::ResponseAction DeveloperPrivateShowOptionsFunction::Run() {
       "Extension does not have an options page.";
   const char kCouldNotFindWebContentsError[] =
       "Could not find a valid web contents.";
- 
+
   const Extension* extension = GetEnabledExtensionById(params->extension_id);
   if (!extension)
     return RespondNow(Error(kNoSuchExtensionError));
- 
+
   if (OptionsPageInfo::GetOptionsPage(extension).is_empty())
     return RespondNow(Error(kNoOptionsPageForExtensionError));
- 
+
   content::WebContents* web_contents = GetSenderWebContents();
   if (!web_contents)
     return RespondNow(Error(kCouldNotFindWebContentsError));
- 
+
   GURL url_to_navigate = OptionsPageInfo::GetOptionsPage(extension);
   if (IsNativeApiEnable()) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
@@ -85,7 +87,7 @@ ExtensionFunction::ResponseAction DeveloperPrivateShowOptionsFunction::Run() {
     ExtensionRegistryInfoManager::OnExtensionOpenUrlCallBack(
         url_to_navigate.spec());
   }
- 
+
   return RespondNow(NoArguments());
 }
 #endif // ARKWEB_ARKWEB_EXTENSIONS

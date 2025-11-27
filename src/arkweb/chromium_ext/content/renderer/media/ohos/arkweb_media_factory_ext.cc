@@ -68,7 +68,7 @@
 #include "third_party/blink/public/common/thread_safe_browser_interface_broker_proxy.h"
 #include "third_party/blink/public/platform/browser_interface_broker_proxy.h"
 #include "third_party/blink/public/platform/media/key_system_config_selector.h"
-#include "third_party/blink/public/platform/media/video_frame_compositor.h"
+#include "third_party/blink/renderer/platform/media/video_frame_compositor.h"
 #include "third_party/blink/public/platform/media/web_encrypted_media_client_impl.h"
 #include "third_party/blink/public/platform/media/web_media_player_builder.h"
 #include "third_party/blink/public/platform/platform.h"
@@ -206,8 +206,7 @@ blink::WebNativeBridge* ArkwebMediaFactoryExt::CreateWebNativeBridge(
         std::move(vfc), std::move(media_task_runner),
         std::move(video_frame_compositor_task_runner),
         base::BindOnce(&blink::WebSurfaceLayerBridge::Create,
-            parent_frame_sink_id,
-            blink::WebSurfaceLayerBridge::ContainsVideo::kNo));
+            parent_frame_sink_id));
     return web_native_bridge;
 }
 

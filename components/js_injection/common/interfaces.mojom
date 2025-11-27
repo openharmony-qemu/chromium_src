@@ -57,7 +57,7 @@ struct ScriptRegexRule {
 struct DocumentJavaScriptRegexRules {
   int32 script_id;
   mojo_base.mojom.String16 script;
-  array<js_injection.mojom.ScriptRegexRule> script_regex_rules;
+  array<ScriptRegexRule> script_regex_rules;
 };
 
 // The ArrayBuffer arm of the JsWebMessage union below, which contains the
@@ -130,7 +130,7 @@ interface JsCommunication {
 
   // Called from browser, to add regex rules for a frame to run at document start stage.
   [EnableIf=arkweb_jsproxy]
-  AddDocumentStartScriptRegexRules(js_injection.mojom.DocumentJavaScriptRegexRules script_regex_rules);
+  AddDocumentStartScriptRegexRules(DocumentJavaScriptRegexRules script_regex_rules);
 
   // Called from browser, to add a script for a frame to run at document end
   // stage. The script will run only if the frame's origin matches any of the
@@ -143,7 +143,7 @@ interface JsCommunication {
 
   // Called from browser, to add regex rules for a frame to run at document end stage.
   [EnableIf=arkweb_js_on_document_end]
-  AddDocumentEndScriptRegexRules(js_injection.mojom.DocumentJavaScriptRegexRules script_regex_rules);
+  AddDocumentEndScriptRegexRules(DocumentJavaScriptRegexRules script_regex_rules);
 
   // Called from browser, to add a script for a frame to run at head element ready
   // stage. The script will run only if the frame's origin matches any of the
@@ -157,28 +157,28 @@ interface JsCommunication {
 
   // Called from browser, to add regex rules for a frame to run at head element ready stage.
   [EnableIf=arkweb_jsproxy]
-  AddHeadReadyScriptRegexRules(js_injection.mojom.DocumentJavaScriptRegexRules script_regex_rules);
+  AddHeadReadyScriptRegexRules(DocumentJavaScriptRegexRules script_regex_rules);
 
   // Called from browser, to replace scripts for a frame to run at document start
   // stage. The scripts will run only if the frame's origin matches any of the
   // allowed_origin_rules.
   [EnableIf=arkweb_jsproxy]
   AddPendingJavascriptAtDocumentStart(js_injection.mojom.DocumentStartJavaScript script,
-    js_injection.mojom.DocumentJavaScriptRegexRules script_regex_rules);
+    DocumentJavaScriptRegexRules script_regex_rules);
 
   // Called from browser, to replace scripts for a frame to run at document end
   // stage. The scripts will run only if the frame's origin matches any of the
   // allowed_origin_rules.
   [EnableIf=arkweb_jsproxy]
   AddPendingJavascriptAtDocumentEnd(js_injection.mojom.DocumentEndJavaScript script,
-    js_injection.mojom.DocumentJavaScriptRegexRules script_regex_rules);
+    DocumentJavaScriptRegexRules script_regex_rules);
 
   // Called from browser, to replace scripts for a frame to run at head element ready
   // stage. The scripts will run only if the frame's origin matches any of the
   // allowed_origin_rules.
   [EnableIf=arkweb_jsproxy]
   AddPendingJavascriptAtHeadReady(js_injection.mojom.DocumentStartJavaScript script,
-    js_injection.mojom.DocumentJavaScriptRegexRules script_regex_rules);
+    DocumentJavaScriptRegexRules script_regex_rules);
 
   // Called from browser, to Commit document start javaScript
   [EnableIf=arkweb_jsproxy]

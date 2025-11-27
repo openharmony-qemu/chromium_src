@@ -338,9 +338,19 @@ class CefScreenInfo : public CefStructBaseSimple<cef_screen_info_t> {
                 int depth_per_component,
                 bool is_monochrome,
                 const cef_rect_t& rect,
-                const cef_rect_t& available_rect) {
+                const cef_rect_t& available_rect
+#if BUILDFLAG(IS_OHOS)
+                ,
+                uint16_t angle_val,
+                cef_screen_orientation_type_t orientation_val
+#endif
+                ) {
     Set(device_scale_factor, depth, depth_per_component, is_monochrome, rect,
-        available_rect);
+        available_rect
+#if BUILDFLAG(IS_OHOS)
+        , angle_val, orientation_val
+#endif
+        );
   }
 
   void Set(float device_scale_factor_val,

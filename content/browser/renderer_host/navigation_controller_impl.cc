@@ -464,9 +464,10 @@ void RewriteUrlForNavigation(const GURL& original_url,
   if (base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kEnableNwebEx) &&
       OhosUrlRewriteController::IsRewriteUrlEnabled()) {
     if (delegate) {
-      std::string result =
-          delegate->NotifyNavigationRewriteUrl(original_url.spec(), referrer.spec(), transition_type, is_key_request);
-      if (!result.empty()) {
+      std::string result = delegate->NotifyNavigationRewriteUrl(
+          original_url.spec(), referrer.spec(), transition_type, is_key_request);
+      if (!result.empty() &&
+          GURL(result).DeprecatedGetOriginAsURL() == original_url.DeprecatedGetOriginAsURL()) {
         if (url_to_rewrite != nullptr) {
           *url_to_rewrite = GURL(result);
         }
@@ -4063,6 +4064,15 @@ NavigationControllerImpl::CreateNavigationRequestFromLoadParams(
 
     if (virtual_url.is_empty())
       virtual_url = url_to_load;
+
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD) && !defined(COMPONENT_BUILD)
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kEnableNwebEx) &&
+        OhosUrlRewriteController::IsRewriteUrlEnabled()) {
+      if (virtual_url != entry->GetVirtualURL()) {
+        return nullptr;
+      }
+    }
+#endif
 
     CHECK(virtual_url == entry->GetVirtualURL());
 

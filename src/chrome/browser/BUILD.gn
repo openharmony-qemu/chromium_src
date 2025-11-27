@@ -7230,9 +7230,6 @@ static_library("browser") {
     deps += [
       "//ohos/adapter:adapter",
     ]
-    if (use_ozone) {
-      sources += [ "fullscreen_ozone.cc" ]
-    }
   }
 
   if (is_posix) {

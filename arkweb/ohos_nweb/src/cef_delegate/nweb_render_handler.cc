@@ -813,6 +813,9 @@ void NWebRenderHandler::OnTextSelectionChanged(CefRefPtr<CefBrowser> browser,
     inputmethod_client_->OnTextSelectionChanged(browser, selected_text,
                                                 selected_range);
   }
+  if (auto handler = handler_.lock()) {
+    handler->OnTextSelectionChange(selected_text);
+  }
 }
 
 void NWebRenderHandler::OnVirtualKeyboardRequestedEx(

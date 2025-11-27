@@ -916,8 +916,12 @@ bool SandboxConfigurationsMatch(const SiteInfo& site_info,
 }  // namespace
 
 bool SiteInstanceImpl::IsSuitableForUrlInfo(const UrlInfo& url_info) {
-  TRACE_EVENT2("navigation", "SiteInstanceImpl::IsSuitableForUrlInfo",
-               ChromeTrackEvent::kSiteInstance, this, "url_info", url_info);
+  INTERNAL_TRACE_EVENT_ADD_SCOPED("navigation",
+                                  "SiteInstanceImpl::IsSuitableForUrlInfo",
+                                  ChromeTrackEvent::kSiteInstance,
+                                  ::perfetto::internal::PossiblyNull(this),
+                                  "url_info",
+                                  ::perfetto::internal::PossiblyNull(url_info));
   const GURL& url = url_info.url;
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   // If the URL to navigate to can be associated with any site instance,

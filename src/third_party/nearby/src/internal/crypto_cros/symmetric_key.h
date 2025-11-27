@@ -20,7 +20,7 @@
 #include <memory>
 #include <string>
 
-#include "internal/crypto_cros/crypto_export.h"
+#include "third_party/nearby/src/internal/crypto_cros/crypto_export.h"
 
 namespace nearby::crypto {
 

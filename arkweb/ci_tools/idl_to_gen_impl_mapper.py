@@ -144,7 +144,6 @@ class ConsolidatedIDLProcessor:
             pattern4 = r'\[[^\]]*ImplementedAs\s*=\s*([^\s,\]]+)[^\]]*\]\s*(readonly\s+)?attribute\s+[^;]+\s+(\w+)\s*;'
 
             # 5. 方法级别 (暂时不实现，因为复杂度较高且相对少见)
-            # pattern5 = r'\[[^\]]*ImplementedAs\s*=\s*([^\s,\]]+)[^\]]*\]\s*(?:static\s+)?[^;]*\s+(\w+)\s*\(.*?\)\s*;'
 
             patterns_to_process = [
                 (pattern1, None, lambda m: m.group(3)),  # entity_type在group2中
@@ -788,7 +787,6 @@ class ImplementationMapper:
         self.impl_file_cache = {}       # 缓存实现文件内容
 
         # 加载consolidated数据
-        # self._load_consolidated_data()
         self.consolidated_data = mapped_gen_data
 
     def map_idl_to_implementations(self):
@@ -925,7 +923,6 @@ class ImplementationMapper:
             pattern4 = r'\[[^\]]*ImplementedAs\s*=\s*([^\s,\]]+)[^\]]*\]\s*(readonly\s+)?attribute\s+[^;]+\s+(\w+)\s*;'
 
             # 5. 方法级别 (暂时不实现，因为比较复杂且相对少见)
-            # pattern5 = r'\[[^\]]*ImplementedAs\s*=\s*([^\s,\]]+)[^\]]*\]\s*(?:static\s+)?[^;]*\s+(\w+)\s*\(.*?\)\s*;'
 
             patterns_to_process = [
                 (pattern1, None, lambda m: m.group(3)),  # entity_type在group2中

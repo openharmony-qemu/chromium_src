@@ -359,15 +359,17 @@ void OhosPipWindow::Hide() {
   LOG(INFO) << "OhosPipWindow::" << __func__
             << " controller_id: " << controller_id_;
   OhosWindow::Hide();
-  int32_t result = PipWindowAdapter::GetInstance().StopPip(controller_id_);
-  if (result != 0) {
-    LOG(ERROR) << "StopPip failed, result: " << result;
-  }
+  StopPipController();
 }
 
 void OhosPipWindow::Close() {
   LOG(INFO) << "OhosPipWindow::" << __func__
             << " controller_id: " << controller_id_;
+  if (!StopPipController()) {
+    LOG(ERROR) << "PipController is not stopped and cannot be deleted.";
+    return;
+  }
+
   int32_t result = PipWindowAdapter::GetInstance().DeletePip(controller_id_);
   if (result != 0) {
     LOG(ERROR) << "DeletePip failed, result: " << result;
@@ -421,6 +423,18 @@ WindowInitParameter OhosPipWindow::BuildWindowInitParameter() {
   parameter.bounds = rect;
   parameter.window_id = GetWindowUniqueId();
   return parameter;
+}
+
+bool OhosPipWindow::StopPipController() {
+  if (pip_state_ == PictureInPicture_PipState::STOPPED) {
+    return true;
+  }
+  int32_t result = PipWindowAdapter::GetInstance().StopPip(controller_id_);
+  if (result != 0) {
+    LOG(ERROR) << "StopPip failed, result: " << result;
+    return false;
+  }
+  return true;
 }
 
 void OhosPipWindow::CloseInternal() {

@@ -15,6 +15,8 @@
 
 #include "arkweb_input_router_impl_utils.h"
 
+#include "base/time/time.h"
+#include "base/trace_event/trace_event.h"
 #include "components/input/input_router_impl.h"
 
 namespace input {

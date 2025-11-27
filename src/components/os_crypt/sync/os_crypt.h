@@ -271,7 +271,7 @@ class COMPONENT_EXPORT(OS_CRYPT) OSCryptImpl {
   static base::Lock& GetLock();
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_ARKWEB)
 
-#if BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
   static constexpr size_t kDerivedKeyBytes = 16;
 
   crypto::SubtlePassKey MakeCryptoPassKey();
@@ -319,7 +319,7 @@ class COMPONENT_EXPORT(OS_CRYPT) OSCryptImpl {
 
   base::OnceCallback<std::unique_ptr<KeyStorageLinux>()>
       storage_provider_factory_for_testing_;
-#endif  // BUILDFLAG(IS_LINUX)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ARKWEB)
 
 #if BUILDFLAG(IS_WIN)
   // Use mock key instead of a real encryption key. Used for testing.

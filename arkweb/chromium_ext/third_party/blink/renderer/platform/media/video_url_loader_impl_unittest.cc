@@ -194,7 +194,6 @@ public:
     CheckFails(request, options);
   }
 
-
   bool CheckAccessControlHeaders(const char* header_name, bool exposed) {
     std::string id("http://www.other.com/CheckAccessControlExposeHeaders_");
     id.append(header_name);
@@ -596,5 +595,7 @@ TEST_F(VideoUrlLoaderImplTest, VideoOpt_BypassAccessCheckForLocalURL) {
   EXPECT_TRUE(did_finish_loading_);
   EXPECT_FALSE(did_fail_);
 }
+
 #undef MAYBE_UntrustedCheckHeaders
+
 }

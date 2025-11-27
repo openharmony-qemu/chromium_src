@@ -123,6 +123,330 @@ class ConsolidatedIDLProcessor:
         self.includes_map = defaultdict(set)
         self.mixin_to_targets = defaultdict(set)
 
+    # ========== IDL解析功能 (来自complete_idl_parser.py) ==========
+    def extract_implemented_as_from_idl(self, idl_path: str):
+        """全面地从IDL文件中提取ImplementedAs信息，支持所有语法结构"""
+        implemented_as_map = {}
+        try:
+            with open(idl_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            # 1. 接口、命名空间、字典、回调级别 (包括partial)
+            pattern1 = r'\[[^\]]*ImplementedAs\s*=\s*([^\s,\]]+)[^\]]*\]\s*(?:partial\s+)?(interface|namespace|callback|dictionary)\s+(\w+)'
+
+            # 2. Mixin级别
+            pattern2 = r'\[[^\]]*ImplementedAs\s*=\s*([^\s,\]]+)[^\]]*\]\s*(?:partial\s+)?(interface\s+mixin|namespace\s+mixin)\s+(\w+)'
+
+            # 3. 枚举级别
+            pattern3 = r'\[[^\]]*ImplementedAs\s*=\s*([^\s,\]]+)[^\]]*\]\s*(?:partial\s+)?enum\s+(\w+)'
+
+            # 4. 属性级别
+            pattern4 = r'\[[^\]]*ImplementedAs\s*=\s*([^\s,\]]+)[^\]]*\]\s*(readonly\s+)?attribute\s+[^;]+\s+(\w+)\s*;'
+
+            # 5. 方法级别 (暂时不实现，因为复杂度较高且相对少见)
+            # pattern5 = r'\[[^\]]*ImplementedAs\s*=\s*([^\s,\]]+)[^\]]*\]\s*(?:static\s+)?[^;]*\s+(\w+)\s*\(.*?\)\s*;'
+
+            patterns_to_process = [
+                (pattern1, None, lambda m: m.group(3)),  # entity_type在group2中
+                (pattern2, None, lambda m: m.group(3)),  # entity_type在group2中
+                (pattern3, 'enum', lambda m: m.group(2)),  # entity_type是'enum'
+                (pattern4, 'attribute', lambda m: m.group(3))   # entity_type是'attribute', name在group3
+            ]
+
+            for pattern, entity_type, extract_name in patterns_to_process:
+                matches = re.finditer(pattern, content, re.MULTILINE | re.IGNORECASE)
+
+                for match in matches:
+                    implemented_as = match.group(1).strip().strip('"\'')
+
+                    if entity_type is None:
+                        # 对于pattern1和pattern2，entity_type在group中
+                        actual_entity_type = match.group(2).lower().replace(' ', '')
+                        if actual_entity_type == 'interfacemixin':
+                            actual_entity_type = 'interface_mixin'
+                        elif actual_entity_type == 'namespacemixin':
+                            actual_entity_type = 'namespace_mixin'
+                        entity_name = match.group(3)
+                    else:
+                        actual_entity_type = entity_type
+                        entity_name = extract_name(match)
+
+                    key = f"{actual_entity_type}:{entity_name}"
+                    implemented_as_map[key] = implemented_as
+
+        except Exception as e:
+            print(f"⚠️ 读取IDL文件 {idl_path} 时出错: {e}")
+
+        return implemented_as_map
+
+    def extract_typedef_from_idl(self, idl_path: str):
+        """从IDL文件中提取typedef的完整定义"""
+        typedef_map = {}
+        try:
+            with open(idl_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            content = re.sub(r'//.*', '', content)
+            content = re.sub(r'/\*.*?\*/', '', content, flags=re.DOTALL)
+            typedef_pattern = r'typedef\s+([^;]+)\s+([^;]+);'
+            matches = re.finditer(typedef_pattern, content, re.MULTILINE)
+            for match in matches:
+                type_def = match.group(1).strip()
+                alias_name = match.group(2).strip()
+                typedef_map[alias_name] = type_def
+        except Exception as e:
+            print(f"⚠️ 提取typedef时出错 {idl_path}: {e}")
+        return typedef_map
+
+    def parse_idl_file(self, file_path):
+        """解析单个IDL文件，完整功能+ImplementedAs提取"""
+        try:
+            if not os.path.exists(file_path):
+                error_msg = f"文件不存在: {file_path}"
+                self.failed_files.append({'file': file_path, 'error': error_msg})
+                return self._create_empty_result(file_path, error_msg)
+
+            implemented_as_map = self.extract_implemented_as_from_idl(file_path)
+            typedef_definitions = self.extract_typedef_from_idl(file_path)
+
+            ast = ParseFile(self.parser, file_path)
+            if not ast:
+                error_msg = f"解析失败，AST为空"
+                self.failed_files.append({'file': file_path, 'error': error_msg})
+                return self._create_empty_result(file_path, error_msg)
+
+            result = {
+                "idl_path": file_path,
+                "interface": [],
+                "dictionary": [],
+                "element": [],
+                "callback": [],
+                "namespace": [],
+                "typedef": [],
+                "includes_info": {}
+            }
+
+            self._extract_definitions(ast, result, implemented_as_map, typedef_definitions)
+            return result
+
+        except Exception as e:
+            error_msg = f"解析错误: {str(e)}"
+            self.failed_files.append({'file': file_path, 'error': error_msg})
+            return self._create_empty_result(file_path, error_msg)
+
+    # ========== 文件映射功能 (来自perfect_file_mapper.py) ==========
+    def load_gn_generated_files(self):
+        """加载GN文件中定义的实际生成文件"""
+        print("🔍 加载GN文件中定义的实际生成文件...")
+        gn_files = {
+            'core': os.path.join(args.source, "src/third_party/blink/renderer/bindings/generated_in_core.gni"),
+            'modules': os.path.join(args.source, "src/third_party/blink/renderer/bindings/generated_in_modules.gni"),
+            'extensions_chromeos': os.path.join(args.source, "src/third_party/blink/renderer/bindings/generated_in_extensions_chromeos.gni"),
+            'extensions_webview': os.path.join(args.source, "src/third_party/blink/renderer/bindings/generated_in_extensions_webview.gni"),
+        }
+
+        for component, gn_file_path in gn_files.items():
+            if os.path.exists(gn_file_path):
+                self._parse_gn_file_enhanced(gn_file_path, component)
+
+        total_files = sum(len(files) for files_dict in self.generated_files.values() for files in files_dict.values())
+        print(f"✅ 从GN文件加载了 {total_files} 个生成文件定义")
+
+    def parse_includes_statements(self, idl_data):
+        """解析所有IDL文件中的includes语句"""
+        print("🔍 解析IDL文件中的includes语句...")
+        includes_pattern = r'^([A-Za-z_][A-Za-z0-9_]*)\s+includes\s+([A-Za-z_][A-Za-z0-9_]*);'
+
+        for idl_file in idl_data:
+            idl_path = idl_file['idl_path']
+            try:
+                with open(idl_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+            except Exception as e:
+                print(f"Warning: 无法读取 {idl_path}: {e}")
+                continue
+
+            for line_num, line in enumerate(content.split('\n'), 1):
+                line = line.strip()
+                if not line or line.startswith('//') or line.startswith('/*'):
+                    continue
+
+                match = re.match(includes_pattern, line)
+                if match:
+                    target_interface = match.group(1)
+                    mixin_interface = match.group(2)
+                    self.includes_map[target_interface].add(mixin_interface)
+                    self.mixin_to_targets[mixin_interface].add(target_interface)
+
+        print(f"✅ 找到 {len(self.includes_map)} 个目标接口包含混入接口")
+        print(f"✅ 找到 {len(self.mixin_to_targets)} 个混入接口被使用")
+
+    def find_gen_files_for_entity(self, entity_name, entity_type):
+        """基于GN定义为实体查找生成文件"""
+        def normalize_name(name):
+            return re.sub(r'[^a-zA-Z0-9]', '', name).lower()
+
+        normalized_entity = normalize_name(entity_name)
+        search_types = [entity_type]
+
+        if entity_type == 'callback':
+            search_types = ['callback_interface', 'callback_function']
+
+        for search_type in search_types:
+            if normalized_entity in self.generated_files.get(search_type, {}):
+                files = self.generated_files[search_type][normalized_entity]
+                return self._get_all_files(files)
+
+            entity_files = self.generated_files.get(search_type, {})
+            for key, files in entity_files.items():
+                normalized_key = normalize_name(key)
+                if normalized_entity == normalized_key:
+                    return self._get_all_files(files)
+
+            for key, files in entity_files.items():
+                normalized_key = normalize_name(key)
+                if (normalized_entity in normalized_key or normalized_key in normalized_entity):
+                    return self._get_all_files(files)
+
+        return []
+
+    def map_idl_to_generated_files(self, idl_data):
+        """将IDL映射到生成文件"""
+        mapped_idl_data = []
+        print("🔗 开始IDL到生成文件映射...")
+
+        for idx, idl_file in enumerate(idl_data):
+            if idx % 200 == 0:
+                print(f"处理进度: {idx+1}/{len(idl_data)} ({(idx+1)/len(idl_data)*100:.1f}%)")
+
+            mapped_file = {
+                'idl_path': idl_file['idl_path'],
+                'interface': [],
+                'dictionary': [],
+                'element': [],
+                'callback': [],
+                'namespace': [],
+                'typedef': [],
+                'includes_info': {}
+            }
+
+            # 处理接口
+            for interface in idl_file.get('interface', []):
+                interface_name = interface['interface_name']
+                gen_files = self.find_gen_files_for_entity(interface_name, 'interface')
+                if not gen_files:
+                    gen_files = self.find_gen_files_for_entity(interface_name, 'callback')
+
+                enhanced_interface = dict(interface)
+                enhanced_interface['generated_files'] = gen_files
+                mapped_file['interface'].append(enhanced_interface)
+
+            # 处理其他实体类型
+            for entity_type in ['dictionary', 'element', 'callback', 'namespace', 'typedef']:
+                for entity in idl_file.get(entity_type, []):
+                    entity_name = entity.get(f'{entity_type}_name', '') or entity.get('callback_name', '') or entity.get('namespace_name', '') or entity.get('value', '')
+                    if not entity_name:
+                        continue
+
+                    search_type = entity_type
+                    if entity_type == 'element':
+                        search_type = 'enumeration'
+
+                    gen_files = self.find_gen_files_for_entity(entity_name, search_type)
+                    enhanced_entity = dict(entity)
+                    enhanced_entity['generated_files'] = gen_files
+                    mapped_file[entity_type].append(enhanced_entity)
+
+            mapped_idl_data.append(mapped_file)
+
+        return mapped_idl_data
+
+    # ========== 主处理流程 ==========
+    def process_all_files(self, file_list_path, output_dir):
+        """处理所有IDL文件并映射到生成文件"""
+        # 读取文件列表
+        with open(file_list_path, 'r') as f:
+            idl_files = [line.strip() for line in f if line.strip()]
+
+        total_files = len(idl_files)
+        idl_results = []
+
+        print(f"🚀 开始处理 {total_files} 个IDL文件...")
+        print("阶段1: IDL解析")
+
+        # 阶段1: 解析所有IDL文件
+        for i, file_path in enumerate(idl_files, 1):
+            try:
+                result = self.parse_idl_file(file_path)
+                if 'parse_error' not in result:
+                    idl_results.append(result)
+
+                if i % 50 == 0:
+                    print(f"已解析 {i}/{total_files} 个文件")
+
+            except Exception as e:
+                print(f"处理文件 {file_path} 时出错: {e}")
+
+        print(f"✅ 成功解析 {len(idl_results)} 个IDL文件")
+
+        # 阶段2: 加载GN生成文件定义
+        print("\n阶段2: 加载GN生成文件定义")
+        self.load_gn_generated_files()
+
+        # 阶段3: 解析includes语句
+        print("\n阶段3: 解析includes语句")
+        self.parse_includes_statements(idl_results)
+
+        # 阶段4: 映射到生成文件
+        print("\n阶段4: 映射到生成文件")
+        mapped_data = self.map_idl_to_generated_files(idl_results)
+
+        # 生成统计报告
+        total_idl_files = len(mapped_data)
+        files_with_gen_files = 0
+        total_generated_files = 0
+
+        for idl_file in mapped_data:
+            has_gen_files = False
+
+            # 检查接口
+            for interface in idl_file.get('interface', []):
+                gen_files = interface.get('generated_files', [])
+                if gen_files:
+                    has_gen_files = True
+                    total_generated_files += len(gen_files)
+
+            # 检查其他实体类型
+            for entity_type in ['dictionary', 'element', 'callback', 'namespace', 'typedef']:
+                for entity in idl_file.get(entity_type, []):
+                    gen_files = entity.get('generated_files', [])
+                    if gen_files:
+                        has_gen_files = True
+                        total_generated_files += len(gen_files)
+
+            if has_gen_files:
+                files_with_gen_files += 1
+
+        report = {
+            'total_idl_files': total_idl_files,
+            'files_with_generated_files': files_with_gen_files,
+            'success_rate': f"{files_with_gen_files/total_idl_files*100:.1f}%",
+            'total_generated_files': total_generated_files,
+            'failed_files': len(self.failed_files),
+            'source': 'consolidated_idl_parser_and_mapper'
+        }
+
+        report_file = os.path.join(output_dir, "idl_to_gen_report.json")
+        with open(report_file, 'w', encoding='utf-8') as f:
+            json.dump(report, f, ensure_ascii=False, indent=2)
+
+        print(f"\n📊 处理统计:")
+        print(f"  📁 处理的IDL文件: {report['total_idl_files']}")
+        print(f"  📄 找到生成文件的IDL: {report['files_with_generated_files']} ({report['success_rate']})")
+        print(f"  📋 总生成文件数: {report['total_generated_files']}")
+        print(f"  ❌ 解析失败文件: {report['failed_files']}")
+
+        return mapped_data
+
     def _extract_definitions(self, node, result, implemented_as_map, typedef_definitions):
         """从AST中提取IDL定义，添加ImplementedAs支持"""
         if not isinstance(node, IDLNode):
@@ -454,330 +778,6 @@ class ConsolidatedIDLProcessor:
         """获取所有文件，不区分头文件和源文件"""
         return sorted(list(files))
 
-    # ========== IDL解析功能 (来自complete_idl_parser.py) ==========
-    def extract_implemented_as_from_idl(self, idl_path: str):
-        """全面地从IDL文件中提取ImplementedAs信息，支持所有语法结构"""
-        implemented_as_map = {}
-        try:
-            with open(idl_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-
-            # 1. 接口、命名空间、字典、回调级别 (包括partial)
-            pattern1 = r'\[[^\]]*ImplementedAs\s*=\s*([^\s,\]]+)[^\]]*\]\s*(?:partial\s+)?(interface|namespace|callback|dictionary)\s+(\w+)'
-
-            # 2. Mixin级别
-            pattern2 = r'\[[^\]]*ImplementedAs\s*=\s*([^\s,\]]+)[^\]]*\]\s*(?:partial\s+)?(interface\s+mixin|namespace\s+mixin)\s+(\w+)'
-
-            # 3. 枚举级别
-            pattern3 = r'\[[^\]]*ImplementedAs\s*=\s*([^\s,\]]+)[^\]]*\]\s*(?:partial\s+)?enum\s+(\w+)'
-
-            # 4. 属性级别
-            pattern4 = r'\[[^\]]*ImplementedAs\s*=\s*([^\s,\]]+)[^\]]*\]\s*(readonly\s+)?attribute\s+[^;]+\s+(\w+)\s*;'
-
-            # 5. 方法级别 (暂时不实现，因为复杂度较高且相对少见)
-            # pattern5 = r'\[[^\]]*ImplementedAs\s*=\s*([^\s,\]]+)[^\]]*\]\s*(?:static\s+)?[^;]*\s+(\w+)\s*\(.*?\)\s*;'
-
-            patterns_to_process = [
-                (pattern1, None, lambda m: m.group(3)),  # entity_type在group2中
-                (pattern2, None, lambda m: m.group(3)),  # entity_type在group2中
-                (pattern3, 'enum', lambda m: m.group(2)),  # entity_type是'enum'
-                (pattern4, 'attribute', lambda m: m.group(3))   # entity_type是'attribute', name在group3
-            ]
-
-            for pattern, entity_type, extract_name in patterns_to_process:
-                matches = re.finditer(pattern, content, re.MULTILINE | re.IGNORECASE)
-
-                for match in matches:
-                    implemented_as = match.group(1).strip().strip('"\'')
-
-                    if entity_type is None:
-                        # 对于pattern1和pattern2，entity_type在group中
-                        actual_entity_type = match.group(2).lower().replace(' ', '')
-                        if actual_entity_type == 'interfacemixin':
-                            actual_entity_type = 'interface_mixin'
-                        elif actual_entity_type == 'namespacemixin':
-                            actual_entity_type = 'namespace_mixin'
-                        entity_name = match.group(3)
-                    else:
-                        actual_entity_type = entity_type
-                        entity_name = extract_name(match)
-
-                    key = f"{actual_entity_type}:{entity_name}"
-                    implemented_as_map[key] = implemented_as
-
-        except Exception as e:
-            print(f"⚠️ 读取IDL文件 {idl_path} 时出错: {e}")
-
-        return implemented_as_map
-
-    def extract_typedef_from_idl(self, idl_path: str):
-        """从IDL文件中提取typedef的完整定义"""
-        typedef_map = {}
-        try:
-            with open(idl_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-            content = re.sub(r'//.*', '', content)
-            content = re.sub(r'/\*.*?\*/', '', content, flags=re.DOTALL)
-            typedef_pattern = r'typedef\s+([^;]+)\s+([^;]+);'
-            matches = re.finditer(typedef_pattern, content, re.MULTILINE)
-            for match in matches:
-                type_def = match.group(1).strip()
-                alias_name = match.group(2).strip()
-                typedef_map[alias_name] = type_def
-        except Exception as e:
-            print(f"⚠️ 提取typedef时出错 {idl_path}: {e}")
-        return typedef_map
-
-    def parse_idl_file(self, file_path):
-        """解析单个IDL文件，完整功能+ImplementedAs提取"""
-        try:
-            if not os.path.exists(file_path):
-                error_msg = f"文件不存在: {file_path}"
-                self.failed_files.append({'file': file_path, 'error': error_msg})
-                return self._create_empty_result(file_path, error_msg)
-
-            implemented_as_map = self.extract_implemented_as_from_idl(file_path)
-            typedef_definitions = self.extract_typedef_from_idl(file_path)
-
-            ast = ParseFile(self.parser, file_path)
-            if not ast:
-                error_msg = f"解析失败，AST为空"
-                self.failed_files.append({'file': file_path, 'error': error_msg})
-                return self._create_empty_result(file_path, error_msg)
-
-            result = {
-                "idl_path": file_path,
-                "interface": [],
-                "dictionary": [],
-                "element": [],
-                "callback": [],
-                "namespace": [],
-                "typedef": [],
-                "includes_info": {}
-            }
-
-            self._extract_definitions(ast, result, implemented_as_map, typedef_definitions)
-            return result
-
-        except Exception as e:
-            error_msg = f"解析错误: {str(e)}"
-            self.failed_files.append({'file': file_path, 'error': error_msg})
-            return self._create_empty_result(file_path, error_msg)
-
-    # ========== 文件映射功能 (来自perfect_file_mapper.py) ==========
-    def load_gn_generated_files(self):
-        """加载GN文件中定义的实际生成文件"""
-        print("🔍 加载GN文件中定义的实际生成文件...")
-        gn_files = {
-            'core': os.path.join(args.source, "src/third_party/blink/renderer/bindings/generated_in_core.gni"),
-            'modules': os.path.join(args.source, "src/third_party/blink/renderer/bindings/generated_in_modules.gni"),
-            'extensions_chromeos': os.path.join(args.source, "src/third_party/blink/renderer/bindings/generated_in_extensions_chromeos.gni"),
-            'extensions_webview': os.path.join(args.source, "src/third_party/blink/renderer/bindings/generated_in_extensions_webview.gni"),
-        }
-
-        for component, gn_file_path in gn_files.items():
-            if os.path.exists(gn_file_path):
-                self._parse_gn_file_enhanced(gn_file_path, component)
-
-        total_files = sum(len(files) for files_dict in self.generated_files.values() for files in files_dict.values())
-        print(f"✅ 从GN文件加载了 {total_files} 个生成文件定义")
-
-    def parse_includes_statements(self, idl_data):
-        """解析所有IDL文件中的includes语句"""
-        print("🔍 解析IDL文件中的includes语句...")
-        includes_pattern = r'^([A-Za-z_][A-Za-z0-9_]*)\s+includes\s+([A-Za-z_][A-Za-z0-9_]*);'
-
-        for idl_file in idl_data:
-            idl_path = idl_file['idl_path']
-            try:
-                with open(idl_path, 'r', encoding='utf-8') as f:
-                    content = f.read()
-            except Exception as e:
-                print(f"Warning: 无法读取 {idl_path}: {e}")
-                continue
-
-            for line_num, line in enumerate(content.split('\n'), 1):
-                line = line.strip()
-                if not line or line.startswith('//') or line.startswith('/*'):
-                    continue
-
-                match = re.match(includes_pattern, line)
-                if match:
-                    target_interface = match.group(1)
-                    mixin_interface = match.group(2)
-                    self.includes_map[target_interface].add(mixin_interface)
-                    self.mixin_to_targets[mixin_interface].add(target_interface)
-
-        print(f"✅ 找到 {len(self.includes_map)} 个目标接口包含混入接口")
-        print(f"✅ 找到 {len(self.mixin_to_targets)} 个混入接口被使用")
-
-    def find_gen_files_for_entity(self, entity_name, entity_type):
-        """基于GN定义为实体查找生成文件"""
-        def normalize_name(name):
-            return re.sub(r'[^a-zA-Z0-9]', '', name).lower()
-
-        normalized_entity = normalize_name(entity_name)
-        search_types = [entity_type]
-
-        if entity_type == 'callback':
-            search_types = ['callback_interface', 'callback_function']
-
-        for search_type in search_types:
-            if normalized_entity in self.generated_files.get(search_type, {}):
-                files = self.generated_files[search_type][normalized_entity]
-                return self._get_all_files(files)
-
-            entity_files = self.generated_files.get(search_type, {})
-            for key, files in entity_files.items():
-                normalized_key = normalize_name(key)
-                if normalized_entity == normalized_key:
-                    return self._get_all_files(files)
-
-            for key, files in entity_files.items():
-                normalized_key = normalize_name(key)
-                if (normalized_entity in normalized_key or normalized_key in normalized_entity):
-                    return self._get_all_files(files)
-
-        return []
-
-    def map_idl_to_generated_files(self, idl_data):
-        """将IDL映射到生成文件"""
-        mapped_idl_data = []
-        print("🔗 开始IDL到生成文件映射...")
-
-        for idx, idl_file in enumerate(idl_data):
-            if idx % 200 == 0:
-                print(f"处理进度: {idx+1}/{len(idl_data)} ({(idx+1)/len(idl_data)*100:.1f}%)")
-
-            mapped_file = {
-                'idl_path': idl_file['idl_path'],
-                'interface': [],
-                'dictionary': [],
-                'element': [],
-                'callback': [],
-                'namespace': [],
-                'typedef': [],
-                'includes_info': {}
-            }
-
-            # 处理接口
-            for interface in idl_file.get('interface', []):
-                interface_name = interface['interface_name']
-                gen_files = self.find_gen_files_for_entity(interface_name, 'interface')
-                if not gen_files:
-                    gen_files = self.find_gen_files_for_entity(interface_name, 'callback')
-
-                enhanced_interface = dict(interface)
-                enhanced_interface['generated_files'] = gen_files
-                mapped_file['interface'].append(enhanced_interface)
-
-            # 处理其他实体类型
-            for entity_type in ['dictionary', 'element', 'callback', 'namespace', 'typedef']:
-                for entity in idl_file.get(entity_type, []):
-                    entity_name = entity.get(f'{entity_type}_name', '') or entity.get('callback_name', '') or entity.get('namespace_name', '') or entity.get('value', '')
-                    if not entity_name:
-                        continue
-
-                    search_type = entity_type
-                    if entity_type == 'element':
-                        search_type = 'enumeration'
-
-                    gen_files = self.find_gen_files_for_entity(entity_name, search_type)
-                    enhanced_entity = dict(entity)
-                    enhanced_entity['generated_files'] = gen_files
-                    mapped_file[entity_type].append(enhanced_entity)
-
-            mapped_idl_data.append(mapped_file)
-
-        return mapped_idl_data
-
-    # ========== 主处理流程 ==========
-    def process_all_files(self, file_list_path, output_dir):
-        """处理所有IDL文件并映射到生成文件"""
-        # 读取文件列表
-        with open(file_list_path, 'r') as f:
-            idl_files = [line.strip() for line in f if line.strip()]
-
-        total_files = len(idl_files)
-        idl_results = []
-
-        print(f"🚀 开始处理 {total_files} 个IDL文件...")
-        print("阶段1: IDL解析")
-
-        # 阶段1: 解析所有IDL文件
-        for i, file_path in enumerate(idl_files, 1):
-            try:
-                result = self.parse_idl_file(file_path)
-                if 'parse_error' not in result:
-                    idl_results.append(result)
-
-                if i % 50 == 0:
-                    print(f"已解析 {i}/{total_files} 个文件")
-
-            except Exception as e:
-                print(f"处理文件 {file_path} 时出错: {e}")
-
-        print(f"✅ 成功解析 {len(idl_results)} 个IDL文件")
-
-        # 阶段2: 加载GN生成文件定义
-        print("\n阶段2: 加载GN生成文件定义")
-        self.load_gn_generated_files()
-
-        # 阶段3: 解析includes语句
-        print("\n阶段3: 解析includes语句")
-        self.parse_includes_statements(idl_results)
-
-        # 阶段4: 映射到生成文件
-        print("\n阶段4: 映射到生成文件")
-        mapped_data = self.map_idl_to_generated_files(idl_results)
-
-        # 生成统计报告
-        total_idl_files = len(mapped_data)
-        files_with_gen_files = 0
-        total_generated_files = 0
-
-        for idl_file in mapped_data:
-            has_gen_files = False
-
-            # 检查接口
-            for interface in idl_file.get('interface', []):
-                gen_files = interface.get('generated_files', [])
-                if gen_files:
-                    has_gen_files = True
-                    total_generated_files += len(gen_files)
-
-            # 检查其他实体类型
-            for entity_type in ['dictionary', 'element', 'callback', 'namespace', 'typedef']:
-                for entity in idl_file.get(entity_type, []):
-                    gen_files = entity.get('generated_files', [])
-                    if gen_files:
-                        has_gen_files = True
-                        total_generated_files += len(gen_files)
-
-            if has_gen_files:
-                files_with_gen_files += 1
-
-        report = {
-            'total_idl_files': total_idl_files,
-            'files_with_generated_files': files_with_gen_files,
-            'success_rate': f"{files_with_gen_files/total_idl_files*100:.1f}%",
-            'total_generated_files': total_generated_files,
-            'failed_files': len(self.failed_files),
-            'source': 'consolidated_idl_parser_and_mapper'
-        }
-
-        report_file = os.path.join(output_dir, "idl_to_gen_report.json")
-        with open(report_file, 'w', encoding='utf-8') as f:
-            json.dump(report, f, ensure_ascii=False, indent=2)
-
-        print(f"\n📊 处理统计:")
-        print(f"  📁 处理的IDL文件: {report['total_idl_files']}")
-        print(f"  📄 找到生成文件的IDL: {report['files_with_generated_files']} ({report['success_rate']})")
-        print(f"  📋 总生成文件数: {report['total_generated_files']}")
-        print(f"  ❌ 解析失败文件: {report['failed_files']}")
-
-        return mapped_data
-
 
 # mapper impl
 class ImplementationMapper:
@@ -790,6 +790,117 @@ class ImplementationMapper:
         # 加载consolidated数据
         # self._load_consolidated_data()
         self.consolidated_data = mapped_gen_data
+
+    def map_idl_to_implementations(self):
+        """将IDL映射到实现文件"""
+        print("\n阶段5: 映射到实现文件")
+        print("🔍 开始映射IDL到实现文件...")
+
+        results = []
+        processed_count = 0
+
+        for idl_data in self.consolidated_data:
+            if processed_count % 200 == 0:
+                print(f"处理进度: {processed_count+1}/{len(self.consolidated_data)} ({(processed_count+1)/len(self.consolidated_data)*100:.1f}%)")
+
+            processed_count += 1
+
+            # 创建结果对象，保持原有格式
+            result = {
+                'idl_path': idl_data['idl_path'],
+                'interface': [],
+                'dictionary': [],
+                'element': [],
+                'callback': [],
+                'namespace': [],
+                'typedef': [],
+                'includes_info': {}
+            }
+
+            # 处理接口
+            for interface in idl_data.get('interface', []):
+                impl_info = self._find_implementation_for_interface(idl_data['idl_path'], interface)
+
+                enhanced_interface = dict(interface)
+                enhanced_interface['implementation_info'] = impl_info
+
+                result['interface'].append(enhanced_interface)
+
+            # 处理其他实体类型
+            for entity_type in ['dictionary', 'element', 'callback', 'namespace', 'typedef']:
+                for entity in idl_data.get(entity_type, []):
+                    impl_info = self._find_implementation_for_other_entity(
+                        idl_data['idl_path'], entity, entity_type
+                    )
+
+                    enhanced_entity = dict(entity)
+                    enhanced_entity['implementation_info'] = impl_info
+
+                    result[entity_type].append(enhanced_entity)
+
+            # 保持原有的generated_files字段
+            for entity_type in ['interface', 'dictionary', 'element', 'callback', 'namespace', 'typedef']:
+                for entity in idl_data.get(entity_type, []):
+                    # 在result中查找对应的entity并添加generated_files
+                    for result_entity in result[entity_type]:
+                        # 简单匹配策略：匹配名称
+                        entity_name = entity.get(f'{entity_type}_name', '') or entity.get('callback_name', '') or entity.get('namespace_name', '') or entity.get('value', '')
+                        result_entity_name = result_entity.get(f'{entity_type}_name', '') or result_entity.get('callback_name', '') or result_entity.get('namespace_name', '') or result_entity.get('value', '')
+
+                        if entity_name == result_entity_name:
+                            if 'generated_files' in entity:
+                                result_entity['generated_files'] = entity['generated_files']
+                            break
+
+            results.append(result)
+
+        print(f"✅ 处理完成！")
+        return results
+
+    def generate_report(self, mapped_data):
+        """生成报告"""
+        total_idl_files = len(mapped_data)
+        files_with_impl = 0
+        files_with_gen = 0
+        total_impl_files = 0
+        total_gen_files = 0
+
+        for data in mapped_data:
+            # 统计实现文件
+            has_impl_files = False
+            for entity_type in ['interface', 'dictionary', 'element', 'callback', 'namespace', 'typedef']:
+                for entity in data.get(entity_type, []):
+                    impl_info = entity.get('implementation_info', {})
+                    impl_files = impl_info.get('files', [])
+                    if impl_files:
+                        has_impl_files = True
+                        total_impl_files += len(impl_files)
+
+            if has_impl_files:
+                files_with_impl += 1
+
+            # 统计生成文件
+            has_gen_files = False
+            for entity_type in ['interface', 'dictionary', 'element', 'callback', 'namespace', 'typedef']:
+                for entity in data.get(entity_type, []):
+                    if entity.get('generated_files'):
+                        has_gen_files = True
+                        total_gen_files += len(entity.get('generated_files', []))
+
+            if has_gen_files:
+                files_with_gen += 1
+
+        report = {
+            'total_idl_files': total_idl_files,
+            'files_with_implementation': files_with_impl,
+            'files_with_generated_files': files_with_gen,
+            'implementation_success_rate': f"{files_with_impl/total_idl_files*100:.1f}%",
+            'generated_success_rate': f"{files_with_gen/total_idl_files*100:.1f}%",
+            'total_implementation_files': total_impl_files,
+            'total_generated_files': total_gen_files
+        }
+
+        return report
 
     def _extract_implemented_as_from_idl_enhanced(self, idl_path):
         """全面版ImplementedAs提取，支持所有语法结构"""
@@ -1272,117 +1383,6 @@ class ImplementationMapper:
             'matched_functions': [],
             'search_method': 'not_found'
         }
-
-    def map_idl_to_implementations(self):
-        """将IDL映射到实现文件"""
-        print("\n阶段5: 映射到实现文件")
-        print("🔍 开始映射IDL到实现文件...")
-
-        results = []
-        processed_count = 0
-
-        for idl_data in self.consolidated_data:
-            if processed_count % 200 == 0:
-                print(f"处理进度: {processed_count+1}/{len(self.consolidated_data)} ({(processed_count+1)/len(self.consolidated_data)*100:.1f}%)")
-
-            processed_count += 1
-
-            # 创建结果对象，保持原有格式
-            result = {
-                'idl_path': idl_data['idl_path'],
-                'interface': [],
-                'dictionary': [],
-                'element': [],
-                'callback': [],
-                'namespace': [],
-                'typedef': [],
-                'includes_info': {}
-            }
-
-            # 处理接口
-            for interface in idl_data.get('interface', []):
-                impl_info = self._find_implementation_for_interface(idl_data['idl_path'], interface)
-
-                enhanced_interface = dict(interface)
-                enhanced_interface['implementation_info'] = impl_info
-
-                result['interface'].append(enhanced_interface)
-
-            # 处理其他实体类型
-            for entity_type in ['dictionary', 'element', 'callback', 'namespace', 'typedef']:
-                for entity in idl_data.get(entity_type, []):
-                    impl_info = self._find_implementation_for_other_entity(
-                        idl_data['idl_path'], entity, entity_type
-                    )
-
-                    enhanced_entity = dict(entity)
-                    enhanced_entity['implementation_info'] = impl_info
-
-                    result[entity_type].append(enhanced_entity)
-
-            # 保持原有的generated_files字段
-            for entity_type in ['interface', 'dictionary', 'element', 'callback', 'namespace', 'typedef']:
-                for entity in idl_data.get(entity_type, []):
-                    # 在result中查找对应的entity并添加generated_files
-                    for result_entity in result[entity_type]:
-                        # 简单匹配策略：匹配名称
-                        entity_name = entity.get(f'{entity_type}_name', '') or entity.get('callback_name', '') or entity.get('namespace_name', '') or entity.get('value', '')
-                        result_entity_name = result_entity.get(f'{entity_type}_name', '') or result_entity.get('callback_name', '') or result_entity.get('namespace_name', '') or result_entity.get('value', '')
-
-                        if entity_name == result_entity_name:
-                            if 'generated_files' in entity:
-                                result_entity['generated_files'] = entity['generated_files']
-                            break
-
-            results.append(result)
-
-        print(f"✅ 处理完成！")
-        return results
-
-    def generate_report(self, mapped_data):
-        """生成报告"""
-        total_idl_files = len(mapped_data)
-        files_with_impl = 0
-        files_with_gen = 0
-        total_impl_files = 0
-        total_gen_files = 0
-
-        for data in mapped_data:
-            # 统计实现文件
-            has_impl_files = False
-            for entity_type in ['interface', 'dictionary', 'element', 'callback', 'namespace', 'typedef']:
-                for entity in data.get(entity_type, []):
-                    impl_info = entity.get('implementation_info', {})
-                    impl_files = impl_info.get('files', [])
-                    if impl_files:
-                        has_impl_files = True
-                        total_impl_files += len(impl_files)
-
-            if has_impl_files:
-                files_with_impl += 1
-
-            # 统计生成文件
-            has_gen_files = False
-            for entity_type in ['interface', 'dictionary', 'element', 'callback', 'namespace', 'typedef']:
-                for entity in data.get(entity_type, []):
-                    if entity.get('generated_files'):
-                        has_gen_files = True
-                        total_gen_files += len(entity.get('generated_files', []))
-
-            if has_gen_files:
-                files_with_gen += 1
-
-        report = {
-            'total_idl_files': total_idl_files,
-            'files_with_implementation': files_with_impl,
-            'files_with_generated_files': files_with_gen,
-            'implementation_success_rate': f"{files_with_impl/total_idl_files*100:.1f}%",
-            'generated_success_rate': f"{files_with_gen/total_idl_files*100:.1f}%",
-            'total_implementation_files': total_impl_files,
-            'total_generated_files': total_gen_files
-        }
-
-        return report
 
 
 def main():

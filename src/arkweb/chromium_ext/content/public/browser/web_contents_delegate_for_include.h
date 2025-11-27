@@ -40,7 +40,7 @@ virtual void OnActivateContent() {}
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 virtual void WebExtensionUpdateTab(
     int32_t tab_id,
-    const void* update_properties);
+    const NWebExtensionTabUpdateProperties* update_properties);
 virtual void WebExtensionUpdateTabUrl(int32_t tab_id, const GURL& url) {}
 virtual int32_t ExtensionGetTabId() {
   return -1;

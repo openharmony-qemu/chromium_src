@@ -14,6 +14,9 @@
  */
 
 #include "arkweb/chromium_ext/third_party/blink/renderer/platform/web_native_bridge_impl.h"
+#include "third_party/blink/renderer/platform/wtf/cross_thread_functional.h"
+
+using blink::internal::MakeCrossThreadOnceFunction;
 
 #include <algorithm>
 #include <cmath>
@@ -38,7 +41,7 @@
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "third_party/blink/public/common/thread_safe_browser_interface_broker_proxy.h"
-#include "third_party/blink/public/platform/media/video_frame_compositor.h"
+#include "third_party/blink/renderer/platform/media/video_frame_compositor.h"
 #include "third_party/blink/public/platform/web_native_client.h"
 #include "third_party/blink/public/web/web_local_frame.h"
 #include "content/child/child_process.h"
@@ -167,8 +170,9 @@ void WebNativeBridgeImpl::StartPipeline() {
       FROM_HERE,
       base::BindOnce(&VideoFrameCompositor::SetOnNewProcessedFrameCallback,
                      base::Unretained(compositor_.get()),
-                     base::BindPostTaskToCurrentDefault(base::BindOnce(
-                         &WebNativeBridgeImpl::OnFirstFrame, weak_this_))));
+                     MakeCrossThreadOnceFunction(
+                         base::BindPostTaskToCurrentDefault(base::BindOnce(
+                             &WebNativeBridgeImpl::OnFirstFrame, weak_this_)))));
 
   media::CreateTextureCB create_texture_cb = base::BindPostTaskToCurrentDefault(
       base::BindOnce(&WebNativeBridgeImpl::OnSurfaceCreated, weak_this_));

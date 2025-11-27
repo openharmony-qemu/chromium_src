@@ -936,12 +936,6 @@ class CONTENT_EXPORT WebContentsDelegate {
                      int height) {}
 #endif
 
-#if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
-  // Extension function to update tab properties
-  virtual void WebExtensionUpdateTab(
-      int32_t tab_id,
-      const struct NWebExtensionTabUpdateProperties* update_properties) = 0;
-#endif
 
   // Returns the saved related_applications web app manifest field associated
   // with the given `web_contents`. The information is saved via the

@@ -17,6 +17,7 @@
 #include <unordered_map>
 #include "audio_capturer_adapter_impl.h"
 #include "arkweb/ohos_nweb/src/nweb_hilog.h"
+#include "arkweb/ohos_adapter_ndk/arkts_adapter/arkts_hilog_adapter.h"
 
 namespace OHOS::NWeb {
 
@@ -146,6 +147,11 @@ int32_t AudioCapturerAdapterImpl::Create(
     std::string cachePath)
 {
     (void) cachePath;
+
+    ALOG_D("AudioCapturerAdapterImpl::Create start, test debug log printed by %{public}s", "arkts");
+    ALOG_I("AudioCapturerAdapterImpl::Create start, test info log printed by %{public}s", "arkts");
+    ALOG_W("AudioCapturerAdapterImpl::Create start, test warn log printed by %{public}s", "arkts");
+    ALOG_E("AudioCapturerAdapterImpl::Create start, test error log printed by %{public}s", "arkts");
 
     if (!capturerOptions) {
         WVLOG_E("capturerOptions is nullptr");

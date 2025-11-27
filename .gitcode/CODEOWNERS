@@ -295,6 +295,23 @@
 /arkweb/ohos_nweb/src/sysevent/ @StringChen
 
 # Framework
+/arkweb/ut_tools/ @cloud_nine999 @zhanghaozhi1
+/arkweb/ohos_nweb/src/capi/arkweb_error_code.h @cloud_nine999 @zhanghaozhi1
+/arkweb/ohos_nweb/src/capi/arkweb_type.h @cloud_nine999 @zhanghaozhi1
+/arkweb/ohos_nweb/src/capi/nweb_capi_export.h @cloud_nine999 @zhanghaozhi1
+/arkweb/ohos_nweb/src/cef_delegate/nweb_accessibility_node_info_impl.cc @cloud_nine999 @zhanghaozhi1
+/arkweb/ohos_nweb/src/cef_delegate/nweb_controller_handler_impl.cc @cloud_nine999 @zhanghaozhi1
+/arkweb/ohos_nweb/src/cef_delegate/nweb_default_engine_init_args_impl.cc @cloud_nine999 @zhanghaozhi1
+/arkweb/ohos_nweb/src/nweb_delegate_adapter.cc @cloud_nine999 @zhanghaozhi1
+/arkweb/ohos_nweb/src/nweb_delegate_adapter.h @cloud_nine999 @zhanghaozhi1
+/ui/views/accessibility/ @cloud_nine999 @zhanghaozhi1
+/ui/accessibility/ @cloud_nine999 @zhanghaozhi1
+/styleguide/c++/ @cloud_nine999 @zhanghaozhi1
+/services/test/echo/ @cloud_nine999 @zhanghaozhi1
+/services/test/data/ @cloud_nine999 @zhanghaozhi1
+/services/service_manager/ @cloud_nine999 @zhanghaozhi1
+/services/data_decoder/ @cloud_nine999 @zhanghaozhi1
+/services/accessibility/ @cloud_nine999 @zhanghaozhi1
 
 # Compositor
 /ui/display/win/ @defeng20201 @LXinJie1

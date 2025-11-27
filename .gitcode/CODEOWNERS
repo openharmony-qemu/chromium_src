@@ -194,6 +194,45 @@
 /base/fuchsia/filtered_service_directory.* @ringking0
 /apps/ @ringking0
 
+# EventHandler
+/arkweb/ohos_adapter_ndk/color_picker_adapter/ @jerrywangxmu
+/arkweb/ohos_adapter_ndk/pasteboard_adapter/ @jerrywangxmu
+/arkweb/ohos_nweb/src/capi/nweb_context_menus_item.h @jerrywangxmu
+/arkweb/ohos_nweb/src/capi/nweb_context_menus_on_clicked_data.h @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_context_menu_params_impl.h @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_context_menu_params_impl.cc @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_cursor_info_impl.h @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_cursor_info_impl.cc @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_date_time_chooser_impl.h @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_date_time_chooser_impl.cc @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_drag_data_impl.h @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_drag_data_impl.cc @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_file_selector_params_impl.h @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_file_selector_params_impl.cc @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_select_menu_bound_impl.h @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_select_menu_bound_impl.cc @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_select_popup_menu_impl.h @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_select_popup_menu_impl.cc @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_touch_handle_hot_zone_impl.h @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_touch_handle_hot_zone_impl.cc @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_touch_handle_state_impl.h @jerrywangxmu
+/arkweb/ohos_nweb/src/cef_delegate/nweb_touch_handle_state_impl.cc @jerrywangxmu
+
+/components/zoom/ @jerrywangxmu
+/components/password_manager/ @jerrywangxmu
+/components/autofill/ @jerrywangxmu
+/components/autofill_ai/ @jerrywangxmu
+/components/autofill_payments_strings_grdp/ @jerrywangxmu
+/components/autofill_prediction_improvements_strings_grdp/ @jerrywangxmu
+/components/autofill_strings_grdp/ @jerrywangxmu
+/components/eye_dropper/ @jerrywangxmu
+
+/ui/aura/gestures/ @jerrywangxmu
+/ui/events/gestures/ @jerrywangxmu
+/ui/events/gestures_detection/ @jerrywangxmu
+/ui/base/dragdrop/ @jerrywangxmu
+/ui/base/clipboard/ @jerrywangxmu
+
 # MultiMedia
 /arkweb/ohos_adapter_ndk/audio_adapter/ @d0ub1eh @whuqincheng
 /arkweb/ohos_adapter_ndk/camera_adapter/ @d0ub1eh @whuqincheng

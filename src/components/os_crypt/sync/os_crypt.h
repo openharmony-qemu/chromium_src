@@ -16,7 +16,7 @@
 #include "build/build_config.h"
 #include "build/chromecast_buildflags.h"
 #include "crypto/subtle_passkey.h"
-#include "third_party/nearby/src/internal/crypto_cros/symmetric_key.h"
+#include "crypto/symmetric_key.h"
 #include "components/os_crypt/sync/key_storage_config_linux.h"
 
 #if BUILDFLAG(IS_APPLE)

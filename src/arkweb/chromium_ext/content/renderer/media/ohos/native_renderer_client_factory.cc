@@ -43,10 +43,6 @@ std::unique_ptr<media::Renderer> NativeRendererClientFactory::CreateRenderer(
       std::move(native_texture_wrapper), video_renderer_sink);
 }
 
-media::MediaResource::Type
-NativeRendererClientFactory::GetRequiredMediaResourceType() {
-  return media::MediaResource::Type::KUrl;
-}
 
 }  // namespace content
                        

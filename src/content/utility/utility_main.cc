@@ -39,7 +39,7 @@
 #include "services/tracing/public/cpp/trace_startup.h"
 #include "services/video_effects/public/cpp/buildflags.h"
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || USE_VAAPI
 #include "base/file_descriptor_store.h"
 #include "base/files/file_util.h"
 #include "base/pickle.h"
@@ -77,7 +77,7 @@
 #include "printing/sandbox/print_backend_sandbox_hook_linux.h"
 #endif
 
-#if BUILDFLAG(ENABLE_SCREEN_AI_SERVICE)
+#if defined(ENABLE_SCREEN_AI_SERVICE) && ENABLE_SCREEN_AI_SERVICE
 #include "services/screen_ai/public/cpp/utilities.h"  // nogncheck
 #include "services/screen_ai/sandbox/screen_ai_sandbox_hook_linux.h"  // nogncheck
 #endif
@@ -301,7 +301,7 @@ int UtilityMain(MainFunctionParams parameters) {
     CHECK(on_device_model::PreSandboxInit());
   }
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || defined(IS_OHOS) && USE_VAAPI
 
 #if BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION) && BUILDFLAG(USE_VAAPI)
   // Regardless of the sandbox status, the VaapiWrapper needs to be initialized
@@ -357,7 +357,7 @@ int UtilityMain(MainFunctionParams parameters) {
       break;
 #endif  // BUILDFLAG(ENABLE_ON_DEVICE_TRANSLATION) && BUILDFLAG(IS_LINUX)
     case sandbox::mojom::Sandbox::kScreenAI:
-#if BUILDFLAG(ENABLE_SCREEN_AI_SERVICE)
+#if defined(ENABLE_SCREEN_AI_SERVICE) && ENABLE_SCREEN_AI_SERVICE
       pre_sandbox_hook =
           base::BindOnce(&screen_ai::ScreenAIPreSandboxHook,
                          parameters.command_line->GetSwitchValuePath(

@@ -67,6 +67,7 @@ def is_test_idl_file(file_path: str) -> bool:
 
     return False
 
+
 def collect_all_idl_files(root_dir: str) -> Set[str]:
     """收集所有IDL文件，排除测试相关文件"""
     print(f"🔍 开始收集IDL文件，根目录: {root_dir}")
@@ -96,6 +97,7 @@ def collect_all_idl_files(root_dir: str) -> Set[str]:
 
     return idl_files
 
+
 class ConsolidatedIDLProcessor:
     def __init__(self, out_dir):
         self.out_dir = out_dir
@@ -120,117 +122,6 @@ class ConsolidatedIDLProcessor:
 
         self.includes_map = defaultdict(set)
         self.mixin_to_targets = defaultdict(set)
-
-    # ========== IDL解析功能 (来自complete_idl_parser.py) ==========
-
-    def extract_implemented_as_from_idl(self, idl_path: str):
-        """全面地从IDL文件中提取ImplementedAs信息，支持所有语法结构"""
-        implemented_as_map = {}
-        try:
-            with open(idl_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-
-            # 1. 接口、命名空间、字典、回调级别 (包括partial)
-            pattern1 = r'\[[^\]]*ImplementedAs\s*=\s*([^\s,\]]+)[^\]]*\]\s*(?:partial\s+)?(interface|namespace|callback|dictionary)\s+(\w+)'
-
-            # 2. Mixin级别
-            pattern2 = r'\[[^\]]*ImplementedAs\s*=\s*([^\s,\]]+)[^\]]*\]\s*(?:partial\s+)?(interface\s+mixin|namespace\s+mixin)\s+(\w+)'
-
-            # 3. 枚举级别
-            pattern3 = r'\[[^\]]*ImplementedAs\s*=\s*([^\s,\]]+)[^\]]*\]\s*(?:partial\s+)?enum\s+(\w+)'
-
-            # 4. 属性级别
-            pattern4 = r'\[[^\]]*ImplementedAs\s*=\s*([^\s,\]]+)[^\]]*\]\s*(readonly\s+)?attribute\s+[^;]+\s+(\w+)\s*;'
-
-            # 5. 方法级别 (暂时不实现，因为复杂度较高且相对少见)
-            # pattern5 = r'\[[^\]]*ImplementedAs\s*=\s*([^\s,\]]+)[^\]]*\]\s*(?:static\s+)?[^;]*\s+(\w+)\s*\(.*?\)\s*;'
-
-            patterns_to_process = [
-                (pattern1, None, lambda m: m.group(3)),  # entity_type在group2中
-                (pattern2, None, lambda m: m.group(3)),  # entity_type在group2中
-                (pattern3, 'enum', lambda m: m.group(2)),  # entity_type是'enum'
-                (pattern4, 'attribute', lambda m: m.group(3))   # entity_type是'attribute', name在group3
-            ]
-
-            for pattern, entity_type, extract_name in patterns_to_process:
-                matches = re.finditer(pattern, content, re.MULTILINE | re.IGNORECASE)
-
-                for match in matches:
-                    implemented_as = match.group(1).strip().strip('"\'')
-
-                    if entity_type is None:
-                        # 对于pattern1和pattern2，entity_type在group中
-                        actual_entity_type = match.group(2).lower().replace(' ', '')
-                        if actual_entity_type == 'interfacemixin':
-                            actual_entity_type = 'interface_mixin'
-                        elif actual_entity_type == 'namespacemixin':
-                            actual_entity_type = 'namespace_mixin'
-                        entity_name = match.group(3)
-                    else:
-                        actual_entity_type = entity_type
-                        entity_name = extract_name(match)
-
-                    key = f"{actual_entity_type}:{entity_name}"
-                    implemented_as_map[key] = implemented_as
-
-        except Exception as e:
-            print(f"⚠️ 读取IDL文件 {idl_path} 时出错: {e}")
-
-        return implemented_as_map
-
-    def extract_typedef_from_idl(self, idl_path: str):
-        """从IDL文件中提取typedef的完整定义"""
-        typedef_map = {}
-        try:
-            with open(idl_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-            content = re.sub(r'//.*', '', content)
-            content = re.sub(r'/\*.*?\*/', '', content, flags=re.DOTALL)
-            typedef_pattern = r'typedef\s+([^;]+)\s+([^;]+);'
-            matches = re.finditer(typedef_pattern, content, re.MULTILINE)
-            for match in matches:
-                type_def = match.group(1).strip()
-                alias_name = match.group(2).strip()
-                typedef_map[alias_name] = type_def
-        except Exception as e:
-            print(f"⚠️ 提取typedef时出错 {idl_path}: {e}")
-        return typedef_map
-
-    def parse_idl_file(self, file_path):
-        """解析单个IDL文件，完整功能+ImplementedAs提取"""
-        try:
-            if not os.path.exists(file_path):
-                error_msg = f"文件不存在: {file_path}"
-                self.failed_files.append({'file': file_path, 'error': error_msg})
-                return self._create_empty_result(file_path, error_msg)
-
-            implemented_as_map = self.extract_implemented_as_from_idl(file_path)
-            typedef_definitions = self.extract_typedef_from_idl(file_path)
-
-            ast = ParseFile(self.parser, file_path)
-            if not ast:
-                error_msg = f"解析失败，AST为空"
-                self.failed_files.append({'file': file_path, 'error': error_msg})
-                return self._create_empty_result(file_path, error_msg)
-
-            result = {
-                "idl_path": file_path,
-                "interface": [],
-                "dictionary": [],
-                "element": [],
-                "callback": [],
-                "namespace": [],
-                "typedef": [],
-                "includes_info": {}
-            }
-
-            self._extract_definitions(ast, result, implemented_as_map, typedef_definitions)
-            return result
-
-        except Exception as e:
-            error_msg = f"解析错误: {str(e)}"
-            self.failed_files.append({'file': file_path, 'error': error_msg})
-            return self._create_empty_result(file_path, error_msg)
 
     def _extract_definitions(self, node, result, implemented_as_map, typedef_definitions):
         """从AST中提取IDL定义，添加ImplementedAs支持"""
@@ -464,25 +355,6 @@ class ConsolidatedIDLProcessor:
             "parse_error": error_msg
         }
 
-    # ========== 文件映射功能 (来自perfect_file_mapper.py) ==========
-
-    def load_gn_generated_files(self):
-        """加载GN文件中定义的实际生成文件"""
-        print("🔍 加载GN文件中定义的实际生成文件...")
-        gn_files = {
-            'core': os.path.join(args.source, "src/third_party/blink/renderer/bindings/generated_in_core.gni"),
-            'modules': os.path.join(args.source, "src/third_party/blink/renderer/bindings/generated_in_modules.gni"),
-            'extensions_chromeos': os.path.join(args.source, "src/third_party/blink/renderer/bindings/generated_in_extensions_chromeos.gni"),
-            'extensions_webview': os.path.join(args.source, "src/third_party/blink/renderer/bindings/generated_in_extensions_webview.gni"),
-        }
-
-        for component, gn_file_path in gn_files.items():
-            if os.path.exists(gn_file_path):
-                self._parse_gn_file_enhanced(gn_file_path, component)
-
-        total_files = sum(len(files) for files_dict in self.generated_files.values() for files in files_dict.values())
-        print(f"✅ 从GN文件加载了 {total_files} 个生成文件定义")
-
     def _parse_gn_file_enhanced(self, gn_file_path, component):
         """增强的GN文件解析，处理条件编译块"""
         try:
@@ -578,6 +450,138 @@ class ConsolidatedIDLProcessor:
             return entity_name
         return None
 
+    def _get_all_files(self, files):
+        """获取所有文件，不区分头文件和源文件"""
+        return sorted(list(files))
+
+    # ========== IDL解析功能 (来自complete_idl_parser.py) ==========
+    def extract_implemented_as_from_idl(self, idl_path: str):
+        """全面地从IDL文件中提取ImplementedAs信息，支持所有语法结构"""
+        implemented_as_map = {}
+        try:
+            with open(idl_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            # 1. 接口、命名空间、字典、回调级别 (包括partial)
+            pattern1 = r'\[[^\]]*ImplementedAs\s*=\s*([^\s,\]]+)[^\]]*\]\s*(?:partial\s+)?(interface|namespace|callback|dictionary)\s+(\w+)'
+
+            # 2. Mixin级别
+            pattern2 = r'\[[^\]]*ImplementedAs\s*=\s*([^\s,\]]+)[^\]]*\]\s*(?:partial\s+)?(interface\s+mixin|namespace\s+mixin)\s+(\w+)'
+
+            # 3. 枚举级别
+            pattern3 = r'\[[^\]]*ImplementedAs\s*=\s*([^\s,\]]+)[^\]]*\]\s*(?:partial\s+)?enum\s+(\w+)'
+
+            # 4. 属性级别
+            pattern4 = r'\[[^\]]*ImplementedAs\s*=\s*([^\s,\]]+)[^\]]*\]\s*(readonly\s+)?attribute\s+[^;]+\s+(\w+)\s*;'
+
+            # 5. 方法级别 (暂时不实现，因为复杂度较高且相对少见)
+            # pattern5 = r'\[[^\]]*ImplementedAs\s*=\s*([^\s,\]]+)[^\]]*\]\s*(?:static\s+)?[^;]*\s+(\w+)\s*\(.*?\)\s*;'
+
+            patterns_to_process = [
+                (pattern1, None, lambda m: m.group(3)),  # entity_type在group2中
+                (pattern2, None, lambda m: m.group(3)),  # entity_type在group2中
+                (pattern3, 'enum', lambda m: m.group(2)),  # entity_type是'enum'
+                (pattern4, 'attribute', lambda m: m.group(3))   # entity_type是'attribute', name在group3
+            ]
+
+            for pattern, entity_type, extract_name in patterns_to_process:
+                matches = re.finditer(pattern, content, re.MULTILINE | re.IGNORECASE)
+
+                for match in matches:
+                    implemented_as = match.group(1).strip().strip('"\'')
+
+                    if entity_type is None:
+                        # 对于pattern1和pattern2，entity_type在group中
+                        actual_entity_type = match.group(2).lower().replace(' ', '')
+                        if actual_entity_type == 'interfacemixin':
+                            actual_entity_type = 'interface_mixin'
+                        elif actual_entity_type == 'namespacemixin':
+                            actual_entity_type = 'namespace_mixin'
+                        entity_name = match.group(3)
+                    else:
+                        actual_entity_type = entity_type
+                        entity_name = extract_name(match)
+
+                    key = f"{actual_entity_type}:{entity_name}"
+                    implemented_as_map[key] = implemented_as
+
+        except Exception as e:
+            print(f"⚠️ 读取IDL文件 {idl_path} 时出错: {e}")
+
+        return implemented_as_map
+
+    def extract_typedef_from_idl(self, idl_path: str):
+        """从IDL文件中提取typedef的完整定义"""
+        typedef_map = {}
+        try:
+            with open(idl_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            content = re.sub(r'//.*', '', content)
+            content = re.sub(r'/\*.*?\*/', '', content, flags=re.DOTALL)
+            typedef_pattern = r'typedef\s+([^;]+)\s+([^;]+);'
+            matches = re.finditer(typedef_pattern, content, re.MULTILINE)
+            for match in matches:
+                type_def = match.group(1).strip()
+                alias_name = match.group(2).strip()
+                typedef_map[alias_name] = type_def
+        except Exception as e:
+            print(f"⚠️ 提取typedef时出错 {idl_path}: {e}")
+        return typedef_map
+
+    def parse_idl_file(self, file_path):
+        """解析单个IDL文件，完整功能+ImplementedAs提取"""
+        try:
+            if not os.path.exists(file_path):
+                error_msg = f"文件不存在: {file_path}"
+                self.failed_files.append({'file': file_path, 'error': error_msg})
+                return self._create_empty_result(file_path, error_msg)
+
+            implemented_as_map = self.extract_implemented_as_from_idl(file_path)
+            typedef_definitions = self.extract_typedef_from_idl(file_path)
+
+            ast = ParseFile(self.parser, file_path)
+            if not ast:
+                error_msg = f"解析失败，AST为空"
+                self.failed_files.append({'file': file_path, 'error': error_msg})
+                return self._create_empty_result(file_path, error_msg)
+
+            result = {
+                "idl_path": file_path,
+                "interface": [],
+                "dictionary": [],
+                "element": [],
+                "callback": [],
+                "namespace": [],
+                "typedef": [],
+                "includes_info": {}
+            }
+
+            self._extract_definitions(ast, result, implemented_as_map, typedef_definitions)
+            return result
+
+        except Exception as e:
+            error_msg = f"解析错误: {str(e)}"
+            self.failed_files.append({'file': file_path, 'error': error_msg})
+            return self._create_empty_result(file_path, error_msg)
+
+    # ========== 文件映射功能 (来自perfect_file_mapper.py) ==========
+    def load_gn_generated_files(self):
+        """加载GN文件中定义的实际生成文件"""
+        print("🔍 加载GN文件中定义的实际生成文件...")
+        gn_files = {
+            'core': os.path.join(args.source, "src/third_party/blink/renderer/bindings/generated_in_core.gni"),
+            'modules': os.path.join(args.source, "src/third_party/blink/renderer/bindings/generated_in_modules.gni"),
+            'extensions_chromeos': os.path.join(args.source, "src/third_party/blink/renderer/bindings/generated_in_extensions_chromeos.gni"),
+            'extensions_webview': os.path.join(args.source, "src/third_party/blink/renderer/bindings/generated_in_extensions_webview.gni"),
+        }
+
+        for component, gn_file_path in gn_files.items():
+            if os.path.exists(gn_file_path):
+                self._parse_gn_file_enhanced(gn_file_path, component)
+
+        total_files = sum(len(files) for files_dict in self.generated_files.values() for files in files_dict.values())
+        print(f"✅ 从GN文件加载了 {total_files} 个生成文件定义")
+
     def parse_includes_statements(self, idl_data):
         """解析所有IDL文件中的includes语句"""
         print("🔍 解析IDL文件中的includes语句...")
@@ -636,10 +640,6 @@ class ConsolidatedIDLProcessor:
 
         return []
 
-    def _get_all_files(self, files):
-        """获取所有文件，不区分头文件和源文件"""
-        return sorted(list(files))
-
     def map_idl_to_generated_files(self, idl_data):
         """将IDL映射到生成文件"""
         mapped_idl_data = []
@@ -692,7 +692,6 @@ class ConsolidatedIDLProcessor:
         return mapped_idl_data
 
     # ========== 主处理流程 ==========
-
     def process_all_files(self, file_list_path, output_dir):
         """处理所有IDL文件并映射到生成文件"""
         # 读取文件列表
@@ -1384,6 +1383,7 @@ class ImplementationMapper:
         }
 
         return report
+
 
 def main():
     """主函数"""

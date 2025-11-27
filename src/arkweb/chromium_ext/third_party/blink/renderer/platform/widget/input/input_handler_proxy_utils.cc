@@ -30,6 +30,10 @@
 #include "arkweb/chromium_ext/third_party/blink/renderer/platform/widget/input/elastic_overscroll_controller_utils.h"
 #endif
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "base/trace_event/trace_event.h"
+#endif
+
 namespace blink {
 
 #define NO_NATIVE_TYPE 100

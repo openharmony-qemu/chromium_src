@@ -135,6 +135,7 @@ TEST_F(BatteryMgrClientAdapterImplTest, StartListen_Fail_OH_CommonEvent_Subscrib
   adapter_->RegBatteryEvent(callback);
   bool result = adapter_->StartListen();
   EXPECT_FALSE(result);
+
   g_mock_OH_CommonEvent_DestroySubscribeInfo = nullptr;
   g_mock_OH_CommonEvent_DestroySubscriber = nullptr;
 }
@@ -223,8 +224,8 @@ TEST_F(BatteryMgrClientAdapterImplTest, StopListen_UnSubscribe_Success) {
   
   ASSERT_EQ(adapter_->commonEventSubscriber_, nullptr);
   ASSERT_EQ(adapter_->commonEventSubscriberInfo_, nullptr);
-  g_mock_OH_CommonEvent_DestroySubscribeInfo = nullptr;
   g_mock_OH_CommonEvent_DestroySubscriber = nullptr;
+  g_mock_OH_CommonEvent_DestroySubscribeInfo = nullptr;
 }
 
 TEST_F(BatteryMgrClientAdapterImplTest, StopListen_Success) {
@@ -243,6 +244,7 @@ TEST_F(BatteryMgrClientAdapterImplTest, StopListen_Success) {
   
   ASSERT_EQ(adapter_->commonEventSubscriber_, nullptr);
   ASSERT_EQ(adapter_->commonEventSubscriberInfo_, nullptr);
+
   g_mock_OH_CommonEvent_DestroySubscribeInfo = nullptr;
   g_mock_OH_CommonEvent_DestroySubscriber = nullptr;
 }

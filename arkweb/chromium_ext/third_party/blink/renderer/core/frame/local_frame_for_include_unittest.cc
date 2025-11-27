@@ -71,7 +71,7 @@ TEST_F(LocalFrameUtilTest, SetZoomFactorsExt_NonTablet) {
 
   local_frame_->scale_limits_min_changed_ = false;
   local_frame_->scale_limits_max_changed_ = false;
-  
+
   LocalFrameUtil::SetLayoutAndTextZoomFactorsExt(
       local_frame_, layout_zoom, text_zoom, layout_zoom_changed, page_);
 
@@ -93,7 +93,7 @@ TEST_F(LocalFrameUtilTest, SetZoomFactorsExt_Tablet_ZoomLessOrEqualOne) {
 
   local_frame_->scale_limits_min_changed_ = false;
   local_frame_->scale_limits_max_changed_ = false;
-  
+
   LocalFrameUtil::SetLayoutAndTextZoomFactorsExt(
       local_frame_, layout_zoom, text_zoom, layout_zoom_changed, page_);
 
@@ -108,14 +108,14 @@ TEST_F(LocalFrameUtilTest, SetZoomFactorsExt_Tablet_NoZoomChange) {
   EXPECT_CALL(system_properties_mock, IsTabletDevice())
       .WillOnce(testing::Return(true))
       .WillRepeatedly(testing::Return(true));
-  
+
   float layout_zoom = 1.5f;
   float text_zoom = 1.2f;
   bool layout_zoom_changed = false;
 
   local_frame_->scale_limits_min_changed_ = false;
   local_frame_->scale_limits_max_changed_ = false;
-  
+
   LocalFrameUtil::SetLayoutAndTextZoomFactorsExt(
       local_frame_, layout_zoom, text_zoom, layout_zoom_changed, page_);
 
@@ -189,17 +189,17 @@ TEST_F(LocalFrameUtilTest, SetZoomFactorsExt_Tablet_ZoomGreaterThanOne_AlreadyCh
   EXPECT_CALL(system_properties_mock, IsTabletDevice())
       .WillOnce(testing::Return(true))
       .WillRepeatedly(testing::Return(true));
- 
+
   float layout_zoom = 1.5f;
   float text_zoom = 1.2f;
   bool layout_zoom_changed = true;
- 
+
   local_frame_->scale_limits_min_changed_ = true;
   local_frame_->scale_limits_max_changed_ = false;
-   
+
   LocalFrameUtil::SetLayoutAndTextZoomFactorsExt(
       local_frame_, layout_zoom, text_zoom, layout_zoom_changed, page_);
- 
+
   EXPECT_TRUE(local_frame_->scale_limits_min_changed_);
   EXPECT_FALSE(local_frame_->scale_limits_max_changed_);
   base::ohos::SysInfoUtilsMock::mockIsTabletDevice = false;
@@ -233,7 +233,6 @@ TEST_F(LocalFrameUtilTest, SetZoomFactorsExt_NotTabletDevice) {
   EXPECT_FALSE(local_frame_->scale_limits_max_changed_);
   base::ohos::SysInfoUtilsMock::mockIsTabletDevice = false;
 }
-
 
 TEST_F(LocalFrameUtilTest, SetZoomFactorsExt_Tablet_ZoomMoreAndNoZoomChange) {
   base::ohos::SysInfoUtilsMock::mockIsTabletDevice = true;

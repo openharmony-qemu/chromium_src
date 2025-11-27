@@ -59,7 +59,8 @@ protected:
 
         base::ScopedPlatformFile scoped_handle(read_file.TakePlatformFile());
 
-        mojo::ScopedHandle script_handle = mojo::WrapPlatformFile(std::move(scoped_handle));
+        mojo::ScopedHandle script_handle =
+                            mojo::WrapPlatformFile(std::move(scoped_handle));
 
         return script_handle;
     }
@@ -79,7 +80,7 @@ protected:
                 const WTF::String& url,
                 const WTF::String& script,
                 mojom::blink::CacheOptionsPtr cache_options,
-               LocalFrameMojoHandler::GenerateCodeCacheCallback callback)
+                LocalFrameMojoHandler::GenerateCodeCacheCallback callback)
     {
         handler_->GenerateCodeCache(url, script,
                             std::move(cache_options), std::move(callback));
@@ -135,9 +136,7 @@ TEST_F(ArkWebLocalFrameMojoHandlerExtTest, GetImageFromCache_EmptyUrl) {
 }
 
 TEST_F(ArkWebLocalFrameMojoHandlerExtTest, GenerateCodeCache_Success) {
-
     auto cache_options = mojom::blink::CacheOptions::New();
-
     EXPECT_CALL(*mock_callback_, GenerateCodeCacheCallback(testing::Eq(0)))
         .Times(1);
 
@@ -152,9 +151,7 @@ TEST_F(ArkWebLocalFrameMojoHandlerExtTest, GenerateCodeCache_Success) {
 }
 
 TEST_F(ArkWebLocalFrameMojoHandlerExtTest, GenerateCodeCache_EmptyScript) {
-
     auto cache_options = mojom::blink::CacheOptions::New();
-
     EXPECT_CALL(*mock_callback_, GenerateCodeCacheCallback(testing::Eq(0)))
         .Times(1);
 
@@ -169,9 +166,7 @@ TEST_F(ArkWebLocalFrameMojoHandlerExtTest, GenerateCodeCache_EmptyScript) {
 }
 
 TEST_F(ArkWebLocalFrameMojoHandlerExtTest, GenerateCodeCache_EmptyUrl) {
-
     auto cache_options = mojom::blink::CacheOptions::New();
-
     EXPECT_CALL(*mock_callback_, GenerateCodeCacheCallback(testing::Eq(0)))
         .Times(1);
 
@@ -186,12 +181,10 @@ TEST_F(ArkWebLocalFrameMojoHandlerExtTest, GenerateCodeCache_EmptyUrl) {
 }
 
 TEST_F(ArkWebLocalFrameMojoHandlerExtTest, JavaScriptExecuteRequestExt_Success) {
-
     const std::string kTestScript = "1 + 2;";
     const uint64_t kScriptLength = kTestScript.size();
 
     mojo::ScopedHandle script_handle = CreateMockHandle(kTestScript);
-
     auto callback = base::BindOnce(&MockCallbackHelper::JavaScriptCallback,
                                 base::Unretained(mock_callback_.get()));
 
@@ -205,7 +198,6 @@ TEST_F(ArkWebLocalFrameMojoHandlerExtTest, JavaScriptExecuteRequestExt_Success) 
 }
 
 TEST_F(ArkWebLocalFrameMojoHandlerExtTest, JavaScriptExecuteRequestExt_NoResult) {
-
     const std::string kTestScript = "console.log('Hello');";
     const uint64_t kScriptLength = kTestScript.size();
 

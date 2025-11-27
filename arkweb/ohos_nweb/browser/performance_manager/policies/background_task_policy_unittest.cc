@@ -62,7 +62,7 @@ class GraphMock : public performance_manager::GraphImpl {
     }
 };
 
-class TestableGraphMock: public GraphMock {
+class TestableGraphMock : public GraphMock {
 public:
     using GraphMock::lifecycle_state_;
     void SetLifecycleStatePublic() { SetLifecycleState(); }

@@ -282,7 +282,7 @@ TEST_F(AudioCapturerAdapterImplTest, GetFrameCount_NotSuccess) {
   adapter_->audio_capturer_ = reinterpret_cast<OH_AudioCapturer*>(0x2345);
   int32_t frameCountValue = 10;
   EXPECT_CALL(MockAudioCommonEventSupport::GetInstance(),
-      OH_AudioCapturer_GetFrameSizeInCallback(adapter_->audio_capturer_,_))
+      OH_AudioCapturer_GetFrameSizeInCallback(adapter_->audio_capturer_, _))
         .WillOnce(DoAll(SetArgPointee<1>(frameCountValue), Return(AUDIOSTREAM_ERROR_SYSTEM)));
   EXPECT_EQ(adapter_->GetFrameCount(frameCount), AUDIO_ERROR);
   EXPECT_EQ(frameCount, 0U);
@@ -293,7 +293,7 @@ TEST_F(AudioCapturerAdapterImplTest, GetAudioTime_ReturnsError2) {
 
   int64_t timestamp = 10;
   EXPECT_CALL(
-      MockAudioCommonEventSupport::GetInstance(), OH_AudioCapturer_GetTimestamp(adapter_->audio_capturer_,_,_,_))
+      MockAudioCommonEventSupport::GetInstance(), OH_AudioCapturer_GetTimestamp(adapter_->audio_capturer_, _, _, _))
       .WillOnce(DoAll(SetArgPointee<3>(timestamp), Return(AUDIOSTREAM_ERROR_SYSTEM)));
   EXPECT_EQ(adapter_->GetAudioTime(), AUDIO_ERROR);
 }
@@ -303,7 +303,7 @@ TEST_F(AudioCapturerAdapterImplTest, GetAudioTime_Success) {
   adapter_->audio_capturer_ = reinterpret_cast<OH_AudioCapturer*>(0x2345);
   int64_t timestamp = 10;
   EXPECT_CALL(
-      MockAudioCommonEventSupport::GetInstance(), OH_AudioCapturer_GetTimestamp(adapter_->audio_capturer_,_,_,_))
+      MockAudioCommonEventSupport::GetInstance(), OH_AudioCapturer_GetTimestamp(adapter_->audio_capturer_, _, _, _))
       .WillOnce(DoAll(SetArgPointee<3>(timestamp), Return(AUDIOSTREAM_SUCCESS)));
   EXPECT_EQ(adapter_->GetAudioTime(), timestamp);
 }

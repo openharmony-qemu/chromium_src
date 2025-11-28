@@ -107,7 +107,9 @@ TEST_F(JsCommunicationHostUtilsTest, AddHeadReadyPendingJavaScript001)
   JsCommunicationHostUtils utils(host);
   std::u16string script = u"123";
   std::vector<std::string> rules = {"0"};
-  JsCommunicationHost::AddScriptResult result = utils.AddHeadReadyPendingJavaScript(script, rules);
+  std::vector<std::pair<std::string, std::string>> script_regex_rules;
+  JsCommunicationHost::AddScriptResult result = utils.AddHeadReadyPendingJavaScript(
+    script, rules, script_regex_rules);
   EXPECT_FALSE(result.error_message->empty());
 }
 
@@ -117,7 +119,9 @@ TEST_F(JsCommunicationHostUtilsTest, AddDocumentEndPendingJavaScript001)
   JsCommunicationHostUtils utils(host);
   std::u16string script = u"123";
   std::vector<std::string> rules = {"0"};
-  JsCommunicationHost::AddScriptResult result = utils.AddDocumentEndPendingJavaScript(script, rules);
+  std::vector<std::pair<std::string, std::string>> script_regex_rules;
+  JsCommunicationHost::AddScriptResult result = utils.AddDocumentEndPendingJavaScript(
+    script, rules, script_regex_rules);
   EXPECT_FALSE(result.error_message->empty());
 }
 
@@ -127,7 +131,9 @@ TEST_F(JsCommunicationHostUtilsTest, AddDocumentStartPendingJavaScript001)
   JsCommunicationHostUtils utils(host);
   std::u16string script = u"123";
   std::vector<std::string> rules = {"0"};
-  JsCommunicationHost::AddScriptResult result = utils.AddDocumentStartPendingJavaScript(script, rules);
+  std::vector<std::pair<std::string, std::string>> script_regex_rules;
+  JsCommunicationHost::AddScriptResult result = utils.AddDocumentStartPendingJavaScript(
+    script, rules, script_regex_rules);
   EXPECT_FALSE(result.error_message->empty());
 }
 #endif

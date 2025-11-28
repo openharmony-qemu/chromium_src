@@ -3028,61 +3028,145 @@ TEST_F(NWebImplTest, JavaScriptOnDocumentEnd002) {
 
 TEST_F(NWebImplTest, JavaScriptOnDocumentStartByOrder001) {
   const ScriptItems scriptItems;
+  const ScriptRegexItems scriptRegexItems;
   const ScriptItemsByOrder scriptItemsByOrder;
   EXPECT_NE(nweb_impl_, nullptr);
   nweb_impl_->nweb_delegate_ = nullptr;
-  EXPECT_CALL(*mock_delegate_, JavaScriptOnDocumentStartByOrder(scriptItems, scriptItemsByOrder)).Times(0);
+  EXPECT_CALL(*mock_delegate_, JavaScriptOnDocumentStartByOrder(
+    scriptItems, scriptRegexItems, scriptItemsByOrder)).Times(0);
   nweb_impl_->JavaScriptOnDocumentStartByOrder(scriptItems, scriptItemsByOrder);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
 }
 
 TEST_F(NWebImplTest, JavaScriptOnDocumentStartByOrder002) {
   const ScriptItems scriptItems;
+  const ScriptRegexItems scriptRegexItems;
   const ScriptItemsByOrder scriptItemsByOrder;
   EXPECT_NE(nweb_impl_, nullptr);
   nweb_impl_->nweb_delegate_ = mock_delegate_;
-  EXPECT_CALL(*mock_delegate_, JavaScriptOnDocumentStartByOrder(scriptItems, scriptItemsByOrder)).Times(1);
+  EXPECT_CALL(*mock_delegate_, JavaScriptOnDocumentStartByOrder(
+    scriptItems, scriptRegexItems, scriptItemsByOrder)).Times(1);
   nweb_impl_->JavaScriptOnDocumentStartByOrder(scriptItems, scriptItemsByOrder);
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
 }
 
 TEST_F(NWebImplTest, JavaScriptOnDocumentEndByOrder001) {
   const ScriptItems scriptItems;
+  const ScriptRegexItems scriptRegexItems;
   const ScriptItemsByOrder scriptItemsByOrder;
   EXPECT_NE(nweb_impl_, nullptr);
   nweb_impl_->nweb_delegate_ = nullptr;
-  EXPECT_CALL(*mock_delegate_, JavaScriptOnDocumentEndByOrder(scriptItems, scriptItemsByOrder)).Times(0);
+  EXPECT_CALL(*mock_delegate_, JavaScriptOnDocumentEndByOrder(
+    scriptItems, scriptRegexItems, scriptItemsByOrder)).Times(0);
   nweb_impl_->JavaScriptOnDocumentEndByOrder(scriptItems, scriptItemsByOrder);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
 }
 
 TEST_F(NWebImplTest, JavaScriptOnDocumentEndByOrder002) {
   const ScriptItems scriptItems;
+  const ScriptRegexItems scriptRegexItems;
   const ScriptItemsByOrder scriptItemsByOrder;
   EXPECT_NE(nweb_impl_, nullptr);
   nweb_impl_->nweb_delegate_ = mock_delegate_;
-  EXPECT_CALL(*mock_delegate_, JavaScriptOnDocumentEndByOrder(scriptItems, scriptItemsByOrder)).Times(1);
+  EXPECT_CALL(*mock_delegate_, JavaScriptOnDocumentEndByOrder(
+    scriptItems, scriptRegexItems, scriptItemsByOrder)).Times(1);
   nweb_impl_->JavaScriptOnDocumentEndByOrder(scriptItems, scriptItemsByOrder);
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
 }
 
 TEST_F(NWebImplTest, JavaScriptOnHeadReadyByOrder001) {
   const ScriptItems scriptItems;
+  const ScriptRegexItems scriptRegexItems;
   const ScriptItemsByOrder scriptItemsByOrder;
   EXPECT_NE(nweb_impl_, nullptr);
   nweb_impl_->nweb_delegate_ = nullptr;
-  EXPECT_CALL(*mock_delegate_, JavaScriptOnHeadReadyByOrder(scriptItems, scriptItemsByOrder)).Times(0);
+  EXPECT_CALL(*mock_delegate_, JavaScriptOnHeadReadyByOrder(
+    scriptItems, scriptRegexItems, scriptItemsByOrder)).Times(0);
   nweb_impl_->JavaScriptOnHeadReadyByOrder(scriptItems, scriptItemsByOrder);
   EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
 }
 
 TEST_F(NWebImplTest, JavaScriptOnHeadReadyByOrder002) {
   const ScriptItems scriptItems;
+  const ScriptRegexItems scriptRegexItems;
   const ScriptItemsByOrder scriptItemsByOrder;
   EXPECT_NE(nweb_impl_, nullptr);
   nweb_impl_->nweb_delegate_ = mock_delegate_;
-  EXPECT_CALL(*mock_delegate_, JavaScriptOnHeadReadyByOrder(scriptItems, scriptItemsByOrder)).Times(1);
+  EXPECT_CALL(*mock_delegate_, JavaScriptOnHeadReadyByOrder(
+    scriptItems, scriptRegexItems, scriptItemsByOrder)).Times(1);
   nweb_impl_->JavaScriptOnHeadReadyByOrder(scriptItems, scriptItemsByOrder);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, JavaScriptOnDocumentStartByOrderV2001) {
+  const ScriptItems scriptItems;
+  const ScriptRegexItems scriptRegexItems;
+  const ScriptItemsByOrder scriptItemsByOrder;
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, JavaScriptOnDocumentStartByOrder(
+    scriptItems, scriptRegexItems, scriptItemsByOrder)).Times(0);
+  nweb_impl_->JavaScriptOnDocumentStartByOrderV2(scriptItems, scriptRegexItems, scriptItemsByOrder);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, JavaScriptOnDocumentStartByOrderV2002) {
+  const ScriptItems scriptItems;
+  const ScriptRegexItems scriptRegexItems;
+  const ScriptItemsByOrder scriptItemsByOrder;
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, JavaScriptOnDocumentStartByOrder(
+    scriptItems, scriptRegexItems, scriptItemsByOrder)).Times(1);
+  nweb_impl_->JavaScriptOnDocumentStartByOrderV2(scriptItems, scriptRegexItems, scriptItemsByOrder);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, JavaScriptOnDocumentEndByOrderV2001) {
+  const ScriptItems scriptItems;
+  const ScriptRegexItems scriptRegexItems;
+  const ScriptItemsByOrder scriptItemsByOrder;
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, JavaScriptOnDocumentEndByOrder(
+    scriptItems, scriptRegexItems, scriptItemsByOrder)).Times(0);
+  nweb_impl_->JavaScriptOnDocumentEndByOrderV2(scriptItems, scriptRegexItems, scriptItemsByOrder);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, JavaScriptOnDocumentEndByOrderV2002) {
+  const ScriptItems scriptItems;
+  const ScriptRegexItems scriptRegexItems;
+  const ScriptItemsByOrder scriptItemsByOrder;
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, JavaScriptOnDocumentEndByOrder(
+    scriptItems, scriptRegexItems, scriptItemsByOrder)).Times(1);
+  nweb_impl_->JavaScriptOnDocumentEndByOrderV2(scriptItems, scriptRegexItems, scriptItemsByOrder);
+  EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, JavaScriptOnHeadReadyByOrderV2001) {
+  const ScriptItems scriptItems;
+  const ScriptRegexItems scriptRegexItems;
+  const ScriptItemsByOrder scriptItemsByOrder;
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = nullptr;
+  EXPECT_CALL(*mock_delegate_, JavaScriptOnHeadReadyByOrder(
+    scriptItems, scriptRegexItems, scriptItemsByOrder)).Times(0);
+  nweb_impl_->JavaScriptOnHeadReadyByOrderV2(scriptItems, scriptRegexItems, scriptItemsByOrder);
+  EXPECT_EQ(nweb_impl_->nweb_delegate_, nullptr);
+}
+
+TEST_F(NWebImplTest, JavaScriptOnHeadReadyByOrderV2002) {
+  const ScriptItems scriptItems;
+  const ScriptRegexItems scriptRegexItems;
+  const ScriptItemsByOrder scriptItemsByOrder;
+  EXPECT_NE(nweb_impl_, nullptr);
+  nweb_impl_->nweb_delegate_ = mock_delegate_;
+  EXPECT_CALL(*mock_delegate_, JavaScriptOnHeadReadyByOrder(
+    scriptItems, scriptRegexItems, scriptItemsByOrder)).Times(1);
+  nweb_impl_->JavaScriptOnHeadReadyByOrderV2(scriptItems, scriptRegexItems, scriptItemsByOrder);
   EXPECT_NE(nweb_impl_->nweb_delegate_, nullptr);
 }
 #endif

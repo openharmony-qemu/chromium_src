@@ -1065,6 +1065,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
   void InjectJsToWeb(JsRunTime time);
   void InjectJsToWebInner(JsRunTime time,
                           ScriptItems& scriptItems,
+                          ScriptRegexItems& scriptRegexItems,
                           ScriptItemsByOrder& scriptItemsByOrder);
 #endif
   void CopyImageToClipboard(CefRefPtr<CefImage> image);

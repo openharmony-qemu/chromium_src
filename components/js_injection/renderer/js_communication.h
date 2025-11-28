@@ -49,11 +49,17 @@ class JsCommunication
 #if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
   void AddDocumentEndScript(
       mojom::DocumentEndJavaScriptPtr script_ptr) override;
+  void AddDocumentEndScriptRegexRules(
+      mojom::DocumentJavaScriptRegexRulesPtr script_regex_rules_ptr) override;
 #endif
 #if BUILDFLAG(ARKWEB_JSPROXY)
   void AddHeadReadyScript(
       mojom::DocumentStartJavaScriptPtr script_ptr) override;
   void RemoveHeadReadyScript(int32_t script_id) override;
+  void AddHeadReadyScriptRegexRules(
+      mojom::DocumentJavaScriptRegexRulesPtr script_regex_rules_ptr) override;
+  void AddDocumentStartScriptRegexRules(
+      mojom::DocumentJavaScriptRegexRulesPtr script_regex_rules_ptr) override;
 #endif
   void RemoveDocumentStartScript(int32_t script_id) override;
 #if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)
@@ -72,13 +78,16 @@ class JsCommunication
 
 #if BUILDFLAG(ARKWEB_JSPROXY)
   void AddPendingJavascriptAtDocumentStart(
-      mojom::DocumentStartJavaScriptPtr script_ptr) override;
+      mojom::DocumentStartJavaScriptPtr script_ptr,
+      mojom::DocumentJavaScriptRegexRulesPtr script_regex_rules_ptr) override;
 
   void AddPendingJavascriptAtDocumentEnd(
-      mojom::DocumentEndJavaScriptPtr script_ptr) override;
+      mojom::DocumentEndJavaScriptPtr script_ptr,
+      mojom::DocumentJavaScriptRegexRulesPtr script_regex_rules_ptr) override;
 
   void AddPendingJavascriptAtHeadReady(
-      mojom::DocumentStartJavaScriptPtr script_ptr) override;
+      mojom::DocumentStartJavaScriptPtr script_ptr,
+      mojom::DocumentJavaScriptRegexRulesPtr script_regex_rules_ptr) override;
 
   void CommitPendingJavascriptsAtDocumentStart() override;
 

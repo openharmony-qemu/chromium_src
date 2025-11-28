@@ -432,12 +432,14 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   void JavaScriptOnDocumentStart(const CefString& script,
                                  const std::vector<CefString>& script_rules,
+                                 const std::vector<std::pair<CefString, CefString>>& script_regex_rules,
                                  bool is_transfer_finished) override {}
 
   void RemoveJavaScriptOnDocumentStart() override {}
 
   void JavaScriptOnDocumentEnd(const CefString& script,
                                const std::vector<CefString>& script_rules,
+                               const std::vector<std::pair<CefString, CefString>>& script_regex_rules,
                                bool is_transfer_finished) override {}
 
   void RemoveJavaScriptOnDocumentEnd() override {}
@@ -448,6 +450,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
 
   void JavaScriptOnHeadReady(const CefString& script,
                              const std::vector<CefString>& script_rules,
+                             const std::vector<std::pair<CefString, CefString>>& script_regex_rules,
                              bool is_transfer_finished) override {}
 
   void RemoveJavaScriptOnHeadReady() override {}

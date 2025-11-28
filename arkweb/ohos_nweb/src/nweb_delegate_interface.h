@@ -869,12 +869,15 @@ class NWebDelegateInterface
 #if BUILDFLAG(ARKWEB_JSPROXY)
   virtual void JavaScriptOnDocumentStartByOrder(
       const ScriptItems& ScriptItems,
+      const ScriptRegexItems& scriptRegexItems,
       const ScriptItemsByOrder& ScriptItemsByOrder) = 0;
   virtual void JavaScriptOnDocumentEndByOrder(
       const ScriptItems& ScriptItems,
+      const ScriptRegexItems& scriptRegexItems,
       const ScriptItemsByOrder& ScriptItemsByOrder) = 0;
   virtual void JavaScriptOnHeadReadyByOrder(
       const ScriptItems& ScriptItems,
+      const ScriptRegexItems& scriptRegexItems,
       const ScriptItemsByOrder& ScriptItemsByOrder) = 0;
 #endif
   virtual bool SetFocusByPosition(float x, float y) = 0;

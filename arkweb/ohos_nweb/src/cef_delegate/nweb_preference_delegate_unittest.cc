@@ -430,12 +430,14 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
 
   void JavaScriptOnDocumentStart(const CefString& script,
                                  const std::vector<CefString>& script_rules,
+                                 const std::vector<std::pair<CefString, CefString>>& script_regex_rules,
                                  bool is_transfer_finished) override {}
 
   void RemoveJavaScriptOnDocumentStart() override {}
 
   void JavaScriptOnDocumentEnd(const CefString& script,
                                const std::vector<CefString>& script_rules,
+                               const std::vector<std::pair<CefString, CefString>>& script_regex_rules,
                                bool is_transfer_finished) override {}
 
   void RemoveJavaScriptOnDocumentEnd() override {}
@@ -449,6 +451,7 @@ class MockPreferenceCefBrowserHost : public ArkWebBrowserHostExt {
 #if BUILDFLAG(ARKWEB_JSPROXY)
   void JavaScriptOnHeadReady(const CefString& script,
                              const std::vector<CefString>& script_rules,
+                             const std::vector<std::pair<CefString, CefString>>& script_regex_rules,
                              bool is_transfer_finished) override {}
 
   void RemoveJavaScriptOnHeadReady() override {}
@@ -1733,12 +1736,17 @@ TEST(NWebPreferenceDelegateTest, PutJavaScriptOnDocumentStartByOrder) {
     auto preference_delegate = std::make_shared<NWebPreferenceDelegate>();
     CefRefPtr<CefBrowser> browser = nullptr;
     preference_delegate->SetBrowser(browser);
-        ScriptItems script_items = {
+    ScriptItems script_items = {
       {"testKey", {"testVal1", "testVal2"}}
     };
+    ScriptRegexItems script_regex_items = {
+        {"testKey", {{"key1", "value1"}, {"key2", "value2"}}}
+    };
     ScriptItemsByOrder script_items_start_by_order_ = {"testVal1", "testVal2"};
-    preference_delegate->PutJavaScriptOnDocumentStartByOrder(script_items, script_items_start_by_order_);
+    preference_delegate->PutJavaScriptOnDocumentStartByOrder(
+        script_items, script_regex_items, script_items_start_by_order_);
     EXPECT_EQ(preference_delegate->GetJavaScriptOnDocumentStart(), script_items);
+    EXPECT_EQ(preference_delegate->GetJavaScriptRegexItemsOnDocumentStart(), script_regex_items);
     EXPECT_EQ(preference_delegate->GetJavaScriptOnDocumentStartByOrder(), script_items_start_by_order_);
 }
 
@@ -1761,9 +1769,14 @@ TEST(NWebPreferenceDelegateTest, PutJavaScriptOnDocumentEndByOrder) {
     ScriptItems script_items = {
       {"testKey", {"testVal1", "testVal2"}}
     };
+    ScriptRegexItems script_regex_items = {
+        {"testKey", {{"key1", "value1"}, {"key2", "value2"}}}
+    };
     ScriptItemsByOrder script_items_start_by_order_ = {"testVal1", "testVal2"};
-    preference_delegate->PutJavaScriptOnDocumentEndByOrder(script_items, script_items_start_by_order_);
+    preference_delegate->PutJavaScriptOnDocumentEndByOrder(
+        script_items, script_regex_items, script_items_start_by_order_);
     EXPECT_EQ(preference_delegate->GetJavaScriptOnDocumentEnd(), script_items);
+    EXPECT_EQ(preference_delegate->GetJavaScriptRegexItemsOnDocumentEnd(), script_regex_items);
     EXPECT_EQ(preference_delegate->GetJavaScriptOnDocumentEndByOrder(), script_items_start_by_order_);
 }
 
@@ -1785,9 +1798,14 @@ TEST(NWebPreferenceDelegateTest, PutJavaScriptOnHeadReadyByOrder) {
     ScriptItems script_items = {
       {"testKey", {"testVal1", "testVal2"}}
     };
+    ScriptRegexItems script_regex_items = {
+        {"testKey", {{"key1", "value1"}, {"key2", "value2"}}}
+    };
     ScriptItemsByOrder script_items_start_by_order_ = {"testVal1", "testVal2"};
-    preference_delegate->PutJavaScriptOnHeadReadyByOrder(script_items, script_items_start_by_order_);
+    preference_delegate->PutJavaScriptOnHeadReadyByOrder(
+        script_items, script_regex_items, script_items_start_by_order_);
     EXPECT_EQ(preference_delegate->GetJavaScriptOnHeadReady(), script_items);
+    EXPECT_EQ(preference_delegate->GetJavaScriptRegexItemsOnHeadReady(), script_regex_items);
     EXPECT_EQ(preference_delegate->GetJavaScriptOnHeadReadyByOrder(), script_items_start_by_order_);
 }
 

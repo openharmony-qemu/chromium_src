@@ -285,13 +285,16 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
 
   void JavaScriptOnDocumentStartByOrder(
       const ScriptItems& scriptItems,
+      const ScriptRegexItems& scriptRegexItems,
       const ScriptItemsByOrder& scriptItemsByOrder) override;
   void JavaScriptOnDocumentEndByOrder(
       const ScriptItems& scriptItems,
+      const ScriptRegexItems& scriptRegexItems,
       const ScriptItemsByOrder& scriptItemsByOrder) override;
 
   void JavaScriptOnHeadReadyByOrder(
       const ScriptItems& scriptItems,
+      const ScriptRegexItems& scriptRegexItems,
       const ScriptItemsByOrder& scriptItemsByOrder) override;
 #endif
 

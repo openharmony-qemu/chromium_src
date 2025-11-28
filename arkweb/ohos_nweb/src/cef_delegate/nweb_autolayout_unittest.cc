@@ -239,14 +239,17 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void SetToken(void*) override {}
   void SetVirtualKeyBoardArg(int32_t, int32_t, double) override {}
   bool ShouldVirtualKeyboardOverlay() override { return false; }
-  void JavaScriptOnDocumentStart(const CefString&, const std::vector<CefString>&, bool) override {}
+  void JavaScriptOnDocumentStart(const CefString&, const std::vector<CefString>&,
+    const std::vector<std::pair<CefString, CefString>>&, bool) override {}
   void RemoveJavaScriptOnDocumentStart() override {}
-  void JavaScriptOnDocumentEnd(const CefString&, const std::vector<CefString>&, bool) override {}
+  void JavaScriptOnDocumentEnd(const CefString&, const std::vector<CefString>&,
+    const std::vector<std::pair<CefString, CefString>>&, bool) override {}
   void RemoveJavaScriptOnDocumentEnd() override {}
   void OnDataDetectorSelectText() override {}
   std::string GetDataDetectorSelectText() override { return std::string(); }
   void SetBypassVsyncCondition(int32_t) override {}
-  void JavaScriptOnHeadReady(const CefString&, const std::vector<CefString>&, bool) override {}
+  void JavaScriptOnHeadReady(const CefString&, const std::vector<CefString>&,
+    const std::vector<std::pair<CefString, CefString>>&, bool) override {}
   void RemoveJavaScriptOnHeadReady() override {}
   void SetDrawRect(int, int, int, int) override {}
   void SetDrawMode(int) override {}

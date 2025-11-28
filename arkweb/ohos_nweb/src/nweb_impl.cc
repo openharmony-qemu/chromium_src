@@ -2784,6 +2784,7 @@ void NWebImpl::JavaScriptOnDocumentStartByOrder(
     return;
   }
   return nweb_delegate_->JavaScriptOnDocumentStartByOrder(scriptItems,
+                                                          ScriptRegexItems(),
                                                           scriptItemsByOrder);
 }
 
@@ -2794,6 +2795,7 @@ void NWebImpl::JavaScriptOnDocumentEndByOrder(
     return;
   }
   return nweb_delegate_->JavaScriptOnDocumentEndByOrder(scriptItems,
+                                                        ScriptRegexItems(),
                                                         scriptItemsByOrder);
 }
 
@@ -2804,6 +2806,43 @@ void NWebImpl::JavaScriptOnHeadReadyByOrder(
     return;
   }
   return nweb_delegate_->JavaScriptOnHeadReadyByOrder(scriptItems,
+                                                      ScriptRegexItems(),
+                                                      scriptItemsByOrder);
+}
+
+void NWebImpl::JavaScriptOnDocumentStartByOrderV2(
+    const ScriptItems& scriptItems,
+    const ScriptRegexItems& scriptRegexItems,
+    const ScriptItemsByOrder& scriptItemsByOrder) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  return nweb_delegate_->JavaScriptOnDocumentStartByOrder(scriptItems,
+                                                          scriptRegexItems,
+                                                          scriptItemsByOrder);
+}
+
+void NWebImpl::JavaScriptOnDocumentEndByOrderV2(
+    const ScriptItems& scriptItems,
+    const ScriptRegexItems& scriptRegexItems,
+    const ScriptItemsByOrder& scriptItemsByOrder) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  return nweb_delegate_->JavaScriptOnDocumentEndByOrder(scriptItems,
+                                                        scriptRegexItems,
+                                                        scriptItemsByOrder);
+}
+
+void NWebImpl::JavaScriptOnHeadReadyByOrderV2(
+    const ScriptItems& scriptItems,
+    const ScriptRegexItems& scriptRegexItems,
+    const ScriptItemsByOrder& scriptItemsByOrder) {
+  if (nweb_delegate_ == nullptr) {
+    return;
+  }
+  return nweb_delegate_->JavaScriptOnHeadReadyByOrder(scriptItems,
+                                                      scriptRegexItems,
                                                       scriptItemsByOrder);
 }
 #endif

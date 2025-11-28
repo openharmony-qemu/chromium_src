@@ -1039,6 +1039,7 @@ void NWebHandlerDelegate::OnFrameDetached(CefRefPtr<CefBrowser> browser,
 void NWebHandlerDelegate::InjectJsToWebInner(
     JsRunTime time,
     ScriptItems& scriptItems,
+    ScriptRegexItems& scriptRegexItems,
     ScriptItemsByOrder& scriptItemsByOrder) {
   if (!main_browser_ || !main_browser_->GetHost()) {
     return;
@@ -1046,28 +1047,31 @@ void NWebHandlerDelegate::InjectJsToWebInner(
   switch (time) {
     case JsRunTime::Start:
       scriptItems = preference_delegate_->GetJavaScriptOnDocumentStart();
+      scriptRegexItems = preference_delegate_->GetJavaScriptRegexItemsOnDocumentStart();
       scriptItemsByOrder =
           preference_delegate_->GetJavaScriptOnDocumentStartByOrder();
       if (scriptItems.size() == 0) {
         main_browser_->GetHost()->JavaScriptOnDocumentStart("", std::vector<CefString>(),
-                                                            true);
+          std::vector<std::pair<CefString, CefString>>(), true);
       }
       break;
     case JsRunTime::End:
       scriptItems = preference_delegate_->GetJavaScriptOnDocumentEnd();
+      scriptRegexItems = preference_delegate_->GetJavaScriptRegexItemsOnDocumentEnd();
       scriptItemsByOrder =
           preference_delegate_->GetJavaScriptOnDocumentEndByOrder();
       if (scriptItems.size() == 0) {
         main_browser_->GetHost()->JavaScriptOnDocumentEnd("", std::vector<CefString>(),
-                                                          true);
+          std::vector<std::pair<CefString, CefString>>(), true);
       }
       break;
     case JsRunTime::HEAD_READY:
       scriptItems = preference_delegate_->GetJavaScriptOnHeadReady();
+      scriptRegexItems = preference_delegate_->GetJavaScriptRegexItemsOnHeadReady();
       scriptItemsByOrder = preference_delegate_->GetJavaScriptOnHeadReadyByOrder();
       if (scriptItems.size() == 0) {
         main_browser_->GetHost()->JavaScriptOnHeadReady("", std::vector<CefString>(),
-                                                        true);
+          std::vector<std::pair<CefString, CefString>>(), true);
       }
       break;
   }
@@ -1081,9 +1085,10 @@ void NWebHandlerDelegate::InjectJsToWebInner(
 
 void NWebHandlerDelegate::InjectJsToWeb(JsRunTime time) {
   ScriptItems scriptItems;
+  ScriptRegexItems scriptRegexItems;
   ScriptItemsByOrder scriptItemsByOrder;
 
-  InjectJsToWebInner(time, scriptItems, scriptItemsByOrder);
+  InjectJsToWebInner(time, scriptItems, scriptRegexItems, scriptItemsByOrder);
 
   size_t count = 0;
   for (const auto& item : scriptItemsByOrder) {
@@ -1097,23 +1102,33 @@ void NWebHandlerDelegate::InjectJsToWeb(JsRunTime time) {
       cefRule.FromString(rule);
       scriptRules.push_back(cefRule);
     }
+    std::vector<std::pair<CefString, CefString>> scriptRegexRules;
+    if (scriptRegexItems.find(item) != scriptRegexItems.end()) {
+      for (const std::pair<std::string, std::string>& regexRule : scriptRegexItems.at(item)) {
+        CefString cefDomainRule;
+        CefString cefRegexRule;
+        cefDomainRule.FromString(regexRule.first);
+        cefRegexRule.FromString(regexRule.second);
+        scriptRegexRules.push_back(std::make_pair(cefDomainRule, cefRegexRule));
+      }
+    }
     if (!main_browser_ || !main_browser_->GetHost()) {
       return;
     }
     switch (time) {
       case JsRunTime::Start:
         count++;
-        main_browser_->GetHost()->JavaScriptOnDocumentStart(script, scriptRules,
+        main_browser_->GetHost()->JavaScriptOnDocumentStart(script, scriptRules, scriptRegexRules,
                                                             count == scriptItems.size());
         break;
       case JsRunTime::End:
         count++;
-        main_browser_->GetHost()->JavaScriptOnDocumentEnd(script, scriptRules,
+        main_browser_->GetHost()->JavaScriptOnDocumentEnd(script, scriptRules, scriptRegexRules,
                                                           count == scriptItems.size());
         break;
       case JsRunTime::HEAD_READY:
         count++;
-        main_browser_->GetHost()->JavaScriptOnHeadReady(script, scriptRules,
+        main_browser_->GetHost()->JavaScriptOnHeadReady(script, scriptRules, scriptRegexRules,
                                                         count == scriptItems.size());
         break;
     }

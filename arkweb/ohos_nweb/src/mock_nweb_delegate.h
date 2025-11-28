@@ -946,16 +946,19 @@ class MockNWebDelegate : public NWebDelegateInterface {
   MOCK_METHOD(void,
               JavaScriptOnDocumentStartByOrder,
               (const ScriptItems& ScriptItems,
+               const ScriptRegexItems& scriptRegexItems,
                const ScriptItemsByOrder& ScriptItemsByOrder),
               (override));
   MOCK_METHOD(void,
               JavaScriptOnDocumentEndByOrder,
               (const ScriptItems& ScriptItems,
+               const ScriptRegexItems& scriptRegexItems,
                const ScriptItemsByOrder& ScriptItemsByOrder),
               (override));
   MOCK_METHOD(void,
               JavaScriptOnHeadReadyByOrder,
               (const ScriptItems& ScriptItems,
+               const ScriptRegexItems& scriptRegexItems,
                const ScriptItemsByOrder& ScriptItemsByOrder),
               (override));
 #endif

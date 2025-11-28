@@ -236,20 +236,26 @@ class NWebPreferenceDelegate : public NWebPreference {
   void PutJavaScriptOnDocumentStart(const ScriptItems& scriptItems);
   void PutJavaScriptOnDocumentStartByOrder(
       const ScriptItems& scriptItems,
+      const ScriptRegexItems& scriptRegexItems,
       const ScriptItemsByOrder& scriptItemsByOrder);
   ScriptItems GetJavaScriptOnDocumentStart();
+  ScriptRegexItems GetJavaScriptRegexItemsOnDocumentStart();
   ScriptItemsByOrder GetJavaScriptOnDocumentStartByOrder();
   void PutJavaScriptOnDocumentEnd(const ScriptItems& scriptItems);
   void PutJavaScriptOnDocumentEndByOrder(
       const ScriptItems& scriptItems,
+      const ScriptRegexItems& scriptRegexItems,
       const ScriptItemsByOrder& scriptItemsByOrder);
   ScriptItems GetJavaScriptOnDocumentEnd();
+  ScriptRegexItems GetJavaScriptRegexItemsOnDocumentEnd();
   ScriptItemsByOrder GetJavaScriptOnDocumentEndByOrder();
   void PutJavaScriptOnHeadReady(const ScriptItems& scriptItems);
   void PutJavaScriptOnHeadReadyByOrder(
       const ScriptItems& scriptItems,
+      const ScriptRegexItems& scriptRegexItems,
       const ScriptItemsByOrder& scriptItemsByOrder);
   ScriptItems GetJavaScriptOnHeadReady();
+  ScriptRegexItems GetJavaScriptRegexItemsOnHeadReady();
   ScriptItemsByOrder GetJavaScriptOnHeadReadyByOrder();
 #endif
 
@@ -430,6 +436,9 @@ class NWebPreferenceDelegate : public NWebPreference {
   ScriptItems script_items_start_{};
   ScriptItems script_items_end_{};
   ScriptItems script_items_head_ready_{};
+  ScriptRegexItems script_regex_items_start_{};
+  ScriptRegexItems script_regex_items_end_{};
+  ScriptRegexItems script_regex_items_head_ready_{};
   ScriptItemsByOrder script_items_start_by_order_;
   ScriptItemsByOrder script_items_end_by_order_;
   ScriptItemsByOrder script_items_head_ready_by_order_;

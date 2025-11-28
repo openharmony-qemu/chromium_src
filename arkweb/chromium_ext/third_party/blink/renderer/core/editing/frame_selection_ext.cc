@@ -204,6 +204,23 @@ gfx::Rect FrameSelectionExt::ClippedSelectionBoundsInRootFrame() const {
   return gfx::ScaleToEnclosingRect(
       selection_bounds, frame_->GetPage()->GetVisualViewport().Scale());
 }
+
+bool FrameSelectionExt::IsPointInSelection(const PhysicalOffset& point) {
+  if (!Contains(point)) {
+    return false;
+  }
+  if (frame_ && frame_->View()) {
+    PhysicalRect selection_bounds_in_root_frame =
+        frame_->View()->ConvertToRootFrame(AbsoluteUnclippedBounds());
+    PhysicalOffset point_in_root_frame = frame_->View()->ConvertToRootFrame(point);
+    if (!selection_bounds_in_root_frame.Contains(point_in_root_frame)) {
+      LOG(INFO) << "point(" << point_in_root_frame.ToString()
+                << ") is not in selection(" << selection_bounds_in_root_frame.ToString() << ")";
+      return false;
+    }
+  }
+  return true;
+}
 // LCOV_EXCL_STOP
 #endif
 

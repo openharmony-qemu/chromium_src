@@ -315,7 +315,6 @@ bool NWebDevToolsMessageHandlerImpl::ActiveDevToolsWindow() {
   return false;
 }
 
- 
 bool NWebDevToolsMessageHandlerImpl::SetInspectedPageBounds(int left,
                                                             int top,
                                                             int width,

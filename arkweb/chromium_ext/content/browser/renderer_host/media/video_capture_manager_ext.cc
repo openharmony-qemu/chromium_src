@@ -29,7 +29,7 @@ void VideoCaptureManagerExt::StartCamera(int nWebId) const {
                        weak_factory_.GetWeakPtr(),nWebId));
       return;
   }
-  LOG(INFO)<<"VideoCaptureManagerExt::StartCamera,nWebId = " << nWebId;
+  LOG(INFO) << "VideoCaptureManagerExt::StartCamera, nWebId = " << nWebId;
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
   std::lock_guard<std::mutex> lock(NWebIdMutex_);
   for (const auto& it : nWebId_) {
@@ -58,7 +58,7 @@ void VideoCaptureManagerExt::StopCamera(int nWebId) const {
                        weak_factory_.GetWeakPtr(),nWebId));
       return;
   }
-  LOG(INFO)<<"VideoCaptureManagerExt::StopCamera,nWebId = " << nWebId;
+  LOG(INFO) << "VideoCaptureManagerExt::StopCamera, nWebId = " << nWebId;
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
   std::lock_guard<std::mutex> lock(NWebIdMutex_);
   for (const auto& it : nWebId_) {
@@ -87,7 +87,7 @@ void VideoCaptureManagerExt::CloseCamera(int nWebId) const {
                        weak_factory_.GetWeakPtr(),nWebId));
       return;
   }
-  LOG(INFO)<<"VideoCaptureManagerExt::CloseCamera,nWebId = " << nWebId;
+  LOG(INFO) << "VideoCaptureManagerExt::CloseCamera, nWebId = " << nWebId;
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
   std::lock_guard<std::mutex> lock(NWebIdMutex_);
   for (const auto& it : nWebId_) {

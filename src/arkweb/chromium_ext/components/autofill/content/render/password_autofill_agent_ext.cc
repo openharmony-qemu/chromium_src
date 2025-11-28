@@ -17,6 +17,7 @@
 
 #include "arkweb/build/features/features.h"
 #include "base/no_destructor.h"
+#include "components/autofill/core/common/form_field_data.h"
 #include "content/public/renderer/render_frame.h"
 #include "third_party/blink/public/platform/web_string.h"
 #include "third_party/blink/public/web/web_element.h"
@@ -224,7 +225,7 @@ bool PasswordAutofillAgentExt::OhosFindPasswordInfoForElement(
     // If there is a password field, but a request to the store hasn't been sent
     // yet, then do fetch saved credentials now.
     if (!sent_request_to_store_) {
-      SendPasswordForms(false);
+      SendPasswordForms(false, /*form_cache=*/{});
       return false;
     }
 
@@ -411,7 +412,7 @@ bool PasswordAutofillAgentExt::FillAccountSuggestion(
       !(username.empty() && element.IsPasswordFieldForAutofill()) &&
       username_element.Value().Utf16() != username) {
     DoFillField(username_element, username,
-                AutofillSuggestionTriggerSource::kUnspecified);
+                FieldPropertiesFlags::kAutofilledOnUserTrigger);
   }
 
   if (!password_element.IsNull()) {

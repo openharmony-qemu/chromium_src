@@ -30,6 +30,10 @@
 #include "nweb_cookie_impl.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(ARKWEB_COOKIE)
+#include "nweb_impl.h"
+#endif
+
 using namespace OHOS::NWeb;
 using base::WaitableEvent;
 
@@ -252,6 +256,14 @@ CefRefPtr<CefCookieManager>
 NWebCookieManagerDelegate::GetGlobalCookieManager() {
   if (!cookie_manager_) {
     cookie_manager_ = CefCookieManager::GetGlobalManager(nullptr);
+#if BUILDFLAG(ARKWEB_COOKIE)
+    if (!cookie_manager_ && NWebImpl::ShouldLazyInitWebEngine()) {
+      if (!uninitialized_cookie_manager_) {
+        uninitialized_cookie_manager_ = GetUninitializedCookieManagerExt(false);
+      }
+      return uninitialized_cookie_manager_;
+    }
+#endif
   }
   return cookie_manager_;
 }
@@ -262,6 +274,15 @@ NWebCookieManagerDelegate::GetGlobalIncognitoCookieManager() {
   if (!incognito_cookie_manager_) {
     incognito_cookie_manager_ =
         CefCookieManager::GetGlobalIncognitoManager(nullptr);
+#if BUILDFLAG(ARKWEB_COOKIE)
+    if (!incognito_cookie_manager_ && NWebImpl::ShouldLazyInitWebEngine()) {
+      if (!uninitialized_incognito_cookie_manager_) {
+        uninitialized_incognito_cookie_manager_ =
+            GetUninitializedCookieManagerExt(true);
+      }
+      return uninitialized_incognito_cookie_manager_;
+    }
+#endif
   }
   return incognito_cookie_manager_;
 #else
@@ -703,5 +724,15 @@ void NWebCookieManagerDelegate::GetAllCookies(
     cookies.push_back(cookie);
   }
 }
+
+#if BUILDFLAG(ARKWEB_COOKIE)
+CefRefPtr<CefCookieManagerExt>
+NWebCookieManagerDelegate::GetUninitializedCookieManagerExt(
+    bool support_incognito) {
+  CefRefPtr cookie_manager =
+      CefCookieManagerImplExt::GetInstance(support_incognito);
+  return cookie_manager.get();
+}
+#endif
 
 }  // namespace OHOS::NWeb

@@ -1225,6 +1225,12 @@ class NWebImpl : public NWeb {
   void StopMicrophone() override;
   void PauseMicrophone() override;
 #endif
+#if BUILDFLAG(ARKWEB_COOKIE)
+  static void LibraryLoaded(std::shared_ptr<NWebEngineInitArgs> init_args,
+                            bool lazy);
+  static bool ShouldLazyInitWebEngine();
+  static std::shared_ptr<NWebEngineInitArgs> GetSaveInitargs();
+#endif
 
  private:
   void ProcessInitArgs(std::shared_ptr<NWebEngineInitArgs> init_args);
@@ -1339,6 +1345,11 @@ class NWebImpl : public NWeb {
   std::atomic<bool> is_private_ = false;
   std::atomic<bool> is_visible_ = false;
   std::atomic<bool> is_user_enable_ = false;
+#endif
+
+#if BUILDFLAG(ARKWEB_COOKIE)
+  static std::shared_ptr<NWebEngineInitArgs> save_initargs_;
+  static bool should_lazy_init_web_engine_;
 #endif
 
   base::WeakPtrFactory<NWebImpl> weak_factory_{this};

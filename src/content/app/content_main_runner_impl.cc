@@ -1309,7 +1309,6 @@ bool ContentMainRunnerImpl::RunRenderRemoteProxy(
   std::string process_type =
       command_line.GetSwitchValueASCII(switches::kProcessType);
   if (process_type != switches::kRendererProcess &&
-      process_type != switches::kPpapiPluginProcess &&
       process_type != switches::kGpuProcess) {
     return true;
   }

@@ -358,7 +358,7 @@ void AnnotateFieldsWithSignatures(
 std::vector<WebFormControlElement> GetFormControlElements(
     const WebFormElement& element) {
   std::vector<WebFormControlElement> form_control_elements =
-      element.GetFormControlElements().ReleaseVector();
+      element.GetFormControlElements();
   std::erase_if(form_control_elements, [](const WebFormControlElement& e) {
     return e.IsNull();
   });

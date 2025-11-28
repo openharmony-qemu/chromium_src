@@ -102,13 +102,13 @@ size_t FXSYS_ToUTF16BE(uint32_t unicode, char* buf) {
   DCHECK(!pdfium::IsLowSurrogate(unicode));
 
   if (unicode <= 0xFFFF) {
-    FXSYS_IntToFourHexChars(unicode, buf.first<4u>());
+    FXSYS_IntToFourHexChars(unicode, buf);
     return 4;
   }
   // SAFETY: required from caller.
   UNSAFE_BUFFERS({
   pdfium::SurrogatePair surrogate_pair(unicode);
-  FXSYS_IntToFourHexChars(surrogate_pair.high(), buf.first<4u>());
+  FXSYS_IntToFourHexChars(surrogate_pair.high(), buf);
     FXSYS_IntToFourHexChars(surrogate_pair.low(), buf + 4);
   });
   return 8;

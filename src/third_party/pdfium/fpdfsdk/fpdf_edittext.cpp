@@ -276,9 +276,8 @@ void AddUnicode(fxcrt::ostringstream& buffer, uint32_t unicode) {
   size_t char_count = FXSYS_ToUTF16BE(unicode, ans);
   buffer << "<";
   CHECK_LE(char_count, std::size(ans));
-  auto ans_span = pdfium::make_span(ans).first(char_count);
-  for (char c : ans_span) {
-    buffer << c;
+  for (size_t i = 0; i < char_count; i++) {
+    buffer << ans[i];
   }
   buffer << ">";
 }

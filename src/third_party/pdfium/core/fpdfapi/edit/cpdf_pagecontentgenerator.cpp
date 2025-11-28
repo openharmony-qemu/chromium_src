@@ -444,7 +444,7 @@ ByteString CPDF_PageContentGenerator::RealizeResource(
   int idnum = 1;
   while (true) {
     name = ByteString::Format("FX%c%d", type[0], idnum);
-    if (!pResList->KeyExist(name))
+    if (!pResList->KeyExist(name.AsStringView()))
       break;
 
     idnum++;

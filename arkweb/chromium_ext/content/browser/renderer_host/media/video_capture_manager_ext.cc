@@ -26,7 +26,7 @@ void VideoCaptureManagerExt::StartCamera(int nWebId) const {
     io_task_runner->PostTask(
         FROM_HERE,
         base::BindOnce(&VideoCaptureManagerExt::StartCamera,
-                       weak_factory_.GetWeakPtr(),nWebId));
+                       weak_factory_.GetWeakPtr(), nWebId));
       return;
   }
   LOG(INFO) << "VideoCaptureManagerExt::StartCamera, nWebId = " << nWebId;
@@ -55,7 +55,7 @@ void VideoCaptureManagerExt::StopCamera(int nWebId) const {
     io_task_runner->PostTask(
         FROM_HERE,
         base::BindOnce(&VideoCaptureManagerExt::StopCamera,
-                       weak_factory_.GetWeakPtr(),nWebId));
+                       weak_factory_.GetWeakPtr(), nWebId));
       return;
   }
   LOG(INFO) << "VideoCaptureManagerExt::StopCamera, nWebId = " << nWebId;
@@ -84,7 +84,7 @@ void VideoCaptureManagerExt::CloseCamera(int nWebId) const {
     io_task_runner->PostTask(
         FROM_HERE,
         base::BindOnce(&VideoCaptureManagerExt::CloseCamera,
-                       weak_factory_.GetWeakPtr(),nWebId));
+                       weak_factory_.GetWeakPtr(), nWebId));
       return;
   }
   LOG(INFO) << "VideoCaptureManagerExt::CloseCamera, nWebId = " << nWebId;

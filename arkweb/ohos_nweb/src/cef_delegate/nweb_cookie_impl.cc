@@ -26,8 +26,12 @@ enum class CookieSameSite {
 
 CookieSameSite MakeCookieSameSite(cef_cookie_same_site_t value) {
   switch (value) {
+    case CEF_COOKIE_SAME_SITE_UNSPECIFIED:
+      return CookieSameSite::LAX_MODE;
     case CEF_COOKIE_SAME_SITE_NO_RESTRICTION:
       return CookieSameSite::NO_RESTRICTION;
+    case CEF_COOKIE_SAME_SITE_LAX_MODE:
+      return CookieSameSite::LAX_MODE;
     case CEF_COOKIE_SAME_SITE_STRICT_MODE:
       return CookieSameSite::STRICT_MODE;
     default:

@@ -132,7 +132,7 @@ float StringToFloat(ByteStringView strc) {
 }
 
 float StringToFloat(WideStringView wsStr) {
-  return StringToFloatImpl<float>(wsStr);
+  return StringToFloat(FX_UTF8Encode(wsStr).AsStringView());
 }
 
 double StringToDouble(ByteStringView strc) {
@@ -140,7 +140,7 @@ double StringToDouble(ByteStringView strc) {
 }
 
 double StringToDouble(WideStringView wsStr) {
-  return StringToFloatImpl<double>(wsStr);
+  return StringToDouble(FX_UTF8Encode(wsStr).AsStringView());
 }
 
 namespace fxcrt {

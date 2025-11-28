@@ -256,9 +256,21 @@ std::unique_ptr<SkiaImageRepresentation> SharedImageManager::ProduceSkia(
   auto found = images_.find(mailbox);
   if (found == images_.end()) {
 #if BUILDFLAG(ARKWEB_REPORT_SYS_EVENT)
-  std::string error_msg =
-    "SharedImageManager::ProduceSkia: Trying to Produce a Skia representation from a non-existent mailbox.";
-  ReportGpuProcessEvent(CrashType::MAILBOX_NONEXISTENT, error_msg);
+  static std::atomic<int64_t> last_report_time{0};
+  const int64_t current_time = base::TimeTicks::Now().ToInternalValue();
+
+  constexpr int kMinutesToWait = 5;
+  constexpr int kSecondsPerMinute = 60;
+  const int64_t five_minutes_in_seconds =
+    kMinutesToWait * kSecondsPerMinute * base::Time::kMicrosecondsPerSecond;
+  
+  int64_t last_time = last_report_time.load();
+  if (current_time - last_time > five_minutes_in_seconds) {
+    last_report_time.store(current_time);
+    std::string error_msg =
+     "SharedImageManager::ProduceSkia: Trying to Produce a Skia representation from a non-existent mailbox.";
+    ReportGpuProcessEvent(CrashType::MAILBOX_NONEXISTENT, error_msg);
+  }
 #endif
     LOG(ERROR) << "SharedImageManager::ProduceSkia: Trying to Produce a "
                   "Skia representation from a non-existent mailbox.";

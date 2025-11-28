@@ -1578,6 +1578,29 @@
   # END "everything else" section.
   # Everything but chrome/, components/, content/, and ios/
 
+  # For IS_ARKWEB_EXT
+  "ohos_nweb_ex/overrides/ui/resources/ohos_nweb_ex_resources.grd": {
+    "includes": [10140],
+  },
+  "ohos_nweb_ex/overrides/ui/strings/ohos_nweb_ex_strings.grd": {
+    "messages": [10160],
+  },
+
+  #For arkweb_i18n
+  "ohos_resources/components/ohos_components_strings.grd": {
+    "messages": [10180],
+  },
+
+  # For arkweb_ai
+  "ohos_resources/data_detector/data_detector_resources.grd": {
+    "includes": [10200],
+  },
+
+  # For autolayout
+  "arkweb/ohos_autolayout/autolayout_resources.grd": {
+    "includes": [10220],
+  },
+
   "cef/libcef/resources/cef_resources.grd": {
     "includes": [12500],
   },

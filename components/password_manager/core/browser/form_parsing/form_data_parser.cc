@@ -1048,7 +1048,8 @@ std::vector<ProcessedField> ProcessFields(
       processed_field.interactability = Interactability::kCertain;
 #if BUILDFLAG(ARKWEB_EXT_PASSWORD)
     } else if (field.is_focusable()) {
-      if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+      if (base::CommandLine::InitializedForCurrentProcess() &&
+          base::CommandLine::ForCurrentProcess()->HasSwitch(
               switches::kEnableNwebExPassword)) {
         if (is_password_visible) {
           processed_field.interactability = Interactability::kPossible;

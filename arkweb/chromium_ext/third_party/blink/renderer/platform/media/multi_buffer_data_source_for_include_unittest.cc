@@ -29,6 +29,10 @@ TEST_F(MultiBufferDataSourceTest, VideoLoadOpt_VLOUpdateBufferSize001) {
   data_source_->SetVLOParams(preloadTime, minCacheTime, maxCacheTime,
                              moovSize, bitRate, videoId);
   data_source_->VLOUpdateBufferSizes();
+
+  int64_t preload_high = loader()->preload_high();
+  int64_t expect_val = 32768;
+  EXPECT_EQ(preload_high, expect_val);
   Stop();
 }
 
@@ -46,6 +50,10 @@ TEST_F(MultiBufferDataSourceTest, VideoLoadOpt_VLOUpdateBufferSize002) {
   data_source_->SetVLOParams(preloadTime, minCacheTime, maxCacheTime,
                              moovSize, bitRate, videoId);
   data_source_->VLOUpdateBufferSizes();
+
+  int64_t preload_high = loader()->preload_high();
+  int64_t expect_val = 32768;
+  EXPECT_EQ(preload_high, expect_val);
   Stop();
 }
 
@@ -63,6 +71,10 @@ TEST_F(MultiBufferDataSourceTest, VideoLoadOpt_VLOUpdateBufferSize003) {
   data_source_->SetVLOParams(preloadTime, minCacheTime, maxCacheTime,
                              moovSize, bitRate, videoId);
   data_source_->VLOUpdateBufferSizes();
+
+  int64_t preload_high = loader()->preload_high();
+  int64_t expect_val = 500000;
+  EXPECT_EQ(preload_high, expect_val);
   Stop();
 }
 

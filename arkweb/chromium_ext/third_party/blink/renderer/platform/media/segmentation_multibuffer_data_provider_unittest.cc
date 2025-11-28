@@ -184,6 +184,8 @@ TEST_F(SegmentationMultiBufferDataProviderTest, VideoOpt_StartRequest001) {
   url_data_->set_length(urldata_length);
 
   segment_provider_->Start();
+  int64_t cur_end = segment_provider_->cur_end_;
+  EXPECT_GT(cur_end, urldata_length);
 }
 
 TEST_F(SegmentationMultiBufferDataProviderTest, VideoOpt_StartRequest002) {

@@ -16,10 +16,34 @@
 #include "base/i18n/time_formatting.h"
 #include "nweb_cookie_impl.h"
 
+namespace {
+enum class CookieSameSite {
+  NO_RESTRICTION = 0,
+  LAX_MODE = 1,
+  STRICT_MODE = 2,
+  kMaxValue = STRICT_MODE
+};
+
+CookieSameSite MakeCookieSameSite(cef_cookie_same_site_t value) {
+  switch (value) {
+    case CEF_COOKIE_SAME_SITE_UNSPECIFIED:
+      return CookieSameSite::LAX_MODE;
+    case CEF_COOKIE_SAME_SITE_NO_RESTRICTION:
+      return CookieSameSite::NO_RESTRICTION;
+    case CEF_COOKIE_SAME_SITE_LAX_MODE:
+      return CookieSameSite::LAX_MODE;
+    case CEF_COOKIE_SAME_SITE_STRICT_MODE:
+      return CookieSameSite::STRICT_MODE;
+    default:
+      return CookieSameSite::LAX_MODE;
+  }
+}
+}
+
 namespace OHOS::NWeb {
 
 void NWebCookieImpl::SetCookieAttribute(const CefCookie& cookie) {
-    samesite_policy_ = cookie.same_site;
+    samesite_policy_ = (int)MakeCookieSameSite(cookie.same_site);
     name_ = CefString(&cookie.name).ToString();
     if (cookie.has_expires) {
       expires_date_ = base::TimeFormatHTTP(CefBaseTime(cookie.expires));

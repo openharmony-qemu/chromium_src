@@ -121,12 +121,15 @@ void MediaStreamDevicePermissionContext::RequestReply(
     permissions::BrowserPermissionCallback callback,
     bool reply_success) {
   if (!reply_success) {
-    std::move(callback).Run(CONTENT_SETTING_ASK);
+    std::move(callback).Run(content::PermissionResult(
+      content::PermissionStatus::ASK,
+      content::PermissionStatusSource::UNSPECIFIED));
     return;
   }
 
-  permissions::PermissionContextBase::RequestPermission(std::move(request_data),
-                                                        std::move(callback));
+  permissions::PermissionContextBase::RequestPermission(
+    std::make_unique<permissions::PermissionRequestData>(std::move(request_data)),
+    std::move(callback));
 }
 
 #if BUILDFLAG(IS_ANDROID)

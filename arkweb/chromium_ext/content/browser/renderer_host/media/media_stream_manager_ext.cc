@@ -55,7 +55,7 @@ void MediaStreamManagerExt::StopScreenCapture(int32_t nweb_id,
                      weak_factory_.GetWeakPtr(), nweb_id, session_id));
       return;
   }
-  LOG(INFO) << "MediaStreamManagerExt::StopScreenCapture,nweb_id=" << nweb_id;
+  LOG(INFO) << "MediaStreamManagerExt::StopScreenCapture, nweb_id=" << nweb_id;
   if (!video_capture_manager_) {
     LOG(ERROR) << "videoCaptureManager null";
     return;

@@ -34,34 +34,6 @@ int GetAshmemRegionProtectionMask(int fd) {
 
 }  // namespace
 
-// static
-PlatformSharedMemoryRegion PlatformSharedMemoryRegion::Take(
-    ScopedFD fd,
-    Mode mode,
-    size_t size,
-    const UnguessableToken& guid) {
-  if (!fd.is_valid())
-    return {};
-
-  if (size == 0)
-    return {};
-
-  if (size > static_cast<size_t>(std::numeric_limits<int>::max()))
-    return {};
-
-#if BUILDFLAG(ARKWEB_BUGFIX_CRASH)
-  auto check_result = CheckPlatformHandlePermissionsCorrespondToMode(fd.get(), mode, size);
-  if (!check_result.has_value()) {
-    LOG(ERROR) << "check platform handle permission failed, fd = " << fd.get() << ", mode" \
-      << static_cast<int>(mode) << ", size = " << size;
-  }
-#else
-  auto check_result = CheckPlatformHandlePermissionsCorrespondToMode(fd.get(), mode, size);
-  CHECK(check_result.has_value());
-#endif
-
-  return PlatformSharedMemoryRegion(std::move(fd), mode, size, guid);
-}
 
 int PlatformSharedMemoryRegion::GetPlatformHandle() const {
   return handle_.get();

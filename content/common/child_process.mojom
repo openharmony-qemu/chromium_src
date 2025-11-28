@@ -146,7 +146,10 @@ interface ChildProcess {
 
   [EnableIf=arkweb_renderer_anr_dump]
   InvokeRenderCrashDump();
- 
+
+  [EnableIf=arkweb_renderer_anr_dump]
+  GetUid() => (int32 uid);
+
   // #ifdef ARKWEB_LOGGER_REPORT
   [EnableIf=arkweb_logger_report]
   SetStrictLogMode(bool is_strict_log_mode);

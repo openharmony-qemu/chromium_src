@@ -33,6 +33,10 @@
       LOG(INFO) << "only get stack once";
     }
   }
+
+  void GetUid(GetUidCallback callback) override {
+    std::move(callback).Run(static_cast<int32_t>(getuid()));
+  }
 #endif
 
 #if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)

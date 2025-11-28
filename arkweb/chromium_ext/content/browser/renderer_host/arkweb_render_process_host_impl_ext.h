@@ -59,6 +59,8 @@ class CONTENT_EXPORT ArkwebRenderProcessHostImplExt : public RenderProcessHostIm
       base::OnceCallback<void(const std::string&)> dump_callback) override;
 
   void InvokeRenderCrashDump() override;
+
+  void ReportRenderUnresponsive(int32_t pid) override;
 #endif
 
 #if BUILDFLAG(IS_ARKWEB)

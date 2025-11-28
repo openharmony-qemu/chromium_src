@@ -123,6 +123,8 @@ constexpr char URL[] = "URL";
 constexpr char PAGE_DRAG_BLANK[] = "PAGE_DRAG_BLANK";
 constexpr char PAGE_BLANK_TIME[] = "PAGE_BLANK_TIME";
 
+constexpr char RENDER_JS_FREEZE[] = "RENDER_JS_FREEZE";
+
 // For web play error info,such as pip/drm
 constexpr char WEB_MEDIA_PLAY_ERROR[] = "WEB_MEDIA_PLAY_ERROR";
  
@@ -144,6 +146,19 @@ constexpr char MAILBOX_NONEXISTENT[] = "MAILBOX_NONEXISTENT";
 constexpr char PROCESS_FREEZE_WARNING[] = "PROCESS_FREEZE_WARNING";
 
 }  // namespace
+
+void ReportRenderJsFreeze(int32_t pid, const std::string& packageName, const std::string& processName,
+                          const std::string& freezeMsg, int32_t uid) {
+  OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
+      RENDER_JS_FREEZE, HiSysEventAdapter::EventType::FAULT,
+      {
+        "PID", pid,
+        "PACKAGE_NAME", packageName,
+        "PROCESS_NAME", processName,
+        "MSG", freezeMsg,
+        "UID", uid
+      });
+}                         
 
 void ReportPageLoadStats(int instanceId,
                          int accessSumCount,
@@ -449,9 +464,16 @@ void ReportGpuProcessEvent(CrashType type, std::string eventcontent) {
   }
 }
 // LOVC_EXCL_START
-void ReportAppfreeze() {
+void ReportAppfreeze(int32_t pid, const std::string& packageName, const std::string& processName,
+                     const std::string& freezeMsg, int32_t uid) {
   OhosAdapterHelper::GetInstance().GetHiSysEventAdapterInstance().Write(
       PROCESS_FREEZE_WARNING, HiSysEventAdapter::EventType::FAULT,
-      {"", std::string()});
+      {
+        "PID", pid,
+        "PACKAGE_NAME", packageName,
+        "PROCESS_NAME", processName,
+        "MSG", freezeMsg,
+        "UID", uid
+      });
 }
 // LOVC_EXCL_STOP

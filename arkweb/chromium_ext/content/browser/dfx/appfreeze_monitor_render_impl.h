@@ -20,14 +20,14 @@
 #include "base/task/single_thread_task_executor.h"
 #include "mojo/public/cpp/bindings/remote.h"
 
-void ReportRenderFreeze();
+void ReportRenderFreeze(int32_t pid, const std::string& processName, const std::string& freezeMsg, int32_t uid);
 
 class AppfreezeMonitorImpl {
 public:
   AppfreezeMonitorImpl();
   ~AppfreezeMonitorImpl() = default;
   static std::shared_ptr<AppfreezeMonitorImpl> GetInstance();
-  void GetRemoteAndSend();
+  void GetRemoteAndSend(int32_t pid, const std::string& processName, const std::string& freezeMsg, int32_t uid);
   void Init();
   bool IsReported() {
     return reported_;

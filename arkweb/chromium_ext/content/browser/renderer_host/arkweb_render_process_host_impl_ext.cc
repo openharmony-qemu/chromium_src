@@ -31,6 +31,11 @@ using blink::mojom::DetailTemplateIndex;
 using blink::mojom::ReaderModeConfig;
 #endif
 
+#if BUILDFLAG(ARKWEB_RENDERER_ANR_DUMP)
+#include "arkweb/ohos_nweb/src/sysevent/event_reporter.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
+#endif
+
 namespace content {
 
 #if BUILDFLAG(ARKWEB_READER_MODE)
@@ -86,6 +91,36 @@ void ArkwebRenderProcessHostImplExt::dumpCurrentJavaScriptStackInMainThread(
 
 void ArkwebRenderProcessHostImplExt::InvokeRenderCrashDump() {
   child_process_->InvokeRenderCrashDump();
+}
+
+std::string GetProcessName() {
+  std::ifstream input_file("/proc/self/cmdline");
+  if (!input_file.is_open()) {
+    LOG(ERROR) << "Error: Could not open /proc/self/cmdline";
+    return "";
+  }
+
+  std::string processName = "";
+  if (!std::getline(input_file, processName)) {
+    LOG(ERROR) << "Error: Failed to read process name from /proc/self/cmdline";
+  }
+  return processName;
+}
+
+void OnUidRetrieved(int32_t pid, int32_t uid) {
+#if !defined(COMPONENT_BUILD)
+  ReportRenderJsFreeze(
+    pid,
+    OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetBundleName(),
+    GetProcessName() + ":render",
+    "render unresponsive",
+    uid
+  );
+#endif
+}
+
+void ArkwebRenderProcessHostImplExt::ReportRenderUnresponsive(int32_t pid) {
+  child_process_->GetUid(base::BindOnce(&OnUidRetrieved, pid));
 }
 
 #if BUILDFLAG(IS_ARKWEB)

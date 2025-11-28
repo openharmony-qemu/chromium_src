@@ -392,7 +392,7 @@ class MockCefBrowserHost : public ArkWebBrowserHostExt {
   void ShowDevToolsWith(
       CefRefPtr<ArkWebBrowserHostExt> frontend_browser,
       CefRefPtr<CefDevToolsMessageHandlerDelegate> delegate,
-      const CefPoint& inspect_element_at) override {}
+      const CefPoint& inspect_element_at, bool canDock) override {}
   bool IsFullscreen() override { return false; }
   void ExitFullscreen(bool will_cause_resize) override {}
   bool CanExecuteChromeCommand(int command_id) override { return false; }

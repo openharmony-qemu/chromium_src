@@ -5972,7 +5972,7 @@ void NWebDelegate::OpenDevtoolsWith(
   CefPoint inspect_element_at(param->point.x, param->point.y);
   GetBrowser()->GetHost()->ShowDevToolsWith(
       devtools_delegate->GetBrowser()->GetHost(),
-      devtools_message_handler, inspect_element_at);
+      devtools_message_handler, inspect_element_at, param->canDock);
 #endif // #if BUILDFLAG(ARKWEB_DEVTOOLS)
 }
 

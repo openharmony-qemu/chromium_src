@@ -44,6 +44,11 @@ class NWebDevToolsMessageHandlerImpl
   bool BringToFront() override;
   bool CloseWindow() override;
   bool ActiveDevToolsWindow() override;
+  bool SetInspectedPageBounds(int left,
+                              int top,
+                              int width,
+                              int height) override;
+  bool SetDockMode(int mode)  override;
 
  private:
   void GetFileSelectorTitle(std::string& title, uint32_t mode);
@@ -51,6 +56,7 @@ class NWebDevToolsMessageHandlerImpl
  private:
   std::unique_ptr<NWebDevtoolsMessageHandler> handler_;
   raw_ptr<NWebDevtoolsMessageHandler> handlerNativeApi_;
+  bool canDock_;
 
   IMPLEMENT_REFCOUNTING(NWebDevToolsMessageHandlerImpl);
 };

@@ -1389,9 +1389,6 @@ void NWebHandlerDelegate::OnBeforeClose(CefRefPtr<CefBrowser> browser) {
       host->gpu_host()->DestroyNativeWindow(main_browser_->GetHost()->GetAcceleratedWidget(false));
     } else {
       LOG(ERROR) << "host|host->get_host()|main_browser_|main_browser_->GetHost() is nullptr";
-      if (NWebNativeWindowTracker::GetInstance()->CheckNativeWindow(window_)) {
-        NWebNativeWindowTracker::GetInstance()->DestroyNativeWindow(reinterpret_cast<intptr_t>(window_.get()));
-      }
     }
     OHOS::NWeb::OhosAdapterHelperExt::GetWindowAdapterNdkInstance()
         .DestroyNativeWindow(window_);

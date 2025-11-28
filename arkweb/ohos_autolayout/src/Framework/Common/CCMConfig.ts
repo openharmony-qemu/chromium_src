@@ -106,7 +106,7 @@ const defaultCCMConfig: ICCMConfig = {
   minScaleFactor: 55,
   breakpoints: [
     { widthRange: { min: 320, max: 500 }, aspectRatioRange: { min: 0.61, max: 1.63 } },
-    { widthRange: { min: 580, max: 900 }, aspectRatioRange: { min: 0.7, max: 2.0 } },
+    { widthRange: { min: 580, max: 950 }, aspectRatioRange: { min: 0.7, max: 2.0 } },
     { widthRange: { min: 1000, max: 1150 }, aspectRatioRange: { min: 1.3, max: 1.45 } }
   ],
   appRuleInfos: [{'id':'000','pg':['home']}],

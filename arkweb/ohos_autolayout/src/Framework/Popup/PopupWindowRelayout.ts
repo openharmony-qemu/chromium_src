@@ -898,7 +898,7 @@ export class PopupWindowRelayout extends AComponent {
         });
 
         if (cnt > 1 && childMinTop !== Infinity &&
-            Math.abs(childMaxBottom - childMinTop - parseFloat(elementStyle.height)) < Constant.flexDelHeightThreshold) {
+            (childMaxBottom - childMinTop) >= parseFloat(elementStyle.height) - Constant.flexDelHeightThreshold) {
             return true;
         }
         return false;

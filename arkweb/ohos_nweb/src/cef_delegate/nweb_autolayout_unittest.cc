@@ -18,13 +18,15 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <sstream>
+#include "base/files/file_path.h"
 #include "arkweb/build/features/features.h"
 #include "cef/include/cef_base.h"
 #include "cef/include/cef_browser.h"
 #include "cef/ohos_cef_ext/include/arkweb_browser_ext.h"
 #include "include/cef_devtools_message_handler_delegate.h"
 #include "include/cef_urlrequest.h"
- 
+#include "ui/base/resource/resource_bundle.h"
+
 using namespace testing;
  
 const std::string g_valid_config = R"({
@@ -45,7 +47,6 @@ const std::string g_valid_config = R"({
 })";
  
 namespace OHOS::NWeb {
-
 // Mock classes based on nweb_find_delegate_unittest.cc and nweb_preference_delegate_unittest.cc
 class MockCefBrowserHost : public ArkWebBrowserHostExt {
  public:
@@ -959,71 +960,6 @@ TEST_F(NwebAutolayoutTest, Parse_MissingWhitelist)
     EXPECT_FALSE(Parse(*root));
 }
 
-// Helper to access static function in .cc file
-namespace {
-std::string TestEscapeForJS(const std::string& s) {
-    std::stringstream ss;
-    for (char c : s) {
-        switch (c) {
-            case '`':  ss << "\\`";  break;
-            case '\\': ss << "\\\\"; break;
-            case '$':  ss << "\\$";  break;
-            default:   ss << c;     break;
-        }
-    }
-    return ss.str();
-}
-}
-
-TEST_F(NwebAutolayoutTest, EscapeForJS_Backtick)
-{
-    std::string input = "test`quote";
-    std::string expected = "test\\`quote";
-    EXPECT_EQ(TestEscapeForJS(input), expected);
-}
-
-TEST_F(NwebAutolayoutTest, EscapeForJS_Backslash)
-{
-    std::string input = "test\\path";
-    std::string expected = "test\\\\path";
-    EXPECT_EQ(TestEscapeForJS(input), expected);
-}
-
-TEST_F(NwebAutolayoutTest, EscapeForJS_Dollar)
-{
-    std::string input = "test$variable";
-    std::string expected = "test\\$variable";
-    EXPECT_EQ(TestEscapeForJS(input), expected);
-}
-
-TEST_F(NwebAutolayoutTest, EscapeForJS_NormalText)
-{
-    std::string input = "normal text 123";
-    std::string expected = "normal text 123";
-    EXPECT_EQ(TestEscapeForJS(input), expected);
-}
-
-TEST_F(NwebAutolayoutTest, EscapeForJS_MixedSpecialChars)
-{
-    std::string input = "`hello\\world$var`";
-    std::string expected = "\\`hello\\\\world\\$var\\`";
-    EXPECT_EQ(TestEscapeForJS(input), expected);
-}
-
-TEST_F(NwebAutolayoutTest, EscapeForJS_EmptyString)
-{
-    std::string input = "";
-    std::string expected = "";
-    EXPECT_EQ(TestEscapeForJS(input), expected);
-}
-
-TEST_F(NwebAutolayoutTest, EscapeForJS_OnlySpecialChars)
-{
-    std::string input = "`\\$";
-    std::string expected = "\\`\\\\\\$";
-    EXPECT_EQ(TestEscapeForJS(input), expected);
-}
-
 TEST_F(NwebAutolayoutTest, CheckCCMandApplyRule_ValidStateWithNullFrame)
 {
     // Set up valid internal state
@@ -1354,31 +1290,20 @@ TEST_F(NwebAutolayoutTest, ParseWhitelist_NonDictEntry)
     EXPECT_FALSE(ParseWhitelist(whitelist_val->GetDict()));
 }
 
-TEST_F(NwebAutolayoutTest, CheckWebContainer_WithValidBrowserAndFrame)
-{
-    // Test line 323: browser != nullptr && frame != nullptr && frame->IsMain()
-    // Since we can't easily create real CefBrowser/CefFrame objects,
-    // we'll test what we can with the current setup
-    mEnable_ = true;
-    mPatternJSSource_ = "test_pattern";
-    
-    // Test with null browser (already covered)
-    CheckWebContainer(nullptr, nullptr);
-    
-    // The branch at line 323 requires real CEF objects which are hard to mock
-    // without significant infrastructure. We verify the function doesn't crash.
-    EXPECT_TRUE(true);
-}
-
 TEST_F(NwebAutolayoutTest, LoadAutoLayoutFromHap_EmptyScript)
 {
-    // Test line 337: script_data.empty() branch
-    // This requires mocking ResourceBundle which is complex
-    // Since ResourceBundle may not be initialized in test environment,
-    // we skip this test to avoid crashes. The empty script case is
-    // already covered by the fact that mEnable_ gets set to false.
-    // If we want to test this properly, we'd need to mock ResourceBundle.
-    GTEST_SKIP() << "Skipping LoadAutoLayoutFromHap_EmptyScript - requires ResourceBundle mocking";
+    // Initialize a ResourceBundle instance with an empty pak path so
+    // GetRawDataResource returns an empty string_view and triggers the
+    // failure branch.
+    ui::ResourceBundle::CleanupSharedInstance();
+    ui::ResourceBundle::InitSharedInstanceWithPakPath(base::FilePath());
+
+    mEnable_ = true;
+    LoadAutoLayoutFromHap();
+
+    EXPECT_FALSE(mEnable_);
+
+    ui::ResourceBundle::CleanupSharedInstance();
 }
 
 TEST_F(NwebAutolayoutTest, Parse_WhitelistEmpty)

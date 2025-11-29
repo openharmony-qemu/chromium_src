@@ -184,6 +184,34 @@ typedef struct OH_Huks_ExtCertInfoSet {
     uint32_t count;
     struct OH_Huks_ExtCertInfo *certs;
 } OH_Huks_ExtCertInfoSet;
+
+/**
+ * @brief Enumerates the PIN auth states.
+ *
+ * @since 22
+ */
+typedef enum OH_Huks_ExternalPinAuthState {
+    /**
+ * @brief Ukey PIN is not authenticated.
+ *
+ * @since 22
+ */
+    OH_HUKS_EXT_CRYPTO_PIN_NO_AUTH = 0,
+
+    /**
+ * @brief Ukey PIN is authenticated.
+ *
+ * @since 22
+ */
+    OH_HUKS_EXT_CRYPTO_PIN_AUTH_SUCCEEDED = 1,
+
+    /**
+ * @brief Ukey PIN is locked.
+ *
+ * @since 22
+ */
+    OH_HUKS_EXT_CRYPTO_PIN_LOCKED = 2
+} OH_Huks_ExternalPinAuthState;
  
 #ifdef __cplusplus
 }

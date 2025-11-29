@@ -36,6 +36,8 @@
 #include "ui/views/accessibility/view_ax_platform_node_delegate_mac.h"
 #elif BUILDFLAG(IS_LINUX)
 #include "ui/views/accessibility/view_ax_platform_node_delegate_auralinux.h"
+#elif BUILDFLAG(IS_OHOS)
+#include "ui/views/accessibility/view_ax_platform_node_delegate_ohos.h"
 #endif
 
 namespace views {
@@ -103,6 +105,8 @@ std::unique_ptr<ViewAccessibility> ViewAccessibility::Create(View* view) {
   return ViewAXPlatformNodeDelegateMac::CreatePlatformSpecific(view);
 #elif BUILDFLAG(IS_LINUX)
   return ViewAXPlatformNodeDelegateAuraLinux::CreatePlatformSpecific(view);
+#elif BUILDFLAG(IS_OHOS)
+  return ViewAXPlatformNodeDelegateOhos::CreatePlatformSpecific(view);
 #endif
 }
 

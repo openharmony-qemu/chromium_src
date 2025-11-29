@@ -31,6 +31,10 @@
 #include "base/trace_event/base_tracing.h"
 #include "build/build_config.h"
 
+#if BUILDFLAG(IS_OHOS) && defined(FREEZE_DETECTION_MODE)
+#include "hicollie/hicollie.h"
+#endif //BUILDFLAG(IS_OHOS) && defined(FREEZE_DETECTION_MODE)
+
 namespace base {
 
 namespace {
@@ -59,6 +63,62 @@ std::atomic<bool> g_keep_monitoring{true};
 // If true, indicates that this process's shutdown sequence has started. Once
 // flipped to true, cannot be un-flipped.
 std::atomic<bool> g_shutting_down{false};
+
+#if BUILDFLAG(IS_OHOS) && defined(FREEZE_DETECTION_MODE)
+constexpr auto kUIMonitoringPeriod = base::Seconds(1);
+constexpr auto kUIHangWatchTime = base::Seconds(3);
+ 
+enum class ReportStatus {
+  kNotNeedReport,
+  kNeedReport3s,
+  kNeedReport6s,
+  kReportedAll
+};
+std::atomic<ReportStatus> g_report_status{ReportStatus::kNotNeedReport};
+
+ReportStatus GetReportStatus() {
+  return g_report_status.load(std::memory_order_relaxed);
+}
+
+void SetReportStatus(ReportStatus report_status) {
+   g_report_status.store(report_status, std::memory_order_relaxed);
+}
+ 
+void UpdateHungThreadReportStatus(bool thread_hang) {
+  if (!thread_hang) {
+    SetReportStatus(ReportStatus::kNotNeedReport);
+  } else if (GetReportStatus() == ReportStatus::kNotNeedReport) {
+    SetReportStatus(ReportStatus::kNeedReport3s);
+  }
+}
+
+void OHHiCollieTask() {
+  switch (GetReportStatus()) {
+    case ReportStatus::kNotNeedReport:
+      break;
+    case ReportStatus::kNeedReport3s:
+    {
+      bool report_arg = false;
+      HiCollie_ErrorCode reportResult = OH_HiCollie_Report(&report_arg);
+      LOG(ERROR) << "OH_HiCollie_Report: Detected freeze, reportResult = "
+                 << static_cast<int>(reportResult) << ", 3s was reported";
+      SetReportStatus(ReportStatus::kNeedReport6s);
+      break;
+    }
+    case ReportStatus::kNeedReport6s:
+    {
+      bool report_arg = true;
+      HiCollie_ErrorCode reportResult = OH_HiCollie_Report(&report_arg);
+      LOG(ERROR) << "OH_HiCollie_Report: Detected freeze, reportResult = "
+                 << static_cast<int>(reportResult) << ", 6s was reported";
+      SetReportStatus(ReportStatus::kReportedAll);
+      break;
+    }
+    case ReportStatus::kReportedAll:
+      break;
+  }
+}
+#endif //BUILDFLAG(IS_OHOS) && defined(FREEZE_DETECTION_MODE)
 
 // Emits the hung thread count histogram. |count| is the number of threads
 // of type |thread_type| that were hung or became hung during the last
@@ -97,6 +157,9 @@ void LogStatusHistogram(HangWatcher::ThreadType thread_type,
           }
           break;
         case HangWatcher::ThreadType::kMainThread:
+#if BUILDFLAG(IS_OHOS) && defined(FREEZE_DETECTION_MODE)
+          UpdateHungThreadReportStatus(any_thread_hung);
+#endif //BUILDFLAG(IS_OHOS) && defined(FREEZE_DETECTION_MODE)
           if (shutting_down) {
             UMA_HISTOGRAM_BOOLEAN(
                 "HangWatcher.IsThreadHung.BrowserProcess.UIThread.Shutdown",
@@ -209,7 +272,7 @@ bool ThreadTypeLoggingLevelGreaterOrEqual(HangWatcher::ThreadType thread_type,
 BASE_FEATURE(kEnableHangWatcher,
              "EnableHangWatcher",
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_CHROMEOS) || \
-    BUILDFLAG(IS_LINUX)
+    BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
              FEATURE_ENABLED_BY_DEFAULT
 #else
              FEATURE_DISABLED_BY_DEFAULT
@@ -307,6 +370,13 @@ WatchHangsInScope::WatchHangsInScope(TimeDelta timeout) {
   // and reusing the value.
 
   previous_deadline_ = old_deadline;
+
+#if BUILDFLAG(IS_OHOS) && defined(FREEZE_DETECTION_MODE)
+    if (g_hang_watcher_process_type == HangWatcher::ProcessType::kBrowserProcess) {
+      timeout = kUIHangWatchTime;
+    }
+#endif //BUILDFLAG(IS_OHOS) && defined(FREEZE_DETECTION_MODE)
+
   TimeTicks deadline = TimeTicks::Now() + timeout;
   current_hang_watch_state->SetDeadline(deadline);
   current_hang_watch_state->IncrementNestingLevel();
@@ -403,6 +473,16 @@ void HangWatcher::InitializeOnMainThread(ProcessType process_type,
   if (!enable_hang_watcher) {
     return;
   }
+
+#if BUILDFLAG(IS_OHOS) && defined(FREEZE_DETECTION_MODE)
+  LOG(INFO) << "Process type: " << static_cast<int>(process_type);
+  if (process_type == ProcessType::kBrowserProcess) {
+    HiCollie_ErrorCode result = OH_HiCollie_Init_StuckDetection(OHHiCollieTask);
+    if (result != 0) {
+      LOG(ERROR) << "OH_HiCollie_Init_StuckDetection failed, errcod: " << static_cast<int>(result);
+    }
+  }
+#endif //BUILDFLAG(IS_OHOS) && defined(FREEZE_DETECTION_MODE)
 
   // Retrieve thread-specific config for hang watching.
   if (process_type == HangWatcher::ProcessType::kBrowserProcess) {
@@ -547,6 +627,12 @@ HangWatcher::HangWatcher()
   DETACH_FROM_THREAD(hang_watcher_thread_checker_);
 
   should_monitor_.declare_only_used_while_idle();
+
+#if BUILDFLAG(IS_OHOS) && defined(FREEZE_DETECTION_MODE)
+  if (g_hang_watcher_process_type == HangWatcher::ProcessType::kBrowserProcess) {
+     monitoring_period_ = kUIMonitoringPeriod;
+  }
+#endif //BUILDFLAG(IS_OHOS) && defined(FREEZE_DETECTION_MODE)
 
   DCHECK(!g_instance);
   g_instance = this;

@@ -567,6 +567,15 @@ BASE_FEATURE(kAddressTrackerLinuxIsProxied,
              base::FEATURE_ENABLED_BY_DEFAULT);
 #endif  // BUILDFLAG(IS_LINUX)
 
+#if BUILDFLAG(IS_OHOS)
+BASE_FEATURE(kEnableNetworkPreload,
+             "EnableNetworkPreload",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+BASE_FEATURE(kEnableOmniboxPre,
+             "EnableOmniboxPre",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+#endif  // BUILDFLAG(IS_OHOS)
+
 // Enables binding of cookies to the port that originally set them by default.
 BASE_FEATURE(kEnablePortBoundCookies,
              "EnablePortBoundCookies",

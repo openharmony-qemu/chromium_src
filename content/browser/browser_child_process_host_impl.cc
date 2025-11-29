@@ -326,6 +326,12 @@ void BrowserChildProcessHostImpl::LaunchWithoutExtraCommandLineSwitches(
       switches::kLogBestEffortTasks,
       switches::kPerfettoDisableInterning,
       switches::kTraceToConsole,
+#if BUILDFLAG(IS_OHOS)
+      switches::kBundleInstallationDir,
+      switches::KDisableOcclusionFeature,
+      switches::KDisablePartialSwap,
+      switches::kOhosTrace,
+#endif
   };
   cmd_line->CopySwitchesFrom(browser_command_line, kForwardSwitches);
 

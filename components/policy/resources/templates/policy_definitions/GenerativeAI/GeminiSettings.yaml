@@ -17,6 +17,7 @@ example_value: 1
 future_on:
 - android
 - chrome.linux
+- chrome.ohos
 - chrome_os
 features:
   dynamic_refresh: true

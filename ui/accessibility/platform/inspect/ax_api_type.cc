@@ -24,6 +24,7 @@ static constexpr std::string_view kMacString{"mac"};
 static constexpr std::string_view kLinuxString{"linux"};
 static constexpr std::string_view kWinIA2String{"ia2"};
 static constexpr std::string_view kWinUIAString{"uia"};
+static constexpr std::string_view kOhosString{"ohos"};
 
 }  // Namespace
 
@@ -47,6 +48,8 @@ AXApiType::Type::operator std::string_view() const {
       return kWinIA2String;
     case kWinUIA:
       return kWinUIAString;
+    case kOhos:
+      return kOhosString;
   }
 }
 

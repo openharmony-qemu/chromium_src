@@ -55,6 +55,8 @@ std::string PlatformToString(variations::Study::Platform platform) {
       return "WebLayer";
     case variations::Study::PLATFORM_CHROMEOS_LACROS:
       return "ChromeOS Lacros";
+    case variations::Study::PLATFORM_OHOS:
+      return "OhOS";
   }
   NOTREACHED();
 }

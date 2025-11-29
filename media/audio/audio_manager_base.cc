@@ -432,6 +432,18 @@ AudioOutputStream* AudioManagerBase::MakeAudioOutputStreamProxy(
         output_params.set_effects(params.effects() & output_params.effects());
       }
 
+#if BUILDFLAG(IS_OHOS)
+      if (params.render_process_id() != output_params.render_process_id()) {
+        output_params.set_render_process_id(params.render_process_id());
+      }
+      if (params.render_frame_id() != output_params.render_frame_id()) {
+        output_params.set_render_frame_id(params.render_frame_id());
+      }
+      if (params.GetStreamPrivacy() != output_params.GetStreamPrivacy()) {
+        output_params.SetStreamPrivacy(params.GetStreamPrivacy());
+      }
+#endif
+
       uma_stream_format = STREAM_FORMAT_PCM_LOW_LATENCY;
     } else {
       // We've received invalid audio output parameters, so switch to a mock

@@ -122,6 +122,12 @@
 #include "media/gpu/vaapi/vaapi_wrapper.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "content/common/gpu_pre_sandbox_hook_linux.h"
+#include "sandbox/policy/linux/sandbox_linux.h"
+#include "sandbox/policy/sandbox_type.h"
+#endif
+
 namespace content {
 
 namespace {
@@ -134,6 +140,8 @@ bool StartSandboxLinux(gpu::GpuWatchdogThread*,
 bool StartSandboxAndroid(gpu::GpuWatchdogThread*);
 #elif BUILDFLAG(IS_WIN)
 bool StartSandboxWindows(const sandbox::SandboxInterfaceInfo*);
+#elif BUILDFLAG(IS_OHOS)
+bool StartSandboxOHOS(gpu::GpuWatchdogThread*);
 #endif
 
 class ContentSandboxHelper : public gpu::GpuSandboxHelper {
@@ -194,6 +202,8 @@ class ContentSandboxHelper : public gpu::GpuSandboxHelper {
     return StartSandboxWindows(sandbox_info_);
 #elif BUILDFLAG(IS_MAC)
     return sandbox::Seatbelt::IsSandboxed();
+#elif BUILDFLAG(IS_OHOS)
+    return StartSandboxOHOS(watchdog_thread);
 #elif BUILDFLAG(IS_ANDROID)
     if (base::FeatureList::IsEnabled(
             sandbox::policy::features::kAndroidGpuSandbox)) {
@@ -577,6 +587,33 @@ bool StartSandboxWindows(const sandbox::SandboxInterfaceInfo* sandbox_info) {
   return false;
 }
 #endif  // BUILDFLAG(IS_WIN)
+
+#if BUILDFLAG(IS_OHOS)
+bool StartSandboxOHOS(gpu::GpuWatchdogThread* watchdog_thread) {
+  TRACE_EVENT0("gpu,startup", "Initialize sandbox");
+
+  if (watchdog_thread) {
+    // SandboxLinux needs to be able to ensure that the thread
+    // has really been stopped.
+    sandbox::policy::SandboxLinux::GetInstance()->StopThread(watchdog_thread);
+  }
+
+  // SandboxLinux::InitializeSandbox() must always be called
+  // with only one thread.
+  sandbox::policy::SandboxLinux::Options sandbox_options;
+
+  bool res = sandbox::policy::SandboxLinux::GetInstance()->InitializeSandbox(
+      sandbox::policy::SandboxTypeFromCommandLine(
+          *base::CommandLine::ForCurrentProcess()),
+      base::BindOnce(GpuPreSandboxHook), sandbox_options);
+
+  if (watchdog_thread) {
+    watchdog_thread->Start();
+  }
+
+  return res;
+}
+#endif
 
 }  // namespace.
 

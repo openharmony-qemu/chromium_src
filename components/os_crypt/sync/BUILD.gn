@@ -74,8 +74,20 @@ component("sync") {
       deps += [ "//dbus" ]
       defines += [ "USE_KWALLET" ]
     }
-  } else if (is_posix || is_fuchsia) {
+  } else if ((is_posix && !is_ohos) || is_fuchsia) {
     sources += [ "os_crypt_posix.cc" ]
+  }
+
+  if (is_ohos) {
+    sources += [
+      "ohos_huks_crypto.cc",
+      "ohos_huks_crypto.h",
+      "os_crypt_ohos.cc",
+    ]
+ 
+    libs = [
+      "huks_ndk.z"
+    ]
   }
 }
 
@@ -150,5 +162,11 @@ source_set("unit_tests") {
     }
   } else if (is_posix || is_fuchsia) {
     sources += [ "os_crypt_posix_unittest.cc" ]
+  }
+
+  if (is_ohos) {
+    sources += [
+      "ohos_huks_crypto_unittest.cc",
+    ]
   }
 }

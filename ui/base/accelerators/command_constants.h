@@ -9,6 +9,7 @@ namespace ui {
 inline constexpr char kKeybindingPlatformChromeOs[] = "chromeos";
 inline constexpr char kKeybindingPlatformDefault[] = "default";
 inline constexpr char kKeybindingPlatformLinux[] = "linux";
+inline constexpr char kKeybindingPlatformOHOS[] = "ohos";
 inline constexpr char kKeybindingPlatformMac[] = "mac";
 inline constexpr char kKeybindingPlatformWin[] = "windows";
 inline constexpr char kKeyAlt[] = "Alt";

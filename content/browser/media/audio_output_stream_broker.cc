@@ -88,6 +88,13 @@ AudioOutputStreamBroker::AudioOutputStreamBroker(
   DCHECK(group_id_);
   TRACE_EVENT_NESTABLE_ASYNC_BEGIN0("audio", "AudioOutputStreamBroker", this);
 
+#if BUILDFLAG(IS_OHOS)
+  media::AudioParameters preParams = params;
+  preParams.set_render_process_id(render_process_id);
+  preParams.set_render_frame_id(render_frame_id);
+  params_ = preParams;
+#endif
+
   MediaObserver* media_observer =
       GetContentClient()->browser()->GetMediaObserver();
 

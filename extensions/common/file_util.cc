@@ -46,6 +46,11 @@
 #include "ui/base/l10n/l10n_util.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/permission_manager/permission_manager_adapter.h"
+namespace ohos_permission = ohos::adapter::permission;
+#endif
+
 using extensions::mojom::ManifestLocation;
 
 namespace extensions::file_util {
@@ -296,7 +301,19 @@ std::optional<base::Value::Dict> LoadManifest(
     *error = l10n_util::GetStringUTF8(IDS_EXTENSION_MANIFEST_UNREADABLE);
     return std::nullopt;
   }
-
+#if BUILDFLAG(IS_OHOS)
+  GURL file_url = net::FilePathToFileURL(extension_path);
+  if (file_url.is_valid()) {
+    ohos_permission::PermissionActivationResult activate_result =
+      ohos_permission::PermissionManagerAdapter::ActivateFileAccessPersist(
+          file_url.spec());
+    if (activate_result !=
+        ohos_permission::PermissionActivationResult::SUCCESS) {
+      LOG(ERROR) << "The file exists, but activating file permissions failed, "
+                 << "error code: " << static_cast<int32_t>(activate_result);
+    }
+  }
+#endif
   JSONFileValueDeserializer deserializer(manifest_path);
   std::unique_ptr<base::Value> root(deserializer.Deserialize(nullptr, error));
   if (!root.get()) {

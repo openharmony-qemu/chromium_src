@@ -45,6 +45,10 @@
 #include "base/trace_event/base_tracing.h"
 #include "build/build_config.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/multiprocess/child_process_manager.h"
+#endif
+
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX)
 #include <sys/prctl.h>
 #endif
@@ -197,6 +201,43 @@ void ResetChildSignalHandlersToDefaults() {
 }
 #endif  // !BUILDFLAG(IS_LINUX) ||
         // (!defined(__i386__) && !defined(__x86_64__) && !defined(__arm__))
+
+#if BUILDFLAG(IS_OHOS)
+Process LaunchProcessWithNativeSpawn(const CommandLine& cmdline,
+                                     const LaunchOptions& options) {
+  ohos::adapter::multiprocess::ChildProcessManager& manager =
+      ohos::adapter::multiprocess::ChildProcessManager::GetInstance();
+
+  std::vector<std::string> argv = cmdline.argv();
+  std::vector<std::pair<int, int>> fd_id_remap;
+  size_t file_count = options.fds_to_remap.size();
+  for (size_t i = 0; i < file_count; ++i) {
+    const FileHandleMappingVector::value_type& value =
+        options.fds_to_remap[i];
+    int fd = value.first;
+    PCHECK(0 <= fd);
+    int id = value.second;
+    fd_id_remap.push_back(std::make_pair(fd, id));
+  }
+
+  int pid = -1;
+  if (options.is_gpu_process) {
+    pid = manager.StartGpuProcess(argv, fd_id_remap);
+  } else {
+    pid = manager.StartChildProcess(argv,
+                                    fd_id_remap,
+                                    options.process_entry_point,
+                                    options.is_isolated_process);
+  }
+  
+  if (pid < 0) {
+    RAW_LOG(ERROR, "start child process failed");
+    return Process();
+  }
+
+  return Process(pid);
+}
+#endif  // BUILDFLAG(IS_OHOS)
 }  // anonymous namespace
 
 // Functor for |ScopedDIR| (below).
@@ -211,7 +252,8 @@ struct ScopedDIRClose {
 // Automatically closes |DIR*|s.
 typedef std::unique_ptr<DIR, ScopedDIRClose> ScopedDIR;
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX) || \
+    BUILDFLAG(IS_OHOS)
 static const char kFDDir[] = "/proc/self/fd";
 #elif BUILDFLAG(IS_SOLARIS)
 static const char kFDDir[] = "/dev/fd";
@@ -295,6 +337,12 @@ void CloseSuperfluousFds(const base::InjectiveMultimap& saved_mapping) {
 
 Process LaunchProcess(const CommandLine& cmdline,
                       const LaunchOptions& options) {
+#if BUILDFLAG(IS_OHOS)
+  if (options.enable_native_spawn) {
+    // Creating a process with native spawn and specified the process startup entry point
+    return LaunchProcessWithNativeSpawn(cmdline, options);
+  }
+#endif
   return LaunchProcess(cmdline.argv(), options);
 }
 
@@ -334,7 +382,8 @@ Process LaunchProcess(const std::vector<std::string>& argv,
   }
 
   pid_t pid;
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX) || \
+    BUILDFLAG(IS_OHOS)
   if (options.clone_flags) {
     // Signal handling in this function assumes the creation of a new
     // process, so we check that a thread is not being created by mistake
@@ -717,7 +766,8 @@ bool GetAppOutputWithExitCode(const CommandLine& cl,
                               exit_code);
 }
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_AIX) || \
+    BUILDFLAG(IS_OHOS)
 namespace {
 
 // This function runs on the stack specified on the clone call. It uses longjmp

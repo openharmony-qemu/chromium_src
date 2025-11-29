@@ -1,0 +1,27 @@
+@rem rename this file to xxx.bat for windows platform
+@rem Usage 1 use default parameter, no data in cem publish command
+@rem Usage 2 user defined parameter, add -d param in cem publish command
+@rem         for start event: chromium_tracing_start, -d can specify the trace categories
+@rem         for stop event: chromium_tracing_stop, -d can specify the treace output filename(not path)
+@rem
+@rem default trace categories: benchmark,blink,blink_gc,v8,cc,gpu,navigation,toplevel,viz,ui,views,
+@rem                           disk_cache,latency,renderer.scheduler,sequence_manager,timeline.frame,
+@rem                           disabled-by-default-v8.gc,disabled-by-default-blink_gc
+@rem default trace output file path: /data/app/el2/100/base/com.huawei.ohos_chromium/temp/chromium_trace
+
+set trace_time=15
+
+hdc shell "cem publish -e \"chromium_tracing_start\" "
+:: hdc shell "cem publish -e \"chromium_tracing_start\" -d \"blink,cc,gpu,renderer.scheduler,sequence_manager,v8,toplevel,viz\" "
+ping -n 1 127.0.1 > nul
+
+hdc shell "hitrace -b 81920 -t %trace_time% ace app ohos ability graphic sched freq irq sync mmc rpc workq idle disk pagecache memreclaim binder nweb -o /data/local/tmp/hitrace.txt"
+
+hdc shell "cem publish -e \"chromium_tracing_stop\" "
+:: hdc shell "cem publish -e \"chromium_tracing_stop\" -d chromium_trace_2 "
+
+ping -n 2 127.0.1 > nul
+hdc file recv /data/local/tmp/hitrace.txt .\
+hdc file recv /data/app/el2/100/base/com.huawei.ohos_chromium/temp/chromium_trace .\
+
+pause

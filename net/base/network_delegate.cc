@@ -34,7 +34,9 @@ int NetworkDelegate::NotifyBeforeURLRequest(URLRequest* request,
   DCHECK(!callback.is_null());
 
   // ClusterFuzz depends on the following VLOG. See: crbug.com/715656
+#if !BUILDFLAG(IS_OHOS)
   VLOG(1) << "NetworkDelegate::NotifyBeforeURLRequest: " << request->url();
+#endif
   return OnBeforeURLRequest(request, std::move(callback), new_url);
 }
 

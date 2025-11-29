@@ -1739,6 +1739,11 @@ class WebContents : public PageNavigator, public base::SupportsUserData {
   // (e.g., from a link click with `target="_blank"`, `window.open()`).
   virtual WindowOpenDisposition GetOriginalWindowOpenDisposition() const = 0;
 
+#if BUILDFLAG(IS_OHOS)
+  virtual void SetHaveEncryptedMedia(bool have_encrypted_media) = 0;
+  virtual bool HaveEncryptedMedia() const = 0;
+#endif
+
  private:
   // This interface should only be implemented inside content.
   friend class WebContentsImpl;

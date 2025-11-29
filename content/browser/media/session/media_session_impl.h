@@ -370,6 +370,11 @@ class MediaSessionImpl : public MediaSession,
   // that might otherwise be sitting in a message pipe somewhere.
   void flush_observers_for_testing() { observers_.FlushForTesting(); }
 
+#if BUILDFLAG(IS_OHOS)
+  bool IsActiveSession() override;
+  bool HasOnlyOneShotPlayersPublic() override;
+#endif
+
  private:
   friend class content::WebContentsUserData<MediaSessionImpl>;
   friend class MediaSessionImplBrowserTest;

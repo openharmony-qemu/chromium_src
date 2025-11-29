@@ -137,6 +137,15 @@ class COMPONENT_EXPORT(OZONE_BASE) PlatformScreen {
   virtual std::optional<float> GetPreferredScaleFactorForAcceleratedWidget(
       gfx::AcceleratedWidget widget) const;
 
+#if BUILDFLAG(IS_OHOS)
+  virtual gfx::AcceleratedWidget GetLocalProcessWidgetAtPoint(
+      const gfx::Point& point_in_dip,
+      const std::set<gfx::AcceleratedWidget>& ignore,
+      const int32_t display_id) const;
+  virtual gfx::Point GetCursorScreenPoint(const int32_t display_id) const = 0;
+  virtual void OnAvailableAreaChange(uint64_t display_id) = 0;
+#endif
+
  protected:
   void StorePlatformNameIntoListOfValues(base::Value::List& values,
                                          const std::string& platform_name);

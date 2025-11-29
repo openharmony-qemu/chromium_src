@@ -166,6 +166,12 @@ class CONTENT_EXPORT WebContentsDelegate {
   // security state changed and that security UI should be updated.
   virtual void VisibleSecurityStateChanged(WebContents* source) {}
 
+#if BUILDFLAG(IS_OHOS)
+  // Tells the delegate to enter or exit privacy mode.
+  // Privacy mode means prevent screenshot and screen capture.
+  virtual void SetPrivacyMode(bool use_privacy_mode) {}
+#endif
+
   // Creates a new tab with the already-created WebContents `new_contents`.
   // The window for the added contents should be reparented correctly when this
   // method returns. `target_url` is set to the value provided when
@@ -864,6 +870,10 @@ class CONTENT_EXPORT WebContentsDelegate {
   GetBackForwardTransitionFallbackUXConfig();
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(IS_OHOS)
+  virtual void NotifyShowBeforeUnloadConfirmDialog() {}
+#endif  // BUILDFLAG(IS_OHOS)
+
   // Returns the saved related_applications web app manifest field associated
   // with the given `web_contents`. The information is saved via the
   // installation of a web app, where the url of the `web_contents` is in-scope
@@ -873,6 +883,11 @@ class CONTENT_EXPORT WebContentsDelegate {
   // https://wicg.github.io/manifest-incubations/index.html#related_applications-member
   virtual std::vector<blink::mojom::RelatedApplicationPtr>
   GetSavedRelatedApplications(WebContents* web_contents);
+
+#if BUILDFLAG(IS_OHOS)
+  // For built-in webapp
+  virtual bool IsWebApp();
+#endif  // BUILDFLAG(IS_OHOS)
 
  protected:
   virtual ~WebContentsDelegate();

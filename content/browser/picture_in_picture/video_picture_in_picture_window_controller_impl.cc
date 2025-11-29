@@ -209,6 +209,12 @@ void VideoPictureInPictureWindowControllerImpl::UpdatePlaybackState() {
     playback_state = VideoOverlayWindow::PlaybackState::kEndOfVideo;
   }
 
+#if BUILDFLAG(IS_OHOS)
+  if (update_playback_state_callback_) {
+    update_playback_state_callback_.Run(oh_controller_id, IsPlayerActive());
+  }
+#endif
+
   window_->SetPlaybackState(playback_state);
 }
 
@@ -496,6 +502,17 @@ void VideoPictureInPictureWindowControllerImpl::MediaSessionActionsChanged(
       media_session_action_next_slide_handled_);
   window_->SetPreviousSlideButtonVisibility(
       media_session_action_previous_slide_handled_);
+
+#if BUILDFLAG(IS_OHOS)
+  if (update_video_previous_callback_) {
+    update_video_previous_callback_.Run(
+        oh_controller_id, media_session_action_previous_track_handled_);
+  }
+  if (update_video_next_callback_) {
+    update_video_next_callback_.Run(oh_controller_id,
+                                    media_session_action_next_track_handled_);
+  }
+#endif
 }
 
 void VideoPictureInPictureWindowControllerImpl::MediaSessionPositionChanged(

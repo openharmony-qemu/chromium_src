@@ -78,6 +78,16 @@ component("system_media_controls") {
       "Foundation.framework",
       "MediaPlayer.framework",
     ]
+  } else if (is_ohos) {
+    sources = [
+      "ohos/system_media_controls_ohos.cc",
+      "ohos/system_media_controls_ohos.h",
+    ]
+
+    libs = [
+      "bundle_ndk.z",
+      "ohavsession",
+    ]
   } else {
     sources = [ "system_media_controls_stub.cc" ]
   }

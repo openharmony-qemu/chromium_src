@@ -1,0 +1,20 @@
+Package: readline-common
+Source: readline
+Version: 8.1-1
+Architecture: all
+Maintainer: Matthias Klose <doko@debian.org>
+Installed-Size: 92
+Depends: dpkg (>= 1.15.4) | install-info
+Suggests: readline-doc
+Conflicts: libreadline-common, libreadline5 (<< 5.0-11)
+Replaces: libreadline-common, libreadline4 (<< 4.3-16), libreadline5 (<< 5.0-11)
+Section: utils
+Priority: optional
+Multi-Arch: foreign
+Description: GNU readline and history libraries, common files
+ The GNU readline library aids in the consistency of user interface
+ across discrete programs that need to provide a command line
+ interface.
+ .
+ The GNU history library provides a consistent user interface for
+ recalling lines of previously typed input.

@@ -34,10 +34,19 @@ template <typename Range, typename Proj = std::identity>
                std::indirect_result_t<Proj, std::ranges::iterator_t<Range>>>
 Value::List ToValueList(Range&& range, Proj proj = {}) {
   auto container = Value::List::with_capacity(std::ranges::size(range));
+#if BUILDFLAG(IS_OHOS)
+  auto first = std::ranges::begin(range);
+  auto last = std::ranges::end(range);
+  auto f = [&]<typename T>(T&& value) { container.Append(std::forward<T>(value)); };
+  for (; first != last; ++first) {
+    std::invoke(f, std::invoke(std::move(proj), *first));
+  }
+#else
   std::ranges::for_each(
       std::forward<Range>(range),
       [&]<typename T>(T&& value) { container.Append(std::forward<T>(value)); },
       std::move(proj));
+#endif
   return container;
 }
 

@@ -15,6 +15,7 @@
 #include "base/notreached.h"
 #include "base/task/single_thread_task_runner.h"
 #include "build/build_config.h"
+#include "chrome/app/chrome_command_ids.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "ui/aura/client/aura_constants.h"
 #include "ui/aura/client/drag_drop_client.h"
@@ -147,9 +148,16 @@ ui::PlatformWindowInitProperties ConvertWidgetInitParamsToInitProperties(
   }
 
 #if BUILDFLAG(IS_OZONE)
+#if BUILDFLAG(IS_OHOS)
+  if (params.type != Widget::InitParams::TYPE_WINDOW &&
+      ui::OzonePlatform::GetInstance()
+          ->GetPlatformProperties()
+          .set_parent_for_non_top_level_windows) {
+#else
   if (ui::OzonePlatform::GetInstance()
           ->GetPlatformProperties()
           .set_parent_for_non_top_level_windows) {
+#endif
     // If context has been set, use that as the parent_widget so that Wayland
     // creates a correct hierarchy of windows.
     if (params.context) {
@@ -1026,6 +1034,25 @@ void DesktopWindowTreeHostPlatform::OnActivationChanged(bool active) {
   ScheduleRelayout();
 }
 
+#if BUILDFLAG(IS_OHOS)
+void DesktopWindowTreeHostPlatform::SetSurfaceId(uint64_t surface_id) {
+  aura::WindowTreeHostPlatform::SetSurfaceId(surface_id);
+}
+
+void DesktopWindowTreeHostPlatform::OnFullscreenSwitched(bool is_enter_fullscreen) {
+  if (GetWidget()->IsFullscreen() == is_enter_fullscreen) {
+    return;
+  }
+  GetWidget()->ExecuteCommand(IDC_FULLSCREEN);
+  OnFullscreenStateChanged();
+}
+
+display::Display DesktopWindowTreeHostPlatform::AccessDisplayNearestRootWindow()
+    const {
+  return GetDisplayNearestRootWindow();
+}
+#endif
+
 std::optional<gfx::Size>
 DesktopWindowTreeHostPlatform::GetMinimumSizeForWindow() const {
   return native_widget_delegate_->GetMinimumSize();
@@ -1188,7 +1215,7 @@ bool DesktopWindowTreeHostPlatform::RotateFocusForWidget(
 // DesktopWindowTreeHost:
 
 // Linux subclasses this host and adds some Linux specific bits.
-#if !BUILDFLAG(IS_LINUX) && !BUILDFLAG(IS_CHROMEOS)
+#if !BUILDFLAG(IS_LINUX) && !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_OHOS)
 // static
 DesktopWindowTreeHost* DesktopWindowTreeHost::Create(
     internal::NativeWidgetDelegate* native_widget_delegate,

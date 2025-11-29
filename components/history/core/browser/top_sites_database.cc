@@ -203,7 +203,10 @@ bool TopSitesDatabase::UpgradeToVersion5(sql::MetaTable& meta_table) {
 
 bool TopSitesDatabase::InitImpl(const base::FilePath& db_name) {
   const bool file_existed = base::PathExists(db_name);
-
+#if BUILDFLAG(IS_OHOS)
+  LOG(INFO) << "TopSitesDatabase file exists: " << file_existed
+            << ", file_path: " << db_name;
+#endif
   // Settings copied from FaviconDatabase.
   db_ =
       std::make_unique<sql::Database>(sql::DatabaseOptions().set_cache_size(32),

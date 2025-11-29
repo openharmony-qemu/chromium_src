@@ -11,6 +11,8 @@
 #include "base/functional/callback.h"
 #include "url/gurl.h"
 
+#include "third_party/wiseplay/cdm/buildflags.h"
+
 namespace media {
 
 // The interface to retrieve provision information for CDM.
@@ -33,6 +35,12 @@ class ProvisionFetcher {
   virtual void Retrieve(const GURL& default_url,
                         const std::string& request_data,
                         ResponseCB response_cb) = 0;
+
+#if BUILDFLAG(ENABLE_WISEPLAY)
+  virtual void RetrieveWiseplayCertificate(const GURL& default_url,
+                                       const std::string& request_data,
+                                       ResponseCB response_cb) = 0;
+#endif // BUILDFLAG(ENABLE_WISEPLAY)
 };
 
 using CreateFetcherCB =

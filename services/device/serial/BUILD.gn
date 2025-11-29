@@ -4,7 +4,7 @@
 
 import("//build/config/features.gni")
 
-if (is_win || ((is_linux || is_chromeos) && use_udev) || is_mac || is_android) {
+if (is_win || ((is_linux || is_chromeos) && use_udev) || is_mac || is_android || is_ohos) {
   config("platform_support") {
     visibility = [ ":serial" ]
     if (is_win) {
@@ -56,6 +56,13 @@ if (is_win || ((is_linux || is_chromeos) && use_udev) || is_mac || is_android) {
       sources += [
         "serial_device_enumerator_linux.cc",
         "serial_device_enumerator_linux.h",
+      ]
+    }
+
+    if (is_ohos) {
+      sources += [
+        "serial_device_enumerator_ohos.cc",
+        "serial_device_enumerator_ohos.h",
       ]
     }
 

@@ -67,7 +67,7 @@ declare_args() {
   # use_debug_fission: whether to use split DWARF debug info files. This can
   # reduce link time significantly.
   use_debug_fission =
-      !is_android && !is_fuchsia && !is_apple && !is_win && use_lld
+      !is_android && !is_fuchsia && !is_apple && !is_win && !is_ohos && use_lld
 
   # Enables support for ThinLTO, which links 3x-10x faster than full LTO. See
   # also http://blog.llvm.org/2016/06/thinlto-scalable-and-incremental-lto.html
@@ -79,7 +79,7 @@ declare_args() {
   # have the same LLVM revisions as us, making bitcode useless to them.
   use_thin_lto =
       is_cfi || (is_clang && is_official_build && chrome_pgo_phase != 1 &&
-                 (is_linux || is_win || is_mac ||
+                 (is_linux || is_win || is_mac || is_ohos ||
                   (is_ios && use_lld && !is_cronet_build) ||
                   (is_android && target_os != "chromeos") ||
                   (is_chromeos && is_chromeos_device)))
@@ -200,6 +200,9 @@ if (is_chromeos) {
 } else if (is_fuchsia) {
   # Fuchsia on arm64 could use shadow call stack for unwinding.
   enable_frame_pointers = current_cpu != "arm64"
+} else if (is_ohos) {
+  # Ensure that stacks from ohos crash dumps are usable
+  enable_frame_pointers = true
 } else {
   # Explicitly ask for frame pointers, otherwise stacks may be missing for
   # sanitizer and profiling builds.
@@ -244,7 +247,7 @@ enable_arm_cfi_table = is_android && !is_component_build && current_cpu == "arm"
 # official builders.
 strip_absolute_paths_from_debug_symbols_default =
     is_android || is_fuchsia || is_nacl || (is_win && use_lld) || is_linux ||
-    is_chromeos || (is_apple && !enable_dsyms)
+    is_chromeos || (is_apple && !enable_dsyms) || is_ohos
 
 # If the platform uses stripped absolute paths by default, then we don't expose
 # it as a configuration option. If this is causing problems, please file a bug.

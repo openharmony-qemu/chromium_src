@@ -270,6 +270,11 @@
 #include "content/public/browser/picture_in_picture_window_controller.h"
 #endif  // !BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/permission_manager/permission_manager_adapter.h"
+namespace ohos_permission = ohos::adapter::permission;
+#endif
+
 namespace content {
 
 namespace {
@@ -3589,6 +3594,15 @@ const blink::web_pref::WebPreferences WebContentsImpl::ComputeWebPreferences(
   OPTIONAL_TRACE_EVENT0("browser", "WebContentsImpl::ComputeWebPreferences");
   CHECK(main_frame->is_main_frame());
 
+#if BUILDFLAG(IS_OHOS)
+  if (GetContentClient()->browser()->IsAdvancedSecurityMode()) {
+    base::CommandLine* command_line =
+        base::CommandLine::ForCurrentProcess();
+    command_line->AppendSwitch(switches::kDisableWebGL);
+    command_line->AppendSwitch(switches::kDisableWebGL2);
+  }
+#endif
+
   blink::web_pref::WebPreferences prefs;
 
   // Sets the hardware-related fields in |prefs| that are slow to compute. The
@@ -6197,6 +6211,19 @@ WebContents* WebContentsImpl::OpenURL(
 
     return nullptr;
   }
+
+#if BUILDFLAG(IS_OHOS)
+  if (params.url.is_valid() && params.url.SchemeIsFile()) {
+    ohos_permission::PermissionActivationResult activate_result =
+        ohos_permission::PermissionManagerAdapter::ActivateFileAccessPersist(
+            params.url.spec());
+    if (activate_result !=
+        ohos_permission::PermissionActivationResult::SUCCESS) {
+      LOG(ERROR) << "Failed to activate error code: "
+                 << static_cast<int32_t>(activate_result);
+    }
+  }
+#endif
 
   RenderFrameHostImpl* source_render_frame_host =
       RenderFrameHostImpl::FromID(GlobalRenderFrameHostId(
@@ -8860,6 +8887,9 @@ void WebContentsImpl::RunBeforeUnloadConfirm(
     std::move(callback).Run(false, true, std::u16string());
     return;
   }
+#if BUILDFLAG(IS_OHOS)
+  delegate_->NotifyShowBeforeUnloadConfirmDialog();
+#endif
 
   is_showing_before_unload_dialog_ = true;
 
@@ -9411,6 +9441,14 @@ void WebContentsImpl::DidStopLoading() {
   if (IsBeingDestroyed()) {
     return;
   }
+
+#if BUILDFLAG(IS_OHOS)
+  if (delegate_ && have_encrypted_media_) {
+    LOG(INFO) << __func__ << " [WiseplayDRM] reset current browser privacy mode to false due to refresh.";
+    have_encrypted_media_ = false;
+    delegate_->SetPrivacyMode(have_encrypted_media_);
+  }
+#endif
 
   // Use the last committed entry rather than the active one, in case a
   // pending entry has been created.
@@ -11445,6 +11483,16 @@ void WebContentsImpl::DidChangeScreenOrientation() {
   last_screen_orientation_change_time_ = ui::EventTimeForNow();
 }
 
+#if BUILDFLAG(IS_OHOS)
+void WebContentsImpl::SetHaveEncryptedMedia(bool have_encrypted_media) {
+  if (!have_encrypted_media_ && have_encrypted_media) {
+    have_encrypted_media_ = have_encrypted_media;
+    LOG(INFO) << __func__ << " [WiseplayDRM] browser window enter privacy mode due to load encrypted media.";
+    delegate_->SetPrivacyMode(have_encrypted_media);
+  }
+}
+#endif
+
 void WebContentsImpl::UpdateWebContentsVisibility(Visibility visibility) {
   OPTIONAL_TRACE_EVENT1("content",
                         "WebContentsImpl::UpdateWebContentsVisibility",
@@ -12255,4 +12303,9 @@ void WebContentsImpl::SetPartitionedPopinOpenerOnNewWindowIfNeeded(
   opened_partitioned_popin_ = new_window->GetWeakPtr();
 }
 
+bool WebContentsImpl::IsWebApp() {
+  if (delegate_)
+    return delegate_->IsWebApp();
+  return false;
+}
 }  // namespace content

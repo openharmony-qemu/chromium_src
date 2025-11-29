@@ -71,8 +71,19 @@ class EVENTS_EXPORT GestureProviderAura : public GestureProviderClient {
   bool RequiresDoubleTapGestureEvents() const override;
 
  private:
+
+#if BUILDFLAG(IS_OHOS)
+  void AddPointer(TouchEvent* event);
+  bool WaitForOtherTouchEvents(TouchEvent* event);
+#endif
+
   raw_ptr<GestureProviderAuraClient> client_;
   MotionEventAura pointer_state_;
+
+#if BUILDFLAG(IS_OHOS)
+  int pointer_update_state_;
+#endif
+
   FilteredGestureProvider filtered_gesture_provider_;
 
   bool handling_event_;

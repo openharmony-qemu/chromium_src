@@ -28,6 +28,11 @@ namespace features {
 CONTENT_EXPORT BASE_DECLARE_FEATURE(kAdditionalOpaqueOriginEnforcements);
 CONTENT_EXPORT BASE_DECLARE_FEATURE(kAndroidFallbackToNextSlot);
 CONTENT_EXPORT BASE_DECLARE_FEATURE(kAndroidWarmUpSpareRendererWithTimeout);
+
+#if BUILDFLAG(IS_OHOS)
+CONTENT_EXPORT BASE_DECLARE_FEATURE(kParallelBeforeUnload);
+#endif
+
 CONTENT_EXPORT extern const base::FeatureParam<std::string>
     kAndroidSpareRendererCreationTiming;
 inline constexpr const char kAndroidSpareRendererCreationAfterLoading[] =

@@ -97,7 +97,7 @@ def main():
         stamp_version = GetStampVersion()
         if stamp_version != GetRustClangRevision():
             print(f'The expected Rust version is {GetRustClangRevision()} '
-                  f'but the actual version is {stamp_version}')
+                f'but the actual version is {stamp_version}')
             print('Did you run "gclient sync"?')
             return 1
         print(stamp_version)
@@ -109,7 +109,6 @@ def main():
     platform_prefix = GetPlatformUrlPrefix(GetDefaultHostOs())
 
     version = GetRustClangRevision()
-
     # Exit early if the existing package is up-to-date. Note that we cannot
     # simply call DownloadAndUnpack() every time: aside from unnecessarily
     # downloading the toolchain if it hasn't changed, it also leads to multiple

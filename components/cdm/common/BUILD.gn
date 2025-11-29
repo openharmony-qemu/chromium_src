@@ -5,6 +5,7 @@
 import("//build/buildflag_header.gni")
 import("//components/cdm/common/playready.gni")
 import("//third_party/widevine/cdm/widevine.gni")
+import("//third_party/wiseplay/cdm/wiseplay.gni")
 
 buildflag_header("buildflags") {
   header = "buildflags.h"
@@ -48,6 +49,13 @@ static_library("common") {
 
   if (enable_playready) {
     sources += [ "playready_cdm_common.h" ]
+  }
+
+  if (enable_wiseplay) {
+    sources += [
+      "wiseplay_drm_delegate_ohos.cc",
+      "wiseplay_drm_delegate_ohos.h",
+    ]
   }
 
   if (enable_library_cdms) {

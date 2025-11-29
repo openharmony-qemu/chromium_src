@@ -302,6 +302,12 @@ std::string AudioParameters::AsHumanReadableString() const {
       << ", require_audio_offload:"
       << hardware_capabilities_->require_audio_offload;
   }
+
+#if BUILDFLAG(IS_OHOS)
+  s << ",  render_process_id_: " << render_process_id_ << ", render_frame_id_: " << render_frame_id_
+    << ", is_stream_privacy_: " << is_stream_privacy_;
+#endif
+
   return s.str();
 }
 
@@ -328,6 +334,10 @@ bool AudioParameters::Equals(const AudioParameters& other) const {
          channel_layout() == other.channel_layout() &&
          channels() == other.channels() &&
          frames_per_buffer_ == other.frames_per_buffer() &&
+#if BUILDFLAG(IS_OHOS)
+         render_process_id_ == other.render_process_id() &&
+         render_frame_id_ == other.render_frame_id() &&
+#endif
          effects_ == other.effects() && mic_positions_ == other.mic_positions_;
 }
 

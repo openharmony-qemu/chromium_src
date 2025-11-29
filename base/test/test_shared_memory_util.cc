@@ -44,7 +44,7 @@ static const size_t kDataSize = 1024;
 static bool CheckReadOnlySharedMemoryFdPosix(int fd) {
 // Note that the error on Android is EPERM, unlike other platforms where
 // it will be EACCES.
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   const int kExpectedErrno = EPERM;
 #else
   const int kExpectedErrno = EACCES;
@@ -131,7 +131,7 @@ bool CheckReadOnlyPlatformSharedMemoryRegionForTesting(
   return CheckReadOnlySharedMemoryFuchsiaHandle(region.GetPlatformHandle());
 #elif BUILDFLAG(IS_WIN)
   return CheckReadOnlySharedMemoryWindowsHandle(region.GetPlatformHandle());
-#elif BUILDFLAG(IS_ANDROID)
+#elif BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   return CheckReadOnlySharedMemoryFdPosix(region.GetPlatformHandle());
 #else
   return CheckReadOnlySharedMemoryFdPosix(region.GetPlatformHandle().fd);

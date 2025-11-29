@@ -24,7 +24,10 @@
 #include "media/base/mime_util.h"
 #include "media/cdm/clear_key_cdm_common.h"
 #include "media/media_buildflags.h"
-
+#include "third_party/wiseplay/cdm/buildflags.h"
+#if BUILDFLAG(ENABLE_WISEPLAY)
+#include "third_party/wiseplay/cdm/wiseplay_cdm_common.h"
+#endif // BUILDFLAG(ENABLE_WISEPLAY)
 namespace media {
 
 namespace {

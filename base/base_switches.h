@@ -64,6 +64,14 @@ extern const char kPackageVersionName[];
 extern const char kSchedulerBoostUrgent[];
 #endif
 
+#if defined(OS_OHOS)
+extern const char kBundleInstallationDir[];
+extern const char KDisableBlinkFeatures[];
+extern const char KDisableOcclusionFeature[];
+extern const char KDisablePartialSwap[];
+extern const char kDisablePagePolicy[];
+extern const char kOhosTrace[];
+#endif
 }  // namespace switches
 
 #endif  // BASE_BASE_SWITCHES_H_

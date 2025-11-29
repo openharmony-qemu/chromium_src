@@ -23,6 +23,16 @@
 #include <ui/platform_window/fuchsia/view_ref_pair.h>
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/window/window_common.h"
+
+using AbilityType = ohos::adapter::window::AbilityType;
+
+namespace content {
+class VideoPictureInPictureWindowController;
+}
+#endif
+
 namespace gfx {
 class ImageSkia;
 }
@@ -158,6 +168,16 @@ struct COMPONENT_EXPORT(PLATFORM_WINDOW) PlatformWindowInitProperties {
   bool enable_compositing_based_throttling = false;
 
   size_t compositor_memory_limit_mb = 0;
+#if BUILDFLAG(IS_OHOS)
+  raw_ptr<content::VideoPictureInPictureWindowController> pip_controller = nullptr;
+  gfx::AcceleratedWidget pip_parent_widget;
+  std::optional<SkColor> background_color;
+  bool using_system_floating_window = false;
+  bool use_dark_mode = false;
+  bool caption_button_visible = true;
+  AbilityType ability_type = AbilityType::kEntryAbility;
+  std::string app_id;
+#endif
 };
 
 }  // namespace ui

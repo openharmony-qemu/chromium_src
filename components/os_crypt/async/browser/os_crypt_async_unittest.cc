@@ -66,7 +66,7 @@ class OSCryptAsyncTest : public ::testing::Test {
     return base::ScopedClosureRunner(base::BindOnce([]() {
       OSCrypt::UseLockedMockKeychainForTesting(/*use_locked=*/false);
     }));
-#elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
+#elif (BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_OHOS)) || BUILDFLAG(IS_FUCHSIA)
     OSCrypt::SetEncryptionAvailableForTesting(/*available=*/false);
     return base::ScopedClosureRunner(base::BindOnce([]() {
       OSCrypt::SetEncryptionAvailableForTesting(/*available=*/std::nullopt);

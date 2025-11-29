@@ -38,6 +38,12 @@
 #include "ui/aura/window_tree_host.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "ui/display/display.h"
+#include "ui/display/screen.h"
+#include "ui/ozone/platform/ohos/host/ohos_window.h"
+#endif
+
 namespace eye_dropper {
 
 class EyeDropperView::ViewPositionHandler {
@@ -112,8 +118,17 @@ EyeDropperView::ScreenCapturer::ScreenCapturer(EyeDropperView* owner)
       base::FeatureList::IsEnabled(features::kAllowEyeDropperWGCScreenCapture);
   // TODO(iopopesc): Update the captured frame after a period of time to match
   // latest content on screen.
+#if BUILDFLAG(IS_OHOS)
+  auto options = content::desktop_capture::CreateDesktopCaptureOptions();
+  options.set_use_screenshot(true);
+  capturer_ = webrtc::DesktopCapturer::CreateScreenCapturer(options);
+  if (capturer_) {
+    capturer_->SelectSource(owner->GetDisplayId());
+  }
+#else
   capturer_ =
       content::desktop_capture::CreateScreenCapturer(allow_wgc_screen_capture);
+#endif
   if (capturer_) {
     capturer_->Start(this);
     if (allow_wgc_screen_capture) {
@@ -199,8 +214,10 @@ EyeDropperView::EyeDropperView(gfx::NativeView parent,
                                gfx::NativeView event_handler,
                                content::EyeDropperListener* listener)
     : listener_(listener),
-      view_position_handler_(std::make_unique<ViewPositionHandler>(this)),
-      screen_capturer_(std::make_unique<ScreenCapturer>(this)) {
+#if !BUILDFLAG(IS_OHOS)
+  screen_capturer_(std::make_unique<ScreenCapturer>(this)),
+#endif
+ view_position_handler_(std::make_unique<ViewPositionHandler>(this)) {
   SetModalType(ui::mojom::ModalType::kWindow);
   // TODO(pbos): Remove this, perhaps by separating the contents view from the
   // EyeDropper/WidgetDelegate.
@@ -253,6 +270,12 @@ EyeDropperView::EyeDropperView(gfx::NativeView parent,
   // Add an observation so the capture can be updated as the eye dropper window
   // moves between displays.
   window_observation_.Observe(GetWidget()->GetNativeWindow());
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+  display::Display current_display = screen->GetDisplayNearestView(parent);
+  display_id_ = current_display.id();
+  screen_capturer_ = std::make_unique<ScreenCapturer>(this);
 #endif
 }
 

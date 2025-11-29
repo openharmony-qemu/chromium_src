@@ -1,0 +1,13 @@
+/ets
+/js
+/native
+/toolchains
+/.version
+/previewer
+/licenses
+/ohos-sdk
+/openharmony
+/[0-9]*
+/llvm
+/rust-toolchain
+ohos-sdk-linux-*.tar.gz

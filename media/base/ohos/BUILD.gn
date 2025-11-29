@@ -1,0 +1,63 @@
+# Copyright 2024 The Huawei Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+if (is_ohos) {
+  import("//build/config/ohos/config.gni")
+  import("//third_party/wiseplay/cdm/wiseplay.gni")
+  source_set("ohos") {
+    visibility = [
+      "//media",
+      "//media/filters",
+    ]
+
+    sources = [
+      "ohos_media_decoder_bridge_impl.cc",
+      "ohos_media_decoder_bridge_impl.h",
+      "ohos_media_codec_util.cc",
+      "ohos_media_codec_util.h",
+    ]
+    configs += [ "//media:subcomponent_config" ]
+
+    if (product_name == "rk3568") {
+      defines = [ "RK3568" ]
+    }
+
+    deps = [
+      "//media/base",
+      "//url",
+    ]
+    libs = [ 
+      "native_media_codecbase",
+      "native_media_core",
+      "native_media_vdec",
+      "native_window",
+    ]
+    if(enable_wiseplay) {
+      sources += [
+        "ohos_drm_adapter.cc",
+        "ohos_drm_adapter.h",
+        "ohos_drm_callback.h",
+        "ohos_cdm_factory.cc",
+        "ohos_cdm_factory.h",
+        "ohos_media_crypto_context_impl.cc",
+        "ohos_media_crypto_context_impl.h",
+        "ohos_media_crypto_context.h",
+        "ohos_media_drm_bridge_client.cc",
+        "ohos_media_drm_bridge_client.h",
+        "ohos_media_drm_bridge_delegate.cc",
+        "ohos_media_drm_bridge_delegate.h",
+        "ohos_media_drm_bridge_factory.cc",
+        "ohos_media_drm_bridge_factory.h",
+        "ohos_media_drm_bridge.cc",
+        "ohos_media_drm_bridge.h",
+        "ohos_media_drm_storage_bridge.cc",
+        "ohos_media_drm_storage_bridge.h",
+      ]
+      libs += [ 
+        "native_drm",
+        "native_media_avcencinfo",
+      ]
+    }
+  }
+}

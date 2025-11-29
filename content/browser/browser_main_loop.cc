@@ -187,6 +187,14 @@
 #include "ui/gl/gl_surface.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "content/browser/font_unique_name_lookup/font_unique_name_lookup_ohos.h"
+#endif
+
+#if BUILDFLAG(ENABLE_WISEPLAY)
+#include "media/base/ohos/ohos_media_drm_bridge_client.h"
+#endif
+
 #if BUILDFLAG(IS_MAC)
 #include "base/apple/scoped_nsautorelease_pool.h"
 #include "content/browser/renderer_host/browser_compositor_view_mac.h"
@@ -371,7 +379,7 @@ std::unique_ptr<base::MemoryPressureMonitor> CreateMemoryPressureMonitor(
   std::unique_ptr<memory_pressure::MultiSourceMemoryPressureMonitor> monitor;
 
 #if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_FUCHSIA) || \
-    BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+    BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
   monitor =
       std::make_unique<memory_pressure::MultiSourceMemoryPressureMonitor>();
 #endif
@@ -808,7 +816,7 @@ int BrowserMainLoop::PreCreateThreads() {
   }
 #endif
 
-#if BUILDFLAG(ENABLE_LIBRARY_CDMS)
+#if BUILDFLAG(ENABLE_LIBRARY_CDMS) || BUILDFLAG(ENABLE_WISEPLAY)
   // Prior to any processing happening on the IO thread, we create the
   // CDM service as it is predominantly used from the IO thread. This must
   // be called on the main thread since it involves file path checks.
@@ -1462,6 +1470,16 @@ void BrowserMainLoop::PostCreateThreadsImpl() {
   if (base::FeatureList::IsEnabled(features::kFontSrcLocalMatching)) {
     FontUniqueNameLookup::GetInstance();
   }
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+  if (base::FeatureList::IsEnabled(features::kFontSrcLocalMatching)) {
+    FontUniqueNameLookup::GetInstance();
+  }
+#endif  // BUILDFLAG(IS_OHOS)
+
+#if BUILDFLAG(ENABLE_WISEPLAY)
+  media::SetMediaDrmBridgeClient(GetContentClient()->GetOhosMediaDrmBridgeClient());
 #endif
 
 #if defined(ENABLE_IPC_FUZZER)

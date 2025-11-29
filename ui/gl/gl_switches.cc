@@ -4,6 +4,8 @@
 
 #include "ui/gl/gl_switches.h"
 
+#include "base/base_switches.h"
+#include "base/command_line.h"
 #include "build/android_buildflags.h"
 #include "build/build_config.h"
 #include "ui/gl/buildflags.h"
@@ -435,5 +437,18 @@ bool SupportsEGLDualGPURendering() {
   return false;
 #endif  // IS_WIN || IS_MAC
 }
+
+#if BUILDFLAG(IS_OHOS)
+BASE_FEATURE(kOHOSEnablePartialSwap,
+             "OHOSEnablePartialSwap",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+
+bool IsOHOSEnablePartialSwap() {
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(switches::KDisablePartialSwap)) {
+    return false;
+  }
+  return base::FeatureList::IsEnabled(kOHOSEnablePartialSwap);
+}
+#endif  // BUILDFLAG(IS_OHOS)
 
 }  // namespace features

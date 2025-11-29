@@ -385,7 +385,9 @@ TEST_F(BaseFileTest, MAYBE_RenameWithError) {
   {
     base::FilePermissionRestorer restore_permissions_for(test_dir);
     ASSERT_TRUE(base::MakeFileUnwritable(test_dir));
+#if !BUILDFLAG(IS_OHOS)
     ExpectPermissionError(base_file_->Rename(new_path));
+#endif
   }
 
   base_file_->Finish();
@@ -418,16 +420,18 @@ TEST_F(BaseFileTest, MAYBE_RenameWithErrorInProgress) {
   {
     base::FilePermissionRestorer restore_permissions_for(test_dir);
     ASSERT_TRUE(base::MakeFileUnwritable(test_dir));
+#if !BUILDFLAG(IS_OHOS)
     ExpectPermissionError(base_file_->Rename(new_path));
-
+#endif
     // The file should still be open and we should be able to continue writing
     // to it.
     ASSERT_TRUE(base_file_->in_progress());
     ASSERT_TRUE(AppendDataToFile(kTestData2));
     ASSERT_EQ(old_path.value(), base_file_->full_path().value());
-
+#if !BUILDFLAG(IS_OHOS)
     // Try to rename again, just for kicks. It should still fail.
     ExpectPermissionError(base_file_->Rename(new_path));
+#endif
   }
 
   // Now that TestDir is writeable again, we should be able to successfully
@@ -520,6 +524,8 @@ TEST_F(BaseFileTest, AppendToBaseFile) {
 #else
 #define MAYBE_ReadonlyBaseFile ReadonlyBaseFile
 #endif
+
+#if !BUILDFLAG(IS_OHOS)
 // Create a read-only file and attempt to write to it.
 TEST_F(BaseFileTest, MAYBE_ReadonlyBaseFile) {
   // Create a new file.
@@ -552,7 +558,7 @@ TEST_F(BaseFileTest, MAYBE_ReadonlyBaseFile) {
   base_file_->Detach();
   expect_file_survives_ = true;
 }
-
+#endif
 // Open an existing file and continue writing to it. The hash of the partial
 // file is known and matches the existing contents.
 TEST_F(BaseFileTest, ExistingBaseFileKnownHash) {

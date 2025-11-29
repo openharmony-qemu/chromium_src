@@ -21,6 +21,10 @@
 #include "media/base/audio_sample_types.h"
 #include "media/base/media_shmem_export.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/threading/thread_local.h"
+#endif
+
 namespace media {
 class AudioParameters;
 
@@ -41,6 +45,11 @@ class MEDIA_SHMEM_EXPORT AudioBus {
   // Guaranteed alignment of each channel's data; use 16-byte alignment for easy
   // SSE optimizations.
   static constexpr size_t kChannelAlignment = 16;
+
+#if BUILDFLAG(IS_OHOS)
+  uint64_t GetAudioDelay();
+  void SetAudioDelay(uint64_t delay_ms);
+#endif
 
   // Creates a new AudioBus and allocates |channels| of length |frames|.  Uses
   // channels() and frames_per_buffer() from AudioParameters if given.
@@ -303,6 +312,9 @@ class MEDIA_SHMEM_EXPORT AudioBus {
   // Run on destruction. Frees memory to the data set via SetChannelData().
   // Only used with CreateWrapper().
   base::OnceClosure wrapped_data_deleter_cb_;
+#if BUILDFLAG(IS_OHOS)
+  static base::ThreadLocalOwnedPointer<uint64_t> slot_;
+#endif
 };
 
 // Delegates to FromInterleavedPartial()

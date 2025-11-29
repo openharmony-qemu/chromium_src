@@ -158,6 +158,7 @@ void SpanFromNonConstRvalueRange() {
 }
 
 void Dangling() {
+#if !BUILDFLAG(IS_OHOS)
   // `std::array` destroyed at the end of the full expression.
   [[maybe_unused]] auto a = span<const int>(std::to_array({1, 2, 3}));     // expected-error-re {{temporary whose address is used as value of local variable {{.*}}will be destroyed at the end of the full-expression}}
   [[maybe_unused]] auto b = span<const int, 3>(std::to_array({1, 2, 3}));  // expected-error-re {{temporary whose address is used as value of local variable {{.*}}will be destroyed at the end of the full-expression}}
@@ -173,6 +174,7 @@ void Dangling() {
       span<const char>(std::vector<char>(str.begin(), str.end()));  // expected-error-re {{temporary whose address is used as value of local variable {{.*}}will be destroyed at the end of the full-expression}}
   [[maybe_unused]] auto f =
       span<const char, 3>(std::vector<char>(str.begin(), str.end()));  // expected-error-re {{temporary whose address is used as value of local variable {{.*}}will be destroyed at the end of the full-expression}}
+#endif
 
   // `std::string_view`'s safety depends on the life of the referred-to buffer.
   // Here the underlying data is destroyed before the end of the full

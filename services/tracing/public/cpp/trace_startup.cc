@@ -29,6 +29,10 @@
 #include "base/apple/mach_port_rendezvous.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "components/tracing/common/hitrace_export_ohos.h"
+#endif
+
 namespace tracing {
 namespace {
 
@@ -124,6 +128,9 @@ void InitTracingPostFeatureList(bool enable_consumer) {
 #if BUILDFLAG(IS_WIN)
   tracing::EnableETWExport();
 #endif  // BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_OHOS)
+  tracing::HitraceInterceptorController::EnableHitraceOnSetup();
+#endif
 }
 
 base::ReadOnlySharedMemoryRegion CreateTracingConfigSharedMemory() {

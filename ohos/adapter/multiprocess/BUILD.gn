@@ -1,0 +1,67 @@
+# Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/config/ohos/config.gni")
+import("//ohos/adapter/multiprocess/multiprocess.gni")
+import("//testing/test.gni")
+
+component("multiprocess") {
+  sources = [
+    "app_spawn_communication.cc",
+    "app_spawn_communication.h",
+    "child_process_manager.cc",
+    "child_process_manager.h",
+    "scoped_socket.cc",
+    "scoped_socket.h",
+    "unix_domain_socket_helper.cc",
+    "unix_domain_socket_helper.h",
+  ]
+
+  deps = [
+    "//ohos/adapter/multiprocess/gpu:gpu",
+  ]
+
+  defines = []
+
+  if (enable_native_child_process) {
+    defines += [
+      "ENABLE_NATIVE_CHILD_PROCESS"
+    ]
+
+    deps += [
+      "//ohos/adapter/multiprocess/native_child_process:native_child_process"
+    ]
+  }
+
+  if (enable_isolated_child_process) {
+    defines += [
+      "ENABLE_ISOLATED_CHILD_PROCESS"
+    ]
+  }
+
+  public_deps = [
+    "//third_party/aki:aki_jsbind",
+  ]
+}
+
+test("multiprocess_unittests") {
+  sources = [
+    "command_line/command_line_unittests.cc",
+    "gpu/gpu_native_ipc_proxy_unittests.cc",
+    "gpu/gpu_native_ipc_stub_unittests.cc",
+    "gpu/gpu_native_process_host_unittests.cc",
+    "gpu/gpu_native_process_test_utils.cc",
+    "gpu/gpu_native_process_test_utils.h",
+    "gpu/gpu_native_process_unittests.cc",
+    "gpu/native_window_parcel_unittests.cc"
+  ]
+
+  deps = [
+    "//ohos/adapter/multiprocess/command_line:command_line",
+    "//ohos/adapter/multiprocess/gpu:gpu",
+    "//ohos/adapter/test:run_all_unittests",
+    "//testing/gmock",
+    "//testing/gtest"
+  ]
+}

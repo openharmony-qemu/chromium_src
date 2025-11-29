@@ -109,7 +109,7 @@ source_set("utility") {
     }
   }
 
-  if (is_linux || is_chromeos) {
+  if (is_linux || is_chromeos || is_ohos) {
     deps += [
       "//content/utility/speech:speech_recognition_sandbox_hook",
       "//media/gpu/sandbox",
@@ -146,7 +146,7 @@ source_set("utility") {
     deps += [ "//services/proxy_resolver:lib" ]
   }
 
-  if (enable_screen_ai_service && (is_linux || is_chromeos)) {
+  if (enable_screen_ai_service && (is_linux || is_chromeos || is_ohos)) {
     deps += [ "//services/screen_ai:screen_ai_sandbox_hook" ]
   }
 

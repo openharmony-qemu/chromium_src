@@ -173,6 +173,21 @@ bool Screen::InTabletMode() const {
 }
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+gfx::NativeWindow Screen::GetLocalProcessWindowAtPoint(
+    const gfx::Point& point,
+    const std::set<gfx::NativeWindow>& ignore,
+    const int32_t display_id) {
+  NOTIMPLEMENTED_LOG_ONCE();
+  return gfx::NativeWindow();
+}
+
+gfx::Point Screen::GetCursorScreenPoint(const int32_t display_id) {
+  NOTIMPLEMENTED_LOG_ONCE();
+  return gfx::Point();
+}
+#endif
+
 void Screen::SetScopedDisplayForNewWindows(int64_t display_id) {
   if (display_id == scoped_display_id_for_new_windows_)
     return;

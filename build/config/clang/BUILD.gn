@@ -177,6 +177,9 @@ template("clang_lib") {
       _suffix = ""
       _ext = "a"
 
+      if (is_ohos) {
+        clang_version = "19"
+      }
       _clang_lib_dir = "$clang_base_path/lib/clang/$clang_version/lib"
       if (is_win) {
         _dir = "windows"
@@ -241,6 +244,18 @@ template("clang_lib") {
           _suffix = "-aarch64-android"
         } else if (current_cpu == "riscv64") {
           _suffix = "-riscv64-android"
+        } else {
+          assert(false)  # Unhandled cpu type
+        }
+      } else if (is_ohos) {
+        if (current_cpu == "x64") {
+          _dir = "x86_64-linux-ohos"
+        }  else if (current_cpu == "arm") {
+          _dir = "arm-linux-ohos"
+        } else if (current_cpu == "arm64") {
+          _dir = "aarch64-linux-ohos"
+        } else if (current_cpu == "riscv64") {
+          _dir = "riscv64-linux-ohos"
         } else {
           assert(false)  # Unhandled cpu type
         }

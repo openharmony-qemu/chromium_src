@@ -212,6 +212,9 @@ void CheckUserAgentStringOrdering(bool mobile_device) {
   ASSERT_EQ("Mac", pieces[5]);
   ASSERT_EQ("OS", pieces[6]);
   ASSERT_EQ("X", pieces[7]);
+#elif BUILDFLAG(IS_OHOS)
+  ASSERT_EQ(2u, pieces.size());
+  ASSERT_EQ("OHOS", pieces[0]);
 #else
 #error Unsupported platform
 #endif
@@ -348,6 +351,8 @@ class UserAgentUtilsTest : public testing::Test,
         ui::GetDeviceFormFactor() == ui::DEVICE_FORM_FACTOR_TABLET
             ? "iPad; CPU iPad OS 14_0 like Mac OS X"
             : "iPhone; CPU iPhone OS 14_0 like Mac OS X";
+#elif BUILDFLAG(IS_OHOS)
+        "OHOS; OHOS x86_64";
 #else
 #error Unsupported platform
 #endif
@@ -726,6 +731,8 @@ TEST_F(UserAgentUtilsTest, UserAgentMetadata) {
   EXPECT_EQ(metadata.platform, "Solaris");
 #elif BUILDFLAG(IS_FUCHSIA)
   EXPECT_EQ(metadata.platform, "Fuchsia");
+#elif BUILDFLAG(IS_OHOS)
+  EXPECT_EQ(metadata.platform, "OHOS");
 #else
   EXPECT_EQ(metadata.platform, "Unknown");
 #endif

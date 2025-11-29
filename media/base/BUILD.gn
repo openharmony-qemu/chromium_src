@@ -407,6 +407,8 @@ source_set("base") {
     "//skia",
     "//third_party/libyuv",
     "//third_party/widevine/cdm:headers",
+    "//third_party/wiseplay/cdm:buildflags",
+    "//third_party/wiseplay/cdm:headers",  
     "//ui/display:display",
     "//ui/events:events",
     "//ui/events:events_base",
@@ -679,6 +681,16 @@ source_set("unit_tests") {
 
   if (is_mac) {
     deps += [ "//media/base/mac:unit_tests" ]
+  }
+
+  if (is_ohos) {
+    sources += [
+      "ohos/ohos_media_decoder_bridge_impl_unittest.cc",
+    ]
+
+    deps += [
+      "//content/public/browser",
+    ]
   }
 
   if (is_win) {

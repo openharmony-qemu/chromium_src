@@ -107,6 +107,12 @@ config("skia_config") {
       "SK_GAMMA_EXPONENT=1.4",
       "SK_GAMMA_CONTRAST=0.0",
     ]
+  } else if (is_ohos) {
+    defines += [
+      "SK_GAMMA_APPLY_TO_A8",
+      "SK_GAMMA_EXPONENT=1.4",
+      "SK_GAMMA_CONTRAST=0.0",
+    ]
   } else if (is_mac) {
     defines += [
       "SK_BUILD_FOR_MAC",
@@ -479,6 +485,13 @@ component("skia") {
       "//third_party/fuchsia-sdk/sdk/pkg/zx",
       "//third_party/icu:icuuc",
     ]
+  }
+
+  if (is_ohos) {
+    sources += [
+      "//third_party/skia/src/ports/SkFontMgr_ohos.cpp"
+    ]
+    libs = [ "native_drawing" ]
   }
 
   configs -= [ "//build/config/compiler:chromium_code" ]

@@ -44,12 +44,13 @@ inline constexpr char kMimeTypeWindowDrag[] = "chromium/x-window-drag";
 
 // ----- LINUX & CHROMEOS & FUCHSIA MIME TYPES -----
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || \
+    BUILDFLAG(IS_OHOS)
 inline constexpr char kMimeTypeLinuxUtf8String[] = "UTF8_STRING";
 inline constexpr char kMimeTypeLinuxString[] = "STRING";
 inline constexpr char kMimeTypeLinuxText[] = "TEXT";
 #endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
-        // BUILDFLAG(IS_FUCHSIA)
+        // BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || \
     BUILDFLAG(IS_ANDROID)
@@ -158,6 +159,11 @@ inline constexpr int kMaxRegisteredClipboardFormats = 100;
 // Web prefix for web custom format types.
 inline constexpr char kWebClipboardFormatPrefix[] = "web ";
 inline constexpr char16_t kWebClipboardFormatPrefix16[] = u"web ";
+
+#if BUILDFLAG(IS_OHOS)
+COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
+extern const char kMimeTypeOHOSCustomData[];
+#endif  // BUILDFLAG(IS_OHOS)
 
 }  // namespace ui
 

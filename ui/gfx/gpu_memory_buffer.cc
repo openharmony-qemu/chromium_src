@@ -100,7 +100,8 @@ GpuMemoryBufferHandle::GpuMemoryBufferHandle(DXGIHandle handle)
 }
 #endif
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || \
+    BUILDFLAG(IS_OHOS)
 GpuMemoryBufferHandle::GpuMemoryBufferHandle(
     NativePixmapHandle native_pixmap_handle)
     : type(GpuMemoryBufferType::NATIVE_PIXMAP),

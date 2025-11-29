@@ -2986,7 +2986,8 @@ TEST_F(RenderTextTest, MoveCursor_Word) {
                                         SELECTION_NONE, &expected);
 
   // Move right twice.
-#if BUILDFLAG(IS_WIN)  // Move word right includes space/punctuation.
+#if BUILDFLAG(IS_WIN) || \
+    BUILDFLAG(IS_OHOS)  // Move word right includes space/punctuation.
   expected.push_back(Range(4));
   expected.push_back(Range(8));
 #else  // Non-Windows: move word right does NOT include space/punctuation.
@@ -3006,7 +3007,8 @@ TEST_F(RenderTextTest, MoveCursor_Word) {
 
   // Move right twice.
   expected.push_back(Range(6));
-#if BUILDFLAG(IS_WIN)  // Select word right includes space/punctuation.
+#if BUILDFLAG(IS_WIN) || \
+    BUILDFLAG(IS_OHOS)  // Select word right includes space/punctuation.
   expected.push_back(Range(6, 8));
 #else  // Non-Windows: select word right does NOT include space/punctuation.
   expected.push_back(Range(6, 7));
@@ -3028,7 +3030,8 @@ TEST_F(RenderTextTest, MoveCursor_Word) {
                                         SELECTION_RETAIN, &expected);
 
   // Move right twice.
-#if BUILDFLAG(IS_WIN)  // Select word right includes space/punctuation.
+#if BUILDFLAG(IS_WIN) || \
+    BUILDFLAG(IS_OHOS)  // Select word right includes space/punctuation.
   expected.push_back(Range(6, 8));
 #else  // Non-Windows: select word right does NOT include space/punctuation.
   expected.push_back(Range(6, 7));
@@ -3051,7 +3054,8 @@ TEST_F(RenderTextTest, MoveCursor_Word) {
                                         SELECTION_EXTEND, &expected);
 
   // Move right twice.
-#if BUILDFLAG(IS_WIN)  // Select word right includes space/punctuation.
+#if BUILDFLAG(IS_WIN) || \
+    BUILDFLAG(IS_OHOS)  // Select word right includes space/punctuation.
   expected.push_back(Range(4, 8));
 #else  // Non-Windows: select word right does NOT include space/punctuation.
   expected.push_back(Range(4, 7));
@@ -3081,7 +3085,8 @@ TEST_F(RenderTextTest, MoveCursor_Word_RTL) {
                                         SELECTION_NONE, &expected);
 
   // Move left twice.
-#if BUILDFLAG(IS_WIN)  // Move word left includes space/punctuation.
+#if BUILDFLAG(IS_WIN) || \
+    BUILDFLAG(IS_OHOS)  // Move word left includes space/punctuation.
   expected.push_back(Range(4));
   expected.push_back(Range(8));
 #else  // Non-Windows: move word left does NOT include space/punctuation.
@@ -3101,7 +3106,8 @@ TEST_F(RenderTextTest, MoveCursor_Word_RTL) {
 
   // Move left twice.
   expected.push_back(Range(6));
-#if BUILDFLAG(IS_WIN)  // Select word left includes space/punctuation.
+#if BUILDFLAG(IS_WIN) || \
+    BUILDFLAG(IS_OHOS)  // Select word left includes space/punctuation.
   expected.push_back(Range(6, 8));
 #else  // Non-Windows: select word left does NOT include space/punctuation.
   expected.push_back(Range(6, 7));
@@ -3123,7 +3129,8 @@ TEST_F(RenderTextTest, MoveCursor_Word_RTL) {
                                         SELECTION_RETAIN, &expected);
 
   // Move left twice.
-#if BUILDFLAG(IS_WIN)  // Select word left includes space/punctuation.
+#if BUILDFLAG(IS_WIN) || \
+    BUILDFLAG(IS_OHOS)  // Select word left includes space/punctuation.
   expected.push_back(Range(6, 8));
 #else  // Non-Windows: select word left does NOT include space/punctuation.
   expected.push_back(Range(6, 7));
@@ -3146,7 +3153,8 @@ TEST_F(RenderTextTest, MoveCursor_Word_RTL) {
                                         SELECTION_EXTEND, &expected);
 
   // Move left twice.
-#if BUILDFLAG(IS_WIN)  // Select word left includes space/punctuation.
+#if BUILDFLAG(IS_WIN) || \
+    BUILDFLAG(IS_OHOS)  // Select word left includes space/punctuation.
   expected.push_back(Range(4, 8));
 #else  // Non-Windows: select word left does NOT include space/punctuation.
   expected.push_back(Range(4, 7));
@@ -4531,14 +4539,14 @@ TEST_F(RenderTextTest, MoveCursorLeftRightWithSelection_Multiline) {
 
   // Move cursor right with WORD_BREAK.
   render_text->MoveCursor(WORD_BREAK, CURSOR_RIGHT, SELECTION_NONE);
-#if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
   EXPECT_EQ(Range(4), render_text->selection());
 #else
   EXPECT_EQ(Range(3), render_text->selection());
 #endif
   EXPECT_EQ(0U, GetLineContainingCaret());
   render_text->MoveCursor(WORD_BREAK, CURSOR_RIGHT, SELECTION_NONE);
-#if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
   EXPECT_EQ(Range(9), render_text->selection());
   EXPECT_EQ(3U, GetLineContainingCaret());
 #else
@@ -4670,7 +4678,7 @@ void MoveLeftRightByWordVerifier(RenderText* render_text, const char16_t* str) {
   }
 }
 
-#if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
 // TODO(aleventhal): https://crbug.com/906308 Fix bugs, update verifier code
 // above, and enable for Windows.
 #define MAYBE_MoveLeftRightByWordInBidiText \
@@ -4755,7 +4763,7 @@ TEST_F(RenderTextTest, MoveLeftRightByWordInTextWithMultiSpaces) {
   render_text->SetText(u"abc     def");
   render_text->SetCursorPosition(5);
   render_text->MoveCursor(WORD_BREAK, CURSOR_RIGHT, SELECTION_NONE);
-#if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
   EXPECT_EQ(8U, render_text->cursor_position());
 #else
   EXPECT_EQ(11U, render_text->cursor_position());

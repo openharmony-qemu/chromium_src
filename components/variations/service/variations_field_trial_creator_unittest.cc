@@ -2007,6 +2007,15 @@ constexpr Study::FormFactor kAllFormFactors[] = {
 // and channels. I.e. the __Desktop feature is enabled only on the Desktop form
 // factor, the __Phone feature is enabled only on the Phone form factor, and so
 // forth.  The seed applies to all platforms and all channels, except "unknown".
+#if BUILDFLAG(IS_OHOS)
+constexpr char kFormFactorTestSeedData[] =
+    "H4sIAAAAAAAAAIXPzWvCQBAF8Gw+"
+    "NsmUQsmt2JalXuYuyF5yWFKRjU3RGuxxie2iQUlKTfDfL2t7C7jnN/"
+    "PjPRivi2z31lcf57WohZA7KcUqTcfT+VRky8lk9SPTZA6+6LuWk3wEt7Om2h7112vVN5/"
+    "7O7KNgCpl4nfGHEaYyzx0kKCLHsboY4AUQ4wQOE0KCF/06dC135zkT0PrBmKl/"
+    "i+snJNICBZ1ezpwkj8MsRhCpS65lfLMxELr7spEE1sh33Ra7ttGX+l0ya0USTJwyw0n+"
+    "f3QoeArVW6sSJAsgJbm10x7HEIAkVJ/B1bMffaa+vgLrCKt4DMCAAA=";
+#else
 constexpr char kFormFactorTestSeedData[] =
     "H4sIAAAAAAAA/4TPT2vCQBAF8Gz+Z0qh7K20lVAvcxdkLzksVmRjLVqDPQ6xXTQoSakJ/"
     "fplrbeAe34zP96D4Xox2b115cfvWlZSqp1ScpVlw/FsLCfL0Wj1ozI+BV92bSNY/"
@@ -2014,6 +2023,7 @@ constexpr char kFormFactorTestSeedData[] =
     "p0aJtvwfJBX7qBhOhyYcEcPoNgXjWng2D5Y59KICI65xbIM+"
     "MWWrdXxpnYwvimz3Lf1PpKn3NugRiX4BYbwfL7vhKCT1RsLETAFYSF+"
     "TSjnvoMQEz0f2Ch3Gevro5/AQAA//8RFDdTJQIAAA==";
+#endif
 constexpr char kFormFactorTestSeedSignature[] = "";  // Deliberately empty.
 
 }  // namespace

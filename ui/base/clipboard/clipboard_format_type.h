@@ -44,6 +44,11 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES) ClipboardFormatType {
   std::string Serialize() const;
   static ClipboardFormatType Deserialize(std::string_view serialization);
 
+#if BUILDFLAG(IS_OHOS)
+  // Gets the ClipboardFormatType corresponding to the standard formats.
+  static ClipboardFormatType GetType(std::string_view format_string);
+#endif
+
   // Get format identifiers for various types.
   static const ClipboardFormatType& FilenamesType();
   static const ClipboardFormatType& UrlType();
@@ -59,6 +64,10 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES) ClipboardFormatType {
   // Chromium-only type for custom formats copied via DataTransfer API.
   // See https://w3c.github.io/clipboard-apis/#clipboard-events-and-interfaces.
   static const ClipboardFormatType& DataTransferCustomType();
+
+#if BUILDFLAG(IS_OHOS)
+  static const ClipboardFormatType& BookMarkType();
+#endif
 
 #if BUILDFLAG(IS_WIN)
   // ANSI formats. Only Windows differentiates between ANSI and UNICODE formats

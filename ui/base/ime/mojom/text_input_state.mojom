@@ -17,6 +17,14 @@ struct ImeTextSpanInfo {
   gfx.mojom.Rect bounds;
 };
 
+// input focus event for notify kKeyboard
+enum RequestKeyboardReason {
+  NONE,          // no event reason
+  MOUSE,         // user triggered mouse event
+  TOUCH,         // user triggered touch event
+  OTHER = 20     // other reason
+};
+
 // This structure represents the current editing state.
 struct TextInputState {
   // Identifier for the currently focused input field, or 0 if there is no
@@ -77,5 +85,6 @@ struct TextInputState {
 
   // Information of ime text spans at the cursor position.
   array<ImeTextSpanInfo> ime_text_spans_info;
+  RequestKeyboardReason request_keyboard_reason;
 };
 

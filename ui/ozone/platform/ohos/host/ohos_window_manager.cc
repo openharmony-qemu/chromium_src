@@ -1,0 +1,218 @@
+// Copyright (c) 2023 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+#include <native_window/external_window.h>
+
+#include "ui/ozone/platform/ohos/host/ohos_window_manager.h"
+
+#include "base/containers/contains.h"
+#include "ohos/adapter/cursor/cursor.h"
+#include "ohos/adapter/device_info/device_info.h"
+#include "ohos/adapter/window/app_window_adapter.h"
+#include "ohos/adapter/xcomponent/adapter/window_adapter.h"
+#include "ui/display/screen.h"
+#include "ui/display/screen_ohos.h"
+#include "ui/gfx/geometry/transform.h"
+#include "ui/ozone/platform/ohos/common/ohos_util.h"
+#include "ui/ozone/platform/ohos/host/ohos_window.h"
+
+namespace ui {
+
+OhosWindowManager::OhosWindowManager() : PlatformWindowManager() {
+  WindowAdapter::GetInstance().RegistWindowStatus(this);
+}
+
+OhosWindowManager::~OhosWindowManager() {
+  DCHECK(thread_checker_.CalledOnValidThread());
+}
+
+void OhosWindowManager::OnWindowAdd(const WindowInfo& info) {
+  auto ohos_window = windows_.Lookup(info.widget_id);
+  if (ohos_window != nullptr) {
+    ohos_window->OnSurfaceCreated();
+  }
+}
+
+void OhosWindowManager::OnWindowRemove(const WindowInfo& info) {
+  auto ohos_window = windows_.Lookup(info.widget_id);
+  if (ohos_window != nullptr) {
+    ohos_window->OnSurfaceDestoryed();
+  }
+}
+
+void OhosWindowManager::AddObserver(OhosWindowObserver* observer) {
+  observers_.AddObserver(observer);
+}
+
+void OhosWindowManager::RemoveObserver(OhosWindowObserver* observer) {
+  observers_.RemoveObserver(observer);
+}
+
+void OhosWindowManager::PrepareCloseWindow(gfx::AcceleratedWidget widget,
+                                           OhosWindow* window) {
+  for (OhosWindowObserver& observer : observers_) {
+    observer.OnWindowCloseEvent(window);
+  }
+}
+
+int32_t OhosWindowManager::AddWindow(gfx::AcceleratedWidget widget,
+                                     OhosWindow* window) {
+  windows_.AddWithID(window, widget);
+
+  for (OhosWindowObserver& observer : observers_)
+    observer.OnWindowAdded(window);
+
+  uint64_t surface_id;
+  auto native_window =  util::GetWindowFromWidget(widget);
+  if (native_window) {
+    auto ret = OH_NativeWindow_GetSurfaceId(reinterpret_cast<OHNativeWindow*>(native_window), &surface_id);
+    if (ret != 0) {
+      LOG(ERROR) << "get xcomponent surface id error";
+      return widget;
+    }
+
+    LOG(INFO) << "Get surface id: " << surface_id;
+    window->SetSurfaceId(surface_id);
+  }
+
+  return widget;
+}
+
+void OhosWindowManager::RemoveWindow(gfx::AcceleratedWidget widget,
+                                     OhosWindow* window) {
+  DCHECK_EQ(window, windows_.Lookup(widget));
+  windows_.Remove(widget);
+
+  for (OhosWindowObserver& observer : observers_)
+    observer.OnWindowRemoved(window);
+}
+
+OhosWindow* OhosWindowManager::GetWindow(gfx::AcceleratedWidget widget) {
+  return windows_.Lookup(widget);
+}
+
+gfx::AcceleratedWidget OhosWindowManager::GetWidgetAtScreenPoint(
+    const gfx::Point& point) {
+  gfx::AcceleratedWidget widget = gfx::kNullAcceleratedWidget;
+  for (base::IDMap<OhosWindow*>::const_iterator iter(&windows_);
+       !iter.IsAtEnd(); iter.Advance()) {
+    const OhosWindow* window = iter.GetCurrentValue();
+    if (window->GetBoundsInDIP().Contains(point)) {
+      widget = iter.GetCurrentKey();
+      break;
+    }
+  }
+  return widget;
+}
+
+void OhosWindowManager::GrabLocatedEvents(OhosWindow* window) {
+  if (window == located_events_grabber_) {
+    return;
+  }
+  auto* old_grabber = located_events_grabber_.get();
+  located_events_grabber_ = window;
+  if (old_grabber) {
+    old_grabber->OnWindowLostCapture();
+  }
+}
+
+// Removes the window that should grab the located events.
+void OhosWindowManager::UngrabLocatedEvents(OhosWindow* window) {
+  if (window != located_events_grabber_) {
+    return;
+  }
+  auto* old_grabber = located_events_grabber_.get();
+  located_events_grabber_ = nullptr;
+  if (old_grabber) {
+    old_grabber->OnWindowLostCapture();
+  }
+}
+
+gfx::AcceleratedWidget OhosWindowManager::GetWidgetAtScreenPointWithIgnore(
+    const gfx::Point& point,
+    const std::set<gfx::AcceleratedWidget>& ignore,
+    const int32_t display_id) {
+  if (ohos::adapter::device_info::DeviceInfo::SdkApi() >=
+      ohos::adapter::device_info::SDK_VERSION_14) {
+    gfx::PointF point_f(point);
+    gfx::PointF point_pixel =
+        display::ohos::ScreenOhos::ConvertDipToPixel(display_id, point_f);
+
+    PointCoordinate coordinate;
+    coordinate.x = point_pixel.x();
+    coordinate.y = point_pixel.y();
+    coordinate.displayId = display_id;
+
+    std::vector<std::string> window_ids =
+        AppWindowAdapter::GetInstance().GetWindowsByCoordinate(coordinate);
+    for (auto& xcomponent_id : window_ids) {
+      gfx::AcceleratedWidget widget_id =
+          ui::util::ConvertWindowIdToWidgetId(xcomponent_id);
+      auto window = GetWindow(widget_id);
+      if (HitWindowAtPoint(window, point, ignore)) {
+        return widget_id;
+      }
+    }
+  } else {
+    for (base::IDMap<OhosWindow*>::const_iterator iter(&windows_);
+         !iter.IsAtEnd(); iter.Advance()) {
+      const OhosWindow* window = iter.GetCurrentValue();
+      if (HitWindowAtPoint(window, point, ignore)) {
+        return iter.GetCurrentKey();
+      }
+    }
+  }
+  return gfx::kNullAcceleratedWidget;
+}
+
+bool OhosWindowManager::HitWindowAtPoint(
+    const OhosWindow* window, const gfx::Point& point,
+    const std::set<gfx::AcceleratedWidget>& ignore) {
+  if (window && window->IsVisible() &&
+      window->GetBoundsInDIP().Contains(point)) {
+    gfx::AcceleratedWidget widget_id = window->GetWidget();
+    if (!base::Contains(ignore, widget_id)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void OhosWindowManager::SetPointerFocusedWindow(
+    base::WeakPtr<OhosWindow> window) {
+  if (!window) {
+      ohos::adapter::SetCursorVisible(true);
+      return;
+  }
+  auto old_focused_window = GetCurrentPointerFocusedWindow();
+  if (old_focused_window) {
+    old_focused_window->OnPointerFocusChanged(false);
+  }
+  pointer_focused_window_ = window;
+  if (window) {
+    window->OnPointerFocusChanged(true);
+  }
+}
+
+void OhosWindowManager::SetPointerFocusedWindow(
+    const gfx::AcceleratedWidget widget) {
+  auto window = GetWindow(widget);
+  if (window != nullptr) {
+    SetPointerFocusedWindow(window->AsWeakPtr());
+  }
+}
+
+bool OhosWindowManager::IsWindowAtLast() {
+  int top_window_count = 0;
+  for (base::IDMap<OhosWindow*>::iterator iter(&windows_);
+       !iter.IsAtEnd(); iter.Advance()) {
+    OhosWindow* window = iter.GetCurrentValue();
+    if (window->AsOhosToplevelWindow()) {
+      top_window_count++;
+    }
+  }
+  return top_window_count == 1;
+}
+
+}  // namespace ui

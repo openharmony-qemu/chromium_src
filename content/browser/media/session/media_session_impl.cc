@@ -163,6 +163,29 @@ MediaSession* MediaSession::Get(WebContents* web_contents) {
   return MediaSessionImpl::Get(web_contents);
 }
 
+#if BUILDFLAG(IS_OHOS)
+// static
+base::WeakPtr<content::MediaSession> MediaSession::Get(int render_process_id,
+                                                       int render_frame_id) {
+  content::RenderFrameHost* render_frame_host =
+      content::RenderFrameHost::FromID(render_process_id, render_frame_id);
+  if (!render_frame_host) {
+    return nullptr;
+  }
+  content::WebContents* web_content =
+      content::WebContents::FromRenderFrameHost(render_frame_host);
+  if (!web_content) {
+    return nullptr;
+  }
+  MediaSessionImpl* session_impl =
+      MediaSessionImpl::FromWebContents(web_content);
+  if (!session_impl) {
+    return nullptr;
+  }
+  return session_impl->GetWeakPtr();
+}
+#endif
+
 // static
 MediaSession* MediaSession::GetIfExists(WebContents* contents) {
   return MediaSessionImpl::FromWebContents(contents);
@@ -849,6 +872,16 @@ double MediaSessionImpl::GetVolumeMultiplier() const {
 bool MediaSessionImpl::IsActive() const {
   return audio_focus_state_ == State::ACTIVE;
 }
+
+#if BUILDFLAG(IS_OHOS)
+bool MediaSessionImpl::IsActiveSession() {
+  return IsActive();
+}
+
+bool MediaSessionImpl::HasOnlyOneShotPlayersPublic() {
+  return HasOnlyOneShotPlayers();
+}
+#endif
 
 bool MediaSessionImpl::IsSuspended() const {
   return audio_focus_state_ == State::SUSPENDED;

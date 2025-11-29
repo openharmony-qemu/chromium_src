@@ -3,7 +3,8 @@
     "os": [
       "mac",
       "win",
-      "linux"
+      "linux",
+      "ohos"
     ],
     "policy_pref_mapping_tests": [
       {

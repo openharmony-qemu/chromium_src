@@ -54,6 +54,7 @@ enum {
   // Flags marked with this are internal to the flags system. Never set this on
   // a manually-added flag.
   kFlagInfrastructure = 1 << 10,
+  kOsOhOS = 1 << 11,
 };
 
 // A flag controlling the behavior of the |ConvertFlagsToSwitches| function -

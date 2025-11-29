@@ -35,6 +35,11 @@ class FakeFrameWidget : public blink::mojom::FrameWidget {
 
   std::optional<bool> GetActive() const;
 
+#if BUILDFLAG(IS_OHOS)
+  void OnTextRecognized(std::vector<blink::mojom::TextRecognizeResultPtr> res,
+                        float scale) override;
+#endif
+
  private:
   void DragTargetDragEnter(blink::mojom::DragDataPtr drag_data,
                            const gfx::PointF& point_in_viewport,

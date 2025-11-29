@@ -328,6 +328,8 @@ std::string GetUserAgentPlatform() {
   return ui::GetDeviceFormFactor() == ui::DEVICE_FORM_FACTOR_TABLET
              ? "iPad; "
              : "iPhone; ";
+#elif BUILDFLAG(IS_OHOS)
+  return "OHOS";
 #else
 #error Unsupported platform
 #endif
@@ -351,6 +353,8 @@ std::string GetUnifiedPlatform() {
     return "iPad; CPU iPad OS 14_0 like Mac OS X";
   }
   return "iPhone; CPU iPhone OS 14_0 like Mac OS X";
+#elif BUILDFLAG(IS_OHOS)
+  return "OHOS; OHOS x86_64";
 #else
 #error Unsupported platform
 #endif

@@ -27,6 +27,10 @@
 #include "ui/native_theme/caption_style.h"
 #include "ui/native_theme/native_theme_observer.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/native_theme/native_theme_adapter.h"
+#endif  // BUILDFLAG(IS_OHOS)
+
 namespace cc {
 class PaintCanvas;
 }
@@ -458,6 +462,24 @@ class COMPONENT_EXPORT(NATIVE_THEME) NativeTheme {
       scoped_refptr<ColorProviderKey::ThemeInitializerSupplier> custom_theme,
       bool use_custom_frame = true) const;
 
+#if BUILDFLAG(IS_OHOS)
+  enum ThemeSource {
+    kSystem,
+    kForcedDark,
+    kForcedLight,
+  };
+
+  ThemeSource theme_source() const {
+    return theme_source_;
+  }
+
+  void set_theme_source(ThemeSource theme_source) {
+    bool original = ShouldUseDarkColors();
+    theme_source_ = theme_source;
+    if (ShouldUseDarkColors() != original) NotifyOnNativeThemeUpdated();
+  }
+#endif  // BUILDFLAG(IS_OHOS)
+
   // Returns a shared instance of the native theme that should be used for web
   // rendering. Do not use it in a normal application context (i.e. browser).
   // The returned object should not be deleted by the caller. This function is
@@ -714,8 +736,23 @@ class COMPONENT_EXPORT(NATIVE_THEME) NativeTheme {
   std::optional<base::TimeDelta> caret_blink_interval_;
   bool use_overlay_scrollbars_ = false;
 
+#if BUILDFLAG(IS_OHOS)
+  ThemeSource theme_source_ = ThemeSource::kSystem;
+#endif  // BUILDFLAG(IS_OHOS)
+
   SEQUENCE_CHECKER(sequence_checker_);
 };
+
+#if BUILDFLAG(IS_OHOS)
+class ThemeSourceEventCallbackImpl :
+  public ohos::adapter::native_theme::ThemeSourceEventCallback {
+  public:
+    ThemeSourceEventCallbackImpl() = default;
+    ~ThemeSourceEventCallbackImpl() = default;
+    void OnThemeSourceChanged(const ohos::adapter::native_theme
+      ::OhosColorMode theme_source) override;
+};
+#endif  // BUILDFLAG(IS_OHOS)
 
 }  // namespace ui
 

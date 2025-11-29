@@ -252,6 +252,10 @@ bool ImportantFileWriter::WriteFileAtomicallyImpl(
   File tmp_file =
       CreateAndOpenTemporaryFileInDir(path.DirName(), &tmp_file_path);
   if (!tmp_file.IsValid()) {
+#if BUILDFLAG(IS_OHOS)
+    LOG(WARNING) << "ImportantFileWriter::WriteFileAtomicallyImpl, "
+                 << "Failed to create temporary file to update " << path;
+#endif
     DPLOG(WARNING) << "Failed to create temporary file to update " << path;
     return false;
   }
@@ -267,6 +271,12 @@ bool ImportantFileWriter::WriteFileAtomicallyImpl(
         static_cast<int>(std::min(kMaxWriteAmount, end - scan));
     bytes_written = tmp_file.WriteAtCurrentPos(scan, write_amount);
     if (bytes_written != write_amount) {
+#if BUILDFLAG(IS_OHOS)
+      LOG(WARNING) << "ImportantFileWriter::WriteFileAtomicallyImpl, "
+                   << "Failed to write " << write_amount << " bytes to temp "
+                   << "file to update " << path
+                   << " (bytes_written=" << bytes_written << ")";
+#endif
       DPLOG(WARNING) << "Failed to write " << write_amount << " bytes to temp "
                      << "file to update " << path
                      << " (bytes_written=" << bytes_written << ")";
@@ -276,6 +286,10 @@ bool ImportantFileWriter::WriteFileAtomicallyImpl(
   }
 
   if (!tmp_file.Flush()) {
+#if BUILDFLAG(IS_OHOS)
+    LOG(WARNING) << "ImportantFileWriter::WriteFileAtomicallyImpl, "
+                 << "Failed to flush temp file to update " << path;
+#endif
     DPLOG(WARNING) << "Failed to flush temp file to update " << path;
     DeleteTmpFileWithRetry(std::move(tmp_file), tmp_file_path);
     return false;
@@ -333,6 +347,10 @@ bool ImportantFileWriter::WriteFileAtomicallyImpl(
     // the log message, otherwise failures in SetCurrentThreadType may be
     // reported instead.
     ::SetLastError(last_error);
+#endif
+#if BUILDFLAG(IS_OHOS)
+    LOG(WARNING) << "ImportantFileWriter::WriteFileAtomicallyImpl, "
+                 << "Failed to replace " << path << " with " << tmp_file_path;
 #endif
     DPLOG(WARNING) << "Failed to replace " << path << " with " << tmp_file_path;
     DeleteTmpFileWithRetry(File(), tmp_file_path);

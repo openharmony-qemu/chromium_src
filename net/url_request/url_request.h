@@ -917,6 +917,14 @@ class NET_EXPORT URLRequest : public base::SupportsUserData {
     return storage_access_status_;
   }
 
+#if BUILDFLAG(IS_OHOS)
+  void set_allow_preload_record(bool allow) { allow_preload_record_ = allow; }
+  bool allow_preload_record() const { return allow_preload_record_; }
+
+  void set_main_page(const GURL& url) { main_page_ = url; }
+  const GURL& main_page() const { return main_page_; }
+#endif
+
   static bool DefaultCanUseCookies();
 
   // Calculates the StorageAccessStatus for this request, according to the
@@ -1246,6 +1254,11 @@ class NET_EXPORT URLRequest : public base::SupportsUserData {
   // How existing device bound sessions interacted with this request
   device_bound_sessions::SessionUsage device_bound_session_usage_ =
       device_bound_sessions::SessionUsage::kUnknown;
+
+#if BUILDFLAG(IS_OHOS)
+  bool allow_preload_record_ = false;
+  GURL main_page_;
+#endif
 
   THREAD_CHECKER(thread_checker_);
 

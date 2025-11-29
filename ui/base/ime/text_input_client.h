@@ -28,6 +28,11 @@
 #include "ui/gfx/range/range.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "ui/display/display.h"
+#include "ui/display/screen.h"
+#endif
+
 namespace gfx {
 class Point;
 class Rect;
@@ -37,6 +42,22 @@ namespace ui {
 
 class KeyEvent;
 enum class TextEditCommand;
+
+#if BUILDFLAG(IS_OHOS)
+// The reason for invoking the virtual keyboard for the text box, used to
+// display the virtual keyboard.This enumeration value corresponds to several
+// types of reasons provided by the OH side for invoking the virtual keyboard.
+enum RequestKeyboardReason {
+  // the request keyboard reason is none
+  REQUEST_KEYBOARD_REASON_NONE,
+  // the request keyboard reason is mouse
+  REQUEST_KEYBOARD_REASON_MOUSE,
+  // the request keyboard reason is touch
+  REQUEST_KEYBOARD_REASON_TOUCH,
+  // other reason
+  REQUEST_KEYBOARD_REASON_OTHER = 20,
+};
+#endif
 
 #if BUILDFLAG(IS_WIN)
 // Mirrors `dwFlags` for ITextStoreACP::GetACPFromPoint:
@@ -235,6 +256,19 @@ class COMPONENT_EXPORT(UI_BASE_IME) TextInputClient {
 
   // Returns how the text input client was focused.
   virtual FocusReason GetFocusReason() const = 0;
+
+#if BUILDFLAG(IS_OHOS)
+  // Returns the reason why the virtual keyboard was invoked.
+  // This method differentiates user actions, aligning with the types defined by
+  // the OH side. Unlike GetFocusReason(), the autofocus type does not invoke
+  // the virtual keyboard.
+  virtual RequestKeyboardReason GetRequestKeyboardReason() const {
+    return RequestKeyboardReason::REQUEST_KEYBOARD_REASON_OTHER;
+  }
+
+  virtual gfx::Rect GetToplevelWindowBounds() const;
+  virtual display::Display GetDisplayForClient();
+#endif
 
   // Document content operations ----------------------------------------------
 

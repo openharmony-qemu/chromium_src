@@ -617,6 +617,7 @@ source_set("browser_sources") {
     "//services/metrics/public/cpp:metrics_cpp",
     "//third_party/blink/public/common:buildflags",
     "//third_party/blink/public/common:headers",
+    "//third_party/wiseplay/cdm:buildflags", 
     "//ui/accessibility",
     "//ui/base",
     "//ui/base/clipboard",
@@ -706,6 +707,10 @@ source_set("browser_sources") {
   if (use_atk) {
     sources += [ "ax_inspect_factory_auralinux.cc" ]
     configs += [ "//build/config/linux/atspi2" ]
+  }
+
+  if (is_ohos) {
+    sources += [ "ax_inspect_factory_ohos.cc" ]
   }
 
   if (is_linux || is_chromeos) {

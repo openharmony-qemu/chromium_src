@@ -50,6 +50,10 @@
 #include "partition_alloc/stack/stack.h"  // nogncheck
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include <qos/qos.h>
+#endif
+
 namespace base {
 
 void InitThreading();
@@ -252,7 +256,7 @@ PlatformThreadId PlatformThreadBase::CurrentId() {
 #endif
   }
   return PlatformThreadId(g_thread_id);
-#elif BUILDFLAG(IS_ANDROID)
+#elif BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   // Note: do not cache the return value inside a thread_local variable on
   // Android (as above). The reasons are:
   // - thread_local is slow on Android (goes through emutls)
@@ -382,11 +386,46 @@ bool PlatformThreadBase::CanChangeThreadType(ThreadType from, ThreadType to) {
 
 namespace internal {
 
+#if BUILDFLAG(IS_OHOS)
+struct ThreadTypeToQosLevelPair {
+  ThreadType thread_type;
+  QoS_Level qs_level;
+};
+
+const ThreadTypeToQosLevelPair kThreadTypeToQosLevelMap[6] = {
+    {ThreadType::kBackground, QoS_Level::QOS_BACKGROUND},
+    {ThreadType::kUtility, QoS_Level::QOS_UTILITY},
+    {ThreadType::kDefault, QoS_Level::QOS_DEFAULT},
+    {ThreadType::kDisplayCritical, QoS_Level::QOS_USER_INTERACTIVE},
+    {ThreadType::kRealtimeAudio, QoS_Level::QOS_DEADLINE_REQUEST},
+};
+  
+QoS_Level ThreadTypeToQosLevel(ThreadType thread_type) {
+  for (const auto& pair : kThreadTypeToQosLevelMap) {
+    if (pair.thread_type == thread_type) {
+      return pair.qs_level;
+    }
+  }
+  NOTREACHED() << "Unknown ThreadType";
+  return QoS_Level::QOS_DEFAULT;
+}
+#endif
+
 void SetCurrentThreadTypeImpl(ThreadType thread_type,
                               MessagePumpType pump_type_hint) {
 #if BUILDFLAG(IS_NACL)
   NOTIMPLEMENTED();
 #else
+#if BUILDFLAG(IS_OHOS)
+  const QoS_Level level = internal::ThreadTypeToQosLevel(thread_type);
+  const auto current_tid = PlatformThread::CurrentId();
+  if (OH_QoS_SetThreadQoS(level) != 0) {
+    LOG(ERROR) << "Failed to set thread qos. thread (" << current_tid << ")";
+  } else {
+    LOG(INFO) << "SetCurrentThread thread (" << current_tid << ") to "
+              << (int)level;
+  }
+#endif
   if (internal::SetCurrentThreadTypeForPlatform(thread_type, pump_type_hint)) {
     return;
   }

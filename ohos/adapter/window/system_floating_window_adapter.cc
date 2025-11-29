@@ -1,0 +1,85 @@
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+#include "ohos/adapter/window/system_floating_window_adapter.h"
+
+#include <chrono>
+#include <future>
+
+#include "ohos/adapter/aki_hook/aki_hook.h"
+#include "ohos/adapter/common/logging.h"
+
+namespace ohos::adapter::window {
+
+SystemFloatingWindowAdapter& SystemFloatingWindowAdapter::GetInstance() {
+  static SystemFloatingWindowAdapter instance;
+  return instance;
+}
+
+void SystemFloatingWindowAdapter::Create(const NewWindowParam& param) {
+  auto jsFunc =
+      ohos::adapter::GetJSFunction("SystemFloatingWindow.CreateWindow");
+  if (jsFunc) {
+    jsFunc->Invoke<void>(param);
+  }
+}
+
+void SystemFloatingWindowAdapter::Close(int32_t id) {
+  auto jsFunc =
+      ohos::adapter::GetJSFunction("SystemFloatingWindow.CloseWindow");
+  if (jsFunc) {
+    jsFunc->Invoke<void>(id);
+  }
+}
+
+void SystemFloatingWindowAdapter::SetBounds(int32_t id,
+                                            const WindowRect& rect) {
+  auto promise = std::make_shared<std::promise<bool>>();
+  std::function<void(bool)> on_completed = [promise](bool successful) -> void {
+    promise->set_value(successful);
+  };
+  auto jsFunc = ohos::adapter::GetJSFunction("SystemFloatingWindow.SetBounds");
+  if (jsFunc) {
+    jsFunc->Invoke<void>(id, rect, on_completed);
+    auto future = promise->get_future();
+    auto status = future.wait_for(std::chrono::seconds(3));
+    if (status == std::future_status::timeout) {
+      LOGE("SystemFloatingWindow.SetBounds timeout");
+      return;
+    }
+    bool successful = future.get();
+    if (!successful) {
+      LOGE("SystemFloatingWindow.SetBounds failed");
+    }
+  }
+}
+
+void SystemFloatingWindowAdapter::SetWindowLimits(int32_t min_width,
+                                                  int32_t min_height,
+                                                  int32_t max_width,
+                                                  int32_t max_height,
+                                                  int32_t id) {
+  auto jsFunc =
+      ohos::adapter::GetJSFunction("SystemFloatingWindow.SetWindowLimits");
+  if (jsFunc) {
+    jsFunc->Invoke<void>(min_width, min_height, max_width, max_height, id);
+  }
+}
+
+void SystemFloatingWindowAdapter::StartWindowMoving(int32_t id) {
+  auto jsFunc = ohos::adapter::GetJSFunction("SystemFloatingWindow.StartWindowMoving");
+  if (jsFunc) {
+    jsFunc->Invoke<void>(id);
+  }
+}
+
+int32_t SystemFloatingWindowAdapter::GetOriginWindowId(int32_t id) {
+  auto jsFunc = ohos::adapter::GetJSFunction("SystemFloatingWindow.GetOriginWindowId");
+  if (jsFunc) {
+    return jsFunc->Invoke<int32_t>(id);
+  }
+  return -1;
+}
+
+}  // namespace ohos::adapter::window

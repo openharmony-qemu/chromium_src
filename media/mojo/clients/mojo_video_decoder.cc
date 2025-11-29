@@ -119,10 +119,13 @@ bool MojoVideoDecoder::IsPlatformDecoder() const {
 
 bool MojoVideoDecoder::SupportsDecryption() const {
   // Currently only the Android backends and specific ChromeOS configurations
+  // and OHOS
   // support decryption.
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(USE_CHROMEOS_PROTECTED_MEDIA)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(USE_CHROMEOS_PROTECTED_MEDIA) || \
+    BUILDFLAG(ENABLE_WISEPLAY)
   return true;
 #else
+  LOG(WARNING) << __FUNCTION__ << " [WiseplayDRM] not support!";
   return false;
 #endif
 }
@@ -132,6 +135,7 @@ VideoDecoderType MojoVideoDecoder::GetDecoderType() const {
 }
 
 void MojoVideoDecoder::FailInit(InitCB init_cb, DecoderStatus err) {
+  LOG(WARNING) << __FUNCTION__ << " [WiseplayDRM] err: " << err.message();
   task_runner_->PostTask(FROM_HERE,
                          base::BindOnce(std::move(init_cb), std::move(err)));
 }
@@ -147,7 +151,7 @@ void MojoVideoDecoder::Initialize(const VideoDecoderConfig& config,
 
   if (gpu_factories_)
     decoder_type_ = gpu_factories_->GetDecoderType();
-
+  LOG(WARNING) << __FUNCTION__ << " [WiseplayDRM] decoder_type_ | " << decoder_type_;
   // If the codec has software fallback, fail immediately if we know that the
   // remote side cannot support |config|.
   if (gpu_factories_ &&

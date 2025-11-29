@@ -32,11 +32,17 @@
 #include "media/cdm/clear_key_cdm_common.h"
 #include "media/media_buildflags.h"
 #include "third_party/widevine/cdm/buildflags.h"
+#include "third_party/wiseplay/cdm/buildflags.h"
 
 #if BUILDFLAG(ENABLE_WIDEVINE)
 #include "components/cdm/renderer/widevine_key_system_info.h"
 #include "third_party/widevine/cdm/widevine_cdm_common.h"  // nogncheck
 #endif  // BUILDFLAG(ENABLE_WIDEVINE)
+
+#if BUILDFLAG(ENABLE_WISEPLAY)
+#include "components/cdm/renderer/wiseplay_key_system_info.h"
+#include "third_party/wiseplay/cdm/wiseplay_cdm_common.h"
+#endif // BUILDFLAG(ENABLE_WISEPLAY)
 
 #if BUILDFLAG(IS_ANDROID)
 #include "components/cdm/renderer/android_key_system_info.h"
@@ -60,7 +66,7 @@ namespace cdm {
 namespace {
 
 #if BUILDFLAG(ENABLE_WIDEVINE) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(ENABLE_PLAYREADY)
+    BUILDFLAG(ENABLE_PLAYREADY) || BUILDFLAG(ENABLE_WISEPLAY)
 SupportedCodecs GetVP9Codecs(
     const base::flat_set<media::VideoCodecProfile>& profiles) {
   if (profiles.empty()) {
@@ -253,7 +259,7 @@ SupportedCodecs GetSupportedCodecs(const media::CdmCapability& capability,
 #endif  // BUILDFLAG(ENABLE_WIDEVINE) || BUILDFLAG(IS_ANDROID) ||
         // BUILDFLAG(ENABLE_PLAYREADY)
 
-#if BUILDFLAG(ENABLE_WIDEVINE)
+#if BUILDFLAG(ENABLE_WIDEVINE) || BUILDFLAG(ENABLE_WISEPLAY)
 
 // Returns whether persistent-license session can be supported.
 bool CanSupportPersistentLicense() {
@@ -272,7 +278,8 @@ bool CanSupportPersistentLicense() {
   // we assume that it can and will make use of persistence no matter whether
   // persistence-based features are supported or not.
   return true;
-
+#elif BUILDFLAG(ENABLE_WISEPLAY)
+  return true;
 #elif BUILDFLAG(ENABLE_CDM_HOST_VERIFICATION) && \
     BUILDFLAG(ENABLE_CDM_STORAGE_ID)
   // On other platforms, persistent licenses are only supported if CDM host
@@ -298,7 +305,7 @@ base::flat_set<CdmSessionType> UpdatePersistentLicenseSupport(
   }
   return session_types;
 }
-
+#if BUILDFLAG(ENABLE_WIDEVINE)
 void AddWidevine(const media::KeySystemCapability& capability,
                  bool can_persist_data,
                  KeySystemInfos* key_systems) {
@@ -399,6 +406,9 @@ void AddWidevine(const media::KeySystemCapability& capability,
     max_experimental_audio_robustness = Robustness::HW_SECURE_CRYPTO;
     max_experimental_video_robustness = Robustness::HW_SECURE_ALL;
   }
+#elif BUILDFLAG(ENABLE_WISEPLAY)
+  max_audio_robustness = Robustness::SW_SECURE_DECODE;
+  max_video_robustness = Robustness::SW_SECURE_DECODE;
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
   // Others.
@@ -412,6 +422,9 @@ void AddWidevine(const media::KeySystemCapability& capability,
   // persistence-based features are supported or not.
   persistent_state_support = EmeFeatureSupport::ALWAYS_ENABLED;
   distinctive_identifier_support = EmeFeatureSupport::ALWAYS_ENABLED;
+#elif BUILDFLAG(ENABLE_WISEPLAY)
+  persistent_state_support = EmeFeatureSupport::REQUESTABLE;
+  distinctive_identifier_support = EmeFeatureSupport::NOT_SUPPORTED;
 #endif
 
   key_systems->emplace_back(std::make_unique<WidevineKeySystemInfo>(
@@ -441,6 +454,80 @@ void AddWidevine(const media::KeySystemCapability& capability,
 #endif  // BUILDFLAG(IS_WIN)
 }
 #endif  // BUILDFLAG(ENABLE_WIDEVINE)
+#endif  // BUILDFLAG(ENABLE_WIDEVINE) || BUILDFLAG(ENABLE_WISEPLAY)
+
+#if BUILDFLAG(ENABLE_WISEPLAY)
+void AddWisePlay(const media::KeySystemCapability& capability,
+                 bool can_persist_data,
+                 KeySystemInfos* key_systems) {
+  // Codecs and encryption schemes.
+  SupportedCodecs codecs = media::EME_CODEC_NONE;
+  SupportedCodecs hw_secure_codecs = media::EME_CODEC_NONE;
+
+  base::flat_set<::media::EncryptionScheme> encryption_schemes;
+  base::flat_set<::media::EncryptionScheme> hw_secure_encryption_schemes;
+  base::flat_set<CdmSessionType> session_types;
+  base::flat_set<CdmSessionType> hw_secure_session_types;
+
+  if (capability.sw_cdm_capability_or_status.has_value()) {
+    const auto& sw_secure_capability =
+        capability.sw_cdm_capability_or_status.value();
+    codecs = GetSupportedCodecs(sw_secure_capability);
+    encryption_schemes = sw_secure_capability.encryption_schemes;
+    session_types = UpdatePersistentLicenseSupport(
+        can_persist_data, sw_secure_capability.session_types);
+    if (!base::Contains(session_types, CdmSessionType::kTemporary)) {
+      LOG(WARNING) << __FUNCTION__
+                   << " [WiseplayDRM] Temporary sessions must be supported.";
+      return;
+    }
+    LOG(WARNING) << __FUNCTION__
+                 << " [WiseplayDRM] Software secure WisePlay supported";
+  } else {
+    LOG(WARNING) << __FUNCTION__
+                 << " [WiseplayDRM] Software secure WisePlay NOT supported";
+  }
+
+  if (capability.hw_cdm_capability_or_status.has_value()) {
+    // For the default WisePlay key system, we support a codec only when it
+    // supports clear lead, unless `force_support_clear_lead` is set to true.
+    const bool force_support_clear_lead =
+        media::kHardwareSecureDecryptionForceSupportClearLead.Get();
+    const auto& hw_secure_capability =
+        capability.hw_cdm_capability_or_status.value();
+    hw_secure_codecs =
+        GetSupportedCodecs(hw_secure_capability, !force_support_clear_lead);
+    hw_secure_encryption_schemes = hw_secure_capability.encryption_schemes;
+    hw_secure_session_types = UpdatePersistentLicenseSupport(
+        can_persist_data, hw_secure_capability.session_types);
+    if (!base::Contains(hw_secure_session_types, CdmSessionType::kTemporary)) {
+      LOG(WARNING) << __FUNCTION__
+                   << " [WiseplayDRM] Temporary sessions must be supported.";
+      return;
+    }
+    LOG(WARNING) << __FUNCTION__
+                 << " [WiseplayDRM] Hardware secure WisePlay supported";
+  } else {
+    LOG(WARNING) << __FUNCTION__
+                 << " [WiseplayDRM] Hardware secure WisePlay NOT supported";
+  }
+
+  // Robustness.
+  using Robustness = WisePlayKeySystemInfo::Robustness;
+  auto max_audio_robustness = Robustness::SW_SECURE_DECODE;
+  auto max_video_robustness = Robustness::SW_SECURE_DECODE;
+
+  // Others.
+  auto persistent_state_support = EmeFeatureSupport::REQUESTABLE;
+  auto distinctive_identifier_support = EmeFeatureSupport::NOT_SUPPORTED;
+
+  key_systems->emplace_back(std::make_unique<WisePlayKeySystemInfo>(
+      codecs, encryption_schemes, session_types, hw_secure_codecs,
+      hw_secure_encryption_schemes, hw_secure_session_types,
+      max_audio_robustness, max_video_robustness, persistent_state_support,
+      distinctive_identifier_support));
+}
+#endif // BUILDFLAG(ENABLE_WISEPLAY)
 
 void AddExternalClearKey(const media::KeySystemCapability& /*capability*/,
                          KeySystemInfos* key_systems) {
@@ -599,6 +686,13 @@ void OnKeySystemSupportUpdated(
       continue;
     }
 #endif  // BUILDFLAG(ENABLE_WIDEVINE)
+
+#if BUILDFLAG(ENABLE_WISEPLAY)
+    if (key_system == kWisePlayKeySystem) {
+      AddWisePlay(capability, can_persist_data, &key_systems);
+      continue;
+    }
+#endif // BUILDFLAG(ENABLE_WISEPLAY)
 
     if (key_system == media::kExternalClearKeyKeySystem) {
       AddExternalClearKey(capability, &key_systems);

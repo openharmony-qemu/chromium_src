@@ -222,6 +222,11 @@
 #include "third_party/blink/public/mojom/android_font_lookup/android_font_lookup.mojom.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "content/browser/font_unique_name_lookup/font_unique_name_lookup_service.h"
+#include "third_party/blink/public/mojom/android_font_lookup/android_font_lookup.mojom.h"
+#endif
+
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 #include <sys/resource.h>
 
@@ -3435,6 +3440,16 @@ void RenderProcessHostImpl::AppendRendererCommandLine(
         switches::kDisableVideoCaptureUseGpuMemoryBuffer);
   }
 #endif  // BUILDFLAG(IS_LINUX)
+
+#if BUILDFLAG(IS_OHOS)
+  if (GetContentClient()->browser()->IsAdvancedSecurityMode()) {
+    command_line->AppendSwitchASCII(blink::switches::kJavaScriptFlags,
+                                    "--jitless");
+    command_line->AppendSwitchASCII(switches::KDisableBlinkFeatures,
+                                    "MathMLCore,ScriptedSpeechRecognition");
+    command_line->AppendSwitch(switches::kEnabledAdvancedSecurityMode);
+  }
+#endif
 }
 
 void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
@@ -3625,6 +3640,12 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
 #endif
 #if BUILDFLAG(IS_CHROMEOS)
       switches::kSchedulerBoostUrgent,
+#endif
+#if BUILDFLAG(IS_OHOS)
+      switches::kBundleInstallationDir,
+      switches::KDisableBlinkFeatures,
+      switches::kEnabledAdvancedSecurityMode,
+      switches::kOhosTrace,
 #endif
   };
   renderer_cmd->CopySwitchesFrom(browser_cmd, kSwitchNames);

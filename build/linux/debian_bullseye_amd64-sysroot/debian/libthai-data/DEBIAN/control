@@ -1,0 +1,18 @@
+Package: libthai-data
+Source: libthai
+Version: 0.1.28-3
+Architecture: all
+Maintainer: Theppitak Karoonboonyanan <thep@debian.org>
+Installed-Size: 614
+Breaks: libthai0 (<< 0.1.10)
+Section: libs
+Priority: optional
+Multi-Arch: foreign
+Homepage: https://linux.thai.net/projects/libthai
+Description: Data files for Thai language support library
+ LibThai is a set of Thai language support routines aimed to ease
+ developers' tasks to incorporate Thai language support in their applications.
+ It includes important Thai-specific functions e.g. word breaking, input and
+ output methods as well as basic character and string supports.
+ .
+ This package contains data files needed by the LibThai library.

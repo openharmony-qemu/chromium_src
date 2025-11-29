@@ -15,6 +15,10 @@
 #include "ui/events/platform_event.h"
 #include "ui/gfx/geometry/rect.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "ui/base/ime/text_input_client.h"
+#endif
+
 namespace ui {
 
 class VirtualKeyboardController;

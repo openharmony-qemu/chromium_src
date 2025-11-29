@@ -97,7 +97,11 @@ void DecryptingVideoDecoder::Initialize(const VideoDecoderConfig& config,
 }
 
 bool DecryptingVideoDecoder::SupportsDecryption() const {
+#if BUILDFLAG(ENABLE_WISEPLAY)
+  return false;
+#else
   return true;
+#endif  // BUILDFLAG(ENABLE_WISEPLAY)
 }
 
 void DecryptingVideoDecoder::Decode(scoped_refptr<DecoderBuffer> buffer,

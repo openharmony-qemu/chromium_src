@@ -40,6 +40,7 @@ def PlatformTypes():
         "mac": download_file_types_pb2.DownloadFileType.PLATFORM_TYPE_MAC,
         "win": download_file_types_pb2.DownloadFileType.PLATFORM_TYPE_WINDOWS,
         # LINT.ThenChange(BUILD.gn:PlatformTypes)
+        "ohos": download_file_types_pb2.DownloadFileType.PLATFORM_TYPE_OHOS,
     }
 
 

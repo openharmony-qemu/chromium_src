@@ -93,7 +93,7 @@ class GeolocationServiceUnitTest : public DeviceServiceTestBase {
 #endif  // BUILDFLAG(IS_MAC)
 };
 
-#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
 // ChromeOS fails to perform network geolocation when zero wifi networks are
 // detected in a scan: https://crbug.com/767300.
 #else

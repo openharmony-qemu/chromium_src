@@ -43,6 +43,10 @@
 #include "components/viz/service/frame_sinks/external_begin_frame_source_mojo.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "components/viz/service/frame_sinks/external_begin_frame_source_ohos.h"
+#endif
+
 #if BUILDFLAG(IS_MAC)
 #include "base/feature_list.h"
 #include "components/viz/service/frame_sinks/external_begin_frame_source_mac.h"
@@ -192,6 +196,10 @@ RootCompositorFrameSinkImpl::Create(
     hw_support_for_multiple_refresh_rates = true;
     external_begin_frame_source =
         std::make_unique<ExternalBeginFrameSourceIOS>(restart_id);
+#elif BUILDFLAG(IS_OHOS)
+    hw_support_for_multiple_refresh_rates = true;
+    external_begin_frame_source =
+        std::make_unique<ExternalBeginFrameSourceOHOS>(restart_id, params->surface_id);
 #else
 #if BUILDFLAG(IS_CHROMEOS)
     hw_support_for_multiple_refresh_rates =

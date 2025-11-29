@@ -255,6 +255,11 @@ class CONTENT_EXPORT RenderWidgetHostViewAura
                                      gfx::Rect* rect) const override;
   bool HasCompositionText() const override;
   ui::TextInputClient::FocusReason GetFocusReason() const override;
+#if BUILDFLAG(IS_OHOS)
+  ui::RequestKeyboardReason GetRequestKeyboardReason() const override;
+  gfx::Rect GetToplevelWindowBounds() const override;
+  display::Display GetDisplayForClient() override;
+#endif
   bool GetTextRange(gfx::Range* range) const override;
   bool GetCompositionTextRange(gfx::Range* range) const override;
   bool GetEditableSelectionRange(gfx::Range* range) const override;
@@ -705,6 +710,10 @@ class CONTENT_EXPORT RenderWidgetHostViewAura
 
   void SetTooltipText(const std::u16string& tooltip_text);
 
+#if BUILDFLAG(IS_OHOS)
+  void DelayedTextInputTypeChanged();
+#endif
+
 #if BUILDFLAG(IS_WIN)
   // Ensure that we're observing the device posture platform provider to
   // get the display feature changes.
@@ -875,6 +884,7 @@ class CONTENT_EXPORT RenderWidgetHostViewAura
   std::optional<display::ScopedDisplayObserver> display_observer_;
 
   base::WeakPtrFactory<RenderWidgetHostViewAura> weak_ptr_factory_{this};
+
 };
 
 }  // namespace content

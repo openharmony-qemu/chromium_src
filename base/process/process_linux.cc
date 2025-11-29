@@ -43,6 +43,10 @@
 #include "base/unguessable_token.h"
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/res_sched/manager/background_manager_api_wrapper.h"
+#endif  // BUILDFLAG(IS_OHOS)
+
 namespace base {
 
 #if BUILDFLAG(IS_CHROMEOS)
@@ -289,6 +293,21 @@ bool Process::SetPriority(Priority priority) {
   if (!CanSetPriority()) {
     return false;
   }
+
+#if BUILDFLAG(IS_OHOS)
+  // call ohos background manager api to lower qos
+  using ohos::adapter::res_sched::manager::BackgroundManagerApiWrapper;
+  BackgroundManagerApiWrapper& instance =
+      BackgroundManagerApiWrapper::GetInstance();
+  bool background = priority == Priority::kBestEffort;
+  if (background) {
+    instance.SetProcessPriority(
+        Pid(),
+        BackgroundManagerApiWrapper::ProcessPriority::PROCESS_BACKGROUND);
+  } else {
+    instance.ResetProcessPriority(Pid());
+  }
+#endif  // BUILDFLAG(IS_OHOS)
 
   int priority_value = priority == Priority::kBestEffort ? kBackgroundPriority
                                                          : kForegroundPriority;

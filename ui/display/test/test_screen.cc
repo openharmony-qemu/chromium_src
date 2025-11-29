@@ -90,5 +90,18 @@ void TestScreen::OverrideTabletStateForTesting(TabletState state) {
       &DisplayObserver::OnDisplayTabletStateChanged, state);
 }
 #endif  // BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_OHOS)
+gfx::NativeWindow TestScreen::GetLocalProcessWindowAtPoint(
+    const gfx::Point& point,
+    const std::set<gfx::NativeWindow>& ignore,
+    const int32_t display_id) {
+  NOTIMPLEMENTED_LOG_ONCE();
+  return gfx::NativeWindow();
+}
+
+gfx::Point TestScreen::GetCursorScreenPoint(const int32_t display_id) {
+  return GetCursorScreenPoint();
+}
+#endif
 
 }  // namespace display::test

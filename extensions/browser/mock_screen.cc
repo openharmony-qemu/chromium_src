@@ -38,6 +38,15 @@ gfx::NativeWindow MockScreen::GetLocalProcessWindowAtPoint(
   return gfx::NativeWindow();
 }
 
+#if BUILDFLAG(IS_OHOS)
+gfx::NativeWindow MockScreen::GetLocalProcessWindowAtPoint(
+    const gfx::Point& point,
+    const std::set<gfx::NativeWindow>& ignore,
+    const int32_t display_id) {
+  return nullptr;
+}
+#endif
+
 int MockScreen::GetNumDisplays() const {
   return static_cast<int>(displays_.size());
 }

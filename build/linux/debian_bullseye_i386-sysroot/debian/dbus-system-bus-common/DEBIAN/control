@@ -1,0 +1,29 @@
+Package: dbus-system-bus-common
+Source: dbus
+Version: 1.14.10-1~deb12u1
+Architecture: all
+Maintainer: Utopia Maintenance Team <pkg-utopia-maintainers@lists.alioth.debian.org>
+Installed-Size: 119
+Depends: adduser
+Breaks: dbus (<< 1.13.18-2~)
+Replaces: dbus (<< 1.13.18-2~)
+Section: admin
+Priority: optional
+Multi-Arch: foreign
+Homepage: https://dbus.freedesktop.org/
+Description: simple interprocess messaging system (system bus configuration)
+ D-Bus is a message bus, used for sending messages between applications.
+ Conceptually, it fits somewhere in between raw sockets and CORBA in
+ terms of complexity.
+ .
+ This package contains the configuration files defining the behaviour of
+ the D-Bus system bus, used for system services such as networking and
+ storage management services. It is also responsible for creating the
+ 'messagebus' system user account used to run the system bus.
+ These are used by the reference implementation in the dbus package,
+ and by the reimplementation in the dbus-broker package.
+ .
+ To provide a complete D-Bus system bus, install one of the packages
+ that implement the dbus-system-bus virtual package, such as dbus.
+ The recommended implementation is indicated by the default-dbus-system-bus
+ virtual package.

@@ -527,7 +527,7 @@ TEST_F(DownloadPathReservationTrackerTest, MAYBE_UnwriteableDirectory) {
 #endif  // BUILDFLAG(IS_ANDROID)
   base::FilePath dir(path.DirName());
   ASSERT_FALSE(IsPathInUse(path));
-
+#if !BUILDFLAG(IS_OHOS)
   {
     // Scope for FilePermissionRestorer
     base::FilePermissionRestorer restorer(dir);
@@ -549,7 +549,7 @@ TEST_F(DownloadPathReservationTrackerTest, MAYBE_UnwriteableDirectory) {
                       PathValidationResult::PATH_NOT_WRITABLE,
                       default_download_path.Append(path.BaseName()));
   }
-
+#endif
   SetDownloadItemState(item.get(), DownloadItem::COMPLETE);
 }
 

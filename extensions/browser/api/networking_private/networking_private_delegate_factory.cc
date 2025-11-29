@@ -26,8 +26,12 @@ using content::BrowserContext;
 NetworkingPrivateDelegateFactory::UIDelegateFactory::UIDelegateFactory() =
     default;
 
+#if BUILDFLAG(IS_OHOS)
+NetworkingPrivateDelegateFactory::UIDelegateFactory::~UIDelegateFactory() {}
+#else
 NetworkingPrivateDelegateFactory::UIDelegateFactory::~UIDelegateFactory() =
     default;
+#endif
 
 // static
 NetworkingPrivateDelegate*

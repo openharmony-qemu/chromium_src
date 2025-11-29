@@ -47,6 +47,12 @@ namespace base {
 class TimeDelta;
 }
 
+#if BUILDFLAG(IS_OHOS)
+namespace content {
+class VideoPictureInPictureWindowController;
+}
+#endif
+
 namespace gfx {
 class Insets;
 class Point;
@@ -535,6 +541,15 @@ class VIEWS_EXPORT Widget : public internal::NativeWidgetDelegate,
     // Used by Ozone platforms that implement support for display server backed
     // session management. E.g: Wayland with xdg-session-management protocol.
     std::optional<ui::PlatformSessionWindowData> session_data;
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+    raw_ptr<content::VideoPictureInPictureWindowController> pip_controller = nullptr;
+    gfx::NativeWindow pip_parent;
+    bool using_system_floating_window = false;
+    bool use_dark_mode = false;
+    bool caption_button_visible = true;
+    std::string app_id;
 #endif
 
 #if BUILDFLAG(IS_MAC)

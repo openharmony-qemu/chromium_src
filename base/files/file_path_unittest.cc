@@ -1367,7 +1367,13 @@ TEST_F(FilePathTest, CompareIgnoreCase) {
       // (or even have glyphs for <uppercase eszett>)
       {{FPL("\u00DF"), FPL("\u00DF")}, 0},
       {{FPL("\u1E9E"), FPL("\u1E9E")}, 0},
+#if BUILDFLAG(IS_OHOS)
+      // ohos, strncasecmp and charmap of musl-C  refer to freebsd implementation
+      // uc(<lowercase eszett>) bigger than <uppercase eszett>!
+      {{FPL("\u00DF"), FPL("\u1E9E")}, 1},
+#else
       {{FPL("\u00DF"), FPL("\u1E9E")}, -1},
+#endif
       {{FPL("SS"), FPL("\u00DF")}, -1},
       {{FPL("SS"), FPL("\u1E9E")}, -1},
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE)

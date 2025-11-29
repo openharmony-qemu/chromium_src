@@ -214,6 +214,7 @@ struct CreateReservationInfo {
   DownloadPathReservationTracker::FilenameConflictAction conflict_action;
 };
 
+#if !BUILDFLAG(IS_OHOS)
 // Check if |target_path| is writable.
 bool IsPathWritable(const CreateReservationInfo& info,
                     const base::FilePath& target_path) {
@@ -225,6 +226,7 @@ bool IsPathWritable(const CreateReservationInfo& info,
   return !info.temporary_path.empty() &&
          info.temporary_path.DirName() == target_path.DirName();
 }
+#endif  // !BUILDFLAG(IS_OHOS)
 
 // Called when reservation conflicts happen. Returns the result on whether the
 // conflict can be resolved, and uniquifying the file name if necessary.
@@ -259,6 +261,7 @@ PathValidationResult ValidatePathAndResolveConflicts(
   // the |default_download_path| if it is not empty or |fallback_directory|.
   // We'll prompt them in this case. No further amendments are made to the
   // filename since the user is going to be prompted.
+#if !BUILDFLAG(IS_OHOS)
   if (!IsPathWritable(info, *target_path)) {
     DVLOG(1) << "Unable to write to path \"" << target_path->value() << "\"";
     if (!info.default_download_path.empty() &&
@@ -269,6 +272,7 @@ PathValidationResult ValidatePathAndResolveConflicts(
     }
     return PathValidationResult::PATH_NOT_WRITABLE;
   }
+#endif  // !BUILDFLAG(IS_OHOS)
 
   int max_path_component_length =
       base::GetMaximumPathComponentLength(target_path->DirName());

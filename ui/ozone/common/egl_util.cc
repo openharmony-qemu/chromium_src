@@ -33,18 +33,30 @@ const base::FilePath::CharType kDefaultEglSoname[] =
     FILE_PATH_LITERAL("libEGL.so");
 const base::FilePath::CharType kDefaultGlesSoname[] =
     FILE_PATH_LITERAL("libGLESv2.so");
+#elif BUILDFLAG(IS_OHOS)
+const base::FilePath::CharType kDefaultEglSoname[] =
+    FILE_PATH_LITERAL("libEGL.so");
+const base::FilePath::CharType kDefaultGlesSoname[] =
+    FILE_PATH_LITERAL("libGLESv3.so");
 #else  // BUILDFLAG(IS_FUCHSIA)
 const base::FilePath::CharType kDefaultEglSoname[] =
     FILE_PATH_LITERAL("libEGL.so.1");
 const base::FilePath::CharType kDefaultGlesSoname[] =
     FILE_PATH_LITERAL("libGLESv2.so.2");
 #endif
+#if BUILDFLAG(IS_OHOS)
+const base::FilePath::CharType kAngleEglSoname[] =
+    FILE_PATH_LITERAL("libEGL_angle.so");
+const base::FilePath::CharType kAngleGlesSoname[] =
+    FILE_PATH_LITERAL("libGLESv2_angle.so");
+#else
 #if !BUILDFLAG(USE_STATIC_ANGLE)
 const base::FilePath::CharType kAngleEglSoname[] =
     FILE_PATH_LITERAL("libEGL.so");
 const base::FilePath::CharType kAngleGlesSoname[] =
     FILE_PATH_LITERAL("libGLESv2.so");
 #endif  // !BUILDFLAG(USE_STATIC_ANGLE)
+#endif  // BUILDFLAG(IS_OHOS)
 
 bool LoadEGLGLES2Bindings(const base::FilePath& egl_library_path,
                           const base::FilePath& gles_library_path) {
@@ -148,7 +160,7 @@ bool LoadDefaultEGLGLES2Bindings(
     return true;
 #else
     base::FilePath module_path;
-#if !BUILDFLAG(IS_FUCHSIA)
+#if !BUILDFLAG(IS_FUCHSIA) && !BUILDFLAG(IS_OHOS)
     if (!base::PathService::Get(base::DIR_MODULE, &module_path))
       return false;
 #endif

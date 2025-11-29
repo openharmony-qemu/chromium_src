@@ -55,9 +55,15 @@ bool DomCodeToUsLayoutDomKey(DomCode dom_code,
       int state = ((flags & EF_SHIFT_DOWN) == EF_SHIFT_DOWN);
       char16_t ch = it.character[state];
       if ((flags & EF_CAPS_LOCK_ON) == EF_CAPS_LOCK_ON) {
+#if BUILDFLAG(IS_OHOS)
+        if ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')) {
+          ch = it.character[state ^ 1];
+        }
+#else
         ch |= 0x20;
         if ((ch >= 'a') && (ch <= 'z'))
           ch = it.character[state ^ 1];
+#endif
       }
       *out_dom_key = DomKey::FromCharacter(ch);
       *out_key_code = DomCodeToUsLayoutNonLocatedKeyboardCode(dom_code);

@@ -63,6 +63,10 @@ viz_test("viz_unittests") {
       "//components/test:viz_test_bundle_data",
     ]
   }
+
+  if (is_ohos) { 
+    libs = [ "deviceinfo_ndk.z" ]
+  }
 }
 
 viz_test("viz_perftests") {

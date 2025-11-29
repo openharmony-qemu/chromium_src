@@ -193,4 +193,8 @@ float RenderWidgetHostDelegate::GetCurrentTouchSequenceYOffset() {
 }
 #endif
 
+bool RenderWidgetHostDelegate::IsWebApp() {
+  return false;
+}
+
 }  // namespace content

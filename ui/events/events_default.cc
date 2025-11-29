@@ -172,4 +172,14 @@ bool GetFlingData(const PlatformEvent& native_event,
   return true;
 }
 
+#if BUILDFLAG(IS_OHOS)
+int32_t EventDisplayIdFromNative(const PlatformEvent& native_event) {
+  const ui::LocatedEvent* e =
+      static_cast<const ui::LocatedEvent*>(native_event);
+  DCHECK(e->IsMouseEvent() || e->IsTouchEvent() || e->IsGestureEvent() ||
+         e->IsScrollEvent());
+  return e->display_id();
+}
+#endif
+
 }  // namespace ui

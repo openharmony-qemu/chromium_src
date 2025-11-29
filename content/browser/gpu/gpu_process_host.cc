@@ -329,6 +329,9 @@ static const char* const kSwitchNames[] = {
 #if BUILDFLAG(IS_WIN)
     switches::kWebNNOrtLoggingLevel,
 #endif
+#if BUILDFLAG(IS_OHOS)
+    switches::kOhosTrace,
+#endif
 };
 
 // These values are persisted to logs. Entries should not be renumbered and

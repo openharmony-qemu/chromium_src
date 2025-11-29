@@ -10,6 +10,14 @@
 #include "media/base/media_util.h"
 #include "media/formats/mp4/box_definitions.h"
 #include "media/formats/mp4/box_reader.h"
+#include "third_party/wiseplay/cdm/buildflags.h"
+
+#if BUILDFLAG(ENABLE_WISEPLAY)
+#include <string>
+#include <vector>
+#include "base/strings/string_number_conversions.h"
+#include "base/logging.h"
+#endif  // BUILDFLAG(ENABLE_WISEPLAY)
 
 namespace media {
 
@@ -71,6 +79,36 @@ static bool ReadAllPsshBoxes(
   return pssh_boxes->size() > 0;
 }
 
+#if BUILDFLAG(ENABLE_WISEPLAY)
+// Returns true if |input| contains only 1 or more valid 'pssh' boxes, false
+// otherwise. |raw_pssh_boxes| is updated as the set of raw 'pssh' boxes.
+// Note: All boxes in |input| must be 'pssh' boxes.
+static bool ReadAllRawPsshBoxes(
+    base::span<const uint8_t> input,
+    std::vector<mp4::ProtectionSystemSpecificHeader>* raw_pssh_boxes) {
+  DCHECK(!input.empty());
+
+  NullMediaLog media_log;
+
+  // Verify that |input| contains only 'pssh' boxes.
+  // ReadAllChildrenAndCheckFourCC() is templated, so it checks that each
+  // box in |input| matches the box type of the parameter (in this case
+  // mp4::ProtectionSystemSpecificHeader is a 'pssh' box).
+  // mp4::ProtectionSystemSpecificHeader doesn't validate the 'pssh' contents,
+  // so this simply verifies that |input| only contains 'pssh' boxes and
+  // nothing else.
+  std::unique_ptr<mp4::BoxReader> input_reader(
+      mp4::BoxReader::ReadConcatentatedBoxes(input.data(), input.size(),
+                                             &media_log));
+  if (!input_reader->ReadAllChildrenAndCheckFourCC(raw_pssh_boxes)) {
+    return false;
+  }
+
+  // Must have successfully parsed at least one 'pssh' box.
+  return raw_pssh_boxes->size() > 0;
+}
+#endif  // BUILDFLAG(ENABLE_WISEPLAY)
+
 bool ValidatePsshInput(base::span<const uint8_t> input) {
   // No 'pssh' boxes is considered valid.
   if (input.empty())
@@ -111,17 +149,32 @@ bool GetPsshData(base::span<const uint8_t> input,
     return false;
 
   std::vector<mp4::FullProtectionSystemSpecificHeader> children;
+
   if (!ReadAllPsshBoxes(input, &children))
     return false;
 
   // Check all children for an appropriate 'pssh' box, returning |data| from
   // the first one found.
+#if !BUILDFLAG(ENABLE_WISEPLAY)
   for (const auto& child : children) {
     if (child.system_id == system_id) {
       pssh_data->assign(child.data.begin(), child.data.end());
       return true;
     }
   }
+#else
+  std::vector<mp4::ProtectionSystemSpecificHeader> raw_pssh_boxes;
+  ReadAllRawPsshBoxes(input, &raw_pssh_boxes);
+  for (unsigned int i = 0; i < children.size(); i++) {
+    const auto& child = children[i];
+    const auto& raw_child = raw_pssh_boxes[i];
+    if (child.system_id == system_id) {
+      pssh_data->assign(raw_child.raw_box.begin(), raw_child.raw_box.end());
+      std::string hex_str2 = base::HexEncode(pssh_data->data(), pssh_data->size());
+      return true;
+    }
+  }
+#endif  // BUILDFLAG(ENABLE_WISEPLAY)
 
   // No matching 'pssh' box found.
   return false;

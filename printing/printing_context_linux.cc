@@ -23,8 +23,12 @@
 #endif
 
 // Avoid using LinuxUi on Fuchsia.
-#if BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
 #include "ui/linux/linux_ui.h"
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+#include "ohos/adapter/print/ohos_print_adapter.h"
 #endif
 
 namespace printing {
@@ -69,7 +73,14 @@ mojom::ResultCode PrintingContextLinux::UseDefaultSettings() {
 
   ResetSettings();
 
-#if BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_OHOS)
+  if (!print_dialog_) {
+    ohos::adapter::print::PrintAdapter::GetInstance().PrintPdfFile();
+    return mojom::ResultCode::kSuccess;
+  }
+#endif
+
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
   if (!ui::LinuxUi::instance())
     return mojom::ResultCode::kSuccess;
 
@@ -85,7 +96,7 @@ mojom::ResultCode PrintingContextLinux::UseDefaultSettings() {
 }
 
 gfx::Size PrintingContextLinux::GetPdfPaperSizeDeviceUnits() {
-#if BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
   if (ui::LinuxUi::instance())
     return ui::LinuxUi::instance()->GetPdfPaperSize(this);
 #endif
@@ -98,7 +109,7 @@ mojom::ResultCode PrintingContextLinux::UpdatePrinterSettings(
   DCHECK(!printer_settings.show_system_dialog);
   DCHECK(!in_print_job_);
 
-#if BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
   if (!ui::LinuxUi::instance())
     return mojom::ResultCode::kSuccess;
 

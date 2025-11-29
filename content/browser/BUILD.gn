@@ -27,6 +27,7 @@ import("//services/device/public/cpp/compute_pressure/buildflags.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 import("//third_party/blink/public/public_features.gni")
 import("//tools/ipc_fuzzer/ipc_fuzzer.gni")
+import("//third_party/wiseplay/cdm/wiseplay.gni")
 
 if (is_mac) {
   import("//content/public/app/mac_helpers.gni")
@@ -55,6 +56,10 @@ if (is_ios) {
   import("//build/config/apple/mobile_config.gni")  # For `target_platform`
 }
 
+if (is_ohos) {
+  import("//build/config/ohos/config.gni")
+}
+
 source_set("browser") {
   # Only the public target should depend on this. All other targets (even
   # internal content ones) should depend on the public one.
@@ -72,6 +77,7 @@ source_set("browser") {
     "//content/test/fuzzer:first_party_set_parser_fuzzer_support",
     "//content/test/fuzzer:indexed_db_fuzzer_support",
     "//content/test/fuzzer:media_stream_dispatcher_host_mojolpm_fuzzer",
+    "//ui/views:views_unittests"
   ]
 
   configs += [
@@ -296,6 +302,7 @@ source_set("browser") {
     "//third_party/snappy",
     "//third_party/sqlite",
     "//third_party/webrtc_overrides:webrtc_component",
+    "//third_party/wiseplay/cdm:buildflags", 
     "//third_party/zlib",
     "//tools/v8_context_snapshot:buildflags",
     "//ui/accessibility",
@@ -2573,6 +2580,35 @@ source_set("browser") {
     deps += [ "//ui/events" ]
   }
 
+  if (is_ohos) {
+    sources += [
+      "child_process_launcher_helper_ohos.cc",
+      "font_access/font_enumeration_data_source_ohos.cc",
+      "font_access/font_enumeration_data_source_ohos.h",
+      "memory/swap_metrics_driver_impl_ohos.cc",
+      "memory/swap_metrics_driver_impl_ohos.h",
+      "sandbox_host_linux.cc",
+      "sandbox_host_linux.h",
+      "sandbox_ipc_linux.cc",
+      "sandbox_ipc_linux.h",
+    ]
+
+    if(enable_wiseplay) {
+      sources += [
+        "media/key_system_support_ohos.cc",
+        "media/key_system_support_ohos.h",
+      ]
+    }
+
+    deps += [
+      "//components/printing/common",
+      "//ohos/adapter",
+      "//ui/accessibility:ax_assistant",
+    ]
+
+    public_deps += [ "//components/services/font/public/mojom" ]
+  }
+
   if (is_posix && !is_mac) {
     sources += [
       "v8_snapshot_files.cc",
@@ -2615,6 +2651,15 @@ source_set("browser") {
       "//components/services/font:lib",
       "//content/common:sandbox_support_linux",
       "//third_party/blink/public/mojom:memory_usage_monitor_linux_mojo_bindings",
+    ]
+  }
+
+  if (is_ohos) {
+    sources -=
+        [ "file_system_access/file_path_watcher/file_path_watcher_stub.cc" ]
+    sources += [
+      "file_system_access/file_path_watcher/file_path_watcher_inotify.cc",
+      "file_system_access/file_path_watcher/file_path_watcher_inotify.h",
     ]
   }
 
@@ -3531,6 +3576,25 @@ source_set("browser") {
       "webid/digital_credentials/cross_device_transaction_impl.h",
     ]
 
+    if (is_ohos) {
+      sources += [
+        "accessibility/browser_accessibility_manager_ohos.cc",
+        "accessibility/browser_accessibility_manager_ohos.h",
+        "accessibility/browser_accessibility_ohos.cc",
+        "accessibility/browser_accessibility_ohos.h",
+        "screenlock_monitor/screenlock_monitor_device_source_ohos.cc",
+        "speech/tts_ohos.cc",
+        "font_unique_name_lookup/font_unique_name_lookup_ohos.cc",
+        "font_unique_name_lookup/font_unique_name_lookup_ohos.h",
+        "font_unique_name_lookup/font_unique_name_lookup_service.cc",
+        "font_unique_name_lookup/font_unique_name_lookup_service.h",
+      ]
+      deps += [
+        "//build/config/freetype",
+        "//third_party/blink/public/common:font_unique_name_table_proto",
+      ]
+    }
+
     if (!is_fuchsia) {
       sources += [
         "speech/soda_speech_recognition_engine_impl.cc",
@@ -3616,7 +3680,7 @@ source_set("browser") {
       "web_contents/web_contents_view_aura.h",
     ]
   }
-
+  
   if (use_aura || is_apple) {
     sources += [
       "compositor/image_transport_factory.cc",

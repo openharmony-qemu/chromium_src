@@ -17,7 +17,8 @@
 #include "ui/gfx/generic_shared_memory_id.h"
 #include "ui/gfx/geometry/rect.h"
 
-#if BUILDFLAG(IS_OZONE) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_OZONE) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
 #include "ui/gfx/native_pixmap_handle.h"
 #elif BUILDFLAG(IS_APPLE)
 #include "ui/gfx/mac/io_surface.h"
@@ -58,7 +59,8 @@ enum GpuMemoryBufferType {
 #if BUILDFLAG(IS_APPLE)
   IO_SURFACE_BUFFER,
 #endif
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || \
+    BUILDFLAG(IS_OHOS)
   NATIVE_PIXMAP,
 #endif
 #if BUILDFLAG(IS_WIN)
@@ -154,7 +156,8 @@ struct COMPONENT_EXPORT(GFX) GpuMemoryBufferHandle {
 #if BUILDFLAG(IS_WIN)
   explicit GpuMemoryBufferHandle(DXGIHandle handle);
 #endif
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || \
+    BUILDFLAG(IS_OHOS)
   explicit GpuMemoryBufferHandle(gfx::NativePixmapHandle native_pixmap_handle);
 #endif
 #if BUILDFLAG(IS_ANDROID)
@@ -196,7 +199,8 @@ struct COMPONENT_EXPORT(GFX) GpuMemoryBufferHandle {
     return std::move(region_);
   }
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || \
+    BUILDFLAG(IS_OHOS)
   const NativePixmapHandle& native_pixmap_handle() const& {
     CHECK_EQ(type, NATIVE_PIXMAP);
     return native_pixmap_handle_;
@@ -240,7 +244,8 @@ struct COMPONENT_EXPORT(GFX) GpuMemoryBufferHandle {
   // goal is to make `this` an encapsulated class.
   base::UnsafeSharedMemoryRegion region_;
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA) || \
+    BUILDFLAG(IS_OHOS)
   NativePixmapHandle native_pixmap_handle_;
 #endif
 

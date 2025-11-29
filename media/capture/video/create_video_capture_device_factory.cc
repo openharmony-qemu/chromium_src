@@ -22,6 +22,8 @@
 #include "media/capture/video/win/video_capture_device_factory_win.h"
 #elif BUILDFLAG(IS_APPLE)
 #include "media/capture/video/apple/video_capture_device_factory_apple.h"
+#elif BUILDFLAG(IS_OHOS)
+#include "media/capture/video/ohos/video_capture_device_factory_ohos.h"
 #elif BUILDFLAG(IS_ANDROID)
 #include "media/capture/video/android/video_capture_device_factory_android.h"
 #elif BUILDFLAG(IS_FUCHSIA)
@@ -75,6 +77,8 @@ CreatePlatformSpecificVideoCaptureDeviceFactory(
   return std::make_unique<VideoCaptureDeviceFactoryFuchsia>();
 #elif BUILDFLAG(IS_IOS)
   return CreateFakeVideoCaptureDeviceFactory();
+#elif BUILDFLAG(IS_OHOS)
+  return std::make_unique<VideoCaptureDeviceFactoryOHOS>();
 #else
   NOTIMPLEMENTED();
   return nullptr;

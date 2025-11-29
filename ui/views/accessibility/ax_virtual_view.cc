@@ -424,6 +424,13 @@ bool AXVirtualView::IsOffscreen() const {
   return false;
 }
 
+#if BUILDFLAG(IS_OHOS)
+ui::AXPlatformNodeId AXVirtualView::GetUniqueId() const {
+  // The unique ID is held in the `ViewAccessibility`.
+  return ViewAccessibility::GetUniqueId();
+}
+#endif
+
 // Virtual views need to implement this function in order for accessibility
 // events to be routed correctly.
 gfx::AcceleratedWidget AXVirtualView::GetTargetForNativeAccessibilityEvent() {

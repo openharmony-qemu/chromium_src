@@ -7,6 +7,7 @@ import("//media/gpu/args.gni")
 import("//media/media_options.gni")
 import("//mojo/public/tools/fuzzers/mojolpm.gni")
 import("//testing/test.gni")
+import("//third_party/wiseplay/cdm/wiseplay.gni")
 
 enable_playback_events_recorder =
     enable_cast_receiver && (is_fuchsia || is_android)
@@ -118,7 +119,9 @@ component("services") {
     sources += [ "gpu_mojo_media_client_mac.cc" ]
   } else if (is_win) {
     sources += [ "gpu_mojo_media_client_win.cc" ]
-  } else if (use_linux_video_acceleration) {
+  } else if (is_ohos) {
+    sources += [ "gpu_mojo_media_client_ohos.cc" ]
+   } else if (use_linux_video_acceleration) {
     if (is_linux) {
       sources += [ "gpu_mojo_media_client_linux.cc" ]
     } else {
@@ -149,6 +152,17 @@ component("services") {
       "mediadrm_support_service.cc",
       "mediadrm_support_service.h",
     ]
+  }
+
+  if (enable_wiseplay) {
+    sources += [
+      "ohos_mojo_media_client.cc",
+      "ohos_mojo_media_client.h",
+      "ohos_mojo_util.cc",
+      "ohos_mojo_util.h",
+    ]
+
+    deps += [ "//media/filters/ohos" ]
   }
 
   if (enable_media_drm_storage) {

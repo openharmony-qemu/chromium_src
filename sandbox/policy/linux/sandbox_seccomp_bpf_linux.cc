@@ -216,7 +216,7 @@ std::unique_ptr<BPFBasePolicy> SandboxSeccompBPF::PolicyForSandboxType(
     case sandbox::mojom::Sandbox::kOnDeviceTranslation:
       return std::make_unique<OnDeviceTranslationProcessPolicy>();
 #endif  // BUILDFLAG(IS_LINUX)
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
     case sandbox::mojom::Sandbox::kScreenAI:
       return std::make_unique<ScreenAIProcessPolicy>();
 #endif
@@ -229,11 +229,13 @@ std::unique_ptr<BPFBasePolicy> SandboxSeccompBPF::PolicyForSandboxType(
       return std::make_unique<HardwareVideoDecodingProcessPolicy>(
           HardwareVideoDecodingProcessPolicy::ComputePolicyType(
               options.use_amd_specific_policies));
+#if !BUILDFLAG(IS_OHOS)
     case sandbox::mojom::Sandbox::kHardwareVideoEncoding:
       // TODO(b/255554267): we're using the GPU process sandbox policy for now
       // as a transition step. However, we should create a policy that's tighter
       // just for hardware video encoding.
       return GetGpuProcessSandbox(options);
+#endif
 #endif
 #if BUILDFLAG(IS_CHROMEOS)
     case sandbox::mojom::Sandbox::kIme:
@@ -247,7 +249,9 @@ std::unique_ptr<BPFBasePolicy> SandboxSeccompBPF::PolicyForSandboxType(
       return std::make_unique<LibassistantProcessPolicy>();
 #endif  // BUILDFLAG(ENABLE_CROS_LIBASSISTANT)
 #endif  // BUILDFLAG(IS_CHROMEOS)
+#if !BUILDFLAG(IS_OHOS)
     case sandbox::mojom::Sandbox::kZygoteIntermediateSandbox:
+#endif
     case sandbox::mojom::Sandbox::kNoSandbox:
       NOTREACHED();
   }
@@ -271,10 +275,15 @@ void SandboxSeccompBPF::RunSandboxSanityChecks(
       // Without the sandbox, this would EBADF.
       syscall_ret = fchmod(-1, 07777);
       CHECK_EQ(-1, syscall_ret);
+#if !BUILDFLAG(IS_OHOS)
+      // in ohos EPERM is always 1, not equal to errno
       CHECK_EQ(EPERM, errno);
+#endif
 
 // Run most of the sanity checks only in DEBUG mode to avoid a perf.
 // impact.
+// On ohos, no such path for sanity checks
+#if !BUILDFLAG(IS_OHOS)
 #if !defined(NDEBUG)
       // open() must be restricted.
       syscall_ret = open("/etc/passwd", O_RDONLY);
@@ -291,10 +300,13 @@ void SandboxSeccompBPF::RunSandboxSanityChecks(
       CHECK_EQ(-1, syscall_ret);
       CHECK_EQ(EPERM, errno);
 #endif  // !defined(NDEBUG)
+#endif  // !BUILDFLAG(IS_OHOS)
     } break;
 #if BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION)
     case sandbox::mojom::Sandbox::kHardwareVideoDecoding:
+#if !BUILDFLAG(IS_OHOS)
     case sandbox::mojom::Sandbox::kHardwareVideoEncoding:
+#endif
 #endif
 #if BUILDFLAG(IS_CHROMEOS)
     case sandbox::mojom::Sandbox::kIme:
@@ -304,7 +316,7 @@ void SandboxSeccompBPF::RunSandboxSanityChecks(
     case sandbox::mojom::Sandbox::kLibassistant:
 #endif  // BUILDFLAG(ENABLE_CROS_LIBASSISTANT)
 #endif  // BUILDFLAG(IS_CHROMEOS)
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
     case sandbox::mojom::Sandbox::kScreenAI:
 #endif
 #if BUILDFLAG(IS_LINUX)
@@ -320,7 +332,9 @@ void SandboxSeccompBPF::RunSandboxSanityChecks(
     case sandbox::mojom::Sandbox::kOnDeviceModelExecution:
     case sandbox::mojom::Sandbox::kUtility:
     case sandbox::mojom::Sandbox::kNoSandbox:
+#if !BUILDFLAG(IS_OHOS)
     case sandbox::mojom::Sandbox::kZygoteIntermediateSandbox:
+#endif
       // Otherwise, no checks required.
       break;
   }

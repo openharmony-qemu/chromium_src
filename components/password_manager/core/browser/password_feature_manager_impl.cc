@@ -41,7 +41,8 @@ bool PasswordFeatureManagerImpl::IsGenerationEnabled() const {
 
 bool PasswordFeatureManagerImpl::IsBiometricAuthenticationBeforeFillingEnabled()
     const {
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
   // This checking order is important to ensure balanced experiment groups.
   // First check for `kHadBiometricsAvailable` ensures that user have biometric
   // scanner on their devices, shrinking down the amount of affected users.

@@ -1,0 +1,15 @@
+Package: gir1.2-atspi-2.0
+Source: at-spi2-core
+Version: 2.44.1-1~bpo11+1
+Architecture: amd64
+Maintainer: Debian Accessibility Team <pkg-a11y-devel@alioth-lists.debian.net>
+Installed-Size: 76
+Depends: gir1.2-freedesktop, gir1.2-glib-2.0, libatspi2.0-0 (>= 2.44.1-1~bpo11+1)
+Replaces: gir1.0-gtk-2.0 (<< 2.22), gobject-introspection-repository
+Section: introspection
+Priority: optional
+Multi-Arch: same
+Homepage: https://wiki.gnome.org/Accessibility
+Description: Assistive Technology Service Provider (GObject introspection)
+ This package can be used by other packages using the GIRepository format to
+ generate dynamic bindings

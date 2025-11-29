@@ -1140,6 +1140,8 @@ TEST_F(FileUtilTest, CopyFileFollowsSymlinks) {
   EXPECT_EQ(file_contents, ReadTextFile(link_to));
 }
 
+// ohos disable permission tests, for ohos unittest runs under root account
+#if !BUILDFLAG(IS_OHOS)
 TEST_F(FileUtilTest, ChangeFilePermissionsAndRead) {
   // Create a file path.
   FilePath file_name =
@@ -1267,6 +1269,7 @@ TEST_F(FileUtilTest, ChangeDirectoryPermissionsAndEnumerate) {
   EXPECT_TRUE(DeletePathRecursively(subdir_path));
   EXPECT_FALSE(PathExists(subdir_path));
 }
+#endif
 
 TEST_F(FileUtilTest, ExecutableExistsInPath) {
   // Create two directories that we will put in our PATH
@@ -1685,7 +1688,12 @@ TEST_F(FileUtilTest, DeleteDeep) {
     ASSERT_TRUE(fd.is_valid()) << strerror(errno);
 
     for (char c = 'a'; c <= 'z'; ++c) {
+#if BUILDFLAG(IS_OHOS)
+      // On OHOS, the longest file path + file name can be 256 bytes.
+      const std::string name(1, c);
+#else
       const std::string name(NAME_MAX, c);
+#endif
       ASSERT_EQ(HANDLE_EINTR(mkdirat(fd.get(), name.c_str(), 0777)), 0)
           << strerror(errno);
 

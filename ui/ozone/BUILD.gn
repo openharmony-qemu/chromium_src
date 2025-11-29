@@ -39,6 +39,18 @@ if (ozone_platform_headless) {
   ozone_platform_deps += [ "platform/headless" ]
 }
 
+if (ozone_platform_ohos) {
+  if (is_ohos) {
+    ozone_platforms += [ "ohos" ]
+    ozone_platform_deps += [ "platform/ohos" ]
+    ozone_platform_test_deps += [ "platform/ohos:ohos_window_unittests" ]
+    ozone_platform_ui_test_support_deps += [ "platform/ohos:test_support" ]
+  } else {
+    ozone_platforms += [ "headless" ]
+    ozone_platform_deps += [ "platform/headless" ]
+  }
+}
+
 if (ozone_platform_drm) {
   ozone_platforms += [ "drm" ]
   ozone_platform_deps += [ "platform/drm:gbm" ]
@@ -112,6 +124,8 @@ component("ozone_base") {
     "public/platform_user_input_monitor.cc",
     "public/platform_user_input_monitor.h",
     "public/platform_utils.h",
+    "public/platform_window_manager.cc",
+    "public/platform_window_manager.h",
     "public/platform_window_surface.h",
     "public/stub_input_controller.cc",
     "public/stub_input_controller.h",

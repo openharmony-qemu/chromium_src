@@ -170,5 +170,9 @@ target(tracing_lib_type, "cpp") {
     if (is_chromeos) {
       deps += [ "//chromeos/dbus/constants" ]
     }
+
+    if(is_ohos) {
+      libs = ["hitrace_ndk.z"]
+    }
   }  # !is_ios && !is_nacl
 }

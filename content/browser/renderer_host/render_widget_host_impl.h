@@ -196,6 +196,8 @@ class CONTENT_EXPORT RenderWidgetHostImpl
 
   ~RenderWidgetHostImpl() override;
 
+  bool IsWebApp();
+
   // Similar to RenderWidgetHost::FromID, but returning the Impl object.
   static RenderWidgetHostImpl* FromID(int32_t process_id, int32_t routing_id);
 
@@ -958,6 +960,13 @@ class CONTENT_EXPORT RenderWidgetHostImpl
       bool animate,
       const std::optional<cc::BrowserControlsOffsetTagModifications>&
           offset_tag_modifications);
+
+#if BUILDFLAG(IS_OHOS)
+  void CreateOverlay(const SkBitmap& bitmap,
+                     const gfx::Rect& image_rect,
+                     const gfx::Point& touch_point) override;
+  void OnTextRecognized(std::vector<blink::mojom::TextRecognizeResultPtr> res);
+#endif
 
   void StartDragging(blink::mojom::DragDataPtr drag_data,
                      const url::Origin& source_origin,

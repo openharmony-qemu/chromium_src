@@ -317,6 +317,11 @@ RenderWidgetHostViewAura::RenderWidgetHostViewAura(
 void RenderWidgetHostViewAura::InitAsChild(gfx::NativeView parent_view) {
   CHECK_EQ(widget_type_, WidgetType::kFrame);
   CreateAuraWindow(aura::client::WINDOW_TYPE_CONTROL);
+#if BUILDFLAG(IS_OHOS)
+  // Use transparent background color in order to avoid flashing
+  // the white background on window open when dark color-scheme is used.
+  SetContentBackgroundColor(SK_ColorTRANSPARENT);
+#endif
 
   if (parent_view)
     parent_view->AddChild(GetNativeView());
@@ -478,7 +483,7 @@ gfx::NativeViewAccessible RenderWidgetHostViewAura::GetNativeViewAccessible() {
     return ToBrowserAccessibilityWin(manager->GetBrowserAccessibilityRoot())
         ->GetCOM();
 
-#elif BUILDFLAG(IS_LINUX)
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
   ui::BrowserAccessibilityManager* manager =
       host()->GetOrCreateRootBrowserAccessibilityManager();
   if (manager && manager->GetBrowserAccessibilityRoot())
@@ -1714,6 +1719,35 @@ ui::TextInputClient::FocusReason RenderWidgetHostViewAura::GetFocusReason()
   }
 }
 
+#if BUILDFLAG(IS_OHOS)
+ui::RequestKeyboardReason RenderWidgetHostViewAura::GetRequestKeyboardReason()
+    const {
+  ui::mojom::RequestKeyboardReason reason =
+      text_input_manager_->ConsumeRequestKeyboardReason();
+  switch (reason) {
+    case ui::mojom::RequestKeyboardReason::MOUSE:
+      return ui::RequestKeyboardReason::REQUEST_KEYBOARD_REASON_MOUSE;
+    case ui::mojom::RequestKeyboardReason::TOUCH:
+      return ui::RequestKeyboardReason::REQUEST_KEYBOARD_REASON_TOUCH;
+    default:
+      return ui::RequestKeyboardReason::REQUEST_KEYBOARD_REASON_OTHER;
+  }
+}
+
+gfx::Rect RenderWidgetHostViewAura::GetToplevelWindowBounds() const {
+  aura::Window* top_level_window = window_->GetToplevelWindow();
+  return(top_level_window->GetBoundsInScreen());
+}
+
+display::Display RenderWidgetHostViewAura::GetDisplayForClient() {
+  display::Screen* screen = display::Screen::GetScreen();
+  if (window()) {
+    return screen->GetDisplayNearestWindow(window());
+  }
+  return screen->GetPrimaryDisplay();
+}
+#endif
+
 bool RenderWidgetHostViewAura::GetTextRange(gfx::Range* range) const {
   if (!text_input_manager_ || !GetFocusedWidget())
     return false;
@@ -2734,8 +2768,24 @@ bool RenderWidgetHostViewAura::SynchronizeVisualProperties(
   if (!GetLocalSurfaceId().is_valid())
     window_->AllocateLocalSurfaceId();
 
+#if BUILDFLAG(IS_OHOS)
+  gfx::Size view_port_size = window_->bounds().size();
+  int32_t view_port_height = view_port_size.height();
+  if (insets_.bottom() > 0) {
+    view_port_height = view_port_height - insets_.bottom();
+  }
+  view_port_size.set_height(view_port_height);
+  LOG(INFO)
+      << "RenderWidgetHostViewAura::SynchronizeVisualProperties contentHeight: "
+      << window_->bounds().size().height()
+      << "viewPortWidth: " << view_port_size.width()
+      << " viewPortHeight: " << view_port_size.height();
+  delegated_frame_host_->EmbedSurface(GetLocalSurfaceId(), view_port_size,
+                                      deadline_policy);
+#elif
   delegated_frame_host_->EmbedSurface(
       GetLocalSurfaceId(), window_->bounds().size(), deadline_policy);
+#endif
 
   return host()->SynchronizeVisualProperties();
 }
@@ -3014,6 +3064,9 @@ void RenderWidgetHostViewAura::DetachFromInputMethod(bool is_removed) {
 #if BUILDFLAG(IS_CHROMEOS)
     wm::RestoreWindowBoundsOnClientFocusLost(window_->GetToplevelWindow());
 #endif  // BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_OHOS)
+    EnsureCaretNotInRect(gfx::Rect());
+#endif  // BUILDFLAG(IS_OHOS)
   }
 
 #if BUILDFLAG(IS_WIN)
@@ -3120,6 +3173,14 @@ const viz::LocalSurfaceId& RenderWidgetHostViewAura::GetLocalSurfaceId() const {
   return window_->GetLocalSurfaceId();
 }
 
+#if BUILDFLAG(IS_OHOS)
+void RenderWidgetHostViewAura::DelayedTextInputTypeChanged() {
+  if (GetInputMethod()) {
+    GetInputMethod()->OnTextInputTypeChanged(this);
+  }
+}
+#endif
+
 void RenderWidgetHostViewAura::OnUpdateTextInputStateCalled(
     TextInputManager* text_input_manager,
     RenderWidgetHostViewBase* updated_view,
@@ -3129,8 +3190,9 @@ void RenderWidgetHostViewAura::OnUpdateTextInputStateCalled(
   if (!GetInputMethod())
     return;
 
-  if (did_update_state)
+  if (did_update_state) {
     GetInputMethod()->OnTextInputTypeChanged(this);
+  }
 
   const ui::mojom::TextInputState* state =
       text_input_manager_->GetTextInputState();

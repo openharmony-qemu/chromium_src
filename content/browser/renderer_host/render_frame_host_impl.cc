@@ -5008,6 +5008,10 @@ void RenderFrameHostImpl::DidNavigate(
     // unique ids within the WebContents.
     ax_unique_ids_.clear();
   }
+
+  if (GetRenderWidgetHost()->IsWebApp()) {
+    GetAssociatedLocalFrame()->SetWebApp(true);
+  }
 }
 
 void RenderFrameHostImpl::SetLastCommittedOrigin(
@@ -10219,9 +10223,15 @@ void RenderFrameHostImpl::SendFencedFrameReportingBeacon(
 
   for (const blink::FencedFrame::ReportingDestination& destination :
        destinations) {
+#if BUILDFLAG(IS_OHOS)
+    SendFencedFrameReportingBeaconInternal(
+        DestinationEnumEvent{event_type, event_data, cross_origin_exposed},
+        destination);
+#else
     SendFencedFrameReportingBeaconInternal(
         DestinationEnumEvent(event_type, event_data, cross_origin_exposed),
         destination);
+#endif
   }
 }
 
@@ -10242,9 +10252,15 @@ void RenderFrameHostImpl::SendFencedFrameReportingBeaconToCustomURL(
     return;
   }
 
+#if BUILDFLAG(IS_OHOS)
+  SendFencedFrameReportingBeaconInternal(
+      DestinationURLEvent{destination_url, cross_origin_exposed},
+      blink::FencedFrame::ReportingDestination::kBuyer);
+#else
   SendFencedFrameReportingBeaconInternal(
       DestinationURLEvent(destination_url, cross_origin_exposed),
       blink::FencedFrame::ReportingDestination::kBuyer);
+#endif
 }
 
 void RenderFrameHostImpl::MaybeSendFencedFrameAutomaticReportingBeacon(

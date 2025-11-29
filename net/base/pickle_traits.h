@@ -423,9 +423,22 @@ struct PickleTraits<T> {
     } else {
       // This handles non-contiguous containers and values that need to be
       // written one at a time.
+#if BUILDFLAG(IS_OHOS)
+      // Special Handling of Proxy Objects for std::vector<bool>
+      if constexpr (std::is_same_v<T, std::vector<bool>>) {
+        for (size_t i = 0; i < value.size(); ++i) {
+          pickle.WriteBool(value[i]);
+        }
+      } else {
+        for (const auto& v : value) {
+          WriteToPickle(pickle, v);
+        }
+      }
+#else
       for (const auto& v : value) {
         WriteToPickle(pickle, v);
       }
+#endif
     }
   }
 

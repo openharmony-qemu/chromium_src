@@ -13,16 +13,26 @@ import("//build/config/compiler/compiler.gni")
 supported_platform =
     is_linux || is_chromeos || is_mac || is_ios ||
     (is_win && (current_cpu == "x64" || current_cpu == "arm64")) ||
-    (is_android && !is_component_build && enable_frame_pointers)
+    (is_android && !is_component_build && enable_frame_pointers) ||
+    is_ohos
 
 declare_args() {
+  # support gwp-asan
+  gwp_asan_enabled = false
   # Is GWP-ASan malloc/PartitionAlloc hooking enabled for chrome/ on a given
   # platform.
   enable_gwp_asan_malloc = supported_platform && use_allocator_shim
   enable_gwp_asan_partitionalloc = supported_platform && use_partition_alloc
 }
 
+if(is_ohos) {
+declare_args() {
+  # Convenience definition
+  enable_gwp_asan = (enable_gwp_asan_malloc || enable_gwp_asan_partitionalloc) && gwp_asan_enabled
+}
+} else {
 declare_args() {
   # Convenience definition
   enable_gwp_asan = enable_gwp_asan_malloc || enable_gwp_asan_partitionalloc
+}
 }

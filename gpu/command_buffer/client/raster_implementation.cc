@@ -108,6 +108,9 @@ BASE_FEATURE(kDisableErrorHandlingForReadback,
 const uint32_t kMaxTransferCacheEntrySizeForTransferBuffer = 1024;
 const size_t kMaxImmediateDeletedPaintCachePaths = 1024;
 constexpr size_t kMaxImmediateDeletedPaintCacheEffects = 10u;
+#if BUILDFLAG(IS_OHOS)
+const int kQueueMaxSize = 100;
+#endif
 
 #define DEFINE_PAINT_CACHE_DELETION(                                     \
     IMMEDIATE_SIZE_CONSTANT, IMMEDIATE_FUNCTION, NON_IMMEDIATE_FUNCTION) \
@@ -1716,6 +1719,13 @@ void RasterImplementation::ReadbackYUVPixelsAsync(
                "|output_rect| width and height must be divisible by 2");
     return;
   }
+
+#if BUILDFLAG(IS_OHOS)
+  if (yuv_request_queue_.size() > kQueueMaxSize) {
+    TRACE_EVENT_INSTANT0("gpu", "No push request to enqueue", TRACE_EVENT_SCOPE_THREAD);
+    return;
+  }
+#endif
 
   auto y_offset = static_cast<GLuint>(base::bits::AlignUp(
       sizeof(cmds::ReadbackYUVImagePixelsINTERNALImmediate::Result),

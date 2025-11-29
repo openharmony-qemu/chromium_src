@@ -121,6 +121,10 @@ typedef FILE* FileHandle;
 #include "base/logging/rust_logger.rs.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "hilog/log.h"
+#endif
+
 namespace logging {
 
 namespace {
@@ -897,6 +901,25 @@ void LogMessage::Flush() {
     // The Android system may truncate the string if it's too long.
     __android_log_write(priority, kAndroidLogTag, str_newline.c_str());
 #endif
+#elif BUILDFLAG(IS_OHOS)
+    auto priority = (severity_ < 0) ? LogLevel::LOG_INFO : LogLevel::LOG_FATAL;
+
+    switch (severity_) {
+      case LOGGING_INFO:
+        priority = LogLevel::LOG_INFO;
+        break;
+      case LOGGING_WARNING:
+        priority = LogLevel::LOG_WARN;
+        break;
+      case LOGGING_ERROR:
+        priority = LogLevel::LOG_ERROR;
+        break;
+      case LOGGING_FATAL:
+        priority = LogLevel::LOG_FATAL;
+        break;
+    }
+    const char kOHOSLogTag[] = "chromium";
+    OH_LOG_Print(LOG_APP, (LogLevel)priority, LOG_DOMAIN, kOHOSLogTag, "%{public}s", str_newline.c_str());
 #elif BUILDFLAG(IS_FUCHSIA)
     // LogMessage() will silently drop the message if the logger is not valid.
     // Skip the final character of |str_newline|, since LogMessage() will add

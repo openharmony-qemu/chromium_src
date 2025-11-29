@@ -16,6 +16,9 @@
 #include "content/public/common/origin_util.h"
 #include "ui/gfx/image/image.h"
 
+#if BUILDFLAG(ENABLE_WISEPLAY)
+#include "media/base/ohos/ohos_media_drm_bridge_client.h"
+#endif
 namespace content {
 
 static ContentClient* g_client;
@@ -150,6 +153,12 @@ media::MediaDrmBridgeClient* ContentClient::GetMediaDrmBridgeClient() {
   return nullptr;
 }
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ENABLE_WISEPLAY)
+media::OhosMediaDrmBridgeClient* ContentClient::GetOhosMediaDrmBridgeClient() {
+  return nullptr;
+}
+#endif  // BUILDFLAG(IS_OHOS)
 
 void ContentClient::ExposeInterfacesToBrowser(
     scoped_refptr<base::SequencedTaskRunner> io_task_runner,

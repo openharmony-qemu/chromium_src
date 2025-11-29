@@ -41,7 +41,8 @@
 #include "third_party/crashpad/crashpad/test/process_type.h"
 #include "third_party/crashpad/crashpad/util/process/process_memory_native.h"
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
 #include "third_party/crashpad/crashpad/test/linux/fake_ptrace_connection.h"
 #endif
 
@@ -59,7 +60,8 @@ void SetNonCanonicalAccessAddress(
   memset(context->x86_64, 0, sizeof(*context->x86_64));
 #endif  // defined(ARCH_CPU_X86_64)
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
+    BUILDFLAG(IS_OHOS)
   exception.SetException(SIGSEGV);
 #if defined(ARCH_CPU_X86_64)
   exception.SetExceptionInfo(SI_KERNEL);
@@ -153,7 +155,8 @@ class BaseCrashAnalyzerTest : public testing::Test {
 #endif
     SetNonCanonicalAccessAddress(*exception, exception_address);
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
     ASSERT_TRUE(connection_.Initialize(getpid()));
     auto memory = std::make_unique<crashpad::ProcessMemoryLinux>(&connection_);
 #else
@@ -169,7 +172,8 @@ class BaseCrashAnalyzerTest : public testing::Test {
 
   GuardedPageAllocator gpa_;
   crashpad::test::TestProcessSnapshot process_snapshot_;
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
   crashpad::test::FakePtraceConnection connection_;
 #endif
 

@@ -9,6 +9,8 @@
 #include <ostream>
 #include <string_view>
 
+#include "ui/gfx/geometry/rect.h"
+
 namespace ui {
 
 TextInputClient::~TextInputClient() {
@@ -78,5 +80,15 @@ std::ostream& operator<<(std::ostream& os, ui::IndexFromPointFlags flags) {
   return os;
 }
 #endif  // BUILDFLAG(IS_WIN)
+
+#if BUILDFLAG(IS_OHOS)
+gfx::Rect TextInputClient::GetToplevelWindowBounds() const {
+  return gfx::Rect();
+}
+
+display::Display TextInputClient::GetDisplayForClient() {
+  return display::Screen::GetScreen()->GetPrimaryDisplay();
+}
+#endif  // BUILDFLAG(IS_OHOS)
 
 }  // namespace ui

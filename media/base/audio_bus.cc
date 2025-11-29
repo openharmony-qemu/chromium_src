@@ -410,4 +410,21 @@ AudioBus::ChannelVector AudioBus::AllChannelsSubspan(size_t offset,
   return sub_channels;
 }
 
+#if BUILDFLAG(IS_OHOS)
+base::ThreadLocalOwnedPointer<uint64_t> AudioBus::slot_;
+uint64_t AudioBus::GetAudioDelay() {
+  if (slot_.Get() == nullptr) {
+    slot_.Set(std::make_unique<uint64_t>(0));
+  }
+  return *slot_;
+}
+
+void AudioBus::SetAudioDelay(uint64_t value) {
+  if (slot_.Get() == nullptr) {
+    slot_.Set(std::make_unique<uint64_t>(0));
+  }
+  *(slot_.Get()) = value;
+}
+#endif
+
 }  // namespace media

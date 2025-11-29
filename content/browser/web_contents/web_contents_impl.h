@@ -1103,6 +1103,7 @@ class CONTENT_EXPORT WebContentsImpl
 #endif
 
   // RenderWidgetHostDelegate --------------------------------------------------
+  bool IsWebApp() override;
 
   void SetTopControlsShownRatio(RenderWidgetHostImpl* render_widget_host,
                                 float ratio) override;
@@ -1352,6 +1353,13 @@ class CONTENT_EXPORT WebContentsImpl
   MediaWebContentsObserver* media_web_contents_observer() {
     return media_web_contents_observer_.get();
   }
+
+#if BUILDFLAG(IS_OHOS)
+  void SetHaveEncryptedMedia(bool have_encrypted_media) override;
+  bool HaveEncryptedMedia() const override {
+    return have_encrypted_media_;
+  }
+#endif
 
   // Update the web contents visibility.
   void UpdateWebContentsVisibility(Visibility visibility) override;
@@ -2770,6 +2778,10 @@ class CONTENT_EXPORT WebContentsImpl
 #if BUILDFLAG(IS_ANDROID)
   bool supports_forward_transition_animation_ = true;
 #endif  // !BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(IS_OHOS)
+  bool have_encrypted_media_ = false;
+#endif
 
   base::WeakPtrFactory<WebContentsImpl> loading_weak_factory_{this};
   base::WeakPtrFactory<WebContentsImpl> weak_factory_{this};

@@ -52,6 +52,8 @@ std::string GetDecoderName(VideoDecoderType type) {
       return "V4L2VideoDecoder";
     case VideoDecoderType::kTesting:
       return "Testing or Mock Video decoder";
+    case VideoDecoderType::kOHOS:
+      return "OHOSVideoDecoder";
     case VideoDecoderType::kOutOfProcess:
       return "OOPVideoDecoder";
     case VideoDecoderType::kVideoToolbox:
@@ -81,6 +83,10 @@ std::string GetDecoderName(AudioDecoderType type) {
       return "AudioToolboxAudioDecoder";
     case AudioDecoderType::kMediaFoundation:
       return "MediaFoundationAudioDecoder";
+#if BUILDFLAG(ENABLE_WISEPLAY)
+    case AudioDecoderType::kOhos:
+      return "OhosAudioDecoder";
+#endif
   }
 }
 

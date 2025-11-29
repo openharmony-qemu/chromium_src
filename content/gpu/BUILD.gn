@@ -75,6 +75,7 @@ target(link_target_type, "gpu_sources") {
     "//services/viz/privileged/mojom",
     "//skia",
     "//third_party/angle:angle_gpu_info_util",
+    "//third_party/wiseplay/cdm:buildflags", 
     "//ui/gfx/ipc",
     "//ui/gl",
     "//ui/gl/init",
@@ -107,7 +108,7 @@ target(link_target_type, "gpu_sources") {
     deps += [ "//media/mojo/services" ]
   }
 
-  if (is_linux || is_chromeos || is_mac || is_win) {
+  if (is_linux || is_chromeos || is_mac || is_win || is_ohos) {
     deps += [ "//sandbox" ]
   }
 

@@ -23,6 +23,10 @@
 #include "components/bookmarks/common/url_load_stats.h"
 #include "components/bookmarks/common/user_folder_load_stats.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/logging.h"
+#endif
+
 namespace bookmarks {
 
 namespace {
@@ -39,6 +43,9 @@ std::optional<base::Value::Dict> LoadFileToDict(
       /*error_code=*/nullptr, /*error_message=*/nullptr);
   if (!root || !root->is_dict()) {
     // The bookmark file exists but was not deserialized properly.
+#if BUILDFLAG(IS_OHOS)
+      LOG(ERROR) << "LoadBookmarks, The bookmark file exists but was not deserialized";
+#endif
     return std::nullopt;
   }
 
@@ -117,6 +124,10 @@ std::unique_ptr<BookmarkLoadDetails> LoadBookmarks(
   {
     std::string sync_metadata_str;
     int64_t max_node_id = 0;
+#if BUILDFLAG(IS_OHOS)
+  LOG(INFO) << "LoadBookmarks, bookmark file path: " << local_or_syncable_file_path
+            << ", file exists: " << base::PathExists(local_or_syncable_file_path);
+#endif
     std::optional<base::Value::Dict> root_dict =
         LoadFileToDict(local_or_syncable_file_path);
     BookmarkCodec codec;

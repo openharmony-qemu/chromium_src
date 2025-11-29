@@ -19,6 +19,7 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 #include "url/url_util.h"
+#include "third_party/wiseplay/cdm/buildflags.h"
 
 namespace base {
 class RefCountedMemory;
@@ -40,6 +41,9 @@ struct GPUInfo;
 namespace media {
 struct CdmHostFilePath;
 class MediaDrmBridgeClient;
+#if BUILDFLAG(ENABLE_WISEPLAY)
+class OhosMediaDrmBridgeClient;
+#endif
 }
 
 namespace mojo {
@@ -210,6 +214,12 @@ class CONTENT_EXPORT ContentClient {
   // Returns the MediaDrmBridgeClient to be used by media code on Android.
   virtual media::MediaDrmBridgeClient* GetMediaDrmBridgeClient();
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ENABLE_WISEPLAY)
+  // Returns the OhosMediaDrmBridgeClient to be used by media code on Huawei Devices
+  // that support Wiseplay.
+  virtual media::OhosMediaDrmBridgeClient* GetOhosMediaDrmBridgeClient();
+#endif  // BUILDFLAG(IS_OHOS)
 
   // Allows the embedder to handle incoming interface binding requests from
   // the browser process to any type of child process. This is called once

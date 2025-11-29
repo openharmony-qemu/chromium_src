@@ -34,10 +34,11 @@ void LogConsoleMessage(blink::mojom::ConsoleMessageLevel log_level,
 
   if (!base::FeatureList::IsEnabled(features::kLogJsConsoleMessages))
     return;
-
+#if !BUILDFLAG(IS_OHOS)
   logging::LogMessage("CONSOLE", line_number, resolved_level).stream()
       << "\"" << message << "\", source: " << source_id << " (" << line_number
       << ")";
+#endif
 }
 
 }  // namespace content

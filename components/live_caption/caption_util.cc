@@ -149,6 +149,8 @@ std::string GetCaptionSettingsUrl() {
              : "chrome://settings/captions";
 #elif BUILDFLAG(IS_MAC)
   return "chrome://settings/accessibility";
+#elif BUILDFLAG(IS_OHOS)
+  return "chrome://settings/captions";
 #else
   NOTREACHED();
 #endif

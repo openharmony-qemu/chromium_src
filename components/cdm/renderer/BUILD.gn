@@ -4,6 +4,7 @@
 
 import("//components/cdm/common/playready.gni")
 import("//third_party/widevine/cdm/widevine.gni")
+import("//third_party/wiseplay/cdm/wiseplay.gni")
 
 static_library("renderer") {
   # See //components/cdm/README.md
@@ -27,9 +28,10 @@ static_library("renderer") {
     "//media",
     "//media:media_buildflags",
     "//third_party/widevine/cdm:buildflags",
+    "//third_party/wiseplay/cdm:buildflags",
   ]
 
-  if (enable_library_cdms || is_win || is_android) {
+  if (enable_library_cdms || is_win || is_android || is_ohos) {
     sources += [
       "key_system_support_update.cc",
       "key_system_support_update.h",
@@ -57,5 +59,12 @@ static_library("renderer") {
       "playready_key_system_info.h",
     ]
     deps += [ "//components/cdm/common" ]
+  }
+
+  if (enable_wiseplay) {
+    sources += [
+      "wiseplay_key_system_info.cc",
+      "wiseplay_key_system_info.h",
+    ]
   }
 }

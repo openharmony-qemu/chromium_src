@@ -145,6 +145,11 @@ void SandboxIPCHandler::HandleMakeSharedMemorySegment(
   if (!iter.ReadBool(&executable))
     return;
   base::ScopedFD shm_fd;
+#if BUILDFLAG(IS_OHOS)
+  base::subtle::PlatformSharedMemoryRegion region =
+        base::subtle::PlatformSharedMemoryRegion::CreateUnsafe(size);
+    shm_fd = region.PassPlatformHandle();
+#else
   if (executable) {
     shm_fd =
         base::subtle::PlatformSharedMemoryRegion::ExecutableRegion::CreateFD(
@@ -154,6 +159,7 @@ void SandboxIPCHandler::HandleMakeSharedMemorySegment(
         base::subtle::PlatformSharedMemoryRegion::CreateUnsafe(size);
     shm_fd = std::move(region.PassPlatformHandle().fd);
   }
+#endif
   base::Pickle reply;
   SendRendererReply(fds, reply, shm_fd.get());
   // shm_fd will close the handle which is no longer needed by this process.

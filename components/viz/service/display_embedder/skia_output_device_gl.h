@@ -77,6 +77,10 @@ class SkiaOutputDeviceGL final : public SkiaOutputDevice {
   std::unique_ptr<MultiSurfaceSwapBuffersTracker>
       multisurface_swapbuffers_tracker_;
 
+#if BUILDFLAG(IS_OHOS)
+  bool ohos_supports_partial_swap_;
+#endif  // BUILDFLAG(IS_OHOS)
+
   base::WeakPtrFactory<SkiaOutputDeviceGL> weak_ptr_factory_{this};
 };
 

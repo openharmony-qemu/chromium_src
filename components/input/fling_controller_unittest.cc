@@ -313,7 +313,13 @@ TEST_P(FlingControllerTest, FlingStartsAtLastScrollUpdate) {
   EXPECT_EQ(1, sent_scroll_gesture_count_);
   ASSERT_EQ(WebInputEvent::Type::kGestureScrollUpdate,
             last_sent_gesture_.GetType());
+#if BUILDFLAG(IS_OHOS)
+  // In OHOS, the fling curve uses a specific calculation logic,
+  // which is different from Chromium.
+  EXPECT_NEAR(last_sent_gesture_.data.scroll_update.delta_x, 40.0, 5);
+#else
   EXPECT_NEAR(last_sent_gesture_.data.scroll_update.delta_x, 30.0, 5);
+#endif
 }
 
 // Tests that when a fling is interrupted (e.g. by having reached the end of

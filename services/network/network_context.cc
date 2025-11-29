@@ -197,6 +197,10 @@
 #include "base/android/application_status_listener.h"
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if BUILDFLAG(IS_OHOS)
+#include "net/prp_preload/include/page_res_parallel_preload_mgr.h"
+#endif // BUILDFLAG(IS_OHOS)
+
 namespace network {
 
 namespace {
@@ -2073,6 +2077,24 @@ void NetworkContext::VerifyCert(
   VerifyCertInternal(certificate, host_port, ocsp_result, sct_list,
                      CTVerificationMode::kTlsCertificate, std::move(callback));
 }
+
+#if BUILDFLAG(IS_OHOS)
+void NetworkContext::InitPRParallelPreloadMgr(const base::FilePath& cache_path) {
+  ohos_prp_preload::PRParallelPreloadMgr::GetInstance().Init(
+      base::SingleThreadTaskRunner::GetCurrentDefault(), cache_path);
+}
+
+void NetworkContext::StartMainPage(
+    const std::string& url,
+    const net::NetworkAnonymizationKey& network_anonymization_key, uint64_t addr_web_handle) {
+  ohos_prp_preload::PRParallelPreloadMgr::GetInstance().StartMainPage(url,
+      network_anonymization_key, url_request_context()->GetWeakPtr(), addr_web_handle);
+}
+
+void NetworkContext::StopMainPage(uint64_t addr_web_handle) {
+  ohos_prp_preload::PRParallelPreloadMgr::GetInstance().StopMainPage(addr_web_handle);
+}
+#endif
 
 void NetworkContext::VerifyCertForSignedExchange(
     const scoped_refptr<net::X509Certificate>& certificate,

@@ -114,7 +114,7 @@ const base::FeatureParam<device::mojom::LocationProviderManagerMode>::Option
          "HybridPlatform2"},
 };
 
-#if BUILDFLAG(IS_MAC)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_OHOS)
 const base::FeatureParam<device::mojom::LocationProviderManagerMode>
     kLocationProviderManagerParam{
         &kLocationProviderManager, "LocationProviderManagerMode",
@@ -126,7 +126,7 @@ const base::FeatureParam<device::mojom::LocationProviderManagerMode>
         &kLocationProviderManager, "LocationProviderManagerMode",
         device::mojom::LocationProviderManagerMode::kNetworkOnly,
         &location_provider_manager_mode_options};
-#endif  // BUILDFLAG(IS_MAC)
+#endif  // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_OHOS)
 
 bool IsOsLevelGeolocationPermissionSupportEnabled() {
 #if BUILDFLAG(IS_WIN)

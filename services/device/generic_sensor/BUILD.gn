@@ -135,6 +135,21 @@ source_set("generic_sensor") {
       "sensorsapi.lib",
     ]
   }
+
+  if (is_ohos) {
+    sources += [
+      "platform_sensor_ambient_light_ohos.cc",
+      "platform_sensor_ambient_light_ohos.h",
+      "platform_sensor_gyroscope_ohos.cc",
+      "platform_sensor_gyroscope_ohos.h",
+      "platform_sensor_ohos.cc",
+      "platform_sensor_ohos.h",
+      "platform_sensor_provider_ohos.cc",
+      "platform_sensor_provider_ohos.h",
+    ]
+
+    libs = [ "ohsensor" ]
+  }
 }
 
 if (is_android) {

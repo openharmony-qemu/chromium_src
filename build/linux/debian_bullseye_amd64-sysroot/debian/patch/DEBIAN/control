@@ -1,0 +1,16 @@
+Package: patch
+Version: 2.7.6-7
+Architecture: amd64
+Maintainer: Laszlo Boszormenyi (GCS) <gcs@debian.org>
+Installed-Size: 248
+Depends: libc6 (>= 2.17)
+Suggests: ed, diffutils-doc
+Section: vcs
+Priority: optional
+Multi-Arch: foreign
+Homepage: https://savannah.gnu.org/projects/patch/
+Description: Apply a diff file to an original
+ Patch will take a patch file containing any of the four forms
+ of difference listing produced by the diff program and apply
+ those differences to an original file, producing a patched
+ version.

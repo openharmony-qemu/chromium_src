@@ -291,6 +291,7 @@ source_set("common_sources") {
     "//storage/common",
     "//third_party/blink/public/common",
     "//third_party/icu",
+    "//third_party/wiseplay/cdm:buildflags", 
     "//ui/accessibility",
     "//ui/base",
     "//ui/gfx",

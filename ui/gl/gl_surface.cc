@@ -71,6 +71,14 @@ gfx::SwapResult GLSurface::PostSubBuffer(int x,
   return gfx::SwapResult::SWAP_FAILED;
 }
 
+#if BUILDFLAG(IS_OHOS)
+gfx::SwapResult GLSurface::SwapBuffersWithDamage(const std::vector<int>& rects,
+                                                 PresentationCallback callback,
+                                                 gfx::FrameData data) {
+  return gfx::SwapResult::SWAP_FAILED;
+}
+#endif  // BUILDFLAG(IS_OHOS)
+
 void GLSurface::PostSubBufferAsync(int x,
                                    int y,
                                    int width,

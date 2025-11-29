@@ -381,6 +381,7 @@ class CONTENT_EXPORT RenderWidgetHostDelegate {
   virtual float GetCurrentTouchSequenceYOffset();
 #endif
 
+  virtual bool IsWebApp();
  protected:
   virtual ~RenderWidgetHostDelegate() {}
 };

@@ -80,6 +80,10 @@
 #include "ui/ozone/public/ozone_platform.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "ui/display/screen_ohos.h"
+#endif
+
 using ui::OSExchangeData;
 
 DEFINE_UI_CLASS_PROPERTY_TYPE(std::vector<views::ViewTracker>*)
@@ -1536,6 +1540,16 @@ void MenuController::OnWidgetDestroying(Widget* widget) {
   ExitMenu();
 }
 
+#if BUILDFLAG(IS_OHOS)
+void MenuController::OnWidgetBoundsChanged(Widget* widget,
+                                           const gfx::Rect& new_bounds) {
+  DCHECK_EQ(owner_, widget);
+  if (widget->IsVisible()) {
+    Cancel(ExitType::kAll);
+  }
+}
+#endif
+
 bool MenuController::IsCancelAllTimerRunningForTest() {
   return cancel_all_timer_.IsRunning();
 }
@@ -1987,11 +2001,25 @@ void MenuController::UpdateInitialLocation(const gfx::Rect& anchor_bounds,
   pending_state_.initial_bounds = anchor_bounds;
   pending_state_.anchor = AdjustAnchorPositionForRtl(position);
 
+#if BUILDFLAG(IS_OHOS)
+  display::Display display;
+   if (owner_) {
+    std::optional<display::Display> display_optional = owner_->GetNearestDisplay();
+    if (display_optional.has_value()) {
+      display = display_optional.value();
+    }
+  }
+  if (!display.is_valid()) {
+    display = display::Screen::GetScreen()->GetDisplayNearestPoint(
+        anchor_bounds.origin());
+  }
+#else
   // Calculate the bounds of the monitor we'll show menus on. Do this once to
   // avoid repeated system queries for the info.
   const display::Display display =
       display::Screen::GetScreen()->GetDisplayNearestPoint(
           anchor_bounds.origin());
+#endif
   pending_state_.monitor_bounds = display.work_area();
 
   if (!pending_state_.monitor_bounds.Contains(anchor_bounds)) {

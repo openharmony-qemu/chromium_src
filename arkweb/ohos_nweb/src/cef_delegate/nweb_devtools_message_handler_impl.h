@@ -56,7 +56,6 @@ class NWebDevToolsMessageHandlerImpl
  private:
   std::unique_ptr<NWebDevtoolsMessageHandler> handler_;
   raw_ptr<NWebDevtoolsMessageHandler> handlerNativeApi_;
-  bool canDock_;
 
   IMPLEMENT_REFCOUNTING(NWebDevToolsMessageHandlerImpl);
 };

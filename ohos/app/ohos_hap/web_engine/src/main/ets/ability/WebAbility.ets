@@ -235,6 +235,12 @@ export class WebAbility extends WebBaseAbility {
       }
 
       let window: window.Window = windowStage.getMainWindowSync();
+
+      let isPCStatus = settings.getValueSync(this.context, 'isSystemModePc', '', settings.domainName.USER_PROPERTY);
+      if (deviceInfo.deviceType === 'tablet' && isPCStatus !== 'true') {
+        this.onPadWindowStageCreate(window, storage);
+      }
+
       // hide title bar
       window.setWindowDecorVisible(!this.hideTitleBar);
       if (!this.titleButtonVisible && !this.deviceInfoAdapter?.isNormalWindowMode()) {
@@ -261,11 +267,6 @@ export class WebAbility extends WebBaseAbility {
 
       if (deviceInfo.sdkApiVersion >= 15) {
         this.nativeContext.RegisterWindowEventFilter(window.getWindowProperties().id);
-      }
-
-      let isPCStatus = settings.getValueSync(this.context, 'isSystemModePc', '', settings.domainName.USER_PROPERTY);
-      if (deviceInfo.deviceType === 'tablet' && isPCStatus !== 'true') {
-        this.onPadWindowStageCreate(window, storage);
       }
 
       try {

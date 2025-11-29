@@ -7,14 +7,22 @@
 
 #include <optional>
 
+#include "base/memory/memory_pressure_listener.h"
 #include "base/memory/raw_ptr.h"
 #include "base/observer_list.h"
 #include "base/time/time.h"
 #include "base/timer/elapsed_timer.h"
 #include "base/timer/timer.h"
+#include "components/performance_manager/scenario_api/performance_scenario_observer.h"
 #include "content/common/content_export.h"
+#include "content/public/browser/content_browser_client.h"
+#include "content/public/browser/process_allocation_context.h"
 #include "content/public/browser/render_process_host_observer.h"
 #include "content/public/browser/spare_render_process_host_manager.h"
+
+#if BUILDFLAG(IS_ANDROID)
+#include "base/android/application_status_listener.h"
+#endif
 
 namespace content {
 
@@ -28,13 +36,15 @@ class RenderProcessHost;
 // LINT.IfChange(SpareRendererDispatchResult)
 enum class SpareRendererDispatchResult {
   kUsed = 0,
-  kTimeout,
-  kOverridden,
-  kDestroyedNotEnabled,
-  kDestroyedProcessLimit,
-  kProcessExited,
-  kProcessHostDestroyed,
-  kMaxValue = kProcessHostDestroyed
+  kTimeout = 1,
+  kOverridden = 2,
+  kDestroyedNotEnabled = 3,
+  kDestroyedProcessLimit = 4,
+  kProcessExited = 5,
+  kProcessHostDestroyed = 6,
+  kMemoryPressure = 7,
+  kKillAfterBackgrounded = 8,
+  kMaxValue = kKillAfterBackgrounded
 };
 // LINT.ThenChange(//tools/metrics/histograms/metadata/browser/enums.xml:SpareRendererDispatchResult)
 
@@ -44,20 +54,24 @@ enum class SpareRendererDispatchResult {
 // LINT.IfChange(NoSpareRendererReason)
 enum class NoSpareRendererReason {
   kNotYetCreated = 0,
-  kTakenByPreviousNavigation,
-  kTimeout,
-  kNotEnabled,
-  kProcessLimit,
-  kMemoryPressure,
-  kProcessExited,
-  kProcessHostDestroyed,
-  kMaxValue = kProcessHostDestroyed
+  kTakenByPreviousNavigation = 1,
+  kTimeout = 2,
+  kNotEnabled = 3,
+  kProcessLimit = 4,
+  kMemoryPressure = 5,
+  kProcessExited = 6,
+  kProcessHostDestroyed = 7,
+  kNotYetCreatedFirstLaunch = 8,
+  kNotYetCreatedAfterWarmup = 9,
+  kOnceBackgrounded = 10,
+  kMaxValue = kOnceBackgrounded
 };
 // LINT.ThenChange(//tools/metrics/histograms/metadata/browser/enums.xml:NoSpareRendererReason)
 
 class CONTENT_EXPORT SpareRenderProcessHostManagerImpl
     : public SpareRenderProcessHostManager,
-      public RenderProcessHostObserver {
+      public RenderProcessHostObserver,
+      public performance_scenarios::PerformanceScenarioObserver {
  public:
   SpareRenderProcessHostManagerImpl();
   ~SpareRenderProcessHostManagerImpl() override;
@@ -72,9 +86,9 @@ class CONTENT_EXPORT SpareRenderProcessHostManagerImpl
   // SpareRenderProcessHostManager:
   void AddObserver(Observer* observer) override;
   void RemoveObserver(Observer* observer) override;
-  void WarmupSpare(BrowserContext* browser_context) override;
+  RenderProcessHost* WarmupSpare(BrowserContext* browser_context) override;
   const std::vector<RenderProcessHost*>& GetSpares() override;
-  std::vector<int> GetSpareIds() override;
+  std::vector<ChildProcessId> GetSpareIds() override;
   void CleanupSparesForTesting() override;
 
   // Start a spare renderer immediately, only if there is none.
@@ -93,8 +107,10 @@ class CONTENT_EXPORT SpareRenderProcessHostManagerImpl
   // If the function is called again without a timeout, the current timeout will
   // be cancelled. If the function is called again with a timeout firing after
   // the current timeout, the timeout will be updated.
-  void WarmupSpare(BrowserContext* browser_context,
-                   std::optional<base::TimeDelta> timeout);
+  //
+  // Returns a RenderProcessHost if a new one is created.
+  RenderProcessHost* WarmupSpare(BrowserContext* browser_context,
+                                 std::optional<base::TimeDelta> timeout);
 
   // RenderProcessHostImpl should call
   // SpareRenderProcessHostManager::MaybeTakeSpare when creating a new RPH. In
@@ -104,8 +120,10 @@ class CONTENT_EXPORT SpareRenderProcessHostManagerImpl
   // the default StoragePartition will be able to use a spare renderer. The
   // spare renderer will also not be used as a guest renderer (flags_ contains
   // kForGuestsOnly).
-  RenderProcessHost* MaybeTakeSpare(BrowserContext* browser_context,
-                                    SiteInstanceImpl* site_instance);
+  RenderProcessHost* MaybeTakeSpare(
+      BrowserContext* browser_context,
+      SiteInstanceImpl* site_instance,
+      const ProcessAllocationContext& allocation_context);
 
   // Prepares for future requests (with an assumption that a future navigation
   // might require a new process for |browser_context|).
@@ -125,8 +143,18 @@ class CONTENT_EXPORT SpareRenderProcessHostManagerImpl
   void CleanupSpares(
       std::optional<SpareRendererDispatchResult> dispatch_result);
 
+  // Gracefully removes and cleanups any extra spare RenderProcessHost beyond
+  // the first one. This is always a nop if the kMultipleSpareRPHs feature is
+  // disabled.
+  void CleanupExtraSpares(
+      std::optional<SpareRendererDispatchResult> dispatch_result);
+
   void SetDeferTimerTaskRunnerForTesting(
       scoped_refptr<base::SequencedTaskRunner> task_runner);
+
+  void SetIsBrowserIdleForTesting(bool is_browser_idle);
+
+  bool HasSpareRenderer() { return !spare_rphs_.empty(); }
 
  private:
   // Release ownership of a spare renderer. Called when the spare has either
@@ -140,6 +168,14 @@ class CONTENT_EXPORT SpareRenderProcessHostManagerImpl
                            const ChildProcessTerminationInfo& info) override;
   void RenderProcessHostDestroyed(RenderProcessHost* host) override;
 
+  // performance_scenarios::PerformanceScenarioObserver:
+  void OnLoadingScenarioChanged(
+      performance_scenarios::ScenarioScope scope,
+      performance_scenarios::LoadingScenario old_scenario,
+      performance_scenarios::LoadingScenario new_scenario) override;
+
+  void SetIsBrowserIdle(bool is_browser_idle);
+
   // Start a spare renderer at a later time if there isn't one.
   // This is to avoid resource contention between existing renderers and a
   // new spare renderer.
@@ -150,6 +186,40 @@ class CONTENT_EXPORT SpareRenderProcessHostManagerImpl
   void StartDestroyTimer(std::optional<base::TimeDelta> timeout);
 
   bool DestroyTimerWillFireBefore(base::TimeDelta timeout);
+
+  void OnMemoryPressure(
+      base::MemoryPressureListener::MemoryPressureLevel memory_pressure_level);
+
+  // When the system is under memory pressure, this function is called every 5
+  // minutes to determine when it ends.
+  void CheckIfMemoryPressureEnded();
+
+  // Returns true if an extra spare should be created.
+  bool ShouldCreateExtraSpare() const;
+
+  // Creates an extra spare, if ShouldCreateExtraSpare() returns true. This
+  // function is responsible for the creation of all the extra spares.
+  // `WarmupSpare()` is still responsible for creating the first one.
+  void MaybeCreateExtraSpare();
+
+  // Records heartbeat metrics for the spare RPHs. Called every 2 minutes.
+  void OnMetricsHeartbeatTimerFired();
+
+#if BUILDFLAG(IS_ANDROID)
+  void OnApplicationStateChange(base::android::ApplicationState state);
+#endif
+
+  // Checks various conditions that could prevent an embedder from using the
+  // spare.
+  std::optional<ContentBrowserClient::SpareProcessRefusedByEmbedderReason>
+  DoesEmbedderAllowSpareUsage(BrowserContext* browser_context,
+                              SiteInstanceImpl* site_instance);
+
+  base::MemoryPressureListener memory_pressure_listener_;
+
+  // If this timer is running, then the system is under memory pressure.
+  // TODO(380805024): Remove the polling timer when possible.
+  base::RepeatingTimer check_memory_pressure_timer_;
 
   // The clients who want to know when the spare render process host has
   // changed.
@@ -176,7 +246,21 @@ class CONTENT_EXPORT SpareRenderProcessHostManagerImpl
 
   // The reason for there being no spare render process present.
   NoSpareRendererReason no_spare_renderer_reason_ =
-      NoSpareRendererReason::kNotYetCreated;
+      NoSpareRendererReason::kNotYetCreatedFirstLaunch;
+  // The process allocation context for the previous successful
+  // MaybeTakeSpare() function call.
+  std::optional<ProcessAllocationContext> previous_taken_context_;
+
+  // Indicates if the browser is not currently loading content.
+  bool is_browser_idle_ = true;
+
+  base::RepeatingTimer metrics_heartbeat_timer_;
+
+#if BUILDFLAG(IS_ANDROID)
+  std::unique_ptr<base::android::ApplicationStatusListener>
+      app_status_listener_;
+  bool is_app_backgroud_;
+#endif
 };
 
 }  // namespace content

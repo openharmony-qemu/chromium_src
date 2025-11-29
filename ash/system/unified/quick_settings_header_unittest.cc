@@ -51,7 +51,8 @@ class QuickSettingsHeaderTest : public NoSessionAshTestBase {
     // Install a test delegate to allow overriding channel version.
     auto delegate = std::make_unique<TestShellDelegate>();
     test_shell_delegate_ = delegate.get();
-    NoSessionAshTestBase::SetUp(std::move(delegate));
+    set_shell_delegate(std::move(delegate));
+    NoSessionAshTestBase::SetUp();
 
     model_ = base::MakeRefCounted<UnifiedSystemTrayModel>(nullptr);
     controller_ = std::make_unique<UnifiedSystemTrayController>(model_.get());
@@ -127,7 +128,7 @@ TEST_F(QuickSettingsHeaderTest, ShowChannelViewBeforeLoginOnNonStable) {
 
 TEST_F(QuickSettingsHeaderTest, ShowsChannelViewAfterLogin) {
   test_shell_delegate_->set_channel(version_info::Channel::BETA);
-  SimulateUserLogin("user@gmail.com");
+  SimulateUserLogin({"user@gmail.com"});
 
   CreateQuickSettingsHeader();
 
@@ -140,7 +141,7 @@ TEST_F(QuickSettingsHeaderTest, ShowsChannelViewAfterLogin) {
 
 TEST_F(QuickSettingsHeaderTest, EolNoticeVisible) {
   Shell::Get()->system_tray_model()->SetShowEolNotice(true);
-  SimulateUserLogin("user@gmail.com");
+  SimulateUserLogin({"user@gmail.com"});
 
   CreateQuickSettingsHeader();
   // Header is shown.
@@ -172,7 +173,7 @@ TEST_F(QuickSettingsHeaderTest, EolNoticeNotVisibleBeforeLogin) {
 
 TEST_F(QuickSettingsHeaderTest, ChannelIndicatorNotShownWithEolNotice) {
   test_shell_delegate_->set_channel(version_info::Channel::BETA);
-  SimulateUserLogin("user@gmail.com");
+  SimulateUserLogin({"user@gmail.com"});
 
   Shell::Get()->system_tray_model()->SetShowEolNotice(true);
 
@@ -190,7 +191,7 @@ TEST_F(QuickSettingsHeaderTest, ChannelIndicatorNotShownWithEolNotice) {
 
 TEST_F(QuickSettingsHeaderTest, ExtendedUpdatesNoticeVisible) {
   Shell::Get()->system_tray_model()->SetShowExtendedUpdatesNotice(true);
-  SimulateUserLogin("user@gmail.com");
+  SimulateUserLogin({"user@gmail.com"});
 
   base::HistogramTester histogram_tester;
   CreateQuickSettingsHeader();
@@ -232,7 +233,7 @@ TEST_F(QuickSettingsHeaderTest, ExtendedUpdatesNoticeNotVisibleBeforeLogin) {
 TEST_F(QuickSettingsHeaderTest,
        ChannelIndicatorNotShownWithExtendedUpdatesNotice) {
   test_shell_delegate_->set_channel(version_info::Channel::BETA);
-  SimulateUserLogin("user@gmail.com");
+  SimulateUserLogin({"user@gmail.com"});
 
   Shell::Get()->system_tray_model()->SetShowExtendedUpdatesNotice(true);
 
@@ -254,7 +255,7 @@ TEST_F(QuickSettingsHeaderTest,
 }
 
 TEST_F(QuickSettingsHeaderTest, ExtendedUpdatesNoticeNotShownWithEolNotice) {
-  SimulateUserLogin("user@gmail.com");
+  SimulateUserLogin({"user@gmail.com"});
 
   Shell::Get()->system_tray_model()->SetShowEolNotice(true);
   Shell::Get()->system_tray_model()->SetShowExtendedUpdatesNotice(true);
@@ -288,7 +289,8 @@ TEST_F(QuickSettingsHeaderTest, EnterpriseManagedDeviceVisible) {
 
   EXPECT_TRUE(GetManagedButton()->GetVisible());
   EXPECT_EQ(GetManagedButtonLabel()->GetText(), u"Managed by example.com");
-  EXPECT_EQ(GetManagedButton()->GetTooltipText({}), u"Managed by example.com");
+  EXPECT_EQ(GetManagedButton()->GetRenderedTooltipText({}),
+            u"Managed by example.com");
   EXPECT_TRUE(header_->GetVisible());
 }
 
@@ -300,7 +302,8 @@ TEST_F(QuickSettingsHeaderTest, EnterpriseManagedAccountVisible) {
 
   EXPECT_TRUE(GetManagedButton()->GetVisible());
   EXPECT_EQ(GetManagedButtonLabel()->GetText(), u"Managed by example.com");
-  EXPECT_EQ(GetManagedButton()->GetTooltipText({}), u"Managed by example.com");
+  EXPECT_EQ(GetManagedButton()->GetRenderedTooltipText({}),
+            u"Managed by example.com");
   EXPECT_TRUE(header_->GetVisible());
 }
 
@@ -308,14 +311,15 @@ TEST_F(QuickSettingsHeaderTest, BothChannelAndEnterpriseVisible) {
   test_shell_delegate_->set_channel(version_info::Channel::BETA);
   GetEnterpriseDomainModel()->SetDeviceEnterpriseInfo(DeviceEnterpriseInfo{
       "example.com", ManagementDeviceMode::kChromeEnterprise});
-  SimulateUserLogin("user@gmail.com");
+  SimulateUserLogin({"user@gmail.com"});
 
   CreateQuickSettingsHeader();
 
   EXPECT_TRUE(GetManagedButton()->GetVisible());
   // The label is the shorter "Managed" due to the two-column layout.
   EXPECT_EQ(GetManagedButtonLabel()->GetText(), u"Managed");
-  EXPECT_EQ(GetManagedButton()->GetTooltipText({}), u"Managed by example.com");
+  EXPECT_EQ(GetManagedButton()->GetRenderedTooltipText({}),
+            u"Managed by example.com");
   EXPECT_TRUE(header_->channel_view_for_test());
   EXPECT_TRUE(header_->GetVisible());
 }
@@ -324,14 +328,15 @@ TEST_F(QuickSettingsHeaderTest, BothEolNoticeAndEnterpriseVisible) {
   GetEnterpriseDomainModel()->SetDeviceEnterpriseInfo(DeviceEnterpriseInfo{
       "example.com", ManagementDeviceMode::kChromeEnterprise});
   Shell::Get()->system_tray_model()->SetShowEolNotice(true);
-  SimulateUserLogin("user@gmail.com");
+  SimulateUserLogin({"user@gmail.com"});
 
   CreateQuickSettingsHeader();
 
   EXPECT_TRUE(GetManagedButton()->GetVisible());
   // The label is the shorter "Managed" due to the two-column layout.
   EXPECT_EQ(GetManagedButtonLabel()->GetText(), u"Managed");
-  EXPECT_EQ(GetManagedButton()->GetTooltipText({}), u"Managed by example.com");
+  EXPECT_EQ(GetManagedButton()->GetRenderedTooltipText({}),
+            u"Managed by example.com");
   EXPECT_TRUE(header_->GetVisible());
   EolNoticeQuickSettingsView* eol_notice = header_->eol_notice_for_test();
   ASSERT_TRUE(eol_notice);
@@ -351,10 +356,8 @@ TEST_F(QuickSettingsHeaderTest, ChildVisible) {
 
   // Simulate supervised user logging in.
   SessionControllerImpl* session = Shell::Get()->session_controller();
-  TestSessionControllerClient* client = GetSessionControllerClient();
-  client->Reset();
-  client->AddUserSession("child@test.com", user_manager::UserType::kChild);
-  client->SetSessionState(session_manager::SessionState::ACTIVE);
+  ClearLogin();
+  SimulateUserLogin({"child@test.com", user_manager::UserType::kChild});
   UserSession user_session = *session->GetUserSession(0);
   user_session.custodian_email = "parent@test.com";
   session->UpdateUserSession(std::move(user_session));
@@ -365,7 +368,7 @@ TEST_F(QuickSettingsHeaderTest, ChildVisible) {
   // Now the supervised user view is visible.
   EXPECT_TRUE(GetSupervisedButton()->GetVisible());
   EXPECT_EQ(GetSupervisedButtonLabel()->GetText(), u"Supervised user");
-  EXPECT_EQ(GetSupervisedButton()->GetTooltipText({}),
+  EXPECT_EQ(GetSupervisedButton()->GetRenderedTooltipText({}),
             u"Account managed by parent@test.com");
   EXPECT_TRUE(header_->GetVisible());
 
@@ -380,9 +383,9 @@ TEST_F(QuickSettingsHeaderTest, ShowManagementDisclosure) {
       AuthEventsRecorder::CreateForTesting();
 
   // Setup to lock screen.
+  ClearLogin();
   TestSessionControllerClient* client = GetSessionControllerClient();
-  client->Reset();
-  GetSessionControllerClient()->set_show_lock_screen_views(true);
+  client->set_show_lock_screen_views(true);
   client->LockScreen();
   client->SetSessionState(session_manager::SessionState::LOCKED);
 
@@ -404,9 +407,9 @@ TEST_F(QuickSettingsHeaderTest, DoNotShowManagementDisclosure) {
       AuthEventsRecorder::CreateForTesting();
 
   // Setup to lock screen.
+  ClearLogin();
   TestSessionControllerClient* client = GetSessionControllerClient();
-  client->Reset();
-  GetSessionControllerClient()->set_show_lock_screen_views(true);
+  client->set_show_lock_screen_views(true);
   client->LockScreen();
   client->SetSessionState(session_manager::SessionState::LOCKED);
 

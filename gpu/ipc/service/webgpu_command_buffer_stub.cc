@@ -37,10 +37,6 @@
 #include "base/win/win_util.h"
 #endif
 
-#if BUILDFLAG(IS_ANDROID)
-#include "gpu/ipc/service/stream_texture_android.h"
-#endif
-
 namespace gpu {
 
 WebGPUCommandBufferStub::WebGPUCommandBufferStub(
@@ -159,7 +155,5 @@ MemoryTracker* WebGPUCommandBufferStub::GetContextGroupMemoryTracker() const {
 base::WeakPtr<CommandBufferStub> WebGPUCommandBufferStub::AsWeakPtr() {
   return weak_ptr_factory_.GetWeakPtr();
 }
-
-void WebGPUCommandBufferStub::OnSwapBuffers(uint64_t swap_id, uint32_t flags) {}
 
 }  // namespace gpu

@@ -32,6 +32,7 @@
 #include "quiche/quic/core/crypto/quic_random.h"
 #include "quiche/quic/core/crypto/transport_parameters.h"
 #include "quiche/quic/core/frames/quic_ack_frequency_frame.h"
+#include "quiche/quic/core/frames/quic_immediate_ack_frame.h"
 #include "quiche/quic/core/frames/quic_max_streams_frame.h"
 #include "quiche/quic/core/frames/quic_new_connection_id_frame.h"
 #include "quiche/quic/core/frames/quic_reset_stream_at_frame.h"
@@ -65,8 +66,8 @@
 #include "quiche/quic/platform/api/quic_export.h"
 #include "quiche/quic/platform/api/quic_flags.h"
 #include "quiche/quic/platform/api/quic_socket_address.h"
-#include "quiche/common/platform/api/quiche_mem_slice.h"
 #include "quiche/common/quiche_circular_deque.h"
+#include "quiche/common/quiche_mem_slice.h"
 
 namespace quic {
 
@@ -433,6 +434,9 @@ class QUICHE_EXPORT QuicConnectionDebugVisitor
   // Called when an AckFrequencyFrame has been parsed.
   virtual void OnAckFrequencyFrame(const QuicAckFrequencyFrame& /*frame*/) {}
 
+  // Called when an ImmediateAckFrame has been parsed.
+  virtual void OnImmediateAckFrame(const QuicImmediateAckFrame& /*frame*/) {}
+
   // Called when a ResetStreamAtFrame has been parsed.
   virtual void OnResetStreamAtFrame(const QuicResetStreamAtFrame& /*frame*/) {}
 
@@ -755,6 +759,7 @@ class QUICHE_EXPORT QuicConnection
   bool OnMessageFrame(const QuicMessageFrame& frame) override;
   bool OnHandshakeDoneFrame(const QuicHandshakeDoneFrame& frame) override;
   bool OnAckFrequencyFrame(const QuicAckFrequencyFrame& frame) override;
+  bool OnImmediateAckFrame(const QuicImmediateAckFrame& frame) override;
   bool OnResetStreamAtFrame(const QuicResetStreamAtFrame& frame) override;
   void OnPacketComplete() override;
   bool IsValidStatelessResetToken(
@@ -1310,12 +1315,8 @@ class QUICHE_EXPORT QuicConnection
       std::unique_ptr<QuicPathValidator::ResultDelegate> result_delegate,
       PathValidationReason reason);
 
-  bool can_receive_ack_frequency_frame() const {
-    return can_receive_ack_frequency_frame_;
-  }
-
-  void set_can_receive_ack_frequency_frame() {
-    can_receive_ack_frequency_frame_ = true;
+  void set_can_receive_ack_frequency_immediate_ack(bool can_receive) {
+    can_receive_ack_frequency_immediate_ack_ = can_receive;
   }
 
   bool is_processing_packet() const { return framer_.is_processing_packet(); }
@@ -2161,44 +2162,31 @@ class QUICHE_EXPORT QuicConnection
 
   void GenerateNewOutgoingFlowLabel();
 
-  QuicAlarmProxy ack_alarm() { return alarms_.ack_alarm(); }
-  QuicAlarmProxy retransmission_alarm() {
-    return alarms_.retransmission_alarm();
+  QuicAlarmProxy ack_alarm() {
+    return QuicAlarmProxy(&alarms_, QuicAlarmSlot::kAck);
   }
-  QuicAlarmProxy send_alarm() { return alarms_.send_alarm(); }
-  QuicAlarmProxy mtu_discovery_alarm() { return alarms_.mtu_discovery_alarm(); }
+  QuicAlarmProxy retransmission_alarm() {
+    return QuicAlarmProxy(&alarms_, QuicAlarmSlot::kRetransmission);
+  }
+  QuicAlarmProxy send_alarm() {
+    return QuicAlarmProxy(&alarms_, QuicAlarmSlot::kSend);
+  }
+  QuicAlarmProxy mtu_discovery_alarm() {
+    return QuicAlarmProxy(&alarms_, QuicAlarmSlot::kMtuDiscovery);
+  }
   QuicAlarmProxy process_undecryptable_packets_alarm() {
-    return alarms_.process_undecryptable_packets_alarm();
+    return QuicAlarmProxy(&alarms_,
+                          QuicAlarmSlot::kProcessUndecryptablePackets);
   }
   QuicAlarmProxy discard_previous_one_rtt_keys_alarm() {
-    return alarms_.discard_previous_one_rtt_keys_alarm();
+    return QuicAlarmProxy(&alarms_, QuicAlarmSlot::kDiscardPreviousOneRttKeys);
   }
   QuicAlarmProxy discard_zero_rtt_decryption_keys_alarm() {
-    return alarms_.discard_zero_rtt_decryption_keys_alarm();
+    return QuicAlarmProxy(&alarms_,
+                          QuicAlarmSlot::kDiscardZeroRttDecryptionKeys);
   }
   QuicAlarmProxy multi_port_probing_alarm() {
-    return alarms_.multi_port_probing_alarm();
-  }
-
-  QuicConstAlarmProxy ack_alarm() const { return alarms_.ack_alarm(); }
-  QuicConstAlarmProxy retransmission_alarm() const {
-    return alarms_.retransmission_alarm();
-  }
-  QuicConstAlarmProxy send_alarm() const { return alarms_.send_alarm(); }
-  QuicConstAlarmProxy mtu_discovery_alarm() const {
-    return alarms_.mtu_discovery_alarm();
-  }
-  QuicConstAlarmProxy process_undecryptable_packets_alarm() const {
-    return alarms_.process_undecryptable_packets_alarm();
-  }
-  QuicConstAlarmProxy discard_previous_one_rtt_keys_alarm() const {
-    return alarms_.discard_previous_one_rtt_keys_alarm();
-  }
-  QuicConstAlarmProxy discard_zero_rtt_decryption_keys_alarm() const {
-    return alarms_.discard_zero_rtt_decryption_keys_alarm();
-  }
-  QuicConstAlarmProxy multi_port_probing_alarm() const {
-    return alarms_.multi_port_probing_alarm();
+    return QuicAlarmProxy(&alarms_, QuicAlarmSlot::kMultiPortProbing);
   }
 
   QuicConnectionContext context_;
@@ -2328,7 +2316,7 @@ class QUICHE_EXPORT QuicConnection
   QuicConnectionArena arena_;
 
   // Alarms used by the connection.
-  QuicConnectionAlarms alarms_;
+  QuicAlarmMultiplexer alarms_;
 
   // Neither visitor is owned by this class.
   QuicConnectionVisitorInterface* visitor_;
@@ -2480,7 +2468,7 @@ class QUICHE_EXPORT QuicConnection
       GetQuicFlag(quic_anti_amplification_factor);
 
   // True if AckFrequencyFrame is supported.
-  bool can_receive_ack_frequency_frame_ = false;
+  bool can_receive_ack_frequency_immediate_ack_ = false;
 
   // Indicate whether coalescing is done.
   bool coalescing_done_ = false;

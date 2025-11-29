@@ -28,6 +28,7 @@ class Origin;
 namespace content {
 
 class CrossOriginEmbedderPolicyReporter;
+class DocumentIsolationPolicyReporter;
 class NavigationRequest;
 class Navigator;
 class RenderFrameHostManager;
@@ -109,7 +110,9 @@ class RenderFrameHostOwner {
       const std::vector<GURL>& redirects,
       const GURL& original_url,
       std::unique_ptr<CrossOriginEmbedderPolicyReporter> coep_reporter,
-      int http_response_code) = 0;
+      std::unique_ptr<DocumentIsolationPolicyReporter> dip_reporter,
+      int http_response_code,
+      base::TimeTicks actual_navigation_start) = 0;
 
   // Cancels the navigation owned by the FrameTreeNode.
   // Note: this does not cancel navigations that are owned by the current or

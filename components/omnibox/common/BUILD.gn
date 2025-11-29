@@ -4,15 +4,22 @@
 
 source_set("common") {
   sources = [
+    "omnibox_feature_configs.cc",
+    "omnibox_feature_configs.h",
     "omnibox_features.cc",
     "omnibox_features.h",
     "omnibox_focus_state.h",
+    "string_cleaning.cc",
+    "string_cleaning.h",
     "zero_suggest_cache_service_interface.cc",
     "zero_suggest_cache_service_interface.h",
   ]
   deps = [
     "//base",
+    "//base:i18n",
+    "//components/url_formatter:url_formatter",
     "//ui/base:features",
+    "//url",
   ]
 
   if (is_android) {
@@ -47,7 +54,9 @@ if (is_android) {
       ":jni_headers",
     ]
     deps = [
+      "$google_play_services_package:google_play_services_location_java",
       "//base:base_java",
+      "//chrome/browser/feedback/android:java",
       "//components/cached_flags:java",
       "//third_party/androidx:androidx_annotation_annotation_java",
       "//third_party/jni_zero:jni_zero_java",

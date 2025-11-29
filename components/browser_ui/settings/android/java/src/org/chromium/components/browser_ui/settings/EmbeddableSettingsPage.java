@@ -5,6 +5,7 @@
 package org.chromium.components.browser_ui.settings;
 
 import org.chromium.base.supplier.ObservableSupplier;
+import org.chromium.build.annotations.NullMarked;
 
 /**
  * The base interface for embeddable settings page fragments.
@@ -18,7 +19,8 @@ import org.chromium.base.supplier.ObservableSupplier;
  *
  * <p>Standalone fragments are shown as a whole and has better control of the activity.
  */
-public interface EmbeddableSettingsPage {
+@NullMarked
+public interface EmbeddableSettingsPage extends SettingsFragment {
     /**
      * Returns the title of the current setting page.
      *

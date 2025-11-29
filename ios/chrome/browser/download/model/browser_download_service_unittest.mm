@@ -11,11 +11,12 @@
 #import "base/test/metrics/histogram_tester.h"
 #import "base/test/scoped_feature_list.h"
 #import "ios/chrome/browser/download/model/ar_quick_look_tab_helper.h"
+#import "ios/chrome/browser/download/model/browser_download_service_factory.h"
 #import "ios/chrome/browser/download/model/download_manager_tab_helper.h"
 #import "ios/chrome/browser/download/model/download_mimetype_util.h"
 #import "ios/chrome/browser/download/model/pass_kit_tab_helper.h"
 #import "ios/chrome/browser/download/model/vcard_tab_helper.h"
-#import "ios/chrome/browser/download/ui_bundled/features.h"
+#import "ios/chrome/browser/download/ui/features.h"
 #import "ios/chrome/browser/shared/model/profile/test/test_profile_ios.h"
 #import "ios/chrome/browser/shared/model/utils/mime_type_util.h"
 #import "ios/web/public/download/download_controller.h"
@@ -95,7 +96,12 @@ class StubTabHelper<DownloadManagerTabHelper>
 // Test fixture for testing BrowserDownloadService class.
 class BrowserDownloadServiceTest : public PlatformTest {
  protected:
-  BrowserDownloadServiceTest() : profile_(TestProfileIOS::Builder().Build()) {
+  BrowserDownloadServiceTest() {
+    TestProfileIOS::Builder builder;
+    builder.AddTestingFactory(
+        BrowserDownloadServiceFactory::GetInstance(),
+        BrowserDownloadServiceFactory::GetDefaultFactory());
+    profile_ = std::move(builder).Build();
     StubTabHelper<PassKitTabHelper>::CreateForWebState(&web_state_);
     StubTabHelper<ARQuickLookTabHelper>::CreateForWebState(&web_state_);
     StubTabHelper<VcardTabHelper>::CreateForWebState(&web_state_);
@@ -147,7 +153,8 @@ TEST_F(BrowserDownloadServiceTest, PkPassMimeType) {
   ASSERT_TRUE(download_manager_tab_helper()->tasks().empty());
   histogram_tester_.ExpectUniqueSample(
       "Download.IOSDownloadMimeType",
-      static_cast<base::HistogramBase::Sample>(DownloadMimeTypeResult::PkPass),
+      static_cast<base::HistogramBase::Sample32>(
+          DownloadMimeTypeResult::PkPass),
       1);
 }
 
@@ -165,7 +172,7 @@ TEST_F(BrowserDownloadServiceTest, UsdzExtension) {
   ASSERT_TRUE(download_manager_tab_helper()->tasks().empty());
   histogram_tester_.ExpectUniqueSample(
       "Download.IOSDownloadMimeType",
-      static_cast<base::HistogramBase::Sample>(DownloadMimeTypeResult::Other),
+      static_cast<base::HistogramBase::Sample32>(DownloadMimeTypeResult::Other),
       1);
 }
 
@@ -183,7 +190,7 @@ TEST_F(BrowserDownloadServiceTest, RealityExtension) {
   ASSERT_TRUE(download_manager_tab_helper()->tasks().empty());
   histogram_tester_.ExpectUniqueSample(
       "Download.IOSDownloadMimeType",
-      static_cast<base::HistogramBase::Sample>(DownloadMimeTypeResult::Other),
+      static_cast<base::HistogramBase::Sample32>(DownloadMimeTypeResult::Other),
       1);
 }
 // Tests that BrowserDownloadService uses ARQuickLookTabHelper for USDZ Mime
@@ -200,7 +207,7 @@ TEST_F(BrowserDownloadServiceTest, UsdzMimeType) {
   ASSERT_TRUE(download_manager_tab_helper()->tasks().empty());
   histogram_tester_.ExpectUniqueSample(
       "Download.IOSDownloadMimeType",
-      static_cast<base::HistogramBase::Sample>(
+      static_cast<base::HistogramBase::Sample32>(
           DownloadMimeTypeResult::UniversalSceneDescription),
       1);
 }
@@ -219,7 +226,7 @@ TEST_F(BrowserDownloadServiceTest, LegacyUsdzMimeType) {
   ASSERT_TRUE(download_manager_tab_helper()->tasks().empty());
   histogram_tester_.ExpectUniqueSample(
       "Download.IOSDownloadMimeType",
-      static_cast<base::HistogramBase::Sample>(
+      static_cast<base::HistogramBase::Sample32>(
           DownloadMimeTypeResult::LegacyUniversalSceneDescription),
       1);
 }
@@ -238,7 +245,7 @@ TEST_F(BrowserDownloadServiceTest, LegacyPixarUsdzMimeType) {
   ASSERT_TRUE(download_manager_tab_helper()->tasks().empty());
   histogram_tester_.ExpectUniqueSample(
       "Download.IOSDownloadMimeType",
-      static_cast<base::HistogramBase::Sample>(
+      static_cast<base::HistogramBase::Sample32>(
           DownloadMimeTypeResult::LegacyPixarUniversalSceneDescription),
       1);
 }
@@ -257,7 +264,7 @@ TEST_F(BrowserDownloadServiceTest, PdfMimeType) {
   EXPECT_EQ(task_ptr, download_manager_tab_helper()->tasks()[0].get());
   histogram_tester_.ExpectUniqueSample(
       "Download.IOSDownloadMimeType",
-      static_cast<base::HistogramBase::Sample>(
+      static_cast<base::HistogramBase::Sample32>(
           DownloadMimeTypeResult::AdobePortableDocumentFormat),
       1);
 }
@@ -274,10 +281,11 @@ TEST_F(BrowserDownloadServiceTest, ZipArchiveMimeType) {
   ASSERT_TRUE(pass_kit_tab_helper()->tasks().empty());
   ASSERT_EQ(1U, download_manager_tab_helper()->tasks().size());
   EXPECT_EQ(task_ptr, download_manager_tab_helper()->tasks()[0].get());
-  histogram_tester_.ExpectUniqueSample("Download.IOSDownloadMimeType",
-                                       static_cast<base::HistogramBase::Sample>(
-                                           DownloadMimeTypeResult::ZipArchive),
-                                       1);
+  histogram_tester_.ExpectUniqueSample(
+      "Download.IOSDownloadMimeType",
+      static_cast<base::HistogramBase::Sample32>(
+          DownloadMimeTypeResult::ZipArchive),
+      1);
 }
 
 // Tests that BrowserDownloadService uses DownloadManagerTabHelper for .exe Mime
@@ -294,7 +302,7 @@ TEST_F(BrowserDownloadServiceTest, ExeMimeType) {
   EXPECT_EQ(task_ptr, download_manager_tab_helper()->tasks()[0].get());
   histogram_tester_.ExpectUniqueSample(
       "Download.IOSDownloadMimeType",
-      static_cast<base::HistogramBase::Sample>(
+      static_cast<base::HistogramBase::Sample32>(
           DownloadMimeTypeResult::MicrosoftApplication),
       1);
 }
@@ -313,7 +321,7 @@ TEST_F(BrowserDownloadServiceTest, ApkMimeType) {
   EXPECT_EQ(task_ptr, download_manager_tab_helper()->tasks()[0].get());
   histogram_tester_.ExpectUniqueSample(
       "Download.IOSDownloadMimeType",
-      static_cast<base::HistogramBase::Sample>(
+      static_cast<base::HistogramBase::Sample32>(
           DownloadMimeTypeResult::AndroidPackageArchive),
       1);
 }

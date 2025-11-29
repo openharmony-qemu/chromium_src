@@ -10,7 +10,6 @@
 #include <vector>
 
 #include "base/containers/adapters.h"
-#include "base/ranges/algorithm.h"
 #include "base/strings/strcat.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/views/layout/normalized_geometry.h"
@@ -301,7 +300,9 @@ void BoxLayout::InitializeChildData(BoxLayoutData& data) const {
 
     data.child_data.emplace_back();
     BoxChildData& child_data = data.child_data.back();
+
     data.layout.child_layouts.emplace_back(child, true);
+
     gfx::Insets* margins = child ? child->GetProperty(kMarginsKey) : nullptr;
     if (margins) {
       child_data.margins = Normalize(orientation_, *margins);

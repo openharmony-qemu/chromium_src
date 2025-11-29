@@ -14,6 +14,7 @@
 #include "base/functional/callback_forward.h"
 #include "base/functional/callback_helpers.h"
 #include "base/location.h"
+#include "base/logging.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/task/bind_post_task.h"
 #include "base/task/task_traits.h"
@@ -61,7 +62,7 @@ GroupDataStore::DBInitStatus InitOnDBSequence(
   const base::FilePath db_path = GetGroupDataStoreDBPath(db_dir_path);
   if (!db->Open(db_path)) {
     LOG(ERROR) << "Failed to open DB " << db_path << ": "
-        << db->GetErrorMessage();
+               << db->GetErrorMessage();
     return GroupDataStore::DBInitStatus::kFailure;
   }
 
@@ -78,7 +79,8 @@ GroupDataStore::GroupDataStore(const base::FilePath& db_dir_path,
                                DBLoadedCallback db_loaded_callback)
     : db_task_runner_(
           base::ThreadPool::CreateSequencedTaskRunner(kDBTaskTraits)),
-      db_(std::make_unique<sql::Database>(sql::DatabaseOptions{})),
+      db_(std::make_unique<sql::Database>(
+          sql::Database::Tag("DataSharingGroupStorage"))),
       proto_table_manager_(
           base::MakeRefCounted<sqlite_proto::ProtoTableManager>(
               db_task_runner_)),
@@ -97,7 +99,8 @@ GroupDataStore::GroupDataStore(const base::FilePath& db_dir_path,
   // that these objects outlive any task posted to DB sequence.
   db_task_runner_->PostTaskAndReplyWithResult(
       FROM_HERE,
-      base::BindOnce(&InitOnDBSequence, db_dir_path, base::Unretained(db_.get()),
+      base::BindOnce(&InitOnDBSequence, db_dir_path,
+                     base::Unretained(db_.get()),
                      base::Unretained(proto_table_manager_.get()),
                      base::Unretained(group_entity_data_.get())),
       base::BindOnce(&GroupDataStore::OnDBReady, weak_ptr_factory_.GetWeakPtr(),
@@ -127,8 +130,10 @@ GroupDataStore::~GroupDataStore() {
           std::move(group_entity_data_), std::move(shutdown_callback_)));
 }
 
-void GroupDataStore::StoreGroupData(const VersionToken& version_token,
-                                    const GroupData& group_data) {
+void GroupDataStore::StoreGroupData(
+    const VersionToken& version_token,
+    const base::Time& last_updated_timestamp,
+    const data_sharing_pb::GroupData& group_data_proto) {
   CHECK_EQ(db_init_status_, DBInitStatus::kSuccess);
 
   // TODO(crbug.com/301390275): support batching StoreGroupData() (by setting
@@ -136,9 +141,10 @@ void GroupDataStore::StoreGroupData(const VersionToken& version_token,
   data_sharing_pb::GroupEntity entity;
   entity.mutable_metadata()->set_last_processed_version_token(
       version_token.value());
-  *entity.mutable_data() = GroupDataToProto(group_data);
-  group_entity_data_->UpdateData(group_data.group_token.group_id.value(),
-                                 entity);
+  entity.mutable_metadata()->set_last_updated_timestamp_millis_since_unix_epoch(
+      last_updated_timestamp.InMillisecondsSinceUnixEpoch());
+  *entity.mutable_data() = group_data_proto;
+  group_entity_data_->UpdateData(group_data_proto.group_id(), entity);
 }
 
 void GroupDataStore::DeleteGroups(const std::vector<GroupId>& groups_ids) {
@@ -160,6 +166,19 @@ std::optional<VersionToken> GroupDataStore::GetGroupVersionToken(
   }
 
   return VersionToken(entity.metadata().last_processed_version_token());
+}
+
+base::Time GroupDataStore::GetGroupLastUpdatedTimestamp(
+    const GroupId& group_id) const {
+  CHECK_EQ(db_init_status_, DBInitStatus::kSuccess);
+
+  data_sharing_pb::GroupEntity entity;
+  if (!group_entity_data_->TryGetData(group_id.value(), &entity)) {
+    return base::Time();
+  }
+
+  return base::Time::FromMillisecondsSinceUnixEpoch(
+      entity.metadata().last_updated_timestamp_millis_since_unix_epoch());
 }
 
 std::optional<GroupData> GroupDataStore::GetGroupData(

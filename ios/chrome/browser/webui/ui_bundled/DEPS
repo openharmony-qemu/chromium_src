@@ -2,6 +2,7 @@ include_rules = [
   "+mojo/public",
   "+ios/components/webui",
   "+components/account_id",
+  "+components/webui/chrome_urls",
   "+ios/chrome/browser/autofill/model/autofill_log_router_factory.h",
   "+ios/chrome/browser/commerce/model/shopping_service_factory.h",
   "+ios/chrome/browser/crash_report/model/crash_upload_list.h",
@@ -32,3 +33,9 @@ include_rules = [
   "+ios/chrome/browser/policy/ui_bundled/user_policy_util.h",
   "+ios/chrome/browser/web/model/java_script_console",
 ]
+
+specific_include_rules = {
+  "^policy_egtest.mm": [
+    "+components/policy/test_support",
+  ],
+}

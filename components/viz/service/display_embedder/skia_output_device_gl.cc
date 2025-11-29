@@ -10,9 +10,9 @@
 #include "base/debug/alias.h"
 #include "base/functional/callback_helpers.h"
 #include "base/memory/scoped_refptr.h"
+#include "base/notreached.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "gpu/command_buffer/service/feature_info.h"
 #include "gpu/command_buffer/service/shared_context_state.h"
 #include "gpu/command_buffer/service/texture_manager.h"
@@ -31,11 +31,6 @@
 #include "ui/gl/gl_implementation.h"
 #include "ui/gl/gl_surface.h"
 
-#if BUILDFLAG(IS_OHOS)
-#include "base/trace_event/trace_event.h"
-#include "ui/gl/gl_switches.h"
-#endif  // BUILDFLAG(IS_OHOS)
-
 namespace viz {
 
 namespace {
@@ -46,7 +41,7 @@ NOINLINE void CheckForLoopFailures() {
   auto now = base::TimeTicks::Now();
   if (!g_last_reshape_failure.is_null() &&
       now - g_last_reshape_failure < threshold) {
-    CHECK(false);
+    NOTREACHED();
   }
   g_last_reshape_failure = now;
 }
@@ -104,7 +99,7 @@ SkiaOutputDeviceGL::SkiaOutputDeviceGL(
     gpu::MemoryTracker* memory_tracker,
     DidSwapBufferCompleteCallback did_swap_buffer_complete_callback)
     : SkiaOutputDevice(context_state->gr_context(),
-                       context_state->graphite_context(),
+                       context_state->graphite_shared_context(),
                        memory_tracker,
                        std::move(did_swap_buffer_complete_callback)),
       context_state_(context_state),
@@ -127,16 +122,12 @@ SkiaOutputDeviceGL::SkiaOutputDeviceGL(
   capabilities_.supports_surfaceless = gl_surface_->IsSurfaceless();
 #endif
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
   // If Chrome OS is run on Linux for development purposes, we need to
   // advertise a hardware orientation mode since Ash manages a separate device
   // rotation independent of the host's native windowing system.
   capabilities_.orientation_mode = OutputSurface::OrientationMode::kHardware;
-#endif  // IS_CHROMEOS_ASH
-
-#if BUILDFLAG(IS_OHOS)
-  ohos_supports_partial_swap_ = features::IsOHOSEnablePartialSwap();
-#endif  // BUILDFLAG(IS_OHOS)
+#endif  // IS_CHROMEOS
 
   DCHECK(context_state_);
   DCHECK(gl_surface_);
@@ -199,9 +190,9 @@ SkiaOutputDeviceGL::~SkiaOutputDeviceGL() {
 }
 
 bool SkiaOutputDeviceGL::Reshape(const ReshapeParams& params) {
-#if !BUILDFLAG(IS_CHROMEOS_ASH)
+#if !BUILDFLAG(IS_CHROMEOS)
   DCHECK_EQ(params.transform, gfx::OVERLAY_TRANSFORM_NONE);
-#endif  // !BUILDFLAG(IS_CHROMEOS_ASH)
+#endif  // !BUILDFLAG(IS_CHROMEOS)
 
   const gfx::Size size = params.GfxSize();
   const SkColorType color_type = params.image_info.colorType();
@@ -294,25 +285,9 @@ void SkiaOutputDeviceGL::Present(const std::optional<gfx::Rect>& update_rect,
   } else {
     gfx::SwapResult result;
     if (update_rect) {
-#if BUILDFLAG(IS_OHOS)
-      TRACE_EVENT2("viz", "SkiaOutputDeviceGL::Present", "update_rect",
-                   update_rect->ToString(), "partial_swap",
-                   ohos_supports_partial_swap_);
-      if (ohos_supports_partial_swap_) {
-        result = gl_surface_->SwapBuffersWithDamage(
-            { update_rect->x(),
-             gl_surface_->GetSize().height() - update_rect->y() -
-                 update_rect->height(),
-             update_rect->width(), update_rect->height() },
-            std::move(feedback), std::move(data));
-      } else {
-        result = gl_surface_->SwapBuffers(std::move(feedback), std::move(data));
-      }
-#else
       result = gl_surface_->PostSubBuffer(
           update_rect->x(), update_rect->y(), update_rect->width(),
           update_rect->height(), std::move(feedback), std::move(data));
-#endif  // BUILDFLAG(IS_OHOS)
     } else {
       result = gl_surface_->SwapBuffers(std::move(feedback), std::move(data));
     }

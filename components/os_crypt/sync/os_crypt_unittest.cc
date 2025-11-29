@@ -15,14 +15,11 @@
 #include "base/test/metrics/histogram_tester.h"
 #include "base/threading/thread.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "components/os_crypt/sync/os_crypt_metrics.h"
 #include "components/os_crypt/sync/os_crypt_mocker.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
-// TODO(crbug.com/40118868): Revisit the macro expression once build flag switch
-// of lacros-chrome is complete.
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_LACROS)
+#if BUILDFLAG(IS_LINUX)
 #include "components/os_crypt/sync/os_crypt_mocker_linux.h"
 #endif
 
@@ -149,15 +146,8 @@ TEST_F(OSCryptTest, DecryptError) {
   plaintext = "hello";
   ASSERT_TRUE(OSCrypt::EncryptString(plaintext, &ciphertext));
   EXPECT_NE(plaintext, ciphertext);
-#if BUILDFLAG(IS_OHOS)
-  // The ohos huks framework can parse ciphertext even if the IV is inconsistent,
-  // and the parsing result is inconsistent with the metadata.
-  // The first sixteen numbers in the encrypted data is IV
-  const int change_cookie = 20;
-  ciphertext[change_cookie] = ciphertext[change_cookie] + 1;
-#else
+  ASSERT_LT(4UL, ciphertext.size());
   ciphertext[3] = ciphertext[3] + 1;
-#endif
   EXPECT_FALSE(OSCrypt::DecryptString(ciphertext, &result));
   EXPECT_NE(plaintext, result);
   EXPECT_TRUE(result.empty());

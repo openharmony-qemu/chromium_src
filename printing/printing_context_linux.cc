@@ -23,12 +23,8 @@
 #endif
 
 // Avoid using LinuxUi on Fuchsia.
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX)
 #include "ui/linux/linux_ui.h"
-#endif
-
-#if BUILDFLAG(IS_OHOS)
-#include "ohos/adapter/print/ohos_print_adapter.h"
 #endif
 
 namespace printing {
@@ -36,13 +32,16 @@ namespace printing {
 // static
 std::unique_ptr<PrintingContext> PrintingContext::CreateImpl(
     Delegate* delegate,
-    ProcessBehavior process_behavior) {
-  return std::make_unique<PrintingContextLinux>(delegate, process_behavior);
+    OutOfProcessBehavior out_of_process_behavior) {
+  return std::make_unique<PrintingContextLinux>(delegate,
+                                                out_of_process_behavior);
 }
 
-PrintingContextLinux::PrintingContextLinux(Delegate* delegate,
-                                           ProcessBehavior process_behavior)
-    : PrintingContext(delegate, process_behavior), print_dialog_(nullptr) {}
+PrintingContextLinux::PrintingContextLinux(
+    Delegate* delegate,
+    OutOfProcessBehavior out_of_process_behavior)
+    : PrintingContext(delegate, out_of_process_behavior),
+      print_dialog_(nullptr) {}
 
 PrintingContextLinux::~PrintingContextLinux() {
   ReleaseContext();
@@ -70,14 +69,7 @@ mojom::ResultCode PrintingContextLinux::UseDefaultSettings() {
 
   ResetSettings();
 
-#if BUILDFLAG(IS_OHOS)
-  if (!print_dialog_) {
-    ohos::adapter::print::PrintAdapter::GetInstance().PrintPdfFile();
-    return mojom::ResultCode::kSuccess;
-  }
-#endif
-
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX)
   if (!ui::LinuxUi::instance())
     return mojom::ResultCode::kSuccess;
 
@@ -93,7 +85,7 @@ mojom::ResultCode PrintingContextLinux::UseDefaultSettings() {
 }
 
 gfx::Size PrintingContextLinux::GetPdfPaperSizeDeviceUnits() {
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX)
   if (ui::LinuxUi::instance())
     return ui::LinuxUi::instance()->GetPdfPaperSize(this);
 #endif
@@ -106,7 +98,7 @@ mojom::ResultCode PrintingContextLinux::UpdatePrinterSettings(
   DCHECK(!printer_settings.show_system_dialog);
   DCHECK(!in_print_job_);
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX)
   if (!ui::LinuxUi::instance())
     return mojom::ResultCode::kSuccess;
 
@@ -139,11 +131,13 @@ mojom::ResultCode PrintingContextLinux::NewDocument(
   document_name_ = document_name;
 
 #if BUILDFLAG(ENABLE_OOP_PRINTING_NO_OOP_BASIC_PRINT_DIALOG)
-  if (process_behavior() == ProcessBehavior::kOopEnabledSkipSystemCalls) {
+  if (out_of_process_behavior() ==
+      OutOfProcessBehavior::kEnabledSkipSystemCalls) {
     return mojom::ResultCode::kSuccess;
   }
 
-  if (process_behavior() == ProcessBehavior::kOopEnabledPerformSystemCalls &&
+  if (out_of_process_behavior() ==
+          OutOfProcessBehavior::kEnabledPerformSystemCalls &&
       !settings_->system_print_dialog_data().empty()) {
     // Take the settings captured by the browser process from the system print
     // dialog and apply them to this printing context in the PrintBackend

@@ -165,3 +165,12 @@ BrowserPolicyConnectorIOS::CreatePlatformProvider() {
   return std::make_unique<AsyncPolicyProvider>(GetSchemaRegistry(),
                                                std::move(loader));
 }
+
+void BrowserPolicyConnectorIOS::OnResourceBundleCreated() {
+  BrowserPolicyConnectorBase::OnResourceBundleCreated();
+}
+
+void BrowserPolicyConnectorIOS::SetMachineLevelUserCloudPolicyManagerForTesting(
+    policy::MachineLevelUserCloudPolicyManager* manager) {
+  machine_level_user_cloud_policy_manager_ = manager;
+}

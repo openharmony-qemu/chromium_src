@@ -8,6 +8,7 @@
 #import <UIKit/UIKit.h>
 
 @protocol ApplicationCommands;
+enum class ShareKitFlowOutcome;
 class TabGroup;
 
 // Configuration object for the ShareKit ShareGroup API.
@@ -19,8 +20,14 @@ class TabGroup;
 // Local tab group.
 @property(nonatomic, assign) const TabGroup* tabGroup;
 
+// The group image preview.
+@property(nonatomic, copy) UIImage* groupImage;
+
 // Application commands handler.
 @property(nonatomic, weak) id<ApplicationCommands> applicationHandler;
+
+// Executed when the share flow ended.
+@property(nonatomic, copy) void (^completion)(ShareKitFlowOutcome outcome);
 
 @end
 

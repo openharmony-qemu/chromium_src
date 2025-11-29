@@ -9,7 +9,6 @@
 #include "base/system/sys_info.h"
 #include "build/branding_buildflags.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "components/update_client/update_query_params_delegate.h"
 #include "components/version_info/version_info.h"
 
@@ -34,14 +33,12 @@ const char kOs[] =
     "android";
 #elif BUILDFLAG(IS_CHROMEOS)
     "cros";
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_LACROS)
+#elif BUILDFLAG(IS_LINUX)
     "linux";
 #elif BUILDFLAG(IS_FUCHSIA)
     "fuchsia";
 #elif BUILDFLAG(IS_OPENBSD)
     "openbsd";
-#elif BUILDFLAG(IS_OHOS)
-    "ohos";
 #else
 #error "unknown os"
 #endif

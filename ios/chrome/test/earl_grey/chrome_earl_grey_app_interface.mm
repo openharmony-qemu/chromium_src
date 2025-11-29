@@ -6,6 +6,8 @@
 
 #import <WebKit/WebKit.h>
 
+#import <string>
+
 #import "base/apple/foundation_util.h"
 #import "base/barrier_closure.h"
 #import "base/command_line.h"
@@ -13,17 +15,19 @@
 #import "base/files/file.h"
 #import "base/files/file_util.h"
 #import "base/ios/ios_util.h"
-#import "base/json/json_string_value_serializer.h"
+#import "base/json/json_writer.h"
 #import "base/strings/sys_string_conversions.h"
 #import "base/test/ios/wait_util.h"
 #import "base/test/scoped_feature_list.h"
 #import "base/threading/thread_restrictions.h"
 #import "base/values.h"
-#import "components/autofill/core/browser/personal_data_manager.h"
+#import "components/autofill/core/browser/data_manager/personal_data_manager.h"
 #import "components/autofill/core/common/autofill_features.h"
 #import "components/browsing_data/core/pref_names.h"
+#import "components/collaboration/public/messaging/messaging_backend_service.h"
 #import "components/content_settings/core/browser/host_content_settings_map.h"
 #import "components/metrics/demographics/demographic_metrics_provider.h"
+#import "components/metrics/dwa/dwa_recorder.h"
 #import "components/password_manager/core/common/password_manager_features.h"
 #import "components/prefs/pref_service.h"
 #import "components/safe_browsing/core/common/features.h"
@@ -33,11 +37,13 @@
 #import "components/sync/service/sync_user_settings.h"
 #import "components/sync/test/fake_server_http_post_provider.h"
 #import "components/unified_consent/unified_consent_service.h"
+#import "components/variations/service/variations_service.h"
 #import "components/variations/variations_associated_data.h"
 #import "components/variations/variations_ids_provider.h"
 #import "ios/chrome/app/application_delegate/app_state.h"
 #import "ios/chrome/app/main_controller.h"
 #import "ios/chrome/browser/autofill/model/personal_data_manager_factory.h"
+#import "ios/chrome/browser/collaboration/model/messaging/messaging_backend_service_factory.h"
 #import "ios/chrome/browser/content_settings/model/host_content_settings_map_factory.h"
 #import "ios/chrome/browser/default_browser/model/utils.h"
 #import "ios/chrome/browser/default_browser/model/utils_test_support.h"
@@ -45,6 +51,7 @@
 #import "ios/chrome/browser/first_run/ui_bundled/first_run_screen_provider.h"
 #import "ios/chrome/browser/first_run/ui_bundled/first_run_util.h"
 #import "ios/chrome/browser/ntp/ui_bundled/new_tab_page_feature.h"
+#import "ios/chrome/browser/popup_menu/ui_bundled/overflow_menu/feature_flags.h"
 #import "ios/chrome/browser/search_engines/model/search_engines_util.h"
 #import "ios/chrome/browser/search_engines/model/template_url_service_factory.h"
 #import "ios/chrome/browser/sessions/model/session_restoration_service.h"
@@ -53,7 +60,9 @@
 #import "ios/chrome/browser/shared/model/application_context/application_context.h"
 #import "ios/chrome/browser/shared/model/browser/browser_provider.h"
 #import "ios/chrome/browser/shared/model/browser/browser_provider_interface.h"
+#import "ios/chrome/browser/shared/model/profile/profile_attributes_storage_ios.h"
 #import "ios/chrome/browser/shared/model/profile/profile_ios.h"
+#import "ios/chrome/browser/shared/model/profile/profile_manager_ios.h"
 #import "ios/chrome/browser/shared/model/web_state_list/web_state_list.h"
 #import "ios/chrome/browser/shared/public/commands/application_commands.h"
 #import "ios/chrome/browser/shared/public/features/features.h"
@@ -62,7 +71,6 @@
 #import "ios/chrome/browser/shared/ui/util/rtl_geometry.h"
 #import "ios/chrome/browser/sync/model/sync_service_factory.h"
 #import "ios/chrome/browser/tips_notifications/model/utils.h"
-#import "ios/chrome/browser/ui/popup_menu/overflow_menu/feature_flags.h"
 #import "ios/chrome/browser/unified_consent/model/unified_consent_service_factory.h"
 #import "ios/chrome/browser/web/model/web_navigation_browser_agent.h"
 #import "ios/chrome/test/app/browsing_data_test_util.h"
@@ -83,6 +91,7 @@
 #import "ios/web/common/features.h"
 #import "ios/web/js_messaging/web_view_js_utils.h"
 #import "ios/web/public/browser_state_utils.h"
+#import "ios/web/public/js_messaging/content_world.h"
 #import "ios/web/public/js_messaging/web_frame.h"
 #import "ios/web/public/js_messaging/web_frames_manager.h"
 #import "ios/web/public/navigation/navigation_manager.h"
@@ -102,8 +111,14 @@ using base::test::ios::kWaitForActionTimeout;
 using base::test::ios::kWaitForJSCompletionTimeout;
 using base::test::ios::kWaitForPageLoadTimeout;
 using base::test::ios::WaitUntilConditionOrTimeout;
+using collaboration::messaging::MessagingBackendService;
+using collaboration::messaging::MessagingBackendServiceFactory;
 
 namespace {
+
+// The timeout for the MessagingBackendService initialization. This is taking
+// a long time on the bots, so the value is pretty large.
+constexpr base::TimeDelta kWaitForMessagingBackend = base::Seconds(60);
 
 // Returns a JSON-encoded string representing the given `pref`. If `pref` is
 // nullptr, returns a string representing a base::Value of type NONE.
@@ -113,10 +128,8 @@ NSString* SerializedPref(const PrefService::Preference* pref) {
   const base::Value* value = pref ? pref->GetValue() : &none_value;
   DCHECK(value);
 
-  std::string serialized_value;
-  JSONStringValueSerializer serializer(&serialized_value);
-  serializer.Serialize(*value);
-  return base::SysUTF8ToNSString(serialized_value);
+  return base::SysUTF8ToNSString(
+      base::WriteJson(*value).value_or(std::string()));
 }
 // Returns a JSON-encoded string representing the given `value`. If `value` is
 // nullptr, returns a string representing a base::Value of type NONE.
@@ -125,10 +138,8 @@ NSString* SerializedValue(const base::Value* value) {
   const base::Value* result = value ? value : &none_value;
   DCHECK(result);
 
-  std::string serialized_value;
-  JSONStringValueSerializer serializer(&serialized_value);
-  serializer.Serialize(*result);
-  return base::SysUTF8ToNSString(serialized_value);
+  return base::SysUTF8ToNSString(
+      base::WriteJson(*result).value_or(std::string()));
 }
 
 }  // namespace
@@ -179,8 +190,9 @@ NSString* SerializedValue(const base::Value* value) {
 + (NSInteger)navigationBackListItemsCount {
   web::WebState* webState = chrome_test_util::GetCurrentWebState();
 
-  if (!webState)
+  if (!webState) {
     return -1;
+  }
 
   return webState->GetNavigationManager()->GetBackwardItems().size();
 }
@@ -270,6 +282,20 @@ NSString* SerializedValue(const base::Value* value) {
 
 + (void)primesTakeMemorySnapshot:(NSString*)eventName {
   ios::provider::PrimesTakeMemorySnapshot(eventName);
+}
+
+#pragma mark - Profile Utilities (EG2)
+
++ (NSString*)currentProfileName {
+  return base::SysUTF8ToNSString(
+      chrome_test_util::GetOriginalProfile()->GetProfileName());
+}
+
++ (NSString*)personalProfileName {
+  return base::SysUTF8ToNSString(GetApplicationContext()
+                                     ->GetProfileManager()
+                                     ->GetProfileAttributesStorage()
+                                     ->GetPersonalProfileName());
 }
 
 #pragma mark - Tab Utilities (EG2)
@@ -538,8 +564,9 @@ NSString* SerializedValue(const base::Value* value) {
 }
 
 + (void)closeAllExtraWindows {
-  if (!base::ios::IsMultipleScenesSupported())
+  if (!base::ios::IsMultipleScenesSupported()) {
     return;
+  }
   SceneState* foreground_scene_state =
       chrome_test_util::GetMainController().appState.foregroundActiveScene;
   // New windows get an accessibilityIdentifier equal to the number of windows
@@ -548,8 +575,9 @@ NSString* SerializedValue(const base::Value* value) {
   foreground_scene_state.window.accessibilityIdentifier = @"0";
   NSSet<UISceneSession*>* sessions =
       UIApplication.sharedApplication.openSessions;
-  if (sessions.count <= 1)
+  if (sessions.count <= 1) {
     return;
+  }
   for (UISceneSession* session in sessions) {
     if (foreground_scene_state.scene == session.scene) {
       continue;
@@ -874,6 +902,11 @@ NSString* SerializedValue(const base::Value* value) {
                                         visitTimestamp);
 }
 
++ (void)setHistoryServiceTitle:(NSString*)title forPage:(NSString*)URL {
+  chrome_test_util::SetPageTitle(GURL(base::SysNSStringToUTF8(URL)),
+                                 base::SysNSStringToUTF16(title));
+}
+
 + (void)deleteHistoryServiceTypedURL:(NSString*)URL {
   chrome_test_util::DeleteTypedUrlFromClient(
       GURL(base::SysNSStringToUTF8(URL)));
@@ -921,38 +954,6 @@ NSString* SerializedValue(const base::Value* value) {
 + (void)deleteAutofillProfileFromFakeSyncServerWithGUID:(NSString*)GUID {
   chrome_test_util::DeleteAutofillProfileFromFakeSyncServer(
       base::SysNSStringToUTF8(GUID));
-}
-
-+ (NSError*)waitForSyncEngineInitialized:(BOOL)isInitialized
-                             syncTimeout:(base::TimeDelta)timeout {
-  bool success = WaitUntilConditionOrTimeout(timeout, ^{
-    return chrome_test_util::IsSyncEngineInitialized() == isInitialized;
-  });
-  if (!success) {
-    NSString* errorDescription =
-        [NSString stringWithFormat:@"Sync must be initialized: %@",
-                                   isInitialized ? @"YES" : @"NO"];
-    return testing::NSErrorWithLocalizedDescription(errorDescription);
-  }
-  return nil;
-}
-
-+ (NSError*)waitForSyncFeatureEnabled:(BOOL)isEnabled
-                          syncTimeout:(base::TimeDelta)timeout {
-  bool success = WaitUntilConditionOrTimeout(timeout, ^{
-    ProfileIOS* profile = chrome_test_util::GetOriginalProfile();
-    DCHECK(profile);
-    syncer::SyncService* syncService =
-        SyncServiceFactory::GetForProfile(profile);
-    return syncService->IsSyncFeatureEnabled() == isEnabled;
-  });
-  if (!success) {
-    NSString* errorDescription =
-        [NSString stringWithFormat:@"Sync feature must be enabled: %@",
-                                   isEnabled ? @"YES" : @"NO"];
-    return testing::NSErrorWithLocalizedDescription(errorDescription);
-  }
-  return nil;
 }
 
 + (NSError*)waitForSyncTransportStateActiveWithTimeout:
@@ -1085,12 +1086,27 @@ NSString* SerializedValue(const base::Value* value) {
 #pragma mark - JavaScript Utilities (EG2)
 
 + (JavaScriptExecutionResult*)executeJavaScript:(NSString*)javaScript {
+  return [ChromeEarlGreyAppInterface
+      executeJavaScript:javaScript
+                inWorld:static_cast<int>(web::ContentWorld::kPageContentWorld)];
+}
+
++ (JavaScriptExecutionResult*)executeJavaScriptInIsolatedWorld:
+    (NSString*)javaScript {
+  return [ChromeEarlGreyAppInterface
+      executeJavaScript:javaScript
+                inWorld:static_cast<int>(web::ContentWorld::kIsolatedWorld)];
+}
+
++ (JavaScriptExecutionResult*)executeJavaScript:(NSString*)javaScript
+                                        inWorld:(int)world {
   __block web::WebFrame* main_frame = nullptr;
   bool completed =
       WaitUntilConditionOrTimeout(kWaitForJSCompletionTimeout, ^bool {
-        main_frame = chrome_test_util::GetCurrentWebState()
-                         ->GetPageWorldWebFramesManager()
-                         ->GetMainWebFrame();
+        main_frame =
+            chrome_test_util::GetCurrentWebState()
+                ->GetWebFramesManager(static_cast<web::ContentWorld>(world))
+                ->GetMainWebFrame();
         return main_frame != nullptr;
       });
 
@@ -1169,6 +1185,10 @@ NSString* SerializedValue(const base::Value* value) {
   return base::FeatureList::IsEnabled(ukm::kUkmFeature);
 }
 
++ (BOOL)isDWAEnabled {
+  return base::FeatureList::IsEnabled(metrics::dwa::kDwaFeature);
+}
+
 + (BOOL)isTestFeatureEnabled {
   return base::FeatureList::IsEnabled(kTestFeature);
 }
@@ -1208,10 +1228,6 @@ NSString* SerializedValue(const base::Value* value) {
   return ios::provider::IsLensSupported() &&
          ui::GetDeviceFormFactor() != ui::DEVICE_FORM_FACTOR_TABLET &&
          search_engines::SupportsSearchImageWithLens(service);
-}
-
-+ (BOOL)isWebChannelsEnabled {
-  return base::FeatureList::IsEnabled(kEnableWebChannels);
 }
 
 + (BOOL)isTabGroupSyncEnabled {
@@ -1276,6 +1292,12 @@ NSString* SerializedValue(const base::Value* value) {
   const PrefService::Preference* pref =
       GetApplicationContext()->GetLocalState()->FindPreference(path);
   return SerializedPref(pref);
+}
+
++ (base::Time)localStateTimePref:(NSString*)prefName {
+  std::string path = base::SysNSStringToUTF8(prefName);
+  PrefService* prefService = GetApplicationContext()->GetLocalState();
+  return prefService->GetTime(path);
 }
 
 + (void)setIntegerValue:(int)value forLocalStatePref:(NSString*)prefName {
@@ -1419,6 +1441,14 @@ NSString* SerializedValue(const base::Value* value) {
   [UIPasteboard.generalPasteboard setString:text];
 }
 
++ (void)copyLinkAsURLToPasteBoard:(NSString*)link {
+  [UIPasteboard.generalPasteboard setURL:[NSURL URLWithString:link]];
+}
+
++ (void)copyImageToPasteboard:(NSData*)imageData {
+  [UIPasteboard.generalPasteboard setImage:[UIImage imageWithData:imageData]];
+}
+
 #pragma mark - Watcher utilities
 
 // Delay between two watch cycles.
@@ -1466,8 +1496,9 @@ int watchRunNumber = 0;
       dispatch_time(DISPATCH_TIME_NOW, kWatcherCycleDelay.InNanoseconds()),
       background_queue, ^{
         dispatch_async(dispatch_get_main_queue(), ^{
-          if (!watchingButtons.count || runNumber != watchRunNumber)
+          if (!watchingButtons.count || runNumber != watchRunNumber) {
             return;
+          }
 
           NSMutableArray<UIWindow*>* windows = [[NSMutableArray alloc] init];
           for (UIScene* scene in UIApplication.sharedApplication
@@ -1493,8 +1524,9 @@ int watchRunNumber = 0;
 // Looks for a button (based on traits) with the given `label`,
 // recursively in the given `views`.
 + (void)findButtonsWithLabelsInViews:(NSArray<UIView*>*)views {
-  if (!watchingButtons.count)
+  if (!watchingButtons.count) {
     return;
+  }
 
   for (UIView* view in views) {
     [self buttonsWithLabelsMatchView:view];
@@ -1505,10 +1537,12 @@ int watchRunNumber = 0;
 // Checks if the given `view` is a button (based on traits) with the
 // given accessibility label.
 + (void)buttonsWithLabelsMatchView:(UIView*)view {
-  if (![view respondsToSelector:@selector(accessibilityLabel)])
+  if (![view respondsToSelector:@selector(accessibilityLabel)]) {
     return;
-  if (([view accessibilityTraits] & UIAccessibilityTraitButton) == 0)
+  }
+  if (([view accessibilityTraits] & UIAccessibilityTraitButton) == 0) {
     return;
+  }
   if ([watchingButtons containsObject:view.accessibilityLabel]) {
     [watchedButtons addObject:view.accessibilityLabel];
     [watchingButtons removeObject:view.accessibilityLabel];
@@ -1552,16 +1586,50 @@ int watchRunNumber = 0;
   return HasFirstRunSentinel();
 }
 
+#pragma mark - Notification Utilities
+
 + (void)requestTipsNotification:(TipsNotificationType)type {
   UNUserNotificationCenter* center =
       UNUserNotificationCenter.currentNotificationCenter;
 
+  std::string_view profileName =
+      chrome_test_util::GetOriginalProfile()->GetProfileName();
   UNNotificationRequest* request = [UNNotificationRequest
       requestWithIdentifier:kTipsNotificationId
-                    content:ContentForTipsNotificationType(type)
+                    content:ContentForTipsNotificationType(type, false,
+                                                           profileName)
                     trigger:nil];
 
   [center addNotificationRequest:request withCompletionHandler:nil];
+}
+
+#pragma mark - Variations Utilities
+
++ (void)overrideVariationsServiceStoredPermanentCountry:(NSString*)country {
+  std::string UTF8Country = base::SysNSStringToUTF8(country);
+  variations::VariationsService* variationsService =
+      GetApplicationContext()->GetVariationsService();
+  variationsService->OverrideStoredPermanentCountry(UTF8Country);
+}
+
+#pragma mark - Shared Tab Groups Utilities
+
++ (NSError*)waitForMessagingBackendServiceInitialized {
+  bool success = WaitUntilConditionOrTimeout(kWaitForMessagingBackend, ^bool {
+    ProfileIOS* profile = chrome_test_util::GetOriginalProfile();
+    CHECK(profile);
+    MessagingBackendService* service =
+        MessagingBackendServiceFactory::GetForProfile(profile);
+    CHECK(service);
+    return service->IsInitialized();
+  });
+  if (!success) {
+    NSString* NSErrorDescription = [NSString
+        stringWithFormat:
+            @"Failed waiting for MessagingBackendService to initialize"];
+    return testing::NSErrorWithLocalizedDescription(NSErrorDescription);
+  }
+  return nil;
 }
 
 @end

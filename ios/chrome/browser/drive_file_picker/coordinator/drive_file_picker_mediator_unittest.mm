@@ -6,7 +6,6 @@
 
 #import "base/test/metrics/histogram_tester.h"
 #import "base/test/scoped_feature_list.h"
-#import "base/test/task_environment.h"
 #import "components/image_fetcher/core/cached_image_fetcher.h"
 #import "components/image_fetcher/core/image_data_fetcher.h"
 #import "ios/chrome/browser/drive/model/drive_list.h"
@@ -25,9 +24,11 @@
 #import "ios/chrome/browser/signin/model/chrome_account_manager_service.h"
 #import "ios/chrome/browser/signin/model/chrome_account_manager_service_factory.h"
 #import "ios/chrome/browser/signin/model/fake_system_identity.h"
+#import "ios/chrome/browser/signin/model/identity_manager_factory.h"
 #import "ios/chrome/browser/web/model/choose_file/choose_file_tab_helper.h"
 #import "ios/chrome/browser/web/model/choose_file/fake_choose_file_controller.h"
 #import "ios/web/public/test/fakes/fake_web_state.h"
+#import "ios/web/public/test/web_task_environment.h"
 #import "services/network/public/cpp/weak_wrapper_shared_url_loader_factory.h"
 #import "services/network/test/test_url_loader_factory.h"
 #import "testing/gtest_mac.h"
@@ -238,6 +239,7 @@ class DriveFilePickerMediatorTest : public PlatformTest {
     scoped_feature_list_.InitAndEnableFeature(kIOSChooseFromDrive);
     profile_ = TestProfileIOS::Builder().Build();
     drive_service_ = drive::DriveServiceFactory::GetForProfile(profile_.get());
+    _identityManager = IdentityManagerFactory::GetForProfile(profile_.get());
     _accountManagerService =
         ChromeAccountManagerServiceFactory::GetForProfile(profile_.get());
     image_fetcher_ =
@@ -283,6 +285,7 @@ class DriveFilePickerMediatorTest : public PlatformTest {
               sortingCriteria:DriveItemsSortingType::kName
              sortingDirection:DriveItemsSortingOrder::kAscending
                  driveService:drive_service_
+              identityManager:_identityManager
         accountManagerService:_accountManagerService
                  imageFetcher:std::move(image_fetcher_)
                 metricsHelper:metrics_helper_];
@@ -313,7 +316,7 @@ class DriveFilePickerMediatorTest : public PlatformTest {
     PlatformTest::TearDown();
   }
 
-  using TaskEnvironment = base::test::TaskEnvironment;
+  using TaskEnvironment = web::WebTaskEnvironment;
   TaskEnvironment task_environment_{TaskEnvironment::TimeSource::MOCK_TIME};
   base::test::ScopedFeatureList scoped_feature_list_;
   NSMutableSet<NSString*>* images_pending_;
@@ -323,6 +326,7 @@ class DriveFilePickerMediatorTest : public PlatformTest {
   raw_ptr<ChooseFileTabHelper> choose_file_tab_helper_;
   raw_ptr<drive::DriveService> drive_service_;
   std::unique_ptr<TestProfileIOS> profile_;
+  raw_ptr<signin::IdentityManager> _identityManager;
   raw_ptr<ChromeAccountManagerService> _accountManagerService;
   network::TestURLLoaderFactory test_url_loader_factory_;
   scoped_refptr<network::SharedURLLoaderFactory> shared_factory_;

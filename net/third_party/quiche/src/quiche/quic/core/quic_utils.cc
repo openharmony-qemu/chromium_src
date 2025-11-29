@@ -23,8 +23,8 @@
 #include "quiche/quic/platform/api/quic_flag_utils.h"
 #include "quiche/quic/platform/api/quic_flags.h"
 #include "quiche/common/platform/api/quiche_logging.h"
-#include "quiche/common/platform/api/quiche_mem_slice.h"
 #include "quiche/common/quiche_endian.h"
+#include "quiche/common/quiche_mem_slice.h"
 
 namespace quic {
 namespace {
@@ -248,6 +248,7 @@ bool QuicUtils::IsRetransmittableFrame(QuicFrameType type) {
     case MTU_DISCOVERY_FRAME:
     case PATH_CHALLENGE_FRAME:
     case PATH_RESPONSE_FRAME:
+    case IMMEDIATE_ACK_FRAME:
       return false;
     default:
       return true;
@@ -508,13 +509,14 @@ bool QuicUtils::IsConnectionIdLengthValidForVersion(
 
 // static
 bool QuicUtils::IsConnectionIdValidForVersion(
-    QuicConnectionId connection_id, QuicTransportVersion transport_version) {
+    const QuicConnectionId& connection_id,
+    QuicTransportVersion transport_version) {
   return IsConnectionIdLengthValidForVersion(connection_id.length(),
                                              transport_version);
 }
 
 StatelessResetToken QuicUtils::GenerateStatelessResetToken(
-    QuicConnectionId connection_id) {
+    const QuicConnectionId& connection_id) {
   static_assert(sizeof(absl::uint128) == sizeof(StatelessResetToken),
                 "bad size");
   static_assert(alignof(absl::uint128) >= alignof(StatelessResetToken),

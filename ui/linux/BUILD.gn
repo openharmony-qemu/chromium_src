@@ -5,7 +5,7 @@
 import("//build/config/linux/gtk/gtk.gni")
 import("//ui/qt/qt.gni")
 
-assert(is_linux || is_ohos)
+assert(is_linux)
 
 component("linux_ui") {
   defines = [ "IS_LINUX_UI_IMPL" ]

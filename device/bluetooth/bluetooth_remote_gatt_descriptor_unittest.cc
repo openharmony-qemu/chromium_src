@@ -7,6 +7,8 @@
 #pragma allow_unsafe_buffers
 #endif
 
+#include <array>
+
 #include "base/logging.h"
 #include "base/memory/raw_ptr.h"
 #include "base/run_loop.h"
@@ -27,8 +29,6 @@
 #include "device/bluetooth/test/bluetooth_test_bluez.h"
 #elif BUILDFLAG(IS_FUCHSIA)
 #include "device/bluetooth/test/bluetooth_test_fuchsia.h"
-#elif BUILDFLAG(IS_OHOS)
-#include "device/bluetooth/test/bluetooth_test_ohos.h"
 #endif
 
 namespace device {
@@ -377,8 +377,10 @@ TEST_F(BluetoothRemoteGattDescriptorTest, MAYBE_ReadRemoteDescriptor) {
       GetReadValueCallback(Call::EXPECTED, Result::SUCCESS));
   EXPECT_EQ(1, gatt_read_descriptor_attempts_);
 
-  uint8_t values[] = {0, 1, 2, 3, 4, 0xf, 0xf0, 0xff};
-  std::vector<uint8_t> test_vector(values, values + std::size(values));
+  auto values = std::to_array<uint8_t>({0, 1, 2, 3, 4, 0xf, 0xf0, 0xff});
+  std::vector<uint8_t> test_vector(
+      values.data(),
+      base::span<uint8_t>(values).subspan(std::size(values)).data());
   SimulateGattDescriptorRead(descriptor1_, test_vector);
   base::RunLoop().RunUntilIdle();
 
@@ -404,8 +406,10 @@ TEST_F(BluetoothRemoteGattDescriptorTest, MAYBE_WriteRemoteDescriptor) {
 #endif
   ASSERT_NO_FATAL_FAILURE(FakeDescriptorBoilerplate());
 
-  uint8_t values[] = {0, 1, 2, 3, 4, 0xf, 0xf0, 0xff};
-  std::vector<uint8_t> test_vector(values, values + std::size(values));
+  auto values = std::to_array<uint8_t>({0, 1, 2, 3, 4, 0xf, 0xf0, 0xff});
+  std::vector<uint8_t> test_vector(
+      values.data(),
+      base::span<uint8_t>(values).subspan(std::size(values)).data());
   descriptor1_->WriteRemoteDescriptor(test_vector, GetCallback(Call::EXPECTED),
                                       GetGattErrorCallback(Call::NOT_EXPECTED));
   EXPECT_EQ(1, gatt_write_descriptor_attempts_);
@@ -433,8 +437,10 @@ TEST_F(BluetoothRemoteGattDescriptorTest, MAYBE_ReadRemoteDescriptor_Twice) {
       GetReadValueCallback(Call::EXPECTED, Result::SUCCESS));
   EXPECT_EQ(1, gatt_read_descriptor_attempts_);
 
-  uint8_t values[] = {0, 1, 2, 3, 4, 0xf, 0xf0, 0xff};
-  std::vector<uint8_t> test_vector(values, values + std::size(values));
+  auto values = std::to_array<uint8_t>({0, 1, 2, 3, 4, 0xf, 0xf0, 0xff});
+  std::vector<uint8_t> test_vector(
+      values.data(),
+      base::span<uint8_t>(values).subspan(std::size(values)).data());
   SimulateGattDescriptorRead(descriptor1_, test_vector);
   base::RunLoop().RunUntilIdle();
   EXPECT_EQ(1, callback_count_);
@@ -469,8 +475,10 @@ TEST_F(BluetoothRemoteGattDescriptorTest, MAYBE_WriteRemoteDescriptor_Twice) {
 #endif
   ASSERT_NO_FATAL_FAILURE(FakeDescriptorBoilerplate());
 
-  uint8_t values[] = {0, 1, 2, 3, 4, 0xf, 0xf0, 0xff};
-  std::vector<uint8_t> test_vector(values, values + std::size(values));
+  auto values = std::to_array<uint8_t>({0, 1, 2, 3, 4, 0xf, 0xf0, 0xff});
+  std::vector<uint8_t> test_vector(
+      values.data(),
+      base::span<uint8_t>(values).subspan(std::size(values)).data());
   descriptor1_->WriteRemoteDescriptor(test_vector, GetCallback(Call::EXPECTED),
                                       GetGattErrorCallback(Call::NOT_EXPECTED));
   EXPECT_EQ(1, gatt_write_descriptor_attempts_);

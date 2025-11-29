@@ -4,7 +4,7 @@
 
 import("//testing/test.gni")
 assert(is_win || is_mac || is_linux || is_chromeos || is_android ||
-       is_fuchsia || is_ios || is_ohos)
+       is_fuchsia || is_ios)
 
 component("menus") {
   sources = [
@@ -18,6 +18,13 @@ component("menus") {
       "cocoa/menu_controller.mm",
       "cocoa/text_services_context_menu.h",
       "cocoa/text_services_context_menu.mm",
+    ]
+  }
+
+  if (is_android) {
+    sources += [
+      "android/menu_model_bridge.cc",
+      "android/menu_model_bridge.h",
     ]
   }
 
@@ -44,6 +51,10 @@ component("menus") {
       "QuartzCore.framework",
     ]
   }
+
+  if (is_android) {
+    public_deps += [ "//ui/android:menu_model_bridge_jni_headers" ]
+  }
 }
 
 source_set("unit_tests") {
@@ -58,6 +69,7 @@ source_set("unit_tests") {
     ":menus",
     "//testing/gmock",
     "//testing/gtest",
+    "//ui/color",
     "//ui/gfx",
     "//ui/gfx:test_support",
   ]
@@ -68,9 +80,5 @@ source_set("unit_tests") {
       "//ui/base:test_support",
       "//ui/events:test_support",
     ]
-  }
-
-  if (use_blink) {
-    deps += [ "//ui/color" ]
   }
 }

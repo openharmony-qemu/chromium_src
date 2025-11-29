@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "base/base64.h"
+#include "base/compiler_specific.h"
 #include "base/feature_list.h"
 #include "base/memory/ref_counted.h"
 #include "base/metrics/histogram_macros.h"
@@ -107,14 +108,6 @@ class RedirectResponseURLLoader : public network::mojom::URLLoader {
                    int intra_priority_value) override {
     // There is nothing to do, because this class just calls OnReceiveRedirect.
   }
-  void PauseReadingBodyFromNet() override {
-    // There is nothing to do, because we don't fetch the resource from the
-    // network.
-  }
-  void ResumeReadingBodyFromNet() override {
-    // There is nothing to do, because we don't fetch the resource from the
-    // network.
-  }
 
   mojo::Remote<network::mojom::URLLoaderClient> client_;
 };
@@ -198,6 +191,7 @@ class PrefetchedNavigationLoaderInterceptor
         *request.trusted_params->isolation_info.top_frame_origin(),
         request.storage_access_api_status, std::move(match_options),
         request.is_ad_tagged,
+        /*apply_devtools_overrides=*/false,
         /*force_disable_third_party_cookies=*/false,
         base::BindOnce(&PrefetchedNavigationLoaderInterceptor::OnGetCookies,
                        weak_factory_.GetWeakPtr(), std::move(callback)));
@@ -339,10 +333,10 @@ bool ExtractSHA256HashValueFromString(std::string_view value,
   const std::string_view base64_str = value.substr(7);
   std::string decoded;
   if (!base::Base64Decode(base64_str, &decoded) ||
-      decoded.size() != sizeof(out->data)) {
+      decoded.size() != out->size()) {
     return false;
   }
-  memcpy(out->data, decoded.data(), sizeof(out->data));
+  UNSAFE_TODO(memcpy(out->data(), decoded.data(), out->size()));
   return true;
 }
 
@@ -358,10 +352,10 @@ std::map<GURL, net::SHA256HashValue> GetAllowedAltSXG(
     return result;
 
   for (const auto& value : link_header_util::SplitLinkHeader(link_header)) {
-    std::string link_url;
     std::unordered_map<std::string, std::optional<std::string>> link_params;
-    if (!link_header_util::ParseLinkHeaderValue(value.first, value.second,
-                                                &link_url, &link_params)) {
+    std::optional<std::string> link_url =
+        link_header_util::ParseLinkHeaderValue(value, link_params);
+    if (!link_url) {
       continue;
     }
 
@@ -375,7 +369,7 @@ std::map<GURL, net::SHA256HashValue> GetAllowedAltSXG(
             &header_integrity_value)) {
       continue;
     }
-    result[main_exchange.inner_url().Resolve(link_url)] =
+    result[main_exchange.inner_url().Resolve(*link_url)] =
         header_integrity_value;
   }
   return result;
@@ -449,13 +443,18 @@ PrefetchedSignedExchangeCache::MaybeCreateInterceptor(
             network::mojom::RestrictedCookieManagerRole::NETWORK,
             inner_url_origin, inner_url_isolation_info,
             /* is_service_worker = */ false,
-            render_frame_host ? render_frame_host->GetProcess()->GetID() : -1,
+            render_frame_host
+                ? render_frame_host->GetProcess()->GetDeprecatedID()
+                : -1,
             render_frame_host ? render_frame_host->GetRoutingID()
                               : MSG_ROUTING_NONE,
+            /*cookie_setting_overrides=*/
             render_frame_host ? render_frame_host->GetCookieSettingOverrides()
                               : net::CookieSettingOverrides(),
+            /*devtools_cookie_setting_overrides=*/net::CookieSettingOverrides(),
             cookie_manager.BindNewPipeAndPassReceiver(),
-            render_frame_host ? render_frame_host->CreateCookieAccessObserver()
+            render_frame_host ? render_frame_host->CreateCookieAccessObserver(
+                                    CookieAccessDetails::Source::kNonNavigation)
                               : mojo::NullRemote());
   }
 

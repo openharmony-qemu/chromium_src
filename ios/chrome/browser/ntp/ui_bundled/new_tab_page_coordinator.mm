@@ -22,19 +22,30 @@
 #import "components/pref_registry/pref_registry_syncable.h"
 #import "components/prefs/pref_service.h"
 #import "components/search/search.h"
+#import "components/search_engines/template_url_service.h"
 #import "components/signin/public/base/signin_metrics.h"
 #import "components/signin/public/identity_manager/objc/identity_manager_observer_bridge.h"
 #import "components/signin/public/identity_manager/tribool.h"
-#import "components/supervised_user/core/common/features.h"
 #import "components/sync/service/sync_service.h"
 #import "ios/chrome/app/profile/profile_init_stage.h"
 #import "ios/chrome/app/profile/profile_state.h"
 #import "ios/chrome/app/profile/profile_state_observer.h"
+#import "ios/chrome/browser/authentication/ui_bundled/account_menu/account_menu_constants.h"
+#import "ios/chrome/browser/authentication/ui_bundled/account_menu/account_menu_coordinator.h"
+#import "ios/chrome/browser/authentication/ui_bundled/account_menu/account_menu_coordinator_delegate.h"
+#import "ios/chrome/browser/authentication/ui_bundled/continuation.h"
+#import "ios/chrome/browser/authentication/ui_bundled/enterprise/enterprise_utils.h"
+#import "ios/chrome/browser/authentication/ui_bundled/signin/signin_coordinator.h"
 #import "ios/chrome/browser/bubble/ui_bundled/bubble_view_controller_presenter.h"
+#import "ios/chrome/browser/content_suggestions/ui_bundled/content_suggestions_collection_utils.h"
+#import "ios/chrome/browser/content_suggestions/ui_bundled/content_suggestions_coordinator.h"
+#import "ios/chrome/browser/content_suggestions/ui_bundled/content_suggestions_delegate.h"
+#import "ios/chrome/browser/content_suggestions/ui_bundled/content_suggestions_mediator.h"
 #import "ios/chrome/browser/context_menu/ui_bundled/link_preview/link_preview_coordinator.h"
 #import "ios/chrome/browser/discover_feed/model/discover_feed_observer_bridge.h"
 #import "ios/chrome/browser/discover_feed/model/discover_feed_service.h"
 #import "ios/chrome/browser/discover_feed/model/discover_feed_service_factory.h"
+#import "ios/chrome/browser/discover_feed/model/discover_feed_visibility_observer.h"
 #import "ios/chrome/browser/discover_feed/model/feed_constants.h"
 #import "ios/chrome/browser/discover_feed/model/feed_model_configuration.h"
 #import "ios/chrome/browser/feature_engagement/model/tracker_factory.h"
@@ -52,12 +63,9 @@
 #import "ios/chrome/browser/ntp/shared/metrics/new_tab_page_metrics_constants.h"
 #import "ios/chrome/browser/ntp/shared/metrics/new_tab_page_metrics_recorder.h"
 #import "ios/chrome/browser/ntp/ui_bundled/discover_feed_constants.h"
-#import "ios/chrome/browser/ntp/ui_bundled/discover_feed_manage_delegate.h"
 #import "ios/chrome/browser/ntp/ui_bundled/discover_feed_preview_delegate.h"
 #import "ios/chrome/browser/ntp/ui_bundled/feed_control_delegate.h"
 #import "ios/chrome/browser/ntp/ui_bundled/feed_header_view_controller.h"
-#import "ios/chrome/browser/ntp/ui_bundled/feed_management/feed_management_coordinator.h"
-#import "ios/chrome/browser/ntp/ui_bundled/feed_menu_coordinator.h"
 #import "ios/chrome/browser/ntp/ui_bundled/feed_sign_in_promo_delegate.h"
 #import "ios/chrome/browser/ntp/ui_bundled/feed_top_section/feed_top_section_coordinator.h"
 #import "ios/chrome/browser/ntp/ui_bundled/feed_wrapper_view_controller.h"
@@ -83,8 +91,8 @@
 #import "ios/chrome/browser/shared/coordinator/scene/scene_state.h"
 #import "ios/chrome/browser/shared/model/application_context/application_context.h"
 #import "ios/chrome/browser/shared/model/browser/browser.h"
-#import "ios/chrome/browser/shared/model/prefs/pref_backed_boolean.h"
 #import "ios/chrome/browser/shared/model/prefs/pref_names.h"
+#import "ios/chrome/browser/shared/model/profile/features.h"
 #import "ios/chrome/browser/shared/model/profile/profile_ios.h"
 #import "ios/chrome/browser/shared/model/web_state_list/web_state_list.h"
 #import "ios/chrome/browser/shared/public/commands/application_commands.h"
@@ -100,6 +108,8 @@
 #import "ios/chrome/browser/shared/ui/util/layout_guide_names.h"
 #import "ios/chrome/browser/shared/ui/util/snackbar_util.h"
 #import "ios/chrome/browser/shared/ui/util/util_swift.h"
+#import "ios/chrome/browser/sharing/ui_bundled/sharing_coordinator.h"
+#import "ios/chrome/browser/sharing/ui_bundled/sharing_params.h"
 #import "ios/chrome/browser/signin/model/authentication_service.h"
 #import "ios/chrome/browser/signin/model/authentication_service_factory.h"
 #import "ios/chrome/browser/signin/model/authentication_service_observer_bridge.h"
@@ -110,17 +120,10 @@
 #import "ios/chrome/browser/signin/model/system_identity_manager.h"
 #import "ios/chrome/browser/supervised_user/model/family_link_user_capabilities_observer_bridge.h"
 #import "ios/chrome/browser/sync/model/sync_service_factory.h"
-#import "ios/chrome/browser/ui/authentication/account_menu/account_menu_coordinator.h"
-#import "ios/chrome/browser/ui/authentication/enterprise/enterprise_utils.h"
-#import "ios/chrome/browser/ui/content_suggestions/content_suggestions_collection_utils.h"
-#import "ios/chrome/browser/ui/content_suggestions/content_suggestions_coordinator.h"
-#import "ios/chrome/browser/ui/content_suggestions/content_suggestions_delegate.h"
-#import "ios/chrome/browser/ui/content_suggestions/content_suggestions_mediator.h"
-#import "ios/chrome/browser/ui/sharing/sharing_coordinator.h"
-#import "ios/chrome/browser/ui/sharing/sharing_params.h"
-#import "ios/chrome/browser/ui/toolbar/public/fakebox_focuser.h"
-#import "ios/chrome/browser/ui/toolbar/tab_groups/coordinator/tab_group_indicator_coordinator.h"
+#import "ios/chrome/browser/toolbar/ui_bundled/public/fakebox_focuser.h"
+#import "ios/chrome/browser/toolbar/ui_bundled/tab_groups/coordinator/tab_group_indicator_coordinator.h"
 #import "ios/chrome/browser/url_loading/model/url_loading_browser_agent.h"
+#import "ios/chrome/common/NSString+Chromium.h"
 #import "ios/chrome/common/material_timing.h"
 #import "ios/chrome/common/ui/util/constraints_ui_util.h"
 #import "ios/chrome/grit/ios_branded_strings.h"
@@ -132,14 +135,13 @@
 #import "ios/web/public/web_state_observer_bridge.h"
 #import "ui/base/l10n/l10n_util_mac.h"
 
-@interface NewTabPageCoordinator () <AuthenticationServiceObserving,
-                                     BooleanObserver,
+@interface NewTabPageCoordinator () <AccountMenuCoordinatorDelegate,
+                                     AuthenticationServiceObserving,
                                      ContentSuggestionsDelegate,
-                                     DiscoverFeedManageDelegate,
                                      DiscoverFeedObserverBridgeDelegate,
                                      DiscoverFeedPreviewDelegate,
+                                     DiscoverFeedVisibilityObserver,
                                      FeedControlDelegate,
-                                     FeedMenuCoordinatorDelegate,
                                      FeedSignInPromoDelegate,
                                      FeedWrapperViewControllerDelegate,
                                      HomeCustomizationDelegate,
@@ -208,10 +210,6 @@
 // PrefService used by this Coordinator.
 @property(nonatomic, assign) PrefService* prefService;
 
-// Whether the feed is expanded or collapsed. Collapsed
-// means the feed header is shown, but not any of the feed content.
-@property(nonatomic, strong) PrefBackedBoolean* feedExpandedPref;
-
 // The view controller representing the selected feed, such as the Discover or
 // Following feed.
 @property(nonatomic, weak) UIViewController* feedViewController;
@@ -222,9 +220,6 @@
 
 // The view controller representing the NTP feed header.
 @property(nonatomic, strong) FeedHeaderViewController* feedHeaderViewController;
-
-// Coordinator for handling the feed menu.
-@property(nonatomic, strong) FeedMenuCoordinator* feedMenuCoordinator;
 
 // Authentication Service for the user's signed-in state.
 @property(nonatomic, assign) AuthenticationService* authService;
@@ -241,10 +236,6 @@
 // The header view controller containing the fake omnibox and logo.
 @property(nonatomic, strong)
     NewTabPageHeaderViewController* headerViewController;
-
-// The coordinator for handling feed management.
-@property(nonatomic, strong)
-    FeedManagementCoordinator* feedManagementCoordinator;
 
 // Coordinator for Feed top section.
 @property(nonatomic, strong)
@@ -281,10 +272,10 @@
   TabGroupIndicatorCoordinator* _tabGroupIndicatorCoordinator;
   // Indicates whether the fakebox was tapped as part of an omnibox focus event.
   BOOL _fakeboxTapped;
-  // Whether the account menu is displayed on top of this NTP.
-  BOOL _showAccountMenuInProgress;
-  // Whether the signin menu is displayed on top of this NTP.
-  BOOL _showSigninCommandInProgress;
+  // The account menu coordinator.
+  AccountMenuCoordinator* _accountMenuCoordinator;
+  // The sign in and history sync coordinator displayed on top of the NTP.
+  SigninCoordinator* _signinCoordinator;
 }
 
 // Synthesize NewTabPageConfiguring properties.
@@ -324,7 +315,7 @@
   [sceneState addObserver:self];
 
   // Configures incognito NTP if user is in incognito mode.
-  if (self.browser->GetProfile()->IsOffTheRecord()) {
+  if (self.isOffTheRecord) {
     DCHECK(!self.incognitoViewController);
     UrlLoadingBrowserAgent* URLLoader =
         UrlLoadingBrowserAgent::FromBrowser(self.browser);
@@ -356,23 +347,15 @@
   }
 
   // Update the feed if the account is subject to parental controls.
-  if (base::FeatureList::IsEnabled(
-          supervised_user::
-              kReplaceSupervisionSystemCapabilitiesWithAccountCapabilitiesOnIOS)) {
-    signin::IdentityManager* identityManager =
-        IdentityManagerFactory::GetForProfile(self.browser->GetProfile());
-    signin::Tribool capability =
-        supervised_user::IsPrimaryAccountSubjectToParentalControls(
-            identityManager);
-    [self
-        updateFeedWithIsSupervisedUser:(capability == signin::Tribool::kTrue)];
-  } else {
-    // Update asynchronously using system capabilities.
-    [self updateFeedVisibilityForSupervision];
-  }
+  signin::IdentityManager* identityManager =
+      IdentityManagerFactory::GetForProfile(self.profile);
+  signin::Tribool capability =
+      supervised_user::IsPrimaryAccountSubjectToParentalControls(
+          identityManager);
+  [self updateFeedWithIsSupervisedUser:(capability == signin::Tribool::kTrue)];
 
   [self configureNTPMediator];
-  if (self.NTPMediator.feedHeaderVisible) {
+  if ([self.NTPMediator isFeedHeaderVisible]) {
     [self configureFeedAndHeader];
   }
   [self configureHeaderViewController];
@@ -396,7 +379,7 @@
   SceneState* sceneState = self.browser->GetSceneState();
   [sceneState removeObserver:self];
 
-  if (self.browser->GetProfile()->IsOffTheRecord()) {
+  if (self.isOffTheRecord) {
     self.incognitoViewController = nil;
     self.started = NO;
     return;
@@ -410,8 +393,6 @@
   [_tabGroupIndicatorCoordinator stop];
   _tabGroupIndicatorCoordinator = nil;
 
-  [self.feedManagementCoordinator stop];
-  self.feedManagementCoordinator = nil;
   [self.contentSuggestionsCoordinator stop];
   self.contentSuggestionsCoordinator = nil;
   self.headerViewController = nil;
@@ -427,6 +408,8 @@
   self.feedHeaderViewController = nil;
   [self.feedTopSectionCoordinator stop];
   self.feedTopSectionCoordinator = nil;
+  [self stopAccountMenuCoordinator];
+  [self stopSigninCoordinator];
 
   self.NTPMetricsRecorder = nil;
 
@@ -449,19 +432,11 @@
   self.feedMetricsRecorder.NTPActionsDelegate = nil;
   self.feedMetricsRecorder = nil;
 
-  [self.feedExpandedPref setObserver:nil];
-  self.feedExpandedPref = nil;
-
-  [self.feedMenuCoordinator stop];
-  self.feedMenuCoordinator = nil;
-
   _familyLinkUserCapabilitiesObserverBridge.reset();
   _discoverFeedObserverBridge.reset();
   _identityObserverBridge.reset();
   _authServiceObserverBridge.reset();
-
-  [_sharingCoordinator stop];
-  _sharingCoordinator = nil;
+  [self clearPresentedState];
 
   [_customizationCoordinator stop];
   _customizationCoordinator = nil;
@@ -506,15 +481,13 @@
 }
 
 - (void)focusFakebox {
-  if (IsHomeCustomizationEnabled()) {
-    [self dismissCustomizationMenu];
-  }
+  [self dismissCustomizationMenu];
   _fakeboxTapped = NO;
   [self.NTPViewController focusOmnibox];
 }
 
 - (void)reload {
-  if (self.browser->GetProfile()->IsOffTheRecord()) {
+  if (self.isOffTheRecord) {
     return;
   }
   [self.contentSuggestionsCoordinator refresh];
@@ -539,15 +512,12 @@
 }
 
 - (void)constrainNamedGuideForFeedIPH {
-  if (self.browser->GetProfile()->IsOffTheRecord()) {
+  if (self.isOffTheRecord) {
     return;
   }
-  UIView* viewToConstrain =
-      IsHomeCustomizationEnabled()
-          ? [self.headerViewController customizationMenuButton]
-          : self.feedHeaderViewController.managementButton;
-  [LayoutGuideCenterForBrowser(self.browser) referenceView:viewToConstrain
-                                                 underName:kFeedIPHNamedGuide];
+  [LayoutGuideCenterForBrowser(self.browser)
+      referenceView:[self.headerViewController customizationMenuButton]
+          underName:kFeedIPHNamedGuide];
 }
 
 - (void)updateFollowingFeedHasUnseenContent:(BOOL)hasUnseenContent {
@@ -577,9 +547,7 @@
 
 - (void)didNavigateAwayFromNTP {
   [self cancelOmniboxEdit];
-  if (IsHomeCustomizationEnabled()) {
-    [self dismissCustomizationMenu];
-  }
+  [self dismissCustomizationMenu];
   [self saveNTPState];
   [self updateNTPIsVisible:NO];
   [self updateStartForVisibilityChange:NO];
@@ -587,7 +555,7 @@
 }
 
 - (BOOL)isFakeboxPinned {
-  if (self.browser->GetProfile()->IsOffTheRecord()) {
+  if (self.isOffTheRecord) {
     return YES;
   }
   return self.NTPViewController.isFakeboxPinned;
@@ -609,6 +577,17 @@
   [self presentLensIconBubbleNow];
 }
 
+- (BOOL)isFeedVisible {
+  return [self.NTPMediator isFeedHeaderVisible] && self.feedViewController;
+}
+
+- (void)clearPresentedState {
+  [self.contentSuggestionsCoordinator clearPresentedState];
+  [self stopSharingCoordinator];
+  [self stopAccountMenuCoordinator];
+  [self stopSigninCoordinator];
+}
+
 #pragma mark - Setters
 
 - (void)setSelectedFeed:(FeedType)selectedFeed {
@@ -627,7 +606,7 @@
 
 // Gets all NTP services from the profile.
 - (void)initializeServices {
-  ProfileIOS* profile = self.browser->GetProfile();
+  ProfileIOS* profile = self.profile;
   self.authService = AuthenticationServiceFactory::GetForProfile(profile);
   self.templateURLService =
       ios::TemplateURLServiceFactory::GetForProfile(profile);
@@ -640,15 +619,9 @@
   DCHECK(self.prefService);
   DCHECK(self.headerViewController);
 
-  self.feedExpandedPref = [[PrefBackedBoolean alloc]
-      initWithPrefService:self.prefService
-                 prefName:feed::prefs::kArticlesListVisible];
-  // Observer is necessary for multiwindow NTPs to remain in sync.
-  [self.feedExpandedPref setObserver:self];
-
   // Start observing IdentityManager.
   signin::IdentityManager* identityManager =
-      IdentityManagerFactory::GetForProfile(self.browser->GetProfile());
+      IdentityManagerFactory::GetForProfile(self.profile);
   _identityObserverBridge =
       std::make_unique<signin::IdentityManagerObserverBridge>(identityManager,
                                                               self);
@@ -675,8 +648,7 @@
       self.componentFactory;
   self.logoVendor = ios::provider::CreateLogoVendor(browser, self.webState);
   self.NTPViewController = [componentFactory NTPViewController];
-  self.headerViewController =
-      [componentFactory headerViewControllerForBrowser:browser];
+  self.headerViewController = [componentFactory headerViewController];
   self.NTPMediator =
       [componentFactory NTPMediatorForBrowser:browser
                      identityDiscImageUpdater:self.headerViewController];
@@ -691,19 +663,12 @@
 
 // Creates and configures the feed and feed header based on user prefs.
 - (void)configureFeedAndHeader {
-  CHECK(self.NTPMediator.feedHeaderVisible);
+  CHECK([self.NTPMediator isFeedHeaderVisible]);
   CHECK(self.NTPViewController);
 
   if (!self.feedHeaderViewController) {
     self.feedHeaderViewController =
         [self.componentFactory feedHeaderViewController];
-    self.feedMenuCoordinator = [[FeedMenuCoordinator alloc]
-        initWithBaseViewController:self.NTPViewController
-                           browser:self.browser];
-    self.feedMenuCoordinator.delegate = self;
-    [self.feedMenuCoordinator start];
-    self.feedHeaderViewController.feedMenuHandler = HandlerForProtocol(
-        self.browser->GetCommandDispatcher(), FeedMenuCommands);
   }
 
   self.feedHeaderViewController.feedControlDelegate = self;
@@ -717,7 +682,7 @@
       self.feedHeaderViewController;
 
   // Requests feeds here if the correct flags and prefs are enabled.
-  if ([self shouldFeedBeVisible]) {
+  if ([self.NTPMediator isFeedHeaderVisible]) {
     if ([self isFollowingFeedAvailable] &&
         self.selectedFeed == FeedTypeFollowing) {
       self.feedViewController = [self.componentFactory
@@ -740,30 +705,39 @@
 
 // Configures `self.headerViewController`.
 - (void)configureHeaderViewController {
-  DCHECK(self.headerViewController);
+  NewTabPageHeaderViewController* headerViewController =
+      self.headerViewController;
+  DCHECK(headerViewController);
   DCHECK(self.NTPMediator);
   DCHECK(self.NTPMetricsRecorder);
 
-  self.headerViewController.isGoogleDefaultSearchEngine =
+  headerViewController.isGoogleDefaultSearchEngine =
       [self isGoogleDefaultSearchEngine];
-  // TODO(crbug.com/40670043): Use HandlerForProtocol after commands protocol
-  // clean up.
-  self.headerViewController.dispatcher =
-      static_cast<id<ApplicationCommands, BrowserCoordinatorCommands,
-                     OmniboxCommands, FakeboxFocuser, LensCommands>>(
-          self.browser->GetCommandDispatcher());
-  self.headerViewController.commandHandler = self;
-  self.headerViewController.customizationDelegate = self;
-  self.headerViewController.delegate = self.NTPViewController;
-  self.headerViewController.layoutGuideCenter =
+
+  CommandDispatcher* dispatcher = self.browser->GetCommandDispatcher();
+  headerViewController.fakeboxFocuserHandler =
+      HandlerForProtocol(dispatcher, FakeboxFocuser);
+  headerViewController.lensHandler =
+      HandlerForProtocol(dispatcher, LensCommands);
+  headerViewController.applicationHandler =
+      HandlerForProtocol(dispatcher, ApplicationCommands);
+  headerViewController.browserCoordinatorHandler =
+      HandlerForProtocol(dispatcher, BrowserCoordinatorCommands);
+  headerViewController.helpHandler =
+      HandlerForProtocol(dispatcher, HelpCommands);
+
+  headerViewController.commandHandler = self;
+  headerViewController.customizationDelegate = self;
+  headerViewController.delegate = self.NTPViewController;
+  headerViewController.layoutGuideCenter =
       LayoutGuideCenterForBrowser(self.browser);
-  self.headerViewController.toolbarDelegate = self.toolbarDelegate;
-  self.headerViewController.baseViewController = self.baseViewController;
-  self.headerViewController.NTPMetricsRecorder = self.NTPMetricsRecorder;
-  [self.headerViewController setLogoVendor:self.logoVendor];
+  headerViewController.toolbarDelegate = self.toolbarDelegate;
+  headerViewController.baseViewController = self.baseViewController;
+  headerViewController.NTPMetricsRecorder = self.NTPMetricsRecorder;
+  [headerViewController setLogoVendor:self.logoVendor];
 }
 
-// Configures `self.contentSuggestionsCoordiantor`.
+// Configures `self.contentSuggestionsCoordinator`.
 - (void)configureContentSuggestionsCoordinator {
   self.contentSuggestionsCoordinator.webState = self.webState;
   self.contentSuggestionsCoordinator.delegate = self;
@@ -777,6 +751,7 @@
 - (void)configureNTPMediator {
   NewTabPageMediator* NTPMediator = self.NTPMediator;
   DCHECK(NTPMediator);
+  NTPMediator.feedVisibilityObserver = self;
   NTPMediator.feedControlDelegate = self;
   NTPMediator.NTPContentDelegate = self;
   NTPMediator.headerConsumer = self.headerViewController;
@@ -808,6 +783,8 @@
   self.feedWrapperViewController = [self.componentFactory
       feedWrapperViewControllerWithDelegate:self
                          feedViewController:self.feedViewController];
+  self.NTPMediator.contentCollectionView =
+      self.feedWrapperViewController.contentCollectionView;
 
   if ([self isFeedVisible]) {
     self.NTPViewController.feedTopSectionViewController =
@@ -864,7 +841,7 @@
 
 - (UIViewController*)viewController {
   DCHECK(self.started);
-  if (self.browser->GetProfile()->IsOffTheRecord()) {
+  if (self.isOffTheRecord) {
     return self.incognitoViewController;
   } else {
     return self.containerViewController;
@@ -889,21 +866,17 @@
 }
 
 - (void)fakeboxTapped {
-  if (IsHomeCustomizationEnabled()) {
-    [self dismissCustomizationMenu];
-  }
+  [self dismissCustomizationMenu];
   _fakeboxTapped = YES;
   [self.NTPViewController focusOmnibox];
 }
 
 - (void)identityDiscWasTapped:(UIView*)identityDisc {
-  if (_showAccountMenuInProgress || _showSigninCommandInProgress) {
+  if (_accountMenuCoordinator || _signinCoordinator) {
     // Double tap, or tap before dismissing of the previous one is complete.
     return;
   }
-  if (IsHomeCustomizationEnabled()) {
-    [self dismissCustomizationMenu];
-  }
+  [self dismissCustomizationMenu];
   [self.NTPMetricsRecorder recordIdentityDiscTapped];
   id<ApplicationCommands> handler = HandlerForProtocol(
       self.browser->GetCommandDispatcher(), ApplicationCommands);
@@ -913,33 +886,34 @@
   if (![self isSignInAllowed]) {
     [handler showSettingsFromViewController:self.baseViewController];
   } else if (isSignedIn) {
-    if (base::FeatureList::IsEnabled(kIdentityDiscAccountMenu)) {
-      _showAccountMenuInProgress = YES;
-      __weak __typeof(self) weakSelf = self;
-      [handler showAccountMenuWithAnchorView:identityDisc
-                                  completion:^{
-                                    [weakSelf showAccountMenuDidFinish];
-                                  }];
-
+    if (IsIdentityDiscAccountMenuEnabled()) {
+      [self showAccountMenu:identityDisc];
     } else {
       [handler showSettingsFromViewController:self.baseViewController];
     }
   } else {
     __weak __typeof(self) weakSelf = self;
-    _showSigninCommandInProgress = YES;
-    ShowSigninCommand* const showSigninCommand = [[ShowSigninCommand alloc]
-        initWithOperation:AuthenticationOperation::kSheetSigninAndHistorySync
-                 identity:nil
-              accessPoint:signin_metrics::AccessPoint::
-                              ACCESS_POINT_NTP_SIGNED_OUT_ICON
-              promoAction:signin_metrics::PromoAction::
-                              PROMO_ACTION_NO_SIGNIN_PROMO
-               completion:^(SigninCoordinatorResult result,
-                            SigninCompletionInfo* info) {
-                 [weakSelf showSigninCommandDidFinish];
-               }];
-    [handler showSignin:showSigninCommand
-        baseViewController:self.baseViewController];
+    auto accessPoint = signin_metrics::AccessPoint::kNtpSignedOutIcon;
+    auto promoAction =
+        signin_metrics::PromoAction::PROMO_ACTION_NO_SIGNIN_PROMO;
+    _signinCoordinator = [SigninCoordinator
+        signinAndHistorySyncCoordinatorWithBaseViewController:
+            self.baseViewController
+                                                      browser:self.browser
+                                                 contextStyle:
+                                                     SigninContextStyle::
+                                                         kDefault
+                                                  accessPoint:accessPoint
+                                                  promoAction:promoAction
+                                          optionalHistorySync:YES
+                                              fullscreenPromo:NO
+                                         continuationProvider:
+                                             DoNothingContinuationProvider()];
+    _signinCoordinator.signinCompletion = ^(
+        SigninCoordinatorResult result, id<SystemIdentity> completionIdentity) {
+      [weakSelf showSigninCommandDidFinish];
+    };
+    [_signinCoordinator start];
   }
 }
 
@@ -951,15 +925,16 @@
     return;
   }
 
-  if (self.prefService->GetInteger(
+  PrefService* localState = GetApplicationContext()->GetLocalState();
+  if (localState->GetInteger(
           prefs::kNTPHomeCustomizationNewBadgeImpressionCount) <=
       kCustomizationNewBadgeMaxImpressionCount) {
     base::RecordAction(
         base::UserMetricsAction(kNTPCustomizationNewBadgeTappedAction));
     // Set the new badge impression count to `INT_MAX` to ensure it isn't shown
     // again, even if we increase the max impression count.
-    self.prefService->SetInteger(
-        prefs::kNTPHomeCustomizationNewBadgeImpressionCount, INT_MAX);
+    localState->SetInteger(prefs::kNTPHomeCustomizationNewBadgeImpressionCount,
+                           INT_MAX);
 
     [self.headerViewController hideBadgeOnCustomizationMenu];
   }
@@ -970,35 +945,16 @@
   [self openCustomizationMenuAtPage:CustomizationMenuPage::kMain animated:YES];
 }
 
-#pragma mark - FeedMenuCoordinatorDelegate
+#pragma mark - DiscoverFeedVisibilityObserver
 
-- (void)didSelectFeedMenuItem:(FeedMenuItemType)item {
-  switch (item) {
-    case FeedMenuItemType::kTurnOff:
-      [self setFeedVisibleFromHeader:NO];
-      break;
-    case FeedMenuItemType::kTurnOn:
-      [self setFeedVisibleFromHeader:YES];
-      break;
-    case FeedMenuItemType::kManage:
-      [self handleFeedManageTapped];
-      break;
-    case FeedMenuItemType::kManageActivity:
-      [self.NTPMediator handleNavigateToActivity];
-      break;
-    case FeedMenuItemType::kManageFollowing:
-      [self.NTPMediator handleNavigateToFollowing];
-      break;
-    case FeedMenuItemType::kLearnMore:
-      [self.NTPMediator handleFeedLearnMoreTapped];
-      break;
+- (void)didChangeDiscoverFeedVisibility {
+  // TODO(crbug.com/412691611): Consider moving to mediator after refactor.
+  if (!self.NTPViewController.viewLoaded) {
+    return;
   }
-}
-
-#pragma mark - DiscoverFeedManageDelegate
-
-- (void)didTapDiscoverFeedManage {
-  [self handleFeedManageTapped];
+  [self handleChangeInModules];
+  [self.NTPViewController setContentOffsetToTop];
+  [self updateModuleVisibility];
 }
 
 #pragma mark - DiscoverFeedPreviewDelegate
@@ -1080,11 +1036,6 @@
   [self saveNTPState];
 }
 
-- (BOOL)shouldFeedBeVisible {
-  return self.NTPMediator.feedHeaderVisible &&
-         ([self.feedExpandedPref value] || IsHomeCustomizationEnabled());
-}
-
 - (BOOL)isFollowingFeedAvailable {
   return IsWebChannelsEnabled() && self.authService &&
          self.authService->HasPrimaryIdentity(signin::ConsentLevel::kSignin);
@@ -1092,14 +1043,6 @@
 
 - (NSUInteger)lastVisibleFeedCardIndex {
   return [self.feedWrapperViewController lastVisibleFeedCardIndex];
-}
-
-- (void)setFeedAndHeaderVisibility:(BOOL)visible {
-  if (!self.NTPViewController.viewLoaded) {
-    return;
-  }
-  [self handleChangeInModules];
-  [self.NTPViewController setContentOffsetToTop];
 }
 
 - (void)updateFeedForDefaultSearchEngineChanged {
@@ -1150,85 +1093,77 @@
 
 #pragma mark - FeedSignInPromoDelegate
 
-- (void)showSignInPromoUI {
-  if (![self isSignInAllowed]) {
-    [self showSignInDisableMessage];
-    [self.feedMetricsRecorder recordShowSignInRelatedUIWithType:
-                                  feed::FeedSignInUI::kShowSignInDisableToast];
+- (void)showSignInUIFromSource:(FeedSignInPromoSource)source {
+  // If the user is already signed in, do nothing.
+  if (self.authService &&
+      self.authService->HasPrimaryIdentity(signin::ConsentLevel::kSignin)) {
     return;
   }
-  if (_showAccountMenuInProgress || _showSigninCommandInProgress) {
-    return;
-  }
-
-  BOOL hasUserIdentities = ChromeAccountManagerServiceFactory::GetForProfile(
-                               self.browser->GetProfile())
-                               ->HasIdentities();
-  id<ApplicationCommands> handler = HandlerForProtocol(
-      self.browser->GetCommandDispatcher(), ApplicationCommands);
-  __weak __typeof(self) weakSelf = self;
-  _showSigninCommandInProgress = YES;
-  ShowSigninCommand* command = [[ShowSigninCommand alloc]
-      initWithOperation:AuthenticationOperation::kSigninOnly
-               identity:nil
-            accessPoint:signin_metrics::AccessPoint::
-                            ACCESS_POINT_NTP_FEED_CARD_MENU_PROMO
-            promoAction:signin_metrics::PromoAction::
-                            PROMO_ACTION_NO_SIGNIN_PROMO
-             completion:^(SigninCoordinatorResult result,
-                          SigninCompletionInfo* info) {
-               [weakSelf showSigninCommandDidFinish];
-             }];
-  [handler showSignin:command baseViewController:self.NTPViewController];
-  [self.feedMetricsRecorder recordShowSignInRelatedUIWithType:
-                                feed::FeedSignInUI::kShowSignInOnlyFlow];
-  [self.feedMetricsRecorder recordShowSignInOnlyUIWithUserId:hasUserIdentities];
-  signin_metrics::RecordSigninUserActionForAccessPoint(
-      signin_metrics::AccessPoint::ACCESS_POINT_NTP_FEED_CARD_MENU_PROMO);
-}
-
-- (void)showSignInUI {
-  // Both possible flows (sign-in only and sign-in + sync) involve sign-in. So
-  // they shouldn't be offered if sign-in is disallowed.
+  // This flow shouldn't be offered if sign-in is disallowed.
+  // In theory, the flow should not even have been offered to the user.
   if (![self isSignInAllowed]) {
     [self showSignInDisableMessage];
     [self.feedMetricsRecorder recordShowSyncnRelatedUIWithType:
                                   feed::FeedSyncPromo::kShowDisableToast];
     return;
   }
-  if (_showAccountMenuInProgress || _showSigninCommandInProgress) {
+  if (_accountMenuCoordinator || _signinCoordinator) {
     return;
   }
+  BOOL hasUserIdentities = [self hasIdentitiesOnDevice];
 
-  ProfileIOS* profile = self.browser->GetProfile();
-  id<ApplicationCommands> handler = HandlerForProtocol(
-      self.browser->GetCommandDispatcher(), ApplicationCommands);
-  // If there are 0 identities, kInstantSignin requires less taps.
-  auto operation = ChromeAccountManagerServiceFactory::GetForProfile(profile)
-                           ->HasIdentities()
-                       ? AuthenticationOperation::kSigninOnly
-                       : AuthenticationOperation::kInstantSignin;
+  signin_metrics::AccessPoint accessPoint =
+      signin_metrics::AccessPoint::kNtpFeedCardMenuPromo;
+  switch (source) {
+    case FeedSignInCommandSourceBottom:
+      // TODO(crbug.com/40066051): Strictly speaking this should record a bucket
+      // other than kShowSyncFlow. But I don't think we care too much about this
+      // particular histogram, just rename the bucket after launch.
+      [self.feedMetricsRecorder
+          recordShowSyncnRelatedUIWithType:feed::FeedSyncPromo::kShowSyncFlow];
+      break;
+    case FeedSignInCommandSourceCardMenu:
+      accessPoint = signin_metrics::AccessPoint::kNtpFeedBottomPromo;
+      [self.feedMetricsRecorder recordShowSignInRelatedUIWithType:
+                                    feed::FeedSignInUI::kShowSignInOnlyFlow];
+      [self.feedMetricsRecorder
+          recordShowSignInOnlyUIWithUserId:hasUserIdentities];
+      break;
+  }
   __weak __typeof(self) weakSelf = self;
-  _showSigninCommandInProgress = YES;
-  ShowSigninCommand* command = [[ShowSigninCommand alloc]
-      initWithOperation:operation
-               identity:nil
-            accessPoint:signin_metrics::AccessPoint::
-                            ACCESS_POINT_NTP_FEED_BOTTOM_PROMO
-            promoAction:signin_metrics::PromoAction::
-                            PROMO_ACTION_NO_SIGNIN_PROMO
-             completion:^(SigninCoordinatorResult result,
-                          SigninCompletionInfo* info) {
-               [weakSelf showSigninCommandDidFinish];
-             }];
-  [handler showSignin:command baseViewController:self.NTPViewController];
-  // TODO(crbug.com/40066051): Strictly speaking this should record a bucket
-  // other than kShowSyncFlow. But I don't think we care too much about this
-  // particular histogram, just rename the bucket after launch.
-  [self.feedMetricsRecorder
-      recordShowSyncnRelatedUIWithType:feed::FeedSyncPromo::kShowSyncFlow];
-  signin_metrics::RecordSigninUserActionForAccessPoint(
-      signin_metrics::AccessPoint::ACCESS_POINT_NTP_FEED_BOTTOM_PROMO);
+  // If there are 0 identities, kInstantSignin requires less taps.
+  if (hasUserIdentities) {
+    _signinCoordinator = [SigninCoordinator
+        consistencyPromoSigninCoordinatorWithBaseViewController:
+            self.NTPViewController
+                                                        browser:self.browser
+                                                   contextStyle:
+                                                       SigninContextStyle::
+                                                           kDefault
+                                                    accessPoint:accessPoint
+                                           prepareChangeProfile:nil
+                                           continuationProvider:
+                                               DoNothingContinuationProvider()];
+  } else {
+    _signinCoordinator = [SigninCoordinator
+        instantSigninCoordinatorWithBaseViewController:self.NTPViewController
+                                               browser:self.browser
+                                              identity:nil
+                                          contextStyle:SigninContextStyle::
+                                                           kDefault
+                                           accessPoint:accessPoint
+                                           promoAction:
+                                               signin_metrics::PromoAction::
+                                                   PROMO_ACTION_NO_SIGNIN_PROMO
+                                  continuationProvider:
+                                      DoNothingContinuationProvider()];
+  }
+  _signinCoordinator.signinCompletion =
+      ^(SigninCoordinatorResult result, id<SystemIdentity> completionIdentity) {
+        [weakSelf showSigninCommandDidFinish];
+      };
+  [_signinCoordinator start];
+  signin_metrics::RecordSigninUserActionForAccessPoint(accessPoint);
 }
 
 #pragma mark - FeedWrapperViewControllerDelegate
@@ -1259,7 +1194,8 @@
   id<FakeboxFocuser> fakeboxFocuserHandler =
       HandlerForProtocol(self.browser->GetCommandDispatcher(), FakeboxFocuser);
   [fakeboxFocuserHandler focusOmniboxFromFakebox:_fakeboxTapped
-                                          pinned:[self isFakeboxPinned]];
+                                          pinned:[self isFakeboxPinned]
+                  fakeboxButtonsSnapshotProvider:self.headerViewController];
 }
 
 - (void)refreshNTPContent {
@@ -1287,6 +1223,13 @@
   [self cancelOmniboxEdit];
   [self setContentOffsetToTop];
   [self.feedHeaderViewController updateForFeedVisibilityChanged];
+  UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification,
+                                  nil);
+}
+
+- (void)feedDidScroll {
+  feature_engagement::TrackerFactory::GetForProfile(self.profile)
+      ->NotifyEvent(feature_engagement::events::kIOSScrolledOnFeed);
 }
 
 #pragma mark - NewTabPageDelegate
@@ -1367,8 +1310,9 @@
 
   // Return an empty list if the BrowserAgent is null (which can happen
   // if e.g. the Browser is off-the-record).
-  if (!followBrowserAgent)
+  if (!followBrowserAgent) {
     return @[];
+  }
 
   return followBrowserAgent->GetFollowedWebSites();
 }
@@ -1426,13 +1370,6 @@
   [self dismissCustomizationMenu];
 }
 
-- (void)parcelTrackingOpened {
-  RecordMagicStackClick(ContentSuggestionsModuleType::kParcelTracking,
-                        [self isStartSurface]);
-  RecordHomeAction(IOSHomeActionType::kParcelTracking, [self isStartSurface]);
-  [self dismissCustomizationMenu];
-}
-
 - (void)priceTrackingPromoOpened {
   RecordMagicStackClick(ContentSuggestionsModuleType::kPriceTrackingPromo,
                         [self isStartSurface]);
@@ -1445,6 +1382,12 @@
                         [self isStartSurface]);
   RecordHomeAction(IOSHomeActionType::kTips, [self isStartSurface]);
   [self dismissCustomizationMenu];
+}
+
+- (void)shopCardOpened {
+  RecordMagicStackClick(ContentSuggestionsModuleType::kShopCard,
+                        [self isStartSurface]);
+  RecordHomeAction(IOSHomeActionType::kShopCard, [self isStartSurface]);
 }
 
 #pragma mark - OverscrollActionsControllerDelegate
@@ -1474,7 +1417,7 @@
 
 - (BOOL)shouldAllowOverscrollActionsForOverscrollActionsController:
     (OverscrollActionsController*)controller {
-  return !IsHomeCustomizationEnabled() || !_customizationCoordinator;
+  return !_customizationCoordinator;
 }
 
 - (UIView*)toolbarSnapshotViewForOverscrollActionsController:
@@ -1523,13 +1466,6 @@
   }
 }
 
-#pragma mark - BooleanObserver
-
-- (void)booleanDidChange:(id<ObservableBoolean>)observableBoolean {
-  // Observes changes in feed visibility pref.
-  [self updateModuleVisibility];
-}
-
 #pragma mark - DiscoverFeedObserverBridge
 
 - (void)discoverFeedModelWasCreated {
@@ -1555,11 +1491,12 @@
   if (!self.started) {
     return;
   }
-  switch (event.GetEventTypeFor(signin::ConsentLevel::kSignin)) {
+  signin::PrimaryAccountChangeEvent::Type eventType =
+      event.GetEventTypeFor(signin::ConsentLevel::kSignin);
+  switch (eventType) {
     case signin::PrimaryAccountChangeEvent::Type::kSet:
     case signin::PrimaryAccountChangeEvent::Type::kCleared: {
       [self.contentSuggestionsCoordinator refresh];
-      [self updateFeedVisibilityForSupervision];
       break;
     }
     case signin::PrimaryAccountChangeEvent::Type::kNone:
@@ -1589,14 +1526,10 @@
 
 - (void)onIsSubjectToParentalControlsCapabilityChanged:
     (supervised_user::CapabilityUpdateState)capabilityUpdateState {
-  if (base::FeatureList::IsEnabled(
-          supervised_user::
-              kReplaceSupervisionSystemCapabilitiesWithAccountCapabilitiesOnIOS)) {
-    BOOL isSubjectToParentalControl =
-        (capabilityUpdateState ==
-         supervised_user::CapabilityUpdateState::kSetToTrue);
-    [self updateFeedWithIsSupervisedUser:isSubjectToParentalControl];
-  }
+  BOOL isSubjectToParentalControl =
+      (capabilityUpdateState ==
+       supervised_user::CapabilityUpdateState::kSetToTrue);
+  [self updateFeedWithIsSupervisedUser:isSubjectToParentalControl];
 }
 
 #pragma mark - SceneStateObserver
@@ -1614,26 +1547,62 @@
   }
 }
 
+#pragma mark - AccountMenuCoordinatorDelegate
+
+// Update the state, to take into account that the account menu coordinator is
+// stopped.
+- (void)accountMenuCoordinatorWantsToBeStopped:
+    (AccountMenuCoordinator*)coordinator {
+  CHECK_EQ(_accountMenuCoordinator, coordinator, base::NotFatalUntil::M140);
+  [self stopAccountMenuCoordinator];
+}
+
 #pragma mark - Private
 
-// Update the state, to take into account that the menu coordinator is stopped.
-- (void)accountMenuCoordinatorIsStopped {
-  CHECK(_showAccountMenuInProgress);
-  _showAccountMenuInProgress = NO;
+- (void)stopSharingCoordinator {
+  [_sharingCoordinator stop];
+  _sharingCoordinator = nil;
+}
+
+- (void)stopAccountMenuCoordinator {
+  [_accountMenuCoordinator stop];
+  _accountMenuCoordinator.delegate = nil;
+  _accountMenuCoordinator = nil;
+}
+
+- (void)stopSigninCoordinator {
+  [_signinCoordinator stop];
+  _signinCoordinator = nil;
+}
+
+- (void)showAccountMenu:(UIView*)identityDisc {
+  _accountMenuCoordinator = [[AccountMenuCoordinator alloc]
+      initWithBaseViewController:self.NTPViewController
+                         browser:self.browser
+                      anchorView:identityDisc
+                     accessPoint:AccountMenuAccessPoint::kNewTabPage
+                             URL:GURL()];
+  _accountMenuCoordinator.delegate = self;
+  [_accountMenuCoordinator start];
+}
+
+- (bool)hasIdentitiesOnDevice {
+  return !IdentityManagerFactory::GetForProfile(self.profile)
+              ->GetAccountsOnDevice()
+              .empty();
 }
 
 // Update the state, to take into account that the account menu coordinator is
 // stopped.
 - (void)showAccountMenuDidFinish {
-  CHECK(_showAccountMenuInProgress, base::NotFatalUntil::M135);
-  _showAccountMenuInProgress = NO;
+  [self stopAccountMenuCoordinator];
 }
 
 // Update the state, to take into account that the signin coordinator
 // coordinator is stopped.
 - (void)showSigninCommandDidFinish {
-  CHECK(_showSigninCommandInProgress, base::NotFatalUntil::M135);
-  _showSigninCommandInProgress = NO;
+  CHECK(_signinCoordinator, base::NotFatalUntil::M140);
+  [self stopSigninCoordinator];
 }
 
 // Updates the feed visibility or content based on the supervision state
@@ -1654,7 +1623,7 @@
 - (void)updateStartForVisibilityChange:(BOOL)visible {
   if (visible && NewTabPageTabHelper::FromWebState(self.webState)
                      ->ShouldShowStartSurface()) {
-    DiscoverFeedServiceFactory::GetForProfile(self.browser->GetProfile())
+    DiscoverFeedServiceFactory::GetForProfile(self.profile)
         ->SetIsShownOnStartSurface(true);
   }
   if (!visible && NewTabPageTabHelper::FromWebState(self.webState)
@@ -1686,7 +1655,7 @@
 
   // Fetches feed header and conditionally fetches feed. Feed can only be
   // visible if feed header is visible.
-  if (self.NTPMediator.feedHeaderVisible) {
+  if ([self.NTPMediator isFeedHeaderVisible]) {
     [self configureFeedAndHeader];
   } else {
     self.NTPViewController.feedHeaderViewController = nil;
@@ -1706,15 +1675,12 @@
 
   self.NTPViewController.feedWrapperViewController =
       self.feedWrapperViewController;
+  self.NTPMediator.contentCollectionView =
+      self.feedWrapperViewController.contentCollectionView;
 
   [self.NTPViewController layoutContentInParentCollectionView];
 
   [self updateFeedLayout];
-}
-
-// Returns `YES` if the feed is currently visible on the NTP.
-- (BOOL)isFeedVisible {
-  return [self shouldFeedBeVisible] && self.feedViewController;
 }
 
 // Creates, configures and returns a feed view controller configuration.
@@ -1724,50 +1690,9 @@
   viewControllerConfig.browser = self.browser;
   viewControllerConfig.scrollDelegate = self.NTPViewController;
   viewControllerConfig.previewDelegate = self;
-  viewControllerConfig.manageDelegate = self;
   viewControllerConfig.signInPromoDelegate = self;
 
   return viewControllerConfig;
-}
-
-// Updates the visibility of the content suggestions on the NTP if the account
-// is subject to parental controls.
-// TODO(crbug.com/346756363): Remove this method as we deprecate getting
-// supervision status from SystemIdentityManager.
-- (void)updateFeedVisibilityForSupervision {
-  if (!base::FeatureList::IsEnabled(
-          supervised_user::
-              kReplaceSupervisionSystemCapabilitiesWithAccountCapabilitiesOnIOS)) {
-    DCHECK(self.prefService);
-    DCHECK(self.authService);
-
-    id<SystemIdentity> identity =
-        self.authService->GetPrimaryIdentity(signin::ConsentLevel::kSignin);
-    if (!identity) {
-      [self updateFeedWithIsSupervisedUser:NO];
-      return;
-    }
-
-    using CapabilityResult = SystemIdentityCapabilityResult;
-
-    __weak NewTabPageCoordinator* weakSelf = self;
-    GetApplicationContext()
-        ->GetSystemIdentityManager()
-        ->IsSubjectToParentalControls(
-            identity, base::BindOnce(^(CapabilityResult result) {
-              const bool isSupervisedUser = result == CapabilityResult::kTrue;
-              [weakSelf updateFeedWithIsSupervisedUser:isSupervisedUser];
-            }));
-  }
-}
-
-// Toggles feed visibility between hidden or expanded using the feed header
-// menu. A hidden feed will continue to show the header, with a modified label.
-// TODO(crbug.com/1304382): Modify this comment when Web Channels is launched.
-- (void)setFeedVisibleFromHeader:(BOOL)visible {
-  [self.feedExpandedPref setValue:visible];
-  [self.feedMetricsRecorder recordDiscoverFeedVisibilityChanged:visible];
-  [self updateModuleVisibility];
 }
 
 // Configures and returns the feed top section coordinator.
@@ -1780,20 +1705,6 @@
   feedTopSectionCoordinator.NTPDelegate = self;
   [feedTopSectionCoordinator start];
   return feedTopSectionCoordinator;
-}
-
-// Handles the feed management button being tapped.
-- (void)handleFeedManageTapped {
-  [self.feedMetricsRecorder recordHeaderMenuManageTapped];
-  [self.feedManagementCoordinator stop];
-  self.feedManagementCoordinator = nil;
-
-  self.feedManagementCoordinator = [[FeedManagementCoordinator alloc]
-      initWithBaseViewController:self.NTPViewController
-                         browser:self.browser];
-  self.feedManagementCoordinator.navigationDelegate = self.NTPMediator;
-  self.feedManagementCoordinator.feedMetricsRecorder = self.feedMetricsRecorder;
-  [self.feedManagementCoordinator start];
 }
 
 // Private setter for the `webState` property.
@@ -1818,47 +1729,39 @@
 
   self.visible = visible;
   self.NTPViewController.NTPVisible = visible;
+  self.NTPMediator.NTPVisible = visible;
 
-  if (!self.browser->GetProfile()->IsOffTheRecord()) {
+  if (!self.isOffTheRecord) {
     if (visible) {
       self.didAppearTime = base::TimeTicks::Now();
 
-      if (IsHomeCustomizationEnabled()) {
-        [self.NTPMetricsRecorder
-            recordCustomizationState:[self currentCustomizationState]];
+      [self.NTPMetricsRecorder
+          recordCustomizationState:[self currentCustomizationState]];
 
-        PrefService* prefService = self.prefService;
-        BOOL safetyCheckEnabled = prefService->GetBoolean(
-            prefs::kHomeCustomizationMagicStackSafetyCheckEnabled);
-        BOOL setUpListEnabled = prefService->GetBoolean(
-            prefs::kHomeCustomizationMagicStackSetUpListEnabled);
-        BOOL tabResumptionEnabled = prefService->GetBoolean(
-            prefs::kHomeCustomizationMagicStackTabResumptionEnabled);
-        BOOL parcelTrackingEnabled = prefService->GetBoolean(
-            prefs::kHomeCustomizationMagicStackParcelTrackingEnabled);
-        BOOL tipsEnabled = prefService->GetBoolean(
-            prefs::kHomeCustomizationMagicStackTipsEnabled);
-        [self.NTPMetricsRecorder
-            recordMagicStackCustomizationStateWithSetUpList:setUpListEnabled
-                                                safetyCheck:safetyCheckEnabled
-                                              tabResumption:tabResumptionEnabled
-                                             parcelTracking:
-                                                 parcelTrackingEnabled
-                                                       tips:tipsEnabled];
-      }
+      PrefService* prefService = self.prefService;
+      BOOL safetyCheckEnabled = prefService->GetBoolean(
+          prefs::kHomeCustomizationMagicStackSafetyCheckEnabled);
+      BOOL setUpListEnabled = prefService->GetBoolean(
+          prefs::kHomeCustomizationMagicStackSetUpListEnabled);
+      BOOL tabResumptionEnabled = prefService->GetBoolean(
+          prefs::kHomeCustomizationMagicStackTabResumptionEnabled);
+      BOOL parcelTrackingEnabled = prefService->GetBoolean(
+          prefs::kHomeCustomizationMagicStackParcelTrackingEnabled);
+      BOOL tipsEnabled = prefService->GetBoolean(
+          prefs::kHomeCustomizationMagicStackTipsEnabled);
+      [self.NTPMetricsRecorder
+          recordMagicStackCustomizationStateWithSetUpList:setUpListEnabled
+                                              safetyCheck:safetyCheckEnabled
+                                            tabResumption:tabResumptionEnabled
+                                           parcelTracking:parcelTrackingEnabled
+                                                     tips:tipsEnabled];
 
       // TODO(crbug.com/350990359): Deprecate IOS.NTP.Impression when Home
       // Customization launches.
-      if (self.NTPMediator.feedHeaderVisible) {
-        if ([self.feedExpandedPref value] || IsHomeCustomizationEnabled()) {
-          [self.NTPMetricsRecorder
-              recordHomeImpression:IOSNTPImpressionType::kFeedVisible
-                    isStartSurface:[self isStartSurface]];
-        } else {
-          [self.NTPMetricsRecorder
-              recordHomeImpression:IOSNTPImpressionType::kFeedCollapsed
-                    isStartSurface:[self isStartSurface]];
-        }
+      if ([self.NTPMediator isFeedHeaderVisible]) {
+        [self.NTPMetricsRecorder
+            recordHomeImpression:IOSNTPImpressionType::kFeedVisible
+                  isStartSurface:[self isStartSurface]];
       } else {
         [self.NTPMetricsRecorder
             recordHomeImpression:IOSNTPImpressionType::kFeedDisabled
@@ -1874,7 +1777,8 @@
     }
     // Check if feed is visible before reporting NTP visibility as the feed
     // needs to be visible in order to use for metrics.
-    // TODO(crbug.com/40871863) Move isFeedVisible check to the metrics recorder
+    // TODO(crbug.com/40871863) Move isFeedVisible check to the metrics
+    // recorder
     if ([self isFeedVisible]) {
       [self.feedMetricsRecorder recordNTPDidChangeVisibility:visible];
     }
@@ -1883,7 +1787,7 @@
 
 // Returns whether the user policies allow them to sync.
 - (BOOL)isSyncAllowedByPolicy {
-  return !SyncServiceFactory::GetForProfile(self.browser->GetProfile())
+  return !SyncServiceFactory::GetForProfile(self.profile)
               ->HasDisableReason(
                   syncer::SyncService::DISABLE_REASON_ENTERPRISE_POLICY);
 }
@@ -1918,20 +1822,19 @@
   _customizationCoordinator.delegate = self;
   [_customizationCoordinator start];
   [_customizationCoordinator presentCustomizationMenuPage:page];
-  feature_engagement::TrackerFactory::GetForProfile(self.browser->GetProfile())
+  feature_engagement::TrackerFactory::GetForProfile(self.profile)
       ->NotifyEvent(feature_engagement::events::kHomeCustomizationMenuUsed);
 }
 
 // Returns the current customization state represnting the visibility of NTP
 // components.
 - (IOSNTPImpressionCustomizationState)currentCustomizationState {
-  CHECK(IsHomeCustomizationEnabled());
   PrefService* prefService = self.prefService;
   BOOL MVTEnabled =
       prefService->GetBoolean(prefs::kHomeCustomizationMostVisitedEnabled);
   BOOL magicStackEnabled =
       prefService->GetBoolean(prefs::kHomeCustomizationMagicStackEnabled);
-  BOOL feedEnabled = prefService->GetBoolean(prefs::kArticlesForYouEnabled);
+  BOOL feedEnabled = [self.NTPMediator isFeedHeaderVisible];
 
   // All components enabled/disabled.
   if (MVTEnabled && magicStackEnabled && feedEnabled) {

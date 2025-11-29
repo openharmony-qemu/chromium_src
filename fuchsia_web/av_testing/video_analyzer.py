@@ -10,24 +10,38 @@ import json
 import logging
 import os
 import subprocess
+import sys
 
 # Copy to avoid cycle dependency.
 LOG_DIR = os.environ.get('ISOLATED_OUTDIR', '/tmp')
 
 
+sys.path.append(
+    os.path.join(os.path.dirname(__file__), '..', '..', 'build', 'fuchsia',
+                 'test'))
+
+from repeating_log import RepeatingLog
+
+
 def from_original_video(recorded: str, original: str) -> object:
     """ Analyzes the |recorded| video file by using the |original| as the
         reference, and returns the results as an json object. """
-    BINARY = '/usr/local/cipd/local_analyzer/local_video_analyzer.par'
-    if not os.path.isfile(BINARY):
-        logging.warning(
-            '%s is not found, no video analysis result would be ' +
-            'generated.', BINARY)
+    binary = '/usr/local/cipd/local_analyzer/local_video_analyzer.par'
+    assert os.path.isfile(binary)
+    _, filename = os.path.split(original)
+    output_dir = os.path.join(LOG_DIR, filename)
+    os.mkdir(output_dir)
+
+    with RepeatingLog('Waiting for local_video_analyzer.'):
+        subprocess.run([
+            binary, '--gid=', '--uid=', '--loas_pwd_fallback_in_corp',
+            f'--ref_video_file={original}', f'--test_video_file={recorded}',
+            f'--output_folder={output_dir}'
+        ],
+                       check=True)
+    try:
+        with open(os.path.join(output_dir, 'results.json'), 'r') as file:
+            return json.load(file)
+    except FileNotFoundError:
+        logging.warning('No results.json file generated in %s', output_dir)
         return {}
-    subprocess.run([
-        BINARY, '--gid=', '--uid=', f'--ref_video_file={original}',
-        f'--test_video_file={recorded}', f'--output_folder={LOG_DIR}'
-    ],
-                   check=True)
-    with open(os.path.join(LOG_DIR, 'results.json'), 'r') as file:
-        return json.load(file)

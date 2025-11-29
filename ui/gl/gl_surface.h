@@ -101,12 +101,6 @@ class GL_EXPORT GLSurface : public base::RefCounted<GLSurface> {
   // Returns whether or not the surface supports PostSubBuffer.
   virtual bool SupportsPostSubBuffer();
 
-#if BUILDFLAG(IS_OHOS)
-  virtual gfx::SwapResult SwapBuffersWithDamage(const std::vector<int>& rects,
-                                                PresentationCallback callback,
-                                                gfx::FrameData data);
-#endif  // BUILDFLAG(IS_OHOS)
-
   // Returns whether SwapBuffersAsync() is supported.
   virtual bool SupportsAsyncSwap();
 

@@ -240,7 +240,7 @@ ExtensionFunction::ResponseAction SocketsUdpSendFunction::Work() {
 
   io_buffer_ =
       base::MakeRefCounted<net::IOBufferWithSize>(params_->data.size());
-  base::ranges::copy(params_->data, io_buffer_->data());
+  std::ranges::copy(params_->data, io_buffer_->data());
 
   ResumableUDPSocket* socket = GetUdpSocket(params_->socket_id);
   if (!socket) {
@@ -314,8 +314,8 @@ void SocketsUdpSendFunction::SetSendResult(int net_result, int bytes_sent) {
   if (net_result == net::OK) {
     Respond(ArgumentList(std::move(args)));
   } else {
-    Respond(
-        ErrorWithArguments(std::move(args), net::ErrorToString(net_result)));
+    Respond(ErrorWithArgumentsDoNotUse(std::move(args),
+                                       net::ErrorToString(net_result)));
   }
 }
 

@@ -13,6 +13,7 @@ import android.view.DragEvent;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.PointerIcon;
+import android.view.Surface;
 import android.view.View;
 import android.view.View.OnDragListener;
 import android.view.View.OnSystemUiVisibilityChangeListener;
@@ -24,10 +25,11 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.widget.FrameLayout;
 
-import androidx.annotation.Nullable;
-
 import org.chromium.base.ObserverList;
 import org.chromium.base.TraceEvent;
+import org.chromium.build.annotations.EnsuresNonNullIf;
+import org.chromium.build.annotations.NullUnmarked;
+import org.chromium.build.annotations.Nullable;
 import org.chromium.components.autofill.AndroidAutofillFeatures;
 import org.chromium.components.embedder_support.util.TouchEventFilter;
 import org.chromium.content_public.browser.ImeAdapter;
@@ -40,6 +42,7 @@ import org.chromium.ui.accessibility.AccessibilityState;
 import org.chromium.ui.base.EventForwarder;
 import org.chromium.ui.base.EventOffsetHandler;
 import org.chromium.ui.base.ViewAndroidDelegate;
+import org.chromium.ui.base.WindowAndroid;
 import org.chromium.ui.dragdrop.DragEventDispatchHelper.DragEventDispatchDestination;
 
 import java.util.function.Supplier;
@@ -53,6 +56,7 @@ import java.util.function.Supplier;
  * because the accessibility support provided by WebContentsAccessibility ignores all child views.
  * In other words, any children added to this are *not* accessible.
  */
+@NullUnmarked
 public class ContentView extends FrameLayout
         implements ViewEventSink.InternalAccessDelegate,
                 SmartClipProvider,
@@ -417,6 +421,24 @@ public class ContentView extends FrameLayout
     }
 
     @Override
+    public boolean onCapturedPointerEvent(MotionEvent event) {
+        EventForwarder forwarder = getEventForwarder();
+        if (forwarder != null) {
+            // Device rotation is needed to update the raw touchpad events based on the device
+            // orientation
+            int deviceRotation = Surface.ROTATION_0;
+            WindowAndroid window = mWebContents.getTopLevelNativeWindow();
+            if (window != null) {
+                deviceRotation = window.getDisplay().getRotation();
+            }
+
+            return forwarder.onCapturedPointerEvent(event, deviceRotation);
+        }
+
+        return false;
+    }
+
+    @Override
     public PointerIcon onResolvePointerIcon(MotionEvent event, int pointerIndex) {
         PointerIcon icon = null;
         if (mStylusWritingIconSupplier != null) {
@@ -611,10 +633,12 @@ public class ContentView extends FrameLayout
     //                End Implementation of ViewEventSink.InternalAccessDelegate                 //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
+    @EnsuresNonNullIf("mWebContents")
     private boolean hasValidWebContents() {
         return mWebContents != null && !mWebContents.isDestroyed();
     }
 
+    @EnsuresNonNullIf("mWebContents")
     private boolean webContentsAttached() {
         return hasValidWebContents() && mWebContents.getTopLevelNativeWindow() != null;
     }

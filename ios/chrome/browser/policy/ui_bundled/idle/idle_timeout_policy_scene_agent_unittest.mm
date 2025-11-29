@@ -6,7 +6,6 @@
 
 #import <MaterialComponents/MaterialSnackbar.h>
 
-#import "base/test/task_environment.h"
 #import "components/enterprise/idle/idle_pref_names.h"
 #import "ios/chrome/app/application_delegate/app_state.h"
 #import "ios/chrome/app/profile/profile_init_stage.h"
@@ -15,6 +14,7 @@
 #import "ios/chrome/browser/enterprise/model/idle/action_runner.h"
 #import "ios/chrome/browser/enterprise/model/idle/idle_service.h"
 #import "ios/chrome/browser/policy/ui_bundled/idle/idle_timeout_confirmation_coordinator_delegate.h"
+#import "ios/chrome/browser/scoped_ui_blocker/ui_bundled/scoped_ui_blocker.h"
 #import "ios/chrome/browser/shared/coordinator/scene/scene_ui_provider.h"
 #import "ios/chrome/browser/shared/coordinator/scene/test/fake_scene_state.h"
 #import "ios/chrome/browser/shared/model/browser/browser.h"
@@ -25,7 +25,7 @@
 #import "ios/chrome/browser/shared/public/commands/command_dispatcher.h"
 #import "ios/chrome/browser/shared/public/commands/settings_commands.h"
 #import "ios/chrome/browser/shared/public/commands/snackbar_commands.h"
-#import "ios/chrome/browser/ui/scoped_ui_blocker/scoped_ui_blocker.h"
+#import "ios/web/public/test/web_task_environment.h"
 #import "testing/gmock/include/gmock/gmock.h"
 #import "testing/gtest/include/gtest/gtest.h"
 #import "testing/platform_test.h"
@@ -69,6 +69,7 @@ class IdleTimeoutPolicySceneAgentTest : public PlatformTest {
   IdleTimeoutPolicySceneAgentTest() = default;
 
   void SetUp() override {
+    PlatformTest::SetUp();
     profile_ = TestProfileIOS::Builder().Build();
 
     // Setyp idle timeout policies.
@@ -79,8 +80,8 @@ class IdleTimeoutPolicySceneAgentTest : public PlatformTest {
         static_cast<int>(enterprise_idle::ActionType::kClearBrowsingHistory));
     // Set the `IdleTimeoutActions` policy. This is needed for the snackbar
     // message.
-    prefs->SetList(
-        enterprise_idle::prefs::kIdleTimeoutActions, std::move(actions));
+    prefs->SetList(enterprise_idle::prefs::kIdleTimeoutActions,
+                   std::move(actions));
 
     // Setup idle timeout service.
     idle_service_ = std::make_unique<enterprise_idle::IdleService>(
@@ -94,9 +95,15 @@ class IdleTimeoutPolicySceneAgentTest : public PlatformTest {
     InitSceneWithAgent();
   }
 
-  void TearDown() override { [agent_ sceneStateDidDisableUI:scene_state_]; }
+  void TearDown() override {
+    [agent_ sceneStateDidDisableUI:scene_state_];
+    [scene_state_ shutdown];
+    scene_state_ = nil;
+    PlatformTest::TearDown();
+  }
 
   void InitSceneWithAgent() {
+    CHECK(!scene_state_);
     scene_state_ = [[FakeSceneState alloc] initWithAppState:app_state_
                                                     profile:profile_.get()];
     scene_state_.scene = static_cast<UIWindowScene*>(
@@ -138,7 +145,7 @@ class IdleTimeoutPolicySceneAgentTest : public PlatformTest {
   }
 
  protected:
-  base::test::TaskEnvironment task_environment_;
+  web::WebTaskEnvironment task_environment_;
   std::unique_ptr<TestProfileIOS> profile_;
   std::unique_ptr<enterprise_idle::IdleService> idle_service_;
   AppState* app_state_;

@@ -55,14 +55,14 @@ mojo::ScopedDataPipeProducerHandle NetToMojoPendingBuffer::Complete(
 
 NetToMojoIOBuffer::NetToMojoIOBuffer(
     scoped_refptr<NetToMojoPendingBuffer> pending_buffer,
-    int offset)
-    : net::WrappedIOBuffer(base::make_span(*pending_buffer).subspan(offset)),
+    size_t offset)
+    : net::WrappedIOBuffer(base::span(*pending_buffer).subspan(offset)),
       pending_buffer_(std::move(pending_buffer)) {}
 
 NetToMojoIOBuffer::~NetToMojoIOBuffer() {
   // Avoid dangling ptr should this destructor remove the last reference
   // to `pending_buffer_`.
-  data_ = nullptr;
+  ClearSpan();
 }
 
 MojoToNetPendingBuffer::MojoToNetPendingBuffer(
@@ -118,7 +118,7 @@ MojoToNetIOBuffer::~MojoToNetIOBuffer() {
 
   // Prevent dangling ptr should this destructor remove the last reference
   // to `pending_buffer_`.
-  data_ = nullptr;
+  ClearSpan();
 }
 
 }  // namespace network

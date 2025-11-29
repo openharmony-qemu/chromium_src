@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/390223051): Remove C-library calls to fix the errors.
+#pragma allow_unsafe_libc_calls
+#endif
+
 #include "components/services/storage/service_worker/service_worker_storage_control_impl.h"
 
 #include <cstdint>
@@ -187,16 +192,18 @@ class ServiceWorkerStorageControlImplTest : public testing::Test {
   void TearDown() override { DestroyStorage(); }
 
   void SetUpStorage() {
+    storage_shared_buffer_ =
+        base::MakeRefCounted<ServiceWorkerStorage::StorageSharedBuffer>(
+            /*enable_registered_storage_keys=*/true);
     storage_impl_ = std::make_unique<ServiceWorkerStorageControlImpl>(
-        user_data_directory_.GetPath(),
-        /*database_task_runner=*/
-        base::SingleThreadTaskRunner::GetCurrentDefault(),
+        user_data_directory_.GetPath(), storage_shared_buffer_,
         remote_.BindNewPipeAndPassReceiver());
   }
 
   void DestroyStorage() {
     remote_.reset();
     storage_impl_.reset();
+    storage_shared_buffer_ = nullptr;
     disk_cache::FlushCacheThreadForTesting();
     task_environment().RunUntilIdle();
   }
@@ -212,6 +219,18 @@ class ServiceWorkerStorageControlImplTest : public testing::Test {
   base::test::TaskEnvironment& task_environment() { return task_environment_; }
 
   void LazyInitializeForTest() { storage_impl_->LazyInitializeForTest(); }
+
+  std::vector<blink::StorageKey> GetRegisteredStorageKeys() {
+    std::vector<blink::StorageKey> return_value;
+    base::RunLoop loop;
+    storage()->GetRegisteredStorageKeys(base::BindLambdaForTesting(
+        [&](const std::vector<blink::StorageKey>& storage_keys) {
+          return_value = storage_keys;
+          loop.Quit();
+        }));
+    loop.Run();
+    return return_value;
+  }
 
   FindRegistrationResult FindRegistrationForClientUrl(
       const GURL& client_url,
@@ -690,7 +709,7 @@ class ServiceWorkerStorageControlImplTest : public testing::Test {
     if (result < 0)
       return result;
 
-    mojo_base::BigBuffer buffer(base::as_bytes(base::make_span(data)));
+    mojo_base::BigBuffer buffer(base::as_byte_span(data));
     result = WriteResponseData(writer.get(), std::move(buffer));
     return result;
   }
@@ -739,10 +758,17 @@ class ServiceWorkerStorageControlImplTest : public testing::Test {
     return result;
   }
 
+  scoped_refptr<ServiceWorkerStorage::StorageSharedBuffer>&
+  storage_shared_buffer() {
+    return storage_shared_buffer_;
+  }
+
  private:
   base::ScopedTempDir user_data_directory_;
   base::test::TaskEnvironment task_environment_;
   std::unique_ptr<ServiceWorkerStorageControlImpl> storage_impl_;
+  scoped_refptr<ServiceWorkerStorage::StorageSharedBuffer>
+      storage_shared_buffer_;
   mojo::Remote<mojom::ServiceWorkerStorageControl> remote_;
 };
 
@@ -756,6 +782,15 @@ TEST_F(ServiceWorkerStorageControlImplTest, FindRegistration_NoRegistration) {
   const int64_t kRegistrationId = 0;
 
   LazyInitializeForTest();
+
+  // Obtains all StorageKeys. This operation should succeed.
+  {
+    std::vector<blink::StorageKey> storage_keys = GetRegisteredStorageKeys();
+    EXPECT_EQ(storage_keys.size(), 0UL);
+    EXPECT_EQ(storage_shared_buffer()->TakeRegisteredKeys()->size(), 0UL);
+    // The 2nd call of TakeRegisteredKeys() returns std::nullopt.
+    EXPECT_FALSE(storage_shared_buffer()->TakeRegisteredKeys().has_value());
+  }
 
   {
     FindRegistrationResult result =
@@ -820,6 +855,17 @@ TEST_F(ServiceWorkerStorageControlImplTest, StoreAndDeleteRegistration) {
     DatabaseStatus status =
         StoreRegistration(std::move(data), std::move(resources));
     ASSERT_EQ(status, DatabaseStatus::kOk);
+  }
+
+  // Obtains all StorageKeys. This operation should succeed.
+  {
+    std::vector<blink::StorageKey> storage_keys = GetRegisteredStorageKeys();
+    EXPECT_EQ(storage_keys.size(), 1UL);
+    EXPECT_EQ(storage_keys[0], kKey);
+    // The obtained keys must be the same as the keys from TakeRegisteredKeys().
+    EXPECT_EQ(storage_keys, storage_shared_buffer()->TakeRegisteredKeys());
+    // The 2nd call of TakeRegisteredKeys() returns std::nullopt.
+    EXPECT_FALSE(storage_shared_buffer()->TakeRegisteredKeys().has_value());
   }
 
   // Find the registration. Find operations should succeed.
@@ -1188,7 +1234,7 @@ TEST_F(ServiceWorkerStorageControlImplTest, WriteAndReadResource) {
 
   // Write content.
   {
-    mojo_base::BigBuffer data(base::as_bytes(base::make_span(kData)));
+    mojo_base::BigBuffer data(base::as_byte_span(kData));
     int bytes_size = data.size();
 
     int result = WriteResponseData(writer.get(), std::move(data));
@@ -1215,7 +1261,7 @@ TEST_F(ServiceWorkerStorageControlImplTest, WriteAndReadResource) {
     EXPECT_EQ(data_result.data, kData);
   }
 
-  const auto kMetadata = base::as_bytes(base::make_span("metadata"));
+  const auto kMetadata = base::as_byte_span("metadata");
   int metadata_size = kMetadata.size();
 
   // Write metadata.

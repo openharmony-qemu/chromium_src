@@ -1,10 +1,10 @@
 Package: libgdk-pixbuf-2.0-dev
 Source: gdk-pixbuf
-Version: 2.42.2+dfsg-1+deb11u1
+Version: 2.42.2+dfsg-1+deb11u2
 Architecture: i386
 Maintainer: Debian GNOME Maintainers <pkg-gnome-maintainers@lists.alioth.debian.org>
 Installed-Size: 425
-Depends: gir1.2-gdkpixbuf-2.0 (= 2.42.2+dfsg-1+deb11u1), libgdk-pixbuf-2.0-0 (= 2.42.2+dfsg-1+deb11u1), libgdk-pixbuf2.0-bin (= 2.42.2+dfsg-1+deb11u1), libglib2.0-dev (>= 2.56.0), libpng-dev (<< 1.7), libpng-dev (>= 1.6), shared-mime-info
+Depends: gir1.2-gdkpixbuf-2.0 (= 2.42.2+dfsg-1+deb11u2), libgdk-pixbuf-2.0-0 (= 2.42.2+dfsg-1+deb11u2), libgdk-pixbuf2.0-bin (= 2.42.2+dfsg-1+deb11u2), libglib2.0-dev (>= 2.56.0), libpng-dev (<< 1.7), libpng-dev (>= 1.6), shared-mime-info
 Breaks: libgdk-pixbuf2.0-dev (<< 2.40.0+dfsg-6~)
 Replaces: libgdk-pixbuf2.0-dev (<< 2.40.0+dfsg-6~)
 Section: libdevel

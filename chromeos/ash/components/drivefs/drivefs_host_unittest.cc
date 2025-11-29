@@ -41,7 +41,6 @@
 #include "services/network/public/cpp/shared_url_loader_factory.h"
 #include "services/network/test/test_network_connection_tracker.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "third_party/abseil-cpp/absl/utility/utility.h"
 
 namespace drivefs {
 namespace {
@@ -226,7 +225,8 @@ class DriveFsHostTest : public ::testing::Test, public mojom::DriveFsBootstrap {
   void SetUp() override {
     testing::Test::SetUp();
     profile_path_ = base::FilePath(FILE_PATH_LITERAL("/path/to/profile"));
-    account_id_ = AccountId::FromUserEmailGaiaId("test@example.com", "ID");
+    account_id_ =
+        AccountId::FromUserEmailGaiaId("test@example.com", GaiaId("ID"));
 
     disk_manager_ = std::make_unique<ash::disks::MockDiskMountManager>();
     identity_test_env_.MakePrimaryAccountAvailable(

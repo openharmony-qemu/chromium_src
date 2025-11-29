@@ -19,6 +19,7 @@
 
 #include "base/logging.h"
 #include "base/strings/string_number_conversions.h"
+#include "base/strings/utf_string_conversions.h"
 #include "base/trace_event/trace_event.h"
 #include "base/win/scoped_variant.h"
 #include "components/stylus_handwriting/win/features.h"
@@ -172,14 +173,17 @@ HRESULT TSFTextStore::GetACPFromPoint(TsViewCookie view_cookie,
   if (stylus_handwriting::win::IsStylusHandwritingWinEnabled()) {
     IndexFromPointFlags index_flags{};
     if (flags & GXFPF_NEAREST) {
-      index_flags |= IndexFromPointFlags::kIndexFromPointNearest;
+      index_flags |= IndexFromPointFlags::kNearestToUncontainedPoint;
     }
     if (flags & GXFPF_ROUND_NEAREST) {
-      index_flags |= IndexFromPointFlags::kIndexFromPointRoundNearest;
+      index_flags |= IndexFromPointFlags::kNearestToContainedPoint;
     }
+    const gfx::Point screen_point_in_dips =
+        gfx::ToFlooredPoint(display::win::GetScreenWin()->ScreenToDIPPoint(
+            gfx::PointF(gfx::Point(*point))));
     const std::optional<size_t> index =
         text_input_client_->GetProximateCharacterIndexFromPoint(
-            gfx::Point(*point), index_flags);
+            screen_point_in_dips, index_flags);
     if (!index.has_value()) {
       return TS_E_INVALIDPOINT;
     }
@@ -245,8 +249,8 @@ HRESULT TSFTextStore::GetScreenExt(TsViewCookie view_cookie, RECT* rect) {
                                                             &tmp_rect);
   if (result_rect) {
     // This conversion is required for high dpi monitors.
-    *rect = display::win::ScreenWin::DIPToScreenRect(window_handle_,
-                                                     result_rect.value())
+    *rect = display::win::GetScreenWin()
+                ->DIPToScreenRect(window_handle_, result_rect.value())
                 .ToRECT();
   } else {
     // Default if the layout bounds are not present in text input client.
@@ -451,8 +455,8 @@ HRESULT TSFTextStore::GetTextExt(TsViewCookie view_cookie,
   TRACE_EVENT1("ime", "TSFTextStore::GetTextExt", "DIP rect",
                result_rect->ToString());
 
-  *rect = display::win::ScreenWin::DIPToScreenRect(window_handle_,
-                                                   result_rect.value())
+  *rect = display::win::GetScreenWin()
+              ->DIPToScreenRect(window_handle_, result_rect.value())
               .ToRECT();
   *clipped = FALSE;
   TRACE_EVENT1("ime", "TSFTextStore::GetTextExt", "screen rect",

@@ -139,11 +139,6 @@ class SHELL_DIALOGS_EXPORT SelectFileDialog
     // visible.
     bool keep_extension_visible = false;
 
-#if BUILDFLAG(IS_OHOS)
-    // Whether to persist read-write authorization
-    bool file_access_persist = false;
-#endif
-
     // Specifies which type of paths the caller can handle.
     enum AllowedPaths {
       // Any type of path, whether on a local/native volume or a remote/virtual

@@ -11,7 +11,7 @@
 
 #include "ash/constants/ash_features.h"
 #include "ash/constants/ash_switches.h"
-#include "ash/focus_cycler.h"
+#include "ash/focus/focus_cycler.h"
 #include "ash/login/login_screen_controller.h"
 #include "ash/login/ui/lock_screen.h"
 #include "ash/metrics/login_metrics_recorder.h"
@@ -251,7 +251,7 @@ LoginShelfView::LoginShelfView() {
                                   ButtonId id) -> LoginShelfButton* {
     View* button_container = AddChildView(std::make_unique<View>());
     button_container->SetLayoutManager(std::make_unique<views::FillLayout>());
-    button_container->SetBorder(views::CreateThemedRoundedRectBorder(
+    button_container->SetBorder(views::CreateRoundedRectBorder(
         kButtonHighlightBorderWidth, kButtonHighlightBorderRadius,
         ui::kColorCrosSystemHighlightBorder));
     button_container->SetID(kButtonContainerDiff + id);
@@ -582,7 +582,7 @@ void LoginShelfView::OnEnterpriseAccountDomainChanged() {}
 void LoginShelfView::HandleLocaleChange() {
   for (LoginShelfButton* button : login_shelf_buttons_) {
     button->SetText(l10n_util::GetStringUTF16(button->text_resource_id()));
-    button->GetViewAccessibility().SetName(button->GetText());
+    button->GetViewAccessibility().SetName(std::u16string(button->GetText()));
   }
 }
 
@@ -594,6 +594,15 @@ LoginShelfView::GetKioskInstructionBubbleForTesting() {
 ShelfShutdownConfirmationBubble*
 LoginShelfView::GetShutdownConfirmationBubbleForTesting() {
   return test_shutdown_confirmation_bubble_;
+}
+
+LoginShelfButton* LoginShelfView::GetLoginShelfButtonByID(ButtonId button_id) {
+  for (LoginShelfButton* button : login_shelf_buttons_) {
+    if (button->GetID() == button_id) {
+      return button;
+    }
+  }
+  return nullptr;
 }
 
 void LoginShelfView::SetButtonVisible(ButtonId button_id, bool visible) {

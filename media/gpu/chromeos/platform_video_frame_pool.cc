@@ -161,8 +161,7 @@ scoped_refptr<FrameResource> PlatformVideoFramePool::GetFrame() {
   scoped_refptr<FrameResource> wrapped_frame =
       origin_frame->CreateWrappingFrame(visible_rect_, natural_size_);
   DCHECK(wrapped_frame);
-  frames_in_use_.emplace(wrapped_frame->GetSharedMemoryId(),
-                         origin_frame.get());
+  frames_in_use_.emplace(wrapped_frame->tracking_token(), origin_frame.get());
   wrapped_frame->AddDestructionObserver(
       base::BindOnce(&PlatformVideoFramePool::OnFrameReleasedThunk, weak_this_,
                      parent_task_runner_, std::move(origin_frame)));
@@ -193,9 +192,6 @@ CroStatus::Or<GpuBufferLayout> PlatformVideoFramePool::Initialize(
   DVLOGF(4);
   base::AutoLock auto_lock(lock_);
 
-  CHECK(!use_linear_buffers_ || *use_linear_buffers_ == use_linear_buffers);
-  use_linear_buffers_ = use_linear_buffers;
-
   // Only support the Fourcc that could map to VideoPixelFormat.
   VideoPixelFormat format = fourcc.ToVideoPixelFormat();
   if (format == PIXEL_FORMAT_UNKNOWN) {
@@ -209,6 +205,11 @@ CroStatus::Or<GpuBufferLayout> PlatformVideoFramePool::Initialize(
     return CroStatus::Codes::kProtectedContentUnsupported;
   }
 #endif
+
+  // |use_linear_buffers| does not change unless we are switching in or out of
+  // using protected content.
+  CHECK(use_protected != use_protected_ || !use_linear_buffers_ ||
+        *use_linear_buffers_ == use_linear_buffers);
 
   // If the frame layout changed we need to allocate new frames so we will clear
   // the pool here. If only the visible rect or natural size changed, we don't
@@ -240,7 +241,7 @@ CroStatus::Or<GpuBufferLayout> PlatformVideoFramePool::Initialize(
     free_frames_.clear();
     auto maybe_frame = create_frame_cb_.Run(
         format, coded_size, visible_rect, natural_size, use_protected,
-        *use_linear_buffers_,
+        use_linear_buffers,
         fourcc == Fourcc(Fourcc::MM21) || fourcc == Fourcc(Fourcc::MT2T),
         base::TimeDelta());
     if (!maybe_frame.has_value())
@@ -259,6 +260,7 @@ CroStatus::Or<GpuBufferLayout> PlatformVideoFramePool::Initialize(
   natural_size_ = natural_size;
   max_num_frames_ = max_num_frames;
   use_protected_ = use_protected;
+  use_linear_buffers_ = use_linear_buffers;
 
   // The pool might become available because of |max_num_frames_| increased.
   // Notify the client if so.
@@ -291,11 +293,11 @@ bool PlatformVideoFramePool::IsExhausted_Locked() {
 }
 
 FrameResource* PlatformVideoFramePool::GetOriginalFrame(
-    gfx::GenericSharedMemoryId frame_id) {
+    const base::UnguessableToken& tracking_token) {
   DVLOGF(4);
   base::AutoLock auto_lock(lock_);
 
-  auto it = frames_in_use_.find(frame_id);
+  auto it = frames_in_use_.find(tracking_token);
   return (it == frames_in_use_.end()) ? nullptr : it->second;
 }
 
@@ -353,9 +355,8 @@ void PlatformVideoFramePool::OnFrameReleased(
   DVLOGF(4);
   base::AutoLock auto_lock(lock_);
 
-  gfx::GenericSharedMemoryId frame_id = origin_frame->GetSharedMemoryId();
-  auto it = frames_in_use_.find(frame_id);
-  CHECK(it != frames_in_use_.end(), base::NotFatalUntil::M130);
+  auto it = frames_in_use_.find(origin_frame->tracking_token());
+  CHECK(it != frames_in_use_.end());
   frames_in_use_.erase(it);
 
   if (IsSameFormat_Locked(origin_frame->format(), origin_frame->coded_size(),

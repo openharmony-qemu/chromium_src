@@ -20,10 +20,10 @@ caf7c6e74537b62de323b102c15b2c4d  usr/include/gnutls/self-test.h
 ca0d7eb89653e8f8cc9ab536f844bbf5  usr/include/gnutls/x509.h
 ed15ba463bba55e52cb265737fefdabf  usr/lib/i386-linux-gnu/libgnutls-dane.a
 b9afaec3ddf70363c5e7eacf066406bd  usr/lib/i386-linux-gnu/libgnutls-openssl.a
-0b8602be1f54f7c87c65bbb97be96dd0  usr/lib/i386-linux-gnu/libgnutls.a
+d5ef0d911850c1bffc795e7df50d558e  usr/lib/i386-linux-gnu/libgnutls.a
 5774f3001bb9f7f26d7c6cd18511026d  usr/lib/i386-linux-gnu/libgnutlsxx.a
 495ce46d9d12afb290d141dac8103bdc  usr/lib/i386-linux-gnu/pkgconfig/gnutls-dane.pc
 d0b90c60cfb1e522b94d43dd4ae6c403  usr/lib/i386-linux-gnu/pkgconfig/gnutls.pc
-a79e76c7cc70c5dc75dbccc48eedcb4d  usr/share/doc/libgnutls28-dev/changelog.Debian.gz
+f82e78798ad9011bc0e20fa78ac95179  usr/share/doc/libgnutls28-dev/changelog.Debian.gz
 a22353276bf54b9e5711bae5ea76c006  usr/share/doc/libgnutls28-dev/changelog.gz
 b6b0ce8b6ef75e99cf2f29e90f82ac03  usr/share/doc/libgnutls28-dev/copyright

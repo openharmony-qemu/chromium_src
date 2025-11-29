@@ -13,7 +13,7 @@
 #include "base/time/time.h"
 #include "base/types/optional_ref.h"
 #include "cc/cc_export.h"
-#include "cc/input/browser_controls_offset_tags_info.h"
+#include "cc/input/browser_controls_offset_tag_modifications.h"
 #include "cc/input/browser_controls_state.h"
 #include "cc/input/compositor_input_interfaces.h"
 #include "cc/input/event_listener_properties.h"
@@ -57,7 +57,9 @@ enum class ScrollBeginThreadState {
   kScrollingOnCompositor = 0,
   kScrollingOnCompositorBlockedOnMain = 1,
   kScrollingOnMain = 2,
-  kMaxValue = kScrollingOnMain,
+  kRasterInducingScroll = 3,
+  kRasterInducingScrollBlockedOnMain = 4,
+  kMaxValue = kRasterInducingScrollBlockedOnMain,
 };
 
 struct CC_EXPORT InputHandlerPointerResult {
@@ -137,6 +139,11 @@ class CC_EXPORT InputHandlerClient {
     // `kUseScrollPredictorForEmptyQueue`. After which we will resume frame
     // production and enqueuing input.
     kUseScrollPredictorForDeadline,
+
+    // Will perform as `kDispatchScrollEventsImmediately` until the deadline.
+    // However no input arriving after the deadline will dispatch. Event if
+    // frame production has yet to complete.
+    kDispatchScrollEventsUntilDeadline,
   };
 
   InputHandlerClient(const InputHandlerClient&) = delete;
@@ -160,40 +167,11 @@ class CC_EXPORT InputHandlerClient {
   virtual void DeliverInputForDeadline() = 0;
   virtual void DidFinishImplFrame() = 0;
   virtual bool HasQueuedInput() const = 0;
-  virtual void SetScrollEventDispatchMode(ScrollEventDispatchMode mode) = 0;
+  virtual void SetScrollEventDispatchMode(ScrollEventDispatchMode mode,
+                                          double scroll_deadline_ratio) = 0;
 
  protected:
   InputHandlerClient() = default;
-};
-
-// Data passed from the input handler to the main thread.  Used to notify the
-// main thread about changes that have occurred as a result of input since the
-// last commit.
-struct InputHandlerCommitData {
-  // Defined in input_handler.cc to avoid inlining since flat_set has
-  // non-trivial size destructor.
-  InputHandlerCommitData();
-  ~InputHandlerCommitData();
-
-  // Unconsumed scroll delta since the last commit.
-  gfx::Vector2dF overscroll_delta;
-
-  // Elements that have scroll snapped to a new target since the last commit.
-  base::flat_set<ElementId> updated_snapped_elements;
-
-  // If a scroll was active at any point since the last commit, this will
-  // identify the scroller (even if it has since ended).
-  ElementId last_latched_scroller;
-
-  // True if a scroll gesture has ended since the last commit.
-  bool scroll_gesture_did_end = false;
-
-  // The following bits are set if a gesture of any type was started since
-  // the last commit.
-  bool has_pinch_zoomed = false;
-  bool has_scrolled_by_wheel = false;
-  bool has_scrolled_by_touch = false;
-  bool has_scrolled_by_precisiontouchpad = false;
 };
 
 // The InputHandler is a way for the embedders to interact with the input system
@@ -264,6 +242,11 @@ class CC_EXPORT InputHandler : public InputDelegateForCompositor {
     // a parameter to ThreadInputHandler to specify whether unused delta is
     // consumed by the viewport or bubbles to the parent.
     bool viewport_cannot_scroll = false;
+
+    // This bool indicates if this scroll operation is expected to require
+    // raster work to be done on worker threads before the scroll tree
+    // can be activated.
+    bool raster_inducing = false;
   };
 
   // ViewportScrollResult records, for a scroll gesture affecting a page's
@@ -458,7 +441,7 @@ class CC_EXPORT InputHandler : public InputDelegateForCompositor {
 
   // Notifies when any input event is received, irrespective of whether it is
   // being handled by the InputHandler or not.
-  virtual void NotifyInputEvent();
+  virtual void NotifyInputEvent(bool is_fling);
 
   // Returns true if ScrollbarController is in the middle of a scroll operation.
   virtual bool ScrollbarScrollIsActive();
@@ -472,7 +455,8 @@ class CC_EXPORT InputHandler : public InputDelegateForCompositor {
       BrowserControlsState constraints,
       BrowserControlsState current,
       bool animate,
-      base::optional_ref<const BrowserControlsOffsetTagsInfo> offset_tags_info);
+      base::optional_ref<const BrowserControlsOffsetTagModifications>
+          offset_tag_modifications);
 
   virtual void SetIsHandlingTouchSequence(bool is_handling_touch_sequence);
 
@@ -896,6 +880,8 @@ class CC_EXPORT InputHandler : public InputDelegateForCompositor {
   // The set of scroll containers for which an impl scroll ended between the
   // last commit and the next one.
   base::flat_set<ElementId> pending_scrollend_containers_;
+
+  base::TimeTicks last_scroll_begin_time_;
 
   // Must be the last member to ensure this is destroyed first in the
   // destruction order and invalidates all weak pointers.

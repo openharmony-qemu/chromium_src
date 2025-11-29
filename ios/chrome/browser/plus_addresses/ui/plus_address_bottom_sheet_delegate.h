@@ -6,6 +6,7 @@
 #define IOS_CHROME_BROWSER_PLUS_ADDRESSES_UI_PLUS_ADDRESS_BOTTOM_SHEET_DELEGATE_H_
 
 #import <Foundation/Foundation.h>
+
 #import "url/gurl.h"
 
 enum class PlusAddressURLType;
@@ -18,6 +19,9 @@ enum class PlusAddressURLType;
 
 // Asks the delegate for the user's primary email address.
 - (NSString*)primaryEmailAddress;
+
+// Asks the delegate for the displayable origin.
+- (NSString*)originForDisplay;
 
 // Asks the delegate to open the URL for `PlusAddressUrlType` on new tab.
 - (void)openNewTab:(PlusAddressURLType)type;

@@ -7,19 +7,20 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <algorithm>
 #include <map>
 #include <set>
 
 #include "base/command_line.h"
 #include "base/containers/contains.h"
 #include "base/functional/bind.h"
-#include "base/functional/callback_forward.h"
+#include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/metrics/histogram_macros.h"
-#include "base/not_fatal_until.h"
-#include "base/ranges/algorithm.h"
+#include "base/strings/stringprintf.h"
 #include "base/token.h"
+#include "base/trace_event/trace_event.h"
 #include "build/build_config.h"
 #include "content/browser/renderer_host/media/media_stream_manager.h"
 #include "content/browser/renderer_host/media/video_capture_manager.h"
@@ -32,7 +33,11 @@
 #include "media/capture/video/video_capture_buffer_tracker_factory_impl.h"
 #include "media/capture/video/video_capture_device_client.h"
 #include "media/capture/video/video_capture_metrics.h"
-#include "services/video_effects/public/mojom/video_effects_processor.mojom-forward.h"
+#include "services/video_effects/public/cpp/buildflags.h"
+
+#if BUILDFLAG(ENABLE_VIDEO_EFFECTS)
+#include "services/video_effects/public/mojom/video_effects_processor.mojom.h"
+#endif
 
 #if !BUILDFLAG(IS_ANDROID)
 #include "content/browser/compositor/image_transport_factory.h"
@@ -200,7 +205,6 @@ VideoCaptureController::VideoCaptureController(
       device_launcher_(std::move(device_launcher)),
       emit_log_message_cb_(std::move(emit_log_message_cb)),
       device_launch_observer_(nullptr),
-      state_(blink::VIDEO_CAPTURE_STATE_STARTING),
       has_received_frames_(false) {
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
 }
@@ -254,7 +258,7 @@ void VideoCaptureController::AddClient(
   }
 
   // Signal error in case device is already in error state.
-  if (state_ == blink::VIDEO_CAPTURE_STATE_ERROR) {
+  if (state_ == State::kError) {
     event_handler->OnError(
         id,
         media::VideoCaptureError::kVideoCaptureControllerIsAlreadyInErrorState);
@@ -266,16 +270,15 @@ void VideoCaptureController::AddClient(
     return;
 
   // If the device has reported OnStarted event, report it to this client here.
-  if (state_ == blink::VIDEO_CAPTURE_STATE_STARTED)
+  if (state_ == State::kStarted) {
     event_handler->OnStarted(id);
+  }
 
   std::unique_ptr<ControllerClient> client =
       std::make_unique<ControllerClient>(id, event_handler, session_id, params);
   // If we already have gotten frame_info from the device, repeat it to the new
   // client.
-  if (state_ != blink::VIDEO_CAPTURE_STATE_ERROR) {
-    controller_clients_.push_back(std::move(client));
-  }
+  controller_clients_.push_back(std::move(client));
 }
 
 base::UnguessableToken VideoCaptureController::RemoveClient(
@@ -389,7 +392,7 @@ void VideoCaptureController::ReturnBuffer(
   CHECK(client);
 
   auto buffers_in_use_entry_iter =
-      base::ranges::find(client->buffers_in_use, buffer_id);
+      std::ranges::find(client->buffers_in_use, buffer_id);
   CHECK(buffers_in_use_entry_iter != std::end(client->buffers_in_use));
   client->buffers_in_use.erase(buffers_in_use_entry_iter);
 
@@ -443,7 +446,7 @@ void VideoCaptureController::OnFrameReadyInBuffer(
       frame.buffer_id, frame.frame_feedback_id, std::move(frame.frame_info),
       &frame_context);
 
-  if (state_ != blink::VIDEO_CAPTURE_STATE_ERROR) {
+  if (state_ != State::kError) {
     // Inform all active clients of the frames.
     for (const auto& client : controller_clients_) {
       if (client->session_closed || client->paused)
@@ -497,8 +500,7 @@ ReadyBuffer VideoCaptureController::MakeReadyBufferAndSetContextFeedbackId(
     media::mojom::VideoFrameInfoPtr frame_info,
     BufferContext** out_buffer_context) {
   auto buffer_context_iter = FindUnretiredBufferContextFromBufferId(buffer_id);
-  CHECK(buffer_context_iter != buffer_contexts_.end(),
-        base::NotFatalUntil::M130);
+  CHECK(buffer_context_iter != buffer_contexts_.end());
   BufferContext* buffer_context = &(*buffer_context_iter);
   buffer_context->set_frame_feedback_id(frame_feedback_id);
   DCHECK(!buffer_context->HasConsumers());
@@ -536,8 +538,7 @@ void VideoCaptureController::OnBufferRetired(int buffer_id) {
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
 
   auto buffer_context_iter = FindUnretiredBufferContextFromBufferId(buffer_id);
-  CHECK(buffer_context_iter != buffer_contexts_.end(),
-        base::NotFatalUntil::M130);
+  CHECK(buffer_context_iter != buffer_contexts_.end());
 
   // If there are any clients still using the buffer, we need to allow them
   // to finish up. We need to hold on to the BufferContext entry until then,
@@ -550,7 +551,7 @@ void VideoCaptureController::OnBufferRetired(int buffer_id) {
 
 void VideoCaptureController::OnError(media::VideoCaptureError error) {
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
-  state_ = blink::VIDEO_CAPTURE_STATE_ERROR;
+  state_ = State::kError;
   PerformForClientsWithOpenSession(base::BindRepeating(&CallOnError, error));
 }
 
@@ -600,7 +601,7 @@ void VideoCaptureController::OnLog(const std::string& message) {
 void VideoCaptureController::OnStarted() {
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
   EmitLogMessage(__func__, 3);
-  state_ = blink::VIDEO_CAPTURE_STATE_STARTED;
+  state_ = State::kStarted;
   PerformForClientsWithOpenSession(base::BindRepeating(&CallOnStarted));
 }
 
@@ -665,8 +666,12 @@ void VideoCaptureController::CreateAndStartDeviceAsync(
     const media::VideoCaptureParams& params,
     VideoCaptureDeviceLaunchObserver* observer,
     base::OnceClosure done_cb,
+#if BUILDFLAG(ENABLE_VIDEO_EFFECTS)
     mojo::PendingRemote<video_effects::mojom::VideoEffectsProcessor>
-        video_effects_processor) {
+        video_effects_processor,
+#endif
+    mojo::PendingRemote<media::mojom::ReadonlyVideoEffectsManager>
+        readonly_video_effects_manager) {
   DCHECK_CURRENTLY_ON(BrowserThread::IO);
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("video_and_image_capture"),
                "VideoCaptureController::CreateAndStartDeviceAsync");
@@ -681,7 +686,11 @@ void VideoCaptureController::CreateAndStartDeviceAsync(
       device_id_, stream_type_, params, GetWeakPtrForIOThread(),
       base::BindOnce(&VideoCaptureController::OnDeviceConnectionLost,
                      GetWeakPtrForIOThread()),
-      this, std::move(done_cb), std::move(video_effects_processor));
+      this, std::move(done_cb),
+#if BUILDFLAG(ENABLE_VIDEO_EFFECTS)
+      std::move(video_effects_processor),
+#endif
+      std::move(readonly_video_effects_manager));
 }
 
 void VideoCaptureController::ReleaseDeviceAsync(base::OnceClosure done_cb) {
@@ -809,13 +818,13 @@ VideoCaptureController::ControllerClient* VideoCaptureController::FindClient(
 std::vector<VideoCaptureController::BufferContext>::iterator
 VideoCaptureController::FindBufferContextFromBufferContextId(
     int buffer_context_id) {
-  return base::ranges::find(buffer_contexts_, buffer_context_id,
-                            &BufferContext::buffer_context_id);
+  return std::ranges::find(buffer_contexts_, buffer_context_id,
+                           &BufferContext::buffer_context_id);
 }
 
 std::vector<VideoCaptureController::BufferContext>::iterator
 VideoCaptureController::FindUnretiredBufferContextFromBufferId(int buffer_id) {
-  return base::ranges::find_if(
+  return std::ranges::find_if(
       buffer_contexts_, [buffer_id](const BufferContext& entry) {
         return (entry.buffer_id() == buffer_id) && !entry.is_retired();
       });
@@ -827,8 +836,7 @@ void VideoCaptureController::OnClientFinishedConsumingBuffer(
     const media::VideoCaptureFeedback& feedback) {
   auto buffer_context_iter =
       FindBufferContextFromBufferContextId(buffer_context_id);
-  CHECK(buffer_context_iter != buffer_contexts_.end(),
-        base::NotFatalUntil::M130);
+  CHECK(buffer_context_iter != buffer_contexts_.end());
 
   buffer_context_iter->RecordConsumerUtilization(feedback);
   buffer_context_iter->DecreaseConsumerCount();
@@ -844,8 +852,8 @@ void VideoCaptureController::ReleaseBufferContext(
     if (client->session_closed)
       continue;
     auto entry_iter =
-        base::ranges::find(client->known_buffer_context_ids,
-                           buffer_context_iter->buffer_context_id());
+        std::ranges::find(client->known_buffer_context_ids,
+                          buffer_context_iter->buffer_context_id());
     if (entry_iter != std::end(client->known_buffer_context_ids)) {
       client->known_buffer_context_ids.erase(entry_iter);
       client->event_handler->OnBufferDestroyed(

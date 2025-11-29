@@ -11,12 +11,13 @@
 #include <string_view>
 #include <utility>
 
+#include "base/feature_list.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "base/logging.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
-#include "base/not_fatal_until.h"
+#include "base/metrics/histogram_macros.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/time/time.h"
 #include "base/trace_event/trace_event.h"
@@ -39,7 +40,6 @@
 #include "gpu/command_buffer/common/shared_image_capabilities.h"
 #include "gpu/command_buffer/common/shared_image_usage.h"
 #include "gpu/command_buffer/common/sync_token.h"
-#include "gpu/config/gpu_finch_features.h"
 #include "gpu/ipc/common/gpu_memory_buffer_support.h"
 #include "media/base/media_switches.h"
 #include "ui/aura/env.h"
@@ -75,6 +75,11 @@ const gfx::BufferUsage kDefaultBufferUsage = gfx::BufferUsage::GPU_READ;
 const gpu::SharedImageUsageSet kDefaultMappableSIUsage =
     gpu::SHARED_IMAGE_USAGE_DISPLAY_READ;
 
+// Killswitch for disabling RG88 format support over exo.
+BASE_FEATURE(kExoDisableRG88Format,
+             "kExoDisableRG88Format",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+
 // Gets the color type of |format| for creating bitmap. If it returns
 // SkColorType::kUnknown_SkColorType, it means with this format, this buffer
 // contents should not be used to create bitmap.
@@ -99,19 +104,18 @@ viz::SharedImageFormat GetSharedImageFormat(gfx::BufferFormat buffer_format) {
       return viz::SinglePlaneFormat::kBGRA_8888;
     case gfx::BufferFormat::R_8:
       return viz::SinglePlaneFormat::kR_8;
-    case gfx::BufferFormat::R_16:
-      return viz::SinglePlaneFormat::kR_16;
-    case gfx::BufferFormat::RG_1616:
-      return viz::SinglePlaneFormat::kRG_1616;
-    case gfx::BufferFormat::RGBA_4444:
-      return viz::SinglePlaneFormat::kRGBA_4444;
     case gfx::BufferFormat::RGBA_8888:
       return viz::SinglePlaneFormat::kRGBA_8888;
     case gfx::BufferFormat::RGBA_F16:
       return viz::SinglePlaneFormat::kRGBA_F16;
-    case gfx::BufferFormat::BGR_565:
+    case gfx::BufferFormat::BGR_565: {
+      UMA_HISTOGRAM_BOOLEAN("Graphics.Exo.Buffer.Used_BRG_565", true);
+    }
       return viz::SinglePlaneFormat::kBGR_565;
     case gfx::BufferFormat::RG_88:
+      if (base::FeatureList::IsEnabled(kExoDisableRG88Format)) {
+        NOTREACHED();
+      }
       return viz::SinglePlaneFormat::kRG_88;
     case gfx::BufferFormat::RGBX_8888:
       return viz::SinglePlaneFormat::kRGBX_8888;
@@ -127,12 +131,14 @@ viz::SharedImageFormat GetSharedImageFormat(gfx::BufferFormat buffer_format) {
     case gfx::BufferFormat::YUV_420_BIPLANAR:
       format = viz::MultiPlaneFormat::kNV12;
       break;
-    case gfx::BufferFormat::YUVA_420_TRIPLANAR:
-      format = viz::MultiPlaneFormat::kNV12A;
-      break;
     case gfx::BufferFormat::P010:
       format = viz::MultiPlaneFormat::kP010;
       break;
+    case gfx::BufferFormat::R_16:
+    case gfx::BufferFormat::RG_1616:
+    case gfx::BufferFormat::RGBA_4444:
+    case gfx::BufferFormat::YUVA_420_TRIPLANAR:
+      NOTREACHED();
   }
 #if BUILDFLAG(IS_CHROMEOS)
   // If format is true multiplanar format, we prefer external sampler on
@@ -312,18 +318,8 @@ Buffer::Texture::Texture(
                                    gpu::SHARED_IMAGE_USAGE_RASTER_WRITE |
                                    gpu::SHARED_IMAGE_USAGE_DISPLAY_READ;
 
-  bool add_scanout_usage = is_overlay_candidate;
-
-  // Scanout usage should be added only if scanout of SharedImages is supported.
-  // However, historically this was not checked.
-  // TODO(crbug.com/330865436): Remove killswitch post-safe rollout.
-  if (base::FeatureList::IsEnabled(
-          features::kExoBufferAddScanoutUsageOnlyIfSupportedBySharedImage)) {
-    add_scanout_usage = add_scanout_usage &&
-                        sii->GetCapabilities().supports_scanout_shared_images;
-  }
-
-  if (add_scanout_usage) {
+  if (is_overlay_candidate &&
+      sii->GetCapabilities().supports_scanout_shared_images) {
     usage |= gpu::SHARED_IMAGE_USAGE_SCANOUT;
   }
 
@@ -435,7 +431,9 @@ gpu::SyncToken Buffer::Texture::CopyTexImage(
     sync_token = sii->GenUnverifiedSyncToken();
 
     gpu::raster::RasterInterface* ri = context_provider_->RasterInterface();
-    ri->WaitSyncTokenCHROMIUM(sync_token.GetConstData());
+    std::unique_ptr<gpu::RasterScopedAccess> ri_access =
+        shared_image_->BeginRasterAccess(ri, sync_token, /*readonly=*/true);
+
     DCHECK_NE(query_id_, 0u);
     ri->BeginQueryEXT(query_type_, query_id_);
 
@@ -448,7 +446,7 @@ gpu::SyncToken Buffer::Texture::CopyTexImage(
     // Create and return a sync token that can be used to ensure that the
     // CopySharedImage call is processed before issuing any commands
     // that will read from the target texture on a different context.
-    ri->GenUnverifiedSyncTokenCHROMIUM(sync_token.GetData());
+    sync_token = gpu::RasterScopedAccess::EndAccess(std::move(ri_access));
   }
   return sync_token;
 }
@@ -720,11 +718,13 @@ bool Buffer::ProduceTransferableResource(
   // require a secure output.
   if (secure_output_only &&
       protected_buffer_state_ == ProtectedBufferState::UNKNOWN &&
-      !gpu_memory_buffer_handle_.is_null() && protected_native_pixmap_query) {
-    gfx::GpuMemoryBufferHandle gmb_handle = gpu_memory_buffer_handle_.Clone();
-    if (!gmb_handle.native_pixmap_handle.planes.empty()) {
-      base::ScopedFD pixmap_handle(HANDLE_EINTR(
-          dup(gmb_handle.native_pixmap_handle.planes[0].fd.get())));
+      gpu_memory_buffer_handle_.type == gfx::NATIVE_PIXMAP &&
+      protected_native_pixmap_query) {
+    if (!gpu_memory_buffer_handle_.native_pixmap_handle().planes.empty()) {
+      base::ScopedFD pixmap_handle(
+          HANDLE_EINTR(dup(gpu_memory_buffer_handle_.native_pixmap_handle()
+                               .planes[0]
+                               .fd.get())));
       if (pixmap_handle.is_valid()) {
         protected_buffer_state_ = ProtectedBufferState::QUERYING;
         protected_native_pixmap_query->IsProtectedNativePixmapHandle(
@@ -947,7 +947,7 @@ void Buffer::MaybeRunPerCommitRelease(
 
 void Buffer::FenceSignalled(uint64_t commit_id) {
   auto iter = buffer_releases_.find(commit_id);
-  CHECK(iter != buffer_releases_.end(), base::NotFatalUntil::M130);
+  CHECK(iter != buffer_releases_.end());
   std::move(iter->second.buffer_release_callback).Run();
   buffer_releases_.erase(iter);
 }

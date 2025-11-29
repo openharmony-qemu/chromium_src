@@ -77,6 +77,8 @@ def to_output(value: Value) -> str | None:
 
 
 _MAGIC_ARG_MAPPING = {
+    '$$MAGIC_SUBSTITUTION_AndroidDesktopTelemetryRemote':
+    'ANDROID_DESKTOP_TELEMETRY_REMOTE',
     '$$MAGIC_SUBSTITUTION_ChromeOSTelemetryRemote': 'CROS_TELEMETRY_REMOTE',
     '$$MAGIC_SUBSTITUTION_ChromeOSGtestFilterFile': 'CROS_GTEST_FILTER_FILE',
     '$$MAGIC_SUBSTITUTION_GPUExpectedVendorId': 'GPU_EXPECTED_VENDOR_ID',
@@ -167,6 +169,21 @@ def convert_swarming(swarming: dict[str, typing.Any]) -> Value:
 
       case _:
         raise Exception(f'unhandled key in swarming: "{key}"')
+
+  return value_builder
+
+
+def convert_skylab(skylab: dict[str, typing.Any]) -> Value:
+  """Convert a skylab dict to a targets.skylab call."""
+  value_builder = CallValueBuilder('targets.skylab')
+
+  for key, value in skylab.items():
+    match key:
+      case 'shards' | 'timeout_sec':
+        value_builder[key] = convert_direct(value)
+
+      case _:
+        raise Exception(f'unhandled key in skylab: "{key}"')
 
   return value_builder
 

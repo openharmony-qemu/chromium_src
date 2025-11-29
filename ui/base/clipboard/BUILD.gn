@@ -7,11 +7,14 @@ import("//build/config/features.gni")
 import("//build/config/ui.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
 
+if (is_ios) {
+  import("//build/config/apple/mobile_config.gni")  # For `target_platform`
+}
+
 component("clipboard_types") {
   output_name = "ui_base_clipboard_types"
   sources = [
     "clipboard_buffer.h",
-    "clipboard_constants.cc",
     "clipboard_constants.h",
   ]
 
@@ -39,12 +42,8 @@ component("clipboard_types") {
     sources += [ "clipboard_format_type_win.cc" ]
   }
 
-  if (use_aura && !is_win && !is_ohos) {
+  if (use_aura && !is_win) {
     sources += [ "clipboard_format_type_aura.cc" ]
-  }
-
-  if (is_ohos) {
-    sources += [ "clipboard_format_type_ohos.cc" ]
   }
 
   defines = [ "IS_UI_BASE_CLIPBOARD_TYPES_IMPL" ]
@@ -93,6 +92,8 @@ component("clipboard") {
   sources = [
     "clipboard.cc",
     "clipboard.h",
+    "clipboard_change_notifier.cc",
+    "clipboard_change_notifier.h",
     "clipboard_metrics.cc",
     "clipboard_metrics.h",
     "clipboard_monitor.cc",
@@ -132,10 +133,14 @@ component("clipboard") {
   }
 
   if (is_ios) {
-    sources += [
-      "clipboard_ios.h",
-      "clipboard_ios.mm",
-    ]
+    if (target_platform == "tvos") {
+      sources += [ "clipboard_tvos.mm" ]
+    } else {
+      sources += [
+        "clipboard_ios.h",
+        "clipboard_ios.mm",
+      ]
+    }
   }
 
   if (is_win) {
@@ -177,25 +182,6 @@ component("clipboard") {
         "//ui/ozone",
       ]
     }
-  }
-
-  if(is_ohos){
-    deps += [
-      "//ohos/adapter:adapter",
-    ]
-
-    sources += [
-     "clipboard_ohos.cc",
-     "clipboard_ohos.h",
-    ]
-
-    sources -= [
-      "clipboard_factory_ozone.cc",
-      "clipboard_ozone.cc",
-      "clipboard_ozone.h",
-    ]
-
-    libs = ["udmf", "pasteboard", "pixelmap", "ability_access_control"]
   }
 
   if (is_android) {

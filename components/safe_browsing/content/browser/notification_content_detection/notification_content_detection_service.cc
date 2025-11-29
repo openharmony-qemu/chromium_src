@@ -34,17 +34,21 @@ NotificationContentDetectionService::~NotificationContentDetectionService() =
 void NotificationContentDetectionService::
     MaybeCheckNotificationContentDetectionModel(
         const blink::PlatformNotificationData& notification_data,
-        const GURL& origin) {
+        const GURL& origin,
+        bool is_allowlisted_by_user,
+        ModelVerdictCallback model_verdict_callback) {
   // Check the high confidence allowlist to determine whether to check the
   // LiteRT model. Since this does not own `notification_data`, create a deep
   // copy and pass it along so that the value is safe to change.
   blink::PlatformNotificationData notification_data_copy = notification_data;
   database_manager_->CheckUrlForHighConfidenceAllowlist(
-      origin, base::BindOnce(&NotificationContentDetectionService::
-                                 OnCheckUrlForHighConfidenceAllowlist,
-                             weak_factory_.GetWeakPtr(),
-                             base::OwnedRef(notification_data_copy),
-                             base::TimeTicks::Now(), origin));
+      origin,
+      base::BindOnce(&NotificationContentDetectionService::
+                         OnCheckUrlForHighConfidenceAllowlist,
+                     weak_factory_.GetWeakPtr(),
+                     base::OwnedRef(notification_data_copy),
+                     base::TimeTicks::Now(), origin, is_allowlisted_by_user,
+                     std::move(model_verdict_callback)));
 }
 
 void NotificationContentDetectionService::SetModelForTesting(
@@ -58,27 +62,46 @@ void NotificationContentDetectionService::OnCheckUrlForHighConfidenceAllowlist(
     blink::PlatformNotificationData& notification_data,
     const base::TimeTicks start_time,
     const GURL& origin,
+    bool is_allowlisted_by_user,
+    ModelVerdictCallback model_verdict_callback,
     bool did_match_allowlist,
     std::optional<
         SafeBrowsingDatabaseManager::HighConfidenceAllowlistCheckLoggingDetails>
         logging_details) {
   base::UmaHistogramTimes(kAllowlistCheckLatencyHistogram,
                           base::TimeTicks::Now() - start_time);
-  // Only perform inference on the model for non-allowlisted URLs.
-  if (did_match_allowlist) {
+  bool should_skip_notification_warning =
+      did_match_allowlist || is_allowlisted_by_user;
+  if (should_skip_notification_warning) {
+    // If the `origin` is on the high confidence allowlist or was allowlisted by
+    // the user, then display the notification before checking the model.
+    std::move(model_verdict_callback)
+        .Run(/*is_suspicious=*/false,
+             NotificationContentDetectionModel::GetSerializedMetadata(
+                 did_match_allowlist, is_allowlisted_by_user, std::nullopt));
     // The model check should happen at a sampled rate for notifications from
-    // allowlisted sites. This rate is defined by the
+    // allowlisted sites for collecting metrics. This rate is defined by the
     // `kOnDeviceNotificationContentDetectionModelAllowlistSamplingRate` feature
     // parameter.
-    if (base::RandDouble() * 100 >=
-        kOnDeviceNotificationContentDetectionModelAllowlistSamplingRate.Get()) {
+    if (did_match_allowlist &&
+        base::RandDouble() * 100 >=
+            kOnDeviceNotificationContentDetectionModelAllowlistSamplingRate
+                .Get()) {
       return;
     }
+    // Perform inference with model on `notification_contents` for metrics.
+    // Since `model_verdict_callback` was already run above, use `DoNothing()`
+    // as the callback.
+    notification_content_detection_model_->Execute(
+        notification_data, origin, is_allowlisted_by_user, did_match_allowlist,
+        base::DoNothing());
+    return;
   }
-
-  // Perform inference with model on `notification_contents`.
-  notification_content_detection_model_->Execute(notification_data, origin,
-                                                 did_match_allowlist);
+  // Perform inference with model on `notification_contents`, passing
+  // `model_verdict_callback` to be called when the model is finished running.
+  notification_content_detection_model_->Execute(
+      notification_data, origin, is_allowlisted_by_user, did_match_allowlist,
+      std::move(model_verdict_callback));
 }
 
 }  // namespace safe_browsing

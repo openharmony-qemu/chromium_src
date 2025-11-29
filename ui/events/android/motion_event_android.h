@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <array>
 #include <memory>
 
 #include "base/android/scoped_java_ref.h"
@@ -36,6 +37,7 @@ class EVENTS_EXPORT MotionEventAndroid : public MotionEvent {
             jfloat pos_y_pixels,
             jfloat touch_major_pixels,
             jfloat touch_minor_pixels,
+            jfloat pressure,
             jfloat orientation_rad,
             jfloat tilt_rad,
             jint tool_type);
@@ -44,6 +46,7 @@ class EVENTS_EXPORT MotionEventAndroid : public MotionEvent {
     jfloat pos_y_pixels;
     jfloat touch_major_pixels;
     jfloat touch_minor_pixels;
+    jfloat pressure;
     jfloat orientation_rad;
     // Unlike the tilt angles in motion_event.h, this field matches the
     // MotionEvent spec because we get this values from Java.
@@ -57,6 +60,7 @@ class EVENTS_EXPORT MotionEventAndroid : public MotionEvent {
                      float tick_multiplier,
                      base::TimeTicks oldest_event_time,
                      base::TimeTicks latest_event_time,
+                     base::TimeTicks cached_down_time_ms,
                      int android_action,
                      int pointer_count,
                      int history_size,
@@ -100,6 +104,7 @@ class EVENTS_EXPORT MotionEventAndroid : public MotionEvent {
   // chromium it gives timestamp of the oldest input event for batched inputs.
   base::TimeTicks GetEventTime() const override;
   base::TimeTicks GetLatestEventTime() const override;
+  base::TimeTicks GetDownTime() const override;
   size_t GetHistorySize() const override;
   int GetSourceDeviceId(size_t pointer_index) const override;
   int GetButtonState() const override;
@@ -114,6 +119,7 @@ class EVENTS_EXPORT MotionEventAndroid : public MotionEvent {
   float GetTickMultiplier() const;
   bool for_touch_handle() const { return for_touch_handle_; }
 
+  float GetRawXPix(size_t pointer_index) const;
   virtual float GetXPix(size_t pointer_index) const = 0;
   virtual float GetYPix(size_t pointer_index) const = 0;
 
@@ -136,11 +142,14 @@ class EVENTS_EXPORT MotionEventAndroid : public MotionEvent {
     gfx::PointF position;
     float touch_major = 0;
     float touch_minor = 0;
+    float pressure = 0;
     float orientation = 0;
     float tilt_x = 0;
     float tilt_y = 0;
     ToolType tool_type = ToolType::UNKNOWN;
-  } cached_pointers_[MAX_POINTERS_TO_CACHE];
+  };
+
+  std::array<CachedPointer, MAX_POINTERS_TO_CACHE> cached_pointers_;
 
   static ToolType FromAndroidToolType(int android_tool_type);
   static base::TimeTicks FromAndroidTime(base::TimeTicks time);
@@ -167,8 +176,15 @@ class EVENTS_EXPORT MotionEventAndroid : public MotionEvent {
 
   const bool for_touch_handle_;
 
+  // |cached_oldest_event_time_| and |cached_latest_event_time_| are same when
+  // history size is 0, in presence of historical events
+  // |cached_oldest_event_time_| is the event time of oldest coalesced event.
   const base::TimeTicks cached_oldest_event_time_;
   const base::TimeTicks cached_latest_event_time_;
+  // This stores the event time of first down event in touch sequence, it is
+  // obtained from MotionEvent.getDownTime for java backed events and
+  // from AMotionEvent_getDowntime for native backed events.
+  const base::TimeTicks cached_down_time_ms_;
   const Action cached_action_;
   const size_t cached_pointer_count_;
   const size_t cached_history_size_;

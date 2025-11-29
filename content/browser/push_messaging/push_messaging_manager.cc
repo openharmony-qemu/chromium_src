@@ -27,6 +27,7 @@
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/child_process_host.h"
 #include "content/public/browser/permission_controller.h"
+#include "content/public/browser/permission_descriptor_util.h"
 #include "content/public/browser/permission_request_description.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/common/content_switches.h"
@@ -196,7 +197,7 @@ void PushMessagingManager::Subscribe(
   // if the renderer if the renderer side check didn't happen for some reason.
   if (service_worker_registration->ancestor_frame_type() ==
       blink::mojom::AncestorFrameType::kFencedFrame) {
-    bad_message::ReceivedBadMessage(render_process_host_->GetID(),
+    bad_message::ReceivedBadMessage(render_process_host_->GetDeprecatedID(),
                                     bad_message::PMM_SUBSCRIBE_IN_FENCED_FRAME);
     return;
   }
@@ -204,7 +205,7 @@ void PushMessagingManager::Subscribe(
   const blink::StorageKey& storage_key = service_worker_registration->key();
 
   if (!ChildProcessSecurityPolicyImpl::GetInstance()->CanAccessDataForOrigin(
-          render_process_host_->GetID(), storage_key.origin())) {
+          render_process_host_->GetDeprecatedID(), storage_key.origin())) {
     bad_message::ReceivedBadMessage(&*render_process_host_,
                                     bad_message::PMM_SUBSCRIBE_INVALID_ORIGIN);
     return;
@@ -326,7 +327,7 @@ void PushMessagingManager::Register(PushMessagingManager::RegisterData data) {
             blink::mojom::PushRegistrationStatus::INCOGNITO_PERMISSION_DENIED);
       } else {
         RenderFrameHostImpl* render_frame_host_impl =
-            RenderFrameHostImpl::FromID(render_process_host_->GetID(),
+            RenderFrameHostImpl::FromID(render_process_host_->GetDeprecatedID(),
                                         render_frame_id_);
         if (render_frame_host_impl) {
           render_frame_host_impl->AddMessageToConsole(
@@ -346,7 +347,10 @@ void PushMessagingManager::Register(PushMessagingManager::RegisterData data) {
               ->RequestPermissionFromCurrentDocument(
                   render_frame_host_impl,
                   PermissionRequestDescription(
-                      blink::PermissionType::NOTIFICATIONS, user_gesture),
+                      PermissionDescriptorUtil::
+                          CreatePermissionDescriptorForPermissionType(
+                              blink::PermissionType::NOTIFICATIONS),
+                      user_gesture),
                   base::BindOnce(
                       &PushMessagingManager::DidRequestPermissionInIncognito,
                       AsWeakPtr(), std::move(data)));
@@ -364,14 +368,14 @@ void PushMessagingManager::Register(PushMessagingManager::RegisterData data) {
   if (IsRequestFromDocument(render_frame_id_)) {
     push_service->SubscribeFromDocument(
         requesting_origin.GetURL(), registration_id,
-        render_process_host_->GetID(), render_frame_id_, std::move(options),
-        user_gesture,
+        render_process_host_->GetDeprecatedID(), render_frame_id_,
+        std::move(options), user_gesture,
         base::BindOnce(&PushMessagingManager::DidRegister, AsWeakPtr(),
                        std::move(data)));
   } else {
     push_service->SubscribeFromWorker(
         requesting_origin.GetURL(), registration_id,
-        render_process_host_->GetID(), std::move(options),
+        render_process_host_->GetDeprecatedID(), std::move(options),
         base::BindOnce(&PushMessagingManager::DidRegister, AsWeakPtr(),
                        std::move(data)));
   }
@@ -519,7 +523,7 @@ void PushMessagingManager::Unsubscribe(int64_t service_worker_registration_id,
   const url::Origin& origin = service_worker_registration->key().origin();
 
   if (!ChildProcessSecurityPolicyImpl::GetInstance()->CanAccessDataForOrigin(
-          render_process_host_->GetID(), origin)) {
+          render_process_host_->GetDeprecatedID(), origin)) {
     bad_message::ReceivedBadMessage(
         &*render_process_host_, bad_message::PMM_UNSUBSCRIBE_INVALID_ORIGIN);
     return;
@@ -608,7 +612,8 @@ void PushMessagingManager::GetSubscription(
           service_worker_registration_id);
   if (registration) {
     if (!ChildProcessSecurityPolicyImpl::GetInstance()->CanAccessDataForOrigin(
-            render_process_host_->GetID(), registration->key().origin())) {
+            render_process_host_->GetDeprecatedID(),
+            registration->key().origin())) {
       bad_message::ReceivedBadMessage(
           &*render_process_host_,
           bad_message::PMM_GET_SUBSCRIPTION_INVALID_ORIGIN);

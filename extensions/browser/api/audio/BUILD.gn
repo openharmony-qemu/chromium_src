@@ -21,25 +21,20 @@ source_set("audio") {
 
   configs += [ "//build/config/compiler:wexit_time_destructors" ]
 
-  public_deps = [ "//extensions/browser:browser_sources" ]
-
-  deps = [
-    "//components/prefs",
-    "//extensions/common",
+  public_deps = [
+    "//base",
+    "//extensions/browser:browser_sources",
     "//extensions/common/api",
   ]
+
+  deps = [ "//components/prefs" ]
 
   if (!is_chromeos) {
     sources += [ "audio_service.cc" ]
   } else {
-    sources += [
-      "audio_service_chromeos.cc",
-      "audio_service_utils.cc",
-      "audio_service_utils.h",
-    ]
+    sources += [ "audio_service_chromeos.cc" ]
     deps += [
       "//chromeos/ash/components/audio",
-      "//chromeos/crosapi/mojom",
       "//content/public/browser",
     ]
   }

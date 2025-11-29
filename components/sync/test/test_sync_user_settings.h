@@ -10,7 +10,6 @@
 #include <vector>
 
 #include "base/memory/raw_ptr.h"
-#include "build/chromeos_buildflags.h"
 #include "components/signin/public/base/gaia_id_hash.h"
 #include "components/sync/base/data_type.h"
 #include "components/sync/base/user_selectable_type.h"
@@ -41,19 +40,18 @@ class TestSyncUserSettings : public SyncUserSettings {
   bool IsTypeManagedByCustodian(UserSelectableType type) const override;
   SyncUserSettings::UserSelectableTypePrefState GetTypePrefStateForAccount(
       UserSelectableType type) const override;
-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS)
-  int GetNumberOfAccountsWithPasswordsSelected() const override;
-#endif
   void SetSelectedTypes(bool sync_everything,
                         UserSelectableTypeSet types) override;
   void SetSelectedType(UserSelectableType type, bool is_type_on) override;
+  void ResetSelectedType(UserSelectableType type) override;
   void KeepAccountSettingsPrefsOnlyForUsers(
-      const std::vector<signin::GaiaIdHash>& available_gaia_ids) override;
+      const std::vector<GaiaId>& available_gaia_ids) override;
   DataTypeSet GetPreferredDataTypes() const;
   UserSelectableTypeSet GetRegisteredSelectableTypes() const override;
 
 #if BUILDFLAG(IS_CHROMEOS)
   bool IsSyncFeatureDisabledViaDashboard() const override;
+  void ClearSyncFeatureDisabledViaDashboard() override;
   bool IsSyncAllOsTypesEnabled() const override;
   UserSelectableOsTypeSet GetSelectedOsTypes() const override;
   bool IsOsTypeManagedByPolicy(UserSelectableOsType type) const override;
@@ -102,7 +100,7 @@ class TestSyncUserSettings : public SyncUserSettings {
   void SetExplicitPassphraseTime(base::Time t);
 
 #if BUILDFLAG(IS_CHROMEOS)
-  void SetSyncFeatureDisabledViaDashboard(bool disabled_via_dashboard);
+  void SetSyncFeatureDisabledViaDashboard();
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
   const std::string& GetEncryptionPassphrase() const;

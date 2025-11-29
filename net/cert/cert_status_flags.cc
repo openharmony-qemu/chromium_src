@@ -25,14 +25,17 @@ int MapCertStatusToNetError(CertStatus cert_status) {
     return ERR_CERT_KNOWN_INTERCEPTION_BLOCKED;
   if (cert_status & CERT_STATUS_REVOKED)
     return ERR_CERT_REVOKED;
-  if (cert_status & CERT_STATUS_AUTHORITY_INVALID)
+  if (cert_status & CERT_STATUS_AUTHORITY_INVALID &&
+      !(cert_status & CERT_STATUS_SELF_SIGNED_LOCAL_NETWORK)) {
     return ERR_CERT_AUTHORITY_INVALID;
+  }
   if (cert_status & CERT_STATUS_COMMON_NAME_INVALID)
     return ERR_CERT_COMMON_NAME_INVALID;
+  if (cert_status & CERT_STATUS_SELF_SIGNED_LOCAL_NETWORK) {
+    return ERR_CERT_SELF_SIGNED_LOCAL_NETWORK;
+  }
   if (cert_status & CERT_STATUS_CERTIFICATE_TRANSPARENCY_REQUIRED)
     return ERR_CERTIFICATE_TRANSPARENCY_REQUIRED;
-  if (cert_status & CERT_STATUS_SYMANTEC_LEGACY)
-    return ERR_CERT_SYMANTEC_LEGACY;
   if (cert_status & CERT_STATUS_NAME_CONSTRAINT_VIOLATION)
     return ERR_CERT_NAME_CONSTRAINT_VIOLATION;
   if (cert_status & CERT_STATUS_WEAK_SIGNATURE_ALGORITHM)
@@ -50,13 +53,6 @@ int MapCertStatusToNetError(CertStatus cert_status) {
     return ERR_CERT_UNABLE_TO_CHECK_REVOCATION;
   if (cert_status & CERT_STATUS_NO_REVOCATION_MECHANISM)
     return ERR_CERT_NO_REVOCATION_MECHANISM;
-
-#if BUILDFLAG(IS_OHOS)
-  if (cert_status & CERT_STATUS_DEPTH_ZERO_SELF_SIGNED_CERT)
-    return ERR_SSL_VERSION_OR_CIPHER_MISMATCH;
-  if (cert_status & CERT_STATUS_LEGACY_TLS)
-    return ERR_SSL_VERSION_OR_CIPHER_MISMATCH;
-#endif
 
   // Unknown status. The assumption is 0 (an OK status) won't be used here.
   NOTREACHED();

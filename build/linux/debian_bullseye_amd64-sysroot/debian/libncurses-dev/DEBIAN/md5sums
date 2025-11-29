@@ -33,8 +33,8 @@ a7a4cd6aac3ec5082245ed659c328097  usr/lib/x86_64-linux-gnu/libncursesw.a
 15147045ca1d51d96f364602286b090b  usr/lib/x86_64-linux-gnu/libpanel.a
 15147045ca1d51d96f364602286b090b  usr/lib/x86_64-linux-gnu/libpanelw.a
 63e6eb4a11cc94e1f8f3f31ed84afcad  usr/lib/x86_64-linux-gnu/libtermcap.so
-fb4af68d2ede1caeb18e3ac34ec6ce84  usr/lib/x86_64-linux-gnu/libtic.a
-161aed3edd37f804092d27bda68815ae  usr/lib/x86_64-linux-gnu/libtinfo.a
+70d35e703870b7699cec8b8381888fe2  usr/lib/x86_64-linux-gnu/libtic.a
+1e3aa9a60d3c26c04d248b900b3eec55  usr/lib/x86_64-linux-gnu/libtinfo.a
 c0637e33657713e62d28305c64acd95a  usr/lib/x86_64-linux-gnu/pkgconfig/form.pc
 0ceac08ab5e514ed0b79e9fda03cf731  usr/lib/x86_64-linux-gnu/pkgconfig/formw.pc
 b6e725fe8a02625ba1e79cf9cd95adad  usr/lib/x86_64-linux-gnu/pkgconfig/menu.pc

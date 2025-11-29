@@ -267,7 +267,7 @@ WebrtcVideoStream::WebrtcVideoStream(const SessionOptions& session_options)
     : session_options_(session_options) {
 // TODO(joedow): Dig into the threading model on other platforms to see if they
 // can also be updated to run on a dedicated thread.
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
   core_task_runner_ = base::ThreadPool::CreateSingleThreadTaskRunner(
       {base::TaskPriority::HIGHEST},
       base::SingleThreadTaskRunnerThreadMode::DEDICATED);
@@ -313,10 +313,10 @@ void WebrtcVideoStream::Start(
   DCHECK(peer_connection_);
 
   std::string stream_name = StreamNameForId(screen_id);
-  video_track_source_ = new rtc::RefCountedObject<WebrtcVideoTrackSource>(
+  video_track_source_ = new webrtc::RefCountedObject<WebrtcVideoTrackSource>(
       base::BindRepeating(&WebrtcVideoStream::OnSinkAddedOrUpdated,
                           weak_factory_.GetWeakPtr()));
-  rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track =
+  webrtc::scoped_refptr<webrtc::VideoTrackInterface> video_track =
       peer_connection_factory->CreateVideoTrack(video_track_source_,
                                                 stream_name);
 
@@ -528,7 +528,8 @@ void WebrtcVideoStream::OnEncodedFrameSent(
   video_stats_dispatcher_->OnVideoFrameStats(result.frame_id, stats);
 }
 
-void WebrtcVideoStream::OnSinkAddedOrUpdated(const rtc::VideoSinkWants& wants) {
+void WebrtcVideoStream::OnSinkAddedOrUpdated(
+    const webrtc::VideoSinkWants& wants) {
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
 
   auto framerate = wants.max_framerate_fps;

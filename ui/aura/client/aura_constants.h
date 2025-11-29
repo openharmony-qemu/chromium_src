@@ -5,6 +5,8 @@
 #ifndef UI_AURA_CLIENT_AURA_CONSTANTS_H_
 #define UI_AURA_CLIENT_AURA_CONSTANTS_H_
 
+#include <stdint.h>
+
 #include <string>
 #include <vector>
 
@@ -14,9 +16,13 @@
 #include "ui/base/mojom/ui_base_types.mojom-shared.h"
 #include "ui/base/mojom/window_show_state.mojom-forward.h"
 #include "ui/base/ui_base_types.h"
+#include "ui/gfx/native_widget_types.h"
 
 namespace gfx {
 class ImageSkia;
+class Rect;
+class Size;
+class SizeF;
 }
 
 namespace ui {
@@ -133,9 +139,6 @@ AURA_EXPORT extern const WindowProperty<bool>* const kUseWindowBoundsForShadow;
 AURA_EXPORT extern const aura::WindowProperty<gfx::NativeViewAccessible>* const
     kParentNativeViewAccessibleKey;
 
-// A property key to store the preferred size of the window.
-AURA_EXPORT extern const WindowProperty<gfx::Size*>* const kPreferredSize;
-
 // A property key to store the resize behavior, which is a bitmask of the
 // ResizeBehavior values.
 AURA_EXPORT extern const WindowProperty<int>* const kResizeBehaviorKey;
@@ -158,11 +161,6 @@ AURA_EXPORT extern const WindowProperty<int64_t>* const
 // back to from the current window show state.
 AURA_EXPORT extern const WindowProperty<ui::mojom::WindowShowState>* const
     kRestoreShowStateKey;
-
-// A property key to store the raster scale. This affects the scale that exo
-// windows are rasterized at.
-// TODO(b/374122147): consider removing this.
-AURA_EXPORT extern const WindowProperty<float>* const kRasterScale;
 
 // A property key to indicate if a window is currently being restored. Normally
 // restoring a window equals to changing window's state to normal window state.
@@ -202,9 +200,25 @@ AURA_EXPORT extern const WindowProperty<int>* const kWindowWorkspaceKey;
 // A property key to store the z-ordering.
 AURA_EXPORT extern const WindowProperty<ui::ZOrderLevel>* const kZOrderingKey;
 
-// Alphabetical sort.
-
 }  // namespace client
 }  // namespace aura
+
+// Declare template specializations introduced by Aura here to make sure that
+// the compiler knows about them before the first template instance use. Using a
+// template instance before its specialization is declared in a translation unit
+// is an error.
+DECLARE_EXPORTED_UI_CLASS_PROPERTY_TYPE(AURA_EXPORT, aura::client::FocusClient*)
+DECLARE_EXPORTED_UI_CLASS_PROPERTY_TYPE(AURA_EXPORT, aura::Window*)
+DECLARE_EXPORTED_UI_CLASS_PROPERTY_TYPE(AURA_EXPORT, gfx::ImageSkia*)
+DECLARE_EXPORTED_UI_CLASS_PROPERTY_TYPE(AURA_EXPORT, gfx::NativeViewAccessible)
+DECLARE_EXPORTED_UI_CLASS_PROPERTY_TYPE(AURA_EXPORT, gfx::Rect*)
+DECLARE_EXPORTED_UI_CLASS_PROPERTY_TYPE(AURA_EXPORT, gfx::Size*)
+DECLARE_EXPORTED_UI_CLASS_PROPERTY_TYPE(AURA_EXPORT, gfx::SizeF*)
+DECLARE_EXPORTED_UI_CLASS_PROPERTY_TYPE(AURA_EXPORT, int64_t)
+DECLARE_EXPORTED_UI_CLASS_PROPERTY_TYPE(AURA_EXPORT, std::string*)
+DECLARE_EXPORTED_UI_CLASS_PROPERTY_TYPE(AURA_EXPORT, ui::mojom::ModalType)
+DECLARE_EXPORTED_UI_CLASS_PROPERTY_TYPE(AURA_EXPORT, ui::mojom::WindowShowState)
+DECLARE_EXPORTED_UI_CLASS_PROPERTY_TYPE(AURA_EXPORT, ui::OwnedWindowAnchor*)
+DECLARE_EXPORTED_UI_CLASS_PROPERTY_TYPE(AURA_EXPORT, ui::ZOrderLevel)
 
 #endif  // UI_AURA_CLIENT_AURA_CONSTANTS_H_

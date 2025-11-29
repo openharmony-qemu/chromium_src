@@ -21,7 +21,7 @@
 #include "content/public/browser/reload_type.h"
 #include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/visibility.h"
-#include "content/public/browser/web_contents.h"
+#include "content/public/browser/web_contents_capability_type.h"
 #include "ipc/ipc_message.h"
 #include "mojo/public/cpp/system/message_pipe.h"
 #include "services/network/public/mojom/fetch_api.mojom-forward.h"
@@ -61,6 +61,14 @@ enum class VirtualKeyboardMode;
 }  // namespace mojom
 }  // namespace ui
 
+namespace net::device_bound_sessions {
+struct SessionAccess;
+}  // namespace net::device_bound_sessions
+
+namespace network {
+struct ResourceRequest;
+}  // namespace network
+
 namespace network::mojom {
 class SharedDictionaryAccessDetails;
 }  // namespace network::mojom
@@ -84,6 +92,7 @@ struct MediaPlayerId;
 struct PrunedDetails;
 struct Referrer;
 struct TrustTokenAccessDetails;
+class WebContents;
 
 // Note: before adding a new `WebContentsObserver` subclass, consider if simpler
 // helpers will suffice:
@@ -236,8 +245,10 @@ class CONTENT_EXPORT WebContentsObserver : public base::CheckedObserver {
 
   // This method is invoked when a write-access Captured Surface Control API is
   // successfully invoked by a tab-capturing Web application. These include:
-  // * CaptureController.sendWheel()
-  // * CaptureController.setZoomLevel()
+  // * CaptureController.forwardWheel()
+  // * CaptureController.increaseZoomLevel()
+  // * CaptureController.decreaseZoomLevel()
+  // * CaptureController.resetZoomLevel()
   //
   // Observing this occurrence allows us to update the UX accordingly; for
   // example, show the user an indicator that the capturing tab is being
@@ -510,6 +521,9 @@ class CONTENT_EXPORT WebContentsObserver : public base::CheckedObserver {
   // Called when a network request issued by the navigation reads or sets a
   // cookie. If a notification is received after the navigation has committed,
   // it will be attributed to the RenderFrameHost created by the navigation.
+  // This method not only includes accesses from the navigation's
+  // request/response, but also accesses from other requests/responses triggered
+  // by the navigation e.g. early hints requests.
   virtual void OnCookiesAccessed(NavigationHandle* navigation_handle,
                                  const CookieAccessDetails& details) {}
 
@@ -532,6 +546,20 @@ class CONTENT_EXPORT WebContentsObserver : public base::CheckedObserver {
   virtual void OnSharedDictionaryAccessed(
       NavigationHandle* navigation_handle,
       const network::mojom::SharedDictionaryAccessDetails& details) {}
+
+  // Called when a network request issued by the navivation accesses a
+  // device bound session
+  // (https://github.com/WICG/dbsc/blob/main/README.md).
+  virtual void OnDeviceBoundSessionAccessed(
+      RenderFrameHost* render_frame_host,
+      const net::device_bound_sessions::SessionAccess& access) {}
+
+  // Called when a document accesses a device bound session
+  // (https://github.com/WICG/dbsc/blob/main/README.md) by issuing a
+  // network request.
+  virtual void OnDeviceBoundSessionAccessed(
+      NavigationHandle* navigation_handle,
+      const net::device_bound_sessions::SessionAccess& access) {}
 
   // Called when the renderer requests access to storage.
   // Observers will be notified about the type of storage access requested
@@ -651,6 +679,10 @@ class CONTENT_EXPORT WebContentsObserver : public base::CheckedObserver {
   // This method is invoked when the title of the WebContents is set.
   virtual void TitleWasSet(NavigationEntry* entry) {}
 
+  // Invoked when the title is changed for any main frame in the WebContents
+  // (a primary main frame of a WebContents, a fenced frame or a MPArch guest).
+  virtual void TitleWasSetForMainFrame(RenderFrameHost* render_frame_host) {}
+
   // These methods are invoked when a Pepper plugin instance is created/deleted
   // in the DOM.
   virtual void PepperInstanceCreated() {}
@@ -658,6 +690,9 @@ class CONTENT_EXPORT WebContentsObserver : public base::CheckedObserver {
 
   // This method is called when the viewport fit of a WebContents changes.
   virtual void ViewportFitChanged(blink::mojom::ViewportFit value) {}
+
+  // This method is called when the safe area constraint changed.
+  virtual void SafeAreaConstraintChanged(bool has_constraint) {}
 
   // This method is called when the virtual keyboard mode of a WebContents
   // changes. This can happen as a result of the
@@ -764,7 +799,7 @@ class CONTENT_EXPORT WebContentsObserver : public base::CheckedObserver {
   // arguments indicate the capability type that starts/stops being used
   // and whether it is in use (true if it starts being used, false if it stops).
   virtual void OnCapabilityTypesChanged(
-      WebContents::CapabilityType capability_type,
+      WebContentsCapabilityType capability_type,
       bool used) {}
 
   // Invoked when the WebContents is muted/unmuted.
@@ -867,6 +902,12 @@ class CONTENT_EXPORT WebContentsObserver : public base::CheckedObserver {
       const MediaPlayerInfo& video_type,
       const MediaPlayerId& id,
       WebContentsObserver::MediaStoppedReason reason) {}
+
+  // Invoked when the set of tracks in the media has changed. Possible reasons
+  // include adding/removing a track via MediaStream.addTrack()/removeTrack().
+  virtual void MediaMetadataChanged(const MediaPlayerInfo& video_type,
+                                    const MediaPlayerId& id) {}
+
   virtual void MediaResized(const gfx::Size& size, const MediaPlayerId& id) {}
   // Invoked when media enters or exits fullscreen. We must use a heuristic
   // to determine this as it is not trivial for media with custom controls.
@@ -974,6 +1015,18 @@ class CONTENT_EXPORT WebContentsObserver : public base::CheckedObserver {
 
   // Called when a first contentful paint happened in the primary main frame.
   virtual void OnFirstContentfulPaintInPrimaryMainFrame() {}
+
+  // Invoked when a fetch keepalive request is created in this WebContents.
+  //
+  // Note that such request is usually initiated from corresponding renderer
+  // process. This method just captures the time when the request is proxied in
+  // the browser process.
+  //
+  // `resource_request` is the fetch keepalive request that is created.
+  // `initiator_rfh` is the RenderFrameHost that initiates the request.
+  virtual void OnKeepAliveRequestCreated(
+      const network::ResourceRequest& resource_request,
+      RenderFrameHost* initiator_rfh) {}
 
   WebContents* web_contents() const;
 

@@ -26,6 +26,7 @@
 
 #if BUILDFLAG(CHROME_WIDE_ECHO_CANCELLATION)
 #include "services/audio/output_device_mixer_manager.h"
+#include "services/audio/system_loopback_listener.h"
 #endif
 
 namespace base {
@@ -73,7 +74,6 @@ class StreamFactory final : public media::mojom::AudioStreamFactory {
       const media::AudioParameters& params,
       uint32_t shared_memory_count,
       bool enable_agc,
-      base::ReadOnlySharedMemoryRegion key_press_count_buffer,
       media::mojom::AudioProcessingConfigPtr processing_config,
       CreateInputStreamCallback created_callback) final;
 
@@ -148,6 +148,7 @@ class StreamFactory final : public media::mojom::AudioStreamFactory {
   // Order of the following members is important for a clean shutdown.
 #if BUILDFLAG(CHROME_WIDE_ECHO_CANCELLATION)
   const std::unique_ptr<OutputDeviceMixerManager> output_device_mixer_manager_;
+  const std::unique_ptr<SystemLoopbackListener> system_loopback_listener_;
 #endif
   LoopbackCoordinator coordinator_;
   std::vector<std::unique_ptr<LocalMuter>> muters_;

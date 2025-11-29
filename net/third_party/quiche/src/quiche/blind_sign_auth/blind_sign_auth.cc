@@ -87,8 +87,7 @@ void BlindSignAuth::GetInitialDataCallback(
     std::string message =
         absl::StrCat("GetInitialDataRequest failed with code: ", code);
     QUICHE_LOG(WARNING) << message;
-    std::move(callback)(
-        absl::InvalidArgumentError("GetInitialDataRequest failed"));
+    std::move(callback)(absl::InvalidArgumentError(message));
     return;
   }
   // Parse GetInitialDataResponse.
@@ -295,7 +294,7 @@ void BlindSignAuth::PrivacyPassAuthAndSignCallback(
   if (code != absl::StatusCode::kOk) {
     std::string message = absl::StrCat("AuthAndSign failed with code: ", code);
     QUICHE_LOG(WARNING) << message;
-    std::move(callback)(absl::InvalidArgumentError("AuthAndSign failed"));
+    std::move(callback)(absl::InvalidArgumentError(message));
     return;
   }
 
@@ -307,13 +306,13 @@ void BlindSignAuth::PrivacyPassAuthAndSignCallback(
         absl::InternalError("Failed to parse AuthAndSignResponse"));
     return;
   }
-  if (static_cast<size_t>(sign_response.blinded_token_signature_size()) !=
+  if (static_cast<size_t>(sign_response.blinded_token_signature_size()) >
       privacy_pass_clients.size()) {
-    QUICHE_LOG(WARNING) << "Number of signatures does not equal number of "
+    QUICHE_LOG(WARNING) << "Number of signatures is greater than the number of "
                            "Privacy Pass tokens sent";
-    std::move(callback)(
-        absl::InternalError("Number of signatures does not equal number of "
-                            "Privacy Pass tokens sent"));
+    std::move(callback)(absl::InternalError(
+        "Number of signatures is greater than the number of "
+        "Privacy Pass tokens sent"));
     return;
   }
 

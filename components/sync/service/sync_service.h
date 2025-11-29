@@ -20,6 +20,7 @@
 #include "components/sync/service/local_data_description.h"
 #include "components/sync/service/sync_service_observer.h"
 #include "components/sync/service/type_status_map_for_debugging.h"
+#include "third_party/abseil-cpp/absl/container/flat_hash_map.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/scoped_java_ref.h"
@@ -158,6 +159,12 @@ class SyncService : public KeyedService {
     // Sync is paused because there is a persistent auth error (e.g. user signed
     // out on the web on desktop), and the engine is inactive.
     PAUSED,
+
+    // States above require user action to resolve.
+    // States below should usually eventually lead to ACTIVE without any further
+    // user action. (Exception: PENDING_DESIRED_CONFIGURATION, i.e. the advanced
+    // setup flow for Sync-the-feature, still requires a user confirmation.)
+
     // Sync's startup was deferred, so that it doesn't slow down browser
     // startup. Once the deferral time (usually 10s) expires, or something
     // requests immediate startup, Sync will actually start.
@@ -185,32 +192,39 @@ class SyncService : public KeyedService {
   // displayed to the user.
   // TODO(crbug.com/40890809): Add new cases that are missing, ideally unify
   // with other enums like AvatarSyncErrorType.
+  //
+  // These values are persisted to logs. Entries should not be renumbered and
+  // numeric values should never be reused.
+  //
+  // LINT.IfChange(UserActionableError)
   enum class UserActionableError {
-    // No errors.
-    kNone,
+    // No errors. This value does not exist in the histograms enum.
+    kNone = 0,
     // There is a persistent auth error and the user needs to sign in for sync
     // to resume (affects all datatypes).
-    kSignInNeedsUpdate,
+    kSignInNeedsUpdate = 1,
     // The user needs to enter a passphrase in order to decrypt the data. This
     // can only happen to custom passphrase users and users in analogous legacy
     // encryption states. It affects most datatypes (all datatypes except the
     // ones that are never encrypted).
-    kNeedsPassphrase,
+    kNeedsPassphrase = 2,
     // The user needs to take action, usually go through a reauth challenge, in
     // order to get access to encryption keys. It affects datatypes that can be
     // branded to the user as 'passwords'.
-    kNeedsTrustedVaultKeyForPasswords,
+    kNeedsTrustedVaultKeyForPasswords = 3,
     // Same as above, but for the case where the encryption key is required to
     // sync all encryptable datatypes.
-    kNeedsTrustedVaultKeyForEverything,
+    kNeedsTrustedVaultKeyForEverything = 4,
     // Recoverability degraded means sync actually works normally, but there is
     // a risk that the user may end up locked out and effectively lose access to
     // passwords stored in the Sync server.
-    kTrustedVaultRecoverabilityDegradedForPasswords,
+    kTrustedVaultRecoverabilityDegradedForPasswords = 5,
     // Same as above, but for the case where data loss may affect all
     // encryptable datatypes.
-    kTrustedVaultRecoverabilityDegradedForEverything,
+    kTrustedVaultRecoverabilityDegradedForEverything = 6,
+    kMaxValue = kTrustedVaultRecoverabilityDegradedForEverything,
   };
+  // LINT.ThenChange(/tools/metrics/histograms/metadata/sync/enums.xml:UserActionableError)
 
   enum class DataTypeDownloadStatus {
     // State is unknown or there are updates to download from the server. Data
@@ -246,15 +260,6 @@ class SyncService : public KeyedService {
   // USER SETTINGS
   //////////////////////////////////////////////////////////////////////////////
 
-  // Indicates the the user wants Sync-the-Feature to run. It should get invoked
-  // early in the Sync setup flow, after the user has pressed "turn on Sync" but
-  // before they have actually confirmed the settings.
-  // TODO(crbug.com/40772592): Remove this API once the internal sync-requested
-  // bit is fully removed and rollback/killswitch safe. Note that it also
-  // requires finding an alternative solution to resolving
-  // IsSyncFeatureDisabledViaDashboard(), tracked in crbug.com/1443446.
-  virtual void SetSyncFeatureRequested() = 0;
-
   // Returns the SyncUserSettings, which encapsulate all the user-configurable
   // bits for Sync.
   virtual SyncUserSettings* GetUserSettings() = 0;
@@ -268,7 +273,7 @@ class SyncService : public KeyedService {
   // DisableReason enum entries.
   // Note: These refer to both Sync-the-feature and Sync-the-transport.
   virtual DisableReasonSet GetDisableReasons() const = 0;
-  // Helper that returns whether GetDisableReasons() contains the given |reason|
+  // Helper that returns whether GetDisableReasons() contains the given `reason`
   // (possibly among others).
   bool HasDisableReason(DisableReason reason) const {
     return GetDisableReasons().Has(reason);
@@ -315,9 +320,15 @@ class SyncService : public KeyedService {
   bool HasCompletedSyncCycle() const;
 
   // The last persistent authentication error that was encountered by the
-  // SyncService. It gets cleared when the error is resolved.
+  // SyncService. It gets cleared when the error is resolved. Note that auth
+  // errors are not persisted to disk, so during browser or profile startup the
+  // function returns no error.
   virtual GoogleServiceAuthError GetAuthError() const = 0;
   virtual base::Time GetAuthErrorTime() const = 0;
+
+  // Similar to GetAuthError().IsPersistentError(), but more reliable shortly
+  // after startup / profile load, as it caches the last known value.
+  virtual bool HasCachedPersistentAuthErrorForMetrics() const = 0;
 
   // Returns true if the Chrome client is too old and needs to be updated for
   // Sync to work.
@@ -381,7 +392,7 @@ class SyncService : public KeyedService {
   // the change before local and remote data are irrevocably merged).
   // The UI calls this and holds onto the instance for as long as any part of
   // the Sync setup/configuration UI is visible.
-  virtual std::unique_ptr<SyncSetupInProgressHandle>
+  [[nodiscard]] virtual std::unique_ptr<SyncSetupInProgressHandle>
   GetSetupInProgressHandle() = 0;
 
   // Whether a Sync setup is currently in progress, i.e. a setup UI is being
@@ -397,6 +408,10 @@ class SyncService : public KeyedService {
   // TODO(crbug.com/40262598): Deprecated, DO NOT USE! You probably want
   // `GetUserSettings()->GetSelectedTypes()` instead.
   virtual DataTypeSet GetPreferredDataTypes() const = 0;
+
+  // Returns the DataTypes allowed in transport-only mode (i.e. those that are
+  // not tied to sync-the-feature).
+  virtual DataTypeSet GetDataTypesForTransportOnlyMode() const = 0;
 
   // Returns the set of currently active data types (those chosen or configured
   // by the user which have not also encountered a runtime error).
@@ -415,9 +430,13 @@ class SyncService : public KeyedService {
   // synced with the server.
   // Note: This only queries the datatypes in `requested_types`.
   // Note: This includes deletions as well.
+  // Note: This must only be called in transport-only mode.
+  // TODO(crbug.com/401470426): Rename this to better reflect that it's only
+  // called in transport-only mode.
   virtual void GetTypesWithUnsyncedData(
       DataTypeSet requested_types,
-      base::OnceCallback<void(DataTypeSet)> callback) const = 0;
+      base::OnceCallback<void(absl::flat_hash_map<DataType, size_t>)> callback)
+      const = 0;
 
   // Queries the count and description/preview of existing local data for
   // `types` data types. This is an asynchronous method which returns the result
@@ -440,17 +459,27 @@ class SyncService : public KeyedService {
   virtual void TriggerLocalDataMigration(DataTypeSet types) = 0;
 
   // Requests sync service to move the local data, that matches with their
-  // `syncer::LocalDataItemModel::DataId`, to account for all data
-  // types and data items in `items` and for data items. This is an asynchronous
-  // method which moves the local data for all `types` to the account store
-  // locally. Upload to the server will happen as part of the regular commit
-  // process, and is NOT part of this method. Note: Only data types that are
-  // enabled and support this functionality are triggered for upload.
-  virtual void TriggerLocalDataMigration(
-      std::map<syncer::DataType,
-               std::vector<syncer::LocalDataItemModel::DataId>> items) = 0;
+  // `LocalDataItemModel::DataId`, to account for all data types and data items
+  // in `items` and for data items. This is an asynchronous method which moves
+  // the local data for all `types` to the account store locally. Upload to the
+  // server will happen as part of the regular commit process, and is NOT part
+  // of this method. Note: Only data types that are enabled and support this
+  // functionality are triggered for upload.
+  virtual void TriggerLocalDataMigrationForItems(
+      std::map<DataType, std::vector<LocalDataItemModel::DataId>> items) = 0;
 
-  // Returns current download status for the given |type|. The caller can use
+  // Requests sync service to first enable account storage for the `data_type`
+  // and then asynchronously move the specified local data `items` to account.
+  // This means that a user selection is mutated - if they had opted out of
+  // account storage for the `data_type` before, this would now opt them in. In
+  // order to use this function, the user must be signed in and sync-the-feature
+  // must be off. Upload to the server will happen as part of the regular commit
+  // process, and is NOT part of this method.
+  virtual void SelectTypeAndMigrateLocalDataItemsWhenActive(
+      DataType data_type,
+      std::vector<LocalDataItemModel::DataId> items) = 0;
+
+  // Returns current download status for the given `type`. The caller can use
   // SyncServiceObserver::OnStateChanged() to track status changes. Must be
   // called for real data types only.
   virtual DataTypeDownloadStatus GetDownloadStatusFor(DataType type) const = 0;
@@ -466,7 +495,7 @@ class SyncService : public KeyedService {
   // TODO(crbug.com/40901006): Remove this API.
   virtual void OnDataTypeRequestsSyncStartup(DataType type) = 0;
 
-  // Triggers a GetUpdates call for the specified |types|, pulling any new data
+  // Triggers a GetUpdates call for the specified `types`, pulling any new data
   // from the sync server. Used by tests and debug UI (sync-internals).
   virtual void TriggerRefresh(const DataTypeSet& types) = 0;
 
@@ -474,7 +503,7 @@ class SyncService : public KeyedService {
   // changed. If preconditions are NOT met, the datatype will be stopped
   // according to the metadata clearing policy returned by the controller's
   // GetPreconditionState(). Otherwise, if preconditions are newly met,
-  // reconfiguration will be triggered so that |type| gets started again. No-op
+  // reconfiguration will be triggered so that `type` gets started again. No-op
   // if the type's state didn't actually change.
   virtual void DataTypePreconditionChanged(DataType type) = 0;
 
@@ -509,7 +538,7 @@ class SyncService : public KeyedService {
   virtual void AddObserver(SyncServiceObserver* observer) = 0;
   virtual void RemoveObserver(SyncServiceObserver* observer) = 0;
 
-  // Returns true if |observer| has already been added as an observer.
+  // Returns true if `observer` has already been added as an observer.
   virtual bool HasObserver(const SyncServiceObserver* observer) const = 0;
 
   //////////////////////////////////////////////////////////////////////////////

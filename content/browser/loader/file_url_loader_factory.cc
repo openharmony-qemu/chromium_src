@@ -55,7 +55,7 @@
 #include "services/network/public/cpp/cors/cors.h"
 #include "services/network/public/cpp/cors/cors_error_status.h"
 #include "services/network/public/cpp/cors/origin_access_list.h"
-#include "services/network/public/cpp/features.h"
+#include "services/network/public/cpp/loading_params.h"
 #include "services/network/public/cpp/request_mode.h"
 #include "services/network/public/cpp/resource_request.h"
 #include "services/network/public/mojom/cors.mojom-shared.h"
@@ -178,8 +178,6 @@ class FileURLDirectoryLoader
       const std::optional<GURL>& new_url) override {}
   void SetPriority(net::RequestPriority priority,
                    int32_t intra_priority_value) override {}
-  void PauseReadingBodyFromNet() override {}
-  void ResumeReadingBodyFromNet() override {}
 
  private:
   FileURLDirectoryLoader() = default;
@@ -434,8 +432,6 @@ class FileURLLoader : public network::mojom::URLLoader {
   }
   void SetPriority(net::RequestPriority priority,
                    int32_t intra_priority_value) override {}
-  void PauseReadingBodyFromNet() override {}
-  void ResumeReadingBodyFromNet() override {}
 
  private:
   // Used to save outstanding redirect data while waiting for FollowRedirect
@@ -596,9 +592,8 @@ class FileURLLoader : public network::mojom::URLLoader {
     mojo::ScopedDataPipeConsumerHandle consumer_handle;
 
     // Request the larger size data pipe for file:// URL loading.
-    uint32_t data_pipe_size =
-        network::features::GetDataPipeDefaultAllocationSize(
-            network::features::DataPipeAllocationSize::kLargerSizeIfPossible);
+    uint32_t data_pipe_size = network::GetDataPipeDefaultAllocationSize(
+        network::DataPipeAllocationSize::kLargerSizeIfPossible);
     // This should already be static_asserted in network::features, but good
     // to double-check.
     DCHECK(data_pipe_size >= net::kMaxBytesToSniff)
@@ -707,24 +702,30 @@ class FileURLLoader : public network::mojom::URLLoader {
       total_bytes_to_send -= actually_written_bytes;
     }
 
-    if (!net::GetMimeTypeFromFile(full_path, &head->mime_type)) {
-      std::string new_type;
-      net::SniffMimeType(
-          std::string_view(initial_read_buffer.data(), read_result.bytes_read),
-          request.url, head->mime_type,
-          GetContentClient()->browser()->ForceSniffingFileUrlsForHtml()
-              ? net::ForceSniffFileUrlsForHtml::kEnabled
-              : net::ForceSniffFileUrlsForHtml::kDisabled,
-          &new_type);
-      head->mime_type.assign(new_type);
-      head->did_mime_sniff = true;
-    }
-    if (!head->headers) {
+    if (head->headers) {
+      head->headers->GetMimeTypeAndCharset(&head->mime_type, &head->charset);
+    } else {
       head->headers =
           base::MakeRefCounted<net::HttpResponseHeaders>("HTTP/1.1 200 OK");
     }
-    head->headers->AddHeader(net::HttpRequestHeaders::kContentType,
-                             head->mime_type);
+
+    // If the mime type is still empty, try to sniff it from the file contents.
+    if (head->mime_type.empty()) {
+      if (!net::GetMimeTypeFromFile(full_path, &head->mime_type)) {
+        net::SniffMimeType(
+            std::string_view(initial_read_buffer.data(),
+                             read_result.bytes_read),
+            request.url, /*type_hint=*/std::string(),
+            GetContentClient()->browser()->ForceSniffingFileUrlsForHtml()
+                ? net::ForceSniffFileUrlsForHtml::kEnabled
+                : net::ForceSniffFileUrlsForHtml::kDisabled,
+            &head->mime_type);
+        head->did_mime_sniff = true;
+      }
+      head->headers->AddHeader(net::HttpRequestHeaders::kContentType,
+                               head->mime_type);
+    }
+
     // We add a Last-Modified header to file responses so that our
     // implementation of document.lastModified can access it (crbug.com/875299).
     head->headers->AddHeader(net::HttpResponseHeaders::kLastModified,

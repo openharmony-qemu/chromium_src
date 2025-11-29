@@ -9,8 +9,15 @@
 #include <string>
 
 #include "base/memory/ref_counted.h"
+#include "base/memory/weak_ptr.h"
 #include "base/sequence_checker.h"
 #include "ios/chrome/browser/shared/model/application_context/application_context.h"
+#include "mojo/public/cpp/bindings/pending_receiver.h"
+#include "services/network/public/mojom/proxy_resolving_socket.mojom.h"
+
+namespace auto_deletion {
+class AutoDeletionService;
+}  // namespace auto_deletion
 
 namespace base {
 class CommandLine;
@@ -64,6 +71,7 @@ class ApplicationContextImpl : public ApplicationContext {
       override;
   network::mojom::NetworkContext* GetSystemNetworkContext() override;
   const std::string& GetApplicationLocale() override;
+  ApplicationLocaleStorage* GetApplicationLocaleStorage() override;
   const std::string& GetApplicationCountry() override;
   ProfileManagerIOS* GetProfileManager() override;
   metrics_services_manager::MetricsServicesManager* GetMetricsServicesManager()
@@ -90,6 +98,7 @@ class ApplicationContextImpl : public ApplicationContext {
   PushNotificationService* GetPushNotificationService() override;
   os_crypt_async::OSCryptAsync* GetOSCryptAsync() override;
   AdditionalFeaturesController* GetAdditionalFeaturesController() override;
+  auto_deletion::AutoDeletionService* GetAutoDeletionService() override;
 #if BUILDFLAG(BUILD_WITH_INTERNAL_OPTIMIZATION_GUIDE)
   optimization_guide::OnDeviceModelServiceController*
   GetOnDeviceModelServiceController(
@@ -110,7 +119,7 @@ class ApplicationContextImpl : public ApplicationContext {
   // application states.
   void OnAppEnterState(AppState app_state);
 
-  // Sets the locale used by the application.
+  // TODO(crbug.com/414379493): Remove this method.
   void SetApplicationLocale(const std::string& locale);
 
   // Create the local state.
@@ -118,6 +127,11 @@ class ApplicationContextImpl : public ApplicationContext {
 
   // Create the gcm driver.
   void CreateGCMDriver();
+
+  // Requests a network::mojom::ProxyResolvingSocketFactory.
+  void RequestProxyResolvingSocketFactory(
+      mojo::PendingReceiver<network::mojom::ProxyResolvingSocketFactory>
+          receiver);
 
   SEQUENCE_CHECKER(sequence_checker_);
 
@@ -146,6 +160,7 @@ class ApplicationContextImpl : public ApplicationContext {
       network_connection_tracker_;
 
   std::unique_ptr<PrefService> local_state_;
+  std::unique_ptr<ApplicationLocaleStorage> application_locale_storage_;
   std::unique_ptr<net_log::NetExportFileWriter> net_export_file_writer_;
   std::unique_ptr<network_time::NetworkTimeTracker> network_time_tracker_;
   std::unique_ptr<IOSChromeIOThread> ios_chrome_io_thread_;
@@ -176,10 +191,15 @@ class ApplicationContextImpl : public ApplicationContext {
 
   std::unique_ptr<AdditionalFeaturesController> additional_features_controller_;
 
+  std::unique_ptr<auto_deletion::AutoDeletionService> auto_deletion_service_;
+
 #if BUILDFLAG(BUILD_WITH_INTERNAL_OPTIMIZATION_GUIDE)
   scoped_refptr<optimization_guide::OnDeviceModelServiceController>
       on_device_model_service_controller_;
 #endif  // BUILD_WITH_INTERNAL_OPTIMIZATION_GUIDE
+
+  // Must be the last member variable.
+  base::WeakPtrFactory<ApplicationContextImpl> weak_ptr_factory_{this};
 };
 
 #endif  // IOS_CHROME_BROWSER_APPLICATION_CONTEXT_MODEL_APPLICATION_CONTEXT_IMPL_H_

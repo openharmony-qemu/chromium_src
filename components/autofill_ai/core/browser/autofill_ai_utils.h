@@ -5,33 +5,52 @@
 #ifndef COMPONENTS_AUTOFILL_AI_CORE_BROWSER_AUTOFILL_AI_UTILS_H_
 #define COMPONENTS_AUTOFILL_AI_CORE_BROWSER_AUTOFILL_AI_UTILS_H_
 
+#include <set>
+#include <string>
+#include <vector>
+
+#include "components/autofill/core/browser/data_model/autofill_ai/entity_instance.h"
+
 namespace autofill {
 class FormStructure;
-class AutofillField;
+class EntityInstance;
 }  // namespace autofill
 
 namespace autofill_ai {
 
-// Returns true if the `field` is eligible based on the type criteria.
-bool IsFieldEligibleByTypeCriteria(const autofill::AutofillField& field);
+// Separator to use between a certain entity label attributes, for example:
+// "Passport · Jon Doe · Germany".
+inline constexpr char16_t kLabelSeparator[] = u" · ";
 
-// For a field to be fillable
-//  - it must have the correct field type.
-//  - its value must be empty.
-//  - it has to be focusable. In field filling skip reasons select fields may
-//    be unfocusable, for the estimated `total_number_of_fillable_fields`
-//    however that exception has shown to offer suggestions too often.
-bool IsFieldEligibleForFilling(const autofill::AutofillField& form_field);
+// The maximum number of entity values/labels that can be used when
+// disambiguating suggestions/entities. Used by suggestion generation and the
+// settings page.
+inline constexpr size_t kMaxNumberOfLabels = 2;
 
-// Returns weather the forms is eligible for the filling journey.
+// Alias defining a list of labels available for each AutofillAi entity.
+using EntitiesLabels =
+    base::StrongAlias<class EntitiesLabelsTag,
+                      std::vector<std::vector<std::u16string>>>;
+
+// Returns whether the forms is eligible for the filling journey.
 bool IsFormEligibleForFilling(const autofill::FormStructure& form);
 
-// Set the filling eligibility of individual fields.
-void SetFieldFillingEligibility(autofill::FormStructure& form);
+// Given `entity_instances` returns `EntitiesLabels`, which will be a
+// list of labels that can be used by an UI surface to display entities
+// information. This is for example used by filling suggestions and the settings
+// page.
+// If `allow_only_disambiguating_types` is true, it will for example in the
+// passport case return only values for name and country attributes, as they are
+// part of the disambiguating attributes from the passport entity. If
+// `return_at_least_one_label` is true, it makes sure that for each
+// `entity_instances`, at least one label is present, even if it repeats across
+// all other entities.
+EntitiesLabels GetLabelsForEntities(
+    base::span<const autofill::EntityInstance*> entity_instances,
+    bool allow_only_disambiguating_types,
+    bool return_at_least_one_label,
+    const std::string& app_locale);
 
-// Return weather the forms is eligible for the import journey.
-bool IsFormEligibleForImportByFieldCriteria(
-    const autofill::FormStructure& form);
 }  // namespace autofill_ai
 
 #endif  // COMPONENTS_AUTOFILL_AI_CORE_BROWSER_AUTOFILL_AI_UTILS_H_

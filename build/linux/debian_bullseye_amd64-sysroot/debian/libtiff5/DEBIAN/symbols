@@ -210,7 +210,7 @@ libtiff.so.5 libtiff5 #MINVER#
  _TIFFCheckMalloc@LIBTIFF_4.0 4.0.3
  _TIFFCheckRealloc@LIBTIFF_4.0 4.0.3
  _TIFFClampDoubleToFloat@LIBTIFF_4.0 4.0.10+git190814
- _TIFFClampDoubleToUInt32@LIBTIFF_4.0 4.2.0-1+deb11u4
+ _TIFFClampDoubleToUInt32@LIBTIFF_4.0 4.2.0-1+deb11u5
  _TIFFCreateAnonField@LIBTIFF_4.0 4.0.3
  _TIFFDataSize@LIBTIFF_4.0 4.0.3
  _TIFFDefaultStripSize@LIBTIFF_4.0 4.0.3

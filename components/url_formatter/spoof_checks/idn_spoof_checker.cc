@@ -22,7 +22,6 @@
 #include "third_party/icu/source/common/unicode/schriter.h"
 #include "third_party/icu/source/common/unicode/unistr.h"
 #include "third_party/icu/source/i18n/unicode/regex.h"
-#include "third_party/icu/source/i18n/unicode/translit.h"
 #include "third_party/icu/source/i18n/unicode/uspoof.h"
 #include "url/url_features.h"
 
@@ -46,32 +45,37 @@ class TopDomainPreloadDecoder : public net::extras::PreloadDecoder {
 
     bool is_same_skeleton;
 
-    if (!reader->Next(&is_same_skeleton))
+    if (!reader->Next(&is_same_skeleton)) {
       return false;
+    }
 
     TopDomainEntry top_domain;
     if (!reader->Next(&top_domain.is_top_bucket)) {
       return false;
     }
     uint32_t skeletontype_value;
-    if (!reader->Read(kSkeletonTypeBitLength, &skeletontype_value))
+    if (!reader->Read(kSkeletonTypeBitLength, &skeletontype_value)) {
       return false;
+    }
     top_domain.skeleton_type =
         static_cast<url_formatter::SkeletonType>(skeletontype_value);
     if (is_same_skeleton) {
       top_domain.domain = search;
     } else {
       bool has_com_suffix = false;
-      if (!reader->Next(&has_com_suffix))
+      if (!reader->Next(&has_com_suffix)) {
         return false;
+      }
 
       for (char c;; top_domain.domain += c) {
         huffman_decoder().Decode(reader, &c);
-        if (c == net::extras::PreloadDecoder::kEndOfTable)
+        if (c == net::extras::PreloadDecoder::kEndOfTable) {
           break;
+        }
       }
-      if (has_com_suffix)
+      if (has_com_suffix) {
         top_domain.domain += ".com";
+      }
     }
     if (current_search_offset == 0) {
       *out_found = true;
@@ -373,22 +377,6 @@ IDNSpoofChecker::Result IDNSpoofChecker::SafeToDisplayAsUnicode(
   icu::UnicodeString label_string(false /* isTerminated */, label.data(),
                                   base::checked_cast<int32_t>(label.size()));
 
-  // A punycode label with 'xn--' prefix is not subject to the URL
-  // canonicalization and is stored as it is in GURL. If it encodes a deviation
-  // character (UTS 46; e.g. U+00DF/sharp-s), it should be still shown in
-  // punycode instead of Unicode. Without this check, xn--fu-hia for
-  // 'fu<sharp-s>' would be converted to 'fu<sharp-s>' for display because
-  // "UTS 46 section 4 Processing step 4" applies validity criteria for
-  // non-transitional processing (i.e. do not map deviation characters) to any
-  // punycode labels regardless of whether transitional or non-transitional is
-  // chosen. On the other hand, 'fu<sharp-s>' typed or copy and pasted
-  // as Unicode would be canonicalized to 'fuss' by GURL and is displayed as
-  // such. See http://crbug.com/595263 .
-  if (!url::IsUsingIDNA2008NonTransitional() &&
-      deviation_characters_.containsSome(label_string)) {
-    return Result::kDeviationCharacters;
-  }
-
   // Disallow Icelandic confusables for domains outside Icelandic and Faroese
   // ccTLD (.is, .fo). Faroese keyboard layout doesn't contain letter ⟨þ⟩, but
   // we don't separate it here to avoid technical complexity, and because
@@ -423,8 +411,9 @@ IDNSpoofChecker::Result IDNSpoofChecker::SafeToDisplayAsUnicode(
   //  - Japanese: Han, Hiragana, Katakana, Common
   //  - Korean: Hangul, Han, Common
   result &= USPOOF_RESTRICTION_LEVEL_MASK;
-  if (result == USPOOF_ASCII)
+  if (result == USPOOF_ASCII) {
     return Result::kSafe;
+  }
 
   if (result == USPOOF_SINGLE_SCRIPT_RESTRICTIVE &&
       kana_letters_exceptions_.containsNone(label_string) &&
@@ -439,8 +428,9 @@ IDNSpoofChecker::Result IDNSpoofChecker::SafeToDisplayAsUnicode(
     }
     // Disallow domains that contain only numbers and number-spoofs.
     // This check is reached if domain characters come from single script.
-    if (IsDigitLookalike(label_string))
+    if (IsDigitLookalike(label_string)) {
       return Result::kDigitLookalikes;
+    }
 
     return Result::kSafe;
   }
@@ -450,8 +440,9 @@ IDNSpoofChecker::Result IDNSpoofChecker::SafeToDisplayAsUnicode(
   // This is generally rare. An example case when it would return true is when
   // the domain contains Latin + Japanese characters that are also digit
   // lookalikes.
-  if (IsDigitLookalike(label_string))
+  if (IsDigitLookalike(label_string)) {
     return Result::kDigitLookalikes;
+  }
 
   // Additional checks for |label| with multiple scripts, one of which is Latin.
   // Disallow non-ASCII Latin letters to mix with a non-Latin script.
@@ -621,11 +612,13 @@ TopDomainEntry IDNSpoofChecker::LookupSkeletonInTopDomains(
     bool match = false;
     bool decoded = preload_decoder.Decode(partial_skeleton, &match);
     DCHECK(decoded);
-    if (!decoded)
+    if (!decoded) {
       return TopDomainEntry();
+    }
 
-    if (match)
+    if (match) {
       return preload_decoder.matching_top_domain();
+    }
 
     labels.erase(labels.begin());
   }
@@ -639,26 +632,10 @@ std::u16string IDNSpoofChecker::MaybeRemoveDiacritics(
              : hostname;
 }
 
-IDNA2008DeviationCharacter IDNSpoofChecker::GetDeviationCharacter(
-    std::u16string_view hostname) const {
-  if (hostname.find(u"\u00df") != std::u16string_view::npos) {
-    return IDNA2008DeviationCharacter::kEszett;
-  }
-  if (hostname.find(u"\u03c2") != std::u16string_view::npos) {
-    return IDNA2008DeviationCharacter::kGreekFinalSigma;
-  }
-  if (hostname.find(u"\u200d") != std::u16string_view::npos) {
-    return IDNA2008DeviationCharacter::kZeroWidthJoiner;
-  }
-  if (hostname.find(u"\u200c") != std::u16string_view::npos) {
-    return IDNA2008DeviationCharacter::kZeroWidthNonJoiner;
-  }
-  return IDNA2008DeviationCharacter::kNone;
-}
-
 void IDNSpoofChecker::SetAllowedUnicodeSet(UErrorCode* status) {
-  if (U_FAILURE(*status))
+  if (U_FAILURE(*status)) {
     return;
+  }
 
   // The recommended set is a set of characters for identifiers in a
   // security-sensitive environment taken from UTR 39

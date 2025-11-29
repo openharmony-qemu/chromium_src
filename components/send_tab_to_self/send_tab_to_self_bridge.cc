@@ -239,13 +239,21 @@ SendTabToSelfBridge::GetAllDataForDebugging() {
 }
 
 std::string SendTabToSelfBridge::GetClientTag(
-    const syncer::EntityData& entity_data) {
+    const syncer::EntityData& entity_data) const {
   return GetStorageKey(entity_data);
 }
 
 std::string SendTabToSelfBridge::GetStorageKey(
-    const syncer::EntityData& entity_data) {
+    const syncer::EntityData& entity_data) const {
   return entity_data.specifics.send_tab_to_self().guid();
+}
+
+bool SendTabToSelfBridge::IsEntityDataValid(
+    const syncer::EntityData& entity_data) const {
+  CHECK(entity_data.specifics.has_send_tab_to_self());
+  sync_pb::SendTabToSelfSpecifics specifics =
+      entity_data.specifics.send_tab_to_self();
+  return !specifics.guid().empty() && GURL(specifics.url()).is_valid();
 }
 
 void SendTabToSelfBridge::ApplyDisableSyncChanges(
@@ -409,8 +417,9 @@ void SendTabToSelfBridge::OnHistoryDeletions(
     return;  // Sync processor not yet ready, don't sync.
   }
 
-  if (deletion_info.is_from_expiration())
+  if (deletion_info.is_from_expiration()) {
     return;
+  }
 
   if (!deletion_info.IsAllHistory()) {
     std::vector<GURL> urls;
@@ -639,12 +648,12 @@ void SendTabToSelfBridge::ComputeTargetDeviceInfoSortedList() {
       device_info_tracker_->GetAllDeviceInfo();
 
   // Sort the DeviceInfo vector so the most recently modified devices are first.
-  std::stable_sort(all_devices.begin(), all_devices.end(),
-                   [](const syncer::DeviceInfo* device1,
-                      const syncer::DeviceInfo* device2) {
-                     return device1->last_updated_timestamp() >
-                            device2->last_updated_timestamp();
-                   });
+  std::stable_sort(
+      all_devices.begin(), all_devices.end(),
+      [](const syncer::DeviceInfo* device1, const syncer::DeviceInfo* device2) {
+        return device1->last_updated_timestamp() >
+               device2->last_updated_timestamp();
+      });
 
   target_device_info_sorted_list_.clear();
   std::set<std::string> unique_device_names;

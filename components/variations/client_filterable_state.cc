@@ -8,7 +8,6 @@
 #include "base/strings/stringprintf.h"
 #include "base/system/sys_info.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "components/prefs/pref_service.h"
 #include "components/variations/pref_names.h"
 
@@ -48,10 +47,8 @@ Study::Platform ClientFilterableState::GetCurrentPlatform() {
   return Study::PLATFORM_IOS;
 #elif BUILDFLAG(IS_MAC)
   return Study::PLATFORM_MAC;
-#elif BUILDFLAG(IS_CHROMEOS_ASH)
+#elif BUILDFLAG(IS_CHROMEOS)
   return Study::PLATFORM_CHROMEOS;
-#elif BUILDFLAG(IS_CHROMEOS_LACROS)
-  return Study::PLATFORM_CHROMEOS_LACROS;
 #elif BUILDFLAG(IS_ANDROID)
   return Study::PLATFORM_ANDROID;
 #elif BUILDFLAG(IS_FUCHSIA)
@@ -60,8 +57,6 @@ Study::Platform ClientFilterableState::GetCurrentPlatform() {
   // Default BSD and SOLARIS to Linux to not break those builds, although these
   // platforms are not officially supported by Chrome.
   return Study::PLATFORM_LINUX;
-#elif BUILDFLAG(IS_OHOS)
-  return Study::PLATFORM_OHOS;
 #else
 #error Unknown platform
 #endif
@@ -89,7 +84,7 @@ base::Version ClientFilterableState::GetOSVersion() {
 
 std::string ClientFilterableState::GetHardwareClass() {
   // TODO(crbug.com/40708998): Expand to other platforms.
-#if BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
   return base::SysInfo::HardwareModelName();
 #else
   return "";

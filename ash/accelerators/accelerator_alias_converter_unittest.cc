@@ -480,6 +480,34 @@ TEST_F(AcceleratorAliasConverterTest, CheckSettingsKeyAlias) {
   EXPECT_EQ(accelerator, accelerator_aliases[0]);
 }
 
+TEST_F(AcceleratorAliasConverterTest, CheckCameraAccessToggleKeyAlias) {
+  std::unique_ptr<FakeDeviceManager> fake_keyboard_manager_ =
+      std::make_unique<FakeDeviceManager>();
+  ui::KeyboardDevice fake_keyboard(
+      /*id=*/1, /*type=*/ui::InputDeviceType::INPUT_DEVICE_INTERNAL,
+      /*name=*/kKbdTopRowLayout1Tag);
+  fake_keyboard.sys_path = base::FilePath("path");
+  fake_keyboard_manager_->AddFakeKeyboard(fake_keyboard, kKbdTopRowLayout1Tag);
+
+  AcceleratorAliasConverter accelerator_alias_converter_;
+
+  const ui::Accelerator accelerator{ui::VKEY_CAMERA_ACCESS_TOGGLE, ui::EF_NONE};
+  std::vector<ui::Accelerator> accelerator_aliases =
+      accelerator_alias_converter_.CreateAcceleratorAlias(accelerator);
+  EXPECT_EQ(0u, accelerator_aliases.size());
+
+  ui::KeyboardDevice wilco_keyboard(
+      /*id=*/2, /*type=*/ui::InputDeviceType::INPUT_DEVICE_BLUETOOTH,
+      /*name=*/kKbdTopRowLayoutWilcoTag);
+  wilco_keyboard.sys_path = base::FilePath("path2");
+  fake_keyboard_manager_->AddFakeKeyboard(wilco_keyboard,
+                                          kKbdTopRowLayoutWilcoTag);
+  accelerator_aliases =
+      accelerator_alias_converter_.CreateAcceleratorAlias(accelerator);
+  EXPECT_EQ(1u, accelerator_aliases.size());
+  EXPECT_EQ(accelerator, accelerator_aliases[0]);
+}
+
 TEST_F(AcceleratorAliasConverterTest, SplitModifierKeyboardCapsLockAlias) {
   base::test::ScopedFeatureList feature_list;
   feature_list.InitAndEnableFeature(features::kModifierSplit);
@@ -499,7 +527,7 @@ TEST_F(AcceleratorAliasConverterTest, SplitModifierKeyboardCapsLockAlias) {
   std::vector<ui::Accelerator> accelerator_aliases =
       accelerator_alias_converter_.CreateAcceleratorAlias(capslock_accelerator);
   EXPECT_EQ(1u, accelerator_aliases.size());
-  EXPECT_EQ(ui::Accelerator(ui::VKEY_RIGHT_ALT, ui::EF_FUNCTION_DOWN),
+  EXPECT_EQ(ui::Accelerator(ui::VKEY_QUICK_INSERT, ui::EF_FUNCTION_DOWN),
             accelerator_aliases[0]);
   const ui::Accelerator capslock_accelerator_2{ui::VKEY_LWIN, ui::EF_ALT_DOWN};
   std::vector<ui::Accelerator> new_accelerator_aliases =
@@ -560,7 +588,7 @@ TEST_F(AcceleratorAliasConverterTest, CheckCapsLockAlias) {
   EXPECT_EQ(0u, accelerator_aliases.size());
 }
 
-TEST_F(AcceleratorAliasConverterTest, CheckRightAltInList) {
+TEST_F(AcceleratorAliasConverterTest, CheckQuickInsertInList) {
   base::test::ScopedFeatureList feature_list;
   feature_list.InitAndEnableFeature(features::kModifierSplit);
 
@@ -573,16 +601,17 @@ TEST_F(AcceleratorAliasConverterTest, CheckRightAltInList) {
   fake_keyboard.sys_path = base::FilePath("path");
   fake_keyboard_manager_->AddFakeKeyboard(fake_keyboard, kKbdTopRowLayout1Tag);
 
-  const ui::Accelerator right_alt_accelerator{ui::VKEY_RIGHT_ALT, ui::EF_NONE};
+  const ui::Accelerator quick_insert_accelerator{ui::VKEY_QUICK_INSERT,
+                                                 ui::EF_NONE};
 
   AcceleratorAliasConverter accelerator_alias_converter;
 
-  EXPECT_EQ(std::vector<ui::Accelerator>{right_alt_accelerator},
+  EXPECT_EQ(std::vector<ui::Accelerator>{quick_insert_accelerator},
             accelerator_alias_converter.CreateAcceleratorAlias(
-                right_alt_accelerator));
+                quick_insert_accelerator));
 }
 
-TEST_F(AcceleratorAliasConverterTest, CheckRightAltNotInList) {
+TEST_F(AcceleratorAliasConverterTest, CheckQuickInsertNotInList) {
   base::test::ScopedFeatureList feature_list;
   feature_list.InitAndEnableFeature(features::kModifierSplit);
 
@@ -594,12 +623,13 @@ TEST_F(AcceleratorAliasConverterTest, CheckRightAltNotInList) {
   fake_keyboard.sys_path = base::FilePath("path");
   fake_keyboard_manager_->AddFakeKeyboard(fake_keyboard, kKbdTopRowLayout1Tag);
 
-  const ui::Accelerator right_alt_accelerator{ui::VKEY_RIGHT_ALT, ui::EF_NONE};
+  const ui::Accelerator quick_insert_accelerator{ui::VKEY_QUICK_INSERT,
+                                                 ui::EF_NONE};
 
   AcceleratorAliasConverter accelerator_alias_converter;
-  EXPECT_TRUE(
-      accelerator_alias_converter.CreateAcceleratorAlias(right_alt_accelerator)
-          .empty());
+  EXPECT_TRUE(accelerator_alias_converter
+                  .CreateAcceleratorAlias(quick_insert_accelerator)
+                  .empty());
 }
 
 TEST_F(AcceleratorAliasConverterTest, MetaFKeyRewritesSuppressed) {
@@ -895,8 +925,8 @@ TEST_P(TopRowAliasTest, CheckTopRowAlias) {
 
   std::vector<ui::Accelerator> accelerator_alias =
       accelerator_alias_converter_.CreateAcceleratorAlias(accelerator_);
-  base::ranges::sort(accelerator_alias);
-  base::ranges::sort(expected_accelerators_);
+  std::ranges::sort(accelerator_alias);
+  std::ranges::sort(expected_accelerators_);
 
   ASSERT_EQ(expected_accelerators_.size(), accelerator_alias.size());
   for (size_t i = 0; i < expected_accelerators_.size(); i++) {
@@ -1750,8 +1780,8 @@ TEST_P(ActionKeyboardVariantsTest, CheckTopRowAlias) {
 
   std::vector<ui::Accelerator> accelerator_alias =
       accelerator_alias_converter_.CreateAcceleratorAlias(accelerator_);
-  base::ranges::sort(accelerator_alias);
-  base::ranges::sort(expected_accelerators_);
+  std::ranges::sort(accelerator_alias);
+  std::ranges::sort(expected_accelerators_);
 
   ASSERT_EQ(expected_accelerators_.size(), accelerator_alias.size());
   for (size_t i = 0; i < expected_accelerators_.size(); i++) {

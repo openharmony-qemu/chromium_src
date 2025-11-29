@@ -12,10 +12,10 @@ build_webui("build") {
     "download_internals.html",
   ]
 
-  non_web_component_files = [
+  ts_files = [
+    "download_internals.ts",
     "download_internals_browser_proxy.ts",
     "download_internals_visuals.ts",
-    "download_internals.ts",
   ]
 
   ts_deps = [

@@ -4,7 +4,9 @@
 
 #include "device/fido/cable/v2_authenticator.h"
 
+#include <algorithm>
 #include <string_view>
+#include <variant>
 
 #include "base/containers/flat_set.h"
 #include "base/feature_list.h"
@@ -12,7 +14,6 @@
 #include "base/memory/raw_ptr.h"
 #include "base/memory/raw_ptr_exclusion.h"
 #include "base/memory/weak_ptr.h"
-#include "base/ranges/algorithm.h"
 #include "base/sequence_checker.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/task/sequenced_task_runner.h"
@@ -40,7 +41,6 @@
 #include "net/storage_access_api/status.h"
 #include "net/traffic_annotation/network_traffic_annotation.h"
 #include "services/network/public/mojom/network_context.mojom.h"
-#include "third_party/abseil-cpp/absl/types/variant.h"
 #include "third_party/blink/public/mojom/webauthn/authenticator.mojom.h"
 #include "third_party/boringssl/src/include/openssl/aes.h"
 #include "third_party/boringssl/src/include/openssl/ec_key.h"
@@ -624,7 +624,7 @@ class TunnelTransport : public Transport {
           break;
       }
     }
-    base::ranges::sort(ret, [](const auto& a, const auto& b) {
+    std::ranges::sort(ret, [](const auto& a, const auto& b) {
       return a.GetString() < b.GetString();
     });
     return cbor::Value(std::move(ret));
@@ -672,14 +672,14 @@ class CTAP2Processor : public Transaction {
       return;
     }
 
-    if (auto* error = absl::get_if<Platform::Error>(&update)) {
+    if (auto* error = std::get_if<Platform::Error>(&update)) {
       have_completed_ = true;
       platform_->OnCompleted(*error);
       return;
-    } else if (auto* status = absl::get_if<Platform::Status>(&update)) {
+    } else if (auto* status = std::get_if<Platform::Status>(&update)) {
       platform_->OnStatus(*status);
       return;
-    } else if (absl::get_if<Transport::Disconnected>(&update)) {
+    } else if (std::get_if<Transport::Disconnected>(&update)) {
       std::optional<Platform::Error> maybe_error;
       if (!transaction_received_) {
         maybe_error = Platform::Error::UNEXPECTED_EOF;
@@ -691,22 +691,22 @@ class CTAP2Processor : public Transaction {
       return;
     }
 
-    auto& msg = absl::get<std::pair<PayloadType, std::vector<uint8_t>>>(update);
+    auto& msg = std::get<std::pair<PayloadType, std::vector<uint8_t>>>(update);
     if (msg.first != PayloadType::kCTAP) {
       have_completed_ = true;
       platform_->OnCompleted(Platform::Error::INVALID_CTAP);
       return;
     }
-    const absl::variant<std::vector<uint8_t>, Platform::Error> result =
+    const std::variant<std::vector<uint8_t>, Platform::Error> result =
         ProcessCTAPMessage(msg.second);
-    if (const auto* error = absl::get_if<Platform::Error>(&result)) {
+    if (const auto* error = std::get_if<Platform::Error>(&result)) {
       have_completed_ = true;
       platform_->OnCompleted(*error);
       return;
     }
 
     const std::vector<uint8_t>& response =
-        absl::get<std::vector<uint8_t>>(result);
+        std::get<std::vector<uint8_t>>(result);
     if (response.empty()) {
       // Response is pending.
       return;
@@ -715,13 +715,12 @@ class CTAP2Processor : public Transaction {
     transport_->Write(PayloadType::kCTAP, std::move(response));
   }
 
-  absl::variant<std::vector<uint8_t>, Platform::Error> ProcessCTAPMessage(
+  std::variant<std::vector<uint8_t>, Platform::Error> ProcessCTAPMessage(
       base::span<const uint8_t> message_bytes) {
     if (message_bytes.empty()) {
       return Platform::Error::INVALID_CTAP;
     }
-    const auto command = message_bytes[0];
-    const auto cbor_bytes = message_bytes.subspan(1);
+    const auto [command, cbor_bytes] = message_bytes.split_at<1>();
 
     std::optional<cbor::Value> payload;
     if (!cbor_bytes.empty()) {
@@ -731,14 +730,13 @@ class CTAP2Processor : public Transaction {
                         << base::HexEncode(cbor_bytes);
         return Platform::Error::INVALID_CTAP;
       }
-      FIDO_LOG(DEBUG) << "<- (" << base::HexEncode(&command, 1) << ") "
+      FIDO_LOG(DEBUG) << "<- (" << base::HexEncode(command) << ") "
                       << cbor::DiagnosticWriter::Write(*payload);
     } else {
-      FIDO_LOG(DEBUG) << "<- (" << base::HexEncode(&command, 1)
-                      << ") <no payload>";
+      FIDO_LOG(DEBUG) << "<- (" << base::HexEncode(command) << ") <no payload>";
     }
 
-    switch (command) {
+    switch (command[0]) {
       case static_cast<uint8_t>(
           device::CtapRequestCommand::kAuthenticatorGetInfo): {
         if (payload) {
@@ -928,7 +926,7 @@ class CTAP2Processor : public Transaction {
 
       default:
         FIDO_LOG(ERROR) << "Received unknown command "
-                        << static_cast<unsigned>(command);
+                        << static_cast<unsigned>(command[0]);
         return Platform::Error::INVALID_CTAP;
     }
   }
@@ -1144,20 +1142,20 @@ class DigitalIdentityProcessor : public Transaction {
     DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
     CHECK(!have_completed_);
 
-    if (auto* error = absl::get_if<Platform::Error>(&update)) {
+    if (auto* error = std::get_if<Platform::Error>(&update)) {
       have_completed_ = true;
       platform_->OnCompleted(*error);
       return;
-    } else if (auto* status = absl::get_if<Platform::Status>(&update)) {
+    } else if (auto* status = std::get_if<Platform::Status>(&update)) {
       platform_->OnStatus(*status);
       return;
-    } else if (absl::get_if<Transport::Disconnected>(&update)) {
+    } else if (std::get_if<Transport::Disconnected>(&update)) {
       have_completed_ = true;
       platform_->OnCompleted(std::nullopt);
       return;
     }
 
-    auto& msg = absl::get<std::pair<PayloadType, std::vector<uint8_t>>>(update);
+    auto& msg = std::get<std::pair<PayloadType, std::vector<uint8_t>>>(update);
     if (msg.first != PayloadType::kJSON) {
       have_completed_ = true;
       platform_->OnCompleted(Platform::Error::INVALID_JSON);

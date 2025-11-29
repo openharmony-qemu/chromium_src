@@ -4,6 +4,7 @@
 
 #include "extensions/renderer/bindings/api_binding_util.h"
 
+#include "base/auto_reset.h"
 #include "base/check_op.h"
 #include "base/notreached.h"
 #include "base/observer_list.h"
@@ -138,8 +139,6 @@ std::string GetPlatformString() {
   return "fuchsia";
 #elif BUILDFLAG(IS_DESKTOP_ANDROID)
   return "desktop_android";
-#elif BUILDFLAG(IS_OHOS)
-  return "ohos";
 #else
   NOTREACHED();
 #endif

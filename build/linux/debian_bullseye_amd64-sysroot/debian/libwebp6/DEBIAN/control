@@ -1,9 +1,9 @@
 Package: libwebp6
 Source: libwebp
-Version: 0.6.1-2.1
+Version: 0.6.1-2.1+deb11u2
 Architecture: amd64
 Maintainer: Jeff Breidenbach <jab@debian.org>
-Installed-Size: 499
+Installed-Size: 503
 Depends: libc6 (>= 2.29)
 Section: libs
 Priority: optional

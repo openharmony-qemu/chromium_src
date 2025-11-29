@@ -11,28 +11,30 @@
 #include <string_view>
 #include <vector>
 
-#include "base/feature_list.h"
-#include "base/gtest_prod_util.h"
-#include "base/time/time.h"
+#include "base/rand_util.h"
 #include "base/types/pass_key.h"
 #include "crypto/process_bound_string.h"
-#include "net/base/features.h"
 #include "net/base/net_export.h"
-#include "net/cookies/cookie_access_params.h"
 #include "net/cookies/cookie_access_result.h"
 #include "net/cookies/cookie_base.h"
 #include "net/cookies/cookie_constants.h"
-#include "net/cookies/cookie_inclusion_status.h"
 #include "net/cookies/cookie_options.h"
-#include "net/cookies/cookie_partition_key.h"
+#include "net/cookies/ref_unique_cookie_key.h"
+#include "net/cookies/unique_cookie_key.h"
 #include "url/third_party/mozilla/url_parse.h"
 
 class GURL;
+
+namespace base {
+class Time;
+}  // namespace base
 
 namespace net {
 
 class ParsedCookie;
 class CanonicalCookie;
+class CookieInclusionStatus;
+class CookiePartitionKey;
 
 struct CookieWithAccessResult;
 struct CookieAndLineWithAccessResult;
@@ -204,7 +206,7 @@ class NET_EXPORT CanonicalCookie : public CookieBase {
   bool operator<(const CanonicalCookie& other) const {
     // Use the cookie properties that uniquely identify a cookie to determine
     // ordering.
-    return UniqueKey() < other.UniqueKey();
+    return RefUniqueKey() < other.RefUniqueKey();
   }
 
   bool operator==(const CanonicalCookie& other) const {
@@ -240,17 +242,24 @@ class NET_EXPORT CanonicalCookie : public CookieBase {
   bool IsEquivalent(const CanonicalCookie& ecc) const {
     // It seems like it would make sense to take secure, httponly, and samesite
     // into account, but the RFC doesn't specify this.
-    // NOTE: Keep this logic in-sync with TrimDuplicateCookiesForKey().
+    return IsEquivalent(RefUniqueKey(), ecc);
+  }
 
-    // A host cookie will never match a domain cookie or vice-versa, this is
-    // because the "host-only-flag" is encoded within the `domain` field of the
-    // respective keys. So we don't need to explicitly check if ecc is also host
-    // or domain.
-    if (IsHostCookie()) {
-      return UniqueKey() == ecc.UniqueKey();
-    }
-    // Is domain cookie
-    return UniqueDomainKey() == ecc.UniqueDomainKey();
+  // This function exists to help optimize the case of when a single cookie is
+  // being compared multiple times against other cookies. E.x.:
+  //
+  // cookie1.IsEquivalent(cookie2), cookie1.IsEquivalent(cookie3),
+  // cookie1.IsEquivalent(cookie4), etc.
+  //
+  // Doing the above re-computes cookie1's UniqueKey each time.
+  //
+  // The function allows the caller to cache cookie1's UniqueKey and reuse it
+  // as `this_key`. This function is preferable to manually comparing cookie's
+  // `UniqueKey` as it helps keep the comparison logic in one place.
+  bool IsEquivalent(const RefUniqueCookieKey& this_key,
+                    const CanonicalCookie& ecc) const {
+    DCHECK(this_key == RefUniqueKey());
+    return this_key == ecc.RefUniqueKey();
   }
 
   // Checks a looser set of equivalency rules than 'IsEquivalent()' in order
@@ -261,9 +270,9 @@ class NET_EXPORT CanonicalCookie : public CookieBase {
   //
   // Returns 'true' if this cookie's name matches |secure_cookie|, and this
   // cookie is a domain-match for |secure_cookie| (or vice versa), and
-  // |secure_cookie|'s path is "on" this cookie's path (as per 'IsOnPath()').
-  // If partitioned cookies are enabled, it also checks that the cookie has
-  // the same partition key as |secure_cookie|.
+  // |secure_cookie|'s path is "on" this cookie's path (as per
+  // 'IsOnPath()'). If partitioned cookies are enabled, it also checks that
+  // the cookie has the same partition key as |secure_cookie|.
   //
   // Note that while the domain-match cuts both ways (e.g. 'example.com'
   // matches 'www.example.com' in either direction), the path-match is
@@ -271,29 +280,41 @@ class NET_EXPORT CanonicalCookie : public CookieBase {
   // '/login' and '/' do not match '/login/en').
   //
   // Conceptually:
-  // If new_cookie.IsEquivalentForSecureCookieMatching(secure_cookie) is true,
-  // this means that new_cookie would "shadow" secure_cookie: they would would
-  // be indistinguishable when serialized into a Cookie header. This is
-  // important because, if an attacker is attempting to set new_cookie, it
-  // should not be allowed to mislead the server into using new_cookie's value
-  // instead of secure_cookie's.
+  // If new_cookie.IsEquivalentForSecureCookieMatching(secure_cookie) is
+  // true, this means that new_cookie would "shadow" secure_cookie: they
+  // would would be indistinguishable when serialized into a Cookie header.
+  // This is important because, if an attacker is attempting to set
+  // new_cookie, it should not be allowed to mislead the server into using
+  // new_cookie's value instead of secure_cookie's.
   //
   // The reason for the asymmetric path comparison ("cookie1=bad; path=/a/b"
-  // from an insecure source is not allowed if "cookie1=good; secure; path=/a"
-  // exists, but "cookie2=bad; path=/a" from an insecure source is allowed if
-  // "cookie2=good; secure; path=/a/b" exists) is because cookies in the Cookie
-  // header are serialized with longer path first. (See CookieSorter in
-  // cookie_monster.cc.) That is, they would be serialized as "Cookie:
-  // cookie1=bad; cookie1=good" in one case, and "Cookie: cookie2=good;
-  // cookie2=bad" in the other case. The first scenario is not allowed because
-  // the attacker injects the bad value, whereas the second scenario is ok
-  // because the good value is still listed first.
+  // from an insecure source is not allowed if "cookie1=good; secure;
+  // path=/a" exists, but "cookie2=bad; path=/a" from an insecure source is
+  // allowed if "cookie2=good; secure; path=/a/b" exists) is because cookies
+  // in the Cookie header are serialized with longer path first. (See
+  // CookieSorter in cookie_monster.cc.) That is, they would be serialized
+  // as "Cookie: cookie1=bad; cookie1=good" in one case, and "Cookie:
+  // cookie2=good; cookie2=bad" in the other case. The first scenario is not
+  // allowed because the attacker injects the bad value, whereas the second
+  // scenario is ok because the good value is still listed first.
   bool IsEquivalentForSecureCookieMatching(
       const CanonicalCookie& secure_cookie) const;
+
+  // Returns true if the |other| cookie's data members match, except for the
+  // value. The heuristic is that, if the value changes, then `LastUpdateDate`
+  // is likely different.
+  bool IsProbablyEquivalentTo(const CanonicalCookie& other) const;
 
   // Returns true if the |other| cookie's data members (instance variables)
   // match, for comparing cookies in collections.
   bool HasEquivalentDataMembers(const CanonicalCookie& other) const;
+
+  // Checks if a another cookie is equivalent to this one with respect to what
+  // information about cookies is revealed to the web platform.
+  //
+  // If true, it implies that the two cookies would appear identical to cookie
+  // change subscribers such as the CookieStore API or service workers.
+  bool IsWebEquivalentTo(const CanonicalCookie& other) const;
 
   void SetLastAccessDate(const base::Time& date) {
     last_access_date_ = date;
@@ -311,13 +332,6 @@ class NET_EXPORT CanonicalCookie : public CookieBase {
   static base::Time ValidateAndAdjustExpiryDate(const base::Time& expiry_date,
                                                 const base::Time& creation_date,
                                                 net::CookieSourceScheme scheme);
-
-  // Cookie ordering methods.
-
-  // Returns true if the cookie is less than |other|, considering only name,
-  // domain and path. In particular, two equivalent cookies (see IsEquivalent())
-  // are identical for PartialCompare().
-  bool PartialCompare(const CanonicalCookie& other) const;
 
   // Return whether this object is a valid CanonicalCookie().  Invalid
   // cookies may be constructed by the detailed constructor.
@@ -376,10 +390,6 @@ class NET_EXPORT CanonicalCookie : public CookieBase {
   FRIEND_TEST_ALL_PREFIXES(CanonicalCookieTest,
                            TestGetAndAdjustPortForTrustworthyUrls);
   FRIEND_TEST_ALL_PREFIXES(CanonicalCookieTest, TestHasHiddenPrefixName);
-
-  // Records histograms to measure how often cookie prefixes appear in
-  // the wild and how often they would be blocked.
-  static void RecordCookiePrefixMetrics(CookiePrefix prefix);
 
   // Returns the appropriate port value for the given `source_url` depending on
   // if the url is considered trustworthy or not.

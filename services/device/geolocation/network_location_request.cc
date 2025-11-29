@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 
+#include <algorithm>
 #include <iterator>
 #include <limits>
 #include <optional>
@@ -22,7 +23,6 @@
 #include "base/metrics/histogram.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/metrics/histogram_macros.h"
-#include "base/ranges/algorithm.h"
 #include "base/strings/escape.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/stringprintf.h"
@@ -130,7 +130,7 @@ std::vector<mojom::AccessPointDataPtr> RequestToMojom(
     return {};
   }
   std::vector<mojom::AccessPointDataPtr> request;
-  base::ranges::transform(
+  std::ranges::transform(
       *access_points_list, std::back_inserter(request),
       [&wifi_timestamp](const base::Value& ap_value) {
         const auto& ap_dict = ap_value.GetDict();
@@ -263,7 +263,7 @@ void NetworkLocationRequest::MakeRequest(
 }
 
 void NetworkLocationRequest::OnRequestComplete(
-    std::unique_ptr<std::string> data) {
+    std::optional<std::string> data) {
   int response_code = 0;
   if (url_loader_->ResponseInfo())
     response_code = url_loader_->ResponseInfo()->headers->response_code();
@@ -291,8 +291,12 @@ void NetworkLocationRequest::OnRequestComplete(
         "the DevTools console for more information.",
         base::StringPrintf("Returned error code %d", response_code));
     result.result_code = NetworkLocationRequestResult::kResponseNotOk;
+  } else if (!data.has_value()) {
+    result.position = CreateGeopositionErrorResult(
+        url_loader_->GetFinalURL(), "Network request response body is empty.",
+        "");
+    result.result_code = NetworkLocationRequestResult::kResponseEmpty;
   } else {
-    CHECK(data);
     DVLOG(1) << "NetworkLocationRequest::OnRequestComplete() : "
                 "Parsing response "
              << *data;

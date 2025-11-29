@@ -52,7 +52,8 @@ class DataTypeManagerMock : public DataTypeManager {
               (const override));
   MOCK_METHOD(void,
               GetTypesWithUnsyncedData,
-              (DataTypeSet, base::OnceCallback<void(DataTypeSet)>),
+              (DataTypeSet,
+               base::OnceCallback<void(absl::flat_hash_map<DataType, size_t>)>),
               (const override));
   MOCK_METHOD(
       void,
@@ -63,7 +64,7 @@ class DataTypeManagerMock : public DataTypeManager {
   MOCK_METHOD(void, TriggerLocalDataMigration, (DataTypeSet), (override));
   MOCK_METHOD(
       void,
-      TriggerLocalDataMigration,
+      TriggerLocalDataMigrationForItems,
       ((std::map<DataType, std::vector<syncer::LocalDataItemModel::DataId>>
             items)),
       (override));

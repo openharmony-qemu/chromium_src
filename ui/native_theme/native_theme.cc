@@ -22,13 +22,8 @@
 #include "ui/color/color_provider_key.h"
 #include "ui/color/color_provider_utils.h"
 #include "ui/native_theme/common_theme.h"
-#include "ui/native_theme/native_theme_features.h"
+#include "ui/native_theme/features/native_theme_features.h"
 #include "ui/native_theme/native_theme_utils.h"
-
-#if BUILDFLAG(IS_OHOS)
-#include "base/ohos/task_scheduler/task_runner_ohos.h"
-#include "ohos/adapter/native_theme/native_theme_adapter.h"
-#endif  // BUILDFLAG(IS_OHOS)
 
 namespace ui {
 
@@ -208,46 +203,19 @@ NativeTheme::NativeTheme(bool should_use_dark_colors,
     : should_use_dark_colors_(should_use_dark_colors || IsForcedDarkMode()),
       system_theme_(system_theme),
       forced_colors_(IsForcedHighContrast()),
-      prefers_reduced_transparency_(false),
-      inverted_colors_(false),
+
       preferred_color_scheme_(CalculatePreferredColorScheme()),
       preferred_contrast_(CalculatePreferredContrast()) {}
 
 NativeTheme::~NativeTheme() = default;
 
-#if BUILDFLAG(IS_OHOS)
-void ThemeSourceEventCallbackImpl::OnThemeSourceChanged(const ohos::adapter::native_theme
-  ::OhosColorMode theme_source_ohos) {
-  auto task = base::BindOnce(
-      [](const ohos::adapter::native_theme::OhosColorMode theme_source_ohos) {
-        ui::NativeTheme::ThemeSource theme_source;
-        ui::NativeTheme::PreferredColorScheme preferred_color_scheme;
-        if (theme_source_ohos == ohos::adapter::native_theme::OhosColorMode::COLOR_MODE_DARK) {
-            theme_source = ui::NativeTheme::ThemeSource::kForcedDark;
-            preferred_color_scheme = ui::NativeTheme::PreferredColorScheme::kDark;
-        } else if (theme_source_ohos == ohos::adapter::native_theme::OhosColorMode::COLOR_MODE_LIGHT) {
-          theme_source = ui::NativeTheme::ThemeSource::kForcedLight;
-          preferred_color_scheme = ui::NativeTheme::PreferredColorScheme::kLight;
-        } else {
-          theme_source = ui::NativeTheme::ThemeSource::kSystem;
-          preferred_color_scheme = ui::NativeTheme::PreferredColorScheme::kMaxValue;
-        }
-        ui::NativeTheme::GetInstanceForNativeUi()->set_preferred_color_scheme(preferred_color_scheme);
-        ui::NativeTheme::GetInstanceForWeb()->set_preferred_color_scheme(preferred_color_scheme);
-        ui::NativeTheme::GetInstanceForNativeUi()->set_theme_source(theme_source);
-        ui::NativeTheme::GetInstanceForWeb()->set_theme_source(theme_source);
-      },
-      theme_source_ohos);
-  base::TaskRunnerOHOS::GetUIThreadTaskRunner()->PostTask(FROM_HERE, std::move(task));
-}
-#endif  // BUILDFLAG(IS_OHOS)
-
 bool NativeTheme::ShouldUseDarkColors() const {
-#if BUILDFLAG(IS_OHOS)
-  if (theme_source() == ThemeSource::kForcedLight) return false;
-  if (theme_source() == ThemeSource::kForcedDark) return true;
-#endif  // BUILDFLAG(IS_OHOS)
   return should_use_dark_colors_;
+}
+
+bool NativeTheme::ShouldUseDarkColorsForSystemIntegratedUI() const {
+  return should_use_dark_colors_for_system_integrated_ui_.value_or(
+      ShouldUseDarkColors());
 }
 
 bool NativeTheme::UserHasContrastPreference() const {
@@ -261,8 +229,9 @@ bool NativeTheme::InForcedColorsMode() const {
 
 NativeTheme::PlatformHighContrastColorScheme
 NativeTheme::GetPlatformHighContrastColorScheme() const {
-  if (GetDefaultSystemColorScheme() != ColorScheme::kPlatformHighContrast)
+  if (GetDefaultSystemColorScheme() != ColorScheme::kPlatformHighContrast) {
     return PlatformHighContrastColorScheme::kNone;
+  }
   return (GetPreferredColorScheme() == PreferredColorScheme::kDark)
              ? PlatformHighContrastColorScheme::kDark
              : PlatformHighContrastColorScheme::kLight;
@@ -280,12 +249,11 @@ NativeTheme::PreferredColorScheme NativeTheme::CalculatePreferredColorScheme()
 
 // static
 bool NativeTheme::CalculateUseOverlayScrollbar() {
-  bool use_overlay_scrollbar = IsOverlayScrollbarEnabledByFeatureFlag();
 #if BUILDFLAG(IS_CHROMEOS)
-  use_overlay_scrollbar =
-      use_overlay_scrollbar || features::IsOverlayScrollbarOSSettingEnabled();
+  return true;
+#else
+  return IsOverlayScrollbarEnabledByFeatureFlag();
 #endif
-  return use_overlay_scrollbar;
 }
 
 std::optional<base::TimeDelta> NativeTheme::GetPlatformCaretBlinkInterval()
@@ -311,8 +279,9 @@ NativeTheme::PreferredContrast NativeTheme::GetPreferredContrast() const {
 
 void NativeTheme::SetPreferredContrast(
     NativeTheme::PreferredContrast preferred_contrast) {
-  if (preferred_contrast_ == preferred_contrast)
+  if (preferred_contrast_ == preferred_contrast) {
     return;
+  }
   preferred_contrast_ = preferred_contrast;
   NotifyOnPreferredContrastUpdated();
 }

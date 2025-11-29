@@ -32,14 +32,17 @@ class MessagePumpIOSForIOTest : public testing::Test {
   }
 
   void TearDown() override {
-    if (IGNORE_EINTR(close(pipefds_[0])) < 0)
+    if (IGNORE_EINTR(close(pipefds_[0])) < 0) {
       PLOG(ERROR) << "close";
-    if (IGNORE_EINTR(close(pipefds_[1])) < 0)
+    }
+    if (IGNORE_EINTR(close(pipefds_[1])) < 0) {
       PLOG(ERROR) << "close";
+    }
   }
 
   void HandleFdIOEvent(MessagePumpForIO::FdWatchController* watcher) {
-    MessagePumpIOSForIO::HandleFdIOEvent(watcher->fdref_.get(),
+    MessagePumpIOSForIO::HandleFdIOEvent(
+        watcher->fdref_.get(),
         kCFFileDescriptorReadCallBack | kCFFileDescriptorWriteCallBack,
         watcher);
   }
@@ -64,7 +67,7 @@ class BaseWatcher : public MessagePumpIOSForIO::FdWatcher {
   void OnFileCanWriteWithoutBlocking(int /* fd */) override { NOTREACHED(); }
 
  protected:
-  MessagePumpIOSForIO::FdWatchController* controller_;
+  raw_ptr<MessagePumpIOSForIO::FdWatchController> controller_;
 };
 
 class DeleteWatcher : public BaseWatcher {
@@ -77,7 +80,7 @@ class DeleteWatcher : public BaseWatcher {
   void OnFileCanWriteWithoutBlocking(int /* fd */) override {
     DCHECK(controller_);
     delete controller_;
-    controller_ = NULL;
+    controller_ = nullptr;
   }
 };
 
@@ -86,8 +89,9 @@ TEST_F(MessagePumpIOSForIOTest, DeleteWatcher) {
   MessagePumpIOSForIO::FdWatchController* watcher =
       new MessagePumpIOSForIO::FdWatchController(FROM_HERE);
   DeleteWatcher delegate(watcher);
-  pump->WatchFileDescriptor(pipefds_[1],
-      false, MessagePumpIOSForIO::WATCH_READ_WRITE, watcher, &delegate);
+  pump->WatchFileDescriptor(pipefds_[1], false,
+                            MessagePumpIOSForIO::WATCH_READ_WRITE, watcher,
+                            &delegate);
 
   // Spoof a callback.
   HandleFdIOEvent(watcher);
@@ -107,13 +111,14 @@ class StopWatcher : public BaseWatcher {
   void OnFileCanWriteWithoutBlocking(int /* fd */) override {
     controller_->StopWatchingFileDescriptor();
     if (fd_to_start_watching_ >= 0) {
-      pump_->WatchFileDescriptor(fd_to_start_watching_,
-          false, MessagePumpIOSForIO::WATCH_READ_WRITE, controller_, this);
+      pump_->WatchFileDescriptor(fd_to_start_watching_, false,
+                                 MessagePumpIOSForIO::WATCH_READ_WRITE,
+                                 controller_, this);
     }
   }
 
  private:
-  MessagePumpIOSForIO* pump_;
+  raw_ptr<MessagePumpIOSForIO> pump_;
   int fd_to_start_watching_;
 };
 
@@ -121,8 +126,9 @@ TEST_F(MessagePumpIOSForIOTest, StopWatcher) {
   std::unique_ptr<MessagePumpIOSForIO> pump(new MessagePumpIOSForIO);
   MessagePumpIOSForIO::FdWatchController watcher(FROM_HERE);
   StopWatcher delegate(&watcher, pump.get());
-  pump->WatchFileDescriptor(pipefds_[1],
-      false, MessagePumpIOSForIO::WATCH_READ_WRITE, &watcher, &delegate);
+  pump->WatchFileDescriptor(pipefds_[1], false,
+                            MessagePumpIOSForIO::WATCH_READ_WRITE, &watcher,
+                            &delegate);
 
   // Spoof a callback.
   HandleFdIOEvent(&watcher);
@@ -132,8 +138,9 @@ TEST_F(MessagePumpIOSForIOTest, StopWatcherAndWatchSomethingElse) {
   std::unique_ptr<MessagePumpIOSForIO> pump(new MessagePumpIOSForIO);
   MessagePumpIOSForIO::FdWatchController watcher(FROM_HERE);
   StopWatcher delegate(&watcher, pump.get(), alternate_pipefds_[1]);
-  pump->WatchFileDescriptor(pipefds_[1],
-      false, MessagePumpIOSForIO::WATCH_READ_WRITE, &watcher, &delegate);
+  pump->WatchFileDescriptor(pipefds_[1], false,
+                            MessagePumpIOSForIO::WATCH_READ_WRITE, &watcher,
+                            &delegate);
 
   // Spoof a callback.
   HandleFdIOEvent(&watcher);

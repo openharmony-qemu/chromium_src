@@ -1,10 +1,10 @@
 Package: libwebp-dev
 Source: libwebp
-Version: 0.6.1-2.1
+Version: 0.6.1-2.1+deb11u2
 Architecture: i386
 Maintainer: Jeff Breidenbach <jab@debian.org>
-Installed-Size: 950
-Depends: libwebp6 (= 0.6.1-2.1), libwebpmux3 (= 0.6.1-2.1), libwebpdemux2 (= 0.6.1-2.1)
+Installed-Size: 952
+Depends: libwebp6 (= 0.6.1-2.1+deb11u2), libwebpmux3 (= 0.6.1-2.1+deb11u2), libwebpdemux2 (= 0.6.1-2.1+deb11u2)
 Section: libdevel
 Priority: optional
 Multi-Arch: same

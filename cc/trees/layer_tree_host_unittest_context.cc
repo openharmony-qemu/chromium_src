@@ -2,13 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifdef UNSAFE_BUFFERS_BUILD
-// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
-#pragma allow_unsafe_buffers
-#endif
-
 #include <stddef.h>
 #include <stdint.h>
+
+#include <array>
 
 #include "base/functional/bind.h"
 #include "base/memory/raw_ptr.h"
@@ -242,7 +239,7 @@ class LayerTreeHostContextTestLostContextSucceeds
   }
 
   bool NextTestCase() {
-    static const TestCase kTests[] = {
+    static const auto kTests = std::to_array<TestCase>({
         // Losing the context and failing to recreate it (or losing it again
         // immediately) a small number of times should succeed.
         {
@@ -326,7 +323,7 @@ class LayerTreeHostContextTestLostContextSucceeds
             true,  // fallback_context_works
             true,  // async_layer_tree_frame_sink_creation
         },
-    };
+    });
 
     if (test_case_ >= std::size(kTests))
       return false;
@@ -842,8 +839,7 @@ class LayerTreeHostContextTestDontUseLostResources
     layer->SetIsDrawable(true);
     root->AddChild(layer);
 
-    scoped_refptr<TextureLayer> texture =
-        TextureLayer::CreateForMailbox(nullptr);
+    scoped_refptr<TextureLayer> texture = TextureLayer::Create(nullptr);
     texture->SetBounds(gfx::Size(10, 10));
     texture->SetIsDrawable(true);
     constexpr gfx::Size size(64, 64);

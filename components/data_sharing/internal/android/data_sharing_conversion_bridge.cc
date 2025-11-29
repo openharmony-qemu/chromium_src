@@ -68,13 +68,12 @@ DataSharingConversionBridge::CreatePeopleGroupActionOutcome(JNIEnv* env,
 // static
 ScopedJavaLocalRef<jobject> DataSharingConversionBridge::CreateParseUrlResult(
     JNIEnv* env,
-    const DataSharingService::ParseUrlResult& data) {
+    const ParseUrlResult& data) {
   ScopedJavaLocalRef<jobject> j_group_data;
-  DataSharingService::ParseUrlStatus status =
-      DataSharingService::ParseUrlStatus::kUnknown;
+  ParseUrlStatus status = ParseUrlStatus::kUnknown;
   if (data.has_value()) {
     j_group_data = conversion::CreateJavaGroupToken(env, data.value());
-    status = DataSharingService::ParseUrlStatus::kSuccess;
+    status = ParseUrlStatus::kSuccess;
   } else {
     status = data.error();
   }
@@ -87,8 +86,8 @@ ScopedJavaLocalRef<jobject>
 DataSharingConversionBridge::CreateSharedDataPreviewOrFailureOutcome(
     JNIEnv* env,
     const DataSharingService::SharedDataPreviewOrFailureOutcome& data) {
-  DataSharingService::PeopleGroupActionFailure failure =
-      DataSharingService::PeopleGroupActionFailure::kUnknown;
+  DataSharingService::DataPreviewActionFailure failure =
+      DataSharingService::DataPreviewActionFailure::kUnknown;
 
   ScopedJavaLocalRef<jobject> j_preview;
   if (data.has_value() && data.value().shared_tab_group_preview) {

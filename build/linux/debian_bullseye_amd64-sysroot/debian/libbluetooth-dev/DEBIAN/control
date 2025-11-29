@@ -1,10 +1,10 @@
 Package: libbluetooth-dev
 Source: bluez
-Version: 5.55-3.1
+Version: 5.55-3.1+deb11u1
 Architecture: amd64
 Maintainer: Debian Bluetooth Maintainers <team+pkg-bluetooth@tracker.debian.org>
 Installed-Size: 818
-Depends: libbluetooth3 (= 5.55-3.1), libc6-dev | libc-dev
+Depends: libbluetooth3 (= 5.55-3.1+deb11u1), libc6-dev | libc-dev
 Suggests: pkg-config
 Conflicts: bluez-pan, libbluetooth-dev, libsdp2-dev (<= 1.5.2)
 Replaces: libsdp2-dev (<= 1.5.2)

@@ -4,6 +4,9 @@
 
 package org.chromium.ui;
 
+import static android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
+import static android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS;
+
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
@@ -17,24 +20,29 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.StrictMode;
+import android.text.Spanned;
 import android.text.TextUtils;
+import android.text.method.LinkMovementMethod;
+import android.text.style.ClickableSpan;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.MeasureSpec;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
 import android.widget.AbsListView;
 import android.widget.ListAdapter;
+import android.widget.TextView;
 
 import androidx.annotation.ColorInt;
 import androidx.annotation.ColorRes;
 import androidx.annotation.DimenRes;
 import androidx.annotation.DrawableRes;
-import androidx.annotation.Nullable;
+import androidx.annotation.NonNull;
 import androidx.annotation.StyleableRes;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.graphics.Insets;
@@ -44,6 +52,8 @@ import androidx.core.view.WindowInsetsCompat;
 import org.chromium.base.BuildInfo;
 import org.chromium.base.ContextUtils;
 import org.chromium.base.Log;
+import org.chromium.build.annotations.NullMarked;
+import org.chromium.build.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
@@ -55,6 +65,7 @@ import java.util.Set;
  * Utility functions for common Android UI tasks.
  * This class is not supposed to be instantiated.
  */
+@NullMarked
 public class UiUtils {
     private static final String TAG = "UiUtils";
 
@@ -140,7 +151,7 @@ public class UiUtils {
      * @param bitmapConfig     Bitmap config for the generated screenshot (ARGB_8888 or RGB_565).
      * @return The screen bitmap of the view or null if a problem was encountered.
      */
-    public static Bitmap generateScaledScreenshot(
+    public static @Nullable Bitmap generateScaledScreenshot(
             View currentView, int maximumDimension, Bitmap.Config bitmapConfig) {
         Bitmap screenshot = null;
         boolean drawingCacheEnabled = currentView.isDrawingCacheEnabled();
@@ -253,7 +264,7 @@ public class UiUtils {
      *     height of all items stored at index 1.
      */
     public static int[] computeListAdapterContentDimensions(
-            ListAdapter adapter, ViewGroup parentView) {
+            ListAdapter adapter, @Nullable ViewGroup parentView) {
         final int widthMeasureSpec = MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED);
         final int heightMeasureSpec = MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED);
         AbsListView.LayoutParams params =
@@ -350,11 +361,21 @@ public class UiUtils {
      * Sets the navigation bar icons to dark or light.
      *
      * @param rootView The root view used to request updates to the system UI theme.
-     * @param useDarkIcons Whether the navigation bar icons should be dark.
+     * @param lightNavigationBar Whether the navigation bar has a light appearance with dark icons.
      */
-    public static void setNavigationBarIconColor(View rootView, boolean useDarkIcons) {
+    public static void setNavigationBarIconColor(View rootView, boolean lightNavigationBar) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            WindowInsetsController controller = rootView.getWindowInsetsController();
+            if (controller != null) {
+                controller.setSystemBarsAppearance(
+                        lightNavigationBar ? APPEARANCE_LIGHT_NAVIGATION_BARS : 0,
+                        APPEARANCE_LIGHT_NAVIGATION_BARS);
+                return;
+            }
+        }
+
         int systemUiVisibility = rootView.getSystemUiVisibility();
-        if (useDarkIcons) {
+        if (lightNavigationBar) {
             systemUiVisibility |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
         } else {
             systemUiVisibility &= ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
@@ -381,19 +402,25 @@ public class UiUtils {
     }
 
     /**
-     * Sets the status bar icons to dark or light. Note that this is only valid for
-     * Android M+.
-     *
-     * TODO: migrate to WindowInsetsController API for Android R+ (API 30+)
+     * Sets the status bar icons to dark or light. Note that this is only valid for Android M+.
      *
      * @param rootView The root view used to request updates to the system UI theming.
-     * @param useDarkIcons Whether the status bar icons should be dark.
+     * @param lightStatusBar Whether the status bar has a light appearance with dark icons.
      */
-    public static void setStatusBarIconColor(View rootView, boolean useDarkIcons) {
+    public static void setStatusBarIconColor(View rootView, boolean lightStatusBar) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            WindowInsetsController controller = rootView.getWindowInsetsController();
+            if (controller != null) {
+                controller.setSystemBarsAppearance(
+                        lightStatusBar ? APPEARANCE_LIGHT_STATUS_BARS : 0,
+                        APPEARANCE_LIGHT_STATUS_BARS);
+                return;
+            }
+        }
         int systemUiVisibility = rootView.getSystemUiVisibility();
         // The status bar should always be black in automotive devices to match the black back
         // button toolbar, so we should not use dark icons.
-        if (useDarkIcons && !BuildInfo.getInstance().isAutomotive) {
+        if (lightStatusBar && !BuildInfo.getInstance().isAutomotive) {
             systemUiVisibility |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
         } else {
             systemUiVisibility &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
@@ -483,5 +510,24 @@ public class UiUtils {
         canvas.drawCircle(badgeCenterX, badgeCenterY, badgeRadius, badge);
 
         return new BitmapDrawable(context.getResources(), bitmap);
+    }
+
+    /**
+     * Set a link movement method if the {@code textView} text contains at least one {@link
+     * ClickableSpan}.
+     *
+     * @param textView The TextView which might set a link movement method.
+     */
+    public static void maybeSetLinkMovementMethod(@NonNull TextView textView) {
+        CharSequence text = textView.getText();
+        if (TextUtils.isEmpty(text)) return;
+        if (text instanceof Spanned spanned) {
+            for (Object o : spanned.getSpans(0, text.length(), Object.class)) {
+                if (o instanceof ClickableSpan) {
+                    textView.setMovementMethod(LinkMovementMethod.getInstance());
+                    return;
+                }
+            }
+        }
     }
 }

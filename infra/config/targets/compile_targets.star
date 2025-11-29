@@ -228,6 +228,13 @@ targets.compile_target(
 )
 
 targets.compile_target(
+    name = "cronet_gn2bp_aosp_feedback_loop",
+    label = "//components/cronet/android:cronet_gn2bp_aosp_feedback_loop",
+    # All references have been moved to starlark
+    skip_usage_check = True,
+)
+
+targets.compile_target(
     name = "cronet_package",
     label = "//components/cronet:cronet_package",
     # All references have been moved to starlark
@@ -334,11 +341,6 @@ targets.compile_target(
 )
 
 targets.compile_target(
-    name = "ondevice_model_example",
-    label = "//components/optimization_guide/internal:ondevice_model_example",
-)
-
-targets.compile_target(
     name = "pdf_fuzzers",
     label = "//pdf/pdfium/fuzzers:pdf_fuzzers",
     # All references have been moved to starlark
@@ -417,6 +419,8 @@ targets.compile_target(
 targets.compile_target(
     name = "chrome/updater:all",
     label = "//chrome/updater:all",
+    # All references have been moved to starlark
+    skip_usage_check = True,
 )
 
 targets.compile_target(
@@ -462,6 +466,13 @@ targets.compile_target(
 targets.compile_target(
     name = "chrome/enterprise_companion:all",
     label = "//chrome/enterprise_companion:all",
+    # All references have been moved to starlark
+    skip_usage_check = True,
+)
+
+targets.compile_target(
+    name = "ipc_fuzzer",
+    label = "//tools/ipc_fuzzer/fuzzer:ipc_fuzzer",
     # All references have been moved to starlark
     skip_usage_check = True,
 )

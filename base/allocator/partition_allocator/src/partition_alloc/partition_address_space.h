@@ -15,11 +15,13 @@
 #include "partition_alloc/partition_alloc_base/bits.h"
 #include "partition_alloc/partition_alloc_base/compiler_specific.h"
 #include "partition_alloc/partition_alloc_base/component_export.h"
+#include "partition_alloc/partition_alloc_base/files/platform_file.h"
 #include "partition_alloc/partition_alloc_base/notreached.h"
 #include "partition_alloc/partition_alloc_check.h"
 #include "partition_alloc/partition_alloc_config.h"
 #include "partition_alloc/partition_alloc_constants.h"
 #include "partition_alloc/partition_alloc_forward.h"
+#include "partition_alloc/tagging.h"
 #include "partition_alloc/thread_isolation/alignment.h"
 
 #if PA_BUILDFLAG(ENABLE_THREAD_ISOLATION)
@@ -32,6 +34,38 @@
 namespace partition_alloc {
 
 namespace internal {
+
+// Utility class to calculate offset within a known pool.
+class PA_COMPONENT_EXPORT(PARTITION_ALLOC) PoolOffsetLookup {
+ public:
+  // Under default-constructed values all lookup will hit DCHECK.
+  PoolOffsetLookup()
+      : base_address_(0), base_mask_(static_cast<uintptr_t>(-1)) {}
+
+  PA_ALWAYS_INLINE uintptr_t GetTaggedOffset(void* ptr) const {
+    const uintptr_t address = reinterpret_cast<uintptr_t>(ptr);
+    PA_DCHECK((address & base_mask_) == base_address_);
+    return address & (kPtrTagMask | ~base_mask_);
+  }
+
+  PA_ALWAYS_INLINE void* GetPointer(uintptr_t tagged_offset) const {
+    PA_DCHECK(IsValidTaggedOffset(tagged_offset));
+    return reinterpret_cast<void*>(base_address_ | tagged_offset);
+  }
+
+  PA_ALWAYS_INLINE bool IsValidTaggedOffset(uintptr_t tagged_offset) const {
+    return !(tagged_offset & base_mask_ & ~kPtrTagMask);
+  }
+
+ private:
+  PoolOffsetLookup(uintptr_t base_address, uintptr_t base_mask)
+      : base_address_(base_address), base_mask_(base_mask) {}
+
+  uintptr_t base_address_;
+  uintptr_t base_mask_;
+
+  friend class PartitionAddressSpace;
+};
 
 // Manages PartitionAlloc address space, which is split into pools.
 // See `glossary.md`.
@@ -100,13 +134,34 @@ class PA_COMPONENT_EXPORT(PARTITION_ALLOC) PartitionAddressSpace {
     return kConfigurablePoolMinSize;
   }
 
+  PA_ALWAYS_INLINE static PoolOffsetLookup GetOffsetLookup(pool_handle pool) {
+    switch (pool) {
+      case kRegularPoolHandle:
+        return PoolOffsetLookup(setup_.regular_pool_base_address_,
+                                CorePoolBaseMask());
+      case kBRPPoolHandle:
+        return PoolOffsetLookup(setup_.brp_pool_base_address_,
+                                CorePoolBaseMask());
+#if PA_BUILDFLAG(ENABLE_THREAD_ISOLATION)
+      case kThreadIsolatedPoolHandle:
+        return PoolOffsetLookup(setup_.thread_isolated_pool_base_address_,
+                                kThreadIsolatedPoolBaseMask);
+#endif  // PA_BUILDFLAG(ENABLE_THREAD_ISOLATION)
+      case kConfigurablePoolHandle:
+        return PoolOffsetLookup(setup_.configurable_pool_base_address_,
+                                setup_.configurable_pool_base_mask_);
+      default:
+        PA_NOTREACHED();
+    }
+  }
+
   // Initialize pools (except for the configurable one).
   //
   // This function must only be called from the main thread.
   static void Init();
   // Initialize the ConfigurablePool at the given address |pool_base|. It must
   // be aligned to the size of the pool. The size must be a power of two and
-  // must be within [ConfigurablePoolMinSize(), ConfigurablePoolMaxSize()].
+  // must be within [kConfigurablePoolMinSize, kConfigurablePoolMaxSize].
   //
   // This function must only be called from the main thread.
   static void InitConfigurablePool(uintptr_t pool_base, size_t size);
@@ -221,15 +276,15 @@ class PA_COMPONENT_EXPORT(PARTITION_ALLOC) PartitionAddressSpace {
 
 #if PA_CONFIG(ENABLE_SHADOW_METADATA)
   PA_ALWAYS_INLINE static bool IsShadowMetadataEnabledOnRegularPool() {
-    return regular_pool_fd_ != -1;
+    return regular_pool_fd_ != base::kInvalidPlatformFile;
   }
 
   PA_ALWAYS_INLINE static bool IsShadowMetadataEnabledOnBRPPool() {
-    return brp_pool_fd_ != -1;
+    return brp_pool_fd_ != base::kInvalidPlatformFile;
   }
 
   PA_ALWAYS_INLINE static bool IsShadowMetadataEnabledOnConfigurablePool() {
-    return configurable_pool_fd_ != -1;
+    return configurable_pool_fd_ != base::kInvalidPlatformFile;
   }
 
   PA_ALWAYS_INLINE static bool IsShadowMetadataEnabled(pool_handle pool) {
@@ -454,10 +509,9 @@ class PA_COMPONENT_EXPORT(PARTITION_ALLOC) PartitionAddressSpace {
   static std::ptrdiff_t regular_pool_shadow_offset_;
   static std::ptrdiff_t brp_pool_shadow_offset_;
   static std::ptrdiff_t configurable_pool_shadow_offset_;
-  // TODO(crbug.com/40238514): Use platform file handles instead of |int|.
-  static int regular_pool_fd_;
-  static int brp_pool_fd_;
-  static int configurable_pool_fd_;
+  static base::PlatformFile regular_pool_fd_;
+  static base::PlatformFile brp_pool_fd_;
+  static base::PlatformFile configurable_pool_fd_;
   static uintptr_t pool_shadow_address_;
 #endif  // PA_CONFIG(ENABLE_SHADOW_METADATA)
 

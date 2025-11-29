@@ -1,6 +1,6 @@
 Package: libwebp7
 Source: libwebp
-Version: 1.2.4-0.2
+Version: 1.2.4-0.2+deb12u1
 Architecture: amd64
 Maintainer: Jeff Breidenbach <jab@debian.org>
 Installed-Size: 544

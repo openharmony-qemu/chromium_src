@@ -2,11 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifdef UNSAFE_BUFFERS_BUILD
-// TODO(crbug.com/342213636): Remove this and spanify to fix the errors.
-#pragma allow_unsafe_buffers
-#endif
-
 #include "content/zygote/zygote_linux.h"
 
 #include <errno.h>
@@ -23,6 +18,7 @@
 #include <utility>
 
 #include "base/command_line.h"
+#include "base/compiler_specific.h"
 #include "base/containers/contains.h"
 #include "base/containers/span.h"
 #include "base/files/file_util.h"
@@ -44,7 +40,6 @@
 #include "base/time/time.h"
 #include "base/trace_event/trace_event.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "content/common/zygote/zygote_commands_linux.h"
 #include "content/public/common/content_descriptors.h"
 #include "content/public/common/content_switches.h"
@@ -116,7 +111,7 @@ bool Zygote::ProcessRequests() {
   // We need to accept SIGCHLD, even though our handler is a no-op because
   // otherwise we cannot wait on children. (According to POSIX 2001.)
   struct sigaction action;
-  memset(&action, 0, sizeof(action));
+  UNSAFE_TODO(memset(&action, 0, sizeof(action)));
   action.sa_handler = &SIGCHLDHandler;
   PCHECK(sigaction(SIGCHLD, &action, nullptr) == 0);
 
@@ -134,7 +129,7 @@ bool Zygote::ProcessRequests() {
     bool r = base::UnixDomainSocket::SendMsg(
         kZygoteSocketPairFd, kZygoteHelloMessage, sizeof(kZygoteHelloMessage),
         std::vector<int>());
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
     LOG_IF(WARNING, !r) << "Sending zygote magic failed";
     // Exit normally on chromeos because session manager may send SIGTERM
     // right after the process starts and it may fail to send zygote magic
@@ -252,7 +247,7 @@ bool Zygote::HandleRequestFromBrowser(int fd) {
   }
 
   base::Pickle pickle = base::Pickle::WithUnownedBuffer(
-      base::span(buf, base::checked_cast<size_t>(len)));
+      UNSAFE_TODO(base::span(buf, base::checked_cast<size_t>(len))));
   base::PickleIterator iter(pickle);
 
   int kind;
@@ -505,7 +500,7 @@ int Zygote::ForkWithRealPid(const std::string& process_type,
       CHECK(recv_fds.empty());
 
       base::Pickle pickle = base::Pickle::WithUnownedBuffer(
-          base::span(buf, base::checked_cast<size_t>(len)));
+          UNSAFE_TODO(base::span(buf, base::checked_cast<size_t>(len))));
       base::PickleIterator iter(pickle);
 
       int kind;

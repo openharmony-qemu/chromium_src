@@ -7,8 +7,8 @@ ef02ad8181333626097653fdd21ed7ac  usr/include/FLAC/metadata.h
 9021522f435d286289f56a6fd6e82984  usr/include/FLAC/ordinals.h
 bc59f7c76f2c71f76719898bfbb9b78c  usr/include/FLAC/stream_decoder.h
 fa4888c80deee71838eeebef75c51966  usr/include/FLAC/stream_encoder.h
-51ed35da9b43ab607a1805efdf182afd  usr/lib/i386-linux-gnu/libFLAC.a
+db867f568af0b9053c66c1e244fc678a  usr/lib/i386-linux-gnu/libFLAC.a
 aa13c68cc6ab99cf28110822582472a2  usr/lib/i386-linux-gnu/pkgconfig/flac.pc
 63adb172647d106b8bf41932157ceb85  usr/share/aclocal/libFLAC.m4
-83abd2e19055f4a4b33011a613908d1b  usr/share/doc/libflac-dev/changelog.Debian.gz
+585eed05ea7da4fa6f686726207ad877  usr/share/doc/libflac-dev/changelog.Debian.gz
 dd24393268ac5799ff4b9b8d9de36804  usr/share/doc/libflac-dev/copyright

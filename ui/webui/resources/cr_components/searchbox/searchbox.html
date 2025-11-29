@@ -8,6 +8,8 @@
     --cr-searchbox-voice-icon-offset: 16px;
     --cr-searchbox-voice-search-button-width: 0px;
     --cr-searchbox-match-padding-inline-start: 12px;
+    --cr-compose-button-width: 104px;
+    --cr-searchbox-icon-spacing: 11px;
     border-radius: var(--cr-searchbox-border-radius);
     box-shadow: var(--cr-searchbox-shadow);
     font-size: var(--cr-searchbox-font-size, 16px);
@@ -21,7 +23,11 @@
   }
 
   :host([show-thumbnail]) {
-    --cr-searchbox-thumbnail-icon-offset: 50px;
+    --cr-searchbox-thumbnail-icon-offset: 54px;
+  }
+
+  :host([enable-thumbnail-sizing-tweaks_][show-thumbnail]) {
+    --cr-searchbox-thumbnail-icon-offset: 48px;
   }
 
   :host([searchbox-chrome-refresh-theming][dropdown-is-visible]) {
@@ -62,7 +68,7 @@
     }
   }
 
-  :host([dropdown-is-visible]) {
+  :host([dropdown-is-visible]:not([is-lens-searchbox_])) {
     box-shadow: none;
   }
 
@@ -101,6 +107,12 @@
     width: 100%;
   }
 
+  :host-context([dir='rtl']) input[dir='ltr'],
+  :host-context([dir='ltr']) input[dir='rtl'] {
+    padding-inline-end: calc(52px + var(--cr-searchbox-thumbnail-icon-offset, 0px));
+    padding-inline-start: calc(var(--cr-searchbox-voice-icon-offset) + var(--cr-searchbox-voice-search-button-width) + var(--cr-searchbox-inner-icon-margin));
+  }
+
   :host-context([is-back-arrow-visible]) input {
     padding-inline-start: calc(22px + var(--cr-searchbox-thumbnail-icon-offset, 0px));
   }
@@ -135,6 +147,10 @@
      * visually hiding the placeholder does not work well with 'Find in page...'
      * as the placeholder text can get highlighted. */
     visibility: hidden;
+  }
+
+  :host([is-lens-searchbox_]) input:focus::placeholder{
+    visibility: visible;
   }
 
   input:focus,
@@ -202,6 +218,11 @@
     position: static;
   }
 
+  :host([compose-button-enabled]) .searchbox-icon-button.lens {
+   /* Since there is a 4px padding because of the glow effect, add 12px to right instead of 16px. */
+   right: calc(12px + var(--cr-compose-button-width) + var(--cr-searchbox-icon-spacing));
+  }
+
   /* When voice/lens icons are monochrome, they are webkit mask images.
    * Webkit mask images hide borders so container rules are created to
    * show focus borders on these icons. */
@@ -221,7 +242,6 @@
   :host-context(.focus-outline-visible) .searchbox-icon-button-container:focus-within {
     box-shadow: var(--ntp-focus-shadow);
   }
-
 
   :host(:not([searchbox-chrome-refresh-theming])) #voiceSearchButton {
     background-image: url(//resources/cr_components/searchbox/icons/mic.svg);
@@ -279,6 +299,15 @@
     right: unset;
   }
 
+  :host([compose-button-enabled]):host-context([dir='rtl']) .searchbox-icon-button-container.lens {
+   left: calc(16px + 2 * (var(--cr-searchbox-icon-width) + var(--cr-searchbox-icon-spacing)));
+   right: unset;
+  }
+
+  :host([compose-button-enabled][searchbox-lens-search-enabled_]) {
+   --cr-searchbox-voice-icon-offset: calc(16px + 2 * var(--cr-searchbox-icon-spacing) + var(--cr-searchbox-icon-width) + var(--cr-compose-button-width));
+  }
+
   :host-context(.focus-outline-visible) .searchbox-icon-button:focus {
     box-shadow: var(--ntp-focus-shadow);
   }
@@ -303,23 +332,30 @@
   #thumbnailContainer {
     align-content: center;
     inset-block-start: var(--cr-searchbox-icon-top-position);
-    inset-inline-start: 48px;
+    inset-inline-start: 52px;
     height: 100%;
     outline: none;
     position: absolute;
     z-index: 101;
   }
 
+  :host([enable-thumbnail-sizing-tweaks_]) #thumbnailContainer {
+    inset-inline-start: 50px;
+  }
+
   :host-context([is-back-arrow-visible]) #thumbnailContainer {
     inset-inline-start: 16px;
   }
+
 </style>
 <div id="inputWrapper" on-focusout=onInputWrapperFocusout_
     on-keydown="onInputWrapperKeydown_">
   <input id="input" class="truncate" type="search" autocomplete="off"
       spellcheck="false" aria-live="[[inputAriaLive_]]" role="combobox"
       aria-expanded="[[dropdownIsVisible]]" aria-controls="matches"
-      placeholder="[[placeholderText_]]" on-copy="onInputCutCopy_"
+      aria-description="[[searchboxAriaDescription]]"
+      placeholder="[[computePlaceholderText_(placeholderText, showThumbnail)]]"
+      on-copy="onInputCutCopy_"
       on-cut="onInputCutCopy_" on-focus="onInputFocus_"
       on-input="onInputInput_" on-keydown="onInputKeydown_"
       on-keyup="onInputKeyup_" on-mousedown="onInputMouseDown_"
@@ -333,9 +369,10 @@
       <!--Tabindex is set to 1 so that the thumbnail is tabbed first,
         then the search box. -->
       <cr-searchbox-thumbnail id="thumbnail" thumbnail-url_="[[thumbnailUrl_]]"
+          is-deletable_="[[isThumbnailDeletable_]]"
           on-remove-thumbnail-click="onRemoveThumbnailClick_"
           role="button" aria-label="[[i18n('searchboxThumbnailLabel')]]"
-          tabindex="1">
+          tabindex$="[[getThumbnailTabindex_(isThumbnailDeletable_)]]">
       </cr-searchbox-thumbnail>
     </div>
   </template>
@@ -365,10 +402,16 @@
       </button>
     </template>
     <template is="dom-if" if="[[searchboxLensSearchEnabled_]]">
-      <button id="lensSearchButton" class="searchbox-icon-button"
+      <button id="lensSearchButton" class="searchbox-icon-button lens"
           on-click="onLensSearchClick_"
           title="[[i18n('lensSearchButtonLabel')]]">
       </button>
+    </template>
+    <template is="dom-if" if="[[composeButtonEnabled]]">
+      <cr-searchbox-compose-button
+        id="composeButton"
+        on-compose-click="onComposeButtonClick_">
+      </cr-searchbox-compose-button>
     </template>
   </template>
   <cr-searchbox-dropdown id="matches" part="searchbox-dropdown"
@@ -379,7 +422,6 @@
       had-secondary-side="{{hadSecondarySide}}"
       has-secondary-side="{{hasSecondarySide}}"
       on-match-focusin="onMatchFocusin_"
-      on-header-focusin="onHeaderFocusin_"
       on-match-click="onMatchClick_"
       hidden$="[[!dropdownIsVisible]]"
       show-thumbnail="[[showThumbnail]]">

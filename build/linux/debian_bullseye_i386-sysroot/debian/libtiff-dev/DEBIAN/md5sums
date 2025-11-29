@@ -6,7 +6,7 @@ c05154bb220e32e33cd510cd2666a560  usr/include/i386-linux-gnu/tiffio.h
 4e271ca49bd9020fcdceac3c75a4fe2a  usr/lib/i386-linux-gnu/libtiff.a
 e1362ccafd0ad6cf7e7fc601dcecfe56  usr/lib/i386-linux-gnu/libtiffxx.a
 c11bc703647d673744bdbc5293484b42  usr/lib/i386-linux-gnu/pkgconfig/libtiff-4.pc
-13634acf517822bc31dcb3ed3e112a0f  usr/share/doc/libtiff-dev/changelog.Debian.gz
+6686c3116b124e7ff3edabbd258c8f09  usr/share/doc/libtiff-dev/changelog.Debian.gz
 5d463687a37308c07d5411114b7168e8  usr/share/doc/libtiff-dev/changelog.gz
 e859b2ae89c96e179995d377da3571de  usr/share/doc/libtiff-dev/copyright
 85e35d1ab88b12f20b7d27fdc0be1ea7  usr/share/man/man3/TIFFClose.3tiff.gz

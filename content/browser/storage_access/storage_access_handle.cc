@@ -4,6 +4,7 @@
 
 #include "content/browser/storage_access/storage_access_handle.h"
 
+#include "base/functional/callback_helpers.h"
 #include "base/types/pass_key.h"
 #include "content/browser/broadcast_channel/broadcast_channel_provider.h"
 #include "content/browser/broadcast_channel/broadcast_channel_service.h"
@@ -12,6 +13,7 @@
 #include "content/browser/renderer_host/render_frame_host_impl.h"
 #include "content/browser/worker_host/shared_worker_connector_impl.h"
 #include "content/public/browser/permission_controller.h"
+#include "content/public/browser/permission_descriptor_util.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/content_client.h"
 #include "storage/browser/quota/quota_manager_proxy.h"
@@ -42,32 +44,14 @@ void StorageAccessHandle::Create(
     RenderFrameHost* host,
     mojo::PendingReceiver<blink::mojom::StorageAccessHandle> receiver) {
   CHECK(host);
-  if (!DoesFrameHaveStorageAccess(host)) {
+  if (!host->DoesDocumentHaveStorageAccess()) {
 #if DCHECK_IS_ON()
     mojo::ReportBadMessage(
-        "Binding a StorageAccessHandle requires third-party cookie access or "
-        "permission access.");
+        "Binding a StorageAccessHandle requires third-party cookie access.");
 #endif
     return;
   }
   new StorageAccessHandle(*host, std::move(receiver));
-}
-
-// static
-bool StorageAccessHandle::DoesFrameHaveStorageAccess(RenderFrameHost* host) {
-  bool has_full_cookie_access =
-      GetContentClient()->browser()->IsFullCookieAccessAllowed(
-          host->GetBrowserContext(), WebContents::FromRenderFrameHost(host),
-          host->GetLastCommittedURL(), host->GetStorageKey());
-  if (has_full_cookie_access) {
-    return true;
-  }
-  return host->GetProcess()
-             ->GetBrowserContext()
-             ->GetPermissionController()
-             ->GetPermissionStatusForCurrentDocument(
-                 blink::PermissionType::STORAGE_ACCESS_GRANT, host) ==
-         blink::mojom::PermissionStatus::GRANTED;
 }
 
 void StorageAccessHandle::BindIndexedDB(
@@ -97,9 +81,16 @@ void StorageAccessHandle::BindCaches(
     host.coep_reporter()->Clone(
         coep_reporter_remote.InitWithNewPipeAndPassReceiver());
   }
+  mojo::PendingRemote<network::mojom::DocumentIsolationPolicyReporter>
+      dip_reporter_remote;
+  if (host.dip_reporter()) {
+    host.dip_reporter()->Clone(
+        dip_reporter_remote.InitWithNewPipeAndPassReceiver());
+  }
   host.GetProcess()->BindCacheStorage(
       host.cross_origin_embedder_policy(), std::move(coep_reporter_remote),
       host.policy_container_host()->policies().document_isolation_policy,
+      std::move(dip_reporter_remote),
       storage::BucketLocator::ForDefaultBucket(
           blink::StorageKey::CreateFirstParty(host.GetStorageKey().origin())),
       std::move(receiver));
@@ -126,7 +117,6 @@ void StorageAccessHandle::Estimate(EstimateCallback callback) {
       ->GetBucketsForStorageKey(
           blink::StorageKey::CreateFirstParty(
               render_frame_host().GetStorageKey().origin()),
-          blink::mojom::StorageType::kTemporary,
           /*delete_expired=*/false,
           base::SequencedTaskRunner::GetCurrentDefault(),
           base::BindOnce(&StorageAccessHandle::EstimateImpl,
@@ -169,8 +159,17 @@ void StorageAccessHandle::BindBlobStorage(
       ->AddReceiver(blink::StorageKey::CreateFirstParty(
                         render_frame_host().GetStorageKey().origin()),
                     render_frame_host().GetLastCommittedOrigin(),
-                    render_frame_host().GetProcess()->GetID(),
-                    std::move(receiver));
+                    render_frame_host().GetProcess()->GetDeprecatedID(),
+                    std::move(receiver),
+                    /*partitioning_blob_url_closure=*/base::DoNothing(),
+                    // In the case that a context is granted storage access, the
+                    // StorageAccessHandle context still shouldn't bypass
+                    // partitioning check. (eg. using a Blob URL created with
+                    // URL.createObjectURL in the third-party context with the
+                    // StorageAccessHandle's SharedWorker constructor.)
+                    /*storage_access_check_callback= */
+                    base::BindRepeating([]() -> bool { return false; }),
+                    /*partitioning_disabled_by_policy=*/false);
 }
 
 void StorageAccessHandle::BindBroadcastChannel(

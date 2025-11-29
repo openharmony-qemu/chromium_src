@@ -57,6 +57,7 @@ class EVENTS_EXPORT MotionEventAndroidJava : public MotionEventAndroid {
                          jfloat tick_multiplier,
                          base::TimeTicks oldest_event_time,
                          base::TimeTicks latest_event_time,
+                         base::TimeTicks down_time_ms,
                          jint android_action,
                          jint pointer_count,
                          jint history_size,
@@ -70,7 +71,8 @@ class EVENTS_EXPORT MotionEventAndroidJava : public MotionEventAndroid {
                          jfloat raw_offset_y_pixels,
                          jboolean for_touch_handle,
                          const Pointer* const pointer0,
-                         const Pointer* const pointer1);
+                         const Pointer* const pointer1,
+                         bool is_latest_event_time_resampled);
 
   ~MotionEventAndroidJava() override;
 
@@ -97,6 +99,7 @@ class EVENTS_EXPORT MotionEventAndroidJava : public MotionEventAndroid {
   float GetHistoricalY(size_t pointer_index,
                        size_t historical_index) const override;
   ToolType GetToolType(size_t pointer_index) const override;
+  bool IsLatestEventTimeResampled() const override;
   // End ui::MotionEvent overrides
 
   // Start MotionEventAndroid overrides
@@ -110,6 +113,8 @@ class EVENTS_EXPORT MotionEventAndroidJava : public MotionEventAndroid {
  private:
   // The Java reference to the underlying MotionEvent.
   base::android::ScopedJavaGlobalRef<jobject> event_;
+
+  bool is_latest_event_time_resampled_;
 
   // Makes a copy of passed object |e| such that the cached pointers are
   // translated to new coordinates where the 0th indexded pointer points to

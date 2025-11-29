@@ -15,7 +15,6 @@
 #include "ui/ozone/platform/wayland/test/mock_xdg_surface.h"
 #include "ui/ozone/platform/wayland/test/server_object.h"
 #include "ui/ozone/platform/wayland/test/test_alpha_blending.h"
-#include "ui/ozone/platform/wayland/test/test_augmented_surface.h"
 #include "ui/ozone/platform/wayland/test/test_fractional_scale.h"
 #include "ui/ozone/platform/wayland/test/test_overlay_prioritized_surface.h"
 #include "ui/ozone/platform/wayland/test/test_subsurface.h"
@@ -83,11 +82,6 @@ class MockSurface : public ServerObject {
     return prioritized_surface_;
   }
 
-  void set_augmented_surface(TestAugmentedSurface* augmented_surface) {
-    augmented_surface_ = augmented_surface;
-  }
-  TestAugmentedSurface* augmented_surface() { return augmented_surface_; }
-
   void set_linux_drm_syncobj_surface(MockLinuxDrmSyncobjSurface* surface) {
     linux_drm_syncobj_surface_ = surface;
   }
@@ -102,6 +96,10 @@ class MockSurface : public ServerObject {
   gfx::Rect input_region() const { return input_region_; }
 
   void set_frame_callback(wl_resource* callback_resource) {
+    if (allow_resetting_frame_callback_ && frame_callback_) {
+      wl_resource_destroy(frame_callback_);
+      frame_callback_ = nullptr;
+    }
     DCHECK(!frame_callback_);
     frame_callback_ = callback_resource;
   }
@@ -129,6 +127,7 @@ class MockSurface : public ServerObject {
   void ReleaseBufferFenced(wl_resource* buffer,
                            gfx::GpuFenceHandle release_fence);
   void SendFrameCallback();
+  void AllowResettingFrameCallback() { allow_resetting_frame_callback_ = true; }
 
   int32_t buffer_scale() const { return buffer_scale_; }
   void set_buffer_scale(int32_t buffer_scale) { buffer_scale_ = buffer_scale; }
@@ -141,13 +140,12 @@ class MockSurface : public ServerObject {
   raw_ptr<TestAlphaBlending, AcrossTasksDanglingUntriaged> blending_ = nullptr;
   raw_ptr<TestOverlayPrioritizedSurface, AcrossTasksDanglingUntriaged>
       prioritized_surface_ = nullptr;
-  raw_ptr<TestAugmentedSurface, AcrossTasksDanglingUntriaged>
-      augmented_surface_ = nullptr;
   raw_ptr<MockLinuxDrmSyncobjSurface> linux_drm_syncobj_surface_ = nullptr;
   gfx::Rect opaque_region_ = {-1, -1, 0, 0};
   gfx::Rect input_region_ = {-1, -1, 0, 0};
 
   raw_ptr<wl_resource, AcrossTasksDanglingUntriaged> frame_callback_ = nullptr;
+  bool allow_resetting_frame_callback_ = false;
   base::flat_map<wl_resource*, raw_ptr<wl_resource, CtnExperimental>>
       linux_buffer_releases_;
 

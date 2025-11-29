@@ -79,7 +79,7 @@ enum class BottomIndicatorState {
 // but it is always shown on the primary display. There is only one instance
 // at a time.
 class ASH_EXPORT LockContentsView
-    : public NonAccessibleView,
+    : public views::View,
       public LoginDataDispatcher::Observer,
       public SystemTrayObserver,
       public display::DisplayObserver,
@@ -87,7 +87,7 @@ class ASH_EXPORT LockContentsView
       public chromeos::PowerManagerClient::Observer,
       public EnterpriseDomainObserver,
       public views::FocusChangeListener {
-  METADATA_HEADER(LockContentsView, NonAccessibleView)
+  METADATA_HEADER(LockContentsView, views::View)
 
  public:
   friend class LockContentsViewTestApi;
@@ -217,7 +217,6 @@ class ASH_EXPORT LockContentsView
   void HideMediaView();
   bool AreMediaControlsEnabled() const;
 
-  void OnWillChangeFocus(View* focused_before, View* focused_now) override;
   void OnDidChangeFocus(View* focused_before, View* focused_now) override;
 
  private:

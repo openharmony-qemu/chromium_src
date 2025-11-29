@@ -30,10 +30,10 @@
 #include "base/process/process.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/time/time.h"
+#include "base/trace_event/trace_log.h"
 #include "base/trace_event/typed_macros.h"
 #include "base/types/pass_key.h"
 #include "build/build_config.h"
-#include "cc/tiles/gpu_image_decode_cache.h"
 #include "content/child/child_thread_impl.h"
 #include "content/common/agent_scheduling_group.mojom.h"
 #include "content/common/content_export.h"
@@ -43,10 +43,10 @@
 #include "content/common/renderer_host.mojom.h"
 #include "content/public/renderer/render_thread.h"
 #include "content/renderer/discardable_memory_utils.h"
-#include "content/renderer/media/codec_factory.h"
 #include "gpu/ipc/client/gpu_channel_host.h"
 #include "ipc/ipc_sync_channel.h"
 #include "media/media_buildflags.h"
+#include "media/mojo/clients/mojo_codec_factory.h"
 #include "mojo/public/cpp/bindings/associated_receiver.h"
 #include "mojo/public/cpp/bindings/associated_remote.h"
 #include "mojo/public/cpp/bindings/pending_associated_receiver.h"
@@ -77,7 +77,6 @@ class WaitableEvent;
 }
 
 namespace cc {
-class RasterContextProviderWrapper;
 class RasterDarkModeFilter;
 }  // namespace cc
 
@@ -87,7 +86,7 @@ class ClientSharedImageInterface;
 }
 
 namespace media {
-class GpuVideoAcceleratorFactories;
+class MojoGpuVideoAcceleratorFactories;
 }
 
 namespace mojo {
@@ -102,15 +101,10 @@ class RasterContextProvider;
 
 namespace content {
 class AgentSchedulingGroup;
-class GpuVideoAcceleratorFactoriesImpl;
 class RenderFrameImpl;
 class RenderThreadObserver;
 class RendererBlinkPlatformImpl;
 class VariationsRenderThreadObserver;
-
-#if BUILDFLAG(IS_ANDROID)
-class StreamTextureFactory;
-#endif
 
 #if BUILDFLAG(IS_WIN)
 class DCOMPTextureFactory;
@@ -127,7 +121,8 @@ class CONTENT_EXPORT RenderThreadImpl
     : public RenderThread,
       public ChildThreadImpl,
       public mojom::Renderer,
-      public viz::mojom::CompositingModeWatcher {
+      public viz::mojom::CompositingModeWatcher,
+      public base::trace_event::TraceLog::AsyncEnabledStateObserver {
  public:
   static RenderThreadImpl* current();
 
@@ -158,6 +153,10 @@ class CONTENT_EXPORT RenderThreadImpl
   IPC::SyncChannel* GetChannel() override;
   std::string GetLocale() override;
 
+  // base::trace_event::TraceLog::AsyncEnabledStateObserver implementation:
+  void OnTraceLogEnabled() override;
+  void OnTraceLogDisabled() override;
+
 #if BUILDFLAG(CONTENT_ENABLE_LEGACY_IPC)
   IPC::SyncMessageFilter* GetSyncMessageFilter() override;
   void AddRoute(int32_t routing_id, IPC::Listener* listener) override;
@@ -178,8 +177,6 @@ class CONTENT_EXPORT RenderThreadImpl
   int PostTaskToAllWebWorkers(base::RepeatingClosure closure) override;
   base::WaitableEvent* GetShutdownEvent() override;
   int32_t GetClientId() override;
-  void SetRendererProcessType(
-      blink::scheduler::WebRendererProcessType type) override;
   blink::WebString GetUserAgent() override;
   const blink::UserAgentMetadata& GetUserAgentMetadata() override;
   void WriteIntoTrace(
@@ -226,8 +223,6 @@ class CONTENT_EXPORT RenderThreadImpl
       base::OnceCallback<void(scoped_refptr<gpu::GpuChannelHost>)>;
   void EstablishGpuChannel(EstablishGpuChannelCallback callback);
 
-  gpu::GpuMemoryBufferManager* GetGpuMemoryBufferManager();
-
   blink::AssociatedInterfaceRegistry* GetAssociatedInterfaceRegistry();
 
   base::DiscardableMemoryAllocator* GetDiscardableMemoryAllocatorForTest()
@@ -254,11 +249,6 @@ class CONTENT_EXPORT RenderThreadImpl
   blink::URLLoaderThrottleProvider* url_loader_throttle_provider() const {
     return url_loader_throttle_provider_.get();
   }
-
-#if BUILDFLAG(IS_ANDROID)
-  scoped_refptr<StreamTextureFactory> GetStreamTexureFactory();
-  bool EnableStreamTextureCopy();
-#endif
 
 #if BUILDFLAG(IS_WIN)
   scoped_refptr<DCOMPTextureFactory> GetDCOMPTextureFactory();
@@ -293,7 +283,7 @@ class CONTENT_EXPORT RenderThreadImpl
 
   // Returns a worker context provider that will be bound on the compositor
   // thread.
-  scoped_refptr<cc::RasterContextProviderWrapper>
+  scoped_refptr<viz::RasterContextProvider>
   SharedCompositorWorkerContextProvider(
       cc::RasterDarkModeFilter* dark_mode_filter);
 
@@ -427,7 +417,8 @@ class CONTENT_EXPORT RenderThreadImpl
       const std::string& user_agent,
       const blink::UserAgentMetadata& user_agent_metadata,
       const std::vector<std::string>& cors_exempt_header_list,
-      blink::mojom::OriginTrialsSettingsPtr origin_trial_settings) override;
+      blink::mojom::OriginTrialsSettingsPtr origin_trial_settings,
+      uint64_t trace_id) override;
   void UpdateScrollbarTheme(
       mojom::UpdateScrollbarThemeParamsPtr params) override;
   void OnSystemColorsChanged(int32_t aqua_color_variant) override;
@@ -445,6 +436,8 @@ class CONTENT_EXPORT RenderThreadImpl
   void SetIsCrossOriginIsolated(bool value) override;
   void SetIsWebSecurityDisabled(bool value) override;
   void SetIsIsolatedContext(bool value) override;
+  void SetWebUIResourceUrlToCodeCacheMap(
+      const base::flat_map<GURL, int>& resource_map) override;
   void OnMemoryPressure(
       base::MemoryPressureListener::MemoryPressureLevel memory_pressure_level);
 
@@ -462,7 +455,7 @@ class CONTENT_EXPORT RenderThreadImpl
   void OnRendererInterfaceReceiver(
       mojo::PendingAssociatedReceiver<mojom::Renderer> receiver);
 
-  std::unique_ptr<CodecFactory> CreateMediaCodecFactory(
+  std::unique_ptr<media::MojoCodecFactory> CreateMediaMojoCodecFactory(
       scoped_refptr<viz::ContextProviderCommandBuffer> context_provider,
       bool enable_video_decode_accelerator,
       bool enable_video_encode_accelerator);
@@ -514,7 +507,8 @@ class CONTENT_EXPORT RenderThreadImpl
   // TODO(dcastagna): This should be just one scoped_ptr once
   // http://crbug.com/580386 is fixed.
   // NOTE(dcastagna): At worst this accumulates a few bytes per context lost.
-  std::vector<std::unique_ptr<GpuVideoAcceleratorFactoriesImpl>> gpu_factories_;
+  std::vector<std::unique_ptr<media::MojoGpuVideoAcceleratorFactories>>
+      gpu_factories_;
 
   // Thread or sequenced task runner (depending on
   // kBlinkMediaIsPooledSequencedTaskRunner) for running multimedia operations
@@ -530,10 +524,6 @@ class CONTENT_EXPORT RenderThreadImpl
   // Thread to run the VideoFrameCompositor on.
   std::unique_ptr<base::Thread> video_frame_compositor_thread_;
 
-#if BUILDFLAG(IS_ANDROID)
-  scoped_refptr<StreamTextureFactory> stream_texture_factory_;
-#endif
-
 #if BUILDFLAG(IS_WIN)
   scoped_refptr<DCOMPTextureFactory> dcomp_texture_factory_;
   scoped_refptr<OverlayStateServiceProviderImpl>
@@ -547,8 +537,7 @@ class CONTENT_EXPORT RenderThreadImpl
   scoped_refptr<viz::RasterContextProvider>
       video_frame_compositor_context_provider_;
 
-  scoped_refptr<cc::RasterContextProviderWrapper>
-      shared_worker_context_provider_wrapper_;
+  scoped_refptr<viz::RasterContextProvider> shared_worker_context_provider_;
 
   scoped_refptr<gpu::ClientSharedImageInterface> shared_image_interface_;
 

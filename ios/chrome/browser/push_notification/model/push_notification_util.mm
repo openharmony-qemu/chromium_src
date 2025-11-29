@@ -13,6 +13,7 @@
 #import "components/prefs/pref_service.h"
 #import "ios/chrome/browser/shared/model/application_context/application_context.h"
 #import "ios/chrome/browser/shared/model/prefs/pref_names.h"
+#import "ios/chrome/browser/shared/model/profile/profile_ios.h"
 #import "ios/chrome/browser/shared/public/features/features.h"
 #import "ios/web/public/thread/web_task_traits.h"
 #import "ios/web/public/thread/web_thread.h"
@@ -78,10 +79,22 @@ NSString* const kPrerenderedPayloadKey = @"$";
 // Key for the client id in the payload.
 NSString* const kClientIdFieldKey = @"n";
 
-// The options to use when requestion notification authorization.
-const UNAuthorizationOptions kAuthorizationOptions =
+// The options to use when requesting notification authorization.
+constexpr UNAuthorizationOptions kAuthorizationOptions =
     UNAuthorizationOptionAlert | UNAuthorizationOptionBadge |
     UNAuthorizationOptionSound;
+
+// The options to use when requesting notification authorization. Includes the
+// option to indicate that the app provides app notification settings.
+constexpr UNAuthorizationOptions kAuthorizationOptionsWithSettings =
+    kAuthorizationOptions |
+    UNAuthorizationOptionProvidesAppNotificationSettings;
+
+UNAuthorizationOptions AuthorizationOptions() {
+  return base::FeatureList::IsEnabled(kIOSProvidesAppNotificationSettings)
+             ? kAuthorizationOptionsWithSettings
+             : kAuthorizationOptions;
+}
 
 }  // namespace
 
@@ -195,6 +208,9 @@ const UNAuthorizationOptions kAuthorizationOptions =
       getPermissionSettings:^(UNNotificationSettings* settings) {
         [PushNotificationUtil
             updateAuthorizationStatusPref:settings.authorizationStatus];
+        if (base::FeatureList::IsEnabled(kIOSProvidesAppNotificationSettings)) {
+          [PushNotificationUtil ensureProvidesAppNotificationSettings:settings];
+        }
       }];
 }
 
@@ -282,6 +298,11 @@ const UNAuthorizationOptions kAuthorizationOptions =
   return std::nullopt;
 }
 
++ (BOOL)provisionalAllowedByPolicyForProfile:(ProfileIOS*)profile {
+  return profile->GetPrefs()->GetBoolean(
+      prefs::kProvisionalNotificationsAllowedByPolicy);
+}
+
 #pragma mark - Private
 
 // Displays the push notification permission prompt if the user has not decided
@@ -298,7 +319,7 @@ const UNAuthorizationOptions kAuthorizationOptions =
   }
   UNUserNotificationCenter* center =
       UNUserNotificationCenter.currentNotificationCenter;
-  [center requestAuthorizationWithOptions:kAuthorizationOptions
+  [center requestAuthorizationWithOptions:AuthorizationOptions()
                         completionHandler:^(BOOL granted, NSError* error) {
                           [PushNotificationUtil
                               requestAuthorizationResult:completion
@@ -323,7 +344,7 @@ const UNAuthorizationOptions kAuthorizationOptions =
     return;
   }
   UNAuthorizationOptions options =
-      kAuthorizationOptions | UNAuthorizationOptionProvisional;
+      AuthorizationOptions() | UNAuthorizationOptionProvisional;
   UNUserNotificationCenter* center =
       UNUserNotificationCenter.currentNotificationCenter;
   [center requestAuthorizationWithOptions:options
@@ -434,6 +455,28 @@ const UNAuthorizationOptions kAuthorizationOptions =
       // This authorization status only applies to app clips.
       return NO;
   }
+}
+
+// Ensure that the `providesAppNotificationSettings` option is enabled.
+// TODO(crbug.com/405388979): Clean up several milestones after launching since
+// this is a migration.
++ (void)ensureProvidesAppNotificationSettings:
+    (UNNotificationSettings*)settings {
+  if ((settings.authorizationStatus != UNAuthorizationStatusAuthorized &&
+       settings.authorizationStatus != UNAuthorizationStatusProvisional) ||
+      settings.providesAppNotificationSettings) {
+    // The app is not authorized yet, or the option is already enabled.
+    return;
+  }
+
+  // The app was previously authorized, but did not include the
+  // `providesAppNotificationSettings` option. Ask for authorization again
+  // and include the option this time.
+  UNUserNotificationCenter* center =
+      UNUserNotificationCenter.currentNotificationCenter;
+  [center requestAuthorizationWithOptions:AuthorizationOptions()
+                        completionHandler:^(BOOL granted, NSError* error){
+                        }];
 }
 
 @end

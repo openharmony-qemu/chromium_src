@@ -12,7 +12,6 @@
 #include "base/power_monitor/power_monitor_source.h"
 #include "base/power_monitor/power_observer.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 
 #if BUILDFLAG(IS_WIN)
 #include <windows.h>
@@ -34,10 +33,6 @@
 #if BUILDFLAG(IS_IOS)
 #include <objc/runtime.h>
 #endif  // BUILDFLAG(IS_IOS)
-
-#if BUILDFLAG(IS_OHOS)
-#include "ohos/adapter/power_monitor/power_monitor.h"
-#endif
 
 namespace base {
 
@@ -75,10 +70,6 @@ class BASE_EXPORT PowerMonitorDeviceSource : public PowerMonitorSource {
  private:
   friend class PowerMonitorDeviceSourceTest;
 
-#if BUILDFLAG(IS_OHOS)
-  std::unique_ptr<::ohos::adapter::OhosPowerMonitor> impl = nullptr;
-#endif
-
 #if BUILDFLAG(IS_WIN)
   // Represents a message-only window for power message handling on Windows.
   // Only allow PowerMonitor to create it.
@@ -102,10 +93,10 @@ class BASE_EXPORT PowerMonitorDeviceSource : public PowerMonitorSource {
   };
 #endif  // BUILDFLAG(IS_WIN)
 
-#if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
+#if (BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_IOS_TVOS)) || BUILDFLAG(IS_WIN)
   void PlatformInit();
   void PlatformDestroy();
-#endif  // BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
+#endif  // BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_WIN)
 
 #if BUILDFLAG(IS_MAC)
   // Callback from IORegisterForSystemPower(). |refcon| is the |this| pointer.
@@ -125,7 +116,6 @@ class BASE_EXPORT PowerMonitorDeviceSource : public PowerMonitorSource {
 #if BUILDFLAG(IS_ANDROID)
   PowerThermalObserver::DeviceThermalState GetCurrentThermalState()
       const override;
-  int GetRemainingBatteryCapacity() const override;
 #endif  // BUILDFLAG(IS_ANDROID)
 
 #if BUILDFLAG(IS_WIN)

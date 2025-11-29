@@ -29,8 +29,6 @@ Feature::Platform Feature::GetCurrentPlatform() {
   return WIN_PLATFORM;
 #elif BUILDFLAG(IS_FUCHSIA)
   return FUCHSIA_PLATFORM;
-#elif BUILDFLAG(IS_OHOS)
-  return OHOS_PLATFORM;
 #else
   return UNSPECIFIED_PLATFORM;
 #endif

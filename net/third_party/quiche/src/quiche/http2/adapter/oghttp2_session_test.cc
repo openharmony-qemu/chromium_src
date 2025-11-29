@@ -92,13 +92,12 @@ TEST(OgHttp2SessionTest, ClientHandlesFrames) {
   const char* kSentinel1 = "arbitrary pointer 1";
   visitor.AppendPayloadForStream(1, "This is an example request body.");
   visitor.SetEndData(1, true);
-  auto body1 = std::make_unique<VisitorDataSource>(visitor, 1);
-  int stream_id = session.SubmitRequest(
-      ToHeaders({{":method", "POST"},
-                 {":scheme", "http"},
-                 {":authority", "example.com"},
-                 {":path", "/this/is/request/one"}}),
-      std::move(body1), false, const_cast<char*>(kSentinel1));
+  int stream_id =
+      session.SubmitRequest(ToHeaders({{":method", "POST"},
+                                       {":scheme", "http"},
+                                       {":authority", "example.com"},
+                                       {":path", "/this/is/request/one"}}),
+                            false, const_cast<char*>(kSentinel1));
   ASSERT_EQ(stream_id, 1);
 
   // Submit another request to ensure the next stream is created.
@@ -107,7 +106,7 @@ TEST(OgHttp2SessionTest, ClientHandlesFrames) {
                                        {":scheme", "http"},
                                        {":authority", "example.com"},
                                        {":path", "/this/is/request/two"}}),
-                            nullptr, true, nullptr);
+                            true, nullptr);
   EXPECT_EQ(stream_id2, 3);
 
   const std::string stream_frames =
@@ -278,13 +277,12 @@ TEST(OgHttp2SessionTest, ClientSubmitRequest) {
   const char* kSentinel1 = "arbitrary pointer 1";
   visitor.AppendPayloadForStream(1, "This is an example request body.");
   visitor.SetEndData(1, true);
-  auto body1 = std::make_unique<VisitorDataSource>(visitor, 1);
-  int stream_id = session.SubmitRequest(
-      ToHeaders({{":method", "POST"},
-                 {":scheme", "http"},
-                 {":authority", "example.com"},
-                 {":path", "/this/is/request/one"}}),
-      std::move(body1), false, const_cast<char*>(kSentinel1));
+  int stream_id =
+      session.SubmitRequest(ToHeaders({{":method", "POST"},
+                                       {":scheme", "http"},
+                                       {":authority", "example.com"},
+                                       {":path", "/this/is/request/one"}}),
+                            false, const_cast<char*>(kSentinel1));
   ASSERT_EQ(stream_id, 1);
   EXPECT_TRUE(session.want_write());
   EXPECT_EQ(kSentinel1, session.GetStreamUserData(stream_id));
@@ -315,7 +313,7 @@ TEST(OgHttp2SessionTest, ClientSubmitRequest) {
                                        {":scheme", "http"},
                                        {":authority", "example.com"},
                                        {":path", "/this/is/request/two"}}),
-                            nullptr, true, nullptr);
+                            true, nullptr);
   EXPECT_GT(stream_id, 0);
   EXPECT_TRUE(session.want_write());
   const char* kSentinel2 = "arbitrary pointer 2";
@@ -334,6 +332,71 @@ TEST(OgHttp2SessionTest, ClientSubmitRequest) {
   // still be the default.
   EXPECT_EQ(session.GetStreamSendWindowSize(stream_id),
             kInitialFlowControlWindowSize);
+}
+
+TEST(OgHttp2SessionTest, ClientHeaderCompression) {
+  using CompressionOption = OgHttp2Session::Options::CompressionOption;
+  absl::flat_hash_map<CompressionOption, size_t> wire_sizes;
+  for (CompressionOption option : {CompressionOption::ENABLE_COMPRESSION,
+                                   CompressionOption::DISABLE_COMPRESSION,
+                                   CompressionOption::DISABLE_HUFFMAN}) {
+    TestVisitor visitor;
+    testing::InSequence seq;
+    EXPECT_CALL(visitor, OnBeforeFrameSent(SETTINGS, 0, _, 0x0));
+    EXPECT_CALL(visitor, OnFrameSent(SETTINGS, 0, _, 0x0, 0));
+    EXPECT_CALL(visitor, OnBeforeFrameSent(HEADERS, _, _, 0x5));
+    EXPECT_CALL(visitor, OnFrameSent(HEADERS, _, _, 0x5, 0));
+
+    OgHttp2Session::Options options;
+    options.perspective = Perspective::kClient;
+    options.compression_option = option;
+    OgHttp2Session session(visitor, options);
+
+    // All characters in "adefmost " have sub-1-byte Huffman codings.
+    constexpr absl::string_view kValue = "toast toast toast feed meeeee";
+    session.SubmitRequest(ToHeaders({{":method", "POST"},
+                                     {":scheme", "http"},
+                                     {":authority", "example.com"},
+                                     {":path", "/this/is/request/one"},
+                                     {"food", kValue},
+                                     {"food", kValue}}),
+                          true, nullptr);
+    int result = session.Send();
+    ASSERT_EQ(result, 0);
+    wire_sizes[option] = visitor.data().size();
+  }
+  EXPECT_LT(wire_sizes[CompressionOption::ENABLE_COMPRESSION],
+            wire_sizes[CompressionOption::DISABLE_HUFFMAN]);
+  EXPECT_LT(wire_sizes[CompressionOption::DISABLE_HUFFMAN],
+            wire_sizes[CompressionOption::DISABLE_COMPRESSION]);
+}
+
+TEST(OgHttp2SessionTest, ClientWithMaxDynamicTableSizeZero) {
+  TestVisitor visitor;
+  testing::InSequence seq;
+  EXPECT_CALL(visitor, OnBeforeFrameSent(SETTINGS, 0, _, 0x0));
+  EXPECT_CALL(visitor, OnFrameSent(SETTINGS, 0, _, 0x0, 0));
+  EXPECT_CALL(visitor, OnBeforeFrameSent(HEADERS, _, _, 0x5));
+  EXPECT_CALL(visitor, OnFrameSent(HEADERS, _, _, 0x5, 0));
+
+  OgHttp2Session::Options options;
+  options.perspective = Perspective::kClient;
+  // Sets the optional option to zero.
+  options.max_hpack_encoding_table_capacity = 0;
+  OgHttp2Session session(visitor, options);
+
+  constexpr absl::string_view kValue = "toast toast toast feed meeeee";
+  session.SubmitRequest(ToHeaders({{":method", "POST"},
+                                   {":scheme", "http"},
+                                   {":authority", "example.com"},
+                                   {":path", "/this/is/request/one"},
+                                   {"food", kValue},
+                                   {"food", kValue}}),
+                        true, nullptr);
+  int result = session.Send();
+  ASSERT_EQ(result, 0);
+  // The encoder table size should not have grown beyond zero.
+  EXPECT_EQ(session.GetHpackEncoderDynamicTableSize(), 0);
 }
 
 TEST(OgHttp2SessionTest, ClientSubmitRequestWithLargePayload) {
@@ -389,13 +452,12 @@ TEST(OgHttp2SessionTest, ClientSubmitRequestWithLargePayload) {
 
   visitor.AppendPayloadForStream(1, std::string(20000, 'a'));
   visitor.SetEndData(1, true);
-  auto body1 = std::make_unique<VisitorDataSource>(visitor, 1);
   int stream_id =
       session.SubmitRequest(ToHeaders({{":method", "POST"},
                                        {":scheme", "http"},
                                        {":authority", "example.com"},
                                        {":path", "/this/is/request/one"}}),
-                            std::move(body1), false, nullptr);
+                            false, nullptr);
   ASSERT_EQ(stream_id, 1);
   EXPECT_TRUE(session.want_write());
 
@@ -422,13 +484,12 @@ TEST(OgHttp2SessionTest, ClientSubmitRequestWithReadBlock) {
   EXPECT_FALSE(session.want_write());
 
   const char* kSentinel1 = "arbitrary pointer 1";
-  auto body1 = std::make_unique<VisitorDataSource>(visitor, 1);
-  int stream_id = session.SubmitRequest(
-      ToHeaders({{":method", "POST"},
-                 {":scheme", "http"},
-                 {":authority", "example.com"},
-                 {":path", "/this/is/request/one"}}),
-      std::move(body1), false, const_cast<char*>(kSentinel1));
+  int stream_id =
+      session.SubmitRequest(ToHeaders({{":method", "POST"},
+                                       {":scheme", "http"},
+                                       {":authority", "example.com"},
+                                       {":path", "/this/is/request/one"}}),
+                            false, const_cast<char*>(kSentinel1));
   EXPECT_GT(stream_id, 0);
   EXPECT_TRUE(session.want_write());
   EXPECT_EQ(kSentinel1, session.GetStreamUserData(stream_id));
@@ -477,13 +538,12 @@ TEST(OgHttp2SessionTest, ClientSubmitRequestEmptyDataWithFin) {
   EXPECT_FALSE(session.want_write());
 
   const char* kSentinel1 = "arbitrary pointer 1";
-  auto body1 = std::make_unique<VisitorDataSource>(visitor, 1);
-  int stream_id = session.SubmitRequest(
-      ToHeaders({{":method", "POST"},
-                 {":scheme", "http"},
-                 {":authority", "example.com"},
-                 {":path", "/this/is/request/one"}}),
-      std::move(body1), false, const_cast<char*>(kSentinel1));
+  int stream_id =
+      session.SubmitRequest(ToHeaders({{":method", "POST"},
+                                       {":scheme", "http"},
+                                       {":authority", "example.com"},
+                                       {":path", "/this/is/request/one"}}),
+                            false, const_cast<char*>(kSentinel1));
   EXPECT_GT(stream_id, 0);
   EXPECT_TRUE(session.want_write());
   EXPECT_EQ(kSentinel1, session.GetStreamUserData(stream_id));
@@ -533,13 +593,12 @@ TEST(OgHttp2SessionTest, ClientSubmitRequestWithWriteBlock) {
   const char* kSentinel1 = "arbitrary pointer 1";
   visitor.AppendPayloadForStream(1, "This is an example request body.");
   visitor.SetEndData(1, true);
-  auto body1 = std::make_unique<VisitorDataSource>(visitor, 1);
-  int stream_id = session.SubmitRequest(
-      ToHeaders({{":method", "POST"},
-                 {":scheme", "http"},
-                 {":authority", "example.com"},
-                 {":path", "/this/is/request/one"}}),
-      std::move(body1), false, const_cast<char*>(kSentinel1));
+  int stream_id =
+      session.SubmitRequest(ToHeaders({{":method", "POST"},
+                                       {":scheme", "http"},
+                                       {":authority", "example.com"},
+                                       {":path", "/this/is/request/one"}}),
+                            false, const_cast<char*>(kSentinel1));
   EXPECT_GT(stream_id, 0);
   EXPECT_TRUE(session.want_write());
   EXPECT_EQ(kSentinel1, session.GetStreamUserData(stream_id));
@@ -742,6 +801,32 @@ TEST(OgHttp2SessionTest, ServerEnqueuesSettingsOnce) {
   EXPECT_THAT(visitor.data(), EqualsFrames({SpdyFrameType::SETTINGS}));
 }
 
+// Demonstrates that the dynamic table size setting interpreted from the peer
+// won't exceed the hardcoded 64kB upper bound.
+TEST(OgHttp2SessionTest, ServerDynamicTableSizeAboveUpperBound) {
+  TestVisitor visitor;
+  OgHttp2Session::Options options;
+  options.perspective = Perspective::kServer;
+  OgHttp2Session session(visitor, options);
+
+  const std::string frames =
+      TestFrameSequence()
+          .ClientPreface({{HEADER_TABLE_SIZE, 100u * 1024u}})
+          .Serialize();
+  testing::InSequence s;
+
+  // Client preface (empty SETTINGS)
+  EXPECT_CALL(visitor, OnFrameHeader(0, 6, SETTINGS, 0));
+  EXPECT_CALL(visitor, OnSettingsStart());
+  // Although the peer adverised 100kB, the server interprets the setting value
+  // with a 64kB upper bound.
+  EXPECT_CALL(visitor, OnSetting(Http2Setting{HEADER_TABLE_SIZE, 64u * 1024u}));
+  EXPECT_CALL(visitor, OnSettingsEnd());
+
+  const int64_t result = session.ProcessBytes(frames);
+  EXPECT_EQ(frames.size(), static_cast<size_t>(result));
+}
+
 TEST(OgHttp2SessionTest, ServerSubmitResponse) {
   TestVisitor visitor;
   OgHttp2Session::Options options;
@@ -806,12 +891,11 @@ TEST(OgHttp2SessionTest, ServerSubmitResponse) {
   // A data fin is not sent so that the stream remains open, and the flow
   // control state can be verified.
   visitor.AppendPayloadForStream(1, "This is an example response body.");
-  auto body1 = std::make_unique<VisitorDataSource>(visitor, 1);
   int submit_result = session.SubmitResponse(
       1,
       ToHeaders({{":status", "404"},
                  {"x-comment", "I have no idea what you're talking about."}}),
-      std::move(body1), false);
+      false);
   EXPECT_EQ(submit_result, 0);
   EXPECT_TRUE(session.want_write());
 
@@ -898,10 +982,9 @@ TEST(OgHttp2SessionTest, ServerSendsTrailers) {
   // the stream.
   visitor.AppendPayloadForStream(1, "This is an example response body.");
   visitor.SetEndData(1, false);
-  auto body1 = std::make_unique<VisitorDataSource>(visitor, 1);
   int submit_result = session.SubmitResponse(
       1, ToHeaders({{":status", "200"}, {"x-comment", "Sure, sounds good."}}),
-      std::move(body1), false);
+      false);
   EXPECT_EQ(submit_result, 0);
   EXPECT_TRUE(session.want_write());
 
@@ -990,10 +1073,9 @@ TEST(OgHttp2SessionTest, ServerQueuesTrailersWithResponse) {
   // the stream.
   visitor.AppendPayloadForStream(1, "This is an example response body.");
   visitor.SetEndData(1, false);
-  auto body1 = std::make_unique<VisitorDataSource>(visitor, 1);
   int submit_result = session.SubmitResponse(
       1, ToHeaders({{":status", "200"}, {"x-comment", "Sure, sounds good."}}),
-      std::move(body1), false);
+      false);
   EXPECT_EQ(submit_result, 0);
   EXPECT_TRUE(session.want_write());
   // There has not been a call to Send() yet, so neither headers nor body have
@@ -1079,6 +1161,60 @@ TEST(OgHttp2SessionTest, ServerSeesErrorOnEndStream) {
   visitor.Clear();
 
   EXPECT_FALSE(session.want_write());
+}
+
+TEST(OgHttp2SessionTest, ServerClosesStreamDuringOnEndStream) {
+  // This is a regression test for a prior crash bug caused by invalidating an
+  // iterator in `OnEndStream()`.
+  TestVisitor visitor;
+  OgHttp2Session::Options options;
+  options.perspective = Perspective::kServer;
+  OgHttp2Session session(visitor, options);
+
+  const std::string frames = TestFrameSequence()
+                                 .ClientPreface()
+                                 .Headers(1,
+                                          {{":method", "POST"},
+                                           {":scheme", "https"},
+                                           {":authority", "example.com"},
+                                           {":path", "/"}},
+                                          /*fin=*/true)
+                                 .Serialize();
+  testing::InSequence s;
+
+  // Client preface (empty SETTINGS)
+  EXPECT_CALL(visitor, OnFrameHeader(0, 0, SETTINGS, 0));
+  EXPECT_CALL(visitor, OnSettingsStart());
+  EXPECT_CALL(visitor, OnSettingsEnd());
+  // Stream 1
+  EXPECT_CALL(visitor, OnFrameHeader(1, _, HEADERS, 0x5));
+  EXPECT_CALL(visitor, OnBeginHeadersForStream(1));
+  EXPECT_CALL(visitor, OnHeaderForStream(1, ":method", "POST"));
+  EXPECT_CALL(visitor, OnHeaderForStream(1, ":scheme", "https"));
+  EXPECT_CALL(visitor, OnHeaderForStream(1, ":authority", "example.com"));
+  EXPECT_CALL(visitor, OnHeaderForStream(1, ":path", "/"));
+  EXPECT_CALL(visitor, OnEndHeadersForStream(1));
+  EXPECT_CALL(visitor, OnEndStream(1))
+      .WillOnce(testing::InvokeWithoutArgs([&session]() {
+        int res = session.SubmitResponse(/*stream_id=*/1,
+                                         ToHeaders({{":status", "200"}}),
+                                         /*end_stream=*/true);
+        EXPECT_EQ(res, 0);
+        int send_result = session.Send();
+        EXPECT_EQ(0, send_result);
+        return true;
+      }));
+
+  EXPECT_CALL(visitor, OnBeforeFrameSent(SETTINGS, 0, _, _));
+  EXPECT_CALL(visitor, OnFrameSent(SETTINGS, 0, _, _, 0));
+  EXPECT_CALL(visitor, OnBeforeFrameSent(SETTINGS, 0, _, _));
+  EXPECT_CALL(visitor, OnFrameSent(SETTINGS, 0, _, _, 0));
+  EXPECT_CALL(visitor, OnBeforeFrameSent(HEADERS, 1, _, _));
+  EXPECT_CALL(visitor, OnFrameSent(HEADERS, 1, _, _, 0));
+  EXPECT_CALL(visitor, OnCloseStream(1, Http2ErrorCode::HTTP2_NO_ERROR));
+
+  const int64_t result = session.ProcessBytes(frames);
+  EXPECT_EQ(result, frames.size());
 }
 
 }  // namespace test

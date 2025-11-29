@@ -7,7 +7,7 @@
 
 #include "ash/app_list/app_list_metrics.h"
 #include "ash/ash_export.h"
-#include "ash/focus_cycler.h"
+#include "ash/focus/focus_cycler.h"
 #include "ash/public/cpp/accelerators.h"
 #include "ash/public/cpp/session/session_types.h"
 
@@ -81,6 +81,8 @@ ASH_EXPORT bool CanScreenshot(bool take_screenshot);
 
 ASH_EXPORT bool CanShowStylusTools();
 
+ASH_EXPORT bool CanStartSunfishSession();
+
 ASH_EXPORT bool CanStopScreenRecording();
 
 ASH_EXPORT bool CanSwapPrimaryDisplay();
@@ -110,6 +112,8 @@ ASH_EXPORT bool CanUnpinWindow();
 ASH_EXPORT bool CanWindowSnap();
 
 ASH_EXPORT bool CanResizePipWindow();
+
+ASH_EXPORT bool CanToggleGeminiApp();
 
 //////////////////////////////////////////////////////////////////////////////
 // Accelerator commands.
@@ -288,6 +292,9 @@ ASH_EXPORT void ShowShortcutCustomizationApp();
 // Brings up task manager.
 ASH_EXPORT void ShowTaskManager();
 
+// Starts a Sunfish-behavior capture mode session.
+ASH_EXPORT void StartSunfishSession();
+
 // Stops the capture mode recording.
 ASH_EXPORT void StopScreenRecording();
 
@@ -319,13 +326,22 @@ ASH_EXPORT void ToggleCalendar();
 // Turns caps lock on and off.
 ASH_EXPORT void ToggleCapsLock();
 
+// Enables or disables camera access in privacy settings.
+ASH_EXPORT void ToggleCameraAllowed();
+
 // Toggles the clipboard history.
 ASH_EXPORT void ToggleClipboardHistory(bool is_plain_text_paste);
 
-// Toggles Picker.
+// Toggles do not disturb functionality.
+ASH_EXPORT void ToggleDoNotDisturb();
+
+// Toggles Quick Insert.
 // `accelerator_timestamp` is the timestamp associated with the accelerator that
-// triggered Picker.
-ASH_EXPORT void TogglePicker(base::TimeTicks accelerator_timestamp);
+// triggered Quick Insert.
+ASH_EXPORT void ToggleQuickInsert(base::TimeTicks accelerator_timestamp);
+
+// Toggles Gemini.
+ASH_EXPORT void ToggleGeminiApp();
 
 // Enables Select to Speak if the feature is currently disabled. Does nothing if
 // the feature is currently enabled.

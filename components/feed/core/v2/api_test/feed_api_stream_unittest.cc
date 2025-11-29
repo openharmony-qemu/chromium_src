@@ -1756,7 +1756,7 @@ TEST_F(FeedApiTest, ReadNetworkResponseWithNoContent) {
   TestForYouSurface surface(stream_.get());
   WaitForIdleTaskQueue();
 
-  ASSERT_EQ("loading -> loading -> no-cards", surface.DescribeUpdates());
+  ASSERT_EQ("loading -> no-cards", surface.DescribeUpdates());
 
   // This network response has no content.
   EXPECT_FALSE(stream_->HasUnreadContent(StreamType(StreamKind::kForYou)));
@@ -2233,7 +2233,7 @@ TEST_F(FeedApiTest, MetadataLoadedWhenDatabaseInitialized) {
     feedstore::Metadata initial_metadata;
     feedstore::SetSessionId(initial_metadata, "session-id", kExpiry);
     initial_metadata.set_consistency_token("token");
-    initial_metadata.set_gaia(GetAccountInfo().gaia);
+    initial_metadata.set_gaia(GetAccountInfo().gaia.ToString());
     store_->WriteMetadata(initial_metadata, base::DoNothing());
   }
 
@@ -2759,6 +2759,38 @@ TEST_F(FeedApiTest, StreamDataOverwritesOldStream) {
   EXPECT_EQ("new-shared-data",
             stored_data->shared_states[0].shared_state_data());
   EXPECT_EQ("new-frame-data", stored_data->content[0].frame());
+}
+
+// Test that we do not overwrite stored stream data if no content is received.
+TEST_F(FeedApiTest, DoNotOverwriteExistingStreamOnEmptyContent) {
+  // Trigger stream load with valid content saved to the storage.
+  response_translator_.InjectResponse(MakeTypicalInitialModelState());
+  TestForYouSurface surface(stream_.get());
+  WaitForIdleTaskQueue();
+  surface.Detach();
+  UnloadModel(surface.GetStreamType());
+
+  // Trigger a background refresh with no card.
+  response_translator_.InjectResponse(MakeEmptyModelState());
+  stream_->ExecuteRefreshTask(RefreshTaskId::kRefreshForYouFeed);
+  WaitForIdleTaskQueue();
+
+  // Verify the refresh happened.
+  ASSERT_TRUE(refresh_scheduler_.completed_tasks.count(
+      RefreshTaskId::kRefreshForYouFeed));
+  EXPECT_TRUE(network_.query_request_sent);
+  EXPECT_EQ(feedwire::FeedQuery::SCHEDULED_REFRESH,
+            network_.query_request_sent->feed_request().feed_query().reason());
+  EXPECT_TRUE(response_translator_.InjectedResponseConsumed());
+
+  // The refresh request should fail with no card error.
+  EXPECT_EQ(LoadStreamStatus::kNoCardReceived,
+            metrics_reporter_->background_refresh_status);
+
+  // The stored cards should not be updated.
+  TestForYouSurface surface2(stream_.get());
+  WaitForIdleTaskQueue();
+  EXPECT_EQ("loading -> [user@foo] 2 slices", surface2.DescribeUpdates());
 }
 
 TEST_F(FeedApiTest, HasUnreadContentIsFalseAfterFeedViewed) {
@@ -3661,6 +3693,25 @@ TEST_F(FeedApiTest, InvalidateFeedCache_DoesNotRefreshOtherFeed) {
               web_feed_surface.DescribeUpdates());
   }
   EXPECT_TRUE(response_translator_.InjectedResponseConsumed());
+}
+
+TEST_F(FeedApiTest, PassFeedLaunchCuiMetadata) {
+  // Test the case that the metadata is read from the network response.
+  RefreshResponseData response;
+  response.model_update_request = MakeTypicalInitialModelState();
+  response.feed_launch_cui_metadata = "hello";
+  response_translator_.InjectResponse(std::move(response));
+  TestForYouSurface surface(stream_.get());
+  WaitForIdleTaskQueue();
+  EXPECT_EQ("hello", feed_launch_cui_metadata_);
+
+  // Test the case that the metadata should be persisted to the store. It should
+  // be read from the store on restart.
+  feed_launch_cui_metadata_ = "";
+  CreateStream();  // Simulate a Chrome restart.
+  TestForYouSurface surface2(stream_.get());
+  WaitForIdleTaskQueue();
+  EXPECT_EQ("hello", feed_launch_cui_metadata_);
 }
 
 class FeedCloseRefreshTest : public FeedApiTest {

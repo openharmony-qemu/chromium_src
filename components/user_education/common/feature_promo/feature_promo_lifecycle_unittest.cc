@@ -10,6 +10,7 @@
 
 #include "base/callback_list.h"
 #include "base/feature_list.h"
+#include "base/strings/stringprintf.h"
 #include "base/test/bind.h"
 #include "base/test/metrics/histogram_tester.h"
 #include "base/test/metrics/user_action_tester.h"
@@ -69,8 +70,6 @@ class FeaturePromoLifecycleTest : public testing::Test {
 
   void SetUp() override {
     testing::Test::SetUp();
-    feature_list_.InitAndEnableFeature(
-        features::kUserEducationExperienceVersion2);
     element_.Show();
   }
 
@@ -188,9 +187,11 @@ class FeaturePromoLifecycleTest : public testing::Test {
       case PromoType::kRotating:
         name.append("Rotating");
         break;
+      case PromoType::kCustomUi:
+        name.append("CustomUi");
+        break;
       case PromoType::kUnspecified:
-        NOTREACHED_IN_MIGRATION();
-        return;
+        NOTREACHED();
     }
 
     EXPECT_EQ(shown_count,
@@ -241,8 +242,6 @@ class FeaturePromoLifecycleTest : public testing::Test {
   std::vector<base::CallbackListSubscription> help_bubble_subscriptions_;
   base::HistogramTester histogram_tester_;
   base::UserActionTester user_action_tester_;
-
-  base::test::ScopedFeatureList feature_list_;
 
  private:
   base::SimpleTestClock clock_;

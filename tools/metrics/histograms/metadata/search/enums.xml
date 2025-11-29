@@ -25,8 +25,6 @@ chromium-metrics-reviews@google.com.
 
 <enums>
 
-<!-- LINT.IfChange(AmbientSearchEntryPoint) -->
-
 <enum name="AmbientSearchEntryPoint">
   <summary>
     The entry point that initiated an ambient search query. (e.g. Context Menu
@@ -48,7 +46,7 @@ chromium-metrics-reviews@google.com.
   <int value="10" label="iOS Spotlight (Camera)"/>
   <int value="11" label="Plus Button (Camera)"/>
   <int value="12" label="Web Search Bar (Camera)"/>
-  <int value="13" label="Companion (Region)"/>
+  <int value="13" label="(Obsolete) Companion (Region) Deprecated 11/2024."/>
   <int value="14" label="Translate Onebox (Camera)"/>
   <int value="15" label="iOS Shortcuts App (Camera)"/>
   <int value="16" label="Web Images Search Bar (Camera)"/>
@@ -83,8 +81,6 @@ chromium-metrics-reviews@google.com.
       label="Lens Overlay Location Bar entry point that leads to Lens
              Overlay, entered via keyboard (Image)"/>
 </enum>
-
-<!-- LINT.ThenChange(//ios/chrome/browser/ui/lens/lens_entrypoint.h:IOSLensEntrypoint) -->
 
 <enum name="AuxiliarySearchRequestStatus">
   <int value="0" label="Sent (overall number of requests issued)"/>
@@ -124,6 +120,17 @@ chromium-metrics-reviews@google.com.
   <int value="1" label="Success (Gallery Image)"/>
   <int value="2" label="Success (QR/Bar Code)"/>
   <int value="3" label="Dismissed"/>
+</enum>
+
+<enum name="ClickInfo">
+  <summary>
+    The type of the button that users clicked on the auxiliary search module
+    card.
+  </summary>
+  <int value="0" label="Got it"/>
+  <int value="1" label="No thanks"/>
+  <int value="2" label="Go to settings"/>
+  <int value="3" label="Turn on"/>
 </enum>
 
 <enum name="ContextualSearchCardTag">
@@ -197,6 +204,30 @@ chromium-metrics-reviews@google.com.
   <int value="0" label="No favicons available"/>
   <int value="1" label="Failed"/>
   <int value="2" label="Succeed"/>
+</enum>
+
+<enum name="EntryClickedPosition">
+  <int value="0" label="1st position"/>
+  <int value="1" label="2nd position"/>
+  <int value="2" label="3rd position"/>
+  <int value="3" label="4th position"/>
+  <int value="4" label="5th position"/>
+  <int value="5" label="6th position"/>
+  <int value="6" label="7th position"/>
+  <int value="7" label="8th position"/>
+  <int value="8" label="9th position"/>
+  <int value="9" label="10th position"/>
+</enum>
+
+<enum name="KeywordTableHashValidationStatus">
+  <int value="0" label="Hash was validated successfully"/>
+  <int value="1" label="Decryption failed"/>
+  <int value="2" label="Hash format was invalid"/>
+  <int value="3" label="Hash did not match expected value"/>
+  <int value="4"
+      label="Hash was not verified as decryption services were not available"/>
+  <int value="5"
+      label="Hash was not verified as hash verification is disabled"/>
 </enum>
 
 <!-- LINT.IfChange(LaunchOsChoiceScreenTapHandlingStatus) -->
@@ -293,12 +324,68 @@ chromium-metrics-reviews@google.com.
   <int value="3" label="SCROLLED_CLICKED"/>
 </enum>
 
-<enum name="SearchAnswerRequestResult">
-  <int value="0" label="Another Request Started"/>
-  <int value="1" label="Failed"/>
-  <int value="2" label="No Answer"/>
-  <int value="3" label="Received Answer"/>
-  <int value="4" label="Received Answer - Too Large"/>
+<enum name="SearchEngineChoiceDate">
+  <summary>Year-Month</summary>
+  <int value="202201" label="2022-01"/>
+  <int value="202202" label="2022-02"/>
+  <int value="202203" label="2022-03"/>
+  <int value="202204" label="2022-04"/>
+  <int value="202205" label="2022-05"/>
+  <int value="202206" label="2022-06"/>
+  <int value="202207" label="2022-07"/>
+  <int value="202208" label="2022-08"/>
+  <int value="202209" label="2022-09"/>
+  <int value="202210" label="2022-10"/>
+  <int value="202211" label="2022-11"/>
+  <int value="202212" label="2022-12"/>
+  <int value="202301" label="2023-01"/>
+  <int value="202302" label="2023-02"/>
+  <int value="202303" label="2023-03"/>
+  <int value="202304" label="2023-04"/>
+  <int value="202305" label="2023-05"/>
+  <int value="202306" label="2023-06"/>
+  <int value="202307" label="2023-07"/>
+  <int value="202308" label="2023-08"/>
+  <int value="202309" label="2023-09"/>
+  <int value="202310" label="2023-10"/>
+  <int value="202311" label="2023-11"/>
+  <int value="202312" label="2023-12"/>
+  <int value="202401" label="2024-01"/>
+  <int value="202402" label="2024-02"/>
+  <int value="202403" label="2024-03"/>
+  <int value="202404" label="2024-04"/>
+  <int value="202405" label="2024-05"/>
+  <int value="202406" label="2024-06"/>
+  <int value="202407" label="2024-07"/>
+  <int value="202408" label="2024-08"/>
+  <int value="202409" label="2024-09"/>
+  <int value="202410" label="2024-10"/>
+  <int value="202411" label="2024-11"/>
+  <int value="202412" label="2024-12"/>
+  <int value="202501" label="2025-01"/>
+  <int value="202502" label="2025-02"/>
+  <int value="202503" label="2025-03"/>
+  <int value="202504" label="2025-04"/>
+  <int value="202505" label="2025-05"/>
+  <int value="202506" label="2025-06"/>
+  <int value="202507" label="2025-07"/>
+  <int value="202508" label="2025-08"/>
+  <int value="202509" label="2025-09"/>
+  <int value="202510" label="2025-10"/>
+  <int value="202511" label="2025-11"/>
+  <int value="202512" label="2025-12"/>
+  <int value="202601" label="2026-01"/>
+  <int value="202602" label="2026-02"/>
+  <int value="202603" label="2026-03"/>
+  <int value="202604" label="2026-04"/>
+  <int value="202605" label="2026-05"/>
+  <int value="202606" label="2026-06"/>
+  <int value="202607" label="2026-07"/>
+  <int value="202608" label="2026-08"/>
+  <int value="202609" label="2026-09"/>
+  <int value="202610" label="2026-10"/>
+  <int value="202611" label="2026-11"/>
+  <int value="202612" label="2026-12"/>
 </enum>
 
 <enum name="SearchEngineChoiceReprompt">
@@ -373,16 +460,23 @@ chromium-metrics-reviews@google.com.
 
 <enum name="SearchEngineChoiceWipeReason">
   <int value="0" label="Profile wipe"/>
-  <int value="1" label="Missing choice version"/>
-  <int value="2" label="Invalid choice version"/>
-  <int value="3" label="Force reprompt"/>
+  <int value="1" label="Invalid choice metadata: Missing version"/>
+  <int value="2" label="Invalid choice metadata: Invalid version"/>
+  <int value="3" label="Finch-based reprompt"/>
   <int value="4" label="Command line flag"/>
+  <int value="5" label="Device restore (iOS only)"/>
+  <int value="6" label="Invalid choice metadata: Other"/>
 </enum>
 
-<enum name="SearchEntryPoint">
-  <int value="0" label="From search widget"/>
-  <int value="1" label="From omnibox"/>
+<!-- LINT.IfChange(SearchPolicyConflictType) -->
+
+<enum name="SearchPolicyConflictType">
+  <int value="0" label="No conflict"/>
+  <int value="1" label="Conflict with featured search engine"/>
+  <int value="2" label="Conflict with non-featured search engine"/>
 </enum>
+
+<!-- LINT.ThenChange(/components/search_engines/template_url_service.h:SearchPolicyConflictType) -->
 
 <enum name="SearchProviderOverrideStatus">
   <int value="0" label="kNoPref"/>
@@ -411,17 +505,21 @@ chromium-metrics-reviews@google.com.
              start)"/>
 </enum>
 
-<enum name="SiteSearchPolicyConflictType">
-  <int value="0" label="No conflict"/>
-  <int value="1" label="Conflict with featured search engine"/>
-  <int value="2" label="Conflict with non-featured search engine"/>
-</enum>
-
 <enum name="TrendingTileEvent">
   <int value="0" label="Tile was shown"/>
   <int value="1" label="Tile was removed"/>
   <int value="2" label="Tile was clicked"/>
 </enum>
+
+<!-- LINT.IfChange(UnknownCountryIdStored) -->
+
+<enum name="UnknownCountryIdStored">
+  <int value="0" label="Valid country stored"/>
+  <int value="1" label="Clearing feature disabled"/>
+  <int value="2" label="Cleared pref due to invalid country ID"/>
+</enum>
+
+<!-- LINT.ThenChange(/components/regional_capabilities/regional_capabilities_service.cc:UnknownCountryIdStored) -->
 
 </enums>
 

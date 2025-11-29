@@ -1,8 +1,8 @@
 # Copyright 2014 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+
 import("//build/buildflag_header.gni")
-import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/features.gni")
 import("//device/bluetooth/cast_bluetooth.gni")
 import("//device/bluetooth/emulation/buildflags.gni")
@@ -113,7 +113,6 @@ source_set("fake_bluetooth") {
 
   deps = [
     ":bluetooth",
-    "//build:chromeos_buildflags",
     "//device/bluetooth/public/cpp",
     "//device/bluetooth/public/mojom:fake_bluetooth_interfaces",
     "//mojo/public/cpp/bindings",
@@ -180,7 +179,6 @@ component("bluetooth") {
 
   deps = [
     "//base",
-    "//build:chromeos_buildflags",
     "//components/device_event_log",
     "//components/prefs",
     "//crypto",
@@ -196,6 +194,8 @@ component("bluetooth") {
 
   if (is_android) {
     sources += [
+      "android/outcome.cc",
+      "android/outcome.h",
       "android/wrappers.cc",
       "android/wrappers.h",
       "bluetooth_adapter_android.cc",
@@ -208,19 +208,18 @@ component("bluetooth") {
       "bluetooth_remote_gatt_descriptor_android.h",
       "bluetooth_remote_gatt_service_android.cc",
       "bluetooth_remote_gatt_service_android.h",
+      "bluetooth_socket_android.cc",
+      "bluetooth_socket_android.h",
     ]
     deps += [ ":jni_headers" ]
   }
 
   if (is_chromeos) {
-    deps += [ "//chromeos/constants" ]
-  }
-
-  if (is_chromeos_ash) {
     deps += [
       "//ash/constants",
       "//chromeos/ash/services/nearby/public/cpp/",
       "//chromeos/ash/services/secure_channel/public/cpp/shared",
+      "//chromeos/constants",
     ]
   }
 
@@ -255,42 +254,7 @@ component("bluetooth") {
     ]
     frameworks = [
       "CoreBluetooth.framework",
-      "IOKit.framework",
       "Foundation.framework",
-    ]
-  }
-
-  if (is_ohos) {
-    sources += [
-      "ohos/bluetooth_adapter_ohos.cc",
-      "ohos/bluetooth_adapter_ohos.h",
-      "ohos/bluetooth_adapter_types.h",
-      "ohos/bluetooth_advertisement_ohos.cc",
-      "ohos/bluetooth_advertisement_ohos.h",
-      "ohos/bluetooth_classic_device_ohos.cc",
-      "ohos/bluetooth_classic_device_ohos.h",
-      "ohos/bluetooth_device_ohos.cc",
-      "ohos/bluetooth_device_ohos.h",
-      "ohos/bluetooth_discovery_manager_ohos.cc",
-      "ohos/bluetooth_discovery_manager_ohos.h",
-      "ohos/bluetooth_low_energy_adapter_ohos.cc",
-      "ohos/bluetooth_low_energy_adapter_ohos.h",
-      "ohos/bluetooth_low_energy_advertisement_manager_ohos.cc",
-      "ohos/bluetooth_low_energy_advertisement_manager_ohos.h",
-      "ohos/bluetooth_low_energy_device_ohos.cc",
-      "ohos/bluetooth_low_energy_device_ohos.h",
-      "ohos/bluetooth_low_energy_discovery_manager_ohos.cc",
-      "ohos/bluetooth_low_energy_discovery_manager_ohos.h",
-      "ohos/bluetooth_remote_gatt_characteristic_ohos.cc",
-      "ohos/bluetooth_remote_gatt_characteristic_ohos.h",
-      "ohos/bluetooth_remote_gatt_descriptor_ohos.cc",
-      "ohos/bluetooth_remote_gatt_descriptor_ohos.h",
-      "ohos/bluetooth_remote_gatt_service_ohos.cc",
-      "ohos/bluetooth_remote_gatt_service_ohos.h",
-    ]
-
-    public_deps += [
-      "//ohos/adapter:adapter",
     ]
   }
 
@@ -311,7 +275,10 @@ component("bluetooth") {
       "bluetooth_socket_mac.h",
       "bluetooth_socket_mac.mm",
     ]
-    frameworks += [ "IOBluetooth.framework" ]
+    frameworks += [
+      "IOBluetooth.framework",
+      "IOKit.framework",
+    ]
   }
 
   if (is_ios) {
@@ -631,12 +598,6 @@ component("bluetooth") {
           "chromeos_platform_features.h",
         ]
         deps += [ "//services/data_decoder/public/mojom" ]
-        if (is_chromeos_lacros) {
-          deps += [
-            "//chromeos/lacros",
-            "//chromeos/startup",
-          ]
-        }
       }
       if (use_dbus) {
         public_deps += [ "//dbus" ]
@@ -718,8 +679,6 @@ static_library("mocks") {
     "//net",
     "//testing/gmock",
   ]
-
-  deps = [ "//build:chromeos_buildflags" ]
 }
 
 if (is_android) {
@@ -731,28 +690,39 @@ if (is_android) {
     "android/java/src/org/chromium/device/bluetooth/ChromeBluetoothRemoteGattService.java",
     "android/java/src/org/chromium/device/bluetooth/ChromeBluetoothScanFilterBuilder.java",
     "android/java/src/org/chromium/device/bluetooth/ChromeBluetoothScanFilterList.java",
+    "android/java/src/org/chromium/device/bluetooth/ChromeBluetoothSocket.java",
+    "android/java/src/org/chromium/device/bluetooth/Outcome.java",
     "android/java/src/org/chromium/device/bluetooth/wrapper/BluetoothAdapterWrapper.java",
   ]
 
   java_sources = java_sources_needing_jni + [
-    "android/java/src/org/chromium/device/bluetooth/wrapper/BluetoothDeviceWrapper.java",
-    "android/java/src/org/chromium/device/bluetooth/wrapper/BluetoothGattCallbackWrapper.java",
-    "android/java/src/org/chromium/device/bluetooth/wrapper/BluetoothGattCharacteristicWrapper.java",
-    "android/java/src/org/chromium/device/bluetooth/wrapper/BluetoothGattDescriptorWrapper.java",
-    "android/java/src/org/chromium/device/bluetooth/wrapper/BluetoothGattServiceWrapper.java",
-    "android/java/src/org/chromium/device/bluetooth/wrapper/BluetoothGattWrapper.java",
-    "android/java/src/org/chromium/device/bluetooth/wrapper/BluetoothLeScannerWrapper.java",
-    "android/java/src/org/chromium/device/bluetooth/wrapper/ScanCallbackWrapper.java",
-    "android/java/src/org/chromium/device/bluetooth/wrapper/ScanResultWrapper.java",
-    "android/java/src/org/chromium/device/bluetooth/wrapper/ThreadUtilsWrapper.java",
-  ]
+                   "android/java/src/org/chromium/device/bluetooth/ChromeBluetoothLeScanner.java",
+                   "android/java/src/org/chromium/device/bluetooth/ChromeBluetoothScanCallback.java",
+                   "android/java/src/org/chromium/device/bluetooth/wrapper/BluetoothDeviceWrapper.java",
+                   "android/java/src/org/chromium/device/bluetooth/wrapper/BluetoothGattCallbackWrapper.java",
+                   "android/java/src/org/chromium/device/bluetooth/wrapper/BluetoothGattCharacteristicWrapper.java",
+                   "android/java/src/org/chromium/device/bluetooth/wrapper/BluetoothGattDescriptorWrapper.java",
+                   "android/java/src/org/chromium/device/bluetooth/wrapper/BluetoothGattServiceWrapper.java",
+                   "android/java/src/org/chromium/device/bluetooth/wrapper/BluetoothGattWrapper.java",
+                   "android/java/src/org/chromium/device/bluetooth/wrapper/BluetoothLeScannerWrapper.java",
+                   "android/java/src/org/chromium/device/bluetooth/wrapper/BluetoothSocketWrapper.java",
+                   "android/java/src/org/chromium/device/bluetooth/wrapper/DeviceBondStateReceiverWrapper.java",
+                   "android/java/src/org/chromium/device/bluetooth/wrapper/DeviceConnectStateReceiverWrapper.java",
+                   "android/java/src/org/chromium/device/bluetooth/wrapper/ScanCallbackWrapper.java",
+                   "android/java/src/org/chromium/device/bluetooth/wrapper/ScanResultWrapper.java",
+                   "android/java/src/org/chromium/device/bluetooth/wrapper/ScanResultWrapperImpl.java",
+                   "android/java/src/org/chromium/device/bluetooth/wrapper/ThreadUtilsWrapper.java",
+                 ]
 
   generate_jni("jni_headers") {
     sources = java_sources_needing_jni
   }
 
   android_library("java") {
-    srcjar_deps = [ ":jni_headers" ]
+    srcjar_deps = [
+      ":bluetooth_java_enum",
+      ":jni_headers",
+    ]
     sources = java_sources
     deps = [
       "//base:base_java",
@@ -761,5 +731,10 @@ if (is_android) {
       "//third_party/androidx:androidx_annotation_annotation_java",
       "//third_party/jni_zero:jni_zero_java",
     ]
+  }
+
+  java_cpp_enum("bluetooth_java_enum") {
+    visibility = [ ":*" ]
+    sources = [ "bluetooth_adapter.h" ]
   }
 }

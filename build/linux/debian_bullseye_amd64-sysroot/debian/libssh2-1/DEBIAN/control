@@ -1,6 +1,6 @@
 Package: libssh2-1
 Source: libssh2
-Version: 1.9.0-2
+Version: 1.9.0-2+deb11u1
 Architecture: amd64
 Maintainer: Nicolas Mora <babelouest@debian.org>
 Installed-Size: 298

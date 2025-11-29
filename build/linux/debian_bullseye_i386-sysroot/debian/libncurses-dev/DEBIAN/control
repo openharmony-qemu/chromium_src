@@ -1,15 +1,15 @@
 Package: libncurses-dev
 Source: ncurses
-Version: 6.2+20201114-2+deb11u1
+Version: 6.2+20201114-2+deb11u2
 Architecture: i386
 Maintainer: Craig Small <csmall@debian.org>
-Installed-Size: 2184
-Depends: libtinfo6 (= 6.2+20201114-2+deb11u1), libncurses6 (= 6.2+20201114-2+deb11u1), libncursesw6 (= 6.2+20201114-2+deb11u1), libc6-dev | libc-dev, ncurses-bin (>= 6.0+20151017)
+Installed-Size: 2185
+Depends: libtinfo6 (= 6.2+20201114-2+deb11u2), libncurses6 (= 6.2+20201114-2+deb11u2), libncursesw6 (= 6.2+20201114-2+deb11u2), libc6-dev | libc-dev, ncurses-bin (>= 6.0+20151017)
 Suggests: ncurses-doc
 Conflicts: ncurses-dev
 Breaks: libncurses5-dev (<< 6.1+20180210), libncursesw5-dev (<< 6.1+20180210), libtinfo-dev (<< 6.1+20180210)
 Replaces: libncurses5-dev (<< 6.1+20180210), libncursesw5-dev (<< 6.1+20180210), libtinfo-dev (<< 6.1+20180210), ncurses-bin (<< 6.0+20151017), ncurses-dev
-Provides: libncurses5-dev (= 6.2+20201114-2+deb11u1), libncursesw5-dev (= 6.2+20201114-2+deb11u1), libtinfo-dev (= 6.2+20201114-2+deb11u1), ncurses-dev
+Provides: libncurses5-dev (= 6.2+20201114-2+deb11u2), libncursesw5-dev (= 6.2+20201114-2+deb11u2), libtinfo-dev (= 6.2+20201114-2+deb11u2), ncurses-dev
 Section: libdevel
 Priority: optional
 Multi-Arch: same

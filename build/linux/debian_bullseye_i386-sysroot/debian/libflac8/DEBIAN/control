@@ -1,6 +1,6 @@
 Package: libflac8
 Source: flac
-Version: 1.3.3-2+deb11u1
+Version: 1.3.3-2+deb11u2
 Architecture: i386
 Maintainer: Debian Multimedia Maintainers <debian-multimedia@lists.debian.org>
 Installed-Size: 277

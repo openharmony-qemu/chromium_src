@@ -15,6 +15,7 @@
 #include <memory>
 #include <string>
 
+#include "base/compiler_specific.h"
 #include "base/debug/alias.h"
 #include "base/environment.h"
 #include "base/files/file_path.h"
@@ -53,13 +54,8 @@
 #endif
 
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA) || \
-    BUILDFLAG(IS_CHROMEOS) || (BUILDFLAG(IS_LINUX) || \
-    BUILDFLAG(IS_OHOS) && !BUILDFLAG(IS_CASTOS))
+    BUILDFLAG(IS_CHROMEOS) || (BUILDFLAG(IS_LINUX) && !BUILDFLAG(IS_CASTOS))
 #include "third_party/icu/source/i18n/unicode/timezone.h"
-#endif
-
-#if BUILDFLAG(IS_OHOS)
-#include "ohos/adapter/ohos_i18n/ohos_i18n.h"
 #endif
 
 namespace base::i18n {
@@ -155,16 +151,16 @@ void LazyInitIcuDataFile() {
   }
 #if BUILDFLAG(IS_WIN)
   // TODO(brucedawson): http://crbug.com/445616
-  wchar_t tmp_buffer[_MAX_PATH] = {0};
-  wcscpy_s(tmp_buffer, data_path.value().c_str());
+  wchar_t tmp_buffer[_MAX_PATH] = {};
+  UNSAFE_TODO(wcscpy_s(tmp_buffer, data_path.value().c_str()));
   debug::Alias(tmp_buffer);
 #endif
   data_path = data_path.AppendASCII(kIcuDataFileName);
 
 #if BUILDFLAG(IS_WIN)
   // TODO(brucedawson): http://crbug.com/445616
-  wchar_t tmp_buffer2[_MAX_PATH] = {0};
-  wcscpy_s(tmp_buffer2, data_path.value().c_str());
+  wchar_t tmp_buffer2[_MAX_PATH] = {};
+  UNSAFE_TODO(wcscpy_s(tmp_buffer2, data_path.value().c_str()));
   debug::Alias(tmp_buffer2);
 #endif
 
@@ -199,7 +195,7 @@ void LazyInitIcuDataFile() {
     // TODO(brucedawson): http://crbug.com/445616.
     g_debug_icu_pf_last_error = ::GetLastError();
     g_debug_icu_pf_error_details = file.error_details();
-    wcscpy_s(g_debug_icu_pf_filename, data_path.value().c_str());
+    UNSAFE_TODO(wcscpy_s(g_debug_icu_pf_filename, data_path.value().c_str()));
   }
 #endif  // BUILDFLAG(IS_WIN)
 }
@@ -291,10 +287,10 @@ bool InitializeICUFromDataFile() {
   debug::Alias(&debug_icu_pf_last_error);
   int debug_icu_pf_error_details = g_debug_icu_pf_error_details;
   debug::Alias(&debug_icu_pf_error_details);
-  wchar_t debug_icu_pf_filename[_MAX_PATH] = {0};
-  wcscpy_s(debug_icu_pf_filename, g_debug_icu_pf_filename);
+  wchar_t debug_icu_pf_filename[_MAX_PATH] = {};
+  UNSAFE_TODO(wcscpy_s(debug_icu_pf_filename, g_debug_icu_pf_filename));
   debug::Alias(&debug_icu_pf_filename);
-#endif            // BUILDFLAG(IS_WIN)
+#endif  // BUILDFLAG(IS_WIN)
   // Excluding Chrome OS from this CHECK due to b/289684640.
 #if !BUILDFLAG(IS_CHROMEOS)
   // https://crbug.com/445616
@@ -310,13 +306,7 @@ bool InitializeICUFromDataFile() {
 // On some platforms, the time zone must be explicitly initialized zone rather
 // than relying on ICU's internal initialization.
 void InitializeIcuTimeZone() {
-#if BUILDFLAG(IS_OHOS)
-  std::string zone_id = ::ohos::adapter::ohos_i18n::GetTimeZone();
-  if (!zone_id.empty()) {
-    icu::TimeZone::adoptDefault(
-        icu::TimeZone::createTimeZone(icu::UnicodeString::fromUTF8(zone_id)));
-  }
-#elif BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID)
   // On Android, we can't leave it up to ICU to set the default time zone
   // because ICU's time zone detection does not work in many time zones (e.g.
   // Australia/Sydney, Asia/Seoul, Europe/Paris ). Use JNI to detect the host
@@ -388,8 +378,9 @@ bool InitializeICUWithFileDescriptor(
   DCHECK(!g_check_called_once || !g_called_once);
   g_called_once = true;
 #endif
-  if (!InitializeICUWithFileDescriptorInternal(data_fd, data_region))
+  if (!InitializeICUWithFileDescriptorInternal(data_fd, data_region)) {
     return false;
+  }
 
   return DoCommonInitialization();
 }
@@ -432,8 +423,9 @@ bool InitializeICU() {
 #if (ICU_UTIL_DATA_IMPL == ICU_UTIL_DATA_STATIC)
   // The ICU data is statically linked.
 #elif (ICU_UTIL_DATA_IMPL == ICU_UTIL_DATA_FILE)
-  if (!InitializeICUFromDataFile())
+  if (!InitializeICUFromDataFile()) {
     return false;
+  }
 #else
 #error Unsupported ICU_UTIL_DATA_IMPL value
 #endif  // (ICU_UTIL_DATA_IMPL == ICU_UTIL_DATA_STATIC)

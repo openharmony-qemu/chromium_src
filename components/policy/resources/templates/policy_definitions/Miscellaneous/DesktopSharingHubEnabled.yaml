@@ -25,6 +25,5 @@ supported_on:
 - chrome.win:93-
 - chrome.linux:93-
 - chrome.mac:93-
-- chrome.ohos:126-
 tags: []
 type: main

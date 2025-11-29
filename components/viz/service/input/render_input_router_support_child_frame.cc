@@ -23,6 +23,11 @@ RenderInputRouterSupportChildFrame::RenderInputRouterSupportChildFrame(
   UpdateFrameSinkIdRegistration();
 }
 
+bool RenderInputRouterSupportChildFrame::IsRenderInputRouterSupportChildFrame()
+    const {
+  return true;
+}
+
 const LocalSurfaceId& RenderInputRouterSupportChildFrame::GetLocalSurfaceId()
     const {
   // Not needed on Viz.
@@ -76,7 +81,7 @@ RenderInputRouterSupportChildFrame::TransformRootPointToViewCoordSpace(
 }
 
 gfx::PointF RenderInputRouterSupportChildFrame::TransformPointToRootCoordSpaceF(
-    const gfx::PointF& point) {
+    const gfx::PointF& point) const {
   return input_helper_->TransformPointToRootCoordSpaceF(point);
 }
 

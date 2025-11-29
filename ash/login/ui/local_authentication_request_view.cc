@@ -5,6 +5,7 @@
 #include "ash/login/ui/local_authentication_request_view.h"
 
 #include <string>
+#include <string_view>
 
 #include "ash/accessibility/accessibility_controller.h"
 #include "ash/keyboard/ui/keyboard_ui_controller.h"
@@ -14,9 +15,8 @@
 #include "ash/public/cpp/login/local_authentication_request_controller.h"
 #include "ash/public/cpp/login/login_utils.h"
 #include "ash/public/cpp/session/user_info.h"
+#include "ash/public/cpp/style/color_provider.h"
 #include "ash/strings/grit/ash_strings.h"
-#include "ash/style/ash_color_id.h"
-#include "ash/style/ash_color_provider.h"
 #include "ash/style/icon_button.h"
 #include "ash/style/system_shadow.h"
 #include "ash/wallpaper/wallpaper_controller_impl.h"
@@ -168,7 +168,7 @@ LocalAuthenticationRequestView::LocalAuthenticationRequestView(
       chromeos::features::IsSystemBlurEnabled()
           ? cros_tokens::kCrosSysSystemBaseElevated
           : cros_tokens::kCrosSysSystemBaseElevatedOpaque;
-  SetBackground(views::CreateThemedRoundedRectBackground(
+  SetBackground(views::CreateRoundedRectBackground(
       background_color_id,
       kLocalAuthenticationRequestViewRoundedCornerRadiusDp));
 
@@ -243,7 +243,7 @@ LocalAuthenticationRequestView::LocalAuthenticationRequestView(
   close_button_->GetViewAccessibility().SetName(l10n_util::GetStringUTF16(
       IDS_ASH_LOGIN_LOCAL_AUTHENTICATION_CLOSE_DIALOG_BUTTON));
   close_button_->SetFocusBehavior(FocusBehavior::ALWAYS);
-  close_button_view->AddChildView(close_button_.get());
+  close_button_view->AddChildViewRaw(close_button_.get());
 
   auto add_spacer = [&](int height) {
     auto* spacer = new NonAccessibleView();
@@ -257,7 +257,7 @@ LocalAuthenticationRequestView::LocalAuthenticationRequestView(
     label->SetSubpixelRenderingEnabled(false);
     label->SetAutoColorReadabilityEnabled(false);
 
-    label->SetEnabledColorId(cros_tokens::kCrosSysOnSurface);
+    label->SetEnabledColor(cros_tokens::kCrosSysOnSurface);
     label->SetFocusBehavior(FocusBehavior::ACCESSIBLE_ONLY);
   };
 
@@ -271,7 +271,7 @@ LocalAuthenticationRequestView::LocalAuthenticationRequestView(
   title_label_->SetFontList(gfx::FontList().Derive(
       kTitleFontSizeDeltaDp, gfx::Font::NORMAL, gfx::Font::Weight::MEDIUM));
   decorate_label(title_label_);
-  AddChildView(title_label_.get());
+  AddChildViewRaw(title_label_.get());
 
   add_spacer(kTitleToDescriptionDistanceDp);
 
@@ -287,7 +287,7 @@ LocalAuthenticationRequestView::LocalAuthenticationRequestView(
       gfx::FontList().Derive(kDescriptionFontSizeDeltaDp, gfx::Font::NORMAL,
                              gfx::Font::Weight::NORMAL));
   decorate_label(description_label_);
-  AddChildView(description_label_.get());
+  AddChildViewRaw(description_label_.get());
 
   add_spacer(kDescriptionToAccessCodeDistanceDp);
 
@@ -343,7 +343,7 @@ void LocalAuthenticationRequestView::UpdateState(
                              : cros_tokens::kCrosSysError;
   title_label_->SetText(title);
   description_label_->SetText(description);
-  description_label_->SetEnabledColorId(color_id);
+  description_label_->SetEnabledColor(color_id);
 }
 
 gfx::Size LocalAuthenticationRequestView::CalculatePreferredSize(
@@ -384,7 +384,7 @@ LocalAuthenticationRequestView::GetLocalAuthenticationRequestViewSize() const {
 
 void LocalAuthenticationRequestView::OnAuthSubmit(
     bool authenticated_by_pin,
-    const std::u16string& password) {
+    std::u16string_view password) {
   CHECK(!authenticated_by_pin);
   SetInputEnabled(false);
 
@@ -415,8 +415,8 @@ void LocalAuthenticationRequestView::OnAuthComplete(
         LocalAuthenticationRequestViewState::kError, default_title_,
         l10n_util::GetStringUTF16(IDS_ASH_LOGIN_ERROR_AUTHENTICATING_PWD));
     ClearInput();
-    NotifyAccessibilityEvent(ax::mojom::Event::kAlert,
-                             true /*send_native_event*/);
+    NotifyAccessibilityEventDeprecated(ax::mojom::Event::kAlert,
+                                       true /*send_native_event*/);
     SetInputEnabled(true);
   } else {
     LocalAuthenticationRequestWidget::Get()->Close(true /* success */,
@@ -433,7 +433,8 @@ void LocalAuthenticationRequestView::UpdateAccessibleName() {
     GetViewAccessibility().SetName(
         std::string(), ax::mojom::NameFrom::kAttributeExplicitlyEmpty);
   } else {
-    GetViewAccessibility().SetName(description_label_->GetText());
+    GetViewAccessibility().SetName(
+        std::u16string(description_label_->GetText()));
   }
 }
 

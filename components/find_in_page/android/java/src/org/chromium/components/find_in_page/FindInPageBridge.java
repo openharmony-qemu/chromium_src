@@ -7,10 +7,12 @@ package org.chromium.components.find_in_page;
 import org.jni_zero.JNINamespace;
 import org.jni_zero.NativeMethods;
 
+import org.chromium.build.annotations.NullMarked;
 import org.chromium.content_public.browser.WebContents;
 
 /** Allows issuing find in page related requests for a given WebContents. */
 @JNINamespace("find_in_page")
+@NullMarked
 public class FindInPageBridge {
     private long mNativeFindInPageBridge;
 
@@ -55,8 +57,9 @@ public class FindInPageBridge {
 
     /**
      * Stops the current find operation.
+     *
      * @param clearSelection Whether the selection on the page should be cleared.
-     * */
+     */
     public void stopFinding(boolean clearSelection) {
         assert mNativeFindInPageBridge != 0;
         FindInPageBridgeJni.get()

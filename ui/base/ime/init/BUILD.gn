@@ -39,7 +39,4 @@ component("init") {
   if (use_ozone) {
     deps += [ "//ui/ozone" ]
   }
-  if (is_ohos) {
-    deps += [ "//ui/base/ime/ohos" ]
-  }  
 }

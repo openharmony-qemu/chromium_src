@@ -11,39 +11,56 @@
 #include "ash/birch/birch_model.h"
 #include "ash/birch/coral_item_remover.h"
 #include "ash/birch/coral_util.h"
+#include "ash/constants/ash_features.h"
 #include "ash/constants/ash_pref_names.h"
 #include "ash/constants/ash_switches.h"
 #include "ash/public/cpp/app_types_util.h"
+#include "ash/public/cpp/coral_delegate.h"
 #include "ash/public/cpp/saved_desk_delegate.h"
 #include "ash/public/cpp/tab_cluster/tab_cluster_ui_controller.h"
 #include "ash/public/cpp/tab_cluster/tab_cluster_ui_item.h"
 #include "ash/public/cpp/window_properties.h"
 #include "ash/session/session_controller_impl.h"
 #include "ash/shell.h"
+#include "ash/strings/grit/ash_strings.h"
+#include "ash/system/model/locale_model.h"
+#include "ash/system/model/system_tray_model.h"
 #include "ash/wm/coral/coral_controller.h"
 #include "ash/wm/desks/desk.h"
 #include "ash/wm/desks/desks_controller.h"
 #include "ash/wm/desks/desks_util.h"
 #include "ash/wm/desks/templates/saved_desk_util.h"
 #include "ash/wm/mru_window_tracker.h"
-#include "ash/wm/overview/birch/birch_bar_controller.h"
 #include "ash/wm/window_restore/informed_restore_contents_data.h"
 #include "ash/wm/window_restore/informed_restore_controller.h"
 #include "base/command_line.h"
+#include "base/containers/contains.h"
+#include "base/containers/fixed_flat_set.h"
+#include "base/metrics/histogram_functions.h"
 #include "base/strings/utf_string_conversions.h"
 #include "chromeos/ash/services/coral/public/mojom/coral_service.mojom.h"
 #include "chromeos/ui/base/window_properties.h"
+#include "components/prefs/pref_registry_simple.h"
 #include "components/prefs/pref_service.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
+#include "ui/base/l10n/l10n_util.h"
 #include "ui/wm/core/window_util.h"
 
-// Implement custom hash for TabPtr because GURL doesn't support hash.
+#undef ENABLED_VLOG_LEVEL
+#define ENABLED_VLOG_LEVEL 1
+
+// Implement custom hash for EntityPtr because GURL doesn't support hash.
 // We can dedup by possibly_invalid_spec() as it's how we transform GURL
 // back to strings.
 namespace std {
 template <>
-struct hash<coral::mojom::TabPtr> {
-  inline size_t operator()(const coral::mojom::TabPtr& tab) const {
+struct hash<coral::mojom::EntityPtr> {
+  inline size_t operator()(const coral::mojom::EntityPtr& entity) const {
+    if (entity->is_app()) {
+      return std::hash<coral::mojom::AppPtr>{}(entity->get_app());
+    }
+
+    const coral::mojom::TabPtr& tab = entity->get_tab();
     std::size_t h1 = std::hash<std::string>{}(tab->title);
     std::size_t h2 = std::hash<std::string>{}(tab->url.possibly_invalid_spec());
     return h1 ^ (h2 << 1);
@@ -62,7 +79,9 @@ constexpr base::TimeDelta kPostLoginClustersLifespan = base::Minutes(15);
 constexpr base::TimeDelta kPostLoginSecondClusterLifespan = base::Minutes(10);
 BirchCoralProvider* g_instance = nullptr;
 
-constexpr char16_t kTitlePlaceholder[] = u"Suggested Group";
+// The minimum number of entities in a group that allows user to remove an
+// entity.
+constexpr size_t kMinGroupSizeToRemove = 3;
 
 bool HasValidClusterCount(size_t num_clusters) {
   return num_clusters <= kMaxClusterCount;
@@ -71,6 +90,16 @@ bool HasValidClusterCount(size_t num_clusters) {
 bool IsBrowserWindow(aura::Window* window) {
   return window->GetProperty(chromeos::kAppTypeKey) ==
          chromeos::AppType::BROWSER;
+}
+
+bool IsWebAppWindow(aura::Window* window) {
+  const chromeos::AppType app_type = window->GetProperty(chromeos::kAppTypeKey);
+  return app_type == chromeos::AppType::CHROME_APP ||
+         app_type == chromeos::AppType::SYSTEM_APP;
+}
+
+bool IsNonWebAppWindow(aura::Window* window) {
+  return !IsBrowserWindow(window) && !IsWebAppWindow(window);
 }
 
 // Filters out tabs that should not be embedded/clustered.
@@ -129,96 +158,129 @@ bool IsValidApp(aura::Window* window) {
 //  and cache a new embedding in the backend.
 bool ShouldCreateEmbedding(TabClusterUIItem* tab) {
   return tab->current_info().title != tab->old_info().title ||
-         tab->current_info().source != tab->old_info().source;
+         tab->current_info().source != tab->old_info().source ||
+         tab->current_info().is_loading != tab->old_info().is_loading;
 }
 
-// Gets the data of the tabs opening on the active desk. Unordered set is used
-// because we need to dedup identical tabs, but we don't need to sort them.
-std::unordered_set<coral::mojom::TabPtr> GetInSessionTabData() {
-  // TODO(zxdan) add more tab metadata, app data,
-  // and handle in-session use cases.
-  std::unordered_set<coral::mojom::TabPtr> tab_data;
-  if (!Shell::Get()->tab_cluster_ui_controller()) {
-    return tab_data;
+// Creates an AppPtr from given `window` with app title and app ID.
+coral::mojom::AppPtr GetBasicAppInfoFromWindow(aura::Window* window) {
+  CHECK(IsValidApp(window));
+
+  const std::string* app_id_key = window->GetProperty(kAppIDKey);
+  auto app_mojom = coral::mojom::App::New();
+  app_mojom->title =
+      IsArcWindow(window)
+          ? base::UTF16ToUTF8(window->GetTitle())
+          : Shell::Get()->saved_desk_delegate()->GetAppShortName(*app_id_key);
+  app_mojom->id = std::move(*app_id_key);
+  return app_mojom;
+}
+
+// Gets the data of the tabs, PWAs, and SWAs opened on the active desk.
+void GetInSessionTabAndWebAppData(
+    std::vector<coral::mojom::EntityPtr>& entities) {
+  const TabClusterUIController* tab_cluster_ui_controller =
+      Shell::Get()->tab_cluster_ui_controller();
+  if (!tab_cluster_ui_controller) {
+    return;
   }
+
   for (const std::unique_ptr<TabClusterUIItem>& tab :
-       Shell::Get()->tab_cluster_ui_controller()->tab_items()) {
+       tab_cluster_ui_controller->tab_items()) {
+    const TabClusterUIItem::Info& item_info = tab->current_info();
     if (IsValidTab(tab.get())) {
-      auto tab_mojom = coral::mojom::Tab::New();
-      tab_mojom->title = tab->current_info().title;
-      tab_mojom->url = GURL(tab->current_info().source);
-      tab_data.insert(std::move(tab_mojom));
+      auto tab_entity = coral::mojom::Entity::NewTab(coral::mojom::Tab::New(
+          /*title=*/item_info.title, /*url=*/GURL(item_info.source)));
+      entities.push_back(std::move(tab_entity));
+    } else if (IsValidApp(item_info.browser_window) &&
+               IsWebAppWindow(item_info.browser_window)) {
+      coral::mojom::AppPtr app_mojom =
+          GetBasicAppInfoFromWindow(item_info.browser_window);
+      // Use the tab title as the app title for web apps, since they are more
+      // descriptive.
+      app_mojom->title = item_info.title;
+      entities.push_back(coral::mojom::Entity::NewApp(std::move(app_mojom)));
     }
   }
-
-  return tab_data;
 }
 
-// Gets the data of the apps opening on the active desk. Unordered set is used
-// because we need to dedup identical apps, but we don't need to sort them.
-std::unordered_set<coral::mojom::AppPtr> GetInSessionAppData() {
-  std::unordered_set<coral::mojom::AppPtr> app_data;
-
-  auto* const shell = Shell::Get();
-  auto mru_windows =
-      shell->mru_window_tracker()->BuildMruWindowList(kActiveDesk);
-  for (aura::Window* window : mru_windows) {
-    if (!IsValidApp(window)) {
+// Gets the data of the non-web apps opened on the active desk.
+void GetInSessionNonWebAppData(std::vector<coral::mojom::EntityPtr>& entities) {
+  for (aura::Window* window :
+       Shell::Get()->mru_window_tracker()->BuildMruWindowList(kActiveDesk)) {
+    if (!IsValidApp(window) || !IsNonWebAppWindow(window)) {
       continue;
     }
 
-    const std::string* app_id_key = window->GetProperty(kAppIDKey);
-    auto app_mojom = coral::mojom::App::New();
-    app_mojom->title =
-        IsArcWindow(window)
-            ? base::UTF16ToUTF8(window->GetTitle())
-            : shell->saved_desk_delegate()->GetAppShortName(*app_id_key);
-    app_mojom->id = std::move(*app_id_key);
-    app_data.insert(std::move(app_mojom));
+    entities.push_back(
+        coral::mojom::Entity::NewApp(GetBasicAppInfoFromWindow(window)));
   }
-  return app_data;
 }
 
-// Checks if we should show the response on Glanceables bar.
-bool ShouldShowResponse(CoralResponse* response) {
-  if (!response) {
-    return false;
+// Returns the pref service to use for coral policy prefs.
+PrefService* GetPrefService() {
+  return Shell::Get()->session_controller()->GetPrimaryUserPrefService();
+}
+
+// Checks if the given `language` is supported by Coral.
+bool IsLanguageSupported(std::string_view language) {
+  static constexpr auto kSupportedLanguages =
+      base::MakeFixedFlatSet<std::string_view>({"en", "ja", "fr", "de", "da",
+                                                "es", "fi", "it", "nl", "no",
+                                                "pt", "sv"});
+  if (!base::FeatureList::IsEnabled(
+          ash::features::kCoralFeatureMultiLanguage)) {
+    return language == "en";
+  }
+  return base::Contains(kSupportedLanguages, language);
+}
+
+// Gets the total number of entities corresponding to the given `identifier`
+// from the `response`.
+int GetNumOfEntities(std::string_view identifier,
+                     const CoralResponse* response) {
+  int entity_num = 0;
+  for (const auto& group : response->groups()) {
+    entity_num += std::ranges::count_if(
+        group->entities, [&](const coral::mojom::EntityPtr& entity) {
+          return coral_util::GetIdentifier(entity) == identifier;
+        });
   }
 
-  // If we got only one group from an in-session response whose name and content
-  // are exactly same as the active desk which was created from a coral group,
-  // we won't show it.
-  const auto& groups = response->groups();
-  if (response->source() == CoralSource::kPostLogin ||
-      DesksController::Get()->active_desk()->type() != Desk::Type::kCoral ||
-      groups.size() != 1) {
-    return true;
-  }
-
-  // Since the non-duplicated entities in the group is a subset of the tabs and
-  // apps on the active desk, we only need to check if the number of group
-  // entities equals to the total number of tabs and apps on the active desk.
-  Shell* shell = Shell::Get();
-  const size_t tab_num = base::ranges::count_if(
-      shell->tab_cluster_ui_controller()->tab_items(),
-      [](const auto& tab_item) {
-        aura::Window* window = tab_item->current_info().browser_window;
-        return IsBrowserWindow(window) &&
-               desks_util::BelongsToActiveDesk(window);
-      });
-  const size_t app_num = base::ranges::count_if(
-      shell->mru_window_tracker()->BuildMruWindowList(kActiveDesk),
-      [](const auto& window) {
-        return !wm::GetTransientParent(window) && !IsBrowserWindow(window);
-      });
-
-  return groups[0]->entities.size() != (tab_num + app_num);
+  return entity_num;
 }
 
 }  // namespace
 
-BirchCoralProvider::BirchCoralProvider(BirchModel* birch_model)
-    : birch_model_(birch_model) {
+////////////////////////////////////////////////////////////////////////////////
+// BirchCoralProvider::Observer:
+BirchCoralProvider::Observer::Observer() {
+  if (auto* coral_provider = BirchCoralProvider::Get()) {
+    coral_provider->AddObserver(this);
+  }
+}
+
+BirchCoralProvider::Observer::~Observer() {
+  if (auto* coral_provider = BirchCoralProvider::Get()) {
+    coral_provider->RemoveObserver(this);
+  }
+  CHECK(!IsInObserverList());
+}
+
+void BirchCoralProvider::Observer::OnCoralGroupRemoved(
+    const base::Token& group_id) {}
+
+void BirchCoralProvider::Observer::OnCoralEntityRemoved(
+    const base::Token& group_id,
+    std::string_view identifier) {}
+
+void BirchCoralProvider::Observer::OnCoralGroupTitleUpdated(
+    const base::Token& group_id,
+    const std::string& title) {}
+
+////////////////////////////////////////////////////////////////////////////////
+// BirchCoralProvider:
+BirchCoralProvider::BirchCoralProvider() {
   g_instance = this;
   Shell* shell = Shell::Get();
   shell->tab_cluster_ui_controller()->AddObserver(this);
@@ -258,8 +320,6 @@ BirchCoralProvider::BirchCoralProvider(BirchModel* birch_model)
     auto fake_response = std::make_unique<CoralResponse>();
     fake_response->set_groups(std::move(fake_groups));
     OverrideCoralResponseForTest(std::move(fake_response));
-  } else {
-    shell->coral_controller()->PrepareResource();
   }
 }
 
@@ -273,8 +333,24 @@ BirchCoralProvider* BirchCoralProvider::Get() {
   return g_instance;
 }
 
+// static
+void BirchCoralProvider::RegisterProfilePrefs(PrefRegistrySimple* registry) {
+  registry->RegisterBooleanPref(prefs::kCoralGenAIAgeAllowed, false);
+}
+
 const coral::mojom::GroupPtr& BirchCoralProvider::GetGroupById(
     const base::Token& group_id) const {
+  // Add crash keys here to track the crash of crbug.com/395130742.
+  SCOPED_CRASH_KEY_BOOL("395130742", "response_", !!response_);
+  if (response_) {
+    SCOPED_CRASH_KEY_NUMBER("395130742", "group num",
+                            response_->groups().size());
+    if (!response_->groups().empty()) {
+      SCOPED_CRASH_KEY_BOOL("395130742", "first group",
+                            !!(*response_->groups().begin()));
+    }
+  }
+
   std::vector<coral::mojom::GroupPtr>& groups = response_->groups();
   auto iter = std::find_if(
       groups.begin(), groups.end(),
@@ -292,6 +368,13 @@ coral::mojom::GroupPtr BirchCoralProvider::ExtractGroupById(
   CHECK(iter != groups.end());
   auto group = std::move(*iter);
   groups.erase(iter);
+  // Clear the `in_session_source_desk_` when there is no groups to avoid
+  // dangling ptr and reset the window observer.
+  if (groups.empty()) {
+    in_session_source_desk_ = nullptr;
+    windows_observation_.RemoveAllObservations();
+  }
+  observers_.Notify(&Observer::OnCoralGroupRemoved, group->id);
   return group;
 }
 
@@ -308,6 +391,9 @@ void BirchCoralProvider::RemoveItemFromGroup(const base::Token& group_id,
   CHECK(coral_item_remover_);
   auto& group = GetGroupById(group_id);
 
+  // The group should not be modified when there are less than
+  // `kMinGroupSizeToRemove` entities.
+  CHECK_GE(group->entities.size(), kMinGroupSizeToRemove);
   group->entities.erase(
       std::remove_if(group->entities.begin(), group->entities.end(),
                      [identifier](const coral::mojom::EntityPtr& entity) {
@@ -327,6 +413,20 @@ mojo::PendingRemote<coral::mojom::TitleObserver>
 BirchCoralProvider::BindRemote() {
   receiver_.reset();
   return receiver_.BindNewPipeAndPassRemote();
+}
+
+void BirchCoralProvider::AddObserver(Observer* observer) {
+  observers_.AddObserver(observer);
+}
+
+void BirchCoralProvider::RemoveObserver(Observer* observer) {
+  observers_.RemoveObserver(observer);
+}
+
+bool BirchCoralProvider::IsCoralServiceAvailable() {
+  return !Shell::Get()->session_controller()->IsUserPublicAccount() &&
+         coral_util::IsCoralAllowedByPolicy(GetPrefService()) &&
+         GetAndCheckLanguageAvailability() && GetGenAIAvailability();
 }
 
 void BirchCoralProvider::RequestBirchDataFetch() {
@@ -370,6 +470,11 @@ void BirchCoralProvider::RequestBirchDataFetch() {
     return;
   }
 
+  if (!IsCoralServiceAvailable()) {
+    HandleCoralResponse(nullptr);
+    return;
+  }
+
   if (HasValidPostLoginData()) {
     HandlePostLoginDataRequest();
   } else {
@@ -395,7 +500,7 @@ void BirchCoralProvider::OnTabItemRemoved(TabClusterUIItem* tab_item) {
     return;
   }
 
-  OnTabRemovedFromActiveDesk(tab_item);
+  OnTabRemovedFromSourceDesk(tab_item);
 }
 
 void BirchCoralProvider::TitleUpdated(const base::Token& id,
@@ -408,9 +513,7 @@ void BirchCoralProvider::TitleUpdated(const base::Token& id,
   for (coral::mojom::GroupPtr& group : response_->groups()) {
     if (group->id == id) {
       group->title = title;
-      if (auto* bar_controller = BirchBarController::Get()) {
-        bar_controller->OnCoralGroupUpdated(group->id);
-      }
+      observers_.Notify(&Observer::OnCoralGroupTitleUpdated, group->id, title);
       return;
     }
   }
@@ -418,7 +521,7 @@ void BirchCoralProvider::TitleUpdated(const base::Token& id,
 
 void BirchCoralProvider::OnWindowDestroyed(aura::Window* window) {
   if (!IsBrowserWindow(window)) {
-    OnAppWindowRemovedFromActiveDesk(window);
+    OnAppWindowRemovedFromSourceDesk(window);
   }
 
   // Note, we should remove the window from observing list after modifying the
@@ -428,10 +531,20 @@ void BirchCoralProvider::OnWindowDestroyed(aura::Window* window) {
 
 void BirchCoralProvider::OnWindowParentChanged(aura::Window* window,
                                                aura::Window* parent) {
+  // Reset the observations when `response_` or `in_session_source_desk_` are
+  // null. This can occur when launching the last group which resets the
+  // `in_session_source_desk_`.
+  // TODO(crbug.com/383770356): Still need to find out the reason why the window
+  // is still being observed when the `response_` has been reset.
+  if (!response_ || !in_session_source_desk_) {
+    Reset();
+    return;
+  }
+
   // If an observed window is moved to another desk, remove the associated
   // entities from the `response_`. When parent is null, the window may be in
   // the middle of changing parent.
-  if (!parent || desks_util::BelongsToActiveDesk(window)) {
+  if (!parent || desks_util::BelongsToDesk(window, in_session_source_desk_)) {
     return;
   }
 
@@ -441,11 +554,11 @@ void BirchCoralProvider::OnWindowParentChanged(aura::Window* window,
     for (const auto& tab_item :
          Shell::Get()->tab_cluster_ui_controller()->tab_items()) {
       if (tab_item->current_info().browser_window == window) {
-        OnTabRemovedFromActiveDesk(tab_item.get());
+        OnTabRemovedFromSourceDesk(tab_item.get());
       }
     }
   } else {
-    OnAppWindowRemovedFromActiveDesk(window);
+    OnAppWindowRemovedFromSourceDesk(window);
   }
 
   // Note, we should remove the window from observing list after modifying the
@@ -454,10 +567,10 @@ void BirchCoralProvider::OnWindowParentChanged(aura::Window* window,
 }
 
 void BirchCoralProvider::OnOverviewModeEnded() {
-  // Clear the in-session `response_` and reset the app windows observation.
+  // Clear the in-session `response_` and reset the in-session source desk and
+  // the app windows observation.
   if (response_ && response_->source() == CoralSource::kInSession) {
-    response_.reset();
-    windows_observation_.RemoveAllObservations();
+    Reset();
   }
 }
 
@@ -465,13 +578,76 @@ void BirchCoralProvider::OnSessionStateChanged(
     session_manager::SessionState state) {
   // Clear stale items on login.
   if (state == session_manager::SessionState::ACTIVE) {
-    response_.reset();
+    Reset();
+    is_gen_ai_age_availability_checked_ = false;
+    is_gen_ai_location_allow_.reset();
+    system_language_.reset();
   }
+}
+
+void BirchCoralProvider::OnActiveUserSessionChanged(
+    const AccountId& account_id) {
+  Reset();
+  is_gen_ai_age_availability_checked_ = false;
+  is_gen_ai_location_allow_.reset();
+  system_language_.reset();
 }
 
 void BirchCoralProvider::OverrideCoralResponseForTest(
     std::unique_ptr<CoralResponse> response) {
   fake_response_ = std::move(response);
+}
+
+bool BirchCoralProvider::GetGenAIAvailability() {
+  // Return true, if using a fake backend or group.
+  auto* current_process = base::CommandLine::ForCurrentProcess();
+  if (current_process->HasSwitch(switches::kForceBirchFakeCoralBackend) ||
+      current_process->HasSwitch(switches::kForceBirchFakeCoralGroup)) {
+    return true;
+  }
+
+  auto* coral_delegate = Shell::Get()->coral_delegate();
+  if (!is_gen_ai_location_allow_.has_value()) {
+    is_gen_ai_location_allow_ = coral_delegate->GetGenAILocationAvailability();
+    if (!(*is_gen_ai_location_allow_)) {
+      VLOG(1) << "Coral: location is restricted by GenAI";
+    }
+  }
+
+  if (!(*is_gen_ai_location_allow_)) {
+    return false;
+  }
+
+  // If age availability is not checked and the checking result will be returned
+  // asynchronously, use the pref value.
+  if (!is_gen_ai_age_availability_checked_) {
+    coral_delegate->CheckGenAIAgeAvailability(
+        base::BindOnce(&BirchCoralProvider::OnGenAIAgeAvailabilityReceived,
+                       weak_ptr_factory_.GetWeakPtr()));
+  }
+
+  return (*is_gen_ai_location_allow_) &&
+         GetPrefService()->GetBoolean(prefs::kCoralGenAIAgeAllowed);
+}
+
+bool BirchCoralProvider::GetAndCheckLanguageAvailability() {
+  // Use "en" as system language for test.
+  auto* current_process = base::CommandLine::ForCurrentProcess();
+  if (current_process->HasSwitch(switches::kForceBirchFakeCoralBackend) ||
+      current_process->HasSwitch(switches::kForceBirchFakeCoralGroup)) {
+    system_language_ = "en";
+    return true;
+  }
+
+  if (!system_language_.has_value()) {
+    system_language_ = Shell::Get()->coral_delegate()->GetSystemLanguage();
+    // Only output log on first checking.
+    if (!IsLanguageSupported(*system_language_)) {
+      VLOG(1) << "Current language is not supported by Coral.";
+      return false;
+    }
+  }
+  return IsLanguageSupported(*system_language_);
 }
 
 bool BirchCoralProvider::HasValidPostLoginData() const {
@@ -502,12 +678,15 @@ void BirchCoralProvider::HandlePostLoginDataRequest() {
     for (const InformedRestoreContentsData::TabInfo& tab_info :
          app_info.tab_infos) {
       tab_app_data.push_back(coral::mojom::Entity::NewTab(
-          coral::mojom::Tab::New(tab_info.title, tab_info.url)));
+          coral::mojom::Tab::New(tab_info.title, tab_info.virtual_url)));
     }
   }
 
+  FilterCoralContentItems(&tab_app_data, CoralSource::kPostLogin);
   request_.set_source(CoralSource::kPostLogin);
   request_.set_content(std::move(tab_app_data));
+  CHECK(system_language_.has_value());
+  request_.set_language(*system_language_);
   Shell::Get()->coral_controller()->GenerateContentGroups(
       request_, BindRemote(),
       base::BindOnce(&BirchCoralProvider::HandlePostLoginCoralResponse,
@@ -518,20 +697,17 @@ void BirchCoralProvider::HandleInSessionDataRequest() {
   // TODO(zxdan) add more tab metadata, app data,
   // and handle in-session use cases.
   std::vector<CoralRequest::ContentItem> active_tab_app_data;
-  std::unordered_set<coral::mojom::TabPtr> tabs = GetInSessionTabData();
-  while (!tabs.empty()) {
-    auto tab = std::move(tabs.extract(tabs.begin()).value());
-    active_tab_app_data.push_back(coral::mojom::Entity::NewTab(std::move(tab)));
-  }
-
-  std::unordered_set<coral::mojom::AppPtr> apps = GetInSessionAppData();
-  while (!apps.empty()) {
-    auto app = std::move(apps.extract(apps.begin()).value());
-    active_tab_app_data.push_back(coral::mojom::Entity::NewApp(std::move(app)));
-  }
-  FilterCoralContentItems(&active_tab_app_data);
+  GetInSessionTabAndWebAppData(active_tab_app_data);
+  GetInSessionNonWebAppData(active_tab_app_data);
+  FilterCoralContentItems(&active_tab_app_data, CoralSource::kInSession);
   request_.set_source(CoralSource::kInSession);
   request_.set_content(std::move(active_tab_app_data));
+  request_.set_suppression_context(
+      mojo::Clone(DesksController::Get()->active_desk()->tab_app_entities()));
+  if (!system_language_.has_value()) {
+    GetAndCheckLanguageAvailability();
+  }
+  request_.set_language(*system_language_);
   Shell::Get()->coral_controller()->GenerateContentGroups(
       request_, BindRemote(),
       base::BindOnce(&BirchCoralProvider::HandleInSessionCoralResponse,
@@ -575,7 +751,7 @@ void BirchCoralProvider::HandleCoralResponse(
     std::unique_ptr<CoralResponse> response) {
   std::vector<BirchCoralItem> items;
   response_ = std::move(response);
-  if (!ShouldShowResponse(response_.get())) {
+  if (!response_) {
     windows_observation_.RemoveAllObservations();
     Shell::Get()->birch_model()->SetCoralItems(items);
     return;
@@ -586,31 +762,61 @@ void BirchCoralProvider::HandleCoralResponse(
     const auto& group = response_->groups()[i];
     // Set a placeholder to item title. The chip title will be directly fetched
     // from group title.
-    // TODO(zxdan): Localize the strings.
-    std::u16string subtitle;
+    int subtitle_id;
     switch (response_->source()) {
       case CoralSource::kPostLogin:
-        subtitle = u"Resume suggested group";
+        subtitle_id = IDS_ASH_BIRCH_CORAL_RESTORE_CHIP_SUBTITLE;
         break;
       case CoralSource::kInSession:
-        subtitle = u"Organize in a new desk";
+        subtitle_id = IDS_ASH_BIRCH_CORAL_IN_SESSION_CHIP_SUBTITLE;
         break;
       case CoralSource::kUnknown:
-        break;
+        NOTREACHED() << "Unknown response type.";
     }
-    items.emplace_back(/*title=*/kTitlePlaceholder,
-                       /*subtitle=*/subtitle, response_->source(),
-                       /*group_id=*/group->id);
+
+    // If the group title is null/empty, we use a placeholder title.
+    bool is_non_empty = group->title.has_value() && !group->title->empty();
+    items.emplace_back(
+        is_non_empty
+            ? base::UTF8ToUTF16(*group->title)
+            : l10n_util::GetStringUTF16(IDS_ASH_BIRCH_CORAL_SUGGESTION_NAME),
+        l10n_util::GetStringUTF16(subtitle_id), response_->source(), group->id);
   }
   Shell::Get()->birch_model()->SetCoralItems(items);
+
+  if (response_->source() == CoralSource::kInSession) {
+    in_session_source_desk_ = DesksController::Get()->active_desk();
+  }
 
   ObserveAllWindowsInResponse();
 }
 
 void BirchCoralProvider::FilterCoralContentItems(
-    std::vector<coral::mojom::EntityPtr>* items) {
+    std::vector<coral::mojom::EntityPtr>* items,
+    CoralSource source) {
   CHECK(coral_item_remover_);
   coral_item_remover_->FilterRemovedItems(items);
+
+  // Remove the items with an empty title.
+  auto removed = std::ranges::remove_if(
+      *items, [source](const coral::mojom::EntityPtr& entity) {
+        if (entity->is_tab() && entity->get_tab()->title.empty()) {
+          VLOG(1) << "An empty titled tab with url: "
+                  << entity->get_tab()->url.possibly_invalid_spec();
+          base::UmaHistogramEnumeration("Ash.Birch.Coral.TabInfoWithEmptyTitle",
+                                        source);
+          return true;
+        }
+        if (entity->is_app() && entity->get_app()->title.empty()) {
+          VLOG(1) << "An empty titled app with id: " << entity->get_app()->id;
+          base::UmaHistogramEnumeration("Ash.Birch.Coral.AppInfoWithEmptyTitle",
+                                        source);
+          return true;
+        }
+        return false;
+      });
+
+  items->erase(removed.begin(), removed.end());
 }
 
 void BirchCoralProvider::MaybeCacheTabEmbedding(TabClusterUIItem* tab_item) {
@@ -620,7 +826,8 @@ void BirchCoralProvider::MaybeCacheTabEmbedding(TabClusterUIItem* tab_item) {
       session_controller->GetPrimaryUserPrefService() &&
       session_controller->GetPrimaryUserPrefService()->GetBoolean(
           prefs::kBirchUseCoral) &&
-      IsValidTab(tab_item) && ShouldCreateEmbedding(tab_item)) {
+      IsCoralServiceAvailable() && IsValidTab(tab_item) &&
+      ShouldCreateEmbedding(tab_item)) {
     CacheTabEmbedding(tab_item);
   }
 }
@@ -638,14 +845,11 @@ void BirchCoralProvider::CacheTabEmbedding(TabClusterUIItem* tab_item) {
       coral::mojom::Entity::NewTab(std::move(tab_mojom)));
   CoralRequest request;
   request.set_content(std::move(active_tab_app_data));
-  Shell::Get()->coral_controller()->CacheEmbeddings(
-      std::move(request),
-      base::BindOnce(&BirchCoralProvider::HandleEmbeddingResult,
-                     weak_ptr_factory_.GetWeakPtr()));
-}
-
-void BirchCoralProvider::HandleEmbeddingResult(bool success) {
-  // TODO(conniekxu) Add metrics.
+  if (!system_language_.has_value()) {
+    GetAndCheckLanguageAvailability();
+  }
+  request.set_language(*system_language_);
+  Shell::Get()->coral_controller()->CacheEmbeddings(std::move(request));
 }
 
 void BirchCoralProvider::ObserveAllWindowsInResponse() {
@@ -672,7 +876,7 @@ void BirchCoralProvider::ObserveAllWindowsInResponse() {
 
   // Observe browser windows containing the tabs with the same urls in the
   // response.
-  base::ranges::for_each(
+  std::ranges::for_each(
       Shell::Get()->tab_cluster_ui_controller()->tab_items(),
       [&](const auto& tab_item) {
         if (IsValidTab(tab_item.get()) &&
@@ -685,7 +889,7 @@ void BirchCoralProvider::ObserveAllWindowsInResponse() {
       });
 
   // Observe all the apps with the app id in the response.
-  base::ranges::for_each(
+  std::ranges::for_each(
       Shell::Get()->mru_window_tracker()->BuildMruWindowList(kActiveDesk),
       [&](const auto& window) {
         if (IsValidApp(window) &&
@@ -695,34 +899,41 @@ void BirchCoralProvider::ObserveAllWindowsInResponse() {
       });
 }
 
-void BirchCoralProvider::OnTabRemovedFromActiveDesk(
+void BirchCoralProvider::OnTabRemovedFromSourceDesk(
     TabClusterUIItem* tab_item) {
-  const std::string url = tab_item->current_info().source;
+  const TabClusterUIItem::Info& removed_tab_info = tab_item->current_info();
+  const std::string url = removed_tab_info.source;
+  const std::string title = removed_tab_info.title;
 
-  // Don't modify the groups if there are multiple tabs with the same url to be
-  // removed.
-  if (base::ranges::count_if(
-          Shell::Get()->tab_cluster_ui_controller()->tab_items(),
-          [&](const auto& tab) {
-            return windows_observation_.IsObservingSource(
-                       tab->current_info().browser_window) &&
-                   tab->current_info().source == url;
-          }) == 1) {
+  // If the count of currently opened tabs sharing the same to be removed tab's
+  // URL equals to the count of corresponding tab entities in the groups, remove
+  // a matching entity from the groups.
+  const int tab_num = std::ranges::count_if(
+      Shell::Get()->tab_cluster_ui_controller()->tab_items(),
+      [&](const auto& tab) {
+        const TabClusterUIItem::Info& info = tab->current_info();
+        return windows_observation_.IsObservingSource(info.browser_window) &&
+               info.source == url;
+      });
+  if (tab_num == GetNumOfEntities(url, response_.get())) {
     RemoveEntity(url);
   }
 }
 
-void BirchCoralProvider::OnAppWindowRemovedFromActiveDesk(
+void BirchCoralProvider::OnAppWindowRemovedFromSourceDesk(
     aura::Window* app_window) {
   CHECK(!IsBrowserWindow(app_window));
 
-  // Don't modify groups if there are multiple of the same app on the active
-  // desk.
+  // If the count of currently opened apps sharing the same to be removed app's
+  // ID equals to the count of corresponding app entities in the groups, remove
+  // a matching entity from the groups.
   const std::string app_id = *(app_window->GetProperty(kAppIDKey));
-  if (base::ranges::count_if(
-          windows_observation_.sources(), [&app_id](const auto& window) {
-            return *(window->GetProperty(kAppIDKey)) == app_id;
-          }) == 1) {
+  const int app_num = std::ranges::count_if(
+      windows_observation_.sources(), [&app_id](const auto& window) {
+        return *(window->GetProperty(kAppIDKey)) == app_id;
+      });
+
+  if (app_num == GetNumOfEntities(app_id, response_.get())) {
     RemoveEntity(app_id);
   }
 }
@@ -732,7 +943,8 @@ void BirchCoralProvider::RemoveEntity(std::string_view entity_identifier) {
   CHECK_EQ(response_->source(), CoralSource::kInSession);
 
   auto& groups = response_->groups();
-  for (auto group_iter = groups.begin(); group_iter != groups.end();) {
+  for (auto group_iter = groups.begin(); group_iter != groups.end();
+       group_iter++) {
     const coral::mojom::GroupPtr& group = *group_iter;
     // Check if the entity is included in the group.
     auto entity_iter = std::find_if(
@@ -746,24 +958,42 @@ void BirchCoralProvider::RemoveEntity(std::string_view entity_identifier) {
     if (entity_iter != group->entities.end()) {
       group->entities.erase(entity_iter);
       if (group->entities.empty()) {
-        // TODO(zxdan|sammiequon): Consider making coral provider observers.
-        if (auto* birch_bar_controller = BirchBarController::Get()) {
-          birch_bar_controller->OnCoralGroupRemoved(group->id);
-        }
-
-        if (auto* birch_model = Shell::Get()->birch_model()) {
-          birch_model->OnCoralGroupRemoved(group->id);
-        }
+        const base::Token group_id = group->id;
         group_iter = groups.erase(group_iter);
-        continue;
+        // Clear the `in_session_source_desk_` when there is no groups since the
+        // source desk may be in the process of removal.
+        if (groups.empty()) {
+          in_session_source_desk_ = nullptr;
+        }
+        observers_.Notify(&Observer::OnCoralGroupRemoved, group_id);
+        return;
       }
-      if (auto* birch_bar_controller = BirchBarController::Get()) {
-        birch_bar_controller->OnCoralEntityRemoved(group->id,
-                                                   entity_identifier);
-      }
+
+      observers_.Notify(&Observer::OnCoralEntityRemoved, group->id,
+                        entity_identifier);
+      return;
     }
-    group_iter++;
   }
+}
+
+void BirchCoralProvider::Reset() {
+  // Clear the groups in observers before resetting the `response_`.
+  if (response_) {
+    for (const auto& group : response_->groups()) {
+      observers_.Notify(&Observer::OnCoralGroupRemoved, group->id);
+    }
+    response_.reset();
+  }
+  in_session_source_desk_ = nullptr;
+  windows_observation_.RemoveAllObservations();
+}
+
+void BirchCoralProvider::OnGenAIAgeAvailabilityReceived(bool allow) {
+  if (!allow) {
+    VLOG(1) << "Coral: age is restricted by GenAI";
+  }
+  is_gen_ai_age_availability_checked_ = true;
+  GetPrefService()->SetBoolean(prefs::kCoralGenAIAgeAllowed, allow);
 }
 
 }  // namespace ash

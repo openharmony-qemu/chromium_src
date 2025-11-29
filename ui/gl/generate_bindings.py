@@ -2412,6 +2412,11 @@ EGL_FUNCTIONS = [
                  'client_extensions': ['EGL_KHR_debug'], }],
   'arguments': 'EGLDisplay display, EGLenum objectType, EGLObjectKHR object, '
     'EGLLabelKHR label', },
+{ 'return_type': 'void',
+    'versions': [{'name': 'eglLockVulkanQueueANGLE',
+                  'extensions':
+                      ['EGL_ANGLE_device_vulkan']}],
+  'arguments': 'EGLDisplay dpy', },
 { 'return_type': 'EGLBoolean',
   'names': ['eglMakeCurrent'],
   'arguments':
@@ -2578,6 +2583,11 @@ EGL_FUNCTIONS = [
 { 'return_type': 'EGLBoolean',
   'names': ['eglTerminate'],
   'arguments': 'EGLDisplay dpy', },
+{ 'return_type': 'void',
+    'versions': [{'name': 'eglUnlockVulkanQueueANGLE',
+                  'extensions':
+                      ['EGL_ANGLE_device_vulkan']}],
+  'arguments': 'EGLDisplay dpy', },
 { 'return_type': 'EGLBoolean',
   'names': ['eglWaitClient'],
   'arguments': 'void', },
@@ -2626,6 +2636,7 @@ EGL_EXTENSIONS_EXTRA = [
   'EGL_ANGLE_context_virtualization',
   'EGL_ANGLE_create_context_backwards_compatible',
   'EGL_ANGLE_create_context_client_arrays',
+  'EGL_ANGLE_create_context_passthrough_shaders',
   'EGL_ANGLE_create_context_webgl_compatibility',
   'EGL_ANGLE_global_fence_sync',
   'EGL_ANGLE_iosurface_client_buffer',
@@ -2833,10 +2844,12 @@ struct GL_EXPORT DisplayExtensionsEGL {
   # Write macros to invoke function pointers. Always use the GL name for the
   # macro.
   file.write('\n')
+  file.write('#if BINDINGS_%s_PROTOTYPES\n' % set_name.upper())
   for func in functions:
     file.write('#define %s ::gl::g_current_%s_context->%sFn\n' %
         (func['known_as'], set_name.lower(), func['known_as']))
 
+  file.write('#endif // BINDINGS_%s_PROTOTYPES\n' % set_name.upper())
   file.write('\n')
   file.write('#endif  // UI_GL_GL_BINDINGS_AUTOGEN_%s_H_\n' %
       set_name.upper())
@@ -2924,7 +2937,7 @@ def GenerateStubHeader(file, functions):
       file.write(';\n');
 
   file.write('\n')
-  file.write('#endif  //  UI_GL_GL_STUB_AUTOGEN_GL_H_')
+  file.write('#endif  // UI_GL_GL_STUB_AUTOGEN_GL_H_')
 
 def GenerateStubSource(file, functions):
   """Generates gl_stub_autogen_gl.cc"""
@@ -2963,6 +2976,7 @@ def GenerateSource(file, functions, set_name, used_extensions,
                    'ui/gl/gl_context.h',
                    'ui/gl/gl_implementation.h',
                    'ui/gl/gl_version_info.h',
+                   'ui/gl/startup_trace.h',
                    set_header_name ]
 
   includes_string = "\n".join(["#include \"{0}\"".format(h)
@@ -2981,7 +2995,7 @@ namespace gl {
 
   file.write('\n')
   if set_name != 'gl':
-    file.write('Driver%s g_driver_%s;  // Exists in .bss\n' % (
+    file.write('Driver%s g_driver_%s = {};\n' % (
         set_name.upper(), set_name.lower()))
   file.write('\n')
 
@@ -3004,23 +3018,19 @@ namespace gl {
   # and to initialize bindings where choice of the function depends on the
   # extension string or the GL version to point to stub functions.
   file.write('\n')
-  file.write('void Driver%s::InitializeStaticBindings() {\n' %
-             set_name.upper())
-  file.write('#if DCHECK_IS_ON()\n')
-  file.write('  // Ensure struct has been zero-initialized.\n')
-  file.write('  auto bytes = base::byte_span_from_ref(*this);\n')
-  file.write('  for (auto byte : bytes) {\n');
-  file.write('    DCHECK_EQ(0, byte);\n')
-  file.write('  };\n')
-  file.write('#endif\n')
-  file.write('\n')
+  file.write("""\
+void Driver%s::InitializeStaticBindings(GLGetProcAddressProc get_proc_address) {
+""" % set_name.upper())
+
+  file.write('  GPU_STARTUP_TRACE_EVENT("Driver%s::InitializeStaticBindings");'
+             '\n' % (set_name.upper()))
 
   def BindingsAreAllStatic(api_set_name):
     return api_set_name == 'egl'
 
   def WriteFuncBinding(file, known_as, version_name):
     file.write(
-        '  fn.%sFn = reinterpret_cast<%sProc>(GetGLProcAddress("%s"));\n' %
+        '  fn.%sFn = reinterpret_cast<%sProc>(get_proc_address("%s"));\n' %
         (known_as, known_as, version_name))
 
   for func in functions:
@@ -3097,12 +3107,14 @@ namespace gl {
 
   if set_name == 'gl':
     file.write("""\
-void DriverGL::InitializeDynamicBindings(const GLVersionInfo* ver,
+void DriverGL::InitializeDynamicBindings(GLGetProcAddressProc get_proc_address,
+                                         const GLVersionInfo* ver,
                                          const gfx::ExtensionSet& extensions) {
 """)
   elif set_name == 'egl':
     file.write("""\
 void ClientExtensionsEGL::InitializeClientExtensionSettings() {
+  GPU_STARTUP_TRACE_EVENT("DriverEGL::InitializeClientExtensionSettings");
   std::string client_extensions(GetClientExtensions());
   [[maybe_unused]] gfx::ExtensionSet extensions(
       gfx::MakeExtensionSet(client_extensions));
@@ -3143,6 +3155,7 @@ void Driver%s::InitializeExtensionBindings() {
 }
 
 void DisplayExtensionsEGL::InitializeExtensionSettings(EGLDisplay display) {
+  GPU_STARTUP_TRACE_EVENT("DriverEGL::InitializeExtensionSettings");
   std::string platform_extensions(GetPlatformExtensions(display));
   [[maybe_unused]] gfx::ExtensionSet extensions(
       gfx::MakeExtensionSet(platform_extensions));
@@ -3161,8 +3174,7 @@ void DisplayExtensionsEGL::InitializeExtensionSettings(EGLDisplay display) {
   # Write function to clear all function pointers.
   file.write('\n')
   file.write("""void Driver%s::ClearBindings() {
-  auto bytes = base::byte_span_from_ref(*this);
-  std::ranges::fill(bytes, 0);
+  *this = {};
 }
 """ % set_name.upper())
 
@@ -3519,7 +3531,7 @@ static constexpr EnumToString kEnumToStringTable[] = {
 
 }  // namespace
 
-#endif  //  UI_GL_GL_ENUMS_IMPLEMENTATION_AUTOGEN_H_
+#endif  // UI_GL_GL_ENUMS_IMPLEMENTATION_AUTOGEN_H_
 """)
 
 

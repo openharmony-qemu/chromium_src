@@ -6,7 +6,10 @@
 
 #include "base/barrier_callback.h"
 #include "base/memory/weak_ptr.h"
+#include "components/optimization_guide/core/model_execution/multimodal_message.h"
 #include "components/optimization_guide/core/model_execution/on_device_model_execution_proto_descriptors.h"
+#include "components/optimization_guide/core/model_execution/safety_config.h"
+#include "components/optimization_guide/core/optimization_guide_features.h"
 
 namespace optimization_guide {
 
@@ -58,10 +61,8 @@ SafetyChecker::Result RequestCheckResult(
   result.is_unsafe =
       checker->safety_cfg().IsRequestUnsafe(request_check_idx, safety_info);
   result.is_unsupported_language =
-      !checker->safety_cfg().ShouldIgnoreLanguageResultForRequestCheck(
-          request_check_idx) &&
-      checker->safety_cfg().IsTextInUnsupportedOrUndeterminedLanguage(
-          safety_info);
+      checker->safety_cfg().IsRequestUnsupportedLanguage(request_check_idx,
+                                                         safety_info);
   *result.logs.Add() = MakeTextSafetyExecutionLog(check_input_text, safety_info,
                                                   result.is_unsafe);
   return result;
@@ -70,16 +71,17 @@ SafetyChecker::Result RequestCheckResult(
 SafetyChecker::Result RawOutputCheckResult(
     base::WeakPtr<SafetyChecker> checker,
     std::string check_input_text,
+    ResponseCompleteness completeness,
     on_device_model::mojom::SafetyInfoPtr safety_info) {
   if (!checker) {
     return FailToRunResult();
   }
   SafetyChecker::Result result;
   // Evaluate the check.
-  result.is_unsafe = checker->safety_cfg().IsUnsafeText(safety_info);
+  result.is_unsafe = checker->safety_cfg().IsRawOutputUnsafe(safety_info);
   result.is_unsupported_language =
-      checker->safety_cfg().IsTextInUnsupportedOrUndeterminedLanguage(
-          safety_info);
+      checker->safety_cfg().IsRawOutputUnsupportedLanguage(completeness,
+                                                           safety_info);
   *result.logs.Add() = MakeTextSafetyExecutionLog(check_input_text, safety_info,
                                                   result.is_unsafe);
   return result;
@@ -89,6 +91,7 @@ SafetyChecker::Result ResponseCheckResult(
     base::WeakPtr<SafetyChecker> checker,
     int request_check_idx,
     std::string check_input_text,
+    ResponseCompleteness completeness,
     on_device_model::mojom::SafetyInfoPtr safety_info) {
   if (!checker) {
     return FailToRunResult();
@@ -98,10 +101,8 @@ SafetyChecker::Result ResponseCheckResult(
   result.is_unsafe =
       checker->safety_cfg().IsResponseUnsafe(request_check_idx, safety_info);
   result.is_unsupported_language =
-      !checker->safety_cfg().ShouldIgnoreLanguageResultForResponseCheck(
-          request_check_idx) &&
-      checker->safety_cfg().IsTextInUnsupportedOrUndeterminedLanguage(
-          safety_info);
+      checker->safety_cfg().IsResponseUnsupportedLanguage(
+          request_check_idx, completeness, safety_info);
   *result.logs.Add() = MakeTextSafetyExecutionLog(check_input_text, safety_info,
                                                   result.is_unsafe);
   return result;
@@ -131,22 +132,23 @@ SafetyChecker::Result SafetyChecker::Result::Merge(
 }
 
 SafetyChecker::SafetyChecker(base::WeakPtr<TextSafetyClient> client,
-                             on_device_model::TextSafetyLoaderParams params,
                              SafetyConfig safety_cfg)
     : client_(std::move(client)),
-      params_(std::move(params)),
       safety_cfg_(std::move(safety_cfg)) {}
+SafetyChecker::SafetyChecker(const SafetyChecker& orig)
+    : client_(orig.client_),
+      safety_cfg_(orig.safety_cfg_) {}
 SafetyChecker::~SafetyChecker() = default;
 
-void SafetyChecker::RunRequestChecks(
-    const google::protobuf::MessageLite& request,
-    ResultCallback callback) {
+void SafetyChecker::RunRequestChecks(const MultimodalMessage& request,
+                                     ResultCallback callback) {
   int num_checks = safety_cfg_.NumRequestChecks();
   if (num_checks == 0) {
     std::move(callback).Run(SafetyChecker::Result{});
     return;
   }
-  if (!client_) {
+  auto& session = GetSession();
+  if (!session.is_bound()) {
     std::move(callback).Run(FailToRunResult());
     return;
   }
@@ -154,7 +156,7 @@ void SafetyChecker::RunRequestChecks(
       num_checks,
       base::BindOnce(&SafetyChecker::Result::Merge).Then(std::move(callback)));
   for (int idx = 0; idx < num_checks; idx++) {
-    auto check_input = safety_cfg_.GetRequestCheckInput(idx, request);
+    auto check_input = safety_cfg_.GetRequestCheckInput(idx, request.read());
     if (!check_input) {
       merge_fn.Run(FailToRunResult());
       continue;
@@ -165,22 +167,23 @@ void SafetyChecker::RunRequestChecks(
                        text)
             .Then(merge_fn);
     if (safety_cfg_.IsRequestCheckLanguageOnly(idx)) {
-      client_->GetTextSafetyModelRemote(params_)->DetectLanguage(
+      session->DetectLanguage(
           text, base::BindOnce(&AsSafetyInfo).Then(std::move(merge_result_fn)));
     } else {
-      client_->GetTextSafetyModelRemote(params_)->ClassifyTextSafety(
-          text, std::move(merge_result_fn));
+      session->ClassifyTextSafety(text, std::move(merge_result_fn));
     }
   }
 }
 
 void SafetyChecker::RunRawOutputCheck(const std::string& raw_output,
+                                      ResponseCompleteness completeness,
                                       ResultCallback callback) {
   if (!safety_cfg_.HasRawOutputCheck()) {
     std::move(callback).Run(SafetyChecker::Result{});
     return;
   }
-  if (!client_) {
+  auto& session = GetSession();
+  if (!session.is_bound()) {
     std::move(callback).Run(FailToRunResult());
     return;
   }
@@ -190,22 +193,23 @@ void SafetyChecker::RunRawOutputCheck(const std::string& raw_output,
     return;
   }
   auto text = check_input->ToString();
-  client_->GetTextSafetyModelRemote(params_)->ClassifyTextSafety(
+  session->ClassifyTextSafety(
       text, base::BindOnce(&RawOutputCheckResult,
-                           weak_ptr_factory_.GetWeakPtr(), text)
+                           weak_ptr_factory_.GetWeakPtr(), text, completeness)
                 .Then(std::move(callback)));
 }
 
-void SafetyChecker::RunResponseChecks(
-    const google::protobuf::MessageLite& request,
-    const proto::Any& response_as_any,
-    ResultCallback callback) {
+void SafetyChecker::RunResponseChecks(const MultimodalMessage& request,
+                                      const proto::Any& response_as_any,
+                                      ResponseCompleteness completeness,
+                                      ResultCallback callback) {
   int num_checks = safety_cfg_.NumResponseChecks();
   if (num_checks == 0) {
     std::move(callback).Run(SafetyChecker::Result{});
     return;
   }
-  if (!client_) {
+  auto& session = GetSession();
+  if (!session.is_bound()) {
     std::move(callback).Run(FailToRunResult());
     return;
   }
@@ -218,8 +222,8 @@ void SafetyChecker::RunResponseChecks(
       num_checks,
       base::BindOnce(&SafetyChecker::Result::Merge).Then(std::move(callback)));
   for (int idx = 0; idx < num_checks; idx++) {
-    auto check_input =
-        safety_cfg_.GetResponseCheckInput(idx, request, *response);
+    auto check_input = safety_cfg_.GetResponseCheckInput(
+        idx, request.read(), MultimodalMessageReadView(*response));
     if (!check_input) {
       merge_fn.Run(FailToRunResult());
       continue;
@@ -227,11 +231,19 @@ void SafetyChecker::RunResponseChecks(
     auto text = check_input->ToString();
     auto merge_result_fn =
         base::BindOnce(&ResponseCheckResult, weak_ptr_factory_.GetWeakPtr(),
-                       idx, text)
+                       idx, text, completeness)
             .Then(merge_fn);
-    client_->GetTextSafetyModelRemote(params_)->ClassifyTextSafety(
-        text, std::move(merge_result_fn));
+    session->ClassifyTextSafety(text, std::move(merge_result_fn));
   }
+}
+
+mojo::Remote<on_device_model::mojom::TextSafetySession>&
+SafetyChecker::GetSession() {
+  if (session_ || !client_) {
+    return session_;
+  }
+  client_->StartSession(session_.BindNewPipeAndPassReceiver());
+  return session_;
 }
 
 }  // namespace optimization_guide

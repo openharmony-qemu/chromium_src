@@ -22,13 +22,18 @@
 /// be displayed by a later `loadLensResult:` call.
 - (void)reloadLensResult:(id<ChromeLensOverlayResult>)result;
 
-/// Loads `URL` in the overlay.
-- (void)reloadURL:(GURL)URL;
+/// Loads `URL` in the overlay and sets the `omniboxText`.
+- (void)loadURL:(const GURL&)URL omniboxText:(NSString*)omniboxText;
 
 /// Called when the navigation list has been updated. This function is triggered
 /// whenever the navigation history changes, potentially altering the
 /// availability of navigating to previous entry.
 - (void)onBackNavigationAvailabilityMaybeChanged:(BOOL)canGoBack;
+
+/// Called when a lens overlay SRP is loaded with `omniboxText`.
+/// `isMultimodal` ensures thumbnail is not removed.
+- (void)onSRPLoadWithOmniboxText:(NSString*)omniboxText
+                    isMultimodal:(BOOL)isMultimodal;
 
 @end
 

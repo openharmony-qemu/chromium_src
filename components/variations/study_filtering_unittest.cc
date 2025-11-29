@@ -2,10 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifdef UNSAFE_BUFFERS_BUILD
-// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
-#pragma allow_unsafe_buffers
-#endif
 
 #include "components/variations/study_filtering.h"
 
@@ -236,7 +232,7 @@ TEST(VariationsStudyFilteringTest, CheckStudyPlatform) {
        Study::PLATFORM_CHROMEOS, Study::PLATFORM_CHROMEOS_LACROS,
        Study::PLATFORM_ANDROID, Study::PLATFORM_IOS,
        Study::PLATFORM_ANDROID_WEBLAYER, Study::PLATFORM_FUCHSIA,
-       Study::PLATFORM_ANDROID_WEBVIEW, Study::PLATFORM_OHOS});
+       Study::PLATFORM_ANDROID_WEBVIEW});
   static_assert(platforms.size() == Study::Platform_ARRAYSIZE,
                 "|platforms| must include all platforms.");
   std::array<bool, platforms.size()> platform_added = {false};
@@ -758,7 +754,7 @@ TEST(VariationsStudyFilteringTest, CheckStudyBothGoogleGroupFiltersSet) {
   EXPECT_FALSE(internal::CheckStudyGoogleGroup(
       filter,
       ClientFilterableStateForGoogleGroups(base::flat_set<uint64_t>())));
-  EXPECT_FALSE(internal::CheckStudyGoogleGroup(
+  EXPECT_TRUE(internal::CheckStudyGoogleGroup(
       filter,
       ClientFilterableStateForGoogleGroups(base::flat_set<uint64_t>({1}))));
   EXPECT_FALSE(internal::CheckStudyGoogleGroup(

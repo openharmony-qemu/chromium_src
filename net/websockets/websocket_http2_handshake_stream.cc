@@ -17,6 +17,7 @@
 #include "base/strings/strcat.h"
 #include "base/strings/stringprintf.h"
 #include "base/time/time.h"
+#include "net/base/completion_once_callback.h"
 #include "net/base/ip_endpoint.h"
 #include "net/http/http_request_headers.h"
 #include "net/http/http_request_info.h"
@@ -79,7 +80,20 @@ int WebSocketHttp2HandshakeStream::InitializeStream(
     CompletionOnceCallback callback) {
   priority_ = priority;
   net_log_ = net_log;
-  return OK;
+
+  int ret = OK;
+  if (!can_send_early) {
+    ret = session_->ConfirmHandshake(
+        base::BindOnce(&WebSocketHttp2HandshakeStream::OnHandshakeConfirmed,
+                       weak_ptr_factory_.GetWeakPtr(), std::move(callback)));
+  }
+  return ret;
+}
+
+void WebSocketHttp2HandshakeStream::OnHandshakeConfirmed(
+    CompletionOnceCallback callback,
+    int rv) {
+  std::move(callback).Run(rv);
 }
 
 int WebSocketHttp2HandshakeStream::SendRequest(
@@ -242,6 +256,15 @@ const std::set<std::string>& WebSocketHttp2HandshakeStream::GetDnsAliases()
 
 std::string_view WebSocketHttp2HandshakeStream::GetAcceptChViaAlps() const {
   return {};
+}
+
+void WebSocketHttp2HandshakeStream::SetHTTP11Required() {
+  if (session_) {
+    session_->CloseSessionOnError(
+        ERR_HTTP_1_1_REQUIRED,
+        std::string(SpdySession::kHTTP11RequiredErrorMessage),
+        /*force_send_go_away=*/true);
+  }
 }
 
 std::unique_ptr<WebSocketStream> WebSocketHttp2HandshakeStream::Upgrade() {

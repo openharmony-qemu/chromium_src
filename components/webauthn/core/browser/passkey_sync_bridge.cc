@@ -17,7 +17,6 @@
 #include "base/containers/span.h"
 #include "base/functional/callback_helpers.h"
 #include "base/logging.h"
-#include "base/ranges/algorithm.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/trace_event/trace_event.h"
 #include "components/sync/base/data_type.h"
@@ -40,8 +39,7 @@ std::unique_ptr<syncer::EntityData> CreateEntityData(
     const sync_pb::WebauthnCredentialSpecifics& specifics) {
   auto entity_data = std::make_unique<syncer::EntityData>();
   // Name must be UTF-8 decodable.
-  entity_data->name =
-      base::HexEncode(base::as_bytes(base::make_span(specifics.sync_id())));
+  entity_data->name = base::HexEncode(base::as_byte_span(specifics.sync_id()));
   *entity_data->specifics.mutable_webauthn_credential() = specifics;
   return entity_data;
 }
@@ -114,7 +112,7 @@ PasskeySyncBridge::CreateMetadataChangeList() {
 std::optional<syncer::ModelError> PasskeySyncBridge::MergeFullSyncData(
     std::unique_ptr<syncer::MetadataChangeList> metadata_changes,
     syncer::EntityChangeList entity_changes) {
-  CHECK(base::ranges::all_of(entity_changes, [](const auto& change) {
+  CHECK(std::ranges::all_of(entity_changes, [](const auto& change) {
     return change->type() == syncer::EntityChange::ACTION_ADD;
   }));
 
@@ -213,12 +211,12 @@ bool PasskeySyncBridge::IsEntityDataValid(
 }
 
 std::string PasskeySyncBridge::GetClientTag(
-    const syncer::EntityData& entity_data) {
+    const syncer::EntityData& entity_data) const {
   return GetStorageKey(entity_data);
 }
 
 std::string PasskeySyncBridge::GetStorageKey(
-    const syncer::EntityData& entity_data) {
+    const syncer::EntityData& entity_data) const {
   DCHECK(entity_data.specifics.has_webauthn_credential());
   return entity_data.specifics.webauthn_credential().sync_id();
 }
@@ -251,16 +249,16 @@ bool PasskeySyncBridge::IsEmpty() const {
 
 base::flat_set<std::string> PasskeySyncBridge::GetAllSyncIds() const {
   std::vector<std::string> sync_ids;
-  base::ranges::transform(data_, std::back_inserter(sync_ids),
-                          [](const auto& pair) { return pair.first; });
+  std::ranges::transform(data_, std::back_inserter(sync_ids),
+                         [](const auto& pair) { return pair.first; });
   return base::flat_set<std::string>(base::sorted_unique, std::move(sync_ids));
 }
 
 std::vector<sync_pb::WebauthnCredentialSpecifics>
 PasskeySyncBridge::GetAllPasskeys() const {
   std::vector<sync_pb::WebauthnCredentialSpecifics> passkeys;
-  base::ranges::transform(data_, std::back_inserter(passkeys),
-                          [](const auto& pair) { return pair.second; });
+  std::ranges::transform(data_, std::back_inserter(passkeys),
+                         [](const auto& pair) { return pair.second; });
   return passkeys;
 }
 
@@ -303,7 +301,7 @@ bool PasskeySyncBridge::DeletePasskey(const std::string& credential_id,
                                       const base::Location& location) {
   // Find the credential with the given |credential_id|.
   const auto passkey_it =
-      base::ranges::find_if(data_, [&credential_id](const auto& passkey) {
+      std::ranges::find_if(data_, [&credential_id](const auto& passkey) {
         return passkey.second.credential_id() == credential_id;
       });
   if (passkey_it == data_.end()) {
@@ -353,6 +351,21 @@ bool PasskeySyncBridge::DeletePasskey(const std::string& credential_id,
                      weak_ptr_factory_.GetWeakPtr()));
   NotifyPasskeysChanged(std::move(changes));
   return true;
+}
+
+bool PasskeySyncBridge::SetPasskeyHidden(const std::string& credential_id,
+                                         bool hidden) {
+  return UpdateSinglePasskey(
+      credential_id,
+      base::BindOnce(
+          [](bool hidden,
+             sync_pb::WebauthnCredentialSpecifics* passkey) -> bool {
+            passkey->set_hidden(hidden);
+            passkey->set_hidden_time(
+                base::Time::Now().InMillisecondsSinceUnixEpoch());
+            return true;
+          },
+          hidden));
 }
 
 // The following implementation is more efficient than the simple one which
@@ -431,7 +444,8 @@ sync_pb::WebauthnCredentialSpecifics PasskeySyncBridge::CreatePasskey(
 
   auto [specifics, public_key_spki_der] =
       webauthn::passkey_model_utils::GeneratePasskeyAndEncryptSecrets(
-          rp_id, user_entity, trusted_vault_key, trusted_vault_key_version);
+          rp_id, user_entity, trusted_vault_key, trusted_vault_key_version,
+          /*extension_input_data=*/{}, /*extension_output_data=*/nullptr);
 
   AddShadowedCredentialIdsToNewPasskey(specifics);
 
@@ -572,7 +586,7 @@ bool PasskeySyncBridge::UpdateSinglePasskey(
         mutate_callback) {
   // Find the credential with the given |credential_id|.
   const auto passkey_it =
-      base::ranges::find_if(data_, [&credential_id](const auto& passkey) {
+      std::ranges::find_if(data_, [&credential_id](const auto& passkey) {
         return passkey.second.credential_id() == credential_id;
       });
   if (passkey_it == data_.end()) {

@@ -125,8 +125,6 @@ void AwWebContentsDelegate::RunFileChooser(
   }
 
   // Only allow Open, OpenMultiple and UploadFolder for pre-FSA code.
-  // TODO(b/364980165): Add check for
-  // base::android::BuildInfo::GetInstance()->target_sdk_version()
   if (!base::FeatureList::IsEnabled(features::kWebViewFileSystemAccess) &&
       params.mode != FileChooserParams::Mode::kOpen &&
       params.mode != FileChooserParams::Mode::kOpenMultiple &&
@@ -138,8 +136,8 @@ void AwWebContentsDelegate::RunFileChooser(
       << "Multiple concurrent FileChooser requests are not supported.";
   file_select_listener_ = std::move(listener);
   Java_AwWebContentsDelegate_runFileChooser(
-      env, java_delegate, render_frame_host->GetProcess()->GetID(),
-      render_frame_host->GetRoutingID(), params.mode,
+      env, java_delegate, render_frame_host->GetProcess()->GetDeprecatedID(),
+      render_frame_host->GetRoutingID(), params.mode, params.open_writable,
       ConvertUTF16ToJavaString(env,
                                base::JoinString(params.accept_types, u",")),
       params.title.empty() ? nullptr
@@ -201,6 +199,11 @@ WebContents* AwWebContentsDelegate::AddNewContents(
     *was_blocked = !create_popup;
   }
   return nullptr;
+}
+
+void AwWebContentsDelegate::SetContentsBounds(content::WebContents* source,
+                                              const gfx::Rect& bounds) {
+  // Do nothing.
 }
 
 void AwWebContentsDelegate::NavigationStateChanged(
@@ -352,13 +355,25 @@ bool AwWebContentsDelegate::IsBackForwardCacheSupported(
 }
 
 content::PreloadingEligibility AwWebContentsDelegate::IsPrerender2Supported(
-    content::WebContents& web_contents) {
+    content::WebContents& web_contents,
+    content::PreloadingTriggerType trigger_type) {
+  // Allow when prerendering is triggered by the WebView Prerender API.
+  if (trigger_type == content::PreloadingTriggerType::kEmbedder) {
+    return content::PreloadingEligibility::kEligible;
+  }
+
   AwSettings* aw_settings = AwSettings::FromWebContents(&web_contents);
   if (aw_settings->IsPrerender2Allowed()) {
     return content::PreloadingEligibility::kEligible;
   }
 
   return content::PreloadingEligibility::kPreloadingUnsupportedByWebContents;
+}
+
+int AwWebContentsDelegate::AllowedPrerenderingCount(
+    content::WebContents& web_contents) {
+  return AwBrowserContext::FromWebContents(&web_contents)
+      ->AllowedPrerenderingCount();
 }
 
 content::NavigationController::UserAgentOverrideOption
@@ -376,13 +391,24 @@ bool AwWebContentsDelegate::ShouldAllowPartialParamMismatchOfPrerender2(
 
   // `ui::PAGE_TRANSITION_FROM_API` bit distinguishes that the activation
   // navigation is triggered by `WebView.loadUrl()`.
-  bool ret =
-      navigation_handle.GetPageTransition() & ui::PAGE_TRANSITION_FROM_API;
-  if (ret) {
-    CHECK(!navigation_handle.GetInitiatorFrameToken().has_value());
-    CHECK(!navigation_handle.GetInitiatorOrigin().has_value());
+  return navigation_handle.GetPageTransition() & ui::PAGE_TRANSITION_FROM_API;
+}
+
+bool AwWebContentsDelegate::isModalContextMenu() const {
+  JNIEnv* env = AttachCurrentThread();
+
+  ScopedJavaLocalRef<jobject> java_delegate = GetJavaDelegate(env);
+  if (java_delegate.is_null()) {
+    return true;
   }
-  return ret;
+
+  // Feature is behind a flag which is disabled by default.
+  // TODO(crbug/408234669): remove this check once flag is no longer needed.
+  if (!base::FeatureList::IsEnabled(features::kWebViewHyperlinkContextMenu)) {
+    return false;
+  }
+
+  return !Java_AwWebContentsDelegate_isPopupSupported(env, java_delegate);
 }
 
 scoped_refptr<content::FileSelectListener>

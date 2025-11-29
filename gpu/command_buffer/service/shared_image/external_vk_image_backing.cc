@@ -14,7 +14,6 @@
 
 #include "base/bits.h"
 #include "base/memory/raw_ptr.h"
-#include "base/not_fatal_until.h"
 #include "build/build_config.h"
 #include "components/viz/common/resources/resource_sizes.h"
 #include "components/viz/common/resources/shared_image_format_utils.h"
@@ -208,7 +207,7 @@ std::unique_ptr<ExternalVkImageBacking> ExternalVkImageBacking::Create(
     VkFormat vk_format = ToVkFormat(format, plane);
 
     auto it = image_usage_cache.find(vk_format);
-    CHECK(it != image_usage_cache.end(), base::NotFatalUntil::M130);
+    CHECK(it != image_usage_cache.end());
     auto vk_tiling_usage = it->second;
 
     // Requested usage flags must be supported.
@@ -350,9 +349,7 @@ ExternalVkImageBacking::CreateWithPixmap(
   }
 
   // Create a handle from pixmap.
-  gfx::GpuMemoryBufferHandle handle;
-  handle.type = gfx::GpuMemoryBufferType::NATIVE_PIXMAP;
-  handle.native_pixmap_handle = pixmap->ExportHandle();
+  gfx::GpuMemoryBufferHandle handle(pixmap->ExportHandle());
 
   // Create backing from the handle.
   return CreateFromGMB(std::move(context_state), command_pool, mailbox,
@@ -403,7 +400,7 @@ ExternalVkImageBacking::ExternalVkImageBacking(
                   ->GetSurfaceFactoryOzone()
                   ->CreateNativePixmapFromHandle(
                       kNullSurfaceHandle, size, ToBufferFormat(format),
-                      std::move(handle.native_pixmap_handle));
+                      std::move(handle).native_pixmap_handle());
   }
 #endif  // BUILDFLAG(IS_OZONE)
 }
@@ -676,10 +673,7 @@ scoped_refptr<gfx::NativePixmap> ExternalVkImageBacking::GetNativePixmap() {
 
 gfx::GpuMemoryBufferHandle ExternalVkImageBacking::GetGpuMemoryBufferHandle() {
 #if BUILDFLAG(IS_OZONE)
-  gfx::GpuMemoryBufferHandle handle;
-  handle.type = gfx::GpuMemoryBufferType::NATIVE_PIXMAP;
-  handle.native_pixmap_handle = pixmap_->ExportHandle();
-  return handle;
+  return gfx::GpuMemoryBufferHandle(pixmap_->ExportHandle());
 #else
   NOTREACHED() << "Illegal access to GetGpuMemoryBufferHandle for non OZONE "
                   "platforms from this backing.";
@@ -1268,6 +1262,60 @@ bool ExternalVkImageBacking::UploadToVkImage(
   gr_context->submit();
 
   EndAccessInternal(/*readonly=*/false, std::move(end_access_semaphore));
+  // |external_semaphores| have been waited on and can be reused when submitted
+  // GPU work is done.
+  ReturnPendingSemaphoresWithFenceHelper(std::move(external_semaphores));
+  return success;
+}
+
+bool ExternalVkImageBacking::ReadbackToMemory(
+    const std::vector<SkPixmap>& pixmaps) {
+  DCHECK_EQ(pixmaps.size(), vk_textures_.size());
+
+  std::vector<ExternalSemaphore> external_semaphores;
+  if (!BeginAccess(/*readonly=*/true, &external_semaphores, /*is_gl=*/false)) {
+    DLOG(ERROR) << "BeginAccess() failed.";
+    return false;
+  }
+  auto* gr_context = context_state_->gr_context();
+  WaitSemaphoresOnGrContext(gr_context, &external_semaphores);
+
+  bool success = true;
+  for (size_t plane = 0; plane < vk_textures_.size(); ++plane) {
+    if (!vk_textures_[plane].Readback(gr_context, pixmaps[plane])) {
+      success = false;
+    }
+  }
+
+  if (!need_synchronization()) {
+    DCHECK(external_semaphores.empty());
+    EndAccess(/*readonly=*/true, ExternalSemaphore(), /*is_gl=*/false);
+    return success;
+  }
+
+  for (auto& vk_texture : vk_textures_) {
+    gr_context->setBackendTextureState(
+        vk_texture.backend_texture,
+        skgpu::MutableTextureStates::MakeVulkan(VK_IMAGE_LAYOUT_UNDEFINED,
+                                                VK_QUEUE_FAMILY_EXTERNAL));
+  }
+
+  auto end_access_semaphore = external_semaphore_pool()->GetOrCreateSemaphore();
+  VkSemaphore vk_end_access_semaphore = end_access_semaphore.GetVkSemaphore();
+  GrBackendSemaphore end_access_backend_semaphore =
+      GrBackendSemaphores::MakeVk(vk_end_access_semaphore);
+  GrFlushInfo flush_info = {
+      .fNumSemaphores = 1,
+      .fSignalSemaphores = &end_access_backend_semaphore,
+  };
+  gr_context->flush(flush_info);
+
+  // Submit so the |end_access_semaphore| is ready for waiting.
+  gr_context->submit();
+
+  EndAccess(/*readonly=*/true, std::move(end_access_semaphore),
+            /*is_gl=*/false);
+
   // |external_semaphores| have been waited on and can be reused when submitted
   // GPU work is done.
   ReturnPendingSemaphoresWithFenceHelper(std::move(external_semaphores));

@@ -4,18 +4,26 @@
 
 #include "components/fingerprinting_protection_filter/renderer/renderer_url_loader_throttle.h"
 
+#include <optional>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "base/check_op.h"
+#include "base/command_line.h"
 #include "base/functional/bind.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/task/bind_post_task.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/types/optional_ref.h"
+#include "components/fingerprinting_protection_filter/common/fingerprinting_protection_filter_features.h"
 #include "components/fingerprinting_protection_filter/renderer/renderer_agent.h"
 #include "components/subresource_filter/content/shared/renderer/filter_utils.h"
 #include "components/subresource_filter/core/common/document_subresource_filter.h"
 #include "components/subresource_filter/core/common/load_policy.h"
 #include "components/subresource_filter/core/mojom/subresource_filter.mojom.h"
 #include "components/url_pattern_index/proto/rules.pb.h"
+#include "components/variations/variations_switches.h"
 #include "content/public/common/url_constants.h"
 #include "content/public/renderer/render_frame.h"
 #include "net/base/net_errors.h"
@@ -45,7 +53,7 @@ RendererURLLoaderThrottle::RendererURLLoaderThrottle(
       frame_token_(local_frame_token.CopyAsOptional()),
       task_runner_(base::SequencedTaskRunner::GetCurrentDefault()),
       main_thread_task_runner_(main_thread_task_runner) {
-  if (frame_token_.has_value()) {
+  if (frame_token_.has_value() && main_thread_task_runner_) {
     // It's only possible to retrieve a `RenderFrame` given a `LocalFrameToken`
     // on the main render thread.
     auto get_renderer_agent_task =
@@ -87,7 +95,11 @@ RendererURLLoaderThrottle::~RendererURLLoaderThrottle() = default;
 bool RendererURLLoaderThrottle::WillIgnoreRequest(
     const GURL& url,
     network::mojom::RequestDestination request_destination) {
-  return !url.SchemeIsHTTPOrHTTPS() || net::IsLocalhost(url) ||
+  bool should_exclude_localhost =
+      !base::CommandLine::ForCurrentProcess()->HasSwitch(
+          variations::switches::kEnableBenchmarking) &&
+      net::IsLocalhost(url);
+  return !url.SchemeIsHTTPOrHTTPS() || should_exclude_localhost ||
          (request_destination !=
               network::mojom::RequestDestination::kWebBundle &&
           request_destination != network::mojom::RequestDestination::kScript);
@@ -116,10 +128,12 @@ void RendererURLLoaderThrottle::CheckCurrentResourceRequest() {
   }
 
   auto check_url_task = [](base::WeakPtr<RendererAgent> agent, GURL url,
+                           std::optional<std::string> devtools_request_id,
                            url_pattern_index::proto::ElementType element_type,
                            RendererAgent::FilterCallback filter_callback) {
     if (agent) {
-      agent->CheckURL(url, element_type, std::move(filter_callback));
+      agent->CheckURL(url, devtools_request_id, element_type,
+                      std::move(filter_callback));
     } else {
       std::move(filter_callback).Run(subresource_filter::LoadPolicy::ALLOW);
     }
@@ -127,7 +141,7 @@ void RendererURLLoaderThrottle::CheckCurrentResourceRequest() {
   main_thread_task_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(
-          check_url_task, renderer_agent_, current_url_,
+          check_url_task, renderer_agent_, current_url_, devtools_request_id_,
           subresource_filter::ToElementType(request_destination_),
           base::BindPostTask(
               task_runner_,
@@ -164,6 +178,7 @@ void RendererURLLoaderThrottle::WillStartRequest(
     network::ResourceRequest* request,
     bool* defer) {
   request_destination_ = request->destination;
+  devtools_request_id_ = request->devtools_request_id;
   ProcessRequestStep(request->url, defer);
 }
 
@@ -225,15 +240,14 @@ void RendererURLLoaderThrottle::OnLoadPolicyCalculated(
   } else {
     main_thread_task_runner_->PostTask(
         FROM_HERE, base::BindOnce(
-                       [](base::WeakPtr<RendererAgent> agent, const GURL& url) {
+                       [](base::WeakPtr<RendererAgent> agent) {
                          if (agent) {
-                           agent->OnSubresourceDisallowed(
-                               url.possibly_invalid_spec().c_str());
+                           agent->OnSubresourceDisallowed();
                          }
                        },
-                       renderer_agent_, GetCurrentURL()));
+                       renderer_agent_));
     // Cancel if the resource load should be blocked.
-    delegate_->CancelWithError(net::ERR_BLOCKED_BY_CLIENT,
+    delegate_->CancelWithError(net::ERR_BLOCKED_BY_FINGERPRINTING_PROTECTION,
                                "FingerprintingProtection");
   }
   deferred_ = false;

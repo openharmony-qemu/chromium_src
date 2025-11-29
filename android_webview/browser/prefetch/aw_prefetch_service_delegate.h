@@ -24,7 +24,6 @@ class AwPrefetchServiceDelegate : public content::PrefetchServiceDelegate {
       delete;
 
   /// content::PrefetchServiceDelegate
-  std::string GetMajorVersionNumber() override;
   std::string GetAcceptLanguageHeader() override;
   GURL GetDefaultPrefetchProxyHost() override;
   std::string GetAPIKey() override;
@@ -42,11 +41,19 @@ class AwPrefetchServiceDelegate : public content::PrefetchServiceDelegate {
   bool IsExtendedPreloadingEnabled() override;
   bool IsDomainInPrefetchAllowList(const GURL& referring_url) override;
   bool IsContaminationExempt(const GURL& referring_url) override;
+  bool IsContaminationExemptPerOrigin(
+      const url::Origin& referring_origin) override;
   void OnPrefetchLikely(content::WebContents* web_contents) override;
+  void SetAcceptLanguageHeader(std::string accept_language_header) override;
 
  private:
   // The browser context that |this| is associated with.
   raw_ref<AwBrowserContext> browser_context_;
+
+  // This value is mutable because WebView eventually derives this from
+  // the user's locale settings. However the user settings are not available
+  // during the browser context initialization.
+  std::string accept_language_header_;
 };
 
 }  // namespace android_webview

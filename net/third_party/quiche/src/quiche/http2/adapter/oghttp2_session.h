@@ -6,10 +6,10 @@
 #include <list>
 #include <memory>
 #include <optional>
+#include <variant>
 #include <vector>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
 #include "quiche/http2/adapter/chunked_buffer.h"
 #include "quiche/http2/adapter/data_source.h"
 #include "quiche/http2/adapter/event_forwarder.h"
@@ -89,6 +89,15 @@ class QUICHE_EXPORT OgHttp2Session : public Http2Session,
     // If true, crumbles `Cookie` header field values for potentially better
     // HPACK compression.
     bool crumble_cookies = false;
+    // If true, allows a GOAWAY to be sent even when acting as a client.
+    bool send_goaway_as_client = false;
+    // Specifies the behavior of the HPACK encoder when compressing headers.
+    enum CompressionOption {
+      ENABLE_COMPRESSION,   // Dynamic table enabled, Huffman enabled.
+      DISABLE_COMPRESSION,  // Dynamic table enabled, Huffman disabled.
+      DISABLE_HUFFMAN,      // Dynamic table disabled, Huffman disabled.
+    };
+    CompressionOption compression_option = ENABLE_COMPRESSION;
   };
 
   OgHttp2Session(Http2VisitorInterface& visitor, Options options);
@@ -106,16 +115,16 @@ class QUICHE_EXPORT OgHttp2Session : public Http2Session,
   int Send();
 
   int32_t SubmitRequest(absl::Span<const Header> headers,
-                        std::unique_ptr<DataFrameSource> data_source,
                         bool end_stream, void* user_data);
   int SubmitResponse(Http2StreamId stream_id, absl::Span<const Header> headers,
-                     std::unique_ptr<DataFrameSource> data_source,
                      bool end_stream);
   int SubmitTrailer(Http2StreamId stream_id, absl::Span<const Header> trailers);
   void SubmitMetadata(Http2StreamId stream_id,
                       std::unique_ptr<MetadataSource> source);
   void SubmitMetadata(Http2StreamId stream_id);
   void SubmitSettings(absl::Span<const Http2Setting> settings);
+  void SubmitGoAway(Http2StreamId last_accepted_stream_id,
+                    Http2ErrorCode error_code, absl::string_view opaque_data);
 
   bool IsServerSession() const {
     return options_.perspective == Perspective::kServer;
@@ -244,7 +253,6 @@ class QUICHE_EXPORT OgHttp2Session : public Http2Session,
           send_window(stream_send_window) {}
 
     WindowManager window_manager;
-    std::unique_ptr<DataFrameSource> outbound_body;
     std::unique_ptr<quiche::HttpHeaderBlock> trailers;
     void* user_data = nullptr;
     int32_t send_window;
@@ -262,7 +270,6 @@ class QUICHE_EXPORT OgHttp2Session : public Http2Session,
 
   struct QUICHE_EXPORT PendingStreamState {
     quiche::HttpHeaderBlock headers;
-    std::unique_ptr<DataFrameSource> data_source;
     void* user_data = nullptr;
     bool end_stream;
   };
@@ -357,7 +364,7 @@ class QUICHE_EXPORT OgHttp2Session : public Http2Session,
     // A user/visitor callback failed with a fatal error.
     kVisitorCallbackFailed,
   };
-  using ProcessBytesResult = absl::variant<int64_t, ProcessBytesError>;
+  using ProcessBytesResult = std::variant<int64_t, ProcessBytesError>;
 
   // Attempts to process `bytes` and returns the number of bytes proccessed on
   // success or the processing error on failure.
@@ -369,14 +376,6 @@ class QUICHE_EXPORT OgHttp2Session : public Http2Session,
   // Returns the next stream that has something to write. If there are no such
   // streams, returns zero.
   Http2StreamId GetNextReadyStream();
-
-  int32_t SubmitRequestInternal(absl::Span<const Header> headers,
-                                std::unique_ptr<DataFrameSource> data_source,
-                                bool end_stream, void* user_data);
-  int SubmitResponseInternal(Http2StreamId stream_id,
-                             absl::Span<const Header> headers,
-                             std::unique_ptr<DataFrameSource> data_source,
-                             bool end_stream);
 
   // Sends the buffered connection preface or serialized frame data, if any.
   SendResult MaybeSendBufferedData();
@@ -415,7 +414,6 @@ class QUICHE_EXPORT OgHttp2Session : public Http2Session,
   // Creates a stream for `stream_id`, stores the `data_source` and `user_data`
   // in the stream state, and sends the `headers`.
   void StartRequest(Http2StreamId stream_id, quiche::HttpHeaderBlock headers,
-                    std::unique_ptr<DataFrameSource> data_source,
                     void* user_data, bool end_stream);
 
   // Sends headers for pending streams as long as the stream limit allows.
@@ -496,7 +494,7 @@ class QUICHE_EXPORT OgHttp2Session : public Http2Session,
   Http2FrameLogger send_logger_;
 
   // Encodes outbound frames.
-  spdy::SpdyFramer framer_{spdy::SpdyFramer::ENABLE_COMPRESSION};
+  spdy::SpdyFramer framer_;
 
   // Decodes inbound frames.
   http2::Http2DecoderAdapter decoder_;

@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/390223051): Remove C-library calls to fix the errors.
+#pragma allow_unsafe_libc_calls
+#endif
+
 #include "media/cast/openscreen/remoting_proto_utils.h"
 
 #include <memory>
@@ -84,7 +89,7 @@ TEST_F(ProtoUtilsTest, PassValidDecoderBuffer) {
   ASSERT_TRUE(output_buffer->is_key_frame());
   ASSERT_EQ(output_buffer->timestamp(), pts);
   EXPECT_EQ(base::span(*output_buffer), base::span(buffer));
-  ASSERT_TRUE(output_buffer->has_side_data());
+  ASSERT_TRUE(output_buffer->side_data());
   EXPECT_EQ(output_buffer->side_data()->alpha_data.as_span(),
             base::span(side_buffer));
 }
@@ -106,33 +111,6 @@ TEST_F(ProtoUtilsTest, AudioDecoderConfigConversionTest) {
       ConvertProtoToAudioDecoderConfig(audio_message, &audio_output_config));
 
   ASSERT_TRUE(audio_config.Matches(audio_output_config));
-}
-
-TEST_F(ProtoUtilsTest, AudioDecoderConfigHandlesAacExtraDataCorrectly) {
-  constexpr char aac_extra_data[4] = {'A', 'C', 'E', 'G'};
-  media::AudioDecoderConfig audio_config(
-      media::AudioCodec::kAAC, media::kSampleFormatF32,
-      media::CHANNEL_LAYOUT_MONO, 48000, std::vector<uint8_t>{},
-      media::EncryptionScheme::kUnencrypted);
-  audio_config.set_aac_extra_data(std::vector<uint8_t>(
-      std::begin(aac_extra_data), std::end(aac_extra_data)));
-  ASSERT_TRUE(audio_config.IsValidConfig());
-
-  openscreen::cast::AudioDecoderConfig audio_message;
-  ConvertAudioDecoderConfigToProto(audio_config, &audio_message);
-
-  // We should have filled the "extra_data" protobuf field with
-  // "aac_extra_data."
-  const std::vector<uint8_t> proto_extra_data(
-      audio_message.extra_data().begin(), audio_message.extra_data().end());
-  EXPECT_THAT(proto_extra_data, testing::ElementsAreArray(aac_extra_data));
-
-  media::AudioDecoderConfig audio_output_config;
-  ASSERT_TRUE(
-      ConvertProtoToAudioDecoderConfig(audio_message, &audio_output_config));
-  ASSERT_TRUE(audio_config.Matches(audio_output_config))
-      << "expected=" << audio_config.AsHumanReadableString()
-      << ", actual=" << audio_output_config.AsHumanReadableString();
 }
 
 TEST_F(ProtoUtilsTest, PipelineStatisticsConversion) {

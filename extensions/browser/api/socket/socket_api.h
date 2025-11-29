@@ -138,8 +138,8 @@ class SocketApiFunction : public ExtensionFunction {
   // ExtensionFunction:
   ResponseAction Run() final;
 
-  // Convenience wrapper for ErrorWithArguments(), where the arguments are just
-  // one integer value.
+  // Convenience wrapper for ErrorWithArgumentsDoNotUse(), where the arguments
+  // are just one integer value.
   ResponseValue ErrorWithCode(int error_code, const std::string& error);
 
   // Either extension_id() or url origin for CrOS Terminal.
@@ -345,7 +345,7 @@ class SocketReadFunction : public SocketApiFunction {
 
   // SocketApiFunction:
   ResponseAction Work() override;
-  void OnCompleted(int result,
+  void OnCompleted(int bytes_read,
                    scoped_refptr<net::IOBuffer> io_buffer,
                    bool socket_destroying);
 };

@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and spanify to fix the errors.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "media/gpu/v4l2/v4l2_device.h"
 
 #include <errno.h>
@@ -25,6 +30,7 @@
 #include "base/not_fatal_until.h"
 #include "base/posix/eintr_wrapper.h"
 #include "base/strings/string_number_conversions.h"
+#include "base/strings/stringprintf.h"
 #include "build/build_config.h"
 #include "media/base/color_plane_layout.h"
 #include "media/base/media_switches.h"
@@ -69,11 +75,11 @@ class V4L2QueueFactory {
   static scoped_refptr<V4L2Queue> CreateQueue(scoped_refptr<V4L2Device> dev,
                                               enum v4l2_buf_type type,
                                               base::OnceClosure destroy_cb) {
-    return new V4L2Queue(base::BindRepeating(&V4L2Device::Ioctl, dev),
-                         base::BindRepeating(&V4L2Device::SchedulePoll, dev),
-                         base::BindRepeating(&V4L2Device::Mmap, dev),
-                         dev->get_secure_allocate_cb(), type,
-                         std::move(destroy_cb));
+    return base::MakeRefCounted<V4L2Queue>(
+        V4L2Queue::PassKey::Get(), base::BindRepeating(&V4L2Device::Ioctl, dev),
+        base::BindRepeating(&V4L2Device::SchedulePoll, dev),
+        base::BindRepeating(&V4L2Device::Mmap, dev),
+        dev->get_secure_allocate_cb(), type, std::move(destroy_cb));
   }
 };
 
@@ -115,7 +121,7 @@ void V4L2Device::OnQueueDestroyed(v4l2_buf_type buf_type) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(client_sequence_checker_);
 
   auto it = queues_.find(buf_type);
-  CHECK(it != queues_.end(), base::NotFatalUntil::M130);
+  CHECK(it != queues_.end());
   queues_.erase(it);
 }
 
@@ -544,13 +550,6 @@ V4L2Device::EnumerateSupportedDecodeProfiles(
 
   for (uint32_t pixelformat : v4l2_codecs_as_pix_fmts) {
     if (!base::Contains(pixelformats, pixelformat)) {
-      continue;
-    }
-
-    // Skip AV1 decoder profiles if kChromeOSHWAV1Decoder is disabled.
-    if ((pixelformat == V4L2_PIX_FMT_AV1 ||
-         pixelformat == V4L2_PIX_FMT_AV1_FRAME) &&
-        !base::FeatureList::IsEnabled(kChromeOSHWAV1Decoder)) {
       continue;
     }
 

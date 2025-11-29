@@ -10,7 +10,6 @@
 #include "base/functional/callback.h"
 #include "base/logging.h"
 #include "base/memory/raw_ptr.h"
-#include "base/not_fatal_until.h"
 #include "base/supports_user_data.h"
 #include "components/domain_reliability/util.h"
 #include "net/base/elements_upload_data_stream.h"
@@ -179,7 +178,7 @@ class DomainReliabilityUploaderImpl : public DomainReliabilityUploader,
     DCHECK(!shutdown_);
 
     auto request_it = uploads_.find(request);
-    CHECK(request_it != uploads_.end(), base::NotFatalUntil::M130);
+    CHECK(request_it != uploads_.end());
 
     int http_response_code = -1;
     base::TimeDelta retry_after;
@@ -207,7 +206,7 @@ class DomainReliabilityUploaderImpl : public DomainReliabilityUploader,
   // Requests are cancelled in OnResponseStarted() once response headers are
   // read, without reading the body, so this is not needed.
   void OnReadCompleted(net::URLRequest* request, int bytes_read) override {
-    NOTREACHED_IN_MIGRATION();
+    NOTREACHED();
   }
 
  private:

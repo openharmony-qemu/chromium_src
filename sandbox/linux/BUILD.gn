@@ -12,11 +12,11 @@ if (is_android) {
 }
 
 declare_args() {
-  compile_suid_client = is_linux || is_chromeos || is_ohos
+  compile_suid_client = is_linux || is_chromeos
 
-  compile_credentials = is_linux || is_chromeos || is_ohos
+  compile_credentials = is_linux || is_chromeos
 
-  compile_syscall_broker = is_linux || is_chromeos || is_ohos
+  compile_syscall_broker = is_linux || is_chromeos
 
   # On Android, use plain GTest.
   use_base_test_suite = is_linux || is_chromeos
@@ -37,9 +37,6 @@ group("sandbox") {
   }
   if (is_android) {
     public_deps += [ ":seccomp_starter_android" ]
-  }
-  if (is_ohos) {
-    public_deps += [ ":seccomp_starter_ohos" ]
   }
 }
 
@@ -102,7 +99,6 @@ source_set("sandbox_linux_unittests_sources") {
     ":sandbox_services_headers",
     "//base",
     "//base/test:test_support",
-    "//build:chromeos_buildflags",
     "//testing/gtest",
   ]
 
@@ -254,7 +250,6 @@ component("seccomp_bpf") {
   deps = [
     ":sandbox_services",
     "//base",
-    "//build:chromeos_buildflags",
     "//sandbox:sandbox_buildflags",
   ]
 
@@ -263,28 +258,6 @@ component("seccomp_bpf") {
       "seccomp-bpf-helpers/baseline_policy_android.cc",
       "seccomp-bpf-helpers/baseline_policy_android.h",
     ]
-  }
-
-  if (is_ohos) {
-    sources += [
-      "seccomp-bpf-helpers/baseline_policy_ohos.cc",
-      "seccomp-bpf-helpers/baseline_policy_ohos.h",
-    ]
-  }
-}
-
-if (is_ohos) {
-  component("seccomp_starter_ohos") {
-    sources = [
-      "seccomp-bpf-helpers/seccomp_starter_ohos.cc",
-      "seccomp-bpf-helpers/seccomp_starter_ohos.h",
-    ]
-
-    deps = [ "//base" ]
-
-    if (use_seccomp_bpf) {
-      deps += [ ":seccomp_bpf" ]
-    }
   }
 }
 
@@ -321,15 +294,6 @@ if (is_linux || is_chromeos) {
       "suid/process_util.h",
       "suid/process_util_linux.c",
       "suid/sandbox.c",
-    ]
-
-    cflags = [
-      # For ULLONG_MAX
-      "-std=gnu99",
-
-      # These files have a suspicious comparison.
-      # TODO fix this and re-enable this warning.
-      "-Wno-sign-compare",
     ]
   }
 }
@@ -413,9 +377,9 @@ source_set("sandbox_services_headers") {
     "system_headers/arm_linux_syscalls.h",
     "system_headers/arm_linux_ucontext.h",
     "system_headers/i386_linux_ucontext.h",
-    "system_headers/landlock.h",
     "system_headers/linux_filter.h",
     "system_headers/linux_futex.h",
+    "system_headers/linux_landlock.h",
     "system_headers/linux_prctl.h",
     "system_headers/linux_ptrace.h",
     "system_headers/linux_seccomp.h",

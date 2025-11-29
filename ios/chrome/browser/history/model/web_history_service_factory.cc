@@ -4,9 +4,7 @@
 
 #include "ios/chrome/browser/history/model/web_history_service_factory.h"
 
-#include "base/no_destructor.h"
 #include "components/history/core/browser/web_history_service.h"
-#include "components/keyed_service/ios/browser_state_dependency_manager.h"
 #include "components/prefs/pref_service.h"
 #include "components/sync/service/sync_service.h"
 #include "ios/chrome/browser/shared/model/profile/profile_ios.h"
@@ -32,14 +30,13 @@ bool IsHistorySyncEnabled(ProfileIOS* profile) {
 // static
 history::WebHistoryService* WebHistoryServiceFactory::GetForProfile(
     ProfileIOS* profile) {
-  // Ensure that the service is not instantiated or used if the user is not
-  // signed into sync, or if web history is not enabled.
+  // Ensure that the service is not instantiated if history sync is off.
   if (!IsHistorySyncEnabled(profile)) {
     return nullptr;
   }
 
-  return static_cast<history::WebHistoryService*>(
-      GetInstance()->GetServiceForBrowserState(profile, true));
+  return GetInstance()->GetServiceForProfileAs<history::WebHistoryService>(
+      profile, /*create=*/true);
 }
 
 // static
@@ -49,15 +46,12 @@ WebHistoryServiceFactory* WebHistoryServiceFactory::GetInstance() {
 }
 
 WebHistoryServiceFactory::WebHistoryServiceFactory()
-    : BrowserStateKeyedServiceFactory(
-          "WebHistoryService",
-          BrowserStateDependencyManager::GetInstance()) {
+    : ProfileKeyedServiceFactoryIOS("WebHistoryService") {
   DependsOn(SyncServiceFactory::GetInstance());
   DependsOn(IdentityManagerFactory::GetInstance());
 }
 
-WebHistoryServiceFactory::~WebHistoryServiceFactory() {
-}
+WebHistoryServiceFactory::~WebHistoryServiceFactory() = default;
 
 std::unique_ptr<KeyedService> WebHistoryServiceFactory::BuildServiceInstanceFor(
     web::BrowserState* context) const {

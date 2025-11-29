@@ -8,20 +8,19 @@
 #include <sync/sync.h>
 
 #include <cstdint>
+#include <variant>
 
 #include "base/containers/adapters.h"
 #include "base/containers/fixed_flat_set.h"
 #include "base/time/time.h"
 #include "base/trace_event/trace_event.h"
 #include "base/trace_event/typed_macros.h"
-#include "build/chromeos_buildflags.h"
 #include "ui/gfx/color_space.h"
 #include "ui/gfx/geometry/rect_conversions.h"
 #include "ui/gfx/geometry/rrect_f.h"
 #include "ui/gfx/geometry/size_conversions.h"
 #include "ui/gfx/overlay_priority_hint.h"
 #include "ui/gfx/swap_result.h"
-#include "ui/ozone/platform/wayland/host/surface_augmenter.h"
 #include "ui/ozone/platform/wayland/host/wayland_buffer_backing.h"
 #include "ui/ozone/platform/wayland/host/wayland_buffer_factory.h"
 #include "ui/ozone/platform/wayland/host/wayland_buffer_handle.h"
@@ -30,7 +29,6 @@
 #include "ui/ozone/platform/wayland/host/wayland_subsurface.h"
 #include "ui/ozone/platform/wayland/host/wayland_surface.h"
 #include "ui/ozone/platform/wayland/host/wayland_window.h"
-#include "ui/ozone/platform/wayland/host/wayland_zaura_shell.h"
 
 namespace ui {
 
@@ -38,6 +36,10 @@ namespace {
 
 constexpr uint32_t kMaxNumberOfFrames = 20u;
 constexpr uint32_t kMaxFramesInFlight = 3u;
+// Using a smaller value may cause too many unwanted timeouts, so use a
+// value that optimally identifies a freeze due to window occlusion so
+// that it warrants ignoring frame callbacks during tab capture.
+constexpr int kFrameCallbackTimeoutMs = 50;
 
 constexpr base::TimeDelta kPresentationFlushTimerDuration =
     base::Milliseconds(160);
@@ -47,8 +49,6 @@ constexpr base::TimeDelta kPresentationFlushTimerStopThreshold =
 constexpr char kBoundsRectNanOrInf[] =
     "Overlay bounds_rect is invalid (NaN or infinity).";
 
-bool potential_compositor_buffer_lock = false;
-
 bool ValidateRect(const gfx::RectF& rect) {
   return !std::isnan(rect.x()) && !std::isnan(rect.y()) &&
          !std::isnan(rect.width()) && !std::isnan(rect.height()) &&
@@ -57,18 +57,6 @@ bool ValidateRect(const gfx::RectF& rect) {
 }
 
 uint32_t GetPresentationKindFlags(uint32_t flags) {
-#if BUILDFLAG(IS_CHROMEOS_LACROS)
-  // `gfx::PresentationFeedback::kFailure` is not a flag defined by wayland
-  // protocol (in presentation-time.xml). So unlike other flags, it does not
-  // have a corresponding WP_PRESENTATION_FEEDBACK_KIND*. However in Ash-Lacros
-  // interraction, this flag is still sent and used. In Ash-Lacros world,
-  // `presented` with `gfx::PresentationFeedback::kFailure` is used instead of
-  // `discarded` so that timestamp can be included in the message.
-  if (flags & gfx::PresentationFeedback::kFailure) {
-    return gfx::PresentationFeedback::kFailure;
-  }
-#endif
-
   // Wayland spec has different meaning of VSync. In Chromium, VSync means to
   // update the begin frame vsync timing based on presentation feedback.
   uint32_t presentation_flags = gfx::PresentationFeedback::kVSync;
@@ -168,9 +156,11 @@ void WaylandFrameManager::MaybeProcessPendingFrame() {
   if (!frame)
     return;
 
-  // Frame callback hasn't been acked, need to wait.
+  // Frame callback hasn't been acked, need to wait, unless we are explicitly
+  // skipping frame callbacks due to a frame callback freeze during tab capture.
   if (!submitted_frames_.empty() &&
-      submitted_frames_.back()->wl_frame_callback) {
+      (!should_skip_frame_callbacks_ &&
+       submitted_frames_.back()->wl_frame_callback)) {
     TRACE_EVENT_INSTANT("wayland", "WaitForFrameCallback", "cb_owner_frame_id",
                         submitted_frames_.back()->frame_id);
     return;
@@ -239,10 +229,12 @@ void WaylandFrameManager::MaybeProcessPendingFrame() {
   }
 
   // wl_frame_callback drives the continuous playback of frames, if the frame we
-  // just played-back did not set up a wl_frame_callback, we should playback
-  // another frame.
+  // just played-back did not set up a wl_frame_callback or we are not relying
+  // on frame callbacks to drive frame playback during tab capture, we should
+  // playback another frame.
   if (!submitted_frames_.empty() &&
-      !submitted_frames_.back()->wl_frame_callback) {
+      (should_skip_frame_callbacks_ ||
+       !submitted_frames_.back()->wl_frame_callback)) {
     MaybeProcessPendingFrame();
   }
 }
@@ -300,11 +292,13 @@ void WaylandFrameManager::PlayBackFrame(std::unique_ptr<WaylandFrame> frame) {
       // freeze.
       if (!submitted_frames_.empty()) {
         submitted_frames_.back()->wl_frame_callback.reset();
+        frame_callback_timer_.Stop();
         submitted_frames_.back()->feedback =
             gfx::PresentationFeedback::Failure();
         submitted_frames_.back()->submitted_buffers.clear();
       }
 
+      frame->swap_result_recreate_buffers = true;
       DiscardFrame(std::move(frame));
       return;
     }
@@ -343,12 +337,9 @@ void WaylandFrameManager::PlayBackFrame(std::unique_ptr<WaylandFrame> frame) {
         }
       }
     } else {
-      // TODO(crbug.com/40273618): Remove clip_rect when
-      // augmented_surface_set_clip_rect become supported widely enough.
       bool needs_commit = subsurface->ConfigureAndShowSurface(
-          config.bounds_rect, root_config.bounds_rect, config.clip_rect,
-          config.transform, root_config.surface_scale_factor, nullptr,
-          reference_above);
+          config.bounds_rect, root_config.bounds_rect,
+          root_config.surface_scale_factor, nullptr, reference_above);
       auto result = ApplySurfaceConfigure(frame.get(), surface, config, true);
       // A fatal error happened. Must stop the playback and terminate the gpu
       // process as it might have been compromised.
@@ -377,15 +368,6 @@ void WaylandFrameManager::PlayBackFrame(std::unique_ptr<WaylandFrame> frame) {
 
   // Empty frames do not expect feedbacks so don't push to |submitted_frames_|.
   if (!empty_frame) {
-    if (potential_compositor_buffer_lock &&
-        ++frames_in_flight_ >= kMaxFramesInFlight) {
-      if (freeze_timeout_timer_.IsRunning()) {
-        freeze_timeout_timer_.Reset();
-      } else {
-        freeze_timeout_timer_.Start(FROM_HERE, base::Milliseconds(500), this,
-                                    &WaylandFrameManager::FreezeTimeout);
-      }
-    }
     submitted_frames_.push_back(std::move(frame));
   }
 
@@ -397,7 +379,6 @@ void WaylandFrameManager::PlayBackFrame(std::unique_ptr<WaylandFrame> frame) {
 void WaylandFrameManager::DiscardFrame(std::unique_ptr<WaylandFrame> frame) {
   DVLOG(2) << "discarding frame id=" << frame->frame_id;
   frame->feedback = gfx::PresentationFeedback::Failure();
-  frame->swap_result_recreate_buffers = true;
   submitted_frames_.push_back(std::move(frame));
   VerifyNumberOfSubmittedFrames();
   MaybeProcessSubmittedFrames();
@@ -432,8 +413,8 @@ std::optional<bool> WaylandFrameManager::ApplySurfaceConfigure(
       config.surface_scale_factor / window_->latched_state().ui_scale;
 
   surface->set_buffer_transform(
-      absl::holds_alternative<gfx::OverlayTransform>(config.transform)
-          ? absl::get<gfx::OverlayTransform>(config.transform)
+      std::holds_alternative<gfx::OverlayTransform>(config.transform)
+          ? std::get<gfx::OverlayTransform>(config.transform)
           : gfx::OverlayTransform::OVERLAY_TRANSFORM_NONE);
   surface->set_surface_buffer_scale(surface_buffer_scale);
   surface->set_buffer_crop(config.crop_rect);
@@ -441,13 +422,11 @@ std::optional<bool> WaylandFrameManager::ApplySurfaceConfigure(
   surface->set_opacity(config.opacity);
   surface->set_blending(config.enable_blend);
   surface->set_overlay_priority(config.priority_hint);
-  surface->set_background_color(config.background_color);
   surface->set_contains_video(
       config.priority_hint == gfx::OverlayPriorityHint::kHardwareProtection ||
       config.priority_hint == gfx::OverlayPriorityHint::kVideo);
   surface->set_color_space(
       config.color_space.value_or(gfx::ColorSpace::CreateSRGB()));
-  surface->set_frame_trace_id(frame->trace_id);
   if (set_opaque_region) {
     auto region_px =
         config.enable_blend
@@ -466,14 +445,13 @@ std::optional<bool> WaylandFrameManager::ApplySurfaceConfigure(
   // If we don't attach a released buffer, graphics freeze will occur.
   DCHECK(will_attach || !buffer_handle->released(surface));
 
-  // `damage_region`, `clip_rect` and `rounded_clip_bounds` are specified in
-  // the root surface coordinates space, the same as `bounds_rect`. To get
-  // these rect values in local surface space we need to offset the origin by
-  // the root surface's position.
-  // Note: The damage and clip rect may be enlarged if bounds_rect is sub-pixel
-  // positioned because `damage_region` and `clip_rect` is a Rect, and
-  // `bounds_rect` is a RectF. `rounded_clip_bounds` is RRectF so no need for
-  // conversion.
+  // `damage_region` is specified in the root surface coordinates space, the
+  // same as `bounds_rect`. To get these rect values in local surface space we
+  // need to offset the origin by the root surface's position.
+  //
+  // Note: The damage may be enlarged if bounds_rect is sub-pixel positioned
+  // because `damage_region` is a Rect, and `bounds_rect` is a RectF.
+  //
   // Note: There is no rotation nor scale of the coordinates compared to the
   // root window coordinates, and also, we assume that the surface is a direct
   // children of the root surface, so we can adjust the position by
@@ -482,28 +460,6 @@ std::optional<bool> WaylandFrameManager::ApplySurfaceConfigure(
   surface_damage -= config.bounds_rect.OffsetFromOrigin();
   surface->UpdateBufferDamageRegion(
       gfx::ToEnclosingRectIgnoringError(surface_damage));
-  if (config.rounded_clip_bounds) {
-    // The deprecated implementation uses root surface coordinates, so do not
-    // offset if the local coordinates rounded corners is not supported.
-    auto rounded_corners_offset =
-        (connection_->surface_augmenter() &&
-         connection_->surface_augmenter()
-             ->NeedsRoundedClipBoundsInLocalSurfaceCoordinates())
-            ? config.bounds_rect.OffsetFromOrigin()
-            : gfx::Vector2d();
-    surface->set_rounded_clip_bounds(*config.rounded_clip_bounds -
-                                     rounded_corners_offset);
-  } else {
-    surface->set_rounded_clip_bounds(gfx::RRectF());
-  }
-  if (config.clip_rect) {
-    gfx::RectF clip_rect = gfx::RectF(*config.clip_rect);
-    clip_rect -= config.bounds_rect.OffsetFromOrigin();
-    surface->set_clip_rect(clip_rect);
-  } else {
-    // Reset clip rect value when `config.clip_rect` is not set.
-    surface->set_clip_rect(std::nullopt);
-  }
 
   if (!config.access_fence_handle.is_null())
     surface->set_acquire_fence(std::move(config.access_fence_handle));
@@ -522,12 +478,19 @@ std::optional<bool> WaylandFrameManager::ApplySurfaceConfigure(
     // new wl_buffer, which leads to graphics freeze. So only setup
     // frame_callback when we're attaching a different buffer and frame
     // callbacks are not being skipped due to video capture in the background.
-    if (!frame->wl_frame_callback && !should_skip_frame_callbacks_) {
+    if (!frame->wl_frame_callback) {
       static constexpr wl_callback_listener kFrameCallbackListener = {
           .done = &OnFrameDone};
       TRACE_EVENT_INSTANT("wayland", "CreateFrameCallback", "cb_owner_frame_id",
                           frame->frame_id);
       frame->wl_frame_callback.reset(wl_surface_frame(surface->surface()));
+      if (frame_callback_timer_.IsRunning()) {
+        frame_callback_timer_.Reset();
+      } else {
+        frame_callback_timer_.Start(
+            FROM_HERE, base::Milliseconds(kFrameCallbackTimeoutMs), this,
+            &WaylandFrameManager::FrameCallbackTimeout);
+      }
       wl_callback_add_listener(frame->wl_frame_callback.get(),
                                &kFrameCallbackListener, this);
       needs_commit = true;
@@ -581,6 +544,7 @@ std::optional<bool> WaylandFrameManager::ApplySurfaceConfigure(
     // Applying pending state failed. So we need to reset this frame so that
     // it can be discarded by the caller.
     frame->wl_frame_callback.reset();
+    frame_callback_timer_.Stop();
     frame->pending_feedback.reset();
     frame->submitted_buffers.clear();
     return std::nullopt;
@@ -599,10 +563,23 @@ void WaylandFrameManager::OnFrameDone(void* data,
 }
 
 void WaylandFrameManager::HandleFrameCallback(wl_callback* callback) {
+  if (frame_callback_freeze_detected_ &&
+      submitted_frames_.back()->wl_frame_callback.get() != callback) {
+    // If there is a frame callback freeze, frames are still submitted without
+    // waiting for callbacks to drive playback. So the callbacks for previous
+    // frames should just be ignored.
+    return;
+  }
   DCHECK(submitted_frames_.back()->wl_frame_callback.get() == callback);
-  submitted_frames_.back()->wl_frame_callback.reset();
   TRACE_EVENT("wayland", "HandleFrameCallback", "cb_owner_frame_id",
               submitted_frames_.back()->frame_id);
+  submitted_frames_.back()->wl_frame_callback.reset();
+  DVLOG_IF(1, frame_callback_freeze_detected_)
+      << "surface=" << window_->root_surface()->get_surface_id()
+      << " recovered from frame callback freeze";
+  frame_callback_timer_.Stop();
+  frame_callback_freeze_detected_ = false;
+  EvaluateShouldSkipFrameCallbacks();
   MaybeProcessPendingFrame();
 }
 
@@ -936,12 +913,6 @@ void WaylandFrameManager::ProcessOldSubmittedFrame(WaylandFrame* frame) {
          !connection_->presentation());
   frame->submission_acked = true;
 
-  if (potential_compositor_buffer_lock &&
-      frame != submitted_frames_.front().get()) {
-    --frames_in_flight_;
-    freeze_timeout_timer_.Stop();
-  }
-
   // If presentation feedback is not supported, use a fake feedback. This
   // literally means there are no presentation feedback callbacks created.
   if (!connection_->presentation()) {
@@ -988,6 +959,13 @@ void WaylandFrameManager::ClearProcessedSubmittedFrames() {
   }
 }
 
+void WaylandFrameManager::FrameCallbackTimeout() {
+  DVLOG(1) << "surface=" << window_->root_surface()->get_surface_id()
+           << " frame callback timed out";
+  frame_callback_freeze_detected_ = true;
+  EvaluateShouldSkipFrameCallbacks();
+}
+
 void WaylandFrameManager::FreezeTimeout() {
   LOG(WARNING) << "Freeze detected, immediately release a frame";
   for (auto& frame : submitted_frames_) {
@@ -1006,6 +984,7 @@ void WaylandFrameManager::Hide() {
   if (!submitted_frames_.empty() &&
       submitted_frames_.back()->wl_frame_callback) {
     submitted_frames_.back()->wl_frame_callback.reset();
+    frame_callback_timer_.Stop();
     // Mutter sometimes does not call buffer.release if wl_surface role is
     // destroyed, causing graphics freeze. Manually release them and trigger
     // OnSubmission callbacks.
@@ -1038,7 +1017,9 @@ void WaylandFrameManager::ReleaseVideoCapture() {
 }
 
 void WaylandFrameManager::OnVideoCaptureUpdate() {
-  VLOG(1) << __func__ << " new capture count=" << video_capture_count_;
+  DVLOG(1) << __func__
+           << " surface=" << window_->root_surface()->get_surface_id()
+           << " new capture count=" << video_capture_count_;
   EvaluateShouldAckSwapWithoutCommit();
   if (!should_ack_swap_without_commit_) {
     // If we're not already ACK-ing swaps immediately, see if we should fallback
@@ -1047,13 +1028,10 @@ void WaylandFrameManager::OnVideoCaptureUpdate() {
   }
 }
 
-void WaylandFrameManager::OnWindowActivationChanged() {
-  VLOG(1) << __func__ << " is_active=" << window_->IsActive();
-  EvaluateShouldSkipFrameCallbacks();
-}
-
 void WaylandFrameManager::OnWindowSuspensionChanged() {
-  VLOG(1) << __func__ << " is_suspended=" << window_->IsSuspended();
+  DVLOG(1) << __func__
+           << " surface=" << window_->root_surface()->get_surface_id()
+           << " is_suspended=" << window_->IsSuspended();
   EvaluateShouldAckSwapWithoutCommit();
 }
 
@@ -1062,15 +1040,20 @@ void WaylandFrameManager::EvaluateShouldAckSwapWithoutCommit() {
   should_ack_swap_without_commit_ =
       video_capture_count_ > 0 && window_->IsSuspended();
   if (!prev_should_ack_swap_without_commit && should_ack_swap_without_commit_) {
-    // Clear existing frame callback.
+    // Clear all submitted frames to be safe from blocked callbacks or buffers
+    // for any of them.
+    // For instance, even when kwin sends the suspended state it still blocks a
+    // buffer from a submitted frame which is not guaranteed to be the last one.
     if (!submitted_frames_.empty()) {
-      auto& last_frame = submitted_frames_.back();
-      if (last_frame->wl_frame_callback) {
-        last_frame->wl_frame_callback.reset();
-      }
-      last_frame->submitted_buffers.clear();
-      if (!last_frame->feedback.has_value() || last_frame->feedback->failed()) {
-        SetFakeFeedback(last_frame.get());
+      for (auto& frame : submitted_frames_) {
+        if (frame->wl_frame_callback) {
+          frame->wl_frame_callback.reset();
+          frame_callback_timer_.Stop();
+        }
+        frame->submitted_buffers.clear();
+        if (!frame->feedback.has_value() || frame->feedback->failed()) {
+          SetFakeFeedback(frame.get());
+        }
       }
     }
 
@@ -1085,44 +1068,32 @@ void WaylandFrameManager::EvaluateShouldAckSwapWithoutCommit() {
 
 void WaylandFrameManager::EvaluateShouldSkipFrameCallbacks() {
   bool prev_skip_frame_callbacks = should_skip_frame_callbacks_;
-  // When video capture is active compositor can stop sending frame callbacks
-  // [1]. Ideally we should check for suspended state here in addition to the
-  // video capture state. But mutter sends suspended state 3 seconds later when
-  // window is obscured [2] [3] and KDE does not send suspended state in this
-  // case [4]. So as a compromise fallback to not using frame callbacks
-  // when the window is not active and video capture is active.
-  //
-  // TODO(crbug.com/364197252): Switch to using suspended state instead when
-  // that is reliable.
+  // When video capture is active, the compositor can stop sending frame
+  // callbacks [1]. Ideally an occlusion state is needed here in addition to the
+  // video capture state. But wayland supports suspended state, which can be
+  // sent with a delay after occlusion comes into effect, e.g. mutter sends
+  // suspended state 3 seconds ater window is occluded [2] [3]. So as a
+  // compromise fallback to not wait for frame callbacks to drive playback when
+  // video capture is active if a frame callback is not received in a while.
   //
   // [1] https://wayland.app/protocols/wayland#wl_surface:request:frame
   // [2] https://gitlab.gnome.org/GNOME/mutter/-/issues/3663.
   // [3]
   // https://gitlab.gnome.org/GNOME/mutter/-/merge_requests/3019/diffs#0d2bb2c9a5b108a9e8d01556d3f3bf5d3e4ecca2_115_117
-  // [4] https://bugs.kde.org/show_bug.cgi?id=492924
   should_skip_frame_callbacks_ =
-      video_capture_count_ > 0 && !window_->IsActive();
+      video_capture_count_ > 0 && frame_callback_freeze_detected_;
 
-  // The following is needed to prevent a graphics freeze when the
-  // window is fully obscured at the same time as being inactive, e.g. by
-  // hitting Alt+tab to switch windows.
-  // This is because it could be that at this point the frame callback could
-  // be already blocked. So we need to unblock and discard those frames.
   if (!prev_skip_frame_callbacks && should_skip_frame_callbacks_) {
-    // Clear existing frame callback.
-    if (!submitted_frames_.empty() &&
-        submitted_frames_.back()->wl_frame_callback) {
-      submitted_frames_.back()->wl_frame_callback.reset();
-      submitted_frames_.back()->feedback = gfx::PresentationFeedback::Failure();
-    }
-
-    MaybeProcessSubmittedFrames();
-
+    DVLOG(1) << "surface=" << window_->root_surface()->get_surface_id()
+             << " will skip wait for frame callbacks";
     // Now we need to ensure pending frames are processed again.
-    // It should be safe to do so as after this point frame callbacks will not
-    // be used.
+    // It should be safe to do so as after this point frame callbacks will no
+    // longer be waited on.
     MaybeProcessPendingFrame();
   }
+  DVLOG_IF(1, prev_skip_frame_callbacks && !should_skip_frame_callbacks_)
+      << "surface=" << window_->root_surface()->get_surface_id()
+      << " wait for frame callbacks again";
 }
 
 void WaylandFrameManager::ClearStates() {

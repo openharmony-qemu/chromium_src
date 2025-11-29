@@ -20,6 +20,7 @@
 #include "base/values.h"
 #include "chromeos/ash/components/audio/audio_device.h"
 #include "chromeos/ash/components/audio/audio_device_id.h"
+#include "components/pref_registry/pref_registry_syncable.h"
 #include "components/prefs/pref_registry_simple.h"
 #include "components/prefs/pref_service.h"
 #include "components/prefs/scoped_user_pref_update.h"
@@ -531,6 +532,14 @@ void AudioDevicesPrefHandlerImpl::InitializePrefObservers() {
       base::BindRepeating(&AudioDevicesPrefHandlerImpl::NotifyAudioPolicyChange,
                           base::Unretained(this));
   pref_change_registrar_.Add(prefs::kAudioOutputAllowed, callback);
+
+  base::RepeatingClosure callbackVoiceIsolation = base::BindRepeating(
+      &AudioDevicesPrefHandlerImpl::NotifyVoiceIsolationChange,
+      base::Unretained(this));
+  pref_change_registrar_.Add(prefs::kInputVoiceIsolationEnabled,
+                             callbackVoiceIsolation);
+  pref_change_registrar_.Add(prefs::kInputVoiceIsolationPreferredEffect,
+                             callbackVoiceIsolation);
 }
 
 void AudioDevicesPrefHandlerImpl::LoadDevicesMutePref() {
@@ -686,6 +695,12 @@ void AudioDevicesPrefHandlerImpl::NotifyAudioPolicyChange() {
   }
 }
 
+void AudioDevicesPrefHandlerImpl::NotifyVoiceIsolationChange() {
+  for (auto& observer : observers_) {
+    observer.OnVoiceIsolationPrefChanged();
+  }
+}
+
 // static
 void AudioDevicesPrefHandlerImpl::RegisterPrefs(PrefRegistrySimple* registry) {
   registry->RegisterDictionaryPref(prefs::kAudioDevicesVolumePercent);
@@ -718,7 +733,9 @@ void AudioDevicesPrefHandlerImpl::RegisterPrefs(PrefRegistrySimple* registry) {
   registry->RegisterDictionaryPref(prefs::kAudioDevicesLastSeen);
 
   registry->RegisterBooleanPref(prefs::kInputForceRespectUiGainsEnabled, false);
-  registry->RegisterBooleanPref(prefs::kSpatialAudioEnabled, false);
+  registry->RegisterBooleanPref(
+      prefs::kSpatialAudioEnabled, true,
+      user_prefs::PrefRegistrySyncable::SYNCABLE_OS_PREF);
 }
 
 }  // namespace ash

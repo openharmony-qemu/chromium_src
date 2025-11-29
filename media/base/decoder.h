@@ -54,8 +54,7 @@ enum class VideoDecoderType : int {
   kV4L2 = 16,          // V4L2VideoDecoder
   kTesting = 17,       // Never send this to UKM, for tests only.
   kOutOfProcess = 18,  // OOPVideoDecoder (Linux and ChromeOS)
-  kOHOS = 19,          //OHOSVideoDecoder
-  kVideoToolbox = 20,  // VideoToolboxVideoDecoder (Mac)
+  kVideoToolbox = 19,  // VideoToolboxVideoDecoder (Mac)
 
   // Keep this at the end and equal to the last entry.
   kMaxValue = kVideoToolbox

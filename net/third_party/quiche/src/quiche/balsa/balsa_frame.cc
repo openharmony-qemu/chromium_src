@@ -475,6 +475,10 @@ bool BalsaFrame::FindColonsAndParseIntoKeyValue(const Lines& lines,
                                : BalsaFrameEnums::INVALID_HEADER_FORMAT);
         return false;
       }
+      // Getting here means we find obs-fold character (for header line
+      // continuation) and continuation is allowed.
+      HandleWarning(is_trailer ? BalsaFrameEnums::OBS_FOLD_IN_TRAILERS
+                               : BalsaFrameEnums::OBS_FOLD_IN_HEADERS);
 
       // If disallow_header_continuation_lines() is false, we neither reject nor
       // normalize continuation lines, in violation of RFC7230.
@@ -666,20 +670,19 @@ bool BalsaFrame::CheckHeaderLinesForInvalidChars(const Lines& lines,
       headers->OriginalHeaderStreamBegin() + lines.front().first;
   const char* stream_end =
       headers->OriginalHeaderStreamBegin() + lines.back().second;
-  bool found_invalid = false;
 
   for (const char* c = stream_begin; c < stream_end; c++) {
     if (header_properties::IsInvalidHeaderChar(*c)) {
-      found_invalid = true;
+      return true;
     }
     if (*c == '\r' &&
         http_validation_policy().disallow_lone_cr_in_request_headers &&
         c + 1 < stream_end && *(c + 1) != '\n') {
-      found_invalid = true;
+      return true;
     }
   }
 
-  return found_invalid;
+  return false;
 }
 
 void BalsaFrame::ProcessHeaderLines(const Lines& lines, bool is_trailer,
@@ -1249,22 +1252,12 @@ size_t BalsaFrame::ProcessInput(const char* input, size_t size) {
             return current - input;
           }
           const char c = *current;
-          if (http_validation_policy_.disallow_lone_cr_in_chunk_extension) {
-            // This is a CR character and the next one is not LF.
-            const bool cr_followed_by_non_lf =
-                c == '\r' && current + 1 < end && *(current + 1) != '\n';
-            // The last character processed by the last ProcessInput() call was
-            // CR, this is the first character of the current ProcessInput()
-            // call, and it is not LF.
-            const bool previous_cr_followed_by_non_lf =
-                last_char_was_slash_r_ && current == input && c != '\n';
-            if (cr_followed_by_non_lf || previous_cr_followed_by_non_lf) {
-              HandleError(BalsaFrameEnums::INVALID_CHUNK_EXTENSION);
-              return current - input;
-            }
-            if (current + 1 == end) {
-              last_char_was_slash_r_ = c == '\r';
-            }
+          if (!IsValidChunkExtensionCharacter(c, current, input, end)) {
+            HandleError(BalsaFrameEnums::INVALID_CHUNK_EXTENSION);
+            return current - input;
+          }
+          if (current + 1 == end) {
+            last_char_was_slash_r_ = c == '\r';
           }
           if (c == '\r' || c == '\n') {
             extensions_length = (extensions_start == current)
@@ -1331,7 +1324,6 @@ size_t BalsaFrame::ProcessInput(const char* input, size_t size) {
 
           const char c = *current;
           ++current;
-
           if (c == '\n') {
             break;
           }
@@ -1499,6 +1491,33 @@ void BalsaFrame::HandleHeadersTooLongError() {
   }
 
   HandleError(BalsaFrameEnums::HEADERS_TOO_LONG);
+}
+
+bool BalsaFrame::IsValidChunkExtensionCharacter(char c, const char* current,
+                                                const char* begin,
+                                                const char* end) {
+  if (http_validation_policy_.disallow_lone_cr_in_chunk_extension) {
+    // This is a CR character and the next one is not LF.
+    const bool cr_followed_by_non_lf =
+        c == '\r' && current + 1 < end && *(current + 1) != '\n';
+    // The last character processed by the last ProcessInput() call was
+    // CR, this is the first character of the current ProcessInput()
+    // call, and it is not LF.
+    const bool previous_cr_followed_by_non_lf =
+        last_char_was_slash_r_ && current == begin && c != '\n';
+    if (cr_followed_by_non_lf || previous_cr_followed_by_non_lf) {
+      return false;
+    }
+  }
+  const bool prev_c_is_cr =
+      current == begin ? last_char_was_slash_r_ : *(current - 1) == '\r';
+  // This is a LF char and the previous one was not CR.
+  if (c == '\n' && !prev_c_is_cr) {
+    if (http_validation_policy_.disallow_lone_lf_in_chunk_extension) {
+      return false;
+    }
+  }
+  return true;
 }
 
 const int32_t BalsaFrame::kValidTerm1;

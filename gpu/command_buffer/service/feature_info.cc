@@ -11,6 +11,7 @@
 
 #include <stddef.h>
 
+#include <array>
 #include <memory>
 #include <set>
 #include <string_view>
@@ -24,7 +25,6 @@
 #include "base/strings/string_split.h"
 #include "build/build_config.h"
 #include "build/chromecast_buildflags.h"
-#include "build/chromeos_buildflags.h"
 #include "gpu/command_buffer/service/gpu_switches.h"
 #include "gpu/config/gpu_finch_features.h"
 #include "gpu/config/gpu_switches.h"
@@ -223,9 +223,10 @@ void FeatureInfo::InitializeBasicState(const base::CommandLine* command_line) {
   const auto useGL = command_line->GetSwitchValueASCII(switches::kUseGL);
   const auto useANGLE = command_line->GetSwitchValueASCII(switches::kUseANGLE);
 
-  feature_flags_.is_swiftshader_for_webgl =
+  feature_flags_.is_software_webgl =
       (useGL == gl::kGLImplementationANGLEName) &&
-      (useANGLE == gl::kANGLEImplementationSwiftShaderForWebGLName);
+      (useANGLE == gl::kANGLEImplementationSwiftShaderForWebGLName ||
+       useANGLE == gl::kANGLEImplementationD3D11WarpForWebGLName);
 
   // The shader translator is needed to translate from WebGL-conformant GLES SL
   // to normal GLES SL, enforce WebGL conformance, translate from GLES SL 1.0 to
@@ -1035,9 +1036,9 @@ void FeatureInfo::InitializeFeatures() {
     }
     if (ext_has_multisample) {
       feature_flags_.chromium_framebuffer_multisample = true;
-      validators_.framebuffer_target.AddValue(GL_READ_FRAMEBUFFER_EXT);
-      validators_.framebuffer_target.AddValue(GL_DRAW_FRAMEBUFFER_EXT);
-      validators_.g_l_state.AddValue(GL_READ_FRAMEBUFFER_BINDING_EXT);
+      validators_.framebuffer_target.AddValue(GL_READ_FRAMEBUFFER);
+      validators_.framebuffer_target.AddValue(GL_DRAW_FRAMEBUFFER);
+      validators_.g_l_state.AddValue(GL_READ_FRAMEBUFFER_BINDING);
       validators_.g_l_state.AddValue(GL_MAX_SAMPLES_EXT);
       validators_.render_buffer_parameter.AddValue(GL_RENDERBUFFER_SAMPLES_EXT);
       AddExtensionString("GL_CHROMIUM_framebuffer_multisample");
@@ -1176,11 +1177,11 @@ void FeatureInfo::InitializeFeatures() {
     // Rectangle textures are used as samplers via glBindTexture, framebuffer
     // textures via glFramebufferTexture2D, and copy destinations via
     // glCopyPixels.
-    validators_.texture_bind_target.AddValue(GL_TEXTURE_RECTANGLE_ARB);
-    validators_.texture_fbo_target.AddValue(GL_TEXTURE_RECTANGLE_ARB);
-    validators_.texture_target.AddValue(GL_TEXTURE_RECTANGLE_ARB);
-    validators_.get_tex_param_target.AddValue(GL_TEXTURE_RECTANGLE_ARB);
-    validators_.g_l_state.AddValue(GL_TEXTURE_BINDING_RECTANGLE_ARB);
+    validators_.texture_bind_target.AddValue(GL_TEXTURE_RECTANGLE_ANGLE);
+    validators_.texture_fbo_target.AddValue(GL_TEXTURE_RECTANGLE_ANGLE);
+    validators_.texture_target.AddValue(GL_TEXTURE_RECTANGLE_ANGLE);
+    validators_.get_tex_param_target.AddValue(GL_TEXTURE_RECTANGLE_ANGLE);
+    validators_.g_l_state.AddValue(GL_TEXTURE_BINDING_RECTANGLE_ANGLE);
   }
 
   if (feature_flags_.chromium_image_ycbcr_420v) {
@@ -1296,11 +1297,11 @@ void FeatureInfo::InitializeFeatures() {
                   "GL_COLOR_ATTACHMENT0_EXT should equal GL_COLOR_ATTACHMENT0");
 
     validators_.g_l_state.AddValue(GL_MAX_COLOR_ATTACHMENTS_EXT);
-    validators_.g_l_state.AddValue(GL_MAX_DRAW_BUFFERS_ARB);
+    validators_.g_l_state.AddValue(GL_MAX_DRAW_BUFFERS);
     GLint max_draw_buffers = 0;
-    glGetIntegerv(GL_MAX_DRAW_BUFFERS_ARB, &max_draw_buffers);
-    for (GLenum i = GL_DRAW_BUFFER0_ARB;
-         i < static_cast<GLenum>(GL_DRAW_BUFFER0_ARB + max_draw_buffers); ++i) {
+    glGetIntegerv(GL_MAX_DRAW_BUFFERS, &max_draw_buffers);
+    for (GLenum i = GL_DRAW_BUFFER0;
+         i < static_cast<GLenum>(GL_DRAW_BUFFER0 + max_draw_buffers); ++i) {
       validators_.g_l_state.AddValue(i);
     }
   }
@@ -1731,6 +1732,11 @@ void FeatureInfo::InitializeFeatures() {
       feature_flags_.angle_blob_cache = true;
     }
   }
+
+  if (is_passthrough_cmd_decoder_ &&
+      gfx::HasExtension(extensions, "GL_OES_required_internalformat")) {
+    AddExtensionString("GL_OES_required_internalformat");
+  }
 }
 
 void FeatureInfo::InitializeFloatAndHalfFloatFeatures(
@@ -1849,10 +1855,8 @@ void FeatureInfo::InitializeFloatAndHalfFloatFeatures(
           EnableCHROMIUMColorBufferFloatRGB();
       }
     } else {
-      static_assert(
-          GL_RGBA32F_ARB == GL_RGBA32F && GL_RGBA32F_EXT == GL_RGBA32F &&
-              GL_RGB32F_ARB == GL_RGB32F && GL_RGB32F_EXT == GL_RGB32F,
-          "sized float internal format variations must match");
+      static_assert(GL_RGBA32F_EXT == GL_RGBA32F && GL_RGB32F_EXT == GL_RGB32F,
+                    "sized float internal format variations must match");
       // We don't check extension support beyond ARB_texture_float on desktop
       // GL, and format support varies between GL configurations. For example,
       // spec prior to OpenGL 3.0 mandates framebuffer support only for one
@@ -1888,12 +1892,22 @@ void FeatureInfo::InitializeFloatAndHalfFloatFeatures(
       // range of formats supported by EXT_color_buffer_float
       if (status_rgba == GL_FRAMEBUFFER_COMPLETE && enable_es3) {
         bool full_float_support = true;
-        const GLenum kInternalFormats[] = {
-            GL_R16F, GL_RG16F, GL_RGBA16F, GL_R32F, GL_RG32F, GL_R11F_G11F_B10F,
-        };
-        const GLenum kFormats[] = {
-            GL_RED, GL_RG, GL_RGBA, GL_RED, GL_RG, GL_RGB,
-        };
+        const auto kInternalFormats = std::to_array<GLenum>({
+            GL_R16F,
+            GL_RG16F,
+            GL_RGBA16F,
+            GL_R32F,
+            GL_RG32F,
+            GL_R11F_G11F_B10F,
+        });
+        const auto kFormats = std::to_array<GLenum>({
+            GL_RED,
+            GL_RG,
+            GL_RGBA,
+            GL_RED,
+            GL_RG,
+            GL_RGB,
+        });
         DCHECK_EQ(std::size(kInternalFormats), std::size(kFormats));
         for (size_t i = 0; i < std::size(kFormats); ++i) {
           glTexImage2D(GL_TEXTURE_2D, 0, kInternalFormats[i], width, width, 0,

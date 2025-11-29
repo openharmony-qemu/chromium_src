@@ -2,15 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifdef UNSAFE_BUFFERS_BUILD
-// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
-#pragma allow_unsafe_buffers
-#endif
 
 #include "device/bluetooth/bluetooth_remote_gatt_characteristic.h"
 
 #include <stdint.h>
 
+#include <array>
 #include <functional>
 #include <utility>
 
@@ -37,8 +34,6 @@
 #include "device/bluetooth/test/bluetooth_test_bluez.h"
 #elif BUILDFLAG(IS_FUCHSIA)
 #include "device/bluetooth/test/bluetooth_test_fuchsia.h"
-#elif BUILDFLAG(IS_OHOS)
-#include "device/bluetooth/test/bluetooth_test_ohos.h"
 #endif
 
 using testing::_;
@@ -920,8 +915,10 @@ TEST_F(BluetoothRemoteGattCharacteristicTest, MAYBE_WriteRemoteCharacteristic) {
   TestBluetoothAdapterObserver observer(adapter_);
 
   base::RunLoop loop;
-  uint8_t values[] = {0, 1, 2, 3, 4, 0xf, 0xf0, 0xff};
-  std::vector<uint8_t> test_vector(values, values + std::size(values));
+  auto values = std::to_array<uint8_t>({0, 1, 2, 3, 4, 0xf, 0xf0, 0xff});
+  std::vector<uint8_t> test_vector(
+      values.data(),
+      base::span<uint8_t>(values).subspan(std::size(values)).data());
   characteristic1_->WriteRemoteCharacteristic(
       test_vector, WriteType::kWithResponse, base::BindLambdaForTesting([&] {
         EXPECT_EQ(1, gatt_write_characteristic_attempts_);
@@ -961,8 +958,10 @@ TEST_F(BluetoothRemoteGattCharacteristicTest,
 
   TestBluetoothAdapterObserver observer(adapter_);
 
-  uint8_t values[] = {0, 1, 2, 3, 4, 0xf, 0xf0, 0xff};
-  std::vector<uint8_t> test_vector(values, values + std::size(values));
+  auto values = std::to_array<uint8_t>({0, 1, 2, 3, 4, 0xf, 0xf0, 0xff});
+  std::vector<uint8_t> test_vector(
+      values.data(),
+      base::span<uint8_t>(values).subspan(std::size(values)).data());
   characteristic1_->DeprecatedWriteRemoteCharacteristic(
       test_vector, GetCallback(Call::EXPECTED),
       GetGattErrorCallback(Call::NOT_EXPECTED));
@@ -995,8 +994,10 @@ TEST_F(BluetoothRemoteGattCharacteristicTest,
   characteristic1_->ReadRemoteCharacteristic(
       GetReadValueCallback(Call::EXPECTED, Result::SUCCESS));
 
-  uint8_t values[] = {0, 1, 2, 3, 4, 0xf, 0xf0, 0xff};
-  std::vector<uint8_t> test_vector(values, values + std::size(values));
+  auto values = std::to_array<uint8_t>({0, 1, 2, 3, 4, 0xf, 0xf0, 0xff});
+  std::vector<uint8_t> test_vector(
+      values.data(),
+      base::span<uint8_t>(values).subspan(std::size(values)).data());
   SimulateGattCharacteristicRead(characteristic1_, test_vector);
   base::RunLoop().RunUntilIdle();
   EXPECT_EQ(1, gatt_read_characteristic_attempts_);
@@ -1037,8 +1038,10 @@ TEST_F(BluetoothRemoteGattCharacteristicTest,
       BluetoothRemoteGattCharacteristic::PROPERTY_WRITE));
 
   base::RunLoop loop1;
-  uint8_t values[] = {0, 1, 2, 3, 4, 0xf, 0xf0, 0xff};
-  std::vector<uint8_t> test_vector(values, values + std::size(values));
+  auto values = std::to_array<uint8_t>({0, 1, 2, 3, 4, 0xf, 0xf0, 0xff});
+  std::vector<uint8_t> test_vector(
+      values.data(),
+      base::span<uint8_t>(values).subspan(std::size(values)).data());
   characteristic1_->WriteRemoteCharacteristic(
       test_vector, WriteType::kWithResponse, base::BindLambdaForTesting([&] {
         EXPECT_EQ(1, gatt_write_characteristic_attempts_);
@@ -1092,8 +1095,10 @@ TEST_F(BluetoothRemoteGattCharacteristicTest,
   ASSERT_NO_FATAL_FAILURE(FakeCharacteristicBoilerplate(
       BluetoothRemoteGattCharacteristic::PROPERTY_WRITE));
 
-  uint8_t values[] = {0, 1, 2, 3, 4, 0xf, 0xf0, 0xff};
-  std::vector<uint8_t> test_vector(values, values + std::size(values));
+  auto values = std::to_array<uint8_t>({0, 1, 2, 3, 4, 0xf, 0xf0, 0xff});
+  std::vector<uint8_t> test_vector(
+      values.data(),
+      base::span<uint8_t>(values).subspan(std::size(values)).data());
   characteristic1_->DeprecatedWriteRemoteCharacteristic(
       test_vector, GetCallback(Call::EXPECTED),
       GetGattErrorCallback(Call::NOT_EXPECTED));

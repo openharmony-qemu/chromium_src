@@ -7,7 +7,6 @@
 
 #import <UIKit/UIKit.h>
 
-#import "base/functional/callback.h"
 #import "ios/chrome/app/application_delegate/tab_opening.h"
 #import "ios/chrome/browser/shared/coordinator/scene/connection_information.h"
 #import "ios/chrome/browser/shared/coordinator/scene/scene_state.h"
@@ -20,13 +19,12 @@
 @class ProfileState;
 
 // The controller object for a scene. Reacts to scene state changes.
-@interface SceneController : NSObject <SceneStateObserver,
-                                       ApplicationCommands,
-                                       SettingsCommands,
+@interface SceneController : NSObject <ApplicationCommands,
                                        ConnectionInformation,
+                                       SceneStateObserver,
+                                       SettingsCommands,
                                        TabOpening,
                                        WebStateListObserving>
-
 - (instancetype)init NS_UNAVAILABLE;
 - (instancetype)initWithSceneState:(SceneState*)sceneState
     NS_DESIGNATED_INITIALIZER;
@@ -51,6 +49,7 @@
 // It should not be called directly, except by unit test that
 // don’t test the whole activation level life cycle.
 - (void)teardownUI;
+
 @end
 
 #endif  // IOS_CHROME_BROWSER_SHARED_COORDINATOR_SCENE_SCENE_CONTROLLER_H_

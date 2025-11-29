@@ -22,6 +22,10 @@
 #include "base/threading/thread_restrictions.h"
 #include "base/trace_event/base_tracing.h"
 
+#if BUILDFLAG(IS_MAC)
+#include "base/apple/mach_port_rendezvous_mac.h"
+#endif
+
 extern "C" {
 // Changes the current thread's directory to a path or directory file
 // descriptor.
@@ -248,8 +252,9 @@ Process LaunchProcess(const std::vector<std::string>& argv,
 
   std::vector<char*> argv_cstr;
   argv_cstr.reserve(argv.size() + 1);
-  for (const auto& arg : argv)
+  for (const auto& arg : argv) {
     argv_cstr.push_back(const_cast<char*>(arg.c_str()));
+  }
   argv_cstr.push_back(nullptr);
 
   base::HeapArray<char*> owned_environ;

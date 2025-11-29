@@ -110,15 +110,6 @@ ListSelectionModel& ListSelectionModel::operator=(const ListSelectionModel&) =
 ListSelectionModel& ListSelectionModel::operator=(ListSelectionModel&&) =
     default;
 
-bool ListSelectionModel::operator==(const ListSelectionModel& other) const {
-  return std::tie(active_, anchor_, selected_indices_) ==
-         std::tie(other.active_, other.anchor_, other.selected_indices_);
-}
-
-bool ListSelectionModel::operator!=(const ListSelectionModel& other) const {
-  return !operator==(other);
-}
-
 void ListSelectionModel::IncrementFrom(size_t index) {
   // Shift the selection to account for a newly inserted item at |index|.
   for (size_t& selected_index : selected_indices_) {
@@ -273,7 +264,7 @@ std::string ListSelectionModel::ToString() const {
                            : std::string("<none>");
   };
   std::vector<std::string> index_strings;
-  base::ranges::transform(
+  std::ranges::transform(
       selected_indices_, std::back_inserter(index_strings),
       [](const auto& index) { return base::NumberToString(index); });
   return "active=" + optional_to_string(active_) +

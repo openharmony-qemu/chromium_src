@@ -27,39 +27,6 @@ namespace gpu {
 
 namespace {
 
-// Serves as killswitch for rolling out restriction of SCANOUT support to
-// Fuchsia.
-// TODO(crbug.com/330865436): Eliminate post safe-rollout.
-BASE_FEATURE(kRestrictExternalVkImageBackingScanoutSupportToFuchsia,
-             "RestrictExternalVkImageBackingScanoutSupportToFuchsia",
-             base::FEATURE_ENABLED_BY_DEFAULT);
-
-// Determines whether SCANOUT support can be restricted to Fuchsia.
-// TODO(crbug.com/330865436): Eliminate once killswitches checked within this
-// function roll out safely.
-bool RestrictScanoutSupportToFuchsia() {
-  // Restricting SCANOUT support here requires that SW VideoFrames are
-  // guarding their addition of SCANOUT usage by SCANOUT support being present
-  // in SharedImageCapabilities.
-  if (!base::FeatureList::IsEnabled(
-          features::kSWVideoFrameAddScanoutUsageOnlyIfSupportedBySharedImage)) {
-    return false;
-  }
-
-#if BUILDFLAG(IS_OZONE)
-  // On Ozone, It also requires that we are computing SCANOUT support in
-  // SharedImageCapabilities by overlays being supported rather than the
-  // too-generous native pixmaps being supported.
-  if (!base::FeatureList::IsEnabled(
-          features::kSharedImageSupportScanoutOnOzoneOnlyIfOverlaysSupported)) {
-    return false;
-  }
-#endif
-
-  return base::FeatureList::IsEnabled(
-      kRestrictExternalVkImageBackingScanoutSupportToFuchsia);
-}
-
 VkImageUsageFlags GetMaximalImageUsageFlags(
     VkFormatFeatureFlags feature_flags) {
   VkImageUsageFlags usage_flags = 0;
@@ -164,10 +131,7 @@ bool IsFormatSupported(viz::SharedImageFormat format,
   }
 
   // ALPHA_8 is only used by UI and should never need GL/Vulkan interop.
-  // LUMINANCE_8 is only used with GL ES2 contexts and shouldn't be relevant for
-  // devices that support Vulkan.
-  if (format == viz::SinglePlaneFormat::kALPHA_8 ||
-      format == viz::SinglePlaneFormat::kLUMINANCE_8) {
+  if (format == viz::SinglePlaneFormat::kALPHA_8) {
     return false;
   }
 
@@ -188,15 +152,11 @@ SharedImageUsageSet SupportedUsage() {
       SHARED_IMAGE_USAGE_RASTER_OVER_GLES2_ONLY |
       SHARED_IMAGE_USAGE_OOP_RASTERIZATION | SHARED_IMAGE_USAGE_VIDEO_DECODE |
       SHARED_IMAGE_USAGE_HIGH_PERFORMANCE_GPU | SHARED_IMAGE_USAGE_CPU_UPLOAD |
-      SHARED_IMAGE_USAGE_CPU_WRITE;
+      SHARED_IMAGE_USAGE_CPU_WRITE_ONLY;
 
-  if (RestrictScanoutSupportToFuchsia()) {
 #if BUILDFLAG(IS_FUCHSIA)
-    supported_usage |= SHARED_IMAGE_USAGE_SCANOUT;
+  supported_usage |= SHARED_IMAGE_USAGE_SCANOUT;
 #endif
-  } else {
-    supported_usage |= SHARED_IMAGE_USAGE_SCANOUT;
-  }
 
   return supported_usage;
 }
@@ -272,7 +232,9 @@ ExternalVkImageBackingFactory::CreateSharedImage(
     SkAlphaType alpha_type,
     SharedImageUsageSet usage,
     std::string debug_label,
+    bool is_thread_safe,
     gfx::GpuMemoryBufferHandle handle) {
+  DCHECK(!is_thread_safe);
   CHECK(CanImportGpuMemoryBuffer(handle.type));
   return ExternalVkImageBacking::CreateFromGMB(
       context_state_, command_pool_.get(), mailbox, std::move(handle), format,
@@ -328,7 +290,7 @@ bool ExternalVkImageBackingFactory::IsSupported(
   }
 
   if (gmb_type == gfx::EMPTY_BUFFER) {
-    if (usage.Has(SHARED_IMAGE_USAGE_CPU_WRITE)) {
+    if (usage.Has(SHARED_IMAGE_USAGE_CPU_WRITE_ONLY)) {
       // Only CPU writable when the client provides a NativePixmap.
       return false;
     }

@@ -12,7 +12,7 @@ e0195e53c0412cf409eabd57b04d752f  usr/include/gdk-pixbuf-2.0/gdk-pixbuf/gdk-pixb
 8cff512075adb66c11a66a47dbbf61b8  usr/include/gdk-pixbuf-2.0/gdk-pixbuf/gdk-pixbuf.h
 79eda4f0f2a1844e8469e493170b5565  usr/include/gdk-pixbuf-2.0/gdk-pixbuf/gdk-pixdata.h
 f9cdeda9a8997706598fc55615c9c2f9  usr/lib/i386-linux-gnu/pkgconfig/gdk-pixbuf-2.0.pc
-546666c214db0435e42046155003a7f7  usr/share/doc/libgdk-pixbuf-2.0-dev/changelog.Debian.gz
+f6bdc8fb1faf40edb3a81b6abbe38a36  usr/share/doc/libgdk-pixbuf-2.0-dev/changelog.Debian.gz
 5bad73429bdc178130a7da187df926eb  usr/share/doc/libgdk-pixbuf-2.0-dev/copyright
 fe13c51bf7e373d31c38f1dd0ee55d09  usr/share/gir-1.0/GdkPixbuf-2.0.gir
 32700805060d5a72c77e79f084f5a300  usr/share/gir-1.0/GdkPixdata-2.0.gir

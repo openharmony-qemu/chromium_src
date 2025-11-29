@@ -35,11 +35,6 @@ class FakeFrameWidget : public blink::mojom::FrameWidget {
 
   std::optional<bool> GetActive() const;
 
-#if BUILDFLAG(IS_OHOS)
-  void OnTextRecognized(std::vector<blink::mojom::TextRecognizeResultPtr> res,
-                        float scale) override;
-#endif
-
  private:
   void DragTargetDragEnter(blink::mojom::DragDataPtr drag_data,
                            const gfx::PointF& point_in_viewport,
@@ -66,7 +61,7 @@ class FakeFrameWidget : public blink::mojom::FrameWidget {
   void DragSourceSystemDragEnded() override {}
   void OnStartStylusWriting(
 #if BUILDFLAG(IS_WIN)
-      const gfx::Rect& focus_rect_in_widget,
+      const gfx::Rect& focus_widget_rect_in_dips,
 #endif  // BUILDFLAG(IS_WIN)
       OnStartStylusWritingCallback callback) override {
   }

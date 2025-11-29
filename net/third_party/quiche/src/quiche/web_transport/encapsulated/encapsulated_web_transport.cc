@@ -36,6 +36,7 @@
 #include "quiche/common/quiche_circular_deque.h"
 #include "quiche/common/quiche_status_utils.h"
 #include "quiche/common/quiche_stream.h"
+#include "quiche/common/vectorized_io_utils.h"
 #include "quiche/web_transport/web_transport.h"
 
 namespace webtransport {
@@ -793,4 +794,11 @@ void EncapsulatedSession::InnerStream::SetPriority(
   QUICHE_BUG_IF(EncapsulatedWebTransport_SetPriority_order, !status.ok())
       << status;
 }
+
+std::optional<std::string> EncapsulatedSession::GetNegotiatedSubprotocol()
+    const {
+  // TODO: implement.
+  return std::nullopt;
+}
+
 }  // namespace webtransport

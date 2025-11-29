@@ -9,7 +9,6 @@
 
 #include "base/feature_list.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 
 #if BUILDFLAG(IS_FUCHSIA)
 #include "components/memory_pressure/system_memory_pressure_evaluator_fuchsia.h"
@@ -17,8 +16,6 @@
 #include "components/memory_pressure/system_memory_pressure_evaluator_mac.h"
 #elif BUILDFLAG(IS_WIN)
 #include "components/memory_pressure/system_memory_pressure_evaluator_win.h"
-#elif BUILDFLAG(IS_OHOS)
-#include "components/memory_pressure/system_memory_pressure_evaluator_ohos.h"
 #endif
 
 namespace memory_pressure {
@@ -40,11 +37,6 @@ SystemMemoryPressureEvaluator::CreateDefaultSystemEvaluator(
 #elif BUILDFLAG(IS_WIN)
   auto evaluator =
       std::make_unique<memory_pressure::win::SystemMemoryPressureEvaluator>(
-          monitor->CreateVoter());
-  return evaluator;
-#elif BUILDFLAG(IS_OHOS)
-  auto evaluator =
-      std::make_unique<memory_pressure::ohos::SystemMemoryPressureEvaluator>(
           monitor->CreateVoter());
   return evaluator;
 #else

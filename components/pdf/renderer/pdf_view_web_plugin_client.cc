@@ -7,6 +7,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "base/check_op.h"
 #include "base/values.h"
@@ -21,7 +22,6 @@
 #include "third_party/blink/public/platform/web_security_origin.h"
 #include "third_party/blink/public/platform/web_string.h"
 #include "third_party/blink/public/platform/web_url.h"
-#include "third_party/blink/public/platform/web_vector.h"
 #include "third_party/blink/public/web/web_associated_url_loader.h"
 #include "third_party/blink/public/web/web_document.h"
 #include "third_party/blink/public/web/web_dom_message_event.h"
@@ -137,8 +137,7 @@ void PdfViewWebPluginClient::ReportFindInPageTickmarks(
     const std::vector<gfx::Rect>& tickmarks) {
   blink::WebLocalFrame* frame = GetFrame();
   if (frame) {
-    frame->SetTickmarks(blink::WebElement(),
-                        blink::WebVector<gfx::Rect>(tickmarks));
+    frame->SetTickmarks(blink::WebElement(), std::vector<gfx::Rect>(tickmarks));
   }
 }
 
@@ -204,20 +203,16 @@ PdfViewWebPluginClient::CreateAssociatedURLLoader(
   return GetFrame()->CreateAssociatedURLLoader(options);
 }
 
+void PdfViewWebPluginClient::GetOcrMaxImageDimension(
+    base::OnceCallback<void(uint32_t)> callback) {
+  ConnectOcrIfNeeded();
+  return screen_ai_annotator_->GetMaxImageDimension(std::move(callback));
+}
+
 void PdfViewWebPluginClient::PerformOcr(
     const SkBitmap& image,
     base::OnceCallback<void(screen_ai::mojom::VisualAnnotationPtr)> callback) {
-  CHECK(base::FeatureList::IsEnabled(ax::mojom::features::kScreenAIOCREnabled));
-
-  if (!screen_ai_annotator_.is_bound()) {
-    render_frame_->GetBrowserInterfaceBroker().GetInterface(
-        screen_ai_annotator_.BindNewPipeAndPassReceiver());
-    screen_ai_annotator_->SetClientType(
-        screen_ai::mojom::OcrClientType::kPdfViewer);
-    screen_ai_annotator_.set_disconnect_handler(
-        base::BindOnce(&PdfViewWebPluginClient::OnOcrDisconnected,
-                       weak_factory_.GetWeakPtr()));
-  }
+  ConnectOcrIfNeeded();
   screen_ai_annotator_->PerformOcrAndReturnAnnotation(image,
                                                       std::move(callback));
 }
@@ -231,6 +226,20 @@ void PdfViewWebPluginClient::OnOcrDisconnected() {
   screen_ai_annotator_.reset();
   CHECK(ocr_disconnect_callback_);
   ocr_disconnect_callback_.Run();
+}
+
+void PdfViewWebPluginClient::ConnectOcrIfNeeded() {
+  CHECK(base::FeatureList::IsEnabled(ax::mojom::features::kScreenAIOCREnabled));
+
+  if (!screen_ai_annotator_.is_bound()) {
+    render_frame_->GetBrowserInterfaceBroker().GetInterface(
+        screen_ai_annotator_.BindNewPipeAndPassReceiver());
+    screen_ai_annotator_->SetClientType(
+        screen_ai::mojom::OcrClientType::kPdfViewer);
+    screen_ai_annotator_.set_disconnect_handler(
+        base::BindOnce(&PdfViewWebPluginClient::OnOcrDisconnected,
+                       weak_factory_.GetWeakPtr()));
+  }
 }
 
 void PdfViewWebPluginClient::UpdateTextInputState() {

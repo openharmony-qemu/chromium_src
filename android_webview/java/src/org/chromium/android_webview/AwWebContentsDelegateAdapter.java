@@ -23,6 +23,7 @@ import org.chromium.base.Callback;
 import org.chromium.base.ContentUriUtils;
 import org.chromium.base.ThreadUtils;
 import org.chromium.base.task.AsyncTask;
+import org.chromium.components.embedder_support.contextmenu.ContextMenuUtils;
 import org.chromium.content_public.browser.InvalidateTypes;
 import org.chromium.content_public.common.ContentUrlConstants;
 import org.chromium.content_public.common.ResourceRequestBody;
@@ -227,6 +228,7 @@ class AwWebContentsDelegateAdapter extends AwWebContentsDelegate {
             final int processId,
             final int renderId,
             final int blinkFileChooserParamsMode,
+            boolean openWritable,
             String acceptTypes,
             String title,
             String defaultFilename,
@@ -235,7 +237,12 @@ class AwWebContentsDelegateAdapter extends AwWebContentsDelegate {
                 FileModeConversionHelper.convertFileChooserMode(blinkFileChooserParamsMode);
         AwContentsClient.FileChooserParamsImpl params =
                 new AwContentsClient.FileChooserParamsImpl(
-                        webChromeClientMode, acceptTypes, title, defaultFilename, capture);
+                        webChromeClientMode,
+                        openWritable,
+                        acceptTypes,
+                        title,
+                        defaultFilename,
+                        capture);
 
         mContentsClient.showFileChooser(
                 new Callback<String[]>() {
@@ -419,5 +426,16 @@ class AwWebContentsDelegateAdapter extends AwWebContentsDelegate {
                 mAwContents.zoomOut();
             }
         }
+    }
+
+    /**
+     * Convenience method for native to call without Context object. Determines if popups are
+     * supported for the context menu.
+     *
+     * @return true if popups are supported, false otherwise.
+     */
+    @Override
+    protected boolean isPopupSupported() {
+        return ContextMenuUtils.isPopupSupported(mContext);
     }
 }

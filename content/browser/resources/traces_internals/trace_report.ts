@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'chrome://resources/cr_elements/cr_icon_button/cr_icon_button.js';
-import 'chrome://resources/cr_elements/icons.html.js';
+import '//resources/cr_elements/cr_icon_button/cr_icon_button.js';
+import '//resources/cr_elements/icons.html.js';
 import './icons.html.js';
 
-import {assert} from 'chrome://resources/js/assert.js';
-import {CrLitElement} from 'chrome://resources/lit/v3_0/lit.rollup.js';
-import type {BigBuffer} from 'chrome://resources/mojo/mojo/public/mojom/base/big_buffer.mojom-webui.js';
-import type {Time} from 'chrome://resources/mojo/mojo/public/mojom/base/time.mojom-webui.js';
+import {assert} from '//resources/js/assert.js';
+import {CrLitElement} from '//resources/lit/v3_0/lit.rollup.js';
+import type {BigBuffer} from '//resources/mojo/mojo/public/mojom/base/big_buffer.mojom-webui.js';
+import type {Time} from '//resources/mojo/mojo/public/mojom/base/time.mojom-webui.js';
 
 import {getCss} from './trace_report.css.js';
 import {getHtml} from './trace_report.html.js';
@@ -53,7 +53,7 @@ export class TraceReportElement extends CrLitElement {
   private traceReportProxy_: TraceReportBrowserProxy =
       TraceReportBrowserProxy.getInstance();
 
-  protected trace: ClientTraceReport = {
+  protected accessor trace: ClientTraceReport = {
     // Dummy ClientTraceReport
     uuid: {
       high: 0n,
@@ -62,6 +62,7 @@ export class TraceReportElement extends CrLitElement {
     creationTime: {internalValue: 0n},
     scenarioName: '',
     uploadRuleName: '',
+    uploadRuleValue: null,
     totalSize: 0n,
     uploadState: ReportUploadState.kNotUploaded,
     uploadTime: {internalValue: 0n},
@@ -177,7 +178,7 @@ export class TraceReportElement extends CrLitElement {
         bytes = new Uint8Array(data.bytes);
       } else {
         assert(!!data.sharedMemory, 'sharedMemory must be defined here');
-        const sharedMemory = data.sharedMemory!;
+        const sharedMemory = data.sharedMemory;
         const {buffer, result} =
             sharedMemory.bufferHandle.mapBuffer(0, sharedMemory.size);
         assert(result === Mojo.RESULT_OK, 'Could not map buffer');
@@ -223,8 +224,8 @@ export class TraceReportElement extends CrLitElement {
   }
 
   protected getTokenAsUuidString_(): string {
-    const highHex = this.trace.uuid.high.toString(16);
-    const lowHex = this.trace.uuid.low.toString(16);
+    const highHex = this.trace.uuid.high.toString(16).padStart(16, '0');
+    const lowHex = this.trace.uuid.low.toString(16).padStart(16, '0');
     return `${lowHex.slice(0, 8)}-${lowHex.slice(8, 12)}-${
         lowHex.slice(12, 16)}-${highHex.slice(0, 4)}-${highHex.slice(4)}`;
   }

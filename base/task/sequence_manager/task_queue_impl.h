@@ -7,10 +7,10 @@
 
 #include <stddef.h>
 
+#include <deque>
 #include <functional>
 #include <memory>
 #include <optional>
-#include <queue>
 #include <set>
 #include <utility>
 #include <vector>
@@ -33,7 +33,6 @@
 #include "base/task/sequence_manager/atomic_flag_set.h"
 #include "base/task/sequence_manager/enqueue_order.h"
 #include "base/task/sequence_manager/fence.h"
-#include "base/task/sequence_manager/lazily_deallocated_deque.h"
 #include "base/task/sequence_manager/sequenced_task_source.h"
 #include "base/task/sequence_manager/task_queue.h"
 #include "base/task/sequence_manager/tasks.h"
@@ -147,6 +146,7 @@ class BASE_EXPORT TaskQueueImpl : public TaskQueue {
   AddOnTaskPostedHandler(OnTaskPostedHandler handler) override;
   void SetTaskExecutionTraceLogger(TaskExecutionTraceLogger logger) override;
   std::unique_ptr<QueueEnabledVoter> CreateQueueEnabledVoter() override;
+  void RemoveCancelledTasks() override;
 
   void SetQueueEnabled(bool enabled);
   void UnregisterTaskQueue();
@@ -183,11 +183,6 @@ class BASE_EXPORT TaskQueueImpl : public TaskQueue {
   bool HasTaskToRunImmediately() const;
   bool HasTaskToRunImmediatelyLocked() const
       EXCLUSIVE_LOCKS_REQUIRED(any_thread_lock_);
-
-  bool has_pending_high_resolution_tasks() const {
-    return main_thread_only()
-        .delayed_incoming_queue.has_pending_high_resolution_tasks();
-  }
 
   WorkQueue* delayed_work_queue() {
     return main_thread_only().delayed_work_queue.get();
@@ -396,10 +391,6 @@ class BASE_EXPORT TaskQueueImpl : public TaskQueue {
     const Task& top() const LIFETIME_BOUND { return queue_.top(); }
     void swap(DelayedIncomingQueue* other);
 
-    bool has_pending_high_resolution_tasks() const {
-      return pending_high_res_tasks_;
-    }
-
     // TODO(crbug.com/40735653): we pass SequenceManager to be able to record
     // crash keys. Remove this parameter after chasing down this crash.
     void SweepCancelledTasks(SequenceManagerImpl* sequence_manager);
@@ -410,9 +401,6 @@ class BASE_EXPORT TaskQueueImpl : public TaskQueue {
       bool operator()(const Task& lhs, const Task& rhs) const;
     };
     IntrusiveHeap<Task, Compare> queue_;
-
-    // Number of pending tasks in the queue that need high resolution timing.
-    int pending_high_res_tasks_ = 0;
   };
 
   struct MainThreadOnly {
@@ -498,8 +486,7 @@ class BASE_EXPORT TaskQueueImpl : public TaskQueue {
 
   // LazilyDeallocatedDeque use TimeTicks to figure out when to resize.  We
   // should use real time here always.
-  using TaskDeque =
-      LazilyDeallocatedDeque<Task, subtle::TimeTicksNowIgnoringOverride>;
+  using TaskDeque = std::deque<Task>;
 
   // Extracts all the tasks from the immediate incoming queue and swaps it with
   // |queue| which must be empty.

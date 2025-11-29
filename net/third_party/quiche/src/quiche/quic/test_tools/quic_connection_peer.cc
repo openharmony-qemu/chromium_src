@@ -7,10 +7,9 @@
 #include <memory>
 #include <string>
 
-
 #include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
 #include "quiche/quic/core/congestion_control/send_algorithm_interface.h"
+#include "quiche/quic/core/quic_connection.h"
 #include "quiche/quic/core/quic_connection_alarms.h"
 #include "quiche/quic/core/quic_packet_writer.h"
 #include "quiche/quic/core/quic_received_packet_manager.h"
@@ -26,16 +25,7 @@ namespace test {
 
 // static
 void QuicConnectionAlarmsPeer::Fire(QuicAlarmProxy alarm) {
-  struct {
-    void operator()(QuicConnectionAlarmHolder::AlarmProxy alarm) {
-      auto* real_alarm = static_cast<TestAlarmFactory::TestAlarm*>(alarm.alarm_);
-      real_alarm->Fire();
-    }
-    void operator()(QuicAlarmMultiplexer::AlarmProxy alarm) {
-      alarm.multiplexer_->Fire(alarm.slot_);
-    }
-  } visitor;
-  absl::visit(visitor, alarm.alarm_);
+  alarm.multiplexer_->Fire(alarm.slot_);
 }
 
 // static
@@ -139,47 +129,50 @@ QuicFramer* QuicConnectionPeer::GetFramer(QuicConnection* connection) {
 
 // static
 QuicAlarmProxy QuicConnectionPeer::GetAckAlarm(QuicConnection* connection) {
-  return connection->alarms_.ack_alarm();
+  return QuicAlarmProxy(&connection->alarms_, QuicAlarmSlot::kAck);
 }
 
 // static
 QuicAlarmProxy QuicConnectionPeer::GetPingAlarm(QuicConnection* connection) {
-  return connection->alarms_.ping_alarm();
+  return QuicAlarmProxy(&connection->alarms_, QuicAlarmSlot::kPing);
 }
 
 // static
 QuicAlarmProxy QuicConnectionPeer::GetRetransmissionAlarm(
     QuicConnection* connection) {
-  return connection->alarms_.retransmission_alarm();
+  return QuicAlarmProxy(&connection->alarms_, QuicAlarmSlot::kRetransmission);
 }
 
 // static
 QuicAlarmProxy QuicConnectionPeer::GetSendAlarm(QuicConnection* connection) {
-  return connection->alarms_.send_alarm();
+  return QuicAlarmProxy(&connection->alarms_, QuicAlarmSlot::kSend);
 }
 
 // static
 QuicAlarmProxy QuicConnectionPeer::GetMtuDiscoveryAlarm(
     QuicConnection* connection) {
-  return connection->alarms_.mtu_discovery_alarm();
+  return QuicAlarmProxy(&connection->alarms_, QuicAlarmSlot::kMtuDiscovery);
 }
 
 // static
 QuicAlarmProxy QuicConnectionPeer::GetProcessUndecryptablePacketsAlarm(
     QuicConnection* connection) {
-  return connection->alarms_.process_undecryptable_packets_alarm();
+  return QuicAlarmProxy(&connection->alarms_,
+                        QuicAlarmSlot::kProcessUndecryptablePackets);
 }
 
 // static
 QuicAlarmProxy QuicConnectionPeer::GetDiscardPreviousOneRttKeysAlarm(
     QuicConnection* connection) {
-  return connection->alarms_.discard_previous_one_rtt_keys_alarm();
+  return QuicAlarmProxy(&connection->alarms_,
+                        QuicAlarmSlot::kDiscardPreviousOneRttKeys);
 }
 
 // static
 QuicAlarmProxy QuicConnectionPeer::GetDiscardZeroRttDecryptionKeysAlarm(
     QuicConnection* connection) {
-  return connection->alarms_.discard_zero_rtt_decryption_keys_alarm();
+  return QuicAlarmProxy(&connection->alarms_,
+                        QuicAlarmSlot::kDiscardZeroRttDecryptionKeys);
 }
 
 // static
@@ -344,7 +337,8 @@ QuicNetworkBlackholeDetector& QuicConnectionPeer::GetBlackholeDetector(
 // static
 QuicAlarmProxy QuicConnectionPeer::GetBlackholeDetectorAlarm(
     QuicConnection* connection) {
-  return connection->alarms_.network_blackhole_detector_alarm();
+  return QuicAlarmProxy(&connection->alarms_,
+                        QuicAlarmSlot::kNetworkBlackholeDetector);
 }
 
 // static
@@ -374,7 +368,8 @@ QuicTime QuicConnectionPeer::GetIdleNetworkDeadline(
 // static
 QuicAlarmProxy QuicConnectionPeer::GetIdleNetworkDetectorAlarm(
     QuicConnection* connection) {
-  return connection->alarms_.idle_network_detector_alarm();
+  return QuicAlarmProxy(&connection->alarms_,
+                        QuicAlarmSlot::kIdleNetworkDetector);
 }
 
 // static
@@ -386,7 +381,7 @@ QuicIdleNetworkDetector& QuicConnectionPeer::GetIdleNetworkDetector(
 // static
 QuicAlarmProxy QuicConnectionPeer::GetMultiPortProbingAlarm(
     QuicConnection* connection) {
-  return connection->alarms_.multi_port_probing_alarm();
+  return QuicAlarmProxy(&connection->alarms_, QuicAlarmSlot::kMultiPortProbing);
 }
 
 // static
@@ -576,7 +571,7 @@ bool QuicConnectionPeer::TestLastReceivedPacketInfoDefaults() {
       << " ecn_codepoint passed: " << (info.ecn_codepoint == ECN_NOT_ECT)
       << " sizeof(ReceivedPacketInfo) passed: "
       << (sizeof(size_t) != 8 ||
-          sizeof(QuicConnection::ReceivedPacketInfo) == 280);
+          sizeof(QuicConnection::ReceivedPacketInfo) == 304);
   return info.destination_address == QuicSocketAddress() &&
          info.source_address == QuicSocketAddress() &&
          info.receipt_time == QuicTime::Zero() &&
@@ -590,22 +585,26 @@ bool QuicConnectionPeer::TestLastReceivedPacketInfoDefaults() {
          // have changed. Please add the relevant conditions and update the
          // length below.
          (sizeof(size_t) != 8 ||
-          sizeof(QuicConnection::ReceivedPacketInfo) == 280);
+          sizeof(QuicConnection::ReceivedPacketInfo) == 304);
 }
 
 // static
 void QuicConnectionPeer::DisableEcnCodepointValidation(
     QuicConnection* connection) {
-  // disable_ecn_codepoint_validation_ doesn't work correctly if the flag
-  // isn't set; all tests that don't set the flag should hit this bug.
-  QUIC_BUG_IF(quic_bug_518619343_03, !GetQuicRestartFlag(quic_support_ect1))
-      << "Test disables ECN validation without setting quic_support_ect1";
   connection->disable_ecn_codepoint_validation_ = true;
+  QuicSentPacketManagerPeer::SetEcnQueried(GetSentPacketManager(connection),
+                                           true);
 }
 
 // static
 void QuicConnectionPeer::OnForwardProgressMade(QuicConnection* connection) {
   connection->OnForwardProgressMade();
+}
+
+// static
+bool QuicConnectionPeer::CanReceiveAckFrequencyFrames(
+    QuicConnection* connection) {
+  return connection->can_receive_ack_frequency_immediate_ack_;
 }
 
 }  // namespace test

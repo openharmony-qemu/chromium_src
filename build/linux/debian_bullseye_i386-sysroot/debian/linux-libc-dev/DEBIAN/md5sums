@@ -3,7 +3,7 @@
 1f4dba31d0314f3f8630b37c5d06e3f2  usr/include/asm-generic/bpf_perf_event.h
 40dd90d2924b4ab14e917bf3d991f0cc  usr/include/asm-generic/errno-base.h
 ef61069dbb65152e41e4be7293c75b11  usr/include/asm-generic/errno.h
-2f6ce3127c91ca1e81ed27bc5cbf63aa  usr/include/asm-generic/fcntl.h
+52350e2c125312e012e8d0d137993751  usr/include/asm-generic/fcntl.h
 c4517fa784b5f474e3b787115bc7f117  usr/include/asm-generic/hugetlb_encode.h
 e57b5e4aaeab776e71b45aac536e6aec  usr/include/asm-generic/int-l64.h
 b810f270733e106319b67ef512c6246e  usr/include/asm-generic/int-ll64.h
@@ -104,7 +104,7 @@ af3687d8ea6574cc5762b515e759c30c  usr/include/i386-linux-gnu/asm/unistd_x32.h
 c9369a7f505ff43ff3004570b48463ba  usr/include/linux/acrn.h
 9804e24abc4453ed6dec353d16bcfb7d  usr/include/linux/adb.h
 9444d9d99533aa0d1de4ce55901f7e43  usr/include/linux/adfs_fs.h
-9e567e7790d5d7a431920b81d7f63a62  usr/include/linux/affs_hardblocks.h
+cbf22a85000fd62ca45c41f85a82fb1b  usr/include/linux/affs_hardblocks.h
 8c0c59bb79147f294c6cccf7cc060ba7  usr/include/linux/agpgart.h
 acfa736dea36618ad0344cb1a2c23a11  usr/include/linux/aio_abi.h
 bd384e4178b4b1fd8c68bae204ce148d  usr/include/linux/am437x-vpfe.h
@@ -136,7 +136,7 @@ b83afbac0e9e4200e86c1f991ce41dac  usr/include/linux/atmppp.h
 d59a09c6373e725bacb087ae9d11832b  usr/include/linux/atmsap.h
 2bd6fe47f608d123852017da707b38db  usr/include/linux/atmsvc.h
 c2dfa4d76b2784b4e3b709e1b9f567a4  usr/include/linux/audit.h
-153aae2709ff826fde4ed14bc7e14da1  usr/include/linux/auto_dev-ioctl.h
+83e68b52f4bf39430e954b5118ba4d05  usr/include/linux/auto_dev-ioctl.h
 2c424360285f5c028fa8ed83f918d187  usr/include/linux/auto_fs.h
 3ac5924f1d99e4a272ac5955d0a82875  usr/include/linux/auto_fs4.h
 8711759fbcc1091ebe3197e5c06fd3ab  usr/include/linux/auxvec.h
@@ -149,8 +149,8 @@ b92abe35aed3b40d9fb6367655258263  usr/include/linux/bcm933xx_hcs.h
 e08982fac9d0585cf4517b206651e56a  usr/include/linux/binfmts.h
 951b354af5969c64fd4ebb2f8ea45676  usr/include/linux/blkpg.h
 451665d21d6863237f2adc50bd018229  usr/include/linux/blktrace_api.h
-9be1e67e3ccf601043f931dd0aab2c36  usr/include/linux/blkzoned.h
-9c93a8425305158b421c8b0ca02738ae  usr/include/linux/bpf.h
+ea7717d1d776d222bff22920de28a7a3  usr/include/linux/blkzoned.h
+84c6864012524455d2c76fa210a7ffb2  usr/include/linux/bpf.h
 591fed2bf512ac123137e00a6a79d5a5  usr/include/linux/bpf_common.h
 c98887a8794bdda39497101c6496940d  usr/include/linux/bpf_perf_event.h
 1654d1264fcc10d747bea54c9634d21e  usr/include/linux/bpfilter.h
@@ -158,7 +158,7 @@ c98887a8794bdda39497101c6496940d  usr/include/linux/bpf_perf_event.h
 fb794e138655ef0c67a387138f088ef5  usr/include/linux/bsg.h
 9523957a482783977d2a16c507bbbecf  usr/include/linux/bt-bmc.h
 f1dba244460124cf8615da0ed4c02c1c  usr/include/linux/btf.h
-9911e92aa495b7a8dfe34302b45b6595  usr/include/linux/btrfs.h
+e42e46ce6d2e30320513a909aecd3cdd  usr/include/linux/btrfs.h
 091578c8a94f37c04f165724586ee582  usr/include/linux/btrfs_tree.h
 b5106931ed5090dd8147a6dd9a7d2d47  usr/include/linux/byteorder/big_endian.h
 76aeceb21c18dda6b7f90d0bc34994e2  usr/include/linux/byteorder/little_endian.h
@@ -194,7 +194,7 @@ c783792bd514bc6eb4cfc3edb3690a65  usr/include/linux/coda.h
 975ed52204302197ba8566d5fe010d1e  usr/include/linux/coff.h
 70489eee21d0f9d289c2da0b725e0a62  usr/include/linux/comedi.h
 63e2c33979c946f6ba9910b51e56ed80  usr/include/linux/connector.h
-5d09982a1e08280729ce60bca11a22e2  usr/include/linux/const.h
+8472d57e288e2f122128c72747e907ec  usr/include/linux/const.h
 61dc10bb4998ad40f65ea9b8c7f8ceca  usr/include/linux/coresight-stm.h
 18e57138ec9a71dddf77945eed792811  usr/include/linux/counter.h
 4fe2bb5e8a575205ad1ddd37afe132b3  usr/include/linux/cramfs_fs.h
@@ -235,7 +235,7 @@ b74d0a3ea809d9844f117748e589651b  usr/include/linux/errno.h
 70c184ec8f2068242eb2e20a71e83af5  usr/include/linux/errqueue.h
 3dc2892d1fc6cd7b759dc81cc5f24d13  usr/include/linux/erspan.h
 de55b66452e23f62818088a07b913b4a  usr/include/linux/ethtool.h
-98de7cb2aee4a01968a3a1b915a459c0  usr/include/linux/ethtool_netlink.h
+9818ea0c8642643d09f98d78f96a2f93  usr/include/linux/ethtool_netlink.h
 dde747193da5f44f37184d923e7718cf  usr/include/linux/eventpoll.h
 7fdbfd1c74d5bfb36333edc2e198ca7a  usr/include/linux/f2fs.h
 62bbbe2c02a68e43f042f09366ae5131  usr/include/linux/fadvise.h
@@ -268,7 +268,7 @@ e9d5fc10635ec56468c6cf57f312cf10  usr/include/linux/gameport.h
 30ffdfa4e97d2cc078dd5c51fe6a5415  usr/include/linux/gfs2_ondisk.h
 f349b9834ef506ca23abf5e5b2121bac  usr/include/linux/gpio.h
 779dd8e649b0ad19425b43781ad54b5d  usr/include/linux/gsmmux.h
-fd3dc6f12f698d3b4ab12a57b795e62f  usr/include/linux/gtp.h
+0b232986ec630d1d9b27e124eb870b87  usr/include/linux/gtp.h
 e13ebdc9d98539093e1811609dc608f1  usr/include/linux/hash_info.h
 f6594d40afb4d246d0d779214bcb496a  usr/include/linux/hdlc.h
 68005b9568aa1ef0327f8e1be2ee5f84  usr/include/linux/hdlc/ioctl.h
@@ -327,12 +327,12 @@ b8a7608192df3ff366277d26564061ba  usr/include/linux/igmp.h
 a3720d8b3f2aa762c0488100cccca2da  usr/include/linux/iio/events.h
 2741e056a9ed3709ce685cf4bb1002c0  usr/include/linux/iio/types.h
 ca8005099275e0d9a6e7f58c0db149d4  usr/include/linux/ila.h
-4444547e35cc687198d1c38c6129c64c  usr/include/linux/in.h
-8bebb780b45d3fe932cc1d934fa5f5fe  usr/include/linux/in6.h
+fcee415bb19db8acb968eeda6f02fa29  usr/include/linux/in.h
+fca1889f0274df066e49cf4d8db8011e  usr/include/linux/in6.h
 0cbd4633cb88947523edcec516977f10  usr/include/linux/in_route.h
 ab0f8aec8f1d129218a101a27f2f7c4e  usr/include/linux/inet_diag.h
 6142b1d25d00d926a881dfb6ef2e2949  usr/include/linux/inotify.h
-56e4da0a07e77ee1e8c9a741b6329b37  usr/include/linux/input-event-codes.h
+473da06d74ce3e329fa35ad9cdfd31df  usr/include/linux/input-event-codes.h
 a03f266e42f041eb3141eeebe2497401  usr/include/linux/input.h
 4fedbdfee1b52f8f137576e41609d2c2  usr/include/linux/io_uring.h
 9e6e27001350c3e199d6a2c43ff86c03  usr/include/linux/ioam6.h
@@ -349,7 +349,7 @@ ed332983419836228606eeb66e68fd3a  usr/include/linux/ipmi.h
 26dae9cb212163a97994e0b9fec57b46  usr/include/linux/ipmi_bmc.h
 d389f5a01ddee677af282cc8b7013a4f  usr/include/linux/ipmi_msgdefs.h
 1b1150da74103d4de5b91e3b1386f909  usr/include/linux/ipsec.h
-deff6bca6b519042089ed906aa3655c3  usr/include/linux/ipv6.h
+9926d49458ea1e0cc4651362e733e03e  usr/include/linux/ipv6.h
 8fc1c2b6c9a745d76c23e8c070c3f959  usr/include/linux/ipv6_route.h
 e5c6b4044f643c379caf155c6ac679df  usr/include/linux/irqnr.h
 33468cf6b9aea32cbb7ed3ba976585cf  usr/include/linux/isdn/capicmd.h
@@ -441,7 +441,7 @@ be3681830afddcc7ac7e640eb4fa8ca7  usr/include/linux/netfilter/nf_conntrack_tcp.h
 6b38df7d5995f79d203a924ec0603c32  usr/include/linux/netfilter/nf_log.h
 1b6bcf744ebb83c0ee7eab2e1a558693  usr/include/linux/netfilter/nf_nat.h
 dfd61cb0f073a086652d01cf5e611a67  usr/include/linux/netfilter/nf_synproxy.h
-6fc408a7bfdd65a15f5ef532d87860ec  usr/include/linux/netfilter/nf_tables.h
+10f0e3e1410f39e9fb387e085a916456  usr/include/linux/netfilter/nf_tables.h
 9f0df12381660b6193af2d5c93c269ee  usr/include/linux/netfilter/nf_tables_compat.h
 26aa1dfff9ffe9e6cde6d169e9752aa0  usr/include/linux/netfilter/nfnetlink.h
 b9a09314d1ee752743b8d03d6d2783ba  usr/include/linux/netfilter/nfnetlink_acct.h
@@ -543,7 +543,7 @@ f914a171dc56f48435b22bc374245476  usr/include/linux/netfilter_bridge/ebt_nflog.h
 319887e95b8c866aa3d8672f474249fe  usr/include/linux/netfilter_bridge/ebt_redirect.h
 712dedf0d6d1a8ba17275ab6deab1789  usr/include/linux/netfilter_bridge/ebt_stp.h
 5a2144edf5f41e3c69e58fa5e04d1cb5  usr/include/linux/netfilter_bridge/ebt_vlan.h
-520e49575e2376c7678904acfea747ef  usr/include/linux/netfilter_bridge/ebtables.h
+8dfec664f2e70dc08d9459351498fed7  usr/include/linux/netfilter_bridge/ebtables.h
 d9cd415c074d8d14e195a310b84ccf13  usr/include/linux/netfilter_ipv4.h
 b88c1e25fd429638f598bba76285b19c  usr/include/linux/netfilter_ipv4/ip_tables.h
 24d5b124755afc88e4f289a276648014  usr/include/linux/netfilter_ipv4/ipt_CLUSTERIP.h
@@ -605,7 +605,7 @@ a27b615e75fd1848e2398ea83b066815  usr/include/linux/packet_diag.h
 363b2155e75f32d2a72049ea069d96e7  usr/include/linux/parport.h
 2422de5f07a5a60ca5e1a875e4658ed6  usr/include/linux/patchkey.h
 6e81a6622dbca900f293a521f6049901  usr/include/linux/pci.h
-1ec500b050ddf1f7c186b434cab1d0f0  usr/include/linux/pci_regs.h
+1a5c8f6c11b7e48a1174d51daf8cf0dc  usr/include/linux/pci_regs.h
 5bdafd6abdc19f6e9c03fd5ef9312a4a  usr/include/linux/pcitest.h
 d1c71e91126393bb202a0a5a3404ea65  usr/include/linux/perf_event.h
 2c2c71a1db3d92cf4c517b68d8d40654  usr/include/linux/personality.h
@@ -632,7 +632,7 @@ a27a7cd524c9f0c7f7ba4de622bff92a  usr/include/linux/ppp-ioctl.h
 ff106d02292fa9162c3bb0d606e712b4  usr/include/linux/prctl.h
 a1b6e0c508fe919e56656799d11e1aa7  usr/include/linux/psample.h
 f6845bc81f01c10c117c1625a92eb162  usr/include/linux/psci.h
-7289d58527dcd8c596c70f6401121ab5  usr/include/linux/psp-sev.h
+63b84c7735193e8740041e2a41d08566  usr/include/linux/psp-sev.h
 be4e92af52fa708cb109d89bac331775  usr/include/linux/ptp_clock.h
 dafe1e3b629ca1920c474ac2dc0e01ff  usr/include/linux/ptrace.h
 53010f57d95e6530cc14898efc84552c  usr/include/linux/qemu_fw_cfg.h
@@ -663,7 +663,7 @@ fd3d0b3634296dfc3012b8f7eb17cded  usr/include/linux/rpmsg.h
 ef5b1f7d968e149cec12a6df51eedb7a  usr/include/linux/rpmsg_types.h
 0146924568250f1d158f383f2c7aff41  usr/include/linux/rseq.h
 068083d867308533b498a4e8526d5afb  usr/include/linux/rtc.h
-bd3bac5fa97eb30b8f11d6f1bdca20d6  usr/include/linux/rtnetlink.h
+a2cf98ca52709a64df0e67ddc6736204  usr/include/linux/rtnetlink.h
 8ade25a625d0092c2a18e13616dea612  usr/include/linux/rxrpc.h
 e41493f8c080eb325bcc7e56b41a33aa  usr/include/linux/scc.h
 36170cee5fab9ae26a88ca741e3db26e  usr/include/linux/sched.h
@@ -685,7 +685,7 @@ dc8f62b066f861a4dbae2419b09b0654  usr/include/linux/serial.h
 095d6c344b7211899c96858d822463ed  usr/include/linux/serial_core.h
 a6498782cbf4d2dfb505cdc0b0c87923  usr/include/linux/serial_reg.h
 a55bb33f1a6eec0f4c9cd3a8d155ee08  usr/include/linux/serio.h
-76ca67bc4c3adf1464ce90c013def69c  usr/include/linux/sev-guest.h
+b279ab7d8ab4b9b1290c307b106c3558  usr/include/linux/sev-guest.h
 6470ea18ac2832c750cbb424107e31e4  usr/include/linux/shm.h
 00646d2070d90f0ee5077dbb56e0d205  usr/include/linux/signal.h
 8d723cfc2c20c362559d744b6e825c14  usr/include/linux/signalfd.h
@@ -703,7 +703,7 @@ a7f2d4f4fc98b2c62d810980e49539b1  usr/include/linux/sound.h
 5b73901c2cf6116ff944e4370bd7671f  usr/include/linux/spi/spi.h
 f82cc6f2ac48aa51993b44ef248dce57  usr/include/linux/spi/spidev.h
 7bf801245f34406c612887e80e98fc5e  usr/include/linux/stat.h
-164c7378bd46eb99ec92136d894931d6  usr/include/linux/stddef.h
+547a5fb9a59a4dde5200c025491ecb6a  usr/include/linux/stddef.h
 cc054d33ddbc49b6cc04aac6b6b215fc  usr/include/linux/stm.h
 724b921f2db2c7c444d12c5aedda09cd  usr/include/linux/string.h
 fb7bb9da32ced3d728cabc31bb3611c8  usr/include/linux/sunrpc/debug.h
@@ -712,7 +712,7 @@ d5f4e40fe4c61105b3b66cd310bf2c8e  usr/include/linux/surface_aggregator/dtx.h
 3de3d4cf2a95808b6de07813c8c6594f  usr/include/linux/suspend_ioctls.h
 6473eb0a11730b344a9aeffd1a98c00c  usr/include/linux/swab.h
 ce7632202e9cb57666a0476a712e9160  usr/include/linux/switchtec_ioctl.h
-a78662eb4fb7224f052a52af8a6d6a01  usr/include/linux/sync_file.h
+8e0b7a7333f27303dab4380bf68f5f4a  usr/include/linux/sync_file.h
 86ac4aa0521377c1120d405f09cbf5c1  usr/include/linux/synclink.h
 6d946582d2a9aad8b3d5ae7c6355ebee  usr/include/linux/sysctl.h
 6f8882c542ddb6603b06a4eafcc17015  usr/include/linux/sysinfo.h
@@ -798,7 +798,7 @@ a826037ab82c3bea2e52e7e04cadded2  usr/include/linux/utime.h
 0c79317de597507029c7a2a6c920c023  usr/include/linux/uuid.h
 260b9512661bc61c76210353708a8a15  usr/include/linux/uvcvideo.h
 9a3a507a1b56818e2b6e2272edca5f35  usr/include/linux/v4l2-common.h
-0545dffec5740f91c165a9cb855a55ee  usr/include/linux/v4l2-controls.h
+c7558e41d7e383b308cfda81295eedf5  usr/include/linux/v4l2-controls.h
 c61b31ca149289c847640ccdbc58dd8f  usr/include/linux/v4l2-dv-timings.h
 1fcb62162a59c5a468539b062bf6286b  usr/include/linux/v4l2-mediabus.h
 c5e2d16b3908167c731ed904f6fa5b2b  usr/include/linux/v4l2-subdev.h
@@ -807,14 +807,14 @@ c5e2d16b3908167c731ed904f6fa5b2b  usr/include/linux/v4l2-subdev.h
 916882d96133c43e2ca85c2437e26c8c  usr/include/linux/vboxguest.h
 835e15bba0db2c2e3b6df41a9623c7d7  usr/include/linux/vdpa.h
 8d54e5a0ee0207584e47c63b50f919a4  usr/include/linux/vduse.h
-141fea3f655d215739047cef897f127c  usr/include/linux/version.h
+a2d1ff1f34cea9c0bb78a4bb0700c8ee  usr/include/linux/version.h
 bf128a27bb67f9a2c8c340292a46e318  usr/include/linux/veth.h
 865656cffdc0210f2f0820ace75f71a6  usr/include/linux/vfio.h
 b605b323d255e97f19ce69b4f36450cf  usr/include/linux/vfio_ccw.h
 2f05f38233a00ce77706d6dd16de709f  usr/include/linux/vfio_zdev.h
 1dafa6ec773e6bb60bbecef8d5fa271c  usr/include/linux/vhost.h
 4abf620bd518c2795cba40e1c8bfc9cb  usr/include/linux/vhost_types.h
-44e807e26932403ef46aa0dc2f29eb4a  usr/include/linux/videodev2.h
+82ea1f3781b291cabe164fb762d67ba5  usr/include/linux/videodev2.h
 9350b8d859d3c4b7f725dbbb7db37902  usr/include/linux/virtio_9p.h
 3ed31b8a3ac9dbd8e8dcf7dfca79b773  usr/include/linux/virtio_balloon.h
 0760c494bb2847d55383220f0843a280  usr/include/linux/virtio_blk.h
@@ -842,7 +842,7 @@ e6deeef65322e6f62aa1350688e9cf6a  usr/include/linux/virtio_scsi.h
 9c8d7451d665fbaed0e75e8aa5dfa821  usr/include/linux/virtio_snd.h
 478932bb8dc2e51dbbf2c99d7663c51a  usr/include/linux/virtio_types.h
 7a8ec673e0ab6f0692e4a577ac3f88af  usr/include/linux/virtio_vsock.h
-9afaf487b62e371671bb51fd540ee640  usr/include/linux/vm_sockets.h
+bec2057cd81580d14901ca8da1c9f916  usr/include/linux/vm_sockets.h
 d4ab9e56b142e7557d1df5be4ee96401  usr/include/linux/vm_sockets_diag.h
 c60f764a4db74239c9eea25b0b9fc05d  usr/include/linux/vmcore.h
 8dd699d9221df1af12af2f4f439cfbb4  usr/include/linux/vsockmon.h
@@ -887,7 +887,7 @@ a45c270ae2b0ddc59c46fe3fa8643bdb  usr/include/rdma/ib_user_ioctl_verbs.h
 2882a1a55418c13b5c7db0e1f79525a5  usr/include/rdma/ib_user_mad.h
 950d139acaeb8ff00cf82546597408b5  usr/include/rdma/ib_user_sa.h
 6a5b2d980ee906521488aff6bbdb1fa1  usr/include/rdma/ib_user_verbs.h
-9404a0ad86495f84a3af6cecf62ebebd  usr/include/rdma/irdma-abi.h
+27c397669778c62e0be98bc2181d4527  usr/include/rdma/irdma-abi.h
 4934efecea59a055f1fd253f793e9348  usr/include/rdma/mlx4-abi.h
 c58b02ad0ca7208210f47a802defecad  usr/include/rdma/mlx5-abi.h
 40b2585833ccda5c25daef7e46925b19  usr/include/rdma/mlx5_user_ioctl_cmds.h
@@ -916,7 +916,7 @@ adae57d49c10776d9e1ec9036f6fed03  usr/include/sound/hdspm.h
 6e149d974916d13fcb16a43a667749a3  usr/include/sound/intel/avs/tokens.h
 2a29efd45d89a2372d50d6f25e0d593c  usr/include/sound/sb16_csp.h
 ed49a60cfae340e2ebde5e3941f3d80a  usr/include/sound/sfnt_info.h
-d36041321b93867f152cca963f57ef07  usr/include/sound/skl-tplg-interface.h
+e0a9f9df04c6e56ec0838ab47ba75882  usr/include/sound/skl-tplg-interface.h
 a6ab3ca901c73fae6c8ecf80ae80d30c  usr/include/sound/snd_ar_tokens.h
 1cdc1769ad3d4687add85ebd8e551fc3  usr/include/sound/snd_sst_tokens.h
 e34c7da79421d59490e21f9643bb5516  usr/include/sound/sof/abi.h
@@ -932,5 +932,5 @@ e5e97a386f501f14ace3de083aea76cc  usr/include/video/edid.h
 3165e5505b74f5785fc1a0cc85d9825f  usr/include/xen/gntalloc.h
 8f283c5250b22fe9dade2a8ba4b1cde7  usr/include/xen/gntdev.h
 81100b689c6f27caf968eeb0ebc0bd60  usr/include/xen/privcmd.h
-cdd7a6441ba023a5b8d313eaf36d2848  usr/share/doc/linux-libc-dev/changelog.Debian.gz
+98839113065c61c8a46658196dc02906  usr/share/doc/linux-libc-dev/changelog.Debian.gz
 9fd298cedfdc3554b2625e165d0f9997  usr/share/doc/linux-libc-dev/copyright

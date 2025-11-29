@@ -11,7 +11,7 @@
 #include "base/check.h"
 #include "base/containers/flat_set.h"
 #include "base/functional/bind.h"
-#include "base/not_fatal_until.h"
+#include "base/task/common/task_annotator.h"
 #include "base/threading/platform_thread.h"
 #include "base/trace_event/trace_event.h"
 #include "base/trace_event/typed_macros.h"
@@ -19,7 +19,6 @@
 #include "cc/slim/constants.h"
 #include "cc/slim/delayed_scheduler.h"
 #include "cc/slim/frame_sink_impl_client.h"
-#include "components/viz/common/features.h"
 #include "components/viz/common/quads/compositor_frame.h"
 #include "components/viz/common/resources/platform_color.h"
 #include "components/viz/common/resources/resource_id.h"
@@ -180,17 +179,12 @@ void FrameSinkImpl::UploadUIResource(cc::UIResourceId resource_id,
                               shared_image_usage, "SlimCompositorUIResource"},
                              resource_bitmap.GetPixels());
   CHECK(uploaded_resource.shared_image);
-  gpu::SyncToken sync_token = sii->GenUnverifiedSyncToken();
 
-  // NOTE: This resource will never be used as an overlay, as we we hardcode
-  // `is_overlay_candidate` to false. Hence, the texture target should always be
-  // GL_TEXTURE_2D (other texture targets are needed only for overlays).
   uploaded_resource.viz_resource_id = resource_provider_.ImportResource(
-      viz::TransferableResource::MakeGpu(
-          uploaded_resource.shared_image, /*texture_target=*/GL_TEXTURE_2D,
-          sync_token, resource_bitmap.GetSize(), format,
-          /*is_overlay_candidate=*/false,
-          viz::TransferableResource::ResourceSource::kUI),
+      viz::TransferableResource::Make(
+          uploaded_resource.shared_image,
+          viz::TransferableResource::ResourceSource::kUI,
+          uploaded_resource.shared_image->creation_sync_token()),
       base::BindOnce(&FrameSinkImpl::UIResourceReleased, base::Unretained(this),
                      resource_id));
   uploaded_resource.size = resource_bitmap.GetSize();
@@ -204,7 +198,7 @@ void FrameSinkImpl::UIResourceReleased(cc::UIResourceId ui_resource_id,
                                        const gpu::SyncToken& sync_token,
                                        bool is_lost) {
   auto itr = uploaded_resources_.find(ui_resource_id);
-  CHECK(itr != uploaded_resources_.end(), base::NotFatalUntil::M130);
+  CHECK(itr != uploaded_resources_.end());
   auto* sii = context_provider_->SharedImageInterface();
   sii->DestroySharedImage(sync_token, std::move(itr->second.shared_image));
   uploaded_resources_.erase(itr);
@@ -269,14 +263,9 @@ void FrameSinkImpl::ReclaimResources(
 void FrameSinkImpl::OnBeginFrame(
     const viz::BeginFrameArgs& begin_frame_args,
     const viz::FrameTimingDetailsMap& timing_details,
-    bool frame_ack,
     std::vector<viz::ReturnedResource> resources) {
-  if (features::IsOnBeginFrameAcksEnabled()) {
-    if (frame_ack) {
-      DidReceiveCompositorFrameAck(std::move(resources));
-    } else if (!resources.empty()) {
-      ReclaimResources(std::move(resources));
-    }
+  if (!resources.empty()) {
+    ReclaimResources(std::move(resources));
   }
 
   // Note order here is expected to be in order w.r.t viz::FrameTokenGT. This
@@ -304,6 +293,7 @@ bool FrameSinkImpl::DoBeginFrame(const viz::BeginFrameArgs& begin_frame_args) {
         "viz,benchmark,graphics.pipeline", "Graphics.Pipeline",
         perfetto::Flow::Global(begin_frame_args.trace_id),
         [&](perfetto::EventContext ctx) {
+          base::TaskAnnotator::EmitTaskTimingDetails(ctx);
           auto* event = ctx.event<perfetto::protos::pbzero::ChromeTrackEvent>();
           auto* data = event->set_chrome_graphics_pipeline();
           data->set_step(perfetto::protos::pbzero::ChromeGraphicsPipeline::
@@ -345,6 +335,7 @@ bool FrameSinkImpl::DoBeginFrame(const viz::BeginFrameArgs& begin_frame_args) {
           "viz,benchmark,graphics.pipeline", "Graphics.Pipeline",
           perfetto::Flow::Global(begin_frame_args.trace_id),
           [&](perfetto::EventContext ctx) {
+            base::TaskAnnotator::EmitTaskTimingDetails(ctx);
             auto* event =
                 ctx.event<perfetto::protos::pbzero::ChromeTrackEvent>();
             auto* data = event->set_chrome_graphics_pipeline();
@@ -375,6 +366,7 @@ void FrameSinkImpl::SendDidNotProduceFrame(
       "viz,benchmark,graphics.pipeline", "Graphics.Pipeline",
       perfetto::Flow::Global(begin_frame_args.trace_id),
       [&](perfetto::EventContext ctx) {
+        base::TaskAnnotator::EmitTaskTimingDetails(ctx);
         auto* event = ctx.event<perfetto::protos::pbzero::ChromeTrackEvent>();
         auto* data = event->set_chrome_graphics_pipeline();
         data->set_step(perfetto::protos::pbzero::ChromeGraphicsPipeline::

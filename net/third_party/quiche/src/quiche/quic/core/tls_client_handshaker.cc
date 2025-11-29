@@ -20,6 +20,7 @@
 #include "quiche/quic/core/crypto/transport_parameters.h"
 #include "quiche/quic/core/quic_session.h"
 #include "quiche/quic/core/quic_types.h"
+#include "quiche/quic/platform/api/quic_bug_tracker.h"
 #include "quiche/quic/platform/api/quic_flags.h"
 #include "quiche/quic/platform/api/quic_hostname_utils.h"
 #include "quiche/common/quiche_text_utils.h"
@@ -57,18 +58,14 @@ TlsClientHandshaker::TlsClientHandshaker(
                                    cert_and_key->private_key.private_key());
     }
   }
-#if BORINGSSL_API_VERSION >= 22
   if (!crypto_config->preferred_groups().empty()) {
     SSL_set1_group_ids(ssl(), crypto_config->preferred_groups().data(),
                        crypto_config->preferred_groups().size());
   }
-#endif  // BORINGSSL_API_VERSION
 
-#if BORINGSSL_API_VERSION >= 27
   // Make sure we use the right ALPS codepoint.
   SSL_set_alps_use_new_codepoint(ssl(),
                                  crypto_config->alps_use_new_codepoint());
-#endif  // BORINGSSL_API_VERSION
 }
 
 TlsClientHandshaker::~TlsClientHandshaker() {}
@@ -133,6 +130,7 @@ bool TlsClientHandshaker::CryptoConnect() {
     cached_state_ = session_cache_->Lookup(
         server_id_, session()->GetClock()->WallNow(), SSL_get_SSL_CTX(ssl()));
   }
+  session_cache_lookup_done_ = true;
   if (cached_state_) {
     SSL_set_session(ssl(), cached_state_->tls_session.get());
     if (!cached_state_->token.empty()) {
@@ -151,6 +149,26 @@ bool TlsClientHandshaker::CryptoConnect() {
     CloseConnection(QUIC_HANDSHAKE_FAILED,
                     "Client failed to set ECHConfigList");
     return false;
+  }
+
+  // Configure TLS Trust Anchor IDs
+  // (https://tlswg.org/tls-trust-anchor-ids/draft-ietf-tls-trust-anchor-ids.html),
+  // if set.
+  if (GetQuicReloadableFlag(enable_tls_trust_anchor_ids)) {
+    QUIC_RELOADABLE_FLAG_COUNT_N(enable_tls_trust_anchor_ids, 2, 2);
+#if defined(BORINGSSL_API_VERSION) && BORINGSSL_API_VERSION >= 36
+    if (!tls_connection_.ssl_config().trust_anchor_ids.empty()) {
+      if (!SSL_set1_requested_trust_anchors(
+              ssl(),
+              reinterpret_cast<const uint8_t*>(
+                  tls_connection_.ssl_config().trust_anchor_ids.data()),
+              tls_connection_.ssl_config().trust_anchor_ids.size())) {
+        CloseConnection(QUIC_HANDSHAKE_FAILED,
+                        "Client failed to set TLS Trust Anchor IDs");
+        return false;
+      }
+    }
+#endif
   }
 
   // Start the handshake.
@@ -347,7 +365,9 @@ bool TlsClientHandshaker::ProcessTransportParameters(
 int TlsClientHandshaker::num_sent_client_hellos() const { return 0; }
 
 bool TlsClientHandshaker::ResumptionAttempted() const {
-  QUIC_BUG_IF(quic_tls_client_resumption_attempted, !encryption_established_);
+  // Don't call this method if the session cache lookup hasn't completed yet.
+  QUIC_BUG_IF(quic_tls_client_resumption_attempted,
+              !session_cache_lookup_done_);
   return cached_state_ != nullptr;
 }
 
@@ -383,6 +403,10 @@ bool TlsClientHandshaker::ExportKeyingMaterial(absl::string_view label,
                                                size_t result_len,
                                                std::string* result) {
   return ExportKeyingMaterialForLabel(label, context, result_len, result);
+}
+
+bool TlsClientHandshaker::MatchedTrustAnchorIdForTesting() const {
+  return matched_trust_anchor_id_;
 }
 
 bool TlsClientHandshaker::encryption_established() const {
@@ -503,6 +527,10 @@ QuicAsyncStatus TlsClientHandshaker::VerifyCertChain(
     const std::vector<std::string>& certs, std::string* error_details,
     std::unique_ptr<ProofVerifyDetails>* details, uint8_t* out_alert,
     std::unique_ptr<ProofVerifierCallback> callback) {
+#if defined(BORINGSSL_API_VERSION) && BORINGSSL_API_VERSION >= 36
+  matched_trust_anchor_id_ = SSL_peer_matched_trust_anchor(ssl());
+#endif
+
   const uint8_t* ocsp_response_raw;
   size_t ocsp_response_len;
   SSL_get0_ocsp_response(ssl(), &ocsp_response_raw, &ocsp_response_len);

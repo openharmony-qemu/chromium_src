@@ -10,7 +10,6 @@
 #include "base/check.h"
 #include "base/containers/adapters.h"
 #include "base/functional/bind.h"
-#include "base/not_fatal_until.h"
 #include "base/time/time.h"
 #include "base/values.h"
 #include "ui/gfx/image/image.h"
@@ -351,7 +350,7 @@ NotificationList::GetPopupNotificationsWithoutBlocker(
 void NotificationList::MarkSinglePopupAsShown(const std::string& id,
                                               bool mark_notification_as_read) {
   auto iter = GetNotification(id);
-  CHECK(iter != notifications_.end(), base::NotFatalUntil::M130);
+  CHECK(iter != notifications_.end());
 
   NotificationState* state = &iter->second;
   if (iter->second.shown_as_popup) {
@@ -384,7 +383,7 @@ void NotificationList::MarkSinglePopupAsDisplayed(const std::string& id) {
 
 void NotificationList::ResetSinglePopup(const std::string& id) {
   auto iter = GetNotification(id);
-  CHECK(iter != notifications_.end(), base::NotFatalUntil::M130);
+  CHECK(iter != notifications_.end());
 
   NotificationState* state = &iter->second;
   // `shown_as_popup` should be true if quiet mode is enabled.
@@ -453,7 +452,7 @@ NotificationList::GetVisibleNotificationsWithoutBlocker(
     const NotificationBlocker* ignored_blocker) const {
   Notifications result;
   for (const auto& tuple : notifications_) {
-    auto it = (base::ranges::find_if(
+    auto it = (std::ranges::find_if(
         blockers, [&ignored_blocker,
                    &tuple](message_center::NotificationBlocker* blocker) {
           return blocker != ignored_blocker &&

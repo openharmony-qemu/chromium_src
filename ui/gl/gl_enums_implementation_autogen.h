@@ -960,10 +960,6 @@ static constexpr EnumToString kEnumToStringTable[] = {
         "GL_CLIP_DISTANCE7_APPLE",
     },
     {
-        0x300E,
-        "GL_CONTEXT_LOST",
-    },
-    {
         0x40,
         "GL_GLYPH_VERTICAL_BEARING_Y_BIT_NV",
     },
@@ -4240,6 +4236,10 @@ static constexpr EnumToString kEnumToStringTable[] = {
         "GL_TEXTURE_UNNORMALIZED_COORDINATES_ARM",
     },
     {
+        0x8F6E,
+        "GL_NUM_SURFACE_COMPRESSION_FIXED_RATES_EXT",
+    },
+    {
         0x8F94,
         "GL_R8_SNORM",
     },
@@ -6813,63 +6813,119 @@ static constexpr EnumToString kEnumToStringTable[] = {
         "GL_RGBX8_ANGLE",
     },
     {
+        0x96C0,
+        "GL_SURFACE_COMPRESSION_EXT",
+    },
+    {
+        0x96C1,
+        "GL_SURFACE_COMPRESSION_FIXED_RATE_NONE_EXT",
+    },
+    {
+        0x96C2,
+        "GL_SURFACE_COMPRESSION_FIXED_RATE_DEFAULT_EXT",
+    },
+    {
+        0x96C4,
+        "GL_SURFACE_COMPRESSION_FIXED_RATE_1BPC_EXT",
+    },
+    {
+        0x96C5,
+        "GL_SURFACE_COMPRESSION_FIXED_RATE_2BPC_EXT",
+    },
+    {
+        0x96C6,
+        "GL_SURFACE_COMPRESSION_FIXED_RATE_3BPC_EXT",
+    },
+    {
+        0x96C7,
+        "GL_SURFACE_COMPRESSION_FIXED_RATE_4BPC_EXT",
+    },
+    {
+        0x96C8,
+        "GL_SURFACE_COMPRESSION_FIXED_RATE_5BPC_EXT",
+    },
+    {
+        0x96C9,
+        "GL_SURFACE_COMPRESSION_FIXED_RATE_6BPC_EXT",
+    },
+    {
+        0x96CA,
+        "GL_SURFACE_COMPRESSION_FIXED_RATE_7BPC_EXT",
+    },
+    {
+        0x96CB,
+        "GL_SURFACE_COMPRESSION_FIXED_RATE_8BPC_EXT",
+    },
+    {
+        0x96CC,
+        "GL_SURFACE_COMPRESSION_FIXED_RATE_9BPC_EXT",
+    },
+    {
+        0x96CD,
+        "GL_SURFACE_COMPRESSION_FIXED_RATE_10BPC_EXT",
+    },
+    {
+        0x96CE,
+        "GL_SURFACE_COMPRESSION_FIXED_RATE_11BPC_EXT",
+    },
+    {
+        0x96CF,
+        "GL_SURFACE_COMPRESSION_FIXED_RATE_12BPC_EXT",
+    },
+    {
         0x96E0,
         "GL_MAX_PIXEL_LOCAL_STORAGE_PLANES_ANGLE",
     },
     {
         0x96E1,
-        "GL_MAX_COLOR_ATTACHMENTS_WITH_ACTIVE_PIXEL_LOCAL_STORAGE_ANGLE",
-    },
-    {
-        0x96E2,
         "GL_MAX_COMBINED_DRAW_BUFFERS_AND_PIXEL_LOCAL_STORAGE_PLANES_ANGLE",
     },
     {
-        0x96E3,
+        0x96E2,
         "GL_PIXEL_LOCAL_STORAGE_ACTIVE_PLANES_ANGLE",
     },
     {
-        0x96E4,
+        0x96E3,
         "GL_LOAD_OP_ZERO_ANGLE",
     },
     {
-        0x96E5,
+        0x96E4,
         "GL_LOAD_OP_CLEAR_ANGLE",
     },
     {
-        0x96E6,
+        0x96E5,
         "GL_LOAD_OP_LOAD_ANGLE",
     },
     {
-        0x96E7,
+        0x96E6,
         "GL_STORE_OP_STORE_ANGLE",
     },
     {
-        0x96E8,
+        0x96E7,
         "GL_PIXEL_LOCAL_FORMAT_ANGLE",
     },
     {
-        0x96E9,
+        0x96E8,
         "GL_PIXEL_LOCAL_TEXTURE_NAME_ANGLE",
     },
     {
-        0x96EA,
+        0x96E9,
         "GL_PIXEL_LOCAL_TEXTURE_LEVEL_ANGLE",
     },
     {
-        0x96EB,
+        0x96EA,
         "GL_PIXEL_LOCAL_TEXTURE_LAYER_ANGLE",
     },
     {
-        0x96EC,
+        0x96EB,
         "GL_PIXEL_LOCAL_CLEAR_VALUE_FLOAT_ANGLE",
     },
     {
-        0x96ED,
+        0x96EC,
         "GL_PIXEL_LOCAL_CLEAR_VALUE_INT_ANGLE",
     },
     {
-        0x96EE,
+        0x96ED,
         "GL_PIXEL_LOCAL_CLEAR_VALUE_UNSIGNED_INT_ANGLE",
     },
     {
@@ -6956,4 +7012,4 @@ static constexpr EnumToString kEnumToStringTable[] = {
 
 }  // namespace
 
-#endif  //  UI_GL_GL_ENUMS_IMPLEMENTATION_AUTOGEN_H_
+#endif  // UI_GL_GL_ENUMS_IMPLEMENTATION_AUTOGEN_H_

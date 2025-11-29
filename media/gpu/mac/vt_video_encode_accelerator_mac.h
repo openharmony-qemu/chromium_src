@@ -15,6 +15,7 @@
 #include "base/sequence_checker.h"
 #include "base/task/sequenced_task_runner.h"
 #include "media/base/bitrate.h"
+#include "media/base/encoder_status.h"
 #include "media/base/mac/videotoolbox_helpers.h"
 #include "media/base/video_codecs.h"
 #include "media/gpu/media_gpu_export.h"
@@ -40,10 +41,13 @@ class MEDIA_GPU_EXPORT VTVideoEncodeAccelerator
   // VideoEncodeAccelerator implementation.
   SupportedProfiles GetSupportedProfiles() override;
 
-  bool Initialize(const Config& config,
-                  Client* client,
-                  std::unique_ptr<MediaLog> media_log = nullptr) override;
+  EncoderStatus Initialize(
+      const Config& config,
+      Client* client,
+      std::unique_ptr<MediaLog> media_log = nullptr) override;
   void Encode(scoped_refptr<VideoFrame> frame, bool force_keyframe) override;
+  void Encode(scoped_refptr<VideoFrame> frame,
+              const VideoEncoder::EncodeOptions& options) override;
   void UseOutputBitstreamBuffer(BitstreamBuffer buffer) override;
   void RequestEncodingParametersChange(
       const Bitrate& bitrate,
@@ -142,6 +146,8 @@ class MEDIA_GPU_EXPORT VTVideoEncodeAccelerator
   // Color space of the first frame sent to Encode().
   std::optional<gfx::ColorSpace> encoder_color_space_;
   bool can_set_encoder_color_space_ = true;
+
+  bool encoder_produces_svc_spec_compliant_bitstream_ = false;
 
   // Monotonically-growing timestamp that will be assigned to the next frame
   base::TimeDelta next_timestamp_;

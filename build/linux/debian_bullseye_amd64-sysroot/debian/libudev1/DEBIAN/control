@@ -1,9 +1,9 @@
 Package: libudev1
 Source: systemd
-Version: 252.5-2~bpo11+1
+Version: 252.29-1~deb12u1~bpo11+1
 Architecture: amd64
 Maintainer: Debian systemd Maintainers <pkg-systemd-maintainers@lists.alioth.debian.org>
-Installed-Size: 239
+Installed-Size: 240
 Depends: libc6 (>= 2.30)
 Section: libs
 Priority: optional

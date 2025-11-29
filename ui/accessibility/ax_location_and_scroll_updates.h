@@ -5,21 +5,23 @@
 #ifndef UI_ACCESSIBILITY_AX_LOCATION_AND_SCROLL_UPDATES_H_
 #define UI_ACCESSIBILITY_AX_LOCATION_AND_SCROLL_UPDATES_H_
 
+#include <vector>
+
 #include "ui/accessibility/ax_base_export.h"
 #include "ui/accessibility/ax_relative_bounds.h"
+
 namespace ui {
 struct AX_BASE_EXPORT AXLocationChange {
  public:
   AXLocationChange() = default;
-  AXLocationChange(int id, AXRelativeBounds& bounds);
+  AXLocationChange(int id, AXRelativeBounds bounds)
+      : id(id), new_location(std::move(bounds)) {}
 
   AXLocationChange(const AXLocationChange& other);
   AXLocationChange& operator=(const AXLocationChange& other);
 
-  AXLocationChange(AXLocationChange&& other);
-  AXLocationChange& operator=(AXLocationChange&& other);
-
-  ~AXLocationChange();
+  AXLocationChange(AXLocationChange&& other) noexcept = default;
+  AXLocationChange& operator=(AXLocationChange&& other) noexcept = default;
 
   int id;
   AXRelativeBounds new_location;

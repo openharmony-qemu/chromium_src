@@ -122,9 +122,11 @@ TestPositionType AXNodePositionFuzzerGenerator::CreateNewPosition(
 
 ax::mojom::MoveDirection AXNodePositionFuzzerGenerator::GenerateMoveDirection(
     unsigned char byte) {
-  constexpr unsigned char max_value =
-      static_cast<unsigned char>(ax::mojom::MoveDirection::kMaxValue);
-  return static_cast<ax::mojom::MoveDirection>(byte % max_value);
+  // Read one bit to determine if the direction is forward or backward.
+  if (1 & byte) {
+    return ax::mojom::MoveDirection::kBackward;
+  }
+  return ax::mojom::MoveDirection::kForward;
 }
 
 ax::mojom::TextAffinity AXNodePositionFuzzerGenerator::GenerateTextAffinity(
@@ -358,7 +360,9 @@ void AXNodePositionFuzzerGenerator::CallPositionAPIs(
   std::ignore = position->AtStartOfContent();
   std::ignore = position->AtEndOfContent();
   std::ignore = position->LowestCommonAnchor(*other_position);
-  std::ignore = position->CompareTo(*other_position);
+  if (position->IsValid() && other_position->IsValid()) {
+    std::ignore = position->CompareTo(*other_position);
+  }
   std::ignore = position->GetText();
   std::ignore = position->IsPointingToLineBreak();
   std::ignore = position->IsInTextObject();

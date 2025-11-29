@@ -7,22 +7,24 @@
 #pragma allow_unsafe_buffers
 #endif
 
+#include <array>
+
 // This file is here so other GLES2 related files can have a common set of
 // includes where appropriate.
-
-#include "gpu/command_buffer/common/gles2_cmd_utils.h"
 
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 #include <GLES2/gl2extchromium.h>
 #include <GLES3/gl3.h>
 #include <GLES3/gl31.h>
+#include <GLES3/gl32.h>
 
 #include <sstream>
 
 #include "base/check_op.h"
 #include "base/notreached.h"
 #include "base/numerics/safe_math.h"
+#include "gpu/command_buffer/common/gles2_cmd_utils.h"
 #include "ui/gl/gl_enums.h"
 
 namespace gpu {
@@ -980,11 +982,14 @@ uint32_t GLES2Util::GLErrorBitToGLError(uint32_t error_bit) {
 }
 
 uint32_t GLES2Util::IndexToGLFaceTarget(int index) {
-  static uint32_t faces[] = {
-      GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
-      GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
-      GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
-  };
+  static auto faces = std::to_array<uint32_t>({
+      GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+      GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+      GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+      GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+      GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
+      GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
+  });
   return faces[index];
 }
 

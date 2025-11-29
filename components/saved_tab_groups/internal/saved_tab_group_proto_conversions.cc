@@ -27,9 +27,6 @@
 namespace tab_groups {
 namespace {
 
-// The current schema version of the SavedTabGroupData proto.
-const int kCurrentSchemaVersion = 1;
-
 base::Time TimeFromWindowsEpochMicros(int64_t time_windows_epoch_micros) {
   return base::Time::FromDeltaSinceWindowsEpoch(
       base::Microseconds(time_windows_epoch_micros));
@@ -74,12 +71,8 @@ std::optional<std::string> GetCacheGuidFromSpecifics(
 
 std::optional<size_t> GroupPositionFromSpecifics(
     const sync_pb::SavedTabGroupSpecifics& specifics) {
-  // In v1 we always set tab group position even if the proto is not set, which
-  // gives a default position of 0. In v2 we leave the position unset if the
-  // proto is not set for unpinned tab groups.
-  if (!IsTabGroupsSaveUIUpdateEnabled()) {
-    return specifics.group().position();
-  }
+  // We leave the position unset if the proto is not set for unpinned tab
+  // groups.
   if (specifics.group().has_pinned_position()) {
     return specifics.group().pinned_position();
   }
@@ -134,11 +127,10 @@ sync_pb::SavedTabGroup_SavedTabGroupColor TabGroupColorToSyncColor(
     case tab_groups::TabGroupColorId::kOrange:
       return sync_pb::SavedTabGroup::SAVED_TAB_GROUP_COLOR_ORANGE;
     case tab_groups::TabGroupColorId::kNumEntries:
-      NOTREACHED_IN_MIGRATION() << "kNumEntries is not a supported color enum.";
-      return sync_pb::SavedTabGroup::SAVED_TAB_GROUP_COLOR_GREY;
+      NOTREACHED() << "kNumEntries is not a supported color enum.";
   }
 
-  NOTREACHED_IN_MIGRATION() << "No known conversion for the supplied color.";
+  NOTREACHED() << "No known conversion for the supplied color.";
 }
 
 SavedTabGroup DataToSavedTabGroup(const proto::SavedTabGroupData& data) {
@@ -171,36 +163,59 @@ SavedTabGroup DataToSavedTabGroup(const proto::SavedTabGroupData& data) {
 
   bool created_before_syncing_tab_groups = false;
   base::Time last_user_interaction_time;
+  base::Uuid originating_tab_group_guid;
+  bool is_hidden = false;
+  std::optional<base::Time> archival_time;
   if (data.has_local_tab_group_data()) {
     created_before_syncing_tab_groups =
         data.local_tab_group_data().created_before_syncing_tab_groups();
     last_user_interaction_time = TimeFromWindowsEpochMicros(
         data.local_tab_group_data()
             .last_user_interaction_time_windows_epoch_micros());
+    if (data.local_tab_group_data().has_originating_tab_group_guid()) {
+      originating_tab_group_guid = base::Uuid::ParseLowercase(
+          data.local_tab_group_data().originating_tab_group_guid());
+    }
+    is_hidden = data.local_tab_group_data().is_group_hidden();
+    if (data.local_tab_group_data().has_archival_time_windows_epoch_micros()) {
+      archival_time = TimeFromWindowsEpochMicros(
+          data.local_tab_group_data().archival_time_windows_epoch_micros());
+    }
   }
 
   SavedTabGroup group = SavedTabGroup(
       title, color, {}, position, guid, local_group_id,
       std::move(creator_cache_guid), std::move(last_updater_cache_guid),
       created_before_syncing_tab_groups, creation_time);
-  group.SetUpdateTimeWindowsEpochMicros(update_time);
+  group.SetUpdateTime(update_time);
   group.SetLastUserInteractionTime(last_user_interaction_time);
+  if (originating_tab_group_guid.is_valid()) {
+    // The user is always an owner of saved tab groups.
+    group.SetOriginatingTabGroupGuid(std::move(originating_tab_group_guid),
+                                     /*use_originating_tab_group_guid=*/true);
+  }
+  group.SetIsHidden(is_hidden);
+  group.SetArchivalTime(archival_time);
 
   return group;
 }
 
-proto::SavedTabGroupData SavedTabGroupToData(const SavedTabGroup& group) {
+proto::SavedTabGroupData SavedTabGroupToData(
+    const SavedTabGroup& group,
+    const sync_pb::SavedTabGroupSpecifics& base_specifics) {
   proto::SavedTabGroupData pb_data;
   auto* pb_specific = pb_data.mutable_specifics();
+  pb_specific->CopyFrom(base_specifics);
+
+  // WARNING: all fields need to be set or cleared explicitly.
+  // WARNING: if you are adding support for new `SavedTabGroupSpecifics`
+  // fields, you need to update the following functions accordingly:
+  // `TrimAllSupportedFieldsFromRemoteSpecifics`.
   pb_specific->set_guid(group.saved_guid().AsLowercaseString());
   pb_specific->set_creation_time_windows_epoch_micros(
-      group.creation_time_windows_epoch_micros()
-          .ToDeltaSinceWindowsEpoch()
-          .InMicroseconds());
+      group.creation_time().ToDeltaSinceWindowsEpoch().InMicroseconds());
   pb_specific->set_update_time_windows_epoch_micros(
-      group.update_time_windows_epoch_micros()
-          .ToDeltaSinceWindowsEpoch()
-          .InMicroseconds());
+      group.update_time().ToDeltaSinceWindowsEpoch().InMicroseconds());
 
   sync_pb::SavedTabGroup* pb_group = pb_specific->mutable_group();
   pb_group->set_color(TabGroupColorToSyncColor(group.color()));
@@ -210,6 +225,15 @@ proto::SavedTabGroupData SavedTabGroupToData(const SavedTabGroup& group) {
         ->mutable_created()
         ->mutable_device_info()
         ->set_cache_guid(group.creator_cache_guid().value());
+  } else {
+    if (pb_specific->has_attribution_metadata() &&
+        pb_specific->attribution_metadata().has_created() &&
+        pb_specific->attribution_metadata().created().has_device_info()) {
+      pb_specific->mutable_attribution_metadata()
+          ->mutable_created()
+          ->mutable_device_info()
+          ->clear_cache_guid();
+    }
   }
 
   if (group.last_updater_cache_guid().has_value()) {
@@ -217,16 +241,24 @@ proto::SavedTabGroupData SavedTabGroupToData(const SavedTabGroup& group) {
         ->mutable_updated()
         ->mutable_device_info()
         ->set_cache_guid(group.last_updater_cache_guid().value());
-  }
-
-  if (group.position().has_value()) {
-    if (IsTabGroupsSaveUIUpdateEnabled()) {
-      pb_group->set_pinned_position(group.position().value());
-    } else {
-      pb_group->set_position(group.position().value());
+  } else {
+    if (pb_specific->has_attribution_metadata() &&
+        pb_specific->attribution_metadata().has_updated() &&
+        pb_specific->attribution_metadata().updated().has_device_info()) {
+      pb_specific->mutable_attribution_metadata()
+          ->mutable_updated()
+          ->mutable_device_info()
+          ->clear_cache_guid();
     }
   }
 
+  if (group.position().has_value()) {
+    pb_group->set_pinned_position(group.position().value());
+  } else {
+    pb_group->clear_pinned_position();
+  }
+
+  // Local only fields.
   if (AreLocalIdsPersisted()) {
     const auto& local_group_id = group.local_group_id();
     if (local_group_id.has_value()) {
@@ -237,13 +269,28 @@ proto::SavedTabGroupData SavedTabGroupToData(const SavedTabGroup& group) {
 
   pb_data.mutable_local_tab_group_data()->set_created_before_syncing_tab_groups(
       group.created_before_syncing_tab_groups());
-  pb_data.mutable_local_tab_group_data()
-      ->set_last_user_interaction_time_windows_epoch_micros(
-          group.last_user_interaction_time()
-              .ToDeltaSinceWindowsEpoch()
-              .InMicroseconds());
+  proto::LocalTabGroupData* local_data = pb_data.mutable_local_tab_group_data();
+  local_data->set_last_user_interaction_time_windows_epoch_micros(
+      group.last_user_interaction_time()
+          .ToDeltaSinceWindowsEpoch()
+          .InMicroseconds());
 
-  pb_data.set_version(kCurrentSchemaVersion);
+  if (group.GetOriginatingTabGroupGuid().has_value()) {
+    local_data->set_originating_tab_group_guid(
+        group.GetOriginatingTabGroupGuid().value().AsLowercaseString());
+  }
+  local_data->set_is_group_hidden(group.is_hidden());
+  if (group.archival_time().has_value()) {
+    local_data->set_archival_time_windows_epoch_micros(
+        group.archival_time()
+            .value()
+            .ToDeltaSinceWindowsEpoch()
+            .InMicroseconds());
+  }
+
+  // Version fields.
+  pb_specific->set_version(kCurrentSavedTabGroupSpecificsProtoVersion);
+  pb_data.set_version(kCurrentSavedTabGroupDataProtoVersion);
 
   // Note: When adding a new syncable field, also update IsSyncEquivalent().
 
@@ -275,25 +322,37 @@ SavedTabGroupTab DataToSavedTabGroupTab(const proto::SavedTabGroupData& data) {
   return tab;
 }
 
-proto::SavedTabGroupData SavedTabGroupTabToData(const SavedTabGroupTab& tab) {
+proto::SavedTabGroupData SavedTabGroupTabToData(
+    const SavedTabGroupTab& tab,
+    const sync_pb::SavedTabGroupSpecifics& base_specifics) {
   proto::SavedTabGroupData pb_data;
   auto* pb_specific = pb_data.mutable_specifics();
+  pb_specific->CopyFrom(base_specifics);
 
+  // WARNING: all fields need to be set or cleared explicitly.
+  // WARNING: if you are adding support for new `SavedTabGroupSpecifics`
+  // fields, you need to update the following functions accordingly:
+  // `TrimAllSupportedFieldsFromRemoteSpecifics`.
   pb_specific->set_guid(tab.saved_tab_guid().AsLowercaseString());
   pb_specific->set_creation_time_windows_epoch_micros(
-      tab.creation_time_windows_epoch_micros()
-          .ToDeltaSinceWindowsEpoch()
-          .InMicroseconds());
+      tab.creation_time().ToDeltaSinceWindowsEpoch().InMicroseconds());
   pb_specific->set_update_time_windows_epoch_micros(
-      tab.update_time_windows_epoch_micros()
-          .ToDeltaSinceWindowsEpoch()
-          .InMicroseconds());
+      tab.update_time().ToDeltaSinceWindowsEpoch().InMicroseconds());
 
   if (tab.creator_cache_guid().has_value()) {
     pb_specific->mutable_attribution_metadata()
         ->mutable_created()
         ->mutable_device_info()
         ->set_cache_guid(tab.creator_cache_guid().value());
+  } else {
+    if (pb_specific->has_attribution_metadata() &&
+        pb_specific->attribution_metadata().has_created() &&
+        pb_specific->attribution_metadata().created().has_device_info()) {
+      pb_specific->mutable_attribution_metadata()
+          ->mutable_created()
+          ->mutable_device_info()
+          ->clear_cache_guid();
+    }
   }
 
   if (tab.last_updater_cache_guid().has_value()) {
@@ -301,6 +360,15 @@ proto::SavedTabGroupData SavedTabGroupTabToData(const SavedTabGroupTab& tab) {
         ->mutable_updated()
         ->mutable_device_info()
         ->set_cache_guid(tab.last_updater_cache_guid().value());
+  } else {
+    if (pb_specific->has_attribution_metadata() &&
+        pb_specific->attribution_metadata().has_updated() &&
+        pb_specific->attribution_metadata().updated().has_device_info()) {
+      pb_specific->mutable_attribution_metadata()
+          ->mutable_updated()
+          ->mutable_device_info()
+          ->clear_cache_guid();
+    }
   }
 
   sync_pb::SavedTabGroupTab* pb_tab = pb_specific->mutable_tab();
@@ -310,9 +378,10 @@ proto::SavedTabGroupData SavedTabGroupTabToData(const SavedTabGroupTab& tab) {
   pb_tab->set_position(tab.position().value());
   // Note: When adding a new syncable field, also update IsSyncEquivalent().
 
-  pb_data.set_version(kCurrentSchemaVersion);
-  pb_data.mutable_local_tab_group_data()->set_is_tab_pending_sanitization(
-      tab.is_pending_sanitization());
+  // Version fields.
+  pb_specific->set_version(kCurrentSavedTabGroupSpecificsProtoVersion);
+  pb_data.set_version(kCurrentSavedTabGroupDataProtoVersion);
+
   return pb_data;
 }
 

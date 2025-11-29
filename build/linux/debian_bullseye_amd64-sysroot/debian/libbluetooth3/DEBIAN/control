@@ -1,6 +1,6 @@
 Package: libbluetooth3
 Source: bluez
-Version: 5.55-3.1
+Version: 5.55-3.1+deb11u1
 Architecture: amd64
 Maintainer: Debian Bluetooth Maintainers <team+pkg-bluetooth@tracker.debian.org>
 Installed-Size: 297

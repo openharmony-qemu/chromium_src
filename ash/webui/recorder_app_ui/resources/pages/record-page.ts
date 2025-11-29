@@ -10,11 +10,13 @@ import '../components/cra/cra-image.js';
 import '../components/cra/cra-menu.js';
 import '../components/cra/cra-menu-item.js';
 import '../components/delete-recording-dialog.js';
+import '../components/language-picker-dialog.js';
 import '../components/recording-file-list.js';
 import '../components/secondary-button.js';
 import '../components/transcription-view.js';
 import '../components/transcription-consent-dialog.js';
 import '../components/time-duration.js';
+import '../components/error-dialog.js';
 
 import {
   classMap,
@@ -32,6 +34,7 @@ import {CraDialog} from '../components/cra/cra-dialog.js';
 import {CraMenu} from '../components/cra/cra-menu.js';
 import {DeleteRecordingDialog} from '../components/delete-recording-dialog.js';
 import {withTooltip} from '../components/directives/with-tooltip.js';
+import {LanguagePickerDialog} from '../components/language-picker-dialog.js';
 import {
   TranscriptionConsentDialog,
 } from '../components/transcription-consent-dialog.js';
@@ -56,6 +59,7 @@ import {
   toggleTranscriptionEnabled,
 } from '../core/state/transcription.js';
 import {
+  assert,
   assertExhaustive,
   assertExists,
   assertInstanceof,
@@ -94,7 +98,6 @@ export class RecordPage extends ReactiveLitElement {
       box-sizing: border-box;
       display: flex;
       flex-flow: column;
-      gap: 4px;
       height: 100%;
       padding: 16px;
       width: 100%;
@@ -121,6 +124,10 @@ export class RecordPage extends ReactiveLitElement {
       display: flex;
       flex-flow: row;
       padding: 8px;
+
+      @container style(--small-viewport: 1) {
+        padding: 2px;
+      }
     }
 
     #title {
@@ -276,7 +283,7 @@ export class RecordPage extends ReactiveLitElement {
       align-items: center;
       display: flex;
       flex-flow: row;
-      gap: 24px;
+      gap: 28px;
     }
 
     #pause-button {
@@ -366,8 +373,14 @@ export class RecordPage extends ReactiveLitElement {
 
   private readonly microphoneManager = useMicrophoneManager();
 
+  private readonly transcriptionAvailable = computed(
+    () => this.platformHandler.isSodaAvailable(),
+  );
+
+  // Shows transcription panel by default if transcription is available.
   // TODO: b/336963138 - Handle when transcription isn't available.
-  private readonly transcriptionShown = signal(false);
+  private readonly transcriptionShown =
+    signal(this.transcriptionAvailable.value);
 
   private readonly transcriptionEnabled = computed(
     () =>
@@ -381,11 +394,16 @@ export class RecordPage extends ReactiveLitElement {
   );
 
   // Speaker label state per-recording.
-  private readonly speakerLabelEnabled =
-    signal(this.globalSpeakerLabelEnabled.value);
+  private readonly speakerLabelEnabled = signal(
+    this.globalSpeakerLabelEnabled.value,
+  );
 
-  private readonly transcriptionAvailable = computed(
-    () => this.platformHandler.isSodaAvailable(),
+  private readonly selectedLanguage = computed(
+    () => this.platformHandler.getSelectedLanguage(),
+  );
+
+  private readonly selectedSodaState = computed(
+    () => this.platformHandler.getSelectedLanguageState()?.value ?? null,
   );
 
   private transcriptionEnableDispose: Dispose|null = null;
@@ -393,6 +411,8 @@ export class RecordPage extends ReactiveLitElement {
   private readonly menu = createRef<CraMenu>();
 
   private readonly deleteDialog = createRef<DeleteRecordingDialog>();
+
+  private readonly languagePickerDialog = createRef<LanguagePickerDialog>();
 
   private readonly transcriptionConsentDialog =
     createRef<TranscriptionConsentDialog>();
@@ -410,6 +430,8 @@ export class RecordPage extends ReactiveLitElement {
   private readonly recordingControlQueue = new AsyncJobQueue('enqueue');
 
   private recordStartTime: number|null = null;
+
+  private readonly audioErrorOccurred = signal(false);
 
   get stopRecordingButtonForTest(): CraButton {
     return assertExists(this.stopRecordingButton.value);
@@ -434,7 +456,7 @@ export class RecordPage extends ReactiveLitElement {
       // are gated behind transcriptionAvailable.
       await session.start(
         this.transcriptionEnabled.value && this.transcriptionAvailable.value,
-        settings.value.transcriptionLanguage,
+        this.selectedLanguage.value,
       );
     } catch (e) {
       if (e instanceof DOMException &&
@@ -445,23 +467,21 @@ export class RecordPage extends ReactiveLitElement {
         navigateTo('main');
       } else {
         console.error(e);
+        this.audioErrorOccurred.value = true;
       }
       return;
     }
     this.recordStartTime = performance.now();
 
     this.transcriptionEnableDispose = effect(() => {
-      // TODO(pihsun): This is a bit fragile now since this relies on the
-      // startNewSodaSession and stopSodaSession both calls AsyncJobQueue,
-      // which always run things async so signal won't be tracked as
-      // dependency. Since we only want the transcriptionEnabled as dependency
-      // here, add either watch() to manually specify dependencies for effect,
-      // or add untrack() to specify region that dependencies shouldn't be
-      // tracked.
       if (this.transcriptionEnabled.value &&
           this.transcriptionAvailable.value &&
-          settings.value.transcriptionLanguage !== null) {
-        session.startNewSodaSession(settings.value.transcriptionLanguage);
+          this.selectedLanguage.value !== null &&
+          this.selectedSodaState.value?.kind === 'installed') {
+        // TODO(hsuanling): `tryStartSodaSession` internally won't start new
+        // SODA session if there's already one running. Change implementation to
+        // start new SODA session when the language is changed.
+        session.tryStartSodaSession(this.selectedLanguage.value);
       } else {
         session.stopSodaSession();
       }
@@ -506,9 +526,8 @@ export class RecordPage extends ReactiveLitElement {
     }
 
     const transcription = session.progress.value.transcription;
-    const locale = this.transcriptionEnabled.value ?
-      settings.value.transcriptionLanguage :
-      null;
+    const locale =
+      this.transcriptionEnabled.value ? this.selectedLanguage.value : null;
 
     this.platformHandler.eventsSender.sendRecordEvent({
       audioDuration: Math.round(session.progress.value.length * 1000),
@@ -627,6 +646,10 @@ export class RecordPage extends ReactiveLitElement {
     if (!toggleTranscriptionEnabled()) {
       this.transcriptionConsentDialog.value?.show();
     }
+    if (this.platformHandler.getSelectedLanguage() === null &&
+        this.transcriptionEnabled.value) {
+      this.languagePickerDialog.value?.show();
+    }
   }
 
   private toggleSpeakerLabelEnabled() {
@@ -650,9 +673,17 @@ export class RecordPage extends ReactiveLitElement {
 
   private onPauseButtonClick() {
     this.recordingControlQueue.push(async () => {
-      this.recordingPaused.update((s) => !s);
       // TODO(pihsun): Animate when paused state change.
-      await this.recordingSession.value?.setPaused(this.recordingPaused.value);
+      try {
+        await this.recordingSession.value?.setPaused(
+          !this.recordingPaused.value,
+        );
+        // Changes state only if no error occurs.
+        this.recordingPaused.update((s) => !s);
+      } catch (e) {
+        console.error(e);
+        this.audioErrorOccurred.value = true;
+      }
     });
   }
 
@@ -708,14 +739,92 @@ export class RecordPage extends ReactiveLitElement {
       </transcription-view>`;
     }
 
-    // Note that the image transcript.svg is currently placeholders and don't
-    // use dynamic color tokens yet.
-    // TODO: b/344785475 - Change to final illustration when ready.
     switch (settings.value.transcriptionEnabled) {
-      case TranscriptionEnableState.ENABLED:
-        return html`<div id="transcription-waiting">
-          ${i18n.transcriptionWaitingSpeechText}
-        </div>`;
+      case TranscriptionEnableState.ENABLED: {
+        const sodaState = this.selectedSodaState.value;
+        if (sodaState === null) {
+          // When language selection is not available, the
+          // getSelectedLanguageState should return the state of the default
+          // language.
+          assert(
+            this.platformHandler.isMultipleLanguageAvailable(),
+            'Language selection is unavailable but' +
+              ' getSelectedLanguageState returns null.',
+          );
+          const description = replacePlaceholderWithHtml(
+            i18n.recordTranscriptionUnusableSelectLanguageDescription,
+            '[3dot]',
+            html`<cra-icon name="more_vertical"></cra-icon>`,
+          );
+          return html`
+            <div id="transcription-consent">
+              <cra-image name="transcription_off"></cra-image>
+              <div class="header">
+                ${i18n.recordTranscriptionUnusableHeader}
+              </div>
+              <div class="description">${description}</div>
+            </div>
+          `;
+        }
+        switch (sodaState.kind) {
+          case 'notInstalled': {
+            return html`
+              <div id="transcription-consent">
+                <cra-image name="transcription_off"></cra-image>
+                <div class="header">
+                  ${i18n.recordTranscriptionUnusableHeader}
+                </div>
+                <div class="description">
+                  ${i18n.recordTranscriptionUnusableNotInstalledDescription}
+                </div>
+              </div>
+            `;
+          }
+          case 'needsReboot': {
+            return html`
+              <div id="transcription-consent">
+                <cra-image name="transcription_off"></cra-image>
+                <div class="header">
+                  ${i18n.recordTranscriptionUnusableHeader}
+                </div>
+                <div class="description">
+                  ${i18n.recordTranscriptionUnusableNeedsRebootDescription}
+                </div>
+              </div>
+            `;
+          }
+          case 'unavailable':
+          case 'error': {
+            return html`
+              <div id="transcription-consent">
+                <cra-image name="transcription_off"></cra-image>
+                <div class="header">
+                  ${i18n.recordTranscriptionUnusableHeader}
+                </div>
+                <div class="description">
+                  ${i18n.recordTranscriptionUnusableErrorDescription}
+                </div>
+              </div>
+            `;
+          }
+          case 'installing': {
+            return html`
+              <div id="transcription-waiting">
+                ${i18n.recordTranscriptionWaitingDownloadText}
+              </div>
+            `;
+          }
+          case 'installed': {
+            return html`
+              <div id="transcription-waiting">
+                ${i18n.transcriptionWaitingSpeechText}
+              </div>
+            `;
+          }
+          default:
+            return assertExhaustive(sodaState);
+        }
+      }
       case TranscriptionEnableState.DISABLED:
       case TranscriptionEnableState.DISABLED_FIRST: {
         const description = replacePlaceholderWithHtml(
@@ -745,7 +854,7 @@ export class RecordPage extends ReactiveLitElement {
               <cra-button
                 .label=${i18n.recordTranscriptionEntryPointDisableButton}
                 button-style="secondary"
-                @click=${disableTranscription(/* firstTime= */ true)}
+                @click=${() => disableTranscription(/* firstTime= */ true)}
               ></cra-button>
               <cra-button
                 .label=${i18n.recordTranscriptionEntryPointEnableButton}
@@ -771,7 +880,7 @@ export class RecordPage extends ReactiveLitElement {
         <circle cx="6" cy="6" r="6" fill="currentColor" />
       </svg>
       <time-duration
-        digits=1
+        digits="1"
         .duration=${recordingDuration}
       ></time-duration>`;
   }
@@ -836,11 +945,30 @@ export class RecordPage extends ReactiveLitElement {
     </cra-dialog>`;
   }
 
+  private onErrorConsent() {
+    this.audioErrorOccurred.value = false;
+    if (this.recordingSession.value === null) {
+      navigateTo('main');
+    }
+  }
+
+  private renderGeneralAudioErrorDialog() {
+    return html`
+      <error-dialog
+        header=${i18n.recordGeneralAudioErrorDialogHeader}
+        ?open=${this.audioErrorOccurred.value}
+        @close=${this.onErrorConsent}
+      >
+        ${i18n.recordGeneralAudioErrorDialogDescription}
+      </error-dialog>
+    `;
+  }
+
   private renderSpeakerLabelToggle() {
     // Only show the toggle when speaker label is enabled before recording and
     // the transcription is turned on.
     if (this.transcriptionEnabled.value === false ||
-      this.globalSpeakerLabelEnabled.value === false) {
+        this.globalSpeakerLabelEnabled.value === false) {
       return nothing;
     }
 
@@ -898,6 +1026,7 @@ export class RecordPage extends ReactiveLitElement {
         @click=${this.toggleTranscriptionShown}
         aria-expanded=${this.transcriptionShown.value}
         aria-label=${transcriptButtonTooltip}
+        ?selected=${this.transcriptionShown.value}
         ${withTooltip()}
       >
         <cra-icon slot="icon" name="notes"></cra-icon>
@@ -926,8 +1055,8 @@ export class RecordPage extends ReactiveLitElement {
         >
           <cra-icon slot="icon" name="more_vertical"></cra-icon>
         </cra-icon-button>
+        ${this.renderMenu()}
       </div>
-      ${this.renderMenu()}
     `;
   }
 
@@ -945,7 +1074,11 @@ export class RecordPage extends ReactiveLitElement {
       i18n.recordPauseButtonTooltip;
 
     return html`
-      <div id="container" part="container">
+      <div
+        id="container"
+        part="container"
+        ?inert=${this.audioErrorOccurred.value}
+      >
         <div id="main-area">
           ${this.renderHeader()}
           <div id="middle" class=${classMap(mainSectionClasses)}>
@@ -983,6 +1116,10 @@ export class RecordPage extends ReactiveLitElement {
           </div>
         </div>
       </div>
+      ${this.renderGeneralAudioErrorDialog()}
+      <language-picker-dialog
+        ${ref(this.languagePickerDialog)}
+      ></language-picker-dialog>
       <delete-recording-dialog
         current
         @delete=${this.deleteRecording}

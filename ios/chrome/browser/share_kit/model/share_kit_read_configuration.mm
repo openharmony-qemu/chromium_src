@@ -6,6 +6,14 @@
 
 #import "base/functional/callback.h"
 
-@implementation ShareKitReadConfiguration
+@implementation ShareKitReadGroupParamConfiguration
+
+@end
+
+@implementation ShareKitReadGroupsConfiguration
+
+@end
+
+@implementation ShareKitReadGroupWithTokenConfiguration
 
 @end

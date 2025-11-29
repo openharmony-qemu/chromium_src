@@ -127,6 +127,11 @@ void NetworkSpeechRecognitionEngineImpl::StartRecognition() {
   DispatchEvent(event_args);
 }
 
+void NetworkSpeechRecognitionEngineImpl::UpdateRecognitionContext(
+    const media::SpeechRecognitionRecognitionContext& recognition_context) {
+  Abort(media::mojom::SpeechRecognitionErrorCode::kPhrasesNotSupported);
+}
+
 void NetworkSpeechRecognitionEngineImpl::EndRecognition() {
   base::UmaHistogramLongTimes100(kWebSpeechAudioDuration,
                                  upstream_audio_duration_);

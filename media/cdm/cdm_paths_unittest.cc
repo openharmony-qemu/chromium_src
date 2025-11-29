@@ -11,7 +11,6 @@
 #include "base/strings/stringprintf.h"
 #include "base/strings/utf_string_conversions.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "media/media_buildflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -31,8 +30,6 @@ const char kComponentPlatform[] =
     "linux";
 #elif BUILDFLAG(IS_FUCHSIA)
     "fuchsia";
-#elif BUILDFLAG(IS_OHOS)
-    "ohos";
 #else
 #error unsupported platform
 #endif

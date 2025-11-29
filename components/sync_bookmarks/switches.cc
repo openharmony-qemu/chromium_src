@@ -18,4 +18,9 @@ BASE_FEATURE(kSyncMigrateBookmarksWithoutClientTagHash,
              "SyncMigrateBookmarksWithoutClientTagHash",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
+// Enabled by default, intended as a kill switch.
+BASE_FEATURE(kSyncBookmarksBatchUploadSelectedItems,
+             "SyncBookmarksBatchUploadSelectedItems",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+
 }  // namespace switches

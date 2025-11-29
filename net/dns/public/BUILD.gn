@@ -5,9 +5,7 @@
 if (is_android) {
   import("//build/config/android/rules.gni")
 }
-if (is_ohos) {
-  import("//build/config/ohos/config.gni")
-}
+
 source_set("public") {
   # Due to circular dependencies, should only be depended on through //net.
   # Limit visibility to //net and other source_sets with the same access
@@ -45,7 +43,7 @@ source_set("public") {
     "util.h",
   ]
 
-  if (is_posix && !is_android && !is_ohos) {
+  if (is_posix && !is_android) {
     sources += [
       "resolv_reader.cc",
       "resolv_reader.h",
@@ -80,7 +78,7 @@ source_set("tests") {
     "doh_provider_entry_unittest.cc",
   ]
 
-  if (is_posix && !is_android && !is_ohos) {
+  if (is_posix && !is_android) {
     sources += [ "resolv_reader_unittest.cc" ]
   }
 

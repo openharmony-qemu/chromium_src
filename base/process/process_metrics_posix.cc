@@ -54,7 +54,7 @@ static const rlim_t kSystemDefaultMaxFds = 8192;
 static const rlim_t kSystemDefaultMaxFds = 1024;
 #elif BUILDFLAG(IS_OPENBSD)
 static const rlim_t kSystemDefaultMaxFds = 256;
-#elif BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#elif BUILDFLAG(IS_ANDROID)
 static const rlim_t kSystemDefaultMaxFds = 1024;
 #elif BUILDFLAG(IS_AIX)
 static const rlim_t kSystemDefaultMaxFds = 8192;
@@ -71,8 +71,9 @@ size_t GetMaxFds() {
     max_fds = nofile.rlim_cur;
   }
 
-  if (max_fds > INT_MAX)
+  if (max_fds > INT_MAX) {
     max_fds = INT_MAX;
+  }
 
   return static_cast<size_t>(max_fds);
 }
@@ -90,8 +91,9 @@ void IncreaseFdLimitTo(unsigned int max_descriptors) {
   struct rlimit limits;
   if (getrlimit(RLIMIT_NOFILE, &limits) == 0) {
     rlim_t new_limit = max_descriptors;
-    if (max_descriptors <= limits.rlim_cur)
+    if (max_descriptors <= limits.rlim_cur) {
       return;
+    }
     if (limits.rlim_max > 0 && limits.rlim_max < max_descriptors) {
       new_limit = limits.rlim_max;
     }
@@ -106,8 +108,7 @@ void IncreaseFdLimitTo(unsigned int max_descriptors) {
 
 #endif  // !BUILDFLAG(IS_FUCHSIA)
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
 namespace {
 
 size_t GetMallocUsageMallinfo() {
@@ -133,8 +134,7 @@ size_t ProcessMetrics::GetMallocUsage() {
   malloc_statistics_t stats = {0};
   malloc_zone_statistics(nullptr, &stats);
   return stats.size_in_use;
-#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(IS_OHOS)
+#elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
   return GetMallocUsageMallinfo();
 #elif BUILDFLAG(IS_FUCHSIA)
   // TODO(fuchsia): Not currently exposed. https://crbug.com/735087.

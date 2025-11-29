@@ -208,14 +208,31 @@ class VIZ_HOST_EXPORT HostFrameSinkManager
                            std::unique_ptr<CopyOutputRequest> request,
                            bool capture_exact_surface_id = false);
 
-  // Setup the connection between the Browser (at WebContentsImpl level) and the
-  // VizCompositor thread (at InputManager level) to allow transferring
-  // information from Viz to the Browser when the VizCompositor thread is
-  // handling input with InputVizard.
+  // Setup the connection between the Browser (at RenderWidgetHost level) and
+  // the VizCompositor thread (at InputManager level) to allow transferring
+  // information from Viz to the Browser and vice versa. Viz can inform Browser
+  // about inputs that it process on VizCompositor thread, and Browser can
+  // inform Viz about |TouchTransferState| to start processing input events for
+  // a sequence.
   void SetupRenderInputRouterDelegateConnection(
-      uint32_t grouping_id,
-      mojo::PendingRemote<input::mojom::RenderInputRouterDelegateClient>
-          rir_delegate_client_remote);
+      const FrameSinkId& frame_sink_id,
+      mojo::PendingAssociatedRemote<
+          input::mojom::RenderInputRouterDelegateClient>
+          rir_delegate_client_remote,
+      mojo::PendingAssociatedReceiver<input::mojom::RenderInputRouterDelegate>
+          rir_delegate_receiver);
+
+  // Notifies the VizCompositor thread (at InputManager level) about block state
+  // changes of |render_input_routers|, for input event handling with
+  // InputVizard.
+  void NotifyRendererBlockStateChanged(
+      bool blocked,
+      const std::vector<FrameSinkId>& render_input_routers);
+
+  // Requests input handling to be transferred back to BrowserMain thread from
+  // VizCompositor thread for cases like touch selection, overscrolls. See
+  // crbug.com/392044047 for more details.
+  void RequestInputBack();
 
   using ScreenshotDestinationReadyCallback =
       base::OnceCallback<void(const SkBitmap& copy_output)>;
@@ -355,6 +372,8 @@ class VIZ_HOST_EXPORT HostFrameSinkManager
           destination_token,
       std::unique_ptr<CopyOutputResult> copy_output_result) override;
 
+  mojo::Remote<mojom::RendererInputRouterDelegateRegistry>
+      rir_delegate_registry_;
   // Connections to/from FrameSinkManagerImpl.
   mojo::Remote<mojom::FrameSinkManager> frame_sink_manager_remote_;
   // This will point to |frame_sink_manager_remote_| if using mojo or it may

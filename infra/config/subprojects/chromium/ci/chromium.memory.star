@@ -7,10 +7,11 @@ load("//lib/args.star", "args")
 load("//lib/branches.star", "branches")
 load("//lib/builder_config.star", "builder_config")
 load("//lib/builder_health_indicators.star", "health_spec")
-load("//lib/builders.star", "cpu", "gardener_rotations", "os", "siso")
+load("//lib/builders.star", "builders", "cpu", "gardener_rotations", "os", "siso")
 load("//lib/ci.star", "ci")
 load("//lib/consoles.star", "consoles")
 load("//lib/gn_args.star", "gn_args")
+load("//lib/html.star", "linkify")
 load("//lib/targets.star", "targets")
 load("//lib/xcode.star", "xcode")
 
@@ -25,10 +26,12 @@ ci.defaults.set(
     os = os.LINUX_DEFAULT,
     gardener_rotations = gardener_rotations.CHROMIUM,
     tree_closing = True,
+    tree_closing_notifiers = ci.DEFAULT_TREE_CLOSING_NOTIFIERS,
     main_console_view = "main",
     contact_team_email = "chrome-sanitizer-builder-owners@google.com",
     execution_timeout = ci.DEFAULT_EXECUTION_TIMEOUT,
     health_spec = health_spec.DEFAULT,
+    reclient_enabled = False,
     service_account = ci.DEFAULT_SERVICE_ACCOUNT,
     shadow_service_account = ci.DEFAULT_SHADOW_SERVICE_ACCOUNT,
     siso_enabled = True,
@@ -96,6 +99,8 @@ linux_memory_builder(
     # to get builder cache.
     cores = 16,
     ssd = True,
+    # TODO(crbug.com/388307198): Re-enable tree closing when the bot is stable.
+    tree_closing = False,
     console_view_entry = consoles.console_view_entry(
         category = "linux|asan lsan",
         short_name = "bld",
@@ -149,7 +154,7 @@ linux_memory_builder(
                 # These are very slow on the ASAN trybot for some reason.
                 # crbug.com/1257927
                 swarming = targets.swarming(
-                    shards = 40,
+                    shards = 50,
                 ),
             ),
             "components_unittests": targets.mixin(
@@ -312,7 +317,7 @@ linux_memory_builder(
             "browser_tests": targets.mixin(
                 swarming = targets.swarming(
                     # https://crbug.com/1361973
-                    shards = 20,
+                    shards = 30,
                 ),
             ),
             "crashpad_tests": targets.remove(
@@ -378,6 +383,7 @@ linux_memory_builder(
     ),
     cores = 16,
     ssd = True,
+    free_space = builders.free_space.high,
     console_view_entry = consoles.console_view_entry(
         category = "cros|asan",
         short_name = "bld",
@@ -507,8 +513,9 @@ linux_memory_builder(
             "x64",
         ],
     ),
-    cores = 16,
+    cores = None,
     ssd = True,
+    free_space = builders.free_space.high,
     console_view_entry = consoles.console_view_entry(
         category = "cros|msan",
         short_name = "bld",
@@ -684,7 +691,7 @@ linux_memory_builder(
         per_test_modifications = {
             "browser_tests": targets.mixin(
                 swarming = targets.swarming(
-                    shards = 23,
+                    shards = 35,
                 ),
             ),
             "content_browsertests": targets.mixin(
@@ -701,7 +708,7 @@ linux_memory_builder(
             ),
             "interactive_ui_tests": targets.mixin(
                 swarming = targets.swarming(
-                    shards = 8,
+                    shards = 10,
                 ),
             ),
             "services_unittests": targets.remove(
@@ -1049,8 +1056,16 @@ ci.builder(
     siso_project = None,
 )
 
+_WEB_TESTS_LINK = "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/testing/web_tests.md"
+
 ci.builder(
-    name = "WebKit Linux ASAN",
+    name = "linux-blink-asan-rel",
+    description_html = "Runs {} with address-sanitized binaries.".format(
+        linkify(
+            _WEB_TESTS_LINK,
+            "web (platform) tests",
+        ),
+    ),
     builder_spec = builder_config.builder_spec(
         gclient_config = builder_config.gclient_config(
             config = "chromium",
@@ -1087,6 +1102,11 @@ ci.builder(
             "linux-jammy",
         ],
         per_test_modifications = {
+            "chrome_wpt_tests": targets.mixin(
+                args = [
+                    "-j6",
+                ],
+            ),
             "blink_web_tests": targets.mixin(
                 args = [
                     "--timeout-ms",
@@ -1105,16 +1125,31 @@ ci.builder(
                     shards = 12,
                 ),
             ),
+            "headless_shell_wpt_tests": targets.mixin(
+                args = [
+                    "-j6",
+                ],
+            ),
         },
     ),
     console_view_entry = consoles.console_view_entry(
-        category = "linux|webkit",
+        category = "linux|blink",
         short_name = "asn",
     ),
 )
 
 ci.builder(
-    name = "WebKit Linux Leak",
+    name = "linux-blink-leak-rel",
+    description_html = "Runs {} with {} enabled.".format(
+        linkify(
+            _WEB_TESTS_LINK,
+            "web (platform) tests",
+        ),
+        linkify(
+            "https://chromium.googlesource.com/chromium/src/+/main/third_party/blink/renderer/controller/blink_leak_detector.h",
+            "DOM leak detection",
+        ),
+    ),
     builder_spec = builder_config.builder_spec(
         gclient_config = builder_config.gclient_config(
             config = "chromium",
@@ -1173,13 +1208,19 @@ ci.builder(
         },
     ),
     console_view_entry = consoles.console_view_entry(
-        category = "linux|webkit",
+        category = "linux|blink",
         short_name = "lk",
     ),
 )
 
 ci.builder(
-    name = "WebKit Linux MSAN",
+    name = "linux-blink-msan-rel",
+    description_html = "Runs {} with memory-sanitized binaries.".format(
+        linkify(
+            _WEB_TESTS_LINK,
+            "web (platform) tests",
+        ),
+    ),
     builder_spec = builder_config.builder_spec(
         gclient_config = builder_config.gclient_config(
             config = "chromium",
@@ -1239,121 +1280,21 @@ ci.builder(
                     shards = 12,
                 ),
             ),
+            "headless_shell_wpt_tests": targets.mixin(
+                args = [
+                    "-j6",
+                ],
+                swarming = targets.swarming(
+                    expiration_sec = 36000,
+                    hard_timeout_sec = 10800,
+                    io_timeout_sec = 3600,
+                ),
+            ),
         },
     ),
     console_view_entry = consoles.console_view_entry(
-        category = "linux|webkit",
+        category = "linux|blink",
         short_name = "msn",
-    ),
-)
-
-ci.builder(
-    name = "android-asan",
-    builder_spec = builder_config.builder_spec(
-        gclient_config = builder_config.gclient_config(
-            config = "chromium",
-            apply_configs = ["android"],
-        ),
-        chromium_config = builder_config.chromium_config(
-            config = "android_asan",
-            apply_configs = ["mb"],
-            build_config = builder_config.build_config.RELEASE,
-            target_bits = 64,
-            target_platform = builder_config.target_platform.ANDROID,
-        ),
-        android_config = builder_config.android_config(config = "main_builder"),
-        build_gs_bucket = "chromium-memory-archive",
-    ),
-    gn_args = gn_args.config(
-        configs = [
-            "android_builder",
-            "clang",
-            "asan",
-            "release_builder",
-            "remoteexec",
-            "strip_debug_info",
-            "minimal_symbols",
-            "arm",
-        ],
-    ),
-    targets = targets.bundle(
-        targets = [
-            "chromium_android_gtests",
-        ],
-        mixins = [
-            "has_native_resultdb_integration",
-            "bullhead",
-            "nougat",
-        ],
-        per_test_modifications = {
-            "android_browsertests": targets.mixin(
-                swarming = targets.swarming(
-                    shards = 2,
-                ),
-            ),
-            "angle_unittests": targets.remove(
-                reason = "Times out listing tests crbug.com/1167314",
-            ),
-            "chrome_public_test_apk": targets.remove(
-                reason = "https://crbug.com/964562",
-            ),
-            "chrome_public_test_vr_apk": targets.remove(
-                reason = "https://crbug.com/964562",
-            ),
-            "chrome_public_unit_test_apk": targets.remove(
-                reason = "https://crbug.com/964562",
-            ),
-            "components_browsertests": targets.mixin(
-                swarming = targets.swarming(
-                    shards = 3,
-                ),
-            ),
-            "content_browsertests": targets.mixin(
-                args = [
-                    "--test-launcher-filter-file=../../testing/buildbot/filters/android.asan.content_browsertests.filter",
-                ],
-                swarming = targets.swarming(
-                    shards = 25,
-                ),
-            ),
-            "content_shell_test_apk": targets.remove(
-                reason = "https://crbug.com/964562",
-            ),
-            "ipc_tests": targets.mixin(
-                swarming = targets.swarming(
-                    shards = 2,
-                ),
-            ),
-            "mojo_unittests": targets.mixin(
-                swarming = targets.swarming(
-                    shards = 5,
-                ),
-            ),
-            "perfetto_unittests": targets.remove(
-                reason = "TODO(crbug.com/41440830): Fix permission issue when creating tmp files",
-            ),
-            "sandbox_linux_unittests": targets.remove(
-                reason = "https://crbug.com/962650",
-            ),
-            "unit_tests": targets.mixin(
-                args = [
-                    "--test-launcher-filter-file=../../testing/buildbot/filters/android.asan.unit_tests.filter",
-                ],
-            ),
-            "webview_instrumentation_test_apk_multiple_process_mode": targets.remove(
-                reason = "https://crbug.com/964562",
-            ),
-        },
-    ),
-    targets_settings = targets.settings(
-        os_type = targets.os_type.ANDROID,
-    ),
-    os = os.LINUX_DEFAULT,
-    gardener_rotations = args.ignore_default(None),
-    tree_closing = False,
-    console_view_entry = consoles.console_view_entry(
-        category = "android",
-        short_name = "asn",
     ),
 )
 
@@ -1472,10 +1413,9 @@ ci.builder(
         },
     ),
     builderless = True,
-    cores = "16|32",
+    cores = 16,
     os = os.WINDOWS_DEFAULT,
-    # TODO: crrev.com/i/7808548 - Drop cores=32 and add ssd=True after bot migration.
-    ssd = None,
+    ssd = True,
     console_view_entry = consoles.console_view_entry(
         category = "win",
         short_name = "asn",

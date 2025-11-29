@@ -59,15 +59,6 @@ std::set<std::u16string_view> URLVisitAggregate::GetAssociatedTitles() const {
 std::set<const GURL*> URLVisitAggregate::GetAssociatedURLs() const {
   std::set<const GURL*> urls = {};
   for (const auto& fetcher_entry : fetcher_data_map) {
-#if defined(__clang__) && (__clang_major__ < 17)
-    std::visit(make_visitor(
-                   [&urls](const URLVisitAggregate::TabData& tab_data) {
-                     urls.insert(&tab_data.last_active_tab.visit.url);
-                   },
-                   [&urls](const URLVisitAggregate::HistoryData& history_data) {
-                     urls.insert(&history_data.last_visited.url_row.url());
-                   }),
-#else
     std::visit(URLVisitVariantHelper{
                    [&urls](const URLVisitAggregate::TabData& tab_data) {
                      urls.insert(&tab_data.last_active_tab.visit.url);
@@ -75,7 +66,6 @@ std::set<const GURL*> URLVisitAggregate::GetAssociatedURLs() const {
                    [&urls](const URLVisitAggregate::HistoryData& history_data) {
                      urls.insert(&history_data.last_visited.url_row.url());
                    }},
-#endif
                fetcher_entry.second);
   }
   return urls;

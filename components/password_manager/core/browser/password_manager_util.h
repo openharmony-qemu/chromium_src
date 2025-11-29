@@ -17,7 +17,6 @@
 #include "components/device_reauth/device_authenticator.h"
 #include "components/password_manager/core/browser/password_form.h"
 #include "components/password_manager/core/browser/password_manager_client.h"
-#include "ui/gfx/native_widget_types.h"
 
 namespace password_manager {
 class PasswordManagerDriver;
@@ -55,8 +54,8 @@ void UpdateMetadataForUsage(password_manager::PasswordForm* credential);
 
 // A convenience function for testing that |client| has a non-null LogManager
 // and that that LogManager returns true for IsLoggingActive. This function can
-// be removed once PasswordManagerClient::GetLogManager is implemented on iOS
-// and required to always return non-null.
+// be removed once PasswordManagerClient::GetCurrentLogManager is implemented on
+// iOS and required to always return non-null.
 bool IsLoggingActive(password_manager::PasswordManagerClient* client);
 
 // True iff the manual password generation is enabled for the current site.
@@ -139,8 +138,7 @@ const password_manager::PasswordForm* GetMatchForUpdating(
 password_manager::PasswordForm MakeNormalizedBlocklistedForm(
     password_manager::PasswordFormDigest digest);
 
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
-    BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
 bool ShouldBiometricAuthenticationForFillingToggleBeVisible(
     const PrefService* local_state);
 
@@ -192,6 +190,9 @@ bool IsSpecialSymbol(char16_t c);
 
 // Returns true if 'type' is a username in a password-less form.
 bool IsSingleUsernameType(autofill::FieldType type);
+
+// Returns the prettified version of |signon_realm| to be displayed on the UI.
+std::u16string GetHumanReadableRealm(const std::string& signon_realm);
 
 }  // namespace password_manager_util
 

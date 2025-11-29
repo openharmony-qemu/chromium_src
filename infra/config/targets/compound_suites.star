@@ -30,19 +30,6 @@ targets.legacy_compound_suite(
 )
 
 targets.legacy_compound_suite(
-    name = "chromium_mac_rel_isolated_scripts_and_sizes",
-    basic_suites = [
-        "chrome_sizes_suite",
-        "chromedriver_py_tests_isolated_scripts",
-        "components_perftests_isolated_scripts",
-        "desktop_chromium_isolated_scripts",
-        "mac_specific_isolated_scripts",
-        "mojo_python_unittests_isolated_scripts",
-        "telemetry_perf_unittests_isolated_scripts",
-    ],
-)
-
-targets.legacy_compound_suite(
     name = "devtools_gtests",
     basic_suites = [
         "devtools_browser_tests_suite",
@@ -77,6 +64,9 @@ targets.legacy_compound_suite(
         "gpu_webcodecs_gl_passthrough_ganesh_telemetry_test",
         "gpu_webcodecs_metal_passthrough_ganesh_telemetry_test",
         "gpu_webcodecs_metal_passthrough_graphite_telemetry_test",
+        "gpu_webrtc_gl_passthrough_ganesh_telemetry_test",
+        "gpu_webrtc_metal_passthrough_ganesh_telemetry_test",
+        "gpu_webrtc_metal_passthrough_graphite_telemetry_test",
         "gpu_webgl2_conformance_gl_passthrough_ganesh_telemetry_tests",
         "gpu_webgl2_conformance_metal_passthrough_graphite_telemetry_tests",
         "gpu_webgl_conformance_gl_passthrough_ganesh_telemetry_tests",
@@ -93,6 +83,7 @@ targets.legacy_compound_suite(
         "gpu_passthrough_graphite_telemetry_tests",
         "gpu_passthrough_telemetry_tests",
         "gpu_webcodecs_telemetry_test",
+        "gpu_webrtc_telemetry_test",
         "gpu_webgl2_conformance_d3d11_passthrough_telemetry_tests",
         "gpu_webgl_conformance_d3d11_passthrough_telemetry_tests",
         "gpu_webgl_conformance_d3d9_passthrough_telemetry_tests",

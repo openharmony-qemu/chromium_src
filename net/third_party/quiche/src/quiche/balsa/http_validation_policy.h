@@ -5,6 +5,7 @@
 #ifndef QUICHE_BALSA_HTTP_VALIDATION_POLICY_H_
 #define QUICHE_BALSA_HTTP_VALIDATION_POLICY_H_
 
+#include <cstdint>
 #include <ostream>
 
 #include "quiche/common/platform/api/quiche_export.h"
@@ -82,6 +83,10 @@ struct QUICHE_EXPORT HttpValidationPolicy {
   // If true, rejects messages with `obs-text` in header field names. RFC 9110
   // allows obs-text in header field values, but not names.
   bool disallow_obs_text_in_field_names = false;
+
+  // If true, the parser rejects messages where there is a lone LF not preceded
+  // by CR.
+  bool disallow_lone_lf_in_chunk_extension = true;
 };
 
 }  // namespace quiche

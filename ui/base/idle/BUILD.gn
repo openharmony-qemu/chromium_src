@@ -25,6 +25,7 @@ component("idle") {
 
   deps = [
     "//base",
+    "//build/config/linux/dbus:buildflags",
     "//ui/base",
   ]
 
@@ -59,12 +60,14 @@ component("idle") {
     sources += [ "idle_fuchsia.cc" ]
   }
 
-  if (is_linux || is_ohos) {
+  if (is_linux) {
     sources += [ "idle_linux.cc" ]
     deps += [ "//ui/display" ]
     if (use_dbus) {
-      deps += [ "//dbus" ]
-      defines += [ "USE_DBUS" ]
+      deps += [
+        "//components/dbus",
+        "//dbus",
+      ]
     }
   }
 

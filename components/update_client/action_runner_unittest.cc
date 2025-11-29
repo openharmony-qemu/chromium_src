@@ -29,10 +29,9 @@ class FakeActionHandler : public ActionHandler {
 
   bool ran() const { return ran_; }
 
- protected:
+ private:
   ~FakeActionHandler() override = default;
 
- private:
   bool ran_ = false;
 };
 
@@ -44,7 +43,7 @@ TEST(ActionRunnerTest, ErrorOnMissingPath) {
   auto handler = base::MakeRefCounted<FakeActionHandler>();
   base::RunLoop runloop;
   RunAction(handler, base::MakeRefCounted<TestInstaller>(), "file", "sid",
-            base::DoNothing(),
+            base::DoNothing(), base::DoNothing(),
             base::BindLambdaForTesting(
                 [&](bool succeeded, int error_code, int extra_code1) {
                   success = succeeded;

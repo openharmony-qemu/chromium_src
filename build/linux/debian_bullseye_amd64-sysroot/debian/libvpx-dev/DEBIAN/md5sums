@@ -5,13 +5,13 @@ b879c8cb0091821c67ab9df99aa67dea  usr/include/vpx/vpx_codec.h
 a5019e022aed4d213c83c202ae59e2b7  usr/include/vpx/vpx_decoder.h
 2bf6a13127ed9f1e38bd0fbae23dcde6  usr/include/vpx/vpx_encoder.h
 2bdab50e78ce99bd4a9e7f56f0b3936a  usr/include/vpx/vpx_frame_buffer.h
-ae564e95d27591dc6204b2a29f3e26fa  usr/include/vpx/vpx_image.h
+237ee5bc5c7814dbca5c221202d0047e  usr/include/vpx/vpx_image.h
 f690fc57c5dc5a62619e42bfc464c765  usr/include/vpx/vpx_integer.h
-6df1cfb847ead09cdf45b0c10b1ebaf8  usr/lib/x86_64-linux-gnu/libvpx.a
+ec782cd31431678238d6249075091961  usr/lib/x86_64-linux-gnu/libvpx.a
 f0effd50eefad8687bcfa72157046986  usr/lib/x86_64-linux-gnu/pkgconfig/vpx.pc
 f0d139cf4fcac869c2c962256baa7fcb  usr/share/doc/libvpx-dev/AUTHORS.gz
 9c8878745c8935d3079f714cb64fca14  usr/share/doc/libvpx-dev/README.gz
-89d54fde55f3f19b6a651a8830188152  usr/share/doc/libvpx-dev/changelog.Debian.gz
+f3cb419d110da3a50384f5d605af6ed3  usr/share/doc/libvpx-dev/changelog.Debian.gz
 9ae0c2eb425f82d0bfe67187c3f3cc9d  usr/share/doc/libvpx-dev/changelog.gz
 804e3362c5eb2dc377e408ff95f2ee65  usr/share/doc/libvpx-dev/copyright
 a79b915bb9f2c9a2ccfa43da3efd2dec  usr/share/doc/libvpx-dev/examples/decode_to_md5.c

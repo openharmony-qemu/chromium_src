@@ -32,6 +32,7 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
+using endpoint_fetcher::MockEndpointFetcher;
 using testing::_;
 
 namespace commerce {
@@ -89,7 +90,7 @@ class FakeClusterServerProxy : public ClusterServerProxy {
   FakeClusterServerProxy(const FakeClusterServerProxy&) = delete;
   FakeClusterServerProxy operator=(const FakeClusterServerProxy&) = delete;
   ~FakeClusterServerProxy() override = default;
-  MOCK_METHOD(std::unique_ptr<EndpointFetcher>,
+  MOCK_METHOD(std::unique_ptr<endpoint_fetcher::EndpointFetcher>,
               CreateEndpointFetcher,
               (const GURL& url, const std::string& post_data),
               (override));
@@ -102,7 +103,7 @@ class ClusterServerProxyTest : public testing::Test {
     scoped_feature_list_.InitAndEnableFeature(commerce::kProductSpecifications);
     account_checker_ = std::make_unique<commerce::MockAccountChecker>();
     prefs_ = std::make_unique<TestingPrefServiceSimple>();
-    commerce::RegisterCommercePrefs(prefs_->registry());
+    commerce::MockAccountChecker::RegisterCommercePrefs(prefs_->registry());
     account_checker_->SetPrefs(prefs_.get());
     commerce::EnableProductSpecificationsDataFetch(account_checker_.get(),
                                                    prefs_.get());

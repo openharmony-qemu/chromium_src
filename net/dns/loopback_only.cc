@@ -12,6 +12,7 @@
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
 #include "base/logging.h"
+#include "base/notimplemented.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/task/task_traits.h"
 #include "base/task/thread_pool.h"
@@ -41,8 +42,7 @@ namespace net {
 
 namespace {
 
-#if (BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)) || \
-    BUILDFLAG(IS_FUCHSIA)
+#if (BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_ANDROID)) || BUILDFLAG(IS_FUCHSIA)
 bool HaveOnlyLoopbackAddressesUsingGetifaddrs() {
   base::ScopedBlockingCall scoped_blocking_call(FROM_HERE,
                                                 base::BlockingType::MAY_BLOCK);
@@ -96,10 +96,8 @@ bool HaveOnlyLoopbackAddressesSlow() {
   return false;
 #elif BUILDFLAG(IS_ANDROID)
   return android::HaveOnlyLoopbackAddresses();
-#elif (BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_OHOS)) || BUILDFLAG(IS_FUCHSIA)
+#elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
   return HaveOnlyLoopbackAddressesUsingGetifaddrs();
-#else
-  return false;
 #endif  // defined(various platforms)
 }
 

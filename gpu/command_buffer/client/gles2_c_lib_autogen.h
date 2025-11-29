@@ -1354,9 +1354,6 @@ void GL_APIENTRY GLES2MemoryBarrierEXT(GLbitfield barriers) {
 void GL_APIENTRY GLES2MemoryBarrierByRegion(GLbitfield barriers) {
   gles2::GetGLContext()->MemoryBarrierByRegion(barriers);
 }
-void GL_APIENTRY GLES2SwapBuffers(GLuint64 swap_id, GLbitfield flags) {
-  gles2::GetGLContext()->SwapBuffers(swap_id, flags);
-}
 GLuint GL_APIENTRY GLES2GetMaxValueInBufferCHROMIUM(GLuint buffer_id,
                                                     GLsizei count,
                                                     GLenum type,
@@ -1411,14 +1408,6 @@ void* GL_APIENTRY GLES2MapTexSubImage2DCHROMIUM(GLenum target,
 }
 void GL_APIENTRY GLES2UnmapTexSubImage2DCHROMIUM(const void* mem) {
   gles2::GetGLContext()->UnmapTexSubImage2DCHROMIUM(mem);
-}
-void GL_APIENTRY GLES2ResizeCHROMIUM(GLuint width,
-                                     GLuint height,
-                                     GLfloat scale_factor,
-                                     GLcolorSpace color_space,
-                                     GLboolean alpha) {
-  gles2::GetGLContext()->ResizeCHROMIUM(width, height, scale_factor,
-                                        color_space, alpha);
 }
 const GLchar* GL_APIENTRY GLES2GetRequestableExtensionsCHROMIUM() {
   return gles2::GetGLContext()->GetRequestableExtensionsCHROMIUM();
@@ -1663,11 +1652,11 @@ GLES2CopySharedImageToTextureINTERNAL(GLuint texture,
                                       GLint src_y,
                                       GLsizei width,
                                       GLsizei height,
-                                      GLboolean flip_y,
+                                      GLboolean is_dst_origin_top_left,
                                       const GLbyte* src_mailbox) {
   gles2::GetGLContext()->CopySharedImageToTextureINTERNAL(
       texture, target, internal_format, type, src_x, src_y, width, height,
-      flip_y, src_mailbox);
+      is_dst_origin_top_left, src_mailbox);
 }
 GLboolean GL_APIENTRY
 GLES2ReadbackARGBImagePixelsINTERNAL(const GLbyte* mailbox,
@@ -2904,10 +2893,6 @@ extern const NameToFunc g_gles2_function_table[] = {
         reinterpret_cast<GLES2FunctionPointer>(glMemoryBarrierByRegion),
     },
     {
-        "glSwapBuffers",
-        reinterpret_cast<GLES2FunctionPointer>(glSwapBuffers),
-    },
-    {
         "glGetMaxValueInBufferCHROMIUM",
         reinterpret_cast<GLES2FunctionPointer>(glGetMaxValueInBufferCHROMIUM),
     },
@@ -2950,10 +2935,6 @@ extern const NameToFunc g_gles2_function_table[] = {
     {
         "glUnmapTexSubImage2DCHROMIUM",
         reinterpret_cast<GLES2FunctionPointer>(glUnmapTexSubImage2DCHROMIUM),
-    },
-    {
-        "glResizeCHROMIUM",
-        reinterpret_cast<GLES2FunctionPointer>(glResizeCHROMIUM),
     },
     {
         "glGetRequestableExtensionsCHROMIUM",

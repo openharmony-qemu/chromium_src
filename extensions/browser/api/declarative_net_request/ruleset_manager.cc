@@ -4,6 +4,7 @@
 
 #include "extensions/browser/api/declarative_net_request/ruleset_manager.h"
 
+#include <algorithm>
 #include <iterator>
 #include <optional>
 #include <tuple>
@@ -13,9 +14,7 @@
 #include "base/containers/contains.h"
 #include "base/functional/bind.h"
 #include "base/metrics/histogram_macros.h"
-#include "base/not_fatal_until.h"
 #include "base/notreached.h"
-#include "base/ranges/algorithm.h"
 #include "base/time/time.h"
 #include "base/timer/elapsed_timer.h"
 #include "components/web_cache/browser/web_cache_manager.h"
@@ -31,6 +30,7 @@
 #include "extensions/browser/api/web_request/web_request_permissions.h"
 #include "extensions/browser/extension_prefs.h"
 #include "extensions/browser/extension_util.h"
+#include "extensions/browser/install_prefs_helper.h"
 #include "extensions/common/api/declarative_net_request.h"
 #include "extensions/common/constants.h"
 #include "extensions/common/switches.h"
@@ -86,7 +86,7 @@ void RulesetManager::AddRuleset(const ExtensionId& extension_id,
   DCHECK(!GetMatcherForExtension(extension_id))
       << "AddRuleset called twice in succession for " << extension_id;
 
-  base::Time update_time = prefs_->GetLastUpdateTime(extension_id);
+  base::Time update_time = GetLastUpdateTime(prefs_, extension_id);
   rulesets_.emplace(extension_id, update_time, std::move(matcher));
   extension_install_times_[extension_id] = update_time;
 
@@ -143,8 +143,8 @@ const CompositeMatcher* RulesetManager::GetMatcherForExtension(
   // This is O(n) but it's ok since the number of extensions will be small and
   // we have to maintain the rulesets sorted in decreasing order of installation
   // time.
-  auto iter = base::ranges::find(rulesets_, extension_id,
-                                 &ExtensionRulesetData::extension_id);
+  auto iter = std::ranges::find(rulesets_, extension_id,
+                                &ExtensionRulesetData::extension_id);
 
   // There must be ExtensionRulesetData corresponding to this |extension_id|.
   if (iter == rulesets_.end()) {
@@ -189,7 +189,7 @@ std::vector<RequestAction> RulesetManager::EvaluateRequestWithHeaders(
 bool RulesetManager::HasAnyExtraHeadersMatcher() const {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
-  return base::ranges::any_of(
+  return std::ranges::any_of(
       rulesets_, [](const ExtensionRulesetData& ruleset) {
         return ruleset.matcher->HasAnyExtraHeadersMatcher();
       });
@@ -234,10 +234,10 @@ void RulesetManager::OnDidFinishNavigation(
 }
 
 bool RulesetManager::HasRulesets(RulesetMatchingStage stage) const {
-  return base::ranges::any_of(rulesets_,
-                              [stage](const ExtensionRulesetData& ruleset) {
-                                return ruleset.matcher->HasRulesets(stage);
-                              });
+  return std::ranges::any_of(rulesets_,
+                             [stage](const ExtensionRulesetData& ruleset) {
+                               return ruleset.matcher->HasRulesets(stage);
+                             });
 }
 
 std::vector<RequestAction> RulesetManager::MergeModifyHeaderActions(
@@ -258,13 +258,11 @@ std::vector<RequestAction> RulesetManager::MergeModifyHeaderActions(
       [this](const RequestAction& lhs, const RequestAction& rhs) {
         auto lhs_install_time_it =
             extension_install_times_.find(lhs.extension_id);
-        CHECK(lhs_install_time_it != extension_install_times_.end(),
-              base::NotFatalUntil::M130);
+        CHECK(lhs_install_time_it != extension_install_times_.end());
 
         auto rhs_install_time_it =
             extension_install_times_.find(rhs.extension_id);
-        CHECK(rhs_install_time_it != extension_install_times_.end(),
-              base::NotFatalUntil::M130);
+        CHECK(rhs_install_time_it != extension_install_times_.end());
 
         // Same comparator as ExtensionRulesetData's for actions from different
         // extensions. Otherwise, default to RequestAction's comparator.
@@ -513,12 +511,15 @@ bool RulesetManager::ShouldEvaluateRulesetForRequest(
     const WebRequestInfo& request,
     bool is_incognito_context,
     PageAccess& host_permission_access) const {
-  // Extensions should not generally have access to requests initiated by other
-  // extensions, though the --extensions-on-chrome-urls switch overrides that
-  // restriction.
+  // Extensions should not generally have access to non-main-frame requests
+  // initiated by other extensions, though the --extensions-on-chrome-urls
+  // switch overrides that restriction.
+  // Note: For discussions regarding handling of extension initiated navigations
+  //       see https://crbug.com/918137 and https://crbug.com/382670035.
   if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
           switches::kExtensionsOnChromeURLs) &&
-      request.initiator) {
+      request.initiator &&
+      request.web_request_type != WebRequestResourceType::MAIN_FRAME) {
     // Checking the precursor is necessary here since requests initiated by
     // manifest sandbox pages have an opaque initiator origin, but still
     // originate from an extension.

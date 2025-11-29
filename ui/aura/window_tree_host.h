@@ -7,7 +7,6 @@
 
 #include <stdint.h>
 
-#include <limits>
 #include <memory>
 #include <optional>
 #include <string>
@@ -398,10 +397,6 @@ class AURA_EXPORT WindowTreeHost : public ui::ImeKeyEventDispatcher,
   // Calculates the root window bounds to be used by UpdateRootwindowSize().
   virtual gfx::Rect CalculateRootWindowBounds() const;
 
-#if BUILDFLAG(IS_OHOS)
-  void SetSurfaceId(uint64_t surface_id) { surface_id_ = surface_id; }
-#endif
-
   virtual void OnVideoCaptureLockCreated();
   virtual void OnVideoCaptureLockDestroyed();
 
@@ -438,6 +433,8 @@ class AURA_EXPORT WindowTreeHost : public ui::ImeKeyEventDispatcher,
       const base::flat_set<viz::FrameSinkId>& ids) final;
   void OnSetPreferredRefreshRate(ui::Compositor*,
                                  float preferred_refresh_rate) override;
+  void OnFirstSurfaceActivation(ui::Compositor* compositor,
+                                const viz::SurfaceInfo& surface_info) override;
 
   // We don't use a std::unique_ptr for |window_| since we need this ptr to be
   // valid during its deletion. (Window's dtor notifies observers that may
@@ -507,11 +504,6 @@ class AURA_EXPORT WindowTreeHost : public ui::ImeKeyEventDispatcher,
   int video_capture_count_for_occlusion_tracking_ = 0;
 
   base::WeakPtrFactory<WindowTreeHost> weak_factory_{this};
-
-#if BUILDFLAG(IS_OHOS)
-  uint64_t surface_id_ = std::numeric_limits<std::uint64_t>::max();
-#endif
-
 };
 
 }  // namespace aura

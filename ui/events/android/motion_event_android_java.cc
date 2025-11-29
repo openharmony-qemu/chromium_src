@@ -2,11 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifdef UNSAFE_BUFFERS_BUILD
-// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
-#pragma allow_unsafe_buffers
-#endif
-
 #include "ui/events/android/motion_event_android_java.h"
 
 #include <android/input.h>
@@ -39,6 +34,7 @@ MotionEventAndroidJava::MotionEventAndroidJava(
     jfloat tick_multiplier,
     base::TimeTicks oldest_event_time,
     base::TimeTicks latest_event_time,
+    base::TimeTicks down_time_ms,
     jint android_action,
     jint pointer_count,
     jint history_size,
@@ -52,13 +48,15 @@ MotionEventAndroidJava::MotionEventAndroidJava(
     jfloat raw_offset_y_pixels,
     jboolean for_touch_handle,
     const Pointer* const pointer0,
-    const Pointer* const pointer1)
+    const Pointer* const pointer1,
+    bool is_latest_event_time_resampled)
     : MotionEventAndroid(pix_to_dip,
                          ticks_x,
                          ticks_y,
                          tick_multiplier,
                          oldest_event_time,
                          latest_event_time,
+                         down_time_ms,
                          android_action,
                          pointer_count,
                          history_size,
@@ -72,7 +70,8 @@ MotionEventAndroidJava::MotionEventAndroidJava(
                          raw_offset_y_pixels,
                          for_touch_handle,
                          pointer0,
-                         pointer1) {
+                         pointer1),
+      is_latest_event_time_resampled_(is_latest_event_time_resampled) {
   event_.Reset(env, event);
   if (GetPointerCount() > MAX_POINTERS_TO_CACHE || GetHistorySize() > 0) {
     DCHECK(event_.obj());
@@ -109,6 +108,7 @@ MotionEventAndroidJava::MotionEventAndroidJava(
                              tick_multiplier,
                              oldest_event_time,
                              oldest_event_time,
+                             base::TimeTicks(),
                              android_action,
                              pointer_count,
                              history_size,
@@ -122,7 +122,8 @@ MotionEventAndroidJava::MotionEventAndroidJava(
                              raw_offset_y_pixels,
                              for_touch_handle,
                              pointer0,
-                             pointer1) {
+                             pointer1,
+                             false) {
   DCHECK_EQ(history_size, 0);
 }
 
@@ -218,14 +219,8 @@ float MotionEventAndroidJava::GetOrientation(size_t pointer_index) const {
 
 float MotionEventAndroidJava::GetPressure(size_t pointer_index) const {
   DCHECK_LT(pointer_index, GetPointerCount());
-  // Note that this early return is a special case exercised only in testing, as
-  // caching the pressure values is not a worthwhile optimization (they're
-  // accessed at most once per event instance).
-  if (!event_.obj()) {
-    return 0.f;
-  }
-  if (GetAction() == MotionEvent::Action::UP) {
-    return 0.f;
+  if (pointer_index < MAX_POINTERS_TO_CACHE) {
+    return cached_pointers_[pointer_index].pressure;
   }
   return JNI_MotionEvent::Java_MotionEvent_getPressure(AttachCurrentThread(),
                                                        event_, pointer_index);
@@ -306,6 +301,10 @@ ui::MotionEvent::ToolType MotionEventAndroidJava::GetToolType(
   return MotionEventAndroid::FromAndroidToolType(
       JNI_MotionEvent::Java_MotionEvent_getToolType(AttachCurrentThread(),
                                                     event_, pointer_index));
+}
+
+bool MotionEventAndroidJava::IsLatestEventTimeResampled() const {
+  return is_latest_event_time_resampled_;
 }
 
 }  // namespace ui

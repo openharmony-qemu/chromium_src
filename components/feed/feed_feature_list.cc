@@ -17,10 +17,9 @@
 
 namespace feed {
 
-namespace switches {
-// Specifies whether RssLinkReader is enabled.
-const char kEnableRssLinkReader[] = "enable-rss-link-reader";
-}  // namespace switches
+const char kFeedHeaderRemovalTreatmentParam[] = "treatment";
+const char kFeedHeaderRemovalTreatmentValue1[] = "label";
+const char kFeedHeaderRemovalTreatmentValue2[] = "none";
 
 // InterestFeedV2 takes precedence over InterestFeedContentSuggestions.
 // InterestFeedV2 is cached in ChromeCachedFlags. If the default value here is
@@ -28,20 +27,6 @@ const char kEnableRssLinkReader[] = "enable-rss-link-reader";
 BASE_FEATURE(kInterestFeedV2,
              "InterestFeedV2",
              base::FEATURE_ENABLED_BY_DEFAULT);
-
-BASE_FEATURE(kInterestFeedV2Hearts,
-             "InterestFeedV2Hearts",
-             base::FEATURE_DISABLED_BY_DEFAULT);
-
-BASE_FEATURE(kInterestFeedV2Scrolling,
-             "InterestFeedV2Scrolling",
-             base::FEATURE_ENABLED_BY_DEFAULT);
-
-#if BUILDFLAG(IS_IOS)
-BASE_FEATURE(kInterestFeedNoticeCardAutoDismiss,
-             "InterestFeedNoticeCardAutoDismiss",
-             base::FEATURE_ENABLED_BY_DEFAULT);
-#endif
 
 BASE_FEATURE(kDiscoFeedEndpoint,
              "DiscoFeedEndpoint",
@@ -80,10 +65,6 @@ signin::ConsentLevel GetConsentLevelNeededForPersonalizedFeed() {
   return signin::ConsentLevel::kSignin;
 }
 
-BASE_FEATURE(kInfoCardAcknowledgementTracking,
-             "InfoCardAcknowledgementTracking",
-             base::FEATURE_ENABLED_BY_DEFAULT);
-
 BASE_FEATURE(kFeedNoViewCache,
              "FeedNoViewCache",
              base::FEATURE_ENABLED_BY_DEFAULT);
@@ -104,10 +85,6 @@ BASE_FEATURE(kFeedSignedOutViewDemotion,
              "FeedSignedOutViewDemotion",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
-BASE_FEATURE(kFeedDynamicColors,
-             "FeedDynamicColors",
-             base::FEATURE_DISABLED_BY_DEFAULT);
-
 BASE_FEATURE(kFeedFollowUiUpdate,
              "FeedFollowUiUpdate",
              base::FEATURE_DISABLED_BY_DEFAULT);
@@ -124,8 +101,16 @@ BASE_FEATURE(kWebFeedKillSwitch,
              "WebFeedKillSwitch",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
-BASE_FEATURE(kFeedLowMemoryImprovement,
-             "FeedLowMemoryImprovement",
+BASE_FEATURE(kFeedRecyclerBinderUnmountOnDetach,
+             "FeedRecyclerBinderUnmountOnDetach",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+
+BASE_FEATURE(kFeedStreaming,
+             "FeedStreaming",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+
+BASE_FEATURE(kFeedHeaderRemoval,
+             "FeedHeaderRemoval",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
 bool IsWebFeedEnabledForLocale(const std::string& country) {

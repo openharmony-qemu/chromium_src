@@ -8,6 +8,7 @@
 #include "base/notreached.h"
 #include "build/build_config.h"
 #include "media/base/cdm_factory.h"
+#include "media/base/demuxer.h"
 #include "media/base/renderer_factory_selector.h"
 #include "media/base/svc_scalability_mode.h"
 #include "media/base/video_transformation.h"
@@ -371,8 +372,6 @@ struct EnumTraits<media::mojom::RendererType, ::media::RendererType> {
         return media::mojom::RendererType::kRendererImpl;
       case ::media::RendererType::kMojo:
         return media::mojom::RendererType::kMojo;
-      case ::media::RendererType::kMediaPlayer:
-        return media::mojom::RendererType::kMediaPlayer;
       case ::media::RendererType::kCourier:
         return media::mojom::RendererType::kCourier;
       case ::media::RendererType::kFlinging:
@@ -405,9 +404,6 @@ struct EnumTraits<media::mojom::RendererType, ::media::RendererType> {
       case media::mojom::RendererType::kMojo:
         *output = ::media::RendererType::kMojo;
         return true;
-      case media::mojom::RendererType::kMediaPlayer:
-        *output = ::media::RendererType::kMediaPlayer;
-        return true;
       case media::mojom::RendererType::kCourier:
         *output = ::media::RendererType::kCourier;
         return true;
@@ -431,6 +427,61 @@ struct EnumTraits<media::mojom::RendererType, ::media::RendererType> {
         return true;
       case media::mojom::RendererType::kTest:
         *output = ::media::RendererType::kTest;
+        return true;
+    }
+
+    NOTREACHED();
+  }
+};
+
+template <>
+struct EnumTraits<media::mojom::DemuxerType, ::media::DemuxerType> {
+  static media::mojom::DemuxerType ToMojom(::media::DemuxerType input) {
+    switch (input) {
+      case ::media::DemuxerType::kUnknownDemuxer:
+        return media::mojom::DemuxerType::kUnknownDemuxer;
+      case ::media::DemuxerType::kMockDemuxer:
+        return media::mojom::DemuxerType::kMockDemuxer;
+      case ::media::DemuxerType::kFFmpegDemuxer:
+        return media::mojom::DemuxerType::kFFmpegDemuxer;
+      case ::media::DemuxerType::kChunkDemuxer:
+        return media::mojom::DemuxerType::kChunkDemuxer;
+      case ::media::DemuxerType::kFrameInjectingDemuxer:
+        return media::mojom::DemuxerType::kFrameInjectingDemuxer;
+      case ::media::DemuxerType::kStreamProviderDemuxer:
+        return media::mojom::DemuxerType::kStreamProviderDemuxer;
+      case ::media::DemuxerType::kManifestDemuxer:
+        return media::mojom::DemuxerType::kManifestDemuxer;
+    }
+
+    NOTREACHED();
+  }
+
+  // Returning false results in deserialization failure and causes the
+  // message pipe receiving it to be disconnected.
+  static bool FromMojom(media::mojom::DemuxerType input,
+                        ::media::DemuxerType* output) {
+    switch (input) {
+      case media::mojom::DemuxerType::kUnknownDemuxer:
+        *output = ::media::DemuxerType::kUnknownDemuxer;
+        return true;
+      case media::mojom::DemuxerType::kMockDemuxer:
+        *output = ::media::DemuxerType::kMockDemuxer;
+        return true;
+      case media::mojom::DemuxerType::kFFmpegDemuxer:
+        *output = ::media::DemuxerType::kFFmpegDemuxer;
+        return true;
+      case media::mojom::DemuxerType::kChunkDemuxer:
+        *output = ::media::DemuxerType::kChunkDemuxer;
+        return true;
+      case media::mojom::DemuxerType::kFrameInjectingDemuxer:
+        *output = ::media::DemuxerType::kFrameInjectingDemuxer;
+        return true;
+      case media::mojom::DemuxerType::kStreamProviderDemuxer:
+        *output = ::media::DemuxerType::kStreamProviderDemuxer;
+        return true;
+      case media::mojom::DemuxerType::kManifestDemuxer:
+        *output = ::media::DemuxerType::kManifestDemuxer;
         return true;
     }
 

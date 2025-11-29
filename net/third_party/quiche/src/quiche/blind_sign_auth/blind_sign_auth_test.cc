@@ -13,6 +13,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
+#include "absl/synchronization/notification.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "absl/types/span.h"
@@ -26,7 +27,6 @@
 #include "quiche/blind_sign_auth/blind_sign_message_interface.h"
 #include "quiche/blind_sign_auth/blind_sign_message_response.h"
 #include "quiche/blind_sign_auth/test_tools/mock_blind_sign_message_interface.h"
-#include "quiche/common/platform/api/quiche_mutex.h"
 #include "quiche/common/platform/api/quiche_test.h"
 #include "quiche/common/test_tools/quiche_test_utils.h"
 
@@ -38,7 +38,6 @@ using ::testing::_;
 using ::testing::Eq;
 using ::testing::InSequence;
 using ::testing::Invoke;
-using ::testing::StartsWith;
 using ::testing::Unused;
 
 class BlindSignAuthTest : public QuicheTest {
@@ -266,7 +265,7 @@ TEST_F(BlindSignAuthTest, TestGetTokensFailedNetworkError) {
       .Times(0);
 
   int num_tokens = 1;
-  QuicheNotification done;
+  absl::Notification done;
   SignedTokenCallback callback =
       [&done](absl::StatusOr<absl::Span<BlindSignToken>> tokens) {
         EXPECT_THAT(tokens.status().code(), absl::StatusCode::kInvalidArgument);
@@ -301,7 +300,7 @@ TEST_F(BlindSignAuthTest, TestGetTokensFailedBadGetInitialDataResponse) {
       .Times(0);
 
   int num_tokens = 1;
-  QuicheNotification done;
+  absl::Notification done;
   SignedTokenCallback callback =
       [&done](absl::StatusOr<absl::Span<BlindSignToken>> tokens) {
         EXPECT_THAT(tokens.status().code(), absl::StatusCode::kInvalidArgument);
@@ -346,7 +345,7 @@ TEST_F(BlindSignAuthTest, TestGetTokensFailedBadAuthAndSignResponse) {
   }
 
   int num_tokens = 1;
-  QuicheNotification done;
+  absl::Notification done;
   SignedTokenCallback callback =
       [&done](absl::StatusOr<absl::Span<BlindSignToken>> tokens) {
         EXPECT_THAT(tokens.status().code(), absl::StatusCode::kInternal);
@@ -389,7 +388,7 @@ TEST_F(BlindSignAuthTest, TestPrivacyPassGetTokensSucceeds) {
   }
 
   int num_tokens = 1;
-  QuicheNotification done;
+  absl::Notification done;
   SignedTokenCallback callback =
       [this, &done](absl::StatusOr<absl::Span<BlindSignToken>> tokens) {
         QUICHE_EXPECT_OK(tokens);
@@ -430,7 +429,7 @@ TEST_F(BlindSignAuthTest, TestPrivacyPassGetTokensFailsWithBadExtensions) {
       });
 
   int num_tokens = 1;
-  QuicheNotification done;
+  absl::Notification done;
   SignedTokenCallback callback =
       [&done](absl::StatusOr<absl::Span<BlindSignToken>> tokens) {
         EXPECT_THAT(tokens.status().code(), absl::StatusCode::kInvalidArgument);
@@ -439,6 +438,117 @@ TEST_F(BlindSignAuthTest, TestPrivacyPassGetTokensFailsWithBadExtensions) {
   blind_sign_auth_->GetTokens(oauth_token_, num_tokens, ProxyLayer::kProxyA,
                               BlindSignAuthServiceType::kChromeIpBlinding,
                               std::move(callback));
+  done.WaitForNotification();
+}
+
+TEST_F(BlindSignAuthTest, TestPrivacyPassGetTokensFailsWithMoreTokens) {
+  BlindSignMessageResponse fake_public_key_response(
+      absl::StatusCode::kOk,
+      fake_get_initial_data_response_.SerializeAsString());
+  {
+    InSequence seq;
+
+    EXPECT_CALL(
+        mock_message_interface_,
+        DoRequest(
+            Eq(BlindSignMessageRequestType::kGetInitialData), Eq(oauth_token_),
+            Eq(expected_get_initial_data_request_.SerializeAsString()), _))
+        .Times(1)
+        .WillOnce([=](auto&&, auto&&, auto&&, auto get_initial_data_cb) {
+          std::move(get_initial_data_cb)(fake_public_key_response);
+        });
+
+    EXPECT_CALL(mock_message_interface_,
+                DoRequest(Eq(BlindSignMessageRequestType::kAuthAndSign),
+                          Eq(oauth_token_), _, _))
+        .Times(1)
+        .WillOnce(Invoke([this](Unused, Unused, const std::string& body,
+                                BlindSignMessageCallback callback) {
+          // Create response for the requested number of tokens (1).
+          CreateSignResponse(body, /*use_privacy_pass=*/true);
+          ASSERT_EQ(sign_response_.blinded_token_signature_size(), 1);
+          // Modify the response to contain 2 signatures (more than requested).
+          sign_response_.add_blinded_token_signature(
+              sign_response_.blinded_token_signature(0));
+          ASSERT_EQ(sign_response_.blinded_token_signature_size(), 2);
+
+          BlindSignMessageResponse response(absl::StatusCode::kOk,
+                                            sign_response_.SerializeAsString());
+          std::move(callback)(response);
+        }));
+  }
+
+  int num_tokens_requested = 1;
+  absl::Notification done;
+  SignedTokenCallback callback =
+      [&done](absl::StatusOr<absl::Span<BlindSignToken>> tokens) {
+        // Expect failure because more tokens were returned than requested.
+        EXPECT_FALSE(tokens.ok());
+        EXPECT_EQ(tokens.status().code(), absl::StatusCode::kInternal);
+        EXPECT_THAT(
+            tokens.status().message(),
+            testing::HasSubstr("Number of signatures is greater than "
+                               "the number of Privacy Pass tokens sent"));
+        done.Notify();
+      };
+  blind_sign_auth_->GetTokens(
+      oauth_token_, num_tokens_requested, ProxyLayer::kProxyA,
+      BlindSignAuthServiceType::kChromeIpBlinding, std::move(callback));
+  done.WaitForNotification();
+}
+
+TEST_F(BlindSignAuthTest, TestPrivacyPassGetTokensSucceedsWithFewerTokens) {
+  BlindSignMessageResponse fake_public_key_response(
+      absl::StatusCode::kOk,
+      fake_get_initial_data_response_.SerializeAsString());
+  {
+    InSequence seq;
+
+    EXPECT_CALL(
+        mock_message_interface_,
+        DoRequest(
+            Eq(BlindSignMessageRequestType::kGetInitialData), Eq(oauth_token_),
+            Eq(expected_get_initial_data_request_.SerializeAsString()), _))
+        .Times(1)
+        .WillOnce([=](auto&&, auto&&, auto&&, auto get_initial_data_cb) {
+          std::move(get_initial_data_cb)(fake_public_key_response);
+        });
+
+    EXPECT_CALL(mock_message_interface_,
+                DoRequest(Eq(BlindSignMessageRequestType::kAuthAndSign),
+                          Eq(oauth_token_), _, _))
+        .Times(1)
+        .WillOnce(Invoke([this](Unused, Unused, const std::string& body,
+                                BlindSignMessageCallback callback) {
+          // Create response for the requested number of tokens (2).
+          CreateSignResponse(body, /*use_privacy_pass=*/true);
+          // Modify the response to only contain 1 signature.
+          ASSERT_EQ(sign_response_.blinded_token_signature_size(), 2);
+          sign_response_.mutable_blinded_token_signature()->RemoveLast();
+          ASSERT_EQ(sign_response_.blinded_token_signature_size(), 1);
+
+          BlindSignMessageResponse response(absl::StatusCode::kOk,
+                                            sign_response_.SerializeAsString());
+          std::move(callback)(response);
+        }));
+  }
+
+  int num_tokens_requested = 2;
+  int expected_tokens_received = 1;
+  absl::Notification done;
+  SignedTokenCallback callback =
+      [this, &done, expected_tokens_received](
+          absl::StatusOr<absl::Span<BlindSignToken>> tokens) {
+        // Expect success even though fewer tokens were returned.
+        QUICHE_ASSERT_OK(tokens);
+        // Expect only the number of tokens returned by the server.
+        EXPECT_EQ(tokens->size(), expected_tokens_received);
+        ValidatePrivacyPassTokensOutput(*tokens);
+        done.Notify();
+      };
+  blind_sign_auth_->GetTokens(
+      oauth_token_, num_tokens_requested, ProxyLayer::kProxyA,
+      BlindSignAuthServiceType::kChromeIpBlinding, std::move(callback));
   done.WaitForNotification();
 }
 

@@ -19,7 +19,6 @@
 #include "components/viz/common/surfaces/surface_id.h"
 #include "third_party/blink/public/mojom/input/input_event_result.mojom-shared.h"
 #include "third_party/blink/public/mojom/page/widget.mojom-shared.h"
-#include "ui/events/blink/did_overscroll_params.h"
 #include "ui/events/event.h"
 
 namespace blink {
@@ -81,8 +80,6 @@ class COMPONENT_EXPORT(INPUT) RenderWidgetHostViewInput
       const TouchEventWithLatencyInfo& touch,
       blink::mojom::InputEventResultState ack_result);
 
-  virtual void DidOverscroll(const ui::DidOverscrollParams& params) {}
-
   virtual void DidStopFlinging() {}
 
   // Returns the root-view associated with this view. For derived views that are
@@ -123,7 +120,8 @@ class COMPONENT_EXPORT(INPUT) RenderWidgetHostViewInput
   // the top-level frame's renderer this is a no-op as they are already
   // properly transformed; however, coordinates received from an out-of-process
   // iframe renderer process require transformation.
-  virtual gfx::PointF TransformPointToRootCoordSpaceF(const gfx::PointF& point);
+  virtual gfx::PointF TransformPointToRootCoordSpaceF(
+      const gfx::PointF& point) const;
 
   // Converts a point in the root view's coordinate space to the coordinate
   // space of whichever view is used to call this method.

@@ -1,10 +1,10 @@
 Package: libncurses6
 Source: ncurses
-Version: 6.2+20201114-2+deb11u1
+Version: 6.2+20201114-2+deb11u2
 Architecture: i386
 Maintainer: Craig Small <csmall@debian.org>
 Installed-Size: 345
-Depends: libtinfo6 (= 6.2+20201114-2+deb11u1), libc6 (>= 2.7)
+Depends: libtinfo6 (= 6.2+20201114-2+deb11u2), libc6 (>= 2.7)
 Recommends: libgpm2
 Breaks: cowdancer (<< 0.89~)
 Section: libs

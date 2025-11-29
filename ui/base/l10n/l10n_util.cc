@@ -9,6 +9,7 @@
 
 #include "ui/base/l10n/l10n_util.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <iterator>
 #include <memory>
@@ -29,7 +30,6 @@
 #include "base/logging.h"
 #include "base/no_destructor.h"
 #include "base/notreached.h"
-#include "base/ranges/algorithm.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_split.h"
 #include "base/strings/string_util.h"
@@ -60,10 +60,6 @@
 #include "base/logging.h"
 #include "ui/base/l10n/l10n_util_win.h"
 #endif  // BUILDFLAG(IS_WIN)
-
-#if BUILDFLAG(IS_OHOS)
-#include "ohos/adapter/ohos_i18n/ohos_i18n.h"
-#endif
 
 namespace {
 
@@ -546,8 +542,8 @@ std::string GetApplicationLocaleInternalNonMac(const std::string& pref_locale) {
   const std::vector<std::string>& languages = l10n_util::GetLocaleOverrides();
   if (!languages.empty()) {
     candidates.reserve(candidates.size() + languages.size());
-    base::ranges::transform(languages, std::back_inserter(candidates),
-                            &base::i18n::GetCanonicalLocale);
+    std::ranges::transform(languages, std::back_inserter(candidates),
+                           &base::i18n::GetCanonicalLocale);
   } else {
     // If no override was set, defer to ICU
     candidates.push_back(base::i18n::GetConfiguredLocale());
@@ -559,13 +555,6 @@ std::string GetApplicationLocaleInternalNonMac(const std::string& pref_locale) {
 
   // On Android, query java.util.Locale for the default locale.
   candidates.push_back(base::android::GetDefaultLocaleString());
-#elif BUILDFLAG(IS_OHOS)
-  // Try pref_locale first.
-  if (!pref_locale.empty())
-    candidates.push_back(base::i18n::GetCanonicalLocale(pref_locale));
- 
-  // On Ohos, query Locale lang for the default locale.
-  candidates.push_back(::ohos::adapter::ohos_i18n::GetLocaleLang());
 #elif defined(USE_GLIB) && !BUILDFLAG(IS_CHROMEOS)
   // GLib implements correct environment variable parsing with
   // the precedence order: LANGUAGE, LC_ALL, LC_MESSAGES and LANG.
@@ -1068,8 +1057,8 @@ bool IsAcceptLanguageDisplayable(const std::string& display_locale,
 std::vector<std::string> KeepAcceptedLanguages(
     base::span<const std::string> languages) {
   std::vector<std::string> filtered_languages;
-  base::ranges::copy_if(languages, std::back_inserter(filtered_languages),
-                        IsPossibleAcceptLanguage);
+  std::ranges::copy_if(languages, std::back_inserter(filtered_languages),
+                       IsPossibleAcceptLanguage);
   return filtered_languages;
 }
 

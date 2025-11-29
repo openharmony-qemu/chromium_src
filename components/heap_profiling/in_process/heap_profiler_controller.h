@@ -84,8 +84,8 @@ class HeapProfilerController {
       sampling_profiler::ProfilerProcessType child_process_type,
       int child_process_id) const;
 
-  // Returns the BrowserProcessSnapshotController or nullptr if none exists (if
-  // heap profiling is disabled or kHeapProfilerCentralControl is disabled).
+  // Returns the BrowserProcessSnapshotController or nullptr if heap profiling
+  // is disabled.
   BrowserProcessSnapshotController* GetBrowserProcessSnapshotController() const;
 
   // Triggers an immediate snapshot in a child process. In the browser process,
@@ -96,6 +96,13 @@ class HeapProfilerController {
   void TakeSnapshotInChildProcess(base::PassKey<ChildProcessSnapshotController>,
                                   uint32_t process_probability_pct,
                                   size_t process_index);
+
+  // Triggers a snapshot in the child process, in order to log metrics about it,
+  // but doesn't upload it. This should be called instead of
+  // TakeSnapshotInChildProcess() for processes that are randomly excluded from
+  // a scheduled snapshot, to make sure they're included in metrics.
+  void LogMetricsWithoutSnapshotInChildProcess(
+      base::PassKey<ChildProcessSnapshotController>);
 
   // Allows unit tests to call AppendCommandLineSwitchForChildProcess without
   // creating a HeapProfilerController. `snapshot_controller` should be null if
@@ -156,8 +163,7 @@ class HeapProfilerController {
     base::TimeTicks profiler_creation_time;
 
     // Metadata to record with the profile. The default values are correct for
-    // the browser process and child processes with kHeapProfilerCentralControl
-    // disabled, where one HeapProfiler always samples one process.
+    // the browser process, where one HeapProfiler always samples one process.
     uint32_t process_probability_pct = 100;
     size_t process_index = 0;
 
@@ -166,7 +172,7 @@ class HeapProfilerController {
     base::OnceClosure on_first_snapshot_callback;
 
     // A callback to trigger snapshots in all known child processes. Only used
-    // in the browser process when kHeapProfilerCentralControl is enabled.
+    // in the browser process.
     base::RepeatingClosure trigger_child_process_snapshot_closure;
   };
 
@@ -219,7 +225,7 @@ class HeapProfilerController {
 
   // A controller that notifies the HeapProfilerController in child processes to
   // take a snapshot at the same time as this HeapProfilerController. Created
-  // only in the browser process when kHeapProfilerCentralControl is enabled.
+  // only in the browser process.
   std::unique_ptr<BrowserProcessSnapshotController>
       browser_process_snapshot_controller_
           GUARDED_BY_CONTEXT(sequence_checker_);

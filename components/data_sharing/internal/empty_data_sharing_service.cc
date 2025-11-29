@@ -5,6 +5,7 @@
 #include "components/data_sharing/internal/empty_data_sharing_service.h"
 
 #include "base/functional/callback.h"
+#include "components/data_sharing/internal/preview_server_proxy.h"
 #include "components/data_sharing/public/data_sharing_sdk_delegate.h"
 
 namespace data_sharing {
@@ -47,15 +48,21 @@ std::set<GroupData> EmptyDataSharingService::ReadAllGroups() {
 std::optional<GroupMemberPartialData>
 EmptyDataSharingService::GetPossiblyRemovedGroupMember(
     const GroupId& group_id,
-    const std::string& member_gaia_id) {
+    const GaiaId& member_gaia_id) {
   return std::nullopt;
 }
 
-void EmptyDataSharingService::ReadAllGroups(
-    base::OnceCallback<void(const GroupsDataSetOrFailureOutcome&)> callback) {}
+std::optional<GroupData> EmptyDataSharingService::GetPossiblyRemovedGroup(
+    const GroupId& group_id) {
+  return std::nullopt;
+}
 
-void EmptyDataSharingService::ReadGroup(
+void EmptyDataSharingService::ReadGroupDeprecated(
     const GroupId& group_id,
+    base::OnceCallback<void(const GroupDataOrFailureOutcome&)> callback) {}
+
+void EmptyDataSharingService::ReadNewGroup(
+    const GroupToken& token,
     base::OnceCallback<void(const GroupDataOrFailureOutcome&)> callback) {}
 
 void EmptyDataSharingService::CreateGroup(
@@ -85,9 +92,13 @@ void EmptyDataSharingService::LeaveGroup(
     const GroupId& group_id,
     base::OnceCallback<void(PeopleGroupActionOutcome)> callback) {}
 
-bool EmptyDataSharingService::ShouldInterceptNavigationForShareURL(
-    const GURL& url) {
+bool EmptyDataSharingService::IsLeavingOrDeletingGroup(
+    const GroupId& group_id) {
   return false;
+}
+
+std::vector<GroupEvent> EmptyDataSharingService::GetGroupEventsSinceStartup() {
+  return {};
 }
 
 void EmptyDataSharingService::HandleShareURLNavigationIntercepted(
@@ -99,11 +110,6 @@ std::unique_ptr<GURL> EmptyDataSharingService::GetDataSharingUrl(
   return nullptr;
 }
 
-DataSharingService::ParseUrlResult EmptyDataSharingService::ParseDataSharingUrl(
-    const GURL& url) {
-  return GroupToken();
-}
-
 void EmptyDataSharingService::EnsureGroupVisibility(
     const GroupId& group_id,
     base::OnceCallback<void(const GroupDataOrFailureOutcome&)> callback) {}
@@ -112,6 +118,12 @@ void EmptyDataSharingService::GetSharedEntitiesPreview(
     const GroupToken& group_token,
     base::OnceCallback<void(const SharedDataPreviewOrFailureOutcome&)>
         callback) {}
+
+void EmptyDataSharingService::GetAvatarImageForURL(
+    const GURL& avatar_url,
+    int size,
+    base::OnceCallback<void(const gfx::Image&)> callback,
+    image_fetcher::ImageFetcher* image_fetcher) {}
 
 void EmptyDataSharingService::SetSDKDelegate(
     std::unique_ptr<DataSharingSDKDelegate> sdk_delegate) {}
@@ -122,5 +134,19 @@ void EmptyDataSharingService::SetUIDelegate(
 DataSharingUIDelegate* EmptyDataSharingService::GetUiDelegate() {
   return nullptr;
 }
+
+Logger* EmptyDataSharingService::GetLogger() {
+  return nullptr;
+}
+
+void EmptyDataSharingService::AddGroupDataForTesting(GroupData group_data) {}
+void EmptyDataSharingService::SetPreviewServerProxyForTesting(
+    std::unique_ptr<PreviewServerProxy> preview_server_proxy) {}
+PreviewServerProxy* EmptyDataSharingService::GetPreviewServerProxyForTesting() {
+  return nullptr;
+}
+
+void EmptyDataSharingService::OnCollaborationGroupRemoved(
+    const GroupId& group_id) {}
 
 }  // namespace data_sharing

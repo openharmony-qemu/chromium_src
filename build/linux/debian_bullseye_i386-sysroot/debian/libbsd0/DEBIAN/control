@@ -1,6 +1,6 @@
 Package: libbsd0
 Source: libbsd
-Version: 0.11.3-1
+Version: 0.11.3-1+deb11u1
 Architecture: i386
 Maintainer: Guillem Jover <guillem@debian.org>
 Installed-Size: 198

@@ -10,7 +10,6 @@
 
 #include "base/component_export.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "ui/base/ui_base_types.h"
 #include "ui/gfx/geometry/insets.h"
 #include "ui/gfx/geometry/rect.h"
@@ -34,29 +33,13 @@ enum class PlatformWindowState {
   kMinimized,
   kNormal,
   kFullScreen,
-
-  // Currently, only used by ChromeOS.
-  kSnappedPrimary,
-  kSnappedSecondary,
-  kFloated,
-  kPip,
-  kPinnedFullscreen,
-  kTrustedPinnedFullscreen,
 };
-
-COMPONENT_EXPORT(PLATFORM_WINDOW)
-bool IsPlatformWindowStateFullscreen(PlatformWindowState state);
 
 enum class PlatformWindowOcclusionState {
   kUnknown,
   kVisible,
   kOccluded,
   kHidden,
-};
-
-enum class PlatformWindowTooltipTrigger {
-  kCursor,
-  kKeyboard,
 };
 
 class COMPONENT_EXPORT(PLATFORM_WINDOW) PlatformWindowDelegate {
@@ -95,15 +78,18 @@ class COMPONENT_EXPORT(PLATFORM_WINDOW) PlatformWindowDelegate {
   // This is used by OnStateChanged and currently only by ozone/wayland.
   struct COMPONENT_EXPORT(PLATFORM_WINDOW) State {
     bool operator==(const State& rhs) const {
-      return std::tie(window_state, bounds_dip, size_px, window_scale,
-                      raster_scale, ui_scale, occlusion_state) ==
-             std::tie(rhs.window_state, rhs.bounds_dip, rhs.size_px,
-                      rhs.window_scale, rhs.raster_scale, rhs.ui_scale,
+      return std::tie(window_state, tiled_edges, bounds_dip, size_px,
+                      window_scale, ui_scale, occlusion_state) ==
+             std::tie(rhs.window_state, tiled_edges, rhs.bounds_dip,
+                      rhs.size_px, rhs.window_scale, rhs.ui_scale,
                       rhs.occlusion_state);
     }
 
     // Current platform window state.
     PlatformWindowState window_state = PlatformWindowState::kUnknown;
+
+    // The tiled edges of the window.
+    WindowTiledEdges tiled_edges;
 
     // Bounds in DIP. The origin of `bounds_dip` does not affect whether it
     // produces a new frame or not. Only the size of `bounds_dip` does.
@@ -115,9 +101,6 @@ class COMPONENT_EXPORT(PLATFORM_WINDOW) PlatformWindowDelegate {
 
     // Current scale factor of the output where the window is located at.
     float window_scale = 1.0;
-
-    // Scale to raster the window at.
-    float raster_scale = 1.0;
 
     // Scale of the window UI content. Used by platform window code to trigger
     // the resize and relayout of UI elements when needed, e.g: in reaction to
@@ -166,17 +149,6 @@ class COMPONENT_EXPORT(PLATFORM_WINDOW) PlatformWindowDelegate {
   virtual void OnWindowTiledStateChanged(WindowTiledEdges new_tiled_edges);
 #endif
 
-#if BUILDFLAG(IS_CHROMEOS_LACROS)
-  // Lets the window know that ChromeOS overview mode has changed.
-  virtual void OnOverviewModeChanged(bool in_overview) {}
-#endif
-
-#if BUILDFLAG(IS_OHOS)
-  // On the ohos, the fullscreen is asynchronous and needs to be notified
-  // to complete the change.
-  virtual void OnFullscreenStateChanged();
-#endif
-
   enum RotateDirection {
     kForward,
     kBackward,
@@ -200,10 +172,6 @@ class COMPONENT_EXPORT(PLATFORM_WINDOW) PlatformWindowDelegate {
 
   virtual void OnActivationChanged(bool active) = 0;
 
-#if BUILDFLAG(IS_OHOS)
-  virtual void SetSurfaceId(uint64_t surface_id) = 0;
-#endif
-
   // Requests size constraints for the PlatformWindow in DIP.
   virtual std::optional<gfx::Size> GetMinimumSizeForWindow() const;
   virtual std::optional<gfx::Size> GetMaximumSizeForWindow() const;
@@ -215,13 +183,6 @@ class COMPONENT_EXPORT(PLATFORM_WINDOW) PlatformWindowDelegate {
   // |WindowTreeHost::GetBoundsInPixels|.
   // This is used to create the non-rectangular window shape.
   virtual SkPath GetWindowMaskForWindowShapeInPixels();
-
-  // Called while dragging maximized window when SurfaceFrame associated with
-  // this window is locked to normal state or unlocked from previously locked
-  // state. This function is used by chromeos for syncing
-  // `chromeos::kFrameRestoreLookKey` window property
-  // with lacros-chrome.
-  virtual void OnSurfaceFrameLockingChanged(bool lock);
 
   // Called when the location of mouse pointer entered the window.  This is
   // different from ui::EventType::kMouseEntered which may not be generated when
@@ -250,17 +211,6 @@ class COMPONENT_EXPORT(PLATFORM_WINDOW) PlatformWindowDelegate {
   // intended position caused the surface to be constrained.
   virtual std::optional<OwnedWindowAnchor> GetOwnedWindowAnchorAndRectInDIP();
 
-  // Enables or disables frame rate throttling.
-  virtual void SetFrameRateThrottleEnabled(bool enabled);
-
-  // Called when tooltip is shown on server.
-  // `bounds` is in screen coordinates.
-  virtual void OnTooltipShownOnServer(const std::u16string& text,
-                                      const gfx::Rect& bounds);
-
-  // Called when tooltip is hidden on server.
-  virtual void OnTooltipHiddenOnServer();
-
   // Converts gfx::Rect in pixels to DIP in screen, and vice versa.
   virtual gfx::Rect ConvertRectToPixels(const gfx::Rect& rect_in_dp) const;
   virtual gfx::Rect ConvertRectToDIP(const gfx::Rect& rect_in_pixels) const;
@@ -273,9 +223,6 @@ class COMPONENT_EXPORT(PLATFORM_WINDOW) PlatformWindowDelegate {
   // Converts gfx::Insets in DIP to pixels.
   virtual gfx::Insets ConvertInsetsToPixels(
       const gfx::Insets& insets_dip) const;
-
-  // Disables native window occlusion.
-  virtual void DisableNativeWindowOcclusion();
 };
 
 }  // namespace ui

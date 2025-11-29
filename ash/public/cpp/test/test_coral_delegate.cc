@@ -13,9 +13,28 @@ TestCoralDelegate::~TestCoralDelegate() = default;
 void TestCoralDelegate::LaunchPostLoginGroup(coral::mojom::GroupPtr group) {}
 
 void TestCoralDelegate::MoveTabsInGroupToNewDesk(
-    const std::vector<coral::mojom::Tab>& tabs) {}
+    const std::vector<coral::mojom::Tab>& tabs,
+    size_t src_desk_index) {}
 
-void TestCoralDelegate::CreateSavedDeskFromGroup(coral::mojom::GroupPtr group) {
+int TestCoralDelegate::GetChromeDefaultRestoreId() {
+  return 0;
+}
+
+void TestCoralDelegate::OpenFeedbackDialog(
+    const std::string& group_description,
+    ScannerDelegate::SendFeedbackCallback send_feedback_callback) {}
+
+void TestCoralDelegate::CheckGenAIAgeAvailability(
+    GenAIInquiryCallback callback) {
+  std::move(callback).Run(true);
+}
+
+bool TestCoralDelegate::GetGenAILocationAvailability() {
+  return true;
+}
+
+std::string TestCoralDelegate::GetSystemLanguage() {
+  return "en";
 }
 
 }  // namespace ash

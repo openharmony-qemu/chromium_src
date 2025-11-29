@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "base/base64.h"
+#include "base/check_deref.h"
 #include "base/check_op.h"
 #include "base/command_line.h"
 #include "base/functional/bind.h"
@@ -31,7 +32,6 @@
 #include "headless/test/headless_browser_test.h"
 #include "headless/test/headless_browser_test_utils.h"
 #include "headless/test/headless_devtooled_browsertest.h"
-#include "headless/test/test_network_interceptor.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/blink/public/common/switches.h"
@@ -68,49 +68,6 @@ IN_PROC_BROWSER_TEST_F(HeadlessWebContentsTest, Navigation) {
 
   EXPECT_THAT(browser_context->GetAllWebContents(),
               UnorderedElementsAre(web_contents));
-}
-
-IN_PROC_BROWSER_TEST_F(HeadlessWebContentsTest, WindowOpen) {
-  EXPECT_TRUE(embedded_test_server()->Start());
-
-  HeadlessBrowserContext* browser_context =
-      browser()->CreateBrowserContextBuilder().Build();
-
-  HeadlessWebContents* web_contents =
-      browser_context->CreateWebContentsBuilder()
-          .SetInitialURL(embedded_test_server()->GetURL("/window_open.html"))
-          .Build();
-  EXPECT_TRUE(WaitForLoad(web_contents));
-
-  EXPECT_EQ(2u, browser_context->GetAllWebContents().size());
-
-  HeadlessWebContentsImpl* child = nullptr;
-  HeadlessWebContentsImpl* parent = nullptr;
-  for (HeadlessWebContents* c : browser_context->GetAllWebContents()) {
-    HeadlessWebContentsImpl* impl = HeadlessWebContentsImpl::From(c);
-    if (impl->window_id() == 1)
-      parent = impl;
-    else if (impl->window_id() == 2)
-      child = impl;
-  }
-
-  EXPECT_NE(nullptr, parent);
-  EXPECT_NE(nullptr, child);
-  EXPECT_NE(parent, child);
-
-  // Mac doesn't have WindowTreeHosts.
-  if (parent && child && parent->window_tree_host())
-    EXPECT_NE(parent->window_tree_host(), child->window_tree_host());
-
-  gfx::Rect expected_bounds(0, 0, 200, 100);
-#if !BUILDFLAG(IS_MAC)
-  EXPECT_EQ(expected_bounds, child->web_contents()->GetViewBounds());
-  EXPECT_EQ(expected_bounds, child->web_contents()->GetContainerBounds());
-#else   // !BUILDFLAG(IS_MAC)
-  // Mac does not support GetViewBounds() and view positions are random.
-  EXPECT_EQ(expected_bounds.size(),
-            child->web_contents()->GetContainerBounds().size());
-#endif  // !BUILDFLAG(IS_MAC)
 }
 
 IN_PROC_BROWSER_TEST_F(HeadlessWebContentsTest,
@@ -390,9 +347,6 @@ class HeadlessWebContentsBeginFrameControlTest : public HeadlessBrowserTest {
         content::DevToolsAgentHost::GetForId(targetId)->GetWebContents());
 
     devtools_client_.AttachToWebContents(web_contents_->web_contents());
-    devtools_client_.AddEventHandler("Page.loadEventFired",
-                                     on_load_event_fired_handler_);
-
     devtools_client_.SendCommand(
         "Page.enable",
         base::BindOnce(
@@ -401,6 +355,8 @@ class HeadlessWebContentsBeginFrameControlTest : public HeadlessBrowserTest {
   }
 
   void OnPageDomainEnabled(base::Value::Dict) {
+    devtools_client_.AddEventHandler("Page.loadEventFired",
+                                     on_load_event_fired_handler_);
     devtools_client_.SendCommand(
         "Page.navigate",
         Param("url", embedded_test_server()->GetURL(GetTestHtmlFile()).spec()));
@@ -474,7 +430,20 @@ class HeadlessWebContentsBeginFrameControlBasicTest
   void StartFrames() override { BeginFrame(true); }
 
   void OnFrameFinished(base::Value::Dict result) override {
+    // TODO(crbug.com/385523803): The screenshot capturing logic is currently
+    // flaky for a first screenshot after a navigation, see bug for detaiils.
+    // This works around the flake by retrying the command in case the first
+    // one returns without screenshot.
     if (num_begin_frames_ == 1) {
+      CHECK_EQ(num_retries_, 0);
+      if (!result.FindStringByDottedPath("result.screenshotData")) {
+        num_retries_ += 1;
+        BeginFrame(true);
+        return;
+      }
+    }
+    int frame_number = num_begin_frames_ - num_retries_;
+    if (frame_number == 1) {
       // First BeginFrame should have caused damage and have a screenshot.
       EXPECT_TRUE(DictBool(result, "result.hasDamage"));
 
@@ -493,13 +462,13 @@ class HeadlessWebContentsBeginFrameControlBasicTest
       SkColor actual_color = result_bitmap.getColor(100, 100);
       EXPECT_EQ(expected_color, actual_color);
     } else {
-      DCHECK_EQ(2, num_begin_frames_);
+      DCHECK_EQ(2, frame_number);
       // Can't guarantee that the second BeginFrame didn't have damage, but it
       // should not have a screenshot.
       EXPECT_FALSE(result.FindStringByDottedPath("result.screenshotData"));
     }
 
-    if (num_begin_frames_ < 2) {
+    if (frame_number < 2) {
       // Don't capture a screenshot in the second BeginFrame.
       BeginFrame(false);
     } else {
@@ -508,6 +477,8 @@ class HeadlessWebContentsBeginFrameControlBasicTest
       PostFinishAsynchronousTest();
     }
   }
+
+  int num_retries_ = 0;
 };
 
 HEADLESS_DEVTOOLED_TEST_F(HeadlessWebContentsBeginFrameControlBasicTest);
@@ -628,94 +599,6 @@ class CookiesEnabled : public HeadlessDevTooledBrowserTest {
 
 HEADLESS_DEVTOOLED_TEST_F(CookiesEnabled);
 
-namespace {
-const char* kPageWhichOpensAWindow = R"(
-<html>
-<body>
-<script>
-const win = window.open('/page2.html');
-if (!win)
-  console.error('ready');
-win.addEventListener('load', () => console.log('ready'));
-</script>
-</body>
-</html>
-)";
-
-const char* kPage2 = R"(
-<html>
-<body>
-Page 2.
-</body>
-</html>
-)";
-}  // namespace
-
-class WebContentsOpenTest : public HeadlessDevTooledBrowserTest {
- public:
-  void PreRunAsynchronousTest() override {
-    interceptor_ = std::make_unique<TestNetworkInterceptor>();
-  }
-
-  void PostRunAsynchronousTest() override { interceptor_.reset(); }
-
-  void RunDevTooledTest() override {
-    DCHECK(interceptor_);
-
-    interceptor_->InsertResponse("http://foo.com/index.html",
-                                 {kPageWhichOpensAWindow, "text/html"});
-    interceptor_->InsertResponse("http://foo.com/page2.html",
-                                 {kPage2, "text/html"});
-
-    devtools_client_.AddEventHandler(
-        "Runtime.consoleAPICalled",
-        base::BindRepeating(&WebContentsOpenTest::OnConsoleAPICalled,
-                            base::Unretained(this)));
-    SendCommandSync(devtools_client_, "Runtime.enable");
-
-    devtools_client_.SendCommand("Page.navigate",
-                                 Param("url", "http://foo.com/index.html"));
-  }
-
-  virtual void OnConsoleAPICalled(const base::Value::Dict& params) {}
-
- protected:
-  std::unique_ptr<TestNetworkInterceptor> interceptor_;
-};
-
-class DontBlockWebContentsOpenTest : public WebContentsOpenTest {
- public:
-  void CustomizeHeadlessBrowserContext(
-      HeadlessBrowserContext::Builder& builder) override {
-    builder.SetBlockNewWebContents(false);
-  }
-
-  void OnConsoleAPICalled(const base::Value::Dict& params) override {
-    EXPECT_THAT(
-        interceptor_->urls_requested(),
-        ElementsAre("http://foo.com/index.html", "http://foo.com/page2.html"));
-    FinishAsynchronousTest();
-  }
-};
-
-HEADLESS_DEVTOOLED_TEST_F(DontBlockWebContentsOpenTest);
-
-class BlockWebContentsOpenTest : public WebContentsOpenTest {
- public:
-  void CustomizeHeadlessBrowserContext(
-      HeadlessBrowserContext::Builder& builder) override {
-    builder.SetBlockNewWebContents(true);
-  }
-
-  void OnConsoleAPICalled(const base::Value::Dict& params) override {
-    EXPECT_THAT(interceptor_->urls_requested(),
-                ElementsAre("http://foo.com/index.html"));
-    FinishAsynchronousTest();
-  }
-};
-
-HEADLESS_DEVTOOLED_TEST_F(BlockWebContentsOpenTest);
-
 // Regression test for crbug.com/1385982.
 class BlockDevToolsEmbedding : public HeadlessDevTooledBrowserTest {
  protected:
@@ -747,11 +630,18 @@ class BlockDevToolsEmbedding : public HeadlessDevTooledBrowserTest {
 
   void OnFrameTreeResult(base::Value::Dict result) {
     // Make sure the iframe did not load successfully.
-    auto& child_frames =
-        *result.FindListByDottedPath("result.frameTree.childFrames");
+    const auto& child_frames = CHECK_DEREF(
+        result.FindListByDottedPath("result.frameTree.childFrames"));
     EXPECT_EQ(DictString(child_frames[0].GetDict(), "frame.url"),
               "chrome-error://chromewebdata/");
     FinishAsynchronousTest();
+  }
+
+  bool ShouldEnableSitePerProcess() override {
+    // Headless browser tests by default run with OOPIF enabled. This results in
+    // the child frame to appear in a separate target. For simplicity we disable
+    // OOPIF for this test and expect child frame in the same target.
+    return false;
   }
 
  private:

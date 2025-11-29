@@ -656,7 +656,7 @@ MojoResult MojoWrapPlatformSharedMemoryRegionIpcz(
     return MOJO_RESULT_INVALID_ARGUMENT;
   }
   auto buffer = ipcz_driver::SharedBuffer::CreateForMojoWrapper(
-      base::make_span(platform_handles, num_platform_handles), num_bytes, *guid,
+      base::span(platform_handles, num_platform_handles), num_bytes, *guid,
       access_mode);
   if (!buffer) {
     return MOJO_RESULT_INVALID_ARGUMENT;
@@ -691,7 +691,7 @@ MojoResult MojoUnwrapPlatformSharedMemoryRegionIpcz(
 
   uint32_t capacity = *num_platform_handles;
   uint32_t required_handles = 1;
-#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID)
   if (buffer->region().GetMode() ==
       base::subtle::PlatformSharedMemoryRegion::Mode::kWritable) {
     required_handles = 2;
@@ -705,7 +705,7 @@ MojoResult MojoUnwrapPlatformSharedMemoryRegionIpcz(
   PlatformHandle handles[2];
   base::subtle::ScopedPlatformSharedMemoryHandle region_handle =
       buffer->region().PassPlatformHandle();
-#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_POSIX) && !BUILDFLAG(IS_APPLE) && !BUILDFLAG(IS_ANDROID)
   handles[0] = PlatformHandle(std::move(region_handle.fd));
   handles[1] = PlatformHandle(std::move(region_handle.readonly_fd));
 #else
@@ -761,7 +761,7 @@ MojoResult MojoAttachMessagePipeToInvitationIpcz(
     return MOJO_RESULT_INVALID_ARGUMENT;
   }
   return invitation->Attach(
-      base::make_span(static_cast<const uint8_t*>(name), name_num_bytes),
+      base::span(static_cast<const uint8_t*>(name), name_num_bytes),
       message_pipe_handle);
 }
 
@@ -777,7 +777,7 @@ MojoResult MojoExtractMessagePipeFromInvitationIpcz(
     return MOJO_RESULT_INVALID_ARGUMENT;
   }
   return invitation->Extract(
-      base::make_span(static_cast<const uint8_t*>(name), name_num_bytes),
+      base::span(static_cast<const uint8_t*>(name), name_num_bytes),
       message_pipe_handle);
 }
 

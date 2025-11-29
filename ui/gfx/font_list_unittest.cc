@@ -288,26 +288,6 @@ TEST(FontListTest, FirstAvailableOrFirst) {
   EXPECT_TRUE(FontList::FirstAvailableOrFirst("").empty());
   EXPECT_TRUE(FontList::FirstAvailableOrFirst(std::string()).empty());
 
-#if BUILDFLAG(IS_OHOS)
-  EXPECT_EQ("HarmonyOS-Sans",
-            FontList::FirstAvailableOrFirst("HarmonyOS-Sans"));
-  EXPECT_EQ("not exist", FontList::FirstAvailableOrFirst("not exist"));
-
-  EXPECT_EQ("HarmonyOS-Sans",
-            FontList::FirstAvailableOrFirst("HarmonyOS-Sans, not exist"));
-
-  EXPECT_EQ("HarmonyOS-Sans",
-            FontList::FirstAvailableOrFirst("not exist, HarmonyOS-Sans"));
-
-  EXPECT_EQ("HarmonyOS-Sans",
-            FontList::FirstAvailableOrFirst("not exist, HarmonyOS-Sans, not exist"));
-
-  EXPECT_EQ("not exist",
-            FontList::FirstAvailableOrFirst("not exist, not exist 2"));
-
-  EXPECT_EQ("HarmonyOS-Sans",
-            FontList::FirstAvailableOrFirst(", not exist, HarmonyOS-Sans"));
-#else
   EXPECT_EQ("Arial", FontList::FirstAvailableOrFirst("Arial"));
   EXPECT_EQ("not exist", FontList::FirstAvailableOrFirst("not exist"));
 
@@ -320,7 +300,6 @@ TEST(FontListTest, FirstAvailableOrFirst) {
             FontList::FirstAvailableOrFirst("not exist, not exist 2"));
 
   EXPECT_EQ("Arial", FontList::FirstAvailableOrFirst(", not exist, Arial"));
-#endif
   EXPECT_EQ("not exist",
             FontList::FirstAvailableOrFirst(", not exist, not exist"));
 }

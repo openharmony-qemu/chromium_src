@@ -4,7 +4,6 @@
 
 #import "ios/chrome/browser/lens_overlay/coordinator/lens_omnibox_client.h"
 
-#import "base/test/task_environment.h"
 #import "components/feature_engagement/public/tracker.h"
 #import "components/feature_engagement/test/test_tracker.h"
 #import "components/omnibox/browser/autocomplete_match.h"
@@ -19,6 +18,7 @@
 #import "ios/testing/nserror_util.h"
 #import "ios/web/public/test/fakes/fake_navigation_context.h"
 #import "ios/web/public/test/fakes/fake_web_state.h"
+#import "ios/web/public/test/web_task_environment.h"
 #import "testing/gmock/include/gmock/gmock.h"
 #import "testing/gtest/include/gtest/gtest.h"
 #import "testing/gtest_mac.h"
@@ -60,12 +60,11 @@ class LensOmniboxClientTest : public PlatformTest {
     lens_omnibox_client_->OnAutocompleteAccept(
         match.destination_url, match.post_content.get(),
         WindowOpenDisposition::CURRENT_TAB, match.transition, match.type,
-        base::TimeTicks(), false, false, input_text, match, match,
-        IDNA2008DeviationCharacter::kNone);
+        base::TimeTicks(), false, false, input_text, match, match);
   }
 
  protected:
-  base::test::TaskEnvironment task_environment_;
+  web::WebTaskEnvironment task_environment_;
 
   std::unique_ptr<TestProfileIOS> profile_;
   std::unique_ptr<feature_engagement::Tracker> tracker_;
@@ -87,7 +86,8 @@ TEST_F(LensOmniboxClientTest, AutocompleteAccept) {
   match.destination_url = GURL("https://www.google.com/search?q=search+terms");
 
   OCMExpect([mock_delegate_ omniboxDidAcceptText:match.fill_into_edit
-                                  destinationURL:match.destination_url]);
+                                  destinationURL:match.destination_url
+                                   textClobbered:NO]);
   UseAutocompleteMatch(input_text, match);
 
   EXPECT_OCMOCK_VERIFY(mock_delegate_);

@@ -8,7 +8,6 @@ load("//lib/builders.star", "builders", "cpu", "os", "siso")
 load("//lib/ci.star", "ci")
 load("//lib/consoles.star", "consoles")
 load("//lib/gn_args.star", "gn_args")
-load("//lib/html.star", "linkify_builder")
 load("//lib/structs.star", "structs")
 load("//lib/targets.star", "targets")
 load("//lib/xcode.star", "xcode")
@@ -358,10 +357,9 @@ fyi_reclient_staging_builder(
         ],
     ),
     builderless = True,
-    # TODO: crrev.com/i/7808548 - Drop cores=32 and add ssd=True after bot migration.
-    cores = "16|32",
+    cores = 16,
     os = os.WINDOWS_ANY,
-    ssd = None,
+    ssd = True,
     console_view_category = "win",
     execution_timeout = 5 * time.hour,
 )
@@ -392,10 +390,9 @@ fyi_reclient_test_builder(
         ],
     ),
     builderless = True,
-    # TODO: crrev.com/i/7808548 - Drop cores=32 and add ssd=True after bot migration.
-    cores = "16|32",
+    cores = 16,
     os = os.WINDOWS_ANY,
-    ssd = None,
+    ssd = True,
     console_view_category = "win",
     execution_timeout = 5 * time.hour,
     reclient_rewrapper_env = {
@@ -564,46 +561,6 @@ fyi_reclient_staging_builder(
     },
 )
 
-ci.builder(
-    name = "Comparison Linux (reclient vs reclient remote links)",
-    executable = "recipe:reclient_reclient_comparison",
-    gn_args = {
-        "build1": gn_args.config(
-            configs = [
-                "gpu_tests",
-                "release_builder",
-                "remoteexec",
-                "linux",
-                "x64",
-            ],
-        ),
-        "build2": gn_args.config(
-            configs = [
-                "gpu_tests",
-                "release_builder",
-                "reclient_with_remoteexec_links",
-                "linux",
-                "x64",
-            ],
-        ),
-    },
-    os = os.LINUX_DEFAULT,
-    console_view_entry = consoles.console_view_entry(
-        category = "linux",
-        short_name = "cmp",
-    ),
-    execution_timeout = 6 * time.hour,
-    reclient_bootstrap_env = {
-        "GOMA_DEPS_CACHE_TABLE_THRESHOLD": "40000",
-        "RBE_ip_reset_min_delay": "-1s",
-        "RBE_clang_depscan_archive": "true",
-        "RBE_fast_log_collection": "true",
-    },
-    reclient_cache_silo = "Comparison Linux remote links - cache siloed",
-    siso_project = siso.project.TEST_TRUSTED,
-    siso_remote_jobs = siso.remote_jobs.DEFAULT,
-)
-
 # The following 2 builders use the untrusted RBE instance because each instance has its own
 # rewrapper configs and the trusted instance uses native windows rewrapper configs but the
 # untrusted instance uses cross compile windows rewrapper configs.
@@ -621,10 +578,9 @@ ci.builder(
         ),
     },
     builderless = True,
-    cores = "16|32",
+    cores = 16,
     os = os.WINDOWS_DEFAULT,
-    # TODO: crrev.com/i/7808548 - Drop cores=32 and add ssd=True after bot migration.
-    ssd = None,
+    ssd = True,
     console_view_entry = consoles.console_view_entry(
         category = "win",
         short_name = "detcross",
@@ -666,10 +622,9 @@ ci.builder(
         ],
     ),
     builderless = True,
-    cores = "16|32",
+    cores = 16,
     os = os.WINDOWS_DEFAULT,
-    # TODO: crrev.com/i/7808548 - Drop cores=32 and add ssd=True after bot migration.
-    ssd = None,
+    ssd = True,
     console_view_entry = consoles.console_view_entry(
         category = "win",
         short_name = "compcross",
@@ -764,37 +719,4 @@ ci.builder(
     shadow_siso_project = siso.project.TEST_UNTRUSTED,
     siso_project = siso.project.TEST_TRUSTED,
     siso_remote_jobs = siso.remote_jobs.DEFAULT,
-)
-
-ci.builder(
-    name = "Comparison Linux (reclient)(CQ)",
-    description_html = """\
-This builder measures Linux build performance with reclient prod vs test in cq configuration.<br/>\
-The bot specs should be in sync with {}.\
-""".format(linkify_builder("try", "linux-rel-compilator")),
-    executable = "recipe:reclient_reclient_comparison",
-    gn_args = {
-        "build1": gn_args.config(
-            configs = ["gpu_tests", "release_builder", "remoteexec", "linux", "x64"],
-        ),
-        "build2": gn_args.config(
-            configs = ["gpu_tests", "release_builder", "remoteexec", "linux", "x64"],
-        ),
-    },
-    cores = 16,
-    os = os.LINUX_DEFAULT,
-    ssd = True,
-    console_view_entry = consoles.console_view_entry(
-        category = "linux|cq",
-        short_name = "cmp",
-    ),
-    execution_timeout = 6 * time.hour,
-    reclient_bootstrap_env = {
-        "RBE_ip_reset_min_delay": "-1s",
-        "RBE_fast_log_collection": "true",
-    },
-    reclient_cache_silo = "Comparison Linux CQ - cache siloed",
-    shadow_siso_project = siso.project.TEST_UNTRUSTED,
-    siso_project = siso.project.TEST_UNTRUSTED,
-    siso_remote_jobs = siso.remote_jobs.HIGH_JOBS_FOR_CQ,
 )

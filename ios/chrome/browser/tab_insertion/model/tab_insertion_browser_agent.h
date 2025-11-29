@@ -68,7 +68,7 @@ struct Params {
   bool insert_in_group = false;
 
   // The tab group where the tab should be inserted (if null and
-  // `insert_in_group` the tab is inserted in a new tab group).
+  // `insert_in_group` is true, the tab is inserted in a new tab group).
   base::WeakPtr<const TabGroup> tab_group;
 };
 
@@ -93,11 +93,8 @@ class TabInsertionBrowserAgent
 
  private:
   friend class BrowserUserData<TabInsertionBrowserAgent>;
-  BROWSER_USER_DATA_KEY_DECL();
 
   explicit TabInsertionBrowserAgent(Browser* browser);
-
-  raw_ptr<Browser> browser_;
 };
 
 #endif  // IOS_CHROME_BROWSER_TAB_INSERTION_MODEL_TAB_INSERTION_BROWSER_AGENT_H_

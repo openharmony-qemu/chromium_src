@@ -275,12 +275,14 @@ class CONTENT_EXPORT AuctionV8Helper
       const SerializedValue& serialized_value);
 
   // Compiles the provided script. Despite not being bound to a context, there
-  // still must be an active context for this method to be invoked. In case of
-  // an error sets `error_out`.
+  // still must be an active context for this method to be invoked. If
+  // cached_data is non-null, use the `cached_data` instead of compiling from
+  // scratch. In case of an error sets `error_out`.
   v8::MaybeLocal<v8::UnboundScript> Compile(
       const std::string& src,
       const GURL& src_url,
       const DebugId* debug_id,
+      v8::ScriptCompiler::CachedData* cached_data,
       std::optional<std::string>& error_out);
 
   // Compiles the provided WASM module from bytecode. A context must be active
@@ -428,6 +430,10 @@ class CONTENT_EXPORT AuctionV8Helper
   static std::string FormatExceptionMessage(v8::Local<v8::Context> context,
                                             v8::Local<v8::Message> message);
 
+  void SetEagerJsCompilation(bool eagerly_compile_js) {
+    eagerly_compile_js_ = eagerly_compile_js;
+  }
+
  private:
   friend class base::RefCountedDeleteOnSequence<AuctionV8Helper>;
   friend class base::DeleteHelper<AuctionV8Helper>;
@@ -452,6 +458,8 @@ class CONTENT_EXPORT AuctionV8Helper
 
   scoped_refptr<base::SequencedTaskRunner> v8_runner_;
   scoped_refptr<base::SequencedTaskRunner> timer_task_runner_;
+
+  bool eagerly_compile_js_ = false;
 
   // This needs to be invoked after ~IsolateHolder to make sure that V8 is
   // really shut down.

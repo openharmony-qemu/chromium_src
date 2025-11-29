@@ -1,6 +1,6 @@
 Package: libgnutls30
 Source: gnutls28
-Version: 3.7.1-5+deb11u3
+Version: 3.7.1-5+deb11u5
 Architecture: i386
 Maintainer: Debian GnuTLS Maintainers <pkg-gnutls-maint@lists.alioth.debian.org>
 Installed-Size: 3297

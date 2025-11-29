@@ -11,8 +11,8 @@
 #include "components/omnibox/browser/actions/omnibox_action.h"
 #include "components/omnibox/browser/actions/omnibox_pedal.h"
 #include "components/omnibox/browser/autocomplete_match.h"
-#include "components/omnibox/browser/omnibox_feature_configs.h"
 #include "components/omnibox/browser/suggestion_answer.h"
+#include "components/omnibox/common/omnibox_feature_configs.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/omnibox_proto/rich_answer_template.pb.h"
 #include "url/gurl.h"
@@ -38,29 +38,33 @@ TEST(AutocompleteMatchTypeTest, AccessibilityLabelHistory) {
   AutocompleteMatch match;
   match.type = AutocompleteMatchType::URL_WHAT_YOU_TYPED;
   match.description = kTestTitle;
-  EXPECT_EQ(kTestUrl + u", 2 of 9",
-            AutocompleteMatchType::ToAccessibilityLabel(match, kTestUrl, 1, 9));
+  EXPECT_EQ(kTestUrl + u", 2 of 9", AutocompleteMatchType::ToAccessibilityLabel(
+                                        match, u"", kTestUrl, 1, 9));
 
   // Decorated with title and match type.
   match.type = AutocompleteMatchType::HISTORY_URL;
-  EXPECT_EQ(kTestTitle + u" " + kTestUrl + u" location from history, 2 of 3",
-            AutocompleteMatchType::ToAccessibilityLabel(match, kTestUrl, 1, 3));
+  EXPECT_EQ(
+      kTestTitle + u" " + kTestUrl + u" location from history, 2 of 3",
+      AutocompleteMatchType::ToAccessibilityLabel(match, u"", kTestUrl, 1, 3));
 }
 
 TEST(AutocompleteMatchTypeTest, AccessibilityLabelSearch) {
   const std::u16string& kSearch = u"gondola";
+  const std::u16string& kTrendingSearchesHeader = u"Trending searches";
   const std::u16string& kSearchDesc = u"Google Search";
 
   AutocompleteMatch match;
   match.type = AutocompleteMatchType::SEARCH_WHAT_YOU_TYPED;
   match.description = kSearchDesc;
-  EXPECT_EQ(kSearch + u" search, 6 of 8",
-            AutocompleteMatchType::ToAccessibilityLabel(match, kSearch, 5, 8));
+  EXPECT_EQ(kSearch + u" search, " + kTrendingSearchesHeader + u", 6 of 8",
+            AutocompleteMatchType::ToAccessibilityLabel(
+                match, kTrendingSearchesHeader, kSearch, 5, 8));
 
   // Make sure there's no suffix if |total_matches| is 0, regardless of the
   // |match_index| value.
-  EXPECT_EQ(kSearch + u" search",
-            AutocompleteMatchType::ToAccessibilityLabel(match, kSearch, 5, 0));
+  EXPECT_EQ(kSearch + u" search, " + kTrendingSearchesHeader,
+            AutocompleteMatchType::ToAccessibilityLabel(
+                match, kTrendingSearchesHeader, kSearch, 5, 0));
 }
 
 TEST(AutocompleteMatchTypeTest, AccessibilityLabelPedal) {
@@ -78,20 +82,22 @@ TEST(AutocompleteMatchTypeTest, AccessibilityLabelPedal) {
 
   // Ensure that the accessibility hint is present in the a11y label for pedal
   // suggestions.
-  EXPECT_EQ(kAccessibilityHint + u", 2 of 5",
-            AutocompleteMatchType::ToAccessibilityLabel(match, kPedal, 1, 5));
+  EXPECT_EQ(
+      kAccessibilityHint + u", 2 of 5",
+      AutocompleteMatchType::ToAccessibilityLabel(match, u"", kPedal, 1, 5));
 }
 
 namespace {
 
 bool ParseJsonToAnswerData(const std::string& answer_json,
                            omnibox::RichAnswerTemplate* answer_template) {
-  std::optional<base::Value> value = base::JSONReader::Read(answer_json);
-  if (!value || !value->is_dict()) {
+  std::optional<base::Value::Dict> value =
+      base::JSONReader::ReadDict(answer_json);
+  if (!value) {
     return false;
   }
 
-  return omnibox::answer_data_parser::ParseJsonToAnswerData(value->GetDict(),
+  return omnibox::answer_data_parser::ParseJsonToAnswerData(*value,
                                                             answer_template);
 }
 
@@ -117,8 +123,9 @@ TEST(AutocompleteMatchTypeTest, AccessibilityLabelAnswer) {
   ASSERT_TRUE(ParseJsonToAnswerData(answer_json, &answer_template));
   ASSERT_FALSE(answer_template.answers(0).subhead().has_a11y_text());
   match.answer_template = answer_template;
-  EXPECT_EQ(kSearch + u", answer, sunny with a chance of hail, 4 of 6",
-            AutocompleteMatchType::ToAccessibilityLabel(match, kSearch, 3, 6));
+  EXPECT_EQ(
+      kSearch + u", answer, sunny with a chance of hail, 4 of 6",
+      AutocompleteMatchType::ToAccessibilityLabel(match, u"", kSearch, 3, 6));
 
   answer_template.Clear();
   // Accessibility text found in the answer data.
@@ -128,6 +135,7 @@ TEST(AutocompleteMatchTypeTest, AccessibilityLabelAnswer) {
   answer_data->mutable_subhead()->set_a11y_text("accessibility text");
   match.answer_template = answer_template;
 
-  EXPECT_EQ(kSearch + u", answer, accessibility text, 4 of 6",
-            AutocompleteMatchType::ToAccessibilityLabel(match, kSearch, 3, 6));
+  EXPECT_EQ(
+      kSearch + u", answer, accessibility text, 4 of 6",
+      AutocompleteMatchType::ToAccessibilityLabel(match, u"", kSearch, 3, 6));
 }

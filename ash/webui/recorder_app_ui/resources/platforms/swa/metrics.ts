@@ -5,6 +5,8 @@
 import {
   // Events
   CrOSEvents_RecorderApp_AppStartPerf,
+  CrOSEvents_RecorderApp_ChangePlaybackSpeed,
+  CrOSEvents_RecorderApp_ChangePlaybackVolume,
   CrOSEvents_RecorderApp_Export,
   CrOSEvents_RecorderApp_ExportPerf,
   CrOSEvents_RecorderApp_FeedbackSummary,
@@ -35,9 +37,12 @@ import {
 } from 'chrome://resources/ash/common/metrics/structured_metrics_service.js';
 
 import {
+  ChangePlaybackSpeedParams,
+  ChangePlaybackVolumeParams,
   EventsSender as EventsSenderBase,
   ExportEventParams,
   FeedbackEventParams,
+  isTranscriptionModelDownloadPerf,
   OnboardEventParams,
   PerfEvent,
   RecordEventParams,
@@ -45,7 +50,11 @@ import {
   SuggestTitleEventParams,
   SummarizeEventParams,
 } from '../../core/events_sender.js';
-import {ModelResponseError} from '../../core/on_device_model/types.js';
+import {
+  ModelExecutionError,
+  ModelLoadError,
+  ModelResponseError,
+} from '../../core/on_device_model/types.js';
 import {LanguageCode} from '../../core/soda/language_info.js';
 import {
   ExportAudioFormat,
@@ -221,15 +230,19 @@ function convertToModelResultStatus(
   } = CrOSEvents_RecorderAppModelResultStatus;
 
   switch (responseError) {
-    case ModelResponseError.GENERAL:
+    case ModelLoadError.LOAD_FAILURE:
+    case ModelLoadError.NEEDS_REBOOT:
+    case ModelExecutionError.GENERAL:
+      // Currently there's no plan to have specific error type for loading
+      // error.
       return CrOSEvents_RecorderAppModelResultStatus.GENERAL_ERROR;
-    case ModelResponseError.UNSAFE:
+    case ModelExecutionError.UNSAFE:
       return CrOSEvents_RecorderAppModelResultStatus.UNSAFE;
-    case ModelResponseError.UNSUPPORTED_TRANSCRIPTION_IS_TOO_SHORT:
+    case ModelExecutionError.UNSUPPORTED_TRANSCRIPTION_IS_TOO_SHORT:
       return UNSUPPORTED_TRANSCRIPTION_IS_TOO_SHORT;
-    case ModelResponseError.UNSUPPORTED_TRANSCRIPTION_IS_TOO_LONG:
+    case ModelExecutionError.UNSUPPORTED_TRANSCRIPTION_IS_TOO_LONG:
       return UNSUPPORTED_TRANSCRIPTION_IS_TOO_LONG;
-    case ModelResponseError.UNSUPPORTED_LANGUAGE:
+    case ModelExecutionError.UNSUPPORTED_LANGUAGE:
       return CrOSEvents_RecorderAppModelResultStatus.UNSUPPORTED_LANGUAGE;
     default:
       assertExhaustive(responseError);
@@ -414,7 +427,34 @@ export class EventsSender extends EventsSenderBase {
     record(event);
   }
 
+  override sendChangePlaybackSpeedEvent(
+    params: ChangePlaybackSpeedParams,
+  ): void {
+    const event = new CrOSEvents_RecorderApp_ChangePlaybackSpeed()
+                    .setPlaybackSpeed(params.playbackSpeed)
+                    .build();
+
+    record(event);
+  }
+
+  override sendChangePlaybackVolumeEvent(
+    params: ChangePlaybackVolumeParams,
+  ): void {
+    const event = new CrOSEvents_RecorderApp_ChangePlaybackVolume()
+                    .setMuted(BigInt(params.muted))
+                    .setVolume(BigInt(params.volume))
+                    .build();
+
+    record(event);
+  }
+
   override sendPerfEvent(event: PerfEvent, duration: number): void {
+    if (isTranscriptionModelDownloadPerf(event)) {
+      return this.sendTranscriptionModelDownloadPerf(
+        duration,
+        event.transcriptionLocale,
+      );
+    }
     const {kind} = event;
     switch (kind) {
       case 'appStart':
@@ -433,9 +473,6 @@ export class EventsSender extends EventsSenderBase {
         return this.sendSummaryModelDownloadPerf(duration);
       case 'titleSuggestion':
         return this.sendTitleSuggestionPerf(duration, event.wordCount);
-      case 'transcriptionModelDownload':
-        // TODO: b/327538356 - Collect soda download perf.
-        return this.sendTranscriptionModelDownloadPerf(duration);
       default:
         assertExhaustive(kind);
     }
@@ -449,10 +486,15 @@ export class EventsSender extends EventsSenderBase {
     record(event);
   }
 
-  private sendTranscriptionModelDownloadPerf(duration: number): void {
-    const event = new CrOSEvents_RecorderApp_TranscriptionModelDownloadPerf()
-                    .setDuration(BigInt(duration))
-                    .build();
+  private sendTranscriptionModelDownloadPerf(
+    duration: number,
+    language: LanguageCode,
+  ): void {
+    const event =
+      new CrOSEvents_RecorderApp_TranscriptionModelDownloadPerf()
+        .setDuration(BigInt(duration))
+        .setTranscriptionLocale(convertTranscriptionLocaleType(language))
+        .build();
 
     record(event);
   }

@@ -311,6 +311,12 @@ bool ShouldContextResponsePopulateHintCache(
       return false;
     case proto::RequestContext::CONTEXT_SHOPPING:
       return false;
+    case proto::RequestContext::CONTEXT_SHOP_CARD:
+      return false;
+    case proto::RequestContext::CONTEXT_GLIC_ZERO_STATE_SUGGESTIONS:
+      return false;
+    case proto::RequestContext::CONTEXT_GLIC_PAGE_CONTEXT:
+      return false;
   }
   NOTREACHED();
 }
@@ -438,20 +444,6 @@ void HintsManager::OnHintsComponentAvailable(const HintsComponentInfo& info) {
     return;
   }
 
-  if (features::ShouldCheckFailedComponentVersionPref() &&
-      failed_component_version_ &&
-      failed_component_version_->CompareTo(info.version) >= 0) {
-    OPTIMIZATION_GUIDE_LOGGER(
-        optimization_guide_common::mojom::LogSource::HINTS,
-        optimization_guide_logger_)
-        << "Skipping processing OptimizationHints component version: "
-        << info.version.GetString()
-        << " as it had failed in a previous session";
-    RecordProcessHintsComponentResult(
-        ProcessHintsComponentResult::kFailedFinishProcessing);
-    MaybeRunUpdateClosure(std::move(next_update_closure_));
-    return;
-  }
   // Write version that we are currently processing to prefs.
   pref_service_->SetString(prefs::kPendingHintsProcessingVersion,
                            info.version.GetString());
@@ -1114,6 +1106,22 @@ void HintsManager::CanApplyOptimizationOnDemand(
     OnDemandOptimizationGuideDecisionRepeatingCallback callback,
     std::optional<proto::RequestContextMetadata> request_context_metadata) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  if (!on_demand_hints_for_testing_.empty()) {
+    for (const GURL& url : urls) {
+      const auto& all_hints = on_demand_hints_for_testing_[url];
+      base::flat_map<proto::OptimizationType,
+                     OptimizationGuideDecisionWithMetadata>
+          requested_hints;
+      for (proto::OptimizationType type : optimization_types) {
+        auto it = all_hints.find(type);
+        if (it != all_hints.end()) {
+          requested_hints[type] = it->second;
+        }
+      }
+      callback.Run(url, requested_hints);
+    }
+    return;
+  }
 
   InsertionOrderedSet<GURL> urls_to_fetch;
   InsertionOrderedSet<std::string> hosts_to_fetch;
@@ -1850,6 +1858,13 @@ void HintsManager::AddHintForTesting(
   }
   hint_cache_->AddHintForTesting(url, std::move(hint));  // IN-TEST
   PrepareToInvokeRegisteredCallbacks(url);
+}
+
+void HintsManager::AddOnDemandHintForTesting(
+    const GURL& url,
+    proto::OptimizationType optimization_type,
+    const OptimizationGuideDecisionWithMetadata& decision) {
+  on_demand_hints_for_testing_[url][optimization_type] = decision;
 }
 
 void HintsManager::RemoveFetchedEntriesByHintKeys(

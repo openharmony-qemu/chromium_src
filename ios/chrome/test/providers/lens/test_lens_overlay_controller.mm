@@ -9,8 +9,10 @@
 
 @implementation TestLensOverlayController
 
-- (BOOL)isPanningSelectionUI {
-  return NO;
+@synthesize visibleAreaLayoutGuide = _visibleAreaLayoutGuide;
+
+- (CGSize)imageSize {
+  return CGSizeZero;
 }
 
 - (void)setLensOverlayDelegate:(id<ChromeLensOverlayDelegate>)delegate {
@@ -52,6 +54,18 @@
 }
 
 - (void)disableFlyoutMenu:(BOOL)disable {
+  // NO-OP
+}
+
+- (BOOL)translateFilterActive {
+  return NO;
+}
+
+- (CGRect)selectionRect {
+  return CGRectZero;
+}
+
+- (void)setGuidanceRestHeight:(CGFloat)height {
   // NO-OP
 }
 

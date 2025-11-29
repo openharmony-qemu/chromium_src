@@ -199,10 +199,8 @@ void WindowTreeHostPlatform::OnVideoCaptureLockDestroyed() {
 }
 
 void WindowTreeHostPlatform::SetCursorNative(gfx::NativeCursor cursor) {
-#if !BUILDFLAG(IS_OHOS)
   if (cursor == current_cursor_)
     return;
-#endif
   current_cursor_ = cursor;
 
   platform_window_->SetCursor(cursor.platform());
@@ -335,12 +333,6 @@ void WindowTreeHostPlatform::OnAcceleratedWidgetDestroyed() {
 
 void WindowTreeHostPlatform::OnActivationChanged(bool active) {}
 
-#if BUILDFLAG(IS_OHOS)
-void WindowTreeHostPlatform::SetSurfaceId(uint64_t surface_id) {
-  WindowTreeHost::SetSurfaceId(surface_id);
-}
-#endif
-
 void WindowTreeHostPlatform::OnMouseEnter() {
   client::CursorClient* cursor_client = client::GetCursorClient(window());
   if (cursor_client) {
@@ -384,10 +376,6 @@ int64_t WindowTreeHostPlatform::OnStateUpdate(
     OnBoundsChanged({origin_changed});
   }
 
-  if (old.raster_scale != latest.raster_scale) {
-    compositor()->SetExternalPageScaleFactor(latest.raster_scale);
-  }
-
   bool needs_frame = latest.WillProduceFrameOnUpdateFrom(old);
   if (old.occlusion_state != latest.occlusion_state &&
       NativeWindowOcclusionTracker::
@@ -417,17 +405,6 @@ int64_t WindowTreeHostPlatform::OnStateUpdate(
   compositor()->SetLocalSurfaceIdFromParent(window()->GetLocalSurfaceId());
 
   return window()->GetLocalSurfaceId().parent_sequence_number();
-}
-
-void WindowTreeHostPlatform::SetFrameRateThrottleEnabled(bool enabled) {
-  if (enabled)
-    HostFrameRateThrottler::GetInstance().AddHost(this);
-  else
-    HostFrameRateThrottler::GetInstance().RemoveHost(this);
-}
-
-void WindowTreeHostPlatform::DisableNativeWindowOcclusion() {
-  SetNativeWindowOcclusionEnabled(false);
 }
 
 }  // namespace aura

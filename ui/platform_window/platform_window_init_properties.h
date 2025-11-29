@@ -109,7 +109,6 @@ struct COMPONENT_EXPORT(PLATFORM_WINDOW) PlatformWindowInitProperties {
   // See Widget::InitParams for details.
   bool accept_events = true;
   bool activatable = true;
-  bool force_show_in_taskbar;
   bool keep_on_top = false;
   bool is_security_surface = false;
   bool visible_on_all_workspaces = false;
@@ -139,9 +138,6 @@ struct COMPONENT_EXPORT(PLATFORM_WINDOW) PlatformWindowInitProperties {
   // manager to match the desktop entry and group windows.
   std::string wayland_app_id;
 
-  // Specifies whether the associated window is persistable.
-  bool persistable = true;
-
   // Specifies the id of the target display the window will be created on.
   std::optional<int64_t> display_id;
 #endif
@@ -150,18 +146,18 @@ struct COMPONENT_EXPORT(PLATFORM_WINDOW) PlatformWindowInitProperties {
   // Specifies whether the current window requests key-events that matches
   // system shortcuts.
   bool inhibit_keyboard_shortcuts = false;
+
+  // Session Management related properties. Analogue to ui::PlatformSessionData
+  // fields though as separate variables to avoid platform_window => ozone
+  // circular dependency.
+  std::string session_id;
+  int32_t session_window_new_id = 0;
+  std::optional<int32_t> session_window_restore_id;
 #endif
 
   bool enable_compositing_based_throttling = false;
 
   size_t compositor_memory_limit_mb = 0;
-#if BUILDFLAG(IS_OHOS)
-  std::optional<SkColor> background_color;
-  bool using_system_floating_window = false;
-  bool use_dark_mode = false;
-  bool is_stateless = false;
-  bool caption_button_visible = true;
-#endif
 };
 
 }  // namespace ui

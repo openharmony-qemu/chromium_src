@@ -31,9 +31,17 @@ component("platform") {
 
   defines = [ "IS_AX_PLATFORM_IMPL" ]
 
-  visibility = [ "//ui/accessibility" ]
+  visibility = [
+    "//chrome/browser/ui/webui/accessibility",
+    "//ui/accessibility",
+    "//ui/views:views",
+  ]
 
   sources = [
+    "assistive_tech.cc",
+    "assistive_tech.h",
+    "ax_mode_observer.cc",
+    "ax_mode_observer.h",
     "ax_node_id_delegate.h",
     "ax_platform.cc",
     "ax_platform.h",
@@ -74,6 +82,11 @@ component("platform") {
     "inspect/ax_tree_formatter_base.cc",
     "inspect/ax_tree_formatter_base.h",
     "inspect/ax_tree_indexer.h",
+  ]
+
+  configs += [
+    "//build/config/compiler:wexit_time_destructors",
+    "//build/config/compiler:wglobal_constructors",
   ]
 
   deps = [
@@ -207,6 +220,7 @@ component("platform") {
         "browser_accessibility_manager_win.h",
         "browser_accessibility_win.cc",
         "browser_accessibility_win.h",
+        "iaccessible2/scoped_co_mem_array.cc",
         "iaccessible2/scoped_co_mem_array.h",
         "inspect/ax_call_statement_invoker_win.cc",
         "inspect/ax_call_statement_invoker_win.h",
@@ -304,21 +318,6 @@ component("platform") {
       ]
     }
 
-    if (is_ohos) {
-      sources += [
-        "ax_platform_node_ohos.cc",
-        "ax_platform_node_ohos.h",
-        "inspect/ax_tree_formatter_ohos.cc",
-        "inspect/ax_tree_formatter_ohos.h",
-        "ohos/accessibility_bridge_ohos_impl.cc",
-        "ohos/accessibility_bridge_ohos_impl.h",
-      ]
-
-      public_deps += [
-      "//ohos/adapter:adapter",
-      ]
-    }
-
     if (use_atk) {
       sources += [
         "atk_util_auralinux.cc",
@@ -353,6 +352,7 @@ component("platform") {
 
       if (use_glib) {
         configs += [ "//build/config/linux:glib" ]
+        deps += [ "//ui/base/glib" ]
       }
       if (use_gio) {
         configs += [ "//build/linux:gio_config" ]

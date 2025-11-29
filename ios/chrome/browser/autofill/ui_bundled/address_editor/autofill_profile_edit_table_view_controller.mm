@@ -5,8 +5,10 @@
 #import "ios/chrome/browser/autofill/ui_bundled/address_editor/autofill_profile_edit_table_view_controller.h"
 
 #import "base/apple/foundation_util.h"
+#import "base/metrics/user_metrics.h"
+#import "base/metrics/user_metrics_action.h"
 #import "base/strings/sys_string_conversions.h"
-#import "components/autofill/core/browser/data_model/autofill_profile.h"
+#import "components/autofill/core/browser/data_model/addresses/autofill_profile.h"
 #import "components/autofill/core/browser/field_types.h"
 #import "components/autofill/core/common/autofill_features.h"
 #import "components/autofill/ios/common/features.h"
@@ -42,6 +44,10 @@ const CGFloat kLineSpacingBetweenErrorAndFooter = 12.0f;
 // autofill::AutofillProfile::RecordType::kAccount.
 @property(nonatomic, assign) BOOL accountProfile;
 
+// YES, if the profile's record type is
+// autofill::AutofillProfile::RecordType::kAccountHome/kAccountWork.
+@property(nonatomic, assign) BOOL isHomeWorkProfile;
+
 // If YES, denotes that the view is laid out for the migration prompt.
 @property(nonatomic, assign) BOOL migrationPrompt;
 
@@ -59,8 +65,16 @@ const CGFloat kLineSpacingBetweenErrorAndFooter = 12.0f;
   // If YES, denotes that the view is shown in the settings.
   BOOL _settingsView;
 
-  // Points to the save/update button in the modal view.
+  // If YES, the new address is being added manually.
+  BOOL _addManualAddress;
+
+  // The item for the save/update button. Used when the
+  // `kAutofillDynamicallyLoadsFieldsForAddressInput` feature is disabled.
   TableViewTextButtonItem* _modalSaveUpdateButton;
+
+  // The button footer item for the save/update button. Used when the
+  // `kAutofillDynamicallyLoadsFieldsForAddressInput` feature is enabled.
+  AutofillEditProfileButtonFooterItem* _saveUpdateButtonFooterItem;
 
   // If YES, the table view has a save button.
   BOOL _hasSaveButton;
@@ -82,7 +96,8 @@ const CGFloat kLineSpacingBetweenErrorAndFooter = 12.0f;
                     (id<AutofillProfileEditTableViewControllerDelegate>)delegate
                        userEmail:(NSString*)userEmail
                       controller:(LegacyChromeTableViewController*)controller
-                    settingsView:(BOOL)settingsView {
+                    settingsView:(BOOL)settingsView
+                addManualAddress:(BOOL)addManualAddress {
   self = [super init];
   if (self) {
     _delegate = delegate;
@@ -90,9 +105,13 @@ const CGFloat kLineSpacingBetweenErrorAndFooter = 12.0f;
     _accountProfile = NO;
     _controller = controller;
     _settingsView = settingsView;
+    _addManualAddress = addManualAddress;
     _moveToAccountFromSettings = NO;
+    _hasSaveButton = NO;
+    _hasUpdateButton = NO;
     _dynamicallyLoadInputFieldsEnabled = base::FeatureList::IsEnabled(
         kAutofillDynamicallyLoadsFieldsForAddressInput);
+    _isHomeWorkProfile = NO;
   }
 
   return self;
@@ -142,79 +161,52 @@ const CGFloat kLineSpacingBetweenErrorAndFooter = 12.0f;
 }
 
 - (void)loadModel {
-  _hasSaveButton = NO;
-  _hasUpdateButton = NO;
-
   TableViewModel* model = _controller.tableViewModel;
 
-  if (_dynamicallyLoadInputFieldsEnabled) {
-    if (![model hasSectionForSectionIdentifier:
-                    AutofillProfileDetailsSectionIdentifierName]) {
-      [model
-          addSectionWithIdentifier:AutofillProfileDetailsSectionIdentifierName];
+  if (!self.isHomeWorkProfile) {
+    AutofillProfileDetailsSectionIdentifier nameSection =
+        _dynamicallyLoadInputFieldsEnabled
+            ? AutofillProfileDetailsSectionIdentifierName
+            : AutofillProfileDetailsSectionIdentifierFields;
 
-      [model addItem:[self nameItem]
-          toSectionWithIdentifier:AutofillProfileDetailsSectionIdentifierName];
-      [model addItem:[self companyItem]
-          toSectionWithIdentifier:AutofillProfileDetailsSectionIdentifierName];
+    if (![model hasSectionForSectionIdentifier:nameSection]) {
+      [model addSectionWithIdentifier:nameSection];
     }
-
-    if (![model hasSectionForSectionIdentifier:
-                    AutofillProfileDetailsSectionIdentifierAddress]) {
-      [model addSectionWithIdentifier:
-                 AutofillProfileDetailsSectionIdentifierAddress];
+    for (AutofillEditProfileField* nonAddressField in
+         [_delegate inputNonAddressFields]) {
+      [model addItem:[self profileEditItem:nonAddressField.fieldLabel
+                                 fieldType:nonAddressField.fieldType]
+          toSectionWithIdentifier:nameSection];
     }
-    for (AutofillProfileAddressField* addressField in
-         [_delegate inputAddressFields]) {
-      [model addItem:[self addressItem:addressField.fieldLabel
-                             fieldType:addressField.fieldType]
-          toSectionWithIdentifier:
-              AutofillProfileDetailsSectionIdentifierAddress];
+  }
+
+  AutofillProfileDetailsSectionIdentifier addressSection =
+      _dynamicallyLoadInputFieldsEnabled
+          ? AutofillProfileDetailsSectionIdentifierAddress
+          : AutofillProfileDetailsSectionIdentifierFields;
+
+  if (![model hasSectionForSectionIdentifier:addressSection]) {
+    [model addSectionWithIdentifier:addressSection];
+  }
+  for (AutofillEditProfileField* addressField in
+       [_delegate inputAddressFields]) {
+    [model addItem:[self profileEditItem:addressField.fieldLabel
+                               fieldType:addressField.fieldType]
+        toSectionWithIdentifier:addressSection];
+  }
+  [model addItem:[self countryItem] toSectionWithIdentifier:addressSection];
+
+  if (!self.isHomeWorkProfile) {
+    AutofillProfileDetailsSectionIdentifier phoneEmailSection =
+        _dynamicallyLoadInputFieldsEnabled
+            ? AutofillProfileDetailsSectionIdentifierPhoneEmail
+            : AutofillProfileDetailsSectionIdentifierFields;
+
+    if (![model hasSectionForSectionIdentifier:phoneEmailSection]) {
+      [model addSectionWithIdentifier:phoneEmailSection];
     }
-
-    [model addItem:[self countryItem]
-        toSectionWithIdentifier:AutofillProfileDetailsSectionIdentifierAddress];
-
-    if (![model hasSectionForSectionIdentifier:
-                    AutofillProfileDetailsSectionIdentifierPhoneEmail]) {
-      [model addSectionWithIdentifier:
-                 AutofillProfileDetailsSectionIdentifierPhoneEmail];
-
-      [model addItem:[self phoneItem]
-          toSectionWithIdentifier:
-              AutofillProfileDetailsSectionIdentifierPhoneEmail];
-      [model addItem:[self emailItem]
-          toSectionWithIdentifier:
-              AutofillProfileDetailsSectionIdentifierPhoneEmail];
-    }
-
-  } else {
-    if (![model hasSectionForSectionIdentifier:
-                    AutofillProfileDetailsSectionIdentifierFields]) {
-      [model addSectionWithIdentifier:
-                 AutofillProfileDetailsSectionIdentifierFields];
-    }
-
-    [model addItem:[self nameItem]
-        toSectionWithIdentifier:AutofillProfileDetailsSectionIdentifierFields];
-    [model addItem:[self companyItem]
-        toSectionWithIdentifier:AutofillProfileDetailsSectionIdentifierFields];
-
-    for (AutofillProfileAddressField* addressField in
-         [_delegate inputAddressFields]) {
-      [model addItem:[self addressItem:addressField.fieldLabel
-                             fieldType:addressField.fieldType]
-          toSectionWithIdentifier:
-              AutofillProfileDetailsSectionIdentifierFields];
-    }
-
-    [model addItem:[self countryItem]
-        toSectionWithIdentifier:AutofillProfileDetailsSectionIdentifierFields];
-
-    [model addItem:[self phoneItem]
-        toSectionWithIdentifier:AutofillProfileDetailsSectionIdentifierFields];
-    [model addItem:[self emailItem]
-        toSectionWithIdentifier:AutofillProfileDetailsSectionIdentifierFields];
+    [model addItem:[self phoneItem] toSectionWithIdentifier:phoneEmailSection];
+    [model addItem:[self emailItem] toSectionWithIdentifier:phoneEmailSection];
   }
 }
 
@@ -247,6 +239,9 @@ const CGFloat kLineSpacingBetweenErrorAndFooter = 12.0f;
         base::apple::ObjCCastStrict<TableViewMultiDetailTextCell>(cell);
     multiDetailTextCell.accessibilityIdentifier =
         multiDetailTextCell.textLabel.text;
+    if ([self showEditView]) {
+      multiDetailTextCell.selectionStyle = UITableViewCellSelectionStyleDefault;
+    }
     return multiDetailTextCell;
   }
 
@@ -301,6 +296,10 @@ const CGFloat kLineSpacingBetweenErrorAndFooter = 12.0f;
       [_controller.tableViewModel sectionIdentifierForSectionIndex:section];
 
   if (_dynamicallyLoadInputFieldsEnabled) {
+    if (self.isHomeWorkProfile) {
+      return sectionIdentifier ==
+             AutofillProfileDetailsSectionIdentifierAddress;
+    }
     return sectionIdentifier ==
            AutofillProfileDetailsSectionIdentifierPhoneEmail;
   }
@@ -325,6 +324,8 @@ const CGFloat kLineSpacingBetweenErrorAndFooter = 12.0f;
 
 - (void)loadMessageAndButtonForModalIfSaveOrUpdate:(BOOL)update {
   CHECK(!_settingsView);
+  _hasSaveButton = !update;
+  _hasUpdateButton = update;
   TableViewModel* model = _controller.tableViewModel;
 
   if (self.accountProfile || self.migrationPrompt) {
@@ -351,9 +352,6 @@ const CGFloat kLineSpacingBetweenErrorAndFooter = 12.0f;
     [model addItem:[self saveButtonIfSaveOrUpdate:update]
         toSectionWithIdentifier:AutofillProfileDetailsSectionIdentifierFields];
   }
-
-  _hasSaveButton = !update;
-  _hasUpdateButton = update;
 }
 
 - (BOOL)isItemAtIndexPathTextEditCell:(NSIndexPath*)cellPath {
@@ -412,7 +410,11 @@ const CGFloat kLineSpacingBetweenErrorAndFooter = 12.0f;
   TableViewModel* model = _controller.tableViewModel;
   if (_dynamicallyLoadInputFieldsEnabled) {
     [model deleteAllItemsFromSectionWithIdentifier:
+               AutofillProfileDetailsSectionIdentifierName];
+    [model deleteAllItemsFromSectionWithIdentifier:
                AutofillProfileDetailsSectionIdentifierAddress];
+    [model deleteAllItemsFromSectionWithIdentifier:
+               AutofillProfileDetailsSectionIdentifierPhoneEmail];
   } else {
     [model deleteAllItemsFromSectionWithIdentifier:
                AutofillProfileDetailsSectionIdentifierFields];
@@ -468,20 +470,19 @@ const CGFloat kLineSpacingBetweenErrorAndFooter = 12.0f;
     _controller.navigationItem.rightBarButtonItem.enabled = enabled;
   } else {
     if (_dynamicallyLoadInputFieldsEnabled) {
-      [_controller.tableView beginUpdates];
+      _saveUpdateButtonFooterItem.enabled = enabled;
 
       NSInteger section = [[_controller tableViewModel]
           sectionForSectionIdentifier:
               AutofillProfileDetailsSectionIdentifierButton];
-      UITableViewHeaderFooterView* footer =
+      UITableViewHeaderFooterView* footerView =
           [_controller.tableView footerViewForSection:section];
-      AutofillEditProfileButtonFooterCell* buttonFooter =
-          base::apple::ObjCCastStrict<AutofillEditProfileButtonFooterCell>(
-              footer);
-      buttonFooter.button.enabled = enabled;
-      [buttonFooter updateButtonColorBasedOnStatus];
 
-      [_controller.tableView endUpdates];
+      if (footerView) {
+        [_saveUpdateButtonFooterItem
+            configureHeaderFooterView:footerView
+                           withStyler:_controller.styler];
+      }
     } else {
       _modalSaveUpdateButton.enabled = enabled;
       [_controller reconfigureCellsForItems:@[ _modalSaveUpdateButton ]];
@@ -493,6 +494,12 @@ const CGFloat kLineSpacingBetweenErrorAndFooter = 12.0f;
 
 - (void)didTapButton {
   CHECK(!_settingsView);
+  if (_addManualAddress) {
+    base::RecordAction(
+        base::UserMetricsAction("AddAddressManually_AddressSaved"));
+  } else if (_hasSaveButton) {
+    base::RecordAction(base::UserMetricsAction("AddressInfobar_AddressSaved"));
+  }
   [_delegate didSaveProfileFromModal];
 }
 
@@ -520,32 +527,6 @@ const CGFloat kLineSpacingBetweenErrorAndFooter = 12.0f;
           initWithType:AutofillProfileDetailsItemTypeError];
   [item setAttributedString:[self errorAndFooterMessage]];
   return item;
-}
-
-// Returns the name field used in the save/update prompts as well as the
-// settings view.
-- (AutofillProfileEditItem*)nameItem {
-  return [self
-      autofillEditItemFromAutofillType:
-          [_delegate fieldTypeToTypeName:autofill::NAME_FULL]
-                            fieldLabel:l10n_util::GetNSString(
-                                           IDS_IOS_AUTOFILL_FULLNAME)
-                         returnKeyType:UIReturnKeyNext
-                          keyboardType:UIKeyboardTypeDefault
-                autoCapitalizationType:UITextAutocapitalizationTypeSentences];
-}
-
-// Returns the company field used in the save/update prompts as well as the
-// settings view.
-- (AutofillProfileEditItem*)companyItem {
-  return [self
-      autofillEditItemFromAutofillType:
-          [_delegate fieldTypeToTypeName:autofill::COMPANY_NAME]
-                            fieldLabel:l10n_util::GetNSString(
-                                           IDS_IOS_AUTOFILL_COMPANY_NAME)
-                         returnKeyType:UIReturnKeyNext
-                          keyboardType:UIKeyboardTypeDefault
-                autoCapitalizationType:UITextAutocapitalizationTypeSentences];
 }
 
 // Returns the phone field used in the save/update prompts as well as the
@@ -576,8 +557,8 @@ const CGFloat kLineSpacingBetweenErrorAndFooter = 12.0f;
 
 // Returns the address field used in the save/update prompts as well as the
 // settings view.
-- (AutofillProfileEditItem*)addressItem:(NSString*)fieldLabel
-                              fieldType:(NSString*)fieldType {
+- (AutofillProfileEditItem*)profileEditItem:(NSString*)fieldLabel
+                                  fieldType:(NSString*)fieldType {
   return [self
       autofillEditItemFromAutofillType:fieldType
                             fieldLabel:fieldLabel
@@ -665,18 +646,20 @@ const CGFloat kLineSpacingBetweenErrorAndFooter = 12.0f;
 
 - (AutofillEditProfileButtonFooterItem*)saveUpdateButtonAsFooter:(BOOL)update {
   CHECK(!_settingsView);
-  AutofillEditProfileButtonFooterItem* buttonFooter =
-      [[AutofillEditProfileButtonFooterItem alloc]
-          initWithType:AutofillProfileDetailsItemTypeSaveButton];
+  _saveUpdateButtonFooterItem = [[AutofillEditProfileButtonFooterItem alloc]
+      initWithType:AutofillProfileDetailsItemTypeSaveButton];
   if (self.migrationPrompt) {
-    buttonFooter.buttonText = l10n_util::GetNSString(
+    _saveUpdateButtonFooterItem.buttonText = l10n_util::GetNSString(
         IDS_AUTOFILL_ADDRESS_MIGRATION_TO_ACCOUNT_PROMPT_OK_BUTTON_LABEL);
   } else {
-    buttonFooter.buttonText = l10n_util::GetNSString(
+    _saveUpdateButtonFooterItem.buttonText = l10n_util::GetNSString(
         update ? IDS_AUTOFILL_UPDATE_ADDRESS_PROMPT_OK_BUTTON_LABEL
                : IDS_AUTOFILL_SAVE_ADDRESS_PROMPT_OK_BUTTON_LABEL);
   }
-  return buttonFooter;
+  // The button should initially be disabled when manually adding a new address
+  // to the account.
+  _saveUpdateButtonFooterItem.enabled = !_addManualAddress || !_accountProfile;
+  return _saveUpdateButtonFooterItem;
 }
 
 #pragma mark - Private
@@ -762,7 +745,9 @@ const CGFloat kLineSpacingBetweenErrorAndFooter = 12.0f;
   return _moveToAccountFromSettings
              ? @""
              : l10n_util::GetNSStringF(
-                   IDS_IOS_SETTINGS_AUTOFILL_ACCOUNT_ADDRESS_FOOTER_TEXT,
+                   _hasSaveButton
+                       ? IDS_IOS_AUTOFILL_SAVE_ADDRESS_IN_ACCOUNT_FOOTER
+                       : IDS_IOS_SETTINGS_AUTOFILL_ACCOUNT_ADDRESS_FOOTER_TEXT,
                    base::SysNSStringToUTF16(_userEmail));
 }
 

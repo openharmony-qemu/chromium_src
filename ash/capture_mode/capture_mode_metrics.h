@@ -172,7 +172,7 @@ void RecordCaptureModeRecordingDuration(base::TimeDelta recording_duration,
 // Records the given video file `size_in_kb`. The used histogram will depend on
 // whether this video file was GIF or WebM.
 void RecordVideoFileSizeKB(bool is_gif,
-                           const CaptureModeBehavior* behavior,
+                           const char* client_metric_component,
                            int size_in_kb);
 
 // Records if the user has switched modes during a capture session.
@@ -258,9 +258,6 @@ void RecordSearchResultsPanelShown();
 
 // Records that a search result URL was clicked in the search results panel.
 void RecordSearchResultClicked();
-
-// Records that a multimodal search was requested in the search results panel.
-void RecordMultimodalSearchRequest();
 
 // Prepends the common prefix to the `root_word` and optionally inserts the
 // client's metric component (as specified by the given `behavior`) or appends

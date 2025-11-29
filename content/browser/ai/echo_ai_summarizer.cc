@@ -31,4 +31,10 @@ void EchoAISummarizer::Summarize(
   responder->OnCompletion(/*context_info=*/nullptr);
 }
 
+void EchoAISummarizer::MeasureUsage(const std::string& input,
+                                    const std::string& context,
+                                    MeasureUsageCallback callback) {
+  std::move(callback).Run(input.size() + context.size());
+}
+
 }  // namespace content

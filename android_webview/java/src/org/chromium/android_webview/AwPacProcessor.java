@@ -33,7 +33,7 @@ import java.util.List;
 // TODO(amalova): remove UsedByReflection
 @UsedByReflection("Android")
 public class AwPacProcessor {
-    private long mNativePacProcessor;
+    private final long mNativePacProcessor;
     private Network mNetwork;
     private ConnectivityManager.NetworkCallback mNetworkCallback;
 
@@ -141,7 +141,10 @@ public class AwPacProcessor {
 
         long createNativePacProcessor();
 
-        boolean setProxyScript(long nativeAwPacProcessor, AwPacProcessor caller, String script);
+        boolean setProxyScript(
+                long nativeAwPacProcessor,
+                AwPacProcessor caller,
+                @JniType("std::string") String script);
 
         String makeProxyRequest(long nativeAwPacProcessor, AwPacProcessor caller, String url);
 

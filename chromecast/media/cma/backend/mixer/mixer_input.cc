@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "chromecast/media/cma/backend/mixer/mixer_input.h"
 
 #include <stdint.h>
@@ -209,10 +214,7 @@ void MixerInput::RemoveAudioOutputRedirector(
                   << ")";
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   DCHECK(redirector);
-  audio_output_redirectors_.erase(
-      std::remove(audio_output_redirectors_.begin(),
-                  audio_output_redirectors_.end(), redirector),
-      audio_output_redirectors_.end());
+  std::erase(audio_output_redirectors_, redirector);
 }
 
 bool MixerInput::Render(

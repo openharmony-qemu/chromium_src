@@ -68,6 +68,7 @@ namespace content {
 
 class ContentBrowserClient;
 class CrossOriginEmbedderPolicyReporter;
+class DocumentIsolationPolicyReporter;
 class ServiceWorkerMainResourceHandle;
 class SharedWorkerContentSettingsProxyImpl;
 class SharedWorkerServiceImpl;
@@ -142,6 +143,8 @@ class CONTENT_EXPORT SharedWorkerHost : public blink::mojom::SharedWorkerHost,
   // Causes this instance to be deleted, which will terminate the worker. May
   // be done based on a UI action.
   void Destruct();
+
+  void DestructIfNoClients();
 
   void AddClient(mojo::PendingRemote<blink::mojom::SharedWorkerClient> client,
                  GlobalRenderFrameHostId client_render_frame_host_id,
@@ -364,6 +367,8 @@ class CONTENT_EXPORT SharedWorkerHost : public blink::mojom::SharedWorkerHost,
   network::mojom::ClientSecurityStatePtr worker_client_security_state_;
 
   std::unique_ptr<CrossOriginEmbedderPolicyReporter> coep_reporter_;
+
+  std::unique_ptr<DocumentIsolationPolicyReporter> dip_reporter_;
 
   base::WeakPtrFactory<SharedWorkerHost> weak_factory_{this};
 };

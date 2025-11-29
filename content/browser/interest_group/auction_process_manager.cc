@@ -18,7 +18,6 @@
 #include "base/memory/scoped_refptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/metrics/histogram_functions.h"
-#include "base/not_fatal_until.h"
 #include "base/strings/strcat.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/time/time.h"
@@ -26,6 +25,7 @@
 #include "build/build_config.h"
 #include "content/browser/interest_group/interest_group_features.h"
 #include "content/browser/interest_group/trusted_signals_cache_impl.h"
+#include "content/browser/site_instance_impl.h"
 #include "content/public/browser/browser_context.h"
 #include "content/public/browser/child_process_host.h"
 #include "content/public/browser/render_frame_host.h"
@@ -52,6 +52,11 @@ void RecordRequestWorkletServiceOutcomeUMA(
                         : "Buyer.",
                     "RequestWorkletServiceOutcome"}),
       result);
+}
+
+void RecordIdleProcessExpiredUma(bool result) {
+  base::UmaHistogramBoolean("Ads.InterestGroup.Auction.IdleProcessExpired",
+                            result);
 }
 }  // namespace
 
@@ -95,9 +100,10 @@ AuctionProcessManager::WorkletProcess::WorkletProcess(
     remove_idle_process_from_manager_timer_.Start(
         FROM_HERE,
         features::kFledgeStartAnticipatoryProcessExpirationTime.Get(),
-        base::BindOnce(&WorkletProcess::RemoveFromProcessManager,
-                       base::Unretained(this),
-                       /*on_destruction=*/false));
+        base::BindOnce(&RecordIdleProcessExpiredUma, true)
+            .Then(base::BindOnce(&WorkletProcess::RemoveFromProcessManager,
+                                 base::Unretained(this),
+                                 /*on_destruction=*/false)));
   }
 }
 
@@ -161,6 +167,7 @@ void AuctionProcessManager::WorkletProcess::ActivateAndBindIfUnbound(
     OnBoundToOrigin();
   }
   is_idle_ = false;
+  RecordIdleProcessExpiredUma(false);
   remove_idle_process_from_manager_timer_.Stop();
 }
 
@@ -244,13 +251,15 @@ void AuctionProcessManager::WorkletProcess::OnBoundToOrigin() {
   DCHECK(is_bound_to_origin_);
 
   // If the TrustedSignalsCache exists (and thus is enabled), pass a pipe to
-  // for KVv2 bidding signals fetches. Seller signals are not yet supported, so
-  // only do this for bidder worklets.
+  // for KVv2 bidding signals fetches.
   auto* trusted_signals_cache =
       auction_process_manager_->trusted_signals_cache_.get();
-  if (trusted_signals_cache && worklet_type_ == WorkletType::kBidder) {
+  if (trusted_signals_cache) {
     service_->SetTrustedSignalsCache(trusted_signals_cache->CreateRemote(
-        TrustedSignalsCacheImpl::SignalsType::kBidding, origin_));
+        worklet_type_ == WorkletType::kBidder
+            ? TrustedSignalsCacheImpl::SignalsType::kBidding
+            : TrustedSignalsCacheImpl::SignalsType::kScoring,
+        origin_));
   }
 }
 
@@ -591,7 +600,7 @@ void AuctionProcessManager::RemovePendingProcessHandle(
   PendingRequestMap* pending_request_map =
       GetPendingRequestMap(process_handle->worklet_type_);
   auto it = pending_request_map->find(process_handle->origin_);
-  CHECK(it != pending_request_map->end(), base::NotFatalUntil::M130);
+  CHECK(it != pending_request_map->end());
   DCHECK_EQ(1u, it->second.count(process_handle));
   it->second.erase(process_handle);
   // If there are no more pending requests for the same origin, remove the
@@ -604,7 +613,7 @@ void AuctionProcessManager::OnWorkletProcessUnusable(
     WorkletProcess* worklet_process) {
   ProcessMap* processes = Processes(worklet_process->worklet_type());
   auto it = processes->find(worklet_process->origin());
-  CHECK(it != processes->end(), base::NotFatalUntil::M130);
+  CHECK(it != processes->end());
   processes->erase(it);
 
   // May need to launch another process at this point.
@@ -781,7 +790,10 @@ InRendererAuctionProcessManager::CreateProcessInternal(
   }
 
   mojo::PendingRemote<auction_worklet::mojom::AuctionWorkletService> service;
-  site_instance->GetProcess()->Init();
+  static_cast<SiteInstanceImpl*>(site_instance)
+      ->GetOrCreateProcess(ProcessAllocationContext{
+          ProcessAllocationSource::kAuctionProcessManager})
+      ->Init();
   site_instance->GetProcess()->BindReceiver(
       service.InitWithNewPipeAndPassReceiver());
   return WorkletProcess::ProcessContext(std::move(service),

@@ -6,11 +6,12 @@
 
 #include <numeric>
 #include <sstream>
-#include <string>
 
 #include "base/check_op.h"
 #include "base/notreached.h"
 #include "base/numerics/checked_math.h"
+#include "base/numerics/safe_conversions.h"
+#include "media/base/video_frame.h"
 
 namespace media {
 
@@ -31,13 +32,15 @@ std::string VectorToString(const std::vector<T>& vec) {
   return result.str();
 }
 
-std::vector<ColorPlaneLayout> PlanesFromStrides(
-    const std::vector<int32_t>& strides) {
+std::vector<ColorPlaneLayout> CreatePlanes(VideoPixelFormat format,
+                                           const std::vector<size_t>& strides,
+                                           const gfx::Size& coded_size) {
   std::vector<ColorPlaneLayout> planes(strides.size());
   for (size_t i = 0; i < strides.size(); i++) {
-    // TODO(crbug.com/338570700): Make strides unsigned and remove the CHECK().
-    CHECK_GE(strides[i], 0) << " plane: " << i;
+    size_t rows =
+        VideoFrame::PlaneSizeInSamples(format, i, coded_size).height();
     planes[i].stride = strides[i];
+    planes[i].size = strides[i] * rows;
   }
   return planes;
 }
@@ -74,9 +77,6 @@ size_t VideoFrameLayout::NumPlanes(VideoPixelFormat format) {
     case PIXEL_FORMAT_I422:
     case PIXEL_FORMAT_I444:
     case PIXEL_FORMAT_NV12A:
-    case PIXEL_FORMAT_YUV420P9:
-    case PIXEL_FORMAT_YUV422P9:
-    case PIXEL_FORMAT_YUV444P9:
     case PIXEL_FORMAT_YUV420P10:
     case PIXEL_FORMAT_YUV422P10:
     case PIXEL_FORMAT_YUV444P10:
@@ -104,17 +104,18 @@ std::optional<VideoFrameLayout> VideoFrameLayout::Create(
     VideoPixelFormat format,
     const gfx::Size& coded_size) {
   return CreateWithStrides(format, coded_size,
-                           std::vector<int32_t>(NumPlanes(format), 0));
+                           std::vector<size_t>(NumPlanes(format), 0));
 }
 
 // static
 std::optional<VideoFrameLayout> VideoFrameLayout::CreateWithStrides(
     VideoPixelFormat format,
     const gfx::Size& coded_size,
-    std::vector<int32_t> strides,
+    std::vector<size_t> strides,
     size_t buffer_addr_align,
     uint64_t modifier) {
-  return CreateWithPlanes(format, coded_size, PlanesFromStrides(strides),
+  return CreateWithPlanes(format, coded_size,
+                          CreatePlanes(format, strides, coded_size),
                           buffer_addr_align, modifier);
 }
 

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import type {ProductInfo} from 'chrome://resources/cr_components/commerce/shopping_service.mojom-webui.js';
+import type {ProductInfo} from 'chrome://resources/cr_components/commerce/shared.mojom-webui.js';
 import {CrLitElement} from 'chrome://resources/lit/v3_0/lit.rollup.js';
 
 import {CommerceInternalsApiProxy} from '../commerce_internals_api_proxy.js';
@@ -35,7 +35,7 @@ export class ProductViewerAppElement extends CrLitElement {
     };
   }
 
-  protected product_: ProductInfo|null = null;
+  protected accessor product_: ProductInfo|null = null;
 
   private commerceInternalsApi_: CommerceInternalsApiProxy =
       CommerceInternalsApiProxy.getInstance();

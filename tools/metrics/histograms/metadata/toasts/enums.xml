@@ -26,6 +26,11 @@ chromium-metrics-reviews@google.com.
 
 <enums>
 
+<enum name="ToastAlertLevel">
+  <int value="0" label="All"/>
+  <int value="1" label="Actionable"/>
+</enum>
+
 <enum name="ToastCloseReason">
   <int value="0" label="Auto Dismissed"/>
   <int value="1" label="Action Button"/>
@@ -35,6 +40,15 @@ chromium-metrics-reviews@google.com.
   <int value="5" label="Feature explicitly dismiss toast"/>
   <int value="6" label="Aborted"/>
 </enum>
+
+<!-- LINT.IfChange(ToastDismissMenuEntries) -->
+
+<enum name="ToastDismissMenuEntries">
+  <int value="0" label="Dismiss"/>
+  <int value="1" label="Don't show again"/>
+</enum>
+
+<!-- LINT.ThenChange(/chrome/browser/ui/toasts/toast_metrics.h:ToastDismissMenuEntries) -->
 
 <!-- LINT.IfChange(ToastId) -->
 
@@ -54,6 +68,11 @@ chromium-metrics-reviews@google.com.
   <int value="10"
       label="ESB value was synced to 'turned on' - for security settings page"/>
   <int value="11" label="ESB value is synced to 'turned off'"/>
+  <int value="12" label="Tab removed from collaboration"/>
+  <int value="13" label="User joined collaboration"/>
+  <int value="14" label="Collaboration removed"/>
+  <int value="15" label="Video Frame Copied"/>
+  <int value="16" label="Close pinned tab confirmation toast"/>
 </enum>
 
 <!-- LINT.ThenChange(/chrome/browser/ui/toasts/api/toast_id.h:ToastId) -->

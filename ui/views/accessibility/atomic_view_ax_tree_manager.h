@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <string>
+
 #include "base/memory/raw_ptr.h"
 #include "ui/accessibility/ax_tree.h"
 #include "ui/accessibility/ax_tree_manager.h"
@@ -16,18 +17,19 @@
 namespace views {
 
 // This class manages a "tree" which consists of a single node. This is intended
-// for use with Views, enabling the UIA ITextProvider and ITextRangeProvider
-// functionalities. This class is TEMPORARY and not a long term solution.
+// for use with Views, enabling the UIA ITextProvider and ITextRangeProvider,
+// and creating AXPosition objects. This class is TEMPORARY and not a long term
+// solution.
 // TODO(crbug.com/40924888): Remove this temporary class once the ViewsAX
 // project is completed.
 class VIEWS_EXPORT AtomicViewAXTreeManager : public ui::AXPlatformTreeManager {
  public:
   static std::unique_ptr<AtomicViewAXTreeManager> Create(
       ViewAXPlatformNodeDelegate* delegate,
-      ui::AXNodeData node_data);
+      const ui::AXNodeData& node_data);
   friend std::unique_ptr<AtomicViewAXTreeManager> Create(
       ViewAXPlatformNodeDelegate* delegate,
-      ui::AXNodeData node_data);
+      const ui::AXNodeData& node_data);
 
   ~AtomicViewAXTreeManager() override;
 
@@ -48,7 +50,7 @@ class VIEWS_EXPORT AtomicViewAXTreeManager : public ui::AXPlatformTreeManager {
 
  private:
   explicit AtomicViewAXTreeManager(ViewAXPlatformNodeDelegate* delegate,
-                                   ui::AXNodeData node_data);
+                                   const ui::AXNodeData& node_data);
 
   raw_ptr<ViewAXPlatformNodeDelegate> delegate_;
 };

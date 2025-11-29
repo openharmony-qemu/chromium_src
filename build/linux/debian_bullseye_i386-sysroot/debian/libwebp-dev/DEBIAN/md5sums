@@ -4,7 +4,7 @@ b62cf28cc28dd4909de1909f2bb0071c  usr/include/webp/decode.h
 984feed5dbfbbeadecb180ef16291cec  usr/include/webp/mux.h
 04fad181edab0d437621c55c624853d9  usr/include/webp/mux_types.h
 40075bf7458a018b0de5fa782cadd33f  usr/include/webp/types.h
-228fb3fac4007fcb3a5233aca4dbb777  usr/lib/i386-linux-gnu/libwebp.a
+8b1961e499aeb91cac5f021f2b133a30  usr/lib/i386-linux-gnu/libwebp.a
 516faa7a2c86da54b2a25e089a4e9a5c  usr/lib/i386-linux-gnu/libwebpdemux.a
 64fba28abacdfc250f02229019160a8a  usr/lib/i386-linux-gnu/libwebpmux.a
 713839c324e5e56cd95a73bfebd228b8  usr/lib/i386-linux-gnu/pkgconfig/libwebp.pc
@@ -14,6 +14,6 @@ b62cf28cc28dd4909de1909f2bb0071c  usr/include/webp/decode.h
 1ecd884331f2910077f16d01d1d16d4c  usr/share/doc/libwebp-dev/NEWS.gz
 c6926d0cb07d296f886ab6e0cc5a85b7  usr/share/doc/libwebp-dev/PATENTS
 15da9fc17c1094c95bfc3928c78304cd  usr/share/doc/libwebp-dev/README.gz
-6df8e445e3b3adba43f891637f5a70b6  usr/share/doc/libwebp-dev/changelog.Debian.gz
+775bb524f19af7baf8f0aec001395410  usr/share/doc/libwebp-dev/changelog.Debian.gz
 77a024c512a3bca0faeb57641263b9dc  usr/share/doc/libwebp-dev/changelog.gz
 017b22367852dc53155f01dcee4f3a85  usr/share/doc/libwebp-dev/copyright

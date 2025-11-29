@@ -4,6 +4,7 @@
 
 #include "headless/lib/browser/headless_content_browser_client.h"
 
+#include <memory>
 #include <string>
 #include <string_view>
 #include <unordered_set>
@@ -25,12 +26,14 @@
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/client_certificate_delegate.h"
 #include "content/public/browser/content_browser_client.h"
+#include "content/public/browser/navigation_throttle_registry.h"
 #include "content/public/browser/overlay_window.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/render_view_host.h"
 #include "content/public/browser/storage_partition.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/content_switches.h"
+#include "headless/lib/browser/headless_bluetooth_delegate.h"
 #include "headless/lib/browser/headless_browser_context_impl.h"
 #include "headless/lib/browser/headless_browser_impl.h"
 #include "headless/lib/browser/headless_browser_main_parts.h"
@@ -50,11 +53,11 @@
 #include "ui/base/ui_base_switches.h"
 #include "ui/gfx/switches.h"
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 #include "components/crash/core/app/crash_switches.h"  // nogncheck
 #include "components/crash/core/app/crashpad.h"        // nogncheck
 #include "content/public/common/content_descriptors.h"
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 
 #if (BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX)) && defined(HEADLESS_USE_PREFS)
 #include "components/os_crypt/sync/os_crypt.h"  // nogncheck
@@ -75,14 +78,14 @@ namespace headless {
 
 namespace {
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 int GetCrashSignalFD(const base::CommandLine& command_line,
                      const HeadlessBrowser::Options& options) {
   int fd;
   pid_t pid;
   return crash_reporter::GetHandlerSocket(&fd, &pid) ? fd : -1;
 }
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 
 class HeadlessVideoOverlayWindow : public content::VideoOverlayWindow {
  public:
@@ -108,6 +111,9 @@ class HeadlessVideoOverlayWindow : public content::VideoOverlayWindow {
   void SetNextSlideButtonVisibility(bool is_visible) override {}
   void SetPreviousSlideButtonVisibility(bool is_visible) override {}
   void SetMediaPosition(const media_session::MediaPosition&) override {}
+  void SetSourceTitle(const std::u16string& source_title) override {}
+  void SetFaviconImages(
+      const std::vector<media_session::MediaImage>& images) override {}
 
   void SetSurfaceId(const viz::SurfaceId& surface_id) override {}
 
@@ -143,6 +149,31 @@ class HeadlessContentBrowserClient::StubBadgeService
   mojo::ReceiverSet<blink::mojom::BadgeService> receivers_;
 };
 
+// As with the above stub BadgeService, a stub implementation of a
+// PersistentRendererPrefsService is needed since the service is
+// implemented in chrome, and thus won't be available here.
+class HeadlessContentBrowserClient::StubPersistentRendererPrefsService
+    : public blink::mojom::PersistentRendererPrefsService {
+ public:
+  StubPersistentRendererPrefsService() = default;
+  StubPersistentRendererPrefsService(
+      const StubPersistentRendererPrefsService&) = delete;
+  StubPersistentRendererPrefsService& operator=(
+      const StubPersistentRendererPrefsService&) = delete;
+  ~StubPersistentRendererPrefsService() override = default;
+
+  void Bind(mojo::PendingReceiver<blink::mojom::PersistentRendererPrefsService>
+                receiver) {
+    receivers_.Add(this, std::move(receiver));
+  }
+
+  // blink::mojom::PersistentRendererPrefsService:
+  void SetViewSourceLineWrapping(bool value) override {}
+
+ private:
+  mojo::ReceiverSet<blink::mojom::PersistentRendererPrefsService> receivers_;
+};
+
 HeadlessContentBrowserClient::HeadlessContentBrowserClient(
     HeadlessBrowserImpl* browser)
     : browser_(browser) {}
@@ -155,8 +186,9 @@ HeadlessContentBrowserClient::CreateBrowserMainParts(
   return std::make_unique<HeadlessBrowserMainParts>(*browser_);
 }
 
-void HeadlessContentBrowserClient::OverrideWebkitPrefs(
+void HeadlessContentBrowserClient::OverrideWebPreferences(
     content::WebContents* web_contents,
+    content::SiteInstance& main_frame_site,
     blink::web_pref::WebPreferences* prefs) {
   prefs->lazy_load_enabled = browser_->options()->lazy_load_enabled;
 
@@ -172,6 +204,9 @@ void HeadlessContentBrowserClient::RegisterBrowserInterfaceBindersForFrame(
     mojo::BinderMapWithContext<content::RenderFrameHost*>* map) {
   map->Add<blink::mojom::BadgeService>(base::BindRepeating(
       &HeadlessContentBrowserClient::BindBadgeService, base::Unretained(this)));
+  map->Add<blink::mojom::PersistentRendererPrefsService>(base::BindRepeating(
+      &HeadlessContentBrowserClient::BindPersistentRendererPrefsService,
+      base::Unretained(this)));
 }
 
 void HeadlessContentBrowserClient::
@@ -208,7 +243,7 @@ HeadlessContentBrowserClient::GetGeneratedCodeCacheSettings(
   return content::GeneratedCodeCacheSettings(true, 0, context->GetPath());
 }
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 void HeadlessContentBrowserClient::GetAdditionalMappedFilesForChildProcess(
     const base::CommandLine& command_line,
     int child_process_id,
@@ -217,7 +252,7 @@ void HeadlessContentBrowserClient::GetAdditionalMappedFilesForChildProcess(
   if (crash_signal_fd >= 0)
     mappings->Share(kCrashDumpSignal, crash_signal_fd);
 }
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 
 void HeadlessContentBrowserClient::AppendExtraCommandLineSwitches(
     base::CommandLine* command_line,
@@ -320,11 +355,9 @@ base::OnceClosure HeadlessContentBrowserClient::SelectClientCertificate(
 }
 
 bool HeadlessContentBrowserClient::ShouldEnableStrictSiteIsolation() {
-  // TODO(lukasza): https://crbug.com/869494: Instead of overriding
-  // ShouldEnableStrictSiteIsolation, //headless should inherit the default
-  // site-per-process setting from //content - this way tools (tests, but also
-  // production cases like screenshot or pdf generation) based on //headless
-  // will use a mode that is actually shipping in Chrome.
+  // Use --site-per-process as the only source of truth for enabling site
+  // isolation, see SiteIsolationPolicy::UseDedicatedProcessesForAllSites()
+  // in content/public/browser/site_isolation_policy.cc.
   return false;
 }
 
@@ -423,6 +456,18 @@ void HeadlessContentBrowserClient::BindBadgeService(
   stub_badge_service_->Bind(std::move(receiver));
 }
 
+void HeadlessContentBrowserClient::BindPersistentRendererPrefsService(
+    content::RenderFrameHost* render_frame_host,
+    mojo::PendingReceiver<blink::mojom::PersistentRendererPrefsService>
+        receiver) {
+  if (!stub_persistent_renderer_prefs_service_) {
+    stub_persistent_renderer_prefs_service_ =
+        std::make_unique<StubPersistentRendererPrefsService>();
+  }
+
+  stub_persistent_renderer_prefs_service_->Bind(std::move(receiver));
+}
+
 bool HeadlessContentBrowserClient::CanAcceptUntrustedExchangesIfNeeded() {
   // We require --user-data-dir flag too so that no dangerous changes are made
   // in the user's regular profile.
@@ -448,19 +493,15 @@ void HeadlessContentBrowserClient::SessionEnding(
 #endif
 
 #if defined(HEADLESS_USE_POLICY)
-std::vector<std::unique_ptr<content::NavigationThrottle>>
-HeadlessContentBrowserClient::CreateThrottlesForNavigation(
-    content::NavigationHandle* handle) {
-  std::vector<std::unique_ptr<content::NavigationThrottle>> throttles;
-
+void HeadlessContentBrowserClient::CreateThrottlesForNavigation(
+    content::NavigationThrottleRegistry& registry) {
   // Avoid creating naviagtion throttle if preferences are not available
   // (happens in tests).
+  content::NavigationHandle& handle = registry.GetNavigationHandle();
   if (browser_->GetPrefs()) {
-    throttles.push_back(std::make_unique<PolicyBlocklistNavigationThrottle>(
-        handle, handle->GetWebContents()->GetBrowserContext()));
+    registry.AddThrottle(std::make_unique<PolicyBlocklistNavigationThrottle>(
+        registry, handle.GetWebContents()->GetBrowserContext()));
   }
-
-  return throttles;
 }
 #endif  // defined(HEADLESS_USE_POLICY)
 
@@ -527,6 +568,20 @@ void HeadlessContentBrowserClient::SetEncryptionKey(
     network_service->SetEncryptionKey(OSCrypt::GetRawEncryptionKey());
   }
 #endif
+}
+
+content::BluetoothDelegate*
+HeadlessContentBrowserClient::GetBluetoothDelegate() {
+  if (!bluetooth_delegate_) {
+    bluetooth_delegate_ = std::make_unique<HeadlessBluetoothDelegate>();
+  }
+  return bluetooth_delegate_.get();
+}
+
+bool HeadlessContentBrowserClient::IsRendererProcessPriorityEnabled() {
+  // Since there is no visible window in headless, the renderer process priority
+  // policy, which is mostly based on visibility, is not needed.
+  return false;
 }
 
 }  // namespace headless

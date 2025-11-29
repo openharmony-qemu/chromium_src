@@ -140,7 +140,7 @@ void WebGPUTest::Initialize(const Options& options) {
 
   wgpu::RequestAdapterOptions ra_options = {};
   ra_options.forceFallbackAdapter = options.force_fallback_adapter;
-  ra_options.compatibilityMode = options.compatibility_mode;
+  ra_options.featureLevel = options.feature_level;
 
   bool done = false;
   instance_.RequestAdapter(
@@ -459,7 +459,7 @@ TEST_F(WebGPUTest, ImplicitFallbackAdapterIsDisallowed) {
 
 TEST_F(WebGPUTest, CompatibilityMode) {
   auto options = WebGPUTest::Options();
-  options.compatibility_mode = true;
+  options.feature_level = wgpu::FeatureLevel::Compatibility;
   options.enable_unsafe_webgpu = true;
   // Initialize attempts to create an adapter.
   Initialize(options);
@@ -467,15 +467,13 @@ TEST_F(WebGPUTest, CompatibilityMode) {
   // Compatibility adapter should be available.
   EXPECT_NE(adapter_, nullptr);
 
-  wgpu::AdapterInfo info;
-  adapter_.GetInfo(&info);
-
-  EXPECT_TRUE(info.compatibilityMode);
+  // A compat defaulting adapter could optionally have the CoreFeaturesAndLimits
+  // feature.
 }
 
 TEST_F(WebGPUTest, NonCompatibilityMode) {
   auto options = WebGPUTest::Options();
-  options.compatibility_mode = false;
+  options.feature_level = wgpu::FeatureLevel::Core;
   options.enable_unsafe_webgpu = true;
   // Initialize attempts to create an adapter.
   Initialize(options);
@@ -483,10 +481,8 @@ TEST_F(WebGPUTest, NonCompatibilityMode) {
   // Non-compatibility adapter should be available.
   EXPECT_NE(adapter_, nullptr);
 
-  wgpu::AdapterInfo info;
-  adapter_.GetInfo(&info);
-
-  EXPECT_FALSE(info.compatibilityMode);
+  // A core defaulting adapter must have the CoreFeaturesAndLimits feature.
+  EXPECT_TRUE(adapter_.HasFeature(wgpu::FeatureName::CoreFeaturesAndLimits));
 }
 
 }  // namespace gpu

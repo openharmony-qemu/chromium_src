@@ -106,14 +106,7 @@ class SANDBOX_POLICY_EXPORT SandboxLinux {
     // Allow starting the sandbox with multiple threads already running. This
     // will enable TSYNC for seccomp-BPF, which syncs the seccomp-BPF policy
     // across all running threads.
-#if BUILDFLAG(IS_OHOS)
-    // Check the policy and eventually start the seccomp-bpf sandbox. Fine to be
-    // called with threads, as long as
-    // |options.allow_threads_during_sandbox_init| is true
-    bool allow_threads_during_sandbox_init = true;
-#else
     bool allow_threads_during_sandbox_init = false;
-#endif
 
     // Enables the CHECK for open directories. The open directory check is only
     // useful for the chroot jail (from the semantic layer of the sandbox), and

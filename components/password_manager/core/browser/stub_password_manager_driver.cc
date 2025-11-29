@@ -16,11 +16,13 @@ int StubPasswordManagerDriver::GetId() const {
   return 0;
 }
 
-void StubPasswordManagerDriver::SetPasswordFillData(
+void StubPasswordManagerDriver::PropagateFillDataOnParsingCompletion(
     const autofill::PasswordFormFillData& form_data) {}
 
 void StubPasswordManagerDriver::GeneratedPasswordAccepted(
     const std::u16string& password) {}
+
+void StubPasswordManagerDriver::GeneratedPasswordRejected() {}
 
 void StubPasswordManagerDriver::FocusNextFieldAfterPasswords() {}
 

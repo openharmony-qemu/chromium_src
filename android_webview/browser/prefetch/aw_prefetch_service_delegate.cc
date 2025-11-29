@@ -11,18 +11,19 @@ namespace android_webview {
 
 AwPrefetchServiceDelegate::AwPrefetchServiceDelegate(
     AwBrowserContext* browser_context)
-    : browser_context_(*browser_context) {}
+    : browser_context_(*browser_context) {
+  accept_language_header_ = browser_context->GetDefaultAcceptLanguageHeader();
+}
 
 AwPrefetchServiceDelegate::~AwPrefetchServiceDelegate() = default;
 
-std::string AwPrefetchServiceDelegate::GetMajorVersionNumber() {
-  NOTREACHED() << "Only used for isolated network context. WebView doesn't use "
-                  "an isolated network context for app triggered prefetching.";
+void AwPrefetchServiceDelegate::SetAcceptLanguageHeader(
+    std::string accept_language_header) {
+  accept_language_header_ = accept_language_header;
 }
 
 std::string AwPrefetchServiceDelegate::GetAcceptLanguageHeader() {
-  NOTREACHED() << "Only used for isolated network context. WebView doesn't use "
-                  "an isolated network context for app triggered prefetching.";
+  return accept_language_header_;
 }
 
 GURL AwPrefetchServiceDelegate::GetDefaultPrefetchProxyHost() {
@@ -130,6 +131,14 @@ bool AwPrefetchServiceDelegate::IsDomainInPrefetchAllowList(
 
 bool AwPrefetchServiceDelegate::IsContaminationExempt(
     const GURL& referring_url) {
+  // WebView app initiated prefetching does not use an isolated network context.
+  // However, if WebView ever adds support for non-app triggered prefetching, we
+  // may need to revisit the value returned here.
+  return false;
+}
+
+bool AwPrefetchServiceDelegate::IsContaminationExemptPerOrigin(
+    const url::Origin& referring_origin) {
   // WebView app initiated prefetching does not use an isolated network context.
   // However, if WebView ever adds support for non-app triggered prefetching, we
   // may need to revisit the value returned here.

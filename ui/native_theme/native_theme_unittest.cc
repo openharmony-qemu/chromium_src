@@ -35,10 +35,9 @@ class TestNativeTheme : public NativeTheme {
              State state,
              const gfx::Rect& rect,
              const ExtraParams& extra,
-             ColorScheme color_scheme = ColorScheme::kDefault,
-             bool in_forced_colors = false,
-             const std::optional<SkColor>& accent_color =
-                 std::nullopt) const override {}
+             ColorScheme color_scheme,
+             bool in_forced_colors,
+             const std::optional<SkColor>& accent_color) const override {}
   bool SupportsNinePatch(Part part) const override { return false; }
   gfx::Size GetNinePatchCanvasSize(Part part) const override {
     return gfx::Size();
@@ -73,18 +72,6 @@ TEST(NativeThemeTest, TestOnNativeThemeUpdatedMetricsEmitted) {
       "Views.Browser.NumColorProvidersInitializedDuringOnNativeThemeUpdated", 0,
       2);
 }
-
-#if BUILDFLAG(IS_OHOS)
-TEST(NativeThemeTest, SetThemeSource) {
-  TestNativeTheme theme;
-
-  theme.set_theme_source(ui::NativeTheme::ThemeSource::kForcedDark);
-  EXPECT_EQ(theme.ShouldUseDarkColors(), true);
-
-  theme.set_theme_source(ui::NativeTheme::ThemeSource::kForcedLight);
-  EXPECT_EQ(theme.ShouldUseDarkColors(), false);
-}
-#endif  // BUILDFLAG(IS_OHOS)
 
 TEST(NativeThemeTest, TestColorProviderKeyForcedColors) {
   TestNativeTheme theme;

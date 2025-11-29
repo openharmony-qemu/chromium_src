@@ -32,8 +32,8 @@ c6b6fd4486b8402954352099f3884da1  usr/lib/i386-linux-gnu/libncurses.so
 ca133113eb8a765ebe0464a6b959ad0a  usr/lib/i386-linux-gnu/libpanel.a
 ca133113eb8a765ebe0464a6b959ad0a  usr/lib/i386-linux-gnu/libpanelw.a
 63e6eb4a11cc94e1f8f3f31ed84afcad  usr/lib/i386-linux-gnu/libtermcap.so
-40e4b8e611336bd82970b22de07cec7a  usr/lib/i386-linux-gnu/libtic.a
-994d45651e7b32cda72a4772a88512a1  usr/lib/i386-linux-gnu/libtinfo.a
+544ecc9b0f26e2fca87286f12ab58da7  usr/lib/i386-linux-gnu/libtic.a
+fb3e7cd6d9e6a5380ee5df11d3fd4da9  usr/lib/i386-linux-gnu/libtinfo.a
 762fbbfa772e82d7989692db11276551  usr/lib/i386-linux-gnu/pkgconfig/form.pc
 5b0c937c89d1c0ded1ee63046fc435b6  usr/lib/i386-linux-gnu/pkgconfig/formw.pc
 6603f07d1084c8234cee8f6b3956d65a  usr/lib/i386-linux-gnu/pkgconfig/menu.pc

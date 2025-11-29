@@ -10,11 +10,10 @@
 #include <vector>
 
 #include "base/time/time.h"
-#include "build/chromeos_buildflags.h"
-#include "components/signin/public/base/gaia_id_hash.h"
 #include "components/sync/base/data_type.h"
 #include "components/sync/base/passphrase_enums.h"
 #include "components/sync/base/user_selectable_type.h"
+#include "google_apis/gaia/gaia_id.h"
 
 namespace syncer {
 
@@ -75,13 +74,6 @@ class SyncUserSettings {
   virtual SyncUserSettings::UserSelectableTypePrefState
   GetTypePrefStateForAccount(UserSelectableType type) const = 0;
 
-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS)
-  // On Desktop, kPasswords isn't considered "selected" by default in transport
-  // mode. This method returns how many accounts selected (enabled) the type.
-  // TODO(crbug.com/40944135): Remove this once the type is enabled by default.
-  virtual int GetNumberOfAccountsWithPasswordsSelected() const = 0;
-#endif
-
   // Whether the "Sync everything" is enabled. This only has an effect if
   // Sync-the-feature is enabled. Note that even if this is true, some types may
   // be disabled e.g. due to enterprise policy.
@@ -97,10 +89,14 @@ class SyncUserSettings {
   // false.
   virtual void SetSelectedType(UserSelectableType type, bool is_type_on) = 0;
 
+  // Resets an individual type selection to its default value. Must only be
+  // called for signed-in non-syncing users.
+  virtual void ResetSelectedType(UserSelectableType type) = 0;
+
   // Clears per account prefs for all users *except* the ones in the passed-in
-  // |available_gaia_ids|.
+  // `available_gaia_ids`.
   virtual void KeepAccountSettingsPrefsOnlyForUsers(
-      const std::vector<signin::GaiaIdHash>& available_gaia_ids) = 0;
+      const std::vector<GaiaId>& available_gaia_ids) = 0;
 
   // Registered user selectable types are derived from registered data types.
   // A UserSelectableType is registered if any of its DataTypes is registered.
@@ -111,6 +107,11 @@ class SyncUserSettings {
   // Returns if sync-the-feature is disabled because the user cleared data from
   // the Sync dashboard.
   virtual bool IsSyncFeatureDisabledViaDashboard() const = 0;
+
+  // Causes `IsSyncFeatureDisabledViaDashboard()` above to return false,
+  // usually representing that the user took some action to confirm it is OK
+  // to resume Sync.
+  virtual void ClearSyncFeatureDisabledViaDashboard() = 0;
 
   // As above, but for Chrome OS-specific data types. These are controlled by
   // toggles in the OS Settings UI.
@@ -170,17 +171,17 @@ class SyncUserSettings {
   // passphrase is in use, or no time is available, returns an unset base::Time.
   virtual base::Time GetExplicitPassphraseTime() const = 0;
 
-  // Asynchronously sets the passphrase to |passphrase| for encryption.
+  // Asynchronously sets the passphrase to `passphrase` for encryption.
   virtual void SetEncryptionPassphrase(const std::string& passphrase) = 0;
-  // Asynchronously decrypts pending keys using |passphrase|. Returns false
+  // Asynchronously decrypts pending keys using `passphrase`. Returns false
   // immediately if the passphrase could not be used to decrypt a locally cached
   // copy of encrypted keys; returns true otherwise. This method shouldn't be
   // called when passphrase isn't required.
   [[nodiscard]] virtual bool SetDecryptionPassphrase(
       const std::string& passphrase) = 0;
 
-  // Asynchronously decrypts pending keys using |nigori|. |nigori| must not be
-  // null. It's safe to call this method with wrong |nigori| and, unlike
+  // Asynchronously decrypts pending keys using `nigori`. `nigori` must not be
+  // null. It's safe to call this method with wrong `nigori` and, unlike
   // SetDecryptionPassphrase(), when passphrase isn't required.
   virtual void SetExplicitPassphraseDecryptionNigoriKey(
       std::unique_ptr<Nigori> nigori) = 0;

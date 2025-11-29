@@ -4,6 +4,7 @@
 
 #include "net/quic/quic_session_pool.h"
 
+#include <algorithm>
 #include <memory>
 #include <optional>
 #include <set>
@@ -21,9 +22,7 @@
 #include "base/metrics/histogram_functions.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/no_destructor.h"
-#include "base/not_fatal_until.h"
 #include "base/numerics/safe_conversions.h"
-#include "base/ranges/algorithm.h"
 #include "base/strings/escape.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_util.h"
@@ -41,6 +40,7 @@
 #include "net/base/network_anonymization_key.h"
 #include "net/base/network_handle.h"
 #include "net/base/proxy_delegate.h"
+#include "net/base/reconnect_notifier.h"
 #include "net/base/session_usage.h"
 #include "net/base/trace_constants.h"
 #include "net/base/tracing.h"
@@ -79,6 +79,7 @@
 #include "net/third_party/quiche/src/quiche/quic/core/crypto/quic_random.h"
 #include "net/third_party/quiche/src/quiche/quic/core/quic_clock.h"
 #include "net/third_party/quiche/src/quiche/quic/core/quic_connection.h"
+#include "net/third_party/quiche/src/quiche/quic/core/quic_tag.h"
 #include "net/third_party/quiche/src/quiche/quic/core/quic_utils.h"
 #include "net/third_party/quiche/src/quiche/quic/core/quic_versions.h"
 #include "net/third_party/quiche/src/quiche/quic/platform/api/quic_flags.h"
@@ -109,6 +110,60 @@ enum FindMatchingIpSessionResult {
   POOLED_WITH_DIFFERENT_IP_SESSION,
   FIND_MATCHING_IP_SESSION_RESULT_MAX
 };
+
+// Whether we have partial match for `QuicSessionKey` with the same `ServerId`.
+//
+// These values are persisted to logs. Entries should not be renumbered and
+// numeric values should never be reused.
+//
+// LINT.IfChange(QuicSessionKeyPartialMatchResult)
+enum QuicSessionKeyPartialMatchResult {
+  kNoMatch,
+  kMatchedToActiveSession,
+  kMatchedToActiveJob,
+  kMaxValue = kMatchedToActiveJob
+};
+// LINT.ThenChange(//tools/metrics/histograms/metadata/net/enums.xml:QuicSessionKeyPartialMatchResult)
+
+// Represents which field in `QuicSessionKey` was different among two keys with
+// the same `ServerId`.
+//
+// These values are persisted to logs. Entries should not be renumbered and
+// numeric values should never be reused.
+//
+// LINT.IfChange(QuicSessionKeyMismatchedField)
+enum class QuicSessionKeyMismatchedField {
+  kPrivacyMode,
+  kSocketTag,
+  kProxyChain,
+  kSessionUsage,
+  kNetworkAnonymizationKey,
+  kSecureDnsPolicy,
+  kRequireDNSHttpsAlpn,
+  kMaxValue = kRequireDNSHttpsAlpn
+};
+// LINT.ThenChange(//tools/metrics/histograms/metadata/net/enums.xml:QuicSessionKeyMismatchedField)
+
+// Represents which combination of field in `QuicSessionKey` was different
+// among two keys with the same `ServerId`. We only look at the commonly
+// mismatched fields to avoid combination explosion.
+//
+// These values are persisted to logs. Entries should not be renumbered and
+// numeric values should never be reused.
+//
+// LINT.IfChange(QuicSessionKeyMismatchedFieldCombination)
+enum class QuicSessionKeyMismatchedFieldCombination {
+  kUnknownCombination,
+  kPrivacyMode,
+  kNetworkAnonymizationKey,
+  kPrivacyModeNetworkAnonymizationKey,
+  kRequireDNSHttpsAlpn,
+  kRequireDNSHttpsAlpnPrivacyMode,
+  kRequireDNSHttpsNetworkAnonymizationKey,
+  kPrivacyModeAndNetworkAnonymizationKeyRequireDNSHttpsAlpn,
+  kMaxValue = kPrivacyModeAndNetworkAnonymizationKeyRequireDNSHttpsAlpn
+};
+// LINT.ThenChange(//tools/metrics/histograms/metadata/net/enums.xml:QuicSessionKeyMismatchedFieldCombination)
 
 std::string QuicPlatformNotificationToString(
     QuicPlatformNotification notification) {
@@ -248,6 +303,72 @@ void LogUsingExistingSession(const NetLogWithSource& request_net_log,
       request_net_log.source());
 }
 
+void LogSessionKeyMismatch(QuicSessionKeyPartialMatchResult result,
+                           const url::SchemeHostPort destination,
+                           const QuicSessionKey session_key,
+                           const std::optional<QuicSessionKey> active_key) {
+  const std::string_view kHistogramBase = "Net.QuicSession.SessionKeyMismatch";
+  const std::string histogram_suffix =
+      IsGoogleHostWithAlpnH3(destination.host()) ? ".GoogleHost" : "";
+
+  base::UmaHistogramEnumeration(
+      base::StrCat({kHistogramBase, histogram_suffix}), result);
+
+  if (result != QuicSessionKeyPartialMatchResult::kNoMatch) {
+    CHECK(active_key.has_value());
+    int total_mismatch = 0;
+    int mismatched_combinations = 0;
+    std::string mismatch_field_histogram =
+        base::StrCat({kHistogramBase, ".MismatchedField", histogram_suffix});
+
+    // Check and record the fields that are mismatching.
+    auto checkAndRecordMismatch =
+        [&mismatch_field_histogram, &total_mismatch, &session_key, &active_key](
+            auto method, QuicSessionKeyMismatchedField field) {
+          if ((session_key.*method)() != (active_key.value().*method)()) {
+            total_mismatch++;
+            base::UmaHistogramEnumeration(mismatch_field_histogram, field);
+            return true;
+          }
+          return false;
+        };
+    checkAndRecordMismatch(&QuicSessionKey::socket_tag,
+                           QuicSessionKeyMismatchedField::kSocketTag);
+    checkAndRecordMismatch(&QuicSessionKey::proxy_chain,
+                           QuicSessionKeyMismatchedField::kProxyChain);
+    checkAndRecordMismatch(&QuicSessionKey::session_usage,
+                           QuicSessionKeyMismatchedField::kSessionUsage);
+    checkAndRecordMismatch(&QuicSessionKey::secure_dns_policy,
+                           QuicSessionKeyMismatchedField::kSecureDnsPolicy);
+
+    if (checkAndRecordMismatch(&QuicSessionKey::privacy_mode,
+                               QuicSessionKeyMismatchedField::kPrivacyMode)) {
+      mismatched_combinations |= 1;
+    }
+    if (checkAndRecordMismatch(
+            &QuicSessionKey::network_anonymization_key,
+            QuicSessionKeyMismatchedField::kNetworkAnonymizationKey)) {
+      mismatched_combinations |= (1 << 1);
+    }
+    if (checkAndRecordMismatch(
+            &QuicSessionKey::require_dns_https_alpn,
+            QuicSessionKeyMismatchedField::kRequireDNSHttpsAlpn)) {
+      mismatched_combinations |= (1 << 2);
+    }
+
+    base::UmaHistogramCounts1000(
+        base::StrCat(
+            {kHistogramBase, ".TotalMismatchedField", histogram_suffix}),
+        total_mismatch);
+
+    base::UmaHistogramEnumeration(
+        base::StrCat(
+            {kHistogramBase, ".MismatchedFieldCombination", histogram_suffix}),
+        static_cast<QuicSessionKeyMismatchedFieldCombination>(
+            mismatched_combinations));
+  }
+}
+
 }  // namespace
 
 QuicSessionRequest::QuicSessionRequest(QuicSessionPool* pool) : pool_(pool) {}
@@ -276,6 +397,7 @@ int QuicSessionRequest::Request(
     const NetLogWithSource& net_log,
     NetErrorDetails* net_error_details,
     MultiplexedSessionCreationInitiator session_creation_initiator,
+    std::optional<ConnectionManagementConfig> management_config,
     CompletionOnceCallback failed_on_default_network_callback,
     CompletionOnceCallback callback) {
   DCHECK_EQ(quic_version.IsKnown(), !require_dns_https_alpn);
@@ -297,8 +419,8 @@ int QuicSessionRequest::Request(
   int rv = pool_->RequestSession(
       session_key_, std::move(destination), quic_version,
       std::move(proxy_annotation_tag), session_creation_initiator,
-      http_user_agent_settings, priority, use_dns_aliases, cert_verify_flags,
-      url, net_log, this);
+      management_config, http_user_agent_settings, priority, use_dns_aliases,
+      cert_verify_flags, url, net_log, this);
   if (rv == ERR_IO_PENDING) {
     net_log_ = net_log;
     callback_ = std::move(callback);
@@ -428,12 +550,8 @@ QuicSessionPool::QuicCryptoClientConfigOwner::QuicCryptoClientConfigOwner(
       base::BindRepeating(&QuicCryptoClientConfigOwner::OnMemoryPressure,
                           base::Unretained(this)));
   if (quic_session_pool_->ssl_config_service_->GetSSLContextConfig()
-          .PostQuantumKeyAgreementEnabled()) {
-    uint16_t postquantum_group =
-        base::FeatureList::IsEnabled(features::kUseMLKEM)
-            ? SSL_GROUP_X25519_MLKEM768
-            : SSL_GROUP_X25519_KYBER768_DRAFT00;
-    config_.set_preferred_groups({postquantum_group, SSL_GROUP_X25519,
+          .post_quantum_key_agreement_enabled) {
+    config_.set_preferred_groups({SSL_GROUP_X25519_MLKEM768, SSL_GROUP_X25519,
                                   SSL_GROUP_SECP256R1, SSL_GROUP_SECP384R1});
   }
 }
@@ -463,6 +581,23 @@ void QuicSessionPool::QuicCryptoClientConfigOwner::OnMemoryPressure(
       session_cache->Clear();
       break;
   }
+}
+
+bool QuicSessionPool::QuicCryptoClientConfigKey::operator==(
+    const QuicSessionPool::QuicCryptoClientConfigKey& other) const {
+  return Tie() == other.Tie();
+}
+
+bool QuicSessionPool::QuicCryptoClientConfigKey::operator<(
+    const QuicSessionPool::QuicCryptoClientConfigKey& other) const {
+  return Tie() < other.Tie();
+}
+
+std::tuple<const NetworkAnonymizationKey&,
+           const ProxyChain&,
+           const SessionUsage&>
+QuicSessionPool::QuicCryptoClientConfigKey::Tie() const {
+  return std::tie(network_anonymization_key, proxy_chain, session_usage);
 }
 
 QuicSessionPool::CryptoClientConfigHandle::CryptoClientConfigHandle(
@@ -534,7 +669,6 @@ QuicSessionPool::QuicSessionPool(
       ssl_config_service_(ssl_config_service),
       use_network_anonymization_key_for_crypto_configs_(
           NetworkAnonymizationKey::IsPartitioningEnabled()),
-      report_ecn_(quic_context->params()->report_ecn),
       skip_dns_with_origin_frame_(
           quic_context->params()->skip_dns_with_origin_frame),
       ignore_ip_matching_when_finding_existing_sessions_(
@@ -603,15 +737,41 @@ QuicChromiumClientSession* QuicSessionPool::FindExistingSession(
   return nullptr;
 }
 
-bool QuicSessionPool::HasMatchingIpSessionForServiceEndpoint(
+std::optional<QuicSessionKey> QuicSessionPool::GetActiveSessionToServerId(
+    const QuicSessionKey& session_key) const {
+  auto it = std::ranges::find_if(
+      active_sessions_, [&session_key](const auto& key_value) {
+        return session_key != key_value.first &&
+               session_key.server_id() == key_value.first.server_id();
+      });
+  return it != std::end(active_sessions_)
+             ? std::optional<QuicSessionKey>(it->first)
+             : std::nullopt;
+}
+
+std::optional<QuicSessionKey> QuicSessionPool::GetActiveJobToServerId(
+    const QuicSessionKey& session_key) const {
+  auto it =
+      std::ranges::find_if(active_jobs_, [&session_key](const auto& key_value) {
+        return session_key != key_value.first &&
+               session_key.server_id() == key_value.first.server_id();
+      });
+  return it != std::end(active_jobs_) ? std::optional<QuicSessionKey>(it->first)
+                                      : std::nullopt;
+}
+
+QuicChromiumClientSession*
+QuicSessionPool::HasMatchingIpSessionForServiceEndpoint(
     const QuicSessionAliasKey& session_alias_key,
     const ServiceEndpoint& service_endpoint,
     const std::set<std::string>& dns_aliases,
     bool use_dns_aliases) {
+  if (QuicChromiumClientSession* session = HasMatchingIpSession(
+          session_alias_key, service_endpoint.ipv6_endpoints, dns_aliases,
+          use_dns_aliases)) {
+    return session;
+  }
   return HasMatchingIpSession(session_alias_key,
-                              service_endpoint.ipv6_endpoints, dns_aliases,
-                              use_dns_aliases) ||
-         HasMatchingIpSession(session_alias_key,
                               service_endpoint.ipv4_endpoints, dns_aliases,
                               use_dns_aliases);
 }
@@ -622,6 +782,7 @@ int QuicSessionPool::RequestSession(
     quic::ParsedQuicVersion quic_version,
     std::optional<NetworkTrafficAnnotationTag> proxy_annotation_tag,
     MultiplexedSessionCreationInitiator session_creation_initiator,
+    std::optional<ConnectionManagementConfig> management_config,
     const HttpUserAgentSettings* http_user_agent_settings,
     RequestPriority priority,
     bool use_dns_aliases,
@@ -637,6 +798,24 @@ int QuicSessionPool::RequestSession(
                       session_key.server_id().port())
              .Equals(HostPortPair::FromURL(url)));
 
+  // Add the observer in the `management_config` for the
+  // `ConnectionChangeNotifier`.
+  bool connection_keep_alive_enabled = false;
+  if (management_config.has_value()) {
+    if (management_config->keep_alive_config.has_value()) {
+      connection_keep_alive_enabled =
+          management_config->keep_alive_config->enable_connection_keep_alive;
+    }
+    if (management_config->connection_change_observer) {
+      if (!base::Contains(connection_change_notifier_, session_key)) {
+        connection_change_notifier_[session_key] =
+            std::make_unique<ConnectionChangeNotifier>();
+      }
+      connection_change_notifier_[session_key]->AddObserver(
+          management_config->connection_change_observer);
+    }
+  }
+
   // Use active session for `session_key` if such exists, or pool to active
   // session to `destination` if possible.
   QuicChromiumClientSession* existing_session =
@@ -650,6 +829,12 @@ int QuicSessionPool::RequestSession(
                                       std::move(dns_aliases));
     }
     request->SetSession(existing_session->CreateHandle(std::move(destination)));
+
+    // If the session exists and the connection keep alive is enabled, we send
+    // a ping to check the liveness of the existing connection.
+    if (connection_keep_alive_enabled) {
+      existing_session->SendPing();
+    }
     return OK;
   }
 
@@ -660,6 +845,8 @@ int QuicSessionPool::RequestSession(
     active_job->second->AddRequest(request);
     return ERR_IO_PENDING;
   }
+
+  CheckQuicSessionKeyMismatch(session_key, destination);
 
   // If a proxy is in use, then a traffic annotation is required.
   if (!session_key.proxy_chain().is_direct()) {
@@ -676,15 +863,16 @@ int QuicSessionPool::RequestSession(
     }
     job = std::make_unique<DirectJob>(
         this, quic_version, host_resolver_, std::move(key),
-        CreateCryptoConfigHandle(session_key.network_anonymization_key()),
+        CreateCryptoConfigHandle(QuicCryptoClientConfigKey(session_key)),
         params_.retry_on_alternate_network_before_handshake, priority,
         use_dns_aliases, session_key.require_dns_https_alpn(),
-        cert_verify_flags, session_creation_initiator, net_log);
+        cert_verify_flags, session_creation_initiator, management_config,
+        net_log);
   } else {
     job = std::make_unique<ProxyJob>(
         this, quic_version, std::move(key), *proxy_annotation_tag,
-        session_creation_initiator, http_user_agent_settings,
-        CreateCryptoConfigHandle(session_key.network_anonymization_key()),
+        session_creation_initiator, management_config, http_user_agent_settings,
+        CreateCryptoConfigHandle(QuicCryptoClientConfigKey(session_key)),
         priority, cert_verify_flags, net_log);
   }
   job->AssociateWithNetLogSource(net_log);
@@ -698,7 +886,7 @@ int QuicSessionPool::RequestSession(
   }
   if (rv == OK) {
     auto it = active_sessions_.find(session_key);
-    CHECK(it != active_sessions_.end(), base::NotFatalUntil::M130);
+    CHECK(it != active_sessions_.end());
     if (it == active_sessions_.end()) {
       return ERR_QUIC_PROTOCOL_ERROR;
     }
@@ -717,7 +905,8 @@ std::unique_ptr<QuicSessionAttempt> QuicSessionPool::CreateSessionAttempt(
     base::TimeTicks dns_resolution_end_time,
     bool use_dns_aliases,
     std::set<std::string> dns_aliases,
-    MultiplexedSessionCreationInitiator session_creation_initiator) {
+    MultiplexedSessionCreationInitiator session_creation_initiator,
+    std::optional<ConnectionManagementConfig> connection_management_config) {
   CHECK(!HasActiveSession(session_key));
   CHECK(!HasActiveJob(session_key));
 
@@ -727,8 +916,8 @@ std::unique_ptr<QuicSessionAttempt> QuicSessionPool::CreateSessionAttempt(
       dns_resolution_end_time,
       params_.retry_on_alternate_network_before_handshake, use_dns_aliases,
       std::move(dns_aliases),
-      CreateCryptoConfigHandle(session_key.network_anonymization_key()),
-      session_creation_initiator);
+      CreateCryptoConfigHandle(QuicCryptoClientConfigKey(session_key)),
+      session_creation_initiator, connection_management_config);
 }
 
 void QuicSessionPool::OnSessionGoingAway(QuicChromiumClientSession* session) {
@@ -765,6 +954,9 @@ void QuicSessionPool::OnSessionClosed(QuicChromiumClientSession* session) {
   OnSessionGoingAway(session);
   auto it = all_sessions_.find(session);
   CHECK(it != all_sessions_.end());
+
+  NotifyOnSessionClosed(session->quic_session_key());
+
   all_sessions_.erase(it);
 }
 
@@ -784,6 +976,7 @@ void QuicSessionPool::CancelRequest(QuicSessionRequest* request) {
   // being in the map.
   if (job_iter != active_jobs_.end()) {
     job_iter->second->RemoveRequest(request);
+    NotifyOnConnectionFailure(/*session_key=*/job_iter->first);
   }
 }
 
@@ -817,6 +1010,10 @@ void QuicSessionPool::CloseAllSessions(int error,
     DCHECK_NE(initial_size, all_sessions_.size());
   }
   DCHECK(all_sessions_.empty());
+
+  // Remove all connection change notifiers.
+  connection_change_notifier_.clear();
+
   // TODO(crbug.com/347984574): Remove before/after counts once we identified
   // the cause.
   net_log_.AddEvent(NetLogEventType::QUIC_SESSION_POOL_CLOSE_ALL_SESSIONS, [&] {
@@ -926,13 +1123,11 @@ void QuicSessionPool::FinishConnectAndConfigureSocket(
     return;
   }
 
-  if (report_ecn_) {
-    rv = socket->SetRecvTos();
-    if (rv != OK) {
-      OnFinishConnectAndConfigureSocketError(
-          std::move(callback), CREATION_ERROR_SETTING_RECEIVE_ECN, rv);
-      return;
-    }
+  rv = socket->SetRecvTos();
+  if (rv != OK) {
+    OnFinishConnectAndConfigureSocketError(
+        std::move(callback), CREATION_ERROR_SETTING_RECEIVE_ECN, rv);
+    return;
   }
 
   // Set a buffer large enough to contain the initial CWND's worth of packet
@@ -1042,12 +1237,10 @@ int QuicSessionPool::ConfigureSocket(DatagramClientSocket* socket,
     return rv;
   }
 
-  if (report_ecn_) {
-    rv = socket->SetRecvTos();
-    if (rv != OK) {
-      HistogramCreateSessionFailure(CREATION_ERROR_SETTING_RECEIVE_ECN);
-      return rv;
-    }
+  rv = socket->SetRecvTos();
+  if (rv != OK) {
+    HistogramCreateSessionFailure(CREATION_ERROR_SETTING_RECEIVE_ECN);
+    return rv;
   }
 
   // Set a buffer large enough to contain the initial CWND's worth of packet
@@ -1143,6 +1336,7 @@ void QuicSessionPool::OnNetworkConnected(handles::NetworkHandle network) {
     ++it;
     session->OnNetworkConnected(network);
   }
+  NotifyOnNetworkEvent(net::NetworkChangeEvent::kConnected);
 }
 
 void QuicSessionPool::OnNetworkDisconnected(handles::NetworkHandle network) {
@@ -1165,6 +1359,7 @@ void QuicSessionPool::OnNetworkDisconnected(handles::NetworkHandle network) {
     ++it;
     session->OnNetworkDisconnectedV2(/*disconnected_network*/ network);
   }
+  NotifyOnNetworkEvent(net::NetworkChangeEvent::kDisconnected);
 }
 
 // This method is expected to only be called when migrating from Cellular to
@@ -1172,6 +1367,7 @@ void QuicSessionPool::OnNetworkDisconnected(handles::NetworkHandle network) {
 void QuicSessionPool::OnNetworkSoonToDisconnect(
     handles::NetworkHandle network) {
   CollectDataOnPlatformNotification(NETWORK_SOON_TO_DISCONNECT, network);
+  NotifyOnNetworkEvent(net::NetworkChangeEvent::kSoonToDisconnect);
 }
 
 void QuicSessionPool::OnNetworkMadeDefault(handles::NetworkHandle network) {
@@ -1209,6 +1405,7 @@ void QuicSessionPool::OnNetworkMadeDefault(handles::NetworkHandle network) {
   if (params_.migrate_sessions_on_network_change_v2) {
     set_has_quic_ever_worked_on_current_network(false);
   }
+  NotifyOnNetworkEvent(net::NetworkChangeEvent::kDefaultNetworkChanged);
 }
 
 void QuicSessionPool::OnTrustStoreChanged() {
@@ -1359,7 +1556,7 @@ void QuicSessionPool::LogConnectionIpPooling(bool pooled) {
   base::UmaHistogramBoolean("Net.QuicSession.ConnectionIpPooled", pooled);
 }
 
-bool QuicSessionPool::HasMatchingIpSession(
+QuicChromiumClientSession* QuicSessionPool::HasMatchingIpSession(
     const QuicSessionAliasKey& key,
     const std::vector<IPEndPoint>& ip_endpoints,
     const std::set<std::string>& aliases,
@@ -1383,7 +1580,7 @@ bool QuicSessionPool::HasMatchingIpSession(
       ActivateAndMapSessionToAliasKey(session, key, std::move(dns_aliases));
       LogFindMatchingIpSessionResult(net_log_, MATCHING_IP_SESSION_FOUND,
                                      session, key.destination());
-      return true;
+      return session;
     }
   }
 
@@ -1413,7 +1610,7 @@ bool QuicSessionPool::HasMatchingIpSession(
       ActivateAndMapSessionToAliasKey(session, key, std::move(dns_aliases));
       LogFindMatchingIpSessionResult(net_log_, POOLED_WITH_DIFFERENT_IP_SESSION,
                                      session, key.destination());
-      return true;
+      return session;
     }
   }
   if (can_pool) {
@@ -1423,7 +1620,7 @@ bool QuicSessionPool::HasMatchingIpSession(
     LogFindMatchingIpSessionResult(net_log_, CANNOT_POOL_WITH_EXISTING_SESSIONS,
                                    /*session=*/nullptr, key.destination());
   }
-  return false;
+  return nullptr;
 }
 
 void QuicSessionPool::OnJobComplete(
@@ -1439,7 +1636,7 @@ void QuicSessionPool::OnJobComplete(
         base::TimeTicks::Now() - *proxy_connect_start_time);
   }
 
-  CHECK(iter != active_jobs_.end(), base::NotFatalUntil::M130);
+  CHECK(iter != active_jobs_.end());
   if (rv == OK) {
     if (!has_quic_ever_worked_on_current_network_) {
       set_has_quic_ever_worked_on_current_network(true);
@@ -1452,6 +1649,8 @@ void QuicSessionPool::OnJobComplete(
       // Do not notify |request| yet.
       request->SetSession(session->CreateHandle(job->key().destination()));
     }
+  } else if (rv < 0) {
+    NotifyOnConnectionFailure(job->key().session_key());
   }
 
   for (QuicSessionRequest* request : iter->second->requests()) {
@@ -1475,6 +1674,28 @@ bool QuicSessionPool::HasActiveJob(const QuicSessionKey& session_key) const {
   return base::Contains(active_jobs_, session_key);
 }
 
+void QuicSessionPool::NotifyOnNetworkEvent(net::NetworkChangeEvent event) {
+  for (auto& notifier : connection_change_notifier_) {
+    notifier.second->OnNetworkEvent(event);
+  }
+}
+
+void QuicSessionPool::NotifyOnSessionClosed(
+    const QuicSessionKey& session_key) const {
+  auto notifier = connection_change_notifier_.find(session_key);
+  if (notifier != connection_change_notifier_.end()) {
+    notifier->second->OnSessionClosed();
+  }
+}
+
+void QuicSessionPool::NotifyOnConnectionFailure(
+    const QuicSessionKey& session_key) const {
+  auto notifier = connection_change_notifier_.find(session_key);
+  if (notifier != connection_change_notifier_.end()) {
+    notifier->second->OnConnectionFailed();
+  }
+}
+
 int QuicSessionPool::CreateSessionSync(
     QuicSessionAliasKey key,
     quic::ParsedQuicVersion quic_version,
@@ -1487,7 +1708,8 @@ int QuicSessionPool::CreateSessionSync(
     const NetLogWithSource& net_log,
     raw_ptr<QuicChromiumClientSession>* session,
     handles::NetworkHandle* network,
-    MultiplexedSessionCreationInitiator session_creation_initiator) {
+    MultiplexedSessionCreationInitiator session_creation_initiator,
+    std::optional<ConnectionManagementConfig> connection_management_config) {
   *session = nullptr;
   // TODO(crbug.com/40256842): This logic only knows how to try one IP
   // endpoint.
@@ -1502,12 +1724,12 @@ int QuicSessionPool::CreateSessionSync(
     return rv;
   }
   base::expected<QuicSessionAttempt::CreateSessionResult, int> result =
-      CreateSessionHelper(std::move(key), quic_version, cert_verify_flags,
-                          require_confirmation, std::move(peer_address),
-                          std::move(metadata), dns_resolution_start_time,
-                          dns_resolution_end_time,
-                          /*session_max_packet_length=*/0, net_log, *network,
-                          std::move(socket), session_creation_initiator);
+      CreateSessionHelper(
+          std::move(key), quic_version, cert_verify_flags, require_confirmation,
+          std::move(peer_address), std::move(metadata),
+          dns_resolution_start_time, dns_resolution_end_time,
+          /*session_max_packet_length=*/0, net_log, *network, std::move(socket),
+          session_creation_initiator, connection_management_config);
   if (!result.has_value()) {
     return result.error();
   }
@@ -1529,7 +1751,8 @@ int QuicSessionPool::CreateSessionAsync(
     base::TimeTicks dns_resolution_end_time,
     const NetLogWithSource& net_log,
     handles::NetworkHandle network,
-    MultiplexedSessionCreationInitiator session_creation_initiator) {
+    MultiplexedSessionCreationInitiator session_creation_initiator,
+    std::optional<ConnectionManagementConfig> connection_management_config) {
   // TODO(crbug.com/40256842): This logic only knows how to try one IP
   // endpoint.
   std::unique_ptr<DatagramClientSocket> socket(
@@ -1541,7 +1764,7 @@ int QuicSessionPool::CreateSessionAsync(
       require_confirmation, peer_address, std::move(metadata),
       dns_resolution_start_time, dns_resolution_end_time,
       /*session_max_packet_length=*/0, net_log, network, std::move(socket),
-      session_creation_initiator);
+      session_creation_initiator, connection_management_config);
 
   // If migrate_sessions_on_network_change_v2 is on, passing in
   // handles::kInvalidNetworkHandle will bind the socket to the default network.
@@ -1613,7 +1836,8 @@ int QuicSessionPool::CreateSessionOnProxyStream(
           require_confirmation, proxy_peer_address, std::move(metadata),
           dns_resolution_time, dns_resolution_time, session_max_packet_length,
           net_log, network, std::move(socket),
-          MultiplexedSessionCreationInitiator::kUnknown));
+          MultiplexedSessionCreationInitiator::kUnknown,
+          /*connection_management_config=*/std::nullopt));
 
   int rv = socket_ptr->ConnectViaStream(
       std::move(local_address), std::move(proxy_peer_address),
@@ -1643,18 +1867,19 @@ void QuicSessionPool::FinishCreateSession(
     handles::NetworkHandle network,
     std::unique_ptr<DatagramClientSocket> socket,
     MultiplexedSessionCreationInitiator session_creation_initiator,
+    std::optional<ConnectionManagementConfig> connection_management_config,
     int rv) {
   if (rv != OK) {
     std::move(callback).Run(base::unexpected(rv));
     return;
   }
   base::expected<QuicSessionAttempt::CreateSessionResult, int> result =
-      CreateSessionHelper(std::move(key), quic_version, cert_verify_flags,
-                          require_confirmation, std::move(peer_address),
-                          std::move(metadata), dns_resolution_start_time,
-                          dns_resolution_end_time, session_max_packet_length,
-                          net_log, network, std::move(socket),
-                          session_creation_initiator);
+      CreateSessionHelper(
+          std::move(key), quic_version, cert_verify_flags, require_confirmation,
+          std::move(peer_address), std::move(metadata),
+          dns_resolution_start_time, dns_resolution_end_time,
+          session_max_packet_length, net_log, network, std::move(socket),
+          session_creation_initiator, connection_management_config);
   std::move(callback).Run(std::move(result));
 }
 
@@ -1672,7 +1897,8 @@ QuicSessionPool::CreateSessionHelper(
     const NetLogWithSource& net_log,
     handles::NetworkHandle network,
     std::unique_ptr<DatagramClientSocket> socket,
-    MultiplexedSessionCreationInitiator session_creation_initiator) {
+    MultiplexedSessionCreationInitiator session_creation_initiator,
+    std::optional<ConnectionManagementConfig> connection_management_config) {
   const quic::QuicServerId& server_id = key.server_id();
 
   if (params_.migrate_sessions_on_network_change_v2 &&
@@ -1709,7 +1935,7 @@ QuicSessionPool::CreateSessionHelper(
         key.session_key().network_anonymization_key(), http_server_properties_);
   }
   std::unique_ptr<CryptoClientConfigHandle> crypto_config_handle =
-      CreateCryptoConfigHandle(key.session_key().network_anonymization_key());
+      CreateCryptoConfigHandle(QuicCryptoClientConfigKey(key.session_key()));
   InitializeCachedStateInCryptoConfig(*crypto_config_handle, server_id,
                                       server_info);
 
@@ -1720,7 +1946,6 @@ QuicSessionPool::CreateSessionHelper(
       ToQuicSocketAddress(peer_address), helper_.get(), alarm_factory_.get(),
       writer, true /* owns_writer */, quic::Perspective::IS_CLIENT,
       {quic_version}, connection_id_generator_);
-  connection->set_keep_alive_ping_timeout(ping_timeout_);
 
   // Calculate the max packet length for this connection. If the session is
   // carrying proxy traffic, add the `additional_proxy_packet_length`.
@@ -1740,6 +1965,25 @@ QuicSessionPool::CreateSessionHelper(
   quic::QuicConfig config = config_;
   ConfigureInitialRttEstimate(
       server_id, key.session_key().network_anonymization_key(), &config);
+
+  auto keep_alive_timeout = ping_timeout_;
+  bool enabled_connection_keep_alive = false;
+  if (connection_management_config.has_value() &&
+      connection_management_config->keep_alive_config.has_value()) {
+    config.SetIdleNetworkTimeout(quic::QuicTime::Delta::FromSeconds(
+        connection_management_config->keep_alive_config
+            ->idle_timeout_in_seconds));
+    config.AddConnectionOptionsToSend(
+        quic::ParseQuicTagVector(connection_management_config->keep_alive_config
+                                     ->quic_connection_options));
+    keep_alive_timeout = quic::QuicTime::Delta::FromSeconds(
+        connection_management_config->keep_alive_config
+            ->ping_interval_in_seconds);
+    enabled_connection_keep_alive =
+        connection_management_config->keep_alive_config
+            ->enable_connection_keep_alive;
+  }
+  connection->set_keep_alive_ping_timeout(keep_alive_timeout);
 
   // Use the factory to create a new socket performance watcher, and pass the
   // ownership to QuicChromiumClientSession.
@@ -1773,7 +2017,7 @@ QuicSessionPool::CreateSessionHelper(
       std::move(crypto_config_handle),
       network_connection_.connection_description(), dns_resolution_start_time,
       dns_resolution_end_time, tick_clock_, task_runner_.get(),
-      std::move(socket_performance_watcher), metadata, params_.report_ecn,
+      std::move(socket_performance_watcher), metadata,
       params_.enable_origin_frame, params_.allow_server_migration,
       session_creation_initiator, net_log);
   QuicChromiumClientSession* session = new_session.get();
@@ -1787,6 +2031,10 @@ QuicSessionPool::CreateSessionHelper(
       session->net_log().source());
 
   session->Initialize();
+
+  if (enabled_connection_keep_alive) {
+    session->SetPeriodicConnectionKeepAlive(true);
+  }
   bool closed_during_initialize = !base::Contains(all_sessions_, session) ||
                                   !session->connection()->connected();
   UMA_HISTOGRAM_BOOLEAN("Net.QuicSession.ClosedDuringInitializeSession",
@@ -1891,8 +2139,8 @@ const base::TimeDelta* QuicSessionPool::GetServerNetworkStatsSmoothedRtt(
 bool QuicSessionPool::WasQuicRecentlyBroken(
     const QuicSessionKey& session_key) const {
   const AlternativeService alternative_service(
-      kProtoQUIC, HostPortPair(session_key.server_id().host(),
-                               session_key.server_id().port()));
+      NextProto::kProtoQUIC, HostPortPair(session_key.server_id().host(),
+                                          session_key.server_id().port()));
   return http_server_properties_->WasAlternativeServiceRecentlyBroken(
       alternative_service, session_key.network_anonymization_key());
 }
@@ -2010,7 +2258,7 @@ void QuicSessionPool::ProcessGoingAwaySession(
 
   const quic::QuicConnectionStats& stats = session->connection()->GetStats();
   const AlternativeService alternative_service(
-      kProtoQUIC, HostPortPair(server_id.host(), server_id.port()));
+      NextProto::kProtoQUIC, HostPortPair(server_id.host(), server_id.port()));
 
   url::SchemeHostPort server("https", server_id.host(), server_id.port());
   // Do nothing if QUIC is currently marked as broken.
@@ -2077,23 +2325,20 @@ void QuicSessionPool::UnmapSessionFromSessionAliases(
 }
 
 std::unique_ptr<QuicSessionPool::CryptoClientConfigHandle>
-QuicSessionPool::CreateCryptoConfigHandle(
-    const NetworkAnonymizationKey& network_anonymization_key) {
-  NetworkAnonymizationKey actual_network_anonymization_key =
-      use_network_anonymization_key_for_crypto_configs_
-          ? network_anonymization_key
-          : NetworkAnonymizationKey();
+QuicSessionPool::CreateCryptoConfigHandle(QuicCryptoClientConfigKey key) {
+  if (!use_network_anonymization_key_for_crypto_configs_) {
+    key.network_anonymization_key = NetworkAnonymizationKey();
+  }
 
   // If there's a matching entry in |active_crypto_config_map_|, create a
   // CryptoClientConfigHandle for it.
-  auto map_iterator =
-      active_crypto_config_map_.find(actual_network_anonymization_key);
+  auto map_iterator = active_crypto_config_map_.find(key);
   if (map_iterator != active_crypto_config_map_.end()) {
     DCHECK_GT(map_iterator->second->num_refs(), 0);
 
     // If there's an active matching crypto config, there shouldn't also be an
     // inactive matching crypto config.
-    DCHECK(recent_crypto_config_map_.Peek(actual_network_anonymization_key) ==
+    DCHECK(recent_crypto_config_map_.Peek(key) ==
            recent_crypto_config_map_.end());
 
     return std::make_unique<CryptoClientConfigHandle>(map_iterator);
@@ -2101,15 +2346,13 @@ QuicSessionPool::CreateCryptoConfigHandle(
 
   // If there's a matching entry in |recent_crypto_config_map_|, move it to
   // |active_crypto_config_map_| and create a CryptoClientConfigHandle for it.
-  auto mru_iterator =
-      recent_crypto_config_map_.Peek(actual_network_anonymization_key);
+  auto mru_iterator = recent_crypto_config_map_.Peek(key);
   if (mru_iterator != recent_crypto_config_map_.end()) {
     DCHECK_EQ(mru_iterator->second->num_refs(), 0);
 
-    map_iterator = active_crypto_config_map_
-                       .emplace(actual_network_anonymization_key,
-                                std::move(mru_iterator->second))
-                       .first;
+    map_iterator =
+        active_crypto_config_map_.emplace(key, std::move(mru_iterator->second))
+            .first;
     recent_crypto_config_map_.Erase(mru_iterator);
     return std::make_unique<CryptoClientConfigHandle>(map_iterator);
   }
@@ -2121,7 +2364,7 @@ QuicSessionPool::CreateCryptoConfigHandle(
           std::make_unique<ProofVerifierChromium>(
               cert_verifier_, transport_security_state_, sct_auditing_delegate_,
               HostsFromOrigins(params_.origins_to_force_quic_on),
-              actual_network_anonymization_key),
+              key.network_anonymization_key),
           std::make_unique<quic::QuicClientSessionCache>(), this);
 
   quic::QuicCryptoClientConfig* crypto_config = crypto_config_owner->config();
@@ -2141,10 +2384,9 @@ QuicSessionPool::CreateCryptoConfigHandle(
     prefer_aes_gcm_recorded_ = true;
   }
 
-  map_iterator = active_crypto_config_map_
-                     .emplace(actual_network_anonymization_key,
-                              std::move(crypto_config_owner))
-                     .first;
+  map_iterator =
+      active_crypto_config_map_.emplace(key, std::move(crypto_config_owner))
+          .first;
   return std::make_unique<CryptoClientConfigHandle>(map_iterator);
 }
 
@@ -2165,27 +2407,49 @@ void QuicSessionPool::CollectDataOnPlatformNotification(
       QuicPlatformNotificationToString(notification), affected_network);
 }
 
+void QuicSessionPool::CheckQuicSessionKeyMismatch(
+    const QuicSessionKey& session_key,
+    url::SchemeHostPort destination) const {
+  // Check and record if we have some sort of partially matched results for the
+  // `session_key`.
+  QuicSessionKeyPartialMatchResult partial_match_result =
+      QuicSessionKeyPartialMatchResult::kNoMatch;
+  std::optional<QuicSessionKey> active_key = std::nullopt;
+  if (auto active_session_key = GetActiveSessionToServerId(session_key)) {
+    partial_match_result =
+        QuicSessionKeyPartialMatchResult::kMatchedToActiveSession;
+    active_key = active_session_key;
+  } else if (auto active_job_key = GetActiveJobToServerId(session_key)) {
+    partial_match_result =
+        QuicSessionKeyPartialMatchResult::kMatchedToActiveJob;
+    active_key = active_job_key;
+  }
+
+  // PostTask the histogram recording since we do not want to incur many
+  // overheads for the execution of the session creation with checking field
+  // mismatches.
+  base::SequencedTaskRunner::GetCurrentDefault()->PostTask(
+      FROM_HERE, base::BindOnce(&LogSessionKeyMismatch, partial_match_result,
+                                destination, session_key, active_key));
+}
+
 std::unique_ptr<QuicCryptoClientConfigHandle>
-QuicSessionPool::GetCryptoConfigForTesting(
-    const NetworkAnonymizationKey& network_anonymization_key) {
-  return CreateCryptoConfigHandle(network_anonymization_key);
+QuicSessionPool::GetCryptoConfigForTesting(QuicCryptoClientConfigKey key) {
+  return CreateCryptoConfigHandle(std::move(key));
 }
 
 bool QuicSessionPool::CryptoConfigCacheIsEmptyForTesting(
     const quic::QuicServerId& server_id,
-    const NetworkAnonymizationKey& network_anonymization_key) {
+    QuicCryptoClientConfigKey key) {
   quic::QuicCryptoClientConfig::CachedState* cached = nullptr;
-  NetworkAnonymizationKey actual_network_anonymization_key =
-      use_network_anonymization_key_for_crypto_configs_
-          ? network_anonymization_key
-          : NetworkAnonymizationKey();
-  auto map_iterator =
-      active_crypto_config_map_.find(actual_network_anonymization_key);
+  if (!use_network_anonymization_key_for_crypto_configs_) {
+    key.network_anonymization_key = NetworkAnonymizationKey();
+  }
+  auto map_iterator = active_crypto_config_map_.find(key);
   if (map_iterator != active_crypto_config_map_.end()) {
     cached = map_iterator->second->config()->LookupOrCreate(server_id);
   } else {
-    auto mru_iterator =
-        recent_crypto_config_map_.Peek(actual_network_anonymization_key);
+    auto mru_iterator = recent_crypto_config_map_.Peek(key);
     if (mru_iterator != recent_crypto_config_map_.end()) {
       cached = mru_iterator->second->config()->LookupOrCreate(server_id);
     }

@@ -26,12 +26,6 @@ class MockScreen : public display::Screen {
   gfx::NativeWindow GetLocalProcessWindowAtPoint(
       const gfx::Point& point,
       const std::set<gfx::NativeWindow>& ignore) override;
-#if BUILDFLAG(IS_OHOS)
-  gfx::NativeWindow GetLocalProcessWindowAtPoint(
-      const gfx::Point& point,
-      const std::set<gfx::NativeWindow>& ignore,
-      const int32_t display_id) override;
-#endif
   int GetNumDisplays() const override;
   const std::vector<display::Display>& GetAllDisplays() const override;
   display::Display GetDisplayNearestWindow(

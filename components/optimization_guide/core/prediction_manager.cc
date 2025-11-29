@@ -17,7 +17,6 @@
 #include "base/metrics/histogram_functions.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/metrics/histogram_macros_local.h"
-#include "base/not_fatal_until.h"
 #include "base/observer_list.h"
 #include "base/path_service.h"
 #include "base/sequence_checker.h"
@@ -319,8 +318,7 @@ void PredictionManager::RemoveObserverForOptimizationTargetModel(
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   auto registration_info =
       model_registration_info_map_.find(optimization_target);
-  CHECK(registration_info != model_registration_info_map_.end(),
-        base::NotFatalUntil::M130);
+  CHECK(registration_info != model_registration_info_map_.end());
 
   auto& observers = registration_info->second.model_observers;
   DCHECK(observers.HasObserver(observer));
@@ -363,7 +361,7 @@ void PredictionManager::FetchModels() {
   proto::ModelInfo base_model_info;
   // There should only be one supported model engine version at a time.
   base_model_info.add_supported_model_engine_versions(
-      proto::MODEL_ENGINE_VERSION_TFLITE_2_18);
+      proto::MODEL_ENGINE_VERSION_TFLITE_2_20_1);
   // This histogram is used for integration tests. Do not remove.
   // Update this to be 10000 if/when we exceed 100 model engine versions.
   LOCAL_HISTOGRAM_COUNTS_100(
@@ -720,6 +718,21 @@ PredictionManager::GetDownloadedModelsInfoForWebUI() const {
   return downloaded_models_info;
 }
 
+base::flat_map<std::string, bool>
+PredictionManager::GetOnDeviceSupplementaryModelsInfoForWebUI() const {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  std::vector<proto::OptimizationTarget> supp_targets = {
+      proto::OptimizationTarget::OPTIMIZATION_TARGET_TEXT_SAFETY,
+      proto::OptimizationTarget::OPTIMIZATION_TARGET_LANGUAGE_DETECTION};
+  base::flat_map<std::string, bool> supp_models_info;
+  for (const auto target : supp_targets) {
+    supp_models_info[optimization_guide::proto::OptimizationTarget_Name(
+        target)] = optimization_target_model_info_map_.contains(target);
+  }
+
+  return supp_models_info;
+}
+
 void PredictionManager::NotifyObserversOfNewModel(
     proto::OptimizationTarget optimization_target,
     base::optional_ref<const ModelInfo> model_info) {
@@ -794,6 +807,9 @@ void PredictionManager::OnPredictionModelOverrideLoaded(
     proto::OptimizationTarget optimization_target,
     std::unique_ptr<proto::PredictionModel> prediction_model) {
   const bool is_available = prediction_model != nullptr;
+  VLOG(0) << "Loading override for "
+          << proto::OptimizationTarget_Name(optimization_target)
+          << (is_available ? " succeeded" : " failed");
   OnLoadPredictionModel(optimization_target,
                         /*record_availability_metrics=*/false,
                         std::move(prediction_model));

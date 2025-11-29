@@ -12,11 +12,12 @@
 #include "base/json/json_writer.h"
 #include "base/strings/strcat.h"
 #include "base/strings/string_split.h"
+#include "base/strings/stringprintf.h"
 #include "base/time/time.h"
 #include "base/value_iterators.h"
 #include "base/values.h"
 #include "crypto/signature_verifier.h"
-#include "net/device_bound_sessions/test_util.h"
+#include "net/device_bound_sessions/test_support.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "url/gurl.h"
 
@@ -53,7 +54,7 @@ TEST(SessionBindingUtilsTest, CreateKeyRegistrationHeaderAndPayload) {
       Base64UrlEncodedJsonToValue(header_and_payload[1]);
 
   base::Value::Dict expected_header =
-      base::Value::Dict().Set("alg", "RS256").Set("typ", "jwt");
+      base::Value::Dict().Set("alg", "RS256").Set("typ", "dbsc+jwt");
   base::Value::Dict expected_payload =
       base::Value::Dict()
           .Set("aud", "https://accounts.example.test/RegisterKey")
@@ -86,7 +87,7 @@ TEST(SessionBindingUtilsTest,
       Base64UrlEncodedJsonToValue(header_and_payload[1]);
 
   base::Value::Dict expected_header =
-      base::Value::Dict().Set("alg", "RS256").Set("typ", "jwt");
+      base::Value::Dict().Set("alg", "RS256").Set("typ", "dbsc+jwt");
   base::Value::Dict expected_payload =
       base::Value::Dict()
           .Set("aud", "https://accounts.example.test/RegisterKey")
@@ -131,6 +132,23 @@ TEST(SessionBindingUtilsTest,
       "abc.efg", crypto::SignatureVerifier::SignatureAlgorithm::ECDSA_SHA256,
       std::vector<uint8_t>({1, 2, 3}));
   EXPECT_EQ(result, std::nullopt);
+}
+
+TEST(SessionBindingUtilsTest, TestIsSecureUrl) {
+  const std::vector<GURL> secure_connection_urls = {
+      GURL("https://example.test/"), GURL("https://localhost:8080/"),
+      GURL("http://localhost:8080/")};
+  const std::vector<GURL> insecure_connection_urls = {
+      GURL("http://example.test/"),
+  };
+  for (const auto& url : secure_connection_urls) {
+    SCOPED_TRACE(base::StringPrintf("url: %s", url.spec()));
+    EXPECT_TRUE(IsSecure(url));
+  }
+  for (const auto& url : insecure_connection_urls) {
+    SCOPED_TRACE(base::StringPrintf("url: %s", url.spec()));
+    EXPECT_FALSE(IsSecure(url));
+  }
 }
 
 }  // namespace net::device_bound_sessions

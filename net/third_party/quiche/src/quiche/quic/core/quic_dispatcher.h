@@ -136,12 +136,6 @@ class QUICHE_EXPORT QuicDispatcher
     QUICHE_DCHECK(false);
   }
 
-  // QuicTimeWaitListManager::Visitor interface implementation
-  // Called whenever the time wait list manager adds a new connection to the
-  // time-wait list.
-  void OnConnectionAddedToTimeWaitList(
-      QuicConnectionId server_connection_id) override;
-
   using ReferenceCountedSessionMap =
       absl::flat_hash_map<QuicConnectionId, std::shared_ptr<QuicSession>,
                           QuicConnectionIdHash>;
@@ -354,8 +348,9 @@ class QUICHE_EXPORT QuicDispatcher
   virtual void MaybeResetPacketsWithNoVersion(
       const quic::ReceivedPacketInfo& packet_info);
 
-  // Called on packets with unsupported versions.
-  virtual void MaybeSendVersionNegotiationPacket(
+  // Called on packets with unsupported versions. Returns true if a version
+  // negotiation packet is sent.
+  virtual bool MaybeSendVersionNegotiationPacket(
       const ReceivedPacketInfo& packet_info);
 
   virtual ConnectionIdGeneratorInterface& ConnectionIdGenerator() {

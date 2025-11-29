@@ -23,11 +23,13 @@ ci.defaults.set(
     os = os.LINUX_DEFAULT,
     gardener_rotations = gardener_rotations.CHROMIUM,
     tree_closing = True,
+    tree_closing_notifiers = ci.DEFAULT_TREE_CLOSING_NOTIFIERS,
     main_console_view = "main",
     cq_mirrors_console_view = "mirrors",
     execution_timeout = ci.DEFAULT_EXECUTION_TIMEOUT,
     health_spec = health_spec.DEFAULT,
     notifies = ["cr-fuchsia"],
+    reclient_enabled = False,
     service_account = ci.DEFAULT_SERVICE_ACCOUNT,
     shadow_service_account = ci.DEFAULT_SHADOW_SERVICE_ACCOUNT,
     siso_enabled = True,
@@ -117,6 +119,7 @@ ci.builder(
     targets = targets.bundle(
         targets = [
             "fuchsia_arm64_tests",
+            "gtests_once",
         ],
         additional_compile_targets = [
             "all",
@@ -196,7 +199,10 @@ ci.builder(
     ),
     targets = targets.bundle(
         targets = [
-            "fuchsia_standard_tests",
+            # Passthrough is used since these emulators use SwiftShader, which
+            # forces use of the passthrough decoder even if validating is
+            # specified.
+            "fuchsia_standard_passthrough_tests",
         ],
         additional_compile_targets = [
             "all",
@@ -287,13 +293,17 @@ ci.builder(
     # removing targets.
     targets = targets.bundle(
         targets = [
-            "fuchsia_standard_tests",
+            # Passthrough is used since these emulators use SwiftShader, which
+            # forces use of the passthrough decoder even if validating is
+            # specified.
+            "fuchsia_standard_passthrough_tests",
         ],
         additional_compile_targets = [
             "all",
             "cast_test_lists",
         ],
         mixins = [
+            "fuchsia-large-device-spec",
             "isolate_profile_data",
             "linux-jammy",
             targets.mixin(

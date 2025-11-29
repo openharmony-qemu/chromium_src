@@ -213,6 +213,9 @@ class DISPLAY_EXPORT Screen {
   virtual std::optional<float> GetPreferredScaleFactorForView(
       gfx::NativeView view) const;
 
+  // Returns true when running in headless mode.
+  virtual bool IsHeadless() const;
+
 #if BUILDFLAG(IS_CHROMEOS)
   // Returns tablet state.
   virtual TabletState GetTabletState() const;
@@ -220,13 +223,6 @@ class DISPLAY_EXPORT Screen {
   // Returns true if the system is in tablet mode.
   bool InTabletMode() const;
 #endif  // BUILDFLAG(IS_CHROMEOS)
-
-#if BUILDFLAG(IS_OHOS)
-  virtual gfx::NativeWindow GetLocalProcessWindowAtPoint(
-      const gfx::Point& point,
-      const std::set<gfx::NativeWindow>& ignore,
-      const int32_t display_id) = 0;
-#endif
 
  protected:
   void set_shutdown(bool shutdown) { shutdown_ = shutdown; }
@@ -262,6 +258,12 @@ class DISPLAY_EXPORT Screen {
 // TODO(crbug.com/40222482): Make this static private member of
 // ScopedNativeScreen.
 DISPLAY_EXPORT Screen* CreateNativeScreen();
+
+#if BUILDFLAG(IS_IOS)
+// Returns the internal display device scale factor. This should only
+// be used for loading resources at startup before Screen is initialized.
+DISPLAY_EXPORT float GetInternalDisplayDeviceScaleFactor();
+#endif
 
 // ScopedNativeScreen creates a native screen if there is no screen created yet
 // (e.g. by a unit test).

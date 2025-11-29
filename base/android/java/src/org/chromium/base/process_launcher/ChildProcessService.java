@@ -4,6 +4,8 @@
 
 package org.chromium.base.process_launcher;
 
+import static org.chromium.build.NullUtil.assumeNonNull;
+
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -14,7 +16,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-import android.os.Parcelable;
 import android.os.Process;
 import android.os.RemoteException;
 import android.os.SystemClock;
@@ -24,9 +25,12 @@ import android.util.SparseArray;
 import org.jni_zero.JNINamespace;
 import org.jni_zero.NativeMethods;
 
+import org.chromium.base.AndroidInfo;
+import org.chromium.base.ApkInfo;
 import org.chromium.base.BaseSwitches;
 import org.chromium.base.CommandLine;
 import org.chromium.base.ContextUtils;
+import org.chromium.base.DeviceInfo;
 import org.chromium.base.EarlyTraceEvent;
 import org.chromium.base.JavaUtils;
 import org.chromium.base.Log;
@@ -35,6 +39,9 @@ import org.chromium.base.ThreadUtils;
 import org.chromium.base.library_loader.LibraryLoader;
 import org.chromium.base.memory.MemoryPressureMonitor;
 import org.chromium.base.metrics.RecordHistogram;
+import org.chromium.build.annotations.Initializer;
+import org.chromium.build.annotations.NullMarked;
+import org.chromium.build.annotations.Nullable;
 
 import java.util.List;
 
@@ -61,6 +68,7 @@ import javax.annotation.concurrent.GuardedBy;
  */
 @JNINamespace("base::android")
 @SuppressWarnings("SynchronizeOnNonFinalField") // mMainThread assigned in onCreate().
+@NullMarked
 public class ChildProcessService {
     private static final String MAIN_THREAD_NAME = "ChildProcessMain";
     private static final String TAG = "ChildProcessService";
@@ -87,16 +95,13 @@ public class ChildProcessService {
     private int mBoundCallingPid;
 
     @GuardedBy("mBinderLock")
-    private String mBoundCallingClazz;
+    private @Nullable String mBoundCallingClazz;
 
     // This is the native "Main" thread for the renderer / utility process.
     private Thread mMainThread;
 
-    // Parameters received via IPC, only accessed while holding the mMainThread monitor.
-    private String[] mCommandLineParams;
-
-    // File descriptors that should be registered natively.
-    private FileDescriptorInfo[] mFdInfos;
+    // All args needed for the main thread to start.
+    private @Nullable IChildProcessArgs mChildProcessArgs;
 
     @GuardedBy("mLibraryInitializedLock")
     private boolean mLibraryInitialized;
@@ -106,7 +111,7 @@ public class ChildProcessService {
     private boolean mServiceBound;
 
     // Interface to send notifications to the parent process.
-    private IParentProcess mParentProcess;
+    private @Nullable IParentProcess mParentProcess;
 
     public ChildProcessService(
             ChildProcessServiceDelegate delegate, Service service, Context applicationContext) {
@@ -154,7 +159,7 @@ public class ChildProcessService {
 
                 @Override
                 public void setupConnection(
-                        Bundle args,
+                        IChildProcessArgs args,
                         IParentProcess parentProcess,
                         List<IBinder> callbacks,
                         IBinder binderBox)
@@ -180,8 +185,7 @@ public class ChildProcessService {
                         m.initInChildProcess();
                         // In a number of cases the app zygote decides not to produce a RELRO FD.
                         // The bundle will tell the receiver to silently ignore it.
-                        relroBundle = new Bundle();
-                        m.putSharedRelrosToBundle(relroBundle);
+                        relroBundle = m.getSharedRelrosBundle();
                     }
                     // After finishSetupConnection() the parent process will stop accepting
                     // |relroBundle| from this process to ensure that another FD to shared memory
@@ -189,7 +193,7 @@ public class ChildProcessService {
                     parentProcess.finishSetupConnection(
                             pid, zygotePid, startupTimeMillis, relroBundle);
                     mParentProcess = parentProcess;
-                    processConnectionBundle(args, callbacks, binderBox);
+                    processConnectionArgs(args, callbacks, binderBox);
                 }
 
                 @Override
@@ -229,6 +233,17 @@ public class ChildProcessService {
                 }
 
                 @Override
+                public void onSelfFreeze() {
+                    synchronized (mLibraryInitializedLock) {
+                        if (!mLibraryInitialized) {
+                            Log.w(TAG, "Cannot do SelfFreeze before native is loaded");
+                            return;
+                        }
+                    }
+                    ChildProcessServiceJni.get().onSelfFreeze();
+                }
+
+                @Override
                 public void dumpProcessStack() {
                     assert mServiceBound;
                     synchronized (mLibraryInitializedLock) {
@@ -247,7 +262,7 @@ public class ChildProcessService {
             };
 
     /** Loads Chrome's native libraries and initializes a ChildProcessService. */
-    // For sCreateCalled check.
+    @Initializer
     public void onCreate() {
         Log.i(TAG, "Creating new ChildProcessService pid=%d", Process.myPid());
         if (sCreateCalled) {
@@ -272,16 +287,29 @@ public class ChildProcessService {
         mMainThread.start();
     }
 
+    private void sendBuildInfoToNative() {
+        assert mChildProcessArgs != null;
+        AndroidInfo.sendToNative(mChildProcessArgs.androidInfo);
+        ApkInfo.sendToNative(mChildProcessArgs.apkInfo);
+        DeviceInfo.sendToNative(mChildProcessArgs.deviceInfo);
+    }
+
     private void mainThreadMain() {
+        assumeNonNull(mParentProcess);
         try {
             // CommandLine must be initialized before everything else.
             synchronized (mMainThread) {
-                while (mCommandLineParams == null) {
+                while (mChildProcessArgs == null) {
                     mMainThread.wait();
                 }
             }
             assert mServiceBound;
-            CommandLine.init(mCommandLineParams);
+            CommandLine.init(mChildProcessArgs.commandLine);
+
+            if (CommandLine.getInstance()
+                    .hasSwitch(BaseSwitches.ANDROID_SKIP_CHILD_SERVICE_INIT_FOR_TESTING)) {
+                return;
+            }
 
             if (CommandLine.getInstance().hasSwitch(BaseSwitches.RENDERER_WAIT_FOR_JAVA_DEBUGGER)) {
                 android.os.Debug.waitForDebugger();
@@ -294,22 +322,17 @@ public class ChildProcessService {
                 mLibraryInitialized = true;
                 mLibraryInitializedLock.notifyAll();
             }
-            synchronized (mMainThread) {
-                mMainThread.notifyAll();
-                while (mFdInfos == null) {
-                    mMainThread.wait();
-                }
-            }
-
+            sendBuildInfoToNative();
             SparseArray<String> idsToKeys = mDelegate.getFileDescriptorsIdsToKeys();
 
-            int[] fileIds = new int[mFdInfos.length];
-            String[] keys = new String[mFdInfos.length];
-            int[] fds = new int[mFdInfos.length];
-            long[] regionOffsets = new long[mFdInfos.length];
-            long[] regionSizes = new long[mFdInfos.length];
-            for (int i = 0; i < mFdInfos.length; i++) {
-                FileDescriptorInfo fdInfo = mFdInfos[i];
+            int numFdInfos = mChildProcessArgs.fileDescriptorInfos.length;
+            int[] fileIds = new int[numFdInfos];
+            String[] keys = new String[numFdInfos];
+            int[] fds = new int[numFdInfos];
+            long[] regionOffsets = new long[numFdInfos];
+            long[] regionSizes = new long[numFdInfos];
+            for (int i = 0; i < numFdInfos; i++) {
+                IFileDescriptorInfo fdInfo = mChildProcessArgs.fileDescriptorInfos[i];
                 String key = idsToKeys != null ? idsToKeys.get(fdInfo.id) : null;
                 if (key != null) {
                     keys[i] = key;
@@ -402,28 +425,11 @@ public class ChildProcessService {
         sZygoteStartupTimeMillis = zygoteStartupTimeMillis;
     }
 
-    private void processConnectionBundle(
-            Bundle bundle, List<IBinder> clientInterfaces, IBinder binderBox) {
-        // Required to unparcel FileDescriptorInfo.
-        ClassLoader classLoader = getApplicationContext().getClassLoader();
-        bundle.setClassLoader(classLoader);
+    private void processConnectionArgs(
+            IChildProcessArgs args, List<IBinder> clientInterfaces, IBinder binderBox) {
         synchronized (mMainThread) {
-            if (mCommandLineParams == null) {
-                mCommandLineParams =
-                        bundle.getStringArray(ChildProcessConstants.EXTRA_COMMAND_LINE);
-                mMainThread.notifyAll();
-            }
-            // We must have received the command line by now
-            assert mCommandLineParams != null;
-            Parcelable[] fdInfosAsParcelable =
-                    bundle.getParcelableArray(ChildProcessConstants.EXTRA_FILES);
-            if (fdInfosAsParcelable != null) {
-                // For why this arraycopy is necessary:
-                // http://stackoverflow.com/questions/8745893/i-dont-get-why-this-classcastexception-occurs
-                mFdInfos = new FileDescriptorInfo[fdInfosAsParcelable.length];
-                System.arraycopy(fdInfosAsParcelable, 0, mFdInfos, 0, fdInfosAsParcelable.length);
-            }
-            mDelegate.onConnectionSetup(bundle, clientInterfaces, binderBox);
+            mChildProcessArgs = args;
+            mDelegate.onConnectionSetup(args, clientInterfaces, binderBox);
             mMainThread.notifyAll();
         }
     }
@@ -447,5 +453,8 @@ public class ChildProcessService {
 
         /** Dumps the child process stack without crashing it. */
         void dumpProcessStack();
+
+        /** Calls pending background tasks, then compacts the process's memory. */
+        void onSelfFreeze();
     }
 }

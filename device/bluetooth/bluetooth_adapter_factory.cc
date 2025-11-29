@@ -43,7 +43,7 @@ bool BluetoothAdapterFactory::IsBluetoothSupported() {
   if (Get()->adapter_)
     return true;
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX) || \
-    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_OHOS)
+    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_APPLE)
   return true;
 #else
   return false;
@@ -56,7 +56,7 @@ bool BluetoothAdapterFactory::IsLowEnergySupported() {
   }
 
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX) || \
-    BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
+    BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_WIN)
   return true;
 #else
   return false;

@@ -65,12 +65,10 @@ using testing::AtLeast;
 using testing::DoAll;
 using testing::DoDefault;
 using testing::ElementsAre;
-using testing::Ge;
 using testing::IgnoreResult;
 using testing::InSequence;
 using testing::Invoke;
 using testing::InvokeWithoutArgs;
-using testing::Lt;
 using testing::Ref;
 using testing::Return;
 using testing::SaveArg;
@@ -341,18 +339,23 @@ class TestConnection : public QuicConnection {
   // split needlessly across packet boundaries).  As a result, we have separate
   // tests for some cases for this stream.
   QuicConsumedData SendCryptoStreamData() {
+    return SendCryptoStreamDataAtLevel(ENCRYPTION_INITIAL);
+  }
+
+  QuicConsumedData SendCryptoStreamDataAtLevel(
+      EncryptionLevel encryption_level) {
     QuicStreamOffset offset = 0;
     absl::string_view data("chlo");
     if (!QuicVersionUsesCryptoFrames(transport_version())) {
       return SendCryptoDataWithString(data, offset);
     }
-    producer_.SaveCryptoData(ENCRYPTION_INITIAL, offset, data);
+    producer_.SaveCryptoData(encryption_level, offset, data);
     size_t bytes_written;
     if (notifier_) {
       bytes_written =
-          notifier_->WriteCryptoData(ENCRYPTION_INITIAL, data.length(), offset);
+          notifier_->WriteCryptoData(encryption_level, data.length(), offset);
     } else {
-      bytes_written = QuicConnection::SendCryptoData(ENCRYPTION_INITIAL,
+      bytes_written = QuicConnection::SendCryptoData(encryption_level,
                                                      data.length(), offset);
     }
     return QuicConsumedData(bytes_written, /*fin_consumed*/ false);
@@ -417,6 +420,8 @@ class TestConnection : public QuicConnection {
       connection_options.push_back(kMTUH);
       config.SetInitialReceivedConnectionOptions(connection_options);
       EXPECT_CALL(*send_algorithm, SetFromConfig(_, _));
+      EXPECT_CALL(*send_algorithm, EnableECT1()).WillOnce(Return(false));
+      EXPECT_CALL(*send_algorithm, EnableECT0()).WillOnce(Return(false));
       SetFromConfig(config);
     }
 
@@ -1033,7 +1038,7 @@ class QuicConnectionTest : public QuicTestWithParam<TestParams> {
                            0 /* ttl */, true /* ttl_valid */,
                            nullptr /* packet_headers */, 0 /* headers_length */,
                            false /* owns_header_buffer */, ECN_NOT_ECT,
-                           flow_label));
+                           /*tos=*/std::nullopt, flow_label));
 
     if (connection_.GetSendAlarm()->IsSet()) {
       connection_.GetSendAlarm()->Fire();
@@ -1491,6 +1496,8 @@ class QuicConnectionTest : public QuicTestWithParam<TestParams> {
     EXPECT_EQ(kPeerAddress, connection_.effective_peer_address());
     QuicConfig config;
     EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+    EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+    EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
     connection_.SetFromConfig(config);
     connection_.set_expected_server_preferred_address(kServerPreferredAddress);
   }
@@ -1523,6 +1530,8 @@ class QuicConnectionTest : public QuicTestWithParam<TestParams> {
     QuicConfigPeer::SetPreferredAddressConnectionIdAndToken(
         &config, connection_id, reset_token);
     EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+    EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+    EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
     connection_.SetFromConfig(config);
 
     ASSERT_TRUE(
@@ -1593,12 +1602,6 @@ INSTANTIATE_TEST_SUITE_P(QuicConnectionTests, QuicConnectionTest,
 
 // Regression test for b/372756997.
 TEST_P(QuicConnectionTest, NoNestedCloseConnection) {
-  if (!GetQuicReloadableFlag(quic_avoid_nested_close_connection)) {
-    // EXPECT_QUIC_BUG tests are expensive so only run one instance of them.
-    if (!IsDefaultTestConfiguration()) {
-      return;
-    }
-  }
   EXPECT_TRUE(connection_.connected());
   EXPECT_CALL(visitor_, OnConnectionClosed(_, ConnectionCloseSource::FROM_SELF))
       .WillRepeatedly(
@@ -1610,20 +1613,11 @@ TEST_P(QuicConnectionTest, NoNestedCloseConnection) {
   writer_->SetShouldWriteFail();
   writer_->SetWriteError(*writer_->MessageTooBigErrorCode());
 
-  if (GetQuicReloadableFlag(quic_avoid_nested_close_connection)) {
-    connection_.CloseConnection(
-        QUIC_CRYPTO_TOO_MANY_ENTRIES, "Closed by test",
-        ConnectionCloseBehavior::SEND_CONNECTION_CLOSE_PACKET);
-    EXPECT_THAT(saved_connection_close_frame_.quic_error_code,
-                IsError(QUIC_CRYPTO_TOO_MANY_ENTRIES));
-  } else {
-    EXPECT_QUIC_BUG(
-        connection_.CloseConnection(
-            QUIC_CRYPTO_TOO_MANY_ENTRIES, "Closed by test",
-            ConnectionCloseBehavior::SEND_CONNECTION_CLOSE_PACKET),
-        // 30=QUIC_CRYPTO_TOO_MANY_ENTRIES, 27=QUIC_PACKET_WRITE_ERROR.
-        "Initial error code: 30, new error code: 27");
-  }
+  connection_.CloseConnection(
+      QUIC_CRYPTO_TOO_MANY_ENTRIES, "Closed by test",
+      ConnectionCloseBehavior::SEND_CONNECTION_CLOSE_PACKET);
+  EXPECT_THAT(saved_connection_close_frame_.quic_error_code,
+              IsError(QUIC_CRYPTO_TOO_MANY_ENTRIES));
 }
 
 // These two tests ensure that the QuicErrorCode mapping works correctly.
@@ -1871,6 +1865,8 @@ TEST_P(QuicConnectionTest, PeerIpAddressChangeAtServer) {
   QuicConfigPeer::SetReceivedInitialSourceConnectionId(&config,
                                                        QuicConnectionId());
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
 
   // Clear direct_peer_address.
@@ -3182,6 +3178,8 @@ TEST_P(QuicConnectionTest,
   QuicConfigPeer::SetPreferredAddressConnectionIdAndToken(
       &config, connection_id, reset_token);
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
   EXPECT_EQ(kPeerAddress, connection_.peer_address());
   EXPECT_EQ(kPeerAddress, connection_.effective_peer_address());
@@ -3207,6 +3205,8 @@ TEST_P(QuicConnectionTest, PeerLowersMaxPacketSize) {
 
   // SetFromConfig is always called after construction from InitializeSession.
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   constexpr uint32_t kTestMaxPacketSize = 1233u;
   QuicConfig config;
   QuicConfigPeer::SetReceivedMaxPacketSize(&config, kTestMaxPacketSize);
@@ -3220,6 +3220,8 @@ TEST_P(QuicConnectionTest, PeerCannotRaiseMaxPacketSize) {
 
   // SetFromConfig is always called after construction from InitializeSession.
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   constexpr uint32_t kTestMaxPacketSize = 1450u;
   QuicConfig config;
   QuicConfigPeer::SetReceivedMaxPacketSize(&config, kTestMaxPacketSize);
@@ -3582,7 +3584,7 @@ TEST_P(QuicConnectionTest, AckFrequencyUpdatedFromAckFrequencyFrame) {
   if (!GetParam().version.HasIetfQuicFrames()) {
     return;
   }
-  connection_.set_can_receive_ack_frequency_frame();
+  connection_.set_can_receive_ack_frequency_immediate_ack(true);
 
   // Expect 13 acks, every 3rd packet including the first packet with
   // AckFrequencyFrame.
@@ -3679,6 +3681,8 @@ TEST_P(QuicConnectionTest, AckNeedsRetransmittableFrames) {
 
 TEST_P(QuicConnectionTest, AckNeedsRetransmittableFramesAfterPto) {
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   QuicTagVector connection_options;
   connection_options.push_back(kEACK);
@@ -3993,7 +3997,7 @@ TEST_P(QuicConnectionTest, FramePackingCryptoThenNonCrypto) {
     connection_.SetDefaultEncryptionLevel(ENCRYPTION_FORWARD_SECURE);
     EXPECT_CALL(*send_algorithm_, OnPacketSent(_, _, _, _, _)).Times(2);
     QuicConnection::ScopedPacketFlusher flusher(&connection_);
-    connection_.SendCryptoStreamData();
+    connection_.SendCryptoStreamDataAtLevel(ENCRYPTION_FORWARD_SECURE);
     connection_.SendStreamData3();
   }
   EXPECT_EQ(0u, connection_.NumQueuedPackets());
@@ -4865,6 +4869,8 @@ TEST_P(QuicConnectionTest, BufferNonDecryptablePackets) {
   }
   // SetFromConfig is always called after construction from InitializeSession.
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   connection_.SetFromConfig(config);
   EXPECT_CALL(visitor_, OnSuccessfulVersionNegotiation(_));
@@ -4904,6 +4910,8 @@ TEST_P(QuicConnectionTest, Buffer100NonDecryptablePacketsThenKeyChange) {
   }
   // SetFromConfig is always called after construction from InitializeSession.
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   config.set_max_undecryptable_packets(100);
   connection_.SetFromConfig(config);
@@ -4975,6 +4983,8 @@ TEST_P(QuicConnectionTest, InitialTimeout) {
 
   // SetFromConfig sets the initial timeouts before negotiation.
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   connection_.SetFromConfig(config);
   // Subtract a second from the idle timeout on the client side.
@@ -5007,6 +5017,8 @@ TEST_P(QuicConnectionTest, IdleTimeoutAfterFirstSentPacket) {
   EXPECT_FALSE(connection_.GetTimeoutAlarm()->IsSet());
 
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   connection_.SetFromConfig(config);
   EXPECT_TRUE(connection_.GetTimeoutAlarm()->IsSet());
@@ -5058,6 +5070,8 @@ TEST_P(QuicConnectionTest, IdleTimeoutAfterSendTwoPackets) {
   EXPECT_FALSE(connection_.GetTimeoutAlarm()->IsSet());
 
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   connection_.SetFromConfig(config);
   EXPECT_TRUE(connection_.GetTimeoutAlarm()->IsSet());
@@ -5868,6 +5882,8 @@ TEST_P(QuicConnectionTest, NoMtuDiscoveryAfterConnectionClosed) {
 TEST_P(QuicConnectionTest, TimeoutAfterSendDuringHandshake) {
   EXPECT_TRUE(connection_.connected());
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   connection_.SetFromConfig(config);
 
@@ -5920,6 +5936,8 @@ TEST_P(QuicConnectionTest, TimeoutAfterSendAfterHandshake) {
   // connection close packets.
   EXPECT_TRUE(connection_.connected());
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
 
   // Create a handshake message that also enables silent close.
@@ -5999,6 +6017,8 @@ TEST_P(QuicConnectionTest, TimeoutAfterSendSilentCloseWithOpenStreams) {
   // to be sent.
   EXPECT_TRUE(connection_.connected());
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
 
   // Create a handshake message that also enables silent close.
@@ -6061,6 +6081,8 @@ TEST_P(QuicConnectionTest, TimeoutAfterReceive) {
   EXPECT_CALL(visitor_, OnSuccessfulVersionNegotiation(_));
   EXPECT_TRUE(connection_.connected());
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   connection_.SetFromConfig(config);
 
@@ -6110,6 +6132,8 @@ TEST_P(QuicConnectionTest, TimeoutAfterReceiveNotSendWhenUnacked) {
   EXPECT_CALL(visitor_, OnSuccessfulVersionNegotiation(_));
   EXPECT_TRUE(connection_.connected());
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   connection_.SetFromConfig(config);
 
@@ -6237,6 +6261,8 @@ TEST_P(QuicConnectionTest, LoopThroughSendingPacketsWithTruncation) {
   // Set up a larger payload than will fit in one packet.
   const std::string payload(connection_.max_packet_length(), 'a');
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _)).Times(AnyNumber());
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillRepeatedly(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillRepeatedly(Return(false));
 
   // Now send some packets with no truncation.
   EXPECT_CALL(*send_algorithm_, OnPacketSent(_, _, _, _, _)).Times(2);
@@ -6347,6 +6373,8 @@ TEST_P(QuicConnectionTest, SendDelayedAckDecimation) {
 TEST_P(QuicConnectionTest, SendDelayedAckDecimationUnlimitedAggregation) {
   EXPECT_CALL(visitor_, OnAckNeedsRetransmittableFrame()).Times(AnyNumber());
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   QuicTagVector connection_options;
   // No limit on the number of packets received before sending an ack.
@@ -6840,6 +6868,8 @@ TEST_P(QuicConnectionTest, IetfStatelessReset) {
   QuicConfigPeer::SetReceivedStatelessResetToken(&config,
                                                  kTestStatelessResetToken);
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
   std::unique_ptr<QuicEncryptedPacket> packet(
       QuicFramer::BuildIetfStatelessResetPacket(connection_id_,
@@ -6928,6 +6958,8 @@ TEST_P(QuicConnectionTest, ClientHandlesVersionNegotiation) {
 
 TEST_P(QuicConnectionTest, ClientHandlesVersionNegotiationWithConnectionClose) {
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   QuicTagVector connection_options;
   connection_options.push_back(kINVC);
@@ -7102,6 +7134,25 @@ TEST_P(QuicConnectionTest, OnPacketHeaderDebugVisitor) {
   connection_.OnPacketHeader(header);
 }
 
+TEST_P(QuicConnectionTest, OnPacketHeaderReturnValue) {
+  QuicPacketHeader header;
+  header.packet_number = QuicPacketNumber(1);
+  header.form = IETF_QUIC_LONG_HEADER_PACKET;
+  EXPECT_TRUE(connection_.OnPacketHeader(header));
+
+  EXPECT_CALL(visitor_, OnConnectionClosed(_, _)).Times(1);
+  connection_.CloseConnection(QUIC_NO_ERROR, "Closed by test",
+                              ConnectionCloseBehavior::SILENT_CLOSE);
+
+  header.packet_number = QuicPacketNumber(2);
+  if (!GetQuicReloadableFlag(quic_on_packet_header_return_connected)) {
+    EXPECT_QUICHE_DEBUG_DEATH(connection_.OnPacketHeader(header), ".*");
+    return;
+  }
+
+  EXPECT_FALSE(connection_.OnPacketHeader(header));
+}
+
 TEST_P(QuicConnectionTest, Pacing) {
   TestConnection server(connection_id_, kPeerAddress, kSelfAddress,
                         helper_.get(), alarm_factory_.get(), writer_.get(),
@@ -7149,6 +7200,8 @@ TEST_P(QuicConnectionTest, BlockedFrameInstigateAcks) {
 TEST_P(QuicConnectionTest, ReevaluateTimeUntilSendOnAck) {
   // Enable pacing.
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   connection_.SetFromConfig(config);
 
@@ -7442,6 +7495,8 @@ TEST_P(QuicConnectionTest, ServerRetransmittableOnWire) {
   SetQuicReloadableFlag(quic_enable_server_on_wire_ping, true);
 
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   QuicTagVector connection_options;
   connection_options.push_back(kSRWP);
@@ -7491,6 +7546,8 @@ TEST_P(QuicConnectionTest, RetransmittableOnWireSendFirstPacket) {
       kRetransmittableOnWireTimeout);
 
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   QuicTagVector connection_options;
   connection_options.push_back(kROWF);
@@ -7536,6 +7593,8 @@ TEST_P(QuicConnectionTest, RetransmittableOnWireSendRandomBytes) {
       kRetransmittableOnWireTimeout);
 
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   QuicTagVector connection_options;
   connection_options.push_back(kROWR);
@@ -7585,6 +7644,8 @@ TEST_P(QuicConnectionTest,
       kRetransmittableOnWireTimeout);
 
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   QuicTagVector connection_options;
   connection_options.push_back(kROWR);
@@ -8108,6 +8169,8 @@ TEST_P(QuicConnectionTest, ClientAlwaysSendConnectionId) {
             writer_->last_packet_header().destination_connection_id_included);
 
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   QuicConfigPeer::SetReceivedBytesForConnectionId(&config, 0);
   connection_.SetFromConfig(config);
@@ -8565,6 +8628,8 @@ TEST_P(QuicConnectionTest, ValidStatelessResetToken) {
   EXPECT_FALSE(connection_.IsValidStatelessResetToken(kTestToken));
 
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _)).Times(2);
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillRepeatedly(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillRepeatedly(Return(false));
   // Token is different from received token.
   QuicConfigPeer::SetReceivedStatelessResetToken(&config, kTestToken);
   connection_.SetFromConfig(config);
@@ -8594,6 +8659,8 @@ TEST_P(QuicConnectionTest, SendMessage) {
     QuicConfigPeer::SetReceivedMaxDatagramFrameSize(
         &config, kMaxAcceptedDatagramFrameSize);
     EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+    EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+    EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
     connection_.SetFromConfig(config);
   }
   std::string message(connection_.GetCurrentLargestMessagePayload() * 2, 'a');
@@ -8642,6 +8709,8 @@ TEST_P(QuicConnectionTest, GetCurrentLargestMessagePayload) {
     QuicConfigPeer::SetReceivedMaxDatagramFrameSize(
         &config, kMaxAcceptedDatagramFrameSize);
     EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+    EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+    EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
     connection_.SetFromConfig(config);
     // Verify the value post-handshake.
     EXPECT_EQ(connection_.GetCurrentLargestMessagePayload(),
@@ -8667,6 +8736,8 @@ TEST_P(QuicConnectionTest, GetGuaranteedLargestMessagePayload) {
     QuicConfigPeer::SetReceivedMaxDatagramFrameSize(
         &config, kMaxAcceptedDatagramFrameSize);
     EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+    EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+    EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
     connection_.SetFromConfig(config);
     // Verify the value post-handshake.
     EXPECT_EQ(connection_.GetGuaranteedLargestMessagePayload(),
@@ -8690,6 +8761,8 @@ TEST_P(QuicConnectionTest, LimitedLargestMessagePayload) {
   QuicConfig config;
   QuicConfigPeer::SetReceivedMaxDatagramFrameSize(&config, kFrameSizeLimit);
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
   // Verify the value post-handshake.
   EXPECT_EQ(connection_.GetCurrentLargestMessagePayload(), kPayloadSizeLimit);
@@ -8956,6 +9029,8 @@ TEST_P(QuicConnectionTest, DisablePacingOffloadConnectionOptions) {
   writer_->set_supports_release_time(true);
   QuicConfig config;
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
   EXPECT_TRUE(QuicConnectionPeer::SupportsReleaseTime(&connection_));
 
@@ -8963,6 +9038,8 @@ TEST_P(QuicConnectionTest, DisablePacingOffloadConnectionOptions) {
   connection_options.push_back(kNPCO);
   config.SetConnectionOptionsToSend(connection_options);
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
   // Verify pacing offload is disabled.
   EXPECT_FALSE(QuicConnectionPeer::SupportsReleaseTime(&connection_));
@@ -9516,6 +9593,8 @@ TEST_P(QuicConnectionTest, ProbeTimeout) {
   connection_options.push_back(k2PTO);
   config.SetConnectionOptionsToSend(connection_options);
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
   EXPECT_FALSE(connection_.GetRetransmissionAlarm()->IsSet());
 
@@ -9551,6 +9630,8 @@ TEST_P(QuicConnectionTest, CloseConnectionAfter6ClientPTOs) {
         &config, connection_.connection_id());
   }
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
   if (GetQuicReloadableFlag(quic_default_enable_5rto_blackhole_detection2) ||
       GetQuicReloadableFlag(
@@ -9603,6 +9684,8 @@ TEST_P(QuicConnectionTest, CloseConnectionAfter7ClientPTOs) {
         &config, connection_.connection_id());
   }
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
   if (GetQuicReloadableFlag(quic_default_enable_5rto_blackhole_detection2) ||
       GetQuicReloadableFlag(
@@ -9654,6 +9737,8 @@ TEST_P(QuicConnectionTest, CloseConnectionAfter8ClientPTOs) {
   }
   config.SetConnectionOptionsToSend(connection_options);
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
   if (GetQuicReloadableFlag(quic_default_enable_5rto_blackhole_detection2) ||
       GetQuicReloadableFlag(
@@ -9802,6 +9887,8 @@ TEST_P(QuicConnectionTest, 3AntiAmplificationLimit) {
                                                          QuicConnectionId());
   }
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
 
   // Verify no data can be sent at the beginning because bytes received is 0.
@@ -9874,6 +9961,8 @@ TEST_P(QuicConnectionTest, 10AntiAmplificationLimit) {
                                                          QuicConnectionId());
   }
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
 
   // Verify no data can be sent at the beginning because bytes received is 0.
@@ -9999,6 +10088,8 @@ TEST_P(QuicConnectionTest, PtoSkipsPacketNumber) {
   connection_options.push_back(kPTOS);
   config.SetConnectionOptionsToSend(connection_options);
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
   EXPECT_FALSE(connection_.GetRetransmissionAlarm()->IsSet());
 
@@ -10024,6 +10115,8 @@ TEST_P(QuicConnectionTest, PtoChangesFlowLabel) {
   connection_options.push_back(kPTOS);
   config.SetConnectionOptionsToSend(connection_options);
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
   EXPECT_FALSE(connection_.GetRetransmissionAlarm()->IsSet());
   EXPECT_EQ(0, connection_.outgoing_flow_label());
@@ -10060,6 +10153,8 @@ TEST_P(QuicConnectionTest, NewReceiveNewFlowLabelWithGapChangesFlowLabel) {
   connection_options.push_back(kPTOS);
   config.SetConnectionOptionsToSend(connection_options);
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
   EXPECT_EQ(0, connection_.outgoing_flow_label());
   connection_.EnableBlackholeAvoidanceViaFlowLabel();
@@ -10092,6 +10187,8 @@ TEST_P(QuicConnectionTest,
   connection_options.push_back(kPTOS);
   config.SetConnectionOptionsToSend(connection_options);
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
   EXPECT_EQ(0, connection_.outgoing_flow_label());
   connection_.EnableBlackholeAvoidanceViaFlowLabel();
@@ -10148,7 +10245,7 @@ TEST_P(QuicConnectionTest, SendCoalescedPackets) {
   EXPECT_EQ(connection_.max_packet_length(), writer_->last_packet_size());
 
   // Verify packet process.
-  EXPECT_EQ(1u, writer_->crypto_frames().size());
+  EXPECT_LE(1u, writer_->crypto_frames().size());
   EXPECT_EQ(0u, writer_->stream_frames().size());
   // Verify there is coalesced packet.
   EXPECT_NE(nullptr, writer_->coalesced_packet());
@@ -10448,6 +10545,8 @@ void QuicConnectionTest::TestClientRetryHandling(
         .Times(0);
   }
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _)).Times(AnyNumber());
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillRepeatedly(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillRepeatedly(Return(false));
   connection_.SetFromConfig(received_config);
   if (missing_original_id_in_config || wrong_original_id_in_config ||
       missing_retry_id_in_config || wrong_retry_id_in_config) {
@@ -10478,6 +10577,8 @@ TEST_P(QuicConnectionTest, FixTimeoutsClient) {
       &config, connection_.connection_id());
 
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _)).Times(1);
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
   QuicIdleNetworkDetector& idle_network_detector =
       QuicConnectionPeer::GetIdleNetworkDetector(&connection_);
@@ -10513,6 +10614,8 @@ TEST_P(QuicConnectionTest, FixTimeoutsServer) {
                                                        QuicConnectionId());
 
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _)).Times(1);
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
   QuicIdleNetworkDetector& idle_network_detector =
       QuicConnectionPeer::GetIdleNetworkDetector(&connection_);
@@ -10605,7 +10708,7 @@ TEST_P(QuicConnectionTest, ClientRetransmitsInitialPacketsOnRetry) {
   // RETRY.
   if (GetParam().ack_response == AckResponse::kImmediate) {
     EXPECT_EQ(2u, writer_->packets_write_attempts());
-    EXPECT_EQ(1u, writer_->framer()->crypto_frames().size());
+    EXPECT_LE(1u, writer_->framer()->crypto_frames().size());
   }
 }
 
@@ -10644,6 +10747,8 @@ TEST_P(QuicConnectionTest, ClientReceivesOriginalConnectionIdWithoutRetry) {
   QuicConfigPeer::SetReceivedOriginalConnectionId(&received_config,
                                                   TestConnectionId(0x12345));
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _)).Times(AnyNumber());
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillRepeatedly(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillRepeatedly(Return(false));
   EXPECT_CALL(visitor_, OnConnectionClosed(_, ConnectionCloseSource::FROM_SELF))
       .Times(1);
   connection_.SetFromConfig(received_config);
@@ -10664,6 +10769,8 @@ TEST_P(QuicConnectionTest, ClientReceivesRetrySourceConnectionIdWithoutRetry) {
   QuicConfigPeer::SetReceivedRetrySourceConnectionId(&received_config,
                                                      TestConnectionId(0x12345));
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _)).Times(AnyNumber());
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillRepeatedly(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillRepeatedly(Return(false));
   EXPECT_CALL(visitor_, OnConnectionClosed(_, ConnectionCloseSource::FROM_SELF))
       .Times(1);
   connection_.SetFromConfig(received_config);
@@ -10775,6 +10882,8 @@ TEST_P(QuicConnectionTest, SendPingWhenSkipPacketNumberForPto) {
         &config, kMaxAcceptedDatagramFrameSize);
   }
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
   connection_.OnHandshakeComplete();
   EXPECT_FALSE(connection_.GetRetransmissionAlarm()->IsSet());
@@ -10834,6 +10943,8 @@ TEST_P(QuicConnectionTest, DonotChangeQueuedAcks) {
 
 TEST_P(QuicConnectionTest, DoNotExtendIdleTimeOnUndecryptablePackets) {
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   connection_.SetFromConfig(config);
   // Subtract a second from the idle timeout on the client side.
@@ -10915,6 +11026,8 @@ TEST_P(QuicConnectionTest, ClientOnlyBlackholeDetectionClient) {
   connection_options.push_back(kCBHD);
   config.SetConnectionOptionsToSend(connection_options);
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
   EXPECT_CALL(visitor_, GetHandshakeState())
       .WillRepeatedly(Return(HANDSHAKE_CONFIRMED));
@@ -10942,6 +11055,8 @@ TEST_P(QuicConnectionTest, ClientOnlyBlackholeDetectionServer) {
   connection_options.push_back(kCBHD);
   config.SetInitialReceivedConnectionOptions(connection_options);
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
   EXPECT_CALL(visitor_, GetHandshakeState())
       .WillRepeatedly(Return(HANDSHAKE_COMPLETE));
@@ -10983,6 +11098,8 @@ TEST_P(QuicConnectionTest, MadeForwardProgressOnDiscardingKeys) {
         &config, connection_.connection_id());
   }
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
 
   connection_.SendCryptoDataWithString("foo", 0, ENCRYPTION_HANDSHAKE);
@@ -11016,6 +11133,8 @@ TEST_P(QuicConnectionTest, ProcessUndecryptablePacketsBasedOnEncryptionLevel) {
   // SetFromConfig is always called after construction from InitializeSession.
   EXPECT_CALL(visitor_, OnSuccessfulVersionNegotiation(_));
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   EXPECT_CALL(visitor_, OnHandshakePacketSent()).Times(AnyNumber());
   QuicConfig config;
   connection_.SetFromConfig(config);
@@ -11337,6 +11456,8 @@ TEST_P(QuicConnectionTest, ClientAckDelayForAsyncPacketProcessing) {
   // SetFromConfig is always called after construction from InitializeSession.
   EXPECT_CALL(visitor_, OnSuccessfulVersionNegotiation(_));
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   EXPECT_CALL(visitor_, OnHandshakePacketSent()).WillOnce(Invoke([this]() {
     connection_.RemoveEncrypter(ENCRYPTION_INITIAL);
     connection_.NeuterUnencryptedPackets();
@@ -11381,6 +11502,8 @@ TEST_P(QuicConnectionTest, TestingLiveness) {
   rtt_stats->UpdateRtt(QuicTime::Delta::FromMilliseconds(kMinRttMs),
                        QuicTime::Delta::Zero(), QuicTime::Zero());
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
 
   CryptoHandshakeMessage msg;
@@ -11425,6 +11548,8 @@ TEST_P(QuicConnectionTest, DisableLivenessTesting) {
   rtt_stats->UpdateRtt(QuicTime::Delta::FromMilliseconds(kMinRttMs),
                        QuicTime::Delta::Zero(), QuicTime::Zero());
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
 
   CryptoHandshakeMessage msg;
@@ -11478,6 +11603,8 @@ TEST_P(QuicConnectionTest, SilentIdleTimeout) {
                                                          QuicConnectionId());
   }
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
 
   EXPECT_TRUE(connection_.connected());
@@ -11615,6 +11742,8 @@ TEST_P(QuicConnectionTest, ShorterIdleTimeoutOnSentPackets) {
                        QuicTime::Delta::Zero(), QuicTime::Zero());
 
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   config.SetClientConnectionOptions(QuicTagVector{kFIDT});
   QuicConfigPeer::SetNegotiated(&config, true);
@@ -11865,6 +11994,8 @@ TEST_P(QuicConnectionTest, PathValidationReceivesStatelessReset) {
   QuicConfigPeer::SetReceivedStatelessResetToken(&config,
                                                  kTestStatelessResetToken);
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
   const QuicSocketAddress kNewSelfAddress(QuicIpAddress::Any4(), 12345);
   EXPECT_NE(kNewSelfAddress, connection_.self_address());
@@ -12580,6 +12711,8 @@ TEST_P(QuicConnectionTest, InitiateKeyUpdate) {
         &config, connection_.connection_id());
   }
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
 
   EXPECT_FALSE(connection_.IsKeyUpdateAllowed());
@@ -12753,6 +12886,8 @@ TEST_P(QuicConnectionTest, InitiateKeyUpdateApproachingConfidentialityLimit) {
         &config, connection_.connection_id());
   }
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
 
   MockFramerVisitor peer_framer_visitor_;
@@ -12847,6 +12982,8 @@ TEST_P(QuicConnectionTest,
         &config, connection_.connection_id());
   }
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
 
   connection_.SetDefaultEncryptionLevel(ENCRYPTION_FORWARD_SECURE);
@@ -13040,6 +13177,8 @@ TEST_P(QuicConnectionTest, CloseConnectionOnIntegrityLimitAcrossKeyPhases) {
         &config, connection_.connection_id());
   }
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
 
   MockFramerVisitor peer_framer_visitor_;
@@ -13138,6 +13277,8 @@ TEST_P(QuicConnectionTest, SendAckFrequencyFrame) {
   QuicConfig config;
   QuicConfigPeer::SetReceivedMinAckDelayMs(&config, /*min_ack_delay_ms=*/1);
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
   QuicConnectionPeer::SetAddressValidated(&connection_);
   connection_.SetDefaultEncryptionLevel(ENCRYPTION_FORWARD_SECURE);
@@ -13183,6 +13324,8 @@ TEST_P(QuicConnectionTest, SendAckFrequencyFrameUponHandshakeCompletion) {
   quic_tag_vector.push_back(kAFF2);
   QuicConfigPeer::SetReceivedConnectionOptions(&config, quic_tag_vector);
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
   QuicConnectionPeer::SetAddressValidated(&connection_);
   connection_.SetDefaultEncryptionLevel(ENCRYPTION_FORWARD_SECURE);
@@ -13206,6 +13349,8 @@ TEST_P(QuicConnectionTest, FastRecoveryOfLostServerHello) {
     return;
   }
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   connection_.SetFromConfig(config);
 
@@ -13228,6 +13373,8 @@ TEST_P(QuicConnectionTest, ServerHelloGetsReordered) {
     return;
   }
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   connection_.SetFromConfig(config);
   EXPECT_CALL(visitor_, OnCryptoFrame(_))
@@ -13336,6 +13483,8 @@ TEST_P(QuicConnectionTest, MultiPortConnection) {
   QuicConfig config;
   config.SetClientConnectionOptions(QuicTagVector{kMPQC});
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
   if (!version().HasIetfQuicFrames()) {
     return;
@@ -13487,6 +13636,8 @@ TEST_P(QuicConnectionTest, TooManyMultiPortPathCreations) {
   QuicConfig config;
   config.SetClientConnectionOptions(QuicTagVector{kMPQC});
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
   if (!version().HasIetfQuicFrames()) {
     return;
@@ -13604,6 +13755,8 @@ TEST_P(QuicConnectionTest, MultiPortPathReceivesStatelessReset) {
                                                  kTestStatelessResetToken);
   config.SetClientConnectionOptions(QuicTagVector{kMPQC});
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
   if (!version().HasIetfQuicFrames()) {
     return;
@@ -13670,6 +13823,8 @@ TEST_P(QuicConnectionTest, MultiPortPathRespectsActiveMigrationConfig) {
   QuicConfigPeer::SetReceivedDisableConnectionMigration(&config);
   config.SetClientConnectionOptions(QuicTagVector{kMPQC});
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
   connection_.CreateConnectionIdManager();
   connection_.SetDefaultEncryptionLevel(ENCRYPTION_FORWARD_SECURE);
@@ -13697,6 +13852,8 @@ TEST_P(QuicConnectionTest, PathDegradingWhenAltPathIsNotReady) {
   QuicConfig config;
   config.SetClientConnectionOptions(QuicTagVector{kMPQC});
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
   if (!version().HasIetfQuicFrames()) {
     return;
@@ -13767,6 +13924,8 @@ TEST_P(QuicConnectionTest, PathDegradingWhenAltPathIsReadyAndNotProbing) {
   QuicConfig config;
   config.SetClientConnectionOptions(QuicTagVector{kMPQC, kMPQM});
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
   if (!version().HasIetfQuicFrames()) {
     return;
@@ -13845,6 +14004,8 @@ TEST_P(QuicConnectionTest, PathDegradingWhenAltPathIsReadyAndProbing) {
   QuicConfig config;
   config.SetClientConnectionOptions(QuicTagVector{kMPQC, kMPQM});
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
   if (!version().HasIetfQuicFrames()) {
     return;
@@ -14082,6 +14243,8 @@ TEST_P(QuicConnectionTest,
   QuicConfigPeer::SetReceivedInitialSourceConnectionId(
       &config, connection_.connection_id());
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
 
   set_perspective(Perspective::IS_SERVER);
@@ -14167,6 +14330,8 @@ TEST_P(QuicConnectionTest, TryToFlushAckWithAckQueued) {
   QuicConfig config;
   QuicConfigPeer::SetReceivedMinAckDelayMs(&config, /*min_ack_delay_ms=*/1);
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   connection_.SetFromConfig(config);
   connection_.SetDefaultEncryptionLevel(ENCRYPTION_FORWARD_SECURE);
   connection_.OnHandshakeComplete();
@@ -15490,6 +15655,8 @@ TEST_P(QuicConnectionTest, QueueingUndecryptablePacketsDoesntPostponePTO) {
     return;
   }
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   config.set_max_undecryptable_packets(3);
   connection_.SetFromConfig(config);
@@ -15540,6 +15707,8 @@ TEST_P(QuicConnectionTest, QueueUndecryptableHandshakePackets) {
     return;
   }
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   config.set_max_undecryptable_packets(3);
   connection_.SetFromConfig(config);
@@ -15600,6 +15769,8 @@ TEST_P(QuicConnectionTest, AckElicitingFrames) {
     return;
   }
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   config.SetReliableStreamReset(true);
   connection_.SetFromConfig(config);
@@ -15628,7 +15799,7 @@ TEST_P(QuicConnectionTest, AckElicitingFrames) {
   connection_.CreateConnectionIdManager();
   QuicConnectionPeer::GetSelfIssuedConnectionIdManager(&connection_)
       ->MaybeSendNewConnectionIds();
-  connection_.set_can_receive_ack_frequency_frame();
+  connection_.set_can_receive_ack_frequency_immediate_ack(true);
 
   QuicAckFrame ack_frame = InitAckFrame(1);
   QuicRstStreamFrame rst_stream_frame;
@@ -15734,6 +15905,9 @@ TEST_P(QuicConnectionTest, AckElicitingFrames) {
       case ACK_FREQUENCY_FRAME:
         frame = QuicFrame(&ack_frequency_frame);
         break;
+      case IMMEDIATE_ACK_FRAME:
+        frame = QuicFrame(QuicImmediateAckFrame());
+        break;
       case RESET_STREAM_AT_FRAME:
         frame = QuicFrame(&reset_stream_at_frame);
         break;
@@ -15751,14 +15925,35 @@ TEST_P(QuicConnectionTest, AckElicitingFrames) {
     ProcessFramesPacketAtLevel(packet_number++, frames,
                                ENCRYPTION_FORWARD_SECURE);
     if (QuicUtils::IsAckElicitingFrame(frame_type)) {
-      ASSERT_TRUE(connection_.HasPendingAcks()) << frame;
-      // Flush ACK.
-      clock_.AdvanceTime(DefaultDelayedAckTime());
-      connection_.GetAckAlarm()->Fire();
+      if (frame_type != IMMEDIATE_ACK_FRAME) {
+        ASSERT_TRUE(connection_.HasPendingAcks()) << frame;
+        // Flush ACK.
+        clock_.AdvanceTime(DefaultDelayedAckTime());
+        connection_.GetAckAlarm()->Fire();
+      }
+      EXPECT_FALSE(writer_->ack_frames().empty());
+      writer_->framer()->Reset();  // Clear the visitor.
     }
     EXPECT_FALSE(connection_.HasPendingAcks());
     ASSERT_TRUE(connection_.connected());
   }
+}
+
+TEST_P(QuicConnectionTest, ImmediateAckOverridesOtherFrame) {
+  if (!version().HasIetfQuicFrames()) {
+    return;
+  }
+  QuicFrames frames;
+  connection_.SetDefaultEncryptionLevel(ENCRYPTION_FORWARD_SECURE);
+  connection_.set_can_receive_ack_frequency_immediate_ack(true);
+  // A PING frame will set the ack timer. IMMEDIATE_ACK should override it to
+  // send an ACK immediately.
+  frames.push_back(QuicFrame(QuicPingFrame()));
+  frames.push_back(QuicFrame(QuicImmediateAckFrame()));
+  writer_->framer()->Reset();  // Clear the visitor.
+  EXPECT_TRUE(writer_->ack_frames().empty());
+  ProcessFramesPacketAtLevel(1, frames, ENCRYPTION_FORWARD_SECURE);
+  EXPECT_FALSE(writer_->ack_frames().empty());
 }
 
 TEST_P(QuicConnectionTest, ReceivedChloAndAck) {
@@ -15947,6 +16142,8 @@ TEST_P(QuicConnectionTest,
     return;
   }
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   config.set_max_undecryptable_packets(3);
   connection_.SetFromConfig(config);
@@ -16109,6 +16306,8 @@ TEST_P(QuicConnectionTest, ReportedAckDelayIncludesQueuingDelay) {
     return;
   }
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   config.set_max_undecryptable_packets(3);
   connection_.SetFromConfig(config);
@@ -16462,6 +16661,8 @@ TEST_P(QuicConnectionTest, ServerConnectionIdChangeWithLateInitial) {
   // Call SetFromConfig so that the undecrypted packet buffer size is
   // initialized above zero.
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _)).Times(1);
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   connection_.SetFromConfig(config);
   connection_.RemoveEncrypter(ENCRYPTION_FORWARD_SECURE);
@@ -16506,6 +16707,8 @@ TEST_P(QuicConnectionTest, ServerConnectionIdChangeTwiceWithLateInitial) {
   // Call SetFromConfig so that the undecrypted packet buffer size is
   // initialized above zero.
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _)).Times(1);
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   connection_.SetFromConfig(config);
 
@@ -17277,6 +17480,8 @@ TEST_P(QuicConnectionTest, EcnMarksUndecryptableCoalescedPacket) {
   }
   // SetFromConfig is always called after construction from InitializeSession.
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   config.set_max_undecryptable_packets(100);
   connection_.SetFromConfig(config);
@@ -17536,7 +17741,6 @@ TEST_P(QuicConnectionTest,
 }
 
 TEST_P(QuicConnectionTest, EcnCodepointsRejected) {
-  SetQuicRestartFlag(quic_support_ect1, true);
   for (QuicEcnCodepoint ecn : {ECN_NOT_ECT, ECN_ECT0, ECN_ECT1, ECN_CE}) {
     if (ecn == ECN_ECT0) {
       EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
@@ -17556,7 +17760,6 @@ TEST_P(QuicConnectionTest, EcnCodepointsRejected) {
 }
 
 TEST_P(QuicConnectionTest, EcnCodepointsAccepted) {
-  SetQuicRestartFlag(quic_support_ect1, true);
   for (QuicEcnCodepoint ecn : {ECN_NOT_ECT, ECN_ECT0, ECN_ECT1, ECN_CE}) {
     if (ecn == ECN_ECT0) {
       EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(true));
@@ -17579,19 +17782,7 @@ TEST_P(QuicConnectionTest, EcnCodepointsAccepted) {
   }
 }
 
-TEST_P(QuicConnectionTest, EcnCodepointsRejectedIfFlagIsFalse) {
-  SetQuicRestartFlag(quic_support_ect1, false);
-  for (QuicEcnCodepoint ecn : {ECN_NOT_ECT, ECN_ECT0, ECN_ECT1, ECN_CE}) {
-    EXPECT_FALSE(connection_.set_ecn_codepoint(ecn));
-    EXPECT_CALL(connection_, OnSerializedPacket(_));
-    SendPing();
-    EXPECT_EQ(connection_.ecn_codepoint(), ECN_NOT_ECT);
-    EXPECT_EQ(writer_->last_ecn_sent(), ECN_NOT_ECT);
-  }
-}
-
 TEST_P(QuicConnectionTest, EcnValidationDisabled) {
-  SetQuicRestartFlag(quic_support_ect1, true);
   QuicConnectionPeer::DisableEcnCodepointValidation(&connection_);
   for (QuicEcnCodepoint ecn : {ECN_NOT_ECT, ECN_ECT0, ECN_ECT1, ECN_CE}) {
     EXPECT_TRUE(connection_.set_ecn_codepoint(ecn));
@@ -17603,7 +17794,6 @@ TEST_P(QuicConnectionTest, EcnValidationDisabled) {
 }
 
 TEST_P(QuicConnectionTest, RtoDisablesEcnMarking) {
-  SetQuicRestartFlag(quic_support_ect1, true);
   EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(true));
   EXPECT_TRUE(connection_.set_ecn_codepoint(ECN_ECT1));
   QuicPacketCreatorPeer::SetPacketNumber(
@@ -17619,7 +17809,6 @@ TEST_P(QuicConnectionTest, RtoDisablesEcnMarking) {
 }
 
 TEST_P(QuicConnectionTest, RtoDoesntDisableEcnMarkingIfEcnAcked) {
-  SetQuicRestartFlag(quic_support_ect1, true);
   EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(true));
   EXPECT_TRUE(connection_.set_ecn_codepoint(ECN_ECT1));
   QuicPacketCreatorPeer::SetPacketNumber(
@@ -17637,7 +17826,6 @@ TEST_P(QuicConnectionTest, RtoDoesntDisableEcnMarkingIfEcnAcked) {
 }
 
 TEST_P(QuicConnectionTest, InvalidFeedbackCancelsEcn) {
-  SetQuicRestartFlag(quic_support_ect1, true);
   EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(true));
   EXPECT_TRUE(connection_.set_ecn_codepoint(ECN_ECT1));
   EXPECT_EQ(connection_.ecn_codepoint(), ECN_ECT1);
@@ -17646,7 +17834,6 @@ TEST_P(QuicConnectionTest, InvalidFeedbackCancelsEcn) {
 }
 
 TEST_P(QuicConnectionTest, StateMatchesSentEcn) {
-  SetQuicRestartFlag(quic_support_ect1, true);
   EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(true));
   EXPECT_TRUE(connection_.set_ecn_codepoint(ECN_ECT1));
   SendPing();
@@ -17662,7 +17849,6 @@ TEST_P(QuicConnectionTest, CoalescedPacketSplitsEcn) {
   if (!connection_.version().CanSendCoalescedPackets()) {
     return;
   }
-  SetQuicRestartFlag(quic_support_ect1, true);
   EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(true));
   EXPECT_TRUE(connection_.set_ecn_codepoint(ECN_ECT1));
   // All these steps are necessary to send an INITIAL ping and save it to be
@@ -17686,7 +17872,6 @@ TEST_P(QuicConnectionTest, CoalescedPacketSplitsEcn) {
 }
 
 TEST_P(QuicConnectionTest, BufferedPacketRetainsOldEcn) {
-  SetQuicRestartFlag(quic_support_ect1, true);
   EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(true));
   EXPECT_TRUE(connection_.set_ecn_codepoint(ECN_ECT1));
   writer_->SetWriteBlocked();
@@ -17700,7 +17885,6 @@ TEST_P(QuicConnectionTest, BufferedPacketRetainsOldEcn) {
 }
 
 TEST_P(QuicConnectionTest, RejectEcnIfWriterDoesNotSupport) {
-  SetQuicRestartFlag(quic_support_ect1, true);
   MockPacketWriter mock_writer;
   QuicConnectionPeer::SetWriter(&connection_, &mock_writer, false);
   EXPECT_CALL(mock_writer, SupportsEcn()).WillOnce(Return(false));
@@ -17713,6 +17897,8 @@ TEST_P(QuicConnectionTest, RejectResetStreamAtIfNotNegotiated) {
     return;
   }
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   config.SetReliableStreamReset(false);
   connection_.SetFromConfig(config);
@@ -17727,6 +17913,8 @@ TEST_P(QuicConnectionTest, ResetStreamAt) {
     return;
   }
   EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
   QuicConfig config;
   config.SetReliableStreamReset(true);
   connection_.SetFromConfig(config);
@@ -17749,6 +17937,17 @@ TEST_P(QuicConnectionTest, OnParsedClientHelloInfoWithDebugVisitor) {
   connection_.set_debug_visitor(&debug_visitor);
   EXPECT_CALL(debug_visitor, OnParsedClientHelloInfo(parsed_chlo)).Times(1);
   connection_.OnParsedClientHelloInfo(parsed_chlo);
+}
+
+TEST_P(QuicConnectionTest, ConfigEnablesAckFrequency) {
+  QuicConfig config;
+  EXPECT_FALSE(QuicConnectionPeer::CanReceiveAckFrequencyFrames(&connection_));
+  config.SetMinAckDelayDraft10Ms(kDefaultMinAckDelayTimeMs);
+  EXPECT_CALL(*send_algorithm_, SetFromConfig(_, _));
+  EXPECT_CALL(*send_algorithm_, EnableECT1()).WillOnce(Return(false));
+  EXPECT_CALL(*send_algorithm_, EnableECT0()).WillOnce(Return(false));
+  connection_.SetFromConfig(config);
+  EXPECT_TRUE(QuicConnectionPeer::CanReceiveAckFrequencyFrames(&connection_));
 }
 
 }  // namespace

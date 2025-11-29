@@ -22,7 +22,6 @@
 #include "base/numerics/safe_conversions.h"
 #include "base/task/single_thread_task_runner.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "components/viz/common/resources/shared_image_format_utils.h"
 #include "gpu/command_buffer/common/constants.h"
 #include "gpu/command_buffer/common/context_result.h"
@@ -58,14 +57,14 @@
 #include "ui/gfx/color_space.h"
 #include "ui/gfx/gpu_memory_buffer.h"
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
 #include "ui/gfx/linux/native_pixmap_dmabuf.h"
 #endif
 
 namespace gpu {
 class Buffer;
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
 namespace {
 
 struct CleanUpContext {
@@ -250,10 +249,10 @@ void ImageDecodeAcceleratorStub::ProcessCompletedDecode(
 
   std::vector<sk_sp<SkImage>> plane_sk_images;
   std::optional<base::ScopedClosureRunner> notify_gl_state_changed;
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
   DCHECK_EQ(
       gfx::NumberOfPlanesForLinearBufferFormat(completed_decode->buffer_format),
-      completed_decode->handle.native_pixmap_handle.planes.size());
+      completed_decode->handle.native_pixmap_handle().planes.size());
   // We should notify the SharedContextState that we or Skia may have modified
   // the driver's GL state. We put this in a ScopedClosureRunner so that if we
   // return early, the SharedContextState ends up in a consistent state.
@@ -266,7 +265,7 @@ void ImageDecodeAcceleratorStub::ProcessCompletedDecode(
       shared_context_state));
 
   const size_t num_planes =
-      completed_decode->handle.native_pixmap_handle.planes.size();
+      completed_decode->handle.native_pixmap_handle().planes.size();
   plane_sk_images.resize(num_planes);
 
   // Right now, we only support YUV 4:2:0 for the output of the decoder (either

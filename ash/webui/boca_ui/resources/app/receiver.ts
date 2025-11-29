@@ -3,11 +3,12 @@
 // found in the LICENSE file.
 
 import {ColorChangeUpdater} from '//resources/cr_components/color_change_listener/colors_css_updater.js';
+import type {BitmapN32} from '//resources/mojo/skia/public/mojom/bitmap.mojom-webui.js';
 
-import {IdentifiedActivity, NetworkInfo, SessionResult} from '../mojom/boca.mojom-webui.js';
+import type {ConfigResult, CrdConnectionState, IdentifiedActivity, NetworkInfo, SpeechRecognitionInstallState} from '../mojom/boca.mojom-webui.js';
 
-import {ClientApi} from './boca_app.js';
-import {ClientDelegateFactory, getNetworkInfoMojomToUI, getSessionConfigMojomToUI, getStudentActivityMojomToUI} from './client_delegate.js';
+import type {ClientApi} from './boca_app.js';
+import {ClientDelegateFactory, getCrdConnectionStateMojomToUI, getNetworkInfoMojomToUI, getSessionConfigMojomToUI, getSpeechRecognitionInstallStateMojomToUI, getStudentActivityMojomToUI} from './client_delegate.js';
 import {callbackRouter, pageHandler} from './mojo_api_bootstrap.js';
 
 /**
@@ -21,23 +22,40 @@ function getApp(): ClientApi {
 /**
  * Runs any initialization code on the boca app once it is in the dom.
  */
-async function initializeApp(app: ClientApi) {
+function initializeApp(app: ClientApi) {
   app.setDelegate(new ClientDelegateFactory(pageHandler).getInstance());
   callbackRouter.onStudentActivityUpdated.addListener(
       (activities: IdentifiedActivity[]) => {
         app.onStudentActivityUpdated(getStudentActivityMojomToUI(activities));
-      })
+      });
 
-  callbackRouter.onSessionConfigUpdated.addListener(
-      (sessionResult: SessionResult) => {
-        app.onSessionConfigUpdated(
-            getSessionConfigMojomToUI(sessionResult.config));
-      })
+  callbackRouter.onSessionConfigUpdated.addListener((config: ConfigResult) => {
+    app.onSessionConfigUpdated(getSessionConfigMojomToUI(config.config));
+  });
+
   callbackRouter.onActiveNetworkStateChanged.addListener(
       (activeNetworks: NetworkInfo[]) => {
         app.onActiveNetworkStateChanged(
             getNetworkInfoMojomToUI(activeNetworks));
-      })
+      });
+
+  callbackRouter.onLocalCaptionDisabled.addListener(
+      () => app.onLocalCaptionDisabled());
+
+  callbackRouter.onSpeechRecognitionInstallStateUpdated.addListener(
+      (state: SpeechRecognitionInstallState) =>
+          app.onSpeechRecognitionInstallStateUpdated(
+              getSpeechRecognitionInstallStateMojomToUI(state)));
+
+  callbackRouter.onSessionCaptionDisabled.addListener(
+      (isError: boolean) => app.onSessionCaptionDisabled(isError));
+
+  callbackRouter.onFrameDataReceived.addListener(
+      (frameData: BitmapN32) => app.onFrameDataReceived(frameData));
+
+  callbackRouter.onSpotlightCrdSessionStatusUpdated.addListener(
+      (state: CrdConnectionState) => app.onSpotlightCrdSessionStatusUpdated(
+          getCrdConnectionStateMojomToUI(state)));
 }
 
 /**

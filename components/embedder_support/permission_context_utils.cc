@@ -35,10 +35,6 @@
 #include "device/vr/public/cpp/features.h"
 #endif
 
-#if BUILDFLAG(IS_OHOS)
-#include "components/permissions/contexts/geolocation_permission_context_ohos.h"
-#endif
-
 namespace embedder_support {
 
 PermissionContextDelegates::PermissionContextDelegates() = default;
@@ -84,11 +80,6 @@ CreateDefaultPermissionContexts(content::BrowserContext* browser_context,
           browser_context,
           std::move(delegates.geolocation_permission_context_delegate),
           is_regular_profile);
-#elif BUILDFLAG(IS_OHOS)
-  permission_contexts[ContentSettingsType::GEOLOCATION] =
-      std::make_unique<permissions::GeolocationPermissionContextOHOS>(
-          browser_context,
-          std::move(delegates.geolocation_permission_context_delegate));
 #elif BUILDFLAG(OS_LEVEL_GEOLOCATION_PERMISSION_SUPPORTED)
   if (features::IsOsLevelGeolocationPermissionSupportEnabled()) {
     permission_contexts[ContentSettingsType::GEOLOCATION] =

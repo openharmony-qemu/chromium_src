@@ -14,7 +14,6 @@
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
 #include "base/time/time.h"
-#include "base/trace_event/traced_value.h"
 #include "cc/cc_export.h"
 #include "cc/metrics/frame_info.h"
 #include "components/viz/common/frame_sinks/begin_frame_args.h"
@@ -98,10 +97,6 @@ class CC_EXPORT FrameSequenceMetrics {
 
   struct CC_EXPORT CustomReportData {
     CustomReportData();
-    CustomReportData(uint32_t frames_expected,
-                     uint32_t frames_dropped,
-                     uint32_t jank_count,
-                     std::vector<Jank> janks);
 
     CustomReportData(const CustomReportData&);
     CustomReportData& operator=(const CustomReportData&);
@@ -125,7 +120,8 @@ class CC_EXPORT FrameSequenceMetrics {
   bool HasEnoughDataForReporting() const;
   bool HasDataLeftForReporting() const;
   // Report related metrics: throughput, checkboarding...
-  void ReportMetrics();
+  // Returns PercentDroppedFrames4.AllSequences metric.
+  int ReportMetrics();
 
   void AddSortedFrame(const viz::BeginFrameArgs& args,
                       const FrameInfo& frame_info);

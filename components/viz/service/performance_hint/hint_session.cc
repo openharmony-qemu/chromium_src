@@ -4,13 +4,13 @@
 
 #include "components/viz/service/performance_hint/hint_session.h"
 
+#include <algorithm>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "base/containers/contains.h"
 #include "base/memory/raw_ptr.h"
-#include "base/strings/string_split.h"
 #include "base/system/sys_info.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
@@ -222,7 +222,10 @@ void AdpfHintSession::SetThreads(
                         type_);
     return;
   }
-  std::vector<int32_t> tids(thread_ids.begin(), thread_ids.end());
+  std::vector<int32_t> tids;
+  tids.reserve(thread_ids.size());
+  std::transform(thread_ids.begin(), thread_ids.end(), std::back_inserter(tids),
+                 [](const base::PlatformThreadId& tid) { return tid.raw(); });
   int retval = AdpfMethods::Get().APerformanceHint_setThreadsFn(
       hint_session_, tids.data(), tids.size());
   TRACE_EVENT_INSTANT("android.adpf", "SetThreads", "thread_ids", thread_ids,
@@ -256,8 +259,11 @@ std::unique_ptr<HintSession> HintSessionFactoryImpl::CreateSession(
   DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
   const auto combined_thread_ids =
       GetSessionThreadIds(transient_thread_ids, type);
-  std::vector<int32_t> thread_ids(combined_thread_ids.begin(),
-                                  combined_thread_ids.end());
+  std::vector<int32_t> thread_ids;
+  thread_ids.reserve(combined_thread_ids.size());
+  std::transform(combined_thread_ids.begin(), combined_thread_ids.end(),
+                 std::back_inserter(thread_ids),
+                 [](const base::PlatformThreadId& tid) { return tid.raw(); });
   // Passing an empty list of threads to the underlying API can cause a process
   // crash. So we have to return early.
   if (thread_ids.empty()) {
@@ -315,20 +321,10 @@ bool IsAdpfEnabled() {
     return false;
   }
 
-  std::string allowlist_param = features::kADPFSocManufacturerAllowlist.Get();
-  std::vector<std::string_view> allowlist = base::SplitStringPiece(
-      allowlist_param, "|", base::TRIM_WHITESPACE, base::SPLIT_WANT_NONEMPTY);
-  std::string blocklist_param = features::kADPFSocManufacturerBlocklist.Get();
-  std::vector<std::string_view> blocklist = base::SplitStringPiece(
-      blocklist_param, "|", base::TRIM_WHITESPACE, base::SPLIT_WANT_NONEMPTY);
+  std::string soc_allowlist = features::kADPFSocManufacturerAllowlist.Get();
+  std::string soc_blocklist = features::kADPFSocManufacturerBlocklist.Get();
   std::string soc = base::SysInfo::SocManufacturer();
-  // If there's no allowlist, soc must be absent from the blocklist.
-  if (allowlist.empty()) {
-    return !base::Contains(blocklist, soc);
-  }
-  // If there's an allowlist, soc must be in the allowlist.
-  // Blocklist is ignored in this case.
-  return base::Contains(allowlist, soc);
+  return features::ShouldUseAdpfForSoc(soc_allowlist, soc_blocklist, soc);
 }
 
 }  // namespace

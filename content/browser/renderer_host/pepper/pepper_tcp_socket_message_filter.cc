@@ -17,7 +17,6 @@
 #include "base/strings/cstring_view.h"
 #include "base/task/sequenced_task_runner.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "content/browser/renderer_host/pepper/content_browser_pepper_host_factory.h"
 #include "content/browser/renderer_host/pepper/pepper_socket_utils.h"
 #include "content/public/browser/browser_context.h"
@@ -387,7 +386,6 @@ int32_t PepperTCPSocketMessageFilter::OnMsgConnect(
     return PP_ERROR_FAILED;
 
   // Intentionally using a HostPortPair because scheme isn't specified.
-  // TODO(mmenke): Pass in correct NetworkAnonymizationKey.
   network_context->ResolveHost(
       network::mojom::HostResolverHost::NewHostPortPair(
           net::HostPortPair(host, port)),
@@ -807,12 +805,12 @@ void PepperTCPSocketMessageFilter::TryWrite() {
 
     DCHECK(write_watcher_);
 
-    auto view = base::cstring_view(pending_write_data_);
-    view.remove_prefix(pending_write_bytes_written_);
-    DCHECK_GT(view.size(), 0u);
+    auto span_to_write = base::as_byte_span(pending_write_data_);
+    span_to_write = span_to_write.subspan(pending_write_bytes_written_);
+    DCHECK_GT(span_to_write.size(), 0u);
     size_t bytes_written = 0;
     int mojo_result = send_stream_->WriteData(
-        base::as_byte_span(view), MOJO_WRITE_DATA_FLAG_NONE, bytes_written);
+        span_to_write, MOJO_WRITE_DATA_FLAG_NONE, bytes_written);
     if (mojo_result == MOJO_RESULT_SHOULD_WAIT) {
       write_watcher_->ArmOrNotify();
       break;

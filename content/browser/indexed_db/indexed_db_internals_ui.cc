@@ -2,11 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifdef UNSAFE_BUFFERS_BUILD
-// TODO(crbug.com/342213636): Remove this and spanify to fix the errors.
-#pragma allow_unsafe_buffers
-#endif
-
 #include "content/browser/indexed_db/indexed_db_internals_ui.h"
 
 #include <cstdint>
@@ -120,8 +115,7 @@ IndexedDBInternalsUI::IndexedDBInternalsUI(WebUI* web_ui)
       network::mojom::CSPDirectiveName::TrustedTypes,
       "trusted-types static-types lit-html-desktop;");
   source->UseStringsJs();
-  source->AddResourcePaths(
-      base::make_span(kIndexedDbResources, kIndexedDbResourcesSize));
+  source->AddResourcePaths(kIndexedDbResources);
   source->AddResourcePath("", IDR_INDEXED_DB_INDEXEDDB_INTERNALS_HTML);
 }
 

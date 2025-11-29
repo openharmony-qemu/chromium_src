@@ -5,8 +5,11 @@
 #ifndef COMPONENTS_COLLABORATION_INTERNAL_ANDROID_MESSAGING_MESSAGING_BACKEND_SERVICE_BRIDGE_H_
 #define COMPONENTS_COLLABORATION_INTERNAL_ANDROID_MESSAGING_MESSAGING_BACKEND_SERVICE_BRIDGE_H_
 
+#include <set>
+
 #include "base/android/scoped_java_ref.h"
 #include "base/supports_user_data.h"
+#include "base/uuid.h"
 #include "components/collaboration/public/messaging/messaging_backend_service.h"
 
 namespace collaboration::messaging::android {
@@ -60,6 +63,16 @@ class MessagingBackendServiceBridge
       JNIEnv* env,
       const base::android::JavaParamRef<jobject>& j_caller,
       jstring j_collaboration_id);
+  void ClearDirtyTabMessagesForGroup(
+      JNIEnv* env,
+      const base::android::JavaParamRef<jobject>& j_caller,
+      const base::android::JavaParamRef<jstring>& j_collaboration_id);
+  void ClearPersistentMessage(
+      JNIEnv* env,
+      const base::android::JavaParamRef<jobject>& j_caller,
+      const base::android::JavaParamRef<jstring>& j_message_id,
+      jint j_type);
+
   void RunInstantaneousMessageSuccessCallback(
       JNIEnv* env,
       const base::android::JavaParamRef<jobject>& j_caller,
@@ -79,6 +92,8 @@ class MessagingBackendServiceBridge
   void DisplayInstantaneousMessage(
       InstantMessage message,
       InstantMessageDelegate::SuccessCallback success_callback) override;
+  void HideInstantaneousMessage(
+      const std::set<base::Uuid>& message_ids) override;
 
   raw_ptr<MessagingBackendService> service_;
 

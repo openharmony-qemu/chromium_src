@@ -12,7 +12,6 @@
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/metrics/histogram_functions.h"
-#include "base/not_fatal_until.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/trace_event/trace_event.h"
@@ -24,6 +23,7 @@
 #include "content/browser/service_worker/service_worker_context_core.h"
 #include "content/browser/service_worker/service_worker_context_wrapper.h"
 #include "content/browser/service_worker/service_worker_info.h"
+#include "content/browser/service_worker/service_worker_loader_helpers.h"
 #include "content/browser/service_worker/service_worker_registration.h"
 #include "content/browser/service_worker/service_worker_version.h"
 #include "content/common/service_worker/service_worker_router_evaluator.h"
@@ -41,13 +41,6 @@
 namespace content {
 
 namespace {
-
-// When this is enabled, the browser will schedule
-// ServiceWorkerStorageControl's response in a kHighest priority
-// queue during startup. After startup, it has a normal priority.
-BASE_FEATURE(kServiceWorkerStorageControlResponseQueue,
-             "ServiceWorkerStorageControlResponseQueue",
-             base::FEATURE_ENABLED_BY_DEFAULT);
 
 blink::ServiceWorkerStatusCode DatabaseStatusToStatusCode(
     storage::mojom::ServiceWorkerDatabaseStatus status) {
@@ -376,6 +369,20 @@ void ServiceWorkerRegistry::FindRegistrationForClientUrl(
         /*callback=*/base::DoNothing(),
         storage::mojom::ServiceWorkerDatabaseStatus::kErrorNotFound, nullptr,
         std::vector(scopes->begin(), scopes->end()));
+    return;
+  }
+  if (service_worker_loader_helpers::IsEligibleForSyntheticResponse(
+          client_url)) {
+    // If `client_url` is eligible for SyntheticResponse, create a fake
+    // ServiceWorker registration so that the navigation is handled by
+    // ServiceWorker main resource loader.
+    CreateInvokerAndStartRemoteCall(
+        &storage::mojom::ServiceWorkerStorageControl::
+            GetFakeRegistrationForClientUrl,
+        base::BindOnce(&ServiceWorkerRegistry::DidFindRegistrationForClientUrl,
+                       weak_factory_.GetWeakPtr(), client_url, key,
+                       trace_event_id, base::DoNothing()),
+        client_url, key);
     return;
   }
   CreateInvokerAndStartRemoteCall(
@@ -1074,11 +1081,11 @@ ServiceWorkerRegistry::GetOrCreateRegistration(
     version->set_used_features(std::move(used_features));
     // policy_container_host could be null for registration restored from old DB
     if (data.policy_container_policies) {
-      version->set_policy_container_host(
-          base::MakeRefCounted<PolicyContainerHost>(
-              PolicyContainerPolicies(*data.policy_container_policies)));
+      version->SetPolicyContainerHost(base::MakeRefCounted<PolicyContainerHost>(
+          PolicyContainerPolicies(*data.policy_container_policies,
+                                  /*is_web_secure_context=*/true)));
     }
-    if (data.router_rules && version->IsStaticRouterEnabled()) {
+    if (data.router_rules) {
       auto error = version->SetupRouterEvaluator(*data.router_rules);
       DCHECK_EQ(error, ServiceWorkerRouterEvaluatorErrorEnums::kNoError)
           << "Failed to setup RouterEvaluator from the provided "
@@ -1225,7 +1232,7 @@ void ServiceWorkerRegistry::RunFindRegistrationCallbacks(
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   auto iter =
       find_registration_callbacks_.find(std::make_pair(client_url, key));
-  CHECK(iter != find_registration_callbacks_.end(), base::NotFatalUntil::M130);
+  CHECK(iter != find_registration_callbacks_.end());
   std::vector<FindRegistrationCallback> callbacks = std::move(iter->second);
   find_registration_callbacks_.erase(iter);
   for (FindRegistrationCallback& callback : callbacks) {
@@ -1509,14 +1516,8 @@ void ServiceWorkerRegistry::NotifyRegistrationStored(
     const GURL& stored_scope,
     const blink::StorageKey& key,
     StatusCallback callback) {
-  scoped_refptr<ServiceWorkerRegistration> registration =
-      context_->GetLiveRegistration(stored_registration_id);
-  if (registration) {
-    registration->SetStored();
-    registration->set_resources_total_size_bytes(
-        stored_resources_total_size_bytes);
-  }
-  context_->NotifyRegistrationStored(stored_registration_id, stored_scope, key);
+  context_->NotifyRegistrationStored(stored_registration_id, stored_scope, key,
+                                     stored_resources_total_size_bytes);
 
   auto iter = registration_scope_cache_.Get(key);
   if (iter != registration_scope_cache_.end()) {
@@ -1837,11 +1838,8 @@ ServiceWorkerRegistry::GetRemoteStorageControl() {
   if (!remote_storage_control_.is_bound()) {
     context_->wrapper()->BindStorageControl(
         remote_storage_control_.BindNewPipeAndPassReceiver(
-            base::FeatureList::IsEnabled(
-                kServiceWorkerStorageControlResponseQueue)
-                ? GetUIThreadTaskRunner(
-                      {BrowserTaskType::kServiceWorkerStorageControlResponse})
-                : base::SequencedTaskRunner::GetCurrentDefault()));
+            GetUIThreadTaskRunner(
+                {BrowserTaskType::kServiceWorkerStorageControlResponse})));
     DCHECK(remote_storage_control_.is_bound());
     remote_storage_control_.set_disconnect_handler(
         base::BindOnce(&ServiceWorkerRegistry::OnRemoteStorageDisconnected,

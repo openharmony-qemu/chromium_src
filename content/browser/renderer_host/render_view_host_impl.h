@@ -25,7 +25,6 @@
 #include "content/browser/renderer_host/browsing_context_state.h"
 #include "content/browser/renderer_host/frame_tree.h"
 #include "content/browser/renderer_host/page_lifecycle_state_manager.h"
-#include "content/browser/renderer_host/render_widget_host_impl.h"
 #include "content/browser/renderer_host/render_widget_host_owner_delegate.h"
 #include "content/browser/site_instance_group.h"
 #include "content/browser/site_instance_impl.h"
@@ -54,6 +53,7 @@ namespace content {
 
 class AgentSchedulingGroupHost;
 class RenderProcessHost;
+class RenderWidgetHostImpl;
 
 // A callback which will be called immediately before EnterBackForwardCache
 // starts.
@@ -153,10 +153,14 @@ class CONTENT_EXPORT RenderViewHostImpl
   //   "noopener", and even if the opener has been closed since.
   // `proxy_route_id` is only used when creating a `blink::WebView` in an
   //   inactive state.
+  // `navigation_metrics_token` identifies the navigation for which this
+  //   view is being created, if any. This is used for navigation-related
+  //   metrics and trace events recorded in the renderer process.
   virtual bool CreateRenderView(
       const std::optional<blink::FrameToken>& opener_frame_token,
       int proxy_route_id,
-      bool window_was_opened_by_another_window);
+      bool window_was_opened_by_another_window,
+      const std::optional<base::UnguessableToken>& navigation_metrics_token);
 
   RenderViewHostDelegate* GetDelegate();
 
@@ -345,7 +349,6 @@ class CONTENT_EXPORT RenderViewHostImpl
   bool ShouldContributePriorityToProcess() override;
   void SetBackgroundOpaque(bool opaque) override;
   bool IsMainFrameActive() override;
-  bool IsNeverComposited() override;
   blink::web_pref::WebPreferences GetWebkitPreferencesForWidget() override;
 
   // IPC message handlers.

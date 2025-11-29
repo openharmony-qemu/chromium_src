@@ -112,6 +112,9 @@ std::string ShortOriginForReporting(const std::string& url) {
 const char ReferrerChainData::kDownloadReferrerChainDataKey[] =
     "referrer_chain_data_key";
 
+const char ReferrerChainData::kDownloadReferrerChainDataKeyForEnterprise[] =
+    "referrer_chain_data_key_for_enterprise";
+
 ReferrerChainData::ReferrerChainData(
     ReferrerChainProvider::AttributionResult attribution_result,
     std::unique_ptr<ReferrerChain> referrer_chain,
@@ -124,7 +127,7 @@ ReferrerChainData::ReferrerChainData(
 
 ReferrerChainData::~ReferrerChainData() = default;
 
-ReferrerChain* ReferrerChainData::GetReferrerChain() {
+ReferrerChain* ReferrerChainData::GetReferrerChain() const {
   return referrer_chain_.get();
 }
 
@@ -789,11 +792,8 @@ void SafeBrowsingNavigationObserverManager::OnCopyURL(
     const GURL& url,
     const GURL& source_frame_url,
     const GURL& source_main_frame_url) {
-  if (base::FeatureList::IsEnabled(
-          kSafeBrowsingReferrerChainWithCopyPasteNavigation)) {
-    last_copy_paste_entry_.emplace(url, source_frame_url, source_main_frame_url,
-                                   base::Time::Now());
-  }
+  last_copy_paste_entry_.emplace(url, source_frame_url, source_main_frame_url,
+                                 base::Time::Now());
 }
 
 void SafeBrowsingNavigationObserverManager::CleanUpNavigationEvents() {
@@ -887,8 +887,6 @@ void SafeBrowsingNavigationObserverManager::RecordNotificationNavigationEvent(
   notification_navigation_events_
       [SafeBrowsingNavigationObserverManager::ClearURLRef(url)] =
           std::move(nav_event);
-  UMA_HISTOGRAM_BOOLEAN(
-      "SafeBrowsing.NavigationObserver.NotificationNavigationEventAdded", true);
 }
 
 void SafeBrowsingNavigationObserverManager::MaybeAddToReferrerChain(

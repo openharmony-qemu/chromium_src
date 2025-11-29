@@ -5,7 +5,6 @@
 import("//build/config/cast.gni")
 import("//build/config/chrome_build.gni")
 import("//build/config/chromeos/args.gni")
-import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/features.gni")
 import("//build/config/ui.gni")
 import("//media/gpu/args.gni")
@@ -29,11 +28,10 @@ is_cast_media_device = is_castos || is_cast_android
 #
 # TODO(b/195769334): finish replacing usages of (is_linux || is_chromeos) with
 # allow_oop_video_decoder where appropriate. Also, finish replacing usages of
-# (is_linux || is_chromeos_ash) with allow_hosting_oop_video_decoder where
+# (is_linux || is_chromeos) with allow_hosting_oop_video_decoder where
 # appropriate.
-allow_hosting_oop_video_decoder =
-    (is_chromeos_ash || is_linux) && (use_vaapi || use_v4l2_codec)
-allow_oop_video_decoder = is_chromeos_lacros || allow_hosting_oop_video_decoder
+allow_hosting_oop_video_decoder = use_linux_video_acceleration
+allow_oop_video_decoder = allow_hosting_oop_video_decoder
 
 declare_args() {
   # Allows distributions to link pulseaudio directly (DT_NEEDED) instead of
@@ -49,6 +47,11 @@ declare_args() {
   # Enable usage of libvpx within the media library. Used for software based
   # decoding of VP9 and VP8A type content.
   media_use_libvpx = true
+
+  # Enables the use of OpenSLES on Android.
+  # Should not be disabled for versions of Android before Q, since we only
+  # support AAudio on level 29 and above.
+  media_use_opensles = true
 
   # non-blink builds doesn't use ffmpeg, libvpx.
   if (!use_blink) {
@@ -109,7 +112,7 @@ declare_args() {
 
   # Enable browser managed persistent metadata storage for EME persistent
   # session and persistent usage record session.
-  enable_media_drm_storage = is_android || is_castos || is_ohos
+  enable_media_drm_storage = is_android || is_castos
 
   # Enable HLS manifest parser and demuxer.
   enable_hls_demuxer = proprietary_codecs
@@ -119,7 +122,7 @@ declare_args() {
   # Windows, Mac, and Android.
   enable_hevc_parser_and_hw_decoder =
       proprietary_codecs &&
-      (use_fuzzing_engine || is_win || is_apple || is_android || is_linux || is_ohos)
+      (use_fuzzing_engine || is_win || is_apple || is_android || is_linux)
 
   # Enable inclusion of VVC/H.266 parser/demuxer, and also enable VVC/H.266 decoding
   # with hardware acceleration provided by platform. Disabled by default for all builds.
@@ -127,8 +130,8 @@ declare_args() {
 
   # Determines if a GpuChannel is needed between media capture utility process
   # and gpu process for a given platform.
-  enable_gpu_channel_media_capture = is_linux || is_win || is_chromeos_ash ||
-                                     is_mac || is_android || is_fuchsia
+  enable_gpu_channel_media_capture =
+      is_linux || is_win || is_chromeos || is_apple || is_android || is_fuchsia
 }
 
 # Use another declare_args() to allow dependence on args defined above.
@@ -138,12 +141,12 @@ declare_args() {
   enable_av1_decoder = enable_dav1d_decoder
 
   # Enable HEVC/H265 demuxing. Actual decoding must be provided by the
-  # platform. Always enable this for Lacros, it determines support at runtime.
+  # platform.
   # TODO(crbug.com/1336055): Revisit the default value for this setting as it
   # applies to video-capable devices.
   enable_platform_hevc =
-      proprietary_codecs && (enable_hevc_parser_and_hw_decoder ||
-                             is_cast_media_device || is_chromeos_lacros || is_ohos)
+      proprietary_codecs &&
+      (enable_hevc_parser_and_hw_decoder || is_cast_media_device)
 
   enable_mse_mpeg2ts_stream_parser =
       proprietary_codecs &&
@@ -153,9 +156,9 @@ declare_args() {
 declare_args() {
   platform_has_optional_hevc_decode_support =
       enable_platform_hevc &&
-      (is_win || is_chromeos || is_linux || is_apple || is_android || is_ohos)
+      (is_win || is_chromeos || is_linux || is_apple || is_android)
   platform_has_optional_hevc_encode_support =
-      enable_platform_hevc && (is_win || is_apple || is_android || is_ohos)
+      enable_platform_hevc && (is_win || is_apple || is_android)
 }
 
 assert(!enable_hls_demuxer || enable_mse_mpeg2ts_stream_parser,
@@ -202,7 +205,7 @@ declare_args() {
   #
   # TODO(crbug.com/1336055): Remove legacy target_cpu hack used for targeting
   # desktop Chromecast builds.
-  if (is_posix && !is_android && !is_apple && !is_ohos &&
+  if (is_posix && !is_android && !is_apple &&
       (!is_castos || (target_cpu == "x86" || target_cpu == "x64") ||
        is_cast_audio_only)) {
     use_alsa = true
@@ -215,7 +218,7 @@ declare_args() {
     # TODO(crbug.com/40636948): We shouldn't have to do this, but it's unclear why
     # our test bots are hanging and all of the ones that don't hang just fall
     # back to ALSA after a connection error anyways.
-    if (!use_cras && !is_castos && !is_asan && !is_tsan && !is_ohos) {
+    if (!use_cras && !is_castos && !is_asan && !is_tsan) {
       use_pulseaudio = true
     }
   }
@@ -276,7 +279,7 @@ _default_mojo_media_host = ""
 if (is_cast_media_device) {
   _default_mojo_media_services = cast_mojo_media_services
   _default_mojo_media_host = cast_mojo_media_host
-} else if (is_android || is_ohos) {
+} else if (is_android) {
   _default_mojo_media_services = [
     "cdm",
     "audio_decoder",
@@ -291,8 +294,7 @@ if (is_cast_media_device) {
     "video_decoder",
   ]
   _default_mojo_media_host = "gpu"
-} else if (is_chromeos_ash || ((is_linux || is_chromeos_lacros) &&
-                               (use_vaapi || use_v4l2_codec))) {
+} else if (use_linux_video_acceleration) {
   _default_mojo_media_services = [ "video_decoder" ]
   _default_mojo_media_host = "gpu"
 }
@@ -338,7 +340,7 @@ declare_args() {
 declare_args() {
   # Media Remoting RPC is disabled on Android since it's unused but increases
   # the native binary size by ~70Kb.
-  enable_media_remoting_rpc = enable_media_remoting && !is_android && !is_ohos
+  enable_media_remoting_rpc = enable_media_remoting && !is_android
 }
 
 declare_args() {
@@ -369,14 +371,6 @@ media_subcomponent_deps = [
 
 if (is_fuchsia) {
   media_subcomponent_deps += [ "//media/fuchsia/common" ]
-}
-
-if (is_ohos) {
-  declare_args() {
-    ohos_enable_media_router = false
-  }
-
-  media_subcomponent_deps += [ "//media/base/ohos" ]
 }
 
 if (media_use_ffmpeg) {

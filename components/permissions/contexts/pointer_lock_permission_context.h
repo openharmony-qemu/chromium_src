@@ -9,6 +9,8 @@
 
 namespace permissions {
 
+// TODO(crbug.com/391651884): Remove this class since Pointer Lock Permission is
+// not needed.
 class PointerLockPermissionContext : public permissions::PermissionContextBase {
  public:
   explicit PointerLockPermissionContext(
@@ -19,9 +21,7 @@ class PointerLockPermissionContext : public permissions::PermissionContextBase {
   PointerLockPermissionContext& operator=(const PointerLockPermissionContext&) =
       delete;
 
-  void NotifyPermissionSet(const PermissionRequestID& id,
-                           const GURL& requesting_origin,
-                           const GURL& embedding_origin,
+  void NotifyPermissionSet(const PermissionRequestData& request_data,
                            BrowserPermissionCallback callback,
                            bool persist,
                            ContentSetting content_setting,

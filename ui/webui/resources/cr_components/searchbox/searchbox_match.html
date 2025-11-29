@@ -47,8 +47,8 @@
 
   :host(:not([is-lens-searchbox_])) .container:not(.actions) {
     margin-inline-end: 16px;
-    border-top-right-radius: 24px;
-    border-bottom-right-radius: 24px;
+    border-start-end-radius: 24px;
+    border-end-end-radius: 24px;
   }
 
   :host-context([has-secondary-side]):host-context([can-show-secondary-side]) .container:not(.actions) {
@@ -58,6 +58,12 @@
   .container:not(.actions):hover,
   :host(:is(:focus-visible, [selected]))  .container:not(.actions) {
     background-color: var(--color-searchbox-results-background-hovered);
+  }
+
+  :host([enable-csb-motion-tweaks_][is-lens-searchbox_]) .container {
+    height: 48px;
+    padding-bottom: 0;
+    padding-top: 0;
   }
 
   .actions.container {
@@ -295,7 +301,10 @@
     </span>
     <!-- When a thumbnail is in the searchbox all results should have an
          ellipsis prepended to the suggestion. -->
-    <span id="ellipsis" hidden$="[[!showThumbnail]]">...&nbsp</span>
+    <span
+        id="ellipsis"
+        hidden$="[[!showEllipsis]]"
+        >...&nbsp</span>
     <span id="contents" inner-h-t-m-l="[[contentsHtml_]]"></span>
     <span id="separator" class="dim">[[separatorText_]]</span>
     <span id="description" inner-h-t-m-l="[[descriptionHtml_]]"></span>

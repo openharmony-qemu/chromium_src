@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/390223051): Remove C-library calls to fix the errors.
+#pragma allow_unsafe_libc_calls
+#endif
+
 #include "services/screen_ai/screen_ai_library_wrapper_impl.h"
 
 #include "base/metrics/histogram_functions.h"
@@ -12,7 +17,7 @@ namespace screen_ai {
 
 namespace {
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
 void HandleLibraryLogging(int severity, const char* message) {
   switch (severity) {
     case logging::LOGGING_VERBOSE:
@@ -66,7 +71,7 @@ bool ScreenAILibraryWrapperImpl::Load(const base::FilePath& library_path) {
   }
 #endif
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
   if (!LoadFunction(set_logger_, "SetLogger")) {
     return false;
   }
@@ -85,6 +90,7 @@ bool ScreenAILibraryWrapperImpl::Load(const base::FilePath& library_path) {
   }
 
   if (!LoadFunction(init_ocr_, "InitOCRUsingCallback") ||
+      !LoadFunction(get_max_image_dimension_, "GetMaxImageDimension") ||
       !LoadFunction(perform_ocr_, "PerformOCR")) {
     return false;
   }
@@ -99,7 +105,7 @@ bool ScreenAILibraryWrapperImpl::Load(const base::FilePath& library_path) {
   return true;
 }
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
 NO_SANITIZE("cfi-icall")
 void ScreenAILibraryWrapperImpl::ScreenAILibraryWrapperImpl::SetLogger() {
   CHECK(set_logger_);
@@ -128,6 +134,12 @@ NO_SANITIZE("cfi-icall")
 void ScreenAILibraryWrapperImpl::EnableDebugMode() {
   CHECK(enable_debug_mode_);
   enable_debug_mode_();
+}
+
+NO_SANITIZE("cfi-icall")
+uint32_t ScreenAILibraryWrapperImpl::GetMaxImageDimension() {
+  CHECK(get_max_image_dimension_);
+  return get_max_image_dimension_();
 }
 
 NO_SANITIZE("cfi-icall")

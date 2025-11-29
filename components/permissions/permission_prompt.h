@@ -57,7 +57,7 @@ class PermissionPrompt {
 
     // These pointers should not be stored as the actual request objects may be
     // deleted upon navigation and so on.
-    virtual const std::vector<raw_ptr<PermissionRequest, VectorExperimental>>&
+    virtual const std::vector<std::unique_ptr<PermissionRequest>>&
     Requests() = 0;
 
     // Get the single origin for the current set of requests.
@@ -134,6 +134,8 @@ class PermissionPrompt {
     // Recreate the UI view because the UI flavor needs to change. Returns true
     // iff successful.
     virtual bool RecreateView() = 0;
+
+    virtual const PermissionPrompt* GetCurrentPrompt() const = 0;
   };
 
   typedef base::RepeatingCallback<

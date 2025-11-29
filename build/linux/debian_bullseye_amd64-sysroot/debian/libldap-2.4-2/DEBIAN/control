@@ -1,6 +1,6 @@
 Package: libldap-2.4-2
 Source: openldap
-Version: 2.4.59+dfsg-1~bpo11+1
+Version: 2.4.57+dfsg-3+deb11u1
 Architecture: amd64
 Maintainer: Debian OpenLDAP Maintainers <pkg-openldap-devel@lists.alioth.debian.org>
 Installed-Size: 539

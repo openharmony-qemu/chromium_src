@@ -123,14 +123,6 @@ mojom::BlobPtr RotateAndBlobify(const uint8_t* buffer,
     case VideoPixelFormat::PIXEL_FORMAT_UYVY:
       src_format = libyuv::FOURCC_UYVY;
       break;
-#if BUILDFLAG(IS_OHOS)
-    case VideoPixelFormat::PIXEL_FORMAT_ABGR:
-      src_format = libyuv::FOURCC_ABGR;
-      break;
-    case VideoPixelFormat::PIXEL_FORMAT_NV21:
-      src_format = libyuv::FOURCC_NV21;
-      break;
-#endif
     default:
       NOTREACHED() << "Unsupported pixel format passed to RotateAndBlobify";
   }

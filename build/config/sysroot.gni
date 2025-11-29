@@ -34,9 +34,6 @@ if (sysroot == "") {
 
     # Android uses unified headers, and thus a single compile time sysroot
     sysroot = "$android_toolchain_root/sysroot"
-  } else if (is_ohos) {
-    import("//build/config/ohos/config.gni")
-    sysroot = "$ohos_sysroot"
   } else if ((is_linux || is_chromeos) && use_sysroot) {
     # By default build against a sysroot image downloaded from Cloud Storage
     # during gclient runhooks.
@@ -64,9 +61,7 @@ if (sysroot == "") {
         _script_arch = "amd64"
       }
       assert(
-          exec_script("//build/dir_exists.py",
-                      [ rebase_path(sysroot) ],
-                      "string") == "True",
+          path_exists(sysroot),
           "Missing sysroot ($sysroot). To fix, run: build/linux/sysroot_scripts/install-sysroot.py --arch=$_script_arch")
     }
   } else if (is_mac) {

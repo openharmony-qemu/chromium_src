@@ -20,6 +20,7 @@
 #include "base/memory/raw_ptr.h"
 #include "build/build_config.h"
 #include "third_party/skia/include/core/SkColor.h"
+#include "ui/accessibility/ax_common.h"
 #include "ui/accessibility/ax_export.h"
 #include "ui/accessibility/ax_hypertext.h"
 #include "ui/accessibility/ax_node_data.h"
@@ -78,8 +79,8 @@ class AX_EXPORT AXNode final {
     ChildIteratorBase(const NodeType* parent, NodeType* child);
     ChildIteratorBase(const ChildIteratorBase& it);
     ~ChildIteratorBase() = default;
-    bool operator==(const ChildIteratorBase& rhs) const;
-    bool operator!=(const ChildIteratorBase& rhs) const;
+    friend bool operator==(const ChildIteratorBase&,
+                           const ChildIteratorBase&) = default;
     ChildIteratorBase& operator++();
     ChildIteratorBase& operator--();
     NodeType* get() const;
@@ -100,7 +101,7 @@ class AX_EXPORT AXNode final {
          AXNodeID id,
          size_t index_in_parent,
          size_t unignored_index_in_parent = 0u);
-  virtual ~AXNode();
+  ~AXNode();
 
   // Accessors.
   AXTree* tree() const { return tree_; }
@@ -123,7 +124,7 @@ class AX_EXPORT AXNode final {
   const std::vector<raw_ptr<AXNode, VectorExperimental>>& GetAllChildren()
       const;
   size_t GetChildCount() const;
-#if DCHECK_IS_ON()
+#if AX_FAIL_FAST_BUILD()
   size_t GetSubtreeCount() const;
 #endif
   size_t GetChildCountCrossingTreeBoundary() const;
@@ -586,6 +587,11 @@ class AX_EXPORT AXNode final {
   const std::vector<raw_ptr<AXNode, VectorExperimental>>* GetExtraMacNodes()
       const;
 
+#if BUILDFLAG(IS_LINUX)
+  AXNode* GetExtraAnnouncementNode(
+      ax::mojom::AriaNotificationPriority priority_property) const;
+#endif  // BUILDFLAG(IS_LINUX)
+
   // Return true for mock nodes added to the map, such as extra mac nodes.
   bool IsGenerated() const;
 
@@ -837,34 +843,6 @@ AXNode::ChildIteratorBase<NodeType,
                           LastChild>::ChildIteratorBase(const ChildIteratorBase&
                                                             it)
     : parent_(it.parent_), child_(it.child_) {}
-
-template <typename NodeType,
-          NodeType* (NodeType::*NextSibling)() const,
-          NodeType* (NodeType::*PreviousSibling)() const,
-          NodeType* (NodeType::*FirstChild)() const,
-          NodeType* (NodeType::*LastChild)() const>
-bool AXNode::ChildIteratorBase<NodeType,
-                               NextSibling,
-                               PreviousSibling,
-                               FirstChild,
-                               LastChild>::operator==(const ChildIteratorBase&
-                                                          rhs) const {
-  return parent_ == rhs.parent_ && child_ == rhs.child_;
-}
-
-template <typename NodeType,
-          NodeType* (NodeType::*NextSibling)() const,
-          NodeType* (NodeType::*PreviousSibling)() const,
-          NodeType* (NodeType::*FirstChild)() const,
-          NodeType* (NodeType::*LastChild)() const>
-bool AXNode::ChildIteratorBase<NodeType,
-                               NextSibling,
-                               PreviousSibling,
-                               FirstChild,
-                               LastChild>::operator!=(const ChildIteratorBase&
-                                                          rhs) const {
-  return parent_ != rhs.parent_ || child_ != rhs.child_;
-}
 
 template <typename NodeType,
           NodeType* (NodeType::*NextSibling)() const,

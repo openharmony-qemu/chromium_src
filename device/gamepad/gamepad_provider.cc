@@ -2,21 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifdef UNSAFE_BUFFERS_BUILD
-// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
-#pragma allow_unsafe_buffers
-#endif
 
 #include "device/gamepad/gamepad_provider.h"
 
 #include <stddef.h>
 #include <string.h>
+
 #include <cmath>
 #include <memory>
 #include <utility>
 #include <vector>
 
 #include "base/check.h"
+#include "base/containers/heap_array.h"
 #include "base/functional/bind.h"
 #include "base/location.h"
 #include "base/message_loop/message_pump_type.h"
@@ -305,7 +303,7 @@ void GamepadProvider::DoPoll() {
   }
 
   for (size_t i = 0; i < Gamepads::kItemsLengthCap; ++i)
-    pad_states_.get()[i].is_active = false;
+    pad_states_[i].is_active = false;
 
   // Loop through each registered data fetcher and poll its gamepad data.
   // It's expected that GetGamepadData will mark each gamepad as active (via
@@ -320,7 +318,7 @@ void GamepadProvider::DoPoll() {
   GetCurrentGamepadData(&old_buffer);
 
   for (size_t i = 0; i < Gamepads::kItemsLengthCap; ++i) {
-    PadState& state = pad_states_.get()[i];
+    PadState& state = pad_states_[i];
 
     // Send out disconnect events using the last polled data.
     if (ever_had_user_gesture_ && !state.is_newly_active && !state.is_active &&
@@ -346,7 +344,7 @@ void GamepadProvider::DoPoll() {
 
   if (ever_had_user_gesture_) {
     for (size_t i = 0; i < Gamepads::kItemsLengthCap; ++i) {
-      PadState& state = pad_states_.get()[i];
+      PadState& state = pad_states_[i];
       if (state.is_newly_active && new_buffer.items[i].connected) {
         state.is_newly_active = false;
         OnGamepadConnectionChange(true, i, new_buffer.items[i]);
@@ -365,7 +363,7 @@ void GamepadProvider::DoPoll() {
   // we will notify again for the same gamepad on the next polling cycle.
   if (did_notify) {
     for (size_t i = 0; i < Gamepads::kItemsLengthCap; ++i)
-      pad_states_.get()[i].is_newly_active = false;
+      pad_states_[i].is_newly_active = false;
   }
 
   // Schedule our next interval of polling.

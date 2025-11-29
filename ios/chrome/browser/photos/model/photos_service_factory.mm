@@ -4,40 +4,19 @@
 
 #import "ios/chrome/browser/photos/model/photos_service_factory.h"
 
-#import "components/keyed_service/ios/browser_state_dependency_manager.h"
+#import "base/functional/bind.h"
 #import "ios/chrome/browser/photos/model/photos_service.h"
 #import "ios/chrome/browser/photos/model/photos_service_configuration.h"
 #import "ios/chrome/browser/shared/model/application_context/application_context.h"
-#import "ios/chrome/browser/shared/model/browser_state/browser_state_otr_helper.h"
 #import "ios/chrome/browser/shared/model/profile/profile_ios.h"
 #import "ios/chrome/browser/signin/model/chrome_account_manager_service_factory.h"
 #import "ios/chrome/browser/signin/model/identity_manager_factory.h"
 #import "ios/public/provider/chrome/browser/photos/photos_api.h"
 
-// static
-PhotosService* PhotosServiceFactory::GetForProfile(ProfileIOS* profile) {
-  return static_cast<PhotosService*>(
-      GetInstance()->GetServiceForBrowserState(profile, true));
-}
+namespace {
 
-// static
-PhotosServiceFactory* PhotosServiceFactory::GetInstance() {
-  static base::NoDestructor<PhotosServiceFactory> instance;
-  return instance.get();
-}
-
-PhotosServiceFactory::PhotosServiceFactory()
-    : BrowserStateKeyedServiceFactory(
-          "PhotosService",
-          BrowserStateDependencyManager::GetInstance()) {
-  DependsOn(IdentityManagerFactory::GetInstance());
-  DependsOn(ChromeAccountManagerServiceFactory::GetInstance());
-}
-
-PhotosServiceFactory::~PhotosServiceFactory() = default;
-
-std::unique_ptr<KeyedService> PhotosServiceFactory::BuildServiceInstanceFor(
-    web::BrowserState* context) const {
+// Build a PhotosService instance.
+std::unique_ptr<KeyedService> BuildPhotosService(web::BrowserState* context) {
   PhotosServiceConfiguration* configuration =
       [[PhotosServiceConfiguration alloc] init];
   ApplicationContext* application_context = GetApplicationContext();
@@ -52,11 +31,38 @@ std::unique_ptr<KeyedService> PhotosServiceFactory::BuildServiceInstanceFor(
   return ios::provider::CreatePhotosService(configuration);
 }
 
-web::BrowserState* PhotosServiceFactory::GetBrowserStateToUse(
-    web::BrowserState* context) const {
-  return GetBrowserStateRedirectedInIncognito(context);
+}  // namespace
+
+// static
+PhotosService* PhotosServiceFactory::GetForProfile(ProfileIOS* profile) {
+  return GetInstance()->GetServiceForProfileAs<PhotosService>(profile,
+                                                              /*create=*/true);
 }
 
-bool PhotosServiceFactory::ServiceIsCreatedWithBrowserState() const {
-  return true;
+// static
+PhotosServiceFactory* PhotosServiceFactory::GetInstance() {
+  static base::NoDestructor<PhotosServiceFactory> instance;
+  return instance.get();
+}
+
+// static
+BrowserStateKeyedServiceFactory::TestingFactory
+PhotosServiceFactory::GetDefaultFactory() {
+  return base::BindOnce(&BuildPhotosService);
+}
+
+PhotosServiceFactory::PhotosServiceFactory()
+    : ProfileKeyedServiceFactoryIOS("PhotosService",
+                                    TestingCreation::kNoServiceForTests,
+                                    ProfileSelection::kRedirectedInIncognito,
+                                    ServiceCreation::kCreateWithProfile) {
+  DependsOn(IdentityManagerFactory::GetInstance());
+  DependsOn(ChromeAccountManagerServiceFactory::GetInstance());
+}
+
+PhotosServiceFactory::~PhotosServiceFactory() = default;
+
+std::unique_ptr<KeyedService> PhotosServiceFactory::BuildServiceInstanceFor(
+    web::BrowserState* context) const {
+  return BuildPhotosService(context);
 }

@@ -43,6 +43,8 @@ const char kDisableGpuProcessForDX12InfoCollection[] =
 
 const char kEnableUnsafeWebGPU[] = "enable-unsafe-webgpu";
 
+const char kForceHighPerformanceGPU[] = "force-high-performance-gpu";
+
 // Enables WebGPU developer features which are not generally exposed to the web
 // platform.
 const char kEnableWebGPUDeveloperFeatures[] =
@@ -155,8 +157,6 @@ const char kDisableSkiaGraphitePrecompilation[] =
 const char kEnableSkiaGraphitePrecompilation[] =
     "enable-skia-graphite-precompilation";
 
-const char kShaderCachePath[] = "shader-cache-path";
-
 // Try to use a redistributable DirectML.dll. Used for testing WebNN
 // against newer DirectML release before it is integrated into Windows OS.
 // Please see more info about DirectML releases at:
@@ -167,5 +167,10 @@ const char kUseRedistributableDirectML[] = "use-redist-dml";
 // CrGpuMain as suffix.
 const char kEnableGpuMainTimeKeeperMetrics[] =
     "enable-gpu-main-time-keeper-metrics";
+
+// Suppresses GL_DEBUG_TYPE_PERFORMANCE log messages for web tests that can get
+// sent to the JS console and cause unnecessary test failures due test output
+// log expectation comparisons.
+const char kSuppressPerformanceLogs[] = "suppress-performance-logs";
 
 }  // namespace switches

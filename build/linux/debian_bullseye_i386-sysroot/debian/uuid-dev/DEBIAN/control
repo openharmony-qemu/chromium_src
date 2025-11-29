@@ -1,10 +1,10 @@
 Package: uuid-dev
 Source: util-linux
-Version: 2.36.1-8+deb11u1
+Version: 2.36.1-8+deb11u2
 Architecture: i386
 Maintainer: util-linux packagers <util-linux@packages.debian.org>
 Installed-Size: 166
-Depends: libc6-dev | libc-dev, libuuid1 (= 2.36.1-8+deb11u1)
+Depends: libc6-dev | libc-dev, libuuid1 (= 2.36.1-8+deb11u2)
 Section: libdevel
 Priority: optional
 Multi-Arch: same

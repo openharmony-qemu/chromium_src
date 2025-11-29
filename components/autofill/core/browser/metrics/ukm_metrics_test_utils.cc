@@ -18,7 +18,7 @@ using UkmDeveloperEngagementType = ukm::builders::Autofill_DeveloperEngagement;
 using UkmInteractedWithFormType = ukm::builders::Autofill_InteractedWithForm;
 using UkmSuggestionsShownType = ukm::builders::Autofill_SuggestionsShown;
 using UkmSuggestionFilledType = ukm::builders::Autofill_SuggestionFilled;
-using UkmTextFieldDidChangeType = ukm::builders::Autofill_TextFieldDidChange;
+using UkmTextFieldValueChangedType = ukm::builders::Autofill_TextFieldDidChange;
 using UkmLogHiddenRepresentationalFieldSkipDecisionType =
     ukm::builders::Autofill_HiddenRepresentationalFieldSkipDecision;
 using UkmFieldTypeValidationType = ukm::builders::Autofill_FieldTypeValidation;
@@ -28,14 +28,6 @@ using UkmEditedAutofilledFieldAtSubmission =
     ukm::builders::Autofill_EditedAutofilledFieldAtSubmission;
 using UkmAutofillKeyMetricsType = ukm::builders::Autofill_KeyMetrics;
 using UkmFieldInfoType = ukm::builders::Autofill2_FieldInfo;
-
-FormSignature Collapse(FormSignature sig) {
-  return FormSignature(sig.value() % 1021);
-}
-
-FieldSignature Collapse(FieldSignature sig) {
-  return FieldSignature(sig.value() % 1021);
-}
 
 MATCHER(CompareMetricsIgnoringMillisecondsSinceFormParsed, "") {
   const auto& lhs = ::testing::get<0>(arg);
@@ -48,6 +40,14 @@ MATCHER(CompareMetricsIgnoringMillisecondsSinceFormParsed, "") {
 }
 
 }  // namespace
+
+FormSignature Collapse(FormSignature sig) {
+  return FormSignature(sig.value() % 1021);
+}
+
+FieldSignature Collapse(FieldSignature sig) {
+  return FieldSignature(sig.value() % 1021);
+}
 
 void VerifyUkm(
     const ukm::TestUkmRecorder* ukm_recorder,
@@ -113,7 +113,7 @@ void AppendFieldFillStatusUkm(
          {UkmFieldFillStatusType::kFormSignatureName, form_signature.value()},
          {UkmFieldFillStatusType::kFieldSignatureName, field_signature.value()},
          {UkmFieldFillStatusType::kValidationEventName, metric_type},
-         {UkmTextFieldDidChangeType::kIsAutofilledName,
+         {UkmTextFieldValueChangedType::kIsAutofilledName,
           field.is_autofilled() ? 1 : 0},
          {UkmFieldFillStatusType::kWasPreviouslyAutofilledName, 0}});
   }

@@ -12,7 +12,7 @@
 
 #include "content/common/content_export.h"
 #include "content/public/browser/document_user_data.h"
-#include "content/public/browser/frame_tree_node_id.h"
+#include "content/public/browser/global_routing_id.h"
 #include "mojo/public/cpp/bindings/associated_receiver.h"
 #include "mojo/public/cpp/bindings/pending_associated_receiver.h"
 #include "services/network/public/mojom/shared_storage.mojom-forward.h"
@@ -56,7 +56,7 @@ class CONTENT_EXPORT SharedStorageDocumentServiceImpl final
 
   const url::Origin& main_frame_origin() const { return main_frame_origin_; }
 
-  FrameTreeNodeId main_frame_id() const { return main_frame_id_; }
+  GlobalRenderFrameHostId main_frame_id() const { return main_frame_id_; }
 
   void Bind(mojo::PendingAssociatedReceiver<
             blink::mojom::SharedStorageDocumentService> receiver);
@@ -65,7 +65,9 @@ class CONTENT_EXPORT SharedStorageDocumentServiceImpl final
   void CreateWorklet(
       const GURL& script_source_url,
       const url::Origin& data_origin,
+      blink::mojom::SharedStorageDataOriginType data_origin_type,
       network::mojom::CredentialsMode credentials_mode,
+      blink::mojom::SharedStorageWorkletCreationMethod creation_method,
       const std::vector<blink::mojom::OriginTrialFeature>&
           origin_trial_features,
       mojo::PendingAssociatedReceiver<blink::mojom::SharedStorageWorkletHost>
@@ -74,8 +76,14 @@ class CONTENT_EXPORT SharedStorageDocumentServiceImpl final
   void SharedStorageGet(const std::u16string& key,
                         SharedStorageGetCallback callback) override;
   void SharedStorageUpdate(
-      network::mojom::SharedStorageModifierMethodPtr method,
+      network::mojom::SharedStorageModifierMethodWithOptionsPtr
+          method_with_options,
       SharedStorageUpdateCallback callback) override;
+  void SharedStorageBatchUpdate(
+      std::vector<network::mojom::SharedStorageModifierMethodWithOptionsPtr>
+          methods_with_options,
+      const std::optional<std::string>& with_lock,
+      SharedStorageBatchUpdateCallback callback) override;
 
   base::WeakPtr<SharedStorageDocumentServiceImpl> GetWeakPtr();
 
@@ -123,9 +131,9 @@ class CONTENT_EXPORT SharedStorageDocumentServiceImpl final
   // save the value of the main frame origin in the constructor.
   const url::Origin main_frame_origin_;
 
-  // The FrameTreeNodeId for the main frame, to be used by notifications
+  // The GlobalRenderFrameHostId for the main frame, to be used by notifications
   // to DevTools. (DevTools will convert this to a DevTools frame token.)
-  const FrameTreeNodeId main_frame_id_;
+  const GlobalRenderFrameHostId main_frame_id_;
 
   DOCUMENT_USER_DATA_KEY_DECL();
 

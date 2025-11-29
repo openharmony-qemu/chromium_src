@@ -8,13 +8,13 @@
 
 #import "base/notreached.h"
 #import "build/build_config.h"
-#import "components/autofill/core/browser/autofill_save_update_address_profile_delegate_ios.h"
-#import "ios/chrome/browser/infobars/model/infobar_ios.h"
-#import "ios/chrome/browser/shared/ui/symbols/symbols.h"
+#import "components/autofill/core/browser/form_import/addresses/autofill_save_update_address_profile_delegate_ios.h"
 #import "ios/chrome/browser/badges/ui_bundled/badge_button.h"
 #import "ios/chrome/browser/badges/ui_bundled/badge_constants.h"
 #import "ios/chrome/browser/badges/ui_bundled/badge_delegate.h"
 #import "ios/chrome/browser/badges/ui_bundled/badge_overflow_menu_util.h"
+#import "ios/chrome/browser/infobars/model/infobar_ios.h"
+#import "ios/chrome/browser/shared/ui/symbols/symbols.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ui/base/l10n/l10n_util.h"
@@ -55,8 +55,6 @@ const CGFloat kSymbolIncognitoFullScreenPointSize = 14.;
       return [self permissionsCameraBadgeButton];
     case kBadgeTypePermissionsMicrophone:
       return [self permissionsMicrophoneBadgeButton];
-    case kBadgeTypeParcelTracking:
-      return [self parcelTrackingBadgeButton];
     case kBadgeTypeNone:
       NOTREACHED() << "A badge should not have kBadgeTypeNone";
   }
@@ -245,21 +243,6 @@ const CGFloat kSymbolIncognitoFullScreenPointSize = 14.;
       kBadgeButtonPermissionsMicrophoneAccessibilityIdentifier;
   button.accessibilityLabel =
       l10n_util::GetNSString(IDS_IOS_INFOBAR_BADGES_PERMISSIONS_HINT);
-  return button;
-}
-
-- (BadgeButton*)parcelTrackingBadgeButton {
-  UIImage* image =
-      DefaultSymbolWithPointSize(kShippingBoxSymbol, kInfobarSymbolPointSize);
-  BadgeButton* button = [self createButtonForType:kBadgeTypeParcelTracking
-                                            image:image];
-  [button addTarget:self.delegate
-                action:@selector(parcelTrackingBadgeButtonTapped:)
-      forControlEvents:UIControlEventTouchUpInside];
-  button.accessibilityIdentifier =
-      kBadgeButtonParcelTrackingAccessibilityIdentifier;
-  button.accessibilityLabel =
-      l10n_util::GetNSString(IDS_IOS_INFOBAR_BADGES_PARCEL_TRACKING_HINT);
   return button;
 }
 

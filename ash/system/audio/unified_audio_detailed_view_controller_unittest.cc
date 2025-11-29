@@ -4,6 +4,8 @@
 
 #include "ash/system/audio/unified_audio_detailed_view_controller.h"
 
+#include <string_view>
+
 #include "ash/accessibility/accessibility_controller.h"
 #include "ash/session/session_controller_impl.h"
 #include "ash/shell.h"
@@ -22,6 +24,8 @@
 #include "base/functional/bind.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/scoped_refptr.h"
+#include "base/strings/stringprintf.h"
+#include "base/strings/utf_string_conversions.h"
 #include "base/test/metrics/histogram_tester.h"
 #include "base/test/scoped_feature_list.h"
 #include "chromeos/ash/components/audio/audio_devices_pref_handler.h"
@@ -276,8 +280,8 @@ class UnifiedAudioDetailedViewControllerTest : public AshTestBase {
         slider_button->GetViewAccessibility().IsAccessibilityFocusable());
 
     slider->RequestFocus();
-    EXPECT_STREQ(slider->GetFocusManager()->GetFocusedView()->GetClassName(),
-                 "QuickSettingsSlider");
+    EXPECT_EQ(slider->GetFocusManager()->GetFocusedView()->GetClassName(),
+              "QuickSettingsSlider");
     // Check the accessibility role of QuickSettingsSlider.
     ui::AXNodeData node_data;
     slider->GetFocusManager()
@@ -969,7 +973,7 @@ class UnifiedAudioDetailedViewControllerSodaTest
     live_caption_view()->SetSubText(text);
   }
 
-  std::u16string GetLiveCaptionViewSubtitleText() {
+  std::u16string_view GetLiveCaptionViewSubtitleText() {
     return live_caption_view()->sub_text_label()->GetText();
   }
 

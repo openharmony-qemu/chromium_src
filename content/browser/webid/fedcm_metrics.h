@@ -80,8 +80,10 @@ enum class FedCmRequestIdTokenStatus {
   kInvalidFieldsSpecified = 48,
   kRpOriginIsOpaque = 49,
   kConfigNotMatchingType = 50,
+  kLoginPopupClosedWithoutSignin = 51,
+  kSuppressedBySegmentationPlatform = 52,
 
-  kMaxValue = kConfigNotMatchingType
+  kMaxValue = kSuppressedBySegmentationPlatform
 };
 
 // This enum describes whether user sign-in states between IDP and browser
@@ -250,6 +252,41 @@ enum class FedCmRpParameters {
   kMaxValue = kHasParametersAndNonDefaultScope
 };
 
+// This enum tracks the user's result after using a different account. These
+// values are persisted to logs. Entries should not be renumbered and numeric
+// values should never be reused.
+enum class FedCmUseOtherAccountResult {
+  kUserSignsInWithNewAccount = 0,
+  kUserSignsInWithExistingAccount = 1,
+  kUserDoesNotSignIn = 2,
+
+  kMaxValue = kUserDoesNotSignIn
+};
+
+// This enum describes the outcome of the verifying dialog. These values are
+// persisted to logs. Entries should not be renumbered and numeric values should
+// never be reused.
+enum class FedCmVerifyingDialogResult {
+  kSuccessExplicit = 0,
+  kSuccessAutoReauthn = 1,
+  kCancelExplicit = 2,
+  kCancelAutoReauthn = 3,
+  kDestroyExplicit = 4,
+  kDestroyAutoReauthn = 5,
+
+  kMaxValue = kDestroyAutoReauthn
+};
+
+// This enum describes the third party cookies status. These values are
+// persisted to logs. Entries should not be renumbered and numeric values should
+// never be reused.
+enum class FedCmThirdPartyCookiesStatus {
+  kEnabledInSettings = 0,
+  kDisabledInSettings = 1,
+
+  kMaxValue = kDisabledInSettings
+};
+
 class CONTENT_EXPORT FedCmMetrics {
  public:
   explicit FedCmMetrics(const ukm::SourceId page_source_id);
@@ -268,8 +305,6 @@ class CONTENT_EXPORT FedCmMetrics {
   static void RecordIdpSigninMatchStatus(
       std::optional<bool> idp_signin_status,
       IdpNetworkRequestManager::ParseStatus accounts_endpoint_status);
-
-  void SetSessionID(int session_id);
 
   // Records the time from when a call to the API was made to when the accounts
   // dialog is shown. This does not include flows that involve LoginToIdP. e.g.
@@ -347,7 +382,12 @@ class CONTENT_EXPORT FedCmMetrics {
       const std::vector<GURL>& requested_providers,
       int num_idps_mismatch,
       const std::optional<GURL>& selected_idp_config_url,
-      const RpMode& rp_mode);
+      const RpMode& rp_mode,
+      std::optional<FedCmUseOtherAccountResult> use_other_account_result,
+      std::optional<FedCmVerifyingDialogResult> verifying_dialog_result,
+      FedCmThirdPartyCookiesStatus tpc_status,
+      const FedCmRequesterFrameType& requester_frame_type,
+      std::optional<bool> has_signin_account);
 
   // Records whether user sign-in states between IDP and browser match.
   void RecordSignInStateMatchStatus(const GURL& provider,
@@ -412,13 +452,11 @@ class CONTENT_EXPORT FedCmMetrics {
   // disconnect fetch request was not sent, in which case we do not log the
   // metric. Because this is a separate API from a token request, a different
   // session ID is passed to this metric.
-  void RecordDisconnectMetrics(FedCmDisconnectStatus status,
-                               std::optional<base::TimeDelta> duration,
-                               const RenderFrameHost& rfh,
-                               const url::Origin& requester,
-                               const url::Origin& embedder,
-                               const GURL& provider_url,
-                               int disconnect_session_id);
+  void RecordDisconnectMetrics(
+      FedCmDisconnectStatus status,
+      std::optional<base::TimeDelta> duration,
+      const FedCmRequesterFrameType& requester_frame_type,
+      const GURL& provider_url);
 
   // Records the status of opening the continue_on dialog.
   void RecordContinueOnPopupStatus(FedCmContinueOnPopupStatus status);
@@ -457,30 +495,67 @@ class CONTENT_EXPORT FedCmMetrics {
   void RecordNumMatchingAccounts(size_t accounts_remaining,
                                  const std::string& filter_type);
 
-  int session_id() { return session_id_; }
+  // Records whether a FedCM API call gets rejected because other IdPs have
+  // already initiated an API call.
+  void RecordMultipleRequestsFromDifferentIdPs(bool has_collision);
+
+  // Records whether the RP's URL has a path.
+  void RecordRpUrlHasPath(bool rp_url_has_path);
+
+  // Records the count of identity providers in the request
+  void RecordIdentityProvidersCount(int count);
+
+  // Returns the session ID.
+  int GetSessionID() const;
 
  private:
   ukm::SourceId GetOrCreateProviderSourceId(const GURL& provider);
+  ukm::builders::Blink_FedCm* GetOrCreateFedCmBuilder();
+  ukm::builders::Blink_FedCmIdp* GetOrCreateFedCmIdpBuilder(
+      const GURL& provider);
+
+  // Builder to log the Blink.FedCm UKM event.
+  std::unique_ptr<ukm::builders::Blink_FedCm> fedcm_builder_;
+
+  // Map of provider's config URL to its builder to log the Blink.FedCmIdp UKM
+  // event.
+  std::map<GURL, std::unique_ptr<ukm::builders::Blink_FedCmIdp>>
+      provider_to_fedcm_idp_builder_;
 
   // The page's SourceId. Used to log the UKM event Blink.FedCm.
   ukm::SourceId page_source_id_;
+
+  // Session ID associated with this request to include in metrics recorded.
+  int session_id_;
 
   // The SourceId to be used to log the UKM event Blink.FedCmIdp. Maps a
   // provider's config URL to its UKM SourceId.
   std::map<GURL, ukm::SourceId> provider_source_ids_;
 
-  // The session ID associated to the FedCM token request for which this object
-  // is recording metrics. Each FedCM call gets a random integer session id,
-  // which helps group UKM events by the session id.
-  int session_id_ = -1;
+  // Map of provider's config URL to its number of accounts request sent.
+  std::map<GURL, int> accounts_request_sent_;
+
+  // Map of provider's config URL to its number of accounts dialogs shown.
+  std::map<GURL, int> accounts_dialog_shown_;
+
+  // Map of provider's config URL to its number of mismatch dialogs shown.
+  std::map<GURL, int> mismatch_dialog_shown_;
+
+  // Whether |RecordRequestTokenStatus| has been called.
+  bool has_recorded_request_token_status_{false};
 };
 
 // The following metric is recorded for UMA and UKM, but does not require an
 // existing FedCM call. Records metrics associated with a preventSilentAccess()
 // call from the given RenderFrameHost.
-void RecordPreventSilentAccess(RenderFrameHost& rfh,
-                               const url::Origin& requester,
-                               const url::Origin& embedder);
+void RecordPreventSilentAccess(
+    const FedCmRequesterFrameType& requester_frame_type,
+    int source_id);
+
+// Records the page scroll Y-axis position upon account selection.
+void RecordAccountSelectionScrollPosition(int source_id,
+                                          int session_id,
+                                          const gfx::Point& scroll_position);
 
 // The following are UMA-only recordings, hence do not need to be in the
 // FedCmMetrics class.

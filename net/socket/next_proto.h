@@ -15,25 +15,32 @@
 
 namespace net {
 
-// This enum is used in Net.SSLNegotiatedAlpnProtocol histogram.
-// Do not change or re-use values.
-enum NextProto : uint8_t {
+// These values are persisted to logs. Entries should not be renumbered and
+// numeric values should never be reused.
+//
+// LINT.IfChange(NextProto)
+enum class NextProto : uint8_t {
   kProtoUnknown = 0,
   kProtoHTTP11 = 1,
   kProtoHTTP2 = 2,
   kProtoQUIC = 3,
-  kProtoLast = kProtoQUIC
+  kMaxValue = kProtoQUIC,
 };
+// LINT.ThenChange(//tools/metrics/histograms/metadata/net/enums.xml:SSLNegotiatedAlpnProtocol)
 
 // List of protocols to use for ALPN, used for configuring HttpNetworkSessions.
 typedef std::vector<NextProto> NextProtoVector;
 
 using NextProtoSet =
-    base::EnumSet<NextProto, NextProto::kProtoUnknown, NextProto::kProtoLast>;
+    base::EnumSet<NextProto, NextProto::kProtoUnknown, NextProto::kMaxValue>;
 
 NET_EXPORT_PRIVATE NextProto NextProtoFromString(std::string_view proto_string);
 
 NET_EXPORT_PRIVATE const char* NextProtoToString(NextProto next_proto);
+
+// Used for histograms.
+NET_EXPORT_PRIVATE const std::string_view NegotiatedProtocolToHistogramSuffix(
+    NextProto next_proto);
 
 }  // namespace net
 

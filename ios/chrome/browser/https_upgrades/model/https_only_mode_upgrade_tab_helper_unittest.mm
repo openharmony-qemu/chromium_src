@@ -6,7 +6,6 @@
 
 #import "base/test/metrics/histogram_tester.h"
 #import "base/test/scoped_feature_list.h"
-#import "base/test/task_environment.h"
 #import "components/keyed_service/core/keyed_service.h"
 #import "components/prefs/pref_service.h"
 #import "ios/chrome/browser/https_upgrades/model/https_upgrade_service_factory.h"
@@ -23,6 +22,7 @@
 #import "ios/web/public/navigation/web_state_policy_decider.h"
 #import "ios/web/public/test/fakes/fake_navigation_manager.h"
 #import "ios/web/public/test/fakes/fake_web_state.h"
+#import "ios/web/public/test/web_task_environment.h"
 #import "net/base/apple/url_conversions.h"
 #import "testing/gtest/include/gtest/gtest.h"
 #import "testing/platform_test.h"
@@ -30,16 +30,17 @@
 namespace {
 
 enum class HttpsUpgradesTestType {
-  // Neither HTTPS-Only Mode or HTTPS-Upgrades is enabled.
+  // HTTPS-Upgrades is disabled. HTTPS-Only Mode feature is enabled, but the
+  // pref is disabled.
   kNone,
   // HTTPS-Only Mode is enabled (both the feature and the UI preference).
   kHttpsOnlyMode,
-  // HTTPS-Upgrades is enabled.
+  // HTTPS-Upgrades is enabled. HTTPS-Only Mode feature is enabled, but the pref
+  // is disabled.
   kHttpsUpgrades,
   // Both HTTPS-Only Mode and HTTPS-Upgrades are enabled.
   kBoth
 };
-
 }
 
 std::unique_ptr<KeyedService> BuildFakePrerenderService(
@@ -68,38 +69,36 @@ class HttpsOnlyModeUpgradeTabHelperTest
 
     switch (GetParam()) {
       case HttpsUpgradesTestType::kNone:
+        profile_->GetPrefs()->SetBoolean(prefs::kHttpsOnlyModeEnabled, false);
         scoped_feature_list_.InitWithFeatures(
             /*enabled_features=*/{},
             /*disabled_features=*/
-            {security_interstitials::features::kHttpsOnlyMode,
-             security_interstitials::features::kHttpsUpgrades});
+            {security_interstitials::features::kHttpsUpgrades});
         break;
 
       case HttpsUpgradesTestType::kHttpsOnlyMode:
         profile_->GetPrefs()->SetBoolean(prefs::kHttpsOnlyModeEnabled, true);
         scoped_feature_list_.InitWithFeatures(
-            /*enabled_features=*/{security_interstitials::features::
-                                      kHttpsOnlyMode},
+            /*enabled_features=*/{},
             /*disabled_features=*/{
                 security_interstitials::features::kHttpsUpgrades});
         break;
 
       case HttpsUpgradesTestType::kHttpsUpgrades:
+        profile_->GetPrefs()->SetBoolean(prefs::kHttpsOnlyModeEnabled, false);
+
         scoped_feature_list_.InitWithFeatures(
             /*enabled_features=*/{security_interstitials::features::
                                       kHttpsUpgrades},
-            /*disabled_features=*/{
-                security_interstitials::features::kHttpsOnlyMode});
+            /*disabled_features=*/{});
         break;
 
       case HttpsUpgradesTestType::kBoth:
         profile_->GetPrefs()->SetBoolean(prefs::kHttpsOnlyModeEnabled, true);
-        scoped_feature_list_
-            .InitWithFeatures(/*enabled_features=*/
-                              {security_interstitials::features::kHttpsOnlyMode,
-                               security_interstitials::features::
-                                   kHttpsUpgrades},
-                              /*disabled_features=*/{});
+        scoped_feature_list_.InitWithFeatures(/*enabled_features=*/
+                                              {security_interstitials::
+                                                   features::kHttpsUpgrades},
+                                              /*disabled_features=*/{});
         break;
     }
 
@@ -148,9 +147,9 @@ class HttpsOnlyModeUpgradeTabHelperTest
   web::FakeWebState web_state_;
 
  private:
-  std::unique_ptr<ProfileIOS> profile_;
-  base::test::TaskEnvironment task_environment_;
   base::test::ScopedFeatureList scoped_feature_list_;
+  web::WebTaskEnvironment task_environment_;
+  std::unique_ptr<ProfileIOS> profile_;
 };
 
 // Tests that ShouldAllowResponse properly upgrades navigations and

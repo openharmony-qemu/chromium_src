@@ -4,9 +4,14 @@
 
 #include "components/enterprise/connectors/core/connectors_service_base.h"
 
+#include "base/feature_list.h"
+#include "base/path_service.h"
+#include "base/version_info/version_info.h"
 #include "components/enterprise/connectors/core/connectors_prefs.h"
+#include "components/policy/core/common/cloud/cloud_policy_util.h"
 #include "components/policy/core/common/cloud/user_cloud_policy_manager.h"
 #include "components/prefs/pref_service.h"
+#include "components/safe_browsing/core/common/features.h"
 
 namespace enterprise_connectors {
 
@@ -21,15 +26,18 @@ ConnectorsServiceBase::DmToken& ConnectorsServiceBase::DmToken::operator=(
     const DmToken&) = default;
 ConnectorsServiceBase::DmToken::~DmToken() = default;
 
-std::optional<std::string>
+base::expected<std::string,
+               ConnectorsServiceBase::NoDMTokenForRealTimeUrlCheckReason>
 ConnectorsServiceBase::GetDMTokenForRealTimeUrlCheck() const {
   if (!ConnectorsEnabled()) {
-    return std::nullopt;
+    return base::unexpected(
+        NoDMTokenForRealTimeUrlCheckReason::kConnectorsDisabled);
   }
 
   if (GetPrefs()->GetInteger(kEnterpriseRealTimeUrlCheckMode) ==
       REAL_TIME_CHECK_DISABLED) {
-    return std::nullopt;
+    return base::unexpected(
+        NoDMTokenForRealTimeUrlCheckReason::kPolicyDisabled);
   }
 
   std::optional<DmToken> dm_token =
@@ -38,7 +46,7 @@ ConnectorsServiceBase::GetDMTokenForRealTimeUrlCheck() const {
   if (dm_token.has_value()) {
     return dm_token.value().value;
   }
-  return std::nullopt;
+  return base::unexpected(NoDMTokenForRealTimeUrlCheckReason::kNoDmToken);
 }
 
 EnterpriseRealTimeUrlCheckMode
@@ -50,6 +58,16 @@ ConnectorsServiceBase::GetAppliedRealTimeUrlCheck() const {
 
   return static_cast<EnterpriseRealTimeUrlCheckMode>(
       GetPrefs()->GetInteger(kEnterpriseRealTimeUrlCheckMode));
+}
+
+std::optional<policy::PolicyScope>
+ConnectorsServiceBase::GetRealtimeUrlCheckScope() const {
+  std::optional<policy::PolicyScope> policy_scope = std::nullopt;
+  if (std::optional<DmToken> dm_token =
+          GetDmToken(kEnterpriseRealTimeUrlCheckScope)) {
+    policy_scope = dm_token.value().scope;
+  }
+  return policy_scope;
 }
 
 std::vector<std::string>
@@ -88,7 +106,7 @@ std::optional<ReportingSettings> ConnectorsServiceBase::GetReportingSettings() {
   return settings;
 }
 
-#if !BUILDFLAG(IS_CHROMEOS_ASH)
+#if !BUILDFLAG(IS_CHROMEOS)
 std::optional<std::string> ConnectorsServiceBase::GetProfileDmToken() const {
   policy::CloudPolicyManager* policy_manager =
       GetManagedUserCloudPolicyManager();
@@ -102,5 +120,36 @@ std::optional<std::string> ConnectorsServiceBase::GetProfileDmToken() const {
   return std::nullopt;
 }
 #endif  // !BUILDFLAG(IS_CHROMEOS)
+
+void ConnectorsServiceBase::PopulateBrowserMetadata(
+    bool include_device_info,
+    ClientMetadata::Browser* browser_proto) {
+  base::FilePath browser_id;
+  if (base::PathService::Get(base::DIR_EXE, &browser_id)) {
+    browser_proto->set_browser_id(browser_id.AsUTF8Unsafe());
+  }
+  browser_proto->set_chrome_version(
+      std::string(version_info::GetVersionNumber()));
+  if (include_device_info) {
+    browser_proto->set_machine_user(policy::GetOSUsername());
+  }
+}
+
+void ConnectorsServiceBase::PopulateDeviceMetadata(
+    const ReportingSettings& reporting_settings,
+    const std::string& client_id,
+    ClientMetadata::Device* device_proto) {
+  if (!reporting_settings.per_profile && !device_proto->has_dm_token()) {
+    device_proto->set_dm_token(reporting_settings.dm_token);
+  }
+  device_proto->set_client_id(client_id);
+  device_proto->set_os_version(policy::GetOSVersion());
+  device_proto->set_os_platform(policy::GetOSPlatform());
+  device_proto->set_name(policy::GetDeviceName());
+  if (base::FeatureList::IsEnabled(safe_browsing::kEnhancedFieldsForSecOps)) {
+    device_proto->set_device_fqdn(policy::GetDeviceFqdn());
+    device_proto->set_network_name(policy::GetNetworkName());
+  }
+}
 
 }  // namespace enterprise_connectors

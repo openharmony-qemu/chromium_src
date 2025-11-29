@@ -6,36 +6,37 @@
 #define COMPONENTS_SAVED_TAB_GROUPS_PUBLIC_FEATURES_H_
 
 #include "base/feature_list.h"
+#include "base/time/time.h"
 
 namespace tab_groups {
 
 BASE_DECLARE_FEATURE(kTabGroupSyncAndroid);
 
-BASE_DECLARE_FEATURE(kTabGroupPaneAndroid);
-
 BASE_DECLARE_FEATURE(kTabGroupSyncDisableNetworkLayer);
 
 BASE_DECLARE_FEATURE(kTabGroupsSaveV2);
 
-BASE_DECLARE_FEATURE(kTabGroupsSaveUIUpdate);
-
 BASE_DECLARE_FEATURE(kTabGroupSyncServiceDesktopMigration);
+
+BASE_DECLARE_FEATURE(kTabGroupSyncDelegateAndroid);
 
 BASE_DECLARE_FEATURE(kTabGroupSyncAutoOpenKillSwitch);
 
 BASE_DECLARE_FEATURE(kRestrictDownloadOnSyncedTabs);
 
-BASE_DECLARE_FEATURE(kDeferMediaLoadInBackgroundTab);
-
 BASE_DECLARE_FEATURE(kUseAlternateHistorySyncIllustration);
 
 BASE_DECLARE_FEATURE(kForceRemoveClosedTabGroupsOnStartup);
 
-extern bool IsTabGroupsSaveV2Enabled();
+BASE_DECLARE_FEATURE(kEnableUrlRestriction);
 
-extern bool IsTabGroupsSaveUIUpdateEnabled();
+BASE_DECLARE_FEATURE(kEnableOriginatingSavedGroupCleanUp);
+
+BASE_DECLARE_FEATURE(kLeftClickOpensTabGroupBubble);
 
 extern bool IsTabGroupSyncServiceDesktopMigrationEnabled();
+
+extern bool IsTabGroupSyncDelegateAndroidEnabled();
 
 extern bool IsTabGroupSyncCoordinatorEnabled();
 
@@ -47,6 +48,13 @@ extern bool DeferMediaLoadInBackgroundTab();
 
 extern bool ShouldForceRemoveClosedTabGroupsOnStartup();
 
+extern bool IsTabTitleSanitizationEnabled();
+
+extern bool IsUrlRestrictionEnabled();
+
+extern bool IsOriginatingSavedGroupCleanUpEnabled();
+
+extern base::TimeDelta GetOriginatingSavedGroupCleanUpTimeInterval();
 }  // namespace tab_groups
 
 #endif  // COMPONENTS_SAVED_TAB_GROUPS_PUBLIC_FEATURES_H_

@@ -13,6 +13,7 @@
 #include "components/favicon/core/favicon_driver_observer.h"
 #include "content/public/browser/web_contents_observer.h"
 #include "fuchsia_web/webengine/web_engine_export.h"
+#include "net/base/net_errors.h"
 
 namespace content {
 class NavigationEntry;
@@ -26,6 +27,8 @@ class NavigationControllerImpl final
       public content::WebContentsObserver,
       public favicon::FaviconDriverObserver {
  public:
+  static const void* const kAbortedRequestKey;
+
   NavigationControllerImpl(content::WebContents* web_contents,
                            void* parent_for_trace_flow);
 
@@ -102,6 +105,9 @@ class NavigationControllerImpl final
 
   // True if navigation failed due to an error during page load.
   bool uncommitted_load_error_ = false;
+
+  // Network error code from the last navigation attempt.
+  net::Error last_error_code_ = net::OK;
 
   // Set to true  when NavigationEventListenerFlags::FAVICON flag
   // was passed to the last SetEventListener() call, i.e. favicon reporting is

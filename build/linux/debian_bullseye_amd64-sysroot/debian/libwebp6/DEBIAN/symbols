@@ -77,7 +77,7 @@ libwebp.so.6 libwebp6 #MINVER#
  WebPPictureSmartARGBToYUVA@Base 0.5.1
  WebPPictureView@Base 0.5.1
  WebPPictureYUVAToARGB@Base 0.5.1
- WebPPlaneDistortion@Base 0.6.1-2.1
+ WebPPlaneDistortion@Base 0.6.1-2.1+deb11u2
  WebPSafeCalloc@Base 0.5.1
  WebPSafeFree@Base 0.5.1
  WebPSafeMalloc@Base 0.5.1

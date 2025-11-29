@@ -23,10 +23,8 @@
 #include "base/test/scoped_feature_list.h"
 #include "base/unguessable_token.h"
 #include "build/build_config.h"
-#include "components/autofill/core/browser/autofill_experiments.h"
 #include "components/autofill/core/browser/autofill_field.h"
-#include "components/autofill/core/browser/autofill_form_test_utils.h"
-#include "components/autofill/core/browser/autofill_test_utils.h"
+#include "components/autofill/core/browser/crowdsourcing/randomized_encoder.h"
 #include "components/autofill/core/browser/field_types.h"
 #include "components/autofill/core/browser/form_parsing/buildflags.h"
 #include "components/autofill/core/browser/form_parsing/form_field_parser.h"
@@ -34,7 +32,9 @@
 #include "components/autofill/core/browser/form_structure_test_api.h"
 #include "components/autofill/core/browser/heuristic_source.h"
 #include "components/autofill/core/browser/proto/api_v1.pb.h"
-#include "components/autofill/core/browser/randomized_encoder.h"
+#include "components/autofill/core/browser/studies/autofill_experiments.h"
+#include "components/autofill/core/browser/test_utils/autofill_form_test_utils.h"
+#include "components/autofill/core/browser/test_utils/autofill_test_utils.h"
 #include "components/autofill/core/common/autocomplete_parsing_util.h"
 #include "components/autofill/core/common/autofill_features.h"
 #include "components/autofill/core/common/autofill_payments_features.h"
@@ -66,6 +66,12 @@ using ::testing::ResultOf;
 using ::testing::Truly;
 using ::testing::UnorderedElementsAre;
 
+size_t AutofillCount(const FormStructure& form) {
+  return std::ranges::count_if(form.fields(), [](const auto& field) {
+    return field->IsFieldFillable();
+  });
+}
+
 class FormStructureTestImpl : public test::FormStructureTest {
  public:
   static std::string Hash64Bit(const std::string& str) {
@@ -83,8 +89,8 @@ class FormStructureTestImpl : public test::FormStructureTest {
     return FormStructure(form).ShouldRunHeuristics();
   }
 
-  bool FormShouldRunHeuristicsForSingleFieldForms(const FormData& form) {
-    return FormStructure(form).ShouldRunHeuristicsForSingleFieldForms();
+  bool FormShouldRunHeuristicsForSingleFields(const FormData& form) {
+    return FormStructure(form).ShouldRunHeuristicsForSingleFields();
   }
 
   bool FormShouldBeQueried(const FormData& form) {
@@ -636,54 +642,124 @@ TEST_F(FormStructureTestImpl, StripCommonNamePrefix_SmallPrefix) {
 TEST_F(FormStructureTestImpl, IsCompleteCreditCardForm_Minimal) {
   CheckFormStructureTestData(
       {{{.description_for_logging = "IsCompleteCreditCardForm_Minimal",
-         .fields = {{.role = FieldType::CREDIT_CARD_NUMBER},
-                    {.label = u"Expiration", .name = u"cc_exp"},
-                    {.role = FieldType::ADDRESS_HOME_ZIP}}},
+         .fields = {{.role = CREDIT_CARD_NUMBER},
+                    {.label = u"Expiration"},
+                    {.role = ADDRESS_HOME_ZIP}}},
         {.determine_heuristic_type = true,
-         .is_complete_credit_card_form = true},
+         .is_complete_credit_card_form = std::make_pair(
+             FormStructure::CreditCardFormCompleteness::kCompleteCreditCardForm,
+             true)},
         {}}});
 }
 
 TEST_F(FormStructureTestImpl, IsCompleteCreditCardForm_Full) {
   CheckFormStructureTestData(
       {{{.description_for_logging = "IsCompleteCreditCardForm_Full",
-         .fields = {{.label = u"Name on Card", .name = u"name_on_card"},
-                    {.role = FieldType::CREDIT_CARD_NUMBER},
-                    {.label = u"Exp Month", .name = u"ccmonth"},
-                    {.label = u"Exp Year", .name = u"ccyear"},
-                    {.label = u"Verification", .name = u"verification"},
-                    {.label = u"Submit",
-                     .name = u"submit",
-                     .form_control_type = FormControlType::kInputText}}},
+         .fields = {{.label = u"Name on Card"},
+                    {.role = CREDIT_CARD_NUMBER},
+                    {.label = u"Exp Month"},
+                    {.label = u"Exp Year"},
+                    {.label = u"Verification"}}},
         {.determine_heuristic_type = true,
-         .is_complete_credit_card_form = true},
-        {}}});
+         .is_complete_credit_card_form = std::make_pair(
+             FormStructure::CreditCardFormCompleteness::kCompleteCreditCardForm,
+             true)}}});
 }
 
 // A form with only the credit card number is not considered sufficient.
 TEST_F(FormStructureTestImpl, IsCompleteCreditCardForm_OnlyCCNumber) {
   CheckFormStructureTestData(
       {{{.description_for_logging = "IsCompleteCreditCardForm_OnlyCCNumber",
-         .fields = {{.role = FieldType::CREDIT_CARD_NUMBER}}},
+         .fields = {{.role = CREDIT_CARD_NUMBER}}},
         {.determine_heuristic_type = true,
-         .is_complete_credit_card_form = false},
+         .is_complete_credit_card_form = std::make_pair(
+             FormStructure::CreditCardFormCompleteness::kCompleteCreditCardForm,
+             false)},
         {}}});
 }
 
-// A form with only the credit card number is not considered sufficient.
 TEST_F(FormStructureTestImpl, IsCompleteCreditCardForm_AddressForm) {
   CheckFormStructureTestData(
       {{{.description_for_logging = "IsCompleteCreditCardForm_AddressForm",
-         .fields = {{.role = FieldType::NAME_FIRST, .name = u""},
-                    {.role = FieldType::NAME_LAST, .name = u""},
-                    {.role = FieldType::EMAIL_ADDRESS, .name = u""},
-                    {.role = FieldType::PHONE_HOME_NUMBER, .name = u""},
-                    {.label = u"Address", .name = u""},
-                    {.label = u"Address", .name = u""},
-                    {.role = FieldType::ADDRESS_HOME_ZIP, .name = u""}}},
+         .fields = {{.role = FieldType::NAME_FIRST},
+                    {.role = FieldType::NAME_LAST},
+                    {.role = FieldType::EMAIL_ADDRESS},
+                    {.role = FieldType::PHONE_HOME_NUMBER},
+                    {.label = u"Address"},
+                    {.label = u"Address"},
+                    {.role = FieldType::ADDRESS_HOME_ZIP}}},
         {.determine_heuristic_type = true,
-         .is_complete_credit_card_form = false},
+         .is_complete_credit_card_form = std::make_pair(
+             FormStructure::CreditCardFormCompleteness::kCompleteCreditCardForm,
+             false)},
         {}}});
+}
+
+TEST_F(FormStructureTestImpl,
+       IsCompleteCreditCardFormIncludingCvcAndName_CvcAndNameExist) {
+  CheckFormStructureTestData({{
+      {.description_for_logging =
+           "IsCompleteCreditCardFormIncludingCvcAndName_CvcAndNameExist",
+       .fields = {{.role = CREDIT_CARD_NUMBER},
+                  {.label = u"Expiration"},
+                  {.label = u"Verification"},
+                  {.label = u"Name on Card"}}},
+      {.determine_heuristic_type = true,
+       .is_complete_credit_card_form =
+           std::make_pair(FormStructure::CreditCardFormCompleteness::
+                              kCompleteCreditCardFormIncludingCvcAndName,
+                          true)},
+  }});
+}
+
+TEST_F(FormStructureTestImpl,
+       IsCompleteCreditCardFormIncludingCvcAndName_MissingCvc) {
+  CheckFormStructureTestData({{
+      {.description_for_logging =
+           "IsCompleteCreditCardFormIncludingCvcAndName_MissingCvc",
+       .fields = {{.role = CREDIT_CARD_NUMBER},
+                  {.label = u"Expiration"},
+                  {.label = u"Name on Card"}}},
+      {.determine_heuristic_type = true,
+       .is_complete_credit_card_form =
+           std::make_pair(FormStructure::CreditCardFormCompleteness::
+                              kCompleteCreditCardFormIncludingCvcAndName,
+                          false)},
+  }});
+}
+
+TEST_F(FormStructureTestImpl,
+       IsCompleteCreditCardFormIncludingCvcAndName_MissingName) {
+  CheckFormStructureTestData({{
+      {.description_for_logging =
+           "IsCompleteCreditCardFormIncludingCvcAndName_MissingName",
+       .fields = {{.role = CREDIT_CARD_NUMBER},
+                  {.label = u"Expiration"},
+                  {.label = u"Verification"}}},
+      {.determine_heuristic_type = true,
+       .is_complete_credit_card_form =
+           std::make_pair(FormStructure::CreditCardFormCompleteness::
+                              kCompleteCreditCardFormIncludingCvcAndName,
+                          false)},
+  }});
+}
+
+TEST_F(FormStructureTestImpl,
+       IsCompleteCreditCardFormIncludingCvcAndName_FirstAndLastNames) {
+  CheckFormStructureTestData({{
+      {.description_for_logging =
+           "IsCompleteCreditCardFormIncludingCvcAndName_FirstAndLastNames",
+       .fields = {{.role = CREDIT_CARD_NUMBER},
+                  {.label = u"Expiration"},
+                  {.label = u"Verification"},
+                  {.label = u"first name"},
+                  {.label = u"last name"}}},
+      {.determine_heuristic_type = true,
+       .is_complete_credit_card_form =
+           std::make_pair(FormStructure::CreditCardFormCompleteness::
+                              kCompleteCreditCardFormIncludingCvcAndName,
+                          true)},
+  }});
 }
 
 // Verify that we can correctly process the 'autocomplete' attribute for phone
@@ -811,7 +887,7 @@ TEST_F(FormStructureTestImpl,
     FormStructure form_structure(form);
     form_structure.DetermineHeuristicTypes(GeoIpCountryCode(""), nullptr);
     ASSERT_EQ(2U, form_structure.field_count());
-    ASSERT_EQ(0U, form_structure.autofill_count());
+    ASSERT_EQ(0U, AutofillCount(form_structure));
     EXPECT_EQ(UNKNOWN_TYPE, form_structure.field(0)->heuristic_type());
     EXPECT_EQ(UNKNOWN_TYPE, form_structure.field(1)->heuristic_type());
     EXPECT_EQ(NO_SERVER_DATA, form_structure.field(0)->server_type());
@@ -845,7 +921,7 @@ TEST_F(FormStructureTestImpl,
     FormStructure form_structure(form_copy);
     form_structure.DetermineHeuristicTypes(GeoIpCountryCode(""), nullptr);
     ASSERT_EQ(1U, form_structure.field_count());
-    ASSERT_EQ(1U, form_structure.autofill_count());
+    ASSERT_EQ(1U, AutofillCount(form_structure));
     EXPECT_EQ(UNKNOWN_TYPE, form_structure.field(0)->heuristic_type());
     EXPECT_EQ(NO_SERVER_DATA, form_structure.field(0)->server_type());
     EXPECT_EQ(NAME_FIRST, form_structure.field(0)->Type().GetStorableType());
@@ -867,14 +943,14 @@ TEST_F(FormStructureTestImpl, PromoCodeHeuristics_SmallForm) {
   field.set_renderer_id(test::MakeFieldRendererId());
   test_api(form).Append(field);
 
-  EXPECT_TRUE(FormShouldRunHeuristicsForSingleFieldForms(form));
+  EXPECT_TRUE(FormShouldRunHeuristicsForSingleFields(form));
 
   // Default configuration.
   {
     FormStructure form_structure(form);
     form_structure.DetermineHeuristicTypes(GeoIpCountryCode(""), nullptr);
     ASSERT_EQ(1U, form_structure.field_count());
-    ASSERT_EQ(1U, form_structure.autofill_count());
+    ASSERT_EQ(1U, AutofillCount(form_structure));
     EXPECT_EQ(MERCHANT_PROMO_CODE, form_structure.field(0)->heuristic_type());
     EXPECT_EQ(NO_SERVER_DATA, form_structure.field(0)->server_type());
     EXPECT_TRUE(form_structure.IsAutofillable());
@@ -898,7 +974,10 @@ TEST_F(FormStructureTestImpl, PasswordFormShouldBeQueried) {
                                        FormControlType::kInputPassword)});
   FormStructure form_structure(form);
   form_structure.DetermineHeuristicTypes(GeoIpCountryCode(""), nullptr);
-  EXPECT_TRUE(form_structure.has_password_field());
+  EXPECT_TRUE(
+      std::ranges::any_of(form_structure.fields(), [](const auto& field) {
+        return field->form_control_type() == FormControlType::kInputPassword;
+      }));
   EXPECT_TRUE(form_structure.ShouldBeQueried());
   EXPECT_TRUE(form_structure.ShouldBeUploaded());
 }
@@ -930,7 +1009,7 @@ TEST_F(FormStructureTestImpl,
 
   // Expect the correct number of fields.
   ASSERT_EQ(6U, form_structure.field_count());
-  EXPECT_EQ(2U, form_structure.autofill_count());
+  EXPECT_EQ(2U, AutofillCount(form_structure));
 
   // All of the fields in this form should be parsed as belonging to the same
   // section.
@@ -956,7 +1035,7 @@ TEST_F(FormStructureTestImpl,
 
   // Expect the correct number of fields.
   ASSERT_EQ(2U, form_structure.field_count());
-  EXPECT_EQ(2U, form_structure.autofill_count());
+  EXPECT_EQ(2U, AutofillCount(form_structure));
 
   // All of the fields in this form should be parsed as belonging to the same
   // section.
@@ -1030,7 +1109,7 @@ TEST_F(FormStructureTestImpl, HeuristicsSample8) {
   form_structure->DetermineHeuristicTypes(GeoIpCountryCode(""), nullptr);
   EXPECT_TRUE(form_structure->IsAutofillable());
   ASSERT_EQ(10U, form_structure->field_count());
-  ASSERT_EQ(9U, form_structure->autofill_count());
+  ASSERT_EQ(9U, AutofillCount(*form_structure));
 
   // First name.
   EXPECT_EQ(NAME_FIRST, form_structure->field(0)->heuristic_type());
@@ -1104,7 +1183,7 @@ TEST_F(FormStructureTestImpl, HeuristicsSample6) {
   form_structure->DetermineHeuristicTypes(GeoIpCountryCode(""), nullptr);
   EXPECT_TRUE(form_structure->IsAutofillable());
   ASSERT_EQ(7U, form_structure->field_count());
-  ASSERT_EQ(6U, form_structure->autofill_count());
+  ASSERT_EQ(6U, AutofillCount(*form_structure));
 
   // Email.
   EXPECT_EQ(EMAIL_ADDRESS, form_structure->field(0)->heuristic_type());
@@ -1178,7 +1257,7 @@ TEST_F(FormStructureTestImpl, HeuristicsLabelsOnly) {
   form_structure->DetermineHeuristicTypes(GeoIpCountryCode(""), nullptr);
   EXPECT_TRUE(form_structure->IsAutofillable());
   ASSERT_EQ(8U, form_structure->field_count());
-  ASSERT_EQ(7U, form_structure->autofill_count());
+  ASSERT_EQ(7U, AutofillCount(*form_structure));
 
   // First name.
   EXPECT_EQ(NAME_FIRST, form_structure->field(0)->heuristic_type());
@@ -1242,7 +1321,7 @@ TEST_F(FormStructureTestImpl, HeuristicsCreditCardInfo) {
   form_structure->DetermineHeuristicTypes(GeoIpCountryCode(""), nullptr);
   EXPECT_TRUE(form_structure->IsAutofillable());
   ASSERT_EQ(6U, form_structure->field_count());
-  ASSERT_EQ(5U, form_structure->autofill_count());
+  ASSERT_EQ(5U, AutofillCount(*form_structure));
 
   // Credit card name.
   EXPECT_EQ(CREDIT_CARD_NAME_FULL, form_structure->field(0)->heuristic_type());
@@ -1310,7 +1389,7 @@ TEST_F(FormStructureTestImpl, HeuristicsCreditCardInfoWithUnknownCardField) {
   form_structure->DetermineHeuristicTypes(GeoIpCountryCode(""), nullptr);
   EXPECT_TRUE(form_structure->IsAutofillable());
   ASSERT_EQ(7U, form_structure->field_count());
-  ASSERT_EQ(5U, form_structure->autofill_count());
+  ASSERT_EQ(5U, AutofillCount(*form_structure));
 
   // Credit card name.
   EXPECT_EQ(CREDIT_CARD_NAME_FULL, form_structure->field(0)->heuristic_type());
@@ -1362,7 +1441,7 @@ TEST_F(FormStructureTestImpl, ThreeAddressLines) {
   form_structure->DetermineHeuristicTypes(GeoIpCountryCode(""), nullptr);
   EXPECT_TRUE(form_structure->IsAutofillable());
   ASSERT_EQ(4U, form_structure->field_count());
-  ASSERT_EQ(4U, form_structure->autofill_count());
+  ASSERT_EQ(4U, AutofillCount(*form_structure));
 
   // Address Line 1.
   EXPECT_EQ(ADDRESS_HOME_LINE1, form_structure->field(0)->heuristic_type());
@@ -1406,7 +1485,7 @@ TEST_F(FormStructureTestImpl, SurplusAddressLinesIgnored) {
   form_structure = std::make_unique<FormStructure>(form);
   form_structure->DetermineHeuristicTypes(GeoIpCountryCode(""), nullptr);
   ASSERT_EQ(4U, form_structure->field_count());
-  ASSERT_EQ(3U, form_structure->autofill_count());
+  ASSERT_EQ(3U, AutofillCount(*form_structure));
 
   // Address Line 1.
   EXPECT_EQ(ADDRESS_HOME_LINE1, form_structure->field(0)->heuristic_type());
@@ -1455,7 +1534,7 @@ TEST_F(FormStructureTestImpl, ThreeAddressLinesExpedia) {
   form_structure->DetermineHeuristicTypes(GeoIpCountryCode(""), nullptr);
   EXPECT_TRUE(form_structure->IsAutofillable());
   ASSERT_EQ(4U, form_structure->field_count());
-  EXPECT_EQ(4U, form_structure->autofill_count());
+  EXPECT_EQ(4U, AutofillCount(*form_structure));
 
   // Address Line 1.
   EXPECT_EQ(ADDRESS_HOME_LINE1, form_structure->field(0)->heuristic_type());
@@ -1497,7 +1576,7 @@ TEST_F(FormStructureTestImpl, TwoAddressLinesEbay) {
   form_structure->DetermineHeuristicTypes(GeoIpCountryCode(""), nullptr);
   EXPECT_TRUE(form_structure->IsAutofillable());
   ASSERT_EQ(3U, form_structure->field_count());
-  ASSERT_EQ(3U, form_structure->autofill_count());
+  ASSERT_EQ(3U, AutofillCount(*form_structure));
 
   // Address Line 1.
   EXPECT_EQ(ADDRESS_HOME_LINE1, form_structure->field(0)->heuristic_type());
@@ -1534,7 +1613,7 @@ TEST_F(FormStructureTestImpl, HeuristicsStateWithProvince) {
   form_structure->DetermineHeuristicTypes(GeoIpCountryCode(""), nullptr);
   EXPECT_TRUE(form_structure->IsAutofillable());
   ASSERT_EQ(3U, form_structure->field_count());
-  ASSERT_EQ(3U, form_structure->autofill_count());
+  ASSERT_EQ(3U, AutofillCount(*form_structure));
 
   // Address Line 1.
   EXPECT_EQ(ADDRESS_HOME_LINE1, form_structure->field(0)->heuristic_type());
@@ -1612,7 +1691,7 @@ TEST_F(FormStructureTestImpl, HeuristicsWithBilling) {
   form_structure->DetermineHeuristicTypes(GeoIpCountryCode(""), nullptr);
   EXPECT_TRUE(form_structure->IsAutofillable());
   ASSERT_EQ(11U, form_structure->field_count());
-  ASSERT_EQ(11U, form_structure->autofill_count());
+  ASSERT_EQ(11U, AutofillCount(*form_structure));
 
   EXPECT_EQ(NAME_FIRST, form_structure->field(0)->heuristic_type());
   EXPECT_EQ(NAME_LAST, form_structure->field(1)->heuristic_type());
@@ -1666,7 +1745,7 @@ TEST_F(FormStructureTestImpl, ThreePartPhoneNumber) {
   form_structure->DetermineHeuristicTypes(GeoIpCountryCode(""), nullptr);
   EXPECT_TRUE(form_structure->IsAutofillable());
   ASSERT_EQ(4U, form_structure->field_count());
-  ASSERT_EQ(4U, form_structure->autofill_count());
+  ASSERT_EQ(4U, AutofillCount(*form_structure));
 
   EXPECT_EQ(PHONE_HOME_CITY_CODE, form_structure->field(0)->heuristic_type());
   EXPECT_EQ(PHONE_HOME_NUMBER_PREFIX,
@@ -1715,7 +1794,7 @@ TEST_F(FormStructureTestImpl, HeuristicsInfernoCC) {
 
   // Expect the correct number of fields.
   ASSERT_EQ(5U, form_structure->field_count());
-  EXPECT_EQ(5U, form_structure->autofill_count());
+  EXPECT_EQ(5U, AutofillCount(*form_structure));
 
   // Name on Card.
   EXPECT_EQ(CREDIT_CARD_NAME_FULL, form_structure->field(0)->heuristic_type());
@@ -1776,7 +1855,7 @@ TEST_F(FormStructureTestImpl, HeuristicsInferCCNames_NamesNotFirst) {
 
   // Expect the correct number of fields.
   ASSERT_EQ(6U, form_structure->field_count());
-  ASSERT_EQ(6U, form_structure->autofill_count());
+  ASSERT_EQ(6U, AutofillCount(*form_structure));
 
   // Card Number.
   EXPECT_EQ(CREDIT_CARD_NUMBER, form_structure->field(0)->heuristic_type());
@@ -1841,7 +1920,7 @@ TEST_F(FormStructureTestImpl, HeuristicsInferCCNames_NamesFirst) {
 
   // Expect the correct number of fields.
   ASSERT_EQ(6U, form_structure->field_count());
-  ASSERT_EQ(6U, form_structure->autofill_count());
+  ASSERT_EQ(6U, AutofillCount(*form_structure));
 
   // First name.
   EXPECT_EQ(CREDIT_CARD_NAME_FIRST, form_structure->field(0)->heuristic_type());
@@ -2311,27 +2390,27 @@ TEST_F(FormStructureTestImpl, GetFormTypes_AutocompleteUnrecognized) {
 }
 
 // The test ensures that single field email forms are correctly parsed via
-// `FormShouldRunHeuristicsForSingleFieldForms`.
+// `FormShouldRunHeuristicsForSingleFields`.
 TEST_F(FormStructureTestImpl, SingleFieldEmailHeuristicsBehavior) {
   FormData form = test::GetFormData({.fields = {{.role = EMAIL_ADDRESS}}});
 
   // The form has too few fields; it should not run heuristics, falling back to
   // the single field parsing.
   EXPECT_FALSE(FormShouldRunHeuristics(form));
-  EXPECT_TRUE(FormShouldRunHeuristicsForSingleFieldForms(form));
+  EXPECT_TRUE(FormShouldRunHeuristicsForSingleFields(form));
 
   {
     FormStructure form_structure(form);
     form_structure.DetermineHeuristicTypes(GeoIpCountryCode(""), nullptr);
     ASSERT_EQ(1U, form_structure.field_count());
-    ASSERT_EQ(1U, form_structure.autofill_count());
+    ASSERT_EQ(1U, AutofillCount(form_structure));
     EXPECT_EQ(EMAIL_ADDRESS, form_structure.field(0)->heuristic_type());
     EXPECT_TRUE(form_structure.IsAutofillable());
   }
 }
 
 // The test ensures that email fields are correctly parsed (via
-// `FormShouldRunHeuristicsForSingleFieldForms`) on small forms with two fields.
+// `FormShouldRunHeuristicsForSingleFields`) on small forms with two fields.
 TEST_F(FormStructureTestImpl, TwoFieldFormEmailHeuristicsBehavior) {
   FormData form = test::GetFormData(
       {.fields = {{.role = NAME_FULL}, {.role = EMAIL_ADDRESS}}});
@@ -2339,30 +2418,22 @@ TEST_F(FormStructureTestImpl, TwoFieldFormEmailHeuristicsBehavior) {
   // The form has too few fields; it should not run heuristics, falling back to
   // the single field parsing.
   EXPECT_FALSE(FormShouldRunHeuristics(form));
-  EXPECT_TRUE(FormShouldRunHeuristicsForSingleFieldForms(form));
+  EXPECT_TRUE(FormShouldRunHeuristicsForSingleFields(form));
 
   {
     FormStructure form_structure(form);
     form_structure.DetermineHeuristicTypes(GeoIpCountryCode(""), nullptr);
     ASSERT_EQ(2U, form_structure.field_count());
-    ASSERT_EQ(1U, form_structure.autofill_count());
+    ASSERT_EQ(1U, AutofillCount(form_structure));
     EXPECT_EQ(UNKNOWN_TYPE, form_structure.field(0)->heuristic_type());
     EXPECT_EQ(EMAIL_ADDRESS, form_structure.field(1)->heuristic_type());
     EXPECT_TRUE(form_structure.IsAutofillable());
   }
 }
 
-// Verifies that with kAutofillEnableEmailHeuristicAutocompleteEmail enabled,
-// only fields with autocomplete=email are parsed as email fields.
+// Verifies that fields with autocomplete=off are not parsed as email fields.
 TEST_F(FormStructureTestImpl,
        SingleFieldEmailHeuristicsEnabledAutocompleteEmail) {
-  base::test::ScopedFeatureList scoped_feature_list;
-  scoped_feature_list.InitAndEnableFeatureWithParameters(
-      features::kAutofillEnableEmailHeuristicOnlyAddressForms,
-      base::FieldTrialParams{
-          {features::kAutofillEnableEmailHeuristicAutocompleteEmail.name,
-           "true"}});
-
   FormData form = test::GetFormData(
       {.fields = {{.role = EMAIL_ADDRESS, .autocomplete_attribute = "off"},
                   {.role = EMAIL_ADDRESS, .autocomplete_attribute = "email"}}});
@@ -2370,13 +2441,13 @@ TEST_F(FormStructureTestImpl,
   // The form has too few fields; it should not run heuristics, falling back to
   // the single field parsing.
   EXPECT_FALSE(FormShouldRunHeuristics(form));
-  EXPECT_TRUE(FormShouldRunHeuristicsForSingleFieldForms(form));
+  EXPECT_TRUE(FormShouldRunHeuristicsForSingleFields(form));
 
   {
     FormStructure form_structure(form);
     form_structure.DetermineHeuristicTypes(GeoIpCountryCode(""), nullptr);
     ASSERT_EQ(2U, form_structure.field_count());
-    ASSERT_EQ(1U, form_structure.autofill_count());
+    ASSERT_EQ(1U, AutofillCount(form_structure));
     EXPECT_EQ(UNKNOWN_TYPE, form_structure.field(0)->heuristic_type());
     EXPECT_EQ(EMAIL_ADDRESS, form_structure.field(1)->heuristic_type());
     EXPECT_TRUE(form_structure.IsAutofillable());
@@ -2388,10 +2459,8 @@ TEST_F(FormStructureTestImpl,
 TEST_F(FormStructureTestImpl,
        SingleFieldEmailHeuristicsNotSupportedOutsideFormTag) {
   base::test::ScopedFeatureList scoped_feature_list;
-  scoped_feature_list.InitWithFeatures(
-      {features::kAutofillEnableEmailHeuristicOnlyAddressForms},
-      {features::kAutofillEnableEmailHeuristicOutsideForms});
-
+  scoped_feature_list.InitAndDisableFeature(
+      features::kAutofillEnableEmailHeuristicOutsideForms);
   FormData form = test::GetFormData({.fields = {{.role = EMAIL_ADDRESS}}});
   // Set the form to simulate a field outside a <form> tag.
   form.set_renderer_id(FormRendererId());
@@ -2399,12 +2468,12 @@ TEST_F(FormStructureTestImpl,
   // The form has too few fields; it should not run heuristics, falling back to
   // the single field parsing.
   EXPECT_FALSE(FormShouldRunHeuristics(form));
-  EXPECT_TRUE(FormShouldRunHeuristicsForSingleFieldForms(form));
+  EXPECT_TRUE(FormShouldRunHeuristicsForSingleFields(form));
   {
     FormStructure form_structure(form);
     form_structure.DetermineHeuristicTypes(GeoIpCountryCode(""), nullptr);
     ASSERT_EQ(1U, form_structure.field_count());
-    ASSERT_EQ(0U, form_structure.autofill_count());
+    ASSERT_EQ(0U, AutofillCount(form_structure));
     EXPECT_EQ(UNKNOWN_TYPE, form_structure.field(0)->heuristic_type());
     EXPECT_FALSE(form_structure.IsAutofillable());
   }
@@ -2416,11 +2485,8 @@ TEST_F(FormStructureTestImpl,
 // is enabled.
 TEST_F(FormStructureTestImpl,
        SingleFieldEmailHeuristicsSupportedOutsideFormTag) {
-  base::test::ScopedFeatureList enabled;
-  enabled.InitWithFeatures(
-      {features::kAutofillEnableEmailHeuristicOnlyAddressForms,
-       features::kAutofillEnableEmailHeuristicOutsideForms},
-      {});
+  base::test::ScopedFeatureList scoped_feature_list{
+      features::kAutofillEnableEmailHeuristicOutsideForms};
 
   FormData form = test::GetFormData({.fields = {{.role = EMAIL_ADDRESS}}});
   // Set the form to simulate a field outside a <form> tag.
@@ -2429,17 +2495,80 @@ TEST_F(FormStructureTestImpl,
   // The form has too few fields; it should not run heuristics, falling back to
   // the single field parsing.
   EXPECT_FALSE(FormShouldRunHeuristics(form));
-  EXPECT_TRUE(FormShouldRunHeuristicsForSingleFieldForms(form));
+  EXPECT_TRUE(FormShouldRunHeuristicsForSingleFields(form));
   {
     FormStructure form_structure(form);
     form_structure.DetermineHeuristicTypes(GeoIpCountryCode(""), nullptr);
     ASSERT_EQ(1U, form_structure.field_count());
     // However, because the email field is in a form and matches the heuristics,
     // it should be autofillable when the feature is enabled.
-    ASSERT_EQ(1U, form_structure.autofill_count());
+    ASSERT_EQ(1U, AutofillCount(form_structure));
     EXPECT_EQ(EMAIL_ADDRESS, form_structure.field(0)->heuristic_type());
     EXPECT_TRUE(form_structure.IsAutofillable());
   }
+}
+
+// Tests that password manager classifier predictions are returned correctly.
+TEST_F(FormStructureTestImpl, GetHeuristicPredictions) {
+  FormData form =
+      test::GetFormData({.fields = {{.role = USERNAME}, {.role = PASSWORD}}});
+
+  FormStructure form_structure(form);
+  form_structure.fields()[0]->set_heuristic_type(
+      HeuristicSource::kPasswordManagerMachineLearning, USERNAME);
+  form_structure.fields()[1]->set_heuristic_type(
+      HeuristicSource::kPasswordManagerMachineLearning, PASSWORD);
+
+  // Fetch model predictions for one field from the form and one field not
+  // present in the form.
+  FormFieldData mystery_field = test::CreateTestFormField(
+      /*label=*/"mystery", /*name=*/"secret",
+      /*value=*/"unknown", FormControlType::kInputText);
+  EXPECT_THAT(form_structure.GetHeuristicPredictions(
+                  HeuristicSource::kPasswordManagerMachineLearning,
+                  {form.fields()[1].global_id(), mystery_field.global_id()}),
+              UnorderedElementsAre(
+                  testing::Pair(form.fields()[1].global_id(), PASSWORD),
+                  testing::Pair(mystery_field.global_id(), NO_SERVER_DATA)));
+}
+
+// Tests that loyalty card fields are classified on big forms.
+TEST_F(FormStructureTestImpl, LoyaltyCardsHeuristics_BigForms) {
+  base::test::ScopedFeatureList feature_list{
+      features::kAutofillEnableLoyaltyCardsFilling};
+  std::unique_ptr<FormStructure> form_structure;
+  FormData form;
+  form.set_url(GURL("http://www.foo.com/"));
+  form.set_renderer_id(test::MakeFormRendererId());
+  form.set_fields(
+      {CreateTestFormField("First Name", "firstname", "",
+                           FormControlType::kInputText, "given-name"),
+       CreateTestFormField("Last Name", "lastname", "",
+                           FormControlType::kInputText, "family-name"),
+       CreateTestFormField("Email", "email", "", FormControlType::kInputEmail,
+                           "email"),
+       CreateTestFormField("Frequent Flyer Number", "frequent-flyer-number", "",
+                           FormControlType::kInputText, "flyer-number"),
+       CreateTestFormField("Phone Number", "BillTo.Phone", "",
+                           FormControlType::kInputText, "phone")});
+
+  form_structure = std::make_unique<FormStructure>(form);
+  form_structure->DetermineHeuristicTypes(GeoIpCountryCode(""), nullptr);
+  EXPECT_TRUE(form_structure->IsAutofillable());
+  ASSERT_EQ(5U, form_structure->field_count());
+  ASSERT_EQ(5U, AutofillCount(*form_structure));
+
+  // First name.
+  EXPECT_EQ(NAME_FIRST, form_structure->field(0)->heuristic_type());
+  // Last name.
+  EXPECT_EQ(NAME_LAST, form_structure->field(1)->heuristic_type());
+  // Email.
+  EXPECT_EQ(EMAIL_ADDRESS, form_structure->field(2)->heuristic_type());
+  // Loyalty Card.
+  EXPECT_EQ(LOYALTY_MEMBERSHIP_ID, form_structure->field(3)->heuristic_type());
+  // Phone number.
+  EXPECT_EQ(PHONE_HOME_CITY_AND_NUMBER,
+            form_structure->field(4)->heuristic_type());
 }
 
 }  // namespace

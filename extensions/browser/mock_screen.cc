@@ -4,6 +4,8 @@
 
 #include "extensions/browser/mock_screen.h"
 
+#include "ui/gfx/native_widget_types.h"
+
 namespace extensions {
 
 MockScreen::MockScreen() {
@@ -27,23 +29,14 @@ bool MockScreen::IsWindowUnderCursor(gfx::NativeWindow window) {
 }
 
 gfx::NativeWindow MockScreen::GetWindowAtScreenPoint(const gfx::Point& point) {
-  return nullptr;
+  return gfx::NativeWindow();
 }
 
 gfx::NativeWindow MockScreen::GetLocalProcessWindowAtPoint(
     const gfx::Point& point,
     const std::set<gfx::NativeWindow>& ignore) {
-  return nullptr;
+  return gfx::NativeWindow();
 }
-
-#if BUILDFLAG(IS_OHOS)
-gfx::NativeWindow MockScreen::GetLocalProcessWindowAtPoint(
-    const gfx::Point& point,
-    const std::set<gfx::NativeWindow>& ignore,
-    const int32_t display_id) {
-  return nullptr;
-}
-#endif
 
 int MockScreen::GetNumDisplays() const {
   return static_cast<int>(displays_.size());

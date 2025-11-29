@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/390223051): Remove C-library calls to fix the errors.
+#pragma allow_unsafe_libc_calls
+#endif
+
 #include "content/services/auction_worklet/auction_v8_helper.h"
 
 #include <limits>
@@ -17,7 +22,6 @@
 #include "base/memory/ref_counted.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/memory/weak_ptr.h"
-#include "base/not_fatal_until.h"
 #include "base/notreached.h"
 #include "base/strings/strcat.h"
 #include "base/strings/string_number_conversions.h"
@@ -35,6 +39,7 @@
 #include "build/build_config.h"
 #include "content/services/auction_worklet/auction_v8_devtools_agent.h"
 #include "content/services/auction_worklet/debug_command_queue.h"
+#include "content/services/auction_worklet/public/cpp/auction_worklet_features.h"
 #include "gin/array_buffer.h"
 #include "gin/converter.h"
 #include "gin/gin_features.h"
@@ -67,8 +72,7 @@ void InitV8() {
 #endif
 
   std::string js_command_line_flags = "";
-  if (base::FeatureList::IsEnabled(
-          blink::features::kFledgeNoWasmLazyCompilation)) {
+  if (base::FeatureList::IsEnabled(features::kFledgeNoWasmLazyCompilation)) {
     js_command_line_flags = "--no-wasm-lazy-compilation";
   }
   gin::IsolateHolder::Initialize(gin::IsolateHolder::kNonStrictMode,
@@ -336,6 +340,7 @@ AuctionV8Helper::SerializedValue::~SerializedValue() {
 
 AuctionV8Helper::SerializedValue& AuctionV8Helper::SerializedValue::operator=(
     SerializedValue&& other) {
+  free(buffer_.ExtractAsDangling());
   buffer_ = other.buffer_;
   size_ = other.size_;
   other.buffer_ = nullptr;
@@ -521,10 +526,10 @@ v8::MaybeLocal<v8::UnboundScript> AuctionV8Helper::Compile(
     const std::string& src,
     const GURL& src_url,
     const DebugId* debug_id,
+    v8::ScriptCompiler::CachedData* cached_data,
     std::optional<std::string>& error_out) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   constexpr const char* kTraceEventCategoryGroup = "v8,devtools.timeline";
-
   v8::Isolate* v8_isolate = isolate();
 
   DebugContextScope maybe_debug(inspector(), v8_isolate->GetCurrentContext(),
@@ -542,14 +547,25 @@ v8::MaybeLocal<v8::UnboundScript> AuctionV8Helper::Compile(
   v8::TryCatch try_catch(isolate());
   v8::ScriptCompiler::Source script_source(
       src_string.ToLocalChecked(),
-      v8::ScriptOrigin(origin_string.ToLocalChecked()));
+      v8::ScriptOrigin(origin_string.ToLocalChecked()), cached_data);
+  v8::ScriptCompiler::CompileOptions compile_options =
+      v8::ScriptCompiler::kNoCompileOptions;
+  if (cached_data) {
+    compile_options = v8::ScriptCompiler::kConsumeCodeCache;
+  } else if (base::FeatureList::IsEnabled(
+                 features::kFledgeEagerJSCompilation) &&
+             eagerly_compile_js_) {
+    compile_options = v8::ScriptCompiler::kEagerCompile;
+  }
   auto result = v8::ScriptCompiler::CompileUnboundScript(
-      v8_isolate, &script_source, v8::ScriptCompiler::kNoCompileOptions,
-      v8::ScriptCompiler::NoCacheReason::kNoCacheNoReason);
+      v8_isolate, &script_source, compile_options);
   if (try_catch.HasCaught()) {
     error_out = FormatExceptionMessage(v8_isolate->GetCurrentContext(),
                                        try_catch.Message());
   }
+
+  DCHECK(!cached_data || (script_source.GetCachedData() &&
+                          !script_source.GetCachedData()->rejected));
 
   TRACE_EVENT_END1(kTraceEventCategoryGroup, "v8.compile", "data",
                    [&](perfetto::TracedValue trace_context) {
@@ -699,8 +715,9 @@ AuctionV8Helper::Result AuctionV8Helper::CallFunction(
           dict.Add("functionName", function_name);
           dict.Add("scriptId", base::NumberToString(func_ptr->ScriptId()));
           dict.Add("url", script_name);
-          dict.Add("lineNumber", func_ptr->GetScriptLineNumber() + 1);
-          dict.Add("columnNumber", func_ptr->GetScriptColumnNumber() + 1);
+          v8::Location location = func_ptr->GetScriptLocation();
+          dict.Add("lineNumber", location.GetLineNumber() + 1);
+          dict.Add("columnNumber", location.GetColumnNumber() + 1);
         });
     func_result =
         func_ptr->Call(context, context->Global(), args.size(), args.data());
@@ -759,7 +776,7 @@ void AuctionV8Helper::SetResumeCallback(int context_group_id,
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   base::AutoLock hold_lock(context_groups_lock_);
   auto it = resume_callbacks_.find(context_group_id);
-  CHECK(it != resume_callbacks_.end(), base::NotFatalUntil::M130);
+  CHECK(it != resume_callbacks_.end());
   DCHECK(it->second.is_null());
   it->second = std::move(resume_callback);
 }

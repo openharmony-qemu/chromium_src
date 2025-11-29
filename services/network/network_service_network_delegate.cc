@@ -4,13 +4,14 @@
 
 #include "services/network/network_service_network_delegate.h"
 
+#include <algorithm>
 #include <optional>
 #include <string>
 
 #include "base/debug/dump_without_crashing.h"
 #include "base/functional/bind.h"
-#include "base/ranges/algorithm.h"
 #include "base/strings/utf_string_conversions.h"
+#include "base/types/optional_ref.h"
 #include "base/types/optional_util.h"
 #include "build/build_config.h"
 #include "components/domain_reliability/monitor.h"
@@ -38,6 +39,16 @@
 #endif
 
 namespace network {
+
+namespace {
+// Returns the permissions policy saved for the request in the loader. The
+// loader should outlive the caller of this method.
+base::optional_ref<const network::PermissionsPolicy> GetPermissionsPolicy(
+    const net::URLRequest& request) {
+  const auto* const loader = URLLoader::ForRequest(request);
+  return loader ? loader->GetPermissionsPolicy() : std::nullopt;
+}
+}  // namespace
 
 NetworkServiceNetworkDelegate::NetworkServiceNetworkDelegate(
     bool enable_referrers,
@@ -196,24 +207,19 @@ NetworkServiceNetworkDelegate::OnGetStorageAccessStatus(
   if (redirect_info) {
     return network_context_->cookie_manager()
         ->cookie_settings()
-        .GetStorageAccessStatus(redirect_info->new_url,
-                                redirect_info->new_site_for_cookies,
-                                request.isolation_info().top_frame_origin(),
-                                request.cookie_setting_overrides());
+        .GetStorageAccessStatus(
+            redirect_info->new_url, redirect_info->new_site_for_cookies,
+            request.isolation_info().top_frame_origin(),
+            request.cookie_setting_overrides(), request.cookie_partition_key(),
+            GetPermissionsPolicy(request));
   }
   return network_context_->cookie_manager()
       ->cookie_settings()
       .GetStorageAccessStatus(request.url(), request.site_for_cookies(),
                               request.isolation_info().top_frame_origin(),
-                              request.cookie_setting_overrides());
-}
-
-bool NetworkServiceNetworkDelegate::OnIsStorageAccessHeaderEnabled(
-    const url::Origin* top_frame_origin,
-    const GURL& url) const {
-  return network_context_->cookie_manager()
-      ->cookie_settings()
-      .IsStorageAccessHeadersEnabled(url, top_frame_origin);
+                              request.cookie_setting_overrides(),
+                              request.cookie_partition_key(),
+                              GetPermissionsPolicy(request));
 }
 
 bool NetworkServiceNetworkDelegate::OnAnnotateAndMoveUserBlockedCookies(
@@ -243,11 +249,13 @@ bool NetworkServiceNetworkDelegate::OnAnnotateAndMoveUserBlockedCookies(
       // 3PCs that were not allowed. If that is the case, we should still
       // preserve partitioned cookies.
       if (url_loader->CookiesDisabled()) {
-        ExcludeAllCookies(net::CookieInclusionStatus::EXCLUDE_USER_PREFERENCES,
+        ExcludeAllCookies(net::CookieInclusionStatus::ExclusionReason::
+                              EXCLUDE_USER_PREFERENCES,
                           maybe_included_cookies, excluded_cookies);
       } else {
         ExcludeAllCookiesExceptPartitioned(
-            net::CookieInclusionStatus::EXCLUDE_USER_PREFERENCES,
+            net::CookieInclusionStatus::ExclusionReason::
+                EXCLUDE_USER_PREFERENCES,
             maybe_included_cookies, excluded_cookies);
       }
     }
@@ -258,7 +266,8 @@ bool NetworkServiceNetworkDelegate::OnAnnotateAndMoveUserBlockedCookies(
       allowed = web_socket->AllowCookies(request.url());
       // TODO(crbug/324211435): Fix partitioned cookies for web sockets.
       if (!allowed) {
-        ExcludeAllCookies(net::CookieInclusionStatus::EXCLUDE_USER_PREFERENCES,
+        ExcludeAllCookies(net::CookieInclusionStatus::ExclusionReason::
+                              EXCLUDE_USER_PREFERENCES,
                           maybe_included_cookies, excluded_cookies);
       }
     }
@@ -336,9 +345,9 @@ bool NetworkServiceNetworkDelegate::OnCanQueueReportingReport(
     const url::Origin& origin) const {
   return network_context_->cookie_manager()
       ->cookie_settings()
-      .IsFullCookieAccessAllowed(origin.GetURL(),
-                                 net::SiteForCookies::FromOrigin(origin),
-                                 origin, net::CookieSettingOverrides());
+      .IsFullCookieAccessAllowed(
+          origin.GetURL(), net::SiteForCookies::FromOrigin(origin), origin,
+          net::CookieSettingOverrides(), /*cookie_partition_key=*/std::nullopt);
 }
 
 void NetworkServiceNetworkDelegate::OnCanSendReportingReports(
@@ -357,7 +366,7 @@ void NetworkServiceNetworkDelegate::OnCanSendReportingReports(
   }
 
   std::vector<url::Origin> origin_vector;
-  base::ranges::copy(origins, std::back_inserter(origin_vector));
+  std::ranges::copy(origins, std::back_inserter(origin_vector));
   client->OnCanSendReportingReports(
       origin_vector,
       base::BindOnce(
@@ -370,9 +379,9 @@ bool NetworkServiceNetworkDelegate::OnCanSetReportingClient(
     const GURL& endpoint) const {
   return network_context_->cookie_manager()
       ->cookie_settings()
-      .IsFullCookieAccessAllowed(origin.GetURL(),
-                                 net::SiteForCookies::FromOrigin(origin),
-                                 origin, net::CookieSettingOverrides());
+      .IsFullCookieAccessAllowed(
+          origin.GetURL(), net::SiteForCookies::FromOrigin(origin), origin,
+          net::CookieSettingOverrides(), /*cookie_partition_key=*/std::nullopt);
 }
 
 bool NetworkServiceNetworkDelegate::OnCanUseReportingClient(
@@ -380,9 +389,9 @@ bool NetworkServiceNetworkDelegate::OnCanUseReportingClient(
     const GURL& endpoint) const {
   return network_context_->cookie_manager()
       ->cookie_settings()
-      .IsFullCookieAccessAllowed(origin.GetURL(),
-                                 net::SiteForCookies::FromOrigin(origin),
-                                 origin, net::CookieSettingOverrides());
+      .IsFullCookieAccessAllowed(
+          origin.GetURL(), net::SiteForCookies::FromOrigin(origin), origin,
+          net::CookieSettingOverrides(), /*cookie_partition_key=*/std::nullopt);
 }
 
 int NetworkServiceNetworkDelegate::HandleClearSiteDataHeader(

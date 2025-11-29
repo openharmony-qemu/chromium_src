@@ -4,6 +4,7 @@
 
 #import "ios/chrome/browser/saved_tab_groups/model/ios_tab_group_sync_delegate.h"
 
+#import <optional>
 #import <vector>
 
 #import "base/check.h"
@@ -74,6 +75,11 @@ ScopedLocalObservationPauserImpl::~ScopedLocalObservationPauserImpl() {
 
 }  // namespace
 
+IOSTabGroupSyncDelegate::IOSScopedBatchOperation::IOSScopedBatchOperation(
+    std::vector<std::unique_ptr<WebStateList::ScopedBatchOperation>>
+        web_state_list_batches)
+    : web_state_list_batches_(std::move(web_state_list_batches)) {}
+
 IOSTabGroupSyncDelegate::IOSTabGroupSyncDelegate(
     BrowserList* browser_list,
     TabGroupSyncService* sync_service,
@@ -84,9 +90,28 @@ IOSTabGroupSyncDelegate::IOSTabGroupSyncDelegate(
   CHECK(local_update_observer_);
 }
 
+IOSTabGroupSyncDelegate::IOSScopedBatchOperation::~IOSScopedBatchOperation() {}
+
 IOSTabGroupSyncDelegate::~IOSTabGroupSyncDelegate() {}
 
-void IOSTabGroupSyncDelegate::HandleOpenTabGroupRequest(
+IOSTabGroupSyncDelegate::IOSScopedBatchOperation::IOSScopedBatchOperation(
+    IOSScopedBatchOperation&& other)
+    : web_state_list_batches_(std::move(other.web_state_list_batches_)) {}
+
+std::unique_ptr<TabGroupSyncDelegate::ScopedBatchOperation>
+IOSTabGroupSyncDelegate::StartBatchOperation() {
+  std::vector<std::unique_ptr<WebStateList::ScopedBatchOperation>> batches;
+  for (Browser* browser :
+       browser_list_->BrowsersOfType(BrowserList::BrowserType::kRegular)) {
+    batches.push_back(std::make_unique<WebStateList::ScopedBatchOperation>(
+        browser->GetWebStateList()->StartBatchOperation()));
+  }
+
+  return std::make_unique<IOSScopedBatchOperation>(std::move(batches));
+}
+
+std::optional<LocalTabGroupID>
+IOSTabGroupSyncDelegate::HandleOpenTabGroupRequest(
     const base::Uuid& sync_tab_group_id,
     std::unique_ptr<TabGroupActionContext> context) {
   IOSTabGroupActionContext* ios_context =
@@ -96,7 +121,7 @@ void IOSTabGroupSyncDelegate::HandleOpenTabGroupRequest(
 
   if (!saved_tab_group || !origin_browser) {
     // The group doesn't exist or there is no origin browser.
-    return;
+    return std::nullopt;
   }
 
   Browser* target_browser = origin_browser;
@@ -106,7 +131,7 @@ void IOSTabGroupSyncDelegate::HandleOpenTabGroupRequest(
   const TabGroup* group = tab_group_info.tab_group;
   if (group) {
     if (!tab_group_info.browser) {
-      return;
+      return std::nullopt;
     }
     target_browser = tab_group_info.browser;
 
@@ -145,7 +170,7 @@ void IOSTabGroupSyncDelegate::HandleOpenTabGroupRequest(
       }
 
       if (!target_scene_state.UIEnabled) {
-        return;
+        return std::nullopt;
       }
 
       CommandDispatcher* dispatcher = target_browser->GetCommandDispatcher();
@@ -156,7 +181,7 @@ void IOSTabGroupSyncDelegate::HandleOpenTabGroupRequest(
           HandlerForProtocol(dispatcher, TabGroupsCommands);
       [tabGroupsHandler showTabGroup:group];
 
-      return;
+      return saved_tab_group->local_group_id();
     }
     base::RecordAction(base::UserMetricsAction("MobileOpenGroupOpenInBrowser"));
   } else {
@@ -165,7 +190,7 @@ void IOSTabGroupSyncDelegate::HandleOpenTabGroupRequest(
     std::optional<LocalTabGroupID> tab_group_id =
         CreateLocalTabGroupImpl(*saved_tab_group, origin_browser);
     if (!tab_group_id) {
-      return;
+      return std::nullopt;
     }
     LocalTabGroupInfo new_tab_group_info =
         GetLocalTabGroupInfo(browser_list_, tab_group_id.value());
@@ -189,6 +214,8 @@ void IOSTabGroupSyncDelegate::HandleOpenTabGroupRequest(
             HandlerForProtocol(dispatcher, TabGridCommands);
         [tabGridHandler bringGroupIntoView:group animated:NO];
       });
+
+  return group->tab_group_id();
 }
 
 std::unique_ptr<ScopedLocalObservationPauser>
@@ -243,8 +270,13 @@ void IOSTabGroupSyncDelegate::UpdateLocalTabGroup(
   WebStateList* web_state_list = tab_group_info.web_state_list;
 
   // Start a batch operation.
-  WebStateList::ScopedBatchOperation observer_lock =
-      web_state_list->StartBatchOperation();
+  std::unique_ptr<WebStateList::ScopedBatchOperation> observer;
+  if (!web_state_list->IsBatchInProgress()) {
+    // The `UpdateLocalTabGroup` can be part of a batch operation, in which case
+    // the WebStateList is already in batch operation.
+    observer = std::make_unique<WebStateList::ScopedBatchOperation>(
+        web_state_list->StartBatchOperation());
+  }
 
   // Update the visual data.
   UpdateLocalGroupVisualData(tab_group_info, saved_tab_group);
@@ -357,18 +389,45 @@ std::vector<LocalTabID> IOSTabGroupSyncDelegate::GetLocalTabIdsForTabGroup(
   return local_tab_ids;
 }
 
-void IOSTabGroupSyncDelegate::CreateRemoteTabGroup(
-    const LocalTabGroupID& local_tab_group_id) {
-  if (sync_service_->GetGroup(local_tab_group_id)) {
-    // The group already exists.
-    return;
+std::set<LocalTabID> IOSTabGroupSyncDelegate::GetSelectedTabs() {
+  std::set<LocalTabID> selected_tab_ids;
+  for (Browser* browser :
+       browser_list_->BrowsersOfType(BrowserList::BrowserType::kRegular)) {
+    WebStateList* web_state_list = browser->GetWebStateList();
+    web::WebState* active_web_state = web_state_list->GetActiveWebState();
+    if (active_web_state) {
+      selected_tab_ids.insert(
+          active_web_state->GetUniqueIdentifier().identifier());
+    }
   }
 
+  return selected_tab_ids;
+}
+
+std::u16string IOSTabGroupSyncDelegate::GetTabTitle(
+    const LocalTabID& local_tab_id) {
+  for (Browser* browser :
+       browser_list_->BrowsersOfType(BrowserList::BrowserType::kRegular)) {
+    WebStateList* web_state_list = browser->GetWebStateList();
+    for (int index = 0; index < web_state_list->count(); ++index) {
+      web::WebState* web_state = web_state_list->GetWebStateAt(index);
+      if (local_tab_id == web_state->GetUniqueIdentifier().identifier()) {
+        return web_state->GetTitle();
+      }
+    }
+  }
+
+  return std::u16string();
+}
+
+std::unique_ptr<SavedTabGroup>
+IOSTabGroupSyncDelegate::CreateSavedTabGroupFromLocalGroup(
+    const LocalTabGroupID& local_tab_group_id) {
   LocalTabGroupInfo tab_group_info =
       GetLocalTabGroupInfo(browser_list_, local_tab_group_id);
   if (!tab_group_info.tab_group) {
     // This group doesn't exists locally.
-    return;
+    return nullptr;
   }
 
   const TabGroup* tab_group = tab_group_info.tab_group;
@@ -393,11 +452,10 @@ void IOSTabGroupSyncDelegate::CreateRemoteTabGroup(
     saved_tabs.push_back(saved_tab);
   }
 
-  SavedTabGroup saved_group(base::SysNSStringToUTF16(tab_group->GetRawTitle()),
-                            tab_group->visual_data().color(), saved_tabs,
-                            /*position=*/std::nullopt, saved_tab_group_id,
-                            tab_group->tab_group_id());
-  sync_service_->AddGroup(saved_group);
+  return std::make_unique<SavedTabGroup>(
+      base::SysNSStringToUTF16(tab_group->GetRawTitle()),
+      tab_group->visual_data().color(), saved_tabs,
+      /*position=*/std::nullopt, saved_tab_group_id, tab_group->tab_group_id());
 }
 
 Browser* IOSTabGroupSyncDelegate::GetMostActiveSceneBrowser() {

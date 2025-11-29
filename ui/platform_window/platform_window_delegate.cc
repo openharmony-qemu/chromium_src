@@ -14,12 +14,6 @@
 
 namespace ui {
 
-bool IsPlatformWindowStateFullscreen(PlatformWindowState state) {
-  return state == PlatformWindowState::kFullScreen ||
-         state == PlatformWindowState::kPinnedFullscreen ||
-         state == PlatformWindowState::kTrustedPinnedFullscreen;
-}
-
 bool PlatformWindowDelegate::State::WillProduceFrameOnUpdateFrom(
     const State& old) const {
   // None of the following changes will produce a new frame:
@@ -37,7 +31,7 @@ bool PlatformWindowDelegate::State::WillProduceFrameOnUpdateFrom(
   // OnWindowStateChanged will schedule relayout even without the bounds change.
   return old.window_state != window_state ||
          old.bounds_dip.size() != bounds_dip.size() || old.size_px != size_px ||
-         old.window_scale != window_scale || old.raster_scale != raster_scale;
+         old.window_scale != window_scale;
 }
 
 std::string PlatformWindowDelegate::State::ToString() const {
@@ -47,7 +41,6 @@ std::string PlatformWindowDelegate::State::ToString() const {
   result << ", bounds_dip = " << bounds_dip.ToString();
   result << ", size_px = " << size_px.ToString();
   result << ", window_scale = " << window_scale;
-  result << ", raster_scale = " << raster_scale;
   result << ", ui_scale = " << ui_scale;
   result << ", occlusion_state = " << static_cast<int>(occlusion_state);
   result << "}";
@@ -66,10 +59,6 @@ gfx::Insets PlatformWindowDelegate::CalculateInsetsInDIP(
 #if BUILDFLAG(IS_LINUX)
 void PlatformWindowDelegate::OnWindowTiledStateChanged(
     WindowTiledEdges new_tiled_edges) {}
-#endif
-
-#if BUILDFLAG(IS_OHOS)
-void PlatformWindowDelegate::OnFullscreenStateChanged() {}
 #endif
 
 std::optional<gfx::Size> PlatformWindowDelegate::GetMinimumSizeForWindow()
@@ -94,8 +83,6 @@ SkPath PlatformWindowDelegate::GetWindowMaskForWindowShapeInPixels() {
   return SkPath();
 }
 
-void PlatformWindowDelegate::OnSurfaceFrameLockingChanged(bool lock) {}
-
 void PlatformWindowDelegate::OnOcclusionStateChanged(
     PlatformWindowOcclusionState occlusion_state) {}
 
@@ -109,18 +96,11 @@ PlatformWindowDelegate::GetOwnedWindowAnchorAndRectInDIP() {
   return std::nullopt;
 }
 
-void PlatformWindowDelegate::SetFrameRateThrottleEnabled(bool enabled) {}
-
-void PlatformWindowDelegate::OnTooltipShownOnServer(const std::u16string& text,
-                                                    const gfx::Rect& bounds) {}
-
 bool PlatformWindowDelegate::OnRotateFocus(
     PlatformWindowDelegate::RotateDirection direction,
     bool reset) {
   return false;
 }
-
-void PlatformWindowDelegate::OnTooltipHiddenOnServer() {}
 
 gfx::Rect PlatformWindowDelegate::ConvertRectToPixels(
     const gfx::Rect& rect_in_dip) const {
@@ -141,7 +121,5 @@ gfx::Insets PlatformWindowDelegate::ConvertInsetsToPixels(
     const gfx::Insets& insets_dip) const {
   return insets_dip;
 }
-
-void PlatformWindowDelegate::DisableNativeWindowOcclusion() {}
 
 }  // namespace ui

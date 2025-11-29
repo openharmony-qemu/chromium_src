@@ -17,12 +17,14 @@
 #include <stdint.h>
 
 #include <algorithm>
+#include <array>
 #include <limits>
 #include <set>
 #include <sstream>
 #include <string>
 
 #include "base/atomic_sequence_num.h"
+#include "base/atomicops.h"
 #include "base/bits.h"
 #include "base/compiler_specific.h"
 #include "base/functional/bind.h"
@@ -105,6 +107,25 @@ BASE_FEATURE(kDisableErrorHandlingForReadback,
 
 const uint32_t kMaxTransferCacheEntrySizeForTransferBuffer = 1024;
 const size_t kMaxImmediateDeletedPaintCachePaths = 1024;
+constexpr size_t kMaxImmediateDeletedPaintCacheEffects = 10u;
+
+#define DEFINE_PAINT_CACHE_DELETION(                                     \
+    IMMEDIATE_SIZE_CONSTANT, IMMEDIATE_FUNCTION, NON_IMMEDIATE_FUNCTION) \
+  if (ids.size() <= IMMEDIATE_SIZE_CONSTANT) {                           \
+    helper_->IMMEDIATE_FUNCTION(ids.size(), ids.data());                 \
+  } else {                                                               \
+    size_t data_size = ids.size() * sizeof(GLuint);                      \
+    ScopedSharedMemoryPtr dest(data_size, transfer_buffer_,              \
+                               mapped_memory_.get(), helper());          \
+    if (dest.valid()) {                                                  \
+      memcpy(dest.address(), ids.data(), data_size);                     \
+      helper_->NON_IMMEDIATE_FUNCTION(ids.size(), dest.shm_id(),         \
+                                      dest.offset());                    \
+    } else {                                                             \
+      SetGLError(GL_INVALID_OPERATION, "glDeletePaintCacheINTERNAL",     \
+                 "couldn't allocate shared memory");                     \
+    }                                                                    \
+  }
 
 class ScopedSharedMemoryPtr {
  public:
@@ -197,7 +218,7 @@ class RasterImplementation::TransferCacheSerializeHelperImpl final
     }
 
     bool succeeded =
-        entry.Serialize(base::make_span(static_cast<uint8_t*>(data), size));
+        entry.Serialize(base::span(static_cast<uint8_t*>(data), size));
     DCHECK(succeeded);
     ri_->UnmapAndCreateTransferCacheEntry(entry.UnsafeType(), entry.Id());
     return 0u;
@@ -237,7 +258,7 @@ class RasterImplementation::TransferCacheSerializeHelperImpl final
     }
 
     bool succeeded = entry.Serialize(
-        base::make_span(reinterpret_cast<uint8_t*>(memory), bytes_remaining));
+        base::span(reinterpret_cast<uint8_t*>(memory), bytes_remaining));
     DCHECK(succeeded);
     ri_->transfer_cache_.AddTransferCacheEntry(
         entry.UnsafeType(), entry.Id(), buffer->shm_id(),
@@ -524,8 +545,13 @@ struct RasterImplementation::AsyncYUVReadbackRequest {
                     uint8_t* out_buffer) {
     // RasterDecoder writes the pixels into |in_buffer| with the requested
     // stride so we can copy the whole block here.
-    memcpy(out_buffer, static_cast<uint8_t*>(in_buffer) + plane_offset,
-           plane_height * plane_stride);
+    // We need to use `RelaxedAtomicWriteMemcpy` because we might be writing
+    // into memory observed by JS at the same time.
+    size_t plane_size = plane_height * plane_stride;
+    auto dst = base::span(out_buffer, plane_size);
+    auto src =
+        base::span(static_cast<uint8_t*>(in_buffer) + plane_offset, plane_size);
+    base::subtle::RelaxedAtomicWriteMemcpy(dst, src);
   }
 };
 
@@ -1307,7 +1333,7 @@ void RasterImplementation::WritePixelsYUV(const gpu::Mailbox& dest_mailbox,
   memcpy(static_cast<uint8_t*>(address), src_sk_pixmaps[0].addr(),
          src_sk_pixmaps[0].computeByteSize());
 
-  GLuint plane_offsets[SkYUVAInfo::kMaxPlanes] = {};
+  std::array<GLuint, SkYUVAInfo::kMaxPlanes> plane_offsets = {};
   for (int plane = 1; plane < src_yuv_info.numPlanes(); plane++) {
     CHECK(src_sk_pixmaps[plane].addr());
     // Calculate the offset based on previous plane offset and previous plane
@@ -1553,9 +1579,12 @@ bool RasterImplementation::ReadbackImagePixelsINTERNAL(
     if (!*readback_result) {
       return false;
     }
-
-    memcpy(dst_pixels, static_cast<uint8_t*>(shm_address) + pixels_offset,
-           dst_size);
+    // We need to use `RelaxedAtomicWriteMemcpy` because we might be writing
+    // into memory observed by JS at the same time.
+    auto dst = base::span<uint8_t>(static_cast<uint8_t*>(dst_pixels), dst_size);
+    auto src = base::span<uint8_t>(
+        static_cast<uint8_t*>(shm_address) + pixels_offset, dst_size);
+    base::subtle::RelaxedAtomicWriteMemcpy(dst, src);
   }
 
   return true;
@@ -1580,10 +1609,16 @@ void RasterImplementation::OnAsyncARGBReadbackDone(
         static_cast<cmds::ReadbackARGBImagePixelsINTERNALImmediate::Result*>(
             request->shared_memory->address());
     if (*result) {
-      memcpy(request->dst_pixels,
-             static_cast<uint8_t*>(request->shared_memory->address()) +
-                 request->pixels_offset,
-             request->dst_size);
+      // We need to use `RelaxedAtomicWriteMemcpy` because we might be writing
+      // into memory observed by JS at the same time.
+      size_t plane_size = request->dst_size;
+      auto dst = base::span<uint8_t>(
+          static_cast<uint8_t*>(request->dst_pixels.get()), plane_size);
+      auto src = base::span<uint8_t>(
+          static_cast<uint8_t*>(request->shared_memory->address()) +
+              request->pixels_offset,
+          plane_size);
+      base::subtle::RelaxedAtomicWriteMemcpy(dst, src);
       request->readback_successful = true;
     }
 
@@ -1941,23 +1976,14 @@ void RasterImplementation::FlushPaintCachePurgedEntries() {
 
     switch (static_cast<cc::PaintCacheDataType>(i)) {
       case cc::PaintCacheDataType::kPath:
-        if (ids.size() <= kMaxImmediateDeletedPaintCachePaths) {
-          helper_->DeletePaintCachePathsINTERNALImmediate(ids.size(),
-                                                          ids.data());
-        } else {
-          size_t data_size = ids.size() * sizeof(GLuint);
-          ScopedSharedMemoryPtr dest(data_size, transfer_buffer_,
-                                     mapped_memory_.get(), helper());
-          if (dest.valid()) {
-            memcpy(dest.address(), ids.data(), data_size);
-            helper_->DeletePaintCachePathsINTERNAL(ids.size(), dest.shm_id(),
-                                                   dest.offset());
-          } else {
-            SetGLError(GL_INVALID_OPERATION, "glDeletePaintCachePathsINTERNAL",
-                       "couldn't allocate shared memory");
-            // Continue with the loop in order to clean up the ids.
-          }
-        }
+        DEFINE_PAINT_CACHE_DELETION(kMaxImmediateDeletedPaintCachePaths,
+                                    DeletePaintCachePathsINTERNALImmediate,
+                                    DeletePaintCachePathsINTERNAL);
+        break;
+      case cc::PaintCacheDataType::kSkRuntimeEffect:
+        DEFINE_PAINT_CACHE_DELETION(kMaxImmediateDeletedPaintCacheEffects,
+                                    DeletePaintCacheEffectsINTERNALImmediate,
+                                    DeletePaintCacheEffectsINTERNAL);
         break;
     }
     ids.clear();

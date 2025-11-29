@@ -7,11 +7,13 @@
 
 #include <stdint.h>
 
+#include <cstring>
 #include <memory>
 #include <string_view>
 #include <vector>
 
 #include "base/bits.h"
+#include "base/compiler_specific.h"
 #include "build/build_config.h"
 #include "ui/display/display.h"
 #include "ui/events/base_event_utils.h"
@@ -222,7 +224,8 @@ template <base::bits::UnsignedInteger T>
 Event::PropertyValue ConvertToEventPropertyValue(const T& value) {
   Event::PropertyValue property_value;
   property_value.resize(sizeof(T));
-  std::memcpy(property_value.data(), &value, property_value.size());
+  UNSAFE_TODO(
+      std::memcpy(property_value.data(), &value, property_value.size()));
   return property_value;
 }
 
@@ -240,11 +243,6 @@ EVENTS_EXPORT std::vector<std::string_view> KeyEventFlagsNames(int event_flags);
 // Returns a a vector of string representations of MouseEventFlags.
 EVENTS_EXPORT std::vector<std::string_view> MouseEventFlagsNames(
     int event_flags);
-
-#if BUILDFLAG(IS_OHOS)
-EVENTS_EXPORT int32_t EventDisplayIdFromNative(
-    const PlatformEvent& native_event);
-#endif
 }  // namespace ui
 
 #endif  // UI_EVENTS_EVENT_UTILS_H_

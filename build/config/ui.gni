@@ -30,7 +30,7 @@ declare_args() {
 
 declare_args() {
   # True means the UI is built using the "views" framework.
-  toolkit_views = is_mac || is_win || is_linux || is_chromeos || is_fuchsia || is_ohos
+  toolkit_views = is_mac || is_win || is_linux || is_chromeos || is_fuchsia
 
   use_glib =
       is_linux && !is_castos &&
@@ -45,8 +45,7 @@ use_atk = use_glib && current_toolchain == default_toolchain
 
 # Whether using Xvfb to provide a display server for a test might be
 # necessary.
-use_xvfb_in_this_config =
-    is_linux || (is_chromeos_lacros && !is_chromeos_device)
+use_xvfb_in_this_config = is_linux
 #
 # =============================================
 #   PLEASE DO NOT ADD MORE FLAGS TO THIS FILE

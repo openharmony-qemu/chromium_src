@@ -24,7 +24,7 @@
 #include "build/build_config.h"
 #include "ui/base/dragdrop/drag_drop_types.h"
 #include "ui/base/dragdrop/mojom/drag_drop_types.mojom-forward.h"
-#include "ui/base/mojom/menu_source_type.mojom-forward.h"
+#include "ui/base/mojom/menu_source_type.mojom-shared.h"
 #include "ui/events/event.h"
 #include "ui/events/event_constants.h"
 #include "ui/events/platform/platform_event_dispatcher.h"
@@ -107,6 +107,12 @@ class VIEWS_EXPORT MenuController final : public gfx::AnimationDelegate,
     kTrailing,
   };
 
+  enum class MenuType {
+    kNormal,               // Regular menu
+    kContextMenu,          // Context menu
+    kMenuItemContextMenu,  // Context menu for a menu item
+  };
+
   // Callback that is used to pass events to an "annotation" bubble or widget,
   // such as a help bubble, that floats alongside the menu and acts as part of
   // the menu for event-handling purposes. These require special handling
@@ -131,14 +137,16 @@ class VIEWS_EXPORT MenuController final : public gfx::AnimationDelegate,
   MenuController& operator=(const MenuController&) = delete;
 
   // Runs the menu at the specified location.
-  void Run(Widget* parent,
-           MenuButtonController* button_controller,
-           MenuItemView* root,
-           const gfx::Rect& anchor_bounds,
-           MenuAnchorPosition position,
-           bool context_menu,
-           bool is_nested_drag,
-           gfx::NativeView native_view_for_gestures = gfx::NativeView());
+  void Run(
+      Widget* parent,
+      MenuButtonController* button_controller,
+      MenuItemView* root,
+      const gfx::Rect& anchor_bounds,
+      MenuAnchorPosition position,
+      ui::mojom::MenuSourceType source_type = ui::mojom::MenuSourceType::kNone,
+      MenuType menu_type = MenuType::kNormal,
+      bool is_nested_drag = false,
+      gfx::NativeView native_view_for_gestures = gfx::NativeView());
 
   bool for_drop() const { return for_drop_; }
 
@@ -245,10 +253,6 @@ class VIEWS_EXPORT MenuController final : public gfx::AnimationDelegate,
 
   // WidgetObserver overrides:
   void OnWidgetDestroying(Widget* widget) override;
-#if BUILDFLAG(IS_OHOS)
-  void OnWidgetBoundsChanged(Widget* widget,
-                             const gfx::Rect& new_bounds) override;
-#endif
   void OnWidgetShowStateChanged(Widget* widget) override;
 
   // Only used for testing.
@@ -377,8 +381,8 @@ class VIEWS_EXPORT MenuController final : public gfx::AnimationDelegate,
     // Bounds for the monitor we're showing on.
     gfx::Rect monitor_bounds;
 
-    // Is the current menu a context menu.
-    bool context_menu = false;
+    // Type of the current menu.
+    MenuType menu_type = MenuType::kNormal;
   };
 
   // Sets the selection to |menu_item|. A value of NULL unselects
@@ -409,7 +413,7 @@ class VIEWS_EXPORT MenuController final : public gfx::AnimationDelegate,
 
   void UpdateInitialLocation(const gfx::Rect& anchor_bounds,
                              MenuAnchorPosition position,
-                             bool context_menu);
+                             MenuType menu_type);
 
   // Returns the anchor position adjusted for RTL languages. For example,
   // in RTL MenuAnchorPosition::kBubbleLeft is mapped to kBubbleRight.

@@ -280,13 +280,27 @@ void QuicDispatcher::ProcessPacket(const QuicSocketAddress& self_address,
   ReceivedPacketInfo packet_info(self_address, peer_address, packet);
   std::string detailed_error;
   QuicErrorCode error;
-  error = QuicFramer::ParsePublicHeaderDispatcherShortHeaderLengthUnknown(
-      packet, &packet_info.form, &packet_info.long_packet_type,
-      &packet_info.version_flag, &packet_info.use_length_prefix,
-      &packet_info.version_label, &packet_info.version,
-      &packet_info.destination_connection_id, &packet_info.source_connection_id,
-      &packet_info.retry_token, &detailed_error, connection_id_generator_);
-
+  if (GetQuicReloadableFlag(quic_heapless_static_parser)) {
+    QUIC_RELOADABLE_FLAG_COUNT_N(quic_heapless_static_parser, 2, 3);
+    absl::string_view destination_connection_id, source_connection_id;
+    error = QuicFramer::ParsePublicHeaderDispatcherShortHeaderLengthUnknown(
+        packet, &packet_info.form, &packet_info.long_packet_type,
+        &packet_info.version_flag, &packet_info.use_length_prefix,
+        &packet_info.version_label, &packet_info.version,
+        &destination_connection_id, &source_connection_id,
+        &packet_info.retry_token, &detailed_error, connection_id_generator_);
+    packet_info.destination_connection_id =
+        QuicConnectionId(destination_connection_id);
+    packet_info.source_connection_id = QuicConnectionId(source_connection_id);
+  } else {
+    error = QuicFramer::ParsePublicHeaderDispatcherShortHeaderLengthUnknown(
+        packet, &packet_info.form, &packet_info.long_packet_type,
+        &packet_info.version_flag, &packet_info.use_length_prefix,
+        &packet_info.version_label, &packet_info.version,
+        &packet_info.destination_connection_id,
+        &packet_info.source_connection_id, &packet_info.retry_token,
+        &detailed_error, connection_id_generator_);
+  }
   if (error != QUIC_NO_ERROR) {
     // Packet has framing error.
     SetLastError(error);
@@ -349,14 +363,33 @@ void QuicDispatcher::ProcessPacket(const QuicSocketAddress& self_address,
       IsSupportedVersion(ParsedQuicVersion::Q046())) {
     ReceivedPacketInfo gquic_packet_info(self_address, peer_address, packet);
     // Try again without asking |connection_id_generator_| for the length.
-    const QuicErrorCode gquic_error = QuicFramer::ParsePublicHeaderDispatcher(
-        packet, expected_server_connection_id_length_, &gquic_packet_info.form,
-        &gquic_packet_info.long_packet_type, &gquic_packet_info.version_flag,
-        &gquic_packet_info.use_length_prefix, &gquic_packet_info.version_label,
-        &gquic_packet_info.version,
-        &gquic_packet_info.destination_connection_id,
-        &gquic_packet_info.source_connection_id, &gquic_packet_info.retry_token,
-        &detailed_error);
+    QuicErrorCode gquic_error;
+    if (GetQuicReloadableFlag(quic_heapless_static_parser)) {
+      QUIC_RELOADABLE_FLAG_COUNT_N(quic_heapless_static_parser, 3, 3);
+      absl::string_view destination_connection_id, source_connection_id;
+      gquic_error = QuicFramer::ParsePublicHeaderDispatcher(
+          packet, expected_server_connection_id_length_,
+          &gquic_packet_info.form, &gquic_packet_info.long_packet_type,
+          &gquic_packet_info.version_flag, &gquic_packet_info.use_length_prefix,
+          &gquic_packet_info.version_label, &gquic_packet_info.version,
+          &destination_connection_id, &source_connection_id,
+          &gquic_packet_info.retry_token, &detailed_error);
+      if (gquic_error == QUIC_NO_ERROR) {
+        gquic_packet_info.destination_connection_id =
+            QuicConnectionId(destination_connection_id);
+        gquic_packet_info.source_connection_id =
+            QuicConnectionId(source_connection_id);
+      }
+    } else {
+      gquic_error = QuicFramer::ParsePublicHeaderDispatcher(
+          packet, expected_server_connection_id_length_,
+          &gquic_packet_info.form, &gquic_packet_info.long_packet_type,
+          &gquic_packet_info.version_flag, &gquic_packet_info.use_length_prefix,
+          &gquic_packet_info.version_label, &gquic_packet_info.version,
+          &gquic_packet_info.destination_connection_id,
+          &gquic_packet_info.source_connection_id,
+          &gquic_packet_info.retry_token, &detailed_error);
+    }
     if (gquic_error == QUIC_NO_ERROR) {
       if (MaybeDispatchPacket(gquic_packet_info)) {
         return;
@@ -783,7 +816,7 @@ void QuicDispatcher::CleanUpSession(QuicConnectionId server_connection_id,
                                     QuicConnection* connection,
                                     QuicErrorCode /*error*/,
                                     const std::string& /*error_details*/,
-                                    ConnectionCloseSource /*source*/) {
+                                    ConnectionCloseSource source) {
   write_blocked_list_.Remove(*connection);
   QuicTimeWaitListManager::TimeWaitAction action =
       QuicTimeWaitListManager::SEND_STATELESS_RESET;
@@ -792,17 +825,18 @@ void QuicDispatcher::CleanUpSession(QuicConnectionId server_connection_id,
     termination_packets = connection->ConsumeTerminationPackets();
     action = QuicTimeWaitListManager::SEND_CONNECTION_CLOSE_PACKETS;
   } else {
-    if (!connection->IsHandshakeComplete()) {
-      // TODO(fayang): Do not serialize connection close packet if the
-      // connection is closed by the client.
-      QUIC_CODE_COUNT(quic_v44_add_to_time_wait_list_with_handshake_failed);
+    if (!connection->IsHandshakeComplete() &&
+        source == ConnectionCloseSource::FROM_SELF) {
+      // This counter used to be called
+      // `quic_v44_add_to_time_wait_list_with_handshake_failed`.
+      QUIC_CODE_COUNT(quic_add_to_time_wait_list_with_handshake_failed);
       // This serializes a connection close termination packet and adds the
       // connection to the time wait list.
-      // TODO(b/359200165): Fix |last_sent_packet_number|.
       StatelessConnectionTerminator terminator(
           server_connection_id,
           connection->GetOriginalDestinationConnectionId(),
-          connection->version(), /*last_sent_packet_number=*/QuicPacketNumber(),
+          connection->version(),
+          connection->sent_packet_manager().GetLargestSentPacket(),
           helper_.get(), time_wait_list_manager_.get());
       terminator.CloseConnection(
           QUIC_HANDSHAKE_FAILED_SYNTHETIC_CONNECTION_CLOSE,
@@ -810,8 +844,10 @@ void QuicDispatcher::CleanUpSession(QuicConnectionId server_connection_id,
           /*ietf_quic=*/true, connection->GetActiveServerConnectionIds());
       return;
     }
+
     QUIC_CODE_COUNT(quic_v44_add_to_time_wait_list_with_stateless_reset);
   }
+
   time_wait_list_manager_->AddConnectionIdToTimeWait(
       action,
       TimeWaitConnectionInfo(
@@ -1002,12 +1038,6 @@ bool QuicDispatcher::TryAddNewConnectionId(
 void QuicDispatcher::OnConnectionIdRetired(
     const QuicConnectionId& server_connection_id) {
   reference_counted_session_map_.erase(server_connection_id);
-}
-
-void QuicDispatcher::OnConnectionAddedToTimeWaitList(
-    QuicConnectionId server_connection_id) {
-  QUIC_DLOG(INFO) << "Connection " << server_connection_id
-                  << " added to time wait list.";
 }
 
 void QuicDispatcher::StatelesslyTerminateConnection(
@@ -1519,17 +1549,22 @@ void QuicDispatcher::MaybeResetPacketsWithNoVersion(
       GetPerPacketContext());
 }
 
-void QuicDispatcher::MaybeSendVersionNegotiationPacket(
+bool QuicDispatcher::MaybeSendVersionNegotiationPacket(
     const ReceivedPacketInfo& packet_info) {
+  if (packet_info.form == IETF_QUIC_LONG_HEADER_PACKET &&
+      packet_info.long_packet_type == VERSION_NEGOTIATION) {
+    return false;
+  }
   if (crypto_config()->validate_chlo_size() &&
       packet_info.packet.length() < kMinPacketSizeForVersionNegotiation) {
-    return;
+    return false;
   }
   time_wait_list_manager()->SendVersionNegotiationPacket(
       packet_info.destination_connection_id, packet_info.source_connection_id,
       packet_info.form != GOOGLE_QUIC_PACKET, packet_info.use_length_prefix,
       GetSupportedVersions(), packet_info.self_address,
       packet_info.peer_address, GetPerPacketContext());
+  return true;
 }
 
 size_t QuicDispatcher::NumSessions() const {

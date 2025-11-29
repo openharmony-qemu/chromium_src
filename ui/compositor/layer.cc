@@ -4,13 +4,13 @@
 
 #include "ui/compositor/layer.h"
 
+#include <algorithm>
 #include <cmath>
 #include <memory>
 #include <optional>
 #include <sstream>
 #include <utility>
 
-#include "base/auto_reset.h"
 #include "base/check_op.h"
 #include "base/command_line.h"
 #include "base/containers/contains.h"
@@ -18,9 +18,7 @@
 #include "base/json/json_writer.h"
 #include "base/memory/ptr_util.h"
 #include "base/memory/raw_ptr.h"
-#include "base/not_fatal_until.h"
 #include "base/observer_list.h"
-#include "base/ranges/algorithm.h"
 #include "base/trace_event/trace_event.h"
 #include "cc/layers/mirror_layer.h"
 #include "cc/layers/nine_patch_layer.h"
@@ -33,11 +31,13 @@
 #include "cc/trees/layer_tree_settings.h"
 #include "components/viz/common/frame_sinks/copy_output_request.h"
 #include "components/viz/common/resources/transferable_resource.h"
+#include "third_party/skia/include/core/SkColor.h"
 #include "ui/compositor/compositor.h"
 #include "ui/compositor/compositor_switches.h"
 #include "ui/compositor/layer_animator.h"
 #include "ui/compositor/layer_delegate.h"
 #include "ui/compositor/layer_observer.h"
+#include "ui/compositor/layer_type.h"
 #include "ui/compositor/paint_context.h"
 #include "ui/gfx/animation/animation.h"
 #include "ui/gfx/canvas.h"
@@ -218,6 +218,11 @@ Layer::Layer(LayerType type)
       backdrop_filter_quality_(1.0f),
       trilinear_filtering_request_(0) {
   CreateCcLayer();
+
+  // For LAYER_SOLID_COLOR, the background color dictates content opaqueness.
+  if (type_ == LAYER_SOLID_COLOR) {
+    fills_bounds_opaquely_ = cc_layer_->background_color().isOpaque();
+  }
 }
 
 Layer::~Layer() {
@@ -300,12 +305,14 @@ std::unique_ptr<Layer> Layer::Clone() const {
   clone->SetVisible(GetTargetVisibility());
   clone->SetClipRect(GetTargetClipRect());
   clone->SetAcceptEvents(accept_events());
-  clone->SetFillsBoundsOpaquely(fills_bounds_opaquely_);
   clone->SetFillsBoundsCompletely(fills_bounds_completely_);
   clone->SetRoundedCornerRadius(GetTargetRoundedCornerRadius());
   clone->SetGradientMask(gradient_mask());
   clone->SetIsFastRoundedCorner(is_fast_rounded_corner());
   clone->SetName(name_);
+  if (type() != LAYER_SOLID_COLOR) {
+    clone->SetFillsBoundsOpaquely(fills_bounds_opaquely_);
+  }
 
   // the |damaged_region_| will be sent to cc later in SendDamagedRects().
   clone->damaged_region_ = damaged_region_;
@@ -425,8 +432,8 @@ void Layer::Remove(Layer* child) {
   if (compositor && compositor->animations_are_enabled())
     child->ResetCompositorForAnimatorsInTree(compositor);
 
-  auto i = base::ranges::find(children_, child);
-  CHECK(i != children_.end(), base::NotFatalUntil::M130);
+  auto i = std::ranges::find(children_, child);
+  CHECK(i != children_.end());
   children_.erase(i);
   child->parent_ = nullptr;
   child->cc_layer_->RemoveFromParent();
@@ -562,8 +569,12 @@ float Layer::GetCombinedOpacity() const {
   return opacity;
 }
 
-void Layer::SetBackdropFilterBounds(const gfx::RRectF& bounds) {
+void Layer::SetBackdropFilterBounds(const SkPath& bounds) {
   cc_layer_->SetBackdropFilterBounds(bounds);
+}
+
+void Layer::SetBackdropFilterBounds(const gfx::RRectF& bounds) {
+  SetBackdropFilterBounds(SkPath::RRect(SkRRect(bounds)));
 }
 
 void Layer::ClearBackdropFilterBounds() {
@@ -889,6 +900,7 @@ void Layer::ConvertPointToLayer(const Layer* source,
 }
 
 void Layer::SetFillsBoundsOpaquely(bool fills_bounds_opaquely) {
+  CHECK_NE(type_, LayerType::LAYER_SOLID_COLOR);
   SetFillsBoundsOpaquelyWithReason(fills_bounds_opaquely,
                                    PropertyChangeReason::NOT_FROM_ANIMATION);
 }
@@ -1075,8 +1087,9 @@ void Layer::SetTransferableResource(const viz::TransferableResource& resource,
   DCHECK(release_callback);
   DCHECK(!resource.is_software);
   if (!texture_layer_.get()) {
-    scoped_refptr<cc::TextureLayer> new_layer =
-        cc::TextureLayer::CreateForMailbox(this);
+    // Incoming resource is assumed to have top-left origin which corresponds to
+    // TextureLayer flipped being false.
+    scoped_refptr<cc::TextureLayer> new_layer = cc::TextureLayer::Create(this);
     if (!SwitchToLayer(new_layer))
       return;
 
@@ -1090,10 +1103,6 @@ void Layer::SetTransferableResource(const viz::TransferableResource& resource,
   transfer_release_callback_ = std::move(release_callback);
   transfer_resource_ = resource;
   SetTextureSize(texture_size_in_dip);
-
-  // Incoming resource is assumed to have top-left origin which corresponds to
-  // TextureLayer::SetFlipped(false).
-  SetTextureFlipped(false);
 
   for (const auto& mirror : mirrors_) {
     // The release callbacks should be empty as only the source layer
@@ -1112,16 +1121,6 @@ void Layer::SetTextureSize(gfx::Size texture_size_in_dip) {
   frame_size_in_dip_ = texture_size_in_dip;
   RecomputeDrawsContentAndUVRect();
   texture_layer_->SetNeedsDisplay();
-}
-
-void Layer::SetTextureFlipped(bool flipped) {
-  DCHECK(texture_layer_.get());
-  texture_layer_->SetFlipped(flipped);
-}
-
-bool Layer::TextureFlipped() const {
-  DCHECK(texture_layer_.get());
-  return texture_layer_->flipped();
 }
 
 void Layer::SetShowSurface(const viz::SurfaceId& surface_id,
@@ -1232,6 +1231,7 @@ void Layer::SetShowSolidColorContent() {
     return;
 
   solid_color_layer_ = new_layer;
+  fills_bounds_opaquely_ = cc_layer_->background_color().isOpaque();
 
   transfer_resource_ = viz::TransferableResource();
   if (transfer_release_callback_) {
@@ -1275,12 +1275,14 @@ void Layer::UpdateNinePatchOcclusion(const gfx::Rect& occlusion) {
   nine_patch_layer_->SetLayerOcclusion(occlusion);
 }
 
-void Layer::SetColor(SkColor color) { GetAnimator()->SetColor(color); }
+void Layer::SetColor(SkColor color) {
+  GetAnimator()->SetColor(SkColor4f::FromColor(color));
+}
 
 SkColor Layer::GetTargetColor() const {
   if (animator_ && animator_->IsAnimatingProperty(
       LayerAnimationElement::COLOR))
-    return animator_->GetTargetColor();
+    return animator_->GetTargetColor().toSkColor();
   // TODO(crbug.com/40219248): Remove toSkColor and make all SkColor4f.
   return cc_layer_->background_color().toSkColor();
 }
@@ -1528,7 +1530,6 @@ scoped_refptr<cc::DisplayItemList> Layer::PaintContentsToDisplayList() {
 bool Layer::FillsBoundsCompletely() const { return fills_bounds_completely_; }
 
 bool Layer::PrepareTransferableResource(
-    cc::SharedBitmapIdRegistrar* bitmap_registar,
     viz::TransferableResource* resource,
     viz::ReleaseCallback* release_callback) {
   if (!transfer_release_callback_)
@@ -1553,9 +1554,9 @@ void Layer::StackRelativeTo(Layer* child, Layer* other, bool above) {
   DCHECK_EQ(this, other->parent());
 
   const size_t child_i =
-      base::ranges::find(children_, child) - children_.begin();
+      std::ranges::find(children_, child) - children_.begin();
   const size_t other_i =
-      base::ranges::find(children_, other) - children_.begin();
+      std::ranges::find(children_, other) - children_.begin();
   DCHECK_LT(child_i, children_.size()) << " child not in vector";
   DCHECK_LT(other_i, children_.size()) << " other not in vector";
   if ((above && child_i == other_i + 1) || (!above && child_i + 1 == other_i))
@@ -1695,12 +1696,16 @@ void Layer::SetGrayscaleFromAnimation(float grayscale,
   SetLayerFilters();
 }
 
-void Layer::SetColorFromAnimation(SkColor color, PropertyChangeReason reason) {
+void Layer::SetColorFromAnimation(SkColor4f color,
+                                  PropertyChangeReason reason) {
   DCHECK_EQ(type_, LAYER_SOLID_COLOR);
-  // TODO(crbug.com/40219248): Remove FromColor and make all SkColor4f.
-  cc_layer_->SetBackgroundColor(SkColor4f::FromColor(color));
-  cc_layer_->SetSafeOpaqueBackgroundColor(SkColor4f::FromColor(color));
-  SetFillsBoundsOpaquelyWithReason(SkColorGetA(color) == 0xFF, reason);
+
+  // For LAYER_SOLID_COLOR, the background color dictates content opaqueness.
+  // And `SetContentOpaque()` is called in
+  // `SolidColorLayer::SetBackgroundColor()`.
+  cc_layer_->SetBackgroundColor(color);
+  cc_layer_->SetSafeOpaqueBackgroundColor(color);
+  SetFillsBoundsOpaquelyWithReason(color.isOpaque(), reason);
 }
 
 void Layer::SetClipRectFromAnimation(const gfx::Rect& clip_rect,
@@ -1764,13 +1769,11 @@ float Layer::GetGrayscaleForAnimation() const {
   return layer_grayscale();
 }
 
-SkColor Layer::GetColorForAnimation() const {
+SkColor4f Layer::GetColorForAnimation() const {
   // The NULL check is here since this is invoked regardless of whether we have
   // been configured as LAYER_SOLID_COLOR.
-  // TODO(crbug.com/40219248): Remove toSkColor and make all SkColor4f.
-  return solid_color_layer_.get()
-             ? solid_color_layer_->background_color().toSkColor()
-             : SK_ColorBLACK;
+  return solid_color_layer_.get() ? solid_color_layer_->background_color()
+                                  : SkColors::kBlack;
 }
 
 gfx::Rect Layer::GetClipRectForAnimation() const {
@@ -1826,11 +1829,20 @@ void Layer::CreateCcLayer() {
     cc_layer_ = content_layer_.get();
   }
   cc_layer_->SetTransformOrigin(gfx::Point3F());
-  cc_layer_->SetContentsOpaque(true);
-  cc_layer_->SetSafeOpaqueBackgroundColor(SkColors::kWhite);
   cc_layer_->SetIsDrawable(type_ != LAYER_NOT_DRAWN);
   cc_layer_->SetHitTestable(IsHitTestableForCC());
   cc_layer_->SetElementId(cc::ElementId(cc_layer_->id()));
+  cc_layer_->SetBackgroundColor(SkColors::kTransparent);
+  cc_layer_->SetSafeOpaqueBackgroundColor(
+      type_ == LAYER_SOLID_COLOR ? SkColors::kBlack : SkColors::kWhite);
+
+  // For LAYER_SOLID_COLOR, the background color dictates content opaqueness.
+  // And `SetContentOpaque()` is called in
+  // `cc::SolidColorLayer::SetBackgroundColor()`.
+  if (type_ != LAYER_SOLID_COLOR) {
+    cc_layer_->SetContentsOpaque(true);
+  }
+
   RecomputePosition();
 }
 
@@ -1887,9 +1899,9 @@ void Layer::ResetCompositorForAnimatorsInTree(Compositor* compositor) {
 
 void Layer::OnMirrorDestroyed(LayerMirror* mirror) {
   const auto it =
-      base::ranges::find(mirrors_, mirror, &std::unique_ptr<LayerMirror>::get);
+      std::ranges::find(mirrors_, mirror, &std::unique_ptr<LayerMirror>::get);
 
-  CHECK(it != mirrors_.end(), base::NotFatalUntil::M130);
+  CHECK(it != mirrors_.end());
   mirrors_.erase(it);
 }
 

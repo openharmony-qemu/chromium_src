@@ -6,8 +6,6 @@ package org.chromium.components.omnibox;
 
 import android.text.TextUtils;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.collection.ArraySet;
 import androidx.core.util.ObjectsCompat;
@@ -18,6 +16,8 @@ import org.jni_zero.CalledByNative;
 import org.jni_zero.JniType;
 import org.jni_zero.NativeMethods;
 
+import org.chromium.build.annotations.NullMarked;
+import org.chromium.build.annotations.Nullable;
 import org.chromium.chrome.browser.omnibox.MatchClassificationStyle;
 import org.chromium.components.omnibox.AnswerTypeProto.AnswerType;
 import org.chromium.components.omnibox.GroupsProto.GroupId;
@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Set;
 
 /** Container class with information about each omnibox suggestion item. */
+@NullMarked
 public class AutocompleteMatch {
     public static final int INVALID_GROUP = GroupId.GROUP_INVALID_VALUE;
     public static final int INVALID_TYPE = -1;
@@ -66,62 +67,67 @@ public class AutocompleteMatch {
     }
 
     private final int mType;
-    private final @NonNull Set<Integer> mSubtypes;
+    private final Set<Integer> mSubtypes;
     private final boolean mIsSearchType;
+    private final int /* SuggestTemplateInfo.IconType */ mIconType;
     private String mDisplayText;
     private final List<MatchClassification> mDisplayTextClassifications;
     private String mDescription;
-    private List<MatchClassification> mDescriptionClassifications;
+    private final List<MatchClassification> mDescriptionClassifications;
     private @Nullable RichAnswerTemplate mAnswerTemplate;
     private AnswerType mAnswerType;
     private final String mFillIntoEdit;
     private GURL mUrl;
     private final GURL mImageUrl;
-    private final String mImageDominantColor;
+    private final @Nullable String mImageDominantColor;
     private final int mTransition;
     private final boolean mIsDeletable;
-    private String mPostContentType;
-    private byte[] mPostData;
+    private @Nullable String mPostContentType;
+    private byte @Nullable [] mPostData;
     private final int mGroupId;
-    private byte[] mClipboardImageData;
+    private byte @Nullable [] mClipboardImageData;
     private boolean mHasTabMatch;
     private long mNativeMatch;
-    private final @NonNull List<OmniboxAction> mActions;
+    private final List<OmniboxAction> mActions;
     private final boolean mAllowedToBeDefaultMatch;
     private final String mInlineAutocompletion;
     private final String mAdditionalText;
+    private final @Nullable String mTabGroupUuid;
 
     public AutocompleteMatch(
             int nativeType,
             Set<Integer> subtypes,
             boolean isSearchType,
+            int iconType,
             int transition,
             String displayText,
             List<MatchClassification> displayTextClassifications,
             String description,
             List<MatchClassification> descriptionClassifications,
-            byte[] serializedAnswerTemplate,
+            byte @Nullable [] serializedAnswerTemplate,
             int answerType,
             String fillIntoEdit,
             GURL url,
             GURL imageUrl,
-            String imageDominantColor,
+            @Nullable String imageDominantColor,
             boolean isDeletable,
-            String postContentType,
-            byte[] postData,
+            @Nullable String postContentType,
+            byte @Nullable [] postData,
             int groupId,
-            byte[] clipboardImageData,
+            byte @Nullable [] clipboardImageData,
             boolean hasTabMatch,
             @Nullable List<OmniboxAction> actions,
             boolean allowedToBeDefaultMatch,
             String inlineAutocompletion,
-            String additionalText) {
+            String additionalText,
+            @Nullable String tabGroupUuid) {
         if (subtypes == null) {
             subtypes = Collections.emptySet();
         }
         mType = nativeType;
         mSubtypes = subtypes;
         mIsSearchType = isSearchType;
+        mIconType = iconType;
         mTransition = transition;
         mDisplayText = displayText;
         mDisplayTextClassifications = displayTextClassifications;
@@ -151,6 +157,7 @@ public class AutocompleteMatch {
         mAllowedToBeDefaultMatch = allowedToBeDefaultMatch;
         mInlineAutocompletion = inlineAutocompletion;
         mAdditionalText = additionalText;
+        mTabGroupUuid = tabGroupUuid;
     }
 
     @CalledByNative
@@ -159,6 +166,7 @@ public class AutocompleteMatch {
             int nativeType,
             int[] nativeSubtypes,
             boolean isSearchType,
+            int iconType,
             int transition,
             String contents,
             int[] contentClassificationOffsets,
@@ -181,7 +189,8 @@ public class AutocompleteMatch {
             @JniType("std::vector") List<OmniboxAction> actions,
             boolean allowedToBeDefaultMatch,
             String inlineAutocompletion,
-            String additionalText) {
+            String additionalText,
+            String localTabGroupId) {
         assert contentClassificationOffsets.length == contentClassificationStyles.length;
         List<MatchClassification> contentClassifications = new ArrayList<>();
         for (int i = 0; i < contentClassificationOffsets.length; i++) {
@@ -200,6 +209,7 @@ public class AutocompleteMatch {
                         nativeType,
                         subtypes,
                         isSearchType,
+                        iconType,
                         transition,
                         contents,
                         contentClassifications,
@@ -220,7 +230,8 @@ public class AutocompleteMatch {
                         actions,
                         allowedToBeDefaultMatch,
                         inlineAutocompletion,
-                        additionalText);
+                        additionalText,
+                        TextUtils.isEmpty(localTabGroupId) ? null : localTabGroupId);
         match.updateNativeObjectRef(nativeObject);
         match.setDescription(
                 description, descriptionClassificationOffsets, descriptionClassificationStyles);
@@ -253,8 +264,8 @@ public class AutocompleteMatch {
             String contents,
             GURL url,
             @Nullable String postContentType,
-            @Nullable byte[] postData,
-            @Nullable byte[] clipboardImageData) {
+            byte @Nullable [] postData,
+            byte @Nullable [] clipboardImageData) {
         mDisplayText = contents;
         mUrl = url;
         mPostContentType = postContentType;
@@ -317,7 +328,7 @@ public class AutocompleteMatch {
         return mTransition;
     }
 
-    public @NonNull String getDisplayText() {
+    public String getDisplayText() {
         return mDisplayText;
     }
 
@@ -341,15 +352,15 @@ public class AutocompleteMatch {
         return mAnswerType;
     }
 
-    public @NonNull String getFillIntoEdit() {
+    public String getFillIntoEdit() {
         return mFillIntoEdit;
     }
 
-    public @NonNull GURL getUrl() {
+    public GURL getUrl() {
         return mUrl;
     }
 
-    public @NonNull GURL getImageUrl() {
+    public GURL getImageUrl() {
         assert mImageUrl != null;
         return mImageUrl;
     }
@@ -368,11 +379,11 @@ public class AutocompleteMatch {
         return mIsDeletable;
     }
 
-    public String getPostContentType() {
+    public @Nullable String getPostContentType() {
         return mPostContentType;
     }
 
-    public byte[] getPostData() {
+    public byte @Nullable [] getPostData() {
         return mPostData;
     }
 
@@ -380,7 +391,6 @@ public class AutocompleteMatch {
         return mHasTabMatch;
     }
 
-    @NonNull
     public List<OmniboxAction> getActions() {
         return mActions;
     }
@@ -397,19 +407,22 @@ public class AutocompleteMatch {
         return mAdditionalText;
     }
 
+    public /* SuggestTemplateInfo.IconType */ int getIconType() {
+        return mIconType;
+    }
+
     /**
      * @return The image data for the image clipbaord suggestion. This data has already been
      *     validated in C++ and is safe to use in the browser process.
      */
-    @Nullable
-    public byte[] getClipboardImageData() {
+    public byte @Nullable [] getClipboardImageData() {
         return mClipboardImageData;
     }
 
     /**
      * @return Set of suggestion subtypes.
      */
-    public @NonNull Set<Integer> getSubtypes() {
+    public Set<Integer> getSubtypes() {
         return mSubtypes;
     }
 
@@ -451,7 +464,8 @@ public class AutocompleteMatch {
                 && Arrays.equals(mPostData, suggestion.mPostData)
                 && mGroupId == suggestion.mGroupId
                 && mAnswerType == suggestion.mAnswerType
-                && answer_template_is_equal;
+                && answer_template_is_equal
+                && ObjectsCompat.equals(mTabGroupUuid, suggestion.mTabGroupUuid);
     }
 
     /**
@@ -461,6 +475,10 @@ public class AutocompleteMatch {
      */
     public int getGroupId() {
         return mGroupId;
+    }
+
+    public @Nullable String getTabGroupUuid() {
+        return mTabGroupUuid;
     }
 
     /**
@@ -480,7 +498,7 @@ public class AutocompleteMatch {
     }
 
     /** Serialize suggestion to a protocol buffer message. */
-    public @Nullable AutocompleteProto.AutocompleteMatchProto serialize() {
+    public AutocompleteProto.AutocompleteMatchProto serialize() {
         var builder = AutocompleteProto.AutocompleteMatchProto.newBuilder();
         builder.setType(mType)
                 .setDisplayText(mDisplayText)
@@ -489,7 +507,8 @@ public class AutocompleteMatch {
                 .setTransition(mTransition)
                 .setGroupId(mGroupId)
                 .setIsSearchType(mIsSearchType)
-                .setAllowedToBeDefaultMatch(mAllowedToBeDefaultMatch);
+                .setAllowedToBeDefaultMatch(mAllowedToBeDefaultMatch)
+                .setIconType(mIconType);
 
         if (!TextUtils.isEmpty(mFillIntoEdit)) {
             builder.setFillIntoEdit(mFillIntoEdit);
@@ -548,6 +567,7 @@ public class AutocompleteMatch {
                 input.getType(),
                 new ArraySet(input.getSubtypeList()),
                 input.getIsSearchType(),
+                input.getIconType(),
                 input.getTransition(),
                 input.getDisplayText(),
                 displayTextClassifications,
@@ -568,7 +588,8 @@ public class AutocompleteMatch {
                 /* actions= */ null,
                 input.getAllowedToBeDefaultMatch(),
                 input.getInlineAutocompletion(),
-                input.getAdditionalText());
+                input.getAdditionalText(),
+                /* tabGroupUuid= */ null);
     }
 
     @Override

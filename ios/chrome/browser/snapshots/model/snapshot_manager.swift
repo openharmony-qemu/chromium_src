@@ -7,12 +7,11 @@ import UIKit
 // A class that takes care of creating, storing and returning snapshots of a tab's web page. This
 // lives on the UI thread.
 @objcMembers public class SnapshotManager: NSObject {
-  // Strong reference to the snapshot generator which is used to generate snapshots.
+  // The snapshot generator which is used to generate snapshots.
   private let snapshotGenerator: SnapshotGenerator
 
-  // Weak reference to the snapshot storage which is used to store and retrieve snapshots.
-  // SnapshotStorage is owned by SnapshotBrowserAgent.
-  weak var snapshotStorage: SnapshotStorage?
+  // The snapshot storage which is used to store and retrieve snapshots.
+  var snapshotStorage: Optional<SnapshotStorage>
 
   // The unique ID for WebState's snapshot.
   let snapshotID: SnapshotIDWrapper
@@ -24,6 +23,7 @@ import UIKit
   init(generator: SnapshotGenerator, snapshotID: SnapshotIDWrapper) {
     assert(snapshotID.valid(), "snapshot ID should be valid")
     self.snapshotGenerator = generator
+    self.snapshotStorage = nil
     self.snapshotID = snapshotID
     super.init()
   }

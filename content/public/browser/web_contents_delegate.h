@@ -18,21 +18,23 @@
 #include "base/types/expected.h"
 #include "build/build_config.h"
 #include "content/common/content_export.h"
-#include "content/public/browser/back_forward_transition_animation_manager.h"
 #include "content/public/browser/eye_dropper.h"
 #include "content/public/browser/fullscreen_types.h"
 #include "content/public/browser/invalidate_type.h"
 #include "content/public/browser/media_stream_request.h"
+#include "content/public/browser/preloading_trigger_type.h"
 #include "content/public/browser/preview_cancel_reason.h"
 #include "content/public/browser/select_audio_output_request.h"
 #include "content/public/browser/serial_chooser.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/common/window_container_type.mojom-forward.h"
+#include "third_party/blink/public/common/input/web_mouse_event.h"
 #include "third_party/blink/public/common/mediastream/media_stream_request.h"
 #include "third_party/blink/public/common/page/drag_operation.h"
 #include "third_party/blink/public/mojom/choosers/color_chooser.mojom-forward.h"
 #include "third_party/blink/public/mojom/frame/blocked_navigation_types.mojom.h"
 #include "third_party/blink/public/mojom/frame/fullscreen.mojom-forward.h"
+#include "third_party/blink/public/mojom/installedapp/related_application.mojom.h"
 #include "third_party/blink/public/mojom/manifest/display_mode.mojom.h"
 #include "third_party/blink/public/mojom/page/draggable_region.mojom-forward.h"
 #include "third_party/skia/include/core/SkColor.h"
@@ -44,6 +46,7 @@
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/scoped_java_ref.h"
+#include "content/public/browser/back_forward_transition_animation_manager.h"
 #endif
 
 class GURL;
@@ -58,23 +61,6 @@ class FileChooserParams;
 class WindowFeatures;
 }
 }  // namespace blink
-
-namespace content {
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_APPLE)
-class ColorChooser;
-#endif
-class EyeDropperListener;
-class FileSelectListener;
-class JavaScriptDialogManager;
-class RenderFrameHost;
-class RenderWidgetHost;
-class SessionStorageNamespace;
-class SiteInstance;
-struct ContextMenuParams;
-struct DropData;
-struct MediaPlayerWatchTime;
-struct Referrer;
-}  // namespace content
 
 namespace device {
 namespace mojom {
@@ -101,13 +87,28 @@ class Origin;
 
 namespace blink {
 class WebGestureEvent;
+class WebMouseEvent;
 enum class ProtocolHandlerSecurityLevel;
 }
 
 namespace content {
 
 class AudioStreamBrokerFactory;
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_APPLE)
+class ColorChooser;
+#endif
+class EyeDropperListener;
+class FileSelectListener;
+class JavaScriptDialogManager;
+class RenderFrameHost;
+class RenderWidgetHost;
+class SessionStorageNamespace;
+class SiteInstance;
+struct ContextMenuParams;
+struct DropData;
+struct MediaPlayerWatchTime;
 struct OpenURLParams;
+struct Referrer;
 
 enum class KeyboardEventProcessingResult;
 
@@ -301,6 +302,16 @@ class CONTENT_EXPORT WebContentsDelegate {
   virtual bool HandleContextMenu(RenderFrameHost& render_frame_host,
                                  const ContextMenuParams& params);
 
+  // Allows delegates to handle mouse events before sending to the renderer.
+  // Returns true if the event was handled, false otherwise. A true value means
+  // no more processing should happen on the event. The default return value is
+  // false.
+  virtual bool PreHandleMouseEvent(WebContents* source,
+                                   const blink::WebMouseEvent& event);
+  virtual void PreHandleDragUpdate(const DropData& drop_data,
+                                   const gfx::PointF& client_pt) {}
+  virtual void PreHandleDragExit() {}
+
   // Allows delegates to handle keyboard events before sending to the renderer.
   // See enum for description of return values.
   virtual KeyboardEventProcessingResult PreHandleKeyboardEvent(
@@ -343,6 +354,7 @@ class CONTENT_EXPORT WebContentsDelegate {
   // If an delegate returns true, it can optionally also override
   // CreateCustomWebContents() below to provide their own WebContents.
   virtual bool IsWebContentsCreationOverridden(
+      RenderFrameHost* opener,
       SiteInstance* source_site_instance,
       mojom::WindowContainerType window_container_type,
       const GURL& opener_url,
@@ -471,7 +483,7 @@ class CONTENT_EXPORT WebContentsDelegate {
 
   // Notifies `BrowserView` about the resizable boolean having been set vith
   // `window.setResizable(bool)` API.
-  virtual void OnCanResizeFromWebAPIChanged() {}
+  virtual void OnWebApiWindowResizableChanged() {}
   // Returns the overall resizability of the `BrowserView` when considering
   // both the value set by the AWC API and browser's "native" resizability.
   virtual bool GetCanResize();
@@ -642,10 +654,6 @@ class CONTENT_EXPORT WebContentsDelegate {
   // used.
   virtual gfx::Size GetSizeForNewRenderView(WebContents* web_contents);
 
-  // Returns true if the WebContents is never user-visible, thus the renderer
-  // never needs to produce pixels for display.
-  virtual bool IsNeverComposited(WebContents* web_contents);
-
   // Askss |guest_web_contents| to perform the same. If this returns true, the
   // default behavior is suppressed.
   virtual bool GuestSaveFrame(WebContents* guest_web_contents);
@@ -659,13 +667,11 @@ class CONTENT_EXPORT WebContentsDelegate {
   // Called when a suspicious navigation of the main frame has been blocked.
   // Allows the delegate to provide some UI to let the user know about the
   // blocked navigation and give them the option to recover from it.
-  // |blocked_url| is the blocked navigation target, |initiator_url| is the URL
-  // of the frame initiating the navigation, |reason| specifies why the
-  // navigation was blocked.
+  // |blocked_url| is the blocked navigation target, and |reason| specifies why
+  // the navigation was blocked.
   virtual void OnDidBlockNavigation(
       WebContents* web_contents,
       const GURL& blocked_url,
-      const GURL& initiator_url,
       blink::mojom::NavigationBlockedReason reason) {}
 
   // Reports that passive mixed content was found at the specified url.
@@ -755,7 +761,12 @@ class CONTENT_EXPORT WebContentsDelegate {
   // content/browser/preloading/prerender/README.md for details) is supported.
   // If it is not supported, returns the reason.
   virtual PreloadingEligibility IsPrerender2Supported(
-      WebContents& web_contents);
+      WebContents& web_contents,
+      PreloadingTriggerType trigger_type);
+
+  // Returns how many prerendering can be triggered by
+  // WebContents::StartPrerendering().
+  virtual int AllowedPrerenderingCount(WebContents& web_contents);
 
   // Returns whether to override user agent for prerendering navigation.
   virtual NavigationController::UserAgentOverrideOption
@@ -837,6 +848,11 @@ class CONTENT_EXPORT WebContentsDelegate {
   // empty bitmap if embedder is not showing any custom view.
   virtual SkBitmap MaybeCopyContentAreaAsBitmapSync();
 
+  // Return an icon to use for privileged internal pages, if no screenshot of
+  // the page is available during back forward transition animations. An empty
+  // bitmap can be returned if the embedder wants to leave the preview empty.
+  virtual SkBitmap GetBackForwardTransitionFallbackUXInternalPageIcon();
+
   // Notifies the delegate that the back forward transition animation state
   // has changed. If necessary, the delegate should use this notification to
   // hold on its animation until the back forward transition has completed.
@@ -847,6 +863,16 @@ class CONTENT_EXPORT WebContentsDelegate {
   virtual BackForwardTransitionAnimationManager::FallbackUXConfig
   GetBackForwardTransitionFallbackUXConfig();
 #endif  // BUILDFLAG(IS_ANDROID)
+
+  // Returns the saved related_applications web app manifest field associated
+  // with the given `web_contents`. The information is saved via the
+  // installation of a web app, where the url of the `web_contents` is in-scope
+  // of an installed web app. Returns an empty vector if `web_contents` is not
+  // associated with an installed web app or `related_applications` is empty.
+  // See:
+  // https://wicg.github.io/manifest-incubations/index.html#related_applications-member
+  virtual std::vector<blink::mojom::RelatedApplicationPtr>
+  GetSavedRelatedApplications(WebContents* web_contents);
 
  protected:
   virtual ~WebContentsDelegate();

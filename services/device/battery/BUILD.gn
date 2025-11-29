@@ -2,8 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/config/chromeos/ui_mode.gni")
-import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/features.gni")
 import("//mojo/public/tools/bindings/mojom.gni")
 
@@ -64,14 +62,6 @@ if (!is_android) {
       frameworks = [
         "CoreFoundation.framework",
         "IOKit.framework",
-      ]
-    } else if (is_ohos) {
-      deps += [
-        "//ohos/adapter:adapter",
-      ]
-      sources += [
-        "battery_status_manager_ohos.cc",
-        "battery_status_manager_ohos.h",
       ]
     } else {
       sources += [ "battery_status_manager_default.cc" ]

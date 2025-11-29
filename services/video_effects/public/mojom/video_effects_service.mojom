@@ -22,7 +22,7 @@ const sandbox.mojom.Sandbox kVideoEffectsSandbox =
 // This interface is intended to be hosted in the Video Effects utility
 // process. The Browser process uses this to create video effect processors
 // and broker the created processors to the Video Capture Service.
-[ServiceSandbox=kVideoEffectsSandbox]
+[EnableIf=enable_video_effects, ServiceSandbox=kVideoEffectsSandbox]
 interface VideoEffectsService {
   // Creates a Video Effects Processor whose effects configuration will be
   // managed by the passed in `manager`. Note that the created processor will
@@ -37,12 +37,14 @@ interface VideoEffectsService {
   // In case of failure, the remote end of the `processor` will be
   // disconnected.
   CreateEffectsProcessor(
-      string device_id,
-      pending_remote<viz.mojom.Gpu> gpu,
-      pending_remote<media.mojom.VideoEffectsManager> manager,
+      string device_id, pending_remote<viz.mojom.Gpu> gpu,
+      pending_remote<media.mojom.ReadonlyVideoEffectsManager> manager,
       pending_receiver<VideoEffectsProcessor> processor);
 
   // Passes a file containing the background segmentation model to be used by
   // all Video Effects Processors created by this service.
-  SetBackgroundSegmentationModel(mojo_base.mojom.ReadOnlyFile model_file);
+  // If the file is not set, it signifies that the model file is currently not
+  // available, and that the service should stop using previously passed in
+  // model file (if any).
+  SetBackgroundSegmentationModel(mojo_base.mojom.ReadOnlyFile? model_file);
 };

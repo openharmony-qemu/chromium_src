@@ -8,6 +8,7 @@
 #include "base/unguessable_token.h"
 #include "services/network/public/cpp/resource_request.h"
 #include "testing/gtest/include/gtest/gtest.h"
+#include "third_party/blink/public/common/navigation/preloading_headers.h"
 
 namespace network {
 
@@ -68,8 +69,9 @@ TEST(PrefetchMatchesTest, HeadersPurposeDiffers) {
   ResourceRequest real;
   prefetch.headers.AddHeadersFromString(
       "User-Agent: Mozilla/1.0\r\n"
-      "Purpose: prefetch\r\n"
       "Referer: https://www.example.com/\r\n");
+  prefetch.headers.SetHeader(blink::kPurposeHeaderName,
+                             blink::kSecPurposePrefetchHeaderValue);
   real.headers.AddHeadersFromString(
       "User-Agent: Mozilla/1.0\r\n"
       "Referer: https://www.example.com/\r\n");
@@ -81,8 +83,9 @@ TEST(PrefetchMatchesTest, HeadersOrderDoesntMatter) {
   ResourceRequest real;
   prefetch.headers.AddHeadersFromString(
       "User-Agent: Mozilla/1.0\r\n"
-      "Purpose: prefetch\r\n"
       "Referer: https://www.example.com/\r\n");
+  prefetch.headers.SetHeader(blink::kPurposeHeaderName,
+                             blink::kSecPurposePrefetchHeaderValue);
   real.headers.AddHeadersFromString(
       "Referer: https://www.example.com/\r\n"
       "User-Agent: Mozilla/1.0\r\n");
@@ -94,8 +97,9 @@ TEST(PrefetchMatchesTest, HeadersOriginDiffers) {
   ResourceRequest real;
   prefetch.headers.AddHeadersFromString(
       "User-Agent: Mozilla/1.0\r\n"
-      "Purpose: prefetch\r\n"
       "Origin: https://www.example.com/\r\n");
+  prefetch.headers.SetHeader(blink::kPurposeHeaderName,
+                             blink::kSecPurposePrefetchHeaderValue);
   real.headers.AddHeadersFromString(
       "User-Agent: Mozilla/1.0\r\n"
       "Referer: https://www.example.com/\r\n"
@@ -110,8 +114,9 @@ TEST(PrefetchMatchesTest, CorsExemptHeadersPurposeDiffers) {
   // "headers".
   prefetch.cors_exempt_headers.AddHeadersFromString(
       "User-Agent: Mozilla/1.0\r\n"
-      "Purpose: prefetch\r\n"
       "Referer: https://www.example.com/\r\n");
+  prefetch.cors_exempt_headers.SetHeader(blink::kPurposeHeaderName,
+                                         blink::kSecPurposePrefetchHeaderValue);
   real.cors_exempt_headers.AddHeadersFromString(
       "User-Agent: Mozilla/1.0\r\n"
       "Referer: https://www.example.com/\r\n");
@@ -123,10 +128,10 @@ TEST(PrefetchMatchesTest, RequestBodySameBytes) {
   ResourceRequest prefetch;
   ResourceRequest real;
   // Set the bodies to different objects with the same contents.
-  prefetch.request_body =
-      ResourceRequestBody::CreateFromBytes(kBytes, sizeof(kBytes));
-  real.request_body =
-      ResourceRequestBody::CreateFromBytes(kBytes, sizeof(kBytes));
+  prefetch.request_body = ResourceRequestBody::CreateFromCopyOfBytes(
+      base::byte_span_from_cstring(kBytes));
+  real.request_body = ResourceRequestBody::CreateFromCopyOfBytes(
+      base::byte_span_from_cstring(kBytes));
   EXPECT_TRUE(PrefetchMatches(prefetch, real));
 }
 
@@ -135,11 +140,11 @@ TEST(PrefetchMatchesTest, RequestBodyDifferentBytes) {
   constexpr char kRealBytes[] = "Some different bytes";
   ResourceRequest prefetch;
   ResourceRequest real;
-  // Set the bodies to different objects with the same contents.
-  prefetch.request_body = ResourceRequestBody::CreateFromBytes(
-      kPrefetchBytes, sizeof(kPrefetchBytes));
-  real.request_body =
-      ResourceRequestBody::CreateFromBytes(kRealBytes, sizeof(kRealBytes));
+  // Set the bodies to different objects.
+  prefetch.request_body = ResourceRequestBody::CreateFromCopyOfBytes(
+      base::byte_span_from_cstring(kPrefetchBytes));
+  real.request_body = ResourceRequestBody::CreateFromCopyOfBytes(
+      base::byte_span_from_cstring(kRealBytes));
   EXPECT_FALSE(PrefetchMatches(prefetch, real));
 }
 
@@ -148,8 +153,8 @@ TEST(PrefetchMatchesTest, RequestBodyDifferentType) {
   ResourceRequest prefetch;
   ResourceRequest real;
   // Set the bodies to different objects with the same contents.
-  prefetch.request_body =
-      ResourceRequestBody::CreateFromBytes(kBytes, sizeof(kBytes));
+  prefetch.request_body = ResourceRequestBody::CreateFromCopyOfBytes(
+      base::byte_span_from_cstring(kBytes));
   real.request_body = base::MakeRefCounted<ResourceRequestBody>();
   real.request_body->AppendFileRange(base::FilePath::FromASCII("path"), 0, 7,
                                      base::Time::Now());
@@ -166,10 +171,10 @@ TEST(PrefetchMatchesTest, RequestBodyDifferentLength) {
   ResourceRequest real;
   // Set the bodies to different objects with the same contents.
   prefetch.request_body =
-      ResourceRequestBody::CreateFromBytes(kBytes.data(), kBytes.size());
+      ResourceRequestBody::CreateFromCopyOfBytes(base::as_byte_span(kBytes));
   real.request_body =
-      ResourceRequestBody::CreateFromBytes(kSplit1.data(), kSplit1.size());
-  real.request_body->AppendBytes(kSplit2.data(), kSplit2.size());
+      ResourceRequestBody::CreateFromCopyOfBytes(base::as_byte_span(kSplit1));
+  real.request_body->AppendCopyOfBytes(base::as_byte_span(kSplit2));
   EXPECT_FALSE(PrefetchMatches(prefetch, real));
 }
 

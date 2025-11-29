@@ -151,13 +151,13 @@ class UsbDevice : public base::RefCountedThreadSafe<UsbDevice> {
   friend class UsbDeviceHandleImpl;
   friend class UsbDeviceHandleMac;
   friend class UsbDeviceHandleUsbfs;
+  friend class UsbDeviceHandleUsbfsTest;
   friend class UsbDeviceHandleWin;
   friend class UsbServiceAndroid;
   friend class UsbServiceImpl;
   friend class UsbServiceLinux;
   friend class UsbServiceMac;
   friend class UsbServiceWin;
-  friend class UsbServiceOhos;
 
   void OnDisconnect();
   void HandleClosed(UsbDeviceHandle* handle);

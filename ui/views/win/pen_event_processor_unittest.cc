@@ -4,6 +4,10 @@
 
 #include "ui/views/win/pen_event_processor.h"
 
+#include <combaseapi.h>
+#include <windows.devices.input.h>
+
+#include "base/compiler_specific.h"
 #include "base/test/scoped_feature_list.h"
 #include "base/test/task_environment.h"
 #include "base/win/scoped_winrt_initializer.h"
@@ -11,6 +15,15 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ui/events/win/stylus_handwriting_properties_win.h"
 #include "ui/gfx/sequential_id_generator.h"
+
+namespace {
+
+Microsoft::WRL::ComPtr<ABI::Windows::Devices::Input::IPenDeviceStatics>
+GetNullPenDeviceStatics() {
+  return nullptr;
+}
+
+}  // namespace
 
 namespace views {
 
@@ -30,6 +43,8 @@ class PenProcessorTest : public ::testing::Test {
   base::win::ScopedWinrtInitializer scoped_winrt_initializer_;
   base::test::TaskEnvironment task_environment_;
   base::test::ScopedFeatureList scoped_feature_list_;
+  views::PenIdHandler::ScopedPenIdStaticsForTesting pen_id_statics_scoper_{
+      &GetNullPenDeviceStatics};
 };
 
 void PenProcessorTest::SetUp() {
@@ -46,13 +61,12 @@ void PenProcessorTest::EnableStylusHandwriting() {
 }
 
 TEST_F(PenProcessorTest, TypicalCaseDMDisabled) {
-  views::PenIdHandler::ScopedPenIdStaticsForTesting scoper(nullptr);
   ui::SequentialIDGenerator id_generator(0);
   PenEventProcessor processor(&id_generator,
                               /*direct_manipulation_enabled*/ false);
 
   POINTER_PEN_INFO pen_info;
-  memset(&pen_info, 0, sizeof(POINTER_PEN_INFO));
+  UNSAFE_TODO(memset(&pen_info, 0, sizeof(POINTER_PEN_INFO)));
   gfx::Point point(100, 100);
 
   std::unique_ptr<ui::Event> event =
@@ -101,13 +115,12 @@ TEST_F(PenProcessorTest, TypicalCaseDMDisabled) {
 }
 
 TEST_F(PenProcessorTest, TypicalCaseDMEnabled) {
-  views::PenIdHandler::ScopedPenIdStaticsForTesting scoper(nullptr);
   ui::SequentialIDGenerator id_generator(0);
   PenEventProcessor processor(&id_generator,
                               /*direct_manipulation_enabled*/ true);
 
   POINTER_PEN_INFO pen_info;
-  memset(&pen_info, 0, sizeof(POINTER_PEN_INFO));
+  UNSAFE_TODO(memset(&pen_info, 0, sizeof(POINTER_PEN_INFO)));
   gfx::Point point(100, 100);
 
   // Set up the modifier state that shift is down so we can test
@@ -115,7 +128,7 @@ TEST_F(PenProcessorTest, TypicalCaseDMEnabled) {
   BYTE restore_key_state[256];
   GetKeyboardState(restore_key_state);
   BYTE shift_key_state[256];
-  memset(shift_key_state, 0, sizeof(shift_key_state));
+  UNSAFE_TODO(memset(shift_key_state, 0, sizeof(shift_key_state)));
   // Mask high order bit on indicating it is down.
   // See MSDN GetKeyState().
   shift_key_state[VK_SHIFT] |= 0x80;
@@ -167,13 +180,12 @@ TEST_F(PenProcessorTest, TypicalCaseDMEnabled) {
 }
 
 TEST_F(PenProcessorTest, UnpairedPointerDownTouchDMEnabled) {
-  views::PenIdHandler::ScopedPenIdStaticsForTesting scoper(nullptr);
   ui::SequentialIDGenerator id_generator(0);
   PenEventProcessor processor(&id_generator,
                               /*direct_manipulation_enabled*/ true);
 
   POINTER_PEN_INFO pen_info;
-  memset(&pen_info, 0, sizeof(POINTER_PEN_INFO));
+  UNSAFE_TODO(memset(&pen_info, 0, sizeof(POINTER_PEN_INFO)));
   gfx::Point point(100, 100);
 
   pen_info.pointerInfo.pointerFlags =
@@ -186,13 +198,12 @@ TEST_F(PenProcessorTest, UnpairedPointerDownTouchDMEnabled) {
 }
 
 TEST_F(PenProcessorTest, UnpairedPointerDownMouseDMEnabled) {
-  views::PenIdHandler::ScopedPenIdStaticsForTesting scoper(nullptr);
   ui::SequentialIDGenerator id_generator(0);
   PenEventProcessor processor(&id_generator,
                               /*direct_manipulation_enabled*/ true);
 
   POINTER_PEN_INFO pen_info;
-  memset(&pen_info, 0, sizeof(POINTER_PEN_INFO));
+  UNSAFE_TODO(memset(&pen_info, 0, sizeof(POINTER_PEN_INFO)));
   gfx::Point point(100, 100);
 
   pen_info.pointerInfo.pointerFlags = POINTER_FLAG_FIRSTBUTTON;
@@ -204,13 +215,12 @@ TEST_F(PenProcessorTest, UnpairedPointerDownMouseDMEnabled) {
 }
 
 TEST_F(PenProcessorTest, TouchFlagDMEnabled) {
-  views::PenIdHandler::ScopedPenIdStaticsForTesting scoper(nullptr);
   ui::SequentialIDGenerator id_generator(0);
   PenEventProcessor processor(&id_generator,
                               /*direct_manipulation_enabled*/ true);
 
   POINTER_PEN_INFO pen_info;
-  memset(&pen_info, 0, sizeof(POINTER_PEN_INFO));
+  UNSAFE_TODO(memset(&pen_info, 0, sizeof(POINTER_PEN_INFO)));
   gfx::Point point(100, 100);
 
   pen_info.pointerInfo.pointerFlags =
@@ -235,13 +245,12 @@ TEST_F(PenProcessorTest, TouchFlagDMEnabled) {
 }
 
 TEST_F(PenProcessorTest, MouseFlagDMEnabled) {
-  views::PenIdHandler::ScopedPenIdStaticsForTesting scoper(nullptr);
   ui::SequentialIDGenerator id_generator(0);
   PenEventProcessor processor(&id_generator,
                               /*direct_manipulation_enabled*/ true);
 
   POINTER_PEN_INFO pen_info;
-  memset(&pen_info, 0, sizeof(POINTER_PEN_INFO));
+  UNSAFE_TODO(memset(&pen_info, 0, sizeof(POINTER_PEN_INFO)));
   gfx::Point point(100, 100);
 
   pen_info.pointerInfo.pointerFlags = POINTER_FLAG_FIRSTBUTTON;
@@ -269,13 +278,12 @@ TEST_F(PenProcessorTest, MouseFlagDMEnabled) {
 }
 
 TEST_F(PenProcessorTest, PenEraserFlagDMEnabled) {
-  views::PenIdHandler::ScopedPenIdStaticsForTesting scoper(nullptr);
   ui::SequentialIDGenerator id_generator(0);
   PenEventProcessor processor(&id_generator,
                               /*direct_manipulation_enabled*/ true);
 
   POINTER_PEN_INFO pen_info;
-  memset(&pen_info, 0, sizeof(POINTER_PEN_INFO));
+  UNSAFE_TODO(memset(&pen_info, 0, sizeof(POINTER_PEN_INFO)));
   gfx::Point point(100, 100);
 
   pen_info.pointerInfo.pointerFlags =
@@ -303,14 +311,13 @@ TEST_F(PenProcessorTest, PenEraserFlagDMEnabled) {
 }
 
 TEST_F(PenProcessorTest, MultiPenDMEnabled) {
-  views::PenIdHandler::ScopedPenIdStaticsForTesting scoper(nullptr);
   ui::SequentialIDGenerator id_generator(0);
   PenEventProcessor processor(&id_generator,
                               /*direct_manipulation_enabled*/ true);
 
   std::array<POINTER_PEN_INFO, 3> pen_info;
   for (auto& i : pen_info) {
-    memset(&i, 0, sizeof(POINTER_PEN_INFO));
+    UNSAFE_TODO(memset(&i, 0, sizeof(POINTER_PEN_INFO)));
   }
 
   gfx::Point point(100, 100);
@@ -343,13 +350,12 @@ TEST_F(PenProcessorTest, MultiPenDMEnabled) {
 
 TEST_F(PenProcessorTest, StylusHandwritingPropertiesDMEnabled) {
   EnableStylusHandwriting();
-  views::PenIdHandler::ScopedPenIdStaticsForTesting scoper(nullptr);
   ui::SequentialIDGenerator id_generator(/*min_id=*/0);
   PenEventProcessor processor(&id_generator,
                               /*direct_manipulation_enabled=*/true);
   const uint32_t pointer_id = 1;
   POINTER_PEN_INFO pen_info;
-  memset(&pen_info, 0, sizeof(POINTER_PEN_INFO));
+  UNSAFE_TODO(memset(&pen_info, 0, sizeof(POINTER_PEN_INFO)));
   pen_info.pointerInfo.pointerFlags =
       POINTER_FLAG_INCONTACT | POINTER_FLAG_FIRSTBUTTON;
   pen_info.pointerInfo.ButtonChangeType = POINTER_CHANGE_FIRSTBUTTON_DOWN;

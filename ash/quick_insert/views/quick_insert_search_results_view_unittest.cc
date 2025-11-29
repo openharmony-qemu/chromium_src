@@ -39,7 +39,7 @@
 #include "ui/compositor/scoped_animation_duration_scale_mode.h"
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/image/image_unittest_util.h"
-#include "ui/views/accessibility/ax_event_manager.h"
+#include "ui/views/accessibility/ax_update_notifier.h"
 #include "ui/views/controls/label.h"
 #include "ui/views/test/ax_event_counter.h"
 #include "ui/views/test/views_test_base.h"
@@ -53,6 +53,7 @@ namespace {
 using ::testing::_;
 using ::testing::AllOf;
 using ::testing::ElementsAre;
+using ::testing::Eq;
 using ::testing::IsEmpty;
 using ::testing::IsNull;
 using ::testing::Not;
@@ -92,7 +93,9 @@ auto MatchesResultSection(QuickInsertSectionType section_type, int num_items) {
       Property(
           &QuickInsertSectionView::title_label_for_testing,
           Property(&views::Label::GetText,
-                   GetSectionTitleForQuickInsertSectionType(section_type))),
+                   // NOTE: Eq() here serves to store the underlying
+                   // std::u16string and prevent it from dangling.
+                   Eq(GetSectionTitleForQuickInsertSectionType(section_type)))),
       Property(&QuickInsertSectionView::item_views_for_testing,
                SizeIs(num_items)));
 }
@@ -104,16 +107,18 @@ auto MatchesResultSectionWithOneItem(QuickInsertSectionType section_type,
       Property(
           &QuickInsertSectionView::title_label_for_testing,
           Property(&views::Label::GetText,
-                   GetSectionTitleForQuickInsertSectionType(section_type))),
+                   // NOTE: Eq() here serves to store the underlying
+                   // std::u16string and prevent it from dangling.
+                   Eq(GetSectionTitleForQuickInsertSectionType(section_type)))),
       Property(&QuickInsertSectionView::item_views_for_testing,
                ElementsAre(item_matcher)));
 }
 
 TEST_F(QuickInsertSearchResultsViewTest, CreatesResultsSections) {
   MockQuickInsertSearchResultsViewDelegate mock_delegate;
-  MockPickerAssetFetcher asset_fetcher;
-  PickerSubmenuController submenu_controller;
-  PickerPreviewBubbleController preview_controller;
+  MockQuickInsertAssetFetcher asset_fetcher;
+  QuickInsertSubmenuController submenu_controller;
+  QuickInsertPreviewBubbleController preview_controller;
   QuickInsertSearchResultsView view(&mock_delegate, kQuickInsertWidth,
                                     &asset_fetcher, &submenu_controller,
                                     &preview_controller);
@@ -137,9 +142,9 @@ TEST_F(QuickInsertSearchResultsViewTest, CreatesResultsSections) {
 
 TEST_F(QuickInsertSearchResultsViewTest, ClearSearchResultsClearsView) {
   MockQuickInsertSearchResultsViewDelegate mock_delegate;
-  MockPickerAssetFetcher asset_fetcher;
-  PickerSubmenuController submenu_controller;
-  PickerPreviewBubbleController preview_controller;
+  MockQuickInsertAssetFetcher asset_fetcher;
+  QuickInsertSubmenuController submenu_controller;
+  QuickInsertPreviewBubbleController preview_controller;
   QuickInsertSearchResultsView view(&mock_delegate, kQuickInsertWidth,
                                     &asset_fetcher, &submenu_controller,
                                     &preview_controller);
@@ -154,9 +159,9 @@ TEST_F(QuickInsertSearchResultsViewTest, ClearSearchResultsClearsView) {
 
 TEST_F(QuickInsertSearchResultsViewTest, EmptySearchResultsShowsThrobber) {
   MockQuickInsertSearchResultsViewDelegate mock_delegate;
-  MockPickerAssetFetcher asset_fetcher;
-  PickerSubmenuController submenu_controller;
-  PickerPreviewBubbleController preview_controller;
+  MockQuickInsertAssetFetcher asset_fetcher;
+  QuickInsertSubmenuController submenu_controller;
+  QuickInsertPreviewBubbleController preview_controller;
   QuickInsertSearchResultsView view(&mock_delegate, kQuickInsertWidth,
                                     &asset_fetcher, &submenu_controller,
                                     &preview_controller);
@@ -171,9 +176,9 @@ TEST_F(QuickInsertSearchResultsViewTest, EmptySearchResultsShowsThrobber) {
 
 TEST_F(QuickInsertSearchResultsViewTest, CreatesResultsSectionWithGif) {
   MockQuickInsertSearchResultsViewDelegate mock_delegate;
-  MockPickerAssetFetcher asset_fetcher;
-  PickerSubmenuController submenu_controller;
-  PickerPreviewBubbleController preview_controller;
+  MockQuickInsertAssetFetcher asset_fetcher;
+  QuickInsertSubmenuController submenu_controller;
+  QuickInsertPreviewBubbleController preview_controller;
   QuickInsertSearchResultsView view(&mock_delegate, kQuickInsertWidth,
                                     &asset_fetcher, &submenu_controller,
                                     &preview_controller);
@@ -193,9 +198,9 @@ TEST_F(QuickInsertSearchResultsViewTest, CreatesResultsSectionWithGif) {
 
 TEST_F(QuickInsertSearchResultsViewTest, CreatesResultsSectionWithCategories) {
   MockQuickInsertSearchResultsViewDelegate mock_delegate;
-  MockPickerAssetFetcher asset_fetcher;
-  PickerSubmenuController submenu_controller;
-  PickerPreviewBubbleController preview_controller;
+  MockQuickInsertAssetFetcher asset_fetcher;
+  QuickInsertSubmenuController submenu_controller;
+  QuickInsertPreviewBubbleController preview_controller;
   QuickInsertSearchResultsView view(&mock_delegate, kQuickInsertWidth,
                                     &asset_fetcher, &submenu_controller,
                                     &preview_controller);
@@ -212,9 +217,9 @@ TEST_F(QuickInsertSearchResultsViewTest, CreatesResultsSectionWithCategories) {
 
 TEST_F(QuickInsertSearchResultsViewTest, CreatesResultsSectionWithLocalFiles) {
   MockQuickInsertSearchResultsViewDelegate mock_delegate;
-  MockPickerAssetFetcher asset_fetcher;
-  PickerSubmenuController submenu_controller;
-  PickerPreviewBubbleController preview_controller;
+  MockQuickInsertAssetFetcher asset_fetcher;
+  QuickInsertSubmenuController submenu_controller;
+  QuickInsertPreviewBubbleController preview_controller;
   QuickInsertSearchResultsView view(&mock_delegate, kQuickInsertWidth,
                                     &asset_fetcher, &submenu_controller,
                                     &preview_controller);
@@ -235,9 +240,9 @@ TEST_F(QuickInsertSearchResultsViewTest, CreatesResultsSectionWithLocalFiles) {
 
 TEST_F(QuickInsertSearchResultsViewTest, CreatesResultsSectionWithDriveFiles) {
   MockQuickInsertSearchResultsViewDelegate mock_delegate;
-  MockPickerAssetFetcher asset_fetcher;
-  PickerSubmenuController submenu_controller;
-  PickerPreviewBubbleController preview_controller;
+  MockQuickInsertAssetFetcher asset_fetcher;
+  QuickInsertSubmenuController submenu_controller;
+  QuickInsertPreviewBubbleController preview_controller;
   QuickInsertSearchResultsView view(&mock_delegate, kQuickInsertWidth,
                                     &asset_fetcher, &submenu_controller,
                                     &preview_controller);
@@ -259,9 +264,9 @@ TEST_F(QuickInsertSearchResultsViewTest, CreatesResultsSectionWithDriveFiles) {
 
 TEST_F(QuickInsertSearchResultsViewTest, UpdatesResultsSections) {
   MockQuickInsertSearchResultsViewDelegate mock_delegate;
-  MockPickerAssetFetcher asset_fetcher;
-  PickerSubmenuController submenu_controller;
-  PickerPreviewBubbleController preview_controller;
+  MockQuickInsertAssetFetcher asset_fetcher;
+  QuickInsertSubmenuController submenu_controller;
+  QuickInsertPreviewBubbleController preview_controller;
   QuickInsertSearchResultsView view(&mock_delegate, kQuickInsertWidth,
                                     &asset_fetcher, &submenu_controller,
                                     &preview_controller);
@@ -283,9 +288,9 @@ TEST_F(QuickInsertSearchResultsViewTest, UpdatesResultsSections) {
 
 TEST_F(QuickInsertSearchResultsViewTest, GetsTopItem) {
   MockQuickInsertSearchResultsViewDelegate mock_delegate;
-  MockPickerAssetFetcher asset_fetcher;
-  PickerSubmenuController submenu_controller;
-  PickerPreviewBubbleController preview_controller;
+  MockQuickInsertAssetFetcher asset_fetcher;
+  QuickInsertSubmenuController submenu_controller;
+  QuickInsertPreviewBubbleController preview_controller;
   QuickInsertSearchResultsView view(&mock_delegate, kQuickInsertWidth,
                                     &asset_fetcher, &submenu_controller,
                                     &preview_controller);
@@ -300,14 +305,14 @@ TEST_F(QuickInsertSearchResultsViewTest, GetsTopItem) {
                                         QuickInsertTextResult(u"Result B")}},
                                       /*has_more_results=*/false));
 
-  EXPECT_TRUE(DoPickerPseudoFocusedActionOnView(view.GetTopItem()));
+  EXPECT_TRUE(DoQuickInsertPseudoFocusedActionOnView(view.GetTopItem()));
 }
 
 TEST_F(QuickInsertSearchResultsViewTest, GetsBottomItem) {
   MockQuickInsertSearchResultsViewDelegate mock_delegate;
-  MockPickerAssetFetcher asset_fetcher;
-  PickerSubmenuController submenu_controller;
-  PickerPreviewBubbleController preview_controller;
+  MockQuickInsertAssetFetcher asset_fetcher;
+  QuickInsertSubmenuController submenu_controller;
+  QuickInsertPreviewBubbleController preview_controller;
   QuickInsertSearchResultsView view(&mock_delegate, kQuickInsertWidth,
                                     &asset_fetcher, &submenu_controller,
                                     &preview_controller);
@@ -322,14 +327,14 @@ TEST_F(QuickInsertSearchResultsViewTest, GetsBottomItem) {
                                         QuickInsertTextResult(u"Result B")}},
                                       /*has_more_results=*/false));
 
-  EXPECT_TRUE(DoPickerPseudoFocusedActionOnView(view.GetBottomItem()));
+  EXPECT_TRUE(DoQuickInsertPseudoFocusedActionOnView(view.GetBottomItem()));
 }
 
 TEST_F(QuickInsertSearchResultsViewTest, GetsItemAbove) {
   MockQuickInsertSearchResultsViewDelegate mock_delegate;
-  MockPickerAssetFetcher asset_fetcher;
-  PickerSubmenuController submenu_controller;
-  PickerPreviewBubbleController preview_controller;
+  MockQuickInsertAssetFetcher asset_fetcher;
+  QuickInsertSubmenuController submenu_controller;
+  QuickInsertPreviewBubbleController preview_controller;
   QuickInsertSearchResultsView view(&mock_delegate, kQuickInsertWidth,
                                     &asset_fetcher, &submenu_controller,
                                     &preview_controller);
@@ -343,15 +348,15 @@ TEST_F(QuickInsertSearchResultsViewTest, GetsItemAbove) {
               SelectSearchResult(VariantWith<QuickInsertCategoryResult>(
                   QuickInsertCategoryResult(QuickInsertCategory::kLinks))));
 
-  EXPECT_TRUE(DoPickerPseudoFocusedActionOnView(
+  EXPECT_TRUE(DoQuickInsertPseudoFocusedActionOnView(
       view.GetItemAbove(view.GetBottomItem())));
 }
 
 TEST_F(QuickInsertSearchResultsViewTest, GetsItemBelow) {
   MockQuickInsertSearchResultsViewDelegate mock_delegate;
-  MockPickerAssetFetcher asset_fetcher;
-  PickerSubmenuController submenu_controller;
-  PickerPreviewBubbleController preview_controller;
+  MockQuickInsertAssetFetcher asset_fetcher;
+  QuickInsertSubmenuController submenu_controller;
+  QuickInsertPreviewBubbleController preview_controller;
   QuickInsertSearchResultsView view(&mock_delegate, kQuickInsertWidth,
                                     &asset_fetcher, &submenu_controller,
                                     &preview_controller);
@@ -365,8 +370,8 @@ TEST_F(QuickInsertSearchResultsViewTest, GetsItemBelow) {
               SelectSearchResult(VariantWith<QuickInsertCategoryResult>(
                   QuickInsertCategoryResult(QuickInsertCategory::kClipboard))));
 
-  EXPECT_TRUE(
-      DoPickerPseudoFocusedActionOnView(view.GetItemBelow(view.GetTopItem())));
+  EXPECT_TRUE(DoQuickInsertPseudoFocusedActionOnView(
+      view.GetItemBelow(view.GetTopItem())));
 }
 
 TEST_F(QuickInsertSearchResultsViewTest,
@@ -374,9 +379,9 @@ TEST_F(QuickInsertSearchResultsViewTest,
   std::unique_ptr<views::Widget> widget =
       CreateTestWidget(views::Widget::InitParams::CLIENT_OWNS_WIDGET);
   MockQuickInsertSearchResultsViewDelegate mock_delegate;
-  MockPickerAssetFetcher asset_fetcher;
-  PickerSubmenuController submenu_controller;
-  PickerPreviewBubbleController preview_controller;
+  MockQuickInsertAssetFetcher asset_fetcher;
+  QuickInsertSubmenuController submenu_controller;
+  QuickInsertPreviewBubbleController preview_controller;
   auto* view =
       widget->SetContentsView(std::make_unique<QuickInsertSearchResultsView>(
           &mock_delegate, kQuickInsertWidth, &asset_fetcher,
@@ -401,9 +406,9 @@ TEST_F(QuickInsertSearchResultsViewTest,
   std::unique_ptr<views::Widget> widget =
       CreateTestWidget(views::Widget::InitParams::CLIENT_OWNS_WIDGET);
   MockQuickInsertSearchResultsViewDelegate mock_delegate;
-  MockPickerAssetFetcher asset_fetcher;
-  PickerSubmenuController submenu_controller;
-  PickerPreviewBubbleController preview_controller;
+  MockQuickInsertAssetFetcher asset_fetcher;
+  QuickInsertSubmenuController submenu_controller;
+  QuickInsertPreviewBubbleController preview_controller;
   auto* view =
       widget->SetContentsView(std::make_unique<QuickInsertSearchResultsView>(
           &mock_delegate, kQuickInsertWidth, &asset_fetcher,
@@ -424,9 +429,9 @@ TEST_F(QuickInsertSearchResultsViewTest, ClickingSeeMoreLinkCallsCallback) {
       CreateTestWidget(views::Widget::InitParams::CLIENT_OWNS_WIDGET);
   widget->SetFullscreen(true);
   MockQuickInsertSearchResultsViewDelegate mock_delegate;
-  MockPickerAssetFetcher asset_fetcher;
-  PickerSubmenuController submenu_controller;
-  PickerPreviewBubbleController preview_controller;
+  MockQuickInsertAssetFetcher asset_fetcher;
+  QuickInsertSubmenuController submenu_controller;
+  QuickInsertPreviewBubbleController preview_controller;
   auto* view =
       widget->SetContentsView(std::make_unique<QuickInsertSearchResultsView>(
           &mock_delegate, kQuickInsertWidth, &asset_fetcher,
@@ -447,9 +452,9 @@ TEST_F(QuickInsertSearchResultsViewTest, ClickingSeeMoreLinkCallsCallback) {
 TEST_F(QuickInsertSearchResultsViewTest,
        SearchStoppedShowsNoResultsViewWithNoIllustration) {
   MockQuickInsertSearchResultsViewDelegate mock_delegate;
-  MockPickerAssetFetcher asset_fetcher;
-  PickerSubmenuController submenu_controller;
-  PickerPreviewBubbleController preview_controller;
+  MockQuickInsertAssetFetcher asset_fetcher;
+  QuickInsertSubmenuController submenu_controller;
+  QuickInsertPreviewBubbleController preview_controller;
   QuickInsertSearchResultsView view(&mock_delegate, kQuickInsertWidth,
                                     &asset_fetcher, &submenu_controller,
                                     &preview_controller);
@@ -466,9 +471,9 @@ TEST_F(QuickInsertSearchResultsViewTest,
 TEST_F(QuickInsertSearchResultsViewTest,
        SearchStoppedShowsNoResultsViewWithIllustration) {
   MockQuickInsertSearchResultsViewDelegate mock_delegate;
-  MockPickerAssetFetcher asset_fetcher;
-  PickerSubmenuController submenu_controller;
-  PickerPreviewBubbleController preview_controller;
+  MockQuickInsertAssetFetcher asset_fetcher;
+  QuickInsertSubmenuController submenu_controller;
+  QuickInsertPreviewBubbleController preview_controller;
   QuickInsertSearchResultsView view(&mock_delegate, kQuickInsertWidth,
                                     &asset_fetcher, &submenu_controller,
                                     &preview_controller);
@@ -487,9 +492,9 @@ TEST_F(QuickInsertSearchResultsViewTest,
 TEST_F(QuickInsertSearchResultsViewTest,
        SearchStoppedShowsSectionListIfThereAreResults) {
   MockQuickInsertSearchResultsViewDelegate mock_delegate;
-  MockPickerAssetFetcher asset_fetcher;
-  PickerSubmenuController submenu_controller;
-  PickerPreviewBubbleController preview_controller;
+  MockQuickInsertAssetFetcher asset_fetcher;
+  QuickInsertSubmenuController submenu_controller;
+  QuickInsertPreviewBubbleController preview_controller;
   QuickInsertSearchResultsView view(&mock_delegate, kQuickInsertWidth,
                                     &asset_fetcher, &submenu_controller,
                                     &preview_controller);
@@ -504,9 +509,9 @@ TEST_F(QuickInsertSearchResultsViewTest,
 
 TEST_F(QuickInsertSearchResultsViewTest, SearchStoppedHidesLoaderView) {
   MockQuickInsertSearchResultsViewDelegate mock_delegate;
-  MockPickerAssetFetcher asset_fetcher;
-  PickerSubmenuController submenu_controller;
-  PickerPreviewBubbleController preview_controller;
+  MockQuickInsertAssetFetcher asset_fetcher;
+  QuickInsertSubmenuController submenu_controller;
+  QuickInsertPreviewBubbleController preview_controller;
   QuickInsertSearchResultsView view(&mock_delegate, kQuickInsertWidth,
                                     &asset_fetcher, &submenu_controller,
                                     &preview_controller);
@@ -519,9 +524,9 @@ TEST_F(QuickInsertSearchResultsViewTest, SearchStoppedHidesLoaderView) {
 
 TEST_F(QuickInsertSearchResultsViewTest, SearchStoppedHidesThrobber) {
   MockQuickInsertSearchResultsViewDelegate mock_delegate;
-  MockPickerAssetFetcher asset_fetcher;
-  PickerSubmenuController submenu_controller;
-  PickerPreviewBubbleController preview_controller;
+  MockQuickInsertAssetFetcher asset_fetcher;
+  QuickInsertSubmenuController submenu_controller;
+  QuickInsertPreviewBubbleController preview_controller;
   QuickInsertSearchResultsView view(&mock_delegate, kQuickInsertWidth,
                                     &asset_fetcher, &submenu_controller,
                                     &preview_controller);
@@ -534,9 +539,9 @@ TEST_F(QuickInsertSearchResultsViewTest, SearchStoppedHidesThrobber) {
 
 TEST_F(QuickInsertSearchResultsViewTest, ClearSearchResultsShowsSearchResults) {
   MockQuickInsertSearchResultsViewDelegate mock_delegate;
-  MockPickerAssetFetcher asset_fetcher;
-  PickerSubmenuController submenu_controller;
-  PickerPreviewBubbleController preview_controller;
+  MockQuickInsertAssetFetcher asset_fetcher;
+  QuickInsertSubmenuController submenu_controller;
+  QuickInsertPreviewBubbleController preview_controller;
   QuickInsertSearchResultsView view(&mock_delegate, kQuickInsertWidth,
                                     &asset_fetcher, &submenu_controller,
                                     &preview_controller);
@@ -550,9 +555,9 @@ TEST_F(QuickInsertSearchResultsViewTest, ClearSearchResultsShowsSearchResults) {
 
 TEST_F(QuickInsertSearchResultsViewTest, ShowLoadingShowsLoaderView) {
   MockQuickInsertSearchResultsViewDelegate mock_delegate;
-  MockPickerAssetFetcher asset_fetcher;
-  PickerSubmenuController submenu_controller;
-  PickerPreviewBubbleController preview_controller;
+  MockQuickInsertAssetFetcher asset_fetcher;
+  QuickInsertSubmenuController submenu_controller;
+  QuickInsertPreviewBubbleController preview_controller;
   QuickInsertSearchResultsView view(&mock_delegate, kQuickInsertWidth,
                                     &asset_fetcher, &submenu_controller,
                                     &preview_controller);
@@ -568,9 +573,9 @@ TEST_F(QuickInsertSearchResultsViewTest, ShowLoadingShowsLoaderView) {
 
 TEST_F(QuickInsertSearchResultsViewTest, ShowSkeletonLoaderHidesThrobber) {
   MockQuickInsertSearchResultsViewDelegate mock_delegate;
-  MockPickerAssetFetcher asset_fetcher;
-  PickerSubmenuController submenu_controller;
-  PickerPreviewBubbleController preview_controller;
+  MockQuickInsertAssetFetcher asset_fetcher;
+  QuickInsertSubmenuController submenu_controller;
+  QuickInsertPreviewBubbleController preview_controller;
   QuickInsertSearchResultsView view(&mock_delegate, kQuickInsertWidth,
                                     &asset_fetcher, &submenu_controller,
                                     &preview_controller);
@@ -585,9 +590,9 @@ TEST_F(QuickInsertSearchResultsViewTest, ShowLoadingAnimatesAfterDelay) {
   ui::ScopedAnimationDurationScaleMode test_duration_mode(
       ui::ScopedAnimationDurationScaleMode::NON_ZERO_DURATION);
   MockQuickInsertSearchResultsViewDelegate mock_delegate;
-  MockPickerAssetFetcher asset_fetcher;
-  PickerSubmenuController submenu_controller;
-  PickerPreviewBubbleController preview_controller;
+  MockQuickInsertAssetFetcher asset_fetcher;
+  QuickInsertSubmenuController submenu_controller;
+  QuickInsertPreviewBubbleController preview_controller;
   QuickInsertSearchResultsView view(&mock_delegate, kQuickInsertWidth,
                                     &asset_fetcher, &submenu_controller,
                                     &preview_controller);
@@ -607,9 +612,9 @@ TEST_F(QuickInsertSearchResultsViewTest,
   ui::ScopedAnimationDurationScaleMode test_duration_mode(
       ui::ScopedAnimationDurationScaleMode::NON_ZERO_DURATION);
   MockQuickInsertSearchResultsViewDelegate mock_delegate;
-  MockPickerAssetFetcher asset_fetcher;
-  PickerSubmenuController submenu_controller;
-  PickerPreviewBubbleController preview_controller;
+  MockQuickInsertAssetFetcher asset_fetcher;
+  QuickInsertSubmenuController submenu_controller;
+  QuickInsertPreviewBubbleController preview_controller;
   QuickInsertSearchResultsView view(&mock_delegate, kQuickInsertWidth,
                                     &asset_fetcher, &submenu_controller,
                                     &preview_controller);
@@ -630,9 +635,9 @@ TEST_F(QuickInsertSearchResultsViewTest,
 TEST_F(QuickInsertSearchResultsViewTest,
        AppendResultsDuringLoadingAppendsResults) {
   MockQuickInsertSearchResultsViewDelegate mock_delegate;
-  MockPickerAssetFetcher asset_fetcher;
-  PickerSubmenuController submenu_controller;
-  PickerPreviewBubbleController preview_controller;
+  MockQuickInsertAssetFetcher asset_fetcher;
+  QuickInsertSubmenuController submenu_controller;
+  QuickInsertPreviewBubbleController preview_controller;
   QuickInsertSearchResultsView view(&mock_delegate, kQuickInsertWidth,
                                     &asset_fetcher, &submenu_controller,
                                     &preview_controller);
@@ -648,9 +653,9 @@ TEST_F(QuickInsertSearchResultsViewTest,
 
 TEST_F(QuickInsertSearchResultsViewTest, AppendResultsHidesThrobber) {
   MockQuickInsertSearchResultsViewDelegate mock_delegate;
-  MockPickerAssetFetcher asset_fetcher;
-  PickerSubmenuController submenu_controller;
-  PickerPreviewBubbleController preview_controller;
+  MockQuickInsertAssetFetcher asset_fetcher;
+  QuickInsertSubmenuController submenu_controller;
+  QuickInsertPreviewBubbleController preview_controller;
   QuickInsertSearchResultsView view(&mock_delegate, kQuickInsertWidth,
                                     &asset_fetcher, &submenu_controller,
                                     &preview_controller);
@@ -673,7 +678,7 @@ TEST_F(QuickInsertSearchResultsViewTest,
           &mock_delegate, kQuickInsertWidth, /*asset_fetcher=*/nullptr,
           /*submenu_controller=*/nullptr, /*preview_controller=*/nullptr));
 
-  views::test::AXEventCounter counter(views::AXEventManager::Get());
+  views::test::AXEventCounter counter(views::AXUpdateNotifier::Get());
   view->AppendSearchResults(QuickInsertSearchResultsSection(
       QuickInsertSectionType::kNone, {}, /*has_more_results=*/false));
   view->SearchStopped(/*illustration=*/{}, u"");
@@ -693,7 +698,7 @@ TEST_F(QuickInsertSearchResultsViewTest,
           &mock_delegate, kQuickInsertWidth, /*asset_fetcher=*/nullptr,
           /*submenu_controller=*/nullptr, /*preview_controller=*/nullptr));
 
-  views::test::AXEventCounter counter(views::AXEventManager::Get());
+  views::test::AXEventCounter counter(views::AXUpdateNotifier::Get());
   EXPECT_TRUE(view->SearchStopped(/*illustration=*/{}, u""));
 
   EXPECT_EQ(view->GetAccessibleName(),
@@ -713,7 +718,7 @@ TEST_F(QuickInsertSearchResultsViewTest,
           /*submenu_controller=*/nullptr, /*preview_controller=*/nullptr));
   view->SetNumEmojiResultsForA11y(5);
 
-  views::test::AXEventCounter counter(views::AXEventManager::Get());
+  views::test::AXEventCounter counter(views::AXUpdateNotifier::Get());
   EXPECT_TRUE(view->SearchStopped(/*illustration=*/{}, u""));
 
   EXPECT_EQ(view->GetAccessibleName(), u"5 emojis. No other results.");
@@ -731,7 +736,7 @@ TEST_F(QuickInsertSearchResultsViewTest,
           &mock_delegate, kQuickInsertWidth, /*asset_fetcher=*/nullptr,
           /*submenu_controller=*/nullptr, /*preview_controller=*/nullptr));
 
-  views::test::AXEventCounter counter(views::AXEventManager::Get());
+  views::test::AXEventCounter counter(views::AXUpdateNotifier::Get());
   view->SearchStopped(/*illustration=*/{}, u"");
   view->SearchStopped(/*illustration=*/{}, u"");
 
@@ -751,7 +756,7 @@ TEST_F(QuickInsertSearchResultsViewTest,
           &mock_delegate, kQuickInsertWidth, /*asset_fetcher=*/nullptr,
           /*submenu_controller=*/nullptr, /*preview_controller=*/nullptr));
 
-  views::test::AXEventCounter counter(views::AXEventManager::Get());
+  views::test::AXEventCounter counter(views::AXUpdateNotifier::Get());
   view->SearchStopped(/*illustration=*/{}, u"");
   view->AppendSearchResults(QuickInsertSearchResultsSection(
       QuickInsertSectionType::kNone, {}, /*has_more_results=*/false));
@@ -773,7 +778,7 @@ TEST_F(QuickInsertSearchResultsViewTest, ClearingSearchResultsDoesNotAnnounce) {
           &mock_delegate, kQuickInsertWidth, /*asset_fetcher=*/nullptr,
           /*submenu_controller=*/nullptr, /*preview_controller=*/nullptr));
 
-  views::test::AXEventCounter counter(views::AXEventManager::Get());
+  views::test::AXEventCounter counter(views::AXUpdateNotifier::Get());
   view->ClearSearchResults();
 
   EXPECT_EQ(view->GetAccessibleName(), u"");
@@ -796,9 +801,9 @@ TEST_P(QuickInsertSearchResultsViewResultSelectionTest,
        LeftClickSelectsResult) {
   const QuickInsertSearchResultTestCase& test_case = GetParam();
   MockQuickInsertSearchResultsViewDelegate mock_delegate;
-  MockPickerAssetFetcher asset_fetcher;
-  PickerSubmenuController submenu_controller;
-  PickerPreviewBubbleController preview_controller;
+  MockQuickInsertAssetFetcher asset_fetcher;
+  QuickInsertSubmenuController submenu_controller;
+  QuickInsertPreviewBubbleController preview_controller;
   std::unique_ptr<views::Widget> widget =
       CreateTestWidget(views::Widget::InitParams::CLIENT_OWNS_WIDGET);
   widget->SetFullscreen(true);

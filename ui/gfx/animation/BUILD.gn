@@ -48,7 +48,7 @@ component("animation") {
     sources += [ "animation_win.cc" ]
   }
 
-  if (is_linux || is_ohos) {
+  if (is_linux) {
     sources += [ "animation_linux.cc" ]
   }
 
@@ -78,10 +78,10 @@ component("animation") {
   ]
 
   if (is_android) {
-    deps += [ "//ui/gfx:gfx_jni_headers" ]
+    deps += [ "//ui/accessibility:ax_base_android" ]
   }
 
-  if (is_linux || is_ohos) {
+  if (is_linux) {
     deps += [ "//ui/linux:linux_ui" ]
   }
 

@@ -117,7 +117,7 @@ base::WritableSharedMemoryRegion Broker::GetWritableSharedMemoryRegion(
   }
 
 #if !BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(MOJO_USE_APPLE_CHANNEL) || BUILDFLAG(IS_OHOS)
+    BUILDFLAG(MOJO_USE_APPLE_CHANNEL)
   // Non-POSIX systems, as well as Android and Mac, only use a single handle to
   // represent a writable region.
   constexpr size_t kNumExpectedHandles = 1;

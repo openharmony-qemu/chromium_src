@@ -6,6 +6,7 @@
 
 #include "base/check.h"
 #include "build/build_config.h"
+#include "skia/fontations_feature.h"
 #include "third_party/skia/include/core/SkFont.h"
 #include "third_party/skia/include/core/SkFontMgr.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
@@ -13,6 +14,7 @@
 
 #if BUILDFLAG(IS_ANDROID)
 #include "third_party/skia/include/ports/SkFontMgr_android.h"
+#include "third_party/skia/include/ports/SkFontScanner_Fontations.h"
 #endif
 
 #if BUILDFLAG(IS_APPLE)
@@ -22,6 +24,7 @@
 #if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX)
 #include "third_party/skia/include/ports/SkFontConfigInterface.h"
 #include "third_party/skia/include/ports/SkFontMgr_FontConfigInterface.h"
+#include "third_party/skia/include/ports/SkFontScanner_Fontations.h"
 #endif
 
 #if BUILDFLAG(IS_FUCHSIA)
@@ -33,10 +36,6 @@
 
 #if BUILDFLAG(IS_WIN)
 #include "third_party/skia/include/ports/SkTypeface_win.h"
-#endif
-
-#if BUILDFLAG(IS_OHOS)
-#include "third_party/skia/include/ports/SkFontMgr_ohos.h"
 #endif
 
 #if defined(SK_FONTMGR_FREETYPE_EMPTY_AVAILABLE)
@@ -61,20 +60,28 @@ static sk_sp<SkFontMgr> fontmgr_factory() {
     return sk_ref_sp(g_fontmgr_override);
   }
 #if BUILDFLAG(IS_ANDROID)
-  return SkFontMgr_New_Android(nullptr);
+  if (base::FeatureList::IsEnabled(skia::kFontationsAndroidSystemFonts)) {
+    return SkFontMgr_New_Android(nullptr, SkFontScanner_Make_Fontations());
+  } else {
+    return SkFontMgr_New_Android(nullptr);
+  }
 #elif BUILDFLAG(IS_APPLE)
   return SkFontMgr_New_CoreText(nullptr);
 #elif BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX)
   sk_sp<SkFontConfigInterface> fci(SkFontConfigInterface::RefGlobal());
-  return fci ? SkFontMgr_New_FCI(std::move(fci)) : nullptr;
+  if (base::FeatureList::IsEnabled(skia::kFontationsLinuxSystemFonts)) {
+    return fci ? SkFontMgr_New_FCI(std::move(fci),
+                                   SkFontScanner_Make_Fontations())
+               : nullptr;
+  } else {
+    return fci ? SkFontMgr_New_FCI(std::move(fci)) : nullptr;
+  }
 #elif BUILDFLAG(IS_FUCHSIA)
   fuchsia::fonts::ProviderSyncPtr provider;
   base::ComponentContextForProcess()->svc()->Connect(provider.NewRequest());
   return SkFontMgr_New_Fuchsia(std::move(provider));
 #elif BUILDFLAG(IS_WIN)
   return SkFontMgr_New_DirectWrite();
-#elif BUILDFLAG(IS_OHOS)
-  return SkFontMgr_New_OHOS();
 #elif defined(SK_FONTMGR_FREETYPE_EMPTY_AVAILABLE)
   return SkFontMgr_New_Custom_Empty();
 #else

@@ -3,16 +3,11 @@
 // found in the LICENSE file.
 
 #include "base/test/mock_callback.h"
-#ifdef UNSAFE_BUFFERS_BUILD
-// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
-#pragma allow_unsafe_buffers
-#endif
-
-#include "ui/ozone/platform/wayland/host/wayland_data_drag_controller.h"
 
 #include <linux/input.h>
 #include <wayland-server.h>
 
+#include <array>
 #include <memory>
 #include <string>
 #include <vector>
@@ -24,7 +19,6 @@
 #include "base/strings/utf_string_conversions.h"
 #include "base/task/thread_pool/thread_pool_instance.h"
 #include "base/test/bind.h"
-#include "build/chromeos_buildflags.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ui/base/clipboard/clipboard_constants.h"
 #include "ui/base/clipboard/clipboard_format_type.h"
@@ -42,6 +36,7 @@
 #include "ui/ozone/platform/wayland/host/wayland_cursor_position.h"
 #include "ui/ozone/platform/wayland/host/wayland_data_device.h"
 #include "ui/ozone/platform/wayland/host/wayland_data_device_manager.h"
+#include "ui/ozone/platform/wayland/host/wayland_data_drag_controller.h"
 #include "ui/ozone/platform/wayland/host/wayland_data_offer.h"
 #include "ui/ozone/platform/wayland/host/wayland_data_source.h"
 #include "ui/ozone/platform/wayland/host/wayland_serial_tracker.h"
@@ -293,7 +288,7 @@ TEST_P(WaylandDataDragControllerTest, StartDrag) {
   // objects are ready.
   ScheduleTestTask(base::BindLambdaForTesting([&]() {
     // Now the server can read the data and give it to our callback.
-    ReadAndCheckData(kMimeTypeTextUtf8, kSampleTextForDragAndDrop);
+    ReadAndCheckData(kMimeTypeUtf8PlainText, kSampleTextForDragAndDrop);
 
     SendDndCancelled();
   }));
@@ -308,7 +303,7 @@ TEST_P(WaylandDataDragControllerTest, StartDrag) {
 TEST_P(WaylandDataDragControllerTest, StartDragWithWrongMimeType) {
   FocusAndPressLeftPointerButton(window_.get(), &delegate_);
 
-  // The client starts dragging offering data with |kMimeTypeHTML|
+  // The client starts dragging offering data with |kMimeTypeHtml|
   OSExchangeData os_exchange_data;
   os_exchange_data.SetHtml(sample_text_for_dnd(), {});
   int operations = DragDropTypes::DRAG_COPY | DragDropTypes::DRAG_MOVE;
@@ -317,7 +312,7 @@ TEST_P(WaylandDataDragControllerTest, StartDragWithWrongMimeType) {
 
   // The server should get an empty data buffer in ReadData callback when trying
   // to read it with a different mime type.
-  ReadAndCheckData(kMimeTypeText, {});
+  ReadAndCheckData(kMimeTypePlainText, {});
 }
 
 // Ensures data drag controller properly offers dragged data with custom
@@ -330,8 +325,8 @@ TEST_P(WaylandDataDragControllerTest, StartDragWithCustomFormats) {
   OSExchangeData data(OSExchangeDataProviderFactory::CreateProvider());
   ClipboardFormatType kCustomFormats[] = {
       ClipboardFormatType::DataTransferCustomType(),
-      ClipboardFormatType::GetType("chromium/x-bookmark-entries"),
-      ClipboardFormatType::GetType("xyz/arbitrary-custom-type")};
+      ClipboardFormatType::CustomPlatformType("chromium/x-bookmark-entries"),
+      ClipboardFormatType::CustomPlatformType("xyz/arbitrary-custom-type")};
   for (auto format : kCustomFormats) {
     data.SetPickledData(format, {});
   }
@@ -447,7 +442,8 @@ TEST_P(WaylandDataDragControllerTest, CancelIncomingDrag) {
     auto* data_device = server->data_device_manager()->data_device();
     auto* data_offer = data_device->CreateAndSendDataOffer();
     data_offer->OnOffer(
-        kMimeTypeText, ToClipboardData(std::string(kSampleTextForDragAndDrop)));
+        kMimeTypePlainText,
+        ToClipboardData(std::string(kSampleTextForDragAndDrop)));
 
     const uint32_t surface_id = window_->root_surface()->get_surface_id();
     auto* surface = server->GetObject<wl::MockSurface>(surface_id);
@@ -491,12 +487,12 @@ TEST_P(WaylandDataDragControllerTest, ReceiveDrag) {
   EXPECT_CALL(*drop_handler_,
               MockDragMotion(PointFNear(gfx::PointF(10, 10)), _, _));
 
-  PostToServerAndWait([surface_id, mime_type_text = std::string(kMimeTypeText),
+  PostToServerAndWait([surface_id,
+                       mime_type_text = std::string(kMimeTypePlainText),
                        sample_text = std::string(kSampleTextForDragAndDrop)](
                           wl::TestWaylandServerThread* server) {
     // HiDPI
     server->output()->SetScale(2);
-    server->output()->SetDeviceScaleFactor(2);
     server->output()->Flush();
 
     // Place the window onto the output.
@@ -554,12 +550,13 @@ TEST_P(WaylandDataDragControllerTest, DropSeveralMimeTypes) {
     auto* data_offer =
         server->data_device_manager()->data_device()->CreateAndSendDataOffer();
     data_offer->OnOffer(
-        kMimeTypeText, ToClipboardData(std::string(kSampleTextForDragAndDrop)));
+        kMimeTypePlainText,
+        ToClipboardData(std::string(kSampleTextForDragAndDrop)));
     data_offer->OnOffer(
-        kMimeTypeMozillaURL,
+        kMimeTypeMozillaUrl,
         ToClipboardData(std::u16string(u"https://sample.com/\r\nSample")));
     data_offer->OnOffer(
-        kMimeTypeURIList,
+        kMimeTypeUriList,
         ToClipboardData(std::string("file:///home/user/file\r\n")));
 
     gfx::Point entered_point(10, 10);
@@ -611,7 +608,7 @@ TEST_P(WaylandDataDragControllerTest, ValidateDroppedUriList) {
       auto* data_offer = server->data_device_manager()
                              ->data_device()
                              ->CreateAndSendDataOffer();
-      data_offer->OnOffer(kMimeTypeURIList, ToClipboardData(content));
+      data_offer->OnOffer(kMimeTypeUriList, ToClipboardData(content));
 
       gfx::Point entered_point(10, 10);
       wl::MockSurface* surface = server->GetObject<wl::MockSurface>(surface_id);
@@ -678,7 +675,7 @@ TEST_P(WaylandDataDragControllerTest, ValidateDroppedXMozUrl) {
       auto* data_offer = server->data_device_manager()
                              ->data_device()
                              ->CreateAndSendDataOffer();
-      data_offer->OnOffer(kMimeTypeMozillaURL, ToClipboardData(content));
+      data_offer->OnOffer(kMimeTypeMozillaUrl, ToClipboardData(content));
 
       gfx::Point entered_point(10, 10);
       wl::MockSurface* surface = server->GetObject<wl::MockSurface>(surface_id);
@@ -738,7 +735,8 @@ TEST_P(WaylandDataDragControllerTest, ForeignDragHandleAskAction) {
     auto* data_offer =
         server->data_device_manager()->data_device()->CreateAndSendDataOffer();
     data_offer->OnOffer(
-        kMimeTypeText, ToClipboardData(std::string(kSampleTextForDragAndDrop)));
+        kMimeTypePlainText,
+        ToClipboardData(std::string(kSampleTextForDragAndDrop)));
     data_offer->OnSourceActions(WL_DATA_DEVICE_MANAGER_DND_ACTION_MOVE |
                                 WL_DATA_DEVICE_MANAGER_DND_ACTION_COPY);
     data_offer->OnAction(WL_DATA_DEVICE_MANAGER_DND_ACTION_ASK);
@@ -901,9 +899,12 @@ TEST_P(WaylandDataDragControllerTest, DragToNonToplevelWindows) {
 
   // Post test tasks, for each non-toplevel window type, to be performed
   // asynchronously once the dnd-related protocol objects are ready.
-  constexpr PlatformWindowType kNonToplevelWindowTypes[]{
-      PlatformWindowType::kPopup, PlatformWindowType::kMenu,
-      PlatformWindowType::kTooltip, PlatformWindowType::kBubble};
+  constexpr auto kNonToplevelWindowTypes = std::to_array<PlatformWindowType>({
+      PlatformWindowType::kPopup,
+      PlatformWindowType::kMenu,
+      PlatformWindowType::kTooltip,
+      PlatformWindowType::kBubble,
+  });
   for (auto window_type : kNonToplevelWindowTypes) {
     // Given there is no guarantee how tasks are scheduled are executed, the end
     // of the test must only be scheduled once all the test cases run.
@@ -1214,7 +1215,7 @@ TEST_P(WaylandDataDragControllerTest, DropWhileFetchingData) {
         auto* data_device = server->data_device_manager()->data_device();
         auto* data_offer = data_device->CreateAndSendDataOffer();
         data_offer->OnOffer(
-            kMimeTypeText,
+            kMimeTypePlainText,
             ToClipboardData(std::string(kSampleTextForDragAndDrop)));
 
         auto* surface = server->GetObject<wl::MockSurface>(surface_id);
@@ -1300,9 +1301,9 @@ TEST_P(WaylandDataDragControllerTest,
     const auto data = ToClipboardData(std::string(kSampleTextForDragAndDrop));
     auto* server_device = server->data_device_manager()->data_device();
     auto* server_offer = server_device->CreateAndSendDataOffer();
-    server_offer->OnOffer(kMimeTypeText, data);
-    server_offer->OnOffer(kMimeTypeTextUtf8, data);
-    server_offer->OnOffer(kMimeTypeHTML, data);
+    server_offer->OnOffer(kMimeTypePlainText, data);
+    server_offer->OnOffer(kMimeTypeUtf8PlainText, data);
+    server_offer->OnOffer(kMimeTypeHtml, data);
 
     const uint32_t surface_id = window_->root_surface()->get_surface_id();
     auto* surface = server->GetObject<wl::MockSurface>(surface_id);
@@ -1351,9 +1352,9 @@ TEST_P(WaylandDataDragControllerTest, LeaveWindowWhileFetchingData) {
     const auto data = ToClipboardData(std::string(kSampleTextForDragAndDrop));
     auto* server_device = server->data_device_manager()->data_device();
     auto* server_offer = server_device->CreateAndSendDataOffer();
-    server_offer->OnOffer(kMimeTypeText, data);
-    server_offer->OnOffer(kMimeTypeTextUtf8, data);
-    server_offer->OnOffer(kMimeTypeHTML, data);
+    server_offer->OnOffer(kMimeTypePlainText, data);
+    server_offer->OnOffer(kMimeTypeUtf8PlainText, data);
+    server_offer->OnOffer(kMimeTypeHtml, data);
 
     const uint32_t surface_id = window_->root_surface()->get_surface_id();
     auto* surface = server->GetObject<wl::MockSurface>(surface_id);
@@ -1475,8 +1476,9 @@ class PerSurfaceScaleWaylandDataDragControllerTest
       const PerSurfaceScaleWaylandDataDragControllerTest&) = delete;
 
   void SetUp() override {
-    CHECK(
-        !base::Contains(enabled_features_, features::kWaylandPerSurfaceScale));
+    CHECK(!base::Contains(
+        enabled_features_,
+        base::test::FeatureRef(features::kWaylandPerSurfaceScale)));
     enabled_features_.push_back(features::kWaylandPerSurfaceScale);
 
     WaylandDataDragControllerTest::SetUp();
@@ -1509,7 +1511,7 @@ TEST_P(PerSurfaceScaleWaylandDataDragControllerTest,
   EXPECT_CALL(*drop_handler_,
               MockDragMotion(PointFNear(gfx::PointF(0, 80)), _, _));
   PostToServerAndWait([surface_id, location = gfx::Point(0, 100),
-                       mime_type_text = std::string(kMimeTypeText),
+                       mime_type_text = std::string(kMimeTypePlainText),
                        sample_text = std::string(kSampleTextForDragAndDrop)](
                           wl::TestWaylandServerThread* server) {
     auto* data_device = server->data_device_manager()->data_device();
@@ -1535,7 +1537,6 @@ TEST_P(PerSurfaceScaleWaylandDataDragControllerTest,
   SendDndLeave();
 }
 
-#if !BUILDFLAG(IS_CHROMEOS_LACROS)
 INSTANTIATE_TEST_SUITE_P(XdgVersionStableTest,
                          WaylandDataDragControllerTest,
                          Values(wl::ServerConfig{}));
@@ -1543,14 +1544,5 @@ INSTANTIATE_TEST_SUITE_P(XdgVersionStableTest,
                          PerSurfaceScaleWaylandDataDragControllerTest,
                          Values(wl::ServerConfig{
                              .supports_viewporter_surface_scaling = true}));
-#else
-INSTANTIATE_TEST_SUITE_P(
-    XdgVersionStableTestWithAuraShell,
-    WaylandDataDragControllerTest,
-    Values(wl::ServerConfig{.enable_aura_shell =
-                                wl::EnableAuraShellProtocol::kEnabled},
-           wl::ServerConfig{
-               .enable_aura_shell = wl::EnableAuraShellProtocol::kEnabled}));
-#endif
 
 }  // namespace ui

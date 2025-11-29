@@ -17,12 +17,12 @@
 #include "base/memory/read_only_shared_memory_region.h"
 #include "base/test/task_environment.h"
 #include "components/viz/client/client_resource_provider.h"
-#include "components/viz/client/shared_bitmap_reporter.h"
 #include "components/viz/common/quads/compositor_render_pass.h"
 #include "components/viz/common/quads/texture_draw_quad.h"
 #include "components/viz/common/resources/shared_image_format.h"
 #include "components/viz/test/fake_output_surface.h"
 #include "components/viz/test/test_gles2_interface.h"
+#include "components/viz/test/test_shared_image_interface_provider.h"
 #include "gpu/GLES2/gl2extchromium.h"
 #include "gpu/command_buffer/common/mailbox.h"
 #include "gpu/ipc/client/client_shared_image_interface.h"
@@ -33,30 +33,6 @@
 
 namespace media {
 namespace {
-
-class FakeSharedBitmapReporter : public viz::SharedBitmapReporter {
- public:
-  FakeSharedBitmapReporter() = default;
-  ~FakeSharedBitmapReporter() override = default;
-
-  // viz::SharedBitmapReporter implementation.
-  void DidAllocateSharedBitmap(base::ReadOnlySharedMemoryRegion region,
-                               const viz::SharedBitmapId& id) override {
-    DCHECK_EQ(shared_bitmaps_.count(id), 0u);
-    shared_bitmaps_.insert(id);
-  }
-  void DidDeleteSharedBitmap(const viz::SharedBitmapId& id) override {
-    DCHECK_EQ(shared_bitmaps_.count(id), 1u);
-    shared_bitmaps_.erase(id);
-  }
-
-  const base::flat_set<viz::SharedBitmapId> shared_bitmaps() const {
-    return shared_bitmaps_;
-  }
-
- private:
-  base::flat_set<viz::SharedBitmapId> shared_bitmaps_;
-};
 
 class UploadCounterGLES2Interface : public viz::TestGLES2Interface {
  public:
@@ -100,20 +76,18 @@ class VideoResourceUpdaterTest : public testing::Test {
     resource_provider_ = std::make_unique<viz::ClientResourceProvider>();
   }
 
-  std::unique_ptr<VideoResourceUpdater> CreateUpdaterForHardware(
-      bool use_stream_video_draw_quad = false) {
+  std::unique_ptr<VideoResourceUpdater> CreateUpdaterForHardware() {
     return std::make_unique<VideoResourceUpdater>(
-        context_provider_.get(), nullptr, resource_provider_.get(),
-        /*shared_image_interface=*/nullptr, use_stream_video_draw_quad,
+        context_provider_.get(), resource_provider_.get(),
+        /*shared_image_interface=*/nullptr,
         /*use_gpu_memory_buffer_resources=*/false,
         /*max_resource_size=*/10000);
   }
 
   std::unique_ptr<VideoResourceUpdater> CreateUpdaterForSoftware() {
     return std::make_unique<VideoResourceUpdater>(
-        /*context_provider=*/nullptr, &shared_bitmap_reporter_,
-        resource_provider_.get(), /*shared_image_interface=*/nullptr,
-        /*use_stream_video_draw_quad=*/false,
+        /*context_provider=*/nullptr, resource_provider_.get(),
+        shared_image_interface_provider_.GetSharedImageInterface(),
         /*use_gpu_memory_buffer_resources=*/false, /*max_resource_size=*/10000);
   }
 
@@ -122,9 +96,9 @@ class VideoResourceUpdaterTest : public testing::Test {
   scoped_refptr<VideoFrame> CreateTestYUVVideoFrame(
       const gfx::Size& size = gfx::Size(10, 10)) {
     constexpr int kMaxDimension = 100;
-    static uint8_t y_data[kMaxDimension * kMaxDimension] = {0};
-    static uint8_t u_data[kMaxDimension * kMaxDimension / 2] = {0};
-    static uint8_t v_data[kMaxDimension * kMaxDimension / 2] = {0};
+    static uint8_t y_data[kMaxDimension * kMaxDimension] = {};
+    static uint8_t u_data[kMaxDimension * kMaxDimension / 2] = {};
+    static uint8_t v_data[kMaxDimension * kMaxDimension / 2] = {};
 
     CHECK_LE(size.width() * size.height(), kMaxDimension * kMaxDimension);
 
@@ -149,9 +123,9 @@ class VideoResourceUpdaterTest : public testing::Test {
     const int kYWidth = kDimension + 5;
     const int kUWidth = (kYWidth + 1) / 2 + 200;
     const int kVWidth = (kYWidth + 1) / 2 + 1;
-    static uint8_t y_data[kYWidth * kDimension] = {0};
-    static uint8_t u_data[kUWidth * kDimension] = {0};
-    static uint8_t v_data[kVWidth * kDimension] = {0};
+    static uint8_t y_data[kYWidth * kDimension] = {};
+    static uint8_t u_data[kUWidth * kDimension] = {};
+    static uint8_t v_data[kVWidth * kDimension] = {};
 
     scoped_refptr<VideoFrame> video_frame = VideoFrame::WrapExternalYuvData(
         PIXEL_FORMAT_I422,                        // format
@@ -172,7 +146,7 @@ class VideoResourceUpdaterTest : public testing::Test {
   scoped_refptr<VideoFrame> CreateTestRGBVideoFrame(VideoPixelFormat format) {
     constexpr int kMaxDimension = 10;
     constexpr gfx::Size kSize = gfx::Size(kMaxDimension, kMaxDimension);
-    static uint32_t rgb_data[kMaxDimension * kMaxDimension] = {0};
+    static uint32_t rgb_data[kMaxDimension * kMaxDimension] = {};
     scoped_refptr<VideoFrame> video_frame = VideoFrame::WrapExternalData(
         format,                                // format
         kSize,                                 // coded_size
@@ -327,8 +301,8 @@ class VideoResourceUpdaterTest : public testing::Test {
   base::test::SingleThreadTaskEnvironment task_environment_;
   raw_ptr<UploadCounterGLES2Interface, DanglingUntriaged> gl_;
   scoped_refptr<viz::TestContextProvider> context_provider_;
-  FakeSharedBitmapReporter shared_bitmap_reporter_;
   std::unique_ptr<viz::ClientResourceProvider> resource_provider_;
+  viz::TestSharedImageInterfaceProvider shared_image_interface_provider_;
   gpu::SyncToken release_sync_token_;
 };
 
@@ -533,7 +507,6 @@ TEST_F(VideoResourceUpdaterTestWithR16, HighBitFrame) {
   // With multiplanar shared images, a TextureDrawQuad is created instead of
   // a YUVDrawQuad.
   EXPECT_EQ(VideoFrameResourceType::RGB, resource.type);
-  EXPECT_EQ(resource.bits_per_channel, 10u);
 
   // Create the resource again, to test the path where the
   // resource are cached.
@@ -541,8 +514,7 @@ TEST_F(VideoResourceUpdaterTestWithR16, HighBitFrame) {
       updater->CreateExternalResourceFromVideoFrame(video_frame);
   // With multiplanar shared images, a TextureDrawQuad is created instead of
   // a YUVDrawQuad.
-  EXPECT_EQ(VideoFrameResourceType::RGB, resource.type);
-  EXPECT_EQ(resource2.bits_per_channel, 10u);
+  EXPECT_EQ(VideoFrameResourceType::RGB, resource2.type);
 }
 
 TEST_F(VideoResourceUpdaterTest, NV12FrameSoftwareCompositor) {
@@ -683,7 +655,7 @@ TEST_F(VideoResourceUpdaterTest, SoftwareFrameRGBSoftwareCompositor) {
     VideoFrameExternalResource resource =
         updater->CreateExternalResourceFromVideoFrame(video_frame);
     EXPECT_EQ(VideoFrameResourceType::RGBA_PREMULTIPLIED, resource.type);
-    EXPECT_EQ(resource.resource.format, viz::SinglePlaneFormat::kRGBA_8888);
+    EXPECT_EQ(resource.resource.format, viz::SinglePlaneFormat::kBGRA_8888);
   }
 }
 
@@ -697,9 +669,6 @@ TEST_F(VideoResourceUpdaterTest, ReuseResourceoftwareCompositor) {
       updater->CreateExternalResourceFromVideoFrame(video_frame);
   EXPECT_EQ(VideoFrameResourceType::RGBA_PREMULTIPLIED, resource.type);
   EXPECT_TRUE(resource.release_callback);
-  // Expect exactly one allocated shared bitmap.
-  EXPECT_EQ(1u, shared_bitmap_reporter_.shared_bitmaps().size());
-  auto shared_bitmaps_copy = shared_bitmap_reporter_.shared_bitmaps();
 
   // Simulate the ResourceProvider releasing the resource back to the video
   // updater.
@@ -709,9 +678,6 @@ TEST_F(VideoResourceUpdaterTest, ReuseResourceoftwareCompositor) {
   resource = updater->CreateExternalResourceFromVideoFrame(video_frame);
   EXPECT_EQ(VideoFrameResourceType::RGBA_PREMULTIPLIED, resource.type);
   EXPECT_TRUE(resource.release_callback);
-
-  // Ensure that the same shared bitmap was reused.
-  EXPECT_EQ(shared_bitmap_reporter_.shared_bitmaps(), shared_bitmaps_copy);
 }
 
 TEST_F(VideoResourceUpdaterTest, ReuseResourceNoDeleteSoftwareCompositor) {
@@ -724,17 +690,11 @@ TEST_F(VideoResourceUpdaterTest, ReuseResourceNoDeleteSoftwareCompositor) {
       updater->CreateExternalResourceFromVideoFrame(video_frame);
   EXPECT_EQ(VideoFrameResourceType::RGBA_PREMULTIPLIED, resource.type);
   EXPECT_TRUE(resource.release_callback);
-  // Expect exactly one allocated shared bitmap.
-  EXPECT_EQ(1u, shared_bitmap_reporter_.shared_bitmaps().size());
-  auto shared_bitmaps_copy = shared_bitmap_reporter_.shared_bitmaps();
 
   // Allocate resource for the same frame.
   resource = updater->CreateExternalResourceFromVideoFrame(video_frame);
   EXPECT_EQ(VideoFrameResourceType::RGBA_PREMULTIPLIED, resource.type);
   EXPECT_TRUE(resource.release_callback);
-
-  // Ensure that the same shared bitmap was reused.
-  EXPECT_EQ(shared_bitmap_reporter_.shared_bitmaps(), shared_bitmaps_copy);
 }
 
 TEST_F(VideoResourceUpdaterTest, ChangeResourceizeSoftwareCompositor) {
@@ -747,9 +707,6 @@ TEST_F(VideoResourceUpdaterTest, ChangeResourceizeSoftwareCompositor) {
   VideoFrameExternalResource resource =
       updater->CreateExternalResourceFromVideoFrame(
           CreateTestYUVVideoFrame(kSize1));
-  // Expect exactly one allocated shared bitmap.
-  EXPECT_EQ(1u, shared_bitmap_reporter_.shared_bitmaps().size());
-  auto shared_bitmaps_copy = shared_bitmap_reporter_.shared_bitmaps();
 
   // Simulate the ResourceProvider releasing the resource back to the video
   // updater.
@@ -758,12 +715,6 @@ TEST_F(VideoResourceUpdaterTest, ChangeResourceizeSoftwareCompositor) {
   // Allocate resource for the next frame with a different size.
   resource = updater->CreateExternalResourceFromVideoFrame(
       CreateTestYUVVideoFrame(kSize2));
-
-  // The first resource was released, so it can be reused but it's the wrong
-  // size. We should expect the first shared bitmap to be deleted and a new
-  // shared bitmap to be allocated.
-  EXPECT_EQ(1u, shared_bitmap_reporter_.shared_bitmaps().size());
-  EXPECT_NE(shared_bitmap_reporter_.shared_bitmaps(), shared_bitmaps_copy);
 }
 
 TEST_F(VideoResourceUpdaterTest, CreateForHardwarePlanes_SharedImageFormat) {
@@ -790,18 +741,17 @@ TEST_F(VideoResourceUpdaterTest, CreateForHardwarePlanes_SharedImageFormat) {
       viz::TransferableResource::SynchronizationType::kGpuCommandsCompleted);
 }
 
+#if BUILDFLAG(IS_ANDROID)
 TEST_F(VideoResourceUpdaterTest,
        CreateForHardwarePlanes_StreamTexture_CopyToNewTexture) {
-  // Note that |use_stream_video_draw_quad| is true for this test.
-  std::unique_ptr<VideoResourceUpdater> updater =
-      CreateUpdaterForHardware(true);
+  std::unique_ptr<VideoResourceUpdater> updater = CreateUpdaterForHardware();
   EXPECT_EQ(0u, GetSharedImageCount());
   scoped_refptr<VideoFrame> video_frame =
       CreateTestStreamTextureHardwareVideoFrame(/*needs_copy=*/false);
 
   VideoFrameExternalResource resource =
       updater->CreateExternalResourceFromVideoFrame(video_frame);
-  EXPECT_EQ(VideoFrameResourceType::STREAM_TEXTURE, resource.type);
+  EXPECT_EQ(VideoFrameResourceType::RGB, resource.type);
   EXPECT_TRUE(resource.release_callback);
   EXPECT_EQ((GLenum)GL_TEXTURE_EXTERNAL_OES,
             resource.resource.texture_target());
@@ -816,6 +766,7 @@ TEST_F(VideoResourceUpdaterTest,
   EXPECT_EQ((GLenum)GL_TEXTURE_2D, resource.resource.texture_target());
   EXPECT_EQ(1u, GetSharedImageCount());
 }
+#endif
 
 TEST_F(VideoResourceUpdaterTest, CreateForHardwarePlanes_TextureQuad) {
   std::unique_ptr<VideoResourceUpdater> updater = CreateUpdaterForHardware();
@@ -841,7 +792,6 @@ TEST_F(VideoResourceUpdaterTest, CreateForHardwarePlanes_DCompSurface) {
 
   VideoFrameExternalResource resource =
       updater->CreateExternalResourceFromVideoFrame(video_frame);
-  EXPECT_EQ(VideoFrameResourceType::STREAM_TEXTURE, resource.type);
   EXPECT_TRUE(resource.release_callback);
   EXPECT_EQ((GLenum)GL_TEXTURE_EXTERNAL_OES,
             resource.resource.texture_target());
@@ -869,7 +819,8 @@ TEST_F(VideoResourceUpdaterTest, CreateForHardwarePlanes_DCompSurface) {
   const viz::TextureDrawQuad* quad =
       pass->quad_list.ElementAt(0)->DynamicCast<viz::TextureDrawQuad>();
   EXPECT_NE(nullptr, quad);
-  EXPECT_EQ(true, quad->is_stream_video);
+  EXPECT_EQ(gfx::ProtectedVideoType::kHardwareProtected,
+            quad->protected_video_type);
   EXPECT_EQ(viz::OverlayPriority::kRequired, quad->overlay_priority_hint);
 
   updater->ReleaseFrameResource();

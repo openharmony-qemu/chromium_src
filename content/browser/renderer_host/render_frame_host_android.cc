@@ -5,6 +5,7 @@
 #include "content/browser/renderer_host/render_frame_host_android.h"
 
 #include <jni.h>
+
 #include <utility>
 
 #include "base/android/callback_android.h"
@@ -21,9 +22,9 @@
 #include "content/public/browser/browser_context.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/site_instance.h"
+#include "services/network/public/mojom/permissions_policy/permissions_policy_feature.mojom-shared.h"
 #include "services/service_manager/public/cpp/interface_provider.h"
 #include "third_party/blink/public/mojom/frame/user_activation_notification_type.mojom.h"
-#include "third_party/blink/public/mojom/permissions_policy/permissions_policy_feature.mojom-shared.h"
 #include "third_party/blink/public/mojom/webauthn/authenticator.mojom.h"
 #include "url/android/gurl_android.h"
 #include "url/origin.h"
@@ -145,9 +146,10 @@ void RenderFrameHostAndroid::GetCanonicalUrlForSharing(
 std::vector<ScopedJavaLocalRef<jobject>>
 RenderFrameHostAndroid::GetAllRenderFrameHosts(JNIEnv* env) const {
   std::vector<ScopedJavaLocalRef<jobject>> ret;
-  render_frame_host_->ForEachRenderFrameHost([&ret](RenderFrameHostImpl* rfh) {
-    ret.push_back(rfh->GetJavaRenderFrameHost());
-  });
+  render_frame_host_->ForEachRenderFrameHostImpl(
+      [&ret](RenderFrameHostImpl* rfh) {
+        ret.push_back(rfh->GetJavaRenderFrameHost());
+      });
   return ret;
 }
 
@@ -155,7 +157,7 @@ bool RenderFrameHostAndroid::IsFeatureEnabled(
     JNIEnv* env,
     jint feature) const {
   return render_frame_host_->IsFeatureEnabled(
-      static_cast<blink::mojom::PermissionsPolicyFeature>(feature));
+      static_cast<network::mojom::PermissionsPolicyFeature>(feature));
 }
 
 base::UnguessableToken RenderFrameHostAndroid::GetAndroidOverlayRoutingToken(
@@ -217,11 +219,19 @@ void RenderFrameHostAndroid::PerformGetAssertionWebAuthSecurityChecks(
     const base::android::JavaParamRef<jstring>& relying_party_id,
     const base::android::JavaParamRef<jobject>& effective_origin,
     jboolean is_payment_credential_get_assertion,
+    const base::android::JavaParamRef<jobject>&
+        remote_desktop_client_override_origin,
     const base::android::JavaParamRef<jobject>& callback) const {
   url::Origin origin = url::Origin::FromJavaObject(env, effective_origin);
+  std::optional<url::Origin> remote_desktop_client_override_origin_optional;
+  if (!remote_desktop_client_override_origin.is_null()) {
+    remote_desktop_client_override_origin_optional =
+        url::Origin::FromJavaObject(env, remote_desktop_client_override_origin);
+  }
   render_frame_host_->PerformGetAssertionWebAuthSecurityChecks(
       ConvertJavaStringToUTF8(env, relying_party_id), origin,
       is_payment_credential_get_assertion,
+      remote_desktop_client_override_origin_optional,
       base::BindOnce(
           [](base::android::ScopedJavaGlobalRef<jobject> callback,
              blink::mojom::AuthenticatorStatus status, bool is_cross_origin) {
@@ -239,11 +249,19 @@ void RenderFrameHostAndroid::PerformMakeCredentialWebAuthSecurityChecks(
     const base::android::JavaParamRef<jstring>& relying_party_id,
     const base::android::JavaParamRef<jobject>& effective_origin,
     jboolean is_payment_credential_creation,
+    const base::android::JavaParamRef<jobject>&
+        remote_desktop_client_override_origin,
     const base::android::JavaParamRef<jobject>& callback) const {
   url::Origin origin = url::Origin::FromJavaObject(env, effective_origin);
+  std::optional<url::Origin> remote_desktop_client_override_origin_optional;
+  if (!remote_desktop_client_override_origin.is_null()) {
+    remote_desktop_client_override_origin_optional =
+        url::Origin::FromJavaObject(env, remote_desktop_client_override_origin);
+  }
   render_frame_host_->PerformMakeCredentialWebAuthSecurityChecks(
       ConvertJavaStringToUTF8(env, relying_party_id), origin,
       is_payment_credential_creation,
+      remote_desktop_client_override_origin_optional,
       base::BindOnce(
           [](base::android::ScopedJavaGlobalRef<jobject> callback,
              blink::mojom::AuthenticatorStatus status, bool is_cross_origin) {

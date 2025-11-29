@@ -15,6 +15,7 @@
 #include "net/base/network_anonymization_key.h"
 #include "net/base/network_isolation_key.h"
 #include "net/base/privacy_mode.h"
+#include "net/base/reconnect_notifier.h"
 #include "net/base/request_priority.h"
 #include "net/dns/public/secure_dns_policy.h"
 #include "net/http/http_request_headers.h"
@@ -131,15 +132,16 @@ struct NET_EXPORT HttpRequestInfo {
   // number once set.
   std::optional<int64_t> browser_run_id;
 
-#if BUILDFLAG(IS_OHOS)
-  bool allow_preload_record = true;
-
-  GURL main_page;
-#endif
-
   // Used to get a shared dictionary for the request. This may be null if the
   // request does not use a shared dictionary.
   SharedDictionaryGetter dictionary_getter;
+
+  // Used to notify when a reconnect-attempt may be invoked (e.g. when a
+  // connection was closed, or when the connection could not be established).
+  std::optional<ConnectionManagementConfig> connection_management_config;
+
+  // True if the page is allowed to access cookies for the request.
+  bool is_shared_resource = false;
 };
 
 }  // namespace net

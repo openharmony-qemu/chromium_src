@@ -2,11 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifdef UNSAFE_BUFFERS_BUILD
-// TODO(crbug.com/342213636): Remove this and spanify to fix the errors.
-#pragma allow_unsafe_buffers
-#endif
-
 #include "content/common/gpu_pre_sandbox_hook_linux.h"
 
 #include <dlfcn.h>
@@ -14,6 +9,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 
+#include <array>
 #include <memory>
 #include <sstream>
 #include <utility>
@@ -29,7 +25,6 @@
 #include "base/strings/stringprintf.h"
 #include "build/build_config.h"
 #include "build/buildflag.h"
-#include "build/chromeos_buildflags.h"
 #include "content/public/common/content_switches.h"
 #include "media/gpu/buildflags.h"
 #include "sandbox/linux/bpf_dsl/policy.h"
@@ -54,9 +49,6 @@ namespace content {
 namespace {
 
 inline bool IsChromeOS() {
-  // TODO(b/206464999): for now, we're making the LaCrOS and Ash GPU sandboxes
-  // behave similarly. However, the LaCrOS GPU sandbox could probably be made
-  // tighter.
 #if BUILDFLAG(IS_CHROMEOS)
   return true;
 #else
@@ -99,13 +91,6 @@ static const char kLibGlesPath[] = "/usr/lib64/libGLESv2.so.2";
 static const char kLibEglPath[] = "/usr/lib64/libEGL.so.1";
 static const char kLibMaliPath[] = "/usr/lib64/libmali.so";
 static const char kLibTegraPath[] = "/usr/lib64/libtegrav4l2.so";
-#elif BUILDFLAG(IS_OHOS)
-static const char kLibGlesPath[] =
-    "/vendor/lib64/chipsetsdk/libGLESv2.so";
-static const char kLibEglPath[] =
-    "/vendor/lib64/chipsetsdk/libEGL.so";
-static const char kLibMaliPath[] =
-    "/vendor/lib64/chipsetsdk/libmali.so.0";
 #else
 static const char kLibGlesPath[] = "/usr/lib/libGLESv2.so.2";
 static const char kLibEglPath[] = "/usr/lib/libEGL.so.1";
@@ -450,18 +435,12 @@ void AddChromecastArmGpuPermissions(
 }
 
 void AddVulkanICDPermissions(std::vector<BrokerFilePermission>* permissions) {
-#if BUILDFLAG(IS_OHOS)
-  static const char* const kReadOnlyICDPrefixes[] = {"/vendor/etc/vulkan/icd.d"};
-
-  static const char* const kReadOnlyICDList[] = {"mali_64.json"};
-#else
   static const char* const kReadOnlyICDPrefixes[] = {"/usr/share/vulkan/icd.d",
                                                      "/etc/vulkan/icd.d"};
 
   static const char* const kReadOnlyICDList[] = {
       "intel_icd.x86_64.json", "nvidia_icd.json", "radeon_icd.x86_64.json",
       "mali_icd.json", "freedreno_icd.aarch64.json"};
-#endif
 
   for (std::string prefix : kReadOnlyICDPrefixes) {
     permissions->push_back(BrokerFilePermission::ReadOnly(prefix));
@@ -473,8 +452,6 @@ void AddVulkanICDPermissions(std::vector<BrokerFilePermission>* permissions) {
 }
 
 void AddStandardGpuPermissions(std::vector<BrokerFilePermission>* permissions) {
-// not supported on ohos
-#if !BUILDFLAG(IS_OHOS)
   static const char kDriCardBasePath[] = "/dev/dri/card";
   static const char kNvidiaCtlPath[] = "/dev/nvidiactl";
   static const char kNvidiaDeviceBasePath[] = "/dev/nvidia";
@@ -500,13 +477,8 @@ void AddStandardGpuPermissions(std::vector<BrokerFilePermission>* permissions) {
   permissions->push_back(
       BrokerFilePermission::ReadWrite(kNvidiaDeviceModeSetPath));
   permissions->push_back(BrokerFilePermission::ReadOnly(kNvidiaParamsPath));
-#endif
 
   // For SwiftShader
-#if BUILDFLAG(IS_OHOS)
-  const std::string sw_path = "/vendor/lib64/chipsetsdk/libGLES_mali.so";
-  permissions->push_back(BrokerFilePermission::ReadOnly(sw_path));
-#else
   base::FilePath module_path;
   if (base::PathService::Get(base::DIR_MODULE, &module_path)) {
     std::string sw_path =
@@ -515,7 +487,6 @@ void AddStandardGpuPermissions(std::vector<BrokerFilePermission>* permissions) {
       permissions->push_back(BrokerFilePermission::ReadOnly(sw_path));
     }
   }
-#endif
 }
 
 std::vector<BrokerFilePermission> FilePermissionsForGpu(
@@ -592,37 +563,34 @@ void LoadArmGpuLibraries() {
     bool is_mali = dlopen(kLibMaliPath, dlopen_flag) != nullptr;
 
     // Preload the Tegra V4L2 (video decode acceleration) library.
-#if BUILDFLAG(IS_OHOS)
-    bool is_tegra = false;
-#else
     bool is_tegra = dlopen(kLibTegraPath, dlopen_flag) != nullptr;
-#endif
+
     // Preload mesa related libraries for devices which use mesa
     // (ie. not mali or tegra):
     if (!is_mali && !is_tegra &&
         (nullptr != dlopen("libglapi.so.0", dlopen_flag))) {
-      const char* driver_paths[] = {
-        "/usr/lib64/libgallium_dri.so",
+      auto driver_paths = std::to_array<const char*>({
+          "/usr/lib64/libgallium_dri.so",
 #if defined(DRI_DRIVER_DIR)
-        DRI_DRIVER_DIR "/msm_dri.so",
-        DRI_DRIVER_DIR "/panfrost_dri.so",
-        DRI_DRIVER_DIR "/mediatek_dri.so",
-        DRI_DRIVER_DIR "/rockchip_dri.so",
-        DRI_DRIVER_DIR "/asahi_dri.so",
+          DRI_DRIVER_DIR "/msm_dri.so",
+          DRI_DRIVER_DIR "/panfrost_dri.so",
+          DRI_DRIVER_DIR "/mediatek_dri.so",
+          DRI_DRIVER_DIR "/rockchip_dri.so",
+          DRI_DRIVER_DIR "/asahi_dri.so",
 #else
-        "/usr/lib64/dri/msm_dri.so",
-        "/usr/lib64/dri/panfrost_dri.so",
-        "/usr/lib64/dri/mediatek_dri.so",
-        "/usr/lib64/dri/rockchip_dri.so",
-        "/usr/lib64/dri/asahi_dri.so",
-        "/usr/lib/dri/msm_dri.so",
-        "/usr/lib/dri/panfrost_dri.so",
-        "/usr/lib/dri/mediatek_dri.so",
-        "/usr/lib/dri/rockchip_dri.so",
-        "/usr/lib/dri/asahi_dri.so",
+          "/usr/lib64/dri/msm_dri.so",
+          "/usr/lib64/dri/panfrost_dri.so",
+          "/usr/lib64/dri/mediatek_dri.so",
+          "/usr/lib64/dri/rockchip_dri.so",
+          "/usr/lib64/dri/asahi_dri.so",
+          "/usr/lib/dri/msm_dri.so",
+          "/usr/lib/dri/panfrost_dri.so",
+          "/usr/lib/dri/mediatek_dri.so",
+          "/usr/lib/dri/rockchip_dri.so",
+          "/usr/lib/dri/asahi_dri.so",
 #endif
-        nullptr
-      };
+          nullptr,
+      });
 
       for (int i = 0; driver_paths[i] != nullptr; i++)
         dlopen(driver_paths[i], dlopen_flag);
@@ -668,9 +636,6 @@ bool LoadNvidiaLibraries() {
 void LoadVulkanLibraries() {
   // Try to preload Vulkan libraries. Failure is not an error as not all may be
   // present.
-#if BUILDFLAG(IS_OHOS)
-  dlopen("libvulkan.so", dlopen_flag);
-#endif
   dlopen("libvulkan.so.1", dlopen_flag);
   dlopen("libvulkan_radeon.so", dlopen_flag);
   dlopen("libvulkan_intel.so", dlopen_flag);

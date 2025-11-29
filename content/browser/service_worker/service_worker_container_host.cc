@@ -9,6 +9,7 @@
 
 #include "base/containers/contains.h"
 #include "base/debug/crash_logging.h"
+#include "base/debug/dump_without_crashing.h"
 #include "base/functional/callback_helpers.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/strings/stringprintf.h"
@@ -26,7 +27,6 @@
 #include "content/public/common/content_client.h"
 #include "content/public/common/origin_util.h"
 #include "mojo/public/cpp/bindings/callback_helpers.h"
-#include "third_party/blink/public/common/features.h"
 #include "third_party/blink/public/common/storage_key/storage_key.h"
 #include "third_party/blink/public/mojom/service_worker/service_worker_registration_options.mojom.h"
 
@@ -78,13 +78,16 @@ ServiceWorkerContainerHostForClient::ServiceWorkerContainerHostForClient(
     const PolicyContainerPolicies& policy_container_policies,
     mojo::PendingRemote<network::mojom::CrossOriginEmbedderPolicyReporter>
         coep_reporter,
+    mojo::PendingRemote<network::mojom::DocumentIsolationPolicyReporter>
+        dip_reporter,
     ukm::SourceId ukm_source_id)
     : service_worker_client_(std::move(service_worker_client)),
       container_(
           container_info->client_receiver.InitWithNewEndpointAndPassRemote()),
       ukm_source_id_(std::move(ukm_source_id)),
       policy_container_policies_(policy_container_policies.Clone()),
-      coep_reporter_(std::move(coep_reporter)) {
+      coep_reporter_(std::move(coep_reporter)),
+      dip_reporter_(std::move(dip_reporter)) {
   CHECK(container_.is_bound());
   CHECK(service_worker_client_);
   CHECK(!service_worker_client_->is_response_committed());
@@ -122,7 +125,7 @@ void ServiceWorkerContainerHostForClient::Register(
     return;
   }
 
-  std::vector<GURL> urls = {url(), options->scope, script_url};
+  std::vector<GURL> urls = {url_for_access_check(), options->scope, script_url};
   if (!service_worker_security_utils::AllOriginsMatchAndCanAccessServiceWorkers(
           urls)) {
     mojo::ReportBadMessage(ServiceWorkerConsts::kBadMessageImproperOrigins);
@@ -135,7 +138,8 @@ void ServiceWorkerContainerHostForClient::Register(
   }
 
   if (!service_worker_security_utils::
-          OriginCanRegisterServiceWorkerFromJavascript(url())) {
+          OriginCanRegisterServiceWorkerFromJavascript(
+              url_for_access_check())) {
     mojo::ReportBadMessage(ServiceWorkerConsts::kBadMessageImproperOrigins);
     // ReportBadMessage() will terminate the renderer process, but Mojo
     // complains if the callback is not run. Just run it with nonsense
@@ -197,7 +201,7 @@ void ServiceWorkerContainerHostForClient::GetRegistration(
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
   if (!CanServeContainerHostMethods(
-          &callback, url(), GURL(),
+          &callback, url_for_access_check(), GURL(),
           ServiceWorkerConsts::kServiceWorkerGetRegistrationErrorPrefix,
           nullptr)) {
     return;
@@ -238,7 +242,7 @@ void ServiceWorkerContainerHostForClient::GetRegistrations(
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
   if (!CanServeContainerHostMethods(
-          &callback, url(), GURL(),
+          &callback, url_for_access_check(), GURL(),
           ServiceWorkerConsts::kServiceWorkerGetRegistrationsErrorPrefix,
           std::nullopt)) {
     return;
@@ -396,9 +400,8 @@ void ServiceWorkerContainerHostForClient::OnVersionAttributesChanged(
     ServiceWorkerRegistration* registration,
     blink::mojom::ChangedServiceWorkerObjectsMaskPtr changed_mask) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-  if (!get_ready_callback_ || get_ready_callback_->is_null()) {
+  if (!get_ready_callback_ || get_ready_callback_->is_null())
     return;
-  }
   if (changed_mask->active && registration->active_version()) {
     // Wait until the state change so we don't send the get for ready
     // registration complete message before set version attributes message.
@@ -549,9 +552,6 @@ void ServiceWorkerContainerHostForClient::SendSetController(
       SCOPED_CRASH_KEY_NUMBER(
           "SWController", "client_type",
           static_cast<int>(service_worker_client().GetClientType()));
-      SCOPED_CRASH_KEY_BOOL(
-          "SWController", "PlzDedicatedWorker",
-          base::FeatureList::IsEnabled(blink::features::kPlzDedicatedWorker));
       base::debug::DumpWithoutCrashing();
     }
   }
@@ -574,20 +574,6 @@ ServiceWorkerRegistrationObjectManager::CreateInfo(
   auto existing_host = registration_object_hosts_.find(registration_id);
   if (existing_host != registration_object_hosts_.end()) {
     return existing_host->second->CreateObjectInfo();
-  }
-  {  // TODO(crbug.com/372879072): Remove this scope after investigation.
-    std::vector<GURL> urls = {container_host_->url(), registration->scope()};
-    if (!service_worker_security_utils::AllOriginsMatchAndCanAccessServiceWorkers(urls)) {
-      static bool has_dumped_without_crashing = false;
-      if (!has_dumped_without_crashing) {
-        has_dumped_without_crashing = true;
-        SCOPED_CRASH_KEY_STRING256("SWRegistration", "container_url",
-                                   container_host_->url().spec());
-        SCOPED_CRASH_KEY_STRING256("SWRegistration", "registration_scope",
-                                   registration->scope().spec());
-        base::debug::DumpWithoutCrashing();
-      }
-    }
   }
   registration_object_hosts_[registration_id] =
       std::make_unique<ServiceWorkerRegistrationObjectHost>(
@@ -659,9 +645,8 @@ ServiceWorkerObjectManager::GetOrCreateHost(
 
   const int64_t version_id = version->version_id();
   auto existing_object_host = service_worker_object_hosts_.find(version_id);
-  if (existing_object_host != service_worker_object_hosts_.end()) {
+  if (existing_object_host != service_worker_object_hosts_.end())
     return existing_object_host->second->AsWeakPtr();
-  }
 
   service_worker_object_hosts_[version_id] =
       std::make_unique<ServiceWorkerObjectHost>(container_host_->context(),
@@ -707,20 +692,24 @@ void ServiceWorkerContainerHostForClient::CloneControllerServiceWorker(
     mojo::PendingReceiver<blink::mojom::ControllerServiceWorker> receiver) {
   mojo::PendingRemote<network::mojom::CrossOriginEmbedderPolicyReporter>
       coep_reporter_to_be_passed;
+  mojo::PendingRemote<network::mojom::DocumentIsolationPolicyReporter>
+      dip_reporter_to_be_passed;
   if (coep_reporter_) {
-    DCHECK(service_worker_client().IsContainerForWindowClient());
     coep_reporter_->Clone(
         coep_reporter_to_be_passed.InitWithNewPipeAndPassReceiver());
-  } else {
-    // TODO(crbug.com/41478971): Implement DedicatedWorker and
-    // SharedWorker cases.
-    DCHECK(service_worker_client().IsContainerForWorkerClient());
+  }
+
+  if (dip_reporter_) {
+    dip_reporter_->Clone(
+        dip_reporter_to_be_passed.InitWithNewPipeAndPassReceiver());
   }
 
   controller()->controller()->Clone(
       std::move(receiver),
       policy_container_policies_.cross_origin_embedder_policy,
-      std::move(coep_reporter_to_be_passed));
+      std::move(coep_reporter_to_be_passed),
+      policy_container_policies_.document_isolation_policy,
+      std::move(dip_reporter_to_be_passed));
 }
 
 bool ServiceWorkerContainerHostForClient::AllowServiceWorker(
@@ -734,13 +723,17 @@ bool ServiceWorkerContainerHostForClient::AllowServiceWorker(
   if (!browser_context) {
     return false;
   }
+  auto start_time = base::TimeTicks::Now();
   AllowServiceWorkerResult allowed =
       GetContentClient()->browser()->AllowServiceWorker(
           scope,
           service_worker_security_utils::site_for_cookies(
               service_worker_client().key()),
-          service_worker_client().top_frame_origin(), script_url,
-          browser_context);
+          service_worker_client().top_frame_origin(),
+          service_worker_client().key(), script_url, browser_context);
+  base::UmaHistogramMicrosecondsTimes(
+      "ServiceWorker.ContainerHostForClient.AllowServiceWorkerCallTime",
+      base::TimeTicks::Now() - start_time);
   if (service_worker_client().IsContainerForWindowClient()) {
     auto* rfh = RenderFrameHostImpl::FromID(
         service_worker_client().GetRenderFrameHostId());
@@ -766,7 +759,7 @@ bool ServiceWorkerContainerHostForServiceWorker::AllowServiceWorker(
   }
   return GetContentClient()->browser()->AllowServiceWorker(
       scope, service_worker_security_utils::site_for_cookies(key_),
-      top_frame_origin(), script_url, browser_context);
+      top_frame_origin(), key_, script_url, browser_context);
 }
 
 const base::WeakPtr<ServiceWorkerContextCore>&
@@ -786,6 +779,11 @@ const GURL& ServiceWorkerContainerHostForClient::url() const {
   return service_worker_client().url();
 }
 
+const GURL& ServiceWorkerContainerHostForClient::url_for_access_check() const {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  return service_worker_client().GetUrlForScopeMatch();
+}
+
 const base::WeakPtr<ServiceWorkerContextCore>&
 ServiceWorkerContainerHostForServiceWorker::context() const {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
@@ -799,6 +797,12 @@ ServiceWorkerContainerHostForServiceWorker::AsWeakPtr() {
 }
 
 const GURL& ServiceWorkerContainerHostForServiceWorker::url() const {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  return url_;
+}
+
+const GURL& ServiceWorkerContainerHostForServiceWorker::url_for_access_check()
+    const {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   return url_;
 }
@@ -823,14 +827,12 @@ ServiceWorkerContainerHostForServiceWorker::top_frame_origin() const {
 
 void ServiceWorkerContainerHostForClient::ReturnRegistrationForReadyIfNeeded() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-  if (!get_ready_callback_ || get_ready_callback_->is_null()) {
+  if (!get_ready_callback_ || get_ready_callback_->is_null())
     return;
-  }
   ServiceWorkerRegistration* registration =
       service_worker_client().MatchRegistration();
-  if (!registration || !registration->active_version()) {
+  if (!registration || !registration->active_version())
     return;
-  }
   TRACE_EVENT_NESTABLE_ASYNC_END1(
       "ServiceWorker", "ServiceWorkerContainerHost::GetRegistrationForReady",
       TRACE_ID_LOCAL(this), "Registration ID", registration->id());
@@ -1014,6 +1016,9 @@ void ServiceWorkerContainerHostForClient::GetRegistrationsComplete(
 
   for (const auto& registration : registrations) {
     DCHECK(registration.get());
+    // TODO(crbug.com/372879072): remove this CHECK
+    CHECK_EQ(service_worker_client().key().origin(),
+             url::Origin::Create(registration->scope()));
     if (!registration->is_uninstalling()) {
       object_infos.push_back(
           registration_object_manager().CreateInfo(std::move(registration)));
@@ -1045,7 +1050,7 @@ bool ServiceWorkerContainerHostForClient::IsValidGetRegistrationMessage(
     *out_error = ServiceWorkerConsts::kBadMessageInvalidURL;
     return false;
   }
-  std::vector<GURL> urls = {url(), client_url};
+  std::vector<GURL> urls = {url_for_access_check(), client_url};
   if (!service_worker_security_utils::AllOriginsMatchAndCanAccessServiceWorkers(
           urls)) {
     *out_error = ServiceWorkerConsts::kBadMessageImproperOrigins;
@@ -1062,7 +1067,7 @@ bool ServiceWorkerContainerHostForClient::IsValidGetRegistrationsMessage(
     *out_error = ServiceWorkerConsts::kBadMessageFromNonWindow;
     return false;
   }
-  if (!OriginCanAccessServiceWorkers(url())) {
+  if (!OriginCanAccessServiceWorkers(url_for_access_check())) {
     *out_error = ServiceWorkerConsts::kBadMessageImproperOrigins;
     return false;
   }

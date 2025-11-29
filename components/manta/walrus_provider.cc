@@ -5,6 +5,7 @@
 #include "components/manta/walrus_provider.h"
 
 #include <algorithm>
+#include <cstdint>
 
 #include "components/manta/features.h"
 #include "third_party/skia/include/codec/SkJpegDecoder.h"
@@ -21,7 +22,44 @@ namespace {
 constexpr char kOauthConsumerName[] = "manta_walrus";
 constexpr base::TimeDelta kTimeout = base::Seconds(30);
 // The maximum number of pixels after resizing an image.
-constexpr int32_t kMaxPixelsAfterResizing = 1024 * 1024;
+constexpr int32_t kMaxPixelsAfterResizing = 512 * 512;
+constexpr auto kTrafficAnnotation =
+    net::DefineNetworkTrafficAnnotation("chromeos_walrus_provider", R"(
+      semantics {
+        sender: "ChromeOS Walrus"
+        description:
+          "Requests the trust and safety verdict of images and text prompt "
+          "from the Mantis service."
+        trigger:
+          "User editing an image in the Gallery app with 'Edit with AI'"
+        internal {
+          contacts {
+            email: "cros-mantis@google.com"
+          }
+        }
+        user_data {
+          type: USER_CONTENT
+        }
+        data:
+          "The image user selected to edit in the gallery and the text prompt "
+          "typed in a editable text field. The generated images from the model "
+          "are also sent for the trust and safety verdict."
+        destination: GOOGLE_OWNED_SERVICE
+        last_reviewed: "2025-03-26"
+      }
+      policy {
+        cookies_allowed: NO
+        setting:
+            "User/Admin can enable or disable this feature via the Google "
+            "Admin Console by updating the GenAI Photo Editing settings. "
+            "The feature is enabled by default."
+        chrome_policy {
+            GenAIPhotoEditingSettings {
+              GenAIPhotoEditingSettings: 0
+            }
+        }
+      }
+    )");
 
 void OnServerResponseOrErrorReceived(
     MantaGenericCallback callback,
@@ -110,9 +148,38 @@ std::optional<std::vector<uint8_t>> WalrusProvider::DownscaleImageIfNeeded(
   return gfx::JPEGCodec::Encode(resized_bitmap, /*quality=*/90);
 }
 
+std::string GetImageTypeTag(WalrusProvider::ImageType image_type) {
+  switch (image_type) {
+    case WalrusProvider::ImageType::kInputImage:
+      return "input_image";
+    case WalrusProvider::ImageType::kOutputImage:
+      return "output_image";
+    case WalrusProvider::ImageType::kGeneratedRegion:
+      return "generated_region";
+    case WalrusProvider::ImageType::kGeneratedRegionOutpainting:
+      return "generated_region_outpainting";
+    default:
+      return "input_image";
+  }
+}
+
 void WalrusProvider::Filter(const std::optional<std::string>& text_prompt,
                             const std::vector<std::vector<uint8_t>>& images,
                             MantaGenericCallback done_callback) {
+  std::vector<ImageType> image_types(images.size(), ImageType::kInputImage);
+  Filter(text_prompt, images, image_types, std::move(done_callback));
+}
+
+void WalrusProvider::Filter(const std::optional<std::string>& text_prompt,
+                            const std::vector<std::vector<uint8_t>>& images,
+                            const std::vector<ImageType>& image_types,
+                            MantaGenericCallback done_callback) {
+  if (images.size() != image_types.size()) {
+    std::move(done_callback)
+        .Run(base::Value::Dict(), {MantaStatusCode::kInvalidInput});
+    return;
+  }
+
   proto::Request request;
   request.set_feature_name(proto::FeatureName::CHROMEOS_WALRUS);
 
@@ -122,9 +189,12 @@ void WalrusProvider::Filter(const std::optional<std::string>& text_prompt,
     input_data->set_text(text_prompt.value());
   }
 
-  for (auto& image : images) {
+  for (size_t i = 0; i < images.size(); ++i) {
+    const std::vector<uint8_t>& image = images[i];
+    const ImageType& image_type = image_types[i];
+
     auto* input_data = request.add_input_data();
-    input_data->set_tag("input_image");
+    input_data->set_tag(GetImageTypeTag(image_type));
     auto resized_image_bytes = DownscaleImageIfNeeded(image);
     if (resized_image_bytes.has_value()) {
       input_data->mutable_image()->set_serialized_bytes(
@@ -142,12 +212,9 @@ void WalrusProvider::Filter(const std::optional<std::string>& text_prompt,
     return;
   }
 
-  // TODO(b:370476808): MISSING_TRAFFIC_ANNOTATION should be resolved before
-  // launch.
   RequestInternal(
       GURL{GetProviderEndpoint(features::IsWalrusUseProdServerEnabled())},
-      kOauthConsumerName, MISSING_TRAFFIC_ANNOTATION, request,
-      MantaMetricType::kWalrus,
+      kOauthConsumerName, kTrafficAnnotation, request, MantaMetricType::kWalrus,
       base::BindOnce(&OnServerResponseOrErrorReceived,
                      std::move(done_callback)),
       kTimeout);

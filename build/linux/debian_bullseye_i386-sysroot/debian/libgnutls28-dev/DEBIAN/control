@@ -1,10 +1,10 @@
 Package: libgnutls28-dev
 Source: gnutls28
-Version: 3.7.1-5+deb11u3
+Version: 3.7.1-5+deb11u5
 Architecture: i386
 Maintainer: Debian GnuTLS Maintainers <pkg-gnutls-maint@lists.alioth.debian.org>
 Installed-Size: 4301
-Depends: libc6-dev | libc-dev, libgnutls-dane0 (= 3.7.1-5+deb11u3), libgnutls-openssl27 (= 3.7.1-5+deb11u3), libgnutls30 (= 3.7.1-5+deb11u3), libgnutlsxx28 (= 3.7.1-5+deb11u3), libidn2-dev, libp11-kit-dev (>= 0.23.10), libtasn1-6-dev, nettle-dev (>= 3.6)
+Depends: libc6-dev | libc-dev, libgnutls-dane0 (= 3.7.1-5+deb11u5), libgnutls-openssl27 (= 3.7.1-5+deb11u5), libgnutls30 (= 3.7.1-5+deb11u5), libgnutlsxx28 (= 3.7.1-5+deb11u5), libidn2-dev, libp11-kit-dev (>= 0.23.10), libtasn1-6-dev, nettle-dev (>= 3.6)
 Suggests: gnutls-bin, gnutls-doc
 Conflicts: gnutls-dev
 Replaces: gnutls-dev

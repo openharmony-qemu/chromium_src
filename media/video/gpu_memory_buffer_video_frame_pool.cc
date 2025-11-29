@@ -14,6 +14,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <algorithm>
+#include <array>
 #include <atomic>
 #include <list>
 #include <memory>
@@ -29,10 +31,10 @@
 #include "base/location.h"
 #include "base/logging.h"
 #include "base/memory/raw_ptr.h"
+#include "base/memory/scoped_refptr.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/not_fatal_until.h"
-#include "base/ranges/algorithm.h"
 #include "base/strings/stringprintf.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/time/default_tick_clock.h"
@@ -77,6 +79,8 @@ class GpuMemoryBufferVideoFramePool::PoolImpl
           GpuMemoryBufferVideoFramePool::PoolImpl>,
       public base::trace_event::MemoryDumpProvider {
  public:
+  REQUIRE_ADOPTION_FOR_REFCOUNTED_TYPE();
+
   // |media_task_runner| is the media task runner associated with the
   // GL context provided by |gpu_factories|
   // |worker_task_runner| is a task runner used to asynchronously copy
@@ -387,7 +391,8 @@ void CopyRowsToP010Buffer(int first_row,
   DCHECK_NE(dest_stride_uv, 0);
   DCHECK_EQ(0, first_row % 2);
   DCHECK_EQ(source_frame->format(), PIXEL_FORMAT_YUV420P10);
-  DCHECK_LE(width * 2, source_frame->stride(VideoFrame::Plane::kY));
+  DCHECK_LE(static_cast<size_t>(width * 2),
+            source_frame->stride(VideoFrame::Plane::kY));
 
   const uint16_t* y_plane = reinterpret_cast<const uint16_t*>(
       source_frame->visible_data(VideoFrame::Plane::kY) +
@@ -475,7 +480,8 @@ void CopyRowsToNV12Buffer(int first_row,
         dest_uv + first_row / 2 * dest_stride_uv, dest_stride_uv,
         bytes_per_row_y, rows_y);
   } else {
-    DCHECK_LE(width * 2, source_frame->stride(VideoFrame::Plane::kY));
+    DCHECK_LE(static_cast<size_t>(width * 2),
+              source_frame->stride(VideoFrame::Plane::kY));
 
     const uint16_t* y_plane = reinterpret_cast<const uint16_t*>(
         source_frame->visible_data(VideoFrame::Plane::kY) +
@@ -628,10 +634,6 @@ void GpuMemoryBufferVideoFramePool::PoolImpl::CreateHardwareFrame(
     scoped_refptr<VideoFrame> video_frame,
     FrameReadyCB frame_ready_cb) {
   DCHECK(media_task_runner_->RunsTasksInCurrentSequence());
-#if BUILDFLAG(IS_OHOS)
-  std::move(frame_ready_cb).Run(std::move(video_frame));
-  return;
-#else
   // Lazily initialize |output_format_| since VideoFrameOutputFormat() has to be
   // called on the media_thread while this object might be instantiated on any.
   const VideoPixelFormat pixel_format = video_frame->format();
@@ -686,9 +688,6 @@ void GpuMemoryBufferVideoFramePool::PoolImpl::CreateHardwareFrame(
     case PIXEL_FORMAT_XRGB:
     case PIXEL_FORMAT_RGB24:
     case PIXEL_FORMAT_MJPEG:
-    case PIXEL_FORMAT_YUV422P9:
-    case PIXEL_FORMAT_YUV420P9:
-    case PIXEL_FORMAT_YUV444P9:
     case PIXEL_FORMAT_YUV422P10:
     case PIXEL_FORMAT_YUV444P10:
     case PIXEL_FORMAT_YUV420P12:
@@ -740,7 +739,6 @@ void GpuMemoryBufferVideoFramePool::PoolImpl::CreateHardwareFrame(
                                     std::move(frame_ready_cb), passthrough);
   if (frame_copy_requests_.size() == 1u)
     StartCopy();
-#endif
 }
 
 bool GpuMemoryBufferVideoFramePool::PoolImpl::OnMemoryDump(
@@ -924,9 +922,11 @@ void GpuMemoryBufferVideoFramePool::PoolImpl::CopyRowsToBuffer(
 
       VideoPixelFormat pixel_format = VideoFormat(output_format);
       for (int dst_plane = 0; dst_plane < 3; ++dst_plane) {
-        static constexpr VideoFrame::Plane kSrcPlanes[3] = {
-            VideoFrame::Plane::kY, VideoFrame::Plane::kV,
-            VideoFrame::Plane::kU};
+        constexpr static std::array<VideoFrame::Plane, 3> kSrcPlanes = {
+            VideoFrame::Plane::kY,
+            VideoFrame::Plane::kV,
+            VideoFrame::Plane::kU,
+        };
         VideoFrame::Plane src_plane = kSrcPlanes[dst_plane];
 
         const size_t plane_row_start =
@@ -982,8 +982,8 @@ void GpuMemoryBufferVideoFramePool::PoolImpl::OnCopiesDoneOnMediaThread(
     // Drop the resource if there was an error with it. If we're not in
     // shutdown we also need to remove the pool entry for the resource.
     if (!in_shutdown_) {
-      auto it = base::ranges::find(resources_pool_, frame_resource);
-      CHECK(it != resources_pool_.end(), base::NotFatalUntil::M130);
+      auto it = std::ranges::find(resources_pool_, frame_resource);
+      CHECK(it != resources_pool_.end());
       resources_pool_.erase(it);
     }
 
@@ -1056,7 +1056,8 @@ scoped_refptr<VideoFrame> GpuMemoryBufferVideoFramePool::PoolImpl::
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
   is_webgpu_compatible =
-      handle.native_pixmap_handle.supports_zero_copy_webgpu_import;
+      handle.type == gfx::NATIVE_PIXMAP &&
+      handle.native_pixmap_handle().supports_zero_copy_webgpu_import;
 #endif
 
   // Bind the texture and create or rebind the image. This image may be read
@@ -1206,29 +1207,20 @@ GpuMemoryBufferVideoFramePool::PoolImpl::GetOrCreateFrameResource(
                                         gpu::SHARED_IMAGE_USAGE_RASTER_READ |
                                         gpu::SHARED_IMAGE_USAGE_DISPLAY_READ;
 
-    bool add_scanout_usage = true;
-
-    // SCANOUT usage was historically added unconditionally. However, it
-    // actually should be added only if scanout of SharedImages for this use
-    // case is supported.
-    // TODO(crbug.com/330865436): Remove killswitch post-safe rollout.
-    if (base::FeatureList::IsEnabled(
-            features::
-                kSWVideoFrameAddScanoutUsageOnlyIfSupportedBySharedImage)) {
-      auto si_caps = sii->GetCapabilities();
-
+    // SCANOUT usage should be added only if scanout of SharedImages for this
+    // use case is supported.
+    auto si_caps = sii->GetCapabilities();
 #if BUILDFLAG(IS_WIN)
-      // On Windows, overlays are in general not supported. However, in some
-      // cases they are supported for the software video frame use case in
-      // particular. This cap details whether that support is present.
-      add_scanout_usage =
-          si_caps.supports_scanout_shared_images_for_software_video_frames;
+    // On Windows, overlays are in general not supported. However, in some
+    // cases they are supported for the software video frame use case in
+    // particular. This cap details whether that support is present.
+    bool add_scanout_usage =
+        si_caps.supports_scanout_shared_images_for_software_video_frames;
 #else
-      // On all other platforms, whether scanout for SharedImages is supported
-      // for this particular use case is no different than the general case.
-      add_scanout_usage = si_caps.supports_scanout_shared_images;
+    // On all other platforms, whether scanout for SharedImages is supported
+    // for this particular use case is no different than the general case.
+    bool add_scanout_usage = si_caps.supports_scanout_shared_images;
 #endif
-    }
 
     if (add_scanout_usage) {
       si_usage |= gpu::SHARED_IMAGE_USAGE_SCANOUT;
@@ -1328,8 +1320,9 @@ GpuMemoryBufferVideoFramePool::GpuMemoryBufferVideoFramePool(
     const scoped_refptr<base::SequencedTaskRunner>& media_task_runner,
     const scoped_refptr<base::TaskRunner>& worker_task_runner,
     GpuVideoAcceleratorFactories* gpu_factories)
-    : pool_impl_(
-          new PoolImpl(media_task_runner, worker_task_runner, gpu_factories)) {
+    : pool_impl_(base::MakeRefCounted<PoolImpl>(media_task_runner,
+                                                worker_task_runner,
+                                                gpu_factories)) {
   base::trace_event::MemoryDumpManager::GetInstance()
       ->RegisterDumpProviderWithSequencedTaskRunner(
           pool_impl_.get(), "GpuMemoryBufferVideoFramePool", media_task_runner,

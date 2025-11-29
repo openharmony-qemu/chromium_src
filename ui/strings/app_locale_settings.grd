@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<grit latest_public_release="0" current_release="1" output_all_resource_defines="false">
+<grit latest_public_release="0" current_release="1">
   <outputs>
     <output filename="grit/app_locale_settings.h" type="rc_header">
       <emit emit_type='prepend'></emit>
@@ -218,7 +218,7 @@
           75%
         </message>
       </if>
-      <if expr="is_linux or is_android or is_bsd or is_fuchsia or is_ohos">
+      <if expr="is_linux or is_android or is_bsd or is_fuchsia">
         <!-- The font used in Web UI (e.g. History). Note that these are only
              backups. We try to use the system font if possible. -->
         <message name="IDS_WEB_FONT_FAMILY" use_name_for_id="true">

@@ -23,8 +23,6 @@
 #include "net/proxy_resolution/proxy_config_service_linux.h"
 #elif BUILDFLAG(IS_ANDROID)
 #include "net/proxy_resolution/proxy_config_service_android.h"
-#elif BUILDFLAG(IS_OHOS)
-#include "net/proxy_resolution/proxy_config_service_ohos.h"
 #endif
 
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX)
@@ -34,8 +32,7 @@
 namespace net {
 
 namespace {
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX) || \
-    BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX)
 constexpr net::NetworkTrafficAnnotationTag kSystemProxyConfigTrafficAnnotation =
     net::DefineNetworkTrafficAnnotation("proxy_config_system", R"(
       semantics {
@@ -63,7 +60,7 @@ constexpr net::NetworkTrafficAnnotationTag kSystemProxyConfigTrafficAnnotation =
       })");
 #endif
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
 class UnsetProxyConfigService : public ProxyConfigService {
  public:
   UnsetProxyConfigService() = default;
@@ -106,7 +103,7 @@ ProxyConfigService::CreateSystemProxyConfigService(
 #elif BUILDFLAG(IS_MAC)
   return std::make_unique<ProxyConfigServiceMac>(
       std::move(main_task_runner), kSystemProxyConfigTrafficAnnotation);
-#elif BUILDFLAG(IS_CHROMEOS_ASH)
+#elif BUILDFLAG(IS_CHROMEOS)
   LOG(ERROR) << "ProxyConfigService for ChromeOS should be created in "
              << "profile_io_data.cc::CreateProxyConfigService and this should "
              << "be used only for examples.";
@@ -134,9 +131,6 @@ ProxyConfigService::CreateSystemProxyConfigService(
   return std::make_unique<ProxyConfigServiceAndroid>(
       std::move(main_task_runner),
       base::SingleThreadTaskRunner::GetCurrentDefault());
-#elif BUILDFLAG(IS_OHOS)
-  return std::make_unique<ProxyConfigServiceOhos>(
-      kSystemProxyConfigTrafficAnnotation);
 #elif BUILDFLAG(IS_FUCHSIA)
   // TODO(crbug.com/42050626): Implement a system proxy service for Fuchsia.
   return std::make_unique<ProxyConfigServiceDirect>();

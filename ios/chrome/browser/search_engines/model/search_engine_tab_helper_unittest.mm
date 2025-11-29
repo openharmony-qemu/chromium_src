@@ -31,8 +31,8 @@
 #import "testing/gtest/include/gtest/gtest.h"
 #import "testing/platform_test.h"
 
-using base::test::ios::WaitUntilConditionOrTimeout;
 using base::test::ios::kWaitForJSCompletionTimeout;
+using base::test::ios::WaitUntilConditionOrTimeout;
 using web::test::SubmitWebViewFormWithId;
 
 namespace {
@@ -40,7 +40,7 @@ const char kOpenSearchXmlFilePath[] =
     "/ios/testing/data/http_server_files/opensearch.xml";
 const char kPonyHtmlFilePath[] =
     "/ios/testing/data/http_server_files/pony.html";
-}
+}  // namespace
 
 // Test fixture for SearchEngineTabHelper class.
 class SearchEngineTabHelperTest : public PlatformTest {
@@ -83,8 +83,7 @@ class SearchEngineTabHelperTest : public PlatformTest {
 
   // Returns the testing TemplateURLService.
   TemplateURLService* template_url_service() {
-    ProfileIOS* profile = ProfileIOS::FromBrowserState(profile_.get());
-    return ios::TemplateURLServiceFactory::GetForProfile(profile);
+    return ios::TemplateURLServiceFactory::GetForProfile(profile_.get());
   }
 
   web::WebState* web_state() { return web_state_.get(); }

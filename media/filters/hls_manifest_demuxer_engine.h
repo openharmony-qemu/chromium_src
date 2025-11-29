@@ -13,7 +13,6 @@
 #include "base/task/sequenced_task_runner.h"
 #include "base/threading/sequence_bound.h"
 #include "base/time/time.h"
-#include "crypto/encryptor.h"
 #include "media/base/media_export.h"
 #include "media/base/media_log.h"
 #include "media/base/media_track.h"
@@ -66,6 +65,9 @@ class MEDIA_EXPORT HlsManifestDemuxerEngine : public ManifestDemuxer::Engine,
   int64_t GetMemoryUsage() const override;
   void Stop() override;
 
+  void SelectVideoVariant(const MediaTrack::Id&) override;
+  void SelectAudioRendition(const MediaTrack::Id&) override;
+
   // HlsRenditionHost implementation.
   void ReadKey(const hls::MediaSegment::EncryptionData& data,
                HlsDataSourceProvider::ReadCb) override;
@@ -79,8 +81,9 @@ class MEDIA_EXPORT HlsManifestDemuxerEngine : public ManifestDemuxer::Engine,
   void UpdateNetworkSpeed(uint64_t bps) override;
   void UpdateRenditionManifestUri(std::string role,
                                   GURL uri,
-                                  base::OnceCallback<void(bool)> cb) override;
+                                  HlsDemuxerStatusCallback cb) override;
   void SetEndOfStream(bool ended) override;
+  void Quit(HlsDemuxerStatus status) override;
 
   // Test helpers.
   void AddRenditionForTesting(std::string role,
@@ -160,7 +163,7 @@ class MEDIA_EXPORT HlsManifestDemuxerEngine : public ManifestDemuxer::Engine,
 
   // Posted by `::Initialize()`
   void InitAction(PipelineStatusCallback status_cb);
-  void FinishInitialization(PipelineStatusCallback cb, PipelineStatus status);
+  void FinishInitialization(PipelineStatusCallback cb, HlsDemuxerStatus status);
 
   // Posted by `::OnTimeUpdate()`
   void OnTimeUpdateAction(base::TimeDelta time,
@@ -176,17 +179,15 @@ class MEDIA_EXPORT HlsManifestDemuxerEngine : public ManifestDemuxer::Engine,
   void UpdateMediaPlaylistForRole(
       std::string role,
       GURL uri,
-      base::OnceCallback<void(bool)> cb,
+      HlsDemuxerStatusCallback cb,
       HlsDataSourceProvider::ReadResult maybe_stream);
 
   // Posted by `::OnRenditionsReselected()`
-  void AdaptationAction(const hls::VariantStream* variant,
-                        const hls::AudioRendition* audio_override_rendition,
-                        PipelineStatusCallback status_cb);
-
-  // Allows continuing any pending seeks after important network requests have
-  // completed.
-  void OnAdaptationComplete(PipelineStatus status);
+  void AdaptationAction(
+      const hls::VariantStream* variant,
+      std::optional<hls::RenditionGroup::RenditionTrack> video,
+      std::optional<hls::RenditionGroup::RenditionTrack> audio,
+      HlsDemuxerStatusCallback status_cb);
 
   // The `prior_delay` arg represents the time that was previously calculated
   // for delay by another rendition. If it is kNoTimestamp, then the other
@@ -208,10 +209,11 @@ class MEDIA_EXPORT HlsManifestDemuxerEngine : public ManifestDemuxer::Engine,
                       base::TimeDelta new_delay);
 
   // Helpers to call |PlayerImplDemuxer::OnDemuxerError|.
-  void OnStatus(PipelineStatus status);
-  void Abort(HlsDemuxerStatus status);
-  void Abort(hls::ParseStatus status);
-  void Abort(HlsDataSourceProvider::ReadStatus status);
+  void ForwardErrorToHost(PipelineStatus status);
+  void CheckActionState(HlsDemuxerStatus status);
+
+  void RecordMidStreamError(HlsDemuxerStatus::Codes c);
+  void RecordParserFailure(hls::ParseStatus::Codes c);
 
   // Capture the stream before it gets posted to `cb` and update the internal
   // memory state and origin tainting.
@@ -224,34 +226,39 @@ class MEDIA_EXPORT HlsManifestDemuxerEngine : public ManifestDemuxer::Engine,
   HlsDataSourceProvider::ReadCb BindStatsUpdate(
       HlsDataSourceProvider::ReadCb cb);
 
-  void ParsePlaylist(PipelineStatusCallback parse_complete_cb,
+  void ParsePlaylist(HlsDemuxerStatusCallback parse_complete_cb,
                      PlaylistParseInfo parse_info,
                      HlsDataSourceProvider::ReadResult m_stream);
 
+  HlsDemuxerStatusCallback BindPlaylistLoader(
+      hls::RenditionGroup::RenditionTrack rendition,
+      std::string rendition_role,
+      HlsDemuxerStatusCallback do_next);
   void OnMultivariantPlaylist(
-      PipelineStatusCallback parse_complete_cb,
+      HlsDemuxerStatusCallback parse_complete_cb,
       scoped_refptr<hls::MultivariantPlaylist> playlist);
   void OnRenditionsReselected(
       hls::AdaptationReason reason,
       const hls::VariantStream* variant,
-      const hls::AudioRendition* audio_override_rendition);
-
+      std::optional<hls::RenditionGroup::RenditionTrack> video,
+      std::optional<hls::RenditionGroup::RenditionTrack> audio);
   void OnRenditionsSelected(
-      PipelineStatusCallback on_complete,
+      HlsDemuxerStatusCallback on_complete,
       const hls::VariantStream* variant,
-      const hls::AudioRendition* audio_override_rendition);
+      std::optional<hls::RenditionGroup::RenditionTrack> video,
+      std::optional<hls::RenditionGroup::RenditionTrack> audio);
 
   void LoadPlaylist(PlaylistParseInfo parse_info,
-                    PipelineStatusCallback on_complete);
+                    HlsDemuxerStatusCallback on_complete);
 
-  void OnMediaPlaylist(PipelineStatusCallback parse_complete_cb,
+  void OnMediaPlaylist(HlsDemuxerStatusCallback parse_complete_cb,
                        PlaylistParseInfo parse_info,
                        scoped_refptr<hls::MediaPlaylist> playlist);
   void DetermineStreamContainer(
       hls::MediaPlaylist* playlist,
       HlsDemuxerStatusCb<RelaxedParserSupportedType> container_cb);
   void OnStreamContainerDetermined(
-      PipelineStatusCallback parse_complete_cb,
+      HlsDemuxerStatusCallback parse_complete_cb,
       PlaylistParseInfo parse_info,
       scoped_refptr<hls::MediaPlaylist> playlist,
       HlsDemuxerStatus::Or<RelaxedParserSupportedType> maybe_info);

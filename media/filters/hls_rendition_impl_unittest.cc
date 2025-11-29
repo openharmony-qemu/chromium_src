@@ -8,6 +8,7 @@
 
 #include "base/test/gmock_callback_support.h"
 #include "base/test/task_environment.h"
+#include "crypto/random.h"
 #include "media/base/mock_media_log.h"
 #include "media/base/test_helpers.h"
 #include "media/filters/hls_network_access_impl.h"
@@ -41,7 +42,13 @@ constexpr char kInitialFetchPlaylist[] =
     "#EXTINF:2.00000,\n"
     "playlist_4500Kb_14551253.ts\n"
     "#EXTINF:2.00000,\n"
-    "playlist_4500Kb_14551254.ts\n";
+    "playlist_4500Kb_14551254.ts\n"
+    "#EXTINF:2.00000,\n"
+    "playlist_4500Kb_14551255.ts\n"
+    "#EXTINF:2.00000,\n"
+    "playlist_4500Kb_14551256.ts\n"
+    "#EXTINF:2.00000,\n"
+    "playlist_4500Kb_14551257.ts\n";
 
 const std::string kSecondFetchLivePlaylist =
     "#EXTM3U\n"
@@ -305,16 +312,15 @@ class HlsRenditionImplUnittest : public testing::Test {
         });
   }
 
-  std::tuple<std::string, std::unique_ptr<crypto::SymmetricKey>> Encrypt(
+  static constexpr size_t kKeySize = 16;
+  std::tuple<std::string, std::array<uint8_t, kKeySize>> Encrypt(
       std::string cleartext,
-      std::string ivstr) {
-    std::string ciphertext;
-    auto mode = crypto::SymmetricKey::AES;
-    auto key = crypto::SymmetricKey::GenerateRandomKey(mode, 128);
-    auto encryptor = std::make_unique<crypto::Encryptor>();
-    encryptor->Init(key.get(), crypto::Encryptor::Mode::CBC, ivstr);
-    encryptor->Encrypt(cleartext, &ciphertext);
-    return std::make_tuple(ciphertext, std::move(key));
+      base::span<const uint8_t, crypto::aes_cbc::kBlockSize> iv) {
+    std::array<uint8_t, kKeySize> key;
+    crypto::RandBytes(key);
+    auto ciphertext =
+        crypto::aes_cbc::Encrypt(key, iv, base::as_byte_span(cleartext));
+    return std::make_tuple(std::string(base::as_string_view(ciphertext)), key);
   }
 
  public:
@@ -362,7 +368,7 @@ TEST_F(HlsRenditionImplUnittest, TestCheckStateWithTooLateBuffer) {
   ASSERT_NE(rendition, nullptr);
 
   RespondWithRange(base::Seconds(10), base::Seconds(12));
-  EXPECT_CALL(*mock_mdeh_, OnError(_));
+  EXPECT_CALL(*mock_hrh_, Quit(_));
   rendition->CheckState(base::Seconds(0), 1.0, BindCheckStateNoExpect());
 
   task_environment_.RunUntilIdle();
@@ -385,7 +391,7 @@ TEST_F(HlsRenditionImplUnittest, TestNonRealTimePlaybackRate) {
   ASSERT_EQ(rendition->GetDuration(), std::nullopt);
 
   // Any rate not 0.0 or 1.0 should error.
-  EXPECT_CALL(*mock_mdeh_, OnError(_));
+  EXPECT_CALL(*mock_hrh_, Quit(_));
   rendition->CheckState(base::Seconds(0), 2.0, BindCheckStateNoExpect());
   task_environment_.RunUntilIdle();
 }
@@ -478,13 +484,12 @@ TEST_F(HlsRenditionImplUnittest, TestRenditionHasEnoughDataFetchNewManifest) {
   // Old data will try to be removed. Since media time is 0, there is nothing
   // to do. Then there will be an attempt to fetch a new manifest, which will
   // get an update.
-  task_environment_.FastForwardBy(base::Seconds(23));
+  task_environment_.FastForwardBy(base::Seconds(33));
   EXPECT_CALL(*mock_hrh_,
               UpdateRenditionManifestUri("test", GURL("http://example.com"), _))
-      .WillOnce(
-          [](std::string role, GURL uri, base::OnceCallback<void(bool)> cb) {
-            std::move(cb).Run(true);
-          });
+      .WillOnce([](std::string role, GURL uri, HlsDemuxerStatusCallback cb) {
+        std::move(cb).Run(OkStatus());
+      });
 
   // CheckState should in this case respond with a delay of 12 - 10/2 seconds.
   rendition->CheckState(base::Seconds(0), 0.0,
@@ -500,20 +505,19 @@ TEST_F(HlsRenditionImplUnittest, TestRenditionHasEnoughDataDeleteOldContent) {
 
   // CheckState causes the rentidion to:
   // Check buffered ranges first. In this case, we've loaded a bunch of content
-  // already, and our loaded ranges are [0 - 32)
+  // already, and our loaded ranges are [0 - 42)
   Ranges<base::TimeDelta> loaded_ranges;
-  loaded_ranges.Add(base::Seconds(0), base::Seconds(32));
+  loaded_ranges.Add(base::Seconds(0), base::Seconds(42));
   EXPECT_CALL(*mock_mdeh_, GetBufferedRanges(_))
       .Times(2)
       .WillRepeatedly(Return(loaded_ranges));
-  // Old data will try to be removed. Since media time is 15, there are 5
-  // seconds of old data to delete. There will be no new fetch and parse for
-  // manifest updates.
-  EXPECT_CALL(*mock_mdeh_, Remove(_, base::Seconds(0), base::Seconds(13)));
-  task_environment_.FastForwardBy(base::Seconds(15));
+  // We will remove old data here - which is max(10, 2*segment_duration) behind
+  // the current timestamp, or 25 - max(10, 4) = 15 seconds
+  EXPECT_CALL(*mock_mdeh_, Remove(_, base::Seconds(0), base::Seconds(15)));
+  task_environment_.FastForwardBy(base::Seconds(25));
 
   // CheckState should in this case respond with a delay of 17 - 10 / 2 seconds.
-  rendition->CheckState(base::Seconds(15), 0.0,
+  rendition->CheckState(base::Seconds(25), 0.0,
                         BindCheckState(base::Seconds(12)));
 
   task_environment_.RunUntilIdle();
@@ -568,9 +572,8 @@ TEST_F(HlsRenditionImplUnittest, TestPauseAndUnpause) {
   // After the pipeline does it's seeking shenanigans, another check state
   // event will be called at 9 seconds, rate 1.0. Because there are 23 seconds
   // now left in the buffer, the response will be a requested pause of 18
-  // seconds, and old buffers (from 0 - 7 seconds) will be cleared.
+  // seconds.
   RespondWithRange(base::Seconds(0), base::Seconds(32));
-  EXPECT_CALL(*mock_mdeh_, Remove(_, base::Seconds(0), base::Seconds(7)));
   rendition->CheckState(base::Seconds(9), 1.0,
                         BindCheckState(base::Seconds(18)));
   task_environment_.RunUntilIdle();
@@ -593,7 +596,7 @@ TEST_F(HlsRenditionImplUnittest, TestPauseAndUnpause) {
   // come back with a 0 second delay.
   EXPECT_CALL(*mock_mdeh_, RequestSeek(base::Seconds(202)));
   EXPECT_CALL(*mock_hrh_, UpdateRenditionManifestUri("test", _, _))
-      .WillOnce(base::test::RunOnceCallback<2>(true));
+      .WillOnce(base::test::RunOnceCallback<2>(OkStatus()));
   task_environment_.FastForwardBy(base::Seconds(190));
   rendition->CheckState(base::Seconds(10), 1.0,
                         BindCheckState(base::Seconds(0)));
@@ -604,7 +607,7 @@ TEST_F(HlsRenditionImplUnittest, TestPauseAndUnpause) {
   auto parsed = hls::MediaPlaylist::Parse(
       kSecondFetchLivePlaylist, GURL("http://example.com"), 3, nullptr);
   CHECK(parsed.has_value());
-  rendition->UpdatePlaylist(std::move(parsed).value(), std::nullopt);
+  rendition->UpdatePlaylist(std::move(parsed).value());
 
   // Once again, the pipeline finishes it's seeking, and a new media CheckState
   // event happens, this time for 200 seconds. Now the media_time is way past
@@ -636,8 +639,10 @@ TEST_F(HlsRenditionImplUnittest, TestPauseAndUnpause) {
 
   // Now, finally, we've satisfied the buffer, so we can clear old segments,
   // and the loop can pause for (22 - 10/2) or 17 seconds.
+  // Old data is 200 - (10 + 2*segment_duration), or 200 - max(10 + 2*2) = 190.
+
   RespondWithRange(base::Seconds(0), base::Seconds(222));
-  EXPECT_CALL(*mock_mdeh_, Remove(_, base::Seconds(0), base::Seconds(198)));
+  EXPECT_CALL(*mock_mdeh_, Remove(_, base::Seconds(0), base::Seconds(190)));
   rendition->CheckState(base::Seconds(200), 1.0,
                         BindCheckState(base::Seconds(17)));
   task_environment_.RunUntilIdle();
@@ -706,8 +711,12 @@ TEST_F(HlsRenditionImplUnittest, TestAES128Content) {
 
   std::string cleartext = "some kind of ts content.";
   std::string ciphertext;
-  std::unique_ptr<crypto::SymmetricKey> key;
-  std::tie(ciphertext, key) = Encrypt(cleartext, "ffffffffffffffff");
+  std::array<uint8_t, kKeySize> key;
+  static constexpr std::array<uint8_t, crypto::aes_cbc::kBlockSize> kFIv{
+      'f', 'f', 'f', 'f', 'f', 'f', 'f', 'f',
+      'f', 'f', 'f', 'f', 'f', 'f', 'f', 'f',
+  };
+  std::tie(ciphertext, key) = Encrypt(cleartext, kFIv);
 
   /* START CHECK 1 */
   // CheckState will start the paused player, query BufferedRanges, get 0-0,
@@ -718,13 +727,14 @@ TEST_F(HlsRenditionImplUnittest, TestAES128Content) {
   // The fetch will request the segment at "media_0.ts", which has an encryption
   // data attached. We need to populate that here so we can use the same key to
   // encrypt our plaintext.
-  InterceptEncDataOnFetch("https://example.com/media_0.ts", ciphertext,
-                          base::BindOnce(
-                              [](crypto::SymmetricKey* key,
-                                 hls::MediaSegment::EncryptionData* enc_data) {
-                                enc_data->ImportKey(key->key());
-                              },
-                              key.get()));
+  InterceptEncDataOnFetch(
+      "https://example.com/media_0.ts", ciphertext,
+      base::BindOnce(
+          [](base::span<const uint8_t, kKeySize> key,
+             hls::MediaSegment::EncryptionData* enc_data) {
+            enc_data->ImportKey(std::string(base::as_string_view(key)));
+          },
+          key));
 
   // The cleartext will get appended, and the network speed will be updated
   // to some massive number.
@@ -753,7 +763,12 @@ TEST_F(HlsRenditionImplUnittest, TestAES128Content) {
 
   // There's a new key, and a new IV.
   std::string ciphertext2;
-  std::tie(ciphertext2, key) = Encrypt(cleartext, "gggggggggggggggg");
+
+  static constexpr std::array<uint8_t, crypto::aes_cbc::kBlockSize> kGIv{
+      'g', 'g', 'g', 'g', 'g', 'g', 'g', 'g',
+      'g', 'g', 'g', 'g', 'g', 'g', 'g', 'g',
+  };
+  std::tie(ciphertext2, key) = Encrypt(cleartext, kGIv);
 
   // CheckState will start the paused player, query BufferedRanges, get 0-4
   // which will trigger an attempt to fetch.
@@ -762,13 +777,14 @@ TEST_F(HlsRenditionImplUnittest, TestAES128Content) {
 
   // The fetch will request the segment at "media_2.ts", which has a new
   // encryption data.
-  InterceptEncDataOnFetch("https://example.com/media_2.ts", ciphertext2,
-                          base::BindOnce(
-                              [](crypto::SymmetricKey* key,
-                                 hls::MediaSegment::EncryptionData* enc_data) {
-                                enc_data->ImportKey(key->key());
-                              },
-                              key.get()));
+  InterceptEncDataOnFetch(
+      "https://example.com/media_2.ts", ciphertext2,
+      base::BindOnce(
+          [](base::span<const uint8_t, kKeySize> key,
+             hls::MediaSegment::EncryptionData* enc_data) {
+            enc_data->ImportKey(std::string(base::as_string_view(key)));
+          },
+          key));
 
   RequireAppend(base::as_byte_span(cleartext));
   rendition->CheckState(base::Seconds(0), 0.0,
@@ -779,11 +795,11 @@ TEST_F(HlsRenditionImplUnittest, TestAES128Content) {
 
   // Update the playlist. The segment stream should keep around media_3.ts,
   // but follow it up with mediax_4.ts
-  auto parsed = hls::MediaPlaylist::Parse(
-      kAESContentReplacement, GURL("https://example.com/manifest.m3u8"), 3,
-      nullptr);
+  GURL manifest_uri = GURL("https://example.com/manifest.m3u8");
+  auto parsed = hls::MediaPlaylist::Parse(kAESContentReplacement, manifest_uri,
+                                          3, nullptr);
   CHECK(parsed.has_value());
-  rendition->UpdatePlaylist(std::move(parsed).value(), std::nullopt);
+  rendition->UpdatePlaylist(std::move(parsed).value());
 
   // The encryption data is the same for segment 3, since it didn't change.
   RespondWithRangeTwice(base::Seconds(0), base::Seconds(2), base::Seconds(0),
@@ -800,7 +816,11 @@ TEST_F(HlsRenditionImplUnittest, TestAES128Content) {
   // a key fetch.
 
   std::string ciphertext3;
-  std::tie(ciphertext3, key) = Encrypt(cleartext, "hhhhhhhhhhhhhhhh");
+  static constexpr std::array<uint8_t, crypto::aes_cbc::kBlockSize> kHIv{
+      'h', 'h', 'h', 'h', 'h', 'h', 'h', 'h',
+      'h', 'h', 'h', 'h', 'h', 'h', 'h', 'h',
+  };
+  std::tie(ciphertext3, key) = Encrypt(cleartext, kHIv);
 
   // CheckState will start the paused player, query BufferedRanges, get 0-4
   // which will trigger an attempt to fetch.
@@ -809,13 +829,14 @@ TEST_F(HlsRenditionImplUnittest, TestAES128Content) {
 
   // The fetch will request the segment at "mediax_4.ts", for which the
   // encryption data has not been fetched.
-  InterceptEncDataOnFetch("https://example.com/mediax_4.ts", ciphertext3,
-                          base::BindOnce(
-                              [](crypto::SymmetricKey* key,
-                                 hls::MediaSegment::EncryptionData* enc_data) {
-                                enc_data->ImportKey(key->key());
-                              },
-                              key.get()));
+  InterceptEncDataOnFetch(
+      "https://example.com/mediax_4.ts", ciphertext3,
+      base::BindOnce(
+          [](base::span<const uint8_t, kKeySize> key,
+             hls::MediaSegment::EncryptionData* enc_data) {
+            enc_data->ImportKey(std::string(base::as_string_view(key)));
+          },
+          key));
   RequireAppend(base::as_byte_span(cleartext));
   rendition->CheckState(base::Seconds(0), 0.0,
                         BindCheckState(base::Seconds(0)));

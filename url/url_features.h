@@ -15,14 +15,6 @@ namespace url {
 // (chrome/app_shim/app_shim_controller.mm). See https://crbug.com/1520386 for
 // more details.
 
-COMPONENT_EXPORT(URL) BASE_DECLARE_FEATURE(kUseIDNA2008NonTransitional);
-
-// Returns true if Chrome is using IDNA 2008 in Non-Transitional mode.
-COMPONENT_EXPORT(URL) bool IsUsingIDNA2008NonTransitional();
-
-// Returns true if Chrome is recording IDNA 2008 related metrics.
-COMPONENT_EXPORT(URL) bool IsRecordingIDNA2008Metrics();
-
 // Returns true if kStandardCompliantNonSpecialSchemeURLParsing feature is
 // enabled. See url::kStandardCompliantNonSpecialSchemeURLParsing for details.
 COMPONENT_EXPORT(URL) bool IsUsingStandardCompliantNonSpecialSchemeURLParsing();

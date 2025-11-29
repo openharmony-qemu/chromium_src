@@ -6,7 +6,6 @@ package org.chromium.components.omnibox;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -21,7 +20,7 @@ import java.util.Set;
 /** Tests for {@link AutocompleteMediator}. */
 @RunWith(BaseRobolectricTestRunner.class)
 public class AutocompleteInputUnitTest {
-    private AutocompleteInput mInput = new AutocompleteInput();
+    private final AutocompleteInput mInput = new AutocompleteInput();
 
     private void verifyCacheablePageClasses(Set<Integer> allowedPageClasses) {
         for (var pageClass : PageClassification.values()) {
@@ -100,11 +99,7 @@ public class AutocompleteInputUnitTest {
     @Test
     public void reset() {
         mInput.setUserText("test");
-        mInput.setPageClassification(123);
-
         mInput.reset();
-
         mInput.setUserText(null);
-        assertTrue(mInput.getPageClassification().isEmpty());
     }
 }

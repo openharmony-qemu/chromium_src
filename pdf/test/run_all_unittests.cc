@@ -14,6 +14,7 @@
 #include "base/test/test_suite.h"
 #include "mojo/core/embedder/embedder.h"
 #include "mojo/public/cpp/bindings/binder_map.h"
+#include "pdf/buildflags.h"
 #include "pdf/test/test_helpers.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/blink/public/platform/platform.h"
@@ -29,9 +30,9 @@
 #include "gin/v8_initializer.h"
 #endif
 
-#if BUILDFLAG(IS_OHOS)
-#include "base/test/test_support_ohos.h"
-#endif
+#if BUILDFLAG(ENABLE_PDF_INK2)
+#include "pdf/test/pdf_ink_test_helpers.h"
+#endif  // BUILDFLAG(ENABLE_PDF_INK2)
 
 namespace {
 
@@ -46,17 +47,27 @@ constexpr gin::V8SnapshotFileType kSnapshotType =
 
 class BlinkPlatformForTesting : public blink::Platform {
  public:
-  BlinkPlatformForTesting() = default;
+  BlinkPlatformForTesting() {
+#if BUILDFLAG(ENABLE_PDF_INK2)
+    chrome_pdf::SetPdfTestTaskEnvironment(&task_environment_);
+#endif  // BUILDFLAG(ENABLE_PDF_INK2)
+  }
   BlinkPlatformForTesting(const BlinkPlatformForTesting&) = delete;
   BlinkPlatformForTesting& operator=(const BlinkPlatformForTesting&) = delete;
-  ~BlinkPlatformForTesting() override { main_thread_scheduler_->Shutdown(); }
+  ~BlinkPlatformForTesting() override {
+    main_thread_scheduler_->Shutdown();
+#if BUILDFLAG(ENABLE_PDF_INK2)
+    chrome_pdf::SetPdfTestTaskEnvironment(nullptr);
+#endif  // BUILDFLAG(ENABLE_PDF_INK2)
+  }
 
   blink::scheduler::WebThreadScheduler* GetMainThreadScheduler() {
     return main_thread_scheduler_.get();
   }
 
  private:
-  base::test::TaskEnvironment task_environment_;
+  base::test::TaskEnvironment task_environment_{
+      base::test::TaskEnvironment::TimeSource::MOCK_TIME};
   std::unique_ptr<blink::scheduler::WebThreadScheduler> main_thread_scheduler_ =
       blink::scheduler::CreateWebMainThreadSchedulerForTests();
 };
@@ -116,9 +127,6 @@ class PdfTestSuite final : public base::TestSuite {
 }  // namespace
 
 int main(int argc, char** argv) {
-#if BUILDFLAG(IS_OHOS)
-  base::RegisterPathProviderForOhosTest();
-#endif
   PdfTestSuite test_suite(argc, argv);
   return base::LaunchUnitTests(
       argc, argv,

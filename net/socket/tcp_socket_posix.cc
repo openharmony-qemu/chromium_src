@@ -19,6 +19,7 @@
 #include "base/logging.h"
 #include "base/memory/ptr_util.h"
 #include "base/metrics/histogram_macros.h"
+#include "base/notimplemented.h"
 #include "base/posix/eintr_wrapper.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/time/time.h"
@@ -80,8 +81,7 @@ bool SetTCPKeepAlive(int fd, bool enable, int delay) {
   // A delay of 0 doesn't work, and is the default, so ignore that and rely on
   // whatever the OS defaults are once we turned it on above.
   if (delay) {
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
-    BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
     // Setting the keepalive interval varies by platform.
 
     // Set seconds until first TCP keep alive.
@@ -210,7 +210,7 @@ int TCPSocketPosix::AdoptConnectedSocket(SocketDescriptor socket,
   DCHECK(!socket_);
 
   SockaddrStorage storage;
-  if (!peer_address.ToSockAddr(storage.addr, &storage.addr_len) &&
+  if (!peer_address.ToSockAddr(storage.addr(), &storage.addr_len) &&
       // For backward compatibility, allows the empty address.
       !(peer_address == IPEndPoint())) {
     return ERR_ADDRESS_INVALID;
@@ -241,8 +241,9 @@ int TCPSocketPosix::Bind(const IPEndPoint& address) {
   DCHECK(socket_);
 
   SockaddrStorage storage;
-  if (!address.ToSockAddr(storage.addr, &storage.addr_len))
+  if (!address.ToSockAddr(storage.addr(), &storage.addr_len)) {
     return ERR_ADDRESS_INVALID;
+  }
 
   return socket_->Bind(storage);
 }
@@ -282,8 +283,9 @@ int TCPSocketPosix::Connect(const IPEndPoint& address,
                       [&] { return CreateNetLogIPEndPointParams(&address); });
 
   SockaddrStorage storage;
-  if (!address.ToSockAddr(storage.addr, &storage.addr_len))
+  if (!address.ToSockAddr(storage.addr(), &storage.addr_len)) {
     return ERR_ADDRESS_INVALID;
+  }
 
   int rv = socket_->Connect(
       storage, base::BindOnce(&TCPSocketPosix::ConnectCompleted,
@@ -380,8 +382,9 @@ int TCPSocketPosix::GetLocalAddress(IPEndPoint* address) const {
   if (rv != OK)
     return rv;
 
-  if (!address->FromSockAddr(storage.addr, storage.addr_len))
+  if (!address->FromSockAddr(storage.addr(), storage.addr_len)) {
     return ERR_ADDRESS_INVALID;
+  }
 
   return OK;
 }
@@ -397,8 +400,9 @@ int TCPSocketPosix::GetPeerAddress(IPEndPoint* address) const {
   if (rv != OK)
     return rv;
 
-  if (!address->FromSockAddr(storage.addr, storage.addr_len))
+  if (!address->FromSockAddr(storage.addr(), storage.addr_len)) {
     return ERR_ADDRESS_INVALID;
+  }
 
   return OK;
 }
@@ -554,7 +558,7 @@ int TCPSocketPosix::BuildTcpSocketPosix(
 
   SockaddrStorage storage;
   if (accept_socket_->GetPeerAddress(&storage) != OK ||
-      !address->FromSockAddr(storage.addr, storage.addr_len)) {
+      !address->FromSockAddr(storage.addr(), storage.addr_len)) {
     accept_socket_.reset();
     return ERR_ADDRESS_INVALID;
   }

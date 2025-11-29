@@ -12,6 +12,15 @@ namespace password_manager::prefs {
 // Alphabetical list of preference names specific to the PasswordManager
 // component.
 
+// Boolean controlling whether websites and apps can automatically upgrade
+// existing accounts to use passkeys when available.
+//
+// This pref doesn't have a policy mapped to it directly. Passkey creation in
+// general can be disabled using `kCredentialsEnableService` and
+// `kCredentialsEnablePasskeys`, in which case this pref's value is ignored.
+inline constexpr char kAutomaticPasskeyUpgrades[] =
+    "credentials_enable_automatic_passkey_upgrades";
+
 // Boolean controlling whether the password manager allows automatic signing in
 // through Credential Management API.
 //
@@ -173,12 +182,6 @@ inline constexpr char kUnenrolledFromGoogleMobileServicesDueToErrors[] =
 // time interval (currently 24h).
 inline constexpr char kUPMErrorUIShownTimestamp[] =
     "profile.upm_error_ui_shown_timestamp";
-
-// Boolean value meant to record in the prefs if the user clicked "Got it" in
-// the UPM local passwords migration warning. When set to true, the warning
-// should not be displayed again.
-inline constexpr char kUserAcknowledgedLocalPasswordsMigrationWarning[] =
-    "user_acknowledged_local_passwords_migration_warning";
 #endif
 
 // Maintains a list of password hashes of enterprise passwords. This pref
@@ -189,29 +192,28 @@ inline constexpr char kLocalPasswordHashDataList[] =
     "local.password_hash_data_list";
 
 #if BUILDFLAG(IS_ANDROID)
-// The timestamp at which the last UPM local passwords migration warning was
-// shown to the user in microseconds since Windows epoch. This is needed to
-// ensure that the UI is prompted only once per given time interval (currently
-// one month).
-inline constexpr char kLocalPasswordsMigrationWarningShownTimestamp[] =
-    "local_passwords_migration_warning_shown_timestamp";
-
-// Whether the local password migration warning was already shown at startup.
-inline constexpr char kLocalPasswordMigrationWarningShownAtStartup[] =
-    "local_passwords_migration_warning_shown_at_startup";
-
-// The version of the password migration warning prefs.
-inline constexpr char kLocalPasswordMigrationWarningPrefsVersion[] =
-    "local_passwords_migration_warning_reset_count";
-
 // How many times the password generation bottom sheet was dismissed by the user
 // in a row. The counter resets when the user applies password generation.
 inline constexpr char kPasswordGenerationBottomSheetDismissCount[] =
     "password_generation_bottom_sheet_dismiss_count";
 
-// Whether the post password migration sheet ahould be shown at startup.
+// Whether the post password migration sheet should be shown at startup.
 inline constexpr char kShouldShowPostPasswordMigrationSheetAtStartup[] =
     "should_show_post_password_migration_sheet_at_startup";
+
+// Whether the auto-exported CSV should be deleted. Normally, it's deleted
+// immediately after export, but if that fails, this pref is used as a signal
+// that deletion should be retried.
+inline constexpr char kUpmAutoExportCsvNeedsDeletion[] =
+    "profile.upm_auto_export_csv_needs_deletion";
+
+// Whether the passwords who couldn't be migrated to UPM have been
+// saved as a CSV. The user can then choose to export the CSV out of Chrome
+// via a separate flow. The pref is also set to true if there were no
+// saved passwords. The value is used as a signal that the login db
+// can stop being used.
+inline constexpr char kUpmUnmigratedPasswordsExported[] =
+    "profile.upm_unmigrated_passwords_exported";
 #endif
 
 #if BUILDFLAG(IS_WIN)
@@ -246,10 +248,11 @@ inline constexpr char kWereOldGoogleLoginsRemoved[] =
     "profile.were_old_google_logins_removed";
 
 #if !BUILDFLAG(IS_IOS) && !BUILDFLAG(IS_ANDROID)
+// Deprecated 01/2025.
 // A dictionary of account-storage-related settings that exist per Gaia account
 // (e.g. whether that user has opted in). It maps from hash of Gaia ID to
 // dictionary of key-value pairs.
-inline constexpr char kAccountStoragePerAccountSettings[] =
+inline constexpr char kObsoleteAccountStoragePerAccountSettings[] =
     "profile.password_account_storage_settings";
 #endif  // !BUILDFLAG(IS_IOS) && !BUILDFLAG(IS_ANDROID)
 
@@ -299,8 +302,7 @@ inline constexpr char kProfileStoreDateLastUsedForFilling[] =
 inline constexpr char kAccountStoreDateLastUsedForFilling[] =
     "password_manager.account_store_date_last_used_for_filling";
 
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
-    BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS)
 // Integer indicating how many times user saw biometric authentication before
 // filling promo.
 inline constexpr char kBiometricAuthBeforeFillingPromoShownCounter[] =
@@ -316,13 +318,13 @@ inline constexpr char kHadBiometricsAvailable[] =
 #endif
 
 #if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+    BUILDFLAG(IS_CHROMEOS)
 // Boolean indicating whether user enabled biometric authentication before
 // filling.
 inline constexpr char kBiometricAuthenticationBeforeFilling[] =
     "password_manager.biometric_authentication_filling";
 #endif  // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID) ||
-        // BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
+        // BUILDFLAG(IS_CHROMEOS)
 
 #if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS)  // Desktop
 // A list of available promo cards with related information which are displayed
@@ -344,7 +346,7 @@ inline constexpr char kAutofillableCredentialsAccountStoreLoginDatabase[] =
 inline constexpr char kPasswordSharingEnabled[] =
     "password_manager.password_sharing_enabled";
 
-#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
 // Integer pref indicating how many times relaunch Chrome bubble was dismissed.
 inline constexpr char kRelaunchChromeBubbleDismissedCounter[] =
     "password_manager.relaunch_chrome_bubble_dismissed_counter";

@@ -14,8 +14,9 @@ namespace chrome_test_util {
 
 id<GREYAction> LongPressElementForContextMenu(ElementSelector* selector,
                                               bool triggers_context_menu) {
-  return [ChromeActionsAppInterface longPressElement:selector
-                                  triggerContextMenu:triggers_context_menu];
+  return [ChromeActionsAppInterface
+      longPressElementOnWebView:selector
+             triggerContextMenu:triggers_context_menu];
 }
 
 id<GREYAction> ScrollElementToVisible(ElementSelector* selector) {
@@ -67,6 +68,10 @@ id<GREYAction> SwipeToShowDeleteButton() {
 
 id<GREYAction> AccessibilitySwipeRight() {
   return [ChromeActionsAppInterface accessibilitySwipeRight];
+}
+
+id<GREYAction> OverscrollSwipe(GREYDirection direction) {
+  return [ChromeActionsAppInterface overscrollSwipe:direction];
 }
 
 }  // namespace chrome_test_util

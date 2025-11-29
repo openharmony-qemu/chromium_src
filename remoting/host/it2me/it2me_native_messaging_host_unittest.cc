@@ -34,6 +34,7 @@
 #include "components/policy/policy_constants.h"
 #include "remoting/base/auto_thread_task_runner.h"
 #include "remoting/base/oauth_token_getter.h"
+#include "remoting/host/chromeos/chromeos_enterprise_params.h"
 #include "remoting/host/chromoting_host_context.h"
 #include "remoting/host/it2me/it2me_constants.h"
 #include "remoting/host/it2me/it2me_helpers.h"
@@ -176,6 +177,8 @@ void MockIt2MeHost::Connect(
 
   host_context_ = std::move(context);
   observer_ = std::move(observer);
+  local_session_policies_provider_ =
+      std::make_unique<LocalSessionPoliciesProvider>();
 
   host_context()->network_task_runner()->PostTask(
       FROM_HERE,
@@ -213,6 +216,9 @@ void MockIt2MeHost::Disconnect() {
   log_to_server_.reset();
   register_request_.reset();
   signal_strategy_.reset();
+  session_policies_finalized_ = false;
+  last_reported_nat_traversal_enabled_.reset();
+  last_reported_relay_connections_allowed_.reset();
 
   RunSetState(It2MeHostState::kDisconnected);
 }
@@ -342,7 +348,7 @@ void It2MeNativeMessagingHostTest::SetUp() {
       base::BindOnce(&It2MeNativeMessagingHostTest::ExitTest,
                      base::Unretained(this)));
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
   test_url_loader_factory_ = new network::TestSharedURLLoaderFactory();
 #endif
 
@@ -416,17 +422,17 @@ It2MeNativeMessagingHostTest::ReadMessageFromOutputPipe() {
       return std::nullopt;
     }
 
-    std::optional<base::Value> message = base::JSONReader::Read(message_json);
-    if (!message || !message->is_dict()) {
+    std::optional<base::Value::Dict> message =
+        base::JSONReader::ReadDict(message_json);
+    if (!message) {
       LOG(ERROR) << "Malformed message:" << message_json;
       return std::nullopt;
     }
 
-    base::Value::Dict result = std::move(*message).TakeDict();
     // If this is a debug message log, ignore it, otherwise return it.
-    const std::string* type = result.FindString(kMessageType);
+    const std::string* type = message->FindString(kMessageType);
     if (!type || *type != LogMessageHandler::kDebugMessageTypeName) {
-      return result;
+      return std::move(*message);
     }
   }
 }
@@ -698,54 +704,34 @@ TEST_F(It2MeNativeMessagingHostTest, ConnectMultiple) {
 }
 
 TEST_F(It2MeNativeMessagingHostTest,
-       ConnectRespectsSuppressUserDialogsParameterOnChromeOsOnly) {
+       ConnectRespectsEnterpriseOptionsParameterOnChromeOsOnly) {
   int next_id = 1;
   base::Value::Dict connect_message = CreateConnectMessage(next_id);
   connect_message.Set(kIsEnterpriseAdminUser, true);
-  connect_message.Set(kSuppressUserDialogs, true);
+  ChromeOsEnterpriseParams params;
+  params.suppress_user_dialogs = true;
+  params.suppress_notifications = true;
+  params.terminate_upon_input = true;
+  params.curtain_local_user_session = true;
+  params.allow_remote_input = false;
+  params.allow_clipboard_sync = false;
+  params.connection_auto_accept_timeout = base::Hours(8);
+  params.request_origin = ChromeOsEnterpriseRequestOrigin::kEnterpriseAdmin;
+  connect_message.Merge(params.ToDict());
   WriteMessageToInputPipe(connect_message);
   VerifyConnectResponses(next_id);
-#if BUILDFLAG(IS_CHROMEOS_ASH) || !defined(NDEBUG)
+#if BUILDFLAG(IS_CHROMEOS) || !defined(NDEBUG)
   ASSERT_TRUE(get_chrome_os_enterprise_params().has_value());
   ASSERT_TRUE(get_chrome_os_enterprise_params()->suppress_user_dialogs);
-#else
-  ASSERT_FALSE(get_chrome_os_enterprise_params().has_value());
-#endif
-  ++next_id;
-  WriteMessageToInputPipe(CreateDisconnectMessage(next_id));
-  VerifyDisconnectResponses(next_id);
-}
-
-TEST_F(It2MeNativeMessagingHostTest,
-       ConnectRespectsSuppressNotificationsParameterOnChromeOsOnly) {
-  int next_id = 1;
-  base::Value::Dict connect_message = CreateConnectMessage(next_id);
-  connect_message.Set(kIsEnterpriseAdminUser, true);
-  connect_message.Set(kSuppressNotifications, true);
-  WriteMessageToInputPipe(connect_message);
-  VerifyConnectResponses(next_id);
-#if BUILDFLAG(IS_CHROMEOS_ASH) || !defined(NDEBUG)
-  ASSERT_TRUE(get_chrome_os_enterprise_params().has_value());
   ASSERT_TRUE(get_chrome_os_enterprise_params()->suppress_notifications);
-#else
-  ASSERT_FALSE(get_chrome_os_enterprise_params().has_value());
-#endif
-  ++next_id;
-  WriteMessageToInputPipe(CreateDisconnectMessage(next_id));
-  VerifyDisconnectResponses(next_id);
-}
-
-TEST_F(It2MeNativeMessagingHostTest,
-       ConnectRespectsTerminateUponInputParameterOnChromeOsOnly) {
-  int next_id = 1;
-  base::Value::Dict connect_message = CreateConnectMessage(next_id);
-  connect_message.Set(kIsEnterpriseAdminUser, true);
-  connect_message.Set(kTerminateUponInput, true);
-  WriteMessageToInputPipe(connect_message);
-  VerifyConnectResponses(next_id);
-#if BUILDFLAG(IS_CHROMEOS_ASH) || !defined(NDEBUG)
-  ASSERT_TRUE(get_chrome_os_enterprise_params().has_value());
   ASSERT_TRUE(get_chrome_os_enterprise_params()->terminate_upon_input);
+  ASSERT_TRUE(get_chrome_os_enterprise_params()->curtain_local_user_session);
+  ASSERT_FALSE(get_chrome_os_enterprise_params()->allow_remote_input);
+  ASSERT_FALSE(get_chrome_os_enterprise_params()->allow_clipboard_sync);
+  ASSERT_EQ(get_chrome_os_enterprise_params()->connection_auto_accept_timeout,
+            base::Hours(8));
+  ASSERT_EQ(get_chrome_os_enterprise_params()->request_origin,
+            ChromeOsEnterpriseRequestOrigin::kEnterpriseAdmin);
 #else
   ASSERT_FALSE(get_chrome_os_enterprise_params().has_value());
 #endif
@@ -761,29 +747,10 @@ TEST_F(It2MeNativeMessagingHostTest,
   connect_message.Set(kIsEnterpriseAdminUser, true);
   WriteMessageToInputPipe(connect_message);
   VerifyConnectResponses(next_id);
-#if BUILDFLAG(IS_CHROMEOS_ASH) || !defined(NDEBUG)
+#if BUILDFLAG(IS_CHROMEOS) || !defined(NDEBUG)
   EXPECT_TRUE(factory_raw_ptr_->host->is_enterprise_session());
 #else
   EXPECT_FALSE(factory_raw_ptr_->host->is_enterprise_session());
-#endif
-  ++next_id;
-  WriteMessageToInputPipe(CreateDisconnectMessage(next_id));
-  VerifyDisconnectResponses(next_id);
-}
-
-TEST_F(It2MeNativeMessagingHostTest,
-       ConnectRespectsCurtainLocalUserSessionParameterOnChromeOsOnly) {
-  int next_id = 1;
-  base::Value::Dict connect_message = CreateConnectMessage(next_id);
-  connect_message.Set(kIsEnterpriseAdminUser, true);
-  connect_message.Set(kCurtainLocalUserSession, true);
-  WriteMessageToInputPipe(connect_message);
-  VerifyConnectResponses(next_id);
-#if BUILDFLAG(IS_CHROMEOS_ASH) || !defined(NDEBUG)
-  ASSERT_TRUE(get_chrome_os_enterprise_params().has_value());
-  ASSERT_TRUE(get_chrome_os_enterprise_params()->curtain_local_user_session);
-#else
-  ASSERT_FALSE(get_chrome_os_enterprise_params().has_value());
 #endif
   ++next_id;
   WriteMessageToInputPipe(CreateDisconnectMessage(next_id));

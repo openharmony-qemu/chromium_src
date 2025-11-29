@@ -6,19 +6,18 @@ package org.chromium.components.browser_ui.settings;
 
 import android.content.Context;
 import android.util.AttributeSet;
-import android.view.View;
 import android.widget.Button;
 
 import androidx.preference.PreferenceViewHolder;
 
-/**
- * A preference with a highlighted background and prominent call to action button.
- *
- * <p>Preference.getOnPreferenceClickListener().onPreferenceClick() is called when the button is
- * clicked.
- */
-public class CardWithButtonPreference extends ChromeBasePreference implements View.OnClickListener {
-    private CharSequence mButtonText;
+import org.chromium.build.annotations.NullMarked;
+import org.chromium.build.annotations.Nullable;
+
+/** A preference with a highlighted background and prominent call to action button. */
+@NullMarked
+public class CardWithButtonPreference extends ChromeBasePreference {
+    private @Nullable CharSequence mButtonText;
+    private @Nullable Runnable mOnButtonClick;
 
     /**
      * Constructor for CardWithButtonPreference.
@@ -26,7 +25,7 @@ public class CardWithButtonPreference extends ChromeBasePreference implements Vi
      * @param context The context of the preference.
      * @param attrs The attributes of the preference.
      */
-    public CardWithButtonPreference(Context context, AttributeSet attrs) {
+    public CardWithButtonPreference(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         setLayoutResource(R.layout.card_with_button_preference_layout);
     }
@@ -34,9 +33,18 @@ public class CardWithButtonPreference extends ChromeBasePreference implements Vi
     @Override
     public void onBindViewHolder(PreferenceViewHolder holder) {
         super.onBindViewHolder(holder);
+
+        // Only the button is clickable (https://crbug.com/382089385).
+        holder.itemView.setClickable(false);
+
         Button button = (Button) holder.findViewById(R.id.card_button);
         button.setText(mButtonText);
-        button.setOnClickListener(this);
+        button.setOnClickListener(
+                (v) -> {
+                    if (mOnButtonClick != null) {
+                        mOnButtonClick.run();
+                    }
+                });
     }
 
     /**
@@ -49,11 +57,12 @@ public class CardWithButtonPreference extends ChromeBasePreference implements Vi
         notifyChanged();
     }
 
-    // OnClickListener:
-    @Override
-    public void onClick(View view) {
-        if (getOnPreferenceClickListener() != null) {
-            getOnPreferenceClickListener().onPreferenceClick(CardWithButtonPreference.this);
-        }
+    /**
+     * Sets the button on click runnable.
+     *
+     * @param onButtonClick The runnable to be invoked when the button is clicked.
+     */
+    public void setOnButtonClick(Runnable onButtonClick) {
+        mOnButtonClick = onButtonClick;
     }
 }

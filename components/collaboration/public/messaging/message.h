@@ -38,7 +38,8 @@ enum class CollaborationEvent {
   COLLABORATION_ADDED,
   COLLABORATION_MEMBER_ADDED,
   COLLABORATION_MEMBER_REMOVED,
-  // Current user left or lost access.
+  // Deprecated: Migrated to TAB_GROUP_REMOVED instead. Current user left or
+  // lost access.
   COLLABORATION_REMOVED,
 };
 
@@ -73,13 +74,18 @@ enum class InstantNotificationType {
 //   org.chromium.components.collaboration.messaging)
 enum class PersistentNotificationType {
   UNDEFINED,
-  // A chip displayed for a specific tab.
+  // A chip displayed for a specific tab. Only used in desktop.
   CHIP,
   // A marker that a tab has been changed and the user has not seen it yet.
   DIRTY_TAB,
-  // A marker that something in the tab group has changed and the user has not
-  // seen it yet.
+  // A marker that one or more tabs in the tab group has changed and the user
+  // has not seen it yet.
   DIRTY_TAB_GROUP,
+  // A marker that an entity (tab or tab group) has been deleted and the user
+  // has not seen it yet.
+  TOMBSTONED,
+  // The message was an instant message.
+  INSTANT_MESSAGE,
 };
 
 // Metadata about the tab group a message is attributed to.
@@ -124,6 +130,10 @@ struct TabMessageMetadata {
   // In the case where the tab is no longer available, this contains the last
   // known title (or empty string if unknown).
   std::optional<std::string> last_known_title;
+
+  // URL of the tab before the last navigation. Only populated for the tab
+  // update events.
+  std::optional<std::string> previous_url;
 };
 
 // A list of attribution data for a message, which can be used to associate it
@@ -134,8 +144,9 @@ struct MessageAttribution {
   MessageAttribution(const MessageAttribution& other);
   ~MessageAttribution();
 
-  // TODO(nyquist): Maybe make collaboration, tab, group, and affected users
-  // vectors.
+  // The id of this message. Non-empty if there is a corresponding entry in the
+  // database, empty for synthetic messages.
+  std::optional<base::Uuid> id;
 
   // The collaboration this message is associated with (if any).
   data_sharing::GroupId collaboration_id;
@@ -147,17 +158,33 @@ struct MessageAttribution {
   std::optional<TabMessageMetadata> tab_metadata;
 
   // The user the related action applies to (if any).
+  // This is the added or removed user for
+  // CollaborationEvent::COLLABORATION_MEMBER_ADDED and
+  // CollaborationEvent::COLLABORATION_MEMBER_REMOVED, otherwise std::nullopt.
   std::optional<data_sharing::GroupMember> affected_user;
 
+  // Whether the affected user is same as the currently signed in user.
+  bool affected_user_is_self = false;
+
   // The user who performed the related action and caused the message (if any).
+  // This is not set for CollaborationEvent::COLLABORATION_MEMBER_ADDED and
+  // CollaborationEvent::COLLABORATION_MEMBER_REMOVED since we do not have a way
+  // to know how the change was triggered.
   std::optional<data_sharing::GroupMember> triggering_user;
+
+  // Whether the triggering user is same as the currently signed in user.
+  bool triggering_user_is_self = false;
 };
 
 // An instant notification that the UI to show something to the user
-// immediately.
+// immediately. Depending on the type of message, it might represent
+// a single event or multiple events of similar type aggregated as a single
+// message.
 struct InstantMessage {
  public:
-  MessageAttribution attribution;
+  InstantMessage();
+  InstantMessage(const InstantMessage& other);
+  ~InstantMessage();
 
   // The collaboration event associated with the message.
   CollaborationEvent collaboration_event;
@@ -167,6 +194,14 @@ struct InstantMessage {
 
   // The type of instant notification to show.
   InstantNotificationType type;
+
+  // The message content to be shown in the UI.
+  std::u16string localized_message;
+
+  // The list of message attributions for the messages that it represents.
+  // For single message case, the size is 1. For aggregated message case, it
+  // will be greater than 1.
+  std::vector<MessageAttribution> attributions;
 };
 
 // A persistent notification that requires an ongoing UI affordance until
@@ -181,6 +216,10 @@ struct PersistentMessage {
   // The type of persistent notification to show.
   PersistentNotificationType type;
 };
+
+// Helper method to query whether the message represents a non-aggregated
+// message.
+bool IsSingleMessage(const InstantMessage& message);
 
 }  // namespace collaboration::messaging
 

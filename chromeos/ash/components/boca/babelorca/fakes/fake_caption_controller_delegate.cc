@@ -12,7 +12,9 @@
 #include "chromeos/ash/components/boca/babelorca/caption_controller.h"
 #include "components/live_caption/caption_bubble_context.h"
 #include "components/live_caption/caption_bubble_controller.h"
+#include "components/live_caption/caption_bubble_settings.h"
 #include "components/live_caption/views/caption_bubble_model.h"
+#include "components/live_caption/views/translation_view_wrapper_base.h"
 #include "components/prefs/pref_service.h"
 #include "media/mojo/mojom/speech_recognition.mojom.h"
 #include "media/mojo/mojom/speech_recognition_result.h"
@@ -31,13 +33,17 @@ class FakeCaptionBubbleController : public captions::CaptionBubbleController {
     delegate_->SetCaptionBubbleDestroyed();
   }
 
-  bool OnTranscription(captions::CaptionBubbleContext*,
+  bool OnTranscription(content::WebContents*,
+                       captions::CaptionBubbleContext*,
                        const media::SpeechRecognitionResult& result) override {
     return delegate_->AddTranscription(result);
   }
 
-  void OnAudioStreamEnd(captions::CaptionBubbleContext*) override {
-    delegate_->OnAudioStreamEnd();
+  void OnLanguageIdentificationEvent(
+      content::WebContents*,
+      captions::CaptionBubbleContext*,
+      const media::mojom::LanguageIdentificationEventPtr&) override {
+    delegate_->OnLanguageIdentificationEvent();
   }
 
   void UpdateCaptionStyle(std::optional<ui::CaptionStyle> style) override {
@@ -53,9 +59,8 @@ class FakeCaptionBubbleController : public captions::CaptionBubbleController {
   bool IsGenericErrorMessageVisibleForTesting() override { return false; }
   std::string GetBubbleLabelTextForTesting() override { return std::string(); }
   void CloseActiveModelForTesting() override {}
-  void OnLanguageIdentificationEvent(
-      captions::CaptionBubbleContext*,
-      const media::mojom::LanguageIdentificationEventPtr&) override {}
+  void OnAudioStreamEnd(content::WebContents*,
+                        captions::CaptionBubbleContext*) override {}
 
  private:
   raw_ptr<FakeCaptionControllerDelegate> delegate_;
@@ -68,8 +73,9 @@ FakeCaptionControllerDelegate::~FakeCaptionControllerDelegate() = default;
 
 std::unique_ptr<captions::CaptionBubbleController>
 FakeCaptionControllerDelegate::CreateCaptionBubbleController(
-    PrefService*,
-    const std::string&) {
+    captions::CaptionBubbleSettings*,
+    const std::string&,
+    std::unique_ptr<captions::TranslationViewWrapperBase>) {
   caption_bubble_alive_ = true;
   ++create_bubble_controller_count_;
   return std::make_unique<FakeCaptionBubbleController>(this);
@@ -94,8 +100,8 @@ FakeCaptionControllerDelegate::GetCaptionStyleObserver() {
   return style_observer_;
 }
 
-size_t FakeCaptionControllerDelegate::GetOnAudioStreamEndCount() {
-  return audio_stream_end_count_;
+size_t FakeCaptionControllerDelegate::GetOnLanguageIdentificationEventCount() {
+  return language_identification_event_count_;
 }
 
 const std::vector<std::optional<ui::CaptionStyle>>&
@@ -118,8 +124,8 @@ void FakeCaptionControllerDelegate::SetOnTranscriptionSuccess(bool success) {
   on_transcritption_success_ = success;
 }
 
-void FakeCaptionControllerDelegate::OnAudioStreamEnd() {
-  ++audio_stream_end_count_;
+void FakeCaptionControllerDelegate::OnLanguageIdentificationEvent() {
+  ++language_identification_event_count_;
 }
 
 void FakeCaptionControllerDelegate::AddStyleUpdate(

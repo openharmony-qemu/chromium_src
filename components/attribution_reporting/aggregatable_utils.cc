@@ -34,12 +34,7 @@ std::vector<NullAggregatableReport> GetNullAggregatableReportsForLookback(
     }
 
     if (generate_func(i)) {
-#if defined(__clang__) && (__clang_major__ < 17)
-      NullAggregatableReport report{fake_source_time};
-      reports.emplace_back(report);
-#else
       reports.emplace_back(fake_source_time);
-#endif
     }
   }
   return reports;
@@ -58,7 +53,7 @@ std::vector<NullAggregatableReport> GetNullAggregatableReports(
     std::optional<base::Time> attributed_source_time,
     GenerateNullAggregatableReportFunc generate_func) {
   // See spec
-  // https://wicg.github.io/attribution-reporting-api/#generate-null-reports.
+  // https://wicg.github.io/attribution-reporting-api/#generate-null-attribution-reports.
   mojom::SourceRegistrationTimeConfig source_registration_time_config =
       config.source_registration_time_config();
 

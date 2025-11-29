@@ -10,13 +10,6 @@ source_set("blink") {
     "web_gesture_curve_impl.h",
   ]
 
-  if (is_ohos) {
-    sources += [
-      "../fling_spring_curve_ohos.h",
-      "../fling_spring_curve_ohos.cc",
-    ]
-  }
-
   if (is_castos) {
     defines = [ "USE_MOBILE_FLING_CURVE" ]
   }

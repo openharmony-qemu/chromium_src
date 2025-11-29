@@ -4,6 +4,8 @@
 
 #include <stddef.h>
 
+#include <optional>
+
 #include "build/build_config.h"
 #include "content/browser/renderer_host/render_frame_host_impl.h"
 #include "content/browser/web_contents/web_contents_impl.h"
@@ -12,6 +14,7 @@
 #include "content/public/test/browser_test_utils.h"
 #include "content/public/test/content_browser_test.h"
 #include "content/public/test/content_browser_test_utils.h"
+#include "content/public/test/scoped_accessibility_mode_override.h"
 #include "content/shell/browser/shell.h"
 #include "ui/accessibility/ax_common.h"
 #include "ui/accessibility/ax_node.h"
@@ -45,8 +48,7 @@ class AccessibilityIpcErrorBrowserTest : public ContentBrowserTest {
 
 // Failed on Android x86 in crbug.com/1123641.
 // Do not test on AX_FAIL_FAST_BUILDS, where the BAD IPC will simply assert.
-#if (BUILDFLAG(IS_ANDROID) && defined(ARCH_CPU_X86)) || \
-    defined(AX_FAIL_FAST_BUILD)
+#if (BUILDFLAG(IS_ANDROID) && defined(ARCH_CPU_X86)) || AX_FAIL_FAST_BUILD()
 #define MAYBE_UnrecoverableAccessibilityErrorDisallowReenabling \
   DISABLED_UnrecoverableAccessibilityErrorDisallowReenabling
 #else
@@ -74,13 +76,12 @@ IN_PROC_BROWSER_TEST_F(
   frame->set_no_create_browser_accessibility_manager_for_testing(true);
   ASSERT_EQ(nullptr, frame->GetOrCreateBrowserAccessibilityManager());
 
+  // Enable accessibility and wait for the first event.
+  std::optional<ScopedAccessibilityModeOverride> basic_mode;
   {
-    // Enable accessibility (passing ui::kAXModeComplete to
-    // AccessibilityNotificationWaiter does this automatically) and wait for
-    // the first event.
     AccessibilityNotificationWaiter waiter(shell()->web_contents(),
-                                           ui::kAXModeComplete,
                                            ax::mojom::Event::kLoadComplete);
+    basic_mode.emplace(ui::kAXModeBasic);
     ASSERT_TRUE(waiter.WaitForNotification());
   }
 
@@ -89,8 +90,7 @@ IN_PROC_BROWSER_TEST_F(
   ASSERT_EQ(nullptr, frame->GetOrCreateBrowserAccessibilityManager());
 
   // Verify the current mode.
-  EXPECT_EQ(ui::kAXModeComplete,
-            shell()->web_contents()->GetAccessibilityMode());
+  EXPECT_EQ(ui::kAXModeBasic, shell()->web_contents()->GetAccessibilityMode());
 
   // Now create a BrowserAccessibilityManager, simulating what would happen
   // if the RFH's view is created now - but then disallow recreating the
@@ -118,7 +118,7 @@ IN_PROC_BROWSER_TEST_F(
   content::WebContentsImpl* impl =
       static_cast<content::WebContentsImpl*>(shell()->web_contents());
   EXPECT_TRUE(impl->GetAccessibilityMode().is_mode_off());
-  impl->SetAccessibilityMode(ui::kAXModeComplete);
+  ScopedAccessibilityModeOverride override(impl, ui::kAXModeComplete);
   EXPECT_TRUE(impl->GetAccessibilityMode().is_mode_off());
 }
 

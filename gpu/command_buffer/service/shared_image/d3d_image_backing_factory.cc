@@ -171,8 +171,9 @@ constexpr SharedImageUsageSet kSupportedUsage =
     SHARED_IMAGE_USAGE_WEBGPU_SWAP_CHAIN_TEXTURE |
     SHARED_IMAGE_USAGE_HIGH_PERFORMANCE_GPU | SHARED_IMAGE_USAGE_CPU_UPLOAD |
     SHARED_IMAGE_USAGE_WEBGPU_STORAGE_TEXTURE |
-    SHARED_IMAGE_USAGE_RASTER_DELEGATED_COMPOSITING |
     SHARED_IMAGE_USAGE_WEBGPU_SHARED_BUFFER;
+
+const char* kD3DImageBackingLabel = "D3DImageBacking";
 
 }  // anonymous namespace
 
@@ -188,6 +189,16 @@ D3DImageBackingFactory::D3DImageBackingFactory(
       gl_format_caps_(gl_format_caps),
       use_update_subresource1_(UseUpdateSubresource1(workarounds)) {
   CHECK(angle_d3d11_device_);
+
+  UINT format_support;
+  HRESULT hr =
+      d3d11_device_->CheckFormatSupport(DXGI_FORMAT_NV12, &format_support);
+  constexpr auto kRequiredUsage = D3D11_FORMAT_SUPPORT_TEXTURE2D |
+                                  D3D11_FORMAT_SUPPORT_SHADER_SAMPLE |
+                                  D3D11_FORMAT_SUPPORT_RENDER_TARGET;
+  bool has_required_format_support =
+      (format_support & kRequiredUsage) == kRequiredUsage;
+  d3d11_supports_nv12_ = SUCCEEDED(hr) && has_required_format_support;
 }
 
 D3DImageBackingFactory::~D3DImageBackingFactory() = default;
@@ -209,15 +220,16 @@ D3DImageBackingFactory::SwapChainBackings::operator=(
 
 // static
 bool D3DImageBackingFactory::IsD3DSharedImageSupported(
+    ID3D11Device* d3d11_device,
     const GpuPreferences& gpu_preferences) {
   // Only supported for passthrough command decoder.
-  if (!gpu_preferences.use_passthrough_cmd_decoder ||
-      !gl::PassthroughCommandDecoderSupported()) {
+  if (!gpu_preferences.use_passthrough_cmd_decoder) {
     return false;
   }
 
-  // D3D11 device will be null if ANGLE is using the D3D9 backend.
-  if (!gl::QueryD3D11DeviceObjectFromANGLE()) {
+  // D3D11 device will be null if ANGLE is using the D3D9 backend or
+  // when we're running with Graphite on D3D12.
+  if (!d3d11_device) {
     return false;
   }
 
@@ -314,6 +326,8 @@ D3DImageBackingFactory::CreateSwapChain(const Mailbox& front_buffer_mailbox,
                << hr;
     return {nullptr, nullptr};
   }
+
+  gl::LabelSwapChainAndBuffers(swap_chain.Get(), kD3DImageBackingLabel);
 
   if (gl::DXGIWaitableSwapChainEnabled()) {
     Microsoft::WRL::ComPtr<IDXGISwapChain3> swap_chain3;
@@ -550,7 +564,10 @@ std::unique_ptr<SharedImageBacking> D3DImageBackingFactory::CreateSharedImage(
     // If this trips, it means we're claiming support for SCANOUT when DComp
     // textures is not supported by the system, or an incompatible texture was
     // created above.
-    CHECK(DCompTextureIsSupported(desc));
+    if (!DCompTextureIsSupported(desc)) {
+      LOG(ERROR) << "Composition texture not supported for scanout usage";
+      return nullptr;
+    }
 
     Microsoft::WRL::ComPtr<IDCompositionDevice3> dcomp_device =
         gl::GetDirectCompositionDevice();
@@ -604,6 +621,7 @@ std::unique_ptr<SharedImageBacking> D3DImageBackingFactory::CreateSharedImage(
     SkAlphaType alpha_type,
     SharedImageUsageSet usage,
     std::string debug_label,
+    bool is_thread_safe,
     gfx::GpuMemoryBufferHandle handle) {
   // Windows does not support external sampler.
   CHECK(!format.PrefersExternalSampler());
@@ -616,20 +634,24 @@ std::unique_ptr<SharedImageBacking> D3DImageBackingFactory::CreateSharedImage(
     return nullptr;
   }
 
-  if (handle.type != gfx::DXGI_SHARED_HANDLE || !handle.dxgi_handle.IsValid()) {
+  if (handle.type != gfx::DXGI_SHARED_HANDLE) {
     LOG(ERROR) << "Invalid handle with type: " << handle.type;
     return nullptr;
   }
 
-  if (!handle.dxgi_token.has_value()) {
-    LOG(ERROR) << "Missing token for DXGI handle";
+  gfx::DXGIHandle dxgi_handle = std::move(handle).dxgi_handle();
+  // This shouldn't happen as the GpuMemoryBufferHandle constructor that takes a
+  // DXGIHandle asserts the handle is valid. However, it is currently possible
+  // for code to set the type to DXGI_SHARED_HANDLE directly but never actually
+  // set the handle. Make this an eventual CHECK() but handle this gracefully
+  // for now just in case.
+  CHECK(dxgi_handle.IsValid(), base::NotFatalUntil::M138);
+  if (!dxgi_handle.IsValid()) {
     return nullptr;
   }
-
   scoped_refptr<DXGISharedHandleState> dxgi_shared_handle_state =
       dxgi_shared_handle_manager_->GetOrCreateSharedHandleState(
-          std::move(handle.dxgi_token.value()), std::move(handle.dxgi_handle),
-          d3d11_device_);
+          dxgi_handle.token(), dxgi_handle.TakeBufferHandle(), d3d11_device_);
   if (!dxgi_shared_handle_state) {
     LOG(ERROR) << "Failed to retrieve matching DXGI shared handle state";
     return nullptr;
@@ -904,6 +926,10 @@ bool D3DImageBackingFactory::IsSupported(SharedImageUsageSet usage,
   }
 
   if (format == viz::MultiPlaneFormat::kNV12) {
+    // Return early if d3d11 cannot support nv12 formats.
+    if (!d3d11_supports_nv12_) {
+      return false;
+    }
     // We know current size is within `max_nv12_size_supported_` and nv12
     // creation is supported for `max_nv12_size_supported_`.
     if (size.GetArea() <= max_nv12_size_supported_) {

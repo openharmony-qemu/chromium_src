@@ -1,6 +1,6 @@
 Package: libk5crypto3
 Source: krb5
-Version: 1.18.3-6+deb11u3
+Version: 1.18.3-6+deb11u5
 Architecture: i386
 Maintainer: Sam Hartman <hartmans@debian.org>
 Installed-Size: 307

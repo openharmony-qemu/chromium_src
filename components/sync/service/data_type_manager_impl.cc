@@ -58,7 +58,7 @@ ConfigureReason GetReasonForProgrammaticReconfigure(
              : ConfigureReason::CONFIGURE_REASON_PROGRAMMATIC;
 }
 
-// Divides |types| into sets by their priorities and return the sets from
+// Divides `types` into sets by their priorities and return the sets from
 // high priority to low priority.
 base::queue<DataTypeSet> PrioritizeTypes(const DataTypeSet& types) {
   // Control types are usually configured before all other types during
@@ -207,7 +207,9 @@ void DataTypeManagerImpl::Configure(DataTypeSet preferred_types,
     allowed_types.Put(type);
   }
 
-  ConfigureImpl(Intersection(preferred_types, allowed_types), context);
+  last_requested_context_ = context;
+  preferred_types_ = Intersection(preferred_types, allowed_types);
+  ConfigureImpl();
 }
 
 void DataTypeManagerImpl::DataTypePreconditionChanged(DataType type) {
@@ -260,18 +262,17 @@ void DataTypeManagerImpl::ResetDataTypeErrors() {
 
 void DataTypeManagerImpl::PurgeForMigration(DataTypeSet undesired_types) {
   CHECK(configurer_);
-  DataTypeSet remainder = Difference(preferred_types_, undesired_types);
+  preferred_types_ = Difference(preferred_types_, undesired_types);
   last_requested_context_.reason = CONFIGURE_REASON_MIGRATION;
-  ConfigureImpl(remainder, last_requested_context_);
+  ConfigureImpl();
 }
 
-void DataTypeManagerImpl::ConfigureImpl(DataTypeSet preferred_types,
-                                        const ConfigureContext& context) {
+void DataTypeManagerImpl::ConfigureImpl() {
   CHECK(configurer_);
-  CHECK_NE(context.reason, CONFIGURE_REASON_UNKNOWN);
+  CHECK_NE(last_requested_context_.reason, CONFIGURE_REASON_UNKNOWN);
 
-  DVLOG(1) << "Configuring for " << DataTypeSetToDebugString(preferred_types)
-           << " with reason " << context.reason;
+  DVLOG(1) << "Configuring for " << DataTypeSetToDebugString(preferred_types_)
+           << " with reason " << last_requested_context_.reason;
   if (state_ == STOPPING) {
     // You can not set a configuration while stopping.
     LOG(ERROR) << "Configuration set while stopping.";
@@ -279,13 +280,11 @@ void DataTypeManagerImpl::ConfigureImpl(DataTypeSet preferred_types,
   }
 
   if (state_ != STOPPED) {
-    DCHECK_EQ(context.authenticated_account_id,
-              last_requested_context_.authenticated_account_id);
-    DCHECK_EQ(context.cache_guid, last_requested_context_.cache_guid);
+    DCHECK_EQ(last_requested_context_.authenticated_gaia_id,
+              last_requested_context_.authenticated_gaia_id);
+    DCHECK_EQ(last_requested_context_.cache_guid,
+              last_requested_context_.cache_guid);
   }
-
-  preferred_types_ = preferred_types;
-  last_requested_context_ = context;
 
   // Only proceed if we're in a steady state or retrying.
   switch (state_) {
@@ -331,7 +330,7 @@ void DataTypeManagerImpl::ConnectDataTypes() {
     CHECK_EQ(dtc->state(), DataTypeController::RUNNING);
 
     if (activation_response->skip_engine_connection) {
-      // |skip_engine_connection| means ConnectDataType() shouldn't be invoked
+      // `skip_engine_connection` means ConnectDataType() shouldn't be invoked
       // because the datatype has some alternative way to sync changes to the
       // server, without relying on this instance of the sync engine. This is
       // currently possible for PASSWORDS on Android.
@@ -454,8 +453,7 @@ void DataTypeManagerImpl::GetAllNodesForDebugging(
         controllers_.at(type);
 
     // An active type's controller must be RUNNING.
-    CHECK_EQ(controller->state(), DataTypeController::RUNNING,
-             base::NotFatalUntil::M134)
+    CHECK_EQ(controller->state(), DataTypeController::RUNNING)
         << " actual=" << DataTypeController::StateToString(controller->state())
         << " for " << DataTypeToDebugString(type);
 
@@ -486,7 +484,7 @@ void DataTypeManagerImpl::Restart() {
   // restarts.
   if (reason == CONFIGURE_REASON_RECONFIGURATION ||
       reason == CONFIGURE_REASON_NEW_CLIENT ||
-      reason == CONFIGURE_REASON_NEWLY_ENABLED_DATA_TYPE) {
+      reason == CONFIGURE_REASON_EXISTING_CLIENT_RESTART) {
     for (DataType type : preferred_types_) {
       UMA_HISTOGRAM_ENUMERATION("Sync.ConfigureDataTypes",
                                 DataTypeHistogramValue(type));
@@ -567,9 +565,9 @@ void DataTypeManagerImpl::OnAllDataTypesReadyForConfigure() {
     ProcessReconfigure();
     return;
   }
-  // TODO(pavely): By now some of datatypes in |configuration_types_queue_|
+  // TODO(pavely): By now some of datatypes in `configuration_types_queue_`
   // could have failed loading and should be excluded from configuration. I need
-  // to adjust |configuration_types_queue_| for such types.
+  // to adjust `configuration_types_queue_` for such types.
   ConnectDataTypes();
 
   StartNextConfiguration();
@@ -630,7 +628,7 @@ void DataTypeManagerImpl::ProcessReconfigure() {
 
   // An attempt was made to reconfigure while we were already configuring.
   // This can be because a passphrase was accepted or the user changed the
-  // set of desired types. Either way, |preferred_types_| will contain the most
+  // set of desired types. Either way, `preferred_types_` will contain the most
   // recent set of desired types, so we just call configure.
   // Note: we do this whether or not GetControllersNeedingStart is true,
   // because we may need to stop datatypes.
@@ -643,7 +641,7 @@ void DataTypeManagerImpl::ProcessReconfigure() {
   // types may be reset before the purging was performed.
   state_ = RETRYING;
   needs_reconfigure_ = false;
-  ConfigureImpl(preferred_types_, last_requested_context_);
+  ConfigureImpl();
 }
 
 void DataTypeManagerImpl::ConfigurationCompleted(
@@ -651,7 +649,7 @@ void DataTypeManagerImpl::ConfigurationCompleted(
     DataTypeSet failed_configuration_types) {
   DCHECK_EQ(CONFIGURING, state_);
 
-  // |succeeded_configuration_types| are the types that were actually downloaded
+  // `succeeded_configuration_types` are the types that were actually downloaded
   // just now (i.e. initial sync was just completed for them).
   downloaded_types_.PutAll(succeeded_configuration_types);
 
@@ -716,7 +714,7 @@ DataTypeManagerImpl::PrepareConfigureParams() {
 
   // All types to download are expected to be protocol types (proxy types should
   // have skipped full activation via
-  // |DataTypeActivationResponse::skip_engine_connection|).
+  // `DataTypeActivationResponse::skip_engine_connection`).
   DCHECK(ProtocolTypes().HasAll(types_to_download));
 
   // Assume that disabled types are not downloaded anymore - if they get
@@ -786,10 +784,8 @@ void DataTypeManagerImpl::Stop(SyncStopMetadataFate metadata_fate) {
   model_load_manager_.Stop(metadata_fate);
 
   // Individual data type controllers might still be STOPPING, but we don't
-  // reflect that in |state_| because, for all practical matters, the manager is
+  // reflect that in `state_` because, for all practical matters, the manager is
   // in a ready state and reconfguration can be triggered.
-  // TODO(mastiz): Reconsider waiting in STOPPING state until all datatypes have
-  // stopped.
   state_ = STOPPED;
 
   // If any configuration was still ongoing or pending, it's obsolete now.
@@ -810,7 +806,8 @@ void DataTypeManagerImpl::NotifyDone(ConfigureStatus status) {
   base::TimeDelta configure_time = base::Time::Now() - last_restart_time_;
 
   ConfigureResult result = {.status = status,
-                            .requested_types = preferred_types_};
+                            .requested_types = preferred_types_,
+                            .sync_mode = last_requested_context_.sync_mode};
 
   const std::string prefix_uma =
       (last_requested_context_.reason == CONFIGURE_REASON_NEW_CLIENT)
@@ -898,14 +895,16 @@ DataTypeSet DataTypeManagerImpl::GetActiveProxyDataTypes() const {
 
 void DataTypeManagerImpl::GetTypesWithUnsyncedData(
     DataTypeSet requested_types,
-    base::OnceCallback<void(DataTypeSet)> callback) const {
+    base::OnceCallback<void(absl::flat_hash_map<DataType, size_t>)> callback)
+    const {
   // NIGORI currently isn't supported, because its controller isn't managed by
   // DataTypeManager. If needed, support could be added via SyncEngine.
   CHECK(!requested_types.Has(NIGORI));
 
   if (requested_types.empty()) {
     base::SequencedTaskRunner::GetCurrentDefault()->PostTask(
-        FROM_HERE, base::BindOnce(std::move(callback), DataTypeSet()));
+        FROM_HERE, base::BindOnce(std::move(callback),
+                                  absl::flat_hash_map<DataType, size_t>()));
     return;
   }
 
@@ -915,13 +914,14 @@ void DataTypeManagerImpl::GetTypesWithUnsyncedData(
   for (DataType type : requested_types) {
     auto it = controllers_.find(type);
     if (it == controllers_.end()) {
-      // This should be rare, but can happen e.g. if a requested type is
-      // disabled via feature flag.
+      // This can happen if the requested data type is not supported on the
+      // current platform, or in some rare cases, for example, if the requested
+      // data type is disabled via feature flag.
       helper->OnReceivedResultForType(type, /*has_unsynced_data=*/false);
       continue;
     }
     DataTypeController* controller = it->second.get();
-    controller->HasUnsyncedData(base::BindOnce(
+    controller->GetUnsyncedDataCount(base::BindOnce(
         &GetTypesWithUnsyncedDataRequestBarrier::OnReceivedResultForType,
         helper, type));
   }
@@ -960,7 +960,7 @@ void DataTypeManagerImpl::TriggerLocalDataMigration(DataTypeSet types) {
   }
 }
 
-void DataTypeManagerImpl::TriggerLocalDataMigration(
+void DataTypeManagerImpl::TriggerLocalDataMigrationForItems(
     std::map<DataType, std::vector<syncer::LocalDataItemModel::DataId>> items) {
   DataTypeSet supported_types = base::Intersection(
       GetDataTypesWithLocalDataBatchUploader(), GetActiveDataTypes());
@@ -975,7 +975,7 @@ void DataTypeManagerImpl::TriggerLocalDataMigration(
   for (auto& [type, item_list] : items) {
     controllers_.at(type)
         ->GetLocalDataBatchUploader()
-        ->TriggerLocalDataMigration(std::move(item_list));
+        ->TriggerLocalDataMigrationForItems(std::move(item_list));
   }
 }
 

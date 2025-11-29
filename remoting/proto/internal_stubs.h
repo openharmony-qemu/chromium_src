@@ -8,8 +8,10 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 
 #include "remoting/proto/logging_service.h"
+#include "remoting/proto/remote_support_service.h"
 #include "remoting/proto/session_authz_service.h"
 #include "third_party/protobuf/src/google/protobuf/message_lite.h"
 
@@ -22,13 +24,9 @@ namespace remoting::internal {
 class DoNothingProto : public google::protobuf::MessageLite {
  public:
   // google::protobuf::MessageLite
-  std::string GetTypeName() const override;
-  MessageLite* New(google::protobuf::Arena* arena) const override;
+  const google::protobuf::internal::ClassData* GetClassData() const override;
   void Clear() override;
-  bool IsInitialized() const override;
-  void CheckTypeAndMergeFrom(const MessageLite& other) override;
   size_t ByteSizeLong() const override;
-  int GetCachedSize() const override;
   uint8_t* _InternalSerialize(
       uint8_t* ptr,
       google::protobuf::io::EpsCopyOutputStream* stream) const override;
@@ -89,9 +87,12 @@ GetUpdateRemoteAccessHostRequest(const std::string& directory_id,
 // SessionAuthzService helpers
 // ===========================
 
+extern std::string_view GetRemoteAccessSessionAuthzPath();
+extern std::string_view GetRemoteSupportSessionAuthzPath();
+
 // GenerateHostToken
 using GenerateHostTokenRequest = DoNothingProto;
-extern std::string GetGenerateHostTokenRequestPath();
+extern std::string_view GetGenerateHostTokenRequestVerb();
 extern std::unique_ptr<GenerateHostTokenRequest> GetGenerateHostTokenRequest(
     const GenerateHostTokenRequestStruct&);
 
@@ -101,7 +102,7 @@ GetGenerateHostTokenResponseStruct(const GenerateHostTokenResponse&);
 
 // VerifySessionToken
 using VerifySessionTokenRequest = DoNothingProto;
-extern std::string GetVerifySessionTokenRequestPath();
+extern std::string_view GetVerifySessionTokenRequestVerb();
 extern std::unique_ptr<VerifySessionTokenRequest> GetVerifySessionTokenRequest(
     const VerifySessionTokenRequestStruct&);
 
@@ -111,7 +112,7 @@ GetVerifySessionTokenResponseStruct(const VerifySessionTokenResponse&);
 
 // ReauthorizeHost
 using ReauthorizeHostRequest = DoNothingProto;
-extern std::string GetReauthorizeHostRequestPath();
+extern std::string_view GetReauthorizeHostRequestVerb();
 extern std::unique_ptr<ReauthorizeHostRequest> GetReauthorizeHostRequest(
     const ReauthorizeHostRequestStruct&);
 
@@ -123,12 +124,25 @@ GetReauthorizeHostResponseStruct(const ReauthorizeHostResponse&);
 // LoggingService helpers
 // ======================
 
+extern std::string_view GetRemoteAccessLoggingPath();
+extern std::string_view GetRemoteSupportLoggingPath();
+
 // ReportSessionDisconnected
+extern std::string_view GetReportSessionDisconnectedRequestVerb();
 using ReportSessionDisconnectedRequest = DoNothingProto;
-extern std::string GetReportSessionDisconnectedRequestPath();
 extern std::unique_ptr<ReportSessionDisconnectedRequest>
 GetReportSessionDisconnectedRequest(
     const ReportSessionDisconnectedRequestStruct&);
+
+// ============================
+// RemoteSupportService helpers
+// ============================
+
+using RemoteSupportHost = DoNothingProto;
+extern std::string_view GetCreateRemoteSupportHostRequestPath();
+extern std::unique_ptr<RemoteSupportHost> GetRemoteSupportHost(
+    const RemoteSupportHostStruct& request_struct);
+extern std::string_view GetSupportId(const RemoteSupportHost&);
 
 }  // namespace remoting::internal
 

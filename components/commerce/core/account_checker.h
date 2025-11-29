@@ -9,7 +9,6 @@
 
 #include "base/memory/scoped_refptr.h"
 #include "components/endpoint_fetcher/endpoint_fetcher.h"
-#include "components/search_engines/template_url_service.h"
 #include "components/signin/public/identity_manager/identity_manager.h"
 #include "components/sync/base/data_type.h"
 #include "components/sync/base/user_selectable_type.h"
@@ -38,21 +37,17 @@ class AccountChecker {
 
   virtual bool IsSignedIn();
 
-  // Returns whether bookmarks is currently syncing. This will return true in
-  // cases where sync is still initializing, but the sync feature itself is
-  // enabled.
-  virtual bool IsSyncingBookmarks();
-
   // Check whether a specific sync entity is enabled by the user. This means
   // the user has chosen to sync the provided model type and does not
   // necessarily mean sync is active.
   virtual bool IsSyncTypeEnabled(syncer::UserSelectableType type);
 
+  // Check whether sync is available for the user.
+  virtual bool IsSyncAvailable();
+
   virtual bool IsAnonymizedUrlDataCollectionEnabled();
 
   virtual bool IsSubjectToParentalControls();
-
-  virtual bool IsDefaultSearchEngineGoogle();
 
   // Whether a user is allowed to use model execution features.
   virtual bool CanUseModelExecutionFeatures();
@@ -76,22 +71,21 @@ class AccountChecker {
       PrefService* pref_service,
       signin::IdentityManager* identity_manager,
       syncer::SyncService* sync_service,
-      scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory,
-      TemplateURLService* template_url_service);
+      scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory);
 
   // Fetch users' pref from server on whether to receive price tracking emails.
   void FetchPriceEmailPref();
 
   // This method could be overridden in tests.
-  virtual std::unique_ptr<EndpointFetcher> CreateEndpointFetcher(
-      const std::string& oauth_consumer_name,
-      const GURL& url,
-      const std::string& http_method,
-      const std::string& content_type,
-      const std::vector<std::string>& scopes,
-      const base::TimeDelta& timeout,
-      const std::string& post_data,
-      const net::NetworkTrafficAnnotationTag& annotation_tag);
+  virtual std::unique_ptr<endpoint_fetcher::EndpointFetcher>
+  CreateEndpointFetcher(const std::string& oauth_consumer_name,
+                        const GURL& url,
+                        const std::string& http_method,
+                        const std::string& content_type,
+                        const std::vector<std::string>& scopes,
+                        const base::TimeDelta& timeout,
+                        const std::string& post_data,
+                        const net::NetworkTrafficAnnotationTag& annotation_tag);
 
  private:
   // Called when the pref value on whether to receive price tracking emails
@@ -104,8 +98,8 @@ class AccountChecker {
       // lifetime extends to the callback and is not destroyed
       // prematurely (which would result in cancellation of the request).
       // TODO(crbug.com/40238190): Avoid passing this fetcher.
-      std::unique_ptr<EndpointFetcher> endpoint_fetcher,
-      std::unique_ptr<EndpointResponse> responses);
+      std::unique_ptr<endpoint_fetcher::EndpointFetcher> endpoint_fetcher,
+      std::unique_ptr<endpoint_fetcher::EndpointResponse> responses);
 
   void OnSendPriceEmailPrefJsonParsed(
       data_decoder::DataDecoder::ValueOrError result);
@@ -115,8 +109,8 @@ class AccountChecker {
       // lifetime extends to the callback and is not destroyed
       // prematurely (which would result in cancellation of the request).
       // TODO(crbug.com/40238190): Avoid passing this fetcher.
-      std::unique_ptr<EndpointFetcher> endpoint_fetcher,
-      std::unique_ptr<EndpointResponse> responses);
+      std::unique_ptr<endpoint_fetcher::EndpointFetcher> endpoint_fetcher,
+      std::unique_ptr<endpoint_fetcher::EndpointResponse> responses);
 
   void OnFetchPriceEmailPrefJsonParsed(
       data_decoder::DataDecoder::ValueOrError result);
@@ -132,8 +126,6 @@ class AccountChecker {
   raw_ptr<syncer::SyncService> sync_service_;
 
   const scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory_;
-
-  raw_ptr<TemplateURLService> template_url_service_;
 
   std::unique_ptr<PrefChangeRegistrar> pref_change_registrar_;
 

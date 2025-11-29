@@ -92,8 +92,8 @@ std::ostream& operator<<(std::ostream& os, WebappInstallSource source) {
       return os << "oobe app recommendations";
     case WebappInstallSource::WEB_INSTALL:
       return os << "web install";
-    case WebappInstallSource::COUNT:
-      return os << "count";
+    case WebappInstallSource::CHROMEOS_HELP_APP:
+      return os << "chromeos help app";
   }
 }
 
@@ -184,8 +184,7 @@ bool IsUserUninstall(WebappUninstallSource source) {
 // static
 void InstallableMetrics::TrackInstallEvent(WebappInstallSource source) {
   DCHECK(IsReportableInstallSource(source));
-  base::UmaHistogramEnumeration("Webapp.Install.InstallEvent", source,
-                                WebappInstallSource::COUNT);
+  base::UmaHistogramEnumeration("Webapp.Install.InstallEvent", source);
 }
 
 // static
@@ -220,6 +219,7 @@ bool InstallableMetrics::IsReportableInstallSource(WebappInstallSource source) {
     case WebappInstallSource::WEBAPK_RESTORE:
     case WebappInstallSource::OOBE_APP_RECOMMENDATIONS:
     case WebappInstallSource::WEB_INSTALL:
+    case WebappInstallSource::CHROMEOS_HELP_APP:
       return true;
     case WebappInstallSource::IWA_GRAPHICAL_INSTALLER:
     case WebappInstallSource::IWA_DEV_UI:
@@ -229,9 +229,6 @@ bool InstallableMetrics::IsReportableInstallSource(WebappInstallSource source) {
     case WebappInstallSource::MANAGEMENT_API:
     case WebappInstallSource::SUB_APP:
     case WebappInstallSource::SYNC:
-      return false;
-    case WebappInstallSource::COUNT:
-      NOTREACHED_IN_MIGRATION();
       return false;
   }
 }
@@ -255,7 +252,7 @@ void InstallableMetrics::TrackInstallResult(bool result,
   if (IsReportableInstallSource(source)) {
     base::UmaHistogramEnumeration(result ? "WebApp.Install.Source.Success"
                                          : "WebApp.Install.Source.Failure",
-                                  source, WebappInstallSource::COUNT);
+                                  source);
   }
 }
 }  // namespace webapps

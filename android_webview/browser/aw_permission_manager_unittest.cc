@@ -14,6 +14,7 @@
 #include "base/functional/callback_helpers.h"
 #include "base/memory/raw_ptr.h"
 #include "content/public/browser/permission_controller.h"
+#include "content/public/browser/permission_descriptor_util.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/blink/public/common/permissions/permission_utils.h"
 #include "url/gurl.h"
@@ -233,8 +234,10 @@ class AwPermissionManagerTest : public testing::Test {
     CHECK(manager);
     manager->RequestPermissions(
         rfh,
-        content::PermissionRequestDescription(permissions, user_gesture,
-                                              requesting_origin),
+        content::PermissionRequestDescription(
+            content::PermissionDescriptorUtil::
+                CreatePermissionDescriptorForPermissionTypes(permissions),
+            user_gesture, requesting_origin),
         std::move(callback));
   }
 
@@ -261,6 +264,17 @@ TEST_F(AwPermissionManagerTest, MIDIPermissionIsGrantedSynchronously) {
 TEST_F(AwPermissionManagerTest, ClipboardPermissionIsGrantedSynchronously) {
   RequestPermissions(
       {PermissionType::CLIPBOARD_SANITIZED_WRITE}, render_frame_host,
+      GURL(kRequestingOrigin1), true,
+      base::BindOnce(&AwPermissionManagerTest::PermissionRequestResponse,
+                     base::Unretained(this), 0));
+  ASSERT_EQ(1u, resolved_permission_status.size());
+  EXPECT_EQ(PermissionStatus::GRANTED, resolved_permission_status[0]);
+}
+
+TEST_F(AwPermissionManagerTest,
+       LocalNetworkAccessPermissionIsGrantedSynchronously) {
+  RequestPermissions(
+      {PermissionType::LOCAL_NETWORK_ACCESS}, render_frame_host,
       GURL(kRequestingOrigin1), true,
       base::BindOnce(&AwPermissionManagerTest::PermissionRequestResponse,
                      base::Unretained(this), 0));

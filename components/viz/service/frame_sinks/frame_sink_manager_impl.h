@@ -64,7 +64,6 @@ class GmbVideoFramePoolContextProvider;
 class HintSessionFactory;
 class InputManager;
 class OutputSurfaceProvider;
-class SharedBitmapManager;
 class SharedImageInterfaceProvider;
 struct VideoCaptureTarget;
 
@@ -81,16 +80,13 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
       public HitTestDataProvider {
  public:
   struct VIZ_SERVICE_EXPORT InitParams {
-    InitParams();
     explicit InitParams(
-        SharedBitmapManager* shared_bitmap_manager,
         OutputSurfaceProvider* output_surface_provider = nullptr,
         GmbVideoFramePoolContextProvider* gmb_context_provider = nullptr);
     InitParams(InitParams&& other);
     ~InitParams();
     InitParams& operator=(InitParams&& other);
 
-    raw_ptr<SharedBitmapManager> shared_bitmap_manager = nullptr;
     std::optional<uint32_t> activation_deadline_in_frames =
         kDefaultActivationDeadlineInFrames;
     raw_ptr<OutputSurfaceProvider> output_surface_provider = nullptr;
@@ -190,10 +186,13 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
       override;
   void EnableFrameSinkManagerTestApi(
       mojo::PendingReceiver<mojom::FrameSinkManagerTestApi> receiver) override;
-  void SetupRenderInputRouterDelegateConnection(
-      uint32_t grouping_id,
-      mojo::PendingRemote<input::mojom::RenderInputRouterDelegateClient>
-          rir_delegate_client_remote) override;
+  void SetupRendererInputRouterDelegateRegistry(
+      mojo::PendingReceiver<mojom::RendererInputRouterDelegateRegistry>
+          receiver) override;
+  void NotifyRendererBlockStateChanged(
+      bool blocked,
+      const std::vector<FrameSinkId>& render_input_routers) override;
+  void RequestInputBack() override;
 
   // mojom::FrameSinksMetricsTracker implementation:
   void StartFrameCounting(base::TimeTicks start_time,
@@ -210,6 +209,12 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
   void SetSameDocNavigationScreenshotSize(
       const gfx::Size& result_size,
       SetSameDocNavigationScreenshotSizeCallback callback) override;
+  void GetForceEnableZoomState(
+      const FrameSinkId& frame_sink_id,
+      GetForceEnableZoomStateCallback callback) override;
+  void WaitForSurfaceAnimationManager(
+      const FrameSinkId& frame_sink_id,
+      WaitForSurfaceAnimationManagerCallback callback) override;
 
   void DestroyFrameSinkBundle(const FrameSinkBundleId& id);
 
@@ -260,9 +265,6 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
 
   SurfaceManager* surface_manager() { return &surface_manager_; }
   const HitTestManager* hit_test_manager() { return &hit_test_manager_; }
-  SharedBitmapManager* shared_bitmap_manager() {
-    return shared_bitmap_manager_;
-  }
 
   virtual InputManager* GetInputManager();  // virtual for testing.
 
@@ -290,6 +292,12 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
   void DidFinishFrame(const FrameSinkId& frame_sink_id,
                       const BeginFrameArgs& args);
 
+  void OnFrameSinkDeviceScaleFactorChanged(const FrameSinkId& frame_sink_id,
+                                           float device_scale_factor);
+
+  void OnFrameSinkMobileOptimizedChanged(const FrameSinkId& frame_sink_id,
+                                         bool is_mobile_optimized);
+
   void AddObserver(FrameSinkObserver* obs);
   void RemoveObserver(FrameSinkObserver* obs);
 
@@ -301,9 +309,12 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
   // oldest embedding. To be called by non-root CompositorFrameSinks only.
   FrameSinkId GetOldestParentByChildFrameId(
       const FrameSinkId& child_frame_sink_id) const;
+  int GetNumParents(const FrameSinkId& frame_sink_id) const;
   // Returns the oldest RootCompositorFrameSink's FrameSinkId associated with
   // `child_frame_sink_id`, since all frame production/input processing uses
   // the oldest embedding.
+  // In case `child_frame_sink_id` is not attached to a RootCompositorFrameSink
+  // FrameSink(0,0) is returned.
   FrameSinkId GetOldestRootCompositorFrameSinkId(
       const FrameSinkId& child_frame_sink_id) const;
 
@@ -384,9 +395,12 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
 
   void RequestBeginFrameForGpuService(bool toggle);
 
+  GpuServiceImpl* GetGpuService();
+
  private:
   friend class FrameSinkManagerTest;
   friend class CompositorFrameSinkSupportTestBase;
+  friend class FlingSchedulerTest;
 
   // Metadata for a CompositorFrameSink.
   struct FrameSinkData {
@@ -466,10 +480,6 @@ class VIZ_SERVICE_EXPORT FrameSinkManagerImpl
   // `display_hit_test_query_` when `InputOnViz` flag is enabled.
   void MaybeEraseHitTestQuery(const FrameSinkId& frame_sink_id);
   void MaybeAddHitTestQuery(const FrameSinkId& frame_sink_id);
-
-  // SharedBitmapManager for the viz display service for receiving software
-  // resources in CompositorFrameSinks.
-  const raw_ptr<SharedBitmapManager> shared_bitmap_manager_;
 
   // Provides an output surface for CreateRootCompositorFrameSink().
   const raw_ptr<OutputSurfaceProvider> output_surface_provider_;

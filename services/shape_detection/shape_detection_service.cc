@@ -33,8 +33,6 @@
 #include "services/shape_detection/face_detection_provider_mac.h"
 #elif BUILDFLAG(IS_ANDROID)
 // No C++ code, face detection comes from Java.
-#elif BUILDFLAG(IS_OHOS)
-#include "services/shape_detection/face_detection_provider_ohos.h"
 #else
 #include "services/shape_detection/face_detection_provider_impl.h"
 #endif
@@ -73,8 +71,6 @@ void ShapeDetectionService::BindFaceDetectionProvider(
   FaceDetectionProviderMac::Create(std::move(receiver));
 #elif BUILDFLAG(IS_WIN)
   FaceDetectionProviderWin::Create(std::move(receiver));
-#elif BUILDFLAG(IS_OHOS)
-  FaceDetectionProviderOhos::Create(std::move(receiver));
 #else
   FaceDetectionProviderImpl::Create(std::move(receiver));
 #endif

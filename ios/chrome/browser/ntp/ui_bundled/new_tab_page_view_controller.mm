@@ -12,29 +12,29 @@
 #import "base/feature_list.h"
 #import "base/ios/block_types.h"
 #import "base/task/sequenced_task_runner.h"
-#import "ios/chrome/browser/overscroll_actions/ui_bundled/overscroll_actions_controller.h"
-#import "ios/chrome/browser/shared/model/utils/first_run_util.h"
-#import "ios/chrome/browser/shared/public/commands/help_commands.h"
-#import "ios/chrome/browser/shared/public/features/features.h"
-#import "ios/chrome/browser/shared/ui/util/uikit_ui_util.h"
-#import "ios/chrome/browser/ui/content_suggestions/cells/content_suggestions_cells_constants.h"
-#import "ios/chrome/browser/ui/content_suggestions/content_suggestions_collection_utils.h"
-#import "ios/chrome/browser/ui/content_suggestions/content_suggestions_view_controller.h"
-#import "ios/chrome/browser/ui/content_suggestions/magic_stack/magic_stack_collection_view.h"
-#import "ios/chrome/browser/ui/content_suggestions/magic_stack/magic_stack_constants.h"
-#import "ios/chrome/browser/ui/content_suggestions/ntp_home_constant.h"
+#import "ios/chrome/browser/content_suggestions/ui_bundled/cells/content_suggestions_cells_constants.h"
+#import "ios/chrome/browser/content_suggestions/ui_bundled/content_suggestions_collection_utils.h"
+#import "ios/chrome/browser/content_suggestions/ui_bundled/content_suggestions_view_controller.h"
+#import "ios/chrome/browser/content_suggestions/ui_bundled/magic_stack/magic_stack_collection_view.h"
+#import "ios/chrome/browser/content_suggestions/ui_bundled/magic_stack/magic_stack_constants.h"
+#import "ios/chrome/browser/content_suggestions/ui_bundled/ntp_home_constant.h"
+#import "ios/chrome/browser/ntp/shared/metrics/feed_metrics_constants.h"
+#import "ios/chrome/browser/ntp/shared/metrics/feed_metrics_recorder.h"
 #import "ios/chrome/browser/ntp/ui_bundled/discover_feed_constants.h"
 #import "ios/chrome/browser/ntp/ui_bundled/feed_header_view_controller.h"
 #import "ios/chrome/browser/ntp/ui_bundled/feed_wrapper_view_controller.h"
-#import "ios/chrome/browser/ntp/shared/metrics/feed_metrics_constants.h"
-#import "ios/chrome/browser/ntp/shared/metrics/feed_metrics_recorder.h"
 #import "ios/chrome/browser/ntp/ui_bundled/new_tab_page_constants.h"
 #import "ios/chrome/browser/ntp/ui_bundled/new_tab_page_content_delegate.h"
 #import "ios/chrome/browser/ntp/ui_bundled/new_tab_page_feature.h"
 #import "ios/chrome/browser/ntp/ui_bundled/new_tab_page_header_constants.h"
 #import "ios/chrome/browser/ntp/ui_bundled/new_tab_page_header_view_controller.h"
 #import "ios/chrome/browser/ntp/ui_bundled/new_tab_page_mutator.h"
-#import "ios/chrome/browser/ui/toolbar/public/toolbar_utils.h"
+#import "ios/chrome/browser/overscroll_actions/ui_bundled/overscroll_actions_controller.h"
+#import "ios/chrome/browser/shared/model/utils/first_run_util.h"
+#import "ios/chrome/browser/shared/public/commands/help_commands.h"
+#import "ios/chrome/browser/shared/public/features/features.h"
+#import "ios/chrome/browser/shared/ui/util/uikit_ui_util.h"
+#import "ios/chrome/browser/toolbar/ui_bundled/public/toolbar_utils.h"
 #import "ios/chrome/common/material_timing.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
 #import "ios/chrome/common/ui/elements/gradient_view.h"
@@ -43,6 +43,7 @@
 #import "ui/base/device_form_factor.h"
 
 namespace {
+
 // Animation time for the shift up/down animations to focus/defocus omnibox.
 const CGFloat kShiftTilesUpAnimationDuration = 0.1;
 // The minimum height of the feed container.
@@ -50,6 +51,14 @@ const CGFloat kFeedContainerMinimumHeight = 1000;
 // Added height to the feed container so that it doesn't end abruptly on
 // overscroll.
 const CGFloat kFeedContainerExtraHeight = 500;
+
+// Vertical spacing between modules.
+CGFloat SpaceBetweenModules() {
+  return GetDeprecateFeedHeaderParameterValueAsDouble(
+      kDeprecateFeedHeaderParameterSpaceBetweenModules,
+      /*default_value=*/14);
+}
+
 }  // namespace
 
 @interface NewTabPageViewController () <UICollectionViewDelegate,
@@ -58,12 +67,6 @@ const CGFloat kFeedContainerExtraHeight = 500;
 // The overscroll actions controller managing accelerators over the toolbar.
 @property(nonatomic, strong)
     OverscrollActionsController* overscrollActionsController;
-
-// Whether or not the user has scrolled into the feed, transferring ownership of
-// the omnibox to allow it to stick to the top of the NTP.
-// With Web Channels enabled, also determines if the feed header is stuck to the
-// top.
-@property(nonatomic, assign, getter=isScrolledIntoFeed) BOOL scrolledIntoFeed;
 
 // Whether or not the fake omnibox is pinned to the top of the NTP. Redefined
 // to make readwrite.
@@ -170,6 +173,10 @@ const CGFloat kFeedContainerExtraHeight = 500;
   UILayoutGuide* _moduleLayoutGuide;
   // Constraint controlling the width of modules on the NTP.
   NSLayoutConstraint* _moduleWidth;
+  // The current background image.
+  UIImage* _backgroundImage;
+  // The image view to display the current background image.
+  UIImageView* _backgroundImageView;
 }
 
 // Properties synthesized from NewTabPageConsumer.
@@ -218,6 +225,15 @@ const CGFloat kFeedContainerExtraHeight = 500;
   [self updateModularHomeBackgroundColorForUserInterfaceStyle:
             self.traitCollection.userInterfaceStyle];
   self.view.backgroundColor = [UIColor colorNamed:@"ntp_background_color"];
+
+  if (IsNTPBackgroundCustomizationEnabled()) {
+    _backgroundImageView = [[UIImageView alloc] init];
+    _backgroundImageView.translatesAutoresizingMaskIntoConstraints = NO;
+    _backgroundImageView.contentMode = UIViewContentModeScaleAspectFill;
+    [self updateBackgroundImageView];
+    [self.view addSubview:_backgroundImageView];
+    AddSameConstraints(_backgroundImageView, self.view);
+  }
 
   [self registerNotifications];
 
@@ -294,10 +310,17 @@ const CGFloat kFeedContainerExtraHeight = 500;
     [self setMinimumHeight];
   }
 
+  if (self.feedVisible &&
+      GetFeedSwipeIPHVariation() == FeedSwipeIPHVariation::kStaticInSecondRun &&
+      !IsFirstRun()) {
+    [self.helpHandler
+        presentInProductHelpWithType:InProductHelpType::kFeedSwipe];
+  }
+
   [self.helpHandler
       presentInProductHelpWithType:InProductHelpType::kDiscoverFeedMenu];
 
-  if (IsHomeCustomizationEnabled() && !IsFirstRunRecent(base::Days(3))) {
+  if (!IsFirstRunRecent(base::Days(3))) {
     [self.helpHandler
         presentInProductHelpWithType:InProductHelpType::kHomeCustomizationMenu];
   }
@@ -485,12 +508,11 @@ const CGFloat kFeedContainerExtraHeight = 500;
     [self addViewControllerAboveFeed:self.feedHeaderViewController];
   }
 
-  if (!IsHomeCustomizationEnabled() || self.magicStackVisible) {
+  if (self.magicStackVisible) {
     [self addViewControllerAboveFeed:self.magicStackCollectionView];
   }
 
-  if (!ShouldPutMostVisitedSitesInMagicStack() &&
-      (!IsHomeCustomizationEnabled() || self.mostVisitedVisible)) {
+  if (self.mostVisitedVisible) {
     [self addViewControllerAboveFeed:self.contentSuggestionsViewController];
   }
 
@@ -513,11 +535,7 @@ const CGFloat kFeedContainerExtraHeight = 500;
   self.collectionView.clipsToBounds = NO;
 
   [self.overscrollActionsController invalidate];
-
-  // Only re-configure `overscrollActionsController`.
-  if (self.overscrollActionsController) {
-    [self configureOverscrollActionsController];
-  }
+  [self configureOverscrollActionsController];
 
   // Update NTP collection view constraints to ensure the layout adapts to
   // changes in feed visibility.
@@ -535,7 +553,7 @@ const CGFloat kFeedContainerExtraHeight = 500;
     [self setMinimumHeight];
   }
 
-  [self updateAccessibilityElements];
+  [self updateAccessibilityElementsForSwitchControl];
 }
 
 - (void)willUpdateSnapshot {
@@ -571,6 +589,9 @@ const CGFloat kFeedContainerExtraHeight = 500;
     // visually keep the same scroll position, but don't allow an offset that
     // is lower than the top.
     [self setContentOffset:MAX(oldOffset - change, -newHeightAboveFeed)];
+    if (!self.feedVisible) {
+      [self setMinimumHeight];
+    }
   }
 }
 
@@ -582,10 +603,7 @@ const CGFloat kFeedContainerExtraHeight = 500;
 
   [self removeFromViewHierarchy:self.feedWrapperViewController];
   [self removeFromViewHierarchy:self.magicStackCollectionView];
-  if (!ShouldPutMostVisitedSitesInMagicStack()) {
-    [self removeFromViewHierarchy:self.contentSuggestionsViewController];
-  }
-
+  [self removeFromViewHierarchy:self.contentSuggestionsViewController];
   for (UIViewController* viewController in self.viewControllersAboveFeed) {
     [self removeFromViewHierarchy:viewController];
   }
@@ -632,19 +650,10 @@ const CGFloat kFeedContainerExtraHeight = 500;
 
     // If the current view controller represents a module, account for the
     // vertical spacing between modules.
-    if (IsHomeCustomizationEnabled() &&
-        (viewController == self.magicStackCollectionView ||
-         viewController == self.contentSuggestionsViewController ||
-         viewController == self.feedHeaderViewController)) {
-      heightAboveFeed += kSpaceBetweenModules;
-    }
-  }
-  if (!IsHomeCustomizationEnabled()) {
-    if (self.feedHeaderViewController) {
-      heightAboveFeed += kBottomMagicStackPadding;
-    }
-    if (!self.contentSuggestionsViewController) {
-      heightAboveFeed += content_suggestions::HeaderBottomPadding();
+    if (viewController == self.magicStackCollectionView ||
+        viewController == self.contentSuggestionsViewController ||
+        viewController == self.feedHeaderViewController) {
+      heightAboveFeed += SpaceBetweenModules();
     }
   }
   return heightAboveFeed;
@@ -786,6 +795,12 @@ const CGFloat kFeedContainerExtraHeight = 500;
   }
 }
 
+- (void)setBackgroundImage:(UIImage*)backgroundImage {
+  _backgroundImage = backgroundImage;
+
+  [self updateBackgroundImageView];
+}
+
 #pragma mark - UIScrollViewDelegate
 
 - (void)scrollViewDidScroll:(UIScrollView*)scrollView {
@@ -824,10 +839,6 @@ const CGFloat kFeedContainerExtraHeight = 500;
     return;
   }
 
-  if (!self.overscrollActionsController) {
-    [self configureOverscrollActionsController];
-  }
-
   // User has interacted with the surface, so it is safe to assume that a saved
   // scroll position can now be overriden.
   self.hasSavedOffsetFromPreviousScrollState = NO;
@@ -861,6 +872,7 @@ const CGFloat kFeedContainerExtraHeight = 500;
   if (self.feedVisible) {
     [self.feedMetricsRecorder recordFeedScrolled:scrollView.contentOffset.y -
                                                  self.scrollStartPosition];
+    [self.NTPContentDelegate feedDidScroll];
   }
 }
 
@@ -962,11 +974,11 @@ const CGFloat kFeedContainerExtraHeight = 500;
       // wait for it to finish to focus the omnibox.
       __weak __typeof(self) weakSelf = self;
       [UIView animateWithDuration:kMaterialDuration6
-          animations:^{
-            weakSelf.collectionView.contentOffset =
-                CGPoint(0, pinnedOffsetBeforeAnimation);
-            [weakSelf resetFakeOmniboxConstraints];
-          }];
+                       animations:^{
+                         weakSelf.collectionView.contentOffset =
+                             CGPoint(0, pinnedOffsetBeforeAnimation);
+                         [weakSelf resetFakeOmniboxConstraints];
+                       }];
     }
     [self.headerViewController
         completeHeaderFakeOmniboxFocusAnimationWithFinalPosition:
@@ -1209,40 +1221,21 @@ const CGFloat kFeedContainerExtraHeight = 500;
 - (void)setInitialFakeOmniboxConstraints {
   [NSLayoutConstraint deactivateConstraints:self.fakeOmniboxConstraints];
 
-  if (IsHomeCustomizationEnabled()) {
-    // If all modules are disabled, the fake omnibox doesn't need additional
-    // constraints.
-    if ([self.viewControllersAboveFeed lastObject] ==
-        self.headerViewController) {
-      self.fakeOmniboxConstraints = @[];
-    } else {
-      // Otherwise, anchor the header to the module below it.
-      NSInteger headerIndex = [self.viewControllersAboveFeed
-          indexOfObject:self.headerViewController];
-      UIView* viewBelowHeader =
-          [self.viewControllersAboveFeed objectAtIndex:(headerIndex + 1)].view;
-      self.fakeOmniboxConstraints = @[
-        [viewBelowHeader.topAnchor
-            constraintEqualToAnchor:self.headerViewController.view.bottomAnchor
-                           constant:kSpaceBetweenModules],
-      ];
-    }
+  // If all modules are disabled, the fake omnibox doesn't need additional
+  // constraints.
+  if ([self.viewControllersAboveFeed lastObject] == self.headerViewController) {
+    self.fakeOmniboxConstraints = @[];
   } else {
-    if (self.contentSuggestionsViewController) {
-      self.fakeOmniboxConstraints = @[
-        [self.contentSuggestionsViewController.view.topAnchor
-            constraintEqualToAnchor:self.headerViewController.view
-                                        .bottomAnchor],
-      ];
-    } else {
-      // If `contentSuggestionsViewController` is nil, that means MVTs are in
-      // the Magic Stack.
-      self.fakeOmniboxConstraints = @[
-        [self.magicStackCollectionView.view.topAnchor
-            constraintEqualToAnchor:self.headerViewController.view.bottomAnchor
-                           constant:content_suggestions::HeaderBottomPadding()],
-      ];
-    }
+    // Otherwise, anchor the header to the module below it.
+    NSInteger headerIndex =
+        [self.viewControllersAboveFeed indexOfObject:self.headerViewController];
+    UIView* viewBelowHeader =
+        [self.viewControllersAboveFeed objectAtIndex:(headerIndex + 1)].view;
+    self.fakeOmniboxConstraints = @[
+      [viewBelowHeader.topAnchor
+          constraintEqualToAnchor:self.headerViewController.view.bottomAnchor
+                         constant:SpaceBetweenModules()],
+    ];
   }
   [NSLayoutConstraint activateConstraints:self.fakeOmniboxConstraints];
 }
@@ -1329,7 +1322,7 @@ const CGFloat kFeedContainerExtraHeight = 500;
 // includes the fake omnibox and if Web Channels is enabled, the feed header. If
 // `force` is YES, the sticky elements will always be set based on the scroll
 // position. If `force` is NO, the sticky elements will only based on
-// `isScrolledIntoFeed` to prevent pinning them multiple times.
+// `isFakeboxPinned` to prevent pinning them multiple times.
 - (void)handleStickyElementsForScrollPosition:(CGFloat)scrollPosition
                                         force:(BOOL)force {
   // Handles the sticky omnibox. Does not stick for iPads.
@@ -1353,6 +1346,10 @@ const CGFloat kFeedContainerExtraHeight = 500;
   [center addObserver:self
              selector:@selector(deviceOrientationDidChange)
                  name:UIDeviceOrientationDidChangeNotification
+               object:nil];
+  [center addObserver:self
+             selector:@selector(updateAccessibilityElementsForSwitchControl)
+                 name:UIAccessibilitySwitchControlStatusDidChangeNotification
                object:nil];
 }
 
@@ -1402,23 +1399,6 @@ const CGFloat kFeedContainerExtraHeight = 500;
       [self.feedHeaderViewController.view.widthAnchor
           constraintEqualToAnchor:self.moduleLayoutGuide.widthAnchor],
     ]];
-    if (!IsHomeCustomizationEnabled()) {
-      // If Feed top section is enabled, the header bottom anchor should be set
-      // to its top anchor instead of the feed collection's top anchor.
-      UIView* bottomView = self.collectionView;
-      if (self.feedTopSectionViewController) {
-        bottomView = self.feedTopSectionViewController.view;
-      }
-      [NSLayoutConstraint activateConstraints:@[
-        [self.feedHeaderViewController.view.topAnchor
-            constraintEqualToAnchor:self.magicStackCollectionView.view
-                                        .bottomAnchor
-                           constant:kBottomMagicStackPadding],
-        [bottomView.topAnchor
-            constraintEqualToAnchor:self.feedHeaderViewController.view
-                                        .bottomAnchor],
-      ]];
-    }
     if (self.feedTopSectionViewController) {
       [NSLayoutConstraint activateConstraints:@[
         [self.feedTopSectionViewController.view.centerXAnchor
@@ -1433,22 +1413,12 @@ const CGFloat kFeedContainerExtraHeight = 500;
                                         .bottomAnchor],
       ]];
     }
-  } else {
-    if (!IsHomeCustomizationEnabled()) {
-      [NSLayoutConstraint activateConstraints:@[
-        [self.collectionView.topAnchor
-            constraintEqualToAnchor:self.magicStackCollectionView.view
-                                        .bottomAnchor],
-      ]];
-    }
   }
-  if (IsHomeCustomizationEnabled()) {
-    UIView* lastView = [self.viewControllersAboveFeed lastObject].view;
-    [NSLayoutConstraint activateConstraints:@[
-      [self.collectionView.topAnchor
-          constraintEqualToAnchor:lastView.bottomAnchor],
-    ]];
-  }
+  UIView* lastView = [self.viewControllersAboveFeed lastObject].view;
+  [NSLayoutConstraint activateConstraints:@[
+    [self.collectionView.topAnchor
+        constraintEqualToAnchor:lastView.bottomAnchor],
+  ]];
 
   if (_feedContainer) {
     [NSLayoutConstraint activateConstraints:@[
@@ -1468,8 +1438,7 @@ const CGFloat kFeedContainerExtraHeight = 500;
     [[self containerView].safeAreaLayoutGuide.trailingAnchor
         constraintEqualToAnchor:self.headerViewController.view.trailingAnchor],
   ]];
-  if (self.contentSuggestionsViewController &&
-      (!IsHomeCustomizationEnabled() || self.mostVisitedVisible)) {
+  if (self.mostVisitedVisible) {
     [NSLayoutConstraint activateConstraints:@[
       [self.contentSuggestionsViewController.view.leadingAnchor
           constraintEqualToAnchor:self.moduleLayoutGuide.leadingAnchor],
@@ -1477,7 +1446,7 @@ const CGFloat kFeedContainerExtraHeight = 500;
           constraintEqualToAnchor:self.moduleLayoutGuide.trailingAnchor],
     ]];
   }
-  if (!IsHomeCustomizationEnabled() || self.magicStackVisible) {
+  if (self.magicStackVisible) {
     [NSLayoutConstraint activateConstraints:@[
       [self.magicStackCollectionView.view.leadingAnchor
           constraintEqualToAnchor:self.moduleLayoutGuide.leadingAnchor],
@@ -1485,20 +1454,10 @@ const CGFloat kFeedContainerExtraHeight = 500;
           constraintEqualToAnchor:self.moduleLayoutGuide.trailingAnchor],
     ]];
   }
-  if (!ShouldPutMostVisitedSitesInMagicStack()) {
-    if (!IsHomeCustomizationEnabled()) {
-      [NSLayoutConstraint activateConstraints:@[
-        [self.magicStackCollectionView.view.topAnchor
-            constraintEqualToAnchor:self.contentSuggestionsViewController.view
-                                        .bottomAnchor],
-      ]];
-    }
-  }
 
   // Anchor each module except the one directly below the header, since it will
   // dynamically update its top anchor when the fake omnibox is pinned.
-  if (IsHomeCustomizationEnabled() &&
-      [self.viewControllersAboveFeed lastObject] != self.headerViewController) {
+  if ([self.viewControllersAboveFeed lastObject] != self.headerViewController) {
     // Start with the bottom module's index, which is either the feed header if
     // enabled, or the last object of the module array if not.
     NSUInteger startIndex =
@@ -1516,7 +1475,7 @@ const CGFloat kFeedContainerExtraHeight = 500;
       UIView* viewAbove = self.viewControllersAboveFeed[index - 1].view;
       [NSLayoutConstraint activateConstraints:@[
         [view.topAnchor constraintEqualToAnchor:viewAbove.bottomAnchor
-                                       constant:kSpaceBetweenModules],
+                                       constant:SpaceBetweenModules()],
       ]];
     }
   }
@@ -1568,16 +1527,23 @@ const CGFloat kFeedContainerExtraHeight = 500;
   }
 }
 
-// Updates the accessibilityElements used by VoiceOver / Switch Control to
-// iterate through on-screen elements. The feed collectionView does not seem to
-// include non-feed items in its `accessibilityElements` so they are added here.
-- (void)updateAccessibilityElements {
+// The default behavior of Switch Control does not iterate through elements
+// added to the collection view by default; manually setting
+// `accessibilityElements` for these elements to be recognized by Switch
+// Control.
+- (void)updateAccessibilityElementsForSwitchControl {
+  if (!UIAccessibilityIsSwitchControlRunning()) {
+    // Reset to `nil` after switch control has been turned off. Other a11y
+    // features can handle the iteration correctly.
+    self.containerView.accessibilityElements = nil;
+    return;
+  }
   NSMutableArray* elements = [[NSMutableArray alloc] init];
   for (UIViewController* viewController in self.viewControllersAboveFeed) {
     [elements addObject:viewController.view];
   }
   [elements addObject:self.collectionView];
-  self.view.accessibilityElements = elements;
+  self.containerView.accessibilityElements = elements;
 }
 
 // Calculate the scroll position that should be saved in the NTP state and
@@ -1640,11 +1606,13 @@ const CGFloat kFeedContainerExtraHeight = 500;
   }
 }
 
-#pragma mark - Helpers
-
-- (UIViewController*)contentSuggestionsViewController {
-  return _contentSuggestionsViewController;
+// Updates the background image view's state based on the current data.
+- (void)updateBackgroundImageView {
+  _backgroundImageView.image = _backgroundImage;
+  _backgroundImageView.hidden = !_backgroundImage;
 }
+
+#pragma mark - Helpers
 
 - (CGFloat)minimumNTPHeight {
   CGFloat collectionViewHeight = self.collectionView.bounds.size.height;
@@ -1664,7 +1632,8 @@ const CGFloat kFeedContainerExtraHeight = 500;
       // Add in half of the margin between the fakebox and the rest of the
       // content suggestions, to ensure there is enough height to fully
       // finish the fakebox to omnibox transition.
-      minimumHeight += content_suggestions::HeaderBottomPadding() / 2;
+      minimumHeight +=
+          content_suggestions::HeaderBottomPadding(self.traitCollection) / 2;
     }
   }
 
@@ -1720,33 +1689,29 @@ const CGFloat kFeedContainerExtraHeight = 500;
   // self.feedWrapperViewController.view ->
   // self.feedWrapperViewController.feedViewController.view ->
   // self.collectionView -> self.contentSuggestionsViewController.view.
-  if (self.contentSuggestionsViewController) {
-    if (![self.collectionView.subviews
-            containsObject:self.contentSuggestionsViewController.view]) {
-      // Remove child VC from old parent.
+  if (![self.collectionView.subviews
+          containsObject:self.contentSuggestionsViewController.view]) {
+    // Remove child VC from old parent.
+    [self.contentSuggestionsViewController willMoveToParentViewController:nil];
+    [self.contentSuggestionsViewController removeFromParentViewController];
+    [self.contentSuggestionsViewController.view removeFromSuperview];
+    [self.contentSuggestionsViewController didMoveToParentViewController:nil];
+
+    if (self.mostVisitedVisible) {
+      // Add child VC to new parent.
       [self.contentSuggestionsViewController
-          willMoveToParentViewController:nil];
-      [self.contentSuggestionsViewController removeFromParentViewController];
-      [self.contentSuggestionsViewController.view removeFromSuperview];
-      [self.contentSuggestionsViewController didMoveToParentViewController:nil];
-
-      if (!IsHomeCustomizationEnabled() || self.mostVisitedVisible) {
-        // Add child VC to new parent.
-        [self.contentSuggestionsViewController
-            willMoveToParentViewController:self.feedWrapperViewController
-                                               .feedViewController];
-        [self.feedWrapperViewController.feedViewController
-            addChildViewController:self.contentSuggestionsViewController];
-        [self.collectionView
-            addSubview:self.contentSuggestionsViewController.view];
-        [self.contentSuggestionsViewController
-            didMoveToParentViewController:self.feedWrapperViewController
-                                              .feedViewController];
-
-        [self.feedMetricsRecorder
-            recordBrokenNTPHierarchy:BrokenNTPHierarchyRelationship::
-                                         kContentSuggestionsParent];
-      }
+          willMoveToParentViewController:self.feedWrapperViewController
+                                             .feedViewController];
+      [self.feedWrapperViewController.feedViewController
+          addChildViewController:self.contentSuggestionsViewController];
+      [self.collectionView
+          addSubview:self.contentSuggestionsViewController.view];
+      [self.contentSuggestionsViewController
+          didMoveToParentViewController:self.feedWrapperViewController
+                                            .feedViewController];
+      [self.feedMetricsRecorder
+          recordBrokenNTPHierarchy:BrokenNTPHierarchyRelationship::
+                                       kContentSuggestionsParent];
     }
   }
 
@@ -1754,7 +1719,6 @@ const CGFloat kFeedContainerExtraHeight = 500;
              isSubviewOf:self.collectionView
       withRelationshipID:BrokenNTPHierarchyRelationship::
                              kContentSuggestionsHeaderParent];
-
   [self ensureView:self.feedHeaderViewController.view
              isSubviewOf:self.collectionView
       withRelationshipID:BrokenNTPHierarchyRelationship::kFeedHeaderParent];
@@ -1884,13 +1848,6 @@ const CGFloat kFeedContainerExtraHeight = 500;
 
 #pragma mark - Setters
 
-// Sets whether or not the NTP is scrolled into the feed and notifies the
-// content suggestions layout to avoid it changing the omnibox frame when this
-// view controls its position.
-- (void)setIsScrolledIntoFeed:(BOOL)scrolledIntoFeed {
-  _scrolledIntoFeed = scrolledIntoFeed;
-}
-
 // Sets the y content offset of the NTP collection view.
 - (void)setContentOffset:(CGFloat)offset {
   UICollectionView* collectionView = self.collectionView;
@@ -1904,7 +1861,6 @@ const CGFloat kFeedContainerExtraHeight = 500;
     offset = MIN(maxOffset, offset);
   }
   collectionView.contentOffset = CGPointMake(0, offset);
-  self.scrolledIntoFeed = offset > [self offsetWhenScrolledIntoFeed];
   [self handleStickyElementsForScrollPosition:offset force:YES];
   [self updateScrollPositionToSave];
 }

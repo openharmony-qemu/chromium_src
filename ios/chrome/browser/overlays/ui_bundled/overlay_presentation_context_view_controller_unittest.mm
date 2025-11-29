@@ -19,8 +19,8 @@
 #import "ios/web/public/test/web_task_environment.h"
 #import "testing/platform_test.h"
 
-using base::test::ios::WaitUntilConditionOrTimeout;
 using base::test::ios::kWaitForUIElementTimeout;
+using base::test::ios::WaitUntilConditionOrTimeout;
 
 namespace {
 // The frame of resizable presened overlay UI.
@@ -87,13 +87,6 @@ TEST_F(OverlayPresentationContextViewControllerTest, NoPresentedUI) {
 // showing overlay UI presented over its context.
 TEST_F(OverlayPresentationContextViewControllerTest,
        PresentedOverCurrentContext) {
-  if (@available(iOS 15.7.1, *)) {
-    if (@available(iOS 15.7.2, *)) {
-    } else {
-      // TODO(crbug.com/40254110): Failing on a few 15.7.1 devices.
-      return;
-    }
-  }
   // Create a fake overlay coordinator that presents its UI over
   // `view_controller_`.
   std::unique_ptr<OverlayRequest> request =
@@ -146,13 +139,6 @@ TEST_F(OverlayPresentationContextViewControllerTest,
 // container view if it is shown using custom UIViewController presentation that
 // resizes the contianer view.
 TEST_F(OverlayPresentationContextViewControllerTest, ResizingPresentedOverlay) {
-  if (@available(iOS 15.7.1, *)) {
-    if (@available(iOS 15.7.2, *)) {
-    } else {
-      // TODO(crbug.com/40254110): Failing on a few 15.7.1 devices.
-      return;
-    }
-  }
   // Create a fake overlay coordinator that presents its UI over
   // `view_controller_` and resizes its presentation container view to
   // kWindowFrame.

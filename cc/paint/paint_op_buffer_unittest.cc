@@ -3540,6 +3540,39 @@ TEST(PaintOpBufferTest, PaintRecordShaderSerialization) {
                   PaintOpEq<DrawRectOp>(SkRect::MakeXYWH(1, 2, 3, 4), flags))));
 }
 
+TEST(PaintOpBufferTest, SkSLCommandShaderSerialization) {
+  static constexpr char kCommand[] =
+      "half4 main(float2 coord) { return half4(0.5); }";
+
+  PaintFlags flags;
+  std::vector<PaintShader::FloatUniform> scalar_uniforms = {
+      {.name = SkString("u_scalar"), .value = 42.f}};
+  std::vector<PaintShader::Float2Uniform> float2_uniforms = {
+      {.name = SkString("u_vec2"), .value = SkV2{42.f, 21.f}}};
+  std::vector<PaintShader::Float4Uniform> float4_uniforms = {
+      {.name = SkString("u_vec4"), .value = SkV4{42.f, 21.f, 10.f, 5.f}}};
+  std::vector<PaintShader::IntUniform> int_uniforms = {
+      {.name = SkString("u_int"), .value = 2}};
+
+  auto paint_shader = PaintShader::MakeSkSLCommand(
+      kCommand, std::move(scalar_uniforms), std::move(float2_uniforms),
+      std::move(float4_uniforms), std::move(int_uniforms), nullptr);
+  flags.setShader(paint_shader);
+
+  auto other_paint_shader =
+      PaintShader::MakeSkSLCommand(kCommand, {}, {}, {}, {}, paint_shader);
+
+  EXPECT_TRUE(
+      paint_shader->MatchingCachedRuntimeEffectForTesting(*other_paint_shader));
+
+  PaintOpBuffer buffer;
+  buffer.push<DrawRectOp>(SkRect::MakeXYWH(1, 2, 3, 4), flags);
+
+  EXPECT_THAT(SerializeAndDeserialize(buffer),
+              Pointee(ElementsAre(
+                  PaintOpEq<DrawRectOp>(SkRect::MakeXYWH(1, 2, 3, 4), flags))));
+}
+
 #if BUILDFLAG(SKIA_SUPPORT_SKOTTIE)
 TEST(PaintOpBufferTest, BoundingRect_DrawSkottieOp) {
   PaintOpBuffer buffer;
@@ -3906,7 +3939,7 @@ TEST(PaintOpBufferTest, RecordShadersCached) {
   }
 
   // Hold onto records so PaintShader pointer comparisons are valid.
-  sk_sp<PaintOpBuffer> buffers[5];
+  std::array<sk_sp<PaintOpBuffer>, 5> buffers;
   SkPicture* last_shader = nullptr;
   std::vector<uint8_t> scratch_buffer;
   PaintOp::DeserializeOptions deserialize_options{

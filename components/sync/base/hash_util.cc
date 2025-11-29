@@ -4,12 +4,13 @@
 
 #include "components/sync/base/hash_util.h"
 
-#include "base/notreached.h"
+#include "base/logging.h"
 #include "base/strings/strcat.h"
 #include "base/strings/string_number_conversions.h"
 #include "components/sync/base/data_type.h"
 #include "components/sync/protocol/autofill_offer_specifics.pb.h"
 #include "components/sync/protocol/autofill_specifics.pb.h"
+#include "components/sync/protocol/autofill_valuable_specifics.pb.h"
 
 namespace syncer {
 
@@ -31,14 +32,20 @@ std::string GetUnhashedClientTagFromAutofillWalletSpecifics(
           {"payment_instrument:",
            base::NumberToString(
                specifics.payment_instrument().instrument_id())});
-    // TODO(crbug.com/374767814): Implement
-    // GetUnhashedClientTagFromAutofillWalletSpecifics for Payment Instrument
-    // Creation Option.
     case sync_pb::AutofillWalletSpecifics::PAYMENT_INSTRUMENT_CREATION_OPTION:
+      // Append a string to the ID since the ID is randomly generated without
+      // restrictions so it could be a duplicate ID of another type.
+      return base::StrCat(
+          {"payment_instrument_creation_option:",
+           specifics.payment_instrument_creation_option().id()});
     case sync_pb::AutofillWalletSpecifics::MASKED_IBAN:
       return std::string();
     case sync_pb::AutofillWalletSpecifics::UNKNOWN:
-      NOTREACHED();
+      DVLOG(1) << "New or unknown Autofill Wallet Specifics type is sent from "
+                  "the sync server side while not handled by Chrome. This is "
+                  "expected when the new type is not yet supported on current "
+                  "chrome version.";
+      return std::string();
   }
   return std::string();
 }
@@ -46,6 +53,11 @@ std::string GetUnhashedClientTagFromAutofillWalletSpecifics(
 std::string GetUnhashedClientTagFromAutofillOfferSpecifics(
     const sync_pb::AutofillOfferSpecifics& specifics) {
   return base::NumberToString(specifics.id());
+}
+
+std::string GetUnhashedClientTagFromAutofillValuableSpecifics(
+    const sync_pb::AutofillValuableSpecifics& specifics) {
+  return specifics.id();
 }
 
 }  // namespace syncer

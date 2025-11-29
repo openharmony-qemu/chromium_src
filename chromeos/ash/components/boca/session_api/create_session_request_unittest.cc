@@ -19,6 +19,7 @@
 #include "google_apis/common/dummy_auth_service.h"
 #include "google_apis/common/request_sender.h"
 #include "google_apis/common/test_util.h"
+#include "google_apis/gaia/gaia_id.h"
 #include "google_apis/gaia/gaia_urls.h"
 #include "google_apis/gaia/gaia_urls_overrider_for_testing.h"
 #include "net/test/embedded_test_server/embedded_test_server.h"
@@ -149,7 +150,7 @@ TEST_F(SessionApiRequestsTest, CreateSessionWithFullInputAndSucceed) {
 
   std::unique_ptr<CreateSessionRequest> request =
       std::make_unique<CreateSessionRequest>(
-          request_sender(), teacher, session_duration,
+          request_sender(), "https://test", teacher, session_duration,
           ::boca::Session::SessionState::Session_SessionState_ACTIVE,
           future.GetCallback());
 
@@ -222,15 +223,17 @@ TEST_F(SessionApiRequestsTest, CreateSessionWithFullInputAndSucceed) {
       "\"google\",\"url\":\"https://google.com\"},{\"faviconUrl\":\"data:image/"
       "123\",\"lockedNavigationOptions\":{\"navigationType\":2},\"title\":"
       "\"youtube\",\"url\":\"https://"
-      "youtube.com\"}],\"locked\":true}}},\"main\":{\"captionsConfig\":{"
-      "\"captionsEnabled\":true,\"translationsEnabled\":true},\"onTaskConfig\":"
-      "{\"activeBundle\":{\"contentConfigs\":[{\"faviconUrl\":\"data:image/"
+      "youtube.com\"}],\"lockToAppHome\":false,\"locked\":true}}},\"main\":{"
+      "\"captionsConfig\":{\"captionsEnabled\":true,\"translationsEnabled\":"
+      "true},\"onTaskConfig\":{\"activeBundle\":{\"contentConfigs\":[{"
+      "\"faviconUrl\":\"data:image/"
       "123\",\"lockedNavigationOptions\":{\"navigationType\":1},\"title\":"
       "\"google\",\"url\":\"https://google.com\"},{\"faviconUrl\":\"data:image/"
       "123\",\"lockedNavigationOptions\":{\"navigationType\":2},\"title\":"
       "\"youtube\",\"url\":\"https://"
-      "youtube.com\"}],\"locked\":true}}}},\"teacher\":{\"email\":\"teacher@"
-      "gmail.com\",\"fullName\":\"teacher\",\"gaiaId\":\"1\"}}";
+      "youtube.com\"}],\"lockToAppHome\":false,\"locked\":true}}}},\"teacher\":"
+      "{\"email\":\"teacher@gmail.com\",\"fullName\":\"teacher\",\"gaiaId\":"
+      "\"1\"}}";
   ASSERT_TRUE(http_request.has_content);
   EXPECT_EQ(contentData, http_request.content);
   EXPECT_EQ(true, result.has_value());
@@ -242,7 +245,7 @@ TEST_F(SessionApiRequestsTest, CreateSessionWithCriticalInputAndSucceed) {
       .WillOnce(DoAll(SaveArg<0>(&http_request),
                       Return(MockRequestHandler::CreateSuccessfulResponse())));
 
-  std::string gaia_id = "1";
+  GaiaId gaia_id("1");
   base::TimeDelta session_duration = base::Seconds(120);
 
   base::test::TestFuture<base::expected<std::unique_ptr<::boca::Session>,
@@ -253,7 +256,7 @@ TEST_F(SessionApiRequestsTest, CreateSessionWithCriticalInputAndSucceed) {
   teacher.set_gaia_id("1");
   std::unique_ptr<CreateSessionRequest> request =
       std::make_unique<CreateSessionRequest>(
-          request_sender(), teacher, session_duration,
+          request_sender(), "https://test", teacher, session_duration,
           ::boca::Session::SessionState::Session_SessionState_ACTIVE,
           future.GetCallback());
 
@@ -282,7 +285,7 @@ TEST_F(SessionApiRequestsTest, CreateSessionWithCriticalInputAndFail) {
       .WillOnce(DoAll(SaveArg<0>(&http_request),
                       Return(MockRequestHandler::CreateFailedResponse())));
 
-  std::string gaia_id = "1";
+  GaiaId gaia_id("1");
   base::TimeDelta session_duration = base::Seconds(120);
 
   base::test::TestFuture<base::expected<std::unique_ptr<::boca::Session>,
@@ -292,7 +295,7 @@ TEST_F(SessionApiRequestsTest, CreateSessionWithCriticalInputAndFail) {
   teacher.set_gaia_id("1");
   std::unique_ptr<CreateSessionRequest> request =
       std::make_unique<CreateSessionRequest>(
-          request_sender(), teacher, session_duration,
+          request_sender(), "https://test", teacher, session_duration,
           ::boca::Session::SessionState::Session_SessionState_ACTIVE,
           future.GetCallback());
 

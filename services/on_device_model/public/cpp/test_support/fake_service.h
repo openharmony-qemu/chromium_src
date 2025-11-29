@@ -13,6 +13,7 @@
 #include "base/run_loop.h"
 #include "build/build_config.h"
 #include "mojo/public/cpp/bindings/associated_receiver.h"
+#include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/unique_receiver_set.h"
 #include "services/on_device_model/public/cpp/model_assets.h"
 #include "services/on_device_model/public/cpp/service_client.h"
@@ -71,39 +72,47 @@ struct FakeOnDeviceServiceSettings final {
 class FakeOnDeviceSession final : public mojom::Session {
  public:
   explicit FakeOnDeviceSession(FakeOnDeviceServiceSettings* settings,
-                               const std::string& adaptation_model_weight,
-                               FakeOnDeviceModel* model);
+                               FakeOnDeviceModel* model,
+                               mojom::SessionParamsPtr params);
   ~FakeOnDeviceSession() override;
 
   // mojom::Session:
-  void AddContext(mojom::InputOptionsPtr input,
-                  mojo::PendingRemote<mojom::ContextClient> client) override;
+  void Append(mojom::AppendOptionsPtr options,
+              mojo::PendingRemote<mojom::ContextClient> client) override;
 
-  void Execute(
-      mojom::InputOptionsPtr input,
+  void Generate(
+      mojom::GenerateOptionsPtr input,
       mojo::PendingRemote<mojom::StreamingResponder> response) override;
 
-  void GetSizeInTokensDeprecated(const std::string& text,
-                                 GetSizeInTokensCallback callback) override;
   void GetSizeInTokens(mojom::InputPtr input,
                        GetSizeInTokensCallback callback) override;
 
   void Score(const std::string& text, ScoreCallback callback) override;
 
+  void GetProbabilitiesBlocking(
+      const std::string& text,
+      GetProbabilitiesBlockingCallback callback) override;
+
   void Clone(
       mojo::PendingReceiver<on_device_model::mojom::Session> session) override;
 
- private:
-  void ExecuteImpl(mojom::InputOptionsPtr input,
-                   mojo::PendingRemote<mojom::StreamingResponder> response);
+  void SetPriority(mojom::Priority priority) override;
 
-  void AddContextInternal(mojom::InputOptionsPtr input,
-                          mojo::PendingRemote<mojom::ContextClient> client);
+ private:
+  void GenerateImpl(mojom::GenerateOptionsPtr options,
+                    mojo::PendingRemote<mojom::StreamingResponder> response);
+  void AppendImpl(mojom::AppendOptionsPtr options,
+                  mojo::Remote<mojom::ContextClient> client);
+  void CloneImpl(
+      mojo::PendingReceiver<on_device_model::mojom::Session> session);
 
   raw_ptr<FakeOnDeviceServiceSettings> settings_;
   std::string adaptation_model_weight_;
-  std::vector<mojom::InputOptionsPtr> context_;
+  std::vector<mojom::AppendOptionsPtr> context_;
   raw_ptr<FakeOnDeviceModel> model_;
+  mojom::SessionParamsPtr params_;
+  on_device_model::mojom::Priority priority_ =
+      on_device_model::mojom::Priority::kForeground;
 
   base::WeakPtrFactory<FakeOnDeviceSession> weak_factory_{this};
 };
@@ -111,14 +120,18 @@ class FakeOnDeviceSession final : public mojom::Session {
 class FakeOnDeviceModel : public mojom::OnDeviceModel {
  public:
   struct Data {
+    std::string base_weight = "";
     std::string adaptation_model_weight = "";
+    std::string cache_weight = "";
   };
   explicit FakeOnDeviceModel(FakeOnDeviceServiceSettings* settings,
-                             Data&& data);
+                             Data&& data,
+                             ml::ModelPerformanceHint performance_hint);
   ~FakeOnDeviceModel() override;
 
   // mojom::OnDeviceModel:
-  void StartSession(mojo::PendingReceiver<mojom::Session> session) override;
+  void StartSession(mojo::PendingReceiver<mojom::Session> session,
+                    mojom::SessionParamsPtr params) override;
 
   void DetectLanguage(const std::string& text,
                       DetectLanguageCallback callback) override;
@@ -134,28 +147,42 @@ class FakeOnDeviceModel : public mojom::OnDeviceModel {
       mojo::PendingReceiver<on_device_model::mojom::Session> receiver,
       std::unique_ptr<FakeOnDeviceSession> session);
 
+  const Data& data() const { return data_; }
+
+  ml::ModelPerformanceHint performance_hint() const {
+    return performance_hint_;
+  }
+
  private:
   raw_ptr<FakeOnDeviceServiceSettings> settings_;
   Data data_;
+  ml::ModelPerformanceHint performance_hint_;
 
   mojo::UniqueReceiverSet<mojom::Session> receivers_;
   mojo::UniqueReceiverSet<mojom::OnDeviceModel> model_adaptation_receivers_;
 };
 
-class FakeTsModel final : public on_device_model::mojom::TextSafetyModel {
+class FakeTsModel final : public mojom::TextSafetyModel,
+                          public mojom::TextSafetySession {
  public:
-  explicit FakeTsModel(on_device_model::mojom::TextSafetyModelParamsPtr params);
+  explicit FakeTsModel(mojom::TextSafetyModelParamsPtr params);
   ~FakeTsModel() override;
 
   // on_device_model::mojom::TextSafetyModel
+  void StartSession(
+      mojo::PendingReceiver<mojom::TextSafetySession> session) override;
+
+  // on_device_model::mojom::TextSafetySession
   void ClassifyTextSafety(const std::string& text,
                           ClassifyTextSafetyCallback callback) override;
   void DetectLanguage(const std::string& text,
                       DetectLanguageCallback callback) override;
+  void Clone(mojo::PendingReceiver<mojom::TextSafetySession> session) override;
 
  private:
   bool has_safety_model_ = false;
   bool has_language_model_ = false;
+  mojo::ReceiverSet<mojom::TextSafetySession> sessions_;
 };
 
 // TsHolder holds a single TsModel. Its operations may block.
@@ -186,6 +213,8 @@ class FakeOnDeviceModelService : public mojom::OnDeviceModelService {
   void LoadModel(mojom::LoadModelParamsPtr params,
                  mojo::PendingReceiver<mojom::OnDeviceModel> model,
                  LoadModelCallback callback) override;
+  void GetCapabilities(ModelFile model_file,
+                       GetCapabilitiesCallback callback) override;
   void LoadTextSafetyModel(
       mojom::TextSafetyModelParamsPtr params,
       mojo::PendingReceiver<mojom::TextSafetyModel> model) override;

@@ -11,7 +11,6 @@
 #include <utility>
 
 #include "base/check.h"
-#include "base/feature_list.h"
 #include "base/json/json_reader.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/time/time.h"
@@ -26,8 +25,8 @@
 #include "components/attribution_reporting/destination_set.h"
 #include "components/attribution_reporting/event_level_epsilon.h"
 #include "components/attribution_reporting/event_report_windows.h"
-#include "components/attribution_reporting/features.h"
 #include "components/attribution_reporting/filters.h"
+#include "components/attribution_reporting/max_event_level_reports.h"
 #include "components/attribution_reporting/parsing_utils.h"
 #include "components/attribution_reporting/source_registration_error.mojom.h"
 #include "components/attribution_reporting/source_type.mojom.h"
@@ -66,13 +65,15 @@ void RecordFeatureUsage(const SourceRegistration& result) {
       /*exclusive_max=*/25 + 1);
   static_assert(attribution_reporting::kMaxAggregatableNamedBudgetsPerSource ==
                 25);
+  base::UmaHistogramEnumeration("Conversions.TriggerDataMatchingRegistration",
+                                result.trigger_data_matching);
 }
-
-}  // namespace
 
 void RecordSourceRegistrationError(SourceRegistrationError error) {
   base::UmaHistogramEnumeration("Conversions.SourceRegistrationError13", error);
 }
+
+}  // namespace
 
 SourceRegistration::SourceRegistration(mojo::DefaultConstruct::Tag tag)
     : destination_set(tag) {}
@@ -145,14 +146,15 @@ base::expected<SourceRegistration, SourceRegistrationError> ParseDict(
                    EventLevelEpsilon::Parse(registration));
 
   ASSIGN_OR_RETURN(
-      auto default_event_report_windows,
+      result.event_report_windows,
       EventReportWindows::FromJSON(registration, result.expiry, source_type));
 
-  ASSIGN_OR_RETURN(
-      result.trigger_specs,
-      TriggerSpecs::ParseTopLevelTriggerData(
-          registration, source_type, std::move(default_event_report_windows),
-          result.trigger_data_matching));
+  ASSIGN_OR_RETURN(result.max_event_level_reports,
+                   MaxEventLevelReports::Parse(registration, source_type));
+
+  ASSIGN_OR_RETURN(result.trigger_data,
+                   TriggerDataSet::Parse(registration, source_type,
+                                         result.trigger_data_matching));
 
   ASSIGN_OR_RETURN(result.filter_data,
                    FilterData::FromJSON(registration.Find(kFilterData)));
@@ -165,9 +167,7 @@ base::expected<SourceRegistration, SourceRegistrationError> ParseDict(
                    AggregatableNamedBudgetDefs::FromJSON(
                        registration.Find(kAggregatableNamedBudgets)));
 
-  if (base::Value* scopes_value = registration.Find(kAttributionScopes);
-      scopes_value &&
-      base::FeatureList::IsEnabled(features::kAttributionScopes)) {
+  if (base::Value* scopes_value = registration.Find(kAttributionScopes)) {
     ASSIGN_OR_RETURN(result.attribution_scopes_data,
                      AttributionScopesData::FromJSON(*scopes_value));
   }
@@ -185,13 +185,13 @@ base::expected<SourceRegistration, SourceRegistrationError> ParseDict(
         *std::move(aggregatable_debug_reporting_config);
   }
 
-    ASSIGN_OR_RETURN(
-        result.destination_limit_priority,
-        ParseInt64(registration, kDestinationLimitPriority)
-            .transform(&ValueOrZero<int64_t>),
-        [](ParseError) {
-          return SourceRegistrationError::kDestinationLimitPriorityInvalid;
-        });
+  ASSIGN_OR_RETURN(
+      result.destination_limit_priority,
+      ParseInt64(registration, kDestinationLimitPriority)
+          .transform(&ValueOrZero<int64_t>),
+      [](ParseError) {
+        return SourceRegistrationError::kDestinationLimitPriorityInvalid;
+      });
 
   CHECK(result.IsValid());
   CHECK(result.IsValidForSourceType(source_type));
@@ -249,7 +249,10 @@ base::Value::Dict SourceRegistration::ToJson() const {
 
   SerializeTimeDeltaInSeconds(dict, kExpiry, expiry);
 
-  trigger_specs.Serialize(dict);
+  event_report_windows.Serialize(dict);
+  max_event_level_reports.Serialize(dict);
+
+  trigger_data.Serialize(dict);
 
   SerializeTimeDeltaInSeconds(dict, kAggregatableReportWindow,
                               aggregatable_report_window);
@@ -263,12 +266,11 @@ base::Value::Dict SourceRegistration::ToJson() const {
 
   aggregatable_debug_reporting_config.Serialize(dict);
 
-  if (attribution_scopes_data.has_value() &&
-      base::FeatureList::IsEnabled(features::kAttributionScopes)) {
+  if (attribution_scopes_data.has_value()) {
     dict.Set(kAttributionScopes, attribution_scopes_data->ToJson());
   }
 
-    SerializeInt64(dict, kDestinationLimitPriority, destination_limit_priority);
+  SerializeInt64(dict, kDestinationLimitPriority, destination_limit_priority);
 
   aggregatable_named_budget_defs.Serialize(dict);
 
@@ -280,10 +282,8 @@ bool SourceRegistration::IsValid() const {
     return false;
   }
 
-  for (const auto& spec : trigger_specs.specs()) {
-    if (!spec.event_report_windows().IsValidForExpiry(expiry)) {
-      return false;
-    }
+  if (!event_report_windows.IsValidForExpiry(expiry)) {
+    return false;
   }
 
   if (aggregatable_report_window < kMinReportWindow ||

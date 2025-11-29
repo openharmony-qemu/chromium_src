@@ -25,6 +25,7 @@
 
 #if BUILDFLAG(IS_APPLE)
 #include <mach/mach.h>
+
 #include "base/process/port_provider_mac.h"
 
 #if !BUILDFLAG(IS_IOS)
@@ -38,7 +39,7 @@
 #endif
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(IS_AIX) || BUILDFLAG(IS_OHOS)
+    BUILDFLAG(IS_AIX)
 #include <string>
 #include <utility>
 #include <vector>
@@ -48,8 +49,7 @@
 
 namespace base {
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
 // Minor and major page fault counts since the process creation.
 // Both counts are process-wide, and exclude child processes.
 //
@@ -65,7 +65,7 @@ struct PageFaultCounts {
 // Convert a POSIX timeval to microseconds.
 BASE_EXPORT int64_t TimeValToMicroseconds(const struct timeval& tv);
 
-enum class ProcessCPUUsageError {
+enum class ProcessUsageError {
   // The OS returned an error while measuring the CPU usage. The possible causes
   // vary by platform.
   kSystemError,
@@ -73,6 +73,32 @@ enum class ProcessCPUUsageError {
   // Process CPU usage couldn't be measured because the process wasn't running.
   // Some platforms may return kSystemError instead in this situation.
   kProcessNotFound,
+};
+
+using ProcessCPUUsageError = ProcessUsageError;
+
+struct ProcessMemoryInfo {
+  uint64_t resident_set_bytes = 0;
+
+#if BUILDFLAG(IS_APPLE)
+  uint64_t physical_footprint_bytes = 0;
+  uint64_t internal_bytes = 0;
+  uint64_t compressed_bytes = 0;
+#endif  // BUILDFLAG(IS_APPLE)
+
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
+    BUILDFLAG(IS_FUCHSIA)
+  uint64_t rss_anon_bytes = 0;
+  uint64_t vm_swap_bytes = 0;
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) ||
+        // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(IS_WIN)
+  uint64_t private_bytes = 0;
+#endif  // BUILDFLAG(IS_WIN)
+
+  // On iOS,
+  //   TBD: https://crbug.com/714961
 };
 
 // Provides performance metrics for a specified process (CPU usage and IO
@@ -114,12 +140,16 @@ class BASE_EXPORT ProcessMetrics {
   // convenience wrapper for CreateProcessMetrics().
   static std::unique_ptr<ProcessMetrics> CreateCurrentProcessMetrics();
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(IS_OHOS)
-  // Resident Set Size is a Linux/Android specific memory concept. Do not
-  // attempt to extend this to other platforms.
-  BASE_EXPORT size_t GetResidentSetSize() const;
-#endif
+  // Provides synchronous access to memory metrics for a process. This interface
+  // has platform-specific restrictions:
+  //  * On Android, due to sandboxing restrictions, processes can only access
+  //    memory metrics for themselves.
+  //  * On Linux, due to sandboxing restrictions, only the privileged browser
+  //    process has access to memory metrics for sandboxed child processes.
+  //  * On Fuchsia, due to the API expecting a ProcessId rather than a
+  //    ProcessHandle, processes can only access memory metrics for themselves
+  //    or for children of base::GetDefaultJob().
+  base::expected<ProcessMemoryInfo, ProcessUsageError> GetMemoryInfo() const;
 
   // Returns the percentage of time spent executing, across all threads of the
   // process, in the interval since the last time the method was called, using
@@ -149,7 +179,7 @@ class BASE_EXPORT ProcessMetrics {
   base::expected<TimeDelta, ProcessCPUUsageError> GetCumulativeCPUUsage();
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(IS_AIX) || BUILDFLAG(IS_OHOS)
+    BUILDFLAG(IS_AIX)
   // Emits the cumulative CPU usage for all currently active threads since they
   // were started into the output parameter (replacing its current contents).
   // Threads that have already terminated will not be reported. Thus, the sum of
@@ -194,11 +224,7 @@ class BASE_EXPORT ProcessMetrics {
   int GetOpenFdSoftLimit() const;
 #endif  // BUILDFLAG(IS_POSIX)
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(IS_OHOS)
-  // Bytes of swap as reported by /proc/[pid]/status.
-  uint64_t GetVmSwapBytes() const;
-
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
   // Minor and major page fault count as reported by /proc/[pid]/stat.
   // Returns true for success.
   bool GetPageFaultCounts(PageFaultCounts* counts) const;
@@ -216,7 +242,7 @@ class BASE_EXPORT ProcessMetrics {
 #endif  // !BUILDFLAG(IS_MAC)
 
 #if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
-    BUILDFLAG(IS_AIX) || BUILDFLAG(IS_OHOS)
+    BUILDFLAG(IS_AIX)
   int CalculateIdleWakeupsPerSecond(uint64_t absolute_idle_wakeups);
 #endif
 #if BUILDFLAG(IS_APPLE)
@@ -243,7 +269,7 @@ class BASE_EXPORT ProcessMetrics {
 #endif
 
 #if BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
-    BUILDFLAG(IS_AIX) || BUILDFLAG(IS_OHOS)
+    BUILDFLAG(IS_AIX)
   // Same thing for idle wakeups.
   TimeTicks last_idle_wakeups_time_;
   uint64_t last_absolute_idle_wakeups_;
@@ -284,7 +310,7 @@ BASE_EXPORT void IncreaseFdLimitTo(unsigned int max_descriptors);
 
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_APPLE) || BUILDFLAG(IS_LINUX) ||      \
     BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_AIX) || \
-    BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
+    BUILDFLAG(IS_FUCHSIA)
 // Data about system-wide memory consumption. Values are in KB. Available on
 // Windows, Mac, Linux, Android and Chrome OS.
 //
@@ -319,7 +345,7 @@ struct BASE_EXPORT SystemMemoryInfoKB {
 #endif
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(IS_AIX) || BUILDFLAG(IS_OHOS)
+    BUILDFLAG(IS_AIX)
   // This provides an estimate of available memory as described here:
   // https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=34e431b0ae398fc54ea69ff85ec700722c9da773
   // NOTE: this is ONLY valid in kernels 3.14 and up.  Its value will always
@@ -334,7 +360,7 @@ struct BASE_EXPORT SystemMemoryInfoKB {
 #endif
 
 #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
-    BUILDFLAG(IS_AIX) || BUILDFLAG(IS_FUCHSIA) || BUILDFLAG(IS_OHOS)
+    BUILDFLAG(IS_AIX) || BUILDFLAG(IS_FUCHSIA)
   int buffers = 0;
   int cached = 0;
   int active_anon = 0;
@@ -371,7 +397,7 @@ BASE_EXPORT bool GetSystemMemoryInfo(SystemMemoryInfoKB* meminfo);
         // BUILDFLAG(IS_FUCHSIA)
 
 #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(IS_AIX) || BUILDFLAG(IS_OHOS)
+    BUILDFLAG(IS_AIX)
 // Parse the data found in /proc/<pid>/stat and return the sum of the
 // CPU-related ticks.  Returns -1 on parse error.
 // Exposed for testing.
@@ -463,8 +489,7 @@ struct BASE_EXPORT SwapInfo {
         num_writes(0),
         compr_data_size(0),
         orig_data_size(0),
-        mem_used_total(0) {
-  }
+        mem_used_total(0) {}
 
   // Serializes the platform specific fields to value.
   Value::Dict ToDict() const;
@@ -566,8 +591,7 @@ class BASE_EXPORT SystemMetrics {
   FRIEND_TEST_ALL_PREFIXES(SystemMetricsTest, SystemMetrics);
 
   size_t committed_memory_;
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
-    BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
   SystemMemoryInfoKB memory_info_;
   VmStatInfo vmstat_info_;
   SystemDiskInfo disk_info_;

@@ -59,9 +59,6 @@ class TestCompositorHostOzone::StubPlatformWindowDelegate
   int64_t OnStateUpdate(const State& old, const State& latest) override {
     return -1;
   }
-#if BUILDFLAG(IS_OHOS)
-  void SetSurfaceId(uint64_t surface_id) override {}
-#endif
 
  private:
   gfx::AcceleratedWidget widget_ = gfx::kNullAcceleratedWidget;

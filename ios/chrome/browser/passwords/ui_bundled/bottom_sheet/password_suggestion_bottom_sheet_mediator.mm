@@ -6,6 +6,7 @@
 
 #import "base/feature_list.h"
 #import "base/memory/raw_ptr.h"
+#import "base/memory/weak_ptr.h"
 #import "base/strings/sys_string_conversions.h"
 #import "components/autofill/core/common/unique_ids.h"
 #import "components/autofill/ios/browser/form_suggestion_provider.h"
@@ -19,6 +20,7 @@
 #import "components/password_manager/core/browser/password_store/password_store_interface.h"
 #import "components/password_manager/core/browser/password_ui_utils.h"
 #import "components/password_manager/core/browser/ui/credential_ui_entry.h"
+#import "components/password_manager/ios/features.h"
 #import "components/password_manager/ios/ios_password_manager_driver_factory.h"
 #import "components/password_manager/ios/shared_password_controller.h"
 #import "components/prefs/pref_service.h"
@@ -30,12 +32,12 @@
 #import "ios/chrome/browser/passwords/model/password_tab_helper.h"
 #import "ios/chrome/browser/passwords/ui_bundled/bottom_sheet/password_suggestion_bottom_sheet_consumer.h"
 #import "ios/chrome/browser/passwords/ui_bundled/bottom_sheet/password_suggestion_bottom_sheet_presenter.h"
+#import "ios/chrome/browser/settings/ui_bundled/password/password_sharing/multi_avatar_image_util.h"
 #import "ios/chrome/browser/shared/model/prefs/pref_names.h"
 #import "ios/chrome/browser/shared/model/web_state_list/active_web_state_observation_forwarder.h"
 #import "ios/chrome/browser/shared/model/web_state_list/web_state_list.h"
 #import "ios/chrome/browser/shared/model/web_state_list/web_state_list_observer_bridge.h"
 #import "ios/chrome/browser/shared/ui/symbols/symbols.h"
-#import "ios/chrome/browser/ui/settings/password/password_sharing/multi_avatar_image_util.h"
 #import "ios/chrome/common/ui/favicon/favicon_attributes.h"
 #import "ios/chrome/common/ui/favicon/favicon_constants.h"
 #import "ios/chrome/common/ui/reauthentication/reauthentication_event.h"
@@ -67,7 +69,7 @@ int PrimaryActionStringIdFromSuggestion(FormSuggestion* suggestion) {
 }
 
 // Makes a query to retrieve suggestions from a FormSuggestionProvider from the
-// provided `params`.
+// provided `params`. Only ask for suggestions with passwords.
 FormSuggestionProviderQuery* MakeQueryFromParameters(
     const autofill::FormActivityParams& params) {
   return [[FormSuggestionProviderQuery alloc]
@@ -78,7 +80,23 @@ FormSuggestionProviderQuery* MakeQueryFromParameters(
              fieldType:base::SysUTF8ToNSString(params.field_type)
                   type:base::SysUTF8ToNSString(params.type)
             typedValue:base::SysUTF8ToNSString(params.value)
-               frameID:base::SysUTF8ToNSString(params.frame_id)];
+               frameID:base::SysUTF8ToNSString(params.frame_id)
+          onlyPassword:YES];
+}
+
+// Makes a copy of suggestions with `params` and `provider` set in the copies.
+NSArray<FormSuggestion*>* SetParamsAndProviderInSuggestions(
+    NSArray<FormSuggestion*>* suggestions,
+    const autofill::FormActivityParams& params,
+    id<FormSuggestionProvider> provider) {
+  NSMutableArray<FormSuggestion*>* suggestions_copy =
+      [NSMutableArray<FormSuggestion*> arrayWithCapacity:[suggestions count]];
+  for (FormSuggestion* suggestion in suggestions) {
+    [suggestions_copy addObject:[FormSuggestion copy:suggestion
+                                        andSetParams:params
+                                            provider:provider]];
+  }
+  return suggestions_copy;
 }
 
 }  // namespace
@@ -116,7 +134,7 @@ FormSuggestionProviderQuery* MakeQueryFromParameters(
 @end
 
 @implementation BottomSheetFormSuggestionProviderWrapperV1 {
-  id<FormInputSuggestionsProvider> _providerWrapper;
+  __weak id<FormInputSuggestionsProvider> _providerWrapper;
 }
 
 - (instancetype)initWithFormInputSuggestionProvider:
@@ -176,7 +194,7 @@ FormSuggestionProviderQuery* MakeQueryFromParameters(
 
 @implementation BottomSheetFormSuggestionProviderWrapperV2 {
   // Suggestions provider for the bottom sheet.
-  id<FormSuggestionProvider> _providerWrapper;
+  __weak id<FormSuggestionProvider> _providerWrapper;
 
   // Form activity parameters giving the context around the sheet trigger.
   autofill::FormActivityParams _params;
@@ -203,13 +221,20 @@ FormSuggestionProviderQuery* MakeQueryFromParameters(
                         webState:webState
                completionHandler:^(NSArray<FormSuggestion*>* suggestions,
                                    id<FormSuggestionProvider> delegate) {
-                 completion(suggestions);
+                 bool stateless = base::FeatureList::IsEnabled(
+                     password_manager::features::kIOSStatelessFillDataFlow);
+                 NSArray<FormSuggestion*>* wrappedSuggestions =
+                     stateless ? SetParamsAndProviderInSuggestions(
+                                     suggestions, params, delegate)
+                               : suggestions;
+                 completion(wrappedSuggestions);
                }];
 }
 
 - (void)didSelectSuggestion:(FormSuggestion*)suggestion
                     atIndex:(NSInteger)index
                    webState:(web::WebState*)webState {
+  __weak UIView* weakView = webState->GetView();
   [_providerWrapper
       didSelectSuggestion:suggestion
                   atIndex:index
@@ -223,7 +248,7 @@ FormSuggestionProviderQuery* MakeQueryFromParameters(
           // approach as used when filling with the FormInputSuggestionProvider
           // in V1. Not doing this will result he re-popping the keyboard after
           // filling is done which is a bad UX.
-          [webState->GetView() endEditing:YES];
+          [weakView endEditing:YES];
         }];
 }
 
@@ -415,6 +440,8 @@ FormSuggestionProviderQuery* MakeQueryFromParameters(
   _forwarder.reset();
   _webStateObserver.reset();
   _webStateList = nullptr;
+
+  _suggestionsProviderWrapper = nil;
 }
 
 - (BOOL)hasSuggestions {
@@ -429,7 +456,7 @@ FormSuggestionProviderQuery* MakeQueryFromParameters(
         stringByReplacingOccurrencesOfString:kPasswordFormSuggestionSuffix
                                   withString:@""];
   }
-  auto it = base::ranges::find_if(
+  auto it = std::ranges::find_if(
       _credentials,
       [username](const password_manager::CredentialUIEntry& credential) {
         CHECK(!credential.facets.empty());
@@ -584,9 +611,6 @@ FormSuggestionProviderQuery* MakeQueryFromParameters(
 
 - (void)webStateListDestroyed:(WebStateList*)webStateList {
   DCHECK_EQ(webStateList, _webStateList);
-  // `disconnect` cleans up all references to `_webStateList` and objects that
-  // depend on it.
-  [self disconnect];
   [self onWebStateChange];
 }
 
@@ -603,6 +627,10 @@ FormSuggestionProviderQuery* MakeQueryFromParameters(
 #pragma mark - Private
 
 - (void)onWebStateChange {
+  // Disconnect so anything that relies on the webstate behind the mediator can
+  // avoid using the mediator's objects once the webstate is destroyed.
+  [self disconnect];
+
   // As there is no more context for showing the bottom sheet, end the
   // presentation.
   [self.presenter endPresentation];
@@ -611,6 +639,10 @@ FormSuggestionProviderQuery* MakeQueryFromParameters(
 // Perform suggestion selection
 - (void)selectSuggestion:(FormSuggestion*)suggestion atIndex:(NSInteger)index {
   default_browser::NotifyPasswordAutofillSuggestionUsed(_engagementTracker);
+
+  if (!_webStateList) {
+    return;
+  }
 
   web::WebState* activeWebState = _webStateList->GetActiveWebState();
   if (!activeWebState) {
@@ -706,19 +738,19 @@ FormSuggestionProviderQuery* MakeQueryFromParameters(
     if (form.type ==
             password_manager::PasswordForm::Type::kReceivedViaSharing &&
         !form.sharing_notification_displayed) {
-        _sharedUnnotifiedForms.push_back(&form);
-        __weak __typeof__(self) weakSelf = self;
-        image_fetcher::ImageFetcherParams params(NO_TRAFFIC_ANNOTATION_YET,
-                                                 kImageFetcherUmaClient);
-        _imageFetcher->FetchImage(
-            form.sender_profile_image_url,
-            base::BindOnce(^(const gfx::Image& image,
-                             const image_fetcher::RequestMetadata& metadata) {
-              if (!image.IsEmpty()) {
-                [weakSelf onSenderImageFetched:[image.ToUIImage() copy]];
-              }
-            }),
-            params);
+      _sharedUnnotifiedForms.push_back(&form);
+      __weak __typeof__(self) weakSelf = self;
+      image_fetcher::ImageFetcherParams params(NO_TRAFFIC_ANNOTATION_YET,
+                                               kImageFetcherUmaClient);
+      _imageFetcher->FetchImage(
+          form.sender_profile_image_url,
+          base::BindOnce(^(const gfx::Image& image,
+                           const image_fetcher::RequestMetadata& metadata) {
+            if (!image.IsEmpty()) {
+              [weakSelf onSenderImageFetched:[image.ToUIImage() copy]];
+            }
+          }),
+          params);
     }
     _credentials.push_back(password_manager::CredentialUIEntry(form));
   }

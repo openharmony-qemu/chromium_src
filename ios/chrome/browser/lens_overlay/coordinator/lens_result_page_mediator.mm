@@ -14,9 +14,13 @@
 #import "base/strings/sys_string_conversions.h"
 #import "components/lens/lens_url_utils.h"
 #import "ios/chrome/browser/context_menu/ui_bundled/context_menu_configuration_provider.h"
+#import "ios/chrome/browser/lens_overlay/coordinator/lens_overlay_availability.h"
+#import "ios/chrome/browser/lens_overlay/coordinator/lens_overlay_tab_change_audience.h"
 #import "ios/chrome/browser/lens_overlay/coordinator/lens_result_page_mediator_delegate.h"
+#import "ios/chrome/browser/lens_overlay/model/lens_overlay_url_utils.h"
 #import "ios/chrome/browser/lens_overlay/ui/lens_overlay_error_handler.h"
 #import "ios/chrome/browser/lens_overlay/ui/lens_result_page_consumer.h"
+#import "ios/chrome/browser/shared/model/profile/profile_ios.h"
 #import "ios/chrome/browser/shared/model/web_state_list/web_state_list.h"
 #import "ios/chrome/browser/shared/public/commands/application_commands.h"
 #import "ios/chrome/browser/shared/public/commands/open_new_tab_command.h"
@@ -24,6 +28,7 @@
 #import "ios/chrome/browser/shared/public/features/features.h"
 #import "ios/chrome/browser/shared/ui/util/snackbar_util.h"
 #import "ios/chrome/browser/tabs/model/tab_helper_util.h"
+#import "ios/chrome/browser/web/model/blocked_popup_tab_helper.h"
 #import "ios/chrome/browser/web/model/web_navigation_util.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ios/web/public/navigation/navigation_context.h"
@@ -44,32 +49,25 @@
 
 namespace {
 
-BOOL URLHostIsGoogle(const GURL& URL) {
-  std::string_view host = URL.host_piece();
-
-  return (base::EqualsCaseInsensitiveASCII(host, "google.com") ||
-          base::EqualsCaseInsensitiveASCII(host, "www.google.com"));
-}
-
 BOOL URLIsFlights(const GURL& URL) {
   std::string_view path = URL.path_piece();
   BOOL pathIsFlights = path.rfind("/travel/flights", 0) == 0;
 
-  return URLHostIsGoogle(URL) && pathIsFlights;
+  return lens::IsGoogleHostURL(URL) && pathIsFlights;
 }
 
 BOOL URLIsFinance(const GURL& URL) {
   std::string_view path = URL.path_piece();
   BOOL pathIsFinance = path.rfind("/finance", 0) == 0;
 
-  return URLHostIsGoogle(URL) && pathIsFinance;
+  return lens::IsGoogleHostURL(URL) && pathIsFinance;
 }
 
 BOOL URLIsShopping(const GURL& URL) {
   std::string_view query = URL.query_piece();
   BOOL queryMatchesShoppingParam = query.find("udm=28") != std::string::npos;
 
-  return URLHostIsGoogle(URL) && queryMatchesShoppingParam;
+  return lens::IsGoogleHostURL(URL) && queryMatchesShoppingParam;
 }
 
 BOOL URLHasLensRequestQueryParam(const GURL& URL) {
@@ -82,7 +80,9 @@ BOOL URLHasLensRequestQueryParam(const GURL& URL) {
 /// them out explicitly.
 GURL URLByRemovingLensSurfaceParamIfNecessary(const GURL& URL) {
   // If not a finance or flights URL, do nothing
-  if (URLIsFinance(URL) || URLIsFlights(URL) || URLIsShopping(URL)) {
+  if (URLIsFinance(URL) || URLIsFlights(URL) || URLIsShopping(URL) ||
+      (lens::IsLensAIMSRP(URL) &&
+       !base::FeatureList::IsEnabled(kLensLoadAIMInLensResultPage))) {
     return net::AppendOrReplaceQueryParameter(URL, "lns_surface", std::nullopt);
   }
 
@@ -96,7 +96,7 @@ GURL URLByRemovingLensSurfaceParamIfNecessary(const GURL& URL) {
 std::pair<BOOL, std::optional<GURL>> IsValidURLToOpenInResultsPage(
     const GURL& originalURL) {
   GURL URL = URLByRemovingLensSurfaceParamIfNecessary(originalURL);
-  if (!URLHostIsGoogle(URL)) {
+  if (!lens::IsGoogleHostURL(URL)) {
     return std::pair(NO, std::nullopt);
   }
 
@@ -305,9 +305,18 @@ inline constexpr char kDarkModeParameterDarkValue[] = "1";
   URL = allowURL.second.value_or(URL);
 
   if (requestInfo.target_frame_is_main && !allowURL.first) {
+    // Allow redirection from google host, search request from some countries
+    // use redirection. crbug.com/397536947
+    if (lens::IsGoogleRedirection(URL, requestInfo)) {
+      decisionHandler(web::WebStatePolicyDecider::PolicyDecision::Allow());
+      return;
+    }
+
     decisionHandler(web::WebStatePolicyDecider::PolicyDecision::Cancel());
 
-    if (URL.IsAboutBlank()) {
+    // Minimize bottom sheet URLs are still delivered but are not handled in a
+    // special way anymore. Refrain from adding them to the navigation stack.
+    if (URL.IsAboutBlank() || IsMinimizeBottomSheetURL(URL)) {
       return;
     }
 
@@ -316,15 +325,21 @@ inline constexpr char kDarkModeParameterDarkValue[] = "1";
       return;
     }
 
-    if (IsMinimizeBottomSheetURL(URL)) {
-      [self.presentationDelegate requestMinimizeBottomSheet];
-      return;
-    }
-
     [self.delegate lensResultPageOpenURLInNewTabRequsted:URL];
     [self.delegate
          lensResultPageMediator:self
         didOpenNewTabFromSource:lens::LensOverlayNewTabSource::kWebNavigation];
+  } else if (lens::IsLensAIMSRP(URL) &&
+             !base::FeatureList::IsEnabled(kLensLoadAIMInLensResultPage)) {
+    decisionHandler(web::WebStatePolicyDecider::PolicyDecision::Cancel());
+
+    // AIM SRP requires lns_surface, but we can't use Chromnient's (4), so use
+    // CHROME_SEARCH.
+    URL = net::AppendOrReplaceQueryParameter(URL, "lns_surface", "45");
+    [self.delegate lensResultPageOpenURLInNewTabRequsted:URL];
+    [self.delegate
+         lensResultPageMediator:self
+        didOpenNewTabFromSource:lens::LensOverlayNewTabSource::kExploreBarTab];
   } else {
     decisionHandler(web::WebStatePolicyDecider::PolicyDecision::Allow());
   }
@@ -412,15 +427,36 @@ inline constexpr char kDarkModeParameterDarkValue[] = "1";
   NOTREACHED(kLensOverlayNotFatalUntil);
 }
 
-#pragma mark CRWWebStateDelegate with _browserWebStateDelegate
-
 - (web::WebState*)webState:(web::WebState*)webState
     createNewWebStateForURL:(const GURL&)URL
                   openerURL:(const GURL&)openerURL
             initiatedByUser:(BOOL)initiatedByUser {
-  return _browserWebStateDelegate->CreateNewWebState(webState, URL, openerURL,
-                                                     initiatedByUser);
+  // Check if requested web state is a popup and block it if necessary.
+  if (!initiatedByUser) {
+    auto* helper = BlockedPopupTabHelper::GetOrCreateForWebState(webState);
+    if (helper->ShouldBlockPopup(openerURL)) {
+      // It's possible for a page to inject a popup into a window created via
+      // window.open before its initial load is committed.  Rather than relying
+      // on the last committed or pending NavigationItem's referrer policy, just
+      // use ReferrerPolicyDefault.
+      // TODO(crbug.com/41317904): Update this to a more appropriate referrer
+      // policy once referrer policies are correctly recorded in
+      // NavigationItems.
+      web::Referrer referrer(openerURL, web::ReferrerPolicyDefault);
+      helper->HandlePopup(URL, referrer);
+      return nullptr;
+    }
+  }
+  // Open the URL in a new tab.
+  [self.delegate lensResultPageOpenURLInNewTabRequsted:URL];
+  [self.delegate
+       lensResultPageMediator:self
+      didOpenNewTabFromSource:lens::LensOverlayNewTabSource::kWebNavigation];
+
+  return nullptr;
 }
+
+#pragma mark CRWWebStateDelegate with _browserWebStateDelegate
 
 - (web::WebState*)webState:(web::WebState*)webState
          openURLWithParams:(const web::WebState::OpenURLParams&)params {
@@ -506,7 +542,7 @@ inline constexpr char kDarkModeParameterDarkValue[] = "1";
   _webState->AddObserver(_webStateObserverBridge.get());
   _policyDeciderBridge =
       std::make_unique<web::WebStatePolicyDeciderBridge>(_webState.get(), self);
-  AttachTabHelpers(_webState.get(), TabHelperFilter::kBottomSheet);
+  AttachTabHelpers(_webState.get(), TabHelperFilter::kLensOverlay);
   id<CRWWebViewProxy> webViewProxy = _webState->GetWebViewProxy();
   webViewProxy.allowsBackForwardNavigationGestures = NO;
   // Allow the scrollView to cover the safe area.
@@ -521,6 +557,13 @@ inline constexpr char kDarkModeParameterDarkValue[] = "1";
 
 /// Activates the web state with the given `URL`.
 - (void)activateWebStateWithURL:(GURL)URL {
+  if (_webState &&
+      IsLensOverlaySameTabNavigationEnabled(
+          ProfileIOS::FromBrowserState(_webState->GetBrowserState())
+              ->GetPrefs())) {
+    [_tabChangeAudience backgroundTabWillBecomeActive];
+  }
+
   if (WebStateList* webStateList = _webStateList.get()) {
     int index = webStateList->GetIndexOfWebStateWithURL(URL);
     if (index != WebStateList::kInvalidIndex) {

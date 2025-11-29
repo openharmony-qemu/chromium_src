@@ -3,7 +3,6 @@
 # found in the LICENSE file.
 
 import("//build/compiled_action.gni")
-import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/features.gni")
 import("//build/config/nacl/config.gni")
 import("//build/config/ui.gni")
@@ -74,6 +73,8 @@ static_library("test_support") {
     "gmock_move_support.h",
     "gtest_links.cc",
     "gtest_links.h",
+    "gtest_sub_test_results.cc",
+    "gtest_sub_test_results.h",
     "gtest_tags.cc",
     "gtest_tags.h",
     "gtest_util.cc",
@@ -84,6 +85,8 @@ static_library("test_support") {
     "gtest_xml_util.h",
     "icu_test_util.cc",
     "icu_test_util.h",
+    "insecure_random_generator.cc",
+    "insecure_random_generator.h",
     "launcher/test_result.cc",
     "launcher/test_result.h",
     "launcher/test_results_tracker.h",
@@ -200,7 +203,6 @@ static_library("test_support") {
 
   deps = [
     ":proto_test_support",
-    "//build:chromeos_buildflags",
     "//testing/libfuzzer:fuzztest_init_support",
     "//third_party/google_benchmark",
     "//third_party/icu:icuuc",
@@ -208,7 +210,11 @@ static_library("test_support") {
     "//third_party/libxml:xml_reader",
   ]
 
-  if (enable_base_tracing) {
+  # Cronet doesn't need the Perfetto test support stuff. This dependency is
+  # problematic for Cronet because of targets like
+  #   //third_party/perfetto/src/trace_processor/perfetto_sql/stdlib:stdlib_generated_file
+  # that would require special support in gn2bp (AOSP Cronet).
+  if (enable_base_tracing && !is_cronet_build) {
     public_deps += [ "//third_party/perfetto:perfetto_test_support" ]
     public_deps += [ ":test_trace_processor" ]
     sources += [
@@ -284,13 +290,6 @@ static_library("test_support") {
     deps += [
       ":base_unittests_jni_headers",
       ":test_support_jni_headers",
-    ]
-  }
-
-  if (is_ohos) {
-    sources += [
-      "test_support_ohos.h",
-      "test_support_ohos.cc",
     ]
   }
 
@@ -699,6 +698,7 @@ if (is_android) {
 
     sources = [
       "android/javatests/src/org/chromium/base/test/transit/ActivityElement.java",
+      "android/javatests/src/org/chromium/base/test/transit/BaseElements.java",
       "android/javatests/src/org/chromium/base/test/transit/BatchedPublicTransitRule.java",
       "android/javatests/src/org/chromium/base/test/transit/CallbackCondition.java",
       "android/javatests/src/org/chromium/base/test/transit/CarryOn.java",
@@ -724,6 +724,7 @@ if (is_android) {
       "android/javatests/src/org/chromium/base/test/transit/MoreViewConditions.java",
       "android/javatests/src/org/chromium/base/test/transit/PublicTransitConfig.java",
       "android/javatests/src/org/chromium/base/test/transit/ScrollableFacility.java",
+      "android/javatests/src/org/chromium/base/test/transit/SimpleConditions.java",
       "android/javatests/src/org/chromium/base/test/transit/Station.java",
       "android/javatests/src/org/chromium/base/test/transit/StatusStore.java",
       "android/javatests/src/org/chromium/base/test/transit/TrafficControl.java",
@@ -734,6 +735,7 @@ if (is_android) {
       "android/javatests/src/org/chromium/base/test/transit/UiThreadCondition.java",
       "android/javatests/src/org/chromium/base/test/transit/ViewConditions.java",
       "android/javatests/src/org/chromium/base/test/transit/ViewElement.java",
+      "android/javatests/src/org/chromium/base/test/transit/ViewElementMatchesCondition.java",
       "android/javatests/src/org/chromium/base/test/transit/ViewSpec.java",
     ]
   }
@@ -744,6 +746,7 @@ if (is_android) {
       "//base:base_java_test_support",
       "//base:base_junit_test_support",
       "//base:callback_java",
+      "//base:log_java",
       "//third_party/junit",
     ]
 

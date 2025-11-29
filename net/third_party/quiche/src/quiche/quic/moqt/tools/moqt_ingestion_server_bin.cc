@@ -115,8 +115,10 @@ class MoqtIngestionHandler {
         absl::bind_front(&MoqtIngestionHandler::OnAnnounceReceived, this);
   }
 
+  // TODO(martinduke): Handle when |announce| is false (UNANNOUNCE).
   std::optional<MoqtAnnounceErrorReason> OnAnnounceReceived(
-      FullTrackName track_namespace) {
+      FullTrackName track_namespace,
+      std::optional<VersionSpecificParameters> /*parameters*/) {
     if (!IsValidTrackNamespace(track_namespace) &&
         !quiche::GetQuicheCommandLineFlag(
             FLAGS_allow_invalid_track_namespaces)) {
@@ -124,7 +126,7 @@ class MoqtIngestionHandler {
                               "disallowed characters; namespace: "
                            << track_namespace;
       return MoqtAnnounceErrorReason{
-          MoqtAnnounceErrorCode::kInternalError,
+          RequestErrorCode::kInternalError,
           "Track namespace contains disallowed characters"};
     }
 
@@ -143,7 +145,7 @@ class MoqtIngestionHandler {
       subscribed_namespaces_.erase(it);
       QUICHE_LOG(ERROR) << "Failed to create directory " << directory_path
                         << "; " << status;
-      return MoqtAnnounceErrorReason{MoqtAnnounceErrorCode::kInternalError,
+      return MoqtAnnounceErrorReason{RequestErrorCode::kInternalError,
                                      "Failed to create output directory"};
     }
 
@@ -153,20 +155,22 @@ class MoqtIngestionHandler {
     for (absl::string_view track : tracks_to_subscribe) {
       FullTrackName full_track_name = track_namespace;
       full_track_name.AddElement(track);
-      session_->SubscribeCurrentGroup(full_track_name, &it->second);
+      session_->JoiningFetch(full_track_name, &it->second, 0,
+                             VersionSpecificParameters());
     }
 
     return std::nullopt;
   }
 
  private:
-  class NamespaceHandler : public RemoteTrack::Visitor {
+  class NamespaceHandler : public SubscribeRemoteTrack::Visitor {
    public:
     explicit NamespaceHandler(absl::string_view directory)
         : directory_(directory) {}
 
     void OnReply(
         const FullTrackName& full_track_name,
+        std::optional<Location> /*largest_id*/,
         std::optional<absl::string_view> error_reason_phrase) override {
       if (error_reason_phrase.has_value()) {
         QUICHE_LOG(ERROR) << "Failed to subscribe to the peer track "
@@ -177,11 +181,9 @@ class MoqtIngestionHandler {
     void OnCanAckObjects(MoqtObjectAckFunction) override {}
 
     void OnObjectFragment(const FullTrackName& full_track_name,
-                          FullSequence sequence,
+                          Location sequence,
                           MoqtPriority /*publisher_priority*/,
-                          MoqtObjectStatus /*status*/,
-                          MoqtForwardingPreference /*forwarding_preference*/,
-                          absl::string_view object,
+                          MoqtObjectStatus /*status*/, absl::string_view object,
                           bool /*end_of_message*/) override {
       std::string file_name = absl::StrCat(sequence.group, "-", sequence.object,
                                            ".", full_track_name.tuple().back());
@@ -190,6 +192,8 @@ class MoqtIngestionHandler {
       output.write(object.data(), object.size());
       output.close();
     }
+
+    void OnSubscribeDone(FullTrackName /*full_track_name*/) override {}
 
    private:
     std::string directory_;

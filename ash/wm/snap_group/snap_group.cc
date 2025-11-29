@@ -198,8 +198,6 @@ void SnapGroup::ShowDivider() {
   // windows is smaller than `kSplitviewDividerShortSideLength`. This adjustment
   // is necessary when restoring a snap group on Overview exit for example, as
   // the gap might have been created.
-  // TODO(michelefan): See if there are other conditions where we need to
-  // account for the divider.
   const bool account_for_divider_width =
       edge_gap < kSplitviewDividerShortSideLength;
   snap_group_divider_.SetDividerPosition(
@@ -213,39 +211,6 @@ void SnapGroup::HideDivider() {
 
 bool SnapGroup::IsSnapGroupLayoutHorizontal() const {
   return IsLayoutHorizontal(GetRootWindow());
-}
-
-void SnapGroup::OnLocatedEvent(ui::LocatedEvent* event) {
-  if (is_shutting_down_) {
-    return;
-  }
-
-  // `ToplevelWindowEventHandler` continues to process drag events in Overview
-  // mode, potentially leading to group removal and crashes in
-  // `OverviewGrid::RemoveItem()`. To prevent groups from being removed in
-  // Overview (forwarded from `ToplevelWindowEventHandler::HandleDrag()`) and
-  // subsequent crashes, early return here.
-  if (IsInOverviewSession()) {
-    return;
-  }
-
-  CHECK(event->type() == ui::EventType::kMouseDragged ||
-        event->type() == ui::EventType::kTouchMoved ||
-        event->type() == ui::EventType::kGestureScrollUpdate);
-
-  aura::Window* target = static_cast<aura::Window*>(event->target());
-  const int client_component =
-      window_util::GetNonClientComponent(target, event->location());
-  if (client_component != HTCAPTION && client_component != HTCLIENT) {
-    return;
-  }
-
-  // When the window is dragged via the caption bar to unsnap, we early break
-  // the group to avoid re-stacking the divider on top of the dragged window.
-  if (window1_->Contains(target) || window2_->Contains(target)) {
-    SnapGroupController::Get()->RemoveSnapGroup(
-        this, SnapGroupExitPoint::kDragWindowOut);
-  }
 }
 
 aura::Window* SnapGroup::GetTopMostWindowInGroup() const {

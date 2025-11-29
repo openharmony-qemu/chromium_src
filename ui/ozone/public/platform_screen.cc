@@ -71,14 +71,4 @@ void PlatformScreen::StorePlatformNameIntoListOfValues(
   values.Append(std::move(dict));
 }
 
-#if BUILDFLAG(IS_OHOS)
-gfx::AcceleratedWidget PlatformScreen::GetLocalProcessWidgetAtPoint(
-    const gfx::Point& point_in_dip,
-    const std::set<gfx::AcceleratedWidget>& ignore,
-    const int32_t display_id) const {
-  NOTIMPLEMENTED_LOG_ONCE();
-  return gfx::kNullAcceleratedWidget;
-}
-#endif
-
 }  // namespace ui

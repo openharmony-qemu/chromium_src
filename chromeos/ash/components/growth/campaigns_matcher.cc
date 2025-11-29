@@ -17,6 +17,7 @@
 #include "base/feature_list.h"
 #include "base/features.h"
 #include "base/logging.h"
+#include "base/strings/string_number_conversions.h"
 #include "base/strings/string_split.h"
 #include "base/system/sys_info.h"
 #include "base/time/time.h"
@@ -38,6 +39,7 @@
 #include "components/user_manager/user.h"
 #include "components/user_manager/user_manager.h"
 #include "components/version_info/version_info.h"
+#include "google_apis/gaia/gaia_id.h"
 #include "third_party/re2/src/re2/re2.h"
 
 namespace growth {
@@ -499,6 +501,12 @@ bool CampaignsMatcher::MatchRetailers(
 
 bool CampaignsMatcher::MatchDemoModeAppVersion(
     const DemoModeTargeting& targeting) const {
+  const auto max_version = targeting.GetAppMaxVersion();
+  const auto min_version = targeting.GetAppMinVersion();
+  if (!max_version && !min_version) {
+    return true;
+  }
+
   return MatchVersion(client_->GetDemoModeAppVersion(),
                       targeting.GetAppMinVersion(),
                       targeting.GetAppMaxVersion());
@@ -948,10 +956,10 @@ bool CampaignsMatcher::MatchMinorUser(
       CAMPAIGNS_LOG(ERROR) << "IdentityManager is null.";
       return false;
     }
-    std::string gaia_id = user_manager::UserManager::Get()
-                              ->GetActiveUser()
-                              ->GetAccountId()
-                              .GetGaiaId();
+    GaiaId gaia_id = user_manager::UserManager::Get()
+                         ->GetActiveUser()
+                         ->GetAccountId()
+                         .GetGaiaId();
     const AccountInfo account_info =
         identity_manager->FindExtendedAccountInfoByGaiaId(gaia_id);
     // TODO: b/333896450 - find a better signal for minor mode.

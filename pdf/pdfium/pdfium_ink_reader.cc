@@ -15,16 +15,18 @@
 #include "pdf/pdf_ink_constants.h"
 #include "pdf/pdf_ink_conversions.h"
 #include "pdf/pdf_ink_transform.h"
+#include "pdf/pdf_transform.h"
 #include "pdf/pdfium/pdfium_api_wrappers.h"
+#include "pdf/pdfium/pdfium_rotation.h"
 #include "printing/units.h"
 #include "third_party/ink/src/ink/geometry/mesh.h"
-#include "third_party/ink/src/ink/geometry/modeled_shape.h"
+#include "third_party/ink/src/ink/geometry/partitioned_mesh.h"
 #include "third_party/ink/src/ink/geometry/point.h"
 #include "third_party/ink/src/ink/geometry/tessellator.h"
 #include "third_party/pdfium/public/fpdf_edit.h"
 #include "third_party/pdfium/public/fpdfview.h"
-#include "ui/gfx/geometry/axis_transform2d.h"
 #include "ui/gfx/geometry/point_f.h"
+#include "ui/gfx/geometry/transform.h"
 
 namespace chrome_pdf {
 
@@ -60,7 +62,7 @@ gfx::PointF GetSegmentPoint(FPDF_PATHSEGMENT segment) {
 // with Ink code. Although the actual transform depends on the values in
 // `transform` and `point`, this should always be used to convert PDF
 // coordinates to canonical coordinates.
-ink::Point GetTransformedInkPoint(const gfx::AxisTransform2d& transform,
+ink::Point GetTransformedInkPoint(const gfx::Transform& transform,
                                   const gfx::PointF& point) {
   return InkPointFromGfxPoint(transform.MapPoint(point));
 }
@@ -89,9 +91,9 @@ std::optional<ink::Mesh> CreateInkMeshFromPolyline(
   return *mesh;
 }
 
-std::optional<ink::ModeledShape> ReadV2InkModeledShapeFromPath(
+std::optional<ink::PartitionedMesh> ReadV2InkModeledShapeFromPath(
     FPDF_PAGEOBJECT path,
-    const gfx::AxisTransform2d& transform) {
+    const gfx::Transform& transform) {
   CHECK_EQ(FPDFPageObj_GetType(path), FPDF_PAGEOBJ_PATH);
 
   const int segment_count = FPDFPath_CountSegments(path);
@@ -138,8 +140,9 @@ std::optional<ink::ModeledShape> ReadV2InkModeledShapeFromPath(
 
   // Note that `shape` only has enough data for use with ink::Intersects(). It
   // has no outline.
-  auto shape = ink::ModeledShape::FromMeshes(base::span_from_ref(mesh.value()),
-                                             /*outlines=*/{});
+  auto shape =
+      ink::PartitionedMesh::FromMeshes(base::span_from_ref(mesh.value()),
+                                       /*outlines=*/{});
   if (!shape.ok()) {
     return std::nullopt;
   }
@@ -149,6 +152,20 @@ std::optional<ink::ModeledShape> ReadV2InkModeledShapeFromPath(
 
 }  // namespace
 
+bool PageContainsV2InkPath(FPDF_PAGE page) {
+  if (!page) {
+    return false;
+  }
+
+  const int page_object_count = FPDFPage_CountObjects(page);
+  for (int i = 0; i < page_object_count; ++i) {
+    if (IsV2InkPath(FPDFPage_GetObject(page, i))) {
+      return true;
+    }
+  }
+  return false;
+}
+
 std::vector<ReadV2InkPathResult> ReadV2InkPathsFromPageAsModeledShapes(
     FPDF_PAGE page) {
   std::vector<ReadV2InkPathResult> results;
@@ -156,9 +173,18 @@ std::vector<ReadV2InkPathResult> ReadV2InkPathsFromPageAsModeledShapes(
     return results;
   }
 
-  gfx::AxisTransform2d transform =
-      GetCanonicalToPdfTransform(FPDF_GetPageHeightF(page));
-  transform.Invert();
+  // Get the intersection between the page's MediaBox and CropBox, to find
+  // the translation offset for the shapes' transform.
+  FS_RECTF bounding_box;
+  auto result = FPDF_GetPageBoundingBox(page, &bounding_box);
+  CHECK(result);
+  const gfx::Vector2dF offset(bounding_box.left, bounding_box.bottom);
+
+  const gfx::Transform transform =
+      GetCanonicalToPdfTransform(
+          {FPDF_GetPageWidthF(page), FPDF_GetPageHeightF(page)},
+          GetPageRotation(page).value_or(PageRotation::kRotate0), offset)
+          .GetCheckedInverse();
 
   const int page_object_count = FPDFPage_CountObjects(page);
   for (int i = 0; i < page_object_count; ++i) {
@@ -167,7 +193,7 @@ std::vector<ReadV2InkPathResult> ReadV2InkPathsFromPageAsModeledShapes(
       continue;
     }
 
-    std::optional<ink::ModeledShape> shape =
+    std::optional<ink::PartitionedMesh> shape =
         ReadV2InkModeledShapeFromPath(page_object, transform);
     if (!shape.has_value()) {
       continue;

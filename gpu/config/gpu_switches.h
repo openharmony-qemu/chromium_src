@@ -19,6 +19,7 @@ GPU_EXPORT extern const char kIgnoreGpuBlocklist[];
 GPU_EXPORT extern const char kGpuDiskCacheSizeKB[];
 GPU_EXPORT extern const char kDisableGpuProcessForDX12InfoCollection[];
 GPU_EXPORT extern const char kEnableUnsafeWebGPU[];
+GPU_EXPORT extern const char kForceHighPerformanceGPU[];
 GPU_EXPORT extern const char kEnableWebGPUDeveloperFeatures[];
 GPU_EXPORT extern const char kEnableDawnBackendValidation[];
 GPU_EXPORT extern const char kUseWebGPUAdapter[];
@@ -50,13 +51,13 @@ GPU_EXPORT extern const char kSkiaGraphiteBackendDawnMetal[];
 GPU_EXPORT extern const char kSkiaGraphiteBackendDawnSwiftshader[];
 GPU_EXPORT extern const char kSkiaGraphiteBackendDawnVulkan[];
 GPU_EXPORT extern const char kSkiaGraphiteBackendMetal[];
-GPU_EXPORT extern const char kShaderCachePath[];
 GPU_EXPORT extern const char kDisableSkiaGraphite[];
 GPU_EXPORT extern const char kEnableSkiaGraphite[];
 GPU_EXPORT extern const char kDisableSkiaGraphitePrecompilation[];
 GPU_EXPORT extern const char kEnableSkiaGraphitePrecompilation[];
 GPU_EXPORT extern const char kUseRedistributableDirectML[];
 GPU_EXPORT extern const char kEnableGpuMainTimeKeeperMetrics[];
+GPU_EXPORT extern const char kSuppressPerformanceLogs[];
 
 }  // namespace switches
 

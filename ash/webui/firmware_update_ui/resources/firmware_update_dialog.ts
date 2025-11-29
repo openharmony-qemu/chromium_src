@@ -12,16 +12,18 @@ import './firmware_shared_fonts.css.js';
 import './firmware_update.mojom-webui.js';
 import '/strings.m.js';
 
-import {I18nMixin, I18nMixinInterface} from 'chrome://resources/ash/common/cr_elements/i18n_mixin.js';
+import type {I18nMixinInterface} from 'chrome://resources/ash/common/cr_elements/i18n_mixin.js';
+import {I18nMixin} from 'chrome://resources/ash/common/cr_elements/i18n_mixin.js';
 import {assert} from 'chrome://resources/js/assert.js';
 import {mojoString16ToString} from 'chrome://resources/js/mojo_type_util.js';
 import {PolymerElement} from 'chrome://resources/polymer/v3_0/polymer/polymer_bundled.min.js';
 
-import {DeviceRequest, DeviceRequestId, DeviceRequestKind, DeviceRequestObserverInterface, DeviceRequestObserverReceiver, FirmwareUpdate, InstallationProgress, InstallControllerRemote, UpdateProgressObserverInterface, UpdateProgressObserverReceiver, UpdateState} from './firmware_update.mojom-webui.js';
+import type {DeviceRequest, DeviceRequestObserverInterface, FirmwareUpdate, InstallationProgress, InstallControllerRemote, UpdateProgressObserverInterface} from './firmware_update.mojom-webui.js';
+import {DeviceRequestId, DeviceRequestKind, DeviceRequestObserverReceiver, UpdateProgressObserverReceiver, UpdateState} from './firmware_update.mojom-webui.js';
 import {getTemplate} from './firmware_update_dialog.html.js';
-import {DialogContent, OpenUpdateDialogEventDetail} from './firmware_update_types.js';
+import type {DialogContent, OpenUpdateDialogEventDetail} from './firmware_update_types.js';
 import {isAppV2Enabled} from './firmware_update_utils.js';
-import {getUpdateProvider} from './mojo_interface_provider.js';
+import {getSystemUtils, getUpdateProvider} from './mojo_interface_provider.js';
 
 const initialDialogContent: DialogContent = {
   title: '',
@@ -100,6 +102,7 @@ export class FirmwareUpdateDialogElement extends FirmwareUpdateDialogElementBase
   installationProgress: InstallationProgress;
   private isInitiallyInflight = false;
   private lastDeviceRequestId: DeviceRequestId|null = null;
+  private updateIsDone: boolean;
   dialogContent = initialDialogContent;
   private updateProvider = getUpdateProvider();
   private installController: InstallControllerRemote|null = null;
@@ -107,6 +110,7 @@ export class FirmwareUpdateDialogElement extends FirmwareUpdateDialogElementBase
       null;
   private deviceRequestObserverReceiver: DeviceRequestObserverReceiver|null =
       null;
+  private systemUtils = getSystemUtils();
   private inactiveDialogStates: UpdateState[] =
       [UpdateState.kUnknown, UpdateState.kIdle];
 
@@ -408,6 +412,12 @@ export class FirmwareUpdateDialogElement extends FirmwareUpdateDialogElementBase
     return this.isWaitingForUserAction();
   }
 
+  protected isUpdateSuccessfulAndRequiresReboot(): boolean {
+    assert(this.update);
+    return this.installationProgress.state === UpdateState.kSuccess &&
+        this.update.needsReboot;
+  }
+
   protected computeButtonText(): string {
     if (!this.isUpdateDone()) {
       return '';
@@ -416,6 +426,12 @@ export class FirmwareUpdateDialogElement extends FirmwareUpdateDialogElementBase
     return this.installationProgress.state === UpdateState.kSuccess ?
         this.i18n('doneButton') :
         this.i18n('okButton');
+  }
+
+  protected restartDevice(): void {
+    assert(this.isUpdateDone());
+    this.systemUtils.restart();
+    return;
   }
 
   protected isDialogOpen(): boolean {

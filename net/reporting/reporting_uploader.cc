@@ -10,10 +10,10 @@
 
 #include "base/functional/callback_helpers.h"
 #include "base/memory/raw_ptr.h"
-#include "base/not_fatal_until.h"
 #include "base/strings/string_split.h"
 #include "base/strings/string_util.h"
 #include "net/base/elements_upload_data_stream.h"
+#include "net/base/features.h"
 #include "net/base/isolation_info.h"
 #include "net/base/load_flags.h"
 #include "net/base/network_anonymization_key.h"
@@ -242,6 +242,12 @@ class ReportingUploaderImpl : public ReportingUploader, URLRequest::Delegate {
     upload->request->SetExtraRequestHeaderByName(
         HttpRequestHeaders::kContentType, kUploadContentType, true);
 
+    if (base::FeatureList::IsEnabled(
+            net::features::kReportingApiCorsOriginHeader)) {
+      upload->request->SetExtraRequestHeaderByName(
+          HttpRequestHeaders::kOrigin, upload->report_origin.Serialize(), true);
+    }
+
     upload->request->set_upload(ElementsUploadDataStream::CreateWithReader(
         std::move(upload->payload_reader)));
 
@@ -288,7 +294,7 @@ class ReportingUploaderImpl : public ReportingUploader, URLRequest::Delegate {
     // Grab Upload from map, and hold on to it in a local unique_ptr so it's
     // removed at the end of the method.
     auto it = uploads_.find(request);
-    CHECK(it != uploads_.end(), base::NotFatalUntil::M130);
+    CHECK(it != uploads_.end());
     std::unique_ptr<PendingUpload> upload = std::move(it->second);
     uploads_.erase(it);
 
@@ -343,6 +349,8 @@ class ReportingUploaderImpl : public ReportingUploader, URLRequest::Delegate {
 
   void HandlePayloadResponse(std::unique_ptr<PendingUpload> upload,
                              int response_code) {
+    // Skip the CORS check here because the result of the report upload is
+    // not exposed to the page.
     upload->RunCallback(ResponseCodeToOutcome(response_code));
   }
 

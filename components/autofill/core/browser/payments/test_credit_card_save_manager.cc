@@ -11,7 +11,7 @@
 namespace autofill {
 
 TestCreditCardSaveManager::TestCreditCardSaveManager(AutofillClient* client)
-    : CreditCardSaveManager(client, "en-US") {}
+    : CreditCardSaveManager(client) {}
 
 TestCreditCardSaveManager::~TestCreditCardSaveManager() = default;
 
@@ -75,6 +75,14 @@ void TestCreditCardSaveManager::set_upload_request_card(
 payments::UploadCardRequestDetails*
 TestCreditCardSaveManager::upload_request() {
   return &upload_request_;
+}
+
+bool TestCreditCardSaveManager::should_request_expiration_date_from_user() {
+  return should_request_expiration_date_from_user_;
+}
+
+bool TestCreditCardSaveManager::should_request_name_from_user() {
+  return should_request_name_from_user_;
 }
 
 void TestCreditCardSaveManager::InitVirtualCardEnroll(

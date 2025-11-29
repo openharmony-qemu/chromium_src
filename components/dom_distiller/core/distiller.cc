@@ -4,6 +4,7 @@
 
 #include "components/dom_distiller/core/distiller.h"
 
+#include <algorithm>
 #include <map>
 #include <memory>
 #include <utility>
@@ -14,7 +15,7 @@
 #include "base/functional/callback.h"
 #include "base/location.h"
 #include "base/memory/ptr_util.h"
-#include "base/ranges/algorithm.h"
+#include "base/metrics/histogram_functions.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/task/single_thread_task_runner.h"
@@ -39,8 +40,7 @@ DistillerFactoryImpl::DistillerFactoryImpl(
 
 DistillerFactoryImpl::~DistillerFactoryImpl() = default;
 
-std::unique_ptr<Distiller> DistillerFactoryImpl::CreateDistillerForUrl(
-    const GURL& unused) {
+std::unique_ptr<Distiller> DistillerFactoryImpl::CreateDistiller() {
   // This default implementation has the same behavior for all URLs.
   std::unique_ptr<DistillerImpl> distiller(new DistillerImpl(
       *distiller_url_fetcher_factory_, dom_distiller_options_));
@@ -61,15 +61,6 @@ DistillerImpl::DistillerImpl(
 
 DistillerImpl::~DistillerImpl() {
   DCHECK(destruction_allowed_);
-}
-
-bool DistillerImpl::DoesFetchImages() {
-// Only iOS makes use of the fetched image data.
-#if BUILDFLAG(IS_IOS)
-  return true;
-#else
-  return false;
-#endif
 }
 
 void DistillerImpl::SetMaxNumPagesInArticle(size_t max_num_pages) {
@@ -240,6 +231,10 @@ void DistillerImpl::OnPageDistillationFinished(
                     distiller_result->content_images(img_num).url());
   }
 
+  base::UmaHistogramCounts100000(
+      "DomDistiller.WordCount",
+      distiller_result->statistics_info().word_count());
+
   AddPageIfDone(page_num);
   DistillNextPage();
 }
@@ -252,7 +247,7 @@ void DistillerImpl::MaybeFetchImage(int page_num,
   DCHECK(started_pages_index_.find(page_num) != started_pages_index_.end());
   DistilledPageData* page_data = GetPageAtIndex(started_pages_index_[page_num]);
 
-  if (!DoesFetchImages()) {
+  if (!distiller_page_->ShouldFetchOfflineData()) {
     DistilledPageProto_Image* image =
         page_data->distilled_page_proto->data.add_image();
     image->set_name(image_id);
@@ -283,8 +278,8 @@ void DistillerImpl::OnFetchImageDone(int page_num,
   DCHECK(page_data->distilled_page_proto);
   DCHECK(url_fetcher);
   auto fetcher_it =
-      base::ranges::find(page_data->image_fetchers_, url_fetcher,
-                         &std::unique_ptr<DistillerURLFetcher>::get);
+      std::ranges::find(page_data->image_fetchers_, url_fetcher,
+                        &std::unique_ptr<DistillerURLFetcher>::get);
 
   DCHECK(fetcher_it != page_data->image_fetchers_.end());
   // Delete the |url_fetcher| by DeleteSoon since the OnFetchImageDone

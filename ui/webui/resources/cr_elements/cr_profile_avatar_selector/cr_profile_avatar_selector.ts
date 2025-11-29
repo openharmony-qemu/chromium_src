@@ -71,11 +71,11 @@ export class CrProfileAvatarSelectorElement extends CrLitElement {
     };
   }
 
-  avatars: AvatarIcon[] = [];
-  selectedAvatar: AvatarIcon|null = null;
-  ignoreModifiedKeyEvents: boolean = false;
-  columns: number = 6;
-  private tabFocusableAvatar_: number = -1;
+  accessor avatars: AvatarIcon[] = [];
+  accessor selectedAvatar: AvatarIcon|null = null;
+  accessor ignoreModifiedKeyEvents: boolean = false;
+  accessor columns: number = 6;
+  private accessor tabFocusableAvatar_: number = -1;
 
   override willUpdate(changedProperties: PropertyValues<this>) {
     super.willUpdate(changedProperties);
@@ -125,7 +125,7 @@ export class CrProfileAvatarSelectorElement extends CrLitElement {
 
     // Autoscroll to selected avatar if it is not completely visible.
     const avatarList =
-        this.shadowRoot!.querySelectorAll<HTMLElement>('.avatar-container');
+        this.shadowRoot.querySelectorAll<HTMLElement>('.avatar-container');
     assert(avatarList.length > 0);
     const selectedAvatarElement = avatarList[index];
     selectedAvatarElement!.scrollIntoViewIfNeeded();

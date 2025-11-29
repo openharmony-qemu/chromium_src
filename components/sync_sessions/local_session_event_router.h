@@ -5,8 +5,6 @@
 #ifndef COMPONENTS_SYNC_SESSIONS_LOCAL_SESSION_EVENT_ROUTER_H_
 #define COMPONENTS_SYNC_SESSIONS_LOCAL_SESSION_EVENT_ROUTER_H_
 
-#include "url/gurl.h"
-
 namespace sync_sessions {
 
 class SyncedTabDelegate;
@@ -33,7 +31,6 @@ class LocalSessionEventHandler {
 
   // A local tab was closed. It's the job of the LocalSessionEventHandler to
   // figure out which tab this is and to react accordingly.
-  // TODO(https://crbug.com/373057420): Make iOS use this as well.
   virtual void OnLocalTabClosed() = 0;
 
  protected:

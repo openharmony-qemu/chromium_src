@@ -389,8 +389,7 @@ void FFmpegDemuxerStream::EnqueuePacket(ScopedAVPacket packet) {
   }
 
   if (!demuxer_ || end_of_stream_) {
-    DUMP_WILL_BE_NOTREACHED()
-        << "Attempted to enqueue packet on a stopped stream";
+    DVLOG(3) << "Attempted to enqueue packet on a stopped stream";
     return;
   }
 
@@ -410,7 +409,9 @@ void FFmpegDemuxerStream::EnqueuePacket(ScopedAVPacket packet) {
   // Convert the packet if there is a bitstream filter.
   if (bitstream_converter_ &&
       !bitstream_converter_->ConvertPacket(packet.get())) {
-    DVLOG(1) << "Format conversion failed.";
+    DVLOG(1) << "Dropped packet that can't be converted to AnnexB"
+             << " pts=" << packet->pts;
+    return;
   }
 #endif
 
@@ -419,7 +420,7 @@ void FFmpegDemuxerStream::EnqueuePacket(ScopedAVPacket packet) {
   base::span<const uint8_t> side_data = GetSideData(packet.get());
 
   std::unique_ptr<DecryptConfig> decrypt_config;
-  int data_offset = 0;
+  size_t data_offset = 0;
   if ((type() == DemuxerStream::AUDIO && audio_config_->is_encrypted()) ||
       (type() == DemuxerStream::VIDEO && video_config_->is_encrypted())) {
     if (!WebMCreateDecryptConfig(
@@ -518,8 +519,12 @@ void FFmpegDemuxerStream::EnqueuePacket(ScopedAVPacket packet) {
       buffer->set_decrypt_config(std::move(decrypt_config));
 
   if (packet->duration >= 0) {
-    buffer->set_duration(
-        ConvertStreamTimestamp(stream_->time_base, packet->duration));
+    // Treat durations under 1ms as not having duration, later stages of the
+    // pipeline will then use the timestamps to estimate duration. Incorrect
+    // duration information can lead to stuttering effects during seeking. See
+    // https://crbug.com/397343886.
+    auto d = ConvertStreamTimestamp(stream_->time_base, packet->duration);
+    buffer->set_duration(d <= base::Milliseconds(1) ? kNoTimestamp : d);
   } else {
     // TODO(wolenetz): Remove when FFmpeg stops returning negative durations.
     // https://crbug.com/394418
@@ -662,12 +667,30 @@ void FFmpegDemuxerStream::EnqueuePacket(ScopedAVPacket packet) {
     return;
   }
 
+  const auto [start_padding, end_padding] = buffer->discard_padding();
+
+  // Save the timestamp of the first non-discarded frame, to calculate duration
+  // below. Only the first buffer should have discard padding.
+  // Note: Some packets marked for total discard have their `start_padding` set
+  // to kInfiniteDuration. Ignore these packets.
+  if (!initial_start_padding_.has_value() &&
+      start_padding != kInfiniteDuration) {
+    initial_start_padding_ = start_padding;
+  }
+
   last_packet_timestamp_ = buffer->timestamp();
   last_packet_duration_ = buffer->duration();
 
-  const base::TimeDelta new_duration = last_packet_timestamp_;
-  if (new_duration > duration_ || duration_ == kNoTimestamp)
+  // Check if `buffer` contains only padding.
+  const bool is_padding = buffer->duration() == start_padding + end_padding;
+
+  const base::TimeDelta new_duration =
+      last_packet_timestamp_ -
+      initial_start_padding_.value_or(base::TimeDelta());
+
+  if ((!is_padding && new_duration > duration_) || duration_ == kNoTimestamp) {
     duration_ = new_duration;
+  }
 
   buffer_queue_.Push(std::move(buffer));
   SatisfyPendingRead();
@@ -1759,14 +1782,29 @@ void FFmpegDemuxer::OnSeekFrameDone(int result) {
   RunPendingSeekCB(PIPELINE_OK);
 }
 
-void FFmpegDemuxer::FindAndEnableProperTracks(
+void FFmpegDemuxer::OnTrackChangeSeekComplete(
+    base::OnceClosure cb,
+    std::vector<FFmpegDemuxerStream*> needs_flush,
+    int seek_status) {
+  for (const auto& stream : needs_flush) {
+    CHECK(stream->IsEnabled());
+    stream->FlushBuffers(true);
+  }
+  // TODO(crbug.com/41393620): Report seek failures for track changes too.
+  std::move(cb).Run();
+}
+
+void FFmpegDemuxer::OnTracksChanged(
+    DemuxerStream::Type track_type,
     const std::vector<MediaTrack::Id>& track_ids,
     base::TimeDelta curr_time,
-    DemuxerStream::Type track_type,
     TrackChangeCB change_completed_cb) {
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
 
+  bool any_track_changed = false;
+
   std::set<FFmpegDemuxerStream*> enabled_streams;
+  std::vector<FFmpegDemuxerStream*> needs_flush;
   for (const auto& id : track_ids) {
     auto it = track_id_to_demux_stream_map_.find(id);
     if (it == track_id_to_demux_stream_map_.end())
@@ -1781,6 +1819,10 @@ void FFmpegDemuxer::FindAndEnableProperTracks(
       continue;
     }
     enabled_streams.insert(stream);
+    if (!stream->IsEnabled()) {
+      any_track_changed = true;
+      needs_flush.push_back(stream);
+    }
     stream->SetEnabled(true, curr_time);
   }
 
@@ -1790,62 +1832,25 @@ void FFmpegDemuxer::FindAndEnableProperTracks(
     if (stream && stream->type() == track_type &&
         enabled_streams.find(stream.get()) == enabled_streams.end()) {
       DVLOG(1) << __func__ << ": disabling stream " << stream.get();
+      if (stream->IsEnabled()) {
+        any_track_changed = true;
+      }
       stream->SetEnabled(false, curr_time);
     }
   }
 
   std::vector<DemuxerStream*> streams(enabled_streams.begin(),
                                       enabled_streams.end());
-  std::move(change_completed_cb).Run(streams);
-}
+  base::OnceCallback<void(int)> seek_cb = base::BindOnce(
+      &FFmpegDemuxer::OnTrackChangeSeekComplete, weak_factory_.GetWeakPtr(),
+      base::BindOnce(std::move(change_completed_cb), std::move(streams)),
+      std::move(needs_flush));
 
-void FFmpegDemuxer::OnEnabledAudioTracksChanged(
-    const std::vector<MediaTrack::Id>& track_ids,
-    base::TimeDelta curr_time,
-    TrackChangeCB change_completed_cb) {
-  FindAndEnableProperTracks(track_ids, curr_time, DemuxerStream::AUDIO,
-                            std::move(change_completed_cb));
-}
-
-void FFmpegDemuxer::OnVideoSeekedForTrackChange(
-    DemuxerStream* video_stream,
-    base::OnceClosure seek_completed_cb,
-    int result) {
-  static_cast<FFmpegDemuxerStream*>(video_stream)->FlushBuffers(true);
-  // TODO(crbug.com/40898124): Report seek failures for track changes too.
-  std::move(seek_completed_cb).Run();
-}
-
-void FFmpegDemuxer::SeekOnVideoTrackChange(
-    base::TimeDelta seek_to_time,
-    TrackChangeCB seek_completed_cb,
-    const std::vector<DemuxerStream*>& streams) {
-  if (streams.size() != 1u) {
-    // If FFmpegDemuxer::FindAndEnableProperTracks() was not able to find the
-    // selected streams in the ID->DemuxerStream map, then its possible for
-    // this vector to be empty. If that's the case, we don't want to bother
-    // with seeking, and just call the callback immediately.
-    std::move(seek_completed_cb).Run(streams);
-    return;
+  if (any_track_changed) {
+    SeekInternal(curr_time, std::move(seek_cb));
+  } else {
+    std::move(seek_cb).Run(0);
   }
-  SeekInternal(
-      seek_to_time,
-      base::BindOnce(&FFmpegDemuxer::OnVideoSeekedForTrackChange,
-                     weak_factory_.GetWeakPtr(), streams[0],
-                     base::BindOnce(std::move(seek_completed_cb), streams)));
-}
-
-void FFmpegDemuxer::OnSelectedVideoTrackChanged(
-    const std::vector<MediaTrack::Id>& track_ids,
-    base::TimeDelta curr_time,
-    TrackChangeCB change_completed_cb) {
-  // Find tracks -> Seek track -> run callback.
-  FindAndEnableProperTracks(
-      track_ids, curr_time, DemuxerStream::VIDEO,
-      track_ids.empty() ? std::move(change_completed_cb)
-                        : base::BindOnce(&FFmpegDemuxer::SeekOnVideoTrackChange,
-                                         weak_factory_.GetWeakPtr(), curr_time,
-                                         std::move(change_completed_cb)));
 }
 
 void FFmpegDemuxer::ReadFrameIfNeeded() {
@@ -1955,8 +1960,7 @@ bool FFmpegDemuxer::StreamsHaveAvailableCapacity() {
 bool FFmpegDemuxer::IsMaxMemoryUsageReached() const {
   DCHECK(task_runner_->RunsTasksInCurrentSequence());
 
-  size_t memory_left =
-      GetDemuxerMemoryLimit(Demuxer::DemuxerTypes::kFFmpegDemuxer);
+  size_t memory_left = GetDemuxerMemoryLimit(DemuxerType::kFFmpegDemuxer);
   for (const auto& stream : streams_) {
     if (!stream)
       continue;

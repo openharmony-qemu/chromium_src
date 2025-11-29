@@ -54,7 +54,7 @@ uint64_t FetchAbiRevision() {
   std::optional<uint64_t> read_bytes =
       base::ReadFile(base::FilePath(kPkgAbiRevisionPath), abi_revision_le);
   CHECK_EQ(read_bytes.value(), sizeof(abi_revision_le));
-  return base::numerics::U64FromLittleEndian(abi_revision_le);
+  return base::U64FromLittleEndian(abi_revision_le);
 }
 
 }  // namespace
@@ -81,7 +81,7 @@ void CastResolver::Resolve(CastResolver::ResolveRequest& request,
                   .source = Ref::WithParent({}),
                   .source_name = "svc",
                   .target_path = "/svc",
-                  .rights = fuchsia_io::kRwStarDir,
+                  .rights = fuchsia_io::wire::kRStarDir,
                   .dependency_type =
                       fuchsia_component_decl::DependencyType::kStrong,
               }}),

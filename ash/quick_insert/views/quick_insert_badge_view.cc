@@ -36,13 +36,13 @@ constexpr int kBadgeCornerRadius = 4;
 
 }  // namespace
 
-PickerBadgeView::PickerBadgeView() {
+QuickInsertBadgeView::QuickInsertBadgeView() {
   // TODO: b/342478227 - Ensure this works with tall text.
   views::Builder<views::BoxLayoutView>(this)
       .SetOrientation(views::LayoutOrientation::kHorizontal)
       .SetMainAxisAlignment(views::LayoutAlignment::kStart)
       .SetCrossAxisAlignment(views::LayoutAlignment::kCenter)
-      .SetBackground(views::CreateThemedRoundedRectBackground(
+      .SetBackground(views::CreateRoundedRectBackground(
           cros_tokens::kCrosSysHoverOnSubtle, kBadgeCornerRadius))
       .SetBorder(views::CreateEmptyBorder(kBadgePadding))
       .AddChildren(
@@ -50,9 +50,8 @@ PickerBadgeView::PickerBadgeView() {
               .CopyAddressTo(&label_)
               .SetProperty(views::kMarginsKey,
                            gfx::Insets::TLBR(0, 0, 0, kLabelRightPadding))
-              .SetFontList(
-                  ash::TypographyProvider::Get()->ResolveTypographyToken(
-                      ash::TypographyToken::kCrosLabel1)),
+              .SetFontList(TypographyProvider::Get()->ResolveTypographyToken(
+                  TypographyToken::kCrosLabel1)),
           views::Builder<views::ImageView>()
               .SetImage(ui::ImageModel::FromVectorIcon(
                   kQuickInsertReturnIcon, cros_tokens::kCrosSysOnSurface))
@@ -60,24 +59,24 @@ PickerBadgeView::PickerBadgeView() {
       .BuildChildren();
 }
 
-PickerBadgeView::~PickerBadgeView() = default;
+QuickInsertBadgeView::~QuickInsertBadgeView() = default;
 
-const std::u16string& PickerBadgeView::GetText() const {
+std::u16string_view QuickInsertBadgeView::GetText() const {
   return label_->GetText();
 }
 
-void PickerBadgeView::SetText(const std::u16string& text) {
+void QuickInsertBadgeView::SetText(const std::u16string& text) {
   label_->SetText(std::move(text));
 }
 
-gfx::Size PickerBadgeView::CalculatePreferredSize(
+gfx::Size QuickInsertBadgeView::CalculatePreferredSize(
     const views::SizeBounds& available_size) const {
   const int preferred_width =
       BoxLayoutView::CalculatePreferredSize(available_size).width();
   return gfx::Size(preferred_width, kBadgeHeight);
 }
 
-BEGIN_METADATA(PickerBadgeView)
+BEGIN_METADATA(QuickInsertBadgeView)
 END_METADATA
 
 }  // namespace ash

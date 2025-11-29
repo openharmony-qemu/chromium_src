@@ -26,12 +26,14 @@
 #include "quiche/quic/core/http/web_transport_http3.h"
 #include "quiche/quic/core/qpack/value_splitting_header_list.h"
 #include "quiche/quic/core/quic_connection.h"
+#include "quiche/quic/core/quic_stream_priority.h"
 #include "quiche/quic/core/quic_stream_sequencer_buffer.h"
 #include "quiche/quic/core/quic_utils.h"
 #include "quiche/quic/core/quic_versions.h"
 #include "quiche/quic/core/quic_write_blocked_list.h"
 #include "quiche/quic/platform/api/quic_expect_bug.h"
 #include "quiche/quic/platform/api/quic_flags.h"
+#include "quiche/quic/platform/api/quic_ip_address.h"
 #include "quiche/quic/platform/api/quic_test.h"
 #include "quiche/quic/test_tools/qpack/qpack_test_utils.h"
 #include "quiche/quic/test_tools/quic_config_peer.h"
@@ -43,6 +45,7 @@
 #include "quiche/quic/test_tools/quic_stream_peer.h"
 #include "quiche/quic/test_tools/quic_test_utils.h"
 #include "quiche/common/capsule.h"
+#include "quiche/common/http/http_header_block.h"
 #include "quiche/common/quiche_ip_address.h"
 #include "quiche/common/quiche_mem_slice_storage.h"
 #include "quiche/common/simple_buffer_allocator.h"
@@ -253,6 +256,10 @@ class TestStream : public QuicSpdyStream {
     data_ += std::string(buffer, bytes_read);
   }
 
+  void OnSoonToBeDestroyed() override {
+    on_soon_to_be_destroyed_called_ = true;
+  }
+
   MOCK_METHOD(void, WriteHeadersMock, (bool fin), ());
 
   size_t WriteHeadersImpl(
@@ -282,12 +289,16 @@ class TestStream : public QuicSpdyStream {
   }
 
   size_t headers_payload_length() const { return headers_payload_length_; }
+  bool on_soon_to_be_destroyed_called() const {
+    return on_soon_to_be_destroyed_called_;
+  }
 
  private:
   bool should_process_data_;
   quiche::HttpHeaderBlock saved_headers_;
   std::string data_;
   size_t headers_payload_length_;
+  bool on_soon_to_be_destroyed_called_ = false;
 };
 
 class TestSession : public MockQuicSpdySession {
@@ -1786,16 +1797,20 @@ TEST_P(QuicSpdyStreamTest, HeaderStreamNotiferCorrespondingSpdyStream) {
 
   EXPECT_CALL(*ack_listener1, OnPacketAcked(7, _));
   EXPECT_TRUE(session_->OnFrameAcked(QuicFrame(frame1), QuicTime::Delta::Zero(),
-                                     QuicTime::Zero()));
+                                     QuicTime::Zero(),
+                                     /*is_retransmission=*/false));
   EXPECT_CALL(*ack_listener1, OnPacketAcked(5, _));
   EXPECT_TRUE(session_->OnFrameAcked(QuicFrame(frame2), QuicTime::Delta::Zero(),
-                                     QuicTime::Zero()));
+                                     QuicTime::Zero(),
+                                     /*is_retransmission=*/false));
   EXPECT_CALL(*ack_listener2, OnPacketAcked(7, _));
   EXPECT_TRUE(session_->OnFrameAcked(QuicFrame(frame3), QuicTime::Delta::Zero(),
-                                     QuicTime::Zero()));
+                                     QuicTime::Zero(),
+                                     /*is_retransmission=*/false));
   EXPECT_CALL(*ack_listener2, OnPacketAcked(5, _));
   EXPECT_TRUE(session_->OnFrameAcked(QuicFrame(frame4), QuicTime::Delta::Zero(),
-                                     QuicTime::Zero()));
+                                     QuicTime::Zero(),
+                                     /*is_retransmission=*/false));
 }
 
 TEST_P(QuicSpdyStreamTest, OnPriorityFrame) {
@@ -1865,8 +1880,8 @@ TEST_P(QuicSpdyStreamTest, StreamWaitsForAcks) {
   EXPECT_CALL(*mock_ack_listener, OnPacketAcked(9, _));
   QuicByteCount newly_acked_length = 0;
   EXPECT_TRUE(stream_->OnStreamFrameAcked(0, 9, false, QuicTime::Delta::Zero(),
-                                          QuicTime::Zero(),
-                                          &newly_acked_length));
+                                          QuicTime::Zero(), &newly_acked_length,
+                                          /*is_retransmission=*/false));
   // Stream is not waiting for acks as all sent data is acked.
   EXPECT_FALSE(stream_->IsWaitingForAcks());
   EXPECT_EQ(0u, QuicStreamPeer::SendBuffer(stream_).size());
@@ -1887,8 +1902,8 @@ TEST_P(QuicSpdyStreamTest, StreamWaitsForAcks) {
   // kData2 is acked.
   EXPECT_CALL(*mock_ack_listener, OnPacketAcked(9, _));
   EXPECT_TRUE(stream_->OnStreamFrameAcked(9, 9, false, QuicTime::Delta::Zero(),
-                                          QuicTime::Zero(),
-                                          &newly_acked_length));
+                                          QuicTime::Zero(), &newly_acked_length,
+                                          /*is_retransmission=*/false));
   // Stream is waiting for acks as FIN is not acked.
   EXPECT_TRUE(stream_->IsWaitingForAcks());
   EXPECT_EQ(0u, QuicStreamPeer::SendBuffer(stream_).size());
@@ -1896,10 +1911,73 @@ TEST_P(QuicSpdyStreamTest, StreamWaitsForAcks) {
   // FIN is acked.
   EXPECT_CALL(*mock_ack_listener, OnPacketAcked(0, _));
   EXPECT_TRUE(stream_->OnStreamFrameAcked(18, 0, true, QuicTime::Delta::Zero(),
-                                          QuicTime::Zero(),
-                                          &newly_acked_length));
+                                          QuicTime::Zero(), &newly_acked_length,
+                                          /*is_retransmission=*/false));
   EXPECT_FALSE(stream_->IsWaitingForAcks());
   EXPECT_EQ(0u, QuicStreamPeer::SendBuffer(stream_).size());
+}
+
+TEST_P(QuicSpdyStreamTest, NotifyOnPacketAckedBeforeStreamDestroy) {
+  Initialize(kShouldProcessData);
+  quiche::QuicheReferenceCountedPointer<MockAckListener> mock_ack_listener(
+      new StrictMock<MockAckListener>);
+  stream_->set_ack_listener(mock_ack_listener);
+  EXPECT_CALL(*session_, WritevData(_, _, _, _, _, _)).Times(AtLeast(1));
+  // Stream is not waiting for acks initially.
+  EXPECT_FALSE(stream_->IsWaitingForAcks());
+  EXPECT_EQ(0u, QuicStreamPeer::SendBuffer(stream_).size());
+  // Receive and consume initial headers with FIN set.
+  QuicHeaderList headers = ProcessHeaders(true, headers_);
+  stream_->ConsumeHeaderList();
+  stream_->OnFinRead();
+  EXPECT_TRUE(stream_->read_side_closed());
+
+  // Send kData1.
+  stream_->WriteOrBufferData("FooAndBar", false, nullptr);
+  EXPECT_EQ(1u, QuicStreamPeer::SendBuffer(stream_).size());
+  EXPECT_TRUE(stream_->IsWaitingForAcks());
+  EXPECT_CALL(*mock_ack_listener, OnPacketAcked(9, _));
+  QuicByteCount newly_acked_length = 0;
+  EXPECT_TRUE(stream_->OnStreamFrameAcked(0, 9, false, QuicTime::Delta::Zero(),
+                                          QuicTime::Zero(), &newly_acked_length,
+                                          /*is_retransmission=*/false));
+  // Stream is not waiting for acks as all sent data is acked.
+  EXPECT_FALSE(stream_->IsWaitingForAcks());
+  EXPECT_EQ(0u, QuicStreamPeer::SendBuffer(stream_).size());
+
+  // Send kData2.
+  stream_->WriteOrBufferData("FooAndBar", true, nullptr);
+  EXPECT_TRUE(stream_->IsWaitingForAcks());
+  EXPECT_EQ(1u, QuicStreamPeer::SendBuffer(stream_).size());
+  EXPECT_TRUE(stream_->IsZombie());
+
+  // kData2 is acked.
+  EXPECT_CALL(*mock_ack_listener, OnPacketAcked(9, _));
+  EXPECT_TRUE(stream_->OnStreamFrameAcked(9, 9, false, QuicTime::Delta::Zero(),
+                                          QuicTime::Zero(), &newly_acked_length,
+                                          /*is_retransmission=*/false));
+  // Stream is waiting for acks as FIN is not acked.
+  EXPECT_TRUE(stream_->IsWaitingForAcks());
+  EXPECT_EQ(0u, QuicStreamPeer::SendBuffer(stream_).size());
+
+  // FIN is acked.
+  EXPECT_CALL(*mock_ack_listener, OnPacketAcked(0, _))
+      .WillOnce(InvokeWithoutArgs([&]() {
+        if (GetQuicReloadableFlag(quic_notify_ack_listener_earlier)) {
+          // Stream is not added to closed stream list yet.
+          EXPECT_NE(session_->GetActiveStream(stream_->id()), nullptr);
+          EXPECT_FALSE(stream_->on_soon_to_be_destroyed_called());
+        } else {
+          EXPECT_EQ(session_->GetActiveStream(stream_->id()), nullptr);
+          EXPECT_TRUE(stream_->on_soon_to_be_destroyed_called());
+        }
+      }));
+  EXPECT_TRUE(stream_->OnStreamFrameAcked(18, 0, true, QuicTime::Delta::Zero(),
+                                          QuicTime::Zero(), &newly_acked_length,
+                                          /*is_retransmission=*/false));
+  EXPECT_FALSE(stream_->IsWaitingForAcks());
+  EXPECT_EQ(0u, QuicStreamPeer::SendBuffer(stream_).size());
+  EXPECT_TRUE(stream_->on_soon_to_be_destroyed_called());
 }
 
 TEST_P(QuicSpdyStreamTest, StreamDataGetAckedMultipleTimes) {
@@ -1918,20 +1996,20 @@ TEST_P(QuicSpdyStreamTest, StreamDataGetAckedMultipleTimes) {
   QuicByteCount newly_acked_length = 0;
   EXPECT_CALL(*mock_ack_listener, OnPacketAcked(9, _));
   EXPECT_TRUE(stream_->OnStreamFrameAcked(0, 9, false, QuicTime::Delta::Zero(),
-                                          QuicTime::Zero(),
-                                          &newly_acked_length));
+                                          QuicTime::Zero(), &newly_acked_length,
+                                          /*is_retransmission=*/false));
   EXPECT_EQ(2u, QuicStreamPeer::SendBuffer(stream_).size());
   // Verify [9, 22) 13 bytes are acked.
   EXPECT_CALL(*mock_ack_listener, OnPacketAcked(13, _));
   EXPECT_TRUE(stream_->OnStreamFrameAcked(5, 17, false, QuicTime::Delta::Zero(),
-                                          QuicTime::Zero(),
-                                          &newly_acked_length));
+                                          QuicTime::Zero(), &newly_acked_length,
+                                          /*is_retransmission=*/false));
   EXPECT_EQ(1u, QuicStreamPeer::SendBuffer(stream_).size());
   // Verify [22, 26) 4 bytes are acked.
   EXPECT_CALL(*mock_ack_listener, OnPacketAcked(4, _));
   EXPECT_TRUE(stream_->OnStreamFrameAcked(18, 8, false, QuicTime::Delta::Zero(),
-                                          QuicTime::Zero(),
-                                          &newly_acked_length));
+                                          QuicTime::Zero(), &newly_acked_length,
+                                          /*is_retransmission=*/false));
   EXPECT_EQ(1u, QuicStreamPeer::SendBuffer(stream_).size());
   EXPECT_TRUE(stream_->IsWaitingForAcks());
 
@@ -1939,25 +2017,25 @@ TEST_P(QuicSpdyStreamTest, StreamDataGetAckedMultipleTimes) {
   // Verify [26, 27) 1 byte is acked.
   EXPECT_CALL(*mock_ack_listener, OnPacketAcked(1, _));
   EXPECT_TRUE(stream_->OnStreamFrameAcked(26, 1, false, QuicTime::Delta::Zero(),
-                                          QuicTime::Zero(),
-                                          &newly_acked_length));
+                                          QuicTime::Zero(), &newly_acked_length,
+                                          /*is_retransmission=*/false));
   EXPECT_EQ(0u, QuicStreamPeer::SendBuffer(stream_).size());
   EXPECT_TRUE(stream_->IsWaitingForAcks());
 
   // Ack Fin. Verify OnPacketAcked is called.
   EXPECT_CALL(*mock_ack_listener, OnPacketAcked(0, _));
   EXPECT_TRUE(stream_->OnStreamFrameAcked(27, 0, true, QuicTime::Delta::Zero(),
-                                          QuicTime::Zero(),
-                                          &newly_acked_length));
+                                          QuicTime::Zero(), &newly_acked_length,
+                                          /*is_retransmission=*/false));
   EXPECT_EQ(0u, QuicStreamPeer::SendBuffer(stream_).size());
   EXPECT_FALSE(stream_->IsWaitingForAcks());
 
   // Ack [10, 27) and fin.
   // No new data is acked, verify OnPacketAcked is not called.
   EXPECT_CALL(*mock_ack_listener, OnPacketAcked(_, _)).Times(0);
-  EXPECT_FALSE(
-      stream_->OnStreamFrameAcked(10, 17, true, QuicTime::Delta::Zero(),
-                                  QuicTime::Zero(), &newly_acked_length));
+  EXPECT_FALSE(stream_->OnStreamFrameAcked(
+      10, 17, true, QuicTime::Delta::Zero(), QuicTime::Zero(),
+      &newly_acked_length, /*is_retransmission=*/false));
   EXPECT_EQ(0u, QuicStreamPeer::SendBuffer(stream_).size());
   EXPECT_FALSE(stream_->IsWaitingForAcks());
 }
@@ -1988,19 +2066,22 @@ TEST_P(QuicSpdyStreamTest, HeadersAckNotReportedWriteOrBufferBody) {
   QuicStreamFrame frame(stream_->id(), false, 0,
                         absl::StrCat(header.AsStringView(), body));
   EXPECT_TRUE(session_->OnFrameAcked(QuicFrame(frame), QuicTime::Delta::Zero(),
-                                     QuicTime::Zero()));
+                                     QuicTime::Zero(),
+                                     /*is_retransmission=*/false));
 
   EXPECT_CALL(*mock_ack_listener, OnPacketAcked(0, _));
   QuicStreamFrame frame2(stream_->id(), false, header.size() + body.length(),
                          header2.AsStringView());
   EXPECT_TRUE(session_->OnFrameAcked(QuicFrame(frame2), QuicTime::Delta::Zero(),
-                                     QuicTime::Zero()));
+                                     QuicTime::Zero(),
+                                     /*is_retransmission=*/false));
 
   EXPECT_CALL(*mock_ack_listener, OnPacketAcked(body2.length(), _));
   QuicStreamFrame frame3(stream_->id(), true,
                          header.size() + body.length() + header2.size(), body2);
   EXPECT_TRUE(session_->OnFrameAcked(QuicFrame(frame3), QuicTime::Delta::Zero(),
-                                     QuicTime::Zero()));
+                                     QuicTime::Zero(),
+                                     /*is_retransmission=*/false));
 
   EXPECT_TRUE(
       QuicSpdyStreamPeer::unacked_frame_headers_offsets(stream_).Empty());
@@ -2035,7 +2116,8 @@ TEST_P(QuicSpdyStreamTest, HeadersAckNotReportedWriteBodySlices) {
               OnPacketAcked(body1.length() + body2.length(), _));
   QuicStreamFrame frame(stream_->id(), true, 0, data1 + data2);
   EXPECT_TRUE(session_->OnFrameAcked(QuicFrame(frame), QuicTime::Delta::Zero(),
-                                     QuicTime::Zero()));
+                                     QuicTime::Zero(),
+                                     /*is_retransmission=*/false));
 
   EXPECT_TRUE(
       QuicSpdyStreamPeer::unacked_frame_headers_offsets(stream_).Empty());
@@ -2140,6 +2222,46 @@ TEST_P(QuicSpdyStreamTest, ProcessBodyAfterTrailers) {
   EXPECT_EQ(kDataFramePayload, absl::string_view(buffer, bytes_read));
 
   EXPECT_FALSE(stream_->HasBytesToRead());
+}
+
+TEST_P(QuicSpdyStreamTest, IncompleteHeadersWithFin) {
+  SetQuicReloadableFlag(quic_fin_before_completed_http_headers, true);
+  if (!UsesHttp3()) {
+    return;
+  }
+
+  Initialize(!kShouldProcessData);
+
+  std::string headers = HeadersFrame({std::make_pair("foo", "bar")});
+  std::string partial_headers = headers.substr(0, headers.length() - 2);
+  EXPECT_FALSE(partial_headers.empty());
+  // Receive the first three bytes of the headers frame with FIN.
+  QuicStreamFrame frame(stream_->id(), true, 0, partial_headers);
+  EXPECT_CALL(
+      *connection_,
+      CloseConnection(
+          QUIC_HTTP_INVALID_FRAME_SEQUENCE_ON_SPDY_STREAM,
+          MatchesRegex("Received FIN before finishing receiving HTTP headers."),
+          ConnectionCloseBehavior::SEND_CONNECTION_CLOSE_PACKET));
+  stream_->OnStreamFrame(frame);
+}
+
+TEST_P(QuicSpdyStreamTest, EmptyStreamFrameWithFin) {
+  SetQuicReloadableFlag(quic_fin_before_completed_http_headers, true);
+  if (!UsesHttp3()) {
+    return;
+  }
+  Initialize(!kShouldProcessData);
+
+  // Receive the first three bytes of the headers frame with FIN.
+  QuicStreamFrame frame(stream_->id(), true, 0, 0);
+  EXPECT_CALL(
+      *connection_,
+      CloseConnection(
+          QUIC_HTTP_INVALID_FRAME_SEQUENCE_ON_SPDY_STREAM,
+          MatchesRegex("Received FIN before finishing receiving HTTP headers."),
+          ConnectionCloseBehavior::SEND_CONNECTION_CLOSE_PACKET));
+  stream_->OnStreamFrame(frame);
 }
 
 // The test stream will receive a stream frame containing malformed headers and
@@ -2388,24 +2510,15 @@ TEST_P(QuicSpdyStreamTest, BlockedHeaderDecodingAndStopReading) {
 
   // Decoding is blocked because dynamic table entry has not been received yet.
   EXPECT_FALSE(stream_->headers_decompressed());
+  EXPECT_CALL(debug_visitor, OnHeadersDecoded(stream_->id(), _)).Times(0);
 
-  if (GetQuicReloadableFlag(
-          quic_stop_reading_also_stops_header_decompression)) {
-    EXPECT_CALL(debug_visitor, OnHeadersDecoded(stream_->id(), _)).Times(0);
-  }
   // Stop reading from now on. Any buffered compressed headers shouldn't be
   // decompressed and delivered up.
   stream_->StopReading();
 
-  if (!GetQuicReloadableFlag(
-          quic_stop_reading_also_stops_header_decompression)) {
-    EXPECT_CALL(debug_visitor, OnHeadersDecoded(stream_->id(), _));
-  }
   // Deliver dynamic table entry to decoder.
   session_->qpack_decoder()->OnInsertWithoutNameReference("foo", "bar");
-  EXPECT_NE(
-      GetQuicReloadableFlag(quic_stop_reading_also_stops_header_decompression),
-      stream_->headers_decompressed());
+  EXPECT_FALSE(stream_->headers_decompressed());
 }
 
 TEST_P(QuicSpdyStreamTest, AsyncErrorDecodingHeaders) {
@@ -3176,7 +3289,7 @@ TEST_P(QuicSpdyStreamTest, TwoResetStreamFrames) {
   EXPECT_FALSE(stream_->write_side_closed());
 }
 
-TEST_P(QuicSpdyStreamTest, ProcessOutgoingWebTransportHeaders) {
+TEST_P(QuicSpdyStreamTest, ProcessWebTransportHeadersAsClient) {
   if (!UsesHttp3()) {
     return;
   }
@@ -3193,20 +3306,97 @@ TEST_P(QuicSpdyStreamTest, ProcessOutgoingWebTransportHeaders) {
   EXPECT_CALL(*session_, WritevData(stream_->id(), _, _, _, _, _))
       .Times(AnyNumber());
 
-  quiche::HttpHeaderBlock headers;
-  headers[":method"] = "CONNECT";
-  headers[":protocol"] = "webtransport";
-  stream_->WriteHeaders(std::move(headers), /*fin=*/false, nullptr);
+  quiche::HttpHeaderBlock request_headers;
+  request_headers[":method"] = "CONNECT";
+  request_headers[":protocol"] = "webtransport";
+  request_headers["wt-available-protocols"] = "moqt-00, moqt-01; foo=bar";
+  stream_->WriteHeaders(std::move(request_headers), /*fin=*/false, nullptr);
   ASSERT_TRUE(stream_->web_transport() != nullptr);
   EXPECT_EQ(stream_->id(), stream_->web_transport()->id());
+  EXPECT_THAT(stream_->web_transport()->subprotocols_offered(),
+              ElementsAre("moqt-00", "moqt-01"));
+
+  quiche::HttpHeaderBlock response_headers;
+  response_headers[":status"] = "200";
+  response_headers["wt-protocol"] = "moqt-01";
+  stream_->web_transport()->HeadersReceived(response_headers);
+  EXPECT_EQ(stream_->web_transport()->rejection_reason(),
+            WebTransportHttp3RejectionReason::kNone);
+  EXPECT_EQ(stream_->web_transport()->GetNegotiatedSubprotocol(), "moqt-01");
 }
 
-TEST_P(QuicSpdyStreamTest, ProcessIncomingWebTransportHeaders) {
+TEST_P(QuicSpdyStreamTest, WebTransportRejectSubprotocolsThatWereNotOffered) {
   if (!UsesHttp3()) {
     return;
   }
 
-  Initialize(kShouldProcessData);
+  InitializeWithPerspective(kShouldProcessData, Perspective::IS_CLIENT);
+  session_->set_local_http_datagram_support(HttpDatagramSupport::kRfc);
+  session_->EnableWebTransport();
+  session_->OnSetting(SETTINGS_ENABLE_CONNECT_PROTOCOL, 1);
+  QuicSpdySessionPeer::EnableWebTransport(session_.get());
+  QuicSpdySessionPeer::SetHttpDatagramSupport(session_.get(),
+                                              HttpDatagramSupport::kRfc);
+
+  EXPECT_CALL(*stream_, WriteHeadersMock(false));
+  EXPECT_CALL(*session_, WritevData(stream_->id(), _, _, _, _, _))
+      .Times(AnyNumber());
+
+  quiche::HttpHeaderBlock request_headers;
+  request_headers[":method"] = "CONNECT";
+  request_headers[":protocol"] = "webtransport";
+  request_headers["wt-available-protocols"] = "moqt-00, moqt-01; foo=bar";
+  stream_->WriteHeaders(std::move(request_headers), /*fin=*/false, nullptr);
+  ASSERT_TRUE(stream_->web_transport() != nullptr);
+
+  quiche::HttpHeaderBlock response_headers;
+  response_headers[":status"] = "200";
+  response_headers["wt-protocol"] = "moqt-02";
+  stream_->web_transport()->HeadersReceived(response_headers);
+  EXPECT_EQ(stream_->web_transport()->rejection_reason(),
+            WebTransportHttp3RejectionReason::kSubprotocolMismatch);
+  EXPECT_EQ(stream_->web_transport()->GetNegotiatedSubprotocol(), std::nullopt);
+}
+
+TEST_P(QuicSpdyStreamTest, WebTransportInvalidSubprotocolResponse) {
+  if (!UsesHttp3()) {
+    return;
+  }
+
+  InitializeWithPerspective(kShouldProcessData, Perspective::IS_CLIENT);
+  session_->set_local_http_datagram_support(HttpDatagramSupport::kRfc);
+  session_->EnableWebTransport();
+  session_->OnSetting(SETTINGS_ENABLE_CONNECT_PROTOCOL, 1);
+  QuicSpdySessionPeer::EnableWebTransport(session_.get());
+  QuicSpdySessionPeer::SetHttpDatagramSupport(session_.get(),
+                                              HttpDatagramSupport::kRfc);
+
+  EXPECT_CALL(*stream_, WriteHeadersMock(false));
+  EXPECT_CALL(*session_, WritevData(stream_->id(), _, _, _, _, _))
+      .Times(AnyNumber());
+
+  quiche::HttpHeaderBlock request_headers;
+  request_headers[":method"] = "CONNECT";
+  request_headers[":protocol"] = "webtransport";
+  request_headers["wt-available-protocols"] = "moqt-00, moqt-01; foo=bar";
+  stream_->WriteHeaders(std::move(request_headers), /*fin=*/false, nullptr);
+  ASSERT_TRUE(stream_->web_transport() != nullptr);
+
+  quiche::HttpHeaderBlock response_headers;
+  response_headers[":status"] = "200";
+  response_headers["wt-protocol"] = "12345.67";
+  stream_->web_transport()->HeadersReceived(response_headers);
+  EXPECT_EQ(stream_->web_transport()->rejection_reason(),
+            WebTransportHttp3RejectionReason::kSubprotocolParseError);
+  EXPECT_EQ(stream_->web_transport()->GetNegotiatedSubprotocol(), std::nullopt);
+}
+
+TEST_P(QuicSpdyStreamTest, ProcessWebTransportHeadersAsServer) {
+  if (!UsesHttp3()) {
+    return;
+  }
+
+  InitializeWithPerspective(kShouldProcessData, Perspective::IS_SERVER);
   session_->set_local_http_datagram_support(HttpDatagramSupport::kRfc);
   session_->EnableWebTransport();
   QuicSpdySessionPeer::EnableWebTransport(session_.get());
@@ -3215,6 +3405,7 @@ TEST_P(QuicSpdyStreamTest, ProcessIncomingWebTransportHeaders) {
 
   headers_[":method"] = "CONNECT";
   headers_[":protocol"] = "webtransport";
+  headers_["wt-available-protocols"] = "moqt-00, moqt-01; foo=bar";
 
   stream_->OnStreamHeadersPriority(
       spdy::SpdyStreamPrecedence(kV3HighestPriority));
@@ -3224,6 +3415,15 @@ TEST_P(QuicSpdyStreamTest, ProcessIncomingWebTransportHeaders) {
   EXPECT_FALSE(stream_->IsDoneReading());
   ASSERT_TRUE(stream_->web_transport() != nullptr);
   EXPECT_EQ(stream_->id(), stream_->web_transport()->id());
+
+  EXPECT_CALL(*stream_, WriteHeadersMock(false));
+  EXPECT_CALL(*session_, WritevData(stream_->id(), _, _, _, _, _))
+      .Times(AnyNumber());
+  quiche::HttpHeaderBlock response_headers;
+  response_headers[":status"] = "200";
+  response_headers["wt-protocol"] = "moqt-01";
+  stream_->WriteHeaders(std::move(response_headers), /*fin=*/false, nullptr);
+  EXPECT_EQ(stream_->web_transport()->GetNegotiatedSubprotocol(), "moqt-01");
 }
 
 TEST_P(QuicSpdyStreamTest, IncomingWebTransportStreamWhenUnsupported) {
@@ -3438,6 +3638,8 @@ TEST_P(QuicSpdyStreamTest, Capsules) {
   stream_->RegisterHttp3DatagramVisitor(&h3_datagram_visitor);
   SavingConnectIpVisitor connect_ip_visitor;
   stream_->RegisterConnectIpVisitor(&connect_ip_visitor);
+  SavingConnectUdpBindVisitor connect_udp_bind_visitor;
+  stream_->RegisterConnectUdpBindVisitor(&connect_udp_bind_visitor);
   headers_[":method"] = "CONNECT";
   headers_[":protocol"] = "fake-capsule-protocol";
   ProcessHeaders(/*fin=*/false, headers_);
@@ -3479,6 +3681,22 @@ TEST_P(QuicSpdyStreamTest, Capsules) {
   EXPECT_THAT(
       connect_ip_visitor.received_route_advertisement_capsules(),
       ElementsAre(route_advertisement_capsule.route_advertisement_capsule()));
+  // Compression assign capsule.
+  Capsule compression_assign_capsule = Capsule::CompressionAssign();
+  compression_assign_capsule.compression_assign_capsule().context_id = 100;
+  compression_assign_capsule.compression_assign_capsule().ip_address_port =
+      QuicSocketAddress(QuicIpAddress::Loopback4(), 80);
+  stream_->OnCapsule(compression_assign_capsule);
+  EXPECT_THAT(
+      connect_udp_bind_visitor.received_compression_assign_capsules(),
+      ElementsAre(compression_assign_capsule.compression_assign_capsule()));
+  // Compression close capsule.
+  Capsule compression_close_capsule = Capsule::CompressionClose();
+  compression_close_capsule.compression_close_capsule().context_id = 100;
+  stream_->OnCapsule(compression_close_capsule);
+  EXPECT_THAT(
+      connect_udp_bind_visitor.received_compression_close_capsules(),
+      ElementsAre(compression_close_capsule.compression_close_capsule()));
   // Unknown capsule.
   uint64_t capsule_type = 0x17u;
   std::string capsule_payload = {1, 2, 3, 4};
@@ -3490,6 +3708,7 @@ TEST_P(QuicSpdyStreamTest, Capsules) {
   // Cleanup.
   stream_->UnregisterHttp3DatagramVisitor();
   stream_->UnregisterConnectIpVisitor();
+  stream_->UnregisterConnectUdpBindVisitor();
 }
 
 TEST_P(QuicSpdyStreamTest,
@@ -3566,12 +3785,7 @@ TEST_P(QuicSpdyStreamTest, HostHeaderInRequest) {
   Initialize(kShouldProcessData);
 
   headers_["host"] = "foo";
-  if (GetQuicReloadableFlag(quic_allow_host_in_request2)) {
-    EXPECT_TRUE(stream_->ValidateReceivedHeaders(AsHeaderList(headers_)));
-  } else {
-    EXPECT_FALSE(stream_->ValidateReceivedHeaders(AsHeaderList(headers_)));
-    EXPECT_EQ("host header is not allowed", stream_->invalid_request_details());
-  }
+  EXPECT_TRUE(stream_->ValidateReceivedHeaders(AsHeaderList(headers_)));
 }
 
 }  // namespace

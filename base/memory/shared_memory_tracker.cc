@@ -62,11 +62,8 @@ void SharedMemoryTracker::DecrementMemoryUsage(
     const SharedMemoryMapping& mapping) {
   AutoLock hold(usages_lock_);
   const auto it = usages_.find(mapping.mapped_memory().data());
-  // TODO(pbos): When removing this NotFatalUntil, use erase(it) below. We can't
-  // do that now because if this CHECK is actually failing there'd be a memory
-  // bug.
-  CHECK(it != usages_.end(), base::NotFatalUntil::M125);
-  usages_.erase(mapping.mapped_memory().data());
+  CHECK(it != usages_.end());
+  usages_.erase(it);
 }
 
 SharedMemoryTracker::SharedMemoryTracker() {
@@ -101,8 +98,9 @@ SharedMemoryTracker::GetOrCreateSharedMemoryDumpInternal(
   const std::string dump_name = GetDumpNameForTracing(mapped_id);
   trace_event::MemoryAllocatorDump* local_dump =
       pmd->GetAllocatorDump(dump_name);
-  if (local_dump)
+  if (local_dump) {
     return local_dump;
+  }
 
   size_t virtual_size = mapped_size;
   // If resident size is not available, a virtual size is used as fallback.
@@ -111,8 +109,9 @@ SharedMemoryTracker::GetOrCreateSharedMemoryDumpInternal(
   std::optional<size_t> resident_size =
       trace_event::ProcessMemoryDump::CountResidentBytesInSharedMemory(
           mapped_memory, mapped_size);
-  if (resident_size.has_value())
+  if (resident_size.has_value()) {
     size = resident_size.value();
+  }
 #endif
 
   local_dump = pmd->CreateAllocatorDump(dump_name);
@@ -136,4 +135,4 @@ SharedMemoryTracker::GetOrCreateSharedMemoryDumpInternal(
 #endif  // BUILDFLAG(ENABLE_BASE_TRACING)
 }
 
-}  // namespace
+}  // namespace base

@@ -7,11 +7,15 @@
 #include "base/notimplemented.h"
 #include "base/notreached.h"
 #include "base/trace_event/trace_event.h"
+#include "base/trace_event/typed_macros.h"
 #include "components/input/render_widget_host_input_event_router.h"
 
 namespace viz {
 
 RenderInputRouterSupportBase::~RenderInputRouterSupportBase() {
+  TRACE_EVENT_INSTANT(
+      "input", "RenderInputRouterSupportBase::~RenderInputRouterSupportBase");
+  rir_->SetView(nullptr);
   NotifyObserversAboutShutdown();
 }
 
@@ -24,6 +28,7 @@ RenderInputRouterSupportBase::RenderInputRouterSupportBase(
       "input", "RenderInputRouterSupportBase::RenderInputRouterSupportBase",
       "frame_sink_id", frame_sink_id);
   CHECK(delegate_);
+  rir_->SetView(this);
 }
 
 bool RenderInputRouterSupportBase::ShouldInitiateStylusWriting() {
@@ -98,8 +103,11 @@ const FrameSinkId& RenderInputRouterSupportBase::GetFrameSinkId() const {
 }
 
 gfx::Size RenderInputRouterSupportBase::GetVisibleViewportSize() {
-  // TODO(374119530): Implement GetVisibleViewportSize in Viz.
-  NOTREACHED();
+  auto* metadata = delegate_->GetLastActivatedFrameMetadata(GetFrameSinkId());
+  if (!metadata) {
+    return gfx::Size();
+  }
+  return metadata->visible_viewport_size;
 }
 
 void RenderInputRouterSupportBase::OnAutoscrollStart() {
@@ -121,6 +129,10 @@ bool RenderInputRouterSupportBase::IsPointerLocked() {
   // Related to mouse events handling which on VizCompositor which is out of
   // scope currently for InputVizard.
   NOTREACHED();
+}
+
+void RenderInputRouterSupportBase::StopFlingingOnViz() {
+  RenderWidgetHostViewInput::StopFling();
 }
 
 void RenderInputRouterSupportBase::UpdateFrameSinkIdRegistration() {

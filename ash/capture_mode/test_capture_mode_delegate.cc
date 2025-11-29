@@ -6,7 +6,6 @@
 
 #include <utility>
 
-#include "ash/capture_mode/capture_mode_types.h"
 #include "ash/capture_mode/fake_video_source_provider.h"
 #include "ash/public/cpp/ash_web_view_factory.h"
 #include "ash/session/session_controller_impl.h"
@@ -16,9 +15,17 @@
 #include "base/threading/thread_restrictions.h"
 #include "chromeos/ash/services/recording/public/mojom/recording_service.mojom.h"
 #include "chromeos/ash/services/recording/recording_service_test_api.h"
+#include "services/network/test/test_shared_url_loader_factory.h"
+#include "testing/gmock/include/gmock/gmock.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 
 namespace ash {
+
+namespace {
+
+using ::testing::Return;
+
+}  // namespace
 
 TestCaptureModeDelegate::TestCaptureModeDelegate()
     : video_source_provider_(std::make_unique<FakeVideoSourceProvider>()) {
@@ -33,6 +40,7 @@ TestCaptureModeDelegate::TestCaptureModeDelegate()
   DCHECK(created_dir);
   created_dir = fake_one_drive_mount_path_.CreateUniqueTempDir();
   DCHECK(created_dir);
+  ON_CALL(*this, IsNetworkConnectionOffline).WillByDefault(Return(false));
 }
 
 TestCaptureModeDelegate::~TestCaptureModeDelegate() = default;
@@ -95,6 +103,7 @@ bool TestCaptureModeDelegate::Uses24HourFormat() const {
 }
 
 void TestCaptureModeDelegate::CheckCaptureModeInitRestrictionByDlp(
+    bool shutting_down,
     OnCaptureModeDlpRestrictionChecked callback) {
   std::move(callback).Run(/*proceed=*/is_allowed_by_dlp_);
 }
@@ -108,6 +117,10 @@ void TestCaptureModeDelegate::CheckCaptureOperationRestrictionByDlp(
 
 bool TestCaptureModeDelegate::IsCaptureAllowedByPolicy() const {
   return is_allowed_by_policy_;
+}
+
+bool TestCaptureModeDelegate::IsSearchAllowedByPolicy() const {
+  return is_search_allowed_by_policy_;
 }
 
 void TestCaptureModeDelegate::StartObservingRestrictedContent(
@@ -169,6 +182,10 @@ base::FilePath TestCaptureModeDelegate::GetOneDriveMountPointPath() const {
   return fake_one_drive_mount_path_.GetPath();
 }
 
+base::FilePath TestCaptureModeDelegate::GetOneDriveVirtualPath() const {
+  return fake_one_drive_mount_path_.GetPath();
+}
+
 TestCaptureModeDelegate::PolicyCapturePath
 TestCaptureModeDelegate::GetPolicyCapturePath() const {
   return policy_capture_path_;
@@ -208,7 +225,8 @@ void TestCaptureModeDelegate::NotifyDeviceUsedWhileDisabled(
 void TestCaptureModeDelegate::FinalizeSavedFile(
     base::OnceCallback<void(bool, const base::FilePath&)> callback,
     const base::FilePath& path,
-    const gfx::Image& thumbnail) {
+    const gfx::Image& thumbnail,
+    bool for_video) {
   std::move(callback).Run(/*success=*/true, path);
 }
 
@@ -223,20 +241,31 @@ std::unique_ptr<AshWebView> TestCaptureModeDelegate::CreateSearchResultsView()
   return AshWebViewFactory::Get()->Create(AshWebView::InitParams());
 }
 
-void TestCaptureModeDelegate::SendRegionSearch(
-    const SkBitmap& image,
-    const gfx::Rect& region,
-    OnSearchUrlFetchedCallback callback) {
-  std::move(callback).Run(GURL("kTestUrl"));
+void TestCaptureModeDelegate::SendLensWebRegionSearch(
+    const gfx::Image& original_image,
+    const bool is_standalone_session,
+    ash::OnSearchUrlFetchedCallback search_callback,
+    ash::OnTextDetectionComplete text_callback,
+    base::OnceCallback<void()> error_callback) {
+  if (force_lens_web_error_) {
+    std::move(error_callback).Run();
+    return;
+  }
+
+  std::move(search_callback).Run(GURL("https://lens.google.com/"));
+  if (!lens_detected_text_.empty()) {
+    std::move(text_callback).Run(lens_detected_text_);
+  }
 }
 
-void TestCaptureModeDelegate::SendMultimodalSearch(
-    const SkBitmap& image,
-    const gfx::Rect& region,
-    const std::string& text,
-    ash::OnSearchUrlFetchedCallback callback) {
-  ++num_multimodal_search_requests_;
-  std::move(callback).Run(GURL("kTestUrl"));
+void TestCaptureModeDelegate::DeleteRemoteFile(
+    const base::FilePath& path,
+    base::OnceCallback<void(bool)> callback) {
+  std::move(callback).Run(true);
+}
+
+bool TestCaptureModeDelegate::ActiveUserDefaultSearchProviderIsGoogle() const {
+  return true;
 }
 
 }  // namespace ash

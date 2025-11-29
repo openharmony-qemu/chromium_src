@@ -106,7 +106,7 @@ PlatformThreadId PlatformThread::CurrentId() {
 #endif
   }
   return g_thread_id;
-#elif PA_BUILDFLAG(IS_ANDROID) || PA_BUILDFLAG(IS_OHOS)
+#elif PA_BUILDFLAG(IS_ANDROID)
   // Note: do not cache the return value inside a thread_local variable on
   // Android (as above). The reasons are:
   // - thread_local is slow on Android (goes through emutls)
@@ -115,6 +115,8 @@ PlatformThreadId PlatformThread::CurrentId() {
   return gettid();
 #elif PA_BUILDFLAG(IS_FUCHSIA)
   return zx_thread_self();
+#elif PA_BUILDFLAG(IS_ASMJS)
+  return pthread_self();
 #elif PA_BUILDFLAG(IS_SOLARIS) || PA_BUILDFLAG(IS_QNX)
   return pthread_self();
 #elif PA_BUILDFLAG(IS_POSIX) && PA_BUILDFLAG(IS_AIX)

@@ -5,6 +5,7 @@
 #import "ios/chrome/browser/shared/model/profile/test/test_profile_ios.h"
 
 #import <tuple>
+#import <variant>
 
 #import "base/base_paths.h"
 #import "base/files/file_util.h"
@@ -17,7 +18,6 @@
 #import "base/task/single_thread_task_runner.h"
 #import "base/task/thread_pool.h"
 #import "base/test/test_file_util.h"
-#import "components/keyed_service/core/service_access_type.h"
 #import "components/keyed_service/ios/browser_state_dependency_manager.h"
 #import "components/policy/core/common/cloud/user_cloud_policy_manager.h"
 #import "components/profile_metrics/browser_profile_type.h"
@@ -40,7 +40,7 @@ void AssignTestingFactories(
     TestProfileIOS* profile,
     TestProfileIOS::TestingFactories testing_factories) {
   for (auto& item : testing_factories) {
-    absl::visit(
+    std::visit(
         [profile](auto& p) {
           p.first->SetTestingFactory(profile, std::move(p.second));
         },
@@ -104,6 +104,7 @@ TestProfileIOS::TestProfileIOS(const base::FilePath& state_path,
 TestProfileIOS::TestProfileIOS(
     const base::FilePath& state_path,
     std::string_view profile_name,
+    base::Uuid webkit_storage_id,
     std::unique_ptr<sync_preferences::PrefServiceSyncable> prefs,
     TestingFactories testing_factories,
     std::unique_ptr<ProfilePolicyConnector> policy_connector,
@@ -115,6 +116,7 @@ TestProfileIOS::TestProfileIOS(
               {base::MayBlock(), base::TaskShutdownBehavior::BLOCK_SHUTDOWN})),
       prefs_(std::move(prefs)),
       testing_prefs_(nullptr),
+      webkit_storage_id_(std::move(webkit_storage_id)),
       user_cloud_policy_manager_(std::move(user_cloud_policy_manager)),
       policy_connector_(std::move(policy_connector)),
       otr_profile_(nullptr),
@@ -204,6 +206,10 @@ void TestProfileIOS::Init() {
 
 bool TestProfileIOS::IsOffTheRecord() const {
   return original_profile_ != nullptr;
+}
+
+const base::Uuid& TestProfileIOS::GetWebKitStorageID() const {
+  return webkit_storage_id_;
 }
 
 scoped_refptr<base::SequencedTaskRunner> TestProfileIOS::GetIOTaskRunner() {
@@ -370,6 +376,16 @@ TestProfileIOS::Builder& TestProfileIOS::Builder::SetUserCloudPolicyManager(
   return *this;
 }
 
+TestProfileIOS::Builder& TestProfileIOS::Builder::SetWebkitStorageId(
+    const base::Uuid& webkit_storage_id) {
+  webkit_storage_id_ = webkit_storage_id;
+  return *this;
+}
+
+std::string TestProfileIOS::Builder::GetEffectiveName() const {
+  return profile_name_.empty() ? "Test" : profile_name_;
+}
+
 std::unique_ptr<TestProfileIOS> TestProfileIOS::Builder::Build() && {
   return std::move(*this).Build(base::CreateUniqueTempDirectoryScopedToTest());
 }
@@ -378,13 +394,9 @@ std::unique_ptr<TestProfileIOS> TestProfileIOS::Builder::Build(
     const base::FilePath& data_dir) && {
   CHECK(!data_dir.empty());
 
-  // Ensure that the name is not empty.
-  if (profile_name_.empty()) {
-    profile_name_ = "Test";
-  }
-
   return base::WrapUnique(new TestProfileIOS(
-      data_dir.Append(profile_name_), profile_name_, std::move(pref_service_),
+      data_dir.Append(GetEffectiveName()), GetEffectiveName(),
+      std::move(webkit_storage_id_), std::move(pref_service_),
       std::move(testing_factories_), std::move(policy_connector_),
       std::move(user_cloud_policy_manager_)));
 }

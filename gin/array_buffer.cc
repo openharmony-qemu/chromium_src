@@ -83,9 +83,13 @@ ArrayBufferAllocator* ArrayBufferAllocator::SharedInstance() {
 // static
 void ArrayBufferAllocator::InitializePartition() {
   partition_alloc::PartitionOptions opts;
-  opts.star_scan_quarantine = partition_alloc::PartitionOptions::kAllowed;
   opts.backup_ref_ptr = partition_alloc::PartitionOptions::kDisabled;
   opts.use_configurable_pool = partition_alloc::PartitionOptions::kAllowed;
+
+  // TODO(crbug.com/333443437): Remove this user-configurable toggle and
+  // default all buckets to "small" single-slot spans.
+  opts.use_small_single_slot_spans =
+      partition_alloc::PartitionOptions::kEnabled;
 
   static base::NoDestructor<partition_alloc::PartitionAllocator>
       partition_allocator(opts);
@@ -169,7 +173,7 @@ class ArrayBufferSharedMemoryMapper : public base::SharedMemoryMapper {
     v8_handle = v8::SharedMemoryHandleFromVMO(handle->get());
 #elif BUILDFLAG(IS_WIN)
     v8_handle = v8::SharedMemoryHandleFromFileMapping(handle);
-#elif BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
+#elif BUILDFLAG(IS_ANDROID)
     v8_handle = v8::SharedMemoryHandleFromFileDescriptor(handle);
 #elif BUILDFLAG(IS_POSIX)
     v8_handle = v8::SharedMemoryHandleFromFileDescriptor(handle.fd);
@@ -191,7 +195,7 @@ class ArrayBufferSharedMemoryMapper : public base::SharedMemoryMapper {
     if (!mapping)
       return std::nullopt;
 
-    return base::make_span(reinterpret_cast<uint8_t*>(mapping), size);
+    return base::span(reinterpret_cast<uint8_t*>(mapping), size);
   }
 
   void Unmap(base::span<uint8_t> mapping) override {

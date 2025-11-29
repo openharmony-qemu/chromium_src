@@ -14,6 +14,8 @@
   BOOL _started;
 }
 
+@synthesize visibleAreaLayoutGuide = _visibleAreaLayoutGuide;
+
 - (instancetype)init {
   self = [super init];
   if (self) {
@@ -26,10 +28,6 @@
 #pragma mark - ChromeLensOverlay
 
 - (BOOL)isTextSelection {
-  return NO;
-}
-
-- (BOOL)isPanningSelectionUI {
   return NO;
 }
 
@@ -82,6 +80,18 @@
   // NO-OP
 }
 
+- (void)setGuidanceRestHeight:(CGFloat)height {
+  // NO-OP
+}
+
+- (CGRect)selectionRect {
+  return CGRectZero;
+}
+
+- (CGSize)imageSize {
+  return CGSizeZero;
+}
+
 #pragma mark - Public
 
 - (void)simulateSelectionUpdate {
@@ -94,7 +104,7 @@
 
   mutableResult.suggestSignals = signals;
   [self.lensOverlayDelegate lensOverlay:self
-        suggestSignalsAvailableOnResult:self.lastResult];
+      hasSuggestSignalsAvailableOnResult:self.lastResult];
 }
 
 #pragma mark - Private

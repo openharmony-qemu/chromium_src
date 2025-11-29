@@ -1,10 +1,10 @@
 Package: libvpx-dev
 Source: libvpx
-Version: 1.9.0-1
+Version: 1.9.0-1+deb11u3
 Architecture: amd64
 Maintainer: Debian Multimedia Maintainers <debian-multimedia@lists.debian.org>
-Installed-Size: 3451
-Depends: libvpx6 (= 1.9.0-1)
+Installed-Size: 3454
+Depends: libvpx6 (= 1.9.0-1+deb11u3)
 Section: libdevel
 Priority: optional
 Multi-Arch: same

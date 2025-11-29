@@ -54,12 +54,6 @@ static_assert(sizeof(void*) != 8, "");
   (PA_BUILDFLAG(IS_LINUX) || PA_BUILDFLAG(IS_CHROMEOS) || \
    PA_BUILDFLAG(IS_ANDROID))
 
-// If defined, enables zeroing memory on Free() with roughly 1% probability.
-// This applies only to normal buckets, as direct-map allocations are always
-// decommitted.
-// TODO(bartekn): Re-enable once PartitionAlloc-Everywhere evaluation is done.
-#define PA_CONFIG_ZERO_RANDOMLY_ON_FREE() 0
-
 // Need TLS support.
 #define PA_CONFIG_THREAD_CACHE_SUPPORTED() \
   (PA_BUILDFLAG(IS_POSIX) || PA_BUILDFLAG(IS_WIN) || PA_BUILDFLAG(IS_FUCHSIA))
@@ -143,8 +137,7 @@ static_assert(sizeof(void*) == 8);
 // - Not on Android due to bot failures
 #if PA_BUILDFLAG(DCHECKS_ARE_ON) &&                \
     PA_BUILDFLAG(USE_PARTITION_ALLOC_AS_MALLOC) && \
-    PA_CONFIG(THREAD_LOCAL_TLS) && !PA_BUILDFLAG(IS_ANDROID) && \
-    !PA_BUILDFLAG(IS_OHOS)
+    PA_CONFIG(THREAD_LOCAL_TLS) && !PA_BUILDFLAG(IS_ANDROID)
 #define PA_CONFIG_HAS_ALLOCATION_GUARD() 1
 #else
 #define PA_CONFIG_HAS_ALLOCATION_GUARD() 0
@@ -152,8 +145,7 @@ static_assert(sizeof(void*) == 8);
 
 // On Android, we have to go through emutls, since this is always a shared
 // library, so don't bother.
-#if PA_CONFIG(THREAD_LOCAL_TLS) && !PA_BUILDFLAG(IS_ANDROID) && \
-    !PA_BUILDFLAG(IS_OHOS)
+#if PA_CONFIG(THREAD_LOCAL_TLS) && !PA_BUILDFLAG(IS_ANDROID)
 #define PA_CONFIG_THREAD_CACHE_FAST_TLS() 1
 #else
 #define PA_CONFIG_THREAD_CACHE_FAST_TLS() 0

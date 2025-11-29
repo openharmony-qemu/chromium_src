@@ -39,17 +39,12 @@ class EarlyBootSafeSeed : public VariationsSafeSeedStore {
   void SetFetchTime(const base::Time& fetch_time) override;
 
   int GetMilestone() const override;
-  void SetMilestone(int milestone) override;
 
   base::Time GetTimeForStudyDateChecks() const override;
   void SetTimeForStudyDateChecks(const base::Time& safe_seed_time) override;
 
-  const std::string& GetCompressedSeed() const override;
-  void SetCompressedSeed(const std::string& safe_compressed,
-                         const std::string& base64_safe_compressed) override;
-
-  std::string GetSignature() const override;
-  void SetSignature(const std::string& safe_seed_signature) override;
+  StoredSeed GetCompressedSeed() const override;
+  void SetCompressedSeed(ValidatedSeedInfo seed_info) override;
 
   std::string GetLocale() const override;
   void SetLocale(const std::string& locale) override;

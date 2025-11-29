@@ -10,8 +10,9 @@ import android.view.View;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.LayoutRes;
-import androidx.annotation.Nullable;
 
+import org.chromium.build.annotations.NullMarked;
+import org.chromium.build.annotations.Nullable;
 import org.chromium.components.browser_ui.widget.R;
 import org.chromium.components.browser_ui.widget.impression.ImpressionTracker;
 import org.chromium.components.browser_ui.widget.impression.OneShotImpressionListener;
@@ -26,6 +27,7 @@ import java.lang.annotation.RetentionPolicy;
  * create another layer of controller to own this coordinator, and pass in the {@link PropertyModel}
  * to initialize the view.
  */
+@NullMarked
 public class PromoCardCoordinator {
     @IntDef({LayoutStyle.LARGE, LayoutStyle.COMPACT, LayoutStyle.SLIM})
     @Retention(RetentionPolicy.SOURCE)
@@ -37,9 +39,9 @@ public class PromoCardCoordinator {
 
     private static final double IMPRESSION_THRESHOLD_RATIO = 0.75;
 
-    private PromoCardView mPromoCardView;
-    private PropertyModelChangeProcessor mModelChangeProcessor;
-    private String mFeatureName;
+    private final PromoCardView mPromoCardView;
+    private final PropertyModelChangeProcessor mModelChangeProcessor;
+    private final String mFeatureName;
 
     private @Nullable ImpressionTracker mImpressionTracker;
 

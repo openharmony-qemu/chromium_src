@@ -26,7 +26,6 @@
 #include "gpu/command_buffer/client/shared_image_interface.h"
 #include "gpu/command_buffer/common/shared_image_capabilities.h"
 #include "gpu/command_buffer/common/shared_image_usage.h"
-#include "gpu/config/gpu_finch_features.h"
 #include "ipc/common/surface_handle.h"
 #include "ui/aura/env.h"
 #include "ui/aura/window.h"
@@ -139,18 +138,7 @@ RoundedDisplayFrameFactory::CreateUiResource(const gfx::Size& size,
 
   gpu::SharedImageUsageSet usage = gpu::SHARED_IMAGE_USAGE_DISPLAY_READ;
 
-  bool add_scanout_usage = is_overlay;
-
-  // Scanout usage should be added only if scanout of SharedImages is supported.
-  // However, historically this was not checked.
-  // TODO(crbug.com/330865436): Remove killswitch post-safe rollout.
-  if (base::FeatureList::IsEnabled(
-          features::
-              kRoundedDisplayAddScanoutUsageOnlyIfSupportedBySharedImage)) {
-    add_scanout_usage &= sii->GetCapabilities().supports_scanout_shared_images;
-  }
-
-  if (add_scanout_usage) {
+  if (is_overlay && sii->GetCapabilities().supports_scanout_shared_images) {
     usage |= gpu::SHARED_IMAGE_USAGE_SCANOUT;
   }
 
@@ -331,17 +319,14 @@ void RoundedDisplayFrameFactory::AppendQuad(
   // Since the gutter texture is drawn into a buffer of exact size, therefore
   // we do not need to scale uv coordinates (zoom in or out on texture) to fit
   // the buffer size.
-  texture_quad->SetNew(
-      quad_state, quad_rect, quad_rect,
-      /*needs_blending=*/true, resource.id,
-      /*premultiplied=*/true, /*uv_top_left=*/gfx::PointF(0, 0),
-      /*uv_bottom_right=*/gfx::PointF(1, 1),
-      /*background=*/SkColors::kTransparent,
-      /*flipped=*/false,
-      /*nearest=*/false,
-      /*secure_output=*/false, gfx::ProtectedVideoType::kClear);
-
-  texture_quad->set_resource_size_in_pixels(resource.size);
+  texture_quad->SetNew(quad_state, quad_rect, quad_rect,
+                       /*needs_blending=*/true, resource.id,
+                       /*uv_top_left=*/gfx::PointF(0, 0),
+                       /*uv_bottom_right=*/gfx::PointF(1, 1),
+                       /*background=*/SkColors::kTransparent,
+                       /*nearest=*/false,
+                       /*secure_output=*/false,
+                       gfx::ProtectedVideoType::kClear);
 
   texture_quad->rounded_display_masks_info =
       MapToRoundedDisplayMasksInfo(gutter.GetGutterCorners());

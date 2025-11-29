@@ -4,13 +4,13 @@
 
 #include "components/services/print_compositor/print_compositor_impl.h"
 
+#include <algorithm>
 #include <tuple>
 #include <utility>
 
 #include "base/containers/contains.h"
 #include "base/logging.h"
 #include "base/memory/discardable_memory.h"
-#include "base/ranges/algorithm.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/trace_event/trace_event.h"
 #include "build/build_config.h"
@@ -44,6 +44,7 @@
 
 #if BUILDFLAG(ENTERPRISE_WATERMARK)
 #include "components/enterprise/watermarking/features.h"  // nogncheck
+#include "components/enterprise/watermarking/mojom/watermark.mojom.h"  // nogncheck
 #include "components/enterprise/watermarking/watermark.h"  // nogncheck
 #endif
 
@@ -73,22 +74,55 @@ sk_sp<SkDocument> MakeDocument(
       generate_document_outline, &stream);
 }
 
+#if BUILDFLAG(ENTERPRISE_WATERMARK)
+
+void DrawWatermarkBlock(
+    SkCanvas* canvas,
+    SkSize size,
+    const watermark::mojom::WatermarkBlockPtr& watermark_block) {
+  if (!watermark_block) {
+    return;
+  }
+  base::ReadOnlySharedMemoryMapping mapping =
+      watermark_block->serialized_skpicture.Map();
+  if (!mapping.IsValid()) {
+    LOG(ERROR)
+        << "Error serializing the watermark block received from the browser";
+    return;
+  }
+  auto skpicture_span = mapping.GetMemoryAsSpan<uint8_t>();
+  SkMemoryStream stream(skpicture_span.data(), skpicture_span.size());
+  sk_sp<SkPicture> picture = SkPicture::MakeFromStream(&stream);
+
+  enterprise_watermark::DrawWatermark(canvas, picture.get(),
+                                      watermark_block->width,
+                                      watermark_block->height, size);
+}
+
+#endif
+
 }  // namespace
 
 #if BUILDFLAG(ENTERPRISE_WATERMARK)
-void DrawEnterpriseWatermark(SkCanvas* canvas,
-                             SkSize size,
-                             const std::string& watermark_text) {
+
+void DrawEnterpriseWatermark(
+    SkCanvas* canvas,
+    SkSize size,
+    const watermark::mojom::WatermarkBlockPtr& watermark_block) {
   if (!base::FeatureList::IsEnabled(
-          enterprise_watermark::features::kEnablePrintWatermark) ||
-      watermark_text.empty()) {
+          enterprise_watermark::features::kEnablePrintWatermark)) {
     return;
   }
-
-  enterprise_watermark::DrawWatermark(canvas, size, watermark_text,
-                                      PrintCompositorImpl::kWatermarkBlockWidth,
-                                      PrintCompositorImpl::kWatermarkTextSize);
+  DrawWatermarkBlock(canvas, size, watermark_block);
 }
+
+void DrawWatermarkBlockForTesting(
+    SkCanvas* canvas,
+    SkSize size,
+    const watermark::mojom::WatermarkBlockPtr& watermark_block) {
+  DrawWatermarkBlock(canvas, size, watermark_block);
+}
+
 #endif
 
 PrintCompositorImpl::PrintCompositorImpl(
@@ -277,8 +311,8 @@ void PrintCompositorImpl::UpdateRequestsWithSubframeInfo(
     // update with this frame's pending list.
     auto& pending_list = request->pending_subframes;
     if (pending_list.erase(frame_guid)) {
-      base::ranges::copy(pending_subframes,
-                         std::inserter(pending_list, pending_list.end()));
+      std::ranges::copy(pending_subframes,
+                        std::inserter(pending_list, pending_list.end()));
     }
 
     // If the request still has pending frames, or isn't at the front of the
@@ -346,7 +380,7 @@ void PrintCompositorImpl::HandleCompositionRequest(
     CompositePagesCallback callback) {
   base::ReadOnlySharedMemoryMapping mapping = serialized_content.Map();
   if (!mapping.IsValid()) {
-    DLOG(ERROR) << "HandleCompositionRequest: Cannot map input.";
+    LOG(ERROR) << "HandleCompositionRequest: Cannot map input.";
     std::move(callback).Run(mojom::PrintCompositor::Status::kHandleMapError,
                             base::ReadOnlySharedMemoryRegion());
     return;
@@ -401,15 +435,16 @@ mojom::PrintCompositor::Status PrintCompositorImpl::CompositePages(
   SkMemoryStream stream(serialized_content.data(), serialized_content.size());
   int page_count = SkMultiPictureDocument::ReadPageCount(&stream);
   if (!page_count) {
-    DLOG(ERROR) << "CompositePages: No page is read.";
+    LOG(ERROR) << "CompositePages: No page is read.";
     return mojom::PrintCompositor::Status::kContentFormatError;
   }
 
   std::vector<SkDocumentPage> pages(page_count);
-  SkDeserialProcs procs = DeserializationProcs(&subframes, &typefaces_);
+  SkDeserialProcs procs =
+      DeserializationProcs(&subframes, &typefaces_, &images_);
   if (!SkMultiPictureDocument::Read(&stream, pages.data(), page_count,
                                     &procs)) {
-    DLOG(ERROR) << "CompositePages: Page reading failed.";
+    LOG(ERROR) << "CompositePages: Page reading failed.";
     return mojom::PrintCompositor::Status::kContentFormatError;
   }
 
@@ -432,12 +467,12 @@ mojom::PrintCompositor::Status PrintCompositorImpl::CompositePages(
 
   for (const auto& page : pages) {
     TRACE_EVENT0("print", "PrintCompositorImpl::CompositePages draw page");
-    DrawPage(doc.get(), page, watermark_text_);
+    DrawPage(doc.get(), page);
 
     if (doc_info_) {
       // Optionally draw this page into the full document in `doc_info_` as
       // well.
-      DrawPage(doc_info_->doc.get(), page, watermark_text_);
+      DrawPage(doc_info_->doc.get(), page);
       doc_info_->pages_written++;
     }
   }
@@ -446,7 +481,7 @@ mojom::PrintCompositor::Status PrintCompositorImpl::CompositePages(
   base::MappedReadOnlyRegion region_mapping =
       base::ReadOnlySharedMemoryRegion::Create(wstream.bytesWritten());
   if (!region_mapping.IsValid()) {
-    DLOG(ERROR) << "CompositePages: Cannot create new shared memory region.";
+    LOG(ERROR) << "CompositePages: Cannot create new shared memory region.";
     return mojom::PrintCompositor::Status::kHandleMapError;
   }
 
@@ -465,8 +500,8 @@ void PrintCompositorImpl::CompositeSubframe(FrameInfo* frame_info) {
   // Composite the entire frame.
   SkMemoryStream stream(frame_info->serialized_content.data(),
                         frame_info->serialized_content.size());
-  SkDeserialProcs procs =
-      DeserializationProcs(&subframes, &frame_info->typefaces);
+  SkDeserialProcs procs = DeserializationProcs(
+      &subframes, &frame_info->typefaces, &frame_info->images);
   frame_info->content = SkPicture::MakeFromStream(&stream, &procs);
 }
 
@@ -490,12 +525,11 @@ PrintCompositorImpl::GetPictureDeserializationContext(
 }
 
 void PrintCompositorImpl::DrawPage(SkDocument* doc,
-                                   const SkDocumentPage& page,
-                                   const std::string& watermark_text) {
+                                   const SkDocumentPage& page) {
   SkCanvas* canvas = doc->beginPage(page.fSize.width(), page.fSize.height());
   canvas->drawPicture(page.fPicture);
 #if BUILDFLAG(ENTERPRISE_WATERMARK)
-  DrawEnterpriseWatermark(canvas, page.fSize, watermark_text);
+  DrawEnterpriseWatermark(canvas, page.fSize, watermark_block_);
 #endif
   doc->endPage();
 }
@@ -527,8 +561,8 @@ void PrintCompositorImpl::FinishDocumentRequest(
     region = std::move(region_mapping.region);
     status = mojom::PrintCompositor::Status::kSuccess;
   } else {
-    DLOG(ERROR) << "FinishDocumentRequest: "
-                << "Cannot create new shared memory region.";
+    LOG(ERROR) << "FinishDocumentRequest: "
+               << "Cannot create new shared memory region.";
     status = mojom::PrintCompositor::Status::kHandleMapError;
   }
 
@@ -575,8 +609,17 @@ void PrintCompositorImpl::SetTitle(const std::string& title) {
   title_ = title;
 }
 
-void PrintCompositorImpl::SetWatermarkText(const std::string& watermark_text) {
-  watermark_text_ = watermark_text;
+#if BUILDFLAG(ENTERPRISE_WATERMARK)
+void PrintCompositorImpl::SetWatermarkBlock(
+    watermark::mojom::WatermarkBlockPtr watermark_block) {
+  watermark_block_ = std::move(watermark_block);
 }
+
+const watermark::mojom::WatermarkBlockPtr&
+PrintCompositorImpl::watermark_block_for_testing() const {
+  return watermark_block_;
+}
+
+#endif
 
 }  // namespace printing

@@ -17,6 +17,7 @@
 @protocol ApplicationCommands;
 @class ContextMenuConfigurationProvider;
 @protocol LensOverlayErrorHandler;
+@protocol LensOverlayTabChangeAudience;
 @protocol LensResultPageConsumer;
 @protocol LensResultPageMediatorDelegate;
 @protocol SnackbarCommands;
@@ -43,6 +44,9 @@ class WebStateList;
 
 /// Delegate for the result page web state.
 @property(nonatomic, weak) id<LensResultPageMediatorDelegate> delegate;
+
+/// Is informed of tab change events.
+@property(nonatomic, weak) id<LensOverlayTabChangeAudience> tabChangeAudience;
 
 /// Presentation delegate for requesting bottom sheet resizing.
 @property(nonatomic, weak) id<LensOverlayBottomSheetPresentationDelegate>

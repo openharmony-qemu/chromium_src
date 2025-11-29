@@ -35,7 +35,6 @@
 #include "content/test/test_web_contents.h"
 #include "net/http/http_response_headers.h"
 #include "services/data_decoder/public/cpp/test_support/in_process_data_decoder.h"
-#include "services/network/public/cpp/features.h"
 #include "services/network/public/mojom/attribution.mojom-shared.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -85,8 +84,7 @@ class KeepAliveAttributionRequestHelperTest : public RenderViewHostTestHarness {
                 AttributionOsLevelManager::ApiState::kEnabled)) {
     scoped_feature_list_.InitWithFeatures(
         {blink::features::kKeepAliveInBrowserMigration,
-         blink::features::kAttributionReportingInBrowserMigration,
-         network::features::kAttributionReportingCrossAppWeb},
+         blink::features::kAttributionReportingInBrowserMigration},
         {});
   }
 
@@ -137,7 +135,7 @@ class KeepAliveAttributionRequestHelperTest : public RenderViewHostTestHarness {
         eligibility, reporting_url, attribution_src_token,
         "devtools-request-id",
         *AttributionSuitableContext::Create(
-            test_web_contents()->GetPrimaryMainFrame()->GetGlobalId()));
+            test_web_contents()->GetPrimaryMainFrame()));
 
     CHECK(helper);
 
@@ -404,7 +402,7 @@ TEST_F(KeepAliveAttributionRequestHelperTest, HelperNotNeeded) {
     test_web_contents()->NavigateAndCommit(source_url);
 
     auto context = AttributionSuitableContext::Create(
-        test_web_contents()->GetPrimaryMainFrame()->GetGlobalId());
+        test_web_contents()->GetPrimaryMainFrame());
     EXPECT_FALSE(context.has_value());
   }
 
@@ -412,7 +410,7 @@ TEST_F(KeepAliveAttributionRequestHelperTest, HelperNotNeeded) {
     const GURL source_url("https://secure.test");
     test_web_contents()->NavigateAndCommit(source_url);
     auto context = AttributionSuitableContext::Create(
-        test_web_contents()->GetPrimaryMainFrame()->GetGlobalId());
+        test_web_contents()->GetPrimaryMainFrame());
     ASSERT_TRUE(context.has_value());
     auto helper = KeepAliveAttributionRequestHelper::CreateIfNeeded(
         AttributionReportingEligibility::kEmpty, reporting_url,
@@ -423,13 +421,13 @@ TEST_F(KeepAliveAttributionRequestHelperTest, HelperNotNeeded) {
 
   {  // kAttributionReportingInBrowserMigration disabled
     scoped_feature_list().Reset();
-    scoped_feature_list().InitAndEnableFeature(
-        blink::features::kKeepAliveInBrowserMigration);
+    scoped_feature_list().InitAndDisableFeature(
+        blink::features::kAttributionReportingInBrowserMigration);
     const GURL source_url("https://secure.test");
     test_web_contents()->NavigateAndCommit(source_url);
 
     auto context = AttributionSuitableContext::Create(
-        test_web_contents()->GetPrimaryMainFrame()->GetGlobalId());
+        test_web_contents()->GetPrimaryMainFrame());
     ASSERT_TRUE(context.has_value());
     auto helper = KeepAliveAttributionRequestHelper::CreateIfNeeded(
         AttributionReportingEligibility::kEventSourceOrTrigger, reporting_url,
@@ -668,7 +666,7 @@ TEST_F(KeepAliveAttributionRequestHelperTest, CreateIfNeeded_MetricRecorded) {
 
     test_web_contents()->NavigateAndCommit(test_case.context_url);
     auto context = AttributionSuitableContext::Create(
-        test_web_contents()->GetPrimaryMainFrame()->GetGlobalId());
+        test_web_contents()->GetPrimaryMainFrame());
 
     base::HistogramTester histograms;
 

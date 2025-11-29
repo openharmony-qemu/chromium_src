@@ -10,7 +10,6 @@
 #include "base/functional/bind.h"
 #include "base/location.h"
 #include "base/memory/ptr_util.h"
-#include "base/not_fatal_until.h"
 #include "base/observer_list.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/task/thread_pool.h"
@@ -27,8 +26,6 @@
 #include "services/device/usb/usb_service_impl.h"
 #elif BUILDFLAG(IS_WIN)
 #include "services/device/usb/usb_service_win.h"
-#elif BUILDFLAG(IS_OHOS)
-#include "services/device/usb/usb_service_ohos.h"
 #endif
 
 namespace device {
@@ -57,8 +54,6 @@ std::unique_ptr<UsbService> UsbService::Create() {
   return base::WrapUnique(new UsbServiceWin());
 #elif BUILDFLAG(IS_MAC)
   return base::WrapUnique(new UsbServiceImpl());
-#elif BUILDFLAG(IS_OHOS)
-  return base::WrapUnique(new UsbServiceOhos());
 #else
   return nullptr;
 #endif
@@ -118,7 +113,7 @@ void UsbService::RemoveDeviceForTesting(const std::string& device_guid) {
   auto testing_devices_it = testing_devices_.find(device_guid);
   if (testing_devices_it != testing_devices_.end()) {
     auto devices_it = devices_.find(device_guid);
-    CHECK(devices_it != devices_.end(), base::NotFatalUntil::M130);
+    CHECK(devices_it != devices_.end());
     scoped_refptr<UsbDevice> device = devices_it->second;
     devices_.erase(devices_it);
     testing_devices_.erase(testing_devices_it);
@@ -132,7 +127,7 @@ void UsbService::GetTestDevices(
   devices->reserve(testing_devices_.size());
   for (const std::string& guid : testing_devices_) {
     auto it = devices_.find(guid);
-    CHECK(it != devices_.end(), base::NotFatalUntil::M130);
+    CHECK(it != devices_.end());
     devices->push_back(it->second);
   }
 }

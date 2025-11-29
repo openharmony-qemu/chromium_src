@@ -19,7 +19,6 @@
 #include "base/metrics/histogram_macros.h"
 #include "base/metrics/user_metrics.h"
 #include "base/no_destructor.h"
-#include "base/not_fatal_until.h"
 #include "base/synchronization/lock.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/threading/thread_checker.h"
@@ -88,7 +87,7 @@ class ExtensionFunctionMemoryDumpProvider
     DCHECK(thread_checker_.CalledOnValidThread());
     DCHECK(function_name);
     auto it = function_map_.find(function_name);
-    CHECK(it != function_map_.end(), base::NotFatalUntil::M130);
+    CHECK(it != function_map_.end());
     DCHECK_GE(it->second, static_cast<uint64_t>(1));
     if (it->second == 1) {
       function_map_.erase(it);
@@ -422,8 +421,8 @@ ExtensionFunction::~ExtensionFunction() {
   if (!response_callback_.is_null()) {
     constexpr char kShouldCallMojoCallback[] = "Ignored did_respond()";
     std::move(response_callback_)
-        .Run(ResponseType::FAILED, base::Value::List(), kShouldCallMojoCallback,
-             nullptr);
+        .Run(ResponseType::kFailed, base::Value::List(),
+             kShouldCallMojoCallback, nullptr);
   }
 #endif  // DCHECK_IS_ON()
 }
@@ -627,7 +626,7 @@ ExtensionFunction::ResponseValue ExtensionFunction::Error(std::string error) {
   return CreateErrorResponseValue(std::move(error));
 }
 
-ExtensionFunction::ResponseValue ExtensionFunction::ErrorWithArguments(
+ExtensionFunction::ResponseValue ExtensionFunction::ErrorWithArgumentsDoNotUse(
     base::Value::List args,
     const std::string& error) {
   return CreateErrorWithArgumentsResponse(std::move(args), error);
@@ -701,12 +700,12 @@ void ExtensionFunction::SetTransferredBlobs(
 
 void ExtensionFunction::SendResponseImpl(bool success) {
   DCHECK(!response_callback_.is_null());
-  DCHECK(!did_respond_) << name_;
-  did_respond_ = true;
+  DCHECK(!did_respond()) << name_;
 
-  ResponseType response = success ? SUCCEEDED : FAILED;
+  ResponseType response =
+      success ? ResponseType::kSucceeded : ResponseType::kFailed;
   if (bad_message_) {
-    response = BAD_MESSAGE;
+    response = ResponseType::kBadMessage;
     LOG(ERROR) << "Bad extension message " << name_;
   }
   response_type_ = std::make_unique<ResponseType>(response);

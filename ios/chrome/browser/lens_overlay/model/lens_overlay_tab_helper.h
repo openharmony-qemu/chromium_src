@@ -11,11 +11,13 @@
 
 #import "ios/chrome/browser/lens_overlay/model/lens_overlay_sheet_detent_state.h"
 #import "ios/chrome/browser/lens_overlay/model/lens_overlay_snapshot_controller_delegate.h"
+#import "ios/web/public/navigation/navigation_item.h"
 #import "ios/web/public/web_state_observer.h"
 #import "ios/web/public/web_state_user_data.h"
 
 @protocol LensOverlayCommands;
 class LensOverlaySnapshotController;
+class PrefService;
 
 // A tab helper that handles navigation to the tab with Lens Overlay
 // by showing/hiding/killing the Lens Overlay UI.
@@ -50,6 +52,14 @@ class LensOverlayTabHelper : public LensOverlaySnapshotControllerDelegate,
     return is_updating_tab_switcher_snapshot_;
   }
 
+  // Returns true if the most recent back navigation item has lens overlay
+  // invoked.
+  bool IsLensOverlayInvokedOnMostRecentBackItem();
+
+  // Returns true if the current navigation item has lens overlay
+  // invoked.
+  bool IsLensOverlayInvokedOnCurrentNavigationItem();
+
   // Get the recorded bottom sheet detent state associate with this tab helper.
   SheetDimensionState GetRecordedSheetDimensionState() {
     return sheet_dimension_state_;
@@ -65,6 +75,9 @@ class LensOverlayTabHelper : public LensOverlaySnapshotControllerDelegate,
 
   // Clears the in memory viewport snapshot.
   void ClearViewportSnapshot() { viewport_snapshot_ = nil; }
+
+  // Clears the recorded invocation navigation id.
+  void ClearInvokationNavigationId() { invokation_navigation_id_ = 0; }
 
   // Records a volatile snapshot of the viewport window.
   void RecordViewportSnaphot();
@@ -96,15 +109,23 @@ class LensOverlayTabHelper : public LensOverlaySnapshotControllerDelegate,
 
   web::WebState* GetWebState() const { return web_state_; }
 
+  base::WeakPtr<LensOverlayTabHelper> GetWeakPtr() {
+    return weak_ptr_factory_.GetWeakPtr();
+  }
+
   // web::WebStateObserver:
   void WebStateDestroyed(web::WebState* web_state) override;
   void WasShown(web::WebState* web_state) override;
   void WasHidden(web::WebState* web_state) override;
   void DidStartNavigation(web::WebState* web_state,
                           web::NavigationContext* navigation_context) override;
+  void DidFinishNavigation(web::WebState* web_state,
+                           web::NavigationContext* navigation_context) override;
 
  private:
   explicit LensOverlayTabHelper(web::WebState* web_state);
+
+  PrefService* GetProfilePrefs();
 
   // Handler used to request showing the password bottom sheet.
   __weak id<LensOverlayCommands> commands_handler_;
@@ -123,7 +144,7 @@ class LensOverlayTabHelper : public LensOverlaySnapshotControllerDelegate,
 
   // Tracks the state of the bottom sheet associated with this web state.
   // Should remain in sync with the actual dimension of the bottom sheet.
-  SheetDimensionState sheet_dimension_state_ = SheetDimensionStateHidden;
+  SheetDimensionState sheet_dimension_state_ = SheetDimensionState::kHidden;
 
   UIImage* viewport_snapshot_;
 
@@ -137,7 +158,6 @@ class LensOverlayTabHelper : public LensOverlaySnapshotControllerDelegate,
   base::WeakPtrFactory<LensOverlayTabHelper> weak_ptr_factory_{this};
 
   friend class web::WebStateUserData<LensOverlayTabHelper>;
-  WEB_STATE_USER_DATA_KEY_DECL();
 };
 
 #endif  // IOS_CHROME_BROWSER_LENS_OVERLAY_MODEL_LENS_OVERLAY_TAB_HELPER_H_

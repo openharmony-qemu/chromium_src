@@ -2,11 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifdef UNSAFE_BUFFERS_BUILD
-// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
-#pragma allow_unsafe_buffers
-#endif
-
 #include "ash/login/ui/lock_contents_view.h"
 
 #include <algorithm>
@@ -19,7 +14,7 @@
 #include "ash/constants/ash_features.h"
 #include "ash/constants/ash_switches.h"
 #include "ash/detachable_base/detachable_base_pairing_status.h"
-#include "ash/focus_cycler.h"
+#include "ash/focus/focus_cycler.h"
 #include "ash/ime/ime_controller_impl.h"
 #include "ash/login/login_screen_controller.h"
 #include "ash/login/ui/auth_error_bubble.h"
@@ -55,7 +50,6 @@
 #include "ash/shell.h"
 #include "ash/strings/grit/ash_strings.h"
 #include "ash/style/ash_color_id.h"
-#include "ash/style/ash_color_provider.h"
 #include "ash/style/pill_button.h"
 #include "ash/system/model/enterprise_domain_model.h"
 #include "ash/system/model/system_tray_model.h"
@@ -73,7 +67,6 @@
 #include "base/strings/utf_string_conversions.h"
 #include "chromeos/ash/components/login/auth/auth_events_recorder.h"
 #include "chromeos/ash/components/proximity_auth/public/mojom/auth_type.mojom.h"
-#include "chromeos/constants/chromeos_features.h"
 #include "chromeos/strings/grit/chromeos_strings.h"
 #include "chromeos/ui/vector_icons/vector_icons.h"
 #include "components/user_manager/known_user.h"
@@ -271,8 +264,8 @@ class UserAddingScreenIndicator : public views::View {
     layer()->SetBackgroundBlur(ColorProvider::kBackgroundBlurSigma);
     layer()->SetBackdropFilterQuality(ColorProvider::kBackgroundBlurQuality);
 
-    SetBackground(views::CreateThemedRoundedRectBackground(
-        kColorAshShieldAndBase80, kBubbleBorderRadius));
+    SetBackground(views::CreateRoundedRectBackground(kColorAshShieldAndBase80,
+                                                     kBubbleBorderRadius));
   }
 
   UserAddingScreenIndicator(const UserAddingScreenIndicator&) = delete;
@@ -1421,7 +1414,8 @@ void LockContentsView::OnOobeDialogStateChanged(OobeDialogState state) {
     Shelf* shelf = Shelf::ForWindow(GetWidget()->GetNativeWindow());
     shelf->GetStatusAreaWidget()
         ->status_area_widget_delegate()
-        ->NotifyAccessibilityEvent(ax::mojom::Event::kStateChanged, true);
+        ->NotifyAccessibilityEventDeprecated(ax::mojom::Event::kStateChanged,
+                                             true);
   }
 }
 
@@ -1586,9 +1580,6 @@ bool LockContentsView::AreMediaControlsEnabled() const {
          !expanded_view_->GetVisible() &&
          Shell::Get()->media_controller()->AreLockScreenMediaKeysEnabled();
 }
-
-void LockContentsView::OnWillChangeFocus(View* focused_before,
-                                         View* focused_now) {}
 
 void LockContentsView::OnDidChangeFocus(View* focused_before,
                                         View* focused_now) {
@@ -1942,8 +1933,14 @@ void LockContentsView::LayoutAuth(LoginBigUserView* to_update,
           to_update_auth |= LoginAuthUserView::AUTH_PIN;
         }
         if (!state->show_password && !state->show_pin) {
-          CHECK(IsTimeInFuture(state->pin_available_at))
+          CHECK(state->pin_available_at.has_value())
               << "Password or pin factor must be present, if pin is not locked";
+          if (IsTimeInPast(state->pin_available_at)) {
+            LOG(WARNING)
+                << "User PIN factor should have been enabled by cryptohome at "
+                << ToString(state->pin_available_at)
+                << ". Waiting for OnPinUnlock call.";
+          }
           to_update_auth =
               screen_type_ == LockScreen::ScreenType::kLogin
                   ? LoginAuthUserView::AUTH_PIN_LOCKED_SHOW_RECOVERY
@@ -2271,37 +2268,33 @@ bool LockContentsView::OnKeyPressed(const ui::KeyEvent& event) {
 }
 
 void LockContentsView::RegisterAccelerators() {
-  for (size_t i = 0; i < kLoginAcceleratorDataLength; ++i) {
+  for (auto& accel : kLoginAcceleratorData) {
     // We need to register global accelerators and a few additional ones that
     // are handled by the WebUI (and normally registered by the WebUI).
     // When WebUI is loaded on demand, we would need to start WebUI after
     // accelerator is pressed. So we register WebUI acceleratos here
     // and then start WebUI when needed and pass the accelerator.
-    if (!kLoginAcceleratorData[i].global &&
-        kLoginAcceleratorData[i].action !=
-            LoginAcceleratorAction::kCancelScreenAction) {
+    if (!accel.global &&
+        accel.action != LoginAcceleratorAction::kCancelScreenAction) {
       continue;
     }
     if ((screen_type_ == LockScreen::ScreenType::kLogin) &&
-        !(kLoginAcceleratorData[i].scope & kScopeLogin)) {
+        !(accel.scope & kScopeLogin)) {
       continue;
     }
     if ((screen_type_ == LockScreen::ScreenType::kLock) &&
-        !(kLoginAcceleratorData[i].scope & kScopeLock)) {
+        !(accel.scope & kScopeLock)) {
       continue;
     }
     // Show reset conflicts with rotate screen when --ash-dev-shortcuts is
     // passed. Favor --ash-dev-shortcuts since that is explicitly added.
-    if (kLoginAcceleratorData[i].action ==
-            LoginAcceleratorAction::kShowResetScreen &&
+    if (accel.action == LoginAcceleratorAction::kShowResetScreen &&
         base::CommandLine::ForCurrentProcess()->HasSwitch(
             switches::kAshDeveloperShortcuts)) {
       continue;
     }
 
-    accel_map_[ui::Accelerator(kLoginAcceleratorData[i].keycode,
-                               kLoginAcceleratorData[i].modifiers)] =
-        kLoginAcceleratorData[i].action;
+    accel_map_[ui::Accelerator(accel.keycode, accel.modifiers)] = accel.action;
   }
 
   // Register the accelerators.
@@ -2336,43 +2329,28 @@ bool LockContentsView::GetSystemInfoVisibility() const {
 void LockContentsView::UpdateSystemInfoColors() {
   for (views::View* child : system_info_->children()) {
     views::Label* label = static_cast<views::Label*>(child);
-    label->SetEnabledColorId(kColorAshTextColorPrimary);
+    label->SetEnabledColor(kColorAshTextColorPrimary);
   }
 }
 
 void LockContentsView::UpdateBottomStatusIndicatorColors() {
-  const bool jelly_style = chromeos::features::IsJellyrollEnabled();
   switch (bottom_status_indicator_state_) {
     case BottomIndicatorState::kNone:
       return;
     case BottomIndicatorState::kManagedDevice: {
-      if (jelly_style) {
-        bottom_status_indicator_->SetIcon(chromeos::kEnterpriseIcon,
-                                          cros_tokens::kCrosSysOnSurface, 20);
-        bottom_status_indicator_->SetEnabledTextColorIds(
-            cros_tokens::kCrosSysOnSurface);
-        bottom_status_indicator_->SetImageLabelSpacing(16);
-      } else {
-        bottom_status_indicator_->SetIcon(chromeos::kEnterpriseIcon,
-                                          kColorAshIconColorPrimary);
-        bottom_status_indicator_->SetEnabledTextColorIds(
-            kColorAshTextColorPrimary);
-      }
+      bottom_status_indicator_->SetIcon(chromeos::kEnterpriseIcon,
+                                        cros_tokens::kCrosSysOnSurface, 20);
+      bottom_status_indicator_->SetEnabledTextColors(
+          cros_tokens::kCrosSysOnSurface);
+      bottom_status_indicator_->SetImageLabelSpacing(16);
       break;
     }
     case BottomIndicatorState::kAdbSideLoadingEnabled: {
-      if (jelly_style) {
-        bottom_status_indicator_->SetIcon(kLockScreenAlertIcon,
-                                          cros_tokens::kCrosSysError, 20);
-        bottom_status_indicator_->SetEnabledTextColorIds(
-            cros_tokens::kCrosSysError);
-        bottom_status_indicator_->SetImageLabelSpacing(16);
-      } else {
-        bottom_status_indicator_->SetIcon(kLockScreenAlertIcon,
-                                          kColorAshIconColorAlert);
-        bottom_status_indicator_->SetEnabledTextColorIds(
-            kColorAshTextColorAlert);
-      }
+      bottom_status_indicator_->SetIcon(kLockScreenAlertIcon,
+                                        cros_tokens::kCrosSysError, 20);
+      bottom_status_indicator_->SetEnabledTextColors(
+          cros_tokens::kCrosSysError);
+      bottom_status_indicator_->SetImageLabelSpacing(16);
       break;
     }
   }

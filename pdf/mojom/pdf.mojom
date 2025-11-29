@@ -38,6 +38,11 @@ interface PdfListener {
   // Get the text contained on the given page of the PDF. `page_index` should be
   // the range [0, # of pages).
   GetPageText(int32 page_index) => (mojo_base.mojom.String16 text);
+
+  // #if BUILDFLAG(ARKWEB_PDF)
+  [EnableIf=arkweb_pdf]
+  ClearTextSelection();
+  // #endif
 };
 
 // Browser-side interface used by PDF renderers.

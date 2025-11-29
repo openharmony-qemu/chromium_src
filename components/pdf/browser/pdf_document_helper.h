@@ -100,6 +100,7 @@ class PDFDocumentHelper
   void UpdateClientClippedSelectionBoundsForPDF(const gfx::Rect& clipped_selection_bounds) override;
   void HideHandleAndQuickMenuForPDF(bool hide_handles) override;
   void ResetResponsePendingInputEvent() override;
+  void ClearTextSelection() override;
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
  private:
@@ -116,6 +117,12 @@ class PDFDocumentHelper
 
 #if BUILDFLAG(ARKWEB_PDF)
   void UpdateQuickMenu();
+  void ScaleSelection(gfx::PointF& left,
+                      int32_t& left_height,
+                      gfx::PointF& right,
+                      int32_t& right_height);
+  int32_t SafeScale(int32_t value, float scale_factor);
+  void SetIsPdfDocument(bool is_pdf_document);
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
   content::RenderFrameHostReceiverSet<mojom::PdfHost> pdf_host_receivers_;

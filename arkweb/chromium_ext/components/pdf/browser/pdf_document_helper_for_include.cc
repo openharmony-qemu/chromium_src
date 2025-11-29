@@ -16,7 +16,8 @@
 namespace pdf {
 
 #if BUILDFLAG(ARKWEB_PDF)
-void PDFDocumentHelper::UpdateClientClippedSelectionBoundsForPDF(const gfx::Rect& clipped_selection_bounds) {
+void PDFDocumentHelper::UpdateClientClippedSelectionBoundsForPDF(
+    const gfx::Rect& clipped_selection_bounds) {
   if (!touch_selection_controller_client_manager_) {
     InitTouchSelectionClientManager();
   }
@@ -34,8 +35,11 @@ void PDFDocumentHelper::UpdateClientClippedSelectionBoundsForPDF(const gfx::Rect
   bounds_origin.set_x(bounds_origin_f.x());
   bounds_origin.set_y(bounds_origin_f.y());
   gfx::Rect converted_bounds(bounds_origin, bounds_size);
+
+  // Convert selection bounds. The converted_bounds value will change.
   touch_selection_controller_client_manager_->
       ConvertClientClippedSelectionBounds(converted_bounds);
+  // Uptate the final converted_bounds.
   touch_selection_controller_client_manager_->
       UpdateClientClippedSelectionBounds(converted_bounds);
 }
@@ -84,6 +88,66 @@ void PDFDocumentHelper::UpdateQuickMenu() {
   }
 
   touch_selection_controller_client_manager_->UpdateQuickMenu();
+}
+
+void PDFDocumentHelper::ScaleSelection(gfx::PointF& left,
+                                       int32_t& left_height,
+                                       gfx::PointF& right,
+                                       int32_t& right_height) {
+  auto main_frame = render_frame_host().GetOutermostMainFrameOrEmbedder();
+  if (!main_frame) {
+    LOG(ERROR) << __func__ << ", PDF main_frame is null.";
+    return;
+  }
+  auto host_impl = content::RenderFrameHostImpl::From(main_frame);
+  if (!host_impl) {
+    LOG(ERROR) << __func__ << ", PDF host_impl is null.";
+    return;
+  }
+  float scale_factor = host_impl->GetPageScaleFactor();
+  if (scale_factor <= 0) {
+    LOG(ERROR) << __func__ << ", PDF invalid scale factor.";
+    return;
+  }
+
+  left.Scale(scale_factor);
+  right.Scale(scale_factor);
+  left_height = SafeScale(left_height, scale_factor);
+  right_height = SafeScale(right_height, scale_factor);
+}
+
+int32_t PDFDocumentHelper::SafeScale(int32_t value, float scale_factor) {
+  double result = static_cast<double>(value) * static_cast<double>(scale_factor);
+  // Check if it exceeds the range of int32_t.
+  if (result > std::numeric_limits<int32_t>::max()) {
+    return std::numeric_limits<int32_t>::max();
+  }
+  if (result < std::numeric_limits<int32_t>::min()) {
+    return std::numeric_limits<int32_t>::min();
+  }
+  return static_cast<int32_t>(std::round(result));
+}
+
+void PDFDocumentHelper::SetIsPdfDocument(bool is_pdf_document) {
+  if (!touch_selection_controller_client_manager_) {
+    InitTouchSelectionClientManager();
+  }
+
+  if (!touch_selection_controller_client_manager_) {
+    LOG(ERROR) << __func__ << ", PDF touch_selection_controller_client_manager_ is null.";
+    return;
+  }
+
+  LOG(INFO) << "Set is PDF document: " << is_pdf_document;
+  touch_selection_controller_client_manager_->SetIsPdfDocument(is_pdf_document);
+}
+
+void PDFDocumentHelper::ClearTextSelection() {
+  if (!remote_pdf_client_) {
+    LOG(ERROR) << __func__ << ", PDF remote_pdf_client_ is null.";
+    return;
+  }
+  remote_pdf_client_->ClearTextSelection();
 }
 #endif  // BUILDFLAG(ARKWEB_PDF)
 

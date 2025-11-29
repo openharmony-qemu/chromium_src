@@ -23,8 +23,9 @@
 #include "ui/touch_selection/touch_editing_controller.h"
 
 #if BUILDFLAG(ARKWEB_PDF)
-#include "arkweb/chromium_ext/components/pdf/browser/pdf_document_helper_for_include.cc"
 #include "base/logging.h"
+#include "content/browser/renderer_host/render_frame_host_impl.h"
+#include "arkweb/chromium_ext/components/pdf/browser/pdf_document_helper_for_include.cc"
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
 namespace pdf {
@@ -42,12 +43,23 @@ void PDFDocumentHelper::BindPdfHost(
   pdf_helper->pdf_host_receivers_.Bind(rfh, std::move(pdf_host));
 }
 
+#if !BUILDFLAG(ARKWEB_PDF)
 PDFDocumentHelper::PDFDocumentHelper(
     content::RenderFrameHost* rfh,
     std::unique_ptr<PDFDocumentHelperClient> client)
     : content::DocumentUserData<PDFDocumentHelper>(rfh),
       pdf_host_receivers_(content::WebContents::FromRenderFrameHost(rfh), this),
       client_(std::move(client)) {}
+#else
+PDFDocumentHelper::PDFDocumentHelper(
+    content::RenderFrameHost* rfh,
+    std::unique_ptr<PDFDocumentHelperClient> client)
+    : content::DocumentUserData<PDFDocumentHelper>(rfh),
+      pdf_host_receivers_(content::WebContents::FromRenderFrameHost(rfh), this),
+      client_(std::move(client)) {
+    SetIsPdfDocument(true);
+}
+#endif  // !BUILDFLAG(ARKWEB_PDF)
 
 PDFDocumentHelper::~PDFDocumentHelper() {
   if (pdf_rwh_) {
@@ -58,6 +70,9 @@ PDFDocumentHelper::~PDFDocumentHelper() {
     return;
   }
 
+#if BUILDFLAG(ARKWEB_PDF)
+  SetIsPdfDocument(false);
+#endif  // BUILDFLAG(ARKWEB_PDF)
   ui::TouchSelectionController* touch_selection_controller =
       touch_selection_controller_client_manager_->GetTouchSelectionController();
   touch_selection_controller->HideAndDisallowShowingAutomatically();
@@ -124,6 +139,10 @@ void PDFDocumentHelper::SelectionChanged(const gfx::PointF& left,
   selection_left_height_ = left_height;
   selection_right_ = right;
   selection_right_height_ = right_height;
+#if BUILDFLAG(ARKWEB_PDF)
+  ScaleSelection(selection_left_, selection_left_height_,
+                 selection_right_, selection_right_height_);
+#endif  // BUILDFLAG(ARKWEB_PDF)
 
   DidScroll();
 }

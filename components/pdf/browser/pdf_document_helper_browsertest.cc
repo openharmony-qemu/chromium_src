@@ -49,6 +49,9 @@ class FakePdfListener : public pdf::mojom::PdfListener {
               GetPageText,
               (int32_t, GetPageTextCallback callback),
               (override));
+#if BUILDFLAG(ARKWEB_PDF)
+  MOCK_METHOD(void, ClearTextSelection, (), (override));
+#endif  // BUILDFLAG(ARKWEB_PDF)
 };
 
 class TestPDFDocumentHelperClient : public PDFDocumentHelperClient {

@@ -22,6 +22,7 @@ namespace {
 constexpr double kMinScale = 0.001f;
 
 constexpr base::TimeDelta kPDFScrollDelay = base::Milliseconds(100);
+constexpr base::TimeDelta kPDFSelectionDelay = base::Milliseconds(50);
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
 }  // namespace
@@ -104,11 +105,11 @@ void PdfViewWebPlugin::RefreshMenuWithTouchAndScroll() {
   } else {
     is_menu_hidden = true;
   }
-  bool expected_is_menu_hidden = is_menu_hidden_.load(std::memory_order_relaxed);
+  bool expected_is_menu_hidden = is_menu_hidden_.load();
   if (expected_is_menu_hidden == is_menu_hidden) {
     return;
   }
-  is_menu_hidden_.store(is_menu_hidden, std::memory_order_relaxed);
+  is_menu_hidden_.store(is_menu_hidden);
   pdf_host_->HideHandleAndQuickMenuForPDF(is_menu_hidden);
 }
 
@@ -163,19 +164,19 @@ scoped_refptr<base::SequencedTaskRunner> PdfViewWebPlugin::GetTaskRunner() {
 }
 
 void PdfViewWebPlugin::SetScrollStoppedAfterDelay() {
-  if (cancelable_delayed_task_.IsValid()) {
-    cancelable_delayed_task_.CancelTask();
+  if (cancelable_scroll_task_.IsValid()) {
+    cancelable_scroll_task_.CancelTask();
   }
   auto task_runner = GetTaskRunner();
   if (!task_runner) {
     LOG(ERROR) << "PDF task runner is null.";
     return;
   }
-  cancelable_delayed_task_ = task_runner->PostCancelableDelayedTask(
-    base::subtle::PostDelayedTaskPassKey(),
-    FROM_HERE,
-    base::BindOnce(&PdfViewWebPlugin::SetIsScrolling, weak_factory_.GetWeakPtr(), false),
-    kPDFScrollDelay);
+  cancelable_scroll_task_ = task_runner->PostCancelableDelayedTask(
+      base::subtle::PostDelayedTaskPassKey(),
+      FROM_HERE,
+      base::BindOnce(&PdfViewWebPlugin::SetIsScrolling, weak_factory_.GetWeakPtr(), false),
+      kPDFScrollDelay);
 }
 
 void PdfViewWebPlugin::ResetResponsePendingInputEvent() {
@@ -189,6 +190,26 @@ void PdfViewWebPlugin::HandleClickBookmarkMessage(const base::Value::Dict& messa
     return;
   }
   engine_->OnClickBookmark(*nullableId);
+}
+
+void PdfViewWebPlugin::ForceSelectionChangedAfterDelay() {
+  if (cancelable_selection_task_.IsValid()) {
+    cancelable_selection_task_.CancelTask();
+  }
+  auto task_runner = GetTaskRunner();
+  if (!task_runner) {
+    LOG(ERROR) << "PDF task runner is null.";
+    return;
+  }
+  cancelable_selection_task_ = task_runner->PostCancelableDelayedTask(
+      base::subtle::PostDelayedTaskPassKey(),
+      FROM_HERE,
+      base::BindOnce(&PdfViewWebPlugin::ForceSelectionChanged, weak_factory_.GetWeakPtr()),
+      kPDFSelectionDelay);
+}
+
+void PdfViewWebPlugin::ClearTextSelection() {
+  engine_->ClearTextSelection();
 }
 #endif  // BUILDFLAG(ARKWEB_PDF)
 

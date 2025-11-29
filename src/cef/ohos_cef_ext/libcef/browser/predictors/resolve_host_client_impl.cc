@@ -45,8 +45,8 @@ ResolveHostClientImpl::~ResolveHostClientImpl() = default;
 void ResolveHostClientImpl::OnComplete(
     int32_t result,
     const net::ResolveErrorInfo& resolve_error_info,
-    const absl::optional<net::AddressList>& resolved_addresses,
-    const absl::optional<net::HostResolverEndpointResults>&
+    const net::AddressList& resolved_addresses,
+    const std::vector<net::HostResolverEndpointResult>&
         endpoint_results_with_metadata) {
   std::move(callback_).Run(result == net::OK);
 }

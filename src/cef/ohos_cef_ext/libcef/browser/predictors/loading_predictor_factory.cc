@@ -7,6 +7,8 @@
 #include "components/keyed_service/content/browser_context_dependency_manager.h"
 #include "components/keyed_service/content/browser_context_keyed_service_factory.h"
 #include "ohos_cef_ext/libcef/browser/predictors/loading_predictor.h"
+#include "content/public/browser/browser_context.h"
+#include <memory>
 
 namespace ohos_predictors {
 
@@ -29,13 +31,15 @@ LoadingPredictorFactory::LoadingPredictorFactory()
 
 LoadingPredictorFactory::~LoadingPredictorFactory() {}
 
-KeyedService* LoadingPredictorFactory::BuildServiceInstanceFor(
-    content::BrowserContext* context) const {
-  if (!IsLoadingPredictorEnabled(context)) {
+std::unique_ptr<KeyedService> LoadingPredictorFactory::BuildServiceInstanceFor(
+    void* context) const {
+  content::BrowserContext* browser_context =
+      static_cast<content::BrowserContext*>(context);
+  if (!IsLoadingPredictorEnabled(browser_context)) {
     return nullptr;
   }
 
-  return new LoadingPredictor(LoadingPredictorConfig(), context);
+  return std::make_unique<LoadingPredictor>(LoadingPredictorConfig(), browser_context);
 }
 
 }  // namespace ohos_predictors

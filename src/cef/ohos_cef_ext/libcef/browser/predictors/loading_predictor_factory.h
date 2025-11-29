@@ -7,6 +7,7 @@
 
 #include "base/memory/singleton.h"
 #include "components/keyed_service/content/browser_context_keyed_service_factory.h"
+#include <memory>
 
 namespace ohos_predictors {
 
@@ -27,9 +28,6 @@ class LoadingPredictorFactory : public BrowserContextKeyedServiceFactory {
   LoadingPredictorFactory();
   ~LoadingPredictorFactory() override;
 
-  // BrowserContextKeyedServiceFactory:
-  KeyedService* BuildServiceInstanceFor(
-      content::BrowserContext* context) const override;
 };
 
 }  // namespace ohos_predictors

@@ -23,6 +23,8 @@
 #include <map>
 #include <string>
 #include <thread>
+#include "third_party/abseil-cpp/absl/strings/str_format.h"
+#include "extensions/browser/extension_registrar_factory.h"
 
 // IS_OHOS begin
 #ifdef TRACE_EVENT0
@@ -385,7 +387,7 @@ static void PerformCrxInstallation(const std::string& file_path,
   auto prompt = std::make_unique<ExtensionInstallPrompt>(profile, nullptr);
 
   scoped_refptr<extensions::CrxInstaller> installer =
-      extensions::CrxInstaller::Create(service, std::move(prompt));
+      extensions::CrxInstaller::Create(context, std::move(prompt));
 
   ConfigureCrxInstaller(installer);
 
@@ -444,7 +446,7 @@ static void PerformCrxInstallationV2(const std::string& file_path,
   auto prompt = std::make_unique<ExtensionInstallPrompt>(profile, nullptr);
 
   scoped_refptr<extensions::CrxInstaller> installer =
-      extensions::CrxInstaller::Create(service, std::move(prompt));
+      extensions::CrxInstaller::Create(context, std::move(prompt));
 
   ConfigureCrxInstallerV2(installer, options);
 
@@ -1109,7 +1111,6 @@ bool NWebImpl::InitializeICUStatic(
   }
   WVLOG_I("will initialize icu.");
   (void)init_args;
-#if !BUILDFLAG(IS_NACL)
   static bool g_init_icu = false;
   if (!g_init_icu) {
     std::list<std::string> web_engine_args;
@@ -1130,7 +1131,6 @@ bool NWebImpl::InitializeICUStatic(
     g_init_icu = true;
     delete[] argv;
   }
-#endif
   return true;
 }
 #endif  // BUILDFLAG(ARKWEB_COOKIE)
@@ -3678,8 +3678,8 @@ void NWebImpl::PrefetchPageV2(
   TRACE_EVENT0("NWebImpl", "NWebImpl::PrefetchPage");
   std::string output;
   for (auto& header : additional_http_headers) {
-    base::StringAppendF(&output, "%s: %s\r\n", header.first.c_str(),
-                        header.second.c_str());
+    absl::StrAppendFormat(&output, "%s: %s\r\n", header.first.c_str(),
+                          header.second.c_str());
   }
   output.append("\r\n");
   nweb_delegate_->PrefetchPage(PrefetchOptions(url, output, 
@@ -4054,9 +4054,9 @@ void NWebImpl::UnLoadWebExtension(const std::string& eid) {
       WVLOG_I("NWebImpl::UnLoadWebExtension RemovedDefaultInstalledExtension");
     }
     if (extensions::ExtensionSystem::Get(browser_context)->extension_service()) {
-      bool result = extensions::ExtensionSystem::Get(browser_context)
-          ->extension_service()
-          ->UninstallExtension(eid, extensions::UNINSTALL_REASON_USER_INITIATED, error);
+      extensions::ExtensionRegistrar* registrar =
+          extensions::ExtensionRegistrarFactory::GetForBrowserContext(browser_context);
+      bool result = registrar->UninstallExtension(eid, extensions::UNINSTALL_REASON_USER_INITIATED, error);
       WVLOG_I("NWebImpl::UnLoadWebExtension result:%{public}d, error:%{public}s", result, error);
     }
     return;
@@ -4081,9 +4081,9 @@ void NWebImpl::DisableWebExtension(const std::string& eid) {
     }
 
     if (extensions::ExtensionSystem::Get(browser_context)->extension_service()) {
-      extensions::ExtensionSystem::Get(browser_context)
-          ->extension_service()
-          ->DisableExtension(eid, extensions::disable_reason::DISABLE_USER_ACTION);
+      extensions::ExtensionRegistrar* registrar =
+          extensions::ExtensionRegistrarFactory::GetForBrowserContext(browser_context);
+      registrar->DisableExtension(eid, {extensions::disable_reason::DISABLE_USER_ACTION});
       WVLOG_I("NWebImpl::DisableWebExtension id:%{public}s", eid.c_str());
     }
     return;
@@ -4282,7 +4282,9 @@ void NWebImpl::UninstallExtension(const std::string& eid,
   }
 
   std::u16string error;
-  const bool ok = service->UninstallExtension(
+  extensions::ExtensionRegistrar* registrar =
+      extensions::ExtensionRegistrarFactory::GetForBrowserContext(browser_context);
+  const bool ok = registrar->UninstallExtension(
       eid, extensions::UNINSTALL_REASON_INTERNAL_MANAGEMENT, &error);
 
   if (!ok) {

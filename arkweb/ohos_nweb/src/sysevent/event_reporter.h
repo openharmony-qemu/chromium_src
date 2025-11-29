@@ -26,6 +26,9 @@ enum class CrashType {
     MAILBOX_NONEXISTENT
 };
 
+void ReportRenderJsFreeze(int32_t pid, const std::string& packageName, const std::string& processName,
+                          const std::string& freezeMsg, int32_t uid);
+
 void ReportPageLoadStats(int instanceId,
                          int accessSumCount,
                          int accessSuccCount,
@@ -116,5 +119,6 @@ void ReportFirstMeaningfulPaintDone(OhWebPerformanceTiming loadPageTime);
 
 void ReportGpuProcessEvent(CrashType type, std::string eventContent);
 
-void ReportAppfreeze();
+void ReportAppfreeze(int32_t pid, const std::string& packageName, const std::string& processName,
+                     const std::string& freezeMsg, int32_t uid);
 #endif

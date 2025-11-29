@@ -6,5 +6,5 @@ interface DfxReporter {
 };
 
 interface FreezeReporter {
-  ReportRenderFreeze(string eventInfo);
+  ReportRenderFreeze(int32 pid, string processName, string freezeMsg, int32 uid);
 };

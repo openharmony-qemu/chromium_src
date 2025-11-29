@@ -24,6 +24,7 @@
 #include "base/values.h"
 #include "base/json/json_reader.h"
 #include "base/trace_event/trace_event.h"
+#include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 
 void DfxReporterImpl::ProcessPendingReceiver(mojo::PendingReceiver<dfx::mojom::DfxReporter>& receiver)
 {
@@ -126,10 +127,12 @@ void DfxReporterImpl::ReportHiSysEvent(const std::string& eventName, const std::
 }
 
 // the param `eventInfo` may be used in the future
-void FreezeReporterImpl::ReportRenderFreeze(const std::string& eventInfo)
+void FreezeReporterImpl::ReportRenderFreeze(int32_t pid, const std::string& processName, const std::string& freezeMsg,
+                                            int32_t uid)
 {
 #if !defined(COMPONENT_BUILD)
-  ReportAppfreeze();
+  auto packageName = OHOS::NWeb::OhosAdapterHelper::GetInstance().GetSystemPropertiesInstance().GetBundleName();
+  ReportAppfreeze(pid, packageName, processName, freezeMsg, uid);
 #endif
 }
 

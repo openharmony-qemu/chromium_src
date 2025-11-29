@@ -17,10 +17,10 @@
 #include "third_party/blink/public/common/thread_safe_browser_interface_broker_proxy.h"
 #include "third_party/blink/public/platform/platform.h"
 
-void ReportRenderFreeze() {
+void ReportRenderFreeze(int32_t pid, const std::string& processName, const std::string& freezeMsg, int32_t uid) {
   std::shared_ptr<AppfreezeMonitorImpl> instance = AppfreezeMonitorImpl::GetInstance();
   if (instance && !instance->IsReported()) {
-    instance->GetRemoteAndSend();
+    instance->GetRemoteAndSend(pid, processName, freezeMsg, uid);
   }
 }
 AppfreezeMonitorImpl::AppfreezeMonitorImpl() {
@@ -45,9 +45,10 @@ std::shared_ptr<AppfreezeMonitorImpl> AppfreezeMonitorImpl::GetInstance() {
   return instance;
 }
 
-void AppfreezeMonitorImpl::GetRemoteAndSend() {
+void AppfreezeMonitorImpl::GetRemoteAndSend(int32_t pid, const std::string& processName, const std::string& freezeMsg,
+                                            int32_t uid) {
   if (remote_.is_bound()) {
-    remote_->ReportRenderFreeze(""); // the param may be used in the future
+    remote_->ReportRenderFreeze(pid, processName, freezeMsg, uid);
     reported_ = true;
   }
 }

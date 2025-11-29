@@ -795,6 +795,8 @@ class CONTENT_EXPORT RenderProcessHost : public RenderProcessHostOhos,
       base::OnceCallback<void(const std::string&)> callback) {}
 
   virtual void InvokeRenderCrashDump() {}
+
+  virtual void ReportRenderUnresponsive(int32_t pid) {}
 #endif
   // Static management functions -----------------------------------------------
 

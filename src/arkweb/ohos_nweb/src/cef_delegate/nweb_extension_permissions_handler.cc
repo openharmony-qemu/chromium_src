@@ -17,6 +17,7 @@
 
 #include "chrome/browser/extensions/extension_action_runner.h"
 #include "chrome/browser/extensions/permissions/site_permissions_helper.h"
+#include "content/public/browser/web_contents.h"
 #include "extensions/browser/permissions_manager.h"
 #include "extensions/common/permissions/permissions_data.h"
 #include "libcef/browser/chrome/extensions/arkweb_chrome_extension_util_ext.h"

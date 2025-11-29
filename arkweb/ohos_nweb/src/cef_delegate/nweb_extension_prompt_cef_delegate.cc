@@ -54,7 +54,7 @@ NWebExtensionPromptData* NWebExtensionPromptCefDelegate::GetPromptData(int id) {
       return nullptr;
     }
 
-    std::move(g_get_prompt_data_callbacks[id]).run(data);
+    g_get_prompt_data_callbacks[id].Run(data);
     return data;
   }
 
@@ -128,14 +128,14 @@ bool NWebExtensionPromptCefDelegate::ShowExtensionPrompt(
 #if BUILDFLAG(ARKWEB_NWEB_EX)
   int id = g_request_id++;
   NWebExtensionActionIcon* icon = CreateActionIcon(icon_image);
-  g_show_prompt_callbacks[id] = showPromptFunc;
-  g_get_prompt_data_callbacks[id] = getPromptDataFunc;
+  g_show_prompt_callbacks[id] = std::move(showPromptFunc);
+  g_get_prompt_data_callbacks[id] = std::move(getPromptDataFunc);
   if (NWebExtensionPromptDispatcher::GetInstance().ShowExtensionPrompt(
           id, type, extensionId.c_str(), icon)) {
     LOG(INFO) << "succeed to notify client to show extension prompt,id is "
               << id << ",type is " << type;
     ReleaseActionIcon(icon);
-    return;
+    return true;
   }
 
   LOG(WARNING) << "failed to notify client to show extension prompt,id is "
@@ -143,7 +143,7 @@ bool NWebExtensionPromptCefDelegate::ShowExtensionPrompt(
   ReleaseActionIcon(icon);
 
   std::move(g_show_prompt_callbacks[id])
-      .run(2, "failed to notify client to show extension prompt");
+      .Run(2, "failed to notify client to show extension prompt");
   g_show_prompt_callbacks.erase(id);
   g_get_prompt_data_callbacks.erase(id);
 #endif
@@ -203,11 +203,11 @@ void NWebExtensionPromptCefDelegate::OnShowExtensionPrompt(int id,
                                                            int action,
                                                            const char* error) {
 #if BUILDFLAG(ARKWEB_NWEB_EX)
-  std::string strErroe = error ? error : "";
+  std::string strError = (error) ? error : "";
   if (g_show_prompt_callbacks.count(id)) {
     LOG(INFO) << "succeed to find callback,id is " << id << ",action is "
               << action << ",error is " << strError;
-    std::move(g_show_prompt_callbacks[id]).run(action, strError);
+    std::move(g_show_prompt_callbacks[id]).Run(action, strError);
     g_show_prompt_callbacks.erase(id);
     g_get_prompt_data_callbacks.erase(id);
     g_prompt_extension_ids.erase(id);

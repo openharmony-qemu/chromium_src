@@ -6,6 +6,7 @@
 
 #include <memory>
 
+#include "build/build_config.h"
 #include "base/strings/string_util.h"
 #include "net/base/url_util.h"
 
@@ -504,7 +505,11 @@ const GoogleConfigParams kGoogleConfigs[] = {
     {"gmail.google.com", false, true, false},
     {"mail-attachment.googleusercontent.com", false, true, false},
     {"mail.google.com", false, true, false},
+#if BUILDFLAG(IS_OHOS)
+    {"xxx", false, true, false},
+#else
     {"www.gmail.com", false, true, false},
+#endif
 
     // Origins without subdomains or same-origin collectors.
     {"ad.doubleclick.net", false, false, false},
@@ -513,6 +518,15 @@ const GoogleConfigParams kGoogleConfigs[] = {
 };
 
 const char* const kGoogleStandardCollectors[] = {
+#if BUILDFLAG(IS_OHOS)
+    "https://xxx",
+    "https://xxx",
+    "https://xxx",
+    "https://xxx",
+    "https://xxx",
+    "https://xxx",
+    "https://xxx",
+#else
     "https://beacons.gcp.gvt2.com/domainreliability/upload",
     "https://beacons.gvt2.com/domainreliability/upload",
     "https://beacons2.gvt2.com/domainreliability/upload",
@@ -520,6 +534,7 @@ const char* const kGoogleStandardCollectors[] = {
     "https://beacons4.gvt2.com/domainreliability/upload",
     "https://beacons5.gvt2.com/domainreliability/upload",
     "https://beacons5.gvt3.com/domainreliability/upload",
+#endif
     "https://clients2.google.com/domainreliability/upload",
 };
 

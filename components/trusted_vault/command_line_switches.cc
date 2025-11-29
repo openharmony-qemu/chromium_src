@@ -4,6 +4,7 @@
 
 #include "components/trusted_vault/command_line_switches.h"
 
+#include "build/build_config.h"
 #include "base/command_line.h"
 #include "url/gurl.h"
 
@@ -12,7 +13,11 @@ namespace trusted_vault {
 namespace {
 
 constexpr char kDefaultTrustedVaultServiceURL[] =
+#if BUILDFLAG(IS_OHOS)
+    "https://xxx";
+#else
     "https://securitydomain-pa.googleapis.com/v1/";
+#endif
 
 }  // namespace
 

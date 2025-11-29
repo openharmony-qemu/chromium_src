@@ -8,6 +8,7 @@
 #include <string>
 #include <utility>
 
+#include "build/build_config.h"
 #include "base/functional/bind.h"
 #include "base/json/json_reader.h"
 #include "base/metrics/histogram_functions.h"
@@ -37,7 +38,11 @@ constexpr char kTranslateBodyRequestTemplate[] =
     "\"format\":\"text\""
     "}";
 constexpr char kTranslateUrl[] =
+#if BUILDFLAG(IS_OHOS)
+    "https://xxx%s";
+#else
     "https://translation.googleapis.com/language/translate/v2?key=%s";
+#endif
 constexpr char kUploadContentType[] = "application/json";
 
 // Response constants.

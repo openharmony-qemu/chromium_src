@@ -161,8 +161,6 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
 
   browser_settings.local_storage =
       IsDomStorageEnabled() ? STATE_ENABLED : STATE_DISABLED;
-  browser_settings.databases =
-      IsDataBaseEnabled() ? STATE_ENABLED : STATE_DISABLED;
   browser_settings.universal_access_from_file_urls =
       EnableUniversalAccessFromFileURLs() ? STATE_ENABLED : STATE_DISABLED;
   // browser_settings.file_access_from_file_urls =

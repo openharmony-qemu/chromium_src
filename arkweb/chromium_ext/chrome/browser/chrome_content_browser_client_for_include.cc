@@ -225,7 +225,13 @@ class ChromeContentBrowserClientUtils {
   static void AppLinkThrottleExt(
       const network::ResourceRequest& request,
       std::vector<std::unique_ptr<blink::URLLoaderThrottle>>& result,
-      content::FrameTreeNodeId frame_tree_node_id) {
+      content::FrameTreeNodeId frame_tree_node_id,
+      bool is_prerendering) {
+    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+            ::switches::kEnableNwebEx) && is_prerendering) {
+      return;
+    }
+
     content::WebContents* web_contents =
         content::WebContents::FromFrameTreeNodeId(frame_tree_node_id);
     if (web_contents == nullptr) {

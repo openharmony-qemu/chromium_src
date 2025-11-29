@@ -33,13 +33,13 @@ public:
   static BlanklessDataController& GetInstance();
   ~BlanklessDataController() = default;
 
-  using SnapShotRect = struct {
+  struct SnapShotRect {
     int x;
     int y;
     int w;
     int h;
   };
-  using SnapshotInfo = struct {
+  struct SnapshotInfo {
     std::string path;
     SkBitmap bitmap;
     std::vector<double> pixels;

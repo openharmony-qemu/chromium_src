@@ -47,9 +47,9 @@ class ResolveHostClientImpl : public network::ResolveHostClientBase {
   // network::mojom::ResolveHostClient:
   void OnComplete(int32_t result,
                   const net::ResolveErrorInfo& resolve_error_info,
-                  const absl::optional<net::AddressList>& resolved_addresses,
-                  const absl::optional<net::HostResolverEndpointResults>&
-                      endpoint_results_with_metadata) override;
+                  const ::net::AddressList& resolved_addresses,
+                  const std::vector<::net::HostResolverEndpointResult>& 
+                  alternative_endpoints) override;
 
   void OnConnectionError();
 

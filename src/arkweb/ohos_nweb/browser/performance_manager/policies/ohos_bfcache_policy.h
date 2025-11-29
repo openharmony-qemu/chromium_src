@@ -12,17 +12,16 @@
 
 #include "base/time/time.h"
 #include "base/timer/timer.h"
+#include "base/memory/memory_pressure_listener.h"
 #include "components/performance_manager/public/graph/graph.h"
-#include "components/performance_manager/public/graph/system_node.h"
 
 namespace performance_manager::policies {
 
 // Policies that automatically flush the BFCache of pages when the system is
 // under memory pressure.
-class OHOSBFCachePolicy : public GraphOwned,
-                          public SystemNode::ObserverDefaultImpl {
+class OHOSBFCachePolicy : public GraphOwned {
  public:
-  OHOSBFCachePolicy() = default;
+  OHOSBFCachePolicy();
   OHOSBFCachePolicy(const OHOSBFCachePolicy&) = delete;
   OHOSBFCachePolicy(OHOSBFCachePolicy&&) = delete;
   OHOSBFCachePolicy& operator=(const OHOSBFCachePolicy&) = delete;
@@ -42,8 +41,11 @@ class OHOSBFCachePolicy : public GraphOwned,
   void OnPassedToGraph(Graph* graph) override;
   void OnTakenFromGraph(Graph* graph) override;
 
-  // SystemNodeObserver:
-  void OnMemoryPressure(MemoryPressureLevel new_level) override;
+  // Memory pressure handling:
+  void OnMemoryPressure(MemoryPressureLevel new_level);
+
+  // Memory pressure listener:
+  base::MemoryPressureListener memory_pressure_listener_;
 };
 
 }  // namespace performance_manager::policies

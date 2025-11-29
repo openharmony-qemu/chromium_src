@@ -54,7 +54,6 @@ AutofillAgentExt::AutofillAgentExt(
     std::unique_ptr<PasswordGenerationAgent> password_generation_agent,
     blink::AssociatedInterfaceRegistry* registry)
     : AutofillAgent(render_frame,
-                    config,
                     std::move(password_autofill_agent),
                     std::move(password_generation_agent),
                     registry) {}
@@ -116,7 +115,8 @@ void AutofillAgentExt::OhAutoFillFormControlElementClicked(
     return;
   }
   HidePopup();
-  HandleFocusChangeComplete(/*focused_node_was_last_clicked=*/node.Focused());
+  const SynchronousFormCache form_cache;
+  HandleFocusChangeComplete(/*focused_node_was_last_clicked=*/node.Focused(), form_cache);
   is_need_to_created_popup_ = true;
   created_popup_time_ = base::TimeTicks::Now();
 }
@@ -151,7 +151,8 @@ bool AutofillAgentExt::OhAutoFillDidChangeScrollOffset() {
                                          return;
                                        }
                                        self->HidePopup();
-                                       self->HandleFocusChangeComplete(true);
+                                       const SynchronousFormCache form_cache;
+                                       self->HandleFocusChangeComplete(true, form_cache);
                                      },
                                      weak_ptr_factory_.GetWeakPtr()));
     return true;

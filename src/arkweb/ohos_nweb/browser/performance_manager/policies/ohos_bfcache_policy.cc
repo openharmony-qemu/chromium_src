@@ -22,6 +22,7 @@
 #include "content/public/browser/back_forward_cache.h"
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
+#include "content/public/browser/navigation_controller.h"
 #include "content/public/browser/web_contents.h"
 
 namespace performance_manager::policies {
@@ -52,21 +53,26 @@ void MaybeFlushBFCacheOnUIThread(base::WeakPtr<content::WebContents> contents,
   }
 
   int cache_size = -1;
+  content::BackForwardCache::NotRestoredReason reason;
   switch (memory_pressure_level) {
     case MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_MODERATE:
       LOG(DEBUG) << "OHOSBFCache::MaybeFlushBFCacheOnUIThread"
                  << " The value of memory pressure level is: "
                     "MEMORY_PRESSURE_LEVEL_MODERATE";
       cache_size = 1;
+      reason = content::BackForwardCache::NotRestoredReason::
+          kCacheLimitPrunedOnModerateMemoryPressure;
       break;
     case MemoryPressureLevel::MEMORY_PRESSURE_LEVEL_CRITICAL:
       LOG(DEBUG) << "OHOSBFCache::MaybeFlushBFCacheOnUIThread"
                  << " The value of memory pressure level is: "
                     "MEMORY_PRESSURE_LEVEL_CRITICAL";
       cache_size = 0;
+      reason = content::BackForwardCache::NotRestoredReason::
+          kCacheLimitPrunedOnCriticalMemoryPressure;
       break;
     default:
-      NOTREACHED_IN_MIGRATION();
+      NOTREACHED();
   }
   // Do not flush BFCache if cache_size is negative (such as -1).
   if (cache_size < 0) {
@@ -80,7 +86,7 @@ void MaybeFlushBFCacheOnUIThread(base::WeakPtr<content::WebContents> contents,
   if (!navigation_controller.GetPendingEntry()) {
     LOG(DEBUG) << "OHOSBFCache::MaybeFlushBFCacheOnUIThread"
                << " Start to prune cache is: " << cache_size;
-    navigation_controller.GetBackForwardCache().Prune(cache_size);
+    navigation_controller.GetBackForwardCache().Prune(cache_size, reason);
   }
 }
 
@@ -96,14 +102,9 @@ void OHOSBFCachePolicy::MaybeFlushBFCache(
                      memory_pressure_level));
 }
 
-void OHOSBFCachePolicy::OnPassedToGraph(Graph* graph) {
-  DCHECK(graph->HasOnlySystemNode());
-  graph->AddSystemNodeObserver(this);
-}
+void OHOSBFCachePolicy::OnPassedToGraph(Graph* graph) {}
 
-void OHOSBFCachePolicy::OnTakenFromGraph(Graph* graph) {
-  graph->RemoveSystemNodeObserver(this);
-}
+void OHOSBFCachePolicy::OnTakenFromGraph(Graph* graph) {}
 
 void OHOSBFCachePolicy::OnMemoryPressure(MemoryPressureLevel new_level) {
   // This shouldn't happen but add the check anyway in case the API changes.

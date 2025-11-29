@@ -5,6 +5,7 @@
 #include <string>
 
 #include "base/logging.h"
+#include "base/notimplemented.h"
 #include "base/notreached.h"
 #include "chrome/browser/policy/policy_path_parser.h"
 

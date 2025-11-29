@@ -546,11 +546,7 @@ void OhosToplevelWindow::OnWindowRectChangeEvent(std::shared_ptr<XCEvent> event)
       break;
     case PlatformWindowState::kFullScreen: {
       if (reason == RectChangeReason::RECOVER) {
-        // When you click the button in the upper right corner to exit the
-        // fullscreen, BrowserView cannot detect the window status change and
-        // sends an F11 key event to exit the full screen.
-          ohos::adapter::InputMethodOHOSAdapter::GetInstance()
-              .ExitFullscreenEvent();
+        delegate()->OnFullscreenSwitched(false);
       }
       delegate()->OnFullscreenStateChanged();
       break;

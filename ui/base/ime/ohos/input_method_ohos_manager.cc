@@ -74,12 +74,6 @@ void InputMethodOHOSManager::MoveCursorOnUIThread(int direction) {
   }
 }
 
-void InputMethodOHOSManager::ExitFullscreenEventOnUIThread() {
-  if (active_instance_) {
-    active_instance_->ExitFullscreenEvent();
-  }
-}
-
 void InputMethodOHOSManager::InsertText(const std::string& text) {
   task_runner_->PostTask(
     FROM_HERE,
@@ -117,14 +111,6 @@ void InputMethodOHOSManager::MoveCursor(int direction) {
     FROM_HERE,
     base::BindOnce(&InputMethodOHOSManager::MoveCursorOnUIThread,
                    weak_factory_.GetWeakPtr(), direction)
-  );
-}
-
-void InputMethodOHOSManager::ExitFullscreenEvent() {
-  task_runner_->PostTask(
-    FROM_HERE,
-    base::BindOnce(&InputMethodOHOSManager::ExitFullscreenEventOnUIThread,
-                   weak_factory_.GetWeakPtr())
   );
 }
 

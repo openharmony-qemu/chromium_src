@@ -345,23 +345,23 @@ DateTimeChooserType ConvertDateTimeChooserType(cef_text_input_type_t type) {
 
 double ConvertDateTimeToMs(const DateTime& datetime) {
   double result =
-      WTF::DateToDaysFrom1970(datetime.year, datetime.month, datetime.day) *
-      WTF::kMsPerDay;
-  result += WTF::kMsPerHour * datetime.hour;
-  result += WTF::kMsPerMinute * datetime.minute;
+      blink::DateToDaysFrom1970(datetime.year, datetime.month, datetime.day) *
+      blink::kMsPerDay;
+  result += blink::kMsPerHour * datetime.hour;
+  result += blink::kMsPerMinute * datetime.minute;
   return result;
 }
 
 DateTime ConvertMsToDateTime(double ms) {
-  int year = WTF::MsToYear(ms);
-  int year_day = WTF::DayInYear(ms, year);
-  int month = WTF::MonthFromDayInYear(year_day, IsLeapYear(year));
-  int day = WTF::DayInMonthFromDayInYear(year_day, IsLeapYear(year));
-  double value = std::floor(fmod(ms, WTF::kMsPerDay) / WTF::kMsPerSecond);
-  int second = static_cast<int>(fmod(value, WTF::kSecondsPerMinute));
-  value = std::floor(value / WTF::kSecondsPerMinute);
-  int minute = static_cast<int>(fmod(value, WTF::kMinutesPerHour));
-  int hour = static_cast<int>(value / WTF::kMinutesPerHour);
+  int year = blink::MsToYear(ms);
+  int year_day = blink::DayInYear(ms, year);
+  int month = blink::MonthFromDayInYear(year_day, blink::IsLeapYear(year));
+  int day = blink::DayInMonthFromDayInYear(year_day, blink::IsLeapYear(year));
+  double value = std::floor(fmod(ms, blink::kMsPerDay) / blink::kMsPerSecond);
+  int second = static_cast<int>(fmod(value, blink::kSecondsPerMinute));
+  value = std::floor(value / blink::kSecondsPerMinute);
+  int minute = static_cast<int>(fmod(value, blink::kMinutesPerHour));
+  int hour = static_cast<int>(value / blink::kMinutesPerHour);
   return {year, month, day, hour, minute, second};
 }
 

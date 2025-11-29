@@ -30,6 +30,7 @@ namespace OHOS::NWeb {
 
 NWebExtensionActionIconColorType GetColorType(const SkBitmap& bitmap) {
   NWebExtensionActionIconColorType colorType;
+
   switch (bitmap.colorType()) {
     case kRGBA_8888_SkColorType:
       colorType = NWebExtensionActionIconColorType::RGBA_8888;
@@ -78,7 +79,7 @@ NWebExtensionActionIconBitmap CreateIconBitmap(const SkBitmap& bitmap) {
 NWebExtensionActionIcon CreateActionIcon(
     const std::vector<gfx::ImageSkiaRep>& imageSkiaReps) {
   NWebExtensionActionIcon actionIcon;
-  for (auto rep : imageSkiaReps) {
+  for (const auto& rep : imageSkiaReps) {
     double scale = rep.scale();
 #if defined(ADDRESS_SANITIZER) || defined(HWADDRESS_SANITIZER)
     actionIcon.bitmaps[scale] =
@@ -101,7 +102,7 @@ NWebExtensionActionIcon* CreateActionIcon(const gfx::Image& icon_image) {
   NWebExtensionActionIcon* icon = new NWebExtensionActionIcon(actionIcon);
 #else
   NWebExtensionActionIcon* addr =
-      (NWebExtensionActionIcon*)__real_malloc(sizeof(actionIcon));
+      (NWebExtensionActionIcon*)__real_malloc(sizeof(NWebExtensionActionIcon));
   NWebExtensionActionIcon* icon =
       new (addr) NWebExtensionActionIcon(actionIcon);
 #endif

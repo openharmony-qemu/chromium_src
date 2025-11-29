@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef OHOS_EXTENSION_PROMPT_CEF_DELEGATE_H_
-#define OHOS_EXTENSION_PROMPT_CEF_DELEGATE_H_
+#ifndef NWEB_EXTENSION_PROMPT_CEF_DELEGATE_H_
+#define NWEB_EXTENSION_PROMPT_CEF_DELEGATE_H_
 
 #include "base/functional/callback.h"
 #include "ohos_nweb/src/capi/browser_service/nweb_extension_prompt_types.h"
@@ -61,4 +61,4 @@ class NWebExtensionPromptCefDelegate {
 
 }  // namespace OHOS::NWeb
 
-#endif  // OHOS_EXTENSION_PROMPT_CEF_DELEGATE_H_
+#endif  // NWEB_EXTENSION_PROMPT_CEF_DELEGATE_H_

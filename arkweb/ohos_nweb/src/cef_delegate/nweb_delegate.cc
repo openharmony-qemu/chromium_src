@@ -1957,7 +1957,16 @@ void NWebDelegate::OnPause() {
     LOG(DEBUG) << "NWebDelegate::OnPause set hidden, nweb_id = " << nweb_id_;
     GetBrowser()->GetHost()->WasHidden(true);
     hidden_ = true;
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+    hasEvictedBufferWhenHidden_ = false;
+  } else if (!hasEvictedBufferWhenHidden_) {
+    hasEvictedBufferWhenHidden_ = true;
+    LOG(DEBUG) << "NWebDelegate::OnPause evict frame back buffers when nweb was hidden";
+    GetBrowser()->GetHost()->EvictFrameBackBuffersWhenNWebWasHidden();
   }
+#else
+  }
+#endif
 
 #if BUILDFLAG(ARKWEB_INPUT_EVENTS)
   is_onPause_ = true;

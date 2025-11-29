@@ -37,7 +37,10 @@ public:
 
     void AudioRendererOutputDeviceChangeCallback(OH_AudioStream_DeviceChangeReason reason);
 
+    static std::shared_mutex& GetAudioCallbackMutex();
+
 private:
+    static std::shared_mutex audio_callback_mutex_;
     base::WeakPtr<OHOSAudioOutputStream> audio_output_stream_;
 };
 

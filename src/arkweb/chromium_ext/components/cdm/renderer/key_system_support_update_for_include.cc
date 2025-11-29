@@ -46,26 +46,26 @@ void AddWiseplay(const media::KeySystemCapability& capability,
   base::flat_set<::media::EncryptionScheme> hw_secure_encryption_schemes;
   base::flat_set<CdmSessionType> session_types;
   base::flat_set<CdmSessionType> hw_secure_session_types;
-  if (capability.sw_secure_capability) {
-    codecs = GetSupportedCodecs(capability.sw_secure_capability.value());
-    encryption_schemes = capability.sw_secure_capability->encryption_schemes;
+  if (capability.sw_cdm_capability_or_status.has_value()) {
+    codecs = GetSupportedCodecs(capability.sw_cdm_capability_or_status.value());
+    encryption_schemes = capability.sw_cdm_capability_or_status->encryption_schemes;
     session_types = UpdatePersistentLicenseSupport(
-        can_persist_data, capability.sw_secure_capability->session_types);
+        can_persist_data, capability.sw_cdm_capability_or_status->session_types);
     if (!base::Contains(session_types, CdmSessionType::kTemporary)) {
       LOG(INFO) << "[DRM]AddWiseplay, Temporary sessions must be supported.";
       return;
     }
     LOG(INFO) << "[DRM]AddWiseplay, Software secure Wiseplay supported";
   }
-  if (capability.hw_secure_capability) {
+  if (capability.hw_cdm_capability_or_status.has_value()) {
     const bool force_support_clear_lead =
         media::kHardwareSecureDecryptionForceSupportClearLead.Get();
     hw_secure_codecs = GetSupportedCodecs(
-        capability.hw_secure_capability.value(), !force_support_clear_lead);
+        capability.hw_cdm_capability_or_status.value(), !force_support_clear_lead);
     hw_secure_encryption_schemes =
-        capability.hw_secure_capability->encryption_schemes;
+        capability.hw_cdm_capability_or_status->encryption_schemes;
     hw_secure_session_types = UpdatePersistentLicenseSupport(
-        can_persist_data, capability.hw_secure_capability->session_types);
+        can_persist_data, capability.hw_cdm_capability_or_status->session_types);
     if (!base::Contains(hw_secure_session_types, CdmSessionType::kTemporary)) {
       LOG(INFO) << "[DRM]AddWiseplay, Temporary sessions must be supported.";
       return;

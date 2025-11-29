@@ -63,7 +63,7 @@ using OHHuksCloseResource = struct OH_Huks_Result (*)(const struct OH_Huks_Blob 
                                                           const OH_Huks_ExternalCryptoParamSet *paramSet);
 using OHHuksGetUkeyPinAuthState = struct OH_Huks_Result (*)(const struct OH_Huks_Blob *resourceId,
                                                             const OH_Huks_ExternalCryptoParamSet *paramSet,
-                                                            bool *authState);
+                                                            OH_Huks_ExternalPinAuthState *authState);
  
  
 OHCertManagerGetUkeyCertificate certManagerGetUkeyCertificate = nullptr;
@@ -481,12 +481,14 @@ int32_t CertManagerAdapterImpl::GetUkeyPinAuthState(const std::string& uri, bool
         return result.errorCode;
     }
 
-    result = huksGetUkeyPinAuthState(&index, paramSet, state);
+    OH_Huks_ExternalPinAuthState authState = OH_HUKS_EXT_CRYPTO_PIN_NO_AUTH;
+    result = huksGetUkeyPinAuthState(&index, paramSet, &authState);
     if (result.errorCode != OH_HUKS_SUCCESS) {
         WVLOG_E("GetUkeyPinAuthState, get ukey pin auth state failed, errorCode = %{public}d ", result.errorCode);
         huksFreeExternalCryptoParamSet(&paramSet);
         return result.errorCode;
     }
+    *state = (authState == OH_HUKS_EXT_CRYPTO_PIN_AUTH_SUCCEEDED);
  
     huksFreeExternalCryptoParamSet(&paramSet);
     return OH_HUKS_SUCCESS;

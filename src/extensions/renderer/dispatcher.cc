@@ -418,8 +418,7 @@ Dispatcher::Dispatcher(
   WebSecurityPolicy::RegisterURLSchemeAsNotAllowingJavascriptURLs(
       arkWebExtension_scheme);
  
-  if (base::FeatureList::IsEnabled(
-          extensions_features::kAllowSharedArrayBuffersUnconditionally)) {
+  if (base::FeatureList::IsEnabled(features::kSharedArrayBuffer)) {
     WebSecurityPolicy::RegisterURLSchemeAsAllowingSharedArrayBuffers(
         arkWebExtension_scheme);
   }

@@ -17,6 +17,7 @@
 #define COMPONENTS_JS_INJECTION_RENDERER_JS_COMMUNICATION_UTILS_H
 
 #include "components/js_injection/renderer/js_communication.h"
+#include "components/origin_matcher/origin_matcher.h"
 
 typedef int int32_t;
 
@@ -41,12 +42,12 @@ class JsCommunicationUtils {
   void CommitPendingJavascriptsAtHeadReady();
  private:
   struct DocumentStartJavaScript {
-    OriginMatcher origin_matcher;
+    origin_matcher::OriginMatcher origin_matcher;
     blink::WebString script;
     int32_t script_id;
   };
   struct DocumentEndJavaScript {
-    OriginMatcher origin_matcher;
+    origin_matcher::OriginMatcher origin_matcher;
     blink::WebString script;
     int32_t script_id;
   };

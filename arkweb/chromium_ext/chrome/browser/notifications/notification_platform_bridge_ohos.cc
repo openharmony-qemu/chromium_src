@@ -184,10 +184,6 @@ class PassThroughDelegate : public message_center::NotificationDelegate {
         std::nullopt /* by_user */, base::DoNothing());
   }
 
-  raw_ptr<Profile> GetProfile() const { return profile_; }
-  message_center::Notification GetNotification() const { return notification_; }
-  NotificationHandler::Type GetNotificationType() const { return notification_type_; }
-
  protected:
   ~PassThroughDelegate() override = default;
 
@@ -313,16 +309,20 @@ void NotificationPlatformBridgeOhos::Display(
     const message_center::Notification& notification,
     std::unique_ptr<NotificationCommon::Metadata> metadata) {
   LOG(INFO) << "NotificationPlatformBridgeOhos::Display: "
-            << "id=" << notification.id()
-            << "; title=" << notification.title()
+            << "id=" << notification.id() << "; title=" << notification.title()
             << "; message=" << notification.message()
             << "; type=" << (int)notification_type
             << "; profileId=" << GetProfileId(profile);
 
-  message_center::Notification notification_with_delegate(notification);
-  notification_with_delegate.set_delegate(base::WrapRefCounted(
-      new PassThroughDelegate(profile, notification, notification_type)));
-  Add(notification.id(), notification_with_delegate, profile);
+  if (notification.delegate() ||
+      notification_type == NotificationHandler::Type::TRANSIENT) {
+    Add(notification.id(), notification, profile);
+  } else {
+    message_center::Notification notification_with_delegate(notification);
+    notification_with_delegate.set_delegate(base::WrapRefCounted(
+        new PassThroughDelegate(profile, notification, notification_type)));
+    Add(notification.id(), notification_with_delegate, profile);
+  }
 
 #if BUILDFLAG(ARKWEB_NOTIFICATION)
   std::shared_ptr<NWebNotificationOptionsItem> options =
@@ -415,14 +415,14 @@ void NotificationPlatformBridgeOhos::OnShowed(const std::string id) {
   }
 
   const message_center::Notification& notification = profile_notification->notification();
-  PassThroughDelegate* delegate = static_cast<PassThroughDelegate*>(notification.delegate());
+  scoped_refptr<message_center::NotificationDelegate> delegate = notification.delegate();
   if (!delegate) {
     return;
   }
-  NotificationHandler* handler = NotificationDisplayServiceImpl::GetForProfile(delegate->GetProfile())
-      ->GetNotificationHandler(delegate->GetNotificationType());
+  NotificationHandler* handler = NotificationDisplayServiceImpl::GetForProfile(profile_notification->profile())
+      ->GetNotificationHandler(profile_notification->type());
   if (handler) {
-    handler->OnShow(delegate->GetProfile(), delegate->GetNotification().id());
+    handler->OnShow(profile_notification->profile(), profile_notification->notification().id());
   }
 }
 
@@ -435,10 +435,10 @@ void NotificationPlatformBridgeOhos::OnClosed(const std::string id) {
   }
 
   const message_center::Notification& notification = profile_notification->notification();
-  PassThroughDelegate* delegate = static_cast<PassThroughDelegate*>(notification.delegate());
+  scoped_refptr<message_center::NotificationDelegate> delegate = notification.delegate();
   if (delegate) {
     delegate->Close(true);
-    CancelById(id, ProfileNotification::GetProfileID(delegate->GetProfile()));
+    CancelById(id, ProfileNotification::GetProfileID(profile_notification->profile()));
   }
 }
 
@@ -452,7 +452,7 @@ void NotificationPlatformBridgeOhos::OnClicked(const std::string id, int buttonI
   }
 
   const message_center::Notification& notification = profile_notification->notification();
-  PassThroughDelegate* delegate = static_cast<PassThroughDelegate*>(notification.delegate());
+  scoped_refptr<message_center::NotificationDelegate> delegate = notification.delegate();
   if (delegate) {
     if (buttonIndex >= 0) {
       delegate->Click(buttonIndex, std::nullopt);

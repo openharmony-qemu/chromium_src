@@ -28,7 +28,7 @@ class BackgroundTaskHolder;
 }  // namespace mechanism
 namespace policies {
 class BackgroundTaskPolicy : public GraphOwnedDefaultImpl,
-                             public PageNode::ObserverDefaultImpl {
+                             public PageNodeObserver {
  public:
   BackgroundTaskPolicy();
   BackgroundTaskPolicy(const BackgroundTaskPolicy&) = delete;

@@ -45,13 +45,8 @@ class ArkWebBrowserExtImpl : virtual public ArkWebBrowserExt,
   ArkWebBrowserExtImpl(blink::WebView* web_view,
                        int browser_id,
                        bool is_popup,
-                       bool is_windowless,
-                       bool print_preview_enabled)
-      : CefBrowserImpl(web_view,
-                       browser_id,
-                       is_popup,
-                       is_windowless,
-                       print_preview_enabled) {}
+                       const cef::BrowserConfig& config)
+      : CefBrowserImpl(web_view, browser_id, is_popup, config) {}
 
   CefRefPtr<ArkWebBrowserExt> AsArkWebBrowser() override { return this; }
 

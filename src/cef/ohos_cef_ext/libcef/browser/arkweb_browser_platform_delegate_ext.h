@@ -16,7 +16,7 @@
 #endif
 
 #if BUILDFLAG(ARKWEB_DATALIST)
-#include "components/autofill/core/browser/ui/suggestion.h"
+#include "components/autofill/core/browser/suggestions/suggestion.h"
 #include "ui/gfx/geometry/rect_f.h"
 #endif
 

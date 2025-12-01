@@ -97,6 +97,7 @@ class AwProxyingURLLoaderFactory : public network::mojom::URLLoaderFactory {
   // navigation URL. This is an optimization that avoids hopping to the UI
   // thread before starting a request.
   static void SetXrwResultForNavigation(
+      content::OriginTrialsControllerDelegate* delegate,
       const GURL& url,
       blink::mojom::ResourceType resource_type,
       content::FrameTreeNodeId frame_tree_node_id,
@@ -146,7 +147,7 @@ class AwProxyingURLLoaderFactory : public network::mojom::URLLoaderFactory {
                        base::OnceCallback<void(std::string)> callback);
 
   void SetCookieHeader(const network::ResourceRequest& request,
-                       const std::string& value,
+                       std::string_view value,
                        const std::optional<base::Time>& server_time);
 
   net::IsolationInfo GetIsolationInfo(const network::ResourceRequest& request);

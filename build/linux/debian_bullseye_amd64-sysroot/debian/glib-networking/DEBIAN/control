@@ -1,0 +1,13 @@
+Package: glib-networking
+Version: 2.66.0-2
+Architecture: amd64
+Maintainer: Debian GNOME Maintainers <pkg-gnome-maintainers@lists.alioth.debian.org>
+Installed-Size: 199
+Depends: libc6 (>= 2.14), libglib2.0-0 (>= 2.63.0), libgnutls30 (>= 3.6.14), libproxy1v5 (>= 0.4.15), glib-networking-services (>= 2.66.0-2), glib-networking-services (<< 2.66.0-2.1~), glib-networking-common (>= 2.66.0-2), gsettings-desktop-schemas
+Breaks: balsa (<< 2.6.0-2ubuntu0.1), libsoup2.4-tests (<< 2.71.1-1~)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Description: network-related giomodules for GLib
+ This package contains various network related extensions for the GIO
+ library.

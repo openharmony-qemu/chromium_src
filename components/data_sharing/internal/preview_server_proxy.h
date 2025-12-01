@@ -9,6 +9,7 @@
 
 #include "base/functional/callback.h"
 #include "base/memory/weak_ptr.h"
+#include "base/version_info/channel.h"
 #include "components/data_sharing/public/data_sharing_service.h"
 #include "components/data_sharing/public/group_data.h"
 #include "components/endpoint_fetcher/endpoint_fetcher.h"
@@ -31,7 +32,8 @@ class PreviewServerProxy {
  public:
   PreviewServerProxy(
       signin::IdentityManager* identity_manager,
-      const scoped_refptr<network::SharedURLLoaderFactory>& url_loader_factory);
+      const scoped_refptr<network::SharedURLLoaderFactory>& url_loader_factory,
+      version_info::Channel channel);
   virtual ~PreviewServerProxy();
   PreviewServerProxy(const PreviewServerProxy& other) = delete;
   PreviewServerProxy& operator=(const PreviewServerProxy& other) = delete;
@@ -46,16 +48,17 @@ class PreviewServerProxy {
           callback);
 
  protected:
-  virtual std::unique_ptr<EndpointFetcher> CreateEndpointFetcher(
-      const GURL& url);
+  virtual std::unique_ptr<endpoint_fetcher::EndpointFetcher>
+  CreateEndpointFetcher(const GURL& url);
+  virtual version_info::Channel GetChannel() const;
 
  private:
   void HandleServerResponse(
       base::OnceCallback<
           void(const DataSharingService::SharedDataPreviewOrFailureOutcome&)>
           callback,
-      std::unique_ptr<EndpointFetcher> endpoint_fetcher,
-      std::unique_ptr<EndpointResponse> response);
+      std::unique_ptr<endpoint_fetcher::EndpointFetcher> endpoint_fetcher,
+      std::unique_ptr<endpoint_fetcher::EndpointResponse> response);
 
   void OnResponseJsonParsed(
       base::OnceCallback<
@@ -63,8 +66,11 @@ class PreviewServerProxy {
           callback,
       data_decoder::DataDecoder::ValueOrError result);
 
+  std::string GetPreviewServerURLString() const;
+
   raw_ptr<signin::IdentityManager> identity_manager_;
   scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory_;
+  version_info::Channel channel_;
   base::WeakPtrFactory<PreviewServerProxy> weak_ptr_factory_{this};
 };
 

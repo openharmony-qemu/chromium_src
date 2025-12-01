@@ -1,6 +1,6 @@
 {
   "module": {
-    "name": "pc_test",
+    "name": "chromium_test",
     "type": "feature",
     "description": "$string:module_test_desc",
     "mainElement": "TestAbility",

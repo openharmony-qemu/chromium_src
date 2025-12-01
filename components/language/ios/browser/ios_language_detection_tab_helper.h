@@ -71,6 +71,9 @@ class IOSLanguageDetectionTabHelper
                        const GURL& url,
                        const base::Value* text_content);
 
+  // Starts the page language detection and initiates the translation process.
+  void StartLanguageDetection();
+
  private:
   friend class web::WebStateUserData<IOSLanguageDetectionTabHelper>;
   FRIEND_TEST_ALL_PREFIXES(IOSLanguageDetectionTabHelperTest,
@@ -95,9 +98,6 @@ class IOSLanguageDetectionTabHelper
   void DidFinishNavigation(web::WebState* web_state,
                            web::NavigationContext* navigation_context) override;
   void WebStateDestroyed(web::WebState* web_state) override;
-
-  // Starts the page language detection and initiates the translation process.
-  void StartLanguageDetection();
 
   // Called on page language detection.
   void OnLanguageDetermined(const translate::LanguageDetectionDetails& details);
@@ -126,8 +126,6 @@ class IOSLanguageDetectionTabHelper
   bool waiting_for_main_frame_ = false;
 
   base::WeakPtrFactory<IOSLanguageDetectionTabHelper> weak_method_factory_;
-
-  WEB_STATE_USER_DATA_KEY_DECL();
 };
 
 }  // namespace language

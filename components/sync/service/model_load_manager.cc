@@ -13,7 +13,6 @@
 #include "base/functional/callback_helpers.h"
 #include "base/logging.h"
 #include "base/metrics/histogram_functions.h"
-#include "base/not_fatal_until.h"
 #include "base/timer/elapsed_timer.h"
 #include "components/sync/base/data_type.h"
 #include "components/sync/base/features.h"
@@ -52,7 +51,7 @@ ModelLoadManager::~ModelLoadManager() = default;
 void ModelLoadManager::Configure(DataTypeSet preferred_types_without_errors,
                                  DataTypeSet preferred_types,
                                  const ConfigureContext& context) {
-  // |preferred_types_without_errors| must be a subset of |preferred_types|.
+  // `preferred_types_without_errors` must be a subset of `preferred_types`.
   DCHECK(preferred_types.HasAll(preferred_types_without_errors))
       << " desired: "
       << DataTypeSetToDebugString(preferred_types_without_errors)
@@ -154,13 +153,13 @@ void ModelLoadManager::StopDatatypeImpl(
 
   delegate_->OnSingleDataTypeWillStop(data_type, error);
 
-  // Note: Depending on |metadata_fate|, data types will clear their metadata
+  // Note: Depending on `metadata_fate`, data types will clear their metadata
   // in response to Stop().
   dtc->Stop(metadata_fate, std::move(callback));
 }
 
 void ModelLoadManager::LoadDesiredTypes() {
-  // Note: |preferred_types_without_errors_| might be modified during iteration
+  // Note: `preferred_types_without_errors_` might be modified during iteration
   // (e.g. in ModelLoadCallback()), so make a copy.
   const DataTypeSet types = preferred_types_without_errors_;
 
@@ -169,7 +168,7 @@ void ModelLoadManager::LoadDesiredTypes() {
 
   for (DataType type : types) {
     auto dtc_iter = controllers_->find(type);
-    CHECK(dtc_iter != controllers_->end(), base::NotFatalUntil::M130);
+    CHECK(dtc_iter != controllers_->end());
     DataTypeController* dtc = dtc_iter->second.get();
     if (dtc->state() == DataTypeController::NOT_RUNNING) {
       LoadModelsForType(dtc);

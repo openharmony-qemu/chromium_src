@@ -8,10 +8,11 @@
 
 #import "base/task/bind_post_task.h"
 #import "base/task/thread_pool.h"
+#import "ios/chrome/browser/fullscreen/ui_bundled/fullscreen_controller.h"
+#import "ios/chrome/browser/lens_overlay/model/lens_overlay_presentation_type.h"
 #import "ios/chrome/browser/lens_overlay/model/lens_overlay_tab_helper.h"
 #import "ios/chrome/browser/lens_overlay/model/snapshot_cover_view_controller.h"
 #import "ios/chrome/browser/snapshots/model/snapshot_tab_helper.h"
-#import "ios/chrome/browser/ui/fullscreen/fullscreen_controller.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
 
 namespace {
@@ -162,10 +163,10 @@ UIWindow* CreateMirrorWindowFromBaseWindow(
 // The top edge is filled with the most prominent color found at the top of the
 // original snapshot. The bottom edge is extended using the background color of
 // the UI elements.
-void PreprocessSnapshot(UIImage* snapshot,
-                        CGSize expected_snapshot_size,
-                        UIEdgeInsets viewport_insets,
-                        base::OnceCallback<void(UIImage*)> callback) {
+void ExtendSnapshot(UIImage* snapshot,
+                    CGSize expected_snapshot_size,
+                    UIEdgeInsets viewport_insets,
+                    base::OnceCallback<void(UIImage*)> callback) {
   // The color used by the omnibox and the bottom toolbar.
   UIColor* elementsBackgroundColor = [UIColor colorNamed:kBackgroundColor];
 
@@ -249,8 +250,14 @@ UIImage* LensOverlaySnapshotController::CropSnapshotToWindowSafeArea(
       (base_window_.bounds.size.height - viewportInsets.bottom) *
           snapshot.scale);
 
-  return [[UIImage alloc] initWithCGImage:CGImageCreateWithImageInRect(
-                                              snapshot.CGImage, croppingRect)];
+  CGImageRef imageRef =
+      CGImageCreateWithImageInRect(snapshot.CGImage, croppingRect);
+  UIImage* croppedImage = [[UIImage alloc] initWithCGImage:imageRef];
+
+  // We are responsible for releasing the `CGImageRef` after being consumed.
+  CGImageRelease(imageRef);
+
+  return croppedImage;
 }
 
 UIImage* LensOverlaySnapshotController::CaptureSnapshotOfBaseWindow() {
@@ -432,11 +439,29 @@ void LensOverlaySnapshotController::ProcessRawSnapshot(UIImage* snapshot) {
     mirror_window_.windowLevel = base_window_.windowLevel - 1;
   }
 
+  if (!snapshot) {
+    NotifySnapshotComplete(nil);
+    return;
+  }
+
   base::OnceCallback<void(UIImage*)> snapshotCapturedCallback =
       base::BindOnce(&LensOverlaySnapshotController::NotifySnapshotComplete,
                      weak_ptr_factory_.GetWeakPtr());
   auto callbackOnInitialSequence = base::BindPostTask(
       task_runner_.get(), std::move(snapshotCapturedCallback));
+
+  if (lens::ContainerPresentationFor(base_window_) ==
+      lens::ContainerPresentationType::kContentAreaCover) {
+    // Content area cover presentation does not require any preprocessing.
+    // Lens requires the image to be 1.0 scale.
+    UIImage* rescaledSnapshot =
+        [[UIImage alloc] initWithCGImage:snapshot.CGImage
+                                   scale:1
+                             orientation:UIImageOrientationUp];
+
+    std::move(callbackOnInitialSequence).Run(rescaledSnapshot);
+    return;
+  }
 
   scoped_refptr<base::SequencedTaskRunner> backgroundRunner =
       base::ThreadPool::CreateSequencedTaskRunner(
@@ -453,10 +478,10 @@ void LensOverlaySnapshotController::ProcessRawSnapshot(UIImage* snapshot) {
     viewportInsets.top = topInsetForNTP;
   }
 
-  auto preprocessCallback =
-      base::BindOnce(&PreprocessSnapshot, snapshot, expected_window_size_,
+  auto extendSnapshotCallback =
+      base::BindOnce(&ExtendSnapshot, snapshot, expected_window_size_,
                      viewportInsets, std::move(callbackOnInitialSequence));
-  backgroundRunner->PostTask(FROM_HERE, std::move(preprocessCallback));
+  backgroundRunner->PostTask(FROM_HERE, std::move(extendSnapshotCallback));
 }
 
 void LensOverlaySnapshotController::NotifySnapshotComplete(UIImage* snapshot) {

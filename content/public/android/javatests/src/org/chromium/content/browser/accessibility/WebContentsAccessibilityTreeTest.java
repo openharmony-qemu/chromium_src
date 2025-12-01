@@ -20,10 +20,12 @@ import org.junit.runner.RunWith;
 
 import org.chromium.base.ThreadUtils;
 import org.chromium.base.test.util.Batch;
+import org.chromium.base.test.util.CommandLineFlags;
 import org.chromium.base.test.util.CriteriaHelper;
 import org.chromium.base.test.util.DisableIf;
 import org.chromium.base.test.util.DisabledTest;
 import org.chromium.base.test.util.Features.DisableFeatures;
+import org.chromium.base.test.util.Features.EnableFeatures;
 import org.chromium.base.test.util.Restriction;
 import org.chromium.base.test.util.TestAnimations;
 import org.chromium.content_public.browser.ContentFeatureList;
@@ -340,6 +342,12 @@ public class WebContentsAccessibilityTreeTest {
 
     @Test
     @SmallTest
+    public void test_ariaCaption() {
+        performAriaTest("aria-caption.html");
+    }
+
+    @Test
+    @SmallTest
     public void test_ariaCell() {
         performAriaTest("aria-cell.html");
     }
@@ -623,6 +631,12 @@ public class WebContentsAccessibilityTreeTest {
 
     @Test
     @SmallTest
+    public void test_ariaLabelWithVisualContent() {
+        performAriaTest("aria-label-with-visual-content.html");
+    }
+
+    @Test
+    @SmallTest
     public void test_ariaLabelAugmentInnerText() {
         performAriaTest("aria-label-augment-inner-text.html");
     }
@@ -631,6 +645,12 @@ public class WebContentsAccessibilityTreeTest {
     @SmallTest
     public void test_ariaLabelledbyHeading() {
         performAriaTest("aria-labelledby-heading.html");
+    }
+
+    @Test
+    @SmallTest
+    public void test_ariaLink() {
+        performAriaTest("aria-link.html");
     }
 
     @Test
@@ -665,14 +685,30 @@ public class WebContentsAccessibilityTreeTest {
 
     @Test
     @SmallTest
+    @DisableFeatures(ContentFeatureList.ACCESSIBILITY_DEPRECATE_TYPE_ANNOUNCE)
     public void test_ariaLive() {
         performAriaTest("aria-live.html");
     }
 
     @Test
     @SmallTest
+    @EnableFeatures(ContentFeatureList.ACCESSIBILITY_DEPRECATE_TYPE_ANNOUNCE)
+    public void test_ariaLive_exp() {
+        performAriaTest("aria-live.html", "aria-live-exp");
+    }
+
+    @Test
+    @SmallTest
+    @DisableFeatures(ContentFeatureList.ACCESSIBILITY_DEPRECATE_TYPE_ANNOUNCE)
     public void test_ariaLiveWithContent() {
         performAriaTest("aria-live-with-content.html");
+    }
+
+    @Test
+    @SmallTest
+    @EnableFeatures(ContentFeatureList.ACCESSIBILITY_DEPRECATE_TYPE_ANNOUNCE)
+    public void test_ariaLiveWithContent_exp() {
+        performAriaTest("aria-live-with-content.html", "aria-live-with-content-exp");
     }
 
     @Test
@@ -761,6 +797,12 @@ public class WebContentsAccessibilityTreeTest {
 
     @Test
     @SmallTest
+    public void test_ariaMultiselectableWithAriaLabelledBy() {
+        performAriaTest("aria-multiselectable-aria-labelledby.html");
+    }
+
+    @Test
+    @SmallTest
     public void test_ariaNavigation() {
         performAriaTest("aria-navigation.html");
     }
@@ -818,6 +860,18 @@ public class WebContentsAccessibilityTreeTest {
     @SmallTest
     public void test_ariaOwnsList() {
         performAriaTest("aria-owns-list.html");
+    }
+
+    @Test
+    @SmallTest
+    public void test_ariaParagraph() {
+        performAriaTest("aria-paragraph.html");
+    }
+
+    @Test
+    @SmallTest
+    public void test_ariaPosinset() {
+        performAriaTest("aria-posinset.html");
     }
 
     @Test
@@ -956,6 +1010,12 @@ public class WebContentsAccessibilityTreeTest {
     @SmallTest
     public void test_ariaSortHtmlTable() {
         performAriaTest("aria-sort-html-table.html");
+    }
+
+    @Test
+    @SmallTest
+    public void test_ariaSpinbutton() {
+        performAriaTest("aria-spinbutton.html");
     }
 
     @Test
@@ -1100,6 +1160,18 @@ public class WebContentsAccessibilityTreeTest {
     @SmallTest
     public void test_ariaTreeitemNestedInLists() {
         performAriaTest("aria-treeitem-nested-in-lists.html");
+    }
+
+    @Test
+    @SmallTest
+    public void test_ariaValuemax() {
+        performAriaTest("aria-valuemax.html");
+    }
+
+    @Test
+    @SmallTest
+    public void test_ariaValuemin() {
+        performAriaTest("aria-valuemin.html");
     }
 
     @Test
@@ -1438,12 +1510,28 @@ public class WebContentsAccessibilityTreeTest {
 
     @Test
     @SmallTest
+    @CommandLineFlags.Add({"enable-blink-features=CanvasDrawElement"})
+    public void test_canvasComplexFallback() {
+        performHtmlTest("canvas-complex-fallback.html");
+    }
+
+    @Test
+    @SmallTest
+    @CommandLineFlags.Add({"enable-blink-features=CanvasDrawElement"})
+    public void test_canvasInteractiveFallback() {
+        performHtmlTest("canvas-interactive-fallback.html");
+    }
+
+    @Test
+    @SmallTest
+    @CommandLineFlags.Add({"enable-blink-features=CanvasDrawElement"})
     public void test_canvasFallback() {
         performHtmlTest("canvas-fallback.html");
     }
 
     @Test
     @SmallTest
+    @CommandLineFlags.Add({"enable-blink-features=CanvasDrawElement"})
     public void test_canvas() {
         performHtmlTest("canvas.html");
     }
@@ -1452,6 +1540,20 @@ public class WebContentsAccessibilityTreeTest {
     @SmallTest
     public void test_caption() {
         performHtmlTest("caption.html");
+    }
+
+    @Test
+    @SmallTest
+    @CommandLineFlags.Add({"enable-experimental-web-platform-features"})
+    public void test_carouselNoTabs() {
+        performCssTest("carousel-no-tabs.html");
+    }
+
+    @Test
+    @SmallTest
+    @CommandLineFlags.Add({"enable-experimental-web-platform-features"})
+    public void test_carouselWithTabs() {
+        performCssTest("carousel-with-tabs.html");
     }
 
     @Test
@@ -1504,6 +1606,18 @@ public class WebContentsAccessibilityTreeTest {
 
     @Test
     @SmallTest
+    public void test_comboboxItemVisibility() {
+        performHtmlTest("combobox-item-visibility.html");
+    }
+
+    @Test
+    @SmallTest
+    public void test_comboboxWithRedundantAriaRole() {
+        performHtmlTest("combobox-with-redundant-aria-role.html");
+    }
+
+    @Test
+    @SmallTest
     public void test_comboboxOptgroup() {
         performHtmlTest("combobox-optgroup.html");
     }
@@ -1542,6 +1656,18 @@ public class WebContentsAccessibilityTreeTest {
     @SmallTest
     public void test_customSelectOpen() {
         performHtmlTest("custom-select-open.html");
+    }
+
+    @Test
+    @SmallTest
+    public void test_customSelectLabelElement() {
+        performHtmlTest("custom-select-label-element.html");
+    }
+
+    @Test
+    @SmallTest
+    public void test_customSelectMixedOptions() {
+        performHtmlTest("custom-select-mixed-options.html");
     }
 
     @Test
@@ -1693,6 +1819,18 @@ public class WebContentsAccessibilityTreeTest {
     @SmallTest
     public void test_header() {
         performHtmlTest("header.html");
+    }
+
+    @Test
+    @SmallTest
+    public void test_headingWithHeadingOffset() {
+        performHtmlTest("heading-with-headingoffset.html");
+    }
+
+    @Test
+    @SmallTest
+    public void test_headingWithHeadingOffsetDialog() {
+        performHtmlTest("heading-with-headingoffset-dialog.html");
     }
 
     @Test
@@ -2080,6 +2218,12 @@ public class WebContentsAccessibilityTreeTest {
 
     @Test
     @SmallTest
+    public void test_labelWithSelectedOption() {
+        performHtmlTest("label-with-selected-option.html");
+    }
+
+    @Test
+    @SmallTest
     @DisabledTest(message = "https://crbug.com/1258230")
     public void test_landmark() {
         performHtmlTest("landmark.html");
@@ -2165,6 +2309,12 @@ public class WebContentsAccessibilityTreeTest {
 
     @Test
     @SmallTest
+    public void test_multi_selectable() {
+        performHtmlTest("multi-selectable.html");
+    }
+
+    @Test
+    @SmallTest
     public void test_navigation() {
         performHtmlTest("navigation.html");
     }
@@ -2222,6 +2372,12 @@ public class WebContentsAccessibilityTreeTest {
     @SmallTest
     public void test_optgroupCustomMenulist() {
         performHtmlTest("optgroup-custom-menulist.html");
+    }
+
+    @Test
+    @SmallTest
+    public void test_optionInDatalist() {
+        performHtmlTest("option-in-datalist.html");
     }
 
     @Test
@@ -2330,6 +2486,18 @@ public class WebContentsAccessibilityTreeTest {
     @SmallTest
     public void test_select() {
         performHtmlTest("select.html");
+    }
+
+    @Test
+    @SmallTest
+    public void test_selectInCanvas() {
+        performHtmlTest("select-in-canvas.html");
+    }
+
+    @Test
+    @SmallTest
+    public void test_selectOpen() {
+        performHtmlTest("select-open.html");
     }
 
     @Test
@@ -2469,6 +2637,12 @@ public class WebContentsAccessibilityTreeTest {
     @SmallTest
     public void test_tabindexExposeChildren() {
         performHtmlTest("tabindex-expose-children.html");
+    }
+
+    @Test
+    @SmallTest
+    public void test_tabindexWithLinkChildren() {
+        performHtmlTest("tabindex-with-link-children.html");
     }
 
     @Test

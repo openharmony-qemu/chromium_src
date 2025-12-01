@@ -5,7 +5,6 @@
 #include "ash/wm/window_restore/informed_restore_controller.h"
 
 #include "ash/birch/birch_model.h"
-#include "ash/constants/ash_features.h"
 #include "ash/constants/ash_pref_names.h"
 #include "ash/constants/ash_switches.h"
 #include "ash/constants/notifier_catalogs.h"
@@ -71,8 +70,6 @@ bool ShouldShowInformedRestoreImage(const gfx::ImageSkia& image) {
   const gfx::Size image_size = image.size();
   const bool is_image_landscape = image_size.width() > image_size.height();
 
-  // TODO(minch|sammiequon): The informed restore dialog will only be shown
-  // inside the primary display for now. Change the logic here if it changes.
   const display::Display display_with_dialog =
       display::Screen::GetScreen()->GetPrimaryDisplay();
   const bool is_display_landscape = chromeos::IsLandscapeOrientation(
@@ -249,8 +246,6 @@ void InformedRestoreController::
 
 void InformedRestoreController::MaybeStartInformedRestoreSession(
     std::unique_ptr<InformedRestoreContentsData> contents_data) {
-  CHECK(features::IsForestFeatureEnabled());
-
   if (OverviewController::Get()->InOverviewSession()) {
     return;
   }
@@ -321,13 +316,6 @@ void InformedRestoreController::OnOverviewModeEndingAnimationComplete(bool cance
   }
 
   in_informed_restore_ = false;
-
-  // In multi-user scenario, forest may have been available for the user that
-  // started overview, but not for the current user. (Switching users ends
-  // overview.)
-  if (!features::IsForestFeatureEnabled()) {
-    return;
-  }
 
   PrefService* prefs = GetActivePrefService();
   if (!prefs) {
@@ -445,6 +433,7 @@ void InformedRestoreController::OnOnboardingAcceptPressed(bool restore_on) {
   // Only do this if we have contents data.
   if (contents_data_) {
     onboarding_widget_->widget_delegate()->RegisterDeleteDelegateCallback(
+        views::WidgetDelegate::RegisterDeleteCallbackPassKey(),
         base::BindOnce(
             [](const base::WeakPtr<InformedRestoreController>& weak_this) {
               if (weak_this) {

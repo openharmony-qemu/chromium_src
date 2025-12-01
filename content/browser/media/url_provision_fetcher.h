@@ -6,6 +6,7 @@
 #define CONTENT_BROWSER_MEDIA_URL_PROVISION_FETCHER_H_
 
 #include "media/base/provision_fetcher.h"
+#include "third_party/wiseplay/cdm/buildflags.h"
 
 namespace network {
 class SharedURLLoaderFactory;
@@ -31,6 +32,11 @@ class URLProvisionFetcher : public media::ProvisionFetcher {
                 const std::string& request_data,
                 ProvisionFetcher::ResponseCB response_cb) override;
 
+#if BUILDFLAG(ENABLE_WISEPLAY)
+  void RetrieveWiseplayCertificate(const GURL& default_url,
+                                   const std::string& request_data,
+                                   ProvisionFetcher::ResponseCB response_cb) override;
+#endif // BUILDFLAG(ENABLE_WISEPLAY)
  private:
   void OnSimpleLoaderComplete(std::unique_ptr<std::string> response_body);
 

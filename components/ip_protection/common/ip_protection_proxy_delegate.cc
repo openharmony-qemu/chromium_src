@@ -4,29 +4,36 @@
 
 #include "components/ip_protection/common/ip_protection_proxy_delegate.h"
 
+#include <cstddef>
 #include <memory>
+#include <optional>
+#include <string>
+#include <utility>
+#include <vector>
 
-#include "base/containers/contains.h"
+#include "base/check.h"
+#include "base/debug/crash_logging.h"
 #include "base/feature_list.h"
-#include "base/functional/bind.h"
+#include "base/logging.h"
 #include "base/memory/raw_ref.h"
-#include "base/memory/scoped_refptr.h"
-#include "base/metrics/histogram_functions.h"
-#include "base/strings/strcat.h"
+#include "components/ip_protection/common/ip_protection_core.h"
 #include "components/ip_protection/common/ip_protection_data_types.h"
 #include "components/ip_protection/common/ip_protection_proxy_config_manager_impl.h"
 #include "components/ip_protection/common/ip_protection_telemetry.h"
 #include "components/ip_protection/common/ip_protection_token_manager_impl.h"
 #include "net/base/features.h"
+#include "net/base/net_errors.h"
 #include "net/base/proxy_chain.h"
 #include "net/base/proxy_server.h"
+#include "net/base/registry_controlled_domains/registry_controlled_domain.h"
+#include "net/base/schemeful_site.h"
 #include "net/base/url_util.h"
 #include "net/http/http_request_headers.h"
 #include "net/http/http_util.h"
+#include "net/http/structured_headers.h"
 #include "net/proxy_resolution/proxy_info.h"
 #include "net/proxy_resolution/proxy_resolution_service.h"
 #include "net/proxy_resolution/proxy_retry_info.h"
-#include "url/url_constants.h"
 
 namespace ip_protection {
 
@@ -50,14 +57,6 @@ ProxyResolutionResult IpProtectionProxyDelegate::ClassifyRequest(
             << ") - " << message;
   };
 
-  const std::string& always_proxy = net::features::kIpPrivacyAlwaysProxy.Get();
-  if (!always_proxy.empty()) {
-    if (url.host() == always_proxy) {
-      return ProxyResolutionResult::kAttemptProxy;
-    }
-    return ProxyResolutionResult::kNoMdlMatch;
-  }
-
   // Check eligibility of this request.
   if (!ip_protection_core_->IsMdlPopulated()) {
     vlog("proxy allow list not populated");
@@ -78,19 +77,9 @@ ProxyResolutionResult IpProtectionProxyDelegate::ClassifyRequest(
   // - The token cache is not available.
   // - The token cache does not have tokens.
   // - No proxy list is available.
-  // - `kEnableIpProtection` is `false`.
   // - `is_ip_protection_enabled_` is `false` (in other words, the user has
-  //   disabled IP Protection via user settings).
+  //   disabled IP Protection via user settings or enterprise policy).
   // - `kIpPrivacyDirectOnly` is `true`.
-
-  // TODO(https://crbug.com/40947771): Once the WebView traffic experiment is
-  // done and IpProtectionProxyDelegate is only created in cases where IP
-  // Protection should be used, remove this check.
-  if (!base::FeatureList::IsEnabled(net::features::kEnableIpProtectionProxy)) {
-    vlog("ip protection proxy cannot be enabled");
-    return ProxyResolutionResult::kFeatureDisabled;
-  }
-
   if (!ip_protection_core_->IsIpProtectionEnabled()) {
     vlog("ip protection proxy is not currently enabled");
     return ProxyResolutionResult::kSettingDisabled;
@@ -113,6 +102,13 @@ ProxyResolutionResult IpProtectionProxyDelegate::ClassifyRequest(
     return ProxyResolutionResult::kTokensExhausted;
   }
 
+  // Check if the protection has been disabled via User Bypass.
+  if (net::features::kIpPrivacyEnableUserBypass.Get() &&
+      ip_protection_core_->HasTrackingProtectionException(
+          network_anonymization_key.GetTopFrameSite()->GetURL())) {
+    return ProxyResolutionResult::kHasSiteException;
+  }
+
   return ProxyResolutionResult::kAttemptProxy;
 }
 
@@ -125,6 +121,22 @@ void IpProtectionProxyDelegate::OnResolveProxy(
   ProxyResolutionResult resolution_result =
       ClassifyRequest(url, network_anonymization_key, result);
   Telemetry().ProxyResolution(resolution_result);
+
+  const std::optional<net::SchemefulSite>& top_frame_site =
+      network_anonymization_key.GetTopFrameSite();
+  if (bool is_prt_eligible =
+          resolution_result == ProxyResolutionResult::kAttemptProxy ||
+          net::features::kEnableProbabilisticRevealTokensForNonProxiedRequests
+              .Get();
+      is_prt_eligible &&
+      !net::features::kProbabilisticRevealTokenFetchOnly.Get() &&
+      top_frame_site.has_value()) {
+    result->set_prt_header_value(
+        GetPRTHeaderValue(url, top_frame_site.value()));
+  } else {
+    result->set_prt_header_value(std::nullopt);
+  }
+
   if (resolution_result != ProxyResolutionResult::kAttemptProxy) {
     return;
   }
@@ -138,14 +150,7 @@ void IpProtectionProxyDelegate::OnResolveProxy(
       // chains.
       CHECK(proxy_chain.is_multi_proxy());
 
-      // For debugging..
-      if (net::features::kIpPrivacyUseSingleProxy.Get()) {
-        proxy_list.AddProxyChain(net::ProxyChain::ForIpProtection({
-            proxy_chain.GetProxyServer(0),
-        }));
-      } else {
-        proxy_list.AddProxyChain(std::move(proxy_chain));
-      }
+      proxy_list.AddProxyChain(std::move(proxy_chain));
     }
   }
 
@@ -156,8 +161,6 @@ void IpProtectionProxyDelegate::OnResolveProxy(
   }
 
   if (VLOG_IS_ON(3)) {
-    std::optional<net::SchemefulSite> top_frame_site =
-        network_anonymization_key.GetTopFrameSite();
     VLOG(3) << "IPPD::OnResolveProxy(" << url << ", "
             << (top_frame_site.has_value() ? top_frame_site.value()
                                            : net::SchemefulSite())
@@ -249,6 +252,15 @@ net::Error IpProtectionProxyDelegate::OnTunnelHeadersReceived(
 void IpProtectionProxyDelegate::SetProxyResolutionService(
     net::ProxyResolutionService* proxy_resolution_service) {}
 
+bool IpProtectionProxyDelegate::AliasRequiresProxyOverride(
+    const std::string scheme,
+    const std::vector<std::string>& dns_aliases,
+    const net::NetworkAnonymizationKey& network_anonymization_key) {
+  // TODO(crbug.com/383134117): Iterate through aliases and invoke mdl manager
+  // to check if any match a 3p resource.
+  return false;
+}
+
 // static
 net::ProxyList IpProtectionProxyDelegate::MergeProxyRules(
     const net::ProxyList& existing_proxy_list,
@@ -266,6 +278,38 @@ net::ProxyList IpProtectionProxyDelegate::MergeProxyRules(
   }
 
   return merged_proxy_list;
+}
+
+/*
+  Sec-Probabilistic-Reveal-Token header is a structured header of type Byte
+  Sequence (rfc8941 section 3.3.5) and holds a serialized PRT.
+
+  `GetPRTHeaderValue()` will return nullopt if destination is not
+  registered for PRTs or there is no PRTs in the manager.
+*/
+std::optional<std::string> IpProtectionProxyDelegate::GetPRTHeaderValue(
+    const GURL& url,
+    const net::SchemefulSite& top_frame_site) const {
+  if (!ip_protection_core_->IsProbabilisticRevealTokenAvailable() ||
+      !ip_protection_core_->ShouldRequestIncludeProbabilisticRevealToken(url)) {
+    return std::nullopt;
+  }
+  const std::string top_level =
+      net::registry_controlled_domains::GetDomainAndRegistry(
+          top_frame_site.GetURL(),
+          net::registry_controlled_domains::INCLUDE_PRIVATE_REGISTRIES);
+  const std::string third_party =
+      net::registry_controlled_domains::GetDomainAndRegistry(
+          url, net::registry_controlled_domains::INCLUDE_PRIVATE_REGISTRIES);
+  const std::optional<std::string> prt =
+      ip_protection_core_->GetProbabilisticRevealToken(top_level, third_party);
+  if (!prt.has_value()) {
+    return std::nullopt;
+  }
+  auto item = net::structured_headers::Item(
+      std::move(prt).value(),
+      net::structured_headers::Item::ItemType::kByteSequenceType);
+  return net::structured_headers::SerializeItem(item);
 }
 
 }  // namespace ip_protection

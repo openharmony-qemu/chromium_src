@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40284755): Remove this and spanify to fix the errors.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "android_webview/js_sandbox/service/js_sandbox_isolate.h"
 
 #include <errno.h>
@@ -340,7 +345,12 @@ JsSandboxIsolate::JsSandboxIsolate(
                                 base::Unretained(this)));
 }
 
-JsSandboxIsolate::~JsSandboxIsolate() {}
+JsSandboxIsolate::~JsSandboxIsolate() {
+  if (context_holder_) {
+    v8::HandleScope handle_scope(isolate_holder_->isolate());
+    context_holder_.reset();
+  }
+}
 
 // Called from Binder thread.
 // This method posts evaluation tasks to the control_task_runner_. The
@@ -526,8 +536,8 @@ void JsSandboxIsolate::ConvertPromiseToArrayBufferInThreadPool(
     std::unique_ptr<v8::Global<v8::Promise::Resolver>> resolver,
     void* inner_buffer) {
   if (base::ReadFromFD(fd.get(),
-                       base::make_span(static_cast<char*>(inner_buffer),
-                                       base::checked_cast<size_t>(length)))) {
+                       base::span(static_cast<char*>(inner_buffer),
+                                  base::checked_cast<size_t>(length)))) {
     control_task_runner_->PostTask(
         FROM_HERE,
         base::BindOnce(

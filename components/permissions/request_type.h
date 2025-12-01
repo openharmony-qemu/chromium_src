@@ -8,7 +8,6 @@
 #include <optional>
 
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "components/content_settings/core/common/content_settings_types.h"
 #include "printing/buildflags/buildflags.h"
 
@@ -39,6 +38,8 @@ enum class RequestType {
   kIdleDetection,
 #if !BUILDFLAG(IS_ANDROID)
   kLocalFonts,
+  // TODO(crbug.com/400455013): Add Android support.
+  kLocalNetworkAccess,
 #endif
   kMicStream,
   kMidiSysex,

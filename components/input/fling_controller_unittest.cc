@@ -9,8 +9,10 @@
 #include "base/test/scoped_feature_list.h"
 #include "base/test/simple_test_tick_clock.h"
 #include "base/test/task_environment.h"
+#include "base/time/time.h"
 #include "build/build_config.h"
 #include "build/chromecast_buildflags.h"
+#include "components/input/features.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ui/base/ui_base_features.h"
 #include "ui/events/base_event_utils.h"
@@ -166,10 +168,13 @@ class FlingControllerTest : public FlingControllerEventSenderClient,
         fling_cancel_with_latency);
   }
 
-  void ProgressFling(base::TimeTicks current_time) {
+  void ProgressFling(base::TimeTicks current_time,
+                     std::optional<base::TimeTicks>
+                         first_coalesced_frame_begin_time = std::nullopt) {
     DCHECK(scheduled_next_fling_progress_);
     scheduled_next_fling_progress_ = false;
-    fling_controller_->ProgressFling(current_time);
+    fling_controller_->ProgressFling(current_time,
+                                     first_coalesced_frame_begin_time);
   }
 
   bool FlingInProgress() { return fling_controller_->fling_in_progress(); }
@@ -308,7 +313,13 @@ TEST_P(FlingControllerTest, FlingStartsAtLastScrollUpdate) {
   EXPECT_EQ(1, sent_scroll_gesture_count_);
   ASSERT_EQ(WebInputEvent::Type::kGestureScrollUpdate,
             last_sent_gesture_.GetType());
+#if BUILDFLAG(IS_OHOS)
+  // In OHOS, the fling curve uses a specific calculation logic,
+  // which is different from Chromium.
+  EXPECT_NEAR(last_sent_gesture_.data.scroll_update.delta_x, 40.0, 5);
+#else
   EXPECT_NEAR(last_sent_gesture_.data.scroll_update.delta_x, 30.0, 5);
+#endif
 }
 
 // Tests that when a fling is interrupted (e.g. by having reached the end of
@@ -756,12 +767,45 @@ TEST_P(FlingControllerTest, NoFlingStartAfterWheelEventConsumed) {
   EXPECT_FALSE(FlingInProgress());
 }
 
+TEST_P(FlingControllerTest, SetGenerationTimestampToCurrentTimeWithoutFix) {
+  base::test::ScopedFeatureList feature_list;
+  feature_list.InitWithFeatureState(
+      features::kUseFirstCoalescedFrameAsFlingGenerationTimestamp, false);
+
+  SimulateFlingStart(blink::WebGestureDevice::kTouchscreen,
+                     gfx::Vector2dF(1000, 0));
+
+  AdvanceTime();
+  std::optional<base::TimeTicks> first_coalesced_frame_begin_time =
+      NowTicks() - base::Seconds(3);
+  ProgressFling(NowTicks(), first_coalesced_frame_begin_time);
+
+  EXPECT_EQ(NowTicks(), last_sent_gesture_.TimeStamp());
+}
+
+TEST_P(FlingControllerTest,
+       SetGenerationTimestampToFirstCoalescedFrameBeginTimeWithFix) {
+  base::test::ScopedFeatureList feature_list;
+  feature_list.InitWithFeatureState(
+      features::kUseFirstCoalescedFrameAsFlingGenerationTimestamp, true);
+
+  SimulateFlingStart(blink::WebGestureDevice::kTouchscreen,
+                     gfx::Vector2dF(1000, 0));
+
+  AdvanceTime();
+  std::optional<base::TimeTicks> first_coalesced_frame_begin_time =
+      NowTicks() - base::Seconds(3);
+  ProgressFling(NowTicks(), first_coalesced_frame_begin_time);
+
+  EXPECT_EQ(first_coalesced_frame_begin_time, last_sent_gesture_.TimeStamp());
+}
+
 class FlingControllerWithPhysicsBasedFlingTest : public FlingControllerTest {
  public:
   // testing::Test
   FlingControllerWithPhysicsBasedFlingTest() {
     scoped_feature_list_.InitAndEnableFeature(
-        features::kExperimentalFlingAnimation);
+        ::features::kExperimentalFlingAnimation);
   }
 
   FlingControllerWithPhysicsBasedFlingTest(

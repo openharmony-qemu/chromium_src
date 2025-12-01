@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 import { injectable, inject } from 'inversify';
 import abilityAccessCtrl from '@ohos.abilityAccessCtrl';
@@ -79,6 +54,9 @@ export class PermissionManagerAdapter extends BaseAdapter {
     ]],
     ['bluetooth', [
       'ohos.permission.ACCESS_BLUETOOTH',
+    ]],
+    ['screenshot', [
+      'ohos.permission.CUSTOM_SCREEN_CAPTURE',
     ]]
   ]);
   private atManager: abilityAccessCtrl.AtManager;
@@ -295,6 +273,9 @@ export class PermissionManagerAdapter extends BaseAdapter {
       case "pasteboard":
         this.openPasteboardPermissionConfirm(activeContext, confirmParams);
         break;
+      case "screenshot":
+        this.openScreenshotPermissionConfirm(activeContext, confirmParams);
+        break;
       default:
         break;
     }
@@ -308,6 +289,15 @@ export class PermissionManagerAdapter extends BaseAdapter {
   private openPasteboardPermissionConfirm(activeContext: Context, pasteboardConfirmParams: ConfirmParams) {
     pasteboardConfirmParams.title = activeContext.resourceManager.getStringSync($r("app.string.pasteBoard_dialog_title").id);
     pasteboardConfirmParams.content = activeContext.resourceManager.getStringSync($r("app.string.pasteBoard_dialog_content").id);
+    pasteboardConfirmParams.label = activeContext.resourceManager.getStringSync(this.appLabelId);
+    pasteboardConfirmParams.content = pasteboardConfirmParams.content.replace("label", pasteboardConfirmParams.label);
+    pasteboardConfirmParams.confirm = activeContext.resourceManager.getStringSync($r("app.string.dialog_confirm_button").id);
+    pasteboardConfirmParams.cancel = activeContext.resourceManager.getStringSync($r("app.string.dialog_cancel_button").id);
+  }
+
+  private openScreenshotPermissionConfirm(activeContext: Context, pasteboardConfirmParams: ConfirmParams) {
+    pasteboardConfirmParams.title = activeContext.resourceManager.getStringSync($r("app.string.screenshot_dialog_title").id);
+    pasteboardConfirmParams.content = activeContext.resourceManager.getStringSync($r("app.string.screenshot_dialog_content").id);
     pasteboardConfirmParams.label = activeContext.resourceManager.getStringSync(this.appLabelId);
     pasteboardConfirmParams.content = pasteboardConfirmParams.content.replace("label", pasteboardConfirmParams.label);
     pasteboardConfirmParams.confirm = activeContext.resourceManager.getStringSync($r("app.string.dialog_confirm_button").id);

@@ -137,7 +137,6 @@ class CoralController;
 class CoralDelegate;
 class CrosDisplayConfig;
 class DarkLightModeControllerImpl;
-class DeskProfilesDelegate;
 class DesksController;
 class DetachableBaseHandler;
 class DetachableBaseNotificationController;
@@ -201,6 +200,7 @@ class MessageCenterController;
 class MouseCursorEventFilter;
 class MouseKeysController;
 class MruWindowTracker;
+class MultiCaptureService;
 class MultiDeviceNotificationPresenter;
 class MultiDisplayMetricsController;
 class NearbyShareControllerImpl;
@@ -226,7 +226,6 @@ class ProjectingObserver;
 class ProjectorControllerImpl;
 class QuickInsertController;
 class RapidKeySequenceRecorder;
-class RasterScaleController;
 class RefreshRateController;
 class ResizeShadowController;
 class ResolutionNotificationController;
@@ -257,6 +256,7 @@ class SmsObserver;
 class SnapGroupController;
 class SnoopingProtectionController;
 class StickyKeysController;
+class SunfishScannerFeatureWatcher;
 class SystemGestureEventFilter;
 class SystemModalContainerEventFilter;
 class SystemNotificationController;
@@ -280,7 +280,6 @@ class WindowTilingController;
 class WindowTreeHostManager;
 class WmModeController;
 class ArcInputMethodBoundsTracker;
-class MultiCaptureServiceClient;
 
 enum class LoginStatus;
 
@@ -376,6 +375,10 @@ class ASH_EXPORT Shell : public SessionObserver,
 
   // Returns true if a system-modal dialog window is currently open.
   static bool IsSystemModalWindowOpen();
+
+  // Updates next focus of status area widget delegate when lock screen or login
+  // screen is visible.
+  static void UpdateAccessibilityForStatusAreaWidget();
 
   // Track/Untrack InputMethod bounds.
   void TrackInputMethodBounds(ArcInputMethodBoundsTracker* tracker);
@@ -722,11 +725,8 @@ class ASH_EXPORT Shell : public SessionObserver,
   quick_pair::Mediator* quick_pair_mediator() {
     return quick_pair_mediator_.get();
   }
-  MultiCaptureServiceClient* multi_capture_service_client() {
-    return multi_capture_service_client_.get();
-  }
-  RasterScaleController* raster_scale_controller() {
-    return raster_scale_controller_.get();
+  MultiCaptureService* multi_capture_service() {
+    return multi_capture_service_.get();
   }
   ResizeShadowController* resize_shadow_controller() {
     return resize_shadow_controller_.get();
@@ -736,6 +736,9 @@ class ASH_EXPORT Shell : public SessionObserver,
   }
   RgbKeyboardManager* rgb_keyboard_manager() {
     return rgb_keyboard_manager_.get();
+  }
+  SunfishScannerFeatureWatcher* sunfish_scanner_feature_watcher() {
+    return sunfish_scanner_feature_watcher_.get();
   }
   ScannerController* scanner_controller() { return scanner_controller_.get(); }
   ScreenLayoutObserver* screen_layout_observer() {
@@ -949,9 +952,6 @@ class ASH_EXPORT Shell : public SessionObserver,
     return login_unlock_throughput_recorder_.get();
   }
 
-  // Returns the DeskProfilesDelegate, or nullptr if it isn't available.
-  DeskProfilesDelegate* GetDeskProfilesDelegate();
-
  private:
   FRIEND_TEST_ALL_PREFIXES(ExtendedDesktopTest, TestCursor);
   FRIEND_TEST_ALL_PREFIXES(WindowManagerTest, MouseEventCursors);
@@ -1063,9 +1063,6 @@ class ASH_EXPORT Shell : public SessionObserver,
   std::unique_ptr<DesksController> desks_controller_;
   std::unique_ptr<SavedDeskController> saved_desk_controller_;
   std::unique_ptr<SavedDeskDelegate> saved_desk_delegate_;
-  std::unique_ptr<DetachableBaseHandler> detachable_base_handler_;
-  std::unique_ptr<DetachableBaseNotificationController>
-      detachable_base_notification_controller_;
   std::unique_ptr<diagnostics::DiagnosticsLogController>
       diagnostics_log_controller_;
   std::unique_ptr<DisplayHighlightController> display_highlight_controller_;
@@ -1128,9 +1125,11 @@ class ASH_EXPORT Shell : public SessionObserver,
   std::unique_ptr<UsbPeripheralNotificationController>
       usb_peripheral_notification_controller_;
   std::unique_ptr<RgbKeyboardManager> rgb_keyboard_manager_;
-  std::unique_ptr<RasterScaleController> raster_scale_controller_;
   std::unique_ptr<ResizeShadowController> resize_shadow_controller_;
   std::unique_ptr<SessionControllerImpl> session_controller_;
+  // Must be after `session_controller_`.
+  std::unique_ptr<SunfishScannerFeatureWatcher>
+      sunfish_scanner_feature_watcher_;
   std::unique_ptr<FeatureDiscoveryDurationReporterImpl>
       feature_discover_reporter_;
   std::unique_ptr<AshColorProvider> ash_color_provider_;
@@ -1139,7 +1138,6 @@ class ASH_EXPORT Shell : public SessionObserver,
   std::unique_ptr<PipController> pip_controller_;
   std::unique_ptr<PrivacyScreenController> privacy_screen_controller_;
   std::unique_ptr<PolicyRecommendationRestorer> policy_recommendation_restorer_;
-  std::unique_ptr<ScannerController> scanner_controller_;
   std::unique_ptr<ScreenSwitchCheckController> screen_switch_check_controller_;
   std::unique_ptr<ShelfConfig> shelf_config_;
   std::unique_ptr<ShelfController> shelf_controller_;
@@ -1150,6 +1148,9 @@ class ASH_EXPORT Shell : public SessionObserver,
   std::unique_ptr<AcceleratorTracker> accelerator_tracker_;
   std::unique_ptr<ShutdownControllerImpl> shutdown_controller_;
   std::unique_ptr<SystemNotificationController> system_notification_controller_;
+  std::unique_ptr<DetachableBaseHandler> detachable_base_handler_;
+  std::unique_ptr<DetachableBaseNotificationController>
+      detachable_base_notification_controller_;
   std::unique_ptr<SystemNudgePauseManagerImpl> system_nudge_pause_manager_;
   std::unique_ptr<SystemTrayModel> system_tray_model_;
   std::unique_ptr<SystemTrayNotifier> system_tray_notifier_;
@@ -1214,6 +1215,8 @@ class ASH_EXPORT Shell : public SessionObserver,
   std::unique_ptr<DisplayConfigurationObserver> display_configuration_observer_;
 
   std::unique_ptr<ScreenPinningController> screen_pinning_controller_;
+  // Must be after `session_controller_` and `screen_pinning_controller_`.
+  std::unique_ptr<ScannerController> scanner_controller_;
 
   std::unique_ptr<PeripheralBatteryListener> peripheral_battery_listener_;
   std::unique_ptr<PeripheralBatteryNotifier> peripheral_battery_notifier_;
@@ -1298,7 +1301,7 @@ class ASH_EXPORT Shell : public SessionObserver,
 
   std::unique_ptr<OcclusionTrackerPauser> occlusion_tracker_pauser_;
 
-  std::unique_ptr<MultiCaptureServiceClient> multi_capture_service_client_;
+  std::unique_ptr<MultiCaptureService> multi_capture_service_;
 
   std::unique_ptr<federated::FederatedServiceControllerImpl>
       federated_service_controller_;

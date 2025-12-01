@@ -7,20 +7,31 @@
 #import "base/containers/contains.h"
 #import "base/functional/bind.h"
 #import "base/ios/ios_util.h"
+#import "base/metrics/histogram_functions.h"
 #import "base/metrics/user_metrics.h"
 #import "base/strings/sys_string_conversions.h"
 #import "components/feature_engagement/public/event_constants.h"
 #import "components/feature_engagement/public/tracker.h"
+#import "components/lens/lens_overlay_metrics.h"
 #import "components/omnibox/browser/omnibox_field_trial.h"
+#import "components/omnibox/common/omnibox_features.h"
 #import "components/open_from_clipboard/clipboard_recent_content.h"
 #import "components/prefs/pref_service.h"
 #import "components/strings/grit/components_strings.h"
+#import "ios/chrome/browser/fullscreen/ui_bundled/fullscreen_animator.h"
+#import "ios/chrome/browser/intelligence/features/features.h"
+#import "ios/chrome/browser/intelligence/page_action_menu/ui/page_action_menu_entrypoint_view.h"
+#import "ios/chrome/browser/lens/ui_bundled/lens_entrypoint.h"
 #import "ios/chrome/browser/lens_overlay/coordinator/lens_overlay_availability.h"
+#import "ios/chrome/browser/lens_overlay/model/lens_overlay_presentation_type.h"
 #import "ios/chrome/browser/lens_overlay/ui/lens_overlay_entrypoint_view.h"
 #import "ios/chrome/browser/location_bar/ui_bundled/badges_container_view.h"
+#import "ios/chrome/browser/location_bar/ui_bundled/fakebox_buttons_snapshot_provider.h"
 #import "ios/chrome/browser/location_bar/ui_bundled/location_bar_constants.h"
 #import "ios/chrome/browser/location_bar/ui_bundled/location_bar_metrics.h"
 #import "ios/chrome/browser/location_bar/ui_bundled/location_bar_steady_view.h"
+#import "ios/chrome/browser/omnibox/public/omnibox_constants.h"
+#import "ios/chrome/browser/omnibox/ui/text_field_view_containing.h"
 #import "ios/chrome/browser/orchestrator/ui_bundled/location_bar_offset_provider.h"
 #import "ios/chrome/browser/shared/model/application_context/application_context.h"
 #import "ios/chrome/browser/shared/model/prefs/pref_names.h"
@@ -28,17 +39,18 @@
 #import "ios/chrome/browser/shared/public/commands/application_commands.h"
 #import "ios/chrome/browser/shared/public/commands/browser_coordinator_commands.h"
 #import "ios/chrome/browser/shared/public/commands/help_commands.h"
+#import "ios/chrome/browser/shared/public/commands/lens_commands.h"
 #import "ios/chrome/browser/shared/public/commands/lens_overlay_commands.h"
 #import "ios/chrome/browser/shared/public/commands/load_query_commands.h"
+#import "ios/chrome/browser/shared/public/commands/open_lens_input_selection_command.h"
+#import "ios/chrome/browser/shared/public/commands/page_action_menu_commands.h"
 #import "ios/chrome/browser/shared/public/features/features.h"
 #import "ios/chrome/browser/shared/ui/symbols/symbols.h"
 #import "ios/chrome/browser/shared/ui/util/layout_guide_names.h"
 #import "ios/chrome/browser/shared/ui/util/uikit_ui_util.h"
 #import "ios/chrome/browser/shared/ui/util/util_swift.h"
-#import "ios/chrome/browser/ui/fullscreen/fullscreen_animator.h"
-#import "ios/chrome/browser/ui/omnibox/omnibox_constants.h"
-#import "ios/chrome/browser/ui/omnibox/text_field_view_containing.h"
-#import "ios/chrome/browser/ui/toolbar/public/toolbar_type.h"
+#import "ios/chrome/browser/toolbar/ui_bundled/public/toolbar_type.h"
+#import "ios/chrome/common/NSString+Chromium.h"
 #import "ios/chrome/common/ui/util/constraints_ui_util.h"
 #import "ios/chrome/common/ui/util/pointer_interaction_util.h"
 #import "ios/chrome/grit/ios_strings.h"
@@ -61,6 +73,10 @@ const CGFloat kSymbolImagePointSize = 18.;
 // Identifier for the omnibox embedded in this location bar as a scribble
 // element.
 const NSString* kScribbleOmniboxElementId = @"omnibox";
+
+// The padding to be added to the bottom of the system share icon to balance
+// the white space on top.
+const CGFloat kShareIconBalancingHeightPadding = 1;
 
 }  // namespace
 
@@ -104,6 +120,9 @@ const NSString* kScribbleOmniboxElementId = @"omnibox";
 // edit menu option to do an image search.
 @property(nonatomic, assign) BOOL lensImageEnabled;
 
+// Search provider name (used for placeholder text).
+@property(nonatomic, copy) NSString* searchProviderName;
+
 // Type of the current placeholder view.
 @property(nonatomic, assign) LocationBarPlaceholderType placeholderType;
 
@@ -115,8 +134,16 @@ const NSString* kScribbleOmniboxElementId = @"omnibox";
 
 @implementation LocationBarViewController {
   BOOL _isNTP;
+  // Stores a snapshot of the fakebox buttons that is overlaid on the Location
+  // Bar and anchored to the trailing edge during focus transitions (when it is
+  // faded out) and defocus transitions (when it is faded in).
+  UIView* _fakeboxButtonsSnapshot;
 
+  // The location bar button to access Lens.
   LensOverlayEntrypointButton* _lensOverlayPlaceholderView;
+
+  // The location bar button to access the page action menu.
+  PageActionMenuEntrypointView* _pageActionMenuEntrypointView;
 }
 
 #pragma mark - public
@@ -147,7 +174,6 @@ const NSString* kScribbleOmniboxElementId = @"omnibox";
 }
 
 - (void)setPlaceholderType:(LocationBarPlaceholderType)placeholderType {
-  CHECK(IsLensOverlayAvailable());
   if (placeholderType == _placeholderType) {
     return;
   }
@@ -190,15 +216,8 @@ const NSString* kScribbleOmniboxElementId = @"omnibox";
           UIUserInterfaceSizeClassRegular ||
       self.traitCollection.verticalSizeClass == UIUserInterfaceSizeClassCompact;
 
-  if (shouldShowVoiceSearch) {
-    if (self.voiceSearchEnabled) {
-      self.trailingButtonState = kVoiceSearchButton;
-    } else {
-      self.trailingButtonState = kNoButton;
-    }
-  } else {
-    self.trailingButtonState = kShareButton;
-  }
+  self.trailingButtonState =
+      shouldShowVoiceSearch ? kVoiceSearchButton : kShareButton;
 }
 
 - (id<ContextualPanelEntrypointVisibilityDelegate>)
@@ -231,13 +250,29 @@ const NSString* kScribbleOmniboxElementId = @"omnibox";
   DCHECK(self.badgeView) << "The badge view must be set at this point";
   [self.locationBarSteadyView setBadgeView:self.badgeView];
 
-  if (IsLensOverlayAvailable()) {
-    _lensOverlayPlaceholderView = [[LensOverlayEntrypointButton alloc] init];
+  if (IsPageActionMenuEnabled()) {
+    _pageActionMenuEntrypointView = [[PageActionMenuEntrypointView alloc] init];
+    [_pageActionMenuEntrypointView
+               addTarget:self
+                  action:@selector(handlePageActionMenuEntrypointTapped)
+        forControlEvents:UIControlEventTouchUpInside];
+  } else if (IsLensOverlayAvailable(_profilePrefs)) {
+    _lensOverlayPlaceholderView = [[LensOverlayEntrypointButton alloc]
+        initWithProfilePrefs:_profilePrefs];
     [self.layoutGuideCenter referenceView:_lensOverlayPlaceholderView
                                 underName:kLensOverlayEntrypointGuide];
-    [_lensOverlayPlaceholderView addTarget:self
-                                    action:@selector(openLensOverlay)
-                          forControlEvents:UIControlEventTouchUpInside];
+
+    BOOL showSpeedbumpMenu = GetLensOverlayOnboardingTreatment() ==
+                             LensOverlayOnboardingTreatment::kSpeedbumpMenu;
+    if (showSpeedbumpMenu) {
+      _lensOverlayPlaceholderView.menu = [self createSpeedbumpMenu];
+      _lensOverlayPlaceholderView.showsMenuAsPrimaryAction = YES;
+    } else {
+      [_lensOverlayPlaceholderView
+                 addTarget:self
+                    action:@selector(handleLensEntrypointPressed)
+          forControlEvents:UIControlEventTouchUpInside];
+    }
   }
 
   [_locationBarSteadyView.locationButton
@@ -271,6 +306,9 @@ const NSString* kScribbleOmniboxElementId = @"omnibox";
         @[ UITraitHorizontalSizeClass.class, UITraitVerticalSizeClass.class ]);
     [self registerForTraitChanges:traits
                        withAction:@selector(updateTrailingButtonState)];
+
+    [self registerForTraitChanges:@[ UITraitHorizontalSizeClass.class ]
+                       withAction:@selector(sizeClassDidChange)];
   }
 }
 
@@ -314,8 +352,9 @@ const NSString* kScribbleOmniboxElementId = @"omnibox";
 }
 
 - (void)updateForFullscreenEnabled:(BOOL)enabled {
-  if (!enabled)
+  if (!enabled) {
     [self updateForFullscreenProgress:1.0];
+  }
 }
 
 - (void)animateFullscreenWithAnimator:(FullscreenAnimator*)animator {
@@ -329,6 +368,16 @@ const NSString* kScribbleOmniboxElementId = @"omnibox";
 
 - (void)defocusOmnibox {
   [self.dispatcher cancelOmniboxEdit];
+}
+
+- (void)setSearchProviderName:(NSString*)searchProviderName {
+  if (_searchProviderName == searchProviderName) {
+    return;
+  }
+  _searchProviderName = searchProviderName;
+  if (_isNTP) {
+    [self updatePlaceholder];
+  }
 }
 
 #pragma mark - LocationBarSteadyViewConsumer
@@ -351,11 +400,7 @@ const NSString* kScribbleOmniboxElementId = @"omnibox";
 - (void)updateForNTP:(BOOL)isNTP {
   _isNTP = isNTP;
   if (isNTP) {
-    // Display a fake "placeholder".
-    NSString* placeholderString =
-        l10n_util::GetNSString(IDS_OMNIBOX_EMPTY_HINT);
-    [self.locationBarSteadyView
-        setLocationLabelPlaceholderText:placeholderString];
+    [self updatePlaceholder];
   }
   [self.locationBarSteadyView setCentered:(!isNTP || self.incognito)];
   self.hideShareButtonWhileOnIncognitoNTP = isNTP;
@@ -386,7 +431,7 @@ const NSString* kScribbleOmniboxElementId = @"omnibox";
 }
 
 - (void)attemptShowingLensOverlayIPH {
-  if (IsLensOverlayAvailable() &&
+  if (IsLensOverlayAvailable(_profilePrefs) &&
       !self.locationBarSteadyView.badgesContainerView.placeholderView.hidden) {
     [self.helpCommandsHandler
         presentInProductHelpWithType:InProductHelpType::kLensOverlayEntrypoint];
@@ -398,6 +443,11 @@ const NSString* kScribbleOmniboxElementId = @"omnibox";
   if (_placeholderType == LocationBarPlaceholderType::kLensOverlay) {
     RecordLensEntrypointAvailable();
   }
+}
+
+- (void)focusSteadyViewForVoiceOver {
+  UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification,
+                                  self.locationBarSteadyView);
 }
 
 #pragma mark - LocationBarAnimatee
@@ -460,7 +510,38 @@ const NSString* kScribbleOmniboxElementId = @"omnibox";
                             self.locationBarSteadyView.transform.b,
                             self.locationBarSteadyView.transform.c,
                             self.locationBarSteadyView.transform.d, 0, 0);
-  ;
+}
+
+- (void)addFakeboxButtonsSnapshot {
+  _fakeboxButtonsSnapshot =
+      [self.fakeboxButtonsSnapshotProvider fakeboxButtonsSnapshot];
+  if (!_fakeboxButtonsSnapshot) {
+    return;
+  }
+
+  _fakeboxButtonsSnapshot.translatesAutoresizingMaskIntoConstraints = NO;
+  _fakeboxButtonsSnapshot.alpha = 0;
+  [self.view addSubview:_fakeboxButtonsSnapshot];
+  CGSize size = _fakeboxButtonsSnapshot.frame.size;
+  [NSLayoutConstraint activateConstraints:@[
+    [_fakeboxButtonsSnapshot.widthAnchor constraintEqualToConstant:size.width],
+    [_fakeboxButtonsSnapshot.heightAnchor
+        constraintEqualToConstant:size.height],
+    [_fakeboxButtonsSnapshot.centerYAnchor
+        constraintEqualToAnchor:self.view.centerYAnchor],
+    [_fakeboxButtonsSnapshot.trailingAnchor
+        constraintEqualToAnchor:self.view.trailingAnchor],
+  ]];
+  [self.view layoutIfNeeded];
+}
+
+- (void)setFakeboxButtonsSnapshotFaded:(BOOL)faded {
+  _fakeboxButtonsSnapshot.alpha = faded ? 0 : 1;
+}
+
+- (void)clearFakeboxButtonsSnapshot {
+  [_fakeboxButtonsSnapshot removeFromSuperview];
+  _fakeboxButtonsSnapshot = nil;
 }
 
 #pragma mark animation helpers
@@ -561,7 +642,7 @@ const NSString* kScribbleOmniboxElementId = @"omnibox";
     case kShareButton: {
       [self.locationBarSteadyView.trailingButton
                  addTarget:self.dispatcher
-                    action:@selector(sharePage)
+                    action:@selector(showShareSheet)
           forControlEvents:UIControlEventTouchUpInside];
 
       // Add self as a target to collect the metrics.
@@ -570,9 +651,22 @@ const NSString* kScribbleOmniboxElementId = @"omnibox";
                     action:@selector(shareButtonPressed)
           forControlEvents:UIControlEventTouchUpInside];
 
+      // The system share image has uneven vertical padding. Add a small bottom
+      // padding to balance it.
       UIImage* shareImage =
           DefaultSymbolWithPointSize(kShareSymbol, kSymbolImagePointSize);
-      [self.locationBarSteadyView.trailingButton setImage:shareImage
+      // TODO(crbug.com/411039614): Replace
+      // UIGraphicsBeginImageContextWithOptions with UIGraphicsImageRenderer.
+      UIGraphicsBeginImageContextWithOptions(
+          CGSizeMake(shareImage.size.width,
+                     shareImage.size.height + kShareIconBalancingHeightPadding),
+          NO, 0.0);
+      [shareImage drawInRect:CGRectMake(0, 0, shareImage.size.width,
+                                        shareImage.size.height)];
+      UIImage* paddedShareImage = UIGraphicsGetImageFromCurrentImageContext();
+      UIGraphicsEndImageContext();
+
+      [self.locationBarSteadyView.trailingButton setImage:paddedShareImage
                                                  forState:UIControlStateNormal];
       self.locationBarSteadyView.trailingButton.accessibilityLabel =
           l10n_util::GetNSString(IDS_IOS_TOOLS_MENU_SHARE);
@@ -609,7 +703,7 @@ const NSString* kScribbleOmniboxElementId = @"omnibox";
           self.locationBarSteadyView.trailingButton.frame.size.width / 2;
       self.locationBarSteadyView.trailingButton.clipsToBounds = YES;
 
-      [self.locationBarSteadyView enableTrailingButton:YES];
+      [self.locationBarSteadyView enableTrailingButton:self.voiceSearchEnabled];
     }
   }
 }
@@ -643,6 +737,54 @@ const NSString* kScribbleOmniboxElementId = @"omnibox";
   return ios::provider::IsLensSupported() &&
          base::FeatureList::IsEnabled(kEnableLensInOmniboxCopiedImage) &&
          self.lensImageEnabled;
+}
+
+// Creates a new menu to use as the "speedbump" menu for the lens overlay
+// entrypoint. Only used in LensOverlayOnboardingTreatment::kSpeedbumpMenu.
+- (UIMenu*)createSpeedbumpMenu {
+  DCHECK(GetLensOverlayOnboardingTreatment() ==
+         LensOverlayOnboardingTreatment::kSpeedbumpMenu);
+
+  NSString* lensOverlayTitle =
+      l10n_util::GetNSString(IDS_IOS_LENS_OVERLAY_SPEEDBUMP_MENU_SCREEN);
+  __weak __typeof__(self) weakSelf = self;
+  UIAction* lensOverlayAction =
+      [UIAction actionWithTitle:lensOverlayTitle
+                          image:nil
+                     identifier:nil
+                        handler:^(UIAction* /* action */) {
+                          [weakSelf handleLensSpeedbumpMenuOpenLensOverlay];
+                        }];
+
+  NSString* cameraTitle =
+      l10n_util::GetNSString(IDS_IOS_LENS_OVERLAY_SPEEDBUMP_MENU_CAMERA);
+  UIAction* viewfinderAction =
+      [UIAction actionWithTitle:cameraTitle
+                          image:nil
+                     identifier:nil
+                        handler:^(UIAction* /* action */) {
+                          [weakSelf handleLensSpeedbumpMenuOpenLensViewFinder];
+                        }];
+  NSString* menuTitle = l10n_util::GetNSString(IDS_IOS_LENS_PRODUCT_NAME);
+  return [UIMenu menuWithTitle:menuTitle
+                      children:@[ lensOverlayAction, viewfinderAction ]];
+}
+
+// Updates placeholder in the steady view.
+- (void)updatePlaceholder {
+  NSString* placeholderString = self.searchOrTypeURLPlaceholderText;
+  [self.locationBarSteadyView
+      setLocationLabelPlaceholderText:placeholderString];
+}
+
+// Computes correct placeholder text.
+- (NSString*)searchOrTypeURLPlaceholderText {
+  if (base::FeatureList::IsEnabled(omnibox::kOmniboxMobileParityUpdate)) {
+    return l10n_util::GetNSStringF(IDS_OMNIBOX_EMPTY_HINT_WITH_DSE_NAME,
+                                   self.searchProviderName.cr_UTF16String);
+  } else {
+    return l10n_util::GetNSString(IDS_OMNIBOX_EMPTY_HINT);
+  }
 }
 
 #pragma mark - UIContextMenuInteractionDelegate
@@ -882,17 +1024,66 @@ const NSString* kScribbleOmniboxElementId = @"omnibox";
   }
 }
 
+- (void)handleLensSpeedbumpMenuOpenLensViewFinder {
+  RecordAction(UserMetricsAction("MobileToolbarLensOverlayTap"));
+
+  base::UmaHistogramEnumeration(
+      "Lens.Overlay.SpeedbumpMenu",
+      lens::LensOverlaySpeedbumpMenuSelection::kSearchWithCamera);
+  [self openLensViewFinder];
+}
+
+- (void)handleLensSpeedbumpMenuOpenLensOverlay {
+  RecordAction(UserMetricsAction("MobileToolbarLensOverlayTap"));
+
+  base::UmaHistogramEnumeration(
+      "Lens.Overlay.SpeedbumpMenu",
+      lens::LensOverlaySpeedbumpMenuSelection::kSearchYourScreen);
+  [self openLensOverlay];
+}
+
+- (void)handleLensEntrypointPressed {
+  RecordAction(UserMetricsAction("MobileToolbarLensOverlayTap"));
+  if (self.lensOverlayVisible) {
+    [self destroyLensOverlay];
+  } else {
+    [self openLensOverlay];
+  }
+}
+
+- (void)handlePageActionMenuEntrypointTapped {
+  // TODO(crbug.com/402827015): Log opens.
+  [self.pageActionMenuHandler showPageActionMenu];
+}
+
+// Creates and shows the LVF input selection UI.
+- (void)openLensViewFinder {
+  TriggerHapticFeedbackForSelectionChange();
+  OpenLensInputSelectionCommand* command = [[OpenLensInputSelectionCommand
+      alloc]
+          initWithEntryPoint:LensEntrypoint::LensOverlayLocationBar
+           presentationStyle:LensInputSelectionPresentationStyle::SlideFromRight
+      presentationCompletion:nil];
+  [self.dispatcher openLensInputSelection:command];
+}
+
 // Creates and shows the lens overlay UI.
 - (void)openLensOverlay {
   if (self.tracker) {
     self.tracker->NotifyEvent(
         feature_engagement::events::kLensOverlayEntrypointUsed);
   }
-  RecordAction(UserMetricsAction("MobileToolbarLensOverlayTap"));
   TriggerHapticFeedbackForSelectionChange();
   [self.dispatcher createAndShowLensUI:YES
                             entrypoint:LensOverlayEntrypoint::kLocationBar
                             completion:nil];
+}
+
+// Creates and shows the lens overlay UI.
+- (void)destroyLensOverlay {
+  TriggerHapticFeedbackForSelectionChange();
+  [self.dispatcher destroyLensUI:YES
+                          reason:lens::LensOverlayDismissalSource::kToolbar];
 }
 
 - (void)updatePlaceholderView {
@@ -903,7 +1094,35 @@ const NSString* kScribbleOmniboxElementId = @"omnibox";
     case LocationBarPlaceholderType::kLensOverlay:
       self.locationBarSteadyView.placeholderView = _lensOverlayPlaceholderView;
       break;
+    case LocationBarPlaceholderType::kPageActionMenu:
+      CHECK(IsPageActionMenuEnabled());
+      self.locationBarSteadyView.placeholderView =
+          _pageActionMenuEntrypointView;
+      break;
   }
+}
+
+- (void)sizeClassDidChange {
+  [self updateLensVisibilityIndicationIfNeeded];
+}
+
+- (void)setLensOverlayVisible:(BOOL)lensOverlayVisible {
+  if (lensOverlayVisible == _lensOverlayVisible) {
+    return;
+  }
+
+  _lensOverlayVisible = lensOverlayVisible;
+  [self updateLensVisibilityIndicationIfNeeded];
+}
+
+- (void)updateLensVisibilityIndicationIfNeeded {
+  // Only indicate Lens Overlay in use when the presentation does not cover the
+  // location bar.
+  BOOL shouldIndicateLensInUse =
+      lens::ContainerPresentationFor(self) !=
+      lens::ContainerPresentationType::kFullscreenCover;
+  [_lensOverlayPlaceholderView
+      setLensOverlayActive:shouldIndicateLensInUse && _lensOverlayVisible];
 }
 
 @end

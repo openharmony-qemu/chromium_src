@@ -32,11 +32,12 @@
 #include "components/history/core/browser/keyword_search_term.h"
 #include "components/history/core/browser/keyword_search_term_util.h"
 #include "components/lens/lens_features.h"
+#include "components/omnibox/browser/autocomplete_enums.h"
+#include "components/omnibox/browser/autocomplete_input.h"
 #include "components/omnibox/browser/autocomplete_provider_client.h"
 #include "components/omnibox/browser/autocomplete_provider_listener.h"
 #include "components/omnibox/browser/autocomplete_result.h"
 #include "components/omnibox/browser/keyword_provider.h"
-#include "components/omnibox/browser/omnibox_feature_configs.h"
 #include "components/omnibox/browser/omnibox_field_trial.h"
 #include "components/omnibox/browser/omnibox_triggered_feature_service.h"
 #include "components/omnibox/browser/page_classification_functions.h"
@@ -44,6 +45,7 @@
 #include "components/omnibox/browser/search_scoring_signals_annotator.h"
 #include "components/omnibox/browser/suggestion_answer.h"
 #include "components/omnibox/browser/url_prefix.h"
+#include "components/omnibox/common/omnibox_feature_configs.h"
 #include "components/omnibox/common/omnibox_features.h"
 #include "components/search/search.h"
 #include "components/search_engines/template_url_service.h"
@@ -231,14 +233,14 @@ void SearchProvider::Start(const AutocompleteInput& input,
   if (base::FeatureList::IsEnabled(omnibox::kAblateSearchProviderWarmup) &&
       (input.IsZeroSuggest() ||
        input.type() == metrics::OmniboxInputType::EMPTY)) {
-    Stop(true, false);
+    Stop(AutocompleteStopReason::kClobbered);
     return;
   }
 
   keyword_input_ = input;
   const TemplateURL* keyword_provider =
-      KeywordProvider::GetSubstitutingTemplateURLForInput(model,
-                                                          &keyword_input_);
+      AutocompleteInput::GetSubstitutingTemplateURLForInput(model,
+                                                            &keyword_input_);
   if (keyword_provider == nullptr)
     keyword_input_.Clear();
   else if (keyword_input_.text().empty())
@@ -254,7 +256,7 @@ void SearchProvider::Start(const AutocompleteInput& input,
 
   if (!default_provider && !keyword_provider) {
     // No valid providers.
-    Stop(true, false);
+    Stop(AutocompleteStopReason::kClobbered);
     return;
   }
 
@@ -268,7 +270,7 @@ void SearchProvider::Start(const AutocompleteInput& input,
       !providers_.equal(default_provider_keyword, keyword_provider_keyword)) {
     // Cancel any in-flight suggest requests.
     if (!done_)
-      Stop(false, false);
+      Stop(AutocompleteStopReason::kInteraction);
   }
 
   providers_.set(default_provider_keyword, keyword_provider_keyword);
@@ -289,7 +291,7 @@ void SearchProvider::Start(const AutocompleteInput& input,
       match.allowed_to_be_default_match = true;
       matches_.push_back(match);
     }
-    Stop(true, false);
+    Stop(AutocompleteStopReason::kClobbered);
     return;
   }
 
@@ -319,12 +321,10 @@ void SearchProvider::Start(const AutocompleteInput& input,
   UpdateMatches();
 }
 
-void SearchProvider::Stop(bool clear_cached_results,
-                          bool due_to_user_inactivity) {
-  AutocompleteProvider::Stop(clear_cached_results, due_to_user_inactivity);
-
+void SearchProvider::Stop(AutocompleteStopReason stop_reason) {
+  AutocompleteProvider::Stop(stop_reason);
   StopSuggest();
-  if (clear_cached_results)
+  if (stop_reason == AutocompleteStopReason::kClobbered)
     ClearAllResults();
 }
 
@@ -466,9 +466,6 @@ void SearchProvider::UpdateMatchContentsClass(
     const std::u16string& input_text,
     SearchSuggestionParser::Results* results) {
   std::u16string trimmed_input = base::CollapseWhitespace(input_text, false);
-  if (base::FeatureList::IsEnabled(omnibox::kNormalizeSearchSuggestions)) {
-    trimmed_input = base::i18n::ToLower(trimmed_input);
-  }
   for (auto& suggest_result : results->suggest_results)
     suggest_result.ClassifyMatchContents(false, trimmed_input);
   for (auto& navigation_result : results->navigation_results)
@@ -1113,7 +1110,7 @@ void SearchProvider::RemoveExtraAnswers(ACMatches* matches) {
 }
 
 void SearchProvider::DuplicateCardAnswer(ACMatches* matches) {
-  auto iter = base::ranges::find_if(*matches, [](const auto& match) {
+  auto iter = std::ranges::find_if(*matches, [](const auto& match) {
     return match.answer_template.has_value();
   });
 
@@ -1188,14 +1185,9 @@ SearchProvider::ScoreHistoryResultsHelper(const HistoryResults& results,
   // True if the user has asked this exact query previously.
   bool found_what_you_typed_match = false;
   std::u16string trimmed_input = base::CollapseWhitespace(input_text, false);
-  if (base::FeatureList::IsEnabled(omnibox::kNormalizeSearchSuggestions)) {
-    trimmed_input = base::i18n::ToLower(trimmed_input);
-  }
   for (const auto& result : results) {
     const std::u16string& trimmed_suggestion =
-        base::FeatureList::IsEnabled(omnibox::kNormalizeSearchSuggestions)
-            ? result->normalized_term
-            : base::CollapseWhitespace(result->term, false);
+        base::CollapseWhitespace(result->term, false);
 
     // Don't autocomplete multi-word queries that have only been seen once
     // unless the user has typed more than one word.

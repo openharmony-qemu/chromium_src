@@ -17,11 +17,14 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "quiche/quic/core/quic_clock.h"
+#include "quiche/quic/core/quic_default_clock.h"
 #include "quiche/quic/moqt/moqt_cached_object.h"
 #include "quiche/quic/moqt/moqt_failed_fetch.h"
 #include "quiche/quic/moqt/moqt_messages.h"
 #include "quiche/quic/moqt/moqt_priority.h"
 #include "quiche/quic/moqt/moqt_publisher.h"
+#include "quiche/web_transport/web_transport.h"
 
 namespace moqt {
 
@@ -37,9 +40,11 @@ namespace moqt {
 // frames that arrive for a short time.
 class MoqtLiveRelayQueue : public MoqtTrackPublisher {
  public:
-  explicit MoqtLiveRelayQueue(FullTrackName track,
-                              MoqtForwardingPreference forwarding_preference)
-      : track_(std::move(track)),
+  MoqtLiveRelayQueue(
+      FullTrackName track, MoqtForwardingPreference forwarding_preference,
+      const quic::QuicClock* clock = quic::QuicDefaultClock::Get())
+      : clock_(clock),
+        track_(std::move(track)),
         forwarding_preference_(forwarding_preference),
         next_sequence_(0, 0) {}
 
@@ -53,28 +58,41 @@ class MoqtLiveRelayQueue : public MoqtTrackPublisher {
   // occur. A false return value might result in a session error on the
   // inbound session, but this queue is the only place that retains enough state
   // to check.
-  bool AddObject(FullSequence sequence, MoqtObjectStatus status) {
-    return AddRawObject(sequence, status, publisher_priority_, "");
+  bool AddObject(Location sequence, MoqtObjectStatus status, bool fin = false) {
+    return AddRawObject(sequence, status, publisher_priority_, "", fin);
   }
-  bool AddObject(FullSequence sequence, absl::string_view object) {
+  bool AddObject(Location sequence, absl::string_view object,
+                 bool fin = false) {
     return AddRawObject(sequence, MoqtObjectStatus::kNormal,
-                        publisher_priority_, object);
+                        publisher_priority_, object, fin);
   }
+  // Record a received FIN that did not come with the last object.
+  // If the forwarding preference is kDatagram or kTrack, |sequence| is ignored.
+  // Otherwise, |sequence| is used to determine which stream is being FINed. If
+  // the object ID does not match the last object ID in the stream, no action
+  // is taken.
+  bool AddFin(Location sequence);
+  // Record a received RESET_STREAM. |sequence| encodes the group and subgroup
+  // of the stream that is being reset. Returns false on datagram tracks, or if
+  // the stream does not exist.
+  bool OnStreamReset(Location sequence,
+                     webtransport::StreamErrorCode error_code);
 
   // MoqtTrackPublisher implementation.
   const FullTrackName& GetTrackName() const override { return track_; }
   std::optional<PublishedObject> GetCachedObject(
-      FullSequence sequence) const override;
-  std::vector<FullSequence> GetCachedObjectsInRange(
-      FullSequence start, FullSequence end) const override;
+      Location sequence) const override;
+  std::vector<Location> GetCachedObjectsInRange(Location start,
+                                                Location end) const override;
   void AddObjectListener(MoqtObjectListener* listener) override {
     listeners_.insert(listener);
+    listener->OnSubscribeAccepted();
   }
   void RemoveObjectListener(MoqtObjectListener* listener) override {
     listeners_.erase(listener);
   }
   absl::StatusOr<MoqtTrackStatusCode> GetTrackStatus() const override;
-  FullSequence GetLargestSequence() const override;
+  Location GetLargestLocation() const override;
   MoqtForwardingPreference GetForwardingPreference() const override {
     return forwarding_preference_;
   }
@@ -84,7 +102,7 @@ class MoqtLiveRelayQueue : public MoqtTrackPublisher {
   MoqtDeliveryOrder GetDeliveryOrder() const override {
     return delivery_order_;
   }
-  std::unique_ptr<MoqtFetchTask> Fetch(FullSequence /*start*/,
+  std::unique_ptr<MoqtFetchTask> Fetch(Location /*start*/,
                                        uint64_t /*end_group*/,
                                        std::optional<uint64_t> /*end_object*/,
                                        MoqtDeliveryOrder /*order*/) override {
@@ -112,21 +130,22 @@ class MoqtLiveRelayQueue : public MoqtTrackPublisher {
 
   struct Group {
     uint64_t next_object = 0;
-    bool complete = false;
+    bool complete = false;  // If true, kEndOfGroup has been received.
     absl::btree_map<SubgroupPriority, Subgroup> subgroups;
   };
 
-  bool AddRawObject(FullSequence sequence, MoqtObjectStatus status,
-                    MoqtPriority priority, absl::string_view payload);
+  bool AddRawObject(Location sequence, MoqtObjectStatus status,
+                    MoqtPriority priority, absl::string_view payload, bool fin);
 
+  const quic::QuicClock* clock_;
   FullTrackName track_;
   MoqtForwardingPreference forwarding_preference_;
   MoqtPriority publisher_priority_ = 128;
   MoqtDeliveryOrder delivery_order_ = MoqtDeliveryOrder::kAscending;
   absl::btree_map<uint64_t, Group> queue_;  // Ordered by group id.
   absl::flat_hash_set<MoqtObjectListener*> listeners_;
-  std::optional<FullSequence> end_of_track_;
-  FullSequence next_sequence_;
+  std::optional<Location> end_of_track_;
+  Location next_sequence_;
 };
 
 }  // namespace moqt

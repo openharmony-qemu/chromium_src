@@ -26,7 +26,7 @@ fd001a2951084fc12a2f6e76e5a1f2e0  usr/include/i386-linux-gnu/libavutil/downmix_i
 1c77ed6faad78909aaddc25035a1d76d  usr/include/i386-linux-gnu/libavutil/encryption_info.h
 8caccc598ee4de2e57b8cf5f746c0fd8  usr/include/i386-linux-gnu/libavutil/error.h
 5f3064e460e4cb973995baa2947c08c0  usr/include/i386-linux-gnu/libavutil/eval.h
-89754ef6e65e3c1929408887308269f1  usr/include/i386-linux-gnu/libavutil/ffversion.h
+5f03700e0c41fd2605732823f0a53a16  usr/include/i386-linux-gnu/libavutil/ffversion.h
 3bd97e7225bc8f6e42f3a581ed46fd91  usr/include/i386-linux-gnu/libavutil/fifo.h
 5981888105ba4043a75344e097d5431b  usr/include/i386-linux-gnu/libavutil/file.h
 ef68b4d6d5eda6515687d375db1d82c7  usr/include/i386-linux-gnu/libavutil/frame.h
@@ -64,7 +64,7 @@ d6f1c8afec926d0d864b5da397b1ae0a  usr/include/i386-linux-gnu/libavutil/pixdesc.h
 dd50a553ba57da531c8c2a12665f2235  usr/include/i386-linux-gnu/libavutil/pixelutils.h
 55b42c5146fd42b55c777752c84c767b  usr/include/i386-linux-gnu/libavutil/pixfmt.h
 f6fea558e1c930b274aa7ff8122cbec7  usr/include/i386-linux-gnu/libavutil/random_seed.h
-a5b089b560005225df705142367fbb80  usr/include/i386-linux-gnu/libavutil/rational.h
+2146e3711a8ab757530287275cabe683  usr/include/i386-linux-gnu/libavutil/rational.h
 4a6a499dc81d440cc3d510c2411603d1  usr/include/i386-linux-gnu/libavutil/rc4.h
 bff828f72dadb6305f31b8c1b68ed321  usr/include/i386-linux-gnu/libavutil/replaygain.h
 f36f2b5817305082f8f8c8ad4c8826dd  usr/include/i386-linux-gnu/libavutil/ripemd.h
@@ -84,8 +84,8 @@ f9e79a1abceb8f24491910f2d58a3ada  usr/include/i386-linux-gnu/libavutil/timestamp
 6c460686a18abb5c828a4e93c1657a3b  usr/include/i386-linux-gnu/libavutil/version.h
 39ef6ef74d1dd424d05d6abc8ce71f11  usr/include/i386-linux-gnu/libavutil/video_enc_params.h
 0574b2aec39e0eb6de17ecae8100641c  usr/include/i386-linux-gnu/libavutil/xtea.h
-d8ed582a90c350b2cce4976f63813c95  usr/lib/i386-linux-gnu/libavutil.a
+fec60f9438b303ba2eaa06fbfcbb9be7  usr/lib/i386-linux-gnu/libavutil.a
 7f12160279105143a73fbba55fbecb76  usr/lib/i386-linux-gnu/pkgconfig/libavutil.pc
-21ece1b947446a2558539c0013b694c4  usr/share/doc/libavutil-dev/changelog.Debian.gz
-e13e34f1be4148bf5e6bb43d126618ef  usr/share/doc/libavutil-dev/changelog.gz
+fc8b576a37fd99080492af0dc600f743  usr/share/doc/libavutil-dev/changelog.Debian.gz
+a25f71d27284c9b5e8cf1ce0dcdc0e84  usr/share/doc/libavutil-dev/changelog.gz
 e187f66b2765eae992e9c748bfea0a09  usr/share/doc/libavutil-dev/copyright

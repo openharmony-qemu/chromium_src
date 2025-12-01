@@ -13,12 +13,11 @@ source_set("model") {
     ":model_utils",
     ":text_classifier_utils",
     "//base",
-    "//components/keyed_service/ios",
     "//components/optimization_guide/core",
     "//components/optimization_guide/proto:optimization_guide_proto",
     "//ios/chrome/browser/optimization_guide/model",
-    "//ios/chrome/browser/shared/model/browser_state",
     "//ios/chrome/browser/shared/model/profile",
+    "//ios/chrome/browser/shared/model/profile:profile_keyed_service_factory",
   ]
 }
 
@@ -36,6 +35,7 @@ source_set("text_classifier_utils") {
     "text_classifier_util.mm",
   ]
   deps = [
+    ":model_utils",
     "//base",
     "//components/optimization_guide/core",
     "//ios/chrome/browser/optimization_guide/model",
@@ -53,7 +53,6 @@ source_set("test_support") {
   deps = [
     ":model",
     "//base",
-    "//components/keyed_service/ios",
     "//components/optimization_guide/core",
     "//ios/chrome/browser/optimization_guide/model",
     "//ios/chrome/browser/shared/model/profile",

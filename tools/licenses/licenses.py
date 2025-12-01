@@ -62,9 +62,9 @@ PRUNE_PATHS = set([
     # Only binaries, used during development.
     os.path.join('third_party', 'valgrind'),
 
-    # Not actually a third party dependency. Supplies configuration for
-    # enabling or disabling field trials and features in Chromium projects.
-    os.path.join('third_party', 'chromium-variations'),
+    # Supplies configuration setting for enabling or disabling field trials and
+    # features in Chromium projects.
+    os.path.join('components', 'variations', 'test_data', 'cipd'),
 
     # Used for development and test, not in the shipping product.
     os.path.join('build', 'secondary'),
@@ -144,6 +144,7 @@ ADDITIONAL_PATHS = (
     os.path.join('chrome', 'test', 'chromeos', 'autotest'),
     os.path.join('chrome', 'test', 'data'),
     os.path.join('native_client'),
+    os.path.join('third_party', 'android_deps', 'autorolled'),
     os.path.join('third_party', 'boringssl', 'src', 'third_party', 'fiat'),
     os.path.join('third_party', 'devtools-frontend', 'src', 'front_end',
                  'third_party'),
@@ -412,7 +413,6 @@ KNOWN_NON_IOS_LIBRARIES = set([
     os.path.join('third_party', 'flot'),
     os.path.join('third_party', 'gtk+'),
     os.path.join('third_party', 'iaccessible2'),
-    os.path.join('third_party', 'iccjpeg'),
     os.path.join('third_party', 'isimpledom'),
     os.path.join('third_party', 'jsoncpp'),
     os.path.join('third_party', 'khronos'),
@@ -431,7 +431,6 @@ KNOWN_NON_IOS_LIBRARIES = set([
     os.path.join('third_party', 'ots'),
     os.path.join('third_party', 'perfetto'),
     os.path.join('third_party', 'ppapi'),
-    os.path.join('third_party', 'qcms'),
     os.path.join('third_party', 're2'),
     os.path.join('third_party', 'safe_browsing'),
     os.path.join('third_party', 'smhasher'),
@@ -892,33 +891,24 @@ def FindThirdPartyDeps(gn_out_dir: str,
 
   # Generate gn project in temp directory and use it to find dependencies.
   # Current gn directory cannot be used when we run this script in a gn action
-  # rule, because gn doesn't allow recursive invocations due to potential side
-  # effects.
-  try:
-    with tempfile.TemporaryDirectory(dir=gn_out_dir) as tmp_dir:
-      shutil.copy(os.path.join(gn_out_dir, "args.gn"), tmp_dir)
-      subprocess.check_output(
-          [_GnBinary(), "gen",
-           "--root=%s" % _REPOSITORY_ROOT, tmp_dir])
-      gn_deps = subprocess.check_output([
-          _GnBinary(), "desc",
-          "--root=%s" % _REPOSITORY_ROOT, tmp_dir, gn_target, "deps",
-          "--as=buildfile", "--all"
-      ])
-      if isinstance(gn_deps, bytes):
-        gn_deps = gn_deps.decode("utf-8")
-  except:
-    if sys.platform == 'win32':
-      print("""
-      ##########################################################################
-
-      This is a known issue; please report the failure to
-      https://crbug.com/1208393.
-
-      ##########################################################################
-      """)
-      subprocess.check_call(['tasklist.exe'])
-    raise
+  # rule, because gn always evaluate *.gn/*.gni and causes side-effect
+  # by `write_file`, `exec_script` or so, and "gn desc" requires "build.ninja".
+  # If only "args.gn", it fails with "ERROR Not a build directory."
+  with tempfile.TemporaryDirectory(
+      dir=os.path.join(gn_out_dir, '..')) as tmp_dir:
+    shutil.copy(os.path.join(gn_out_dir, "args.gn"), tmp_dir)
+    # "gn desc" requires "build.ninja", but ok with empty "build.ninja".
+    # "gn gen" is slow and requires too much memory.
+    with open(os.path.join(tmp_dir, "build.ninja"), "w") as w:
+      pass
+    gn_deps = subprocess.check_output([
+        _GnBinary(), "desc",
+        "--root=%s" % _REPOSITORY_ROOT, tmp_dir, gn_target, "deps",
+        "--as=buildfile", "--all"
+    ],
+                                      stderr=sys.stderr)
+    if isinstance(gn_deps, bytes):
+      gn_deps = gn_deps.decode("utf-8")
 
   third_party_deps = GetThirdPartyDepsFromGNDepsOutput(gn_deps, target_os,
                                                        extra_allowed_dirs)
@@ -998,19 +988,19 @@ def GenerateCredits(file_template_file,
                                           extra_third_party_dirs)
 
   if not file_template_file:
-    file_template_file = os.path.join(_REPOSITORY_ROOT, 'components',
-                                      'about_ui', 'resources',
+    file_template_file = os.path.join(_REPOSITORY_ROOT, 'components', 'webui',
+                                      'about', 'resources',
                                       'about_credits.tmpl')
   if not entry_template_file:
-    entry_template_file = os.path.join(_REPOSITORY_ROOT, 'components',
-                                       'about_ui', 'resources',
+    entry_template_file = os.path.join(_REPOSITORY_ROOT, 'components', 'webui',
+                                       'about', 'resources',
                                        'about_credits_entry.tmpl')
 
   # Used to add a link at the top of credits for Chromium code to
   # satisfy the requirements for reciprocal license types.
   if not reciprocal_template_file:
     reciprocal_template_file = os.path.join(_REPOSITORY_ROOT, 'components',
-                                            'about_ui', 'resources',
+                                            'webui', 'about', 'resources',
                                             'about_credits_reciprocal.tmpl')
 
   entry_template = codecs.open(entry_template_file, encoding='utf-8').read()

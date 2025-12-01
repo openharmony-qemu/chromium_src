@@ -1,11 +1,11 @@
 Package: qtbase5-dev
 Source: qtbase-opensource-src
-Version: 5.15.2+dfsg-9
+Version: 5.15.2+dfsg-9+deb11u1
 Architecture: i386
 Maintainer: Debian Qt/KDE Maintainers <debian-qt-kde@lists.debian.org>
-Installed-Size: 15199
-Depends: libegl-dev, libgl-dev, libglu1-mesa-dev | libglu-dev, libqt5concurrent5 (= 5.15.2+dfsg-9), libqt5core5a (= 5.15.2+dfsg-9), libqt5dbus5 (= 5.15.2+dfsg-9), libqt5gui5 (= 5.15.2+dfsg-9), libqt5network5 (= 5.15.2+dfsg-9), libqt5printsupport5 (= 5.15.2+dfsg-9), libqt5sql5 (= 5.15.2+dfsg-9), libqt5test5 (= 5.15.2+dfsg-9), libqt5widgets5 (= 5.15.2+dfsg-9), libqt5xml5 (= 5.15.2+dfsg-9), libvulkan-dev, libxext-dev, qt5-qmake (= 5.15.2+dfsg-9), qtbase5-dev-tools (= 5.15.2+dfsg-9), qtchooser
-Recommends: libqt5opengl5-dev (= 5.15.2+dfsg-9)
+Installed-Size: 15200
+Depends: libegl-dev, libgl-dev, libglu1-mesa-dev | libglu-dev, libqt5concurrent5 (= 5.15.2+dfsg-9+deb11u1), libqt5core5a (= 5.15.2+dfsg-9+deb11u1), libqt5dbus5 (= 5.15.2+dfsg-9+deb11u1), libqt5gui5 (= 5.15.2+dfsg-9+deb11u1), libqt5network5 (= 5.15.2+dfsg-9+deb11u1), libqt5printsupport5 (= 5.15.2+dfsg-9+deb11u1), libqt5sql5 (= 5.15.2+dfsg-9+deb11u1), libqt5test5 (= 5.15.2+dfsg-9+deb11u1), libqt5widgets5 (= 5.15.2+dfsg-9+deb11u1), libqt5xml5 (= 5.15.2+dfsg-9+deb11u1), libvulkan-dev, libxext-dev, qt5-qmake (= 5.15.2+dfsg-9+deb11u1), qtbase5-dev-tools (= 5.15.2+dfsg-9+deb11u1), qtchooser
+Recommends: libqt5opengl5-dev (= 5.15.2+dfsg-9+deb11u1)
 Suggests: default-libmysqlclient-dev, firebird-dev, libpq-dev, libsqlite3-dev, unixodbc-dev
 Conflicts: qtbase5-gles-dev
 Breaks: qt5-default (<< 5.15.1+dfsg-2~), qt5-qmake (<< 5.11.3+dfsg-3~), qtbase5-dev-tools (<< 5.12.5+dfsg-3~), qtbase5-private-dev (<< 5.11.3+dfsg-5~)

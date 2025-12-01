@@ -1,36 +1,12 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "ohos/adapter/drag_drop/drag_drop_ohos_adapter.h"
 
 #include "ohos/adapter/aki_hook/aki_hook.h"
 #include "ohos/adapter/common/logging.h"
+#include "ohos/adapter/drag_drop/drag_drop_common.h"
 #include "ohos/adapter/file_manager/file_manager_adapter.h"
 #include "ohos/adapter/xcomponent/xcomponent_manager.h"
 
@@ -40,7 +16,7 @@ namespace ohos {
 namespace adapter {
 
 namespace {
-const int IMAGE_PIXEL_MAP = 4;
+constexpr int kImagePixelMap = 4;
 }  // namespace
 
 DragDropOhosAdapter::DragDropOhosAdapter() {}
@@ -49,50 +25,67 @@ DragDropOhosAdapter& DragDropOhosAdapter::GetInstance() {
   return adapter;
 }
 
-void DragDropOhosAdapter::ExecuteDrag(std::shared_ptr<OhosStartDragParam> drag_param,
-                                      const std::string& window_id) {
-  if (auto func = ohos::adapter::GetJSFunction("DragDropAdapter.StartDrag")) {
-    int pixelMapWidth = drag_param->pixelMapWidth;
-    int pixelMapHeight = drag_param->pixelMapHeight;
-    aki::ArrayBuffer pixel_buffer(
-        (uint8_t*)drag_param->pixelMapBuffer.get(),
-        pixelMapWidth * pixelMapHeight *
-            IMAGE_PIXEL_MAP);
-    aki::ArrayBuffer bookmark_buffer(drag_param->basicData.bookmarkData.data(),
-                                     drag_param->basicData.bookmarkData.size());
-    aki::ArrayBuffer web_custom_buffer(drag_param->basicData.webCustomData.data(),
-                                       drag_param->basicData.webCustomData.size());
-    OhosDragParamToJs drag_param_to_js;
-    drag_param_to_js.text = drag_param->basicData.text;
-    drag_param_to_js.url = drag_param->basicData.url;
-    drag_param_to_js.urlTitle = drag_param->basicData.urlTitle;
-    drag_param_to_js.html = drag_param->basicData.html;
-    drag_param_to_js.webImageFilePath = drag_param->webImageFilePath;
-    drag_param_to_js.bookmarkBuffer = std::move(bookmark_buffer);
-    drag_param_to_js.webCustomBuffer = std::move(web_custom_buffer);
-    drag_param_to_js.pixelMapBuffer = std::move(pixel_buffer);
-    drag_param_to_js.pixelMapWidth = pixelMapWidth;
-    drag_param_to_js.pixelMapHeight = pixelMapHeight;
-    drag_param_to_js.pixelMapTouchX = drag_param->pixelMapTouchX;
-    drag_param_to_js.pixelMapTouchY = drag_param->pixelMapTouchY;
-    drag_param_to_js.windowId = window_id;
-    func->Invoke<void>(drag_param_to_js);
+bool DragDropOhosAdapter::ExecuteDrag(
+    std::shared_ptr<OhosStartDragParam> drag_param,
+    const std::string& window_id) {
+  auto func = ohos::adapter::GetJSFunction("DragDropAdapter.StartDrag");
+  if (func == nullptr) {
+    LOGE("[OhosDrag]ExecuteDrag fail, func is null");
+    return false;
   }
+  int pixelmap_width = drag_param->pixelmap_width;
+  int pixelmap_height = drag_param->pixelmap_height;
+  aki::ArrayBuffer pixel_buffer(
+      (uint8_t*)drag_param->pixelmap_buffer.get(),
+      pixelmap_width * pixelmap_height * kImagePixelMap);
+  aki::ArrayBuffer bookmark_buffer(drag_param->basic_data.bookmark_data.data(),
+                                   drag_param->basic_data.bookmark_data.size());
+  aki::ArrayBuffer web_custom_buffer(
+      drag_param->basic_data.web_custom_data.data(),
+      drag_param->basic_data.web_custom_data.size());
+  OhosDragParamToJs drag_param_to_js;
+  drag_param_to_js.text = drag_param->basic_data.text;
+  drag_param_to_js.url = drag_param->basic_data.url;
+  drag_param_to_js.url_title = drag_param->basic_data.url_title;
+  drag_param_to_js.html = drag_param->basic_data.html;
+  drag_param_to_js.web_image_file_path = drag_param->web_image_file_path;
+  drag_param_to_js.bookmark_buffer = std::move(bookmark_buffer);
+  drag_param_to_js.web_custom_buffer = std::move(web_custom_buffer);
+  drag_param_to_js.pixelmap_buffer = std::move(pixel_buffer);
+  drag_param_to_js.pixelmap_width = pixelmap_width;
+  drag_param_to_js.pixelmap_height = pixelmap_height;
+  drag_param_to_js.pixelmap_touch_x = drag_param->pixelmap_touch_x;
+  drag_param_to_js.pixelmap_touch_y = drag_param->pixelmap_touch_y;
+  drag_param_to_js.window_id = window_id;
+
+  auto promise = std::make_shared<std::promise<bool>>();
+  auto future = promise->get_future();
+  std::function<void(bool)> callback = [promise](bool result) -> void {
+    promise->set_value(result);
+  };
+  func->Invoke<void>(drag_param_to_js, callback);
+  auto status = future.wait_for(std::chrono::seconds(1));
+  if (status == std::future_status::timeout) {
+    LOGE("[OhosDrag]ExecuteDrag Wait timeout");
+    return false;
+  }
+  bool result = future.get();
+  return result;
 }
 
 void HandleDropData(const aki::Value drag_info_value,
                     const std::vector<std::string>& file_paths,
                     OhosDropData& drop_data) {
-  drop_data.basicData.text = drag_info_value["text"].As<std::string>();
-  drop_data.basicData.url = drag_info_value["url"].As<std::string>();
-  drop_data.basicData.urlTitle = drag_info_value["urlTitle"].As<std::string>();
-  drop_data.basicData.html = drag_info_value["html"].As<std::string>();
-  drop_data.filePaths = file_paths;
-  drop_data.basicData.bookmarkData = std::vector<uint8_t>(
+  drop_data.basic_data.text = drag_info_value["text"].As<std::string>();
+  drop_data.basic_data.url = drag_info_value["url"].As<std::string>();
+  drop_data.basic_data.url_title = drag_info_value["urlTitle"].As<std::string>();
+  drop_data.basic_data.html = drag_info_value["html"].As<std::string>();
+  drop_data.file_paths = file_paths;
+  drop_data.basic_data.bookmark_data = std::vector<uint8_t>(
       drag_info_value["bookmarkBuffer"].As<aki::ArrayBuffer>().GetData(),
       drag_info_value["bookmarkBuffer"].As<aki::ArrayBuffer>().GetData() +
           drag_info_value["bookmarkBuffer"].As<aki::ArrayBuffer>().GetLength());
-  drop_data.basicData.webCustomData = std::vector<uint8_t>(
+  drop_data.basic_data.web_custom_data = std::vector<uint8_t>(
       drag_info_value["webCustomBuffer"].As<aki::ArrayBuffer>().GetData(),
       drag_info_value["webCustomBuffer"].As<aki::ArrayBuffer>().GetData() +
           drag_info_value["webCustomBuffer"].As<aki::ArrayBuffer>().GetLength());
@@ -186,17 +179,17 @@ JSBIND_CLASS(OhosDragParamToJs) {
   JSBIND_CONSTRUCTOR<>();
   JSBIND_PROPERTY(text);
   JSBIND_PROPERTY(url);
-  JSBIND_PROPERTY(urlTitle);
+  JSBIND_PROPERTY(url_title);
   JSBIND_PROPERTY(html);
-  JSBIND_PROPERTY(webImageFilePath);
-  JSBIND_PROPERTY(bookmarkBuffer);
-  JSBIND_PROPERTY(webCustomBuffer);
-  JSBIND_PROPERTY(pixelMapBuffer);
-  JSBIND_PROPERTY(pixelMapWidth);
-  JSBIND_PROPERTY(pixelMapHeight);
-  JSBIND_PROPERTY(pixelMapTouchX);
-  JSBIND_PROPERTY(pixelMapTouchY);
-  JSBIND_PROPERTY(windowId);
+  JSBIND_PROPERTY(web_image_file_path);
+  JSBIND_PROPERTY(bookmark_buffer);
+  JSBIND_PROPERTY(web_custom_buffer);
+  JSBIND_PROPERTY(pixelmap_buffer);
+  JSBIND_PROPERTY(pixelmap_width);
+  JSBIND_PROPERTY(pixelmap_height);
+  JSBIND_PROPERTY(pixelmap_touch_x);
+  JSBIND_PROPERTY(pixelmap_touch_y);
+  JSBIND_PROPERTY(window_id);
 }
 
 JSBIND_GLOBAL() {

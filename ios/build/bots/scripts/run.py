@@ -7,15 +7,16 @@
 
 Sample usage:
   ./run.py \
-  -a src/xcodebuild/Release-iphoneos/base_unittests.app \
+  -a /path/to/Release-iphoneos/base_unittests.app \
   -o /tmp/out \
-  -p iPhone 5s \
+  -p "iPhone 5s" \
   -v 9.3 \
-  -b 9b46
+  -b 9b46 \
+  -i /path/to/Release-iphoneos/iossim
 
-  Installs base_unittests.app in an iPhone 5s simulator running iOS 9.3 under
-  Xcode build version 9b46, runs it, and captures all test data in /tmp/out.
-  """
+Installs base_unittests.app in an iPhone 5s simulator running iOS 9.3 under
+Xcode build version 9b46, runs it, and captures all test data in /tmp/out.
+"""
 
 import argparse
 import json
@@ -108,9 +109,16 @@ class Runner():
     is_legacy_xcode = True
     self.parse_args(args)
 
+    # If xcode already exists in /Applications, then use that instead of
+    # trying to cache another xcode in the work directory
+    if xcode.check_xcode_exists_in_apps(self.args.xcode_build_version.lower()):
+      self.args.xcode_path = ("/Applications/"
+                              f"xcode_{self.args.xcode_build_version.lower()}"
+                              ".app")
+
     try:
-      with measures.time_consumption(
-          'mac_toolchain', 'Download and Install', 'Xcode and Runtime'):
+      with measures.time_consumption('mac_toolchain', 'Download and Install',
+                                     'Xcode and Runtime'):
         install_success, is_legacy_xcode = xcode.install_xcode(
             self.args.mac_toolchain_cmd, self.args.xcode_build_version,
             self.args.xcode_path, self.args.runtime_cache_prefix,
@@ -242,6 +250,10 @@ class Runner():
       # on exception to distinguish between a test failure, and a failure
       # to launch the test at all.
       exception_recorder.register(e)
+      if isinstance(e, test_runner_errors.XcodeInstallFailedError
+                   ) and not xcode.check_xcode_exists_in_apps(
+                       self.args.xcode_build_version.lower()):
+        self.should_delete_xcode_cache = True
       return 2
     finally:
       if tr:
@@ -272,7 +284,8 @@ class Runner():
       with open(output_json_path, 'w') as f:
         json.dump(test_results, f)
 
-      if self.should_delete_xcode_cache:
+      if self.should_delete_xcode_cache and os.path.exists(
+          self.args.xcode_path):
         shutil.rmtree(self.args.xcode_path)
 
       test_runner.defaults_delete('com.apple.CoreSimulator',

@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2023 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include <native_window/external_window.h>
 
@@ -37,13 +12,14 @@
 #include "ohos/adapter/window/app_window_adapter.h"
 #include "ohos/adapter/xcomponent/adapter/window_adapter.h"
 #include "ui/display/screen.h"
+#include "ui/display/screen_ohos.h"
 #include "ui/gfx/geometry/transform.h"
 #include "ui/ozone/platform/ohos/common/ohos_util.h"
 #include "ui/ozone/platform/ohos/host/ohos_window.h"
 
 namespace ui {
 
-OhosWindowManager::OhosWindowManager() {
+OhosWindowManager::OhosWindowManager() : PlatformWindowManager() {
   WindowAdapter::GetInstance().RegistWindowStatus(this);
 }
 
@@ -52,16 +28,16 @@ OhosWindowManager::~OhosWindowManager() {
 }
 
 void OhosWindowManager::OnWindowAdd(const WindowInfo& info) {
-  auto ohosWindow = windows_.Lookup(info.widgetId);
-  if (ohosWindow != nullptr) {
-    ohosWindow->OnSurfaceCreated();
+  auto ohos_window = windows_.Lookup(info.widget_id);
+  if (ohos_window != nullptr) {
+    ohos_window->OnSurfaceCreated();
   }
 }
 
 void OhosWindowManager::OnWindowRemove(const WindowInfo& info) {
-  auto ohosWindow = windows_.Lookup(info.widgetId);
-  if (ohosWindow != nullptr) {
-    ohosWindow->OnSurfaceDestoryed();
+  auto ohos_window = windows_.Lookup(info.widget_id);
+  if (ohos_window != nullptr) {
+    ohos_window->OnSurfaceDestoryed();
   }
 }
 
@@ -71,6 +47,13 @@ void OhosWindowManager::AddObserver(OhosWindowObserver* observer) {
 
 void OhosWindowManager::RemoveObserver(OhosWindowObserver* observer) {
   observers_.RemoveObserver(observer);
+}
+
+void OhosWindowManager::PrepareCloseWindow(gfx::AcceleratedWidget widget,
+                                           OhosWindow* window) {
+  for (OhosWindowObserver& observer : observers_) {
+    observer.OnWindowCloseEvent(window);
+  }
 }
 
 int32_t OhosWindowManager::AddWindow(gfx::AcceleratedWidget widget,
@@ -152,16 +135,13 @@ gfx::AcceleratedWidget OhosWindowManager::GetWidgetAtScreenPointWithIgnore(
     const int32_t display_id) {
   if (ohos::adapter::device_info::DeviceInfo::SdkApi() >=
       ohos::adapter::device_info::SDK_VERSION_14) {
-    float device_scale_factor =
-        display::Screen::GetScreen()->GetPrimaryDisplay().device_scale_factor();
     gfx::PointF point_f(point);
-    gfx::Transform trans;
-    trans.PostScale(device_scale_factor, device_scale_factor);
-    gfx::PointF transformed_point = trans.MapPoint(point_f);
+    gfx::PointF point_pixel =
+        display::ohos::ScreenOhos::ConvertDipToPixel(display_id, point_f);
 
     PointCoordinate coordinate;
-    coordinate.x = transformed_point.x();
-    coordinate.y = transformed_point.y();
+    coordinate.x = point_pixel.x();
+    coordinate.y = point_pixel.y();
     coordinate.displayId = display_id;
 
     std::vector<std::string> window_ids =
@@ -224,15 +204,15 @@ void OhosWindowManager::SetPointerFocusedWindow(
 }
 
 bool OhosWindowManager::IsWindowAtLast() {
-  int topWindowCount = 0;
+  int top_window_count = 0;
   for (base::IDMap<OhosWindow*>::iterator iter(&windows_);
        !iter.IsAtEnd(); iter.Advance()) {
     OhosWindow* window = iter.GetCurrentValue();
     if (window->AsOhosToplevelWindow()) {
-      topWindowCount++;
+      top_window_count++;
     }
   }
-  return topWindowCount == 1;
+  return top_window_count == 1;
 }
 
 }  // namespace ui

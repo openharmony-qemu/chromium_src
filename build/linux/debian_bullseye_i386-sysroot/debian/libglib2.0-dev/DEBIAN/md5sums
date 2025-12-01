@@ -239,7 +239,7 @@ a60f5a49a26b4b5a4b8df0b69e24c057  usr/include/glib-2.0/glib/gunicode.h
 6153030e8cbc27c8f81e453c7d1fe9de  usr/include/glib-2.0/glib/guri.h
 14d3b05acf526a2d3e785d93858750fe  usr/include/glib-2.0/glib/gutils.h
 a5acc55edf2541259eecfe014ff02fcf  usr/include/glib-2.0/glib/guuid.h
-496c1dee4b5b236d6a8ea41b520147df  usr/include/glib-2.0/glib/gvariant.h
+5f63f9d838111349622521e4cabffaec  usr/include/glib-2.0/glib/gvariant.h
 95729ff744045876f597206f84962eb3  usr/include/glib-2.0/glib/gvarianttype.h
 d99f400b53093c07544bc457c9229144  usr/include/glib-2.0/glib/gversion.h
 9d955fec5406b8c7671920a02cd1ccd5  usr/include/glib-2.0/glib/gversionmacros.h
@@ -267,8 +267,8 @@ c75f53a817ad37cafaf9ba9550073426  usr/include/glib-2.0/gobject/gvaluearray.h
 d0bea8e7b23a4b9c308a88123aeb585f  usr/include/glib-2.0/gobject/gvaluecollector.h
 6ede69213119a520f6ab817a805b11a5  usr/include/glib-2.0/gobject/gvaluetypes.h
 be62fc479fe55cacc1ea57dc18e9a60e  usr/lib/i386-linux-gnu/glib-2.0/include/glibconfig.h
-5b0881cdd1906ba032037cbe8c723b2c  usr/lib/i386-linux-gnu/libgio-2.0.a
-a97c3cda799df6a14789b0e30e670eb4  usr/lib/i386-linux-gnu/libglib-2.0.a
+0643cd02bb8c868f44cd00e8e374f01a  usr/lib/i386-linux-gnu/libgio-2.0.a
+8b7eed0c52b08cd89349e4915d0ac9e9  usr/lib/i386-linux-gnu/libglib-2.0.a
 0c289bc97b1cc9836ef1c29807c3382c  usr/lib/i386-linux-gnu/libgmodule-2.0.a
 b3ea9fdd12bc6f139a3717da44f4bb51  usr/lib/i386-linux-gnu/libgobject-2.0.a
 995ec2408e2b2075bda99dc1359d53ee  usr/lib/i386-linux-gnu/libgthread-2.0.a
@@ -281,7 +281,7 @@ aa25fb326e43a5763056f29113080f18  usr/lib/i386-linux-gnu/pkgconfig/gmodule-no-ex
 883e33fc205d69216e5df08d7e37e8ad  usr/lib/i386-linux-gnu/pkgconfig/gobject-2.0.pc
 f99517a27af037f5343e2002116515c4  usr/lib/i386-linux-gnu/pkgconfig/gthread-2.0.pc
 f1f91cf6a8604edd32c9f9a069fbbc50  usr/share/doc/libglib2.0-dev/README.Debian
-2c9f56b370fa1aef9e4e0fb3a3144fb9  usr/share/doc/libglib2.0-dev/changelog.Debian.gz
+210d71760af285963807276fac0943f9  usr/share/doc/libglib2.0-dev/changelog.Debian.gz
 79d63f0117a1096f0ec95d7a506bf045  usr/share/doc/libglib2.0-dev/copyright
 385628b75f5126d509b3f2abbba4535c  usr/share/gdb/auto-load/usr/lib/i386-linux-gnu/libglib-2.0.so.0.6600.8-gdb.py
 9b26af3316f1502859a04b3dbd3db40d  usr/share/gdb/auto-load/usr/lib/i386-linux-gnu/libgobject-2.0.so.0.6600.8-gdb.py

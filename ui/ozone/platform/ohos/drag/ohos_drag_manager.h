@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #ifndef UI_OZONE_PLATFORM_OHOS_DRAG_OHOS_DRAG_MANAGER_H_
 #define UI_OZONE_PLATFORM_OHOS_DRAG_OHOS_DRAG_MANAGER_H_
@@ -40,6 +15,7 @@
 #include "ui/base/dragdrop/os_exchange_data_provider.h"
 #include "ui/base/dragdrop/os_exchange_data_provider_factory.h"
 #include "ui/base/dragdrop/os_exchange_data_provider_non_backed.h"
+#include "ui/display/display.h"
 #include "ui/events/event_target.h"
 #include "ui/events/platform/platform_event_dispatcher.h"
 #include "ui/gfx/geometry/size.h"
@@ -100,6 +76,7 @@ class OhosDragManager : public WmDragHandler,
   gfx::Size GetSize() override;
   void SetBoundsOnMove(const gfx::Rect& requested_bounds) override;
   void StartWindowMovingWithOffset(const gfx::PointF& offset_point) override;
+  display::Display GetCurrentDisplay() override;
 
   bool notified_enter_ = false;
   raw_ptr<const OSExchangeDataProviderNonBacked> source_provider_ = nullptr;
@@ -124,7 +101,6 @@ class OhosDragManager : public WmDragHandler,
   const raw_ptr<PlatformWindow> platform_window_;
   raw_ptr<OhosDragManager::Delegate> drag_delegate_ = nullptr;
   std::unique_ptr<ui::OSExchangeData> data_;
-  base::WeakPtrFactory<OhosDragManager> weak_factory_{this};
   bool is_drag_source_ = false;
   base::OnceClosure quit_closure_;
   gfx::PointF last_point_;
@@ -144,6 +120,8 @@ class OhosDragManager : public WmDragHandler,
                            std::shared_ptr<OhosStartDragParam> drag_param);
   void HandlePixelMapData(const OSExchangeData& data,
                           std::shared_ptr<OhosStartDragParam> drag_param);
+
+  base::WeakPtrFactory<OhosDragManager> weak_factory_{this};
 };
 }  // namespace ui
 

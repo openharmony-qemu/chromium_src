@@ -4,9 +4,11 @@
 
 #include "gpu/ipc/service/image_decode_accelerator_stub.h"
 
+#include <inttypes.h>
 #include <stddef.h>
 #include <stdint.h>
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>
@@ -22,7 +24,6 @@
 #include "base/notreached.h"
 #include "base/numerics/checked_math.h"
 #include "base/numerics/safe_conversions.h"
-#include "base/ranges/algorithm.h"
 #include "base/run_loop.h"
 #include "base/strings/string_util.h"
 #include "base/strings/stringprintf.h"
@@ -77,6 +78,7 @@
 #include "ui/gfx/color_space.h"
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/gpu_memory_buffer.h"
+#include "ui/gfx/native_pixmap_handle.h"
 #include "ui/gl/gl_bindings.h"
 #include "url/gurl.h"
 
@@ -114,8 +116,8 @@ uint64_t GetMemoryDumpByteSize(
     const std::string& entry_name) {
   DCHECK(dump);
   auto entry_it =
-      base::ranges::find(dump->entries(), entry_name,
-                         &base::trace_event::MemoryAllocatorDump::Entry::name);
+      std::ranges::find(dump->entries(), entry_name,
+                        &base::trace_event::MemoryAllocatorDump::Entry::name);
   if (entry_it != dump->entries().cend()) {
     EXPECT_EQ(std::string(base::trace_event::MemoryAllocatorDump::kUnitsBytes),
               entry_it->units);
@@ -177,6 +179,7 @@ class TestSharedImageBackingFactory : public SharedImageBackingFactory {
       SkAlphaType alpha_type,
       SharedImageUsageSet usage,
       std::string debug_label,
+      bool is_thread_safe,
       gfx::GpuMemoryBufferHandle handle) override {
     auto test_image_backing = std::make_unique<TestImageBacking>(
         mailbox, format, size, color_space, surface_origin, alpha_type, usage,
@@ -233,13 +236,15 @@ class MockImageDecodeAcceleratorWorker : public ImageDecodeAcceleratorWorker {
       // the SharedImage backing in these tests, the only requirement is that
       // the NativePixmapHandle has the right number of planes.
       auto decode_result = std::make_unique<DecodeResult>();
-      decode_result->handle.type = gfx::GpuMemoryBufferType::NATIVE_PIXMAP;
+      gfx::NativePixmapHandle native_pixmap_handle;
       for (size_t plane = 0; plane < gfx::NumberOfPlanesForLinearBufferFormat(
                                          format_for_decodes_);
            plane++) {
-        decode_result->handle.native_pixmap_handle.planes.emplace_back(
+        native_pixmap_handle.planes.emplace_back(
             0 /* stride */, 0 /* offset */, 0 /* size */, base::ScopedFD());
       }
+      decode_result->handle =
+          gfx::GpuMemoryBufferHandle(std::move(native_pixmap_handle));
       decode_result->visible_size = next_decode.output_size;
       decode_result->buffer_format = format_for_decodes_;
       decode_result->buffer_byte_size = kDecodedBufferByteSize;

@@ -19,6 +19,7 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 #include "url/url_util.h"
+#include "third_party/wiseplay/cdm/buildflags.h"
 
 namespace base {
 class RefCountedMemory;
@@ -40,6 +41,9 @@ struct GPUInfo;
 namespace media {
 struct CdmHostFilePath;
 class MediaDrmBridgeClient;
+#if BUILDFLAG(ENABLE_WISEPLAY)
+class OhosMediaDrmBridgeClient;
+#endif
 }
 
 namespace mojo {
@@ -102,9 +106,6 @@ class CONTENT_EXPORT ContentClient {
 
   // Gives the embedder a chance to register its own plugins.
   virtual void AddPlugins(std::vector<content::ContentPluginInfo>* plugins) {}
-
-  // Returns a list of origins that are allowed to use PDF internal plugin.
-  virtual std::vector<url::Origin> GetPdfInternalPluginAllowedOrigins();
 
   // Gives the embedder a chance to register the Content Decryption Modules
   // (CDM) it supports, as well as the CDM host file paths to verify CDM host.
@@ -193,6 +194,17 @@ class CONTENT_EXPORT ContentClient {
   // supported by the embedder.
   virtual blink::OriginTrialPolicy* GetOriginTrialPolicy();
 
+  // Cross-origin subframes are generally not allowed to display a file picker
+  // for security reasons. This method allows content embedders to specify
+  // whether a cross-origin subframe of a particular origin should be allowed to
+  // display the file picker.
+  //
+  // For example, Chrome's built-in PDF viewer may be hosted in a cross-origin
+  // subframe. To allow this viewer to function correctly, Chrome uses this
+  // method to grant it access to the file picker.
+  virtual bool IsFilePickerAllowedForCrossOriginSubframe(
+      const url::Origin& origin);
+
 #if BUILDFLAG(IS_ANDROID)
   // Returns true for clients like Android WebView that uses synchronous
   // compositor. Note setting this to true will permit synchronous IPCs from
@@ -202,6 +214,12 @@ class CONTENT_EXPORT ContentClient {
   // Returns the MediaDrmBridgeClient to be used by media code on Android.
   virtual media::MediaDrmBridgeClient* GetMediaDrmBridgeClient();
 #endif  // BUILDFLAG(IS_ANDROID)
+
+#if BUILDFLAG(ENABLE_WISEPLAY)
+  // Returns the OhosMediaDrmBridgeClient to be used by media code on Huawei Devices
+  // that support Wiseplay.
+  virtual media::OhosMediaDrmBridgeClient* GetOhosMediaDrmBridgeClient();
+#endif  // BUILDFLAG(IS_OHOS)
 
   // Allows the embedder to handle incoming interface binding requests from
   // the browser process to any type of child process. This is called once

@@ -107,11 +107,11 @@ public class RenderTestRule extends TestWatcher {
     /** Prefix on the render test images that describes light/dark mode. */
     private String mNightModePrefix;
 
-    private String mSkiaGoldCorpus;
-    private int mSkiaGoldRevision;
-    private String mSkiaGoldRevisionDescription;
-    private boolean mFailOnUnsupportedConfigs;
-    private String mBugComponent;
+    private final String mSkiaGoldCorpus;
+    private final int mSkiaGoldRevision;
+    private final String mSkiaGoldRevisionDescription;
+    private final boolean mFailOnUnsupportedConfigs;
+    private final String mBugComponent;
 
     @StringDef({
         Corpus.ANDROID_RENDER_TESTS_PUBLIC,
@@ -140,6 +140,7 @@ public class RenderTestRule extends TestWatcher {
         Component.UI_BROWSER_AUTOFILL,
         Component.UI_BROWSER_BOOKMARKS,
         Component.UI_BROWSER_BUBBLES_PAGE_INFO,
+        Component.UI_BROWSER_CHROME_TABS_CHROME_TAB_GROUPS_SHARED_TAB_GROUPS,
         Component.UI_BROWSER_CONTENT_SUGGESTIONS,
         Component.UI_BROWSER_CONTENT_SUGGESTIONS_FEED,
         Component.UI_BROWSER_CONTENT_SUGGESTIONS_HISTORY,
@@ -164,6 +165,7 @@ public class RenderTestRule extends TestWatcher {
         Component.UI_BROWSER_NEW_TAB_PAGE,
         Component.UI_BROWSER_OMNIBOX,
         Component.UI_BROWSER_PASSWORDS,
+        Component.UI_BROWSER_PRIVACY_SANDBOX,
         Component.UI_BROWSER_SEARCH_VOICE,
         Component.UI_BROWSER_SHARING,
         Component.UI_BROWSER_SHOPPING,
@@ -173,7 +175,7 @@ public class RenderTestRule extends TestWatcher {
         Component.UI_BROWSER_TOOLBAR,
         Component.UI_BROWSER_THUMBNAIL,
         Component.UI_BROWSER_WEB_APP_INSTALLS,
-        Component.UI_SETTINGS_PRIVACY
+        Component.UI_SETTINGS_PRIVACY,
     })
     @Retention(RetentionPolicy.SOURCE)
     public @interface Component {
@@ -189,6 +191,8 @@ public class RenderTestRule extends TestWatcher {
         String UI_BROWSER_AUTOFILL = "UI>Browser>Autofill";
         String UI_BROWSER_BOOKMARKS = "UI>Browser>Bookmarks";
         String UI_BROWSER_BUBBLES_PAGE_INFO = "UI>Browser>Bubbles>PageInfo";
+        String UI_BROWSER_CHROME_TABS_CHROME_TAB_GROUPS_SHARED_TAB_GROUPS =
+                "UI>Browser>ChromeTabs>ChromeTabGroups>SharedTabGroups";
         String UI_BROWSER_CONTENT_SUGGESTIONS = "UI>Browser>ContentSuggestions";
         String UI_BROWSER_CONTENT_SUGGESTIONS_FEED = "UI>Browser>ContentSuggestions>Feed";
         String UI_BROWSER_CONTENT_SUGGESTIONS_HISTORY = "UI>Browser>ContentSuggestions>History";
@@ -213,6 +217,7 @@ public class RenderTestRule extends TestWatcher {
         String UI_BROWSER_NEW_TAB_PAGE = "UI>Browser>NewTabPage";
         String UI_BROWSER_OMNIBOX = "UI>Browser>Omnibox";
         String UI_BROWSER_PASSWORDS = "UI>Browser>Passwords";
+        String UI_BROWSER_PRIVACY_SANDBOX = "UI>Browser>Privacy Sandbox";
         String UI_BROWSER_SEARCH_VOICE = "UI>Browser>Search>Voice";
         String UI_BROWSER_SHARING = "UI>Browser>Sharing";
         String UI_BROWSER_SHOPPING = "UI>Browser>Shopping";
@@ -416,13 +421,6 @@ public class RenderTestRule extends TestWatcher {
         }
 
         return String.format("%s.%s.rev_%s", testClass, desc, mSkiaGoldRevision);
-    }
-
-    /**
-     * Returns a string encoding the device model and sdk. It is used to identify device goldens.
-     */
-    private static String modelSdkIdentifier() {
-        return Build.MODEL.replace(' ', '_') + "-" + Build.VERSION.SDK_INT;
     }
 
     /** Saves a the given |bitmap| to the |file|. */

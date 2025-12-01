@@ -6,8 +6,11 @@ package org.chromium.components.tab_group_sync;
 
 import org.jni_zero.CalledByNative;
 import org.jni_zero.JNINamespace;
+import org.jni_zero.NativeMethods;
 
 import org.chromium.base.Token;
+import org.chromium.build.annotations.NullMarked;
+import org.chromium.build.annotations.Nullable;
 import org.chromium.url.GURL;
 
 /**
@@ -15,7 +18,28 @@ import org.chromium.url.GURL;
  * or methods and is meant as a private factory to build {@link SavedTabGroup} instances.
  */
 @JNINamespace("tab_groups")
+@NullMarked
 public class TabGroupSyncConversionsBridge {
+    @CalledByNative
+    private static void toNativeSavedTabGroup(
+            long nativeSavedTabGroup, SavedTabGroup savedTabGroup) {
+        // Set visuals on the native group based on the Java group.
+        TabGroupSyncConversionsBridgeJni.get()
+                .updateVisualData(
+                        nativeSavedTabGroup,
+                        savedTabGroup.localId,
+                        savedTabGroup.title,
+                        savedTabGroup.color);
+
+        // Add tabs to the native group.
+        for (int i = 0; i < savedTabGroup.savedTabs.size(); i++) {
+            SavedTabGroupTab savedTab = savedTabGroup.savedTabs.get(i);
+            assert savedTab.localId != null
+                    : "Java-to-native conversion expects a non-null local tab ID";
+            TabGroupSyncConversionsBridgeJni.get()
+                    .addTab(nativeSavedTabGroup, savedTab.localId, savedTab.title, savedTab.url);
+        }
+    }
 
     @CalledByNative
     private static SavedTabGroup createGroup(
@@ -27,7 +51,8 @@ public class TabGroupSyncConversionsBridge {
             long updateTimeMs,
             String creatorCacheGuid,
             String lastUpdaterCacheGuid,
-            String collaborationId) {
+            String collaborationId,
+            long archivalTimeMs) {
         SavedTabGroup group = new SavedTabGroup();
         group.syncId = syncId;
         group.localId = localId;
@@ -39,6 +64,7 @@ public class TabGroupSyncConversionsBridge {
         group.creatorCacheGuid = creatorCacheGuid;
         group.lastUpdaterCacheGuid = lastUpdaterCacheGuid;
         group.collaborationId = collaborationId;
+        group.archivalTimeMs = archivalTimeMs == -1 ? null : Long.valueOf(archivalTimeMs);
         return group;
     }
 
@@ -82,5 +108,16 @@ public class TabGroupSyncConversionsBridge {
     private static Token getNativeTabGroupId(LocalTabGroupId tabGroupId) {
         assert tabGroupId != null;
         return tabGroupId.tabGroupId;
+    }
+
+    @NativeMethods
+    interface Natives {
+        void updateVisualData(
+                long groupPtr,
+                @Nullable LocalTabGroupId localId,
+                @Nullable String title,
+                int color);
+
+        void addTab(long groupPtr, int tabId, @Nullable String title, @Nullable GURL url);
     }
 }

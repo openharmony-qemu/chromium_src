@@ -27,6 +27,7 @@
 #include "android_webview/browser/ip_protection/aw_ip_protection_core_host.h"
 #include "android_webview/browser/metrics/aw_metrics_service_client.h"
 #include "android_webview/browser/network_service/net_helpers.h"
+#include "android_webview/browser/prefetch/aw_preloading_utils.h"
 #include "android_webview/browser/safe_browsing/aw_safe_browsing_allowlist_manager.h"
 #include "android_webview/common/aw_features.h"
 #include "android_webview/common/aw_switches.h"
@@ -43,6 +44,7 @@
 #include "base/files/file_util.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
+#include "base/metrics/histogram_functions.h"
 #include "base/path_service.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/task/thread_pool.h"
@@ -53,7 +55,6 @@
 #include "components/keyed_service/core/simple_key_map.h"
 #include "components/origin_trials/browser/leveldb_persistence_provider.h"
 #include "components/origin_trials/browser/origin_trials.h"
-#include "components/origin_trials/common/features.h"
 #include "components/policy/core/browser/browser_policy_connector_base.h"
 #include "components/policy/core/browser/configuration_policy_pref_store.h"
 #include "components/policy/core/browser/url_blocklist_manager.h"
@@ -73,13 +74,13 @@
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/download_request_utils.h"
-#include "content/public/browser/prefetch_browser_callbacks.h"
+#include "content/public/browser/render_process_host.h"
+#include "content/public/browser/spare_render_process_host_manager.h"
 #include "content/public/browser/ssl_host_state_delegate.h"
 #include "content/public/browser/storage_partition.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/browser/zoom_level_delegate.h"
 #include "media/mojo/buildflags.h"
-#include "net/base/features.h"
 #include "net/http/http_no_vary_search_data.h"
 #include "net/http/http_request_headers.h"
 #include "net/http/http_util.h"
@@ -92,8 +93,6 @@
 
 // Must come after all headers that specialize FromJniType() / ToJniType().
 #include "android_webview/browser_jni_headers/AwBrowserContext_jni.h"
-#include "android_webview/browser_jni_headers/AwNoVarySearchData_jni.h"
-#include "android_webview/browser_jni_headers/AwPrefetchParameters_jni.h"
 #include "url/gurl.h"
 
 using base::FilePath;
@@ -164,7 +163,6 @@ void MigrateProfileData(base::FilePath cache_path,
   migrate_context_storage_data("QuotaManager-journal");
   migrate_context_storage_data("Service Worker");
   migrate_context_storage_data("VideoDecodeStats");
-  migrate_context_storage_data("databases");
   migrate_context_storage_data("shared_proto_db");
   migrate_context_storage_data("webrtc_event_logs");
 }
@@ -195,7 +193,7 @@ AwBrowserContext::AwBrowserContext(std::string name,
       service_worker_xrw_allowlist_matcher_(
           base::MakeRefCounted<AwContentsOriginMatcher>()) {
   DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
-  TRACE_EVENT0("startup", "AwBrowserContext::AwBrowserContext");
+  TRACE_EVENT("startup", "AwBrowserContext::AwBrowserContext", "name", name_);
 
   profile_metrics::SetBrowserProfileType(
       this, profile_metrics::BrowserProfileType::kRegular);
@@ -218,6 +216,16 @@ AwBrowserContext::AwBrowserContext(std::string name,
       std::make_unique<AwFormDatabaseService>(context_storage_path_);
 
   EnsureResourceContextInitialized();
+  prefetch_manager_ = std::make_unique<AwPrefetchManager>(this);
+
+  // This should be initialized as soon as possible when creating the profile,
+  // in order to load the database from disk.
+  origin_trials_controller_delegate_ =
+      std::make_unique<origin_trials::OriginTrials>(
+          std::make_unique<origin_trials::LevelDbPersistenceProvider>(
+              GetPath(),
+              GetDefaultStoragePartition()->GetProtoDatabaseProvider()),
+          std::make_unique<blink::TrialTokenValidator>());
 }
 
 AwBrowserContext::~AwBrowserContext() {
@@ -374,10 +382,6 @@ AwQuotaManagerBridge* AwBrowserContext::GetQuotaManagerBridge() {
   return quota_manager_bridge_.get();
 }
 
-AwFormDatabaseService* AwBrowserContext::GetFormDatabaseService() {
-  return form_database_service_.get();
-}
-
 CookieManager* AwBrowserContext::GetCookieManager() {
   if (IsDefaultBrowserContext()) {
     // For the default context, the CookieManager isn't owned by the context,
@@ -496,17 +500,6 @@ AwBrowserContext::RetrieveInProgressDownloadManager() {
 
 content::OriginTrialsControllerDelegate*
 AwBrowserContext::GetOriginTrialsControllerDelegate() {
-  if (!origin_trials::features::IsPersistentOriginTrialsEnabled())
-    return nullptr;
-
-  if (!origin_trials_controller_delegate_) {
-    origin_trials_controller_delegate_ =
-        std::make_unique<origin_trials::OriginTrials>(
-            std::make_unique<origin_trials::LevelDbPersistenceProvider>(
-                GetPath(),
-                GetDefaultStoragePartition()->GetProtoDatabaseProvider()),
-            std::make_unique<blink::TrialTokenValidator>());
-  }
   return origin_trials_controller_delegate_.get();
 }
 
@@ -514,6 +507,16 @@ std::unique_ptr<content::ZoomLevelDelegate>
 AwBrowserContext::CreateZoomLevelDelegate(
     const base::FilePath& partition_path) {
   return nullptr;
+}
+
+std::string AwBrowserContext::GetExtraHeadersForUrl(const GURL& url) {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  if (!url.is_valid()) {
+    return std::string();
+  }
+  std::map<std::string, std::string>::iterator iter =
+      extra_headers_.find(url.spec());
+  return iter != extra_headers_.end() ? iter->second : std::string();
 }
 
 void AwBrowserContext::RebuildTable(
@@ -547,11 +550,8 @@ void AwBrowserContext::ConfigureNetworkContextParams(
   context_params->user_agent = android_webview::GetUserAgent();
 
   // TODO(ntfschr): set this value to a proper value based on the user's
-  // preferred locales (http://crbug.com/898555). For now, set this to
-  // "en-US,en" instead of "en-us,en", since Android guarantees region codes
-  // will be uppercase.
-  context_params->accept_language =
-      net::HttpUtil::GenerateAcceptLanguageHeader("en-US,en");
+  // preferred locales (http://crbug.com/898555).
+  context_params->accept_language = GetDefaultAcceptLanguageHeader();
 
   // HTTP cache
   context_params->http_cache_enabled = true;
@@ -581,18 +581,14 @@ void AwBrowserContext::ConfigureNetworkContextParams(
   // Allow SHA-1 to be used for locally-installed trust anchors, as WebView
   // should behave like the Android system would.
   context_params->initial_ssl_config->sha1_local_anchors_enabled = true;
-  // Do not enforce the Legacy Symantec PKI policies outlined in
-  // https://security.googleblog.com/2017/09/chromes-plan-to-distrust-symantec.html,
-  // defer to the Android system.
-  context_params->initial_ssl_config->symantec_enforcement_disabled = true;
 
-  // WebView does not currently support Certificate Transparency
-  // (http://crbug.com/921750).
+  // WebView supports Certificate Transparency from Android B via Android's CT
+  // policy. (http://crbug.com/921750).
   context_params->enforce_chrome_ct_policy = false;
 
   context_params->enable_brotli = true;
-  context_params->enable_zstd =
-      base::FeatureList::IsEnabled(net::features::kZstdContentEncoding);
+  context_params->enable_zstd = true;
+  context_params->stale_dns_enabled = enable_stale_dns_;
 
   context_params->check_clear_text_permitted =
       AwContentBrowserClient::get_check_cleartext_permitted();
@@ -607,6 +603,11 @@ void AwBrowserContext::ConfigureNetworkContextParams(
         aw_ipp_core_host->IsIpProtectionEnabled();
   }
 
+  if (base::FeatureList::IsEnabled(features::kWebViewQuicConnectionTimeout)) {
+    context_params->quic_idle_connection_timeout_seconds =
+        features::kWebViewQuicConnectionTimeoutSeconds.Get();
+  }
+
   // Add proxy settings
   AwProxyConfigMonitor::GetInstance()->AddProxyToNetworkContextParams(
       context_params);
@@ -619,16 +620,12 @@ base::android::ScopedJavaLocalRef<jobject> JNI_AwBrowserContext_GetDefaultJava(
   return default_context->GetJavaBrowserContext();
 }
 
-base::android::ScopedJavaLocalRef<jstring>
-JNI_AwBrowserContext_GetDefaultContextName(JNIEnv* env) {
-  return base::android::ConvertUTF8ToJavaString(
-      env, AwBrowserContextStore::kDefaultContextName);
+std::string JNI_AwBrowserContext_GetDefaultContextName(JNIEnv* env) {
+  return AwBrowserContextStore::kDefaultContextName;
 }
 
-base::android::ScopedJavaLocalRef<jstring>
-JNI_AwBrowserContext_GetDefaultContextRelativePath(JNIEnv* env) {
-  return base::android::ConvertUTF8ToJavaString(
-      env, AwBrowserContextStore::kDefaultContextPath);
+std::string JNI_AwBrowserContext_GetDefaultContextRelativePath(JNIEnv* env) {
+  return AwBrowserContextStore::kDefaultContextPath;
 }
 
 void AwBrowserContext::ClearPersistentOriginTrialStorageForTesting(
@@ -639,23 +636,14 @@ void AwBrowserContext::ClearPersistentOriginTrialStorageForTesting(
     delegate->ClearPersistedTokens();
 }
 
-jboolean AwBrowserContext::HasFormData(JNIEnv* env) {
-  return GetFormDatabaseService()->HasFormData();
-}
-
-void AwBrowserContext::ClearFormData(JNIEnv* env) {
-  return GetFormDatabaseService()->ClearFormData();
-}
-
 base::android::ScopedJavaLocalRef<jobject>
 AwBrowserContext::GetJavaBrowserContext() {
   if (!obj_) {
     JNIEnv* env = base::android::AttachCurrentThread();
     obj_ = Java_AwBrowserContext_create(
-        env, reinterpret_cast<intptr_t>(this),
-        base::android::ConvertUTF8ToJavaString(env, name_),
-        base::android::ConvertUTF8ToJavaString(env, relative_path_.value()),
-        GetCookieManager()->GetJavaCookieManager(), IsDefaultBrowserContext());
+        env, reinterpret_cast<intptr_t>(this), name_, relative_path_.value(),
+        GetCookieManager()->GetJavaCookieManager(),
+        prefetch_manager_->GetJavaPrefetchManager(), IsDefaultBrowserContext());
   }
   return base::android::ScopedJavaLocalRef<jobject>(obj_);
 }
@@ -682,16 +670,6 @@ void AwBrowserContext::SetExtraHeaders(const GURL& url,
   }
 }
 
-std::string AwBrowserContext::GetExtraHeaders(const GURL& url) {
-  DCHECK_CURRENTLY_ON(BrowserThread::UI);
-  if (!url.is_valid()) {
-    return std::string();
-  }
-  std::map<std::string, std::string>::iterator iter =
-      extra_headers_.find(url.spec());
-  return iter != extra_headers_.end() ? iter->second : std::string();
-}
-
 void AwBrowserContext::SetServiceWorkerIoThreadClient(
     JNIEnv* const env,
     const base::android::JavaParamRef<jobject>& io_thread_client) {
@@ -699,101 +677,28 @@ void AwBrowserContext::SetServiceWorkerIoThreadClient(
       base::android::ScopedJavaGlobalRef<jobject>(io_thread_client);
 }
 
-void AwBrowserContext::StartPrefetchRequest(
-    JNIEnv* env,
-    const std::string& url,
-    const base::android::JavaParamRef<jobject>& prefetch_params,
-    const base::android::JavaParamRef<jobject>& callback,
-    const base::android::JavaParamRef<jobject>& callback_executor) {
+int AwBrowserContext::AllowedPrerenderingCount() const {
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
-
-  GURL pf_url = GURL(url);
-  net::HttpRequestHeaders pf_additional_headers =
-      GetPrefetchAdditionalHeaders(env, prefetch_params);
-  std::optional<net::HttpNoVarySearchData> pf_expected_no_vary_search =
-      GetPrefetchExpectedNoVarySearch(env, prefetch_params);
-  base::android::ScopedJavaGlobalRef<jobject> pf_callback(callback);
-  base::android::ScopedJavaGlobalRef<jobject> pf_callback_executor(
-      callback_executor);
-  content::PrefetchStartCallback pf_start_callback =
-      base::BindOnce(&AwBrowserContext::HandlePrefetchStartCallback,
-                     weak_method_factory_.GetWeakPtr(), std::move(pf_callback),
-                     std::move(pf_callback_executor));
-  StartBrowserPrefetchRequest(
-      pf_url,
-      Java_AwPrefetchParameters_getIsJavascriptEnabled(env, prefetch_params),
-      pf_expected_no_vary_search, pf_additional_headers,
-      std::move(pf_start_callback));
+  return allowed_prerendering_count_;
 }
 
-void AwBrowserContext::HandlePrefetchStartCallback(
-    const base::android::ScopedJavaGlobalRef<jobject> callback,
-    const base::android::ScopedJavaGlobalRef<jobject> callback_executor,
-    const content::PrefetchStartResultCode result_code) {
-  JNIEnv* env = base::android::AttachCurrentThread();
-
-  switch (result_code) {
-    case content::PrefetchStartResultCode::kSuccess:
-      Java_AwBrowserContext_onPrefetchStarted(env, obj_, callback,
-                                              callback_executor);
-      break;
-    case content::PrefetchStartResultCode::kFailed:
-      Java_AwBrowserContext_onPrefetchStartFailed(env, obj_, callback,
-                                                  callback_executor);
-      break;
-  }
+void AwBrowserContext::SetAllowedPrerenderingCount(JNIEnv* const env,
+                                                   int allowed_count) {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  CHECK_GT(allowed_count, 0);
+  allowed_prerendering_count_ =
+      std::min(allowed_count, MAX_ALLOWED_PRERENDERING_COUNT);
 }
 
-net::HttpRequestHeaders AwBrowserContext::GetPrefetchAdditionalHeaders(
-    JNIEnv* env,
-    const base::android::JavaRef<jobject>& prefetch_params) {
-  // TODO (crbug.com/372915075) : Implement tests for adding additional headers.
-  net::HttpRequestHeaders additional_headers = {};
-  if (prefetch_params) {
-    std::map<std::string, std::string> additional_headers_map =
-        Java_AwPrefetchParameters_getAdditionalHeaders(env, prefetch_params);
-
-    for (const auto& header : additional_headers_map) {
-      additional_headers.SetHeader(header.first, header.second);
-    }
-  }
-  return additional_headers;
-}
-
-std::optional<net::HttpNoVarySearchData>
-AwBrowserContext::GetPrefetchExpectedNoVarySearch(
-    JNIEnv* env,
-    const base::android::JavaRef<jobject>& prefetch_params) {
-  // TODO (crbug.com/372915075) : Implement tests for constructing expected no
-  // vary search.
-  std::optional<net::HttpNoVarySearchData> expected_no_vary_search;
-  if (prefetch_params) {
-    base::android::ScopedJavaLocalRef<jobject> no_vary_search_jobj =
-        Java_AwPrefetchParameters_getExpectedNoVarySearch(env, prefetch_params);
-
-    if (no_vary_search_jobj) {
-      const bool vary_on_key_order = static_cast<bool>(
-          Java_AwNoVarySearchData_getVaryOnKeyOrder(env, no_vary_search_jobj));
-      const bool ignore_differences_in_params = static_cast<bool>(
-          Java_AwNoVarySearchData_getIgnoreDifferencesInParameters(
-              env, no_vary_search_jobj));
-
-      if (ignore_differences_in_params) {
-        expected_no_vary_search =
-            net::HttpNoVarySearchData::CreateFromVaryParams(
-                Java_AwNoVarySearchData_getConsideredQueryParameters(
-                    env, no_vary_search_jobj),
-                vary_on_key_order);
-      } else {
-        expected_no_vary_search =
-            net::HttpNoVarySearchData::CreateFromNoVaryParams(
-                Java_AwNoVarySearchData_getIgnoredQueryParameters(
-                    env, no_vary_search_jobj),
-                vary_on_key_order);
-      }
-    }
-  }
-  return expected_no_vary_search;
+void AwBrowserContext::WarmUpSpareRenderer(JNIEnv* const env) {
+  DCHECK_CURRENTLY_ON(BrowserThread::UI);
+  base::TimeTicks start_time = base::TimeTicks::Now();
+  content::RenderProcessHost* rph =
+      content::SpareRenderProcessHostManager::Get().WarmupSpare(this);
+  base::UmaHistogramTimes("Android.WebView.WarmUpSpareRenderer.Duration",
+                          base::TimeTicks::Now() - start_time);
+  base::UmaHistogramBoolean(
+      "Android.WebView.WarmUpSpareRenderer.StartsNewRenderer", rph != nullptr);
 }
 
 std::unique_ptr<AwContentsIoThreadClient>
@@ -846,8 +751,7 @@ void AwBrowserContext::DeleteContext(const base::FilePath& relative_path) {
   CHECK(cache_deleted);
 
   JNIEnv* env = base::android::AttachCurrentThread();
-  Java_AwBrowserContext_deleteSharedPreferences(
-      env, base::android::ConvertUTF8ToJavaString(env, relative_path.value()));
+  Java_AwBrowserContext_deleteSharedPreferences(env, relative_path.value());
 }
 blink::mojom::PermissionStatus AwBrowserContext::GetGeolocationPermission(
     const GURL& origin) const {
@@ -857,10 +761,14 @@ blink::mojom::PermissionStatus AwBrowserContext::GetGeolocationPermission(
     return blink::mojom::PermissionStatus::ASK;
   }
 
-  base::android::ScopedJavaLocalRef<jstring> j_origin(
-      base::android::ConvertUTF8ToJavaString(env, origin.spec()));
   return static_cast<blink::mojom::PermissionStatus>(
-      Java_AwBrowserContext_getGeolocationPermission(env, obj_, j_origin));
+      Java_AwBrowserContext_getGeolocationPermission(env, obj_, origin.spec()));
+}
+
+std::string AwBrowserContext::GetDefaultAcceptLanguageHeader() {
+  // For now, set this to "en-US,en" instead of "en-us,en", since Android
+  // guarantees region codes will be uppercase.
+  return net::HttpUtil::GenerateAcceptLanguageHeader("en-US,en");
 }
 
 mojo::PendingRemote<network::mojom::URLLoaderFactory>

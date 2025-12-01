@@ -32,8 +32,8 @@
 #include "base/notreached.h"
 #include "base/path_service.h"
 #include "base/rand_util.h"
+#include "base/strings/span_printf.h"
 #include "base/strings/string_split.h"
-#include "base/strings/string_util.h"
 #include "base/system/sys_info.h"
 #include "base/threading/platform_thread.h"
 #include "base/time/time.h"
@@ -196,7 +196,7 @@ void SetV8FlagsFormatted(const char* format, ...) {
   char buffer[128];
   va_list args;
   va_start(args, format);
-  int length = base::vsnprintf(buffer, sizeof(buffer), format, args);
+  int length = base::VSpanPrintf(buffer, format, args);
   if (length <= 0 || sizeof(buffer) <= static_cast<unsigned>(length)) {
     PLOG(ERROR) << "Invalid formatted V8 flag: " << format;
     return;
@@ -236,20 +236,20 @@ class V8FeatureVisitor : public base::FeatureVisitor {
     // prefix, so we expect all feature names to start with "V8Flag_". Strip
     // this prefix off to get the corresponding V8 flag name.
     DCHECK(feature_name_view.starts_with(kV8FlagFeaturePrefix));
-    std::string_view flag_name =
-        feature_name_view.substr(kV8FlagFeaturePrefix.size());
+    std::string flag_name(
+        feature_name_view.substr(kV8FlagFeaturePrefix.size()));
 
     switch (override_state) {
       case base::FeatureList::OverrideState::OVERRIDE_USE_DEFAULT:
         return;
 
       case base::FeatureList::OverrideState::OVERRIDE_DISABLE_FEATURE:
-        SetV8FlagsFormatted("--no-%s", flag_name);
+        SetV8FlagsFormatted("--no-%s", flag_name.c_str());
         // Do not set parameters for disabled features.
         break;
 
       case base::FeatureList::OverrideState::OVERRIDE_ENABLE_FEATURE:
-        SetV8FlagsFormatted("--%s", flag_name);
+        SetV8FlagsFormatted("--%s", flag_name.c_str());
         for (const auto& [param_name, param_value] : params) {
           SetV8FlagsFormatted("--%s=%s", param_name.c_str(),
                               param_value.c_str());
@@ -261,8 +261,42 @@ class V8FeatureVisitor : public base::FeatureVisitor {
 
 namespace {
 
+// Sets mandatory V8 flags.
 void SetFlags(IsolateHolder::ScriptMode mode,
               const std::string& js_command_line_flags) {
+
+  if (IsolateHolder::kStrictMode == mode) {
+    SetV8Flags("--use_strict");
+  }
+
+  // Apply any --js-flags explicitly specified by the caller.
+  if (!js_command_line_flags.empty()) {
+    std::vector<std::string_view> flag_list = base::SplitStringPiece(
+        js_command_line_flags, ",", base::TRIM_WHITESPACE,
+        base::SPLIT_WANT_NONEMPTY);
+    for (const auto& flag : flag_list) {
+      v8::V8::SetFlagsFromString(std::string(flag).c_str(), flag.size());
+    }
+  }
+}
+
+// Sets feature flags that are default to enabled.
+//
+// This function must be called *before* SetFeatureFlags is called, so that
+// default-enabled flags may be overridden and disabled.
+//
+// Usually V8 is the source of truth for the default state of feature flags.
+// However, some features must be shipped from the blink side because they add
+// new globals, which requires updating web tests that cannot be skipped (to
+// safeguard against accidentally breaking the web).
+void SetDefaultEnabledFeatureFlags() {
+  SetV8Flags("--js-float16array");
+  SetV8Flags("--js-explicit-resource-management");
+  SetV8Flags("--js-regexp-escape");
+}
+
+// Sets feature controlled V8 flags.
+void SetFeatureFlags() {
   // Chromium features prefixed with "V8Flag_" are forwarded to V8 as V8 flags,
   // with the "V8Flag_" prefix stripped off. For example, an enabled feature
   // "V8Flag_foo_bar" will be passed to V8 as the flag `--foo_bar`. Similarly,
@@ -355,6 +389,10 @@ void SetFlags(IsolateHolder::ScriptMode mode,
     SetV8FlagsFormatted("--memory-reducer-gc-count=%i",
                         features::kV8MemoryReducerGCCount.Get());
   }
+  if (base::FeatureList::IsEnabled(features::kV8PreconfigureOldGen)) {
+    SetV8FlagsFormatted("--preconfigured-old-space-size=%i",
+                        features::kV8PreconfigureOldGenSize.Get());
+  }
   SetV8FlagsIfOverridden(features::kV8IncrementalMarkingStartUserVisible,
                          "--incremental-marking-start-user-visible",
                          "--no-incremental-marking-start-user-visible");
@@ -366,8 +404,6 @@ void SetFlags(IsolateHolder::ScriptMode mode,
     SetV8FlagsFormatted("--scavenger-max-new-space-capacity-mb=%i",
                         features::kV8ScavengerMaxCapacity.Get());
   }
-  SetV8FlagsIfOverridden(features::kV8SeparateGCPhases, "--separate-gc-phases",
-                         "--no-separate-gc-phases");
   SetV8FlagsIfOverridden(features::kV8Sparkplug, "--sparkplug",
                          "--no-sparkplug");
   SetV8FlagsIfOverridden(features::kV8Turbofan, "--turbofan", "--no-turbofan");
@@ -472,10 +508,6 @@ void SetFlags(IsolateHolder::ScriptMode mode,
                          "--intel-jcc-erratum-mitigation",
                          "--no-intel-jcc-erratum-mitigation");
 
-  SetV8FlagsIfOverridden(features::kV8UpdateLimitAfterLoading,
-                         "--update-allocation-limits-after-loading",
-                         "--no-update-allocation-limits-after-loading");
-
   SetV8FlagsIfOverridden(features::kV8UseLibmTrigFunctions,
                          "--use-libm-trig-functions",
                          "--no-use-libm-trig-functions");
@@ -485,28 +517,16 @@ void SetFlags(IsolateHolder::ScriptMode mode,
                          "--no-use-original-message-for-stack-trace");
 
   // JavaScript language features.
-  SetV8FlagsIfOverridden(features::kJavaScriptIteratorHelpers,
-                         "--harmony-iterator-helpers",
-                         "--no-harmony-iterator-helpers");
-  SetV8FlagsIfOverridden(features::kJavaScriptPromiseWithResolvers,
-                         "--js-promise-withresolvers",
-                         "--no-js-promise-withresolvers");
   SetV8FlagsIfOverridden(features::kJavaScriptRegExpModifiers,
                          "--js-regexp-modifiers", "--no-js-regexp-modifiers");
   SetV8FlagsIfOverridden(features::kJavaScriptImportAttributes,
                          "--harmony-import-attributes",
                          "--no-harmony-import-attributes");
-  SetV8FlagsIfOverridden(features::kJavaScriptSetMethods,
-                         "--harmony-set-methods", "--no-harmony-set-methods");
   SetV8FlagsIfOverridden(features::kJavaScriptRegExpDuplicateNamedGroups,
                          "--js-regexp-duplicate-named-groups",
                          "--no-js-duplicate-named-groups");
   SetV8FlagsIfOverridden(features::kJavaScriptPromiseTry, "--js-promise-try",
                          "--no-js-promise-try");
-
-  if (IsolateHolder::kStrictMode == mode) {
-    SetV8Flags("--use_strict");
-  }
 
   // WebAssembly features.
 
@@ -515,27 +535,6 @@ void SetFlags(IsolateHolder::ScriptMode mode,
   SetV8FlagsIfOverridden(features::kWebAssemblyInliningCallIndirect,
                          "--wasm-inlining-call-indirect",
                          "--no-wasm-inlining-call-indirect");
-  SetV8FlagsIfOverridden(features::kWebAssemblyLiftoffCodeFlushing,
-                         "--flush-liftoff-code", "--no-flush-liftoff-code");
-  SetV8FlagsIfOverridden(features::kWebAssemblyMultipleMemories,
-                         "--experimental-wasm-multi-memory",
-                         "--no-experimental-wasm-multi-memory");
-  SetV8FlagsIfOverridden(features::kWebAssemblyTurboshaft, "--turboshaft-wasm",
-                         "--no-turboshaft-wasm");
-  SetV8FlagsIfOverridden(features::kWebAssemblyTurboshaftInstructionSelection,
-                         "--turboshaft-wasm-instruction-selection-staged",
-                         "--no-turboshaft-wasm-instruction-selection-staged");
-
-  if (js_command_line_flags.empty())
-    return;
-
-  // Allow the --js-flags switch to override existing flags:
-  std::vector<std::string_view> flag_list =
-      base::SplitStringPiece(js_command_line_flags, ",", base::TRIM_WHITESPACE,
-                             base::SPLIT_WANT_NONEMPTY);
-  for (const auto& flag : flag_list) {
-    v8::V8::SetFlagsFromString(std::string(flag).c_str(), flag.size());
-  }
 }
 
 }  // namespace
@@ -543,14 +542,20 @@ void SetFlags(IsolateHolder::ScriptMode mode,
 // static
 void V8Initializer::Initialize(IsolateHolder::ScriptMode mode,
                                const std::string& js_command_line_flags,
+                               bool disallow_v8_feature_flag_overrides,
                                v8::OOMErrorCallback oom_error_callback) {
   static bool v8_is_initialized = false;
   if (v8_is_initialized)
     return;
 
-  // Flags need to be set before InitializePlatform as they are used for
-  // system instrumentation initialization.
-  // See https://crbug.com/v8/11043
+  // Flags need to be set before InitializePlatform as they are used for system
+  // instrumentation initialization, see https://crbug.com/v8/11043. --js-flags
+  // and other mandatory flags in `SetFlags` must be ordered after feature flag
+  // overrides.
+  SetDefaultEnabledFeatureFlags();
+  if (!disallow_v8_feature_flag_overrides) {
+    SetFeatureFlags();
+  }
   SetFlags(mode, js_command_line_flags);
 
   v8::V8::InitializePlatform(V8Platform::Get());

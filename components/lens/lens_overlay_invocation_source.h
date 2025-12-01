@@ -36,7 +36,26 @@ enum class LensOverlayInvocationSource {
   // The button in the omnibox (address bar).
   kOmnibox = 5,
 
-  kMaxValue = kOmnibox
+  // The shutter button from LVF.
+  kLVFShutterButton = 6,
+
+  // The gallery picker from LVF.
+  kLVFGallery = 7,
+
+  // The context menu when long pressing a web image.
+  kContextMenu = 8,
+
+  // The Lens suggestion in the omnibox.
+  kOmniboxPageAction = 9,
+
+  // The contextual suggestions in the omnibox that take you directly to
+  // contextual answers in the side panel.
+  kOmniboxContextualSuggestion = 10,
+
+  // The Lens homework action chip in the omnibox.
+  kHomeworkActionChip = 11,
+
+  kMaxValue = kHomeworkActionChip
 };
 // LINT.ThenChange(//tools/metrics/histograms/metadata/lens/enums.xml:LensOverlayInvocationSource)
 // When adding a value here, also update:

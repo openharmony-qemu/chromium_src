@@ -1,10 +1,10 @@
 Package: libswresample3
 Source: ffmpeg
-Version: 7:4.3.5-0+deb11u1
+Version: 7:4.3.7-0+deb11u1
 Architecture: amd64
 Maintainer: Debian Multimedia Maintainers <debian-multimedia@lists.debian.org>
-Installed-Size: 238
-Depends: libavutil56 (= 7:4.3.5-0+deb11u1), libc6 (>= 2.29), libsoxr0 (>= 0.1.0)
+Installed-Size: 242
+Depends: libavutil56 (= 7:4.3.7-0+deb11u1), libc6 (>= 2.29), libsoxr0 (>= 0.1.0)
 Section: libs
 Priority: optional
 Multi-Arch: same

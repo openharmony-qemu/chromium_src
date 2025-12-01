@@ -2,10 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "h264_ratectrl_rtc.h"
+#include "media/gpu/h264_ratectrl_rtc.h"
+
+#include <memory>
+#include <string>
+#include <vector>
 
 #include "base/logging.h"
 #include "base/strings/string_number_conversions.h"
+#include "base/strings/to_string.h"
 #include "media/gpu/h264_rate_control_util.h"
 
 namespace media {
@@ -57,9 +62,11 @@ std::string CreateRateControlConfigLogMessage(
                   VideoEncodeAccelerator::Config::ContentType::kCamera
               ? "camera"
               : "display")
-      << ", fixed_delta_qp: " << (config.fixed_delta_qp ? "true" : "false")
-      << ", ease_hrd_reduction: "
-      << (config.ease_hrd_reduction ? "true" : "false");
+      << ", fixed_delta_qp: "
+      << (config.fixed_delta_qp
+              ? base::NumberToString(config.fixed_delta_qp.value())
+              : "not set")
+      << ", ease_hrd_reduction: " << base::ToString(config.ease_hrd_reduction);
   for (size_t tl = 0; tl < config.num_temporal_layers; tl++) {
     log_message << ", [ temporal_layer_id: " << tl
                 << ", avg_bitrate: " << config.layer_settings[tl].avg_bitrate

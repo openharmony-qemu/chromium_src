@@ -1,9 +1,9 @@
 Package: linux-libc-dev
 Source: linux
-Version: 6.1.20-2~bpo11+1
+Version: 6.1.94-1~bpo11+1
 Architecture: amd64
 Maintainer: Debian Kernel Team <debian-kernel@lists.debian.org>
-Installed-Size: 6500
+Installed-Size: 6735
 Section: devel
 Priority: optional
 Multi-Arch: same

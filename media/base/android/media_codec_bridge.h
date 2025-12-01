@@ -16,6 +16,7 @@
 #include "base/android/scoped_java_ref.h"
 #include "base/containers/span.h"
 #include "base/time/time.h"
+#include "media/base/decrypt_config.h"
 #include "media/base/encryption_pattern.h"
 #include "media/base/encryption_scheme.h"
 #include "media/base/media_export.h"
@@ -24,8 +25,6 @@
 #include "ui/gfx/geometry/size.h"
 
 namespace media {
-
-struct SubsampleEntry;
 
 // GENERATED_JAVA_ENUM_PACKAGE: org.chromium.media
 enum class CodecType {
@@ -36,8 +35,10 @@ enum class CodecType {
 
 // GENERATED_JAVA_ENUM_PACKAGE: org.chromium.media
 // GENERATED_JAVA_PREFIX_TO_STRIP: MEDIA_CODEC_
-// These enums are also reported to UMA so values should not be renumbered or
-// reused.
+// These values are persisted to logs. Entries should not be renumbered and
+// numeric values should never be reused.
+//
+// LINT.IfChange(MediaCodecStatus)
 enum MediaCodecStatus {
   MEDIA_CODEC_OK = 0,
   MEDIA_CODEC_TRY_AGAIN_LATER = 1,
@@ -60,8 +61,36 @@ enum MediaCodecStatus {
   MEDIA_CODEC_ZERO_SUBSAMPLES = 18,
   MEDIA_CODEC_UNKNOWN_CIPHER_MODE = 19,
   MEDIA_CODEC_PATTERN_ENCRYPTION_NOT_SUPPORTED = 20,
-  MEDIA_CODEC_MAX = MEDIA_CODEC_PATTERN_ENCRYPTION_NOT_SUPPORTED,
+  MEDIA_CODEC_INSUFFICIENT_RESOURCE = 21,
+  MEDIA_CODEC_RECLAIMED = 22,
+  MEDIA_CODEC_INPUT_SLOT_UNAVAILABLE = 23,
+  MEDIA_CODEC_ILLEGAL_STATE = 24,
+  MEDIA_CODEC_UNKNOWN_CRYPTO_EXCEPTION = 25,
+  MEDIA_CODEC_UNKNOWN_MEDIADRM_EXCEPTION = 26,
+  MEDIA_CODEC_UNKNOWN_CODEC_EXCEPTION = 27,
+  MEDIA_CODEC_LINEAR_BLOCK_EXCEPTION = 28,
+  MEDIA_CODEC_CERTIFICATE_MALFORMED = 29,
+  MEDIA_CODEC_CERTIFICATE_MISSING = 30,
+  MEDIA_CODEC_CRYPTO_LIBRARY = 31,
+  MEDIA_CODEC_INIT_DATA = 32,
+  MEDIA_CODEC_KEY_NOT_LOADED = 33,
+  MEDIA_CODEC_LICENSE_POLICY = 34,
+  MEDIA_CODEC_LICENSE_RELEASE = 35,
+  MEDIA_CODEC_LICENSE_REQUEST_REJECTED = 36,
+  MEDIA_CODEC_LICENSE_RESTORE = 37,
+  MEDIA_CODEC_LICENSE_STATE = 38,
+  MEDIA_CODEC_PROVISIONING_CERTIFICATE = 39,
+  MEDIA_CODEC_PROVISIONING_CONFIG = 40,
+  MEDIA_CODEC_PROVISIONING_PARSE = 41,
+  MEDIA_CODEC_PROVISIONING_REQUEST_REJECTED = 42,
+  MEDIA_CODEC_PROVISIONING_RETRY = 43,
+  MEDIA_CODEC_SECURE_STOP_RELEASE = 44,
+  MEDIA_CODEC_STORAGE_READ = 45,
+  MEDIA_CODEC_STORAGE_WRITE = 46,
+
+  MEDIA_CODEC_MAX = MEDIA_CODEC_STORAGE_WRITE,
 };
+// LINT.ThenChange(tools/metrics/histograms/metadata/media/enums.xml:MediaCodecError)
 
 struct MediaCodecResultTraits {
   enum class Codes : StatusCodeType {
@@ -146,26 +175,16 @@ class MEDIA_EXPORT MediaCodecBridge {
       size_t data_size,
       base::TimeDelta presentation_time) = 0;
 
-  // Submits a byte array to the given input buffer, using LinearBlock.
-  virtual MediaCodecResult QueueInputBlock(int index,
-                                           base::span<const uint8_t> data,
-                                           base::TimeDelta presentation_time,
-                                           bool is_eos) = 0;
-
   // As above but for encrypted buffers. NULL |subsamples| indicates the
   // whole buffer is encrypted.
   virtual MediaCodecResult QueueSecureInputBuffer(
       int index,
       base::span<const uint8_t> data,
-      const std::string& key_id,
-      const std::string& iv,
-      const std::vector<SubsampleEntry>& subsamples,
-      EncryptionScheme encryption_scheme,
-      std::optional<EncryptionPattern> encryption_pattern,
-      base::TimeDelta presentation_time) = 0;
+      base::TimeDelta presentation_time,
+      const DecryptConfig& decrypt_config) = 0;
 
   // Submits an empty buffer with the END_OF_STREAM flag set.
-  virtual void QueueEOS(int input_buffer_index) = 0;
+  virtual MediaCodecResult QueueEOS(int input_buffer_index) = 0;
 
   // Returns:
   // kOk if an input buffer is ready to be filled with valid data,

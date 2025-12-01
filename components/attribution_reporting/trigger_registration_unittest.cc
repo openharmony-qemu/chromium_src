@@ -10,9 +10,9 @@
 #include <vector>
 
 #include "base/functional/function_ref.h"
+#include "base/test/fuzztest_support.h"
 #include "base/test/gmock_expected_support.h"
 #include "base/test/metrics/histogram_tester.h"
-#include "base/test/scoped_feature_list.h"
 #include "base/test/values_test_util.h"
 #include "base/time/time.h"
 #include "base/types/expected.h"
@@ -28,7 +28,6 @@
 #include "components/attribution_reporting/attribution_scopes_set.h"
 #include "components/attribution_reporting/debug_types.mojom.h"
 #include "components/attribution_reporting/event_trigger_data.h"
-#include "components/attribution_reporting/features.h"
 #include "components/attribution_reporting/filters.h"
 #include "components/attribution_reporting/source_registration_time_config.mojom.h"
 #include "components/attribution_reporting/suitable_origin.h"
@@ -37,6 +36,7 @@
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/abseil-cpp/absl/numeric/int128.h"
+#include "third_party/fuzztest/src/fuzztest/fuzztest.h"
 #include "url/gurl.h"
 #include "url/origin.h"
 
@@ -61,9 +61,6 @@ TriggerRegistration TriggerRegistrationWith(
 }
 
 TEST(TriggerRegistrationTest, Parse) {
-  base::test::ScopedFeatureList scoped_feature_list;
-  scoped_feature_list.InitAndEnableFeature(
-      features::kAttributionReportingAggregatableFilteringIds);
   const struct {
     const char* description;
     const char* json;
@@ -342,9 +339,6 @@ TEST(TriggerRegistrationTest, Parse) {
 }
 
 TEST(TriggerRegistrationTest, ToJson) {
-  base::test::ScopedFeatureList scoped_feature_list;
-  scoped_feature_list.InitAndEnableFeature(
-      features::kAttributionReportingAggregatableFilteringIds);
   const struct {
     TriggerRegistration input;
     const char* expected_json;
@@ -479,9 +473,6 @@ TEST(TriggerRegistrationTest, ParseAggregationCoordinator) {
 }
 
 TEST(TriggerRegistrationTest, SerializeAggregationCoordinator) {
-  base::test::ScopedFeatureList scoped_feature_list;
-  scoped_feature_list.InitAndDisableFeature(
-      features::kAttributionReportingAggregatableFilteringIds);
   const struct {
     TriggerRegistration input;
     const char* expected_json;
@@ -489,6 +480,7 @@ TEST(TriggerRegistrationTest, SerializeAggregationCoordinator) {
       {
           TriggerRegistration(),
           R"json({
+            "aggregatable_filtering_id_max_bytes": 1,
             "aggregatable_source_registration_time": "exclude",
             "debug_reporting": false,
             "aggregatable_debug_reporting": {
@@ -502,6 +494,7 @@ TEST(TriggerRegistrationTest, SerializeAggregationCoordinator) {
                 SuitableOrigin::Create(GURL("https://a.test"));
           }),
           R"json({
+            "aggregatable_filtering_id_max_bytes": 1,
             "aggregatable_source_registration_time": "exclude",
             "aggregation_coordinator_origin": "https://a.test",
             "debug_reporting": false,
@@ -548,9 +541,6 @@ TEST(TriggerRegistrationTest, ParseAggregatableDebugReportingConfig) {
       },
   };
 
-  base::test::ScopedFeatureList scoped_feature_list(
-      features::kAttributionAggregatableDebugReporting);
-
   for (const auto& test_case : kTestCases) {
     SCOPED_TRACE(test_case.desc);
 
@@ -588,9 +578,6 @@ TEST(TriggerRegistrationTest, ParseAttributionScopesConfig) {
           ErrorIs(TriggerRegistrationError::kAttributionScopesValueInvalid),
       },
   };
-
-  base::test::ScopedFeatureList scoped_feature_list(
-      features::kAttributionScopes);
 
   for (const auto& test_case : kTestCases) {
     base::HistogramTester histograms;
@@ -655,9 +642,6 @@ TEST(TriggerRegistrationTest, ParseAggregatableNamedBudgetCandidate) {
       },
   };
 
-  base::test::ScopedFeatureList scoped_feature_list(
-      features::kAttributionAggregatableNamedBudgets);
-
   for (const auto& test_case : kTestCases) {
     base::HistogramTester histograms;
     SCOPED_TRACE(test_case.desc);
@@ -715,6 +699,13 @@ TEST(TriggerRegistrationTest, SerializeAggregatableNamedBudgetCandidate) {
                 base::test::IsJson(test_case.expected_json));
   }
 }
+
+void Parses(base::Value value) {
+  std::ignore = TriggerRegistration::Parse(std::move(value));
+}
+
+FUZZ_TEST(TriggerRegistrationTest, Parses)
+    .WithDomains(fuzztest::Arbitrary<base::Value>());
 
 }  // namespace
 }  // namespace attribution_reporting

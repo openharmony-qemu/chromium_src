@@ -1,9 +1,9 @@
 Package: libaom0
 Source: aom
-Version: 1.0.0.errata1-3
+Version: 1.0.0.errata1-3+deb11u1
 Architecture: i386
 Maintainer: Debian Multimedia Maintainers <debian-multimedia@lists.debian.org>
-Installed-Size: 4235
+Installed-Size: 4139
 Depends: libc6 (>= 2.29)
 Section: libs
 Priority: optional

@@ -496,7 +496,7 @@ fb312841c73b9b6d051f292d036fe7b6  usr/lib/x86_64-linux-gnu/crtn.o
 49e336556ce801787650d90d05811439  usr/lib/x86_64-linux-gnu/grcrt1.o
 2edd6427c02ab85246589db85abc8b41  usr/lib/x86_64-linux-gnu/libBrokenLocale.a
 1e01db8f43321f6d9f353f0e1755b201  usr/lib/x86_64-linux-gnu/libanl.a
-2223f9e1e6c2a6e0f71d6a3528ebc8ed  usr/lib/x86_64-linux-gnu/libc.a
+e0bc1fce33bd4ccca80bb2ce979e6748  usr/lib/x86_64-linux-gnu/libc.a
 b330f1ab192a095f4650a9599506b7cc  usr/lib/x86_64-linux-gnu/libc.so
 9b13c88cc4b1f83802ebef6920892d1b  usr/lib/x86_64-linux-gnu/libc_nonshared.a
 b24d1e85234dbf3536331f6bd73014bd  usr/lib/x86_64-linux-gnu/libdl.a
@@ -513,7 +513,7 @@ d98336d3d5b5dd53d23e40dee011073f  usr/lib/x86_64-linux-gnu/librpcsvc.a
 81ba38312b3ad569ca1b4097e29cee11  usr/lib/x86_64-linux-gnu/libutil.a
 3645cc83b2cf916c95eba004e8b8802a  usr/lib/x86_64-linux-gnu/rcrt1.o
 68db2667ec40b6eccab467c974199f9a  usr/share/doc/libc6-dev/NEWS.Debian.gz
-1bfa4f3743e92f4dca1f09e1da49d066  usr/share/doc/libc6-dev/changelog.Debian.gz
+40901eb656861053f0ed240bcab6063c  usr/share/doc/libc6-dev/changelog.Debian.gz
 48d68260ab7331ccff4ff77677d7607d  usr/share/doc/libc6-dev/changelog.gz
 d848be5c37cd71d76c5a7b9e7e28868a  usr/share/doc/libc6-dev/copyright
 57d9feaa3f4028e329aa67819ba29447  usr/share/gdb/auto-load/lib/x86_64-linux-gnu/libpthread-2.31.so-gdb.py

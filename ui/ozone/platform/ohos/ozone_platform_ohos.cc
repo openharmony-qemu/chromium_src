@@ -1,37 +1,13 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2023 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "ui/ozone/platform/ohos/ozone_platform_ohos.h"
 
 #include <memory>
 
 #include "build/build_config.h"
+#include "ohos/adapter/node_handle/node_handle_impl.h"
 #include "ui/base/cursor/cursor_factory.h"
 #include "ui/base/ime/ohos/input_method_ohos.h"
 #include "ui/display/types/native_display_delegate.h"
@@ -45,12 +21,15 @@
 #include "ui/ozone/platform/ohos/gpu/ohos_surface_factory.h"
 #include "ui/ozone/platform/ohos/host/ohos_canvas_surface.h"
 #include "ui/ozone/platform/ohos/host/ohos_event_source.h"
+#include "ui/ozone/platform/ohos/host/ohos_event_source_node_handle.h"
 #include "ui/ozone/platform/ohos/host/ohos_screen.h"
 #include "ui/ozone/platform/ohos/host/ohos_window.h"
 #include "ui/ozone/platform/ohos/host/ohos_window_manager.h"
 #include "ui/ozone/public/gpu_platform_support_host.h"
 #include "ui/ozone/public/input_controller.h"
 #include "ui/ozone/public/ozone_platform.h"
+#include "ui/ozone/public/platform_window_manager.h"
+#include "ui/ozone/public/stub_input_controller.h"
 #include "ui/ozone/public/surface_ozone_canvas.h"
 #include "ui/ozone/public/system_input_injector.h"
 #include "ui/platform_window/platform_window_init_properties.h"
@@ -107,7 +86,7 @@ class OzonePlatformOhos : public OzonePlatform {
   std::unique_ptr<InputMethod> CreateInputMethod(
       ImeKeyEventDispatcher* ime_key_event_dispatcher,
       gfx::AcceleratedWidget widget) override {
-    return std::make_unique<InputMethodOHOS>(ime_key_event_dispatcher);
+    return std::make_unique<InputMethodOHOS>(ime_key_event_dispatcher, widget);
   }
 
   bool InitializeUI(const InitParams& params) override {
@@ -116,15 +95,21 @@ class OzonePlatformOhos : public OzonePlatform {
     window_drag_manager_ = std::make_unique<OhosWindowDragManager>();
     // This unbreaks tests that create their own.
     if (!PlatformEventSource::GetInstance()) {
-      platform_event_source_ =
-          std::make_unique<OhosEventSource>(window_manager_.get(), window_drag_manager_.get());
+      if (ohos::adapter::nodeHandle::NodeHandleImpl::GetInstance()
+              .IsSupportNodeHandle()) {
+        platform_event_source_ = std::make_unique<OhosEventSourceNodeHandle>(
+            window_manager_.get(), window_drag_manager_.get());
+      } else {
+        platform_event_source_ = std::make_unique<OhosEventSource>(
+            window_manager_.get(), window_drag_manager_.get());
+      }
     }
     keyboard_layout_engine_ = std::make_unique<StubKeyboardLayoutEngine>();
     KeyboardLayoutEngineManager::SetKeyboardLayoutEngine(
         keyboard_layout_engine_.get());
 
     overlay_manager_ = std::make_unique<StubOverlayManager>();
-    input_controller_ = CreateStubInputController();
+    input_controller_ = std::make_unique<StubInputController>();
     cursor_factory_ = std::make_unique<BitmapCursorFactory>();
     gpu_platform_support_host_.reset(CreateStubGpuPlatformSupportHost());
     return true;
@@ -155,11 +140,13 @@ class OzonePlatformOhos : public OzonePlatform {
       case PlatformKeyboardHookTypes::kModifier:
         return std::make_unique<BaseKeyboardHook>(std::move(dom_codes),
                                                   std::move(callback));
-      case PlatformKeyboardHookTypes::kMedia:
-        return nullptr;
       default:
         return nullptr;
     }
+  }
+
+  PlatformWindowManager* GetPlatformWindowManager() override {
+    return window_manager_.get();
   }
 
  private:

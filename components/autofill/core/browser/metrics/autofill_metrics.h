@@ -12,6 +12,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "base/containers/flat_set.h"
@@ -19,16 +20,16 @@
 #include "base/memory/raw_ref.h"
 #include "base/time/time.h"
 #include "components/autofill/core/browser/autofill_progress_dialog_type.h"
-#include "components/autofill/core/browser/data_model/autofill_profile.h"
-#include "components/autofill/core/browser/data_model/credit_card.h"
+#include "components/autofill/core/browser/data_model/addresses/autofill_profile.h"
+#include "components/autofill/core/browser/data_model/payments/credit_card.h"
 #include "components/autofill/core/browser/field_types.h"
-#include "components/autofill/core/browser/filling_product.h"
+#include "components/autofill/core/browser/filling/filling_product.h"
 #include "components/autofill/core/browser/form_types.h"
 #include "components/autofill/core/browser/metrics/form_events/form_events.h"
 #include "components/autofill/core/browser/metrics/log_event.h"
 #include "components/autofill/core/browser/payments/payments_autofill_client.h"
+#include "components/autofill/core/browser/suggestions/suggestion_hiding_reason.h"
 #include "components/autofill/core/browser/ui/popup_interaction.h"
-#include "components/autofill/core/browser/ui/suggestion_hiding_reason.h"
 #include "components/autofill/core/common/dense_set.h"
 #include "components/autofill/core/common/mojom/autofill_types.mojom-forward.h"
 #include "components/autofill/core/common/signatures.h"
@@ -36,13 +37,8 @@
 #include "components/security_state/core/security_state.h"
 #include "services/metrics/public/cpp/ukm_recorder.h"
 #include "services/metrics/public/cpp/ukm_source_id.h"
-#include "third_party/abseil-cpp/absl/types/variant.h"
 
 class GURL;
-
-namespace ukm::builders {
-class Autofill_CreditCardFill;
-}
 
 namespace autofill {
 
@@ -722,8 +718,13 @@ class AutofillMetrics {
                                   int popup_level,
                                   PopupInteraction action);
 
-  // Logs the number of days since an Autocomplete suggestion was last used.
+  // Logs the number of days since an accepted Autocomplete suggestion was last
+  // used.
   static void LogAutocompleteDaysSinceLastUse(size_t days);
+
+  // Logs the number of days since an unaccepted Autocomplete suggestion was
+  // last used.
+  static void LogUnacceptedAutocompleteSuggestionDaysSinceLastUse(size_t days);
 
   // Logs the fact that an autocomplete popup was shown.
   static void OnAutocompleteSuggestionsShown();
@@ -741,12 +742,15 @@ class AutofillMetrics {
   static void LogAutofillPerfectFilling(bool is_address, bool perfect_filling);
 
   struct LogCreditCardSeamlessnessParam {
-    const raw_ref<autofill_metrics::FormEventLoggerBase> event_logger;
-    const raw_ref<const FormStructure> form;
-    const raw_ref<const AutofillField> field;
-    const raw_ref<const base::flat_set<FieldGlobalId>> newly_filled_fields;
-    const raw_ref<const base::flat_set<FieldGlobalId>> safe_fields;
-    const raw_ref<ukm::builders::Autofill_CreditCardFill> builder;
+    STACK_ALLOCATED();  // So that the members don't have to be raw_ref/raw_ptr.
+   public:
+    ukm::UkmRecorder* ukm_recorder;
+    const ukm::SourceId source_id;
+    autofill_metrics::FormEventLoggerBase& event_logger;
+    const FormStructure& form;
+    const AutofillField& field;
+    const base::flat_set<FieldGlobalId>& newly_filled_fields;
+    const base::flat_set<FieldGlobalId>& safe_fields;
   };
 
   // Logs several metrics about seamlessness. These are qualitative and bitmask
@@ -818,7 +822,8 @@ class AutofillMetrics {
 
   // Records if an autofilled field of a specific type was edited by the user.
   static void LogEditedAutofilledFieldAtSubmission(
-      autofill_metrics::FormInteractionsUkmLogger* form_interactions_ukm_logger,
+      autofill_metrics::FormInteractionsUkmLogger& form_interactions_ukm_logger,
+      ukm::SourceId source_id,
       const FormStructure& form,
       const AutofillField& field);
 
@@ -844,10 +849,17 @@ class AutofillMetrics {
   static void LogVerificationStatusOfAddressTokensOnProfileUsage(
       const AutofillProfile& profile);
 
-  // Logs the image fetching result for one image in AutofillImageFetcher.
-  static void LogImageFetchResult(bool succeeded);
-  // Logs the roundtrip latency for fetching an image in AutofillImageFetcher.
-  static void LogImageFetcherRequestLatency(base::TimeDelta latency);
+  // Logs the image fetching result for one `image_type` in
+  // AutofillImageFetcher.
+  static void LogImageFetchResult(
+      AutofillImageFetcherBase::ImageType image_type,
+      bool succeeded);
+  // Logs the overall image fetching result for a `image_type` in
+  // AutofillImageFetcher after a maximum preset number of attempts during
+  // browser startup.
+  static void LogImageFetchOverallResult(
+      AutofillImageFetcherBase::ImageType image_type,
+      bool succeeded);
 
   // Logs a field's (PredictionState, AutocompleteState) pair on form submit.
   static void LogAutocompletePredictionCollisionState(
@@ -865,16 +877,8 @@ class AutofillMetrics {
   // `payments::PaymentsAutofillClient::PaymentsRpcCardType` or
   // `CreditCard::RecordType`, starting with a period.
   static std::string GetHistogramStringForCardType(
-      absl::variant<payments::PaymentsAutofillClient::PaymentsRpcCardType,
-                    CreditCard::RecordType> card_type);
-
-  // Returns 64-bit hash of the string of form global id, which consists of
-  // |frame_token| and |renderer_id|.
-  static uint64_t FormGlobalIdToHash64Bit(const FormGlobalId& form_global_id);
-  // Returns 64-bit hash of the string of field global id, which consists of
-  // |frame_token| and |renderer_id|.
-  static uint64_t FieldGlobalIdToHash64Bit(
-      const FieldGlobalId& field_global_id);
+      std::variant<payments::PaymentsAutofillClient::PaymentsRpcCardType,
+                   CreditCard::RecordType> card_type);
 
   // Logs the Autofill2_FieldInfoAfterSubmission UKM event after the form is
   // submitted and uploaded for votes to the crowdsourcing server.
@@ -894,8 +898,13 @@ class AutofillMetrics {
 
   static void LogAutocompleteEvent(AutocompleteEvent event);
 
-  static void LogAutofillPopupVisibleDuration(FillingProduct filling_product,
-                                              base::TimeDelta duration);
+  // TODO(crbug.com/316143236): Remove all datalist related metrics once
+  // debugging is complete.
+  static void LogDataListSuggestionsShown();
+
+  static void LogDataListSuggestionsUpdated();
+
+  static void LogDataListSuggestionsInserted();
 };
 
 #if defined(UNIT_TEST)

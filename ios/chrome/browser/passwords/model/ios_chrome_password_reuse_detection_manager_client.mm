@@ -20,7 +20,6 @@
 #import "ios/chrome/browser/passwords/model/password_tab_helper.h"
 #import "ios/chrome/browser/safe_browsing/model/chrome_password_protection_service.h"
 #import "ios/chrome/browser/safe_browsing/model/chrome_password_protection_service_factory.h"
-#import "ios/chrome/browser/safe_browsing/model/features.h"
 #import "ios/chrome/browser/shared/model/profile/profile_ios.h"
 #import "ios/chrome/browser/signin/model/identity_manager_factory.h"
 #import "ios/chrome/browser/sync/model/sync_service_factory.h"
@@ -32,16 +31,13 @@ using password_manager::metrics_util::PasswordType;
 IOSChromePasswordReuseDetectionManagerClient::
     IOSChromePasswordReuseDetectionManagerClient(
         id<IOSChromePasswordReuseDetectionManagerClientBridge> bridge)
-    : bridge_(bridge), password_reuse_detection_manager_(this) {
-  log_manager_ = autofill::LogManager::Create(
-      ios::PasswordManagerLogRouterFactory::GetForProfile(bridge_.profile),
-      base::RepeatingClosure());
-
-  if (IsPasswordReuseDetectionEnabled()) {
-    web_state_observation_.Observe(bridge_.webState);
-    input_event_observation_.Observe(
-        PasswordProtectionJavaScriptFeature::GetInstance());
-  }
+    : bridge_(bridge),
+      password_reuse_detection_manager_(this),
+      log_router_(ios::PasswordManagerLogRouterFactory::GetForProfile(
+          bridge_.profile)) {
+  web_state_observation_.Observe(bridge_.webState);
+  input_event_observation_.Observe(
+      PasswordProtectionJavaScriptFeature::GetInstance());
 }
 
 IOSChromePasswordReuseDetectionManagerClient::
@@ -58,7 +54,11 @@ const GURL& IOSChromePasswordReuseDetectionManagerClient::GetLastCommittedURL()
 }
 
 autofill::LogManager*
-IOSChromePasswordReuseDetectionManagerClient::GetLogManager() {
+IOSChromePasswordReuseDetectionManagerClient::GetCurrentLogManager() {
+  if (!log_manager_ && log_router_ && log_router_->HasReceivers()) {
+    log_manager_ =
+        autofill::LogManager::Create(log_router_, base::RepeatingClosure());
+  }
   return log_manager_.get();
 }
 

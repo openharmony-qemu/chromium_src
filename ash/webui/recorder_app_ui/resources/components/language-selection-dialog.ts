@@ -6,18 +6,21 @@ import './cra/cra-button.js';
 import './language-dropdown.js';
 import './cra/cra-feature-tour-dialog.js';
 
-import {createRef, css, html, ref} from 'chrome://resources/mwc/lit/index.js';
+import {
+  createRef,
+  css,
+  html,
+  ref,
+} from 'chrome://resources/mwc/lit/index.js';
 
 import {i18n} from '../core/i18n.js';
 import {usePlatformHandler} from '../core/lit/context.js';
 import {ReactiveLitElement} from '../core/reactive/lit.js';
-import {
-  setTranscriptionLanguage,
-} from '../core/state/transcription.js';
-import {assertExists} from '../core/utils/assert.js';
+import {computed, signal} from '../core/reactive/signal.js';
+import {LanguageCode} from '../core/soda/language_info.js';
+import {setTranscriptionLanguage} from '../core/state/transcription.js';
 
 import {CraFeatureTourDialog} from './cra/cra-feature-tour-dialog.js';
-import {LanguageDropdown} from './language-dropdown.js';
 import {SpeakerLabelConsentDialog} from './speaker-label-consent-dialog.js';
 
 /**
@@ -55,12 +58,23 @@ export class LanguageSelectionDialog extends ReactiveLitElement {
 
   private readonly dialog = createRef<CraFeatureTourDialog>();
 
-  private readonly dropdown = createRef<LanguageDropdown>();
+  private readonly platformHandler = usePlatformHandler();
+
+  private readonly selectedLanguage = signal<LanguageCode>(
+    this.platformHandler.getDefaultLanguage(),
+  );
+
+  private readonly availableLanguages = computed(() => {
+    const languageList = this.platformHandler.getLangPackList();
+    return languageList.filter((langPack) => {
+      const sodaState =
+        this.platformHandler.getSodaState(langPack.languageCode);
+      return sodaState.value.kind !== 'unavailable';
+    });
+  });
 
   private readonly speakerLabelConsentDialog =
     createRef<SpeakerLabelConsentDialog>();
-
-  private readonly platformHandler = usePlatformHandler();
 
   async show(): Promise<void> {
     await this.dialog.value?.show();
@@ -75,7 +89,7 @@ export class LanguageSelectionDialog extends ReactiveLitElement {
   }
 
   private downloadLanguage() {
-    const languageCode = assertExists(this.dropdown.value).value;
+    const languageCode = this.selectedLanguage.value;
     if (languageCode === null) {
       return;
     }
@@ -87,6 +101,10 @@ export class LanguageSelectionDialog extends ReactiveLitElement {
   }
 
   override render(): RenderResult {
+    const onDropdownChange = (ev: CustomEvent<LanguageCode>) => {
+      this.selectedLanguage.value = ev.detail;
+    };
+
     // TODO(hsuanling): The dialogs (like speaker-label-consent-dialog) are
     // currently initialized at multiple places when it needs to be used,
     // consider making it "global" so it'll only be rendered once?
@@ -98,20 +116,22 @@ export class LanguageSelectionDialog extends ReactiveLitElement {
         <div slot="content">
           ${i18n.onboardingDialogLanguageSelectionDescription}
           <language-dropdown
-            .languageList=${this.platformHandler.getLangPackList()}
-            ${ref(this.dropdown)}
+            .languageList=${this.availableLanguages.value}
+            .defaultLanguage=${this.platformHandler.getDefaultLanguage()}
+            @dropdown-changed=${onDropdownChange}
           >
           </language-dropdown>
         </div>
         <div slot="actions">
-            <cra-button
-              .label=${i18n.onboardingDialogLanguageSelectionCancelButton}
-              @click=${this.cancelSelection}
-            ></cra-button>
-            <cra-button
-              label=${i18n.onboardingDialogLanguageSelectionDownloadButton}
-              @click=${this.downloadLanguage}
-            ></cra-button>
+          <cra-button
+            .label=${i18n.onboardingDialogLanguageSelectionCancelButton}
+            @click=${this.cancelSelection}
+          ></cra-button>
+          <cra-button
+            label=${i18n.onboardingDialogLanguageSelectionDownloadButton}
+            .disabled=${this.selectedLanguage.value === null}
+            @click=${this.downloadLanguage}
+          ></cra-button>
         </div>
       </cra-feature-tour-dialog>
       <speaker-label-consent-dialog ${ref(this.speakerLabelConsentDialog)}>

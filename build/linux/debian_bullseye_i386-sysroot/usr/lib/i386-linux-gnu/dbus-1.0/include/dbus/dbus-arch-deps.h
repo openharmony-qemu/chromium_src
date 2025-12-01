@@ -50,11 +50,11 @@ typedef unsigned short dbus_uint16_t;
  */
 #define DBUS_MAJOR_VERSION 1
 #define DBUS_MINOR_VERSION 12
-#define DBUS_MICRO_VERSION 24
+#define DBUS_MICRO_VERSION 28
 
-#define DBUS_VERSION_STRING "1.12.24"
+#define DBUS_VERSION_STRING "1.12.28"
 
-#define DBUS_VERSION ((1 << 16) | (12 << 8) | (24)) 
+#define DBUS_VERSION ((1 << 16) | (12 << 8) | (28)) 
 
 DBUS_END_DECLS
 

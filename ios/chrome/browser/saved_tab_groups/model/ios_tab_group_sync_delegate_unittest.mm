@@ -17,11 +17,13 @@
 #import "components/saved_tab_groups/test_support/mock_tab_group_sync_service.h"
 #import "components/tab_groups/tab_group_color.h"
 #import "components/tab_groups/tab_group_id.h"
+#import "google_apis/gaia/gaia_id.h"
 #import "ios/chrome/app/application_delegate/app_state.h"
 #import "ios/chrome/browser/saved_tab_groups/model/ios_tab_group_action_context.h"
 #import "ios/chrome/browser/saved_tab_groups/model/ios_tab_group_sync_util.h"
 #import "ios/chrome/browser/saved_tab_groups/model/tab_group_local_update_observer.h"
 #import "ios/chrome/browser/saved_tab_groups/model/tab_group_sync_service_factory.h"
+#import "ios/chrome/browser/saved_tab_groups/ui/tab_group_utils.h"
 #import "ios/chrome/browser/sessions/model/session_restoration_service_factory.h"
 #import "ios/chrome/browser/sessions/model/test_session_restoration_service.h"
 #import "ios/chrome/browser/shared/coordinator/scene/scene_state.h"
@@ -134,6 +136,15 @@ class IOSTabGroupSyncDelegateTest : public PlatformTest {
                              forProtocol:@protocol(TabGroupsCommands)];
     [dispatcher startDispatchingToTarget:mock_tab_grid_handler_
                              forProtocol:@protocol(TabGridCommands)];
+  }
+
+  ~IOSTabGroupSyncDelegateTest() override {
+    [other_scene_state_ shutdown];
+    other_scene_state_ = nil;
+    [scene_state_same_profile_ shutdown];
+    scene_state_same_profile_ = nil;
+    [scene_state_ shutdown];
+    scene_state_ = nil;
   }
 
   // Returns a vector containing the 3 distant tabs.
@@ -427,8 +438,7 @@ TEST_F(IOSTabGroupSyncDelegateTest, UpdateLocalTabGroup) {
   EXPECT_EQ(kFirstTabTitle, first_web_state->GetTitle());
   EXPECT_EQ(1, tab_group->range().count());
   EXPECT_NSEQ(tab_group->GetTitle(), @"my group");
-  EXPECT_TRUE([tab_group->GetColor()
-      isEqual:TabGroup::ColorForTabGroupColorId(TabGroupColorId::kPink)]);
+  EXPECT_EQ(TabGroupColorId::kPink, tab_group->GetColor());
 
   // Update the local group by adding 2 new tabs.
   saved_group.AddTabFromSync(second_tab);
@@ -453,7 +463,7 @@ TEST_F(IOSTabGroupSyncDelegateTest, UpdateLocalTabGroup) {
 
   // Move the second tab at the end and remove the first tab.
   saved_group.MoveTabLocally(kSecondTabId, 2);
-  saved_group.RemoveTabFromSync(kFirstTabId);
+  saved_group.RemoveTabFromSync(kFirstTabId, GaiaId());
   delegate_->UpdateLocalTabGroup(saved_group);
   second_web_state = web_state_list->GetWebStateAt(2);
   third_web_state = web_state_list->GetWebStateAt(1);
@@ -524,8 +534,7 @@ TEST_F(IOSTabGroupSyncDelegateTest, UpdateLocalTabGroupOneTab) {
   EXPECT_EQ(kFirstTabTitle, first_web_state->GetTitle());
   EXPECT_EQ(1, tab_group->range().count());
   EXPECT_NSEQ(tab_group->GetTitle(), @"my group");
-  EXPECT_TRUE([tab_group->GetColor()
-      isEqual:TabGroup::ColorForTabGroupColorId(TabGroupColorId::kPink)]);
+  EXPECT_EQ(TabGroupColorId::kPink, tab_group->GetColor());
 }
 
 // Tests that the service correctly returns local ids.
@@ -555,8 +564,8 @@ TEST_F(IOSTabGroupSyncDelegateTest, GetLocalTabIdsForTabGroup) {
   EXPECT_EQ(0u, local_tab_ids.size());
 }
 
-// Tests that the service is correctly updated when creating a remote tab group.
-TEST_F(IOSTabGroupSyncDelegateTest, CreateRemoteTabGroup) {
+// Tests that a local group is correctly converted to a remote group.
+TEST_F(IOSTabGroupSyncDelegateTest, CreateSavedTabGroupFromLocalGroup) {
   WebStateList* web_state_list = browser_same_profile_->GetWebStateList();
   WebStateListBuilderFromDescription builder(web_state_list);
   ASSERT_TRUE(builder.BuildWebStateListFromDescription("| a b c* d e f"));
@@ -568,14 +577,26 @@ TEST_F(IOSTabGroupSyncDelegateTest, CreateRemoteTabGroup) {
       kGroupTitle, tab_groups::TabGroupColorId::kBlue);
   web_state_list->CreateGroup({0, 1}, visual_data, tab_group_id);
 
-  std::vector<SavedTabGroupTab> saved_tabs =
+  std::vector<SavedTabGroupTab> expected_saved_tabs =
       SavedTabGroupTabsFromTabs({0, 1}, web_state_list, saved_tab_group_id);
-  SavedTabGroup saved_group(kGroupTitle, visual_data.color(), saved_tabs,
-                            std::nullopt, saved_tab_group_id, tab_group_id);
 
-  EXPECT_CALL(*mock_service_, GetGroup(tab_group_id));
-  EXPECT_CALL(*mock_service_, AddGroup(SyncTabGroupPrediction(saved_group)));
-  delegate_->CreateRemoteTabGroup(tab_group_id);
+  auto saved_tab_group =
+      delegate_->CreateSavedTabGroupFromLocalGroup(tab_group_id);
+  EXPECT_EQ(tab_group_id, saved_tab_group->local_group_id());
+  EXPECT_EQ(kGroupTitle, saved_tab_group->title());
+  EXPECT_EQ(tab_groups::TabGroupColorId::kBlue, saved_tab_group->color());
+
+  EXPECT_EQ(2u, saved_tab_group->saved_tabs().size());
+  for (size_t i = 0; i < expected_saved_tabs.size(); i++) {
+    EXPECT_EQ(expected_saved_tabs[i].url(),
+              saved_tab_group->saved_tabs()[i].url());
+    EXPECT_EQ(expected_saved_tabs[i].title(),
+              saved_tab_group->saved_tabs()[i].title());
+    EXPECT_EQ(expected_saved_tabs[i].local_tab_id(),
+              saved_tab_group->saved_tabs()[i].local_tab_id());
+    EXPECT_EQ(saved_tab_group->saved_guid(),
+              saved_tab_group->saved_tabs()[i].saved_group_guid());
+  }
 }
 
 // Tests opening an unknown tab group ID doesn't do anything.

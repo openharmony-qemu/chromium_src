@@ -1,0 +1,14 @@
+Package: libacl1
+Source: acl
+Version: 2.2.53-10
+Architecture: amd64
+Maintainer: Guillem Jover <guillem@debian.org>
+Installed-Size: 71
+Depends: libc6 (>= 2.14)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: https://savannah.nongnu.org/projects/acl/
+Description: access control list - shared library
+ This package contains the shared library containing the POSIX 1003.1e
+ draft standard 17 functions for manipulating access control lists.

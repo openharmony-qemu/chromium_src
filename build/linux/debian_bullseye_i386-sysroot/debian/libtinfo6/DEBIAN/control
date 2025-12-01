@@ -1,6 +1,6 @@
 Package: libtinfo6
 Source: ncurses
-Version: 6.2+20201114-2+deb11u1
+Version: 6.2+20201114-2+deb11u2
 Architecture: i386
 Maintainer: Craig Small <csmall@debian.org>
 Installed-Size: 519

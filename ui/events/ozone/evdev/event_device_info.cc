@@ -11,6 +11,7 @@
 
 #include <linux/input.h>
 
+#include <array>
 #include <cstring>
 
 #include "base/containers/fixed_flat_set.h"
@@ -25,10 +26,6 @@
 #include "ui/events/devices/device_util_linux.h"
 #include "ui/events/ozone/evdev/keyboard_mouse_combo_device_metrics.h"
 #include "ui/events/ozone/features.h"
-
-#if BUILDFLAG(IS_CHROMEOS_ASH)
-#include "ash/constants/ash_switches.h"  // nogncheck
-#endif
 
 #if !defined(EVIOCGMTSLOTS)
 #define EVIOCGMTSLOTS(len) _IOC(_IOC_READ, 'E', 0x0a, len)
@@ -440,12 +437,14 @@ void AssignBitset(const unsigned long* src,
 }
 
 bool IsDenylistedAbsoluteMouseDevice(const input_id& id) {
-  static constexpr struct {
+  struct USBLegacyDenyListedDevices {
     uint16_t vid;
     uint16_t pid;
-  } kUSBLegacyDenyListedDevices[] = {
-      {0x222a, 0x0001},  // ILITEK ILITEK-TP
   };
+  constexpr static auto kUSBLegacyDenyListedDevices =
+      std::to_array<USBLegacyDenyListedDevices>({
+          {0x222a, 0x0001},  // ILITEK ILITEK-TP
+      });
 
   for (size_t i = 0; i < std::size(kUSBLegacyDenyListedDevices); ++i) {
     if (id.vendor == kUSBLegacyDenyListedDevices[i].vid &&
@@ -970,13 +969,44 @@ bool EventDeviceInfo::SupportsRumble() const {
 
 // static
 ui::InputDeviceType EventDeviceInfo::GetInputDeviceTypeFromId(input_id id) {
+  struct USBInternalDevices {
+    uint16_t vid;
+    uint16_t pid;
+  };
+  constexpr static auto kUSBInternalDevices =
+      std::to_array<USBInternalDevices>({
+          {0x18d1, 0x502b},  // Google, Hammer PID (soraka)
+          {0x18d1, 0x5030},  // Google, Whiskers PID (nocturne)
+          {0x18d1, 0x503c},  // Google, Masterball PID (krane) // nocheck
+          {0x18d1, 0x503d},  // Google, Magnemite PID (kodama)
+          {0x18d1, 0x5044},  // Google, Moonball PID (kakadu)
+          {0x18d1, 0x504c},  // Google, Zed PID (coachz)
+          {0x18d1, 0x5050},  // Google, Don PID (katsu)
+          {0x18d1, 0x5052},  // Google, Star PID (homestar)
+          {0x18d1, 0x5056},  // Google, bland PID (mrbland)
+          {0x18d1, 0x5057},  // Google, eel PID (wormdingler)
+          {0x18d1, 0x505B},  // Google, Duck PID (quackingstick)
+          {0x18d1, 0x5061},  // Google, Jewel PID (starmie)
+          {0x18d1, 0x5067},  // Google, Spikyrock (wugtrio)
+          {0x18d1, 0x5074},  // Google, Whitebeard (wyrdeer)
+          {0x1fd2, 0x8103},  // LG, Internal TouchScreen PID
+      });
+
+  if (id.bustype == BUS_USB) {
+    for (size_t i = 0; i < std::size(kUSBInternalDevices); ++i) {
+      if (id.vendor == kUSBInternalDevices[i].vid &&
+          id.product == kUSBInternalDevices[i].pid) {
+        return InputDeviceType::INPUT_DEVICE_INTERNAL;
+      }
+    }
+  }
+
   switch (id.bustype) {
     case BUS_I2C:
     case BUS_I8042:
       return ui::InputDeviceType::INPUT_DEVICE_INTERNAL;
     case BUS_USB:
-      return IsInternalUSB(id) ? ui::InputDeviceType::INPUT_DEVICE_INTERNAL
-                               : ui::InputDeviceType::INPUT_DEVICE_USB;
+      return ui::InputDeviceType::INPUT_DEVICE_USB;
     case BUS_BLUETOOTH:
       return ui::InputDeviceType::INPUT_DEVICE_BLUETOOTH;
     default:
@@ -986,52 +1016,8 @@ ui::InputDeviceType EventDeviceInfo::GetInputDeviceTypeFromId(input_id id) {
 
 // static
 bool EventDeviceInfo::IsInternalUSB(input_id id) {
-  struct VidPid {
-    uint16_t vid;
-    uint16_t pid;
-  };
-
-  if (id.bustype != BUS_USB) {
-    return false;
-  }
-
-  std::vector<VidPid> usb_internal_ids = {
-      {0x18d1, 0x502b},  // Google, Hammer PID (soraka)
-      {0x18d1, 0x5030},  // Google, Whiskers PID (nocturne)
-      {0x18d1, 0x503c},  // Google, Masterball PID (krane) // nocheck
-      {0x18d1, 0x503d},  // Google, Magnemite PID (kodama)
-      {0x18d1, 0x5044},  // Google, Moonball PID (kakadu)
-      {0x18d1, 0x504c},  // Google, Zed PID (coachz)
-      {0x18d1, 0x5050},  // Google, Don PID (katsu)
-      {0x18d1, 0x5052},  // Google, Star PID (homestar)
-      {0x18d1, 0x5056},  // Google, bland PID (mrbland)
-      {0x18d1, 0x5057},  // Google, eel PID (wormdingler)
-      {0x18d1, 0x505B},  // Google, Duck PID (quackingstick)
-      {0x18d1, 0x5061},  // Google, Jewel PID (starmie)
-      {0x18d1, 0x5067},  // Google, Spikyrock (wugtrio)
-      {0x1fd2, 0x8103},  // LG, Internal TouchScreen PID
-  };
-
-#if BUILDFLAG(IS_CHROMEOS_ASH)
-  if (ash::switches::IsRevenBranding()) {
-    usb_internal_ids.insert(
-        usb_internal_ids.end(),
-        {
-            // ILI Technology Corp., Touchscreen PID (HP Engage One Pro AIO)
-            {0x222a, 0x016f},
-            // D-Wav Scientific Co., Ltd, eGalaxTouch PID (Advantech UTC-520F)
-            {0x0eef, 0xc000},
-        });
-  }
-#endif
-
-  for (VidPid internal_id : usb_internal_ids) {
-    if (id.vendor == internal_id.vid && id.product == internal_id.pid) {
-      return true;
-    }
-  }
-
-  return false;
+  return (id.bustype == BUS_USB && GetInputDeviceTypeFromId(id) ==
+                                       InputDeviceType::INPUT_DEVICE_INTERNAL);
 }
 
 EventDeviceInfo::LegacyAbsoluteDeviceType

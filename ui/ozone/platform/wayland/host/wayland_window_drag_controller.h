@@ -86,6 +86,10 @@ class WaylandWindowDragController : public WaylandDataDevice::DragDelegate,
   // drag controller.
   bool IsDragInProgress() const;
 
+  // Returns true iff there is an active drag session and `window` is the
+  // current window being dragged.
+  bool IsDraggingWindow(WaylandToplevelWindow* window) const;
+
   // Tells if any of the window drag protocol (ie: zcr-extended-drag-v1 or
   // xdg-toplevel-drag-v1) is available. May also return true in tests if
   // `window_drag_protocol_available_for_testing_` is set.
@@ -136,6 +140,8 @@ class WaylandWindowDragController : public WaylandDataDevice::DragDelegate,
   // WaylandWindowObserver:
   void OnWindowRemoved(WaylandWindow* window) override;
 
+  // Asks the Wayland compositor to cancel the drag session, if any.
+  void CancelDragSession();
   // Handles drag/move mouse |event|, while in |kDetached| mode, forwarding it
   // as a bounds change event to the upper layer handlers.
   void HandleMotionEvent(LocatedEvent* event);
@@ -189,7 +195,7 @@ class WaylandWindowDragController : public WaylandDataDevice::DragDelegate,
 
   // Keeps track of the window that holds the pointer grab. i.e: the owner of
   // the surface that must receive the mouse release event upon drop.
-  raw_ptr<WaylandWindow> pointer_grab_owner_ = nullptr;
+  raw_ptr<WaylandWindow> events_grabber_ = nullptr;
 
   // The window where the DND session originated from. i.e: which had the
   // pointer focus when the session was initiated.
@@ -210,15 +216,10 @@ class WaylandWindowDragController : public WaylandDataDevice::DragDelegate,
 
   // Tells if the current drag motion events should be processed.
   //
-  // The processing of drag motion events should be suspended when:
-  //
-  // 1/ Buggy compositors send wl_pointer::motion events, for example, while
-  // a DND session is still in progress, which leads to issues in window
-  // dragging sessions.
-  //
-  // 2/ `Screen coordinates` feature is enabled, given that in this mode
-  // the surface location during a window drag operation is updated
-  // via `zaura_shell::origin_change` request.
+  // The processing of drag motion events should be suspended for buggy
+  // compositors send wl_pointer::motion events, for example, while a DND
+  // session is still in progress, which leads to issues in window dragging
+  // sessions.
   //
   // This flag is used to make window drag controller resistant to such
   // scenarios.

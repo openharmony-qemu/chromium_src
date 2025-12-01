@@ -4,6 +4,7 @@
 
 #include "ash/capture_mode/capture_mode_session_test_api.h"
 
+#include "ash/capture_mode/action_button_container_view.h"
 #include "ash/capture_mode/action_button_view.h"
 #include "ash/capture_mode/capture_mode_controller.h"
 #include "ash/capture_mode/capture_mode_session.h"
@@ -12,6 +13,7 @@
 #include "ash/capture_mode/recording_type_menu_view.h"
 #include "ui/views/layout/box_layout_view.h"
 #include "ui/views/view_utils.h"
+#include "ui/views/widget/widget.h"
 
 namespace ash {
 
@@ -67,6 +69,10 @@ views::Widget* CaptureModeSessionTestApi::GetActionContainerWidget() {
   return session_->action_container_widget_.get();
 }
 
+views::Widget* CaptureModeSessionTestApi::GetDisclaimerWidget() {
+  return session_->disclaimer_.get();
+}
+
 views::Widget* CaptureModeSessionTestApi::GetRecordingTypeMenuWidget() {
   return session_->recording_type_menu_widget_.get();
 }
@@ -109,7 +115,15 @@ CaptureModeSessionTestApi::GetCurrentFocusedView() {
   return items[GetCurrentFocusIndex()];
 }
 
-bool CaptureModeSessionTestApi::HasFocus() {
+bool CaptureModeSessionTestApi::HasAxVirtualWidget() const {
+  return !!session_->focus_cycler_->ax_widget_;
+}
+
+size_t CaptureModeSessionTestApi::GetAxVirtualViewsCount() const {
+  return session_->focus_cycler_->ax_virtual_views_.size();
+}
+
+bool CaptureModeSessionTestApi::HasFocus() const {
   return session_->focus_cycler_->HasFocus();
 }
 
@@ -135,12 +149,31 @@ std::vector<ActionButtonView*> CaptureModeSessionTestApi::GetActionButtons()
   // vector.
   if (session_->action_container_widget_) {
     CHECK(session_->action_container_view_);
-    for (views::View* button : session_->action_container_view_->children()) {
+    for (views::View* button :
+         session_->action_container_view_->GetActionButtons()) {
       action_buttons.emplace_back(views::AsViewClass<ActionButtonView>(button));
     }
   }
 
   return action_buttons;
+}
+
+ActionButtonView* CaptureModeSessionTestApi::GetActionButtonByViewId(
+    ActionButtonViewID id) const {
+  raw_ptr<ActionButtonContainerView> container =
+      session_->action_container_view_;
+  return container
+             ? views::AsViewClass<ActionButtonView>(container->GetViewByID(id))
+             : nullptr;
+}
+
+ActionButtonContainerView::ErrorView*
+CaptureModeSessionTestApi::GetActionContainerErrorView() const {
+  raw_ptr<ActionButtonContainerView> container =
+      session_->action_container_view_;
+  return container ? views::AsViewClass<ActionButtonContainerView::ErrorView>(
+                         container->error_view_for_testing())
+                   : nullptr;
 }
 
 CaptureRegionOverlayController*

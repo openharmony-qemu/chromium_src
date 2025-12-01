@@ -413,7 +413,7 @@ c71b5e4e51eec96c4bcd73bff33f4acc  usr/lib/i386-linux-gnu/pkgconfig/gdk-x11-3.0.p
 4ee0975066637a04c50603ae49b10d84  usr/lib/i386-linux-gnu/pkgconfig/gtk+-x11-3.0.pc
 19fea612fa072035a8d36d4c3e0a4c97  usr/share/aclocal/gtk-3.0.m4
 462252ce98d71b71c9ab7717e9fc4d40  usr/share/doc/libgtk-3-dev/AUTHORS
-7defba8cc503977019459b74fd20e575  usr/share/doc/libgtk-3-dev/changelog.Debian.gz
+ac2486d3e5d775f4ff3ee10ba7948ea0  usr/share/doc/libgtk-3-dev/changelog.Debian.gz
 327922a0105d48814544f5f2b97745c9  usr/share/doc/libgtk-3-dev/copyright
 9e1961ac634ee31ddc602d4c5a3364b7  usr/share/gir-1.0/Gdk-3.0.gir
 61a5939b7f004d22ac3a28d606eb811d  usr/share/gir-1.0/GdkX11-3.0.gir

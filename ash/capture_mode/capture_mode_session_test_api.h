@@ -5,6 +5,8 @@
 #ifndef ASH_CAPTURE_MODE_CAPTURE_MODE_SESSION_TEST_API_H_
 #define ASH_CAPTURE_MODE_CAPTURE_MODE_SESSION_TEST_API_H_
 
+#include "ash/capture_mode/action_button_container_view.h"
+#include "ash/capture_mode/capture_mode_constants.h"
 #include "ash/capture_mode/capture_mode_session_focus_cycler.h"
 #include "base/memory/raw_ptr.h"
 
@@ -14,13 +16,13 @@ class Label;
 
 namespace ash {
 
+class ActionButtonView;
 class BaseCaptureModeSession;
 class CaptureLabelView;
 class CaptureModeBarView;
 class CaptureModeSettingsView;
 class CaptureRegionOverlayController;
 class MagnifierGlass;
-class ActionButtonView;
 class RecordingTypeMenuView;
 class UserNudgeController;
 
@@ -50,6 +52,8 @@ class CaptureModeSessionTestApi {
 
   views::Widget* GetActionContainerWidget();
 
+  views::Widget* GetDisclaimerWidget();
+
   views::Widget* GetRecordingTypeMenuWidget();
 
   views::Widget* GetDimensionsLabelWidget();
@@ -69,9 +73,12 @@ class CaptureModeSessionTestApi {
 
   CaptureModeSessionFocusCycler::HighlightableView* GetCurrentFocusedView();
 
+  bool HasAxVirtualWidget() const;
+  size_t GetAxVirtualViewsCount() const;
+
   // Returns false if `current_focus_group_` equals to `kNone` which means
   // there's no focus on any focus group for now. Otherwise, returns true;
-  bool HasFocus();
+  bool HasFocus() const;
 
   bool IsFolderSelectionDialogShown();
 
@@ -85,6 +92,11 @@ class CaptureModeSessionTestApi {
   // session. The returned vector will be empty if there are no buttons or there
   // is no selected region.
   std::vector<ActionButtonView*> GetActionButtons() const;
+
+  // Returns the action button with view ID `id`, or nullptr if there is none.
+  ActionButtonView* GetActionButtonByViewId(ActionButtonViewID id) const;
+
+  ActionButtonContainerView::ErrorView* GetActionContainerErrorView() const;
 
   CaptureRegionOverlayController* GetCaptureRegionOverlayController() const;
 

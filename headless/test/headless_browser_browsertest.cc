@@ -27,11 +27,14 @@
 #include "components/infobars/core/confirm_infobar_delegate.h"
 #include "components/infobars/core/infobar.h"
 #include "components/infobars/core/infobars_switches.h"
+#include "content/public/browser/content_browser_client.h"
 #include "content/public/browser/navigation_controller.h"
 #include "content/public/browser/navigation_entry.h"
 #include "content/public/browser/permission_controller_delegate.h"
+#include "content/public/browser/permission_descriptor_util.h"
 #include "content/public/browser/ssl_status.h"
 #include "content/public/browser/web_contents.h"
+#include "content/public/common/content_client.h"
 #include "content/public/common/content_switches.h"
 #include "content/public/common/url_constants.h"
 #include "content/public/test/browser_test.h"
@@ -344,49 +347,10 @@ IN_PROC_BROWSER_TEST_F(HeadlessBrowserTest, DefaultSizes) {
   HeadlessWebContents* web_contents =
       browser_context->CreateWebContentsBuilder().Build();
 
-  HeadlessBrowser::Options::Builder builder;
-  const HeadlessBrowser::Options kDefaultOptions = builder.Build();
+  const HeadlessBrowser::Options kDefaultOptions;
 
   const int expected_width = kDefaultOptions.window_size.width();
   const int expected_height = kDefaultOptions.window_size.height();
-
-  EXPECT_THAT(EvaluateScript(web_contents, "screen.width"),
-              DictHasValue("result.result.value", expected_width));
-  EXPECT_THAT(EvaluateScript(web_contents, "screen.height"),
-              DictHasValue("result.result.value", expected_height));
-
-  EXPECT_THAT(EvaluateScript(web_contents, "window.outerWidth"),
-              DictHasValue("result.result.value", expected_width));
-  EXPECT_THAT(EvaluateScript(web_contents, "window.outerHeight"),
-              DictHasValue("result.result.value", expected_height));
-
-  EXPECT_THAT(EvaluateScript(web_contents, "window.innerWidth"),
-              DictHasValue("result.result.value", expected_width));
-  EXPECT_THAT(EvaluateScript(web_contents, "window.innerHeight"),
-              DictHasValue("result.result.value", expected_height));
-}
-
-class HeadlessBrowserWindowSizeTest : public HeadlessBrowserTest {
- public:
-  static constexpr gfx::Size kWindowSize = {1920, 1080};
-
-  void SetUpCommandLine(base::CommandLine* command_line) override {
-    HeadlessBrowserTest::SetUpCommandLine(command_line);
-    command_line->AppendSwitchASCII(
-        switches::kWindowSize,
-        base::StringPrintf("%u,%u", kWindowSize.width(), kWindowSize.height()));
-  }
-};
-
-IN_PROC_BROWSER_TEST_F(HeadlessBrowserWindowSizeTest, WindowSize) {
-  HeadlessBrowserContext* browser_context =
-      browser()->CreateBrowserContextBuilder().Build();
-
-  HeadlessWebContents* web_contents =
-      browser_context->CreateWebContentsBuilder().Build();
-
-  const int expected_width = kWindowSize.width();
-  const int expected_height = kWindowSize.height();
 
   EXPECT_THAT(EvaluateScript(web_contents, "screen.width"),
               DictHasValue("result.result.value", expected_width));
@@ -581,7 +545,10 @@ IN_PROC_BROWSER_TEST_F(HeadlessBrowserTest, PermissionManagerAlwaysASK) {
   // Check that the permission manager returns ASK for a given permission type.
   EXPECT_EQ(blink::mojom::PermissionStatus::ASK,
             permission_controller_delegate->GetPermissionStatus(
-                blink::PermissionType::NOTIFICATIONS, url, url));
+                content::PermissionDescriptorUtil::
+                    CreatePermissionDescriptorForPermissionType(
+                        blink::PermissionType::NOTIFICATIONS),
+                url, url));
 }
 
 class BrowserTargetTracingTest : public HeadlessBrowserTest {
@@ -1007,6 +974,12 @@ IN_PROC_BROWSER_TEST_F(HeadlessBrowserTest, DISABLED_NetworkServiceCrash) {
         /* ignore_uncommitted_navigations */ false);
     nav_observer.Wait();
   } while (wc->GetController().GetLastCommittedEntry()->GetURL() != new_url);
+}
+
+IN_PROC_BROWSER_TEST_F(HeadlessBrowserTest, HasValidBluetoothDelegate) {
+  auto* delegate =
+      content::GetContentClientForTesting()->browser()->GetBluetoothDelegate();
+  EXPECT_TRUE(delegate);
 }
 
 // Infobar tests -------------------------------------------------------------

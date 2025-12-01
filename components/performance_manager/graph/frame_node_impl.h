@@ -20,13 +20,12 @@
 #include "components/performance_manager/public/mojom/coordination_unit.mojom.h"
 #include "components/performance_manager/public/mojom/web_memory.mojom.h"
 #include "components/performance_manager/public/render_frame_host_proxy.h"
+#include "components/performance_manager/resource_attribution/cpu_measurement_data.h"
 #include "content/public/browser/browsing_instance_id.h"
 #include "content/public/browser/site_instance.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "third_party/blink/public/common/tokens/tokens.h"
-#include "third_party/blink/public/mojom/frame/lifecycle.mojom-forward.h"
-#include "third_party/blink/public/mojom/frame/viewport_intersection_state.mojom-forward.h"
 #include "url/gurl.h"
 #include "url/origin.h"
 
@@ -40,9 +39,11 @@ class FrameNodeImpl
     : public PublicNodeImpl<FrameNodeImpl, FrameNode>,
       public TypedNodeBase<FrameNodeImpl, FrameNode, FrameNodeObserver>,
       public mojom::DocumentCoordinationUnit,
-      public SupportsNodeInlineData<execution_context::FrameExecutionContext,
-                                    // Keep this last to avoid merge conflicts.
-                                    NodeAttachedDataStorage> {
+      public SupportsNodeInlineData<
+          execution_context::FrameExecutionContext,
+          resource_attribution::SharedCPUTimeResultData,
+          // Keep this last to avoid merge conflicts.
+          NodeAttachedDataStorage> {
  public:
   static const char kDefaultPriorityReason[];
 
@@ -86,6 +87,7 @@ class FrameNodeImpl
   void OnWebMemoryMeasurementRequested(
       mojom::WebMemoryMeasurement::Mode mode,
       OnWebMemoryMeasurementRequestedCallback callback) override;
+  void OnFreezingOriginTrialOptOut() override;
 
   // Partial FrameNode implementation:
   const blink::LocalFrameToken& GetFrameToken() const override;
@@ -102,15 +104,17 @@ class FrameNodeImpl
   bool GetNetworkAlmostIdle() const override;
   bool IsAdFrame() const override;
   bool IsHoldingWebLock() const override;
-  bool IsHoldingIndexedDBLock() const override;
+  bool IsHoldingBlockingIndexedDBLock() const override;
   bool UsesWebRTC() const override;
   bool HadUserActivation() const override;
   bool HadFormInteraction() const override;
   bool HadUserEdits() const override;
   bool IsAudible() const override;
   bool IsCapturingMediaStream() const override;
-  std::optional<ViewportIntersection> GetViewportIntersection() const override;
+  bool HasFreezingOriginTrialOptOut() const override;
+  ViewportIntersection GetViewportIntersection() const override;
   Visibility GetVisibility() const override;
+  bool IsIntersectingLargeArea() const override;
   bool IsImportant() const override;
   const RenderFrameHostProxy& GetRenderFrameHostProxy() const override;
   uint64_t GetResidentSetKbEstimate() const override;
@@ -137,14 +141,14 @@ class FrameNodeImpl
                                  GraphImpl* graph);
   void SetHadUserActivation();
   void SetIsHoldingWebLock(bool is_holding_weblock);
-  void SetIsHoldingIndexedDBLock(bool is_holding_indexeddb_lock);
+  void SetIsHoldingBlockingIndexedDBLock(
+      bool is_holding_blocking_indexeddb_lock);
   void SetIsAudible(bool is_audible);
   void SetIsCapturingMediaStream(bool is_capturing_media_stream);
-  void SetViewportIntersection(const blink::mojom::ViewportIntersectionState&
-                                   viewport_intersection_state);
-  void SetViewportIntersection(blink::mojom::FrameVisibility frame_visibility);
+  void SetViewportIntersection(ViewportIntersection viewport_intersection);
   void SetInitialVisibility(Visibility visibility);
   void SetVisibility(Visibility visibility);
+  void SetIsIntersectingLargeArea(bool is_intersecting_large_area);
   void SetIsImportant(bool is_important);
   void SetResidentSetKbEstimate(uint64_t rss_estimate);
   void SetPrivateFootprintKbEstimate(uint64_t private_footprint_estimate);
@@ -155,6 +159,10 @@ class FrameNodeImpl
                              bool same_document,
                              bool is_served_from_back_forward_cache);
 
+  // Traverses the frame tree and notifies all frames that their embedding
+  // primary page is about to be discarded.
+  void OnPrimaryPageAboutToBeDiscarded();
+
   // Invoked by |worker_node| when it starts/stops being a child of this frame.
   void AddChildWorker(WorkerNodeImpl* worker_node);
   void RemoveChildWorker(WorkerNodeImpl* worker_node);
@@ -162,7 +170,6 @@ class FrameNodeImpl
   // Invoked to set the frame priority, and the reason behind it.
   void SetPriorityAndReason(const PriorityAndReason& priority_and_reason);
 
-  base::WeakPtr<FrameNodeImpl> GetWeakPtrOnUIThread();
   base::WeakPtr<FrameNodeImpl> GetWeakPtr();
 
   void SeverPageRelationshipsAndMaybeReparentForTesting() {
@@ -184,12 +191,6 @@ class FrameNodeImpl
   void RemoveEmbeddedPage(base::PassKey<PageNodeImpl> key,
                           PageNodeImpl* page_node);
 
-  // Testing-only functions that allows setting the ViewportIntersection
-  // directly.
-  void SetViewportIntersectionForTesting(bool is_intersecting_viewport);
-  void SetViewportIntersectionForTesting(
-      ViewportIntersection viewport_intersection);
-
  private:
   friend class FrameNodeImplDescriber;
   friend class ProcessNodeImpl;
@@ -207,6 +208,7 @@ class FrameNodeImpl
 
   // Properties associated with a Document, which are reset when a
   // different-document navigation is committed in the frame.
+  // LINT.IfChange(document_prop)
   struct DocumentProperties {
     DocumentProperties();
     ~DocumentProperties();
@@ -249,16 +251,25 @@ class FrameNodeImpl
         bool,
         &FrameNodeObserver::OnFrameUsesWebRTCChanged>
         uses_web_rtc{false};
+
+    // Whether the document is opted-out from freezing via origin trial.
+    ObservedProperty::NotifiesOnlyOnChanges<
+        bool,
+        &FrameNodeObserver::OnFrameHasFreezingOriginTrialOptOutChanged>
+        has_freezing_origin_trial_opt_out{false};
   };
+  // LINT.ThenChange(//components/performance_manager/graph/frame_node_impl.cc:document_prop_reset)
 
   // Invoked by subframes on joining/leaving the graph.
   void AddChildFrame(FrameNodeImpl* frame_node);
   void RemoveChildFrame(FrameNodeImpl* frame_node);
 
   // NodeBase:
-  void OnJoiningGraph() override;
+  void OnInitializingProperties() override;
+  void OnInitializingEdges() override;
   void OnBeforeLeavingGraph() override;
-  void RemoveNodeAttachedData() override;
+  void OnUninitializingEdges() override;
+  void CleanUpNodeState() override;
 
   // Helper function to sever all opened/embedded page relationships. This is
   // called before destroying the frame node in "OnBeforeLeavingGraph". Note
@@ -280,17 +291,10 @@ class FrameNodeImpl
   // result of this call.
   bool SetIsCurrent(bool is_current);
 
-  // Sets the viewport intersection on a non-local root frame. In this case, the
-  // area size of the viewport intersection is not known, and must be inherited
-  // from its parent.
-  void SetViewportIntersectionImpl(bool is_intersecting_viewport);
-
-  // Sets the ViewportIntersection for this frame.
-  void SetViewportIntersectionImpl(ViewportIntersection viewport_intersection);
-
-  // Updates the inherited `is_intersecting_large_area` bit of the
-  // ViewportIntersection of this frame.
+  // Updates the inherited `IsIntersectingLargeArea()` property of this frame.
   void SetInheritedIsIntersectingLargeArea(bool is_intersecting_large_area);
+
+  void SetIsIntersectingLargeAreaImpl(bool is_intersecting_large_area);
 
   mojo::Receiver<mojom::DocumentCoordinationUnit> receiver_{this};
 
@@ -359,8 +363,8 @@ class FrameNodeImpl
       is_holding_weblock_{false};
   ObservedProperty::NotifiesOnlyOnChanges<
       bool,
-      &FrameNodeObserver::OnFrameIsHoldingIndexedDBLockChanged>
-      is_holding_indexeddb_lock_{false};
+      &FrameNodeObserver::OnFrameIsHoldingBlockingIndexedDBLockChanged>
+      is_holding_blocking_indexeddb_lock_{false};
 
   bool is_current_{false};
 
@@ -397,14 +401,14 @@ class FrameNodeImpl
 
   // Indicates the intersection between the frame and the viewport.
   //
-  // Note that this property is always invalid for a main frame. This is because
-  // the main frame always occupies the entirety of the viewport so there is no
-  // point in tracking it. To avoid programming mistakes, it is forbidden to
-  // query this property for the main frame.
+  // Note that calling `GetViewportIntersection()` will always returns
+  // ViewportIntersection::kIntersecting for the outermost main frame. This is
+  // because it always occupies the entirety of the viewport, so there is no
+  // point in tracking it.
   ObservedProperty::NotifiesOnlyOnChanges<
-      std::optional<ViewportIntersection>,
+      ViewportIntersection,
       &FrameNodeObserver::OnViewportIntersectionChanged>
-      viewport_intersection_;
+      viewport_intersection_{ViewportIntersection::kUnknown};
 
   // Indicates if the frame is visible. This is maintained by the
   // FrameVisibilityDecorator.
@@ -414,17 +418,19 @@ class FrameNodeImpl
       &FrameNodeObserver::OnFrameVisibilityChanged>
       visibility_{Visibility::kUnknown};
 
+  // Indicates if this frame intersects with a large area of the viewport.
+  // Defaults to true when its value is unknown.
+  bool is_intersecting_large_area_ = true;
+
+  // Indicates that SetIsIntersectingLargeArea() was called for this frame. This
+  // is only called for local root frames and means this frame should not
+  // inherit the value of its parent.
+  bool has_is_intersecting_large_area_updates_ = false;
+
   ObservedProperty::
       NotifiesOnlyOnChanges<bool, &FrameNodeObserver::OnIsImportantChanged>
           is_important_{true};
 
-  // Indicates that SetViewportIntersection() was called with a
-  // blink::mojom::ViewportIntersectionState instance. This is only called for
-  // local root frames and take precedence over frame visibility updates. When
-  // true, frame visibility updates are ignored.
-  bool has_viewport_intersection_updates_ = false;
-
-  base::WeakPtr<FrameNodeImpl> weak_this_;
   base::WeakPtrFactory<FrameNodeImpl> weak_factory_
       GUARDED_BY_CONTEXT(sequence_checker_){this};
 };

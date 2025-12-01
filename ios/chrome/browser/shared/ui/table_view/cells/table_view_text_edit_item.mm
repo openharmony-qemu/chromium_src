@@ -137,6 +137,10 @@ const CGFloat kSymbolSize = 15;
         self.identifyingIconAccessibilityLabel;
   }
 
+  if ([self.cellAccessibilityLabel length]) {
+    cell.accessibilityLabelValue = self.cellAccessibilityLabel;
+  }
+
   // If the TextField or IconButton are enabled, the cell needs to make its
   // inner TextField or button accessible to voice over. In order to achieve
   // this the cell can't be an A11y element.
@@ -147,8 +151,7 @@ const CGFloat kSymbolSize = 15;
 #pragma mark Actions
 
 - (void)textFieldChanged:(UITextField*)textField {
-  self.textFieldValue = textField.text;
-  [self.delegate tableViewItemDidChange:self];
+  [self updateTextFieldValue:textField.text];
 }
 
 - (void)textFieldBeginEditing:(UITextField*)textField {
@@ -166,6 +169,11 @@ const CGFloat kSymbolSize = 15;
     return;
   }
   _hasValidText = hasValidText;
+}
+
+- (void)updateTextFieldValue:(NSString*)textFieldValue {
+  _textFieldValue = textFieldValue;
+  [self.delegate tableViewItemDidChange:self];
 }
 
 @end
@@ -410,6 +418,10 @@ const CGFloat kSymbolSize = 15;
 #pragma mark Accessibility
 
 - (NSString*)accessibilityLabel {
+  if ([self.accessibilityLabelValue length]) {
+    return self.accessibilityLabelValue;
+  }
+
   // If `textFieldSecureTextEntry` is
   // YES, the voice over should not read the text value.
   NSString* textFieldText =

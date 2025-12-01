@@ -44,7 +44,7 @@ class ASH_EXPORT NullCaptureModeSession : public BaseCaptureModeSession {
       bool capture_surface_became_too_small,
       bool did_bounds_or_visibility_change) override;
   void OnCameraPreviewDestroyed() override;
-  void MaybeDismissUserNudgeForever() override;
+  void MaybeDismissSunfishRegionNudgeForever() override;
   void MaybeChangeRoot(aura::Window* new_root,
                        bool root_window_will_shutdown) override;
   void OnPerformCaptureForSearchStarting(
@@ -55,11 +55,20 @@ class ASH_EXPORT NullCaptureModeSession : public BaseCaptureModeSession {
   ActionButtonView* AddActionButton(views::Button::PressedCallback callback,
                                     std::u16string text,
                                     const gfx::VectorIcon* icon,
-                                    ActionButtonRank rank) override;
-  void AddScannerActionButtons(
-      std::vector<ScannerActionViewModel> scanner_actions) override;
-  void OnTextDetected() override;
-  gfx::Rect GetFeedbackWidgetScreenBounds() const override;
+                                    ActionButtonRank rank,
+                                    ActionButtonViewID id) override;
+  void AddSmartActionsButton() override;
+  void MaybeShowScannerDisclaimer(
+      ScannerEntryPoint entry_point,
+      base::RepeatingClosure accept_callback,
+      base::RepeatingClosure decline_callback) override;
+  void OnScannerActionsFetched(
+      ScannerSession::FetchActionsResponse actions_response) override;
+  void ShowActionContainerError(const std::u16string& error_message) override;
+  void OnSearchResultsPanelCreated(views::Widget* panel_widget) override;
+  bool TakeFocusForSearchResultsPanel(bool reverse) override;
+  void ClearPseudoFocus() override;
+  void SetA11yOverrideWindowToSearchResultsPanel() override;
 
  private:
   // CaptureModeSession:

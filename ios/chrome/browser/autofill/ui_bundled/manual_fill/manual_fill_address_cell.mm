@@ -32,7 +32,7 @@
 
 // The cell's accessibility label. Indicates the index at which the address
 // represented by this item is positioned in the list of addresses to show.
-@property(nonatomic, strong) NSString* cellIndexAccessibilityLabel;
+@property(nonatomic, copy) NSString* cellIndexAccessibilityLabel;
 
 @end
 
@@ -56,7 +56,7 @@
     _address = address;
     _menuActions = menuActions;
     _cellIndex = cellIndex;
-    _cellIndexAccessibilityLabel = cellIndexAccessibilityLabel;
+    _cellIndexAccessibilityLabel = [cellIndexAccessibilityLabel copy];
     _showAutofillFormButton = showAutofillFormButton;
     self.cellClass = [ManualFillAddressCell class];
   }
@@ -258,7 +258,7 @@ constexpr CGFloat kOverflowMenuButtonTopSpacing = 14;
     AppendHorizontalConstraintsForViews(
         staticConstraints, @[ self.addressLabel ], self.layoutGuide);
   } else {
-    self.overflowMenuButton = CreateOverflowMenuButton();
+    self.overflowMenuButton = CreateOverflowMenuButton(_cellIndex);
     [self.contentView addSubview:self.overflowMenuButton];
     [staticConstraints
         addObject:[self.overflowMenuButton.topAnchor

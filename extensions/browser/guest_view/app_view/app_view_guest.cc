@@ -115,8 +115,8 @@ std::unique_ptr<GuestViewBase> AppViewGuest::Create(
 
 AppViewGuest::AppViewGuest(content::RenderFrameHost* owner_rfh)
     : GuestView<AppViewGuest>(owner_rfh),
-      app_view_guest_delegate_(base::WrapUnique(
-          ExtensionsAPIClient::Get()->CreateAppViewGuestDelegate())) {
+      app_view_guest_delegate_(
+          ExtensionsAPIClient::Get()->CreateAppViewGuestDelegate()) {
   if (app_view_guest_delegate_) {
     app_delegate_ =
         base::WrapUnique(app_view_guest_delegate_->CreateAppDelegate(
@@ -150,6 +150,7 @@ bool AppViewGuest::HandleContextMenu(
 }
 
 bool AppViewGuest::IsWebContentsCreationOverridden(
+    content::RenderFrameHost* opener,
     content::SiteInstance* source_site_instance,
     content::mojom::WindowContainerType window_container_type,
     const GURL& opener_url,
@@ -214,9 +215,11 @@ bool AppViewGuest::CheckMediaAccessPermission(
       render_frame_host, security_origin, type, guest_extension);
 }
 
-void AppViewGuest::CreateInnerPage(std::unique_ptr<GuestViewBase> owned_this,
-                                   const base::Value::Dict& create_params,
-                                   GuestPageCreatedCallback callback) {
+void AppViewGuest::CreateInnerPage(
+    std::unique_ptr<GuestViewBase> owned_this,
+    scoped_refptr<content::SiteInstance> site_instance,
+    const base::Value::Dict& create_params,
+    GuestPageCreatedCallback callback) {
   const std::string* app_id = create_params.FindString(appview::kAppID);
   if (!app_id) {
     RejectGuestCreation(std::move(owned_this), std::move(callback));
@@ -268,16 +271,18 @@ void AppViewGuest::CreateInnerPage(std::unique_ptr<GuestViewBase> owned_this,
 }
 
 void AppViewGuest::DidInitialize(const base::Value::Dict& create_params) {
-  if (!base::FeatureList::IsEnabled(features::kGuestViewMPArch)) {
-    ExtensionsAPIClient::Get()->AttachWebContentsHelpers(web_contents());
-  }
-
-  if (!url_.is_valid()) {
+  if (base::FeatureList::IsEnabled(features::kGuestViewMPArch)) {
     return;
   }
 
-  GetController().LoadURL(url_, content::Referrer(), ui::PAGE_TRANSITION_LINK,
-                          std::string());
+  ExtensionsAPIClient::Get()->AttachWebContentsHelpers(web_contents());
+  LoadURL();
+}
+
+void AppViewGuest::DidAttachToEmbedder() {
+  if (base::FeatureList::IsEnabled(features::kGuestViewMPArch)) {
+    LoadURL();
+  }
 }
 
 void AppViewGuest::MaybeRecreateGuestContents(
@@ -360,6 +365,15 @@ void AppViewGuest::LaunchAppAndFireEvent(
   embed_request.Set(appview::kData, std::move(data));
   AppRuntimeEventRouter::DispatchOnEmbedRequestedEvent(
       browser_context(), std::move(embed_request), extension);
+}
+
+void AppViewGuest::LoadURL() {
+  if (!url_.is_valid()) {
+    return;
+  }
+
+  GetController().LoadURL(url_, content::Referrer(), ui::PAGE_TRANSITION_LINK,
+                          std::string());
 }
 
 void AppViewGuest::SetAppDelegateForTest(AppDelegate* delegate) {

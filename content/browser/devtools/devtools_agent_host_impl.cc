@@ -14,8 +14,10 @@
 #include "base/no_destructor.h"
 #include "base/notreached.h"
 #include "base/observer_list.h"
+#include "base/strings/string_number_conversions.h"
 #include "base/strings/string_split.h"
 #include "content/browser/devtools/auction_worklet_devtools_agent_host.h"
+#include "content/browser/devtools/dedicated_worker_devtools_agent_host.h"
 #include "content/browser/devtools/devtools_http_handler.h"
 #include "content/browser/devtools/devtools_manager.h"
 #include "content/browser/devtools/devtools_pipe_handler.h"
@@ -29,6 +31,7 @@
 #include "content/browser/devtools/shared_worker_devtools_agent_host.h"
 #include "content/browser/devtools/shared_worker_devtools_manager.h"
 #include "content/browser/devtools/web_contents_devtools_agent_host.h"
+#include "content/browser/devtools/worker_or_worklet_devtools_agent_host.h"
 #include "content/browser/renderer_host/render_frame_host_impl.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/content_browser_client.h"
@@ -178,8 +181,7 @@ DevToolsAgentHost::List DevToolsAgentHost::GetOrCreateAll() {
 
   SharedStorageWorkletDevToolsManager::GetInstance()->AddAllAgentHosts(&result);
 
-  // TODO(dgozman): we should add dedicated workers here, but clients are not
-  // ready.
+  DedicatedWorkerDevToolsAgentHost::AddAllAgentHosts(&result);
   RenderFrameDevToolsAgentHost::AddAllAgentHosts(&result);
   WebContentsDevToolsAgentHost::AddAllAgentHosts(&result);
 

@@ -33,7 +33,6 @@
 #include "base/threading/thread_restrictions.h"
 #include "base/time/time.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "components/services/storage/indexed_db/transactional_leveldb/transactional_leveldb_database.h"
 #include "components/services/storage/privileged/mojom/indexed_db_control.mojom-test-utils.h"
 #include "components/services/storage/privileged/mojom/indexed_db_control_test.mojom.h"
@@ -64,7 +63,6 @@
 #include "net/test/embedded_test_server/http_request.h"
 #include "net/test/embedded_test_server/http_response.h"
 #include "storage/browser/blob/blob_storage_context.h"
-#include "storage/browser/database/database_util.h"
 #include "storage/browser/quota/quota_manager.h"
 #include "storage/browser/quota/quota_manager_proxy.h"
 #include "storage/browser/quota/quota_settings.h"
@@ -73,7 +71,6 @@
 #include "url/gurl.h"
 #include "url/origin.h"
 
-using storage::DatabaseUtil;
 using storage::QuotaManager;
 using storage::mojom::FailClass;
 using storage::mojom::FailMethod;
@@ -182,7 +179,7 @@ class IndexedDBBrowserTest : public ContentBrowserTest {
         ->GetBrowserContext()
         ->GetDefaultStoragePartition()
         ->GetIndexedDBControl()
-        .BindTestInterface(std::move(receiver));
+        .BindTestInterfaceForTesting(std::move(receiver));
   }
 
   void SetQuota(int per_host_quota_kilobytes) {
@@ -255,17 +252,6 @@ class IndexedDBBrowserTest : public ContentBrowserTest {
       count++;
     }
     return count;
-  }
-
-  // Synchronously writes to the IndexedDB database at the given storage_key.
-  void WriteToIndexedDB(const storage::BucketLocator& bucket_locator,
-                        std::string key,
-                        std::string value) {
-    auto control_test = GetControlTest();
-    base::RunLoop loop;
-    control_test->WriteToIndexedDBForTesting(
-        bucket_locator, std::move(key), std::move(value), loop.QuitClosure());
-    loop.Run();
   }
 
   storage::QuotaErrorOr<storage::BucketInfo> GetOrCreateBucket(
@@ -511,72 +497,6 @@ IN_PROC_BROWSER_TEST_F(IndexedDBBrowserTest, SchedulingPriority) {
   }));
 }
 
-IN_PROC_BROWSER_TEST_F(IndexedDBBrowserTest, NegativeDBSchemaVersion) {
-  const GURL database_open_url = GetTestUrl("indexeddb", "database_test.html");
-
-  // Create the database.
-  SimpleTest(database_open_url);
-  // -10, little endian.
-  std::string value = "\xF6\xFF\xFF\xFF\xFF\xFF\xFF\xFF";
-
-  // Find the bucket that was created.
-  ASSERT_OK_AND_ASSIGN(
-      const auto bucket_info,
-      GetOrCreateBucket(storage::BucketInitParams::ForDefaultBucket(
-          blink::StorageKey::CreateFirstParty(
-              url::Origin::Create(database_open_url)))));
-  const auto bucket_locator = bucket_info.ToBucketLocator();
-
-  auto control_test = GetControlTest();
-  base::RunLoop loop;
-  std::string key;
-  control_test->GetDatabaseKeysForTesting(
-      base::BindLambdaForTesting([&](const std::string& schema_version_key,
-                                     const std::string& data_version_key) {
-        key = schema_version_key;
-        loop.Quit();
-      }));
-  loop.Run();
-
-  WriteToIndexedDB(bucket_locator, key, value);
-  // Crash the tab to ensure no old navigations are picked up.
-  CrashTab(shell()->web_contents());
-  SimpleTest(GetTestUrl("indexeddb", "open_bad_db.html"));
-}
-
-IN_PROC_BROWSER_TEST_F(IndexedDBBrowserTest, NegativeDBDataVersion) {
-  const GURL database_open_url = GetTestUrl("indexeddb", "database_test.html");
-
-  // Create the database.
-  SimpleTest(database_open_url);
-  // -10, little endian.
-  std::string value = "\xF6\xFF\xFF\xFF\xFF\xFF\xFF\xFF";
-
-  // Find the bucket that was created.
-  ASSERT_OK_AND_ASSIGN(
-      const auto bucket_info,
-      GetOrCreateBucket(storage::BucketInitParams::ForDefaultBucket(
-          blink::StorageKey::CreateFirstParty(
-              url::Origin::Create(database_open_url)))));
-  const auto bucket_locator = bucket_info.ToBucketLocator();
-
-  auto control_test = GetControlTest();
-  base::RunLoop loop;
-  std::string key;
-  control_test->GetDatabaseKeysForTesting(
-      base::BindLambdaForTesting([&](const std::string& schema_version_key,
-                                     const std::string& data_version_key) {
-        key = data_version_key;
-        loop.Quit();
-      }));
-  loop.Run();
-
-  WriteToIndexedDB(bucket_locator, key, value);
-  // Crash the tab to ensure no old navigations are picked up.
-  CrashTab(shell()->web_contents());
-  SimpleTest(GetTestUrl("indexeddb", "open_bad_db.html"));
-}
-
 class IndexedDBBrowserTestWithLowQuota : public IndexedDBBrowserTest {
  public:
   IndexedDBBrowserTestWithLowQuota() = default;
@@ -622,6 +542,11 @@ IN_PROC_BROWSER_TEST_F(IndexedDBBrowserTestWithGCExposed,
 
 IN_PROC_BROWSER_TEST_F(IndexedDBBrowserTestWithGCExposed, Bug346955148Test) {
   SimpleTest(GetTestUrl("indexeddb", "bug_346955148.html"));
+}
+
+// Regression test for crbug.com/392376370
+IN_PROC_BROWSER_TEST_F(IndexedDBBrowserTestWithGCExposed, NestedBlob) {
+  SimpleTest(GetTestUrl("indexeddb", "nested_blob.html"));
 }
 
 struct BlobModificationTime {
@@ -959,7 +884,7 @@ std::unique_ptr<net::test_server::HttpResponse> ServePath(
   return std::move(http_response);
 }
 
-#if !BUILDFLAG(IS_WIN)
+#if !BUILDFLAG(IS_WIN) && !BUILDFLAG(IS_IOS)
 void CorruptDatabase(const base::FilePath& idb_data_path) {
   int num_files = 0;
   int num_errors = 0;
@@ -1032,7 +957,7 @@ std::unique_ptr<net::test_server::HttpResponse> CorruptDBRequestHandler(
     // The less ideal temporary solution is to only run these tests on
     // non-Windows.
     base::RunLoop loop;
-    control_test->CompactBackingStoreForTesting(
+    control_test->FlushBackingStoreForTesting(
         bucket_locator, base::BindLambdaForTesting([&]() {
           control_test->GetFilePathForTesting(
               bucket_locator,
@@ -1148,7 +1073,8 @@ std::unique_ptr<net::test_server::HttpResponse> StaticFileRequestHandler(
 
 // See TODO in CorruptDBRequestHandler.  Windows does not support nested
 // message loops on the IO thread, so run this test on other platforms.
-#if !BUILDFLAG(IS_WIN)
+// iOS runs into difficulty with the nested IO message loop as well.
+#if !BUILDFLAG(IS_WIN) && !BUILDFLAG(IS_IOS)
 class IndexedDBBrowserTestWithCorruption
     : public IndexedDBBrowserTest,
       public ::testing::WithParamInterface<const char*> {};
@@ -1199,7 +1125,7 @@ IN_PROC_BROWSER_TEST_P(IndexedDBBrowserTestWithCorruption,
       std::string(s_corrupt_db_test_prefix) + "corrupted_open_db_recovery.html";
   SimpleTest(embedded_test_server()->GetURL(test_file));
 }
-#endif  // !BUILDFLAG(IS_WIN)
+#endif  // !BUILDFLAG(IS_WIN) && !BUILDFLAG(IS_IOS)
 
 // TODO: http://crbug.com/510520, flaky on all platforms
 IN_PROC_BROWSER_TEST_F(IndexedDBBrowserTest,
@@ -1369,6 +1295,7 @@ IN_PROC_BROWSER_TEST_F(IndexedDBBrowserTest, LargeValueReadBlobMissing) {
   content::FetchHistogramsFromChildProcesses();
   const int kExpectedBucketCount = 1;
   const int kFailureTypeBackendReadError = 3;  // From file_reader_loader.h.
+  const int kFileErrorOK = 0;                  // From file_error.h.
   const int kFileErrorCodeNotFoundErr = 1;     // From file_error.h.
   histogram_tester.ExpectUniqueSample(
       "Storage.Blob.FileReaderLoader.ReadError2", -net::ERR_FILE_NOT_FOUND,
@@ -1376,9 +1303,10 @@ IN_PROC_BROWSER_TEST_F(IndexedDBBrowserTest, LargeValueReadBlobMissing) {
   histogram_tester.ExpectUniqueSample(
       "Storage.Blob.FileReaderLoader.FailureType2",
       kFailureTypeBackendReadError, kExpectedBucketCount);
-  histogram_tester.ExpectUniqueSample("IndexedDB.LargeValueReadError",
-                                      kFileErrorCodeNotFoundErr,
-                                      kExpectedBucketCount);
+  histogram_tester.GetAllSamples("IndexedDB.LargeValueReadResult"),
+      testing::ElementsAre(
+          base::Bucket(kFileErrorOK, kExpectedBucketCount),
+          base::Bucket(kFileErrorCodeNotFoundErr, kExpectedBucketCount));
   histogram_tester.ExpectTotalCount("IndexedDB.WrappedBlobLoadTime", 1);
 }
 

@@ -16,8 +16,7 @@
 #include "apps/saved_files_service_factory.h"
 #include "base/json/values_util.h"
 #include "base/memory/raw_ptr.h"
-#include "base/not_fatal_until.h"
-#include "build/chromeos_buildflags.h"
+#include "build/build_config.h"
 #include "content/public/browser/browser_context.h"
 #include "extensions/browser/api/file_system/saved_file_entry.h"
 #include "extensions/browser/extension_host.h"
@@ -309,12 +308,12 @@ void SavedFilesService::SavedFiles::RegisterFileEntry(
 
 void SavedFilesService::SavedFiles::EnqueueFileEntry(const std::string& id) {
   auto id_it = registered_file_entries_.find(id);
-  CHECK(id_it != registered_file_entries_.end(), base::NotFatalUntil::M130);
+  CHECK(id_it != registered_file_entries_.end());
 
   SavedFileEntry* file_entry = id_it->second.get();
   int old_sequence_number = file_entry->sequence_number;
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
   // crbug.com/983844 Convert path from legacy Download/ to MyFiles/Downloads/
   // so entries saved before MyFiles don't fail. TODO(lucmult): Remove this
   // after M-83.

@@ -270,7 +270,7 @@ void OmniboxFieldTrial::GetDemotionsByType(
     omnibox::CheckObsoletePageClass(current_page_classification);
 
     if (current_page_classification == OmniboxEventProto::NTP_REALBOX) {
-      demotion_rule = "1:10,2:10,3:10,4:10,5:10,16:10,17:10,24:10";
+      demotion_rule = "1:10,2:10,3:10,4:10,5:10,16:10,17:10,24:10,33:0";
     }
   }
 
@@ -583,8 +583,8 @@ bool OmniboxFieldTrial::IsOnDeviceTailSuggestEnabled(
   // Do not launch for iOS since the feature is not supported in iOS yet.
 #if !BUILDFLAG(IS_IOS)
   if (IsEnglishLocale(locale)) {
-    return !base::FeatureList::IsEnabled(
-        omnibox::kDisableOnDeviceTailEnglishModel);
+    return base::FeatureList::IsEnabled(
+        omnibox::kOnDeviceTailEnableEnglishModel);
   }
 #endif  // !BUILDFLAG(IS_IOS)
 
@@ -601,11 +601,11 @@ bool OmniboxFieldTrial::ShouldApplyOnDeviceHeadModelSelectionFix() {
   return base::GetFieldTrialParamByFeatureAsBool(
              omnibox::kOnDeviceHeadProviderNonIncognito,
              OmniboxFieldTrial::kOnDeviceHeadModelSelectionFix,
-             /*default_value=*/false) ||
+             /*default_value=*/true) ||
          base::GetFieldTrialParamByFeatureAsBool(
              omnibox::kOnDeviceHeadProviderIncognito,
              OmniboxFieldTrial::kOnDeviceHeadModelSelectionFix,
-             /*default_value=*/false);
+             /*default_value=*/true);
 }
 
 bool OmniboxFieldTrial::IsOnDeviceHeadSuggestEnabledForLocale(
@@ -694,6 +694,8 @@ const char OmniboxFieldTrial::kDynamicMaxAutocompleteUrlCutoffParam[] =
     "OmniboxDynamicMaxAutocompleteUrlCutoff";
 const char OmniboxFieldTrial::kDynamicMaxAutocompleteIncreasedLimitParam[] =
     "OmniboxDynamicMaxAutocompleteIncreasedLimit";
+const char OmniboxFieldTrial::kSuppressPsuggestBackfillWithMIAParam[] =
+    "SuppressPsuggestBackfillWithMIA";
 
 const char OmniboxFieldTrial::kOnDeviceHeadModelLocaleConstraint[] =
     "ForceModelLocaleConstraint";
@@ -704,6 +706,16 @@ int OmniboxFieldTrial::kDefaultMinimumTimeBetweenSuggestQueriesMs = 100;
 namespace OmniboxFieldTrial {
 
 // Local history zero-prefix (aka zero-suggest) and prefix suggestions:
+
+// Whether to ignore all ZPS prefetch responses received from the Suggest
+// service when the user is on a Google SRP. This can be used, for example,
+// during experimentation to measure the performance impact of only the
+// request/response portion of ZPS prefetching (i.e. without updating the
+// user-visible list of suggestions in the Omnibox).
+const base::FeatureParam<bool> kZeroSuggestPrefetchingOnSRPCounterfactual(
+    &omnibox::kZeroSuggestPrefetchingOnSRP,
+    "ZeroSuggestPrefetchingOnSRPCounterfactual",
+    false);
 
 // The debouncing delay (in milliseconds) to use when throttling ZPS prefetch
 // requests.
@@ -725,13 +737,6 @@ const base::FeatureParam<int> kZeroSuggestCacheMaxSize(
     &omnibox::kZeroSuggestInMemoryCaching,
     "ZeroSuggestCacheMaxSize",
     5);
-
-// The relevance score for remote zero-suggest ranges from 550-1400. A default
-// value of 500 places local history zero-suggest below the remote zero-suggest.
-const base::FeatureParam<int> kLocalHistoryZeroSuggestRelevanceScore(
-    &omnibox::kAdjustLocalHistoryZeroSuggestRelevanceScore,
-    "LocalHistoryZeroSuggestRelevanceScore",
-    500);
 
 bool IsZeroSuggestPrefetchingEnabled() {
   return base::FeatureList::IsEnabled(omnibox::kZeroSuggestPrefetching) ||
@@ -755,80 +760,52 @@ bool IsZeroSuggestPrefetchingEnabledInContext(
   }
 }
 
+bool IsOnFocusZeroSuggestEnabledInContext(
+    metrics::OmniboxEventProto::PageClassification page_classification) {
+  static bool enabled =
+      base::FeatureList::IsEnabled(omnibox::kFocusTriggersWebAndSRPZeroSuggest);
+
+  switch (page_classification) {
+    case metrics::OmniboxEventProto::
+        SEARCH_RESULT_PAGE_NO_SEARCH_TERM_REPLACEMENT:
+    case metrics::OmniboxEventProto::OTHER:
+      return enabled;
+    default:
+      return false;
+  }
+}
+
+bool IsHideSuggestionGroupHeadersEnabledInContext(
+    metrics::OmniboxEventProto::PageClassification page_classification) {
+  static bool enabled =
+      base::FeatureList::IsEnabled(omnibox::kHideSuggestionGroupHeaders);
+
+  switch (page_classification) {
+    case metrics::OmniboxEventProto::
+        SEARCH_RESULT_PAGE_NO_SEARCH_TERM_REPLACEMENT:
+    case metrics::OmniboxEventProto::OTHER:
+      return enabled;
+    default:
+      return false;
+  }
+}
+
 // Rich autocompletion.
 
 bool IsRichAutocompletionEnabled() {
   return base::FeatureList::IsEnabled(omnibox::kRichAutocompletion);
 }
 
-bool RichAutocompletionShowAdditionalText() {
-  return IsRichAutocompletionEnabled() &&
-         kRichAutocompletionShowAdditionalText.Get();
-}
-
-const base::FeatureParam<bool> kRichAutocompletionAutocompleteTitles(
-    &omnibox::kRichAutocompletion,
-    "RichAutocompletionAutocompleteTitles",
-    false);
-
-const base::FeatureParam<bool>
-    kRichAutocompletionAutocompleteTitlesShortcutProvider(
-        &omnibox::kRichAutocompletion,
-        "RichAutocompletionAutocompleteTitlesShortcutProvider",
-        true);
-
-const base::FeatureParam<int> kRichAutocompletionAutocompleteTitlesMinChar(
+const base::FeatureParam<size_t> kRichAutocompletionAutocompleteTitlesMinChar(
     &omnibox::kRichAutocompletion,
     "RichAutocompletionAutocompleteTitlesMinChar",
     3);
 
-const base::FeatureParam<bool> kRichAutocompletionAutocompleteNonPrefixAll(
-    &omnibox::kRichAutocompletion,
-    "RichAutocompletionAutocompleteNonPrefixAll",
-    false);
-
-const base::FeatureParam<bool>
-    kRichAutocompletionAutocompleteNonPrefixShortcutProvider(
-        &omnibox::kRichAutocompletion,
-        "RichAutocompletionAutocompleteNonPrefixShortcutProvider",
-        false);
-
-const base::FeatureParam<int> kRichAutocompletionAutocompleteNonPrefixMinChar(
-    &omnibox::kRichAutocompletion,
-    "RichAutocompletionAutocompleteNonPrefixMinChar",
-    0);
-
-const base::FeatureParam<bool> kRichAutocompletionShowAdditionalText(
-    &omnibox::kRichAutocompletion,
-    "RichAutocompletionAutocompleteShowAdditionalText",
-    true);
-
-const base::FeatureParam<bool> kRichAutocompletionAdditionalTextWithParenthesis(
-    &omnibox::kRichAutocompletion,
-    "RichAutocompletionAdditionalTextWithParenthesis",
-    false);
-
-const base::FeatureParam<bool> kRichAutocompletionAutocompleteShortcutText(
-    &omnibox::kRichAutocompletion,
-    "RichAutocompletionAutocompleteShortcutText",
-    true);
-
-const base::FeatureParam<int>
+const base::FeatureParam<size_t>
     kRichAutocompletionAutocompleteShortcutTextMinChar(
         &omnibox::kRichAutocompletion,
         "RichAutocompletionAutocompleteShortcutTextMinChar",
         3);
-
-const base::FeatureParam<bool> kRichAutocompletionCounterfactual(
-    &omnibox::kRichAutocompletion,
-    "RichAutocompletionCounterfactual",
-    false);
-
-const base::FeatureParam<bool>
-    kRichAutocompletionAutocompletePreferUrlsOverPrefixes(
-        &omnibox::kRichAutocompletion,
-        "RichAutocompletionAutocompletePreferUrlsOverPrefixes",
-        false);
 
 const base::FeatureParam<bool> kDomainSuggestionsCounterfactual(
     &omnibox::kDomainSuggestions,
@@ -1135,6 +1112,7 @@ bool IsStarterPackExpansionEnabled() {
 bool IsStarterPackIPHEnabled() {
   return base::FeatureList::IsEnabled(omnibox::kStarterPackIPH);
 }
+
 // <- Site Search Starter Pack
 }  // namespace OmniboxFieldTrial
 

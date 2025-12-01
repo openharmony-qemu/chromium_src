@@ -24,11 +24,18 @@ constexpr bool kDoubleTapPlatformSupport = true;
 constexpr bool kDoubleTapPlatformSupport = false;
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
+#if BUILDFLAG(IS_OHOS)
+constexpr int kMinPinchPointerCount = 2;
+#endif
+
 }  // namespace
 
 GestureProviderAura::GestureProviderAura(GestureConsumer* consumer,
                                          GestureProviderAuraClient* client)
     : client_(client),
+#if BUILDFLAG(IS_OHOS)
+      pointer_update_state_(0),
+#endif
       filtered_gesture_provider_(
           GetGestureProviderConfig(GestureProviderConfigType::CURRENT_PLATFORM),
           this),
@@ -43,10 +50,26 @@ GestureProviderAura::~GestureProviderAura() {
 }
 
 bool GestureProviderAura::OnTouchEvent(TouchEvent* event) {
+#if BUILDFLAG(IS_OHOS)
+  AddPointer(event);
+#endif
+
   if (!pointer_state_.OnTouch(*event))
     return false;
 
+#if BUILDFLAG(IS_OHOS)
+  if (WaitForOtherTouchEvents(event)) {
+    return false;
+  }
+#endif
+
   auto result = filtered_gesture_provider_.OnTouchEvent(pointer_state_);
+
+#if BUILDFLAG(IS_OHOS)
+  // clean up update state
+  pointer_update_state_ = 0;
+#endif
+
   pointer_state_.CleanupRemovedTouchPoints(*event);
 
   if (!result.succeeded)
@@ -114,5 +137,27 @@ void GestureProviderAura::OnTouchEnter(int pointer_id, float x, float y) {
   OnTouchEventAck(touch_event->unique_event_id(), true /* event_consumed */,
                   false /* is_source_touch_event_set_blocking */);
 }
+
+#if BUILDFLAG(IS_OHOS)
+void GestureProviderAura::AddPointer(TouchEvent* event) {
+  int count = pointer_state_.GetPointerCount();
+  if (count >= kMinPinchPointerCount &&
+      event->type() == EventType::kTouchMoved) {
+    int id = event->pointer_details().id;
+    int index = pointer_state_.FindPointerIndexOfId(id);
+    pointer_update_state_ |= 1 << index;
+  }
+}
+
+bool GestureProviderAura::WaitForOtherTouchEvents(TouchEvent* event) {
+  int count = pointer_state_.GetPointerCount();
+  if (count >= kMinPinchPointerCount &&
+      event->type() == EventType::kTouchMoved &&
+      pointer_update_state_ != ((1 << count) - 1)) {
+    return true;
+  }
+  return false;
+}
+#endif // IS_OHOS
 
 }  // namespace ui

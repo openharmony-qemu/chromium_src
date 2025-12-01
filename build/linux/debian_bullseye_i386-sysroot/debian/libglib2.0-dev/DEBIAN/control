@@ -1,10 +1,10 @@
 Package: libglib2.0-dev
 Source: glib2.0
-Version: 2.66.8-1
+Version: 2.66.8-1+deb11u4
 Architecture: i386
 Maintainer: Debian GNOME Maintainers <pkg-gnome-maintainers@lists.alioth.debian.org>
-Installed-Size: 8706
-Depends: libffi-dev (>= 3.3), libglib2.0-0 (= 2.66.8-1), libglib2.0-bin (= 2.66.8-1), libglib2.0-dev-bin (= 2.66.8-1), libmount-dev (>= 2.35.2-7~), libpcre3-dev (>= 1:8.31), libselinux1-dev, pkg-config, zlib1g-dev
+Installed-Size: 8726
+Depends: libffi-dev (>= 3.3), libglib2.0-0 (= 2.66.8-1+deb11u4), libglib2.0-bin (= 2.66.8-1+deb11u4), libglib2.0-dev-bin (= 2.66.8-1+deb11u4), libmount-dev (>= 2.35.2-7~), libpcre3-dev (>= 1:8.31), libselinux1-dev, pkg-config, zlib1g-dev
 Suggests: libgirepository1.0-dev (>= 1.62), libglib2.0-doc
 Breaks: libglib2.0-0-dbg (<< 2.51.4-1~)
 Replaces: libglib2.0-0-dbg (<< 2.51.4-1~)

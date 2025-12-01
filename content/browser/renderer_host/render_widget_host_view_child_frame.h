@@ -95,6 +95,7 @@ class CONTENT_EXPORT RenderWidgetHostViewChildFrame
   void WasOccluded() override;
   gfx::Rect GetViewBounds() override;
   gfx::Size GetVisibleViewportSize() override;
+  gfx::Size GetVisibleViewportSizeDevicePx() override;
   void SetInsets(const gfx::Insets& insets) override;
   gfx::NativeView GetNativeView() override;
   gfx::NativeViewAccessible GetNativeViewAccessible() override;
@@ -102,6 +103,17 @@ class CONTENT_EXPORT RenderWidgetHostViewChildFrame
   void TakeFallbackContentFrom(RenderWidgetHostView* view) override;
 
   // RenderWidgetHostViewBase implementation.
+#if BUILDFLAG(IS_ANDROID)
+  bool IsTouchSequencePotentiallyActiveOnViz() override;
+  void RequestInputBackForDragAndDrop(
+      blink::mojom::DragDataPtr drag_data,
+      const url::Origin& source_origin,
+      blink::DragOperationsMask drag_operations_mask,
+      SkBitmap bitmap,
+      gfx::Vector2d cursor_offset_in_dip,
+      gfx::Rect drag_obj_rect_in_dip,
+      blink::mojom::DragEventSourceInfoPtr event_info) override;
+#endif
   RenderWidgetHostViewBase* GetRootView() override;
   uint32_t GetCaptureSequenceNumber() const override;
   gfx::Size GetCompositorViewportPixelSize() override;
@@ -146,7 +158,7 @@ class CONTENT_EXPORT RenderWidgetHostViewChildFrame
   bool HasSize() const override;
   double GetCSSZoomFactor() const override;
   gfx::PointF TransformPointToRootCoordSpaceF(
-      const gfx::PointF& point) override;
+      const gfx::PointF& point) const override;
   bool TransformPointToCoordSpaceForView(
       const gfx::PointF& point,
       input::RenderWidgetHostViewInput* target_view,
@@ -160,7 +172,7 @@ class CONTENT_EXPORT RenderWidgetHostViewChildFrame
       blink::mojom::IntrinsicSizingInfoPtr sizing_info) override;
   std::unique_ptr<SyntheticGestureTarget> CreateSyntheticGestureTarget()
       override;
-  bool IsRenderWidgetHostViewChildFrame() override;
+  bool IsRenderWidgetHostViewChildFrame() const override;
   void InvalidateLocalSurfaceIdAndAllocationGroup() override;
 
 #if BUILDFLAG(IS_MAC)
@@ -251,7 +263,8 @@ class CONTENT_EXPORT RenderWidgetHostViewChildFrame
   void UpdateFrameSinkIdRegistration() override;
   void UpdateBackgroundColor() override;
   std::optional<DisplayFeature> GetDisplayFeature() override;
-  void SetDisplayFeatureForTesting(
+  void DisableDisplayFeatureOverrideForEmulation() override;
+  void OverrideDisplayFeatureForEmulation(
       const DisplayFeature* display_feature) override;
   void NotifyHostAndDelegateOnWasShown(
       blink::mojom::RecordContentToVisibleTimeRequestPtr) final;
@@ -316,8 +329,16 @@ class CONTENT_EXPORT RenderWidgetHostViewChildFrame
       const blink::WebGestureEvent& event,
       blink::mojom::InputEventResultState ack_result) override;
 
+  // TODO(crbug.com/375388841): Remove these once Aura also uses
+  // TouchSelectionControllerInputObserver. These are not needed on Android
+  // since it uses TouchSelectionControllerInputObserver.
+#if !BUILDFLAG(IS_ANDROID)
   // Performs gesture ack handling needed for swipe-to-move-cursor gestures.
   void HandleSwipeToMoveCursorGestureAck(const blink::WebGestureEvent& event);
+
+  // Whether a swipe-to-move-cursor gesture is activated.
+  bool swipe_to_move_cursor_activated_ = false;
+#endif
 
   std::vector<base::OnceClosure> frame_swapped_callbacks_;
 
@@ -330,9 +351,6 @@ class CONTENT_EXPORT RenderWidgetHostViewChildFrame
 
   std::unique_ptr<TouchSelectionControllerClientChildFrame>
       selection_controller_client_;
-
-  // Whether a swipe-to-move-cursor gesture is activated.
-  bool swipe_to_move_cursor_activated_ = false;
 
   // If a new RWHVCF is created for a cross-origin navigation, the parent
   // will typically not notice and will not transmit a full complement of

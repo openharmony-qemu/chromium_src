@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 import UIAbility from '@ohos.app.ability.UIAbility';
 import LogUtil from '../utils/LogUtil';
@@ -33,12 +8,13 @@ import window from '@ohos.window';
 import Want from '@ohos.app.ability.Want';
 import AbilityConstant from '@ohos.app.ability.AbilityConstant';
 import JsBindingUtils from '../utils/JsBindingUtils';
-import { NativeContext } from '../interface/CommonInterface';
-import { ConfigData, ContextType } from '../common/Constants';
+import { ChangeEventType, NativeContext } from '../interface/CommonInterface';
+import { CommandType, ConfigData, ContextType } from '../common/Constants';
 import CheckEmptyUtils from '../utils/CheckEmptyUtils';
 import { WebProxy } from '../interface/WebProxy';
 import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
+import { WebAbilityStage } from '../application/WebAbilityStage';
 
 const TAG: string = 'WebBaseAbility';
 
@@ -53,6 +29,8 @@ export class WebBaseAbility extends UIAbility implements WebProxy {
   protected useDarkMode: boolean = false;
   protected isStateless: boolean = false;
   protected titleButtonVisible: boolean = true;
+  protected appId: string = '';
+  protected deviceModeChangeEvent: ChangeEventType | undefined = undefined;
 
   private initParameters(want: Want) {
     if (want && want.parameters) {
@@ -65,11 +43,14 @@ export class WebBaseAbility extends UIAbility implements WebProxy {
       if (want.parameters["useDarkMode"] !== undefined) {
         this.useDarkMode = want.parameters['useDarkMode'] as boolean;
       }
-      if (want.parameters["isStateless"] !== undefined) {
-        this.isStateless = want.parameters['isStateless'] as boolean;
-      }
       if (want.parameters["titleButtonVisible"] !== undefined) {
         this.titleButtonVisible = want.parameters['titleButtonVisible'] as boolean;
+      }
+      if (want.parameters["appId"] !== undefined) {
+        this.appId = want.parameters['appId'] as string;
+      }
+      if (want.parameters["webappWindow"] !== undefined && want.parameters["webappWindow"] !== '') {
+        this.appId = "--app-id=" + want.parameters['webappWindow'] as string;
       }
     }
 
@@ -81,7 +62,11 @@ export class WebBaseAbility extends UIAbility implements WebProxy {
   }
 
   protected getContentPath(): string {
-    return 'pages/Index';
+    if (this.nativeContext.IsSupportNodeHandleFeature()) {
+      return 'pages/NodeHandleWindow';
+    } else {
+      return 'pages/Index';
+    }
   }
 
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam) {
@@ -89,7 +74,12 @@ export class WebBaseAbility extends UIAbility implements WebProxy {
 
     if (CheckEmptyUtils.isEmpty(this.xcomponentId)) {
       LogUtil.info(TAG, 'onCreate, Allocate xcomponent id');
-      this.xcomponentId = ConfigData.WINDOW_PREFIX + this.nativeContext.AllocateWidgetId();
+      if (want.parameters?.openInNewWindow) {
+        this.xcomponentId = WebAbilityStage.X_COMPONENT_ID;
+        return;
+      }
+      let widgetId = this.nativeContext.ExecuteCommand(CommandType.kGetWidget, {}).widget_Id;
+      this.xcomponentId = ConfigData.WINDOW_PREFIX + widgetId;
     }
   }
 
@@ -149,5 +139,38 @@ export class WebBaseAbility extends UIAbility implements WebProxy {
 
   getOriginWindowId(): number {
     return this.originWindowId;
+  }
+
+  isUIAbility(): boolean {
+    return true;
+  }
+
+  public updateAvoidAreaStatus(isFullScreen: boolean) {
+    let windowClass = this.getWindow();
+ 
+    // Set window to full screen.
+    windowClass?.setWindowLayoutFullScreen(true).then(() => {
+      LogUtil.info(TAG, 'Succeeded in setting the window layout to full-screen mode.');
+    }).catch((err: BusinessError) => {
+      LogUtil.error(TAG, 'Failed to set the window layout to full-screen mode. Cause:' + JSON.stringify(err));
+    });
+ 
+    // Hide the navigation bar here.
+    windowClass?.setSpecificSystemBarEnabled('navigationIndicator', false).then(() => {
+      LogUtil.info(TAG, 'Succeeded in setting the navigation indicator to be invisible.');
+    }).catch((err: BusinessError) => {
+      LogUtil.error(TAG, `Failed to set the navigation indicator to be invisible. Code is ${err.code}, message is ${err.message}`);
+    });
+ 
+    // The top status bar is set up to be hidden when in full-screen mode and displayed when maximized.
+    windowClass?.setSpecificSystemBarEnabled('status', !isFullScreen).then(() => {
+      LogUtil.info(TAG, 'Succeeded in setting the status bar to be invisible.');
+    }).catch((err: BusinessError) => {
+      LogUtil.error(TAG, `Failed to set the status bar to be invisible. Code is ${err.code}, message is ${err.message}`);
+    });
+  }
+
+  public setDeviceModeChangeEvent(deviceModeChangeEvent: ChangeEventType | undefined) {
+    this.deviceModeChangeEvent = deviceModeChangeEvent;
   }
 };

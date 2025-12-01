@@ -109,7 +109,7 @@ void GLSurfaceEglReadback::ReadPixels(base::span<uint8_t> buffer) {
   glReadPixels(0, 0, size.width(), size.height(), GL_RGBA, GL_UNSIGNED_BYTE,
                buffer.data());
 #else
-  glReadPixels(0, 0, size.width(), size.height(), GL_BGRA, GL_UNSIGNED_BYTE,
+  glReadPixels(0, 0, size.width(), size.height(), GL_BGRA_EXT, GL_UNSIGNED_BYTE,
                buffer.data());
 #endif
 

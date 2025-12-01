@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "media/gpu/ohos/direct_shared_image_video_provider.h"
 
@@ -124,6 +99,8 @@ void GpuSharedImageVideoFactory::Initialize(
     return;
   }
 
+  is_vulkan_ = shared_context->GrContextIsVulkan();
+
   auto scoped_current = std::make_unique<ui::ScopedMakeCurrent>(
       shared_context->context(), shared_context->surface());
   if (!shared_context->IsCurrent(nullptr)) {
@@ -145,25 +122,32 @@ void GpuSharedImageVideoFactory::CreateImage(
   if (!stub_) {
     return;
   }
- 
+
   auto codec_image =
       base::MakeRefCounted<CodecImage>(spec.coded_size, drdc_lock);
- 
   TRACE_EVENT0("media", "GpuSharedImageVideoFactory::CreateVideoFrame");
- 
+
   scoped_refptr<gpu::GpuChannelSharedImageInterface>
       gpu_channel_shared_image_interface =
           stub_->channel()->shared_image_stub()->shared_image_interface();
   scoped_refptr<gpu::ClientSharedImage> shared_image =
       gpu_channel_shared_image_interface->CreateSharedImageForOhosVideo(
-          spec.coded_size, spec.color_space, codec_image);
+          spec.coded_size, spec.color_space, codec_image, drdc_lock);
+
   if (!shared_image) {
     return;
   }
 
   SharedImageVideoProvider::ImageRecord record;
   record.shared_image = std::move(shared_image);
-  record.is_vulkan = false;
+  record.release_cb = base::BindOnce(
+      [](scoped_refptr<gpu::ClientSharedImage> image,
+         const gpu::SyncToken& sync_token) {
+        image->UpdateDestructionSyncToken(sync_token);
+      },
+      record.shared_image);
+  record.is_vulkan = is_vulkan_;
+
   // Since |codec_image|'s ref holders can be destroyed by stub destruction,
   // we create a ref to it for the MaybeRenderEarlyManager.  This is a hack;
   // we should not be sending the CodecImage at all.  The
@@ -171,7 +155,7 @@ void GpuSharedImageVideoFactory::CreateImage(
   // to be used by CodecImage, and non-GL things, to hold the output buffer,
   // etc.
   record.codec_image_holder = base::MakeRefCounted<CodecImageHolder>(
-      base::SequencedTaskRunner::GetCurrentDefault(), std::move(codec_image));
+      base::SequencedTaskRunner::GetCurrentDefault(), std::move(codec_image), std::move(drdc_lock));
 
   std::move(image_ready_cb).Run(std::move(record));
 }
@@ -205,7 +189,7 @@ bool GpuSharedImageVideoFactory::CreateImageInternal(
   }
   auto shared_image = gpu::SharedImageVideoOhos::Create(
       mailbox, coded_size, spec.color_space, kTopLeft_GrSurfaceOrigin,
-      kPremul_SkAlphaType, std::move(image), std::move(shared_context));
+      kPremul_SkAlphaType, std::move(image), std::move(shared_context), drdc_lock);
   DCHECK(stub_->channel()->gpu_channel_manager()->shared_image_manager());
   stub_->channel()->shared_image_stub()->factory()->RegisterBacking(
       std::move(shared_image));

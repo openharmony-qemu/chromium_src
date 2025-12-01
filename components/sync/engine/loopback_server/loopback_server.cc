@@ -15,7 +15,6 @@
 #include "base/format_macros.h"
 #include "base/logging.h"
 #include "base/metrics/histogram_macros.h"
-#include "base/not_fatal_until.h"
 #include "base/numerics/clamped_math.h"
 #include "base/rand_util.h"
 #include "base/sequence_checker.h"
@@ -155,7 +154,7 @@ class UpdateSieve {
     return !datatypes_to_migrate->empty();
   }
 
-  // Sets the progress markers in |get_updates_response| based on the highest
+  // Sets the progress markers in `get_updates_response` based on the highest
   // version between request progress markers and response entities.
   void SetProgressMarkers(
       sync_pb::GetUpdatesResponse* get_updates_response) const {
@@ -167,7 +166,7 @@ class UpdateSieve {
     }
   }
 
-  // Determines whether the server should send an |entity| to the client as
+  // Determines whether the server should send an `entity` to the client as
   // part of a GetUpdatesResponse.
   bool ClientWantsItem(const LoopbackServerEntity& entity) const {
     DataType type = entity.GetDataType();
@@ -546,7 +545,7 @@ string LoopbackServer::CommitEntity(
     // NIGORI is the only permanent item type that should be updated by the
     // client.
     EntityMap::const_iterator iter = entities_.find(client_entity.id_string());
-    CHECK(iter != entities_.end(), base::NotFatalUntil::M130);
+    CHECK(iter != entities_.end());
     entity = PersistentPermanentEntity::CreateUpdatedNigoriEntity(
         client_entity, *iter->second);
   } else if (type == syncer::BOOKMARKS) {
@@ -602,7 +601,7 @@ void LoopbackServer::BuildEntryResponseForSuccessfulCommit(
     const std::string& entity_id,
     sync_pb::CommitResponse_EntryResponse* entry_response) {
   EntityMap::const_iterator iter = entities_.find(entity_id);
-  CHECK(iter != entities_.end(), base::NotFatalUntil::M130);
+  CHECK(iter != entities_.end());
   const LoopbackServerEntity& entity = *iter->second;
   entry_response->set_response_type(response_type_override_
                                         ? response_type_override_.Run(entity)
@@ -631,7 +630,7 @@ bool LoopbackServer::IsChild(const string& id,
 
 void LoopbackServer::DeleteChildren(const string& parent_id) {
   std::vector<sync_pb::SyncEntity> tombstones;
-  // Find all the children of |parent_id|.
+  // Find all the children of `parent_id`.
   for (auto& [id, entity] : entities_) {
     if (IsChild(id, parent_id)) {
       sync_pb::SyncEntity proto;
@@ -684,7 +683,7 @@ bool LoopbackServer::HandleCommitRequest(
     }
 
     EntityMap::const_iterator iter = entities_.find(entity_id);
-    CHECK(iter != entities_.end(), base::NotFatalUntil::M130);
+    CHECK(iter != entities_.end());
     committed_data_types.Put(iter->second->GetDataType());
 
     if (observer_for_tests_) {
@@ -881,7 +880,7 @@ std::optional<std::string> LoopbackServer::SerializeData() {
   }
   UMA_HISTOGRAM_MEMORY_KB(
       "Sync.Local.FileSizeKB",
-      base::saturated_cast<base::Histogram::Sample>(
+      base::saturated_cast<base::Histogram::Sample32>(
           base::ClampDiv(base::ClampAdd(data.size(), 512), 1024)));
   return data;
 }

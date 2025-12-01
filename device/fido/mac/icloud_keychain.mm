@@ -7,6 +7,7 @@
 #import <AuthenticationServices/AuthenticationServices.h>
 #import <Foundation/Foundation.h>
 
+#include <algorithm>
 #include <optional>
 
 #include "base/apple/foundation_util.h"
@@ -17,7 +18,6 @@
 #include "base/metrics/histogram_functions.h"
 #include "base/no_destructor.h"
 #include "base/notreached.h"
-#include "base/ranges/algorithm.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/sys_string_conversions.h"
 #include "base/task/sequenced_task_runner.h"
@@ -58,8 +58,7 @@ AuthenticatorSupportedOptions AuthenticatorOptions() {
       UserVerificationAvailability::kSupportedAndConfigured;
   options.supports_user_presence = true;
   if (@available(macOS 15.0, *)) {
-    options.supports_prf =
-        base::FeatureList::IsEnabled(kWebAuthniCloudKeychainPrf);
+    options.supports_prf = true;
   }
   return options;
 }
@@ -243,11 +242,17 @@ class API_AVAILABLE(macos(13.3)) Authenticator : public FidoAuthenticator {
         const auto& cred = credentials[i];
         std::vector<uint8_t> cred_id = ToVector(cred.credentialID);
         if (!allow_list.empty() &&
-            base::ranges::none_of(
+            std::ranges::none_of(
                 allow_list,
                 [&cred_id](const PublicKeyCredentialDescriptor& allow_list_cred)
                     -> bool { return allow_list_cred.id == cred_id; })) {
           continue;
+        }
+        std::optional<std::string> provider_name;
+        if (@available(macOS 14.0, *)) {
+          // `providerName` is documented available in 13.3+, but appears broken
+          // in 13.* (see https://crbug.com/407900955)
+          provider_name = cred.providerName.UTF8String;
         }
         ret.emplace_back(AuthenticatorType::kICloudKeychain, rp_id,
                          std::move(cred_id),
@@ -255,7 +260,8 @@ class API_AVAILABLE(macos(13.3)) Authenticator : public FidoAuthenticator {
                              ToVector(cred.userHandle), cred.name.UTF8String,
                              /* iCloud Keychain does not store
                                 a displayName for passkeys */
-                             std::nullopt));
+                             std::nullopt),
+                         std::move(provider_name));
       }
       const auto has_credentials =
           ret.empty() ? FidoRequestHandlerBase::RecognizedCredential::
@@ -368,7 +374,7 @@ class API_AVAILABLE(macos(13.3)) Authenticator : public FidoAuthenticator {
     std::vector<uint8_t> credential_id_from_auth_data =
         response.attestation_object.authenticator_data().GetCredentialId();
     base::span<const uint8_t> credential_id = NSDataToSpan(result.credentialID);
-    if (!base::ranges::equal(credential_id_from_auth_data, credential_id)) {
+    if (!std::ranges::equal(credential_id_from_auth_data, credential_id)) {
       FIDO_LOG(ERROR) << "iCKC: credential ID mismatch: "
                       << base::HexEncode(credential_id_from_auth_data) << " vs "
                       << base::HexEncode(credential_id);
@@ -535,15 +541,10 @@ bool IsSupported() {
   return false;
 }
 
-std::unique_ptr<FidoDiscoveryBase> NewDiscovery(uintptr_t ns_window) {
+std::unique_ptr<FidoDiscoveryBase> NewDiscovery(
+    base::apple::WeakNSWindow ns_window) {
   if (@available(macOS 13.5, *)) {
-    NSWindow* window = nullptr;
-    if (ns_window != kFakeNSWindowForTesting) {
-      window = (__bridge NSWindow*)(void*)ns_window;
-      static_assert(sizeof(window) == sizeof(ns_window));
-    }
-
-    return std::make_unique<Discovery>(window);
+    return std::make_unique<Discovery>(ns_window.Get());
   }
 
   NOTREACHED();

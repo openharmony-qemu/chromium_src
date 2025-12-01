@@ -14,22 +14,24 @@
 #include "pdf/pdf_ink_constants.h"
 #include "pdf/pdf_ink_conversions.h"
 #include "pdf/pdf_ink_transform.h"
+#include "pdf/pdf_transform.h"
+#include "pdf/pdfium/pdfium_rotation.h"
 #include "third_party/ink/src/ink/brush/brush_coat.h"
 #include "third_party/ink/src/ink/brush/brush_tip.h"
 #include "third_party/ink/src/ink/geometry/mesh.h"
-#include "third_party/ink/src/ink/geometry/modeled_shape.h"
+#include "third_party/ink/src/ink/geometry/partitioned_mesh.h"
 #include "third_party/ink/src/ink/geometry/point.h"
 #include "third_party/ink/src/ink/strokes/stroke.h"
 #include "third_party/pdfium/public/cpp/fpdf_scopers.h"
 #include "third_party/pdfium/public/fpdf_edit.h"
-#include "ui/gfx/geometry/axis_transform2d.h"
 #include "ui/gfx/geometry/point_f.h"
+#include "ui/gfx/geometry/transform.h"
 
 namespace chrome_pdf {
 
 namespace {
 
-// Wrapper around an `ink::ModeledShape` to iterate through all the outlines
+// Wrapper around an `ink::PartitionedMesh` to iterate through all the outlines
 // that make up the shape.
 class ModeledShapeOutlinesIterator {
  public:
@@ -37,11 +39,11 @@ class ModeledShapeOutlinesIterator {
     uint32_t group_index;
     // Guaranteeded to be non-empty.
     // TODO(367764863) Rewrite to base::raw_span.
-    RAW_PTR_EXCLUSION base::span<const ink::ModeledShape::VertexIndexPair>
+    RAW_PTR_EXCLUSION base::span<const ink::PartitionedMesh::VertexIndexPair>
         outline;
   };
 
-  explicit ModeledShapeOutlinesIterator(const ink::ModeledShape& shape)
+  explicit ModeledShapeOutlinesIterator(const ink::PartitionedMesh& shape)
       : shape_(shape) {}
 
   std::optional<OutlineData> GetAndAdvance() {
@@ -62,14 +64,14 @@ class ModeledShapeOutlinesIterator {
   }
 
  private:
-  const raw_ref<const ink::ModeledShape> shape_;
+  const raw_ref<const ink::PartitionedMesh> shape_;
   uint32_t group_index_ = 0;
   uint32_t outline_index_ = 0;
 };
 
 gfx::PointF GetVertexPosition(
     base::span<const ink::Mesh> meshes,
-    const ink::ModeledShape::VertexIndexPair& vertex_index_pair) {
+    const ink::PartitionedMesh::VertexIndexPair& vertex_index_pair) {
   ink::Point vertex_position =
       meshes[vertex_index_pair.mesh_index].VertexPosition(
           vertex_index_pair.vertex_index);
@@ -83,9 +85,9 @@ gfx::PointF GetVertexPosition(
 // The returned page object is always a `FPDF_PAGEOBJ_PATH` and never null.
 ScopedFPDFPageObject CreatePathFromOutlineData(
     FPDF_PAGE page,
-    const ink::ModeledShape& shape,
+    const ink::PartitionedMesh& shape,
     const ModeledShapeOutlinesIterator::OutlineData& outline_data,
-    const gfx::AxisTransform2d& transform) {
+    const gfx::Transform& transform) {
   CHECK(page);
 
   base::span<const ink::Mesh> meshes =
@@ -119,12 +121,20 @@ ScopedFPDFPageObject CreatePathFromOutlineData(
 }
 
 std::vector<ScopedFPDFPageObject> WriteShapeToNewPathsOnPage(
-    const ink::ModeledShape& shape,
+    const ink::PartitionedMesh& shape,
     FPDF_PAGE page) {
   CHECK(page);
 
-  const gfx::AxisTransform2d transform =
-      GetCanonicalToPdfTransform(FPDF_GetPageHeightF(page));
+  // Get the intersection between the page's MediaBox and CropBox, to find
+  // the translation offset for the shape's transform.
+  FS_RECTF bounding_box;
+  auto result = FPDF_GetPageBoundingBox(page, &bounding_box);
+  CHECK(result);
+  const gfx::Vector2dF offset(bounding_box.left, bounding_box.bottom);
+
+  const gfx::Transform transform = GetCanonicalToPdfTransform(
+      {FPDF_GetPageWidthF(page), FPDF_GetPageHeightF(page)},
+      GetPageRotation(page).value_or(PageRotation::kRotate0), offset);
 
   std::vector<ScopedFPDFPageObject> results;
   ModeledShapeOutlinesIterator it(shape);
@@ -144,15 +154,14 @@ void SetBrushPropertiesForPath(const ink::Brush& brush, FPDF_PAGEOBJECT path) {
 
   CHECK_EQ(brush.CoatCount(), 1u);
   const ink::BrushCoat& coat = brush.GetCoats()[0];
-  CHECK_EQ(coat.tips.size(), 1u);
   // third_party/ink/src/ink/brush/brush_tip.h says this can have a value up to
   // 2.0f, but that should never be the case, as //pdf code never sets it that
   // high.
-  CHECK_LE(coat.tips[0].opacity_multiplier, 1.0f);
+  CHECK_LE(coat.tip.opacity_multiplier, 1.0f);
 
   bool result = FPDFPageObj_SetFillColor(path, SkColorGetR(color),
                                          SkColorGetG(color), SkColorGetB(color),
-                                         coat.tips[0].opacity_multiplier * 255);
+                                         coat.tip.opacity_multiplier * 255);
   CHECK(result);
 }
 

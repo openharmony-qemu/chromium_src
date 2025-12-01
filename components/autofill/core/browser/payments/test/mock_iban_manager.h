@@ -7,21 +7,21 @@
 
 #include "base/memory/weak_ptr.h"
 #include "components/autofill/core/browser/payments/iban_manager.h"
-#include "components/autofill/core/browser/personal_data_manager.h"
-#include "components/autofill/core/browser/ui/suggestion_type.h"
+#include "components/autofill/core/browser/suggestions/suggestion_type.h"
 #include "testing/gmock/include/gmock/gmock.h"
 
 namespace autofill {
 
 class MockIbanManager : public IbanManager {
  public:
-  explicit MockIbanManager(PersonalDataManager* personal_data_manager);
+  explicit MockIbanManager(PaymentsDataManager* payments_data_manager);
 
   ~MockIbanManager() override;
 
   MOCK_METHOD(bool,
               OnGetSingleFieldSuggestions,
-              (const FormFieldData& field,
+              (const FormStructure& form,
+               const FormFieldData& field,
                const AutofillField& autofill_field,
                const AutofillClient& client,
                SingleFieldFillRouter::OnSuggestionsReturnedCallback& callback),

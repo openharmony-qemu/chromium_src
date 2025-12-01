@@ -67,7 +67,7 @@ size_t AXNode::GetChildCount() const {
   return children_.size();
 }
 
-#if DCHECK_IS_ON()
+#if AX_FAIL_FAST_BUILD()
 size_t AXNode::GetSubtreeCount() const {
   DCHECK(!tree_->GetTreeUpdateInProgressState());
   size_t count = 1;  // |this| counts as one.
@@ -76,7 +76,7 @@ size_t AXNode::GetSubtreeCount() const {
   }
   return count;
 }
-#endif  // DCHECK_IS_ON()
+#endif  // AX_FAIL_FAST_BUILD()
 
 size_t AXNode::GetChildCountCrossingTreeBoundary() const {
   DCHECK(!tree_->GetTreeUpdateInProgressState());
@@ -992,8 +992,7 @@ bool AXNode::CanComputeStringAttribute(
     case ax::mojom::StringAttribute::kName:
       // The name may be suppressed when serializing an AXInlineTextBox if it
       // can be inferred from the parent.
-      return ::features::IsAccessibilityPruneRedundantInlineTextEnabled() &&
-             data().role == ax::mojom::Role::kInlineTextBox &&
+      return data().role == ax::mojom::Role::kInlineTextBox &&
              data().GetNameFrom() == ax::mojom::NameFrom::kContents &&
              GetParent() &&
              GetParent()->data().GetNameFrom() ==
@@ -1546,6 +1545,9 @@ const std::vector<raw_ptr<AXNode, VectorExperimental>>*
 AXNode::GetExtraMacNodes() const {
   DCHECK(!tree_->GetTreeUpdateInProgressState());
   // Should only be available on the table node itself, not any of its children.
+  if (!IsTable() || IsInvisibleOrIgnored()) {
+    return nullptr;
+  }
   const AXTableInfo* table_info = tree_->GetTableInfo(this);
   if (!table_info)
     return nullptr;
@@ -1553,9 +1555,27 @@ AXNode::GetExtraMacNodes() const {
   return &table_info->extra_mac_nodes;
 }
 
+#if BUILDFLAG(IS_LINUX)
+AXNode* AXNode::GetExtraAnnouncementNode(
+    ax::mojom::AriaNotificationPriority priority_property) const {
+  if (!tree_->extra_announcement_nodes()) {
+    tree_->CreateExtraAnnouncementNodes();
+  }
+
+  switch (priority_property) {
+    case ax::mojom::AriaNotificationPriority::kHigh:
+      return &tree_->extra_announcement_nodes()->AssertiveNode();
+    case ax::mojom::AriaNotificationPriority::kNormal:
+      return &tree_->extra_announcement_nodes()->PoliteNode();
+  }
+  NOTREACHED();
+}
+#endif  // BUILDFLAG(IS_LINUX)
+
 bool AXNode::IsGenerated() const {
   bool is_generated_node = id() < 0 && id() > kInitialEmptyDocumentRootNodeID;
 #if DCHECK_IS_ON()
+#if BUILDFLAG(IS_APPLE)
   // Currently, the only generated nodes are columns and table header
   // containers, and when those roles occur, they are always extra mac nodes.
   // This could change in the future.
@@ -1563,7 +1583,13 @@ bool AXNode::IsGenerated() const {
       GetRole() == ax::mojom::Role::kColumn ||
       GetRole() == ax::mojom::Role::kTableHeaderContainer;
   DCHECK_EQ(is_generated_node, is_extra_mac_node_role);
+#elif BUILDFLAG(IS_LINUX)
+  //  On Linux, generated nodes are always children of the root.
+  if (GetParent() && GetParent()->GetManager()) {
+    DCHECK(GetParent()->GetManager()->IsRoot());
+  }
 #endif
+#endif  // DCHECK_IS_ON()
   return is_generated_node;
 }
 
@@ -1808,11 +1834,13 @@ bool AXNode::IsCellOrHeaderOfAriaGrid() const {
 
 AXTableInfo* AXNode::GetAncestorTableInfo() const {
   const AXNode* node = this;
-  while (node && !node->IsTable())
-    node = node->GetParent();
-  if (node)
-    return tree_->GetTableInfo(node);
-  return nullptr;
+  while (node && !node->IsTable()) {
+    node = node->GetUnignoredParent();
+  }
+  if (!node || node->IsInvisibleOrIgnored()) {
+    return nullptr;
+  }
+  return tree_->GetTableInfo(node);
 }
 
 void AXNode::IdVectorToNodeVector(const std::vector<AXNodeID>& ids,
@@ -1931,10 +1959,15 @@ bool AXNode::SetRoleMatchesItemRole(const AXNode* ordered_set) const {
 
 bool AXNode::IsIgnoredContainerForOrderedSet() const {
   return IsIgnored() || IsEmbeddedGroup() ||
+         GetRole() == ax::mojom::Role::kCell ||
          GetRole() == ax::mojom::Role::kDetails ||
          GetRole() == ax::mojom::Role::kLabelText ||
+         GetRole() == ax::mojom::Role::kLayoutTableCell ||
+         GetRole() == ax::mojom::Role::kLayoutTableRow ||
          GetRole() == ax::mojom::Role::kListItem ||
          GetRole() == ax::mojom::Role::kGenericContainer ||
+         GetRole() == ax::mojom::Role::kGridCell ||
+         GetRole() == ax::mojom::Role::kRow ||
          GetRole() == ax::mojom::Role::kScrollView ||
          GetRole() == ax::mojom::Role::kUnknown;
 }

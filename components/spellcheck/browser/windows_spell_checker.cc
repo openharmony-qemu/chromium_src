@@ -15,6 +15,7 @@
 #include <locale>
 #include <string>
 
+#include "base/compiler_specific.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
 #include "base/functional/callback_helpers.h"
@@ -239,19 +240,6 @@ std::vector<SpellCheckResult> BackgroundHelper::RequestTextCheckForAllLanguages(
             (action == CORRECTIVE_ACTION_GET_SUGGESTIONS ||
              action == CORRECTIVE_ACTION_REPLACE)) {
           std::vector<std::u16string> suggestions;
-          if (!base::FeatureList::IsEnabled(
-                  spellcheck::kWinRetrieveSuggestionsOnlyOnDemand)) {
-            // Perform the expensive operation of retrieving suggestions for all
-            // misspelled words while performing a text check. If
-            // kWinRetrieveSuggestionsOnlyOnDemand is set, suggestions will
-            // be retrieved on demand when the context menu is brought up with a
-            // misspelled word selected, and the spellcheck results returned by
-            // this method will have empty suggestion lists.
-            FillSuggestionList(it->first,
-                               text.substr(start_index, error_length),
-                               &suggestions);
-          }
-
           result_map[std::tuple<ULONG, ULONG>(start_index, error_length)]
               .push_back(suggestions);
         }
@@ -314,7 +302,7 @@ void BackgroundHelper::FillSuggestionList(
     hr = suggestions->Next(1, &suggestion, nullptr);
     if (hr == S_OK) {
       std::u16string utf16_suggestion;
-      if (base::WideToUTF16(suggestion.get(), wcslen(suggestion),
+      if (base::WideToUTF16(suggestion.get(), UNSAFE_TODO(wcslen(suggestion)),
                             &utf16_suggestion)) {
         optional_suggestions->push_back(utf16_suggestion);
       }

@@ -30,6 +30,7 @@ from pylib.local.emulator import ini
 from pylib.local.emulator.proto import avd_pb2
 
 from lib.proto import exception_recorder
+from lib.proto import measures
 
 # A common root directory to store the CIPD packages for creating or starting
 # the emulator instance, e.g. emulator binary, system images, AVDs.
@@ -48,6 +49,17 @@ _BACKING_FILES = ('system.img', 'vendor.img')
 _DEFAULT_AVDMANAGER_PATH = os.path.join(constants.ANDROID_SDK_ROOT,
                                         'cmdline-tools', 'latest', 'bin',
                                         'avdmanager')
+
+# Additional debug tags we would like to have when "--debug-tags" is passed.
+_DEFAULT_DEBUG_TAGS = (
+    'time',  # Show the timestamp in the logs.
+    '-asconnector',  # Keep reporting connection error so disable.
+    # The following are disabled because they flood the logs.
+    '-qemud',
+    '-gps',
+    '-sensors',
+)
+
 # Default to a 480dp mdpi screen (a relatively large phone).
 # See https://developer.android.com/training/multiscreen/screensizes
 # and https://developer.android.com/training/multiscreen/screendensities
@@ -149,6 +161,16 @@ def _FindMinSdkFile(apk_dir, min_sdk):
                  min_sdk, min_sdk_found['file_name'],
                  min_sdk_found['version_name'])
     return os.path.join(apk_dir, min_sdk_found['file_name'])
+
+
+def ProcessDebugTags(debug_tags_str, default_debug_tags=None):
+  """Given a string of debug tags, process them and return as a list."""
+  tags = set(debug_tags_str.split(','))
+  if default_debug_tags:
+    tags |= set(default_debug_tags)
+  # The disabled tags, i.e. tags with prefix '-', should come later otherwise
+  # the logging will not work properly.
+  return sorted(tags, key=lambda t: (t.startswith('-'), t))
 
 
 class _AvdManagerAgent:
@@ -460,7 +482,8 @@ class AvdConfig:
 
   def HasSnapshot(self, snapshot_name):
     """Check if a given snapshot exists or not."""
-    snapshot_path = os.path.join(self._avd_dir, 'snapshots', snapshot_name)
+    snapshot_path = os.path.join(self._avd_dir, 'snapshots', snapshot_name,
+                                 'ram.bin')
     return os.path.exists(snapshot_path)
 
   def Create(self,
@@ -611,9 +634,11 @@ class AvdConfig:
         instance.device.RunShellCommand(['svc', 'wifi', 'disable'],
                                         as_root=True,
                                         check_return=True)
+        # Certain system image like tablet does not have data service
+        # So don't check return status here.
         instance.device.RunShellCommand(['svc', 'data', 'disable'],
                                         as_root=True,
-                                        check_return=True)
+                                        check_return=False)
 
       if snapshot:
         logging.info('Wait additional 60 secs before saving snapshot for AVD')
@@ -821,7 +846,8 @@ class AvdConfig:
     Returns: None
     Raises: AvdException on failure to install.
     """
-    self._InstallCipdPackages(_PACKAGES_RUNTIME)
+    with measures.time_consumption('emulator', 'install', 'cipd_packages'):
+      self._InstallCipdPackages(_PACKAGES_RUNTIME)
     self._MakeWriteable()
     self._UpdateConfigs()
     self._RebaseQcow2Images()
@@ -1120,9 +1146,8 @@ class _AvdInstance:
                     or _DEFAULT_GPU_MODE)
       emulator_cmd.extend(['-gpu', gpu_mode])
       if debug_tags:
-        self._debug_tags = set(debug_tags.split(','))
-        # Always print timestamp when debug tags are set.
-        self._debug_tags.add('time')
+        self._debug_tags = ProcessDebugTags(
+            debug_tags, default_debug_tags=_DEFAULT_DEBUG_TAGS)
         emulator_cmd.extend(['-debug', ','.join(self._debug_tags)])
         if 'kernel' in self._debug_tags or 'all' in self._debug_tags:
           # TODO(crbug.com/40885864): newer API levels need "-virtio-console"
@@ -1182,12 +1207,14 @@ class _AvdInstance:
           return 'emulator-%d' % int(val)
 
       try:
-        self._emulator_serial = timeout_retry.Run(
-            listen_for_serial,
-            timeout=120 if is_slow_start else 60,
-            retries=retries,
-            args=[sock])
-        logging.info('%s started', self._emulator_serial)
+        with measures.time_consumption('emulator', 'start',
+                                       'listen_for_serial'):
+          self._emulator_serial = timeout_retry.Run(
+              listen_for_serial,
+              timeout=300 if is_slow_start else 120,
+              retries=retries,
+              args=[sock])
+          logging.info('%s started', self._emulator_serial)
       except base_error.BaseError as e:
         self.Stop(force=True)
         raise AvdStartException(str(e)) from e

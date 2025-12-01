@@ -16,6 +16,9 @@ if (is_ohos) {
 
     # Enable ohos_nweb_hap build target.
     enable_ohos_nweb_hap = false
+
+    # support isolated mode
+    isolated_level = 0
   }
 
   declare_args() {

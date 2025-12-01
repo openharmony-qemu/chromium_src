@@ -21,4 +21,16 @@ private:
   int value GUARDED_BY(lock) = 0;
 };
 
+struct StructWithLock {
+  Lock lock;
+};
+
+void AutoLockAsTemporary(StructWithLock* s) {
+#if BUILDFLAG(IS_OHOS)
+  AutoLock(s->lock); // expected-error {{ignoring temporary created by a constructor declared with 'nodiscard' attribute}}
+#else
+  AutoLock(s->lock); // expected-error {{ignoring temporary of type 'BasicAutoLock<base::Lock>' declared with 'nodiscard' attribute}}
+#endif
+}
+
 }  // namespace base

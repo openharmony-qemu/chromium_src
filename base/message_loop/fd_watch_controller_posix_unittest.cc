@@ -20,7 +20,8 @@
 #include "build/build_config.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
+    BUILDFLAG(IS_OHOS)
 #include "base/message_loop/message_pump_epoll.h"
 #endif
 
@@ -41,7 +42,8 @@ class FdWatchControllerPosixTest : public testing::Test,
 
   // testing::Test interface.
   void SetUp() override {
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
+    BUILDFLAG(IS_OHOS)
     features_.InitWithFeatureStates(
         {{kUsePollForMessagePumpEpoll, GetParam()}});
     MessagePumpEpoll::InitializeFeatures();
@@ -268,8 +270,9 @@ class MessageLoopForIoPosixReadAndWriteTest
  protected:
   bool CreateSocketPair(ScopedFD* one, ScopedFD* two) {
     int fds[2];
-    if (socketpair(AF_UNIX, SOCK_STREAM, 0, fds) == -1)
+    if (socketpair(AF_UNIX, SOCK_STREAM, 0, fds) == -1) {
       return false;
+    }
     one->reset(fds[0]);
     two->reset(fds[1]);
     return true;
@@ -528,8 +531,9 @@ TEST_P(FdWatchControllerPosixTest, RunUntilIdle) {
 
   TriggerReadEvent();
 
-  while (!handler.is_readable_)
+  while (!handler.is_readable_) {
     loop.RunUntilIdle();
+  }
 }
 
 void StopWatching(MessagePumpForIO::FdWatchController* controller,

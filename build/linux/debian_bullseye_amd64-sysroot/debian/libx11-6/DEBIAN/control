@@ -1,6 +1,6 @@
 Package: libx11-6
 Source: libx11
-Version: 2:1.7.2-1
+Version: 2:1.7.2-1+deb11u2
 Architecture: amd64
 Maintainer: Debian X Strike Force <debian-x@lists.debian.org>
 Installed-Size: 1576

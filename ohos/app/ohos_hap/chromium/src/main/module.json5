@@ -6,7 +6,8 @@
     "description": "$string:module_desc",
     "mainElement": "EntryAbility",
     "deviceTypes": [
-      "2in1"
+      "2in1",
+      "tablet"
     ],
     "deliveryWithInstall": true,
     "installationFree": false,
@@ -36,15 +37,18 @@
             "uris": [
               {
                 "type": "application/pdf",
-                "scheme": 'file'
+                "scheme": 'file',
+                "linkFeature": "FileOpen"
               },
               {
                 "type": "text/html",
-                "scheme": 'file'
+                "scheme": 'file',
+                "linkFeature": "FileOpen"
               },
               {
                 "type": "application/x-mimearchive",
-                "scheme": 'file'
+                "scheme": 'file',
+                "linkFeature": "FileOpen"
               },
               {
                 "scheme": "http"
@@ -55,7 +59,12 @@
             ]
           }
         ],
-        "process": ':browser'
+        "metadata": [
+          {
+            "name": "ohos.ability.shortcuts",
+            "resource": "$profile:shortcuts_config"
+          },
+        ],
       },
       {
         "name": "BrowserAbility",
@@ -65,34 +74,6 @@
         "startWindowBackground": "$color:start_window_background",
         "removeMissionAfterTerminate": true,
         "exported": true,
-        "skills": [
-          {
-            "actions": [
-              "ohos.want.action.viewData"
-            ],
-            "uris": [
-              {
-                "type": "application/pdf",
-                "scheme": 'file'
-              },
-              {
-                "type": "text/html",
-                "scheme": 'file'
-              },
-              {
-                "type": "application/x-mimearchive",
-                "scheme": 'file'
-              },
-              {
-                "scheme": "http"
-              },
-              {
-                "scheme": "https"
-              }
-            ]
-          }
-        ],
-        "process": ':browser'
       },
       {
         "name": "StatelessAbility",
@@ -104,7 +85,17 @@
         "launchType": "specified",
         "removeMissionAfterTerminate": true,
         "exported": true,
-        "process": ':browser'
+      },
+      {
+        "name": "TaskManagerAbility",
+        "srcEntry": "./ets/entryability/TaskManagerAbility.ets",
+        "description": "$string:TaskManagerAbility_desc",
+        "label": "$string:TaskManagerAbility_label",
+        "startWindowIcon": "$media:app_icon",
+        "startWindowBackground": "$color:start_window_background",
+        "launchType": "specified",
+        "removeMissionAfterTerminate": true,
+        "exported": true,
       }
     ],
     "extensionAbilities": [
@@ -112,7 +103,6 @@
         "name": "BrowserEmbeddedAbility",
         "srcEntry": "./ets/extensionAbility/BrowserEmbeddedAbility.ets",
         "type": "embeddedUI",
-        "process": ':browser'
       }
     ]
   }

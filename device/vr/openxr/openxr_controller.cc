@@ -2,16 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifdef UNSAFE_BUFFERS_BUILD
-// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
-#pragma allow_unsafe_buffers
-#endif
-
 #include "device/vr/openxr/openxr_controller.h"
 
 #include <stdint.h>
 
 #include "base/check.h"
+#include "base/compiler_specific.h"
 #include "base/notreached.h"
 #include "base/strings/string_util.h"
 #include "device/gamepad/public/cpp/gamepad.h"
@@ -168,13 +164,15 @@ XrResult OpenXrController::Initialize(
       XR_TYPE_ACTION_SET_CREATE_INFO};
 
   size_t dest_size = std::size(action_set_create_info.actionSetName);
-  size_t src_size = base::strlcpy(action_set_create_info.actionSetName,
-                                  action_set_name.c_str(), dest_size);
+  size_t src_size =
+      UNSAFE_TODO(base::strlcpy(action_set_create_info.actionSetName,
+                                action_set_name.c_str(), dest_size));
   DCHECK_LT(src_size, dest_size);
 
   dest_size = std::size(action_set_create_info.localizedActionSetName);
-  src_size = base::strlcpy(action_set_create_info.localizedActionSetName,
-                           action_set_name.c_str(), dest_size);
+  src_size =
+      UNSAFE_TODO(base::strlcpy(action_set_create_info.localizedActionSetName,
+                                action_set_name.c_str(), dest_size));
   DCHECK_LT(src_size, dest_size);
 
   RETURN_IF_XR_FAILED(
@@ -632,13 +630,13 @@ XrResult OpenXrController::CreateAction(XrActionType type,
   action_create_info.actionType = type;
 
   size_t dest_size = std::size(action_create_info.actionName);
-  size_t src_size = base::strlcpy(action_create_info.actionName,
-                                  action_name.data(), dest_size);
+  size_t src_size = UNSAFE_TODO(base::strlcpy(action_create_info.actionName,
+                                              action_name.data(), dest_size));
   DCHECK_LT(src_size, dest_size);
 
   dest_size = std::size(action_create_info.localizedActionName);
-  src_size = base::strlcpy(action_create_info.localizedActionName,
-                           action_name.data(), dest_size);
+  src_size = UNSAFE_TODO(base::strlcpy(action_create_info.localizedActionName,
+                                       action_name.data(), dest_size));
   DCHECK_LT(src_size, dest_size);
   return xrCreateAction(action_set_, &action_create_info, action);
 }

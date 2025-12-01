@@ -954,7 +954,7 @@
         ],
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "aura_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "aura_unittests",
@@ -965,7 +965,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "base_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "base_unittests",
@@ -980,7 +980,7 @@
         ],
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "capture_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "capture_unittests",
@@ -991,7 +991,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "cc_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "cc_unittests",
@@ -1002,7 +1002,7 @@
       {
         "autotest_name": "tast.chrome-from-gcs",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "chrome_all_tast_tests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "shards": 15,
@@ -1018,7 +1018,7 @@
         "autotest_name": "tast.chrome-from-gcs",
         "ci_only": true,
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "experiment_percentage": 100,
         "name": "chrome_criticalstaging_tast_tests RELEASE_LKGM",
         "shards": 3,
@@ -1034,7 +1034,7 @@
         "autotest_name": "tast.chrome-from-gcs",
         "ci_only": true,
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "experiment_percentage": 100,
         "name": "chrome_disabled_tast_tests RELEASE_LKGM",
         "shards": 2,
@@ -1049,7 +1049,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "chromeos_integration_tests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "chromeos_integration_tests",
@@ -1060,7 +1060,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "crypto_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "crypto_unittests",
@@ -1071,7 +1071,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "display_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "display_unittests",
@@ -1090,7 +1090,7 @@
         ],
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "experiment_percentage": 100,
         "name": "fake_libva_driver_unittest RELEASE_LKGM",
         "test": "fake_libva_driver_unittest",
@@ -1101,7 +1101,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "google_apis_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "google_apis_unittests",
@@ -1112,7 +1112,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "ipc_tests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "ipc_tests",
@@ -1123,7 +1123,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "latency_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "latency_unittests",
@@ -1134,7 +1134,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "libcups_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "libcups_unittests",
@@ -1148,7 +1148,7 @@
         ],
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "media_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "media_unittests",
@@ -1159,7 +1159,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "midi_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "midi_unittests",
@@ -1170,7 +1170,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "mojo_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "mojo_unittests",
@@ -1184,7 +1184,7 @@
         ],
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "ozone_gl_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "ozone_gl_unittests",
@@ -1195,7 +1195,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "ozone_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "ozone_unittests",
@@ -1206,7 +1206,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "pdf_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "pdf_unittests",
@@ -1217,7 +1217,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "printing_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "printing_unittests",
@@ -1232,7 +1232,7 @@
         ],
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "profile_provider_unittest RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "profile_provider_unittest",
@@ -1243,7 +1243,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "rust_gtest_interop_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "rust_gtest_interop_unittests",
@@ -1254,7 +1254,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "sql_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "sql_unittests",
@@ -1265,7 +1265,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "url_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "url_unittests",
@@ -1280,7 +1280,7 @@
         ],
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "vaapi_unittest RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "vaapi_unittest",
@@ -1302,7 +1302,7 @@
         "autotest_name": "chromium",
         "ci_only": true,
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "experiment_percentage": 100,
         "name": "video_decode_accelerator_tests_fake_vaapi_av1 RELEASE_LKGM",
         "test": "video_decode_accelerator_tests",
@@ -1324,7 +1324,7 @@
         "autotest_name": "chromium",
         "ci_only": true,
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "experiment_percentage": 100,
         "name": "video_decode_accelerator_tests_fake_vaapi_vp8 RELEASE_LKGM",
         "test": "video_decode_accelerator_tests",
@@ -1346,7 +1346,7 @@
         "autotest_name": "chromium",
         "ci_only": true,
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "video_decode_accelerator_tests_fake_vaapi_vp9 RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "video_decode_accelerator_tests",
@@ -1364,7 +1364,7 @@
         ],
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "aura_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "aura_unittests",
@@ -1375,7 +1375,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "base_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "base_unittests",
@@ -1390,7 +1390,7 @@
         ],
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "capture_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "capture_unittests",
@@ -1401,7 +1401,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "cc_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "cc_unittests",
@@ -1412,7 +1412,7 @@
       {
         "autotest_name": "tast.chrome-from-gcs",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "chrome_all_tast_tests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "shards": 15,
@@ -1428,7 +1428,7 @@
         "autotest_name": "tast.chrome-from-gcs",
         "ci_only": true,
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "experiment_percentage": 100,
         "name": "chrome_criticalstaging_tast_tests RELEASE_LKGM",
         "shards": 3,
@@ -1444,7 +1444,7 @@
         "autotest_name": "tast.chrome-from-gcs",
         "ci_only": true,
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "experiment_percentage": 100,
         "name": "chrome_disabled_tast_tests RELEASE_LKGM",
         "shards": 2,
@@ -1459,7 +1459,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "chromeos_integration_tests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "chromeos_integration_tests",
@@ -1470,7 +1470,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "crypto_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "crypto_unittests",
@@ -1481,7 +1481,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "display_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "display_unittests",
@@ -1500,7 +1500,7 @@
         ],
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "experiment_percentage": 100,
         "name": "fake_libva_driver_unittest RELEASE_LKGM",
         "test": "fake_libva_driver_unittest",
@@ -1511,7 +1511,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "google_apis_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "google_apis_unittests",
@@ -1522,7 +1522,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "ipc_tests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "ipc_tests",
@@ -1533,7 +1533,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "latency_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "latency_unittests",
@@ -1544,7 +1544,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "libcups_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "libcups_unittests",
@@ -1558,7 +1558,7 @@
         ],
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "media_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "media_unittests",
@@ -1569,7 +1569,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "midi_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "midi_unittests",
@@ -1580,7 +1580,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "mojo_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "mojo_unittests",
@@ -1594,7 +1594,7 @@
         ],
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "ozone_gl_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "ozone_gl_unittests",
@@ -1605,7 +1605,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "ozone_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "ozone_unittests",
@@ -1616,7 +1616,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "pdf_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "pdf_unittests",
@@ -1627,7 +1627,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "printing_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "printing_unittests",
@@ -1642,7 +1642,7 @@
         ],
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "profile_provider_unittest RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "profile_provider_unittest",
@@ -1653,7 +1653,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "rust_gtest_interop_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "rust_gtest_interop_unittests",
@@ -1664,7 +1664,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "sql_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "sql_unittests",
@@ -1675,7 +1675,7 @@
       {
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "url_unittests RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "url_unittests",
@@ -1690,7 +1690,7 @@
         ],
         "autotest_name": "chromium",
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "vaapi_unittest RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "vaapi_unittest",
@@ -1712,7 +1712,7 @@
         "autotest_name": "chromium",
         "ci_only": true,
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "experiment_percentage": 100,
         "name": "video_decode_accelerator_tests_fake_vaapi_av1 RELEASE_LKGM",
         "test": "video_decode_accelerator_tests",
@@ -1734,7 +1734,7 @@
         "autotest_name": "chromium",
         "ci_only": true,
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "experiment_percentage": 100,
         "name": "video_decode_accelerator_tests_fake_vaapi_vp8 RELEASE_LKGM",
         "test": "video_decode_accelerator_tests",
@@ -1756,7 +1756,7 @@
         "autotest_name": "chromium",
         "ci_only": true,
         "cros_board": "brya",
-        "cros_cbx": true,
+        "cros_model": "kano",
         "name": "video_decode_accelerator_tests_fake_vaapi_vp9 RELEASE_LKGM",
         "shard_level_retries_on_ctp": 1,
         "test": "video_decode_accelerator_tests",
@@ -2169,6 +2169,9 @@
       },
       {
         "merge": {
+          "args": [
+            "--upload-skia-json"
+          ],
           "script": "//tools/perf/process_perf_results.py"
         },
         "name": "chrome_sizes",
@@ -2302,7 +2305,7 @@
           "service_account": "chrome-tester@chops-service-accounts.iam.gserviceaccount.com"
         },
         "test": "ash_components_unittests",
-        "test_id_prefix": "ninja://ash/components:ash_components_unittests/"
+        "test_id_prefix": "ninja://chromeos/ash/experiences:ash_components_unittests/"
       },
       {
         "merge": {
@@ -3637,6 +3640,27 @@
         "test_id_prefix": "ninja://chrome/browser/ash/child_accounts/time_limit_consistency_test:usage_time_limit_unittests/"
       },
       {
+        "args": [
+          "--enable-features=ViewsAccessibilitySerializeOnDataChanged",
+          "--test-launcher-filter-file=../../testing/buildbot/filters/views_ax_chromeos.browser_tests.filter"
+        ],
+        "experiment_percentage": 10,
+        "merge": {
+          "script": "//testing/merge_scripts/standard_gtest_merge.py"
+        },
+        "name": "views_ax_chromeos_browser_tests",
+        "swarming": {
+          "dimensions": {
+            "os": "Ubuntu-22.04",
+            "pool": "chrome.tests",
+            "ssd": "0"
+          },
+          "service_account": "chrome-tester@chops-service-accounts.iam.gserviceaccount.com"
+        },
+        "test": "browser_tests",
+        "test_id_prefix": "ninja://chrome/test:browser_tests/"
+      },
+      {
         "merge": {
           "script": "//testing/merge_scripts/standard_gtest_merge.py"
         },
@@ -3768,6 +3792,9 @@
     "isolated_scripts": [
       {
         "merge": {
+          "args": [
+            "--upload-skia-json"
+          ],
           "script": "//tools/perf/process_perf_results.py"
         },
         "name": "chrome_sizes",
@@ -3825,6 +3852,9 @@
     "isolated_scripts": [
       {
         "merge": {
+          "args": [
+            "--upload-skia-json"
+          ],
           "script": "//tools/perf/process_perf_results.py"
         },
         "name": "chrome_sizes",
@@ -3835,7 +3865,7 @@
         "swarming": {
           "dimensions": {
             "cpu": "x86-64",
-            "os": "Mac-14",
+            "os": "Mac-14|Mac-15",
             "pool": "chrome.tests"
           },
           "service_account": "chrome-tester@chops-service-accounts.iam.gserviceaccount.com"
@@ -3863,7 +3893,7 @@
         "swarming": {
           "dimensions": {
             "cpu": "x86-64",
-            "os": "Mac-14",
+            "os": "Mac-14|Mac-15",
             "pool": "chrome.tests"
           },
           "service_account": "chrome-tester@chops-service-accounts.iam.gserviceaccount.com"
@@ -3903,6 +3933,9 @@
     "isolated_scripts": [
       {
         "merge": {
+          "args": [
+            "--upload-skia-json"
+          ],
           "script": "//tools/perf/process_perf_results.py"
         },
         "name": "chrome_sizes",
@@ -3957,6 +3990,9 @@
     "isolated_scripts": [
       {
         "merge": {
+          "args": [
+            "--upload-skia-json"
+          ],
           "script": "//tools/perf/process_perf_results.py"
         },
         "name": "chrome_sizes",

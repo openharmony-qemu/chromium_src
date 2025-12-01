@@ -9,11 +9,13 @@ subprojects can choose to be more restrictive if necessary for toolchain
 support._
 
 The C++ language has in recent years received an updated standard every three
-years (C++11, C++14, etc.). For various reasons, Chromium does not immediately
-allow new features on the publication of such a standard. Instead, once
-Chromium supports the toolchain to a certain extent (e.g., build support is
-ready), a standard is declared "_initially supported_", with new
-language/library features banned pending discussion but not yet allowed.
+years (C++11, C++14, etc.).
+[For various reasons](https://chromium.googlesource.com/chromium/src/+/main/docs/process/c++_version_upgrades.md),
+Chromium does not immediately allow new features on the publication of such a
+standard. Instead, once Chromium supports the toolchain to a certain extent
+(e.g., build support is ready), a standard is declared "_initially supported_",
+with new language/library features banned pending discussion but not yet
+allowed.
 
 You can propose changing the status of a feature by sending an email to
 [cxx@chromium.org](https://groups.google.com/a/chromium.org/forum/#!forum/cxx).
@@ -33,16 +35,8 @@ The current status of existing standards and Abseil features is:
 *   **C++17:** _Default allowed; see banned features below_
 *   **C++20:** _Initially supported November 13, 2023; see allowed/banned/TBD
     features below_
-*   **C++23:** _Not yet officially standardized_
-*   **Abseil:** _Default allowed; see banned/TBD features below. The following
-    dates represent the start of the two-year TBD periods for certain parts of
-    Abseil:_
-      * absl::AnyInvocable: Initially added to third_party June 20, 2022
-      * Log library: Initially added to third_party Aug 31, 2022
-      * CRC32C library: Initially added to third_party Dec 5, 2022
-      * Nullability annotation: Initially added to third_party Jun 21, 2023
-      * Overload: Initially added to third_party Sep 27, 2023
-      * NoDestructor: Initially added to third_party Nov 15, 2023
+*   **C++23:** _Not yet supported_
+*   **Abseil:** _Default allowed; see banned features below_
 
 ## Banned features and third-party code
 
@@ -255,6 +249,25 @@ due to concerns that this is tied to a more template-heavy interface style.
 *** promo
 Overlaps with many regular expression libraries in Chromium. When in doubt, use
 `third_party/re2`.
+***
+
+### std::aligned_{storage,union} <sup>[banned]</sup>
+
+```c++
+std::aligned_storage<sizeof(T), alignof<T>>::type buf;
+```
+
+**Description:** Creates aligned, uninitialized storage to later hold one or
+more objects.
+
+**Documentation:**
+[`std::aligned_storage`](https://en.cppreference.com/w/cpp/types/aligned_storage)
+
+**Notes:**
+*** promo
+Deprecated in C++23. Generally, use `alignas(T) char buf[sizeof(T)];`. Aligned
+unions can be handled similarly, using the max alignment and size of the union
+members, either passed via a pack or computed inline.
 ***
 
 ### std::bind <sup>[banned]</sup>
@@ -574,29 +587,6 @@ Overlaps with utilities in `base/strings/string_number_conversions.h`, which are
 easier to use correctly.
 ***
 
-### std::in_place{_type,_index}[_t] <sup>[banned]</sup>
-
-```c++
-std::variant<int, float> v{std::in_place_type<int>, 1.4};
-```
-
-**Description:** `std::in_place_type` and `std::in_place_index` are
-disambiguation tags for `std::variant` and `std::any` to indicate that the
-object should be constructed in-place.
-
-**Documentation:**
-[`std::in_place_type`](https://en.cppreference.com/w/cpp/utility/in_place)
-
-**Notes:**
-*** promo
-Banned for now because `std::variant` and `std::any` are banned. Because
-`absl::variant` is used instead, and it requires `absl::in_place_type`, use
-`absl::in_place_type` for non-Abseil Chromium
-code.
-
-[Discussion thread](https://groups.google.com/a/chromium.org/g/cxx/c/ZspmuJPpv6s)
-***
-
 ### std::{pmr::memory_resource,polymorphic_allocator} <sup>[banned]</sup>
 
 ```c++
@@ -649,24 +639,6 @@ int count = std::uncaught_exceptions();
 **Notes:**
 *** promo
 Banned because exceptions are banned.
-***
-
-### std::variant <sup>[banned]</sup>
-
-```c++
-std::variant<int, double> v = 12;
-```
-
-**Description:** The class template `std::variant` represents a type-safe
-`union`. An instance of `std::variant` at any given time holds a value of one of
-its alternative types (it's also possible for it to be valueless).
-
-**Documentation:**
-[`std::variant`](https://en.cppreference.com/w/cpp/utility/variant)
-
-**Notes:**
-*** promo
-[Will be allowed soon](https://crbug.com/1373620); for now, use `absl::variant`.
 ***
 
 ### Transparent std::owner_less <sup>[banned]</sup>
@@ -1094,8 +1066,6 @@ iterator-sentinel pair or a single range argument.
 
 **Notes:**
 *** promo
-Supersedes `//base`'s backports in `//base/ranges/algorithm.h`.
-
 [Discussion thread](https://groups.google.com/a/chromium.org/g/cxx/c/ZnIbkfJ0Glw)
 ***
 
@@ -1339,9 +1309,8 @@ it's an implementation detail that the data is contiguous (e.g.
 ### std::remove_cvref[_t] <sup>[allowed]</sup>
 
 ```c++
-template <typename T,
-          typename = std::enable_if_t<std::is_same_v<std::remove_cvref_t<T>,
-                                                     int>>>
+template <typename T>
+  requires (std::is_same_v<std::remove_cvref_t<T>, int>)
 void foo(T t);
 ```
 
@@ -1607,6 +1576,22 @@ primarily allow authors to create similar functionality.
 [Discussion thread](https://groups.google.com/a/chromium.org/g/cxx/c/ZnIbkfJ0Glw)
 ***
 
+### &lt;span&gt; <sup>[banned]</sup>
+
+```c++
+#include <span>
+```
+
+**Description:** Utilities for non-owning views over a sequence of objects.
+
+**Documentation:**
+[](https://en.cppreference.com/w/cpp/header/span)
+
+**Notes:**
+*** promo
+Superseded by `base::span`, which has a richer functionality set.
+***
+
 ### std::to_address <sup>[banned]</sup>
 
 ```c++
@@ -1692,8 +1677,6 @@ callbacks.
 **Notes:**
 *** promo
 Requires significant support code and planning around API and migration.
-
-[Prototyping bug](https://crbug.com/1403840)
 ***
 
 ## C++20 TBD Library Features {#library-review-20}
@@ -1752,24 +1735,6 @@ filenames, function names, and line numbers.
 Seems to regress code size vs. `base::Location`.
 ***
 
-### &lt;span&gt; <sup>[tbd]</sup>
-
-```c++
-#include <span>
-```
-
-**Description:** Utilities for non-owning views over a sequence of objects.
-
-**Documentation:**
-[](https://en.cppreference.com/w/cpp/header/span)
-
-**Notes:**
-*** promo
-Use `base::span` for now.
-
-[Migration bug](https://crbug.com/1414652)
-***
-
 ### std::u8string <sup>[tbd]</sup>
 
 ```c++
@@ -1810,6 +1775,23 @@ Banned since workaround for lack of RTTI
 `std::any`.
 ***
 
+### AnyInvocable <sup>[banned]</sup>
+
+```c++
+absl::AnyInvocable
+```
+
+**Description:** An equivalent of the C++23 std::move_only_function.
+
+**Documentation:**
+*   [any_invocable.h](https://source.chromium.org/chromium/chromium/src/+/main:third_party/abseil-cpp/absl/functional/any_invocable.h)
+*   [std::move_only_function](https://en.cppreference.com/w/cpp/utility/functional/move_only_function/move_only_function)
+
+**Notes:**
+*** promo
+Banned due to overlap with `base::RepeatingCallback`, `base::OnceCallback`.
+***
+
 ### Attributes <sup>[banned]</sup>
 
 ```c++
@@ -1832,6 +1814,28 @@ possible, and otherwise prefer shorter alternatives in
 [Discussion thread](https://groups.google.com/a/chromium.org/g/cxx/c/lVQOJTng1RU)
 ***
 
+### btree_\* containers <sup>[banned]</sup>
+
+```c++
+absl::btree_map
+absl::btree_set
+absl::btree_multimap
+absl::btree_multiset
+```
+
+**Description:** Alternatives to the tree-based standard library containers
+designed to be more efficient in the general case.
+
+**Documentation:** [Containers](https://abseil.io/docs/cpp/guides/container)
+
+**Notes:**
+*** promo
+In theory these should be superior alternatives that could replace most uses of
+`std::map` and company. In practice they have been found to introduce a
+substantial code size increase. Until this problem can be resolved the use of
+these containers is banned. Use the standard library containers instead.
+***
+
 ### bind_front <sup>[banned]</sup>
 
 ```c++
@@ -1847,7 +1851,7 @@ them by value.
 
 **Notes:**
 *** promo
-Overlaps with `base::Bind`.
+Banned due to overlap with `base::Bind`.
 ***
 
 ### Command line flags <sup>[banned]</sup>
@@ -1883,7 +1887,7 @@ standard library.
 
 **Notes:**
 *** promo
-Overlaps with `base/ranges/algorithm.h`.
+Superseded by algorithms in `std::ranges::`.
 ***
 
 ### FixedArray <sup>[banned]</sup>
@@ -1943,6 +1947,74 @@ invocable type.
   to result in lifetime bugs.
 
 [Discussion thread](https://groups.google.com/a/chromium.org/g/cxx/c/JVN4E4IIYA0)
+***
+
+### Log macros and related classes <sup>[banned]</sup>
+
+```c++
+LOG(INFO) << message;
+CHECK(condition);
+absl::AddLogSink(&custom_sink_to_capture_absl_logs);
+```
+
+**Description:** Macros and related classes to perform debug loggings
+
+**Documentation:**
+[log.h](https://source.chromium.org/chromium/chromium/src/+/main:third_party/abseil-cpp/absl/log/log.h)
+[check.h](https://source.chromium.org/chromium/chromium/src/+/main:third_party/abseil-cpp/absl/log/check.h)
+
+**Notes:**
+*** promo
+Banned due to overlap with `base/logging.h`. We'd like to drop Chromium's
+version and replace with the Abseil one, but no one has looked into how to
+migrate and what impacts (e.g. build time) we'd incur. If you'd like to do this
+work, please contact cxx@.
+***
+
+### NoDestructor <sup>[banned]</sup>
+
+```c++
+// Global or namespace scope.
+ABSL_CONST_INIT absl::NoDestructor<MyRegistry> reg{"foo", "bar", 8008};
+
+// Function scope.
+const std::string& MyString() {
+  static const absl::NoDestructor<std::string> x("foo");
+  return *x;
+}
+```
+
+**Description:** `absl::NoDestructor<T>` is a wrapper around an object of
+type T that behaves as an object of type T but never calls T's destructor.
+
+**Documentation:**
+[no_destructor.h](https://source.chromium.org/chromium/chromium/src/+/main:third_party/abseil-cpp/absl/base/no_desctructor.h)
+
+**Notes:**
+*** promo
+Overlaps with `base::NoDestructor`. Banned pending rewriting friending of that
+class into a form usable with this (see
+[crbug.com/392931072](https://crbug.com/392931072)); at that point we can allow
+this and migrate to it.
+***
+
+### Nullability annotations <sup>[banned]</sup>
+
+```c++
+void PaySalary(absl::NotNull<Employee *> employee) {
+  pay(*employee);  // OK to dereference
+}
+```
+
+**Description:** Annotations to more clearly specify contracts
+
+**Documentation:**
+[nullability.h](https://source.chromium.org/chromium/chromium/src/+/main:third_party/abseil-cpp/absl/base/nullability.h)
+
+**Notes:**
+*** promo
+Banned due to no feasible path to codebase-wide use and little mechanism for
+enforcement.
 ***
 
 ### Optional <sup>[banned]</sup>
@@ -2094,153 +2166,54 @@ absolute time and civil time.
 Overlaps with `base/time/`.
 ***
 
-## Abseil TBD Features {#absl-review}
-
-The following Abseil library features are not allowed in the Chromium codebase.
-See the top of this page on how to propose moving a feature from this list into
-the allowed or banned sections.
-
-### AnyInvocable <sup>[tbd]</sup>
+### Variant <sup>[banned]</sup>
 
 ```c++
-absl::AnyInvocable
+absl::bad_variant_access;
+absl::get;
+absl::get_if;
+absl::holds_alternative;
+absl::monostate;
+absl::variant;
+absl::variant_alternative;
+absl::variant_alternative_t;
+absl::variant_npos;
+absl::variant_size;
+absl::variant_size_v;
+absl::visit;
 ```
 
-**Description:** An equivalent of the C++23 std::move_only_function.
-
-**Documentation:**
-*   [any_invocable.h](https://source.chromium.org/chromium/chromium/src/+/main:third_party/abseil-cpp/absl/functional/any_invocable.h)
-*   [std::move_only_function](https://en.cppreference.com/w/cpp/utility/functional/move_only_function/move_only_function)
+**Description:** A backport of C++17's std::variant type-safe union and related utilities.
 
 **Notes:**
 *** promo
-Overlaps with `base::RepeatingCallback`, `base::OnceCallback`.
+These are just aliases to the std counterparts these days. Use std instead.
 ***
 
-### Containers <sup>[tbd]</sup>
+### Utility library <sup>[banned]</sup>
 
 ```c++
-absl::flat_hash_map
-absl::flat_hash_set
-absl::node_hash_map
-absl::node_hash_set
-absl::btree_map
-absl::btree_set
-absl::btree_multimap
-absl::btree_multiset
+absl::apply;
+absl::exchange;
+absl::forward;
+absl::in_place;
+absl::in_place_index;
+absl::in_place_index_t;
+absl::in_place_t;
+absl::in_place_type;
+absl::in_place_type_t;
+absl::index_sequence;
+absl::index_sequence_for;
+absl::integer_sequence;
+absl::make_from_tuple;
+absl::make_index_sequence;
+absl::make_integer_sequence;
+absl::move;
 ```
 
-**Description:** Alternatives to STL containers designed to be more efficient
-in the general case.
-
-**Documentation:**
-*   [Containers](https://abseil.io/docs/cpp/guides/container)
-*   [Hash](https://abseil.io/docs/cpp/guides/hash)
+**Description:** Backports of various C++17 template utilities.
 
 **Notes:**
 *** promo
-Supplements `base/containers/`.
-
-absl::InlinedVector is explicitly allowed, see the [discussion
-thread](https://groups.google.com/a/chromium.org/g/cxx/c/jTfqVfU-Ka0/m/caaal90NCgAJ).
-
-***
-
-### CRC32C library <sup>[tbd]</sup>
-
-**Description:** API for computing CRC32C values as checksums for arbitrary
-sequences of bytes provided as a string buffer.
-
-**Documentation:**
-[crc32.h](https://source.chromium.org/chromium/chromium/src/+/main:third_party/abseil-cpp/absl/crc/crc32c.h)
-
-**Notes:**
-*** promo
-Overlaps with `third_party/crc32c`.
-***
-
-### Log macros and related classes <sup>[tbd]</sup>
-
-```c++
-LOG(INFO) << message;
-CHECK(condition);
-absl::AddLogSink(&custom_sink_to_capture_absl_logs);
-```
-
-**Description:** Macros and related classes to perform debug loggings
-
-**Documentation:**
-[log.h](https://source.chromium.org/chromium/chromium/src/+/main:third_party/abseil-cpp/absl/log/log.h)
-[check.h](https://source.chromium.org/chromium/chromium/src/+/main:third_party/abseil-cpp/absl/log/check.h)
-
-**Notes:**
-*** promo
-Overlaps with `base/logging.h`.
-***
-
-### NoDestructor <sup>[tbd]</sup>
-
-```c++
-// Global or namespace scope.
-ABSL_CONST_INIT absl::NoDestructor<MyRegistry> reg{"foo", "bar", 8008};
-
-// Function scope.
-const std::string& MyString() {
-  static const absl::NoDestructor<std::string> x("foo");
-  return *x;
-}
-```
-
-**Description:** `absl::NoDestructor<T>` is a wrapper around an object of
-type T that behaves as an object of type T but never calls T's destructor.
-
-**Documentation:**
-[no_destructor.h](https://source.chromium.org/chromium/chromium/src/+/main:third_party/abseil-cpp/absl/base/no_desctructor.h)
-
-**Notes:**
-*** promo
-Overlaps with `base::NoDestructor`.
-***
-
-### Nullability annotations <sup>[tbd]</sup>
-
-```c++
-void PaySalary(absl::NotNull<Employee *> employee) {
-  pay(*employee);  // OK to dereference
-}
-```
-
-**Description:** Annotations to more clearly specify contracts
-
-**Documentation:**
-[nullability.h](https://source.chromium.org/chromium/chromium/src/+/main:third_party/abseil-cpp/absl/base/nullability.h)
-
-**Notes:**
-*** promo
-These nullability annotations are primarily a human readable signal about the
-intended contract of the pointer. They are not *types* and do not currently
-provide any correctness guarantees.
-***
-
-### Overload <sup>[tbd]</sup>
-
-```c++
-std::variant<int, std::string, double> v(int{1});
-assert(std::visit(absl::Overload(
-                       [](int) -> absl::string_view { return "int"; },
-                       [](const std::string&) -> absl::string_view {
-                         return "string";
-                       },
-                       [](double) -> absl::string_view { return "double"; }),
-                    v) == "int");
-```
-
-**Description:** Returns a functor that provides overloads based on the functors passed to it
-
-**Documentation:**
-[overload.h](https://source.chromium.org/chromium/chromium/src/+/main:third_party/abseil-cpp/absl/functional/overload.h)
-
-**Notes:**
-*** promo
-Overlaps with `base::Overloaded`.
+These are just aliases to the std counterparts these days. Use std instead.
 ***

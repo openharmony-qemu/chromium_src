@@ -1,6 +1,6 @@
 Package: libdav1d4
 Source: dav1d
-Version: 0.7.1-3
+Version: 0.7.1-3+deb11u1
 Architecture: amd64
 Maintainer: Debian Multimedia Maintainers <debian-multimedia@lists.debian.org>
 Installed-Size: 982

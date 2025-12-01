@@ -11,8 +11,6 @@ import android.os.Build;
 import androidx.annotation.RequiresApi;
 import androidx.test.filters.SmallTest;
 
-import com.android.webview.chromium.WebViewChromiumFactoryProvider;
-
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -22,7 +20,6 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import org.chromium.android_webview.AwPacProcessor;
-import org.chromium.base.JNIUtils;
 import org.chromium.base.library_loader.LibraryLoader;
 import org.chromium.base.test.util.MinAndroidSdkLevel;
 
@@ -37,14 +34,14 @@ import java.util.List;
 public class AwPacProcessorTest extends AwParameterizedTest {
     private AwPacProcessor mProcessor;
 
-    private final String mPacScript =
+    private static final String PAC_SCRIPT =
             """
         function FindProxyForURL(url, host) {
           var x = myIpAddress();
           return "PROXY " + x + ":80";
         }
         """;
-    private final String mTestUrl = "http://testurl.test";
+    private static final String M_TEST_URL = "http://testurl.test";
 
     @Rule public AwActivityTestRule mRule;
 
@@ -54,7 +51,6 @@ public class AwPacProcessorTest extends AwParameterizedTest {
 
     @Before
     public void setUp() {
-        JNIUtils.setClassLoader(WebViewChromiumFactoryProvider.class.getClassLoader());
         LibraryLoader.getInstance().ensureInitialized();
 
         mProcessor = AwPacProcessor.getInstance();
@@ -64,18 +60,18 @@ public class AwPacProcessorTest extends AwParameterizedTest {
     @SmallTest
     public void testUpdateNetworkAndLinkAddresses() throws Throwable {
         // PAC script returns result of myIpAddress call
-        mProcessor.setProxyScript(mPacScript);
+        mProcessor.setProxyScript(PAC_SCRIPT);
 
         // Save the proxy request result when network is not set
-        String proxyResultNetworkIsNotSet = mProcessor.makeProxyRequest(mTestUrl);
+        String proxyResultNetworkIsNotSet = mProcessor.makeProxyRequest(M_TEST_URL);
 
         // Set network and IP addresses, check they are correctly propagated.
         mProcessor.setNetworkAndLinkAddresses(42, List.of("1.2.3.4"));
-        String proxyResultNetworkIsSet = mProcessor.makeProxyRequest(mTestUrl);
+        String proxyResultNetworkIsSet = mProcessor.makeProxyRequest(M_TEST_URL);
         Assert.assertEquals("PROXY 1.2.3.4:80", proxyResultNetworkIsSet);
 
         // Unset network, the returned proxy string must be equal previously saved value
         mProcessor.setNetwork(null);
-        Assert.assertEquals(proxyResultNetworkIsNotSet, mProcessor.makeProxyRequest(mTestUrl));
+        Assert.assertEquals(proxyResultNetworkIsNotSet, mProcessor.makeProxyRequest(M_TEST_URL));
     }
 }

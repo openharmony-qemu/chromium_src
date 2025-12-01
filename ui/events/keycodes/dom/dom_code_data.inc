@@ -106,13 +106,15 @@ DOM_CODE_DECLARATION {
 
   // Sleep could be encoded as USB#0c0032, but there's no corresponding WakeUp
   // in the 0x0c USB page.
-  //            USB     evdev    XKB     Win     Mac    Ohos    Code
+  //            USB     evdev    XKB     Win   Mac   Ohos
   DOM_CODE(0x010082, 0x008e, 0x0096, 0xe05f, 0xffff, 2600, "Sleep", SLEEP), // SystemSleep
   DOM_CODE(0x010083, 0x008f, 0x0097, 0xe063, 0xffff, -1, "WakeUp", WAKE_UP),
   DOM_CODE(0x010097, 0x01d0, 0x01d8, 0x0000, 0xffff, 0, "Fn", FN),
-  DOM_CODE(0x0100a9, 0x00f8, 0x0100, 0x0000, 0xffff, 23, NULL,
+  DOM_CODE(0x01009b, 0x024f, 0x0257, 0x0000, 0xffff, -1, NULL,
+             DO_NOT_DISTURB), // System Do Not Disturb
+  DOM_CODE(0x0100a9, 0x00f8, 0x0100, 0x0000, 23, 0xffff, NULL,
              MICROPHONE_MUTE_TOGGLE),  // Microphone Mute Toggle
-  DOM_CODE(0x0100aa, 0x024e, 0x0256, 0x0000, -1, 0xffff, NULL,
+  DOM_CODE(0x0100aa, 0x024e, 0x0256, 0x0000, 0xffff, -1, NULL,
              ACCESSIBILITY),  // System Accessibility Binding
   DOM_CODE(0x0100b5, 0x00e3, 0x00eb, 0x0000, 0xffff, -1, "DisplayToggleIntExt",
              DISPLAY_TOGGLE_INT_EXT),  // System Display Toggle Int/Ext
@@ -471,7 +473,7 @@ DOM_CODE_DECLARATION {
   //
   // Keyboard backlight/illumination spec update.
   // https://www.usb.org/sites/default/files/hutrr73_-_fn_key_and_keyboard_backlight_brightness_0.pdf
-  //            USB     evdev    XKB     Win     Mac    Ohos    Code
+  //            USB     evdev    XKB     Win     Mac  Ohos  Code
   DOM_CODE(0x0c0060, 0x0166, 0x016e, 0x0000, 0xffff, 2664, NULL, INFO),
   DOM_CODE(0x0c0061, 0x0172, 0x017a, 0x0000, 0xffff, -1, NULL, CLOSED_CAPTION_TOGGLE),
   DOM_CODE(0x0c006f, 0x00e1, 0x00e9, 0x0000, 0xffff, 40, "BrightnessUp", BRIGHTNESS_UP),
@@ -481,6 +483,7 @@ DOM_CODE_DECLARATION {
   DOM_CODE(0x0c0073, 0x0250, 0x0258, 0x0000, 0xffff, 2724, NULL, BRIGHTNESS_MINIMIUM),
   DOM_CODE(0x0c0074, 0x0251, 0x0259, 0x0000, 0xffff, 2725, NULL, BRIGHTNESS_MAXIMUM),
   DOM_CODE(0x0c0075, 0x00f4, 0x00fc, 0x0000, 0xffff, -1, NULL, BRIGHTNESS_AUTO),
+  DOM_CODE(0x0c0078, 0x024d, 0x0255, 0x0000, 0xffff, -1, NULL, CAMERA_ACCESS_TOGGLE),
   DOM_CODE(0x0c0079, 0x00e6, 0x00ee, 0x0000, 0xffff, 2651, NULL, KBD_ILLUM_UP),
   DOM_CODE(0x0c007a, 0x00e5, 0x00ed, 0x0000, 0xffff, 2650, NULL, KBD_ILLUM_DOWN),
   DOM_CODE(0x0c007c, 0x00e4, 0x00ec, 0x0000, 0xffff, 2649, NULL,
@@ -496,7 +499,7 @@ DOM_CODE_DECLARATION {
   DOM_CODE(0x0c00b0, 0x00cf, 0x00d7, 0x0000, 0xffff, 2085, "MediaPlay", MEDIA_PLAY),
   DOM_CODE(0x0c00b1, 0x00c9, 0x00d1, 0x0000, 0xffff, 2086, "MediaPause", MEDIA_PAUSE),
   DOM_CODE(0x0c00b2, 0x00a7, 0x00af, 0x0000, 0xffff, 2089, "MediaRecord", MEDIA_RECORD),
-  DOM_CODE(0x0c00b3, 0x00d0, 0x00d8, 0x0000, 0xffff, 15, "MediaFastForward", MEDIA_FAST_FORWARD),
+  DOM_CODE(0x0c00b3, 0x00d0, 0x00d8, 0x0000, 0xffff, 15,  "MediaFastForward", MEDIA_FAST_FORWARD),
   DOM_CODE(0x0c00b4, 0x00a8, 0x00b0, 0x0000, 0xffff, 14, "MediaRewind", MEDIA_REWIND),
   DOM_CODE(0x0c00b5, 0x00a3, 0x00ab, 0xe019, 0xffff, 12, "MediaTrackNext",
              MEDIA_TRACK_NEXT),

@@ -11,6 +11,7 @@
 #import "base/functional/bind.h"
 #import "base/metrics/histogram_functions.h"
 #import "base/metrics/histogram_macros.h"
+#import "base/numerics/safe_conversions.h"
 #import "base/strings/sys_string_conversions.h"
 #import "components/safe_browsing/core/browser/safe_browsing_url_checker_impl.h"
 #import "components/safe_browsing/core/common/features.h"
@@ -31,12 +32,29 @@ using safe_browsing::SafeBrowsingUrlCheckerImpl;
 using security_interstitials::UnsafeResource;
 
 namespace {
+
 // Creates a PolicyDecision that cancels a navigation to show a safe browsing
-// error.
-web::WebStatePolicyDecider::PolicyDecision CreateSafeBrowsingErrorDecision() {
+// error for an unsafe `resource`.
+web::WebStatePolicyDecider::PolicyDecision CreateSafeBrowsingErrorDecision(
+    const UnsafeResource& resource) {
+  SafeBrowsingErrorCode error_code;
+  switch (resource.threat_type) {
+    case safe_browsing::SBThreatType::SB_THREAT_TYPE_MANAGED_POLICY_BLOCK:
+      error_code = SafeBrowsingErrorCode::kEnterpriseBlock;
+      break;
+
+    case safe_browsing::SBThreatType::SB_THREAT_TYPE_MANAGED_POLICY_WARN:
+      error_code = SafeBrowsingErrorCode::kEnterpriseWarn;
+      break;
+
+    default:
+      error_code = SafeBrowsingErrorCode::kUnsafeResource;
+      break;
+  }
+
   return web::WebStatePolicyDecider::PolicyDecision::CancelAndDisplayError(
       [NSError errorWithDomain:kSafeBrowsingErrorDomain
-                          code:kUnsafeResourceErrorCode
+                          code:base::checked_cast<NSInteger>(error_code)
                       userInfo:nil]);
 }
 
@@ -49,12 +67,15 @@ GURL GetCanonicalizedUrl(const GURL& url) {
                                                         &query);
 
   GURL::Replacements replacements;
-  if (hostname.length())
+  if (hostname.length()) {
     replacements.SetHostStr(hostname);
-  if (path.length())
+  }
+  if (path.length()) {
     replacements.SetPathStr(path);
-  if (query.length())
+  }
+  if (query.length()) {
     replacements.SetQueryStr(query);
+  }
   replacements.ClearRef();
 
   return url.ReplaceComponents(replacements);
@@ -118,8 +139,6 @@ SafeBrowsingTabHelper::SafeBrowsingTabHelper(web::WebState* web_state,
 
 SafeBrowsingTabHelper::~SafeBrowsingTabHelper() = default;
 
-WEB_STATE_USER_DATA_KEY_IMPL(SafeBrowsingTabHelper)
-
 void SafeBrowsingTabHelper::SetDelegate(
     id<SafeBrowsingTabHelperDelegate> delegate) {
   delegate_ = delegate;
@@ -180,14 +199,11 @@ bool SafeBrowsingTabHelper::PolicyDecider::ShouldReloadOnCommit() {
 }
 
 void SafeBrowsingTabHelper::PolicyDecider::SetCommittedRedirectChain() {
-  if (base::FeatureList::IsEnabled(
-          safe_browsing::kSafeBrowsingAsyncRealTimeCheck)) {
-    committed_redirect_chain_.clear();
-    for (auto& query : to_be_committed_redirect_chain_) {
-      committed_redirect_chain_.push_back(std::move(query));
-    }
-    to_be_committed_redirect_chain_.clear();
+  committed_redirect_chain_.clear();
+  for (auto& query : to_be_committed_redirect_chain_) {
+    committed_redirect_chain_.push_back(std::move(query));
   }
+  to_be_committed_redirect_chain_.clear();
 }
 
 void SafeBrowsingTabHelper::PolicyDecider::ReloadPage() {
@@ -207,7 +223,8 @@ SafeBrowsingTabHelper::PolicyDecider::CreatePolicyDecision(
   web::WebStatePolicyDecider::PolicyDecision policy_decision =
       web::WebStatePolicyDecider::PolicyDecision::Allow();
   if (result.show_error_page) {
-    policy_decision = CreateSafeBrowsingErrorDecision();
+    CHECK(result.resource);
+    policy_decision = CreateSafeBrowsingErrorDecision(*result.resource);
   } else if (!result.proceed) {
     policy_decision = web::WebStatePolicyDecider::PolicyDecision::Cancel();
   }
@@ -316,7 +333,8 @@ void SafeBrowsingTabHelper::PolicyDecider::ShouldAllowRequest(
     // TODO(crbug.com/40681490): This should directly return the safe browsing
     // error decision once error pages for cancelled requests are supported.
     // For now, only cancelled response errors are displayed properly.
-    pending_main_frame_query_->decision = CreateSafeBrowsingErrorDecision();
+    pending_main_frame_query_->decision =
+        CreateSafeBrowsingErrorDecision(*main_frame_resource);
     return std::move(callback).Run(
         web::WebStatePolicyDecider::PolicyDecision::Allow());
   }
@@ -349,17 +367,12 @@ void SafeBrowsingTabHelper::PolicyDecider::ShouldAllowResponse(
         web::WebStatePolicyDecider::PolicyDecision::Allow());
   }
 
-  if (base::FeatureList::IsEnabled(
-          safe_browsing::kSafeBrowsingAsyncRealTimeCheck)) {
-    if (!pending_main_frame_query_) {
-      base::UmaHistogramBoolean("SafeBrowsing.IOS.RepeatedResponseCalled",
-                                true);
-      return std::move(callback).Run(
-          web::WebStatePolicyDecider::PolicyDecision::Allow());
-    }
-  } else {
-    DCHECK(pending_main_frame_query_);
+  if (!pending_main_frame_query_) {
+    base::UmaHistogramBoolean("SafeBrowsing.IOS.RepeatedResponseCalled", true);
+    return std::move(callback).Run(
+        web::WebStatePolicyDecider::PolicyDecision::Allow());
   }
+
   base::UmaHistogramBoolean("SafeBrowsing.IOS.RepeatedResponseCalled", false);
 
   // When there's a server redirect, a ShouldAllowRequest call sometimes
@@ -382,16 +395,11 @@ void SafeBrowsingTabHelper::PolicyDecider::ShouldAllowResponse(
     pending_main_frame_redirect_chain_.clear();
   }
 
-  std::optional<web::WebStatePolicyDecider::PolicyDecision> decision;
-  if (base::FeatureList::IsEnabled(
-          safe_browsing::kSafeBrowsingAsyncRealTimeCheck)) {
-    // Logic only needs to check if sync queries in the redirect chain are
-    // completed since async queries can respond after navigation.
-    decision = RedirectChainDecisionWithFilter(
-        RedirectChain::kPendingMainFrame, RedirectChainFilter::kSyncQueries);
-  } else {
-    decision = MainFrameRedirectChainDecision();
-  }
+  // Logic only needs to check if sync queries in the redirect chain are
+  // completed since async queries can respond after navigation.
+  std::optional<web::WebStatePolicyDecider::PolicyDecision> decision =
+      RedirectChainDecisionWithFilter(RedirectChain::kPendingMainFrame,
+                                      RedirectChainFilter::kSyncQueries);
 
   if (decision) {
     RecordCheckCompletedOnResponseMetric(/*check_completed=*/true);
@@ -753,17 +761,14 @@ SafeBrowsingTabHelper::PolicyDecider::QueryDecisionFromFilter(
 }
 
 void SafeBrowsingTabHelper::PolicyDecider::UpdateToBeCommittedRedirectChain() {
-  if (base::FeatureList::IsEnabled(
-          safe_browsing::kSafeBrowsingAsyncRealTimeCheck)) {
-    to_be_committed_redirect_chain_.clear();
-    to_be_committed_redirect_chain_.push_back(
-        std::move(*pending_main_frame_query_));
-    pending_main_frame_query_.reset();
-    for (auto& query : pending_main_frame_redirect_chain_) {
-      to_be_committed_redirect_chain_.push_back(std::move(query));
-    }
-    pending_main_frame_redirect_chain_.clear();
+  to_be_committed_redirect_chain_.clear();
+  to_be_committed_redirect_chain_.push_back(
+      std::move(*pending_main_frame_query_));
+  pending_main_frame_query_.reset();
+  for (auto& query : pending_main_frame_redirect_chain_) {
+    to_be_committed_redirect_chain_.push_back(std::move(query));
   }
+  pending_main_frame_redirect_chain_.clear();
 }
 
 #pragma mark SafeBrowsingTabHelper::PolicyDecider::MainFrameUrlQuery
@@ -803,8 +808,9 @@ void SafeBrowsingTabHelper::QueryObserver::SafeBrowsingQueryFinished(
     const SafeBrowsingQueryManager::Query& query,
     const SafeBrowsingQueryManager::Result& result,
     SafeBrowsingUrlCheckerImpl::PerformedCheck performed_check) {
-  if (policy_decider_->IsQueryStale(query))
+  if (policy_decider_->IsQueryStale(query)) {
     return;
+  }
 
   // Create a policy decision using the query result.
   web::WebStatePolicyDecider::PolicyDecision policy_decision =

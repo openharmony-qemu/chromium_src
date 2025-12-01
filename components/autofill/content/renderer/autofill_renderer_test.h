@@ -53,7 +53,7 @@ class MockAutofillDriver : public mojom::AutofillDriver {
                const gfx::Rect& caret_bounds),
               (override));
   MOCK_METHOD(void,
-              TextFieldDidChange,
+              TextFieldValueChanged,
               (const FormData& form,
                FieldRendererId field_id,
                base::TimeTicks timestamp),
@@ -63,7 +63,7 @@ class MockAutofillDriver : public mojom::AutofillDriver {
               (const FormData& form, FieldRendererId field_id),
               (override));
   MOCK_METHOD(void,
-              SelectControlDidChange,
+              SelectControlSelectionChanged,
               (const FormData& form, FieldRendererId field_id),
               (override));
   MOCK_METHOD(void,
@@ -74,16 +74,17 @@ class MockAutofillDriver : public mojom::AutofillDriver {
               JavaScriptChangedAutofilledValue,
               (const FormData& form,
                FieldRendererId field_id,
-               const std::u16string& old_value,
-               bool formatting_ony),
+               const std::u16string& old_value),
               (override));
-  MOCK_METHOD(void,
-              AskForValuesToFill,
-              (const FormData& form,
-               FieldRendererId field_id,
-               const gfx::Rect& caret_bounds,
-               AutofillSuggestionTriggerSource trigger_source),
-              (override));
+  MOCK_METHOD(
+      void,
+      AskForValuesToFill,
+      (const FormData& form,
+       FieldRendererId field_id,
+       const gfx::Rect& caret_bounds,
+       AutofillSuggestionTriggerSource trigger_source,
+       const std::optional<PasswordSuggestionRequest>& password_request),
+      (override));
   MOCK_METHOD(void, HidePopup, (), (override));
   MOCK_METHOD(void, FocusOnNonFormField, (), (override));
   MOCK_METHOD(void,
@@ -111,7 +112,6 @@ class AutofillRendererTest : public content::RenderViewTest {
 
   virtual std::unique_ptr<AutofillAgent> CreateAutofillAgent(
       content::RenderFrame* render_frame,
-      const AutofillAgent::Config& config,
       std::unique_ptr<PasswordAutofillAgent> password_autofill_agent,
       std::unique_ptr<PasswordGenerationAgent> password_generation_agent,
       blink::AssociatedInterfaceRegistry* associated_interfaces);

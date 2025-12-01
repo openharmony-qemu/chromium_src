@@ -18,7 +18,7 @@ namespace media {
 VideoCaptureErrorOrDevice VideoCaptureDeviceWebRtc::Create(
     webrtc::VideoCaptureOptions* options,
     const VideoCaptureDeviceDescriptor& device_descriptor) {
-  rtc::scoped_refptr<webrtc::VideoCaptureModule> capture_module =
+  webrtc::scoped_refptr<webrtc::VideoCaptureModule> capture_module =
       webrtc::VideoCaptureFactory::Create(options,
                                           device_descriptor.device_id.c_str());
 
@@ -32,7 +32,7 @@ VideoCaptureErrorOrDevice VideoCaptureDeviceWebRtc::Create(
 
 VideoCaptureDeviceWebRtc::VideoCaptureDeviceWebRtc(
     webrtc::VideoCaptureOptions* options,
-    rtc::scoped_refptr<webrtc::VideoCaptureModule> capture_module) {
+    webrtc::scoped_refptr<webrtc::VideoCaptureModule> capture_module) {
   options_ = options;
   capture_module_ = capture_module;
   capture_module_->RegisterCaptureDataCallback(this);
@@ -152,7 +152,9 @@ int32_t VideoCaptureDeviceWebRtc::OnRawFrame(
   client_->OnIncomingCapturedData(
       video_frame, video_frame_length, format, gfx::ColorSpace(),
       rotation_degree, false /* flip_y */, base::TimeTicks::Now(),
-      base::Milliseconds(capture_time_ms) - *base_time_, std::nullopt);
+      base::Milliseconds(capture_time_ms) - *base_time_,
+      /*capture_begin_timestamp=*/std::nullopt,
+      /*metadata=*/std::nullopt);
   return 0;
 }
 

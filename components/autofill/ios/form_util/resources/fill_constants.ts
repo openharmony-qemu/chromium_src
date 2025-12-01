@@ -4,7 +4,7 @@
 
 import '//components/autofill/ios/form_util/resources/create_fill_namespace.js';
 
-import {gCrWeb} from '//ios/web/public/js_messaging/resources/gcrweb.js';
+import {gCrWebLegacy} from '//ios/web/public/js_messaging/resources/gcrweb.js';
 
 declare type FormControlElement =
     HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
@@ -36,6 +36,10 @@ const MAX_STRING_LENGTH = 1024;
  * chromium/src/components/autofill/core/common/autofill_constants.h
  */
 const MAX_EXTRACTABLE_FIELDS = 200;
+
+// The maximum number of frames we are willing to extract, due to computational
+// costs.
+const MAX_EXTRACTABLE_FRAMES = 20;
 
 /**
  * A value for the "presentation" role.
@@ -73,9 +77,10 @@ export {
   MAX_DATA_LENGTH,
   MAX_STRING_LENGTH,
   MAX_EXTRACTABLE_FIELDS,
+  MAX_EXTRACTABLE_FRAMES,
   ROLE_ATTRIBUTE_PRESENTATION,
   RENDERER_ID_NOT_SET,
   UNIQUE_ID_ATTRIBUTE,
 };
 
-gCrWeb.fill.ID_SYMBOL = ID_SYMBOL;
+gCrWebLegacy.fill.ID_SYMBOL = ID_SYMBOL;

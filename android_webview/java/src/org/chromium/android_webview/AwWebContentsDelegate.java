@@ -29,6 +29,7 @@ public abstract class AwWebContentsDelegate extends WebContentsDelegateAndroid {
             int renderId,
             @JniType("blink::mojom::FileChooserParams::Mode") @FileChooserParams.Mode.EnumType
                     int blinkFileChooserParamsMode,
+            boolean openWritable,
             String acceptTypes,
             String title,
             String defaultFilename,
@@ -54,6 +55,9 @@ public abstract class AwWebContentsDelegate extends WebContentsDelegateAndroid {
     // into onLoad{Started|Stopped}.
     @CalledByNative
     public abstract void loadingStateChanged();
+
+    @CalledByNative
+    protected abstract boolean isPopupSupported();
 
     @NativeMethods
     interface Natives {

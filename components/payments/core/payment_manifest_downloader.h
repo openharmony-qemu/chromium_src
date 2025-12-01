@@ -174,7 +174,7 @@ class PaymentManifestDownloader {
 
   // Called by SimpleURLLoader on completion.
   void OnURLLoaderComplete(network::SimpleURLLoader* url_loader,
-                           std::unique_ptr<std::string> response_body);
+                           std::optional<std::string> response_body);
 
   // Internally called by OnURLLoaderComplete, exposed to ease unit tests.
   void OnURLLoaderCompleteInternal(
@@ -183,10 +183,6 @@ class PaymentManifestDownloader {
       const std::string& response_body,
       scoped_refptr<net::HttpResponseHeaders> headers,
       int net_error);
-
-  void TryFallbackToDownloadingResponseBody(
-      const GURL& url_to_download,
-      std::unique_ptr<Download> download_info);
 
   // Called by unittests to get the one in-progress loader.
   network::SimpleURLLoader* GetLoaderForTesting();

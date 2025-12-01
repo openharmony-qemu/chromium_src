@@ -21,6 +21,7 @@
 #include "base/files/scoped_file.h"
 #include "base/functional/bind.h"
 #include "base/logging.h"
+#include "base/notreached.h"
 #include "base/path_service.h"
 #include "base/posix/eintr_wrapper.h"
 #include "base/process/kill.h"
@@ -81,6 +82,7 @@
 #include <zircon/process.h>
 #include <zircon/processargs.h>
 #include <zircon/syscalls.h>
+
 #include "base/files/scoped_temp_dir.h"
 #include "base/fuchsia/file_utils.h"
 #include "base/fuchsia/filtered_service_directory.h"
@@ -92,7 +94,7 @@
 #if BUILDFLAG(IS_MAC)
 #include <mach/mach.h>
 
-#include "base/apple/mach_port_rendezvous.h"
+#include "base/apple/mach_port_rendezvous_mac.h"
 #include "base/apple/scoped_mach_port.h"
 #include "base/mac/process_requirement.h"
 #endif
@@ -396,8 +398,7 @@ TEST_F(ProcessUtilTest, CloneTmp) {
 }
 
 MULTIPROCESS_TEST_MAIN(NeverCalled) {
-  CHECK(false) << "Process should not have been launched.";
-  return 99;
+  NOTREACHED() << "Process should not have been launched.";
 }
 
 TEST_F(ProcessUtilTest, TransferInvalidHandleFails) {
@@ -848,8 +849,9 @@ MULTIPROCESS_TEST_MAIN(ChildVerifiesCetDisabled) {
   if (GetProcessMitigationPolicy(GetCurrentProcess(),
                                  ProcessUserShadowStackPolicy, &policy,
                                  sizeof(policy))) {
-    if (policy.EnableUserShadowStack)
+    if (policy.EnableUserShadowStack) {
       return 1;
+    }
   }
   return kSuccess;
 }
@@ -943,13 +945,7 @@ TEST_F(ProcessUtilTest, GetAppOutputWithExitCode) {
   command.AppendArg("-x");
   command.AppendArg(NumberToString(kExpectedExitCode));
   command.AppendArg(kEchoMessage2);
-#if BUILDFLAG(IS_WIN)
-  // On Windows, anything that quits with a nonzero status code is handled as a
-  // "crash", so just ignore GetAppOutputWithExitCode's return value.
-  GetAppOutputWithExitCode(command, &output, &exit_code);
-#elif BUILDFLAG(IS_POSIX) || BUILDFLAG(IS_FUCHSIA)
   EXPECT_TRUE(GetAppOutputWithExitCode(command, &output, &exit_code));
-#endif
   EXPECT_EQ(kEchoMessage2, output);
   EXPECT_EQ(kExpectedExitCode, exit_code);
 }
@@ -1021,8 +1017,9 @@ bool CanGuardFd(int fd) {
   // descriptor is bad, or EINVAL if the fd already has a guard set.
   int ret =
       change_fdguard_np(fd, NULL, 0, &kGuard, GUARD_DUP, &original_fdflags);
-  if (ret == -1)
+  if (ret == -1) {
     return false;
+  }
 
   // Remove the guard.  It should not be possible to fail in removing the guard
   // just added.
@@ -1044,8 +1041,9 @@ MULTIPROCESS_TEST_MAIN(ProcessUtilsLeakFDChildProcess) {
   for (int i = STDERR_FILENO + 1; i < max_files; i++) {
 #if BUILDFLAG(IS_APPLE)
     // Ignore guarded or invalid file descriptors.
-    if (!CanGuardFd(i))
+    if (!CanGuardFd(i)) {
       continue;
+    }
 #endif
 
     if (i != kChildPipe) {
@@ -1068,8 +1066,9 @@ MULTIPROCESS_TEST_MAIN(ProcessUtilsLeakFDChildProcess) {
 
 int ProcessUtilTest::CountOpenFDsInChild() {
   int fds[2];
-  if (pipe(fds) < 0)
+  if (pipe(fds) < 0) {
     NOTREACHED();
+  }
 
   LaunchOptions options;
   options.fds_to_remap.emplace_back(fds[1], kChildPipe);
@@ -1240,7 +1239,7 @@ TEST_F(ProcessUtilTest, LaunchWithHandleTransfer) {
   ASSERT_TRUE(signals & ZX_SOCKET_READABLE);
 
   size_t bytes_read = 0;
-  char buf[16] = {0};
+  char buf[16] = {};
   result = zx_socket_read(handles[1], 0, buf, sizeof(buf), &bytes_read);
   EXPECT_EQ(ZX_OK, result);
   EXPECT_EQ(1u, bytes_read);

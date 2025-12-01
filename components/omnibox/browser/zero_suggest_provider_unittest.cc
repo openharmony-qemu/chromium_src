@@ -14,8 +14,10 @@
 #include "base/run_loop.h"
 #include "base/strings/string_util.h"
 #include "base/strings/utf_string_conversions.h"
+#include "base/test/bind.h"
 #include "base/test/metrics/histogram_tester.h"
 #include "base/test/metrics/user_action_tester.h"
+#include "base/test/run_until.h"
 #include "base/test/scoped_feature_list.h"
 #include "base/test/task_environment.h"
 #include "build/build_config.h"
@@ -27,6 +29,7 @@
 #include "components/omnibox/browser/omnibox_prefs.h"
 #include "components/omnibox/browser/test_scheme_classifier.h"
 #include "components/omnibox/browser/zero_suggest_cache_service.h"
+#include "components/omnibox/common/omnibox_feature_configs.h"
 #include "components/omnibox/common/omnibox_features.h"
 #include "components/prefs/pref_registry_simple.h"
 #include "components/prefs/testing_pref_service.h"
@@ -87,14 +90,12 @@ class FakeAutocompleteProviderClient : public MockAutocompleteProviderClient {
     return zero_suggest_cache_service_.get();
   }
 
-  bool IsPersonalizedUrlDataCollectionActive() const override {
-    return is_personalized_url_data_collection_active_;
+  bool IsUrlDataCollectionActive() const override {
+    return is_url_data_collection_active_;
   }
 
-  void set_is_personalized_url_data_collection_active(
-      bool is_personalized_url_data_collection_active) {
-    is_personalized_url_data_collection_active_ =
-        is_personalized_url_data_collection_active;
+  void set_is_url_data_collection_active(bool is_url_data_collection_active) {
+    is_url_data_collection_active_ = is_url_data_collection_active;
   }
 
   void Classify(
@@ -115,7 +116,7 @@ class FakeAutocompleteProviderClient : public MockAutocompleteProviderClient {
 
  private:
   search_engines::SearchEnginesTestEnvironment search_engines_test_environment_;
-  bool is_personalized_url_data_collection_active_;
+  bool is_url_data_collection_active_;
   std::unique_ptr<ZeroSuggestCacheService> zero_suggest_cache_service_;
   TestSchemeClassifier scheme_classifier_;
 };
@@ -151,18 +152,35 @@ class ZeroSuggestProviderTest : public testing::Test,
 
     TemplateURLService* template_url_service = client_->GetTemplateURLService();
     return RemoteSuggestionsService::EndpointUrl(
-        template_url_service->GetDefaultSearchProvider(), search_terms_args,
+        *template_url_service->GetDefaultSearchProvider(), search_terms_args,
         template_url_service->search_terms_data());
   }
 
+  GURL GetProviderRequestURL(const AutocompleteInput& input) {
+    network::ResourceRequest resource_request;
+    // Intercept the request to determine full URL actually used by provider.
+    test_loader_factory()->SetInterceptor(base::BindLambdaForTesting(
+        [&](const network::ResourceRequest& request) {
+          resource_request = request;
+        }));
+    provider_->Start(input, false);
+    EXPECT_TRUE(
+        base::test::RunUntil([&] { return !resource_request.url.is_empty(); }));
+    return resource_request.url;
+  }
+
   // An AutocompleteInput that gets Zero Prefix Suggestions on NTP.
-  AutocompleteInput ZeroPrefixInputForNTP(const bool is_prefetch) {
+  AutocompleteInput ZeroPrefixInputForNTP(
+      const bool is_prefetch,
+      const bool user_input_in_progress = false) {
     AutocompleteInput input(u"",
                             is_prefetch
                                 ? metrics::OmniboxEventProto::NTP_ZPS_PREFETCH
                                 : metrics::OmniboxEventProto::NTP_REALBOX,
                             TestSchemeClassifier());
-    input.set_focus_type(metrics::OmniboxFocusType::INTERACTION_FOCUS);
+    input.set_focus_type(user_input_in_progress
+                             ? metrics::OmniboxFocusType::INTERACTION_DEFAULT
+                             : metrics::OmniboxFocusType::INTERACTION_FOCUS);
     return input;
   }
 
@@ -177,7 +195,9 @@ class ZeroSuggestProviderTest : public testing::Test,
   // An AutocompleteInput that gets Zero Prefix Suggestions on WEB.
   AutocompleteInput ZeroPrefixInputForWeb(
       const bool is_prefetch,
-      const std::string& input_url = "https://example.com/") {
+      const bool user_input_in_progress = false,
+      const std::string& input_url = "https://example.com/",
+      const std::u16string& input_title = u"Example / Page") {
     // On IOS WEB/SRP, input text is not empty.
     AutocompleteInput input(is_ios ? base::ASCIIToUTF16(input_url) : u"",
                             is_prefetch
@@ -185,23 +205,10 @@ class ZeroSuggestProviderTest : public testing::Test,
                                 : metrics::OmniboxEventProto::OTHER,
                             TestSchemeClassifier());
     input.set_current_url(GURL(input_url));
-    input.set_focus_type(metrics::OmniboxFocusType::INTERACTION_FOCUS);
-    return input;
-  }
-
-  // An AutocompleteInput that gets Zero Prefix Suggestions on SRP.
-  AutocompleteInput ZeroPrefixInputForSRP(
-      const bool is_prefetch,
-      const std::string& input_url = "https://www.google.com/search?q=foo") {
-    AutocompleteInput input(
-        // On IOS WEB/SRP, input text is not empty.
-        is_ios ? base::ASCIIToUTF16(input_url) : u"",
-        is_prefetch ? metrics::OmniboxEventProto::SRP_ZPS_PREFETCH
-                    : metrics::OmniboxEventProto::
-                          SEARCH_RESULT_PAGE_NO_SEARCH_TERM_REPLACEMENT,
-        TestSchemeClassifier());
-    input.set_current_url(GURL(input_url));
-    input.set_focus_type(metrics::OmniboxFocusType::INTERACTION_FOCUS);
+    input.set_current_title(input_title);
+    input.set_focus_type(user_input_in_progress
+                             ? metrics::OmniboxFocusType::INTERACTION_DEFAULT
+                             : metrics::OmniboxFocusType::INTERACTION_FOCUS);
     return input;
   }
 
@@ -212,6 +219,27 @@ class ZeroSuggestProviderTest : public testing::Test,
                             TestSchemeClassifier());
     input.set_current_url(GURL(input_url));
     input.set_focus_type(metrics::OmniboxFocusType::INTERACTION_DEFAULT);
+    return input;
+  }
+
+  // An AutocompleteInput that gets Zero Prefix Suggestions on SRP.
+  AutocompleteInput ZeroPrefixInputForSRP(
+      const bool is_prefetch,
+      const bool user_input_in_progress = false,
+      const std::string& input_url = "https://www.google.com/search?q=foo",
+      const std::u16string& input_title = u"foo - Google Search") {
+    AutocompleteInput input(
+        // On IOS WEB/SRP, input text is not empty.
+        is_ios ? base::ASCIIToUTF16(input_url) : u"",
+        is_prefetch ? metrics::OmniboxEventProto::SRP_ZPS_PREFETCH
+                    : metrics::OmniboxEventProto::
+                          SEARCH_RESULT_PAGE_NO_SEARCH_TERM_REPLACEMENT,
+        TestSchemeClassifier());
+    input.set_current_url(GURL(input_url));
+    input.set_current_title(input_title);
+    input.set_focus_type(user_input_in_progress
+                             ? metrics::OmniboxFocusType::INTERACTION_DEFAULT
+                             : metrics::OmniboxFocusType::INTERACTION_FOCUS);
     return input;
   }
 
@@ -249,8 +277,8 @@ class ZeroSuggestProviderTest : public testing::Test,
 void ZeroSuggestProviderTest::SetUp() {
   client_ = std::make_unique<FakeAutocompleteProviderClient>();
 
-  // Activate personalized URL data collection.
-  client_->set_is_personalized_url_data_collection_active(true);
+  // Activate URL data collection.
+  client_->set_is_url_data_collection_active(true);
 
   TemplateURLService* template_url_service = client_->GetTemplateURLService();
   template_url_service->Load();
@@ -365,17 +393,23 @@ TEST_F(ZeroSuggestProviderTest, AllowZeroPrefixSuggestionsContextualWebAndSRP) {
 
 // Tests whether zero-suggest is allowed on NTP/Web/SRP with various external
 TEST_F(ZeroSuggestProviderTest, AllowZeroPrefixSuggestionsRequestEligibility) {
+  using ResultType = ZeroSuggestProvider::ResultType;
+
   // Keep a reference to the Google default search provider.
   TemplateURLService* template_url_service = client_->GetTemplateURLService();
   const TemplateURL* google_provider =
       template_url_service->GetDefaultSearchProvider();
 
   // Benchmark test for NTP.
-  auto test_ntp = [this]() {
-    const auto& input = ZeroPrefixInputForNTP(/*is_prefetch=*/false);
+  auto test_ntp = [this](bool user_input_in_progress = false,
+                         ResultType expected_result_type =
+                             ResultType::kRemoteNoURL) {
+    const auto& input = ZeroPrefixInputForNTP(
+        /*is_prefetch=*/false,
+        /*user_input_in_progress=*/user_input_in_progress);
     const auto [result_type, eligible] =
         ZeroSuggestProvider::GetResultTypeAndEligibility(client_.get(), input);
-    EXPECT_EQ(ZeroSuggestProvider::ResultType::kRemoteNoURL, result_type);
+    EXPECT_EQ(expected_result_type, result_type);
     return eligible;
   };
 
@@ -384,58 +418,71 @@ TEST_F(ZeroSuggestProviderTest, AllowZeroPrefixSuggestionsRequestEligibility) {
     const auto& input = ZeroPrefixInputForLens();
     const auto [result_type, eligible] =
         ZeroSuggestProvider::GetResultTypeAndEligibility(client_.get(), input);
-    EXPECT_EQ(ZeroSuggestProvider::ResultType::kRemoteNoURL, result_type);
+    EXPECT_EQ(ResultType::kRemoteNoURL, result_type);
     return eligible;
   };
 
   // Benchmark test for valid page URL.
-  auto test_other = [this]() {
-    const auto& input = ZeroPrefixInputForWeb(/*is_prefetch=*/false);
+  auto test_other = [this](bool user_input_in_progress = false,
+                           ResultType expected_result_type =
+                               ResultType::kRemoteSendURL) {
+    const auto& input = ZeroPrefixInputForWeb(
+        /*is_prefetch=*/false,
+        /*user_input_in_progress=*/user_input_in_progress);
     const auto [result_type, eligible] =
         ZeroSuggestProvider::GetResultTypeAndEligibility(client_.get(), input);
-    EXPECT_EQ(ZeroSuggestProvider::ResultType::kRemoteSendURL, result_type);
+    EXPECT_EQ(expected_result_type, result_type);
     return eligible;
   };
 
   // Benchmark test for Search Results Page URL.
-  auto test_srp = [this](const TemplateURL* template_url) {
+  auto test_srp = [this](const TemplateURL* template_url,
+                         bool user_input_in_progress = false,
+                         ResultType expected_result_type =
+                             ResultType::kRemoteSendURL) {
     const auto& input = ZeroPrefixInputForSRP(
         /*is_prefetch=*/false,
+        /*user_input_in_progress=*/user_input_in_progress,
         /*input_url= */
         template_url->GenerateSearchURL(SearchTermsData()).spec());
     const auto [result_type, eligible] =
         ZeroSuggestProvider::GetResultTypeAndEligibility(client_.get(), input);
-    EXPECT_EQ(ZeroSuggestProvider::ResultType::kRemoteSendURL, result_type);
+    EXPECT_EQ(expected_result_type, result_type);
     return eligible;
   };
 
-  // Enable personalized URL data collection.
-  client_->set_is_personalized_url_data_collection_active(true);
+  // Enable URL data collection.
+  client_->set_is_url_data_collection_active(true);
 
   {
     // Zero-suggest is generally not allowed for invalid or non-HTTP(S) URLs.
     AutocompleteInput on_focus_ineligible_url_input = ZeroPrefixInputForWeb(
         /*is_prefetch=*/false,
+        /*user_input_in_progress=*/false,
         /*input_url= */ "chrome://history");
-    EXPECT_EQ(std::make_pair(ZeroSuggestProvider::ResultType::kNone, false),
+    EXPECT_EQ(std::make_pair(ResultType::kNone, false),
               ZeroSuggestProvider::GetResultTypeAndEligibility(
                   client_.get(), on_focus_ineligible_url_input));
   }
   {
     // Zero-suggest is generally not allowed for non-empty inputs.
-    EXPECT_EQ(std::make_pair(ZeroSuggestProvider::ResultType::kNone, false),
+    EXPECT_EQ(std::make_pair(ResultType::kNone, false),
               ZeroSuggestProvider::GetResultTypeAndEligibility(
                   client_.get(), PrefixInputForNTP()));
   }
   {
     // Zero-suggest is generally not allowed for non-empty inputs.
-    EXPECT_EQ(std::make_pair(ZeroSuggestProvider::ResultType::kNone, false),
+    EXPECT_EQ(std::make_pair(ResultType::kNone, false),
               ZeroSuggestProvider::GetResultTypeAndEligibility(
                   client_.get(), PrefixInputForSRP()));
   }
   {
     // Zero-suggest request can be made on NTP.
     EXPECT_TRUE(test_ntp());
+
+    // Non-zero-prefix input should NOT result in zero-suggest request.
+    EXPECT_FALSE(test_ntp(/*user_input_in_progress=*/true,
+                          /*expected_result_type=*/ResultType::kNone));
   }
   {
     // Zero-suggest request can be made from Lens searchboxes.
@@ -445,16 +492,25 @@ TEST_F(ZeroSuggestProviderTest, AllowZeroPrefixSuggestionsRequestEligibility) {
   {
     // Valid SRP URLs can be sent in the zero-suggest request.
     EXPECT_TRUE(test_srp(google_provider));
+
+    // Non-zero-prefix input should NOT result in a zero-suggest request.
+    EXPECT_FALSE(test_srp(google_provider,
+                          /*user_input_in_progress=*/true,
+                          /*expected_result_type=*/ResultType::kNone));
   }
   {
     // Valid page URLs can be sent in the zero-suggest request.
     EXPECT_TRUE(test_other());
+
+    // Non-zero-prefix input should NOT result in a zero-suggest request.
+    EXPECT_FALSE(test_other(/*user_input_in_progress=*/true,
+                            /*expected_result_type=*/ResultType::kNone));
   }
 
-  // Deactivate personalized URL data collection. This ensures that the page URL
+  // Deactivate URL data collection. This ensures that the page URL
   // cannot be sent and zero-suggest is disallowed unless the URL is the SRP or
   // the request is being made from the Lens searchboxes.
-  client_->set_is_personalized_url_data_collection_active(false);
+  client_->set_is_url_data_collection_active(false);
 
   {
     // Zero-suggest request can be made on NTP.
@@ -473,8 +529,8 @@ TEST_F(ZeroSuggestProviderTest, AllowZeroPrefixSuggestionsRequestEligibility) {
     EXPECT_FALSE(test_other());
   }
 
-  // Reactivate personalized URL data collection.
-  client_->set_is_personalized_url_data_collection_active(true);
+  // Reactivate URL data collection.
+  client_->set_is_url_data_collection_active(true);
 
   // Change the default search provider to a non-Google one.
   TemplateURLData non_google_provider_data;
@@ -1089,6 +1145,204 @@ TEST_F(ZeroSuggestProviderTest,
   // Expect the provider to not have notified the provider listener since the
   // request was not sent.
   EXPECT_FALSE(provider_did_notify_);
+}
+
+TEST_F(ZeroSuggestProviderTest, SyncMatchesOnly) {
+  EXPECT_CALL(*client_, IsAuthenticated())
+      .WillRepeatedly(testing::Return(true));
+
+  base::test::ScopedFeatureList features;
+  features.InitWithFeatures(
+      /*enabled_features=*/
+      {omnibox_feature_configs::ContextualSearch::kOmniboxContextualSuggestions,
+       omnibox_feature_configs::ContextualSearch::
+           kOmniboxZeroSuggestSynchronousMatchesOnly,
+       omnibox::kZeroSuggestPrefetchingOnSRP,
+       omnibox::kZeroSuggestPrefetchingOnWeb},
+      /*disabled_features=*/{omnibox::kZeroSuggestInMemoryCaching});
+
+  auto clear_matches = [&]() {
+    while (!provider_->matches().empty()) {
+      provider_->DeleteMatch(provider_->matches().front());
+    }
+  };
+
+  // ZPS via CSB (Lens overlay)
+  {
+    // Set up the pref to cache the response from the previous run.
+    std::string json_response(
+        R"(["",["search1", "search2", "search3"],)"
+        R"([],[],{"google:suggestrelevance":[602, 601, 600],)"
+        R"("google:suggestdetail":[{"du":"a.com"}, {"du":"a.com"}, {"du":"a.com"}],)"
+        R"("google:verbatimrelevance":1300}])");
+    PrefService* prefs = client_->GetPrefs();
+    prefs->SetString(omnibox::kZeroSuggestCachedResults, json_response);
+
+    AutocompleteInput input = ZeroPrefixInputForLens();
+    provider_->Start(input, false);
+    ASSERT_EQ(ZeroSuggestProvider::ResultType::kRemoteNoURL,
+              provider_->GetResultTypeRunningForTesting());
+    ASSERT_EQ(1, test_loader_factory()->NumPending());
+
+    // Expect that matches DO NOT get populated synchronously out of the cache
+    // for CSB.
+    EXPECT_TRUE(provider_->matches().empty());
+
+    clear_matches();
+
+    std::string json_response2(
+        R"(["",["search4", "search5", "search6"],)"
+        R"([],[],{"google:suggestrelevance":[602, 601, 600],)"
+        R"("google:verbatimrelevance":1300}])");
+    test_loader_factory()->AddResponse(
+        test_loader_factory()->GetPendingRequest(0)->request.url.spec(),
+        json_response2);
+
+    base::RunLoop().RunUntilIdle();
+    EXPECT_TRUE(provider_->done());
+
+    // Expect that matches get populated using the async ZPS response.
+    ASSERT_EQ(3U, provider_->matches().size());
+    EXPECT_EQ(u"search4", provider_->matches()[0].contents);
+    EXPECT_EQ(u"search5", provider_->matches()[1].contents);
+    EXPECT_EQ(u"search6", provider_->matches()[2].contents);
+  }
+
+  // ZPS on NTP
+  {
+    // Set up the pref to cache the response from the previous run.
+    std::string json_response(
+        R"(["",["search1", "search2", "search3"],)"
+        R"([],[],{"google:suggestrelevance":[602, 601, 600],)"
+        R"("google:suggestdetail":[{"du":"a.com"}, {"du":"a.com"}, {"du":"a.com"}],)"
+        R"("google:verbatimrelevance":1300}])");
+    PrefService* prefs = client_->GetPrefs();
+    prefs->SetString(omnibox::kZeroSuggestCachedResults, json_response);
+
+    AutocompleteInput input = ZeroPrefixInputForNTP(/*is_prefetch=*/false);
+    provider_->Start(input, false);
+    ASSERT_EQ(ZeroSuggestProvider::ResultType::kRemoteNoURL,
+              provider_->GetResultTypeRunningForTesting());
+
+    // Expect that matches get populated synchronously out of the cache.
+    ASSERT_EQ(3U, provider_->matches().size());
+    EXPECT_EQ(u"search1", provider_->matches()[0].contents);
+    EXPECT_EQ(u"search2", provider_->matches()[1].contents);
+    EXPECT_EQ(u"search3", provider_->matches()[2].contents);
+
+    clear_matches();
+
+    GURL suggest_url =
+        GetSuggestURL(metrics::OmniboxEventProto::NTP_REALBOX,
+                      metrics::OmniboxFocusType::INTERACTION_FOCUS, "");
+    EXPECT_TRUE(test_loader_factory()->IsPending(suggest_url.spec()));
+    std::string json_response2(
+        R"(["",["search4", "search5", "search6"],)"
+        R"([],[],{"google:suggestrelevance":[602, 601, 600],)"
+        R"("google:verbatimrelevance":1300}])");
+    test_loader_factory()->AddResponse(suggest_url.spec(), json_response2);
+
+    base::RunLoop().RunUntilIdle();
+    EXPECT_TRUE(provider_->done());
+
+    // Expect that matches get populated using the async ZPS response.
+    ASSERT_EQ(3U, provider_->matches().size());
+    EXPECT_EQ(u"search4", provider_->matches()[0].contents);
+    EXPECT_EQ(u"search5", provider_->matches()[1].contents);
+    EXPECT_EQ(u"search6", provider_->matches()[2].contents);
+  }
+
+  // ZPS on SRP
+  {
+    // Set up the pref to cache the response from the previous run.
+    std::string json_response(
+        R"(["",["search1", "search2", "search3"],)"
+        R"([],[],{"google:suggestrelevance":[602, 601, 600],)"
+        R"("google:suggestdetail":[{"du":"a.com"}, {"du":"a.com"}, {"du":"a.com"}],)"
+        R"("google:verbatimrelevance":1300}])");
+    PrefService* prefs = client_->GetPrefs();
+    AutocompleteInput input = ZeroPrefixInputForSRP(/*is_prefetch=*/false);
+    omnibox::SetUserPreferenceForZeroSuggestCachedResponse(
+        prefs, input.current_url().spec(), json_response);
+
+    provider_->Start(input, false);
+    ASSERT_EQ(ZeroSuggestProvider::ResultType::kRemoteSendURL,
+              provider_->GetResultTypeRunningForTesting());
+
+    // Expect that matches get populated synchronously out of the cache.
+    ASSERT_EQ(3U, provider_->matches().size());
+    EXPECT_EQ(u"search1", provider_->matches()[0].contents);
+    EXPECT_EQ(u"search2", provider_->matches()[1].contents);
+    EXPECT_EQ(u"search3", provider_->matches()[2].contents);
+
+    clear_matches();
+
+    GURL suggest_url =
+        GetSuggestURL(metrics::OmniboxEventProto::
+                          SEARCH_RESULT_PAGE_NO_SEARCH_TERM_REPLACEMENT,
+                      metrics::OmniboxFocusType::INTERACTION_FOCUS,
+                      input.current_url().spec());
+    EXPECT_TRUE(test_loader_factory()->IsPending(suggest_url.spec()));
+    std::string json_response2(
+        R"(["",["search4", "search5", "search6"],)"
+        R"([],[],{"google:suggestrelevance":[602, 601, 600],)"
+        R"("google:verbatimrelevance":1300}])");
+    test_loader_factory()->AddResponse(suggest_url.spec(), json_response2);
+
+    base::RunLoop().RunUntilIdle();
+    EXPECT_TRUE(provider_->done());
+
+    // Expect that matches get populated using the async ZPS response.
+    ASSERT_EQ(3U, provider_->matches().size());
+    EXPECT_EQ(u"search4", provider_->matches()[0].contents);
+    EXPECT_EQ(u"search5", provider_->matches()[1].contents);
+    EXPECT_EQ(u"search6", provider_->matches()[2].contents);
+  }
+
+  // ZPS on Web
+  {
+    // Set up the pref to cache the response from the previous run.
+    std::string json_response(
+        R"(["",["search1", "search2", "search3"],)"
+        R"([],[],{"google:suggestrelevance":[602, 601, 600],)"
+        R"("google:suggestdetail":[{"du":"a.com"}, {"du":"a.com"}, {"du":"a.com"}],)"
+        R"("google:verbatimrelevance":1300}])");
+    PrefService* prefs = client_->GetPrefs();
+    AutocompleteInput input = ZeroPrefixInputForWeb(/*is_prefetch=*/false);
+    omnibox::SetUserPreferenceForZeroSuggestCachedResponse(
+        prefs, input.current_url().spec(), json_response);
+
+    provider_->Start(input, false);
+    ASSERT_EQ(ZeroSuggestProvider::ResultType::kRemoteSendURL,
+              provider_->GetResultTypeRunningForTesting());
+
+    // Expect that matches get populated synchronously out of the cache.
+    ASSERT_EQ(3U, provider_->matches().size());
+    EXPECT_EQ(u"search1", provider_->matches()[0].contents);
+    EXPECT_EQ(u"search2", provider_->matches()[1].contents);
+    EXPECT_EQ(u"search3", provider_->matches()[2].contents);
+
+    clear_matches();
+
+    GURL suggest_url =
+        GetSuggestURL(metrics::OmniboxEventProto::OTHER,
+                      metrics::OmniboxFocusType::INTERACTION_FOCUS,
+                      input.current_url().spec());
+    EXPECT_TRUE(test_loader_factory()->IsPending(suggest_url.spec()));
+    std::string json_response2(
+        R"(["",["search4", "search5", "search6"],)"
+        R"([],[],{"google:suggestrelevance":[602, 601, 600],)"
+        R"("google:verbatimrelevance":1300}])");
+    test_loader_factory()->AddResponse(suggest_url.spec(), json_response2);
+
+    base::RunLoop().RunUntilIdle();
+    EXPECT_TRUE(provider_->done());
+
+    // Expect that matches DO NOT get populated using the async ZPS response,
+    // since "sync matches only" targets the Contextual Search in Omnibox
+    // experience on Web.
+    EXPECT_TRUE(provider_->matches().empty());
+  }
 }
 
 TEST_F(ZeroSuggestProviderTest, TestPsuggestZeroSuggestHasCachedResultsNTP) {
@@ -2013,6 +2267,590 @@ TEST_F(ZeroSuggestProviderTest, TestPsuggestZeroSuggestPrefetchThenNTPOnFocus) {
   }
 }
 
+TEST_F(ZeroSuggestProviderTest, TestCacheStateWithSRPPrefetchDisabled) {
+  EXPECT_CALL(*client_, IsAuthenticated())
+      .WillRepeatedly(testing::Return(true));
+
+  // Disable in-memory caching and prefetching on SRP.
+  base::test::ScopedFeatureList features;
+  features.InitWithFeatures(
+      /*enabled_features=*/{},
+      /*disabled_features=*/{omnibox::kZeroSuggestInMemoryCaching,
+                             omnibox::kZeroSuggestPrefetchingOnSRP});
+
+  PrefService* prefs = client_->GetPrefs();
+
+  std::string json_response(
+      R"(["",["search1", "search2", "search3"],)"
+      R"([],[],{"google:suggestrelevance":[602, 601, 600],)"
+      R"("google:verbatimrelevance":1300}])");
+
+  {
+    base::HistogramTester histogram_tester;
+
+    // Start a prefetch request.
+    AutocompleteInput input = ZeroPrefixInputForSRP(/*is_prefetch=*/true);
+    // Set up the pref to cache the response from the previous run.
+    omnibox::SetUserPreferenceForZeroSuggestCachedResponse(
+        prefs, input.current_url().spec(), json_response);
+    // Call RunZeroSuggestPrefetch() instead of StartPrefetch() since the latter
+    // won't work when kZeroSuggestPrefetchingOnSRP is disabled.
+    provider_->RunZeroSuggestPrefetch(
+        input,
+        provider_->GetResultTypeAndEligibility(client_.get(), input).first);
+    EXPECT_TRUE(provider_->done());
+
+    // Expect the results to be empty.
+    ASSERT_EQ(0U, provider_->matches().size());
+
+    GURL suggest_url =
+        GetSuggestURL(input.current_page_classification(), input.focus_type(),
+                      input.current_url().spec());
+    EXPECT_TRUE(test_loader_factory()->IsPending(suggest_url.spec()));
+    std::string json_response2(
+        R"(["",["search4", "search5", "search6"],)"
+        R"([],[],{"google:suggestrelevance":[602, 601, 600],)"
+        R"("google:verbatimrelevance":1300}])");
+    test_loader_factory()->AddResponse(suggest_url.spec(), json_response2);
+
+    base::RunLoop().RunUntilIdle();
+    EXPECT_TRUE(provider_->done());
+
+    // Expect correct histograms to have been logged.
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.NoURL.NonPrefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.NoURL.Prefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.NonPrefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch", 2);
+    histogram_tester.ExpectBucketCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch", /*kRequestSent*/ 1, 1);
+    histogram_tester.ExpectBucketCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch",
+        /*kResponseReceived*/ 3, 1);
+
+    // Expect the provider to not have notified the provider listener since the
+    // matches were not updated.
+    EXPECT_FALSE(provider_did_notify_);
+
+    // Expect the same empty results after the response has been handled since
+    // response should not have been read from cache.
+    ASSERT_EQ(0U, provider_->matches().size());
+
+    // Expect the response to not have been stored in the prefs.
+    EXPECT_EQ(json_response,
+              omnibox::GetUserPreferenceForZeroSuggestCachedResponse(
+                  prefs, input.current_url().spec()));
+  }
+  {
+    base::HistogramTester histogram_tester;
+
+    // Start a non-prefetch request.
+    AutocompleteInput input = ZeroPrefixInputForSRP(/*is_prefetch=*/false);
+    provider_->Start(input, false);
+    EXPECT_FALSE(provider_->done());
+    ASSERT_EQ(ZeroSuggestProvider::ResultType::kRemoteSendURL,
+              provider_->GetResultTypeRunningForTesting());
+
+    // Expect the results to be empty.
+    ASSERT_EQ(0U, provider_->matches().size());
+
+    GURL suggest_url =
+        GetSuggestURL(metrics::OmniboxEventProto::
+                          SEARCH_RESULT_PAGE_NO_SEARCH_TERM_REPLACEMENT,
+                      metrics::OmniboxFocusType::INTERACTION_FOCUS,
+                      input.current_url().spec());
+    EXPECT_TRUE(test_loader_factory()->IsPending(suggest_url.spec()));
+    std::string json_response3(
+        R"(["",["search7", "search8", "search9"],)"
+        R"([],[],{"google:suggestrelevance":[602, 601, 600],)"
+        R"("google:verbatimrelevance":1300}])");
+    test_loader_factory()->AddResponse(suggest_url.spec(), json_response3);
+
+    base::RunLoop().RunUntilIdle();
+    EXPECT_TRUE(provider_->done());
+
+    // Expect correct histograms to have been logged.
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.NoURL.Prefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.NoURL.NonPrefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.NonPrefetch", 3);
+    histogram_tester.ExpectBucketCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.NonPrefetch", /*kRequestSent*/ 1,
+        1);
+    histogram_tester.ExpectBucketCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.NonPrefetch",
+        /*kResponseReceived*/ 3, 1);
+    histogram_tester.ExpectBucketCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.NonPrefetch",
+        /*kRemoteResponseConvertedToMatches*/ 5, 1);
+
+    // Expect the provider to have notified the provider listener.
+    EXPECT_TRUE(provider_did_notify_);
+
+    // Expect the results after the response has been handled.
+    ASSERT_EQ(3U, provider_->matches().size());
+    EXPECT_EQ(u"search7", provider_->matches()[0].contents);
+    EXPECT_EQ(u"search8", provider_->matches()[1].contents);
+    EXPECT_EQ(u"search9", provider_->matches()[2].contents);
+
+    // Expect the response to not have been stored in the prefs.
+    EXPECT_EQ(json_response,
+              omnibox::GetUserPreferenceForZeroSuggestCachedResponse(
+                  prefs, input.current_url().spec()));
+  }
+}
+
+TEST_F(ZeroSuggestProviderTest, TestCacheStateWithWebPrefetchDisabled) {
+  EXPECT_CALL(*client_, IsAuthenticated())
+      .WillRepeatedly(testing::Return(true));
+
+  // Disable in-memory caching and prefetching on Web.
+  base::test::ScopedFeatureList features;
+  features.InitWithFeatures(
+      /*enabled_features=*/{},
+      /*disabled_features=*/{omnibox::kZeroSuggestInMemoryCaching,
+                             omnibox::kZeroSuggestPrefetchingOnWeb});
+
+  PrefService* prefs = client_->GetPrefs();
+
+  std::string json_response(
+      R"(["",["search1", "search2", "search3"],)"
+      R"([],[],{"google:suggestrelevance":[602, 601, 600],)"
+      R"("google:verbatimrelevance":1300}])");
+
+  {
+    base::HistogramTester histogram_tester;
+
+    // Start a prefetch request.
+    AutocompleteInput input = ZeroPrefixInputForWeb(/*is_prefetch=*/true);
+    // Set up the pref to cache the response from the previous run.
+    omnibox::SetUserPreferenceForZeroSuggestCachedResponse(
+        prefs, input.current_url().spec(), json_response);
+    // Call RunZeroSuggestPrefetch() instead of StartPrefetch() since the latter
+    // won't work when kZeroSuggestPrefetchingOnWeb is disabled.
+    provider_->RunZeroSuggestPrefetch(
+        input,
+        provider_->GetResultTypeAndEligibility(client_.get(), input).first);
+    EXPECT_TRUE(provider_->done());
+
+    // Expect the results to be empty.
+    ASSERT_EQ(0U, provider_->matches().size());
+
+    GURL suggest_url =
+        GetSuggestURL(input.current_page_classification(), input.focus_type(),
+                      input.current_url().spec());
+    EXPECT_TRUE(test_loader_factory()->IsPending(suggest_url.spec()));
+    std::string json_response2(
+        R"(["",["search4", "search5", "search6"],)"
+        R"([],[],{"google:suggestrelevance":[602, 601, 600],)"
+        R"("google:verbatimrelevance":1300}])");
+    test_loader_factory()->AddResponse(suggest_url.spec(), json_response2);
+
+    base::RunLoop().RunUntilIdle();
+    EXPECT_TRUE(provider_->done());
+
+    // Expect correct histograms to have been logged.
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.NoURL.NonPrefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.NoURL.Prefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.NonPrefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch", 2);
+    histogram_tester.ExpectBucketCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch", /*kRequestSent*/ 1, 1);
+    histogram_tester.ExpectBucketCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch",
+        /*kResponseReceived*/ 3, 1);
+
+    // Expect the provider to not have notified the provider listener since the
+    // matches were not updated.
+    EXPECT_FALSE(provider_did_notify_);
+
+    // Expect the same empty results after the response has been handled since
+    // response should not have been read from the cache.
+    ASSERT_EQ(0U, provider_->matches().size());
+
+    // Expect the response to not have been stored in the prefs.
+    EXPECT_EQ(json_response,
+              omnibox::GetUserPreferenceForZeroSuggestCachedResponse(
+                  prefs, input.current_url().spec()));
+  }
+  {
+    base::HistogramTester histogram_tester;
+
+    // Start a non-prefetch request.
+    AutocompleteInput input = ZeroPrefixInputForWeb(/*is_prefetch=*/false);
+    provider_->Start(input, false);
+    EXPECT_FALSE(provider_->done());
+    ASSERT_EQ(ZeroSuggestProvider::ResultType::kRemoteSendURL,
+              provider_->GetResultTypeRunningForTesting());
+
+    // Expect the results to be empty.
+    ASSERT_EQ(0U, provider_->matches().size());
+
+    GURL suggest_url =
+        GetSuggestURL(metrics::OmniboxEventProto::OTHER,
+                      metrics::OmniboxFocusType::INTERACTION_FOCUS,
+                      input.current_url().spec());
+    EXPECT_TRUE(test_loader_factory()->IsPending(suggest_url.spec()));
+    std::string json_response3(
+        R"(["",["search7", "search8", "search9"],)"
+        R"([],[],{"google:suggestrelevance":[602, 601, 600],)"
+        R"("google:verbatimrelevance":1300}])");
+    test_loader_factory()->AddResponse(suggest_url.spec(), json_response3);
+
+    base::RunLoop().RunUntilIdle();
+    EXPECT_TRUE(provider_->done());
+
+    // Expect correct histograms to have been logged.
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.NoURL.Prefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.NoURL.NonPrefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.NonPrefetch", 3);
+    histogram_tester.ExpectBucketCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.NonPrefetch", /*kRequestSent*/ 1,
+        1);
+    histogram_tester.ExpectBucketCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.NonPrefetch",
+        /*kResponseReceived*/ 3, 1);
+    histogram_tester.ExpectBucketCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.NonPrefetch",
+        /*kRemoteResponseConvertedToMatches*/ 5, 1);
+
+    // Expect the provider to have notified the provider listener.
+    EXPECT_TRUE(provider_did_notify_);
+
+    // Expect the results after the response has been handled.
+    ASSERT_EQ(3U, provider_->matches().size());
+    EXPECT_EQ(u"search7", provider_->matches()[0].contents);
+    EXPECT_EQ(u"search8", provider_->matches()[1].contents);
+    EXPECT_EQ(u"search9", provider_->matches()[2].contents);
+
+    // Expect the response to not have been stored in the prefs.
+    EXPECT_EQ(json_response,
+              omnibox::GetUserPreferenceForZeroSuggestCachedResponse(
+                  prefs, input.current_url().spec()));
+  }
+}
+
+TEST_F(ZeroSuggestProviderTest, TestZeroSuggestPrefetchingOnSRPCounterfactual) {
+  EXPECT_CALL(*client_, IsAuthenticated())
+      .WillRepeatedly(testing::Return(true));
+
+  // ZPS on NTP (prefetch w/ CF param).
+  {
+    base::test::ScopedFeatureList features;
+    features.InitWithFeaturesAndParameters(
+        /*enabled_features=*/
+        {
+            {omnibox::kZeroSuggestPrefetching, {}},
+            {omnibox::kZeroSuggestPrefetchingOnSRP,
+             {{"ZeroSuggestPrefetchingOnSRPCounterfactual", "true"}}},
+            {omnibox::kZeroSuggestPrefetchingOnWeb, {}},
+        },
+        /*disabled_features=*/{});
+
+    base::HistogramTester histogram_tester;
+
+    AutocompleteInput input = ZeroPrefixInputForNTP(/*is_prefetch=*/true);
+    provider_->StartPrefetch(input);
+    EXPECT_TRUE(provider_->done());
+
+    GURL suggest_url =
+        GetSuggestURL(metrics::OmniboxEventProto::NTP_ZPS_PREFETCH,
+                      metrics::OmniboxFocusType::INTERACTION_FOCUS, "");
+    std::string json_response(
+        R"(["",["search1", "search2", "search3"],)"
+        R"([],[],{"google:suggestrelevance":[602, 601, 600],)"
+        R"("google:verbatimrelevance":1300}])");
+    test_loader_factory()->AddResponse(suggest_url.spec(), json_response);
+
+    base::RunLoop().RunUntilIdle();
+    EXPECT_TRUE(provider_->done());
+
+    // Expect correct histograms to have been logged.
+    // In particular, enabling the CF param should NOT have impacted this case.
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.NonPrefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.NoURL.NonPrefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.NoURL.Prefetch", 3);
+    histogram_tester.ExpectBucketCount(
+        "Omnibox.ZeroSuggestProvider.NoURL.Prefetch", /*kRequestSent*/ 1, 1);
+    histogram_tester.ExpectBucketCount(
+        "Omnibox.ZeroSuggestProvider.NoURL.Prefetch",
+        /*kResponseReceived*/ 3, 1);
+    histogram_tester.ExpectBucketCount(
+        "Omnibox.ZeroSuggestProvider.NoURL.Prefetch",
+        /*kRemoteResponseCached*/ 4, 1);
+  }
+  // ZPS on NTP (prefetch w/o CF param).
+  {
+    base::test::ScopedFeatureList features;
+    features.InitWithFeaturesAndParameters(
+        /*enabled_features=*/
+        {
+            {omnibox::kZeroSuggestPrefetching, {}},
+            {omnibox::kZeroSuggestPrefetchingOnSRP,
+             {{"ZeroSuggestPrefetchingOnSRPCounterfactual", "false"}}},
+            {omnibox::kZeroSuggestPrefetchingOnWeb, {}},
+        },
+        /*disabled_features=*/{});
+
+    base::HistogramTester histogram_tester;
+
+    AutocompleteInput input = ZeroPrefixInputForNTP(/*is_prefetch=*/true);
+    provider_->StartPrefetch(input);
+    EXPECT_TRUE(provider_->done());
+
+    GURL suggest_url =
+        GetSuggestURL(metrics::OmniboxEventProto::NTP_ZPS_PREFETCH,
+                      metrics::OmniboxFocusType::INTERACTION_FOCUS, "");
+    std::string json_response(
+        R"(["",["search1", "search2", "search3"],)"
+        R"([],[],{"google:suggestrelevance":[602, 601, 600],)"
+        R"("google:verbatimrelevance":1300}])");
+    test_loader_factory()->AddResponse(suggest_url.spec(), json_response);
+
+    base::RunLoop().RunUntilIdle();
+    EXPECT_TRUE(provider_->done());
+
+    // Expect correct histograms to have been logged.
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.NonPrefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.NoURL.NonPrefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.NoURL.Prefetch", 3);
+    histogram_tester.ExpectBucketCount(
+        "Omnibox.ZeroSuggestProvider.NoURL.Prefetch", /*kRequestSent*/ 1, 1);
+    histogram_tester.ExpectBucketCount(
+        "Omnibox.ZeroSuggestProvider.NoURL.Prefetch",
+        /*kResponseReceived*/ 3, 1);
+    histogram_tester.ExpectBucketCount(
+        "Omnibox.ZeroSuggestProvider.NoURL.Prefetch",
+        /*kRemoteResponseCached*/ 4, 1);
+  }
+
+  // ZPS on SRP (prefetch w/ CF param).
+  {
+    base::test::ScopedFeatureList features;
+    features.InitWithFeaturesAndParameters(
+        /*enabled_features=*/
+        {
+            {omnibox::kZeroSuggestPrefetching, {}},
+            {omnibox::kZeroSuggestPrefetchingOnSRP,
+             {{"ZeroSuggestPrefetchingOnSRPCounterfactual", "true"}}},
+            {omnibox::kZeroSuggestPrefetchingOnWeb, {}},
+        },
+        /*disabled_features=*/{});
+
+    base::HistogramTester histogram_tester;
+
+    AutocompleteInput input = ZeroPrefixInputForSRP(/*is_prefetch=*/true);
+    provider_->StartPrefetch(input);
+    EXPECT_TRUE(provider_->done());
+
+    GURL suggest_url =
+        GetSuggestURL(input.current_page_classification(), input.focus_type(),
+                      input.current_url().spec());
+    std::string json_response(
+        R"(["",["search1", "search2", "search3"],)"
+        R"([],[],{"google:suggestrelevance":[602, 601, 600],)"
+        R"("google:verbatimrelevance":1300}])");
+    test_loader_factory()->AddResponse(suggest_url.spec(), json_response);
+
+    base::RunLoop().RunUntilIdle();
+    EXPECT_TRUE(provider_->done());
+
+    // Expect correct histograms to have been logged.
+    // In particular, enabling the CF param should have impacted this case.
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.NoURL.NonPrefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.NoURL.Prefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.NonPrefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch", 2);
+    histogram_tester.ExpectBucketCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch", /*kRequestSent*/ 1, 1);
+    histogram_tester.ExpectBucketCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch",
+        /*kResponseReceived*/ 3, 1);
+    histogram_tester.ExpectBucketCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch",
+        /*kRemoteResponseCached*/ 4, 0);
+  }
+  // ZPS on SRP (prefetch w/o CF param).
+  {
+    base::test::ScopedFeatureList features;
+    features.InitWithFeaturesAndParameters(
+        /*enabled_features=*/
+        {
+            {omnibox::kZeroSuggestPrefetching, {}},
+            {omnibox::kZeroSuggestPrefetchingOnSRP,
+             {{"ZeroSuggestPrefetchingOnSRPCounterfactual", "false"}}},
+            {omnibox::kZeroSuggestPrefetchingOnWeb, {}},
+        },
+        /*disabled_features=*/{});
+
+    base::HistogramTester histogram_tester;
+
+    AutocompleteInput input = ZeroPrefixInputForSRP(/*is_prefetch=*/true);
+    provider_->StartPrefetch(input);
+    EXPECT_TRUE(provider_->done());
+
+    GURL suggest_url =
+        GetSuggestURL(input.current_page_classification(), input.focus_type(),
+                      input.current_url().spec());
+    std::string json_response(
+        R"(["",["search1", "search2", "search3"],)"
+        R"([],[],{"google:suggestrelevance":[602, 601, 600],)"
+        R"("google:verbatimrelevance":1300}])");
+    test_loader_factory()->AddResponse(suggest_url.spec(), json_response);
+
+    base::RunLoop().RunUntilIdle();
+    EXPECT_TRUE(provider_->done());
+
+    // Expect correct histograms to have been logged.
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.NoURL.NonPrefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.NoURL.Prefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.NonPrefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch", 3);
+    histogram_tester.ExpectBucketCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch", /*kRequestSent*/ 1, 1);
+    histogram_tester.ExpectBucketCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch",
+        /*kResponseReceived*/ 3, 1);
+    histogram_tester.ExpectBucketCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch",
+        /*kRemoteResponseCached*/ 4, 1);
+  }
+
+  // ZPS on Web (prefetch w/ CF param).
+  {
+    base::test::ScopedFeatureList features;
+    features.InitWithFeaturesAndParameters(
+        /*enabled_features=*/
+        {
+            {omnibox::kZeroSuggestPrefetching, {}},
+            {omnibox::kZeroSuggestPrefetchingOnSRP,
+             {{"ZeroSuggestPrefetchingOnSRPCounterfactual", "true"}}},
+            {omnibox::kZeroSuggestPrefetchingOnWeb, {}},
+        },
+        /*disabled_features=*/{});
+
+    base::HistogramTester histogram_tester;
+
+    AutocompleteInput input = ZeroPrefixInputForWeb(/*is_prefetch=*/true);
+    provider_->StartPrefetch(input);
+    EXPECT_TRUE(provider_->done());
+
+    GURL suggest_url =
+        GetSuggestURL(input.current_page_classification(), input.focus_type(),
+                      input.current_url().spec());
+    std::string json_response(
+        R"(["",["search1", "search2", "search3"],)"
+        R"([],[],{"google:suggestrelevance":[602, 601, 600],)"
+        R"("google:verbatimrelevance":1300}])");
+    test_loader_factory()->AddResponse(suggest_url.spec(), json_response);
+
+    base::RunLoop().RunUntilIdle();
+    EXPECT_TRUE(provider_->done());
+
+    // Expect correct histograms to have been logged.
+    // In particular, enabling the CF param should NOT have impacted this case.
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.NoURL.NonPrefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.NoURL.Prefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.NonPrefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch", 3);
+    histogram_tester.ExpectBucketCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch", /*kRequestSent*/ 1, 1);
+    histogram_tester.ExpectBucketCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch",
+        /*kResponseReceived*/ 3, 1);
+    histogram_tester.ExpectBucketCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch",
+        /*kRemoteResponseCached*/ 4, 1);
+  }
+  // ZPS on Web (prefetch w/o CF param).
+  {
+    base::test::ScopedFeatureList features;
+    features.InitWithFeaturesAndParameters(
+        /*enabled_features=*/
+        {
+            {omnibox::kZeroSuggestPrefetching, {}},
+            {omnibox::kZeroSuggestPrefetchingOnSRP,
+             {{"ZeroSuggestPrefetchingOnSRPCounterfactual", "false"}}},
+            {omnibox::kZeroSuggestPrefetchingOnWeb, {}},
+        },
+        /*disabled_features=*/{});
+
+    base::HistogramTester histogram_tester;
+
+    AutocompleteInput input = ZeroPrefixInputForWeb(/*is_prefetch=*/true);
+    provider_->StartPrefetch(input);
+    EXPECT_TRUE(provider_->done());
+
+    GURL suggest_url =
+        GetSuggestURL(input.current_page_classification(), input.focus_type(),
+                      input.current_url().spec());
+    std::string json_response(
+        R"(["",["search1", "search2", "search3"],)"
+        R"([],[],{"google:suggestrelevance":[602, 601, 600],)"
+        R"("google:verbatimrelevance":1300}])");
+    test_loader_factory()->AddResponse(suggest_url.spec(), json_response);
+
+    base::RunLoop().RunUntilIdle();
+    EXPECT_TRUE(provider_->done());
+
+    // Expect correct histograms to have been logged.
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.NoURL.NonPrefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.NoURL.Prefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.NonPrefetch", 0);
+    histogram_tester.ExpectTotalCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch", 3);
+    histogram_tester.ExpectBucketCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch", /*kRequestSent*/ 1, 1);
+    histogram_tester.ExpectBucketCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch",
+        /*kResponseReceived*/ 3, 1);
+    histogram_tester.ExpectBucketCount(
+        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch",
+        /*kRemoteResponseCached*/ 4, 1);
+  }
+}
+
 TEST_F(ZeroSuggestProviderTest, TestMultipleZeroSuggestPrefetchesInFlight) {
   EXPECT_CALL(*client_, IsAuthenticated())
       .WillRepeatedly(testing::Return(true));
@@ -2114,275 +2952,6 @@ TEST_F(ZeroSuggestProviderTest, TestMultipleZeroSuggestPrefetchesInFlight) {
       prefs->GetDict(omnibox::kZeroSuggestCachedResultsWithURL)
           .FindString(current_url);
   ASSERT_TRUE(stored_response && *stored_response == json_response2);
-}
-
-TEST_F(ZeroSuggestProviderTest, TestPsuggestZeroSuggestPrefetchThenSRP) {
-  EXPECT_CALL(*client_, IsAuthenticated())
-      .WillRepeatedly(testing::Return(true));
-
-  // Disable in-memory caching and prefetching on SRP.
-  base::test::ScopedFeatureList features;
-  features.InitWithFeatures(
-      /*enabled_features=*/{},
-      /*disabled_features=*/{omnibox::kZeroSuggestInMemoryCaching,
-                             omnibox::kZeroSuggestPrefetchingOnSRP});
-
-  PrefService* prefs = client_->GetPrefs();
-
-  std::string json_response(
-      R"(["",["search1", "search2", "search3"],)"
-      R"([],[],{"google:suggestrelevance":[602, 601, 600],)"
-      R"("google:verbatimrelevance":1300}])");
-
-  {
-    base::HistogramTester histogram_tester;
-
-    // Start a prefetch request.
-    AutocompleteInput input = ZeroPrefixInputForSRP(/*is_prefetch=*/true);
-    // Set up the pref to cache the response from the previous run.
-    omnibox::SetUserPreferenceForZeroSuggestCachedResponse(
-        prefs, input.current_url().spec(), json_response);
-    provider_->StartPrefetch(input);
-    EXPECT_TRUE(provider_->done());
-
-    // Expect the results to be empty.
-    ASSERT_EQ(0U, provider_->matches().size());
-
-    GURL suggest_url =
-        GetSuggestURL(input.current_page_classification(), input.focus_type(),
-                      input.current_url().spec());
-    EXPECT_TRUE(test_loader_factory()->IsPending(suggest_url.spec()));
-    std::string json_response2(
-        R"(["",["search4", "search5", "search6"],)"
-        R"([],[],{"google:suggestrelevance":[602, 601, 600],)"
-        R"("google:verbatimrelevance":1300}])");
-    test_loader_factory()->AddResponse(suggest_url.spec(), json_response2);
-
-    base::RunLoop().RunUntilIdle();
-    EXPECT_TRUE(provider_->done());
-
-    // Expect correct histograms to have been logged.
-    histogram_tester.ExpectTotalCount(
-        "Omnibox.ZeroSuggestProvider.NoURL.NonPrefetch", 0);
-    histogram_tester.ExpectTotalCount(
-        "Omnibox.ZeroSuggestProvider.NoURL.Prefetch", 0);
-    histogram_tester.ExpectTotalCount(
-        "Omnibox.ZeroSuggestProvider.URLBased.NonPrefetch", 0);
-    histogram_tester.ExpectTotalCount(
-        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch", 2);
-    histogram_tester.ExpectBucketCount(
-        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch", /*kRequestSent*/ 1, 1);
-    histogram_tester.ExpectBucketCount(
-        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch",
-        /*kResponseReceived*/ 3, 1);
-
-    // Expect the provider to not have notified the provider listener since the
-    // matches were not updated.
-    EXPECT_FALSE(provider_did_notify_);
-
-    // Expect the same empty results after the response has been handled.
-    ASSERT_EQ(0U, provider_->matches().size());
-
-    // Expect the response to not have been stored in the prefs.
-    EXPECT_EQ(json_response,
-              omnibox::GetUserPreferenceForZeroSuggestCachedResponse(
-                  prefs, input.current_url().spec()));
-  }
-  {
-    base::HistogramTester histogram_tester;
-
-    // Start a non-prefetch request.
-    AutocompleteInput input = ZeroPrefixInputForSRP(/*is_prefetch=*/false);
-    provider_->Start(input, false);
-    EXPECT_FALSE(provider_->done());
-    ASSERT_EQ(ZeroSuggestProvider::ResultType::kRemoteSendURL,
-              provider_->GetResultTypeRunningForTesting());
-
-    // Expect the results to be empty.
-    ASSERT_EQ(0U, provider_->matches().size());
-
-    GURL suggest_url =
-        GetSuggestURL(metrics::OmniboxEventProto::
-                          SEARCH_RESULT_PAGE_NO_SEARCH_TERM_REPLACEMENT,
-                      metrics::OmniboxFocusType::INTERACTION_FOCUS,
-                      input.current_url().spec());
-    EXPECT_TRUE(test_loader_factory()->IsPending(suggest_url.spec()));
-    std::string json_response3(
-        R"(["",["search7", "search8", "search9"],)"
-        R"([],[],{"google:suggestrelevance":[602, 601, 600],)"
-        R"("google:verbatimrelevance":1300}])");
-    test_loader_factory()->AddResponse(suggest_url.spec(), json_response3);
-
-    base::RunLoop().RunUntilIdle();
-    EXPECT_TRUE(provider_->done());
-
-    // Expect correct histograms to have been logged.
-    histogram_tester.ExpectTotalCount(
-        "Omnibox.ZeroSuggestProvider.NoURL.Prefetch", 0);
-    histogram_tester.ExpectTotalCount(
-        "Omnibox.ZeroSuggestProvider.NoURL.NonPrefetch", 0);
-    histogram_tester.ExpectTotalCount(
-        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch", 0);
-    histogram_tester.ExpectTotalCount(
-        "Omnibox.ZeroSuggestProvider.URLBased.NonPrefetch", 3);
-    histogram_tester.ExpectBucketCount(
-        "Omnibox.ZeroSuggestProvider.URLBased.NonPrefetch", /*kRequestSent*/ 1,
-        1);
-    histogram_tester.ExpectBucketCount(
-        "Omnibox.ZeroSuggestProvider.URLBased.NonPrefetch",
-        /*kResponseReceived*/ 3, 1);
-    histogram_tester.ExpectBucketCount(
-        "Omnibox.ZeroSuggestProvider.URLBased.NonPrefetch",
-        /*kRemoteResponseConvertedToMatches*/ 5, 1);
-
-    // Expect the provider to have notified the provider listener.
-    EXPECT_TRUE(provider_did_notify_);
-
-    // Expect the results after the response has been handled.
-    ASSERT_EQ(3U, provider_->matches().size());
-    EXPECT_EQ(u"search7", provider_->matches()[0].contents);
-    EXPECT_EQ(u"search8", provider_->matches()[1].contents);
-    EXPECT_EQ(u"search9", provider_->matches()[2].contents);
-
-    // Expect the response to not have been stored in the prefs.
-    EXPECT_EQ(json_response,
-              omnibox::GetUserPreferenceForZeroSuggestCachedResponse(
-                  prefs, input.current_url().spec()));
-  }
-}
-
-TEST_F(ZeroSuggestProviderTest, TestPsuggestZeroSuggestPrefetchThenWeb) {
-  EXPECT_CALL(*client_, IsAuthenticated())
-      .WillRepeatedly(testing::Return(true));
-
-  // Disable in-memory caching and prefetching on Web.
-  base::test::ScopedFeatureList features;
-  features.InitWithFeatures(
-      /*enabled_features=*/{},
-      /*disabled_features=*/{omnibox::kZeroSuggestInMemoryCaching,
-                             omnibox::kZeroSuggestPrefetchingOnWeb});
-
-  PrefService* prefs = client_->GetPrefs();
-
-  std::string json_response(
-      R"(["",["search1", "search2", "search3"],)"
-      R"([],[],{"google:suggestrelevance":[602, 601, 600],)"
-      R"("google:verbatimrelevance":1300}])");
-
-  {
-    base::HistogramTester histogram_tester;
-
-    // Start a prefetch request.
-    AutocompleteInput input = ZeroPrefixInputForWeb(/*is_prefetch=*/true);
-    // Set up the pref to cache the response from the previous run.
-    omnibox::SetUserPreferenceForZeroSuggestCachedResponse(
-        prefs, input.current_url().spec(), json_response);
-    provider_->StartPrefetch(input);
-    EXPECT_TRUE(provider_->done());
-
-    // Expect the results to be empty.
-    ASSERT_EQ(0U, provider_->matches().size());
-
-    GURL suggest_url =
-        GetSuggestURL(input.current_page_classification(), input.focus_type(),
-                      input.current_url().spec());
-    EXPECT_TRUE(test_loader_factory()->IsPending(suggest_url.spec()));
-    std::string json_response2(
-        R"(["",["search4", "search5", "search6"],)"
-        R"([],[],{"google:suggestrelevance":[602, 601, 600],)"
-        R"("google:verbatimrelevance":1300}])");
-    test_loader_factory()->AddResponse(suggest_url.spec(), json_response2);
-
-    base::RunLoop().RunUntilIdle();
-    EXPECT_TRUE(provider_->done());
-
-    // Expect correct histograms to have been logged.
-    histogram_tester.ExpectTotalCount(
-        "Omnibox.ZeroSuggestProvider.NoURL.NonPrefetch", 0);
-    histogram_tester.ExpectTotalCount(
-        "Omnibox.ZeroSuggestProvider.NoURL.Prefetch", 0);
-    histogram_tester.ExpectTotalCount(
-        "Omnibox.ZeroSuggestProvider.URLBased.NonPrefetch", 0);
-    histogram_tester.ExpectTotalCount(
-        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch", 2);
-    histogram_tester.ExpectBucketCount(
-        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch", /*kRequestSent*/ 1, 1);
-    histogram_tester.ExpectBucketCount(
-        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch",
-        /*kResponseReceived*/ 3, 1);
-
-    // Expect the provider to not have notified the provider listener since the
-    // matches were not updated.
-    EXPECT_FALSE(provider_did_notify_);
-
-    // Expect the same empty results after the response has been handled.
-    ASSERT_EQ(0U, provider_->matches().size());
-
-    // Expect the response to not have been stored in the prefs.
-    EXPECT_EQ(json_response,
-              omnibox::GetUserPreferenceForZeroSuggestCachedResponse(
-                  prefs, input.current_url().spec()));
-  }
-  {
-    base::HistogramTester histogram_tester;
-
-    // Start a non-prefetch request.
-    AutocompleteInput input = ZeroPrefixInputForWeb(/*is_prefetch=*/false);
-    provider_->Start(input, false);
-    EXPECT_FALSE(provider_->done());
-    ASSERT_EQ(ZeroSuggestProvider::ResultType::kRemoteSendURL,
-              provider_->GetResultTypeRunningForTesting());
-
-    // Expect the results to be empty.
-    ASSERT_EQ(0U, provider_->matches().size());
-
-    GURL suggest_url =
-        GetSuggestURL(metrics::OmniboxEventProto::OTHER,
-                      metrics::OmniboxFocusType::INTERACTION_FOCUS,
-                      input.current_url().spec());
-    EXPECT_TRUE(test_loader_factory()->IsPending(suggest_url.spec()));
-    std::string json_response3(
-        R"(["",["search7", "search8", "search9"],)"
-        R"([],[],{"google:suggestrelevance":[602, 601, 600],)"
-        R"("google:verbatimrelevance":1300}])");
-    test_loader_factory()->AddResponse(suggest_url.spec(), json_response3);
-
-    base::RunLoop().RunUntilIdle();
-    EXPECT_TRUE(provider_->done());
-
-    // Expect correct histograms to have been logged.
-    histogram_tester.ExpectTotalCount(
-        "Omnibox.ZeroSuggestProvider.NoURL.Prefetch", 0);
-    histogram_tester.ExpectTotalCount(
-        "Omnibox.ZeroSuggestProvider.NoURL.NonPrefetch", 0);
-    histogram_tester.ExpectTotalCount(
-        "Omnibox.ZeroSuggestProvider.URLBased.Prefetch", 0);
-    histogram_tester.ExpectTotalCount(
-        "Omnibox.ZeroSuggestProvider.URLBased.NonPrefetch", 3);
-    histogram_tester.ExpectBucketCount(
-        "Omnibox.ZeroSuggestProvider.URLBased.NonPrefetch", /*kRequestSent*/ 1,
-        1);
-    histogram_tester.ExpectBucketCount(
-        "Omnibox.ZeroSuggestProvider.URLBased.NonPrefetch",
-        /*kResponseReceived*/ 3, 1);
-    histogram_tester.ExpectBucketCount(
-        "Omnibox.ZeroSuggestProvider.URLBased.NonPrefetch",
-        /*kRemoteResponseConvertedToMatches*/ 5, 1);
-
-    // Expect the provider to have notified the provider listener.
-    EXPECT_TRUE(provider_did_notify_);
-
-    // Expect the results after the response has been handled.
-    ASSERT_EQ(3U, provider_->matches().size());
-    EXPECT_EQ(u"search7", provider_->matches()[0].contents);
-    EXPECT_EQ(u"search8", provider_->matches()[1].contents);
-    EXPECT_EQ(u"search9", provider_->matches()[2].contents);
-
-    // Expect the response to not have been stored in the prefs.
-    EXPECT_EQ(json_response,
-              omnibox::GetUserPreferenceForZeroSuggestCachedResponse(
-                  prefs, input.current_url().spec()));
-  }
 }
 
 TEST_F(ZeroSuggestProviderTest, TestNoURLResultTypeWithNonEmptyURLInput) {
@@ -2631,4 +3200,120 @@ TEST_F(ZeroSuggestProviderTest, TestDeleteMatchTriggersDeletionRequest) {
 
   EXPECT_EQ(1, user_action_tester.GetActionCount(
                    "Omnibox.ZeroSuggestDelete.Failure"));
+}
+
+TEST_F(ZeroSuggestProviderTest, SuggestUrlIncludesCtxus) {
+  // Ensure it's not included by default.
+  {
+    GURL url =
+        GetProviderRequestURL(ZeroPrefixInputForWeb(/*is_prefetch=*/false));
+    EXPECT_EQ(url.spec().find("ctxus="), std::string::npos);
+  }
+
+  // Ensure it is conditionally included when enabled.
+  omnibox_feature_configs::ScopedConfigForTesting<
+      omnibox_feature_configs::ContextualSearch>
+      config;
+  config.Get().contextual_url_suggest_param = "1";
+
+  // Web gets the param when Lens is enabled.
+  {
+    EXPECT_CALL(*client_, IsLensEnabled())
+        .WillRepeatedly(testing::Return(true));
+    GURL url =
+        GetProviderRequestURL(ZeroPrefixInputForWeb(/*is_prefetch=*/false));
+    EXPECT_NE(url.spec().find("ctxus=1"), std::string::npos);
+  }
+  // Web does not get the param when Lens is disabled.
+  {
+    EXPECT_CALL(*client_, IsLensEnabled())
+        .WillRepeatedly(testing::Return(false));
+    GURL url =
+        GetProviderRequestURL(ZeroPrefixInputForWeb(/*is_prefetch=*/false));
+    EXPECT_EQ(url.spec().find("ctxus=1"), std::string::npos);
+  }
+  // NTP does not, even when enabled.
+  {
+    EXPECT_CALL(*client_, IsLensEnabled())
+        .WillRepeatedly(testing::Return(true));
+    GURL url =
+        GetProviderRequestURL(ZeroPrefixInputForNTP(/*is_prefetch=*/false));
+    EXPECT_EQ(url.spec().find("ctxus=1"), std::string::npos);
+  }
+  // SRP does not, even when enabled.
+  {
+    EXPECT_CALL(*client_, IsLensEnabled())
+        .WillRepeatedly(testing::Return(true));
+    GURL url =
+        GetProviderRequestURL(ZeroPrefixInputForSRP(/*is_prefetch=*/false));
+    EXPECT_EQ(url.spec().find("ctxus=1"), std::string::npos);
+  }
+}
+
+TEST_F(ZeroSuggestProviderTest, SuggestUrlIncludesPageTitle) {
+  // Ensure it's not included by default.
+  {
+    GURL url =
+        GetProviderRequestURL(ZeroPrefixInputForWeb(/*is_prefetch=*/false));
+    EXPECT_EQ(url.spec().find("pageTitle="), std::string::npos);
+  }
+
+  // Ensure it is conditionally included when enabled.
+  omnibox_feature_configs::ScopedConfigForTesting<
+      omnibox_feature_configs::ContextualSearch>
+      config;
+  config.Get().send_page_title_suggest_param = true;
+
+  // Web gets the param (URL-encoded page title).
+  {
+    EXPECT_CALL(*client_, IsLensEnabled())
+        .WillRepeatedly(testing::Return(true));
+    EXPECT_CALL(*client_, IsPersonalizedUrlDataCollectionActive())
+        .WillRepeatedly(testing::Return(true));
+    GURL url =
+        GetProviderRequestURL(ZeroPrefixInputForWeb(/*is_prefetch=*/false));
+    EXPECT_NE(url.spec().find("pageTitle=Example%20%2F%20Page"),
+              std::string::npos);
+  }
+  // Web does not get the param when Lens is disabled.
+  {
+    EXPECT_CALL(*client_, IsLensEnabled())
+        .WillRepeatedly(testing::Return(false));
+    EXPECT_CALL(*client_, IsPersonalizedUrlDataCollectionActive())
+        .WillRepeatedly(testing::Return(true));
+    GURL url =
+        GetProviderRequestURL(ZeroPrefixInputForWeb(/*is_prefetch=*/false));
+    EXPECT_EQ(url.spec().find("pageTitle="), std::string::npos);
+  }
+  // Web does not get the param when personalized URL data collection is
+  // disabled.
+  {
+    EXPECT_CALL(*client_, IsLensEnabled())
+        .WillRepeatedly(testing::Return(true));
+    EXPECT_CALL(*client_, IsPersonalizedUrlDataCollectionActive())
+        .WillRepeatedly(testing::Return(false));
+    GURL url =
+        GetProviderRequestURL(ZeroPrefixInputForWeb(/*is_prefetch=*/false));
+    EXPECT_EQ(url.spec().find("pageTitle="), std::string::npos);
+  }
+  // NTP does not, even when enabled.
+  {
+    EXPECT_CALL(*client_, IsLensEnabled())
+        .WillRepeatedly(testing::Return(true));
+    EXPECT_CALL(*client_, IsPersonalizedUrlDataCollectionActive())
+        .WillRepeatedly(testing::Return(true));
+    GURL url =
+        GetProviderRequestURL(ZeroPrefixInputForNTP(/*is_prefetch=*/false));
+    EXPECT_EQ(url.spec().find("pageTitle="), std::string::npos);
+  }
+  // SRP does not, even when enabled.
+  {
+    EXPECT_CALL(*client_, IsLensEnabled())
+        .WillRepeatedly(testing::Return(true));
+    EXPECT_CALL(*client_, IsPersonalizedUrlDataCollectionActive())
+        .WillRepeatedly(testing::Return(true));
+    GURL url =
+        GetProviderRequestURL(ZeroPrefixInputForSRP(/*is_prefetch=*/false));
+    EXPECT_EQ(url.spec().find("pageTitle="), std::string::npos);
+  }
 }

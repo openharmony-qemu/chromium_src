@@ -95,6 +95,7 @@ def ci_builder(*, name, resultdb_bigquery_exports = None, **kwargs):
         resultdb_bigquery_exports = resultdb_bigquery_exports,
         siso_project = siso.project.DEFAULT_TRUSTED,
         siso_remote_jobs = siso.remote_jobs.DEFAULT,
+        siso_enabled = True,
         resultdb_index_by_timestamp = True,
         **kwargs
     )
@@ -115,19 +116,21 @@ ci_builder(
             ],
         ),
         chromium_config = builder_config.chromium_config(
-            config = "android",
+            config = "main_builder",
+            apply_configs = ["mb"],
             build_config = builder_config.build_config.RELEASE,
             target_arch = builder_config.target_arch.ARM,
             target_bits = 64,
             target_platform = builder_config.target_platform.ANDROID,
         ),
         android_config = builder_config.android_config(
-            config = "main_builder_mb",
+            config = "base_config",
         ),
     ),
     gn_args = gn_args.config(
         configs = [
             "android_builder",
+            "android_with_static_analysis",
             "release_builder",
             "remoteexec",
             "minimal_symbols",

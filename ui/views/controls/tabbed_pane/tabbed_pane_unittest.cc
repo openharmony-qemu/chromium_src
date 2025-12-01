@@ -170,7 +170,8 @@ class TabbedPaneWithWidgetTest : public ViewsTestBase {
   }
 
   View* GetSelectedTabContentView() {
-    return tabbed_pane_->GetSelectedTabContentView();
+    return tabbed_pane_->GetTabContentsForTesting(
+        tabbed_pane_->GetSelectedTabIndex());
   }
 
   void SendKeyPressToSelectedTab(ui::KeyboardCode keyboard_code) {
@@ -382,12 +383,13 @@ TEST_F(TabbedPaneWithWidgetTest, AccessiblePaneContentsRoleIsTabPanel) {
 TEST_F(TabbedPaneWithWidgetTest, AccessibleEvents) {
   tabbed_pane_->AddTab(u"Tab1", std::make_unique<View>());
   tabbed_pane_->AddTab(u"Tab2", std::make_unique<View>());
-  test::AXEventCounter counter(views::AXEventManager::Get());
+  test::AXEventCounter counter(views::AXUpdateNotifier::Get());
 
   // This is needed for FocusManager::SetFocusedViewWithReason to notify
   // observers observers of focus changes.
-  if (widget_ && !widget_->IsActive())
+  if (widget_ && !widget_->IsActive()) {
     widget_->Activate();
+  }
 
   EXPECT_EQ(0u, tabbed_pane_->GetSelectedTabIndex());
 

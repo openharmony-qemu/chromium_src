@@ -2,13 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "ui/views/bubble/bubble_dialog_delegate_view.h"
-
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
 #include "build/build_config.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ui/aura/window.h"
+#include "ui/views/bubble/bubble_dialog_delegate_view.h"
 #include "ui/views/buildflags.h"
 #include "ui/views/test/widget_activation_waiter.h"
 #include "ui/views/test/widget_test.h"
@@ -51,8 +50,9 @@ class BubbleDialogDelegateViewInteractiveTest : public test::WidgetTest {
 #if BUILDFLAG(ENABLE_DESKTOP_AURA)
     // Create DesktopNativeWidgetAura for toplevel widgets, NativeWidgetAura
     // otherwise.
-    if (!params.parent)
+    if (!params.parent) {
       return new DesktopNativeWidgetAura(delegate);
+    }
 #endif  // BUILDFLAG(ENABLE_DESKTOP_AURA)
     return new NativeWidgetAura(delegate);
   }
@@ -72,7 +72,8 @@ TEST_F(BubbleDialogDelegateViewInteractiveTest,
   EXPECT_TRUE(anchor_widget->GetNativeWindow()->HasFocus());
 
   auto bubble = std::make_unique<BubbleDialogDelegateView>(
-      anchor_view, BubbleBorder::Arrow::TOP_CENTER);
+      BubbleDialogDelegateView::CreatePassKey(), anchor_view,
+      BubbleBorder::Arrow::TOP_CENTER);
   bubble->set_close_on_deactivate(false);
   WidgetAutoclosePtr bubble_widget(
       BubbleDialogDelegateView::CreateBubble(std::move(bubble)));

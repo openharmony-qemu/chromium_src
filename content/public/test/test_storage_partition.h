@@ -115,11 +115,6 @@ class TestStoragePartition : public StoragePartition {
   }
   BackgroundSyncContext* GetBackgroundSyncContext() override;
 
-  void set_database_tracker(storage::DatabaseTracker* tracker) {
-    database_tracker_ = tracker;
-  }
-  storage::DatabaseTracker* GetDatabaseTracker() override;
-
   void set_dom_storage_context(DOMStorageContext* context) {
     dom_storage_context_ = context;
   }
@@ -167,7 +162,14 @@ class TestStoragePartition : public StoragePartition {
   CdmStorageDataModel* GetCdmStorageDataModel() override;
 #endif  // BUILDFLAG(ENABLE_LIBRARY_CDMS)
 
-  void DeleteStaleSessionOnlyCookiesAfterDelay() override {}
+  network::mojom::DeviceBoundSessionManager* GetDeviceBoundSessionManager()
+      override;
+  void set_device_bound_session_manager(
+      network::mojom::DeviceBoundSessionManager* device_bound_session_manager) {
+    device_bound_session_manager_ = device_bound_session_manager;
+  }
+
+  void DeleteStaleSessionData() override {}
 
   void set_browsing_topics_site_data_manager(
       BrowsingTopicsSiteDataManager* manager) {
@@ -271,7 +273,6 @@ class TestStoragePartition : public StoragePartition {
   raw_ptr<storage::QuotaManager> quota_manager_ = nullptr;
   raw_ptr<BackgroundSyncContext> background_sync_context_ = nullptr;
   raw_ptr<storage::FileSystemContext> file_system_context_ = nullptr;
-  raw_ptr<storage::DatabaseTracker> database_tracker_ = nullptr;
   raw_ptr<DOMStorageContext> dom_storage_context_ = nullptr;
   mojo::Remote<storage::mojom::LocalStorageControl> local_storage_control_;
   mojo::Remote<storage::mojom::IndexedDBControl> indexed_db_control_;
@@ -280,6 +281,8 @@ class TestStoragePartition : public StoragePartition {
   raw_ptr<SharedWorkerService> shared_worker_service_ = nullptr;
   mojo::Remote<storage::mojom::CacheStorageControl> cache_storage_control_;
   raw_ptr<GeneratedCodeCacheContext> generated_code_cache_context_ = nullptr;
+  raw_ptr<network::mojom::DeviceBoundSessionManager>
+      device_bound_session_manager_ = nullptr;
   raw_ptr<BrowsingTopicsSiteDataManager> browsing_topics_site_data_manager_ =
       nullptr;
   raw_ptr<PlatformNotificationContext> platform_notification_context_ = nullptr;

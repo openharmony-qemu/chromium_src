@@ -26,6 +26,7 @@
 #include "base/test/task_environment.h"
 #include "base/values.h"
 #include "base/version.h"
+#include "components/component_updater/android/component_loader_policy.h"
 #include "components/component_updater/component_installer.h"
 #include "components/component_updater/component_updater_paths.h"
 #include "components/component_updater/component_updater_service.h"
@@ -72,7 +73,7 @@ void AssertOnDemandRequest(bool on_demand, std::string post_data) {
   ASSERT_TRUE(root);
   const auto* request = root->GetDict().FindDict("request");
   ASSERT_TRUE(request);
-  const auto& app = (*request->FindList("app"))[0].GetDict();
+  const auto& app = (*request->FindList("apps"))[0].GetDict();
   if (on_demand) {
     EXPECT_EQ("ondemand", *app.FindString("installsource"));
   } else {
@@ -98,10 +99,11 @@ class FailingNetworkFetcher : public update_client::NetworkFetcher {
       PostRequestCompleteCallback post_request_complete_callback) override {
     AssertOnDemandRequest(false, post_data);
     std::move(post_request_complete_callback)
-        .Run(/* response_body= */ std::make_unique<std::string>(""),
+        .Run(/* response_body= */ std::string(""),
              /* network_error= */ -2,
              /* header_etag= */ "",
              /* header_x_cup_server_proof= */ "",
+             /* header_cookie= */ "",
              /* x_header_retry_after_sec= */ 0ll);
   }
 
@@ -139,10 +141,11 @@ class OnDemandNetworkFetcher : public update_client::NetworkFetcher {
       PostRequestCompleteCallback post_request_complete_callback) override {
     AssertOnDemandRequest(true, post_data);
     std::move(post_request_complete_callback)
-        .Run(/* response_body= */ std::make_unique<std::string>(""),
+        .Run(/* response_body= */ std::string(),
              /* network_error= */ -2,
              /* header_etag= */ "",
              /* header_x_cup_server_proof= */ "",
+             /* header_cookie= */ "",
              /* x_header_retry_after_sec= */ 0ll);
   }
 
@@ -195,10 +198,11 @@ class FakeCrxNetworkFetcher : public update_client::NetworkFetcher {
       network_error = -2;
     }
     std::move(post_request_complete_callback)
-        .Run(/* response_body= */ std::make_unique<std::string>(response_body),
+        .Run(/* response_body= */ std::move(response_body),
              /* network_error= */ network_error,
              /* header_etag= */ "",
              /* header_x_cup_server_proof= */ "",
+             /* header_cookie= */ "",
              /* x_header_retry_after_sec= */ 0ll);
   }
 
@@ -501,9 +505,9 @@ TEST_F(AwComponentUpdateServiceTest, TestExtraMetadataFile) {
   EXPECT_TRUE(base::PathExists(metadata_file_path));
   ASSERT_TRUE(
       base::ReadFileToString(metadata_file_path, &metadata_file_contents));
-  EXPECT_EQ(metadata_file_contents, "{\"" + std::string(kComponentId) +
-                                        "\":\"" + std::string(kCohortId) +
-                                        "\"}");
+  EXPECT_EQ(metadata_file_contents,
+            "{\"" + std::string(component_updater::kMetadataFileCohortIdKey) +
+                "\":\"" + std::string(kCohortId) + "\"}");
 }
 
 }  // namespace android_webview

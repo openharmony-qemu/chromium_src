@@ -128,11 +128,11 @@ class SyncableServiceBasedBridgeTest : public ::testing::Test {
   }
 
   void ShutdownBridge() {
-    // |bridge_| must outlive |start_syncing_sync_processor_|, so reset it
+    // `bridge_` must outlive `start_syncing_sync_processor_`, so reset it
     // first.
     start_syncing_sync_processor_.reset();
     bridge_.reset();
-    // The mock is still delegating to |real_processor_|, so we reset it too.
+    // The mock is still delegating to `real_processor_`, so we reset it too.
     ASSERT_TRUE(testing::Mock::VerifyAndClear(&mock_processor_));
     real_processor_.reset();
   }
@@ -141,8 +141,7 @@ class SyncableServiceBasedBridgeTest : public ::testing::Test {
     syncer::DataTypeActivationRequest request;
     request.error_handler = mock_error_handler_.Get();
     request.cache_guid = "TestCacheGuid";
-    request.authenticated_account_id =
-        CoreAccountId::FromGaiaId("SomeAccountId");
+    request.authenticated_gaia_id = GaiaId("SomeGaiaId");
     return request;
   }
 

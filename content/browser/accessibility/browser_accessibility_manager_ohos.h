@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2025 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #ifndef CONTENT_BROWSER_ACCESSIBILITY_BROWSER_ACCESSIBILITY_MANAGER_OHOS_H_
 #define CONTENT_BROWSER_ACCESSIBILITY_BROWSER_ACCESSIBILITY_MANAGER_OHOS_H_
@@ -78,11 +53,11 @@ enum class AccessibilityEventType : int32_t {
   UNKNOWN,
 };
 
-class NWebAccessibilityEventCallback {
+class AccessibilityEventCallback {
  public:
-  NWebAccessibilityEventCallback() = default;
+  AccessibilityEventCallback() = default;
 
-  virtual ~NWebAccessibilityEventCallback() = default;
+  virtual ~AccessibilityEventCallback() = default;
   virtual void OnAccessibilityEvent(int64_t accessibility_id,
                                     uint32_t event_type) = 0;
 };
@@ -117,7 +92,7 @@ class CONTENT_EXPORT BrowserAccessibilityManagerOHOS
   static int64_t GenerateAccessibilityId();
 
   void RegisterAccessibilityEventListener(
-      std::shared_ptr<NWebAccessibilityEventCallback>
+      std::shared_ptr<AccessibilityEventCallback>
           accessibility_event_listener);
 
   void SetLastHoverId(int64_t id) { last_hover_id_ = id; }
@@ -156,7 +131,7 @@ private:
 
   int64_t accessibility_focus_id_ = -1;
 
-  std::shared_ptr<NWebAccessibilityEventCallback> accessibility_event_listener_;
+  std::shared_ptr<AccessibilityEventCallback> accessibility_event_listener_;
 };
 }  // namespace content
 

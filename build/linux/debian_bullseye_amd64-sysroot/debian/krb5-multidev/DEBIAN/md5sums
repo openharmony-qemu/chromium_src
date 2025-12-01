@@ -50,6 +50,6 @@ f318bc6590412ebe1979c93ffe7f7f85  usr/lib/x86_64-linux-gnu/pkgconfig/mit-krb5/ka
 dc4cc44045930b390368212c241aa30c  usr/lib/x86_64-linux-gnu/pkgconfig/mit-krb5/kdb.pc
 5b0aa348f6b094a69b1b8cedc4fa06d7  usr/lib/x86_64-linux-gnu/pkgconfig/mit-krb5/krb5-gssapi.pc
 1eb28f1397a541f87c48f4bf90c10680  usr/lib/x86_64-linux-gnu/pkgconfig/mit-krb5/krb5.pc
-12b85ba3f2b63222ff5506de1b36bbb2  usr/share/doc/krb5-multidev/changelog.Debian.gz
+f2f127c43bdd7663c96df29d2e38e9ee  usr/share/doc/krb5-multidev/changelog.Debian.gz
 55245d0f2c5677eb816754f87456a1e7  usr/share/doc/krb5-multidev/copyright
 776987ff877aace86f7b738d875d8f0c  usr/share/man/man1/krb5-config.mit.1.gz

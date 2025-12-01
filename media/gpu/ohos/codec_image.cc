@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "media/gpu/ohos/codec_image.h"
 
@@ -140,11 +115,24 @@ void CodecImage::ReleaseCodecBuffer() {
 
 CodecImageHolder::CodecImageHolder(
     scoped_refptr<base::SequencedTaskRunner> task_runner,
-    scoped_refptr<CodecImage> codec_image)
+    scoped_refptr<CodecImage> codec_image,
+    scoped_refptr<gpu::RefCountedLock> drdc_lock)
     : base::RefCountedDeleteOnSequence<CodecImageHolder>(
           std::move(task_runner)),
-      codec_image_(std::move(codec_image)) {}
+    gpu::RefCountedLockHelperDrDc(std::move(drdc_lock)),
+    codec_image_(std::move(codec_image)) {}
 
-CodecImageHolder::~CodecImageHolder() = default;
+CodecImageHolder::~CodecImageHolder()
+{
+  // Note that CodecImageHolder is always destroyed on the thread it was created
+  // on which is gpu main thread. CodecImage destructor also has checks to
+  // ensure that it is destroyed on gpu main thread.
+  // Acquiring DrDc lock here to ensure that the lock is held from all the paths
+  // from where |codec_image_| can be destroyed.
+  {
+    auto scoped_lock = GetScopedDrDcLock();
+    codec_image_.reset();
+  }
+}
 
 }  // namespace media

@@ -384,10 +384,6 @@ int64_t WindowTreeHostPlatform::OnStateUpdate(
     OnBoundsChanged({origin_changed});
   }
 
-  if (old.raster_scale != latest.raster_scale) {
-    compositor()->SetExternalPageScaleFactor(latest.raster_scale);
-  }
-
   bool needs_frame = latest.WillProduceFrameOnUpdateFrom(old);
   if (old.occlusion_state != latest.occlusion_state &&
       NativeWindowOcclusionTracker::
@@ -417,17 +413,6 @@ int64_t WindowTreeHostPlatform::OnStateUpdate(
   compositor()->SetLocalSurfaceIdFromParent(window()->GetLocalSurfaceId());
 
   return window()->GetLocalSurfaceId().parent_sequence_number();
-}
-
-void WindowTreeHostPlatform::SetFrameRateThrottleEnabled(bool enabled) {
-  if (enabled)
-    HostFrameRateThrottler::GetInstance().AddHost(this);
-  else
-    HostFrameRateThrottler::GetInstance().RemoveHost(this);
-}
-
-void WindowTreeHostPlatform::DisableNativeWindowOcclusion() {
-  SetNativeWindowOcclusionEnabled(false);
 }
 
 }  // namespace aura

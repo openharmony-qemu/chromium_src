@@ -108,6 +108,20 @@ std::vector<uint16_t> GetCertCompressionAlgos(
   return cert_compression_algos;
 }
 
+std::vector<uint8_t> GetTransportParameters(
+    const SSL_CLIENT_HELLO* client_hello) {
+  const uint8_t* transport_params_data;
+  size_t transport_params_len;
+  int rv = SSL_early_callback_ctx_extension_get(
+      client_hello, TLSEXT_TYPE_quic_transport_parameters,
+      &transport_params_data, &transport_params_len);
+  if (rv != 1) {
+    return {};
+  }
+  return std::vector<uint8_t>(transport_params_data,
+                              transport_params_data + transport_params_len);
+}
+
 }  // namespace
 
 TlsChloExtractor::TlsChloExtractor()
@@ -423,6 +437,8 @@ void TlsChloExtractor::HandleParsedChlo(const SSL_CLIENT_HELLO* client_hello) {
     }
   }
 
+  transport_params_ = GetTransportParameters(client_hello);
+
   // Update our state now that we've parsed a full CHLO.
   if (state_ == State::kInitial) {
     state_ = State::kParsedFullSinglePacketChlo;
@@ -440,7 +456,6 @@ std::pair<SSL_CTX*, int> TlsChloExtractor::GetSharedSslHandles() {
   // initialized lazily in a thread-safe manner. |shared_handles| is therefore
   // guaranteed to be initialized exactly once and never destructed.
   static std::pair<SSL_CTX*, int>* shared_handles = []() {
-    CRYPTO_library_init();
     SSL_CTX* ssl_ctx = SSL_CTX_new(TLS_with_buffers_method());
     SSL_CTX_set_min_proto_version(ssl_ctx, TLS1_3_VERSION);
     SSL_CTX_set_max_proto_version(ssl_ctx, TLS1_3_VERSION);

@@ -10,8 +10,8 @@
 #import "base/notreached.h"
 
 using base::RecordAction;
-using base::UserMetricsAction;
 using base::UmaHistogramEnumeration;
+using base::UserMetricsAction;
 
 void LogNonModalPromoAction(NonModalPromoAction action,
                             NonModalPromoTriggerType type,
@@ -85,7 +85,7 @@ void LogNonModalPromoAction(NonModalPromoAction action,
 
     default:
       // TODO(crbug.com/327429982): M124 validation necessary.
-      NOTREACHED(base::NotFatalUntil::M126);
+      NOTREACHED();
   }
 
   UmaHistogramEnumeration(histogramString, action);

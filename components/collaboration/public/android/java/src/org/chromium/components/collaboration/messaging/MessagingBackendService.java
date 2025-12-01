@@ -4,20 +4,21 @@
 
 package org.chromium.components.collaboration.messaging;
 
-import androidx.annotation.NonNull;
-
 import org.chromium.base.Callback;
-import org.chromium.components.collaboration.messaging.EitherId.EitherGroupId;
-import org.chromium.components.collaboration.messaging.EitherId.EitherTabId;
+import org.chromium.build.annotations.NullMarked;
+import org.chromium.components.tab_group_sync.EitherId.EitherGroupId;
+import org.chromium.components.tab_group_sync.EitherId.EitherTabId;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Java shim for a MessagingBackendService. See
  * //components/collaboration/public/messaging/messaging_backend_service.h. Used for accessing and
  * listening to messages related to collaboration and groups that need to be reflected in the UI.
  */
+@NullMarked
 public interface MessagingBackendService {
     /** An observer to be notified of persistent indicators that need to be shown in the UI. */
     interface PersistentMessageObserver {
@@ -52,6 +53,17 @@ public interface MessagingBackendService {
          * be given to the garbage collector without invoking it first.
          */
         void displayInstantaneousMessage(InstantMessage message, Callback<Boolean> successCallback);
+
+        /**
+         * Invoked when the frontend should hide instant messages. This is intended to be a no-op if
+         * the message is not currently displayed or not in the queue to be displayed. The provided
+         * {@code messageIds} are the IDs of the messages that should be hidden. These correspond to
+         * the {@link MessageAttribution#id id} values from the {@link MessageAttribution} objects
+         * within the {@link InstantMessage#attributions attributions} list of the {@link
+         * InstantMessage} argument originally passed to {@link
+         * #displayInstantaneousMessage(InstantMessage, Callback) displayInstantaneousMessage}.
+         */
+        void hideInstantaneousMessage(Set<String> messageIds);
     }
 
     /** Sets the delegate for instant (one-off) messages. */
@@ -77,7 +89,6 @@ public interface MessagingBackendService {
      * @param type The type of message to query to. Pass Optional.empty() to return all message
      *     types.
      */
-    @NonNull
     List<PersistentMessage> getMessagesForTab(
             EitherTabId tabId, Optional</* @PersistentNotificationType */ Integer> type);
 
@@ -92,7 +103,6 @@ public interface MessagingBackendService {
      * @param groupId The ID of the group to scope messages to.
      * @param type The message type to query for. Pass Optional.empty() to return all message types.
      */
-    @NonNull
     List<PersistentMessage> getMessagesForGroup(
             EitherGroupId groupId, Optional</* @PersistentNotificationType */ Integer> type);
 
@@ -105,7 +115,6 @@ public interface MessagingBackendService {
      *
      * @param type The message type to query for. Pass Optional.empty() to return all message types.
      */
-    @NonNull
     List<PersistentMessage> getMessages(Optional</* @PersistentNotificationType */ Integer> type);
 
     /**
@@ -116,6 +125,22 @@ public interface MessagingBackendService {
      *
      * @param params The query params (e.g. collaboration ID).
      */
-    @NonNull
     List<ActivityLogItem> getActivityLog(ActivityLogQueryParams params);
+
+    /**
+     * Clears all dirty messages associated with a collaboration. Doesn't apply to instant messages.
+     *
+     * @param collaborationId The associated collaboration ID.
+     */
+    void clearDirtyTabMessagesForGroup(String collaborationId);
+
+    /**
+     * Clears a given persistent message. Internally clears out the specified dirty bit from the DB
+     * for the message.
+     *
+     * @param messageId The ID of the messasge.
+     * @param type The message type to clear. Pass Optional.empty() to clear out all message types.
+     */
+    void clearPersistentMessage(
+            String messageId, Optional</* @PersistentNotificationType */ Integer> type);
 }

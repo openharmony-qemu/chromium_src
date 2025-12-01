@@ -1,38 +1,16 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "ohos/adapter/web_entry/chrome/chrome_loader.h"
+
+#include <accesstoken/ability_access_control.h>
 
 #include "ohos/adapter/common/logging.h"
 #include "ohos/adapter/common/shared_library.h"
 #include "ohos/adapter/dev_config/dev_config.h"
 #include "ohos/adapter/device_info/device_info.h"
+#include "ohos/adapter/web_entry/permission_constants.h"
 
 namespace ohos::adapter::web_entry {
 namespace {
@@ -53,6 +31,20 @@ bool CheckAdvSecMode() {
   }
   return false;
 }
+
+bool ShouldDisableJit() {
+  if (CheckAdvSecMode()) {
+    return true;
+  }
+  
+  if (!OH_AT_CheckSelfPermission(
+      PermissionConstants::ALLOW_WRITABLE_CODE_MEMORY)) {
+    return true;
+  }
+  
+  return false;
+}
+
 }  // namespace
 
 std::string ChromeMainLoader::GetEntryPoint(int process_type) {
@@ -84,17 +76,20 @@ const std::vector<std::string> ChromeMainLoader::GetEntryArgs() {
       "--ozone-dump-file=/data/storage/el2/base/cache/",
       "--no-zygote",
       "--user-data-dir=/data/storage/el2/base/files/",
-      "--log-net-log",
+      "--disable-gpu-watchdog",
       "--force-renderer-accessibility=basic",
   };
   ohos::adapter::device_info::DeviceType device_type =
-    ohos::adapter::device_info::DeviceInfo::GetInstance().GetDeviceType();
+      ohos::adapter::device_info::DeviceInfo::GetInstance().GetDeviceType();
   // pad not support gpu process
   if (device_type == ohos::adapter::device_info::DeviceType::_TABLET) {
+    if (ohos::adapter::device_info::DeviceInfo::SdkApi() <
+        ohos::adapter::device_info::SDK_VERSION_19) {
+          args.emplace_back("--js-flags=--jitless");
+    }
     args.push_back("--in-process-gpu");
-    args.push_back("--js-flags=--jitless");
   }
-  if (CheckAdvSecMode()) {
+  if (ShouldDisableJit()) {
     args.emplace_back("--js-flags=--jitless");
   }
   for (const auto& command : GetDevCommandLines()) {

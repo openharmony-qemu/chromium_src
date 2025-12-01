@@ -9,7 +9,7 @@
 
 #include "base/time/time.h"
 #include "base/types/strong_alias.h"
-#include "components/sync/protocol/entity_specifics.pb.h"
+#include "google_apis/gaia/gaia_id.h"
 #include "url/gurl.h"
 
 namespace data_sharing {
@@ -18,10 +18,32 @@ using GroupId = base::StrongAlias<class GroupIdTag, std::string>;
 
 // GENERATED_JAVA_ENUM_PACKAGE: (
 //   org.chromium.components.data_sharing.member_role)
-enum class MemberRole { kUnknown = 0, kOwner = 1, kMember = 2, kInvitee = 3 };
+enum class MemberRole {
+  kUnknown = 0,
+  kOwner = 1,
+  kMember = 2,
+  kInvitee = 3,
+  kFormerMember = 4
+};
+
+// This tells if the group is enabled or not. This field is set by chrome client
+// after comparing the version info from ReadGroup request and comparing it with
+// hardcoded version info in Chrome client.
+enum class GroupEnabledStatus {
+  kUnknown = 0,
+  kEnabled = 1,
+  kDisabledChromeNeedsUpdate = 2,
+};
 
 struct GroupMember {
   GroupMember();
+
+  GroupMember(GaiaId gaia_id,
+              std::string display_name,
+              std::string email,
+              MemberRole role,
+              GURL avatar_url,
+              std::string given_name);
 
   GroupMember(const GroupMember&);
   GroupMember& operator=(const GroupMember&);
@@ -31,10 +53,10 @@ struct GroupMember {
 
   ~GroupMember();
 
-  std::string gaia_id;
+  GaiaId gaia_id;
   std::string display_name;
   std::string email;
-  MemberRole role;
+  MemberRole role = MemberRole::kUnknown;
   GURL avatar_url;
   std::string given_name;
 };
@@ -54,10 +76,13 @@ struct GroupMemberPartialData {
 
   ~GroupMemberPartialData();
 
-  std::string gaia_id;
+  GroupMember ToGroupMember();
+
+  GaiaId gaia_id;
   std::string display_name;
   std::string email;
   GURL avatar_url;
+  std::string given_name;
 };
 
 struct GroupToken {
@@ -85,7 +110,9 @@ struct GroupData {
   GroupData(GroupId group_id,
             std::string display_name,
             std::vector<GroupMember> members,
-            std::string access_token);
+            std::vector<GroupMember> former_members,
+            std::string access_token,
+            GroupEnabledStatus enabled_status = GroupEnabledStatus::kEnabled);
 
   GroupData(const GroupData&);
   GroupData& operator=(const GroupData&);
@@ -98,6 +125,38 @@ struct GroupData {
   GroupToken group_token;
   std::string display_name;
   std::vector<GroupMember> members;
+  std::vector<GroupMember> former_members;
+  GroupEnabledStatus enabled_status = GroupEnabledStatus::kEnabled;
+};
+
+struct GroupEvent {
+  enum class EventType {
+    kGroupAdded,
+    kGroupRemoved,
+    kMemberRemoved,
+    kMemberAdded,
+  };
+
+  GroupEvent();
+
+  GroupEvent(const GroupEvent&);
+  GroupEvent& operator=(const GroupEvent&);
+
+  GroupEvent(GroupEvent&&);
+  GroupEvent& operator=(GroupEvent&&);
+
+  GroupEvent(EventType event_type,
+             const GroupId& group_id,
+             const std::optional<GaiaId>& affected_member_gaia_id,
+             const base::Time& event_time);
+
+  ~GroupEvent();
+
+  EventType event_type;
+  GroupId group_id;
+  // Unset for kGroupAdded and kGroupRemoved events.
+  std::optional<GaiaId> affected_member_gaia_id;
+  base::Time event_time;
 };
 
 // Represents a tab that is shared in a group.
@@ -153,6 +212,25 @@ struct SharedDataPreview {
 
   // Shared tab group data.
   std::optional<SharedTabGroupPreview> shared_tab_group_preview;
+};
+
+// The state of the sync bridge wrt sign-in / sign-out, i.e. whether the bridge
+// has completed initial merge and isn't in the process of disabling sync.
+// Interested consumers might want to ignore the incoming updates from sync
+// based on this enum.
+enum class SyncBridgeUpdateType {
+  // The bridge is currently undergoing initial merge. After this stage, it will
+  // transition to `kDefaultState`.
+  kInitialMerge = 0,
+
+  // The bridge is currently in the process of disabling, i.e.
+  // ApplyDisableSyncChanges has been invoked. After this stage, it will
+  // transition to `kDefaultState`.
+  kDisableSync = 1,
+
+  // The bridge is not currently doing an initial merge or disable sync
+  // operation.
+  kDefaultState = 2,
 };
 
 // Only takes `group_id` into account, used to allow storing GroupData in

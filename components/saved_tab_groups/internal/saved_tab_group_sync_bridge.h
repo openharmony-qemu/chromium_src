@@ -20,6 +20,7 @@
 #include "components/sync/model/data_type_store.h"
 #include "components/sync/model/data_type_sync_bridge.h"
 #include "components/sync/protocol/saved_tab_group_specifics.pb.h"
+#include "google_apis/gaia/gaia_id.h"
 
 class PrefService;
 
@@ -67,12 +68,16 @@ class SavedTabGroupSyncBridge : public syncer::DataTypeSyncBridge {
   syncer::ConflictResolution ResolveConflict(
       const std::string& storage_key,
       const syncer::EntityData& remote_data) const override;
-  std::string GetStorageKey(const syncer::EntityData& entity_data) override;
-  std::string GetClientTag(const syncer::EntityData& entity_data) override;
+  std::string GetStorageKey(
+      const syncer::EntityData& entity_data) const override;
+  std::string GetClientTag(
+      const syncer::EntityData& entity_data) const override;
   std::unique_ptr<syncer::DataBatch> GetDataForCommit(
       StorageKeyList storage_keys) override;
   std::unique_ptr<syncer::DataBatch> GetAllDataForDebugging() override;
   bool IsEntityDataValid(const syncer::EntityData& entity_data) const override;
+  sync_pb::EntitySpecifics TrimAllSupportedFieldsFromRemoteSpecifics(
+      const sync_pb::EntitySpecifics& entity_specifics) const override;
 
   void SavedTabGroupAddedLocally(const base::Uuid& guid);
   void SavedTabGroupRemovedLocally(const SavedTabGroup& removed_group);
@@ -95,7 +100,7 @@ class SavedTabGroupSyncBridge : public syncer::DataTypeSyncBridge {
 
   // Returns the account ID from the change processor if metadata is tracked,
   // otherwise returns a nullopt.
-  std::optional<std::string> GetTrackedAccountId() const;
+  std::optional<GaiaId> GetTrackedGaiaId() const;
 
   // Whether the sync is currently enabled and syncing for saved tab groups.
   // False before bridge initialization is completed.
@@ -123,6 +128,9 @@ class SavedTabGroupSyncBridge : public syncer::DataTypeSyncBridge {
   // Updates and/or adds the specifics into the DataTypeStore.
   void UpsertEntitySpecific(const proto::SavedTabGroupData& data,
                             syncer::DataTypeStore::WriteBatch* write_batch);
+  void UpsertEntitySpecific(const proto::SavedTabGroupData& data,
+                            syncer::DataTypeStore::WriteBatch* write_batch,
+                            bool send_to_sync);
 
   // Removes the specifics pointed to by `guid` from the DataTypeStore.
   void RemoveEntitySpecific(const base::Uuid& guid,
@@ -149,6 +157,18 @@ class SavedTabGroupSyncBridge : public syncer::DataTypeSyncBridge {
   void DeleteDataFromLocalStorage(
       const base::Uuid& guid,
       syncer::DataTypeStore::WriteBatch* write_batch);
+
+  // Converts a `group` to a `SavedTabGroupSpecifics` proto. The returned
+  // specifics also contains unsupported fields that are stored in sync
+  // metadata.
+  proto::SavedTabGroupData SavedTabGroupToData(
+      const SavedTabGroup& group) const;
+
+  // Converts a `tab` to a `SavedTabGroupSpecifics` proto. The returned
+  // specifics also contains unsupported fields that are stored in sync
+  // metadata.
+  proto::SavedTabGroupData SavedTabGroupTabToData(
+      const SavedTabGroupTab& tab) const;
 
   // Attempts to add the tabs found in `tabs_missing_groups_` to local storage.
   void ResolveTabsMissingGroups(syncer::DataTypeStore::WriteBatch* write_batch);

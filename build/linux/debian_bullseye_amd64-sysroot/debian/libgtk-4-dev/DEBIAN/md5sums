@@ -362,7 +362,7 @@ d7d91b2a9faf27d645a855cb1c6c6853  usr/include/gtk-4.0/unix-print/gtk/gtkunixprin
 61dd9c4de3359b95c80a208364da5297  usr/lib/x86_64-linux-gnu/pkgconfig/gtk4-wayland.pc
 61dd9c4de3359b95c80a208364da5297  usr/lib/x86_64-linux-gnu/pkgconfig/gtk4-x11.pc
 64d398c6e67cd7a4b57eabeb9c3fcde1  usr/lib/x86_64-linux-gnu/pkgconfig/gtk4.pc
-9ea9645b1147ee230daa0b030b2425ce  usr/share/doc/libgtk-4-dev/changelog.Debian.gz
+7e49f8a96b799a2be7649ce01b7e9736  usr/share/doc/libgtk-4-dev/changelog.Debian.gz
 e7c8187092182771e767f6e2399ffc7b  usr/share/doc/libgtk-4-dev/copyright
 bb2432ae8dcd55e486512b272a042829  usr/share/gettext/its/gtk4builder.its
 da5e1373d393fe85e48fb74e978b98b7  usr/share/gettext/its/gtk4builder.loc

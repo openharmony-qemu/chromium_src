@@ -1,6 +1,5 @@
 include_rules = [
   "+chromeos/crosapi",
-  "+chromeos/lacros",
   "+gpu/command_buffer/client",
   "+gpu/ipc/client/client_shared_image_interface.h",
   "+media/base",
@@ -9,6 +8,6 @@ include_rules = [
   "+media/capture",
   "+media/media_buildflags.h",
   "+ui/gfx",
-  "+services/video_effects/public/mojom/video_effects_processor.mojom-forward.h",
+  "+services/video_effects/public",
   "+services/viz/public/cpp/gpu",
 ]

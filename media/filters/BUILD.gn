@@ -71,7 +71,6 @@ source_set("filters") {
 
   deps = [
     "//base",
-    "//build:chromeos_buildflags",
     "//cc/base",  # For MathUtil.
     "//media:media_buildflags",
     "//media/base",
@@ -81,6 +80,7 @@ source_set("filters") {
     "//media/video",
     "//net",
     "//third_party/libyuv",
+    "//third_party/wiseplay/cdm:buildflags", 
     "//ui/gfx/geometry:geometry",
   ]
 
@@ -321,7 +321,7 @@ source_set("unit_tests") {
 
   deps = [
     "//base/test:test_support",
-    "//build:chromeos_buildflags",
+    "//crypto:crypto",
     "//media:test_support",
     "//testing/gmock",
     "//testing/gtest",

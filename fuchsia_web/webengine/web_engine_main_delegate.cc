@@ -5,6 +5,7 @@
 #include "fuchsia_web/webengine/web_engine_main_delegate.h"
 
 #include <utility>
+#include <variant>
 
 #include "base/base_paths.h"
 #include "base/command_line.h"
@@ -35,7 +36,7 @@ void InitializeResources() {
   constexpr char kCommonResourcesPakPath[] = "web_engine_common_resources.pak";
 
   constexpr char kWebUiGeneratedResourcesPakPath[] =
-      "ui/resources/webui_resources.pak";
+      "ui/webui/resources/webui_resources.pak";
 
   base::FilePath asset_root;
   bool result = base::PathService::Get(base::DIR_ASSETS, &asset_root);
@@ -115,7 +116,7 @@ std::optional<int> WebEngineMainDelegate::PreBrowserMain() {
   return std::nullopt;
 }
 
-absl::variant<int, content::MainFunctionParams>
+std::variant<int, content::MainFunctionParams>
 WebEngineMainDelegate::RunProcess(
     const std::string& process_type,
     content::MainFunctionParams main_function_params) {

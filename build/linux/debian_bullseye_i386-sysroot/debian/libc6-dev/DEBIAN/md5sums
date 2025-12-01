@@ -496,7 +496,7 @@ d38142327f7a2f18f4dc6a3325dc1519  usr/lib/i386-linux-gnu/crti.o
 7ea44467bfc7c976a427c207d7975213  usr/lib/i386-linux-gnu/grcrt1.o
 6ecec538c2a579986e09b2b2bd15731d  usr/lib/i386-linux-gnu/libBrokenLocale.a
 2360ac5e242d16c2ef2cbae91f4f6c2d  usr/lib/i386-linux-gnu/libanl.a
-24826d58b67acb6efa7c28bfe4767528  usr/lib/i386-linux-gnu/libc.a
+06bbcb346c7ef802613d8a17f0627032  usr/lib/i386-linux-gnu/libc.a
 5af0d017151bc35d180c566cc3ca9ea4  usr/lib/i386-linux-gnu/libc.so
 c26cb52a8b38273a9ab3e0b41b9e8d2a  usr/lib/i386-linux-gnu/libc_nonshared.a
 0c5f8012a386d0ac3a2a9b022f318a4d  usr/lib/i386-linux-gnu/libdl.a
@@ -511,7 +511,7 @@ d40bf88b97d4fdf59d6c1e0192a31e37  usr/lib/i386-linux-gnu/libmcheck.a
 812b961b1c606b125aafd48e0e5f5819  usr/lib/i386-linux-gnu/rcrt1.o
 6ecec538c2a579986e09b2b2bd15731d  usr/lib/i386-linux-gnu/xen/libBrokenLocale.a
 43e7252f58aea5053c6b50c8523d88d9  usr/lib/i386-linux-gnu/xen/libanl.a
-cc6a4bfe226f28e6c266016e47771290  usr/lib/i386-linux-gnu/xen/libc.a
+98365d7c6535bbe89ec1d244afe9664d  usr/lib/i386-linux-gnu/xen/libc.a
 c26cb52a8b38273a9ab3e0b41b9e8d2a  usr/lib/i386-linux-gnu/xen/libc_nonshared.a
 0c5f8012a386d0ac3a2a9b022f318a4d  usr/lib/i386-linux-gnu/xen/libdl.a
 03d268ceda7abee9aea7e335afae5837  usr/lib/i386-linux-gnu/xen/libg.a
@@ -523,7 +523,7 @@ d40bf88b97d4fdf59d6c1e0192a31e37  usr/lib/i386-linux-gnu/xen/libmcheck.a
 86b77941a7cbd7e2abdd951d98d1e258  usr/lib/i386-linux-gnu/xen/librt.a
 a4079828050b7ef18a4a69d4f685ab23  usr/lib/i386-linux-gnu/xen/libutil.a
 68db2667ec40b6eccab467c974199f9a  usr/share/doc/libc6-dev/NEWS.Debian.gz
-1bfa4f3743e92f4dca1f09e1da49d066  usr/share/doc/libc6-dev/changelog.Debian.gz
+40901eb656861053f0ed240bcab6063c  usr/share/doc/libc6-dev/changelog.Debian.gz
 48d68260ab7331ccff4ff77677d7607d  usr/share/doc/libc6-dev/changelog.gz
 d848be5c37cd71d76c5a7b9e7e28868a  usr/share/doc/libc6-dev/copyright
 fb52b5ad8660095f749f4c46dccc54ac  usr/share/gdb/auto-load/lib/i386-linux-gnu/libpthread-2.31.so-gdb.py

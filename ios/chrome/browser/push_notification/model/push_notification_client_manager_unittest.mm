@@ -9,7 +9,10 @@
 #import "base/test/task_environment.h"
 #import "ios/chrome/browser/push_notification/model/push_notification_client.h"
 #import "ios/chrome/browser/push_notification/model/test_push_notification_client.h"
+#import "ios/chrome/test/ios_chrome_scoped_testing_local_state.h"
 #import "testing/platform_test.h"
+#import "third_party/ocmock/OCMock/OCMock.h"
+#import "third_party/ocmock/gtest_support.h"
 
 namespace {
 
@@ -49,6 +52,7 @@ class PushNotificationClientManagerTest : public PlatformTest {
   const scoped_refptr<base::SequencedTaskRunner> main_task_runner_{
       base::SequencedTaskRunner::GetCurrentDefault()};
 
+  IOSChromeScopedTestingLocalState scoped_testing_local_state_;
   std::unique_ptr<PushNotificationClientManager> manager_ =
       std::make_unique<PushNotificationClientManager>(main_task_runner_);
 };
@@ -100,4 +104,16 @@ TEST_F(PushNotificationClientManagerTest, BrowserReady) {
   EXPECT_FALSE(GetClient(manager_, 0)->IsBrowserReady());
   manager_->OnSceneActiveForegroundBrowserReady();
   EXPECT_TRUE(GetClient(manager_, 0)->IsBrowserReady());
+}
+
+TEST_F(PushNotificationClientManagerTest, GetClientForNotification) {
+  GenerateClients(manager_, 3);
+  GetClient(manager_, 0)->SetCanHandleNotification(false);
+  GetClient(manager_, 1)->SetCanHandleNotification(true);
+  GetClient(manager_, 2)->SetCanHandleNotification(false);
+
+  id mock_notification = OCMClassMock([UNNotification class]);
+
+  EXPECT_EQ(manager_->GetClientForNotification(mock_notification),
+            GetClient(manager_, 1));
 }

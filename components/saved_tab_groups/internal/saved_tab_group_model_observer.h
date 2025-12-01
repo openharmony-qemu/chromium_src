@@ -8,6 +8,7 @@
 #include <optional>
 
 #include "base/uuid.h"
+#include "components/saved_tab_groups/public/types.h"
 
 namespace tab_groups {
 
@@ -34,6 +35,10 @@ class SavedTabGroupModelObserver {
   // Called whenever the user is interacted with the group.
   virtual void SavedTabGroupLastUserInteractionTimeUpdated(
       const base::Uuid& saved_group_id) {}
+
+  virtual void SavedTabGroupTabLastSeenTimeUpdated(
+      const base::Uuid& saved_tab_id,
+      TriggerSource source) {}
 
   // Called when the title, tabs, or color change. `group_guid` denotes the
   // group that is currently being updated. `tab_guid` denotes if a tab in this
@@ -75,6 +80,17 @@ class SavedTabGroupModelObserver {
   // tabs restore through session restore to the corresponding SavedTabGroup
   // metadata in the SavedTabGroupModel.
   virtual void SavedTabGroupModelLoaded() {}
+
+  // Called to notify of the sync bridge state changes, e.g. whether initial
+  // merge or disable sync are in progress. Invoked only for shared tab group
+  // bridge.
+  virtual void OnSyncBridgeUpdateTypeChanged(
+      SyncBridgeUpdateType sync_bridge_update_type) {}
+
+  // Called notify that a shared tab group that is transitioning to saved group
+  // is removed.
+  virtual void TabGroupTransitioningToSavedRemovedFromSync(
+      const base::Uuid& group_guid) {}
 
  protected:
   SavedTabGroupModelObserver() = default;

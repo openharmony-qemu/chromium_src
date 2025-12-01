@@ -9,18 +9,23 @@
 
 #include "media/mojo/mojom/video_frame_mojom_traits.h"
 
+#include <algorithm>
+#include <array>
+
 #include "base/functional/callback_helpers.h"
 #include "base/memory/ref_counted.h"
 #include "base/memory/writable_shared_memory_region.h"
+#include "base/numerics/safe_conversions.h"
 #include "base/test/task_environment.h"
 #include "build/build_config.h"
+#include "gpu/command_buffer/client/test_shared_image_interface.h"
 #include "gpu/command_buffer/common/mailbox.h"
 #include "gpu/command_buffer/common/mailbox_holder.h"
 #include "gpu/command_buffer/common/sync_token.h"
 #include "media/base/color_plane_layout.h"
 #include "media/base/video_frame.h"
-#include "media/mojo/mojom/traits_test_service.mojom.h"
-#include "media/video/fake_gpu_memory_buffer.h"
+#include "media/base/video_frame_layout.h"
+#include "media/mojo/mojom/traits_test_service.test-mojom.h"
 #include "mojo/public/cpp/bindings/message.h"
 #include "mojo/public/cpp/bindings/receiver_set.h"
 #include "mojo/public/cpp/bindings/remote.h"
@@ -28,6 +33,15 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/geometry/size.h"
+
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#include <linux/kcmp.h>
+#include <sys/syscall.h>
+
+#include "base/posix/eintr_wrapper.h"
+#include "base/process/process.h"
+#include "media/mojo/mojom/buffer_handle_test_util.h"
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 
 namespace media {
 
@@ -53,6 +67,22 @@ class VideoFrameStructTraitsTest : public testing::Test,
     scoped_refptr<VideoFrame> input = std::move(*frame);
     mojo::Remote<mojom::TraitsTestService> remote = GetTraitsTestRemote();
     return remote->EchoVideoFrame(std::move(input), frame);
+  }
+
+  bool RoundTripFails(scoped_refptr<VideoFrame> frame) {
+    // For a negative round trip test, the function will reduce the number of
+    // error logs when compared to RoundTrip. This makes the test output read
+    // cleaner.
+    auto message = mojom::VideoFrame::SerializeAsMessage(&frame);
+
+    // Required to pass base deserialize checks.
+    mojo::ScopedMessageHandle handle = message.TakeMojoMessage();
+    message = mojo::Message::CreateFromMessageHandle(&handle);
+
+    // Ensure deserialization fails instead of crashing.
+    scoped_refptr<VideoFrame> new_frame;
+    return false == mojom::VideoFrame::DeserializeFromMessage(
+                        std::move(message), &new_frame);
   }
 
  private:
@@ -109,10 +139,10 @@ TEST_F(VideoFrameStructTraitsTest, MappableVideoFrame) {
         frame = media::VideoFrame::CreateFrame(format, kCodedSize, kVisibleRect,
                                                kNaturalSize, kTimestamp);
       } else {
-        std::vector<int32_t> strides =
+        std::vector<size_t> strides =
             VideoFrame::ComputeStrides(format, kCodedSize);
         size_t aggregate_size = 0;
-        size_t sizes[3] = {};
+        std::array<size_t, 3> sizes = {};
         for (size_t i = 0; i < strides.size(); ++i) {
           sizes[i] = media::VideoFrame::Rows(i, format, kCodedSize.height()) *
                      strides[i];
@@ -121,7 +151,7 @@ TEST_F(VideoFrameStructTraitsTest, MappableVideoFrame) {
         region = base::ReadOnlySharedMemoryRegion::Create(aggregate_size);
         ASSERT_TRUE(region.IsValid());
 
-        uint8_t* data[3] = {};
+        std::array<uint8_t*, 3> data = {};
         data[0] = const_cast<uint8_t*>(region.mapping.GetMemoryAs<uint8_t>());
         for (size_t i = 1; i < strides.size(); ++i) {
           data[i] = data[i - 1] + sizes[i - 1];
@@ -168,11 +198,11 @@ TEST_F(VideoFrameStructTraitsTest, InterleavedPlanes) {
 
   scoped_refptr<media::VideoFrame> frame;
 
-  std::vector<int32_t> strides = VideoFrame::ComputeStrides(format, kCodedSize);
+  std::vector<size_t> strides = VideoFrame::ComputeStrides(format, kCodedSize);
   ASSERT_EQ(strides[1], strides[2]);
 
   size_t aggregate_size = 0;
-  size_t sizes[3] = {};
+  std::array<size_t, 3> sizes = {};
   for (size_t i = 0; i < strides.size(); ++i) {
     sizes[i] =
         media::VideoFrame::Rows(i, format, kCodedSize.height()) * strides[i];
@@ -182,28 +212,27 @@ TEST_F(VideoFrameStructTraitsTest, InterleavedPlanes) {
   ASSERT_TRUE(region.IsValid());
   auto mapping = region.MapAt(0, aggregate_size);
 
-  auto region_span = mapping.GetMemoryAsSpan<uint8_t>();
-  auto y_plane = region_span.first(sizes[0]);
-  std::fill(y_plane.begin(), y_plane.end(), 1);
+  auto [y_plane, uv_plane] =
+      mapping.GetMemoryAsSpan<uint8_t>().split_at(sizes[0]);
+  std::ranges::fill(y_plane, 1);
 
   // Setup memory layout where U and V planes occupy the same space, but have
-  // interleaving Y and V rows. This is achieved by doubling the stride.
-  auto u_plane = region_span.subspan(sizes[0]);
-  int32_t normal_stride = strides[1];
-  auto v_plane = u_plane.subspan(normal_stride);
-  strides[1] = strides[2] = normal_stride * 2;
+  // interleaving U and V rows. This is achieved by doubling the stride.
+  size_t normal_stride = strides[1];
+  size_t uv_stride = normal_stride * 2;
 
   int yu_rows = media::VideoFrame::Rows(1, format, kCodedSize.height());
+  auto uv_plane2 = uv_plane;  // Loop below is destructive.
   for (int i = 0; i < yu_rows; ++i) {
-    auto u_row = u_plane.subspan(i * strides[1], normal_stride);
-    std::fill(u_row.begin(), u_row.end(), 2);
-    auto v_row = v_plane.subspan(i * strides[2], normal_stride);
-    std::fill(v_row.begin(), v_row.end(), 3);
+    const auto [u, v] = uv_plane2.take_first(uv_stride).split_at(normal_stride);
+    std::ranges::fill(u, 2);
+    std::ranges::fill(v, 3);
   }
 
   frame = media::VideoFrame::WrapExternalYuvData(
-      format, kCodedSize, kVisibleRect, kNaturalSize, strides[0], strides[1],
-      strides[2], y_plane.data(), u_plane.data(), v_plane.data(), kTimestamp);
+      format, kCodedSize, kVisibleRect, kNaturalSize, strides[0], uv_stride,
+      uv_stride, y_plane.data(), uv_plane.data(),
+      uv_plane.subspan(normal_stride).data(), kTimestamp);
   auto ro_region =
       base::WritableSharedMemoryRegion::ConvertToReadOnly(std::move(region));
   frame->BackWithSharedMemory(&ro_region);
@@ -215,11 +244,20 @@ TEST_F(VideoFrameStructTraitsTest, InterleavedPlanes) {
   EXPECT_EQ(frame->format(), format);
   EXPECT_EQ(frame->coded_size(), kCodedSize);
 
+  auto plane_1 = frame->GetVisiblePlaneData(1);
+  auto plane_2 = frame->GetVisiblePlaneData(2);
+  // Bytes between the visible edge and the full stride are not considered part
+  // of the visible plane, and may not be accessible through the above spans.
+  const size_t row_bytes_1 =
+      VideoFrame::RowBytes(1, format, kCodedSize.width());
+  const size_t row_bytes_2 =
+      VideoFrame::RowBytes(2, format, kCodedSize.width());
   for (int i = 0; i < yu_rows; ++i) {
-    EXPECT_EQ(0, memcmp(frame->visible_data(1) + i * frame->stride(1),
-                        u_plane.data() + i * strides[1], normal_stride));
-    EXPECT_EQ(0, memcmp(frame->visible_data(2) + i * frame->stride(2),
-                        v_plane.data() + i * strides[2], normal_stride));
+    const auto [u, v] = uv_plane.take_first(uv_stride).split_at(normal_stride);
+    EXPECT_EQ(plane_1.subspan(i * frame->stride(1), row_bytes_1),
+              u.first(row_bytes_1));
+    EXPECT_EQ(plane_2.subspan(i * frame->stride(2), row_bytes_2),
+              v.first(row_bytes_2));
   }
 }
 
@@ -233,7 +271,7 @@ TEST_F(VideoFrameStructTraitsTest, InvalidOffsets) {
 
   auto strides = VideoFrame::ComputeStrides(kFormat, kSize);
   size_t aggregate_size = 0;
-  size_t sizes[3] = {};
+  std::array<size_t, 3> sizes = {};
   for (size_t i = 0; i < strides.size(); ++i) {
     sizes[i] = VideoFrame::Rows(i, kFormat, kSize.height()) * strides[i];
     aggregate_size += sizes[i];
@@ -242,7 +280,7 @@ TEST_F(VideoFrameStructTraitsTest, InvalidOffsets) {
   auto region = base::ReadOnlySharedMemoryRegion::Create(aggregate_size);
   ASSERT_TRUE(region.IsValid());
 
-  uint8_t* data[3] = {};
+  std::array<uint8_t*, 3> data = {};
   data[0] = const_cast<uint8_t*>(region.mapping.GetMemoryAs<uint8_t>());
   for (size_t i = 1; i < strides.size(); ++i) {
     data[i] = data[i - 1] + sizes[i];
@@ -348,44 +386,286 @@ TEST_F(VideoFrameStructTraitsTest, SharedImageVideoFrame) {
   ASSERT_EQ(frame->shared_image()->mailbox(), shared_image->mailbox());
 }
 
-// BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) because
-// media::FakeGpuMemoryBuffer supports NativePixmapHandle backed
-// GpuMemoryBufferHandle only. !BUILDFLAG(IS_OZONE) so as to force
-// GpuMemoryBufferSupport to select gfx::ClientNativePixmapFactoryDmabuf for
-// gfx::ClientNativePixmapFactory.
-// TODO(crbug.com/40286368): Allow this test without !BUILDFLAG(IS_OZONE)
-#if (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)) && !BUILDFLAG(IS_OZONE)
-TEST_F(VideoFrameStructTraitsTest, GpuMemoryBufferSharedImageVideoFrame) {
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+TEST_F(VideoFrameStructTraitsTest, DmabufsVideoFrame) {
+  constexpr gfx::Size kCodedSize = gfx::Size(256, 256);
+  constexpr gfx::Rect kVisibleRect(kCodedSize);
+  constexpr gfx::Size kNaturalSize = kCodedSize;
+  constexpr base::TimeDelta timestamp = base::Milliseconds(1);
+  constexpr VideoPixelFormat kFormat = PIXEL_FORMAT_NV12;
+
+  // Makes the "default" layout
+  constexpr int kUvWidth = (kCodedSize.width() + 1) / 2;
+  constexpr int kUvHeight = (kCodedSize.height() + 1) / 2;
+  constexpr int kUvStride = kUvWidth * 2;
+  constexpr int kUvSize = kUvStride * kUvHeight;
+  std::vector<ColorPlaneLayout> planes = std::vector<ColorPlaneLayout>{
+      ColorPlaneLayout(kCodedSize.width(), 0, kCodedSize.GetArea()),
+      ColorPlaneLayout(kUvStride, kCodedSize.GetArea(), kUvSize),
+  };
+  std::optional<VideoFrameLayout> layout = VideoFrameLayout::CreateWithPlanes(
+      kFormat, kCodedSize, std::move(planes));
+  ASSERT_TRUE(layout.has_value());
+
+  // Makes a single FD that is big enough to hold the layout.
+  std::vector<base::ScopedFD> fds;
+  fds.emplace_back(
+      CreateValidLookingBufferHandle(kCodedSize.GetArea() + kUvSize));
+  ASSERT_TRUE(fds.back().is_valid());
+  // Mojo serialization can be destructive, so we dup() the FD before
+  // serialization in order to use it later to compare it against the FD in the
+  // deserialized message.
+  std::vector<base::ScopedFD> duped_fds;
+  duped_fds.emplace_back(HANDLE_EINTR(dup(fds.back().get())));
+  ASSERT_TRUE(duped_fds.back().is_valid());
+
+  auto frame = VideoFrame::WrapExternalDmabufs(
+      *layout, kVisibleRect, kNaturalSize, std::move(fds), timestamp);
+  ASSERT_TRUE(RoundTrip(&frame));
+  ASSERT_TRUE(frame);
+  ASSERT_EQ(frame->storage_type(), VideoFrame::STORAGE_DMABUFS);
+  EXPECT_TRUE(frame->HasDmaBufs());
+  EXPECT_FALSE(frame->metadata().end_of_stream);
+  EXPECT_EQ(frame->format(), kFormat);
+  EXPECT_EQ(frame->coded_size(), kCodedSize);
+  EXPECT_EQ(frame->visible_rect(), kVisibleRect);
+  EXPECT_EQ(frame->natural_size(), kNaturalSize);
+  EXPECT_EQ(frame->timestamp(), timestamp);
+  EXPECT_EQ(frame->layout().is_multi_planar(), layout->is_multi_planar());
+  ASSERT_EQ(frame->layout().num_planes(), layout->num_planes());
+  for (size_t i = 0, num_planes = layout->num_planes(); i < num_planes; ++i) {
+    EXPECT_EQ(frame->layout().planes()[i].stride, layout->planes()[i].stride);
+    EXPECT_EQ(frame->layout().planes()[i].offset, layout->planes()[i].offset);
+    EXPECT_EQ(frame->layout().planes()[i].size, layout->planes()[i].size);
+  }
+  ASSERT_EQ(frame->NumDmabufFds(), duped_fds.size());
+  for (size_t i = 0, num_fds = duped_fds.size(); i < num_fds; ++i) {
+    const auto pid = base::Process::Current().Pid();
+    EXPECT_EQ(syscall(SYS_kcmp, pid, pid, KCMP_FILE, duped_fds[i].get(),
+                      frame->GetDmabufFd(i)),
+              0);
+  }
+}
+
+TEST_F(VideoFrameStructTraitsTest, MultiplanarDmabufsVideoFrame) {
+  constexpr gfx::Size kCodedSize = gfx::Size(256, 256);
+  constexpr gfx::Rect kVisibleRect(kCodedSize);
+  constexpr gfx::Size kNaturalSize = kCodedSize;
+  constexpr base::TimeDelta timestamp = base::Milliseconds(1);
+  constexpr VideoPixelFormat kFormat = PIXEL_FORMAT_NV12;
+
+  // Makes the "default" layout
+  constexpr int kUvWidth = (kCodedSize.width() + 1) / 2;
+  constexpr int kUvHeight = (kCodedSize.height() + 1) / 2;
+  constexpr int kUvStride = kUvWidth * 2;
+  constexpr int kUvSize = kUvStride * kUvHeight;
+  std::vector<ColorPlaneLayout> planes = std::vector<ColorPlaneLayout>{
+      ColorPlaneLayout(kCodedSize.width(), 1, kCodedSize.GetArea()),
+      ColorPlaneLayout(kUvStride, 2, kUvSize),
+  };
+  std::optional<VideoFrameLayout> layout = VideoFrameLayout::CreateMultiPlanar(
+      kFormat, kCodedSize, std::move(planes));
+  ASSERT_TRUE(layout.has_value());
+
+  // For each plane, makes an FD
+  std::vector<base::ScopedFD> fds;
+  std::vector<base::ScopedFD> duped_fds;
+  for (const auto& plane : layout->planes()) {
+    fds.emplace_back(CreateValidLookingBufferHandle(plane.offset + plane.size));
+    ASSERT_TRUE(fds.back().is_valid());
+    // Mojo serialization can be destructive, so we dup() the FD before
+    // serialization in order to use it later to compare it against the FD in
+    // the deserialized message.
+    duped_fds.emplace_back(HANDLE_EINTR(dup(fds.back().get())));
+    ASSERT_TRUE(duped_fds.back().is_valid());
+  }
+
+  auto frame = VideoFrame::WrapExternalDmabufs(
+      *layout, kVisibleRect, kNaturalSize, std::move(fds), timestamp);
+  ASSERT_TRUE(RoundTrip(&frame));
+  ASSERT_TRUE(frame);
+  ASSERT_EQ(frame->storage_type(), VideoFrame::STORAGE_DMABUFS);
+  EXPECT_TRUE(frame->HasDmaBufs());
+  EXPECT_FALSE(frame->metadata().end_of_stream);
+  EXPECT_EQ(frame->format(), kFormat);
+  EXPECT_EQ(frame->coded_size(), kCodedSize);
+  EXPECT_EQ(frame->visible_rect(), kVisibleRect);
+  EXPECT_EQ(frame->natural_size(), kNaturalSize);
+  EXPECT_EQ(frame->timestamp(), timestamp);
+  EXPECT_EQ(frame->layout().is_multi_planar(), layout->is_multi_planar());
+  ASSERT_EQ(frame->layout().num_planes(), layout->num_planes());
+  for (size_t i = 0, num_planes = layout->num_planes(); i < num_planes; ++i) {
+    EXPECT_EQ(frame->layout().planes()[i].stride, layout->planes()[i].stride);
+    EXPECT_EQ(frame->layout().planes()[i].offset, layout->planes()[i].offset);
+    EXPECT_EQ(frame->layout().planes()[i].size, layout->planes()[i].size);
+  }
+  ASSERT_EQ(frame->NumDmabufFds(), duped_fds.size());
+  for (size_t i = 0, num_fds = duped_fds.size(); i < num_fds; ++i) {
+    const auto pid = base::Process::Current().Pid();
+    EXPECT_EQ(syscall(SYS_kcmp, pid, pid, KCMP_FILE, duped_fds[i].get(),
+                      frame->GetDmabufFd(i)),
+              0);
+  }
+}
+
+TEST_F(VideoFrameStructTraitsTest, DmabufsVideoInvalidPixelFormat) {
+  constexpr gfx::Size kCodedSize = gfx::Size(256, 256);
+  constexpr gfx::Rect kVisibleRect(kCodedSize);
+  constexpr gfx::Size kNaturalSize = kCodedSize;
+  constexpr base::TimeDelta timestamp = base::Milliseconds(1);
+  constexpr VideoPixelFormat kFormat = PIXEL_FORMAT_XRGB;
+
+  // Makes the "default" layout
+  std::vector<ColorPlaneLayout> planes = std::vector<ColorPlaneLayout>{
+      ColorPlaneLayout(kCodedSize.width() * 4, 0, kCodedSize.GetArea() * 4),
+  };
+  std::optional<VideoFrameLayout> layout = VideoFrameLayout::CreateWithPlanes(
+      kFormat, kCodedSize, std::move(planes));
+  ASSERT_TRUE(layout.has_value());
+
+  // Makes a single FD that is too small to hold the layout.
+  std::vector<base::ScopedFD> fds;
+  fds.emplace_back(CreateValidLookingBufferHandle(4 * kCodedSize.GetArea()));
+  ASSERT_TRUE(fds.back().is_valid());
+
+  auto frame = VideoFrame::WrapExternalDmabufs(
+      *layout, kVisibleRect, kNaturalSize, std::move(fds), timestamp);
+  ASSERT_TRUE(frame);
+
+  // Ensure deserialization fails instead of crashing.
+  EXPECT_TRUE(RoundTripFails(std::move(frame)));
+}
+
+TEST_F(VideoFrameStructTraitsTest, DmabufsVideoNondecreasingStrides) {
+  constexpr gfx::Size kCodedSize = gfx::Size(256, 256);
+  constexpr gfx::Rect kVisibleRect(kCodedSize);
+  constexpr gfx::Size kNaturalSize = kCodedSize;
+  constexpr base::TimeDelta timestamp = base::Milliseconds(1);
+  constexpr VideoPixelFormat kFormat = PIXEL_FORMAT_NV12;
+
+  // Makes the "default" layout
+  constexpr int kUvWidth = (kCodedSize.width() + 1) / 2;
+  constexpr int kUvHeight = (kCodedSize.height() + 1) / 2;
+  constexpr int kUvStride = kUvWidth * 2;
+  constexpr int kUvSize = kUvStride * kUvHeight;
+  // Mess up the firs plane width
+  std::vector<ColorPlaneLayout> planes = std::vector<ColorPlaneLayout>{
+      ColorPlaneLayout(1, 0, kCodedSize.GetArea()),
+      ColorPlaneLayout(kUvStride, kCodedSize.GetArea(), kUvSize),
+  };
+  std::optional<VideoFrameLayout> layout = VideoFrameLayout::CreateWithPlanes(
+      kFormat, kCodedSize, std::move(planes));
+  ASSERT_TRUE(layout.has_value());
+
+  // Makes a single FD that is too small to hold the layout.
+  std::vector<base::ScopedFD> fds;
+  fds.emplace_back(CreateValidLookingBufferHandle(kCodedSize.GetArea()));
+  ASSERT_TRUE(fds.back().is_valid());
+
+  auto frame = VideoFrame::WrapExternalDmabufs(
+      *layout, kVisibleRect, kNaturalSize, std::move(fds), timestamp);
+
+  // Ensure deserialization fails instead of crashing.
+  EXPECT_TRUE(RoundTripFails(std::move(frame)));
+}
+
+TEST_F(VideoFrameStructTraitsTest, DmabufsVideoInvalidStrides) {
+  constexpr gfx::Size kCodedSize = gfx::Size(256, 256);
+  constexpr gfx::Rect kVisibleRect(kCodedSize);
+  constexpr gfx::Size kNaturalSize = kCodedSize;
+  constexpr base::TimeDelta timestamp = base::Milliseconds(1);
+  constexpr VideoPixelFormat kFormat = PIXEL_FORMAT_NV12;
+
+  // Makes the "default" layout
+  constexpr int kUvWidth = (kCodedSize.width() + 1) / 2;
+  constexpr int kUvHeight = (kCodedSize.height() + 1) / 2;
+  constexpr int kUvStride = kUvWidth * 2;
+  constexpr int kUvSize = kUvStride * kUvHeight;
+  // Reverse the plane layout.
+  std::vector<ColorPlaneLayout> planes = std::vector<ColorPlaneLayout>{
+      ColorPlaneLayout(kUvStride, kCodedSize.GetArea(), kUvSize),
+      ColorPlaneLayout(kCodedSize.width(), 0, kCodedSize.GetArea()),
+  };
+  std::optional<VideoFrameLayout> layout = VideoFrameLayout::CreateWithPlanes(
+      kFormat, kCodedSize, std::move(planes));
+  ASSERT_TRUE(layout.has_value());
+
+  // Makes a single FD that is too small to hold the layout.
+  std::vector<base::ScopedFD> fds;
+  fds.emplace_back(CreateValidLookingBufferHandle(kCodedSize.GetArea()));
+  ASSERT_TRUE(fds.back().is_valid());
+
+  auto frame = VideoFrame::WrapExternalDmabufs(
+      *layout, kVisibleRect, kNaturalSize, std::move(fds), timestamp);
+
+  // Ensure deserialization fails instead of crashing.
+  EXPECT_TRUE(RoundTripFails(std::move(frame)));
+}
+
+TEST_F(VideoFrameStructTraitsTest, DmabufsVideoFrameTooSmall) {
+  constexpr gfx::Size kCodedSize = gfx::Size(256, 256);
+  constexpr gfx::Rect kVisibleRect(kCodedSize);
+  constexpr gfx::Size kNaturalSize = kCodedSize;
+  constexpr base::TimeDelta timestamp = base::Milliseconds(1);
+  constexpr VideoPixelFormat kFormat = PIXEL_FORMAT_NV12;
+
+  // Makes the "default" layout
+  constexpr int kUvWidth = (kCodedSize.width() + 1) / 2;
+  constexpr int kUvHeight = (kCodedSize.height() + 1) / 2;
+  constexpr int kUvStride = kUvWidth * 2;
+  constexpr int kUvSize = kUvStride * kUvHeight;
+  std::vector<ColorPlaneLayout> planes = std::vector<ColorPlaneLayout>{
+      ColorPlaneLayout(kCodedSize.width(), 0, kCodedSize.GetArea()),
+      ColorPlaneLayout(kUvStride, kCodedSize.GetArea(), kUvSize),
+  };
+  std::optional<VideoFrameLayout> layout = VideoFrameLayout::CreateWithPlanes(
+      kFormat, kCodedSize, std::move(planes));
+  ASSERT_TRUE(layout.has_value());
+
+  // Makes a single FD that is too small to hold the layout.
+  std::vector<base::ScopedFD> fds;
+  fds.emplace_back(CreateValidLookingBufferHandle(kCodedSize.GetArea()));
+  ASSERT_TRUE(fds.back().is_valid());
+
+  auto frame = VideoFrame::WrapExternalDmabufs(
+      *layout, kVisibleRect, kNaturalSize, std::move(fds), timestamp);
+  ASSERT_TRUE(frame);
+
+  // Ensure deserialization fails instead of crashing.
+  EXPECT_TRUE(RoundTripFails(std::move(frame)));
+}
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+
+TEST_F(VideoFrameStructTraitsTest, MappableSharedImageVideoFrame) {
+  auto test_sii = base::MakeRefCounted<gpu::TestSharedImageInterface>();
+  test_sii->UseTestGMBInSharedImageCreationWithBufferUsage();
   gfx::Size coded_size = gfx::Size(256, 256);
   gfx::Rect visible_rect(coded_size);
   auto timestamp = base::Milliseconds(1);
-  std::unique_ptr<gfx::GpuMemoryBuffer> gmb =
-      std::make_unique<FakeGpuMemoryBuffer>(
-          coded_size, gfx::BufferFormat::YUV_420_BIPLANAR);
-  gfx::BufferFormat expected_gmb_format = gmb->GetFormat();
-  gfx::Size expected_gmb_size = gmb->GetSize();
-  scoped_refptr<gpu::ClientSharedImage> shared_image =
-      gpu::ClientSharedImage::CreateForTesting();
-  auto frame = VideoFrame::WrapExternalGpuMemoryBuffer(
-      visible_rect, visible_rect.size(), std::move(gmb), shared_image,
-      gpu::SyncToken(), base::NullCallback(), timestamp);
+  auto si_format = viz::SinglePlaneFormat::kRGBA_8888;
+  const auto si_usage = gpu::SHARED_IMAGE_USAGE_CPU_WRITE_ONLY |
+                        gpu::SHARED_IMAGE_USAGE_DISPLAY_READ;
+  auto shared_image = test_sii->CreateSharedImage(
+      {si_format, coded_size, gfx::ColorSpace(),
+       gpu::SharedImageUsageSet(si_usage), "VideoFrameStructTraitsTest"},
+      gpu::kNullSurfaceHandle, gfx::BufferUsage::GPU_READ);
+  ASSERT_TRUE(shared_image);
+  auto frame = VideoFrame::WrapMappableSharedImage(
+      shared_image, test_sii->GenVerifiedSyncToken(), base::NullCallback(),
+      visible_rect, visible_rect.size(), timestamp);
+  ASSERT_TRUE(frame);
   ASSERT_TRUE(RoundTrip(&frame));
   ASSERT_TRUE(frame);
   ASSERT_EQ(frame->storage_type(), VideoFrame::STORAGE_GPU_MEMORY_BUFFER);
   EXPECT_TRUE(frame->HasMappableGpuBuffer());
   EXPECT_FALSE(frame->metadata().end_of_stream);
-  EXPECT_EQ(frame->format(), PIXEL_FORMAT_NV12);
+  EXPECT_EQ(frame->format(), PIXEL_FORMAT_ABGR);
   EXPECT_EQ(frame->coded_size(), coded_size);
   EXPECT_EQ(frame->visible_rect(), visible_rect);
   EXPECT_EQ(frame->natural_size(), visible_rect.size());
   EXPECT_EQ(frame->timestamp(), timestamp);
   ASSERT_TRUE(frame->HasSharedImage());
-  EXPECT_EQ(frame->mailbox_holder(0).mailbox, shared_image->mailbox());
-  EXPECT_EQ(frame->GetGpuMemoryBufferForTesting()->GetFormat(),
-            expected_gmb_format);
-  EXPECT_EQ(frame->GetGpuMemoryBufferForTesting()->GetSize(),
-            expected_gmb_size);
+  ASSERT_EQ(frame->shared_image()->mailbox(), shared_image->mailbox());
 }
-#endif  // (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)) &&
-        // !BUILDFLAG(IS_OZONE)
+
 }  // namespace media

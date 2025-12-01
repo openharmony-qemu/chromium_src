@@ -13,6 +13,7 @@
 #include "quiche/quic/core/crypto/crypto_protocol.h"
 #include "quiche/quic/core/crypto/transport_parameters.h"
 #include "quiche/quic/core/quic_constants.h"
+#include "quiche/quic/core/quic_error_codes.h"
 #include "quiche/quic/core/quic_packets.h"
 #include "quiche/quic/core/quic_time.h"
 #include "quiche/quic/core/quic_types.h"
@@ -244,7 +245,7 @@ TEST_P(QuicConfigTest, MissingOptionalValuesInCHLO) {
 
   // Set all REQUIRED tags.
   msg.SetValue(kICSL, 1);
-  msg.SetValue(kMIBS, 1);
+  msg.SetValue(kMIDS, 1);
 
   // No error, as rest are optional.
   std::string error_details;
@@ -263,7 +264,7 @@ TEST_P(QuicConfigTest, MissingOptionalValuesInSHLO) {
 
   // Set all REQUIRED tags.
   msg.SetValue(kICSL, 1);
-  msg.SetValue(kMIBS, 1);
+  msg.SetValue(kMIDS, 1);
 
   // No error, as rest are optional.
   std::string error_details;
@@ -439,7 +440,7 @@ TEST_P(QuicConfigTest, IncomingLargeIdleTimeoutTransportParameter) {
             config_.IdleNetworkTimeout());
 }
 
-TEST_P(QuicConfigTest, ReceivedInvalidMinAckDelayInTransportParameter) {
+TEST_P(QuicConfigTest, ReceivedInvalidMinAckDelayDraft10InTransportParameter) {
   if (!version_.UsesTls()) {
     // TransportParameters are only used for QUIC+TLS.
     return;
@@ -447,7 +448,7 @@ TEST_P(QuicConfigTest, ReceivedInvalidMinAckDelayInTransportParameter) {
   TransportParameters params;
 
   params.max_ack_delay.set_value(25 /*ms*/);
-  params.min_ack_delay_us.set_value(25 * kNumMicrosPerMilli + 1);
+  params.min_ack_delay_us_draft10 = 25 * kNumMicrosPerMilli + 1;
   std::string error_details = "foobar";
   EXPECT_THAT(config_.ProcessTransportParameters(
                   params, /* is_resumption = */ false, &error_details),
@@ -455,7 +456,7 @@ TEST_P(QuicConfigTest, ReceivedInvalidMinAckDelayInTransportParameter) {
   EXPECT_EQ("MinAckDelay is greater than MaxAckDelay.", error_details);
 
   params.max_ack_delay.set_value(25 /*ms*/);
-  params.min_ack_delay_us.set_value(25 * kNumMicrosPerMilli);
+  params.min_ack_delay_us_draft10 = 25 * kNumMicrosPerMilli;
   EXPECT_THAT(config_.ProcessTransportParameters(
                   params, /* is_resumption = */ false, &error_details),
               IsQuicNoError());
@@ -482,7 +483,7 @@ TEST_P(QuicConfigTest, FillTransportParams) {
   config_.SetOriginalConnectionIdToSend(TestConnectionId(0x1111));
   config_.SetInitialSourceConnectionIdToSend(TestConnectionId(0x2222));
   config_.SetRetrySourceConnectionIdToSend(TestConnectionId(0x3333));
-  config_.SetMinAckDelayMs(kDefaultMinAckDelayTimeMs);
+  config_.SetMinAckDelayDraft10Ms(kDefaultMinAckDelayTimeMs);
   config_.SetDiscardLengthToSend(kDiscardLength);
   config_.SetGoogleHandshakeMessageToSend(kFakeGoogleHandshakeMessage);
   config_.SetReliableStreamReset(true);
@@ -536,7 +537,7 @@ TEST_P(QuicConfigTest, FillTransportParams) {
 
   EXPECT_EQ(
       static_cast<uint64_t>(kDefaultMinAckDelayTimeMs) * kNumMicrosPerMilli,
-      params.min_ack_delay_us.value());
+      *params.min_ack_delay_us_draft10);
 
   EXPECT_EQ(params.preferred_address->ipv4_socket_address, kTestServerAddress);
   EXPECT_EQ(params.preferred_address->ipv6_socket_address,
@@ -673,7 +674,7 @@ TEST_P(QuicConfigTest, ProcessTransportParametersServer) {
   params.initial_max_streams_bidi.set_value(kDefaultMaxStreamsPerConnection);
   params.stateless_reset_token = CreateStatelessResetTokenForTest();
   params.max_ack_delay.set_value(kMaxAckDelayForTest);
-  params.min_ack_delay_us.set_value(kMinAckDelayUsForTest);
+  params.min_ack_delay_us_draft10 = kMinAckDelayUsForTest;
   params.ack_delay_exponent.set_value(kAckDelayExponentForTest);
   params.active_connection_id_limit.set_value(kActiveConnectionIdLimitForTest);
   params.original_destination_connection_id = TestConnectionId(0x1111);
@@ -721,7 +722,7 @@ TEST_P(QuicConfigTest, ProcessTransportParametersServer) {
   EXPECT_FALSE(config_.HasReceivedStatelessResetToken());
   EXPECT_FALSE(config_.HasReceivedMaxAckDelayMs());
   EXPECT_FALSE(config_.HasReceivedAckDelayExponent());
-  EXPECT_FALSE(config_.HasReceivedMinAckDelayMs());
+  EXPECT_FALSE(config_.HasReceivedMinAckDelayDraft10Ms());
   EXPECT_FALSE(config_.HasReceivedOriginalConnectionId());
   EXPECT_FALSE(config_.HasReceivedInitialSourceConnectionId());
   EXPECT_FALSE(config_.HasReceivedRetrySourceConnectionId());
@@ -780,8 +781,8 @@ TEST_P(QuicConfigTest, ProcessTransportParametersServer) {
   ASSERT_TRUE(config_.HasReceivedMaxAckDelayMs());
   EXPECT_EQ(config_.ReceivedMaxAckDelayMs(), kMaxAckDelayForTest);
 
-  ASSERT_TRUE(config_.HasReceivedMinAckDelayMs());
-  EXPECT_EQ(config_.ReceivedMinAckDelayMs(),
+  ASSERT_TRUE(config_.HasReceivedMinAckDelayDraft10Ms());
+  EXPECT_EQ(config_.ReceivedMinAckDelayDraft10Ms(),
             kMinAckDelayUsForTest / kNumMicrosPerMilli);
 
   ASSERT_TRUE(config_.HasReceivedAckDelayExponent());

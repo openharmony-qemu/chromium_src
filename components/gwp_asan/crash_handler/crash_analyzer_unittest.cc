@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/390223051): Remove C-library calls to fix the errors.
+#pragma allow_unsafe_libc_calls
+#endif
+
 #include "components/gwp_asan/crash_handler/crash_analyzer.h"
 
 #include <cstdint>
@@ -36,7 +41,8 @@
 #include "third_party/crashpad/crashpad/test/process_type.h"
 #include "third_party/crashpad/crashpad/util/process/process_memory_native.h"
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
 #include "third_party/crashpad/crashpad/test/linux/fake_ptrace_connection.h"
 #endif
 
@@ -54,7 +60,8 @@ void SetNonCanonicalAccessAddress(
   memset(context->x86_64, 0, sizeof(*context->x86_64));
 #endif  // defined(ARCH_CPU_X86_64)
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
+    BUILDFLAG(IS_OHOS)
   exception.SetException(SIGSEGV);
 #if defined(ARCH_CPU_X86_64)
   exception.SetExceptionInfo(SI_KERNEL);
@@ -98,19 +105,20 @@ class BaseCrashAnalyzerTest : public testing::Test {
   BaseCrashAnalyzerTest(bool is_partition_alloc,
                         LightweightDetectorMode lightweight_detector_mode)
       : is_partition_alloc_(is_partition_alloc),
-        lightweight_detector_enabled_(lightweight_detector_mode !=
-                                      LightweightDetectorMode::kOff) {
-    gpa_.Init(
+        lightweight_detector_mode_(lightweight_detector_mode) {}
+
+  void SetUp() override {
+    ASSERT_TRUE(gpa_.Init(
         AllocatorSettings{
             .max_allocated_pages = 1u,
             .num_metadata = 1u,
             .total_pages = 1u,
             .sampling_frequency = 0u,
         },
-        base::DoNothing(), is_partition_alloc);
-    if (lightweight_detector_enabled_) {
+        base::DoNothing(), is_partition_alloc_));
+    if (lightweight_detector_mode_ != LightweightDetectorMode::kOff) {
       lud::PoisonMetadataRecorder::ResetForTesting();
-      lud::PoisonMetadataRecorder::Init(lightweight_detector_mode, 1);
+      lud::PoisonMetadataRecorder::Init(lightweight_detector_mode_, 1);
     }
   }
 
@@ -128,7 +136,7 @@ class BaseCrashAnalyzerTest : public testing::Test {
     append_annotation(
         is_partition_alloc_ ? kPartitionAllocCrashKey : kMallocCrashKey,
         gpa_.GetCrashKey());
-    if (lightweight_detector_enabled_) {
+    if (lightweight_detector_mode_ != LightweightDetectorMode::kOff) {
       append_annotation(kLightweightDetectorCrashKey,
                         lud::PoisonMetadataRecorder::Get()->GetCrashKey());
     }
@@ -147,7 +155,8 @@ class BaseCrashAnalyzerTest : public testing::Test {
 #endif
     SetNonCanonicalAccessAddress(*exception, exception_address);
 
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
     ASSERT_TRUE(connection_.Initialize(getpid()));
     auto memory = std::make_unique<crashpad::ProcessMemoryLinux>(&connection_);
 #else
@@ -163,12 +172,13 @@ class BaseCrashAnalyzerTest : public testing::Test {
 
   GuardedPageAllocator gpa_;
   crashpad::test::TestProcessSnapshot process_snapshot_;
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_OHOS)
   crashpad::test::FakePtraceConnection connection_;
 #endif
 
   bool is_partition_alloc_;
-  bool lightweight_detector_enabled_;
+  LightweightDetectorMode lightweight_detector_mode_;
 };
 
 class CrashAnalyzerTest : public BaseCrashAnalyzerTest {
@@ -216,7 +226,7 @@ TEST_F(CrashAnalyzerTest, DISABLED_StackTraceCollection) {
     if (trace[0] == __builtin_return_address(0))
       break;
 
-    trace = trace.subspan(1);
+    trace = trace.subspan<1>();
   }
 
   ASSERT_GT(proto.allocation().stack_trace_size(),

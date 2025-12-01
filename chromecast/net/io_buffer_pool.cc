@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
+#pragma allow_unsafe_buffers
+#endif
+
 #include "chromecast/net/io_buffer_pool.h"
 
 #include <new>
@@ -90,8 +95,7 @@ class IOBufferPool::Internal {
 
 class IOBufferPool::Internal::Buffer : public net::IOBuffer {
  public:
-  Buffer(char* data, size_t size)
-      : net::IOBuffer(base::make_span(data, size)) {}
+  Buffer(char* data, size_t size) : net::IOBuffer(base::span(data, size)) {}
 
   Buffer(const Buffer&) = delete;
   Buffer& operator=(const Buffer&) = delete;

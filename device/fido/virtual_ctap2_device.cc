@@ -9,6 +9,7 @@
 
 #include "device/fido/virtual_ctap2_device.h"
 
+#include <algorithm>
 #include <array>
 #include <memory>
 #include <set>
@@ -19,9 +20,8 @@
 #include "base/containers/span.h"
 #include "base/functional/bind.h"
 #include "base/logging.h"
-#include "base/not_fatal_until.h"
+#include "base/numerics/byte_conversions.h"
 #include "base/numerics/safe_conversions.h"
-#include "base/ranges/algorithm.h"
 #include "base/strings/strcat.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/task/single_thread_task_runner.h"
@@ -29,6 +29,8 @@
 #include "components/cbor/reader.h"
 #include "components/cbor/writer.h"
 #include "crypto/ec_private_key.h"
+#include "crypto/hash.h"
+#include "crypto/sha2.h"
 #include "device/fido/authenticator_get_assertion_response.h"
 #include "device/fido/authenticator_make_credential_response.h"
 #include "device/fido/authenticator_supported_options.h"
@@ -47,11 +49,9 @@
 #include "device/fido/public_key.h"
 #include "device/fido/virtual_u2f_device.h"
 #include "third_party/boringssl/src/include/openssl/aes.h"
-#include "third_party/boringssl/src/include/openssl/digest.h"
 #include "third_party/boringssl/src/include/openssl/ec.h"
 #include "third_party/boringssl/src/include/openssl/ec_key.h"
 #include "third_party/boringssl/src/include/openssl/evp.h"
-#include "third_party/boringssl/src/include/openssl/hmac.h"
 #include "third_party/boringssl/src/include/openssl/mem.h"
 #include "third_party/boringssl/src/include/openssl/rand.h"
 #include "third_party/boringssl/src/include/openssl/sha.h"
@@ -507,7 +507,7 @@ std::vector<uint8_t> GenerateAndEncryptToken(
 
 bool CheckCredentialListForExtraKeys(
     base::span<const PublicKeyCredentialDescriptor> creds) {
-  if (base::ranges::any_of(
+  if (std::ranges::any_of(
           creds, [](const auto& cred) { return cred.had_other_keys; })) {
     LOG(ERROR) << "A PublicKeyCredentialDescriptor contained unexpected CBOR "
                   "keys. This is believed to trigger bugs in some security "
@@ -516,29 +516,6 @@ bool CheckCredentialListForExtraKeys(
   }
 
   return true;
-}
-
-std::vector<uint8_t> EvaluateHMAC(
-    base::span<const uint8_t> hmac_key,
-    const std::array<uint8_t, 32>& hmac_salt1,
-    const std::optional<std::array<uint8_t, 32>>& hmac_salt2) {
-  uint8_t hmac_result[SHA256_DIGEST_LENGTH];
-  unsigned hmac_out_length;
-  HMAC(EVP_sha256(), hmac_key.data(), hmac_key.size(), hmac_salt1.data(),
-       hmac_salt1.size(), hmac_result, &hmac_out_length);
-  CHECK_EQ(hmac_out_length, sizeof(hmac_result));
-
-  std::vector<uint8_t> outputs;
-  outputs.insert(outputs.end(), std::begin(hmac_result), std::end(hmac_result));
-
-  if (hmac_salt2) {
-    HMAC(EVP_sha256(), hmac_key.data(), hmac_key.size(), hmac_salt2->data(),
-         hmac_salt2->size(), hmac_result, &hmac_out_length);
-    CHECK_EQ(hmac_out_length, sizeof(hmac_result));
-    outputs.insert(outputs.end(), std::begin(hmac_result),
-                   std::end(hmac_result));
-  }
-  return outputs;
 }
 
 }  // namespace
@@ -728,7 +705,7 @@ VirtualCtap2Device::VirtualCtap2Device(scoped_refptr<State> state,
 
   if (!config.advertised_algorithms.empty()) {
     device_info_->algorithms.emplace();
-    base::ranges::transform(
+    std::ranges::transform(
         config.advertised_algorithms,
         std::back_inserter(device_info_->algorithms.value()),
         [](auto algo) { return static_cast<int32_t>(algo); });
@@ -821,7 +798,7 @@ FidoDevice::CancelToken VirtualCtap2Device::DeviceTransact(
     return 0;
   }
 
-  const auto request_bytes = base::make_span(command).subspan(1);
+  const auto request_bytes = base::span(command).subspan<1>();
   CtapDeviceResponseCode response_code =
       CtapDeviceResponseCode::kCtap1ErrInvalidCommand;
   std::vector<uint8_t> response_data;
@@ -1137,7 +1114,7 @@ std::optional<CtapDeviceResponseCode> VirtualCtap2Device::OnMakeCredential(
   }
 
   // 6. Check for already registered credentials.
-  const auto rp_id_hash = fido_parsing_utils::CreateSHA256Hash(request.rp.id);
+  const auto rp_id_hash = crypto::hash::Sha256(request.rp.id);
   if ((config_.reject_large_allow_and_exclude_lists &&
        request.exclude_list.size() > 1) ||
       (config_.max_credential_count_in_list &&
@@ -1430,8 +1407,7 @@ std::optional<CtapDeviceResponseCode> VirtualCtap2Device::OnMakeCredential(
       const std::array<uint8_t, 32>& hmac_key =
           user_verified ? registration.hmac_key->second
                         : registration.hmac_key->first;
-      prf_results = EvaluateHMAC(hmac_key, request.prf_input->salt1,
-                                 request.prf_input->salt2);
+      prf_results = request.prf_input->EvaluateHMAC(hmac_key);
     }
   }
 
@@ -1489,7 +1465,7 @@ std::optional<CtapDeviceResponseCode> VirtualCtap2Device::OnGetAssertion(
     return CtapDeviceResponseCode::kCtap2ErrNoCredentials;
   }
 
-  const auto rp_id_hash = fido_parsing_utils::CreateSHA256Hash(request.rp_id);
+  const auto rp_id_hash = crypto::hash::Sha256(request.rp_id);
 
   std::vector<std::pair<base::span<const uint8_t>, RegistrationData*>>
       found_registrations;
@@ -1683,7 +1659,7 @@ std::optional<CtapDeviceResponseCode> VirtualCtap2Device::OnGetAssertion(
       const std::array<uint8_t, 32>& hmac_key =
           user_verified ? hmac_keys.second : hmac_keys.first;
       const std::vector<uint8_t> outputs =
-          EvaluateHMAC(hmac_key, *hmac_salt1, hmac_salt2);
+          PRFInput::EvaluateHMAC(hmac_key, *hmac_salt1, hmac_salt2);
 
       std::vector<uint8_t> encrypted_outputs =
           pin::ProtocolVersion(*request.pin_protocol)
@@ -1800,8 +1776,7 @@ std::optional<CtapDeviceResponseCode> VirtualCtap2Device::OnGetAssertion(
 
       if (selected_input) {
         assertion.hmac_secret =
-            EvaluateHMAC(registration.second->hmac_key->second,
-                         selected_input->salt1, selected_input->salt2);
+            selected_input->EvaluateHMAC(registration.second->hmac_key->second);
       }
     }
 
@@ -2170,7 +2145,7 @@ CtapDeviceResponseCode VirtualCtap2Device::OnCredentialManagement(
         return pin_status;
       }
 
-      const size_t num_resident = base::ranges::count_if(
+      const size_t num_resident = std::ranges::count_if(
           mutable_state()->registrations,
           [](const auto& it) { return it.second.is_resident; });
       response_map.emplace(
@@ -2682,14 +2657,15 @@ CtapDeviceResponseCode VirtualCtap2Device::OnLargeBlobs(
     }
     cbor::Value::MapValue response_map;
 
-    auto subspan = base::make_span(mutable_state()->large_blob).subspan(offset);
+    auto subspan = base::span(mutable_state()->large_blob)
+                       .subspan(static_cast<size_t>(offset));
     response_map.emplace(static_cast<uint8_t>(LargeBlobsResponseKey::kConfig),
-                         subspan.first(std::min<size_t>(get, subspan.size())));
+                         subspan.first(std::min(get, subspan.size())));
 
     *response =
         cbor::Writer::Write(cbor::Value(std::move(response_map))).value();
   } else {
-    CHECK(set_it != request_map.end(), base::NotFatalUntil::M130);
+    CHECK(set_it != request_map.end());
     const std::vector<uint8_t>& set = set_it->second.GetBytestring();
     if (set.size() > max_fragment_length) {
       return CtapDeviceResponseCode::kCtap1ErrInvalidLength;
@@ -2740,7 +2716,7 @@ CtapDeviceResponseCode VirtualCtap2Device::OnLargeBlobs(
                            pin::kPinUvAuthTokenSafetyPadding.end());
       pinauth_bytes.insert(pinauth_bytes.end(), kLargeBlobPinPrefix.begin(),
                            kLargeBlobPinPrefix.end());
-      auto offset_vec = fido_parsing_utils::Uint32LittleEndian(offset);
+      auto offset_vec = base::U32ToLittleEndian(offset);
       pinauth_bytes.insert(pinauth_bytes.end(), offset_vec.begin(),
                            offset_vec.end());
       std::array<uint8_t, crypto::kSHA256Length> set_hash =
@@ -2806,8 +2782,8 @@ void VirtualCtap2Device::InitPendingRegistrations(
   request_state_.Reset();
   for (const auto& registration : mutable_state()->registrations) {
     if (!registration.second.is_resident ||
-        !base::ranges::equal(rp_id_hash,
-                             registration.second.application_parameter)) {
+        !std::ranges::equal(rp_id_hash,
+                            registration.second.application_parameter)) {
       continue;
     }
     DCHECK(!registration.second.is_u2f && registration.second.user &&
@@ -2851,8 +2827,7 @@ void VirtualCtap2Device::GetNextRP(cbor::Value::MapValue* response_map) {
                       config_.allow_invalid_utf8_in_credential_entities));
   response_map->emplace(
       static_cast<int>(CredentialManagementResponseKey::kRPIDHash),
-      fido_parsing_utils::CreateSHA256Hash(
-          request_state_.pending_rps.front().id));
+      crypto::hash::Sha256(request_state_.pending_rps.front().id));
   request_state_.pending_rps.pop_front();
 }
 
@@ -2892,10 +2867,10 @@ size_t VirtualCtap2Device::remaining_resident_credentials() const {
 }
 
 bool VirtualCtap2Device::SupportsAtLeast(Ctap2Version ctap2_version) const {
-  return base::ranges::any_of(config_.ctap2_versions,
-                              [ctap2_version](const Ctap2Version& version) {
-                                return version >= ctap2_version;
-                              });
+  return std::ranges::any_of(config_.ctap2_versions,
+                             [ctap2_version](const Ctap2Version& version) {
+                               return version >= ctap2_version;
+                             });
 }
 
 }  // namespace device

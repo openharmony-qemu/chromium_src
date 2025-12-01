@@ -1,10 +1,10 @@
 Package: libcupsimage2-dev
 Source: cups
-Version: 2.3.3op2-3+deb11u2
+Version: 2.3.3op2-3+deb11u8
 Architecture: i386
 Maintainer: Debian Printing Team <debian-printing@lists.debian.org>
 Installed-Size: 36
-Depends: libcups2-dev (= 2.3.3op2-3+deb11u2), libcupsimage2 (= 2.3.3op2-3+deb11u2), libjpeg-dev, libpng-dev, libtiff-dev, zlib1g-dev
+Depends: libcups2-dev (= 2.3.3op2-3+deb11u8), libcupsimage2 (= 2.3.3op2-3+deb11u8), libjpeg-dev, libpng-dev, libtiff-dev, zlib1g-dev
 Recommends: libcupsfilters-dev
 Section: libdevel
 Priority: optional

@@ -98,6 +98,7 @@ if (enable_pdf) {
       "metrics_handler.h",
       "page_orientation.cc",
       "page_orientation.h",
+      "page_rotation.h",
       "paint_aggregator.cc",
       "paint_aggregator.h",
       "paint_manager.cc",
@@ -139,6 +140,10 @@ if (enable_pdf) {
       "pdfium/pdfium_print.h",
       "pdfium/pdfium_range.cc",
       "pdfium/pdfium_range.h",
+      "pdfium/pdfium_rotation.cc",
+      "pdfium/pdfium_rotation.h",
+      "pdfium/pdfium_text_fragment_finder.cc",
+      "pdfium/pdfium_text_fragment_finder.h",
       "pdfium/pdfium_unsupported_features.cc",
       "pdfium/pdfium_unsupported_features.h",
       "preview_mode_client.cc",
@@ -220,6 +225,7 @@ if (enable_pdf) {
       sources += [
         "draw_utils/page_boundary_intersect.cc",
         "draw_utils/page_boundary_intersect.h",
+        "pdf_ink_annotation_mode.h",
         "pdf_ink_brush.cc",
         "pdf_ink_brush.h",
         "pdf_ink_constants.h",
@@ -228,6 +234,8 @@ if (enable_pdf) {
         "pdf_ink_cursor.cc",
         "pdf_ink_cursor.h",
         "pdf_ink_ids.h",
+        "pdf_ink_metrics_handler.cc",
+        "pdf_ink_metrics_handler.h",
         "pdf_ink_module.cc",
         "pdf_ink_module.h",
         "pdf_ink_module_client.h",
@@ -255,6 +263,7 @@ if (enable_pdf) {
       ]
 
       public_deps += [ "//services/screen_ai/public/mojom" ]
+      deps += [ "//services/screen_ai/public/cpp:utilities" ]
 
       if (is_chromeos) {
         sources += [
@@ -323,6 +332,7 @@ if (enable_pdf) {
 
     deps = [
       "//base",
+      "//services/screen_ai/buildflags",
       "//skia",
       "//ui/gfx/geometry",
     ]
@@ -430,6 +440,8 @@ if (enable_pdf) {
       "pdf_view_web_plugin_unittest.cc",
       "pdfium/accessibility_unittest.cc",
       "pdfium/findtext_unittest.cc",
+      "pdfium/pdfium_draw_selection_test_base.cc",
+      "pdfium/pdfium_draw_selection_test_base.h",
       "pdfium/pdfium_engine_exports_unittest.cc",
       "pdfium/pdfium_engine_unittest.cc",
       "pdfium/pdfium_form_filler_unittest.cc",
@@ -441,6 +453,7 @@ if (enable_pdf) {
       "pdfium/pdfium_test_base.h",
       "pdfium/pdfium_test_helpers.cc",
       "pdfium/pdfium_test_helpers.h",
+      "pdfium/pdfium_text_fragment_finder_unittest.cc",
       "test/run_all_unittests.cc",
       "ui/document_properties_unittest.cc",
       "ui/file_name_unittest.cc",

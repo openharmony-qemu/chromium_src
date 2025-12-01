@@ -18,7 +18,6 @@
 #include "ash/wm/window_preview_view.h"
 #include "ash/wm/window_util.h"
 #include "ash/wm/wm_constants.h"
-#include "chromeos/constants/chromeos_features.h"
 #include "ui/accessibility/ax_action_data.h"
 #include "ui/aura/window.h"
 #include "ui/base/l10n/l10n_util.h"
@@ -83,6 +82,9 @@ WindowCycleItemView::WindowCycleItemView(aura::Window* window)
   // to make this a layer.
   SetPaintToLayer();
   layer()->SetFillsBoundsOpaquely(false);
+
+  layer_tree_synchronizer_ =
+      std::make_unique<LayerTreeSynchronizer>(/*restore_tree=*/false);
 }
 
 WindowCycleItemView::~WindowCycleItemView() = default;
@@ -142,15 +144,6 @@ void WindowCycleItemView::Layout(PassKey) {
   SetBackdropVisibility(preview_max_bounds.size() !=
                         preview_area_bounds.size());
 
-  if (!chromeos::features::IsRoundedWindowsEnabled()) {
-    return;
-  }
-
-  if (!layer_tree_synchronizer_) {
-    layer_tree_synchronizer_ = std::make_unique<ScopedLayerTreeSynchronizer>(
-        layer(), /*restore_tree=*/false);
-  }
-
   // In order to draw the final result without requiring the rendering of
   // surfaces, the rounded corners bounds of the layer tree, that is rooted at
   // WindowCycleItemView, are synchronized.
@@ -160,7 +153,7 @@ void WindowCycleItemView::Layout(PassKey) {
   // surfaces would be necessary. However, by matching (synchronizing) the
   // radii, the need for render surfaces is eliminated.
   layer_tree_synchronizer_->SynchronizeRoundedCorners(
-      layer(),
+      layer(), /*root_layer=*/layer(),
       gfx::RRectF(gfx::RectF(preview_max_bounds),
                   window_util::GetMiniWindowRoundedCorners(
                       source_window(), /*include_header_rounding=*/false)));
@@ -305,10 +298,10 @@ void GroupContainerCycleView::OnAccessibleIgnoredStateChanged(
 }
 
 bool GroupContainerCycleView::Contains(aura::Window* window) const {
-  return base::ranges::any_of(mini_views_,
-                              [window](const WindowCycleItemView* mini_view) {
-                                return mini_view->Contains(window);
-                              });
+  return std::ranges::any_of(mini_views_,
+                             [window](const WindowCycleItemView* mini_view) {
+                               return mini_view->Contains(window);
+                             });
 }
 
 aura::Window* GroupContainerCycleView::GetWindowAtPoint(
@@ -407,14 +400,14 @@ void GroupContainerCycleView::SetSelectedWindowForFocus(aura::Window* window) {
   if (old_is_first_focus_selection_request &&
       window_util::GetActiveWindow() == mini_views_[1]->source_window()) {
     mini_views_[0]->UpdateFocusState(/*focus=*/true);
-    NotifyAccessibilityEvent(ax::mojom::Event::kSelection, true);
+    NotifyAccessibilityEventDeprecated(ax::mojom::Event::kSelection, true);
   } else {
     // For normal use case, follow the window cycle order and `UpdateFocusState`
     // on the cycle item that contains the target window.
     for (WindowCycleItemView* mini_view : mini_views_) {
       if (mini_view->Contains(window)) {
         mini_view->UpdateFocusState(/*focus=*/true);
-        NotifyAccessibilityEvent(ax::mojom::Event::kSelection, true);
+        NotifyAccessibilityEventDeprecated(ax::mojom::Event::kSelection, true);
         break;
       }
     }

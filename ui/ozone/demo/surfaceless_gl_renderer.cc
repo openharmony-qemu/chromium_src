@@ -2,16 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifdef UNSAFE_BUFFERS_BUILD
-// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
-#pragma allow_unsafe_buffers
-#endif
 
 #include "ui/ozone/demo/surfaceless_gl_renderer.h"
 
 #include <stddef.h>
 
 #include <algorithm>
+#include <array>
 #include <memory>
 #include <utility>
 
@@ -228,7 +225,7 @@ void SurfacelessGlRenderer::RenderFrame() {
 
   float fraction = NextFraction();
 
-  gfx::Rect overlay_rect[kMaxLayers];
+  std::array<gfx::Rect, kMaxLayers> overlay_rect;
   const gfx::RectF unity_rect = gfx::RectF(0, 0, 1, 1);
 
   OverlayCandidatesOzone::OverlaySurfaceCandidateList overlay_list;

@@ -2,18 +2,22 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifdef UNSAFE_BUFFERS_BUILD
-// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
-#pragma allow_unsafe_buffers
-#endif
-
 #include "media/cdm/cenc_utils.h"
 
 #include <memory>
 
+#include "base/not_fatal_until.h"
 #include "media/base/media_util.h"
 #include "media/formats/mp4/box_definitions.h"
 #include "media/formats/mp4/box_reader.h"
+#include "third_party/wiseplay/cdm/buildflags.h"
+
+#if BUILDFLAG(ENABLE_WISEPLAY)
+#include <string>
+#include <vector>
+#include "base/strings/string_number_conversions.h"
+#include "base/logging.h"
+#endif  // BUILDFLAG(ENABLE_WISEPLAY)
 
 namespace media {
 
@@ -24,18 +28,18 @@ namespace media {
 
 // CENC SystemID for the Common System.
 // https://w3c.github.io/encrypted-media/cenc-format.html#common-system
-const uint8_t kCencCommonSystemId[] = {0x10, 0x77, 0xef, 0xec, 0xc0, 0xb2,
-                                       0x4d, 0x02, 0xac, 0xe3, 0x3c, 0x1e,
-                                       0x52, 0xe2, 0xfb, 0x4b};
+constexpr auto kCencCommonSystemId =
+    std::to_array<uint8_t>({0x10, 0x77, 0xef, 0xec, 0xc0, 0xb2, 0x4d, 0x02,
+                            0xac, 0xe3, 0x3c, 0x1e, 0x52, 0xe2, 0xfb, 0x4b});
 
 // Returns true if |input| contains only 1 or more valid 'pssh' boxes, false
 // otherwise. |pssh_boxes| is updated as the set of parsed 'pssh' boxes.
 // Note: All boxes in |input| must be 'pssh' boxes. However, if they can't be
 //       properly parsed (e.g. unsupported version), then they will be skipped.
 static bool ReadAllPsshBoxes(
-    const std::vector<uint8_t>& input,
+    base::span<const uint8_t> input,
     std::vector<mp4::FullProtectionSystemSpecificHeader>* pssh_boxes) {
-  DCHECK(!input.empty());
+  CHECK(!input.empty(), base::NotFatalUntil::M140);
 
   // TODO(wolenetz): Questionable MediaLog usage, http://crbug.com/712310
   NullMediaLog media_log;
@@ -75,7 +79,37 @@ static bool ReadAllPsshBoxes(
   return pssh_boxes->size() > 0;
 }
 
-bool ValidatePsshInput(const std::vector<uint8_t>& input) {
+#if BUILDFLAG(ENABLE_WISEPLAY)
+// Returns true if |input| contains only 1 or more valid 'pssh' boxes, false
+// otherwise. |raw_pssh_boxes| is updated as the set of raw 'pssh' boxes.
+// Note: All boxes in |input| must be 'pssh' boxes.
+static bool ReadAllRawPsshBoxes(
+    base::span<const uint8_t> input,
+    std::vector<mp4::ProtectionSystemSpecificHeader>* raw_pssh_boxes) {
+  DCHECK(!input.empty());
+
+  NullMediaLog media_log;
+
+  // Verify that |input| contains only 'pssh' boxes.
+  // ReadAllChildrenAndCheckFourCC() is templated, so it checks that each
+  // box in |input| matches the box type of the parameter (in this case
+  // mp4::ProtectionSystemSpecificHeader is a 'pssh' box).
+  // mp4::ProtectionSystemSpecificHeader doesn't validate the 'pssh' contents,
+  // so this simply verifies that |input| only contains 'pssh' boxes and
+  // nothing else.
+  std::unique_ptr<mp4::BoxReader> input_reader(
+      mp4::BoxReader::ReadConcatentatedBoxes(input.data(), input.size(),
+                                             &media_log));
+  if (!input_reader->ReadAllChildrenAndCheckFourCC(raw_pssh_boxes)) {
+    return false;
+  }
+
+  // Must have successfully parsed at least one 'pssh' box.
+  return raw_pssh_boxes->size() > 0;
+}
+#endif  // BUILDFLAG(ENABLE_WISEPLAY)
+
+bool ValidatePsshInput(base::span<const uint8_t> input) {
   // No 'pssh' boxes is considered valid.
   if (input.empty())
     return true;
@@ -84,7 +118,7 @@ bool ValidatePsshInput(const std::vector<uint8_t>& input) {
   return ReadAllPsshBoxes(input, &children);
 }
 
-bool GetKeyIdsForCommonSystemId(const std::vector<uint8_t>& pssh_boxes,
+bool GetKeyIdsForCommonSystemId(base::span<const uint8_t> pssh_boxes,
                                 KeyIdList* key_ids) {
   // If there are no 'pssh' boxes then no key IDs found.
   if (pssh_boxes.empty())
@@ -97,11 +131,8 @@ bool GetKeyIdsForCommonSystemId(const std::vector<uint8_t>& pssh_boxes,
   // Check all children for an appropriate 'pssh' box, returning the
   // key IDs found.
   KeyIdList result;
-  std::vector<uint8_t> common_system_id(
-      kCencCommonSystemId,
-      kCencCommonSystemId + std::size(kCencCommonSystemId));
   for (const auto& child : children) {
-    if (child.system_id == common_system_id) {
+    if (base::as_byte_span(child.system_id) == kCencCommonSystemId) {
       key_ids->assign(child.key_ids.begin(), child.key_ids.end());
       return key_ids->size() > 0;
     }
@@ -111,24 +142,39 @@ bool GetKeyIdsForCommonSystemId(const std::vector<uint8_t>& pssh_boxes,
   return false;
 }
 
-bool GetPsshData(const std::vector<uint8_t>& input,
-                 const std::vector<uint8_t>& system_id,
+bool GetPsshData(base::span<const uint8_t> input,
+                 base::span<const uint8_t> system_id,
                  std::vector<uint8_t>* pssh_data) {
   if (input.empty())
     return false;
 
   std::vector<mp4::FullProtectionSystemSpecificHeader> children;
+
   if (!ReadAllPsshBoxes(input, &children))
     return false;
 
   // Check all children for an appropriate 'pssh' box, returning |data| from
   // the first one found.
+#if !BUILDFLAG(ENABLE_WISEPLAY)
   for (const auto& child : children) {
     if (child.system_id == system_id) {
       pssh_data->assign(child.data.begin(), child.data.end());
       return true;
     }
   }
+#else
+  std::vector<mp4::ProtectionSystemSpecificHeader> raw_pssh_boxes;
+  ReadAllRawPsshBoxes(input, &raw_pssh_boxes);
+  for (unsigned int i = 0; i < children.size(); i++) {
+    const auto& child = children[i];
+    const auto& raw_child = raw_pssh_boxes[i];
+    if (child.system_id == system_id) {
+      pssh_data->assign(raw_child.raw_box.begin(), raw_child.raw_box.end());
+      std::string hex_str2 = base::HexEncode(pssh_data->data(), pssh_data->size());
+      return true;
+    }
+  }
+#endif  // BUILDFLAG(ENABLE_WISEPLAY)
 
   // No matching 'pssh' box found.
   return false;

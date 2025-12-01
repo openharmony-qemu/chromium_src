@@ -9,6 +9,7 @@
 
 #include "media/filters/mac/audio_toolbox_audio_decoder.h"
 
+#include <algorithm>
 #include <optional>
 
 #include "base/apple/osstatus_logging.h"
@@ -16,7 +17,6 @@
 #include "base/functional/bind.h"
 #include "base/logging.h"
 #include "base/memory/raw_ptr.h"
-#include "base/ranges/algorithm.h"
 #include "base/task/bind_post_task.h"
 #include "media/base/audio_buffer.h"
 #include "media/base/audio_codecs.h"
@@ -75,7 +75,7 @@ OSStatus ProvideInputCallback(AudioConverterRef decoder,
 
   // No const version of this API unfortunately, so we need const_cast().
   buffer_list->mBuffers[0].mData =
-      const_cast<uint8_t*>(input_data->buffer->data());
+      const_cast<uint8_t*>(base::span(*input_data->buffer).data());
 
   if (packets)
     *packets = &input_data->packet;
@@ -235,7 +235,7 @@ bool AudioToolboxAudioDecoder::CreateDecoder(const AudioDecoderConfig& config) {
       // Input is xHE-AAC / USAC.
       CHECK_EQ(config.profile(), AudioCodecProfile::kXHE_AAC);
       input_format.mFormatID = kAudioFormatMPEGD_USAC;
-      magic_cookie = mp4::ESDescriptor::CreateEsds(config.aac_extra_data());
+      magic_cookie = mp4::ESDescriptor::CreateEsds(config.extra_data());
 
       // Have macOS fill in the rest of the input_format for us.
       UInt32 format_size = sizeof(input_format);
@@ -305,7 +305,7 @@ bool AudioToolboxAudioDecoder::CreateDecoder(const AudioDecoderConfig& config) {
     // Get the decoder's output channel layout.
     UInt32 size;
     result = AudioConverterGetPropertyInfo(
-        decoder_.get(), kAudioConverterOutputChannelLayout, &size, NULL);
+        decoder_.get(), kAudioConverterOutputChannelLayout, &size, nullptr);
     if (result != noErr) {
       OSSTATUS_MEDIA_LOG(ERROR, result, media_log_)
           << "AudioConverterGetPropertyInfo() failed";

@@ -66,7 +66,7 @@
           ],
           "when":"always"
         }
-      },      
+      },
       {
         "name": "ohos.permission.FILE_ACCESS_PERSIST"
       },
@@ -74,18 +74,20 @@
         "name": "ohos.permission.PREPARE_APP_TERMINATE"
       },
       {
-        "name": "ohos.permission.kernel.ALLOW_WRITABLE_CODE_MEMORY"
+        "name": "ohos.permission.GYROSCOPE"
       },
       {
-        "name": "ohos.permission.kernel.DISABLE_CODE_MEMORY_PROTECTION"
-      }
-    ],
-    "definePermissions": [
-      {
-        "name": "ohos.permission.kernel.ALLOW_WRITABLE_CODE_MEMORY"
+        "name": "ohos.permission.SET_ABILITY_INSTANCE_INFO"
       },
       {
-        "name": "ohos.permission.kernel.DISABLE_CODE_MEMORY_PROTECTION"
+        "name": "ohos.permission.GET_FILE_ICON"
+      },
+      {
+        "name": "ohos.permission.PRIVACY_WINDOW"
+      },
+      {
+        "name": "ohos.permission.CUSTOM_SCREEN_CAPTURE",
+        "reason": "$string:screenshot"
       }
     ]
   }

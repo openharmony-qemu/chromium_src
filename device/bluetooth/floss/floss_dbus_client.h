@@ -134,6 +134,7 @@ inline constexpr char kOnNameChanged[] = "OnNameChanged";
 inline constexpr char kOnDiscoverableChanged[] = "OnDiscoverableChanged";
 inline constexpr char kOnDeviceFound[] = "OnDeviceFound";
 inline constexpr char kOnDeviceCleared[] = "OnDeviceCleared";
+inline constexpr char kOnDeviceKeyMissing[] = "OnDeviceKeyMissing";
 inline constexpr char kOnDevicePropertiesChanged[] =
     "OnDevicePropertiesChanged";
 inline constexpr char kOnDiscoveringChanged[] = "OnDiscoveringChanged";
@@ -353,7 +354,6 @@ inline constexpr char kSetDebugLogging[] = "SetDebugLogging";
 
 namespace experimental {
 inline constexpr char kSetLLPrivacy[] = "SetLLPrivacy";
-inline constexpr char kSetDevCoredump[] = "SetDevCoredump";
 }  // namespace experimental
 
 // BluetoothDevice structure for DBus apis.

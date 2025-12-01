@@ -77,6 +77,10 @@ class COMPONENT_EXPORT(AX_PLATFORM) BrowserAccessibility
 
   bool IsLineBreakObject() const;
 
+  // Returns true if `node` has a default action that can be triggered by
+  // DoDefaultAction().
+  bool HasDefaultAction() const;
+
   // Returns true if this object can fire events.
   virtual bool CanFireEvents() const;
 
@@ -230,7 +234,6 @@ class COMPONENT_EXPORT(AX_PLATFORM) BrowserAccessibility
       bool operator==(const Iterator& rhs) const {
         return parent_ == rhs.parent_ && index_ == rhs.index_;
       }
-      bool operator!=(const Iterator& rhs) const { return !operator==(rhs); }
       const BrowserAccessibility* operator*();
 
      private:
@@ -242,7 +245,9 @@ class COMPONENT_EXPORT(AX_PLATFORM) BrowserAccessibility
     Iterator begin() { return {parent_, child_tree_root_}; }
     Iterator end() {
       unsigned int count =
-          child_tree_root_ ? 1U : parent_->node()->children().size();
+          child_tree_root_
+              ? 1U
+              : static_cast<unsigned int>(parent_->node()->children().size());
       return {parent_, child_tree_root_, count};
     }
 
@@ -471,8 +476,6 @@ class COMPONENT_EXPORT(AX_PLATFORM) BrowserAccessibility
   TextAttributeMap GetSpellingAndGrammarAttributes() const;
 
   std::string SubtreeToStringHelper(size_t level) override;
-
-  void NotifyAccessibilityApiUsage() const override;
 
   // The UIA tree formatter needs access to GetUniqueId() to identify the
   // starting point for tree dumps.

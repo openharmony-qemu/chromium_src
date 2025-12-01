@@ -31,6 +31,7 @@
 #include "ui/views/controls/menu/menu_item_view.h"
 #include "ui/views/controls/menu/menu_model_adapter.h"
 #include "ui/views/controls/menu/menu_runner.h"
+#include "ui/views/view_utils.h"
 
 namespace ash {
 
@@ -84,8 +85,8 @@ const DeskMiniView* DesksTestApi::GetDeskBarDragView(
 // static
 views::LabelButton* DesksTestApi::GetCloseAllUndoToastDismissButton() {
   ToastManagerImpl* toast_manager = Shell::Get()->toast_manager();
-  return toast_manager->GetCurrentOverlayForTesting()
-      ->dismiss_button_for_testing();
+  return views::AsViewClass<views::LabelButton>(
+      toast_manager->GetCurrentOverlayForTesting()->button_for_testing());
 }
 
 // static
@@ -180,12 +181,6 @@ void DesksTestApi::WaitForDeskBarUiUpdate(DeskBarViewBase* desk_bar_view) {
   base::RunLoop run_loop;
   desk_bar_view->on_update_ui_closure_for_testing_ = run_loop.QuitClosure();
   run_loop.Run();
-}
-
-// static
-void DesksTestApi::SetDeskBarUiUpdateCallback(DeskBarViewBase* desk_bar_view,
-                                              base::OnceClosure done) {
-  desk_bar_view->on_update_ui_closure_for_testing_ = std::move(done);
 }
 
 // static

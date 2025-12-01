@@ -5,12 +5,13 @@
 """Siso configuration for clang-cl/windows."""
 
 load("@builtin//lib/gn.star", "gn")
-load("@builtin//path.star", "path")
 load("@builtin//struct.star", "module")
 load("./clang_all.star", "clang_all")
 load("./clang_code_coverage_wrapper.star", "clang_code_coverage_wrapper")
+load("./clang_exception.star", "clang_exception")
 load("./config.star", "config")
 load("./gn_logs.star", "gn_logs")
+load("./reproxy.star", "reproxy")
 load("./rewrapper_cfg.star", "rewrapper_cfg")
 load("./win_sdk.star", "win_sdk")
 
@@ -27,6 +28,7 @@ def __clang_compile_coverage(ctx, cmd):
 __handlers = {
     "clang_compile_coverage": __clang_compile_coverage,
 }
+__handlers.update(clang_all.handlers)
 
 def __step_config(ctx, step_config):
     cfg = "buildtools/reclient_cfgs/chromium-browser-clang/rewrapper_windows.cfg"
@@ -39,13 +41,14 @@ def __step_config(ctx, step_config):
             largePlatform[k] = v
 
         # no "action_large" Windows worker pool
-        windowsWorker = True
+        use_windows_worker = True
         if reproxy_config["platform"]["OSFamily"] != "Windows":
             largePlatform["label:action_large"] = "1"
-            windowsWorker = False
+            use_windows_worker = False
         step_config["platforms"].update({
             "clang-cl": reproxy_config["platform"],
             "clang-cl_large": largePlatform,
+            "lld-link": largePlatform,
         })
         step_config["input_deps"].update(clang_all.input_deps)
 
@@ -56,9 +59,14 @@ def __step_config(ctx, step_config):
         # When building with ToT Clang, we can't run clang-cl
         # remotely, too.
         remote = False
+        link_inputs = []
         win_toolchain_dir = win_sdk.toolchain_dir(ctx)
         if win_toolchain_dir:
             remote = True
+            link_inputs = [
+                "third_party/llvm-build/Release+Asserts/bin/lld-link.exe",
+                win_toolchain_dir + ":libs",
+            ]
             if reproxy_config["platform"]["OSFamily"] == "Windows":
                 step_config["input_deps"].update({
                     win_toolchain_dir + ":headers": [
@@ -72,7 +80,7 @@ def __step_config(ctx, step_config):
         canonicalize_dir = not input_root_absolute_path
 
         timeout = "2m"
-        if gn.args(ctx).get("use_reclient") == "false" and windowsWorker:
+        if (not reproxy.enabled(ctx)) and use_windows_worker:
             # use longer timeout for siso native
             # it takes long time for input fetch (many files in sysroot etc)
             timeout = "4m"
@@ -85,7 +93,6 @@ def __step_config(ctx, step_config):
                 "inputs": [
                     "third_party/llvm-build/Release+Asserts/bin/clang-cl.exe",
                 ],
-                "exclude_input_patterns": ["*.stamp"],
                 "platform_ref": "clang-cl",
                 "remote": remote,
                 "input_root_absolute_path": input_root_absolute_path,
@@ -100,7 +107,6 @@ def __step_config(ctx, step_config):
                 "inputs": [
                     "third_party/llvm-build/Release+Asserts/bin/clang-cl.exe",
                 ],
-                "exclude_input_patterns": ["*.stamp"],
                 "platform_ref": "clang-cl",
                 "remote": remote,
                 "input_root_absolute_path": input_root_absolute_path,
@@ -115,7 +121,6 @@ def __step_config(ctx, step_config):
                 "inputs": [
                     "third_party/llvm-build/Release+Asserts/bin/clang++",
                 ],
-                "exclude_input_patterns": ["*.stamp"],
                 "handler": "clang_compile_coverage",
                 "platform_ref": "clang-cl",
                 "remote": remote,
@@ -131,7 +136,6 @@ def __step_config(ctx, step_config):
                 "inputs": [
                     "third_party/llvm-build/Release+Asserts/bin/clang",
                 ],
-                "exclude_input_patterns": ["*.stamp"],
                 "handler": "clang_compile_coverage",
                 "platform_ref": "clang-cl",
                 "remote": remote,
@@ -140,7 +144,78 @@ def __step_config(ctx, step_config):
                 "remote_wrapper": remote_wrapper,
                 "timeout": timeout,
             },
+            {
+                "name": "lld-link/alink",
+                "action": "(.*_)?alink",
+                "command_prefix": "..\\..\\third_party\\llvm-build\\Release+Asserts\\bin\\lld-link.exe /lib",
+                "handler": "lld_thin_archive",
+                "remote": False,
+                "accumulate": True,
+            },
+            {
+                "name": "lld-link/solink",
+                "action": "(.*_)?solink",
+                "command_prefix": "..\\..\\third_party\\llvm-build\\Release+Asserts\\bin\\lld-link.exe",
+                "handler": "lld_link",
+                "inputs": link_inputs,
+                "exclude_input_patterns": [
+                    "*.cc",
+                    "*.h",
+                    "*.js",
+                    "*.pak",
+                    "*.py",
+                ],
+                "remote": config.get(ctx, "remote-link"),
+                "remote_wrapper": remote_wrapper,
+                "platform_ref": "lld-link",
+                "input_root_absolute_path": input_root_absolute_path,
+                "canonicalize_dir": canonicalize_dir,
+                "timeout": "2m",
+            },
+            {
+                "name": "lld-link/solink_module",
+                "action": "(.*_)?solink_module",
+                "command_prefix": "..\\..\\third_party\\llvm-build\\Release+Asserts\\bin\\lld-link.exe",
+                "handler": "lld_link",
+                "inputs": link_inputs,
+                "exclude_input_patterns": [
+                    "*.cc",
+                    "*.h",
+                    "*.js",
+                    "*.pak",
+                    "*.py",
+                ],
+                "remote": config.get(ctx, "remote-link"),
+                "remote_wrapper": remote_wrapper,
+                "platform_ref": "lld-link",
+                "input_root_absolute_path": input_root_absolute_path,
+                "canonicalize_dir": canonicalize_dir,
+                "timeout": "2m",
+            },
+            {
+                "name": "lld-link/link",
+                "action": "(.*_)?link",
+                "command_prefix": "..\\..\\third_party\\llvm-build\\Release+Asserts\\bin\\lld-link.exe",
+                "handler": "lld_link",
+                "inputs": link_inputs,
+                "exclude_input_patterns": [
+                    "*.cc",
+                    "*.h",
+                    "*.js",
+                    "*.pak",
+                    "*.py",
+                ],
+                "remote": config.get(ctx, "remote-link"),
+                "remote_wrapper": remote_wrapper,
+                "platform_ref": "lld-link",
+                "input_root_absolute_path": input_root_absolute_path,
+                "canonicalize_dir": canonicalize_dir,
+                "timeout": "4m",
+            },
         ])
+        step_config = clang_exception.step_config(ctx, step_config, use_windows_worker)
+    elif gn.args(ctx).get("use_remoteexec") == "true":
+        fail("remoteexec requires rewrapper config")
     return step_config
 
 clang = module(

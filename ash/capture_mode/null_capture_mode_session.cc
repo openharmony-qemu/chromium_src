@@ -100,7 +100,7 @@ void NullCaptureModeSession::OnCameraPreviewBoundsOrVisibilityChanged(
 
 void NullCaptureModeSession::OnCameraPreviewDestroyed() {}
 
-void NullCaptureModeSession::MaybeDismissUserNudgeForever() {}
+void NullCaptureModeSession::MaybeDismissSunfishRegionNudgeForever() {}
 
 void NullCaptureModeSession::MaybeChangeRoot(aura::Window* new_root,
                                              bool root_window_will_shutdown) {
@@ -128,14 +128,23 @@ ActionButtonView* NullCaptureModeSession::AddActionButton(
     views::Button::PressedCallback callback,
     std::u16string text,
     const gfx::VectorIcon* icon,
-    const ActionButtonRank rank) {
+    const ActionButtonRank rank,
+    ActionButtonViewID id) {
   return nullptr;
 }
 
-void NullCaptureModeSession::AddScannerActionButtons(
-    std::vector<ScannerActionViewModel> scanner_actions) {}
+void NullCaptureModeSession::AddSmartActionsButton() {}
 
-void NullCaptureModeSession::OnTextDetected() {}
+void NullCaptureModeSession::MaybeShowScannerDisclaimer(
+    ScannerEntryPoint entry_point,
+    base::RepeatingClosure accept_callback,
+    base::RepeatingClosure decline_callback) {}
+
+void NullCaptureModeSession::OnScannerActionsFetched(
+    ScannerSession::FetchActionsResponse actions_response) {}
+
+void NullCaptureModeSession::ShowActionContainerError(
+    const std::u16string& error_message) {}
 
 void NullCaptureModeSession::InitInternal() {
   layer()->SetName("NullCaptureModeSession");
@@ -143,8 +152,15 @@ void NullCaptureModeSession::InitInternal() {
 
 void NullCaptureModeSession::ShutdownInternal() {}
 
-gfx::Rect NullCaptureModeSession::GetFeedbackWidgetScreenBounds() const {
-  return gfx::Rect();
+void NullCaptureModeSession::OnSearchResultsPanelCreated(
+    views::Widget* panel_widget) {}
+
+bool NullCaptureModeSession::TakeFocusForSearchResultsPanel(bool reverse) {
+  return false;
 }
+
+void NullCaptureModeSession::ClearPseudoFocus() {}
+
+void NullCaptureModeSession::SetA11yOverrideWindowToSearchResultsPanel() {}
 
 }  // namespace ash

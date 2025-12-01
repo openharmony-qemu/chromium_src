@@ -28,11 +28,6 @@
 
 namespace media {
 
-const uint16_t WebMClusterParser::kOpusFrameDurationsMu[] = {
-    10000, 20000, 40000, 60000, 10000, 20000, 40000, 60000, 10000, 20000, 40000,
-    60000, 10000, 20000, 10000, 20000, 2500,  5000,  10000, 20000, 2500,  5000,
-    10000, 20000, 2500,  5000,  10000, 20000, 2500,  5000,  10000, 20000};
-
 enum {
   // Limits the number of MEDIA_LOG() calls in the path of reading encoded
   // duration to avoid spamming for corrupted data.
@@ -447,7 +442,7 @@ bool WebMClusterParser::OnBlock(bool is_simple_block,
     return false;
   }
 
-  Track* track = NULL;
+  Track* track = nullptr;
   StreamParserBuffer::Type buffer_type = DemuxerStream::AUDIO;
   std::string encryption_key_id;
   base::TimeDelta encoded_duration = kNoTimestamp;
@@ -489,7 +484,7 @@ bool WebMClusterParser::OnBlock(bool is_simple_block,
   // Every encrypted Block has a signal byte and IV prepended to it.
   // See: http://www.webmproject.org/docs/webm-encryption/
   std::unique_ptr<DecryptConfig> decrypt_config;
-  int data_offset = 0;
+  size_t data_offset = 0;
   if (!encryption_key_id.empty() &&
       !WebMCreateDecryptConfig(
           data, size,
@@ -502,9 +497,9 @@ bool WebMClusterParser::OnBlock(bool is_simple_block,
   // TODO(wolenetz/acolwell): Validate and use a common cross-parser TrackId
   // type with remapped bytestream track numbers and allow multiple tracks as
   // applicable. See https://crbug.com/341581.
-  auto buffer =
-      StreamParserBuffer::CopyFrom(data + data_offset, size - data_offset,
-                                   is_keyframe, buffer_type, track_num);
+  auto data_span = base::span(data, size).subspan(data_offset);
+  auto buffer = StreamParserBuffer::CopyFrom(data_span, is_keyframe,
+                                             buffer_type, track_num);
   if (additional_size) {
     buffer->WritableSideData().alpha_data =
         base::HeapArray<uint8_t>::CopiedFrom(
@@ -558,7 +553,8 @@ bool WebMClusterParser::OnBlock(bool is_simple_block,
             << encoded_duration.InMilliseconds() << "ms).";
       }
     }
-  } else if (block_duration_time_delta != kNoTimestamp) {
+  } else if (block_duration_time_delta != kNoTimestamp &&
+             block_duration_time_delta != kInfiniteDuration) {
     buffer->set_duration(block_duration_time_delta);
   } else {
     buffer->set_duration(track->default_duration());

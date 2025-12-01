@@ -32,6 +32,8 @@ chromium-metrics-reviews@google.com.
   <int value="2" label="Nudge"/>
   <int value="3" label="Notification"/>
   <int value="4" label="OOBE Perk Discovery Page"/>
+  <int value="5" label="Demo Mode Sign In Experience"/>
+  <int value="6" label="Dry Run"/>
 </enum>
 
 <enum name="CampaignsManagerError">
@@ -87,6 +89,10 @@ chromium-metrics-reviews@google.com.
   <int value="49" label="Record events before campaigns loaded"/>
   <int value="50" label="Shelf icon not found for anchoring nudge"/>
   <int value="51" label="No board info is available"/>
+  <int value="52" label="Feature index out of range"/>
+  <int value="53" label="Invalid URL regrex"/>
+  <int value="54" label="Unrecognized built-in image"/>
+  <int value="55" label="Missing built-in vector icon"/>
 </enum>
 
 </enums>

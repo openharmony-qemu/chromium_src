@@ -9,15 +9,12 @@
 
 #include "base/feature_list.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "google_apis/buildflags.h"
 #include "google_apis/google_api_keys.h"
 
 namespace google_apis {
 
 struct DefaultApiKeys;
-
-COMPONENT_EXPORT(GOOGLE_APIS) BASE_DECLARE_FEATURE(kOverrideAPIKeyFeature);
 
 // This is used as a lazy instance to determine keys once and cache them.
 class COMPONENT_EXPORT(GOOGLE_APIS) ApiKeyCache {
@@ -36,11 +33,17 @@ class COMPONENT_EXPORT(GOOGLE_APIS) ApiKeyCache {
 #if !BUILDFLAG(IS_ANDROID)
   const std::string& api_key_hats() const { return api_key_hats_; }
 #endif
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
   const std::string& api_key_sharing() const { return api_key_sharing_; }
   const std::string& api_key_read_aloud() const { return api_key_read_aloud_; }
   const std::string& api_key_fresnel() const { return api_key_fresnel_; }
   const std::string& api_key_boca() const { return api_key_boca_; }
+  const std::string& api_key_cros_system_geo() const {
+    return api_key_cros_system_geo_;
+  }
+  const std::string& api_key_cros_chrome_geo() const {
+    return api_key_cros_chrome_geo_;
+  }
 #endif
 
   const std::string& metrics_key() const { return metrics_key_; }
@@ -65,16 +68,18 @@ class COMPONENT_EXPORT(GOOGLE_APIS) ApiKeyCache {
 #if !BUILDFLAG(IS_ANDROID)
   std::string api_key_hats_;
 #endif
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
   std::string api_key_sharing_;
   std::string api_key_read_aloud_;
   std::string api_key_fresnel_;
   std::string api_key_boca_;
+  std::string api_key_cros_system_geo_;
+  std::string api_key_cros_chrome_geo_;
 #endif
 
   std::string metrics_key_;
-  std::string client_ids_[CLIENT_NUM_ITEMS];
-  std::string client_secrets_[CLIENT_NUM_ITEMS];
+  std::array<std::string, CLIENT_NUM_ITEMS> client_ids_;
+  std::array<std::string, CLIENT_NUM_ITEMS> client_secrets_;
 };
 
 }  // namespace google_apis

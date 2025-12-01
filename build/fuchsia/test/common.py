@@ -19,6 +19,7 @@ from typing import Iterable, List, Optional, Tuple
 from dataclasses import dataclass
 
 from compatible_utils import get_ssh_prefix, get_host_arch
+from repeating_log import RepeatingLog
 
 
 def _find_src_root() -> str:
@@ -352,29 +353,31 @@ def ssh_run(cmd: List[str],
 def resolve_packages(packages: List[str], target_id: Optional[str]) -> None:
     """Ensure that all |packages| are installed on a device."""
 
-    ssh_run(['pkgctl', 'gc'], target_id, check=False)
+    # A temporary solution to avoid cycle dependency. The DIR_SRC_ROOT should be
+    # moved away from common.py.
+    # pylint: disable=cyclic-import, import-outside-toplevel
+    import monitors
 
-    def _retry_command(cmd: List[str],
-                       retries: int = 2,
-                       **kwargs) -> Optional[subprocess.CompletedProcess]:
+    with monitors.time_consumption('pkgctl', 'gc'):
+        ssh_run(['pkgctl', 'gc'], target_id, check=False)
+
+    def _retry_resolve(package) -> None:
         """Helper function for retrying a subprocess.run command."""
 
-        for i in range(retries):
-            if i == retries - 1:
-                proc = ssh_run(cmd, **kwargs, check=True)
-                return proc
-            proc = ssh_run(cmd, **kwargs, check=False)
+        cmd = ['pkgctl', 'resolve',
+               'fuchsia-pkg://%s/%s' % (REPO_ALIAS, package)]
+        retry_counter = monitors.count('pkgctl', 'resolve', package, 'retry')
+        for _ in range(4):
+            proc = ssh_run(cmd, target_id=target_id, check=False)
             if proc.returncode == 0:
-                return proc
+                return
             time.sleep(3)
-        return None
+            retry_counter.record()
+        ssh_run(cmd, target_id=target_id, check=True)
 
     for package in packages:
-        resolve_cmd = [
-            'pkgctl', 'resolve',
-            'fuchsia-pkg://%s/%s' % (REPO_ALIAS, package)
-        ]
-        _retry_command(resolve_cmd, target_id=target_id)
+        with monitors.time_consumption('pkgctl', 'resolve', package):
+            _retry_resolve(package)
 
 
 def get_ip_address(target_id: Optional[str], ipv4_only: bool = False):
@@ -385,17 +388,42 @@ def get_ip_address(target_id: Optional[str], ipv4_only: bool = False):
 
 def get_ssh_address(target_id: Optional[str],
                     ipv4_only: bool = False) -> Tuple[str, int]:
-    """Determines SSH address for given target."""
+    """Determines SSH address for given target, this function waits for the
+    device to be reachable up to 5 minutes, or throws an error if it fails."""
     cmd = ['target', 'list']
     if ipv4_only:
         cmd.append('--no-ipv6')
     if target_id:
         # target list does not respect -t / --target flag.
         cmd.append(target_id)
-    target = json.loads(
-        run_ffx_command(cmd=cmd, json_out=True,
-                        capture_output=True).stdout.strip())
-    addr = target[0]['addresses'][0]
+
+    # A temporary solution to avoid cycle dependency. The DIR_SRC_ROOT should be
+    # moved away from common.py.
+    # pylint: disable=cyclic-import, import-outside-toplevel
+    import monitors
+
+    # The initial ffx target list command may return an empty list or without
+    # the ipv4 address, wait for a while to allow it detecting the devices and
+    # their addresses.
+    with monitors.time_consumption('ffx', 'get_ssh_address',
+                                    ipv4_only and 'ipv4' or ''), \
+         RepeatingLog("Waiting for the ssh address"):
+        for _ in range(60):
+            target = json.loads(
+                run_ffx_command(cmd=cmd, json_out=True,
+                                capture_output=True).stdout.strip())
+            if target:
+                addrs = target[0]['addresses']
+                if addrs:
+                    addr = addrs[0]
+                    if 'Ip' in addr:
+                        addr = addr['Ip']
+                    break
+            time.sleep(5)
+        else:
+            monitors.count('ffx', 'get_ssh_address', ipv4_only and 'ipv4' or '',
+                           'failed').record()
+            raise RuntimeError('No addresses found for target.')
     ssh_port = int(addr['ssh_port'])
     if ssh_port == 0:
         # Returning an unset ssh_port means the default port 22.

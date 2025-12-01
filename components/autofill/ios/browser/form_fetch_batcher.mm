@@ -4,11 +4,12 @@
 
 #import "components/autofill/ios/browser/form_fetch_batcher.h"
 
-#include "base/functional/bind.h"
+#import <algorithm>
+
+#import "base/functional/bind.h"
 #import "base/memory/weak_ptr.h"
 #import "base/metrics/histogram_functions.h"
-#include "base/not_fatal_until.h"
-#include "base/ranges/algorithm.h"
+#import "base/not_fatal_until.h"
 #import "base/task/task_runner.h"
 #import "base/time/time.h"
 #import "components/autofill/core/common/form_data.h"
@@ -30,7 +31,7 @@ std::optional<std::vector<FormData>> ApplyFormFilterIfNeeded(
   }
 
   std::vector<FormData> filtered_forms;
-  base::ranges::copy_if(
+  std::ranges::copy_if(
       *forms, std::back_inserter(filtered_forms),
       [&](const std::u16string& name) { return name == *form_name; },
       &FormData::name);
@@ -80,7 +81,7 @@ void FormFetchBatcher::PushRequest(
 
 void FormFetchBatcher::Run() {
   // There should be at least one fetch request in the batch when running it.
-  CHECK_GT(fetch_requests_.size(), 0u, base::NotFatalUntil::M133);
+  CHECK_GT(fetch_requests_.size(), 0u);
   // Running the batch should only be done when there was an actual batch
   // scheduled.
   CHECK(batch_scheduled_);
@@ -102,7 +103,7 @@ void FormFetchBatcher::Run() {
 void FormFetchBatcher::Complete(
     std::optional<std::vector<autofill::FormData>> forms) {
   // Complete() should only be done when there are queued requests.
-  CHECK_GT(fetch_requests_.size(), 0u, base::NotFatalUntil::M133);
+  CHECK_GT(fetch_requests_.size(), 0u);
   // Completing the batch should only be done when there was an actual batch
   // scheduled.
   CHECK(batch_scheduled_);

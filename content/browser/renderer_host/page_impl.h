@@ -32,13 +32,17 @@
 #include "ui/base/ime/mojom/virtual_keyboard_types.mojom.h"
 #include "url/gurl.h"
 
+#if BUILDFLAG(IS_ANDROID)
+#include "content/browser/android/page_proxy.h"
+#endif
+
 namespace cc {
-struct BrowserControlsOffsetTagsInfo;
+struct BrowserControlsOffsetTagModifications;
 }  // namespace cc
 
-namespace input {
+namespace viz {
 class PeakGpuMemoryTracker;
-}  // namespace input
+}  // namespace viz
 
 namespace content {
 
@@ -72,6 +76,9 @@ class CONTENT_EXPORT PageImpl : public Page {
   const std::string& GetContentsMimeType() const override;
   void SetResizableForTesting(std::optional<bool> resizable) override;
   std::optional<bool> GetResizable() override;
+#if BUILDFLAG(IS_ANDROID)
+  const base::android::JavaRef<jobject>& GetJavaPage() override;
+#endif
 
   // Setter for the `window.setResizable(bool)` API's value defining whether the
   // window can be resized or not. `std::nullopt` means the value is not set.
@@ -191,7 +198,8 @@ class CONTENT_EXPORT PageImpl : public Page {
       cc::BrowserControlsState constraints,
       cc::BrowserControlsState current,
       bool animate,
-      const std::optional<cc::BrowserControlsOffsetTagsInfo>& offset_tags_info);
+      const std::optional<cc::BrowserControlsOffsetTagModifications>&
+          offset_tag_modifications);
 
   float GetPageScaleFactor() const;
 
@@ -200,7 +208,17 @@ class CONTENT_EXPORT PageImpl : public Page {
   }
   double load_progress() const { return load_progress_; }
 
+  // The env() variables for virtual keyboard overlay and context menu insets
+  // are page-level, and don't get propagated into iframes, because a) that
+  // would be a cross-site info leak, and b) it's hard to know exactly how they
+  // would be used in that context.
+  // See https://github.com/w3c/csswg-drafts/issues/4670.
   void NotifyVirtualKeyboardOverlayRect(const gfx::Rect& keyboard_rect);
+  void NotifyContextMenuInsetsObservers(const gfx::Rect&);
+
+  // This call will "show interest" in the Element with the provided DOMNodeID,
+  // which is presumed to have an `interesttarget` attribute.
+  void ShowInterestInElement(int);
 
   void SetVirtualKeyboardMode(ui::mojom::VirtualKeyboardMode mode);
   ui::mojom::VirtualKeyboardMode virtual_keyboard_mode() const {
@@ -424,7 +442,7 @@ class CONTENT_EXPORT PageImpl : public Page {
   // Created by NavigationRequest; ownership is maintained until the frame has
   // stopped loading, or we navigate away from the page before it finishes
   // loading.
-  std::unique_ptr<input::PeakGpuMemoryTracker> loading_memory_tracker_;
+  std::unique_ptr<viz::PeakGpuMemoryTracker> loading_memory_tracker_;
 
   // Whether the page is overriding the user agent or not.
   bool is_overriding_user_agent_ = false;
@@ -433,6 +451,12 @@ class CONTENT_EXPORT PageImpl : public Page {
   // or when activating a prerendered page, with the same params as the original
   // navigation.
   mojom::DidCommitProvisionalLoadParamsPtr last_commit_params_;
+
+#if BUILDFLAG(IS_ANDROID)
+  // For each C++ Page, there is a Java counterpart. It is the JNI bridge in
+  // between the two.
+  std::unique_ptr<PageProxy> page_proxy_;
+#endif
 
   base::WeakPtrFactory<PageImpl> weak_factory_{this};
 };

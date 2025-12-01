@@ -2,11 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifdef UNSAFE_BUFFERS_BUILD
-// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
-#pragma allow_unsafe_buffers
-#endif
-
 #include "ui/events/keycodes/keyboard_code_conversion.h"
 
 #include <algorithm>
@@ -60,9 +55,15 @@ bool DomCodeToUsLayoutDomKey(DomCode dom_code,
       int state = ((flags & EF_SHIFT_DOWN) == EF_SHIFT_DOWN);
       char16_t ch = it.character[state];
       if ((flags & EF_CAPS_LOCK_ON) == EF_CAPS_LOCK_ON) {
+#if BUILDFLAG(IS_OHOS)
+        if ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')) {
+          ch = it.character[state ^ 1];
+        }
+#else
         ch |= 0x20;
         if ((ch >= 'a') && (ch <= 'z'))
           ch = it.character[state ^ 1];
+#endif
       }
       *out_dom_key = DomKey::FromCharacter(ch);
       *out_key_code = DomCodeToUsLayoutNonLocatedKeyboardCode(dom_code);
@@ -250,15 +251,16 @@ DomCode UsLayoutKeyboardCodeToDomCode(KeyboardCode key_code) {
 }
 
 KeyboardCode DomCodeToUsLayoutKeyboardCode(DomCode dom_code) {
-  const DomCodeToKeyboardCodeEntry* end =
-      kDomCodeToKeyboardCodeMap + std::size(kDomCodeToKeyboardCodeMap);
   const DomCodeToKeyboardCodeEntry* found = std::lower_bound(
-      kDomCodeToKeyboardCodeMap, end, dom_code,
+      std::begin(kDomCodeToKeyboardCodeMap),
+      std::end(kDomCodeToKeyboardCodeMap), dom_code,
       [](const DomCodeToKeyboardCodeEntry& a, DomCode b) {
         return static_cast<int>(a.dom_code) < static_cast<int>(b);
       });
-  if ((found != end) && (found->dom_code == dom_code))
+  if ((found != std::end(kDomCodeToKeyboardCodeMap)) &&
+      (found->dom_code == dom_code)) {
     return found->key_code;
+  }
 
   return VKEY_UNKNOWN;
 }

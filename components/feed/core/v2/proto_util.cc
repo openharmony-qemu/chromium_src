@@ -28,7 +28,6 @@
 #include "components/feed/core/v2/feed_stream.h"
 #include "components/feed/core/v2/public/feed_api.h"
 #include "components/feed/feed_feature_list.h"
-#include "components/reading_list/features/reading_list_switches.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "base/android/build_info.h"
@@ -143,16 +142,13 @@ feedwire::Request CreateFeedQueryRequest(
 #if BUILDFLAG(IS_ANDROID)
         Capability::SYNC_STRING_REMOVAL,
 #endif
-        Capability::SPORTS_IN_GAME_UPDATE}) {
+        Capability::SPORTS_IN_GAME_UPDATE,
+        Capability::INFO_CARD_ACKNOWLEDGEMENT_TRACKING}) {
     feed_request.add_client_capability(capability);
   }
 
   for (auto capability : GetFeedConfig().experimental_capabilities)
     feed_request.add_client_capability(capability);
-
-  if (base::FeatureList::IsEnabled(kInterestFeedV2Hearts)) {
-    feed_request.add_client_capability(Capability::HEART);
-  }
 
   if (base::FeatureList::IsEnabled(kFeedStamp)) {
     feed_request.add_client_capability(Capability::SILK_AMP_OPEN_COMMAND);
@@ -174,17 +170,14 @@ feedwire::Request CreateFeedQueryRequest(
     feed_request.add_client_capability(Capability::ON_DEVICE_VIEW_HISTORY);
   }
 
-  if (base::FeatureList::IsEnabled(kInfoCardAcknowledgementTracking)) {
-    feed_request.add_client_capability(
-        Capability::INFO_CARD_ACKNOWLEDGEMENT_TRACKING);
-  }
-
   if (base::FeatureList::IsEnabled(kSyntheticCapabilities)) {
     feed_request.add_client_capability(Capability::SYNTHETIC_CAPABILITIES);
   }
 
-  if (base::FeatureList::IsEnabled(kFeedDynamicColors)) {
-    feed_request.add_client_capability(Capability::DYNAMIC_COLORS);
+  feed_request.add_client_capability(Capability::DYNAMIC_COLORS);
+
+  if (base::FeatureList::IsEnabled(kFeedStreaming)) {
+    feed_request.add_client_capability(Capability::STREAMING_FULL);
   }
 
   switch (request_metadata.tab_group_enabled_state) {

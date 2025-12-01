@@ -7,6 +7,7 @@
 #pragma allow_unsafe_buffers
 #endif
 
+#include <array>
 #include <memory>
 
 #include "base/command_line.h"
@@ -187,10 +188,9 @@ class RecordReplayContext : public GpuControl {
 
     scoped_refptr<gles2::FeatureInfo> feature_info = new gles2::FeatureInfo();
     scoped_refptr<gles2::ContextGroup> context_group = new gles2::ContextGroup(
-        gpu_preferences_, true, nullptr /* memory_tracker */,
-        &translator_cache_, &completeness_cache_, feature_info,
-        bind_generates_resource, nullptr /* progress_reporter */,
-        GpuFeatureInfo(), &discardable_manager_,
+        gpu_preferences_, /*memory_tracker=*/nullptr, &translator_cache_,
+        &completeness_cache_, feature_info, bind_generates_resource,
+        /*progress_reporter=*/nullptr, GpuFeatureInfo(), &discardable_manager_,
         &passthrough_discardable_manager_, &shared_image_manager_);
     command_buffer_ = std::make_unique<RecordReplayCommandBuffer>();
 
@@ -248,6 +248,8 @@ class RecordReplayContext : public GpuControl {
     gles2_helper_->FreeRingBuffer();
     command_buffer_->AdvanceMode();
   }
+
+  void WaitExec() { gles2_helper_->Finish(); }
 
   void StartReplay() {
     DCHECK_EQ(command_buffer_->mode(), RecordReplayCommandBuffer::kRecord);
@@ -428,6 +430,8 @@ class DecoderPerfTest : public testing::Test {
   void StartRecord() { context_->StartRecord(); }
 
   void StartReplay() { context_->StartReplay(); }
+
+  void WaitExec() { context_->WaitExec(); }
 
   void Replay() { context_->Replay(); }
 
@@ -632,7 +636,7 @@ TEST_F(DecoderPerfTest, ProgramDraw) {
       "  gl_FragColor = color;\n"
       "}\n";
 
-  GLuint programs[2];
+  std::array<GLuint, 2> programs;
   programs[0] =
       CreateAndLinkProgram(kVertexShader, kFragmentShader, {{"position", 0}});
 
@@ -670,8 +674,9 @@ TEST_F(DecoderPerfTest, ProgramDraw) {
   gl_->Uniform2f(scale_location2, 2.f / N, 2.f / N);
   gl_->Uniform4f(color_location2, 1.f, 0.f, 0.f, 1.f);
 
-  GLint offset_locations[2] = {gl_->GetUniformLocation(programs[0], "offset"),
-                               gl_->GetUniformLocation(programs[1], "offset")};
+  std::array<GLint, 2> offset_locations = {
+      gl_->GetUniformLocation(programs[0], "offset"),
+      gl_->GetUniformLocation(programs[1], "offset")};
 
   StartRecord();
   size_t program = 0;
@@ -685,6 +690,7 @@ TEST_F(DecoderPerfTest, ProgramDraw) {
       program = 1 - program;
     }
   }
+  WaitExec();
 
   StartReplay();
   PerfIterator iterator("program_draw_100", kDefaultRuns, kDefaultIterations);

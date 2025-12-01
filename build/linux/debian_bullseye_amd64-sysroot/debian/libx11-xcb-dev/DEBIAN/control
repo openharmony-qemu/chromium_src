@@ -1,10 +1,10 @@
 Package: libx11-xcb-dev
 Source: libx11
-Version: 2:1.7.2-1
+Version: 2:1.7.2-1+deb11u2
 Architecture: amd64
 Maintainer: Debian X Strike Force <debian-x@lists.debian.org>
 Installed-Size: 259
-Depends: libx11-xcb1 (= 2:1.7.2-1), libxcb1-dev (>= 1.11.1), libx11-dev
+Depends: libx11-xcb1 (= 2:1.7.2-1+deb11u2), libxcb1-dev (>= 1.11.1), libx11-dev
 Section: libdevel
 Priority: optional
 Multi-Arch: same

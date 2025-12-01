@@ -2236,7 +2236,7 @@ cc24d9039c97d0e73713e557addc59d5  usr/lib/i386-linux-gnu/qt6/mkspecs/modules/qt_
 64cc003963d6131ddc5672362a7f342d  usr/lib/i386-linux-gnu/qt6/mkspecs/modules/qt_lib_xml.pri
 34446dae313c074f093f118ebd574800  usr/lib/i386-linux-gnu/qt6/mkspecs/modules/qt_lib_xml_private.pri
 f63ef0310e8d9cc0f5c78eb055736107  usr/lib/qt6/libexec/ensure_pro_file.cmake
-714519f42d58214eb34386bbe0551788  usr/share/doc/qt6-base-dev/changelog.Debian.gz
+31b7263503d651300686bd538bd5b287  usr/share/doc/qt6-base-dev/changelog.Debian.gz
 b34cdcf90ff7d9a4e75b63828abdb651  usr/share/doc/qt6-base-dev/copyright
 1c367119f31193d6211eb87009c23e29  usr/share/lintian/overrides/qt6-base-dev
 666dfaa8b78cae91ae6b7d09cf1453a2  usr/share/qt6/doc/config/exampleurl-qt3d.qdocconf
@@ -2315,7 +2315,7 @@ fd48eff1759937f33266fad2403123be  usr/share/qt6/doc/global/template/images/Qt-fo
 46fd2d5df6942dd9a2e51e49cadfe64c  usr/share/qt6/doc/global/template/images/Qt-footer_shadow.png
 8c1d5e26531066869aa5e6894eb82b4b  usr/share/qt6/doc/global/template/images/Qt-gradient.png
 a0666a3e14352c1e82d07b56619b658d  usr/share/qt6/doc/global/template/images/Qt-header-bg.jpg
-dca3fea49be9688b961dea6e3568e72c  usr/share/qt6/doc/global/template/images/Qt-logo.png
+611501682b28a04a7d355de4dbd7cc50  usr/share/qt6/doc/global/template/images/Qt-logo.png
 a2f58f531dc7fcf3a5d689e1bf80ae56  usr/share/qt6/doc/global/template/images/arrow.png
 a2f58f531dc7fcf3a5d689e1bf80ae56  usr/share/qt6/doc/global/template/images/arrow_bc.png
 f5444dfa8a6bdb8c98356466de787978  usr/share/qt6/doc/global/template/images/arrow_down.png
@@ -2340,7 +2340,7 @@ ea4d9619557804a827add26e09217e41  usr/share/qt6/doc/global/template/images/feedb
 37f7d71fde79a9c402a617cc5f20cb4c  usr/share/qt6/doc/global/template/images/horBar.png
 45cc9f53e40d2b0a9458f33de461efff  usr/share/qt6/doc/global/template/images/ico_note.png
 649ad5df6323afc90db830cd82b78b85  usr/share/qt6/doc/global/template/images/ico_note_attention.png
-8d486cc39df953efb4e10ce2ea63b329  usr/share/qt6/doc/global/template/images/ico_out.png
+91a97e429cc77991a6bd6a6ad54ca047  usr/share/qt6/doc/global/template/images/ico_out.png
 3456cf318fd62fa68757350e3855e789  usr/share/qt6/doc/global/template/images/logo.png
 92940f062e441baad47ed43da69b15a2  usr/share/qt6/doc/global/template/images/page.png
 5c61b49c12d21045448057a5d055e1de  usr/share/qt6/doc/global/template/images/page_bg.png
@@ -2357,8 +2357,8 @@ e9ecb94ac5066209a4bc8cba69def09f  usr/share/qt6/doc/global/template/style/icomoo
 4372b39f8a630d18b30e44aa30972348  usr/share/qt6/doc/global/template/style/icomoon.svg
 099e0126774c888c5e2a7445a4dff8d9  usr/share/qt6/doc/global/template/style/icomoon.ttf
 8c69e766eca3c59a6bc84d9206c79541  usr/share/qt6/doc/global/template/style/icomoon.woff
-a3c62d423720ba47a0cac59a95a9453f  usr/share/qt6/doc/global/template/style/list_arrow.png
-cb725827d35c98a8f3aa3ba200199d4b  usr/share/qt6/doc/global/template/style/list_expand.png
+c9fdc6d1e404c7a207887f2a2e513b2d  usr/share/qt6/doc/global/template/style/list_arrow.png
+dd21770ce149896dff364219a8a21995  usr/share/qt6/doc/global/template/style/list_expand.png
 84a8b1ff3eb5ef84d4b1bb667b9ca238  usr/share/qt6/doc/global/template/style/offline-simple.css
 62cc57127f8498be0421accf1ccd98c7  usr/share/qt6/doc/global/template/style/offline.css
 e674a8bee653e9dd1b2531da5f8af6d2  usr/share/qt6/doc/global/template/style/online.css

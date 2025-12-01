@@ -6,6 +6,8 @@
 
 #include "android_webview/browser/page_load_metrics/aw_gws_page_load_metrics_observer.h"
 #include "android_webview/browser/page_load_metrics/aw_page_load_metrics_memory_tracker_factory.h"
+#include "android_webview/browser/page_load_metrics/service_level_page_load_metrics_observer.h"
+#include "components/page_load_metrics/browser/features.h"
 #include "components/page_load_metrics/browser/metrics_web_contents_observer.h"
 #include "components/page_load_metrics/browser/observers/abandoned_page_load_metrics_observer.h"
 #include "components/page_load_metrics/browser/observers/third_party_metrics_observer.h"
@@ -44,6 +46,7 @@ class PageLoadMetricsEmbedder
   page_load_metrics::PageLoadMetricsMemoryTracker*
   GetMemoryTrackerForBrowserContext(
       content::BrowserContext* browser_context) override;
+  bool IsIncognito(content::WebContents* web_contents) override;
 
  protected:
   // page_load_metrics::PageLoadMetricsEmbedderBase:
@@ -65,6 +68,7 @@ void PageLoadMetricsEmbedder::RegisterObservers(
   tracker->AddObserver(std::make_unique<AbandonedPageLoadMetricsObserver>());
   tracker->AddObserver(std::make_unique<GWSAbandonedPageLoadMetricsObserver>());
   tracker->AddObserver(std::make_unique<AwGWSPageLoadMetricsObserver>());
+  tracker->AddObserver(std::make_unique<ServiceLevelPageLoadMetricsObserver>());
 }
 
 bool PageLoadMetricsEmbedder::IsNewTabPageUrl(const GURL& url) {
@@ -89,11 +93,18 @@ bool PageLoadMetricsEmbedder::IsNonTabWebUI(const GURL& url) {
 page_load_metrics::PageLoadMetricsMemoryTracker*
 PageLoadMetricsEmbedder::GetMemoryTrackerForBrowserContext(
     content::BrowserContext* browser_context) {
-  if (!base::FeatureList::IsEnabled(features::kV8PerFrameMemoryMonitoring))
+  if (!base::FeatureList::IsEnabled(
+          page_load_metrics::features::kV8PerFrameMemoryMonitoring)) {
     return nullptr;
+  }
 
   return AwPageLoadMetricsMemoryTrackerFactory::GetForBrowserContext(
       browser_context);
+}
+
+bool PageLoadMetricsEmbedder::IsIncognito(content::WebContents* web_contents) {
+  // Android web view doesn't have Incognito mode.
+  return false;
 }
 
 }  // namespace

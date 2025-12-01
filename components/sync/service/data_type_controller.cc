@@ -10,7 +10,6 @@
 #include "base/logging.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/notreached.h"
-#include "base/task/sequenced_task_runner.h"
 #include "components/sync/base/data_type.h"
 #include "components/sync/engine/data_type_activation_response.h"
 #include "components/sync/model/data_type_activation_request.h"
@@ -19,13 +18,6 @@
 
 namespace syncer {
 namespace {
-
-void ReportErrorOnModelThread(
-    scoped_refptr<base::SequencedTaskRunner> ui_thread,
-    const ModelErrorHandler& error_handler,
-    const ModelError& error) {
-  ui_thread->PostTask(error.location(), base::BindOnce(error_handler, error));
-}
 
 // Takes the strictest policy for clearing sync metadata.
 SyncStopMetadataFate TakeStrictestMetadataFate(SyncStopMetadataFate fate1,
@@ -174,15 +166,15 @@ void DataTypeController::LoadModels(
 
   DataTypeActivationRequest request;
   request.error_handler = base::BindRepeating(
-      &ReportErrorOnModelThread, base::SequencedTaskRunner::GetCurrentDefault(),
-      base::BindRepeating(&DataTypeController::ReportModelError,
-                          weak_ptr_factory_.GetWeakPtr()));
-  request.authenticated_account_id = configure_context.authenticated_account_id;
+      &DataTypeController::ReportModelError, weak_ptr_factory_.GetWeakPtr());
+  request.authenticated_gaia_id = configure_context.authenticated_gaia_id;
+  request.previously_syncing_gaia_id_info =
+      configure_context.previously_syncing_gaia_id_info;
   request.cache_guid = configure_context.cache_guid;
   request.sync_mode = configure_context.sync_mode;
   request.configuration_start_time = configure_context.configuration_start_time;
 
-  // Note that |request.authenticated_account_id| may be empty for local sync.
+  // Note that `request.authenticated_account_id` may be empty for local sync.
   DCHECK(!request.cache_guid.empty());
 
   // Ask the delegate to actually start the datatype.
@@ -278,13 +270,17 @@ bool DataTypeController::ShouldRunInTransportOnlyMode() const {
   return delegate_map_.count(SyncMode::kTransportOnly) != 0;
 }
 
-void DataTypeController::HasUnsyncedData(
-    base::OnceCallback<void(bool)> callback) {
-  if (!delegate_) {
-    std::move(callback).Run(false);
+void DataTypeController::GetUnsyncedDataCount(
+    base::OnceCallback<void(size_t)> callback) {
+  auto it = delegate_map_.find(SyncMode::kTransportOnly);
+  if (it == delegate_map_.end()) {
+    std::move(callback).Run(/*count=*/0);
     return;
   }
-  delegate_->HasUnsyncedData(std::move(callback));
+  CHECK(it->second);
+  // This should only be triggered for transport-only mode.
+  CHECK(!delegate_ || delegate_ == it->second.get(), base::NotFatalUntil::M138);
+  it->second->GetUnsyncedDataCount(std::move(callback));
 }
 
 void DataTypeController::GetAllNodesForDebugging(AllNodesCallback callback) {

@@ -36,10 +36,10 @@
   [super start];
 
   _mediator = [[OmniboxPositionChoiceMediator alloc] init];
-  if (!self.browser->GetProfile()->IsOffTheRecord()) {
+  if (!self.isOffTheRecord) {
     _mediator.deviceSwitcherResultDispatcher =
         segmentation_platform::SegmentationPlatformServiceFactory::
-            GetDispatcherForProfile(self.browser->GetProfile());
+            GetDispatcherForProfile(self.profile);
   }
 
   _viewController = [[OmniboxPositionChoiceViewController alloc] init];
@@ -100,7 +100,7 @@
   }
 
   TipsManagerIOS* tipsManager =
-      TipsManagerIOSFactory::GetForProfile(self.browser->GetProfile());
+      TipsManagerIOSFactory::GetForProfile(self.profile);
 
   tipsManager->NotifySignal(segmentation_platform::tips_manager::signals::
                                 kAddressBarPositionChoiceScreenDisplayed);

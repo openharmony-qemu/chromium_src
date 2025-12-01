@@ -1,10 +1,10 @@
 Package: libavcodec-dev
 Source: ffmpeg
-Version: 7:4.3.5-0+deb11u1
+Version: 7:4.3.7-0+deb11u1
 Architecture: amd64
 Maintainer: Debian Multimedia Maintainers <debian-multimedia@lists.debian.org>
-Installed-Size: 21130
-Depends: libavcodec58 (= 7:4.3.5-0+deb11u1), libavutil-dev (= 7:4.3.5-0+deb11u1), libswresample-dev (= 7:4.3.5-0+deb11u1)
+Installed-Size: 21135
+Depends: libavcodec58 (= 7:4.3.7-0+deb11u1), libavutil-dev (= 7:4.3.7-0+deb11u1), libswresample-dev (= 7:4.3.7-0+deb11u1)
 Section: libdevel
 Priority: optional
 Multi-Arch: same

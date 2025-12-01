@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "ohos/adapter/screen/screen_adapter.h"
 
@@ -67,7 +42,7 @@ void ScreenAdapter::ConvertDisplay(aki::Value complete_display,
   ohos_display.avail_area.height = avail_area["height"].As<int32_t>();
 }
 
-void ScreenAdapter::GetDefaultDisplay(OhosDisplay& ohos_display) {
+void ScreenAdapter::GetPrimaryDisplay(OhosDisplay& ohos_display) {
   std::promise<bool> promise;
   std::function<void(aki::Value)> callback =
     [&](aki::Value complete_display) {
@@ -80,7 +55,7 @@ void ScreenAdapter::GetDefaultDisplay(OhosDisplay& ohos_display) {
   };
 
   if (auto func =
-          ohos::adapter::GetJSFunction("OhosDisplayAdapter.GetDefaultDisplay")) {
+          ohos::adapter::GetJSFunction("OhosDisplayAdapter.GetPrimaryDisplay")) {
     func->Invoke<void>(callback);
     promise.get_future().get();
   }
@@ -91,8 +66,8 @@ void ScreenAdapter::GetDefaultDisplay(OhosDisplay& ohos_display) {
 void ScreenAdapter::GetAllDisplays(std::vector<OhosDisplay>& ohos_displays) {
   std::promise<bool> promise;
   std::function<void(aki::Value, int32_t)> callback =
-    [&](aki::Value complete_display, int32_t len) {
-    if (!complete_display.IsArray()) {
+    [&](aki::Value complete_displays, int32_t len) {
+    if (!complete_displays.IsArray()) {
       LOGE("[Display]GetAllDisplays input param err, displays is not array.");
       promise.set_value(false);
       return;
@@ -100,7 +75,7 @@ void ScreenAdapter::GetAllDisplays(std::vector<OhosDisplay>& ohos_displays) {
 
     for (int32_t i = 0; i < len; i++) {
       OhosDisplay ohos_display;
-      ConvertDisplay(complete_display[i], ohos_display);
+      ConvertDisplay(complete_displays[i], ohos_display);
       ohos_displays.push_back(ohos_display);
     }
 
@@ -142,9 +117,45 @@ ScreenAdapter::DisplayChangeCallback ScreenAdapter::GetCallback() {
   return callback_;
 }
 
+void ScreenAdapter::RegisterAvailableAreaMonitor() {
+  if (auto func =
+        ohos::adapter::GetJSFunction("OhosDisplayAdapter.registerAvailableAreaMonitor")) {
+    func->Invoke<void>();
+  }
+}
+
+void ScreenAdapter::RegisterAvailableAreaCallback(
+    ScreenAdapter::AvailableAreaChangeCallback callback) {
+  available_area_callback_ = callback;
+}
+ 
+ScreenAdapter::AvailableAreaChangeCallback ScreenAdapter::GetAvailableAreaCallback() {
+  return available_area_callback_;
+}
+
+void ScreenAdapter::RegisterAvoidAreaCallback(
+    ScreenAdapter::AvoidAreaChangeCallback callback) {
+  avoid_area_callback_ = callback;
+}
+ 
+ScreenAdapter::AvoidAreaChangeCallback ScreenAdapter::GetAvoidAreaCallback() {
+  return avoid_area_callback_;
+}
+
 void OnDisplayChangeCallback(const std::string& event, int32_t id) {
   if (ScreenAdapter::GetInstance().GetCallback() != nullptr) {
     ScreenAdapter::GetInstance().GetCallback()(event, id);
+  }
+}
+
+void OnAvailableAreaChangeCallback(const aki::Value available_area, int32_t display_id) {
+  window::WindowRect work_area;
+  work_area.left = available_area["left"].As<int32_t>();
+  work_area.top = available_area["top"].As<int32_t>();
+  work_area.width = available_area["width"].As<int32_t>();
+  work_area.height = available_area["height"].As<int32_t>();
+  if (ScreenAdapter::GetInstance().GetAvailableAreaCallback() != nullptr) {
+    ScreenAdapter::GetInstance().GetAvailableAreaCallback()(work_area, display_id);
   }
 }
 
@@ -159,9 +170,29 @@ void ScreenAdapter::SetFontSizeZoom(float zoom) {
   font_size_zoom_ = zoom;
 }
 
+void ScreenAdapter::OnAvoidAreaChangeCallback(int32_t status_bar_height) {
+  if (status_bar_height_ == status_bar_height) {
+    return;
+  }
+  status_bar_height_ = status_bar_height;
+  if (GetAvoidAreaCallback() != nullptr) {
+    GetAvoidAreaCallback()(status_bar_height_);
+  }
+}
+ 
+int32_t ScreenAdapter::GetStatusBarHeight() {
+  return status_bar_height_;
+}
+ 
+void OnAvoidAreaChangeCallback(int32_t status_bar_height) {
+  ScreenAdapter::GetInstance().OnAvoidAreaChangeCallback(status_bar_height);
+}
+
 JSBIND_GLOBAL() {
+  JSBIND_FUNCTION(OnAvailableAreaChangeCallback);
   JSBIND_FUNCTION(OnDisplayChangeCallback);
   JSBIND_FUNCTION(OnFontSizeChangeCallback);
+  JSBIND_FUNCTION(OnAvoidAreaChangeCallback);
 }
 
 }  // namespace adapter

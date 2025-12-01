@@ -40,7 +40,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import org.chromium.android_webview.AwContents;
-import org.chromium.android_webview.AwContentsClient.AwWebResourceRequest;
+import org.chromium.android_webview.AwWebResourceRequest;
 import org.chromium.android_webview.test.AwActivityTestRule.TestDependencyFactory;
 import org.chromium.autofill.mojom.SubmissionSource;
 import org.chromium.base.Log;
@@ -68,6 +68,7 @@ import org.chromium.components.autofill_public.ViewType;
 import org.chromium.components.embedder_support.util.WebResourceResponseInfo;
 import org.chromium.content_public.browser.test.util.DOMUtils;
 import org.chromium.content_public.browser.test.util.TouchCommon;
+import org.chromium.content_public.browser.test.util.WebContentsUtils;
 import org.chromium.net.test.EmbeddedTestServer;
 import org.chromium.net.test.util.TestWebServer;
 
@@ -243,8 +244,8 @@ public class AwAutofillTest extends AwParameterizedTest {
         private static final int TOTAL_CONTROLS = 1; // text1
 
         private int mCnt;
-        private AwAutofillTest mTest;
-        private TestWebServer mWebServer;
+        private final AwAutofillTest mTest;
+        private final TestWebServer mWebServer;
 
         public AwAutofillSessionUMATestHelper(AwAutofillTest test, TestWebServer webServer) {
             mTest = test;
@@ -314,14 +315,6 @@ public class AwAutofillTest extends AwParameterizedTest {
                             mCnt, new Integer[] {AUTOFILL_VALUE_CHANGED});
         }
 
-        public void simulateUserChangeAutofilledField() throws Throwable {
-            mTest.executeJavaScriptAndWaitForResult("document.getElementById('text1').select();");
-            mTest.dispatchDownAndUpKeyEvents(KeyEvent.KEYCODE_B);
-            mCnt +=
-                    mTest.waitForCallbackAndVerifyTypes(
-                            mCnt, new Integer[] {AUTOFILL_VALUE_CHANGED});
-        }
-
         public void submitForm() throws Throwable {
             mTest.executeJavaScriptAndWaitForResult("document.getElementById('formid').submit();");
             mCnt +=
@@ -375,10 +368,10 @@ public class AwAutofillTest extends AwParameterizedTest {
     private EmbeddedTestServer mEmbeddedServer;
     private AwTestContainerView mTestContainerView;
     private AwAutofillTestClient mContentsClient;
-    private CallbackHelper mCallbackHelper = new CallbackHelper();
+    private final CallbackHelper mCallbackHelper = new CallbackHelper();
     private AwContents mAwContents;
-    private ConcurrentLinkedQueue<Integer> mEventQueue = new ConcurrentLinkedQueue<>();
-    private TestValues mTestValues = new TestValues();
+    private final ConcurrentLinkedQueue<Integer> mEventQueue = new ConcurrentLinkedQueue<>();
+    private final TestValues mTestValues = new TestValues();
     private int mSubmissionSource;
     private TestAutofillManagerWrapper mTestAutofillManagerWrapper;
     private AwAutofillSessionUMATestHelper mUMATestHelper;
@@ -417,8 +410,6 @@ public class AwAutofillTest extends AwParameterizedTest {
                                     true);
                         });
         mContentsClient = new AwAutofillTestClient();
-        ThreadUtils.runOnUiThreadBlocking(
-                () -> AutofillProviderTestHelper.disableCrowdsourcingForTesting());
         mTestContainerView =
                 mRule.createAwTestContainerViewOnMainSync(
                         mContentsClient, false, new TestDependencyFactory());
@@ -427,10 +418,6 @@ public class AwAutofillTest extends AwParameterizedTest {
         mAutofillProvider = mAwContents.getAutofillProviderForTesting();
 
         ThreadUtils.runOnUiThreadBlocking(() -> histograms.assertExpected());
-    }
-
-    private void setUpAwGNotCurrent() throws Exception {
-        doSetUp(/* isAwGCurrentAutofillService= */ false);
     }
 
     @After
@@ -629,9 +616,6 @@ public class AwAutofillTest extends AwParameterizedTest {
         clearChangedValues();
         invokeAutofill(values);
 
-        // Autofilling the select control will move the focus on it, and triggers a value change
-        // callback, so we get additional AUTOFILL_VIEW_EXITED, AUTOFILL_VIEW_ENTERED and
-        // AUTOFILL_VALUE_CHANGED events at the end.
         waitForCallbackAndVerifyTypes(
                 cnt,
                 new Integer[] {
@@ -639,9 +623,6 @@ public class AwAutofillTest extends AwParameterizedTest {
                     AUTOFILL_VALUE_CHANGED,
                     AUTOFILL_VALUE_CHANGED,
                     AUTOFILL_VALUE_CHANGED,
-                    AUTOFILL_VIEW_EXITED,
-                    AUTOFILL_VIEW_ENTERED,
-                    AUTOFILL_VALUE_CHANGED
                 });
 
         // Verify form filled by Javascript
@@ -1170,7 +1151,7 @@ public class AwAutofillTest extends AwParameterizedTest {
                     public WebResourceResponseInfo shouldInterceptRequest(
                             AwWebResourceRequest request) {
                         try {
-                            if (url.equals(request.url)) {
+                            if (url.equals(request.getUrl())) {
                                 // Only intercept the iframe's request.
                                 if (mCallCount == 1) {
                                     final String encoding = "UTF-8";
@@ -2926,10 +2907,7 @@ public class AwAutofillTest extends AwParameterizedTest {
     @Test
     @SmallTest
     @Feature({"AndroidWebView"})
-    @CommandLineFlags.Add({
-        "enable-features=AutofillFixValueSemantics",
-        "disable-features=AutofillServerCommunication"
-    })
+    @CommandLineFlags.Add({"disable-features=AutofillServerCommunication"})
     public void testServerPredictionArrivesAfterAutofillStart() throws Throwable {
         loadHTML(
                 """
@@ -3023,10 +3001,7 @@ public class AwAutofillTest extends AwParameterizedTest {
     @Test
     @SmallTest
     @Feature({"AndroidWebView"})
-    @CommandLineFlags.Add({
-        "enable-features=AutofillFixValueSemantics",
-        "disable-features=AutofillServerCommunication"
-    })
+    @CommandLineFlags.Add({"disable-features=AutofillServerCommunication"})
     public void testServerPredictionPrimaryTypeArrivesAfterAutofillStart() throws Throwable {
         loadHTML(
                 """
@@ -3115,10 +3090,7 @@ public class AwAutofillTest extends AwParameterizedTest {
     @Test
     @SmallTest
     @Feature({"AndroidWebView"})
-    @CommandLineFlags.Add({
-        "enable-features=AutofillFixValueSemantics",
-        "disable-features=AutofillServerCommunication"
-    })
+    @CommandLineFlags.Add({"disable-features=AutofillServerCommunication"})
     public void testServerPredictionArrivesBeforeCallbackRegistered() throws Throwable {
         loadHTML(
                 """
@@ -3460,6 +3432,7 @@ public class AwAutofillTest extends AwParameterizedTest {
     @Test
     @SmallTest
     @Feature({"AndroidWebView"})
+    @DisabledTest(message = "crbug.com/404869375")
     public void testLabelChange() throws Throwable {
         loadHTML(
                 """
@@ -3557,6 +3530,9 @@ public class AwAutofillTest extends AwParameterizedTest {
         mRule.loadUrlSync(
                 mTestContainerView.getAwContents(), mContentsClient.getOnPageFinishedHelper(), url);
         done.waitForCallback(callCount);
+
+        ThreadUtils.runOnUiThreadBlocking(
+                () -> WebContentsUtils.simulateEndOfPaintHolding(mAwContents.getWebContents()));
     }
 
     private void reloadSync() throws Exception {
@@ -3695,7 +3671,7 @@ public class AwAutofillTest extends AwParameterizedTest {
     }
 
     private static String buildEventList(Integer[] eventArray) {
-        Assert.assertEquals(EVENT.length, AUTOFILL_EVENT_MAX);
+        Assert.assertEquals(AUTOFILL_EVENT_MAX, EVENT.length);
         List<String> result = new ArrayList<String>(eventArray.length);
         for (Integer event : eventArray) result.add(EVENT[event]);
         return TextUtils.join(",", result);

@@ -52,9 +52,12 @@ TestBrowser::TestBrowser(ProfileIOS* profile)
           profile->IsOffTheRecord() ? Type::kIncognito : Type::kRegular) {}
 
 TestBrowser::~TestBrowser() {
+  // Ensure all WebStates are closed before destroying the Browser.
+  CloseAllWebStates(*web_state_list_, WebStateList::CLOSE_NO_FLAGS);
   for (auto& observer : observers_) {
     observer.BrowserDestroyed(this);
   }
+  ClearAllUserData();
 }
 
 #pragma mark - Browser
@@ -116,4 +119,8 @@ Browser* TestBrowser::CreateInactiveBrowser() {
 
 void TestBrowser::DestroyInactiveBrowser() {
   NOTREACHED();
+}
+
+void TestBrowser::SetCommandDispatcher(CommandDispatcher* dispatcher) {
+  command_dispatcher_ = dispatcher;
 }

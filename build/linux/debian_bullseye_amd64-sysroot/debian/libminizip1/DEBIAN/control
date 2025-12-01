@@ -1,9 +1,9 @@
 Package: libminizip1
-Source: minizip (1.1-8)
-Version: 1.1-8+b1
+Source: minizip
+Version: 1.1-8+deb11u1
 Architecture: amd64
 Maintainer: Michael Gilbert <mgilbert@debian.org>
-Installed-Size: 64
+Installed-Size: 63
 Depends: libc6 (>= 2.14), zlib1g (>= 1:1.1.4)
 Section: libs
 Priority: optional

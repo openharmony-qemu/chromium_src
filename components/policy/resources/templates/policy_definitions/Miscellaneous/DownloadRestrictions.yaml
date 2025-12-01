@@ -28,7 +28,6 @@ features:
   per_profile: true
 future_on:
 - fuchsia
-- ios
 items:
 - caption: No special restrictions. Default.
   name: DefaultDownloadSecurity
@@ -48,7 +47,7 @@ items:
   value: 4
 label: Download restrictions
 owners:
-- dpr-eng@google.com
+- cbe-cep-eng@google.com
 - zmin@chromium.org
 schema:
   enum:
@@ -62,6 +61,7 @@ supported_on:
 - chrome.*:61-
 - chrome_os:61-
 - android:131-
+- ios:135-
 tags:
 - local-data-access
 type: int-enum

@@ -17,6 +17,10 @@
 #include "base/process/set_process_title_linux.h"
 #endif
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/test/test_support_ohos.h"
+#endif
+ 
 namespace base {
 
 namespace {
@@ -53,6 +57,10 @@ class BaseUnittestSuite : public TestSuite {
  protected:
   void Initialize() override {
     TestSuite::Initialize();
+
+#if BUILDFLAG(IS_OHOS)
+    base::RegisterPathProviderForOhosTest();
+#endif
 
 #if BUILDFLAG(IS_WIN)
     // Add TestEventListeners to enforce certain properties across tests.

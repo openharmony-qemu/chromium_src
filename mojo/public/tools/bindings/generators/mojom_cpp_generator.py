@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 """Generates C++ source files from a mojom.Module."""
+import hashlib
 import os
 import mojom.generate.generator as generator
 import mojom.generate.module as mojom
@@ -178,6 +179,11 @@ def ShouldInlineUnion(union):
   return not any(mojom.IsReferenceKind(field.kind) for field in union.fields)
 
 
+def _IpcHash(message_name):
+  sha256_hash = hashlib.sha256(message_name.encode('utf-8'))
+  return f'0x{sha256_hash.hexdigest()[:8]}'
+
+
 def HasPackedMethodOrdinals(interface):
   """Returns whether all method ordinals are packed such that indexing into a
   table would be efficient."""
@@ -274,6 +280,9 @@ class Generator(generator.Generator):
       all_enums.extend(interface.enums)
       if interface.uuid:
         headers.add('base/token.h')
+      for method in interface.methods:
+        if not method.result_response is None:
+          headers.add('base/types/expected.h')
 
     types = set(self._GetFullMojomNameForKind(typename)
                 for typename in
@@ -325,6 +334,62 @@ class Generator(generator.Generator):
         for param in method.parameters + (method.response_parameters or []):
           yield param.kind
 
+  def _GetSendValidationModules(self):
+    """
+    Returns a dict with the sets of modules this module needs for send
+    validation.
+    """
+    base_enums = set()
+    base_structs = set()
+    base_unions = set()
+    modules = set()
+
+    # Collect all enums, structs, and unions that need send validation from
+    # methods with the SendValidation attribute.
+    for interface in self.module.interfaces:
+      for method in interface.methods:
+        if method.send_validation:
+          base_enums, base_structs, base_unions = (
+              mojom.CollectSendValidationTypesFromMethod(method))
+
+    # Collect all enums, structs, and unions that need send validation from
+    # the module itself if it includes send validation.
+    if self.module.include_send_validation:
+      base_enums.update(self.module.enums)
+      base_structs.update(self.module.structs)
+      base_unions.update(self.module.unions)
+
+    # Collect nested enums, structs, and unions
+    enums = set(base_enums)
+    structs = set(base_structs)
+    unions = set(base_unions)
+    for union in base_unions:
+      union_enums, union_structs, union_unions = (
+          mojom.CollectSendValidationTypesFromKind(union))
+      enums.update(union_enums)
+      structs.update(union_structs)
+      unions.update(union_unions)
+
+    for struct in base_structs:
+      struct_enums, struct_structs, struct_unions = (
+          mojom.CollectSendValidationTypesFromKind(struct))
+      enums.update(struct_enums)
+      structs.update(struct_structs)
+      unions.update(struct_unions)
+
+    # Collect modules from all referenced types
+    for e in enums:
+      if hasattr(e, "module") and e.module:
+        modules.add(e.module)
+    for s in structs:
+      if hasattr(s, "module") and s.module:
+        modules.add(s.module)
+    for u in unions:
+      if hasattr(u, "module") and u.module:
+        modules.add(u.module)
+
+    return modules
+
   def _GetJinjaExports(self):
     all_enums = list(self.module.enums)
     for struct in self.module.structs:
@@ -363,6 +428,7 @@ class Generator(generator.Generator):
         "uses_interfaces": self._ReferencesAnyHandleOrInterfaceType(),
         "uses_native_types": self._ReferencesAnyNativeType(),
         "variant": self.variant,
+        "send_validation_modules": self._GetSendValidationModules(),
     }
 
   @staticmethod
@@ -409,6 +475,7 @@ class Generator(generator.Generator):
         "requires_context_for_data_view": RequiresContextForDataView,
         "should_inline": ShouldInlineStruct,
         "should_inline_union": ShouldInlineUnion,
+        "ipc_hash": _IpcHash,
         "is_array_kind": mojom.IsArrayKind,
         "is_bool_kind": mojom.IsBoolKind,
         "is_default_constructible": self._IsDefaultConstructible,
@@ -493,10 +560,17 @@ class Generator(generator.Generator):
   def _GenerateModuleFeaturesHeader(self):
     return self._GetJinjaExports()
 
+  @UseJinja("module-send-validation.h.tmpl")
+  def _GenerateModuleSendValidationHeader(self):
+    return self._GetJinjaExports()
+
+  @UseJinja("module-data-view.h.tmpl")
+  def _GenerateModuleDataViewHeader(self):
+    return self._GetJinjaExports()
+
   @UseJinjaForImportedTemplate
   def _GenerateModuleFromImportedTemplate(self, path_to_template, filename):
     return self._GetJinjaExports()
-
 
   def GenerateFiles(self, args):
     self.module.Stylize(generator.Stylizer())
@@ -518,6 +592,11 @@ class Generator(generator.Generator):
                               "%s-shared.cc" % self.module.path)
         self.WriteWithComment(self._GenerateModuleParamsDataHeader(),
                               "%s-params-data.h" % self.module.path)
+        self.WriteWithComment(self._GenerateModuleDataViewHeader(),
+                              "%s-data-view.h" % self.module.path)
+        self.WriteWithComment(self._GenerateModuleSendValidationHeader(),
+                              "%s-send-validation.h" % self.module.path)
+
     else:
       suffix = "-%s" % self.variant if self.variant else ""
       self.WriteWithComment(self._GenerateModuleHeader(),
@@ -550,7 +629,8 @@ class Generator(generator.Generator):
     return self._ExpressionToText(constant.value, kind=constant.kind)
 
   def _ConstantLength(self, constant):
-    # The length of the string value, removing the quotes, but preserving the null-terminator.
+    # The length of the string value, removing the quotes, but preserving the
+    # null-terminator.
     return f"{len(constant.value) - 1}"
 
   def _UnderToCamel(self, value, digits_split=False):

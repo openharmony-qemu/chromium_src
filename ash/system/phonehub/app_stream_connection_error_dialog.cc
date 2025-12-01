@@ -67,6 +67,8 @@ constexpr int kMarginBetweenTitleAndBody = 15;
 constexpr int kMarginBetweenBodyAndButtons = 20;
 constexpr int kMarginBetweenButtons = 8;
 
+}  // namespace
+
 // The real error dialog with content.
 class ConnectionErrorDialogDelegateView : public views::WidgetDelegateView {
   METADATA_HEADER(ConnectionErrorDialogDelegateView, views::WidgetDelegateView)
@@ -87,7 +89,7 @@ class ConnectionErrorDialogDelegateView : public views::WidgetDelegateView {
     layer()->SetRoundedCornerRadius(
         gfx::RoundedCornersF(kDialogRoundedCornerRadius));
 
-    SetBackground(views::CreateThemedRoundedRectBackground(
+    SetBackground(views::CreateRoundedRectBackground(
         static_cast<ui::ColorId>(cros_tokens::kCrosSysBaseElevated),
         kDialogRoundedCornerRadius));
     SetBorder(std::make_unique<views::HighlightBorder>(
@@ -270,8 +272,6 @@ class ConnectionErrorDialogDelegateView : public views::WidgetDelegateView {
 
 BEGIN_METADATA(ConnectionErrorDialogDelegateView)
 END_METADATA
-
-}  // namespace
 
 AppStreamConnectionErrorDialog::AppStreamConnectionErrorDialog(
     views::View* host_view,

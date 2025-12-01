@@ -4,6 +4,7 @@
 
 #include "media/audio/audio_manager_base.h"
 
+#include <algorithm>
 #include <memory>
 #include <optional>
 
@@ -15,7 +16,6 @@
 #include "base/metrics/histogram_functions.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/observer_list.h"
-#include "base/ranges/algorithm.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/stringprintf.h"
 #include "base/task/single_thread_task_runner.h"
@@ -34,11 +34,7 @@ namespace media {
 
 namespace {
 
-#if BUILDFLAG(IS_OHOS)
-const int kStreamCloseDelaySeconds = 100000;
-#else
 const int kStreamCloseDelaySeconds = 5;
-#endif
 
 // Default maximum number of output streams that can be open simultaneously
 // for all platforms.
@@ -362,11 +358,15 @@ AudioInputStream* AudioManagerBase::MakeAudioInputStream(
       // created stream and cleans it up when it is Close()d, transparently to
       // the user of the stream. I the case where the audio manager closes the
       // stream (Mac), this will result in a dangling pointer.
+      AudioDebugRecordingStreamType stream_type =
+          AudioDeviceDescription::IsLoopbackDevice(device_id)
+              ? AudioDebugRecordingStreamType::kLoopback
+              : AudioDebugRecordingStreamType::kInput;
       stream = new AudioInputStreamDataInterceptor(
           base::BindRepeating(
               &AudioDebugRecordingManager::RegisterDebugRecordingSource,
-              base::Unretained(debug_recording_manager_.get()),
-              AudioDebugRecordingStreamType::kInput, params),
+              base::Unretained(debug_recording_manager_.get()), stream_type,
+              params),
           stream);
     }
   }
@@ -432,6 +432,18 @@ AudioOutputStream* AudioManagerBase::MakeAudioOutputStreamProxy(
         output_params.set_effects(params.effects() & output_params.effects());
       }
 
+#if BUILDFLAG(IS_OHOS)
+      if (params.render_process_id() != output_params.render_process_id()) {
+        output_params.set_render_process_id(params.render_process_id());
+      }
+      if (params.render_frame_id() != output_params.render_frame_id()) {
+        output_params.set_render_frame_id(params.render_frame_id());
+      }
+      if (params.GetStreamPrivacy() != output_params.GetStreamPrivacy()) {
+        output_params.SetStreamPrivacy(params.GetStreamPrivacy());
+      }
+#endif
+
       uma_stream_format = STREAM_FORMAT_PCM_LOW_LATENCY;
     } else {
       // We've received invalid audio output parameters, so switch to a mock
@@ -479,7 +491,7 @@ AudioOutputStream* AudioManagerBase::MakeAudioOutputStreamProxy(
   // it work with expected buffer size according to requested output
   // param.
   if (!output_params.RequireOffload()) {
-    auto it = base::ranges::find_if(
+    auto it = std::ranges::find_if(
         output_dispatchers_,
         [&](const std::unique_ptr<DispatcherParams>& dispatcher) {
           // We will reuse the existing dispatcher when:

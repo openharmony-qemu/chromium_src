@@ -33,11 +33,8 @@
 #import "services/metrics/public/cpp/ukm_builders.h"
 #import "ui/base/l10n/l10n_util.h"
 
-BROWSER_USER_DATA_KEY_IMPL(ReadingListBrowserAgent)
-
-ReadingListBrowserAgent::ReadingListBrowserAgent(Browser* browser) {
-  browser_ = browser;
-}
+ReadingListBrowserAgent::ReadingListBrowserAgent(Browser* browser)
+    : BrowserUserData(browser) {}
 
 ReadingListBrowserAgent::~ReadingListBrowserAgent() {}
 
@@ -159,12 +156,12 @@ AccountInfo ReadingListBrowserAgent::GetAccountInfoFromLastAddedURL(
     const GURL& url) {
   ReadingListModel* reading_model =
       ReadingListModelFactory::GetForProfile(browser_->GetProfile());
-  CoreAccountId account_id = reading_model->GetAccountWhereEntryIsSavedTo(url);
+  GaiaId gaia_id = reading_model->GetAccountWhereEntryIsSavedTo(url);
   signin::IdentityManager* identity_manager =
       IdentityManagerFactory::GetForProfile(
           browser_->GetProfile()->GetOriginalProfile());
   AccountInfo account_info =
-      identity_manager->FindExtendedAccountInfoByAccountId(account_id);
+      identity_manager->FindExtendedAccountInfoByGaiaId(gaia_id);
   return account_info;
 }
 
@@ -184,7 +181,8 @@ void ReadingListBrowserAgent::AddURLToReadingListwithTitle(const GURL& url,
     }
   }
 
-  RecordModuleFreshnessSignal(ContentSuggestionsModuleType::kShortcuts);
+  RecordModuleFreshnessSignal(ContentSuggestionsModuleType::kShortcuts,
+                              browser_->GetProfile()->GetPrefs());
   base::RecordAction(base::UserMetricsAction("MobileReadingListAdd"));
   ReadingListModel* reading_model =
       ReadingListModelFactory::GetForProfile(browser_->GetProfile());

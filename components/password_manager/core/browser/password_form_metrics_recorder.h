@@ -11,6 +11,7 @@
 #include <memory>
 #include <optional>
 #include <set>
+#include <variant>
 #include <vector>
 
 #include "base/memory/raw_ptr.h"
@@ -22,8 +23,6 @@
 #include "components/password_manager/core/browser/password_manager_metrics_util.h"
 #include "services/metrics/public/cpp/ukm_builders.h"
 #include "services/metrics/public/cpp/ukm_recorder.h"
-#include "third_party/abseil-cpp/absl/types/variant.h"
-#include "url/gurl.h"
 
 class PrefService;
 
@@ -224,7 +223,9 @@ class PasswordFormMetricsRecorder
     // A credential with a different domain was grouped with the current domain
     // by the `AffiliationService`.
     kGroupedMatch = 13,
-    kMaxValue = kGroupedMatch,
+    // A form on a page is a single username form.
+    kSingleUsernameForm = 14,
+    kMaxValue = kSingleUsernameForm,
   };
 
   // Used in UMA histogram, please do NOT reorder.
@@ -473,6 +474,10 @@ class PasswordFormMetricsRecorder
   void RecordMatchedFormType(const PasswordForm& form);
   void RecordPotentialPreferredMatch(std::optional<MatchedFormType> form_type);
 
+  // Records whether there was at least one grouped match in fill suggestions.
+  void RecordFillSuggestionHasGroupedMatch(
+      base::span<const PasswordForm> best_matches);
+
   // Calculates FillingAssistance metrics for |submitted_form|.
   void CalculateFillingAssistanceMetric(
       const PasswordForm& submitted_form,
@@ -648,13 +653,15 @@ class PasswordFormMetricsRecorder
 
   bool recorded_wait_for_username_reason_ = false;
 
-  bool recorded_preferred_matched_password_type = false;
+  bool recorded_preferred_matched_password_type_ = false;
 
-  bool recorded_potential_preferred_matched_password_type = false;
+  bool recorded_potential_preferred_matched_password_type_ = false;
 
-  absl::variant<absl::monostate,
-                FillingAssistance,
-                SingleUsernameFillingAssistance>
+  bool recorded_fill_suggestion_has_grouped_match_ = false;
+
+  std::variant<std::monostate,
+               FillingAssistance,
+               SingleUsernameFillingAssistance>
       filling_assistance_;
   std::optional<FillingSource> filling_source_;
   std::optional<features_util::PasswordAccountStorageUsageLevel>

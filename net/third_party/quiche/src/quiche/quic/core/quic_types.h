@@ -275,6 +275,7 @@ enum QuicFrameType : uint8_t {
   NEW_TOKEN_FRAME,
   RETIRE_CONNECTION_ID_FRAME,
   ACK_FREQUENCY_FRAME,
+  IMMEDIATE_ACK_FRAME,
   RESET_STREAM_AT_FRAME,
 
   NUM_FRAME_TYPES
@@ -332,6 +333,8 @@ enum QuicIetfFrameType : uint64_t {
   IETF_APPLICATION_CLOSE = 0x1d,
 
   IETF_HANDSHAKE_DONE = 0x1e,
+  // See draft-ietf-quic-ack-frequency.
+  IETF_IMMEDIATE_ACK = 0x1f,
 
   // The MESSAGE frame type has not yet been fully standardized.
   // QUIC versions starting with 46 and before 99 use 0x20-0x21.
@@ -857,6 +860,12 @@ struct QUICHE_EXPORT QuicSSLConfig {
   // As a client, whether ECH GREASE is enabled. If `ech_config_list` is
   // not empty, this value does nothing.
   bool ech_grease_enabled = false;
+  // If non-empty, the TLS Trust Anchor IDs to send in the TLS handshake. (See
+  // https://tlswg.org/tls-trust-anchor-ids/draft-ietf-tls-trust-anchor-ids.html.)
+  // The value should be a series of Trust Anchor IDs in wire format (a series
+  // of non-empty, 8-bit length-prefixed strings). If empty, the Trust Anchor
+  // IDs extension will not be sent.
+  std::string trust_anchor_ids;
 };
 
 QUICHE_EXPORT bool operator==(const QuicSSLConfig& lhs,

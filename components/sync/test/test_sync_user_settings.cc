@@ -4,7 +4,6 @@
 
 #include "components/sync/test/test_sync_user_settings.h"
 
-#include "build/chromeos_buildflags.h"
 #include "components/sync/base/passphrase_enums.h"
 #include "components/sync/base/user_selectable_type.h"
 #include "components/sync/engine/nigori/nigori.h"
@@ -82,8 +81,15 @@ void TestSyncUserSettings::SetSelectedType(UserSelectableType type,
   }
 }
 
+void TestSyncUserSettings::ResetSelectedType(UserSelectableType type) {
+  // In the real implementation, this would reset the selected type to its
+  // default value. Since `selected_types_` is populated with all types by
+  // default, this can be considered resetting.
+  selected_types_.Put(type);
+}
+
 void TestSyncUserSettings::KeepAccountSettingsPrefsOnlyForUsers(
-    const std::vector<signin::GaiaIdHash>& available_gaia_ids) {}
+    const std::vector<GaiaId>& available_gaia_ids) {}
 
 UserSelectableTypeSet TestSyncUserSettings::GetSelectedTypes() const {
   if (service_->GetAccountInfo().IsEmpty()) {
@@ -111,12 +117,6 @@ TestSyncUserSettings::GetTypePrefStateForAccount(
   return SyncUserSettings::UserSelectableTypePrefState::kDisabled;
 }
 
-#if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS)
-int TestSyncUserSettings::GetNumberOfAccountsWithPasswordsSelected() const {
-  return selected_types_.Has(UserSelectableType::kPasswords) ? 1 : 0;
-}
-#endif
-
 DataTypeSet TestSyncUserSettings::GetPreferredDataTypes() const {
   DataTypeSet types = UserSelectableTypesToDataTypes(GetSelectedTypes());
   types.PutAll(AlwaysPreferredUserTypes());
@@ -138,9 +138,12 @@ bool TestSyncUserSettings::IsSyncFeatureDisabledViaDashboard() const {
   return sync_feature_disabled_via_dashboard_;
 }
 
-void TestSyncUserSettings::SetSyncFeatureDisabledViaDashboard(
-    bool disabled_via_dashboard) {
-  sync_feature_disabled_via_dashboard_ = disabled_via_dashboard;
+void TestSyncUserSettings::ClearSyncFeatureDisabledViaDashboard() {
+  sync_feature_disabled_via_dashboard_ = false;
+}
+
+void TestSyncUserSettings::SetSyncFeatureDisabledViaDashboard() {
+  sync_feature_disabled_via_dashboard_ = true;
 }
 
 bool TestSyncUserSettings::IsSyncAllOsTypesEnabled() const {

@@ -17,10 +17,15 @@
 class BrowserImplTest : public PlatformTest {
  protected:
   BrowserImplTest() {
-    TestProfileIOS::Builder test_cbs_builder;
-    profile_ = std::move(test_cbs_builder).Build();
+    TestProfileIOS::Builder test_profile_builder;
+    profile_ = std::move(test_profile_builder).Build();
     scene_state_ = [[FakeSceneState alloc] initWithAppState:nil
                                                     profile:profile_.get()];
+  }
+
+  ~BrowserImplTest() override {
+    [scene_state_ shutdown];
+    scene_state_ = nil;
   }
 
   std::unique_ptr<BrowserImpl> CreateBrowser() {

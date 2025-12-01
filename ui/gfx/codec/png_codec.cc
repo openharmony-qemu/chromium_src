@@ -15,8 +15,9 @@
 #include "skia/buildflags.h"
 #include "skia/rusty_png_feature.h"
 #include "third_party/skia/include/codec/SkPngDecoder.h"
+#include "third_party/skia/include/core/SkAlphaType.h"
 #include "third_party/skia/include/core/SkBitmap.h"
-#include "third_party/skia/include/core/SkColorPriv.h"
+#include "third_party/skia/include/core/SkColorType.h"
 #include "third_party/skia/include/core/SkUnPreMultiply.h"
 #include "third_party/skia/include/encode/SkPngEncoder.h"
 #include "third_party/zlib/zlib.h"
@@ -24,7 +25,7 @@
 #include "ui/gfx/geometry/size.h"
 
 #if BUILDFLAG(SKIA_BUILD_RUST_PNG)
-#include "third_party/skia/experimental/rust_png/SkPngRustDecoder.h"
+#include "third_party/skia/experimental/rust_png/decoder/SkPngRustDecoder.h"
 #endif
 
 namespace gfx {
@@ -210,7 +211,7 @@ std::optional<std::vector<uint8_t>> EncodeSkPixmap(
     options.fFilterFlags = SkPngEncoder::FilterFlag::kNone;
   }
 
-  if (!SkPngEncoder::Encode(&dst, src, options)) {
+  if (!skia::EncodePng(&dst, src, options)) {
     return std::nullopt;
   }
 

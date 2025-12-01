@@ -293,8 +293,8 @@ TEST(URLRequestContextConfigTest, TestExperimentalOptionParsing) {
       context->host_resolver()->CreateRequest(
           net::HostPortPair("abcde", 80), net::NetworkAnonymizationKey(),
           net::NetLogWithSource(), std::nullopt);
-  EXPECT_EQ(net::OK, resolve_request->Start(base::BindOnce(
-                         [](int error) { NOTREACHED_IN_MIGRATION(); })));
+  EXPECT_EQ(net::OK, resolve_request->Start(
+                         base::BindOnce([](int error) { NOTREACHED(); })));
 
   EXPECT_TRUE(config->network_thread_priority);
   EXPECT_EQ(42, config->network_thread_priority.value());
@@ -320,8 +320,6 @@ TEST(URLRequestContextConfigTest, TestExperimentalOptionParsing) {
             https_svcb_options.secure_extra_time_percent);
   EXPECT_EQ(net::features::kUseDnsHttpsSvcbSecureExtraTimeMin.Get(),
             https_svcb_options.secure_extra_time_min);
-  EXPECT_EQ(base::FeatureList::IsEnabled(net::features::kUseDnsHttpsSvcbAlpn),
-            params->use_dns_https_svcb_alpn);
 }
 
 TEST(URLRequestContextConfigTest, SetSupportedQuicVersionByAlpn) {

@@ -17,6 +17,9 @@ import './certificate_manager_v2_icons.html.js';
 import './certificate_manager_style_v2.css.js';
 import './crs_section_v2.js';
 import './local_certs_section_v2.js';
+// <if expr="is_chromeos">
+import './certificate_provisioning_list.js';
+// </if>
 import '//resources/cr_elements/cr_icon/cr_icon.js';
 import '//resources/cr_elements/cr_toast/cr_toast.js';
 import '//resources/cr_elements/cr_toolbar/cr_toolbar.js';
@@ -37,13 +40,14 @@ import {I18nMixin} from '//resources/cr_elements/i18n_mixin.js';
 import {assert, assertNotReached} from '//resources/js/assert.js';
 import {focusWithoutInk} from '//resources/js/focus_without_ink.js';
 import {loadTimeData} from '//resources/js/load_time_data.js';
+import {PluralStringProxyImpl} from '//resources/js/plural_string_proxy.js';
 import {PromiseResolver} from '//resources/js/promise_resolver.js';
 import {PolymerElement} from '//resources/polymer/v3_0/polymer/polymer_bundled.min.js';
 
 import type {CertificateConfirmationDialogElement} from './certificate_confirmation_dialog.js';
 import type {CertificateListV2Element} from './certificate_list_v2.js';
 import {getTemplate} from './certificate_manager_v2.html.js';
-import type {ActionResult} from './certificate_manager_v2.mojom-webui.js';
+import type {ActionResult, SummaryCertInfo} from './certificate_manager_v2.mojom-webui.js';
 import {CertificateSource} from './certificate_manager_v2.mojom-webui.js';
 import type {CertificatePasswordDialogElement} from './certificate_password_dialog.js';
 import type {CertificateSubpageV2Element, SubpageCertificateList} from './certificate_subpage_v2.js';
@@ -90,7 +94,9 @@ export interface CertificateManagerV2Element {
     crsCertSection: CrsSectionV2Element,
     adminCertsSection: CertificateSubpageV2Element,
     userCertsSection: CertificateSubpageV2Element,
+    // <if expr="not is_chromeos">
     platformCertsSection: CertificateSubpageV2Element,
+    // </if>
     platformClientCertsSection: CertificateSubpageV2Element,
   };
 }
@@ -132,6 +138,7 @@ export class CertificateManagerV2Element extends
           ];
         },
       },
+      // <if expr="not is_chromeos">
       platformSubpageLists_: {
         type: Array<SubpageCertificateList>,
         value: (): SubpageCertificateList[] => {
@@ -156,14 +163,15 @@ export class CertificateManagerV2Element extends
           ];
         },
       },
+      // </if>
 
       clientPlatformSubpageLists_: {
         type: Array<SubpageCertificateList>,
-        // <if expr="chromeos_ash">
+        // <if expr="is_chromeos">
         computed: 'computeClientPlatformSubpageLists_(showClientCertImport_,' +
             'showClientCertImportAndBind_)',
         // </if>
-        // <if expr="not chromeos_ash">
+        // <if expr="not is_chromeos">
         computed: 'computeClientPlatformSubpageLists_()',
         // </if>
       },
@@ -177,18 +185,24 @@ export class CertificateManagerV2Element extends
                   'certificateManagerV2TrustedCertsList'),
               certSource: CertificateSource.kUserTrustedCerts,
               showImport: loadTimeData.getBoolean('userCertsImportAllowed'),
+              certMetadataEditable:
+                  loadTimeData.getBoolean('userCertsImportAllowed'),
             },
             {
               headerText: loadTimeData.getString(
                   'certificateManagerV2IntermediateCertsList'),
               certSource: CertificateSource.kUserIntermediateCerts,
               showImport: loadTimeData.getBoolean('userCertsImportAllowed'),
+              certMetadataEditable:
+                  loadTimeData.getBoolean('userCertsImportAllowed'),
             },
             {
               headerText: loadTimeData.getString(
                   'certificateManagerV2DistrustedCertsList'),
               certSource: CertificateSource.kUserDistrustedCerts,
               showImport: loadTimeData.getBoolean('userCertsImportAllowed'),
+              certMetadataEditable:
+                  loadTimeData.getBoolean('userCertsImportAllowed'),
             },
           ];
         },
@@ -196,20 +210,33 @@ export class CertificateManagerV2Element extends
 
       toastMessage_: String,
 
-      showInfoDialog_: Boolean,
+      showInfoDialog_: {
+        type: Boolean,
+        value: false,
+      },
+
       infoDialogTitle_: String,
       infoDialogMessage_: String,
-      showPasswordDialog_: Boolean,
+
+      showPasswordDialog_: {
+        type: Boolean,
+        value: false,
+      },
+
       confirmationDialogTitle_: String,
       confirmationDialogMessage_: String,
-      showConfirmationDialog_: Boolean,
+
+      showConfirmationDialog_: {
+        type: Boolean,
+        value: false,
+      },
 
       showSearch_: {
         type: Boolean,
         value: false,
       },
 
-      // <if expr="chromeos_ash">
+      // <if expr="is_chromeos">
       showClientCertImport_: {
         type: Boolean,
         value() {
@@ -234,28 +261,35 @@ export class CertificateManagerV2Element extends
         type: Object,
         value: Page,
       },
+
+      numPlatformClientCertsString_: String,
     };
   }
 
-  private selectedPage_: Page;
-  private toastMessage_: string;
-  private showInfoDialog_: boolean = false;
-  private infoDialogTitle_: string;
-  private infoDialogMessage_: string;
-  private showPasswordDialog_: boolean = false;
+  declare private selectedPage_: Page;
+  declare private userSubpageLists_: SubpageCertificateList[];
+  declare private toastMessage_: string;
+  declare private showInfoDialog_: boolean;
+  declare private infoDialogTitle_: string;
+  declare private infoDialogMessage_: string;
+  declare private showPasswordDialog_: boolean;
   private passwordEntryResolver_: PromiseResolver<PasswordResult>|null = null;
-  private showConfirmationDialog_: boolean = false;
-  private confirmationDialogTitle_: string;
-  private confirmationDialogMessage_: string;
+  declare private showConfirmationDialog_: boolean;
+  declare private showSearch_: boolean;
+  declare private confirmationDialogTitle_: string;
+  declare private confirmationDialogMessage_: string;
   private confirmationDialogResolver_: PromiseResolver<ConfirmationResult>|
       null = null;
-  private enterpriseSubpageLists_: SubpageCertificateList[];
-  private platformSubpageLists_: SubpageCertificateList[];
-  private clientPlatformSubpageLists_: SubpageCertificateList[];
-  // <if expr="chromeos_ash">
-  private showClientCertImport_: boolean;
-  private showClientCertImportAndBind_: boolean;
+  declare private enterpriseSubpageLists_: SubpageCertificateList[];
+  // <if expr="not is_chromeos">
+  declare private platformSubpageLists_: SubpageCertificateList[];
   // </if>
+  declare private clientPlatformSubpageLists_: SubpageCertificateList[];
+  // <if expr="is_chromeos">
+  declare private showClientCertImport_: boolean;
+  declare private showClientCertImportAndBind_: boolean;
+  // </if>
+  declare private numPlatformClientCertsString_: string;
 
   override ready() {
     super.ready();
@@ -264,6 +298,28 @@ export class CertificateManagerV2Element extends
         this.onAskForImportPassword_.bind(this));
     proxy.callbackRouter.askForConfirmation.addListener(
         this.onAskForConfirmation_.bind(this));
+    proxy.callbackRouter.triggerReload.addListener(
+        this.onTriggerReload_.bind(this));
+    this.getClientCertCount_();
+  }
+
+  private onTriggerReload_(certSources: CertificateSource[]) {
+    if (certSources.includes(CertificateSource.kPlatformClientCert)) {
+      this.getClientCertCount_();
+    }
+  }
+
+  private getClientCertCount_() {
+    CertificatesV2BrowserProxy.getInstance()
+        .handler.getCertificates(CertificateSource.kPlatformClientCert)
+        .then((results: {certs: SummaryCertInfo[]}) => {
+          PluralStringProxyImpl.getInstance()
+              .getPluralString(
+                  'certificateManagerV2NumCerts', results.certs.length)
+              .then(label => {
+                this.numPlatformClientCertsString_ = label;
+              });
+        });
   }
 
   private onAskForImportPassword_(): Promise<PasswordResult> {
@@ -339,9 +395,11 @@ export class CertificateManagerV2Element extends
         case Page.ADMIN_CERTS:
           this.$.adminCertsSection.setInitialFocus();
           break;
+        // <if expr="not is_chromeos">
         case Page.PLATFORM_CERTS:
           this.$.platformCertsSection.setInitialFocus();
           break;
+        // </if>
         case Page.PLATFORM_CLIENT_CERTS:
           this.$.platformClientCertsSection.setInitialFocus();
           break;
@@ -361,16 +419,24 @@ export class CertificateManagerV2Element extends
             this.$.localCertSection.setFocusToLinkRow(oldRoute.page);
           }
           break;
+        // <if expr="not is_chromeos">
         case Page.PLATFORM_CERTS:
           if (route.page === Page.LOCAL_CERTS) {
             await this.$.main.updateComplete;
             this.$.localCertSection.setFocusToLinkRow(oldRoute.page);
           }
           break;
+        // </if>
         case Page.PLATFORM_CLIENT_CERTS:
           if (route.page === Page.CLIENT_CERTS) {
             await this.$.main.updateComplete;
             focusWithoutInk(this.$.viewOsImportedClientCerts);
+          }
+          break;
+        case Page.USER_CERTS:
+          if (route.page === Page.LOCAL_CERTS) {
+            await this.$.main.updateComplete;
+            this.$.localCertSection.setFocusToLinkRow(oldRoute.page);
           }
           break;
         default:
@@ -387,8 +453,11 @@ export class CertificateManagerV2Element extends
 
   private getSelectedTopLevelHref_(): string {
     switch (this.selectedPage_) {
-      case Page.ADMIN_CERTS:
+      // <if expr="not is_chromeos">
       case Page.PLATFORM_CERTS:
+      // </if>
+      case Page.ADMIN_CERTS:
+      case Page.USER_CERTS:
         return this.generateHrefForPage_(Page.LOCAL_CERTS);
       case Page.PLATFORM_CLIENT_CERTS:
         return this.generateHrefForPage_(Page.CLIENT_CERTS);
@@ -402,7 +471,7 @@ export class CertificateManagerV2Element extends
   }
 
 
-  private async onClientPlatformCertsLinkRowClick_(e: Event) {
+  private onClientPlatformCertsLinkRowClick_(e: Event) {
     e.preventDefault();
     Router.getInstance().navigateTo(Page.PLATFORM_CLIENT_CERTS);
   }
@@ -445,7 +514,7 @@ export class CertificateManagerV2Element extends
             'certificateManagerV2ClientCertsFromPlatform'),
         certSource: CertificateSource.kPlatformClientCert,
         hideExport: true,
-        // <if expr="chromeos_ash">
+        // <if expr="is_chromeos">
         showImport: this.showClientCertImport_,
         showImportAndBind: this.showClientCertImportAndBind_,
         // TODO(crbug.com/40928765): Figure out how we want to display the
@@ -458,7 +527,7 @@ export class CertificateManagerV2Element extends
         showImport: true,
         hideHeader: false,
         // </if>
-        // <if expr="not chromeos_ash and not is_linux">
+        // <if expr="not is_chromeos and not is_linux">
         hideHeader: true,
         // </if>
       },

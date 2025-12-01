@@ -1777,7 +1777,7 @@ fd91406f3c8e8fa7c9c24b5d77bccaae  usr/lib/i386-linux-gnu/qt5/mkspecs/modules/qt_
 44ac5c6d727725cb195319dbced5ef42  usr/lib/i386-linux-gnu/qt5/mkspecs/modules/qt_lib_xkbcommon_support_private.pri
 11009058d5483a5d7f6a187c72b6e7f1  usr/lib/i386-linux-gnu/qt5/mkspecs/modules/qt_lib_xml.pri
 24509dfc55d58025f00ea22fb531eb37  usr/lib/i386-linux-gnu/qt5/mkspecs/modules/qt_lib_xml_private.pri
-9cf1a01272144a858957cecec5648143  usr/share/doc/qtbase5-dev/changelog.Debian.gz
+8ab3f726873fd9463e0a0ee09125f88d  usr/share/doc/qtbase5-dev/changelog.Debian.gz
 d6f8b4b98631fc3c4a97b5d53645a287  usr/share/doc/qtbase5-dev/changelog.gz
 fcff62d59a8729d2c26e846856ada5e3  usr/share/doc/qtbase5-dev/copyright
 666dfaa8b78cae91ae6b7d09cf1453a2  usr/share/qt5/doc/config/exampleurl-qt3d.qdocconf

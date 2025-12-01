@@ -48,7 +48,13 @@ VideoPictureInPictureWindowControllerImpl::
     VideoPictureInPictureWindowControllerImpl(WebContents* web_contents)
     : WebContentsUserData<VideoPictureInPictureWindowControllerImpl>(
           *web_contents),
-      WebContentsObserver(web_contents) {}
+      WebContentsObserver(web_contents) {
+  MediaSessionImpl* media_session =
+      MediaSessionImpl::FromWebContents(web_contents);
+  if (media_session) {
+    media_session->UpdateVideoPictureInPictureWindowController(this);
+  }
+}
 
 void VideoPictureInPictureWindowControllerImpl::Show() {
   DCHECK(window_);
@@ -97,6 +103,8 @@ void VideoPictureInPictureWindowControllerImpl::Show() {
       media_session_action_next_slide_handled_);
   window_->SetPreviousSlideButtonVisibility(
       media_session_action_previous_slide_handled_);
+  window_->SetFaviconImages(favicon_images_);
+  window_->SetSourceTitle(source_title_);
   window_->ShowInactive();
   GetWebContentsImpl()->SetHasPictureInPictureVideo(true);
 }
@@ -192,13 +200,33 @@ void VideoPictureInPictureWindowControllerImpl::UpdatePlaybackState() {
     return;
 
   auto playback_state = VideoOverlayWindow::PlaybackState::kPaused;
+  const std::optional<media_session::MediaPosition>& effective_media_position =
+      GetEffectiveMediaPosition();
   if (IsPlayerActive()) {
     playback_state = VideoOverlayWindow::PlaybackState::kPlaying;
-  } else if (media_position_ && media_position_->end_of_media()) {
+  } else if (effective_media_position.has_value() &&
+             effective_media_position->end_of_media()) {
     playback_state = VideoOverlayWindow::PlaybackState::kEndOfVideo;
   }
 
+#if BUILDFLAG(IS_OHOS)
+  if (update_playback_state_callback_) {
+    update_playback_state_callback_.Run(oh_controller_id, IsPlayerActive());
+  }
+#endif
+
   window_->SetPlaybackState(playback_state);
+}
+
+void VideoPictureInPictureWindowControllerImpl::UpdateMediaPosition() {
+  const std::optional<media_session::MediaPosition>& effective_position =
+      GetEffectiveMediaPosition();
+  if (window_ && effective_position.has_value()) {
+    window_->SetMediaPosition(*effective_position);
+    window_received_media_position_ = true;
+  } else {
+    window_received_media_position_ = false;
+  }
 }
 
 bool VideoPictureInPictureWindowControllerImpl::TogglePlayPause() {
@@ -254,6 +282,14 @@ bool VideoPictureInPictureWindowControllerImpl::PauseInternal() {
   return false /* paused */;
 }
 
+const std::optional<media_session::MediaPosition>&
+VideoPictureInPictureWindowControllerImpl::GetEffectiveMediaPosition() const {
+  if (media_session_media_position_.has_value()) {
+    return media_session_media_position_;
+  }
+  return pip_session_media_position_;
+}
+
 PictureInPictureResult VideoPictureInPictureWindowControllerImpl::StartSession(
     PictureInPictureServiceImpl* service,
     const MediaPlayerId& player_id,
@@ -272,8 +308,10 @@ PictureInPictureResult VideoPictureInPictureWindowControllerImpl::StartSession(
   if (result != PictureInPictureResult::kSuccess)
     return result;
 
-  if (active_session_)
+  if (active_session_) {
     active_session_->Disconnect();
+    pip_session_media_position_ = std::nullopt;
+  }
 
   source_bounds_ = source_bounds;
 
@@ -313,12 +351,24 @@ void VideoPictureInPictureWindowControllerImpl::OnServiceDeleted(
 
   active_session_->Shutdown();
   active_session_ = nullptr;
+  pip_session_media_position_ = std::nullopt;
 }
 
 void VideoPictureInPictureWindowControllerImpl::SetShowPlayPauseButton(
     bool show_play_pause_button) {
   always_show_play_pause_button_ = show_play_pause_button;
   UpdatePlayPauseButtonVisibility();
+}
+
+void VideoPictureInPictureWindowControllerImpl::SetMediaPosition(
+    const media_session::MediaPosition& media_position) {
+  if (media_position == pip_session_media_position_ &&
+      window_received_media_position_) {
+    return;
+  }
+  pip_session_media_position_ = media_position;
+  UpdatePlaybackState();
+  UpdateMediaPosition();
 }
 
 void VideoPictureInPictureWindowControllerImpl::SkipAd() {
@@ -366,9 +416,13 @@ void VideoPictureInPictureWindowControllerImpl::HangUp() {
 }
 
 void VideoPictureInPictureWindowControllerImpl::SeekTo(base::TimeDelta time) {
+  // Default to the Media Session handler if it's available.
   if (media_session_action_seek_to_handled_) {
     MediaSession::Get(web_contents())->SeekTo(time);
+    return;
   }
+  // Otherwise, directly seek the video player.
+  active_session_->GetMediaPlayerRemote()->RequestSeekTo(time);
 }
 
 void VideoPictureInPictureWindowControllerImpl::MediaSessionInfoChanged(
@@ -448,15 +502,65 @@ void VideoPictureInPictureWindowControllerImpl::MediaSessionActionsChanged(
       media_session_action_next_slide_handled_);
   window_->SetPreviousSlideButtonVisibility(
       media_session_action_previous_slide_handled_);
+
+#if BUILDFLAG(IS_OHOS)
+  if (update_video_previous_callback_) {
+    update_video_previous_callback_.Run(
+        oh_controller_id, media_session_action_previous_track_handled_);
+  }
+  if (update_video_next_callback_) {
+    update_video_next_callback_.Run(oh_controller_id,
+                                    media_session_action_next_track_handled_);
+  }
+#endif
 }
 
 void VideoPictureInPictureWindowControllerImpl::MediaSessionPositionChanged(
     const std::optional<media_session::MediaPosition>& media_position) {
-  media_position_ = media_position;
-  UpdatePlaybackState();
+  // If we've already sent this position to |window|, then no need to update
+  // again.
+  if (media_position == media_session_media_position_ &&
+      window_received_media_position_) {
+    return;
+  }
 
-  if (window_ && media_position.has_value()) {
-    window_->SetMediaPosition(*media_position);
+  media_session_media_position_ = media_position;
+  UpdatePlaybackState();
+  UpdateMediaPosition();
+}
+
+void VideoPictureInPictureWindowControllerImpl::MediaSessionImagesChanged(
+    const base::flat_map<media_session::mojom::MediaSessionImageType,
+                         std::vector<media_session::MediaImage>>& images) {
+  auto it =
+      images.find(media_session::mojom::MediaSessionImageType::kSourceIcon);
+  if (it == images.end()) {
+    if (favicon_images_.empty()) {
+      return;
+    }
+    favicon_images_.clear();
+  } else {
+    if (it->second == favicon_images_) {
+      return;
+    }
+    favicon_images_ = it->second;
+  }
+
+  if (window_) {
+    window_->SetFaviconImages(favicon_images_);
+  }
+}
+
+void VideoPictureInPictureWindowControllerImpl::MediaSessionMetadataChanged(
+    const std::optional<media_session::MediaMetadata>& metadata) {
+  if (metadata) {
+    source_title_ = metadata->source_title;
+  } else {
+    source_title_.clear();
+  }
+
+  if (window_) {
+    window_->SetSourceTitle(source_title_);
   }
 }
 
@@ -506,6 +610,7 @@ void VideoPictureInPictureWindowControllerImpl::OnLeavingPictureInPicture(
 
   active_session_->Shutdown();
   active_session_ = nullptr;
+  pip_session_media_position_ = std::nullopt;
 }
 
 void VideoPictureInPictureWindowControllerImpl::CloseInternal(
@@ -526,6 +631,17 @@ void VideoPictureInPictureWindowControllerImpl::CloseInternal(
 const gfx::Rect& VideoPictureInPictureWindowControllerImpl::GetSourceBounds()
     const {
   return source_bounds_;
+}
+
+void VideoPictureInPictureWindowControllerImpl::GetMediaImage(
+    const media_session::MediaImage& image,
+    int minimum_size_px,
+    int desired_size_px,
+    MediaSession::GetMediaImageBitmapCallback callback) {
+  MediaSessionImpl* media_session = MediaSessionImpl::Get(web_contents());
+  CHECK(media_session);
+  media_session->GetMediaImageBitmap(image, minimum_size_px, desired_size_px,
+                                     std::move(callback));
 }
 
 std::optional<gfx::Rect>

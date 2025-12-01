@@ -7,11 +7,13 @@
 
 #include <stdint.h>
 
+#include <cstring>
 #include <memory>
 #include <string_view>
 #include <vector>
 
 #include "base/bits.h"
+#include "base/compiler_specific.h"
 #include "build/build_config.h"
 #include "ui/display/display.h"
 #include "ui/events/base_event_utils.h"
@@ -222,7 +224,8 @@ template <base::bits::UnsignedInteger T>
 Event::PropertyValue ConvertToEventPropertyValue(const T& value) {
   Event::PropertyValue property_value;
   property_value.resize(sizeof(T));
-  std::memcpy(property_value.data(), &value, property_value.size());
+  UNSAFE_TODO(
+      std::memcpy(property_value.data(), &value, property_value.size()));
   return property_value;
 }
 

@@ -62,8 +62,8 @@ std::unique_ptr<KeyedService> BuildEventRouter(
 
 class StorageApiUnittest : public ApiUnitTest {
  public:
-  StorageApiUnittest() {}
-  ~StorageApiUnittest() override {}
+  StorageApiUnittest() = default;
+  ~StorageApiUnittest() override = default;
 
  protected:
   void SetUp() override {
@@ -239,6 +239,8 @@ TEST_F(StorageApiUnittest, GetBytesInUseIntOverflow) {
     }
 
     size_t GetBytesInUse() override { return bytes_in_use_; }
+
+    ReadResult GetKeys() override { NOTREACHED(); }
 
     ReadResult Get(const std::string& key) override { NOTREACHED(); }
 

@@ -91,8 +91,10 @@ class CONTENT_EXPORT GestureListenerManager
   // End WebContentsObserver overrides
 
   // Start RenderWidgetHost::InputEventObserver overrides
-  void OnInputEvent(const blink::WebInputEvent&) override;
-  void OnInputEventAck(blink::mojom::InputEventResultSource source,
+  void OnInputEvent(const RenderWidgetHost& widget,
+                    const blink::WebInputEvent&) override;
+  void OnInputEventAck(const RenderWidgetHost& widget,
+                       blink::mojom::InputEventResultSource source,
                        blink::mojom::InputEventResultState state,
                        const blink::WebInputEvent&) override;
   // End RenderWidgetHost::InputEventObserver overrides
@@ -111,7 +113,6 @@ class CONTENT_EXPORT GestureListenerManager
   std::unique_ptr<ResetScrollObserver> reset_scroll_observer_;
   raw_ptr<WebContentsImpl> web_contents_;
   raw_ptr<RenderWidgetHostViewAndroid> rwhva_ = nullptr;
-  int active_pointers_ = 0;
   bool is_in_a_fling_ = false;
 
   // A weak reference to the Java GestureListenerManager object.

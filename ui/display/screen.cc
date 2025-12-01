@@ -33,10 +33,6 @@ Screen::~Screen() = default;
 
 // static
 Screen* Screen::GetScreen() {
-#if BUILDFLAG(IS_IOS)
-  if (!g_screen)
-    g_screen = CreateNativeScreen();
-#endif
   return g_screen;
 }
 
@@ -161,6 +157,10 @@ std::optional<float> Screen::GetPreferredScaleFactorForView(
   return GetPreferredScaleFactorForWindow(GetWindowForView(view));
 }
 
+bool Screen::IsHeadless() const {
+  return false;
+}
+
 #if BUILDFLAG(IS_CHROMEOS)
 TabletState Screen::GetTabletState() const {
   return TabletState::kInClamshellMode;
@@ -170,6 +170,21 @@ bool Screen::InTabletMode() const {
   TabletState state = GetTabletState();
   return state == TabletState::kInTabletMode ||
          state == TabletState::kEnteringTabletMode;
+}
+#endif
+
+#if BUILDFLAG(IS_OHOS)
+gfx::NativeWindow Screen::GetLocalProcessWindowAtPoint(
+    const gfx::Point& point,
+    const std::set<gfx::NativeWindow>& ignore,
+    const int32_t display_id) {
+  NOTIMPLEMENTED_LOG_ONCE();
+  return gfx::NativeWindow();
+}
+
+gfx::Point Screen::GetCursorScreenPoint(const int32_t display_id) {
+  NOTIMPLEMENTED_LOG_ONCE();
+  return gfx::Point();
 }
 #endif
 
@@ -245,12 +260,8 @@ ScreenInfos Screen::GetScreenInfosNearestDisplay(int64_t nearest_id) const {
 
 ScopedNativeScreen::ScopedNativeScreen(const base::Location& location) {
   if (!Screen::HasScreen()) {
-#if BUILDFLAG(IS_IOS)
-    Screen::GetScreen();
-#else
     screen_ = base::WrapUnique(CreateNativeScreen());
     Screen::SetScreenInstance(screen_.get(), location);
-#endif
   }
 }
 

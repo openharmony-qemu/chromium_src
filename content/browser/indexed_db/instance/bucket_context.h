@@ -24,7 +24,6 @@
 #include "base/timer/timer.h"
 #include "base/trace_event/memory_dump_provider.h"
 #include "components/services/storage/indexed_db/locks/partitioned_lock_manager.h"
-#include "components/services/storage/indexed_db/transactional_leveldb/transactional_leveldb_factory.h"
 #include "components/services/storage/privileged/cpp/bucket_client_info.h"
 #include "components/services/storage/privileged/mojom/indexed_db_client_state_checker.mojom.h"
 #include "components/services/storage/privileged/mojom/indexed_db_control_test.mojom.h"
@@ -33,6 +32,7 @@
 #include "components/services/storage/public/cpp/quota_error_or.h"
 #include "components/services/storage/public/mojom/blob_storage_context.mojom.h"
 #include "components/services/storage/public/mojom/file_system_access_context.mojom.h"
+#include "content/browser/indexed_db/blob_reader.h"
 #include "content/browser/indexed_db/indexed_db_data_loss_info.h"
 #include "content/browser/indexed_db/indexed_db_database_error.h"
 #include "content/browser/indexed_db/indexed_db_external_object.h"
@@ -52,11 +52,14 @@ class QuotaManagerProxy;
 
 namespace content::indexed_db {
 
+namespace level_db {
 class BackingStore;
-class BackingStorePreCloseTaskQueue;
+class BackingStoreTest;
+}  // namespace level_db
+
+class BackingStore;
 class BucketContextHandle;
 class Database;
-class IndexedDBDataItemReader;
 struct PendingConnection;
 
 // BucketContext manages the per-bucket IndexedDB state, and other important
@@ -156,7 +159,7 @@ class CONTENT_EXPORT BucketContext
 
   // Normally, in-memory bucket contexts never self-close. If this is called
   // with `doom` set to true, they will self-close.
-  void ForceClose(bool doom);
+  void ForceClose(bool doom, const std::string& message);
 
   // Starts capturing state data for indexeddb-internals. The data will be
   // returned the next time `StopMetadataRecording()` is invoked.
@@ -221,10 +224,6 @@ class CONTENT_EXPORT BucketContext
     DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
     return *lock_manager_;
   }
-  BackingStorePreCloseTaskQueue* pre_close_task_queue() const {
-    DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-    return pre_close_task_queue_.get();
-  }
 
   Delegate& delegate() { return delegate_; }
 
@@ -246,10 +245,6 @@ class CONTENT_EXPORT BucketContext
   }
   storage::mojom::FileSystemAccessContext* file_system_access_context() {
     return file_system_access_context_.get();
-  }
-
-  TransactionalLevelDBFactory* transactional_leveldb_factory() {
-    return transactional_leveldb_factory_.get();
   }
 
   void AddReceiver(
@@ -287,9 +282,7 @@ class CONTENT_EXPORT BucketContext
   // `SequenceBound`, it's not possible to directly grab pointer to `this`.
   BucketContext* GetReferenceForTesting();
 
-  void CompactBackingStoreForTesting();
-  void WriteToIndexedDBForTesting(const std::string& key,
-                                  const std::string& value);
+  void FlushBackingStoreForTesting();
   void BindMockFailureSingletonForTesting(
       mojo::PendingReceiver<storage::mojom::MockFailureInjector> receiver);
 
@@ -299,15 +292,17 @@ class CONTENT_EXPORT BucketContext
   void OnDatabaseError(Status status, const std::string& message);
 
   // Called when the backing store has been corrupted.
-  void HandleBackingStoreCorruption(const DatabaseError& error);
+  void HandleBackingStoreCorruption(const std::string& error_message);
 
   // base::trace_event::MemoryDumpProvider:
   bool OnMemoryDump(const base::trace_event::MemoryDumpArgs& args,
                     base::trace_event::ProcessMemoryDump* pmd) override;
 
+  bool in_memory() const { return data_path_.empty(); }
+
  private:
   friend BucketContextHandle;
-  friend class BackingStoreTest;
+  friend class level_db::BackingStoreTest;
   friend class DatabaseTest;
   friend class IndexedDBTest;
   friend class TransactionTest;
@@ -363,11 +358,10 @@ class CONTENT_EXPORT BucketContext
   // since `bucket_space_remaining_timestamp_`.
   int64_t GetBucketSpaceToAllot();
 
-  // Bind `receiver` to read from the file at `path`.
-  void BindFileReader(
-      const base::FilePath& path,
-      base::OnceClosure release_callback,
-      mojo::PendingReceiver<storage::mojom::BlobDataItemReader> receiver);
+  // Hooks up a `BlobReader` to `receiver` for the blob described by
+  // `blob_info`.
+  void BindBlobReader(const IndexedDBExternalObject& blob_info,
+                      mojo::PendingReceiver<blink::mojom::Blob> receiver);
   // Removes all readers for this file path.
   void RemoveBoundReaders(const base::FilePath& path);
 
@@ -385,6 +379,10 @@ class CONTENT_EXPORT BucketContext
 
   // Records one tick of Metadata during a metadata recording session.
   void RecordInternalsSnapshot();
+
+  std::string SanitizeErrorMessage(const std::string& message);
+
+  bool ShouldUseSqliteBackingStore();
 
   SEQUENCE_CHECKER(sequence_checker_);
 
@@ -407,7 +405,6 @@ class CONTENT_EXPORT BucketContext
   ClosingState closing_stage_ = ClosingState::kNotClosing;
   base::OneShotTimer close_timer_;
   std::unique_ptr<PartitionedLockManager> lock_manager_;
-  std::unique_ptr<TransactionalLevelDBFactory> transactional_leveldb_factory_;
   std::unique_ptr<BackingStore> backing_store_;
   scoped_refptr<storage::QuotaManagerProxy> quota_manager_proxy_;
 
@@ -444,11 +441,9 @@ class CONTENT_EXPORT BucketContext
       file_system_access_context_;
   // This map's value type contains a closure which will run on destruction.
   std::map<base::FilePath,
-           std::tuple<std::unique_ptr<IndexedDBDataItemReader>,
+           std::tuple<std::unique_ptr<BlobReader>,
                       base::ScopedClosureRunner /*release_callback*/>>
       file_reader_map_;
-
-  std::unique_ptr<BackingStorePreCloseTaskQueue> pre_close_task_queue_;
 
   Delegate delegate_;
 

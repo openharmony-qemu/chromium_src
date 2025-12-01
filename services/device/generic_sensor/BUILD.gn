@@ -2,7 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/features.gni")
 
 if (is_android) {
@@ -56,7 +55,6 @@ source_set("generic_sensor") {
 
   deps = [
     "//base",
-    "//build:chromeos_buildflags",
     "//device/base/synchronization",
     "//services/device/public/cpp:device_features",
     "//ui/gfx/geometry:geometry",
@@ -136,6 +134,21 @@ source_set("generic_sensor") {
       "portabledeviceguids.lib",
       "sensorsapi.lib",
     ]
+  }
+
+  if (is_ohos) {
+    sources += [
+      "platform_sensor_ambient_light_ohos.cc",
+      "platform_sensor_ambient_light_ohos.h",
+      "platform_sensor_gyroscope_ohos.cc",
+      "platform_sensor_gyroscope_ohos.h",
+      "platform_sensor_ohos.cc",
+      "platform_sensor_ohos.h",
+      "platform_sensor_provider_ohos.cc",
+      "platform_sensor_provider_ohos.h",
+    ]
+
+    libs = [ "ohsensor" ]
   }
 }
 

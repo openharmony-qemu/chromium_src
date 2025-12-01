@@ -8,12 +8,12 @@
 #include <string>
 #include <vector>
 
-#include "autofill_test_utils.h"
 #include "base/check_op.h"
 #include "base/test/scoped_feature_list.h"
 #include "components/autofill/core/browser/autofill_field.h"
 #include "components/autofill/core/browser/autofill_type.h"
 #include "components/autofill/core/browser/field_types.h"
+#include "components/autofill/core/browser/test_utils/autofill_test_utils.h"
 #include "components/autofill/core/common/autocomplete_parsing_util.h"
 #include "components/autofill/core/common/autofill_features.h"
 #include "components/autofill/core/common/form_field_data.h"
@@ -45,7 +45,8 @@ std::vector<std::unique_ptr<AutofillField>> CreateFields(
         result.emplace_back(std::make_unique<AutofillField>(FormFieldData()));
     f->set_renderer_id(test::MakeFieldRendererId());
     f->set_form_control_type(t.form_control_type);
-    f->SetTypeTo(AutofillType(t.field_type));
+    f->SetTypeTo(AutofillType(t.field_type),
+                 AutofillPredictionSource::kHeuristics);
     DCHECK_EQ(f->Type().GetStorableType(), t.field_type);
     if (!t.autocomplete_section.empty() ||
         t.autocomplete_mode != HtmlFieldMode::kNone) {
@@ -61,8 +62,9 @@ std::vector<Section> GetSections(
     const std::vector<std::unique_ptr<AutofillField>>& fields) {
   std::vector<Section> sections;
   sections.reserve(fields.size());
-  for (const auto& field : fields)
+  for (const auto& field : fields) {
     sections.push_back(field->section());
+  }
   return sections;
 }
 

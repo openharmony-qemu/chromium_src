@@ -4,6 +4,8 @@
 
 package org.chromium.components.browser_ui.bottomsheet;
 
+import static org.chromium.build.NullUtil.assumeNonNull;
+
 import android.animation.Animator;
 import android.animation.ValueAnimator;
 import android.content.Context;
@@ -16,8 +18,7 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.FrameLayout;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 import androidx.annotation.VisibleForTesting;
 
 import org.chromium.base.Callback;
@@ -28,6 +29,9 @@ import org.chromium.base.ResettersForTesting;
 import org.chromium.base.supplier.Supplier;
 import org.chromium.base.task.PostTask;
 import org.chromium.base.task.TaskTraits;
+import org.chromium.build.annotations.Initializer;
+import org.chromium.build.annotations.NullMarked;
+import org.chromium.build.annotations.Nullable;
 import org.chromium.components.browser_ui.bottomsheet.BottomSheetContent.HeightMode;
 import org.chromium.components.browser_ui.bottomsheet.BottomSheetController.SheetState;
 import org.chromium.components.browser_ui.bottomsheet.BottomSheetController.StateChangeReason;
@@ -48,6 +52,7 @@ import org.chromium.ui.interpolators.Interpolators;
  * All the computation in this file is based off of the bottom of the screen instead of the top
  * for simplicity. This means that the bottom of the screen is 0 on the Y axis.
  */
+@NullMarked
 class BottomSheet extends FrameLayout
         implements BottomSheetSwipeDetector.SwipeableBottomSheet, View.OnLayoutChangeListener {
     private static final String TAG = "BottomSheet";
@@ -75,10 +80,10 @@ class BottomSheet extends FrameLayout
     private static final float HEIGHT_UNSPECIFIED = -1.0f;
 
     /** A means of reporting an exception/stack without crashing. */
-    private static Callback<Throwable> sExceptionReporter;
+    private static @Nullable Callback<Throwable> sExceptionReporter;
 
     /** A flag to force the small screen state of the bottom sheet. */
-    private static Boolean sIsSmallScreenForTesting;
+    private static @Nullable Boolean sIsSmallScreenForTesting;
 
     /** The list of observers of this sheet. */
     private final ObserverList<BottomSheetObserver> mObservers = new ObserverList<>();
@@ -96,10 +101,10 @@ class BottomSheet extends FrameLayout
     private ViewGroup mSheetContainer;
 
     /** For detecting scroll and fling events on the bottom sheet. */
-    private BottomSheetSwipeDetector mGestureDetector;
+    private final BottomSheetSwipeDetector mGestureDetector;
 
     /** The animator used to move the sheet to a fixed state when released by the user. */
-    private ValueAnimator mSettleAnimator;
+    private @Nullable ValueAnimator mSettleAnimator;
 
     /** The width of the view that contains the bottom sheet. */
     private int mContainerWidth;
@@ -127,7 +132,7 @@ class BottomSheet extends FrameLayout
     @SheetState int mScrollingStartState = SheetState.NONE;
 
     /** A handle to the content being shown by the sheet. */
-    @Nullable protected BottomSheetContent mSheetContent;
+    protected @Nullable BottomSheetContent mSheetContent;
 
     /** A handle to the FrameLayout that holds the content of the bottom sheet. */
     private TouchRestrictingFrameLayout mBottomSheetContentContainer;
@@ -147,7 +152,7 @@ class BottomSheet extends FrameLayout
     /** Whether the sheet is currently open. */
     private boolean mIsSheetOpen;
 
-    /** Whether {@link #destroy()} has been called. **/
+    /** Whether {@link #destroy()} has been called. */
     private boolean mIsDestroyed;
 
     /** The ratio in the range [0, 1] that the browser controls are hidden. */
@@ -162,13 +167,15 @@ class BottomSheet extends FrameLayout
     /** The last recorded app header height, in px. */
     private int mAppHeaderHeight;
 
+    private int mBottomMargin;
+
     /**
      * A view used to render a shadow behind the sheet and extends outside the bounds of its parent
      * view.
      */
     public static class ShadowLayerView extends View {
         /** The length of the shadow in any direction. */
-        private int mShadowLength;
+        private final int mShadowLength;
 
         /** Constructor to inflate from XML. */
         public ShadowLayerView(Context context, AttributeSet atts) {
@@ -300,22 +307,25 @@ class BottomSheet extends FrameLayout
      * @param alwaysFullWidth Whether bottom sheet is always full-width.
      * @param edgeToEdgeBottomInsetSupplier The supplier of the bottom inset in DP when e2e is on.
      * @param appHeaderHeight The app header height, in px.
+     * @param bottomMargin The extra margin to add to the bottom of sheet container.
      */
+    @Initializer
     public void init(
             Window window,
             KeyboardVisibilityDelegate keyboardDelegate,
             boolean alwaysFullWidth,
-            @NonNull Supplier<Integer> edgeToEdgeBottomInsetSupplier,
-            int appHeaderHeight) {
+            Supplier<Integer> edgeToEdgeBottomInsetSupplier,
+            int appHeaderHeight,
+            int bottomMargin) {
         mEdgeToEdgeBottomInsetSupplier = edgeToEdgeBottomInsetSupplier;
         mSheetContainer = (ViewGroup) getParent();
         onAppHeaderHeightChanged(appHeaderHeight);
+        setBottomMargin(bottomMargin);
 
-        mToolbarHolder =
-                (TouchRestrictingFrameLayout) findViewById(R.id.bottom_sheet_toolbar_container);
+        mToolbarHolder = findViewById(R.id.bottom_sheet_toolbar_container);
+        mToolbarHolder.setBottomSheet(this);
 
-        mBottomSheetContentContainer =
-                (TouchRestrictingFrameLayout) findViewById(R.id.bottom_sheet_content);
+        mBottomSheetContentContainer = findViewById(R.id.bottom_sheet_content);
         mBottomSheetContentContainer.setBottomSheet(this);
 
         mContainerWidth = mSheetContainer.getWidth();
@@ -363,10 +373,7 @@ class BottomSheet extends FrameLayout
                         }
 
                         assert mEdgeToEdgeBottomInsetSupplier.get() != null;
-                        int bottomInset =
-                                ViewUtils.dpToPx(
-                                        getContext(), mEdgeToEdgeBottomInsetSupplier.get());
-                        int bottomPadding = bottomInset;
+                        int bottomPadding = getBottomInset();
 
                         // Reset mVisibleViewportRect regardless of sheet open state as it is used
                         // outside of calculating the keyboard height.
@@ -443,7 +450,15 @@ class BottomSheet extends FrameLayout
         mSheetContainer.removeView(this);
     }
 
-    /** @param ratio The current browser controls hidden ratio. */
+    private int getBottomInset() {
+        return mBottomMargin == 0
+                ? ViewUtils.dpToPx(getContext(), mEdgeToEdgeBottomInsetSupplier.get())
+                : 0;
+    }
+
+    /**
+     * @param ratio The current browser controls hidden ratio.
+     */
     void setBrowserControlsHiddenRatio(float ratio) {
         mBrowserControlsHiddenRatio = ratio;
 
@@ -541,11 +556,12 @@ class BottomSheet extends FrameLayout
 
     @Override
     public float getMaxOffsetPx() {
-        return getFullRatio() * mContainerHeight;
+        return getFullRatio() * getMaxContentHeight();
     }
 
     /**
      * Show content in the bottom sheet's content area.
+     *
      * @param content The {@link BottomSheetContent} to show, or null if no content should be shown.
      */
     void showContent(@Nullable final BottomSheetContent content) {
@@ -587,7 +603,8 @@ class BottomSheet extends FrameLayout
      * @param oldView The old view to transition from.
      * @param parent The parent for newView and oldView.
      */
-    private void swapViews(final View newView, final View oldView, final ViewGroup parent) {
+    private void swapViews(
+            final @Nullable View newView, final @Nullable View oldView, final ViewGroup parent) {
         if (oldView != null && oldView.getParent() != null) parent.removeView(oldView);
         if (newView != null && parent != newView.getParent()) parent.addView(newView);
     }
@@ -720,7 +737,7 @@ class BottomSheet extends FrameLayout
         mCurrentOffsetPx = offset;
 
         assert mEdgeToEdgeBottomInsetSupplier.get() != null;
-        int bottomInset = ViewUtils.dpToPx(getContext(), mEdgeToEdgeBottomInsetSupplier.get());
+        int bottomInset = getBottomInset();
 
         // The browser controls offset is added here so that the sheet's toolbar behaves like the
         // browser controls do.
@@ -848,7 +865,7 @@ class BottomSheet extends FrameLayout
         return toolbarHeight / (float) mContainerHeight;
     }
 
-    private View getToolbarView() {
+    private @Nullable View getToolbarView() {
         return mSheetContent != null && mSheetContent.getToolbarView() != null
                 ? mSheetContent.getToolbarView()
                 : null;
@@ -859,7 +876,7 @@ class BottomSheet extends FrameLayout
     float getHalfRatio() {
         if (mContainerHeight <= 0 || !isHalfStateEnabled()) return 0;
 
-        float customHalfRatio = mSheetContent.getHalfHeightRatio();
+        float customHalfRatio = assumeNonNull(mSheetContent).getHalfHeightRatio();
         assert customHalfRatio != HeightMode.WRAP_CONTENT
                 : "Half-height cannot be WRAP_CONTENT. This is only supported for full-height.";
 
@@ -876,7 +893,7 @@ class BottomSheet extends FrameLayout
 
         if (isFullHeightWrapContent()) {
             ensureContentDesiredHeightIsComputed();
-            return Math.min(getMaxContentHeight(), mContentDesiredHeight) / mContainerHeight;
+            return Math.min(getMaxContentHeight(), mContentDesiredHeight) / getMaxContentHeight();
         }
 
         return customFullRatio == HeightMode.DEFAULT ? 1 : customFullRatio;
@@ -885,6 +902,13 @@ class BottomSheet extends FrameLayout
     /** @return The height of the container that the bottom sheet exists in. */
     public float getSheetContainerHeight() {
         return mContainerHeight;
+    }
+
+    /**
+     * @return The width of the container that the bottom sheet exists in.
+     */
+    public float getSheetContainerWidth() {
+        return mContainerWidth;
     }
 
     /**
@@ -1005,7 +1029,8 @@ class BottomSheet extends FrameLayout
                     new Throwable(
                             "This is not a crash. See https://crbug.com/1126872 for details.");
             PostTask.postTask(
-                    TaskTraits.BEST_EFFORT_MAY_BLOCK, () -> sExceptionReporter.onResult(throwable));
+                    TaskTraits.BEST_EFFORT_MAY_BLOCK,
+                    () -> assumeNonNull(sExceptionReporter).onResult(throwable));
 
             setSheetState(SheetState.HIDDEN, false);
             return;
@@ -1026,6 +1051,8 @@ class BottomSheet extends FrameLayout
         mCurrentState = state;
 
         if (mCurrentState == SheetState.HALF || mCurrentState == SheetState.FULL) {
+            assumeNonNull(getCurrentSheetContent());
+            @StringRes
             int resId =
                     mCurrentState == SheetState.FULL
                             ? getCurrentSheetContent().getSheetFullHeightAccessibilityStringId()
@@ -1064,8 +1091,7 @@ class BottomSheet extends FrameLayout
     }
 
     /** @return The current sheet content, or null if there is no content. */
-    @Nullable
-    BottomSheetContent getCurrentSheetContent() {
+    @Nullable BottomSheetContent getCurrentSheetContent() {
         return mSheetContent;
     }
 
@@ -1079,10 +1105,12 @@ class BottomSheet extends FrameLayout
             ensureContentDesiredHeightIsComputed();
         }
 
-        return getRatioForState(state) * mContainerHeight;
+        return getRatioForState(state) * getMaxContentHeight();
     }
 
-    /** @return The max possible height that the content can be. */
+    /**
+     * @return The max possible height that the content can be.
+     */
     private int getMaxContentHeight() {
         return mContainerHeight;
     }
@@ -1125,7 +1153,7 @@ class BottomSheet extends FrameLayout
         if (mContentDesiredHeight != HEIGHT_UNSPECIFIED) {
             return;
         }
-        mSheetContent
+        assumeNonNull(mSheetContent)
                 .getContentView()
                 .measure(
                         MeasureSpec.makeMeasureSpec(getMaxSheetWidth(), MeasureSpec.EXACTLY),
@@ -1385,6 +1413,13 @@ class BottomSheet extends FrameLayout
         }
     }
 
+    void setBottomMargin(int bottomMargin) {
+        mBottomMargin = bottomMargin;
+        MarginLayoutParams layoutParams = (MarginLayoutParams) mSheetContainer.getLayoutParams();
+        layoutParams.bottomMargin = mBottomMargin;
+        mSheetContainer.setLayoutParams(layoutParams);
+    }
+
     private void ensureContentIsWrapped(boolean animate) {
         if (mCurrentState == SheetState.HIDDEN || mCurrentState == SheetState.PEEK) return;
 
@@ -1416,5 +1451,10 @@ class BottomSheet extends FrameLayout
 
     void setSheetContainerForTesting(ViewGroup sheetContainer) {
         mSheetContainer = sheetContainer;
+    }
+
+    void setEdgeToEdgeBottomInsetSupplierForTesting(
+            Supplier<Integer> edgeToEdgeBottomInsetSupplier) {
+        mEdgeToEdgeBottomInsetSupplier = edgeToEdgeBottomInsetSupplier;
     }
 }

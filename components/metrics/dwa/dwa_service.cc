@@ -14,6 +14,7 @@
 #include "base/strings/string_util.h"
 #include "base/version.h"
 #include "components/metrics/dwa/dwa_pref_names.h"
+#include "components/metrics/dwa/dwa_rotation_scheduler.h"
 #include "components/metrics/metrics_log.h"
 #include "components/metrics/metrics_pref_names.h"
 #include "components/prefs/pref_service.h"
@@ -60,8 +61,8 @@ constexpr auto kEuropeanEconomicAreaCountries =
         "uk",  // United Kingdom
     });
 
-// Number of seconds in a week or seven days. (604800 = 7 * 24 * 60 * 60)
-const int kOneWeekInSeconds = base::Days(7).InSeconds();
+// One week or seven days represented in base::TimeDelta.
+const base::TimeDelta kOneWeek = base::Days(7);
 
 const size_t kMinLogQueueCount = 10;
 const size_t kMinLogQueueSizeBytes = 300 * 1024;  // 300 KiB
@@ -79,9 +80,9 @@ DwaService::DwaService(MetricsServiceClient* client, PrefService* local_state)
   auto get_upload_interval_callback =
       base::BindRepeating(&metrics::MetricsServiceClient::GetUploadInterval,
                           base::Unretained(client_));
-  bool fast_startup_for_testing = client_->ShouldStartUpFastForTesting();
-  scheduler_ = std::make_unique<MetricsRotationScheduler>(
-      rotate_callback, get_upload_interval_callback, fast_startup_for_testing);
+  bool fast_startup = client_->ShouldStartUpFast();
+  scheduler_ = std::make_unique<DwaRotationScheduler>(
+      rotate_callback, get_upload_interval_callback, fast_startup);
   scheduler_->InitTaskComplete();
 }
 
@@ -169,7 +170,7 @@ void DwaService::RecordCoarseSystemInformation(
   coarse_system_info->set_platform(::dwa::CoarseSystemInfo::PLATFORM_ANDROID);
 #elif BUILDFLAG(IS_IOS)
   coarse_system_info->set_platform(::dwa::CoarseSystemInfo::PLATFORM_IOS);
-#elif BUILDFLAG(IS_CHROMEOS_ASH) || BUILDFLAG(IS_CHROMEOS_LACROS)
+#elif BUILDFLAG(IS_CHROMEOS)
   coarse_system_info->set_platform(::dwa::CoarseSystemInfo::PLATFORM_CHROMEOS);
 #else
   coarse_system_info->set_platform(::dwa::CoarseSystemInfo::PLATFORM_OTHER);
@@ -189,11 +190,11 @@ void DwaService::RecordCoarseSystemInformation(
         ::dwa::CoarseSystemInfo::GEO_DESIGNATION_ROW);
   }
 
-  int64_t seconds_since_install =
-      MetricsLog::GetCurrentTime() -
-      local_state.GetInt64(metrics::prefs::kInstallDate);
+  base::TimeDelta time_since_install =
+      base::Time::Now() -
+      base::Time::FromTimeT(local_state.GetInt64(metrics::prefs::kInstallDate));
   coarse_system_info->set_client_age(
-      seconds_since_install < kOneWeekInSeconds
+      time_since_install < kOneWeek
           ? ::dwa::CoarseSystemInfo::CLIENT_AGE_RECENT
           : ::dwa::CoarseSystemInfo::CLIENT_AGE_NOT_RECENT);
 

@@ -10,9 +10,10 @@
 #include "base/containers/contains.h"
 #include "base/feature_list.h"
 #include "base/observer_list.h"
+#include "base/strings/string_split.h"
+#include "base/strings/string_util.h"
 #include "base/strings/stringprintf.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "components/device_event_log/device_event_log.h"
 #include "ui/base/linux/linux_desktop.h"
 #include "ui/base/pointer/touch_ui_controller.h"
@@ -41,7 +42,7 @@
 #include "ui/ozone/platform/wayland/host/wayland_zcr_color_manager.h"
 #include "ui/ozone/platform/wayland/host/zwp_idle_inhibit_manager.h"
 
-#if defined(USE_DBUS)
+#if BUILDFLAG(USE_DBUS)
 #include "ui/ozone/platform/wayland/host/org_gnome_mutter_idle_monitor.h"
 #endif
 
@@ -336,23 +337,22 @@ display::Display WaylandScreen::GetDisplayForAcceleratedWidget(
 }
 
 gfx::Point WaylandScreen::GetCursorScreenPoint() const {
-  // wl_shell/xdg-shell do not provide either location of surfaces in global
-  // space coordinate system or location of a pointer. Instead, only locations
-  // of mouse/touch events are known. Given that Chromium assumes top-level
-  // windows are located at origin when screen coordinates is not available,
-  // always provide a cursor point in regards to surfaces' location.
-  //
-  // If a pointer is located in any of the existing wayland windows, return
-  // the last known cursor position.
+  // On Wayland, neither surface nor pointer location is provided in global
+  // screen coordinates system. Instead, only mouse/touch events location are
+  // sent (in local surface coordinates). Given that Chromium assumes that
+  // toplevel windows are located at origin when screen coordinates are not
+  // available, return the last known cursor position for the currently focused
+  // window, if any.
   auto* cursor_position = connection_->wayland_cursor_position();
-  if (connection_->window_manager()->GetCurrentPointerOrTouchFocusedWindow() &&
-      cursor_position)
-    return cursor_position->GetCursorSurfacePoint();
+  auto* focused_window =
+      connection_->window_manager()->GetCurrentPointerOrTouchFocusedWindow();
+  if (focused_window && cursor_position) {
+    return gfx::ScaleToRoundedPoint(
+        cursor_position->GetCursorSurfacePoint(),
+        1.0f / focused_window->applied_state().ui_scale);
+  }
 
-  // Make sure the cursor position does not overlap with any window by using the
-  // outside of largest window bounds.
-  // TODO(oshima): Change this for the case that screen coordinates is
-  // available.
+  // Otherwise, make sure the returned point does not overlap any known window.
   auto* window = connection_->window_manager()->GetWindowWithLargestBounds();
   DCHECK(window);
   const gfx::Rect bounds = window->GetBoundsInDIP();
@@ -468,7 +468,7 @@ base::TimeDelta WaylandScreen::CalculateIdleTime() const {
       return *idle_time;
   }
 
-#if defined(USE_DBUS)
+#if BUILDFLAG(USE_DBUS)
   // Try the org.gnome.Mutter.IdleMonitor D-Bus service (Mutter).
   if (!org_gnome_mutter_idle_monitor_)
     org_gnome_mutter_idle_monitor_ =
@@ -476,7 +476,7 @@ base::TimeDelta WaylandScreen::CalculateIdleTime() const {
   const auto idle_time = org_gnome_mutter_idle_monitor_->GetIdleTime();
   if (idle_time)
     return *idle_time;
-#endif  // defined(USE_DBUS)
+#endif  // BUILDFLAG(USE_DBUS)
 
   NOTIMPLEMENTED_LOG_ONCE();
 
@@ -534,7 +534,7 @@ bool WaylandScreen::VerifyOutputStateConsistentForTesting() const {
   // Both the display_list_ and the display_id_map_ should be tracking the same
   // displays.
   for (const auto& pair : display_id_map_) {
-    if (base::ranges::find(displays, pair.second, &display::Display::id) ==
+    if (std::ranges::find(displays, pair.second, &display::Display::id) ==
         displays.end()) {
       return false;
     }

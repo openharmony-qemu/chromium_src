@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 import { inject, injectable } from 'inversify';
 import window from '@ohos.window';
@@ -64,8 +39,22 @@ export class SubWindowAdapter extends BaseAdapter {
   }
 
   @LogMethod
-  createSubWindow(param: NewWindowParam,
-    callback: (ready: boolean, id: string) => void) {
+  createSubWindow(param: NewWindowParam) {
+    let parentId = param.parent_id
+    let fixedBounds = this.adjustBounds(parentId, param.bounds);
+    const para: Record<string, IParams> = {
+      'subWindowParams': {
+        id: param.window_id,
+        size: [fixedBounds.width, fixedBounds.height],
+        initColorRgb: param.init_color_argb,
+      }
+    };
+    let subStorage: LocalStorage = new LocalStorage(para);
+    this.createNewWindow(parentId, param.window_id, fixedBounds, subStorage);
+  }
+
+  @LogMethod
+  reuseSubWindow(param: NewWindowParam): string {
     let parentId = param.parent_id
     let fixedBounds = this.adjustBounds(parentId, param.bounds);
     const reusableWindow =
@@ -81,25 +70,15 @@ export class SubWindowAdapter extends BaseAdapter {
         this.moveSubWindow(reusableWindow.subWindow, fixedBounds.left, fixedBounds.top, parentId);
         reusableWindow.subWindow.showWindow()
           .catch((err: BusinessError) => {
+            reusableWindow.id = "";
             LogUtil.error(TAG, 'Failed to reuseSubWindow: ' + reusableWindow.id + ',err:' + JSON.stringify(err));
-            return;
           });
-        callback(true, reusableWindow.id);
-        return;
+        return reusableWindow.id;
       } catch (e) {
         LogUtil.error(TAG,'reuseSubWindow error' + reusableWindow.id);
       }
     }
-    const para: Record<string, IParams> = {
-      'subWindowParams': {
-        id: param.window_id,
-        callback: callback,
-        size: [fixedBounds.width, fixedBounds.height],
-        initColorRgb: param.init_color_argb,
-      }
-    };
-    let subStorage: LocalStorage = new LocalStorage(para);
-    this.createNewWindow(parentId, param.window_id, fixedBounds, subStorage);
+    return "";
   }
 
   private getParentWindow(parentId: string): window.Window | undefined {
@@ -221,9 +200,9 @@ export class SubWindowAdapter extends BaseAdapter {
       if (bounds.width > 0 && bounds.height > 0) {
         this.resizeSubWindow(windowClass, bounds.width, bounds.height);
       }
-      windowClass.loadContent('pages/SubWindow', subStorage, (err) => {
+      windowClass.loadContent(this.getContentPath(), subStorage, (err) => {
         if (err.code) {
-          LogUtil.error(TAG, 'Failed to load the content. Cause:' + JSON.stringify(err));
+          LogUtil.error(TAG, 'Failed to load the subwindow. Cause:' + JSON.stringify(err));
           return;
         }
         windowClass.setWindowFocusable(false)
@@ -238,6 +217,14 @@ export class SubWindowAdapter extends BaseAdapter {
       });
     } catch (exception) {
       LogUtil.error(TAG,'Failed to create sub window. Cause: ' + JSON.stringify(exception));
+    }
+  }
+
+  private getContentPath(): string {
+    if (this.nativeContext.IsSupportNodeHandleFeature()) {
+      return 'pages/NodeHandleSubWindow';
+    } else {
+      return 'pages/SubWindow';
     }
   }
 

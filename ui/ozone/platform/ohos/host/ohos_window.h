@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2023 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #ifndef UI_OZONE_PLATFORM_OHOS_OHOS_WINDOW_H_
 #define UI_OZONE_PLATFORM_OHOS_OHOS_WINDOW_H_
@@ -33,7 +8,10 @@
 #include "base/memory/weak_ptr.h"
 #include "base/ohos/task_scheduler/task_runner_ohos.h"
 #include "ohos/adapter/window/window_common.h"
+#include "ohos/adapter/xcomponent/adapter/window_adapter.h"
 #include "ohos/adapter/xcomponent/event/window_event_common.h"
+#include "ui/display/display.h"
+#include "ui/display/types/display_constants.h"
 #include "ui/events/event_target.h"
 #include "ui/events/platform/platform_event_dispatcher.h"
 #include "ui/gfx/geometry/rect.h"
@@ -51,6 +29,7 @@ using namespace ohos::adapter::xcomponent;
 
 class OhosPopup;
 class OhosToplevelWindow;
+class OhosPipWindow;
 class OhosWindowManager;
 
 class OhosWindow : public PlatformWindow,
@@ -83,6 +62,9 @@ class OhosWindow : public PlatformWindow,
       PlatformWindowDelegate* delegate,
       OhosWindowManager* manager,
       PlatformWindowInitProperties properties);
+
+  // Initializes the OhosWindow with supplied properties.
+  virtual bool Initialize(PlatformWindowInitProperties properties);
 
   void set_parent_window(OhosWindow* parent_window) {
     parent_window_ = parent_window;
@@ -182,6 +164,21 @@ class OhosWindow : public PlatformWindow,
   void SetFocus(bool focus) { has_focus_ = focus; }
   bool HasFocus() const { return has_focus_; }
 
+  void SetCurrentDisplayId(int64_t display_id) {
+    current_display_id_ = display_id;
+    ohos::adapter::xcomponent::WindowAdapter::GetInstance().SetCurrentDisplayId(display_id);
+  }
+  int64_t GetCurrentDisplayId() {
+    return current_display_id_;
+  }
+  // Convert the logical pixels of the rectangular area data in the new window
+  // to physical pixels.
+  gfx::Rect ConvertDipToPixelForNewWindow(
+      const gfx::Rect& rect_in_dip);
+
+  virtual int32_t GetOriginWindowId();
+  virtual display::Display GetCurrentDisplay();
+
   bool is_visible_{true};
 
   // The bounds of our window before the window was maximized.
@@ -196,10 +193,10 @@ class OhosWindow : public PlatformWindow,
   // Contains the current state of the window.
   PlatformWindowState state_ = PlatformWindowState::kUnknown;
 
- private:
-  // Initializes the OhosWindow with supplied properties.
-  virtual bool Initialize(PlatformWindowInitProperties properties);
+ protected:
+  void BindNodeHandle();
 
+ private:
   uint32_t DispatchEventToDelegate(const PlatformEvent& native_event);
 
   // Additional initialization of derived classes.
@@ -238,14 +235,17 @@ class OhosWindow : public PlatformWindow,
   PlatformWindowType type_ = PlatformWindowType::kWindow;
 
   scoped_refptr<base::SingleThreadTaskRunner> ui_task_runner_;
-  
-  base::WeakPtrFactory<OhosWindow> weak_ptr_factory_{this};
 
   // The current cursor bitmap
   scoped_refptr<BitmapCursor> cursor_;
 
   bool has_focus_ = false;
   bool has_pointer_focus_ = false;
+  int64_t current_display_id_ = display::kInvalidDisplayId;
+  // whether the node handle xcomponent already bound with node content in ability
+  bool is_ability_bound_ = false;
+
+  base::WeakPtrFactory<OhosWindow> weak_ptr_factory_{this};
 };
 
 }  // namespace ui

@@ -26,6 +26,7 @@
 #include "partition_alloc/partition_root.h"
 #include "partition_alloc/partition_stats.h"
 #include "partition_alloc/shim/allocator_dispatch.h"
+#include "partition_alloc/shim/allocator_shim.h"
 #include "partition_alloc/shim/allocator_shim_default_dispatch_to_partition_alloc_internal.h"
 #include "partition_alloc/shim/allocator_shim_internals.h"
 
@@ -101,7 +102,7 @@ class LeakySingleton {
     __cpp_lib_atomic_value_initialization < 201911L
   alignas(T) uint8_t instance_buffer_[sizeof(T)];
 #else
-  alignas(T) uint8_t instance_buffer_[sizeof(T)] = {0};
+  alignas(T) uint8_t instance_buffer_[sizeof(T)] = {};
 #endif
   std::atomic<bool> initialization_lock_;
 };
@@ -148,7 +149,6 @@ class MainPartitionConstructor {
     // the decision to turn the thread cache on until then.
     // Also tests, such as the ThreadCache tests create a thread cache.
     opts.thread_cache = partition_alloc::PartitionOptions::kDisabled;
-    opts.star_scan_quarantine = partition_alloc::PartitionOptions::kAllowed;
     opts.backup_ref_ptr = partition_alloc::PartitionOptions::kDisabled;
     auto* new_root = new (buffer) partition_alloc::PartitionRoot(opts);
 
@@ -435,25 +435,46 @@ PartitionAllocFunctionsInternal<base_alloc_flags, base_free_flags>::Free(
       object);
 }
 
-#if PA_BUILDFLAG(IS_APPLE) || PA_BUILDFLAG(IS_OHOS)
-// Normal free() path on Apple OSes:
-// 1. size = GetSizeEstimate(ptr);
-// 2. if (size) FreeDefiniteSize(ptr, size)
-//
-// So we don't need to re-check that the pointer is owned in Free(), and we
-// can use the size.
 // static
 template <partition_alloc::AllocFlags base_alloc_flags,
           partition_alloc::FreeFlags base_free_flags>
-void PartitionAllocFunctionsInternal<base_alloc_flags, base_free_flags>::
-    FreeDefiniteSize(void* address, size_t size, void* context) {
-  partition_alloc::ScopedDisallowAllocations guard{};
+PA_ALWAYS_INLINE void
+PartitionAllocFunctionsInternal<base_alloc_flags,
+                                base_free_flags>::FreeWithSize(void* object,
+                                                               size_t size,
+                                                               void* context) {
   // TODO(lizeb): Optimize PartitionAlloc to use the size information. This is
   // still useful though, as we avoid double-checking that the address is owned.
-  partition_alloc::PartitionRoot::FreeInlineInUnknownRoot<base_free_flags>(
-      address);
+  PartitionAllocFunctionsInternal<base_alloc_flags, base_free_flags>::Free(
+      object, context);
 }
-#endif  // PA_BUILDFLAG(IS_APPLE) || PA_BUILDFLAG(IS_OHOS)
+
+// static
+template <partition_alloc::AllocFlags base_alloc_flags,
+          partition_alloc::FreeFlags base_free_flags>
+PA_ALWAYS_INLINE void
+PartitionAllocFunctionsInternal<base_alloc_flags, base_free_flags>::
+    FreeWithAlignment(void* object, size_t alignment, void* context) {
+  // TODO(lizeb): Optimize PartitionAlloc to use the size information. This is
+  // still useful though, as we avoid double-checking that the address is owned.
+  PartitionAllocFunctionsInternal<base_alloc_flags, base_free_flags>::Free(
+      object, context);
+}
+
+// static
+template <partition_alloc::AllocFlags base_alloc_flags,
+          partition_alloc::FreeFlags base_free_flags>
+PA_ALWAYS_INLINE void PartitionAllocFunctionsInternal<
+    base_alloc_flags,
+    base_free_flags>::FreeWithSizeAndAlignment(void* object,
+                                               size_t size,
+                                               size_t alignment,
+                                               void* context) {
+  // TODO(lizeb): Optimize PartitionAlloc to use the size information. This is
+  // still useful though, as we avoid double-checking that the address is owned.
+  PartitionAllocFunctionsInternal<base_alloc_flags, base_free_flags>::Free(
+      object, context);
+}
 
 // static
 template <partition_alloc::AllocFlags base_alloc_flags,
@@ -563,15 +584,14 @@ void PartitionAllocFunctionsInternal<base_alloc_flags, base_free_flags>::
 #endif  // PA_BUILDFLAG(IS_APPLE)
 
 // Explicitly instantiate `PartitionAllocFunctions`.
-template class PA_COMPONENT_EXPORT(ALLOCATOR_SHIM)
+template class PA_EXPORT_TEMPLATE_DEFINE(PA_COMPONENT_EXPORT(ALLOCATOR_SHIM))
     PartitionAllocFunctionsInternal<partition_alloc::AllocFlags::kNoHooks,
                                     partition_alloc::FreeFlags::kNoHooks>;
 // Explicitly instantiate `PartitionAllocWithAdvancedChecksFunctions`.
-template class PA_COMPONENT_EXPORT(ALLOCATOR_SHIM)
+template class PA_EXPORT_TEMPLATE_DEFINE(PA_COMPONENT_EXPORT(ALLOCATOR_SHIM))
     PartitionAllocFunctionsInternal<
         partition_alloc::AllocFlags::kNoHooks,
         partition_alloc::FreeFlags::kNoHooks |
-            partition_alloc::FreeFlags::kZap |
             partition_alloc::FreeFlags::kSchedulerLoopQuarantine>;
 
 // static
@@ -612,14 +632,16 @@ void EnablePartitionAllocMemoryReclaimer() {
 
 void ConfigurePartitions(
     EnableBrp enable_brp,
+    size_t brp_extra_extras_size,
     EnableMemoryTagging enable_memory_tagging,
     partition_alloc::TagViolationReportingMode memory_tagging_reporting_mode,
     BucketDistribution distribution,
-    SchedulerLoopQuarantine scheduler_loop_quarantine,
-    size_t scheduler_loop_quarantine_branch_capacity_in_bytes,
-    ZappingByFreeFlags zapping_by_free_flags,
+    partition_alloc::internal::SchedulerLoopQuarantineConfig
+        scheduler_loop_quarantine_global_config,
+    partition_alloc::internal::SchedulerLoopQuarantineConfig
+        scheduler_loop_quarantine_thread_local_config,
     EventuallyZeroFreedMemory eventually_zero_freed_memory,
-    UsePoolOffsetFreelists use_pool_offset_freelists,
+    FewerMemoryRegions fewer_memory_regions,
     UseSmallSingleSlotSpans use_small_single_slot_spans) {
   // Calling Get() is actually important, even if the return value isn't
   // used, because it has a side effect of initializing the variable, if it
@@ -640,33 +662,26 @@ void ConfigurePartitions(
         // another partition will have the thread cache enabled, by calling
         // EnableThreadCacheIfSupported().
         opts.thread_cache = partition_alloc::PartitionOptions::kDisabled;
-        opts.star_scan_quarantine = partition_alloc::PartitionOptions::kAllowed;
         opts.backup_ref_ptr =
             enable_brp ? partition_alloc::PartitionOptions::kEnabled
                        : partition_alloc::PartitionOptions::kDisabled;
-        opts.zapping_by_free_flags =
-            zapping_by_free_flags
-                ? partition_alloc::PartitionOptions::kEnabled
-                : partition_alloc::PartitionOptions::kDisabled;
+        opts.backup_ref_ptr_extra_extras_size = brp_extra_extras_size;
         opts.eventually_zero_freed_memory =
             eventually_zero_freed_memory
                 ? partition_alloc::PartitionOptions::kEnabled
                 : partition_alloc::PartitionOptions::kDisabled;
-        opts.scheduler_loop_quarantine =
-            scheduler_loop_quarantine
-                ? partition_alloc::PartitionOptions::kEnabled
-                : partition_alloc::PartitionOptions::kDisabled;
-        opts.scheduler_loop_quarantine_branch_capacity_in_bytes =
-            scheduler_loop_quarantine_branch_capacity_in_bytes;
+        opts.fewer_memory_regions =
+            fewer_memory_regions ? partition_alloc::PartitionOptions::kEnabled
+                                 : partition_alloc::PartitionOptions::kDisabled;
+        opts.scheduler_loop_quarantine_global_config =
+            scheduler_loop_quarantine_global_config;
+        opts.scheduler_loop_quarantine_thread_local_config =
+            scheduler_loop_quarantine_thread_local_config;
         opts.memory_tagging = {
             .enabled = enable_memory_tagging
                            ? partition_alloc::PartitionOptions::kEnabled
                            : partition_alloc::PartitionOptions::kDisabled,
             .reporting_mode = memory_tagging_reporting_mode};
-        opts.use_pool_offset_freelists =
-            use_pool_offset_freelists
-                ? partition_alloc::PartitionOptions::kEnabled
-                : partition_alloc::PartitionOptions::kDisabled;
         opts.use_small_single_slot_spans =
             use_small_single_slot_spans
                 ? partition_alloc::PartitionOptions::kEnabled

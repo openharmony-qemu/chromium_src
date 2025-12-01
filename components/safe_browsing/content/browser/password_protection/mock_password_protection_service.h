@@ -31,9 +31,6 @@ class MockPasswordProtectionService : public PasswordProtectionService {
   ~MockPasswordProtectionService() override;
 
   // safe_browsing::PasswordProtectionService
-  MOCK_CONST_METHOD0(GetSyncAccountType,
-                     safe_browsing::LoginReputationClientRequest::
-                         PasswordReuseEvent::SyncAccountType());
   MOCK_CONST_METHOD0(
       GetUrlDisplayExperiment,
       safe_browsing::LoginReputationClientRequest::UrlDisplayExperiment());
@@ -69,9 +66,7 @@ class MockPasswordProtectionService : public PasswordProtectionService {
   MOCK_METHOD1(
       RemovePhishedSavedPasswordCredential,
       void(const std::vector<password_manager::MatchingReusedCredential>&));
-  MOCK_METHOD1(
-      GetReferringAppInfo,
-      LoginReputationClientRequest::ReferringAppInfo(content::WebContents*));
+  MOCK_METHOD1(GetReferringAppInfo, ReferringAppInfo(content::WebContents*));
   MOCK_METHOD2(IsPingingEnabled,
                bool(LoginReputationClientRequest::TriggerType,
                     ReusedPasswordAccountType));
@@ -117,8 +112,6 @@ class MockPasswordProtectionService : public PasswordProtectionService {
            PasswordType,
            const std::vector<password_manager::MatchingReusedCredential>&,
            bool));
-  MOCK_CONST_METHOD0(GetUserPopulationPref,
-                     ChromeUserPopulation::UserPopulation());
 };
 
 }  // namespace safe_browsing

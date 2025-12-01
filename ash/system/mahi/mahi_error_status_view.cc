@@ -86,14 +86,14 @@ class ErrorContentsView : public views::FlexLayoutView,
                 }))
                 .CopyAddressTo(&error_status_text_)
                 .SetBorder(views::CreateEmptyBorder(kLabelPaddings))
-                .SetEnabledColorId(cros_tokens::kCrosSysOnSurface)
+                .SetEnabledColor(cros_tokens::kCrosSysOnSurface)
                 .SetHorizontalAlignment(gfx::HorizontalAlignment::ALIGN_CENTER)
                 .SetID(mahi_constants::ViewId::kErrorStatusLabel)
                 .SetMultiLine(true)
                 .SetMaximumWidth(kLabelMaximumWidth),
             views::Builder<views::Link>()
                 .CopyAddressTo(&retry_link_)
-                .SetForceUnderline(false)
+                .SetForceUnderline(true)
                 .SetID(mahi_constants::ViewId::kErrorStatusRetryLink)
                 .SetText(l10n_util::GetStringUTF16(
                     IDS_ASH_MAHI_RETRY_LINK_LABEL_TEXT))

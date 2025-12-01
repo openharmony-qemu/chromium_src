@@ -4,7 +4,9 @@
 
 #import "ios/chrome/browser/saved_tab_groups/model/ios_tab_group_sync_util.h"
 
+#import "base/debug/dump_without_crashing.h"
 #import "base/strings/sys_string_conversions.h"
+#import "components/collaboration/public/collaboration_service.h"
 #import "components/saved_tab_groups/delegate/tab_group_sync_delegate.h"
 #import "components/saved_tab_groups/public/saved_tab_group.h"
 #import "components/saved_tab_groups/public/saved_tab_group_tab.h"
@@ -158,8 +160,7 @@ void MoveTabGroupAcrossBrowsers(const TabGroup* source_tab_group,
       destination_tab_group));
   // Check that the source browser has one less group.
   CHECK_EQ(source_group_count,
-           source_browser->GetWebStateList()->GetGroups().size() + 1,
-           base::NotFatalUntil::M128);
+           source_browser->GetWebStateList()->GetGroups().size() + 1);
 }
 
 void MoveTabGroupToBrowser(const TabGroup* source_tab_group,
@@ -291,27 +292,54 @@ bool IsSaveableNavigation(web::NavigationContext* navigation_context) {
 
 bool IsTabGroupShared(const TabGroup* tab_group,
                       TabGroupSyncService* sync_service) {
-  BOOL shared = false;
-  if (sync_service && tab_group) {
-    std::optional<tab_groups::SavedTabGroup> saved_group =
-        sync_service->GetGroup(tab_group->tab_group_id());
-    shared =
-        saved_group.has_value() && saved_group->collaboration_id().has_value();
+  if (!sync_service || !tab_group) {
+    return false;
   }
-  return shared;
+
+  std::optional<tab_groups::SavedTabGroup> saved_group =
+      sync_service->GetGroup(tab_group->tab_group_id());
+  return saved_group.has_value() && saved_group->collaboration_id().has_value();
 }
 
-NSString* GetTabGroupCollabID(const TabGroup* tab_group,
-                              TabGroupSyncService* sync_service) {
-  if (sync_service && tab_group) {
+data_sharing::MemberRole GetUserRoleForGroup(
+    const TabGroup* tab_group,
+    TabGroupSyncService* tab_group_sync_service,
+    collaboration::CollaborationService* collaboration_service) {
+  if (!collaboration_service) {
+    return data_sharing::MemberRole::kUnknown;
+  }
+
+  CollaborationId collab_id =
+      GetTabGroupCollabID(tab_group, tab_group_sync_service);
+  if (collab_id == CollaborationId()) {
+    return data_sharing::MemberRole::kUnknown;
+  }
+
+  data_sharing::GroupId group_id = data_sharing::GroupId(collab_id.value());
+  return collaboration_service->GetCurrentUserRoleForGroup(group_id);
+}
+
+CollaborationId GetTabGroupCollabID(
+    const TabGroup* tab_group,
+    TabGroupSyncService* tab_group_sync_service) {
+  if (!tab_group) {
+    return CollaborationId();
+  }
+  return GetTabGroupCollabID(tab_group->tab_group_id(), tab_group_sync_service);
+}
+
+CollaborationId GetTabGroupCollabID(
+    const tab_groups::EitherGroupID& tab_group_id,
+    TabGroupSyncService* tab_group_sync_service) {
+  if (tab_group_sync_service) {
     std::optional<tab_groups::SavedTabGroup> saved_group =
-        sync_service->GetGroup(tab_group->tab_group_id());
+        tab_group_sync_service->GetGroup(tab_group_id);
     if (saved_group.has_value() &&
         saved_group->collaboration_id().has_value()) {
-      return base::SysUTF8ToNSString(saved_group->collaboration_id().value());
+      return saved_group->collaboration_id().value();
     }
   }
-  return nil;
+  return CollaborationId();
 }
 
 }  // namespace utils

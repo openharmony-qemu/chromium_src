@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "base/strings/to_string.h"
+
 // This file contains the ResponseAnalyzerTests (which test the response
 // analyzer's behavior in several parameterized test scenarios) and at the end
 // includes the CrossOriginReadBlockingTests, which are more typical unittests.
@@ -124,7 +126,6 @@ inline std::ostream& operator<<(std::ostream& out, const MimeType& value) {
   }
   packets += "}";
 
-
   return os << "\n  description           = " << scenario.description
             << "\n  source_line           = " << scenario.source_line
             << "\n  target_url            = " << scenario.target_url
@@ -134,7 +135,7 @@ inline std::ostream& operator<<(std::ostream& out, const MimeType& value) {
             << "\n  canonical_mime_type   = " << scenario.canonical_mime_type
             << "\n  packets               = " << packets
             << "\n  resource_is_sensitive = "
-            << (scenario.resource_is_sensitive ? "true" : "false")
+            << base::ToString(scenario.resource_is_sensitive)
             << "\n  verdict               = " << verdict
             << "\n  verdict_packet        = " << scenario.verdict_packet;
 }

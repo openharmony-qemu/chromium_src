@@ -11,13 +11,20 @@
 #import "base/task/bind_post_task.h"
 #import "base/time/time.h"
 #import "components/feature_engagement/public/tracker.h"
+#import "components/password_manager/core/browser/password_manager_util.h"
 #import "components/prefs/pref_registry_simple.h"
 #import "components/prefs/pref_service.h"
 #import "components/safe_browsing/core/common/safe_browsing_prefs.h"
 #import "components/search/search.h"
+#import "components/signin/public/identity_manager/identity_manager.h"
+#import "ios/chrome/browser/authentication/ui_bundled/signin_presenter.h"
+#import "ios/chrome/browser/content_suggestions/ui_bundled/content_suggestions_commands.h"
+#import "ios/chrome/browser/content_suggestions/ui_bundled/set_up_list/utils.h"
 #import "ios/chrome/browser/default_browser/model/promo_source.h"
 #import "ios/chrome/browser/default_browser/model/utils.h"
 #import "ios/chrome/browser/feature_engagement/model/tracker_factory.h"
+#import "ios/chrome/browser/lens/ui_bundled/lens_availability.h"
+#import "ios/chrome/browser/ntp/model/features.h"
 #import "ios/chrome/browser/ntp/model/set_up_list_prefs.h"
 #import "ios/chrome/browser/push_notification/model/constants.h"
 #import "ios/chrome/browser/push_notification/model/push_notification_client.h"
@@ -34,6 +41,7 @@
 #import "ios/chrome/browser/shared/public/commands/application_commands.h"
 #import "ios/chrome/browser/shared/public/commands/browser_coordinator_commands.h"
 #import "ios/chrome/browser/shared/public/commands/command_dispatcher.h"
+#import "ios/chrome/browser/shared/public/commands/credential_provider_promo_commands.h"
 #import "ios/chrome/browser/shared/public/commands/docking_promo_commands.h"
 #import "ios/chrome/browser/shared/public/commands/settings_commands.h"
 #import "ios/chrome/browser/shared/public/commands/show_signin_command.h"
@@ -43,11 +51,8 @@
 #import "ios/chrome/browser/signin/model/authentication_service_factory.h"
 #import "ios/chrome/browser/signin/model/chrome_account_manager_service.h"
 #import "ios/chrome/browser/signin/model/chrome_account_manager_service_factory.h"
+#import "ios/chrome/browser/signin/model/identity_manager_factory.h"
 #import "ios/chrome/browser/tips_notifications/model/utils.h"
-#import "ios/chrome/browser/ui/authentication/signin_presenter.h"
-#import "ios/chrome/browser/ui/content_suggestions/content_suggestions_commands.h"
-#import "ios/chrome/browser/ui/content_suggestions/set_up_list/utils.h"
-#import "ios/chrome/browser/ui/lens/lens_availability.h"
 #import "ios/public/provider/chrome/browser/lens/lens_api.h"
 #import "ui/base/device_form_factor.h"
 
@@ -55,6 +60,13 @@ namespace {
 
 // The amount of time used to determine if Lens was opened recently.
 const base::TimeDelta kLensOpenedRecency = base::Days(30);
+// The amount of time used to determine if the CPE promo was displayed recently.
+const base::TimeDelta kCPEPromoRecency = base::Days(7);
+// The amount of time used to determine if the user successfully logged in
+// recently.
+const base::TimeDelta kSuccessfullLoginRecency = base::Days(30);
+// The amount of time used to determine if the user should be classified.
+const base::TimeDelta kClassifyUserRecency = base::Hours(2);
 
 // Returns the first notification from `requests` whose identifier matches
 // `identifier`.
@@ -82,6 +94,14 @@ bool IsSigninEnabled(AuthenticationService* auth_service) {
   }
 }
 
+// Returns true if the user can sign in.
+bool CanSignIn(ProfileIOS* profile) {
+  AuthenticationService* auth_service =
+      AuthenticationServiceFactory::GetForProfile(profile);
+  return IsSigninEnabled(auth_service) &&
+         !auth_service->HasPrimaryIdentity(signin::ConsentLevel::kSignin);
+}
+
 // Returns true if a Default Browser Promo was canceled.
 bool DefaultBrowserPromoCanceled() {
   std::optional<IOSDefaultBrowserPromoAction> action =
@@ -102,9 +122,9 @@ bool DefaultBrowserPromoCanceled() {
 
 // Returns true if the Feature Engagement Tracker has ever triggered for the
 // given `feature`.
-bool FETHasEverTriggered(Browser* browser, const base::Feature& feature) {
+bool FETHasEverTriggered(ProfileIOS* profile, const base::Feature& feature) {
   feature_engagement::Tracker* tracker =
-      feature_engagement::TrackerFactory::GetForProfile(browser->GetProfile());
+      feature_engagement::TrackerFactory::GetForProfile(profile);
   return tracker->HasEverTriggered(feature, true);
 }
 
@@ -121,10 +141,16 @@ void SetUserType(PrefService* local_state, TipsNotificationUserType user_type) {
   base::UmaHistogramEnumeration("IOS.Notifications.Tips.UserType", user_type);
 }
 
+// Returns true if `time` is less time ago than `delta`.
+bool IsRecent(base::Time time, base::TimeDelta delta) {
+  return base::Time::Now() - time < delta;
+}
+
 }  // namespace
 
 TipsNotificationClient::TipsNotificationClient()
-    : PushNotificationClient(PushNotificationClientId::kTips) {
+    : PushNotificationClient(PushNotificationClientId::kTips,
+                             PushNotificationClientScope::kAppWide) {
   local_state_ = GetApplicationContext()->GetLocalState();
   pref_change_registrar_.Init(local_state_);
   PrefChangeRegistrar::NamedChangeCallback pref_callback = base::BindRepeating(
@@ -142,10 +168,15 @@ TipsNotificationClient::TipsNotificationClient()
 
 TipsNotificationClient::~TipsNotificationClient() = default;
 
+bool TipsNotificationClient::CanHandleNotification(
+    UNNotification* notification) {
+  return IsTipsNotification(notification.request);
+}
+
 bool TipsNotificationClient::HandleNotificationInteraction(
     UNNotificationResponse* response) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-  if (!IsTipsNotification(response.notification.request)) {
+  if (!CanHandleNotification(response.notification)) {
     return false;
   }
 
@@ -155,8 +186,11 @@ bool TipsNotificationClient::HandleNotificationInteraction(
                                   TipsNotificationType::kError);
     return false;
   }
-  base::UmaHistogramEnumeration("IOS.Notifications.Tips.Interaction",
-                                interacted_type_.value());
+  const char* histogram =
+      IsProactiveTipsNotification(response.notification.request)
+          ? "IOS.Notifications.Tips.Proactive.Interaction"
+          : "IOS.Notifications.Tips.Interaction";
+  base::UmaHistogramEnumeration(histogram, interacted_type_.value());
 
   // If the app is not yet foreground active, store the notification type and
   // handle it later when the app becomes foreground active.
@@ -169,28 +203,55 @@ bool TipsNotificationClient::HandleNotificationInteraction(
 void TipsNotificationClient::HandleNotificationInteraction(
     TipsNotificationType type) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-  Browser* browser = GetSceneLevelForegroundActiveBrowser();
+  Browser* browser = GetActiveForegroundBrowser();
   CHECK(browser);
   id<ApplicationCommands> application_handler =
       HandlerForProtocol(browser->GetCommandDispatcher(), ApplicationCommands);
+  auto showUICallback = base::CallbackToBlock(
+      base::BindOnce(&TipsNotificationClient::ShowUIForNotificationType,
+                     weak_ptr_factory_.GetWeakPtr(), type, browser));
   [application_handler
-      prepareToPresentModal:
-          base::CallbackToBlock(
-              base::BindOnce(&TipsNotificationClient::ShowUIForNotificationType,
-                             weak_ptr_factory_.GetWeakPtr(), type, browser))];
+      prepareToPresentModalWithSnackbarDismissal:NO
+                                      completion:showUICallback];
 
-  if (IsProvisionalNotificationAlertEnabled() && !permitted_) {
-    AuthenticationService* authService =
-        AuthenticationServiceFactory::GetForProfile(
-            GetSceneLevelForegroundActiveBrowser()->GetProfile());
-    id<SystemIdentity> identity =
-        authService->GetPrimaryIdentity(signin::ConsentLevel::kSignin);
-    const std::string& gaiaID = base::SysNSStringToUTF8(identity.gaiaID);
-    PushNotificationService* service =
-        GetApplicationContext()->GetPushNotificationService();
-    service->SetPreference(base::SysUTF8ToNSString(gaiaID),
-                           PushNotificationClientId::kTips, true);
+  // If a relavent feature is enabled and the user hasn't yet opted-in, and the
+  // current auth status is "authorized", interacting with a notification (which
+  // must have been sent provisionally) will be treated as a positive signal to
+  // opt in the user to this type of notification.
+  if ((IsProvisionalNotificationAlertEnabled() ||
+       IsIOSReactivationNotificationsEnabled()) &&
+      !permitted_) {
+    [PushNotificationUtil
+        getPermissionSettings:base::CallbackToBlock(base::BindOnce(
+                                  &TipsNotificationClient::OptInIfAuthorized,
+                                  weak_ptr_factory_.GetWeakPtr(),
+                                  browser->GetProfile()->AsWeakPtr()))];
   }
+}
+
+void TipsNotificationClient::OptInIfAuthorized(
+    base::WeakPtr<ProfileIOS> weak_profile,
+    UNNotificationSettings* settings) {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  if (settings.authorizationStatus != UNAuthorizationStatusAuthorized) {
+    return;
+  }
+  ProfileIOS* profile = weak_profile.get();
+  if (!profile) {
+    return;
+  }
+
+  AuthenticationService* authService =
+      AuthenticationServiceFactory::GetForProfile(profile);
+  id<SystemIdentity> identity =
+      authService->GetPrimaryIdentity(signin::ConsentLevel::kSignin);
+  const std::string& gaiaID = base::SysNSStringToUTF8(identity.gaiaID);
+  PushNotificationService* service =
+      GetApplicationContext()->GetPushNotificationService();
+  // Set `permitted_` here so that the OnPermittedPrefChanged exits early.
+  permitted_ = true;
+  service->SetPreference(base::SysUTF8ToNSString(gaiaID),
+                         PushNotificationClientId::kTips, true);
 }
 
 std::optional<UIBackgroundFetchResult>
@@ -216,6 +277,8 @@ void TipsNotificationClient::OnSceneActiveForegroundBrowserReady() {
 void TipsNotificationClient::OnSceneActiveForegroundBrowserReady(
     base::OnceClosure closure) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  UpdateProvisionalAllowed();
+  forced_type_ = ForcedTipsNotificationType();
   if (user_type_ == TipsNotificationUserType::kUnknown &&
       !CanSendReactivation()) {
     ClassifyUser();
@@ -304,8 +367,21 @@ void TipsNotificationClient::OnPendingRequestFound(
 void TipsNotificationClient::MaybeRequestNotification(
     base::OnceClosure completion) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-  if ((!permitted_ && !CanSendReactivation()) || DismissLimitReached()) {
+  if ((!permitted_ && !CanSendReactivation())) {
     std::move(completion).Run();
+    return;
+  }
+
+  Browser* browser = GetActiveForegroundBrowser();
+  if (!browser) {
+    std::move(completion).Run();
+    return;
+  }
+  ProfileIOS* profile = browser->GetProfile();
+
+  if (forced_type_.has_value()) {
+    RequestNotification(forced_type_.value(), profile->GetProfileName(),
+                        std::move(completion));
     return;
   }
 
@@ -327,8 +403,9 @@ void TipsNotificationClient::MaybeRequestNotification(
       // This type of notification is not enabled.
       continue;
     }
-    if (ShouldSendNotification(type)) {
-      RequestNotification(type, std::move(completion));
+    if (ShouldSendNotification(type, profile)) {
+      RequestNotification(type, profile->GetProfileName(),
+                          std::move(completion));
       return;
     }
   }
@@ -343,10 +420,37 @@ void TipsNotificationClient::ClearAllRequestedNotifications() {
 }
 
 void TipsNotificationClient::RequestNotification(TipsNotificationType type,
+                                                 std::string_view profile_name,
                                                  base::OnceClosure completion) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-  UNNotificationRequest* request =
-      TipsNotificationRequest(type, CanSendReactivation(), user_type_);
+
+  if (IsNotificationCollisionManagementEnabled()) {
+    ScheduledNotificationRequest request = {
+        kTipsNotificationId,
+        ContentForTipsNotificationType(type, CanSendReactivation(),
+                                       profile_name),
+        TipsNotificationTriggerDelta(CanSendReactivation(), user_type_)};
+    CheckRateLimitBeforeSchedulingNotification(
+        request,
+        base::BindPostTask(
+            base::SequencedTaskRunner::GetCurrentDefault(),
+            base::BindOnce(&TipsNotificationClient::OnNotificationRequested,
+                           weak_ptr_factory_.GetWeakPtr(), type)
+                .Then(std::move(completion))));
+    MarkNotificationTypeSent(type);
+    return;
+  }
+
+  UNNotificationRequest* request = [UNNotificationRequest
+      requestWithIdentifier:kTipsNotificationId
+                    content:ContentForTipsNotificationType(
+                                type, CanSendReactivation(), profile_name)
+                    trigger:[UNTimeIntervalNotificationTrigger
+                                triggerWithTimeInterval:
+                                    TipsNotificationTriggerDelta(
+                                        CanSendReactivation(), user_type_)
+                                        .InSecondsF()
+                                                repeats:NO]];
 
   auto completion_block = base::CallbackToBlock(base::BindPostTask(
       base::SequencedTaskRunner::GetCurrentDefault(),
@@ -369,25 +473,30 @@ void TipsNotificationClient::OnNotificationRequested(TipsNotificationType type,
   }
 }
 
-bool TipsNotificationClient::ShouldSendNotification(TipsNotificationType type) {
+bool TipsNotificationClient::ShouldSendNotification(TipsNotificationType type,
+                                                    ProfileIOS* profile) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   switch (type) {
     case TipsNotificationType::kDefaultBrowser:
       return ShouldSendDefaultBrowser();
     case TipsNotificationType::kWhatsNew:
-      return ShouldSendWhatsNew();
+      return ShouldSendWhatsNew(profile);
     case TipsNotificationType::kSignin:
-      return ShouldSendSignin();
+      return ShouldSendSignin(profile);
     case TipsNotificationType::kSetUpListContinuation:
-      return ShouldSendSetUpListContinuation();
+      return ShouldSendSetUpListContinuation(profile);
     case TipsNotificationType::kDocking:
-      return ShouldSendDocking();
+      return ShouldSendDocking(profile);
     case TipsNotificationType::kOmniboxPosition:
       return ShouldSendOmniboxPosition();
     case TipsNotificationType::kLens:
-      return ShouldSendLens();
+      return ShouldSendLens(profile);
     case TipsNotificationType::kEnhancedSafeBrowsing:
-      return ShouldSendEnhancedSafeBrowsing();
+      return ShouldSendEnhancedSafeBrowsing(profile);
+    case TipsNotificationType::kCPE:
+      return ShouldSendCPE(profile);
+    case TipsNotificationType::kLensOverlay:
+    case TipsNotificationType::kIncognitoLock:
     case TipsNotificationType::kError:
       NOTREACHED();
   }
@@ -398,62 +507,41 @@ bool TipsNotificationClient::ShouldSendDefaultBrowser() {
   return !IsChromeLikelyDefaultBrowser() && !DefaultBrowserPromoCanceled();
 }
 
-bool TipsNotificationClient::ShouldSendWhatsNew() {
+bool TipsNotificationClient::ShouldSendWhatsNew(ProfileIOS* profile) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-  Browser* browser = GetSceneLevelForegroundActiveBrowser();
-  if (!browser) {
-    return false;
-  }
-  return !FETHasEverTriggered(browser,
+  return !FETHasEverTriggered(profile,
                               feature_engagement::kIPHWhatsNewUpdatedFeature);
 }
 
-bool TipsNotificationClient::ShouldSendSignin() {
+bool TipsNotificationClient::ShouldSendSignin(ProfileIOS* profile) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-  Browser* browser = GetSceneLevelForegroundActiveBrowser();
-  if (!browser) {
-    return false;
-  }
-  ProfileIOS* profile = browser->GetProfile();
-  AuthenticationService* auth_service =
-      AuthenticationServiceFactory::GetForProfile(profile);
-
-  return IsSigninEnabled(auth_service) &&
-         !auth_service->HasPrimaryIdentity(signin::ConsentLevel::kSignin);
+  return CanSignIn(profile);
 }
 
-bool TipsNotificationClient::ShouldSendSetUpListContinuation() {
-  Browser* browser = GetSceneLevelForegroundActiveBrowser();
-  if (!browser) {
-    return false;
-  }
+bool TipsNotificationClient::ShouldSendSetUpListContinuation(
+    ProfileIOS* profile) {
   PrefService* local_prefs = GetApplicationContext()->GetLocalState();
-  PrefService* user_prefs = browser->GetProfile()->GetPrefs();
+  PrefService* user_prefs = profile->GetPrefs();
   if (!set_up_list_utils::IsSetUpListActive(local_prefs, user_prefs)) {
     return false;
   }
 
-  // The Set Up List only shows for 14 days after FirstRun, so this
-  // notification should only be requested 14 days minus the trigger interval
-  // after FirstRun.
+  // This notification should only be requested during the duration of the Set
+  // Up List minus the trigger interval after FirstRun.
   if (!IsFirstRunRecent(
-          base::Days(14) -
+          set_up_list::SetUpListDurationPastFirstRun() -
           TipsNotificationTriggerDelta(CanSendReactivation(), user_type_))) {
     return false;
   }
   return !set_up_list_prefs::AllItemsComplete(local_prefs);
 }
 
-bool TipsNotificationClient::ShouldSendDocking() {
+bool TipsNotificationClient::ShouldSendDocking(ProfileIOS* profile) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-  Browser* browser = GetSceneLevelForegroundActiveBrowser();
-  if (!browser) {
-    return false;
-  }
-  return !FETHasEverTriggered(browser,
+  return !FETHasEverTriggered(profile,
                               feature_engagement::kIPHiOSDockingPromoFeature) &&
          !FETHasEverTriggered(
-             browser,
+             profile,
              feature_engagement::kIPHiOSDockingPromoRemindMeLaterFeature);
 }
 
@@ -467,15 +555,11 @@ bool TipsNotificationClient::ShouldSendOmniboxPosition() {
       prefs::kBottomOmnibox);
 }
 
-bool TipsNotificationClient::ShouldSendLens() {
+bool TipsNotificationClient::ShouldSendLens(ProfileIOS* profile) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   // Early return if Lens is not available or disabled by policy.
-  Browser* browser = GetSceneLevelForegroundActiveBrowser();
-  if (!browser) {
-    return false;
-  }
   TemplateURLService* template_url_service =
-      ios::TemplateURLServiceFactory::GetForProfile(browser->GetProfile());
+      ios::TemplateURLServiceFactory::GetForProfile(profile);
   bool default_search_is_google =
       search::DefaultSearchProviderIsGoogle(template_url_service);
   const bool lens_enabled =
@@ -487,23 +571,41 @@ bool TipsNotificationClient::ShouldSendLens() {
 
   base::Time last_opened =
       GetApplicationContext()->GetLocalState()->GetTime(prefs::kLensLastOpened);
-  return base::Time::Now() - last_opened > kLensOpenedRecency;
+  return !IsRecent(last_opened, kLensOpenedRecency);
 }
 
-bool TipsNotificationClient::ShouldSendEnhancedSafeBrowsing() {
+bool TipsNotificationClient::ShouldSendEnhancedSafeBrowsing(
+    ProfileIOS* profile) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-  Browser* browser = GetSceneLevelForegroundActiveBrowser();
-  if (!browser) {
-    return false;
-  }
-  PrefService* user_prefs = browser->GetProfile()->GetPrefs();
+  PrefService* user_prefs = profile->GetPrefs();
   return user_prefs->GetBoolean(prefs::kAdvancedProtectionAllowed) &&
          !safe_browsing::IsEnhancedProtectionEnabled(*user_prefs);
 }
 
+bool TipsNotificationClient::ShouldSendCPE(ProfileIOS* profile) {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  if (!local_state_->GetBoolean(
+          prefs::kIosCredentialProviderPromoPolicyEnabled)) {
+    return false;
+  }
+  bool is_credential_provider_enabled =
+      password_manager_util::IsCredentialProviderEnabledOnStartup(local_state_);
+  if (is_credential_provider_enabled) {
+    return false;
+  }
+  base::Time promo_display_time =
+      local_state_->GetTime(prefs::kIosCredentialProviderPromoDisplayTime);
+  if (IsRecent(promo_display_time, kCPEPromoRecency)) {
+    return false;
+  }
+  base::Time login_time =
+      local_state_->GetTime(prefs::kIosSuccessfulLoginWithExistingPassword);
+  return IsRecent(login_time, kSuccessfullLoginRecency);
+}
+
 bool TipsNotificationClient::IsSceneLevelForegroundActive() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-  return GetSceneLevelForegroundActiveBrowser() != nullptr;
+  return GetActiveForegroundBrowser() != nullptr;
 }
 
 void TipsNotificationClient::ShowUIForNotificationType(
@@ -535,6 +637,11 @@ void TipsNotificationClient::ShowUIForNotificationType(
     case TipsNotificationType::kEnhancedSafeBrowsing:
       ShowEnhancedSafeBrowsingPromo(browser);
       break;
+    case TipsNotificationType::kCPE:
+      ShowCPEPromo(browser);
+      break;
+    case TipsNotificationType::kLensOverlay:
+    case TipsNotificationType::kIncognitoLock:
     case TipsNotificationType::kError:
       NOTREACHED();
   }
@@ -559,18 +666,24 @@ void TipsNotificationClient::ShowWhatsNew(Browser* browser) {
 
 void TipsNotificationClient::ShowSignin(Browser* browser) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  // The user may have signed in between when the notification was requested
+  // and when it triggered. If the user can no longer sign in, then open
+  // the account settings.
+  if (!CanSignIn(browser->GetProfile())) {
+    [HandlerForProtocol(browser->GetCommandDispatcher(), SettingsCommands)
+        showAccountsSettingsFromViewController:nil
+                          skipIfUINotAvailable:NO];
+    return;
+  }
   // If there are 0 identities, kInstantSignin requires less taps.
-  ProfileIOS* profile = browser->GetProfile();
   AuthenticationOperation operation =
-      ChromeAccountManagerServiceFactory::GetForProfile(profile)
-              ->HasIdentities()
+      HasIdentitiesOnDevice(browser->GetProfile())
           ? AuthenticationOperation::kSigninOnly
           : AuthenticationOperation::kInstantSignin;
   ShowSigninCommand* command = [[ShowSigninCommand alloc]
       initWithOperation:operation
                identity:nil
-            accessPoint:signin_metrics::AccessPoint::
-                            ACCESS_POINT_TIPS_NOTIFICATION
+            accessPoint:signin_metrics::AccessPoint::kTipsNotification
             promoAction:signin_metrics::PromoAction::
                             PROMO_ACTION_NO_SIGNIN_PROMO
              completion:nil];
@@ -611,6 +724,14 @@ void TipsNotificationClient::ShowEnhancedSafeBrowsingPromo(Browser* browser) {
       showEnhancedSafeBrowsingPromo];
 }
 
+void TipsNotificationClient::ShowCPEPromo(Browser* browser) {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  [HandlerForProtocol(browser->GetCommandDispatcher(),
+                      CredentialProviderPromoCommands)
+      showCredentialProviderPromoWithTrigger:CredentialProviderPromoTrigger::
+                                                 TipsNotification];
+}
+
 void TipsNotificationClient::MarkNotificationTypeSent(
     TipsNotificationType type) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
@@ -619,7 +740,10 @@ void TipsNotificationClient::MarkNotificationTypeSent(
   local_state_->SetInteger(kTipsNotificationsSentPref, sent_bitfield);
   local_state_->SetInteger(kTipsNotificationsLastSent, int(type));
   local_state_->SetTime(kTipsNotificationsLastRequestedTime, base::Time::Now());
-  base::UmaHistogramEnumeration("IOS.Notifications.Tips.Sent", type);
+  const char* histogram = CanSendReactivation()
+                              ? "IOS.Notifications.Tips.Proactive.Sent"
+                              : "IOS.Notifications.Tips.Sent";
+  base::UmaHistogramEnumeration(histogram, type);
 }
 
 void TipsNotificationClient::MarkNotificationTypeNotSent(
@@ -641,7 +765,12 @@ void TipsNotificationClient::MaybeLogTriggeredNotification() {
 
   TipsNotificationType type =
       static_cast<TipsNotificationType>(last_sent->GetValue()->GetInt());
-  base::UmaHistogramEnumeration("IOS.Notifications.Tips.Triggered", type);
+  const char* triggered_histogram =
+      CanSendReactivation() ? "IOS.Notifications.Tips.Proactive.Triggered"
+                            : "IOS.Notifications.Tips.Triggered";
+  base::UmaHistogramEnumeration(triggered_histogram, type);
+  base::UmaHistogramEnumeration("IOS.Notification.Received",
+                                NotificationTypeForTipsNotificationType(type));
   local_state_->SetInteger(kTipsNotificationsLastTriggered, int(type));
   local_state_->ClearPref(kTipsNotificationsLastSent);
 }
@@ -679,7 +808,10 @@ void TipsNotificationClient::OnGetDeliveredNotifications(
   local_state_->SetInteger(kTipsNotificationsDismissCount, dismiss_count);
   TipsNotificationType type = static_cast<TipsNotificationType>(
       local_state_->GetInteger(kTipsNotificationsLastTriggered));
-  base::UmaHistogramEnumeration("IOS.Notifications.Tips.Dismissed", type);
+  const char* dismissed_histogram =
+      CanSendReactivation() ? "IOS.Notifications.Tips.Proactive.Dismissed"
+                            : "IOS.Notifications.Tips.Dismissed";
+  base::UmaHistogramEnumeration(dismissed_histogram, type);
   local_state_->ClearPref(kTipsNotificationsLastTriggered);
 }
 
@@ -699,7 +831,7 @@ bool TipsNotificationClient::CanSendReactivation() {
   // or if the feature is not enabled, Reactivation notifications should not
   // be sent.
   if (permitted_ || !IsFirstRunRecent(base::Days(28)) ||
-      !IsIOSReactivationNotificationsEnabled()) {
+      !IsIOSReactivationNotificationsEnabled() || !provisional_allowed_) {
     return false;
   }
 
@@ -709,26 +841,26 @@ bool TipsNotificationClient::CanSendReactivation() {
     return false;
   }
 
-  return local_state_->GetInteger(kReactivationNotificationsCanceledCount) < 2;
+  return local_state_->GetInteger(kReactivationNotificationsCanceledCount) <
+             2 ||
+         forced_type_.has_value();
 }
 
-bool TipsNotificationClient::DismissLimitReached() {
-  int dismiss_limit = TipsNotificationsDismissLimit();
-  if (!dismiss_limit) {
-    return false;
-  }
-
-  int dismiss_count = GetApplicationContext()->GetLocalState()->GetInteger(
-      kTipsNotificationsDismissCount);
-  return dismiss_count >= dismiss_limit;
+void TipsNotificationClient::UpdateProvisionalAllowed() {
+  Browser* browser = GetActiveForegroundBrowser();
+  CHECK(browser);
+  provisional_allowed_ = [PushNotificationUtil
+      provisionalAllowedByPolicyForProfile:browser->GetProfile()];
 }
 
 void TipsNotificationClient::OnPermittedPrefChanged(const std::string& name) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   bool newpermitted_ = IsPermitted();
-  if (permitted_ != newpermitted_ && IsSceneLevelForegroundActive()) {
+  if (permitted_ != newpermitted_) {
     ClearAllRequestedNotifications();
-    CheckAndMaybeRequestNotification(base::DoNothing());
+    if (IsSceneLevelForegroundActive()) {
+      CheckAndMaybeRequestNotification(base::DoNothing());
+    }
   }
 }
 
@@ -747,20 +879,25 @@ void TipsNotificationClient::ClassifyUser() {
     return;
   }
 
-  base::Time now = base::Time::Now();
   base::Time last_request =
       local_state_->GetTime(kTipsNotificationsLastRequestedTime);
-  if (now < last_request + base::Hours(2)) {
+  if (IsRecent(last_request, kClassifyUserRecency)) {
     // Not enough time has passed to classify the user.
     return;
   }
 
-  if (now > last_request + TipsNotificationTriggerDelta(
-                               CanSendReactivation(),
-                               TipsNotificationUserType::kUnknown)) {
-    user_type_ = TipsNotificationUserType::kLessEngaged;
-  } else {
+  base::TimeDelta trigger_delta = TipsNotificationTriggerDelta(
+      CanSendReactivation(), TipsNotificationUserType::kUnknown);
+  if (IsRecent(last_request, trigger_delta)) {
     user_type_ = TipsNotificationUserType::kActiveSeeker;
+  } else {
+    user_type_ = TipsNotificationUserType::kLessEngaged;
   }
   SetUserType(local_state_, user_type_);
+}
+
+bool TipsNotificationClient::HasIdentitiesOnDevice(ProfileIOS* profile) const {
+  return !IdentityManagerFactory::GetForProfile(profile)
+              ->GetAccountsOnDevice()
+              .empty();
 }

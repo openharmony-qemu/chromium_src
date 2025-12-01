@@ -72,7 +72,6 @@ void AdjustParamsForCurrentConfig(media::VideoCaptureParams* params) {
   params->requested_format.pixel_format = media::PIXEL_FORMAT_NV12;
   params->buffer_type = media::VideoCaptureBufferType::kGpuMemoryBuffer;
 }
-#endif
 
 bool IsFatalError(media::VideoCaptureError error) {
   switch (error) {
@@ -90,6 +89,7 @@ bool IsFatalError(media::VideoCaptureError error) {
       return false;
   }
 }
+#endif
 
 #if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
 bool IsGpuRasterizationSupported(ui::ContextFactory* context_factory) {
@@ -140,14 +140,17 @@ void AdjustMacParamsForCurrentConfig(media::VideoCaptureParams* params,
 // frame that is backed by a `kSharedMemory` buffer type.
 class SharedMemoryBufferHandleHolder : public BufferHandleHolder {
  public:
-  explicit SharedMemoryBufferHandleHolder(base::UnsafeSharedMemoryRegion region)
-      : region_(std::move(region)) {
-    CHECK(region_.IsValid());
+  explicit SharedMemoryBufferHandleHolder(
+      const base::UnsafeSharedMemoryRegion& region)
+      : mapping_(base::MakeRefCounted<
+                 base::RefCountedData<base::WritableSharedMemoryMapping>>(
+            region.Map())) {
+    CHECK(region.IsValid());
   }
   explicit SharedMemoryBufferHandleHolder(
       media::mojom::VideoBufferHandlePtr buffer_handle)
-      : region_(std::move(buffer_handle->get_unsafe_shmem_region())) {
-    DCHECK(buffer_handle->is_unsafe_shmem_region());
+      : SharedMemoryBufferHandleHolder(
+            buffer_handle->get_unsafe_shmem_region()) {
 #if BUILDFLAG(IS_CHROMEOS)
     DCHECK(!base::SysInfo::IsRunningOnChromeOS());
 #endif
@@ -164,7 +167,7 @@ class SharedMemoryBufferHandleHolder : public BufferHandleHolder {
     const size_t mapping_size = media::VideoFrame::AllocationSize(
         buffer->frame_info->pixel_format, buffer->frame_info->coded_size);
 
-    auto mapping = region_.Map();
+    const auto& mapping = mapping_->data;
     if (!mapping.IsValid()) {
       return {};
     }
@@ -177,16 +180,17 @@ class SharedMemoryBufferHandleHolder : public BufferHandleHolder {
         mapping.GetMemoryAs<uint8_t>(), mapping.size(), frame_info->timestamp);
 
     if (frame) {
-      frame->AddDestructionObserver(
-          base::DoNothingWithBoundArgs(std::move(mapping)));
+      frame->AddDestructionObserver(base::DoNothingWithBoundArgs(mapping_));
     }
+    frame->metadata().MergeMetadataFrom(frame_info->metadata);
 
     return frame;
   }
 
  private:
-  // The held shared memory region associated with this object.
-  base::UnsafeSharedMemoryRegion region_;
+  // The held shared memory mapping associated with this object.
+  scoped_refptr<base::RefCountedData<base::WritableSharedMemoryMapping>>
+      mapping_;
 };
 
 // -----------------------------------------------------------------------------
@@ -270,10 +274,6 @@ class GpuMemoryBufferHandleHolder : public BufferHandleHolder,
     return gpu_memory_buffer_handle_;
   }
 
-  base::UnsafeSharedMemoryRegion TakeGpuMemoryBufferHandleRegion() {
-    return std::move(gpu_memory_buffer_handle_.region);
-  }
-
  private:
   // Initializes this holder by creating `shared_image_`. This shared image is
   // backed by a GpuMemoryBuffer whose handle is a clone of our
@@ -310,19 +310,8 @@ class GpuMemoryBufferHandleHolder : public BufferHandleHolder,
         gpu::SHARED_IMAGE_USAGE_RASTER_READ |
         gpu::SHARED_IMAGE_USAGE_DISPLAY_READ;
 
-    bool add_scanout_usage = true;
-
-    // Scanout usage should be added only if scanout of SharedImages is
-    // supported. However, historically this was not checked.
-    // TODO(crbug.com/330865436): Remove killswitch post-safe rollout.
-    if (base::FeatureList::IsEnabled(
-            features::
-                kCameraVideoFrameHandlerAddScanoutUsageOnlyIfSupportedBySharedImage)) {
-      add_scanout_usage &= shared_image_interface->GetCapabilities()
-                               .supports_scanout_shared_images;
-    }
-
-    if (add_scanout_usage) {
+    if (shared_image_interface->GetCapabilities()
+            .supports_scanout_shared_images) {
       shared_image_usage |= gpu::SHARED_IMAGE_USAGE_SCANOUT;
     }
 
@@ -450,7 +439,8 @@ class MacGpuMemoryBufferHandleHolder : public BufferHandleHolder {
     }
     auto frame = media::VideoFrame::WrapUnacceleratedIOSurface(
         gmb_holder_.GetGpuMemoryBufferHandle().Clone(),
-        buffer->frame_info->visible_rect, buffer->frame_info->timestamp);
+        buffer->frame_info->visible_rect,
+        buffer->frame_info->visible_rect.size(), buffer->frame_info->timestamp);
 
     if (!frame) {
       VLOG(0) << "Failed to create a video frame.";
@@ -482,7 +472,8 @@ class WinGpuMemoryBufferHandleHolder : public BufferHandleHolder {
       ui::ContextFactory* context_factory)
       : context_factory_(context_factory),
         gmb_holder_(std::move(buffer_handle), context_factory),
-        sh_mem_holder_(gmb_holder_.TakeGpuMemoryBufferHandleRegion()),
+        sh_mem_holder_(
+            gmb_holder_.GetGpuMemoryBufferHandle().dxgi_handle().region()),
         require_mapped_frame_callback_(
             std::move(require_mapped_frame_callback)) {
     CHECK_EQ(gmb_holder_.GetGpuMemoryBufferHandle().type,
@@ -695,9 +686,14 @@ void CameraVideoFrameHandler::OnBufferRetired(int buffer_id) {
 
 void CameraVideoFrameHandler::OnError(media::VideoCaptureError error) {
   LOG(ERROR) << "Recieved error: " << static_cast<int>(error);
+  if (delegate_) {
+    delegate_->OnError(error);
+  }
+#if BUILDFLAG(IS_CHROMEOS)
   if (IsFatalError(error)) {
     OnFatalErrorOrDisconnection();
   }
+#endif
 }
 
 void CameraVideoFrameHandler::OnFrameDropped(
@@ -732,6 +728,7 @@ void CameraVideoFrameHandler::OnSubscriptionCreationResult(
   if (result_code->is_error_code()) {
     LOG(ERROR) << "Error in creating push subscription: "
                << static_cast<int>(result_code->get_error_code());
+    OnError(result_code->get_error_code());
   } else {
     actual_params_.emplace(actual_params);
   }

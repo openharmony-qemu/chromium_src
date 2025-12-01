@@ -1,12 +1,19 @@
 #!/bin/bash
 
-#!/bin/bash
-
-latest_version="ohos-sdk-linux-5.0.5.165.tar.gz"
-
+latest_version="ohos-sdk-linux-6.0.0.47.tar.gz"
 
 base_dir="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+echo ${base_dir}
 version_file="${base_dir}/.version"
+
+cd "${base_dir}"
+  
+if [ ! -f "${latest_version}" ]; then
+    # 合并文件 
+    cat "${latest_version}".* > "${latest_version}"
+    echo "${latest_version}"
+fi
+
 
 sdk_upgrade() {
   installed_version=""
@@ -34,13 +41,8 @@ sdk_upgrade() {
   else
     echo "ERROR: Failed to extract SDK tarball: ${base_dir}/${latest_version}, result: ${rc}"
   fi
-
-  #将编译工具链替换为18版本
-  if [ ! -f "llvm.tar.gz" ]; then
-    # 合并文件
-    cat "llvm.tar.gz".* > "llvm.tar.gz"
-    echo "llvm.tar.gz"
-  fi
+  
+  #替换llvm编译工具链
   rm -rf llvm
   tar zxf "llvm.tar.gz"
   rc=$?
@@ -57,14 +59,17 @@ sdk_upgrade() {
     echo "ERROR: Failed to replace the llvm, result: ${rc}"
     return ${rc}
   fi
-
-  #将rust工具链替换为18版本
+ 
+  #替换rust工具链
   tar zxf "rust-toolchain.tar.gz"
   rc=$?
   if [ ${rc} -ne 0 ]; then
     echo "ERROR: Failed to extract rust toolchain tarball: ${base_dir}/rust-toolchain.tar.gz, result: ${rc}"
     return ${rc}
   fi
+
+  rm -rf "../third_party/rust-toolchain"
+  cp -ra "rust-toolchain" "../third_party"
 
   return ${rc}
 }

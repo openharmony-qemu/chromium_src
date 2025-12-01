@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "ohos/adapter/xcomponent/event/window_event_common.h"
 
@@ -39,6 +14,32 @@ std::string WithEnumValue(int value) {
   tmp += std::to_string(value);
   tmp += ")";
   return tmp;
+}
+
+std::string Event::GetName() const {
+  return EventTypeName(type_);
+}
+
+std::string EventTypeName(EventType type) {
+  switch (type) {
+#define CASE_TYPE(t) \
+    case t:            \
+      return #t
+
+      CASE_TYPE(ET_UNKNOWN);
+      CASE_TYPE(ET_SURFACE_CHANGE);
+      CASE_TYPE(ET_SURFACE_FOCUS);
+      CASE_TYPE(ET_SURFACE_BLUR);
+      CASE_TYPE(ET_WINDOW_SIZE_CHANGE);
+      CASE_TYPE(ET_WINDOW_CHANGE);
+      CASE_TYPE(ET_WINDOW_RECT_CHANGE);
+      CASE_TYPE(ET_WINDOW_STATUS_CHANGE);
+      CASE_TYPE(ET_WINDOW_CAPTION_BUTTON_RECT_CHANGE);
+
+#undef CASE_TYPE
+      default:
+        return "";
+  }
 }
 
 std::string WindowEventToString(WindowEventType eventType) {
@@ -131,21 +132,36 @@ std::string RectChangeReasonToString(RectChangeReason reason) {
   return name + WithEnumValue(static_cast<int>(reason));
 }
 
+std::string ChangeEventToString(ChangeEventType changeType) {
+  std::string name;
+  switch (changeType) {
+    case ChangeEventType::CHANGE_TO_NORMAL_MODE:
+      name = "CHANGE_TO_NORMAL_MODE";
+      break;
+    case ChangeEventType::CHANGE_TO_FREE_MODE:
+      name = "CHANGE_TO_FREE_MODE";
+      break;
+    default:
+      name = "UNKNOWN_EVENT";
+  }
+  return name + WithEnumValue(static_cast<int>(changeType));
+}
+
 std::string Event::ToString() {
   std::ostringstream oss;
-  oss << "Event(type: " << static_cast<int>(type_) << ")";
+  oss << "Event(type: " << GetName() << ")";
   return oss.str();
 }
 
 std::string SurfaceEvent::ToString() {
   std::ostringstream oss;
-  oss << "SurfaceEvent(size: (" << width << "X" << height << "))";
+  oss << GetName() << "(size: (" << width << "X" << height << "))";
   return oss.str();
 }
 
 std::string WindowRectChangeEvent::ToString() {
   std::ostringstream oss;
-  oss << "WindowRectChangeEvent(reason: " << static_cast<int>(reason) <<
+  oss << GetName() << "(reason: " << RectChangeReasonToString(reason) <<
       ", pos: (" << left << ", " << top << "), size: (" <<
       width << "X" << height << "))";
   return oss.str();
@@ -153,27 +169,41 @@ std::string WindowRectChangeEvent::ToString() {
 
 std::string WindowStatusChangeEvent::ToString() {
   std::ostringstream oss;
-  oss << "WindowStatusChangeEvent(status: " << static_cast<int>(status) << ")";
+  oss << GetName() << "(status: " << WindowStatusToString(status) << ")";
   return oss.str();
 }
 
 std::string WindowSizeChangeEvent::ToString() {
   std::ostringstream oss;
-  oss << "WindowSizeChangeEvent(pos: (" << left << ", " << top <<
+  oss << GetName() << "(pos: (" << left << ", " << top <<
       "), size: (" << width << "X" << height << "))";
   return oss.str();
 }
 
 std::string WindowEvent::ToString() {
   std::ostringstream oss;
-  oss << "WindowEvent(type: " << static_cast<int>(window_event_type_) << ")";
+  oss << GetName() << "(type: " << WindowEventToString(window_event_type_) << ")";
   return oss.str();
 }
 
 std::string WindowCaptionButtonRectChangeEvent::ToString() {
   std::ostringstream oss;
-  oss << "WindowCaptionButtonRectChangeEvent(pos: (" << right << ", " << top <<
+  oss << GetName() <<"(pos: (" << right << ", " << top <<
       "), size: (" << width << "X" << height << "))";
+  return oss.str();
+}
+
+std::string DeviceInfoChangeEvent::ToString() {
+  std::ostringstream oss;
+  oss << "DeviceInfoChangeEvent(type: "
+      << ChangeEventToString(change_event_type_)
+      << ", status: " << WindowStatusToString(status_) << ")";
+  return oss.str();
+}
+
+std::string WindowDisplayIdChangeEvent::ToString() {
+  std::ostringstream oss;
+  oss << GetName() << "(display_id: " << display_id << ")";
   return oss.str();
 }
 }  // namespace ohos::adapter::xcomponent

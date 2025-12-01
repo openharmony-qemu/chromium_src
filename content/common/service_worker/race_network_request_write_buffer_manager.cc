@@ -2,10 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifdef UNSAFE_BUFFERS_BUILD
-// TODO(crbug.com/342213636): Remove this and spanify to fix the errors.
-#pragma allow_unsafe_buffers
-#endif
 
 #include "content/common/service_worker/race_network_request_write_buffer_manager.h"
 
@@ -16,7 +12,7 @@
 #include "content/public/common/content_features.h"
 #include "mojo/public/cpp/system/data_pipe.h"
 #include "mojo/public/cpp/system/simple_watcher.h"
-#include "services/network/public/cpp/features.h"
+#include "services/network/public/cpp/loading_params.h"
 
 namespace content {
 namespace {
@@ -56,8 +52,8 @@ uint32_t RaceNetworkRequestWriteBufferManager::GetDataPipeCapacityBytes() {
   // The feature param may override the buffer size.
   return base::GetFieldTrialParamByFeatureAsInt(
       features::kServiceWorkerAutoPreload, "data_pipe_capacity_num_bytes",
-      network::features::GetDataPipeDefaultAllocationSize(
-          network::features::DataPipeAllocationSize::kLargerSizeIfPossible));
+      network::GetDataPipeDefaultAllocationSize(
+          network::DataPipeAllocationSize::kLargerSizeIfPossible));
 }
 
 mojo::ScopedDataPipeProducerHandle

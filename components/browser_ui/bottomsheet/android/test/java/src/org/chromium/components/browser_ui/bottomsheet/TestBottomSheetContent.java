@@ -12,6 +12,7 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 
 import org.chromium.base.ThreadUtils;
 import org.chromium.base.supplier.ObservableSupplierImpl;
@@ -32,10 +33,10 @@ public class TestBottomSheetContent implements BottomSheetContent {
     private View mContentView;
 
     /** This content's priority. */
-    private @ContentPriority int mPriority;
+    private final @ContentPriority int mPriority;
 
     /** Whether this content is browser specific. */
-    private boolean mHasCustomLifecycle;
+    private final boolean mHasCustomLifecycle;
 
     /** Whether this content has a custom scrim lifecycle. */
     private boolean mHasCustomScrimLifecycle;
@@ -229,17 +230,17 @@ public class TestBottomSheetContent implements BottomSheetContent {
     }
 
     @Override
-    public int getSheetHalfHeightAccessibilityStringId() {
+    public @StringRes int getSheetHalfHeightAccessibilityStringId() {
         return android.R.string.copy;
     }
 
     @Override
-    public int getSheetFullHeightAccessibilityStringId() {
+    public @StringRes int getSheetFullHeightAccessibilityStringId() {
         return android.R.string.copy;
     }
 
     @Override
-    public int getSheetClosedAccessibilityStringId() {
+    public @StringRes int getSheetClosedAccessibilityStringId() {
         return android.R.string.copy;
     }
 

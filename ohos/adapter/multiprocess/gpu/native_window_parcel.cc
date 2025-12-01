@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "native_window_parcel.h"
 
@@ -35,7 +10,6 @@ namespace ohos::adapter::multiprocess {
 
 static NativeWindowOperation nativeWindowGetInt32Ops[] = {
     GET_FORMAT,
-    GET_USAGE,
     GET_STRIDE,
     GET_SWAP_INTERVAL,
     GET_TIMEOUT,
@@ -46,13 +20,20 @@ static NativeWindowOperation nativeWindowGetInt32Ops[] = {
 
 static NativeWindowOperation nativeWindowSetInt32Ops[] = {
     SET_FORMAT,
-    SET_USAGE,
     SET_STRIDE,
     SET_SWAP_INTERVAL,
     SET_TIMEOUT,
     SET_COLOR_GAMUT,
     SET_TRANSFORM,
     SET_SOURCE_TYPE
+};
+
+static NativeWindowOperation nativeWindowGetInt64Ops[] = {
+    GET_USAGE
+};
+
+static NativeWindowOperation nativeWindowSetInt64Ops[] = {
+    SET_USAGE
 };
 
 static int WriteInt32AttrToParcel(NativeWindowOperation op,
@@ -95,6 +76,46 @@ static int ReadInt32AttrFromParcel(NativeWindowOperation op,
   return 0;
 }
 
+static int WriteInt64AttrToParcel(NativeWindowOperation op,
+                                  void* window,
+                                  OHIPCParcel* data_parcel) {
+  int64_t val;
+  int ret =
+      OH_NativeWindow_NativeWindowHandleOpt((OHNativeWindow*)window, op, &val);
+  if (ret != 0) {
+    LOGE("Native window %{public}d error: %{public}d", op, ret);
+    return OH_IPC_PARCEL_WRITE_ERROR;
+  }
+  ret = OH_IPCParcel_WriteInt64(data_parcel, val);
+  if (ret != OH_IPC_SUCCESS) {
+    LOGE("Native window write %{public}d into parcel error: %{public}d", op,
+         ret);
+    return ret;
+  }
+
+  return 0;
+}
+
+static int ReadInt64AttrFromParcel(NativeWindowOperation op,
+                                   void* window,
+                                   const OHIPCParcel* data_parcel) {
+  int64_t val;
+  int ret = OH_IPCParcel_ReadInt64(data_parcel, &val);
+  if (ret != OH_IPC_SUCCESS) {
+    LOGE("Native window read %{public}d from parcel error: %{public}d", op,
+         ret);
+    return OH_IPC_PARCEL_READ_ERROR;
+  }
+
+  ret = OH_NativeWindow_NativeWindowHandleOpt((OHNativeWindow*)window, op, val);
+  if (ret != 0) {
+    LOGE("Native window %{public}d error: %{public}d", op, ret);
+    return ret;
+  }
+
+  return 0;
+}
+
 int NativeWindowAttrToParcel(void* window, OHIPCParcel* data_parcel) {
   int32_t height;
   int32_t width;
@@ -118,6 +139,11 @@ int NativeWindowAttrToParcel(void* window, OHIPCParcel* data_parcel) {
 
   for (NativeWindowOperation op : nativeWindowGetInt32Ops) {
     if (WriteInt32AttrToParcel(op, window, data_parcel) != 0) {
+      return OH_IPC_PARCEL_WRITE_ERROR;
+    }
+  }
+  for (NativeWindowOperation op : nativeWindowGetInt64Ops) {
+    if (WriteInt64AttrToParcel(op, window, data_parcel) != 0) {
       return OH_IPC_PARCEL_WRITE_ERROR;
     }
   }
@@ -164,6 +190,11 @@ int NativeWindowAttrFromParcel(const OHIPCParcel* data_parcel, void* window) {
 
   for (NativeWindowOperation op : nativeWindowSetInt32Ops) {
     if (ReadInt32AttrFromParcel(op, window, data_parcel) != 0) {
+      return OH_IPC_PARCEL_READ_ERROR;
+    }
+  }
+  for (NativeWindowOperation op : nativeWindowSetInt64Ops) {
+    if (ReadInt64AttrFromParcel(op, window, data_parcel) != 0) {
       return OH_IPC_PARCEL_READ_ERROR;
     }
   }

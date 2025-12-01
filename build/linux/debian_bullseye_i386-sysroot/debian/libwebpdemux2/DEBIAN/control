@@ -1,6 +1,6 @@
 Package: libwebpdemux2
 Source: libwebp
-Version: 0.6.1-2.1
+Version: 0.6.1-2.1+deb11u2
 Architecture: i386
 Maintainer: Jeff Breidenbach <jab@debian.org>
 Installed-Size: 112

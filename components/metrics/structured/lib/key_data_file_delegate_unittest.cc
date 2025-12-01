@@ -104,6 +104,9 @@ class KeyDataFileDelegateTest : public testing::Test {
   }
 
   void SaveKeyData() {
+#ifdef BUILDFLAG(IS_OHOS)
+    Wait();
+#endif
     key_data_file_->WriteNowForTesting();
     Wait();
     ASSERT_TRUE(base::PathExists(GetPath()));

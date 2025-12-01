@@ -28,6 +28,9 @@ namespace content {
 using PrivateAggregationRequests =
     std::vector<auction_worklet::mojom::PrivateAggregationRequestPtr>;
 
+using FinalizedPrivateAggregationRequests =
+    std::vector<auction_worklet::mojom::FinalizedPrivateAggregationRequestPtr>;
+
 std::optional<base::span<const uint8_t>> CONTENT_EXPORT
 ExtractCompressedBiddingAndAuctionResponse(
     base::span<const uint8_t> decrypted_data);
@@ -70,6 +73,9 @@ struct CONTENT_EXPORT BiddingAndAuctionResponse {
 
     KAnonJoinCandidate candidate;
     blink::InterestGroupKey interest_group;
+    // `non_kanon_private_aggregation_requests` will only have reject reason
+    // contributions, which the server will guarantee.
+    PrivateAggregationRequests non_kanon_private_aggregation_requests;
     std::optional<GhostWinnerForTopLevelAuction> ghost_winner;
   };
 
@@ -165,6 +171,10 @@ struct CONTENT_EXPORT BiddingAndAuctionResponse {
   // auctions start the bidding phase.
   AuctionResult result = AuctionResult::kInvalidServerResponse;
 
+  // Nonce used to match against the Ad-Auction-Result-Nonce header in a fetch
+  // response from the seller.
+  std::optional<std::string> nonce;
+
   bool is_chaff = false;  // indicates this response should be ignored.
   // TODO(behamilton): Add support for creative dimensions to the response from
   // the Bidding and Auction server.
@@ -200,9 +210,9 @@ struct CONTENT_EXPORT BiddingAndAuctionResponse {
   // include component losing buyers/sellers PAgg contributions, or
   // contributions from single level auctions or server orchestrated multi-level
   // auctions.
-  std::map<PrivateAggregationKey, PrivateAggregationRequests>
+  std::map<PrivateAggregationKey, FinalizedPrivateAggregationRequests>
       server_filtered_pagg_requests_reserved;
-  std::map<std::string, PrivateAggregationRequests>
+  std::map<std::string, FinalizedPrivateAggregationRequests>
       server_filtered_pagg_requests_non_reserved;
 
   // forDebuggingOnly reports from component winning buyer/seller. These need to

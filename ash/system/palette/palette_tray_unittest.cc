@@ -16,6 +16,7 @@
 #include "ash/session/session_controller_impl.h"
 #include "ash/session/test_session_controller_client.h"
 #include "ash/shell.h"
+#include "ash/strings/grit/ash_strings.h"
 #include "ash/system/palette/palette_tray_test_api.h"
 #include "ash/system/palette/palette_utils.h"
 #include "ash/system/palette/palette_welcome_bubble.h"
@@ -32,6 +33,7 @@
 #include "base/test/simple_test_tick_clock.h"
 #include "components/prefs/pref_service.h"
 #include "components/session_manager/session_manager_types.h"
+#include "ui/base/l10n/l10n_util.h"
 #include "ui/compositor/scoped_animation_duration_scale_mode.h"
 #include "ui/display/manager/display_manager.h"
 #include "ui/display/test/display_manager_test_api.h"
@@ -384,9 +386,12 @@ TEST_F(PaletteTrayTestWithInternalStylus, WelcomeBubbleShownOnEject) {
 
 // Verify if the pref which tracks if the welcome bubble has been shown before
 // is true, the welcome bubble is not shown when the stylus is removed.
-// TODO(crbug.com/1423035): Disabled due to flakiness.
-TEST_F(PaletteTrayTestWithInternalStylus,
-       DISABLED_WelcomeBubbleNotShownIfShownBefore) {
+//
+// This test used to be disabled due to flakiness (crbug.com/1423035). It was
+// then re-enabled in crbug.com/281717553 after local verification. Please feel
+// free to disable it again and leave a comment in crbug.com/281717553 if the
+// flake reappears.
+TEST_F(PaletteTrayTestWithInternalStylus, WelcomeBubbleNotShownIfShownBefore) {
   active_user_pref_service()->SetBoolean(prefs::kLaunchPaletteOnEjectEvent,
                                          false);
   active_user_pref_service()->SetBoolean(prefs::kShownPaletteWelcomeBubble,
@@ -480,20 +485,29 @@ TEST_F(PaletteTrayTestWithInternalStylus, PaletteBubbleShownOnEject) {
       PaletteToolId::LASER_POINTER));
 }
 
-// Verify that palette bubble is shown/hidden on stylus eject/insert iff the
-// auto open palette setting is true.
-TEST_F(PaletteTrayTestWithInternalStylus, PaletteBubbleViewAccessibleName) {
+// Verify that palette tray and bubble view have the correct accessible names.
+TEST_F(PaletteTrayTestWithInternalStylus, AccessibleNames) {
   active_user_pref_service()->SetBoolean(prefs::kEnableStylusTools, true);
+
+  {
+    ui::AXNodeData node_data;
+    palette_tray_->GetViewAccessibility().GetAccessibleNodeData(&node_data);
+    EXPECT_EQ(node_data.GetString16Attribute(ax::mojom::StringAttribute::kName),
+              l10n_util::GetStringUTF16(IDS_ASH_STYLUS_TOOLS_TITLE));
+  }
 
   // Removing the stylus shows the bubble.
   EjectStylus();
   ASSERT_TRUE(palette_tray_->GetBubbleView());
 
-  ui::AXNodeData node_data;
-  palette_tray_->GetBubbleView()->GetViewAccessibility().GetAccessibleNodeData(
-      &node_data);
-  EXPECT_EQ(node_data.GetString16Attribute(ax::mojom::StringAttribute::kName),
-            test_api_->GetAccessibleNameForBubble());
+  {
+    ui::AXNodeData node_data;
+    palette_tray_->GetBubbleView()
+        ->GetViewAccessibility()
+        .GetAccessibleNodeData(&node_data);
+    EXPECT_EQ(node_data.GetString16Attribute(ax::mojom::StringAttribute::kName),
+              test_api_->GetAccessibleNameForBubble());
+  }
 }
 
 // Base class for tests that need to simulate an internal stylus, and need to
@@ -542,7 +556,7 @@ TEST_F(PaletteTrayNoSessionTestWithInternalStylus,
   Shell::RootWindowControllerList controllers =
       Shell::GetAllRootWindowControllers();
   ASSERT_EQ(2u, controllers.size());
-  SimulateUserLogin("test@test.com");
+  SimulateUserLogin({"test@test.com"});
 
   base::CommandLine::ForCurrentProcess()->RemoveSwitch(
       switches::kAshEnablePaletteOnAllDisplays);
@@ -629,7 +643,7 @@ class PaletteTrayTestMultiDisplay : public PaletteTrayTest {
     Shell::RootWindowControllerList controllers =
         Shell::GetAllRootWindowControllers();
     ASSERT_EQ(2u, controllers.size());
-    SimulateUserLogin("test@test.com");
+    SimulateUserLogin({"test@test.com"});
 
     palette_tray_ = controllers[0]->GetStatusAreaWidget()->palette_tray();
     palette_tray_external_ =

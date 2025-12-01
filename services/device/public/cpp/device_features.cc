@@ -24,13 +24,24 @@ BASE_FEATURE(kGenericSensorExtraClasses,
 // changes.
 BASE_FEATURE(kSerialPortConnected,
              "SerialPortConnected",
-             base::FEATURE_ENABLED_BY_DEFAULT);
+#if !BUILDFLAG(IS_ANDROID)
+             base::FEATURE_ENABLED_BY_DEFAULT
+#else
+             base::FEATURE_DISABLED_BY_DEFAULT
+#endif  // !BUILDFLAG(IS_ANDROID)
+);
 
 // This feature allows to dynamically introduce an additional list of devices
 // blocked by WebUSB via a Finch parameter. This parameter should be specified
 // in the Finch configuration to manage the list of blocked devices.
 BASE_FEATURE(kWebUsbBlocklist,
              "WebUSBBlocklist",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+
+// When enabled, accessing the navigator.hid attribute does not prevent the
+// frame from entering the back forward cache.
+BASE_FEATURE(kWebHidAttributeAllowsBackForwardCache,
+             "WebHidAttributeAllowsBackForwardCache",
              base::FEATURE_ENABLED_BY_DEFAULT);
 
 #if BUILDFLAG(IS_WIN)
@@ -52,12 +63,19 @@ BASE_FEATURE(kHidGetFeatureReportFix,
 const base::FeatureParam<int> kWinSystemLocationPermissionPollingParam{
     &kWinSystemLocationPermission, "polling_interval_in_ms", 500};
 #endif  // BUILDFLAG(IS_WIN)
+
 // Enables usage of the location provider manager to select between
 // the operating system's location API or our network-based provider
 // as the source of location data for Geolocation API.
+#if BUILDFLAG(IS_MAC)
+BASE_FEATURE(kLocationProviderManager,
+             "LocationProviderManager",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+#else
 BASE_FEATURE(kLocationProviderManager,
              "LocationProviderManager",
              base::FEATURE_DISABLED_BY_DEFAULT);
+#endif  // BUILDFLAG(IS_MAC)
 
 #if BUILDFLAG(IS_CHROMEOS)
 // Enables crash key logging for USB device open operations on ChromeOS. See
@@ -75,6 +93,15 @@ BASE_FEATURE(kBatteryStatusManagerBroadcastReceiverInBackground,
              base::FEATURE_DISABLED_BY_DEFAULT);
 #endif  // BUILDFLAG(IS_ANDROID)
 
+#if !BUILDFLAG(IS_ANDROID)
+// Modifies the internal allowlist behavior that enables privileged extensions
+// to bypass the HID blocklist when accessing FIDO devices. When enabled,
+// privileged extensions can access non-FIDO interfaces on known security keys.
+BASE_FEATURE(kSecurityKeyHidInterfacesAreFido,
+             "SecurityKeyHidInterfacesAreFido",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+#endif  // !BUILDFLAG(IS_ANDROID)
+
 const base::FeatureParam<device::mojom::LocationProviderManagerMode>::Option
     location_provider_manager_mode_options[] = {
         {device::mojom::LocationProviderManagerMode::kNetworkOnly,
@@ -83,9 +110,11 @@ const base::FeatureParam<device::mojom::LocationProviderManagerMode>::Option
          "PlatformOnly"},
         {device::mojom::LocationProviderManagerMode::kHybridPlatform,
          "HybridPlatform"},
+        {device::mojom::LocationProviderManagerMode::kHybridPlatform2,
+         "HybridPlatform2"},
 };
 
-#if BUILDFLAG(IS_OHOS)
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_OHOS)
 const base::FeatureParam<device::mojom::LocationProviderManagerMode>
     kLocationProviderManagerParam{
         &kLocationProviderManager, "LocationProviderManagerMode",
@@ -97,7 +126,7 @@ const base::FeatureParam<device::mojom::LocationProviderManagerMode>
         &kLocationProviderManager, "LocationProviderManagerMode",
         device::mojom::LocationProviderManagerMode::kNetworkOnly,
         &location_provider_manager_mode_options};
-#endif  // BUILDFLAG(IS_OHOS)
+#endif  // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_OHOS)
 
 bool IsOsLevelGeolocationPermissionSupportEnabled() {
 #if BUILDFLAG(IS_WIN)
@@ -108,5 +137,13 @@ bool IsOsLevelGeolocationPermissionSupportEnabled() {
   return false;
 #endif  // BUILDFLAG(IS_WIN)
 }
+
+// Controls whether Chrome will try to automatically detach kernel drivers when
+// a USB interface is busy.
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX)
+BASE_FEATURE(kAutomaticUsbDetach,
+             "AutomaticUsbDetach",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+#endif  // BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX)
 
 }  // namespace features

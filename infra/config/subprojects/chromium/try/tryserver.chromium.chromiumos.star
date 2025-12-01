@@ -222,8 +222,6 @@ try_.builder(
     experiments = {
         # crbug/940930
         "chromium.enable_cleandead": 100,
-        # b/346598710
-        "chromium.luci_analysis_v2": 100,
     },
     main_list_view = "try",
 )
@@ -242,8 +240,6 @@ try_.builder(
     experiments = {
         # crbug/940930
         "chromium.enable_cleandead": 100,
-        # b/346598710
-        "chromium.luci_analysis_v2": 100,
     },
     main_list_view = "try",
     siso_remote_jobs = siso.remote_jobs.HIGH_JOBS_FOR_CQ,
@@ -299,6 +295,9 @@ try_.builder(
     mirrors = [
         "ci/chromeos-jacuzzi-rel",
     ],
+    builder_config_settings = builder_config.try_settings(
+        retry_failed_shards = False,
+    ),
     gn_args = "ci/chromeos-jacuzzi-rel",
     contact_team_email = "chromeos-chrome-build@google.com",
     execution_timeout = 8 * time.hour,
@@ -311,6 +310,9 @@ try_.builder(
     mirrors = [
         "ci/chromeos-octopus-rel",
     ],
+    builder_config_settings = builder_config.try_settings(
+        retry_failed_shards = False,
+    ),
     gn_args = "ci/chromeos-octopus-rel",
     contact_team_email = "chromeos-chrome-build@google.com",
     execution_timeout = 8 * time.hour,
@@ -341,8 +343,6 @@ try_.orchestrator_builder(
         "chromium.add_one_test_shard": 10,
         # crbug/940930
         "chromium.enable_cleandead": 100,
-        # b/346598710
-        "chromium.luci_analysis_v2": 100,
     },
     main_list_view = "try",
     # TODO(crbug.com/40241638): Use orchestrator pool once overloaded test pools

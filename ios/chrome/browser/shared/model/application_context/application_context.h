@@ -16,6 +16,10 @@
 #include "base/memory/weak_ptr.h"
 #endif  // BUILDFLAG(BUILD_WITH_INTERNAL_OPTIMIZATION_GUIDE)
 
+namespace auto_deletion {
+class AutoDeletionService;
+}  // namespace auto_deletion
+
 namespace component_updater {
 class ComponentUpdateService;
 }
@@ -79,6 +83,7 @@ class VariationsService;
 class AdditionalFeaturesController;
 class AccountProfileMapper;
 class ApplicationContext;
+class ApplicationLocaleStorage;
 class BrowserPolicyConnectorIOS;
 class IncognitoSessionTracker;
 class IOSChromeIOThread;
@@ -139,8 +144,12 @@ class ApplicationContext {
   // GetSystemURLRequestContext().
   virtual network::mojom::NetworkContext* GetSystemNetworkContext() = 0;
 
-  // Gets the locale used by the application.
+  // TODO(crbug.com/414379493): Replace existing usage with
+  // GetApplicationLocaleStorage(). Gets the locale used by the application.
   virtual const std::string& GetApplicationLocale() = 0;
+
+  // Gets the ApplicationLocaleStorage associated with this application.
+  virtual ApplicationLocaleStorage* GetApplicationLocaleStorage() = 0;
 
   // Gets the country locale used by the application
   virtual const std::string& GetApplicationCountry() = 0;
@@ -218,6 +227,9 @@ class ApplicationContext {
   // Returns the application's AdditionalFeaturesController that manages some
   // features not declared by `BASE_DECLARE_FEATURE()`.
   virtual AdditionalFeaturesController* GetAdditionalFeaturesController() = 0;
+
+  // Returns the AutoDeletionService instance.
+  virtual auto_deletion::AutoDeletionService* GetAutoDeletionService() = 0;
 
 #if BUILDFLAG(BUILD_WITH_INTERNAL_OPTIMIZATION_GUIDE)
   // Returns the application's OnDeviceModelServiceController which manages the

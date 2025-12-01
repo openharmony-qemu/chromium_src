@@ -6,7 +6,6 @@
 #define PDF_PDFIUM_PDFIUM_ON_DEMAND_SEARCHIFIER_H_
 
 #include <optional>
-#include <set>
 #include <vector>
 
 #include "base/containers/circular_deque.h"
@@ -27,7 +26,8 @@ class PDFiumOnDemandSearchifier {
   // Starts performing searchify on the scheduled pages. The function should be
   // called only once. If pages are added for searchifying later, they are
   // automatically picked up from the queue.
-  void Start(PerformOcrCallbackAsync callback);
+  void Start(GetOcrMaxImageDimensionCallbackAsync get_max_dimension_callback,
+             PerformOcrCallbackAsync perform_ocr_callback);
 
   // Called when OCR service is disconnected and is not available anymore.
   void OnOcrDisconnected();
@@ -41,10 +41,6 @@ class PDFiumOnDemandSearchifier {
   // starts.
   void SchedulePage(int page_index);
 
-  // If `page_index` in it the searchifying queue, it's removed. If it's
-  // currently being processed, the process gets stopped as soon as possible.
-  void CancelPage(int page_index);
-
   bool HasFailed() const { return state_ == State::kFailed; }
   bool IsIdleForTesting() const { return state_ == State::kIdle; }
 
@@ -53,6 +49,8 @@ class PDFiumOnDemandSearchifier {
 
   void SearchifyNextPage();
   void SearchifyNextImage();
+
+  void CommitResultsToPage();
 
   struct BitmapResult {
     SkBitmap bitmap;
@@ -72,6 +70,8 @@ class PDFiumOnDemandSearchifier {
     gfx::Size image_size;
   };
 
+  void OnGotOcrMaxImageDimension(uint32_t max_image_dimension);
+
   std::optional<BitmapResult> GetNextBitmap();
   void OnGotOcrResult(int image_index,
                       const gfx::Size& image_size,
@@ -85,17 +85,21 @@ class PDFiumOnDemandSearchifier {
   // Callback function to perform OCR.
   PerformOcrCallbackAsync perform_ocr_callback_;
 
+  // Maximum dimension size for images to be sent to OCR. This value is updated
+  // after OCR service is connected and stored for subsequent calls.
+  // OCR service downsamples images before processing if their dimensions are
+  // above this threshold. Sending larger images has processing and memory
+  // overhead and does not have any other negative effect.
+  uint32_t max_image_dimension_ = 0;
+
   // The page that is currently OCRed.
   raw_ptr<PDFiumPage> current_page_ = nullptr;
+  bool current_page_was_loaded_ = false;
   std::vector<int> current_page_image_object_indices_;
   std::vector<OcrResult> current_page_ocr_results_;
 
   // Scheduled pages to be searchified.
   base::circular_deque<int> pages_queue_;
-
-  // Keeps track of the indices of pages for which "PDF.SearchifyAddedText"
-  // metric is reported.
-  std::set<int> searchify_added_text_metric_reported_;
 
   State state_ = State::kIdle;
 

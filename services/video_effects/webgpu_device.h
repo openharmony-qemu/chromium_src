@@ -31,13 +31,16 @@ class WebGpuDevice final {
   };
 
   using DeviceCallback = base::OnceCallback<void(wgpu::Device)>;
-  using ErrorCallback = base::OnceCallback<void(Error, std::string_view)>;
+  using ErrorCallback = base::OnceCallback<void(Error, std::string)>;
   using DeviceLostCallback =
-      base::OnceCallback<void(wgpu::DeviceLostReason, std::string_view)>;
+      base::OnceCallback<void(wgpu::DeviceLostReason, std::string)>;
 
   // `context_provider` provides access to the GPU context (command buffer).
   // `device_lost_cb` is invoked if the GPU context was lost with the reason and
   // message.  The wgpu::Device is unusable after `device_lost_cb` is run.
+  // `device_lost_cb` must not destroy the instance of this `WebGpuDevice` in
+  // the currently running task (i.e. `~WebGpuDevice()` must not be called
+  // re-entrantly).
   WebGpuDevice(
       scoped_refptr<viz::ContextProviderCommandBuffer> context_provider,
       DeviceLostCallback device_lost_cb);
@@ -49,28 +52,29 @@ class WebGpuDevice final {
   // was created successfully.  `error_cb` is invoked if the device could not be
   // created with the error type and message.  Either `device_cb` or `error_cb`
   // is guaranteed to be called, and `Initialize` must be called exactly once.
+  // `error_cb` must not destroy the instance of this `WebGpuDevice` in the
+  // currently running task (i.e. `~WebGpuDevice()` must not be called
+  // re-entrantly).
   void Initialize(DeviceCallback device_cb, ErrorCallback error_cb);
 
  private:
   void OnRequestAdapter(wgpu::RequestAdapterStatus status,
                         wgpu::Adapter adapter,
-                        std::string_view message,
+                        std::string message,
                         DeviceCallback device_cb,
                         ErrorCallback error_cb);
 
   void OnRequestDevice(wgpu::RequestDeviceStatus status,
                        wgpu::Device device,
-                       std::string_view message,
+                       std::string message,
                        DeviceCallback device_cb,
                        ErrorCallback error_cb);
 
   void OnDeviceLost(const wgpu::Device& device,
                     wgpu::DeviceLostReason reason,
-                    std::string_view message);
+                    std::string message);
 
-  static void LoggingCallback(WGPULoggingType type,
-                              WGPUStringView message,
-                              void* userdata);
+  static void LoggingCallback(wgpu::LoggingType type, wgpu::StringView message);
 
   void EnsureFlush();
 

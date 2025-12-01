@@ -7,15 +7,17 @@
 #import "base/check.h"
 #import "components/strings/grit/components_strings.h"
 #import "ios/chrome/browser/keyboard/ui_bundled/UIKeyCommand+Chrome.h"
+#import "ios/chrome/browser/lens_overlay/public/lens_overlay_constants.h"
 #import "ios/chrome/browser/lens_overlay/ui/lens_overlay_progress_bar.h"
 #import "ios/chrome/browser/lens_overlay/ui/lens_result_page_mutator.h"
 #import "ios/chrome/browser/lens_overlay/ui/lens_toolbar_mutator.h"
+#import "ios/chrome/browser/omnibox/ui/text_field_view_containing.h"
 #import "ios/chrome/browser/shared/public/features/features.h"
 #import "ios/chrome/browser/shared/ui/symbols/symbols.h"
-#import "ios/chrome/browser/ui/omnibox/text_field_view_containing.h"
 #import "ios/chrome/common/ui/colors/semantic_color_names.h"
 #import "ios/chrome/common/ui/util/constraints_ui_util.h"
 #import "ios/chrome/common/ui/util/ui_util.h"
+#import "ios/chrome/grit/ios_strings.h"
 #import "ios/components/ui_util/dynamic_type_util.h"
 #import "ui/base/l10n/l10n_util.h"
 
@@ -50,9 +52,14 @@ const CGFloat kWebContainerTopPadding = 16;
 const CGFloat kProgressBarHeight = 2.0f;
 /// Value of a full progress bar.
 const CGFloat kProgressBarFull = 1.0f;
-
-/// The duration for buttons appear & disappear animations.
-const CGFloat kButtonAnimationDuration = 0.2f;
+/// Value of the grabber corner radius.
+const CGFloat kGrabberCornerRadius = 3.0;
+/// The width of the bottom sheet grabber.
+const CGFloat kGrabberWidth = 36.0;
+/// The height of the bottom sheet grabber.
+const CGFloat kGrabberHeight = 5.0;
+/// The top padding of the bottom sheet grabber.
+const CGFloat kGrabberTopPadding = 5;
 
 }  // namespace
 
@@ -94,6 +101,10 @@ const CGFloat kButtonAnimationDuration = 0.2f;
   /// When set, the omnibox tap target continues to "eat" the touches, but they
   /// are ignored, effectively preventing omnibox interaction.
   BOOL _ignoreOmniboxTaps;
+  /// The grabber indicator for the bottom sheet.
+  UIView* _bottomSheetGrabber;
+  /// Whether to show the bottom sheet grabber.
+  BOOL _bottomSheetGrabberVisible;
 }
 
 - (instancetype)init {
@@ -122,6 +133,17 @@ const CGFloat kButtonAnimationDuration = 0.2f;
   self.webViewContainer.translatesAutoresizingMaskIntoConstraints = NO;
   self.webViewContainer.clipsToBounds = YES;
   [self.view addSubview:self.webViewContainer];
+
+  // Bottom sheet grabber.
+  _bottomSheetGrabber = [self createSheetGrabber];
+  [self.view addSubview:_bottomSheetGrabber];
+  [self setBottomSheetGrabberVisible:_bottomSheetGrabberVisible];
+  AddSameCenterXConstraint(_bottomSheetGrabber, self.view);
+  AddSameConstraintsToSidesWithInsets(
+      _bottomSheetGrabber, self.view, LayoutSides::kTop,
+      NSDirectionalEdgeInsetsMake(kGrabberTopPadding, 0, 0, 0));
+  AddSizeConstraints(_bottomSheetGrabber,
+                     CGSizeMake(kGrabberWidth, kGrabberHeight));
 
   // Omnibox popup container.
   _omniboxPopupContainer.translatesAutoresizingMaskIntoConstraints = NO;
@@ -167,6 +189,8 @@ const CGFloat kButtonAnimationDuration = 0.2f;
   [_omniboxTapTarget addTarget:self
                         action:@selector(didTapOmniboxTapTarget:)
               forControlEvents:UIControlEventTouchUpInside];
+  _omniboxTapTarget.accessibilityLabel =
+      l10n_util::GetNSString(IDS_IOS_LENS_OVERLAY_OMNIBOX_FOCUS);
   AddSameConstraints(_omniboxContainer, _omniboxTapTarget);
 
   // Cancel button.
@@ -252,6 +276,23 @@ const CGFloat kButtonAnimationDuration = 0.2f;
   }
 }
 
+- (void)viewDidAppear:(BOOL)animated {
+  [super viewDidAppear:animated];
+  [[NSNotificationCenter defaultCenter]
+      addObserver:self
+         selector:@selector(updateMutatorDarkMode)
+             name:UIApplicationWillEnterForegroundNotification
+           object:nil];
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+  [super viewWillDisappear:animated];
+  [[NSNotificationCenter defaultCenter]
+      removeObserver:self
+                name:UIApplicationWillEnterForegroundNotification
+              object:nil];
+}
+
 #if !defined(__IPHONE_17_0) || __IPHONE_OS_VERSION_MIN_REQUIRED < __IPHONE_17_0
 - (void)traitCollectionDidChange:(UITraitCollection*)previousTraitCollection {
   [super traitCollectionDidChange:previousTraitCollection];
@@ -285,6 +326,11 @@ const CGFloat kButtonAnimationDuration = 0.2f;
   AddSameConstraints(_editView, _omniboxContainer);
 }
 
+- (void)setBottomSheetGrabberVisible:(BOOL)bottomSheetGrabberVisible {
+  _bottomSheetGrabberVisible = bottomSheetGrabberVisible;
+  _bottomSheetGrabber.hidden = !bottomSheetGrabberVisible;
+}
+
 - (void)setMutator:(id<LensResultPageMutator>)mutator {
   _mutator = mutator;
   [self updateMutatorDarkMode];
@@ -301,7 +347,7 @@ const CGFloat kButtonAnimationDuration = 0.2f;
   }
 
   __weak __typeof(self) weakSelf = self;
-  [UIView animateWithDuration:kButtonAnimationDuration
+  [UIView animateWithDuration:kLensResultPageButtonAnimationDuration
                         delay:0
                       options:UIViewAnimationOptionCurveEaseInOut
                    animations:^{
@@ -424,6 +470,26 @@ const CGFloat kButtonAnimationDuration = 0.2f;
 
 #pragma mark - Private
 
+- (UIView*)createSheetGrabber {
+  UIButton* grabber = [[UIButton alloc] init];
+  [grabber addTarget:self
+                action:@selector(didTapBottomSheetGrabber:)
+      forControlEvents:UIControlEventTouchUpInside];
+  grabber.translatesAutoresizingMaskIntoConstraints = NO;
+  grabber.backgroundColor = [UIColor colorNamed:kGrey400Color];
+  grabber.layer.cornerRadius = kGrabberCornerRadius;
+  grabber.accessibilityLabel = l10n_util::GetNSString(
+      IDS_IOS_LENS_OVERLAY_SHEET_GRABBER_ACCESSIBILITY_LABEL);
+  grabber.accessibilityHint = l10n_util::GetNSString(
+      IDS_IOS_LENS_OVERLAY_SHEET_GRABBER_ACCESSIBILITY_HINT);
+
+  return grabber;
+}
+
+- (void)didTapBottomSheetGrabber:(id)sender {
+  [_delegate lensResultPageViewControllerDidTapBottomSheetGrabber:self];
+}
+
 /// Handles omnibox tap target taps.
 - (void)didTapOmniboxTapTarget:(UIView*)view {
   if (_ignoreOmniboxTaps) {
@@ -455,7 +521,7 @@ const CGFloat kButtonAnimationDuration = 0.2f;
   }
 
   __weak __typeof(self) weakSelf = self;
-  [UIView animateWithDuration:kButtonAnimationDuration
+  [UIView animateWithDuration:kLensResultPageButtonAnimationDuration
                         delay:0
                       options:UIViewAnimationOptionCurveEaseInOut
                    animations:^{
@@ -472,6 +538,20 @@ const CGFloat kButtonAnimationDuration = 0.2f;
 
 /// Updates the user interface style in the mutator.
 - (void)updateMutatorDarkMode {
+  // To ensure the app switcher displays the correct snapshot, the app briefly
+  // toggles between light and dark modes when it enters the background. This
+  // creates snapshots for both modes, so the switcher can show the appropriate
+  // one regardless of the user's current interface style.
+  //
+  // Refrain from doing 2 additional reload requests as a consequence of the
+  // brief switch by early exiting if the app is in background. If there is a
+  // a style change it will be scheduled when the app returns to foreground.
+  UIApplicationState currentState =
+      [[UIApplication sharedApplication] applicationState];
+  if (currentState == UIApplicationStateBackground) {
+    return;
+  }
+
   [self.mutator setIsDarkMode:self.traitCollection.userInterfaceStyle ==
                               UIUserInterfaceStyleDark];
 }

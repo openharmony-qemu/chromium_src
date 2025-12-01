@@ -44,6 +44,7 @@ import org.chromium.android_webview.AwGeolocationPermissions;
 import org.chromium.android_webview.AwHistogramRecorder;
 import org.chromium.android_webview.AwHttpAuthHandler;
 import org.chromium.android_webview.AwRenderProcessGoneDetail;
+import org.chromium.android_webview.AwWebResourceRequest;
 import org.chromium.android_webview.JsPromptResultReceiver;
 import org.chromium.android_webview.JsResultReceiver;
 import org.chromium.android_webview.R;
@@ -53,7 +54,6 @@ import org.chromium.android_webview.permission.Resource;
 import org.chromium.base.Callback;
 import org.chromium.base.ContextUtils;
 import org.chromium.base.Log;
-import org.chromium.base.PathUtils;
 import org.chromium.base.TraceEvent;
 import org.chromium.base.metrics.RecordHistogram;
 import org.chromium.base.metrics.ScopedSysTraceEvent;
@@ -68,7 +68,6 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.WeakHashMap;
-import java.util.regex.Pattern;
 
 /**
  * An adapter class that forwards the callbacks from {@link ContentViewClient}
@@ -100,17 +99,12 @@ class WebViewContentsClientAdapter extends SharedWebViewContentsClientAdapter {
 
     private DownloadListener mDownloadListener;
 
-    private Handler mUiThreadHandler;
+    private final Handler mUiThreadHandler;
 
     private static final int NEW_WEBVIEW_CREATED = 100;
 
     private WeakHashMap<AwPermissionRequest, WeakReference<PermissionRequestAdapter>>
             mOngoingPermissionRequests;
-
-    // Pattern to match URLs that WebView internally handles as asset or
-    // resource lookups.
-    private static final Pattern FILE_ANDROID_ASSET_PATTERN =
-            Pattern.compile("^file:/*android_(asset|res).*");
 
     /**
      * Adapter constructor.
@@ -230,7 +224,7 @@ class WebViewContentsClientAdapter extends SharedWebViewContentsClientAdapter {
                 TraceEvent.scoped("WebView.APICallback.WebViewClient.shouldInterceptRequest")) {
             AwHistogramRecorder.recordCallbackInvocation(
                     AwHistogramRecorder.WebViewCallbackType.SHOULD_INTERCEPT_REQUEST);
-            if (TRACE) Log.i(TAG, "shouldInterceptRequest=" + request.url);
+            if (TRACE) Log.i(TAG, "shouldInterceptRequest=" + request.getUrl());
             WebResourceResponse response =
                     mWebViewClient.shouldInterceptRequest(
                             mWebView, new WebResourceRequestAdapter(request));
@@ -516,14 +510,23 @@ class WebViewContentsClientAdapter extends SharedWebViewContentsClientAdapter {
             final long requestStartTime = System.currentTimeMillis();
             GeolocationPermissions.Callback callbackWrapper =
                     (callbackOrigin, allow, retain) -> {
+                        long durationMs = System.currentTimeMillis() - requestStartTime;
                         RecordHistogram.recordTimesHistogram(
                                 "Android.WebView.OnGeolocationPermissionsShowPrompt.ResponseTime",
-                                System.currentTimeMillis() - requestStartTime);
+                                durationMs);
                         RecordHistogram.recordBooleanHistogram(
-                                "Android.WebView.OnGeolocationPermissionsShowPrompt.Allow", allow);
+                                "Android.WebView.OnGeolocationPermissionsShowPrompt.Granted",
+                                allow);
                         RecordHistogram.recordBooleanHistogram(
                                 "Android.WebView.OnGeolocationPermissionsShowPrompt.Retain",
                                 retain);
+
+                        if (retain) {
+                            RecordHistogram.recordTimesHistogram(
+                                    "Android.WebView.GeolocationRetained.ResponseTime", durationMs);
+                            RecordHistogram.recordBooleanHistogram(
+                                    "Android.WebView.GeolocationRetained.Granted", allow);
+                        }
                         callback.invoke(callbackOrigin, allow, retain);
                     };
             mWebChromeClient.onGeolocationPermissionsShowPrompt(
@@ -914,16 +917,6 @@ class WebViewContentsClientAdapter extends SharedWebViewContentsClientAdapter {
                                 s = new String[uriList.length];
                                 for (int i = 0; i < uriList.length; i++) {
                                     s[i] = uriList[i].toString();
-                                    if ("file".equals(uriList[i].getScheme())
-                                            && !FILE_ANDROID_ASSET_PATTERN
-                                                    .matcher(s[i])
-                                                    .matches()) {
-                                        RecordHistogram.recordBooleanHistogram(
-                                                "Android.WebView.FileChooserResultOutsideAppDataDir",
-                                                PathUtils.isPathUnderAppDir(
-                                                        uriList[i].getSchemeSpecificPart(),
-                                                        mContext));
-                                    }
                                 }
                             }
                             uploadFileCallback.onResult(s);
@@ -1091,7 +1084,7 @@ class WebViewContentsClientAdapter extends SharedWebViewContentsClientAdapter {
     }
 
     private static class AwHttpAuthHandlerAdapter extends android.webkit.HttpAuthHandler {
-        private AwHttpAuthHandler mAwHandler;
+        private final AwHttpAuthHandler mAwHandler;
 
         public AwHttpAuthHandlerAdapter(AwHttpAuthHandler awHandler) {
             mAwHandler = awHandler;
@@ -1157,7 +1150,7 @@ class WebViewContentsClientAdapter extends SharedWebViewContentsClientAdapter {
             return result.toArray(resource_array);
         }
 
-        private AwPermissionRequest mAwPermissionRequest;
+        private final AwPermissionRequest mAwPermissionRequest;
         private final String[] mResources;
 
         private final long mCreationTime;
@@ -1251,6 +1244,12 @@ class WebViewContentsClientAdapter extends SharedWebViewContentsClientAdapter {
             @Override
             public String getFilenameHint() {
                 return value.getFilenameHint();
+            }
+
+            // TODO(crbug.com/40101963): Add @Override and @PermissionMode when SDK is updated.
+            @SuppressWarnings("all")
+            public int getPermissionMode() {
+                return value.getPermissionMode();
             }
 
             @Override

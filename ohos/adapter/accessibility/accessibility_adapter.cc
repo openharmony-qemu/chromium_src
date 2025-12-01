@@ -1,73 +1,40 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "ohos/adapter/accessibility/accessibility_adapter.h"
 
 #include <dlfcn.h>
+
 #include <cstring>
 
 #include "aki/jsbind.h"
 #include "ohos/adapter/accessibility/accessibility_delegate_ohos_registry.h"
 #include "ohos/adapter/aki_hook/aki_hook.h"
 #include "ohos/adapter/common/logging.h"
-#include "ohos/adapter/common/shared_library.h"
 #include "ohos/adapter/device_info/device_info.h"
+#include "ohos/adapter/node_handle/node_handle_impl.h"
 
 namespace ohos::adapter::accessibility {
 
-common::SharedLibrary native_accessibility_lib("ace_ndk.z");
-
 __attribute__((no_sanitize("cfi", "cfi-icall")))
-int32_t AccessibilityProviderRegisterCallback(
-    const char* instance_id,
-    ArkUI_AccessibilityProvider* provider,
-    AccessibilityProviderCallbacks* callbacks) {
-  using NativeAccessibilityForProviderFunc =
-      int32_t(const char*, ArkUI_AccessibilityProvider*,
-              AccessibilityProviderCallbacks*);
+AccessibilityAdapter::AccessibilityAdapter()
+    : native_accessibility_lib_("ace_ndk.z") {
+  if (!native_accessibility_lib_.IsLoaded()) {
+    LOGE(
+        "AccessibilityAdapter::AccessibilityAdapter native_accessibility_lib_ "
+        "load fail");
+    return;
+  }
 
-  if (!native_accessibility_lib.IsLoaded()) {
+  if (!native_accessibility_lib_.LoadFunction(
+      &accessibility_provider_register_callback_fn_,
+      "OH_ArkUI_AccessibilityProviderRegisterCallbackWithInstance")) {
     LOGE(
-        "AccessibilityProviderRegisterCallback native_accessibility_lib Load "
-        "fail");
-    return -1;
+        "AccessibilityAdapter::AccessibilityAdapter get "
+        "OH_ArkUI_AccessibilityProviderRegisterCallbackWithInstance failed");
+    return;
   }
-  auto fn =
-      native_accessibility_lib.GetFunction<NativeAccessibilityForProviderFunc>(
-          "OH_ArkUI_AccessibilityProviderRegisterCallbackWithInstance");
-  if (fn == nullptr) {
-    LOGE(
-        "AccessibilityProviderRegisterCallback get "
-        "OH_ArkUI_AccessibilityProviderRegisterCallbackWithInstance fail");
-    return -1;
-  }
-  return fn(instance_id, provider, callbacks);
 }
 
 AccessibilityAdapter& AccessibilityAdapter::GetInstance() {
@@ -92,6 +59,7 @@ void AccessibilityAdapter::ShutDown() {
   }
 }
 
+__attribute__((no_sanitize("cfi", "cfi-icall")))
 void AccessibilityAdapter::Initialize(OH_NativeXComponent* native_xcomponent,
                                       std::string& id) {
   int32_t ret = OH_NativeXComponent_GetNativeAccessibilityProvider(
@@ -104,18 +72,46 @@ void AccessibilityAdapter::Initialize(OH_NativeXComponent* native_xcomponent,
     return;
   }
 
+  RegisterCallback(id);
+}
+
+void AccessibilityAdapter::Initialize(ArkUI_NodeHandle node, std::string& id) {
+  provider_ =
+      nodeHandle::NodeHandleImpl::GetInstance().AccessibilityProviderCreate(
+          node);
+  if (provider_ == nullptr) {
+    LOGE(
+        "AccessibilityAdapter::Initialize "
+        "AccessibilityProviderCreate get provider "
+        "fail");
+    return;
+  }
+
+  RegisterCallback(id);
+}
+
+__attribute__((no_sanitize("cfi", "cfi-icall")))
+void AccessibilityAdapter::RegisterCallback(std::string& id) {
+  if (accessibility_provider_register_callback_fn_ == nullptr) {
+    LOGE(
+        "AccessibilityAdapter::Initialize "
+        "OH_ArkUI_AccessibilityProviderRegisterCallbackWithInstance was not "
+        "loaded correctly");
+    return;
+  }
+
   accessibility_provider_callbacks_ = {
       FindAccessibilityNodeInfosById,    FindAccessibilityNodeInfosByText,
       FindFocusedAccessibilityNode,      FindNextFocusAccessibilityNode,
       ExecuteAccessibilityAction,        ClearFocusedFocusAccessibilityNode,
       GetAccessibilityNodeCursorPosition};
 
-  ret = AccessibilityProviderRegisterCallback(
+  int32_t ret = accessibility_provider_register_callback_fn_(
       id.c_str(), provider_, &accessibility_provider_callbacks_);
   if (ret != 0) {
     LOGE(
         "AccessibilityAdapter::Initialize "
-        "AccessibilityProviderRegisterCallback run fail, instance_id: "
+        "accessibility_provider_register_callback_fn_ run fail, instance_id: "
         "%{public}s, ret: %{public}d",
         id.c_str(), ret);
     return;

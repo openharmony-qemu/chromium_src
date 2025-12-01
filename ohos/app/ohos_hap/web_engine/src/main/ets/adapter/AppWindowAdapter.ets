@@ -1,36 +1,11 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 import bundleManager from '@ohos.bundle.bundleManager';
 import { inject, injectable } from 'inversify';
 import { BusinessError } from '@ohos.base';
-import { display, window } from '@kit.ArkUI';
+import { display, NodeContent, window } from '@kit.ArkUI';
 import { deviceInfo } from '@kit.BasicServicesKit';
 import Want from '@ohos.app.ability.Want';
 import { BaseAdapter } from '../common/BaseAdapter';
@@ -38,9 +13,12 @@ import LogUtil from '../utils/LogUtil';
 import { AbilityManager } from '../common/AbilityManager';
 import LogMethod from '../common/LogDecorator';
 import { StartOptions } from '@kit.AbilityKit';
-import { NewWindowParam, PointCoordinate, WindowBound } from '../interface/CommonInterface';
+import { NewWindowParam, PointCoordinate, WindowBound, kAbilityMap } from '../interface/CommonInterface';
 import LaunchHelper from '../utils/LaunchHelper';
 import { ContextAdapter } from './ContextAdapter';
+import { DeviceInfoAdapter } from "../adapter/DeviceInfoAdapter";
+import { NativeThemeAdapter } from './NativeThemeAdapter';
+import { NodeHandleManager } from '../common/NodeHandleManager';
 
 const TAG: string = 'AppWindow';
 
@@ -52,14 +30,23 @@ export class AppWindowAdapter extends BaseAdapter {
                         bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_METADATA;
   private queryWindowNum: number = 10;                      
   private ctxAdapter: ContextAdapter;
+  private deviceInfoAdapter: DeviceInfoAdapter;
+  private themeAdapter: NativeThemeAdapter;
+  private nodeHandleManager: NodeHandleManager;
 
   constructor(
     @inject(AbilityManager) abilityManager: AbilityManager,
-    @inject(ContextAdapter) ctxAdapter: ContextAdapter
+    @inject(ContextAdapter) ctxAdapter: ContextAdapter,
+    @inject(DeviceInfoAdapter) deviceInfoAdapter: DeviceInfoAdapter,
+    @inject(NativeThemeAdapter) themeAdapter: NativeThemeAdapter,
+    @inject(NodeHandleManager) nodeHandleManager: NodeHandleManager
   ) {
     super();
     this.abilityManager = abilityManager;
     this.ctxAdapter = ctxAdapter;
+    this.deviceInfoAdapter = deviceInfoAdapter;
+    this.themeAdapter = themeAdapter;
+    this.nodeHandleManager = nodeHandleManager;
 
     try {
       bundleManager.getBundleInfoForSelf(this.bundleFlags).then((data) => {
@@ -77,12 +64,16 @@ export class AppWindowAdapter extends BaseAdapter {
     return this.abilityManager.getProxy(id)?.getWindow();
   }
 
+  private backgroundColor(useDarkMode: boolean): string {
+    if (useDarkMode || this.themeAdapter.isDarkMode()) {
+      return NativeThemeAdapter.DARK_BACKGROUND_COLOR;
+    }
+    return NativeThemeAdapter.LIGHT_BACKGROUND_COLOR;
+  }
+
   @LogMethod
   createWindow(param: NewWindowParam) {
-    let abilityName: string = "EntryAbility";
-    if (param.is_stateless) {
-      abilityName = "StatelessAbility";
-    }
+    let abilityName: string = kAbilityMap.get(param.ability_type) ?? 'EntryAbility';
     const want: Want = {
       bundleName: this.bundleName,
       abilityName: abilityName,
@@ -91,7 +82,8 @@ export class AppWindowAdapter extends BaseAdapter {
         'hideTitleBar': param.hide_title_bar,
         'useDarkMode': param.use_dark_mode,
         'titleButtonVisible': param.caption_button_visible,
-        instanceKey: param.window_id
+        instanceKey: param.window_id,
+        'webappWindow': param.app_id
       }
     };
 
@@ -103,7 +95,8 @@ export class AppWindowAdapter extends BaseAdapter {
       windowLeft: param.bounds.left - xComBorder,
       windowTop: param.bounds.top - xComTop,
       windowWidth: param.bounds.width + xComBorder + xComBorder,
-      windowHeight: param.bounds.height + xComBorder + xComTop
+      windowHeight: param.bounds.height + xComBorder + xComTop,
+      startWindowBackgroundColor: this.backgroundColor(param.use_dark_mode),
     }
     LaunchHelper.LaunchWithOptions(this.ctxAdapter.getActiveContext(), want, options);
   }
@@ -141,6 +134,10 @@ export class AppWindowAdapter extends BaseAdapter {
       return;
     }
 
+    if (this.deviceInfoAdapter.isNormalWindowMode()) {
+      this.abilityManager.getProxy(id)?.updateAvoidAreaStatus(true);
+    }
+
     if (deviceInfo.sdkApiVersion >= 14) {
       windowClass.maximize(window.MaximizePresentation.ENTER_IMMERSIVE_DISABLE_TITLE_AND_DOCK_HOVER)
         .catch((err: BusinessError) => {
@@ -155,9 +152,7 @@ export class AppWindowAdapter extends BaseAdapter {
   }
 
   @LogMethod
-  setBounds(id: number,
-            bounds: WindowBound,
-            callback: () => void) {
+  setBounds(id: number, bounds: WindowBound) {
     let windowClass = this.getWindow(id);
     if (!windowClass) {
       LogUtil.error(TAG, 'Failed to obtain the main window.');
@@ -173,16 +168,24 @@ export class AppWindowAdapter extends BaseAdapter {
     bounds.height = bounds.height + xComBorder + xComTop;
 
     try {
-      windowClass.moveWindowToAsync(bounds.left, bounds.top)
-        .then(() => {
-          windowClass?.resizeAsync(bounds.width, bounds.height)
-            .catch((err: BusinessError) => {
-              LogUtil.error(TAG, 'Failed to change the window size. Cause:' + JSON.stringify(err));
-              callback && callback();
-            });
-        }).catch((err: BusinessError) => {
-        LogUtil.error(TAG, 'Failed to move the window. Cause:' + JSON.stringify(err));
-      });
+      if (windowClass.getWindowStatus() !== window.WindowStatusType.MAXIMIZE &&
+        windowClass.getWindowStatus() !== window.WindowStatusType.FULL_SCREEN) {
+        windowClass.moveWindowToAsync(bounds.left, bounds.top)
+          .then(() => {
+            if (windowClass?.getWindowStatus() !== window.WindowStatusType.MAXIMIZE &&
+              windowClass?.getWindowStatus() !== window.WindowStatusType.FULL_SCREEN) {
+              windowClass?.resizeAsync(bounds.width, bounds.height)
+                .catch((err: BusinessError) => {
+                  LogUtil.error(TAG,
+                    'Failed to change the window size. Cause:' + JSON.stringify(err) + ' window status:' +
+                    windowClass?.getWindowStatus());
+                });
+            }
+          }).catch((err: BusinessError) => {
+          LogUtil.error(TAG, 'Failed to move the window. Cause:' + JSON.stringify(err) + ' window status:' +
+          windowClass?.getWindowStatus());
+        });
+      }
     } catch (exception) {
       LogUtil.error(TAG, 'move the window exception. Cause:' + JSON.stringify(exception));
     }
@@ -251,6 +254,10 @@ export class AppWindowAdapter extends BaseAdapter {
       }).catch((err: BusinessError) => {
         LogUtil.error(TAG, 'Failed to maximize the window. Cause:' + JSON.stringify(err));
       });
+
+      if (!this.deviceInfoAdapter.isPcMode()) {
+        this.abilityManager.getProxy(id)?.updateAvoidAreaStatus(false);
+      }
     } catch (exception) {
       LogUtil.error(TAG, 'maximize the window exception. Cause:' + JSON.stringify(exception));
     }
@@ -419,5 +426,16 @@ export class AppWindowAdapter extends BaseAdapter {
       LogUtil.error(TAG, 'shiftWindowEvent fail, sdkApiVersion is less than 15');
       callback(false);
     }
+  }
+
+  @LogMethod
+  bind(id: string, callback: (nodeContent: NodeContent | undefined) => void) {
+    let nodeContent = this.nodeHandleManager.getNodeContent(id);
+    if (!nodeContent) {
+      LogUtil.warn(TAG, 'bind node handle with node content failed, not find node content for id' + id);
+      callback(undefined);
+      return;
+    }
+    callback(nodeContent);
   }
 };

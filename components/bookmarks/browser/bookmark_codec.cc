@@ -147,6 +147,12 @@ bool BookmarkCodec::Decode(const base::Value::Dict& value,
   // reassign IDs.
   if (!ids_valid_ || computed_checksum_ != stored_checksum_) {
     maximum_id_ = max_already_assigned_id;
+#if BUILDFLAG(IS_OHOS)
+    LOG(WARNING)
+        << "Bookmark checksums differ or some IDs were missing/not unique"
+        << ", checksum equal: " << (computed_checksum_ == stored_checksum_)
+        << ", ids_valid_: " << ids_valid_;
+#endif
     ReassignIDs(bb_node, other_folder_node, mobile_folder_node);
   }
   *max_id = maximum_id_ + 1;
@@ -269,17 +275,15 @@ bool BookmarkCodec::DecodeChildren(const base::Value::List& child_value_list,
 bool BookmarkCodec::DecodeNode(const base::Value::Dict& value,
                                BookmarkNode* parent,
                                BookmarkNode* node) {
-  // If no |node| is specified, we'll create one and add it to the |parent|.
-  // Therefore, in that case, |parent| must be non-NULL.
+  // If no `node` is specified, we'll create one and add it to the `parent`.
+  // Therefore, in that case, `parent` must be non-NULL.
   if (!node && !parent) {
-    NOTREACHED_IN_MIGRATION();
-    return false;
+    NOTREACHED();
   }
 
   // It's not valid to have both a node and a specified parent.
   if (node && parent) {
-    NOTREACHED_IN_MIGRATION();
-    return false;
+    NOTREACHED();
   }
 
   std::string id_string;
@@ -304,7 +308,7 @@ bool BookmarkCodec::DecodeNode(const base::Value::Dict& value,
     title = base::UTF8ToUTF16(*string_value);
 
   base::Uuid uuid;
-  // |node| is only passed in for bookmarks of type BookmarkPermanentNode, in
+  // `node` is only passed in for bookmarks of type BookmarkPermanentNode, in
   // which case we do not need to check for UUID validity as their UUIDs are
   // hard-coded and not read from the persisted file.
   if (!node) {

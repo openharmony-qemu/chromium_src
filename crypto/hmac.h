@@ -22,9 +22,6 @@
 
 namespace crypto {
 
-// Simplify the interface and reduce includes by abstracting out the internals.
-class SymmetricKey;
-
 // TODO(https://issues.chromium.org/issues/374334448): Rework this interface and
 // delete much of it.
 class CRYPTO_EXPORT HMAC {
@@ -59,14 +56,10 @@ class CRYPTO_EXPORT HMAC {
   // Init() may fail.
   [[nodiscard]] bool Init(const unsigned char* key, size_t key_length);
 
-  // Initializes this instance using |key|. Call Init
-  // only once. It returns false on the second or later calls.
-  [[nodiscard]] bool Init(const SymmetricKey* key);
-
   // Initializes this instance using |key|. Call Init only once. It returns
   // false on the second or later calls.
   [[nodiscard]] bool Init(std::string_view key) {
-    return Init(base::as_bytes(base::make_span(key)));
+    return Init(base::as_byte_span(key));
   }
 
   // Initializes this instance using |key|. Call Init only once. It returns

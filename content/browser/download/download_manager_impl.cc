@@ -212,12 +212,13 @@ class DownloadItemFactoryImpl : public download::DownloadItemFactory {
       download::DownloadItemImplDelegate* delegate,
       uint32_t download_id,
       const base::FilePath& path,
+      const base::FilePath& display_name,
       const GURL& url,
       const std::string& mime_type,
       download::DownloadJob::CancelRequestCallback cancel_request_callback)
       override {
-    return new download::DownloadItemImpl(delegate, download_id, path, url,
-                                          mime_type,
+    return new download::DownloadItemImpl(delegate, download_id, path,
+                                          display_name, url, mime_type,
                                           std::move(cancel_request_callback));
   }
 };
@@ -238,7 +239,7 @@ CreatePendingSharedURLLoaderFactory(StoragePartitionImpl* storage_partition,
     // Also allow the Content embedder to inject itself if it wants to.
     GetContentClient()->browser()->WillCreateURLLoaderFactory(
         rfh->GetSiteInstance()->GetBrowserContext(), rfh,
-        rfh->GetProcess()->GetID(),
+        rfh->GetProcess()->GetDeprecatedID(),
         ContentBrowserClient::URLLoaderFactoryType::kDownload, url::Origin(),
         net::IsolationInfo(), /*navigation_id=*/std::nullopt,
         ukm::kInvalidSourceIdObj, factory_builder, /*header_client=*/nullptr,
@@ -769,9 +770,28 @@ void DownloadManagerImpl::CreateNewDownloadItemToStart(
     info->save_info->total_bytes = info->total_bytes;
   }
   content::devtools_instrumentation::WillBeginDownload(info.get(), download);
+  // Check if the download is a duplicate. Only GET download URL that has
+  // existed are considered duplicate.
+  bool is_duplicate = duplicate_file_exists && (info->method == "GET");
+  if (is_duplicate) {
+    bool found_same_url = false;
+    // If there is another download with the same path, the download is
+    // not a duplicate.
+    for (auto it = downloads_.begin(); it != downloads_.end(); ++it) {
+      if (it->second->GetTargetFilePath() == duplicate_download_file_path) {
+        if (it->second->GetURL() != info->url()) {
+          is_duplicate = false;
+          break;
+        } else {
+          found_same_url = true;
+        }
+      }
+    }
+    is_duplicate = is_duplicate && found_same_url;
+  }
   std::move(callback).Run(
       std::move(info), download,
-      duplicate_file_exists ? duplicate_download_file_path : base::FilePath(),
+      is_duplicate ? duplicate_download_file_path : base::FilePath(),
       should_persist_new_download_);
   if (download) {
     // For new downloads, we notify here, rather than earlier, so that
@@ -883,6 +903,7 @@ BrowserContext* DownloadManagerImpl::GetBrowserContext() {
 
 void DownloadManagerImpl::CreateSavePackageDownloadItem(
     const base::FilePath& main_file_path,
+    const base::FilePath& main_file_display_name,
     const GURL& page_url,
     const std::string& mime_type,
     int render_process_id,
@@ -892,13 +913,14 @@ void DownloadManagerImpl::CreateSavePackageDownloadItem(
   DCHECK_CURRENTLY_ON(BrowserThread::UI);
   GetNextId(base::BindOnce(
       &DownloadManagerImpl::CreateSavePackageDownloadItemWithId,
-      weak_factory_.GetWeakPtr(), main_file_path, page_url, mime_type,
-      render_process_id, render_frame_id, std::move(cancel_request_callback),
-      std::move(item_created)));
+      weak_factory_.GetWeakPtr(), main_file_path, main_file_display_name,
+      page_url, mime_type, render_process_id, render_frame_id,
+      std::move(cancel_request_callback), std::move(item_created)));
 }
 
 void DownloadManagerImpl::CreateSavePackageDownloadItemWithId(
     const base::FilePath& main_file_path,
+    const base::FilePath& main_file_display_name,
     const GURL& page_url,
     const std::string& mime_type,
     int render_process_id,
@@ -911,7 +933,7 @@ void DownloadManagerImpl::CreateSavePackageDownloadItemWithId(
   DCHECK(!base::Contains(downloads_, id));
 
   download::DownloadItemImpl* download_item = item_factory_->CreateSavePageItem(
-      this, id, main_file_path, page_url, mime_type,
+      this, id, main_file_path, main_file_display_name, page_url, mime_type,
       std::move(cancel_request_callback));
 
   GlobalRenderFrameHostId global_id(render_process_id, render_frame_id);
@@ -1358,7 +1380,7 @@ void DownloadManagerImpl::InterceptNavigationOnChecksComplete(
   if (ftn) {
     render_frame_host = ftn->current_frame_host();
     if (render_frame_host) {
-      render_process_id = render_frame_host->GetProcess()->GetID();
+      render_process_id = render_frame_host->GetProcess()->GetDeprecatedID();
       render_frame_id = render_frame_host->GetRoutingID();
       storage_partition_config =
           render_frame_host->GetSiteInstance()->GetStoragePartitionConfig();
@@ -1447,7 +1469,7 @@ void DownloadManagerImpl::BeginResourceDownloadOnChecksComplete(
     pending_url_loader_factory =
         std::make_unique<network::WrapperPendingSharedURLLoaderFactory>(
             CreateFileSystemURLLoaderFactory(
-                rfh->GetProcess()->GetID(), rfh->GetFrameTreeNodeId(),
+                rfh->GetProcess()->GetDeprecatedID(), rfh->GetFrameTreeNodeId(),
                 storage_partition->GetFileSystemContext(),
                 storage_partition->GetPartitionDomain(),
                 static_cast<RenderFrameHostImpl*>(rfh)->GetStorageKey()));
@@ -1505,16 +1527,6 @@ void DownloadManagerImpl::BeginDownloadInternal(
 
   auto* rfh = RenderFrameHost::FromID(params->render_process_host_id(),
                                       params->render_frame_host_routing_id());
-
-  // Untrusted network access is revoked, download request is interrupted.
-  if (rfh && rfh->IsUntrustedNetworkDisabled()) {
-    // TODO(crbug.com/365033308): Create a new download interrupt reason for
-    // fenced frame network revocation.
-    CreateInterruptedDownload(
-        std::move(params), download::DOWNLOAD_INTERRUPT_REASON_NETWORK_FAILED,
-        weak_factory_.GetWeakPtr());
-    return;
-  }
 
   StoragePartitionConfig storage_partition_config;
   if (rfh && serialized_embedder_download_data.empty()) {

@@ -5,9 +5,11 @@
 #include "net/cert/internal/trust_store_chrome.h"
 
 #include "base/containers/span.h"
+#include "base/containers/to_vector.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_util.h"
 #include "crypto/sha2.h"
+#include "net/cert/root_store_proto_lite/root_store.pb.h"
 #include "net/cert/x509_certificate.h"
 #include "net/cert/x509_util.h"
 #include "net/test/cert_builder.h"
@@ -44,26 +46,50 @@ scoped_refptr<X509Certificate> MakeTestRoot() {
   return builder->GetX509Certificate();
 }
 
+std::shared_ptr<const bssl::ParsedCertificate>
+FindParsedCertificateInCertificateList(const std::string& hash,
+                                       CertificateList certs) {
+  for (const auto& cert : certs) {
+    std::shared_ptr<const bssl::ParsedCertificate> parsed =
+        ToParsedCertificate(*cert);
+    std::string sha256_hex = base::ToLowerASCII(
+        base::HexEncode(crypto::SHA256Hash(parsed->der_cert())));
+    if (sha256_hex == hash) {
+      return parsed;
+    }
+  }
+  return nullptr;
+}
+
 TEST(TrustStoreChromeTestNoFixture, ContainsCert) {
   std::unique_ptr<TrustStoreChrome> trust_store_chrome =
       TrustStoreChrome::CreateTrustStoreForTesting(
           base::span<const ChromeRootCertInfo>(kChromeRootCertList),
+          base::span(kEutlRootCertList),
           /*version=*/1);
 
   // Check every certificate in test_store.certs is included.
   CertificateList certs = CreateCertificateListFromFile(
       GetTestNetDataDirectory().AppendASCII("ssl/chrome_root_store"),
       "test_store.certs", X509Certificate::FORMAT_PEM_CERT_SEQUENCE);
-  ASSERT_EQ(certs.size(), 2u);
+  ASSERT_EQ(certs.size(), 6u);
 
+  size_t eutl_certs = 0;
   for (const auto& cert : certs) {
     std::shared_ptr<const bssl::ParsedCertificate> parsed =
         ToParsedCertificate(*cert);
     ASSERT_TRUE(trust_store_chrome->Contains(parsed.get()));
     bssl::CertificateTrust trust = trust_store_chrome->GetTrust(parsed.get());
-    EXPECT_EQ(bssl::CertificateTrust::ForTrustAnchor().ToDebugString(),
-              trust.ToDebugString());
+    EXPECT_TRUE(trust.IsTrustAnchor());
+    // Count how many certs are on the EUTL.
+    bssl::CertificateTrust eutl_trust =
+        trust_store_chrome->eutl_trust_store()->GetTrust(parsed.get());
+    if (eutl_trust.type == bssl::CertificateTrustType::TRUSTED_ANCHOR) {
+      eutl_certs++;
+    }
   }
+  // There should be one cert from test_store.certs on the EUTL.
+  EXPECT_EQ(eutl_certs, 1);
 
   // Other certificates should not be included. Which test cert used here isn't
   // important as long as it isn't one of the certificates in the
@@ -80,10 +106,54 @@ TEST(TrustStoreChromeTestNoFixture, ContainsCert) {
             trust.ToDebugString());
 }
 
+TEST(TrustStoreChromeTestNoFixture, ContainsEutlCert) {
+  std::unique_ptr<TrustStoreChrome> trust_store_chrome =
+      TrustStoreChrome::CreateTrustStoreForTesting(
+          base::span<const ChromeRootCertInfo>(kChromeRootCertList),
+          base::span(kEutlRootCertList),
+          /*version=*/1);
+
+  const std::string kEUTLCertHash =
+      "f7c7e28fb5e79f314aaac6bbba932f15e1a72069f435d4c9e707f93ca1482ee3";
+
+  // Check that the EUTL certificate in test_additional.certs is included in
+  // the EUTL trust store, but not trusted for TLS connection establishment.
+  CertificateList certs = CreateCertificateListFromFile(
+      GetTestNetDataDirectory().AppendASCII("ssl/chrome_root_store"),
+      "test_additional.certs", X509Certificate::FORMAT_PEM_CERT_SEQUENCE);
+  std::shared_ptr<const bssl::ParsedCertificate> parsed =
+      FindParsedCertificateInCertificateList(kEUTLCertHash, certs);
+  ASSERT_TRUE(parsed);
+
+  bssl::CertificateTrust eutl_trust =
+      trust_store_chrome->eutl_trust_store()->GetTrust(parsed.get());
+  EXPECT_EQ(bssl::CertificateTrust::ForTrustAnchor().ToDebugString(),
+            eutl_trust.ToDebugString());
+
+  EXPECT_FALSE(trust_store_chrome->Contains(parsed.get()));
+  bssl::CertificateTrust trust = trust_store_chrome->GetTrust(parsed.get());
+  EXPECT_EQ(bssl::CertificateTrust::ForUnspecified().ToDebugString(),
+            trust.ToDebugString());
+
+  // Other certificates should not be included. Which test cert used here isn't
+  // important as long as it isn't one of the certificates in the
+  // chrome_root_store/test_store.certs.
+  scoped_refptr<X509Certificate> other_cert =
+      ImportCertFromFile(GetTestCertsDirectory(), "root_ca_cert.pem");
+  ASSERT_TRUE(other_cert);
+  std::shared_ptr<const bssl::ParsedCertificate> other_parsed =
+      ToParsedCertificate(*other_cert);
+  eutl_trust =
+      trust_store_chrome->eutl_trust_store()->GetTrust(other_parsed.get());
+  EXPECT_EQ(bssl::CertificateTrust::ForUnspecified().ToDebugString(),
+            eutl_trust.ToDebugString());
+}
+
 TEST(TrustStoreChromeTestNoFixture, Constraints) {
   std::unique_ptr<TrustStoreChrome> trust_store_chrome =
       TrustStoreChrome::CreateTrustStoreForTesting(
           base::span<const ChromeRootCertInfo>(kChromeRootCertList),
+          base::span(kEutlRootCertList),
           /*version=*/1);
 
   const std::string kUnconstrainedCertHash =
@@ -97,7 +167,6 @@ TEST(TrustStoreChromeTestNoFixture, Constraints) {
   CertificateList certs = CreateCertificateListFromFile(
       GetTestNetDataDirectory().AppendASCII("ssl/chrome_root_store"),
       "test_store.certs", X509Certificate::FORMAT_PEM_CERT_SEQUENCE);
-  ASSERT_EQ(certs.size(), 2u);
   for (const auto& cert : certs) {
     std::shared_ptr<const bssl::ParsedCertificate> parsed =
         ToParsedCertificate(*cert);
@@ -162,6 +231,271 @@ TEST(TrustStoreChromeTestNoFixture, Constraints) {
       trust_store_chrome->GetConstraintsForCert(other_parsed.get()).empty());
 }
 
+TEST(TrustStoreChromeTestNoFixture, EnforceAnchorExpiryAndConstraints) {
+  std::unique_ptr<TrustStoreChrome> trust_store_chrome =
+      TrustStoreChrome::CreateTrustStoreForTesting(
+          base::span<const ChromeRootCertInfo>(kChromeRootCertList),
+          base::span(kEutlRootCertList),
+          /*version=*/1);
+
+  std::map<std::string /* SHA-256 hash of certificate */,
+           bssl::CertificateTrust>
+      tests = {
+          {"568d6905a2c88708a4b3025190edcfedb1974a606a13c6e5290fcb2ae63edab5",
+           bssl::CertificateTrust::ForTrustAnchor()},
+          {"d92e93252eabca950870b94331990963a2dd5db96d833c82b08e41afd1719178",
+           bssl::CertificateTrust::ForTrustAnchor().WithEnforceAnchorExpiry()},
+          {"68b9c761219a5b1f0131784474665db61bbdb109e00f05ca9f74244ee5f5f52b",
+           bssl::CertificateTrust::ForTrustAnchor()
+               .WithEnforceAnchorConstraints()},
+          {"687fa451382278fff0c8b11f8d43d576671c6eb2bceab413fb83d965d06d2ff2",
+           bssl::CertificateTrust::ForTrustAnchor()
+               .WithEnforceAnchorExpiry()
+               .WithEnforceAnchorConstraints()},
+      };
+
+  CertificateList certs = CreateCertificateListFromFile(
+      GetTestNetDataDirectory().AppendASCII("ssl/chrome_root_store"),
+      "test_store.certs", X509Certificate::FORMAT_PEM_CERT_SEQUENCE);
+
+  for (const auto& test : tests) {
+    std::shared_ptr<const bssl::ParsedCertificate> cert =
+        FindParsedCertificateInCertificateList(test.first, certs);
+    bssl::CertificateTrust trust = trust_store_chrome->GetTrust(cert.get());
+    EXPECT_TRUE(trust.IsTrustAnchor());
+    EXPECT_EQ(trust.enforce_anchor_expiry, test.second.enforce_anchor_expiry);
+    EXPECT_EQ(trust.enforce_anchor_constraints,
+              test.second.enforce_anchor_constraints);
+  }
+}
+
+TEST(TrustStoreChromeTestNoFixture,
+     EnforceAnchorExpiryAndConstraintsFromProto) {
+  for (bool enforce_anchor_expiry : {false, true}) {
+    for (bool enforce_anchor_constraints : {false, true}) {
+      scoped_refptr<X509Certificate> root = MakeTestRoot();
+      chrome_root_store::RootStore root_store;
+      chrome_root_store::TrustAnchor* anchor = root_store.add_trust_anchors();
+      anchor->set_der(
+          net::x509_util::CryptoBufferAsStringPiece(root->cert_buffer()));
+      anchor->set_enforce_anchor_expiry(enforce_anchor_expiry);
+      anchor->set_enforce_anchor_constraints(enforce_anchor_constraints);
+
+      std::optional<ChromeRootStoreData> root_store_data =
+          ChromeRootStoreData::CreateFromRootStoreProto(root_store);
+      ASSERT_TRUE(root_store_data);
+      TrustStoreChrome trust_store_chrome(root_store_data.value());
+
+      std::shared_ptr<const bssl::ParsedCertificate> parsed =
+          ToParsedCertificate(*root);
+      bssl::CertificateTrust trust = trust_store_chrome.GetTrust(parsed.get());
+      EXPECT_TRUE(trust.IsTrustAnchor());
+      EXPECT_EQ(trust.enforce_anchor_expiry, enforce_anchor_expiry);
+      EXPECT_EQ(trust.enforce_anchor_constraints, enforce_anchor_constraints);
+    }
+  }
+}
+
+// Tests that, for a compiled-in root store, certificates in |additional_certs|
+// are compiled in as trust anchors when indicated, with associated trust anchor
+// IDs when present, with |enforce_anchor_expiry| and
+// |enforce_anchor_constraints| flags enforced.
+TEST(TrustStoreChromeTestNoFixture,
+     LoadCompiledTrustAnchorsWithTrustAnchorIDs) {
+  std::unique_ptr<TrustStoreChrome> trust_store_chrome =
+      TrustStoreChrome::CreateTrustStoreForTesting(
+          base::span<const ChromeRootCertInfo>(kChromeRootCertList),
+          base::span(kEutlRootCertList),
+          /*version=*/1);
+
+  // Map of hex-encoded SHA-256 hashes of |trust_anchors| certificates that have
+  // associated Trust Anchor IDs to their expected CertificateTrust setting.
+  std::map<std::string, bssl::CertificateTrust>
+      expected_trust_anchor_trust_by_hash = {
+          {"687fa451382278fff0c8b11f8d43d576671c6eb2bceab413fb83d965d06d2ff2",
+           bssl::CertificateTrust::ForTrustAnchor()
+               .WithEnforceAnchorExpiry()
+               .WithEnforceAnchorConstraints()},
+      };
+
+  // Map of hex-encoded SHA-256 hashes of |additional_certs| certificates that
+  // are marked as trust anchors, and have associated Trust Anchor IDs, to their
+  // expected CertificateTrust setting.
+  std::map<std::string, bssl::CertificateTrust>
+      expected_additional_certificate_trust_by_hash = {
+          {"72a34ac2b424aed3f6b0b04755b88cc027dccc806fddb22b4cd7c47773973ec0",
+           bssl::CertificateTrust::ForTrustAnchor().WithEnforceAnchorExpiry()},
+          {"e6fe22bf45e4f0d3b85c59e02c0f495418e1eb8d3210f788d48cd5e1cb547cd4",
+           bssl::CertificateTrust::ForTrustAnchor()
+               .WithEnforceAnchorConstraints()},
+          {"973a41276ffd01e027a2aad49e34c37846d3e976ff6a620b6712e33832041aa6",
+           bssl::CertificateTrust::ForTrustAnchor()
+               .WithEnforceAnchorExpiry()
+               .WithEnforceAnchorConstraints()}};
+
+  CertificateList trust_anchor_certs = CreateCertificateListFromFile(
+      GetTestNetDataDirectory().AppendASCII("ssl/chrome_root_store"),
+      "test_store.certs", X509Certificate::FORMAT_PEM_CERT_SEQUENCE);
+
+  CertificateList additional_certs = CreateCertificateListFromFile(
+      GetTestNetDataDirectory().AppendASCII("ssl/chrome_root_store"),
+      "test_additional.certs", X509Certificate::FORMAT_PEM_CERT_SEQUENCE);
+
+  size_t certs_with_tai = 0;
+  for (const auto& cert : kChromeRootCertList) {
+    if (cert.trust_anchor_id.empty()) {
+      continue;
+    }
+
+    certs_with_tai++;
+    std::string hash = base::ToLowerASCII(
+        base::HexEncode(crypto::SHA256Hash(cert.root_cert_der)));
+    bool is_additional_cert =
+        expected_additional_certificate_trust_by_hash.contains(hash);
+    bssl::CertificateTrust expected_trust =
+        is_additional_cert ? expected_additional_certificate_trust_by_hash[hash]
+                           : expected_trust_anchor_trust_by_hash[hash];
+
+    std::shared_ptr<const bssl::ParsedCertificate> parsed_cert =
+        is_additional_cert
+            ? FindParsedCertificateInCertificateList(hash, additional_certs)
+            : FindParsedCertificateInCertificateList(hash, trust_anchor_certs);
+    ASSERT_TRUE(parsed_cert);
+
+    // Check that the certificate is present in the trust store as an anchor,
+    // with the expected settings for expiry and X.509 constraints.
+    bssl::CertificateTrust trust =
+        trust_store_chrome->GetTrust(parsed_cert.get());
+    EXPECT_TRUE(trust.IsTrustAnchor());
+    EXPECT_EQ(trust.enforce_anchor_expiry,
+              expected_trust.enforce_anchor_expiry);
+    EXPECT_EQ(trust.enforce_anchor_constraints,
+              expected_trust.enforce_anchor_constraints);
+    EXPECT_TRUE(trust_store_chrome->trust_anchor_ids().contains(
+        base::ToVector(base::as_byte_span(cert.trust_anchor_id))));
+  }
+  EXPECT_EQ(4u, certs_with_tai);
+  EXPECT_EQ(trust_store_chrome->trust_anchor_ids().size(), 4u);
+}
+
+// Tests that, for a compiled-in root store, certificates in |additional_certs|
+// are compiled in as trust anchors when indicated, even if they have no
+// associated Trust Anchor ID.
+TEST(TrustStoreChromeTestNoFixture,
+     LoadCompiledTrustAnchorsWithNoTrustAnchorID) {
+  std::unique_ptr<TrustStoreChrome> trust_store_chrome =
+      TrustStoreChrome::CreateTrustStoreForTesting(
+          base::span<const ChromeRootCertInfo>(kChromeRootCertList),
+          base::span(kEutlRootCertList),
+          /*version=*/1);
+
+  const std::string kAdditionalCertTrustAnchorWithNoTAIHash =
+      "19400be5b7a31fb733917700789d2f0a2471c0c9d506c0e504c06c16d7cb17c0";
+
+  CertificateList additional_certs = CreateCertificateListFromFile(
+      GetTestNetDataDirectory().AppendASCII("ssl/chrome_root_store"),
+      "test_additional.certs", X509Certificate::FORMAT_PEM_CERT_SEQUENCE);
+
+  std::shared_ptr<const bssl::ParsedCertificate> parsed_cert =
+      FindParsedCertificateInCertificateList(
+          kAdditionalCertTrustAnchorWithNoTAIHash, additional_certs);
+  ASSERT_TRUE(parsed_cert);
+  bssl::CertificateTrust trust =
+      trust_store_chrome->GetTrust(parsed_cert.get());
+  EXPECT_TRUE(trust.IsTrustAnchor());
+  EXPECT_TRUE(trust.enforce_anchor_expiry);
+  EXPECT_TRUE(trust.enforce_anchor_constraints);
+}
+
+// Tests that, for a root loaded from a proto, certificates in
+// |additional_certs| are loaded into TrustStoreChrome as trust anchors when
+// indicated, with |enforce_anchor_expiry| and |enforce_anchor_constraints|
+// flags enforced.
+TEST(TrustStoreChromeTestNoFixture, LoadProtoAdditionalCertsAsTrustAnchors) {
+  for (bool enforce_anchor_expiry : {true, false}) {
+    for (bool enforce_anchor_constraints : {true, false}) {
+      scoped_refptr<X509Certificate> root = MakeTestRoot();
+      chrome_root_store::RootStore root_store;
+      chrome_root_store::TrustAnchor* anchor =
+          root_store.add_additional_certs();
+      anchor->set_der(
+          net::x509_util::CryptoBufferAsStringPiece(root->cert_buffer()));
+      anchor->set_enforce_anchor_expiry(enforce_anchor_expiry);
+      anchor->set_enforce_anchor_constraints(enforce_anchor_constraints);
+      anchor->set_tls_trust_anchor(true);
+      anchor->set_trust_anchor_id("\x01\x02\x03\x04");
+
+      std::optional<ChromeRootStoreData> root_store_data =
+          ChromeRootStoreData::CreateFromRootStoreProto(root_store);
+      ASSERT_TRUE(root_store_data);
+      TrustStoreChrome trust_store_chrome(root_store_data.value());
+
+      std::shared_ptr<const bssl::ParsedCertificate> parsed =
+          ToParsedCertificate(*root);
+      bssl::CertificateTrust trust = trust_store_chrome.GetTrust(parsed.get());
+      EXPECT_TRUE(trust.IsTrustAnchor());
+      EXPECT_EQ(trust.enforce_anchor_expiry, enforce_anchor_expiry);
+      EXPECT_EQ(trust.enforce_anchor_constraints, enforce_anchor_constraints);
+      EXPECT_TRUE(trust_store_chrome.trust_anchor_ids().contains(
+          {0x01, 0x02, 0x03, 0x04}));
+    }
+  }
+}
+
+// Tests that, for a root loaded from a proto, certificates in
+// |additional_certs| are loaded into TrustStoreChrome as trust anchors when
+// indicated, even if there is no Trust Anchor ID set.
+TEST(TrustStoreChromeTestNoFixture,
+     LoadProtoAdditionalCertsAsTrustAnchorsWithNoTrustAnchorID) {
+  scoped_refptr<X509Certificate> root = MakeTestRoot();
+  chrome_root_store::RootStore root_store;
+  chrome_root_store::TrustAnchor* anchor = root_store.add_additional_certs();
+  anchor->set_der(
+      net::x509_util::CryptoBufferAsStringPiece(root->cert_buffer()));
+  anchor->set_enforce_anchor_expiry(true);
+  anchor->set_enforce_anchor_constraints(true);
+  anchor->set_tls_trust_anchor(true);
+  // `trust_anchor_id` is left unset here.
+
+  std::optional<ChromeRootStoreData> root_store_data =
+      ChromeRootStoreData::CreateFromRootStoreProto(root_store);
+  ASSERT_TRUE(root_store_data);
+  TrustStoreChrome trust_store_chrome(root_store_data.value());
+
+  std::shared_ptr<const bssl::ParsedCertificate> parsed =
+      ToParsedCertificate(*root);
+  bssl::CertificateTrust trust = trust_store_chrome.GetTrust(parsed.get());
+  EXPECT_TRUE(trust.IsTrustAnchor());
+  EXPECT_TRUE(trust.enforce_anchor_expiry);
+  EXPECT_TRUE(trust.enforce_anchor_constraints);
+}
+
+// Tests that, for a root loaded from a proto, certificates in
+// |additional_certs| are not loaded into TrustStoreChrome as trust anchors when
+// |tls_trust_anchor| is false.
+TEST(TrustStoreChromeTestNoFixture, LoadProtoNonAnchorsAreNotTrusted) {
+  scoped_refptr<X509Certificate> root = MakeTestRoot();
+  chrome_root_store::RootStore root_store;
+  chrome_root_store::TrustAnchor* anchor = root_store.add_additional_certs();
+  anchor->set_der(
+      net::x509_util::CryptoBufferAsStringPiece(root->cert_buffer()));
+  anchor->set_enforce_anchor_expiry(true);
+  anchor->set_enforce_anchor_constraints(true);
+  // |tls_trust_anchor| is left unset here.
+  anchor->set_trust_anchor_id("\x01\x02\x03\x04");
+
+  std::optional<ChromeRootStoreData> root_store_data =
+      ChromeRootStoreData::CreateFromRootStoreProto(root_store);
+  ASSERT_TRUE(root_store_data);
+  TrustStoreChrome trust_store_chrome(root_store_data.value());
+
+  std::shared_ptr<const bssl::ParsedCertificate> parsed =
+      ToParsedCertificate(*root);
+  EXPECT_FALSE(trust_store_chrome.Contains(parsed.get()));
+  EXPECT_FALSE(
+      trust_store_chrome.trust_anchor_ids().contains({0x01, 0x02, 0x03, 0x04}));
+}
+
 TEST(TrustStoreChromeTestNoFixture, OverrideConstraints) {
   // Root1: has no constraints and no override constraints
   // Root2: has constraints and no override constraints
@@ -213,6 +547,7 @@ TEST(TrustStoreChromeTestNoFixture, OverrideConstraints) {
   std::unique_ptr<TrustStoreChrome> trust_store_chrome =
       TrustStoreChrome::CreateTrustStoreForTesting(
           std::move(root_cert_info),
+          /*eutl_certs=*/{},
           /*version=*/1, std::move(override_constraints));
 
   {
@@ -333,7 +668,7 @@ TEST(TrustStoreChromeTestNoFixture, ParseCommandLineConstraintsErrorHandling) {
                                 0x4b, 0xca, 0x05, 0x2b, 0xa3, 0xe4, 0xd1, 0xf4,
                                 0xd7, 0xa8, 0xd9, 0xc8, 0x8c, 0x55, 0xa1, 0xa9,
                                 0xab, 0x7c, 0xa0, 0xfa, 0xe2, 0xdc, 0x54, 0x73};
-    auto it = constraints.find(base::make_span(hash));
+    auto it = constraints.find(base::span(hash));
     ASSERT_NE(it, constraints.end());
     ASSERT_EQ(it->second.size(), 1U);
     const auto& constraint1 = it->second[0];
@@ -348,7 +683,7 @@ TEST(TrustStoreChromeTestNoFixture, ParseCommandLineConstraintsErrorHandling) {
                                 0xf2, 0x6a, 0x6a, 0xc1, 0xf7, 0xb0, 0xa8, 0x6a,
                                 0x48, 0x2e, 0x2f, 0x3d, 0x32, 0x6b, 0xc9, 0x11,
                                 0xc9, 0x5d, 0x56, 0xff, 0x3d, 0x49, 0x06, 0xd5};
-    auto it = constraints.find(base::make_span(hash));
+    auto it = constraints.find(base::span(hash));
     ASSERT_NE(it, constraints.end());
     ASSERT_EQ(it->second.size(), 1U);
 
@@ -368,7 +703,7 @@ TEST(TrustStoreChromeTestNoFixture, ParseCommandLineConstraintsErrorHandling) {
                             0x70, 0xec, 0x5e, 0x10, 0x6e, 0x27, 0x25, 0x92,
                             0xc2, 0xfb, 0xcb, 0xad, 0xf8, 0xdc, 0x57, 0x63};
 
-    auto it = constraints.find(base::make_span(hash));
+    auto it = constraints.find(base::span(hash));
     ASSERT_NE(it, constraints.end());
     ASSERT_EQ(it->second.size(), 1U);
     const auto& constraint = it->second[0];
@@ -393,7 +728,7 @@ TEST(TrustStoreChromeTestNoFixture,
                           0x70, 0xec, 0x5e, 0x10, 0x6e, 0x27, 0x25, 0x92,
                           0xc2, 0xfb, 0xcb, 0xad, 0xf8, 0xdc, 0x57, 0x63};
 
-  auto it = constraints.find(base::make_span(hash));
+  auto it = constraints.find(base::span(hash));
   ASSERT_NE(it, constraints.end());
   ASSERT_EQ(it->second.size(), 1U);
   const auto& constraint = it->second[0];
@@ -423,7 +758,7 @@ TEST(TrustStoreChromeTestNoFixture,
         0x78, 0x4e, 0xca, 0xa8, 0xb9, 0xdf, 0xcc, 0x82, 0x65, 0x47, 0xf8,
         0x06, 0xf7, 0x59, 0xab, 0xd6, 0xb4, 0x48, 0x15, 0x82, 0xfc, 0x7e,
         0x37, 0x7d, 0xc3, 0xe6, 0xa0, 0xa9, 0x59, 0x02, 0x51, 0x26};
-    auto it = constraints.find(base::make_span(hash1));
+    auto it = constraints.find(base::span(hash1));
     ASSERT_NE(it, constraints.end());
     ASSERT_EQ(it->second.size(), 1U);
     const auto& constraint1 = it->second[0];
@@ -444,7 +779,7 @@ TEST(TrustStoreChromeTestNoFixture,
         0xa7, 0xe0, 0xc7, 0x5d, 0x7f, 0x77, 0x2f, 0xcc, 0xf2, 0x6a, 0x6a,
         0xc1, 0xf7, 0xb0, 0xa8, 0x6a, 0x48, 0x2e, 0x2f, 0x3d, 0x32, 0x6b,
         0xc9, 0x11, 0xc9, 0x5d, 0x56, 0xff, 0x3d, 0x49, 0x06, 0xd5};
-    auto it = constraints.find(base::make_span(hash2));
+    auto it = constraints.find(base::span(hash2));
     ASSERT_NE(it, constraints.end());
     ASSERT_EQ(it->second.size(), 2U);
 
@@ -477,7 +812,7 @@ TEST(TrustStoreChromeTestNoFixture,
         0x56, 0x8c, 0x8e, 0xf6, 0xb5, 0x26, 0xd1, 0x39, 0x4b, 0xca, 0x05,
         0x2b, 0xa3, 0xe4, 0xd1, 0xf4, 0xd7, 0xa8, 0xd9, 0xc8, 0x8c, 0x55,
         0xa1, 0xa9, 0xab, 0x7c, 0xa0, 0xfa, 0xe2, 0xdc, 0x54, 0x73};
-    auto it = constraints.find(base::make_span(hash3));
+    auto it = constraints.find(base::span(hash3));
     ASSERT_NE(it, constraints.end());
     ASSERT_EQ(it->second.size(), 1U);
     const auto& constraint1 = it->second[0];

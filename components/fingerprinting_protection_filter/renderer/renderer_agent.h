@@ -7,7 +7,7 @@
 
 #include <memory>
 #include <optional>
-#include <string_view>
+#include <string>
 #include <vector>
 
 #include "base/containers/flat_set.h"
@@ -84,7 +84,7 @@ class RendererAgent
   // Used to signal to the remote host that a subresource load has been
   // disallowed; must be run on the main thread. Virtual to allow mocking in
   // tests.
-  virtual void OnSubresourceDisallowed(std::string_view subresource_url);
+  virtual void OnSubresourceDisallowed();
 
   // Callback for when activation returns from the browser after calling
   // `CheckActivation()`;
@@ -98,8 +98,11 @@ class RendererAgent
 
   // Called by `RendererURLLoaderThrottles` to check a URL against the filter,
   // with a callback bound to the throttle's task runner to provide the result.
-  // Must be run on the main thread.
+  // Must be run on the main thread. The DevTools request ID will be used to
+  // report an issue in the case of a blocked URL if it is available; otherwise
+  // `url` will be reported.
   void CheckURL(const GURL& url,
+                std::optional<std::string> devtools_request_id,
                 url_pattern_index::proto::ElementType element_type,
                 FilterCallback callback);
 
@@ -143,6 +146,11 @@ class RendererAgent
   virtual void SendDocumentLoadStatistics(
       const subresource_filter::mojom::DocumentLoadStatistics& statistics);
 
+  // The activation state for the current page, received from the browser.
+  // Note that the `RendererAgent` covers a single RenderFrame at a time, which
+  // may be the main frame or a subframe within a larger page.
+  subresource_filter::mojom::ActivationState activation_state_;
+
  private:
   // Initializes `filter_`. Assumes that activation has been computed.
   void MaybeCreateNewFilter();
@@ -153,8 +161,6 @@ class RendererAgent
   // Remote used to pass messages to the browser-side `ThrottleManager`.
   mojo::AssociatedRemote<mojom::FingerprintingProtectionHost>
       fingerprinting_protection_host_;
-
-  subresource_filter::mojom::ActivationState activation_state_;
 
   bool pending_activation_ = true;
 

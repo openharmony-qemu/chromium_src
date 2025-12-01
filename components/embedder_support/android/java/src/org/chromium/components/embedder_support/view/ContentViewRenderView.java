@@ -4,6 +4,8 @@
 
 package org.chromium.components.embedder_support.view;
 
+import static org.chromium.build.NullUtil.assumeNonNull;
+
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
@@ -21,10 +23,13 @@ import org.jni_zero.JNINamespace;
 import org.jni_zero.JniType;
 import org.jni_zero.NativeMethods;
 
+import org.chromium.build.annotations.Initializer;
+import org.chromium.build.annotations.NullMarked;
+import org.chromium.build.annotations.Nullable;
+import org.chromium.components.input.InputUtils;
 import org.chromium.content_public.browser.InputTransferHandler;
 import org.chromium.content_public.browser.SurfaceInputTransferHandlerMap;
 import org.chromium.content_public.browser.WebContents;
-import org.chromium.content_public.common.InputUtils;
 import org.chromium.ui.base.WindowAndroid;
 
 /***
@@ -34,18 +39,19 @@ import org.chromium.ui.base.WindowAndroid;
  * Note that only one WebContents can be shown at a time.
  */
 @JNINamespace("embedder_support")
+@NullMarked
 public class ContentViewRenderView extends FrameLayout {
     // The native side of this object.
     private long mNativeContentViewRenderView;
-    private WindowAndroid mWindowAndroid;
+    private @Nullable WindowAndroid mWindowAndroid;
 
     protected SurfaceBridge mSurfaceBridge;
-    protected WebContents mWebContents;
+    protected @Nullable WebContents mWebContents;
 
     private int mWidth;
     private int mHeight;
 
-    private Integer mSurfaceId;
+    private @Nullable Integer mSurfaceId;
 
     /**
      * Constructs a new ContentViewRenderView. This should be called and the {@link
@@ -84,12 +90,14 @@ public class ContentViewRenderView extends FrameLayout {
                     public void surfaceChanged(
                             SurfaceHolder holder, int format, int width, int height) {
                         assert mNativeContentViewRenderView != 0;
+                        assumeNonNull(mWindowAndroid);
 
                         InputTransferToken browserInputToken = null;
                         Window window = mWindowAndroid.getWindow();
                         if (InputUtils.isTransferInputToVizSupported() && window != null) {
                             AttachedSurfaceControl rootSurfaceControl =
                                     window.getRootSurfaceControl();
+                            assumeNonNull(rootSurfaceControl);
                             browserInputToken = rootSurfaceControl.getInputTransferToken();
                         }
                         Integer surfaceId =
@@ -104,7 +112,7 @@ public class ContentViewRenderView extends FrameLayout {
                                                 browserInputToken);
                         if (surfaceId != null && browserInputToken != null) {
                             InputTransferHandler handler =
-                                    new InputTransferHandler(browserInputToken);
+                                    new InputTransferHandler(browserInputToken, mWindowAndroid);
                             assert mSurfaceId == null;
                             mSurfaceId = surfaceId;
                             SurfaceInputTransferHandlerMap.getMap().put(mSurfaceId, handler);
@@ -146,7 +154,7 @@ public class ContentViewRenderView extends FrameLayout {
                                 .surfaceDestroyed(
                                         mNativeContentViewRenderView, ContentViewRenderView.this);
                         if (mSurfaceId != null) {
-                            SurfaceInputTransferHandlerMap.getMap().remove(mSurfaceId);
+                            SurfaceInputTransferHandlerMap.remove(mSurfaceId);
                             mSurfaceId = null;
                         }
                     }
@@ -271,12 +279,13 @@ public class ContentViewRenderView extends FrameLayout {
 
     protected static class SurfaceBridge {
         private SurfaceView mSurfaceView;
-        private SurfaceHolder.Callback mSurfaceCallback;
+        private SurfaceHolder.@Nullable Callback mSurfaceCallback;
 
         protected SurfaceView getSurfaceView() {
             return mSurfaceView;
         }
 
+        @Initializer
         protected void initialize(ContentViewRenderView renderView) {
             mSurfaceView = renderView.createSurfaceView(renderView.getContext());
             mSurfaceView.setZOrderMediaOverlay(true);
@@ -331,7 +340,7 @@ public class ContentViewRenderView extends FrameLayout {
                 int width,
                 int height,
                 Surface surface,
-                InputTransferToken browserInputToken);
+                @Nullable InputTransferToken browserInputToken);
 
         void setOverlayVideoMode(
                 long nativeContentViewRenderView, ContentViewRenderView caller, boolean enabled);

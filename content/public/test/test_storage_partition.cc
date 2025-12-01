@@ -83,10 +83,6 @@ storage::FileSystemContext* TestStoragePartition::GetFileSystemContext() {
   return file_system_context_;
 }
 
-storage::DatabaseTracker* TestStoragePartition::GetDatabaseTracker() {
-  return database_tracker_;
-}
-
 DOMStorageContext* TestStoragePartition::GetDOMStorageContext() {
   return dom_storage_context_;
 }
@@ -167,6 +163,11 @@ CdmStorageDataModel* TestStoragePartition::GetCdmStorageDataModel() {
   return nullptr;
 }
 #endif  // BUILDFLAG(ENABLE_LIBRARY_CDMS)
+
+network::mojom::DeviceBoundSessionManager*
+TestStoragePartition::GetDeviceBoundSessionManager() {
+  return device_bound_session_manager_;
+}
 
 BrowsingTopicsSiteDataManager*
 TestStoragePartition::GetBrowsingTopicsSiteDataManager() {

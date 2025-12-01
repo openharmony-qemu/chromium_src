@@ -1,0 +1,22 @@
+Package: libz3-4
+Source: z3
+Version: 4.8.10-1
+Architecture: amd64
+Maintainer: LLVM Packaging Team <pkg-llvm-team@lists.alioth.debian.org>
+Installed-Size: 22408
+Depends: libc6 (>= 2.30), libgcc-s1 (>= 3.4), libstdc++6 (>= 9)
+Breaks: libz3-dev (<< 4.4.1)
+Replaces: libz3-dev (<< 4.4.1)
+Section: libs
+Priority: optional
+Multi-Arch: same
+Homepage: https://github.com/Z3Prover/z3
+Description: theorem prover from Microsoft Research - runtime libraries
+ Z3 is a state-of-the art theorem prover from Microsoft Research. It can be
+ used to check the satisfiability of logical formulas over one or more
+ theories. Z3 offers a compelling match for software analysis and verification
+ tools, since several common software constructs map directly into supported
+ theories.
+ .
+ This package contains runtime libraries. You shouldn't have to install it
+ manually.

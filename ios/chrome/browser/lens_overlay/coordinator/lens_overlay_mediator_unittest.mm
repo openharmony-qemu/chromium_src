@@ -16,12 +16,15 @@
 #import "ios/chrome/browser/lens_overlay/coordinator/lens_omnibox_client.h"
 #import "ios/chrome/browser/lens_overlay/coordinator/lens_web_provider.h"
 #import "ios/chrome/browser/lens_overlay/ui/lens_toolbar_consumer.h"
+#import "ios/chrome/browser/omnibox/coordinator/omnibox_coordinator.h"
 #import "ios/chrome/browser/search_engines/model/template_url_service_factory.h"
+#import "ios/chrome/browser/shared/coordinator/scene/scene_state.h"
+#import "ios/chrome/browser/shared/model/browser/test/test_browser.h"
 #import "ios/chrome/browser/shared/model/profile/test/test_profile_ios.h"
+#import "ios/chrome/browser/shared/model/web_state_list/web_state_list.h"
 #import "ios/chrome/browser/shared/public/commands/command_dispatcher.h"
 #import "ios/chrome/browser/shared/public/commands/lens_overlay_commands.h"
 #import "ios/chrome/browser/shared/public/features/features.h"
-#import "ios/chrome/browser/ui/omnibox/omnibox_coordinator.h"
 #import "ios/public/provider/chrome/browser/lens/lens_overlay_result.h"
 #import "ios/web/public/test/fakes/fake_navigation_context.h"
 #import "ios/web/public/test/fakes/fake_web_state.h"
@@ -82,7 +85,19 @@ namespace {
 class LensOverlayMediatorTest : public PlatformTest {
  public:
   LensOverlayMediatorTest() {
-    mediator_ = [[LensOverlayMediator alloc] initWithIsIncognito:NO];
+    TestProfileIOS::Builder builder;
+    builder.AddTestingFactory(
+        ios::TemplateURLServiceFactory::GetInstance(),
+        ios::TemplateURLServiceFactory::GetDefaultFactory());
+    profile_ = std::move(builder).Build();
+
+    SceneState* mock_scene_state = OCMClassMock([SceneState class]);
+    browser_ = std::make_unique<TestBrowser>(profile_.get(), mock_scene_state);
+    CreateAndAttachWebState();
+
+    mediator_ = [[LensOverlayMediator alloc]
+        initWithWebStateList:browser_.get()->GetWebStateList()
+                profilePrefs:browser_.get()->GetProfile()->GetPrefs()];
     mediator_.templateURLService =
         search_engines_test_environment_.template_url_service();
     mock_omnibox_coordinator_ =
@@ -91,10 +106,9 @@ class LensOverlayMediatorTest : public PlatformTest {
         [OCMockObject mockForProtocol:@protocol(LensToolbarConsumer)];
     mock_lens_commands_ =
         [OCMockObject mockForProtocol:@protocol(LensOverlayCommands)];
-    fake_web_state_ = std::make_unique<web::FakeWebState>();
 
     fake_result_consumer_ = [[FakeResultConsumer alloc] init];
-    fake_result_consumer_.webState = fake_web_state_.get();
+    fake_result_consumer_.webState = GetActiveWebState();
 
     fake_chrome_lens_overlay_ = [[FakeChromeLensOverlay alloc] init];
     [fake_chrome_lens_overlay_ setLensOverlayDelegate:mediator_];
@@ -103,12 +117,7 @@ class LensOverlayMediatorTest : public PlatformTest {
     tracker_ = feature_engagement::CreateTestTracker();
 
     fake_web_provider_ = [[FakeLensWebProviderImpl alloc] init];
-    fake_web_provider_.webState = fake_web_state_.get();
-    TestProfileIOS::Builder builder;
-    builder.AddTestingFactory(
-        ios::TemplateURLServiceFactory::GetInstance(),
-        ios::TemplateURLServiceFactory::GetDefaultFactory());
-    profile_ = std::move(builder).Build();
+    fake_web_provider_.webState = GetActiveWebState();
 
     lens_omnibox_client_ = std::make_unique<LensOmniboxClient>(
         profile_.get(), tracker_.get(), fake_web_provider_, nil);
@@ -119,7 +128,7 @@ class LensOverlayMediatorTest : public PlatformTest {
     mediator_.lensHandler = fake_chrome_lens_overlay_;
     mediator_.commandsHandler = mock_lens_commands_;
     mediator_.omniboxClient = lens_omnibox_client_.get();
-    [mediator_ lensResultPageDidChangeActiveWebState:fake_web_state_.get()];
+    [mediator_ lensResultPageDidChangeActiveWebState:GetActiveWebState()];
   }
 
   ~LensOverlayMediatorTest() override {
@@ -128,6 +137,20 @@ class LensOverlayMediatorTest : public PlatformTest {
   }
 
  protected:
+  void CreateAndAttachWebState() {
+    std::unique_ptr<web::WebState> web_state =
+        std::make_unique<web::FakeWebState>();
+
+    // Mark the only web state as active.
+    browser_.get()->GetWebStateList()->InsertWebState(std::move(web_state));
+    browser_.get()->GetWebStateList()->ActivateWebStateAt(0);
+  }
+
+  web::FakeWebState* GetActiveWebState() {
+    return static_cast<web::FakeWebState*>(
+        browser_.get()->GetWebStateList()->GetActiveWebState());
+  }
+
   /// Expects an omnibox focus event.
   void ExpectOmniboxFocus() {
     OCMExpect([mock_omnibox_coordinator_ focusOmnibox]);
@@ -160,9 +183,11 @@ class LensOverlayMediatorTest : public PlatformTest {
     OCMExpect([mock_toolbar_consumer_ setCanGoBack:expectCanGoBack]);
     OCMExpect([mock_toolbar_consumer_ setOmniboxEnabled:YES]);
     OCMExpect([mock_toolbar_consumer_ setOmniboxEnabled:YES]);
-
+    ExpectOmniboxDefocus();
     fake_chrome_lens_overlay_.resultURL = resultURL;
-    [mediator_ omniboxDidAcceptText:omniboxText destinationURL:omniboxURL];
+    [mediator_ omniboxDidAcceptText:omniboxText
+                     destinationURL:omniboxURL
+                      textClobbered:NO];
 
     EXPECT_EQ(fake_result_consumer_.lastPushedURL, resultURL);
     EXPECT_OCMOCK_VERIFY(mock_omnibox_coordinator_);
@@ -174,6 +199,7 @@ class LensOverlayMediatorTest : public PlatformTest {
   /// Simulates new lens selection and returns the generated result.
   id<ChromeLensOverlayResult> UpdateLensSelection(const GURL& resultURL,
                                                   BOOL expectCanGoBack) {
+    ExpectOmniboxDefocus();
     OCMExpect([mock_omnibox_coordinator_ setThumbnailImage:[OCMArg any]]);
     OCMExpect([mock_omnibox_coordinator_ updateOmniboxState]);
     OCMExpect([mock_toolbar_consumer_ setCanGoBack:expectCanGoBack]);
@@ -213,11 +239,11 @@ class LensOverlayMediatorTest : public PlatformTest {
     OCMExpect([mock_toolbar_consumer_ setCanGoBack:expectCanGoBack]);
 
     web::FakeNavigationContext navigationContext;
-    navigationContext.SetWebState(fake_web_state_.get());
+    navigationContext.SetWebState(GetActiveWebState());
     navigationContext.SetUrl(URL);
     navigationContext.SetIsSameDocument(NO);
-    fake_web_state_->OnNavigationStarted(&navigationContext);
-    fake_web_state_->OnNavigationFinished(&navigationContext);
+    GetActiveWebState()->OnNavigationStarted(&navigationContext);
+    GetActiveWebState()->OnNavigationFinished(&navigationContext);
 
     EXPECT_OCMOCK_VERIFY(mock_toolbar_consumer_);
   }
@@ -227,6 +253,7 @@ class LensOverlayMediatorTest : public PlatformTest {
               BOOL expectCanGoBack,
               id<ChromeLensOverlayResult> expectedResultReload) {
     // Expect UI update when starting to go back and on navigation start.
+    ExpectOmniboxDefocus();
     OCMExpect([mock_omnibox_coordinator_ updateOmniboxState]);
     OCMExpect([mock_omnibox_coordinator_ updateOmniboxState]);
     OCMExpect([mock_toolbar_consumer_ setCanGoBack:expectCanGoBack]);
@@ -248,20 +275,20 @@ class LensOverlayMediatorTest : public PlatformTest {
     EXPECT_OCMOCK_VERIFY(mock_toolbar_consumer_);
   }
 
-  base::test::TaskEnvironment task_environment_;
+  web::WebTaskEnvironment task_environment_;
 
   LensOverlayMediator* mediator_;
 
   FakeResultConsumer* fake_result_consumer_;
   FakeChromeLensOverlay* fake_chrome_lens_overlay_;
   id mock_omnibox_coordinator_;
-  std::unique_ptr<web::FakeWebState> fake_web_state_;
   OCMockObject<LensToolbarConsumer>* mock_toolbar_consumer_;
   OCMockObject<LensOverlayCommands>* mock_lens_commands_;
   search_engines::SearchEnginesTestEnvironment search_engines_test_environment_;
   std::unique_ptr<feature_engagement::Tracker> tracker_;
   FakeLensWebProviderImpl* fake_web_provider_;
   std::unique_ptr<LensOmniboxClient> lens_omnibox_client_;
+  std::unique_ptr<TestBrowser> browser_;
   std::unique_ptr<TestProfileIOS> profile_;
 };
 

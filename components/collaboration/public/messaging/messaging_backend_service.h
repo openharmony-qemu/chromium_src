@@ -5,25 +5,29 @@
 #ifndef COMPONENTS_COLLABORATION_PUBLIC_MESSAGING_MESSAGING_BACKEND_SERVICE_H_
 #define COMPONENTS_COLLABORATION_PUBLIC_MESSAGING_MESSAGING_BACKEND_SERVICE_H_
 
+#include <set>
+
 #include "base/functional/callback_forward.h"
 #include "base/observer_list_types.h"
+#include "base/scoped_observation_traits.h"
 #include "base/supports_user_data.h"
+#include "base/uuid.h"
 #include "components/collaboration/public/messaging/activity_log.h"
 #include "components/collaboration/public/messaging/message.h"
 #include "components/keyed_service/core/keyed_service.h"
 #include "components/saved_tab_groups/public/types.h"
 
 namespace collaboration::messaging {
-class InstantMessageDelegate;
 
 class MessagingBackendService : public KeyedService,
                                 public base::SupportsUserData {
  public:
   class PersistentMessageObserver : public base::CheckedObserver {
+   public:
     // Invoked once when the service is initialized. This is invoked only once
-    // and is immediately invoked if the service was initialized before the
-    // observer was added. The initialization state can also be inspected using
-    // IsInitialized().
+    // and is immediately invoked (re-entrant) if the service was initialized
+    // before the observer was added. You can invoke `IsInitialized()` if you
+    // want to know the state and whether this is going to happen or not.
     virtual void OnMessagingBackendServiceInitialized() = 0;
 
     // Invoked when the frontend needs to display a specific persistent message.
@@ -51,6 +55,15 @@ class MessagingBackendService : public KeyedService,
     virtual void DisplayInstantaneousMessage(
         InstantMessage message,
         SuccessCallback success_callback) = 0;
+
+    // Invoked when the frontend should hide instant messages.  This is intended
+    // to be a no-op if the message is not currently displayed or not in the
+    // queue to be displayed. The provided message IDs are the IDs of the
+    // messages that should be hidden, and they are the same IDs as the
+    // `InstantMessage::attributions[].id` values from the `InstantMessage`
+    // argument originally passed to `DisplayInstantaneousMessage(..)`.
+    virtual void HideInstantaneousMessage(
+        const std::set<base::Uuid>& message_ids) = 0;
   };
 
   ~MessagingBackendService() override = default;
@@ -85,8 +98,51 @@ class MessagingBackendService : public KeyedService,
   // UI. Will return an empty list if the service has not been initialized.
   virtual std::vector<ActivityLogItem> GetActivityLog(
       const ActivityLogQueryParams& params) = 0;
+
+  // Invoked to clear all dirty messages for a tab group. Meant to be invoked
+  // from the activity card which when dismissed clears out all the individual
+  // tab messages. Doesn't apply to instant messages.
+  virtual void ClearDirtyTabMessagesForGroup(
+      const data_sharing::GroupId& collaboration_group_id) = 0;
+
+  // Invoked to clear a given persistent message. This will clear the specified
+  // dirty bit on the message entry of the database. If std::nullopt is passed,
+  // all dirty bits of that message will be cleared.
+  virtual void ClearPersistentMessage(
+      const base::Uuid& message_id,
+      std::optional<PersistentNotificationType> type) = 0;
+
+  // Deprecated. Do not use. Use ClearPersistentMessage instead.
+  // Invoked to remove a list of given messages from the backend storage.
+  virtual void RemoveMessages(const std::vector<base::Uuid>& message_ids) = 0;
+
+  // Testing-only API for setting activity log.
+  virtual void AddActivityLogForTesting(
+      data_sharing::GroupId collaboration_id,
+      const std::vector<ActivityLogItem>& activity_log) = 0;
 };
 
 }  // namespace collaboration::messaging
+
+namespace base {
+template <>
+struct ScopedObservationTraits<
+    collaboration::messaging::MessagingBackendService,
+    collaboration::messaging::MessagingBackendService::
+        PersistentMessageObserver> {
+  static void AddObserver(
+      collaboration::messaging::MessagingBackendService* source,
+      collaboration::messaging::MessagingBackendService::
+          PersistentMessageObserver* observer) {
+    source->AddPersistentMessageObserver(observer);
+  }
+  static void RemoveObserver(
+      collaboration::messaging::MessagingBackendService* source,
+      collaboration::messaging::MessagingBackendService::
+          PersistentMessageObserver* observer) {
+    source->RemovePersistentMessageObserver(observer);
+  }
+};
+}  // namespace base
 
 #endif  // COMPONENTS_COLLABORATION_PUBLIC_MESSAGING_MESSAGING_BACKEND_SERVICE_H_

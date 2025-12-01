@@ -273,7 +273,6 @@ class RasterDecoderOOPTest : public testing::Test, DecoderClient {
   void OnFenceSyncRelease(uint64_t release) override {}
   void OnDescheduleUntilFinished() override {}
   void OnRescheduleAfterFinished() override {}
-  void OnSwapBuffers(uint64_t swap_id, uint32_t flags) override {}
   void ScheduleGrContextCleanup() override {}
   void HandleReturnData(base::span<const uint8_t> data) override {}
   bool ShouldYield() override { return false; }
@@ -285,7 +284,7 @@ class RasterDecoderOOPTest : public testing::Test, DecoderClient {
         GpuPreferences(), nullptr /* memory_tracker */, &shared_image_manager_,
         context_state_, true /* is_privileged */));
     ContextCreationAttribs attribs;
-    attribs.enable_oop_rasterization = true;
+    attribs.enable_gpu_rasterization = true;
     attribs.enable_raster_interface = true;
     CHECK_EQ(decoder->Initialize(context_state_->surface(),
                                  context_state_->context(), true,

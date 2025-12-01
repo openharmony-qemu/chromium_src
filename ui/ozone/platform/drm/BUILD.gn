@@ -9,6 +9,7 @@ import("//build/config/logging.gni")
 import("//build/config/ozone.gni")
 import("//gpu/vulkan/features.gni")
 import("//testing/test.gni")
+import("//ui/gl/features.gni")
 
 visibility = [ "//ui/ozone/*" ]
 
@@ -120,7 +121,6 @@ source_set("gbm") {
 
   deps = [
     "//base",
-    "//build:chromeos_buildflags",
     "//build/config/linux/libdrm",
     "//gpu/vulkan:buildflags",
     "//ipc",
@@ -156,15 +156,18 @@ source_set("gbm") {
     "//ui/platform_window",
   ]
 
-  if (!is_castos) {
+  if (!is_castos && !use_static_angle) {
     data_deps = [
       "//third_party/angle:libEGL",
       "//third_party/angle:libGLESv2",
     ]
   }
 
-  if (is_chromeos_ash) {
-    deps += [ "//ui/base/ime/ash" ]
+  if (is_chromeos) {
+    deps += [
+      "//ash/constants",
+      "//ui/base/ime/ash",
+    ]
   }
 
   if (enable_vulkan) {

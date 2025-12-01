@@ -12,7 +12,6 @@
 
 #include "base/component_export.h"
 #include "base/values.h"
-#include "build/chromeos_buildflags.h"
 #include "ui/gfx/gpu_extra_info.h"
 #include "ui/gfx/native_widget_types.h"
 
@@ -23,7 +22,6 @@ class TimeDelta;
 namespace display {
 class Display;
 class DisplayObserver;
-enum class TabletState;
 }  // namespace display
 
 namespace gfx {
@@ -139,20 +137,13 @@ class COMPONENT_EXPORT(OZONE_BASE) PlatformScreen {
   virtual std::optional<float> GetPreferredScaleFactorForAcceleratedWidget(
       gfx::AcceleratedWidget widget) const;
 
-#if BUILDFLAG(IS_CHROMEOS_LACROS)
-  // Called when tablet state is changed.
-  virtual void OnTabletStateChanged(display::TabletState tablet_state) {}
-
-  // Returns tablet state. If a platform does not support this, returns
-  // display::TabletState::kInClamshellMode.
-  virtual display::TabletState GetTabletState() const = 0;
-#endif
-
 #if BUILDFLAG(IS_OHOS)
-virtual gfx::AcceleratedWidget GetLocalProcessWidgetAtPoint(
+  virtual gfx::AcceleratedWidget GetLocalProcessWidgetAtPoint(
       const gfx::Point& point_in_dip,
       const std::set<gfx::AcceleratedWidget>& ignore,
       const int32_t display_id) const;
+  virtual gfx::Point GetCursorScreenPoint(const int32_t display_id) const = 0;
+  virtual void OnAvailableAreaChange(uint64_t display_id) = 0;
 #endif
 
  protected:

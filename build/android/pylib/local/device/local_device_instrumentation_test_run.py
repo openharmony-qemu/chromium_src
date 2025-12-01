@@ -30,6 +30,7 @@ from devil.android.tools import webview_app
 from devil.utils import reraiser_thread
 from incremental_install import installer
 from lib.proto import exception_recorder
+from lib.proto import measures
 from pylib import constants
 from pylib.base import base_test_result
 from pylib.base import output_manager
@@ -114,6 +115,14 @@ _EXTRA_PACKAGE_UNDER_TEST = ('org.chromium.chrome.test.pagecontroller.rules.'
 
 _EXTRA_WEBVIEW_PROCESS_MODE = 'AwJUnit4ClassRunner.ProcessMode'
 
+# LINT.IfChange
+_EXTRA_WEBVIEW_REBASELINE_MODE = (
+    'org.chromium.android_webview.test.RebaselineMode')
+_VALUE_WEBVIEW_REBASELINE_MODE = 'rebaseline'
+# pylint: disable=line-too-long
+# LINT.ThenChange(//android_webview/tools/system_webview_shell/layout_tests/src/org/chromium/webview_shell/test/WebViewLayoutTest.java)
+# pylint: enable=line-too-long
+
 FEATURE_ANNOTATION = 'Feature'
 RENDER_TEST_FEATURE_ANNOTATION = 'RenderTest'
 WPR_ARCHIVE_FILE_PATH_ANNOTATION = 'WPRArchiveDirectory'
@@ -124,7 +133,7 @@ _DEVICE_GOLD_DIR = 'skia_gold'
 # A map of Android product models to SDK ints.
 RENDER_TEST_MODEL_SDK_CONFIGS = {
     # Android x86 emulator.
-    'Android SDK built for x86': [26, 28],
+    'Android SDK built for x86': [26],
     # We would like this to be supported, but it is currently too prone to
     # introducing flakiness due to a combination of Gold and Chromium issues.
     # See crbug.com/1233700 and skbug.com/12149 for more information.
@@ -347,6 +356,7 @@ class LocalDeviceInstrumentationTestRun(
 
     @local_device_environment.handle_shard_failures_with(
         self._env.DenylistDevice)
+    @measures.timed_func('device_setup')
     @trace_event.traced
     def individual_device_set_up(device, host_device_tuples):
       # Functions to run concurrerntly when --concurrent-adb is enabled.
@@ -359,6 +369,8 @@ class LocalDeviceInstrumentationTestRun(
         test_data_root_dir = _DEVICE_TEMP_DIR_DATA_ROOT
 
       if self._test_instance.replace_system_package:
+
+        @measures.timed_func('device_setup', 'replace_package')
         @trace_event.traced
         def replace_package(dev):
           # We need the context manager to be applied before modifying any
@@ -382,6 +394,7 @@ class LocalDeviceInstrumentationTestRun(
 
       if self._test_instance.system_packages_to_remove:
 
+        @measures.timed_func('device_setup', 'remove_packages')
         @trace_event.traced
         def remove_packages(dev):
           logging.info('Attempting to remove system packages %s',
@@ -403,6 +416,7 @@ class LocalDeviceInstrumentationTestRun(
                          instant_app=False):
 
         @instrumentation_tracing.no_tracing
+        @measures.timed_func('device_setup', 'install_apk')
         @trace_event.traced
         def install_helper_internal(d, apk_path=None):
           # pylint: disable=unused-argument
@@ -431,6 +445,7 @@ class LocalDeviceInstrumentationTestRun(
 
       def install_apex_helper(apex):
         @instrumentation_tracing.no_tracing
+        @measures.timed_func('device_setup', 'install_apex')
         @trace_event.traced
         def install_helper_internal(d, apk_path=None):
           # pylint: disable=unused-argument
@@ -440,6 +455,7 @@ class LocalDeviceInstrumentationTestRun(
 
       def incremental_install_helper(apk, json_path, permissions):
 
+        @measures.timed_func('device_setup', 'install_incremental')
         @trace_event.traced
         def incremental_install_helper_internal(d, apk_path=None):
           # pylint: disable=unused-argument
@@ -492,6 +508,7 @@ class LocalDeviceInstrumentationTestRun(
 
       if self._test_instance.use_webview_provider:
 
+        @measures.timed_func('device_setup', 'use_webview_provider')
         @trace_event.traced
         def use_webview_provider(dev):
           # We need the context manager to be applied before modifying any
@@ -518,6 +535,7 @@ class LocalDeviceInstrumentationTestRun(
 
       if self._test_instance.use_voice_interaction_service:
 
+        @measures.timed_func('device_setup', 'use_voice_interaction_service')
         @trace_event.traced
         def use_voice_interaction_service(device):
           voice_interaction_service_context = _VoiceInteractionService(
@@ -555,6 +573,7 @@ class LocalDeviceInstrumentationTestRun(
       # Execute any custom setup shell commands
       if self._test_instance.run_setup_commands:
 
+        @measures.timed_func('device_setup', 'run_setup_commands')
         @trace_event.traced
         def run_setup_commands(dev):
           for cmd in self._test_instance.run_setup_commands:
@@ -563,6 +582,7 @@ class LocalDeviceInstrumentationTestRun(
 
         post_install_steps.append(run_setup_commands)
 
+      @measures.timed_func('device_setup', 'set_debug_app')
       @trace_event.traced
       def set_debug_app(dev):
         # Set debug app in order to enable reading command line flags on user
@@ -573,6 +593,7 @@ class LocalDeviceInstrumentationTestRun(
         cmd.append(target_package)
         dev.RunShellCommand(cmd, check_return=True)
 
+      @measures.timed_func('device_setup', 'approve_app_links')
       @trace_event.traced
       def approve_app_links(dev):
         self._ToggleAppLinks(dev, 'STATE_APPROVED')
@@ -598,6 +619,7 @@ class LocalDeviceInstrumentationTestRun(
               'android.permission.READ_EXTERNAL_STORAGE'
           ])
 
+      @measures.timed_func('device_setup', 'push_test_data')
       @instrumentation_tracing.no_tracing
       def push_test_data(dev):
         device_root = test_data_root_dir
@@ -622,6 +644,7 @@ class LocalDeviceInstrumentationTestRun(
                               check_return=True,
                               as_root=self._env.force_main_user)
 
+      @measures.timed_func('device_setup', 'create_flag_changer')
       @trace_event.traced
       def create_flag_changer(dev):
         flags = self._test_instance.flags
@@ -1093,6 +1116,9 @@ class LocalDeviceInstrumentationTestRun(
               device_utils=device))
       flags_to_add.append('--render-test-output-dir=%s' %
                           self._render_tests_device_output_dir.name)
+
+    if self._test_instance.webview_rebaseline_mode:
+      extras[_EXTRA_WEBVIEW_REBASELINE_MODE] = _VALUE_WEBVIEW_REBASELINE_MODE
 
     if _IsWPRRecordReplayTest(test):
       wpr_archive_relative_path = _GetWPRArchivePath(test)

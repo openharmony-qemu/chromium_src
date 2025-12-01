@@ -1,32 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 #include "ui/base/clipboard/clipboard_ohos.h"
 
 #include <accesstoken/ability_access_control.h>
@@ -37,7 +11,6 @@
 
 #include <map>
 #include <set>
-#include <unordered_map>
 
 #include "base/check_op.h"
 #include "base/command_line.h"
@@ -54,7 +27,6 @@
 #include "base/types/optional_util.h"
 #include "content/public/browser/browser_task_traits.h"
 #include "content/public/browser/browser_thread.h"
-#include "content/public/common/content_switches.h"
 #include "ohos/adapter/file_manager/file_manager_adapter.h"
 #include "ohos/adapter/permission_manager/permission_manager_adapter.h"
 #include "skia/ext/skia_utils_base.h"
@@ -125,23 +97,29 @@ class ClipboardOHOSInternal {
     }
     OH_Pasteboard_Destroy(pasteboard_);
   }
+
   void WritePasteboard(OH_UdmfRecord*& udmf_record) {
     OH_UdmfData* udmf_data = OH_UdmfData_Create();
     if (udmf_data == nullptr) {
       LOG(ERROR) << "[Pasteboard]WritePasteboard OH_UdmfData_Create fail, "
-                        "udmf_data is null";
+                    "udmf_data is null";
       return;
     }
     auto result = OH_UdmfData_AddRecord(udmf_data, udmf_record);
     if (result != ERR_OK) {
-      LOG(ERROR) << "[Pasteboard]WritePasteboard OH_UdmfData_AddRecord failed,error " 
-                 "code is :" << result;
+      LOG(ERROR)
+          << "[Pasteboard]WritePasteboard OH_UdmfData_AddRecord failed,error "
+             "code is :"
+          << result;
       DestroyUdmfData(&udmf_data);
       return;
     }
+
     result = OH_Pasteboard_SetData(pasteboard_, udmf_data);
     if (result != ERR_OK) {
-      LOG(ERROR) << "[Pasteboard]WritePasteboard OH_Pasteboard_SetData failed,error code is :" 
+      LOG(ERROR)
+          << "[Pasteboard]WritePasteboard OH_Pasteboard_SetData failed,error "
+             "code is :"
           << result;
     }
     DestroyUdmfData(&udmf_data);
@@ -210,6 +188,7 @@ class ClipboardOHOSInternal {
         return ui::ClipBoardImageAlphaType::ALPHA_TYPE_UNKNOWN;
     }
   }
+
   ui::ClipBoardImageColorType ImageToClipboardColorType(
       SkColorType color_type) {
     switch (color_type) {
@@ -221,30 +200,36 @@ class ClipboardOHOSInternal {
         return ui::ClipBoardImageColorType::COLOR_TYPE_UNKNOWN;
     }
   }
+
   void DestroyUdsPlainText(OH_UdsPlainText** plain_text) {
     if (*plain_text != nullptr) {
       OH_UdsPlainText_Destroy(*plain_text);
       *plain_text = nullptr;
     }
   }
+
   void DestroyUdmfRecord(OH_UdmfRecord** udmf_record) const {
     if (*udmf_record) {
       OH_UdmfRecord_Destroy(*udmf_record);
       *udmf_record = nullptr;
     }
   }
+
   void DestroyUdsFileUri(OH_UdsFileUri** uds_file_uri) const {
     OH_UdsFileUri_Destroy(*uds_file_uri);
     *uds_file_uri = nullptr;
   }
+
   void DestroyUdsHtml(OH_UdsHtml** uds_html) const {
     OH_UdsHtml_Destroy(*uds_html);
     *uds_html = nullptr;
   }
+
   void DestroyUdsPixelMap(OH_UdsPixelMap** uds_pixel_map) const {
     OH_UdsPixelMap_Destroy(*uds_pixel_map);
     *uds_pixel_map = nullptr;
   }
+
   void DestroyUdmfData(OH_UdmfData** udmf_data) const {
     OH_UdmfData_Destroy(*udmf_data);
     *udmf_data = nullptr;
@@ -269,51 +254,52 @@ class ClipboardOHOSInternal {
         << status;
         return;
     }
-    unsigned int count = 0;
-    OH_UdmfRecord** records = OH_UdmfData_GetRecords(udmf_data, &count);
-    if (records == nullptr) {
-      LOG(ERROR)
-          << "[Pasteboard]ReadTextFromPasteBoard OH_UdmfData_GetRecords fail";
-      return;
-    }
-    for (unsigned int i = 0; i < count; i++) {
-      OH_UdmfRecord* udmf_record = records[i];
-      if (udmf_record == nullptr) {
+      unsigned int count = 0;
+      OH_UdmfRecord** records = OH_UdmfData_GetRecords(udmf_data, &count);
+      if (records == nullptr) {
         LOG(ERROR)
-            << "[Pasteboard]ReadTextFromPasteBoard udmf_record is null";
-        continue;
+            << "[Pasteboard]ReadTextFromPasteBoard OH_UdmfData_GetRecords fail";
+        return;
       }
-      OH_UdsPlainText* plain_text = OH_UdsPlainText_Create();
-      if (plain_text == nullptr) {
-        LOG(ERROR) << "[Pasteboard]ReadTextFromPasteBoard "
-                      "OH_UdsPlainText_Create fail, "
-                      "plain_text is null";
-        DestroyUdmfRecord(&udmf_record);
-        records[i] = nullptr;
-        continue;
-      }
-      int res = OH_UdmfRecord_GetPlainText(udmf_record, plain_text);
-      if (res != UDMF_E_OK) {
-        LOG(ERROR) << "[Pasteboard]ReadTextFromPasteBoard "
-                      "OH_UdmfRecord_GetPlainText fail,error code:"
-                    << res;
+      for (unsigned int i = 0; i < count; i++) {
+        OH_UdmfRecord* udmf_record = records[i];
+        if (udmf_record == nullptr) {
+          LOG(ERROR)
+              << "[Pasteboard]ReadTextFromPasteBoard udmf_record is null";
+          continue;
+        }
+        OH_UdsPlainText* plain_text = OH_UdsPlainText_Create();
+        if (plain_text == nullptr) {
+          LOG(ERROR) << "[Pasteboard]ReadTextFromPasteBoard "
+                        "OH_UdsPlainText_Create fail, "
+                        "plain_text is null";
+          DestroyUdmfRecord(&udmf_record);
+          records[i] = nullptr;
+          continue;
+        }
+        int res = OH_UdmfRecord_GetPlainText(udmf_record, plain_text);
+        if (res != UDMF_E_OK) {
+          LOG(ERROR) << "[Pasteboard]ReadTextFromPasteBoard "
+                        "OH_UdmfRecord_GetPlainText fail,error code:"
+                     << res;
+          DestroyUdsPlainText(&plain_text);
+          DestroyUdmfRecord(&udmf_record);
+          records[i] = nullptr;
+          continue;
+        }
+        const char* text = OH_UdsPlainText_GetContent(plain_text);
+        if (text == nullptr) {
+          LOG(ERROR) << "[Pasteboard]ReadTextFromPasteBoard "
+                        "OH_UdsPlainText_GetContent fail";
+          continue;
+        }
+        result->append(base::UTF8ToUTF16(text));
         DestroyUdsPlainText(&plain_text);
         DestroyUdmfRecord(&udmf_record);
         records[i] = nullptr;
-        continue;
       }
-      const char* text = OH_UdsPlainText_GetContent(plain_text);
-      if (text == nullptr) {
-        LOG(ERROR) << "[Pasteboard]ReadTextFromPasteBoard "
-                      "OH_UdsPlainText_GetContent fail";
-        continue;
-      }
-      result->append(base::UTF8ToUTF16(text));
-      DestroyUdsPlainText(&plain_text);
-      DestroyUdmfRecord(&udmf_record);
-      records[i] = nullptr;
-    }
   }
+
   void ReadHtmlFromPasteBoard(std::u16string* result) {
     if (!result) {
       LOG(ERROR) << "ReadHtmlFromPasteBoard result is null";
@@ -332,50 +318,51 @@ class ClipboardOHOSInternal {
         << status;
         return;
     }
-    unsigned int count = 0;
-    OH_UdmfRecord** records = OH_UdmfData_GetRecords(udmf_data, &count);
-    if (records == nullptr) {
-      LOG(ERROR) << "[Pasteboard]ReadHtmlFromPasteBoard "
-                    "OH_UdmfData_GetRecords fail ";
-      return;
-    }
-    for (unsigned int i = 0; i < count; i++) {
-      OH_UdmfRecord* udmf_record = records[i];
-      if (udmf_record == nullptr) {
-        LOG(ERROR)
-            << "[Pasteboard]ReadHtmlFromPasteBoard udmf_record is null";
-        continue;
-      }
-      OH_UdsHtml* uds_html = OH_UdsHtml_Create();
-      if (uds_html == nullptr) {
-        LOG(ERROR)
-            << "[Pasteboard]ReadHtmlFromPasteBoard OH_UdsHtml_Create fail, "
-                "uds_html is null";
-        DestroyUdmfRecord(&udmf_record);
-        records[i] = nullptr;
-        continue;
-      }
-      int res = OH_UdmfRecord_GetHtml(udmf_record, uds_html);
-      if (res != UDMF_E_OK) {
+      unsigned int count = 0;
+      OH_UdmfRecord** records = OH_UdmfData_GetRecords(udmf_data, &count);
+      if (records == nullptr) {
         LOG(ERROR) << "[Pasteboard]ReadHtmlFromPasteBoard "
-                      "OH_UdmfRecord_GetHtml fail,error code:"
-                    << res;
+                      "OH_UdmfData_GetRecords fail ";
+        return;
+      }
+      for (unsigned int i = 0; i < count; i++) {
+        OH_UdmfRecord* udmf_record = records[i];
+        if (udmf_record == nullptr) {
+          LOG(ERROR)
+              << "[Pasteboard]ReadHtmlFromPasteBoard udmf_record is null";
+          continue;
+        }
+        OH_UdsHtml* uds_html = OH_UdsHtml_Create();
+        if (uds_html == nullptr) {
+          LOG(ERROR)
+              << "[Pasteboard]ReadHtmlFromPasteBoard OH_UdsHtml_Create fail, "
+                 "uds_html is null";
+          DestroyUdmfRecord(&udmf_record);
+          records[i] = nullptr;
+          continue;
+        }
+        int res = OH_UdmfRecord_GetHtml(udmf_record, uds_html);
+        if (res != UDMF_E_OK) {
+          LOG(ERROR) << "[Pasteboard]ReadHtmlFromPasteBoard "
+                        "OH_UdmfRecord_GetHtml fail,error code:"
+                     << res;
+          DestroyUdsHtml(&uds_html);
+          DestroyUdmfRecord(&udmf_record);
+          records[i] = nullptr;
+          continue;
+        }
+        const char* html = OH_UdsHtml_GetContent(uds_html);
+        if (html == nullptr) {
+          LOG(ERROR) << "[Pasteboard]ReadHtmlFromPasteBoard "
+                        "OH_UdsHtml_GetContent fail ";
+          continue;
+        }
+        result->append(base::UTF8ToUTF16(html));
+
         DestroyUdsHtml(&uds_html);
         DestroyUdmfRecord(&udmf_record);
         records[i] = nullptr;
-        continue;
       }
-      const char* html = OH_UdsHtml_GetContent(uds_html);
-      if (html == nullptr) {
-        LOG(ERROR) << "[Pasteboard]ReadHtmlFromPasteBoard "
-                      "OH_UdsHtml_GetContent fail ";
-        continue;
-      }
-      result->append(base::UTF8ToUTF16(html));
-      DestroyUdsHtml(&uds_html);
-      DestroyUdmfRecord(&udmf_record);
-      records[i] = nullptr;
-    }
   }
 
   // Reads HTML from the ClipboardData.
@@ -387,12 +374,10 @@ class ClipboardOHOSInternal {
       LOG(ERROR) << "ReadHTML result is null";
       return;
     }
-
     markup->clear();
     src_url->clear();
     *fragment_start = 0;
     *fragment_end = 0;
-
     std::u16string html;
     std::u16string text;
     ReadHtmlFromPasteBoard(&html);
@@ -401,8 +386,9 @@ class ClipboardOHOSInternal {
       *markup = html;
       *fragment_start = 0;
       *fragment_end = static_cast<uint32_t>(markup->length());
-    }else if (!text.empty()) {
-      *markup = base::UTF8ToUTF16("<span>" + base::UTF16ToASCII(text) + "</span>");
+    } else if (!text.empty()) {
+      *markup =
+          base::UTF8ToUTF16("<span>" + base::UTF16ToASCII(text) + "</span>");
       *fragment_start = 0;
       *fragment_end = static_cast<uint32_t>(markup->length());
     }
@@ -418,7 +404,7 @@ class ClipboardOHOSInternal {
     if (!OH_Pasteboard_HasData(pasteboard_)) {
         LOG(ERROR) << K_PASTEBOARD_LOG_TAG
         << " ReadFilenames OH_Pasteboard_HasData fail.";
-      return;
+        return;
     }
     OH_UdmfData* udmf_data = OH_Pasteboard_GetData(pasteboard_, &status);
     if (status != ERR_OK) {
@@ -427,195 +413,198 @@ class ClipboardOHOSInternal {
          << status;
       return;
     }
-    unsigned int count = 0;
-    OH_UdmfRecord** records = OH_UdmfData_GetRecords(udmf_data, &count);
-    if (records == nullptr) {
-      LOG(ERROR) << "[Pasteboard]ReadFilenames OH_UdmfData_GetRecords fail ";
+      unsigned int count = 0;
+      OH_UdmfRecord** records = OH_UdmfData_GetRecords(udmf_data, &count);
+      if (records == nullptr) {
+        LOG(ERROR) << "[Pasteboard]ReadFilenames OH_UdmfData_GetRecords fail ";
+        return;
+      }
+
+      std::vector<std::string> file_paths;
+      for (unsigned int i = 0; i < count; i++) {
+        OH_UdmfRecord* udmf_record = records[i];
+        if (udmf_record == nullptr) {
+          LOG(ERROR) << "[Pasteboard]ReadFilenames udmf_record is null";
+          continue;
+        }
+        OH_UdsFileUri* uds_file_uri = OH_UdsFileUri_Create();
+        if (uds_file_uri == nullptr) {
+          LOG(ERROR) << "[Pasteboard]ReadFilenames OH_UdsFileUri_Create fail, "
+                        "uds_file_uri is null";
+          DestroyUdmfRecord(&udmf_record);
+          records[i] = nullptr;
+          continue;
+        }
+        int res = OH_UdmfRecord_GetFileUri(udmf_record, uds_file_uri);
+        if (res != UDMF_E_OK) {
+          LOG(ERROR) << "[Pasteboard]ReadFilenames OH_UdmfRecord_GetFileUri "
+                        "fail,error code:"
+                     << res;
+          DestroyUdsFileUri(&uds_file_uri);
+          DestroyUdmfRecord(&udmf_record);
+          records[i] = nullptr;
+          continue;
+        }
+        const char* file_uri = OH_UdsFileUri_GetFileUri(uds_file_uri);
+        if (file_uri == nullptr) {
+          LOG(ERROR) << "[Pasteboard]ReadFilenames OH_UdsFileUri_GetFileUri "
+                        "fail, file_uri is null";
+          DestroyUdsFileUri(&uds_file_uri);
+          DestroyUdmfRecord(&udmf_record);
+          records[i] = nullptr;
+          continue;
+        }
+        std::string file_path;
+        ohos::adapter::FileManagerAdapter::GetInstance().GetPathForUri(
+            file_uri, file_path);
+        if (file_path.empty()) {
+          LOG(ERROR) << "[Pasteboard]ReadFilenames GetPathForUri fail, "
+                        "file_path is null";
+          DestroyUdsFileUri(&uds_file_uri);
+          DestroyUdmfRecord(&udmf_record);
+          records[i] = nullptr;
+          continue;
+        }
+        file_paths.push_back(file_path);
+        DestroyUdsFileUri(&uds_file_uri);
+        DestroyUdmfRecord(&udmf_record);
+        records[i] = nullptr;
+      }
+
+      for (const std::string& file_path : file_paths) {
+        url::RawCanonOutputW<kMaxUriDecodeLen> unescaped_path;
+        url::DecodeURLEscapeSequences(file_path.c_str(),
+                                      url::DecodeURLMode::kUTF8OrIsomorphic,
+                                      &unescaped_path);
+        std::string decode_file_path = base::UTF16ToUTF8(std::u16string_view(
+            unescaped_path.data(), unescaped_path.length()));
+        result->emplace_back(
+            base::FilePath(FILE_PATH_LITERAL(decode_file_path)),
+            base::FilePath());
+      }
+  }
+
+  void PrepareImageInfoForRead(OH_UdsPixelMap*& uds_pixel_map,
+                               OH_PixelmapNative*& pixelmap_native,
+                               OH_Pixelmap_ImageInfo*& image_info) {
+    int option_width = 1;
+    int option_height = 1;
+    OH_Pixelmap_InitializationOptions* pixelmap_option;
+    OH_PixelmapInitializationOptions_Create(&pixelmap_option);
+    OH_PixelmapInitializationOptions_SetWidth(pixelmap_option, option_width);
+    OH_PixelmapInitializationOptions_SetHeight(pixelmap_option, option_height);
+    OH_PixelmapInitializationOptions_SetPixelFormat(pixelmap_option,
+                                                    PIXEL_FORMAT_BGRA_8888);
+    OH_PixelmapInitializationOptions_SetAlphaType(pixelmap_option,
+                                                  PIXELMAP_ALPHA_TYPE_OPAQUE);
+
+    Image_ErrorCode err_code = OH_PixelmapNative_CreateEmptyPixelmap(
+        pixelmap_option, &pixelmap_native);
+    if (err_code != IMAGE_SUCCESS) {
+      LOG(ERROR) << "[Pasteboard]ReadPng OH_PixelmapNative_CreateEmptyPixelmap "
+                    "fail,error code:"
+                 << err_code;
+      OH_PixelmapInitializationOptions_Release(pixelmap_option);
       return;
     }
-    std::vector<std::string> file_paths;
-    for (unsigned int i = 0; i < count; i++) {
-      OH_UdmfRecord* udmf_record = records[i];
-      if (udmf_record == nullptr) {
-        LOG(ERROR) << "[Pasteboard]ReadFilenames udmf_record is null";
-        continue;
-      }
-      OH_UdsFileUri* uds_file_uri = OH_UdsFileUri_Create();
-      if (uds_file_uri == nullptr) {
-        LOG(ERROR) << "[Pasteboard]ReadFilenames OH_UdsFileUri_Create fail, "
-                      "uds_file_uri is null";
-        DestroyUdmfRecord(&udmf_record);
-        records[i] = nullptr;
-        continue;
-      }
-      int res = OH_UdmfRecord_GetFileUri(udmf_record, uds_file_uri);
+    OH_PixelmapInitializationOptions_Release(pixelmap_option);
+    OH_UdsPixelMap_GetPixelMap(uds_pixel_map, pixelmap_native);
+    if (pixelmap_native == nullptr) {
+      LOG(ERROR) << "[Pasteboard]ReadPng OH_UdsPixelMap_GetPixelMap fail, "
+                    "pixelmap_native is null";
+      return;
+    }
+
+    int res = OH_PixelmapImageInfo_Create(&image_info);
+    if (res != IMAGE_SUCCESS) {
+      LOG(ERROR) << "[Pasteboard]ReadPng OH_PixelmapImageInfo_Create "
+                    "fail,error code:"
+                 << res;
+      return;
+    }
+    res = OH_PixelmapNative_GetImageInfo(pixelmap_native, image_info);
+    if (res != IMAGE_SUCCESS) {
+      LOG(ERROR) << "[Pasteboard]ReadPng OH_PixelmapNative_GetImageInfo "
+                    "fail,error code:"
+                 << res;
+      res = OH_PixelmapImageInfo_Release(image_info);
       if (res != UDMF_E_OK) {
-        LOG(ERROR) << "[Pasteboard]ReadFilenames OH_UdmfRecord_GetFileUri "
+        LOG(ERROR) << "[Pasteboard]ReadPng OH_PixelmapImageInfo_Release "
                       "fail,error code:"
                    << res;
-        DestroyUdsFileUri(&uds_file_uri);
-        DestroyUdmfRecord(&udmf_record);
-        records[i] = nullptr;
-        continue;
       }
-      const char* file_uri = OH_UdsFileUri_GetFileUri(uds_file_uri);
-      if (file_uri == nullptr) {
-        LOG(ERROR) << "[Pasteboard]ReadFilenames OH_UdsFileUri_GetFileUri "
-                      "fail, file_uri is null";
-        DestroyUdsFileUri(&uds_file_uri);
-        DestroyUdmfRecord(&udmf_record);
-        records[i] = nullptr;
-        continue;
-      }
-      std::string file_path;
-      ohos::adapter::FileManagerAdapter::GetInstance().GetPathForUri(file_uri,
-                                                                     file_path);
-      if (file_path.empty()) {
-        LOG(ERROR) << "[Pasteboard]ReadFilenames GetPathForUri fail, "
-                      "file_path is null";
-        DestroyUdsFileUri(&uds_file_uri);
-        DestroyUdmfRecord(&udmf_record);
-        records[i] = nullptr;
-        continue;
-      }
-      file_paths.push_back(file_path);
-      DestroyUdsFileUri(&uds_file_uri);
-      DestroyUdmfRecord(&udmf_record);
-      records[i] = nullptr;
-    }
-    for (const std::string& file_path : file_paths) {
-      url::RawCanonOutputW<kMaxUriDecodeLen> unescaped_path;
-      url::DecodeURLEscapeSequences(file_path.c_str(),
-                                    url::DecodeURLMode::kUTF8OrIsomorphic,
-                                    &unescaped_path);
-      std::string decode_file_path = base::UTF16ToUTF8(
-          std::u16string_view(unescaped_path.data(), unescaped_path.length()));
-      result->emplace_back(base::FilePath(FILE_PATH_LITERAL(decode_file_path)),
-                           base::FilePath());
     }
   }
-void PrepareImageInfoForRead(OH_UdsPixelMap*& uds_pixel_map,
-                             OH_PixelmapNative*& pixelmap_native,
-                             OH_Pixelmap_ImageInfo*& image_info) {
-  int option_width = 1;
-  int option_height = 1;
-  OH_Pixelmap_InitializationOptions* pixelmap_option;
-  OH_PixelmapInitializationOptions_Create(&pixelmap_option);
-  OH_PixelmapInitializationOptions_SetWidth(pixelmap_option, option_width);
-  OH_PixelmapInitializationOptions_SetHeight(pixelmap_option, option_height);
-  OH_PixelmapInitializationOptions_SetPixelFormat(pixelmap_option,
-                                                  +PIXEL_FORMAT_BGRA_8888);
-  OH_PixelmapInitializationOptions_SetAlphaType(pixelmap_option,
-                                                +PIXELMAP_ALPHA_TYPE_OPAQUE);
-  Image_ErrorCode err_code =
-      OH_PixelmapNative_CreateEmptyPixelmap(pixelmap_option, &pixelmap_native);
-  if (err_code != IMAGE_SUCCESS) {
-    LOG(ERROR) << "[Pasteboard]ReadPng OH_PixelmapNative_CreateEmptyPixelmap "
-                  "fail,error code:"
-               << err_code;
-    OH_PixelmapInitializationOptions_Release(pixelmap_option);
-    return;
-  }
-  OH_PixelmapInitializationOptions_Release(pixelmap_option);
-  OH_UdsPixelMap_GetPixelMap(uds_pixel_map, pixelmap_native);
-  if (pixelmap_native == nullptr) {
-    LOG(ERROR) << "[Pasteboard]ReadPng OH_UdsPixelMap_GetPixelMap fail, "
-                  "pixelmap_native is null";
-    return;
-  }
-  int res = OH_PixelmapImageInfo_Create(&image_info);
-  if (res != IMAGE_SUCCESS) {
-    LOG(ERROR) << "[Pasteboard]ReadPng OH_PixelmapImageInfo_Create "
-                  "fail,error code:"
-               << res;
-    return;
-  }
-  res = OH_PixelmapNative_GetImageInfo(pixelmap_native, image_info);
-  if (res != IMAGE_SUCCESS) {
-    LOG(ERROR) << "[Pasteboard]ReadPng OH_PixelmapNative_GetImageInfo "
-                  "fail,error code:"
-               << res;
+
+  void PrepareImgBufferForRead(OH_Pixelmap_ImageInfo*& image_info,
+                               OH_PixelmapNative*& pixelmap_native,
+                               std::vector<uint8_t>& buff_data) {
+    uint32_t width = 0;
+    int res = OH_PixelmapImageInfo_GetWidth(image_info, &width);
+    if (res != IMAGE_SUCCESS) {
+      LOG(ERROR) << "[Pasteboard]ReadPng OH_PixelmapImageInfo_GetWidth "
+                    "fail,error code:"
+                 << res;
+    }
+    uint32_t height = 0;
+    res = OH_PixelmapImageInfo_GetHeight(image_info, &height);
+    if (res != IMAGE_SUCCESS) {
+      LOG(ERROR) << "[Pasteboard]ReadPng OH_PixelmapImageInfo_GetHeight "
+                    "fail,error code:"
+                 << res;
+    }
+    size_t data_size = height * width * 4;
+    std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(data_size);
+    uint32_t* pixel_data = nullptr;
+    res = OH_PixelmapNative_ReadPixels(pixelmap_native, data.get(), &data_size);
+    if (res != IMAGE_SUCCESS) {
+      LOG(ERROR) << "[Pasteboard]ReadPng OH_PixelmapNative_ReadPixels "
+                    "fail,error code:"
+                 << res;
+    } else {
+      pixel_data = reinterpret_cast<uint32_t*>(data.get());
+    }
+
+    uint32_t row_stride = 0;
+    res = OH_PixelmapImageInfo_GetRowStride(image_info, &row_stride);
+    if (res != IMAGE_SUCCESS) {
+      LOG(ERROR) << "[Pasteboard]ReadPng OH_PixelmapImageInfo_GetRowStride"
+                    " fail,error code:"
+                 << res;
+    }
+    int32_t pixel_format = 0;
+    res = OH_PixelmapImageInfo_GetPixelFormat(image_info, &pixel_format);
+    if (res != IMAGE_SUCCESS) {
+      LOG(ERROR) << "[Pasteboard]ReadPng OH_PixelmapImageInfo_GetPixelFormat"
+                    " fail,error code:"
+                 << res;
+    }
     res = OH_PixelmapImageInfo_Release(image_info);
     if (res != UDMF_E_OK) {
       LOG(ERROR) << "[Pasteboard]ReadPng OH_PixelmapImageInfo_Release "
                     "fail,error code:"
                  << res;
     }
-  }
-}
 
-void PrepareImgBufferForRead(OH_Pixelmap_ImageInfo*& image_info,
-                             OH_PixelmapNative*& pixelmap_native,
-                             std::vector<uint8_t>& buff_data) {
-  uint32_t width = 0;
-  int res = OH_PixelmapImageInfo_GetWidth(image_info, &width);
-  if (res != IMAGE_SUCCESS) {
-    LOG(ERROR) << "[Pasteboard]ReadPng OH_PixelmapImageInfo_GetWidth "
-                  "fail,error code:"
-               << res;
+    SkColorType sk_color_type = PixelFormatToSkColorType(
+        static_cast<ui::ClipBoardImageColorType>(pixel_format));
+    // The image pixel data is pre-multiplied according to the alpha type,
+    // and the RGB data is no longer processed according to the alpha.
+    SkAlphaType sk_alpha_type = SkAlphaType::kPremul_SkAlphaType;
+    sk_sp<SkColorSpace> color_space = SkColorSpace::MakeSRGB();
+    SkImageInfo sk_image_info = SkImageInfo::Make(width, height, sk_color_type,
+                                                  sk_alpha_type, color_space);
+    SkBitmap img;
+    SkPixmap pixmap(sk_image_info, pixel_data, row_stride);
+    if (!img.installPixels(pixmap)) {
+      LOG(ERROR) << "[Pasteboard]installPixels failed";
+    } else {
+      buff_data = clipboard_util::EncodeBitmapToPng(img);
+      LOG(INFO) << K_PASTEBOARD_LOG_TAG << __FUNCTION__
+                << " PrepareImgBufferForRead buff_data size:"
+                << buff_data.size();
+    }
   }
-  uint32_t height = 0;
-  res = OH_PixelmapImageInfo_GetHeight(image_info, &height);
-  if (res != IMAGE_SUCCESS) {
-    LOG(ERROR) << "[Pasteboard]ReadPng OH_PixelmapImageInfo_GetHeight "
-                  "fail,error code:"
-               << res;
-  }
-  size_t data_size = height * width * 4;
-  std::unique_ptr<uint8_t[]> data = std::make_unique<uint8_t[]>(data_size);
-  uint32_t* pixel_data = nullptr;
-  res = OH_PixelmapNative_ReadPixels(pixelmap_native, data.get(), &data_size);
-  if (res != IMAGE_SUCCESS) {
-    LOG(ERROR) << "[Pasteboard]ReadPng OH_PixelmapNative_ReadPixels "
-                  "fail,error code:"
-               << res;
-  } else {
-    pixel_data = reinterpret_cast<uint32_t*>(data.get());
-  }
-
-  uint32_t row_stride = 0;
-  res = OH_PixelmapImageInfo_GetRowStride(image_info, &row_stride);
-  if (res != IMAGE_SUCCESS) {
-    LOG(ERROR) << "[Pasteboard]ReadPng OH_PixelmapImageInfo_GetRowStride"
-                  " fail,error code:"
-               << res;
-  }
-  int32_t alpha_type = 0;
-  res = OH_PixelmapImageInfo_GetAlphaType(image_info, &alpha_type);
-  if (res != IMAGE_SUCCESS) {
-    LOG(ERROR) << "[Pasteboard]ReadPng OH_PixelmapImageInfo_GetAlphaType"
-                  " fail,error code:"
-               << res;
-  }
-  int32_t pixel_format = 0;
-  res = OH_PixelmapImageInfo_GetPixelFormat(image_info, &pixel_format);
-  if (res != IMAGE_SUCCESS) {
-    LOG(ERROR) << "[Pasteboard]ReadPng OH_PixelmapImageInfo_GetPixelFormat"
-                  " fail,error code:"
-               << res;
-  }
-  res = OH_PixelmapImageInfo_Release(image_info);
-  if (res != UDMF_E_OK) {
-    LOG(ERROR) << "[Pasteboard]ReadPng OH_PixelmapImageInfo_Release "
-                  "fail,error code:"
-               << res;
-  }
-  alpha_type = 1;
-  SkColorType sk_color_type = PixelFormatToSkColorType(
-      static_cast<ui::ClipBoardImageColorType>(pixel_format));
-  SkAlphaType sk_alpha_type = AlphaTypeToSkAlphaType(
-      static_cast<ui::ClipBoardImageAlphaType>(alpha_type));
-  sk_sp<SkColorSpace> color_space = SkColorSpace::MakeSRGB();
-  SkImageInfo sk_image_info = SkImageInfo::Make(width, height, sk_color_type,
-                                                sk_alpha_type, color_space);
-  SkBitmap img;
-  SkPixmap pixmap(sk_image_info, pixel_data, row_stride);
-  if (!img.installPixels(pixmap)) {
-    LOG(ERROR) << "[Pasteboard]installPixels failed";
-  } else {
-    buff_data = clipboard_util::EncodeBitmapToPng(img);
-  }
-}
 
   // Reads image from the ClipboardData.
   void ReadPng(Clipboard::ReadPngCallback callback) {
@@ -637,53 +626,53 @@ void PrepareImgBufferForRead(OH_Pixelmap_ImageInfo*& image_info,
         << status;
         return;
     }
-    unsigned int count = 0;
-    OH_UdmfRecord** records = OH_UdmfData_GetRecords(udmf_data, &count);
-    if (records == nullptr) {
-      LOG(ERROR) << "[Pasteboard]ReadPng OH_UdmfData_GetRecords fail";
-      return;
-    }
-    for (unsigned int i = 0; i < count; i++) {
-      OH_UdmfRecord* udmf_record = records[i];
-      if (udmf_record == nullptr) {
-        LOG(ERROR) << "[Pasteboard]ReadPng udmf_record is null";
-        continue;
+      unsigned int count = 0;
+      OH_UdmfRecord** records = OH_UdmfData_GetRecords(udmf_data, &count);
+      if (records == nullptr) {
+        LOG(ERROR) << "[Pasteboard]ReadPng OH_UdmfData_GetRecords fail";
+        return;
       }
-      OH_UdsPixelMap* uds_pixel_map = OH_UdsPixelMap_Create();
-      if (uds_pixel_map == nullptr) {
-        LOG(ERROR) << "[Pasteboard]ReadPng OH_UdsPixelMap_Create fail, "
-                      "uds_pixel_map is null";
+      for (unsigned int i = 0; i < count; i++) {
+        OH_UdmfRecord* udmf_record = records[i];
+        if (udmf_record == nullptr) {
+          LOG(ERROR) << "[Pasteboard]ReadPng udmf_record is null";
+          continue;
+        }
+        OH_UdsPixelMap* uds_pixel_map = OH_UdsPixelMap_Create();
+        if (uds_pixel_map == nullptr) {
+          LOG(ERROR) << "[Pasteboard]ReadPng OH_UdsPixelMap_Create fail, "
+                        "uds_pixel_map is null";
+          DestroyUdmfRecord(&udmf_record);
+          records[i] = nullptr;
+          continue;
+        }
+        int res = OH_UdmfRecord_GetPixelMap(udmf_record, uds_pixel_map);
+        if (res != UDMF_E_OK) {
+          LOG(ERROR) << "[Pasteboard]ReadPng OH_UdmfRecord_GetPixelMap "
+                        "fail,error code:"
+                     << res;
+          DestroyUdsPixelMap(&uds_pixel_map);
+          DestroyUdmfRecord(&udmf_record);
+          records[i] = nullptr;
+          continue;
+        }
         DestroyUdmfRecord(&udmf_record);
         records[i] = nullptr;
-        continue;
-      }
-      int res = OH_UdmfRecord_GetPixelMap(udmf_record, uds_pixel_map);
-      if (res != UDMF_E_OK) {
-        LOG(ERROR) << "[Pasteboard]ReadPng OH_UdmfRecord_GetPixelMap "
-                      "fail,error code:"
-                    << res;
+        OH_PixelmapNative* pixelmap_native = nullptr;
+        OH_Pixelmap_ImageInfo* image_info = nullptr;
+        PrepareImageInfoForRead(uds_pixel_map, pixelmap_native, image_info);
+        if (!image_info) {
+          LOG(ERROR) << "[Pasteboard]ReadPng PrepareImageInfoForRead "
+                        "fail, image_info is null";
+          DestroyUdsPixelMap(&uds_pixel_map);
+          continue;
+        }
         DestroyUdsPixelMap(&uds_pixel_map);
-        DestroyUdmfRecord(&udmf_record);
-        records[i] = nullptr;
-        continue;
+        std::vector<uint8_t> buff_data;
+        PrepareImgBufferForRead(image_info, pixelmap_native, buff_data);
+        std::move(callback).Run(std::move(buff_data));
+        break;
       }
-      DestroyUdmfRecord(&udmf_record);
-      records[i] = nullptr;
-      OH_PixelmapNative* pixelmap_native = nullptr;
-      OH_Pixelmap_ImageInfo* image_info = nullptr;
-      PrepareImageInfoForRead(uds_pixel_map, pixelmap_native, image_info);
-      if (!image_info) {
-        LOG(ERROR) << "[Pasteboard]ReadPng PrepareImageInfoForRead "
-                      "fail, image_info is null";
-        DestroyUdsPixelMap(&uds_pixel_map);
-        continue;
-      }
-      DestroyUdsPixelMap(&uds_pixel_map);
-      std::vector<uint8_t> buff_data;
-      PrepareImgBufferForRead(image_info, pixelmap_native, buff_data);
-      std::move(callback).Run(std::move(buff_data));
-      break;
-    }
   }
 
   void ReadData(const std::string& type, std::string* result) const {
@@ -705,37 +694,37 @@ void PrepareImgBufferForRead(OH_Pixelmap_ImageInfo*& image_info,
         << status;
         return;
     }
-    unsigned int count = 0;
-    OH_UdmfRecord** records = OH_UdmfData_GetRecords(udmf_data, &count);
-    if (records == nullptr) {
-      LOG(ERROR) << "[Pasteboard]ReadData OH_UdmfData_GetRecords fail ";
-      return;
-    }
-    for (unsigned int i = 0; i < count; i++) {
-      OH_UdmfRecord* udmf_record = records[i];
-      if (udmf_record == nullptr) {
-        LOG(ERROR) << "[Pasteboard]ReadData udmf_record is null";
-        continue;
+      unsigned int count = 0;
+      OH_UdmfRecord** records = OH_UdmfData_GetRecords(udmf_data, &count);
+      if (records == nullptr) {
+        LOG(ERROR) << "[Pasteboard]ReadData OH_UdmfData_GetRecords fail ";
+        return;
       }
-      const char* type_id = type.c_str();
-      unsigned char* entrys;
-      unsigned int entry_count;
-      int res = OH_UdmfRecord_GetGeneralEntry(udmf_record, type_id, &entrys,
-                                              &entry_count);
-      if (res != UDMF_E_OK) {
-        LOG(ERROR) << "[Pasteboard]ReadData OH_UdmfRecord_GetGeneralEntry "
-                      "fail,error code:"
-                    << res;
+      for (unsigned int i = 0; i < count; i++) {
+        OH_UdmfRecord* udmf_record = records[i];
+        if (udmf_record == nullptr) {
+          LOG(ERROR) << "[Pasteboard]ReadData udmf_record is null";
+          continue;
+        }
+        const char* type_id = type.c_str();
+        unsigned char* entrys;
+        unsigned int entry_count;
+        int res = OH_UdmfRecord_GetGeneralEntry(udmf_record, type_id, &entrys,
+                                                &entry_count);
+        if (res != UDMF_E_OK) {
+          LOG(ERROR) << "[Pasteboard]ReadData OH_UdmfRecord_GetGeneralEntry "
+                        "fail,error code:"
+                     << res;
+          DestroyUdmfRecord(&udmf_record);
+          records[i] = nullptr;
+          continue;
+        }
+        *result =
+            std::string(reinterpret_cast<const char*>(entrys), entry_count);
         DestroyUdmfRecord(&udmf_record);
         records[i] = nullptr;
-        continue;
+        break;
       }
-      *result =
-          std::string(reinterpret_cast<const char*>(entrys), entry_count);
-      DestroyUdmfRecord(&udmf_record);
-      records[i] = nullptr;
-      break;
-    }
   }
 
   void WriteHtmlToRecord(const char* html_text, OH_UdmfRecord* record) {
@@ -821,7 +810,6 @@ void PrepareImgBufferForRead(OH_Pixelmap_ImageInfo*& image_info,
     if (!current_data) {
       return nullptr;
     }
-
     if (HasFormat(ClipboardInternalFormat::kPng)) {
       const std::optional<SkBitmap>& optional_bitmap =
           current_data->GetBitmapIfPngNotEncoded();
@@ -848,7 +836,6 @@ void PrepareImgBufferForRead(OH_Pixelmap_ImageInfo*& image_info,
         WriteCustomeDataToRecord(custome_data, book_mark_type, udmf_record);
       }
     }
-
     WritePasteboard(udmf_record);
     DestroyUdmfRecord(&udmf_record);
     sequence_number_ = ClipboardSequenceNumberToken();
@@ -1050,6 +1037,7 @@ void PrepareImgBufferForRead(OH_Pixelmap_ImageInfo*& image_info,
   }
 
   bool HasFormatInMisc(ClipboardInternalFormat format) const {
+    LOG(INFO) << K_PASTEBOARD_LOG_TAG << __FUNCTION__ << " format:" << static_cast<int>(format);
     int status = -1;
     if (!OH_Pasteboard_HasData(pasteboard_)) {
         LOG(ERROR) << K_PASTEBOARD_LOG_TAG
@@ -1069,7 +1057,7 @@ void PrepareImgBufferForRead(OH_Pixelmap_ImageInfo*& image_info,
       LOG(ERROR) << "[Pasteboard]HasFormatInMisc OH_UdmfData_GetRecords fail";
       return false;
     }
-   int all_format = 0;
+    int all_format = 0;
     for (unsigned int i = 0; i < count; i++) {
       OH_UdmfRecord* udmf_record = records[i];
       if (udmf_record == nullptr) {
@@ -1082,6 +1070,7 @@ void PrepareImgBufferForRead(OH_Pixelmap_ImageInfo*& image_info,
         continue;
       }
       for (unsigned int j = 0; j < type_count; j++) {
+        LOG(INFO) << K_PASTEBOARD_LOG_TAG << __FUNCTION__ << " type in pasteboard:" << types[j];
         if ((format == ClipboardInternalFormat::kHtml) &&
             (strcmp(types[j], UDMF_META_HTML) == 0)) {
           all_format |= static_cast<int>(ClipboardInternalFormat::kHtml);
@@ -1112,9 +1101,10 @@ void PrepareImgBufferForRead(OH_Pixelmap_ImageInfo*& image_info,
 
   // Sequence number uniquely identifying clipboard state.
   ClipboardSequenceNumberToken sequence_number_;
-  OH_Pasteboard* pasteboard_;
-  base::WeakPtrFactory<ClipboardOHOSInternal> weak_factory_{this};
+  RAW_PTR_EXCLUSION OH_Pasteboard* pasteboard_;
   bool promptDialogOpened_ = false;
+
+  base::WeakPtrFactory<ClipboardOHOSInternal> weak_factory_{this};
 };
 
 class ClipboardDataBuilderOhos {
@@ -1219,6 +1209,7 @@ ClipboardOHOS::~ClipboardOHOS() {
 
 std::unique_ptr<ClipboardData> ClipboardOHOS::WriteClipboardData(
     std::unique_ptr<ClipboardData> data) {
+  LOG(INFO) << K_PASTEBOARD_LOG_TAG << __FUNCTION__;
   DCHECK(CalledOnValidThread());
   return clipboard_internal_->WriteData(std::move(data));
 }
@@ -1276,6 +1267,7 @@ bool ClipboardOHOS::IsFormatAvailable(
     const ClipboardFormatType& format,
     ClipboardBuffer buffer,
     const DataTransferEndpoint* data_dst) const {
+  LOG(INFO) << K_PASTEBOARD_LOG_TAG << __FUNCTION__ << " start, format is " << format.GetName();
   DCHECK(CalledOnValidThread());
   DCHECK(IsSupportedClipboardBuffer(buffer));
 
@@ -1355,6 +1347,7 @@ void ClipboardOHOS::ReadText(ClipboardBuffer buffer,
   }
   RecordRead(ClipboardFormatMetric::kText);
   clipboard_internal_->ReadTextFromPasteBoard(result);
+  LOG(INFO) << K_PASTEBOARD_LOG_TAG << __FUNCTION__ << " end, text-length:" << result->length();
 }
 
 void ClipboardOHOS::ReadAsciiText(ClipboardBuffer buffer,
@@ -1378,6 +1371,7 @@ void ClipboardOHOS::ReadHTML(ClipboardBuffer buffer,
 
   RecordRead(ClipboardFormatMetric::kHtml);
   clipboard_internal_->ReadHTML(markup, src_url, fragment_start, fragment_end);
+  LOG(INFO) << K_PASTEBOARD_LOG_TAG << __FUNCTION__ << " end, markup-length:" << markup->length();
 }
 
 void ClipboardOHOS::ReadSvg(ClipboardBuffer buffer,
@@ -1395,6 +1389,7 @@ void ClipboardOHOS::ReadRTF(ClipboardBuffer buffer,
 void ClipboardOHOS::ReadPng(ClipboardBuffer buffer,
                             const DataTransferEndpoint* data_dst,
                             ReadPngCallback callback) const {
+  LOG(INFO) << K_PASTEBOARD_LOG_TAG << __FUNCTION__;
   DCHECK(CalledOnValidThread());
   if (!clipboard_internal_->IsReadAllowed(data_dst,
                                           ClipboardInternalFormat::kPng)) {
@@ -1423,6 +1418,7 @@ void ClipboardOHOS::ReadFilenames(ClipboardBuffer buffer,
     return;
   }
   RecordRead(ClipboardFormatMetric::kFilenames);
+  LOG(INFO) << K_PASTEBOARD_LOG_TAG << __FUNCTION__ << " end, result_size is " << result->size();
   clipboard_internal_->ReadFilenames(std::move(result));
 }
 
@@ -1442,6 +1438,12 @@ void ClipboardOHOS::ReadData(const ClipboardFormatType& format,
   }
   RecordRead(ClipboardFormatMetric::kData);
   clipboard_internal_->ReadData(format.GetName(), result);
+  LOG(INFO) << K_PASTEBOARD_LOG_TAG
+            << __FUNCTION__
+            << " end, result-length is "
+            << result->length()
+            << ", format is "
+            << format.GetName();
 }
 
 bool ClipboardOHOS::IsSelectionBufferAvailable() const {
@@ -1451,6 +1453,7 @@ bool ClipboardOHOS::IsSelectionBufferAvailable() const {
 void ClipboardOHOS::WritePortableAndPlatformRepresentations(
     ClipboardBuffer buffer,
     const ObjectMap& objects,
+    const std::vector<RawData>& raw_objects,
     std::vector<Clipboard::PlatformRepresentation> platform_representations,
     std::unique_ptr<DataTransferEndpoint> data_src,
     uint32_t privacy_types) {
@@ -1466,17 +1469,25 @@ void ClipboardOHOS::WritePortableAndPlatformRepresentations(
   for (const auto& object : objects) {
     DispatchPortableRepresentation(object.second);
   }
+  for (const auto& raw_object : raw_objects) {
+    DispatchPortableRepresentation(raw_object);
+  }
 
   ClipboardDataBuilderOhos::CommitToClipboard(
       clipboard_internal_.get(), base::OptionalFromPtr(data_src.get()));
 }
 
 void ClipboardOHOS::WriteText(std::string_view text) {
+  LOG(INFO) << K_PASTEBOARD_LOG_TAG << __FUNCTION__ << ", text-length:" << text.length();
   ClipboardDataBuilderOhos::WriteText(text);
 }
 
 void ClipboardOHOS::WriteHTML(std::string_view markup,
                               std::optional<std::string_view> source_url) {
+  LOG(INFO) << K_PASTEBOARD_LOG_TAG
+            << __FUNCTION__
+            << ", markup_len:" << markup.length()
+            << ", url_len:" << source_url->length();
   ClipboardDataBuilderOhos::WriteHTML(markup, source_url);
 }
 
@@ -1492,11 +1503,13 @@ void ClipboardOHOS::WriteBookmark(std::string_view title,
 void ClipboardOHOS::WriteWebSmartPaste() {}
 
 void ClipboardOHOS::WriteBitmap(const SkBitmap& bitmap) {
+  LOG(INFO) << K_PASTEBOARD_LOG_TAG << __FUNCTION__;
   ClipboardDataBuilderOhos::WriteBitmap(bitmap);
 }
 
 void ClipboardOHOS::WriteData(const ClipboardFormatType& format,
                               base::span<const uint8_t> data) {
+  LOG(INFO) << K_PASTEBOARD_LOG_TAG << __FUNCTION__ << " data_len is " << data.size();
   RecordWrite(ClipboardFormatMetric::kData);
   ClipboardDataBuilderOhos::WriteData(format, data);
 }

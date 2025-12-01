@@ -10,7 +10,6 @@
 #include "base/numerics/safe_conversions.h"
 #include "base/system/sys_info.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "net/base/mime_sniffer.h"
 #include "url/gurl.h"
 #include "url/origin.h"
@@ -100,22 +99,6 @@ BASE_FEATURE(kCoopNoopenerAllowPopups,
              "CoopNoopenerAllowPopups",
              base::FEATURE_ENABLED_BY_DEFAULT);
 
-// Introduce a new COOP value: restrict-properties. It restricts window
-// properties that can be accessed by other pages. This also grants
-// crossOriginIsolated if coupled with an appropriate COEP header.
-// This used solely for testing the process model and should not be enabled in
-// any production code. See https://crbug.com/1221127.
-BASE_FEATURE(kCoopRestrictProperties,
-             "CoopRestrictProperties",
-             base::FEATURE_DISABLED_BY_DEFAULT);
-
-// Enables the origin trial for COOP: restrict-properties. We need a new feature
-// because token validation is not possible in the network process. This also
-// allows us to keep using CoopRestrictProperties to enable COOP: RP for WPTs.
-BASE_FEATURE(kCoopRestrictPropertiesOriginTrial,
-             "CoopRestrictPropertiesOriginTrial",
-             base::FEATURE_ENABLED_BY_DEFAULT);
-
 // Enables or defaults splittup up server (not proxy) entries in the
 // HttpAuthCache.
 BASE_FEATURE(kSplitAuthCacheByNetworkIsolationKey,
@@ -140,18 +123,29 @@ BASE_FEATURE(kMaskedDomainList,
              "MaskedDomainList",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
-// When set, only resources in the MDL that are part of the experiment group
-// will be loaded into the proxy's allow list.
-const base::FeatureParam<int> kMaskedDomainListExperimentGroup{
-    &kMaskedDomainList, /*name=*/"MaskedDomainListExperimentGroup",
-    /*default_value=*/0};
-
 // Used to build the MDL component's installer attributes and possibly control
 // which release version is retrieved.
 // Altering this value via Finch does not have any effect for WebView.
-const base::FeatureParam<std::string> kMaskedDomainListExperimentalVersion{
-    &kMaskedDomainList, /*name=*/"MaskedDomainListExperimentalVersion",
-    /*default_value=*/""};
+BASE_FEATURE_PARAM(std::string,
+                   kMaskedDomainListExperimentalVersion,
+                   &kMaskedDomainList,
+                   /*name=*/"MaskedDomainListExperimentalVersion",
+                   /*default_value=*/"");
+
+// When enabled, the MaskedDomainList will be split into two separate lists,
+// one for regular browsing and one for incognito browsing.
+BASE_FEATURE_PARAM(bool,
+                   kSplitMaskedDomainList,
+                   &kMaskedDomainList,
+                   /*name=*/"SplitMaskedDomainList",
+                   /*default_value=*/false);
+
+// When enabled, if the MaskedDomainList is used at all, it will use the
+// flatbuffer implementation (the `MaskedDomainList` class) instead of the
+// `UrlMatcherWithBypass` implementation.
+BASE_FEATURE(kMaskedDomainListFlatbufferImpl,
+             "MaskedDomainListFlatbufferImpl",
+             base::FEATURE_DISABLED_BY_DEFAULT);
 
 // If this feature is enabled, the mDNS responder service responds to queries
 // for TXT records associated with
@@ -168,98 +162,10 @@ BASE_FEATURE(kOpaqueResponseBlockingErrorsForAllFetches,
              "OpaqueResponseBlockingErrorsForAllFetches",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
-// Gate access to Attribution Reporting cross app and web APIs that allow
-// registering with a native attribution API.
-BASE_FEATURE(kAttributionReportingCrossAppWeb,
-             "AttributionReportingCrossAppWeb",
-             base::FEATURE_ENABLED_BY_DEFAULT);
-
-// Enables preprocessing requests with the Private State Tokens API Fetch flags
-// set, and handling their responses, according to the protocol.
-// (See https://github.com/WICG/trust-token-api.)
-BASE_FEATURE(kPrivateStateTokens,
-             "PrivateStateTokens",
-             base::FEATURE_ENABLED_BY_DEFAULT);
-
-// Secondary flag used by the FLEDGE ads experiment in the interim before
-// PSTs are fully rolled out to stable.
-BASE_FEATURE(kFledgePst, "TrustTokens", base::FEATURE_ENABLED_BY_DEFAULT);
-
-// Determines which Trust Tokens operations require the TrustTokens origin trial
-// active in order to be used. This is runtime-configurable so that the Trust
-// Tokens operations of issuance, redemption, and signing are compatible with
-// both standard origin trials and third-party origin trials:
-//
-// - For standard origin trials, set kOnlyIssuanceRequiresOriginTrial. In Blink,
-// all of the interface will be enabled (so long as the base::Feature is!), and
-// issuance operations will check at runtime if the origin trial is enabled,
-// returning an error if it is not.
-// - For third-party origin trials, set kAllOperationsRequireOriginTrial. In
-// Blink, the interface will be enabled exactly when the origin trial is present
-// in the executing context (so long as the base::Feature is present).
-//
-// For testing, set kOriginTrialNotRequired. With this option, although all
-// operations will still only be available if the base::Feature is enabled, none
-// will additionally require that the origin trial be active.
-const base::FeatureParam<TrustTokenOriginTrialSpec>::Option
-    kTrustTokenOriginTrialParamOptions[] = {
-        {TrustTokenOriginTrialSpec::kOriginTrialNotRequired,
-         "origin-trial-not-required"},
-        {TrustTokenOriginTrialSpec::kAllOperationsRequireOriginTrial,
-         "all-operations-require-origin-trial"},
-        {TrustTokenOriginTrialSpec::kOnlyIssuanceRequiresOriginTrial,
-         "only-issuance-requires-origin-trial"}};
-const base::FeatureParam<TrustTokenOriginTrialSpec>
-    kTrustTokenOperationsRequiringOriginTrial{
-        &kFledgePst, "TrustTokenOperationsRequiringOriginTrial",
-        TrustTokenOriginTrialSpec::kOriginTrialNotRequired,
-        &kTrustTokenOriginTrialParamOptions};
-
 // Enable support for ACCEPT_CH H2/3 frame as part of Client Hint Reliability.
 // See:
 // https://tools.ietf.org/html/draft-davidben-http-client-hint-reliability-02#section-4.3
 BASE_FEATURE(kAcceptCHFrame, "AcceptCHFrame", base::FEATURE_ENABLED_BY_DEFAULT);
-
-// Enable
-BASE_FEATURE(kGetCookiesStringUma,
-             "GetCookiesStringUma",
-             base::FEATURE_ENABLED_BY_DEFAULT);
-
-namespace {
-
-// The default Mojo ring buffer size, used to send the content body.
-constexpr uint32_t kDefaultDataPipeAllocationSize = 512 * 1024;
-
-// The larger ring buffer size, used primarily for network::URLLoader loads.
-// This value was optimized via Finch: see crbug.com/1041006.
-constexpr uint32_t kLargerDataPipeAllocationSize = 2 * 1024 * 1024;
-
-// The smallest buffer size must be larger than the maximum MIME sniffing
-// chunk size. This is assumed several places in content/browser/loader.
-static_assert(kDefaultDataPipeAllocationSize < kLargerDataPipeAllocationSize);
-static_assert(kDefaultDataPipeAllocationSize >= net::kMaxBytesToSniff,
-              "Smallest data pipe size must be at least as large as a "
-              "MIME-type sniffing buffer.");
-}  // namespace
-
-// static
-uint32_t GetDataPipeDefaultAllocationSize(DataPipeAllocationSize option) {
-#if BUILDFLAG(IS_CHROMEOS)
-  // TODO(crbug.com/1306998): ChromeOS experiences a much higher OOM crash
-  // rate if the larger data pipe size is used.
-  return kDefaultDataPipeAllocationSize;
-#else
-  // For low-memory devices, always use the (smaller) default buffer size.
-  if (base::SysInfo::AmountOfPhysicalMemoryMB() <= 512)
-    return kDefaultDataPipeAllocationSize;
-  switch (option) {
-    case DataPipeAllocationSize::kDefaultSizeOnly:
-      return kDefaultDataPipeAllocationSize;
-    case DataPipeAllocationSize::kLargerSizeIfPossible:
-      return kLargerDataPipeAllocationSize;
-  }
-#endif
-}
 
 // https://fetch.spec.whatwg.org/#cors-non-wildcard-request-header-name
 BASE_FEATURE(kCorsNonWildcardRequestHeadersSupport,
@@ -272,39 +178,28 @@ BASE_FEATURE(kOmitCorsClientCert,
              "OmitCorsClientCert",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
-// Load Pervasive Payloads List for Cache Transparency.
-BASE_FEATURE(kPervasivePayloadsList,
-             "PervasivePayloadsList",
-             base::FEATURE_DISABLED_BY_DEFAULT);
-
-// The list of pervasive payloads. A comma separated list starting with a
-// version number, followed one or more pairs of URL and checksum. The version
-// number is an integer. The URL is the canonical URL as returned by
-// GURL::spec(). The checksum is the SHA-256 of the payload and selected headers
-// converted to uppercase hexadecimal.
-constexpr base::FeatureParam<std::string> kCacheTransparencyPervasivePayloads{
-    &kPervasivePayloadsList, "pervasive-payloads", ""};
-
 // Enables support for the `Variants` response header and reduce
 // accept-language. https://github.com/Tanych/accept-language
 BASE_FEATURE(kReduceAcceptLanguage,
              "ReduceAcceptLanguage",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
-const base::FeatureParam<base::TimeDelta> kReduceAcceptLanguageCacheDuration{
-    &kReduceAcceptLanguage, "reduce-accept-language-cache-duration",
-    base::Days(30)};
+BASE_FEATURE_PARAM(base::TimeDelta,
+                   kReduceAcceptLanguageCacheDuration,
+                   &kReduceAcceptLanguage,
+                   "reduce-accept-language-cache-duration",
+                   base::Days(30));
+
+// Enables support for the `Variants` response header and reduce
+// Accept-Language HTTP header only.
+BASE_FEATURE(kReduceAcceptLanguageHTTP,
+             "ReduceAcceptLanguageHTTP",
+             base::FEATURE_DISABLED_BY_DEFAULT);
 
 // Reduce PNA preflight response waiting time to 200ms.
 // See: https://wicg.github.io/private-network-access/#cors-preflight
 BASE_FEATURE(kPrivateNetworkAccessPreflightShortTimeout,
              "PrivateNetworkAccessPreflightShortTimeout",
-             base::FEATURE_ENABLED_BY_DEFAULT);
-
-// Allow potentially trustworthy same origin local network requests without
-// preflights.
-BASE_FEATURE(kLocalNetworkAccessAllowPotentiallyTrustworthySameOrigin,
-             "LocalNetworkAccessAllowPotentiallyTrustworthySameOrigin",
              base::FEATURE_ENABLED_BY_DEFAULT);
 
 // When kPrivateNetworkAccessPermissionPrompt is enabled, public secure websites
@@ -313,9 +208,25 @@ BASE_FEATURE(kPrivateNetworkAccessPermissionPrompt,
              "PrivateNetworkAccessPermissionPrompt",
              base::FEATURE_ENABLED_BY_DEFAULT);
 
-BASE_FEATURE(kAccessControlAllowMethodsInCORSPreflightSpecConformant,
-             "AccessControlAllowMethodsInCORSPreflightSpecConformant",
-             base::FEATURE_ENABLED_BY_DEFAULT);
+// Enables Local Network Access checks.
+// Blocks local network requests without user permission to prevent exploitation
+// of vulnerable local devices.
+//
+// This feature is being built as a replacement for Private Network Access
+// (PNA), and if this is on PNA features may stop working.
+//
+// Public explainer:
+// https://github.com/explainers-by-googlers/local-network-access
+BASE_FEATURE(kLocalNetworkAccessChecks,
+             "LocalNetworkAccessChecks",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+
+// If true, local network access checks will only be warnings.
+BASE_FEATURE_PARAM(bool,
+                   kLocalNetworkAccessChecksWarn,
+                   &kLocalNetworkAccessChecks,
+                   /*name=*/"LocalNetworkAccessChecksWarn",
+                   /*default_value=*/true);
 
 // If enabled, then the network service will parse the Cookie-Indices header.
 // This does not currently control changing cache behavior according to the
@@ -351,24 +262,60 @@ BASE_FEATURE(kCompressionDictionaryTransport,
              "CompressionDictionaryTransport",
              base::FEATURE_ENABLED_BY_DEFAULT);
 
+// When this feature, the kCompressionDictionaryTransport and
+// the kCompressionDictionaryTransportBackend features are enabled then the
+// response to a main-frame navigation request may be registered as a
+// dictionary if the response header contains a `use-as-dictionary` header.
+BASE_FEATURE(kSharedDictionaryRegisterNavigationRequests,
+             "SharedDictionaryRegisterNavigationRequests",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+
 // When this feature is enabled, preloaded dictionaries will not be used for
 // network requests if the binary has not yet been preloaded.
 BASE_FEATURE(kPreloadedDictionaryConditionalUse,
              "PreloadedDictionaryConditionalUse",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
+// Enables support for the `Integrity-Policy` header with script destinations,
+// which enables developers to ensure all their external scripts have their
+// integrity enforced.
+BASE_FEATURE(kIntegrityPolicyScript,
+             "IntegrityPolicyScript",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+
 BASE_FEATURE(kVisibilityAwareResourceScheduler,
              "VisibilityAwareResourceScheduler",
              base::FEATURE_DISABLED_BY_DEFAULT);
-
-BASE_FEATURE(kSharedZstd, "SharedZstd", base::FEATURE_ENABLED_BY_DEFAULT);
 
 // This feature will reduce TransferSizeUpdated IPC from the network service.
 // When enabled, the network service will send the IPC only when DevTools is
 // attached or the request is for an ad request.
 BASE_FEATURE(kReduceTransferSizeUpdatedIPC,
              "ReduceTransferSizeUpdatedIPC",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+
+// Enables content decoding in the renderer process.
+// See https://crbug.com/391950057 and this doc for more details.
+// https://docs.google.com/document/d/1LwgPlrtQtUhGz_ilTsRun-7o4TuHo9jbXll6FRq-dKk/edit?usp=sharing
+BASE_FEATURE(kRendererSideContentDecoding,
+             "RendererSideContentDecoding",
              base::FEATURE_DISABLED_BY_DEFAULT);
+// When non-zero, a Mojo data pipe of this size will be used between the
+// decoding thread and the data receiving thread.
+BASE_FEATURE_PARAM(int,
+                   kRendererSideContentDecodingPipeSize,
+                   &kRendererSideContentDecoding,
+                   /*name=*/"RendererSideContentDecodingPipeSize",
+                   /*default_value=*/0);
+// For testing purposes only. If set to true, the creation of the Mojo data pipe
+// for the RendererSideContentDecoding feature will be forced to fail,
+// simulating an insufficient resources error (net::ERR_INSUFFICIENT_RESOURCES).
+BASE_FEATURE_PARAM(
+    bool,
+    kRendererSideContentDecodingForceMojoFailureForTesting,
+    &kRendererSideContentDecoding,
+    /*name=*/"RendererSideContentDecodingForceMojoFailureForTesting",
+    /*default_value=*/false);
 
 // This feature allows skipping TPCD mitigation checks when the cookie access
 // is tagged as being used for advertising purposes. This means that cookies
@@ -378,22 +325,29 @@ BASE_FEATURE(kSkipTpcdMitigationsForAds,
              "SkipTpcdMitigationsForAds",
              base::FEATURE_DISABLED_BY_DEFAULT);
 // Controls whether we ignore opener heuristic grants for 3PC accesses.
-const base::FeatureParam<bool> kSkipTpcdMitigationsForAdsHeuristics{
-    &kSkipTpcdMitigationsForAds, /*name=*/"SkipTpcdMitigationsForAdsHeuristics",
-    /*default_value=*/false};
+BASE_FEATURE_PARAM(bool,
+                   kSkipTpcdMitigationsForAdsHeuristics,
+                   &kSkipTpcdMitigationsForAds,
+                   /*name=*/"SkipTpcdMitigationsForAdsHeuristics",
+                   /*default_value=*/false);
 // Controls whether we ignore checks on the metadata allowlist for 3PC cookies.
-const base::FeatureParam<bool> kSkipTpcdMitigationsForAdsMetadata{
-    &kSkipTpcdMitigationsForAds, /*name=*/"SkipTpcdMitigationsForAdsMetadata",
-    /*default_value=*/false};
+BASE_FEATURE_PARAM(bool,
+                   kSkipTpcdMitigationsForAdsMetadata,
+                   &kSkipTpcdMitigationsForAds,
+                   /*name=*/"SkipTpcdMitigationsForAdsMetadata",
+                   /*default_value=*/false);
 // Controls whether we ignore checks on the deprecation trial for 3PC.
-const base::FeatureParam<bool> kSkipTpcdMitigationsForAdsTrial{
-    &kSkipTpcdMitigationsForAds, /*name=*/"SkipTpcdMitigationsForAdsSupport",
-    /*default_value=*/false};
+BASE_FEATURE_PARAM(bool,
+                   kSkipTpcdMitigationsForAdsTrial,
+                   &kSkipTpcdMitigationsForAds,
+                   /*name=*/"SkipTpcdMitigationsForAdsSupport",
+                   /*default_value=*/false);
 // Controls whether we ignore checks on the top-level deprecation trial for 3PC.
-const base::FeatureParam<bool> kSkipTpcdMitigationsForAdsTopLevelTrial{
-    &kSkipTpcdMitigationsForAds,
-    /*name=*/"SkipTpcdMitigationsForAdsTopLevelTrial",
-    /*default_value=*/false};
+BASE_FEATURE_PARAM(bool,
+                   kSkipTpcdMitigationsForAdsTopLevelTrial,
+                   &kSkipTpcdMitigationsForAds,
+                   /*name=*/"SkipTpcdMitigationsForAdsTopLevelTrial",
+                   /*default_value=*/false);
 
 // Avoids copying ResourceRequest when possible.
 BASE_FEATURE(kAvoidResourceRequestCopies,
@@ -401,39 +355,22 @@ BASE_FEATURE(kAvoidResourceRequestCopies,
              base::FEATURE_ENABLED_BY_DEFAULT);
 
 // Enables Document-Isolation-Policy (DIP).
-// https://github.com/explainers-by-googlers/document-isolation-policy
+// https://github.com/WICG/document-isolation-policy
 BASE_FEATURE(kDocumentIsolationPolicy,
              "DocumentIsolationPolicy",
-             base::FEATURE_DISABLED_BY_DEFAULT);
+#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
+    BUILDFLAG(IS_LINUX)
+             base::FEATURE_ENABLED_BY_DEFAULT
+#else
+             base::FEATURE_DISABLED_BY_DEFAULT
+#endif
+);
 
 // This feature enables the Prefetch() method on the NetworkContext, and makes
 // the PrefetchMatchingURLLoaderFactory check the match quality.
 BASE_FEATURE(kNetworkContextPrefetch,
              "NetworkContextPrefetch",
              base::FEATURE_DISABLED_BY_DEFAULT);
-
-// How many prefetches should be cached before old ones are evicted. This
-// provides rough control over the overall memory used by prefetches.
-const base::FeatureParam<int> kNetworkContextPrefetchMaxLoaders{
-    &kNetworkContextPrefetch,
-    /*name=*/"max_loaders", /*default_value=*/10};
-
-// When "NetworkContextPrefetchUseMatches" is disabled, how long to leave a
-// matched cache entry alive before deleting it. This corresponds to the
-// expected maximum time it will take for a request to reach the HttpCache once
-// it has been initiated. Since it may be delayed by the ResourceScheduler, give
-// the delay is quite large.
-//
-// Why not shorter: the request from the render process may be delayed by the
-// ResourceScheduler.
-//
-// Why not longer: If the prefetch has not yet received response headers, it
-// has an exclusive cache lock. The real request from the render process
-// cannot proceed until the cache lock is released. If the response turns out
-// to be uncacheable, then this time is pure waste.
-const base::FeatureParam<base::TimeDelta> kNetworkContextPrefetchEraseGraceTime{
-    &kNetworkContextPrefetch, /*name=*/"erase_grace_time",
-    /*default_value=*/base::Seconds(1)};
 
 // This feature makes the matching fetches performed by the Prefetch() actually
 // be consumed directly by renderers. When this is disabled, the disk cache
@@ -456,23 +393,228 @@ BASE_FEATURE(kCloneDevToolsConnectionOnlyIfRequested,
              "CloneDevToolsConnectionOnlyIfRequested",
              base::FEATURE_ENABLED_BY_DEFAULT);
 
-BASE_FEATURE(kStorageAccessHeaders,
-             "StorageAccessHeaders",
+BASE_FEATURE(kSRIMessageSignatureEnforcement,
+             "SRIMessageSignatureEnforcement",
              base::FEATURE_DISABLED_BY_DEFAULT);
 
-BASE_FEATURE(kStorageAccessHeadersTrial,
-             "StorageAccessHeadersTrial",
+BASE_FEATURE(kAdAuctionEventRegistration,
+             "AdAuctionEventRegistration",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+
+// See https://github.com/WICG/turtledove/blob/main/FLEDGE.md
+// Changes default Permissions Policy for features join-ad-interest-group and
+// run-ad-auction to a more restricted EnableForSelf.
+BASE_FEATURE(kAdInterestGroupAPIRestrictedPolicyByDefault,
+             "AdInterestGroupAPIRestrictedPolicyByDefault",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+
+// Enables unload handler deprecation via Permissions-Policy.
+// https://crbug.com/1324111
+BASE_FEATURE(kDeprecateUnload,
+             "DeprecateUnload",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+// If < 100, each user experiences the deprecation on this % of origins.
+// Which origins varies per user.
+BASE_FEATURE_PARAM(int,
+                   kDeprecateUnloadPercent,
+                   &kDeprecateUnload,
+                   "rollout_percent",
+                   100);
+// This buckets users, with users in each bucket having a consistent experience
+// of the unload deprecation rollout.
+BASE_FEATURE_PARAM(int,
+                   kDeprecateUnloadBucket,
+                   &kDeprecateUnload,
+                   "rollout_bucket",
+                   0);
+
+// Only used if `kDeprecateUnload` is enabled. The deprecation will only apply
+// if the host is on the allow-list.
+BASE_FEATURE(kDeprecateUnloadByAllowList,
+             "DeprecateUnloadByAllowList",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+// A list of hosts for which deprecation of unload is allowed. If it's empty
+// the all hosts are allowed.
+BASE_FEATURE_PARAM(std::string,
+                   kDeprecateUnloadAllowlist,
+                   &kDeprecateUnloadByAllowList,
+                   "allowlist",
+                   "");
+// When enabled, a `Sec-Fetch-Frame-Top` header will be emitted on
+// outgoing requests.
+BASE_FEATURE(kFrameAncestorHeaders,
+             "FrameAncestorHeaders",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+
+BASE_FEATURE(kUpdateRequestForCorsRedirect,
+             "UpdateRequestForCorsRedirect",
              base::FEATURE_ENABLED_BY_DEFAULT);
 
-#if BUILDFLAG(IS_WIN)
-// On Windows, when the params for a new network context supplies a cookie
-// database path but does not specify a value for
-// `enable_locking_cookie_database` then this feature determines whether or not
-// the cookie database is locked or not. This is enabled by default so it can be
-// removed in a future release if no incompatibilities are found.
-BASE_FEATURE(kEnableLockCookieDatabaseByDefault,
-             "EnableLockCookieDatabaseByDefault",
+// https://github.com/patcg-individual-drafts/topics
+// Kill switch for the Topics API.
+BASE_FEATURE(kBrowsingTopics,
+             "BrowsingTopics",
              base::FEATURE_ENABLED_BY_DEFAULT);
-#endif  // BUILDFLAG(IS_WIN)
+
+// Enable the shared storage API. Note that enabling this feature does not
+// automatically expose this API to the web, it only allows the element to be
+// enabled by the runtime enabled feature, for origin trials.
+// https://github.com/pythagoraskitty/shared-storage/blob/main/README.md
+BASE_FEATURE(kSharedStorageAPI,
+             "SharedStorageAPI",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+BASE_FEATURE_PARAM(size_t,
+                   kSharedStorageURLSelectionOperationInputURLSizeLimit,
+                   &kSharedStorageAPI,
+                   "url_selection_operation_input_url_size_limit",
+                   8);
+BASE_FEATURE_PARAM(int,
+                   kMaxSharedStoragePageSize,
+                   &kSharedStorageAPI,
+                   "MaxSharedStoragePageSize",
+                   4096);
+BASE_FEATURE_PARAM(int,
+                   kMaxSharedStorageCacheSize,
+                   &kSharedStorageAPI,
+                   "MaxSharedStorageCacheSize",
+                   1024);
+BASE_FEATURE_PARAM(int,
+                   kMaxSharedStorageInitTries,
+                   &kSharedStorageAPI,
+                   "MaxSharedStorageInitTries",
+                   2);
+BASE_FEATURE_PARAM(int,
+                   kMaxSharedStorageIteratorBatchSize,
+                   &kSharedStorageAPI,
+                   "MaxSharedStorageIteratorBatchSize",
+                   100);
+BASE_FEATURE_PARAM(int,
+                   kSharedStorageBitBudget,
+                   &kSharedStorageAPI,
+                   "SharedStorageBitBudget",
+                   12);
+BASE_FEATURE_PARAM(base::TimeDelta,
+                   kSharedStorageBudgetInterval,
+                   &kSharedStorageAPI,
+                   "SharedStorageBudgetInterval",
+                   base::Hours(24));
+BASE_FEATURE_PARAM(base::TimeDelta,
+                   kSharedStorageStalePurgeInitialInterval,
+                   &kSharedStorageAPI,
+                   "SharedStorageStalePurgeInitialInterval",
+                   base::Minutes(2));
+BASE_FEATURE_PARAM(base::TimeDelta,
+                   kSharedStorageStalePurgeRecurringInterval,
+                   &kSharedStorageAPI,
+                   "SharedStorageStalePurgeRecurringInterval",
+                   base::Hours(2));
+BASE_FEATURE_PARAM(base::TimeDelta,
+                   kSharedStorageStalenessThreshold,
+                   &kSharedStorageAPI,
+                   "SharedStorageStalenessThreshold",
+                   base::Days(30));
+BASE_FEATURE_PARAM(size_t,
+                   kSharedStorageMaxAllowedFencedFrameDepthForSelectURL,
+                   &kSharedStorageAPI,
+                   "SharedStorageMaxAllowedFencedFrameDepthForSelectURL",
+                   1);
+// NOTE: To preserve user privacy, the
+// `kSharedStorageExposeDebugMessageForSettingsStatus` feature param MUST remain
+// false by default.
+BASE_FEATURE_PARAM(bool,
+                   kSharedStorageExposeDebugMessageForSettingsStatus,
+                   &kSharedStorageAPI,
+                   "ExposeDebugMessageForSettingsStatus",
+                   false);
+
+// Enables transactional behavior for sharedStorage.batchUpdate(). This also
+// disallows the 'withLock' option for methods within batchUpdate().
+// https://wicg.github.io/shared-storage/#batch-update
+BASE_FEATURE(kSharedStorageTransactionalBatchUpdate,
+             "SharedStorageTransactionalBatchUpdate",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+
+// Kill switch for the Interest Group API, i.e. if disabled, the
+// API exposure will be disabled regardless of the OT config.
+BASE_FEATURE(kInterestGroupStorage,
+             "InterestGroupStorage",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+// TODO(crbug.com/40176812): Adjust these limits in response to usage.
+BASE_FEATURE_PARAM(int,
+                   kInterestGroupStorageMaxOwners,
+                   &kInterestGroupStorage,
+                   "max_owners",
+                   1000);
+BASE_FEATURE_PARAM(int,
+                   kInterestGroupStorageMaxStoragePerOwner,
+                   &kInterestGroupStorage,
+                   "max_storage_per_owner",
+                   10 * 1024 * 1024);
+BASE_FEATURE_PARAM(int,
+                   kInterestGroupStorageMaxGroupsPerOwner,
+                   &kInterestGroupStorage,
+                   "max_groups_per_owner",
+                   2000);
+BASE_FEATURE_PARAM(int,
+                   kInterestGroupStorageMaxNegativeGroupsPerOwner,
+                   &kInterestGroupStorage,
+                   "max_negative_groups_per_owner",
+                   20000);
+BASE_FEATURE_PARAM(int,
+                   kInterestGroupStorageMaxOpsBeforeMaintenance,
+                   &kInterestGroupStorage,
+                   "max_ops_before_maintenance",
+                   1000);
+
+BASE_FEATURE(kGetCookiesOnSet,
+             "GetCookiesOnSet",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+
+BASE_FEATURE(kIncreaseCookieAccessCacheSize,
+             "IncreaseCookieAccessCacheSize",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+
+BASE_FEATURE(kPopulatePermissionsPolicyOnRequest,
+             "PopulatePermissionsPolicyOnRequest",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+
+BASE_FEATURE(kProtectedAudienceCorsSafelistKVv2Signals,
+             "ProtectedAudienceCorsSafelistKVv2Signals",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+
+BASE_FEATURE(kStorageAccessHeadersRespectPermissionsPolicy,
+             "StorageAccessHeadersRespectPermissionsPolicy",
+             base::FEATURE_ENABLED_BY_DEFAULT);
+
+BASE_FEATURE(kDeviceBoundSessionAccessObserverSharedRemote,
+             "DeviceBoundSessionAccessObserverSharedRemote",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+
+BASE_FEATURE(kCSPScriptSrcV2, "ScriptSrcV2", base::FEATURE_DISABLED_BY_DEFAULT);
+
+BASE_FEATURE(kCacheSharingForPervasiveScripts,
+             "CacheSharingForPervasiveScripts",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+
+// This is a newline-delimited list of pervasive script URL Patterns.
+BASE_FEATURE_PARAM(std::string,
+                   kPervasiveScriptURLPatterns,
+                   &kCacheSharingForPervasiveScripts,
+                   /*name=*/"url_patterns",
+                   /*default_value=*/"");
+
+BASE_FEATURE(kSharedDictionaryCache,
+             "SharedDictionaryCache",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+BASE_FEATURE_PARAM(size_t,
+                   kSharedDictionaryCacheSize,
+                   &kSharedDictionaryCache,
+                   /*name=*/"cache_size",
+                   1);
+BASE_FEATURE_PARAM(size_t,
+                   kSharedDictionaryCacheMaxSizeBytes,
+                   &kSharedDictionaryCache,
+                   /*name=*/"max_size",
+                   1'000'000);
 
 }  // namespace network::features

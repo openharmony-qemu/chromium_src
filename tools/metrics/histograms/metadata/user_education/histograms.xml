@@ -33,6 +33,11 @@ chromium-metrics-reviews@google.com.
                saved state to resume.."/>
   <variant name="ComposeProactiveNudge"
       summary="For Compose feature; shown on autofill popup."/>
+  <variant name="Glic" summary="Glic toggle on settings page."/>
+  <variant name="GlicAppMenuNewBadge"
+      summary="Glic menu item in the three dot menu."/>
+  <variant name="GlicKeyboardShortcutNewBadge"
+      summary="Glic keyboard shortcut input on settings page."/>
   <variant name="LensOverlay"
       summary="Lens Overlay entry points in app and web context menus."/>
   <variant name="NewBadgeTestFeature"
@@ -43,6 +48,11 @@ chromium-metrics-reviews@google.com.
       summary="For plus address creation; shown in the autofill popup."/>
   <variant name="PlusAddressFallbackFromContextMenu"
       summary="Plus address manual fallback entry point in the context menu."/>
+  <variant name="SideBySide"
+      summary="Promotion for Split View in the tab context menu"/>
+  <variant name="SideBySideLinkMenuNewBadge"
+      summary="Promotion for Split View in the render view context menu when
+               right clicking a link."/>
   <variant name="TabOrganization"
       summary="Promotion for Organize Tabs in the app menu."/>
   <variant name="TabstripDeclutter"
@@ -64,8 +74,6 @@ chromium-metrics-reviews@google.com.
 </variants>
 
 <variants name="WhatsNewModule">
-  <variant name="EnhancedProtection"
-      summary="the module for Enhanced Protection"/>
   <variant name="FamilyLink" summary="the module for Family Link"/>
   <variant name="GANslate" summary="the module for GANslate"/>
   <variant name="GeminiShortcut" summary="the module for Gemini Shortcut"/>
@@ -74,23 +82,33 @@ chromium-metrics-reviews@google.com.
   <variant name="GenerativeThemes" summary="the module for Generative Themes"/>
   <variant name="GenerativeTheming"
       summary="the module for Generative Theming"/>
+  <variant name="GlicIntro" summary="the module for Glic Intro"/>
+  <variant name="GlicLearnMore" summary="the module for Glic Learn More"/>
   <variant name="GoogleLens" summary="the module for Google Lens"/>
   <variant name="Googlepayreauth" summary="the module for Google Pay Re-auth"/>
   <variant name="HelpMeWrite" summary="the module for Help Me Write"/>
   <variant name="HistoryEmbeddings"
       summary="the module for History Embeddings Search"/>
+  <variant name="iOSLensSWYS"
+      summary="the module for iOS Lens Search What You See"/>
   <variant name="LensOverlayTranslateButton"
       summary="the module for Lens Overlay Full Page Translate"/>
-  <variant name="Passkeys" summary="the module for Passkeys"/>
+  <variant name="Mobilepasswords"
+      summary="the module for getting passwords on mobile"/>
   <variant name="PdfSearchify"
       summary="the module for making PDFs interactable"/>
   <variant name="PerformanceInterventionUI"
       summary="the module for Performance Intervention"/>
-  <variant name="SafetyCheck" summary="the module for Safety Check"/>
+  <variant name="ReadAnythingReadAloud" summary="Read Anything Read Aloud"/>
+  <variant name="SafetyEnhancedprotection"
+      summary="the module for Enhanced Protection"/>
+  <variant name="SafetyPasskeys" summary="the module for SafetyPasskeys"/>
+  <variant name="SafetySafetycheck" summary="the module for Safety Check"/>
   <variant name="SaveTabGroups" summary="the module for Saved Tab Groups"/>
   <variant name="SearchBoxSuggestions"
       summary="the module for Search Box Suggestions"/>
   <variant name="SidePanelPinning" summary="the module for Side Panel Pinning"/>
+  <variant name="TabGroupsSync" summary="the module for Tab Groups that Sync"/>
   <variant name="TabOrganizer" summary="the module for Tab Organizer"/>
   <variant name="TestDefaultModule"
       summary="the default module used for testing only"/>
@@ -101,7 +119,7 @@ chromium-metrics-reviews@google.com.
 </variants>
 
 <histogram name="Tutorial.TabGroup.EditedTitle" enum="BooleanSuccess"
-    expires_after="2024-09-20">
+    expires_after="never">
   <owner>dpenning@chromium.org</owner>
   <owner>dfried@chromium.org</owner>
   <summary>
@@ -175,7 +193,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="UserEducation.MessageNotShown" enum="PromoFailure"
-    expires_after="2025-04-30">
+    expires_after="2025-11-02">
   <owner>mickeyburks@chromium.org</owner>
   <owner>frizzle-team@google.com</owner>
   <summary>
@@ -186,19 +204,31 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="UserEducation.MessageNotShown.DesktopReEngagement.NoBrowser"
-    units="tries" expires_after="2025-04-30">
+    units="tries" expires_after="2025-02-21">
   <owner>dfried@chromium.org</owner>
   <owner>frizzle-team@google.com</owner>
   <summary>
-    Records when the re-engagement promo is not shown because there is no
-    eligible browser. This is recorded on a new User Education session. The
-    value is the number of times the promo had attempted to show; typical values
-    are low (1-2) as the number of retries is limited.
+    Deprecated. Records when the re-engagement promo is not shown because there
+    is no eligible browser. This is recorded on a new User Education session.
+    The value is the number of times the promo had attempted to show; typical
+    values are low (1-2) as the number of retries is limited.
+  </summary>
+</histogram>
+
+<histogram name="UserEducation.MessageNotShown.TimeInQueue" units="ms"
+    expires_after="2025-09-21">
+  <owner>dfried@chromium.org</owner>
+  <owner>frizzle-team@google.com</owner>
+  <summary>
+    Records the amount of time an IPH promo spends in queue before not being
+    shown. Is not recorded for promos that are immediately rejected due to
+    failed requirements, promos which are explicitly canceled, or promos which
+    are actually shown (see UserEducation.MessageShown.TimeInQueue).
   </summary>
 </histogram>
 
 <histogram name="UserEducation.MessageShown.RotatingPromoIndex" units="Index"
-    expires_after="2025-04-30">
+    expires_after="2025-08-31">
   <expired_intentionally>
     Deprecated. Replaced by UserEducation.RotatingPromoIndex.{IPHFeature}.
   </expired_intentionally>
@@ -226,6 +256,17 @@ chromium-metrics-reviews@google.com.
     dictates special rules for when it can be shown. It can be normal, per-app
     (shown once each in multiple applications), or a legal notice (must be shown
     until explicitly acknowledged by the user).
+  </summary>
+</histogram>
+
+<histogram name="UserEducation.MessageShown.TimeInQueue" units="ms"
+    expires_after="2025-10-12">
+  <owner>dfried@chromium.org</owner>
+  <owner>frizzle-team@google.com</owner>
+  <summary>
+    Records the amount of time an IPH promo spends in queue before being shown.
+    Is not recorded if the promo is not shown (see
+    UserEducation.MessageNotShown.TimeInQueue).
   </summary>
 </histogram>
 
@@ -283,7 +324,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="UserEducation.Session.ActivePeriodDuration.Min.Under1Hour"
-    units="minutes" expires_after="2025-04-30">
+    units="minutes" expires_after="2025-11-02">
   <owner>mickeyburks@chromium.org</owner>
   <owner>frizzle-team@google.com</owner>
   <summary>
@@ -295,7 +336,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="UserEducation.Session.ActivePeriodDuration.Min.Under24Hours"
-    units="minutes" expires_after="2025-04-30">
+    units="minutes" expires_after="2025-11-02">
   <owner>mickeyburks@chromium.org</owner>
   <owner>frizzle-team@google.com</owner>
   <summary>
@@ -307,7 +348,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="UserEducation.Session.IdlePeriodDuration.Hr.Under28Days"
-    units="hours" expires_after="2025-04-30">
+    units="hours" expires_after="2025-11-02">
   <owner>mickeyburks@chromium.org</owner>
   <owner>frizzle-team@google.com</owner>
   <summary>
@@ -319,7 +360,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="UserEducation.Session.IdlePeriodDuration.Min.Under24Hours"
-    units="minutes" expires_after="2025-04-30">
+    units="minutes" expires_after="2025-11-02">
   <owner>mickeyburks@chromium.org</owner>
   <owner>frizzle-team@google.com</owner>
   <summary>
@@ -331,7 +372,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="UserEducation.Session.LongTermCount" units="count"
-    expires_after="2025-04-30">
+    expires_after="2025-11-02">
   <owner>dfried@chromium.org</owner>
   <owner>frizzle-team@google.com</owner>
   <summary>
@@ -342,7 +383,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="UserEducation.Session.MonthlyActiveDays" units="count"
-    expires_after="2025-04-30">
+    expires_after="2025-11-02">
   <owner>dfried@chromium.org</owner>
   <owner>frizzle-team@google.com</owner>
   <summary>
@@ -354,7 +395,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="UserEducation.Session.RecentActiveDays" units="count"
-    expires_after="2025-04-30">
+    expires_after="2025-11-02">
   <owner>dfried@chromium.org</owner>
   <owner>frizzle-team@google.com</owner>
   <summary>
@@ -366,7 +407,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="UserEducation.Session.RecentActiveWeeks" units="count"
-    expires_after="2025-04-30">
+    expires_after="2025-11-02">
   <owner>dfried@chromium.org</owner>
   <owner>frizzle-team@google.com</owner>
   <summary>
@@ -378,7 +419,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="UserEducation.Session.RecentSuperActiveWeeks" units="count"
-    expires_after="2025-04-30">
+    expires_after="2025-11-02">
   <owner>dfried@chromium.org</owner>
   <owner>frizzle-team@google.com</owner>
   <summary>
@@ -390,7 +431,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="UserEducation.Session.ShortTermCount" units="count"
-    expires_after="2025-04-30">
+    expires_after="2025-11-02">
   <owner>dfried@chromium.org</owner>
   <owner>frizzle-team@google.com</owner>
   <summary>
@@ -572,7 +613,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="WhatsNew.LoadEvent" enum="WhatsNewLoadEvent"
-    expires_after="2025-04-30">
+    expires_after="2025-11-02">
   <owner>mickeyburks@chromium.org</owner>
   <owner>frizzle-team@google.com</owner>
   <summary>
@@ -587,7 +628,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="WhatsNew.LoadResponseCode"
-    enum="CombinedHttpResponseAndNetErrorCode" expires_after="2025-04-30">
+    enum="CombinedHttpResponseAndNetErrorCode" expires_after="2025-11-02">
   <owner>mickeyburks@chromium.org</owner>
   <owner>frizzle-team@google.com</owner>
   <summary>
@@ -598,7 +639,7 @@ chromium-metrics-reviews@google.com.
 </histogram>
 
 <histogram name="WhatsNew.StartupType" enum="WhatsNewStartupType"
-    expires_after="2025-04-30">
+    expires_after="2025-11-02">
   <owner>mickeyburks@chromium.org</owner>
   <owner>frizzle-team@google.com</owner>
   <summary>

@@ -94,6 +94,18 @@ enum class TipsNotificationType;
 // framework (should only be used by performance tests)
 + (void)primesTakeMemorySnapshot:(NSString*)eventName;
 
+#pragma mark - Profile Utilities (EG2)
+
+// Returns the name (as in `ProfileIOS::GetProfileName()`) of the current
+// profile, more precisely the profile associated with the foreground active
+// scene.
++ (NSString*)currentProfileName;
+
+// Returns the name (as in `ProfileIOS::GetProfileName()`) of the personal
+// profile (as opposed to managed profiles), as per
+// `ProfileAttributesStorageIOS::GetPersonalProfileName()`.
++ (NSString*)personalProfileName;
+
 #pragma mark - Tab Utilities (EG2)
 
 // Selects tab with given index in current mode (incognito or main
@@ -346,18 +358,6 @@ enum class TipsNotificationType;
 
 #pragma mark - Sync Utilities (EG2)
 
-// Waits for sync engine to be initialized or not. It doesn't necessarily mean
-// that data types are configured and ready to use. See
-// SyncService::IsEngineInitialized() for details. If not succeeded a GREYAssert
-// is induced.
-+ (NSError*)waitForSyncEngineInitialized:(BOOL)isInitialized
-                             syncTimeout:(base::TimeDelta)timeout;
-
-// Waits for the sync feature to be enabled/disabled. See SyncService::
-// IsSyncFeatureEnabled() for details. If not succeeded a GREYAssert is induced.
-+ (NSError*)waitForSyncFeatureEnabled:(BOOL)isEnabled
-                          syncTimeout:(base::TimeDelta)timeout;
-
 // Waits for sync to become fully active; see
 // SyncService::TransportState::ACTIVE for details. If not succeeded a
 // GREYAssert is induced.
@@ -422,6 +422,9 @@ enum class TipsNotificationType;
 // Adds typed URL into HistoryService at timestamp `visitTimestamp`.
 + (void)addHistoryServiceTypedURL:(NSString*)URL
                    visitTimestamp:(base::Time)visitTimestamp;
+
+// Sets the page `title` for `URL` in the History Service.
++ (void)setHistoryServiceTitle:(NSString*)title forPage:(NSString*)URL;
 
 // Deletes typed URL from HistoryService.
 + (void)deleteHistoryServiceTypedURL:(NSString*)URL;
@@ -496,6 +499,12 @@ enum class TipsNotificationType;
 // otherwise returns object representing execution result.
 + (JavaScriptExecutionResult*)executeJavaScript:(NSString*)javaScript;
 
+// Same as -executeJavaScript but executes the script in the isolated world
+// instead of the page content world. This allows interacting with the gcrweb
+// objects that are injected there.
++ (JavaScriptExecutionResult*)executeJavaScriptInIsolatedWorld:
+    (NSString*)javaScript;
+
 // Returns the user agent that should be used for the mobile version.
 + (NSString*)mobileUserAgentString;
 
@@ -523,6 +532,9 @@ enum class TipsNotificationType;
 // Returns YES if kTestFeature is enabled.
 + (BOOL)isTestFeatureEnabled;
 
+// Returns YES if DWA feature is enabled.
++ (BOOL)isDWAEnabled [[nodiscard]];
+
 // Returns YES if DemographicMetricsReporting feature is enabled.
 + (BOOL)isDemographicMetricsReportingEnabled [[nodiscard]];
 
@@ -546,9 +558,6 @@ enum class TipsNotificationType;
 
 // Returns whether the UseLensToSearchForImage feature is enabled.
 + (BOOL)isUseLensToSearchForImageEnabled;
-
-// Returns whether the Web Channels feature is enabled.
-+ (BOOL)isWebChannelsEnabled;
 
 // Returns whether Tab Group Sync is enabled.
 + (BOOL)isTabGroupSyncEnabled;
@@ -594,6 +603,10 @@ enum class TipsNotificationType;
 // base::Value encoded as a JSON string. If the pref was not registered,
 // returns a Value of type NONE.
 + (NSString*)localStatePrefValue:(NSString*)prefName;
+
+// Gets the time value for the local state pref with `prefName`. Local State
+// contains the preferences that are shared between all profiles.
++ (base::Time)localStateTimePref:(NSString*)prefName;
 
 // Sets the integer value for the local state pref with `prefName`. `value`
 // can be either a casted enum or any other numerical value. Local State
@@ -691,6 +704,12 @@ enum class TipsNotificationType;
 // Copies `text` into the clipboard from the app's perspective.
 + (void)copyTextToPasteboard:(NSString*)text;
 
+// Copies `link` into pasteboard as a NSURL.
++ (void)copyLinkAsURLToPasteBoard:(NSString*)link;
+
+// Copies png `data` as image into pasteboard.
++ (void)copyImageToPasteboard:(NSData*)imageData;
+
 #pragma mark - Watcher utilities
 
 // Starts monitoring for buttons (based on traits) with the given
@@ -731,6 +750,16 @@ enum class TipsNotificationType;
 #pragma mark - Notification Utilities
 
 + (void)requestTipsNotification:(TipsNotificationType)type;
+
+#pragma mark - Variations Utilities
+
+// Forces an override of the variations stored permanent country.
++ (void)overrideVariationsServiceStoredPermanentCountry:(NSString*)country;
+
+#pragma mark - Shared Tab Groups Utilities
+
+// Waits for the MessagingBackendService to be initialized.
++ (NSError*)waitForMessagingBackendServiceInitialized;
 
 @end
 

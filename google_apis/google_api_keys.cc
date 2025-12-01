@@ -2,11 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifdef UNSAFE_BUFFERS_BUILD
-// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
-#pragma allow_unsafe_buffers
-#endif
-
 #include "google_apis/google_api_keys.h"
 
 #include <string>
@@ -18,7 +13,6 @@
 #include "base/version_info/channel.h"
 #include "build/branding_buildflags.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "google_apis/api_key_cache.h"
 #include "google_apis/buildflags.h"
 #include "google_apis/default_api_keys.h"
@@ -65,7 +59,7 @@ ApiKeyCache& InitializeApiKeyCacheInstance() {
   // is not feasible to check that `g_api_key_cache_instance` is null in
   // tests.
   if (g_api_key_cache_instance) {
-    CHECK_IS_TEST(base::NotFatalUntil::M133);
+    CHECK_IS_TEST();
   }
   return GetApiKeyCacheInstance();
 }
@@ -104,7 +98,7 @@ const std::string& GetHatsAPIKey() {
 }
 #endif
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
 const std::string& GetSharingAPIKey() {
   return GetApiKeyCacheInstance().api_key_sharing();
 }
@@ -119,6 +113,13 @@ const std::string& GetFresnelAPIKey() {
 
 const std::string& GetBocaAPIKey() {
   return GetApiKeyCacheInstance().api_key_boca();
+}
+
+const std::string& GetCrosSystemGeoAPIKey() {
+  return GetApiKeyCacheInstance().api_key_cros_system_geo();
+}
+const std::string& GetCrosChromeGeoAPIKey() {
+  return GetApiKeyCacheInstance().api_key_cros_chrome_geo();
 }
 #endif
 

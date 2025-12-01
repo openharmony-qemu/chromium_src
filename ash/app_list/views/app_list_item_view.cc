@@ -196,10 +196,13 @@ class PromiseIconBackground : public views::Background {
   PromiseIconBackground(ui::ColorId color_id,
                         const gfx::Rect& icon_bounds,
                         const gfx::Insets& insets)
-      : color_id_(color_id), icon_bounds_(icon_bounds), insets_(insets) {}
+      : icon_bounds_(icon_bounds), insets_(insets) {
+    SetColor(color_id);
+  }
 
   PromiseIconBackground(const PromiseIconBackground&) = delete;
   PromiseIconBackground& operator=(const PromiseIconBackground&) = delete;
+
   ~PromiseIconBackground() override = default;
 
   // views::Background:
@@ -212,18 +215,16 @@ class PromiseIconBackground : public views::Background {
 
     cc::PaintFlags flags;
     flags.setAntiAlias(true);
-    flags.setColor(get_color());
+    flags.setColor(color().ResolveToSkColor(view->GetColorProvider()));
 
     canvas->DrawCircle(bounds.CenterPoint(), radius, flags);
   }
 
   void OnViewThemeChanged(views::View* view) override {
-    SetNativeControlColor(view->GetColorProvider()->GetColor(color_id_));
     view->SchedulePaint();
   }
 
  private:
-  const ui::ColorId color_id_;
   const gfx::Rect icon_bounds_;
   const gfx::Insets insets_;
 };
@@ -659,11 +660,10 @@ AppListItemView::AppListItemView(const AppListConfig* app_list_config,
           ? TypographyToken::kCrosAnnotation1
           : TypographyToken::kCrosButton2,
       *title);
-  title->SetEnabledColorId(cros_tokens::kCrosSysOnSurface);
+  title->SetEnabledColor(cros_tokens::kCrosSysOnSurface);
 
   icon_background_ = AddChildView(std::make_unique<views::View>());
   icon_background_->SetPaintToLayer(ui::LAYER_SOLID_COLOR);
-  icon_background_->layer()->SetFillsBoundsOpaquely(false);
   icon_background_->SetCanProcessEventsWithinSubtree(false);
   icon_background_->SetVisible(is_folder_);
 
@@ -741,6 +741,13 @@ AppListItemView::AppListItemView(const AppListConfig* app_list_config,
   }
 
   UpdateAccessibleDescription();
+  UpdateTooltipText();
+
+  new_install_dot_visibility_changed_callback_ =
+      new_install_dot_->AddVisibleChangedCallback(base::BindRepeating(
+          &AppListItemView::UpdateTooltipText, weak_ptr_factory_.GetWeakPtr()));
+  title_->AddLabelTooltipTextChangedCallback(base::BindRepeating(
+      &AppListItemView::UpdateTooltipText, weak_ptr_factory_.GetWeakPtr()));
 }
 
 void AppListItemView::InitializeIconLoader() {
@@ -840,7 +847,7 @@ void AppListItemView::SetIconAndMaybeHostBadgeIcon(
 
   // Clear icon and bail out if item icon is empty.
   if (icon.isNull()) {
-    icon_->SetImage(nullptr);
+    icon_->SetImage(ui::ImageModel());
     icon_image_model_ =
         ui::ImageModel(ui::ImageModel::FromImageSkia(gfx::ImageSkia()));
     return;
@@ -857,12 +864,13 @@ void AppListItemView::SetIconAndMaybeHostBadgeIcon(
   host_badge_icon_image_ = has_host_badge_ ? host_badge_icon : gfx::ImageSkia();
 
   if (GetColorProvider() && !host_badge_icon_image_.isNull()) {
-    icon_->SetImage(CreateBadgedShortcutImage(*app_list_config_, icon,
-                                              host_badge_icon, icon_scale_,
-                                              GetColorProvider()));
+    icon_->SetImage(ui::ImageModel::FromImageSkia(
+        CreateBadgedShortcutImage(*app_list_config_, icon, host_badge_icon,
+                                  icon_scale_, GetColorProvider())));
   } else {
-    icon_->SetImage(gfx::ImageSkiaOperations::CreateResizedImage(
-        icon, skia::ImageOperations::RESIZE_BEST, icon_size));
+    icon_->SetImage(ui::ImageModel::FromImageSkia(
+        gfx::ImageSkiaOperations::CreateResizedImage(
+            icon, skia::ImageOperations::RESIZE_BEST, icon_size)));
   }
 
   DeprecatedLayoutImmediately();
@@ -1669,21 +1677,6 @@ void AppListItemView::OnThemeChanged() {
   SchedulePaint();
 }
 
-std::u16string AppListItemView::GetTooltipText(const gfx::Point& p) const {
-  // Use the label to generate a tooltip, so that it will consider its text
-  // truncation in making the tooltip. We do not want the label itself to have a
-  // tooltip, so we only temporarily enable it to get the tooltip text from the
-  // label, then disable it again.
-  title_->SetHandlesTooltips(true);
-  std::u16string tooltip = title_->GetTooltipText(p);
-  title_->SetHandlesTooltips(false);
-  if (new_install_dot_ && new_install_dot_->GetVisible() && !is_folder_) {
-    // Tooltip becomes two lines: "App Name" + "New install".
-    tooltip = l10n_util::GetStringFUTF16(IDS_APP_LIST_NEW_INSTALL, tooltip);
-  }
-  return tooltip;
-}
-
 void AppListItemView::OnDraggedViewEnter() {
   SetBackgroundExtendedState(/*extend_icon=*/true, /*animate=*/true);
 }
@@ -2229,7 +2222,8 @@ void AppListItemView::SetBackgroundExtendedState(bool extend_icon,
   if (GetWidget()) {
     builder.GetCurrentSequence().SetColor(
         background_layer,
-        GetColorProvider()->GetColor(GetBackgroundLayerColorId()),
+        SkColor4f::FromColor(
+            GetColorProvider()->GetColor(GetBackgroundLayerColorId())),
         animation_tween_type);
   }
 }
@@ -2316,6 +2310,19 @@ void AppListItemView::UpdateAccessibleDescription() {
   } else {
     GetViewAccessibility().RemoveDescription();
   }
+}
+
+void AppListItemView::UpdateTooltipText() {
+  // Use the label to generate a tooltip, so that it will consider its text
+  // truncation in making the tooltip. We do not want the label itself to have a
+  // tooltip, so we only temporarily enable it to get the tooltip text from the
+  // label, then disable it again.
+  std::u16string tooltip(title_->GetComputedTooltip());
+  if (new_install_dot_ && new_install_dot_->GetVisible() && !is_folder_) {
+    // Tooltip becomes two lines: "App Name" + "New install".
+    tooltip = l10n_util::GetStringFUTF16(IDS_APP_LIST_NEW_INSTALL, tooltip);
+  }
+  SetTooltipText(tooltip);
 }
 
 BEGIN_METADATA(AppListItemView)

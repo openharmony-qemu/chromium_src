@@ -1,10 +1,10 @@
 Package: libx11-xcb1
 Source: libx11
-Version: 2:1.7.2-1
+Version: 2:1.7.2-1+deb11u2
 Architecture: i386
 Maintainer: Debian X Strike Force <debian-x@lists.debian.org>
 Installed-Size: 262
-Depends: libx11-6 (= 2:1.7.2-1)
+Depends: libx11-6 (= 2:1.7.2-1+deb11u2)
 Section: libs
 Priority: optional
 Multi-Arch: same

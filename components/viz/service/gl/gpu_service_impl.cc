@@ -27,10 +27,11 @@
 #include "base/trace_event/trace_event.h"
 #include "base/unguessable_token.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "components/startup_metric_utils/gpu/startup_metric_utils.h"
 #include "components/version_info/version_info.h"
 #include "components/viz/common/features.h"
+#include "components/viz/common/resources/peak_gpu_memory_tracker_util.h"
+#include "components/viz/service/gl/gpu_log_message_manager.h"
 #include "gpu/command_buffer/client/gpu_memory_buffer_manager.h"
 #include "gpu/command_buffer/service/dawn_caching_interface.h"
 #include "gpu/command_buffer/service/gpu_switches.h"
@@ -93,23 +94,20 @@
 #include "media/base/android/media_codec_util.h"
 #endif
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
 #include "components/chromeos_camera/gpu_mjpeg_decode_accelerator_factory.h"
 #include "components/chromeos_camera/mojo_jpeg_encode_accelerator_service.h"
 #include "components/chromeos_camera/mojo_mjpeg_decode_accelerator_service.h"
 
-#if BUILDFLAG(USE_CHROMEOS_MEDIA_ACCELERATION)
-#include "ash/components/arc/video_accelerator/gpu_arc_video_decode_accelerator.h"
-#if BUILDFLAG(USE_VAAPI) || BUILDFLAG(USE_V4L2_CODEC)
-#include "ash/components/arc/video_accelerator/gpu_arc_video_decoder.h"
-#endif
-#include "ash/components/arc/video_accelerator/gpu_arc_video_encode_accelerator.h"
-#include "ash/components/arc/video_accelerator/gpu_arc_video_protected_buffer_allocator.h"
-#include "ash/components/arc/video_accelerator/protected_buffer_manager.h"
-#include "ash/components/arc/video_accelerator/protected_buffer_manager_proxy.h"
-#endif  // BUILDFLAG(USE_CHROMEOS_MEDIA_ACCELERATION)
-
-#endif  // BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION)
+#include "chromeos/ash/experiences/arc/video_accelerator/gpu_arc_video_decode_accelerator.h"
+#include "chromeos/ash/experiences/arc/video_accelerator/gpu_arc_video_decoder.h"
+#include "chromeos/ash/experiences/arc/video_accelerator/gpu_arc_video_encode_accelerator.h"
+#include "chromeos/ash/experiences/arc/video_accelerator/gpu_arc_video_protected_buffer_allocator.h"
+#include "chromeos/ash/experiences/arc/video_accelerator/protected_buffer_manager.h"
+#include "chromeos/ash/experiences/arc/video_accelerator/protected_buffer_manager_proxy.h"
+#endif  // BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION)
+#endif  // BUILDFLAG(IS_CHROMEOS)
 
 #if BUILDFLAG(IS_WIN)
 #include "components/viz/common/overlay_state/win/overlay_state_service.h"
@@ -155,148 +153,13 @@ namespace {
 constexpr char kGpuInitializationEventCategory[] = "latency";
 constexpr char kGpuInitializationEvent[] = "GpuInitialization";
 
-using LogCallback = base::RepeatingCallback<
-    void(int severity, const std::string& header, const std::string& message)>;
-
-struct LogMessage {
-  LogMessage(int severity,
-             const std::string& header,
-             const std::string& message)
-      : severity(severity),
-        header(std::move(header)),
-        message(std::move(message)) {}
-  const int severity;
-  const std::string header;
-  const std::string message;
-};
-
-// Forward declare log handlers so they can be used within LogMessageManager.
-bool PreInitializeLogHandler(int severity,
-                             const char* file,
-                             int line,
-                             size_t message_start,
-                             const std::string& message);
-bool PostInitializeLogHandler(int severity,
-                              const char* file,
-                              int line,
-                              size_t message_start,
-                              const std::string& message);
-
-// Class which manages LOG() message forwarding before and after GpuServiceImpl
-// InitializeWithHost(). Prior to initialize, log messages are deferred and kept
-// within the class. During initialize, InstallPostInitializeLogHandler() will
-// be called to flush deferred messages and route new ones directly to GpuHost.
-class LogMessageManager {
- public:
-  LogMessageManager() = default;
-  ~LogMessageManager() = delete;
-
-  // Queues a deferred LOG() message into |deferred_messages_| unless
-  // |log_callback_| has been set -- in which case RouteMessage() is called.
-  void AddDeferredMessage(int severity,
-                          const std::string& header,
-                          const std::string& message) {
-    base::AutoLock lock(message_lock_);
-    // During InstallPostInitializeLogHandler() there's a brief window where a
-    // call into this function may be waiting on |message_lock_|, so we need to
-    // check if |log_callback_| was set once we get the lock.
-    if (log_callback_) {
-      RouteMessage(severity, std::move(header), std::move(message));
-      return;
-    }
-
-    // Otherwise just queue the message for InstallPostInitializeLogHandler() to
-    // forward later.
-    deferred_messages_.emplace_back(severity, std::move(header),
-                                    std::move(message));
-  }
-
-  // Used after InstallPostInitializeLogHandler() to route messages directly to
-  // |log_callback_|; avoids the need for a global lock.
-  void RouteMessage(int severity,
-                    const std::string& header,
-                    const std::string& message) {
-    log_callback_.Run(severity, std::move(header), std::move(message));
-  }
-
-  // If InstallPostInitializeLogHandler() will never be called, this method is
-  // called prior to process exit to ensure logs are forwarded.
-  void FlushMessages(mojom::GpuHost* gpu_host) {
-    base::AutoLock lock(message_lock_);
-    for (auto& log : deferred_messages_) {
-      gpu_host->RecordLogMessage(log.severity, std::move(log.header),
-                                 std::move(log.message));
-    }
-    deferred_messages_.clear();
-  }
-
-  // Used prior to InitializeWithHost() during GpuMain startup to ensure logs
-  // aren't lost before initialize.
-  void InstallPreInitializeLogHandler() {
-    DCHECK(!log_callback_);
-    logging::SetLogMessageHandler(PreInitializeLogHandler);
-  }
-
-  // Called by InitializeWithHost() to take over logging from the
-  // PostInitializeLogHandler(). Flushes all deferred messages.
-  void InstallPostInitializeLogHandler(LogCallback log_callback) {
-    base::AutoLock lock(message_lock_);
-    DCHECK(!log_callback_);
-    log_callback_ = std::move(log_callback);
-    for (auto& log : deferred_messages_)
-      RouteMessage(log.severity, std::move(log.header), std::move(log.message));
-    deferred_messages_.clear();
-    logging::SetLogMessageHandler(PostInitializeLogHandler);
-  }
-
-  // Called when it's no longer safe to invoke |log_callback_|.
-  void ShutdownLogging() {
-    logging::SetLogMessageHandler(nullptr);
-    log_callback_.Reset();
-  }
-
- private:
-  base::Lock message_lock_;
-  std::vector<LogMessage> deferred_messages_ GUARDED_BY(message_lock_);
-
-  // Set once under |mesage_lock_|, but may be accessed without lock after that.
-  LogCallback log_callback_;
-};
-
-LogMessageManager* GetLogMessageManager() {
-  static base::NoDestructor<LogMessageManager> message_manager;
-  return message_manager.get();
-}
-
-bool PreInitializeLogHandler(int severity,
-                             const char* file,
-                             int line,
-                             size_t message_start,
-                             const std::string& message) {
-  GetLogMessageManager()->AddDeferredMessage(severity,
-                                             message.substr(0, message_start),
-                                             message.substr(message_start));
-  return false;
-}
-
-bool PostInitializeLogHandler(int severity,
-                              const char* file,
-                              int line,
-                              size_t message_start,
-                              const std::string& message) {
-  GetLogMessageManager()->RouteMessage(severity,
-                                       message.substr(0, message_start),
-                                       message.substr(message_start));
-  return false;
-}
-
 bool IsAcceleratedJpegDecodeSupported() {
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(IS_CHROMEOS)
   return chromeos_camera::GpuMjpegDecodeAcceleratorFactory::
       IsAcceleratedJpegDecodeSupported();
 #else
   return false;
-#endif  // BUILDFLAG(IS_CHROMEOS_ASH)
+#endif  // BUILDFLAG(IS_CHROMEOS)
 }
 
 bool WillGetGmbConfigFromGpu() {
@@ -311,6 +174,14 @@ bool WillGetGmbConfigFromGpu() {
 #else
   return false;
 #endif
+}
+
+void RunGetPeakGpuMemoryUsageCallbackOnMainThread(
+    GpuServiceImpl::GetPeakMemoryUsageCallback callback,
+    uint64_t peak_memory,
+    base::flat_map<gpu::GpuPeakMemoryAllocationSource, uint64_t>
+        allocation_per_source) {
+  std::move(callback).Run(peak_memory, std::move(allocation_per_source));
 }
 
 }  // namespace
@@ -337,16 +208,14 @@ GpuServiceImpl::GpuServiceImpl(
 #if BUILDFLAG(ENABLE_VULKAN)
       vulkan_implementation_(init_params.vulkan_implementation),
 #endif
-      exit_callback_(std::move(init_params.exit_callback)),
       clear_shader_cache_(base::FeatureList::IsEnabled(
           features::kClearGrShaderDiskCacheOnInvalidPrefix)) {
   DCHECK(!io_runner_->BelongsToCurrentThread());
-  DCHECK(exit_callback_);
 
-#if BUILDFLAG(IS_CHROMEOS_ASH) && BUILDFLAG(USE_CHROMEOS_MEDIA_ACCELERATION)
+#if BUILDFLAG(IS_CHROMEOS) && BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION)
   protected_buffer_manager_ = new arc::ProtectedBufferManager();
-#endif  // BUILDFLAG(IS_CHROMEOS_ASH) &&
-        // BUILDFLAG(USE_CHROMEOS_MEDIA_ACCELERATION)
+#endif  // BUILDFLAG(IS_CHROMEOS) &&
+        // BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION)
 
 #if BUILDFLAG(ENABLE_VULKAN)
   if (vulkan_implementation_) {
@@ -386,8 +255,8 @@ GpuServiceImpl::GpuServiceImpl(
       // GpuServiceImpl holds the instance of DawnContextProvider, so it
       // outlives the DawnContextProvider.
       auto cache_blob_callback = base::BindRepeating(
-          [](GpuServiceImpl* self, gpu::GpuDiskCacheType type,
-             const std::string& key, const std::string& blob) {
+          [](GpuServiceImpl* self, const std::string& key,
+             const std::string& blob) {
             self->StoreBlobToDisk(gpu::kGraphiteDawnGpuDiskCacheHandle, key,
                                   blob);
           },
@@ -428,16 +297,23 @@ GpuServiceImpl::GpuServiceImpl(
   weak_ptr_ = weak_ptr_factory_.GetWeakPtr();
 }
 
+GpuServiceImpl::GpuServiceImpl()
+    : clear_shader_cache_(base::FeatureList::IsEnabled(
+          features::kClearGrShaderDiskCacheOnInvalidPrefix)) {}
+
 GpuServiceImpl::~GpuServiceImpl() {
-  DCHECK(main_runner_->BelongsToCurrentThread());
+  if (main_runner_) {
+    DCHECK(main_runner_->BelongsToCurrentThread());
+  }
 
   // Ensure we don't try to exit when already in the process of exiting.
   is_exiting_.Set();
 
   bind_task_tracker_.TryCancelAll();
 
-  if (!in_host_process())
-    GetLogMessageManager()->ShutdownLogging();
+  if (!in_host_process()) {
+    GpuLogMessageManager::GetInstance()->ShutdownLogging();
+  }
 
 #if BUILDFLAG(IS_WIN)
   gl::DirectCompositionOverlayCapsMonitor::GetInstance()->RemoveObserver(this);
@@ -448,16 +324,15 @@ GpuServiceImpl::~GpuServiceImpl() {
     base::WaitableEvent wait;
     auto destroy_receiver_task = base::BindOnce(
         [](mojo::Receiver<mojom::GpuService>* receiver,
-           std::unordered_map<int, std::unique_ptr<ClientGmbInterfaceImpl>>
-               client_gmb_interface_impl,
            base::WaitableEvent* wait) {
           receiver->reset();
-          client_gmb_interface_impl.clear();
           wait->Signal();
         },
-        &receiver_, std::move(gmb_clients_), base::Unretained(&wait));
-    if (io_runner_->PostTask(FROM_HERE, std::move(destroy_receiver_task)))
+        &receiver_, base::Unretained(&wait));
+    if (io_runner_ &&
+        io_runner_->PostTask(FROM_HERE, std::move(destroy_receiver_task))) {
       wait.Wait();
+    }
   }
 
   if (watchdog_thread_)
@@ -479,7 +354,8 @@ GpuServiceImpl::~GpuServiceImpl() {
         },
         std::move(gpu_memory_buffer_factory_), base::Unretained(&wait));
 
-    if (io_runner_->PostTask(FROM_HERE, std::move(destroy_gmb_factory))) {
+    if (io_runner_ &&
+        io_runner_->PostTask(FROM_HERE, std::move(destroy_gmb_factory))) {
       // |gpu_memory_buffer_factory_| holds a raw pointer to
       // |vulkan_context_provider_|. Waiting here enforces the correct order
       // of destruction.
@@ -517,11 +393,6 @@ void GpuServiceImpl::UpdateGPUInfo() {
         image_decode_accelerator_worker_->GetSupportedProfiles();
   }
 
-#if BUILDFLAG(IS_WIN)
-  gpu_info_.shared_image_d3d =
-      gpu::D3DImageBackingFactory::IsD3DSharedImageSupported(gpu_preferences_);
-#endif
-
   // Record initialization only after collecting the GPU info because that can
   // take a significant amount of time.
   base::TimeTicks now = base::TimeTicks::Now();
@@ -547,28 +418,107 @@ void GpuServiceImpl::UpdateGPUInfoGL() {
   gpu_host_->DidUpdateGPUInfo(gpu_info_);
 }
 
+#if BUILDFLAG(IS_ANDROID)
 void GpuServiceImpl::InitializeWithHost(
     mojo::PendingRemote<mojom::GpuHost> pending_gpu_host,
     gpu::GpuProcessShmCount use_shader_cache_shm_count,
     scoped_refptr<gl::GLSurface> default_offscreen_surface,
     mojom::GpuServiceCreationParamsPtr creation_params,
-#if BUILDFLAG(IS_ANDROID)
     gpu::SyncPointManager* sync_point_manager,
     gpu::SharedImageManager* shared_image_manager,
     gpu::Scheduler* scheduler,
+    base::WaitableEvent* shutdown_event,
+    const gpu::SharedContextState::GrContextOptionsProvider*
+        gr_context_options_provider) {
+  if (!sync_point_manager) {
+    sync_point_manager = CreateSyncPointManager();
+  }
+
+  if (!shared_image_manager) {
+#if BUILDFLAG(IS_OZONE)
+    shared_image_manager =
+        CreateSharedImageManager(creation_params->supports_overlays);
+#else
+    shared_image_manager = CreateSharedImageManager();
 #endif
+  }
+
+  if (!scheduler) {
+    scheduler = CreateScheduler(sync_point_manager);
+  }
+
+  if (!shutdown_event) {
+    shutdown_event = CreateShutdownEvent();
+  }
+
+  gr_context_options_provider_ = gr_context_options_provider;
+
+  InitializeWithHostInternal(
+      std::move(pending_gpu_host), std::move(use_shader_cache_shm_count),
+      default_offscreen_surface, std::move(creation_params), sync_point_manager,
+      shared_image_manager, scheduler, shutdown_event);
+}
+#else
+void GpuServiceImpl::InitializeWithHost(
+    mojo::PendingRemote<mojom::GpuHost> pending_gpu_host,
+    gpu::GpuProcessShmCount use_shader_cache_shm_count,
+    scoped_refptr<gl::GLSurface> default_offscreen_surface,
+    mojom::GpuServiceCreationParamsPtr creation_params,
     base::WaitableEvent* shutdown_event) {
-#if !BUILDFLAG(IS_ANDROID)
-  // On platforms other than Android these objects are *always* created
-  // internally.
-  gpu::SyncPointManager* sync_point_manager = nullptr;
-  gpu::SharedImageManager* shared_image_manager = nullptr;
-  gpu::Scheduler* scheduler = nullptr;
+  gpu::SyncPointManager* sync_point_manager = CreateSyncPointManager();
+#if BUILDFLAG(IS_OZONE)
+  gpu::SharedImageManager* shared_image_manager =
+      CreateSharedImageManager(creation_params->supports_overlays);
+#else
+  gpu::SharedImageManager* shared_image_manager = CreateSharedImageManager();
+#endif
+  gpu::Scheduler* scheduler = CreateScheduler(sync_point_manager);
+
+  if (!shutdown_event) {
+    shutdown_event = CreateShutdownEvent();
+  }
+
+  InitializeWithHostInternal(
+      std::move(pending_gpu_host), std::move(use_shader_cache_shm_count),
+      default_offscreen_surface, std::move(creation_params), sync_point_manager,
+      shared_image_manager, scheduler, shutdown_event);
+
+#if BUILDFLAG(IS_WIN)
+  // shared_image_d3d must be initialized after we call
+  // InitializeWithHostInternal as that is where the shared context state is
+  // created.
+  auto shared_context_state = GetContextState();
+  if (shared_context_state) {
+    gpu_info_.shared_image_d3d =
+        gpu::D3DImageBackingFactory::IsD3DSharedImageSupported(
+            shared_context_state->GetD3D11Device().Get(), gpu_preferences_);
+
+    gpu_host_->DidUpdateGPUInfo(gpu_info_);
+  }
+#endif
+}
 #endif
 
+void GpuServiceImpl::InitializeWithHostInternal(
+    mojo::PendingRemote<mojom::GpuHost> pending_gpu_host,
+    gpu::GpuProcessShmCount use_shader_cache_shm_count,
+    scoped_refptr<gl::GLSurface> default_offscreen_surface,
+    mojom::GpuServiceCreationParamsPtr creation_params,
+    gpu::SyncPointManager* sync_point_manager,
+    gpu::SharedImageManager* shared_image_manager,
+    gpu::Scheduler* scheduler,
+    base::WaitableEvent* shutdown_event) {
   DCHECK(main_runner_->BelongsToCurrentThread());
 
+  scheduler_ = scheduler;
+  shutdown_event_ = shutdown_event;
+
   mojo::Remote<mojom::GpuHost> gpu_host(std::move(pending_gpu_host));
+
+#if BUILDFLAG(IS_LINUX)
+  gpu_extra_info_.is_gmb_nv12_supported = IsGMBNV12Supported();
+#endif
+
   gpu_host->DidInitialize(gpu_info_, gpu_feature_info_,
                           gpu_info_for_hardware_gpu_,
                           gpu_feature_info_for_hardware_gpu_, gpu_extra_info_);
@@ -577,48 +527,9 @@ void GpuServiceImpl::InitializeWithHost(
     // The global callback is reset from the dtor. So Unretained() here is safe.
     // Note that the callback can be called from any thread. Consequently, the
     // callback cannot use a WeakPtr.
-    GetLogMessageManager()->InstallPostInitializeLogHandler(base::BindRepeating(
-        &GpuServiceImpl::RecordLogMessage, base::Unretained(this)));
-  }
-
-  if (!sync_point_manager) {
-    owned_sync_point_manager_ = std::make_unique<gpu::SyncPointManager>();
-    sync_point_manager = owned_sync_point_manager_.get();
-  }
-
-  if (!shared_image_manager) {
-    // When using real buffers for testing overlay configurations, we need
-    // access to SharedImageManager on the viz thread to obtain the buffer
-    // corresponding to a mailbox.
-    const bool display_context_on_another_thread =
-        features::IsDrDcEnabled() && !gpu_driver_bug_workarounds_.disable_drdc;
-
-    // |display_context_on_another_thread|, features::IsUsingRawDraw(),
-    // kAlwaysUseRealBufferTestingOnOzone, and kSharedBitmapToSharedImage
-    // requires |thread_safe_manager| to be true.
-    bool thread_safe_manager = true;
-    owned_shared_image_manager_ = std::make_unique<gpu::SharedImageManager>(
-        thread_safe_manager, display_context_on_another_thread);
-#if BUILDFLAG(IS_OZONE)
-    owned_shared_image_manager_->SetSupportsOverlays(
-        creation_params->supports_overlays);
-#endif
-    shared_image_manager = owned_shared_image_manager_.get();
-  }
-
-  shutdown_event_ = shutdown_event;
-  if (!shutdown_event_) {
-    owned_shutdown_event_ = std::make_unique<base::WaitableEvent>(
-        base::WaitableEvent::ResetPolicy::MANUAL,
-        base::WaitableEvent::InitialState::NOT_SIGNALED);
-    shutdown_event_ = owned_shutdown_event_.get();
-  }
-
-  if (scheduler) {
-    scheduler_ = scheduler;
-  } else {
-    owned_scheduler_ = std::make_unique<gpu::Scheduler>(sync_point_manager);
-    scheduler_ = owned_scheduler_.get();
+    GpuLogMessageManager::GetInstance()->InstallPostInitializeLogHandler(
+        base::BindRepeating(&GpuServiceImpl::RecordLogMessage,
+                            base::Unretained(this)));
   }
 
   // Defer creation of the render thread. This is to prevent it from handling
@@ -632,7 +543,7 @@ void GpuServiceImpl::InitializeWithHost(
       std::move(default_offscreen_surface),
       image_decode_accelerator_worker_.get(), vulkan_context_provider(),
       metal_context_provider(), dawn_context_provider(),
-      dawn_caching_interface_factory());
+      dawn_caching_interface_factory(), gr_context_options_provider_);
 
   media_gpu_channel_manager_ = std::make_unique<media::MediaGpuChannelManager>(
       gpu_channel_manager_.get());
@@ -691,16 +602,6 @@ scoped_refptr<gpu::SharedContextState> GpuServiceImpl::GetContextState() {
   return gpu_channel_manager_->GetSharedContextState(&result);
 }
 
-// static
-void GpuServiceImpl::InstallPreInitializeLogHandler() {
-  GetLogMessageManager()->InstallPreInitializeLogHandler();
-}
-
-// static
-void GpuServiceImpl::FlushPreInitializeLogMessages(mojom::GpuHost* gpu_host) {
-  GetLogMessageManager()->FlushMessages(gpu_host);
-}
-
 void GpuServiceImpl::SetVisibilityChangedCallback(
     VisibilityChangedCallback callback) {
   DCHECK(main_runner_->BelongsToCurrentThread());
@@ -714,8 +615,8 @@ void GpuServiceImpl::RecordLogMessage(int severity,
   gpu_host_->RecordLogMessage(severity, std::move(header), std::move(message));
 }
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
-#if BUILDFLAG(USE_CHROMEOS_MEDIA_ACCELERATION)
+#if BUILDFLAG(IS_CHROMEOS)
+#if BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION)
 void GpuServiceImpl::CreateArcVideoDecodeAccelerator(
     mojo::PendingReceiver<arc::mojom::VideoDecodeAccelerator> vda_receiver) {
   DCHECK(io_runner_->BelongsToCurrentThread());
@@ -779,11 +680,9 @@ void GpuServiceImpl::CreateArcVideoDecodeAcceleratorOnMainThread(
 void GpuServiceImpl::CreateArcVideoDecoderOnMainThread(
     mojo::PendingReceiver<arc::mojom::VideoDecoder> vd_receiver) {
   DCHECK(main_runner_->BelongsToCurrentThread());
-#if BUILDFLAG(USE_VAAPI) || BUILDFLAG(USE_V4L2_CODEC)
   mojo::MakeSelfOwnedReceiver(
       std::make_unique<arc::GpuArcVideoDecoder>(protected_buffer_manager_),
       std::move(vd_receiver));
-#endif
 }
 
 void GpuServiceImpl::CreateArcVideoEncodeAcceleratorOnMainThread(
@@ -817,7 +716,7 @@ void GpuServiceImpl::CreateArcProtectedBufferManagerOnMainThread(
           protected_buffer_manager_),
       std::move(pbm_receiver));
 }
-#endif  // BUILDFLAG(USE_CHROMEOS_MEDIA_ACCELERATION)
+#endif  // BUILDFLAG(USE_LINUX_VIDEO_ACCELERATION)
 
 void GpuServiceImpl::CreateJpegDecodeAccelerator(
     mojo::PendingReceiver<chromeos_camera::mojom::MjpegDecodeAccelerator>
@@ -837,7 +736,7 @@ void GpuServiceImpl::CreateJpegEncodeAccelerator(
   chromeos_camera::MojoJpegEncodeAcceleratorService::Create(
       std::move(jea_receiver));
 }
-#endif  // BUILDFLAG(IS_CHROMEOS_ASH)
+#endif  // BUILDFLAG(IS_CHROMEOS)
 
 #if BUILDFLAG(IS_WIN)
 void GpuServiceImpl::RegisterDCOMPSurfaceHandle(
@@ -894,23 +793,6 @@ void GpuServiceImpl::CreateVideoEncodeAcceleratorProvider(
       media_gpu_channel_manager_->AsWeakPtr(), main_runner_);
 }
 
-void GpuServiceImpl::BindClientGmbInterface(
-    mojo::PendingReceiver<gpu::mojom::ClientGmbInterface> pending_receiver,
-    int client_id) {
-  // Bind the receiver to the IO tread. All IPC in this interface will be
-  // then received on the IO thread.
-  if (main_runner_->BelongsToCurrentThread()) {
-    bind_task_tracker_.PostTask(
-        io_runner_.get(), FROM_HERE,
-        base::BindOnce(&GpuServiceImpl::BindClientGmbInterface,
-                       base::Unretained(this), std::move(pending_receiver),
-                       client_id));
-    return;
-  }
-  gmb_clients_[client_id] = std::make_unique<ClientGmbInterfaceImpl>(
-      client_id, std::move(pending_receiver), this, io_runner_);
-}
-
 void GpuServiceImpl::BindWebNNContextProvider(
     mojo::PendingReceiver<webnn::mojom::WebNNContextProvider> pending_receiver,
     int client_id) {
@@ -923,71 +805,21 @@ void GpuServiceImpl::BindWebNNContextProvider(
   }
 
   if (!webnn_context_provider_) {
+    scoped_refptr<gpu::SharedContextState> shared_context_state =
+        GetContextState();
+    if (!shared_context_state) {
+      return;
+    }
     // TODO(crbug.com/345352987): manage `WebNNContextProviderImpl` instance per
     // `client_id` in order to support memory metrics.
     webnn_context_provider_ = webnn::WebNNContextProviderImpl::Create(
-        GetContextState(), gpu_feature_info_, gpu_info_,
-        base::BindOnce(&GpuServiceImpl::LoseAllContexts, weak_ptr_));
+        std::move(shared_context_state), gpu_feature_info_, gpu_info_,
+        base::BindOnce(&GpuServiceImpl::LoseAllContexts, weak_ptr_),
+        main_runner(), GetGpuScheduler(), client_id);
   }
 
   webnn_context_provider_->BindWebNNContextProvider(
       std::move(pending_receiver));
-}
-
-void GpuServiceImpl::CreateGpuMemoryBuffer(
-    gfx::GpuMemoryBufferId id,
-    const gfx::Size& size,
-    gfx::BufferFormat format,
-    gfx::BufferUsage usage,
-    int client_id,
-    gpu::SurfaceHandle surface_handle,
-    CreateGpuMemoryBufferCallback callback) {
-  // This needs to happen in the IO thread.
-  DCHECK(io_runner_->BelongsToCurrentThread());
-
-  // Create a native buffer handle if supported.
-  if (IsNativeBufferSupported(format, usage)) {
-    gpu_memory_buffer_factory_->CreateGpuMemoryBufferAsync(
-        id, size, format, usage, client_id, surface_handle,
-        std::move(callback));
-    return;
-  }
-
-  // Otherwise, create a shared memory handle if supported.
-  if (gpu::GpuMemoryBufferImplSharedMemory::IsUsageSupported(usage) &&
-      gpu::GpuMemoryBufferImplSharedMemory::IsSizeValidForFormat(size,
-                                                                 format)) {
-    gfx::GpuMemoryBufferHandle shm_handle;
-    shm_handle = gpu::GpuMemoryBufferImplSharedMemory::CreateGpuMemoryBuffer(
-        id, size, format, usage);
-    DCHECK_EQ(gfx::SHARED_MEMORY_BUFFER, shm_handle.type);
-    std::move(callback).Run(std::move(shm_handle));
-    return;
-  }
-
-  // By default, return a null handle.
-  std::move(callback).Run(gfx::GpuMemoryBufferHandle());
-}
-
-void GpuServiceImpl::DestroyGpuMemoryBuffer(gfx::GpuMemoryBufferId id,
-                                            int client_id) {
-  if (!main_runner_->BelongsToCurrentThread()) {
-    main_runner_->PostTask(
-        FROM_HERE, base::BindOnce(&GpuServiceImpl::DestroyGpuMemoryBuffer,
-                                  weak_ptr_, id, client_id));
-    return;
-  }
-  gpu_channel_manager_->DestroyGpuMemoryBuffer(id, client_id);
-}
-
-void GpuServiceImpl::CopyGpuMemoryBuffer(
-    gfx::GpuMemoryBufferHandle buffer_handle,
-    base::UnsafeSharedMemoryRegion shared_memory,
-    CopyGpuMemoryBufferCallback callback) {
-  DCHECK(io_runner_->BelongsToCurrentThread());
-  std::move(callback).Run(
-      gpu_memory_buffer_factory_->FillSharedMemoryRegionWithBufferContents(
-          std::move(buffer_handle), std::move(shared_memory)));
 }
 
 void GpuServiceImpl::GetVideoMemoryUsageStats(
@@ -1005,7 +837,6 @@ void GpuServiceImpl::GetVideoMemoryUsageStats(
 }
 
 void GpuServiceImpl::StartPeakMemoryMonitor(uint32_t sequence_num) {
-  DCHECK(io_runner_->BelongsToCurrentThread());
   main_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(&GpuServiceImpl::StartPeakMemoryMonitorOnMainThread,
@@ -1014,7 +845,6 @@ void GpuServiceImpl::StartPeakMemoryMonitor(uint32_t sequence_num) {
 
 void GpuServiceImpl::GetPeakMemoryUsage(uint32_t sequence_num,
                                         GetPeakMemoryUsageCallback callback) {
-  DCHECK(io_runner_->BelongsToCurrentThread());
   main_runner_->PostTask(
       FROM_HERE, base::BindOnce(&GpuServiceImpl::GetPeakMemoryUsageOnMainThread,
                                 weak_ptr_, sequence_num, std::move(callback)));
@@ -1146,7 +976,6 @@ void GpuServiceImpl::GetIsolationKey(
 }
 
 void GpuServiceImpl::MaybeExitOnContextLost(
-    bool synthetic_loss,
     gpu::error::ContextLostReason context_lost_reason) {
   DCHECK(main_runner_->BelongsToCurrentThread());
 
@@ -1156,13 +985,7 @@ void GpuServiceImpl::MaybeExitOnContextLost(
     return;
   }
 
-  if (IsExiting() || !exit_callback_)
-    return;
-
-  LOG(ERROR) << "Exiting GPU process because some drivers can't recover "
-                "from errors. GPU process will restart shortly.";
-  is_exiting_.Set();
-  std::move(exit_callback_).Run(ExitCode::RESULT_CODE_GPU_EXIT_ON_CONTEXT_LOST);
+  RestartGpuProcessForContextLoss("Context was lost.");
 }
 
 bool GpuServiceImpl::IsExiting() const {
@@ -1179,7 +1002,6 @@ void GpuServiceImpl::EstablishGpuChannel(int32_t client_id,
       // We are already exiting so there is no point in responding. Close the
       // receiver so we can safely drop the callback.
       receiver_.reset();
-      gmb_clients_.clear();
       return;
     }
 
@@ -1293,7 +1115,7 @@ void GpuServiceImpl::WakeUpGpuOnMainThread() {
 #if BUILDFLAG(IS_ANDROID)
     gpu_channel_manager_->WakeUpGpu();
 #else
-    NOTREACHED_IN_MIGRATION() << "WakeUpGpu() not supported on this platform.";
+    NOTREACHED() << "WakeUpGpu() not supported on this platform.";
 #endif
   }
 }
@@ -1383,7 +1205,7 @@ void GpuServiceImpl::OnBackgroundCleanupGpuMainThread() {
   DVLOG(1) << "GPU: Performing background cleanup";
   gpu_channel_manager_->OnBackgroundCleanup();
 #else
-  NOTREACHED_IN_MIGRATION();
+  NOTREACHED();
 #endif
 }
 
@@ -1393,7 +1215,7 @@ void GpuServiceImpl::OnBackgroundCleanupCompositorGpuThread() {
   if (compositor_gpu_thread_)
     compositor_gpu_thread_->OnBackgroundCleanup();
 #else
-  NOTREACHED_IN_MIGRATION();
+  NOTREACHED();
 #endif
 }
 
@@ -1492,7 +1314,7 @@ void GpuServiceImpl::ThrowJavaException() {
 #if BUILDFLAG(IS_ANDROID)
   ThrowUncaughtException();
 #else
-  NOTREACHED_IN_MIGRATION() << "Java exception not supported on this platform.";
+  NOTREACHED() << "Java exception not supported on this platform.";
 #endif
 }
 
@@ -1506,6 +1328,13 @@ void GpuServiceImpl::GetPeakMemoryUsageOnMainThread(
   uint64_t peak_memory = 0u;
   auto allocation_per_source =
       gpu_channel_manager_->GetPeakMemoryUsage(sequence_num, &peak_memory);
+
+  auto seq_loc = GetPeakMemoryUsageRequestLocation(sequence_num);
+  if (seq_loc == SequenceLocation::kGpuProcess) {
+    RunGetPeakGpuMemoryUsageCallbackOnMainThread(
+        std::move(callback), peak_memory, std::move(allocation_per_source));
+    return;
+  }
   io_runner_->PostTask(FROM_HERE,
                        base::BindOnce(std::move(callback), peak_memory,
                                       std::move(allocation_per_source)));
@@ -1521,6 +1350,32 @@ bool GpuServiceImpl::OnBeginFrameDerivedImpl(const BeginFrameArgs& args) {
                                       base::Unretained(this), args));
   return true;
 }
+
+#if BUILDFLAG(IS_LINUX)
+bool GpuServiceImpl::IsGMBNV12Supported() {
+  CHECK(main_runner_->BelongsToCurrentThread());
+  auto buffer_format = gfx::BufferFormat::YUV_420_BIPLANAR;
+  auto buffer_usage = gfx::BufferUsage::GPU_READ_CPU_READ_WRITE;
+
+  if (!IsNativeBufferSupported(buffer_format, buffer_usage)) {
+    return false;
+  }
+  auto size = gfx::Size(2, 2);
+
+  // Note that |gmb_id| and |client_id| does not matter here as this is the
+  // first GMB which will created and immediately destroyed.
+  auto gmb_id = gfx::GpuMemoryBufferId(
+      static_cast<int>(gpu::MappableSIClientGmbId::kGpuServiceImpl));
+  auto client_id = gpu::kMappableSIClientId;
+  auto gmb_handle = gpu_memory_buffer_factory_->CreateGpuMemoryBuffer(
+      gmb_id, size, /*framebuffer_size=*/size, buffer_format, buffer_usage,
+      client_id, gpu::kNullSurfaceHandle);
+
+  // Destroy the gmb_handle since it will be no longer needed.
+  gpu_memory_buffer_factory_->DestroyGpuMemoryBuffer(gmb_id, client_id);
+  return !gmb_handle.is_null();
+}
+#endif
 
 void GpuServiceImpl::OnBeginFrameSourcePausedChanged(bool paused) {}
 
@@ -1567,6 +1422,44 @@ void GpuServiceImpl::OnOverlayCapsChanged() {
 }
 #endif
 
+gpu::SyncPointManager* GpuServiceImpl::CreateSyncPointManager() {
+  owned_sync_point_manager_ = std::make_unique<gpu::SyncPointManager>();
+  return owned_sync_point_manager_.get();
+}
+
+gpu::SharedImageManager* GpuServiceImpl::CreateSharedImageManager(
+    bool supports_overlays) {
+  // When using real buffers for testing overlay configurations, we need
+  // access to SharedImageManager on the viz thread to obtain the buffer
+  // corresponding to a mailbox.
+  const bool display_context_on_another_thread =
+      features::IsDrDcEnabled() && !gpu_driver_bug_workarounds_.disable_drdc;
+
+  // |display_context_on_another_thread|, features::IsUsingRawDraw(),
+  // kAlwaysUseRealBufferTestingOnOzone, and kSharedBitmapToSharedImage
+  // requires |thread_safe_manager| to be true.
+  bool thread_safe_manager = true;
+  owned_shared_image_manager_ = std::make_unique<gpu::SharedImageManager>(
+      thread_safe_manager, display_context_on_another_thread);
+#if BUILDFLAG(IS_OZONE)
+  owned_shared_image_manager_->SetSupportsOverlays(supports_overlays);
+#endif
+  return owned_shared_image_manager_.get();
+}
+
+gpu::Scheduler* GpuServiceImpl::CreateScheduler(
+    gpu::SyncPointManager* sync_point_manager) {
+  owned_scheduler_ = std::make_unique<gpu::Scheduler>(sync_point_manager);
+  return owned_scheduler_.get();
+}
+
+base::WaitableEvent* GpuServiceImpl::CreateShutdownEvent() {
+  owned_shutdown_event_ = std::make_unique<base::WaitableEvent>(
+      base::WaitableEvent::ResetPolicy::MANUAL,
+      base::WaitableEvent::InitialState::NOT_SIGNALED);
+  return owned_shutdown_event_.get();
+}
+
 bool GpuServiceImpl::IsNativeBufferSupported(gfx::BufferFormat format,
                                              gfx::BufferUsage usage) {
   // Note that we are initializing the |supported_gmb_configurations_| here to
@@ -1595,146 +1488,6 @@ bool GpuServiceImpl::IsNativeBufferSupported(gfx::BufferFormat format,
              usage, format)) != supported_gmb_configurations_.end();
 }
 
-GpuServiceImpl::ClientGmbInterfaceImpl::PendingBufferInfo::PendingBufferInfo() =
-    default;
-GpuServiceImpl::ClientGmbInterfaceImpl::PendingBufferInfo::PendingBufferInfo(
-    PendingBufferInfo&&) = default;
-GpuServiceImpl::ClientGmbInterfaceImpl::PendingBufferInfo::
-    ~PendingBufferInfo() = default;
-
-GpuServiceImpl::ClientGmbInterfaceImpl::ClientGmbInterfaceImpl(
-    int client_id,
-    mojo::PendingReceiver<gpu::mojom::ClientGmbInterface> pending_receiver,
-    raw_ptr<GpuServiceImpl> gpu_service,
-    scoped_refptr<base::SingleThreadTaskRunner> io_runner)
-    : client_id_(client_id), gpu_service_(gpu_service) {
-  receiver_.Bind(std::move(pending_receiver));
-  receiver_.set_disconnect_handler(
-      base::BindOnce(&GpuServiceImpl::ClientGmbInterfaceImpl::OnConnectionError,
-                     base::Unretained(this)));
-  base::trace_event::MemoryDumpManager::GetInstance()->RegisterDumpProvider(
-      this, "GpuServiceImpl::ClientGmbInterfaceImpl", std::move(io_runner));
-  weak_ptr_ = weak_ptr_factory_.GetWeakPtr();
-}
-
-GpuServiceImpl::ClientGmbInterfaceImpl::~ClientGmbInterfaceImpl() {
-  base::trace_event::MemoryDumpManager::GetInstance()->UnregisterDumpProvider(
-      this);
-}
-
-void GpuServiceImpl::ClientGmbInterfaceImpl::CreateGpuMemoryBuffer(
-    gfx::GpuMemoryBufferId id,
-    const gfx::Size& size,
-    gfx::BufferFormat format,
-    gfx::BufferUsage usage,
-    gpu::SurfaceHandle surface_handle,
-    CreateGpuMemoryBufferCallback callback) {
-  if (!gpu::GpuMemoryBufferSupport::IsSizeValid(size)) {
-    receiver_.ReportBadMessage("Invalid GMB size");
-    std::move(callback).Run(gfx::GpuMemoryBufferHandle());
-    return;
-  }
-
-  // Ensure that the buffer corresponding to this id is not already pending or
-  // allocated.
-  if ((pending_buffers_.find(id) != pending_buffers_.end()) ||
-      (allocated_buffers_.find(id) != allocated_buffers_.end())) {
-    DLOG(ERROR) << "Allocation request for this buffer is either pending or "
-                   "have already completed. Hence not allocating a new buffer.";
-    std::move(callback).Run(gfx::GpuMemoryBufferHandle());
-    return;
-  }
-
-  PendingBufferInfo pending_buffer_info;
-  pending_buffer_info.size = size;
-  pending_buffer_info.format = format;
-  pending_buffer_info.callback = std::move(callback);
-  pending_buffers_.emplace(id, std::move(pending_buffer_info));
-  gpu_service_->CreateGpuMemoryBuffer(
-      id, size, format, usage, client_id_, surface_handle,
-      base::BindOnce(
-          &GpuServiceImpl::ClientGmbInterfaceImpl::OnGpuMemoryBufferAllocated,
-          weak_ptr_, id));
-}
-
-void GpuServiceImpl::ClientGmbInterfaceImpl::DestroyGpuMemoryBuffer(
-    gfx::GpuMemoryBufferId id) {
-  // Check if the id is present in the allocated_buffers.
-  auto allocated_buffer = allocated_buffers_.find(id);
-  if (allocated_buffer == allocated_buffers_.end()) {
-    DLOG(ERROR) << "Can not find GpuMemoryBuffer to destroy";
-    return;
-  }
-  DCHECK_NE(gfx::EMPTY_BUFFER, allocated_buffer->second.type());
-  if (allocated_buffer->second.type() != gfx::SHARED_MEMORY_BUFFER) {
-    gpu_service_->DestroyGpuMemoryBuffer(id, client_id_);
-  }
-  allocated_buffers_.erase(allocated_buffer);
-}
-
-void GpuServiceImpl::ClientGmbInterfaceImpl::CopyGpuMemoryBuffer(
-    gfx::GpuMemoryBufferHandle buffer_handle,
-    base::UnsafeSharedMemoryRegion shared_memory,
-    CopyGpuMemoryBufferCallback callback) {
-  gpu_service_->CopyGpuMemoryBuffer(
-      std::move(buffer_handle), std::move(shared_memory), std::move(callback));
-}
-
-bool GpuServiceImpl::ClientGmbInterfaceImpl::OnMemoryDump(
-    const base::trace_event::MemoryDumpArgs& args,
-    base::trace_event::ProcessMemoryDump* pmd) {
-  uint64_t client_tracing_process_id =
-      base::trace_event::MemoryDumpManager::GetInstance()
-          ->GetTracingProcessId();
-  for (const auto& allocated_buffer : allocated_buffers_) {
-    auto& buffer_info = allocated_buffer.second;
-    if (!buffer_info.OnMemoryDump(pmd, client_id_, client_tracing_process_id)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-void GpuServiceImpl::ClientGmbInterfaceImpl::OnConnectionError() {
-  // Destroy all the GMBs corresponding to this client.
-  DestroyAllGpuMemoryBuffers();
-
-  // Note that this method destroys the current ClientGmbInterfaceImpl object.
-  // So it is not safe to use this pointer after below line.
-  gpu_service_->RemoveGmbClient(client_id_);
-}
-
-void GpuServiceImpl::ClientGmbInterfaceImpl::OnGpuMemoryBufferAllocated(
-    gfx::GpuMemoryBufferId id,
-    gfx::GpuMemoryBufferHandle handle) {
-  auto pending_buffer = pending_buffers_.find(id);
-  auto pending_buffer_info = std::move(pending_buffer->second);
-  pending_buffers_.erase(pending_buffer);
-  if (!handle.is_null()) {
-    CHECK(handle.id == id);
-    gpu::AllocatedBufferInfo buffer_info(handle, pending_buffer_info.size,
-                                         pending_buffer_info.format);
-    allocated_buffers_.emplace(id, buffer_info);
-  }
-  std::move(pending_buffer_info.callback).Run(std::move(handle));
-}
-
-void GpuServiceImpl::ClientGmbInterfaceImpl::DestroyAllGpuMemoryBuffers() {
-  for (const auto& allocated_buffer : allocated_buffers_) {
-    DCHECK_NE(gfx::EMPTY_BUFFER, allocated_buffer.second.type());
-    if (allocated_buffer.second.type() != gfx::SHARED_MEMORY_BUFFER) {
-      gpu_service_->DestroyGpuMemoryBuffer(allocated_buffer.first, client_id_);
-    }
-  }
-  allocated_buffers_.clear();
-
-  // Run all pending_buffers callback with null handle.
-  for (auto& pending_buffer : pending_buffers_) {
-    std::move(pending_buffer.second.callback).Run(gfx::GpuMemoryBufferHandle());
-  }
-  pending_buffers_.clear();
-}
-
 void GpuServiceImpl::GetDawnInfo(bool collect_metrics,
                                  GetDawnInfoCallback callback) {
   DCHECK(io_runner_->BelongsToCurrentThread());
@@ -1745,53 +1498,31 @@ void GpuServiceImpl::GetDawnInfo(bool collect_metrics,
                      collect_metrics, std::move(callback)));
 }
 
-BASE_FEATURE(kPauseWatchdogDuringDawnInfoCollection,
-             "PauseWatchdogDuringDawnInfoCollection",
-             base::FEATURE_ENABLED_BY_DEFAULT);
-
-BASE_FEATURE(kEnableDawnInfoCollectionWatchdogReportOnlyMode,
-             "EnableDawnInfoCollectionWatchdogReportOnlyMode",
-             base::FEATURE_DISABLED_BY_DEFAULT);
-
 void GpuServiceImpl::GetDawnInfoOnMain(bool collect_metrics,
                                        GetDawnInfoCallback callback) {
   DCHECK(main_runner_->BelongsToCurrentThread());
-  static const bool pause_watchdog =
-      base::FeatureList::IsEnabled(kPauseWatchdogDuringDawnInfoCollection);
-  static const bool report_only_mode = base::FeatureList::IsEnabled(
-      kEnableDawnInfoCollectionWatchdogReportOnlyMode);
 
   std::vector<std::string> dawn_info_list;
   // Pause the watchdog around Dawn info collection since it is known to be
   // slow loading GPU drivers.
-  if (watchdog_thread_ && pause_watchdog) {
+  if (watchdog_thread_) {
     watchdog_thread_->PauseWatchdog();
   }
 
-  if (report_only_mode) {
+  // Don't collect metrics if gpu watchdog is still running. Otherwise fast
+  // timings will be recorded, and very-slow timings will crash and not
+  // record, skewing the results.
+  {
     SCOPED_UMA_HISTOGRAM_TIMER("GPU.Dawn.InfoCollectionTimeMS");
-    gpu::CollectDawnInfo(gpu_preferences_, collect_metrics, &dawn_info_list);
-  } else {
-    // Don't collect metrics if not in report only mode. Otherwise fast timings
-    // will be recorded, and very-slow timings will crash and not record,
-    // skewing the results.
     gpu::CollectDawnInfo(gpu_preferences_, collect_metrics, &dawn_info_list);
   }
 
-  if (watchdog_thread_ && pause_watchdog) {
+  if (watchdog_thread_) {
     watchdog_thread_->ResumeWatchdog();
   }
 
   io_runner_->PostTask(FROM_HERE,
                        base::BindOnce(std::move(callback), dawn_info_list));
-}
-
-void GpuServiceImpl::RemoveGmbClient(int client_id) {
-  CHECK(io_runner_->BelongsToCurrentThread());
-  auto it = gmb_clients_.find(client_id);
-  if (it != gmb_clients_.end()) {
-    gmb_clients_.erase(it);
-  }
 }
 
 #if BUILDFLAG(IS_ANDROID)

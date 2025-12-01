@@ -117,7 +117,9 @@ class SharedStorageWorkletDevToolsAgentHostTest
             main_rfh);
     document_service->CreateWorklet(
         script_url, url::Origin::Create(script_url),
-        network::mojom::CredentialsMode::kSameOrigin, {},
+        blink::mojom::SharedStorageDataOriginType::kScriptOrigin,
+        network::mojom::CredentialsMode::kSameOrigin,
+        blink::mojom::SharedStorageWorkletCreationMethod::kCreateWorklet, {},
         std::move(worklet_host), base::DoNothing());
 
     SharedStorageRuntimeManager* manager =

@@ -4,6 +4,7 @@
 
 #include "components/safe_browsing/core/browser/db/v4_protocol_manager_util.h"
 
+#include <algorithm>
 #include <string_view>
 
 #include "base/base64.h"
@@ -11,7 +12,6 @@
 #include "base/hash/sha1.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/rand_util.h"
-#include "base/ranges/algorithm.h"
 #include "base/strings/escape.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_util.h"
@@ -191,14 +191,6 @@ StoreAndHashPrefix::StoreAndHashPrefix(ListIdentifier list_id,
 
 StoreAndHashPrefix::~StoreAndHashPrefix() = default;
 
-bool StoreAndHashPrefix::operator==(const StoreAndHashPrefix& other) const {
-  return list_id == other.list_id && hash_prefix == other.hash_prefix;
-}
-
-bool StoreAndHashPrefix::operator!=(const StoreAndHashPrefix& other) const {
-  return !operator==(other);
-}
-
 size_t StoreAndHashPrefix::hash() const {
   std::size_t first = list_id.hash();
   std::size_t second = std::hash<std::string>()(hash_prefix);
@@ -221,16 +213,6 @@ bool SBThreatTypeSetIsValidForCheckBrowseUrl(const SBThreatTypeSet& set) {
     }
   }
   return true;
-}
-
-bool ListIdentifier::operator==(const ListIdentifier& other) const {
-  return platform_type_ == other.platform_type_ &&
-         threat_entry_type_ == other.threat_entry_type_ &&
-         threat_type_ == other.threat_type_;
-}
-
-bool ListIdentifier::operator!=(const ListIdentifier& other) const {
-  return !operator==(other);
 }
 
 size_t ListIdentifier::hash() const {
@@ -611,9 +593,9 @@ void V4ProtocolManagerUtil::SetClientInfoFromConfig(
 void V4ProtocolManagerUtil::GetListClientStatesFromStoreStateMap(
     const std::unique_ptr<StoreStateMap>& store_state_map,
     std::vector<std::string>* list_client_states) {
-  base::ranges::transform(*store_state_map,
-                          std::back_inserter(*list_client_states),
-                          &StoreStateMap::value_type::second);
+  std::ranges::transform(*store_state_map,
+                         std::back_inserter(*list_client_states),
+                         &StoreStateMap::value_type::second);
 }
 
 }  // namespace safe_browsing

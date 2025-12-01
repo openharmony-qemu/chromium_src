@@ -63,8 +63,8 @@ constexpr auto kTextfieldFocusIndicatorMargins = gfx::Insets::VH(6, 0);
 QuickInsertSearchFieldView::QuickInsertSearchFieldView(
     SearchCallback search_callback,
     BackCallback back_callback,
-    PickerKeyEventHandler* key_event_handler,
-    PickerPerformanceMetrics* performance_metrics)
+    QuickInsertKeyEventHandler* key_event_handler,
+    QuickInsertPerformanceMetrics* performance_metrics)
     : search_callback_(std::move(search_callback)),
       key_event_handler_(key_event_handler),
       performance_metrics_(performance_metrics) {
@@ -80,8 +80,8 @@ QuickInsertSearchFieldView::QuickInsertSearchFieldView(
               .CopyAddressTo(&back_button_)
               .SetProperty(views::kMarginsKey, kButtonHorizontalMargin)
               .SetVisible(false),
-          views::Builder<PickerSearchBarTextfield>(
-              std::make_unique<PickerSearchBarTextfield>(this))
+          views::Builder<QuickInsertSearchBarTextfield>(
+              std::make_unique<QuickInsertSearchBarTextfield>(this))
               .CopyAddressTo(&textfield_)
               .SetProperty(views::kElementIdentifierKey,
                            kQuickInsertSearchFieldTextfieldElementId)
@@ -133,7 +133,7 @@ void QuickInsertSearchFieldView::OnPaint(gfx::Canvas* canvas) {
   views::View::OnPaint(canvas);
 
   if (should_show_focus_indicator_) {
-    PaintPickerFocusIndicator(
+    PaintQuickInsertFocusIndicator(
         canvas, gfx::Point(0, kTextfieldFocusIndicatorMargins.top()),
         height() - kTextfieldFocusIndicatorMargins.height(),
         GetColorProvider()->GetColor(cros_tokens::kCrosSysFocusRing));
@@ -164,9 +164,6 @@ bool QuickInsertSearchFieldView::HandleKeyEvent(views::Textfield* sender,
   return key_event_handler_->HandleKeyEvent(key_event);
 }
 
-void QuickInsertSearchFieldView::OnWillChangeFocus(View* focused_before,
-                                                   View* focused_now) {}
-
 void QuickInsertSearchFieldView::OnDidChangeFocus(View* focused_before,
                                                   View* focused_now) {
   if (focused_now == textfield_) {
@@ -176,14 +173,15 @@ void QuickInsertSearchFieldView::OnDidChangeFocus(View* focused_before,
   ScheduleNotifyInitialActiveDescendantForA11y();
 }
 
-const std::u16string& QuickInsertSearchFieldView::GetPlaceholderText() const {
+std::u16string_view QuickInsertSearchFieldView::GetPlaceholderText() const {
   return textfield_->GetPlaceholderText();
 }
 
 void QuickInsertSearchFieldView::SetPlaceholderText(
-    const std::u16string& new_placeholder_text) {
+    std::u16string_view new_placeholder_text) {
   textfield_->SetPlaceholderText(new_placeholder_text);
-  textfield_->GetViewAccessibility().SetName(new_placeholder_text);
+  textfield_->GetViewAccessibility().SetName(
+      std::u16string(new_placeholder_text));
 }
 
 void QuickInsertSearchFieldView::SetTextfieldActiveDescendant(
@@ -236,8 +234,8 @@ views::View* QuickInsertSearchFieldView::GetViewLeftOf(views::View* view) {
   if (!Contains(view)) {
     return nullptr;
   }
-  views::View* left_view = GetNextPickerPseudoFocusableView(
-      view, PickerPseudoFocusDirection::kBackward, /*should_loop=*/false);
+  views::View* left_view = GetNextQuickInsertPseudoFocusableView(
+      view, QuickInsertPseudoFocusDirection::kBackward, /*should_loop=*/false);
   return Contains(left_view) ? left_view : nullptr;
 }
 
@@ -245,8 +243,8 @@ views::View* QuickInsertSearchFieldView::GetViewRightOf(views::View* view) {
   if (!Contains(view)) {
     return nullptr;
   }
-  views::View* right_view = GetNextPickerPseudoFocusableView(
-      view, PickerPseudoFocusDirection::kForward, /*should_loop=*/false);
+  views::View* right_view = GetNextQuickInsertPseudoFocusableView(
+      view, QuickInsertPseudoFocusDirection::kForward, /*should_loop=*/false);
   return Contains(right_view) ? right_view : nullptr;
 }
 

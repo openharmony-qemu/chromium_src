@@ -497,7 +497,7 @@
             {
               "cipd_package": "infra/3pp/tools/cpython3/linux-amd64",
               "location": "vpython_dir_linux_amd64",
-              "revision": "version:2@3.8.10.chromium.34"
+              "revision": "version:3@3.11.9.chromium.36"
             },
             {
               "cipd_package": "infra/tools/luci/vpython3/linux-amd64",
@@ -528,7 +528,7 @@
             }
           },
           "service_account": "chromium-tester@chops-service-accounts.iam.gserviceaccount.com",
-          "shards": 6
+          "shards": 4
         },
         "test": "net_unittests",
         "test_id_prefix": "ninja://net:net_unittests/"

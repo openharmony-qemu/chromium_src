@@ -15,6 +15,7 @@
 #include <array>
 #include <bit>
 #include <type_traits>
+#include <variant>
 
 #include "base/base64url.h"
 #include "base/feature_list.h"
@@ -22,7 +23,6 @@
 #include "base/numerics/byte_conversions.h"
 #include "base/numerics/safe_conversions.h"
 #include "base/numerics/safe_math.h"
-#include "base/ranges/algorithm.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_util.h"
 #include "components/cbor/reader.h"
@@ -57,18 +57,14 @@ namespace {
 // will ever reach.
 constexpr uint32_t kMaxSequence = (1 << 24) - 1;
 
-bool ConstructNonce(uint32_t counter, base::span<uint8_t, 12u> out_nonce) {
+bool ConstructNonce(uint32_t counter, base::span<uint8_t, 12> out_nonce) {
   if (counter > kMaxSequence) {
     return false;
   }
 
-  auto [zeros, counter_span] = out_nonce.split_at<12u - 4u>();
-#if defined(__clang__) && (__clang_major__ < 17)
-    std::fill(zeros.begin(), zeros.end(), uint8_t{0});
-#else
-    std::ranges::fill(zeros, uint8_t{0});
-#endif
-  counter_span.copy_from(base::numerics::U32ToBigEndian(counter));
+  auto [zeros, counter_span] = out_nonce.split_at<8>();
+  std::ranges::fill(zeros, uint8_t{0});
+  counter_span.copy_from(base::U32ToBigEndian(counter));
   return true;
 }
 
@@ -109,7 +105,8 @@ namespace tunnelserver {
 
 // kAssignedDomains is the list of defined tunnel server domains. These map
 // to values 0..256.
-static const char* kAssignedDomains[] = {"cable.ua5v.com", "cable.auth.com"};
+static auto kAssignedDomains =
+    std::to_array<const char*>({"cable.ua5v.com", "cable.auth.com"});
 
 std::optional<KnownDomainID> ToKnownDomainID(uint16_t domain) {
   if (domain >= 256 || domain < std::size(kAssignedDomains)) {
@@ -372,7 +369,7 @@ std::optional<Components> Parse(const std::string& qr_url) {
   }
   const cbor::Value::MapValue& qr_contents_map(qr_contents->GetMap());
 
-  base::span<const uint8_t> values[2];
+  std::array<base::span<const uint8_t>, 2> values;
   for (size_t i = 0; i < std::size(values); i++) {
     const cbor::Value::MapValue::const_iterator it =
         qr_contents_map.find(cbor::Value(static_cast<int>(i)));
@@ -389,7 +386,7 @@ std::optional<Components> Parse(const std::string& qr_url) {
   if (qr_secret.size() != ret.secret.size()) {
     return std::nullopt;
   }
-  base::ranges::copy(qr_secret, ret.secret.begin());
+  std::ranges::copy(qr_secret, ret.secret.begin());
 
   std::optional<std::array<uint8_t, device::kP256X962Length>> peer_identity =
       DecompressPublicKey(compressed_public_key);
@@ -429,12 +426,10 @@ std::optional<Components> Parse(const std::string& qr_url) {
 std::string Encode(base::span<const uint8_t, kQRKeySize> qr_key,
                    RequestType request_type) {
   cbor::Value::MapValue qr_contents;
-  qr_contents.emplace(
-      0, SeedToCompressedPublicKey(
-             base::span<const uint8_t, device::cablev2::kQRSeedSize>(
-                 qr_key.data(), device::cablev2::kQRSeedSize)));
+  qr_contents.emplace(0, SeedToCompressedPublicKey(
+                             qr_key.first<device::cablev2::kQRSeedSize>()));
 
-  qr_contents.emplace(1, qr_key.subspan(device::cablev2::kQRSeedSize));
+  qr_contents.emplace(1, qr_key.subspan<device::cablev2::kQRSeedSize>());
 
   qr_contents.emplace(
       2, static_cast<int64_t>(std::size(tunnelserver::kAssignedDomains)));
@@ -470,7 +465,7 @@ std::string BytesToDigits(base::span<const uint8_t> in) {
              static_cast<int>(sizeof(digits)));
     ret += digits;
 
-    in = in.subspan(kChunkSize);
+    in = in.subspan<kChunkSize>();
   }
 
   if (in.size()) {
@@ -588,7 +583,7 @@ void Derive(uint8_t* out,
 }  // namespace internal
 
 const char* RequestTypeToString(RequestType request_type) {
-  return absl::visit(
+  return std::visit(
       base::Overloaded{[](const FidoRequestType& request_type) {
                          switch (request_type) {
                            case FidoRequestType::kMakeCredential:
@@ -603,6 +598,8 @@ const char* RequestTypeToString(RequestType request_type) {
                          switch (request_type) {
                            case CredentialRequestType::kPresentation:
                              return "dcp";
+                           case CredentialRequestType::kIssuance:
+                             return "dci";
                              // If adding a value here, also update
                              // `RequestTypeFromString`.
                          }
@@ -613,8 +610,12 @@ const char* RequestTypeToString(RequestType request_type) {
 RequestType RequestTypeFromString(const std::string& s) {
   if (s == "mc") {
     return FidoRequestType::kMakeCredential;
-  } else if (s == "dcp") {
+  }
+  if (s == "dcp") {
     return CredentialRequestType::kPresentation;
+  }
+  if (s == "dci") {
+    return CredentialRequestType::kIssuance;
   }
   // kGetAssertion is the default if the value is unknown too.
   return FidoRequestType::kGetAssertion;
@@ -623,7 +624,7 @@ RequestType RequestTypeFromString(const std::string& s) {
 bssl::UniquePtr<EC_KEY> IdentityKey(base::span<const uint8_t, 32> root_secret) {
   std::array<uint8_t, 32> seed;
   seed = device::cablev2::Derive<seed.size()>(
-      root_secret, /*nonce=*/base::span<uint8_t>(),
+      root_secret, /*nonce=*/{},
       device::cablev2::DerivedValueType::kIdentityKeySeed);
   bssl::UniquePtr<EC_GROUP> p256(
       EC_GROUP_new_by_curve_name(NID_X9_62_prime256v1));
@@ -681,7 +682,7 @@ std::optional<std::vector<uint8_t>> EncodePaddedCBORMap(
 }
 
 bool ShouldOfferLinking(RequestType request_type) {
-  return absl::visit(
+  return std::visit(
       base::Overloaded{[](const FidoRequestType&) {
                          return base::FeatureList::IsEnabled(
                              device::kWebAuthnHybridLinking);
@@ -702,7 +703,7 @@ namespace {
 // TODO(agl): remove support for this padding format. (Chromium started sending
 // the new format with M99.)
 std::optional<cbor::Value> DecodePaddedCBORMap8(
-    const base::span<const uint8_t> input) {
+    base::span<const uint8_t> input) {
   if (input.empty()) {
     return std::nullopt;
   }
@@ -809,9 +810,7 @@ bool Crypter::Encrypt(std::vector<uint8_t>* message_to_encrypt) {
   aes_key.Init(write_key_);
   DCHECK_EQ(nonce.size(), aes_key.NonceLength());
 
-  base::span<const uint8_t> additional_data;
-  std::vector<uint8_t> ciphertext =
-      aes_key.Seal(padded_message, nonce, additional_data);
+  std::vector<uint8_t> ciphertext = aes_key.Seal(padded_message, nonce, {});
   message_to_encrypt->swap(ciphertext);
   return true;
 }
@@ -827,14 +826,13 @@ bool Crypter::Decrypt(base::span<const uint8_t> ciphertext,
   aes_key.Init(read_key_);
   DCHECK_EQ(nonce.size(), aes_key.NonceLength());
 
-  base::span<const uint8_t> additional_data;
   std::optional<std::vector<uint8_t>> plaintext =
-      aes_key.Open(ciphertext, nonce, additional_data);
+      aes_key.Open(ciphertext, nonce, {});
 
   if (!plaintext) {
     return false;
   }
-  read_sequence_num_++;
+  ++read_sequence_num_;
 
   if (plaintext->empty()) {
     FIDO_LOG(ERROR) << "Invalid caBLE message.";
@@ -922,8 +920,7 @@ std::vector<uint8_t> HandshakeInitiator::BuildInitialMessage() {
     noise_.MixKey(es_key);
   }
 
-  std::vector<uint8_t> ciphertext =
-      noise_.EncryptAndHash(base::span<const uint8_t>());
+  std::vector<uint8_t> ciphertext = noise_.EncryptAndHash({});
 
   std::vector<uint8_t> handshake_message;
   handshake_message.reserve(sizeof(ephemeral_key_public_bytes) +
@@ -944,8 +941,7 @@ HandshakeResult HandshakeInitiator::ProcessResponse(
                     << " bytes)";
     return std::nullopt;
   }
-  auto peer_point_bytes = response.first(kP256X962Length);
-  auto ciphertext = response.subspan(kP256X962Length);
+  auto [peer_point_bytes, ciphertext] = response.split_at<kP256X962Length>();
 
   bssl::UniquePtr<EC_POINT> peer_point(
       EC_POINT_new(EC_KEY_get0_group(ephemeral_key_.get())));
@@ -998,8 +994,7 @@ HandshakeResult RespondToHandshake(
     FIDO_LOG(DEBUG) << "Handshake truncated (" << in.size() << " bytes)";
     return std::nullopt;
   }
-  auto peer_point_bytes = in.first(kP256X962Length);
-  auto ciphertext = in.subspan(kP256X962Length);
+  auto [peer_point_bytes, ciphertext] = in.split_at<kP256X962Length>();
 
   Noise noise;
   uint8_t prologue[1];
@@ -1085,8 +1080,7 @@ HandshakeResult RespondToHandshake(
     noise.MixKey(shared_key_se);
   }
 
-  const std::vector<uint8_t> my_ciphertext =
-      noise.EncryptAndHash(base::span<const uint8_t>());
+  const std::vector<uint8_t> my_ciphertext = noise.EncryptAndHash({});
   out_response->insert(
       out_response->end(), ephemeral_key_public_bytes,
       ephemeral_key_public_bytes + sizeof(ephemeral_key_public_bytes));

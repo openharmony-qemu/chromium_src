@@ -17,6 +17,10 @@
 #include "media/mojo/services/android_mojo_media_client.h"  // nogncheck
 #endif
 
+#if BUILDFLAG(ENABLE_WISEPLAY)
+#include "media/mojo/services/ohos_mojo_media_client.h"  // nogncheck
+#endif
+
 #if BUILDFLAG(IS_WIN)
 #include "media/mojo/services/media_foundation_mojo_media_client.h"
 #endif

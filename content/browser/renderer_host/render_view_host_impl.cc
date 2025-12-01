@@ -4,9 +4,9 @@
 
 #include "content/browser/renderer_host/render_view_host_impl.h"
 
+#include <algorithm>
 #include <set>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -20,10 +20,9 @@
 #include "base/json/json_reader.h"
 #include "base/memory/raw_ptr.h"
 #include "base/metrics/field_trial.h"
+#include "base/metrics/histogram_functions.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/metrics/user_metrics.h"
-#include "base/not_fatal_until.h"
-#include "base/ranges/algorithm.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_util.h"
 #include "base/strings/utf_string_conversions.h"
@@ -84,8 +83,8 @@
 #include "mojo/public/cpp/bindings/callback_helpers.h"
 #include "net/base/url_util.h"
 #include "services/network/public/cpp/features.h"
+#include "third_party/abseil-cpp/absl/container/flat_hash_map.h"
 #include "third_party/blink/public/common/features.h"
-#include "third_party/blink/public/common/page/browsing_context_group_info.h"
 #include "third_party/blink/public/common/web_preferences/web_preferences.h"
 #include "third_party/blink/public/mojom/page/prerender_page_param.mojom.h"
 #include "third_party/perfetto/include/perfetto/tracing/traced_value.h"
@@ -103,7 +102,7 @@
 #include "ui/gfx/color_space.h"
 #include "ui/gfx/image/image_skia.h"
 #include "ui/gfx/native_widget_types.h"
-#include "ui/native_theme/native_theme_features.h"
+#include "ui/native_theme/features/native_theme_features.h"
 #include "url/url_constants.h"
 
 #if BUILDFLAG(IS_WIN)
@@ -126,9 +125,7 @@ using perfetto::protos::pbzero::ChromeTrackEvent;
 // <process id, routing id>
 using RenderViewHostID = std::pair<int32_t, int32_t>;
 using RoutingIDViewMap =
-    std::unordered_map<RenderViewHostID,
-                       RenderViewHostImpl*,
-                       base::IntPairHash<RenderViewHostID>>;
+    absl::flat_hash_map<RenderViewHostID, RenderViewHostImpl*>;
 base::LazyInstance<RoutingIDViewMap>::Leaky g_routing_id_view_map =
     LAZY_INSTANCE_INITIALIZER;
 
@@ -167,13 +164,13 @@ class PerProcessRenderViewHostSet : public base::SupportsUserData::Data {
 
   void Erase(const RenderViewHostImpl* rvh) {
     auto it = render_view_host_instances_.find(rvh);
-    CHECK(it != render_view_host_instances_.end(), base::NotFatalUntil::M130);
+    CHECK(it != render_view_host_instances_.end());
     render_view_host_instances_.erase(it);
   }
 
   bool HasNonBackForwardCachedInstances() const {
-    return !base::ranges::all_of(render_view_host_instances_,
-                                 &RenderViewHostImpl::is_in_back_forward_cache);
+    return !std::ranges::all_of(render_view_host_instances_,
+                                &RenderViewHostImpl::is_in_back_forward_cache);
   }
 
  private:
@@ -267,13 +264,13 @@ void RenderViewHostImpl::GetPlatformSpecificPrefs(
               &prefs->status_font_height);
 
   prefs->vertical_scroll_bar_width_in_dips =
-      display::win::ScreenWin::GetSystemMetricsInDIP(SM_CXVSCROLL);
+      display::win::GetScreenWin()->GetSystemMetricsInDIP(SM_CXVSCROLL);
   prefs->horizontal_scroll_bar_height_in_dips =
-      display::win::ScreenWin::GetSystemMetricsInDIP(SM_CYHSCROLL);
+      display::win::GetScreenWin()->GetSystemMetricsInDIP(SM_CYHSCROLL);
   prefs->arrow_bitmap_height_vertical_scroll_bar_in_dips =
-      display::win::ScreenWin::GetSystemMetricsInDIP(SM_CYVSCROLL);
+      display::win::GetScreenWin()->GetSystemMetricsInDIP(SM_CYVSCROLL);
   prefs->arrow_bitmap_width_horizontal_scroll_bar_in_dips =
-      display::win::ScreenWin::GetSystemMetricsInDIP(SM_CXHSCROLL);
+      display::win::GetScreenWin()->GetSystemMetricsInDIP(SM_CXHSCROLL);
 #elif BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
   base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
   if (command_line->HasSwitch(switches::kSystemFontFamily)) {
@@ -330,7 +327,7 @@ RenderViewHostImpl::RenderViewHostImpl(
       "Navigation.RenderViewHostConstructor");
   TRACE_EVENT("navigation", "RenderViewHostImpl::RenderViewHostImpl",
               ChromeTrackEvent::kRenderViewHost, *this);
-  TRACE_EVENT_BEGIN("navigation", "RenderViewHost",
+  TRACE_EVENT_BEGIN("navigation.debug", "RenderViewHost",
                     perfetto::Track::FromPointer(this),
                     "render_view_host_when_created", this);
 
@@ -342,7 +339,7 @@ RenderViewHostImpl::RenderViewHostImpl(
 
   std::pair<RoutingIDViewMap::iterator, bool> result =
       g_routing_id_view_map.Get().emplace(
-          RenderViewHostID(GetProcess()->GetID(), routing_id_), this);
+          RenderViewHostID(GetProcess()->GetDeprecatedID(), routing_id_), this);
   CHECK(result.second) << "Inserting a duplicate item!";
   GetAgentSchedulingGroup().AddRoute(routing_id_, this);
 
@@ -381,7 +378,7 @@ RenderViewHostImpl::~RenderViewHostImpl() {
   // Detach the routing ID as the object is going away.
   GetAgentSchedulingGroup().RemoveRoute(GetRoutingID());
   g_routing_id_view_map.Get().erase(
-      RenderViewHostID(GetProcess()->GetID(), GetRoutingID()));
+      RenderViewHostID(GetProcess()->GetDeprecatedID(), GetRoutingID()));
 
   delegate_->RenderViewDeleted(this);
   GetProcess()->RemoveObserver(this);
@@ -392,7 +389,7 @@ RenderViewHostImpl::~RenderViewHostImpl() {
     frame_tree_->UnregisterRenderViewHost(render_view_host_map_id_, this);
 
   // Corresponds to the TRACE_EVENT_BEGIN in RenderViewHostImpl's constructor.
-  TRACE_EVENT_END("navigation", perfetto::Track::FromPointer(this));
+  TRACE_EVENT_END("navigation.debug", perfetto::Track::FromPointer(this));
 }
 
 RenderViewHostDelegate* RenderViewHostImpl::GetDelegate() {
@@ -413,7 +410,8 @@ void RenderViewHostImpl::DisallowReuse() {
 bool RenderViewHostImpl::CreateRenderView(
     const std::optional<blink::FrameToken>& opener_frame_token,
     int proxy_route_id,
-    bool window_was_opened_by_another_window) {
+    bool window_was_opened_by_another_window,
+    const std::optional<base::UnguessableToken>& navigation_metrics_token) {
   TRACE_EVENT0("renderer_host,navigation",
                "RenderViewHostImpl::CreateRenderView");
   DCHECK(!IsRenderViewLive()) << "Creating view twice";
@@ -436,12 +434,12 @@ bool RenderViewHostImpl::CreateRenderView(
   RenderFrameHostImpl* main_rfh = nullptr;
   RenderFrameProxyHost* main_rfph = nullptr;
   if (main_frame_routing_id_ != MSG_ROUTING_NONE) {
-    main_rfh = RenderFrameHostImpl::FromID(GetProcess()->GetID(),
+    main_rfh = RenderFrameHostImpl::FromID(GetProcess()->GetDeprecatedID(),
                                            main_frame_routing_id_);
     DCHECK(main_rfh);
   } else {
-    main_rfph =
-        RenderFrameProxyHost::FromID(GetProcess()->GetID(), proxy_route_id);
+    main_rfph = RenderFrameProxyHost::FromID(GetProcess()->GetDeprecatedID(),
+                                             proxy_route_id);
     DCHECK(main_rfph);
   }
   FrameTreeNode* const frame_tree_node =
@@ -450,7 +448,7 @@ bool RenderViewHostImpl::CreateRenderView(
   mojom::CreateViewParamsPtr params = mojom::CreateViewParams::New();
 
   params->renderer_preferences = delegate_->GetRendererPrefs(this);
-  params->web_preferences = delegate_->GetOrCreateWebPreferences();
+  params->web_preferences = delegate_->GetOrCreateWebPreferences(this);
   params->color_provider_colors = delegate_->GetColorProviderColorMaps();
   params->opener_frame_token = opener_frame_token;
   params->replication_state =
@@ -458,6 +456,7 @@ bool RenderViewHostImpl::CreateRenderView(
   params->devtools_main_frame_token =
       frame_tree_node->current_frame_host()->devtools_frame_token();
   DCHECK_EQ(&frame_tree_node->frame_tree(), frame_tree_);
+  params->navigation_metrics_token = navigation_metrics_token;
 
   if (frame_tree_->is_prerendering() ||
       frame_tree_->page_delegate()->IsPageInPreviewMode()) {
@@ -541,9 +540,19 @@ bool RenderViewHostImpl::CreateRenderView(
               mojom::CreateProvisionalLocalMainFrameParams::New(
                   std::move(local_frame_params),
                   frame_tree_node->current_frame_host()->GetFrameToken()));
-    } else if (frame_tree_->is_prerendering()) {
-      // During a prerender navigation, a local main frame for a new
-      // RenderViewHost must always start as a provisinonal RenderFrame in the
+    } else if (frame_tree_->is_prerendering() &&
+               (!base::FeatureList::IsEnabled(
+                    features::kPrerenderMoreCorrectSpeculativeRFHCreation) ||
+                main_rfh->lifecycle_state() ==
+                    RenderFrameHostImpl::LifecycleStateImpl::kSpeculative)) {
+      // During prerender, the browser may need to create new speculative local
+      // main frames. Normally, creating a speculative local main frame is a
+      // two step process: the browser first creates a RenderViewHost with a
+      // main RenderFrameProxyHost and then creates the speculative main
+      // RenderFrameHost.
+      //
+      // Prerender skips the RenderFrameProxyHost creation step, but the new
+      // RenderViewHost must still start with a provisional RenderFrame in the
       // renderer. Otherwise, discarding a speculative RFH during prerender
       // navigation causes the browser and the renderer to go out of sync. See
       // https://crbug.com/40076091 for more background and details.
@@ -593,13 +602,10 @@ bool RenderViewHostImpl::CreateRenderView(
   // group. Note that we cannot use this RenderViewHost's site_instance_group(),
   // which may not match in a popup case. For example, if A opens a
   // cross-browsing-context-group popup to B, the RenderViewHost for the opener
-  // in B's process should have A's BrowsingContextGroupInfo, which is the
+  // in B's process should have A's Browsing Context Group Token, which is the
   // current page in the opener.
-  params->browsing_context_group_info = blink::BrowsingContextGroupInfo(
-      frame_tree_->GetMainFrame()->GetSiteInstance()->browsing_instance_token(),
-      frame_tree_->GetMainFrame()
-          ->GetSiteInstance()
-          ->coop_related_group_token());
+  params->browsing_context_group_token =
+      frame_tree_->GetMainFrame()->GetSiteInstance()->browsing_instance_token();
 
   // RenderViewHostImpl is reused after a crash, so reset any endpoint that
   // might be a leftover from a crash.
@@ -758,15 +764,11 @@ bool RenderViewHostImpl::IsMainFrameActive() {
   return is_active();
 }
 
-bool RenderViewHostImpl::IsNeverComposited() {
-  return GetDelegate()->IsNeverComposited();
-}
-
 blink::web_pref::WebPreferences
 RenderViewHostImpl::GetWebkitPreferencesForWidget() {
   if (!delegate_)
     return blink::web_pref::WebPreferences();
-  return delegate_->GetOrCreateWebPreferences();
+  return delegate_->GetOrCreateWebPreferences(this);
 }
 
 void RenderViewHostImpl::RenderViewCreated(
@@ -788,7 +790,7 @@ RenderFrameHostImpl* RenderViewHostImpl::GetMainRenderFrameHost() {
     return nullptr;
   }
 
-  return RenderFrameHostImpl::FromID(GetProcess()->GetID(),
+  return RenderFrameHostImpl::FromID(GetProcess()->GetDeprecatedID(),
                                      main_frame_routing_id_);
 }
 
@@ -908,7 +910,7 @@ void RenderViewHostImpl::SendWebPreferencesToRenderer() {
     if (!will_send_web_preferences_callback_for_testing_.is_null()) {
       will_send_web_preferences_callback_for_testing_.Run();
     }
-    broadcast->UpdateWebPreferences(delegate_->GetOrCreateWebPreferences());
+    broadcast->UpdateWebPreferences(delegate_->GetOrCreateWebPreferences(this));
   }
 }
 
@@ -954,11 +956,7 @@ std::vector<viz::SurfaceId> RenderViewHostImpl::CollectSurfaceIdsForEviction() {
     // <webview>, and PDF. These may have a compositor surface as well,
     // in which case we need to explore not the outer node only, but the inner
     // ones as well.
-    FrameTree::NodeRange node_range =
-        base::FeatureList::IsEnabled(
-            features::kInnerFrameCompositorSurfaceEviction)
-            ? tree.NodesIncludingInnerTreeNodes()
-            : tree.SubtreeNodes(root);
+    FrameTree::NodeRange node_range = tree.NodesIncludingInnerTreeNodes();
     CollectSurfaceIdsForEvictionForFrameTreeNodeRange(node_range, ids);
   } else if (is_in_back_forward_cache_) {
     // `FrameTree::SubtreeAndInnerTreeNodes` starts with the children of `rfh`

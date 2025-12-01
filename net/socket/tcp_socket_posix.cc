@@ -19,6 +19,7 @@
 #include "base/logging.h"
 #include "base/memory/ptr_util.h"
 #include "base/metrics/histogram_macros.h"
+#include "base/notimplemented.h"
 #include "base/posix/eintr_wrapper.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/time/time.h"
@@ -210,7 +211,7 @@ int TCPSocketPosix::AdoptConnectedSocket(SocketDescriptor socket,
   DCHECK(!socket_);
 
   SockaddrStorage storage;
-  if (!peer_address.ToSockAddr(storage.addr, &storage.addr_len) &&
+  if (!peer_address.ToSockAddr(storage.addr(), &storage.addr_len) &&
       // For backward compatibility, allows the empty address.
       !(peer_address == IPEndPoint())) {
     return ERR_ADDRESS_INVALID;
@@ -241,8 +242,9 @@ int TCPSocketPosix::Bind(const IPEndPoint& address) {
   DCHECK(socket_);
 
   SockaddrStorage storage;
-  if (!address.ToSockAddr(storage.addr, &storage.addr_len))
+  if (!address.ToSockAddr(storage.addr(), &storage.addr_len)) {
     return ERR_ADDRESS_INVALID;
+  }
 
   return socket_->Bind(storage);
 }
@@ -282,8 +284,9 @@ int TCPSocketPosix::Connect(const IPEndPoint& address,
                       [&] { return CreateNetLogIPEndPointParams(&address); });
 
   SockaddrStorage storage;
-  if (!address.ToSockAddr(storage.addr, &storage.addr_len))
+  if (!address.ToSockAddr(storage.addr(), &storage.addr_len)) {
     return ERR_ADDRESS_INVALID;
+  }
 
   int rv = socket_->Connect(
       storage, base::BindOnce(&TCPSocketPosix::ConnectCompleted,
@@ -380,8 +383,9 @@ int TCPSocketPosix::GetLocalAddress(IPEndPoint* address) const {
   if (rv != OK)
     return rv;
 
-  if (!address->FromSockAddr(storage.addr, storage.addr_len))
+  if (!address->FromSockAddr(storage.addr(), storage.addr_len)) {
     return ERR_ADDRESS_INVALID;
+  }
 
   return OK;
 }
@@ -397,8 +401,9 @@ int TCPSocketPosix::GetPeerAddress(IPEndPoint* address) const {
   if (rv != OK)
     return rv;
 
-  if (!address->FromSockAddr(storage.addr, storage.addr_len))
+  if (!address->FromSockAddr(storage.addr(), storage.addr_len)) {
     return ERR_ADDRESS_INVALID;
+  }
 
   return OK;
 }
@@ -554,7 +559,7 @@ int TCPSocketPosix::BuildTcpSocketPosix(
 
   SockaddrStorage storage;
   if (accept_socket_->GetPeerAddress(&storage) != OK ||
-      !address->FromSockAddr(storage.addr, storage.addr_len)) {
+      !address->FromSockAddr(storage.addr(), storage.addr_len)) {
     accept_socket_.reset();
     return ERR_ADDRESS_INVALID;
   }

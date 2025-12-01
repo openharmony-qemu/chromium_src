@@ -69,7 +69,6 @@ DisallowedFeatures AdjustDisallowedFeatures(
 
 ContextGroup::ContextGroup(
     const GpuPreferences& gpu_preferences,
-    bool supports_passthrough_command_decoders,
     std::unique_ptr<MemoryTracker> memory_tracker,
     ShaderTranslatorCache* shader_translator_cache,
     FramebufferCompletenessCache* framebuffer_completeness_cache,
@@ -128,8 +127,7 @@ ContextGroup::ContextGroup(
       shared_image_manager_(shared_image_manager) {
   DCHECK(discardable_manager);
   DCHECK(feature_info_);
-  use_passthrough_cmd_decoder_ = supports_passthrough_command_decoders &&
-                                 gpu_preferences_.use_passthrough_cmd_decoder;
+  use_passthrough_cmd_decoder_ = gpu_preferences_.use_passthrough_cmd_decoder;
 }
 
 gpu::ContextResult ContextGroup::Initialize(
@@ -214,7 +212,7 @@ gpu::ContextResult ContextGroup::Initialize(
       max_color_attachments_ = 1;
     if (max_color_attachments_ > 16)
       max_color_attachments_ = 16;
-    GetIntegerv(GL_MAX_DRAW_BUFFERS_ARB, &max_draw_buffers_);
+    GetIntegerv(GL_MAX_DRAW_BUFFERS, &max_draw_buffers_);
     if (max_draw_buffers_ < 1)
       max_draw_buffers_ = 1;
     if (max_draw_buffers_ > 16)
@@ -357,7 +355,7 @@ gpu::ContextResult ContextGroup::Initialize(
                     : gpu::ContextResult::kFatalFailure;
   }
   if (feature_info_->feature_flags().arb_texture_rectangle &&
-      !QueryGLFeature(GL_MAX_RECTANGLE_TEXTURE_SIZE_ARB,
+      !QueryGLFeature(GL_MAX_RECTANGLE_TEXTURE_SIZE_ANGLE,
                       kMinRectangleTextureSize, &max_rectangle_texture_size)) {
     bool was_lost = decoder->CheckResetStatus();
     LOG(ERROR) << (was_lost ? "ContextResult::kTransientFailure: "

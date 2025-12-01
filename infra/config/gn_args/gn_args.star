@@ -94,6 +94,14 @@ gn_args.config(
     },
 )
 
+# This will not be the default anymore so must explicitly be set on bots.
+gn_args.config(
+    name = "android_with_static_analysis",
+    args = {
+        "android_static_analysis": "on",
+    },
+)
+
 gn_args.config(
     name = "android_low_end_secondary_toolchain",
     args = {
@@ -259,10 +267,22 @@ gn_args.config(
 )
 
 gn_args.config(
+    name = "disable_jni_multiplexing",
+    args = {
+        "enable_jni_multiplexing": False,
+    },
+)
+
+gn_args.config(
     name = "cast_receiver",
     args = {
         "enable_cast_receiver": True,
     },
+)
+
+gn_args.config(
+    name = "cast_receiver_perf_optimized",
+    args_file = "//build/config/fuchsia/perf_optimized_cast_receiver_args.gn",
 )
 
 gn_args.config(
@@ -412,16 +432,21 @@ gn_args.config(
 gn_args.config(
     name = "cronet_android",
     args = {
+        # PLEASE TRY TO AVOID ADDING NEW GN ARGS HERE. Special snowflake gn args
+        # are a pain to maintain; see https://crbug.com/40287068. Instead, try
+        # to change the GN build rules so that the default value for the arg
+        # is derived from the `is_cronet_build` gn arg.
+        # TODO: https://crbug.com/40287068 - clean up this list. Ideally it
+        # should be empty.
+        # LINT.IfChange(cronet_android)
         "use_partition_alloc": False,
-        "enable_reporting": True,
         "use_hashed_jni_names": True,
-        "default_min_sdk_version": 21,
-        "enable_base_tracing": False,
+        "default_min_sdk_version": 23,
         "clang_use_default_sample_profile": False,
-        "media_use_ffmpeg": False,
         # https://crbug.com/1136963
         "use_thin_lto": False,
         "enable_resource_allowlist_generation": False,
+        # LINT.ThenChange(//tools/mb/mb_config.pyl:cronet_android)
     },
     configs = [
         "android",
@@ -444,11 +469,19 @@ gn_args.config(
 gn_args.config(
     name = "cronet_common",
     args = {
+        # PLEASE TRY TO AVOID ADDING NEW GN ARGS HERE. Special snowflake gn args
+        # are a pain to maintain; see https://crbug.com/40287068. Instead, try
+        # to change the GN build rules so that the default value for the arg
+        # is derived from the `is_cronet_build` gn arg.
+        # TODO: https://crbug.com/40287068 - clean up this list. Ideally it
+        # should contain `is_cronet_build` and nothing else.
+        # LINT.IfChange(cronet_common)
         "disable_file_support": True,
         "enable_websockets": False,
         "include_transport_security_state_preload_list": False,
         "is_cronet_build": True,
         "use_platform_icu_alternatives": True,
+        # LINT.ThenChange(//tools/mb/mb_config.pyl:cronet_common)
     },
 )
 
@@ -564,6 +597,13 @@ gn_args.config(
     ],
 )
 
+gn_args.config(
+    name = "enable_android_secondary_abi",
+    args = {
+        "enable_android_secondary_abi": True,
+    },
+)
+
 # Enables backup ref ptr by changing the default value of the feature flag.
 # This sets the default value of PartitionAllocBackupRefPtr to enabled, with
 # enabled-processes = non-renderer:
@@ -572,6 +612,16 @@ gn_args.config(
     name = "enable_backup_ref_ptr_feature_flag",
     args = {
         "enable_backup_ref_ptr_feature_flag": True,
+    },
+)
+
+# Enables the instance tracer for BackupRefPtr. This provides more useful stack
+# traces when triggering the dangling pointer detector, but at the cost of some
+# runtime performance (last measured at ~10% in release builds).
+gn_args.config(
+    name = "enable_backup_ref_ptr_instance_tracer",
+    args = {
+        "enable_backup_ref_ptr_instance_tracer": True,
     },
 )
 
@@ -734,6 +784,13 @@ gn_args.config(
 )
 
 gn_args.config(
+    name = "reclient",
+    args = {
+        "use_reclient": True,
+    },
+)
+
+gn_args.config(
     name = "include_unwind_tables",
     args = {
         "exclude_unwind_tables": False,
@@ -762,13 +819,6 @@ gn_args.config(
     configs = [
         "ios",
     ],
-)
-
-gn_args.config(
-    name = "ios_chromium_cert",
-    args = {
-        "ios_code_signing_identity_description": "iPhone Developer",
-    },
 )
 
 gn_args.config(
@@ -816,21 +866,18 @@ gn_args.config(
 )
 
 gn_args.config(
-    name = "lacros",
-    args = {
-        "target_os": "chromeos",
-        "chromeos_is_browser_only": True,
-    },
-)
-
-gn_args.config(
-    name = "lacros_on_linux",
-    args = {
-        "chromeos_is_browser_only": True,
-    },
+    name = "chromeos_on_linux",
     configs = [
         "chromeos",
     ],
+)
+
+# Do not use this for non-FYI builders.
+gn_args.config(
+    name = "libcxx_modules",
+    args = {
+        "use_libcxx_modules": True,
+    },
 )
 
 gn_args.config(
@@ -857,6 +904,7 @@ gn_args.config(
         "ozone_platform_wayland": True,
         "ozone_platform": "wayland",
         "use_bundled_weston": True,
+        "use_bundled_mutter": True,
     },
 )
 
@@ -992,14 +1040,9 @@ gn_args.config(
 )
 
 gn_args.config(
-    name = "no_secondary_abi",
+    name = "no_safe_browsing",
     args = {
-        "skip_secondary_abi_for_cq": True,
-        # A chromium build with "skip_secondary_abi_for_cq" enabled in a
-        # checkout that has src-internal fails if enable_chrome_android_internal
-        # is not set to false.
-        # TODO(crbug.com/361540497): Can remove this when the build is fixed.
-        "enable_chrome_android_internal": False,
+        "safe_browsing_mode": 0,
     },
 )
 
@@ -1099,13 +1142,6 @@ gn_args.config(
 )
 
 gn_args.config(
-    name = "pgo_phase_0",
-    args = {
-        "chrome_pgo_phase": 0,
-    },
-)
-
-gn_args.config(
     name = "pgo_phase_1",
     args = {
         "chrome_pgo_phase": 1,
@@ -1120,15 +1156,6 @@ gn_args.config(
     args = {
         "use_remoteexec": True,
     },
-)
-
-gn_args.config(
-    name = "reclient_with_remoteexec_links",
-    args = {
-        "use_reclient_links": True,
-        "concurrent_links": 50,
-    },
-    configs = ["remoteexec"],
 )
 
 gn_args.config(
@@ -1169,6 +1196,14 @@ gn_args.config(
         "try_builder",
         "no_symbols",
     ],
+)
+
+gn_args.config(
+    name = "release_with_dchecks",
+    args = {
+        "is_debug": False,
+        "dcheck_always_on": True,
+    },
 )
 
 gn_args.config(
@@ -1381,6 +1416,20 @@ gn_args.config(
 )
 
 gn_args.config(
+    name = "v8_backtrace",
+    args = {
+        "v8_enable_backtrace": True,
+    },
+)
+
+gn_args.config(
+    name = "v8_debug",
+    args = {
+        "v8_enable_debug_code": True,
+    },
+)
+
+gn_args.config(
     name = "v8_heap",
     args = {
         "v8_enable_verify_heap": True,
@@ -1406,6 +1455,13 @@ gn_args.config(
 )
 
 gn_args.config(
+    name = "v8_sandbox_testing",
+    args = {
+        "v8_enable_memory_corruption_api": True,
+    },
+)
+
+gn_args.config(
     name = "v8_simulate_arm",
     args = {
         "v8_target_cpu": "arm",
@@ -1423,6 +1479,13 @@ gn_args.config(
     configs = [
         "x64",
     ],
+)
+
+gn_args.config(
+    name = "v8_static",
+    args = {
+        "v8_static_library": True,
+    },
 )
 
 gn_args.config(

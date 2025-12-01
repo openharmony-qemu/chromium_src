@@ -7,26 +7,31 @@
 
 #import <UIKit/UIKit.h>
 
+#import "ios/chrome/browser/fullscreen/ui_bundled/fullscreen_ui_element.h"
 #import "ios/chrome/browser/location_bar/ui_bundled/location_bar_consumer.h"
 #import "ios/chrome/browser/orchestrator/ui_bundled/location_bar_animatee.h"
 #import "ios/chrome/browser/shared/public/commands/omnibox_commands.h"
-#import "ios/chrome/browser/ui/fullscreen/fullscreen_ui_element.h"
 
 @class LayoutGuideCenter;
 @protocol ActivityServiceCommands;
 @protocol ApplicationCommands;
 @protocol BadgeViewVisibilityDelegate;
+@protocol BrowserCoordinatorCommands;
 @protocol ContextualPanelEntrypointVisibilityDelegate;
+@protocol FakeboxButtonsSnapshotProvider;
 @protocol HelpCommands;
+@protocol LensCommands;
 @protocol LensOverlayCommands;
 @protocol LocationBarOffsetProvider;
 @protocol LoadQueryCommands;
+@protocol PageActionMenuCommands;
 @protocol TextFieldViewContaining;
+class PrefService;
 namespace feature_engagement {
 class Tracker;
 }
 
-@protocol LocationBarViewControllerDelegate<NSObject>
+@protocol LocationBarViewControllerDelegate <NSObject>
 
 // Notifies the delegate about a tap on the steady-state location bar.
 - (void)locationBarSteadyViewTapped;
@@ -74,10 +79,17 @@ class Tracker;
 
 @property(nonatomic, assign) BOOL incognito;
 
+// TODO(crbug.com/399689234): A ViewController shouldn't directly access the
+// profile's PrefService. Instead, `LocationBarCoordinator` should pass in the
+// necessary info, e.g. via a property `BOOL isLensOverlayAvailable`.
+@property(nonatomic, assign) PrefService* profilePrefs;
+
 // The dispatcher for the share button, voice search, and long press actions.
 @property(nonatomic, weak) id<ActivityServiceCommands,
                               ApplicationCommands,
+                              BrowserCoordinatorCommands,
                               LoadQueryCommands,
+                              LensCommands,
                               LensOverlayCommands,
                               OmniboxCommands>
     dispatcher;
@@ -100,6 +112,17 @@ class Tracker;
 
 // The help command handler.
 @property(nonatomic, weak) id<HelpCommands> helpCommandsHandler;
+
+// The page action menu handler.
+@property(nonatomic, weak) id<PageActionMenuCommands> pageActionMenuHandler;
+
+// An object to provide a snapshot of the fakebox buttons to be used during
+// focus and defocus transitions.
+@property(nonatomic, weak) id<FakeboxButtonsSnapshotProvider>
+    fakeboxButtonsSnapshotProvider;
+
+// Whether Lens overlay is currently visible.
+@property(nonatomic, assign) BOOL lensOverlayVisible;
 
 // Sets the edit view to use in the editing state. This must be set before the
 // view of this view controller is initialized. This must only be called once.
@@ -155,6 +178,9 @@ class Tracker;
 
 // Records the lens overlay entrypoint availability in the location bar.
 - (void)recordLensOverlayAvailability;
+
+// Moves the focus of VoiceOver to the steady view.
+- (void)focusSteadyViewForVoiceOver;
 
 @end
 

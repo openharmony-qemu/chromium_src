@@ -22,8 +22,8 @@ bcd2980d37050728310f17f3d6511096  usr/include/x86_64-linux-gnu/libavcodec/qsv.h
 4c55d3fcc8bb8756cb8ae087ef5ce1f4  usr/include/x86_64-linux-gnu/libavcodec/videotoolbox.h
 9009392c159d11fc3d53686632ea7b21  usr/include/x86_64-linux-gnu/libavcodec/vorbis_parser.h
 12db430a6371326482e19d99b507b3cb  usr/include/x86_64-linux-gnu/libavcodec/xvmc.h
-990944505e2040d90f6e7716f38d849a  usr/lib/x86_64-linux-gnu/libavcodec.a
+7bbd62e51dcce9dd9cbd352e4d4c669f  usr/lib/x86_64-linux-gnu/libavcodec.a
 6cdfdfbed227f8206126edca238b1f6b  usr/lib/x86_64-linux-gnu/pkgconfig/libavcodec.pc
-21ece1b947446a2558539c0013b694c4  usr/share/doc/libavcodec-dev/changelog.Debian.gz
-e13e34f1be4148bf5e6bb43d126618ef  usr/share/doc/libavcodec-dev/changelog.gz
+fc8b576a37fd99080492af0dc600f743  usr/share/doc/libavcodec-dev/changelog.Debian.gz
+a25f71d27284c9b5e8cf1ce0dcdc0e84  usr/share/doc/libavcodec-dev/changelog.gz
 e187f66b2765eae992e9c748bfea0a09  usr/share/doc/libavcodec-dev/copyright

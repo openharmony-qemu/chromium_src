@@ -27,10 +27,7 @@ VulkanImplementationAndroid::~VulkanImplementationAndroid() = default;
 bool VulkanImplementationAndroid::InitializeVulkanInstance(bool using_surface) {
   DCHECK(using_surface);
   std::vector<const char*> required_extensions = {
-      VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_ANDROID_SURFACE_EXTENSION_NAME,
-      VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME,
-      VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME};
-
+      VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_ANDROID_SURFACE_EXTENSION_NAME};
   return vulkan_instance_.Initialize(base::FilePath("libvulkan.so"),
                                      required_extensions, {});
 }

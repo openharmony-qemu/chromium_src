@@ -343,7 +343,7 @@ void AddViewToWidgetAndResize(views::Widget* widget, views::View* view) {
     widget->SetContentsView(std::make_unique<views::View>());
 
   views::View* contents_view = widget->GetContentsView();
-  contents_view->AddChildView(view);
+  contents_view->AddChildViewRaw(view);
   view->SetBounds(contents_view->width(), 0, 100, 100);
   gfx::Rect contents_view_bounds = contents_view->bounds();
   contents_view_bounds.Union(view->bounds());
@@ -464,7 +464,8 @@ class DragDropControllerTest : public AshTestBase {
   void SetUp() override {
     auto mock_shell_delegate = std::make_unique<NiceMock<MockShellDelegate>>();
     mock_shell_delegate_ = mock_shell_delegate.get();
-    AshTestBase::SetUp(std::move(mock_shell_delegate));
+    set_shell_delegate(std::move(mock_shell_delegate));
+    AshTestBase::SetUp();
 
     drag_drop_controller_ = std::make_unique<TestDragDropController>();
     drag_drop_controller_->set_should_block_during_drag_drop(false);
@@ -1311,16 +1312,16 @@ TEST_F(DragDropControllerTest, EventTarget) {
   generator.PressLeftButton();
   // For drag enter
   base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
-      FROM_HERE, base::BindOnce(&ui::test::EventGenerator::MoveMouseBy,
-                                base::Unretained(&generator), 0, 1));
+      FROM_HERE,
+      base::BindLambdaForTesting([&]() { generator.MoveMouseBy(0, 1); }));
   // For drag update
   base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
-      FROM_HERE, base::BindOnce(&ui::test::EventGenerator::MoveMouseBy,
-                                base::Unretained(&generator), 0, 1));
+      FROM_HERE,
+      base::BindLambdaForTesting([&]() { generator.MoveMouseBy(0, 1); }));
   // For perform drop
   base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
-      FROM_HERE, base::BindOnce(&ui::test::EventGenerator::ReleaseLeftButton,
-                                base::Unretained(&generator)));
+      FROM_HERE,
+      base::BindLambdaForTesting([&]() { generator.ReleaseLeftButton(); }));
 
   drag_drop_controller_->set_should_block_during_drag_drop(true);
   auto data = CreateDragData(/*with_image=*/false);
@@ -1351,12 +1352,12 @@ TEST_F(DragDropControllerTest, DragTabChangesDragOperationToMove) {
   generator.PressLeftButton();
   // For drag enter.
   base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
-      FROM_HERE, base::BindOnce(&ui::test::EventGenerator::MoveMouseBy,
-                                base::Unretained(&generator), 0, 1));
+      FROM_HERE,
+      base::BindLambdaForTesting([&]() { generator.MoveMouseBy(0, 1); }));
   // For perform drop.
   base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
-      FROM_HERE, base::BindOnce(&ui::test::EventGenerator::ReleaseLeftButton,
-                                base::Unretained(&generator)));
+      FROM_HERE,
+      base::BindLambdaForTesting([&]() { generator.ReleaseLeftButton(); }));
 
   drag_drop_controller_->set_should_block_during_drag_drop(true);
   DragOperation operation = drag_drop_controller_->StartDragAndDrop(

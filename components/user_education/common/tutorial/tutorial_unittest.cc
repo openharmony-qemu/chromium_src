@@ -1173,40 +1173,42 @@ class ConditionalTutorialTest : public ui::test::InteractiveTestT<TutorialTest>,
     const int id = expected_strings.size() == 1U
                        ? expected_strings.begin()->second
                        : expected_strings[GetParam()];
-    return Steps(
-        std::move(CheckElement(
-                      test::TestHelpBubble::kElementId,
-                      [](ui::TrackedElement* el) {
-                        return el->AsA<test::TestHelpBubbleElement>()
-                            ->bubble()
-                            ->params()
-                            .body_text;
-                      },
-                      l10n_util::GetStringUTF16(id))
-                      .FormatDescription("%s - Body text must match.")),
-        std::move(CheckElement(
-                      test::TestHelpBubble::kElementId,
-                      [](ui::TrackedElement* el) {
-                        return el->AsA<test::TestHelpBubbleElement>()
-                            ->bubble()
-                            ->params()
-                            .buttons.empty();
-                      },
-                      progress.has_value())
-                      .FormatDescription(
-                          "%s - Only final bubble should have buttons.")),
-        std::move(
-            CheckElement(
-                test::TestHelpBubble::kElementId,
-                [](ui::TrackedElement* el) {
-                  return el->AsA<test::TestHelpBubbleElement>()
-                      ->bubble()
-                      ->params()
-                      .progress;
-                },
-                progress)
-                .SetMustRemainVisible(false)
-                .FormatDescription("%s - Progress indicators should match.")));
+    auto steps =
+        Steps(CheckElement(
+                  test::TestHelpBubble::kElementId,
+                  [](ui::TrackedElement* el) {
+                    return el->AsA<test::TestHelpBubbleElement>()
+                        ->bubble()
+                        ->params()
+                        .body_text;
+                  },
+                  l10n_util::GetStringUTF16(id)),
+              CheckElement(
+                  test::TestHelpBubble::kElementId,
+                  [](ui::TrackedElement* el) {
+                    return el->AsA<test::TestHelpBubbleElement>()
+                        ->bubble()
+                        ->params()
+                        .buttons.empty();
+                  },
+                  progress.has_value()),
+              CheckElement(
+                  test::TestHelpBubble::kElementId,
+                  [](ui::TrackedElement* el) {
+                    return el->AsA<test::TestHelpBubbleElement>()
+                        ->bubble()
+                        ->params()
+                        .progress;
+                  },
+                  progress)
+                  .SetMustRemainVisible(false));
+    const std::string progress_str =
+        progress.has_value()
+            ? base::StringPrintf("{%d, %d}", progress->first, progress->second)
+            : std::string("<null>");
+    AddDescriptionPrefix(steps, base::StringPrintf("VerifyHelpBubble( %d, %s )",
+                                                   id, progress_str.c_str()));
+    return steps;
   }
 
   TutorialRegistry tutorial_registry_;
@@ -1300,9 +1302,9 @@ TEST_P(ConditionalTutorialTest1, ConditionalAtEndOfTutorialUnevenSteps) {
       VerifyHelpBubble({{-1, IDS_DONE}}, std::make_pair(1, 2)),
       Do([&]() { el2.Show(); }),
       If([this]() { return !GetBranchValue(0); },
-         Steps(std::move(WaitForShow(test::TestHelpBubble::kElementId)
-                             .SetTransitionOnlyOnEvent(true)),
-               VerifyHelpBubble({{-1, IDS_CLEAR}}, std::make_pair(2, 2)))),
+         Then(WaitForShow(test::TestHelpBubble::kElementId)
+                  .SetTransitionOnlyOnEvent(true),
+              VerifyHelpBubble({{-1, IDS_CLEAR}}, std::make_pair(2, 2)))),
       Do([&]() { el3.Show(); }),
       WaitForShow(test::TestHelpBubble::kElementId)
           .SetTransitionOnlyOnEvent(true),
@@ -1323,10 +1325,10 @@ TEST_P(ConditionalTutorialTest1, OptionalStep) {
           BubbleStep(kTestIdentifier3).SetBubbleBodyText(IDS_CLEAR)),
       VerifyHelpBubble({{-1, IDS_DONE}}, std::make_pair(1, 2)),
       If([this]() { return GetBranchValue(0); },
-         Steps(Do([&]() { el2.Show(); }),
-               std::move(WaitForShow(test::TestHelpBubble::kElementId)
-                             .SetTransitionOnlyOnEvent(true)),
-               VerifyHelpBubble({{1, IDS_OK}}, std::make_pair(2, 2)))),
+         Then(Do([&]() { el2.Show(); }),
+              WaitForShow(test::TestHelpBubble::kElementId)
+                  .SetTransitionOnlyOnEvent(true),
+              VerifyHelpBubble({{1, IDS_OK}}, std::make_pair(2, 2)))),
       Do([&]() { el3.Show(); }),
       WaitForShow(test::TestHelpBubble::kElementId)
           .SetTransitionOnlyOnEvent(true),
@@ -1350,14 +1352,14 @@ TEST_P(ConditionalTutorialTest1, WaitForAnyOf) {
           BubbleStep(kTestIdentifier4).SetBubbleBodyText(IDS_CLEAR)),
       VerifyHelpBubble({{-1, IDS_DONE}}, std::make_pair(1, 2)),
       If([this]() { return GetBranchValue(0); },
-         Steps(Do([&]() { el2.Show(); }),
-               std::move(WaitForShow(test::TestHelpBubble::kElementId)
-                             .SetTransitionOnlyOnEvent(true)),
-               VerifyHelpBubble({{-1, IDS_OK}}, std::make_pair(2, 2))),
-         Steps(Do([&]() { el3.Show(); }),
-               std::move(WaitForShow(test::TestHelpBubble::kElementId)
-                             .SetTransitionOnlyOnEvent(true)),
-               VerifyHelpBubble({{-1, IDS_CANCEL}}, std::make_pair(2, 2)))),
+         Then(Do([&]() { el2.Show(); }),
+              WaitForShow(test::TestHelpBubble::kElementId)
+                  .SetTransitionOnlyOnEvent(true),
+              VerifyHelpBubble({{-1, IDS_OK}}, std::make_pair(2, 2))),
+         Else(Do([&]() { el3.Show(); }),
+              WaitForShow(test::TestHelpBubble::kElementId)
+                  .SetTransitionOnlyOnEvent(true),
+              VerifyHelpBubble({{-1, IDS_CANCEL}}, std::make_pair(2, 2)))),
       Do([&]() { el4.Show(); }),
       WaitForShow(test::TestHelpBubble::kElementId)
           .SetTransitionOnlyOnEvent(true),

@@ -277,14 +277,13 @@ std::unique_ptr<web::WebState> CreateWebState(
 
 }  // namespace
 
-BROWSER_USER_DATA_KEY_IMPL(SessionRestorationBrowserAgent)
-
 SessionRestorationBrowserAgent::SessionRestorationBrowserAgent(
     Browser* browser,
     SessionServiceIOS* session_service,
     bool enable_pinned_web_states,
     bool enable_tab_groups)
-    : session_service_(session_service),
+    : BrowserUserData(browser),
+      session_service_(session_service),
       browser_(browser),
       session_window_ios_factory_([[SessionWindowIOSFactory alloc]
           initWithWebStateList:browser_->GetWebStateList()]),
@@ -384,8 +383,9 @@ bool SessionRestorationBrowserAgent::IsRestoringSession() {
 void SessionRestorationBrowserAgent::SaveSession(bool immediately) {
   DCHECK(session_identifier_.length != 0);
 
-  if (!CanSaveSession())
+  if (!CanSaveSession()) {
     return;
+  }
 
   WebStateList* const web_state_list = browser_->GetWebStateList();
   if (web_state_list->IsBatchInProgress()) {

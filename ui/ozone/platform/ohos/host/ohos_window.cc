@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2023 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "ui/ozone/platform/ohos/host/ohos_window.h"
 
@@ -37,9 +12,14 @@
 #include "content/public/browser/browser_thread.h"
 #include "ohos/adapter/accessibility/accessibility_delegate_ohos_registry.h"
 #include "ohos/adapter/cursor/cursor.h"
+#include "ohos/adapter/node_handle/node_handle_impl.h"
+#include "ohos/adapter/window/app_window_adapter.h"
+#include "ohos/adapter/window/system_floating_window_adapter.h"
 #include "ohos/adapter/xcomponent/adapter/window_adapter.h"
+#include "ohos/adapter/xcomponent/event/window_event_filter_adapter.h"
 #include "ui/base/cursor/platform_cursor.h"
 #include "ui/base/hit_test.h"
+#include "ui/display/screen_ohos.h"
 #include "ui/events/event.h"
 #include "ui/events/event_target_iterator.h"
 #include "ui/events/event_utils.h"
@@ -50,6 +30,7 @@
 #include "ui/ozone/platform/ohos/common/ohos_util.h"
 #include "ui/ozone/platform/ohos/host/ohos_cursor_utils.h"
 #include "ui/ozone/platform/ohos/host/ohos_window_manager.h"
+#include "ui/views/widget_util_ohos.h"
 
 namespace ui {
 
@@ -78,7 +59,7 @@ bool OhosWindow::Initialize(PlatformWindowInitProperties properties) {
   TRACE_EVENT0("gpu", "OhosWindow::Initialize");
 
   type_ = properties.type;
-  bounds_in_pixels_ = delegate()->ConvertRectToPixels(properties.bounds);
+  bounds_in_pixels_ = ConvertDipToPixelForNewWindow(properties.bounds);
 
   OnInitialize(std::move(properties));
 
@@ -152,6 +133,7 @@ void OhosWindow::OnSurfaceCreated() {
 void OhosWindow::OnSurfaceDestoryed() {
   auto task = base::BindOnce([](base::WeakPtr<OhosWindow> window) {
         if (window) {
+          LOG(INFO) << "OhosWindow on surface destroyed call window on close request";
           window->delegate()->OnCloseRequest();
         }
       },
@@ -459,6 +441,56 @@ void OhosWindow::EndDrag() {
     drag_source_window->GetDragManager()->DragEnd();
   }
   drag_manager_->DragEnd();
+}
+
+int32_t OhosWindow::GetOriginWindowId() {
+  std::vector<int32_t> window_ids;
+  window_ids.push_back(GetWidget());
+  std::vector<int32_t> origin_window_ids =
+      AppWindowAdapter::GetInstance().GetOriginWindowIds(window_ids);
+  if (origin_window_ids.size() != window_ids.size()) {
+    LOG(ERROR) << __FUNCTION__
+               << ", get oh origin window id fail, widget:" << GetWidget();
+    return -1;
+  }
+  return origin_window_ids.front();
+}
+
+gfx::Rect OhosWindow::ConvertDipToPixelForNewWindow(
+    const gfx::Rect& rect_in_dip) {
+  int32_t target_widget_id = gfx::kNullAcceleratedWidget;
+  if (parent_window()) {
+    target_widget_id = parent_window()->GetWidget();
+  } else if (ohos::adapter::window::WindowEventFilterAdapter::GetInstance()
+                 .IsTabDragging()) {
+    target_widget_id =
+        ohos::adapter::window::WindowEventFilterAdapter::GetInstance()
+            .GetDraggingTabWidgetId();
+  } else {
+    target_widget_id = window_manager_->GetLastActiveWidgetId();
+  }
+  OhosWindow* target_window = window_manager_->GetWindow(target_widget_id);
+  display::Display current_display;
+  if (target_window != nullptr) {
+    current_display = target_window->GetCurrentDisplay();
+  }
+  return display::ohos::ScreenOhos::ConvertDipToPixel(current_display,
+                                                      rect_in_dip);
+}
+
+display::Display OhosWindow::GetCurrentDisplay() {
+  NOTIMPLEMENTED_LOG_ONCE();
+  display::Display current_display;
+  return current_display;
+}
+
+void OhosWindow::BindNodeHandle() {
+  if (ohos::adapter::nodeHandle::NodeHandleImpl::GetInstance()
+          .IsSupportNodeHandle() &&
+      !is_ability_bound_) {
+    is_ability_bound_ =
+        AppWindowAdapter::GetInstance().Bind(GetWindowUniqueId());
+  }
 }
 
 }  // namespace ui

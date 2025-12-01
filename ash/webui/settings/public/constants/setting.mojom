@@ -123,8 +123,8 @@ enum Setting {
   kNightLight = 415,
   kStylusToolsInShelf = 416,
   kStylusNoteTakingApp = 417,
-  kStylusNoteTakingFromLockScreen = 418,
-  kStylusLatestNoteOnLockScreen = 419,
+  // Note: Value 418 and 419 were for deprecated remoed LockScreen apps - see
+  // https://crbug.com/376354347. Do not reuse.
   kDisplayOrientation = 420,
   kDisplayArrangement = 421,
   kPowerIdleBehaviorWhileCharging = 422,
@@ -182,6 +182,7 @@ enum Setting {
   kMagicBoostOnOff = 613,
   kLobsterOnOff = 614,
   kSunfishOnOff = 615,
+  kScannerOnOff = 616,
 
   // Apps section.
   kManageAndroidPreferences = 700,
@@ -337,8 +338,11 @@ enum Setting {
   kMagnifierFollowsChromeVox = 1549,
   kMainNodeAnnotationsEnabled = 1550,
   kFlashNotifications = 1551,
-  kOverlayScrollbarEnabled = 1552,
+  kAlwaysShowScrollbarsEnabled = 1552,
   kFaceGaze = 1553,
+  kBounceKeys = 1554,
+  kSlowKeys = 1555,
+  kDisableTouchpad = 1556,
 
   // Reset section.
   kPowerwash = 1600,

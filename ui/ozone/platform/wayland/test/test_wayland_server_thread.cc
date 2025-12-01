@@ -20,7 +20,6 @@
 #include "base/strings/string_number_conversions.h"
 #include "base/test/bind.h"
 #include "ui/ozone/platform/wayland/test/test_gtk_primary_selection.h"
-#include "ui/ozone/platform/wayland/test/test_zcr_text_input_extension.h"
 #include "ui/ozone/platform/wayland/test/test_zwp_primary_selection.h"
 
 namespace wl {
@@ -56,8 +55,6 @@ TestWaylandServerThread::TestWaylandServerThread(const ServerConfig& config)
       client_destroy_listener_(this),
       config_(config),
       compositor_(config.compositor_version),
-      output_(this),
-      zcr_text_input_extension_v1_(config.text_input_extension_version),
       controller_(FROM_HERE) {
   DETACH_FROM_THREAD(thread_checker_);
 }
@@ -119,19 +116,6 @@ bool TestWaylandServerThread::Start() {
     }
   }
 
-  if (config_.enable_aura_shell == EnableAuraShellProtocol::kEnabled) {
-    // The aura output managers should be initialized before any wl_output
-    // globals.
-    if (!zaura_output_manager_v2_.Initialize(display_.get())) {
-      return false;
-    }
-
-    output_.set_aura_shell_enabled();
-    if (!zaura_shell_.Initialize(display_.get())) {
-      return false;
-    }
-  }
-
   if (!output_.Initialize(display_.get()))
     return false;
 
@@ -147,16 +131,11 @@ bool TestWaylandServerThread::Start() {
   if (!xdg_shell_.Initialize(display_.get()))
     return false;
 
-  if (!zcr_stylus_.Initialize(display_.get()))
-    return false;
-  if (config_.text_input_wrapper_type == ZWPTextInputWrapperType::kV3) {
+  if (config_.text_input_type == ZwpTextInputType::kV3) {
     if (!zwp_text_input_manager_v3_.Initialize(display_.get())) {
       return false;
     }
   } else {
-    if (!zcr_text_input_extension_v1_.Initialize(display_.get())) {
-      return false;
-    }
     if (!zwp_text_input_manager_v1_.Initialize(display_.get())) {
       return false;
     }
@@ -253,28 +232,6 @@ MockWpPresentation* TestWaylandServerThread::EnsureAndGetWpPresentation() {
   if (wp_presentation_.Initialize(display_.get()))
     return &wp_presentation_;
   return nullptr;
-}
-
-TestSurfaceAugmenter* TestWaylandServerThread::EnsureSurfaceAugmenter() {
-  DCHECK_CALLED_ON_VALID_THREAD(thread_checker_);
-  if (surface_augmenter_.Initialize(display_.get()))
-    return &surface_augmenter_;
-  return nullptr;
-}
-
-void TestWaylandServerThread::OnTestOutputFlush(
-    TestOutput* test_output,
-    const TestOutputMetrics& metrics) {
-  if (zaura_output_manager_v2_.resource()) {
-    zaura_output_manager_v2_.SendOutputMetrics(test_output, metrics);
-  }
-}
-
-void TestWaylandServerThread::OnTestOutputGlobalDestroy(
-    TestOutput* test_output) {
-  if (zaura_output_manager_v2_.resource()) {
-    zaura_output_manager_v2_.OnTestOutputGlobalDestroy(test_output);
-  }
 }
 
 void TestWaylandServerThread::OnClientDestroyed(wl_client* client) {

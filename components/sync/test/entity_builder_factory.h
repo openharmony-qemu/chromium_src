@@ -13,7 +13,6 @@
 #include "base/strings/string_util.h"
 #include "base/uuid.h"
 #include "components/sync/test/bookmark_entity_builder.h"
-#include "url/gurl.h"
 
 namespace fake_server {
 
@@ -39,6 +38,9 @@ class EntityBuilderFactory {
 
   BookmarkEntityBuilder NewBookmarkEntityBuilder(
       const std::string& title,
+      const base::Uuid& uuid = base::Uuid::GenerateRandomV4());
+  BookmarkEntityBuilder NewBookmarkEntityBuilder(
+      const std::u16string& title,
       const base::Uuid& uuid = base::Uuid::GenerateRandomV4());
 
  private:

@@ -21,7 +21,6 @@
 #include "base/task/single_thread_task_runner.h"
 #include "base/threading/thread_checker.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "content/child/child_process.h"
 #include "content/common/process_visibility_tracker.h"
 #include "content/gpu/browser_exposed_gpu_interfaces.h"
@@ -45,13 +44,18 @@
 #include "services/service_manager/public/cpp/binder_registry.h"
 #include "services/viz/privileged/mojom/gl/gpu_service.mojom.h"
 #include "third_party/skia/include/core/SkGraphics.h"
+#include "third_party/wiseplay/cdm/buildflags.h"
 
 #if BUILDFLAG(IS_ANDROID)
 #include "media/base/android/media_drm_bridge_client.h"
 #include "media/mojo/clients/mojo_android_overlay.h"
 #endif
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(ENABLE_WISEPLAY)
+#include "media/base/ohos/ohos_media_drm_bridge_client.h"
+#endif
+
+#if BUILDFLAG(IS_CHROMEOS)
 #include "components/services/font/public/cpp/font_loader.h"  // nogncheck
 #include "components/services/font/public/mojom/font_service.mojom.h"  // nogncheck
 #include "third_party/skia/include/core/SkRefCnt.h"
@@ -97,6 +101,8 @@ viz::VizMainImpl::ExternalDependencies CreateVizMainDependencies() {
     deps.scheduler = GetContentClient()->gpu()->GetScheduler();
     deps.viz_compositor_thread_runner =
         GetContentClient()->gpu()->GetVizCompositorThreadRunner();
+    deps.gr_context_options_provider =
+        GetContentClient()->gpu()->GetGrContextOptionsProvider();
   }
 #endif
 
@@ -159,7 +165,14 @@ void GpuChildThread::Init(const base::TimeTicks& process_start_time) {
   }
 #endif
 
-#if BUILDFLAG(IS_CHROMEOS_ASH)
+#if BUILDFLAG(ENABLE_WISEPLAY)
+  if (!in_process_gpu()) {
+    media::SetMediaDrmBridgeClient(
+        GetContentClient()->GetOhosMediaDrmBridgeClient());
+  }
+#endif
+
+#if BUILDFLAG(IS_CHROMEOS)
   if (!in_process_gpu()) {
     mojo::PendingRemote<font_service::mojom::FontService> font_service;
     BindHostReceiver(font_service.InitWithNewPipeAndPassReceiver());

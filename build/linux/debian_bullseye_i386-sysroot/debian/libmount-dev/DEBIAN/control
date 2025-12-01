@@ -1,10 +1,10 @@
 Package: libmount-dev
 Source: util-linux
-Version: 2.36.1-8+deb11u1
+Version: 2.36.1-8+deb11u2
 Architecture: i386
 Maintainer: util-linux packagers <util-linux@packages.debian.org>
 Installed-Size: 135
-Depends: libblkid-dev, libc6-dev | libc-dev, libmount1 (= 2.36.1-8+deb11u1), libselinux1-dev
+Depends: libblkid-dev, libc6-dev | libc-dev, libmount1 (= 2.36.1-8+deb11u2), libselinux1-dev
 Section: libdevel
 Priority: optional
 Multi-Arch: same

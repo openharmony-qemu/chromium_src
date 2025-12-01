@@ -241,6 +241,11 @@ void MediaSessionController::OnAudioOutputSinkChangingDisabled() {
 
 void MediaSessionController::OnRemotePlaybackMetadataChanged(
     media_session::mojom::RemotePlaybackMetadataPtr metadata) {
+#if BUILDFLAG(IS_OHOS)
+  // set web_contents_ as have encrypted media when media element metadata changed
+  web_contents_->SetHaveEncryptedMedia(metadata->is_encrypted_media);
+#endif
+
   media_session_->SetRemotePlaybackMetadata(std::move(metadata));
   AddOrRemovePlayer();
 }
@@ -325,6 +330,21 @@ bool MediaSessionController::SupportsAudioOutputDeviceSwitching(
 
 media::MediaContentType MediaSessionController::GetMediaContentType() const {
   return media_content_type_;
+}
+
+void MediaSessionController::OnAutoPictureInPictureInfoChanged(
+    int player_id,
+    const media::PictureInPictureEventsInfo::AutoPipInfo&
+        auto_picture_in_picture_info) {
+  DCHECK_EQ(player_id_, player_id);
+
+  auto* observer = web_contents_->media_web_contents_observer();
+  if (!observer->IsMediaPlayerRemoteAvailable(id_)) {
+    return;
+  }
+
+  observer->GetMediaPlayerRemote(id_)->RecordAutoPictureInPictureInfo(
+      auto_picture_in_picture_info);
 }
 
 }  // namespace content

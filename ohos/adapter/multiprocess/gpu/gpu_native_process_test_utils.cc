@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "gpu_native_process_test_utils.h"
 
@@ -140,7 +115,6 @@ int OH_NativeWindow_NativeWindowHandleOpt(NativeWindow* window,
                                    va_arg(args, int));
       break;
     case GET_FORMAT:
-    case GET_USAGE:
     case GET_STRIDE:
     case GET_SWAP_INTERVAL:
     case GET_TIMEOUT:
@@ -151,7 +125,6 @@ int OH_NativeWindow_NativeWindowHandleOpt(NativeWindow* window,
                               va_arg(args, int*));
       break;
     case SET_FORMAT:
-    case SET_USAGE:
     case SET_STRIDE:
     case SET_SWAP_INTERVAL:
     case SET_TIMEOUT:
@@ -159,6 +132,14 @@ int OH_NativeWindow_NativeWindowHandleOpt(NativeWindow* window,
     case SET_TRANSFORM:
     case SET_SOURCE_TYPE:
       ret = api->SetInt32Attr(window, NativeWindowActionToAttr(op_code),
+                              va_arg(args, int));
+      break;
+    case GET_USAGE:
+      ret = api->GetInt64Attr(window, NativeWindowActionToAttr(op_code),
+                              va_arg(args, int*));
+      break;
+    case SET_USAGE:
+      ret = api->SetInt64Attr(window, NativeWindowActionToAttr(op_code),
                               va_arg(args, int));
       break;
     case GET_APP_FRAMEWORK_TYPE:

@@ -15,6 +15,7 @@
 #include "components/saved_tab_groups/public/types.h"
 #include "components/tab_groups/tab_group_color.h"
 #include "components/tab_groups/tab_group_id.h"
+#include "google_apis/gaia/gaia_id.h"
 #include "ui/gfx/image/image.h"
 #include "url/gurl.h"
 
@@ -32,11 +33,10 @@ class SavedTabGroupTab {
       std::optional<LocalTabID> local_tab_id = std::nullopt,
       std::optional<std::string> creator_cache_guid = std::nullopt,
       std::optional<std::string> last_updater_cache_guid = std::nullopt,
-      std::optional<base::Time> creation_time_windows_epoch_micros =
-          std::nullopt,
-      std::optional<base::Time> update_time_windows_epoch_micros = std::nullopt,
+      std::optional<base::Time> creation_time = std::nullopt,
+      std::optional<base::Time> update_time = std::nullopt,
       std::optional<gfx::Image> favicon = std::nullopt,
-      bool is_pending_sanitization = false);
+      bool is_pending_ntp = false);
   SavedTabGroupTab(const SavedTabGroupTab& other);
   SavedTabGroupTab& operator=(const SavedTabGroupTab& other);
   SavedTabGroupTab(SavedTabGroupTab&& other);
@@ -51,11 +51,11 @@ class SavedTabGroupTab {
   const GURL& url() const { return url_; }
   const std::u16string& title() const { return title_; }
   const std::optional<gfx::Image>& favicon() const { return favicon_; }
-  const base::Time& creation_time_windows_epoch_micros() const {
-    return creation_time_windows_epoch_micros_;
-  }
-  const base::Time& update_time_windows_epoch_micros() const {
-    return update_time_windows_epoch_micros_;
+  const base::Time& creation_time() const { return creation_time_; }
+  const base::Time& update_time() const { return update_time_; }
+  const base::Time& navigation_time() const { return navigation_time_; }
+  const std::optional<base::Time>& last_seen_time() const {
+    return last_seen_time_;
   }
   const std::optional<std::string>& creator_cache_guid() const {
     return creator_cache_guid_;
@@ -66,22 +66,25 @@ class SavedTabGroupTab {
   const std::vector<GURL>& redirect_url_chain() const {
     return redirect_url_chain_;
   }
-  bool is_pending_sanitization() const { return is_pending_sanitization_; }
+  const SharedAttribution& shared_attribution() const {
+    return shared_attribution_;
+  }
+  bool is_pending_ntp() const { return is_pending_ntp_; }
 
   // Mutators.
   SavedTabGroupTab& SetURL(GURL url) {
     url_ = std::move(url);
-    SetUpdateTimeWindowsEpochMicros(base::Time::Now());
+    SetUpdateTime(base::Time::Now());
     return *this;
   }
   SavedTabGroupTab& SetTitle(std::u16string title) {
     title_ = std::move(title);
-    SetUpdateTimeWindowsEpochMicros(base::Time::Now());
+    SetUpdateTime(base::Time::Now());
     return *this;
   }
   SavedTabGroupTab& SetFavicon(std::optional<gfx::Image> favicon) {
     favicon_ = std::move(favicon);
-    SetUpdateTimeWindowsEpochMicros(base::Time::Now());
+    SetUpdateTime(base::Time::Now());
     return *this;
   }
   SavedTabGroupTab& SetLocalTabID(std::optional<LocalTabID> local_tab_id) {
@@ -90,7 +93,7 @@ class SavedTabGroupTab {
   }
   SavedTabGroupTab& SetPosition(size_t position) {
     position_ = position;
-    SetUpdateTimeWindowsEpochMicros(base::Time::Now());
+    SetUpdateTime(base::Time::Now());
     return *this;
   }
   SavedTabGroupTab& SetCreatorCacheGuid(
@@ -103,9 +106,16 @@ class SavedTabGroupTab {
     last_updater_cache_guid_ = std::move(cache_guid);
     return *this;
   }
-  SavedTabGroupTab& SetUpdateTimeWindowsEpochMicros(
-      base::Time update_time_windows_epoch_micros) {
-    update_time_windows_epoch_micros_ = update_time_windows_epoch_micros;
+  SavedTabGroupTab& SetUpdateTime(base::Time update_time) {
+    update_time_ = update_time;
+    return *this;
+  }
+  SavedTabGroupTab& SetNavigationTime(base::Time navigation_time) {
+    navigation_time_ = navigation_time;
+    return *this;
+  }
+  SavedTabGroupTab& SetLastSeenTime(base::Time last_seen_time) {
+    last_seen_time_ = last_seen_time;
     return *this;
   }
   SavedTabGroupTab& SetRedirectURLChain(
@@ -113,10 +123,20 @@ class SavedTabGroupTab {
     redirect_url_chain_ = redirect_url_chain;
     return *this;
   }
-  SavedTabGroupTab& SetIsPendingSanitization(bool is_pending_sanitization) {
-    is_pending_sanitization_ = is_pending_sanitization;
+  SavedTabGroupTab& SetIsPendingNtp(bool is_pending_ntp) {
+    is_pending_ntp_ = is_pending_ntp;
     return *this;
   }
+
+  // Sets the updater of the tab, and also the creator if it's the first update.
+  // This method should be preferred over SetCreatedByAttribution() for local
+  // changes.
+  SavedTabGroupTab& SetUpdatedByAttribution(GaiaId updated_by);
+
+  // Sets the creator of the tab. Must be called only when there is no creator
+  // already set. Don't invoke this method, as it should only be invoked from
+  // the sync bridge for incoming sync updates (use SetUpdatedByAttribution()).
+  SavedTabGroupTab& SetCreatedByAttribution(GaiaId created_by);
 
   // Merges this tabs data with a specific from sync and returns the newly
   // merged specific. Side effect: Updates the values in the tab.
@@ -152,19 +172,39 @@ class SavedTabGroupTab {
   // A guid which refers to the device which created the tab group. If metadata
   // is not being tracked when the saved tab group is being created, this value
   // will be null. The value could also be null if the group was created before
-  // M127. Used for metrics purposes only.
+  // M127. Used for metrics purposes only. Applicable for saved tab groups only.
   std::optional<std::string> creator_cache_guid_;
 
   // The cache guid of the device that last modified this tab group. Can be null
-  // if the group was just created. Used for metrics purposes only.
+  // if the group was just created. Used for metrics purposes only. Applicable
+  // for saved tab groups only.
   std::optional<std::string> last_updater_cache_guid_;
 
-  // Timestamp for when the tab was created using windows epoch microseconds.
-  base::Time creation_time_windows_epoch_micros_;
+  // Atribution data for the shared tab. Applicable to shared tab groups only.
+  SharedAttribution shared_attribution_;
 
-  // Timestamp for when the tab was last updated using windows epoch
-  // microseconds.
-  base::Time update_time_windows_epoch_micros_;
+  // Timestamp for when the tab was created.
+  base::Time creation_time_;
+
+  // Timestamp for when the tab was last updated.
+  base::Time update_time_;
+
+  // Timestamp for when the tab was last navigated. Currently set to the mtime
+  // from the metadata from remote updates. TODO(crbug.com/420739337): After
+  // per-field mtime support is added, it will be correctly set to the server
+  // timestamp of when URL field is modified. Updated locally for local
+  // navigations.
+  base::Time navigation_time_;
+
+  // Timestamp of the last time a user saw the contents of this tab.
+  // This value may be null if the user has never focused a tab added
+  // from collaboration. Windows-epoch based.
+  //
+  // This is used by SharedTabGroupAccountDataSyncBridge to sync "read"
+  // status for shared tab updates. As such, it is not saved to disk
+  // alongside saved/shared tab group data. The account data sync bridge
+  // manages syncing and saving this to disk.
+  std::optional<base::Time> last_seen_time_;
 
   // The following fields aren't synced across devices.
 
@@ -176,10 +216,13 @@ class SavedTabGroupTab {
   // URL, we don't do a navigation.
   std::vector<GURL> redirect_url_chain_;
 
-  // Whether there are pending saninization tasks on the tab. This could include
-  // URL or title sanitization. If a tab is pending sanitization, the group
-  // will not be synced until the pending state is cleared.
-  bool is_pending_sanitization_;
+  // Whether the current tab is a pending NTP. The pending NTPs are
+  // real NTPs in the local tab model, but never synced to the server side.
+  // Pending NTPs are converted to regular tabs and synced to the server
+  // side when there is a navigation or tab addition either locally or from the
+  // server side. A pending NTP always has the position zero and is the only
+  // tab in the group.
+  bool is_pending_ntp_ = false;
 };
 
 class SavedTabGroupTabBuilder {

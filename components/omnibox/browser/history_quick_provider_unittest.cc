@@ -2,16 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "third_party/omnibox_proto/groups.pb.h"
-#ifdef UNSAFE_BUFFERS_BUILD
-// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
-#pragma allow_unsafe_buffers
-#endif
-
 #include "components/omnibox/browser/history_quick_provider.h"
 
 #include <stddef.h>
 
+#include <algorithm>
+#include <array>
 #include <functional>
 #include <memory>
 #include <set>
@@ -20,8 +16,8 @@
 
 #include "base/containers/to_vector.h"
 #include "base/memory/raw_ptr.h"
-#include "base/ranges/algorithm.h"
 #include "base/run_loop.h"
+#include "base/strings/to_string.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/test/scoped_feature_list.h"
 #include "base/test/task_environment.h"
@@ -42,6 +38,7 @@
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/metrics_proto/omnibox_event.pb.h"
 #include "third_party/metrics_proto/omnibox_focus_type.pb.h"
+#include "third_party/omnibox_proto/groups.pb.h"
 
 using base::ASCIIToUTF16;
 
@@ -593,8 +590,9 @@ TEST_F(HistoryQuickProviderTest, ContentsClass) {
   // Verify that contents_class divides the string in the right places.
   // [22, 24) is the "第二".  All the other pairs are the "e3".
   ACMatchClassifications contents_class(ac_matches()[0].contents_class);
-  size_t expected_offsets[] = {0,  22, 24, 31, 33, 40, 42, 49, 51, 58,
-                               60, 67, 69, 76, 78, 85, 86, 94, 95};
+  auto expected_offsets = std::to_array<size_t>({
+      0, 22, 24, 31, 33, 40, 42, 49, 51, 58, 60, 67, 69, 76, 78, 85, 86, 94, 95,
+  });
   // ScoredHistoryMatch may not highlight all the occurrences of these terms
   // because it only highlights terms at word breaks, and it only stores word
   // breaks up to some specified number of characters (50 at the time of this
@@ -1115,7 +1113,7 @@ TEST_F(HQPDomainSuggestionsTest, DomainSuggestions) {
                         std::vector<std::u16string> expected_matches,
                         bool expected_triggered) {
     SCOPED_TRACE("input_text: " + base::UTF16ToUTF8(input_text) +
-                 ", input_keyword: " + (input_keyword ? "true" : "false"));
+                 ", input_keyword: " + base::ToString(input_keyword));
 
     AutocompleteInput input(input_text, metrics::OmniboxEventProto::OTHER,
                             TestSchemeClassifier());
@@ -1129,9 +1127,8 @@ TEST_F(HQPDomainSuggestionsTest, DomainSuggestions) {
     provider().Start(input, false);
     auto matches = provider().matches();
     std::vector<std::u16string> match_titles;
-    base::ranges::transform(
-        matches, std::back_inserter(match_titles),
-        [](const auto& match) { return match.description; });
+    std::ranges::transform(matches, std::back_inserter(match_titles),
+                           [](const auto& match) { return match.description; });
     EXPECT_THAT(match_titles, testing::ElementsAreArray(expected_matches));
 
     EXPECT_EQ(client()

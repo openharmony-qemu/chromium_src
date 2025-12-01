@@ -103,7 +103,7 @@ class ContentSettingsPattern {
                                               // *:443 etc.
     kMaxValue = kCustomScope
   };
-  // LINT.ThenChange(//tools/metrics/histograms/enums.xml:ContentSettingPatternScope)
+  // LINT.ThenChange(//tools/metrics/histograms/metadata/privacy/enums.xml:ContentSettingPatternScope)
 
   struct PatternParts {
     PatternParts();
@@ -281,17 +281,15 @@ class ContentSettingsPattern {
   // |Relation| of the two patterns.
   Relation Compare(const ContentSettingsPattern& other) const;
 
-  // Returns true if the pattern and the |other| pattern are identical.
-  bool operator==(const ContentSettingsPattern& other) const;
+  friend bool operator==(const ContentSettingsPattern& a,
+                         const ContentSettingsPattern& b) {
+    return a.Compare(b) == IDENTITY;
+  }
 
-  // Returns true if the pattern and the |other| pattern are not identical.
-  bool operator!=(const ContentSettingsPattern& other) const;
-
-  // Returns true if the pattern has a lower priority than the |other| pattern.
-  bool operator<(const ContentSettingsPattern& other) const;
-
-  // Returns true if the pattern has a higher priority than the |other| pattern.
-  bool operator>(const ContentSettingsPattern& other) const;
+  friend auto operator<=>(const ContentSettingsPattern& a,
+                          const ContentSettingsPattern& b) {
+    return a.Compare(b) <=> IDENTITY;
+  }
 
   // Formatter method for Google Test
   friend void PrintTo(const ContentSettingsPattern& pattern, std::ostream* os) {

@@ -1,6 +1,6 @@
 Package: libqt6network6
 Source: qt6-base
-Version: 6.4.2+dfsg-10~bpo11+1
+Version: 6.4.2+dfsg-11~bpo11+1
 Architecture: amd64
 Maintainer: Debian Qt/KDE Maintainers <debian-qt-kde@lists.debian.org>
 Installed-Size: 2499

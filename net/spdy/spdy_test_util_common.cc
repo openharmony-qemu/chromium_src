@@ -11,6 +11,7 @@
 
 #include <cstddef>
 #include <optional>
+#include <ranges>
 #include <string_view>
 #include <utility>
 
@@ -19,11 +20,11 @@
 #include "base/compiler_specific.h"
 #include "base/containers/span.h"
 #include "base/functional/bind.h"
+#include "base/notimplemented.h"
 #include "base/notreached.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_split.h"
 #include "build/build_config.h"
-#include "net/base/features.h"
 #include "net/base/host_port_pair.h"
 #include "net/base/http_user_agent_settings.h"
 #include "net/base/proxy_delegate.h"
@@ -466,6 +467,7 @@ base::WeakPtr<SpdySession> CreateSpdySessionHelper(
       socket_params, /*proxy_annotation_tag=*/std::nullopt, MEDIUM,
       key.socket_tag(), ClientSocketPool::RespectLimits::ENABLED,
       callback.callback(), ClientSocketPool::ProxyAuthCallback(),
+      /*fail_if_alias_requires_proxy_override=*/false,
       http_session->GetSocketPool(HttpNetworkSession::NORMAL_SOCKET_POOL,
                                   ProxyChain::Direct()),
       net_log);
@@ -528,7 +530,9 @@ class FakeSpdySessionClientSocket : public MockClientSocket {
   }
 
   // Return kProtoUnknown to use the pool's default protocol.
-  NextProto GetNegotiatedProtocol() const override { return kProtoUnknown; }
+  NextProto GetNegotiatedProtocol() const override {
+    return NextProto::kProtoUnknown;
+  }
 
   // The functions below are not expected to be called.
 
@@ -611,8 +615,7 @@ void SpdyTestUtil::AddPriorityToHeaderBlock(
     RequestPriority request_priority,
     bool priority_incremental,
     quiche::HttpHeaderBlock* headers) const {
-  if (use_priority_header_ &&
-      base::FeatureList::IsEnabled(net::features::kPriorityHeader)) {
+  if (use_priority_header_) {
     uint8_t urgency = ConvertRequestPriorityToQuicPriority(request_priority);
     bool incremental = priority_incremental;
     quic::HttpStreamPriority priority{urgency, incremental};
@@ -1003,7 +1006,7 @@ quiche::HttpHeaderBlock SpdyTestUtil::ConstructHeaderBlock(
 namespace test {
 HashValue GetTestHashValue(uint8_t label) {
   HashValue hash_value(HASH_VALUE_SHA256);
-  memset(hash_value.data(), label, hash_value.size());
+  std::ranges::fill(hash_value.span(), label);
   return hash_value;
 }
 

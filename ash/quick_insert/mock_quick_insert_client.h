@@ -9,17 +9,16 @@
 #include <string>
 
 #include "ash/ash_export.h"
+#include "ash/quick_insert/mock_quick_insert_client.h"
 #include "ash/quick_insert/quick_insert_category.h"
 #include "ash/quick_insert/quick_insert_client.h"
 #include "base/memory/scoped_refptr.h"
 #include "services/network/public/cpp/shared_url_loader_factory.h"
 #include "testing/gmock/include/gmock/gmock.h"
 
-class PrefService;
-
 namespace ash {
 
-struct PickerWebPasteTarget;
+struct QuickInsertWebPasteTarget;
 
 class ASH_EXPORT MockQuickInsertClient : public QuickInsertClient {
  public:
@@ -41,7 +40,7 @@ class ASH_EXPORT MockQuickInsertClient : public QuickInsertClient {
   MOCK_METHOD(ShowEditorCallback, CacheEditorContext, (), (override));
   MOCK_METHOD(ShowLobsterCallback,
               CacheLobsterContext,
-              (bool support_image_insertion),
+              (ui::TextInputClient * text_input_client),
               (override));
   MOCK_METHOD(void,
               GetSuggestedEditorResults,
@@ -56,21 +55,18 @@ class ASH_EXPORT MockQuickInsertClient : public QuickInsertClient {
               (size_t, RecentFilesCallback),
               (override));
   MOCK_METHOD(void,
-              GetSuggestedLinkResults,
-              (size_t, SuggestedLinksCallback),
-              (override));
-  MOCK_METHOD(void,
               FetchFileThumbnail,
               (const base::FilePath& path,
                const gfx::Size& size,
                FetchFileThumbnailCallback callback),
               (override));
-  MOCK_METHOD(PrefService*, GetPrefs, (), (override));
-  MOCK_METHOD(std::optional<PickerWebPasteTarget>,
+  MOCK_METHOD(std::optional<QuickInsertWebPasteTarget>,
               GetWebPasteTarget,
               (),
               (override));
   MOCK_METHOD(void, Announce, (std::u16string_view message), (override));
+  MOCK_METHOD(history::HistoryService*, GetHistoryService, (), (override));
+  MOCK_METHOD(favicon::FaviconService*, GetFaviconService, (), (override));
 };
 
 }  // namespace ash

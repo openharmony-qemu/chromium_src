@@ -22,9 +22,9 @@
 #include "base/metrics/field_trial_params.h"
 #include "base/metrics/histogram_functions.h"
 #include "base/metrics/histogram_macros.h"
-#include "base/not_fatal_until.h"
 #include "base/observer_list.h"
 #include "base/strings/strcat.h"
+#include "base/strings/string_number_conversions.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/time/default_clock.h"
@@ -674,15 +674,6 @@ bool ServiceWorkerVersion::OnRequestTermination() {
     }
   }
 
-  static const bool kSpeculativeServiceWorkerWarmUpOnIdleTimeoutEnabled =
-      base::FeatureList::IsEnabled(
-          blink::features::kSpeculativeServiceWorkerWarmUp) &&
-      blink::features::kSpeculativeServiceWorkerWarmUpOnIdleTimeout.Get();
-  will_warm_up_on_stopped_ =
-      will_be_terminated &&
-      kSpeculativeServiceWorkerWarmUpOnIdleTimeoutEnabled &&
-      scope_.SchemeIsHTTPOrHTTPS();
-
   if (will_be_terminated) {
     embedded_worker_->Stop();
   } else {
@@ -1018,7 +1009,7 @@ void ServiceWorkerVersion::OnControlleeNavigationCommitted(
 #if DCHECK_IS_ON()
   // Ensures this function is only called for a known window client.
   auto it = controllee_map_.find(client_uuid);
-  CHECK(it != controllee_map_.end(), base::NotFatalUntil::M130);
+  CHECK(it != controllee_map_.end());
 
   DCHECK_EQ(it->second->GetClientType(),
             blink::mojom::ServiceWorkerClientType::kWindow);
@@ -1116,6 +1107,14 @@ void ServiceWorkerVersion::EvictBackForwardCachedControllee(
     BackForwardCacheMetrics::NotRestoredReason reason) {
   controllee->EvictFromBackForwardCache(reason);
   controllees_to_be_evicted_[controllee->client_uuid()] = reason;
+  // TODO(crbug.com/341322515): remove this if expression with
+  // CHECK in RemoveControlleeFromBackForwardCacheMap().
+  // As I assumed in #comment21 of the crbug, this behavior can be expected
+  // for a dedicated worker.
+  if (!BFCacheContainsControllee(controllee->client_uuid()) &&
+      controllee->IsContainerForWorkerClient()) {
+    return;
+  }
   RemoveControlleeFromBackForwardCacheMap(controllee->client_uuid());
 }
 
@@ -1207,6 +1206,17 @@ void ServiceWorkerVersion::Doom() {
   main_script_load_params_.reset();
 }
 
+void ServiceWorkerVersion::SetPolicyContainerHost(
+    scoped_refptr<PolicyContainerHost> policy_container_host) {
+  policy_container_host_ = std::move(policy_container_host);
+  if (policy_container_host_ &&
+      policy_container_host_->policies()
+              .integrity_policy.blocked_destinations.size() > 0) {
+    CountFeature(
+        blink::mojom::WebFeature::kIntegrityPolicyInServiceWorkerResponse);
+  }
+}
+
 void ServiceWorkerVersion::InitializeGlobalScope() {
   TRACE_EVENT0("ServiceWorker", "ServiceWorkerVersion::InitializeGlobalScope");
   receiver_.reset();
@@ -1241,8 +1251,7 @@ void ServiceWorkerVersion::InitializeGlobalScope() {
           std::move(registration)),
       worker_host_->container_host()->version_object_manager().CreateInfoToSend(
           this),
-      fetch_handler_existence(), std::move(reporting_observer_receiver_),
-      ancestor_frame_type_, key_);
+      fetch_handler_existence(), ancestor_frame_type_, key_);
 
   is_endpoint_ready_ = true;
   associated_registry_ = std::make_unique<blink::AssociatedInterfaceRegistry>();
@@ -1453,6 +1462,12 @@ void ServiceWorkerVersion::OnProcessAllocated() {
 void ServiceWorkerVersion::OnStarting() {
   for (auto& observer : observers_) {
     observer.OnRunningStateChanged(this);
+  }
+}
+
+void ServiceWorkerVersion::OnStartWorkerMessageSent() {
+  for (auto& observer : observers_) {
+    observer.OnStartWorkerMessageSent(this);
   }
 }
 
@@ -1687,7 +1702,7 @@ void ServiceWorkerVersion::GetClient(const std::string& client_uuid,
       context_->service_worker_client_owner().GetServiceWorkerClientByClientID(
           client_uuid);
   if (!service_worker_client ||
-      service_worker_client->url().DeprecatedGetOriginAsURL() !=
+      service_worker_client->GetUrlForScopeMatch().DeprecatedGetOriginAsURL() !=
           script_url_.DeprecatedGetOriginAsURL()) {
     // The promise will be resolved to 'undefined'.
     // Note that we don't BadMessage here since Clients#get() can be passed an
@@ -1787,7 +1802,7 @@ void ServiceWorkerVersion::PostMessageToClient(
     }
   }
 
-  if (service_worker_client->url().DeprecatedGetOriginAsURL() !=
+  if (service_worker_client->GetUrlForScopeMatch().DeprecatedGetOriginAsURL() !=
       script_url_.DeprecatedGetOriginAsURL()) {
     associated_interface_receiver_.ReportBadMessage(
         "Received Client#postMessage() request for a cross-origin client.");
@@ -1832,7 +1847,9 @@ void ServiceWorkerVersion::PostMessageToClient(
 void ServiceWorkerVersion::FocusClient(const std::string& client_uuid,
                                        FocusClientCallback callback) {
   if (!context_) {
-    std::move(callback).Run(nullptr /* client */);
+    auto result = blink::mojom::FocusResult::NewErrorCode(
+        blink::mojom::FocusError::CLIENT_NOT_FOUND);
+    std::move(callback).Run(std::move(result));
     return;
   }
   ServiceWorkerClient* service_worker_client =
@@ -1840,10 +1857,12 @@ void ServiceWorkerVersion::FocusClient(const std::string& client_uuid,
           client_uuid);
   if (!service_worker_client) {
     // The client may already have been closed, just fail.
-    std::move(callback).Run(nullptr /* client */);
+    auto result = blink::mojom::FocusResult::NewErrorCode(
+        blink::mojom::FocusError::CLIENT_NOT_FOUND);
+    std::move(callback).Run(std::move(result));
     return;
   }
-  if (service_worker_client->url().DeprecatedGetOriginAsURL() !=
+  if (service_worker_client->GetUrlForScopeMatch().DeprecatedGetOriginAsURL() !=
       script_url_.DeprecatedGetOriginAsURL()) {
     associated_interface_receiver_.ReportBadMessage(
         "Received WindowClient#focus() request for a cross-origin client.");
@@ -1900,7 +1919,7 @@ void ServiceWorkerVersion::NavigateClient(const std::string& client_uuid,
                             std::string("The client was not found."));
     return;
   }
-  if (service_worker_client->url().DeprecatedGetOriginAsURL() !=
+  if (service_worker_client->GetUrlForScopeMatch().DeprecatedGetOriginAsURL() !=
       script_url_.DeprecatedGetOriginAsURL()) {
     associated_interface_receiver_.ReportBadMessage(
         "Received WindowClient#navigate() request for a cross-origin client.");
@@ -1970,12 +1989,6 @@ void ServiceWorkerVersion::SkipWaiting(SkipWaitingCallback callback) {
 void ServiceWorkerVersion::AddRoutes(
     const blink::ServiceWorkerRouterRules& rules,
     AddRoutesCallback callback) {
-  if (!IsStaticRouterEnabled()) {
-    // This renderer should have called this only when the feature is enabled.
-    associated_interface_receiver_.ReportBadMessage(
-        "Unexpected router registration call during the feature is disabled.");
-    return;
-  }
   auto error = SetupRouterEvaluator(rules);
   bool is_parse_error = false;
   switch (error) {
@@ -2796,27 +2809,21 @@ void ServiceWorkerVersion::OnStoppedInternal(
   // the worker was stopping. The worker must be restarted to fulfill the
   // request.
   bool should_restart = !start_callbacks_.empty();
-  bool should_warm_up =
-      will_warm_up_on_stopped_ && !is_stopping_warmed_up_worker_;
   if (is_redundant() || in_dtor_) {
     // This worker will be destroyed soon.
     should_restart = false;
-    should_warm_up = false;
   } else if (ping_controller_.IsTimedOut()) {
     // This worker exhausted its time to run, don't let it restart.
     should_restart = false;
-    should_warm_up = false;
   } else if (old_status == blink::EmbeddedWorkerStatus::kStarting) {
     // This worker unexpectedly stopped because start failed.  Attempting to
     // restart on start failure could cause an endless loop of start attempts,
     // so don't try to restart now.
     should_restart = false;
-    should_warm_up = false;
   } else if (is_stopping_warmed_up_worker_) {
     // This worker is stopped while warmed-up or warming-up. Such workers don't
-    // need to restart nor re-warm-up.
+    // need to restart.
     should_restart = false;
-    should_warm_up = false;
   }
 
   if (!stop_time_.is_null()) {
@@ -2876,7 +2883,6 @@ void ServiceWorkerVersion::OnStoppedInternal(
   pending_external_requests_.clear();
   worker_is_idle_on_renderer_ = true;
   worker_host_.reset();
-  will_warm_up_on_stopped_ = false;
   is_stopping_warmed_up_worker_ = false;
 
   for (auto& observer : observers_) {
@@ -2886,22 +2892,6 @@ void ServiceWorkerVersion::OnStoppedInternal(
     StartWorkerInternal();
   } else if (!HasWorkInBrowser()) {
     OnNoWorkInBrowser();
-  }
-
-  if (should_warm_up && !should_restart && context_) {
-    // Posts a re-warm-up task so that the warming up operation runs in a
-    // different task.
-    base::SingleThreadTaskRunner::GetCurrentDefault()->PostTask(
-        FROM_HERE, base::BindOnce(
-                       [](base::WeakPtr<ServiceWorkerContextCore> context,
-                          const GURL scope, const blink::StorageKey key) {
-                         if (!context) {
-                           return;
-                         }
-                         context->wrapper()->WarmUpServiceWorker(
-                             scope, key, base::DoNothing());
-                       },
-                       context_, scope_, key_));
   }
 }
 
@@ -2968,7 +2958,7 @@ bool ServiceWorkerVersion::IsStartWorkerAllowed() const {
   // tab, pass a null callback as WebContents getter.
   if (!GetContentClient()->browser()->AllowServiceWorker(
           scope_, net::SiteForCookies::FromUrl(scope_),
-          url::Origin::Create(scope_), script_url_, browser_context)) {
+          url::Origin::Create(scope_), key_, script_url_, browser_context)) {
     return false;
   }
 
@@ -3030,7 +3020,7 @@ void ServiceWorkerVersion::PrepareForUpdate(
            ->browser()
            ->ShouldServiceWorkerInheritPolicyContainerFromCreator(
                updated_script_url)) {
-    set_policy_container_host(policy_container_host);
+    SetPolicyContainerHost(policy_container_host);
   }
 }
 
@@ -3042,7 +3032,7 @@ ServiceWorkerVersion::compared_script_info_map() const {
 ServiceWorkerUpdateChecker::ComparedScriptInfo
 ServiceWorkerVersion::TakeComparedScriptInfo(const GURL& script_url) {
   auto it = compared_script_info_map_.find(script_url);
-  CHECK(it != compared_script_info_map_.end(), base::NotFatalUntil::M130);
+  CHECK(it != compared_script_info_map_.end());
   ServiceWorkerUpdateChecker::ComparedScriptInfo info = std::move(it->second);
   compared_script_info_map_.erase(it);
   return info;
@@ -3149,7 +3139,6 @@ void ServiceWorkerVersion::SetResources(
 ServiceWorkerRouterEvaluatorErrorEnums
 ServiceWorkerVersion::SetupRouterEvaluator(
     const blink::ServiceWorkerRouterRules& rules) {
-  CHECK(IsStaticRouterEnabled());
   blink::ServiceWorkerRouterRules new_rules;
   // If there are existing router rules, set them first.
   // TODO(crbug.com/40277030) Consider having a method to merge rules instead of
@@ -3173,7 +3162,7 @@ ServiceWorkerVersion::SetupRouterEvaluator(
 
   // Check if we have fetch handler. This is a rare case, since this should have
   // been validated in the renderer already when adding a new router rule.
-  if (router_evaluator_->has_fetch_event_source() &&
+  if (router_evaluator_->require_fetch_handler() &&
       fetch_handler_existence() == FetchHandlerExistence::DOES_NOT_EXIST) {
     router_evaluator_.reset();
     return ServiceWorkerRouterEvaluatorErrorEnums::
@@ -3202,17 +3191,6 @@ bool ServiceWorkerVersion::NeedRouterEvaluate() const {
     case FetchHandlerType::kNotSkippable:
       return true;
   }
-}
-
-bool ServiceWorkerVersion::IsStaticRouterEnabled() {
-  if (base::FeatureList::IsEnabled(features::kServiceWorkerStaticRouter)) {
-    return true;
-  }
-  if (origin_trial_tokens_ &&
-      origin_trial_tokens_->contains("ServiceWorkerStaticRouter")) {
-    return true;
-  }
-  return false;
 }
 
 void ServiceWorkerVersion::GetAssociatedInterface(
@@ -3262,6 +3240,7 @@ ServiceWorkerVersion::GetRemoteCacheStorage() {
 
   mojo::PendingRemote<blink::mojom::CacheStorage> remote;
   control->AddReceiver(*coep, embedded_worker()->GetCoepReporter(), *dip,
+                       embedded_worker()->GetDipReporter(),
                        storage::BucketLocator::ForDefaultBucket(key()),
                        storage::mojom::CacheStorageOwner::kCacheAPI,
                        remote.InitWithNewPipeAndPassReceiver());

@@ -144,7 +144,7 @@ TEST_F(CallbackTest, NullAfterMoveRun) {
   const RepeatingClosure cb2 = BindRepeating([] {});
   ASSERT_TRUE(cb2);
   std::move(cb2).Run();
-  EXPECT_TRUE(cb2);
+  EXPECT_TRUE(cb2);  // NOLINT(bugprone-use-after-move)
 
   OnceCallback<void(void*)> cb3 = BindOnce([](void* param) {
     EXPECT_TRUE(static_cast<OnceCallback<void(void*)>*>(param)->is_null());
@@ -169,7 +169,7 @@ TEST_F(CallbackTest, ThenResetsOriginalCallback) {
     EXPECT_TRUE(!!orig);
     OnceClosure joined = std::move(orig).Then(base::BindOnce([] {}));
     EXPECT_TRUE(!!joined);
-    EXPECT_FALSE(!!orig);
+    EXPECT_FALSE(!!orig);  // NOLINT(bugprone-use-after-move)
   }
   {
     // RepeatingCallback::Then() destroys the original callback if it's an
@@ -178,7 +178,7 @@ TEST_F(CallbackTest, ThenResetsOriginalCallback) {
     EXPECT_TRUE(!!orig);
     RepeatingClosure joined = std::move(orig).Then(base::BindRepeating([] {}));
     EXPECT_TRUE(!!joined);
-    EXPECT_FALSE(!!orig);
+    EXPECT_FALSE(!!orig);  // NOLINT(bugprone-use-after-move)
   }
   {
     // RepeatingCallback::Then() doesn't destroy the original callback if it's
@@ -297,22 +297,19 @@ class CallbackThenTest<use_once, R(Args...), ThenR> {
   static auto GetInner(std::string& s) { return Bind(&Inner<R, ThenR>, &s); }
 
  private:
-  template <bool bind_once = use_once,
-            typename F,
-            typename... FArgs,
-            std::enable_if_t<bind_once, int> = 0>
+  template <typename F, typename... FArgs>
+    requires(use_once)
   static auto Bind(F function, FArgs... args) {
     return BindOnce(function, std::forward<FArgs>(args)...);
   }
-  template <bool bind_once = use_once,
-            typename F,
-            typename... FArgs,
-            std::enable_if_t<!bind_once, int> = 0>
+  template <typename F, typename... FArgs>
+    requires(!use_once)
   static auto Bind(F function, FArgs... args) {
     return BindRepeating(function, std::forward<FArgs>(args)...);
   }
 
-  template <typename R2 = R, std::enable_if_t<!std::is_void_v<R2>, int> = 0>
+  template <typename R2 = R>
+    requires(!std::is_void_v<R2>)
   static int Outer(std::string* s,
                    std::unique_ptr<int> a,
                    std::unique_ptr<int> b) {
@@ -320,51 +317,52 @@ class CallbackThenTest<use_once, R(Args...), ThenR> {
     *s += base::NumberToString(*a) + base::NumberToString(*b);
     return *a + *b;
   }
-  template <typename R2 = R, std::enable_if_t<!std::is_void_v<R2>, int> = 0>
+  template <typename R2 = R>
+    requires(!std::is_void_v<R2>)
   static int Outer(std::string* s, int a, int b) {
     *s += "Outer";
     *s += base::NumberToString(a) + base::NumberToString(b);
     return a + b;
   }
-  template <typename R2 = R, std::enable_if_t<!std::is_void_v<R2>, int> = 0>
+  template <typename R2 = R>
+    requires(!std::is_void_v<R2>)
   static int Outer(std::string* s) {
     *s += "Outer";
     *s += "None";
     return 99;
   }
 
-  template <typename R2 = R, std::enable_if_t<std::is_void_v<R2>, int> = 0>
+  template <typename R2 = R>
+    requires(std::is_void_v<R2>)
   static void Outer(std::string* s,
                     std::unique_ptr<int> a,
                     std::unique_ptr<int> b) {
     *s += "Outer";
     *s += base::NumberToString(*a) + base::NumberToString(*b);
   }
-  template <typename R2 = R, std::enable_if_t<std::is_void_v<R2>, int> = 0>
+  template <typename R2 = R>
+    requires(std::is_void_v<R2>)
   static void Outer(std::string* s, int a, int b) {
     *s += "Outer";
     *s += base::NumberToString(a) + base::NumberToString(b);
   }
-  template <typename R2 = R, std::enable_if_t<std::is_void_v<R2>, int> = 0>
+  template <typename R2 = R>
+    requires(std::is_void_v<R2>)
   static void Outer(std::string* s) {
     *s += "Outer";
     *s += "None";
   }
 
-  template <typename OuterR,
-            typename InnerR,
-            std::enable_if_t<!std::is_void_v<OuterR>, int> = 0,
-            std::enable_if_t<!std::is_void_v<InnerR>, int> = 0>
+  template <typename OuterR, typename InnerR>
+    requires(!std::is_void_v<OuterR> && !std::is_void_v<InnerR>)
   static int Inner(std::string* s, OuterR a) {
     static_assert(std::is_same_v<InnerR, int>, "Use int return type");
     *s += "Inner";
     *s += base::NumberToString(a);
     return a;
   }
-  template <typename OuterR,
-            typename InnerR,
-            std::enable_if_t<std::is_void_v<OuterR>, int> = 0,
-            std::enable_if_t<!std::is_void_v<InnerR>, int> = 0>
+  template <typename OuterR, typename InnerR>
+    requires(std::is_void_v<OuterR> && !std::is_void_v<InnerR>)
   static int Inner(std::string* s) {
     static_assert(std::is_same_v<InnerR, int>, "Use int return type");
     *s += "Inner";
@@ -372,18 +370,14 @@ class CallbackThenTest<use_once, R(Args...), ThenR> {
     return 99;
   }
 
-  template <typename OuterR,
-            typename InnerR,
-            std::enable_if_t<!std::is_void_v<OuterR>, int> = 0,
-            std::enable_if_t<std::is_void_v<InnerR>, int> = 0>
+  template <typename OuterR, typename InnerR>
+    requires(!std::is_void_v<OuterR> && std::is_void_v<InnerR>)
   static void Inner(std::string* s, OuterR a) {
     *s += "Inner";
     *s += base::NumberToString(a);
   }
-  template <typename OuterR,
-            typename InnerR,
-            std::enable_if_t<std::is_void_v<OuterR>, int> = 0,
-            std::enable_if_t<std::is_void_v<InnerR>, int> = 0>
+  template <typename OuterR, typename InnerR>
+    requires(std::is_void_v<OuterR> && std::is_void_v<InnerR>)
   static void Inner(std::string* s) {
     *s += "Inner";
     *s += "None";
@@ -705,8 +699,9 @@ TEST_F(CallbackTest, MaybeValidInvalidateWeakPtrsOnOtherSequence) {
             // Check that MaybeValid() _eventually_ returns false.
             const TimeDelta timeout = TestTimeouts::tiny_timeout();
             const TimeTicks begin = TimeTicks::Now();
-            while (cb.MaybeValid() && (TimeTicks::Now() - begin) < timeout)
+            while (cb.MaybeValid() && (TimeTicks::Now() - begin) < timeout) {
               PlatformThread::YieldCurrentThread();
+            }
             EXPECT_FALSE(cb.MaybeValid());
           },
           cb));

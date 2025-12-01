@@ -5,12 +5,14 @@
 #include "content/services/auction_worklet/trusted_kvv2_signals.h"
 
 #include <cstddef>
+#include <optional>
 
 #include "base/containers/span_writer.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/run_loop.h"
+#include "base/strings/string_number_conversions.h"
 #include "base/strings/stringprintf.h"
 #include "base/synchronization/waitable_event.h"
 #include "base/test/bind.h"
@@ -42,8 +44,6 @@ namespace auction_worklet {
 namespace {
 
 const char kPublisherHostName[] = "publisher.test";
-const int kExperimentGroupId = 12345;
-const char kTrustedBiddingSignalsSlotSizeParam[] = "slotSize=100,200";
 const char kJoiningOrigin[] = "https://foo.test/";
 const size_t kFramingHeaderSize = 5;  // bytes
 const size_t kOhttpHeaderSize = 55;   // bytes
@@ -114,7 +114,7 @@ const char kBiddingContentBase[] =
 //     "keyGroupOutputs": [
 //       {
 //         "tags": [
-//           "renderUrls"
+//           "renderURLs"
 //         ],
 //         "keyValues": {
 //           "https://foo.test/": {
@@ -124,7 +124,7 @@ const char kBiddingContentBase[] =
 //       },
 //       {
 //         "tags": [
-//           "adComponentRenderUrls"
+//           "adComponentRenderURLs"
 //         ],
 //         "keyValues": {
 //           "https://foosub.test/": {
@@ -137,8 +137,8 @@ const char kBiddingContentBase[] =
 // ]
 const char kScoringContentBase[] =
     "81A2626964006F6B657947726F75704F75747075747382A26474616773816A72656E646572"
-    "55726C73696B657956616C756573A17168747470733A2F2F666F6F2E746573742FA1657661"
-    "6C75656131A2647461677381756164436F6D706F6E656E7452656E64657255726C73696B65"
+    "55524C73696B657956616C756573A17168747470733A2F2F666F6F2E746573742FA1657661"
+    "6C75656131A2647461677381756164436F6D706F6E656E7452656E64657255524C73696B65"
     "7956616C756573A17468747470733A2F2F666F6F7375622E746573742FA16576616C756563"
     "5B325D";
 
@@ -152,8 +152,9 @@ CreateBiddingRequestHelperBuilder() {
           kKeyId);
 
   return std::make_unique<TrustedBiddingSignalsKVv2RequestHelperBuilder>(
-      kPublisherHostName, kExperimentGroupId, std::move(public_key),
-      kTrustedBiddingSignalsSlotSizeParam);
+      kPublisherHostName, /*experiment_group_id=*/std::nullopt,
+      /*contextual_data=*/std::nullopt, std::move(public_key),
+      /*trusted_bidding_signals_slot_size_param=*/"");
 }
 
 std::unique_ptr<TrustedScoringSignalsKVv2RequestHelperBuilder>
@@ -166,7 +167,8 @@ CreateScoringRequestHelperBuilder() {
           kKeyId);
 
   return std::make_unique<TrustedScoringSignalsKVv2RequestHelperBuilder>(
-      kPublisherHostName, kExperimentGroupId, std::move(public_key));
+      kPublisherHostName, /*experiment_group_id=*/std::nullopt,
+      /*contextual_data=*/std::nullopt, std::move(public_key));
 }
 
 class TrustedKVv2SignalsEmbeddedTest : public testing::Test {
@@ -308,7 +310,9 @@ class TrustedKVv2SignalsEmbeddedTest : public testing::Test {
           v8::Context::Scope context_scope(context);
 
           v8::Local<v8::Value> value = result_map.at(index)->GetScoringSignals(
-              v8_helper_.get(), context, render_url, ad_component_render_urls);
+              v8_helper_.get(), context, render_url,
+              CreateMojoCreativeInfoWithoutOwnerVector(
+                  ad_component_render_urls));
 
           if (v8_helper_->ExtractJson(context, value,
                                       /*script_timeout=*/nullptr, &result) !=
@@ -351,11 +355,10 @@ class TrustedKVv2SignalsEmbeddedTest : public testing::Test {
     size_t response_body_size = desired_size - kOhttpHeaderSize;
     response_body.resize(response_body_size, 0x00);
 
-    base::SpanWriter writer(
-        base::as_writable_bytes(base::make_span(response_body)));
+    base::SpanWriter writer(base::as_writable_byte_span(response_body));
     writer.WriteU8BigEndian(0x00);
     writer.WriteU32BigEndian(hex_bytes.size());
-    writer.Write(base::as_bytes(base::make_span(hex_bytes)));
+    writer.Write(base::as_byte_span(hex_bytes));
 
     return response_body;
   }

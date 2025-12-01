@@ -1,10 +1,10 @@
 Package: libkrb5-3
 Source: krb5
-Version: 1.18.3-6+deb11u3
+Version: 1.18.3-6+deb11u5
 Architecture: amd64
 Maintainer: Sam Hartman <hartmans@debian.org>
 Installed-Size: 1108
-Depends: libc6 (>= 2.25), libcom-err2 (>= 1.43.9), libk5crypto3 (>= 1.15~beta1), libkeyutils1 (>= 1.5.9), libkrb5support0 (= 1.18.3-6+deb11u3), libssl1.1 (>= 1.1.0)
+Depends: libc6 (>= 2.25), libcom-err2 (>= 1.43.9), libk5crypto3 (>= 1.15~beta1), libkeyutils1 (>= 1.5.9), libkrb5support0 (= 1.18.3-6+deb11u5), libssl1.1 (>= 1.1.0)
 Recommends: krb5-locales
 Suggests: krb5-doc, krb5-user
 Breaks: libapache2-mod-auth-kerb (<= 5.4-2.4), libsmbclient (<= 2:3.6.1-2), sssd (<= 1.2.1-4.3)

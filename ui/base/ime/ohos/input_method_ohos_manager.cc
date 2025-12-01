@@ -1,38 +1,19 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2025 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "ui/base/ime/ohos/input_method_ohos_manager.h"
+#include "ohos/adapter/ime_adapter/input_method_ohos_adapter.h"
 
 namespace ui {
 InputMethodOHOSManager& InputMethodOHOSManager::GetInstance() {
   static InputMethodOHOSManager instance;
   return instance;
+}
+
+InputMethodOHOSManager::InputMethodOHOSManager() {
+  ohos::adapter::InputMethodOHOSAdapter::GetInstance().Register(this);
+  task_runner_ = base::TaskRunnerOHOS::GetUIThreadTaskRunner();
 }
 
 void InputMethodOHOSManager::SetActiveInstance(
@@ -61,6 +42,90 @@ InputMethodOHOSManager::GetTaskRunner() {
     task_runner_ = base::TaskRunnerOHOS::GetUIThreadTaskRunner();
   });
   return task_runner_;
+}
+
+void InputMethodOHOSManager::InsertTextOnUIThread(const std::string& text) {
+  if (active_instance_) {
+    active_instance_->InsertText(text);
+  }
+}
+
+void InputMethodOHOSManager::DeleteBackwardOnUIThread(int32_t length) {
+  if (active_instance_) {
+    active_instance_->DeleteBackward(length);
+  }
+}
+
+void InputMethodOHOSManager::DeleteForwardOnUIThread(int32_t length) {
+  if (active_instance_) {
+    active_instance_->DeleteForward(length);
+  }
+}
+
+void InputMethodOHOSManager::SendEnterKeyEventOnUIThread() {
+  if (active_instance_) {
+    active_instance_->SendEnterKeyEvent();
+  }
+}
+
+void InputMethodOHOSManager::MoveCursorOnUIThread(int direction) {
+  if (active_instance_) {
+    active_instance_->MoveCursor(direction);
+  }
+}
+
+void InputMethodOHOSManager::ExitFullscreenEventOnUIThread() {
+  if (active_instance_) {
+    active_instance_->ExitFullscreenEvent();
+  }
+}
+
+void InputMethodOHOSManager::InsertText(const std::string& text) {
+  task_runner_->PostTask(
+    FROM_HERE,
+    base::BindOnce(&InputMethodOHOSManager::InsertTextOnUIThread,
+                   weak_factory_.GetWeakPtr(), text)
+  );
+}
+
+void InputMethodOHOSManager::DeleteBackward(int32_t length) {
+  task_runner_->PostTask(
+    FROM_HERE,
+    base::BindOnce(&InputMethodOHOSManager::DeleteBackwardOnUIThread,
+                   weak_factory_.GetWeakPtr(), length)
+  );
+}
+
+void InputMethodOHOSManager::DeleteForward(int32_t length) {
+  task_runner_->PostTask(
+    FROM_HERE,
+    base::BindOnce(&InputMethodOHOSManager::DeleteForwardOnUIThread,
+                   weak_factory_.GetWeakPtr(), length)
+  );
+}
+
+void InputMethodOHOSManager::SendEnterKeyEvent() {
+  task_runner_->PostTask(
+    FROM_HERE,
+    base::BindOnce(&InputMethodOHOSManager::SendEnterKeyEventOnUIThread,
+                   weak_factory_.GetWeakPtr())
+  );
+}
+
+void InputMethodOHOSManager::MoveCursor(int direction) {
+  task_runner_->PostTask(
+    FROM_HERE,
+    base::BindOnce(&InputMethodOHOSManager::MoveCursorOnUIThread,
+                   weak_factory_.GetWeakPtr(), direction)
+  );
+}
+
+void InputMethodOHOSManager::ExitFullscreenEvent() {
+  task_runner_->PostTask(
+    FROM_HERE,
+    base::BindOnce(&InputMethodOHOSManager::ExitFullscreenEventOnUIThread,
+                   weak_factory_.GetWeakPtr())
+  );
 }
 
 }  // namespace ui

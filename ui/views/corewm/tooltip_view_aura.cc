@@ -34,16 +34,15 @@ TooltipViewAura::TooltipViewAura()
   render_text_->SetWordWrapBehavior(gfx::WRAP_LONG_WORDS);
   render_text_->SetMultiline(true);
 
-  SetBackground(
-      views::CreateThemedSolidBackground(ui::kColorTooltipBackground));
+  SetBackground(views::CreateSolidBackground(ui::kColorTooltipBackground));
   SetBorder(views::CreatePaddedBorder(
 #if BUILDFLAG(IS_OHOS)
-      views::CreateThemedRoundedRectBorder(kTooltipBorderThickness,
+      views::CreateRoundedRectBorder(kTooltipBorderThickness,
                                            kTooltipBorderRoundedCornerRadius,
                                            ui::kColorTooltipForeground),
 #else
-      views::CreateThemedSolidBorder(kTooltipBorderThickness,
-                                     ui::kColorTooltipForeground),
+      views::CreateSolidBorder(kTooltipBorderThickness,
+                               ui::kColorTooltipForeground),
 #endif
       kBorderInset - gfx::Insets(kTooltipBorderThickness)));
 
@@ -113,8 +112,10 @@ void TooltipViewAura::OnThemeChanged() {
   views::View::OnThemeChanged();
   // Force the text color to be readable when |background_color| is not
   // opaque.
+  const SkColor background_color =
+      background()->color().ResolveToSkColor(GetColorProvider());
   render_text_->set_subpixel_rendering_suppressed(
-      SkColorGetA(background()->get_color()) != SK_AlphaOPAQUE);
+      SkColorGetA(background_color) != SK_AlphaOPAQUE);
   render_text_->SetColor(
       GetColorProvider()->GetColor(ui::kColorTooltipForeground));
 }
@@ -126,7 +127,8 @@ void TooltipViewAura::UpdateAccessibleName() {
     return;
   }
 
-  GetViewAccessibility().SetName(render_text_->GetDisplayText());
+  GetViewAccessibility().SetName(
+      std::u16string(render_text_->GetDisplayText()));
 }
 
 void TooltipViewAura::ResetDisplayRect() {

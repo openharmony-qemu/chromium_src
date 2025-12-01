@@ -942,6 +942,36 @@ TEST_P(QuicDispatcherTestOneVersion, NoVersionNegotiationWithSmallPacket) {
                 CONNECTION_ID_PRESENT, PACKET_4BYTE_PACKET_NUMBER, 1);
 }
 
+TEST_P(QuicDispatcherTestOneVersion,
+       NoVersionNegotiationWithVersionNegotiationPacket) {
+  if (!version_.HasIetfQuicFrames()) {
+    return;
+  }
+  CreateTimeWaitListManager();
+  QuicSocketAddress client_address(QuicIpAddress::Loopback4(), 1);
+
+  ParsedQuicVersionVector supported_versions;
+  for (QuicByteCount i = 0; i < kMinPacketSizeForVersionNegotiation; i += 4) {
+    supported_versions.push_back(ParsedQuicVersion::RFCv1());
+  }
+
+  std::unique_ptr<QuicEncryptedPacket> packet(
+      QuicFramer::BuildVersionNegotiationPacket(
+          TestConnectionId(), EmptyQuicConnectionId(), /*ietf_quic=*/true,
+          version_.HasLengthPrefixedConnectionIds(), supported_versions));
+  ASSERT_GT(packet->length(), kMinPacketSizeForVersionNegotiation);
+
+  EXPECT_CALL(*dispatcher_, CreateQuicSession(_, _, _, _, _, _, _)).Times(0);
+  EXPECT_CALL(*time_wait_list_manager_,
+              SendVersionNegotiationPacket(_, _, _, _, _, _, _, _))
+      .Times(0);
+
+  dispatcher_->ProcessPacket(
+      server_address_, client_address,
+      QuicReceivedPacket(packet->data(), packet->length(), QuicTime::Zero(),
+                         /*owns_buffer=*/false));
+}
+
 // Disabling CHLO size validation allows the dispatcher to send version
 // negotiation packets in response to a CHLO that is otherwise too small.
 TEST_P(QuicDispatcherTestOneVersion,
@@ -1727,61 +1757,6 @@ TEST_P(QuicDispatcherTestOneVersion, AndroidConformanceTest) {
   quiche::test::CompareCharArraysWithHexError(
       "response connection ID", &(*(saving_writer->packets()))[0]->data()[7], 8,
       reinterpret_cast<const char*>(&packet[6]), 8);
-}
-
-TEST_P(QuicDispatcherTestOneVersion, AndroidConformanceTestOld) {
-  // WARNING: this test covers an old Android Conformance Test that has now been
-  // changed, but it'll take time for the change to propagate through the
-  // Android ecosystem. The Android team has asked us to keep this test
-  // supported until at least 2021-03-31. After that date, and when we drop
-  // support for sending QUIC version negotiation packets using the legacy
-  // Google QUIC format (Q001-Q043), then we can delete this test.
-  // TODO(dschinazi) delete this test after 2021-03-31
-  SavingWriter* saving_writer = new SavingWriter();
-  // dispatcher_ takes ownership of saving_writer.
-  QuicDispatcherPeer::UseWriter(dispatcher_.get(), saving_writer);
-
-  QuicTimeWaitListManager* time_wait_list_manager = new QuicTimeWaitListManager(
-      saving_writer, dispatcher_.get(), mock_helper_.GetClock(),
-      &mock_alarm_factory_);
-  // dispatcher_ takes ownership of time_wait_list_manager.
-  QuicDispatcherPeer::SetTimeWaitListManager(dispatcher_.get(),
-                                             time_wait_list_manager);
-  // clang-format off
-  static const unsigned char packet[1200] = {
-    // Android UDP network conformance test packet as it was after this change:
-    // https://android-review.googlesource.com/c/platform/cts/+/1104285
-    // but before this change:
-    // https://android-review.googlesource.com/c/platform/cts/+/1454515
-    0x0d,  // public flags: version, 8-byte connection ID, 1-byte packet number
-    0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78,  // 8-byte connection ID
-    0xaa, 0xda, 0xca, 0xaa,  // reserved-space version number
-    0x01,  // 1-byte packet number
-    0x00,  // private flags
-    0x07,  // PING frame
-  };
-  // clang-format on
-
-  QuicEncryptedPacket encrypted(reinterpret_cast<const char*>(packet),
-                                sizeof(packet), false);
-  std::unique_ptr<QuicReceivedPacket> received_packet(
-      ConstructReceivedPacket(encrypted, mock_helper_.GetClock()->Now()));
-  EXPECT_CALL(*dispatcher_, CreateQuicSession(_, _, _, _, _, _, _)).Times(0);
-
-  QuicSocketAddress client_address(QuicIpAddress::Loopback4(), 1);
-  dispatcher_->ProcessPacket(server_address_, client_address, *received_packet);
-  ASSERT_EQ(1u, saving_writer->packets()->size());
-
-  // The Android UDP network conformance test directly checks that bytes 1-9
-  // of the response match the connection ID that was sent.
-  static const char connection_id_bytes[] = {0x71, 0x72, 0x73, 0x74,
-                                             0x75, 0x76, 0x77, 0x78};
-  ASSERT_GE((*(saving_writer->packets()))[0]->length(),
-            1u + sizeof(connection_id_bytes));
-  quiche::test::CompareCharArraysWithHexError(
-      "response connection ID", &(*(saving_writer->packets()))[0]->data()[1],
-      sizeof(connection_id_bytes), connection_id_bytes,
-      sizeof(connection_id_bytes));
 }
 
 TEST_P(QuicDispatcherTestAllVersions, DoNotProcessSmallPacket) {
@@ -3190,7 +3165,6 @@ TEST_P(BufferedPacketStoreTest, BufferedChloWithEcn) {
   if (!version_.HasIetfQuicFrames()) {
     return;
   }
-  SetQuicRestartFlag(quic_support_ect1, true);
   InSequence s;
   QuicConnectionId conn_id = TestConnectionId(1);
   // Process non-CHLO packet. This ProcessUndecryptableEarlyPacket() but with

@@ -48,7 +48,10 @@ import {
   ReactiveAudio,
 } from '../core/audio_player_controller.js';
 import {i18n} from '../core/i18n.js';
-import {useRecordingDataManager} from '../core/lit/context.js';
+import {
+  usePlatformHandler,
+  useRecordingDataManager,
+} from '../core/lit/context.js';
 import {
   ComputedState,
   ReactiveLitElement,
@@ -106,6 +109,8 @@ export function setInitialAudio(audio: ReactiveAudio|null): void {
 export class PlaybackPage extends ReactiveLitElement {
   static override styles = css`
     :host {
+      --header-padding: 8px;
+
       background-color: var(--cros-sys-app_base_shaded);
       box-sizing: border-box;
       display: flex;
@@ -113,6 +118,10 @@ export class PlaybackPage extends ReactiveLitElement {
       height: 100%;
       padding: 16px;
       width: 100%;
+
+      @container style(--small-viewport: 1) {
+        --header-padding: 2px;
+      }
     }
 
     #main-area {
@@ -120,7 +129,7 @@ export class PlaybackPage extends ReactiveLitElement {
       display: flex;
       flex: 1;
       flex-flow: column;
-      gap: 2px;
+      gap: 4px;
 
       /* To have the border-radius applied to content. */
       overflow: hidden;
@@ -135,7 +144,7 @@ export class PlaybackPage extends ReactiveLitElement {
       align-items: center;
       display: flex;
       flex-flow: row;
-      padding: 8px;
+      padding: var(--header-padding);
 
       & > recording-title {
         margin: 0 auto 0 -4px;
@@ -309,7 +318,7 @@ export class PlaybackPage extends ReactiveLitElement {
       align-items: center;
       display: flex;
       flex-flow: row;
-      gap: 24px;
+      gap: 28px;
     }
 
     #speed-controls {
@@ -366,6 +375,8 @@ export class PlaybackPage extends ReactiveLitElement {
   private readonly exportDialog = createRef<ExportDialog>();
 
   private readonly recordingInfoDialog = createRef<RecordingInfoDialog>();
+
+  private readonly platformHandler = usePlatformHandler();
 
   private readonly recordingDataManager = useRecordingDataManager();
 
@@ -758,6 +769,9 @@ export class PlaybackPage extends ReactiveLitElement {
       const label = this.getSpeedLabel(speed);
       const onClick = () => {
         this.audioPlayer.playbackSpeed.value = speed;
+        this.platformHandler.eventsSender.sendChangePlaybackSpeedEvent(
+          {playbackSpeed: speed},
+        );
       };
 
       return html`<cra-menu-item
@@ -805,15 +819,27 @@ export class PlaybackPage extends ReactiveLitElement {
     `;
   }
 
+  // Updates volume states in audioPlayer and sends event
+  private updateVolume(muted: boolean, volume: number) {
+    this.audioPlayer.muted.value = muted;
+    this.audioPlayer.volume.value = volume / 100;
+    // Directly records the change because we don't do optimistic updates on
+    // those values in the audioPlayer.
+    this.platformHandler.eventsSender.sendChangePlaybackVolumeEvent(
+      {muted, volume},
+    );
+  }
+
   private onVolumeInput(ev: Event) {
     const slider = assertInstanceof(ev.target, CrosSlider);
-    this.audioPlayer.muted.value = false;
-    this.audioPlayer.volume.value = slider.value / 100;
+    this.updateVolume(/* muted= */ false, slider.value);
     this.requestUpdate();
   }
 
   private toggleMuted() {
-    this.audioPlayer.muted.update((s) => !s);
+    const muted = !this.audioPlayer.muted.value;
+    const volume = Math.round(this.audioPlayer.volume.value * 100);
+    this.updateVolume(muted, volume);
     this.requestUpdate();
   }
 
@@ -841,8 +867,7 @@ export class PlaybackPage extends ReactiveLitElement {
         min="0"
         max="100"
         @input=${this.onVolumeInput}
-        aria-label=${i18n.playbackVolumeAriaLabel}
-        ${withTooltip()}
+        aria-label=${i18n.playbackVolumeSliderAriaLabel}
       ></cros-slider>
     `;
   }
@@ -883,7 +908,8 @@ export class PlaybackPage extends ReactiveLitElement {
         <cra-icon-button
           buttonstyle="floating"
           @click=${this.showFloatingVolume}
-          aria-label=${i18n.playbackVolumeAriaLabel}
+          aria-label=${i18n.playbackFloatingVolumeShowButtonAriaLabel}
+          ${withTooltip()}
         >
           ${this.renderVolumeIcon()}
         </cra-icon-button>
@@ -892,13 +918,20 @@ export class PlaybackPage extends ReactiveLitElement {
           ${ref(this.floatingVolume)}
           @focusout=${this.hideFloatingVolume}
         >
-          <cra-icon-button buttonstyle="floating" @click=${this.toggleMuted}>
+          <cra-icon-button
+            buttonstyle="floating"
+            @click=${this.toggleMuted}
+            aria-label=${volumeButtonLabel}
+            ${withTooltip()}
+          >
             ${this.renderVolumeIcon()}
           </cra-icon-button>
           ${this.renderVolumeSlider()}
           <cra-icon-button
             buttonstyle="floating"
             @click=${this.hideFloatingVolume}
+            aria-label=${i18n.playbackFloatingVolumeCloseButtonAriaLabel}
+            ${withTooltip()}
           >
             <cra-icon slot="icon" name="close"></cra-icon>
           </cra-icon-button>

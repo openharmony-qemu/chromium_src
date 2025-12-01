@@ -2,15 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifdef UNSAFE_BUFFERS_BUILD
-// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
-#pragma allow_unsafe_buffers
-#endif
-
 #include "components/search_engines/template_url.h"
 
 #include <stddef.h>
 
+#include <array>
 #include <string>
 
 #include "base/base64.h"
@@ -25,12 +21,14 @@
 #include "base/test/metrics/histogram_tester.h"
 #include "base/test/scoped_feature_list.h"
 #include "base/test/with_feature_override.h"
+#include "build/branding_buildflags.h"
 #include "components/google/core/common/google_util.h"
 #include "components/omnibox/common/omnibox_features.h"
 #include "components/search_engines/regulatory_extension_type.h"
 #include "components/search_engines/search_engines_switches.h"
 #include "components/search_engines/search_terms_data.h"
 #include "components/search_engines/template_url_data.h"
+#include "components/search_engines/template_url_data_util.h"
 #include "components/search_engines/testing_search_terms_data.h"
 #include "net/base/url_util.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -40,10 +38,14 @@
 #include "ui/base/device_form_factor.h"
 
 using base::ASCIIToUTF16;
-using CreatedByPolicy = TemplateURLData::CreatedByPolicy;
+using PolicyOrigin = TemplateURLData::PolicyOrigin;
 using RequestSource = SearchTermsData::RequestSource;
 
 namespace {
+
+const bool kEnableBuiltinSearchProviderAssets =
+    !!BUILDFLAG(ENABLE_BUILTIN_SEARCH_PROVIDER_ASSETS);
+
 bool IsLowerCase(const std::u16string& str) {
   return str == base::i18n::ToLower(str);
 }
@@ -125,14 +127,16 @@ TEST_F(TemplateURLTest, URLRefTestSearchTerms) {
     const char* url;
     const std::u16string terms;
     const std::string output;
-  } search_term_cases[] = {
+  };
+  auto search_term_cases = std::to_array<SearchTermsCase>({
       {"http://foo{searchTerms}", u"sea rch/bar", "http://foosea%20rch/bar"},
       {"http://foo{searchTerms}?boo=abc", u"sea rch/bar",
        "http://foosea%20rch/bar?boo=abc"},
       {"http://foo/?boo={searchTerms}", u"sea rch/bar",
        "http://foo/?boo=sea+rch%2Fbar"},
       {"http://en.wikipedia.org/{searchTerms}", u"wiki/?",
-       "http://en.wikipedia.org/wiki/%3F"}};
+       "http://en.wikipedia.org/wiki/%3F"},
+  });
   for (size_t i = 0; i < std::size(search_term_cases); ++i) {
     const SearchTermsCase& value = search_term_cases[i];
     TemplateURLData data;
@@ -550,10 +554,12 @@ TEST_F(TemplateURLTest, URLRefTestSearchTermsUsingTermsData) {
     const char* url;
     const std::u16string terms;
     const char* output;
-  } search_term_cases[] = {{"{google:baseURL}{language}{searchTerms}",
-                            std::u16string(), "http://example.com/e/en"},
-                           {"{google:baseSuggestURL}{searchTerms}",
-                            std::u16string(), "http://example.com/complete/"}};
+  };
+  auto search_term_cases = std::to_array<SearchTermsCase>(
+      {{"{google:baseURL}{language}{searchTerms}", std::u16string(),
+        "http://example.com/e/en"},
+       {"{google:baseSuggestURL}{searchTerms}", std::u16string(),
+        "http://example.com/complete/"}});
 
   TestingSearchTermsData search_terms_data("http://example.com/e/");
   TemplateURLData data;
@@ -575,7 +581,8 @@ TEST_F(TemplateURLTest, URLRefTermToWide) {
   struct ToWideCase {
     const char* encoded_search_term;
     const std::u16string expected_decoded_term;
-  } to_wide_cases[] = {
+  };
+  auto to_wide_cases = std::to_array<ToWideCase>({
       {"hello+world", u"hello world"},
       // Test some big-5 input.
       {"%a7A%A6%6e+to+you", u"\x4f60\x597d to you"},
@@ -589,7 +596,7 @@ TEST_F(TemplateURLTest, URLRefTermToWide) {
       {"C%2B%2B", u"C++"},
       // C%2B is escaped as C%252B, make sure we unescape it properly.
       {"C%252B", u"C%2B"},
-  };
+  });
 
   // Set one input encoding: big-5. This is so we can test fallback to UTF-8.
   TemplateURLData data;
@@ -1006,7 +1013,7 @@ TEST_F(TemplateURLTest, GetRegulatoryExtensionType) {
   }
 
   {
-    data.created_from_play_api = true;
+    data.regulatory_origin = RegulatoryExtensionType::kAndroidEEA;
     TemplateURL url(data);
     EXPECT_EQ(RegulatoryExtensionType::kAndroidEEA,
               url.GetRegulatoryExtensionType());
@@ -1154,60 +1161,6 @@ TEST_F(TemplateURLTest, ReplaceCurrentPageUrl) {
     EXPECT_EQ(entry.expected_result, result.spec());
   }
 }
-
-#if BUILDFLAG(IS_ANDROID)
-// Tests appending attribution parameter to queries originating from Play API
-// search engine.
-TEST_F(TemplateURLTest, PlayAPIAttributionEnabled) {
-  const struct TestData {
-    const char* url;
-    std::u16string terms;
-    bool created_from_play_api;
-    const char* output;
-  } test_data[] = {
-      {"http://foo/?q={searchTerms}", u"bar", false, "http://foo/?q=bar"},
-      {"http://foo/?q={searchTerms}", u"bar", true,
-       "http://foo/?q=bar&chrome_dse_attribution=1"}};
-  TemplateURLData data;
-  for (const auto& entry : test_data) {
-    data.SetURL(entry.url);
-    data.created_from_play_api = entry.created_from_play_api;
-    TemplateURL url(data);
-    EXPECT_TRUE(url.url_ref().IsValid(search_terms_data_));
-    ASSERT_TRUE(url.url_ref().SupportsReplacement(search_terms_data_));
-    GURL result(url.url_ref().ReplaceSearchTerms(
-        TemplateURLRef::SearchTermsArgs(entry.terms), search_terms_data_));
-    ASSERT_TRUE(result.is_valid());
-    EXPECT_EQ(entry.output, result.spec());
-  }
-}
-
-TEST_F(TemplateURLTest, PlayAPIAttributionDisabled) {
-  base::test::ScopedFeatureList feature_list;
-  feature_list.InitAndEnableFeature(
-      switches::kRemoveSearchEngineChoiceAttribution);
-  const struct TestData {
-    const char* url;
-    std::u16string terms;
-    bool created_from_play_api;
-    const char* output;
-  } test_data[] = {
-      {"http://foo/?q={searchTerms}", u"bar", false, "http://foo/?q=bar"},
-      {"http://foo/?q={searchTerms}", u"bar", true, "http://foo/?q=bar"}};
-  TemplateURLData data;
-  for (const auto& entry : test_data) {
-    data.SetURL(entry.url);
-    data.created_from_play_api = entry.created_from_play_api;
-    TemplateURL url(data);
-    EXPECT_TRUE(url.url_ref().IsValid(search_terms_data_));
-    ASSERT_TRUE(url.url_ref().SupportsReplacement(search_terms_data_));
-    GURL result(url.url_ref().ReplaceSearchTerms(
-        TemplateURLRef::SearchTermsArgs(entry.terms), search_terms_data_));
-    ASSERT_TRUE(result.is_valid());
-    EXPECT_EQ(entry.output, result.spec());
-  }
-}
-#endif
 
 TEST_F(TemplateURLTest, Suggestions) {
   struct TestData {
@@ -1361,16 +1314,32 @@ TEST_F(TemplateURLTest, SearchTermKeyLocation) {
 }
 
 TEST_F(TemplateURLTest, GoogleBaseSuggestURL) {
-  static const struct {
+  struct Data {
     const char* const base_url;
     const char* const base_suggest_url;
-  } data[] = {
-    { "http://google.com/", "http://google.com/complete/", },
-    { "http://www.google.com/", "http://www.google.com/complete/", },
-    { "http://www.google.co.uk/", "http://www.google.co.uk/complete/", },
-    { "http://www.google.com.by/", "http://www.google.com.by/complete/", },
-    { "http://google.com/intl/xx/", "http://google.com/complete/", },
   };
+  static const auto data = std::to_array<Data>({
+      {
+          "http://google.com/",
+          "http://google.com/complete/",
+      },
+      {
+          "http://www.google.com/",
+          "http://www.google.com/complete/",
+      },
+      {
+          "http://www.google.co.uk/",
+          "http://www.google.co.uk/complete/",
+      },
+      {
+          "http://www.google.com.by/",
+          "http://www.google.com.by/complete/",
+      },
+      {
+          "http://google.com/intl/xx/",
+          "http://google.com/complete/",
+      },
+  });
 
   for (size_t i = 0; i < std::size(data); ++i)
     CheckSuggestBaseURL(data[i].base_url, data[i].base_suggest_url);
@@ -2169,21 +2138,52 @@ TEST_F(TemplateURLTest, IsSearchURL) {
   data.alternate_urls.push_back("http://bar/webhp#q={searchTerms}");
   TemplateURL search_provider(data);
 
-  const struct {
+  struct UrlData {
     const char* const url;
     bool result;
-  } url_data[] = {
-    { "http://bar/search?q=foo&oq=foo", true, },
-    { "http://bar/?q=foo&oq=foo", true, },
-    { "http://bar/#output=search&q=foo&oq=foo", true, },
-    { "http://bar/webhp#q=foo&oq=foo", true, },
-    { "http://bar/#q=foo&oq=foo", true, },
-    { "http://bar/?ext=foo&q=foo#ref=bar", true, },
-    { "http://bar/url?url=http://www.foo.com/&q=foo#ref=bar", false, },
-    { "http://bar/", false, },
-    { "http://foo/", false, },
-    { "http://bar/newtab", false, },
   };
+  const auto url_data = std::to_array<UrlData>({
+      {
+          "http://bar/search?q=foo&oq=foo",
+          true,
+      },
+      {
+          "http://bar/?q=foo&oq=foo",
+          true,
+      },
+      {
+          "http://bar/#output=search&q=foo&oq=foo",
+          true,
+      },
+      {
+          "http://bar/webhp#q=foo&oq=foo",
+          true,
+      },
+      {
+          "http://bar/#q=foo&oq=foo",
+          true,
+      },
+      {
+          "http://bar/?ext=foo&q=foo#ref=bar",
+          true,
+      },
+      {
+          "http://bar/url?url=http://www.foo.com/&q=foo#ref=bar",
+          false,
+      },
+      {
+          "http://bar/",
+          false,
+      },
+      {
+          "http://foo/",
+          false,
+      },
+      {
+          "http://bar/newtab",
+          false,
+      },
+  });
 
   for (size_t i = 0; i < std::size(url_data); ++i) {
     EXPECT_EQ(url_data[i].result,
@@ -2520,7 +2520,7 @@ TEST_F(TemplateURLTest, GenerateURL_NoRegulatoryExtensions) {
   }
 
   {
-    data.created_from_play_api = true;
+    data.regulatory_origin = RegulatoryExtensionType::kAndroidEEA;
     TemplateURL t_url(data);
 
     EXPECT_EQ(t_url.GenerateSearchURL(search_terms_data_, u"user query").spec(),
@@ -2566,7 +2566,7 @@ TEST_F(TemplateURLTest, GenerateURL_WithEmptyRegulatoryExtensions) {
   }
 
   {
-    data.created_from_play_api = true;
+    data.regulatory_origin = RegulatoryExtensionType::kAndroidEEA;
     TemplateURL t_url(data);
 
     EXPECT_EQ(t_url.GenerateSearchURL(search_terms_data_, u"user query").spec(),
@@ -2627,7 +2627,7 @@ TEST_F(TemplateURLTest, GenerateURL_WithFullRegulatoryExtensions) {
   }
 
   {
-    data.created_from_play_api = true;
+    data.regulatory_origin = RegulatoryExtensionType::kAndroidEEA;
     TemplateURL t_url(data);
     const char* expected_search_url =
         "https://search/?q=user+query&eea_search_param=abc";
@@ -2708,7 +2708,7 @@ TEST_F(TemplateURLTest,
   }
 
   {
-    data.created_from_play_api = true;
+    data.regulatory_origin = RegulatoryExtensionType::kAndroidEEA;
     TemplateURL t_url(data);
 
     base::HistogramTester histogram_tester;
@@ -2763,7 +2763,7 @@ TEST_F(TemplateURLTest, GenerateURL_RegulatoryExtensionVariantHistograms) {
   }
 
   {
-    data.created_from_play_api = true;
+    data.regulatory_origin = RegulatoryExtensionType::kAndroidEEA;
     TemplateURL t_url(data);
 
     {
@@ -2976,43 +2976,6 @@ TEST_F(TemplateURLTest, PathWildcard) {
   EXPECT_EQ("https://www.google.com/search?q=foo", generated_url.spec());
 }
 
-TEST_F(TemplateURLTest, SideImageSearchParams) {
-  TemplateURLData data;
-  data.side_image_search_param = "sideimagesearch";
-  TemplateURL url(data);
-
-  // Adds query param with provided version to URL.
-  GURL result =
-      url.GenerateSideImageSearchURL(GURL("http://foo.com/?q=123"), "1");
-  EXPECT_EQ("http://foo.com/?q=123&sideimagesearch=1", result.spec());
-
-  // Does not add query param if the provided URL already has that param and
-  // version.
-  result = url.GenerateSideImageSearchURL(
-      GURL("http://foo.com/?q=123&sideimagesearch=1"), "1");
-  EXPECT_EQ("http://foo.com/?q=123&sideimagesearch=1", result.spec());
-
-  // Updates version if the version on the query param does not match.
-  result = url.GenerateSideImageSearchURL(
-      GURL("http://foo.com/?q=123&sideimagesearch=2"), "1");
-  EXPECT_EQ("http://foo.com/?q=123&sideimagesearch=1", result.spec());
-
-  // Does nothing if the URL does not have the param.
-  result = url.RemoveSideImageSearchParamFromURL(GURL("http://foo.com/?q=123"));
-  EXPECT_EQ("http://foo.com/?q=123", result.spec());
-
-  // Removes the param if the provided URL has it.
-  result = url.RemoveSideImageSearchParamFromURL(
-      GURL("http://foo.com/?q=123&sideimagesearch=1"));
-  EXPECT_EQ("http://foo.com/?q=123", result.spec());
-
-  // Removes the first instance of the query param that exist in the URL. This
-  // should not happen but just asserting for expected behavior.
-  result = url.RemoveSideImageSearchParamFromURL(
-      GURL("http://foo.com/?q=123&sideimagesearch=1&sideimagesearch=2"));
-  EXPECT_EQ("http://foo.com/?q=123&sideimagesearch=2", result.spec());
-}
-
 TEST_F(TemplateURLTest, ImageTranslate) {
   struct TestData {
     const std::string image_translate_url;
@@ -3069,9 +3032,51 @@ TEST_F(TemplateURLTest, ImageSearchBrandingLabel) {
   EXPECT_EQ(u"fooimages", image_branding_url.image_search_branding_label());
 }
 
+TEST_F(TemplateURLTest, GetBuiltinImageResourceId_FromPrepopulatedEngine) {
+  std::unique_ptr<TemplateURLData> t_url_data =
+      TemplateURLDataFromPrepopulatedEngine(TemplateURLPrepopulateData::google);
+  TemplateURL t_url(*t_url_data.get());
+
+  std::string expected_resource_id = kEnableBuiltinSearchProviderAssets
+                                         ? "IDR_SEARCH_ENGINE_GOOGLE_IMAGE"
+                                         : "IDR_DEFAULT_FAVICON";
+  EXPECT_EQ(t_url.GetBuiltinImageResourceId(), expected_resource_id);
+}
+
+TEST_F(TemplateURLTest,
+       GetBuiltinImageResourceId_FromPrepopulatedEngineWithoutResources) {
+  // Relies on Baidu not having built-in resources, the test would start failing
+  // if that changes.
+  std::unique_ptr<TemplateURLData> t_url_data =
+      TemplateURLDataFromPrepopulatedEngine(TemplateURLPrepopulateData::baidu);
+  TemplateURL t_url(*t_url_data.get());
+  EXPECT_EQ(t_url.GetBuiltinImageResourceId(), "IDR_DEFAULT_FAVICON");
+}
+
+TEST_F(TemplateURLTest, GetBuiltinImageResourceId_FromAssignedData) {
+  TemplateURLData data;
+  data.prepopulate_id = TemplateURLPrepopulateData::google.id;
+  TemplateURL t_url(data);
+
+  std::string expected_resource_id = kEnableBuiltinSearchProviderAssets
+                                         ? "IDR_SEARCH_ENGINE_GOOGLE_IMAGE"
+                                         : "IDR_DEFAULT_FAVICON";
+  EXPECT_EQ(t_url.GetBuiltinImageResourceId(), expected_resource_id);
+}
+
+TEST_F(TemplateURLTest, GetBuiltinImageResourceId_FromCustomEngine) {
+  TemplateURLData data;
+  data.SetShortName(TemplateURLPrepopulateData::google.name);
+  data.SetKeyword(TemplateURLPrepopulateData::google.keyword);
+  data.SetURL(TemplateURLPrepopulateData::google.search_url);
+  TemplateURL t_url(data);
+
+  EXPECT_EQ(t_url.GetBuiltinImageResourceId(), "IDR_DEFAULT_FAVICON");
+}
+
 struct IsBetterThanEngineTestEngine {
   std::u16string keyword;
-  CreatedByPolicy created_by_policy = CreatedByPolicy::kNoPolicy;
+  PolicyOrigin policy_origin = PolicyOrigin::kNoPolicy;
   bool enforced_by_policy = false;
   bool featured_by_policy = false;
   bool safe_for_autoreplace = false;
@@ -3085,7 +3090,7 @@ TemplateURL CreateEngineFromTestEngine(
   template_url_data.SetShortName(engine.keyword + u"_name");
   template_url_data.SetURL("https://" + base::UTF16ToUTF8(engine.keyword) +
                            ".com/q={searchTerms}");
-  template_url_data.created_by_policy = engine.created_by_policy;
+  template_url_data.policy_origin = engine.policy_origin;
   template_url_data.enforced_by_policy = engine.enforced_by_policy;
   template_url_data.featured_by_policy = engine.featured_by_policy;
   template_url_data.safe_for_autoreplace = engine.safe_for_autoreplace;
@@ -3099,11 +3104,11 @@ struct IsBetterThanEngineTestCase {
   IsBetterThanEngineTestEngine worse_engine;
 } kTestCases[] = {
     {
-        .description = "NonFeaturedByPolicy_SafeForAutoreplace",
+        .description = "NonFeaturedBySiteSearchPolicy_SafeForAutoreplace",
         .better_engine =
             {
                 .keyword = u"kw",
-                .created_by_policy = CreatedByPolicy::kSiteSearch,
+                .policy_origin = PolicyOrigin::kSiteSearch,
             },
         .worse_engine =
             {
@@ -3112,7 +3117,7 @@ struct IsBetterThanEngineTestCase {
             },
     },
     {
-        .description = "NonFeaturedByPolicy_EditedByUser",
+        .description = "NonFeaturedBySiteSearchPolicy_EditedByUser",
         .better_engine =
             {
                 .keyword = u"kw",
@@ -3121,15 +3126,15 @@ struct IsBetterThanEngineTestCase {
         .worse_engine =
             {
                 .keyword = u"kw",
-                .created_by_policy = CreatedByPolicy::kSiteSearch,
+                .policy_origin = PolicyOrigin::kSiteSearch,
             },
     },
     {
-        .description = "FeaturedByPolicy_EditedByUser",
+        .description = "FeaturedBySiteSearchPolicy_EditedByUser",
         .better_engine =
             {
                 .keyword = u"@kw",
-                .created_by_policy = CreatedByPolicy::kSiteSearch,
+                .policy_origin = PolicyOrigin::kSiteSearch,
                 .featured_by_policy = true,
             },
         .worse_engine =
@@ -3139,17 +3144,18 @@ struct IsBetterThanEngineTestCase {
             },
     },
     {
-        .description = "FeaturedByPolicy_NonFeaturedByPolicy",
+        .description =
+            "FeaturedBySiteSearchPolicy_NonFeaturedBySiteSearchPolicy",
         .better_engine =
             {
                 .keyword = u"@kw",
-                .created_by_policy = CreatedByPolicy::kSiteSearch,
+                .policy_origin = PolicyOrigin::kSiteSearch,
                 .featured_by_policy = true,
             },
         .worse_engine =
             {
                 .keyword = u"kw",
-                .created_by_policy = CreatedByPolicy::kSiteSearch,
+                .policy_origin = PolicyOrigin::kSiteSearch,
             },
     },
     {
@@ -3157,13 +3163,13 @@ struct IsBetterThanEngineTestCase {
         .better_engine =
             {
                 .keyword = u"kw",
-                .created_by_policy = CreatedByPolicy::kDefaultSearchProvider,
+                .policy_origin = PolicyOrigin::kDefaultSearchProvider,
                 .enforced_by_policy = true,
             },
         .worse_engine =
             {
                 .keyword = u"kw",
-                .created_by_policy = CreatedByPolicy::kNoPolicy,
+                .policy_origin = PolicyOrigin::kNoPolicy,
                 .safe_for_autoreplace = false,
             },
     },
@@ -3172,13 +3178,13 @@ struct IsBetterThanEngineTestCase {
         .better_engine =
             {
                 .keyword = u"kw",
-                .created_by_policy = CreatedByPolicy::kDefaultSearchProvider,
+                .policy_origin = PolicyOrigin::kDefaultSearchProvider,
                 .enforced_by_policy = true,
             },
         .worse_engine =
             {
                 .keyword = u"kw",
-                .created_by_policy = CreatedByPolicy::kDefaultSearchProvider,
+                .policy_origin = PolicyOrigin::kDefaultSearchProvider,
             },
     },
     {
@@ -3186,14 +3192,70 @@ struct IsBetterThanEngineTestCase {
         .better_engine =
             {
                 .keyword = u"kw",
-                .created_by_policy = CreatedByPolicy::kSiteSearch,
+                .policy_origin = PolicyOrigin::kSiteSearch,
                 .last_modified = base::Time::FromTimeT(2000),
             },
         .worse_engine =
             {
                 .keyword = u"kw",
-                .created_by_policy = CreatedByPolicy::kSiteSearch,
+                .policy_origin = PolicyOrigin::kSiteSearch,
                 .last_modified = base::Time::FromTimeT(1000),
+            },
+    },
+    {
+        .description = "NonFeaturedBySearchAggregatorPolicy_SafeForAutoreplace",
+        .better_engine =
+            {
+                .keyword = u"kw",
+                .policy_origin = PolicyOrigin::kSearchAggregator,
+            },
+        .worse_engine =
+            {
+                .keyword = u"kw",
+                .safe_for_autoreplace = true,
+            },
+    },
+    {
+        .description = "NonFeaturedBySearchAggregatorPolicy_EditedByUser",
+        .better_engine =
+            {
+                .keyword = u"kw",
+                .safe_for_autoreplace = false,
+            },
+        .worse_engine =
+            {
+                .keyword = u"kw",
+                .policy_origin = PolicyOrigin::kSearchAggregator,
+            },
+
+    },
+    {
+        .description = "FeaturedBySearchAggregatorPolicy_EditedByUser",
+        .better_engine =
+            {
+                .keyword = u"@kw",
+                .policy_origin = PolicyOrigin::kSearchAggregator,
+                .featured_by_policy = true,
+            },
+        .worse_engine =
+            {
+                .keyword = u"@kw",
+                .safe_for_autoreplace = false,
+            },
+    },
+    {
+        .description = "FeaturedBySearchAggregatorPolicy_"
+                       "NonFeaturedBySearchAggregatorPolicy",
+        .better_engine =
+            {
+                .keyword = u"@kw",
+                .policy_origin = PolicyOrigin::kSearchAggregator,
+                .featured_by_policy = true,
+            },
+        .worse_engine =
+            {
+                .keyword = u"kw",
+                .policy_origin = PolicyOrigin::kSearchAggregator,
             },
     },
 };

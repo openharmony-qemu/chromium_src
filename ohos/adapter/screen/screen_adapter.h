@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #ifndef OHOS_ADAPTER_SCREEN_SCREEN_ADAPTER_H_
 #define OHOS_ADAPTER_SCREEN_SCREEN_ADAPTER_H_
@@ -36,6 +11,7 @@
 #include "aki/jsbind.h"
 #include "ohos/adapter/aki_hook/aki_hook.h"
 #include "ohos/adapter/export.h"
+#include "ohos/adapter/window/window_common.h"
 
 namespace ohos {
 namespace adapter {
@@ -96,13 +72,26 @@ class ADAPTER_EXPORT_API ScreenAdapter {
   using DisplayChangeCallback =
       std::function<void(const std::string&, int32_t)>;
 
-  void GetDefaultDisplay(OhosDisplay& ohos_display);
+  using AvailableAreaChangeCallback =
+      std::function<void(window::WindowRect, int32_t)>;
+
+  using AvoidAreaChangeCallback =
+      std::function<void(int32_t)>;
+
+  void GetPrimaryDisplay(OhosDisplay& ohos_display);
   void GetAllDisplays(std::vector<OhosDisplay>& ohos_displays);
+  int32_t GetStatusBarHeight();
   void RegisterDisplayMonitor();
+  void RegisterAvailableAreaMonitor();
   void initFontSizeScale();
   void RegisterCallback(DisplayChangeCallback callback);
+  void RegisterAvailableAreaCallback(AvailableAreaChangeCallback callback);
+  void RegisterAvoidAreaCallback(AvoidAreaChangeCallback callback);
   void SetFontSizeZoom(float zoom);
+  void OnAvoidAreaChangeCallback(int32_t status_bar_height);
   DisplayChangeCallback GetCallback();
+  AvailableAreaChangeCallback GetAvailableAreaCallback();
+  AvoidAreaChangeCallback GetAvoidAreaCallback();
   static ScreenAdapter& GetInstance();
 
  private:
@@ -110,7 +99,10 @@ class ADAPTER_EXPORT_API ScreenAdapter {
   void ConvertDisplay(aki::Value complete_display, OhosDisplay& ohos_display);
 
   DisplayChangeCallback callback_;
+  AvailableAreaChangeCallback available_area_callback_;
+  AvoidAreaChangeCallback avoid_area_callback_;
   float font_size_zoom_ = 1.0f;
+  int32_t status_bar_height_ = 0;
 };
 
 }  // namespace adapter

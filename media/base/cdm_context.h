@@ -13,6 +13,7 @@
 #include "build/build_config.h"
 #include "media/base/media_export.h"
 #include "media/media_buildflags.h"
+#include "third_party/wiseplay/cdm/buildflags.h"
 
 #if BUILDFLAG(IS_WIN)
 #include "media/base/win/media_foundation_cdm_proxy.h"
@@ -29,6 +30,9 @@ namespace media {
 class CallbackRegistration;
 class Decryptor;
 class MediaCryptoContext;
+#if BUILDFLAG(ENABLE_WISEPLAY)
+class OhosMediaCryptoContext;
+#endif
 
 #if BUILDFLAG(IS_FUCHSIA)
 class FuchsiaCdmContext;
@@ -111,6 +115,10 @@ class MEDIA_EXPORT CdmContext {
 #if BUILDFLAG(IS_ANDROID)
   // Returns a MediaCryptoContext that can be used by MediaCodec based decoders.
   virtual MediaCryptoContext* GetMediaCryptoContext();
+#endif
+
+#if BUILDFLAG(ENABLE_WISEPLAY)
+  virtual OhosMediaCryptoContext* GetOhosMediaCryptoContext();
 #endif
 
 #if BUILDFLAG(IS_FUCHSIA)

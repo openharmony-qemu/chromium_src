@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "ohos/adapter/xcomponent/adapter/window_adapter.h"
 
@@ -34,21 +9,25 @@
 #include <string>
 #include <unordered_map>
 
+#include <window_manager/oh_window.h>
+
 #include "ohos/adapter/common/constants.h"
+#include "ohos/adapter/common/logging.h"
 #include "ohos/adapter/multiprocess/gpu/gpu_native_process_host.h"
+#include "ohos/adapter/window/app_window_adapter.h"
 
 namespace ohos::adapter::xcomponent {
 
 const std::string kBrowserWindowPresuffix = "browser";
 
-static WindowWidgetType ConvertWindowIdToWidgetId(WindowIdType windowId) {
-  if (!windowId.starts_with(kBrowserWindowPresuffix) ||
-      !std::all_of(windowId.begin() + kBrowserWindowPresuffix.size(),
-                   windowId.end(), [](char i) { return isdigit(i); })) {
+static WindowWidgetType ConvertWindowIdToWidgetId(WindowIdType window_id) {
+  if (!window_id.starts_with(kBrowserWindowPresuffix) ||
+      !std::all_of(window_id.begin() + kBrowserWindowPresuffix.size(),
+                   window_id.end(), [](char i) { return isdigit(i); })) {
     return -1;
   }
-  std::string windowIdString = windowId.substr(kBrowserWindowPresuffix.size());
-  return std::stoi(windowIdString);
+  std::string window_id_string = window_id.substr(kBrowserWindowPresuffix.size());
+  return std::stoi(window_id_string);
 }
 
 WindowType WindowAdapter::GetWindow(WindowIdType index) {
@@ -64,47 +43,47 @@ WindowWidgetType WindowAdapter::GetWidgetId(const WindowIdType index) {
   std::lock_guard<std::mutex> lock_protect(windows_mutex_);
   auto search = windows_.find(index);
   if (search != windows_.end()) {
-    return search->second.widgetId;
+    return search->second.widget_id;
   }
   return -1;
 }
 
 WindowIdType WindowAdapter::GetWindowId(const WindowWidgetType index) {
-  WindowIdType windowId = kBrowserWindowPresuffix + std::to_string(index);
-  return windowId;
+  WindowIdType window_id = kBrowserWindowPresuffix + std::to_string(index);
+  return window_id;
 }
 
 WindowIdType WindowAdapter::GetWindowIdByNativeWindow(const WindowType window) {
-  WindowIdType windowId;
-  for (const auto& [index, windowInfo] : windows_) {
-    if (windowInfo.window == window) {
-      windowId = windowInfo.windowId;
+  WindowIdType window_id;
+  for (const auto& [index, window_info] : windows_) {
+    if (window_info.window == window) {
+      window_id = window_info.window_id;
     }
   }
-  return windowId;
+  return window_id;
 }
 
 WindowWidgetType WindowAdapter::GetWidgetId(const WindowType window) {
   std::lock_guard<std::mutex> lock_protect(windows_mutex_);
-  WindowWidgetType widgetId = -1;
-  for (const auto& [index, windowInfo] : windows_) {
-    if (windowInfo.window == window) {
-      widgetId = windowInfo.widgetId;
+  WindowWidgetType widget_id = -1;
+  for (const auto& [index, window_info] : windows_) {
+    if (window_info.window == window) {
+      widget_id = window_info.widget_id;
     }
   }
-  return widgetId;
+  return widget_id;
 }
 
 void WindowAdapter::AddWindow(WindowIdType index, WindowType window) {
   std::lock_guard<std::mutex> lock_protect(windows_mutex_);
 
-  WindowInfo windowInfo;
-  windowInfo.window = window;
-  windowInfo.windowId = index;
-  windowInfo.widgetId = ConvertWindowIdToWidgetId(index);
-  windows_.emplace(index, windowInfo);
-  if (windowStatusObserver_ != nullptr) {
-    windowStatusObserver_->OnWindowAdd(windowInfo);
+  WindowInfo window_info;
+  window_info.window = window;
+  window_info.window_id = index;
+  window_info.widget_id = ConvertWindowIdToWidgetId(index);
+  windows_.emplace(index, window_info);
+  if (window_status_observer_ != nullptr) {
+    window_status_observer_->OnWindowAdd(window_info);
   }
 
   ohos::adapter::multiprocess::GpuNativeProcessHost::GetInstance().AddWindow(
@@ -116,8 +95,8 @@ void WindowAdapter::RemoveWindow(WindowIdType index) {
 
   auto search = windows_.find(index);
   if (search != windows_.end()) {
-    if (windowStatusObserver_ != nullptr) {
-      windowStatusObserver_->OnWindowRemove(search->second);
+    if (window_status_observer_ != nullptr) {
+      window_status_observer_->OnWindowRemove(search->second);
     }
     windows_.erase(search);
   }
@@ -127,102 +106,107 @@ void WindowAdapter::RemoveWindow(WindowIdType index) {
 }
 
 void WindowAdapter::SetWindowWidget(WindowType window,
-                                    WindowWidgetType widgetId) {
+                                    WindowWidgetType widget_id) {
   std::lock_guard<std::mutex> lock_protect(windows_mutex_);
 
-  for (auto& [index, windowInfo] : windows_) {
-    if (windowInfo.window == window) {
-      windowInfo.widgetId = widgetId;
+  for (auto& [index, window_info] : windows_) {
+    if (window_info.window == window) {
+      window_info.widget_id = widget_id;
     }
   }
 
   ohos::adapter::multiprocess::GpuNativeProcessHost::GetInstance()
-      .SetWindowWidget(GetWindowIdByNativeWindow(window), widgetId);
+      .SetWindowWidget(GetWindowIdByNativeWindow(window), widget_id);
 }
 
 void WindowAdapter::RegistWindowStatus(WindowStatusListener* listener) {
-  windowStatusObserver_ = listener;
+  window_status_observer_ = listener;
 }
 
 void WindowAdapter::RegistWindowEvent(WindowWidgetType id,
                                       WindowEventCallBack callback) {
   std::lock_guard<std::mutex> lock(windows_mutex_);
-  windowEventCallbacks_.emplace(id, callback);
+  window_event_callbacks_.emplace(id, callback);
+
+  cached_event_dispatcher_.DispatchCachedEvent(id, callback);
 }
 
 void WindowAdapter::UnregistWindowEvent(WindowWidgetType id) {
   std::lock_guard<std::mutex> lock(windows_mutex_);
-  windowEventCallbacks_.erase(id);
+  window_event_callbacks_.erase(id);
 }
 
-void WindowAdapter::NotifyWindowEvent(WindowWidgetType widgetId,
+void WindowAdapter::NotifyWindowEvent(WindowIdType window_id,
                                       std::shared_ptr<Event> event) {
-  auto it = windowEventCallbacks_.find(widgetId);
-  if (it != windowEventCallbacks_.end()) {
+  std::lock_guard<std::mutex> lock(windows_mutex_);
+  int32_t widget_id = ConvertWindowIdToWidgetId(window_id);
+  auto it = window_event_callbacks_.find(widget_id);
+  if (it != window_event_callbacks_.end()) {
     auto callback = it->second;
-    callback(widgetId, event);
-    TryReissueEvent(widgetId, callback);
+    callback(widget_id, event);
   } else {
-    TryStoreEvent(widgetId, event);
+    cached_event_dispatcher_.SaveCacheEvent(widget_id, event);
   }
 }
 
-void WindowAdapter::NotifyWindowEvent(WindowType window,
-                                      std::shared_ptr<Event> event) {
-  int32_t widget_id = GetWidgetId(window);
-  if (widget_id < 0) {
-    return;
-  }
-  NotifyWindowEvent(widget_id, event);
-}
-
-void WindowAdapter::NotifyWindowEvent(WindowIdType windowId,
-                                      std::shared_ptr<Event> event) {
-  int32_t widget_id = GetWidgetId(windowId);
-  if (widget_id < 0) {
-    return;
-  }
-  NotifyWindowEvent(widget_id, event);
-}
-
-void WindowAdapter::TryReissueEvent(WindowWidgetType widgetId,
-                                    WindowEventCallBack callback) {
-  auto itEvent = event_map_.find(widgetId);
-  if (itEvent != event_map_.end()) {
-    LOGI(
-        "%{public}s(%{public}d) %{public}s: Reissue event to widget %{public}d",
-        __FILE__, __LINE__, __FUNCTION__, widgetId);
-    callback(widgetId, event_map_[widgetId]);
-    event_map_.erase(widgetId);
-  }
-}
- 
-void WindowAdapter::TryStoreEvent(WindowWidgetType widgetId,
-                                  std::shared_ptr<Event> event) {
-  if (event->type() == EventType::ET_WINDOW_CAPTION_BUTTON_RECT_CHANGE) {
-    LOGI(
-        "%{public}s(%{public}d) %{public}s: Store caption button event of "
-        "widget %{public}d before register callback ",
-        __FILE__, __LINE__, __FUNCTION__, widgetId);
-    event_map_.emplace(widgetId, event);
-  }
+WindowWidgetType WindowAdapter::PeekNextWindowWidgetId() {
+  return next_window_id_.load() + 1;
 }
 
 WindowWidgetType WindowAdapter::NextWindowWidgetId() {
-  return ++nextWindowId_;
+  return ++next_window_id_;
 }
 
 WindowWidgetType WindowAdapter::GetWindowWidgetId() {
-  return nextWindowId_.load();
+  return next_window_id_.load();
+}
+
+void WindowAdapter::RegistKeyboardHeightEvent(
+    WindowWidgetType id,
+    WindowKeyboardHeightCallBack callback) {
+  std::lock_guard<std::mutex> lock(keyboard_height_mutex_);
+  window_keyboard_height_callbacks_.emplace(id, callback);
+}
+
+void WindowAdapter::UnRegistKeyboardHeightEvent(WindowWidgetType id) {
+  std::lock_guard<std::mutex> lock(keyboard_height_mutex_);
+  window_keyboard_height_callbacks_.erase(id);
+}
+
+void WindowAdapter::NotifyKeyboardHeightEvent(WindowWidgetType widget_id,
+                                              int32_t height) {
+  std::lock_guard<std::mutex> lock(keyboard_height_mutex_);
+  auto itCallback = window_keyboard_height_callbacks_.find(widget_id);
+  if (itCallback != window_keyboard_height_callbacks_.end()) {
+    LOGI(
+        "WindowAdapter::NotifyKeyboardHeightEvent widgetId: %{public}d, "
+        "keyboardHeight: %{public}d", widget_id,
+        height);
+    auto callback = window_keyboard_height_callbacks_[widget_id];
+    callback(widget_id, height);
+  }
+}
+
+void WindowAdapter::NotifyKeyboardHeightEvent(WindowIdType window_id,
+                                              int32_t height) {
+  int32_t widget_id = GetWidgetId(window_id);
+  if (widget_id < 0) {
+    LOGE(
+        "WindowAdapter::NotifyKeyboardHeightEvent widget_id "
+        "%{public}d of windowId: %{public}s is invaild",
+        widget_id, window_id.c_str());
+    return;
+  }
+  NotifyKeyboardHeightEvent(widget_id, height);
 }
 
 CrossProcessSyncResult WindowAdapter::SyncWindowToGpuProcess() {
   std::lock_guard<std::mutex> lock_protect(windows_mutex_);
 
   std::vector<std::pair<std::string, void*>> windows;
-  for (auto& [windowId, windowInfo] : windows_) {
+  for (auto& [window_id, window_info] : windows_) {
     windows.emplace_back(
-        std::pair<std::string, void*>(windowId, windowInfo.window));
+        std::pair<std::string, void*>(window_id, window_info.window));
   }
   if (ohos::adapter::multiprocess::GpuNativeProcessHost::GetInstance()
       .InitializeWindowAdapter(windows) != 0) {
@@ -254,26 +238,50 @@ WindowStatusType WindowAdapter::GetInitialState() const {
   return initial_state_;
 }
 
-void WindowAdapter::OnWindowInitDone(WindowWidgetType widgetId) {
+void WindowAdapter::OnWindowInitDone(WindowWidgetType widget_id) {
   std::lock_guard<std::mutex> lock_protect(windows_mutex_);
 
-  for (auto& [index, windowInfo] : windows_) {
-    if (windowInfo.widgetId == widgetId) {
-      windowInfo.initialized = true;
+  for (auto& [index, window_info] : windows_) {
+    if (window_info.widget_id == widget_id) {
+      window_info.initialized = true;
     }
   }
 }
 
-bool WindowAdapter::WindowHasInit(WindowWidgetType widgetId) {
+bool WindowAdapter::WindowHasInit(WindowWidgetType widget_id) {
   std::lock_guard<std::mutex> lock_protect(windows_mutex_);
 
-  for (auto& [index, windowInfo] : windows_) {
-    if (windowInfo.widgetId == widgetId) {
-      return windowInfo.initialized;
+  for (auto& [index, window_info] : windows_) {
+    if (window_info.widget_id == widget_id) {
+      return window_info.initialized;
     }
   }
 
   return false;
+}
+
+void WindowAdapter::SetWindowPrivacyMode(WindowWidgetType widget_id, bool is_privacy_mode) {
+  // get ohos window id form widget_id
+  std::vector<int32_t> ids = AppWindowAdapter::GetInstance().GetOriginWindowIds({widget_id});
+  if (!ids.empty()) {
+    LOGI(" [WiseplayDRM] OH_WindowManager_SetWindowPrivacyMode window_id: %{public}d,  privacy_mode: %{public}d",
+        widget_id,
+        is_privacy_mode);
+    int32_t result = OH_WindowManager_SetWindowPrivacyMode(ids[0], is_privacy_mode);
+    if (result != 0) {
+      LOGE(" [WiseplayDRM] OH_WindowManager_SetWindowPrivacyMode result: %{public}d, widget_id:%{public}d ",
+          result,
+          widget_id);
+    }
+  }
+}
+
+void WindowAdapter::SetSystemWindowLimits(WindowLimits window_limits) {
+  system_window_limits_ = window_limits;
+}
+
+WindowLimits WindowAdapter::GetSystemWindowLimits() const {
+  return system_window_limits_;
 }
 
 WindowAdapter& WindowAdapter::GetInstance() {
@@ -281,4 +289,46 @@ WindowAdapter& WindowAdapter::GetInstance() {
   return instance;
 }
 
+void WindowCachedEventQueue::AddCacheEventToQueue(std::shared_ptr<Event> event) {
+  if (event->type() == EventType::ET_WINDOW_CHANGE &&
+      !first_occluded_event_received_) {
+    auto window_event = static_pointer_cast<WindowEvent>(event);
+    if (window_event->window_event_type_ == WindowEventType::WINDOW_OCCLUDED) {
+      LOGW("first WINDOW_OCCLUDED event will not cached");
+      first_occluded_event_received_ = true;
+      return;
+    }
+  }
+  cached_events_.push_back(event);
+}
+
+void WindowCachedEventDispatcher::SaveCacheEvent(WindowWidgetType widget_id,
+                                                 std::shared_ptr<Event> event) {
+  if (widget_id < 0) {
+    return;
+  }
+  auto it = cached_event_map_.find(widget_id);
+  if (it == cached_event_map_.end()) {
+    auto event_queue = std::make_unique<WindowCachedEventQueue>();
+    event_queue->AddCacheEventToQueue(event);
+    cached_event_map_[widget_id] = std::move(event_queue);
+  } else {
+    it->second->AddCacheEventToQueue(event);
+  }
+}
+ 
+void WindowCachedEventDispatcher::DispatchCachedEvent(
+    WindowWidgetType widget_id,
+    WindowEventCallBack& callback) {
+  auto it = cached_event_map_.find(widget_id);
+  if (it != cached_event_map_.end()) {
+    std::vector<std::shared_ptr<Event>> events = it->second->GetCachedEvent();
+    for (auto event : events) {
+      callback(widget_id, event);
+    }
+  }
+
+  cached_event_map_.erase(widget_id);
+}
+ 
 }  // namespace ohos::adapter::xcomponent

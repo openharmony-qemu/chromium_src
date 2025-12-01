@@ -4,6 +4,7 @@
 
 #include "components/update_client/component.h"
 
+#include <algorithm>
 #include <memory>
 #include <optional>
 #include <string>
@@ -12,8 +13,6 @@
 #include <vector>
 
 #include "base/check_op.h"
-#include "base/debug/alias.h"
-#include "base/debug/dump_without_crashing.h"
 #include "base/files/file_util.h"
 #include "base/files/scoped_temp_dir.h"
 #include "base/functional/bind.h"
@@ -24,7 +23,6 @@
 #include "base/memory/raw_ref.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/notreached.h"
-#include "base/ranges/algorithm.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_util.h"
 #include "base/task/bind_post_task.h"
@@ -59,14 +57,7 @@ Component::Component(const UpdateContext& update_context, const std::string& id)
     : id_(id),
       state_(std::make_unique<StateNew>(this)),
       update_context_(update_context) {
-  // TODO(crbug.com/345250525) - remove when the bug is fixed. We are
-  // seeing dumps where the app id is empty in the state change
-  // callbacks. This code verifies the invariant that the component
-  // instance always has an id.
-  if (id_.empty()) {
-    DEBUG_ALIAS_FOR_CSTR(dbg_id, id_.c_str(), 64);
-    base::debug::DumpWithoutCrashing();
-  }
+  CHECK(!id_.empty());
 }
 
 Component::~Component() = default;
@@ -109,13 +100,7 @@ void Component::ChangeState(std::unique_ptr<State> next_state) {
 CrxUpdateItem Component::GetCrxUpdateItem() const {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
-  // TODO(crbug.com/345250525) - remove when the bug is fixed. We are seeing
-  // dumps where the app id is empty in the state change callbacks. This code
-  // verifies the invariant that the id is always valid.
-  if (id_.empty()) {
-    DEBUG_ALIAS_FOR_CSTR(dbg_id, id_.c_str(), 64);
-    base::debug::DumpWithoutCrashing();
-  }
+  CHECK(!id_.empty());
 
   CrxUpdateItem crx_update_item;
   crx_update_item.state = state_->state();
@@ -133,7 +118,6 @@ CrxUpdateItem Component::GetCrxUpdateItem() const {
   }
   crx_update_item.last_check = last_check_;
   crx_update_item.next_version = next_version_;
-  crx_update_item.next_fp = next_fp_;
   crx_update_item.downloaded_bytes = downloaded_bytes_;
   crx_update_item.install_progress = install_progress_;
   crx_update_item.total_bytes = total_bytes_;
@@ -146,11 +130,10 @@ CrxUpdateItem Component::GetCrxUpdateItem() const {
   return crx_update_item;
 }
 
-void Component::SetUpdateCheckResult(
-    std::optional<ProtocolParser::Result> result,
-    ErrorCategory error_category,
-    int error,
-    base::OnceCallback<void(bool)> callback) {
+void Component::SetUpdateCheckResult(std::optional<ProtocolParser::App> result,
+                                     ErrorCategory error_category,
+                                     int error,
+                                     base::OnceCallback<void(bool)> callback) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   CHECK_EQ(ComponentState::kChecking, state());
 
@@ -160,22 +143,20 @@ void Component::SetUpdateCheckResult(
   if (result) {
     CHECK(crx_component_);
     custom_attrs_ = result->custom_attributes;
-    if (!result->manifest.packages.empty()) {
-      next_version_ = base::Version(result->manifest.version);
-      next_fp_ = result->manifest.packages.front().fingerprint;
+    if (result->nextversion.IsValid()) {
+      next_version_ = base::Version(result->nextversion);
     } else {
       // When the updatecheck response doesn't contain any packages, use the
       // current version and fingerprint as the "next" version and fingerprint
       // for any events emitted (such as a RunAction event).
       next_version_ = crx_component_->version;
-      next_fp_ = crx_component_->fingerprint;
     }
     MakePipeline(
         update_context_->config, update_context_->get_available_space,
         update_context_->is_foreground, update_context_->session_id,
-        update_context_->crx_cache_, crx_component_->crx_format_requirement,
-        crx_component_->app_id, crx_component_->pk_hash,
-        crx_component_->install_data_index, crx_component_->fingerprint,
+        update_context_->config->GetCrxCache(),
+        crx_component_->crx_format_requirement, crx_component_->app_id,
+        crx_component_->pk_hash, crx_component_->install_data_index,
         crx_component_->installer,
         base::BindRepeating(
             [](base::raw_ref<Component> component, ComponentState state) {
@@ -203,21 +184,12 @@ void Component::SetUpdateCheckResult(
             [](base::raw_ref<Component> component,
                const CrxInstaller::Result& result) {
               component->installer_result_ = result;
-              component->error_category_ = result.result.category_;
-              component->error_code_ = result.result.code_;
-              component->extra_code1_ = result.result.extra_;
+              component->error_category_ = result.result.category;
+              component->error_code_ = result.result.code;
+              component->extra_code1_ = result.result.extra;
             },
             base::raw_ref(*this)),
-        crx_component_->action_handler,
-        base::BindRepeating(
-            [](base::raw_ref<Component> component,
-               const CategorizedError& result) {
-              component->diff_error_category_ = result.category_;
-              component->diff_error_code_ = result.code_;
-              component->diff_extra_code1_ = result.extra_;
-            },
-            base::raw_ref(*this)),
-        result.value(),
+        crx_component_->action_handler, result.value(),
         base::BindOnce(
             base::BindOnce(
                 [](base::raw_ref<Component> component,
@@ -232,14 +204,16 @@ void Component::SetUpdateCheckResult(
             .Then(std::move(callback)));
   } else {
     pipeline_ = base::unexpected(
-        CategorizedError({.category_ = error_category, .code_ = error}));
+        CategorizedError({.category = error_category, .code = error}));
     base::SequencedTaskRunner::GetCurrentDefault()->PostTask(
         FROM_HERE, base::BindOnce(std::move(callback), true));
   }
 }
 
-bool Component::HasDiffUpdate() const {
-  return !crx_diffurls().empty();
+base::Value::Dict WrapFingerprint(const std::string& fp) {
+  base::Value::Dict wrapper;
+  wrapper.Set("fingerprint", fp);
+  return wrapper;
 }
 
 void Component::AppendEvent(base::Value::Dict event) {
@@ -285,25 +259,11 @@ base::Value::Dict Component::MakeEventUpdateComplete() const {
   if (extra_code1()) {
     event.Set("extracode1", extra_code1());
   }
-  if (HasDiffUpdate()) {
-    const int diffresult = static_cast<int>(!diff_update_failed());
-    event.Set("diffresult", diffresult);
-  }
-  if (diff_error_category() != ErrorCategory::kNone) {
-    const int differrorcat = static_cast<int>(diff_error_category());
-    event.Set("differrorcat", differrorcat);
-  }
-  if (diff_error_code()) {
-    event.Set("differrorcode", diff_error_code());
-  }
-  if (diff_extra_code1()) {
-    event.Set("diffextracode1", diff_extra_code1());
-  }
   if (!previous_fp().empty()) {
-    event.Set("previousfp", previous_fp());
+    event.Set("previousfp", WrapFingerprint(previous_fp()));
   }
   if (!next_fp().empty()) {
-    event.Set("nextfp", next_fp());
+    event.Set("nextfp", WrapFingerprint(next_fp()));
   }
   return event;
 }
@@ -419,7 +379,7 @@ void Component::StateChecking::DoHandle() {
     return;
   }
 
-  if (component.pipeline_.error().category_ == ErrorCategory::kNone) {
+  if (component.pipeline_.error().category == ErrorCategory::kNone) {
     metrics::RecordUpdateCheckResult(metrics::UpdateCheckResult::kNoUpdate);
     TransitionState(std::make_unique<StateUpToDate>(&component));
     return;
@@ -475,7 +435,6 @@ void Component::StateCanUpdate::DoHandle() {
     component.error_category_ = ErrorCategory::kService;
     component.error_code_ = static_cast<int>(ServiceError::UPDATE_DISABLED);
     component.extra_code1_ = 0;
-    metrics::RecordCanUpdateResult(metrics::CanUpdateResult::kUpdatesDisabled);
     TransitionState(std::make_unique<StateUpdateError>(&component));
     return;
   }
@@ -484,7 +443,6 @@ void Component::StateCanUpdate::DoHandle() {
     TransitionState(std::make_unique<StateUpdateError>(&component));
     component.error_category_ = ErrorCategory::kService;
     component.error_code_ = static_cast<int>(ServiceError::CANCELLED);
-    metrics::RecordCanUpdateResult(metrics::CanUpdateResult::kCanceled);
     return;
   }
 
@@ -495,12 +453,8 @@ void Component::StateCanUpdate::DoHandle() {
     component.extra_code1_ = 0;
     component.AppendEvent(component.MakeEventUpdateComplete());
     EndState();
-    metrics::RecordCanUpdateResult(
-        metrics::CanUpdateResult::kCheckForUpdateOnly);
     return;
   }
-
-  metrics::RecordCanUpdateResult(metrics::CanUpdateResult::kCanUpdate);
 
   // Start computing the cost of the this update from here on.
   component.update_begin_ = base::TimeTicks::Now();
@@ -541,9 +495,9 @@ void Component::StateUpdating::DoHandle() {
                                 base::Unretained(this)));
     return;
   }
-  component.error_category_ = component.pipeline_.error().category_;
-  component.error_code_ = component.pipeline_.error().code_;
-  component.extra_code1_ = component.pipeline_.error().extra_;
+  component.error_category_ = component.pipeline_.error().category;
+  component.error_code_ = component.pipeline_.error().code;
+  component.extra_code1_ = component.pipeline_.error().extra;
   TransitionState(std::make_unique<StateUpdateError>(&component));
 }
 
@@ -553,16 +507,16 @@ void Component::StateUpdating::PipelineComplete(
 
   auto& component = Component::State::component();
 
-  if (result.category_ != ErrorCategory::kNone) {
-    component.error_category_ = result.category_;
-    component.error_code_ = result.code_;
-    component.extra_code1_ = result.extra_;
+  if (result.category != ErrorCategory::kNone) {
+    component.error_category_ = result.category;
+    component.error_code_ = result.code;
+    component.extra_code1_ = result.extra;
   }
 
   CHECK(component.crx_component_);
   if (!component.crx_component_->allow_cached_copies) {
-    component.update_context_->crx_cache_->RemoveAll(
-        component.crx_component()->app_id);
+    component.config()->GetCrxCache()->RemoveAll(
+        component.crx_component()->app_id, base::DoNothing());
   }
 
   if (component.error_category_ != ErrorCategory::kNone) {
@@ -590,7 +544,6 @@ void Component::StateUpdated::DoHandle() {
   CHECK(component.crx_component());
 
   component.crx_component_->version = component.next_version_;
-  component.crx_component_->fingerprint = component.next_fp_;
 
   component.update_context_->persisted_data->SetProductVersion(
       component.id(), component.crx_component_->version);

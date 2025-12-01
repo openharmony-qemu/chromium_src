@@ -5,6 +5,7 @@
 #include "media/gpu/android/media_codec_video_decoder.h"
 
 #include <memory>
+#include <variant>
 
 #include "base/android/build_info.h"
 #include "base/command_line.h"
@@ -15,6 +16,7 @@
 #include "base/memory/ptr_util.h"
 #include "base/memory/weak_ptr.h"
 #include "base/metrics/histogram_macros.h"
+#include "base/no_destructor.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/task/bind_post_task.h"
 #include "base/task/sequenced_task_runner.h"
@@ -219,10 +221,12 @@ PendingDecode::~PendingDecode() = default;
 // static
 std::vector<SupportedVideoDecoderConfig>
 MediaCodecVideoDecoder::GetSupportedConfigs() {
-  static const auto configs = GenerateSupportedConfigs(
-      DeviceInfo::GetInstance(),
-      base::FeatureList::IsEnabled(media::kAllowMediaCodecSoftwareDecoder));
-  return configs;
+  static const base::NoDestructor<std::vector<SupportedVideoDecoderConfig>>
+      configs(GenerateSupportedConfigs(
+          DeviceInfo::GetInstance(),
+          base::FeatureList::IsEnabled(
+              media::kAllowMediaCodecSoftwareDecoder)));
+  return *configs;
 }
 
 MediaCodecVideoDecoder::MediaCodecVideoDecoder(
@@ -254,9 +258,9 @@ MediaCodecVideoDecoder::MediaCodecVideoDecoder(
           gpu_preferences.enable_threaded_texture_mailboxes),
       allow_nonsecure_overlays_(
           base::FeatureList::IsEnabled(media::kAllowNonSecureOverlays)),
-      use_block_model_(base::FeatureList::IsEnabled(kMediaCodecBlockModel) &&
-                       device_info_->SdkVersion() >=
-                           base::android::SDK_VERSION_R) {
+      use_block_model_(device_info_->SdkVersion() >=
+                           base::android::SDK_VERSION_V &&
+                       base::FeatureList::IsEnabled(kMediaCodecBlockModel)) {
   DVLOG(2) << __func__;
   surface_chooser_helper_.chooser()->SetClientCallbacks(
       base::BindRepeating(&MediaCodecVideoDecoder::OnSurfaceChosen,
@@ -784,7 +788,8 @@ void MediaCodecVideoDecoder::OnCodecConfigured(
   codec_name_ = codec->GetName();
   MEDIA_LOG(INFO, media_log_)
       << "Created MediaCodec " << codec_name_
-      << ", is_software_codec=" << codec->IsSoftwareCodec();
+      << ", is_software_codec=" << codec->IsSoftwareCodec()
+      << ", use_block_model_=" << use_block_model_;
 
   // Since we can't get the coded size w/o rendering the frame, we try to guess
   // in cases where we are unable to render the frame (resolution changes). If
@@ -813,7 +818,7 @@ void MediaCodecVideoDecoder::OnCodecConfigured(
               &MediaCodecVideoDecoder::PumpCodec, weak_factory_.GetWeakPtr()))),
       decoder_config_.coded_size(),
       decoder_config_.color_space_info().ToGfxColorSpace(),
-      coded_size_alignment, use_block_model_);
+      coded_size_alignment);
 
   // If the target surface changed while codec creation was in progress,
   // transition to it immediately.
@@ -979,7 +984,7 @@ bool MediaCodecVideoDecoder::QueueInput() {
   if (base::FeatureList::IsEnabled(kMediaCodecElideEOS) &&
       pending_buffer->end_of_stream() && pending_buffer->next_config()) {
     const auto new_config =
-        absl::get<VideoDecoderConfig>(*pending_buffer->next_config());
+        std::get<VideoDecoderConfig>(*pending_buffer->next_config());
 
     // The underlying MediaCodec must remain the same in order for us to elide
     // the end of stream flush.

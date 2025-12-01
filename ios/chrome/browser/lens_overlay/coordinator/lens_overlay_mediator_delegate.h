@@ -5,17 +5,23 @@
 #ifndef IOS_CHROME_BROWSER_LENS_OVERLAY_COORDINATOR_LENS_OVERLAY_MEDIATOR_DELEGATE_H_
 #define IOS_CHROME_BROWSER_LENS_OVERLAY_COORDINATOR_LENS_OVERLAY_MEDIATOR_DELEGATE_H_
 
+#import "ios/chrome/browser/lens_overlay/coordinator/lens_overlay_tab_change_audience.h"
+
 class GURL;
 @class LensOverlayMediator;
 
-/// Delegate for events in LensOverlayMediator.
-@protocol LensOverlayMediatorDelegate
+/// Delegate for events in `LensOverlayMediator`.
+@protocol LensOverlayMediatorDelegate <NSObject>
 
 /// The lens overlay menu (3-dots) did open.
 - (void)lensOverlayMediatorDidOpenOverlayMenu:(LensOverlayMediator*)mediator;
 
 /// Called when an URL needs to be opened in a new tab.
 - (void)lensOverlayMediatorOpenURLInNewTabRequsted:(GURL)url;
+
+/// Called when a translation failed due to no or unprocessable text in the
+/// given image.
+- (void)lensOverlayMediatorDidFailDetectingTranslatableText;
 
 @end
 

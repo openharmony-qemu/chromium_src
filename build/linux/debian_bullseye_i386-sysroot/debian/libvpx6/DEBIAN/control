@@ -1,9 +1,9 @@
 Package: libvpx6
 Source: libvpx
-Version: 1.9.0-1
+Version: 1.9.0-1+deb11u3
 Architecture: i386
 Maintainer: Debian Multimedia Maintainers <debian-multimedia@lists.debian.org>
-Installed-Size: 2229
+Installed-Size: 2233
 Depends: libc6 (>= 2.29), libgcc-s1 (>= 4.2)
 Section: libs
 Priority: optional

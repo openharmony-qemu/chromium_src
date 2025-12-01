@@ -9,6 +9,8 @@
 
 #import "base/containers/enum_set.h"
 
+@class SceneState;
+
 typedef NS_ENUM(NSUInteger, SigninCoordinatorResult);
 
 // The key in the user info dictionary containing the GoogleServiceAuthError
@@ -37,18 +39,20 @@ typedef enum {
 // Enum is used to represent the action to be taken by the authentication once
 // the user is successfully signed in.
 enum class PostSignInAction {
-  // No post action after sign-in.
-  kNone,
-  kFirstType = kNone,
   // Shows a snackbar displaying the account that just signed-in.
   kShowSnackbar,
+  kFirstType = kShowSnackbar,
+  // Shows a snackbar to confirm the account that was just switched to.
+  kShowIdentityConfirmationSnackbar,
   // Enables SelectableType::kBookmarks for the account that just signed-in from
   // the bookmarks manager.
   kEnableUserSelectableTypeBookmarks,
   // Enables SelectableType::kReadingList for the account that just signed-in
   // from the reading list manager.
   kEnableUserSelectableTypeReadingList,
-  kLastType = kEnableUserSelectableTypeReadingList
+  // Shows the history sync screen after a profile switch.
+  kShowHistorySyncScreenAfterProfileSwitch,
+  kLastType = kShowHistorySyncScreenAfterProfileSwitch
 };
 
 using PostSignInActionSet = base::EnumSet<PostSignInAction,
@@ -72,7 +76,8 @@ using SigninCompletionCallback = void (^)(SigninCoordinatorResult success);
 
 // Completion callback for a sign-out operation.
 // `success` is YES if the operation was successful.
-using SignoutCompletionCallback = void (^)(BOOL success);
+using SignoutCompletionCallback = void (^)(BOOL success,
+                                           SceneState* scene_state);
 
 }  // namespace signin_ui
 

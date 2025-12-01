@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifdef UNSAFE_BUFFERS_BUILD
+// TODO(crbug.com/390223051): Remove C-library calls to fix the errors.
+#pragma allow_unsafe_libc_calls
+#endif
+
 #include "net/quic/quic_chromium_client_stream.h"
 
 #include <string_view>
@@ -14,7 +19,6 @@
 #include "base/memory/raw_ptr.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/metrics/histogram_functions.h"
-#include "base/not_fatal_until.h"
 #include "base/task/single_thread_task_runner.h"
 #include "net/base/io_buffer.h"
 #include "net/base/net_errors.h"
@@ -699,7 +703,7 @@ size_t QuicChromiumClientStream::WriteHeaders(
         ack_listener) {
   if (!session()->OneRttKeysAvailable()) {
     auto entry = header_block.find(":method");
-    CHECK(entry != header_block.end(), base::NotFatalUntil::M130);
+    CHECK(entry != header_block.end());
     DCHECK(
         entry->second != "POST" ||
         (handle_ != nullptr && handle_->GetRequestIdempotency() == IDEMPOTENT));

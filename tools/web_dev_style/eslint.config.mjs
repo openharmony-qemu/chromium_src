@@ -5,6 +5,7 @@
 import stylistic from '../../third_party/node/node_modules/@stylistic/eslint-plugin/dist/index.js';
 import typescriptEslint from '../../third_party/node/node_modules/@typescript-eslint/eslint-plugin/dist/index.js';
 import tsParser from '../../third_party/node/node_modules/@typescript-eslint/parser/dist/index.js';
+import webUiEslint from '../../ui/webui/resources/tools/webui_eslint_plugin.js';
 
 export default [
   {
@@ -19,6 +20,9 @@ export default [
       // No point linting auto-generated files.
       'tools/typescript/definitions/**/*',
 
+      // Ignore generated checked-in JS file.
+      'ios/tools/documents_statistics_viewer/tsc/viewer.js',
+
       // ESLint is disabled for camera_app_ui and recorder_app_ui as they used
       // a custom eslint plugin that does not work with the latest eslint, and
       // they had complex eslint rc files that have not been updated to the
@@ -30,16 +34,12 @@ export default [
       // which is no longer supported. TODO(https://crbug.com/369766161):
       // Bring directories into conformance to re-enable linting.
       'ash/webui/**/*',
-      'chrome/browser/resources/ash/**/*.[jt]s',
       'chrome/browser/resources/chromeos/**/*',
-      'chrome/test/data/webui/chromeos/**/*',
+      'chrome/test/data/webui/chromeos/**/*.js',
 
       // TODO(https://crbug.com/41446521): Bring extension test files into
       // conformance.
       'chrome/test/data/extensions/**/*',
-
-      // Un-ignore CrOS Settings dir to enable linting.
-      '!chrome/browser/resources/ash/settings/**/*',
     ],
   },
   {
@@ -150,6 +150,11 @@ export default [
               'Remove unnecessary "!" non-null operator after querySelectorAll(). It always returns a non-null result',
         },
         {
+          // Prevent unnecessary usage of dispatchEvent(new Event('click'))
+          'selector': 'NewExpression[callee.name=Event][arguments.0.type=Literal][arguments.0.value=click]',
+          'message': 'Don\'t use dispatchEvent(new Event(\'click\')) for click events. Use the click() method instead.',
+        },
+        {
           // https://google.github.io/styleguide/jsguide.html#es-module-imports
           //  1) Matching only import URLs that have at least one '/' slash,
           //  to avoid false positives for NodeJS imports like `import fs from
@@ -202,6 +207,13 @@ export default [
     plugins: {
       '@typescript-eslint': typescriptEslint,
       '@stylistic': stylistic,
+
+      // Need to register the WebUI plugin even though it is not used in the
+      // configuration below, to prevent errors like
+      // "Definition for rule XYZ was not found  @webui-eslint/XYZ"
+      // when encountering 'eslint-disable-next-line' comments referencing rules
+      // defined in the `webUiEslint` plugin.
+      '@webui-eslint': webUiEslint,
     },
 
     languageOptions: {
@@ -317,6 +329,12 @@ export default [
           selector: 'classProperty',
           format: ['camelCase'],
           modifiers: ['public'],
+        },
+        {
+          selector: 'classProperty',
+          format: ['camelCase'],
+          modifiers: ['protected'],
+          trailingUnderscore: 'allow',
         },
         {
           selector: 'classProperty',

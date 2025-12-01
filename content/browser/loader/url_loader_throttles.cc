@@ -8,7 +8,6 @@
 
 #include "base/feature_list.h"
 #include "base/memory/safe_ref.h"
-#include "components/variations/net/omnibox_url_loader_throttle.h"
 #include "components/variations/net/variations_url_loader_throttle.h"
 #include "content/browser/client_hints/client_hints.h"
 #include "content/browser/client_hints/critical_client_hints_throttle.h"
@@ -49,7 +48,6 @@ CreateContentBrowserURLLoaderThrottles(
       GetContentClient()->browser()->CreateURLLoaderThrottles(
           request, browser_context, wc_getter, navigation_ui_data,
           frame_tree_node_id, navigation_id);
-  variations::OmniboxURLLoaderThrottle::AppendThrottleIfNeeded(&throttles);
   // TODO(crbug.com/40135370): Consider whether we want to use the WebContents
   // to determine the value for variations::Owner. Alternatively, this is the
   // browser side, and we might be fine with Owner::kUnknown.
@@ -71,16 +69,13 @@ CreateContentBrowserURLLoaderThrottles(
   // Creating a throttle only for outermost main frames to persist the reduced
   // accept language for an origin and to restart requests if needed, due to
   // language negotiation.
-  if (base::FeatureList::IsEnabled(network::features::kReduceAcceptLanguage)) {
-    ReduceAcceptLanguageControllerDelegate* reduce_accept_lang_delegate =
-        browser_context->GetReduceAcceptLanguageControllerDelegate();
-    OriginTrialsControllerDelegate* origin_trials_delegate =
-        browser_context->GetOriginTrialsControllerDelegate();
-    if (request.is_outermost_main_frame && reduce_accept_lang_delegate) {
-      throttles.push_back(std::make_unique<ReduceAcceptLanguageThrottle>(
-          *reduce_accept_lang_delegate, origin_trials_delegate,
-          frame_tree_node_id));
-    }
+  if (auto reduce_accept_lang_utils =
+          ReduceAcceptLanguageUtils::Create(browser_context);
+      reduce_accept_lang_utils && request.is_outermost_main_frame) {
+    throttles.push_back(std::make_unique<ReduceAcceptLanguageThrottle>(
+        std::move(reduce_accept_lang_utils.value()),
+        browser_context->GetOriginTrialsControllerDelegate(),
+        frame_tree_node_id));
   }
 
   // frame_tree_node_id may be invalid if we are loading the first frame
@@ -136,14 +131,11 @@ CreateContentBrowserURLLoaderThrottles(
 
 std::vector<std::unique_ptr<blink::URLLoaderThrottle>>
 CreateContentBrowserURLLoaderThrottlesForKeepAlive(
-    const network::ResourceRequest& request,
     BrowserContext* browser_context,
-    const base::RepeatingCallback<WebContents*()>& wc_getter,
     FrameTreeNodeId frame_tree_node_id) {
   std::vector<std::unique_ptr<blink::URLLoaderThrottle>> throttles =
       GetContentClient()->browser()->CreateURLLoaderThrottlesForKeepAlive(
-          request, browser_context, wc_getter, frame_tree_node_id);
-  variations::OmniboxURLLoaderThrottle::AppendThrottleIfNeeded(&throttles);
+          browser_context, frame_tree_node_id);
   // TODO(crbug.com/40135370): Consider whether we want to use the WebContents
   // to determine the value for variations::Owner. Alternatively, this is the
   // browser side, and we might be fine with Owner::kUnknown.

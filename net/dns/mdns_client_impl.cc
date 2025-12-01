@@ -15,9 +15,7 @@
 #include "base/functional/bind.h"
 #include "base/location.h"
 #include "base/metrics/histogram_functions.h"
-#include "base/not_fatal_until.h"
 #include "base/observer_list.h"
-#include "base/ranges/algorithm.h"
 #include "base/strings/string_util.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/time/clock.h"
@@ -71,10 +69,10 @@ void RecordQueryMetric(mdnsQueryType query_type, std::string_view host) {
 
   if (host.ends_with("_googlecast._tcp.local")) {
     base::UmaHistogramEnumeration("Network.Mdns.Googlecast", query_type);
-  } else if (base::ranges::any_of(kPrintScanServices,
-                                  [&host](std::string_view service) {
-                                    return host.ends_with(service);
-                                  })) {
+  } else if (std::ranges::any_of(kPrintScanServices,
+                                 [&host](std::string_view service) {
+                                   return host.ends_with(service);
+                                 })) {
     base::UmaHistogramEnumeration("Network.Mdns.PrintScan", query_type);
   } else {
     base::UmaHistogramEnumeration("Network.Mdns.Other", query_type);
@@ -413,7 +411,7 @@ void MDnsClientImpl::Core::RemoveListener(MDnsListenerImpl* listener) {
   ListenerKey key(listener->GetName(), listener->GetType());
   auto observer_list_iterator = listeners_.find(key);
 
-  CHECK(observer_list_iterator != listeners_.end(), base::NotFatalUntil::M130);
+  CHECK(observer_list_iterator != listeners_.end());
   DCHECK(observer_list_iterator->second->HasObserver(listener));
 
   observer_list_iterator->second->RemoveObserver(listener);

@@ -1018,6 +1018,8 @@ const char* ToString(ax::mojom::State state) {
       return "focusable";
     case ax::mojom::State::kHasActions:
       return "hasActions";
+    case ax::mojom::State::kHasInterestTarget:
+      return "hasInterestTarget";
     case ax::mojom::State::kHorizontal:
       return "horizontal";
     case ax::mojom::State::kHovered:
@@ -1935,8 +1937,8 @@ const char* ToString(ax::mojom::StringListAttribute string_list_attribute) {
       return "none";
     case ax::mojom::StringListAttribute::kAriaNotificationAnnouncements:
       return "ariaNotificationAnnouncements";
-    case ax::mojom::StringListAttribute::kAriaNotificationIds:
-      return "ariaNotificationIds";
+    case ax::mojom::StringListAttribute::kAriaNotificationTypes:
+      return "ariaNotificationTypes";
     case ax::mojom::StringListAttribute::kCustomActionDescriptions:
       return "customActionDescriptions";
   }
@@ -2474,6 +2476,10 @@ const char* ToString(ax::mojom::DetailsFrom details_from) {
       return "popoverTarget";
     case ax::mojom::DetailsFrom::kInterestTarget:
       return "interestTarget";
+    case ax::mojom::DetailsFrom::kCommandfor:
+      return "commandforAttribute";
+    case ax::mojom::DetailsFrom::kCssScrollMarkerPseudoElement:
+      return "cssScrollMarkerPseudoElement";
   }
 
   return "";
@@ -2601,10 +2607,10 @@ const char* ToString(ax::mojom::AriaNotificationInterrupt interrupt) {
 
 const char* ToString(ax::mojom::AriaNotificationPriority priority) {
   switch (priority) {
-    case ax::mojom::AriaNotificationPriority::kNone:
-      return "none";
-    case ax::mojom::AriaNotificationPriority::kImportant:
-      return "important";
+    case ax::mojom::AriaNotificationPriority::kNormal:
+      return "normal";
+    case ax::mojom::AriaNotificationPriority::kHigh:
+      return "high";
   }
   NOTREACHED();
 }

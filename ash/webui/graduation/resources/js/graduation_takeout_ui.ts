@@ -121,6 +121,7 @@ export class GraduationTakeoutUi extends PolymerElement {
     };
   }
 
+  private showLoadingScreen: boolean;
   authStatus: AuthStatus = AuthStatus.IN_PROGRESS;
   isWebviewLoading: boolean = false;
   takeoutFlowCompleted: boolean;
@@ -133,6 +134,11 @@ export class GraduationTakeoutUi extends PolymerElement {
 
     this.webview =
         this.shadowRoot!.querySelector<chrome.webviewTag.WebView>('webview')!;
+    if (loadTimeData.getBoolean('isEmbeddedEndpointEnabled')) {
+      const userAgent = this.webview.getUserAgent();
+      const webviewUserAgent = loadTimeData.getString('userAgentString');
+      this.webview.setUserAgentOverride(`${userAgent} ${webviewUserAgent}`);
+    }
 
     this.configureWebviewListeners();
 

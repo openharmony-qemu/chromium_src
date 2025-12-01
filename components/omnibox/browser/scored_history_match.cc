@@ -6,6 +6,7 @@
 
 #include <math.h>
 
+#include <algorithm>
 #include <array>
 #include <optional>
 #include <string>
@@ -15,7 +16,6 @@
 #include "base/check_op.h"
 #include "base/no_destructor.h"
 #include "base/numerics/safe_conversions.h"
-#include "base/ranges/algorithm.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_split.h"
 #include "base/strings/string_util.h"
@@ -28,6 +28,7 @@
 #include "components/omnibox/browser/in_memory_url_index_types.h"
 #include "components/omnibox/browser/omnibox_field_trial.h"
 #include "components/omnibox/browser/url_prefix.h"
+#include "components/omnibox/common/string_cleaning.h"
 #include "url/gurl.h"
 #include "url/third_party/mozilla/url_parse.h"
 
@@ -179,8 +180,8 @@ ScoredHistoryMatch::ScoredHistoryMatch(
   base::OffsetAdjuster::Adjustments adjustments;
   GURL gurl = row.url();
   std::u16string cleaned_up_url_for_matching =
-      bookmarks::CleanUpUrlForMatching(gurl, &adjustments);
-  std::u16string title = bookmarks::CleanUpTitleForMatching(row.title());
+      string_cleaning::CleanUpUrlForMatching(gurl, &adjustments);
+  std::u16string title = string_cleaning::CleanUpTitleForMatching(row.title());
   int term_num = 0;
   for (const auto& term : terms_vector) {
     TermMatches url_term_matches =
@@ -919,8 +920,8 @@ float ScoredHistoryMatch::GetFrequency(const base::Time& now,
   auto visits_end =
       visits.begin() + std::min(visits.size(), max_visits_to_score_);
   // Visits should be in newest to oldest order.
-  DCHECK(base::ranges::adjacent_find(visits.begin(), visits_end, std::less<>(),
-                                     &history::VisitInfo::first) == visits_end);
+  DCHECK(std::ranges::adjacent_find(visits.begin(), visits_end, std::less<>(),
+                                    &history::VisitInfo::first) == visits_end);
   for (auto i = visits.begin(); i != visits_end; ++i) {
     const bool is_page_transition_typed =
         ui::PageTransitionCoreTypeIs(i->second, ui::PAGE_TRANSITION_TYPED);

@@ -10,9 +10,12 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
+#include <cstdint>
+
 #include "absl/base/optimization.h"
 #include "quiche/quic/core/flow_label.h"
-#include "quiche/quic/core/io/socket.h"
+#include "quiche/quic/core/quic_constants.h"
+#include "quiche/quic/core/quic_types.h"
 #include "quiche/quic/core/quic_udp_socket.h"
 #include "quiche/quic/platform/api/quic_bug_tracker.h"
 #include "quiche/quic/platform/api/quic_flag_utils.h"
@@ -34,9 +37,6 @@
 
 namespace quic {
 namespace {
-
-// Explicit Congestion Notification is the last two bits of the TOS byte.
-constexpr uint8_t kEcnMask = 0x03;
 
 constexpr int kIpv6RecvPacketInfo = IPV6_RECVPKTINFO;
 
@@ -140,7 +140,10 @@ void PopulatePacketInfoFromControlMessage(
   if ((cmsg->cmsg_level == IPPROTO_IP && cmsg->cmsg_type == IP_TOS) ||
       (cmsg->cmsg_level == IPPROTO_IPV6 && cmsg->cmsg_type == IPV6_TCLASS)) {
 #endif
-    if (packet_info_interested.IsSet(QuicUdpPacketInfoBit::ECN)) {
+    if (packet_info_interested.IsSet(QuicUdpPacketInfoBit::TOS)) {
+      packet_info->SetTos(*(reinterpret_cast<uint8_t*>(CMSG_DATA(cmsg))));
+    } else if (packet_info_interested.IsSet(QuicUdpPacketInfoBit::ECN)) {
+      // TODO: b/732900348 - Remove this once TOS bit is always set.
       packet_info->SetEcnCodepoint(QuicEcnCodepoint(
           *(reinterpret_cast<uint8_t*>(CMSG_DATA(cmsg))) & kEcnMask));
     }
@@ -235,15 +238,12 @@ bool QuicUdpSocketApi::SetupSocket(QuicUdpSocketFd fd, int address_family,
                                    << "IPv6 socket";
       return false;
     }
-#if defined(__linux__)
-    if (GetQuicRestartFlag(quic_support_flow_label2)) {
-      QUIC_RESTART_FLAG_COUNT_N(quic_support_flow_label2, 5, 6);
-      if (setsockopt(fd, SOL_IPV6, IPV6_FLOWINFO, &set, sizeof(set)) != 0) {
-        QUIC_LOG_FIRST_N(ERROR, 100)
-            << "Failed to request to receive flow label on "
-            << "IPv6 socket";
-        return false;
-      }
+#if defined(__linux__) && !defined(__ANDROID__)
+    if (setsockopt(fd, SOL_IPV6, IPV6_FLOWINFO, &set, sizeof(set)) != 0) {
+      QUIC_LOG_FIRST_N(ERROR, 100)
+          << "Failed to request to receive flow label on "
+          << "IPv6 socket";
+      return false;
     }
 #endif
     if (!EnableReceiveSelfIpAddressForV6(fd)) {
@@ -564,26 +564,20 @@ WriteResult QuicUdpSocketApi::WritePacket(
 
   // TODO(b/270584616): This code block might go away when full support for
   // marking ECN is implemented.
-  if (packet_info.HasValue(QuicUdpPacketInfoBit::ECN)) {
+  if (packet_info.HasValue(QuicUdpPacketInfoBit::ECN) &&
+      packet_info.ecn_codepoint() != ECN_NOT_ECT) {
     int cmsg_level =
         packet_info.peer_address().host().IsIPv4() ? IPPROTO_IP : IPPROTO_IPV6;
     int cmsg_type;
     unsigned char value_buf[20];
     socklen_t value_len = sizeof(value_buf);
-    if (GetQuicRestartFlag(quic_support_ect1)) {
-      QUIC_RESTART_FLAG_COUNT_N(quic_support_ect1, 9, 9);
-      if (GetEcnCmsgArgsPreserveDscp(
-              fd, packet_info.peer_address().host().address_family(),
-              packet_info.ecn_codepoint(), cmsg_type, value_buf,
-              value_len) != 0) {
-        QUIC_LOG_FIRST_N(ERROR, 100)
-            << "Could not get ECN msg type for this platform.";
-        return WriteResult(WRITE_STATUS_ERROR, EINVAL);
-      }
-    } else {
-      cmsg_type = (cmsg_level == IPPROTO_IP) ? IP_TOS : IPV6_TCLASS;
-      *(int*)value_buf = static_cast<int>(packet_info.ecn_codepoint());
-      value_len = sizeof(int);
+    if (GetEcnCmsgArgsPreserveDscp(
+            fd, packet_info.peer_address().host().address_family(),
+            packet_info.ecn_codepoint(), cmsg_type, value_buf,
+            value_len) != 0) {
+      QUIC_LOG_FIRST_N(ERROR, 100)
+          << "Could not get ECN msg type for this platform.";
+      return WriteResult(WRITE_STATUS_ERROR, EINVAL);
     }
     if (!NextCmsg(&hdr, control_buffer, sizeof(control_buffer), cmsg_level,
                   cmsg_type, value_len, &cmsg)) {

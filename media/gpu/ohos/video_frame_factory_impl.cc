@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "media/gpu/ohos/video_frame_factory_impl.h"
 
@@ -198,13 +173,14 @@ void VideoFrameFactoryImpl::CreateVideoFrame_OnImageReady(
 
   auto codec_image_holder = std::move(record.codec_image_holder);
 
-  auto frame = VideoFrame::WrapMappableSharedImage(
-      std::move(record.shared_image), gpu::SyncToken(),
-      VideoFrame::ReleaseMailboxAndGpuMemoryBufferCB(),
+  scoped_refptr<VideoFrame> frame = VideoFrame::WrapSharedImage(
+      pixel_format, std::move(record.shared_image), gpu::SyncToken(),
+      VideoFrame::ReleaseMailboxCB(), frame_info.coded_size,
       frame_info.visible_rect, natural_size, timestamp);
 
   DVLOG(3) << "CreateVideoFrame_OnImageReady frame id : "
            << frame->unique_id();
+  frame->set_ycbcr_info(frame_info.ycbcr_info);
   frame->set_color_space(color_space);
 
   if (!frame) {
@@ -216,7 +192,7 @@ void VideoFrameFactoryImpl::CreateVideoFrame_OnImageReady(
   frame->metadata().copy_required = video_frame_copy_required;
 
   frame->metadata().allow_overlay = false;
-  frame->metadata().texture_owner = is_texture_owner_backed;
+  frame->metadata().in_surface_view = !is_texture_owner_backed;
   frame->SetReleaseMailboxCB(std::move(record.release_cb));
   std::move(output_cb).Run(std::move(frame));
 }

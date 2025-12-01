@@ -6,28 +6,37 @@
 #define COMPONENTS_IP_PROTECTION_COMMON_IP_PROTECTION_PROXY_CONFIG_MANAGER_IMPL_H_
 
 #include <memory>
+#include <optional>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
-#include "base/memory/raw_ref.h"
+#include "base/memory/weak_ptr.h"
 #include "base/time/time.h"
 #include "base/timer/timer.h"
-#include "components/ip_protection/common/ip_protection_config_getter.h"
-#include "components/ip_protection/common/ip_protection_core.h"
-#include "components/ip_protection/common/ip_protection_data_types.h"
 #include "components/ip_protection/common/ip_protection_proxy_config_manager.h"
-#include "net/base/proxy_chain.h"
+
+namespace net {
+
+class ProxyChain;
+
+}  // namespace net
 
 namespace ip_protection {
 
-// An implementation of IpProtectionProxyConfigManager that populates itself
-// using a passed in IpProtectionConfigGetter pointer from the cache.
+class IpProtectionProxyConfigFetcher;
+class IpProtectionCore;
+struct GeoHint;
+
+// The production implementation of IpProtectionProxyConfigManager.
 class IpProtectionProxyConfigManagerImpl
     : public IpProtectionProxyConfigManager {
  public:
   explicit IpProtectionProxyConfigManagerImpl(
       IpProtectionCore* core,
-      IpProtectionConfigGetter& config_getter,
+      std::unique_ptr<IpProtectionProxyConfigFetcher> fetcher,
       bool disable_proxy_refreshing_for_testing = false);
   ~IpProtectionProxyConfigManagerImpl() override;
 
@@ -55,13 +64,8 @@ class IpProtectionProxyConfigManagerImpl
     disable_proxy_refreshing_for_testing_ = false;
   }
 
-  void SetProxyListForTesting(
-      std::optional<std::vector<net::ProxyChain>> proxy_list,
-      std::optional<GeoHint> geo_hint) {
-    current_geo_id_ = GetGeoIdFromGeoHint(geo_hint);
-    proxy_list_ = *proxy_list;
-    have_fetched_proxy_list_ = true;
-  }
+  void SetProxyListForTesting(std::vector<net::ProxyChain> proxy_list,
+                              std::optional<GeoHint> geo_hint);
 
   void EnableProxyListFetchIntervalFuzzingForTesting(bool enable);
 
@@ -80,7 +84,7 @@ class IpProtectionProxyConfigManagerImpl
   // Current geo of the proxy list.
   std::string current_geo_id_ = "";
 
-  // True if an invocation of `config_getter_.GetProxyConfig()` is
+  // True if an invocation of `fetcher_.GetProxyConfig()` is
   // outstanding.
   bool fetching_proxy_list_ = false;
 
@@ -95,7 +99,7 @@ class IpProtectionProxyConfigManagerImpl
   const raw_ptr<IpProtectionCore> ip_protection_core_;
 
   // Source of proxy list, when needed.
-  raw_ref<IpProtectionConfigGetter> config_getter_;
+  std::unique_ptr<IpProtectionProxyConfigFetcher> fetcher_;
 
   // The last time this instance began refreshing the proxy list successfully.
   base::Time last_successful_proxy_list_refresh_;
@@ -107,10 +111,7 @@ class IpProtectionProxyConfigManagerImpl
   const base::TimeDelta proxy_list_refresh_interval_;
 
   // If false, proxy list refresh interval is not fuzzed.
-  bool enable_proxy_list_fetch_interval_fuzzing_for_testing_ = true;
-
-  // Feature flag to safely introduce token caching by geo.
-  const bool enable_token_caching_by_geo_;
+  bool enable_proxy_list_fetch_interval_fuzzing_ = true;
 
   // A timer to run `RefreshProxyList()` when necessary.
   base::OneShotTimer next_refresh_proxy_list_;

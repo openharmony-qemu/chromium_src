@@ -1,6 +1,6 @@
 Package: libgtk2.0-0
 Source: gtk+2.0
-Version: 2.24.33-2
+Version: 2.24.33-2+deb11u1
 Architecture: amd64
 Maintainer: Debian GNOME Maintainers <pkg-gnome-maintainers@lists.alioth.debian.org>
 Installed-Size: 5899

@@ -539,7 +539,8 @@ bool ParseJpegPicture(base::span<const uint8_t> buffer,
   DCHECK(result);
 
   auto reader = base::SpanReader(buffer);
-  std::ranges::fill(base::byte_span_from_ref(*result), 0u);
+  *result = {};
+
   uint8_t marker1;
   uint8_t marker2;
   READ_U8_OR_RETURN_FALSE(marker1);

@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "disk_cache_file.h"
 
@@ -81,8 +56,17 @@ int DiskCacheEntry::OpenCallback(int rv) {
   auto callback = base::BindOnce(&DiskCacheEntry::OnEntryOpenComplete,
                                  weak_ptr_factory_.GetWeakPtr());
 
+  if (cache_ == nullptr) {
+    LOG(WARNING) << __FUNCTION__ << ", cache_ is nullptr";
+    return rv;
+  }
+  disk_cache::Backend* backend = cache_->Backend();
+  if (backend == nullptr) {
+    LOG(WARNING) << __FUNCTION__ << ", backend is nullptr";
+    return net::ERR_FAILED;
+  }
   disk_cache::EntryResult create_result =
-      cache_->Backend()->OpenOrCreateEntry(url_, net::HIGHEST, std::move(callback));
+      backend->OpenOrCreateEntry(url_, net::HIGHEST, std::move(callback));
   rv = create_result.net_error();
   if (rv != net::ERR_IO_PENDING) {
     entry_ = create_result.ReleaseEntry();
@@ -92,7 +76,9 @@ int DiskCacheEntry::OpenCallback(int rv) {
 
 int DiskCacheEntry::WriteCallback(int rv) {
   if (rv != net::OK) {
-    cache_->EntryWriteComplete(this);
+    if (cache_ != nullptr) {
+      cache_->EntryWriteComplete(this);
+    }
     return rv;
   }
 
@@ -104,7 +90,9 @@ int DiskCacheEntry::WriteCallback(int rv) {
 }
 
 int DiskCacheEntry::IOComplete(int rv) {
-  cache_->EntryWriteComplete(this);
+  if (cache_ != nullptr) {
+    cache_->EntryWriteComplete(this);
+  }
   return rv;
 }
 
@@ -161,8 +149,17 @@ int DiskCacheReadHelper::OpenCallback(int rv) {
   auto callback = base::BindOnce(&DiskCacheReadHelper::OnEntryOpenComplete,
                                  weak_ptr_factory_.GetWeakPtr());
 
+  if (cache_ == nullptr) {
+    LOG(WARNING) << __FUNCTION__ << ", cache_ is nullptr";
+    return rv;
+  }
+  disk_cache::Backend* backend = cache_->Backend();
+  if (backend == nullptr) {
+    LOG(WARNING) << __FUNCTION__ << ", backend is nullptr";
+    return net::ERR_FAILED;
+  }
   disk_cache::EntryResult result =
-      cache_->Backend()->OpenEntry(url_, net::HIGHEST, std::move(callback));
+      backend->OpenEntry(url_, net::HIGHEST, std::move(callback));
   rv = result.net_error();
   if (rv != net::ERR_IO_PENDING)
     entry_ = result.ReleaseEntry();  // may be nullptr
@@ -172,7 +169,9 @@ int DiskCacheReadHelper::OpenCallback(int rv) {
 int DiskCacheReadHelper::ReadCallback(int rv) {
   if (rv != net::OK) {
     LOG(ERROR) << "PRPPreload.DiskCacheReadHelper::ReadCallback load cache entry failed: " << rv;
-    cache_->EntryReadComplete();
+    if (cache_ != nullptr) {
+      cache_->EntryReadComplete();
+    }
     return rv;
   }
 
@@ -188,7 +187,9 @@ int DiskCacheReadHelper::IOComplete(int rv) {
     entry_loaded_cb_.Run(std::string(buf_->data(), buf_->size()));
   }
 
-  cache_->EntryReadComplete();
+  if (cache_ != nullptr) {
+    cache_->EntryReadComplete();
+  }
   return rv;
 }
 
@@ -198,7 +199,7 @@ DiskCacheFile::DiskCacheFile(const scoped_refptr<DiskCacheBackendFactory>& disk_
     disk_cache_backend_factory_(disk_cache_backend_factory), url_(url), entry_loaded_cb_(entry_loaded_cb) {}
 
 void DiskCacheFile::StoreInfoAsync(const std::string& entry_content) {
-  if (!disk_cache_backend_factory_->WaitInitedTimeout()) {
+  if (!disk_cache_backend_factory_ || !disk_cache_backend_factory_->WaitInitedTimeout()) {
     LOG(ERROR) << "PRPPreload.DiskCacheFile::StoreInfoAsync backend not ready";
     return;
   }
@@ -207,7 +208,7 @@ void DiskCacheFile::StoreInfoAsync(const std::string& entry_content) {
 }
 
 void DiskCacheFile::LoadInfoAsync() {
-  if (!disk_cache_backend_factory_->WaitInitedTimeout()) {
+  if (!disk_cache_backend_factory_ || !disk_cache_backend_factory_->WaitInitedTimeout()) {
     LOG(INFO) << "PRPPreload.DiskCacheFile::LoadInfoAsync already load";
     return;
   }

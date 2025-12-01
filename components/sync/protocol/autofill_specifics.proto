@@ -68,6 +68,13 @@ message AutofillProfileSpecifics {
   repeated string name_first = 2;
   repeated string name_middle = 3;
   repeated string name_last = 4;
+
+  // A name_last consists of a prefix and a core (e.g., "van" and "Gogh" in
+  // "van Gogh"). Used for more granular name representation of last names
+  // with prefixes.
+  repeated string name_last_prefix = 99;
+  repeated string name_last_core = 100;
+
   // Sometimes the last name is composed of two names as it is common for
   // Hispanic/Latinx names. In the unstructured representation of the last name,
   // there may be even a conjunction between the first and the second last
@@ -93,6 +100,8 @@ message AutofillProfileSpecifics {
   repeated VerificationStatus name_first_status = 31;
   repeated VerificationStatus name_middle_status = 32;
   repeated VerificationStatus name_last_status = 33;
+  repeated VerificationStatus name_last_prefix_status = 101;
+  repeated VerificationStatus name_last_core_status = 102;
   repeated VerificationStatus name_last_first_status = 34;
   repeated VerificationStatus name_last_conjunction_status = 35;
   repeated VerificationStatus name_last_second_status = 36;
@@ -309,6 +318,14 @@ message CardBenefit {
     ENTERTAINMENT = 4;
     STREAMING = 5;
     GROCERY_STORES = 6;
+    AIR_MILES_PARTNER = 7;
+    ALCOHOL_STORES = 8;
+    DRUGSTORES = 9;
+    OFFICE_SUPPLIES = 10;
+    RECURRING_BILLS = 11;
+    TRANSIT = 12;
+    TRAVEL = 13;
+    WHOLESALE_CLUBS = 14;
   }
 
   // Proto containing data specific to a category benefit.
@@ -394,8 +411,15 @@ message WalletMaskedCreditCard {
     RETRIEVAL_UNENROLLED_AND_ELIGIBLE = 3;
   }
 
+  enum CardBenefitSource {
+    SOURCE_UNKNOWN = 0;
+    SOURCE_AMEX = 1;
+    SOURCE_BMO = 2;
+    SOURCE_CURINOS = 3;
+  }
+
   // Server-generated unique ID string. This is opaque to the client.
-  // This is the legacy version of |instrument_id|.
+  // This is the legacy version of `instrument_id`.
   optional string id = 1;
 
   // What the server thinks of this card.
@@ -433,7 +457,7 @@ message WalletMaskedCreditCard {
   optional CardIssuer card_issuer = 13;
 
   // Server-generated unique ID. This is opaque to the client.
-  // |id| is the legacy version of this.
+  // `id` is the legacy version of this.
   optional int64 instrument_id = 15;
 
   // The state of virtual card enrollment.
@@ -462,6 +486,10 @@ message WalletMaskedCreditCard {
   // card issuer including card number, expiry and CVC.
   optional CardInfoRetrievalEnrollmentState
       card_info_retrieval_enrollment_state = 22;
+
+  // The source of the card's benefits. eg: Curinos. Each card can only have one
+  // single benefit source, even if there are multiple benefits.
+  optional CardBenefitSource card_benefit_source = 23;
 }
 
 // Unused by the client since M121.
@@ -598,9 +626,21 @@ message BnplIssuerDetails {
 // Details for payment instruments that the user is eligible to create an
 // instrument with.
 message PaymentInstrumentCreationOption {
+  // Identifier for the payment instrument creation option.
+  optional string id = 1;
+
   oneof creation_option {
-    BnplIssuerDetails buy_now_pay_later_option = 1;
+    BnplCreationOption buy_now_pay_later_option = 2;
   }
+}
+
+// Buy Now Pay Later details that the user is eligible to create an instrument
+// from.
+message BnplCreationOption {
+  // Unique identifier for the BNPL partner. Example: 'affirm'.
+  optional string issuer_id = 1;
+  // Eligible price range that the BNPL issuer supports.
+  repeated EligiblePriceRange eligible_price_range = 2;
 }
 
 // Details the eligible price range that a BNPL issuer supports. Server

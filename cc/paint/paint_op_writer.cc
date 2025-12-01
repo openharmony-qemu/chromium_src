@@ -2,11 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifdef UNSAFE_BUFFERS_BUILD
-// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
-#pragma allow_unsafe_buffers
-#endif
-
 #include "cc/paint/paint_op_writer.h"
 
 #include <memory>
@@ -14,6 +9,7 @@
 #include <vector>
 
 #include "base/bits.h"
+#include "base/compiler_specific.h"
 #include "base/containers/heap_array.h"
 #include "base/notreached.h"
 #include "cc/paint/color_filter.h"
@@ -30,6 +26,7 @@
 #include "cc/paint/skottie_wrapper.h"
 #include "cc/paint/transfer_cache_serialize_helper.h"
 #include "gpu/command_buffer/common/mailbox.h"
+#include "skia/ext/skia_utils_base.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkColor.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
@@ -55,6 +52,8 @@
 namespace cc {
 namespace {
 
+static_assert(std::is_same_v<unsigned char, uint8_t>);
+
 SkIRect MakeSrcRect(const PaintImage& image) {
   if (!image) {
     return SkIRect::MakeEmpty();
@@ -67,7 +66,37 @@ void WriteHeader(void* memory, uint8_t type, size_t serialized_size) {
   static_cast<uint32_t*>(memory)[0] = type | serialized_size << 8;
 }
 
+template <typename ValueType>
+size_t CountNonEmptyUniforms(
+    const std::vector<PaintShader::Uniform<ValueType>>& uniforms) {
+  return std::count_if(uniforms.begin(), uniforms.end(),
+                       [](const PaintShader::Uniform<ValueType>& u) {
+                         return !u.name.isEmpty();
+                       });
+}
+
 }  // namespace
+
+// Friend to `PaintOpWriter`. Can't be nested in the anonymous namespace.
+template <typename ValueType>
+size_t SerializeSizeSimpleValueUniforms(
+    const std::vector<PaintShader::Uniform<ValueType>>& uniforms) {
+  const size_t count = uniforms.size();
+  size_t name_sizes = 0u;
+  for (const auto& [name, value] : uniforms) {
+    if (name.isEmpty()) {
+      continue;
+    }
+    name_sizes += PaintOpWriter::SerializedSize(name);
+  }
+  // [ size_t [ [size_t data] data [size_t data] data ] ]
+  //     2u         key0      val0      key1     val1
+  return (PaintOpWriter::SerializedSize<size_t>() +
+          base::CheckedNumeric<size_t>(name_sizes) +
+          base::CheckedNumeric<size_t>(count) *
+              PaintOpWriter::SerializedSizeSimple<ValueType>())
+      .ValueOrDie();
+}
 
 // static
 size_t PaintOpWriter::SerializedSize(const PaintImage& image) {
@@ -123,6 +152,35 @@ size_t PaintOpWriter::SerializedSize(const PaintRecord& record) {
 size_t PaintOpWriter::SerializedSize(const SkHighContrastConfig& config) {
   return SerializedSize(config.fGrayscale) +
          SerializedSize(config.fInvertStyle) + SerializedSize(config.fContrast);
+}
+
+// static:
+size_t PaintOpWriter::SerializedSize(const SkString& sk_string) {
+  return SerializedSizeOfBytes(sk_string.size());
+}
+
+// static:
+size_t PaintOpWriter::SerializedSize(
+    const std::vector<PaintShader::FloatUniform>& uniforms) {
+  return SerializeSizeSimpleValueUniforms<SkScalar>(uniforms);
+}
+
+// static:
+size_t PaintOpWriter::SerializedSize(
+    const std::vector<PaintShader::Float2Uniform>& uniforms) {
+  return SerializeSizeSimpleValueUniforms<SkV2>(uniforms);
+}
+
+// static:
+size_t PaintOpWriter::SerializedSize(
+    const std::vector<PaintShader::Float4Uniform>& uniforms) {
+  return SerializeSizeSimpleValueUniforms<SkV4>(uniforms);
+}
+
+// static:
+size_t PaintOpWriter::SerializedSize(
+    const std::vector<PaintShader::IntUniform>& uniforms) {
+  return SerializeSizeSimpleValueUniforms<int>(uniforms);
 }
 
 // static
@@ -189,9 +247,10 @@ size_t PaintOpWriter::FinishOp(uint8_t type) {
   }
 
   // Write type and skip into the header bytes.
-  WriteHeader(memory_ - written, type, aligned_written);
-
-  memory_ += padding;
+  UNSAFE_TODO({
+    WriteHeader(memory_ - written, type, aligned_written);
+    memory_ += padding;
+  });
   return aligned_written;
 }
 
@@ -223,7 +282,8 @@ void PaintOpWriter::WriteSizeAt(void* memory, size_t size) {
   // and https://crbug.com/1440013).
   uint32_t* memory_32 = static_cast<uint32_t*>(memory);
   memory_32[0] = static_cast<uint32_t>(size);
-  memory_32[1] = static_cast<uint32_t>(static_cast<uint64_t>(size) >> 32);
+  UNSAFE_TODO(memory_32[1]) =
+      static_cast<uint32_t>(static_cast<uint64_t>(size) >> 32);
 }
 
 void PaintOpWriter::Write(const SkPath& path, UsePaintCache use_paint_cache) {
@@ -345,7 +405,8 @@ void PaintOpWriter::Write(const DrawImage& draw_image,
     Write(pixmap.height());
     size_t pixmap_size = pixmap.computeByteSize();
     WriteSize(pixmap_size);
-    WriteData(pixmap_size, pixmap.addr());
+    WriteData(UNSAFE_TODO(base::span<const uint8_t>(
+        static_cast<const uint8_t*>(pixmap.addr()), pixmap_size)));
     return;
   }
 
@@ -424,7 +485,7 @@ void PaintOpWriter::WriteImage(const gpu::Mailbox& mailbox,
     return;
   }
 
-  memcpy(memory_, mailbox.name, sizeof(mailbox.name));
+  UNSAFE_TODO(memcpy(memory_, mailbox.name, sizeof(mailbox.name)));
   DidWrite(sizeof(mailbox.name));
   Write(reinterpret_as_srgb);
 }
@@ -438,7 +499,7 @@ void PaintOpWriter::Write(const SkHighContrastConfig& config) {
 void PaintOpWriter::Write(const sk_sp<SkData>& data) {
   if (data.get() && data->size()) {
     WriteSize(data->size());
-    WriteData(data->size(), data->data());
+    WriteData(skia::as_byte_span(*data));
   } else {
     // Differentiate between nullptr and valid but zero size.  It's not clear
     // that this happens in practice, but seems better to be consistent.
@@ -487,7 +548,66 @@ void PaintOpWriter::Write(const gfx::HDRMetadata& hdr_metadata) {
   std::vector<uint8_t> bytes =
       gfx::mojom::HDRMetadata::Serialize(&hdr_metadata);
   WriteSize(bytes.size());
-  WriteData(bytes.size(), bytes.data());
+  WriteData(base::as_byte_span(bytes));
+}
+
+void PaintOpWriter::Write(const SkString& sk_string) {
+  size_t num_bytes = sk_string.size();
+  WriteSize(num_bytes);
+  WriteData(UNSAFE_TODO(base::span<const uint8_t>(
+      reinterpret_cast<const uint8_t*>(sk_string.data()), num_bytes)));
+}
+
+void PaintOpWriter::Write(
+    const std::vector<PaintShader::FloatUniform>& uniforms) {
+  const size_t count = CountNonEmptyUniforms(uniforms);
+  WriteSize(count);
+  for (const auto& [name, value] : uniforms) {
+    if (name.isEmpty()) {
+      continue;
+    }
+    Write(name);
+    WriteSimple(value);
+  }
+}
+
+void PaintOpWriter::Write(
+    const std::vector<PaintShader::Float2Uniform>& uniforms) {
+  const size_t count = CountNonEmptyUniforms(uniforms);
+  WriteSize(count);
+  for (const auto& [name, value] : uniforms) {
+    if (name.isEmpty()) {
+      continue;
+    }
+    Write(name);
+    WriteSimpleMultiple(value.x, value.y);
+  }
+}
+
+void PaintOpWriter::Write(
+    const std::vector<PaintShader::Float4Uniform>& uniforms) {
+  const size_t count = CountNonEmptyUniforms(uniforms);
+  WriteSize(count);
+  for (const auto& [name, value] : uniforms) {
+    if (name.isEmpty()) {
+      continue;
+    }
+    Write(name);
+    WriteSimpleMultiple(value.x, value.y, value.z, value.w);
+  }
+}
+
+void PaintOpWriter::Write(
+    const std::vector<PaintShader::IntUniform>& uniforms) {
+  const size_t count = CountNonEmptyUniforms(uniforms);
+  WriteSize(count);
+  for (const auto& [name, value] : uniforms) {
+    if (name.isEmpty()) {
+      continue;
+    }
+    Write(name);
+    WriteSimple(value);
+  }
 }
 
 void PaintOpWriter::Write(const SkGainmapInfo& gainmap_info) {
@@ -664,16 +784,40 @@ void PaintOpWriter::Write(const PaintShader* shader,
     Write(false);
   }
 
-  WriteSize(shader->colors_.size());
-  WriteData(shader->colors_.size() *
-                (shader->colors_.size() > 0 ? sizeof(shader->colors_[0]) : 0u),
-            shader->colors_.data());
-
-  WriteSize(shader->positions_.size());
-  WriteData(shader->positions_.size() * sizeof(SkScalar),
-            shader->positions_.data());
+  Write(shader->colors_);
+  Write(shader->positions_);
   // Explicitly don't write the cached_shader_ because that can be regenerated
   // using other fields.
+
+  uint32_t effect_id = shader->sk_runtime_effect_id_;
+  WriteSimple(effect_id);
+  auto* cache = options_.paint_cache;
+  CHECK(cache);
+  auto entry_state = PaintCacheEntryState::kEmpty;
+  if (effect_id != 0u) {
+    auto cache_id = static_cast<PaintCacheId>(effect_id);
+    if (cache->Get(PaintCacheDataType::kSkRuntimeEffect, cache_id)) {
+      // Cached.
+      entry_state = PaintCacheEntryState::kCached;
+    } else {
+      // Tell the service to cache.
+      // Use the size of the string as an estimation to the SkRuntimeEffect.
+      // This is intentional as only browser UI is submitting the shader
+      // commands, and there is no cache budget contention on the browser
+      // UI side.
+      size_t effect_size = SerializedSize(shader->sksl_command_);
+      cache->Put(PaintCacheDataType::kSkRuntimeEffect, cache_id, effect_size);
+      entry_state = PaintCacheEntryState::kInlined;
+    }
+  }
+  Write(static_cast<uint32_t>(entry_state));
+  if (entry_state == PaintCacheEntryState::kInlined) {
+    Write(shader->sksl_command_);
+  }
+  Write(shader->scalar_uniforms_);
+  Write(shader->float2_uniforms_);
+  Write(shader->float4_uniforms_);
+  Write(shader->int_uniforms_);
 }
 
 void PaintOpWriter::Write(SkYUVColorSpace yuv_color_space) {
@@ -688,21 +832,21 @@ void PaintOpWriter::Write(SkYUVAInfo::Subsampling subsampling) {
   WriteSimple(static_cast<uint32_t>(subsampling));
 }
 
-void PaintOpWriter::WriteData(size_t bytes, const void* input) {
+void PaintOpWriter::WriteData(base::span<const uint8_t> data) {
   AssertFieldAlignment();
 
-  if (bytes == 0) {
+  if (data.size() == 0) {
     return;
   }
 
-  EnsureBytes(bytes);
+  EnsureBytes(data.size());
 
   if (!valid_) {
     return;
   }
 
-  memcpy(memory_, input, bytes);
-  DidWrite(bytes);
+  UNSAFE_TODO(memcpy(memory_, data.data(), data.size()));
+  DidWrite(data.size());
 }
 
 void PaintOpWriter::AlignMemory(size_t alignment) {
@@ -717,7 +861,7 @@ void PaintOpWriter::AlignMemory(size_t alignment) {
     return;
   }
 
-  memory_ += padding;
+  UNSAFE_TODO(memory_ += padding);
 }
 
 void PaintOpWriter::Write(const ColorFilter* filter) {
@@ -1124,7 +1268,7 @@ void PaintOpWriter::Write(const SkRegion& region) {
   DCHECK_EQ(bytes_required, bytes_written);
 
   WriteSize(bytes_written);
-  WriteData(bytes_written, data.data());
+  WriteData(base::as_byte_span(data));
 }
 
 }  // namespace cc

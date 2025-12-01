@@ -1,10 +1,10 @@
 Package: libx11-dev
 Source: libx11
-Version: 2:1.7.2-1
+Version: 2:1.7.2-1+deb11u2
 Architecture: amd64
 Maintainer: Debian X Strike Force <debian-x@lists.debian.org>
-Installed-Size: 2651
-Depends: libx11-6 (= 2:1.7.2-1), libxau-dev (>= 1:1.0.0-1), libxdmcp-dev (>= 1:1.0.0-1), x11proto-dev (>= 2019.2-1), xtrans-dev, libxcb1-dev
+Installed-Size: 2653
+Depends: libx11-6 (= 2:1.7.2-1+deb11u2), libxau-dev (>= 1:1.0.0-1), libxdmcp-dev (>= 1:1.0.0-1), x11proto-dev (>= 2019.2-1), xtrans-dev, libxcb1-dev
 Suggests: libx11-doc
 Replaces: x11proto-dev (<< 2019.2)
 Section: libdevel

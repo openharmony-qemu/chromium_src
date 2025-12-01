@@ -5,6 +5,7 @@
 import("//build/config/features.gni")
 import("//media/media_options.gni")
 import("//ppapi/buildflags/buildflags.gni")
+import("//third_party/wiseplay/cdm/wiseplay.gni")
 
 # See //content/BUILD.gn for how this works.
 group("renderer") {
@@ -101,7 +102,7 @@ target(link_target_type, "renderer_sources") {
     deps += [ "//sandbox" ]
   }
 
-  if (enable_library_cdms || is_win || is_android) {
+  if (enable_library_cdms || is_win || is_android || enable_wiseplay) {
     sources += [
       "key_system_support.cc",
       "key_system_support.h",

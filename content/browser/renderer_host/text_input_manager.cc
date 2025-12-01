@@ -248,6 +248,10 @@ void TextInputManager::UpdateTextInputState(
   if (active_view_ == view && text_input_state.type == ui::TEXT_INPUT_TYPE_NONE)
     active_view_ = nullptr;
 
+#if BUILDFLAG(IS_OHOS)
+  request_keyboard_reason_ = text_input_state.request_keyboard_reason;
+#endif
+
   NotifyObserversAboutInputStateUpdate(view, changed);
 }
 
@@ -372,12 +376,10 @@ void TextInputManager::NotifySelectionBoundsChanged(
 // TODO(ekaramad): We use |range| only on Mac OS; but we still track its value
 // here for other platforms. See if there is a nice way around this with minimal
 // #ifdefs for platform specific code (https://crbug.com/602427).
-// This also applies to |line_bounds| which are only used on Android.
 void TextInputManager::ImeCompositionRangeChanged(
     RenderWidgetHostViewBase* view,
     const gfx::Range& range,
-    const std::optional<std::vector<gfx::Rect>>& character_bounds,
-    const std::optional<std::vector<gfx::Rect>>& line_bounds) {
+    const std::optional<std::vector<gfx::Rect>>& character_bounds) {
   DCHECK(IsRegistered(view));
 
   if (character_bounds.has_value()) {
@@ -393,20 +395,10 @@ void TextInputManager::ImeCompositionRangeChanged(
     composition_range_info_map_[view].range.set_start(range.start());
     composition_range_info_map_[view].range.set_end(range.end());
   }
-  // Transform the values in line bounds to the root coordinate space if they
-  // exist.
-  std::optional<std::vector<gfx::Rect>> transformed_line_bounds;
-  if (line_bounds.has_value()) {
-    transformed_line_bounds.emplace();
-    for (auto& rect : line_bounds.value()) {
-      transformed_line_bounds->emplace_back(
-          view->TransformPointToRootCoordSpace(rect.origin()), rect.size());
-    }
-  }
 
   for (auto& observer : observer_list_) {
-    observer.OnImeCompositionRangeChanged(
-        this, view, character_bounds.has_value(), transformed_line_bounds);
+    observer.OnImeCompositionRangeChanged(this, view,
+                                          character_bounds.has_value());
   }
 }
 

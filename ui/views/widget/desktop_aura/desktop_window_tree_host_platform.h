@@ -70,10 +70,14 @@ class VIEWS_EXPORT DesktopWindowTreeHostPlatform
   void Init(const Widget::InitParams& params) override;
   void OnNativeWidgetCreated(const Widget::InitParams& params) override;
   void OnWidgetInitDone() override;
+  void OnWidgetThemeChanged(
+      ui::ColorProviderKey::ColorMode color_mode) override;
   void OnActiveWindowChanged(bool active) override;
- 
+
 #if BUILDFLAG(IS_OHOS)
   void SetSurfaceId(uint64_t surface_id) override;
+
+  void OnFullscreenSwitched(bool is_enter_fullscreen) override;
 #endif
 
   std::unique_ptr<corewm::Tooltip> CreateTooltip() override;
@@ -105,6 +109,7 @@ class VIEWS_EXPORT DesktopWindowTreeHostPlatform
   void Maximize() override;
   void Minimize() override;
   void Restore() override;
+  void ShowWindowControlsMenu(const gfx::Point& point) override;
   bool IsMaximized() const override;
   bool IsMinimized() const override;
   bool HasCapture() const override;
@@ -217,7 +222,7 @@ class VIEWS_EXPORT DesktopWindowTreeHostPlatform
   void ScheduleRelayout();
 
 #if BUILDFLAG(IS_OHOS)
-  void SetVisibleOHOS(bool visible);
+  display::Display AccessDisplayNearestRootWindow() const;
 #endif
 
  private:

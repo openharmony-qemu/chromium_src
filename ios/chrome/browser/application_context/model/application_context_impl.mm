@@ -7,6 +7,7 @@
 #import <algorithm>
 #import <vector>
 
+#import "base/base_paths.h"
 #import "base/check_op.h"
 #import "base/command_line.h"
 #import "base/feature_list.h"
@@ -16,10 +17,12 @@
 #import "base/metrics/histogram_functions.h"
 #import "base/path_service.h"
 #import "base/strings/sys_string_conversions.h"
+#import "base/task/bind_post_task.h"
 #import "base/task/sequenced_task_runner.h"
 #import "base/task/thread_pool.h"
 #import "base/time/default_clock.h"
 #import "base/time/default_tick_clock.h"
+#import "components/application_locale_storage/application_locale_storage.h"
 #import "components/breadcrumbs/core/breadcrumbs_status.h"
 #import "components/breadcrumbs/core/crash_reporter_breadcrumb_observer.h"
 #import "components/component_updater/component_updater_service.h"
@@ -49,6 +52,7 @@
 #import "ios/chrome/browser/component_updater/model/ios_component_updater_configurator.h"
 #import "ios/chrome/browser/crash_report/model/breadcrumbs/application_breadcrumbs_logger.h"
 #import "ios/chrome/browser/default_browser/model/utils.h"
+#import "ios/chrome/browser/download/model/auto_deletion/auto_deletion_service.h"
 #import "ios/chrome/browser/gcm/model/ios_chrome_gcm_profile_service_factory.h"
 #import "ios/chrome/browser/history/model/history_service_factory.h"
 #import "ios/chrome/browser/metrics/model/ios_chrome_metrics_services_manager_client.h"
@@ -59,10 +63,10 @@
 #import "ios/chrome/browser/profile/model/profile_manager_ios_impl.h"
 #import "ios/chrome/browser/push_notification/model/push_notification_service.h"
 #import "ios/chrome/browser/shared/model/application_context/application_context.h"
-#import "ios/chrome/browser/shared/model/browser_state/incognito_session_tracker.h"
 #import "ios/chrome/browser/shared/model/paths/paths.h"
 #import "ios/chrome/browser/shared/model/prefs/browser_prefs.h"
 #import "ios/chrome/browser/shared/model/prefs/pref_names.h"
+#import "ios/chrome/browser/shared/model/profile/incognito_session_tracker.h"
 #import "ios/chrome/browser/shared/model/profile/profile_ios.h"
 #import "ios/chrome/browser/signin/model/account_profile_mapper.h"
 #import "ios/chrome/browser/update_client/model/ios_chrome_update_query_params_delegate.h"
@@ -92,48 +96,18 @@
 #import "ios/chrome/browser/optimization_guide/model/on_device_model_service_controller_ios.h"
 #endif  // BUILD_WITH_INTERNAL_OPTIMIZATION_GUIDE
 
-namespace {
-
-// Requests a network::mojom::ProxyResolvingSocketFactory on the UI thread.
-// Note that this cannot be called on a thread that is not the UI thread.
-void RequestProxyResolvingSocketFactoryOnUIThread(
-    ApplicationContextImpl* app_context,
-    mojo::PendingReceiver<network::mojom::ProxyResolvingSocketFactory>
-        receiver) {
-  network::mojom::NetworkContext* network_context =
-      app_context->GetSystemNetworkContext();
-  network_context->CreateProxyResolvingSocketFactory(std::move(receiver));
-}
-
-// Wrapper on top of the method above. This does a PostTask to the UI thread.
-void RequestProxyResolvingSocketFactory(
-    ApplicationContextImpl* app_context,
-    mojo::PendingReceiver<network::mojom::ProxyResolvingSocketFactory>
-        receiver) {
-  web::GetUIThreadTaskRunner({})->PostTask(
-      FROM_HERE, base::BindOnce(&RequestProxyResolvingSocketFactoryOnUIThread,
-                                app_context, std::move(receiver)));
-}
-
-// Passed to NetworkConnectionTracker to bind a NetworkChangeManager receiver.
-void BindNetworkChangeManagerReceiver(
-    network::NetworkChangeManager* network_change_manager,
-    mojo::PendingReceiver<network::mojom::NetworkChangeManager> receiver) {
-  network_change_manager->AddReceiver(std::move(receiver));
-}
-
-}  // namespace
-
 ApplicationContextImpl::ApplicationContextImpl(
     base::SequencedTaskRunner* local_state_task_runner,
     const base::CommandLine& command_line,
     const std::string& locale,
     const std::string& country)
-    : local_state_task_runner_(local_state_task_runner) {
+    : application_locale_storage_(std::make_unique<ApplicationLocaleStorage>()),
+      local_state_task_runner_(local_state_task_runner) {
   DCHECK(!GetApplicationContext());
   SetApplicationContext(this);
 
   SetApplicationLocale(locale);
+  application_locale_storage_->Set(locale);
   application_country_ = country;
 
   update_client::UpdateQueryParams::SetDelegate(
@@ -215,15 +189,14 @@ void ApplicationContextImpl::StartTearDown() {
     safe_browsing_service_->ShutDown();
   }
 
-  // Need to clear profiles before the IO thread. In detail:
-  // - First destroy the profiles, including their keyed services, which may
-  //   depend on the AccountProfileMapper.
-  // - Then destroy the AccountProfileMapper, which depends on the
-  //   ProfileManagerIOS.
-  // - Finally destroy the ProfileManagerIOS.
-  if (profile_manager_) {
-    profile_manager_->DestroyAllProfiles();
-  }
+  // Ensure that the profiles have all be unloaded. This is required because
+  // the profiles' KeyedService may use the AccountProfileMapper, and thus
+  // they have to be destroyed before the ProfileManagerIOS. However since
+  // the AccountProfileMapper depends on the ProfileManagerIOS, it must be
+  // destroyed before.
+  profile_manager_->PrepareForDestruction();
+  CHECK_EQ(profile_manager_->GetLoadedProfiles().size(), 0u);
+
   account_profile_mapper_.reset();
   profile_manager_.reset();
 
@@ -252,6 +225,8 @@ void ApplicationContextImpl::StartTearDown() {
   application_breadcrumbs_logger_.reset();
 
   ios_chrome_io_thread_->NetworkTearDown();
+
+  additional_features_controller_->ShutDown();
 }
 
 void ApplicationContextImpl::PostDestroyThreads() {
@@ -333,6 +308,13 @@ const std::string& ApplicationContextImpl::GetApplicationLocale() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   DCHECK(!application_locale_.empty());
   return application_locale_;
+}
+
+ApplicationLocaleStorage*
+ApplicationContextImpl::GetApplicationLocaleStorage() {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  CHECK(application_locale_storage_);
+  return application_locale_storage_.get();
 }
 
 const std::string& ApplicationContextImpl::GetApplicationCountry() {
@@ -461,6 +443,8 @@ SafeBrowsingService* ApplicationContextImpl::GetSafeBrowsingService() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   if (!safe_browsing_service_) {
     safe_browsing_service_ = base::MakeRefCounted<SafeBrowsingServiceImpl>();
+    safe_browsing_service_->Initialize(
+        base::PathService::CheckedGet(ios::DIR_USER_DATA));
   }
   return safe_browsing_service_.get();
 }
@@ -474,7 +458,7 @@ ApplicationContextImpl::GetNetworkConnectionTracker() {
         std::make_unique<network::NetworkChangeManager>(nullptr);
     network_connection_tracker_ =
         std::make_unique<network::NetworkConnectionTracker>(base::BindRepeating(
-            &BindNetworkChangeManagerReceiver,
+            &network::NetworkChangeManager::AddReceiver,
             base::Unretained(network_change_manager_.get())));
   }
   return network_connection_tracker_.get();
@@ -483,11 +467,15 @@ ApplicationContextImpl::GetNetworkConnectionTracker() {
 BrowserPolicyConnectorIOS* ApplicationContextImpl::GetBrowserPolicyConnector() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   if (!browser_policy_connector_.get()) {
+#if !BUILDFLAG(USE_BLINK)
     // Ensure that the ResourceBundle has already been initialized. If this
     // DCHECK ever fails, a call to
     // BrowserPolicyConnector::OnResourceBundleCreated() will need to be added
     // later in the startup sequence, after the ResourceBundle is initialized.
+    // Blink based startup will call OnResourceBundleCreated in
+    // IOSChromeMainParts::PreCreateThreads.
     DCHECK(ui::ResourceBundle::HasSharedInstance());
+#endif
     version_info::Channel channel = ::GetChannel();
     policy::ConfigurationPolicyProvider* test_policy_provider =
         tests_hook::GetOverriddenPlatformPolicyProvider();
@@ -543,7 +531,7 @@ AccountProfileMapper* ApplicationContextImpl::GetAccountProfileMapper() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   if (!account_profile_mapper_) {
     account_profile_mapper_ = std::make_unique<AccountProfileMapper>(
-        GetSystemIdentityManager(), GetProfileManager());
+        GetSystemIdentityManager(), GetProfileManager(), GetLocalState());
   }
   return account_profile_mapper_.get();
 }
@@ -575,6 +563,15 @@ ApplicationContextImpl::GetAdditionalFeaturesController() {
         ios::provider::CreateAdditionalFeaturesController();
   }
   return additional_features_controller_.get();
+}
+
+auto_deletion::AutoDeletionService*
+ApplicationContextImpl::GetAutoDeletionService() {
+  if (!auto_deletion_service_) {
+    auto_deletion_service_ =
+        std::make_unique<auto_deletion::AutoDeletionService>(GetLocalState());
+  }
+  return auto_deletion_service_.get();
 }
 
 #if BUILDFLAG(BUILD_WITH_INTERNAL_OPTIMIZATION_GUIDE)
@@ -672,7 +669,7 @@ void ApplicationContextImpl::OnAppEnterState(AppState app_state) {
 
         case AppState::kBackgroundFromActive:
           if (history::HistoryService* history_service =
-                  ios::HistoryServiceFactory::GetForProfileIfExists(
+                  ios::HistoryServiceFactory::GetForProfile(
                       profile, ServiceAccessType::EXPLICIT_ACCESS)) {
             history_service->HandleBackgrounding();
           }
@@ -754,14 +751,27 @@ void ApplicationContextImpl::CreateGCMDriver() {
            base::TaskShutdownBehavior::SKIP_ON_SHUTDOWN}));
 
   gcm_driver_ = gcm::CreateGCMDriverDesktop(
-      base::WrapUnique(new gcm::GCMClientFactory), GetLocalState(), store_path,
-      // Because ApplicationContextImpl is destroyed after all WebThreads have
-      // been shut down, base::Unretained() is safe here.
-      base::BindRepeating(&RequestProxyResolvingSocketFactory,
-                          base::Unretained(this)),
+      std::make_unique<gcm::GCMClientFactory>(), GetLocalState(), store_path,
+      // This callback may be invoked on a background sequence, but it calls a
+      // method of ApplicationContextImpl which is a sequence-affine object,
+      // so wrap the call in BindPostTask(...) to ensure the method happens on
+      // the correct sequence.
+      base::BindPostTask(
+          base::SequencedTaskRunner::GetCurrentDefault(),
+          base::BindRepeating(
+              &ApplicationContextImpl::RequestProxyResolvingSocketFactory,
+              weak_ptr_factory_.GetWeakPtr())),
       GetSharedURLLoaderFactory(),
       GetApplicationContext()->GetNetworkConnectionTracker(), ::GetChannel(),
       IOSChromeGCMProfileServiceFactory::GetProductCategoryForSubtypes(),
       web::GetUIThreadTaskRunner({}), web::GetIOThreadTaskRunner({}),
       blocking_task_runner);
+}
+
+void ApplicationContextImpl::RequestProxyResolvingSocketFactory(
+    mojo::PendingReceiver<network::mojom::ProxyResolvingSocketFactory>
+        receiver) {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  network::mojom::NetworkContext* network_context = GetSystemNetworkContext();
+  network_context->CreateProxyResolvingSocketFactory(std::move(receiver));
 }

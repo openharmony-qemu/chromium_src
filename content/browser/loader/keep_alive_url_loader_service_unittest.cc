@@ -21,6 +21,7 @@
 #include "content/browser/storage_partition_impl.h"
 #include "content/public/browser/navigation_entry.h"
 #include "content/public/test/test_utils.h"
+#include "content/test/navigation_simulator_impl.h"
 #include "content/test/test_render_view_host.h"
 #include "content/test/test_web_contents.h"
 #include "mojo/public/cpp/bindings/associated_remote.h"
@@ -113,6 +114,8 @@ class MockReceiverURLLoaderClient : public network::mojom::URLLoaderClient {
 // `remote_url_loader_factory`.
 class FakeRemoteURLLoaderFactory {
  public:
+  static constexpr int kRequestId = 1;
+
   FakeRemoteURLLoaderFactory() = default;
   FakeRemoteURLLoaderFactory(const FakeRemoteURLLoaderFactory&) = delete;
   FakeRemoteURLLoaderFactory& operator=(const FakeRemoteURLLoaderFactory&) =
@@ -131,7 +134,7 @@ class FakeRemoteURLLoaderFactory {
       bool expect_success = true) {
     remote_url_loader_factory->CreateLoaderAndStart(
         remote_url_loader.BindNewPipeAndPassReceiver(),
-        /*request_id=*/1, /*options=*/0, request, std::move(client),
+        /*request_id=*/kRequestId, /*options=*/0, request, std::move(client),
         net::MutableNetworkTrafficAnnotationTag(TRAFFIC_ANNOTATION_FOR_TESTS));
     remote_url_loader_factory.FlushForTesting();
     ASSERT_EQ(remote_url_loader.is_connected(), expect_success);
@@ -346,10 +349,17 @@ class KeepAliveURLLoaderServiceTestBase : public RenderViewHostTestHarness {
         }));
     RenderViewHostTestHarness::SetUp();
 
+    test_web_contents()->NavigateAndCommit(GURL("https://example.com"));
+
+    pending_navigation_ = NavigationSimulator::CreateBrowserInitiated(
+        GURL("https://example.com"), web_contents());
+    pending_navigation_->ReadyToCommit();
+
     AddConnectSrcCSPToRFH(kTestRedirectRequestUrl);
   }
 
   void TearDown() override {
+    pending_navigation_.reset();
     network_url_loader_factory_ = nullptr;
     loader_service_ = nullptr;
     mojo::SetDefaultProcessErrorHandler(base::NullCallback());
@@ -359,6 +369,10 @@ class KeepAliveURLLoaderServiceTestBase : public RenderViewHostTestHarness {
 
   void ExpectMojoBadMessage(const std::string& message) {
     EXPECT_EQ(mojo_bad_message_, message);
+  }
+
+  NavigationHandle* GetNavigationHandle() {
+    return pending_navigation_->GetNavigationHandle();
   }
 
   // Asks KeepAliveURLLoaderService to bind a KeepAliveURLLoaderFactory to the
@@ -380,8 +394,7 @@ class KeepAliveURLLoaderServiceTestBase : public RenderViewHostTestHarness {
         static_cast<RenderFrameHostImpl*>(main_rfh())
             ->policy_container_host()
             ->Clone());
-    context->OnDidCommitNavigation(
-        static_cast<RenderFrameHostImpl*>(main_rfh())->GetWeakDocumentPtr());
+    context->OnDidCommitNavigation(GetNavigationHandle());
   }
 
   network::TestURLLoaderFactory::PendingRequest* GetLastPendingRequest() {
@@ -428,6 +441,7 @@ class KeepAliveURLLoaderServiceTestBase : public RenderViewHostTestHarness {
   // The test target.
   std::unique_ptr<KeepAliveURLLoaderService> loader_service_ = nullptr;
   std::optional<std::string> mojo_bad_message_;
+  std::unique_ptr<NavigationSimulator> pending_navigation_;
 };
 
 class KeepAliveURLLoaderServiceTest : public KeepAliveURLLoaderServiceTestBase {
@@ -556,8 +570,7 @@ TEST_F(KeepAliveURLLoaderServiceTest, LoadRequestAfterUpdateFactory) {
       static_cast<RenderFrameHostImpl*>(main_rfh())
           ->policy_container_host()
           ->Clone());
-  context->OnDidCommitNavigation(
-      static_cast<RenderFrameHostImpl*>(main_rfh())->GetWeakDocumentPtr());
+  context->OnDidCommitNavigation(GetNavigationHandle());
   {
     // Load a keepalive request. There should be no network loader created.
     MockReceiverURLLoaderClient renderer_loader_client;
@@ -576,6 +589,7 @@ TEST_F(KeepAliveURLLoaderServiceTest, LoadRequestAfterUpdateFactory) {
   auto pending_factory = std::make_unique<blink::PendingURLLoaderFactoryBundle>(
       factory.Unbind(), blink::PendingURLLoaderFactoryBundle::SchemeMap(),
       blink::PendingURLLoaderFactoryBundle::OriginMap(),
+      /*local_resource_loader_config=*/nullptr,
       /*bypass_redirect_checks=*/false);
   context->UpdateFactory(
       network::SharedURLLoaderFactory::Create(std::move(pending_factory)));
@@ -624,7 +638,6 @@ TEST_F(KeepAliveURLLoaderServiceTest,
   data_decoder::test::InProcessDataDecoder in_process_data_decoder;
 
   // Set up the Attribution Manager.
-  test_web_contents()->NavigateAndCommit(GURL("https://secure_impression.com"));
   auto mock_manager = std::make_unique<MockAttributionManager>();
   mock_manager->SetDataHostManager(
       std::make_unique<AttributionDataHostManagerImpl>(mock_manager.get()));
@@ -666,7 +679,6 @@ TEST_F(KeepAliveURLLoaderServiceTest,
 
 TEST_F(KeepAliveURLLoaderServiceTest, ForwardErrorToAttributionRequestHelper) {
   // Set up the Attribution Manager.
-  test_web_contents()->NavigateAndCommit(GURL("https://example.com"));
   auto mock_manager = std::make_unique<MockAttributionManager>();
   auto mock_data_host_manager =
       std::make_unique<MockAttributionDataHostManager>();
@@ -701,7 +713,6 @@ TEST_F(
     KeepAliveURLLoaderServiceTest,
     OnReceiveRedirectWithErrorRedirectMode_NotForwardedToAttributionRequestHelper) {
   // Set up the Attribution Manager.
-  test_web_contents()->NavigateAndCommit(GURL("https://example.com"));
   auto mock_manager = std::make_unique<MockAttributionManager>();
   auto mock_data_host_manager =
       std::make_unique<MockAttributionDataHostManager>();
@@ -1321,8 +1332,7 @@ class FetchLaterKeepAliveURLLoaderServiceTest
         static_cast<RenderFrameHostImpl*>(main_rfh())
             ->policy_container_host()
             ->Clone());
-    context->OnDidCommitNavigation(
-        static_cast<RenderFrameHostImpl*>(main_rfh())->GetWeakDocumentPtr());
+    context->OnDidCommitNavigation(GetNavigationHandle());
   }
 };
 
@@ -1459,23 +1469,14 @@ TEST_F(FetchLaterKeepAliveURLLoaderServiceTest, Shutdown) {
   EXPECT_EQ(network_url_loader_factory().NumPending(), 1);
 }
 
-// TODO(https://crbug.com/368570340)
-#if BUILDFLAG(IS_ANDROID)
-#define MAYBE_ForwardRedirectsAndResponseToAttributionRequestHelper \
-  DISABLED_ForwardRedirectsAndResponseToAttributionRequestHelper
-#else
-#define MAYBE_ForwardRedirectsAndResponseToAttributionRequestHelper \
-  ForwardRedirectsAndResponseToAttributionRequestHelper
-#endif
 TEST_F(FetchLaterKeepAliveURLLoaderServiceTest,
-       MAYBE_ForwardRedirectsAndResponseToAttributionRequestHelper) {
+       ForwardRedirectsAndResponseToAttributionRequestHelper) {
   // The Attribution Manager uses the DataDecoder service, which, when an
   // InProcessDataDecoer object exists, will route to an internal in-process
   // instance.
   data_decoder::test::InProcessDataDecoder in_process_data_decoder;
 
   // Set up the Attribution Manager.
-  test_web_contents()->NavigateAndCommit(GURL("https://secure_impression.com"));
   auto mock_manager = std::make_unique<MockAttributionManager>();
   mock_manager->SetDataHostManager(
       std::make_unique<AttributionDataHostManagerImpl>(mock_manager.get()));
@@ -1504,24 +1505,537 @@ TEST_F(FetchLaterKeepAliveURLLoaderServiceTest,
   // The network should now have created pending URLLoader.
   EXPECT_EQ(network_url_loader_factory().NumPending(), 1);
 
+  base::RunLoop run_loop_1;
+
   // Simluates receiving a redirect in the network service.
-  EXPECT_CALL(*mock_attribution_manager, HandleTrigger).Times(1);
+  EXPECT_CALL(*mock_attribution_manager, HandleTrigger)
+      .WillOnce([&](AttributionTrigger, GlobalRenderFrameHostId) {
+        run_loop_1.Quit();
+      });
   constexpr char kRegisterTriggerJson[] = R"json({ })json";
   GetLastPendingRequest()->client->OnReceiveRedirect(
       CreateRedirectInfo(GURL(kTestRedirectRequestUrl)),
       CreateResponseHead({{kAttributionReportingRegisterTriggerHeader,
                            kRegisterTriggerJson}}));
+  run_loop_1.Run();
+
+  base::RunLoop run_loop_2;
 
   // Simluates receiving response in the network service.
-  EXPECT_CALL(*mock_attribution_manager, HandleSource).Times(1);
+  EXPECT_CALL(*mock_attribution_manager, HandleSource)
+      .WillOnce(
+          [&](StorableSource, GlobalRenderFrameHostId) { run_loop_2.Quit(); });
   constexpr char kRegisterSourceJson[] =
       R"json({"destination":"https://destination.example"})json";
   GetLastPendingRequest()->client->OnReceiveResponse(
       CreateResponseHead(
           {{kAttributionReportingRegisterSourceHeader, kRegisterSourceJson}}),
       /*body=*/{}, /*cached_metadata=*/std::nullopt);
+  run_loop_2.Run();
+}
 
+class KeepAliveURLLoaderServiceRetryTest
+    : public KeepAliveURLLoaderServiceTestBase {
+ protected:
+  static constexpr int kMaxRetryCountForTesting = 10;
+  static constexpr base::TimeDelta kMinRetryDeltaForTesting = base::Seconds(10);
+  static constexpr double kMinRetryBackoffFactorForTesting = 10.0;
+  static constexpr base::TimeDelta kMaxRetryAgeForTesting = base::Days(1);
+
+  void SetUp() override {
+    feature_list().InitWithFeaturesAndParameters(
+        {{blink::features::kKeepAliveInBrowserMigration, {}},
+         {blink::features::kAttributionReportingInBrowserMigration, {}},
+         {blink::features::kFetchRetry,
+          {
+              {"max_retry_count",
+               base::NumberToString(kMaxRetryCountForTesting)},
+              {"min_retry_delta",
+               base::NumberToString(kMinRetryDeltaForTesting.InSeconds()) +
+                   "s"},
+              {"min_retry_backoff",
+               base::NumberToString(kMinRetryBackoffFactorForTesting)},
+              {"max_retry_age",
+               base::NumberToString(kMaxRetryAgeForTesting.InDays()) + "d"},
+          }}},
+        {});
+    KeepAliveURLLoaderServiceTestBase::SetUp();
+  }
+};
+
+// Test that setting retry options above the feature-param controlled limits
+// results in adjustment of some of the options.
+TEST_F(KeepAliveURLLoaderServiceRetryTest, AboveRetryLimits) {
+  FakeRemoteURLLoaderFactory renderer_loader_factory;
+  MockReceiverURLLoaderClient renderer_loader_client;
+  BindKeepAliveURLLoaderFactory(renderer_loader_factory);
+
+  auto resource_request = CreateResourceRequest(GURL(kTestRequestUrl));
+  network::FetchRetryOptions options;
+  options.max_attempts = kMaxRetryCountForTesting + 10;
+  options.initial_delay = kMinRetryDeltaForTesting + base::Seconds(10);
+  options.backoff_factor = kMinRetryBackoffFactorForTesting + 10.0;
+  options.max_age = kMaxRetryAgeForTesting + base::Seconds(10);
+  resource_request.fetch_retry_options = options;
+
+  // Loads keepalive request:
+  renderer_loader_factory.CreateLoaderAndStart(
+      resource_request, renderer_loader_client.BindNewPipeAndPassRemote());
+  ASSERT_EQ(network_url_loader_factory().NumPending(), 1);
+  ASSERT_EQ(loader_service().NumLoadersForTesting(), 1u);
+
+  base::WeakPtr<KeepAliveURLLoader> loader =
+      loader_service().GetLoaderWithRequestIdForTesting(
+          FakeRemoteURLLoaderFactory::kRequestId);
+  // Max attempt will adjust to the feature param-controlled max attempt,
+  // instead of using the requested max attempt.
+  EXPECT_NE(loader->GetMaxAttemptsForRetry(), options.max_attempts);
+  EXPECT_EQ(loader->GetMaxAttemptsForRetry(), kMaxRetryCountForTesting);
+
+  // Initial delay will follow the requested initial delay, since it's ok to
+  // exceed the feature param-controlled minimum initial delay.
+  EXPECT_EQ(loader->GetInitialTimeDeltaForRetry(), options.initial_delay);
+  EXPECT_NE(loader->GetInitialTimeDeltaForRetry(), kMinRetryDeltaForTesting);
+
+  // Backoff factor will follow the requested backoff factor, since it's ok to
+  // exceed the feature param-controlled minimum backoff factor.
+  EXPECT_EQ(loader->GetBackoffFactorForRetry(), options.backoff_factor);
+  EXPECT_NE(loader->GetBackoffFactorForRetry(),
+            kMinRetryBackoffFactorForTesting);
+
+  // Max age will adjust to the feature param-controlled max age,
+  // instead of using the requested max age.
+  EXPECT_NE(loader->GetMaxAgeForRetry(), options.max_age);
+  EXPECT_EQ(loader->GetMaxAgeForRetry(), kMaxRetryAgeForTesting);
+}
+
+// Test that setting retry options below the feature-param controlled limits
+// results in adjustment of some of the options.
+TEST_F(KeepAliveURLLoaderServiceRetryTest, BelowRetryLimits) {
+  FakeRemoteURLLoaderFactory renderer_loader_factory;
+  MockReceiverURLLoaderClient renderer_loader_client;
+  BindKeepAliveURLLoaderFactory(renderer_loader_factory);
+
+  auto resource_request = CreateResourceRequest(GURL(kTestRequestUrl));
+  network::FetchRetryOptions options;
+  options.max_attempts = kMaxRetryCountForTesting - 1;
+  options.initial_delay = kMinRetryDeltaForTesting - base::Milliseconds(10);
+  options.backoff_factor = kMinRetryBackoffFactorForTesting - 1.0;
+  options.max_age = kMaxRetryAgeForTesting - base::Seconds(10);
+  resource_request.fetch_retry_options = options;
+
+  // Loads keepalive request:
+  renderer_loader_factory.CreateLoaderAndStart(
+      resource_request, renderer_loader_client.BindNewPipeAndPassRemote());
+  ASSERT_EQ(network_url_loader_factory().NumPending(), 1);
+  ASSERT_EQ(loader_service().NumLoadersForTesting(), 1u);
+
+  base::WeakPtr<KeepAliveURLLoader> loader =
+      loader_service().GetLoaderWithRequestIdForTesting(
+          FakeRemoteURLLoaderFactory::kRequestId);
+  // Max attempt will follow the requested options, since it's ok to go below
+  // the feature param-controlled minimum max attempt.
+  EXPECT_EQ(loader->GetMaxAttemptsForRetry(), options.max_attempts);
+  EXPECT_NE(loader->GetMaxAttemptsForRetry(), kMaxRetryCountForTesting);
+
+  // Initial delay will adjust to the feature param-controlled min initial
+  // delay, instead of using the requested initial delay.
+  EXPECT_NE(loader->GetInitialTimeDeltaForRetry(), options.initial_delay);
+  EXPECT_EQ(loader->GetInitialTimeDeltaForRetry(), kMinRetryDeltaForTesting);
+
+  // Backoff factor will adjust to the feature param-controlled min backoff
+  // factor, instead of using the requested backoff factor.
+  EXPECT_NE(loader->GetBackoffFactorForRetry(), options.backoff_factor);
+  EXPECT_EQ(loader->GetBackoffFactorForRetry(),
+            kMinRetryBackoffFactorForTesting);
+
+  // Max age will follow the requested options, since it's ok to go below the
+  // feature param-controlled minimum max age.
+  EXPECT_EQ(loader->GetMaxAgeForRetry(), options.max_age);
+  EXPECT_NE(loader->GetMaxAgeForRetry(), kMaxRetryAgeForTesting);
+}
+
+// Test that setting only the max attempt would cause the other options to use
+// default values set by the feature params.
+TEST_F(KeepAliveURLLoaderServiceRetryTest, RetryLimitsDefaults) {
+  FakeRemoteURLLoaderFactory renderer_loader_factory;
+  MockReceiverURLLoaderClient renderer_loader_client;
+  BindKeepAliveURLLoaderFactory(renderer_loader_factory);
+
+  auto resource_request = CreateResourceRequest(GURL(kTestRequestUrl));
+  network::FetchRetryOptions options;
+  options.max_attempts = 1;
+  resource_request.fetch_retry_options = options;
+
+  // Loads keepalive request:
+  renderer_loader_factory.CreateLoaderAndStart(
+      resource_request, renderer_loader_client.BindNewPipeAndPassRemote());
+  ASSERT_EQ(network_url_loader_factory().NumPending(), 1);
+  ASSERT_EQ(loader_service().NumLoadersForTesting(), 1u);
+
+  base::WeakPtr<KeepAliveURLLoader> loader =
+      loader_service().GetLoaderWithRequestIdForTesting(
+          FakeRemoteURLLoaderFactory::kRequestId);
+  // Max attempt will follow the requested options.
+  EXPECT_EQ(loader->GetMaxAttemptsForRetry(), options.max_attempts);
+  EXPECT_NE(loader->GetMaxAttemptsForRetry(), kMaxRetryCountForTesting);
+
+  // All other options will use the feature param-controlled values.
+  EXPECT_EQ(loader->GetInitialTimeDeltaForRetry(), kMinRetryDeltaForTesting);
+  EXPECT_EQ(loader->GetBackoffFactorForRetry(),
+            kMinRetryBackoffFactorForTesting);
+  EXPECT_EQ(loader->GetMaxAgeForRetry(), kMaxRetryAgeForTesting);
+}
+
+// Test which errors are eligible for retry.
+TEST_F(KeepAliveURLLoaderServiceRetryTest, ErrorCodeRetryEligibility) {
+  FakeRemoteURLLoaderFactory renderer_loader_factory;
+  MockReceiverURLLoaderClient renderer_loader_client;
+  BindKeepAliveURLLoaderFactory(renderer_loader_factory);
+
+  auto resource_request = CreateResourceRequest(GURL(kTestRequestUrl));
+  network::FetchRetryOptions options;
+  options.max_attempts = 1;
+  resource_request.fetch_retry_options = options;
+
+  // Loads keepalive request:
+  renderer_loader_factory.CreateLoaderAndStart(
+      resource_request, renderer_loader_client.BindNewPipeAndPassRemote());
+  ASSERT_EQ(network_url_loader_factory().NumPending(), 1);
+  ASSERT_EQ(loader_service().NumLoadersForTesting(), 1u);
+
+  base::WeakPtr<KeepAliveURLLoader> loader =
+      loader_service().GetLoaderWithRequestIdForTesting(
+          FakeRemoteURLLoaderFactory::kRequestId);
+  net::Error eligible_errors[] = {
+      net::ERR_TIMED_OUT, net::ERR_CONNECTION_TIMED_OUT,
+      net::ERR_CONNECTION_CLOSED, net::ERR_CONNECTION_REFUSED,
+      net::ERR_CONNECTION_RESET, net::ERR_CONNECTION_FAILED,
+      net::ERR_ADDRESS_UNREACHABLE, net::ERR_NETWORK_CHANGED,
+      // Proxy/tunnel-specific connection issues.
+      net::ERR_TUNNEL_CONNECTION_FAILED, net::ERR_PROXY_CONNECTION_FAILED,
+      net::ERR_SOCKS_CONNECTION_FAILED, net::ERR_HTTP2_PING_FAILED,
+      net::ERR_HTTP2_PROTOCOL_ERROR, net::ERR_QUIC_PROTOCOL_ERROR,
+      // DNS failures.
+      net::ERR_NAME_NOT_RESOLVED, net::ERR_INTERNET_DISCONNECTED,
+      net::ERR_NAME_RESOLUTION_FAILED};
+  for (net::Error error : eligible_errors) {
+    ASSERT_TRUE(
+        loader->IsEligibleForRetry(network::URLLoaderCompletionStatus(error)))
+        << " Should be eligible for retry: " << error;
+  }
+  // Not passing an error code is possible for disconnect loader timeout
+  // failure.
+  ASSERT_TRUE(loader->IsEligibleForRetry(std::nullopt));
+  // Other error codes are not eligible for retry. Testing a sample here.
+  ASSERT_FALSE(
+      loader->IsEligibleForRetry(network::URLLoaderCompletionStatus(net::OK)));
+  ASSERT_FALSE(loader->IsEligibleForRetry(
+      network::URLLoaderCompletionStatus(net::ERR_ABORTED)));
+}
+
+// Test failing with an eligible error with OnComplete causes the fetch to be
+// retried.
+TEST_F(KeepAliveURLLoaderServiceRetryTest, OnCompleteWillBeRetried) {
+  FakeRemoteURLLoaderFactory renderer_loader_factory;
+  MockReceiverURLLoaderClient renderer_loader_client;
+  BindKeepAliveURLLoaderFactory(renderer_loader_factory);
+
+  auto resource_request = CreateResourceRequest(GURL(kTestRequestUrl));
+  network::FetchRetryOptions options;
+  options.max_attempts = 1;
+  resource_request.fetch_retry_options = options;
+
+  // Loads keepalive request:
+  renderer_loader_factory.CreateLoaderAndStart(
+      resource_request, renderer_loader_client.BindNewPipeAndPassRemote());
+  ASSERT_EQ(network_url_loader_factory().NumPending(), 1);
+  ASSERT_EQ(loader_service().NumLoadersForTesting(), 1u);
+
+  base::WeakPtr<KeepAliveURLLoader> loader =
+      loader_service().GetLoaderWithRequestIdForTesting(
+          FakeRemoteURLLoaderFactory::kRequestId);
+  loader->OnComplete(
+      network::URLLoaderCompletionStatus(net::ERR_NETWORK_CHANGED));
+  EXPECT_TRUE(loader->IsAttemptingRetry());
+}
+// Test which errors are eligible for retry when opting in to retry only if the
+// server is not reached yet.
+TEST_F(KeepAliveURLLoaderServiceRetryTest,
+       ErrorCodeRetryEligibility_OnlyIfServerUnreached) {
+  FakeRemoteURLLoaderFactory renderer_loader_factory;
+  MockReceiverURLLoaderClient renderer_loader_client;
+  BindKeepAliveURLLoaderFactory(renderer_loader_factory);
+
+  auto resource_request = CreateResourceRequest(GURL(kTestRequestUrl));
+  network::FetchRetryOptions options;
+  options.max_attempts = 1;
+  options.retry_only_if_server_unreached = true;
+  resource_request.fetch_retry_options = options;
+
+  // Loads keepalive request:
+  renderer_loader_factory.CreateLoaderAndStart(
+      resource_request, renderer_loader_client.BindNewPipeAndPassRemote());
+  ASSERT_EQ(network_url_loader_factory().NumPending(), 1);
+  ASSERT_EQ(loader_service().NumLoadersForTesting(), 1u);
+
+  base::WeakPtr<KeepAliveURLLoader> loader =
+      loader_service().GetLoaderWithRequestIdForTesting(
+          FakeRemoteURLLoaderFactory::kRequestId);
+  net::Error eligible_errors[] = {
+      net::ERR_CONNECTION_REFUSED,       net::ERR_ADDRESS_UNREACHABLE,
+      net::ERR_TUNNEL_CONNECTION_FAILED, net::ERR_PROXY_CONNECTION_FAILED,
+      net::ERR_SOCKS_CONNECTION_FAILED,  net::ERR_NAME_NOT_RESOLVED,
+      net::ERR_NAME_RESOLUTION_FAILED};
+  for (net::Error error : eligible_errors) {
+    ASSERT_TRUE(
+        loader->IsEligibleForRetry(network::URLLoaderCompletionStatus(error)))
+        << " Should be eligible for retry: " << error;
+  }
+  net::Error ineligible_errors[] = {
+      net::ERR_TIMED_OUT, net::ERR_CONNECTION_TIMED_OUT,
+      net::ERR_CONNECTION_CLOSED, net::ERR_CONNECTION_RESET,
+      net::ERR_CONNECTION_FAILED, net::ERR_NETWORK_CHANGED,
+      // Proxy/tunnel-specific connection issues.
+      net::ERR_HTTP2_PING_FAILED, net::ERR_HTTP2_PROTOCOL_ERROR,
+      net::ERR_QUIC_PROTOCOL_ERROR,
+      // DNS failures.
+      net::ERR_INTERNET_DISCONNECTED};
+  for (net::Error error : ineligible_errors) {
+    ASSERT_FALSE(
+        loader->IsEligibleForRetry(network::URLLoaderCompletionStatus(error)))
+        << " Should not be eligible for retry: " << error;
+  }
+  // Not passing an error code is possible for disconnect loader timeout
+  // failure. We can't guarantee that the server has not been reached yet since
+  // there's no error information.
+  ASSERT_FALSE(loader->IsEligibleForRetry(std::nullopt));
+  // Other error codes are also not eligible for retry. Testing a sample here.
+  ASSERT_FALSE(
+      loader->IsEligibleForRetry(network::URLLoaderCompletionStatus(net::OK)));
+  ASSERT_FALSE(loader->IsEligibleForRetry(
+      network::URLLoaderCompletionStatus(net::ERR_ABORTED)));
+}
+
+// Test failing with an eligible error with CancelWithStatus causes the fetch to
+// be retreid.
+TEST_F(KeepAliveURLLoaderServiceRetryTest, CancelWithStatusWillBeRetried) {
+  FakeRemoteURLLoaderFactory renderer_loader_factory;
+  MockReceiverURLLoaderClient renderer_loader_client;
+  BindKeepAliveURLLoaderFactory(renderer_loader_factory);
+
+  auto resource_request = CreateResourceRequest(GURL(kTestRequestUrl));
+  network::FetchRetryOptions options;
+  options.max_attempts = 1;
+  resource_request.fetch_retry_options = options;
+
+  // Loads keepalive request:
+  renderer_loader_factory.CreateLoaderAndStart(
+      resource_request, renderer_loader_client.BindNewPipeAndPassRemote());
+  ASSERT_EQ(network_url_loader_factory().NumPending(), 1);
+  ASSERT_EQ(loader_service().NumLoadersForTesting(), 1u);
+
+  base::WeakPtr<KeepAliveURLLoader> loader =
+      loader_service().GetLoaderWithRequestIdForTesting(
+          FakeRemoteURLLoaderFactory::kRequestId);
+  loader->CancelWithStatus(
+      network::URLLoaderCompletionStatus(net::ERR_NETWORK_CHANGED));
+  EXPECT_TRUE(loader->IsAttemptingRetry());
+}
+
+// Test that failing a request with no retry options won't be retried.
+TEST_F(KeepAliveURLLoaderServiceRetryTest, NoRetryOptionsWillNotBeRetried) {
+  FakeRemoteURLLoaderFactory renderer_loader_factory;
+  MockReceiverURLLoaderClient renderer_loader_client;
+  BindKeepAliveURLLoaderFactory(renderer_loader_factory);
+
+  auto resource_request = CreateResourceRequest(GURL(kTestRequestUrl));
+  // Loads keepalive request:
+  renderer_loader_factory.CreateLoaderAndStart(
+      resource_request, renderer_loader_client.BindNewPipeAndPassRemote());
+  ASSERT_EQ(network_url_loader_factory().NumPending(), 1);
+  ASSERT_EQ(loader_service().NumLoadersForTesting(), 1u);
+
+  base::WeakPtr<KeepAliveURLLoader> loader =
+      loader_service().GetLoaderWithRequestIdForTesting(
+          FakeRemoteURLLoaderFactory::kRequestId);
+  loader->OnComplete(
+      network::URLLoaderCompletionStatus(net::ERR_NETWORK_CHANGED));
+  // The loader is deleted as it can't be retried.
+  EXPECT_FALSE(loader.get());
+}
+
+// Test that failing a request to non-HTTPs will not be retried.
+TEST_F(KeepAliveURLLoaderServiceRetryTest, NonHTTPSWillNotBeRetried) {
+  FakeRemoteURLLoaderFactory renderer_loader_factory;
+  MockReceiverURLLoaderClient renderer_loader_client;
+  BindKeepAliveURLLoaderFactory(renderer_loader_factory);
+
+  auto resource_request = CreateResourceRequest(GURL("http://foo.com"));
+  network::FetchRetryOptions options;
+  options.max_attempts = 1;
+  resource_request.fetch_retry_options = options;
+
+  // Loads keepalive request:
+  renderer_loader_factory.CreateLoaderAndStart(
+      resource_request, renderer_loader_client.BindNewPipeAndPassRemote());
+  ASSERT_EQ(network_url_loader_factory().NumPending(), 1);
+  ASSERT_EQ(loader_service().NumLoadersForTesting(), 1u);
+
+  base::WeakPtr<KeepAliveURLLoader> loader =
+      loader_service().GetLoaderWithRequestIdForTesting(
+          FakeRemoteURLLoaderFactory::kRequestId);
+  loader->OnComplete(
+      network::URLLoaderCompletionStatus(net::ERR_NETWORK_CHANGED));
+  // The loader is deleted as it can't be retried.
+  EXPECT_FALSE(loader.get());
+}
+
+// Test that failing a request using a POST method will not be retried if the
+// retry options doesn't specify it wants to retry non-idempotent failures.
+TEST_F(KeepAliveURLLoaderServiceRetryTest,
+       POSTWillNotBeRetriedUnlessRequested) {
+  FakeRemoteURLLoaderFactory renderer_loader_factory;
+  MockReceiverURLLoaderClient renderer_loader_client;
+  BindKeepAliveURLLoaderFactory(renderer_loader_factory);
+
+  auto resource_request = CreateResourceRequest(GURL(kTestRequestUrl));
+  network::FetchRetryOptions options;
+  options.max_attempts = 1;
+  resource_request.fetch_retry_options = options;
+  resource_request.method = "POST";
+
+  // Loads keepalive request:
+  renderer_loader_factory.CreateLoaderAndStart(
+      resource_request, renderer_loader_client.BindNewPipeAndPassRemote());
+  ASSERT_EQ(network_url_loader_factory().NumPending(), 1);
+  ASSERT_EQ(loader_service().NumLoadersForTesting(), 1u);
+
+  base::WeakPtr<KeepAliveURLLoader> loader =
+      loader_service().GetLoaderWithRequestIdForTesting(
+          FakeRemoteURLLoaderFactory::kRequestId);
+  loader->OnComplete(
+      network::URLLoaderCompletionStatus(net::ERR_NETWORK_CHANGED));
+  // The loader is deleted as it can't be retried.
+  EXPECT_FALSE(loader.get());
+}
+
+// Test that failing a request after it has received a response will not be
+// retried.
+TEST_F(KeepAliveURLLoaderServiceRetryTest, ReceivedResponseWillNotBeRetried) {
+  FakeRemoteURLLoaderFactory renderer_loader_factory;
+  MockReceiverURLLoaderClient renderer_loader_client;
+  BindKeepAliveURLLoaderFactory(renderer_loader_factory);
+
+  auto resource_request = CreateResourceRequest(GURL(kTestRequestUrl));
+  network::FetchRetryOptions options;
+  options.max_attempts = 1;
+  resource_request.fetch_retry_options = options;
+
+  // Loads keepalive request:
+  renderer_loader_factory.CreateLoaderAndStart(
+      resource_request, renderer_loader_client.BindNewPipeAndPassRemote());
+  ASSERT_EQ(network_url_loader_factory().NumPending(), 1);
+  ASSERT_EQ(loader_service().NumLoadersForTesting(), 1u);
+
+  base::WeakPtr<KeepAliveURLLoader> loader =
+      loader_service().GetLoaderWithRequestIdForTesting(
+          FakeRemoteURLLoaderFactory::kRequestId);
+  loader->OnReceiveResponse(
+      CreateResponseHead({{kTestResponseHeaderName, kTestResponseHeaderValue}}),
+      /*body=*/{}, std::nullopt);
+  loader->OnComplete(
+      network::URLLoaderCompletionStatus(net::ERR_NETWORK_CHANGED));
+
+  // The loader can't be retried. Note that it won't be immediately deleted like
+  // in other cases, because it will forward the response to the renderer.
+  EXPECT_TRUE(loader->IsForwardURLLoadStarted());
+}
+
+// Test that hitting the redirect limit won't trigger a retry.
+TEST_F(KeepAliveURLLoaderServiceRetryTest,
+       ExceededRedirectLimitWillNotBeRetried) {
+  FakeRemoteURLLoaderFactory renderer_loader_factory;
+  MockReceiverURLLoaderClient renderer_loader_client;
+  BindKeepAliveURLLoaderFactory(renderer_loader_factory);
+
+  auto resource_request = CreateResourceRequest(GURL(kTestRequestUrl));
+  network::FetchRetryOptions options;
+  options.max_attempts = 2;
+  resource_request.fetch_retry_options = options;
+
+  // Loads keepalive request:
+  renderer_loader_factory.CreateLoaderAndStart(
+      resource_request, renderer_loader_client.BindNewPipeAndPassRemote());
+  ASSERT_EQ(network_url_loader_factory().NumPending(), 1);
+  ASSERT_EQ(loader_service().NumLoadersForTesting(), 1u);
+
+  base::WeakPtr<KeepAliveURLLoader> loader =
+      loader_service().GetLoaderWithRequestIdForTesting(
+          FakeRemoteURLLoaderFactory::kRequestId);
+
+  // Simulate hitting kMaxRedirects - 1 redirects, then failing the request.
+  for (int i = 1; i < net::URLRequest::kMaxRedirects; ++i) {
+    loader->EndReceiveRedirect(
+        CreateRedirectInfo(GURL(kTestRedirectRequestUrl)),
+        CreateResponseHead(
+            {{kTestResponseHeaderName, kTestResponseHeaderValue}}));
+  }
+  loader->OnComplete(
+      network::URLLoaderCompletionStatus(net::ERR_NETWORK_CHANGED));
+  // The load should be eligible for retry still.
+  EXPECT_TRUE(loader->IsAttemptingRetry());
+  EXPECT_FALSE(loader->IsForwardURLLoadStarted());
+
+  // But if we hit another redirect, the loader will fail with
+  // TOO_MANY_REDIRECTS, which is not retriable.
+  loader->EndReceiveRedirect(CreateRedirectInfo(GURL(kTestRedirectRequestUrl)),
+                             CreateResponseHead({{kTestResponseHeaderName,
+                                                  kTestResponseHeaderValue}}));
+
+  // The loader can't be retried. Note that it won't be immediately deleted like
+  // in other cases, because it will forward the redirects to the renderer.
+  EXPECT_TRUE(loader->IsForwardURLLoadStarted());
+}
+
+// Check that a retrying loader will be deleted when it reaches max age.
+TEST_F(KeepAliveURLLoaderServiceRetryTest, SelfDeletionOnMaxAge) {
+  FakeRemoteURLLoaderFactory renderer_loader_factory;
+  MockReceiverURLLoaderClient renderer_loader_client;
+  BindKeepAliveURLLoaderFactory(renderer_loader_factory);
+
+  auto resource_request = CreateResourceRequest(GURL(kTestRequestUrl));
+  network::FetchRetryOptions options;
+  options.max_attempts = 10;
+  options.max_age = base::Seconds(10);
+  resource_request.fetch_retry_options = options;
+
+  // Loads keepalive request:
+  renderer_loader_factory.CreateLoaderAndStart(
+      resource_request, renderer_loader_client.BindNewPipeAndPassRemote());
+  ASSERT_EQ(network_url_loader_factory().NumPending(), 1);
+  ASSERT_EQ(loader_service().NumLoadersForTesting(), 1u);
+
+  // Simmulate failure that will cause the loader to attempt retry.
+  base::WeakPtr<KeepAliveURLLoader> loader =
+      loader_service().GetLoaderWithRequestIdForTesting(
+          FakeRemoteURLLoaderFactory::kRequestId);
+  loader->OnComplete(
+      network::URLLoaderCompletionStatus(net::ERR_NETWORK_CHANGED));
+  EXPECT_TRUE(loader->IsAttemptingRetry());
+
+  // Fast forwards to just before the max age timeout fires.
+  task_environment()->FastForwardBy(options.max_age.value() - base::Seconds(5));
+  EXPECT_EQ(loader_service().NumLoadersForTesting(), 1u);
+  EXPECT_TRUE(loader->IsAttemptingRetry());
+
+  // Fast forward to after the max age timeout fires.
+  task_environment()->FastForwardBy(base::Seconds(10));
   base::RunLoop().RunUntilIdle();
+
+  // The loader should be deleted after hitting max age.
+  EXPECT_EQ(loader_service().NumLoadersForTesting(), 0u);
+  EXPECT_FALSE(loader.get());
 }
 
 }  // namespace content

@@ -21,6 +21,7 @@
 #import "ios/chrome/browser/price_insights/model/price_insights_model.h"
 #import "ios/chrome/browser/price_insights/ui/price_insights_cell.h"
 #import "ios/chrome/browser/price_insights/ui/price_insights_item.h"
+#import "ios/chrome/browser/price_notifications/ui_bundled/price_notifications_price_tracking_mediator.h"
 #import "ios/chrome/browser/shared/coordinator/alert/alert_coordinator.h"
 #import "ios/chrome/browser/shared/model/application_context/application_context.h"
 #import "ios/chrome/browser/shared/model/browser/browser.h"
@@ -28,9 +29,8 @@
 #import "ios/chrome/browser/shared/model/web_state_list/web_state_list.h"
 #import "ios/chrome/browser/shared/public/commands/command_dispatcher.h"
 #import "ios/chrome/browser/shared/public/commands/contextual_sheet_commands.h"
-#import "ios/chrome/browser/shared/public/commands/price_notifications_commands.h"
+#import "ios/chrome/browser/shared/public/commands/price_tracked_items_commands.h"
 #import "ios/chrome/browser/shared/public/commands/snackbar_commands.h"
-#import "ios/chrome/browser/ui/price_notifications/price_notifications_price_tracking_mediator.h"
 #import "ios/chrome/grit/ios_branded_strings.h"
 #import "ios/chrome/grit/ios_strings.h"
 #import "ios/web/public/web_state.h"
@@ -351,8 +351,8 @@ NSDate* getNSDateFromString(std::string date) {
 // Callback invoked when the notification snackbar closes.
 - (void)onPriceNotificationSnackBarClosed {
   CommandDispatcher* dispatcher = self.browser->GetCommandDispatcher();
-  __weak id<PriceNotificationsCommands> weakPriceNotificationsHandler =
-      HandlerForProtocol(dispatcher, PriceNotificationsCommands);
+  __weak id<PriceTrackedItemsCommands> weakPriceNotificationsHandler =
+      HandlerForProtocol(dispatcher, PriceTrackedItemsCommands);
   __weak id<ContextualSheetCommands> weakContextualSheetHandler =
       HandlerForProtocol(dispatcher, ContextualSheetCommands);
 
@@ -361,7 +361,7 @@ NSDate* getNSDateFromString(std::string date) {
       "IOS.ContextualPanel.DismissedReason",
       ContextualPanelDismissedReason::BlockInteraction);
   [weakContextualSheetHandler closeContextualSheet];
-  [weakPriceNotificationsHandler showPriceNotifications];
+  [weakPriceNotificationsHandler showPriceTrackedItemsWithCurrentPage];
 }
 
 @end

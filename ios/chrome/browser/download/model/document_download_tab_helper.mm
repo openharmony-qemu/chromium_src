@@ -188,6 +188,10 @@ void DocumentDownloadTabHelper::PageLoaded(
   GURL url = web_state->GetLastCommittedURL();
   should_trigger = should_trigger && url.SchemeIsHTTPOrHTTPS();
 
+  // Only trigger when download is not restricted.
+  should_trigger = should_trigger &&
+                   !DownloadManagerTabHelper::ShouldRestrictDownload(web_state);
+
   if (should_trigger) {
     base::UmaHistogramEnumeration(kIOSDocumentDownloadMimeType,
                                   GetDownloadMimeTypeResultFromMimeType(
@@ -356,5 +360,3 @@ void DocumentDownloadTabHelper::OnPreviousTaskDeleted() {
   }
   AttachFullscreen();
 }
-
-WEB_STATE_USER_DATA_KEY_IMPL(DocumentDownloadTabHelper)

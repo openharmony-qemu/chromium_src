@@ -6,6 +6,7 @@
 
 #include <stddef.h>
 
+#include <algorithm>
 #include <limits>
 #include <optional>
 #include <string>
@@ -18,7 +19,6 @@
 #include "base/metrics/histogram_base.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/notreached.h"
-#include "base/ranges/algorithm.h"
 #include "base/strings/string_util.h"
 #include "base/time/time.h"
 #include "base/types/expected.h"
@@ -70,7 +70,7 @@ base::expected<void, FilterValuesError> ValidateForSource(
 }
 
 // Records the Conversions.FiltersPerFilterData metric.
-void RecordFiltersPerFilterData(base::HistogramBase::Sample count) {
+void RecordFiltersPerFilterData(base::HistogramBase::Sample32 count) {
   const int kExclusiveMaxHistogramValue = 101;
 
   static_assert(
@@ -84,7 +84,7 @@ void RecordFiltersPerFilterData(base::HistogramBase::Sample count) {
 }
 
 // Records the Conversions.ValuesPerFilter metric.
-void RecordValuesPerFilter(base::HistogramBase::Sample count) {
+void RecordValuesPerFilter(base::HistogramBase::Sample32 count) {
   const int kExclusiveMaxHistogramValue = 101;
 
   static_assert(kMaxValuesPerFilter < kExclusiveMaxHistogramValue,
@@ -188,8 +188,7 @@ base::expected<FilterData, SourceRegistrationError> FilterData::FromJSON(
   }
 
   if (dict->contains(kSourceTypeFilterKey)) {
-    return base::unexpected(
-        SourceRegistrationError::kFilterDataKeyReserved);
+    return base::unexpected(SourceRegistrationError::kFilterDataKeyReserved);
   }
 
   const auto map_errors = [](FilterValuesError error) {
@@ -240,8 +239,8 @@ base::Value::Dict FilterData::ToJson() const {
 }
 
 bool FilterData::Matches(mojom::SourceType source_type,
-                         const base::Time& source_time,
-                         const base::Time& trigger_time,
+                         base::Time source_time,
+                         base::Time trigger_time,
                          const FiltersDisjunction& filters,
                          bool negated) const {
   if (filters.empty()) {
@@ -265,7 +264,7 @@ bool FilterData::Matches(mojom::SourceType source_type,
   // If the filters are negated, the behavior should be that every single filter
   // key does not match between the two (negating the function result is not
   // sufficient by the API definition).
-  return base::ranges::any_of(filters, [&](const FilterConfig& config) {
+  return std::ranges::any_of(filters, [&](const FilterConfig& config) {
     if (config.lookback_window()) {
       if (duration_since_source_registration >
           config.lookback_window().value()) {
@@ -277,10 +276,10 @@ bool FilterData::Matches(mojom::SourceType source_type,
       }
     }
 
-    return base::ranges::all_of(
+    return std::ranges::all_of(
         config.filter_values(), [&](const auto& trigger_filter) {
           if (trigger_filter.first == kSourceTypeFilterKey) {
-            bool has_intersection = base::ranges::any_of(
+            bool has_intersection = std::ranges::any_of(
                 trigger_filter.second, [&](const std::string& value) {
                   return value == SourceTypeName(source_type);
                 });
@@ -302,7 +301,7 @@ bool FilterData::Matches(mojom::SourceType source_type,
             return negated != source_filter->second.empty();
           }
 
-          bool has_intersection = base::ranges::any_of(
+          bool has_intersection = std::ranges::any_of(
               trigger_filter.second, [&](const std::string& value) {
                 return base::Contains(source_filter->second, value);
               });
@@ -314,16 +313,16 @@ bool FilterData::Matches(mojom::SourceType source_type,
 }
 
 bool FilterData::MatchesForTesting(mojom::SourceType source_type,
-                                   const base::Time& source_time,
-                                   const base::Time& trigger_time,
+                                   base::Time source_time,
+                                   base::Time trigger_time,
                                    const FiltersDisjunction& filters,
                                    bool negated) const {
   return Matches(source_type, source_time, trigger_time, filters, negated);
 }
 
 bool FilterData::Matches(mojom::SourceType source_type,
-                         const base::Time& source_time,
-                         const base::Time& trigger_time,
+                         base::Time source_time,
+                         base::Time trigger_time,
                          const FilterPair& filters) const {
   return Matches(source_type, source_time, trigger_time, filters.positive,
                  /*negated=*/false) &&

@@ -1,10 +1,10 @@
 Package: libcupsimage2
 Source: cups
-Version: 2.3.3op2-3+deb11u2
+Version: 2.3.3op2-3+deb11u8
 Architecture: amd64
 Maintainer: Debian Printing Team <debian-printing@lists.debian.org>
-Installed-Size: 148
-Depends: libcups2 (= 2.3.3op2-3+deb11u2), libc6 (>= 2.2.5)
+Installed-Size: 149
+Depends: libcups2 (= 2.3.3op2-3+deb11u8), libc6 (>= 2.2.5)
 Recommends: libcupsfilters1
 Section: libs
 Priority: optional

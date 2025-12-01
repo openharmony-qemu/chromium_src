@@ -2,42 +2,29 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import type {String16} from '//resources/mojo/mojo/public/mojom/base/string16.mojom-webui.js';
 import type {Uuid} from '//resources/mojo/mojo/public/mojom/base/uuid.mojom-webui.js';
 import type {Url} from '//resources/mojo/url/mojom/url.mojom-webui.js';
 
-import type {ProductSpecificationsSet} from './shared.mojom-webui.js';
-import type {BookmarkProductInfo, PriceInsightsInfo, ProductInfo, ProductSpecifications, ProductSpecificationsFeatureState, UrlInfo, UserFeedback} from './shopping_service.mojom-webui.js';
-import {PageCallbackRouter, ShoppingServiceHandlerFactory, ShoppingServiceHandlerRemote} from './shopping_service.mojom-webui.js';
+import type {ProductInfo, ProductSpecificationsSet} from './shared.mojom-webui.js';
+import type {PriceInsightsInfo, ProductSpecifications, ProductSpecificationsFeatureState, UrlInfo, UserFeedback} from './shopping_service.mojom-webui.js';
+import {ShoppingServiceHandlerFactory, ShoppingServiceHandlerRemote} from './shopping_service.mojom-webui.js';
 
 let instance: ShoppingServiceBrowserProxy|null = null;
 
 export interface ShoppingServiceBrowserProxy {
-  getAllPriceTrackedBookmarkProductInfo():
-      Promise<{productInfos: BookmarkProductInfo[]}>;
-  getAllShoppingBookmarkProductInfo():
-      Promise<{productInfos: BookmarkProductInfo[]}>;
-  trackPriceForBookmark(bookmarkId: bigint): void;
-  untrackPriceForBookmark(bookmarkId: bigint): void;
   getProductInfoForCurrentUrl(): Promise<{productInfo: ProductInfo}>;
   getPriceInsightsInfoForCurrentUrl():
       Promise<{priceInsightsInfo: PriceInsightsInfo}>;
-  showInsightsSidePanelUi(): void;
   getUrlInfosForProductTabs(): Promise<{urlInfos: UrlInfo[]}>;
   getUrlInfosForRecentlyViewedTabs(): Promise<{urlInfos: UrlInfo[]}>;
   isShoppingListEligible(): Promise<{eligible: boolean}>;
-  getShoppingCollectionBookmarkFolderId(): Promise<{collectionId: bigint}>;
   getPriceTrackingStatusForCurrentUrl(): Promise<{tracked: boolean}>;
-  setPriceTrackingStatusForCurrentUrl(track: boolean): void;
   openUrlInNewTab(url: Url): void;
   switchToOrOpenTab(url: Url): void;
-  getParentBookmarkFolderNameForCurrentUrl(): Promise<{name: String16}>;
-  showBookmarkEditorForCurrentUrl(): void;
-  showFeedbackForPriceInsights(): void;
-  getCallbackRouter(): PageCallbackRouter;
   getPriceInsightsInfoForUrl(url: Url):
       Promise<{priceInsightsInfo: PriceInsightsInfo}>;
   getProductInfoForUrl(url: Url): Promise<{productInfo: ProductInfo}>;
+  getProductInfoForUrls(urls: Url[]): Promise<{productInfos: ProductInfo[]}>;
   getProductSpecificationsForUrls(urls: Url[]):
       Promise<{productSpecs: ProductSpecifications}>;
   getAllProductSpecificationsSets():
@@ -59,33 +46,13 @@ export interface ShoppingServiceBrowserProxy {
 export class ShoppingServiceBrowserProxyImpl implements
     ShoppingServiceBrowserProxy {
   handler: ShoppingServiceHandlerRemote;
-  callbackRouter: PageCallbackRouter;
 
   constructor() {
-    this.callbackRouter = new PageCallbackRouter();
-
     this.handler = new ShoppingServiceHandlerRemote();
 
     const factory = ShoppingServiceHandlerFactory.getRemote();
     factory.createShoppingServiceHandler(
-        this.callbackRouter.$.bindNewPipeAndPassRemote(),
         this.handler.$.bindNewPipeAndPassReceiver());
-  }
-
-  getAllPriceTrackedBookmarkProductInfo() {
-    return this.handler.getAllPriceTrackedBookmarkProductInfo();
-  }
-
-  getAllShoppingBookmarkProductInfo() {
-    return this.handler.getAllShoppingBookmarkProductInfo();
-  }
-
-  trackPriceForBookmark(bookmarkId: bigint) {
-    this.handler.trackPriceForBookmark(bookmarkId);
-  }
-
-  untrackPriceForBookmark(bookmarkId: bigint) {
-    this.handler.untrackPriceForBookmark(bookmarkId);
   }
 
   getProductInfoForCurrentUrl() {
@@ -94,6 +61,10 @@ export class ShoppingServiceBrowserProxyImpl implements
 
   getProductInfoForUrl(url: Url) {
     return this.handler.getProductInfoForUrl(url);
+  }
+
+  getProductInfoForUrls(urls: Url[]) {
+    return this.handler.getProductInfoForUrls(urls);
   }
 
   getPriceInsightsInfoForCurrentUrl() {
@@ -116,24 +87,12 @@ export class ShoppingServiceBrowserProxyImpl implements
     return this.handler.getUrlInfosForRecentlyViewedTabs();
   }
 
-  showInsightsSidePanelUi() {
-    this.handler.showInsightsSidePanelUI();
-  }
-
   isShoppingListEligible() {
     return this.handler.isShoppingListEligible();
   }
 
-  getShoppingCollectionBookmarkFolderId() {
-    return this.handler.getShoppingCollectionBookmarkFolderId();
-  }
-
   getPriceTrackingStatusForCurrentUrl() {
     return this.handler.getPriceTrackingStatusForCurrentUrl();
-  }
-
-  setPriceTrackingStatusForCurrentUrl(track: boolean) {
-    this.handler.setPriceTrackingStatusForCurrentUrl(track);
   }
 
   openUrlInNewTab(url: Url) {
@@ -142,18 +101,6 @@ export class ShoppingServiceBrowserProxyImpl implements
 
   switchToOrOpenTab(url: Url) {
     this.handler.switchToOrOpenTab(url);
-  }
-
-  getParentBookmarkFolderNameForCurrentUrl() {
-    return this.handler.getParentBookmarkFolderNameForCurrentUrl();
-  }
-
-  showBookmarkEditorForCurrentUrl() {
-    this.handler.showBookmarkEditorForCurrentUrl();
-  }
-
-  showFeedbackForPriceInsights() {
-    this.handler.showFeedbackForPriceInsights();
   }
 
   getAllProductSpecificationsSets() {
@@ -186,10 +133,6 @@ export class ShoppingServiceBrowserProxyImpl implements
 
   getProductSpecificationsFeatureState() {
     return this.handler.getProductSpecificationsFeatureState();
-  }
-
-  getCallbackRouter() {
-    return this.callbackRouter;
   }
 
   static getInstance(): ShoppingServiceBrowserProxy {

@@ -13,6 +13,7 @@
 #include "media/base/provision_fetcher.h"
 #include "media/mojo/mojom/provision_fetcher.mojom.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
+#include "third_party/wiseplay/cdm/buildflags.h"
 
 namespace network {
 class SharedURLLoaderFactory;
@@ -41,6 +42,12 @@ class CONTENT_EXPORT ProvisionFetcherImpl
   void Retrieve(const GURL& default_url,
                 const std::string& request_data,
                 RetrieveCallback callback) final;
+
+#if BUILDFLAG(ENABLE_WISEPLAY)
+  void RetrieveWiseplayCertificate(const GURL& default_url,
+                const std::string& request_data,
+                RetrieveCallback callback) final;
+#endif // BUILDFLAG(ENABLE_WISEPLAY)
 
  private:
   // Callback for media::ProvisionFetcher::Retrieve().

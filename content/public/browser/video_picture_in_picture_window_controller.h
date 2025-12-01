@@ -7,12 +7,27 @@
 
 #include "base/functional/callback_forward.h"
 #include "base/time/time.h"
+#include "build/build_config.h"
 #include "content/common/content_export.h"
+#include "content/public/browser/media_session.h"
 #include "content/public/browser/picture_in_picture_window_controller.h"
+#include "services/media_session/public/cpp/media_image.h"
 #include "ui/gfx/geometry/rect.h"
+
+#if BUILDFLAG(IS_OHOS)
+#include "base/functional/callback.h"
+#endif
 
 namespace content {
 class VideoOverlayWindow;
+
+#if BUILDFLAG(IS_OHOS)
+struct UpdateControlCallbacks {
+  base::RepeatingCallback<void(uint32_t, bool)> playback_state_callback;
+  base::RepeatingCallback<void(uint32_t, bool)> video_previous_callback;
+  base::RepeatingCallback<void(uint32_t, bool)> video_next_callback;
+};
+#endif
 
 class VideoPictureInPictureWindowController
     : public PictureInPictureWindowController {
@@ -63,10 +78,35 @@ class VideoPictureInPictureWindowController
   // coordinate space, of the video before it enters picture in picture.
   virtual const gfx::Rect& GetSourceBounds() const = 0;
 
+  // Retrieves the SkBitmap of the given media_session::MediaImage.
+  virtual void GetMediaImage(
+      const media_session::MediaImage& image,
+      int minimum_size_px,
+      int desired_size_px,
+      MediaSession::GetMediaImageBitmapCallback callback) = 0;
+
   // Called to set the callback to notify the observers that window has been
   // created.
   virtual void SetOnWindowCreatedNotifyObserversCallback(
       base::OnceClosure on_window_created_notify_observers_callback) = 0;
+
+#if BUILDFLAG(IS_OHOS)
+  void SetUpdateControllCallbacks(uint32_t controller_id,
+                                  const UpdateControlCallbacks& callbacks) {
+    oh_controller_id = controller_id;
+    update_playback_state_callback_ =
+        std::move(callbacks.playback_state_callback);
+    update_video_previous_callback_ =
+        std::move(callbacks.video_previous_callback);
+    update_video_next_callback_ =
+        std::move(callbacks.video_next_callback);
+  }
+
+  base::RepeatingCallback<void(uint32_t, bool)> update_playback_state_callback_;
+  base::RepeatingCallback<void(uint32_t, bool)> update_video_previous_callback_;
+  base::RepeatingCallback<void(uint32_t, bool)> update_video_next_callback_;
+  uint32_t oh_controller_id;
+#endif
 
  protected:
   // Use PictureInPictureWindowController::GetOrCreateForWebContents() to

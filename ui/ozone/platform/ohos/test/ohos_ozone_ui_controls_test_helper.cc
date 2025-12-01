@@ -1,36 +1,9 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2023 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "ui/ozone/platform/ohos/test/ohos_ozone_ui_controls_test_helper.h"
 
-#include "ohos/adapter/xcomponent/adapter/window_adapter.h"
-#include "ohos/adapter/xcomponent/xcomponent_manager.h"
 #include "ui/aura/window_tree_host.h"
 #include "ui/events/base_event_utils.h"
 #include "ui/events/event.h"
@@ -42,9 +15,12 @@
 #include "ui/events/platform/platform_event_source.h"
 #include "ui/events/pointer_details.h"
 #include "ui/events/types/event_type.h"
-#include "ui/ozone/platform/ohos/host/ohos_event_source.h"
+#include "ui/ozone/platform/ohos/host/ohos_event_source_base.h"
 
 namespace ui {
+// Mask of the buttons currently down.
+// just set it to 1 for test on the ohos platform
+constexpr unsigned kButtonDownMask = 1;
 
 OhosOzoneUIControlsTestHelper::OhosOzoneUIControlsTestHelper() = default;
 OhosOzoneUIControlsTestHelper::~OhosOzoneUIControlsTestHelper() = default;
@@ -56,7 +32,7 @@ bool OhosOzoneUIControlsTestHelper::SupportsScreenCoordinates() const {
 }
 
 unsigned OhosOzoneUIControlsTestHelper::ButtonDownMask() const {
-  return 1;
+  return kButtonDownMask;
 }
 
 void OhosOzoneUIControlsTestHelper::SendKeyEvents(gfx::AcceleratedWidget widget,
@@ -74,7 +50,7 @@ void OhosOzoneUIControlsTestHelper::SendKeyEvents(gfx::AcceleratedWidget widget,
     return;
   }
   auto* event_source =
-      reinterpret_cast<OhosEventSource*>(PlatformEventSource::GetInstance());
+      reinterpret_cast<OhosEventSourceBase*>(PlatformEventSource::GetInstance());
 
   KeyEvent event(EventType::kKeyPressed, ui::VKEY_MENU, dom_code, key_event_types,
                  dom_key, ui::EventTimeForNow());

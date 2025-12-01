@@ -20,6 +20,7 @@
 #include "base/memory/raw_ptr.h"
 #include "base/path_service.h"
 #include "base/strings/strcat.h"
+#include "base/strings/string_number_conversions.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/test/metrics/histogram_tester.h"
 #include "base/test/scoped_feature_list.h"
@@ -80,7 +81,7 @@ const char kDescriptionKey[] = "Description";
 const char kIdKey[] = "DeviceId";
 const char kNameKey[] = "Name";
 const char kPriorityKey[] = "Urgency";
-const char kUriKey[] = "Uri";
+const char kLocationsKey[] = "Locations";
 const char kVersionKey[] = "Version";
 const char kChecksumKey[] = "Checksum";
 const char kDownloadDir[] = "firmware-updates";
@@ -505,6 +506,7 @@ class FirmwareUpdateManagerTest : public testing::Test {
     dbus::MessageWriter response_array_writer(nullptr);
     dbus::MessageWriter device_array_writer(nullptr);
     dbus::MessageWriter dict_writer(nullptr);
+    dbus::MessageWriter variant_writer(nullptr);
 
     // The response is an array of arrays of dictionaries. Each dictionary is
     // one device description.
@@ -527,8 +529,10 @@ class FirmwareUpdateManagerTest : public testing::Test {
     device_array_writer.CloseContainer(&dict_writer);
 
     device_array_writer.OpenDictEntry(&dict_writer);
-    dict_writer.AppendString(kUriKey);
-    dict_writer.AppendVariantOfString(kFakeUpdateUriForTesting);
+    dict_writer.AppendString(kLocationsKey);
+    dict_writer.OpenVariant("as", &variant_writer);
+    variant_writer.AppendArrayOfStrings({kFakeUpdateUriForTesting});
+    dict_writer.CloseContainer(&variant_writer);
     device_array_writer.CloseContainer(&dict_writer);
 
     device_array_writer.OpenDictEntry(&dict_writer);
@@ -564,6 +568,7 @@ class FirmwareUpdateManagerTest : public testing::Test {
     dbus::MessageWriter response_array_writer(nullptr);
     dbus::MessageWriter device_array_writer(nullptr);
     dbus::MessageWriter dict_writer(nullptr);
+    dbus::MessageWriter variant_writer(nullptr);
 
     // The response is an array of arrays of dictionaries. Each dictionary is
     // one device description.
@@ -586,8 +591,10 @@ class FirmwareUpdateManagerTest : public testing::Test {
     device_array_writer.CloseContainer(&dict_writer);
 
     device_array_writer.OpenDictEntry(&dict_writer);
-    dict_writer.AppendString(kUriKey);
-    dict_writer.AppendVariantOfString(kFakeUpdateUriForTesting);
+    dict_writer.AppendString(kLocationsKey);
+    dict_writer.OpenVariant("as", &variant_writer);
+    variant_writer.AppendArrayOfStrings({kFakeUpdateUriForTesting});
+    dict_writer.CloseContainer(&variant_writer);
     device_array_writer.CloseContainer(&dict_writer);
 
     device_array_writer.OpenDictEntry(&dict_writer);

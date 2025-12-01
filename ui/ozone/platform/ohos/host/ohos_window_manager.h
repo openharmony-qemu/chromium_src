@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2023 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #ifndef UI_OZONE_PLATFORM_OHOS_OHOS_WINDOW_MANAGER_H_
 #define UI_OZONE_PLATFORM_OHOS_OHOS_WINDOW_MANAGER_H_
@@ -41,6 +16,7 @@
 #include "ui/gfx/native_widget_types.h"
 #include "ui/gfx/geometry/point.h"
 #include "ui/ozone/platform/ohos/host/ohos_window_observer.h"
+#include "ui/ozone/public/platform_window_manager.h"
 #include "ui/ozone/public/surface_factory_ozone.h"
 
 namespace ui {
@@ -49,7 +25,8 @@ class OhosWindow;
 
 using namespace ohos::adapter::xcomponent;
 
-class OhosWindowManager : public WindowStatusListener {
+class OhosWindowManager : public WindowStatusListener,
+                          public PlatformWindowManager {
  public:
   OhosWindowManager();
 
@@ -66,6 +43,9 @@ class OhosWindowManager : public WindowStatusListener {
 
   void AddObserver(OhosWindowObserver* observer);
   void RemoveObserver(OhosWindowObserver* observer);
+
+  // call when window receive close event and before window close
+  void PrepareCloseWindow(gfx::AcceleratedWidget widget, OhosWindow* window);
 
   // Register a new window. Returns the window id.
   int32_t AddWindow(gfx::AcceleratedWidget widget, OhosWindow* window);
@@ -113,6 +93,14 @@ class OhosWindowManager : public WindowStatusListener {
 
   bool IsWindowAtLast();
 
+  void SetLastActiveWidgetId(gfx::AcceleratedWidget widget_id) {
+    last_active_widget_id_ = widget_id;
+  }
+
+  gfx::AcceleratedWidget GetLastActiveWidgetId() {
+    return last_active_widget_id_;
+  }
+
  private:
   base::IDMap<OhosWindow*> windows_;
   base::ThreadChecker thread_checker_;
@@ -121,6 +109,7 @@ class OhosWindowManager : public WindowStatusListener {
   raw_ptr<OhosWindow> located_events_grabber_ = nullptr;
   base::WeakPtr<OhosWindow> pointer_focused_window_{nullptr};
   base::WeakPtr<OhosWindow> drag_source_window_{nullptr};
+  gfx::AcceleratedWidget last_active_widget_id_;
 
   bool HitWindowAtPoint(const OhosWindow* window, const gfx::Point& point,
                         const std::set<gfx::AcceleratedWidget>& ignore);

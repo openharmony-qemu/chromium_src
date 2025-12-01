@@ -77,14 +77,6 @@ MATCHER(ConfigureAborted, "") {
   return arg.status == DataTypeManager::ABORTED;
 }
 
-MATCHER_P(MatchesDictionary, dict_matcher, "") {
-  if (!arg.is_dict()) {
-    *result_listener << "Not a dictionary";
-    return false;
-  }
-  return dict_matcher.MatchAndExplain(arg.GetDict(), result_listener);
-}
-
 // Fake DataTypeConfigurer implementation that allows the test body to control
 // when downloads complete and whether failures occurred.
 class FakeDataTypeConfigurer : public DataTypeConfigurer {
@@ -2067,7 +2059,7 @@ TEST_F(DataTypeManagerImplTest,
 }
 
 TEST_F(DataTypeManagerImplTest,
-       ShouldOnlyMigrateActiveTypesUponTriggerLocalDataMigrationWithItems) {
+       ShouldOnlyMigrateActiveTypesUponTriggerLocalDataMigrationForItems) {
   InitDataTypeManager(
       /*types_without_transport_mode_support=*/{},
       /*types_with_transport_mode_support=*/{PASSWORDS, READING_LIST},
@@ -2079,16 +2071,16 @@ TEST_F(DataTypeManagerImplTest,
   // Only the controller for passwords should be exercised, because reading list
   // is not active.
   EXPECT_CALL(*GetBatchUploader(READING_LIST),
-              TriggerLocalDataMigration(testing::_))
+              TriggerLocalDataMigrationForItems(testing::_))
       .Times(0);
   std::vector<syncer::LocalDataItemModel::DataId> password_ids{"p1", "p2"};
   std::map<DataType, std::vector<syncer::LocalDataItemModel::DataId>> items{
       {DataType::PASSWORDS, password_ids},
       {DataType::READING_LIST, {"rl1", "rl2"}}};
   EXPECT_CALL(*GetBatchUploader(PASSWORDS),
-              TriggerLocalDataMigration(password_ids));
+              TriggerLocalDataMigrationForItems(password_ids));
 
-  dtm_->TriggerLocalDataMigration(items);
+  dtm_->TriggerLocalDataMigrationForItems(items);
 }
 
 TEST_F(DataTypeManagerImplTest, ShouldGetAllNodesForDebugging) {
@@ -2113,10 +2105,10 @@ TEST_F(DataTypeManagerImplTest, ShouldGetAllNodesForDebugging) {
       mock_completion_callback;
   EXPECT_CALL(
       mock_completion_callback,
-      Run(UnorderedElementsAre(MatchesDictionary(base::test::DictionaryHasValue(
-                                   "type", base::Value("Encryption Keys"))),
-                               MatchesDictionary(base::test::DictionaryHasValue(
-                                   "type", base::Value("Bookmarks"))))));
+      Run(UnorderedElementsAre(
+          base::test::DictionaryHasValue("type",
+                                         base::Value("Encryption Keys")),
+          base::test::DictionaryHasValue("type", base::Value("Bookmarks")))));
 
   dtm_->GetAllNodesForDebugging(mock_completion_callback.Get());
 }

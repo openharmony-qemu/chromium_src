@@ -226,6 +226,7 @@ static_library("test_support") {
   deps = [
     "//base",
     "//base/test:test_support",
+    "//build:chromeos_buildflags",
     "//cc:test_support",
     "//components/viz/test:test_support",
     "//skia",
@@ -307,11 +308,6 @@ test("aura_unittests") {
     "window_tree_host_unittest.cc",
     "window_unittest.cc",
   ]
-
-  if (is_win) {
-    sources += [ "native_window_occlusion_tracker_unittest.cc" ]
-    libs = [ "dwmapi.lib" ]
-  }
 
   deps = [
     ":test_support",

@@ -729,9 +729,9 @@ static const GLenum valid_render_buffer_target_table[] = {
 
 bool Validators::ResetStatusValidator::IsValid(const GLenum value) const {
   switch (value) {
-    case GL_GUILTY_CONTEXT_RESET_ARB:
-    case GL_INNOCENT_CONTEXT_RESET_ARB:
-    case GL_UNKNOWN_CONTEXT_RESET_ARB:
+    case GL_GUILTY_CONTEXT_RESET:
+    case GL_INNOCENT_CONTEXT_RESET:
+    case GL_UNKNOWN_CONTEXT_RESET:
       return true;
   }
   return false;
@@ -821,16 +821,6 @@ bool Validators::StringTypeValidator::IsValid(const GLenum value) const {
     case GL_VERSION:
     case GL_SHADING_LANGUAGE_VERSION:
     case GL_EXTENSIONS:
-      return true;
-  }
-  return false;
-}
-
-bool Validators::SwapBuffersFlagsValidator::IsValid(
-    const GLbitfield value) const {
-  switch (value) {
-    case 0:
-    case gpu::SwapBuffersFlags::kVSyncParams:
       return true;
   }
   return false;

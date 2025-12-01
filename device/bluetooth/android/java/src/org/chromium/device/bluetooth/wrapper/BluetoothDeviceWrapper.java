@@ -4,31 +4,42 @@
 
 package org.chromium.device.bluetooth.wrapper;
 
+import static org.chromium.build.NullUtil.assumeNonNull;
+
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
-import android.bluetooth.BluetoothDevice;
 import android.content.Context;
+import android.os.ParcelUuid;
 
 import androidx.annotation.VisibleForTesting;
 
 import org.chromium.base.Log;
+import org.chromium.build.annotations.NullMarked;
+import org.chromium.build.annotations.NullUnmarked;
+import org.chromium.build.annotations.Nullable;
 
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.Objects;
+import java.util.UUID;
 
 /** Wraps android.bluetooth.BluetoothDevice. */
+@NullMarked
 public class BluetoothDeviceWrapper {
     private static final String TAG = "Bluetooth";
     public static final int DEVICE_CLASS_UNSPECIFIED = 0x1F00;
 
-    private final BluetoothDevice mDevice;
+    private final @Nullable BluetoothDevice mDevice;
     final HashMap<BluetoothGattCharacteristic, BluetoothGattCharacteristicWrapper>
             mCharacteristicsToWrappers;
     final HashMap<BluetoothGattDescriptor, BluetoothGattDescriptorWrapper> mDescriptorsToWrappers;
 
+    @NullUnmarked
     @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
-    public BluetoothDeviceWrapper(BluetoothDevice device) {
+    public BluetoothDeviceWrapper(@Nullable BluetoothDevice device) {
         mDevice = device;
         mCharacteristicsToWrappers = new HashMap<>();
         mDescriptorsToWrappers = new HashMap<>();
@@ -39,6 +50,7 @@ public class BluetoothDeviceWrapper {
             boolean autoConnect,
             BluetoothGattCallbackWrapper callback,
             int transport) {
+        assumeNonNull(mDevice);
         return new BluetoothGattWrapper(
                 mDevice.connectGatt(
                         context,
@@ -49,6 +61,7 @@ public class BluetoothDeviceWrapper {
     }
 
     public String getAddress() {
+        assumeNonNull(mDevice);
         return mDevice.getAddress();
     }
 
@@ -63,20 +76,56 @@ public class BluetoothDeviceWrapper {
     }
 
     public int getBondState() {
+        assumeNonNull(mDevice);
         return mDevice.getBondState();
     }
 
     public String getName() {
+        assumeNonNull(mDevice);
         return mDevice.getName();
     }
 
+    public int getType() {
+        assumeNonNull(mDevice);
+        return mDevice.getType();
+    }
+
+    public ParcelUuid[] getUuids() {
+        assumeNonNull(mDevice);
+        return mDevice.getUuids();
+    }
+
+    public BluetoothSocketWrapper createRfcommSocketToServiceRecord(UUID uuid) throws IOException {
+        assumeNonNull(mDevice);
+        return new BluetoothSocketWrapper(mDevice.createRfcommSocketToServiceRecord(uuid));
+    }
+
+    public BluetoothSocketWrapper createInsecureRfcommSocketToServiceRecord(UUID uuid)
+            throws IOException {
+        assumeNonNull(mDevice);
+        return new BluetoothSocketWrapper(mDevice.createInsecureRfcommSocketToServiceRecord(uuid));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof BluetoothDeviceWrapper) {
+            return Objects.equals(mDevice, ((BluetoothDeviceWrapper) o).mDevice);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return mDevice == null ? 0 : mDevice.hashCode();
+    }
+
     /**
-     * Implements android.bluetooth.BluetoothGattCallback and forwards calls through
-     * to a provided BluetoothGattCallbackWrapper instance.
+     * Implements android.bluetooth.BluetoothGattCallback and forwards calls through to a provided
+     * BluetoothGattCallbackWrapper instance.
      *
-     * This class is required so that Fakes can use BluetoothGattCallbackWrapper
-     * without it extending from BluetoothGattCallback. Fakes must function even on
-     * Android versions where BluetoothGattCallback class is not defined.
+     * <p>This class is required so that Fakes can use BluetoothGattCallbackWrapper without it
+     * extending from BluetoothGattCallback. Fakes must function even on Android versions where
+     * BluetoothGattCallback class is not defined.
      */
     private static class ForwardBluetoothGattCallbackToWrapper extends BluetoothGattCallback {
         final BluetoothGattCallbackWrapper mWrapperCallback;
@@ -93,36 +142,46 @@ public class BluetoothDeviceWrapper {
         public void onCharacteristicChanged(
                 BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
             Log.i(TAG, "wrapper onCharacteristicChanged.");
-            mWrapperCallback.onCharacteristicChanged(
-                    mDeviceWrapper.mCharacteristicsToWrappers.get(characteristic));
+            BluetoothGattCharacteristicWrapper wrapped =
+                    mDeviceWrapper.mCharacteristicsToWrappers.get(characteristic);
+            assert wrapped != null;
+            mWrapperCallback.onCharacteristicChanged(wrapped);
         }
 
         @Override
         public void onCharacteristicRead(
                 BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-            mWrapperCallback.onCharacteristicRead(
-                    mDeviceWrapper.mCharacteristicsToWrappers.get(characteristic), status);
+            BluetoothGattCharacteristicWrapper wrapped =
+                    mDeviceWrapper.mCharacteristicsToWrappers.get(characteristic);
+            assert wrapped != null;
+            mWrapperCallback.onCharacteristicRead(wrapped, status);
         }
 
         @Override
         public void onCharacteristicWrite(
                 BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-            mWrapperCallback.onCharacteristicWrite(
-                    mDeviceWrapper.mCharacteristicsToWrappers.get(characteristic), status);
+            BluetoothGattCharacteristicWrapper wrapped =
+                    mDeviceWrapper.mCharacteristicsToWrappers.get(characteristic);
+            assert wrapped != null;
+            mWrapperCallback.onCharacteristicWrite(wrapped, status);
         }
 
         @Override
         public void onDescriptorRead(
                 BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
-            mWrapperCallback.onDescriptorRead(
-                    mDeviceWrapper.mDescriptorsToWrappers.get(descriptor), status);
+            BluetoothGattDescriptorWrapper wrapped =
+                    mDeviceWrapper.mDescriptorsToWrappers.get(descriptor);
+            assert wrapped != null;
+            mWrapperCallback.onDescriptorRead(wrapped, status);
         }
 
         @Override
         public void onDescriptorWrite(
                 BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
-            mWrapperCallback.onDescriptorWrite(
-                    mDeviceWrapper.mDescriptorsToWrappers.get(descriptor), status);
+            BluetoothGattDescriptorWrapper wrapped =
+                    mDeviceWrapper.mDescriptorsToWrappers.get(descriptor);
+            assert wrapped != null;
+            mWrapperCallback.onDescriptorWrite(wrapped, status);
         }
 
         @Override
@@ -140,5 +199,4 @@ public class BluetoothDeviceWrapper {
             mWrapperCallback.onServicesDiscovered(status);
         }
     }
-
 }

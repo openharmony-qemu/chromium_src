@@ -7,6 +7,8 @@
 
 namespace ash {
 
+// These values are persisted to logs. Entries should not be renumbered and
+// numeric values should never be reused.
 enum class LobsterMetricState {
   // recorded when the feature can be shown, or is blocked but has the potential
   // to be shown.
@@ -20,13 +22,14 @@ enum class LobsterMetricState {
   // recorded when the right click menu trigger is fired but the user hasn’t
   // given their consent to use the feature.
   kRightClickTriggerNeedsConsent = 4,
-  // recorded when the Picker trigger is shown to the user.
-  kPickerTriggerImpression = 5,
-  // recorded when the Picker trigger is fired by the user.
-  kPickerTriggerFired = 6,
-  // recorded when the Picker trigger is fired but the user hasn’t given their
+  // recorded when the Quick Insert trigger is shown to the user.
+  kQuickInsertTriggerImpression = 5,
+  // recorded when the Quick Insert trigger is fired by the user.
+  kQuickInsertTriggerFired = 6,
+  // recorded when the Quick Insert trigger is fired but the user hasn’t given
+  // their
   // consent to use the feature.
-  kPickerTriggerNeedsConsent = 7,
+  kQuickInsertTriggerNeedsConsent = 7,
   // recorded when the consent screen is shown after the user has fired one of
   // the triggers.
   kConsentScreenImpression = 8,
@@ -87,7 +90,35 @@ enum class LobsterMetricState {
   kFeedbackThumbsUp = 29,
   //  recorded when a user presses thumbs down button for any image candidate.
   kFeedbackThumbsDown = 30,
-  kMaxValue = kFeedbackThumbsDown,
+  // recorded when the feature is blocked by invalid consent.
+  kBlockedByConsent = 31,
+  // recorded when the feature is blocked by invalid account capabilities.
+  kBlockedByAccountCapabilities = 32,
+  // recorded when the feature is blocked by an invalid account type.
+  kBlockedByAccountType = 33,
+  // recorded when the feature is blocked by geolocation restrictions.
+  kBlockedByGeolocation = 34,
+  // recorded when the feature is blocked due to invalid input field.
+  kBlockedByInputField = 35,
+  // recorded when the feature is blocked by user settings.
+  kBlockedBySettings = 36,
+  // recorded when the feature is blocked by a lack of internet connection.
+  kBlockedByInternetConnection = 37,
+  // recorded when the feature is blocked by an invalid input method.
+  kBlockedByInputMethod = 38,
+  // recorded when the feature is blocked by feature flag restrictions.
+  kBlockedByFeatureFlags = 39,
+  // recorded when the feature is blocked by unsupported hardware.
+  kBlockedByHardware = 40,
+  // recorded when the feature is blocked when in Kiosk mode.
+  kBlockedByKioskMode = 41,
+  // recorded when the feature is blocked when in unsupported form factors, i.e.
+  // tablet mode.
+  kBlockedByFormFactor = 42,
+  // recorded when the feature is blocked when in unsupported form factors, i.e.
+  // tablet mode.
+  kBlockedByPolicy = 43,
+  kMaxValue = kBlockedByPolicy,
 };
 
 }  // namespace ash

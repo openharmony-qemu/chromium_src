@@ -6,6 +6,8 @@
 
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
+#include "base/functional/callback.h"
+#include "base/memory/safety_checks.h"
 #include "base/strings/strcat.h"
 #include "components/crash/core/common/crash_key.h"
 #include "mojo/public/cpp/bindings/receiver_set.h"
@@ -15,9 +17,22 @@
 #include "storage/browser/blob/blob_url_registry.h"
 #include "storage/browser/blob/blob_url_utils.h"
 #include "storage/browser/blob/features.h"
+#include "third_party/blink/public/mojom/devtools/inspector_issue.mojom.h"
 #include "url/url_util.h"
 
 namespace storage {
+namespace {
+
+bool IsBlobUrlAccessCrossPartitionSameOrigin(
+    BlobUrlRegistry::MappingStatus mapping_status) {
+  return mapping_status ==
+             BlobUrlRegistry::MappingStatus::
+                 kNotMappedCrossPartitionSameOriginAccessFirstPartyBlobURL ||
+         mapping_status ==
+             BlobUrlRegistry::MappingStatus::
+                 kNotMappedCrossPartitionSameOriginAccessThirdPartyBlobURL;
+}
+}  // namespace
 
 // Self deletes when the last binding to it is closed.
 class BlobURLTokenImpl : public blink::mojom::BlobURLToken {
@@ -69,12 +84,20 @@ BlobURLStoreImpl::BlobURLStoreImpl(
     const url::Origin& renderer_origin,
     int render_process_host_id,
     base::WeakPtr<BlobUrlRegistry> registry,
-    BlobURLValidityCheckBehavior validity_check_behavior)
+    BlobURLValidityCheckBehavior validity_check_behavior,
+    base::RepeatingCallback<
+        void(const GURL&, std::optional<blink::mojom::PartitioningBlobURLInfo>)>
+        partitioning_blob_url_closure,
+    base::RepeatingCallback<bool()> storage_access_check_callback,
+    bool partitioning_disabled_by_policy)
     : storage_key_(storage_key),
       renderer_origin_(renderer_origin),
       render_process_host_id_(render_process_host_id),
       registry_(std::move(registry)),
-      validity_check_behavior_(validity_check_behavior) {}
+      validity_check_behavior_(validity_check_behavior),
+      partitioning_blob_url_closure_(std::move(partitioning_blob_url_closure)),
+      storage_access_check_callback_(std::move(storage_access_check_callback)),
+      partitioning_disabled_by_policy_(partitioning_disabled_by_policy) {}
 
 BlobURLStoreImpl::~BlobURLStoreImpl() {
   if (registry_) {
@@ -114,6 +137,22 @@ void BlobURLStoreImpl::Revoke(const GURL& url) {
   urls_.erase(url);
 }
 
+bool BlobURLStoreImpl::ShouldPartitionBlobUrlAccess(
+    bool has_storage_access_handle,
+    BlobUrlRegistry::MappingStatus mapping_status) {
+  const bool feature_and_policy_check =
+      base::FeatureList::IsEnabled(
+          features::kBlockCrossPartitionBlobUrlFetching) &&
+      !partitioning_disabled_by_policy_;
+
+  const bool should_bypass_partitioning =
+      has_storage_access_handle &&
+      mapping_status ==
+          BlobUrlRegistry::MappingStatus::
+              kNotMappedCrossPartitionSameOriginAccessFirstPartyBlobURL;
+  return feature_and_policy_check && !should_bypass_partitioning;
+}
+
 void BlobURLStoreImpl::ResolveAsURLLoaderFactory(
     const GURL& url,
     mojo::PendingReceiver<network::mojom::URLLoaderFactory> receiver,
@@ -123,13 +162,29 @@ void BlobURLStoreImpl::ResolveAsURLLoaderFactory(
     std::move(callback).Run(std::nullopt, std::nullopt);
     return;
   }
-  if (base::FeatureList::IsEnabled(
-          features::kBlockCrossPartitionBlobUrlFetching) &&
-      !registry_->IsUrlMapped(BlobUrlUtils::ClearUrlFragment(url),
-                              storage_key_)) {
-    BlobURLLoaderFactory::Create(mojo::NullRemote(), url, std::move(receiver));
-    std::move(callback).Run(std::nullopt, std::nullopt);
-    return;
+  FinishResolveAsURLLoaderFactory(url, std::move(receiver), std::move(callback),
+                                  storage_access_check_callback_.Run());
+}
+
+void BlobURLStoreImpl::FinishResolveAsURLLoaderFactory(
+    const GURL& url,
+    mojo::PendingReceiver<network::mojom::URLLoaderFactory> receiver,
+    ResolveAsURLLoaderFactoryCallback callback,
+    bool has_storage_access_handle) {
+  const BlobUrlRegistry::MappingStatus mapping_status =
+      registry_->IsUrlMapped(BlobUrlUtils::ClearUrlFragment(url), storage_key_);
+  if (IsBlobUrlAccessCrossPartitionSameOrigin(mapping_status)) {
+    if (ShouldPartitionBlobUrlAccess(has_storage_access_handle,
+                                     mapping_status)) {
+      partitioning_blob_url_closure_.Run(url,
+                                         blink::mojom::PartitioningBlobURLInfo::
+                                             kBlockedCrossPartitionFetching);
+      BlobURLLoaderFactory::Create(mojo::NullRemote(), url,
+                                   std::move(receiver));
+      std::move(callback).Run(std::nullopt, std::nullopt);
+      return;
+    }
+    partitioning_blob_url_closure_.Run(url, std::nullopt);
   }
 
   BlobURLLoaderFactory::Create(registry_->GetBlobFromUrl(url), url,
@@ -142,40 +197,56 @@ void BlobURLStoreImpl::ResolveAsURLLoaderFactory(
                           registry_->GetUnsafeTopLevelSite(url));
 }
 
-void BlobURLStoreImpl::ResolveForNavigation(
+void BlobURLStoreImpl::ResolveAsBlobURLToken(
     const GURL& url,
     mojo::PendingReceiver<blink::mojom::BlobURLToken> token,
-    ResolveForNavigationCallback callback) {
+    bool is_top_level_navigation,
+    ResolveAsBlobURLTokenCallback callback) {
+  // This function is known to be heap allocation heavy and performance
+  // critical. Extra memory safety checks can introduce regression
+  // (https://crbug.com/414710225) and these are disabled here.
+  base::ScopedSafetyChecksExclusion scoped_unsafe;
+
   if (!registry_) {
     std::move(callback).Run(std::nullopt);
     return;
   }
+  FinishResolveAsBlobURLToken(url, std::move(token), is_top_level_navigation,
+                              std::move(callback),
+                              storage_access_check_callback_.Run());
+}
+
+void BlobURLStoreImpl::FinishResolveAsBlobURLToken(
+    const GURL& url,
+    mojo::PendingReceiver<blink::mojom::BlobURLToken> token,
+    bool is_top_level_navigation,
+    ResolveAsBlobURLTokenCallback callback,
+    bool has_storage_access_handle) {
+  if (!is_top_level_navigation) {
+    const BlobUrlRegistry::MappingStatus mapping_status =
+        registry_->IsUrlMapped(BlobUrlUtils::ClearUrlFragment(url),
+                               storage_key_);
+    if (IsBlobUrlAccessCrossPartitionSameOrigin(mapping_status)) {
+      if (ShouldPartitionBlobUrlAccess(has_storage_access_handle,
+                                       mapping_status)) {
+        partitioning_blob_url_closure_.Run(
+            url, blink::mojom::PartitioningBlobURLInfo::
+                     kBlockedCrossPartitionFetching);
+        std::move(callback).Run(std::nullopt);
+        return;
+      }
+      partitioning_blob_url_closure_.Run(url, std::nullopt);
+    }
+  }
+
   mojo::PendingRemote<blink::mojom::Blob> blob = registry_->GetBlobFromUrl(url);
   if (!blob) {
     std::move(callback).Run(std::nullopt);
     return;
   }
+
   new BlobURLTokenImpl(registry_, url, std::move(blob), std::move(token));
   std::move(callback).Run(registry_->GetUnsafeAgentClusterID(url));
-}
-
-void BlobURLStoreImpl::ResolveForWorkerScriptFetch(
-    const GURL& url,
-    mojo::PendingReceiver<blink::mojom::BlobURLToken> token,
-    ResolveForNavigationCallback callback) {
-  if (!registry_) {
-    std::move(callback).Run(std::nullopt);
-    return;
-  }
-  if (base::FeatureList::IsEnabled(
-          features::kBlockCrossPartitionBlobUrlFetching) &&
-      !registry_->IsUrlMapped(BlobUrlUtils::ClearUrlFragment(url),
-                              storage_key_)) {
-    std::move(callback).Run(std::nullopt);
-    return;
-  }
-
-  ResolveForNavigation(url, std::move(token), std::move(callback));
 }
 
 bool BlobURLStoreImpl::BlobUrlIsValid(const GURL& url,

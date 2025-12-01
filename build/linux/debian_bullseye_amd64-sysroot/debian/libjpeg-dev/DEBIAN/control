@@ -1,0 +1,15 @@
+Package: libjpeg-dev
+Source: libjpeg-turbo
+Version: 1:2.0.6-4
+Architecture: amd64
+Maintainer: Ondřej Surý <ondrej@debian.org>
+Installed-Size: 81
+Depends: libjpeg62-turbo-dev (>= 1:2.0.6-4)
+Conflicts: libjpeg62-dev, libjpeg7-dev, libjpeg8-dev, libjpeg9-dev
+Section: libdevel
+Priority: optional
+Multi-Arch: same
+Homepage: https://www.libjpeg-turbo.org/
+Description: Development files for the JPEG library [dummy package]
+ This package depends on default Debian implementation of
+ libjpeg.so.62 JPEG library.

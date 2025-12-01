@@ -136,7 +136,7 @@ enum class NotificationCatalogName {
   kNetworkPortalDetector = 117,
   kCrostiniPackage = 118,
   kCrostiniUpgradeAvailable = 119,
-  kFullRestore = 120,
+  // [Deprecated] kFullRestore = 120,
   kAdbSideloadingDisallowed = 121,
   kAdbSideloadingPowerwashPlanned = 122,
   kAdbSideloadingPowerwashOnReboot = 123,
@@ -209,7 +209,13 @@ enum class NotificationCatalogName {
   kOnTaskSessionEnd = 190,
   kOnTaskAddContentToBundle = 191,
   kOnTaskRemoveContentFromBundle = 192,
-  kMaxValue = kOnTaskRemoveContentFromBundle
+  kScannerAction = 193,
+  kChromeAppDeprecation = 194,
+  kDownloadImageFromLobster = 195,
+  kBocaSpotlightStarted = 196,
+  kFaceGazeActive = 197,
+  kUsbPeripheralDeviceOrEndpointLimit = 198,
+  kMaxValue = kUsbPeripheralDeviceOrEndpointLimit
 };
 
 // A living catalog that registers system nudges.
@@ -259,7 +265,9 @@ enum class NudgeCatalogName {
   kVideoConferenceTraySidetoneNotSupported = 36,
   kVideoConferenceTraySidetoneEnabled = 37,
   kGraduationAppEnabled = 38,
-  kMaxValue = kGraduationAppEnabled
+  kSunfishLauncherNudge = 39,
+  kSunfishIncognitoNudge = 40,
+  kMaxValue = kSunfishIncognitoNudge
 };
 
 // A living catalog that registers toasts.
@@ -325,7 +333,13 @@ enum class ToastCatalogName {
   kOnTaskUrlBlocked = 55,
   kCopyImageToClipboardAction = 56,
   kCaptureModeTextCopied = 57,
-  kMaxValue = kCaptureModeTextCopied
+  kCoralSavedGroupLimitMax = 58,
+  kScannerActionSuccess = 59,
+  kScannerActionFailure = 60,
+  kCameraNowAllowed = 61,
+  kCameraNowDisallowed = 62,
+  kCameraForceDisabled = 63,
+  kMaxValue = kCameraForceDisabled
 };
 
 }  // namespace ash

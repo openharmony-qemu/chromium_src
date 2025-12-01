@@ -76,6 +76,7 @@
 #include "components/prefs/pref_change_registrar.h"
 #include "components/prefs/pref_registry_simple.h"
 #include "components/prefs/pref_service.h"
+#include "google_apis/gaia/gaia_id.h"
 #include "ui/aura/client/aura_constants.h"
 #include "ui/base/l10n/l10n_util.h"
 #include "ui/base/mojom/window_show_state.mojom.h"
@@ -176,15 +177,6 @@ bool IsAmbientModeEnabled() {
   return IsUserAmbientModeEnabled() || IsAmbientModeManagedScreensaverEnabled();
 }
 
-class AmbientWidgetDelegate : public views::WidgetDelegate {
- public:
-  AmbientWidgetDelegate() {
-    SetCanFullscreen(true);
-    SetCanMaximize(true);
-    SetOwnedByWidget(true);
-  }
-};
-
 void RecordManagedScreensaverEnabledPref() {
   if (PrefService* pref_service = GetActivePrefService();
       pref_service &&
@@ -196,6 +188,15 @@ void RecordManagedScreensaverEnabledPref() {
 }
 
 }  // namespace
+
+class AmbientWidgetDelegate : public views::WidgetDelegate {
+ public:
+  AmbientWidgetDelegate() {
+    SetCanFullscreen(true);
+    SetCanMaximize(true);
+    SetOwnedByWidget(OwnedByWidgetPassKey());
+  }
+};
 
 // static
 void AmbientController::RegisterProfilePrefs(PrefRegistrySimple* registry) {
@@ -1075,7 +1076,7 @@ void AmbientController::RequestAccessToken(
   if (IsAmbientModeManagedScreensaverEnabled()) {
     // Consume the callback to be resilient against dependencies on the callback
     // in the future.
-    std::move(callback).Run("", "");
+    std::move(callback).Run(GaiaId(), "");
     return;
   }
   access_token_controller_.RequestAccessToken(std::move(callback),

@@ -2,13 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifdef UNSAFE_BUFFERS_BUILD
-// TODO(crbug.com/40284755): Remove this and spanify to fix the errors.
-#pragma allow_unsafe_buffers
-#endif
 
 #include "base/threading/scoped_blocking_call.h"
 
+#include <array>
 #include <memory>
 #include <optional>
 #include <utility>
@@ -191,11 +188,11 @@ class ScopedBlockingCallIOJankMonitoringTest : public testing::Test {
     // be caused by ScopedBlockingCall interference in the same process but
     // outside this test's managed threads: crbug.com/1071166.
     EnableIOJankMonitoringForProcess(
-        BindLambdaForTesting([&](int janky_intervals_per_minute,
-                                 int total_janks_per_minute) {
-          reports_.emplace_back(
-              janky_intervals_per_minute, total_janks_per_minute);
-        }),
+        BindLambdaForTesting(
+            [&](int janky_intervals_per_minute, int total_janks_per_minute) {
+              reports_.emplace_back(janky_intervals_per_minute,
+                                    total_janks_per_minute);
+            }),
         OnlyObservedThreadsForTest(true));
 
     internal::SetBlockingObserverForCurrentThread(&main_thread_observer);
@@ -210,8 +207,9 @@ class ScopedBlockingCallIOJankMonitoringTest : public testing::Test {
   }
 
   void TearDown() override {
-    if (task_environment_)
+    if (task_environment_) {
       StopMonitoring();
+    }
   }
 
  protected:
@@ -505,8 +503,8 @@ TEST_F(ScopedBlockingCallIOJankMonitoringTest, MultiThreadedOverlapped) {
 
   TestWaitableEvent next_task_is_blocked(WaitableEvent::ResetPolicy::AUTOMATIC);
 
-  TestWaitableEvent resume_thread[kNumJankyTasks] = {};
-  TestWaitableEvent exited_blocking_scope[kNumJankyTasks] = {};
+  std::array<TestWaitableEvent, kNumJankyTasks> resume_thread = {};
+  std::array<TestWaitableEvent, kNumJankyTasks> exited_blocking_scope = {};
 
   auto blocking_task = BindLambdaForTesting([&](int task_index) {
     {
@@ -572,8 +570,8 @@ TEST_F(ScopedBlockingCallIOJankMonitoringTest, MultiThreadedOverlappedWindows) {
 
   TestWaitableEvent next_task_is_blocked(WaitableEvent::ResetPolicy::AUTOMATIC);
 
-  TestWaitableEvent resume_thread[kNumJankyTasks] = {};
-  TestWaitableEvent exited_blocking_scope[kNumJankyTasks] = {};
+  std::array<TestWaitableEvent, kNumJankyTasks> resume_thread = {};
+  std::array<TestWaitableEvent, kNumJankyTasks> exited_blocking_scope = {};
 
   auto blocking_task = BindLambdaForTesting([&](int task_index) {
     {
@@ -733,10 +731,11 @@ TEST_F(ScopedBlockingCallIOJankMonitoringTest, BackgroundBlockingCallsIgnored) {
   task_environment_->FastForwardBy(
       internal::IOJankMonitoringWindow::kMonitoringWindow);
 
-  if (internal::CanUseBackgroundThreadTypeForWorkerThread())
+  if (internal::CanUseBackgroundThreadTypeForWorkerThread()) {
     EXPECT_THAT(reports_, ElementsAre(std::make_pair(0, 0)));
-  else
+  } else {
     EXPECT_THAT(reports_, ElementsAre(std::make_pair(7, 7)));
+  }
 }
 
 TEST_F(ScopedBlockingCallIOJankMonitoringTest,
@@ -779,10 +778,11 @@ TEST_F(ScopedBlockingCallIOJankMonitoringTest,
   task_environment_->FastForwardBy(
       internal::IOJankMonitoringWindow::kMonitoringWindow);
 
-  if (internal::CanUseBackgroundThreadTypeForWorkerThread())
+  if (internal::CanUseBackgroundThreadTypeForWorkerThread()) {
     EXPECT_THAT(reports_, ElementsAre(std::make_pair(7, 7)));
-  else
+  } else {
     EXPECT_THAT(reports_, ElementsAre(std::make_pair(7, 14)));
+  }
 }
 
 TEST_F(ScopedBlockingCallIOJankMonitoringTest, WillBlockNotMonitored) {

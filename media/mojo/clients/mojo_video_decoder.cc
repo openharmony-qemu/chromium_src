@@ -5,7 +5,6 @@
 #include "media/mojo/clients/mojo_video_decoder.h"
 
 #include "base/check.h"
-#include "base/command_line.h"
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
@@ -18,7 +17,6 @@
 #include "base/trace_event/trace_event.h"
 #include "base/unguessable_token.h"
 #include "build/build_config.h"
-#include "build/chromeos_buildflags.h"
 #include "media/base/decoder_buffer.h"
 #include "media/base/demuxer_stream.h"
 #include "media/base/media_switches.h"
@@ -98,7 +96,7 @@ MojoVideoDecoder::MojoVideoDecoder(
     : task_runner_(task_runner),
       pending_remote_decoder_(std::move(pending_remote_decoder)),
       gpu_factories_(gpu_factories),
-      media_log_(media_log),
+      media_log_(media_log->Clone()),
       timestamps_(128),
       writer_capacity_(
           GetDefaultDecoderBufferConverterCapacity(DemuxerStream::VIDEO)),
@@ -121,16 +119,13 @@ bool MojoVideoDecoder::IsPlatformDecoder() const {
 
 bool MojoVideoDecoder::SupportsDecryption() const {
   // Currently only the Android backends and specific ChromeOS configurations
+  // and OHOS
   // support decryption.
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(USE_CHROMEOS_PROTECTED_MEDIA)
-#if BUILDFLAG(IS_CHROMEOS_LACROS)
-  if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
-          switches::kLacrosUseChromeosProtectedMedia)) {
-    return false;
-  }
-#endif  // BUILDFLAG(IS_CHROMEOS_LACROS)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(USE_CHROMEOS_PROTECTED_MEDIA) || \
+    BUILDFLAG(ENABLE_WISEPLAY)
   return true;
 #else
+  LOG(WARNING) << __FUNCTION__ << " [WiseplayDRM] not support!";
   return false;
 #endif
 }
@@ -140,6 +135,7 @@ VideoDecoderType MojoVideoDecoder::GetDecoderType() const {
 }
 
 void MojoVideoDecoder::FailInit(InitCB init_cb, DecoderStatus err) {
+  LOG(WARNING) << __FUNCTION__ << " [WiseplayDRM] err: " << err.message();
   task_runner_->PostTask(FROM_HERE,
                          base::BindOnce(std::move(init_cb), std::move(err)));
 }
@@ -155,7 +151,7 @@ void MojoVideoDecoder::Initialize(const VideoDecoderConfig& config,
 
   if (gpu_factories_)
     decoder_type_ = gpu_factories_->GetDecoderType();
-
+  LOG(WARNING) << __FUNCTION__ << " [WiseplayDRM] decoder_type_ | " << decoder_type_;
   // If the codec has software fallback, fail immediately if we know that the
   // remote side cannot support |config|.
   if (gpu_factories_ &&
@@ -207,7 +203,8 @@ void MojoVideoDecoder::InitializeRemoteDecoder(
   }
 
   remote_decoder_->Initialize(
-      config, low_delay, cdm_id,
+      config, low_delay,
+      cdm_id ? mojom::Cdm::NewCdmId(cdm_id.value()) : nullptr,
       base::BindOnce(&MojoVideoDecoder::OnInitializeDone,
                      base::Unretained(this)));
 }
@@ -215,7 +212,8 @@ void MojoVideoDecoder::InitializeRemoteDecoder(
 void MojoVideoDecoder::OnInitializeDone(const DecoderStatus& status,
                                         bool needs_bitstream_conversion,
                                         int32_t max_decode_requests,
-                                        VideoDecoderType decoder_type) {
+                                        VideoDecoderType decoder_type,
+                                        bool needs_transcryption) {
   DVLOG(1) << __func__ << ": status = " << status.group() << ":"
            << static_cast<int>(status.code());
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);

@@ -8,6 +8,7 @@
 
 #include "base/check_op.h"
 #include "base/debug/dump_without_crashing.h"
+#include "base/metrics/histogram_functions.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/notreached.h"
 #include "base/strings/strcat.h"
@@ -86,12 +87,9 @@ std::optional<WebFeature> FeatureCoop(CrossOriginOpenerPolicyValue value) {
       return WebFeature::kCrossOriginOpenerPolicySameOrigin;
     case CrossOriginOpenerPolicyValue::kSameOriginAllowPopups:
       return WebFeature::kCrossOriginOpenerPolicySameOriginAllowPopups;
-    case CrossOriginOpenerPolicyValue::kRestrictProperties:
-      return WebFeature::kCrossOriginOpenerPolicyRestrictProperties;
     case CrossOriginOpenerPolicyValue::kNoopenerAllowPopups:
       return WebFeature::kCrossOriginOpenerPolicyNoopenerAllowPopups;
     case CrossOriginOpenerPolicyValue::kSameOriginPlusCoep:
-    case CrossOriginOpenerPolicyValue::kRestrictPropertiesPlusCoep:
       return WebFeature::kCoopAndCoepIsolated;
   }
 }
@@ -107,12 +105,9 @@ std::optional<WebFeature> FeatureCoopRO(CrossOriginOpenerPolicyValue value) {
     case CrossOriginOpenerPolicyValue::kSameOriginAllowPopups:
       return WebFeature::
           kCrossOriginOpenerPolicySameOriginAllowPopupsReportOnly;
-    case CrossOriginOpenerPolicyValue::kRestrictProperties:
-      return WebFeature::kCrossOriginOpenerPolicyRestrictPropertiesReportOnly;
     case CrossOriginOpenerPolicyValue::kNoopenerAllowPopups:
       return WebFeature::kCrossOriginOpenerPolicyNoopenerAllowPopupsReportOnly;
     case CrossOriginOpenerPolicyValue::kSameOriginPlusCoep:
-    case CrossOriginOpenerPolicyValue::kRestrictPropertiesPlusCoep:
       return WebFeature::kCoopAndCoepIsolatedReportOnly;
   }
 }
@@ -414,7 +409,7 @@ bool Navigator::CheckWebUIRendererDoesNotDisplayNormalURL(
     // TODO(nasko): Convert to CHECK() once it is confirmed this is not
     // violated in reality.
     if (!ChildProcessSecurityPolicyImpl::GetInstance()->HasWebUIBindings(
-            render_frame_host->GetProcess()->GetID())) {
+            render_frame_host->GetProcess()->GetDeprecatedID())) {
       base::debug::DumpWithoutCrashing();
     }
 
@@ -433,10 +428,8 @@ bool Navigator::CheckWebUIRendererDoesNotDisplayNormalURL(
       // process, it should be terminated, otherwise it is a bug in the
       // navigation logic and the browser process should be terminated to avoid
       // exposing users to security issues.
-      if (is_renderer_initiated_check)
-        return false;
-
-      CHECK(false);
+      CHECK(is_renderer_initiated_check);
+      return false;
     }
   }
 
@@ -491,10 +484,11 @@ bool Navigator::StartHistoryNavigationInNewSubframe(
     RenderFrameHostImpl* render_frame_host,
     mojo::PendingAssociatedRemote<mojom::NavigationClient>* navigation_client,
     blink::LocalFrameToken initiator_frame_token,
-    int initiator_process_id) {
+    int initiator_process_id,
+    base::TimeTicks actual_navigation_start) {
   return controller_.StartHistoryNavigationInNewSubframe(
       render_frame_host, navigation_client, initiator_frame_token,
-      initiator_process_id);
+      initiator_process_id, actual_navigation_start);
 }
 
 void Navigator::DidNavigate(
@@ -728,17 +722,17 @@ void Navigator::DidNavigate(
   }
   render_frame_host->set_last_committed_frame_entry(frame_entry);
 
-  // If the history length and/or offset changed, update other renderers in the
+  // If the history length and/or index changed, update other renderers in the
   // FrameTree.
   if (old_entry_count != controller_.GetEntryCount() ||
       details.previous_entry_index !=
           controller_.GetLastCommittedEntryIndex()) {
-    int history_offset = controller_.GetLastCommittedEntryIndex();
+    int history_index = controller_.GetLastCommittedEntryIndex();
     int history_count = controller_.GetEntryCount();
     frame_tree.root()->render_manager()->ExecutePageBroadcastMethod(
-        [history_offset, history_count](RenderViewHostImpl* rvh) {
+        [history_index, history_count](RenderViewHostImpl* rvh) {
           if (auto& broadcast = rvh->GetAssociatedPageBroadcast()) {
-            broadcast->SetHistoryOffsetAndLength(history_offset, history_count);
+            broadcast->SetHistoryIndexAndLength(history_index, history_count);
           }
         },
         site_instance->group());
@@ -754,14 +748,13 @@ void Navigator::DidNavigate(
       navigation_request->browsing_context_group_swap().ShouldSwap()) {
     SiteInstanceImpl* final_site_instance =
         render_frame_host->GetSiteInstance();
-    blink::BrowsingContextGroupInfo browsing_context_group_info(
-        final_site_instance->browsing_instance_token(),
-        final_site_instance->coop_related_group_token());
+    base::UnguessableToken browsing_context_group_token =
+        final_site_instance->browsing_instance_token();
     frame_tree.root()->render_manager()->ExecutePageBroadcastMethod(
-        [&browsing_context_group_info](RenderViewHostImpl* rvh) {
+        [&browsing_context_group_token](RenderViewHostImpl* rvh) {
           if (auto& broadcast = rvh->GetAssociatedPageBroadcast()) {
             broadcast->UpdatePageBrowsingContextGroup(
-                browsing_context_group_info);
+                browsing_context_group_token);
           }
         },
         final_site_instance->group());
@@ -868,6 +861,8 @@ void Navigator::Navigate(std::unique_ptr<NavigationRequest> request,
   //  the appropriate long-term solution. Please remove this condition once the
   //  final fix is implemented.
   if (controller_.GetBrowserContext()->ShutdownStarted()) {
+    request->set_navigation_discard_reason(
+        NavigationDiscardReason::kNeverStarted);
     return;
   }
 
@@ -948,12 +943,26 @@ void Navigator::Navigate(std::unique_ptr<NavigationRequest> request,
   // We don't want to dispatch a beforeunload handler if
   // is_history_navigation_in_new_child is true. This indicates a newly created
   // child frame which does not have a beforeunload handler.
-  bool should_dispatch_beforeunload =
+  //
+  // We also don't want to dispatch a beforeunload handler if the browser is
+  // forcibly navigating a frame to an error page, because the renderer should
+  // have no chance to respond before that occurs.
+  // TODO(crbug.com/406729265): LoadPostCommitErrorPage() does not initiate a
+  // navigation via Navigator::Navigate(). We should fix that, so that
+  // post-commit error page navigations don't bypass other important checks in
+  // this function.
+  const bool should_dispatch_beforeunload =
       !NavigationTypeUtils::IsSameDocument(
           request->common_params().navigation_type) &&
       !request->common_params().is_history_navigation_in_new_child_frame &&
       frame_tree_node->current_frame_host()->ShouldDispatchBeforeUnload(
-          false /* check_subframes_only */);
+          false /* check_subframes_only */) &&
+      request->browser_initiated_error_navigation_type() ==
+          NavigationRequest::BrowserInitiatedErrorNavigationType::kNone;
+
+  base::UmaHistogramBoolean(
+      "Navigation.BrowserInitiated.ShouldDispatchBeforeUnload",
+      should_dispatch_beforeunload);
 
   int nav_entry_id = request->nav_entry_id();
   bool is_pending_entry =
@@ -966,7 +975,7 @@ void Navigator::Navigate(std::unique_ptr<NavigationRequest> request,
   // is not needed then NavigationRequest::BeginNavigation should be directly
   // called instead.
   if (should_dispatch_beforeunload) {
-    frame_tree_node->navigation_request()->SetWaitingForRendererResponse();
+    frame_tree_node->navigation_request()->WillStartBeforeUnload();
     frame_tree_node->current_frame_host()->DispatchBeforeUnload(
         RenderFrameHostImpl::BeforeUnloadType::BROWSER_INITIATED_NAVIGATION,
         reload_type != ReloadType::NONE);
@@ -1057,7 +1066,8 @@ void Navigator::RequestOpenURL(
   params.source_site_instance = current_site_instance;
 
   params.source_render_frame_id = render_frame_host->GetRoutingID();
-  params.source_render_process_id = render_frame_host->GetProcess()->GetID();
+  params.source_render_process_id =
+      render_frame_host->GetProcess()->GetDeprecatedID();
 
   if (render_frame_host->web_ui()) {
     // Note that we hide the referrer for Web UI pages. We don't really want
@@ -1100,6 +1110,7 @@ void Navigator::NavigateFromFrameProxy(
     const std::optional<blink::Impression>& impression,
     blink::mojom::NavigationInitiatorActivationAndAdStatus
         initiator_activation_and_ad_status,
+    base::TimeTicks actual_navigation_start_time,
     base::TimeTicks navigation_start_time,
     bool is_embedder_initiated_fenced_frame_navigation,
     bool is_unfenced_top_navigation,
@@ -1142,6 +1153,10 @@ void Navigator::NavigateFromFrameProxy(
     return;
   }
 
+  if (!will_navigate_from_frame_proxy_callback_for_testing_.is_null()) {
+    will_navigate_from_frame_proxy_callback_for_testing_.Run();
+  }
+
   controller_.NavigateFromFrameProxy(
       render_frame_host, url, initiator_frame_token, initiator_process_id,
       initiator_origin, initiator_base_url, is_renderer_initiated,
@@ -1149,15 +1164,23 @@ void Navigator::NavigateFromFrameProxy(
       should_replace_current_entry, download_policy, method, post_body,
       extra_headers, std::move(source_location),
       std::move(blob_url_loader_factory), is_form_submission, impression,
-      initiator_activation_and_ad_status, navigation_start_time,
-      is_embedder_initiated_fenced_frame_navigation, is_unfenced_top_navigation,
-      force_new_browsing_instance, is_container_initiated, has_rel_opener,
-      storage_access_api_status, embedder_shared_storage_context);
+      initiator_activation_and_ad_status, actual_navigation_start_time,
+      navigation_start_time, is_embedder_initiated_fenced_frame_navigation,
+      is_unfenced_top_navigation, force_new_browsing_instance,
+      is_container_initiated, has_rel_opener, storage_access_api_status,
+      embedder_shared_storage_context);
+}
+
+void Navigator::SetWillNavigateFromFrameProxyCallbackForTesting(
+    const base::RepeatingClosure& callback) {
+  will_navigate_from_frame_proxy_callback_for_testing_ = callback;
 }
 
 void Navigator::BeforeUnloadCompleted(FrameTreeNode* frame_tree_node,
                                       bool proceed,
-                                      const base::TimeTicks& proceed_time) {
+                                      const base::TimeTicks& proceed_time,
+                                      bool for_legacy,
+                                      bool showed_dialog) {
   DCHECK(frame_tree_node);
 
   NavigationRequest* navigation_request = frame_tree_node->navigation_request();
@@ -1191,7 +1214,8 @@ void Navigator::BeforeUnloadCompleted(FrameTreeNode* frame_tree_node,
 
   // Update the navigation start: it should be when it was determined that the
   // navigation will proceed.
-  navigation_request->set_navigation_start_time(proceed_time);
+  navigation_request->UpdateNavigationStartTime(proceed_time, for_legacy,
+                                                showed_dialog);
 
   DCHECK_EQ(NavigationRequest::WAITING_FOR_RENDERER_RESPONSE,
             navigation_request->state());
@@ -1230,7 +1254,8 @@ void Navigator::OnBeginNavigation(
     if (begin_params->initiator_frame_token &&
         frame_tree_node->navigator().StartHistoryNavigationInNewSubframe(
             frame_tree_node->current_frame_host(), &navigation_client,
-            *begin_params->initiator_frame_token, initiator_process_id)) {
+            *begin_params->initiator_frame_token, initiator_process_id,
+            common_params->actual_navigation_start)) {
       return;
     }
   }
@@ -1291,11 +1316,14 @@ void Navigator::OnBeginNavigation(
   // those frames.
   DCHECK(!NavigationTypeUtils::IsSameDocument(
       navigation_request->common_params().navigation_type));
-  bool should_dispatch_beforeunload =
+  const bool should_dispatch_beforeunload =
       frame_tree_node->current_frame_host()->ShouldDispatchBeforeUnload(
           true /* check_subframes_only */);
+  base::UmaHistogramBoolean(
+      "Navigation.RendererInitiated.ShouldDispatchBeforeUnload",
+      should_dispatch_beforeunload);
   if (should_dispatch_beforeunload) {
-    frame_tree_node->navigation_request()->SetWaitingForRendererResponse();
+    frame_tree_node->navigation_request()->WillStartBeforeUnload();
     frame_tree_node->current_frame_host()->DispatchBeforeUnload(
         RenderFrameHostImpl::BeforeUnloadType::RENDERER_INITIATED_NAVIGATION,
         NavigationTypeUtils::IsReload(

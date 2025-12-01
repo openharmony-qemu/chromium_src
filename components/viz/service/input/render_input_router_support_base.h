@@ -8,6 +8,7 @@
 #include "base/observer_list.h"
 #include "components/input/render_widget_host_view_input.h"
 #include "components/viz/common/hit_test/hit_test_data_provider.h"
+#include "components/viz/common/quads/compositor_frame_metadata.h"
 #include "components/viz/service/viz_service_export.h"
 
 namespace viz {
@@ -34,7 +35,12 @@ class VIZ_SERVICE_EXPORT RenderInputRouterSupportBase
         const FrameSinkId& frame_sink_id) = 0;
     virtual RenderInputRouterSupportBase* GetRootRenderInputRouterSupport(
         const FrameSinkId& frame_sink_id) = 0;
+    virtual const CompositorFrameMetadata* GetLastActivatedFrameMetadata(
+        const FrameSinkId& frame_sink_id) = 0;
   };
+
+  virtual bool IsRenderInputRouterSupportChildFrame() const = 0;
+  virtual void NotifySiteIsMobileOptimized(bool is_mobile_optimized) = 0;
 
   // StylusInterface implementation.
   bool ShouldInitiateStylusWriting() override;
@@ -60,6 +66,8 @@ class VIZ_SERVICE_EXPORT RenderInputRouterSupportBase
   const DisplayHitTestQueryMap& GetDisplayHitTestQuery() const override;
   float GetDeviceScaleFactor() const final;
   bool IsPointerLocked() override;
+
+  void StopFlingingOnViz();
 
   Delegate* delegate() { return delegate_; }
 

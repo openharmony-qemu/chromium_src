@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #include "base/check.h"
+#include "base/containers/span.h"
 #include "base/notreached.h"
 #include "base/strings/string_util.h"
 #include "base/time/time.h"
@@ -210,7 +211,7 @@ bool CreateWebURLRequest(PP_Instance instance,
 
   const std::string& headers = data->headers;
   if (!headers.empty()) {
-    net::HttpUtil::HeadersIterator it(headers.begin(), headers.end(), "\n\r");
+    net::HttpUtil::HeadersIterator it(headers, "\n\r");
     while (it.GetNext()) {
       dest->AddHttpHeaderField(WebString::FromUTF8(it.name()),
                                WebString::FromUTF8(it.values()));
@@ -233,7 +234,7 @@ bool CreateWebURLRequest(PP_Instance instance,
           return false;
       } else {
         DCHECK(!item.data.empty());
-        http_body.AppendData(WebData(item.data));
+        http_body.AppendData(WebData(base::as_byte_span(item.data)));
       }
     }
     dest->SetHttpBody(http_body);

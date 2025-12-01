@@ -6,6 +6,7 @@
 #define UI_AURA_TEST_TEST_SCREEN_H_
 
 #include <map>
+#include <unordered_map>
 
 #include "base/memory/raw_ptr.h"
 #include "ui/aura/window_observer.h"
@@ -78,6 +79,7 @@ class TestScreen : public display::ScreenBase, public WindowObserver {
       const gfx::Point& point,
       const std::set<gfx::NativeWindow>& ignore,
       const int32_t display_id) override;
+  gfx::Point GetCursorScreenPoint(const int32_t display_id) override;
 #endif
 
  private:

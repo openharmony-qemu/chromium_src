@@ -54,8 +54,7 @@ public class TextViewWithTightWrapTest {
 
     @BeforeClass
     public static void setupSuite() {
-        sActivityTestRule.launchActivity(null);
-        sActivity = ThreadUtils.runOnUiThreadBlocking(() -> sActivityTestRule.getActivity());
+        sActivity = sActivityTestRule.launchActivity(null);
     }
 
     @Before
@@ -107,7 +106,7 @@ public class TextViewWithTightWrapTest {
     @SmallTest
     @Feature({"RenderTest"})
     public void testTextViewWithSnooze() throws Exception {
-        Button snoozeButton = (Button) mView.findViewById(R.id.button_snooze);
+        Button snoozeButton = mView.findViewById(R.id.button_snooze);
         ThreadUtils.runOnUiThreadBlocking(
                 () -> {
                     snoozeButton.setVisibility(View.VISIBLE);

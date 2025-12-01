@@ -1,35 +1,13 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "ohos/adapter/window/app_window_adapter.h"
 
+#include <arkui/native_node_napi.h>
+
 #include "ohos/adapter/aki_hook/aki_hook.h"
+#include "ohos/adapter/xcomponent/xcomponent_manager.h"
 
 namespace ohos::adapter::window {
 
@@ -75,12 +53,10 @@ void AppWindowAdapter::SetFullscreen(int32_t id) {
   }
 }
 
-void AppWindowAdapter::SetBounds(int32_t id,
-                                 const WindowRect& rect,
-                                 ChangeSizeCallback callback) {
+void AppWindowAdapter::SetBounds(int32_t id, const WindowRect& rect) {
   auto jsFunc = ohos::adapter::GetJSFunction("AppWindow.SetBounds");
   if (jsFunc) {
-    jsFunc->Invoke<void>(id, rect, callback);
+    jsFunc->Invoke<void>(id, rect);
   }
 }
 
@@ -204,6 +180,43 @@ bool AppWindowAdapter::ShiftWindowEvent(const int32_t source_id,
     bool result = future.get();
     LOGI("[OhosTabDrag] AppWindowAdapter::ShiftWindowEvent future result:%{public}d", result);
     return result;
+  }
+  return false;
+}
+
+bool AppWindowAdapter::Bind(const std::string& id) {
+  auto promise = std::make_shared<std::promise<bool>>();
+  std::function<void(aki::Value)> callback = [promise,
+                                              id](aki::Value node_content) {
+    ArkUI_NodeContentHandle node_content_handle = nullptr;
+    OH_ArkUI_GetNodeContentFromNapiValue(aki::JSBind::GetScopedEnv(),
+                                         node_content.GetHandle(),
+                                         &node_content_handle);
+    if (node_content_handle == nullptr) {
+      LOGE(
+          "AppWindowAdapter::Bind Get content node handle failed, "
+          "id:%{public}s",
+          id.c_str());
+      promise->set_value(false);
+      return;
+    }
+
+    promise->set_value(
+        xcomponent::XComponentManager::GetInstance()->BindNativeXComponentNode(
+            id, node_content_handle));
+  };
+
+  auto js_func = ohos::adapter::GetJSFunction("AppWindow.Bind");
+  if (js_func) {
+    js_func->Invoke<void>(id, callback);
+    auto future = promise->get_future();
+    auto status = future.wait_for(std::chrono::seconds(3));
+    if (status == std::future_status::timeout) {
+      LOGE("AppWindowAdapter::Bind timeout for %{public}s", id.c_str());
+      return false;
+    }
+ 
+    return future.get();
   }
   return false;
 }

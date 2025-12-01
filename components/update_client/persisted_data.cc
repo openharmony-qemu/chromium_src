@@ -69,6 +69,9 @@ class PersistedDataImpl : public PersistedData {
   void SetDateLastRollCall(const std::string& id, int dlrc) override;
   int GetInstallDate(const std::string& id) const override;
   void SetInstallDate(const std::string& id, int install_date) override;
+  std::string GetInstallId(const std::string& app_id) const override;
+  void SetInstallId(const std::string& app_id,
+                    const std::string& install_id) override;
   std::string GetCohort(const std::string& id) const override;
   std::string GetCohortHint(const std::string& id) const override;
   std::string GetCohortName(const std::string& id) const override;
@@ -210,6 +213,10 @@ std::string PersistedDataImpl::GetCohortHint(const std::string& id) const {
   return GetString(id, "cohorthint");
 }
 
+std::string PersistedDataImpl::GetInstallId(const std::string& id) const {
+  return GetString(id, "iid");
+}
+
 base::Value::Dict* PersistedDataImpl::GetOrCreateAppKey(
     const std::string& id,
     base::Value::Dict& root) {
@@ -244,6 +251,7 @@ void PersistedDataImpl::SetDateLastDataHelper(
     }
     if (active_ids.find(id) != active_ids.end()) {
       app_key->Set("dla", datenum);
+      app_key->Remove("iid");
     }
   }
   std::move(callback).Run();
@@ -330,6 +338,11 @@ void PersistedDataImpl::SetCohortHint(const std::string& id,
   SetString(id, "cohorthint", cohort_hint);
 }
 
+void PersistedDataImpl::SetInstallId(const std::string& app_id,
+                                     const std::string& install_id) {
+  SetString(app_id, "iid", install_id);
+}
+
 void PersistedDataImpl::GetActiveBits(
     const std::vector<std::string>& ids,
     base::OnceCallback<void(const std::set<std::string>&)> callback) const {
@@ -413,11 +426,11 @@ void PersistedDataImpl::SetLastUpdateCheckError(const CategorizedError& error) {
   if (!pref_service) {
     return;
   }
-  pref_service->SetInteger(kLastUpdateCheckErrorPreference, error.code_);
+  pref_service->SetInteger(kLastUpdateCheckErrorPreference, error.code);
   pref_service->SetInteger(kLastUpdateCheckErrorCategoryPreference,
-                           static_cast<int>(error.category_));
+                           static_cast<int>(error.category));
   pref_service->SetInteger(kLastUpdateCheckErrorExtraCode1Preference,
-                           error.extra_);
+                           error.extra);
 }
 
 }  // namespace

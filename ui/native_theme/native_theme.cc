@@ -22,7 +22,7 @@
 #include "ui/color/color_provider_key.h"
 #include "ui/color/color_provider_utils.h"
 #include "ui/native_theme/common_theme.h"
-#include "ui/native_theme/native_theme_features.h"
+#include "ui/native_theme/features/native_theme_features.h"
 #include "ui/native_theme/native_theme_utils.h"
 
 #if BUILDFLAG(IS_OHOS)
@@ -208,8 +208,7 @@ NativeTheme::NativeTheme(bool should_use_dark_colors,
     : should_use_dark_colors_(should_use_dark_colors || IsForcedDarkMode()),
       system_theme_(system_theme),
       forced_colors_(IsForcedHighContrast()),
-      prefers_reduced_transparency_(false),
-      inverted_colors_(false),
+
       preferred_color_scheme_(CalculatePreferredColorScheme()),
       preferred_contrast_(CalculatePreferredContrast()) {}
 
@@ -250,6 +249,11 @@ bool NativeTheme::ShouldUseDarkColors() const {
   return should_use_dark_colors_;
 }
 
+bool NativeTheme::ShouldUseDarkColorsForSystemIntegratedUI() const {
+  return should_use_dark_colors_for_system_integrated_ui_.value_or(
+      ShouldUseDarkColors());
+}
+
 bool NativeTheme::UserHasContrastPreference() const {
   return GetPreferredContrast() !=
          NativeTheme::PreferredContrast::kNoPreference;
@@ -261,8 +265,9 @@ bool NativeTheme::InForcedColorsMode() const {
 
 NativeTheme::PlatformHighContrastColorScheme
 NativeTheme::GetPlatformHighContrastColorScheme() const {
-  if (GetDefaultSystemColorScheme() != ColorScheme::kPlatformHighContrast)
+  if (GetDefaultSystemColorScheme() != ColorScheme::kPlatformHighContrast) {
     return PlatformHighContrastColorScheme::kNone;
+  }
   return (GetPreferredColorScheme() == PreferredColorScheme::kDark)
              ? PlatformHighContrastColorScheme::kDark
              : PlatformHighContrastColorScheme::kLight;
@@ -280,12 +285,11 @@ NativeTheme::PreferredColorScheme NativeTheme::CalculatePreferredColorScheme()
 
 // static
 bool NativeTheme::CalculateUseOverlayScrollbar() {
-  bool use_overlay_scrollbar = IsOverlayScrollbarEnabledByFeatureFlag();
 #if BUILDFLAG(IS_CHROMEOS)
-  use_overlay_scrollbar =
-      use_overlay_scrollbar || features::IsOverlayScrollbarOSSettingEnabled();
+  return true;
+#else
+  return IsOverlayScrollbarEnabledByFeatureFlag();
 #endif
-  return use_overlay_scrollbar;
 }
 
 std::optional<base::TimeDelta> NativeTheme::GetPlatformCaretBlinkInterval()
@@ -311,8 +315,9 @@ NativeTheme::PreferredContrast NativeTheme::GetPreferredContrast() const {
 
 void NativeTheme::SetPreferredContrast(
     NativeTheme::PreferredContrast preferred_contrast) {
-  if (preferred_contrast_ == preferred_contrast)
+  if (preferred_contrast_ == preferred_contrast) {
     return;
+  }
   preferred_contrast_ = preferred_contrast;
   NotifyOnPreferredContrastUpdated();
 }

@@ -1,3 +1,143 @@
+## Release 0.178.0 (2025-05-14)
+```
+Changes:
+ + 300ad8c4:
+ [GH] Update github.com/bazelbuild/remote-apis-sdks digest to 94c824e
+ + d9130b46:
+ Refresh token if it is about to expire within 5 minutes.
+ + 42cbd274:
+ Update chromium-win snapshot image every 30 days
+ + eb149d7a:
+ Update aosp snapshot image every 30 days
+ + cf577e64:
+ Update chromium snapshot image every 30 days
+ + cad053e9:
+ Update chromium-win snapshot image every 30 days
+ + 128ffb36:
+ Update chromium snapshot image every 30 days
+ + 48c43686:
+ Update aosp snapshot image every 30 days
+ + 85f4bf74:
+ Cleaning up renovate configs
+```
+
+## Release 0.177.1 (2025-02-27)
+```
+Changes:
+ + 596e5319:
+ Make key iteration order consistent
+```
+
+## Release 0.177.0 (2025-02-14)
+```
+Changes:
+ + 283e9a32:
+ Upload clang_flags.go file to GCS
+ + ddac9163:
+ [GH] Update google.golang.org/genproto/googleapis/rpc digest to e9438ea
+ + e0928cdd:
+ Update chromium-win snapshot image every 30 days
+ + 0c2fa767:
+ [GH] Update module github.com/golang/glog to v1.2.4 [SECURITY]
+ + 1e49ae53:
+ Opt-out abseil-cpp from renovate
+```
+
+## Release 0.176.0 (2025-02-06)
+```
+Changes:
+ + 5169af84:
+ Ignore -fconserve-stack
+ + b39cc5bf:
+ Update chromium snapshot image every 30 days
+ + aeb4448f:
+ Update aosp snapshot image every 30 days
+ + e8b84921:
+ Clarify credshelper message
+```
+
+## Release 0.175.0 (2025-01-15)
+```
+Changes:
+ + 300a5097:
+ Avoid crash in reproxy when --version is specified as a flag
+ + 613400d6:
+ [GH] Update google.golang.org/genproto/googleapis/rpc digest to 5f5ef82
+ + bb3b08f1:
+ [GH] Update github.com/bazelbuild/remote-apis-sdks digest to 8bf84d3
+ + c5393077:
+ [GH] Update google.golang.org/genproto digest to 5f5ef82
+ + 8d970e1b:
+ Add retry in clone-chromium-win
+ + be66b0eb:
+ Update chromium-win snapshot image every 30 days
+```
+
+## Release 0.174.0 (2025-01-08)
+```
+Changes:
+ + 3c922e3a:
+ Update chromium snapshot image every 30 days
+ + 6176416f:
+ update the sdk to pick up a security patch for golang.org/x/net
+ + 8c38b2c1:
+ update non-major deps
+ + b5349f3a:
+ [GH] Update github.com/bazelbuild/remote-apis-sdks digest to 063ce64
+ + 082cb597:
+ update non-major deps
+ + dfc8ea47:
+ update non-major deps
+ + 6b397662:
+ update non-major deps
+ + b7810507:
+ Update aosp snapshot image every 30 days
+ + 7f497c37:
+ Update Go Version & related dependencies
+ + e5b2c423:
+ security patch for crypto pkg
+ + b1404a70:
+ [GH] Update dependency protobuf to v29
+ + 7c4f7288:
+ Import SDK with credshelper changes
+ + 0f0391ba:
+ [GH] Update dependency rules_proto to v7
+ + c7a71d2c:
+ Only pull protobuf and googleapi updates for major changes.
+ + 5ec07004:
+ [GH] Update actions/checkout digest to 11bd719
+ + 7f7e0cc3:
+ Update chromium snapshot image every 30 days
+ + 4259cb8f:
+ Update reclient-builder image to include security updates
+ + e5019418:
+ Fix typo in Kokoro config files
+ + 65a6f7a3:
+ Give mac release builds more time when bazel cache is invalidated.
+```
+
+## Release 0.173.0 (2024-11-26)
+```
+Changes:
+ + 2b6f1e30:
+ Upgrade bazel to 7.4.0
+ + 23637924:
+ Migrate from master-build-rbe-testing to main-build-rbe-testing
+ + 25a9b990:
+ Update chromium-win snapshot image every 30 days
+ + a47b7eeb:
+ Update aosp snapshot image every 30 days
+```
+
+## Release 0.172.0 (2024-11-12)
+```
+Changes:
+ + a9fe0e3b:
+ Run basic diagnostics when scandeps server fails to boot up
+ + 5f55127e:
+ Update chrome linux image
+```
+
 ## Release 0.171.0 (2024-10-30)
 ```
 Changes:

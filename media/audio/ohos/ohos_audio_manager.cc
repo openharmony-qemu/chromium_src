@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "media/audio/ohos/ohos_audio_manager.h"
 
@@ -42,9 +17,9 @@ namespace media {
 constexpr int kDefaultSampleRate = 48000;
 constexpr int kMinimumOutputBufferSize = 2048;
 constexpr int kMinimumInputBufferSize = 960;
-const char kAudioDefaultDeviceId[] = "defaultId";
-const char AUDIO_DEFAULT_DEVICE_NAME[] = "(default)";
-static const char AUDIO_MANAGER_NAME[] = "OHOS";
+constexpr char kAudioDefaultDeviceId[] = "defaultId";
+constexpr char kAudioDefaultDeviceName[] = "(default)";
+constexpr char kAudioManagerName[] = "OHOS";
 
 std::unique_ptr<AudioManager> CreateAudioManager(
     std::unique_ptr<AudioThread> audio_thread,
@@ -72,7 +47,7 @@ void OHOSAudioManager::GetAudioOutputDeviceNames(
     AudioDeviceNames* device_names) {
   AudioDeviceName device_name;
   device_name.unique_id = std::string(kAudioDefaultDeviceId);
-  device_name.device_name = std::string(AUDIO_DEFAULT_DEVICE_NAME);
+  device_name.device_name = std::string(kAudioDefaultDeviceName);
   device_names->push_front(device_name);
 }
 
@@ -80,12 +55,12 @@ void OHOSAudioManager::GetAudioInputDeviceNames(
     AudioDeviceNames* device_names) {
   AudioDeviceName device_name;
   device_name.unique_id = std::string(kAudioDefaultDeviceId);
-  device_name.device_name = std::string(AUDIO_DEFAULT_DEVICE_NAME);
+  device_name.device_name = std::string(kAudioDefaultDeviceName);
   device_names->push_front(device_name);
 }
 
-const char* OHOSAudioManager::GetName() {
-  return AUDIO_MANAGER_NAME;
+const std::string_view OHOSAudioManager::GetName() {
+  return kAudioManagerName;
 }
 
 // Implementation of AudioManagerBase.

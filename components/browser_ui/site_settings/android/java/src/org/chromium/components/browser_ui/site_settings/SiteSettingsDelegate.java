@@ -7,9 +7,9 @@ package org.chromium.components.browser_ui.site_settings;
 import android.app.Activity;
 import android.graphics.drawable.Drawable;
 
-import androidx.annotation.Nullable;
-
 import org.chromium.base.Callback;
+import org.chromium.build.annotations.NullMarked;
+import org.chromium.build.annotations.Nullable;
 import org.chromium.components.browser_ui.settings.ManagedPreferenceDelegate;
 import org.chromium.components.browsing_data.content.BrowsingDataModel;
 import org.chromium.components.content_settings.ContentSettingsType;
@@ -24,6 +24,7 @@ import java.util.Set;
  * An interface implemented by the embedder that allows the Site Settings UI to access
  * embedder-specific logic.
  */
+@NullMarked
 public interface SiteSettingsDelegate {
     /**
      * @return The BrowserContextHandle that should be used to read and update settings.
@@ -70,15 +71,16 @@ public interface SiteSettingsDelegate {
     boolean isPermissionDedicatedCpssSettingAndroidFeatureEnabled();
 
     /**
-     * @return true if the PrivacySandboxFirstPartySetsUi Feature is enabled.
+     * @return true if the PermissionSiteSettingsRadioButtonFeatureEnabled Feature is enabled.
      */
-    boolean isPrivacySandboxFirstPartySetsUiFeatureEnabled();
+    boolean isPermissionSiteSettingsRadioButtonFeatureEnabled();
 
     /**
-     * @return The id of the notification channel associated with the given origin.
+     * Get the id of the notification channel associated with the given origin.
+     *
+     * @param callback Callback to be invoked with the Id of the channel.
      */
-    // TODO(crbug.com/40126121): Remove this once WebLayer supports notifications.
-    String getChannelIdForOrigin(String origin);
+    void getChannelIdForOrigin(String origin, Callback<String> callback);
 
     /**
      * @return The name of the app the settings are associated with.
@@ -89,15 +91,15 @@ public interface SiteSettingsDelegate {
      * @return The user visible name of the app that will handle permission delegation for the
      *     origin and content setting type.
      */
-    @Nullable
-    String getDelegateAppNameForOrigin(Origin origin, @ContentSettingsType.EnumType int type);
+    @Nullable String getDelegateAppNameForOrigin(
+            Origin origin, @ContentSettingsType.EnumType int type);
 
     /**
      * @return The package name of the app that should handle permission delegation for the origin
      *     and content setting type.
      */
-    @Nullable
-    String getDelegatePackageNameForOrigin(Origin origin, @ContentSettingsType.EnumType int type);
+    @Nullable String getDelegatePackageNameForOrigin(
+            Origin origin, @ContentSettingsType.EnumType int type);
 
     /**
      * @return true if Help and Feedback links and menu items should be shown to the user.
@@ -118,8 +120,8 @@ public interface SiteSettingsDelegate {
      */
     void launchProtectedContentHelpAndFeedbackActivity(Activity currentActivity);
 
-    /** Launches the Storage Access API help center link in a Chrome Custom Tab. */
-    void launchStorageAccessHelpActivity(Activity currentActivity);
+    /** Launches a Help Center URL in a custom tab. */
+    void launchUrlInCustomTab(Activity currentActivity, String url);
 
     /**
      * @return The set of all origins that have a WebAPK or TWA installed.
@@ -174,27 +176,6 @@ public interface SiteSettingsDelegate {
      * @return true if the Tracking Protection UI should be displayed.
      */
     boolean shouldShowTrackingProtectionUi();
-
-    /**
-     * @return true if the IP Protection UI should be displayed in User Bypass.
-     */
-    boolean shouldDisplayIpProtection();
-
-    /***
-     * @return true if the Fingerprinting Protection UI should be displayed in User
-     *         Bypass.
-     */
-    boolean shouldDisplayFingerprintingProtection();
-
-    /***
-     * @return true if the Tracking Protection branded UI should be shown.
-     */
-    boolean shouldShowTrackingProtectionBrandedUi();
-
-    /**
-     * @return whether the 100% 3PCD Tracking Protection with ACT features UI should be shown.
-     */
-    boolean shouldShowTrackingProtectionActFeaturesUi();
 
     /**
      * @return whether all 3pcs should be blocked in incognito.

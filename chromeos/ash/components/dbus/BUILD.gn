@@ -3,10 +3,9 @@
 # found in the LICENSE file.
 
 import("//build/config/chromebox_for_meetings/buildflags.gni")
-import("//build/config/ui.gni")
 import("//third_party/protobuf/proto_library.gni")
 
-assert(is_chromeos_ash, "Non ChromeOS builds must not depend on //chromeos/ash")
+assert(is_chromeos, "Non ChromeOS builds must not depend on //chromeos/ash")
 
 component("dbus") {
   output_name = "ash_dbus"  # Avoid conflict with //dbus
@@ -134,7 +133,7 @@ proto_library("vm_sk_forwarding_proto") {
 proto_library("vm_wl_proto") {
   sources = [ "//third_party/cros_system_api/dbus/vm_wl/wl.proto" ]
   proto_out_dir = "chromeos/ash/components/dbus/vm_wl"
-  proto_deps = [ ":vm_applications_apps_proto" ]
+  deps = [ ":vm_applications_apps_proto" ]
   import_dirs = [ "//third_party/cros_system_api/dbus" ]
   extra_configs = [ ":system_api_proto_include_cfg" ]
 }

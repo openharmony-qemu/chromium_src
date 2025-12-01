@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "ohos/adapter/cert_manager/cert_manager_adapter.h"
 
@@ -43,12 +18,12 @@ CertManagerAdapter& CertManagerAdapter::GetInstance() {
 
 CertManagerAdapter::CertInfoList CertManagerAdapter::ListCertsInfo() {
   TRACE_EVENT_0("CertManagerAdapter::ListCertsInfo");
-  std::promise<bool> promise;
-  CertInfoList cert_infos;
+  auto promise = std::make_shared<std::promise<bool>>();
+  auto cert_infos = std::make_shared<CertInfoList>();
   std::function<void(aki::Value, int32_t)> callback =
-      [&](aki::Value ohos_cert_infos, int32_t cert_count) -> void {
+      [promise, cert_infos, this](aki::Value ohos_cert_infos, int32_t cert_count) -> void {
     if (!ohos_cert_infos.IsArray()) {
-      promise.set_value(true);
+      promise->set_value(true);
       return;
     }
 
@@ -56,24 +31,23 @@ CertManagerAdapter::CertInfoList CertManagerAdapter::ListCertsInfo() {
       OhosCertInfo cert_info;
       ConvertCertInfo(ohos_cert_infos[i], &cert_info);
       cert_info.type = CertType::USER_CERT;
-      cert_infos.push_back(cert_info);
+      cert_infos->push_back(cert_info);
     }
-    promise.set_value(true);
+    promise->set_value(true);
   };
 
   auto func = ohos::adapter::GetJSFunction(
       "CertManagerAdapter.GetAllPrivateCertificates");
   if (func) {
     func->Invoke<void>(callback);
-    auto future = promise.get_future();
+    auto future = promise->get_future();
     auto status = future.wait_for(std::chrono::seconds(kListCertsInfoWaitTime));
     if (status == std::future_status::timeout) {
       LOGE("CertManagerAdapter.ListCertsInfo Wait timeout");
-      return cert_infos;
+      return *cert_infos;
     }
-    future.get();
   }
-  return cert_infos;
+  return *cert_infos;
 }
 
 int CertManagerAdapter::InstallPersonalCert(std::shared_ptr<char[]> cert_data,
@@ -81,16 +55,16 @@ int CertManagerAdapter::InstallPersonalCert(std::shared_ptr<char[]> cert_data,
                                             const std::string& cert_pass,
                                             const std::string& alias) {
   TRACE_EVENT_0("CertManagerAdapter::InstallPersonalCert");
-  std::promise<int32_t> promise;
+  auto promise = std::make_shared<std::promise<int32_t>>();
   std::function<void(int32_t)> callback =
-      [&promise](int32_t ret_value) -> void { promise.set_value(ret_value); };
+      [promise](int32_t ret_value) -> void { promise->set_value(ret_value); };
 
   auto func =
       ohos::adapter::GetJSFunction("CertManagerAdapter.InstallPersonalCert");
   if (func) {
     aki::ArrayBuffer certArrayBuffer((uint8_t*)cert_data.get(), cert_len);
     func->Invoke<void>(std::move(certArrayBuffer), cert_pass, alias, callback);
-    auto future = promise.get_future();
+    auto future = promise->get_future();
     auto status = future.wait_for(std::chrono::seconds(3));
     if (status == std::future_status::timeout) {
       LOGE("CertManagerAdapter.InstallPersonalCert Wait timeout");

@@ -9,6 +9,7 @@
 
 #include "components/gwp_asan/crash_handler/crash_handler.h"
 
+#include <array>
 #include <map>
 #include <memory>
 #include <string>
@@ -42,7 +43,8 @@
 #include "third_party/crashpad/crashpad/snapshot/minidump/process_snapshot_minidump.h"
 #include "third_party/crashpad/crashpad/tools/tool_support.h"
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
+    BUILDFLAG(IS_OHOS)
 #include "third_party/crashpad/crashpad/snapshot/sanitized/sanitization_information.h"
 #endif
 
@@ -53,7 +55,9 @@ namespace {
 
 constexpr size_t kAllocationSize = 902;
 constexpr int kSuccess = 0;
-constexpr size_t kTotalPages = AllocatorState::kMaxRequestedSlots;
+
+static constexpr size_t kMaxMetadata = 2048;
+static constexpr size_t kTotalPages = 8192;
 
 #if !BUILDFLAG(IS_ANDROID)
 int HandlerMainAdaptor(int argc, char* argv[]) {
@@ -117,14 +121,14 @@ MULTIPROCESS_TEST_MAIN(CrashingProcess) {
   }
 
   base::NoDestructor<GuardedPageAllocator> gpa;
-  gpa->Init(
+  CHECK(gpa->Init(
       AllocatorSettings{
-          .max_allocated_pages = AllocatorState::kMaxMetadata,
-          .num_metadata = AllocatorState::kMaxMetadata,
+          .max_allocated_pages = kMaxMetadata,
+          .num_metadata = kMaxMetadata,
           .total_pages = kTotalPages,
           .sampling_frequency = 0u,
       },
-      base::DoNothing(), allocator == "partitionalloc");
+      base::DoNothing(), allocator == "partitionalloc"));
 
   static crashpad::StringAnnotation<24> gpa_annotation(annotation_name);
   gpa_annotation.Set(gpa->GetCrashKey());
@@ -142,7 +146,8 @@ MULTIPROCESS_TEST_MAIN(CrashingProcess) {
   std::map<std::string, std::string> annotations;
   std::vector<std::string> arguments;
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_ANDROID) || \
+    BUILDFLAG(IS_OHOS)
   static crashpad::SanitizationInformation sanitization_info = {};
   static crashpad::SanitizationAllowedMemoryRanges allowed_memory_ranges;
   if (cmd_line->HasSwitch("sanitize")) {
@@ -198,8 +203,7 @@ MULTIPROCESS_TEST_MAIN(CrashingProcess) {
       modules.AppendASCII("libchrome_crashpad_handler.so");
 
   std::unique_ptr<base::Environment> env(base::Environment::Create());
-  std::string library_path;
-  env->GetVar("LD_LIBRARY_PATH", &library_path);
+  std::string library_path = env->GetVar("LD_LIBRARY_PATH").value_or("");
   env->SetVar("LD_LIBRARY_PATH", library_path + ":" + modules.value());
 
   bool handler = client->StartHandlerAtCrash(
@@ -230,12 +234,27 @@ MULTIPROCESS_TEST_MAIN(CrashingProcess) {
     gpa->Deallocate(ptr);
   } else if (test_name == "Underflow") {
     void* ptr = gpa->Allocate(kAllocationSize);
-    for (size_t i = 0; i < base::GetPageSize(); i++)
-      ((unsigned char*)ptr)[-i] = 0;
+    for (size_t i = 0; i < base::GetPageSize(); i++) {
+      // Cast to `ptrdiff_t` so that the offset is actually negative, rather
+      // than a very large unsigned value. With a very large unsigned value,
+      // UBSan flags the error without any information about allocation sizes,
+      // which impacts the crash handling.
+      //
+      // The compiler could also, in principle, see that `ptr[-size_t{1}]` is
+      // always UB because no allocation can be that large, and then optimize
+      // this code to assume `base::GetPageSize()` returns one, suppressing the
+      // crash. (Though, as of writing, it does not do this.)
+      //
+      // Avoid these issues by underflowing with an actual negative value. This
+      // is still UB (thus the crash), but requires knowledge of `ptr` to
+      // observe, so a non-ASan compiler does not interfere with it in practice.
+      ((unsigned char*)ptr)[-static_cast<ptrdiff_t>(i)] = 0;
+    }
   } else if (test_name == "Overflow") {
     void* ptr = gpa->Allocate(kAllocationSize);
-    for (size_t i = 0; i <= base::GetPageSize(); i++)
+    for (size_t i = 0; i <= base::GetPageSize(); i++) {
       ((unsigned char*)ptr)[i] = 0;
+    }
   } else if (test_name == "UnrelatedException") {
     __builtin_trap();
   } else if (test_name == "FreeInvalidAddress") {
@@ -244,9 +263,10 @@ MULTIPROCESS_TEST_MAIN(CrashingProcess) {
     gpa->Deallocate(reinterpret_cast<void*>(bad_address));
   } else if (test_name == "MissingMetadata") {
     // Consume all allocations/metadata
-    void* ptrs[AllocatorState::kMaxMetadata];
-    for (size_t i = 0; i < AllocatorState::kMaxMetadata; i++)
+    std::array<void*, kMaxMetadata> ptrs;
+    for (size_t i = 0; i < kMaxMetadata; i++) {
       ptrs[i] = gpa->Allocate(1);
+    }
 
     gpa->Deallocate(ptrs[0]);
 
@@ -446,9 +466,11 @@ class BaseCrashHandlerTest : public base::MultiProcessTest,
       // depends on the PartitionAlloc metadata layout.
       EXPECT_GE(proto_.region_size(),
                 base::GetPageSize() * (2 * kTotalPages + 1));
-      EXPECT_LE(
-          proto_.region_size(),
-          base::GetPageSize() * (2 * AllocatorState::kMaxReservedSlots + 1));
+      // Upper bound for number of pages reserved when requesting kTotalPages
+      // worth of allocatable slots.
+      constexpr size_t kTotalPagesReserved = 2 * kTotalPages;
+      EXPECT_LE(proto_.region_size(),
+                base::GetPageSize() * (2 * kTotalPagesReserved + 1));
     }
 
     EXPECT_TRUE(proto_.has_missing_metadata());
@@ -470,7 +492,8 @@ class BaseCrashHandlerTest : public base::MultiProcessTest,
 
 class CrashHandlerTest : public BaseCrashHandlerTest {};
 
-#if defined(ADDRESS_SANITIZER) && (BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID))
+#if defined(ADDRESS_SANITIZER) && (BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID) || \
+    BUILDFLAG(IS_OHOS))
 // ASan intercepts crashes and crashpad doesn't have a chance to see them.
 #define MAYBE_DISABLED(name) DISABLED_ ##name
 #else

@@ -9,11 +9,11 @@
 
 #include "device/fido/cable/v2_handshake.h"
 
+#include <algorithm>
 #include <string_view>
 
 #include "base/containers/contains.h"
 #include "base/rand_util.h"
-#include "base/ranges/algorithm.h"
 #include "base/test/scoped_feature_list.h"
 #include "components/cbor/reader.h"
 #include "components/cbor/values.h"
@@ -21,6 +21,7 @@
 #include "crypto/random.h"
 #include "device/fido/cable/cable_discovery_data.h"
 #include "device/fido/features.h"
+#include "device/fido/fido_constants.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "third_party/boringssl/src/include/openssl/ec.h"
 #include "third_party/boringssl/src/include/openssl/ec_key.h"
@@ -32,7 +33,7 @@ namespace device::cablev2 {
 namespace {
 
 TEST(CableV2Encoding, TunnelServerURLs) {
-  uint8_t tunnel_id[16] = {0};
+  uint8_t tunnel_id[16] = {};
   // Tunnel ID zero should map to Google's tunnel server.
   const tunnelserver::KnownDomainID kGoogleDomain(0);
   const GURL url = tunnelserver::GetNewTunnelURL(kGoogleDomain, tunnel_id);
@@ -126,7 +127,7 @@ TEST(CableV2Encoding, KnownQRs) {
       0x57, 0x42, 0x1D, 0x49, 0x7E, 0x56, 0x9E, 0x1E, 0xBA, 0x6C, 0xFF,
       0x9A, 0x69, 0xD3, 0x2E, 0x90, 0xF1, 0x9E, 0x7F, 0x6F, 0xD1, 0x5E,
   };
-  static const uint8_t kQRSecret[16] = {0};
+  static const uint8_t kQRSecret[16] = {};
 
   const struct {
     std::function<void(cbor::Value::MapValue* m)> build;
@@ -318,21 +319,20 @@ TEST(CableV2Encoding, RequestTypeToString) {
 }
 
 TEST(CableV2Encoding, ShouldOfferLinking) {
-  for (const auto type :
-       {FidoRequestType::kMakeCredential, FidoRequestType::kGetAssertion}) {
-    EXPECT_TRUE(ShouldOfferLinking(type));
-  }
-  {
-    base::test::ScopedFeatureList disable_linking_for_dc;
-    disable_linking_for_dc.InitAndDisableFeature(
-        device::kDigitalCredentialsHybridLinking);
-    EXPECT_FALSE(ShouldOfferLinking(CredentialRequestType::kPresentation));
-  }
-  {
-    base::test::ScopedFeatureList enable_linking_for_dc;
-    enable_linking_for_dc.InitAndEnableFeature(
-        device::kDigitalCredentialsHybridLinking);
-    EXPECT_TRUE(ShouldOfferLinking(CredentialRequestType::kPresentation));
+  const struct TestCase {
+    device::cablev2::RequestType request_type;
+    base::test::FeatureRef feature;
+  } kTestCases[] = {
+      {FidoRequestType::kMakeCredential, device::kWebAuthnHybridLinking},
+      {FidoRequestType::kGetAssertion, device::kWebAuthnHybridLinking},
+      {CredentialRequestType::kPresentation,
+       device::kDigitalCredentialsHybridLinking}};
+  for (const TestCase& test_case : kTestCases) {
+    for (bool enabled : {false, true}) {
+      base::test::ScopedFeatureList scoped_feature_list;
+      scoped_feature_list.InitWithFeatureState(*test_case.feature, enabled);
+      EXPECT_EQ(ShouldOfferLinking(test_case.request_type), enabled);
+    }
   }
 }
 
@@ -348,7 +348,7 @@ TEST(CableV2Encoding, PaddedCBOR) {
   EXPECT_EQ(0u, decoded->GetMap().size());
 
   cbor::Value::MapValue map2;
-  uint8_t blob[kPostHandshakeMsgPaddingGranularity] = {0};
+  uint8_t blob[kPostHandshakeMsgPaddingGranularity] = {};
   map2.emplace(1, base::span<const uint8_t>(blob, sizeof(blob)));
   encoded = EncodePaddedCBORMap(std::move(map2));
   ASSERT_TRUE(encoded);
@@ -448,7 +448,7 @@ TEST(CableV2Encoding, Digits) {
     if (!bytes.has_value()) {
       continue;
     }
-    EXPECT_TRUE(base::ranges::all_of(*bytes, [](uint8_t v) { return v == 0; }));
+    EXPECT_TRUE(std::ranges::all_of(*bytes, [](uint8_t v) { return v == 0; }));
   }
 
   // The encoding is used as part of an external protocol and so should not

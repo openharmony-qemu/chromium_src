@@ -61,13 +61,10 @@ class CONTENT_EXPORT TextInputManager {
     // Called when |updated_view| has changed its CompositionRangeInfo.
     // |character_bounds_changed| marks whether the current
     // CompositionRangeInfo::character_bounds should be updated.
-    // |line_bounds| (used by Android) is an optional list of line rectangles.
-    // If it has no value, no update is required.
     virtual void OnImeCompositionRangeChanged(
         TextInputManager* text_input_manager,
         RenderWidgetHostViewBase* updated_view,
-        bool character_bounds_changed,
-        const std::optional<std::vector<gfx::Rect>>& line_bounds) {}
+        bool character_bounds_changed) {}
     // Called when the text selection for the |updated_view_| has changed.
     virtual void OnTextSelectionChanged(
         TextInputManager* text_input_manager,
@@ -260,8 +257,7 @@ class CONTENT_EXPORT TextInputManager {
   void ImeCompositionRangeChanged(
       RenderWidgetHostViewBase* view,
       const gfx::Range& range,
-      const std::optional<std::vector<gfx::Rect>>& character_bounds,
-      const std::optional<std::vector<gfx::Rect>>& line_bounds);
+      const std::optional<std::vector<gfx::Rect>>& character_bounds);
 
   // Updates the new text selection information for the |view|.
   void SelectionChanged(RenderWidgetHostViewBase* view,
@@ -299,6 +295,12 @@ class CONTENT_EXPORT TextInputManager {
       RenderWidgetHostViewBase* view);
   const gfx::Range* GetCompositionRangeForTesting() const;
 
+  ui::mojom::RequestKeyboardReason ConsumeRequestKeyboardReason() {
+    ui::mojom::RequestKeyboardReason reason = request_keyboard_reason_;
+    request_keyboard_reason_ = ui::mojom::RequestKeyboardReason::NONE;
+    return reason;
+  }
+
  private:
   // This class is used to create maps which hold specific IME state for a
   // view.
@@ -321,6 +323,9 @@ class CONTENT_EXPORT TextInputManager {
   ViewMap<SelectionRegion> selection_region_map_;
   ViewMap<CompositionRangeInfo> composition_range_info_map_;
   ViewMap<TextSelection> text_selection_map_;
+#if BUILDFLAG(IS_OHOS)
+  ui::mojom::RequestKeyboardReason request_keyboard_reason_;
+#endif
 #if BUILDFLAG(IS_WIN)
   ViewMap<blink::mojom::ProximateCharacterRangeBoundsPtr>
       proximate_character_bounds_map_;

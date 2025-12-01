@@ -80,11 +80,8 @@ void ReadDataFromSpeechFile(char* data, int length) {
 void DisableDefaultSettings(AudioProcessingSettings& settings) {
   settings.echo_cancellation = false;
   settings.noise_suppression = false;
-  settings.transient_noise_suppression = false;
   settings.automatic_gain_control = false;
-  settings.high_pass_filter = false;
   settings.multi_channel_capture_processing = false;
-  settings.stereo_mirroring = false;
 }
 
 }  // namespace
@@ -143,7 +140,7 @@ class AudioProcessorTest : public ::testing::Test {
             EXPECT_EQ(audio_capture_time, input_capture_time);
           });
       audio_processor.ProcessCapturedAudio(*data_bus, input_capture_time,
-                                           num_preferred_channels, 1.0, false);
+                                           num_preferred_channels, 1.0);
 
       data_ptr += input_params.frames_per_buffer() * input_params.channels();
 
@@ -161,11 +158,11 @@ class AudioProcessorTest : public ::testing::Test {
     const webrtc::AudioProcessing::Config config =
         *audio_processor.GetAudioProcessingModuleConfigForTesting();
 
-    EXPECT_TRUE(config.high_pass_filter.enabled);
     EXPECT_FALSE(config.pre_amplifier.enabled);
     EXPECT_TRUE(config.echo_canceller.enabled);
 
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
+    BUILDFLAG(IS_OHOS)
     EXPECT_FALSE(config.gain_controller1.enabled);
     EXPECT_TRUE(config.gain_controller2.enabled);
 #elif BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_FUCHSIA)
@@ -184,13 +181,6 @@ class AudioProcessorTest : public ::testing::Test {
     EXPECT_TRUE(config.noise_suppression.enabled);
     EXPECT_EQ(config.noise_suppression.level,
               webrtc::AudioProcessing::Config::NoiseSuppression::kHigh);
-
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
-    // Android and iOS use echo cancellation optimized for mobiles.
-    EXPECT_TRUE(config.echo_canceller.mobile_mode);
-#else
-    EXPECT_FALSE(config.echo_canceller.mobile_mode);
-#endif
   }
 
   media::AudioParameters params_;
@@ -385,15 +375,12 @@ TEST_P(AudioProcessorTestMultichannelAndFormat, TestStereoAudio) {
       // Turn off the audio processing.
       DisableDefaultSettings(settings);
     }
-    // Turn on the stereo channels mirroring.
-    settings.stereo_mirroring = true;
     std::unique_ptr<AudioProcessor> audio_processor = AudioProcessor::Create(
         mock_capture_callback_.Get(), LogCallbackForTesting(), settings,
         params_, GetProcessorOutputParams(params_, settings));
     EXPECT_EQ(audio_processor->has_webrtc_audio_processing(), use_apm);
     // There's no sense in continuing if this fails.
     ASSERT_EQ(2, audio_processor->output_format().channels());
-
     // Run the test consecutively to make sure the stereo channels are not
     // flipped back and forth.
     const base::TimeTicks pushed_capture_time = base::TimeTicks::Now();
@@ -406,8 +393,8 @@ TEST_P(AudioProcessorTestMultichannelAndFormat, TestStereoAudio) {
         SCOPED_TRACE(testing::Message() << "packet index i=" << i);
         EXPECT_CALL(mock_capture_callback_, Run(_, _, _)).Times(1);
         // Pass audio for processing.
-        audio_processor->ProcessCapturedAudio(
-            *data_bus, pushed_capture_time, num_preferred_channels, 0.0, false);
+        audio_processor->ProcessCapturedAudio(*data_bus, pushed_capture_time,
+                                              num_preferred_channels, 0.0);
       }
       // At this point, the audio processing algorithms have gotten past any
       // initial buffer silence generated from resamplers, FFTs, and whatnot.
@@ -434,15 +421,13 @@ TEST_P(AudioProcessorTestMultichannelAndFormat, TestStereoAudio) {
               EXPECT_NE(right_channel_energy, 0);
             } else {
               // Stereo output. Output channels are independent.
-              // Note that after stereo mirroring, the _right_ channel is
-              // non-zero.
-              EXPECT_EQ(left_channel_energy, 0);
-              EXPECT_NE(right_channel_energy, 0);
+              EXPECT_NE(left_channel_energy, 0);
+              EXPECT_EQ(right_channel_energy, 0);
             }
           });
       // Process one more frame of audio.
       audio_processor->ProcessCapturedAudio(*data_bus, pushed_capture_time,
-                                            num_preferred_channels, 0.0, false);
+                                            num_preferred_channels, 0.0);
     }
   }
 }
@@ -514,16 +499,15 @@ class AudioProcessorPlayoutTest : public AudioProcessorTest {
  protected:
   AudioProcessorPlayoutTest()
       : mock_webrtc_apm_(
-            rtc::make_ref_counted<webrtc::test::MockAudioProcessing>()),
+            webrtc::make_ref_counted<webrtc::test::MockAudioProcessing>()),
         audio_processor_(mock_capture_callback_.Get(),
                          LogCallbackForTesting(),
                          params_,
                          params_,
                          mock_webrtc_apm_,
-                         /*stereo_mirroring=*/false,
                          /*needs_playout_reference=*/true) {}
 
-  rtc::scoped_refptr<webrtc::test::MockAudioProcessing> mock_webrtc_apm_;
+  webrtc::scoped_refptr<webrtc::test::MockAudioProcessing> mock_webrtc_apm_;
   AudioProcessor audio_processor_;
 };
 
@@ -615,27 +599,27 @@ TEST(AudioProcessorCallbackTest,
   // 4 ms of data: Not enough to process.
   EXPECT_CALL(mock_capture_callback, Run(_, _, _)).Times(0);
   audio_processor->ProcessCapturedAudio(*data_bus, base::TimeTicks::Now(), -1,
-                                        1.0, false);
+                                        1.0);
   // 8 ms of data: Not enough to process.
   EXPECT_CALL(mock_capture_callback, Run(_, _, _)).Times(0);
   audio_processor->ProcessCapturedAudio(*data_bus, base::TimeTicks::Now(), -1,
-                                        1.0, false);
+                                        1.0);
   // 12 ms of data: Should trigger callback, with 2 ms left in the processor.
   EXPECT_CALL(mock_capture_callback, Run(_, _, _))
       .Times(1)
       .WillOnce(check_audio_length);
   audio_processor->ProcessCapturedAudio(*data_bus, base::TimeTicks::Now(), -1,
-                                        1.0, false);
+                                        1.0);
   // 2 + 4 ms of data: Not enough to process.
   EXPECT_CALL(mock_capture_callback, Run(_, _, _)).Times(0);
   audio_processor->ProcessCapturedAudio(*data_bus, base::TimeTicks::Now(), -1,
-                                        1.0, false);
+                                        1.0);
   // 10 ms of data: Should trigger callback.
   EXPECT_CALL(mock_capture_callback, Run(_, _, _))
       .Times(1)
       .WillOnce(check_audio_length);
   audio_processor->ProcessCapturedAudio(*data_bus, base::TimeTicks::Now(), -1,
-                                        1.0, false);
+                                        1.0);
 }
 
 // When audio processing is performed, input containing 10 ms several times over
@@ -667,13 +651,13 @@ TEST(AudioProcessorCallbackTest,
       .Times(3)
       .WillRepeatedly(check_audio_length);
   audio_processor->ProcessCapturedAudio(*data_bus, base::TimeTicks::Now(), -1,
-                                        1.0, false);
+                                        1.0);
   // 5 + 35 ms of audio --> 4 chunks of 10 ms.
   EXPECT_CALL(mock_capture_callback, Run(_, _, _))
       .Times(4)
       .WillRepeatedly(check_audio_length);
   audio_processor->ProcessCapturedAudio(*data_bus, base::TimeTicks::Now(), -1,
-                                        1.0, false);
+                                        1.0);
 }
 
 // When no audio processing is performed, audio is delivered immediately. Note
@@ -706,12 +690,12 @@ TEST(AudioProcessorCallbackTest,
       .Times(1)
       .WillOnce(check_audio_length);
   audio_processor->ProcessCapturedAudio(*data_bus, base::TimeTicks::Now(), -1,
-                                        1.0, false);
+                                        1.0);
   EXPECT_CALL(mock_capture_callback, Run(_, _, _))
       .Times(1)
       .WillOnce(check_audio_length);
   audio_processor->ProcessCapturedAudio(*data_bus, base::TimeTicks::Now(), -1,
-                                        1.0, false);
+                                        1.0);
 }
 
 // When no audio processing is performed, audio is delivered immediately. Chunks
@@ -744,36 +728,18 @@ TEST(AudioProcessorCallbackTest,
       .Times(3)
       .WillRepeatedly(check_audio_length);
   audio_processor->ProcessCapturedAudio(*data_bus, base::TimeTicks::Now(), -1,
-                                        1.0, false);
+                                        1.0);
   // 5 + 35 ms of audio --> 4 chunks of 10 ms.
   EXPECT_CALL(mock_capture_callback, Run(_, _, _))
       .Times(4)
       .WillRepeatedly(check_audio_length);
   audio_processor->ProcessCapturedAudio(*data_bus, base::TimeTicks::Now(), -1,
-                                        1.0, false);
+                                        1.0);
 }
-
-class ApmTellsIfPlayoutReferenceIsNeededParametrizedTest
-    : public ::testing::TestWithParam<bool> {
- public:
-  ApmTellsIfPlayoutReferenceIsNeededParametrizedTest() {
-    if (GetParam()) {
-      feature_list_.InitAndEnableFeature(
-          features::kWebRtcApmTellsIfPlayoutReferenceIsNeeded);
-    } else {
-      feature_list_.InitAndDisableFeature(
-          features::kWebRtcApmTellsIfPlayoutReferenceIsNeeded);
-    }
-  }
-
- private:
-  ::base::test::ScopedFeatureList feature_list_;
-};
 
 // Checks that, when all the audio processing settings are disabled, APM does
 // not need the playout reference.
-TEST_P(ApmTellsIfPlayoutReferenceIsNeededParametrizedTest,
-       DoesNotNeedPlayoutReference) {
+TEST(ApmTellsIfPlayoutReferenceIsNeededTest, DoesNotNeedPlayoutReference) {
   AudioProcessingSettings settings;
   DisableDefaultSettings(settings);
 
@@ -795,8 +761,7 @@ TEST_P(ApmTellsIfPlayoutReferenceIsNeededParametrizedTest,
 #endif
 // TODO: This test is disabled for ios-blink platform as per the discussion on
 // bug https://crbug.com/1417474
-TEST_P(ApmTellsIfPlayoutReferenceIsNeededParametrizedTest,
-       MAYBE_NeedsPlayoutReference) {
+TEST(ApmTellsIfPlayoutReferenceIsNeededTest, MAYBE_NeedsPlayoutReference) {
   AudioProcessingSettings settings;
   DisableDefaultSettings(settings);
   settings.echo_cancellation = true;
@@ -810,9 +775,5 @@ TEST_P(ApmTellsIfPlayoutReferenceIsNeededParametrizedTest,
 
   EXPECT_TRUE(audio_processor->needs_playout_reference());
 }
-
-INSTANTIATE_TEST_SUITE_P(AudioProcessor,
-                         ApmTellsIfPlayoutReferenceIsNeededParametrizedTest,
-                         ::testing::Bool());
 
 }  // namespace media

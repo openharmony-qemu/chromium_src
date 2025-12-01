@@ -5,6 +5,7 @@
 #include "ash/system/focus_mode/sounds/focus_mode_sounds_view.h"
 
 #include <memory>
+#include <variant>
 
 #include "ash/public/cpp/system_tray_client.h"
 #include "ash/resources/vector_icons/vector_icons.h"
@@ -27,7 +28,7 @@
 #include "base/check_op.h"
 #include "base/containers/fixed_flat_map.h"
 #include "base/functional/bind.h"
-#include "third_party/abseil-cpp/absl/types/variant.h"
+#include "base/strings/utf_string_conversions.h"
 #include "ui/base/l10n/l10n_util.h"
 #include "ui/base/metadata/metadata_impl_macros.h"
 #include "ui/chromeos/devicetype_utils.h"
@@ -48,7 +49,7 @@ namespace {
 constexpr auto kDisconnectedContainerMargins = gfx::Insets::TLBR(8, 0, 0, 0);
 
 constexpr auto kSoundViewBottomPadding = 22;
-constexpr auto kSoundTabSliderInsets = gfx::Insets::VH(16, 0);
+constexpr auto kSoundTabSliderInsets = gfx::Insets::VH(16, 24);
 constexpr auto kFocusSoundsLabelInsets = gfx::Insets::VH(18, 24);
 
 constexpr int kNonPremiumChildViewsSpacing = 16;
@@ -91,12 +92,12 @@ std::unique_ptr<views::BoxLayoutView> CreateYouTubeMusicAlternateViewBase(
   label->SetHorizontalAlignment(gfx::HorizontalAlignment::ALIGN_CENTER);
   label->SetFontList(TypographyProvider::Get()->ResolveTypographyToken(
       TypographyToken::kCrosBody2));
-  label->SetEnabledColorId(cros_tokens::kCrosSysOnSurface);
+  label->SetEnabledColor(cros_tokens::kCrosSysOnSurface);
 
   auto* button = box_view->AddChildView(std::make_unique<PillButton>(
       std::move(callback), l10n_util::GetStringUTF16(button_message_id),
       PillButton::Type::kSecondaryWithoutIcon));
-  button->SetBackgroundColorId(cros_tokens::kCrosSysHighlightShape);
+  button->SetBackgroundColorId(cros_tokens::kCrosSysSystemPrimaryContainer);
   button->SetButtonTextColorId(cros_tokens::kCrosSysSystemOnPrimaryContainer);
   return box_view;
 }
@@ -142,7 +143,7 @@ std::unique_ptr<views::Label> CreateOfflineLabel(const int message_id) {
       std::make_unique<views::Label>(l10n_util::GetStringUTF16(message_id));
   label->SetFontList(ash::TypographyProvider::Get()->ResolveTypographyToken(
       ash::TypographyToken::kCrosBody2));
-  label->SetEnabledColorId(cros_tokens::kCrosSysOnSurface);
+  label->SetEnabledColor(cros_tokens::kCrosSysOnSurface);
   label->SetMultiLine(true);
   label->SetHorizontalAlignment(gfx::HorizontalAlignment::ALIGN_CENTER);
   return label;
@@ -325,12 +326,12 @@ constexpr std::partial_ordering FocusModeSoundsView::ToastData::operator<=>(
     return kActionValue.at(action_type) <=> kActionValue.at(other.action_type);
   }
 
-  if (absl::holds_alternative<int>(message)) {
-    if (absl::holds_alternative<std::u16string>(other.message)) {
+  if (std::holds_alternative<int>(message)) {
+    if (std::holds_alternative<std::u16string>(other.message)) {
       return std::partial_ordering::less;
     }
   } else {
-    if (absl::holds_alternative<int>(other.message)) {
+    if (std::holds_alternative<int>(other.message)) {
       return std::partial_ordering::greater;
     }
   }
@@ -408,6 +409,16 @@ void FocusModeSoundsView::CreateHeader(
 
   auto* sounds_container_header =
       AddChildView(std::make_unique<views::BoxLayoutView>());
+
+  // Stretch children views to take full width. This is needed because otherwise
+  // TabSlider's preferred width will become zero.
+  // TODO(crbug.com/400028865): this should be no longer needed once Label's
+  // preferred size respects its eliding mode.
+  sounds_container_header->SetOrientation(
+      views::BoxLayout::Orientation::kVertical);
+  sounds_container_header->SetCrossAxisAlignment(
+      views::BoxLayout::CrossAxisAlignment::kStretch);
+
   sounds_container_header->SetInsideBorderInsets(
       contains_youtube_music ? kSoundTabSliderInsets : kFocusSoundsLabelInsets);
   sounds_container_header->SetMainAxisAlignment(
@@ -422,8 +433,7 @@ void FocusModeSoundsView::CreateHeader(
         IDS_ASH_STATUS_TRAY_FOCUS_MODE_SOUNDS_SOUNDSCAPE_BUTTON));
     focus_sounds_label->SetHorizontalAlignment(
         gfx::HorizontalAlignment::ALIGN_LEFT);
-    focus_sounds_label->SetEnabledColorId(
-        cros_tokens::kCrosSysOnSurfaceVariant);
+    focus_sounds_label->SetEnabledColor(cros_tokens::kCrosSysOnSurfaceVariant);
     TypographyProvider::Get()->StyleLabel(TypographyToken::kCrosBody2,
                                           *focus_sounds_label);
     return;
@@ -621,9 +631,9 @@ void FocusModeSoundsView::ProcessError(const ToastData& data) {
   }
 
   const std::u16string& message =
-      absl::holds_alternative<std::u16string>(data.message)
-          ? absl::get<std::u16string>(data.message)
-          : l10n_util::GetStringUTF16(absl::get<int>(data.message));
+      std::holds_alternative<std::u16string>(data.message)
+          ? std::get<std::u16string>(data.message)
+          : l10n_util::GetStringUTF16(std::get<int>(data.message));
   ShowErrorMessageForType(
       data.source == focus_mode_util::SoundType::kSoundscape, message,
       data.action_type);

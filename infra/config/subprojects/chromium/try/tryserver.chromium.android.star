@@ -21,6 +21,7 @@ try_.defaults.set(
     compilator_cores = 32,
     execution_timeout = try_.DEFAULT_EXECUTION_TIMEOUT,
     orchestrator_cores = 4,
+    reclient_enabled = False,
     service_account = try_.DEFAULT_SERVICE_ACCOUNT,
     siso_enabled = True,
     # crbug.com/372192123 - downloading with "minimum" strategy doesn't work
@@ -54,6 +55,36 @@ try_.builder(
             "release_try_builder",
         ],
     ),
+)
+
+try_.builder(
+    name = "android-10-x86-rel",
+    mirrors = [
+        "ci/android-10-x86-rel",
+    ],
+    gn_args = gn_args.config(
+        configs = [
+            "ci/android-10-x86-rel",
+            "release_try_builder",
+        ],
+    ),
+    contact_team_email = "clank-engprod@google.com",
+    siso_remote_jobs = siso.remote_jobs.LOW_JOBS_FOR_CQ,
+)
+
+try_.builder(
+    name = "android-10-x86-fyi-rel",
+    mirrors = [
+        "ci/android-10-x86-fyi-rel",
+    ],
+    gn_args = gn_args.config(
+        configs = [
+            "ci/android-10-x86-fyi-rel",
+            "release_try_builder",
+        ],
+    ),
+    contact_team_email = "clank-engprod@google.com",
+    siso_remote_jobs = siso.remote_jobs.LOW_JOBS_FOR_CQ,
 )
 
 try_.builder(
@@ -179,13 +210,14 @@ try_.builder(
 )
 
 try_.builder(
-    name = "android-tablet-14-arm64-fyi-rel",
+    name = "android-14-tablet-landscape-arm64-rel",
+    branch_selector = branches.selector.ANDROID_BRANCHES,
     mirrors = [
-        "ci/android-tablet-14-arm64-fyi-rel",
+        "ci/android-14-tablet-landscape-arm64-rel",
     ],
     gn_args = gn_args.config(
         configs = [
-            "ci/android-tablet-14-arm64-fyi-rel",
+            "ci/android-14-tablet-landscape-arm64-rel",
             "release_try_builder",
         ],
     ),
@@ -229,6 +261,21 @@ try_.builder(
 )
 
 try_.builder(
+    name = "android-14-automotive-landscape-x64-rel",
+    mirrors = [
+        "ci/android-14-automotive-landscape-x64-rel",
+    ],
+    gn_args = gn_args.config(
+        configs = [
+            "ci/android-14-automotive-landscape-x64-rel",
+            "release_try_builder",
+        ],
+    ),
+    contact_team_email = "clank-engprod@google.com",
+    siso_remote_jobs = siso.remote_jobs.LOW_JOBS_FOR_CQ,
+)
+
+try_.builder(
     name = "android-14-x64-rel",
     mirrors = [
         "ci/android-14-x64-rel",
@@ -260,12 +307,50 @@ try_.builder(
 
 try_.builder(
     name = "android-15-x64-rel",
+    branch_selector = branches.selector.ANDROID_BRANCHES,
+    description_html = "Run Chromium tests on Android 15 emulator.",
     mirrors = [
         "ci/android-15-x64-rel",
     ],
     gn_args = gn_args.config(
         configs = [
             "ci/android-15-x64-rel",
+            "release_try_builder",
+        ],
+    ),
+    contact_team_email = "clank-engprod@google.com",
+    siso_remote_jobs = siso.remote_jobs.LOW_JOBS_FOR_CQ,
+)
+
+try_.builder(
+    name = "android-15-tablet-landscape-x64-rel",
+    # TODO(crbug.com/376748979 ): Enable on branches once tests are stable
+    # branch_selector = branches.selector.ANDROID_BRANCHES,
+    description_html = "Run Chromium tests on Android 15 tablet landscape emulator.",
+    mirrors = [
+        "ci/android-15-tablet-landscape-x64-rel",
+    ],
+    gn_args = gn_args.config(
+        configs = [
+            "ci/android-15-tablet-landscape-x64-rel",
+            "release_try_builder",
+        ],
+    ),
+    contact_team_email = "clank-engprod@google.com",
+    siso_remote_jobs = siso.remote_jobs.LOW_JOBS_FOR_CQ,
+)
+
+try_.builder(
+    name = "android-15-tablet-x64-rel",
+    # TODO(crbug.com/376748979 ): Enable on branches once tests are stable
+    # branch_selector = branches.selector.ANDROID_BRANCHES,
+    description_html = "Run Chromium tests on Android 15 tablet emulator.",
+    mirrors = [
+        "ci/android-15-tablet-x64-rel",
+    ],
+    gn_args = gn_args.config(
+        configs = [
+            "ci/android-15-tablet-x64-rel",
             "release_try_builder",
         ],
     ),
@@ -281,6 +366,21 @@ try_.builder(
     gn_args = gn_args.config(
         configs = [
             "ci/android-15-x64-fyi-rel",
+            "release_try_builder",
+        ],
+    ),
+    contact_team_email = "clank-engprod@google.com",
+    siso_remote_jobs = siso.remote_jobs.LOW_JOBS_FOR_CQ,
+)
+
+try_.builder(
+    name = "android-16-x64-fyi-rel",
+    mirrors = [
+        "ci/android-16-x64-fyi-rel",
+    ],
+    gn_args = gn_args.config(
+        configs = [
+            "ci/android-16-x64-fyi-rel",
             "release_try_builder",
         ],
     ),
@@ -310,8 +410,8 @@ try_.orchestrator_builder(
             "ci/android-pie-arm64-rel",
             "release_try_builder",
             "android_fastbuild",
+            "enable_android_secondary_abi",
             "fail_on_android_expectations",
-            "no_secondary_abi",
             "use_clang_coverage",
             "partial_code_coverage_instrumentation",
         ],
@@ -321,11 +421,8 @@ try_.orchestrator_builder(
     experiments = {
         # go/nplus1shardsproposal
         "chromium.add_one_test_shard": 10,
-        "chromium.compilator_can_outlive_parent": 100,
         # crbug/940930
         "chromium.enable_cleandead": 100,
-        # b/346598710
-        "chromium.luci_analysis_v2": 100,
     },
     main_list_view = "try",
     tryjob = try_.job(),
@@ -356,20 +453,6 @@ try_.builder(
     contact_team_email = "chrome-mte@google.com",
     siso_remote_jobs = siso.remote_jobs.LOW_JOBS_FOR_CQ,
 )
-
-# TODO(crbug.com/40240078): Reenable this builder once the reboot issue is resolved.
-# try_.builder(
-#     name = "android-asan",
-#     mirrors = ["ci/android-asan"],
-#     gn_args = gn_args.config(
-#         configs = [
-#             "ci/android-asan",
-#             "release_try_builder",
-#             "minimal_symbols",
-#         ],
-#     ),
-#     siso_remote_jobs = siso.remote_jobs.LOW_JOBS_FOR_CQ,
-# )
 
 try_.builder(
     name = "android-bfcache-rel",
@@ -402,8 +485,6 @@ try_.builder(
             # Allows the bot to measure low-end arm32 and high-end arm64 using
             # a single build.
             "android_low_end_secondary_toolchain",
-            # Disable PGO due to too much volatility: https://crbug.com/344608183
-            "pgo_phase_0",
         ],
     ),
     builderless = not settings.is_main,
@@ -418,6 +499,7 @@ try_.builder(
                 "//chrome/android:validate_expectations",
                 "//tools/binary_size:binary_size_trybot_py",
             ],
+            "arm64_size_config_json": "config/TrichromeLibrary64_size_config.json",
             "compile_targets": [
                 "check_chrome_static_initializers",
                 "trichrome_32_minimal_apks",
@@ -459,6 +541,7 @@ try_.builder(
     gn_args = gn_args.config(
         configs = [
             "android_builder_without_codecs",
+            "android_with_static_analysis",
             "cronet_android",
             "debug_static_builder",
             "remoteexec",
@@ -492,6 +575,7 @@ try_.builder(
     gn_args = gn_args.config(
         configs = [
             "android_builder_without_codecs",
+            "android_with_static_analysis",
             "cronet_android",
             "release_try_builder",
             "remoteexec",
@@ -517,14 +601,6 @@ try_.builder(
 )
 
 try_.builder(
-    name = "android-cronet-arm64-gn2bp-dbg",
-    mirrors = ["ci/android-cronet-arm64-gn2bp-dbg"],
-    gn_args = "ci/android-cronet-arm64-gn2bp-dbg",
-    contact_team_email = "cronet-team@google.com",
-    siso_remote_jobs = siso.remote_jobs.LOW_JOBS_FOR_CQ,
-)
-
-try_.builder(
     name = "android-cronet-arm64-rel",
     mirrors = ["ci/android-cronet-arm64-rel"],
     # TODO(crbug.com/40462241): Switch this back to debug try builder when cronet's
@@ -538,55 +614,6 @@ try_.builder(
     name = "android-cronet-asan-arm-rel",
     mirrors = ["ci/android-cronet-asan-arm-rel"],
     gn_args = "ci/android-cronet-asan-arm-rel",
-    contact_team_email = "cronet-team@google.com",
-    siso_remote_jobs = siso.remote_jobs.LOW_JOBS_FOR_CQ,
-)
-
-try_.builder(
-    name = "android-cronet-mainline-clang-arm64-dbg",
-    mirrors = ["ci/android-cronet-mainline-clang-arm64-dbg"],
-    gn_args = "ci/android-cronet-mainline-clang-arm64-dbg",
-    contact_team_email = "cronet-team@google.com",
-    siso_remote_jobs = siso.remote_jobs.LOW_JOBS_FOR_CQ,
-)
-
-try_.builder(
-    name = "android-cronet-mainline-clang-arm64-rel",
-    mirrors = ["ci/android-cronet-mainline-clang-arm64-rel"],
-    gn_args = "ci/android-cronet-mainline-clang-arm64-rel",
-    contact_team_email = "cronet-team@google.com",
-    siso_remote_jobs = siso.remote_jobs.LOW_JOBS_FOR_CQ,
-)
-
-try_.builder(
-    name = "android-cronet-mainline-clang-riscv64-dbg",
-    mirrors = ["ci/android-cronet-mainline-clang-riscv64-dbg"],
-    gn_args = "ci/android-cronet-mainline-clang-riscv64-dbg",
-    contact_team_email = "cronet-team@google.com",
-    siso_remote_jobs = siso.remote_jobs.LOW_JOBS_FOR_CQ,
-)
-
-try_.builder(
-    name = "android-cronet-mainline-clang-riscv64-rel",
-    mirrors = ["ci/android-cronet-mainline-clang-riscv64-rel"],
-    gn_args = "ci/android-cronet-mainline-clang-riscv64-rel",
-    contact_team_email = "cronet-team@google.com",
-    siso_remote_jobs = siso.remote_jobs.LOW_JOBS_FOR_CQ,
-)
-
-try_.builder(
-    name = "android-cronet-mainline-clang-x86-dbg",
-    branch_selector = branches.selector.ANDROID_BRANCHES,
-    mirrors = ["ci/android-cronet-mainline-clang-x86-dbg"],
-    gn_args = "ci/android-cronet-mainline-clang-x86-dbg",
-    contact_team_email = "cronet-team@google.com",
-    siso_remote_jobs = siso.remote_jobs.LOW_JOBS_FOR_CQ,
-)
-
-try_.builder(
-    name = "android-cronet-mainline-clang-x86-rel",
-    mirrors = ["ci/android-cronet-mainline-clang-x86-rel"],
-    gn_args = "ci/android-cronet-mainline-clang-x86-rel",
     contact_team_email = "cronet-team@google.com",
     siso_remote_jobs = siso.remote_jobs.LOW_JOBS_FOR_CQ,
 )
@@ -673,8 +700,18 @@ try_.builder(
         "ci/android-cronet-x64-dbg",
         "ci/android-cronet-x64-dbg-15-tests",
     ],
-    # Replicates "ci/android-cronet-x64-dbg", with code coverage related
-    # arguments appended.
+    gn_args = "ci/android-cronet-x64-dbg",
+    contact_team_email = "cronet-team@google.com",
+    siso_remote_jobs = siso.remote_jobs.LOW_JOBS_FOR_CQ,
+)
+
+try_.builder(
+    name = "android-cronet-x64-dbg-16-tests",
+    description_html = "Tests Cronet against Android 16",
+    mirrors = [
+        "ci/android-cronet-x64-dbg",
+        "ci/android-cronet-x64-dbg-16-tests",
+    ],
     gn_args = gn_args.config(
         configs = [
             "ci/android-cronet-x64-dbg",
@@ -811,6 +848,7 @@ try_.builder(
     gn_args = gn_args.config(
         configs = [
             "android_builder",
+            "android_with_static_analysis",
             "debug_builder",
             "remoteexec",
             "arm",
@@ -829,6 +867,7 @@ try_.builder(
     gn_args = gn_args.config(
         configs = [
             "android_builder_without_codecs",
+            "android_with_static_analysis",
             "release_try_builder",
             "remoteexec",
             "strip_debug_info",
@@ -864,7 +903,9 @@ try_.builder(
     gn_args = gn_args.config(
         configs = [
             "android_builder",
+            "android_with_static_analysis",
             "debug_try_builder",
+            "enable_android_secondary_abi",
             "remoteexec",
             "arm64",
         ],
@@ -979,39 +1020,19 @@ try_.builder(
 )
 
 try_.builder(
-    name = "android-chrome-pie-x86-wpt-fyi-rel",
-    mirrors = ["ci/android-chrome-pie-x86-wpt-fyi-rel"],
-    gn_args = gn_args.config(
-        configs = [
-            "ci/android-chrome-pie-x86-wpt-fyi-rel",
-            "release_try_builder",
-            "strip_debug_info",
-        ],
-    ),
+    name = "android-15-chrome-wpt-fyi-rel",
+    mirrors = ["ci/android-15-chrome-wpt-fyi-rel"],
+    gn_args = "ci/android-15-chrome-wpt-fyi-rel",
+    contact_team_email = "chrome-product-engprod@google.com",
+    siso_remote_jobs = siso.remote_jobs.LOW_JOBS_FOR_CQ,
 )
 
 try_.builder(
-    name = "android-chrome-13-x64-wpt-android-specific",
-    mirrors = ["ci/android-chrome-13-x64-wpt-android-specific"],
-    gn_args = gn_args.config(
-        configs = [
-            "ci/android-chrome-13-x64-wpt-android-specific",
-            "release_try_builder",
-        ],
-    ),
-    contact_team_email = "chrome-blink-engprod@google.com",
-)
-
-try_.builder(
-    name = "android-webview-13-x64-wpt-android-specific",
-    mirrors = ["ci/android-webview-13-x64-wpt-android-specific"],
-    gn_args = gn_args.config(
-        configs = [
-            "ci/android-webview-13-x64-wpt-android-specific",
-            "release_try_builder",
-        ],
-    ),
-    contact_team_email = "chrome-blink-engprod@google.com",
+    name = "android-15-webview-wpt-fyi-rel",
+    mirrors = ["ci/android-15-webview-wpt-fyi-rel"],
+    gn_args = "ci/android-15-webview-wpt-fyi-rel",
+    contact_team_email = "chrome-product-engprod@google.com",
+    siso_remote_jobs = siso.remote_jobs.LOW_JOBS_FOR_CQ,
 )
 
 try_.builder(
@@ -1060,13 +1081,6 @@ try_.builder(
 )
 
 try_.builder(
-    name = "android-webview-pie-x86-wpt-fyi-rel",
-    mirrors = ["ci/android-webview-pie-x86-wpt-fyi-rel"],
-    gn_args = "ci/android-webview-pie-x86-wpt-fyi-rel",
-    siso_remote_jobs = siso.remote_jobs.LOW_JOBS_FOR_CQ,
-)
-
-try_.builder(
     name = "android-webview-oreo-arm64-dbg",
     branch_selector = branches.selector.ANDROID_BRANCHES,
     mirrors = [
@@ -1076,6 +1090,7 @@ try_.builder(
     gn_args = gn_args.config(
         configs = [
             "ci/Android arm64 Builder (dbg)",
+            "enable_android_secondary_abi",
             "release_try_builder",
             "strip_debug_info",
             "webview_monochrome",
@@ -1094,6 +1109,7 @@ try_.builder(
     gn_args = gn_args.config(
         configs = [
             "ci/Android arm64 Builder (dbg)",
+            "enable_android_secondary_abi",
             "release_try_builder",
             "strip_debug_info",
             "webview_monochrome",
@@ -1108,12 +1124,12 @@ try_.orchestrator_builder(
     description_html = "Run Chromium tests on Android emulators.",
     mirrors = [
         "ci/android-12l-x64-rel-cq",
-        "ci/android-13-x64-rel",
+        "ci/android-15-x64-rel",
         "ci/android-webview-13-x64-hostside-rel",
     ],
     gn_args = gn_args.config(
         configs = [
-            "ci/android-13-x64-rel",
+            "ci/android-15-x64-rel",
             "release_try_builder",
             "use_clang_coverage",
             "use_java_coverage",
@@ -1128,8 +1144,6 @@ try_.orchestrator_builder(
         "chromium.add_one_test_shard": 10,
         # crbug/940930
         "chromium.enable_cleandead": 100,
-        # b/346598710
-        "chromium.luci_analysis_v2": 100,
     },
     main_list_view = "try",
     tryjob = try_.job(),
@@ -1170,8 +1184,6 @@ try_.orchestrator_builder(
         "chromium.add_one_test_shard": 10,
         # crbug/940930
         "chromium.enable_cleandead": 100,
-        # b/346598710
-        "chromium.luci_analysis_v2": 100,
     },
     main_list_view = "try",
     tryjob = try_.job(),
@@ -1203,30 +1215,13 @@ try_.builder(
         configs = [
             "android_builder",
             "debug_try_builder",
+            "enable_android_secondary_abi",
             "remoteexec",
             "compile_only",
             "arm64",
             "android_fastbuild",
         ],
     ),
-)
-
-try_.builder(
-    name = "android-arm64-all-targets-dbg",
-    mirrors = [
-        "ci/Android arm64 Builder All Targets (dbg)",
-    ],
-    gn_args = gn_args.config(
-        configs = [
-            "android_builder",
-            "debug_try_builder",
-            "remoteexec",
-            "compile_only",
-            "arm64",
-            "android_fastbuild",
-        ],
-    ),
-    execution_timeout = 8 * time.hour,
 )
 
 try_.builder(
@@ -1239,21 +1234,23 @@ try_.builder(
             ],
         ),
         chromium_config = builder_config.chromium_config(
-            config = "android",
+            config = "main_builder",
             apply_configs = [
                 "mb",
             ],
             build_config = builder_config.build_config.RELEASE,
+            target_arch = builder_config.target_arch.ARM,
             target_bits = 32,
             target_platform = builder_config.target_platform.ANDROID,
         ),
         android_config = builder_config.android_config(
-            config = "main_builder",
+            config = "base_config",
         ),
     ),
     gn_args = gn_args.config(
         configs = [
             "android_builder",
+            "android_with_static_analysis",
             "release_try_builder",
             "remoteexec",
             "strip_debug_info",
@@ -1286,6 +1283,9 @@ try_.builder(
     contact_team_email = "cast-eng@google.com",
     tryjob = try_.job(
         location_filters = [
+            "build/android/.+",
+            "build/config/android/.+",
+            "chrome/browser/safe_browsing/BUILD.gn",
             "chromecast/.+",
             "components/cast/.+",
             "components/cast_receiver/.+",
@@ -1306,6 +1306,9 @@ try_.builder(
     contact_team_email = "cast-eng@google.com",
     tryjob = try_.job(
         location_filters = [
+            "build/android/.+",
+            "build/config/android/.+",
+            "chrome/browser/safe_browsing/BUILD.gn",
             "chromecast/.+",
             "components/cast/.+",
             "components/cast_receiver/.+",
@@ -1326,6 +1329,9 @@ try_.builder(
     contact_team_email = "cast-eng@google.com",
     tryjob = try_.job(
         location_filters = [
+            "build/android/.+",
+            "build/config/android/.+",
+            "chrome/browser/safe_browsing/BUILD.gn",
             "chromecast/.+",
             "components/cast/.+",
             "components/cast_receiver/.+",
@@ -1346,6 +1352,9 @@ try_.builder(
     contact_team_email = "cast-eng@google.com",
     tryjob = try_.job(
         location_filters = [
+            "build/android/.+",
+            "build/config/android/.+",
+            "chrome/browser/safe_browsing/BUILD.gn",
             "chromecast/.+",
             "components/cast/.+",
             "components/cast_receiver/.+",
@@ -1369,7 +1378,9 @@ try_.builder(
     gn_args = gn_args.config(
         configs = [
             "android_builder",
+            "android_with_static_analysis",
             "debug_try_builder",
+            "enable_android_secondary_abi",
             "remoteexec",
             "compile_only",
             "arm64",
@@ -1403,6 +1414,7 @@ try_.builder(
     gn_args = gn_args.config(
         configs = [
             "android_builder",
+            "android_with_static_analysis",
             "debug_try_builder",
             "remoteexec",
             "compile_only",
@@ -1452,6 +1464,7 @@ try_.builder(
     gn_args = gn_args.config(
         configs = [
             "android_builder",
+            "android_with_static_analysis",
             "debug_try_builder",
             "remoteexec",
             "compile_only",
@@ -1478,6 +1491,7 @@ try_.builder(
 try_.gpu.optional_tests_builder(
     name = "android_optional_gpu_tests_rel",
     branch_selector = branches.selector.ANDROID_BRANCHES,
+    description_html = "Runs GPU tests on Pixel 4 devices. Only automatically added to CLs that touch GPU-related files.",
     builder_spec = builder_config.builder_spec(
         gclient_config = builder_config.gclient_config(
             config = "chromium",
@@ -1486,11 +1500,14 @@ try_.gpu.optional_tests_builder(
             ],
         ),
         chromium_config = builder_config.chromium_config(
-            config = "android",
+            config = "main_builder",
+            build_config = builder_config.build_config.DEBUG,
+            target_arch = builder_config.target_arch.ARM,
+            target_bits = 32,
             target_platform = builder_config.target_platform.ANDROID,
         ),
         android_config = builder_config.android_config(
-            config = "main_builder",
+            config = "base_config",
         ),
         build_gs_bucket = "chromium-gpu-fyi-archive",
     ),
@@ -1501,6 +1518,7 @@ try_.gpu.optional_tests_builder(
         configs = [
             "gpu_tests",
             "android_builder",
+            "android_with_static_analysis",
             "release_builder",
             "remoteexec",
             "minimal_symbols",
@@ -1519,7 +1537,7 @@ try_.gpu.optional_tests_builder(
             "gpu_pixel_4_stable",
         ],
         per_test_modifications = {
-            "expected_color_pixel_passthrough_test": targets.mixin(
+            "expected_color_pixel_passthrough_ganesh_test": targets.mixin(
                 args = [
                     # See Android FYI Release (Pixel 4).
                     "--extra-browser-args=--disable-wcg-for-test",
@@ -1531,7 +1549,7 @@ try_.gpu.optional_tests_builder(
                     "--extra-browser-args=--disable-wcg-for-test",
                 ],
             ),
-            "pixel_skia_gold_passthrough_test": targets.mixin(
+            "pixel_skia_gold_passthrough_ganesh_test": targets.mixin(
                 args = [
                     # See Android FYI Release (Pixel 4).
                     "--extra-browser-args=--disable-wcg-for-test",
@@ -1543,7 +1561,7 @@ try_.gpu.optional_tests_builder(
                     "--extra-browser-args=--disable-wcg-for-test",
                 ],
             ),
-            "screenshot_sync_passthrough_tests": targets.mixin(
+            "screenshot_sync_passthrough_ganesh_tests": targets.mixin(
                 args = [
                     # See Android FYI Release (Pixel 4).
                     "--extra-browser-args=--disable-wcg-for-test",
@@ -1562,7 +1580,13 @@ try_.gpu.optional_tests_builder(
         os_type = targets.os_type.ANDROID,
         use_android_merge_script_by_default = False,
     ),
+    pool = "luci.chromium.gpu.try",
+    builderless = True,
+    ssd = None,
+    free_space = None,
+    contact_team_email = "chrome-gpu-infra@google.com",
     main_list_view = "try",
+    max_concurrent_builds = 10,
     tryjob = try_.job(
         location_filters = [
             # Inclusion filters.
@@ -1601,6 +1625,7 @@ try_.gpu.optional_tests_builder(
 try_.gpu.optional_tests_builder(
     name = "gpu-fyi-cq-android-arm64",
     branch_selector = branches.selector.ANDROID_BRANCHES,
+    description_html = "Runs GPU tests on Pixel 6 devices. Only automatically added to CLs that touch GPU-related files.",
     mirrors = [
         "ci/GPU FYI Android arm64 Builder",
         "ci/Android FYI Release (Pixel 6)",
@@ -1609,7 +1634,13 @@ try_.gpu.optional_tests_builder(
         retry_failed_shards = False,
     ),
     gn_args = "ci/GPU FYI Android arm64 Builder",
+    pool = "luci.chromium.gpu.try",
+    builderless = True,
+    ssd = None,
+    free_space = None,
+    contact_team_email = "chrome-gpu-infra@google.com",
     main_list_view = "try",
+    max_concurrent_builds = 10,
     tryjob = try_.job(
         location_filters = [
             # Inclusion filters.

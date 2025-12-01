@@ -18,7 +18,7 @@
 #include "base/task/thread_pool.h"
 #include "base/types/optional_util.h"
 #include "build/build_config.h"
-#include "crypto/sha2.h"
+#include "crypto/hash.h"
 #include "mojo/public/cpp/bindings/callback_helpers.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
@@ -41,6 +41,7 @@
 
 #if BUILDFLAG(IS_CT_SUPPORTED)
 #include "components/certificate_transparency/chrome_ct_policy_enforcer.h"
+#include "components/certificate_transparency/chrome_require_ct_delegate.h"
 #include "services/network/public/mojom/ct_log_info.mojom.h"
 #endif
 
@@ -84,10 +85,20 @@ internal::CertVerifierServiceImpl* GetNewCertVerifierImpl(
     UpdateCertVerifierInstanceParams(
         creation_params->initial_additional_certificates, &instance_params);
   }
+#if BUILDFLAG(IS_CT_SUPPORTED)
+  scoped_refptr<certificate_transparency::ChromeRequireCTDelegate>
+      require_ct_delegate = base::MakeRefCounted<
+          certificate_transparency::ChromeRequireCTDelegate>();
+  if (creation_params->ct_policy) {
+    require_ct_delegate->UpdateCTPolicies(
+        creation_params->ct_policy->excluded_hosts,
+        creation_params->ct_policy->excluded_spkis);
+  }
+  instance_params.require_ct_delegate = std::move(require_ct_delegate);
+#endif
 
   std::unique_ptr<net::CertVerifierWithUpdatableProc> cert_verifier =
-      CreateCertVerifier(creation_params.get(), cert_net_fetcher, impl_params,
-                         instance_params);
+      CreateCertVerifier(cert_net_fetcher, impl_params, instance_params);
 
   // As an optimization, if the CertNetFetcher isn't used by the CertVerifier,
   // shut it down immediately.
@@ -112,7 +123,7 @@ internal::CertVerifierServiceImpl* GetNewCertVerifierImpl(
 std::string GetHash(const bssl::ParsedCertificate& cert) {
   net::SHA256HashValue hash =
       net::X509Certificate::CalculateFingerprint256(cert.cert_buffer());
-  return base::HexEncode(hash.data);
+  return base::HexEncode(hash);
 }
 
 bool IsVersionConstraintSatisified(
@@ -145,7 +156,44 @@ bool IsAnchorTrustedOnThisChromeVersion(
   }
   return false;
 }
+
+#if !BUILDFLAG(IS_CHROMEOS)
+mojom::PlatformRootStoreInfoPtr GetPlatformRootStoreInfoOnBackgroundThread() {
+  mojom::PlatformRootStoreInfoPtr info_ptr =
+      mojom::PlatformRootStoreInfo::New();
+  std::unique_ptr<net::SystemTrustStore> system_trust_store =
+      net::CreateSslSystemTrustStoreChromeRoot(
+          std::make_unique<net::TrustStoreChrome>());
+
+  net::PlatformTrustStore* platform_trust_store =
+      system_trust_store->GetPlatformTrustStore();
+  if (!platform_trust_store) {
+    return info_ptr;
+  }
+
+  for (const auto& cert_with_trust :
+       platform_trust_store->GetAllUserAddedCerts()) {
+    mojom::CertificateTrust mojo_trust;
+    switch (cert_with_trust.trust.type) {
+      case bssl::CertificateTrustType::DISTRUSTED:
+        mojo_trust = mojom::CertificateTrust::kDistrusted;
+        break;
+      case bssl::CertificateTrustType::UNSPECIFIED:
+        mojo_trust = mojom::CertificateTrust::kUnspecified;
+        break;
+      case bssl::CertificateTrustType::TRUSTED_ANCHOR:
+      case bssl::CertificateTrustType::TRUSTED_LEAF:
+      case bssl::CertificateTrustType::TRUSTED_ANCHOR_OR_LEAF:
+        mojo_trust = mojom::CertificateTrust::kTrusted;
+    }
+    info_ptr->user_added_certs.push_back(
+        mojom::PlatformCertInfo::New(cert_with_trust.cert_bytes, mojo_trust));
+  }
+
+  return info_ptr;
+}
 #endif
+#endif  // BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)
 
 // Attempts to parse |crl_set|, returning nullptr on error or the parsed
 // CRLSet.
@@ -171,15 +219,16 @@ void ComputeCTLogInfo(
     std::vector<std::pair<std::string, base::Time>>* disqualified_logs,
     std::map<std::string, certificate_transparency::LogInfo>* log_info) {
   for (const auto& log : log_list) {
-    std::string log_id = crypto::SHA256HashString(log->public_key);
+    std::string log_id(
+        base::as_string_view(crypto::hash::Sha256(log->public_key)));
     if (log->disqualified_at) {
       disqualified_logs->emplace_back(log_id, log->disqualified_at.value());
     }
     certificate_transparency::OperatorHistoryEntry entry;
-    entry.current_operator_ = log->current_operator;
+    entry.current_operator = log->current_operator;
     for (const auto& previous_operator : log->previous_operators) {
-      entry.previous_operators_.emplace_back(previous_operator->name,
-                                             previous_operator->end_time);
+      entry.previous_operators.emplace_back(previous_operator->name,
+                                            previous_operator->end_time);
     }
     certificate_transparency::LogInfo info;
     info.operator_history = entry;
@@ -205,6 +254,7 @@ void CertVerifierServiceFactoryImpl::GetNewCertVerifier(
     mojo::PendingReceiver<mojom::CertVerifierServiceUpdater> updater_receiver,
     mojo::PendingRemote<mojom::CertVerifierServiceClient> client,
     mojom::CertVerifierCreationParamsPtr creation_params) {
+  InitializeRootStoreDataIfNecessary();
   internal::CertVerifierServiceImpl* service_impl = GetNewCertVerifierImpl(
       std::move(service_receiver), std::move(updater_receiver),
       std::move(client), std::move(creation_params), proc_params_,
@@ -220,6 +270,7 @@ void CertVerifierServiceFactoryImpl::GetNewCertVerifierForTesting(
     mojo::PendingRemote<mojom::CertVerifierServiceClient> client,
     mojom::CertVerifierCreationParamsPtr creation_params,
     scoped_refptr<CertNetFetcherURLLoader>* cert_net_fetcher_ptr) {
+  InitializeRootStoreDataIfNecessary();
   GetNewCertVerifierImpl(std::move(service_receiver),
                          std::move(updater_receiver), std::move(client),
                          std::move(creation_params), proc_params_,
@@ -277,7 +328,19 @@ void CertVerifierServiceFactoryImpl::UpdateCtLogList(
 
   std::move(callback).Run();
 }
-#endif
+
+void CertVerifierServiceFactoryImpl::DisableCtEnforcement(
+    DisableCtEnforcementCallback callback) {
+  // Clear the ct_policy_enforcer, which will cause a DefaultCTPolicyEnforcer
+  // to be used, which disables CT enforcement. If UpdateCtLogList is called
+  // later, CT enforcement will be re-enabled.
+  proc_params_.ct_policy_enforcer.reset();
+
+  UpdateVerifierServices();
+
+  std::move(callback).Run();
+}
+#endif  // BUILDFLAG(IS_CT_SUPPORTED)
 
 void CertVerifierServiceFactoryImpl::OnCRLSetParsed(
     scoped_refptr<net::CRLSet> parsed_crl_set) {
@@ -318,13 +381,13 @@ void CertVerifierServiceFactoryImpl::UpdateChromeRootStore(
   }
 
   std::optional<net::ChromeRootStoreData> root_store_data =
-      net::ChromeRootStoreData::CreateChromeRootStoreData(message.value());
+      net::ChromeRootStoreData::CreateFromRootStoreProto(message.value());
   if (!root_store_data) {
     LOG(ERROR) << "error interpreting proto for Chrome Root Store";
     return;
   }
 
-  if (root_store_data->anchors().empty()) {
+  if (root_store_data->trust_anchors().empty()) {
     LOG(ERROR) << "parsed root store contained no anchors";
     return;
   }
@@ -340,16 +403,10 @@ void CertVerifierServiceFactoryImpl::GetChromeRootStoreInfo(
     GetChromeRootStoreInfoCallback callback) {
   mojom::ChromeRootStoreInfoPtr info_ptr = mojom::ChromeRootStoreInfo::New();
 
-  std::vector<net::ChromeRootStoreData::Anchor> anchors;
-  if (proc_params_.root_store_data) {
-    info_ptr->version = proc_params_.root_store_data->version();
-    anchors = proc_params_.root_store_data->anchors();
-  } else {
-    info_ptr->version = net::CompiledChromeRootStoreVersion();
-    anchors = net::CompiledChromeRootStoreAnchors();
-  }
+  InitializeRootStoreDataIfNecessary();
+  info_ptr->version = proc_params_.root_store_data->version();
 
-  for (const auto& anchor : anchors) {
+  for (const auto& anchor : proc_params_.root_store_data->trust_anchors()) {
     if (!IsAnchorTrustedOnThisChromeVersion(anchor)) {
       continue;
     }
@@ -364,6 +421,7 @@ void CertVerifierServiceFactoryImpl::GetChromeRootStoreInfo(
   std::move(callback).Run(std::move(info_ptr));
 }
 
+#if !BUILDFLAG(IS_CHROMEOS)
 // TODO(crbug.com/40928765): look into adding a test here. Possible ways to do
 // this:
 //  * add a SetSystemTrustStoreForTesting() call, have code use that if its set.
@@ -371,41 +429,16 @@ void CertVerifierServiceFactoryImpl::GetChromeRootStoreInfo(
 //  UpdateSystemTrustStoreForTesting
 void CertVerifierServiceFactoryImpl::GetPlatformRootStoreInfo(
     GetPlatformRootStoreInfoCallback callback) {
-  mojom::PlatformRootStoreInfoPtr info_ptr =
-      mojom::PlatformRootStoreInfo::New();
-  std::unique_ptr<net::SystemTrustStore> system_trust_store =
-      net::CreateSslSystemTrustStoreChromeRoot(
-          std::make_unique<net::TrustStoreChrome>());
-
-  net::PlatformTrustStore* platform_trust_store =
-      system_trust_store->GetPlatformTrustStore();
-  if (!platform_trust_store) {
-    std::move(callback).Run(std::move(info_ptr));
-    return;
-  }
-
-  for (const auto& cert_with_trust :
-       platform_trust_store->GetAllUserAddedCerts()) {
-    mojom::CertificateTrust mojo_trust;
-    switch (cert_with_trust.trust.type) {
-      case bssl::CertificateTrustType::DISTRUSTED:
-        mojo_trust = mojom::CertificateTrust::kDistrusted;
-        break;
-      case bssl::CertificateTrustType::UNSPECIFIED:
-        mojo_trust = mojom::CertificateTrust::kUnspecified;
-        break;
-      case bssl::CertificateTrustType::TRUSTED_ANCHOR:
-      case bssl::CertificateTrustType::TRUSTED_LEAF:
-      case bssl::CertificateTrustType::TRUSTED_ANCHOR_OR_LEAF:
-        mojo_trust = mojom::CertificateTrust::kTrusted;
-    }
-    info_ptr->user_added_certs.push_back(
-        mojom::PlatformCertInfo::New(cert_with_trust.cert_bytes, mojo_trust));
-  }
-
-  std::move(callback).Run(std::move(info_ptr));
+  // Getting the platform root info may query slow/blocking APIs, run it on a
+  // background thread to avoid blocking the mojo processing thread.
+  base::ThreadPool::PostTaskAndReplyWithResult(
+      FROM_HERE,
+      {base::MayBlock(), base::TaskShutdownBehavior::CONTINUE_ON_SHUTDOWN},
+      base::BindOnce(&GetPlatformRootStoreInfoOnBackgroundThread),
+      std::move(callback));
 }
 #endif
+#endif  // BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)
 
 void CertVerifierServiceFactoryImpl::UpdateNetworkTime(
     base::Time system_time,
@@ -422,6 +455,7 @@ void CertVerifierServiceFactoryImpl::SetUseChromeRootStore(
     SetUseChromeRootStoreCallback callback) {
   if (use_crs != proc_params_.use_chrome_root_store) {
     proc_params_.use_chrome_root_store = use_crs;
+    InitializeRootStoreDataIfNecessary();
     UpdateVerifierServices();
   }
   std::move(callback).Run();
@@ -431,6 +465,21 @@ void CertVerifierServiceFactoryImpl::SetUseChromeRootStore(
 void CertVerifierServiceFactoryImpl::RemoveService(
     internal::CertVerifierServiceImpl* service_impl) {
   verifier_services_.erase(service_impl);
+}
+
+void CertVerifierServiceFactoryImpl::InitializeRootStoreDataIfNecessary() {
+#if BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)
+#if BUILDFLAG(CHROME_ROOT_STORE_OPTIONAL)
+  if (!proc_params_.use_chrome_root_store) {
+    return;
+  }
+#endif  // BUILDFLAG(CHROME_ROOT_STORE_OPTIONAL)
+
+  if (!proc_params_.root_store_data) {
+    proc_params_.root_store_data =
+        net::ChromeRootStoreData::CreateFromCompiledRootStore();
+  }
+#endif  // BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)
 }
 
 void CertVerifierServiceFactoryImpl::UpdateVerifierServices() {

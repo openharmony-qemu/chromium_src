@@ -14,6 +14,7 @@
 
 #include <memory>
 #include <string>
+#include <variant>
 #include <vector>
 
 #include "base/containers/flat_set.h"
@@ -33,7 +34,6 @@
 #include "components/exo/test/test_data_offer_delegate.h"
 #include "components/exo/test/test_security_delegate.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "third_party/abseil-cpp/absl/types/variant.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "ui/base/clipboard/clipboard.h"
 #include "ui/base/clipboard/clipboard_format_type.h"
@@ -82,7 +82,7 @@ class TestDataTransferPolicyController : ui::DataTransferPolicyController {
   void PasteIfAllowed(
       base::optional_ref<const ui::DataTransferEndpoint> data_src,
       base::optional_ref<const ui::DataTransferEndpoint> data_dst,
-      absl::variant<size_t, std::vector<base::FilePath>> pasted_content,
+      std::variant<size_t, std::vector<base::FilePath>> pasted_content,
       content::RenderFrameHost* web_contents,
       base::OnceCallback<void(bool)> callback) override {}
 
@@ -225,8 +225,9 @@ TEST_F(DataOfferTest, SetPickleDropData) {
   pickle.WriteString("filesystem:chrome-extension://path/to/file1");
   pickle.WriteInt64(1000);   // file size
   pickle.WriteString("id");  // filesystem id
-  data.SetPickledData(
-      ui::ClipboardFormatType::GetType("chromium/x-file-system-files"), pickle);
+  data.SetPickledData(ui::ClipboardFormatType::CustomPlatformType(
+                          "chromium/x-file-system-files"),
+                      pickle);
   data_offer.SetDropData(&data_exchange_delegate, nullptr, data);
 
   EXPECT_EQ(1u, delegate.mime_types().size());
@@ -340,8 +341,9 @@ TEST_F(DataOfferTest, ReceiveUriListFromPickle_ReceiveBeforeUrlIsResolved) {
   pickle.WriteString("filesystem:chrome-extension://path/to/file1");
   pickle.WriteInt64(1000);   // file size
   pickle.WriteString("id");  // filesystem id
-  data.SetPickledData(
-      ui::ClipboardFormatType::GetType("chromium/x-file-system-files"), pickle);
+  data.SetPickledData(ui::ClipboardFormatType::CustomPlatformType(
+                          "chromium/x-file-system-files"),
+                      pickle);
   data_offer.SetDropData(&data_exchange_delegate, nullptr, data);
 
   base::ScopedFD read_pipe1;
@@ -384,8 +386,9 @@ TEST_F(DataOfferTest,
   pickle.WriteString("filesystem:chrome-extension://path/to/file1");
   pickle.WriteInt64(1000);   // file size
   pickle.WriteString("id");  // filesystem id
-  data.SetPickledData(
-      ui::ClipboardFormatType::GetType("chromium/x-file-system-files"), pickle);
+  data.SetPickledData(ui::ClipboardFormatType::CustomPlatformType(
+                          "chromium/x-file-system-files"),
+                      pickle);
   data_offer.SetDropData(&data_exchange_delegate, nullptr, data);
 
   base::ScopedFD read_pipe;

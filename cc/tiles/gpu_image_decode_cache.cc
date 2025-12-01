@@ -23,10 +23,8 @@
 #include "base/memory/raw_ptr.h"
 #include "base/metrics/field_trial_params.h"
 #include "base/metrics/histogram_macros.h"
-#include "base/not_fatal_until.h"
 #include "base/notreached.h"
 #include "base/numerics/safe_math.h"
-#include "base/ranges/algorithm.h"
 #include "base/strings/stringprintf.h"
 #include "base/synchronization/lock.h"
 #include "base/task/single_thread_task_runner.h"
@@ -561,7 +559,7 @@ size_t GpuImageDecodeCache::InUseCacheKeyHash::operator()(
       cache_key.target_color_space.GetHash(),
       base::HashInts(
           cache_key.frame_key.hash(),
-          base::HashInts(cache_key.upload_scale_mip_level,
+          base::HashInts(cache_key.mip_level(),
                          static_cast<int>(cache_key.filter_quality))));
 }
 
@@ -936,6 +934,24 @@ void GpuImageDecodeCache::DecodedImageData::ResetBitmapImage() {
   OnUnlock();
 }
 
+void GpuImageDecodeCache::ImageData::RecordSpeculativeDecodeMatch(
+    int mip_level) {
+  if (speculative_decode_usage_stats_.has_value()) {
+    speculative_decode_usage_stats_->min_raster_mip_level = std::min(
+        speculative_decode_usage_stats_->min_raster_mip_level, mip_level);
+  }
+}
+
+void GpuImageDecodeCache::ImageData::
+    RecordSpeculativeDecodeRasterTaskTakeover() {
+  if (speculative_decode_usage_stats_.has_value()) {
+    speculative_decode_usage_stats_->raster_task_takeover = true;
+    TRACE_EVENT_INSTANT1(TRACE_DISABLED_BY_DEFAULT("loading"),
+                         "SpeculativeImageDecodeRasterTaskTakeover",
+                         TRACE_EVENT_SCOPE_THREAD, "image_id", paint_image_id);
+  }
+}
+
 void GpuImageDecodeCache::DecodedImageData::ResetData() {
   if (aux_image_data_[kAuxImageIndexDefault].data) {
     ReportUsageStats();
@@ -1083,21 +1099,22 @@ GpuImageDecodeCache::ImageInfo::~ImageInfo() = default;
 // GpuImageDecodeCache::ImageData
 
 GpuImageDecodeCache::ImageData::ImageData(
-    PaintImage::Id paint_image_id,
+    PaintImage::Id paint_image_id_param,
     DecodedDataMode mode,
     const gfx::ColorSpace& target_color_space,
     PaintFlags::FilterQuality quality,
-    int upload_scale_mip_level,
+    int upload_scale_mip_level_param,
     bool needs_mips,
     bool is_bitmap_backed,
     bool can_do_hardware_accelerated_decode,
     bool do_hardware_accelerated_decode,
+    bool speculative_decode,
     base::span<ImageInfo, kAuxImageCount> image_info)
-    : paint_image_id(paint_image_id),
+    : paint_image_id(paint_image_id_param),
       mode(mode),
       target_color_space(target_color_space),
       quality(quality),
-      upload_scale_mip_level(upload_scale_mip_level),
+      upload_scale_mip_level(upload_scale_mip_level_param),
       needs_mips(needs_mips),
       is_bitmap_backed(is_bitmap_backed),
       info(std::move(image_info[kAuxImageIndexDefault])),
@@ -1110,6 +1127,18 @@ GpuImageDecodeCache::ImageData::ImageData(
     DCHECK_EQ(info.yuva->yuvaInfo().planeConfig(),
               SkYUVAInfo::PlaneConfig::kY_U_V);
   }
+  if (base::FeatureList::IsEnabled(features::kInitImageDecodeLastUseTime)) {
+    last_use = base::TimeTicks::Now();
+  }
+  if (speculative_decode) {
+    speculative_decode_usage_stats_.emplace();
+    speculative_decode_usage_stats_->speculative_decode_mip_level =
+        upload_scale_mip_level;
+    TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("loading"),
+                         "SpeculativeImageDecodeTaskCreated",
+                         TRACE_EVENT_SCOPE_THREAD, "image_id", paint_image_id,
+                         "speculative_mip_level", upload_scale_mip_level);
+  }
 }
 
 GpuImageDecodeCache::ImageData::~ImageData() {
@@ -1121,6 +1150,13 @@ GpuImageDecodeCache::ImageData::~ImageData() {
   // This should always be cleaned up before deleting the image, as it needs to
   // be freed with the GL context lock held.
   DCHECK(!HasUploadedData());
+  if (IsSpeculativeDecode() &&
+      speculative_decode_usage_stats_->min_raster_mip_level == INT_MAX) {
+    TRACE_EVENT_INSTANT1(TRACE_DISABLED_BY_DEFAULT("loading"),
+                         "SpeculativeImageDecodeUnused",
+                         TRACE_EVENT_SCOPE_THREAD, "image_id", paint_image_id);
+  }
+  speculative_decode_usage_stats_.reset();
 }
 
 bool GpuImageDecodeCache::ImageData::IsGpuOrTransferCache() const {
@@ -1262,7 +1298,7 @@ GpuImageDecodeCache::~GpuImageDecodeCache() {
 
   // SetShouldAggressivelyFreeResources will zero our limits and free all
   // outstanding image memory.
-  SetShouldAggressivelyFreeResources(true, /*context_lock_acquired=*/false);
+  SetShouldAggressivelyFreeResources(true);
 
   // It is safe to unregister, even if we didn't register in the constructor.
   base::trace_event::MemoryDumpManager::GetInstance()->UnregisterDumpProvider(
@@ -1274,23 +1310,26 @@ ImageDecodeCache::TaskResult GpuImageDecodeCache::GetTaskForImageAndRef(
     const DrawImage& draw_image,
     const TracingInfo& tracing_info) {
   return GetTaskForImageAndRefInternal(client_id, draw_image, tracing_info,
-                                       TaskType::kInRaster);
+                                       TaskType::kInRaster,
+                                       /*speculative*/ false);
 }
 
 ImageDecodeCache::TaskResult
 GpuImageDecodeCache::GetOutOfRasterDecodeTaskForImageAndRef(
     ClientId client_id,
-    const DrawImage& draw_image) {
+    const DrawImage& draw_image,
+    bool speculative) {
   return GetTaskForImageAndRefInternal(client_id, draw_image,
                                        TracingInfo(0, TilePriority::NOW),
-                                       TaskType::kOutOfRaster);
+                                       TaskType::kOutOfRaster, speculative);
 }
 
 ImageDecodeCache::TaskResult GpuImageDecodeCache::GetTaskForImageAndRefInternal(
     ClientId client_id,
     const DrawImage& draw_image,
     const TracingInfo& tracing_info,
-    TaskType task_type) {
+    TaskType task_type,
+    bool speculative) {
   DCHECK_GE(client_id, kDefaultClientId);
 
   TRACE_EVENT1(TRACE_DISABLED_BY_DEFAULT("cc.debug"),
@@ -1304,7 +1343,8 @@ ImageDecodeCache::TaskResult GpuImageDecodeCache::GetTaskForImageAndRefInternal(
 
   base::AutoLock locker(lock_);
   const InUseCacheKey cache_key = InUseCacheKeyFromDrawImage(draw_image);
-  ImageData* image_data = GetImageDataForDrawImage(draw_image, cache_key);
+  ImageData* image_data = GetImageDataForDrawImage(
+      draw_image, cache_key, task_type == TaskType::kInRaster);
   scoped_refptr<ImageData> new_data;
   if (!image_data) {
     // We need an ImageData, create one now. Note that hardware decode
@@ -1313,7 +1353,8 @@ ImageDecodeCache::TaskResult GpuImageDecodeCache::GetTaskForImageAndRefInternal(
     // through hardware decode acceleration.
     new_data = CreateImageData(
         draw_image,
-        task_type == TaskType::kInRaster /* allow_hardware_decode */);
+        task_type == TaskType::kInRaster /* allow_hardware_decode */,
+        speculative);
     image_data = new_data.get();
   } else if (image_data->decode.decode_failure) {
     // We have already tried and failed to decode this image, so just return.
@@ -1468,10 +1509,11 @@ DecodedDrawImage GpuImageDecodeCache::GetDecodedImageForDraw(
 
   base::AutoLock lock(lock_);
   const InUseCacheKey cache_key = InUseCacheKeyFromDrawImage(draw_image);
-  ImageData* image_data = GetImageDataForDrawImage(draw_image, cache_key);
+  ImageData* image_data = GetImageDataForDrawImage(draw_image, cache_key, true);
   if (!image_data) {
     // We didn't find the image, create a new entry.
-    auto data = CreateImageData(draw_image, true /* allow_hardware_decode */);
+    auto data = CreateImageData(draw_image, true /* allow_hardware_decode */,
+                                false /* speculative_decode */);
     image_data = data.get();
     AddToPersistentCache(draw_image, std::move(data));
   }
@@ -1571,21 +1613,15 @@ void GpuImageDecodeCache::ReduceCacheUsageLocked() NO_THREAD_SAFETY_ANALYSIS {
 }
 
 void GpuImageDecodeCache::SetShouldAggressivelyFreeResources(
-    bool aggressively_free_resources,
-    bool context_lock_acquired) {
+    bool aggressively_free_resources) {
   TRACE_EVENT1(TRACE_DISABLED_BY_DEFAULT("cc.debug"),
                "GpuImageDecodeCache::SetShouldAggressivelyFreeResources",
                "agressive_free_resources", aggressively_free_resources);
   if (aggressively_free_resources) {
     std::optional<viz::RasterContextProvider::ScopedRasterContextLock>
         context_lock;
-    if (auto* lock = context_->GetLock()) {
-      // There are callers that might have already acquired the lock. Thus,
-      // check if that's the case.
-      if (context_lock_acquired)
-        lock->AssertAcquired();
-      else
-        context_lock.emplace(context_);
+    if (context_->GetLock()) {
+      context_lock.emplace(context_);
     }
 
     base::AutoLock lock(lock_);
@@ -2100,6 +2136,7 @@ scoped_refptr<TileTask> GpuImageDecodeCache::GetImageDecodeTaskAndRef(
         // raster task primary.
         if (stand_alone_task->state().IsNew()) {
           result->SetExternalDependent(stand_alone_task);
+          image_data->RecordSpeculativeDecodeRasterTaskTakeover();
         } else {
           stand_alone_task->SetExternalDependent(result);
         }
@@ -2121,7 +2158,7 @@ void GpuImageDecodeCache::RefImageDecode(const DrawImage& draw_image,
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("cc.debug"),
                "GpuImageDecodeCache::RefImageDecode");
   auto found = in_use_cache_.find(cache_key);
-  CHECK(found != in_use_cache_.end(), base::NotFatalUntil::M130);
+  CHECK(found != in_use_cache_.end());
   ++found->second.ref_count;
   ++found->second.image_data->decode.ref_count;
   OwnershipChanged(draw_image, found->second.image_data.get());
@@ -2132,7 +2169,7 @@ void GpuImageDecodeCache::UnrefImageDecode(const DrawImage& draw_image,
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("cc.debug"),
                "GpuImageDecodeCache::UnrefImageDecode");
   auto found = in_use_cache_.find(cache_key);
-  CHECK(found != in_use_cache_.end(), base::NotFatalUntil::M130);
+  CHECK(found != in_use_cache_.end());
   DCHECK_GT(found->second.image_data->decode.ref_count, 0u);
   DCHECK_GT(found->second.ref_count, 0u);
   --found->second.ref_count;
@@ -2154,7 +2191,7 @@ void GpuImageDecodeCache::RefImage(const DrawImage& draw_image,
   // cache entry now.
   if (found == in_use_cache_.end()) {
     auto found_image = persistent_cache_.Peek(draw_image.frame_key());
-    CHECK(found_image != persistent_cache_.end(), base::NotFatalUntil::M130);
+    CHECK(found_image != persistent_cache_.end());
     DCHECK(IsCompatible(found_image->second.get(), draw_image));
     found = in_use_cache_
                 .insert(InUseCache::value_type(
@@ -2162,7 +2199,7 @@ void GpuImageDecodeCache::RefImage(const DrawImage& draw_image,
                 .first;
   }
 
-  CHECK(found != in_use_cache_.end(), base::NotFatalUntil::M130);
+  CHECK(found != in_use_cache_.end());
   ++found->second.ref_count;
   ++found->second.image_data->upload.ref_count;
   OwnershipChanged(draw_image, found->second.image_data.get());
@@ -2171,7 +2208,7 @@ void GpuImageDecodeCache::RefImage(const DrawImage& draw_image,
 void GpuImageDecodeCache::UnrefImageInternal(const DrawImage& draw_image,
                                              const InUseCacheKey& cache_key) {
   auto found = in_use_cache_.find(cache_key);
-  CHECK(found != in_use_cache_.end(), base::NotFatalUntil::M130);
+  CHECK(found != in_use_cache_.end());
   DCHECK_GT(found->second.image_data->upload.ref_count, 0u);
   DCHECK_GT(found->second.ref_count, 0u);
   --found->second.ref_count;
@@ -2217,6 +2254,7 @@ void GpuImageDecodeCache::OwnershipChanged(const DrawImage& draw_image,
       image_data->mode != DecodedDataMode::kCpu &&
       image_data->HasUploadedData()) {
     image_data->decode.ResetData();
+    image_data->speculative_decode_usage_stats_.reset();
   }
 
   // If we have no refs on an uploaded image, it should be unlocked. Do this
@@ -2333,7 +2371,7 @@ void GpuImageDecodeCache::InsertTransferCacheEntry(
   if (data) {
     // TODO(crbug.com/40285824): Have MapTransferCacheEntry() return a span.
     bool succeeded = image_entry.Serialize(
-        UNSAFE_TODO(base::make_span(static_cast<uint8_t*>(data), size)));
+        UNSAFE_TODO(base::span(static_cast<uint8_t*>(data), size)));
     DCHECK(succeeded);
     context_->ContextSupport()->UnmapAndCreateTransferCacheEntry(
         image_entry.UnsafeType(), image_entry.Id());
@@ -2427,7 +2465,9 @@ void GpuImageDecodeCache::DecodeImageIfNecessary(
     return;
   }
 
-  TRACE_EVENT0("cc,benchmark", "GpuImageDecodeCache::DecodeImage");
+  TRACE_EVENT2("cc,benchmark", "GpuImageDecodeCache::DecodeImage",
+               "speculative", image_data->IsSpeculativeDecode(),
+               "paint_image_id", image_data->paint_image_id);
 
   image_data->decode.ResetData();
 
@@ -2709,6 +2749,11 @@ void GpuImageDecodeCache::UploadImageIfNecessary_TransferCache_SoftwareDecode(
     auto aux_image_index = AuxImageIndex(aux_image);
     const auto& info = image_data->GetImageInfo(aux_image);
     if (aux_image == AuxImage::kGainmap) {
+      // The gainmap image is allowed to silently fail to decode. If that
+      // happens, there will be no data. Just pretend it didn't exist.
+      if (!image_data->decode.data(aux_image)) {
+        continue;
+      }
       has_gainmap = info.rgba.has_value() || info.yuva.has_value();
     }
     if (info.yuva.has_value()) {
@@ -2898,7 +2943,8 @@ void GpuImageDecodeCache::UploadImageIfNecessary_GpuCpu_RGBA(
 
 scoped_refptr<GpuImageDecodeCache::ImageData>
 GpuImageDecodeCache::CreateImageData(const DrawImage& draw_image,
-                                     bool allow_hardware_decode) {
+                                     bool allow_hardware_decode,
+                                     bool speculative_decode) {
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("cc.debug"),
                "GpuImageDecodeCache::CreateImageData");
   std::array<ImageInfo, kAuxImageCount> image_info;
@@ -3026,7 +3072,7 @@ GpuImageDecodeCache::CreateImageData(const DrawImage& draw_image,
       draw_image.target_color_space(),
       CalculateDesiredFilterQuality(draw_image), upload_scale_mip_level,
       needs_mips, is_bitmap_backed, can_do_hardware_accelerated_decode,
-      do_hardware_accelerated_decode, image_info));
+      do_hardware_accelerated_decode, speculative_decode, image_info));
 }
 
 void GpuImageDecodeCache::WillAddCacheEntry(const DrawImage& draw_image) {
@@ -3328,22 +3374,58 @@ bool GpuImageDecodeCache::TryLockImage(HaveContextLock have_context_lock,
 // cannot be found, it looks for a compatible entry in our |persistent_cache_|.
 GpuImageDecodeCache::ImageData* GpuImageDecodeCache::GetImageDataForDrawImage(
     const DrawImage& draw_image,
-    const InUseCacheKey& key) {
+    const InUseCacheKey& key,
+    bool record_speculative_decode_stats) {
   TRACE_EVENT0(TRACE_DISABLED_BY_DEFAULT("cc.debug"),
                "GpuImageDecodeCache::GetImageDataForDrawImage");
   DCHECK(UseCacheForDrawImage(draw_image));
 
   auto found_in_use = in_use_cache_.find(key);
-  if (found_in_use != in_use_cache_.end())
-    return found_in_use->second.image_data.get();
+  if (found_in_use != in_use_cache_.end()) {
+    scoped_refptr<ImageData>& image_data = found_in_use->second.image_data;
+    if (image_data->IsSpeculativeDecode() && record_speculative_decode_stats) {
+      if (!image_data->SpeculativeDecodeHasMatched()) {
+        TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("loading"),
+                             "SpeculativeImageDecodeInUseMatch",
+                             TRACE_EVENT_SCOPE_THREAD, "image_id",
+                             image_data->paint_image_id, "raster_mip_level",
+                             key.mip_level());
+      }
+      image_data->RecordSpeculativeDecodeMatch(
+          image_data->upload_scale_mip_level);
+    }
+    return image_data.get();
+  }
 
   auto found_persistent = persistent_cache_.Get(draw_image.frame_key());
   if (found_persistent != persistent_cache_.end()) {
-    ImageData* image_data = found_persistent->second.get();
-    if (IsCompatible(image_data, draw_image)) {
+    scoped_refptr<ImageData>& image_data = found_persistent->second;
+    bool first_match = !image_data->SpeculativeDecodeHasMatched();
+    if (image_data->IsSpeculativeDecode() && record_speculative_decode_stats) {
+      image_data->RecordSpeculativeDecodeMatch(key.mip_level());
+    }
+    if (IsCompatible(image_data.get(), draw_image)) {
       image_data->last_use = base::TimeTicks::Now();
-      return image_data;
+      if (image_data->IsSpeculativeDecode() &&
+          record_speculative_decode_stats) {
+        if (first_match) {
+          TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("loading"),
+                               "SpeculativeImageDecodeCompatibleMatch",
+                               TRACE_EVENT_SCOPE_THREAD, "image_id",
+                               image_data->paint_image_id, "raster_mip_level",
+                               key.mip_level());
+        }
+      }
+      return image_data.get();
     } else {
+      if (image_data->IsSpeculativeDecode() &&
+          record_speculative_decode_stats) {
+        TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("loading"),
+                             "SpeculativeImageDecodeIncompatibleMatch",
+                             TRACE_EVENT_SCOPE_THREAD, "image_id",
+                             image_data->paint_image_id, "raster_mip_level",
+                             key.mip_level());
+      }
       RemoveFromPersistentCache(found_persistent);
     }
   }
@@ -3388,8 +3470,8 @@ bool GpuImageDecodeCache::IsCompatible(const ImageData* image_data,
 
 size_t GpuImageDecodeCache::GetDrawImageSizeForTesting(const DrawImage& image) {
   base::AutoLock lock(lock_);
-  scoped_refptr<ImageData> data =
-      CreateImageData(image, false /* allow_hardware_decode */);
+  scoped_refptr<ImageData> data = CreateImageData(
+      image, false /* allow_hardware_decode */, false /* speculative_decode */);
   return data->GetTotalSize();
 }
 
@@ -3397,7 +3479,7 @@ void GpuImageDecodeCache::SetImageDecodingFailedForTesting(
     const DrawImage& image) {
   base::AutoLock lock(lock_);
   auto found = persistent_cache_.Peek(image.frame_key());
-  CHECK(found != persistent_cache_.end(), base::NotFatalUntil::M130);
+  CHECK(found != persistent_cache_.end());
   ImageData* image_data = found->second.get();
   image_data->decode.decode_failure = true;
 }
@@ -3406,7 +3488,7 @@ bool GpuImageDecodeCache::DiscardableIsLockedForTesting(
     const DrawImage& image) {
   base::AutoLock lock(lock_);
   auto found = persistent_cache_.Peek(image.frame_key());
-  CHECK(found != persistent_cache_.end(), base::NotFatalUntil::M130);
+  CHECK(found != persistent_cache_.end());
   ImageData* image_data = found->second.get();
   return image_data->decode.is_locked();
 }
@@ -3429,7 +3511,7 @@ sk_sp<SkImage> GpuImageDecodeCache::GetSWImageDecodeForTesting(
     const DrawImage& image) {
   base::AutoLock lock(lock_);
   auto found = persistent_cache_.Peek(image.frame_key());
-  CHECK(found != persistent_cache_.end(), base::NotFatalUntil::M130);
+  CHECK(found != persistent_cache_.end());
   ImageData* image_data = found->second.get();
   DCHECK(!image_data->info.yuva.has_value());
   return image_data->decode.ImageForTesting();
@@ -3738,7 +3820,7 @@ void GpuImageDecodeCache::UpdateMipsIfNeeded(const DrawImage& draw_image,
 scoped_refptr<TileTask> GpuImageDecodeCache::GetTaskFromMapForClientId(
     const ClientId client_id,
     const ImageTaskMap& task_map) {
-  auto task_it = base::ranges::find_if(
+  auto task_it = std::ranges::find_if(
       task_map,
       [client_id](
           const std::pair<ClientId, scoped_refptr<TileTask>> task_item) {

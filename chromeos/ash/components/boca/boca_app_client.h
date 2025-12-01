@@ -40,6 +40,10 @@ class BocaAppClient : public signin::IdentityManager::Observer {
   // Launch Boca App.
   virtual void LaunchApp();
 
+  // Find if there is any open app. Will return not if the app is already
+  // scheduled to be closed.
+  virtual bool HasApp();
+
   // Add `BocaSessionManager` instance for the current profile.
   virtual void AddSessionManager(BocaSessionManager* session_manager);
 
@@ -49,6 +53,10 @@ class BocaAppClient : public signin::IdentityManager::Observer {
   // Get virtual device id. Returns empty is device is not enrolled and has no
   // device policy.
   virtual std::string GetDeviceId();
+
+  virtual std::string GetSchoolToolsServerBaseUrl();
+
+  virtual void OpenFeedbackDialog();
 
   // IdentityManager overrides.
   void OnIdentityManagerShutdown(

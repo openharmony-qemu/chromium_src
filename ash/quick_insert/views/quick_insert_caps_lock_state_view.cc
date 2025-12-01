@@ -48,7 +48,7 @@ views::BubbleBorder::Arrow GetArrowForTextDirection(
 
 }  // namespace
 
-PickerCapsLockStateView::PickerCapsLockStateView(
+QuickInsertCapsLockStateView::QuickInsertCapsLockStateView(
     gfx::NativeView parent,
     bool enabled,
     gfx::Rect caret_bounds,
@@ -74,24 +74,24 @@ PickerCapsLockStateView::PickerCapsLockStateView(
 
   BubbleDialogDelegateView::CreateBubble(this);
 
-  SetBackground(views::CreateThemedRoundedRectBackground(
+  SetBackground(views::CreateRoundedRectBackground(
       kQuickInsertContainerBackgroundColor, kQuickInsertContainerBorderRadius));
 
   caret_bounds.Outset(kArrowGap);
   SetAnchorRect(caret_bounds);
 }
 
-PickerCapsLockStateView::~PickerCapsLockStateView() = default;
+QuickInsertCapsLockStateView::~QuickInsertCapsLockStateView() = default;
 
-void PickerCapsLockStateView::Close() {
+void QuickInsertCapsLockStateView::Close() {
   GetWidget()->Close();
 }
 
-void PickerCapsLockStateView::Show() {
+void QuickInsertCapsLockStateView::Show() {
   GetWidget()->Show();
 }
 
-BEGIN_METADATA(PickerCapsLockStateView)
+BEGIN_METADATA(QuickInsertCapsLockStateView)
 END_METADATA
 
 }  // namespace ash

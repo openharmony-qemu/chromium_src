@@ -4,6 +4,7 @@
 
 #include "ash/app_list/views/app_list_search_view.h"
 
+#include <string_view>
 #include <tuple>
 #include <utility>
 
@@ -33,6 +34,8 @@
 #include "base/memory/raw_ptr.h"
 #include "base/run_loop.h"
 #include "base/strings/strcat.h"
+#include "base/strings/string_number_conversions.h"
+#include "base/strings/utf_string_conversions.h"
 #include "base/test/bind.h"
 #include "base/test/metrics/histogram_tester.h"
 #include "base/test/scoped_feature_list.h"
@@ -190,7 +193,7 @@ class AppListSearchViewTest : public AshTestBase {
         .value();
   }
 
-  std::u16string GetListLabel(
+  std::u16string_view GetListLabel(
       SearchResultContainerView* result_container_view) {
     return static_cast<SearchResultListView*>(result_container_view)
         ->title_label_for_test()
@@ -841,7 +844,7 @@ TEST_P(SearchResultImageViewTest, SearchCategoryMenuItemTooltips) {
   GetSearchBoxView()->GetWidget()->LayoutRootViewIfNecessary();
   views::ImageButton* filter_button = GetSearchBoxView()->filter_button();
   EXPECT_TRUE(filter_button->GetVisible());
-  EXPECT_EQ(filter_button->GetTooltipText({}),
+  EXPECT_EQ(filter_button->GetRenderedTooltipText({}),
             u"Toggle search result categories");
   LeftClickOn(filter_button);
   EXPECT_TRUE(GetSearchBoxView()->IsFilterMenuOpen());
@@ -850,7 +853,7 @@ TEST_P(SearchResultImageViewTest, SearchCategoryMenuItemTooltips) {
                            std::u16string tooltip) {
     EXPECT_EQ(GetSearchBoxView()
                   ->GetFilterMenuItemByCategory(category)
-                  ->GetTooltipText({}),
+                  ->GetRenderedTooltipText({}),
               tooltip);
   };
 
@@ -866,7 +869,7 @@ TEST_P(SearchResultImageViewTest, SearchCategoryMenuItemTooltips) {
   check_tooltip(AppListSearchControlCategory::kHelp,
                 u"Key shortcuts, tips for using device, and more");
   check_tooltip(AppListSearchControlCategory::kImages,
-                u"Search for text within images and see image previews");
+                u"Image search by content and image previews");
   check_tooltip(AppListSearchControlCategory::kPlayStore,
                 u"Available apps from the Play Store");
   check_tooltip(AppListSearchControlCategory::kWeb,
@@ -1350,7 +1353,14 @@ TEST_P(SearchViewClamshellAndTabletTest, ResultSelectionCycle) {
     EXPECT_EQ(controller->selected_location_details()->result_index, i);
   }
 
-  // Pressing down while the last result is selected moves focus to the close
+  // Pressing down while the last result is selected moves focus to the filter
+  // button.
+  PressAndReleaseKey(ui::VKEY_DOWN);
+
+  EXPECT_FALSE(controller->selected_result());
+  EXPECT_TRUE(GetSearchBoxView()->filter_button()->HasFocus());
+
+  // Pressing down while the filter button is selected moves focus to the close
   // button.
   PressAndReleaseKey(ui::VKEY_DOWN);
 
@@ -1365,11 +1375,15 @@ TEST_P(SearchViewClamshellAndTabletTest, ResultSelectionCycle) {
   EXPECT_EQ(controller->selected_location_details()->container_index, 2);
   EXPECT_EQ(controller->selected_location_details()->result_index, 0);
 
-  // Up key should cycle focus to the close button, and then the last search
-  // result.
+  // Up key should cycle focus to the close button, the filter button, and then
+  // the last search result.
   PressAndReleaseKey(ui::VKEY_UP);
   EXPECT_FALSE(controller->selected_result());
   EXPECT_TRUE(GetSearchBoxView()->close_button()->HasFocus());
+
+  PressAndReleaseKey(ui::VKEY_UP);
+  EXPECT_FALSE(controller->selected_result());
+  EXPECT_TRUE(GetSearchBoxView()->filter_button()->HasFocus());
 
   PressAndReleaseKey(ui::VKEY_UP);
   EXPECT_TRUE(GetSearchBoxView()->search_box()->HasFocus());
@@ -1667,7 +1681,7 @@ TEST_P(SearchViewClamshellAndTabletTest, SearchResultA11y) {
   ASSERT_EQ(static_cast<int>(result_containers.size()), kResultContainersCount);
   EXPECT_TRUE(result_containers[1]->GetVisible());
 
-  views::test::AXEventCounter ax_counter(views::AXEventManager::Get());
+  views::test::AXEventCounter ax_counter(views::AXUpdateNotifier::Get());
 
   // Pressing down should not generate a selection accessibility event because
   // A11Y announcements are delayed since the results list just changed.

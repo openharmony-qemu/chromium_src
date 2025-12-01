@@ -1,6 +1,6 @@
 Package: libkadm5srv-mit12
 Source: krb5
-Version: 1.18.3-6+deb11u3
+Version: 1.18.3-6+deb11u5
 Architecture: amd64
 Maintainer: Sam Hartman <hartmans@debian.org>
 Installed-Size: 230

@@ -9,6 +9,7 @@
 #include <optional>
 
 #include "base/barrier_closure.h"
+#include "base/feature_list.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
 #include "base/functional/callback_helpers.h"
@@ -58,35 +59,6 @@ constexpr uint64_t kAllOnes = 0xFFFFFFFFFFFFFFFFu;
 constexpr uint64_t kAllZeros = 0x0000000000000000u;
 constexpr uint64_t kOnesThenZeroes = 0xAAAAAAAAAAAAAAAAu;
 constexpr uint64_t kZeroesThenOnes = 0x5555555555555555u;
-
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
-class HangWatcherEnabledInZygoteChildTest : public testing::Test {
- public:
-  HangWatcherEnabledInZygoteChildTest() {
-    std::vector<base::test::FeatureRefAndParams> enabled_features =
-        kFeatureAndParams;
-    feature_list_.InitWithFeaturesAndParameters(enabled_features, {});
-    HangWatcher::InitializeOnMainThread(
-        HangWatcher::ProcessType::kUtilityProcess,
-        /*emit_crashes=*/true);
-  }
-
-  void TearDown() override { HangWatcher::UnitializeOnMainThreadForTesting(); }
-
-  HangWatcherEnabledInZygoteChildTest(
-      const HangWatcherEnabledInZygoteChildTest& other) = delete;
-  HangWatcherEnabledInZygoteChildTest& operator=(
-      const HangWatcherEnabledInZygoteChildTest& other) = delete;
-
- protected:
-  base::test::ScopedFeatureList feature_list_;
-};
-
-TEST_F(HangWatcherEnabledInZygoteChildTest, IsEnabled) {
-  ASSERT_TRUE(HangWatcher::IsEnabled());
-}
-
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
 
 // Waits on provided WaitableEvent before executing and signals when done.
 class BlockingThread : public DelegateSimpleThread::Delegate {
@@ -165,7 +137,9 @@ class HangWatcherTest : public testing::Test {
     hang_watcher_.Start();
   }
 
-  void TearDown() override { HangWatcher::UnitializeOnMainThreadForTesting(); }
+  void TearDown() override {
+    HangWatcher::UninitializeOnMainThreadForTesting();
+  }
 
   HangWatcherTest(const HangWatcherTest& other) = delete;
   HangWatcherTest& operator=(const HangWatcherTest& other) = delete;
@@ -227,7 +201,7 @@ class HangWatcherBlockingThreadTest : public HangWatcherTest {
 
   void MonitorHangs() {
     // HangWatcher::Monitor() should not be set which would mean a call to
-    // HangWatcher::Monitor() happened and was unacounted for.
+    // HangWatcher::Monitor() happened and was unaccounted for.
     // ASSERT_FALSE(monitor_event_.IsSignaled());
 
     // Trigger a monitoring on HangWatcher thread and verify results.
@@ -273,7 +247,7 @@ TEST_F(HangWatcherTest, MultipleInvalidateExpectationsDoNotCancelOut) {
   // de-activate hang watching,
   base::HangWatcher::InvalidateActiveExpectations();
 
-  // Redundently de-activate hang watching.
+  // Redundantly de-activate hang watching.
   base::HangWatcher::InvalidateActiveExpectations();
 
   // Trigger a monitoring on HangWatcher thread and verify results.
@@ -283,7 +257,9 @@ TEST_F(HangWatcherTest, MultipleInvalidateExpectationsDoNotCancelOut) {
   ASSERT_FALSE(hang_event_.IsSignaled());
 }
 
-TEST_F(HangWatcherTest, NewInnerWatchHangsInScopeAfterInvalidationDetectsHang) {
+// TODO(crbug.com/385732561): Test is flaky.
+TEST_F(HangWatcherTest,
+       DISABLED_NewInnerWatchHangsInScopeAfterInvalidationDetectsHang) {
   // Register the main test thread for hang watching.
   auto unregister_thread_closure =
       HangWatcher::RegisterThread(base::HangWatcher::ThreadType::kMainThread);
@@ -394,7 +370,7 @@ TEST_F(HangWatcherTest, NewScopeAfterDisabling) {
     task_environment_.FastForwardBy(kHangTime);
   }
 
-  // New scope for which expecations are never invalidated.
+  // New scope for which expectations are never invalidated.
   WatchHangsInScope also_expires_instantly(base::TimeDelta{});
   task_environment_.FastForwardBy(kHangTime);
 
@@ -459,6 +435,14 @@ TEST_F(HangWatcherBlockingThreadTest, HistogramsLoggedOnHang) {
                                              "BrowserProcess.UIThread.Normal"),
               ElementsAre(base::Bucket(true, /*count=*/1)));
 
+  EXPECT_THAT(histogram_tester.GetAllSamples("HangWatcher.IsThreadHung."
+                                             "Any"),
+              ElementsAre(base::Bucket(true, /*count=*/1)));
+
+  EXPECT_THAT(histogram_tester.GetAllSamples("HangWatcher.IsThreadHung."
+                                             "AnyCritical"),
+              ElementsAre(base::Bucket(true, /*count=*/1)));
+
   // Reset to attempt capture again.
   hang_event_.Reset();
   monitor_event_.Reset();
@@ -467,6 +451,14 @@ TEST_F(HangWatcherBlockingThreadTest, HistogramsLoggedOnHang) {
   MonitorHangs();
   EXPECT_THAT(histogram_tester.GetAllSamples("HangWatcher.IsThreadHung."
                                              "BrowserProcess.UIThread.Normal"),
+              ElementsAre(base::Bucket(true, /*count=*/2)));
+
+  EXPECT_THAT(histogram_tester.GetAllSamples("HangWatcher.IsThreadHung."
+                                             "Any"),
+              ElementsAre(base::Bucket(true, /*count=*/2)));
+
+  EXPECT_THAT(histogram_tester.GetAllSamples("HangWatcher.IsThreadHung."
+                                             "AnyCritical"),
               ElementsAre(base::Bucket(true, /*count=*/2)));
 
   // Thread types that are not monitored should not get any samples.
@@ -503,6 +495,14 @@ TEST_F(HangWatcherBlockingThreadTest, HistogramsLoggedWithoutHangs) {
   EXPECT_THAT(histogram_tester.GetAllSamples("HangWatcher.IsThreadHung."
                                              "BrowserProcess.IOThread.Normal"),
               IsEmpty());
+
+  EXPECT_THAT(histogram_tester.GetAllSamples("HangWatcher.IsThreadHung."
+                                             "Any"),
+              ElementsAre(base::Bucket(false, /*count=*/1)));
+
+  EXPECT_THAT(histogram_tester.GetAllSamples("HangWatcher.IsThreadHung."
+                                             "AnyCritical"),
+              ElementsAre(base::Bucket(false, /*count=*/1)));
   JoinThread();
 }
 
@@ -606,7 +606,9 @@ class HangWatcherSnapshotTest : public testing::Test {
     hang_watcher_.SetMonitoringPeriodForTesting(kVeryLongDelta);
   }
 
-  void TearDown() override { HangWatcher::UnitializeOnMainThreadForTesting(); }
+  void TearDown() override {
+    HangWatcher::UninitializeOnMainThreadForTesting();
+  }
 
   HangWatcherSnapshotTest() = default;
   HangWatcherSnapshotTest(const HangWatcherSnapshotTest& other) = delete;
@@ -643,7 +645,7 @@ class HangWatcherSnapshotTest : public testing::Test {
     constexpr char kSeparator{'|'};
 
     for (PlatformThreadId id : ids) {
-      result += base::NumberToString(id) + kSeparator;
+      result += base::NumberToString(id.raw()) + kSeparator;
     }
 
     return result;
@@ -683,7 +685,7 @@ class HangWatcherSnapshotTest : public testing::Test {
 
 // Verify that the hang capture fails when marking a thread for blocking fails.
 // This simulates a WatchHangsInScope completing between the time the hang
-// was dected and the time it is recorded which would create a non-actionable
+// was detected and the time it is recorded which would create a non-actionable
 // report.
 TEST_F(HangWatcherSnapshotTest, NonActionableReport) {
   hang_watcher_.SetOnHangClosureForTesting(
@@ -723,16 +725,7 @@ TEST_F(HangWatcherSnapshotTest, NonActionableReport) {
   }
 }
 
-// TODO(crbug.com/40187449): On MAC, the base::PlatformThread::CurrentId(...)
-// should return the system wide IDs. The HungThreadIDs test fails because the
-// reported process ids do not match.
-#if BUILDFLAG(IS_MAC)
-#define MAYBE_HungThreadIDs DISABLED_HungThreadIDs
-#else
-#define MAYBE_HungThreadIDs HungThreadIDs
-#endif
-
-TEST_F(HangWatcherSnapshotTest, MAYBE_HungThreadIDs) {
+TEST_F(HangWatcherSnapshotTest, HungThreadIDs) {
   // During hang capture the list of hung threads should be populated.
   hang_watcher_.SetOnHangClosureForTesting(base::BindLambdaForTesting([this] {
     EXPECT_EQ(hang_watcher_.GrabWatchStateSnapshotForTesting()
@@ -876,7 +869,9 @@ class HangWatcherPeriodicMonitoringTest : public testing::Test {
   HangWatcherPeriodicMonitoringTest& operator=(
       const HangWatcherPeriodicMonitoringTest& other) = delete;
 
-  void TearDown() override { hang_watcher_.UnitializeOnMainThreadForTesting(); }
+  void TearDown() override {
+    hang_watcher_.UninitializeOnMainThreadForTesting();
+  }
 
  protected:
   // Setup the callback invoked after waiting in HangWatcher to advance the
@@ -939,7 +934,7 @@ TEST_F(HangWatcherPeriodicMonitoringTest,
   // this is rare.
 }
 
-// During normal execution periodic monitorings should take place.
+// During normal execution periodic monitoring should take place.
 TEST_F(HangWatcherPeriodicMonitoringTest, PeriodicCallsTakePlace) {
   // HangWatcher::Monitor() will run once right away on thread registration.
   // We want to make sure it runs at a couple more times from being scheduled.
@@ -951,6 +946,9 @@ TEST_F(HangWatcherPeriodicMonitoringTest, PeriodicCallsTakePlace) {
   // invoked enough times.
   hang_watcher_.SetAfterMonitorClosureForTesting(BarrierClosure(
       kMinimumMonitorCount, base::BindLambdaForTesting([&run_loop] {
+        // This should only run if there are threads to watch.
+        EXPECT_TRUE(base::FeatureList::IsEnabled(kEnableHangWatcher));
+
         // Test condition are confirmed, stop monitoring.
         HangWatcher::StopMonitoringForTesting();
 
@@ -969,7 +967,10 @@ TEST_F(HangWatcherPeriodicMonitoringTest, PeriodicCallsTakePlace) {
   unregister_thread_closure_ =
       HangWatcher::RegisterThread(base::HangWatcher::ThreadType::kMainThread);
 
-  run_loop.Run();
+  // The "after monitor" closure only runs if there are threads to watch.
+  if (base::FeatureList::IsEnabled(kEnableHangWatcher)) {
+    run_loop.Run();
+  }
 
   // No monitored scope means no possible hangs.
   ASSERT_FALSE(hang_event_.IsSignaled());
@@ -1044,7 +1045,9 @@ class WatchHangsInScopeBlockingTest : public testing::Test {
         HangWatcher::RegisterThread(base::HangWatcher::ThreadType::kMainThread);
   }
 
-  void TearDown() override { HangWatcher::UnitializeOnMainThreadForTesting(); }
+  void TearDown() override {
+    HangWatcher::UninitializeOnMainThreadForTesting();
+  }
 
   WatchHangsInScopeBlockingTest(const WatchHangsInScopeBlockingTest& other) =
       delete;
@@ -1239,7 +1242,7 @@ TEST_F(HangWatchDeadlineTest, SetAndClearPersistentFlag) {
   // All flags back to original state.
   ASSERT_EQ(new_flags, old_flags);
 
-  // Deadline still unnafected.
+  // Deadline still unaffected.
   ASSERT_EQ(new_deadline, old_deadline);
 }
 
@@ -1318,7 +1321,7 @@ TEST_F(HangWatchDeadlineTest, ClearIgnoreHangsDeadlineChanged) {
 // Verify that setting a persistent (kIgnoreCurrentWatchHangsInScope) when
 // the deadline or flags changed succeeds and has non side-effects.
 TEST_F(HangWatchDeadlineTest,
-       SetIgnoreCurrentHangWatchScopeEnableDeadlineChangedd) {
+       SetIgnoreCurrentHangWatchScopeEnableDeadlineChanged) {
   AssertNoFlagsSet();
 
   auto [flags, deadline] = deadline_.GetFlagsAndDeadline();

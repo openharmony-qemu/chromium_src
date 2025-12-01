@@ -1,9 +1,9 @@
 Package: libtiff5
 Source: tiff
-Version: 4.2.0-1+deb11u4
+Version: 4.2.0-1+deb11u5
 Architecture: i386
 Maintainer: Laszlo Boszormenyi (GCS) <gcs@debian.org>
-Installed-Size: 711
+Installed-Size: 712
 Depends: libc6 (>= 2.29), libdeflate0 (>= 1.0), libjbig0 (>= 2.0), libjpeg62-turbo (>= 1.3.1), liblzma5 (>= 5.1.1alpha+20120614), libwebp6 (>= 0.5.1), libzstd1 (>= 1.4.0), zlib1g (>= 1:1.1.4)
 Section: libs
 Priority: optional

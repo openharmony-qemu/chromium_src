@@ -58,13 +58,26 @@ export class CertificateEntryV2Element extends CertificateEntryV2ElementBase {
       sha256hashHex: String,
       displayName: String,
       isDeletable: Boolean,
+      showEditIcon: {
+        type: Boolean,
+        value: false,
+      },
     };
   }
 
-  certSource: CertificateSource;
-  sha256hashHex: string;
-  displayName: string;
-  isDeletable: boolean;
+  declare certSource: CertificateSource;
+  declare sha256hashHex: string;
+  declare displayName: string;
+  declare isDeletable: boolean;
+  declare showEditIcon: boolean;
+
+  private certDetailsIconClass_(): string {
+    if (this.showEditIcon) {
+      return 'icon-edit';
+    } else {
+      return 'icon-visibility';
+    }
+  }
 
   private onViewCertificate_() {
     CertificatesV2BrowserProxy.getInstance().handler.viewCertificate(

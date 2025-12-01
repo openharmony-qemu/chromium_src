@@ -5,7 +5,6 @@
 #include "base/test/test_shared_memory_util.h"
 
 #include <gtest/gtest.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -45,7 +44,7 @@ static const size_t kDataSize = 1024;
 static bool CheckReadOnlySharedMemoryFdPosix(int fd) {
 // Note that the error on Android is EPERM, unlike other platforms where
 // it will be EACCES.
-#if BUILDFLAG(IS_ANDROID)
+#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_OHOS)
   const int kExpectedErrno = EPERM;
 #else
   const int kExpectedErrno = EACCES;
@@ -152,8 +151,9 @@ WritableSharedMemoryMapping MapAtForTesting(
     size_t size) {
   SharedMemoryMapper* mapper = SharedMemoryMapper::GetDefaultInstance();
   auto result = region->MapAt(offset, size, mapper);
-  if (!result.has_value())
+  if (!result.has_value()) {
     return {};
+  }
 
   return WritableSharedMemoryMapping(result.value(), size, region->GetGUID(),
                                      mapper);

@@ -1,9 +1,9 @@
 Package: libqt5core5a
 Source: qtbase-opensource-src
-Version: 5.15.2+dfsg-9
+Version: 5.15.2+dfsg-9+deb11u1
 Architecture: amd64
 Maintainer: Debian Qt/KDE Maintainers <debian-qt-kde@lists.debian.org>
-Installed-Size: 5924
+Installed-Size: 5933
 Depends: shared-mime-info, libc6 (>= 2.29), libdouble-conversion3 (>= 2.0.0), libgcc-s1 (>= 3.4), libglib2.0-0 (>= 2.22.0), libicu67 (>= 67.1-1~), libpcre2-16-0 (>= 10.22), libstdc++6 (>= 10), libzstd1 (>= 1.4.0), zlib1g (>= 1:1.1.4)
 Recommends: qttranslations5-l10n
 Suggests: libthai0

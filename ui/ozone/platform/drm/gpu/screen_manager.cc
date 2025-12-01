@@ -14,7 +14,7 @@
 #include "base/files/file_path.h"
 #include "base/json/json_writer.h"
 #include "base/logging.h"
-#include "base/not_fatal_until.h"
+#include "base/memory/scoped_refptr.h"
 #include "base/strings/strcat.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/trace_event/common/trace_event_common.h"
@@ -163,7 +163,9 @@ std::string GenerateConfigurationLogForController(
       const std::string size = ModeSize(*(param.mode.get())).ToString();
       const std::string refresh_rate =
           base::NumberToString(ModeRefreshRate(*param.mode));
-      mode = base::StrCat({size, "@", refresh_rate});
+      const char* scan_mode =
+          param.mode.get()->flags & DRM_MODE_FLAG_INTERLACE ? "i" : "p";
+      mode = base::StrCat({size, scan_mode, "@", refresh_rate});
     } else {
       mode = "Disabled";
     }
@@ -424,7 +426,7 @@ bool ScreenManager::TestAndSetPreferredModifiers(
 
   for (const auto& params : controllers_params) {
     auto it = FindDisplayController(params.drm, params.crtc);
-    CHECK(controllers_.end() != it, base::NotFatalUntil::M130);
+    CHECK(controllers_.end() != it);
     HardwareDisplayController* controller = it->get();
 
     if (params.mode) {
@@ -476,7 +478,7 @@ bool ScreenManager::TestAndSetLinearModifier(
 
   for (const auto& params : controllers_params) {
     auto it = FindDisplayController(params.drm, params.crtc);
-    CHECK(controllers_.end() != it, base::NotFatalUntil::M130);
+    CHECK(controllers_.end() != it);
     HardwareDisplayController* controller = it->get();
 
     uint32_t fourcc_format = GetFourCCFormatForOpaqueFramebuffer(
@@ -553,7 +555,7 @@ bool ScreenManager::TestModesetWithOverlays(
   auto drm = controllers_params[0].drm;
   for (const auto& params : controllers_params) {
     auto it = FindDisplayController(params.drm, params.crtc);
-    CHECK(controllers_.end() != it, base::NotFatalUntil::M130);
+    CHECK(controllers_.end() != it);
     HardwareDisplayController* controller = it->get();
 
     if (params.mode) {
@@ -600,7 +602,7 @@ bool ScreenManager::Modeset(
   for (const auto& params : controllers_params) {
     if (params.mode) {
       auto it = FindDisplayController(params.drm, params.crtc);
-      CHECK(controllers_.end() != it, base::NotFatalUntil::M130);
+      CHECK(controllers_.end() != it);
       HardwareDisplayController* controller = it->get();
 
       uint32_t fourcc_format = GetFourCCFormatForOpaqueFramebuffer(
@@ -649,7 +651,7 @@ void ScreenManager::SetDisplayControllerForEnableAndGetProps(
     const DrmOverlayPlaneList& modeset_planes,
     bool enable_vrr) {
   HardwareDisplayControllers::iterator it = FindDisplayController(drm, crtc);
-  CHECK(controllers_.end() != it, base::NotFatalUntil::M130)
+  CHECK(controllers_.end() != it)
       << "Display controller (crtc=" << crtc << ") doesn't exist.";
 
   HardwareDisplayController* controller = it->get();
@@ -838,8 +840,9 @@ void ScreenManager::UpdateControllerToWindowMapping() {
   // First create a unique mapping between a window and a controller. Note, a
   // controller may be associated with at most 1 window.
   for (const auto& controller : controllers_) {
-    if (!controller->IsEnabled())
+    if (!controller->IsEnabled() || !controller->GetDrmDevice()->has_master()) {
       continue;
+    }
 
     DrmWindow* window = FindWindowAt(
         gfx::Rect(controller->origin(), controller->GetModeSize()));
@@ -1055,6 +1058,27 @@ bool ScreenManager::ReplaceDisplayControllersCrtcs(
 
   // No need to UpdateControllerToWindowMapping() since the underlying
   // HardwareDisplayController remained intact - just changed their CRTCs.
+
+  return true;
+}
+
+bool ScreenManager::DetachPlanesFromAllControllers() {
+  base::flat_map<scoped_refptr<DrmDevice>, CommitRequest>
+      commit_request_per_device;
+  for (const auto& controller : controllers_) {
+    scoped_refptr<DrmDevice> drm = controller->GetDrmDevice();
+    CommitRequest& commit_request = commit_request_per_device[drm];
+    controller->GetCurrentModesetPropsWithoutPlanes(&commit_request);
+  }
+
+  for (auto& [drm, commit_request] : commit_request_per_device) {
+    if (!drm->plane_manager()->Commit(
+            commit_request, /*flags=*/DRM_MODE_ATOMIC_ALLOW_MODESET)) {
+      LOG(ERROR) << __func__ << " detach plane commit failure for drm device: "
+                 << drm->device_path().value();
+      return false;
+    }
+  }
 
   return true;
 }

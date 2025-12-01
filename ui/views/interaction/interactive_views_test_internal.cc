@@ -14,16 +14,18 @@
 
 #include "base/containers/map_util.h"
 #include "base/scoped_observation.h"
-#include "base/strings/stringprintf.h"
+#include "base/strings/strcat.h"
 #include "build/build_config.h"
 #include "ui/base/interaction/element_identifier.h"
 #include "ui/base/interaction/element_tracker.h"
 #include "ui/base/interaction/framework_specific_implementation.h"
+#include "ui/base/interaction/interaction_sequence.h"
 #include "ui/base/interaction/interaction_test_util.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/native_widget_types.h"
 #include "ui/views/focus/widget_focus_manager.h"
 #include "ui/views/interaction/element_tracker_views.h"
+#include "ui/views/interaction/interaction_test_util_mouse.h"
 #include "ui/views/interaction/widget_focus_observer.h"
 #include "ui/views/native_window_tracker.h"
 #include "ui/views/test/widget_test.h"
@@ -74,7 +76,7 @@ class NativeViewWidgetFocusSupplier : public WidgetFocusSupplier,
     Widget::Widgets result;
     if (aura::test::AuraTestHelper* const aura_test_helper =
             aura::test::AuraTestHelper::GetInstance()) {
-      Widget::GetAllChildWidgets(aura_test_helper->GetContext(), &result);
+      result.merge(Widget::GetAllChildWidgets(aura_test_helper->GetContext()));
     }
     return result;
 #else
@@ -250,8 +252,9 @@ class InteractiveViewsTestPrivate::WindowHintCacheEntry {
   }
 
   void SetWindow(gfx::NativeWindow window) {
-    if (window_ == window)
+    if (window_ == window) {
       return;
+    }
     window_ = window;
     tracker_ = window ? views::NativeWindowTracker::Create(window) : nullptr;
   }
@@ -296,15 +299,18 @@ void InteractiveViewsTestPrivate::DoTestTearDown() {
   InteractiveTestPrivate::DoTestTearDown();
 }
 
-gfx::NativeWindow InteractiveViewsTestPrivate::GetWindowHintFor(
-    ui::TrackedElement* el) {
+InteractionTestUtilMouse::GestureParams
+InteractiveViewsTestPrivate::GetGestureParamsForStep(
+    ui::TrackedElement* el,
+    const ui::InteractionSequence* seq) {
   // See if the native window can be extracted directly from the element.
   gfx::NativeWindow window = GetNativeWindowFromElement(el);
 
   // If not, see if the window can be extracted from the context (perhaps via
   // the cache).
-  if (!window)
+  if (!window) {
     window = GetNativeWindowFromContext(el->context());
+  }
 
   // If a window was found, then a cache entry may need to be inserted/updated.
   if (window) {
@@ -315,7 +321,8 @@ gfx::NativeWindow InteractiveViewsTestPrivate::GetWindowHintFor(
     result.first->second.SetWindow(window);
   }
 
-  return window;
+  return InteractionTestUtilMouse::GestureParams(
+      window, seq->IsCurrentStepImmediateForTesting());
 }
 
 gfx::NativeWindow InteractiveViewsTestPrivate::GetNativeWindowFromElement(
@@ -327,11 +334,13 @@ gfx::NativeWindow InteractiveViewsTestPrivate::GetNativeWindowFromElement(
     window = widget->GetNativeWindow();
     // Most of those that don't are sub-widgets that are hard-parented to
     // another widget.
-    if (!window && widget->parent())
+    if (!window && widget->parent()) {
       window = widget->parent()->GetNativeWindow();
+    }
     // At worst case, fall back to the primary window.
-    if (!window)
+    if (!window) {
       window = widget->GetPrimaryWindowWidget()->GetNativeWindow();
+    }
   }
   return window;
 }
@@ -347,19 +356,21 @@ gfx::NativeWindow InteractiveViewsTestPrivate::GetNativeWindowFromContext(
 std::string InteractiveViewsTestPrivate::DebugDumpWidget(
     const Widget& widget) const {
   std::string description = widget.GetName();
-  return base::StringPrintf(
-      "%s \"%s\" at %s", widget.GetClassName(), widget.GetName().c_str(),
-      DebugDumpBounds(widget.GetWindowBoundsInScreen()).c_str());
+  return base::StrCat({// At any time, at most one widget can be active. It is
+                       // the widget that accepts keyboard inputs.
+                       widget.IsActive() ? "[ACTIVE] " : "",
+                       widget.GetClassName(), " \"", widget.GetName(), "\" at ",
+                       DebugDumpBounds(widget.GetWindowBoundsInScreen())});
 }
 
 InteractiveViewsTestPrivate::DebugTreeNode
 InteractiveViewsTestPrivate::DebugDumpElement(
     const ui::TrackedElement* el) const {
   if (const auto* view = el->AsA<TrackedElementViews>()) {
-    return DebugTreeNode(base::StringPrintf(
-        "%s%s - %s at %s", (view->view()->HasFocus() ? "[FOCUSED] " : ""),
-        view->view()->GetClassName(), el->identifier().GetName().c_str(),
-        DebugDumpBounds(el->GetScreenBounds())));
+    return DebugTreeNode(base::StrCat(
+        {(view->view()->HasFocus() ? "[FOCUSED] " : ""),
+         view->view()->GetClassName(), " - ", el->identifier().GetName(),
+         " at ", DebugDumpBounds(el->GetScreenBounds())}));
   }
   return InteractiveTestPrivate::DebugDumpElement(el);
 }

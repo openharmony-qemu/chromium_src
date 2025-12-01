@@ -5,6 +5,7 @@
 #include "android_webview/nonembedded/component_updater/aw_component_update_service.h"
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -27,7 +28,7 @@
 #include "base/files/important_file_writer.h"
 #include "base/files/scoped_temp_dir.h"
 #include "base/functional/callback_helpers.h"
-#include "base/json/json_string_value_serializer.h"
+#include "base/json/json_writer.h"
 #include "base/json/values_util.h"
 #include "base/logging.h"
 #include "base/no_destructor.h"
@@ -38,6 +39,7 @@
 #include "base/time/time.h"
 #include "base/values.h"
 #include "base/version.h"
+#include "components/component_updater/android/component_loader_policy.h"
 #include "components/component_updater/component_installer.h"
 #include "components/component_updater/component_updater_service.h"
 #include "components/component_updater/component_updater_utils.h"
@@ -289,10 +291,11 @@ void AwComponentUpdateService::UpdateMetadataFiles(
         cps_component_base_path.AppendASCII(highest_sequence_number_dir);
 
     base::Value::Dict metadata_file_contents;
-    metadata_file_contents.Set(component_id, GetCohortId(component_id));
-    std::string metadata_file_contents_json;
-    JSONStringValueSerializer serializer(&metadata_file_contents_json);
-    if (!serializer.Serialize(metadata_file_contents)) {
+    metadata_file_contents.Set(component_updater::kMetadataFileCohortIdKey,
+                               GetCohortId(component_id));
+    std::optional<std::string> metadata_file_contents_json =
+        base::WriteJson(metadata_file_contents);
+    if (!metadata_file_contents_json.has_value()) {
       LOG(ERROR) << "Failed to serialize metadata for component "
                  << component_id;
       continue;
@@ -302,7 +305,7 @@ void AwComponentUpdateService::UpdateMetadataFiles(
     base::FilePath metadata_file_path =
         dest_path.Append("aw_extra_component_metadata.json");
     if (!base::ImportantFileWriter::WriteFileAtomically(
-            metadata_file_path, metadata_file_contents_json)) {
+            metadata_file_path, metadata_file_contents_json.value())) {
       LOG(ERROR) << "Failed to write metadata file for component "
                  << component_id << " at " << metadata_file_path;
     }
@@ -314,18 +317,15 @@ void AwComponentUpdateService::UpdateMetadataFiles(
 std::string AwComponentUpdateService::GetHighestSequenceNumberDirectory(
     base::FilePath cps_component_base_path) {
   JNIEnv* env = jni_zero::AttachCurrentThread();
-  return base::android::ConvertJavaStringToUTF8(
-      env, Java_ComponentsProviderPathUtil_getTheHighestSequenceNumberDirectory(
-               env, base::android::ConvertUTF8ToJavaString(
-                        env, cps_component_base_path.MaybeAsASCII())));
+  return Java_ComponentsProviderPathUtil_getTheHighestSequenceNumberDirectory(
+      env, cps_component_base_path.MaybeAsASCII());
 }
 
 int AwComponentUpdateService::GetHighestSequenceNumber(
     base::FilePath cps_component_base_path) {
   JNIEnv* env = jni_zero::AttachCurrentThread();
   return Java_ComponentsProviderPathUtil_getTheHighestSequenceNumber(
-      env, base::android::ConvertUTF8ToJavaString(
-               env, cps_component_base_path.MaybeAsASCII()));
+      env, cps_component_base_path.MaybeAsASCII());
 }
 
 base::FilePath AwComponentUpdateService::GetComponentsProviderServiceDirectory(
@@ -335,10 +335,9 @@ base::FilePath AwComponentUpdateService::GetComponentsProviderServiceDirectory(
 
   JNIEnv* env = jni_zero::AttachCurrentThread();
   return base::FilePath(
-             base::android::ConvertJavaStringToUTF8(
-                 env,
-                 Java_ComponentsProviderPathUtil_getComponentsServingDirectoryPath(
-                     env)))
+
+             Java_ComponentsProviderPathUtil_getComponentsServingDirectoryPath(
+                 env))
       .AppendASCII(component_id);
 }
 

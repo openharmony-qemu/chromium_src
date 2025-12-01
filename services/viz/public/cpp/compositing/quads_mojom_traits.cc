@@ -2,10 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifdef UNSAFE_BUFFERS_BUILD
-// TODO(crbug.com/351564777): Remove this and convert code to safer constructs.
-#pragma allow_unsafe_buffers
-#endif
 
 #include "services/viz/public/cpp/compositing/quads_mojom_traits.h"
 
@@ -13,6 +9,7 @@
 #include <optional>
 
 #include "base/notreached.h"
+#include "cc/mojom/paint_flags_mojom_traits.h"
 #include "components/viz/common/quads/shared_element_draw_quad.h"
 #include "components/viz/common/quads/texture_draw_quad.h"
 #include "services/viz/public/cpp/compositing/compositor_render_pass_id_mojom_traits.h"
@@ -97,19 +94,15 @@ bool StructTraits<
     viz::DrawQuad>::Read(viz::mojom::CompositorRenderPassQuadStateDataView data,
                          viz::DrawQuad* out) {
   auto* quad = static_cast<viz::CompositorRenderPassDrawQuad*>(out);
-  viz::ResourceId& mask_resource_id =
-      quad->resources
-          .ids[viz::CompositorRenderPassDrawQuad::kMaskResourceIdIndex];
   if (!data.ReadMaskUvRect(&quad->mask_uv_rect) ||
       !data.ReadMaskTextureSize(&quad->mask_texture_size) ||
       !data.ReadFiltersScale(&quad->filters_scale) ||
       !data.ReadFiltersOrigin(&quad->filters_origin) ||
       !data.ReadTexCoordRect(&quad->tex_coord_rect) ||
       !data.ReadRenderPassId(&quad->render_pass_id) ||
-      !data.ReadMaskResourceId(&mask_resource_id)) {
+      !data.ReadMaskResourceId(&quad->resource_id)) {
     return false;
   }
-  quad->resources.count = mask_resource_id ? 1 : 0;
 
   // CompositorRenderPass ids are never zero.
   if (!quad->render_pass_id) {
@@ -145,6 +138,14 @@ bool StructTraits<viz::mojom::SurfaceQuadStateDataView, viz::DrawQuad>::Read(
   quad->stretch_content_to_fill_bounds = data.stretch_content_to_fill_bounds();
   quad->is_reflection = data.is_reflection();
   quad->allow_merge = data.allow_merge();
+  if (!data.ReadOverrideChildFilterQuality(
+          &quad->override_child_filter_quality)) {
+    return false;
+  }
+  if (!data.ReadOverrideChildDynamicRangeLimit(
+          &quad->override_child_dynamic_range_limit)) {
+    return false;
+  }
   return data.ReadSurfaceRange(&quad->surface_range);
 }
 
@@ -154,14 +155,10 @@ bool StructTraits<viz::mojom::TextureQuadStateDataView, viz::DrawQuad>::Read(
     viz::DrawQuad* out) {
   auto* quad = static_cast<viz::TextureDrawQuad*>(out);
 
-  if (!data.ReadResourceId(
-          &quad->resources.ids[viz::TextureDrawQuad::kResourceIdIndex]) ||
-      !data.ReadResourceSizeInPixels(&quad->overlay_resources.size_in_pixels)) {
+  if (!data.ReadResourceId(&quad->resource_id)) {
     return false;
   }
 
-  quad->resources.count = 1;
-  quad->premultiplied_alpha = data.premultiplied_alpha();
   gfx::ProtectedVideoType protected_video_type =
       gfx::ProtectedVideoType::kClear;
   viz::OverlayPriority overlay_priority_hint = viz::OverlayPriority::kLow;
@@ -169,7 +166,8 @@ bool StructTraits<viz::mojom::TextureQuadStateDataView, viz::DrawQuad>::Read(
       !data.ReadUvBottomRight(&quad->uv_bottom_right) ||
       !data.ReadProtectedVideoType(&protected_video_type) ||
       !data.ReadOverlayPriorityHint(&overlay_priority_hint) ||
-      !data.ReadRoundedDisplayMasksInfo(&quad->rounded_display_masks_info)) {
+      !data.ReadRoundedDisplayMasksInfo(&quad->rounded_display_masks_info) ||
+      !data.ReadDynamicRangeLimit(&quad->dynamic_range_limit)) {
     return false;
   }
   quad->protected_video_type = protected_video_type;
@@ -177,10 +175,8 @@ bool StructTraits<viz::mojom::TextureQuadStateDataView, viz::DrawQuad>::Read(
   if (!data.ReadBackgroundColor(&quad->background_color))
     return false;
 
-  quad->y_flipped = data.y_flipped();
   quad->nearest_neighbor = data.nearest_neighbor();
   quad->secure_output_only = data.secure_output_only();
-  quad->is_stream_video = data.is_stream_video();
   quad->is_video_frame = data.is_video_frame();
   quad->force_rgbx = data.force_rgbx();
 
@@ -197,15 +193,12 @@ bool StructTraits<viz::mojom::TileQuadStateDataView, viz::DrawQuad>::Read(
   viz::TileDrawQuad* quad = static_cast<viz::TileDrawQuad*>(out);
   if (!data.ReadTexCoordRect(&quad->tex_coord_rect) ||
       !data.ReadTextureSize(&quad->texture_size) ||
-      !data.ReadResourceId(
-          &quad->resources.ids[viz::TileDrawQuad::kResourceIdIndex])) {
+      !data.ReadResourceId(&quad->resource_id)) {
     return false;
   }
 
-  quad->is_premultiplied = data.is_premultiplied();
   quad->nearest_neighbor = data.nearest_neighbor();
   quad->force_anti_aliasing_off = data.force_anti_aliasing_off();
-  quad->resources.count = 1;
   return true;
 }
 

@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 import { injectable } from 'inversify';
 import { OhosDragParamToJs, OhosDropData } from '../interface/CommonInterface';
@@ -115,9 +90,15 @@ export class DragParamManager {
   public handleDragRecords(dragParams: OhosDragParamToJs): UDC.UnifiedData | undefined {
     this.dragData = undefined;
     let dragContents: Array<UDC.UnifiedRecord> = [];
-    let dragDataHtml: UDC.HTML|undefined = undefined;
-    let dragDataText: UDC.PlainText|undefined = undefined;
-    let dragDataHyperlink: UDC.Hyperlink|undefined = undefined;
+    let dragDataHtml: UDC.HTML | undefined = undefined;
+    let dragDataText: UDC.PlainText | undefined = undefined;
+    let dragDataHyperlink: UDC.Hyperlink | undefined = undefined;
+    if (dragParams.web_image_file_path) {
+      let image: UDC.Image | undefined = this.handleImageDragUri(dragParams.web_image_file_path);
+      if (image) {
+        dragContents.push(image);
+      }
+    }
     if (dragParams.text) {
       LogUtil.info(TAG, `handleDragRecords text-length:${dragParams.text.length}`);
       dragDataText = new UDC.PlainText();
@@ -138,10 +119,9 @@ export class DragParamManager {
         dragDataHtml.plainContent = dragParams.text;
       }
     }
-    if (dragParams.urlTitle) {
-      LogUtil.info(TAG, `handleDragRecords urlTitle-length:${dragParams.urlTitle.length}`);
+    if (dragParams.url_title) {
       dragDataHyperlink = new UDC.Hyperlink();
-      dragDataHyperlink.description = dragParams.urlTitle;
+      dragDataHyperlink.description = dragParams.url_title;
       dragContents.push(dragDataHyperlink);
     }
     if (dragParams.url) {
@@ -154,25 +134,16 @@ export class DragParamManager {
         dragContents.push(dragDataHyperlink);
       }
     }
-    if (dragParams.webImageFilePath) {
-      LogUtil.info(TAG, `handleDragRecords webImageFilePath-length:${dragParams.webImageFilePath.length}`);
-      let image: UDC.Image | undefined = this.handleImageDragUri(dragParams.webImageFilePath);
-      if (image) {
-        dragContents.push(image);
-      }
-    }
-    if (dragParams.bookmarkBuffer.byteLength > 0) {
-      LogUtil.info(TAG, `handleDragRecords bookmarkBuffer-length:${dragParams.bookmarkBuffer.byteLength}`);
+    if (dragParams.bookmark_buffer.byteLength > 0) {
       let record = new unifiedDataChannel.ApplicationDefinedRecord();
       record.applicationDefinedType = BOOKMARK_DEFINED_TYPE;
-      record.rawData = new Uint8Array(dragParams.bookmarkBuffer);
+      record.rawData = new Uint8Array(dragParams.bookmark_buffer);
       dragContents.push(record);
     }
-    if (dragParams.webCustomBuffer.byteLength > 0) {
-      LogUtil.info(TAG, `handleDragRecords webCustomBuffer-length:${dragParams.webCustomBuffer.byteLength}`);
+    if (dragParams.web_custom_buffer.byteLength > 0) {
       let record = new unifiedDataChannel.ApplicationDefinedRecord();
       record.applicationDefinedType = WEB_CUSTOM_DEFINED_TYPE;
-      record.rawData = new Uint8Array(dragParams.webCustomBuffer);
+      record.rawData = new Uint8Array(dragParams.web_custom_buffer);
       dragContents.push(record);
     }
     if (dragContents.length === 0) {
@@ -193,9 +164,12 @@ export class DragParamManager {
    */
   public handleDragDataForEntries(dragParams: OhosDragParamToJs): UDC.UnifiedData | undefined {
     this.dragData = undefined;
-    let dragContents:(uniformDataStruct.PlainText |uniformDataStruct.HTML |uniformDataStruct.Hyperlink
-                    |uniformDataStruct.FileUri |CustomDragData)[] = [];
-
+    let dragContents: (uniformDataStruct.PlainText | uniformDataStruct.HTML | uniformDataStruct.Hyperlink
+      | uniformDataStruct.FileUri | CustomDragData)[] = [];
+    let imageUds = this.handleWebImageForEntries(dragParams);
+    if (imageUds) {
+      dragContents.push(imageUds);
+    }
     let plainText = this.handleTextDragDataForEntries(dragParams);
     if (plainText) {
       dragContents.push(plainText);
@@ -207,11 +181,6 @@ export class DragParamManager {
     let hyperlinkUds = this.handleHyperlinkDragDataForEntries(dragParams);
     if (hyperlinkUds) {
       dragContents.push(hyperlinkUds);
-    }
-    let imageUds = this.handleWebImageForEntries(dragParams);
-    if (imageUds) {
-      LogUtil.info(TAG, `handleDragDataForEntries webImageFilePath-length:${dragParams.webImageFilePath.length}`);
-      dragContents.push(imageUds);
     }
     let bookmarkStruct = this.handleBookmarkDragDataForEntries(dragParams);
     if (bookmarkStruct) {
@@ -233,7 +202,7 @@ export class DragParamManager {
     return this.dragData;
   }
 
-  public handleDropDataForEnter(summary: Summary) : OhosDropData {
+  public handleDropDataForEnter(summary: Summary): OhosDropData {
     let dropData: OhosDropData = {
       text: "",
       url: "",
@@ -256,7 +225,7 @@ export class DragParamManager {
       LogUtil.warn(TAG, `On handleDropDataForEnter summary records is null`);
       return dropData;
     }
-    for(let i = 0; i < records.length; i++) {
+    for (let i = 0; i < records.length; i++) {
       if (records[i].length > 0 && !records[i][0]) {
         LogUtil.error(TAG, `On handleDropDataForEnter dragData summary is empty`);
         continue;
@@ -290,7 +259,7 @@ export class DragParamManager {
     return dropData;
   }
 
-  public handleDropDataForDrop(dragData: UnifiedData) : OhosDropData {
+  public handleDropDataForDrop(dragData: UnifiedData): OhosDropData {
     let dropData: OhosDropData = {
       text: "",
       url: "",
@@ -380,7 +349,8 @@ export class DragParamManager {
         LogUtil.info(TAG, `handleDropDataFromRecordsForEntries, recordType: ${recordType}`);
         switch (recordType) {
           case UTD.UniformDataType.PLAIN_TEXT:
-            let plainText: uniformDataStruct.PlainText = entryMap[uniformTypeDescriptor.UniformDataType.PLAIN_TEXT] as uniformDataStruct.PlainText
+            let plainText: uniformDataStruct.PlainText =
+              entryMap[uniformTypeDescriptor.UniformDataType.PLAIN_TEXT] as uniformDataStruct.PlainText
             if (plainText) {
               dropData.text = plainText.textContent;
             }
@@ -394,7 +364,8 @@ export class DragParamManager {
               dropData.urlTitle = hyperlink.description ? hyperlink.description : "";
             }
             LogUtil.info(TAG, `handleDropDataFromRecordsForEntries, url data length: ${dropData.url.length}`);
-            LogUtil.info(TAG, `handleDropDataFromRecordsForEntries, url title data length: ${dropData.urlTitle.length}`);
+            LogUtil.info(TAG,
+              `handleDropDataFromRecordsForEntries, url title data length: ${dropData.urlTitle.length}`);
             break;
           case UTD.UniformDataType.HTML:
             let html: uniformDataStruct.HTML =
@@ -405,7 +376,7 @@ export class DragParamManager {
             LogUtil.info(TAG, `handleDropDataFromRecordsForEntries, html data length: ${dropData.html.length}`);
             break;
           case BOOKMARK_DEFINED_TYPE:
-            let bookmarkData: ArrayBuffer|undefined = this.loadApplicationDefineDataForEntries(BOOKMARK_DEFINED_TYPE);
+            let bookmarkData: ArrayBuffer | undefined = this.loadApplicationDefineDataForEntries(BOOKMARK_DEFINED_TYPE);
             if (bookmarkData) {
               dropData.bookmarkBuffer = bookmarkData;
             }
@@ -420,7 +391,8 @@ export class DragParamManager {
             if (!webImage) {
               let fileUri = entryMap[UTD_FILE_URI] as uniformDataStruct.FileUri;
               if (fileUri) {
-                LogUtil.info(TAG, `handleDropDataFromRecordsForEntries, FILE_URI data length: ${fileUri.oriUri.length}`);
+                LogUtil.info(TAG,
+                  `handleDropDataFromRecordsForEntries, FILE_URI data length: ${fileUri.oriUri.length}`);
                 dropData.fileUris.push(fileUri.oriUri);
               }
             }
@@ -444,19 +416,19 @@ export class DragParamManager {
   }
 
   private handleTextDragDataForEntries(dragParams: OhosDragParamToJs) {
-    let plainText : uniformDataStruct.PlainText|undefined = undefined;
+    let plainText: uniformDataStruct.PlainText | undefined = undefined;
     if (dragParams.text) {
       LogUtil.info(TAG, `handleDragDataForEntries text-length:${dragParams.text.length}`);
       plainText = {
-        uniformDataType : uniformTypeDescriptor.UniformDataType.PLAIN_TEXT,
-        textContent:dragParams.text
+        uniformDataType: uniformTypeDescriptor.UniformDataType.PLAIN_TEXT,
+        textContent: dragParams.text
       }
     }
     return plainText;
   }
 
   private handleHtmlDragDataForEntries(dragParams: OhosDragParamToJs) {
-    let html : uniformDataStruct.HTML|undefined = undefined;
+    let html: uniformDataStruct.HTML | undefined = undefined;
     if (dragParams.html) {
       LogUtil.info(TAG, `handleDragDataForEntries html-length:${dragParams.html.length}`);
       html = {
@@ -471,13 +443,12 @@ export class DragParamManager {
   }
 
   private handleHyperlinkDragDataForEntries(dragParams: OhosDragParamToJs) {
-    let hyperlink : uniformDataStruct.Hyperlink|undefined = undefined;
-    if (dragParams.urlTitle) {
-      LogUtil.info(TAG, `handleDragDataForEntries urlTitle-length:${dragParams.urlTitle.length}`);
+    let hyperlink: uniformDataStruct.Hyperlink | undefined = undefined;
+    if (dragParams.url_title) {
       hyperlink = {
         uniformDataType: uniformTypeDescriptor.UniformDataType.HYPERLINK,
         url: "",
-        description: dragParams.urlTitle
+        description: dragParams.url_title
       }
     }
     if (dragParams.url) {
@@ -488,7 +459,7 @@ export class DragParamManager {
         hyperlink = {
           uniformDataType: uniformTypeDescriptor.UniformDataType.HYPERLINK,
           url: dragParams.url,
-          description: dragParams.urlTitle
+          description: dragParams.url_title
         }
       }
     }
@@ -496,10 +467,9 @@ export class DragParamManager {
   }
 
   private handleWebImageForEntries(dragParams: OhosDragParamToJs) {
-    let dragImage : uniformDataStruct.FileUri|undefined = undefined;
-    if (dragParams.webImageFilePath) {
-      LogUtil.info(TAG, `handleDragDataForEntries webImageFilePath-length:${dragParams.webImageFilePath.length}`);
-      let image: UDC.Image | undefined = this.handleImageDragUri(dragParams.webImageFilePath);
+    let dragImage: uniformDataStruct.FileUri | undefined = undefined;
+    if (dragParams.web_image_file_path) {
+      let image: UDC.Image | undefined = this.handleImageDragUri(dragParams.web_image_file_path);
       if (image) {
         dragImage = {
           uniformDataType: UTD_FILE_URI,
@@ -513,30 +483,28 @@ export class DragParamManager {
   }
 
   private handleBookmarkDragDataForEntries(dragParams: OhosDragParamToJs) {
-    let bookmarkStruct: CustomDragData|undefined = undefined;
-    if (dragParams.bookmarkBuffer.byteLength > 0) {
-      LogUtil.info(TAG, `handleDragDataForEntries bookmarkBuffer-length:${dragParams.bookmarkBuffer.byteLength}`);
+    let bookmarkStruct: CustomDragData | undefined = undefined;
+    if (dragParams.bookmark_buffer.byteLength > 0) {
       bookmarkStruct = {
         uniformDataType: BOOKMARK_DEFINED_TYPE,
-        bufferData: dragParams.bookmarkBuffer,
+        bufferData: dragParams.bookmark_buffer,
       }
     }
     return bookmarkStruct;
   }
 
   private handleWebCustomDataForEntries(dragParams: OhosDragParamToJs) {
-    let webCustomStruct: CustomDragData|undefined = undefined;
-    if (dragParams.webCustomBuffer.byteLength > 0) {
-      LogUtil.info(TAG, `handleDragDataForEntries webCustomBuffer-length:${dragParams.webCustomBuffer.byteLength}`);
+    let webCustomStruct: CustomDragData | undefined = undefined;
+    if (dragParams.web_custom_buffer.byteLength > 0) {
       webCustomStruct = {
         uniformDataType: WEB_CUSTOM_DEFINED_TYPE,
-        bufferData: dragParams.webCustomBuffer,
+        bufferData: dragParams.web_custom_buffer,
       }
     }
     return webCustomStruct;
   }
 
-  private handleImageDragUri(webImageFilePath: string) : UDC.Image | undefined {
+  private handleImageDragUri(webImageFilePath: string): UDC.Image | undefined {
     if (!webImageFilePath) {
       LogUtil.error(TAG, `get drag image info fail, webImageFilePath is empty`);
       return;
@@ -551,7 +519,7 @@ export class DragParamManager {
       let image: UDC.Image = new UDC.Image();
       image.imageUri = uri;
       return image;
-    } catch(err) {
+    } catch (err) {
       LogUtil.error(TAG, `get drag image info failed with error message: ${err.message},
                     error code: ${err.code}`);
     }
@@ -567,10 +535,12 @@ export class DragParamManager {
     if (applicationDefinedItem.rawData.byteLength > 0) {
       if (applicationDefinedItem.applicationDefinedType === BOOKMARK_DEFINED_TYPE) {
         dropData.bookmarkBuffer = applicationDefinedItem.rawData;
-        LogUtil.info(TAG, `loadApplicationDefineData, bookmarkBuffer data length: ${dropData.bookmarkBuffer.byteLength}`);
+        LogUtil.info(TAG,
+          `loadApplicationDefineData, bookmarkBuffer data length: ${dropData.bookmarkBuffer.byteLength}`);
       } else if (applicationDefinedItem.applicationDefinedType === WEB_CUSTOM_DEFINED_TYPE) {
         dropData.webCustomBuffer = applicationDefinedItem.rawData;
-        LogUtil.info(TAG, `loadApplicationDefineData, webCustomBuffer data length: ${dropData.webCustomBuffer.byteLength}`);
+        LogUtil.info(TAG,
+          `loadApplicationDefineData, webCustomBuffer data length: ${dropData.webCustomBuffer.byteLength}`);
       } else {
         LogUtil.warn(TAG, `On loadApplicationDefineData dragData,
             APPLICATION_DEFINE_TYPE: ${applicationDefinedItem.applicationDefinedType} not support`);
@@ -578,7 +548,7 @@ export class DragParamManager {
     }
   }
 
-  private loadApplicationDefineDataForEntries(applicationType: string): ArrayBuffer | undefined{
+  private loadApplicationDefineDataForEntries(applicationType: string): ArrayBuffer | undefined {
     let applicationDefinedItem = this.getRecordForEntries(applicationType) as CustomDragData;
     if (!applicationDefinedItem) {
       LogUtil.error(TAG, `loadApplicationDefineDataForEntries, type:${applicationType} do not find data`);
@@ -592,7 +562,7 @@ export class DragParamManager {
     return undefined;
   }
 
-  private getRecord(recordType: string) : UDC.UnifiedRecord | undefined {
+  private getRecord(recordType: string): UDC.UnifiedRecord | undefined {
     if (!this.dragData) {
       return;
     }
@@ -605,7 +575,7 @@ export class DragParamManager {
     return;
   }
 
-  private getRecordForEntries(entryType: string) : uniformDataStruct.FileUri | CustomDragData | undefined {
+  private getRecordForEntries(entryType: string): uniformDataStruct.FileUri | CustomDragData | undefined {
     if (!this.dragData || this.dragData.getRecords().length == 0) {
       return;
     }
@@ -614,7 +584,8 @@ export class DragParamManager {
     return entryMap[entryType] as CustomDragData | uniformDataStruct.FileUri | undefined;
   }
 
-  public clearParam() : void {
+  public clearParam(): void {
     this.dragData = undefined;
   }
-};
+}
+;

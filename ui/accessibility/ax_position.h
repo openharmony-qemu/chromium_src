@@ -33,6 +33,7 @@
 #include "base/strings/string_util.h"
 #include "base/strings/utf_string_conversions.h"
 #include "ui/accessibility/ax_common.h"
+#include "ui/accessibility/ax_constants.mojom.h"
 #include "ui/accessibility/ax_enum_util.h"
 #include "ui/accessibility/ax_enums.mojom.h"
 #include "ui/accessibility/ax_node.h"
@@ -207,9 +208,6 @@ class AXRange;
 template <class AXPositionType, class AXNodeType>
 bool operator==(const AXPosition<AXPositionType, AXNodeType>& first,
                 const AXPosition<AXPositionType, AXNodeType>& second);
-template <class AXPositionType, class AXNodeType>
-bool operator!=(const AXPosition<AXPositionType, AXNodeType>& first,
-                const AXPosition<AXPositionType, AXNodeType>& second);
 
 // A position in the accessibility tree.
 //
@@ -257,7 +255,7 @@ class AXPosition {
 
   static const int BEFORE_TEXT = -1;
   static const int INVALID_INDEX = -2;
-  static const int INVALID_OFFSET = -1;
+  static const int INVALID_OFFSET = ax::mojom::kNoSelectionOffset;
 
   static AXPositionInstance CreateNullPosition() {
     AXPositionInstance new_position(new AXPositionType());
@@ -916,8 +914,9 @@ class AXPosition {
   AXBoundaryType GetFormatStartBoundaryType() const {
     // Since formats are stored on text anchors, the start of a format boundary
     // must be at the start of an anchor.
-    if (IsNullPosition() || !AtStartOfAnchor())
+    if (IsNullPosition() || !AtStartOfAnchor()) {
       return AXBoundaryType::kNone;
+    }
 
     // Treat the first iterable node as a format boundary.
     if (CreatePreviousLeafTreePosition(
@@ -927,8 +926,9 @@ class AXPosition {
     }
 
     // Ignored positions cannot be format boundaries.
-    if (IsIgnored())
+    if (IsIgnored()) {
       return AXBoundaryType::kNone;
+    }
 
     // Iterate over anchors until a format boundary is found. This will return a
     // null position upon crossing a boundary. Make sure the previous position
@@ -946,14 +946,31 @@ class AXPosition {
   }
 
   bool AtStartOfFormat() const {
-    return GetFormatStartBoundaryType() != AXBoundaryType::kNone;
+    AXPositionInstance text_position = AsLeafTextPosition();
+
+    switch (text_position->kind_) {
+      case AXPositionKind::NULL_POSITION:
+        return false;
+      case AXPositionKind::TREE_POSITION:
+        NOTREACHED();
+      case AXPositionKind::TEXT_POSITION: {
+        const std::vector<int32_t>& format_starts =
+            text_position->GetFormatStartOffsets();
+        if (format_starts.size() <= 1) {
+          return GetFormatStartBoundaryType() != AXBoundaryType::kNone;
+        }
+        return base::Contains(format_starts,
+                              int32_t{text_position->text_offset_});
+      }
+    }
   }
 
   AXBoundaryType GetFormatEndBoundaryType() const {
     // Since formats are stored on text anchors, the end of a format break must
     // be at the end of an anchor.
-    if (IsNullPosition() || !AtEndOfAnchor())
+    if (IsNullPosition() || !AtEndOfAnchor()) {
       return AXBoundaryType::kNone;
+    }
 
     // Treat the last iterable node as a format boundary
     if (CreateNextLeafTreePosition(
@@ -962,8 +979,9 @@ class AXPosition {
       return AXBoundaryType::kContentEnd;
 
     // Ignored positions cannot be format boundaries.
-    if (IsIgnored())
+    if (IsIgnored()) {
       return AXBoundaryType::kNone;
+    }
 
     // Iterate over anchors until a format boundary is found. This will return a
     // null position upon crossing a boundary. Make sure the next position is
@@ -981,7 +999,23 @@ class AXPosition {
   }
 
   bool AtEndOfFormat() const {
-    return GetFormatEndBoundaryType() != AXBoundaryType::kNone;
+    AXPositionInstance text_position = AsLeafTextPosition();
+
+    switch (text_position->kind_) {
+      case AXPositionKind::NULL_POSITION:
+        return false;
+      case AXPositionKind::TREE_POSITION:
+        NOTREACHED();
+      case AXPositionKind::TEXT_POSITION: {
+        const std::vector<int32_t>& format_ends =
+            text_position->GetFormatEndOffsets();
+        if (format_ends.size() <= 1) {
+          return GetFormatEndBoundaryType() != AXBoundaryType::kNone;
+        }
+        return base::Contains(format_ends,
+                              int32_t{text_position->text_offset_});
+      }
+    }
   }
 
   bool AtStartOfSentence() const {
@@ -1678,37 +1712,37 @@ class AXPosition {
       return copy;
     }
 
-      DCHECK_GE(copy->child_index_, 0);
-      DCHECK_LT(copy->child_index_, copy->AnchorChildCount());
-      int new_offset = 0;
-      for (int i = 0; i <= child_index_; ++i) {
-        AXPositionInstance child = copy->CreateChildPositionAt(i);
-        DCHECK(!child->IsNullPosition());
-        // If the current text offset is valid, we don't touch it to
-        // potentially allow converting from a text position to a tree
-        // position and back without losing information. Otherwise, if the
-        // text_offset is invalid, equals to 0 or is smaller than
-        // |new_offset|, we reset it to the beginning of the current child.
-        if (i == child_index_ && copy->text_offset_ <= new_offset) {
-          copy->text_offset_ = new_offset;
-          break;
-        }
-
-        int child_length = child->MaxTextOffsetInParent();
-        // Same comment as above: we don't touch the text offset if it's
-        // already valid.
-        if (i == child_index_ &&
-            (copy->text_offset_ > (new_offset + child_length) ||
-             // When the text offset is equal to the text's length but this is
-             // not an "after text" position.
-             (!copy->AtEndOfAnchor() &&
-              copy->text_offset_ == (new_offset + child_length)))) {
-          copy->text_offset_ = new_offset;
-          break;
-        }
-
-        new_offset += child_length;
+    DCHECK_GE(copy->child_index_, 0);
+    DCHECK_LT(copy->child_index_, copy->AnchorChildCount());
+    int new_offset = 0;
+    for (int i = 0; i <= child_index_; ++i) {
+      AXPositionInstance child = copy->CreateChildPositionAt(i);
+      DCHECK(!child->IsNullPosition());
+      // If the current text offset is valid, we don't touch it to
+      // potentially allow converting from a text position to a tree
+      // position and back without losing information. Otherwise, if the
+      // text_offset is invalid, equals to 0 or is smaller than
+      // |new_offset|, we reset it to the beginning of the current child.
+      if (i == child_index_ && copy->text_offset_ <= new_offset) {
+        copy->text_offset_ = new_offset;
+        break;
       }
+
+      int child_length = child->MaxTextOffsetInParent();
+      // Same comment as above: we don't touch the text offset if it's
+      // already valid.
+      if (i == child_index_ &&
+          (copy->text_offset_ > (new_offset + child_length) ||
+           // When the text offset is equal to the text's length but this is
+           // not an "after text" position.
+           (!copy->AtEndOfAnchor() &&
+            copy->text_offset_ == (new_offset + child_length)))) {
+        copy->text_offset_ = new_offset;
+        break;
+      }
+
+      new_offset += child_length;
+    }
 
       // Affinity should always be left as downstream. The only case when the
       // resulting text position is at the end of the line is when we get an
@@ -1922,6 +1956,62 @@ class AXPosition {
     if (IsTextPosition())
       return leaf_tree_position->AsTextPosition();
     return leaf_tree_position;
+  }
+
+  // This method is similar to `AsUnignoredPosition`, but it will never cross
+  // an anchor boundary. This means that if the position is at the start or end
+  // of the anchor, it will return a position at the start or end of the anchor,
+  // respectively. This is useful when we want to ensure that the resulting
+  // position is still within the same anchor. If no unignored position can be
+  // found, it will return a null position.
+  AXPositionInstance TryAsUnignoredPositionPreservingAnchor(
+      AXPositionAdjustmentBehavior behavior) const {
+    if (IsNullPosition()) {
+      return Clone();
+    }
+
+    AXPositionInstance new_position = AsUnignoredPosition(behavior);
+    if (GetAnchor() == new_position->GetAnchor()) {
+      return new_position;
+    }
+
+    // As a last resort, AsUnignoredPosition() may return a position that is
+    // anchored at a different node. In such case, we need to create a new
+    // position that is anchored at the same node as this position. To do this,
+    // Try Calling AsUnignoredPosition in the other direction, starting from
+    // one of the ends, as there may not have been any unignored positions in
+    // the original direction.
+    switch (behavior) {
+      case AXPositionAdjustmentBehavior::kMoveBackward:
+        new_position = CreatePositionAtStartOfAnchor()->AsUnignoredPosition(
+            AXPositionAdjustmentBehavior::kMoveForward);
+        break;
+      case AXPositionAdjustmentBehavior::kMoveForward:
+        new_position = CreatePositionAtEndOfAnchor()->AsUnignoredPosition(
+            AXPositionAdjustmentBehavior::kMoveBackward);
+        break;
+    }
+    if (GetAnchor() != new_position->GetAnchor()) {
+      // Check to see if the new position can be expressed in terms of the
+      // current anchor.
+      new_position = new_position->CreateAncestorPosition(
+          GetAnchor(), behavior == AXPositionAdjustmentBehavior::kMoveForward
+                           ? ax::mojom::MoveDirection::kForward
+                           : ax::mojom::MoveDirection::kBackward);
+    }
+    // It could be that there are no unignored positions that can be rooted
+    // at the current anchor. In such case, we return a null position.
+    if (new_position->IsIgnored()) {
+      return CreateNullPosition();
+    }
+
+    // Retain original position type.
+    if (IsTextPosition()) {
+      new_position = new_position->AsTextPosition();
+    } else {
+      new_position = new_position->AsTreePosition();
+    }
+    return new_position;
   }
 
   // Searches backward and forward from this position until it finds the given
@@ -3037,7 +3127,9 @@ class AXPosition {
             AXBoundaryBehavior::kStopAtAnchorBoundary &&
         options.boundary_detection ==
             AXBoundaryDetection::kCheckInitialPosition &&
-        (AtEndOfAnchor() || *text_position == *CloneWithDownstreamAffinity())) {
+        (AtEndOfAnchor() ||
+         (IsTextPosition() &&
+          *text_position == *CloneWithDownstreamAffinity()))) {
       return Clone();
     }
 
@@ -3125,8 +3217,9 @@ class AXPosition {
           options.boundary_detection ==
               AXBoundaryDetection::kCheckInitialPosition &&
           (AtStartOfAnchor() ||
-           *text_position == *CloneWithUpstreamAffinity() ||
-           *text_position == *CloneWithDownstreamAffinity())) {
+           (IsTextPosition() &&
+            (*text_position == *CloneWithUpstreamAffinity() ||
+             *text_position == *CloneWithDownstreamAffinity())))) {
         return Clone();
       }
 
@@ -3248,7 +3341,8 @@ class AXPosition {
     return CreateBoundaryStartPosition(
         options, ax::mojom::MoveDirection::kForward,
         base::BindRepeating(&AtStartOfFormatPredicate),
-        base::BindRepeating(&AtEndOfFormatPredicate));
+        base::BindRepeating(&AtEndOfFormatPredicate),
+        base::BindRepeating(&GetFormatStartOffsetsFunc));
   }
 
   AXPositionInstance CreatePreviousFormatStartPosition(
@@ -3256,7 +3350,8 @@ class AXPosition {
     return CreateBoundaryStartPosition(
         options, ax::mojom::MoveDirection::kBackward,
         base::BindRepeating(&AtStartOfFormatPredicate),
-        base::BindRepeating(&AtEndOfFormatPredicate));
+        base::BindRepeating(&AtEndOfFormatPredicate),
+        base::BindRepeating(&GetFormatStartOffsetsFunc));
   }
 
   AXPositionInstance CreateNextFormatEndPosition(
@@ -3264,7 +3359,8 @@ class AXPosition {
     return CreateBoundaryEndPosition(
         options, ax::mojom::MoveDirection::kForward,
         base::BindRepeating(&AtStartOfFormatPredicate),
-        base::BindRepeating(&AtEndOfFormatPredicate));
+        base::BindRepeating(&AtEndOfFormatPredicate),
+        base::BindRepeating(&GetFormatEndOffsetsFunc));
   }
 
   AXPositionInstance CreatePreviousFormatEndPosition(
@@ -3272,7 +3368,8 @@ class AXPosition {
     return CreateBoundaryEndPosition(
         options, ax::mojom::MoveDirection::kBackward,
         base::BindRepeating(&AtStartOfFormatPredicate),
-        base::BindRepeating(&AtEndOfFormatPredicate));
+        base::BindRepeating(&AtEndOfFormatPredicate),
+        base::BindRepeating(&GetFormatEndOffsetsFunc));
   }
 
   AXPositionInstance CreateNextSentenceStartPosition(
@@ -3481,11 +3578,13 @@ class AXPosition {
               case ax::mojom::MoveDirection::kNone:
                 NOTREACHED();
               case ax::mojom::MoveDirection::kBackward:
-                return CreatePositionAtStartOfAnchor()->AsUnignoredPosition(
-                    AXPositionAdjustmentBehavior::kMoveBackward);
+                return CreatePositionAtStartOfAnchor()
+                    ->TryAsUnignoredPositionPreservingAnchor(
+                        AXPositionAdjustmentBehavior::kMoveBackward);
               case ax::mojom::MoveDirection::kForward:
-                return CreatePositionAtEndOfAnchor()->AsUnignoredPosition(
-                    AXPositionAdjustmentBehavior::kMoveForward);
+                return CreatePositionAtEndOfAnchor()
+                    ->TryAsUnignoredPositionPreservingAnchor(
+                        AXPositionAdjustmentBehavior::kMoveForward);
             }
           }
 
@@ -3531,12 +3630,14 @@ class AXPosition {
         case ax::mojom::MoveDirection::kNone:
           NOTREACHED();
         case ax::mojom::MoveDirection::kBackward:
-          text_position = CreatePositionAtStartOfAnchor()->AsUnignoredPosition(
-              AXPositionAdjustmentBehavior::kMoveBackward);
+          text_position = CreatePositionAtStartOfAnchor()
+                              ->TryAsUnignoredPositionPreservingAnchor(
+                                  AXPositionAdjustmentBehavior::kMoveBackward);
           break;
         case ax::mojom::MoveDirection::kForward:
-          text_position = CreatePositionAtEndOfAnchor()->AsUnignoredPosition(
-              AXPositionAdjustmentBehavior::kMoveForward);
+          text_position = CreatePositionAtEndOfAnchor()
+                              ->TryAsUnignoredPositionPreservingAnchor(
+                                  AXPositionAdjustmentBehavior::kMoveForward);
       }
 
       // Preserve affinity for forward upstream positions.
@@ -3644,11 +3745,13 @@ class AXPosition {
               case ax::mojom::MoveDirection::kNone:
                 NOTREACHED();
               case ax::mojom::MoveDirection::kBackward:
-                return CreatePositionAtStartOfAnchor()->AsUnignoredPosition(
-                    AXPositionAdjustmentBehavior::kMoveBackward);
+                return CreatePositionAtStartOfAnchor()
+                    ->TryAsUnignoredPositionPreservingAnchor(
+                        AXPositionAdjustmentBehavior::kMoveBackward);
               case ax::mojom::MoveDirection::kForward:
-                return CreatePositionAtEndOfAnchor()->AsUnignoredPosition(
-                    AXPositionAdjustmentBehavior::kMoveForward);
+                return CreatePositionAtEndOfAnchor()
+                    ->TryAsUnignoredPositionPreservingAnchor(
+                        AXPositionAdjustmentBehavior::kMoveForward);
             }
           }
 
@@ -3694,11 +3797,13 @@ class AXPosition {
         case ax::mojom::MoveDirection::kNone:
           NOTREACHED();
         case ax::mojom::MoveDirection::kBackward:
-          return CreatePositionAtStartOfAnchor()->AsUnignoredPosition(
-              AXPositionAdjustmentBehavior::kMoveBackward);
+          return CreatePositionAtStartOfAnchor()
+              ->TryAsUnignoredPositionPreservingAnchor(
+                  AXPositionAdjustmentBehavior::kMoveBackward);
         case ax::mojom::MoveDirection::kForward:
-          return CreatePositionAtEndOfAnchor()->AsUnignoredPosition(
-              AXPositionAdjustmentBehavior::kMoveForward);
+          return CreatePositionAtEndOfAnchor()
+              ->TryAsUnignoredPositionPreservingAnchor(
+                  AXPositionAdjustmentBehavior::kMoveForward);
       }
     }
 
@@ -4873,6 +4978,143 @@ class AXPosition {
         ax::mojom::IntListAttribute::kWordEnds);
   }
 
+  const std::vector<int32_t>& GetFormatStartOffsets() const {
+    if (IsNullPosition()) {
+      static const base::NoDestructor<std::vector<int32_t>> empty_format_starts;
+      return *empty_format_starts;
+    }
+    DCHECK(GetAnchor());
+
+    std::vector<int32_t> format_starts;
+    format_starts.push_back(0);
+
+    // Format is almost always consistent throughout any node -- the only
+    // exception are inline text boxes with CSS highlights. Therefore, unless
+    // the node is an inline text box with CSS highlights, we can assume the
+    // node's format starts only at index 0.
+    if (GetAnchor()->GetRole() != ax::mojom::Role::kInlineTextBox) {
+      static const base::NoDestructor<std::vector<int32_t>> format_starts_copy(
+          std::move(format_starts));
+      return *format_starts_copy;
+    }
+
+    AXNode* parent = GetAnchor()->GetUnignoredParent();
+
+    const std::vector<int32_t>& marker_types =
+        parent->GetIntListAttribute(ax::mojom::IntListAttribute::kMarkerTypes);
+    const std::vector<int32_t>& highlight_types = parent->GetIntListAttribute(
+        ax::mojom::IntListAttribute::kHighlightTypes);
+
+    // Since, there are no highlights, there is no possibility of any spelling
+    // or grammar highlights.
+    if (highlight_types.empty()) {
+      static const base::NoDestructor<std::vector<int32_t>> format_starts_copy(
+          std::move(format_starts));
+      return *format_starts_copy;
+    }
+    CHECK_EQ(marker_types.size(), highlight_types.size());
+
+    const std::vector<int>& marker_starts =
+        parent->GetIntListAttribute(ax::mojom::IntListAttribute::kMarkerStarts);
+    const std::vector<int>& marker_ends =
+        parent->GetIntListAttribute(ax::mojom::IntListAttribute::kMarkerEnds);
+
+    CHECK_EQ(marker_types.size(), marker_starts.size());
+    CHECK_EQ(marker_types.size(), marker_ends.size());
+
+    int text_length = GetAnchor()->GetTextContentLengthUTF16();
+    for (size_t i = 0; i < marker_types.size(); ++i) {
+      if (HasSpellingOrGrammarErrorHighlight(
+              static_cast<ax::mojom::MarkerType>(marker_types[i]),
+              static_cast<ax::mojom::HighlightType>(highlight_types[i]))) {
+        if (marker_starts[i] != 0) {  // 0 is already added
+          format_starts.push_back(marker_starts[i]);
+        }
+        if (marker_ends[i] < text_length - 1) {
+          format_starts.push_back(marker_ends[i]);
+        }
+      }
+    }
+
+    static const base::NoDestructor<std::vector<int32_t>> format_starts_copy(
+        std::move(format_starts));
+    return *format_starts_copy;
+  }
+
+  const std::vector<int32_t>& GetFormatEndOffsets() const {
+    if (IsNullPosition()) {
+      static const base::NoDestructor<std::vector<int32_t>> empty_format_ends;
+      return *empty_format_ends;
+    }
+    DCHECK(GetAnchor());
+
+    int text_length = GetAnchor()->GetTextContentLengthUTF16();
+    std::vector<int32_t> format_ends;
+    format_ends.push_back(text_length);
+
+    // Format is almost always consistent throughout any node -- the only
+    // exception are inline text boxes with CSS highlights. Therefore, unless
+    // the node is an inline text box with CSS highlights, we can assume the
+    // node's format ends only at the text length.
+    if (GetAnchor()->GetRole() != ax::mojom::Role::kInlineTextBox) {
+      static const base::NoDestructor<std::vector<int32_t>> format_ends_copy(
+          std::move(format_ends));
+      return *format_ends_copy;
+    }
+
+    AXNode* parent = GetAnchor()->GetUnignoredParent();
+
+    const std::vector<int32_t>& marker_types =
+        parent->GetIntListAttribute(ax::mojom::IntListAttribute::kMarkerTypes);
+    const std::vector<int32_t>& highlight_types = parent->GetIntListAttribute(
+        ax::mojom::IntListAttribute::kHighlightTypes);
+
+    // Since, there are no highlights, there is no possibility of any spelling
+    // or grammar highlights.
+    if (highlight_types.empty()) {
+      static const base::NoDestructor<std::vector<int32_t>> format_ends_copy(
+          std::move(format_ends));
+      return *format_ends_copy;
+    }
+    CHECK_EQ(marker_types.size(), highlight_types.size());
+
+    const std::vector<int>& marker_starts =
+        parent->GetIntListAttribute(ax::mojom::IntListAttribute::kMarkerStarts);
+    const std::vector<int>& marker_ends =
+        parent->GetIntListAttribute(ax::mojom::IntListAttribute::kMarkerEnds);
+
+    CHECK_EQ(marker_types.size(), marker_starts.size());
+    CHECK_EQ(marker_types.size(), marker_ends.size());
+
+    format_ends.clear();
+    for (size_t i = 0; i < marker_types.size(); ++i) {
+      if (HasSpellingOrGrammarErrorHighlight(
+              static_cast<ax::mojom::MarkerType>(marker_types[i]),
+              static_cast<ax::mojom::HighlightType>(highlight_types[i]))) {
+        if (marker_starts[i] > 0) {
+          format_ends.push_back(marker_starts[i]);
+        }
+        format_ends.push_back(marker_ends[i]);
+      }
+    }
+
+    if (format_ends.empty() || format_ends.back() != text_length) {
+      format_ends.push_back(text_length);
+    }
+
+    static const base::NoDestructor<std::vector<int32_t>> format_ends_copy(
+        std::move(format_ends));
+    return *format_ends_copy;
+  }
+
+  static bool HasSpellingOrGrammarErrorHighlight(
+      ax::mojom::MarkerType marker_type,
+      ax::mojom::HighlightType highlight_type) {
+    return marker_type == ax::mojom::MarkerType::kHighlight &&
+           (highlight_type == ax::mojom::HighlightType::kSpellingError ||
+            highlight_type == ax::mojom::HighlightType::kGrammarError);
+  }
+
   AXNodeID GetNextOnLineID() const {
     if (IsNullPosition())
       return kInvalidAXNodeID;
@@ -5528,6 +5770,16 @@ class AXPosition {
     return position->GetWordEndOffsets();
   }
 
+  static const std::vector<int32_t>& GetFormatStartOffsetsFunc(
+      const AXPositionInstance& position) {
+    return position->GetFormatStartOffsets();
+  }
+
+  static const std::vector<int32_t>& GetFormatEndOffsetsFunc(
+      const AXPositionInstance& position) {
+    return position->GetFormatEndOffsets();
+  }
+
   // Creates an ancestor equivalent position at the root node of this position's
   // accessibility tree, e.g. at the root of the current iframe (out-of-process
   // or not), PDF plugin, Views tree, dialog (native, ARIA or HTML), window, or
@@ -5821,17 +6073,6 @@ bool operator==(const AXPosition<AXPositionType, AXNodeType>& first,
                 const AXPosition<AXPositionType, AXNodeType>& second) {
   const std::optional<int> compare_to_optional = first.CompareTo(second);
   return compare_to_optional.has_value() && compare_to_optional.value() == 0;
-}
-
-template <class AXPositionType, class AXNodeType>
-bool operator!=(const AXPosition<AXPositionType, AXNodeType>& first,
-                const AXPosition<AXPositionType, AXNodeType>& second) {
-  const std::optional<int> compare_to_optional = first.CompareTo(second);
-  // It makes sense to also return false if the positions are not comparable,
-  // because by definition non-comparable positions are uniqual. Positions are
-  // not comparable when one position is null and the other is not or if the
-  // positions do not have any common ancestor.
-  return !compare_to_optional.has_value() || compare_to_optional.value() != 0;
 }
 
 template <class AXPositionType, class AXNodeType>

@@ -113,19 +113,19 @@ std::vector<std::u16string> TestClipboard::GetStandardFormats(
 
   if (IsFormatAvailable(ClipboardFormatType::PlainTextType(), buffer,
                         data_dst)) {
-    types.push_back(base::UTF8ToUTF16(kMimeTypeText));
+    types.push_back(kMimeTypePlainText16);
   }
   if (IsFormatAvailable(ClipboardFormatType::HtmlType(), buffer, data_dst))
-    types.push_back(base::UTF8ToUTF16(kMimeTypeHTML));
+    types.push_back(kMimeTypeHtml16);
   if (IsFormatAvailable(ClipboardFormatType::SvgType(), buffer, data_dst))
-    types.push_back(base::UTF8ToUTF16(kMimeTypeSvg));
+    types.push_back(kMimeTypeSvg16);
   if (IsFormatAvailable(ClipboardFormatType::RtfType(), buffer, data_dst))
-    types.push_back(base::UTF8ToUTF16(kMimeTypeRTF));
+    types.push_back(kMimeTypeRtf16);
   if (IsFormatAvailable(ClipboardFormatType::PngType(), buffer, data_dst) ||
       IsFormatAvailable(ClipboardFormatType::BitmapType(), buffer, data_dst))
-    types.push_back(base::UTF8ToUTF16(kMimeTypePNG));
+    types.push_back(kMimeTypePng16);
   if (IsFormatAvailable(ClipboardFormatType::FilenamesType(), buffer, data_dst))
-    types.push_back(base::UTF8ToUTF16(kMimeTypeURIList));
+    types.push_back(kMimeTypeUriList16);
 
   auto it = store.data.find(ClipboardFormatType::DataTransferCustomType());
   if (it != store.data.end())
@@ -312,6 +312,7 @@ bool TestClipboard::IsSelectionBufferAvailable() const {
 void TestClipboard::WritePortableAndPlatformRepresentations(
     ClipboardBuffer buffer,
     const ObjectMap& objects,
+    const std::vector<RawData>& raw_objects,
     std::vector<Clipboard::PlatformRepresentation> platform_representations,
     std::unique_ptr<DataTransferEndpoint> data_src,
     uint32_t privacy_types) {
@@ -321,8 +322,12 @@ void TestClipboard::WritePortableAndPlatformRepresentations(
   GetStore(buffer).SetDataSource(base::OptionalFromPtr(data_src.get()));
 
   DispatchPlatformRepresentations(std::move(platform_representations));
-  for (const auto& kv : objects)
+  for (const auto& kv : objects) {
     DispatchPortableRepresentation(kv.second);
+  }
+  for (const auto& raw_object : raw_objects) {
+    DispatchPortableRepresentation(raw_object);
+  }
   default_store_buffer_ = ClipboardBuffer::kCopyPaste;
 }
 

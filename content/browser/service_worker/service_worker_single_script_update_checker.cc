@@ -2,13 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifdef UNSAFE_BUFFERS_BUILD
-// TODO(crbug.com/377326291): Remove this and convert code to safer constructs.
-#pragma allow_unsafe_buffers
-#endif
-
 #include "content/browser/service_worker/service_worker_single_script_update_checker.h"
 
+#include <optional>
+#include <string_view>
 #include <utility>
 
 #include "base/containers/span.h"
@@ -99,8 +96,8 @@ constexpr net::NetworkTrafficAnnotationTag kUpdateCheckTrafficAnnotation =
 class ServiceWorkerSingleScriptUpdateChecker::WrappedIOBuffer
     : public net::WrappedIOBuffer {
  public:
-  WrappedIOBuffer(const char* data, size_t size)
-      : net::WrappedIOBuffer(base::make_span(data, size)) {}
+  explicit WrappedIOBuffer(base::span<const char> data)
+      : net::WrappedIOBuffer(data) {}
 
  private:
   ~WrappedIOBuffer() override = default;
@@ -249,13 +246,11 @@ void ServiceWorkerSingleScriptUpdateChecker::OnReceiveResponse(
   // https://w3c.github.io/ServiceWorker/#service-worker-script-response
   // Only main script needs the following check.
   if (is_main_script_) {
-    std::string service_worker_allowed;
-    bool has_header = response_head->headers->EnumerateHeader(
-        nullptr, ServiceWorkerConsts::kServiceWorkerAllowed,
-        &service_worker_allowed);
+    std::optional<std::string_view> service_worker_allowed =
+        response_head->headers->EnumerateHeader(
+            nullptr, ServiceWorkerConsts::kServiceWorkerAllowed);
     if (!service_worker_loader_helpers::IsPathRestrictionSatisfied(
-            scope_, script_url_, has_header ? &service_worker_allowed : nullptr,
-            &error_message)) {
+            scope_, script_url_, service_worker_allowed, &error_message)) {
       Fail(blink::ServiceWorkerStatusCode::kErrorSecurity, error_message,
            network::URLLoaderCompletionStatus(net::ERR_INSECURE_RESPONSE));
       return;
@@ -566,9 +561,9 @@ void ServiceWorkerSingleScriptUpdateChecker::CompareData(
       this, TRACE_EVENT_FLAG_FLOW_IN | TRACE_EVENT_FLAG_FLOW_OUT);
 
   DCHECK(pending_buffer || bytes_to_compare == 0);
-  auto buffer = base::MakeRefCounted<WrappedIOBuffer>(
-      pending_buffer ? pending_buffer->buffer() : nullptr,
-      pending_buffer ? pending_buffer->size() : 0);
+  auto buffer = base::MakeRefCounted<WrappedIOBuffer>(UNSAFE_BUFFERS(
+      base::span(pending_buffer ? pending_buffer->buffer() : nullptr,
+                 pending_buffer ? pending_buffer->size() : 0)));
 
   // Compare the network data and the stored data.
   net::Error error = cache_writer_->MaybeWriteData(

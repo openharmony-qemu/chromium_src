@@ -25,7 +25,6 @@
 #include "ppapi/shared_impl/file_system_util.h"
 #include "ppapi/shared_impl/file_type_conversion.h"
 #include "storage/browser/file_system/file_system_operation_runner.h"
-#include "storage/browser/file_system/file_system_util.h"
 #include "storage/browser/file_system/isolated_context.h"
 #include "storage/browser/quota/quota_manager_proxy.h"
 #include "storage/common/file_system/file_system_util.h"
@@ -279,11 +278,8 @@ void PepperFileSystemBrowserHost::IOThreadState::ShouldCreateQuotaReservation(
   const scoped_refptr<storage::QuotaManagerProxy>& quota_manager_proxy =
       file_system_context_->quota_manager_proxy();
   CHECK(quota_manager_proxy);
-  storage::FileSystemType file_system_type =
-      PepperFileSystemTypeToFileSystemType(type_);
   quota_manager_proxy->IsStorageUnlimited(
       blink::StorageKey::CreateFirstParty(url::Origin::Create(root_url_)),
-      storage::FileSystemTypeToQuotaStorageType(file_system_type),
       base::SequencedTaskRunner::GetCurrentDefault(),
       base::BindOnce(
           [](base::OnceCallback<void(bool)> callback,

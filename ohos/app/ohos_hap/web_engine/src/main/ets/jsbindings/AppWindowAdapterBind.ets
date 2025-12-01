@@ -1,36 +1,12 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 import JsBindingUtils from '../utils/JsBindingUtils';
 import Inject from '../common/InjectModule';
 import lazy { AppWindowAdapter } from '../adapter/AppWindowAdapter';
 import type { NewWindowParam, PointCoordinate, WindowBound } from '../interface/CommonInterface';
+import { NodeContent } from '@kit.ArkUI';
 
 function implAppWindowAdapter(): AppWindowAdapter {
   return Inject.getOrCreate(AppWindowAdapter);
@@ -56,10 +32,8 @@ function setFullscreen(id: number) {
   implAppWindowAdapter().setFullscreen(id);
 }
 
-function setBounds(id: number,
-                   bounds: WindowBound,
-                   callback: () => void) {
-  implAppWindowAdapter().setBounds(id, bounds, callback);
+function setBounds(id: number, bounds: WindowBound) {
+  implAppWindowAdapter().setBounds(id, bounds);
 }
 
 function setEnabled(enable: boolean, id: number) {
@@ -120,6 +94,10 @@ function getOriginWindowIds(windowIds: Array<number>): Array<number> {
   return implAppWindowAdapter().getOriginWindowIds(windowIds);
 }
 
+function bind(id: string, callback: (nodeContent: NodeContent | undefined) => void) {
+  implAppWindowAdapter().bind(id, callback);
+}
+
 export class AppWindowAdapterBind {
   static bind() {
     JsBindingUtils.bindFunction("AppWindow.CreateWindow", createWindow);
@@ -141,5 +119,6 @@ export class AppWindowAdapterBind {
     JsBindingUtils.bindFunction("AppWindow.ShiftWindowEvent", shiftWindowEvent);
     JsBindingUtils.bindFunction("AppWindow.StartWindowMovingWithOffset", startWindowMovingWithOffset);
     JsBindingUtils.bindFunction("AppWindow.GetOriginWindowIds", getOriginWindowIds);
+    JsBindingUtils.bindFunction("AppWindow.Bind", bind);
   }
 }

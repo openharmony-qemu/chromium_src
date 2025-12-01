@@ -1,10 +1,10 @@
-721463403a55db7f7f9c6a6d1ed51dbd  usr/lib/x86_64-linux-gnu/libgnutls.so.30.29.1
+f8778507e87cb735a226e095bd969c2b  usr/lib/x86_64-linux-gnu/libgnutls.so.30.29.1
 92b3c61c84703dd674ef84b326695f68  usr/share/doc/libgnutls30/AUTHORS.gz
 787dbcb5ca39fc65cc813b879743c903  usr/share/doc/libgnutls30/NEWS.Debian.gz
 e096afb3c4da57d69ee12716db682e99  usr/share/doc/libgnutls30/NEWS.gz
 dc4bd69a9bdda8c17b35a7c86a41264c  usr/share/doc/libgnutls30/README.md.gz
 edef2c31672f8e9ac53b1093a61e2664  usr/share/doc/libgnutls30/THANKS.gz
-a79e76c7cc70c5dc75dbccc48eedcb4d  usr/share/doc/libgnutls30/changelog.Debian.gz
+f82e78798ad9011bc0e20fa78ac95179  usr/share/doc/libgnutls30/changelog.Debian.gz
 a22353276bf54b9e5711bae5ea76c006  usr/share/doc/libgnutls30/changelog.gz
 b6b0ce8b6ef75e99cf2f29e90f82ac03  usr/share/doc/libgnutls30/copyright
 ee878136c4f447c57018df29243832ca  usr/share/locale/cs/LC_MESSAGES/gnutls30.mo

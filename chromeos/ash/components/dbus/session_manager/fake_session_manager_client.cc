@@ -430,27 +430,9 @@ void FakeSessionManagerClient::StartRemoteDeviceWipe(
   }
 }
 
-void FakeSessionManagerClient::ClearForcedReEnrollmentVpd(
+void FakeSessionManagerClient::ClearBlockDevmodeVpd(
     chromeos::VoidDBusMethodCallback callback) {
-  clear_forced_re_enrollment_vpd_call_count_++;
-  PostReply(FROM_HERE, std::move(callback), true);
-}
-
-void FakeSessionManagerClient::UnblockDevModeForEnrollment(
-    chromeos::VoidDBusMethodCallback callback) {
-  unblock_dev_mode_enrollment_call_count_++;
-  PostReply(FROM_HERE, std::move(callback), true);
-}
-
-void FakeSessionManagerClient::UnblockDevModeForInitialStateDetermination(
-    chromeos::VoidDBusMethodCallback callback) {
-  unblock_dev_mode_init_state_call_count_++;
-  PostReply(FROM_HERE, std::move(callback), true);
-}
-
-void FakeSessionManagerClient::UnblockDevModeForCarrierLock(
-    chromeos::VoidDBusMethodCallback callback) {
-  unblock_dev_mode_carrier_lock_call_count_++;
+  clear_block_devmode_vpd_call_count_++;
   PostReply(FROM_HERE, std::move(callback), true);
 }
 

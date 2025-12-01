@@ -24,8 +24,10 @@
 #include "media/base/mime_util.h"
 #include "media/cdm/clear_key_cdm_common.h"
 #include "media/media_buildflags.h"
-#include "third_party/widevine/cdm/widevine_cdm_common.h"
-
+#include "third_party/wiseplay/cdm/buildflags.h"
+#if BUILDFLAG(ENABLE_WISEPLAY)
+#include "third_party/wiseplay/cdm/wiseplay_cdm_common.h"
+#endif // BUILDFLAG(ENABLE_WISEPLAY)
 namespace media {
 
 namespace {
@@ -187,56 +189,6 @@ class ClearKeyKeySystemInfo : public KeySystemInfo {
   bool UseAesDecryptor() const final { return true; }
 };
 
-// Returns whether the |key_system| is known to Chromium and is thus likely to
-// be implemented in an interoperable way.
-// True is always returned for a |key_system| that begins with "x-".
-//
-// As with other web platform features, advertising support for a key system
-// implies that it adheres to a defined and interoperable specification.
-//
-// To ensure interoperability, implementations of a specific |key_system| string
-// must conform to a specification for that identifier that defines
-// key system-specific behaviors not fully defined by the EME specification.
-// That specification should be provided by the owner of the domain that is the
-// reverse of the |key_system| string.
-// This involves more than calling a library, SDK, or platform API.
-// KeySystemsImpl must be populated appropriately, and there will likely be glue
-// code to adapt to the API of the library, SDK, or platform API.
-//
-// Chromium mainline contains this data and glue code for specific key systems,
-// which should help ensure interoperability with other implementations using
-// these key systems.
-//
-// If you need to add support for other key systems, ensure that you have
-// obtained the specification for how to integrate it with EME, implemented the
-// appropriate glue/adapter code, and added all the appropriate data to
-// KeySystemsImpl. Only then should you change this function.
-static bool IsPotentiallySupportedKeySystem(const std::string& key_system) {
-  if (key_system == kWidevineKeySystem)
-    return true;
-
-  if (key_system == kClearKeyKeySystem) {
-    return true;
-  }
-
-  // External or MediaFoundation Clear Key is known and supports suffixes for
-  // testing.
-  if (IsExternalClearKey(key_system))
-    return true;
-
-  // Chromecast defines behaviors for Cast clients within its reverse domain.
-  const char kChromecastRoot[] = "com.chromecast";
-  if (IsSubKeySystemOf(key_system, kChromecastRoot))
-    return true;
-
-  // Implementations that do not have a specification or appropriate glue code
-  // can use the "x-" prefix to avoid conflicting with and advertising support
-  // for real key system names. Use is discouraged.
-  const char kExcludedPrefix[] = "x-";
-  return base::StartsWith(key_system, kExcludedPrefix,
-                          base::CompareCase::SENSITIVE);
-}
-
 // Returns whether distinctive identifiers and persistent state can be reliably
 // blocked for |key_system_info| (and therefore be safely configurable).
 static bool CanBlock(const KeySystemInfo& key_system_info) {
@@ -390,13 +342,6 @@ void KeySystemsImpl::ProcessSupportedKeySystems(KeySystemInfos key_systems) {
            EmeFeatureSupport::INVALID);
     DCHECK(key_system->GetDistinctiveIdentifierSupport() !=
            EmeFeatureSupport::INVALID);
-
-    if (!IsPotentiallySupportedKeySystem(key_system->GetBaseKeySystemName())) {
-      // If you encounter this path, see the comments for the function above.
-      DLOG(ERROR) << "Unsupported name '" << key_system->GetBaseKeySystemName()
-                  << "'. See code comments.";
-      continue;
-    }
 
     // Supporting persistent state is a prerequisite for supporting persistent
     // sessions.
@@ -593,16 +538,8 @@ EmeConfig::Rule KeySystemsImpl::GetContentTypeConfigRule(
   SupportedCodecs key_system_codec_mask = key_system_info->GetSupportedCodecs();
   SupportedCodecs key_system_hw_secure_codec_mask =
       key_system_info->GetSupportedHwSecureCodecs();
-
-  // Check that the container is supported by the key system. (This check is
-  // necessary because |codecs| may be empty.)
   SupportedCodecs mime_type_codec_mask =
       GetCodecMaskForMimeType(container_mime_type);
-  if ((key_system_codec_mask & mime_type_codec_mask) == 0) {
-    DVLOG(2) << "Container " << container_mime_type << " not supported by "
-             << key_system;
-    return EmeConfig::UnsupportedRule();
-  }
 
   // Check that the codecs are supported by the key system and container based
   // on the following rule:

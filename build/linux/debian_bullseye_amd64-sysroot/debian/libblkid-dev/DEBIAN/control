@@ -1,10 +1,10 @@
 Package: libblkid-dev
 Source: util-linux
-Version: 2.36.1-8+deb11u1
+Version: 2.36.1-8+deb11u2
 Architecture: amd64
 Maintainer: util-linux packagers <util-linux@packages.debian.org>
 Installed-Size: 900
-Depends: libblkid1 (= 2.36.1-8+deb11u1), libc6-dev | libc-dev, uuid-dev
+Depends: libblkid1 (= 2.36.1-8+deb11u2), libc6-dev | libc-dev, uuid-dev
 Section: libdevel
 Priority: optional
 Multi-Arch: same

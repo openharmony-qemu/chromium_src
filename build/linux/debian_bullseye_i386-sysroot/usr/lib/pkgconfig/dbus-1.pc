@@ -15,7 +15,7 @@ daemondir=${bindir}
 
 Name: dbus
 Description: Free desktop message bus
-Version: 1.12.24
+Version: 1.12.28
 Libs: -L${libdir} -ldbus-1
 Libs.private: -lpthread    -lsystemd
 Cflags: -I${includedir}/dbus-1.0 -I${libdir}/dbus-1.0/include 

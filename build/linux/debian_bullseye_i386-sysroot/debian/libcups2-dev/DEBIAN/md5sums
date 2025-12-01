@@ -14,9 +14,9 @@ ad4d2f206c23423fe4eeb3336d439a78  usr/include/cups/ppd.h
 3a6de4bdc31c823ffbad759b02d0941b  usr/include/cups/sidechannel.h
 13111bf07502120bc088faab59ae34d1  usr/include/cups/transcode.h
 613dbd19395bd32cf16db25846c39c7a  usr/include/cups/versioning.h
-5ee0eb8b9292afff33f72d6e45b2fd1b  usr/lib/i386-linux-gnu/libcups.a
+81a11b48d7e4e2a5ec4a1e585c1f75dc  usr/lib/i386-linux-gnu/libcups.a
 e25bb5864fabcd7d8e081907d4af1dbb  usr/share/doc/libcups2-dev/NEWS.Debian.gz
-761ea4af16125f42d2df5b8644f8bf77  usr/share/doc/libcups2-dev/changelog.Debian.gz
+b444880a03d7670a4fa409e9be89a153  usr/share/doc/libcups2-dev/changelog.Debian.gz
 e98c45eea86b32adfb86107fda6ea91e  usr/share/doc/libcups2-dev/changelog.gz
 32d48086d3ecbb67e962ea9ddd2a7311  usr/share/doc/libcups2-dev/copyright
 a3b58f2d08235e2ce4df9110da7a0910  usr/share/lintian/overrides/libcups2-dev

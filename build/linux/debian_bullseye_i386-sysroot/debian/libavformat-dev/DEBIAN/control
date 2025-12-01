@@ -1,10 +1,10 @@
 Package: libavformat-dev
 Source: ffmpeg
-Version: 7:4.3.5-0+deb11u1
+Version: 7:4.3.7-0+deb11u1
 Architecture: i386
 Maintainer: Debian Multimedia Maintainers <debian-multimedia@lists.debian.org>
-Installed-Size: 4794
-Depends: libavcodec-dev (= 7:4.3.5-0+deb11u1), libavformat58 (= 7:4.3.5-0+deb11u1), libavutil-dev (= 7:4.3.5-0+deb11u1), libswresample-dev (= 7:4.3.5-0+deb11u1)
+Installed-Size: 4801
+Depends: libavcodec-dev (= 7:4.3.7-0+deb11u1), libavformat58 (= 7:4.3.7-0+deb11u1), libavutil-dev (= 7:4.3.7-0+deb11u1), libswresample-dev (= 7:4.3.7-0+deb11u1)
 Section: libdevel
 Priority: optional
 Multi-Arch: same

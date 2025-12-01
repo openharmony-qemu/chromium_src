@@ -19,7 +19,10 @@
 @interface AutofillEditProfileButtonFooterItem : TableViewHeaderFooterItem
 
 // Text for cell button.
-@property(nonatomic, strong) NSString* buttonText;
+@property(nonatomic, copy) NSString* buttonText;
+
+// Enabled state of the button.
+@property(nonatomic, assign) BOOL enabled;
 
 @end
 
@@ -33,9 +36,6 @@
 
 // Action button. Note: Set action method in the TableView datasource method.
 @property(nonatomic, strong) UIButton* button;
-
-// Updates the button color based on it's status.
-- (void)updateButtonColorBasedOnStatus;
 
 @end
 

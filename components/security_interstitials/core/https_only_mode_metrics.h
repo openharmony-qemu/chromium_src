@@ -134,7 +134,12 @@ enum class NavigationRequestSecurityLevel {
   // Request was for a URL with non-default ports.
   kNonDefaultPorts = 12,
 
-  kMaxValue = kNonDefaultPorts,
+  // The hostname was in the HTTPS-enforcement list because of the HFM+SE
+  // heuristic. Recorded regardless of whether there was a fallback navigation
+  // or an interstitial. Not recorded if the hostname is allowlisted.
+  kHttpsEnforcedOnHostname = 13,
+
+  kMaxValue = kHttpsEnforcedOnHostname,
 };
 
 // Recorded by the Site Engagement Heuristic logic, recording whether HFM should
@@ -236,6 +241,28 @@ enum class InterstitialReason {
 };
 
 void RecordInterstitialReason(const HttpInterstitialState& interstitial_state);
+
+// Used for UKM. There is only a single BlockingResult per navigation.
+enum class BlockingResult {
+  kUnknown = 0,
+  // An insecure HTTP request was intercepted.
+  kInsecureRequest = 1,
+  // An insecure HTTP request was permitted because no variant of
+  // Ask-Before-HTTP prevented the navigation.
+  kInsecureRequestPermitted = 2,
+  // An insecure HTTP request was permitted because a user had previously
+  // proceeded through a warning on this origin.
+  kInsecureRequestAllowlisted = 3,
+  // An insecure HTTP request caused a warning to show, and the user proceeded
+  // through the warning.
+  kInterstitialProceed = 4,
+  // An insecure HTTP request caused a warning to show, and the user cancelled
+  // the navigation.
+  kInterstitialDontProceed = 5,
+  // Append new items to the end of the list above; do not modify or replace
+  // existing values. Comment out obsolete items.
+  kMaxValue = kInterstitialDontProceed,
+};
 
 }  // namespace security_interstitials::https_only_mode
 

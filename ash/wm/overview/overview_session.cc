@@ -4,6 +4,7 @@
 
 #include "ash/wm/overview/overview_session.h"
 
+#include <algorithm>
 #include <utility>
 
 #include "ash/accessibility/accessibility_controller.h"
@@ -52,11 +53,11 @@
 #include "ash/wm/window_util.h"
 #include "base/auto_reset.h"
 #include "base/containers/contains.h"
+#include "base/debug/dump_without_crashing.h"
 #include "base/functional/bind.h"
 #include "base/memory/raw_ptr.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/metrics/user_metrics.h"
-#include "base/ranges/algorithm.h"
 #include "base/task/single_thread_task_runner.h"
 #include "base/trace_event/trace_event.h"
 #include "chromeos/utils/haptics_util.h"
@@ -211,22 +212,20 @@ void OverviewSession::Init(
   }
 
   // Create this before the birch bar widget.
-  if (features::IsForestFeatureEnabled()) {
-    birch_bar_controller_ = std::make_unique<BirchBarController>(
-        /*is_informed_restore=*/enter_exit_overview_type_ ==
-        OverviewEnterExitType::kInformedRestore);
-    if (enter_exit_overview_type_ == OverviewEnterExitType::kInformedRestore) {
-      PostLoginMetricsRecorder* post_login_metrics_recorder =
-          Shell::Get()
-              ->login_unlock_throughput_recorder()
-              ->post_login_metrics_recorder();
-      if (birch_bar_controller_->GetShowBirchSuggestions()) {
-        post_login_metrics_recorder->set_post_login_ui_status(
-            PostLoginMetricsRecorder::PostLoginUIStatus::kShownWithBirchBar);
-      } else {
-        post_login_metrics_recorder->set_post_login_ui_status(
-            PostLoginMetricsRecorder::PostLoginUIStatus::kShownWithoutBirchBar);
-      }
+  birch_bar_controller_ = std::make_unique<BirchBarController>(
+      /*is_informed_restore=*/enter_exit_overview_type_ ==
+      OverviewEnterExitType::kInformedRestore);
+  if (enter_exit_overview_type_ == OverviewEnterExitType::kInformedRestore) {
+    PostLoginMetricsRecorder* post_login_metrics_recorder =
+        Shell::Get()
+            ->login_unlock_throughput_recorder()
+            ->post_login_metrics_recorder();
+    if (birch_bar_controller_->GetShowBirchSuggestions()) {
+      post_login_metrics_recorder->set_post_login_ui_status(
+          PostLoginMetricsRecorder::PostLoginUIStatus::kShownWithBirchBar);
+    } else {
+      post_login_metrics_recorder->set_post_login_ui_status(
+          PostLoginMetricsRecorder::PostLoginUIStatus::kShownWithoutBirchBar);
     }
   }
 
@@ -485,7 +484,7 @@ void OverviewSession::SelectWindow(OverviewItemBase* item) {
           TaskSwitchSource::OVERVIEW_MODE);
     }
 
-    if (const auto it = base::ranges::find(window_list, window);
+    if (const auto it = std::ranges::find(window_list, window);
         it != window_list.end()) {
       // Record 1-based index so that selecting a top MRU window will record 1.
       UMA_HISTOGRAM_COUNTS_100("Ash.Overview.SelectionDepth",
@@ -1107,7 +1106,7 @@ void OverviewSession::OnFocusedItemClosed(OverviewItem* item) {
 }
 
 void OverviewSession::OnRootWindowClosing(aura::Window* root) {
-  auto iter = base::ranges::find_if(
+  auto iter = std::ranges::find_if(
       grid_list_, [root](const std::unique_ptr<OverviewGrid>& grid) {
         return grid->root_window() == root;
       });
@@ -1581,9 +1580,7 @@ void OverviewSession::OnSplitViewStateChanged(
 
   // Entering or exiting splitview is unexpected behavior in an informed restore
   // overview session.
-  if (features::IsForestFeatureEnabled()) {
-    CHECK(!Shell::Get()->informed_restore_controller()->contents_data());
-  }
+  CHECK(!Shell::Get()->informed_restore_controller()->contents_data());
 
   UpdateNoWindowsWidgetOnEachGrid(/*animate=*/false,
                                   /*is_continuous_enter=*/false);

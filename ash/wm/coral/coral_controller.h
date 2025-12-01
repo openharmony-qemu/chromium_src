@@ -10,15 +10,24 @@
 
 #include "ash/ash_export.h"
 #include "ash/birch/coral_constants.h"
+#include "ash/public/cpp/scanner/scanner_feedback_info.h"
 #include "base/memory/weak_ptr.h"
 #include "base/token.h"
 #include "chromeos/ash/services/coral/public/mojom/coral_service.mojom.h"
+#include "components/desks_storage/core/desk_model.h"
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "mojo/public/cpp/bindings/remote.h"
 
+namespace aura {
+class Window;
+class WindowTracker;
+}  // namespace aura
+
 namespace ash {
 
-class FakeCoralService;
+class Desk;
+class DeskTemplate;
+class FakeCoralProcessor;
 
 class ASH_EXPORT CoralRequest {
  public:
@@ -30,14 +39,23 @@ class ASH_EXPORT CoralRequest {
   ~CoralRequest();
 
   void set_source(CoralSource source) { source_ = source; }
-
-  void set_content(std::vector<ContentItem>&& content) {
-    content_ = std::move(content);
-  }
-
   CoralSource source() const { return source_; }
 
+  void set_content(std::vector<ContentItem> content) {
+    content_ = std::move(content);
+  }
   const std::vector<ContentItem>& content() const { return content_; }
+
+  void set_suppression_context(std::vector<ContentItem>&& suppression_context) {
+    suppression_context_ = std::move(suppression_context);
+  }
+  const std::vector<ContentItem>& suppression_context() const {
+    return suppression_context_;
+  }
+
+  void set_language(const std::string& language) { language_ = language; }
+
+  std::string language() const { return language_; }
 
   std::string ToString() const;
 
@@ -46,6 +64,12 @@ class ASH_EXPORT CoralRequest {
 
   // Tab/app content with arbitrary ordering.
   std::vector<ContentItem> content_;
+
+  // Original tab/app content of the workspace.
+  std::vector<ContentItem> suppression_context_;
+
+  // The language code, e.g., "en" for English.
+  std::string language_;
 };
 
 // `CoralResponse` contains 0-2 groups in order of relevance.
@@ -81,10 +105,10 @@ class ASH_EXPORT CoralController {
   ~CoralController();
 
   // Claims necessary resources (dlc download / model loading) for processing
-  // `GenerateContentGroups` and `CacheEmbeddings` requests. It is not necessary
-  // to call `PrepareResource` before calling other methods, but in that case
-  // the first method request might take longer to run.
-  void PrepareResource();
+  // `GenerateContentGroups` and `CacheEmbeddings` requests. This should be
+  // run before other methods to ensure models are ready, and set up the
+  // language.
+  void Initialize(std::string language);
 
   // GenerateContentGroups clusters the input ContentItems (which includes web
   // tabs, apps, etc.) into suitable groups based on their topics, and gives
@@ -106,37 +130,65 @@ class ASH_EXPORT CoralController {
       mojo::PendingRemote<coral::mojom::TitleObserver> title_observer,
       CoralResponseCallback callback);
 
-  // Callback returns whether the request was successful.
-  void CacheEmbeddings(const CoralRequest& request,
-                       base::OnceCallback<void(bool)> callback);
+  void CacheEmbeddings(const CoralRequest& request);
 
-  // Creates a new desk for the content group.
-  void OpenNewDeskWithGroup(CoralResponse::Group group);
+  // Creates a new desk for the content group from `source_desk`.
+  void OpenNewDeskWithGroup(CoralResponse::Group group,
+                            const Desk* source_desk);
+
+  // Creates a saved desk with up to one browser with tabs from `group`.
+  void CreateSavedDeskFromGroup(const std::string& template_name,
+                                coral::mojom::GroupPtr group,
+                                aura::Window* root_window);
+
+  void OpenFeedbackDialog(const std::string& group_description);
 
  private:
-  using CoralService = coral::mojom::CoralService;
+  using CoralProcessor = coral::mojom::CoralProcessor;
 
-  // Requests coral service from service manager and returns the pointer of the
-  // service instance.
-  CoralService* EnsureCoralService();
+  // Requests coral processor from service manager and returns the pointer of
+  // the processor instance.
+  CoralProcessor* EnsureCoralProcessor(std::string language);
 
-  // Used as the callback of mojom::CoralService::Group.
+  // Used as the callback of mojom::CoralProcessor::Group.
   void HandleGroupResult(CoralSource source,
                          CoralResponseCallback callback,
                          const base::TimeTicks& request_time,
                          coral::mojom::GroupResultPtr result);
 
-  // Used as the callback of mojom::CoralService::CacheEmbeddings. `callback` is
-  // the callback passed from `CoralController::CacheEmbeddings`, which should
-  // be triggered with a bool indicating whether the CacheEmbeddings operation
-  // was successful.
+  // Used as the callback of mojom::CoralProcessor::CacheEmbeddings.
   void HandleCacheEmbeddingsResult(
-      base::OnceCallback<void(bool)> callback,
       coral::mojom::CacheEmbeddingsResultPtr result);
 
-  mojo::Remote<CoralService> coral_service_;
+  // Callback that is run when we call
+  // `DesksController::CaptureActiveDeskAsSavedDesk()`. May also be called
+  // directly if a group has no apps in it. If `desk_template` is nullptr, then
+  // we create one if `tab_urls` is not empty, otherwise this function does
+  // nothing.
+  void OnTemplateCreated(std::vector<coral::mojom::EntityPtr> tab_app_entities,
+                         std::unique_ptr<aura::WindowTracker> window_tracker,
+                         const std::string& template_name,
+                         std::unique_ptr<DeskTemplate> desk_template);
 
-  std::unique_ptr<FakeCoralService> fake_service_;
+  // Callback that is run after a saved desk is saved. Shows the saved desk
+  // library if we are still in overview. `window_tracker` contains the root
+  // window that the `BirchChipButton` context menu was clicked from. Default to
+  // the primary root if the root was removed during the async callbacks for any
+  // reason.
+  void ShowSavedDeskLibrary(
+      std::unique_ptr<aura::WindowTracker> window_tracker,
+      desks_storage::DeskModel::AddOrUpdateEntryStatus status,
+      std::unique_ptr<DeskTemplate> saved_desk);
+
+  // Sends the feedback when the send button is clicked. The group info was
+  // saved in the `feedback_info`.
+  void OnFeedbackSendButtonClicked(ScannerFeedbackInfo feedback_info,
+                                   const std::string& user_description);
+
+  mojo::Remote<coral::mojom::CoralService> coral_service_;
+  mojo::Remote<coral::mojom::CoralProcessor> coral_processor_;
+
+  std::unique_ptr<FakeCoralProcessor> fake_processor_;
 
   base::WeakPtrFactory<CoralController> weak_factory_{this};
 };

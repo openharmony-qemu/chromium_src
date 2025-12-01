@@ -7,16 +7,19 @@
 #include <vector>
 
 #include "base/base64.h"
+#include "base/notreached.h"
+#include "base/strings/to_string.h"
 #include "base/test/metrics/histogram_tester.h"
 #include "base/test/metrics/user_action_tester.h"
 #include "base/test/scoped_feature_list.h"
 #include "components/autofill/core/browser/crowdsourcing/autofill_crowdsourcing_encoding.h"
 #include "components/autofill/core/browser/field_types.h"
 #include "components/autofill/core/browser/form_structure_test_api.h"
+#include "components/autofill/core/browser/heuristic_source.h"
 #include "components/autofill/core/browser/metrics/autofill_metrics_test_base.h"
 #include "components/autofill/core/browser/metrics/ukm_metrics_test_utils.h"
 #include "components/autofill/core/browser/proto/api_v1.pb.h"
-#include "components/autofill/core/browser/test_autofill_clock.h"
+#include "components/autofill/core/browser/test_utils/test_autofill_clock.h"
 #include "components/autofill/core/common/form_data.h"
 #include "components/autofill/core/common/form_data_test_api.h"
 #include "components/autofill/core/common/form_field_data.h"
@@ -51,14 +54,6 @@ using UkmSubmittedFormWithExperimentalFieldsType =
     ukm::builders::Autofill2_SubmittedFormWithExperimentalFields;
 using ExpectedUkmMetricsRecord = std::vector<ExpectedUkmMetricsPair>;
 using ExpectedUkmMetrics = std::vector<ExpectedUkmMetricsRecord>;
-
-FormSignature Collapse(FormSignature sig) {
-  return FormSignature(sig.value() % 1021);
-}
-
-FieldSignature Collapse(FieldSignature sig) {
-  return FieldSignature(sig.value() % 1021);
-}
 
 std::string SerializeAndEncode(const AutofillQueryResponse& response) {
   std::string unencoded_response_string;
@@ -197,7 +192,7 @@ TEST_F(FormInteractionsUkmLoggerTest, TypeOfEditedAutofilledFieldsUkmLogging) {
 
   base::HistogramTester histogram_tester;
   // Simulate text input in the first and second fields.
-  SimulateUserChangedTextField(form, form.fields()[0]);
+  SimulateUserChangedField(form, form.fields()[0]);
 
   SubmitForm(form);
   ExpectedUkmMetricsRecord name_field_ukm_record{
@@ -286,7 +281,8 @@ TEST_F(FieldLogUkmMetricTest, TestShowSuggestionAutofillStatus) {
     SubmitForm(form);
 
     // Record Autofill2.FieldInfo UKM event at autofill manager reset.
-    test_api(autofill_manager()).Reset();
+    test_api(autofill_client().GetAutofillDriverFactory())
+        .Reset(autofill_driver());
 
     // Verify FieldInfo UKM event for every field.
     auto field_entries =
@@ -303,10 +299,9 @@ TEST_F(FieldLogUkmMetricTest, TestShowSuggestionAutofillStatus) {
           AutofillStatus::kSuggestionWasShown, AutofillStatus::kWasFocused};
       std::map<std::string, int64_t> expected = {
           {UFIT::kFormSessionIdentifierName,
-           AutofillMetrics::FormGlobalIdToHash64Bit(form.global_id())},
+           FormGlobalIdToHash64Bit(form.global_id())},
           {UFIT::kFieldSessionIdentifierName,
-           AutofillMetrics::FieldGlobalIdToHash64Bit(
-               form.fields()[i].global_id())},
+           FieldGlobalIdToHash64Bit(form.fields()[i].global_id())},
           {UFIT::kFieldSignatureName,
            Collapse(CalculateFieldSignatureForField(form.fields()[i])).value()},
           {UFIT::kFormControlType2Name,
@@ -334,6 +329,7 @@ TEST_F(FieldLogUkmMetricTest, AddressSubmittedFormLogEvents) {
                                          {.label = u"Street"},
                                          {.label = u"Number"},
                                      }});
+  autofill_driver().SetLocalFrameToken(form.host_frame());
 
   std::vector<FieldType> field_types = {
       ADDRESS_HOME_STATE, ADDRESS_HOME_STREET_ADDRESS, NO_SERVER_DATA};
@@ -353,14 +349,15 @@ TEST_F(FieldLogUkmMetricTest, AddressSubmittedFormLogEvents) {
                                      .begin()
                                      ->second->form_parsed_timestamp();
     // Simulate text input in the first fields.
-    SimulateUserChangedTextFieldTo(form, form.fields()[0], u"United States",
-                                   parse_time + base::Milliseconds(3));
+    SimulateUserChangedFieldTo(form, form.fields()[0], u"United States",
+                               parse_time + base::Milliseconds(3));
     task_environment_.FastForwardBy(base::Milliseconds(1200));
     base::HistogramTester histogram_tester;
     SubmitForm(form);
 
     // Record Autofill2.FieldInfo UKM event at autofill manager reset.
-    test_api(autofill_manager()).Reset();
+    test_api(autofill_client().GetAutofillDriverFactory())
+        .Reset(autofill_driver());
 
     // Verify FieldInfo UKM event for every field.
     auto field_entries =
@@ -372,7 +369,7 @@ TEST_F(FieldLogUkmMetricTest, AddressSubmittedFormLogEvents) {
       const auto* const entry = field_entries[i].get();
 
       FieldFillingSkipReason status =
-          i == 2 ? FieldFillingSkipReason::kNoFillableGroup
+          i == 2 ? FieldFillingSkipReason::kFieldTypeUnrelated
                  : FieldFillingSkipReason::kNotSkipped;
       DenseSet<AutofillStatus> autofill_status_vector;
       int field_log_events_count = 0;
@@ -407,10 +404,9 @@ TEST_F(FieldLogUkmMetricTest, AddressSubmittedFormLogEvents) {
       }
       std::map<std::string, int64_t> expected = {
           {UFIT::kFormSessionIdentifierName,
-           AutofillMetrics::FormGlobalIdToHash64Bit(form.global_id())},
+           FormGlobalIdToHash64Bit(form.global_id())},
           {UFIT::kFieldSessionIdentifierName,
-           AutofillMetrics::FieldGlobalIdToHash64Bit(
-               form.fields()[i].global_id())},
+           FieldGlobalIdToHash64Bit(form.fields()[i].global_id())},
           {UFIT::kFieldSignatureName,
            Collapse(CalculateFieldSignatureForField(form.fields()[i])).value()},
           {UFIT::kAutofillSkippedStatusName,
@@ -450,10 +446,9 @@ TEST_F(FieldLogUkmMetricTest, AddressSubmittedFormLogEvents) {
           i < 3 ? SubmissionSource::FORM_SUBMISSION : SubmissionSource::NONE;
       std::map<std::string, int64_t> expected = {
           {UFIAST::kFormSessionIdentifierName,
-           AutofillMetrics::FormGlobalIdToHash64Bit(form.global_id())},
+           FormGlobalIdToHash64Bit(form.global_id())},
           {UFIAST::kFieldSessionIdentifierName,
-           AutofillMetrics::FieldGlobalIdToHash64Bit(
-               form.fields()[i % 3].global_id())},
+           FieldGlobalIdToHash64Bit(form.fields()[i % 3].global_id())},
           {UFIAST::kSubmittedType1Name, submitted_type1},
           {UFIAST::kSubmissionSourceName, static_cast<int>(submission_source)},
           {UFIAST::kMillisecondsFromFormParsedUntilSubmissionName, 1000},
@@ -479,7 +474,7 @@ TEST_F(FieldLogUkmMetricTest, AddressSubmittedFormLogEvents) {
         FORM_EVENT_LOCAL_SUGGESTION_WILL_SUBMIT_ONCE};
     std::map<std::string, int64_t> expected = {
         {UFST::kFormSessionIdentifierName,
-         AutofillMetrics::FormGlobalIdToHash64Bit(form.global_id())},
+         FormGlobalIdToHash64Bit(form.global_id())},
         {UFST::kFormSignatureName,
          Collapse(CalculateFormSignature(form)).value()},
         {UFST::kAutofillFormEventsName, form_events.data()[0]},
@@ -578,7 +573,8 @@ TEST_F(FieldLogUkmMetricTest, AutofillFieldInfoMetricsFieldType) {
   base::HistogramTester histogram_tester;
   SubmitForm(form);
   // Record Autofill2.FieldInfo UKM event at autofill manager reset.
-  test_api(autofill_manager()).Reset();
+  test_api(autofill_client().GetAutofillDriverFactory())
+      .Reset(autofill_driver());
 
   auto entries =
       test_ukm_recorder().GetEntriesByName(UkmFieldInfoType::kEntryName);
@@ -618,10 +614,9 @@ TEST_F(FieldLogUkmMetricTest, AutofillFieldInfoMetricsFieldType) {
     field_log_events_count = 2;
     std::map<std::string, int64_t> expected = {
         {UFIT::kFormSessionIdentifierName,
-         AutofillMetrics::FormGlobalIdToHash64Bit(form.global_id())},
+         FormGlobalIdToHash64Bit(form.global_id())},
         {UFIT::kFieldSessionIdentifierName,
-         AutofillMetrics::FieldGlobalIdToHash64Bit(
-             form.fields()[i].global_id())},
+         FieldGlobalIdToHash64Bit(form.fields()[i].global_id())},
         {UFIT::kFieldSignatureName,
          Collapse(CalculateFieldSignatureForField(form.fields()[i])).value()},
         {UFIT::kServerType1Name, server_types[i]},
@@ -641,20 +636,10 @@ TEST_F(FieldLogUkmMetricTest, AutofillFieldInfoMetricsFieldType) {
         {UFIT::kAutofillStatusVectorName, autofill_status_vector.data()[0]},
     };
     if (heuristic_types[i] != UNKNOWN_TYPE) {
-      field_log_events_count += 2;
       expected.merge(std::map<std::string, int64_t>({
           {UFIT::kHeuristicTypeName, heuristic_types[i]},
-#if BUILDFLAG(USE_INTERNAL_AUTOFILL_PATTERNS)
-          {UFIT::kHeuristicTypeLegacyName, UNKNOWN_TYPE},
-          {UFIT::kHeuristicTypeDefaultName, heuristic_types[i]},
-          {UFIT::kHeuristicTypeExperimentalName, UNKNOWN_TYPE},
       }));
-#else
-          {UFIT::kHeuristicTypeLegacyName, heuristic_types[i]},
-          {UFIT::kHeuristicTypeDefaultName, UNKNOWN_TYPE},
-          {UFIT::kHeuristicTypeExperimentalName, UNKNOWN_TYPE},
-      }));
-#endif
+      field_log_events_count += 2;
     } else {
       ++field_log_events_count;
     }
@@ -685,10 +670,9 @@ TEST_F(FieldLogUkmMetricTest, AutofillFieldInfoMetricsFieldType) {
     const auto* const entry = submission_entries[i].get();
     std::map<std::string, int64_t> expected = {
         {UFIAST::kFormSessionIdentifierName,
-         AutofillMetrics::FormGlobalIdToHash64Bit(form.global_id())},
+         FormGlobalIdToHash64Bit(form.global_id())},
         {UFIAST::kFieldSessionIdentifierName,
-         AutofillMetrics::FieldGlobalIdToHash64Bit(
-             form.fields()[i].global_id())},
+         FieldGlobalIdToHash64Bit(form.fields()[i].global_id())},
         {UFIAST::kSubmittedType1Name, EMPTY_TYPE},
         {UFIAST::kSubmissionSourceName,
          static_cast<int>(SubmissionSource::FORM_SUBMISSION)},
@@ -711,7 +695,7 @@ TEST_F(FieldLogUkmMetricTest, AutofillFieldInfoMetricsFieldType) {
   FormInteractionsUkmLogger::FormEventSet form_events = {};
   std::map<std::string, int64_t> expected = {
       {UFST::kFormSessionIdentifierName,
-       AutofillMetrics::FormGlobalIdToHash64Bit(form.global_id())},
+       FormGlobalIdToHash64Bit(form.global_id())},
       {UFST::kFormSignatureName,
        Collapse(CalculateFormSignature(form)).value()},
       {UFST::kAutofillFormEventsName, form_events.data()[0]},
@@ -758,16 +742,17 @@ TEST_F(FieldLogUkmMetricTest, AutofillFieldInfoMetricsEditedFieldWithoutFill) {
                                    .begin()
                                    ->second->form_parsed_timestamp();
   // Simulate text input in the first and second fields.
-  SimulateUserChangedTextFieldTo(form, form.fields()[0], u"Elvis Aaron Presley",
-                                 parse_time + base::Milliseconds(3));
-  SimulateUserChangedTextFieldTo(form, form.fields()[1], u"buddy@gmail.com",
-                                 parse_time + base::Milliseconds(3));
+  SimulateUserChangedFieldTo(form, form.fields()[0], u"Elvis Aaron Presley",
+                             parse_time + base::Milliseconds(3));
+  SimulateUserChangedFieldTo(form, form.fields()[1], u"buddy@gmail.com",
+                             parse_time + base::Milliseconds(3));
   task_environment_.FastForwardBy(base::Milliseconds(1200));
   base::HistogramTester histogram_tester;
   SubmitForm(form);
 
   // Record Autofill2.FieldInfo UKM event at autofill manager reset.
-  test_api(autofill_manager()).Reset();
+  test_api(autofill_client().GetAutofillDriverFactory())
+      .Reset(autofill_driver());
 
   // Verify FieldInfo UKM event for every field.
   auto entries =
@@ -782,10 +767,9 @@ TEST_F(FieldLogUkmMetricTest, AutofillFieldInfoMetricsEditedFieldWithoutFill) {
     const auto* const entry = entries[i].get();
     std::map<std::string, int64_t> expected = {
         {UFIT::kFormSessionIdentifierName,
-         AutofillMetrics::FormGlobalIdToHash64Bit(form.global_id())},
+         FormGlobalIdToHash64Bit(form.global_id())},
         {UFIT::kFieldSessionIdentifierName,
-         AutofillMetrics::FieldGlobalIdToHash64Bit(
-             form.fields()[i].global_id())},
+         FieldGlobalIdToHash64Bit(form.fields()[i].global_id())},
         {UFIT::kFieldSignatureName,
          Collapse(CalculateFieldSignatureForField(form.fields()[i])).value()},
         {UFIT::kFormControlType2Name,
@@ -816,10 +800,9 @@ TEST_F(FieldLogUkmMetricTest, AutofillFieldInfoMetricsEditedFieldWithoutFill) {
         i < 3 ? SubmissionSource::FORM_SUBMISSION : SubmissionSource::NONE;
     std::map<std::string, int64_t> expected = {
         {UFIAST::kFormSessionIdentifierName,
-         AutofillMetrics::FormGlobalIdToHash64Bit(form.global_id())},
+         FormGlobalIdToHash64Bit(form.global_id())},
         {UFIAST::kFieldSessionIdentifierName,
-         AutofillMetrics::FieldGlobalIdToHash64Bit(
-             form.fields()[i % 3].global_id())},
+         FieldGlobalIdToHash64Bit(form.fields()[i % 3].global_id())},
         {UFIAST::kSubmittedType1Name, submitted_types[i % 3]},
         {UFIAST::kSubmissionSourceName, static_cast<int>(submission_source)},
         {UFIAST::kMillisecondsFromFormParsedUntilSubmissionName, 1000},
@@ -842,7 +825,7 @@ TEST_F(FieldLogUkmMetricTest, AutofillFieldInfoMetricsEditedFieldWithoutFill) {
       FORM_EVENT_DID_PARSE_FORM};
   std::map<std::string, int64_t> expected = {
       {UFST::kFormSessionIdentifierName,
-       AutofillMetrics::FormGlobalIdToHash64Bit(form.global_id())},
+       FormGlobalIdToHash64Bit(form.global_id())},
       {UFST::kFormSignatureName,
        Collapse(CalculateFormSignature(form)).value()},
       {UFST::kAutofillFormEventsName, form_events.data()[0]},
@@ -888,7 +871,8 @@ TEST_F(FieldLogUkmMetricTest,
   SeeForm(form);
   SubmitForm(form);
 
-  test_api(autofill_manager()).Reset();
+  test_api(autofill_client().GetAutofillDriverFactory())
+      .Reset(autofill_driver());
 
   // This form is not parsed in |AutofillManager::OnFormsSeen|.
   auto entries =
@@ -911,7 +895,8 @@ TEST_F(FieldLogUkmMetricTest, AutofillFieldInfoMetricsNotRecordOnSearchBox) {
   SeeForm(form);
   SubmitForm(form);
 
-  test_api(autofill_manager()).Reset();
+  test_api(autofill_client().GetAutofillDriverFactory())
+      .Reset(autofill_driver());
 
   // The form that only has a search box is not recorded into any UKM events.
   auto entries =
@@ -938,7 +923,8 @@ TEST_F(FieldLogUkmMetricTest, AutofillFieldInfoMetricsNotRecordOnAllCheckBox) {
 
   SeeForm(form);
   SubmitForm(form);
-  test_api(autofill_manager()).Reset();
+  test_api(autofill_client().GetAutofillDriverFactory())
+      .Reset(autofill_driver());
 
   // The form with two checkboxes is not recorded into any UKM events.
   auto entries =
@@ -974,7 +960,8 @@ TEST_F(
 
   SeeForm(form);
   SubmitForm(form);
-  test_api(autofill_manager()).Reset();
+  test_api(autofill_client().GetAutofillDriverFactory())
+      .Reset(autofill_driver());
 
   // This form only has one non-checkable field, so the local heuristics are
   // not executed.
@@ -1012,7 +999,8 @@ TEST_F(FieldLogUkmMetricTest,
   task_environment_.FastForwardBy(base::Milliseconds(3500));
   base::HistogramTester histogram_tester;
   SubmitForm(form);
-  test_api(autofill_manager()).Reset();
+  test_api(autofill_client().GetAutofillDriverFactory())
+      .Reset(autofill_driver());
 
   auto entries =
       test_ukm_recorder().GetEntriesByName(UkmFieldInfoType::kEntryName);
@@ -1028,10 +1016,9 @@ TEST_F(FieldLogUkmMetricTest,
     const auto* const entry = entries[i].get();
     std::map<std::string, int64_t> expected = {
         {UFIT::kFormSessionIdentifierName,
-         AutofillMetrics::FormGlobalIdToHash64Bit(form.global_id())},
+         FormGlobalIdToHash64Bit(form.global_id())},
         {UFIT::kFieldSessionIdentifierName,
-         AutofillMetrics::FieldGlobalIdToHash64Bit(
-             form.fields()[i].global_id())},
+         FieldGlobalIdToHash64Bit(form.fields()[i].global_id())},
         {UFIT::kFieldSignatureName,
          Collapse(CalculateFieldSignatureForField(form.fields()[i])).value()},
         {UFIT::kOverallTypeName, field_types[i]},
@@ -1061,7 +1048,7 @@ TEST_F(FieldLogUkmMetricTest,
       FORM_EVENT_DID_PARSE_FORM};
   std::map<std::string, int64_t> expected = {
       {UFST::kFormSessionIdentifierName,
-       AutofillMetrics::FormGlobalIdToHash64Bit(form.global_id())},
+       FormGlobalIdToHash64Bit(form.global_id())},
       {UFST::kFormSignatureName,
        Collapse(CalculateFormSignature(form)).value()},
       {UFST::kAutofillFormEventsName, form_events.data()[0]},
@@ -1114,7 +1101,8 @@ TEST_F(FieldLogUkmMetricTest, AutofillFieldInfoMetricsRecordOnDifferentFrames) {
   task_environment_.FastForwardBy(base::Milliseconds(1980000));  // 33m
   base::HistogramTester histogram_tester;
   SubmitForm(form);
-  test_api(autofill_manager()).Reset();
+  test_api(autofill_client().GetAutofillDriverFactory())
+      .Reset(autofill_driver());
 
   // Verify FieldInfo UKM event for each field.
   auto entries =
@@ -1137,10 +1125,9 @@ TEST_F(FieldLogUkmMetricTest, AutofillFieldInfoMetricsRecordOnDifferentFrames) {
     const auto* const entry = entries[i].get();
     std::map<std::string, int64_t> expected = {
         {UFIT::kFormSessionIdentifierName,
-         AutofillMetrics::FormGlobalIdToHash64Bit(form.global_id())},
+         FormGlobalIdToHash64Bit(form.global_id())},
         {UFIT::kFieldSessionIdentifierName,
-         AutofillMetrics::FieldGlobalIdToHash64Bit(
-             form.fields()[i].global_id())},
+         FieldGlobalIdToHash64Bit(form.fields()[i].global_id())},
         {UFIT::kFieldSignatureName,
          Collapse(CalculateFieldSignatureForField(form.fields()[i])).value()},
         {UFIT::kOverallTypeName, field_types[i]},
@@ -1152,19 +1139,9 @@ TEST_F(FieldLogUkmMetricTest, AutofillFieldInfoMetricsRecordOnDifferentFrames) {
          base::to_underlying(AutofillMetrics::AutocompleteState::kNone)},
         {UFIT::kAutofillStatusVectorName, autofill_status_vector.data()[0]},
         {UFIT::kHeuristicTypeName, field_types[i]},
-#if BUILDFLAG(USE_INTERNAL_AUTOFILL_PATTERNS)
-        {UFIT::kHeuristicTypeLegacyName, UNKNOWN_TYPE},
-        {UFIT::kHeuristicTypeDefaultName, field_types[i]},
-        {UFIT::kHeuristicTypeExperimentalName, UNKNOWN_TYPE},
-#else
-        {UFIT::kHeuristicTypeLegacyName, field_types[i]},
-        {UFIT::kHeuristicTypeDefaultName, UNKNOWN_TYPE},
-        {UFIT::kHeuristicTypeExperimentalName, UNKNOWN_TYPE},
-#endif
-        {UFIT::kFieldLogEventCountName, 2},
         {UFIT::kRankInFieldSignatureGroupName, 1},
+        {UFIT::kFieldLogEventCountName, 2},
     };
-
     EXPECT_EQ(expected.size(), entry->metrics.size());
     for (const auto& [metric, value] : expected) {
       test_ukm_recorder().ExpectEntryMetric(entry, metric, value);
@@ -1181,7 +1158,7 @@ TEST_F(FieldLogUkmMetricTest, AutofillFieldInfoMetricsRecordOnDifferentFrames) {
       FORM_EVENT_DID_PARSE_FORM};
   std::map<std::string, int64_t> expected = {
       {UFST::kFormSessionIdentifierName,
-       AutofillMetrics::FormGlobalIdToHash64Bit(form.global_id())},
+       FormGlobalIdToHash64Bit(form.global_id())},
       {UFST::kFormSignatureName,
        Collapse(CalculateFormSignature(form)).value()},
       {UFST::kAutofillFormEventsName, form_events.data()[0]},
@@ -1674,7 +1651,7 @@ INSTANTIATE_TEST_SUITE_P(
     [](const testing::TestParamInfo<
         LogFocusedComplexFormAtFormRemoveTest::ParamType>& info) {
       std::string name = info.param.test_name;
-      base::ranges::replace_if(
+      std::ranges::replace_if(
           name, [](char c) { return !std::isalnum(c); }, '_');
       return name;
     });
@@ -1687,7 +1664,7 @@ TEST_P(LogFocusedComplexFormAtFormRemoveTest, TestEmittedUKM) {
       {features::kAutofillAblationStudyAblationWeightPerMilleParam.name,
        "1000"},
       {features::kAutofillAblationStudyIsDryRun.name,
-       GetParam().ablation_study_is_dry_run ? "true" : "false"}};
+       base::ToString(GetParam().ablation_study_is_dry_run)}};
   base::test::ScopedFeatureList scoped_feature_list;
   if (GetParam().enable_ablation_study_for_addresses) {
     scoped_feature_list.InitAndEnableFeatureWithParameters(
@@ -1722,26 +1699,24 @@ TEST_P(LogFocusedComplexFormAtFormRemoveTest, TestEmittedUKM) {
 
   if (GetParam().step_2_typing) {
     task_environment_.FastForwardBy(base::Milliseconds(1000));
-    SimulateUserChangedTextField(form, first_field, base::TimeTicks::Now());
+    SimulateUserChangedField(form, first_field, base::TimeTicks::Now());
   }
   if (GetParam().step_3_autofill) {
     task_environment_.FastForwardBy(base::Milliseconds(1000));
     ASSERT_TRUE(first_field.parsed_autocomplete());
     HtmlFieldType autocomplete = first_field.parsed_autocomplete()->field_type;
     if (GroupTypeOfHtmlFieldType(autocomplete) == FieldTypeGroup::kAddress) {
-      // This simulates the call to the renderer
-      // (AutofillManager::FillOrPreviewProfileForm).
       FillTestProfile(form);
     } else if (GroupTypeOfHtmlFieldType(autocomplete) ==
                FieldTypeGroup::kCreditCard) {
-      autofill_manager().AuthenticateThenFillCreditCardForm(
-          form, first_field.global_id(),
-          *personal_data().payments_data_manager().GetCreditCardByGUID(
+      autofill_manager().FillOrPreviewForm(
+          mojom::ActionPersistence::kFill, form, first_field.global_id(),
+          personal_data().payments_data_manager().GetCreditCardByGUID(
               "10000000-0000-0000-0000-000000000001"),
-          {.trigger_source = AutofillTriggerSource::kPopup});
+          AutofillTriggerSource::kPopup);
     } else {
       // Autofill should not be simulated on a field that is not autofillable.
-      ASSERT_TRUE(false);
+      NOTREACHED();
     }
     // This simulates the callback from the renderer
     // (AutofillManager::OnDidFillAutofillFormData).
@@ -1749,14 +1724,15 @@ TEST_P(LogFocusedComplexFormAtFormRemoveTest, TestEmittedUKM) {
   }
   if (GetParam().step_4_edit_after_autofill) {
     task_environment_.FastForwardBy(base::Milliseconds(1000));
-    SimulateUserChangedTextField(form, first_field, base::TimeTicks::Now());
+    SimulateUserChangedField(form, first_field, base::TimeTicks::Now());
   }
   if (GetParam().step_5_submit) {
     task_environment_.FastForwardBy(base::Milliseconds(1000));
     SubmitForm(form);
   }
   // Record Autofill2.FocusedComplexForm UKM event at autofill manager / reset.
-  test_api(autofill_manager()).Reset();
+  test_api(autofill_client().GetAutofillDriverFactory())
+      .Reset(autofill_driver());
 
   // Verify UKM event for the form.
   auto interacted_entries = test_ukm_recorder().GetEntriesByName(
@@ -1774,7 +1750,7 @@ TEST_P(LogFocusedComplexFormAtFormRemoveTest, TestEmittedUKM) {
   EXPECT_EQ(expected.size() + 2, entry->metrics.size());
   test_ukm_recorder().ExpectEntryMetric(
       entry, UkmFocusedComplexFormType::kFormSessionIdentifierName,
-      AutofillMetrics::FormGlobalIdToHash64Bit(form.global_id()));
+      FormGlobalIdToHash64Bit(form.global_id()));
   test_ukm_recorder().ExpectEntryMetric(
       entry, UkmFocusedComplexFormType::kFormSignatureName,
       Collapse(CalculateFormSignature(form)).value());
@@ -1828,9 +1804,9 @@ TEST_F(FieldLogUkmMetricTest,
       TypingFieldLogEvent{.has_value_after_typing = OptionalBoolean::kTrue});
   // No typing on field 5.
 
-  FormInteractionsUkmLogger logger(autofill_client_.get(),
-                                   &test_ukm_recorder());
-  logger.LogAutofillFormWithExperimentalFieldsCountAtFormRemove(form_structure);
+  FormInteractionsUkmLogger logger(autofill_client_.get());
+  logger.LogAutofillFormWithExperimentalFieldsCountAtFormRemove(
+      autofill_driver_->GetPageUkmSourceId(), form_structure);
 
   auto ukm_entries = test_ukm_recorder().GetEntriesByName(
       UkmSubmittedFormWithExperimentalFieldsType::kEntryName);
@@ -1839,7 +1815,7 @@ TEST_F(FieldLogUkmMetricTest,
   test_ukm_recorder().ExpectEntryMetric(
       entry,
       UkmSubmittedFormWithExperimentalFieldsType::kFormSessionIdentifierName,
-      AutofillMetrics::FormGlobalIdToHash64Bit(form.global_id()));
+      FormGlobalIdToHash64Bit(form.global_id()));
   test_ukm_recorder().ExpectEntryMetric(
       entry,
       UkmSubmittedFormWithExperimentalFieldsType::

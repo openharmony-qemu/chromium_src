@@ -6,6 +6,7 @@
 #define COMPONENTS_SAVED_TAB_GROUPS_DELEGATE_TAB_GROUP_SYNC_DELEGATE_H_
 
 #include <memory>
+#include <set>
 
 #include "base/uuid.h"
 #include "components/saved_tab_groups/public/saved_tab_group.h"
@@ -22,12 +23,24 @@ namespace tab_groups {
 // mutation helper that will propagate the changes to sync.
 class TabGroupSyncDelegate {
  public:
+  // A RAII class that indicates to the TabGroupSyncDelegate that several
+  // operations will happen before it is necessary to reflect all the updates.
+  class [[maybe_unused, nodiscard]] ScopedBatchOperation {
+   public:
+    virtual ~ScopedBatchOperation() = default;
+  };
+
   virtual ~TabGroupSyncDelegate() = default;
+
+  // Notify the delegate that several operations are about to happen. The
+  // returned token should be kept alive until the operations complete, at which
+  // point it must be deleted.
+  virtual std::unique_ptr<ScopedBatchOperation> StartBatchOperation();
 
   // Called to open a given saved tab group in the local tab model.
   // The `context` can be used to specify the browser window in which the tab
   // group should be opened.
-  virtual void HandleOpenTabGroupRequest(
+  virtual std::optional<LocalTabGroupID> HandleOpenTabGroupRequest(
       const base::Uuid& sync_tab_group_id,
       std::unique_ptr<TabGroupActionContext> context) = 0;
 
@@ -61,12 +74,19 @@ class TabGroupSyncDelegate {
   virtual std::vector<LocalTabID> GetLocalTabIdsForTabGroup(
       const LocalTabGroupID& local_tab_group_id) = 0;
 
+  // Called to get the currently selected tabs from the tab model. The result
+  // should contain selected tabs across all browser windows.
+  virtual std::set<LocalTabID> GetSelectedTabs() = 0;
+
+  // Called to get the title of a tab from the tab model.
+  virtual std::u16string GetTabTitle(const LocalTabID& local_tab_id) = 0;
+
   // Local To Remote mutation methods.
 
-  // Called to create a remote tab group for the given local tab group ID.
-  // Called on startup for any unsynced local tab groups and as well as meant to
-  // be called from the local tab model observer when a new group is created.
-  virtual void CreateRemoteTabGroup(
+  // Helper function to create a SavedTabGroup for the given local tab group ID.
+  // Caller is supposed to handle the SavedTabGroup, e.g. add to the sync
+  // service.
+  virtual std::unique_ptr<SavedTabGroup> CreateSavedTabGroupFromLocalGroup(
       const LocalTabGroupID& local_tab_group_id) = 0;
 };
 

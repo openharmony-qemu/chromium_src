@@ -1,1 +1,0 @@
-../../../qt5/bin/fixqt4headers.pl

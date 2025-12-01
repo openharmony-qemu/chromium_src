@@ -4,6 +4,7 @@
 
 #include "chromeos/ash/services/network_config/cros_network_config.h"
 
+#include <algorithm>
 #include <cmath>
 #include <optional>
 #include <string_view>
@@ -14,8 +15,6 @@
 #include "base/containers/flat_map.h"
 #include "base/i18n/time_formatting.h"
 #include "base/metrics/histogram_functions.h"
-#include "base/not_fatal_until.h"
-#include "base/ranges/algorithm.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_split.h"
 #include "base/strings/string_util.h"
@@ -569,8 +568,8 @@ bool IsCellularConnecting(NetworkStateHandler* network_state_handler) {
   NetworkStateHandler::NetworkStateList cellular_networks;
   network_state_handler->GetVisibleNetworkListByType(
       NetworkTypePattern::Cellular(), &cellular_networks);
-  return base::ranges::any_of(cellular_networks,
-                              &NetworkState::IsConnectingState);
+  return std::ranges::any_of(cellular_networks,
+                             &NetworkState::IsConnectingState);
 }
 
 mojom::InhibitReason GetInhibitReason(
@@ -673,8 +672,7 @@ mojom::DeviceStatePropertiesPtr DeviceStateToMojo(
 std::string GetRequiredString(const base::Value::Dict* dict, const char* key) {
   const base::Value* v = dict->Find(key);
   if (!v) {
-    NOTREACHED(base::NotFatalUntil::M127) << "Required key missing: " << key;
-    return std::string();
+    NOTREACHED() << "Required key missing: " << key;
   }
   if (!v->is_string()) {
     NET_LOG(ERROR) << "Expected string, found: " << *v;

@@ -31,8 +31,8 @@
 #include "quiche/quic/core/quic_types.h"
 #include "quiche/quic/platform/api/quic_export.h"
 #include "quiche/quic/platform/api/quic_flags.h"
-#include "quiche/common/platform/api/quiche_mem_slice.h"
 #include "quiche/common/quiche_circular_deque.h"
+#include "quiche/common/quiche_mem_slice.h"
 
 namespace quic {
 namespace test {
@@ -639,6 +639,18 @@ class QUICHE_EXPORT QuicPacketCreator {
   // Saves next_transmission_type_ before calling the delegate and restore it
   // after.
   void MaybeBundleOpportunistically();
+
+  // Generates crypto frames from any remaining available crypto data.
+  size_t GenerateRemainingCryptoFrames(EncryptionLevel level,
+                                       size_t write_length,
+                                       QuicStreamOffset offset,
+                                       size_t total_bytes_consumed);
+
+  // Attempts to perform multi-packet chaos protection. If this portion of the
+  // crypto stream isn't supposed to be protected or if anything fails then 0 is
+  // returned. Otherwise returns the amount of crypto data consumed.
+  size_t MultiPacketChaosProtect(EncryptionLevel level, size_t write_length,
+                                 QuicStreamOffset offset);
 
   // Does not own these delegates or the framer.
   DelegateInterface* delegate_;

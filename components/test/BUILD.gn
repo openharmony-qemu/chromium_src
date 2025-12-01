@@ -32,6 +32,10 @@ source_set("test_support") {
 
   public_deps = [ "//base/test:test_support" ]
 
+  if (is_ohos) {
+    deps += [ "//components:components_tests_pak" ]
+  }
+
   if (is_ios) {
     sources += [
       "ios_components_test_initializer.cc",
@@ -98,6 +102,10 @@ if (is_ios) {
   bundle_data_from_filelist("paint_preview_test_bundle_data") {
     testonly = true
     filelist_name = "data/paint_preview/unit_tests_bundle_data.filelist"
+  }
+  bundle_data_from_filelist("passage_embeddings_test_bundle_data") {
+    testonly = true
+    filelist_name = "data/passage_embeddings/unit_tests_bundle_data.filelist"
   }
   bundle_data_from_filelist("password_manager_test_bundle_data") {
     testonly = true

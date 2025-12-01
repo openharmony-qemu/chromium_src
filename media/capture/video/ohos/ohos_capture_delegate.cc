@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "media/capture/video/ohos/ohos_capture_delegate.h"
 
@@ -38,7 +13,9 @@
 #include "build/build_config.h"
 #include "media/capture/video/blob_utils.h"
 #include "media/capture/video/ohos/ohos_capture_delegate.h"
+#include "ohos/adapter/media_manager/media_adapter.h"
 #include "third_party/libyuv/include/libyuv.h"
+#include "ui/display/screen.h"
 #include "video_capture_common_ohos.h"
 
 #include "ohos/adapter/media_manager/media_adapter.h"
@@ -314,14 +291,46 @@ void OHOSCaptureDelegate::Resume() {
 void OHOSCaptureDelegate::OnBufferAvailable(uint8_t* data, size_t data_size) {
   DCHECK(capture_task_runner_->BelongsToCurrentThread());
   const base::TimeTicks now = base::TimeTicks::Now();
+  int32_t rotation = 0;
+  int32_t cameraOrientation =
+      ohos::adapter::MediaAdapter::GetInstance().GetCameraOrientation();
+  if (display::Screen::GetScreen() && cameraOrientation != 0) {
+    display::Screen* screen = display::Screen::GetScreen();
+    display::Display primary_display = screen->GetPrimaryDisplay();
+    switch (primary_display.rotation()) {
+      case display::Display::Rotation::ROTATE_0:
+        if (device_descriptor_.facing == MEDIA_VIDEO_FACING_ENVIRONMENT) {
+          rotation = 90;
+        } else {
+          rotation = 270;
+        }
+        break;
+      case display::Display::Rotation::ROTATE_90:
+        rotation = 180;
+        break;
+      case display::Display::Rotation::ROTATE_180:
+        if (device_descriptor_.facing == MEDIA_VIDEO_FACING_ENVIRONMENT) {
+          rotation = 270;
+        } else {
+          rotation = 90;
+        }
+        break;
+      case display::Display::Rotation::ROTATE_270:
+        rotation = 0;
+        break;
+      default:
+        LOG(ERROR) << "set rotation failed";
+        break;
+    }
+  }
   if (first_ref_time_.is_null()) {
     first_ref_time_ = now;
   }
   if (client_ != nullptr) {
     client_->OnIncomingCapturedData(
         data, data_size, capture_format_, gfx::ColorSpace(),
-        0 /* clockwise rotation */, false /* flip_y */, now,
-        now - first_ref_time_, std::nullopt);
+        rotation /* clockwise rotation */, false /* flip_y */, now,
+        now - first_ref_time_, std::nullopt, std::nullopt);
 
     while (!take_photo_callbacks_.empty()) {
       VideoCaptureDevice::TakePhotoCallback cb =

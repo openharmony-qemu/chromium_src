@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "ui/base/clipboard/clipboard_format_type.h"
 
@@ -42,7 +17,7 @@ ClipboardFormatType::ClipboardFormatType() = default;
 
 ClipboardFormatType::~ClipboardFormatType() = default;
 
-ClipboardFormatType::ClipboardFormatType(const std::string& native_format)
+ClipboardFormatType::ClipboardFormatType(std::string_view native_format)
     : data_(native_format) {}
 
 std::string ClipboardFormatType::Serialize() const {
@@ -51,7 +26,7 @@ std::string ClipboardFormatType::Serialize() const {
 
 // static
 ClipboardFormatType ClipboardFormatType::Deserialize(
-    const std::string& serialization) {
+    std::string_view serialization) {
   return ClipboardFormatType(serialization);
 }
 
@@ -69,7 +44,7 @@ bool ClipboardFormatType::operator==(const ClipboardFormatType& other) const {
 
 // static
 ClipboardFormatType ClipboardFormatType::CustomPlatformType(
-    const std::string& format_string) {
+    std::string_view format_string) {
   DCHECK(base::IsStringASCII(format_string));
   return ClipboardFormatType::Deserialize(format_string);
 }
@@ -92,31 +67,31 @@ const ClipboardFormatType& ClipboardFormatType::WebCustomFormatMap() {
 
 // static
 ClipboardFormatType ClipboardFormatType::GetType(
-    const std::string& format_string) {
+    std::string_view format_string) {
   return ClipboardFormatType::Deserialize(format_string);
 }
 
 // static
 const ClipboardFormatType& ClipboardFormatType::FilenamesType() {
-  static base::NoDestructor<ClipboardFormatType> type(kMimeTypeURIList);
+  static base::NoDestructor<ClipboardFormatType> type(kMimeTypeUriList);
   return *type;
 }
 
 // static
 const ClipboardFormatType& ClipboardFormatType::UrlType() {
-  static base::NoDestructor<ClipboardFormatType> type(kMimeTypeMozillaURL);
+  static base::NoDestructor<ClipboardFormatType> type(kMimeTypeMozillaUrl);
   return *type;
 }
 
 // static
 const ClipboardFormatType& ClipboardFormatType::PlainTextType() {
-  static base::NoDestructor<ClipboardFormatType> type(kMimeTypeText);
+  static base::NoDestructor<ClipboardFormatType> type(kMimeTypePlainText);
   return *type;
 }
 
 // static
 const ClipboardFormatType& ClipboardFormatType::HtmlType() {
-  static base::NoDestructor<ClipboardFormatType> type(kMimeTypeHTML);
+  static base::NoDestructor<ClipboardFormatType> type(kMimeTypeHtml);
   return *type;
 }
 
@@ -128,13 +103,13 @@ const ClipboardFormatType& ClipboardFormatType::SvgType() {
 
 // static
 const ClipboardFormatType& ClipboardFormatType::RtfType() {
-  static base::NoDestructor<ClipboardFormatType> type(kMimeTypeRTF);
+  static base::NoDestructor<ClipboardFormatType> type(kMimeTypeRtf);
   return *type;
 }
 
 // static
 const ClipboardFormatType& ClipboardFormatType::PngType() {
-  static base::NoDestructor<ClipboardFormatType> type(kMimeTypePNG);
+  static base::NoDestructor<ClipboardFormatType> type(kMimeTypePng);
   return *type;
 }
 

@@ -32,7 +32,6 @@ libcurl-gnutls.so.4 libcurl3-gnutls #MINVER#
  curl_global_init@CURL_GNUTLS_3 7.16.2
  curl_global_init_mem@CURL_GNUTLS_3 7.16.2
  curl_global_sslset@CURL_GNUTLS_3 7.56.1
- curl_jmpenv@CURL_GNUTLS_3 7.16.2
  curl_maprintf@CURL_GNUTLS_3 7.16.2
  curl_mfprintf@CURL_GNUTLS_3 7.16.2
  curl_mime_addpart@CURL_GNUTLS_3 7.56.1

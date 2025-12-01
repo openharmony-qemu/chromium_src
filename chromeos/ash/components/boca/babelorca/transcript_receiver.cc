@@ -102,11 +102,14 @@ void TranscriptReceiver::StartReceivingInternal() {
   *request.mutable_header() = GetRequestHeaderTemplate();
   request.mutable_header()->set_auth_token_payload(
       request_data_provider_->tachyon_token().value());
+  request.mutable_initial_pull_options()->add_message_types(
+      InboxMessage::GROUP);
   std::unique_ptr<RequestDataWrapper> request_data =
       std::make_unique<RequestDataWrapper>(
           kTrafficAnnotation, kReceiveMessagesUrl, /*max_retries=*/0,
           base::BindOnce(&TranscriptReceiver::OnResponse,
                          base::Unretained(this)));
+  request_data->uma_name = "ReceiveMessages";
   streaming_client_->StartAuthedRequestString(std::move(request_data),
                                               request.SerializeAsString());
 }

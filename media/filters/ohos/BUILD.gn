@@ -1,0 +1,42 @@
+# Copyright 2025 The Huawei Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+import("//third_party/wiseplay/cdm/wiseplay.gni")
+
+if (enable_wiseplay) {
+  
+  source_set("ohos") {
+    visibility = [
+      "//media",
+      "//media/filters",
+      "//media/mojo/services",
+    ]
+
+    sources = [
+      "ohos_audio_decoder.cc",
+      "ohos_audio_decoder.h",
+      "ohos_audio_decoder_loop.cc",
+      "ohos_audio_decoder_loop.h",
+      "media_codec_adapter.h",
+    ]
+
+    libs = [ 
+      "native_drm",
+      "native_media_adec",
+      "native_media_acodec",
+      "native_media_avcencinfo",
+      "native_media_codecbase",
+      "native_media_core",
+    ]
+
+    deps =[
+      "//base",
+      "//third_party/abseil-cpp:absl",
+      "//third_party/perfetto/include/perfetto/protozero:protozero",
+    ]
+
+    include_dirs = [
+      "//third_party/skia",
+    ]
+  }
+}

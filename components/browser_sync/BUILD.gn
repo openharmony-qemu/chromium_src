@@ -2,7 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/config/chromeos/ui_mode.gni")
 import("//build/config/features.gni")
 import("//components/supervised_user/buildflags.gni")
 
@@ -29,10 +28,11 @@ static_library("browser_sync") {
 
   deps = [
     "//base",
-    "//build:chromeos_buildflags",
     "//components/autofill/core/browser",
     "//components/autofill/core/common",
     "//components/bookmarks/browser",
+    "//components/collaboration/public",
+    "//components/collaboration/public:data_type_controller",
     "//components/commerce/core:feature_list",
     "//components/commerce/core/product_specifications:product_specifications",
     "//components/consent_auditor",
@@ -48,7 +48,6 @@ static_library("browser_sync") {
     "//components/power_bookmarks/core:features",
     "//components/prefs",
     "//components/reading_list/core",
-    "//components/reading_list/features:flags",
     "//components/saved_tab_groups/public",
     "//components/search_engines",
     "//components/send_tab_to_self",
@@ -68,7 +67,7 @@ static_library("browser_sync") {
     "//ui/base",
   ]
 
-  if (is_chromeos_ash) {
+  if (is_chromeos) {
     deps += [
       "//ash/constants",
       "//components/desks_storage",

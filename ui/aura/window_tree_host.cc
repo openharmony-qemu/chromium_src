@@ -39,7 +39,6 @@
 #include "ui/base/ui_base_features.h"
 #include "ui/base/view_prop.h"
 #include "ui/compositor/compositor.h"
-#include "ui/compositor/compositor_switches.h"
 #include "ui/compositor/layer.h"
 #include "ui/display/display.h"
 #include "ui/display/screen.h"
@@ -392,9 +391,6 @@ void WindowTreeHost::SetNativeWindowOcclusionState(
   auto occluded_region = video_capture_count_for_occlusion_tracking_ > 0
                              ? SkRegion()
                              : raw_occluded_region;
-
-  TRACE_EVENT1("ui", "WindowTreeHost::SetNativeWindowOcclusionState", "state",
-               static_cast<int>(state));
   if (occlusion_state_ == state && occluded_region_ == occluded_region) {
     return;
   }
@@ -563,9 +559,9 @@ void WindowTreeHost::CreateCompositor(bool force_software_compositor,
   compositor_ = std::make_unique<ui::Compositor>(
       context_factory->AllocateFrameSinkId(), context_factory,
       base::SingleThreadTaskRunner::GetCurrentDefault(),
-      ui::IsPixelCanvasRecordingEnabled(), use_external_begin_frame_control,
-      force_software_compositor, enable_compositing_based_throttling,
-      memory_limit_when_visible_mb);
+      features::IsPixelCanvasRecordingEnabled(),
+      use_external_begin_frame_control, force_software_compositor,
+      enable_compositing_based_throttling, memory_limit_when_visible_mb);
   compositor_->AddObserver(this);
 
 #if BUILDFLAG(IS_OHOS)
@@ -857,6 +853,15 @@ void WindowTreeHost::OnSetPreferredRefreshRate(ui::Compositor*,
                                                float preferred_refresh_rate) {
   observers_.Notify(&WindowTreeHostObserver::OnSetPreferredRefreshRate, this,
                     preferred_refresh_rate);
+}
+
+void WindowTreeHost::OnFirstSurfaceActivation(
+    ui::Compositor*,
+    const viz::SurfaceInfo& surface_info) {
+  window()->UpdateLocalSurfaceIdFromEmbeddedClient(
+      surface_info.id().local_surface_id());
+  observers_.Notify(&WindowTreeHostObserver::OnLocalSurfaceIdChanged, this,
+                    window()->GetLocalSurfaceId());
 }
 
 }  // namespace aura

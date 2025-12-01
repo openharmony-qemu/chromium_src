@@ -4,6 +4,8 @@
 
 package org.chromium.content.app;
 
+import static org.chromium.build.NullUtil.assumeNonNull;
+
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
@@ -27,8 +29,10 @@ import org.chromium.base.UnguessableToken;
 import org.chromium.base.library_loader.LibraryLoader;
 import org.chromium.base.memory.MemoryPressureUma;
 import org.chromium.base.process_launcher.ChildProcessServiceDelegate;
+import org.chromium.base.process_launcher.IChildProcessArgs;
+import org.chromium.build.annotations.NullMarked;
+import org.chromium.build.annotations.Nullable;
 import org.chromium.content.browser.ChildProcessCreationParamsImpl;
-import org.chromium.content.browser.ContentChildProcessConstants;
 import org.chromium.content.common.IGpuProcessCallback;
 import org.chromium.content.common.InputTransferTokenWrapper;
 import org.chromium.content.common.SurfaceWrapper;
@@ -41,18 +45,19 @@ import java.util.List;
  * access to view surfaces.
  */
 @JNINamespace("content")
+@NullMarked
 public class ContentChildProcessServiceDelegate implements ChildProcessServiceDelegate {
     private static final String TAG = "ContentCPSDelegate";
 
     // The binder box passed to us by the browser. May be null.
-    private IBinder mBinderBox;
+    private @Nullable IBinder mBinderBox;
 
-    private IGpuProcessCallback mGpuCallback;
+    private @Nullable IGpuProcessCallback mGpuCallback;
 
     private int mCpuCount;
     private long mCpuFeatures;
 
-    private SparseArray<String> mFdsIdsToKeys;
+    private @Nullable SparseArray<String> mFdsIdsToKeys;
 
     public ContentChildProcessServiceDelegate() {
         KillChildUncaughtExceptionHandler.maybeInstallHandler();
@@ -65,26 +70,27 @@ public class ContentChildProcessServiceDelegate implements ChildProcessServiceDe
 
     @Override
     public void onServiceBound(Intent intent) {
-        LibraryLoader.getInstance().getMediator().takeLoadAddressFromBundle(intent.getExtras());
+        Bundle extras = assumeNonNull(intent.getExtras());
+        LibraryLoader.getInstance().getMediator().takeLoadAddressFromBundle(extras);
         LibraryLoader.getInstance()
                 .setLibraryProcessType(
-                        ChildProcessCreationParamsImpl.getLibraryProcessType(intent.getExtras()));
+                        ChildProcessCreationParamsImpl.getLibraryProcessType(extras));
     }
 
     @Override
     public void onConnectionSetup(
-            Bundle connectionBundle, List<IBinder> clientInterfaces, IBinder binderBox) {
+            IChildProcessArgs args, List<IBinder> clientInterfaces, IBinder binderBox) {
         mBinderBox = binderBox;
         mGpuCallback =
                 clientInterfaces != null && !clientInterfaces.isEmpty()
                         ? IGpuProcessCallback.Stub.asInterface(clientInterfaces.get(0))
                         : null;
 
-        mCpuCount = connectionBundle.getInt(ContentChildProcessConstants.EXTRA_CPU_COUNT);
-        mCpuFeatures = connectionBundle.getLong(ContentChildProcessConstants.EXTRA_CPU_FEATURES);
+        mCpuCount = args.cpuCount;
+        mCpuFeatures = args.cpuFeatures;
         assert mCpuCount > 0;
 
-        LibraryLoader.getInstance().getMediator().takeSharedRelrosFromBundle(connectionBundle);
+        LibraryLoader.getInstance().getMediator().takeSharedRelrosFromBundle(args.relroBundle);
     }
 
     @Override
@@ -182,7 +188,7 @@ public class ContentChildProcessServiceDelegate implements ChildProcessServiceDe
 
     @SuppressWarnings("unused")
     @CalledByNative
-    private SurfaceWrapper getViewSurface(int surfaceId) {
+    private @Nullable SurfaceWrapper getViewSurface(int surfaceId) {
         if (mGpuCallback == null) {
             Log.e(TAG, "No callback interface has been provided.");
             return null;

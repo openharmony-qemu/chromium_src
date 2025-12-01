@@ -10,7 +10,6 @@
 #include "base/debug/debugging_buildflags.h"
 #include "build/build_config.h"
 #include "components/gwp_asan/buildflags/buildflags.h"
-#include "components/memory_system/buildflags.h"
 #include "components/memory_system/memory_system_features.h"
 #include "components/memory_system/parameters.h"
 #include "partition_alloc/buildflags.h"
@@ -227,6 +226,13 @@ bool MemorySystem::Impl::IsAllocatorShimInitialized() {
 void MemorySystem::Impl::InitializeGwpASan(
     const GwpAsanParameters& gwp_asan_parameters,
     InitializationData& initialization_data) {
+#if BUILDFLAG(IS_OHOS)
+  if (gwp_asan_parameters.process_type != "renderer") {
+    LOG(INFO) << "gwp-asan only support for renderer, pass process_type = "
+      << gwp_asan_parameters.process_type;
+    return;
+  }
+#endif
 #if BUILDFLAG(ENABLE_GWP_ASAN)
   // LUD has the highest priority and the Extreme LUD has the lowest priority.
   // An allocator shim later installed has priority over the already-installed

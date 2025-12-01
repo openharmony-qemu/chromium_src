@@ -1,10 +1,10 @@
 Package: libgnutlsxx28
 Source: gnutls28
-Version: 3.7.1-5+deb11u3
+Version: 3.7.1-5+deb11u5
 Architecture: amd64
 Maintainer: Debian GnuTLS Maintainers <pkg-gnutls-maint@lists.alioth.debian.org>
 Installed-Size: 82
-Depends: libgnutls30 (= 3.7.1-5+deb11u3), libc6 (>= 2.14), libgcc-s1 (>= 3.0), libstdc++6 (>= 5)
+Depends: libgnutls30 (= 3.7.1-5+deb11u5), libc6 (>= 2.14), libgcc-s1 (>= 3.0), libstdc++6 (>= 5)
 Section: libs
 Priority: optional
 Multi-Arch: same

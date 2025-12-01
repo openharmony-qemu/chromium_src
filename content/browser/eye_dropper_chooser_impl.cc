@@ -13,6 +13,12 @@
 #include "content/public/browser/web_contents_delegate.h"
 #include "third_party/blink/public/mojom/choosers/color_chooser.mojom.h"
 
+#if BUILDFLAG(IS_OHOS)
+#include "base/task/task_traits.h"
+#include "base/task/thread_pool.h"
+#include "ohos/adapter/permission_manager/permission_manager_adapter.h"
+#endif
+
 namespace content {
 
 // static
@@ -32,9 +38,63 @@ void EyeDropperChooserImpl::Create(
                blink::mojom::UserActivationNotificationType::kNone)) {
     return;
   }
+#if BUILDFLAG(IS_OHOS)
+  if (!ohos::adapter::permission::PermissionManagerAdapter::CheckPermission(
+      ohos::adapter::permission::OHOSPermissionType::SCREENSHOT)) {
+    base::ThreadPool::PostTaskAndReplyWithResult(FROM_HERE,
+        {base::MayBlock()},
+        base::BindOnce(&ohos::adapter::permission::PermissionManagerAdapter::RequestPermission,
+            ohos::adapter::permission::OHOSPermissionType::SCREENSHOT),
+        base::BindOnce(
+            &EyeDropperChooserImpl::CreateEyeDropperCallback, render_frame_host->GetGlobalId(), std::move(receiver)));
+    return;
+  }
+#endif
+  new EyeDropperChooserImpl(*render_frame_host, std::move(receiver));
+}
+
+#if BUILDFLAG(IS_OHOS)
+void EyeDropperChooserImpl::CreateEyeDropperCallback(
+    content::GlobalRenderFrameHostId rfh_id,
+    mojo::PendingReceiver<blink::mojom::EyeDropperChooser> receiver,
+    bool permission_result) {
+  if (!permission_result) {
+    base::ThreadPool::PostTaskAndReplyWithResult(
+        FROM_HERE, base::MayBlock(),
+        base::BindOnce(
+            &ohos::adapter::permission::PermissionManagerAdapter::
+                OpenPermissionConfirm,
+            ohos::adapter::permission::OHOSPermissionType::SCREENSHOT),
+        base::BindOnce(&EyeDropperChooserImpl::OpenConfirmDialogCallback));
+    return;
+  }
+
+  content::RenderFrameHost* render_frame_host =
+      content::RenderFrameHost::FromID(rfh_id);
+  if (render_frame_host == nullptr) {
+    LOG(INFO) << __func__ << " RenderFrameHost is no longer available";
+    return;
+  }
+  RenderWidgetHostView* render_frame_host_view = render_frame_host->GetView();
+  if (!render_frame_host_view->HasFocus()) {
+    int wait_window_get_focus_time = 10;
+    // EyeDropperChooserImpl should be create on UI thread and render_frame_host
+    // should only be used in UI thread
+    content::GetUIThreadTaskRunner({})->PostDelayedTask(
+        FROM_HERE,
+        base::BindOnce(&EyeDropperChooserImpl::CreateEyeDropperCallback, rfh_id,
+                       std::move(receiver), permission_result),
+        base::Milliseconds(wait_window_get_focus_time));
+    return;
+  }
 
   new EyeDropperChooserImpl(*render_frame_host, std::move(receiver));
 }
+
+void EyeDropperChooserImpl::OpenConfirmDialogCallback(bool replySuccess) {
+  LOG(INFO) << __func__ << "  replySuccess:" << replySuccess;
+}
+#endif
 
 EyeDropperChooserImpl::EyeDropperChooserImpl(
     RenderFrameHost& render_frame_host,

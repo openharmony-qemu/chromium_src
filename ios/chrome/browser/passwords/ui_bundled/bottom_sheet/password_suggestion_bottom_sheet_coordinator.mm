@@ -7,6 +7,7 @@
 #import <optional>
 
 #import "base/feature_list.h"
+#import "base/not_fatal_until.h"
 #import "components/keyed_service/core/service_access_type.h"
 #import "components/password_manager/core/browser/features/password_features.h"
 #import "components/password_manager/core/browser/ui/credential_ui_entry.h"
@@ -14,6 +15,9 @@
 #import "components/segmentation_platform/embedder/home_modules/tips_manager/signal_constants.h"
 #import "ios/chrome/browser/favicon/model/ios_chrome_favicon_loader_factory.h"
 #import "ios/chrome/browser/feature_engagement/model/tracker_factory.h"
+#import "ios/chrome/browser/first_run/ui_bundled/best_features/ui/best_features_item.h"
+#import "ios/chrome/browser/first_run/ui_bundled/features.h"
+#import "ios/chrome/browser/first_run/ui_bundled/welcome_back/model/welcome_back_prefs.h"
 #import "ios/chrome/browser/passwords/model/ios_chrome_account_password_store_factory.h"
 #import "ios/chrome/browser/passwords/model/ios_chrome_profile_password_store_factory.h"
 #import "ios/chrome/browser/passwords/model/password_controller_delegate.h"
@@ -101,7 +105,7 @@ using PasswordSuggestionBottomSheetExitReason::kUsePasswordSuggestion;
           accountPasswordStore:accountPasswordStore
         sharedURLLoaderFactory:profile->GetSharedURLLoaderFactory()
              engagementTracker:feature_engagement::TrackerFactory::
-                                   GetForProfile(self.browser->GetProfile())
+                                   GetForProfile(self.profile)
                      presenter:self];
     self.viewController.delegate = self.mediator;
     self.mediator.consumer = self.viewController;
@@ -202,6 +206,15 @@ using PasswordSuggestionBottomSheetExitReason::kUsePasswordSuggestion;
 
 - (void)primaryButtonTappedForSuggestion:(FormSuggestion*)formSuggestion
                                  atIndex:(NSInteger)index {
+  if (_dismissing) {
+    // Do not handle an action if the view controller is already being
+    // dismissed. Only one action is allowed on the sheet.
+    return;
+  }
+  // Disable user interactions on the root view of the view controller so any
+  // further user action isn't allowed. Only one action is allowed on the sheet.
+  self.viewController.view.userInteractionEnabled = NO;
+
   _dismissing = YES;
   [self.mediator logExitReason:kUsePasswordSuggestion];
   __weak __typeof(self) weakSelf = self;
@@ -209,21 +222,31 @@ using PasswordSuggestionBottomSheetExitReason::kUsePasswordSuggestion;
     [weakSelf.browserCoordinatorCommandsHandler dismissPasswordSuggestions];
   };
   [self.viewController.presentingViewController
-      dismissViewControllerAnimated:NO
+      dismissViewControllerAnimated:YES
                          completion:^{
                            [weakSelf.mediator didSelectSuggestion:formSuggestion
                                                           atIndex:index
                                                        completion:completion];
                          }];
 
+  // Dismiss the soft keyboard right after starting the animation so it doesn't
+  // flicker.
+  [self dismissSoftKeyboard];
+
   // Records the usage of password autofill. This notifies the Tips Manager,
   // which may trigger tips or guidance related to password management features.
   if (IsSegmentationTipsManagerEnabled()) {
     TipsManagerIOS* tipsManager =
-        TipsManagerIOSFactory::GetForProfile(self.browser->GetProfile());
+        TipsManagerIOSFactory::GetForProfile(self.profile);
 
     tipsManager->NotifySignal(
         segmentation_platform::tips_manager::signals::kUsedPasswordAutofill);
+  }
+
+  // Notify Welcome Back to remove Save and Autofill Passwords from the eligible
+  // features.
+  if (first_run::IsWelcomeBackInFirstRunEnabled()) {
+    MarkWelcomeBackFeatureUsed(BestFeaturesItemType::kSaveAndAutofillPasswords);
   }
 }
 
@@ -289,6 +312,17 @@ using PasswordSuggestionBottomSheetExitReason::kUsePasswordSuggestion;
 - (void)showPasswordDetailsForCredential:
     (password_manager::CredentialUIEntry)credential {
   [_passwordControllerDelegate showPasswordDetailsForCredential:credential];
+}
+
+// Dismisses the soft keyboard. Make sure to only call this when there is an
+// active webstate.
+- (void)dismissSoftKeyboard {
+  web::WebState* activeWebState =
+      self.browser->GetWebStateList()->GetActiveWebState();
+  CHECK(activeWebState);
+  if (activeWebState) {
+    [activeWebState->GetView() endEditing:NO];
+  }
 }
 
 @end

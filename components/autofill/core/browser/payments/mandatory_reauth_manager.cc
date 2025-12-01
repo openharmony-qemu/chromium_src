@@ -4,11 +4,13 @@
 
 #include "components/autofill/core/browser/payments/mandatory_reauth_manager.h"
 
+#include <variant>
+
 #include "base/strings/utf_string_conversions.h"
-#include "components/autofill/core/browser/data_model/credit_card.h"
+#include "components/autofill/core/browser/data_manager/personal_data_manager.h"
+#include "components/autofill/core/browser/data_model/payments/credit_card.h"
 #include "components/autofill/core/browser/metrics/payments/mandatory_reauth_metrics.h"
 #include "components/autofill/core/browser/payments/payments_autofill_client.h"
-#include "components/autofill/core/browser/personal_data_manager.h"
 #include "components/strings/grit/components_branded_strings.h"
 #include "components/strings/grit/components_strings.h"
 #include "ui/base/l10n/l10n_util.h"
@@ -33,9 +35,9 @@ MandatoryReauthManager::~MandatoryReauthManager() = default;
 // static
 NonInteractivePaymentMethodType
 MandatoryReauthManager::GetNonInteractivePaymentMethodType(
-    absl::variant<CreditCard::RecordType, Iban::RecordType> record_type) {
+    std::variant<CreditCard::RecordType, Iban::RecordType> record_type) {
   if (CreditCard::RecordType* type =
-          absl::get_if<CreditCard::RecordType>(&record_type)) {
+          std::get_if<CreditCard::RecordType>(&record_type)) {
     switch (*type) {
       case CreditCard::RecordType::kLocalCard:
         return NonInteractivePaymentMethodType::kLocalCard;
@@ -47,11 +49,11 @@ MandatoryReauthManager::GetNonInteractivePaymentMethodType(
         return NonInteractivePaymentMethodType::kMaskedServerCard;
     }
   } else {
-    if (absl::get<Iban::RecordType>(record_type) ==
+    if (std::get<Iban::RecordType>(record_type) ==
         Iban::RecordType::kLocalIban) {
       return NonInteractivePaymentMethodType::kLocalIban;
     } else {
-      CHECK_NE(absl::get<Iban::RecordType>(record_type),
+      CHECK_NE(std::get<Iban::RecordType>(record_type),
                Iban::RecordType::kUnknown);
       return NonInteractivePaymentMethodType::kServerIban;
     }
@@ -136,8 +138,7 @@ bool MandatoryReauthManager::ShouldOfferOptin(
   // If the user prefs denote that we should not display the re-auth opt-in
   // bubble, return that we should not offer mandatory re-auth opt-in.
   // Pref-related decision logging also occurs within this function call.
-  if (!client_->GetPersonalDataManager()
-           ->payments_data_manager()
+  if (!GetPaymentsDataManager()
            .ShouldShowPaymentMethodsMandatoryReauthPromo()) {
     return false;
   }
@@ -254,29 +255,23 @@ void MandatoryReauthManager::OnOptInAuthenticationStepCompleted(bool success) {
               : autofill_metrics::MandatoryReauthAuthenticationFlowEvent::
                     kFlowFailed);
   if (success) {
-    client_->GetPersonalDataManager()
-        ->payments_data_manager()
-        .SetPaymentMethodsMandatoryReauthEnabled(
-            /*enabled=*/true);
+    GetPaymentsDataManager().SetPaymentMethodsMandatoryReauthEnabled(
+        /*enabled=*/true);
     client_->GetPaymentsAutofillClient()
         ->ShowMandatoryReauthOptInConfirmation();
   } else {
-    client_->GetPersonalDataManager()
-        ->payments_data_manager()
+    GetPaymentsDataManager()
         .IncrementPaymentMethodsMandatoryReauthPromoShownCounter();
   }
 }
 
 void MandatoryReauthManager::OnUserCancelledOptInPrompt() {
-  client_->GetPersonalDataManager()
-      ->payments_data_manager()
-      .SetPaymentMethodsMandatoryReauthEnabled(
-          /*enabled=*/false);
+  GetPaymentsDataManager().SetPaymentMethodsMandatoryReauthEnabled(
+      /*enabled=*/false);
 }
 
 void MandatoryReauthManager::OnUserClosedOptInPrompt() {
-  client_->GetPersonalDataManager()
-      ->payments_data_manager()
+  GetPaymentsDataManager()
       .IncrementPaymentMethodsMandatoryReauthPromoShownCounter();
 }
 
@@ -305,6 +300,10 @@ MandatoryReauthManager::GetAuthenticationMethod() {
   }
   return MandatoryReauthAuthenticationMethod::kUnsupportedMethod;
 #endif  // BUILDFLAG(IS_ANDROID)
+}
+
+PaymentsDataManager& MandatoryReauthManager::GetPaymentsDataManager() {
+  return client_->GetPersonalDataManager().payments_data_manager();
 }
 
 }  // namespace autofill::payments

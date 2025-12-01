@@ -6,6 +6,7 @@
 
 #include <algorithm>
 
+#include "base/metrics/histogram_functions.h"
 #include "base/sequence_checker.h"
 #include "base/task/sequenced_task_runner.h"
 #include "base/task/thread_pool.h"
@@ -47,8 +48,6 @@ SessionStoreImpl::DBStatus InitializeOnDbSequence(
     return SessionStoreImpl::DBStatus::kFailure;
   }
 
-  db->Preload();
-
   table_manager->InitializeOnDbSequence(
       db, std::vector<std::string>{kSessionTableName}, kCurrentSchemaVersion);
   session_data->InitializeOnDBSequence();
@@ -65,7 +64,8 @@ SessionStoreImpl::SessionStoreImpl(base::FilePath db_storage_path,
           base::ThreadPool::CreateSequencedTaskRunner(kDBTaskTraits)),
       db_storage_path_(std::move(db_storage_path)),
       db_(std::make_unique<sql::Database>(
-          sql::DatabaseOptions{.page_size = 4096, .cache_size = 500})),
+          sql::DatabaseOptions().set_preload(true),
+          sql::Database::Tag("DBSCSessions"))),
       table_manager_(base::MakeRefCounted<sqlite_proto::ProtoTableManager>(
           db_task_runner_)),
       session_table_(
@@ -76,9 +76,7 @@ SessionStoreImpl::SessionStoreImpl(base::FilePath db_storage_path,
               table_manager_,
               session_table_.get(),
               /*max_num_entries=*/std::nullopt,
-              kFlushDelay)) {
-  db_->set_histogram_tag("DBSCSessions");
-}
+              kFlushDelay)) {}
 
 SessionStoreImpl::~SessionStoreImpl() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
@@ -123,10 +121,12 @@ void SessionStoreImpl::LoadSessions(LoadSessionsCallback callback) {
                      db_storage_path_, base::Unretained(table_manager_.get()),
                      base::Unretained(session_data_.get())),
       base::BindOnce(&SessionStoreImpl::OnDatabaseLoaded,
-                     weak_ptr_factory_.GetWeakPtr(), std::move(callback)));
+                     weak_ptr_factory_.GetWeakPtr(), std::move(callback),
+                     base::ElapsedTimer()));
 }
 
 void SessionStoreImpl::OnDatabaseLoaded(LoadSessionsCallback callback,
+                                        base::ElapsedTimer timer,
                                         DBStatus db_status) {
   db_status_ = db_status;
   SessionsMap sessions;
@@ -138,6 +138,10 @@ void SessionStoreImpl::OnDatabaseLoaded(LoadSessionsCallback callback,
       session_data_->DeleteData(keys_to_delete);
     }
   }
+  base::UmaHistogramBoolean("Net.DeviceBoundSessions.SessionStoreLoadSuccess",
+                            db_status == DBStatus::kSuccess);
+  base::UmaHistogramTimes("Net.DeviceBoundSessions.SessionStoreLoadDuration",
+                          timer.Elapsed());
   std::move(callback).Run(std::move(sessions));
 }
 

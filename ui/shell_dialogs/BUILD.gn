@@ -12,6 +12,9 @@ if (is_android) {
 if (is_mac) {
   import("//build/config/mac/rules.gni")
 }
+if (is_ios) {
+  import("//build/config/apple/mobile_config.gni")  # For `target_platform`
+}
 
 component("shell_dialogs") {
   sources = [
@@ -28,11 +31,17 @@ component("shell_dialogs") {
     "shell_dialogs_export.h",
   ]
 
+  configs += [
+    "//build/config/compiler:wexit_time_destructors",
+    "//build/config/compiler:wglobal_constructors",
+  ]
+
   defines = [ "SHELL_DIALOGS_IMPLEMENTATION" ]
 
   deps = [
     "//base",
     "//base:i18n",
+    "//build/config/linux/dbus:buildflags",
     "//skia",
     "//ui/base",
     "//ui/strings",
@@ -47,21 +56,17 @@ component("shell_dialogs") {
     sources += [
       "select_file_dialog_linux.cc",
       "select_file_dialog_linux.h",
-      "select_file_dialog_linux_kde.cc",
-      "select_file_dialog_linux_kde.h",
       "shell_dialog_linux.cc",
       "shell_dialog_linux.h",
     ]
     deps += [ "//ui/linux:linux_ui" ]
     if (use_dbus) {
-      defines += [ "USE_DBUS" ]
       sources += [
         "select_file_dialog_linux_portal.cc",
         "select_file_dialog_linux_portal.h",
       ]
       deps += [
-        "//components/dbus/thread_linux",
-        "//components/dbus/utils",
+        "//components/dbus",
         "//dbus",
         "//ui/views",
       ]
@@ -87,10 +92,14 @@ component("shell_dialogs") {
   }
 
   if (is_ios) {
-    sources += [
-      "select_file_dialog_ios.h",
-      "select_file_dialog_ios.mm",
-    ]
+    if (target_platform == "tvos") {
+      sources += [ "select_file_dialog_tvos.mm" ]
+    } else {
+      sources += [
+        "select_file_dialog_ios.h",
+        "select_file_dialog_ios.mm",
+      ]
+    }
   }
 
   if (is_win) {

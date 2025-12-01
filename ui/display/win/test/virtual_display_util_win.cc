@@ -12,6 +12,7 @@
 #include "base/containers/fixed_flat_map.h"
 #include "base/containers/flat_tree.h"
 #include "base/logging.h"
+#include "base/strings/string_util.h"
 #include "third_party/win_virtual_display/driver/public/properties.h"
 #include "ui/display/display.h"
 #include "ui/display/screen.h"
@@ -214,7 +215,8 @@ void VirtualDisplayUtilWin::OnDisplayAdded(
     const display::Display& new_display) {
   std::vector<MonitorConfig> requested = current_config_.requested_configs();
   HMONITOR monitor = ::MonitorFromPoint(
-      win::ScreenWin::DIPToScreenPoint(new_display.work_area().CenterPoint())
+      win::GetScreenWin()
+          ->DIPToScreenPoint(new_display.work_area().CenterPoint())
           .ToPOINT(),
       MONITOR_DEFAULTTONEAREST);
   std::optional<DISPLAYCONFIG_PATH_INFO> path_info =

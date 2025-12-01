@@ -16,6 +16,7 @@
 #include "components/bookmarks/browser/bookmark_model.h"
 #include "components/bookmarks/test/test_bookmark_client.h"
 #include "components/commerce/core/commerce_feature_list.h"
+#include "components/commerce/core/mock_account_checker.h"
 #include "components/commerce/core/pref_names.h"
 #include "components/commerce/core/proto/discounts.pb.h"
 #include "components/commerce/core/proto/merchant_trust.pb.h"
@@ -120,9 +121,7 @@ OptimizationGuideDecision MockOptGuideDecider::CanApplyOptimization(
     OptimizationType optimization_type,
     OptimizationMetadata* optimization_metadata) {
   // We don't use the synchronous API in the shopping service.
-  NOTREACHED_IN_MIGRATION();
-
-  return OptimizationGuideDecision::kUnknown;
+  NOTREACHED();
 }
 
 void MockOptGuideDecider::AddOnDemandShoppingResponse(
@@ -349,6 +348,9 @@ OptimizationMetadata MockOptGuideDecider::BuildDiscountsResponse(
       if (info.type == DiscountType::kFreeListingWithCode) {
         type = Discount_Type_FREE_LISTING_WITH_CODE;
       }
+      if (info.type == DiscountType::kCrawledPromotion) {
+        type = Discount_Type_CRAWLED_PROMOTION;
+      }
       discount->set_type(type);
 
       Discount_Description* description = discount->mutable_description();
@@ -359,7 +361,9 @@ OptimizationMetadata MockOptGuideDecider::BuildDiscountsResponse(
             info.terms_and_conditions.value());
       }
       description->set_value_text(info.value_in_text);
-      discount->set_expiry_time_sec(info.expiry_time_sec);
+      if (info.expiry_time_sec.has_value()) {
+        discount->set_expiry_time_sec(info.expiry_time_sec.value());
+      }
       discount->set_is_merchant_wide(info.is_merchant_wide);
       if (info.discount_code.has_value()) {
         discount->set_discount_code(info.discount_code.value());
@@ -470,7 +474,7 @@ ShoppingServiceTestBase::ShoppingServiceTestBase()
           std::make_unique<testing::NiceMock<MockTabRestoreService>>()) {
   base::CommandLine::ForCurrentProcess()->AppendSwitch(
       optimization_guide::switches::kDisableCheckingUserPermissionsForTesting);
-  RegisterCommercePrefs(pref_service_->registry());
+  MockAccountChecker::RegisterCommercePrefs(pref_service_->registry());
   pref_service_->registry()->RegisterBooleanPref(
       unified_consent::prefs::kUrlKeyedAnonymizedDataCollectionEnabled, false);
 }
@@ -485,8 +489,8 @@ void ShoppingServiceTestBase::SetUp() {
       base::MakeRefCounted<network::WeakWrapperSharedURLLoaderFactory>(
           test_url_loader_factory_.get()),
       nullptr, nullptr, product_spec_service_.get(), nullptr, nullptr, nullptr,
-      std::make_unique<testing::NiceMock<MockWebExtractor>>(),
-      tab_restore_service_.get(), nullptr);
+      nullptr, std::make_unique<testing::NiceMock<MockWebExtractor>>(),
+      tab_restore_service_.get());
 }
 
 void ShoppingServiceTestBase::TestBody() {}

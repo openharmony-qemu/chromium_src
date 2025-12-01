@@ -1,30 +1,16 @@
 #!/bin/bash
-# Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
-# Redistribution and use in source and binary forms, with or without modification,
-# are permitted provided that the following conditions are met:
+# Copyright (c) 2024 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# 1. Redistributions of source code must retain the above copyright notice, this list of
-#    conditions and the following disclaimer.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# 2. Redistributions in binary form must reproduce the above copyright notice, this list
-#    of conditions and the following disclaimer in the documentation and/or other materials
-#    provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its contributors may be used
-#    to endorse or promote products derived from this software without specific prior written
-#    permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-# THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
-# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
-# OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
-# OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
-# ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 # use ./build.sh -nosym to build content_shell without symbol.
 set -e
@@ -39,6 +25,7 @@ TEXT_NORMAL="\033[0m"
 
 #Add build args begin
 buildargs="
+  use_siso=true
   target_os=\"ohos\"
   is_component_build=false
   is_chrome_branded=false
@@ -67,9 +54,10 @@ buildargs="
   enable_rust=true
   enable_rust_cxx=true
   enable_chromium_prelude=true
+  enable_cem_update_devconfig=false
   clang_base_path=\"//ohos_sdk/openharmony/native/llvm\"
   llvm_ohos_mainline=true
-  rustc_version=\"bca5fdebe0e539d123f33df5f2149d5976392e76-1-llvmorg-20-init-9764-gb81d8e90\"
+  rustc_version=\"4a0969e06dbeaaa43914d2d00b2e843d49aa3886-1-llvmorg-21-init-11777-gfd3fecfc\"
   rust_sysroot_absolute=\"//ohos_sdk/rust-toolchain\"
   "
 #Add build args end
@@ -91,6 +79,8 @@ build_product_name="product_name=\"all\""
 build_target="${BUILD_TARGET_CHROME}"
 build_output=""
 build_asan=0
+build_isolated_level=0
+build_gwp_asan=0
 
 usage() {
   echo -ne "USAGE: $0 [OPTIONS] [PRODUCT]
@@ -103,8 +93,10 @@ ${TEXT_BOLD}OPTIONS${TEXT_NORMAL}:
                       ./build.sh -t \"base:base\"
                       ./build.sh -t \"content/test:content_unittests\"
   -o <output_dir>   Output directory, for example: Default.
+  -asan             Enable AddressSanitizer (ASan).
   -d                Build with Debug mode.
-
+  -isl              Support the render process to enable sandbox isolation.
+  -gwp_asan         Enable GWP-ASan
 "
 }
 
@@ -128,6 +120,9 @@ while [ "$1" != "" ]; do
       shift
       build_output=$1
       ;;
+    "-asan")
+      build_asan=1
+      ;;
     "-d")
       is_debug=true
       is_official_build=false
@@ -136,6 +131,12 @@ while [ "$1" != "" ]; do
     "-h")
       usage
       exit 0
+      ;;
+    "-isl")
+      build_isolated_level=1
+      ;;
+    "-gwp_asan")
+      build_gwp_asan=1
       ;;
     *)
       echo " -> $1 <- is not a valid option, please follow the usage below: "
@@ -193,6 +194,17 @@ else
   GN_ARGS="${GN_ARGS} is_asan=false"
 fi
 
+if [ ${build_isolated_level} -eq 1 ]; then
+  isolated_level=1
+  buildargs="${buildargs} isolated_level=$isolated_level"
+fi
+
+if [ ${build_gwp_asan} -eq 1 ]; then
+  GN_ARGS="${GN_ARGS} gwp_asan_enabled=true"
+else
+  GN_ARGS="${GN_ARGS} gwp_asan_enabled=false"
+fi
+
 # Extract ohos-sdk.
 if [ -f "src/ohos_sdk/.install" ]; then
   bash "src/ohos_sdk/.install"
@@ -213,10 +225,18 @@ if [ $buildgn = 1 ]; then
 fi
 time_end_for_gn=$(date +%s)
 
-third_party/depot_tools/ninja -C $build_dir -j$buildcount ${build_target}
+# Limit the number of parallel builds, see https://chromium.googlesource.com/build/+/refs/heads/main/siso/docs/environment_variables.md#siso_limits
+export SISO_LIMITS=local=$buildcount
+third_party/depot_tools/autoninja -C $build_dir ${build_target}
 
 # generate compile_commands.json
-third_party/depot_tools/ninja -C $build_dir -t compdb > "${build_dir}compile_commands.json"
+echo "generate compile db: ${build_dir}compile_commands.json in the background"
+ 
+# generate compile_commands.json in the background, Save time.
+(
+tools/clang/scripts/generate_compdb.py -p $build_dir > "${build_dir}compile_commands.json.bak"
+mv "${build_dir}compile_commands.json.bak" "${build_dir}compile_commands.json"
+)&
 
 time_end_for_build=$(date +%s)
 
@@ -234,3 +254,6 @@ time_format $time_end_for_build $time_start_for_build
 printf "\e[32mTime for Total : %dH:%dM:%dS \e[0m\n\n" $hours $minutes $seconds
 
 echo "build done"
+
+# rollback changes on depot_tools
+git restore third_party/depot_tools

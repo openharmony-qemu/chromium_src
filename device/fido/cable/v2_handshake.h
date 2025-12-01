@@ -11,6 +11,7 @@
 #include <memory>
 #include <optional>
 #include <string_view>
+#include <variant>
 
 #include "base/component_export.h"
 #include "base/containers/span.h"
@@ -19,19 +20,15 @@
 #include "device/fido/cable/noise.h"
 #include "device/fido/cable/v2_constants.h"
 #include "device/fido/fido_constants.h"
-#include "third_party/abseil-cpp/absl/types/variant.h"
 #include "third_party/boringssl/src/include/openssl/base.h"
 
 class GURL;
 
 namespace device::cablev2 {
 
-// The different types of digital credential requests. Current only presentment
-// is supported.
-enum CredentialRequestType {
-  kPresentation,
-};
-using RequestType = absl::variant<FidoRequestType, CredentialRequestType>;
+// The different types of digital credential requests.
+enum CredentialRequestType { kPresentation, kIssuance };
+using RequestType = std::variant<FidoRequestType, CredentialRequestType>;
 
 namespace tunnelserver {
 // ToKnownDomainID creates a KnownDomainID from a raw 16-bit value, or returns

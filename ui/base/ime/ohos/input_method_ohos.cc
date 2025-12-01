@@ -1,31 +1,6 @@
-/*
- * Copyright (c) 2023-2025 Haitai FangYuan Co., Ltd.
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used
- *    to endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "ui/base/ime/ohos/input_method_ohos.h"
 
@@ -37,9 +12,12 @@
 #include "base/strings/utf_string_conversions.h"
 #include "base/trace_event/trace_event.h"
 #include "content/public/browser/browser_thread.h"
+#include "ohos/adapter/xcomponent/adapter/window_adapter.h"
+#include "ohos/adapter/xcomponent/xcomponent_manager.h"
 #include "ui/base/ime/ohos/input_method_ohos_manager.h"
 #include "ui/display/display.h"
 #include "ui/display/screen.h"
+#include "ui/display/screen_ohos.h"
 #include "ui/events/base_event_utils.h"
 #include "ui/events/event.h"
 #include "ui/events/keycodes/dom/dom_code.h"
@@ -47,15 +25,23 @@
 #include "ui/events/ozone/layout/keyboard_layout_engine.h"
 #include "ui/events/ozone/layout/keyboard_layout_engine_manager.h"
 #include "ui/events/types/event_type.h"
+#include "ui/gfx/geometry/transform.h"
 
 namespace ui {
 const float kDefaultRatio = 1.0f;
+const gfx::PointF kInvalidPoint(-1.0f, -1.0f);
+const int kAttachVirtualKeyboardDelay = 100;
 
 InputMethodOHOS::InputMethodOHOS(
-    ImeKeyEventDispatcher* ime_key_event_dispatcher)
-    : InputMethodBase(ime_key_event_dispatcher) {}
+    ImeKeyEventDispatcher* ime_key_event_dispatcher,
+    gfx::AcceleratedWidget widget)
+    : InputMethodBase(ime_key_event_dispatcher), widget_id_(widget) {
+  RegistKeyboardHeightEvent();
+}
 
-InputMethodOHOS::~InputMethodOHOS() {}
+InputMethodOHOS::~InputMethodOHOS() {
+  UnRegistKeyboardHeightEvent();
+}
 
 ui::EventDispatchDetails InputMethodOHOS::DispatchKeyEvent(
     ui::KeyEvent* event) {
@@ -90,6 +76,36 @@ ohos::adapter::IMFAdapterInputAttribute InputMethodOHOS::GetInputAttribute() {
   return inputAttribute;
 }
 
+void SetSoftKeyboardForWidget(int32_t widget_id, bool need_soft_keyboard) {
+  std::string platform_id =
+      ohos::adapter::xcomponent::WindowAdapter::GetInstance().GetWindowId(
+          widget_id);
+  auto manager = ohos::adapter::xcomponent::XComponentManager::GetInstance();
+  if (!manager) {
+    LOG(ERROR) << "[XComponentManager] is nullptr";
+    return;
+  }
+
+  auto impl = manager->GetXComponent(platform_id);
+  if (!impl) {
+    LOG(ERROR) << "manager [GetXComponent] return nullptr";
+    return;
+  }
+
+  auto xcomponent = impl->GetComponent();
+  if (!xcomponent) {
+    LOG(ERROR) << "impl [GetComponent] return nullptr";
+    return;
+  }
+
+  int32_t res =
+      OH_NativeXComponent_SetNeedSoftKeyboard(xcomponent, need_soft_keyboard);
+  if (res != 0) {
+    LOG(ERROR) << "OH_NativeXComponent_SetNeedSoftKeyboard error return: "
+               << res;
+  }
+}
+
 void InputMethodOHOS::DetachTextInputTask() {
   if (InputMethodOHOSManager::GetInstance().ReleaseActiveInstance(
       weak_ptr_factory_.GetWeakPtr())) {
@@ -97,25 +113,14 @@ void InputMethodOHOS::DetachTextInputTask() {
     ime_instance.DetachTextInput();
     is_attach_ = false;
   }
+  SetSoftKeyboardForWidget(widget_id_, false);
 }
 
 void InputMethodOHOS::AttachTextInputTask(ui::RequestKeyboardReason reason) {
-  auto& ime_instance = ohos::adapter::InputMethodOHOSAdapter::GetInstance();
+  SetSoftKeyboardForWidget(widget_id_, true);
   ohos::adapter::IMFAdapterCursorInfo cursorInfo = GetCursorInfo();
   ohos::adapter::IMFAdapterTextConfig textConfig = {GetInputAttribute(), cursorInfo};
-  ime_instance.AttachTextInput(textConfig, reason);
-  ime_instance.RegisterInsertTextCallback(
-      std::bind(&InputMethodOHOS::InsertText, this, std::placeholders::_1));
-  ime_instance.RegisterDeleteBackwardCallback(std::bind(
-      &InputMethodOHOS::DeleteBackward, this, std::placeholders::_1));
-  ime_instance.RegisterDeleteForwardCallback(std::bind(
-      &InputMethodOHOS::DeleteForward, this, std::placeholders::_1));
-  ime_instance.RegisterSendEnterKeyEventCallback(
-      std::bind(&InputMethodOHOS::SendEnterKeyEvent, this));
-  ime_instance.RegisterExitFullscreenEventCallback(
-      std::bind(&InputMethodOHOS::ExitFullscreenEvent, this));
-  ime_instance.RegisterMoveCursorCallback(
-      std::bind(&InputMethodOHOS::MoveCursor, this, std::placeholders::_1));
+  ohos::adapter::InputMethodOHOSAdapter::GetInstance().AttachTextInput(textConfig, reason);
   InputMethodOHOSManager::GetInstance().SetActiveInstance(
       weak_ptr_factory_.GetWeakPtr());
   is_attach_ = true;
@@ -129,46 +134,51 @@ void InputMethodOHOS::UpdateAttributeTask() {
 void InputMethodOHOS::UpdateContextFocusState() {
   TextInputType old_text_input_type = text_input_type_;
   text_input_type_ = GetTextInputType();
-  TRACE_EVENT2("ui", "UpdateContextFocusState",
-               "old_type", old_text_input_type, "new_type", text_input_type_);
+  TRACE_EVENT2("ui", "UpdateContextFocusState", "old_type", old_text_input_type,
+               "new_type", text_input_type_);
   if (old_text_input_type != TEXT_INPUT_TYPE_NONE &&
       text_input_type_ == TEXT_INPUT_TYPE_NONE) {
-    auto task = base::BindOnce(&InputMethodOHOS::DetachTextInputTask,
-        weak_ptr_factory_.GetWeakPtr());
-    InputMethodOHOSManager::GetInstance().GetTaskRunner()->PostTask(
-        FROM_HERE, std::move(task));
+    delayed_attach_timer_.Stop();
+    delayed_attach_timer_.Start(
+        FROM_HERE, base::Milliseconds(kAttachVirtualKeyboardDelay),
+        base::BindOnce(&InputMethodOHOS::DetachTextInputTask,
+                       weak_ptr_factory_.GetWeakPtr()));
   } else if (text_input_type_ != TEXT_INPUT_TYPE_NONE) {
     if (GetTextInputClient() != nullptr) {
       ui::RequestKeyboardReason reason =
           GetTextInputClient()->GetRequestKeyboardReason();
-      auto task = base::BindOnce(&InputMethodOHOS::AttachTextInputTask,
-          weak_ptr_factory_.GetWeakPtr(), reason);
-      InputMethodOHOSManager::GetInstance().GetTaskRunner()->PostTask(
-          FROM_HERE, std::move(task));
+      delayed_attach_timer_.Stop();
+      delayed_attach_timer_.Start(
+          FROM_HERE, base::Milliseconds(kAttachVirtualKeyboardDelay),
+          base::BindOnce(&InputMethodOHOS::AttachTextInputTask,
+                         weak_ptr_factory_.GetWeakPtr(), reason));
     } else {
       LOG(ERROR) << "[GetTextInputClient] is nullptr";
     }
   }
 }
 
-void InputMethodOHOS::SetVirtualKeyboardVisibilityTask(bool should_show) {
+void InputMethodOHOS::SetVirtualKeyboardVisibilityTask(
+    bool should_show, ui::RequestKeyboardReason reason) {
   if (should_show && is_attach_) {
-    if (GetTextInputClient()) {
-      ui::RequestKeyboardReason request_keyboard_reason =
-          GetTextInputClient()->GetRequestKeyboardReason();
-      ohos::adapter::InputMethodOHOSAdapter::GetInstance().ShowTextInput(
-          request_keyboard_reason);
-    } else {
-      LOG(ERROR) << "[InputMethodOHOS] SetVirtualKeyboardVisibilityTask "
-                    "[GetTextInputClient] is nullptr";
-    }
+    ohos::adapter::InputMethodOHOSAdapter::GetInstance().ShowTextInput(reason);
   }
   InputMethodBase::SetVirtualKeyboardVisibilityIfEnabled(should_show);
 }
 
 void InputMethodOHOS::SetVirtualKeyboardVisibilityIfEnabled(bool should_show) {
-  auto task = base::BindOnce(&InputMethodOHOS::SetVirtualKeyboardVisibilityTask,
-      weak_ptr_factory_.GetWeakPtr(), should_show);
+  ui::RequestKeyboardReason reason =
+      ui::RequestKeyboardReason::REQUEST_KEYBOARD_REASON_NONE;
+  if (GetTextInputClient()) {
+    reason = GetTextInputClient()->GetRequestKeyboardReason();
+  } else {
+    LOG(ERROR) << "[InputMethodOHOS] SetVirtualKeyboardVisibilityTask "
+                  "[GetTextInputClient] is nullptr";
+  }
+ 
+  auto task =
+      base::BindOnce(&InputMethodOHOS::SetVirtualKeyboardVisibilityTask,
+                     weak_ptr_factory_.GetWeakPtr(), should_show, reason);
   InputMethodOHOSManager::GetInstance().GetTaskRunner()->PostTask(
       FROM_HERE, std::move(task));
 }
@@ -202,6 +212,7 @@ bool InputMethodOHOS::IsCandidatePopupOpen() const {
 }
 
 void InputMethodOHOS::InsertText(const std::string& text) {
+  TRACE_EVENT0("ui", "InputMethodOHOS::InsertText");
   if (text.empty()) {
     LOG(ERROR) << "[InputMethodOHOS] insert text is empty!";
     return;
@@ -213,248 +224,180 @@ void InputMethodOHOS::InsertText(const std::string& text) {
     return;
   }
 
-  auto task = base::BindOnce(
-      [](const std::u16string& inputText, TextInputClient* client,
-         base::WeakPtr<InputMethodOHOS> input) {
-        TRACE_EVENT0("ui", "InputMethodOHOS::InsertText");
-        if (!input) {
-          LOG(WARNING)
-              << "[InputMethodOHOS] InputMethodOHOS was deconstructed.";
-          return;
-        }
-        ui::KeyEvent key_down_event{EventType::kKeyPressed,  ui::VKEY_PROCESSKEY,
-                                    ui::DomCode::NONE,   ui::EF_IS_SYNTHESIZED,
-                                    ui::DomKey::PROCESS, ui::EventTimeForNow()};
+  if (GetTextInputType() == TEXT_INPUT_TYPE_NONE) {
+    LOG(ERROR) << "[InputMethodOHOS] text input type is null";
+    return;
+  }
+  ui::KeyEvent key_down_event{EventType::kKeyPressed, ui::VKEY_PROCESSKEY,
+                              ui::DomCode::NONE,      ui::EF_IS_SYNTHESIZED,
+                              ui::DomKey::PROCESS,    ui::EventTimeForNow()};
 
-        input->DispatchKeyEvent(&key_down_event);
-        client->InsertText(inputText,
-                           ui::TextInputClient::InsertTextCursorBehavior::
-                               kMoveCursorAfterText);
+  DispatchKeyEvent(&key_down_event);
+  client->InsertText(
+      inputText,
+      ui::TextInputClient::InsertTextCursorBehavior::kMoveCursorAfterText);
 
-        ui::KeyEvent key_up_event{EventType::kKeyReleased, ui::VKEY_PROCESSKEY,
-                                  ui::DomCode::NONE,   ui::EF_IS_SYNTHESIZED,
-                                  ui::DomKey::PROCESS, ui::EventTimeForNow()};
-        input->DispatchKeyEvent(&key_up_event);
-      },
-      inputText, client, weak_ptr_factory_.GetWeakPtr());
-  InputMethodOHOSManager::GetInstance().GetTaskRunner()->PostTask(
-      FROM_HERE, std::move(task));
+  ui::KeyEvent key_up_event{EventType::kKeyReleased, ui::VKEY_PROCESSKEY,
+                            ui::DomCode::NONE,       ui::EF_IS_SYNTHESIZED,
+                            ui::DomKey::PROCESS,     ui::EventTimeForNow()};
+  DispatchKeyEvent(&key_up_event);
+}
+
+bool InputMethodOHOS::IsDispatchedPressAndReleaseKeyEvents(
+    int32_t length, KeyboardCode key_code, DomCode dom_Code) {
+  DomKey dom_key;
+  auto *layout_engine = KeyboardLayoutEngineManager::GetKeyboardLayoutEngine();
+  if (layout_engine == nullptr ||
+      !layout_engine->Lookup(dom_Code, 0, &dom_key, &key_code)) {
+    return false;
+  }
+
+  EventType type = EventType::kKeyPressed;
+  EventType type_release = EventType::kKeyReleased;
+  for (int32_t i = 0; i < length; i++) {
+    ui::KeyEvent event(type, key_code, dom_Code, 0, dom_key, EventTimeForNow());
+    ui::KeyEvent event_release(type_release, key_code, dom_Code, 0, dom_key,
+                               EventTimeForNow());
+    DispatchKeyEvent(&event);
+    DispatchKeyEvent(&event_release);
+  }
+  return true;
 }
 
 void InputMethodOHOS::DeleteBackward(int32_t length) {
-  auto task = base::BindOnce(
-      [](int32_t length, base::WeakPtr<InputMethodOHOS> input) {
-        if (!input) {
-          LOG(WARNING)
-              << "[InputMethodOHOS] InputMethodOHOS was deconstructed.";
-          return;
-        }
-        EventType type = EventType::kKeyPressed;
-        EventType type_release = EventType::kKeyReleased;
-        KeyboardCode key_code = ui::VKEY_BACK;
-        DomCode dom_Code = ui::DomCode::BACKSPACE;
-        DomKey dom_key;
-        auto* layout_engine =
-            KeyboardLayoutEngineManager::GetKeyboardLayoutEngine();
-        if (layout_engine == nullptr ||
-            !layout_engine->Lookup(dom_Code, 0, &dom_key, &key_code)) {
-          LOG(ERROR)
-              << "[InputMethodOHOS] DeleteBackward failed to decode key_code";
-          return;
-        }
-        ui::KeyEvent event(type, key_code, dom_Code, 0, dom_key,
-                           EventTimeForNow());
-        ui::KeyEvent event_release(type_release, key_code, dom_Code, 0, dom_key,
-                           EventTimeForNow());
-        for (int32_t i = 0; i < length; i++) {
-          input->DispatchKeyEvent(&event);
-          input->DispatchKeyEvent(&event_release);
-        }
-      },
-      length, weak_ptr_factory_.GetWeakPtr());
-  InputMethodOHOSManager::GetInstance().GetTaskRunner()->PostTask(
-      FROM_HERE, std::move(task));
+  TRACE_EVENT0("ui", "InputMethodOHOS::DeleteBackward");
+  if (!IsDispatchedPressAndReleaseKeyEvents(length, ui::VKEY_BACK,
+                                            ui::DomCode::BACKSPACE)) {
+    LOG(ERROR) << "[InputMethodOHOS] DeleteBackward failed to decode key_code";
+  }
 }
 
 void InputMethodOHOS::DeleteForward(int32_t length) {
-  auto task = base::BindOnce(
-      [](int32_t length, base::WeakPtr<InputMethodOHOS> input) {
-        if (!input) {
-          LOG(WARNING)
-              << "[InputMethodOHOS] InputMethodOHOS was deconstructed.";
-          return;
-        }
-        EventType type = EventType::kKeyPressed;
-        EventType type_release = EventType::kKeyReleased;
-        KeyboardCode key_code = ui::VKEY_DELETE;
-        DomCode dom_Code = ui::DomCode::DEL;
-        DomKey dom_key;
-        auto* layout_engine =
-            KeyboardLayoutEngineManager::GetKeyboardLayoutEngine();
-        if (layout_engine == nullptr ||
-            !layout_engine->Lookup(dom_Code, 0, &dom_key, &key_code)) {
-          LOG(ERROR)
-              << "[InputMethodOHOS] DeleteForward failed to decode key_code";
-          return;
-        }
-        ui::KeyEvent event(type, key_code, dom_Code, 0, dom_key,
-                           EventTimeForNow());
-        ui::KeyEvent event_release(type_release, key_code, dom_Code, 0, dom_key,
-                           EventTimeForNow());
-        for (int32_t i = 0; i < length; i++) {
-          input->DispatchKeyEvent(&event);
-          input->DispatchKeyEvent(&event_release);
-        }
-      },
-      length, weak_ptr_factory_.GetWeakPtr());
-  InputMethodOHOSManager::GetInstance().GetTaskRunner()->PostTask(
-      FROM_HERE, std::move(task));
+  TRACE_EVENT0("ui", "InputMethodOHOS::DeleteForward");
+  if (!IsDispatchedPressAndReleaseKeyEvents(length, ui::VKEY_DELETE,
+                                            ui::DomCode::DEL)) {
+    LOG(ERROR) << "[InputMethodOHOS] DeleteForward failed to decode key_code";
+  }
 }
 
 void InputMethodOHOS::SendEnterKeyEvent() {
-  auto task = base::BindOnce(
-      [](base::WeakPtr<InputMethodOHOS> input) {
-        TRACE_EVENT0("ui", "InputMethodOHOS::SendEnterKeyEvent");
-        if (!input) {
-          LOG(WARNING)
-              << "[InputMethodOHOS] InputMethodOHOS was deconstructed.";
-          return;
-        }
-        EventType type = EventType::kKeyPressed;
-        KeyboardCode key_code = ui::VKEY_RETURN;
-        DomCode dom_Code = ui::DomCode::ENTER;
-        DomKey dom_key;
-        auto* layout_engine =
-            KeyboardLayoutEngineManager::GetKeyboardLayoutEngine();
-        if (layout_engine == nullptr ||
-            !layout_engine->Lookup(dom_Code, 0, &dom_key, &key_code)) {
-          LOG(ERROR) << "[InputMethodOHOS] SendEnterKeyEvent failed to decode "
-                        "key_code";
-          return;
-        }
-        ui::KeyEvent key_down_event(type, key_code, dom_Code, 0, dom_key,
-                                    EventTimeForNow());
-        input->DispatchKeyEvent(&key_down_event);
+  TRACE_EVENT0("ui", "InputMethodOHOS::SendEnterKeyEvent");
+  EventType type = EventType::kKeyPressed;
+  KeyboardCode key_code = ui::VKEY_RETURN;
+  DomCode dom_Code = ui::DomCode::ENTER;
+  DomKey dom_key;
+  auto* layout_engine = KeyboardLayoutEngineManager::GetKeyboardLayoutEngine();
+  if (layout_engine == nullptr ||
+      !layout_engine->Lookup(dom_Code, 0, &dom_key, &key_code)) {
+    LOG(ERROR) << "[InputMethodOHOS] SendEnterKeyEvent failed to decode "
+                  "key_code";
+    return;
+  }
 
-        type = EventType::kKeyReleased;
-        ui::KeyEvent key_up_event(type, key_code, dom_Code, 0, dom_key,
-                                  EventTimeForNow());
-        input->DispatchKeyEvent(&key_up_event);
-      },
-      weak_ptr_factory_.GetWeakPtr());
-  InputMethodOHOSManager::GetInstance().GetTaskRunner()->PostTask(
-      FROM_HERE, std::move(task));
+  ui::KeyEvent key_down_event(type, key_code, dom_Code, 0, dom_key,
+                              EventTimeForNow());
+  DispatchKeyEvent(&key_down_event);
+
+  type = EventType::kKeyReleased;
+  ui::KeyEvent key_up_event(type, key_code, dom_Code, 0, dom_key,
+                            EventTimeForNow());
+  DispatchKeyEvent(&key_up_event);
 }
 
 void InputMethodOHOS::ExitFullscreenEvent() {
-  auto task = base::BindOnce(
-      [](base::WeakPtr<InputMethodOHOS> input) {
-        TRACE_EVENT0("ui", "InputMethodOHOS::ExitFullscreenEvent");
-        if (!input) {
-          LOG(WARNING)
-              << "[InputMethodOHOS] InputMethodOHOS was deconstructed.";
-          return;
-        }
-        EventType type = ui::EventType::kKeyPressed;
-        KeyboardCode key_code = ui::VKEY_F11;
-        DomCode dom_Code = ui::DomCode::F11;
-        DomKey dom_key;
-        auto* layout_engine =
-            KeyboardLayoutEngineManager::GetKeyboardLayoutEngine();
-        if (layout_engine == nullptr ||
-            !layout_engine->Lookup(dom_Code, 0, &dom_key, &key_code)) {
-          LOG(ERROR) << "[InputMethodOHOS] ExitFullscreenEvent failed to decode "
-                        "key_code";
-          return;
-        }
-        ui::KeyEvent key_down_event(type, key_code, dom_Code, 0, dom_key,
-                                    EventTimeForNow());
-        input->DispatchKeyEvent(&key_down_event);
+  TRACE_EVENT0("ui", "InputMethodOHOS::ExitFullscreenEvent");
+  EventType type = ui::EventType::kKeyPressed;
+  KeyboardCode key_code = ui::VKEY_F11;
+  DomCode dom_Code = ui::DomCode::F11;
+  DomKey dom_key;
+  auto* layout_engine = KeyboardLayoutEngineManager::GetKeyboardLayoutEngine();
+  if (layout_engine == nullptr ||
+      !layout_engine->Lookup(dom_Code, 0, &dom_key, &key_code)) {
+    LOG(ERROR) << "[InputMethodOHOS] ExitFullscreenEvent failed to decode "
+                  "key_code";
+    return;
+  }
 
-        type = ui::EventType::kKeyReleased;
-        ui::KeyEvent key_up_event(type, key_code, dom_Code, 0, dom_key,
-                                  EventTimeForNow());
-        input->DispatchKeyEvent(&key_up_event);
-      },
-      weak_ptr_factory_.GetWeakPtr());
-  InputMethodOHOSManager::GetInstance().GetTaskRunner()->PostTask(
-      FROM_HERE, std::move(task));
+  ui::KeyEvent key_down_event(type, key_code, dom_Code, 0, dom_key,
+                              EventTimeForNow());
+  DispatchKeyEvent(&key_down_event);
+
+  type = ui::EventType::kKeyReleased;
+  ui::KeyEvent key_up_event(type, key_code, dom_Code, 0, dom_key,
+                            EventTimeForNow());
+  DispatchKeyEvent(&key_up_event);
 }
 
 void InputMethodOHOS::MoveCursor(int direction) {
-  auto task = base::BindOnce(
-      [](int direction, base::WeakPtr<InputMethodOHOS> input) {
-        if (!input) {
-          LOG(WARNING)
-              << "[InputMethodOHOS] InputMethodOHOS was deconstructed.";
-          return;
-        }
-        EventType type = EventType::kKeyPressed;
-        EventType type_release = EventType::kKeyReleased;
-        KeyboardCode key_code;
-        DomCode dom_Code;
-        switch (direction) {
-          case ohos::adapter::IMFAdapterDirection::UP: {
-            key_code = ui::VKEY_UP;
-            dom_Code = ui::DomCode::ARROW_UP;
-            break;
-          }
-          case ohos::adapter::IMFAdapterDirection::LEFT: {
-            key_code = ui::VKEY_LEFT;
-            dom_Code = ui::DomCode::ARROW_LEFT;
-            break;
-          }
-          case ohos::adapter::IMFAdapterDirection::RIGHT: {
-            key_code = ui::VKEY_RIGHT;
-            dom_Code = ui::DomCode::ARROW_RIGHT;
-            break;
-          }
-          case ohos::adapter::IMFAdapterDirection::DOWN: {
-            key_code = ui::VKEY_DOWN;
-            dom_Code = ui::DomCode::ARROW_DOWN;
-            break;
-          }
-          default: {
-            return;
-          }
-        }
-        DomKey dom_key;
-        auto* layout_engine =
-            KeyboardLayoutEngineManager::GetKeyboardLayoutEngine();
-        if (layout_engine == nullptr ||
-            !layout_engine->Lookup(dom_Code, 0, &dom_key, &key_code)) {
-          LOG(ERROR) << "[InputMethodOHOS] SendEnterKeyEvent failed to decode "
-                        "key_code";
-          return;
-        }
-        ui::KeyEvent event(type, key_code, dom_Code, 0, dom_key,
-                           EventTimeForNow());
-        input->DispatchKeyEvent(&event);
-        ui::KeyEvent event_release(type_release, key_code, dom_Code, 0, dom_key,
-                           EventTimeForNow());
-        input->DispatchKeyEvent(&event_release);
-      },
-      direction, weak_ptr_factory_.GetWeakPtr());
-  InputMethodOHOSManager::GetInstance().GetTaskRunner()->PostTask(
-      FROM_HERE, std::move(task));
-}
-
-float InputMethodOHOS::GetPixelRatio(const gfx::Rect& rect) {
-  display::Screen* screen = display::Screen::GetScreen();
-  if (!screen) {
-    return kDefaultRatio;
+  TRACE_EVENT0("ui", "InputMethodOHOS::MoveCursor");
+  EventType type = EventType::kKeyPressed;
+  EventType type_release = EventType::kKeyReleased;
+  KeyboardCode key_code;
+  DomCode dom_Code;
+  
+  switch (direction) {
+    case ohos::adapter::IMFAdapterDirection::UP: {
+      key_code = ui::VKEY_UP;
+      dom_Code = ui::DomCode::ARROW_UP;
+      break;
+    }
+    case ohos::adapter::IMFAdapterDirection::LEFT: {
+      key_code = ui::VKEY_LEFT;
+      dom_Code = ui::DomCode::ARROW_LEFT;
+      break;
+    }
+    case ohos::adapter::IMFAdapterDirection::RIGHT: {
+      key_code = ui::VKEY_RIGHT;
+      dom_Code = ui::DomCode::ARROW_RIGHT;
+      break;
+    }
+    case ohos::adapter::IMFAdapterDirection::DOWN: {
+      key_code = ui::VKEY_DOWN;
+      dom_Code = ui::DomCode::ARROW_DOWN;
+      break;
+    }
+    default: {
+      LOG(ERROR) << "[InputMethodOHOS] MoveCursor unknown direction:" << direction;
+      return;
+    }
   }
-  display::Display display = screen->GetDisplayNearestPoint(rect.origin());
-  return display.device_scale_factor();
+
+  DomKey dom_key;
+  auto* layout_engine = KeyboardLayoutEngineManager::GetKeyboardLayoutEngine();
+
+  if (layout_engine == nullptr ||
+      !layout_engine->Lookup(dom_Code, 0, &dom_key, &key_code)) {
+    LOG(ERROR) << "[InputMethodOHOS] SendEnterKeyEvent failed to decode "
+                  "key_code";
+    return;
+  }
+
+  ui::KeyEvent event(type, key_code, dom_Code, 0, dom_key, EventTimeForNow());
+  DispatchKeyEvent(&event);
+
+  ui::KeyEvent event_release(type_release, key_code, dom_Code, 0, dom_key,
+                             EventTimeForNow());
+  DispatchKeyEvent(&event_release);
 }
 
 ohos::adapter::IMFAdapterCursorInfo InputMethodOHOS::GetCursorInfo() {
-  float device_scale_factor = GetPixelRatio(focus_rect_);
-  ohos::adapter::IMFAdapterCursorInfo cursorInfo{
-      .left = focus_rect_.x() * device_scale_factor,
-      .top = focus_rect_.y() * device_scale_factor,
-      .width = focus_rect_.width() * device_scale_factor,
-      .height = focus_rect_.height() * device_scale_factor};
+  display::Display current_display;
+  if (GetTextInputClient()) {
+    current_display = GetTextInputClient()->GetDisplayForClient();
+  } else {
+    current_display = display::Screen::GetScreen()->GetPrimaryDisplay();
+  }
+  gfx::Rect rect_pixel = display::ohos::ScreenOhos::ConvertDipToPixel(
+      current_display, focus_rect_);
+  if (rect_pixel.width() == 0 && rect_pixel.height() == 0) {
+    LOG(ERROR) << "[InputMethodOHOS] " << __FUNCTION__
+                 << ", The width and height of rect_pixel are both 0";
+    rect_pixel = focus_rect_;
+  }
+  ohos::adapter::IMFAdapterCursorInfo cursorInfo{.left = rect_pixel.x(),
+                                                 .top = rect_pixel.y(),
+                                                 .width = rect_pixel.width(),
+                                                 .height = rect_pixel.height()};
   return cursorInfo;
 }
 
@@ -475,6 +418,73 @@ void InputMethodOHOS::OnCursorUpdate(const gfx::Rect& rect) {
       weak_ptr_factory_.GetWeakPtr(), rect);
   InputMethodOHOSManager::GetInstance().GetTaskRunner()->PostTask(
       FROM_HERE, std::move(task));
+}
+
+gfx::AcceleratedWidget InputMethodOHOS::GetWidgetId() const {
+  return widget_id_;
+}
+
+void InputMethodOHOS::RegistKeyboardHeightEvent() {
+  auto weak_this = weak_ptr_factory_.GetWeakPtr();
+  ohos::adapter::xcomponent::WindowAdapter::GetInstance()
+      .RegistKeyboardHeightEvent(
+      GetWidgetId(), [weak_this](gfx::AcceleratedWidget widget_id,
+                                 int32_t keyboard_height) {
+            // Handle arkui keyboard height events on the browser UI thread
+            auto task =
+                base::BindOnce(&InputMethodOHOS::SetVirtualKeyboardBoundsTask,
+                               weak_this, keyboard_height);
+            InputMethodOHOSManager::GetInstance().GetTaskRunner()->PostTask(
+                FROM_HERE, std::move(task));
+          });
+}
+
+void InputMethodOHOS::SetVirtualKeyboardBoundsTask(int32_t keyboard_height) {
+  if (!GetTextInputClient()) {
+    LOG(ERROR) << "[InputMethodOHOS::SetVirtualKeyboardBoundsTask] "
+                  "GetTextInputClient is nullptr";
+    return;
+  }
+
+  gfx::Rect window_bounds = GetTextInputClient()->GetToplevelWindowBounds();
+  if (window_bounds.IsEmpty()) {
+    LOG(ERROR) << "[InputMethodOHOS::SetVirtualKeyboardBoundsTask] "
+                  "Window bounds retrieval failed: null/empty result.";
+    return;
+  }
+  display::Display current_display;
+  if (GetTextInputClient()) {
+    current_display = GetTextInputClient()->GetDisplayForClient();
+  } else {
+    current_display = display::Screen::GetScreen()->GetPrimaryDisplay();
+  }
+  gfx::PointF transformed_point = display::ohos::ScreenOhos::ConvertPixelToDip(
+      current_display, gfx::PointF(0, keyboard_height));
+  if (transformed_point == kInvalidPoint) {
+    return;
+  }
+
+  float logical_keyboard_height = transformed_point.y();
+
+  gfx::Rect keyboard_rect;
+  if (logical_keyboard_height > 0) {
+    keyboard_rect = gfx::Rect(
+        window_bounds.x(),
+        window_bounds.y() + window_bounds.height() - logical_keyboard_height,
+        window_bounds.width(), logical_keyboard_height);
+  }
+  LOG(INFO) << "[InputMethodOHOS::SetVirtualKeyboardBoundsTask] "
+               "keyboard_rect positionX: "
+            << keyboard_rect.x() << " positionY: " << keyboard_rect.y()
+            << " keyboardWidth: " << keyboard_rect.width()
+            << " keyboardHeight: " << keyboard_rect.height();
+
+  InputMethodBase::SetVirtualKeyboardBounds(keyboard_rect);
+}
+
+void InputMethodOHOS::UnRegistKeyboardHeightEvent() {
+  ohos::adapter::xcomponent::WindowAdapter::GetInstance()
+      .UnRegistKeyboardHeightEvent(widget_id_);
 }
 
 }  // namespace ui

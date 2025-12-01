@@ -16,6 +16,7 @@ namespace content {
 
 class BrowserContext;
 class WebContents;
+class RenderFrameHost;
 
 // MediaSession manages the media session and audio focus for a given
 // WebContents. There is only one MediaSession per WebContents.
@@ -67,6 +68,14 @@ class MediaSession : public media_session::mojom::MediaSession {
   // default value. This will only have any effect if audio focus grouping is
   // supported.
   virtual void SetAudioFocusGroupId(const base::UnguessableToken& group_id) = 0;
+
+  // Returns the `RenderFrameHost` for the currently MediaSession routed
+  // service, if the routed service exists, nullptr otherwise.
+  virtual RenderFrameHost* GetRoutedFrame() = 0;
+
+  // Report to all players that information related to automatic picture in
+  // picture has changed.
+  virtual void ReportAutoPictureInPictureInfoChanged() = 0;
 
   // media_session.mojom.MediaSession overrides -------------------------------
 
@@ -151,6 +160,15 @@ class MediaSession : public media_session::mojom::MediaSession {
   // defined by |HTMLVideoElement| (kVisibilityThreshold). |HTMLVideoElement|
   // visibility is computed by the |MediaVideoVisibilityTracker|.
   void GetVisibility(GetVisibilityCallback callback) override = 0;
+
+#if BUILDFLAG(IS_OHOS)
+  static base::WeakPtr<content::MediaSession> Get(int render_process_id,
+                                                  int render_frame_id);
+
+  virtual bool IsActiveSession() = 0;
+
+  virtual bool HasOnlyOneShotPlayersPublic() = 0;
+#endif
 
  protected:
   MediaSession() = default;

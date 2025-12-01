@@ -27,6 +27,9 @@
 #include "content/public/browser/global_routing_id.h"
 #include "content/public/browser/web_contents_observer.h"
 
+// Bring OriginMatcher into the current namespace for compatibility
+using origin_matcher::OriginMatcher;
+
 namespace js_injection {
 
 #if BUILDFLAG(ARKWEB_JS_ON_DOCUMENT_END)

@@ -6,5 +6,5 @@ declare_args() {
   enable_cef = true
 
   # Optionally configure the CEF API version. This impacts wrapper-side only.
-  cef_api_version = ""
+  cef_api_version = "14100"
 }

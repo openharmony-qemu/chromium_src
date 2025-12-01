@@ -258,7 +258,7 @@ TEST_F(SegmentationMultiBufferDataProviderTest, VideoOpt_AvaialbleBytes001) {
   EXPECT_EQ(bytes, block_size);
 }
 
-TEST_F(SegmentationMultiBufferDataProviderTest, VideoOpt_Avaialble001) {
+TEST_F(SegmentationMultiBufferDataProviderTest, VideoOpt_Available001) {
   int32_t pos = 0;
   int32_t preload_size = 8;
   int32_t request_size = 24;
@@ -269,7 +269,7 @@ TEST_F(SegmentationMultiBufferDataProviderTest, VideoOpt_Avaialble001) {
   EXPECT_FALSE(is_available);
 }
 
-TEST_F(SegmentationMultiBufferDataProviderTest, VideoOpt_Avaialble002) {
+TEST_F(SegmentationMultiBufferDataProviderTest, VideoOpt_Available002) {
   int32_t pos = 0;
   int32_t preload_size = 8;
   int32_t request_size = 24;
@@ -296,7 +296,7 @@ TEST_F(SegmentationMultiBufferDataProviderTest, VideoOpt_Avaialble002) {
   EXPECT_TRUE(is_available);
 }
 
-TEST_F(SegmentationMultiBufferDataProviderTest, VideoOpt_Avaialble003) {
+TEST_F(SegmentationMultiBufferDataProviderTest, VideoOpt_Available003) {
   int32_t pos = 10;
   int32_t preload_size = 8;
   int32_t request_size = 24;
@@ -323,7 +323,7 @@ TEST_F(SegmentationMultiBufferDataProviderTest, VideoOpt_Avaialble003) {
   EXPECT_TRUE(is_available);
 }
 
-TEST_F(SegmentationMultiBufferDataProviderTest, VideoOpt_Avaialble004) {
+TEST_F(SegmentationMultiBufferDataProviderTest, VideoOpt_Available004) {
   int32_t pos = 10;
   int32_t preload_size = 8;
   int32_t request_size = 24;
@@ -387,6 +387,7 @@ TEST_F(SegmentationMultiBufferDataProviderTest, VideoOpt_SetDeferred001) {
 
   segment_provider_->Start();
   segment_provider_->SetDeferred(false);
+  EXPECT_NE(url_data_->length(), kPositionNotSpecified);
 }
 
 TEST_F(SegmentationMultiBufferDataProviderTest, VideoOpt_NotifyLengthSet001) {

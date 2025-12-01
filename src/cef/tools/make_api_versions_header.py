@@ -36,6 +36,8 @@ def make_api_versions_header(json):
 #define CEF_API_HASH_{version} "$MAC$"
 #elif defined(OS_LINUX)
 #define CEF_API_HASH_{version} "$LINUX$"
+#elif defined(OS_OHOS)
+#define CEF_API_HASH_{version} "$LINUX$"
 #endif
 """
 

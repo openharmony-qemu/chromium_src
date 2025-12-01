@@ -16,7 +16,7 @@
 namespace blink {
 
 #if BUILDFLAG(ARKWEB_EXT_VIDEO_LOAD_OPTIMIZATION)
-TEST_F(MultiBufferDataSourceTest, VideoLoadOpt_VLOUpdateBufferSizesTest) {
+TEST_F(MultiBufferDataSourceTest, VideoLoadOpt_VLOUpdateBufferSize001) {
   Initialize(kHttpUrl, true);
 
   uint16_t preloadTime = 4;
@@ -28,6 +28,53 @@ TEST_F(MultiBufferDataSourceTest, VideoLoadOpt_VLOUpdateBufferSizesTest) {
 
   data_source_->SetVLOParams(preloadTime, minCacheTime, maxCacheTime,
                              moovSize, bitRate, videoId);
+  data_source_->VLOUpdateBufferSizes();
+
+  int64_t preload_high = loader()->preload_high();
+  int64_t expect_val = 32768;
+  EXPECT_EQ(preload_high, expect_val);
+  Stop();
+}
+
+TEST_F(MultiBufferDataSourceTest, VideoLoadOpt_VLOUpdateBufferSize002) {
+  Initialize(kHttpUrl, true);
+
+  uint16_t preloadTime = 4;
+  uint16_t minCacheTime = 2;
+  uint16_t maxCacheTime = 6;
+  uint16_t moovSize = 512;
+  uint16_t bitRate = 2000;
+  std::string videoId = "v_662102_html5_api";
+
+  url_data()->set_length(kPositionNotSpecified);
+  data_source_->SetVLOParams(preloadTime, minCacheTime, maxCacheTime,
+                             moovSize, bitRate, videoId);
+  data_source_->VLOUpdateBufferSizes();
+
+  int64_t preload_high = loader()->preload_high();
+  int64_t expect_val = 32768;
+  EXPECT_EQ(preload_high, expect_val);
+  Stop();
+}
+
+TEST_F(MultiBufferDataSourceTest, VideoLoadOpt_VLOUpdateBufferSize003) {
+  Initialize(kHttpUrl, true);
+
+  uint16_t preloadTime = 4;
+  uint16_t minCacheTime = 2;
+  uint16_t maxCacheTime = 6;
+  uint16_t moovSize = 512;
+  uint16_t bitRate = 2000;
+  std::string videoId = "v_662102_html5_api";
+
+  data_source_->OnMediaIsPlaying();
+  data_source_->SetVLOParams(preloadTime, minCacheTime, maxCacheTime,
+                             moovSize, bitRate, videoId);
+  data_source_->VLOUpdateBufferSizes();
+
+  int64_t preload_high = loader()->preload_high();
+  int64_t expect_val = 500000;
+  EXPECT_EQ(preload_high, expect_val);
   Stop();
 }
 

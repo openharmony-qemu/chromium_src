@@ -364,8 +364,29 @@ using IsViaIPC = base::StrongAlias<class IsViaIPCTag, bool>;
 
 class BASE_EXPORT PlatformThreadLinux : public PlatformThreadBase {
  public:
+#if BUILDFLAG(IS_OHOS)
+  static constexpr struct sched_param kRealTimeAudioPrio = {
+    8, 0,
+#if _REDIR_TIME64
+    {0, 0, 0, 0},
+#else
+    {{0, 0}, {0, 0}},
+#endif
+    0
+  };
+  static constexpr struct sched_param kRealTimeDisplayPrio = {
+    6, 0,
+#if _REDIR_TIME64
+    {0, 0, 0, 0},
+#else
+    {{0, 0}, {0, 0}},
+#endif
+    0
+  };
+#else
   static constexpr struct sched_param kRealTimeAudioPrio = {8};
   static constexpr struct sched_param kRealTimeDisplayPrio = {6};
+#endif  // BUILDFLAG(IS_OHOS)
 
   // Sets a delegate which handles thread type changes for this process. This
   // must be externally synchronized with any call to SetCurrentThreadType.
@@ -394,7 +415,7 @@ class BASE_EXPORT PlatformThreadLinux : public PlatformThreadBase {
   // it is in the urgent or non-urgent cpuset
   static bool IsThreadBackgroundedForTest(PlatformThreadId thread_id);
 };
-#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
 
 #if BUILDFLAG(IS_CHROMEOS)
 BASE_EXPORT BASE_DECLARE_FEATURE(kSetRtForDisplayThreads);

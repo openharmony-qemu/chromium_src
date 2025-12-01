@@ -12,7 +12,7 @@ namespace ui {
 
 #if BUILDFLAG(ARKWEB_SCROLLBAR)
 constexpr int kOverlayScrollbarStrokeWidth = 0;
-constexpr int kOverlayScrollbarThumbWidthPressed = 28;
+constexpr int kOverlayScrollbarThumbWidthPressed = 8;
 constexpr int kOverlayScrollbarThumbWidthPressedPc = 8;
 constexpr float kOverlayScrollbarIdleThicknessScale = 0.5f;
 constexpr base::TimeDelta kOverlayScrollbarFadeDelay = base::Milliseconds(2000);

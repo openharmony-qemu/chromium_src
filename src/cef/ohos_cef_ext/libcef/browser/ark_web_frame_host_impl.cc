@@ -23,6 +23,7 @@
 #include "cef/libcef/browser/thread_util.h"
 #include "content/browser/renderer_host/frame_tree.h"
 #include "content/browser/renderer_host/render_frame_host_impl.h"
+#include "services/network/public/cpp/resource_request_body.h"
 #endif
  
 namespace {
@@ -54,8 +55,8 @@ void ArkWebDealWithPostData(const std::string& method,
     if (post_data.size() <= 0) {
       params->post_data = new network::ResourceRequestBody();
     } else {
-      params->post_data = network::ResourceRequestBody::CreateFromBytes(
-          reinterpret_cast<const char*>(&post_data[0]), post_data.size());
+      params->post_data = base::MakeRefCounted<network::ResourceRequestBody>();
+      params->post_data->AppendCopyOfBytes(base::as_byte_span(post_data));
     }
   }
 }
@@ -68,8 +69,8 @@ void ArkWebDealWithPostUploadData(const std::string& method,
     if (post_data.size() <= 0) {
       params->upload_data = new network::ResourceRequestBody();
     } else {
-      params->upload_data = network::ResourceRequestBody::CreateFromBytes(
-          reinterpret_cast<const char*>(&post_data[0]), post_data.size());
+      params->upload_data = base::MakeRefCounted<network::ResourceRequestBody>();
+      params->upload_data->AppendCopyOfBytes(base::as_byte_span(post_data));
     }
   }
 }

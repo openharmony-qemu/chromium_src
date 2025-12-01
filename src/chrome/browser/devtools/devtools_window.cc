@@ -1846,6 +1846,7 @@ void DevToolsWindow::ShowCertificateViewer(const std::string& cert_chain) {
   gfx::NativeWindow parent = browser->window()->GetNativeWindow();
   ::ShowCertificateViewer(inspected_contents, parent, cert.get());
 #endif
+#endif  // BUILDFLAG(ENABLE_WEBUI_CERTIFICATE_VIEWER)
 }
 
 void DevToolsWindow::OnLoadCompleted() {

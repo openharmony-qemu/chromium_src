@@ -93,10 +93,6 @@ void NWebApplication::InitializeCef(const CefMainArgs& mainargs,
     LOG(INFO) << "has initialized cef.";
     return;
   }
-#if BUILDFLAG(ARKWEB_DOWNLOAD)
-  // get download Temp directory.
-  NwebFileWriterCleaner::GetDeletePendingFiles();
-#endif  // BUILDFLAG(ARKWEB_DOWNLOAD)
   int exitcode =
       CefExecuteProcess(mainargs, NWebApplication::GetDefault(), NULL);
   if (exitcode >= 0) {
@@ -104,7 +100,12 @@ void NWebApplication::InitializeCef(const CefMainArgs& mainargs,
     return;
   }
   std::unique_lock<std::mutex> lk(init_mtx);
-  if (!CefInitialize(mainargs, settings, NWebApplication::GetDefault(), NULL)) {
+  bool initial_result = CefInitialize(mainargs, settings, NWebApplication::GetDefault(), NULL);
+#if BUILDFLAG(ARKWEB_DOWNLOAD)
+  // get download Temp directory.
+  NwebFileWriterCleaner::GetDeletePendingFiles();
+#endif  // BUILDFLAG(ARKWEB_DOWNLOAD)
+  if (!initial_result) {
     LOG(ERROR) << "CefInitialize failed";
   } else {
     is_initialized = true;

@@ -333,6 +333,7 @@ class NWebHandlerDelegate : public ArkWebClientExt,
       const CefString& target_url,
       CefLifeSpanHandler::WindowOpenDisposition target_disposition,
       bool user_gesture,
+      const CefRect& window_features,
       CefRefPtr<CefCallback> callback) override;
   /* CefLifeSpanHandler methods end */
 

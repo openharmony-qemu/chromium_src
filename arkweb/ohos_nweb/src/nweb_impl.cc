@@ -2205,6 +2205,13 @@ void NWebImpl::PutOptimizeParserBudgetEnabled(bool enable) {
   nweb_delegate_->PutOptimizeParserBudgetEnabled(enable);
 }
 
+void NWebImpl::NotifyPopupWindowDisposition(
+      CefLifeSpanHandler::WindowOpenDisposition disposition) {
+  if (disposition == CEF_WOD_NEW_BACKGROUND_TAB) {
+    is_pause_ = true;
+  }
+}
+
 void NWebImpl::OnPause() {
   if (!GetWebOptimizationValue()) {
     LOG(DEBUG) << "WebOptimization disabled.";

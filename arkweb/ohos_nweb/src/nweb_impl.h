@@ -789,6 +789,8 @@ class NWebImpl : public NWeb {
   void NotifyPopupWindowResult(bool result) override {
     nweb_delegate_->NotifyPopupWindowResult(result);
   }
+  void NotifyPopupWindowDisposition(
+      CefLifeSpanHandler::WindowOpenDisposition disposition);
 #endif  // BUILDFLAG(ARKWEB_MULTI_WINDOW)
 
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)

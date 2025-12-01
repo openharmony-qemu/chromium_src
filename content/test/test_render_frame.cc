@@ -229,6 +229,7 @@ class MockFrameHost : public mojom::FrameHost {
   void GetCreateNewWindow(const ::GURL& target_url,
                           ::WindowOpenDisposition disposition,
                           bool allow_popup,
+                          ::blink::mojom::WindowFeaturesPtr window_features,
                           GetCreateNewWindowCallback callback) override {}
 
   void CloseImageOverlaySelection() override {}

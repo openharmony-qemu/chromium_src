@@ -1372,6 +1372,7 @@ class CONTENT_EXPORT ContentBrowserClient {
       const GURL& target_url,
       WindowOpenDisposition disposition,
       bool user_gesture,
+      const gfx::Rect& window_features,
       content::mojom::FrameHost::GetCreateNewWindowCallback callback);
 #endif  // BUILDFLAG(ARKWEB_MULTI_WINDOW)
 

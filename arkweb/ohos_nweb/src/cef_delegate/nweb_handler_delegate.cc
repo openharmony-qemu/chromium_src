@@ -178,6 +178,10 @@
 #include "nweb_autolayout.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_MULTI_WINDOW)
+#include "ohos_nweb/src/nweb_window_new_event_info_impl.h"
+#endif
+
 namespace OHOS::NWeb {
 namespace {
 
@@ -516,6 +520,22 @@ bool IsPrerendering(const CefRefPtr<CefFrame> frame) {
   return static_cast<CefFrameHostImpl*>(frame.get())->IsPrerendering();
 }
 
+NavigationPolicy ConvertDisPositionToNavigation(
+    CefLifeSpanHandler::WindowOpenDisposition disposition) {
+  switch (disposition) {
+    case CEF_WOD_NEW_POPUP:
+      return NavigationPolicy::NEW_POPUP;
+    case CEF_WOD_NEW_WINDOW:
+      return NavigationPolicy::NEW_WINDOW;
+    case CEF_WOD_NEW_BACKGROUND_TAB:
+      return NavigationPolicy::NEW_BACKGROUND_TAB;
+    case CEF_WOD_NEW_FOREGROUND_TAB:
+      return NavigationPolicy::NEW_FOREGROUND_TAB;
+    default:
+      break;
+  }
+  return NavigationPolicy::NEW_POPUP;
+}
 }  // namespace
 
 class NWebDateTimeSuggestionImpl : public NWebDateTimeSuggestion {
@@ -1498,6 +1518,7 @@ bool NWebHandlerDelegate::OnPreBeforePopup(
     const CefString& target_url,
     CefLifeSpanHandler::WindowOpenDisposition target_disposition,
     bool user_gesture,
+    const CefRect& window_features,
     CefRefPtr<CefCallback> callback) {
   LOG(INFO) << "NWebHandlerDelegate::OnPreBeforePopup";
   CEF_REQUIRE_UI_THREAD();
@@ -1525,6 +1546,11 @@ bool NWebHandlerDelegate::OnPreBeforePopup(
       std::shared_ptr<NWebControllerHandler> handler =
           std::make_shared<NWebControllerHandlerImpl>(popIndex_, true);
       nweb_handler_->OnWindowNewByJS(target_url, true, user_gesture, handler);
+      auto event_info = std::make_shared<NWebWindowNewEventInfoImpl>(
+          target_url, true, user_gesture, handler,
+          ConvertDisPositionToNavigation(target_disposition), window_features.x,
+          window_features.y, window_features.width, window_features.height);
+      nweb_handler_->OnWindowNewExtByJS(event_info);
       return false;
     }
     case CEF_WOD_NEW_BACKGROUND_TAB:
@@ -1534,6 +1560,11 @@ bool NWebHandlerDelegate::OnPreBeforePopup(
       std::shared_ptr<NWebControllerHandler> handler =
           std::make_shared<NWebControllerHandlerImpl>(popIndex_, true);
       nweb_handler_->OnWindowNewByJS(target_url, false, user_gesture, handler);
+      auto event_info = std::make_shared<NWebWindowNewEventInfoImpl>(
+          target_url, false, user_gesture, handler,
+          ConvertDisPositionToNavigation(target_disposition), window_features.x,
+          window_features.y, window_features.width, window_features.height);
+      nweb_handler_->OnWindowNewExtByJS(event_info);
       return false;
     }
     default:
@@ -1578,6 +1609,12 @@ bool NWebHandlerDelegate::OnBeforePopup(
         std::shared_ptr<NWebControllerHandler> handler =
             std::make_shared<NWebControllerHandlerImpl>(popIndex_, false);
         nweb_handler_->OnWindowNewByJS(target_url, true, user_gesture, handler);
+        auto event_info = std::make_shared<NWebWindowNewEventInfoImpl>(
+            target_url, true, user_gesture, handler,
+            ConvertDisPositionToNavigation(target_disposition),
+            popup_features.x, popup_features.y, popup_features.width,
+            popup_features.height);
+        nweb_handler_->OnWindowNewExtByJS(event_info);
         if (extra_info) {
           extra_info->SetInt("nweb_id", handler->GetNWebHandlerId());
         }
@@ -1586,6 +1623,7 @@ bool NWebHandlerDelegate::OnBeforePopup(
           LOG(ERROR) << "NWebHandlerDelegate::OnBeforePopup nweb is null";
           return true;
         }
+        nweb->NotifyPopupWindowDisposition(target_disposition);
         client = nweb->GetCefClient();
         if (!client) {
           LOG(ERROR) << "NWebHandlerDelegate::OnBeforePopup client is null";

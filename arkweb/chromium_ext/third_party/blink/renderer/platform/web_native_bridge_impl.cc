@@ -260,7 +260,8 @@ void WebNativeBridgeImpl::ActivateSurfaceLayerForSameLayer() {
   media::LayerRemovedVisibilityChangedCB layer_removed_visibility_change_cb =
       base::BindRepeating(&WebNativeBridgeImpl::CleanupVisibilityForRemovedLayer,
                           weak_this_);
-
+  DCHECK(client_);
+  bridge_->SetStretchContentToFillBounds(client_->GetStretchContentToFillBounds());
   surface_layer_ = bridge_->CreateSurfaceLayer(std::move(rect_change_cb), std::move(rect_visibility_change_cb),
       std::move(layer_removed_visibility_change_cb));
   client_->SetCcLayer(surface_layer_.get());
@@ -290,6 +291,12 @@ void WebNativeBridgeImpl::UnregisterContentsLayer(cc::Layer* layer)
 }
 
 void WebNativeBridgeImpl::OnSurfaceIdUpdated(viz::SurfaceId surface_id) {
+}
+
+void WebNativeBridgeImpl::SetStretchContentToFillBounds(bool stretch_content_to_fill_bounds) {
+  if (bridge_) {
+    bridge_->SetStretchContentToFillBounds(stretch_content_to_fill_bounds);
+  }
 }
 // LCOV_EXCL_STOP
 }  // namespace blink

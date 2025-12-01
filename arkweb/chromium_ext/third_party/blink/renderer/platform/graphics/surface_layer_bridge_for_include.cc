@@ -55,8 +55,7 @@ scoped_refptr<cc::SurfaceLayer> SurfaceLayerBridge::CreateSurfaceLayer(cc::Surfa
 
   surface_layer_->SetSurfaceId(current_surface_id_,
                                cc::DeadlinePolicy::UseDefaultDeadline());
-
-  surface_layer_->SetStretchContentToFillBounds(true);
+  surface_layer_->SetStretchContentToFillBounds(stretch_content_to_fill_bounds_);
   surface_layer_->SetIsDrawable(true);
   surface_layer_->SetHitTestable(true);
   surface_layer_->SetMayContainVideo(contains_video_ == ContainsVideo::kYes);
@@ -69,6 +68,13 @@ scoped_refptr<cc::SurfaceLayer> SurfaceLayerBridge::CreateSurfaceLayer(cc::Surfa
   surface_layer_->SetContentsOpaque(false);
 
   return surface_layer_;
+}
+
+void SurfaceLayerBridge::SetStretchContentToFillBounds(bool stretch_content_to_fill_bounds) {
+  stretch_content_to_fill_bounds_ = stretch_content_to_fill_bounds;
+  if (surface_layer_) {
+    surface_layer_->SetStretchContentToFillBounds(stretch_content_to_fill_bounds_);
+  }
 }
 #endif  // ARKWEB_SAME_LAYER
 }  // namespace blink

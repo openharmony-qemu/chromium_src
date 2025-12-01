@@ -446,6 +446,20 @@ void NativeLoader::SetNativeEmbedOverlay(bool native_embed_overlay) {
   }
 }
 
+void NativeLoader::SetStretchContentToFillBounds(bool stretch_content_to_fill_bounds) {
+  LOG(INFO) << "[NativeEmbed] NativeLoader: SetstretchContentToFillBounds"
+            << stretch_content_to_fill_bounds;
+  stretch_content_to_fill_bounds_ = stretch_content_to_fill_bounds;
+  if (web_native_bridge_) {
+    web_native_bridge_->SetStretchContentToFillBounds(
+        stretch_content_to_fill_bounds_);
+  }
+}
+
+bool NativeLoader::GetStretchContentToFillBounds() {
+  return stretch_content_to_fill_bounds_;
+}
+
 void NativeLoader::ProcessParamChanges(const Vector<ParamChangeInfo>& changes) {
   Vector<media::mojom::blink::NativeEmbedParamItemPtr> mojo_items;
   for (const auto& info : changes) {

@@ -98,6 +98,20 @@ void HTMLPlugInElementUtils::SetNativeEmbedOverlayInfinity(bool native_embed_ove
   }
 }
 
+void HTMLPlugInElementUtils::SetStretchContentToFillBounds(bool stretch_content_to_fill_bounds) {
+  if (auto* native_loader = plugin_->NativeLoader()) {
+    native_loader->SetStretchContentToFillBounds(stretch_content_to_fill_bounds);
+  } else {
+    stretch_content_to_fill_bounds_ = stretch_content_to_fill_bounds;
+  }
+}
+
+void HTMLPlugInElementUtils::ProcessStretchContentToFillBounds() {
+  if (auto* native_loader = plugin_->NativeLoader()) {
+    native_loader->SetStretchContentToFillBounds(stretch_content_to_fill_bounds_);
+  }
+}
+
 void HTMLPlugInElementUtils::ProcessParamChanges(const Vector<ParamChangeInfo>& changes) {
   if (auto* native_loader = plugin_->NativeLoader()) {
     native_loader->ProcessParamChanges(changes);

@@ -614,7 +614,7 @@ void ArkWebRenderWidgetHostViewOSRUtils::SendMouseWheelEventEx(
   view_->mouse_wheel_phase_handler_.SendWheelEndForTouchpadScrollingIfNeeded(
       shouldRoute);
   view_->mouse_wheel_phase_handler_.AddPhaseIfNeededAndScheduleEndEvent(
-      mouse_wheel_event, shouldRoute);
+      mouse_wheel_event, shouldRoute, /*is_fling_capable=*/false);
 }
 
 void ArkWebRenderWidgetHostViewOSRUtils::SetFocusEx() {

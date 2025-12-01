@@ -74,7 +74,7 @@
 #include "libcef/browser/web_client_extension/alloy_native_embed_first_frame_paint_event.h"
 #include "media/base/video_frame.h"
 #include "media/capture/mojom/video_capture_buffer.mojom.h"
-#include "third_party/blink/renderer/platform/widget/input/input_handler_proxy.h"
+// #include "third_party/blink/renderer/platform/widget/input/input_handler_proxy.h"  // Removed for Chromium 141 compatibility
 #include "ui/compositor/compositor.h"
 #include "ui/events/blink/blink_event_util.h"
 #include "ui/events/gesture_detection/gesture_provider_config_helper.h"
@@ -144,96 +144,105 @@ const int32_t NOT_NATIVE_ID = 100;
 #endif
 
 #if BUILDFLAG(ARKWEB_SAME_LAYER)
-class CefGestureEventCallbackImpl : public CefGestureEventCallback {
- public:
-  using CallbackType = blink::InputHandlerProxyUtils::GestureEventCallback;
+// NOTE: The following callback implementation classes are disabled for Chromium 141
+// due to incompatible changes in blink internal APIs (InputHandlerProxyUtils).
+// The required types GestureEventCallback and MouseEventCallback are no longer
+// available in the new architecture.
+//
+// TODO: Re-implement this functionality using the new Chromium 141 input event
+// system when the ARKWEB_SAME_LAYER feature needs to be supported.
 
-  CefGestureEventCallbackImpl(CallbackType callback, int32_t fingerId)
-      : callback_(std::move(callback)), fingerId_(fingerId) {}
-  ~CefGestureEventCallbackImpl() override {
-    if (!callback_.is_null()) {
-      // The callback is still pending. Cancel it now.
-      if (CEF_CURRENTLY_ON_UIT()) {
-        CancelNow(std::move(callback_), fingerId_);
-      } else {
-        CEF_POST_TASK(CEF_UIT,
-                      base::BindOnce(&CefGestureEventCallbackImpl::CancelNow,
-                                     std::move(callback_), fingerId_));
-      }
-    }
-  }
+// class CefGestureEventCallbackImpl : public CefGestureEventCallback {
+//  public:
+//   using CallbackType = blink::InputHandlerProxyUtils::GestureEventCallback;  // Not available in Chromium 141
+//
+//   CefGestureEventCallbackImpl(CallbackType callback, int32_t fingerId)
+//       : callback_(std::move(callback)), fingerId_(fingerId) {}
+//   ~CefGestureEventCallbackImpl() override {
+//     if (!callback_.is_null()) {
+//       // The callback is still pending. Cancel it now.
+//       if (CEF_CURRENTLY_ON_UIT()) {
+//         CancelNow(std::move(callback_), fingerId_);
+//       } else {
+//         CEF_POST_TASK(CEF_UIT,
+//                       base::BindOnce(&CefGestureEventCallbackImpl::CancelNow,
+//                                      std::move(callback_), fingerId_));
+//       }
+//     }
+//   }
+//
+//   void ContinueTask(bool user_input, bool stopPropagation) override {
+//     if (CEF_CURRENTLY_ON_UIT()) {
+//       if (!callback_.is_null()) {
+//         std::move(callback_).Run(user_input, stopPropagation, fingerId_);
+//       }
+//     } else {
+//       CEF_POST_TASK(CEF_UIT,
+//                     base::BindOnce(&CefGestureEventCallbackImpl::ContinueTask,
+//                                    this, user_input, stopPropagation));
+//     }
+//   }
+//
+//   [[nodiscard]] CallbackType Disconnect() { return std::move(callback_); }
+//
+//  private:
+//   static void CancelNow(CallbackType callback, int32_t fingerId) {
+//     CEF_REQUIRE_UIT();
+//     std::move(callback).Run(false, true, fingerId);
+//   }
+//
+//   CallbackType callback_;
+//   int32_t fingerId_ = 0;
+//
+//   IMPLEMENT_REFCOUNTING(CefGestureEventCallbackImpl);
+// };
+//
+// class CefMouseEventCallbackImpl : public CefMouseEventCallback {
+//  public:
+//   using CallbackType = blink::InputHandlerProxyUtils::MouseEventCallback;  // Not available in Chromium 141
+//
+//   CefMouseEventCallbackImpl(CallbackType callback)
+//       : callback_(std::move(callback)) {}
+//   ~CefMouseEventCallbackImpl() override {
+//     if (!callback_.is_null()) {
+//       // The callback is still pending. Cancel it now.
+//       if (CEF_CURRENTLY_ON_UIT()) {
+//         CancelNow(std::move(callback_));
+//       } else {
+//         CEF_POST_TASK(CEF_UIT,
+//                       base::BindOnce(&CefMouseEventCallbackImpl::CancelNow,
+//                                      std::move(callback_)));
+//       }
+//     }
+//   }
+//
+//   void ContinueTask(bool user_input, bool stopPropagation) override {
+//     if (CEF_CURRENTLY_ON_UIT()) {
+//       if (!callback_.is_null()) {
+//         std::move(callback_).Run(user_input, stopPropagation);
+//       }
+//     } else {
+//       CEF_POST_TASK(CEF_UIT,
+//                     base::BindOnce(&CefMouseEventCallbackImpl::ContinueTask, this,
+//                                    user_input, stopPropagation));
+//     }
+//   }
+//
+//
+//   [[nodiscard]] CallbackType Disconnect() { return std::move(callback_); }
+//
+//  private:
+//   static void CancelNow(CallbackType callback) {
+//     CEF_REQUIRE_UIT();
+//     std::move(callback).Run(false, true);
+//   }
+//
+//   CallbackType callback_;
+//
+//   IMPLEMENT_REFCOUNTING(CefMouseEventCallbackImpl);
+// };
 
-  void ContinueTask(bool user_input, bool stopPropagation) override {
-    if (CEF_CURRENTLY_ON_UIT()) {
-      if (!callback_.is_null()) {
-        std::move(callback_).Run(user_input, stopPropagation, fingerId_);
-      }
-    } else {
-      CEF_POST_TASK(CEF_UIT,
-                    base::BindOnce(&CefGestureEventCallbackImpl::ContinueTask,
-                                   this, user_input, stopPropagation));
-    }
-  }
-
-  [[nodiscard]] CallbackType Disconnect() { return std::move(callback_); }
-
- private:
-  static void CancelNow(CallbackType callback, int32_t fingerId) {
-    CEF_REQUIRE_UIT();
-    std::move(callback).Run(false, true, fingerId);
-  }
-
-  CallbackType callback_;
-  int32_t fingerId_ = 0;
-
-  IMPLEMENT_REFCOUNTING(CefGestureEventCallbackImpl);
-};
-
-class CefMouseEventCallbackImpl : public CefMouseEventCallback {
- public:
-  using CallbackType = blink::InputHandlerProxyUtils::MouseEventCallback;
- 
-  CefMouseEventCallbackImpl(CallbackType callback)
-      : callback_(std::move(callback)) {}
-  ~CefMouseEventCallbackImpl() override {
-    if (!callback_.is_null()) {
-      // The callback is still pending. Cancel it now.
-      if (CEF_CURRENTLY_ON_UIT()) {
-        CancelNow(std::move(callback_));
-      } else {
-        CEF_POST_TASK(CEF_UIT,
-                      base::BindOnce(&CefMouseEventCallbackImpl::CancelNow,
-                                     std::move(callback_)));
-      }
-    }
-  }
- 
-  void ContinueTask(bool user_input, bool stopPropagation) override {
-    if (CEF_CURRENTLY_ON_UIT()) {
-      if (!callback_.is_null()) {
-        std::move(callback_).Run(user_input, stopPropagation);
-      }
-    } else {
-      CEF_POST_TASK(CEF_UIT,
-                    base::BindOnce(&CefMouseEventCallbackImpl::ContinueTask, this,
-                                   user_input, stopPropagation));
-    }
-  }
- 
- 
-  [[nodiscard]] CallbackType Disconnect() { return std::move(callback_); }
- 
- private:
-  static void CancelNow(CallbackType callback) {
-    CEF_REQUIRE_UIT();
-    std::move(callback).Run(false, true);
-  }
- 
-  CallbackType callback_;
- 
-  IMPLEMENT_REFCOUNTING(CefMouseEventCallbackImpl);
-};
-#endif
+#endif // BUILDFLAG(ARKWEB_SAME_LAYER)
 
 ArkWebRenderWidgetHostViewOSRExt::ArkWebRenderWidgetHostViewOSRExt(
     SkColor background_color,
@@ -554,8 +563,12 @@ void ArkWebRenderWidgetHostViewOSRExt::OnUpdateTextInputStateCalled(
     }
   }
   if (state && state->type != ui::TEXT_INPUT_TYPE_NONE) {
+    // The last definition of the enumeration in src/cef/include/internal/cef_types.h was modified to 
+    // clearly indicate "the number of values," making the semantics clearer. However, the corresponding 
+    // enumeration in src/ui/base/ime/text_input_mode.h has not been modified, 
+    // so it is necessary to subtract one to match the difference.
     static_assert(
-        static_cast<int>(ArkWebRenderHandlerExt::TextInputMode::CEF_TEXT_INPUT_MODE_MAX) ==
+        static_cast<int>(ArkWebRenderHandlerExt::TextInputMode::CEF_TEXT_INPUT_MODE_NUM_VALUES) - 1 ==
             static_cast<int>(ui::TextInputMode::TEXT_INPUT_MODE_MAX),
         "Enum values in cef_text_input_mode_t must match ui::TextInputMode");
     static_assert(
@@ -1930,10 +1943,11 @@ void ArkWebRenderWidgetHostViewOSRExt::DidNativeEmbedEvent(
     if (touchEvent->id == NOT_NATIVE_ID) {
       new_callback.Reset();
     }
-    CefRefPtr<CefGestureEventCallbackImpl> callbackPtr(
-        new CefGestureEventCallbackImpl(std::move(new_callback), touchEvent->id));
-    handler->OnNativeEmbedGestureEvent(browser_impl_.get(), event,
-                                       callbackPtr.get());
+    // TODO: Re-implement gesture event callback handling for Chromium 141
+    // CefRefPtr<CefGestureEventCallbackImpl> callbackPtr(
+    //     new CefGestureEventCallbackImpl(std::move(new_callback), touchEvent->id));
+    // handler->OnNativeEmbedGestureEvent(browser_impl_.get(), event,
+    //                                    callbackPtr.get());
   }
 }
 
@@ -1959,10 +1973,11 @@ void ArkWebRenderWidgetHostViewOSRExt::DidNativeEmbedMouseEvent(
     auto new_callback =
         base::BindOnce(&ArkWebRenderWidgetHostViewOSRExt::SetMouseEventResult,
                        weak_ptr_factory_.GetWeakPtr());
-    CefRefPtr<CefMouseEventCallbackImpl> callbackPtr(
-        new CefMouseEventCallbackImpl(std::move(new_callback)));
-    handler->OnNativeEmbedMouseEvent(browser_impl_.get(), event,
-                                     callbackPtr.get());
+    // TODO: Re-implement mouse event callback handling for Chromium 141
+    // CefRefPtr<CefMouseEventCallbackImpl> callbackPtr(
+    //     new CefMouseEventCallbackImpl(std::move(new_callback)));
+    // handler->OnNativeEmbedMouseEvent(browser_impl_.get(), event,
+    //                                  callbackPtr.get());
   }
 }
 

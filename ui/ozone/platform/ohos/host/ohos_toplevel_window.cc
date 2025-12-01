@@ -11,7 +11,6 @@
 #include "base/strings/utf_string_conversions.h"
 #include "ohos/adapter/browser/browser_adapter.h"
 #include "ohos/adapter/device_info/device_info.h"
-#include "ohos/adapter/ime_adapter/input_method_ohos_adapter.h"
 #include "ohos/adapter/node_handle/node_handle_impl.h"
 #include "ohos/adapter/window/app_window_adapter.h"
 #include "ohos/adapter/xcomponent/xcomponent_manager.h"
@@ -516,11 +515,7 @@ void OhosToplevelWindow::OnWindowRectChangeEvent(std::shared_ptr<XCEvent> event)
       break;
     case PlatformWindowState::kFullScreen: {
       if (reason == RectChangeReason::RECOVER) {
-        // When you click the button in the upper right corner to exit the
-        // fullscreen, BrowserView cannot detect the window status change and
-        // sends an F11 key event to exit the full screen.
-          ohos::adapter::InputMethodOHOSAdapter::GetInstance()
-              .ExitFullscreenEvent();
+        delegate()->OnFullscreenSwitched(false);
       }
       delegate()->OnFullscreenStateChanged();
       break;

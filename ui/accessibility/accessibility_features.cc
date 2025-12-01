@@ -524,6 +524,15 @@ bool IsBlockRootWindowAccessibleNameChangeEventEnabled() {
 }
 #endif  // BUILDFLAG(IS_MAC)
 
+#if BUILDFLAG(IS_OHOS)
+// Starting from API version 15, the input method uses the HarmonyOS native API (C API) by default.
+// To force the use of the JS API (i.e., the implementation where C++ calls ets and js),
+// enable this option. This feature is disabled by default.
+BASE_FEATURE(kUseInputMethodJSApi,
+             "UseInputMethodJSApi",
+             base::FEATURE_DISABLED_BY_DEFAULT);
+#endif
+
 #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
     BUILDFLAG(IS_OHOS)
 BASE_FEATURE(kWasmTtsComponentUpdaterEnabled,

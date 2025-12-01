@@ -1409,6 +1409,7 @@ void TabsCaptureVisibleTabFunction::RegisterProfilePrefs(
 ExecuteCodeInTabFunction::ExecuteCodeInTabFunction() = default;
 ExecuteCodeInTabFunction::~ExecuteCodeInTabFunction() = default;
 
+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
 ExecuteCodeFunction::InitResult ExecuteCodeInTabFunction::Init() {
   if (init_result_) {
     return init_result_.value();

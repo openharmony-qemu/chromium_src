@@ -190,18 +190,6 @@
      const content::LoadCommittedDetails& load_details) {
    // Call RespondWithLanguage() with an empty string as we want to guarantee the
    // callback is called for every API call the extension made.
-@@ -2591,10 +2610,11 @@
- ExecuteCodeInTabFunction::ExecuteCodeInTabFunction()
-     : chrome_details_(this), execute_tab_id_(-1) {}
- 
- ExecuteCodeInTabFunction::~ExecuteCodeInTabFunction() {}
- 
-+#if !BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
- ExecuteCodeFunction::InitResult ExecuteCodeInTabFunction::Init() {
-   if (init_result_) {
-     return init_result_.value();
-   }
- 
 @@ -2723,11 +2744,15 @@
    content::WebContents* contents = nullptr;
  

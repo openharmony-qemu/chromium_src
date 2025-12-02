@@ -179,7 +179,7 @@ struct PartitionOptions {
   // compression ratio of freed memory inside partially allocated pages (due to
   // fragmentation).
   EnableToggle eventually_zero_freed_memory = kDisabled;
-  EnableToggle fewer_memory_regions = kEnabled;
+  EnableToggle fewer_memory_regions = kDisabled;
 
   struct {
     EnableToggle enabled = kDisabled;

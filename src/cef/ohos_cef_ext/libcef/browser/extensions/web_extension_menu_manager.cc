@@ -222,9 +222,10 @@ void ExtensionContextMenusInvokeActiveTab(
  
   content::WebContents* out_contents = nullptr;
   if (extensions::ExtensionTabUtil::GetTabById(tab_id, context, true, &out_contents)) {
-    extensions::TabHelper::FromWebContents(out_contents)
-        ->active_tab_permission_granter()
-        ->GrantIfRequested(extension);
+    auto* active_tab_granter = extensions::ActiveTabPermissionGranter::FromWebContents(out_contents);
+    if (active_tab_granter) {
+      active_tab_granter->GrantIfRequested(extension);
+    }
   }
 }
 
@@ -295,13 +296,13 @@ void CefWebExtensionMenuManager::OnClickedExtensionContextMenus(const std::strin
   {
     auto event = std::make_unique<extensions::Event>(extensions::events::CONTEXT_MENUS,
         "contextMenus", args.Clone(), browser_context);
-    event->user_gesture = extensions::EventRouter::USER_GESTURE_ENABLED;
+    event->user_gesture = extensions::EventRouter::UserGestureState::kEnabled;
     event_router->DispatchEventToExtension(extension_id, std::move(event));
   }
   {
     auto event = std::make_unique<extensions::Event>(extensions::events::CONTEXT_MENUS_ON_CLICKED,
         extensions::api::context_menus::OnClicked::kEventName, std::move(args), browser_context);
-    event->user_gesture = extensions::EventRouter::USER_GESTURE_ENABLED;
+    event->user_gesture = extensions::EventRouter::UserGestureState::kEnabled;
     event_router->DispatchEventToExtension(extension_id, std::move(event));
   }
 }
@@ -347,7 +348,7 @@ void CefWebExtensionMenuManager::OnClickedExtensionContextMenus(const std::strin
         "contextMenus",
         args.Clone(),
         browser_context);
-    event->user_gesture = extensions::EventRouter::USER_GESTURE_ENABLED;
+    event->user_gesture = extensions::EventRouter::UserGestureState::kEnabled;
     event_router->DispatchEventToExtension(extension_id, std::move(event));
   }
   {
@@ -356,7 +357,7 @@ void CefWebExtensionMenuManager::OnClickedExtensionContextMenus(const std::strin
         extensions::api::context_menus::OnClicked::kEventName,
         std::move(args),
         browser_context);
-    event->user_gesture = extensions::EventRouter::USER_GESTURE_ENABLED;
+    event->user_gesture = extensions::EventRouter::UserGestureState::kEnabled;
     event_router->DispatchEventToExtension(extension_id, std::move(event));
   }
 }

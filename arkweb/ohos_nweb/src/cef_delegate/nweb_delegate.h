@@ -664,6 +664,10 @@ class NWebDelegate : public NWebDelegateInterface, public virtual CefRefCount {
       std::shared_ptr<NWebMessageValueCallback> callback) override;
   void FillAutofillData(std::shared_ptr<NWebMessage> data) override;
   void FillAutofillDataV2(std::shared_ptr<NWebRomValue> data) override;
+  void FillAutofillDataFromTriggerType(
+      std::shared_ptr<NWebRomValue> data, int32_t type) override;
+  void PutVaultPlainTextCallback(
+      std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> callback) override;
   void StopFling() override;
 
 #if BUILDFLAG(ARKWEB_WEBRTC)

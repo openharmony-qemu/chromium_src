@@ -227,4 +227,10 @@ void MockClipboardHost::OnClipboardDataGuard(
   std::move(callback).Run();
 }
 #endif
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+void MockClipboardHost::HandlePasswordVault(HandlePasswordVaultCallback callback) {
+  std::move(callback).Run(false);
+}
+#endif
 }  // namespace content

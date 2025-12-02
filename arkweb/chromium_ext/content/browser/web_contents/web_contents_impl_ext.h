@@ -244,6 +244,13 @@ class WebContentsImplExt : public WebContentsImpl {
                          bool is_password_popup_type) override;
   void HideAutofillPopup() override;
 #endif // BUILDFLAG(ARKWEB_DATALIST)
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> GetVaultPlainTextCallback() override;
+  void SetVaultPlainTextCallback(
+      std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> callback) override;
+#endif
+
 #if BUILDFLAG(ARKWEB_EXT_FREE_COPY)
   bool is_selectable_ = false;
   void SetShouldShowFreeCopyMenu(bool is_selectable) {
@@ -351,6 +358,9 @@ private:
   std::unique_ptr<VideoAssistant> video_assistant_;
   bool custom_media_player_enabled_ = false;
   std::map<MediaPlayerId, int32_t> surface_widget_map_;
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> vault_plain_text_callback_ = nullptr;
+#endif
 #if BUILDFLAG(ARKWEB_TEST)
   friend class WebContentsImplExtTest;
 #endif  // ARKWEB_TEST

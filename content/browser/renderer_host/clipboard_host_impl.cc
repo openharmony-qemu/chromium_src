@@ -57,6 +57,10 @@
 #include "content/public/common/url_constants.h"
 #endif  // BUILDFLAG(IS_CHROMEOS_ASH)
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+#include "content/public/browser/web_contents.h"
+#endif
+
 namespace content {
 
 namespace {
@@ -857,6 +861,20 @@ void ClipboardHostImpl::UpdateClipboardData(
     UpdateClipboardDataCallback callback) {
   ui::Clipboard::GetForCurrentThread()->UpdateClipboardData(
       std::move(callback));
+}
+#endif
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+void ClipboardHostImpl::HandlePasswordVault(HandlePasswordVaultCallback callback) {
+  auto* contents = WebContents::FromRenderFrameHost(&render_frame_host());
+  if (!contents) {
+    std::move(callback).Run(false);
+    return;
+  }
+
+  bool result = ui::Clipboard::GetForCurrentThread()->HandlePasswordVault(
+      contents->GetVaultPlainTextCallback());
+  std::move(callback).Run(result);
 }
 #endif
 }  // namespace content

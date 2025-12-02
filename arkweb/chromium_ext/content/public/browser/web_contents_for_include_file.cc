@@ -37,3 +37,7 @@
 #if BUILDFLAG(ARKWEB_READER_MODE)
 #include "components/dom_distiller/content/common/mojom/distillability_service.mojom.h"
 #endif  // ARKWEB_READER_MODE
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+#include "arkweb/ohos_nweb/include/nweb_vault_plain_text_callback.h"
+#endif

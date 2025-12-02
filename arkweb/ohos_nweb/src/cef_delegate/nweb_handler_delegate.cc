@@ -1203,6 +1203,10 @@ void NWebHandlerDelegate::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
         main_browser_->GetHost()->SetAutofillCallback(
             preference_delegate_->GetAutofillCallback());
+        if (preference_delegate_->GetVaultPlainTextCallback()) {
+          main_browser_->GetHost()->SetVaultPlainTextCallback(
+              preference_delegate_->GetVaultPlainTextCallback());
+        }
 #endif
 
 #if BUILDFLAG(ARKWEB_JSPROXY)

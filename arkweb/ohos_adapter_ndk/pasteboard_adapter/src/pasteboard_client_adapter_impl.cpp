@@ -680,11 +680,11 @@ std::shared_ptr<PasteCustomData> PasteDataRecordAdapterImpl::GetCustomData()
     }
 
     auto customData = std::make_shared<PasteCustomData>();
-    unsigned char* entrys;
+    unsigned char* entrys = nullptr;
     char typeId[] = "ohos/custom-data";
     unsigned int count = 0;
     int getGeneralEntry_res = OH_UdmfRecord_GetGeneralEntry(record_, typeId, &entrys, &count);
-    if (getGeneralEntry_res != UDMF_E_OK) {
+    if (getGeneralEntry_res != UDMF_E_OK || !entrys) {
         WVLOG_E("GetGeneralEntry failed. error code is : %{public}d", getGeneralEntry_res);
         return nullptr;
     }
@@ -1215,5 +1215,16 @@ void PasteBoardClientAdapterImpl::RemovePasteboardChangedObserver(
     if (ret != ERR_OK) {
         WVLOG_E("destroy observer failed. error code is : %{public}d", ret);
     }
+}
+
+bool PasteBoardClientAdapterImpl::HasType(const char* type)
+{
+    if (pasteboard_ == nullptr || type == nullptr) {
+        WVLOG_E("pasteboard_ or type is nullptr");
+        return false;
+    }
+    bool has = OH_Pasteboard_HasType(pasteboard_, type);
+    WVLOG_D("HasType query type:%{public}s, result:%{public}d", type, has);
+    return has;
 }
 } // namespace OHOS::NWeb

@@ -197,7 +197,8 @@
                 "int OH_Pasteboard_SetData(OH_Pasteboard* pasteboard, OH_UdmfData* data)",
                 "OH_UdmfData* OH_Pasteboard_GetData(OH_Pasteboard* pasteboard, int* status)",
                 "int OH_Pasteboard_ClearData(OH_Pasteboard* pasteboard)",
-                "bool OH_Pasteboard_HasData(OH_Pasteboard* pasteboard)"
+                "bool OH_Pasteboard_HasData(OH_Pasteboard* pasteboard)",
+                "bool OH_Pasteboard_HasType(OH_Pasteboard* pasteboard, const char* type)"
             ],
             "15": [
                 "Pasteboard_GetDataParams *OH_Pasteboard_GetDataParams_Create()",

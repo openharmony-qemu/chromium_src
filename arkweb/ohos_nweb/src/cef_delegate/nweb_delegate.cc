@@ -2041,6 +2041,30 @@ void NWebDelegate::FillAutofillDataV2(std::shared_ptr<NWebRomValue> data) {
   GetBrowser()->GetHost()->FillAutofillData(message);
 }
 
+void NWebDelegate::FillAutofillDataFromTriggerType(
+    std::shared_ptr<NWebRomValue> data, int32_t type) {
+  if (!GetBrowser().get()) {
+    return;
+  }
+
+  CefRefPtr<CefValue> message = ConvertRomValueToCefValue(data);
+  GetBrowser()->GetHost()->FillAutofillData(message, type);
+}
+
+void NWebDelegate::PutVaultPlainTextCallback(
+    std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback> callback) {
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
+    if (preference_delegate_) {
+      preference_delegate_->PutVaultPlainTextCallback(callback);
+    }
+    return;
+  }
+
+  GetBrowser()->GetHost()->SetVaultPlainTextCallback(callback);
+#endif
+}
+
 void NWebDelegate::OnContinue() {
   LOG(DEBUG) << "NWebDelegate::OnContinue, nweb_id = " << nweb_id_;
   if (!GetBrowser().get() || !GetBrowser()->GetHost()) {

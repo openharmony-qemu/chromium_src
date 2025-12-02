@@ -298,6 +298,9 @@ class NWebPreferenceDelegate : public NWebPreference {
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
   CefRefPtr<CefWebMessageReceiver> GetAutofillCallback();
   void SetAutofillCallback(CefRefPtr<CefWebMessageReceiver> callback);
+
+  std::shared_ptr<NWebVaultPlainTextCallback> GetVaultPlainTextCallback();
+  void PutVaultPlainTextCallback(std::shared_ptr<NWebVaultPlainTextCallback> callback);
 #endif
 
 #if BUILDFLAG(ARKWEB_MEDIA_AVSESSION)
@@ -465,6 +468,7 @@ class NWebPreferenceDelegate : public NWebPreference {
 
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
   CefRefPtr<CefWebMessageReceiver> autofill_callback_ = nullptr;
+  std::shared_ptr<NWebVaultPlainTextCallback> vault_plain_text_callback_ = nullptr;
 #endif
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)

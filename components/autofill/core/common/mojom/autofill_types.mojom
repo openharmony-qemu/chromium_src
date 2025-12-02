@@ -583,6 +583,8 @@ enum FieldActionType {
   kReplaceAll,        // Replace the field's current value.
   kReplaceSelection,  // Replace only the currently selected text.
   kSelectAll,         // Selects all the text within this field.
+  [EnableIf=arkweb_password_autofill]
+  kNotSmartReplaceSelection,
 };
 
 // Describes which action triggered Autofill suggestions. This has implications

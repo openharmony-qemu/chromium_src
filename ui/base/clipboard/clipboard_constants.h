@@ -154,6 +154,24 @@ extern const char kWebClipboardFormatPrefix[];
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
 COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
 extern const char kMimeTypeOHOSCustomData[];
+
+COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
+extern const char kMiscServicesMimeTypePixelmap[];
+
+COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
+extern const char kMiscServicesMimeTypeTextHtml[];
+
+COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
+extern const char kMiscServicesMimeTypeTextPlain[];
+
+COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
+extern const char kMiscServicesMimeTypeTextUri[];
+
+COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
+extern const char kMiscServicesMimeTypeTextWant[];
+
+COMPONENT_EXPORT(UI_BASE_CLIPBOARD_TYPES)
+extern const char kMiscServicesMimeTypeAutoFillSecure[];
 #endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
 
 }  // namespace ui

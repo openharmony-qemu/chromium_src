@@ -29,6 +29,10 @@ if (arkweb_clipboard) {
   mojom_platform_enabled_features += [ "arkweb_clipboard" ]
 }
 
+if (arkweb_password_autofill) {
+  mojom_platform_enabled_features += [ "arkweb_password_autofill" ]
+}
+
 if (arkweb_copy_option) {
   mojom_platform_enabled_features += [ "arkweb_copy_option" ]
 }

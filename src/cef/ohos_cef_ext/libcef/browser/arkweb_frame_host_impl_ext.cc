@@ -42,6 +42,7 @@
 #include "cef/ohos_cef_ext/include/arkweb_frame_ext.h"
 #endif
 #include "content/public/browser/browsing_data_remover.h"
+#include "content/public/browser/browser_context.h"
 
 #if BUILDFLAG(ARKWEB_BLANK_OPTIMIZE)
 #include "components/viz/common/surfaces/frame_sink_id.h"

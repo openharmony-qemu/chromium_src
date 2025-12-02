@@ -651,6 +651,10 @@ namespace developerPrivate {
         optional ReloadOptions options,
         optional LoadErrorCallback callback);
 
+    // ifdef ARKWEB_ARKWEB_EXTENSIONS
+    // open a extension url.
+    static void openUrl(DOMString url, long type);
+
     // Modifies an extension's current configuration.
     // |update| : The parameters for updating the extension's configuration.
     //     Any properties omitted from |update| will not be changed.

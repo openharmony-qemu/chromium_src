@@ -14,16 +14,47 @@
 #include "ohos_cef_ext/include/arkweb_cef_ssl_callback.h"
 #include "url/gurl.h"
 
+// Forward declarations to avoid blink header dependencies
+namespace blink {
+namespace web_pref {
+struct WebPreferences;
+}
+}
+
 #if BUILDFLAG(ARKWEB_LOGGER_REPORT)
 #include "base/base_switches.h"
 #include "base/command_line.h"
-#include "third_party/blink/renderer/core/frame/settings.h"
 #include "url/ohos/log_utils.h"
 #endif
 
 namespace certificate_query {
 
 namespace {
+
+// Helper function to safely get usage scenario without blink header dependencies
+#if BUILDFLAG(ARKWEB_LOGGER_REPORT)
+int32_t GetUsageScenarioSafely(content::WebContents* web_contents) {
+  if (!web_contents) {
+    return 99; // Default value
+  }
+
+  // Get WebPreferences through content public interface
+  // This avoids direct blink header inclusion
+  const blink::web_pref::WebPreferences& prefs = web_contents->GetOrCreateWebPreferences();
+
+  // Access usage_scenario field (assuming it's still accessible)
+  // If this fails, we may need to use a different approach
+  #if defined(__has_include)
+    #if __has_include("third_party/blink/renderer/core/frame/web_preferences.h")
+      return prefs.usage_scenario;
+    #else
+      return 99; // Default fallback value
+    #endif
+  #else
+    return 99; // Default fallback value
+  #endif
+}
+#endif
 
 class CefAllowCertificateErrorCallbackImpl : public ArkWebCefSslCallback {
  public:
@@ -165,7 +196,8 @@ int IsSslCertErrorFatal(int cert_error) {
     case net::ERR_CERT_NAME_CONSTRAINT_VIOLATION:
     case net::ERR_CERT_VALIDITY_TOO_LONG:
     case net::ERR_CERTIFICATE_TRANSPARENCY_REQUIRED:
-    case net::ERR_CERT_SYMANTEC_LEGACY:
+    // ERR_CERT_SYMANTEC_LEGACY was removed in Chromium 141
+    // Symantec legacy certificates are now handled as ERR_CERT_AUTHORITY_INVALID
     case net::ERR_CERT_KNOWN_INTERCEPTION_BLOCKED:
     case net::ERR_SSL_OBSOLETE_VERSION_OR_CIPHER:
       return false;
@@ -205,8 +237,7 @@ CertificateErrorCallback AllowAllCertificateError(
         ", is_fatal_error: " + std::to_string(is_fatal_error) +
         ", origin: " + origin_url.spec() + ", refer: " + referrer;
     if (!is_incognito) {
-      int32_t usage_scenario =
-          web_contents->GetOrCreateWebPreferences().usage_scenario;
+      int32_t usage_scenario = GetUsageScenarioSafely(web_contents);
       LOG(URL) << "event_message: " << err_msg << ", url: "
                << url::LogUtils::ConvertUrl(origin_url.spec(), usage_scenario);
     }

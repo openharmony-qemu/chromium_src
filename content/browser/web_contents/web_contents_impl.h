@@ -1599,6 +1599,10 @@ class CONTENT_EXPORT WebContentsImpl
 
   WebContents* GetOpenedPartitionedPopin() const override;
 
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+  void EvictFrameBackBuffersWhenNWebWasHidden();
+#endif
+
 #if BUILDFLAG(ARKWEB_TEST)
  public:
 #else

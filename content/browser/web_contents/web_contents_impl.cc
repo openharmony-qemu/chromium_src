@@ -4689,6 +4689,12 @@ void WebContentsImpl::UpdateVisibilityAndNotifyPageAndView(
   }
 }
 
+#if BUILDFLAG(ARKWEB_OFFLINE_WEB_EVICT_BACK_BUFFERS)
+void WebContentsImpl::EvictFrameBackBuffersWhenNWebWasHidden() {
+  implUtils_->EvictFrameBackBuffersWhenNWebWasHidden();
+}
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
 void WebContentsImpl::UpdateUserGestureCarryoverInfo() {
   OPTIONAL_TRACE_EVENT0("content",

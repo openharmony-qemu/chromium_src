@@ -6,6 +6,7 @@
 
 #include "base/check.h"
 #include "base/logging.h"
+#include "base/command_line.h"
 #if BUILDFLAG(IS_OHOS)
 #include "content/renderer/render_remote_proxy_ohos.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
@@ -17,6 +18,11 @@ extern void* QueryRenderWindowFromBrowserProcess(int32_t window_id);
 extern void DestoryRenderWindowFromBrowserProcess(int32_t window_id);
 extern void PassWindow(int64_t window_id);
 extern void DestroyPassedSurfaceFromGpuProcess(int64_t surface_id);
+
+namespace {
+constexpr char kProcessType[] = "type";
+constexpr char kGpuProcess[] = "gpu-process";
+}  // namespace
 
 class BrowserClientAdapterImpl : public OHOS::NWeb::AafwkBrowserClientAdapter {
 public:
@@ -48,8 +54,13 @@ public:
 
 //LCOV_EXCL_START
 NWebNativeWindowTracker::NWebNativeWindowTracker()
-    : g_browser_client_(std::make_shared<BrowserClientAdapterImpl>()),
-      next_native_window_id_(1) {}
+    : next_native_window_id_(1) {
+  auto type = base::CommandLine::ForCurrentProcess()->
+      GetSwitchValueASCII(kProcessType);
+  if (type == kGpuProcess) {
+    g_browser_client_ = std::make_shared<BrowserClientAdapterImpl>();
+  }
+}
 
 NWebNativeWindowTracker::~NWebNativeWindowTracker() {}
 

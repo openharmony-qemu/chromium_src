@@ -1312,11 +1312,7 @@ void NWebHandlerDelegate::OnBeforeClose(CefRefPtr<CefBrowser> browser) {
     if (host != nullptr && host->gpu_host() != nullptr && main_browser_ != nullptr) {
       host->gpu_host()->DestroyNativeWindow(main_browser_->GetHost()->GetAcceleratedWidget(false));
     }
-    OHOS::NWeb::OhosAdapterHelperExt::GetWindowAdapterNdkInstance()
-        .DestroyNativeWindow(window_);
     window_ = nullptr;
-    OHOS::NWeb::OhosAdapterHelperExt::GetWindowAdapterNdkInstance()
-        .DestroyNativeWindow(popup_window_);
     popup_window_ = nullptr;
   }
 

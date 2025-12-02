@@ -59,7 +59,8 @@ DesktopBrowserFrameAuraOhos::DesktopBrowserFrameAuraOhos(
 
 DesktopBrowserFrameAuraOhos::~DesktopBrowserFrameAuraOhos() = default;
 
-views::Widget::InitParams DesktopBrowserFrameAuraOhos::GetWidgetParams() {
+views::Widget::InitParams DesktopBrowserFrameAuraOhos::GetWidgetParams(
+    views::Widget::InitParams::Ownership ownership) {
   views::Widget::InitParams params(
       views::Widget::InitParams::NATIVE_WIDGET_OWNS_WIDGET);
   params.native_widget = this;

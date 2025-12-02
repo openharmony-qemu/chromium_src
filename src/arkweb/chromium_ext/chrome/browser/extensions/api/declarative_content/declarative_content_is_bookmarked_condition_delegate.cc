@@ -15,6 +15,9 @@
 
 #include "arkweb/chromium_ext/chrome/browser/extensions/api/declarative_content/declarative_content_is_bookmarked_condition_delegate.h"
 
+#include <set>
+#include "base/logging.h"
+#include "url/gurl.h"
 #include "arkweb/ohos_nweb/src/cef_delegate/nweb_extension_bookmarks_cef_delegate.h"
 
 namespace extensions {

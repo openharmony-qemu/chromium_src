@@ -47,6 +47,12 @@ class ExtensionOmniboxEventRouter {
                                  const ExtensionId& extension_id,
                                  const std::string& suggestion_text);
 
+  // The user has clicked an action of an extension omnibox suggestion result.
+  static void OnActionExecuted(Profile* profile,
+                               const ExtensionId& extension_id,
+                               const std::string& action_name,
+                               const std::string& content);
+
   // The user has changed what is typed into the omnibox while in an extension
   // keyword session. Returns true if someone is listening to this event, and
   // thus we have some degree of confidence we'll get a response.

@@ -66,10 +66,13 @@ void ConvertAutofillPopupItem(const autofill::Suggestion& suggestion,
                               CefAutofillPopupItem& menu_item)
 {
   CefString label = CefString(base::UTF16ToUTF8(suggestion.main_text.value));
-  CefString sublabel = CefString(suggestion.minor_text.value);
+  // TODO:In src/components/autofill/core/browser/suggestions/suggestion.h, 
+  // minor_text has been changed to minor_texts, 
+  // and the corresponding implementations need to be updated.
+  // CefString sublabel = CefString(suggestion.minor_text.value);
   cef_string_set(label.c_str(), label.length(), &(menu_item.label), true);
-  cef_string_set(sublabel.c_str(), sublabel.length(), &(menu_item.sublabel),
-                 true);
+  // cef_string_set(sublabel.c_str(), sublabel.length(), &(menu_item.sublabel),
+  //                true);
 }
 }  // namespace
 
@@ -763,7 +766,7 @@ void CefBrowserPlatformDelegateOsrExt::SetPipNativeWindow(
                                                 frame_routing_id,
                                                 status);
   if (status) {
-    LOG(INFO) << "PIC playId:" << it.delegate_id; 
+    LOG(INFO) << "PIC playId:" << it.player_id; 
     auto observer = web_contents_impl->media_web_contents_observer();
     if (web_contents_impl->media_web_contents_observer()) {
       if (observer) {

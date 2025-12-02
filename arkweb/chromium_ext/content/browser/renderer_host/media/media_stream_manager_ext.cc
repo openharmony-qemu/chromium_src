@@ -43,6 +43,19 @@ void MediaStreamManagerExt::SetScreenCaptureDelegateCallback(
 
 void MediaStreamManagerExt::StopScreenCapture(int32_t nweb_id,
                                               const std::string& session_id) {
+  if (!BrowserThread::CurrentlyOn(BrowserThread::IO)) {
+    auto io_task_runner = GetIOThreadTaskRunner({});
+    if (!io_task_runner) {
+      LOG(ERROR) << "StopScreenCapture io_task_runner is nullptr";
+      return;
+    }
+    io_task_runner->PostTask(
+      FROM_HERE,
+      base::BindOnce(&MediaStreamManagerExt::StopScreenCapture,
+                     weak_factory_.GetWeakPtr(), nweb_id, session_id));
+      return;
+  }
+  LOG(INFO) << "MediaStreamManagerExt::StopScreenCapture, nweb_id=" << nweb_id;
   if (!video_capture_manager_) {
     LOG(ERROR) << "videoCaptureManager null";
     return;
@@ -62,6 +75,19 @@ void MediaStreamManagerExt::StopScreenCapture(int32_t nweb_id,
 
 // LCOV_EXCL_START
 void MediaStreamManagerExt::SetScreenCapturePickerShow() {
+  if (!BrowserThread::CurrentlyOn(BrowserThread::IO)) {
+    auto io_task_runner = GetIOThreadTaskRunner({});
+    if (!io_task_runner) {
+      LOG(ERROR) << "SetScreenCapturePickerShow io_task_runner is nullptr";
+      return;
+    }
+    io_task_runner->PostTask(
+      FROM_HERE,
+      base::BindOnce(&MediaStreamManagerExt::SetScreenCapturePickerShow,
+                     weak_factory_.GetWeakPtr()));
+      return;
+  }
+  LOG(INFO) << "MediaStreamManagerExt::SetScreenCapturePickerShow";
   if (!video_capture_manager_) {
     LOG(ERROR) << "videoCaptureManager null";
     return;
@@ -71,6 +97,19 @@ void MediaStreamManagerExt::SetScreenCapturePickerShow() {
 }
 
 void MediaStreamManagerExt::DisableSessionReuse() {
+  if (!BrowserThread::CurrentlyOn(BrowserThread::IO)) {
+    auto io_task_runner = GetIOThreadTaskRunner({});
+    if (!io_task_runner) {
+      LOG(ERROR) << "DisableSessionReuse io_task_runner is nullptr";
+      return;
+    }
+    io_task_runner->PostTask(
+      FROM_HERE,
+      base::BindOnce(&MediaStreamManagerExt::DisableSessionReuse,
+                     weak_factory_.GetWeakPtr()));
+      return;
+  }
+  LOG(INFO) << "MediaStreamManagerExt::DisableSessionReuse";
   if (!video_capture_manager_) {
     LOG(ERROR) << "videoCaptureManager null";
     return;

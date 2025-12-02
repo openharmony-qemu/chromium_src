@@ -41,6 +41,9 @@ static bool SetUserDataDirForArkweb(const base::CommandLine* command_line) {
     target_user_data_dir = arkweb_user_data_dir;
   }
 
+  base::PathService::OverrideAndCreateIfNeeded(
+    base::DIR_USER_DATA, target_user_data_dir, false, false);
+
   return !base::PathService::OverrideAndCreateIfNeeded(
             chrome::DIR_USER_DATA, target_user_data_dir, false, true);
 }

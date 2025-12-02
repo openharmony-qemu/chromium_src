@@ -262,7 +262,7 @@ struct alignas(64) PA_COMPONENT_EXPORT(PARTITION_ALLOC) PartitionRoot {
     bool zapping_by_free_flags = false;
     bool eventually_zero_freed_memory = false;
     bool scheduler_loop_quarantine = false;
-    bool fewer_memory_regions = true;
+    bool fewer_memory_regions = false;
 #if PA_BUILDFLAG(HAS_MEMORY_TAGGING)
     bool memory_tagging_enabled_ = false;
     bool use_random_memory_tagging_ = false;

@@ -63,8 +63,7 @@ void BusinessRiskIntelligentDetectionHostImpl::DetectSimulatedClickRiskEnhanced(
     }
   }
 
-  DetectSimulatedClickRiskEnhancedFFI func = nullptr;
-  func = (DetectSimulatedClickRiskEnhancedFFI)
+  DetectSimulatedClickRiskEnhancedFFI func = (DetectSimulatedClickRiskEnhancedFFI)
       dlsym(detect_sim_click_risk_enhanced_handler_, "DetectSimulatedClickRiskEnhancedFFI");
   if (!func) {
     const char* error = dlerror();

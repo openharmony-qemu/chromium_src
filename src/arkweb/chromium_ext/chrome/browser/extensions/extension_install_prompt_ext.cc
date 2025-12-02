@@ -109,11 +109,12 @@ class PromptInfoHolder {
           l10n_util::GetStringUTF8(IDS_EXTENSIONS_SHOW_DETAILS);
       const std::string hide_details_label =
           l10n_util::GetStringUTF8(IDS_EXTENSIONS_HIDE_DETAILS);
+      auto permissions = prompt_->GetPermissions();
       for (uint32_t i = 0; i < data->permissionCount; i++) {
         std::string permission =
             base::UTF16ToUTF8(prompt_->GetPermission(i));
         std::string detail =
-            base::UTF16ToUTF8(prompt_->GetPermissionsDetails(i));
+            base::UTF16ToUTF8(permissions.details.at(i));
         data->permissions[i].detail = strdup(detail.c_str());
         data->permissions[i].permission = strdup(permission.c_str());
         data->permissions[i].showDetailLabel = strdup(show_details_label.c_str());

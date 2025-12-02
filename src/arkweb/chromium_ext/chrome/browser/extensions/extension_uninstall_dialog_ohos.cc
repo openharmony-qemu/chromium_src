@@ -15,6 +15,7 @@
 
 #include "arkweb/chromium_ext/chrome/browser/extensions/extension_uninstall_dialog_ohos.h"
 
+#include "base/auto_reset.h"
 #include "base/functional/callback.h"
 #include "base/task/single_thread_task_runner.h"
 #include "chrome/browser/extensions/extension_util.h"

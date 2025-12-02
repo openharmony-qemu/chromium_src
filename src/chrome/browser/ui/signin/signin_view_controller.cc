@@ -476,7 +476,7 @@ void SigninViewController::ShowModalSyncConfirmationDialog(
       GetOnModalDialogClosedCallback());
 }
 
-#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
 void SigninViewController::ShowModalHistorySyncOptInDialog() {
   CHECK(base::FeatureList::IsEnabled(switches::kEnableHistorySyncOptin));
   CloseModalSignin();
@@ -486,7 +486,7 @@ void SigninViewController::ShowModalHistorySyncOptInDialog() {
           HistorySyncOptinLaunchContext::kModal),
       GetOnModalDialogClosedCallback());
 }
-#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
+#endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
 
 void SigninViewController::ShowModalManagedUserNoticeDialog(
     std::unique_ptr<signin::EnterpriseProfileCreationDialogParams>

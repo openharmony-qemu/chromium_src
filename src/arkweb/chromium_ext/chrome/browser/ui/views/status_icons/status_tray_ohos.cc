@@ -4,6 +4,7 @@
 
 #include "base/notreached.h"
 #include "chrome/browser/status_icons/status_tray.h"
+#include "base/notimplemented.h"
 
 std::unique_ptr<StatusTray> StatusTray::Create() {
   NOTIMPLEMENTED_LOG_ONCE();

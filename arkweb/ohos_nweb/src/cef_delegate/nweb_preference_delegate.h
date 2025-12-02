@@ -148,6 +148,10 @@ class NWebPreferenceDelegate : public NWebPreference {
                               double borderRadiusBottomRight);
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  void SetEnableAutoFill(bool enable) override;
+#endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+
 #if BUILDFLAG(ARKWEB_MENU)
   void SetTouchHandleExistState(bool touchHandleExist);
   void SetViewportScaleState(bool viewportScale);
@@ -372,6 +376,9 @@ class NWebPreferenceDelegate : public NWebPreference {
   double border_radius_bottom_left_{0.0};
   double border_radius_bottom_right_{0.0};
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  bool is_autofill_enabled_{true};
+#endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 #if BUILDFLAG(ARKWEB_MENU)
   bool touch_handle_exist_{false};
   bool viewport_scale_{false};

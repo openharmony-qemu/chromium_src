@@ -54,6 +54,10 @@ class AutofillAgentExt : public AutofillAgent {
   AutofillAgentExt* AsAutofillAgentExt() override { return this; }
 
 #if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  bool isAutofillEnabled() const;
+#endif
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
   void ArkFillAccountSuggestion(const std::u16string& username,
                                 const std::u16string& password);
   void OhFormControlElementClicked();

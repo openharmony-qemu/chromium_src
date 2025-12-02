@@ -90,6 +90,10 @@ void ApplyOhosWebPreferences(const web_pref::WebPreferences& prefs,
       prefs.border_radius_bottom_left, prefs.border_radius_bottom_right);
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  settings->SetEnableAutoFill(prefs.is_autofill_enabled);
+#endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+
 #if BUILDFLAG(ARKWEB_MENU)
   settings->SetTouchHandleExistState(prefs.touch_handle_exist);
   settings->SetViewportScaleState(prefs.viewport_scale);

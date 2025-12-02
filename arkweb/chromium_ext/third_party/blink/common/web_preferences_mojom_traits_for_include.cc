@@ -120,6 +120,9 @@ static void WebPreferenceMojomExt(blink::mojom::WebPreferencesDataView data,
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
   out->clipboard_site_permission_enabled = data.clipboard_site_permission_enabled();
 #endif  // BUILDFLAG(ARKWEB_CLIPBOARD)
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  out->is_autofill_enabled = data.is_autofill_enabled();
+#endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 }
 
 } // namespace mojo

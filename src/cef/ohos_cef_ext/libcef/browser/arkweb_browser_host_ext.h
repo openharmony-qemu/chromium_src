@@ -73,6 +73,10 @@
 #include "components/zoom/zoom_observer.h"
 #endif
 
+#if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+#include "content/public/browser/prerender_handle.h"
+#endif
+
 #if BUILDFLAG(ARKWEB_MSGPORT)
 class WebMessageReceiverImpl : public blink::WebMessagePort::MessageReceiver {
  public:
@@ -102,13 +106,18 @@ class ArkWebBrowserHostExtImpl : public ArkWebBrowserHostExt,
 #endif
 {
  public:
-  CefRefPtr<ArkWebBrowserHostExt> GetHost() override { return this; }
+  CefRefPtr<ArkWebBrowserHostExt> GetHost() override {
+    return static_cast<ArkWebBrowserHostExt*>(this);
+  }
 
-  CefRefPtr<ArkWebBrowserExt> AsArkWebBrowser() override { return this; }
+  CefRefPtr<ArkWebBrowserExt> AsArkWebBrowser() override {
+    return static_cast<ArkWebBrowserExt*>(this);
+  }
 
 #if BUILDFLAG(ARKWEB_NETWORK_CONNINFO)
   CefRefPtr<ArkWebBrowserHostExtImpl> AsArkWebBrowserHostExtImpl() override {
-    return this;
+    // Return this directly since this class is ArkWebBrowserHostExtImpl
+    return CefRefPtr<ArkWebBrowserHostExtImpl>(this);
   }
 #endif
 
@@ -845,6 +854,8 @@ class ArkWebBrowserHostExtImpl : public ArkWebBrowserHostExt,
   bool has_composition_ = false;
 #endif // BUILDFLAG(ARKWEB_INPUT_EVENTS)
 #if BUILDFLAG(ARKWEB_NETWORK_LOAD)
+  // PrerenderHandle still exists in Chromium 141 but requires proper header inclusion
+  // Include content/public/browser/prerender_handle.h if needed
   base::circular_deque<std::unique_ptr<content::PrerenderHandle>>
       prerender_handles_;
 #endif

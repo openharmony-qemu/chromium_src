@@ -148,6 +148,13 @@
   double GetBorderRadiusBottomRight() { return border_radius_bottom_right_; }
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  void SetEnableAutoFill(bool enable) {
+    is_autofill_enabled_ = enable;
+  }
+  bool GetEnableAutoFill() { return is_autofill_enabled_; }
+#endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+
 #if BUILDFLAG(ARKWEB_MENU)
   void SetTouchHandleExistState(bool touchHandleExist) {
     touch_handle_exist_ = touchHandleExist;

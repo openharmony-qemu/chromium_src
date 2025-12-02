@@ -110,6 +110,11 @@ public:
   virtual double GetBorderRadiusBottomRight() = 0;
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  virtual void SetEnableAutoFill(bool) = 0;
+  virtual bool GetEnableAutoFill() = 0;
+#endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
   virtual void SetClipboardSitePermissionEnabled(bool) = 0;
 #endif  // BUILDFLAG(ARKWEB_CLIPBOARD)

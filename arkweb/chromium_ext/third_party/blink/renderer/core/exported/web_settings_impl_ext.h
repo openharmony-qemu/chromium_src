@@ -116,6 +116,11 @@ class CORE_EXPORT WebSettingsImplExt final : public WebSettingsImpl {
   double GetBorderRadiusBottomRight() override;
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  void SetEnableAutoFill(bool enable) override;
+  bool GetEnableAutoFill() override;
+#endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
   void SetClipboardSitePermissionEnabled(bool enable) override;
 #endif  // BUILDFLAG(ARKWEB_CLIPBOARD)

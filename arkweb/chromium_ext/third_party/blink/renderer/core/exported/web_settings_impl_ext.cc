@@ -189,6 +189,18 @@ double WebSettingsImplExt::GetBorderRadiusBottomRight()
 }
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
 
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+void WebSettingsImplExt::SetEnableAutoFill(bool enable)
+{
+  settings_->SetEnableAutoFill(enable);
+}
+
+bool  WebSettingsImplExt::GetEnableAutoFill()
+{
+  return settings_->GetEnableAutoFill();
+}
+#endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+
 #if BUILDFLAG(ARKWEB_CLIPBOARD)
 void WebSettingsImplExt::SetClipboardSitePermissionEnabled(bool enable)
 {

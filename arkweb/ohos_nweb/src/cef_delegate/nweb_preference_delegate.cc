@@ -203,6 +203,9 @@ void NWebPreferenceDelegate::ComputeBrowserSettings(
   browser_settings.border_radius_bottom_left = border_radius_bottom_left_;
   browser_settings.border_radius_bottom_right = border_radius_bottom_right_;
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+  browser_settings.is_autofill_enabled = is_autofill_enabled_;
+#endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 #if BUILDFLAG(ARKWEB_MENU)
   browser_settings.touch_handle_exist = touch_handle_exist_;
   browser_settings.viewport_scale = viewport_scale_;
@@ -402,6 +405,13 @@ void NWebPreferenceDelegate::SetBorderRadiusFromWeb(
   }
 }
 #endif  // ARKWEB_SCROLLBAR_AVOID_CORNER
+
+#if BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
+void NWebPreferenceDelegate::SetEnableAutoFill(bool enable) {
+  is_autofill_enabled_ = enable;
+  WebPreferencesChanged();
+}
+#endif  // BUILDFLAG(ARKWEB_PASSWORD_AUTOFILL)
 
 #if BUILDFLAG(ARKWEB_MENU)
 void NWebPreferenceDelegate::SetTouchHandleExistState(bool touchHandleExist) {

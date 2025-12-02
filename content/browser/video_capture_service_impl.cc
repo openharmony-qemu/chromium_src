@@ -155,7 +155,7 @@ video_capture::mojom::VideoCaptureService& GetVideoCaptureService() {
     if (features::IsVideoCaptureServiceEnabledForBrowserProcess()) {
       auto dedicated_task_runner = CREATE_IN_PROCESS_TASK_RUNNER(
           {base::MayBlock(), base::WithBaseSyncPrimitives(),
-           base::TaskPriority::BEST_EFFORT},
+           base::TaskPriority::USER_VISIBLE},
           base::SingleThreadTaskRunnerThreadMode::DEDICATED);
       dedicated_task_runner->PostTask(
           FROM_HERE,

@@ -737,12 +737,16 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
 #endif
 
 #if BUILDFLAG(ARKWEB_PDF)
-  void ForceSelectionChanged();
   void RefreshMenuWithTouchAndScroll();
   void SetIsScrolling(bool is_scrolling);
-  void SetScrollStoppedAfterDelay();
   void SetIsPinching(bool is_pinching);
-  void ForceSelectionChangedAfterDelay();
+
+  void SelectionChangedAtScrollStopped();
+  void DoPaintAtScrollStopped();
+
+  void SetScrollStoppedAfterDelay();
+  void SelectionChangedAfterDelay();
+  void DoPaintAfterDelay();
 
   // Used for cancelable delayed task in `UpdateScroll()`.
   scoped_refptr<base::SequencedTaskRunner> GetTaskRunner();
@@ -975,19 +979,26 @@ class PdfViewWebPlugin final : public PDFiumEngineClient,
 #endif
 
 #if BUILDFLAG(ARKWEB_PDF)
-  bool scroll_at_bottom_status_ = false;
   gfx::Rect current_left_;
   gfx::Rect current_right_;
+  gfx::Rect clipped_selection_bounds_;
+
+  bool scroll_at_bottom_status_ = false;
   bool is_touching_ = false;
   bool is_scrolling_ = false;
   bool is_pinching_ = false;
   std::atomic<bool> is_menu_hidden_{false};
 
-  // Used for cancelable delayed task in `UpdateScroll()`.
+  // Used for cancelable delayed task.
   const scoped_refptr<base::SequencedTaskRunner> task_runner_;
   SEQUENCE_CHECKER(sequence_checker_);
+
+  // Cancelable delayed task for scroll stopped.
   base::DelayedTaskHandle cancelable_scroll_task_ GUARDED_BY_CONTEXT(sequence_checker_);
+  // Cancelable delayed task for selection changed.
   base::DelayedTaskHandle cancelable_selection_task_ GUARDED_BY_CONTEXT(sequence_checker_);
+  // Cancelable delayed task for paint after scroll.
+  base::DelayedTaskHandle cancelable_paint_task_ GUARDED_BY_CONTEXT(sequence_checker_);
 
 #endif  // BUILDFLAG(ARKWEB_PDF)
 

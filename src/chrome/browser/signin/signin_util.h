@@ -171,7 +171,7 @@ SignedInState GetSignedInState(const signin::IdentityManager* identity_manager);
 // Returns a string representation of `SignedInState`.
 std::string SignedInStateToString(SignedInState state);
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
 // Returns if the necessary conditions to show the History Sync Optin screen
 // are met.
 // This method does not take into account any feature flags related to the above
@@ -184,7 +184,7 @@ bool ShouldShowHistorySyncOptinScreen(Profile& profile);
 // Requires the feature enabling through
 // `switches::IsAvatarSyncPromoFeatureEnabled()`.
 bool ShouldShowAvatarSyncPromo(Profile* profile);
-#endif  // BUILDFLAG(IS_LINUX) ||  BUILDFLAG(IS_MAC) ||  BUILDFLAG(IS_WIN)
+#endif  // BUILDFLAG(IS_LINUX) ||  BUILDFLAG(IS_MAC) ||  BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
 
 }  // namespace signin_util
 

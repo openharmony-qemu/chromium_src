@@ -667,6 +667,28 @@ bool NodeHandleXComponentImpl::BindNativeXComponentNode(
   return true;
 }
 
+bool NodeHandleXComponentImpl::UnBindNativeXComponentNode(
+    ArkUI_NodeContentHandle node_content_handle) {
+  if (node_handle_ == nullptr) {
+    LOGE(
+        "NodeHandleXComponentImpl::UnBindNativeXComponentNode node handle is "
+        "not initialized");
+    return false;
+  }
+
+  auto result =
+      OH_ArkUI_NodeContent_RemoveNode(node_content_handle, node_handle_);
+  if (result != ARKUI_ERROR_CODE_NO_ERROR) {
+    LOGE(
+        "NodeHandleXComponentImpl::UnBindNativeXComponentNode failed error "
+        "code is %{public}d",
+        result);
+    return false;
+  }
+
+  return true;
+}
+
 __attribute__((no_sanitize("cfi", "cfi-icall")))
 void NodeHandleXComponentImpl::EventReissueAfterRegisterInputEventCallBack() {
   if (has_hover_event_before_register_) {

@@ -4,6 +4,7 @@
 
 #include "ui/ozone/platform/ohos/host/ohos_popup.h"
 
+#include "ohos/adapter/task_runner/main_thread_task_runner.h"
 #include "ohos/adapter/window/sub_window_adapter.h"
 #include "ohos/adapter/xcomponent/xcomponent_manager.h"
 #include "ui/gfx/geometry/rect.h"
@@ -55,6 +56,17 @@ void OhosPopup::Close() {
     SubWindowAdapter::GetInstance().Cancel(GetWindowUniqueId());
   }
 
+  if (ohos::adapter::nodeHandle::NodeHandleImpl::GetInstance()
+          .IsSupportNodeHandle()) {
+    OhosWindow::UnBindNodeHandle();
+    if (!is_ability_bound_) {
+      auto task =
+          std::bind(&XComponentManager::RemoveNodeHandleXComponent,
+                    XComponentManager::GetInstance(), GetWindowUniqueId());
+      ohos::adapter::taskRunner::MainThreadTaskRunner::GetInstance().PostTask(
+          task);
+    }
+  }
   OhosWindow::Close();
 }
 
@@ -199,6 +211,10 @@ void OhosPopup::OnWindowSizeChangeEvent(std::shared_ptr<XCEvent> event) {
 display::Display OhosPopup::GetCurrentDisplay() {
   OhosWindow* parent_window = GetRootParentWindow();
   return parent_window->GetCurrentDisplay();
+}
+
+bool OhosPopup::ShouldWindowContentsBeTransparent() const {
+  return true;
 }
 
 }  // namespace ui

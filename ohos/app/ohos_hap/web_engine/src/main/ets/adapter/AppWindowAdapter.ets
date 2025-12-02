@@ -467,6 +467,17 @@ export class AppWindowAdapter extends BaseAdapter {
   }
 
   @LogMethod
+  unbind(id: string, callback: (nodeContent: NodeContent | undefined) => void) {
+    let nodeContent = this.nodeHandleManager.getNodeContent(id);
+    if (!nodeContent) {
+      LogUtil.warn(TAG, 'unbind node handle with node content failed, not find node content for id' + id);
+      callback(undefined);
+      return;
+    }
+    callback(nodeContent);
+  }
+
+  @LogMethod
   shiftWindowTouchEvent(sourceId: number, targetId: number,
     fingerId: number, callback: (result: boolean) => void): void {
     if (deviceInfo.sdkApiVersion >= 20) {

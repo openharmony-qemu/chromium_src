@@ -192,6 +192,10 @@ class OhosWindow : public PlatformWindow,
 
  protected:
   void BindNodeHandle();
+  void UnBindNodeHandle();
+  // whether the node handle xcomponent already bound with node content in
+  // ability
+  bool is_ability_bound_ = false;
 
  private:
   uint32_t DispatchEventToDelegate(const PlatformEvent& native_event);
@@ -239,8 +243,6 @@ class OhosWindow : public PlatformWindow,
   bool has_focus_ = false;
   bool has_pointer_focus_ = false;
   int64_t current_display_id_ = display::kInvalidDisplayId;
-  // whether the node handle xcomponent already bound with node content in ability
-  bool is_ability_bound_ = false;
 
   base::WeakPtrFactory<OhosWindow> weak_ptr_factory_{this};
 };

@@ -98,6 +98,10 @@ function bind(id: string, callback: (nodeContent: NodeContent | undefined) => vo
   implAppWindowAdapter().bind(id, callback);
 }
 
+function unbind(id: string, callback: (nodeContent: NodeContent | undefined) => void) {
+  implAppWindowAdapter().unbind(id, callback);
+}
+
 function shiftWindowTouchEvent(sourceId: number, targetId: number,
   fingerId: number, callback: (result: boolean) => void) {
   implAppWindowAdapter().shiftWindowTouchEvent(sourceId, targetId, fingerId, callback);
@@ -125,6 +129,7 @@ export class AppWindowAdapterBind {
     JsBindingUtils.bindFunction("AppWindow.StartWindowMovingWithOffset", startWindowMovingWithOffset);
     JsBindingUtils.bindFunction("AppWindow.GetOriginWindowIds", getOriginWindowIds);
     JsBindingUtils.bindFunction("AppWindow.Bind", bind);
+    JsBindingUtils.bindFunction("AppWindow.UnBind", unbind);
     JsBindingUtils.bindFunction("AppWindow.ShiftWindowTouchEvent", shiftWindowTouchEvent);
   }
 }

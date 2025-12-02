@@ -171,17 +171,23 @@ bool InitializeNodeHandleXComponent(
 }
 
 __attribute__((no_sanitize("cfi", "cfi-icall")))
-void CreateNodeHandleXComponent(XComponentAttribute attribute) {
+void FindOrCreateNodeHandleXComponent(XComponentAttribute attribute) {
   std::string xcomponent_id = attribute.xcomponent_id;
+
+  if (XComponentManager::GetInstance()->GetNodeHandleXComponent(
+          xcomponent_id)) {
+    XComponentManager::GetInstance()->OnXcomponentAvailable(xcomponent_id);
+    return;
+  }
 
   // create XComponentImpl
   std::shared_ptr<NodeHandleXComponentImpl> render =
-      XComponentManager::GetInstance()->GetOrCreateNodeHandleXComponent(
+      XComponentManager::GetInstance()->CreateNodeHandleXComponent(
           xcomponent_id, attribute.xcomponent_type);
   if (render == nullptr) {
     LOGE(
-        "[XComponentManager] CreateNodeHandleXComponent initialize xcomopnent "
-        "impl failed, xcomponent_id:%{public}s",
+        "[XComponentManager] FindOrCreateNodeHandleXComponent initialize "
+        "xcomponent impl failed, xcomponent_id:%{public}s",
         xcomponent_id.c_str());
     return;
   }
@@ -189,8 +195,8 @@ void CreateNodeHandleXComponent(XComponentAttribute attribute) {
   ArkUI_NativeNodeAPI_1* node_api = GetNativeNodeAPI();
   if (node_api == nullptr) {
     LOGE(
-        "[XComponentManager] CreateNodeHandleXComponent %{public}s get nodeAPI "
-        "failed",
+        "[XComponentManager] FindOrCreateNodeHandleXComponent %{public}s get "
+        "nodeAPI failed",
         xcomponent_id.c_str());
     return;
   }
@@ -290,13 +296,8 @@ std::shared_ptr<XComponentImpl> XComponentManager::GetOrCreateXComponent(
 }
 
 std::shared_ptr<NodeHandleXComponentImpl>
-XComponentManager::GetOrCreateNodeHandleXComponent(const std::string& id,
-                                                   XComponentType type) {
-  auto it = node_handle_render_map_.find(id);
-  if (it != node_handle_render_map_.end()) {
-    return it->second;
-  }
-
+XComponentManager::CreateNodeHandleXComponent(const std::string& id,
+                                              XComponentType type) {
   auto result = node_handle_render_map_.emplace(
       id, std::make_shared<NodeHandleXComponentImpl>(id, type));
   return result.first->second;
@@ -341,6 +342,14 @@ void XComponentManager::RemoveXComponent(const std::string& id) {
     render_map_.erase(id);
   }
  
+  {
+    std::lock_guard<std::mutex> lock_protect(window_status_mutex_);
+    window_status_.erase(id);
+  }
+}
+
+void XComponentManager::RemoveNodeHandleXComponent(const std::string& id) {
+  node_handle_render_map_.erase(id);
   {
     std::lock_guard<std::mutex> lock_protect(window_status_mutex_);
     window_status_.erase(id);
@@ -416,14 +425,14 @@ void XComponentManager::CreateXComponentViaNodeHandle(
     XComponentType type) {
   {
     std::lock_guard<std::mutex> lock_protect(window_status_mutex_);
-    window_status_.insert({create_id, std::promise<bool>()});
+    window_status_[create_id] = std::promise<bool>();
   }
  
   // Create XComponent via NodeHandle
   XComponentAttribute attribute = XComponentAttribute{
       create_id, type, true, true, 0x00FFFFFF, ARKUI_RENDER_FIT_TOP_LEFT};
   taskRunner::MainThreadTaskRunner::GetInstance().PostTask(
-      std::bind(CreateNodeHandleXComponent, std::move(attribute)));
+      std::bind(FindOrCreateNodeHandleXComponent, std::move(attribute)));
 }
  
 void XComponentManager::CreateAbilityViaNodeHandle(const NewWindowParam& param,
@@ -456,6 +465,14 @@ std::string XComponentManager::CreateSubWindow(const NewWindowParam& param) {
   std::string reuse_window_id =
       SubWindowAdapter::GetInstance().ReuseSubWindow(param);
   if (!reuse_window_id.empty()) {
+    LOGI("XComponentManager::CreateSubWindow reuse sub window, id: %{public}s",
+         reuse_window_id.c_str());
+
+    if (nodeHandle::NodeHandleImpl::GetInstance().IsSupportNodeHandle()) {
+      CreateXComponentViaNodeHandle(reuse_window_id,
+                                    XComponentType::kSubWindow);
+      WaitForXComponentCreated(reuse_window_id);
+    }
     return reuse_window_id;
   }
  
@@ -524,14 +541,8 @@ void XComponentManager::OnWidgetAvailable(const std::string& id) {
     LOGI("filter sub window render: %{public}s", id.c_str());
     return;
   }
-  {
-    std::lock_guard<std::mutex> lock_protect(window_status_mutex_);
-    if (window_status_.contains(id)) {
-      window_status_[id].set_value(true);
-    } else {
-      reuse_window_.push(id);
-    }
-  }
+
+  OnXcomponentAvailable(id);
  
   if (render->GetType() != XComponentType::kSubWindow) {
     // lost surface focus event in create xcomponent on OH platform, trigger
@@ -559,11 +570,30 @@ bool XComponentManager::BindNativeXComponentNode(
   std::shared_ptr<NodeHandleXComponentImpl> render =
       GetNodeHandleXComponent(id);
   if (render == nullptr) {
-    LOGE("not found render id:%{public}s", id.c_str());
+    LOGE(
+        "XComponentManager::BindNativeXComponentNode not found render "
+        "id: %{public}s",
+        id.c_str());
     return false;
   }
 
   return render->BindNativeXComponentNode(node_content_handle);
+}
+
+bool XComponentManager::UnBindNativeXComponentNode(
+    const std::string& id,
+    ArkUI_NodeContentHandle node_content_handle) {
+  std::shared_ptr<NodeHandleXComponentImpl> render =
+      GetNodeHandleXComponent(id);
+  if (render == nullptr) {
+    LOGE(
+        "XComponentManager::UnBindNativeXComponentNode not found render "
+        "id: %{public}s",
+        id.c_str());
+    return false;
+  }
+
+  return render->UnBindNativeXComponentNode(node_content_handle);
 }
 
 void XComponentManager::OnAbilityAvailable(const std::string& id) {
@@ -573,6 +603,16 @@ void XComponentManager::OnAbilityAvailable(const std::string& id) {
     iter->second.set_value(true);
   } else {
     reuse_ability_.push(id);
+  }
+}
+
+void XComponentManager::OnXcomponentAvailable(const std::string& id) {
+  std::lock_guard<std::mutex> lock_protect(window_status_mutex_);
+  auto iter = window_status_.find(id);
+  if (iter != window_status_.end()) {
+    iter->second.set_value(true);
+  } else {
+    reuse_window_.push(id);
   }
 }
 

@@ -28,13 +28,13 @@ using ThrottleCheckResult = content::NavigationThrottle::ThrottleCheckResult;
 
 namespace ohos_safe_browsing {
 std::unique_ptr<NavigationThrottle> UrlTrustListNavigationThrottle::Create(
-    content::NavigationHandle* handle) {
-  return base::WrapUnique(new UrlTrustListNavigationThrottle(handle));
+    content::NavigationThrottleRegistry& registry) {
+  return base::WrapUnique(new UrlTrustListNavigationThrottle(registry));
 }
 
 UrlTrustListNavigationThrottle::UrlTrustListNavigationThrottle(
-    content::NavigationHandle* navigation_handle)
-    : NavigationThrottle(navigation_handle) {}
+    content::NavigationThrottleRegistry& registry)
+    : NavigationThrottle(registry) {}
 
 UrlTrustListNavigationThrottle::~UrlTrustListNavigationThrottle() = default;
 

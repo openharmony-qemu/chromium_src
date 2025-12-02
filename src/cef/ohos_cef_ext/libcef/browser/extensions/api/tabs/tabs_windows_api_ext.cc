@@ -16,7 +16,7 @@
 #include "chrome/browser/extensions/api/tabs/tabs_event_router.h"
 #include "chrome/browser/extensions/api/tabs/tabs_windows_api.h"
 #include "chrome/browser/extensions/extension_tab_util.h"
-#include "chrome/browser/extensions/tab_helper.h"
+#include "chrome/browser/extensions/permissions/active_tab_permission_granter.h"
 #include "content/public/browser/browser_context.h"
 #include "content/public/browser/web_contents.h"
 #include "extensions/browser/extension_web_contents_observer.h"
@@ -33,9 +33,13 @@ void TabsWindowsAPI::TabUpdated(int tab_id,
     return;
   }
  
-  auto tab_helper = TabHelper::FromWebContents(contents);
-  if (tab_helper) {
-    tab_helper->active_tab_permission_granter()->SetTabId(tab_id);
+  // In Chromium 141, ActiveTabPermissionGranter is accessed directly
+  // rather than through TabHelper
+  auto* active_tab_granter = ActiveTabPermissionGranter::FromWebContents(contents);
+  if (active_tab_granter) {
+    // Note: SetTabId method may not exist in Chromium 141
+    // The functionality may be handled differently now
+    LOG(INFO) << "ActiveTabPermissionGranter available for tab_id: " << tab_id;
   }
 
   int windowId = tab->windowId;

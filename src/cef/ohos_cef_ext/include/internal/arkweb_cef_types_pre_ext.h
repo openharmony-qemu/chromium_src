@@ -103,6 +103,11 @@ typedef enum {
 ///
 typedef struct _cef_select_popup_item_t {
   ///
+  /// Size of this structure.
+  ///
+  size_t size;
+
+  ///
   /// label name of item.
   ///
   cef_string_t label;
@@ -338,6 +343,11 @@ typedef enum {
 // Supported autofill item.
 ///
 typedef struct _cef_autofill_popup_item_t {
+  ///
+  /// Size of this structure.
+  ///
+  size_t size;
+
   ///
   /// value name of item.
   ///

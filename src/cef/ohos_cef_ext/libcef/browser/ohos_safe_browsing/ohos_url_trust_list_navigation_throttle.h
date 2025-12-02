@@ -19,13 +19,19 @@
 #include "content/public/browser/navigation_handle.h"
 #include "content/public/browser/navigation_throttle.h"
 
+// Forward declaration for NavigationThrottleRegistry
+namespace content {
+class NavigationThrottleRegistry;
+}
+
 namespace ohos_safe_browsing {
 class UrlTrustListNavigationThrottle : public content::NavigationThrottle {
  public:
   static std::unique_ptr<content::NavigationThrottle> Create(
-      content::NavigationHandle* handle);
+      content::NavigationThrottleRegistry& registry);
 
-  UrlTrustListNavigationThrottle(content::NavigationHandle* navigation_handle);
+  explicit UrlTrustListNavigationThrottle(
+      content::NavigationThrottleRegistry& registry);
   ~UrlTrustListNavigationThrottle() override;
 
   ThrottleCheckResult WillStartRequest() override;

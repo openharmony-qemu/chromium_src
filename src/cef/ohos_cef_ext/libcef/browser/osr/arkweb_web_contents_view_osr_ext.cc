@@ -223,7 +223,6 @@ void ArkWebCefWebContentsViewOSRExt::ShowPopupMenu(
     content::RenderFrameHost* render_frame_host,
     mojo::PendingRemote<blink::mojom::PopupMenuClient> popup_client,
     const gfx::Rect& bounds,
-    int item_height,
     double item_font_size,
     int selected_item,
     std::vector<blink::mojom::MenuItemPtr> menu_items,
@@ -233,7 +232,7 @@ void ArkWebCefWebContentsViewOSRExt::ShowPopupMenu(
   CefRefPtr<AlloyBrowserHostImpl> browser = GetBrowser();
 #if BUILDFLAG(ARKWEB_HTML_SELECT)
   if (browser.get()) {
-    browser->AsAlloyBrowserHostImplExt()->ShowPopupMenu(std::move(popup_client), bounds, item_height,
+    browser->AsAlloyBrowserHostImplExt()->ShowPopupMenu(std::move(popup_client), bounds,
                                                         item_font_size, selected_item, std::move(menu_items),
                                                         right_aligned, allow_multiple_selection);
   }

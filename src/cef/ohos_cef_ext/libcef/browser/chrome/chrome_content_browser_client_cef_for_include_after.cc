@@ -216,12 +216,11 @@ void ArkWebInnerExposeInterfacesToRenderer(
 }
 
 void ArkWebInnerCreateThrottlesForNavigation(
-    content::NavigationHandle* navigation_handle,
+    content::NavigationThrottleRegistry& registry,
     std::vector<std::unique_ptr<content::NavigationThrottle>>& throttles) {
 #if BUILDFLAG(ARKWEB_URL_TRUST_LIST)
   throttles.push_back(
-      ohos_safe_browsing::UrlTrustListNavigationThrottle::Create(
-          navigation_handle));
+      ohos_safe_browsing::UrlTrustListNavigationThrottle::Create(registry));
 #endif
 }
 

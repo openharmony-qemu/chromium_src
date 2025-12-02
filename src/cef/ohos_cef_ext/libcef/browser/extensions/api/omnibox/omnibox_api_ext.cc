@@ -15,7 +15,7 @@
 
 #include "chrome/browser/extensions/api/omnibox/omnibox_api.h"
 #include "chrome/browser/extensions/extension_tab_util.h"
-#include "chrome/browser/extensions/tab_helper.h"
+#include "chrome/browser/extensions/permissions/active_tab_permission_granter.h"
 #include "chrome/browser/omnibox/omnibox_input_watcher_factory.h"
 #include "chrome/browser/profiles/profile.h"
 #include "components/omnibox/browser/omnibox_input_watcher.h"
@@ -67,9 +67,10 @@ void ExtensionOmniboxEventRouter::OnInputEntered(
   content::WebContents* web_contents = nullptr;
   if (ExtensionTabUtil::GetTabById(tab_id, browser_context, true,
                                    &web_contents)) {
-    extensions::TabHelper::FromWebContents(web_contents)
-        ->active_tab_permission_granter()
-        ->GrantIfRequested(extension);
+    auto* active_tab_granter = ActiveTabPermissionGranter::FromWebContents(web_contents);
+    if (active_tab_granter) {
+      active_tab_granter->GrantIfRequested(extension);
+    }
   }
 
   base::Value::List args;
@@ -85,7 +86,7 @@ void ExtensionOmniboxEventRouter::OnInputEntered(
   auto event = std::make_unique<Event>(events::OMNIBOX_ON_INPUT_ENTERED,
                                        omnibox::OnInputEntered::kEventName,
                                        std::move(args), profile);
-  event->user_gesture = EventRouter::USER_GESTURE_ENABLED;
+  event->user_gesture = EventRouter::UserGestureState::kEnabled;
   EventRouter::Get(profile)->DispatchEventToExtension(extension_id,
                                                       std::move(event));
 
@@ -94,12 +95,12 @@ void ExtensionOmniboxEventRouter::OnInputEntered(
 }
 
 ExtensionFunction::ResponseAction OmniboxSendSuggestionsFunction::Run() {
-  params_ = SendSuggestions::Params::Create(args());
-  EXTENSION_FUNCTION_VALIDATE(params_);
+  auto params = SendSuggestions::Params::Create(args());
+  EXTENSION_FUNCTION_VALIDATE(params);
 
-  if (is_from_service_worker() && !params_->suggest_results.empty()) {
+  if (is_from_service_worker() && !params->suggest_results.empty()) {
     std::vector<OHOS::NWeb::OmniboxSuggestResult> results;
-    for (const auto& suggest_result : params_->suggest_results) {
+    for (const auto& suggest_result : params->suggest_results) {
       OHOS::NWeb::OmniboxSuggestResult result;
       result.content = suggest_result.content;
       result.deletable = suggest_result.deletable;

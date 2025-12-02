@@ -120,14 +120,22 @@ void PageInfoSecurityContentView::SetIdentityInfo(
 
     // Add the Certificate Section.
     const ui::ImageModel icon =
+#if BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)
         base::FeatureList::IsEnabled(net::features::kVerifyQWACs)
+#else
+        false
+#endif
             ? PageInfoViewFactory::GetImageModel(vector_icons::kStickyNote2Icon)
             : (valid_identity ? PageInfoViewFactory::GetImageModel(
                                     vector_icons::kCertificateIcon)
                               : PageInfoViewFactory::GetImageModel(
                                     vector_icons::kCertificateOffIcon));
-    const int title_id = (valid_identity && !base::FeatureList::IsEnabled(
-                                                net::features::kVerifyQWACs))
+    const int title_id = (valid_identity && 
+#if BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)      
+                                    !base::FeatureList::IsEnabled(net::features::kVerifyQWACs))
+#else
+                                    !false)
+#endif
                              ? IDS_PAGE_INFO_CERTIFICATE_IS_VALID
                              : IDS_PAGE_INFO_CERTIFICATE_DETAILS;
 
@@ -148,6 +156,7 @@ void PageInfoSecurityContentView::SetIdentityInfo(
       }
     }
 
+#if BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)
     if (base::FeatureList::IsEnabled(net::features::kVerifyQWACs)) {
       std::u16string qwac_title =
           l10n_util::GetStringUTF16(IDS_PAGE_INFO_QWAC_STATUS_TITLE);
@@ -212,6 +221,7 @@ void PageInfoSecurityContentView::SetIdentityInfo(
             views::style::STYLE_BODY_4, kColorPageInfoSubtitleForeground);
       }
     }
+#endif
 
     // If the certificate button has been added previously, remove the old one
     // before recreating it. Re-adding it bumps it to the bottom of the

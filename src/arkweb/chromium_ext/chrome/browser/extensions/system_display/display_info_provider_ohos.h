@@ -16,12 +16,12 @@
 #ifndef CHROME_BROWSER_EXTENSIONS_SYSTEM_DISPLAY_DISPLAY_INFO_PROVIDER_OHOS_H_
 #define CHROME_BROWSER_EXTENSIONS_SYSTEM_DISPLAY_DISPLAY_INFO_PROVIDER_OHOS_H_
 
-#include "extensions/browser/api/system_display/display_info_provider.h"
+#include "extensions/browser/display_info_provider_base.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/display_manager_adapter.h"
 
 namespace extensions {
 
-class DisplayInfoProviderOhos : public DisplayInfoProvider {
+class DisplayInfoProviderOhos : public DisplayInfoProviderBase {
  public:
   DisplayInfoProviderOhos();
 

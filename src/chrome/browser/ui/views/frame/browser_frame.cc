@@ -72,8 +72,8 @@ namespace {
 constexpr double kTitlePaddingWidthFraction = 0.1;
 #endif
 
-#if BUILDFLAG(IS_LINUX)
-// These values are used for Linux/GTK.
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_OHOS)
+// These values are used for Linux/GTK and OHOS.
 constexpr int kIconTitleSpacing = 4;
 constexpr int kCaptionSpacing = 5;
 #endif

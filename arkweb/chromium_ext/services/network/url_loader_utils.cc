@@ -569,7 +569,7 @@ void URLLoaderUtils::CleanupAndRollback()
   prpp_loader_ = nullptr;
   base::SequencedTaskRunner::GetCurrentDefault()->PostTask(
       FROM_HERE, base::BindOnce(&URLLoaderUtils::RollbackFromPPRP,
-                                base::Unretained(this)));
+                                weak_ptr_factory_.GetWeakPtr()));
 }
 
 void URLLoaderUtils::GetLoadTimeInfo(net::LoadTimingInfo* load_timing_info)

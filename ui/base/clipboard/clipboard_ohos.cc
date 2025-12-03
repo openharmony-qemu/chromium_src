@@ -804,18 +804,21 @@ class ClipboardOHOSInternal {
     DestroyUdsPlainText(&uds_plain_text);
   }
 
-  void WriteCustomeDataToRecord(std::string custome_data,
-                                const ClipboardFormatType format_type,
-                                OH_UdmfRecord* record) {
-    unsigned int count = custome_data.length();
-    unsigned char* entry =
-        reinterpret_cast<unsigned char*>(custome_data.data());
-    int entry_res = OH_UdmfRecord_AddGeneralEntry(
-        record, format_type.GetName().c_str(), entry, count);
-    if (entry_res != UDMF_E_OK) {
-      LOG(ERROR) << "[Pasteboard]WriteData OH_UdmfRecord_AddGeneralEntry "
-                    "failed,code is :"
-                 << entry_res;
+  void WriteCustomDataToRecord(const std::map<ClipboardFormatType, std::string>& custom_datas,
+                               OH_UdmfRecord* record) {
+    for (auto it = custom_datas.begin(); it != custom_datas.end(); ++it) {
+      const ClipboardFormatType format_type = it->first;
+      std::string custom_data = it->second;
+      unsigned int count = custom_data.length();
+      unsigned char* entry =
+          reinterpret_cast<unsigned char*>(custom_data.data());
+      int entry_res = OH_UdmfRecord_AddGeneralEntry(
+          record, format_type.GetName().c_str(), entry, count);
+      if (entry_res != UDMF_E_OK) {
+        LOG(ERROR) << "[Pasteboard]WriteData OH_UdmfRecord_AddGeneralEntry "
+                      "failed,code is :"
+                  << entry_res;
+      }
     }
   }
 
@@ -854,12 +857,8 @@ class ClipboardOHOSInternal {
     }
 
     if (HasFormat(ClipboardInternalFormat::kCustom)) {
-      const ClipboardFormatType book_mark_type =
-          ClipboardFormatType::BookMarkType();
-      if (current_data->HasCustomDataFormat(book_mark_type)) {
-        std::string custome_data = current_data->GetCustomData(book_mark_type);
-        WriteCustomeDataToRecord(custome_data, book_mark_type, udmf_record);
-      }
+      const std::map<ClipboardFormatType, std::string>& custom_datas = current_data->GetAllCustomData();
+      WriteCustomDataToRecord(custom_datas, udmf_record);
     }
     WritePasteboard(udmf_record);
     DestroyUdmfRecord(&udmf_record);

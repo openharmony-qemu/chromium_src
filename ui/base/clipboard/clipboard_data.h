@@ -145,6 +145,10 @@ class COMPONENT_EXPORT(UI_BASE_CLIPBOARD) ClipboardData {
   // `application/web;type="custom/format0"` exists.
   bool HasCustomDataFormat(const ClipboardFormatType& format) const;
   std::string GetCustomData(const ClipboardFormatType& data_format) const;
+
+#if BUILDFLAG(IS_OHOS)
+  const std::map<ClipboardFormatType, std::string>& GetAllCustomData() const;
+#endif  // BUILDFLAG(IS_OHOS)
   // Returns the ClipboardFormatType::DataTransferCustomType() pickle.
   std::string GetDataTransferCustomData() const;
   void SetCustomData(const ClipboardFormatType& format,

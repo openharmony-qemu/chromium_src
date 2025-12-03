@@ -26,7 +26,7 @@ public:
   void* GetNativeWindow(int32_t native_window_id);
   void DestroyNativeWindow(int32_t native_window_id);
   static NWebNativeWindowTracker* GetInstance();
-  std::shared_ptr<OHOS::NWeb::AafwkBrowserClientAdapter> g_browser_client_;
+  std::shared_ptr<OHOS::NWeb::AafwkBrowserClientAdapter> g_browser_client_ {nullptr};
 private:
   NWebNativeWindowTracker();
   ~NWebNativeWindowTracker();

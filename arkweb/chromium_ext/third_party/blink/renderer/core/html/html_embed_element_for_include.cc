@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 
-#include "base/strings/string_split.h"
-#include "base/strings/string_util.h"
 #include "third_party/blink/renderer/core/html/html_embed_element.h"
 #include "third_party/blink/renderer/platform/graphics/compositing/paint_artifact_compositor.h"
 
@@ -49,32 +47,6 @@ void HTMLEmbedElement::NativeEmbedOverlay(
   }
 }
 
-void HTMLEmbedElement::StretchContentToFillBounds(
-    const AttributeModificationParams& params) {
-  bool stretch_content_to_fill_bounds = true;
-  if (!params.new_value.empty()) {
-    base::StringPairs pairs;
-    base::SplitStringIntoKeyValuePairs(params.new_value.Utf8(), ':', ';', &pairs);
-    for (const auto& pair : pairs) {
-      std::string key = base::ToLowerASCII(
-          base::TrimWhitespaceASCII(pair.first, base::TRIM_ALL));
-      if (key == "object-fit") {
-        std::string value = base::ToLowerASCII(
-            base::TrimWhitespaceASCII(pair.second, base::TRIM_ALL));
-        if (value == "none") {
-          stretch_content_to_fill_bounds = false;
-        }
-        break;
-      }
-    }
-  }
-  Utils()->SetStretchContentToFillBounds(stretch_content_to_fill_bounds);
-  if (GetLayoutObject()) {
-    SetNeedsPluginUpdate(true);
-    GetLayoutObject()->SetNeedsLayoutAndFullPaintInvalidation(
-        "Arkwebnativestyle changed");
-  }
-}
 #endif
 
 }  // namespace blink

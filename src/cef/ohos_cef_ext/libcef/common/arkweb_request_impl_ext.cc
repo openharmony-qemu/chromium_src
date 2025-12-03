@@ -28,7 +28,7 @@ class BytesElementReader : public net::UploadBytesElementReader {
  public:
   BytesElementReader(network::ResourceRequestBody* resource_request_body,
                      const network::DataElementBytes& element)
-      : net::UploadBytesElementReader(base::make_span(element.bytes())),
+      : net::UploadBytesElementReader(std::span(element.bytes())),
         resource_request_body_(resource_request_body) {}
 
   BytesElementReader(const BytesElementReader&) = delete;

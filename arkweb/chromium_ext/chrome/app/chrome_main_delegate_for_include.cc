@@ -21,7 +21,8 @@ static bool SetUserDataDirForArkweb(const base::CommandLine* command_line) {
   base::FilePath arkweb_app_base_dir = command_line->GetSwitchValuePath(switches::kArkwebAppDataDir);
   base::FilePath user_data_dir = command_line->GetSwitchValuePath(switches::kUserDataDir);
   if (arkweb_app_base_dir.empty()) {
-    arkweb_app_base_dir = base::FilePath("/data/storage/el2/base");
+    LOG(ERROR) << " arkweb_app_data_dir is empty. ";
+    return true;
   }
 
   base::FilePath arkweb_user_data_dir = user_data_dir;

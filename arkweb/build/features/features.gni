@@ -242,6 +242,7 @@ declare_args() {
   arkweb_ext_password=false
   arkweb_ex_free_copy=false
   arkweb_blank_optimize = true
+  arkweb_first_screen_paint = true
   arkweb_viewport_avoid = true
   arkweb_error_page = true
   arkweb_gwp_asan = true

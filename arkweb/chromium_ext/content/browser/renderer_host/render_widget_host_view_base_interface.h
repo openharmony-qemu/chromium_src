@@ -56,6 +56,12 @@ class CONTENT_EXPORT RenderWidgetHostViewBaseInterface {
                                      int32_t detectedContentfulNodesCount) {}
 #endif
 
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
+  virtual void OnFirstScreenPaint(const std::string& url,
+                                  int64_t navigationStartTime,
+                                  int64_t firstScreenPaintTime) {}
+#endif
+
 #if BUILDFLAG(ARKWEB_COMPOSITE_RENDER)
   virtual void SendCurrentLanguage(const std::string& ans) {}
 #endif

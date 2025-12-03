@@ -449,6 +449,18 @@ void RenderFrameHostImpl::SetBlankScreenDetectionConfig(
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
+void RenderFrameHostImpl::OnFirstScreenPaint(const std::string& url,
+                                             int64_t navigationStartTime,
+                                             int64_t firstScreenPaintTime) {
+  RenderWidgetHostViewBase* view = static_cast<RenderWidgetHostViewBase*>(
+      render_view_host_->GetWidget()->GetView());
+  if (view) {
+    view->OnFirstScreenPaint(url, navigationStartTime, firstScreenPaintTime);
+  }
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_READER_MODE)
 net::Error RenderFrameHostImpl::GetNetErrorCode() {
   return net_error_;

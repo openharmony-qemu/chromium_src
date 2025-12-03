@@ -113,19 +113,6 @@ void BlankScreenDetector::GetPaintRects() {
       ->GetPaintTimingDetector()
       .GetFirstScreenCalculator()
       ->GetPaintRects(paint_rects_);
-  for (Frame* child = local_frame_->Tree().FirstChild(); child;
-       child = child->Tree().NextSibling()) {
-    if (auto* child_local_frame = DynamicTo<LocalFrame>(child)) {
-      if (child_local_frame->View() && child_local_frame->View()
-                                           ->GetPaintTimingDetector()
-                                           .GetFirstScreenCalculator()) {
-        child_local_frame->View()
-            ->GetPaintTimingDetector()
-            .GetFirstScreenCalculator()
-            ->GetPaintRects(paint_rects_);
-      }
-    }
-  }
 }
 
 int32_t BlankScreenDetector::CalculateContentfulCount() {

@@ -34,7 +34,8 @@ class FirstScreenCalculator {
       : frame_view_(local_frame_view) {}
   void NotifyImagePaint(MediaRecordIdHash record_id_hash,
                         const ImageRecord* record,
-                        std::optional<uint64_t> viewport_size);
+                        std::optional<uint64_t> viewport_size,
+                        bool is_video);
   void NotifyTextPaint(const TextRecord* record, base::TimeTicks timestamp);
   void AssignImagePaintTime(MediaRecordIdHash record_id_hash,
                             const gfx::Rect& rect,
@@ -57,12 +58,13 @@ class FirstScreenCalculator {
   void DumpImageRect();
   void DumpTextRect();
   void OnFirstScreenInvoked();
-  void RestartTimerForFirstScreenDetection(base::TimeDelta delay);
+  void RestartTimerForFirstScreenDetection();
 
   std::unordered_map<MediaRecordIdHash, PaintRectInfo> image_rects_map_;
   std::vector<PaintRectInfo> text_paint_rect_;
   base::OneShotTimer timer_;
   base::TimeTicks first_screen_paint_time_;
+  base::TimeTicks navigation_start_time_;
   Member<LocalFrameView> frame_view_;
   bool user_scrolled_ = false;
   base::WeakPtrFactory<FirstScreenCalculator> weak_factory_{this};

@@ -6,7 +6,6 @@
 
 #include "core/fpdfapi/parser/cpdf_parser.h"
 
-#include <ctype.h>
 #include <stdint.h>
 
 #include <algorithm>
@@ -35,6 +34,7 @@
 #include "core/fxcrt/data_vector.h"
 #include "core/fxcrt/fx_extension.h"
 #include "core/fxcrt/fx_safe_types.h"
+#include "core/fxcrt/fx_string.h"
 #include "core/fxcrt/notreached.h"
 #include "core/fxcrt/scoped_set_insertion.h"
 #include "core/fxcrt/span.h"
@@ -213,17 +213,23 @@ bool CPDF_Parser::InitSyntaxParser(RetainPtr<CPDF_ReadValidator> validator) {
 bool CPDF_Parser::ParseFileVersion() {
   file_version_ = 0;
   uint8_t ch;
-  if (!syntax_->GetCharAt(5, ch))
+  if (!syntax_->GetCharAt(5, ch)) {
     return false;
+  }
 
-  if (isdigit(ch))
-    file_version_ = FXSYS_DecimalCharToInt(static_cast<wchar_t>(ch)) * 10;
+  wchar_t wch = static_cast<wchar_t>(ch);
+  if (FXSYS_IsDecimalDigit(wch)) {
+    file_version_ = FXSYS_DecimalCharToInt(wch) * 10;
+  }
 
-  if (!syntax_->GetCharAt(7, ch))
+  if (!syntax_->GetCharAt(7, ch)) {
     return false;
+  }
 
-  if (isdigit(ch))
-    file_version_ += FXSYS_DecimalCharToInt(static_cast<wchar_t>(ch));
+  wch = static_cast<wchar_t>(ch);
+  if (FXSYS_IsDecimalDigit(wch)) {
+    file_version_ += FXSYS_DecimalCharToInt(wch);
+  }
   return true;
 }
 
@@ -597,16 +603,18 @@ bool CPDF_Parser::ParseAndAppendCrossRefSubsectionData(
 
         if (offset.ValueOrDie() == 0) {
           for (int32_t c = 0; c < 10; c++) {
-            if (!isdigit(pEntry[c]))
+            if (!FXSYS_IsDecimalDigit(pEntry[c])) {
               return false;
             }
+          }
         }
 
         info.pos = offset.ValueOrDie();
 
         // TODO(art-snake): The info.gennum is uint16_t, but version may be
-        // greated than max<uint16_t>. Needs solve this issue.
-        const int32_t version = FXSYS_atoi(pEntry.subspan<11u>.data());
+        // greater than max<uint16_t>. Need to solve this issue.
+        const int32_t version =
+            StringToInt(ByteStringView(pEntry.subspan<11u>()));
         info.gennum = version;
         info.type = ObjectType::kNormal;
       }

@@ -18,6 +18,7 @@
 #include "content/public/browser/render_process_host.h"
 #include "chrome/browser/extensions/extension_tab_util.h"
 #include "chrome/common/extensions/api/tabs.h"
+#include "content/public/browser/navigation_controller.h"
 #include "content/public/browser/navigation_entry.h"
 #include "content/public/browser/favicon_status.h"
 #include "cef/ohos_cef_ext/libcef/browser/chrome/extensions/arkweb_chrome_extension_util_ext.h"
@@ -253,7 +254,7 @@ void TabsEventRouter::DispatchTabUpdatedEvent(
       // The event arguments depend on the extension's permission. They are set
       // in WillDispatchTabUpdatedEvent().
       base::Value::List(), profile);
-  event->user_gesture = EventRouter::USER_GESTURE_NOT_ENABLED;
+  event->user_gesture = extensions::EventRouter::UserGestureState::kNotEnabled;
   event->will_dispatch_callback =
       base::BindRepeating(&WillDispatchTabUpdatedEventWithTab, tab_id,
                           contents, std::move(change_info), std::move(extension_tab));
@@ -273,7 +274,7 @@ void TabsEventRouter::DispatchTabActivatedEvent(
   DispatchEvent(profile, events::TABS_ON_ACTIVATED,
                 api::tabs::OnActivated::kEventName,
                 api::tabs::OnActivated::Create(info),
-                EventRouter::USER_GESTURE_UNKNOWN);
+                extensions::EventRouter::UserGestureState::kUnknown);
 }
 
 void TabsEventRouter::DispatchTabRemovedEvent(int tab_id,
@@ -289,7 +290,7 @@ void TabsEventRouter::DispatchTabRemovedEvent(int tab_id,
   DispatchEvent(profile, events::TABS_ON_REMOVED,
                 api::tabs::OnRemoved::kEventName,
                 api::tabs::OnRemoved::Create(tab_id, info),
-                EventRouter::USER_GESTURE_UNKNOWN);
+                extensions::EventRouter::UserGestureState::kUnknown);
 }
 
 void TabsEventRouter::DispatchTabAttachedEvent(int tab_id,
@@ -305,7 +306,7 @@ void TabsEventRouter::DispatchTabAttachedEvent(int tab_id,
   DispatchEvent(profile, events::TABS_ON_ATTACHED,
                 api::tabs::OnAttached::kEventName,
                 api::tabs::OnAttached::Create(tab_id, info),
-                EventRouter::USER_GESTURE_UNKNOWN);
+                extensions::EventRouter::UserGestureState::kUnknown);
 }
 
 void TabsEventRouter::DispatchTabCreatedEvent(int tab_id,
@@ -318,7 +319,7 @@ void TabsEventRouter::DispatchTabCreatedEvent(int tab_id,
   auto event = std::make_unique<Event>(events::TABS_ON_CREATED,
                                        api::tabs::OnCreated::kEventName,
                                        base::Value::List(), profile);
-  event->user_gesture = EventRouter::USER_GESTURE_NOT_ENABLED;
+  event->user_gesture = extensions::EventRouter::UserGestureState::kNotEnabled;
   event->will_dispatch_callback =
       base::BindRepeating(&WillDispatchTabCreatedEvent, std::move(extension_tab));
   EventRouter::Get(profile)->BroadcastEvent(std::move(event));
@@ -341,7 +342,7 @@ void TabsEventRouter::DispatchTabDetachedEvent(content::WebContents* contents,
   DispatchEvent(profile, events::TABS_ON_DETACHED,
                 api::tabs::OnDetached::kEventName,
                 std::move(args),
-                EventRouter::USER_GESTURE_UNKNOWN);
+                extensions::EventRouter::UserGestureState::kUnknown);
 }
 
 void TabsEventRouter::DispatchTabHighlightedEvent(
@@ -364,7 +365,7 @@ void TabsEventRouter::DispatchTabHighlightedEvent(
   DispatchEvent(profile, events::TABS_ON_HIGHLIGHTED,
                 api::tabs::OnHighlighted::kEventName,
                 std::move(args),
-                EventRouter::USER_GESTURE_UNKNOWN);
+                extensions::EventRouter::UserGestureState::kUnknown);
 }
 
 void TabsEventRouter::DispatchTabMovedEvent(
@@ -385,7 +386,7 @@ void TabsEventRouter::DispatchTabMovedEvent(
   DispatchEvent(profile, events::TABS_ON_MOVED,
                 api::tabs::OnMoved::kEventName,
                 std::move(args),
-                EventRouter::USER_GESTURE_UNKNOWN);
+                extensions::EventRouter::UserGestureState::kUnknown);
 }
 
 void TabsEventRouter::DispatchTabReplacedEvent(
@@ -401,7 +402,7 @@ void TabsEventRouter::DispatchTabReplacedEvent(
   DispatchEvent(profile, events::TABS_ON_REPLACED,
                 api::tabs::OnReplaced::kEventName,
                 std::move(args),
-                EventRouter::USER_GESTURE_UNKNOWN);
+                extensions::EventRouter::UserGestureState::kUnknown);
 }
 
 void TabsEventRouter::RegisterTabZoomObserver(content::WebContents* contents) {

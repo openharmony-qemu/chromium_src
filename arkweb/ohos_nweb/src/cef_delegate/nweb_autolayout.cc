@@ -41,17 +41,6 @@ void NwebAutolayout::Initialize() {
   ScopedTimeLogger timer("Initialize");
   TRACE_EVENT("base", "NwebAutolayout::Initialize");
   auto &adapter = OhosAdapterHelper::GetInstance();
-  auto sv = adapter.GetSystemPropertiesInstance().GetStringParameter(std::string(kMinDesScale), "0");
-  auto result = ParseInt(sv);
-  if (result && result.value() > 0) {
-      mCCMConfig_.minScaleFactor = result.value();
-  } else {
-      mCCMConfig_.minScaleFactor = 0;
-      LOG(ERROR) << "Failed to parse desScale config. Disabling feature.";
-      mEnable_ = false;
-      return;
-  }
-  LOG(DEBUG) << "get minScaleFactor:" << mCCMConfig_.minScaleFactor;
 
   std::string ccmConfig = "";
   auto configPath = adapter.GetSystemPropertiesInstance().GetStringParameter(std::string(kConfigPath),"");
@@ -161,54 +150,106 @@ bool NwebAutolayout::Parse(const base::Value& root) {
   return ParseWhitelist(*whitelist_dict);
 }
 
-bool NwebAutolayout::ParseToplevelConfig(const base::Value::Dict& root_dict) {
-  auto min_mask_opt =
-      root_dict.FindInt(std::string(kMinMaskAreaRatioThresholdKey));
-  if (!min_mask_opt || *min_mask_opt < kMinMaskAreaRatioThreshold ||
-      *min_mask_opt > kMaxMaskAreaRatioThreshold) {
-    LOG(ERROR) << "Parse Error: '" << kMinMaskAreaRatioThresholdKey
-               << "' value is missing, invalid or out of range.";
-    return false;
-  }
-  mCCMConfig_.min_mask_area_ratio_threshold = *min_mask_opt;
+struct IntRangeLimits {
+  int min;
+  int max;
+  bool inclusive_min;
+  bool inclusive_max;
+};
 
-  auto min_content_opt =
-      root_dict.FindInt(std::string(kMinContentAreaRatioThresholdKey));
-  if (!min_content_opt || *min_content_opt <= kMinContentAreaRatioThreshold ||
-      *min_content_opt >= kMaxContentAreaRatioThreshold) {
-    LOG(ERROR) << "Parse Error: '" << kMinContentAreaRatioThresholdKey
-               << "' value is missing, invalid or out of range.";
+bool ValidateIntConfig(const base::Value::Dict& root_dict, std::string_view key,
+                       const IntRangeLimits& limits, int& output) {
+  if (limits.min > limits.max) {
+    LOG(ERROR) << "Parse Error: Invalid range for '" << key << "'.";
     return false;
   }
-  mCCMConfig_.min_content_area_ratio_threshold = *min_content_opt;
 
-  auto scale_anim_opt =
-      root_dict.FindInt(std::string(kScaleAnimationDurationKey));
-  if (!scale_anim_opt || *scale_anim_opt <= kMinScaleAnimationDuration ||
-      *scale_anim_opt >= kMaxScaleAnimationDuration) {
-    LOG(ERROR) << "Parse Error: '" << kScaleAnimationDurationKey
-               << "' value is missing, invalid or out of range.";
+  auto value_opt = root_dict.FindInt(std::string(key));
+  if (!value_opt) {
+    LOG(ERROR) << "Parse Error: '" << key << "' value is missing.";
     return false;
   }
-  mCCMConfig_.scale_animation_duration = *scale_anim_opt;
+
+  const int value = *value_opt;
+  const bool below_min = limits.inclusive_min ? value < limits.min : value <= limits.min;
+  const bool above_max = limits.inclusive_max ? value > limits.max : value >= limits.max;
+  if (below_min || above_max) {
+    LOG(ERROR) << "Parse Error: '" << key << "' value is invalid or out of range.";
+    return false;
+  }
+
+  output = value;
+  return true;
+}
+
+bool ParseOpacityFilter(const base::Value::Dict& root_dict, std::pair<int, int>& opacity_filter) {
+  if (kMinOpacityFilter > kMaxOpacityFilter) {
+    LOG(ERROR) << "Parse Error: Invalid range for '" << kOpacityFilterKey << "'.";
+    return false;
+  }
 
   const base::Value::List* opacity_list = root_dict.FindList(kOpacityFilterKey);
-  if (!opacity_list) {
-    LOG(ERROR) << "Parse Error: Missing '" << kOpacityFilterKey << "'.";
-    return false;
-  }
-  if (opacity_list->size() != 2 || !(*opacity_list)[0].is_int() ||
+  if (!opacity_list || opacity_list->size() != 2 || !(*opacity_list)[0].is_int() ||
       !(*opacity_list)[1].is_int()) {
+    LOG(ERROR) << "Parse Error: Missing, empty or invalid type for '" << kOpacityFilterKey << "'.";
     return false;
   }
-  int first_opacity = (*opacity_list)[0].GetInt();
-  int second_opacity = (*opacity_list)[1].GetInt();
-  if (first_opacity < kMinOpacityFilter || first_opacity > kMaxOpacityFilter ||
-      second_opacity < kMinOpacityFilter ||
-      second_opacity > kMaxOpacityFilter || first_opacity > second_opacity) {
+
+  const int first_opacity = (*opacity_list)[0].GetInt();
+  const int second_opacity = (*opacity_list)[1].GetInt();
+  const bool in_range = first_opacity >= kMinOpacityFilter && first_opacity <= kMaxOpacityFilter &&
+                        second_opacity >= kMinOpacityFilter && second_opacity <= kMaxOpacityFilter &&
+                        first_opacity <= second_opacity;
+  if (!in_range) {
+    LOG(ERROR) << "Parse Error: '" << kOpacityFilterKey << "' value is invalid or out of range.";
     return false;
   }
-  mCCMConfig_.opacity_filter = {first_opacity, second_opacity};
+
+  opacity_filter = {first_opacity, second_opacity};
+  return true;
+}
+
+bool NwebAutolayout::ParseToplevelConfig(const base::Value::Dict& root_dict) {
+  constexpr IntRangeLimits kMaskAreaThresholdRange{
+    kMinMaskAreaRatioThreshold, kMaxMaskAreaRatioThreshold, true, true};
+  constexpr IntRangeLimits kContentAreaThresholdRange{
+    kMinContentAreaRatioThreshold, kMaxContentAreaRatioThreshold, false, false};
+  constexpr IntRangeLimits kScaleFactorRange{
+    kMinScaleFactor, kMaxScaleFactor, true, true};
+  constexpr IntRangeLimits kScaleAnimationDurationRange{
+    kMinScaleAnimationDuration, kMaxScaleAnimationDuration, false, false};
+
+  int min_mask_area_ratio_threshold = 0;
+  if (!ValidateIntConfig(root_dict, kMinMaskAreaRatioThresholdKey, kMaskAreaThresholdRange,
+                         min_mask_area_ratio_threshold)) {
+    return false;
+  }
+  mCCMConfig_.min_mask_area_ratio_threshold = min_mask_area_ratio_threshold;
+
+  int min_content_area_ratio_threshold = 0;
+  if (!ValidateIntConfig(root_dict, kMinContentAreaRatioThresholdKey, kContentAreaThresholdRange,
+                         min_content_area_ratio_threshold)) {
+    return false;
+  }
+  mCCMConfig_.min_content_area_ratio_threshold = min_content_area_ratio_threshold;
+  
+  int min_scale_factor = 0;
+  if (!ValidateIntConfig(root_dict, kMinDesScaleKey, kScaleFactorRange, min_scale_factor)) {
+    return false;
+  }
+  mCCMConfig_.minScaleFactor = min_scale_factor;
+
+  int scale_animation_duration = 0;
+  if (!ValidateIntConfig(root_dict, kScaleAnimationDurationKey, kScaleAnimationDurationRange,
+                         scale_animation_duration)) {
+    return false;
+  }
+  mCCMConfig_.scale_animation_duration = scale_animation_duration;
+
+  if (!ParseOpacityFilter(root_dict, mCCMConfig_.opacity_filter)) {
+    return false;
+  }
+  
   return true;
 }
 

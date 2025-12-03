@@ -79,7 +79,6 @@ constexpr std::string_view kIdKey = "id";
 constexpr std::string_view kPgKey = "pg";
 constexpr std::string_view kWildcard = "*";
 constexpr std::string_view kMinDesScaleKey = "minScaleFactor";
-constexpr std::string_view kMinDesScale = "const.product.web.minScaleFactor";
 constexpr std::string_view kConfigPath = "const.product.web.alconfig";
 
 constexpr std::string_view kAutoLayoutBegin = "AutoLayout.Main.start(`";

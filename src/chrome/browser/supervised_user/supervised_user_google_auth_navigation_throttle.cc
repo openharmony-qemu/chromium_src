@@ -38,7 +38,7 @@
 #include "chrome/browser/supervised_user/supervised_user_verification_page.h"
 #endif
 
-#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_OHOS)
 namespace {
 bool IsYouTubeInfrastructureSubframe(content::NavigationHandle* handle) {
   if (handle->GetNavigatingFrameType() != content::FrameType::kSubframe) {

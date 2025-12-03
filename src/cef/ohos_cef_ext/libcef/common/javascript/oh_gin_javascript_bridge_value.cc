@@ -174,5 +174,5 @@ std::unique_ptr<base::Value>
 OhGinJavascriptBridgeValue ::SerializeToBinaryValue() {
   const auto* data = static_cast<const uint8_t*>(pickle_.data());
   return base::Value::ToUniquePtrValue(
-      base::Value(base::make_span(data, pickle_.size())));
+      base::Value(base::span<const uint8_t>(data, pickle_.size())));
 }

@@ -21,6 +21,7 @@
 #include "arkweb/ohos_nweb/src/nweb_common.h"
 #include "base/logging.h"
 #include "chrome/browser/extensions/extension_tab_util.h"
+#include "content/public/browser/browser_context.h"
 #include "ohos_nweb/src/cef_delegate/nweb_extension_side_panel_cef_delegate.h"
 #endif  // ARKWEB_ARKWEB_EXTENSIONS
 

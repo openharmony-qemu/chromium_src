@@ -18,7 +18,7 @@
  * found in the LICENSE file.
  */
 
-#include "libcef/browser/autofill/oh_autofill_manager.h"
+#include "ohos_cef_ext/libcef/browser/autofill/oh_autofill_manager.h"
 
 #include <locale>
 
@@ -404,10 +404,10 @@ void OhAutofillManager::OnFormSubmittedImpl(const FormData& form,
   }
 }
 
-void OhAutofillManager::OnTextFieldDidChangeImpl(const FormData& form,
-                                                 const FieldGlobalId& field_id,
-                                                 const TimeTicks timestamp) {
-  LOG(INFO) << "OnTextFieldDidChangeImpl";
+void OhAutofillManager::OnTextFieldValueChangedImpl(const FormData& form,
+                                                     const FieldGlobalId& field_id,
+                                                     const TimeTicks timestamp) {
+  LOG(INFO) << "OnTextFieldValueChangedImpl";
   auto* rfh = static_cast<ContentAutofillDriver&>(driver()).render_frame_host();
   if (!rfh || !rfh->IsActive()) {
     LOG(ERROR) << "rfh is nullptr or not active";
@@ -443,15 +443,16 @@ void OhAutofillManager::OnTextFieldDidScrollImpl(
 void OhAutofillManager::OnAskForValuesToFillImpl(
     const FormData& form,
     const FieldGlobalId& field_id,
-    const gfx::Rect& bounding_box,
-    AutofillSuggestionTriggerSource trigger_source) {
+    const gfx::Rect& caret_bounds,
+    AutofillSuggestionTriggerSource trigger_source,
+    std::optional<PasswordSuggestionRequest> password_request) {
   LOG(INFO) << "OnAskForValuesToFillImpl";
 #if BUILDFLAG(ARKWEB_DATALIST)
-  OnAskForValuesToFillImplForDatalist(form, field_id, bounding_box);
+  OnAskForValuesToFillImplForDatalist(form, field_id, caret_bounds);
 #endif
 
   if (is_show_) {
-    // Handle this event in OnTextFieldDidChangeImpl
+    // Handle this event in OnTextFieldValueChangedImpl
     return;
   } else {
     form_ = std::make_unique<FormData>(form);
@@ -488,10 +489,10 @@ void OhAutofillManager::OnFocusOnFormFieldImpl(const FormData& form,
   LOG(INFO) << "OnFocusOnFormFieldImpl";
 }
 
-void OhAutofillManager::OnSelectControlDidChangeImpl(
+void OhAutofillManager::OnSelectControlSelectionChangedImpl(
     const FormData& form,
     const FieldGlobalId& field_id) {
-  LOG(INFO) << "OnSelectControlDidChangeImpl";
+  LOG(INFO) << "OnSelectControlSelectionChangedImpl";
 }
 
 bool OhAutofillManager::ShouldParseForms() {
@@ -609,7 +610,7 @@ void OhAutofillManager::SuggestionSelected(const FieldGlobalId& field_id,
 void OhAutofillManager::OnAskForValuesToFillImplForDatalist(
     const FormData& form,
     const FieldGlobalId& field_id,
-    const gfx::Rect& bounding_box) {
+    const gfx::Rect& caret_bounds) {
   auto* rfh = static_cast<ContentAutofillDriver&>(driver()).render_frame_host();
   if (!rfh || !rfh->IsActive()) {
     LOG(ERROR) << "rfh is nullptr or not active";
@@ -636,8 +637,8 @@ void OhAutofillManager::OnAskForValuesToFillImplForDatalist(
   } else {
     autofill::AutofillClient::PopupOpenArgs open_args =
         autofill::AutofillClient::PopupOpenArgs(
-            gfx::RectF(bounding_box.x(), bounding_box.y(), bounding_box.width(),
-                       bounding_box.height()),
+            gfx::RectF(caret_bounds.x(), caret_bounds.y(), caret_bounds.width(),
+                       caret_bounds.height()),
             base::i18n::TextDirection::LEFT_TO_RIGHT, suggestions,
             autofill::AutofillSuggestionTriggerSource::kOpenTextDataListChooser,
             /*form_control_ax_id=*/0, autofill::PopupAnchorType::kField);

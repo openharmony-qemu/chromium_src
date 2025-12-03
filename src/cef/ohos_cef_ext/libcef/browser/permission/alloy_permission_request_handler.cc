@@ -5,6 +5,7 @@
 #include "libcef/browser/permission/alloy_permission_request_handler.h"
 
 #include "arkweb/build/features/features.h"
+#include "content/public/browser/navigation_controller.h"
 #include "content/public/browser/navigation_details.h"
 #include "content/public/browser/navigation_entry.h"
 #include "content/public/browser/web_contents.h"

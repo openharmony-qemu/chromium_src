@@ -285,7 +285,8 @@ CefDevToolsManagerDelegate::~CefDevToolsManagerDelegate() {}
 
 scoped_refptr<content::DevToolsAgentHost>
 CefDevToolsManagerDelegate::CreateNewTarget(const GURL& url,
-                                            TargetType target_type) {
+                                            TargetType target_type,
+                                            bool new_window) {
   // This is reached when the user selects "Open link in new tab" from the
   // DevTools interface.
   // TODO(cef): Consider exposing new API to support this.

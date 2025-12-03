@@ -31,7 +31,7 @@ void CefReportManager::ExposeInterfacesToRenderer(
             std::make_unique<CefReportManager>(render_process_id),
             std::move(receiver));
       },
-      host->GetID()));
+      static_cast<int>(host->GetID())));
 }
 
 void CefReportManager::ReportKeyThread(int status,

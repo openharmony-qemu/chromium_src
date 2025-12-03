@@ -17,6 +17,7 @@
 
 #include "cef/libcef/browser/browser_host_base.h"
 #include "cef/libcef/browser/file_dialog_manager.h"
+#include "content/public/browser/web_contents.h"
 
 using blink::mojom::FileChooserParams;
 

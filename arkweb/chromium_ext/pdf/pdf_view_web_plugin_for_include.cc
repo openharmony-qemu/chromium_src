@@ -23,6 +23,7 @@ constexpr double kMinScale = 0.001f;
 
 constexpr base::TimeDelta kPDFScrollDelay = base::Milliseconds(100);
 constexpr base::TimeDelta kPDFSelectionDelay = base::Milliseconds(50);
+constexpr base::TimeDelta kPDFPaintDelay = base::Milliseconds(100);
 #endif  // BUILDFLAG(ARKWEB_PDF)
 
 }  // namespace
@@ -95,6 +96,7 @@ void PdfViewWebPlugin::UpdateClientClippedSelectionBoundsForPDF(gfx::Rect& clipp
                             clipped_selection_bounds.height() * inverse_scale);
   clipped_selection_bounds.set_origin(converted_origin);
   clipped_selection_bounds.set_size(converted_size);
+  clipped_selection_bounds_ = clipped_selection_bounds;
   pdf_host_->UpdateClientClippedSelectionBoundsForPDF(clipped_selection_bounds);
 }
 
@@ -113,7 +115,7 @@ void PdfViewWebPlugin::RefreshMenuWithTouchAndScroll() {
   pdf_host_->HideHandleAndQuickMenuForPDF(is_menu_hidden);
 }
 
-void PdfViewWebPlugin::ForceSelectionChanged() {
+void PdfViewWebPlugin::SelectionChangedAtScrollStopped() {
   auto left = current_left_;
   auto right = current_right_;
 
@@ -129,6 +131,9 @@ void PdfViewWebPlugin::ForceSelectionChanged() {
 
   if (accessibility_state_ == AccessibilityState::kLoaded)
     PrepareAndSetAccessibilityViewportInfo();
+
+  // Clipped selection bounds also need to be updated at scroll stopped.
+  pdf_host_->UpdateClientClippedSelectionBoundsForPDF(clipped_selection_bounds_);
 }
 
 void PdfViewWebPlugin::SetIsTouching(bool is_touching) {
@@ -145,9 +150,6 @@ void PdfViewWebPlugin::SetIsScrolling(bool is_scrolling) {
   }
   is_scrolling_ = is_scrolling;
   RefreshMenuWithTouchAndScroll();
-  if (!is_scrolling_) {
-    paint_manager_.DoPaintAtScrollStopped();
-  }
 }
 
 void PdfViewWebPlugin::SetIsPinching(bool is_pinching) {
@@ -164,6 +166,7 @@ scoped_refptr<base::SequencedTaskRunner> PdfViewWebPlugin::GetTaskRunner() {
 }
 
 void PdfViewWebPlugin::SetScrollStoppedAfterDelay() {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   if (cancelable_scroll_task_.IsValid()) {
     cancelable_scroll_task_.CancelTask();
   }
@@ -192,7 +195,8 @@ void PdfViewWebPlugin::HandleClickBookmarkMessage(const base::Value::Dict& messa
   engine_->OnClickBookmark(*nullableId);
 }
 
-void PdfViewWebPlugin::ForceSelectionChangedAfterDelay() {
+void PdfViewWebPlugin::SelectionChangedAfterDelay() {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   if (cancelable_selection_task_.IsValid()) {
     cancelable_selection_task_.CancelTask();
   }
@@ -204,12 +208,33 @@ void PdfViewWebPlugin::ForceSelectionChangedAfterDelay() {
   cancelable_selection_task_ = task_runner->PostCancelableDelayedTask(
       base::subtle::PostDelayedTaskPassKey(),
       FROM_HERE,
-      base::BindOnce(&PdfViewWebPlugin::ForceSelectionChanged, weak_factory_.GetWeakPtr()),
+      base::BindOnce(&PdfViewWebPlugin::SelectionChangedAtScrollStopped, weak_factory_.GetWeakPtr()),
       kPDFSelectionDelay);
 }
 
 void PdfViewWebPlugin::ClearTextSelection() {
   engine_->ClearTextSelection();
+}
+
+void PdfViewWebPlugin::DoPaintAtScrollStopped() {
+  paint_manager_.DoPaintAtScrollStopped();
+}
+
+void PdfViewWebPlugin::DoPaintAfterDelay() {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  if (cancelable_paint_task_.IsValid()) {
+    cancelable_paint_task_.CancelTask();
+  }
+  auto task_runner = GetTaskRunner();
+  if (!task_runner) {
+    LOG(ERROR) << "PDF task runner is null.";
+    return;
+  }
+  cancelable_paint_task_ = task_runner->PostCancelableDelayedTask(
+      base::subtle::PostDelayedTaskPassKey(),
+      FROM_HERE,
+      base::BindOnce(&PdfViewWebPlugin::DoPaintAtScrollStopped, weak_factory_.GetWeakPtr()),
+      kPDFPaintDelay);
 }
 #endif  // BUILDFLAG(ARKWEB_PDF)
 

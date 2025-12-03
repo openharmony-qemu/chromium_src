@@ -691,9 +691,8 @@ void PdfViewWebPlugin::UpdateScroll(const gfx::PointF& scroll_position) {
   engine_->ScrolledToYPosition(scaled_scroll_position.y());
   
 #if BUILDFLAG(ARKWEB_PDF)
-  ForceSelectionChangedAfterDelay();
   SetIsScrolling(true);
-  SetScrollStoppedAfterDelay();
+  DoPaintAfterDelay();
 #endif  // BUILDFLAG(ARKWEB_PDF)
   
 }
@@ -2053,7 +2052,8 @@ void PdfViewWebPlugin::OnPaint(const std::vector<gfx::Rect>& paint_rects,
   base::AutoReset<bool> auto_reset_in_paint(&in_paint_, true);
   DoPaint(paint_rects, ready, pending);
 #if BUILDFLAG(ARKWEB_PDF)
-  ForceSelectionChangedAfterDelay();
+  SelectionChangedAfterDelay();
+  SetScrollStoppedAfterDelay();
 #endif
 }
 

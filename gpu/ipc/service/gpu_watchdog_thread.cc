@@ -35,6 +35,10 @@
 #include "gpu/config/gpu_switches.h"
 #include "gpu/ipc/common/result_codes.h"
 
+#if BUILDFLAG(IS_ARKWEB)
+#include "arkweb/chromium_ext/gpu/ipc/service/gpu_hang_adapter.h"
+#endif
+
 namespace gpu {
 
 base::TimeDelta GetGpuWatchdogTimeout(bool software_rendering) {
@@ -83,6 +87,10 @@ GpuWatchdogThread::GpuWatchdogThread(base::TimeDelta timeout,
   else
     watched_thread_name_str_uma_ = ".main";
 
+#if BUILDFLAG(IS_ARKWEB) && !defined(COMPONENT_BUILD)
+  bool gpumain_test = gpu::IsHangTestEnabled("gpu_main");
+  hang_test_ = gpumain_test && thread_name == "GpuWatchdog";
+#endif
 #if BUILDFLAG(IS_MAC)
   // TODO(crbug.com/40187449): Remove this once macOS uses system-wide ids.
   // On macOS the thread ids used by CrashPad are not the same as the ones
@@ -310,6 +318,11 @@ void GpuWatchdogThread::WillProcessTask(const base::PendingTask& pending_task,
     DCHECK(IsArmed());
   else
     Arm();
+
+#if BUILDFLAG(IS_ARKWEB)
+  static int32_t count = 0;
+  gpu::SimulateHangForTesting(count, hang_test_, "gpu_main");
+#endif
 }
 
 void GpuWatchdogThread::DidProcessTask(const base::PendingTask& pending_task) {
@@ -700,7 +713,10 @@ void GpuWatchdogThread::DeliberatelyTerminateToRecoverFromHang() {
   base::debug::Alias(&last_arm_disarm_counter);
 
 #if BUILDFLAG(IS_ARKWEB)
-  LOG(ERROR) << "ArkWeb do not create a crash dump without crashing";
+  LOG(ERROR) << "ArkWeb report gpu freeze";
+#if !defined(COMPONENT_BUILD)
+  gpu::ReportGpuFreeze();
+#endif
 #else
   // Create a crash dump first
   base::debug::DumpWithoutCrashing();

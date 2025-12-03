@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "ohos_cef_ext/libcef/browser/net_service/stream_reader_url_loader_utils.h"
+#include "services/network/public/cpp/loading_params.h"
 
 namespace net_service {
 
@@ -68,8 +69,8 @@ void StreamReaderURLLoaderUtils::CreatePipeOptions(
   options.flags = MOJO_CREATE_DATA_PIPE_FLAG_NONE;
   options.element_num_bytes = 1;
   options.capacity_num_bytes =
-      network::features::GetDataPipeDefaultAllocationSize(
-          network::features::DataPipeAllocationSize::kLargerSizeIfPossible);
+      network::GetDataPipeDefaultAllocationSize(
+          network::DataPipeAllocationSize::kLargerSizeIfPossible);
 }
 #endif
 

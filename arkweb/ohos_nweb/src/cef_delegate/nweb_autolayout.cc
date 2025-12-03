@@ -376,20 +376,4 @@ void NwebAutolayout::LoadAutoLayoutFromHap() {
   mAutoLayoutJSSource_.assign(script_data.data(), script_data.size());
 }
 
-std::optional<int> NwebAutolayout::ParseInt(std::string_view input) {
-    if (input.empty()) {
-        return std::nullopt;
-    }
-
-    int value = -1;
-    const char* const start = input.data();
-    const char* const end = start + input.size();
-    auto result = std::from_chars(start, end, value);
-    if (result.ec != std::errc() || result.ptr != end) {
-        return std::nullopt;
-    }
-
-    return value;
-}
-
 }  // namespace OHOS::NWeb

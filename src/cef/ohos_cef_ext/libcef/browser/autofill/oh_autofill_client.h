@@ -93,7 +93,7 @@ class OhAutofillClient : public autofill::ContentAutofillClient {
   bool OnAutofillEvent(const std::string& json_str);
   bool IsOffTheRecord() const override;
   scoped_refptr<network::SharedURLLoaderFactory> GetURLLoaderFactory() override;
-  PersonalDataManager* GetPersonalDataManager() override;
+  PersonalDataManager& GetPersonalDataManager() override;
   AutocompleteHistoryManager* GetAutocompleteHistoryManager() override;
   PrefService* GetPrefs() override;
   const PrefService* GetPrefs() const override;
@@ -103,7 +103,6 @@ class OhAutofillClient : public autofill::ContentAutofillClient {
   autofill::FormDataImporter* GetFormDataImporter() override;
   autofill::StrikeDatabase* GetStrikeDatabase() override;
   ukm::UkmRecorder* GetUkmRecorder() override;
-  ukm::SourceId GetUkmSourceId() override;
   autofill::AddressNormalizer* GetAddressNormalizer() override;
   const GURL& GetLastCommittedPrimaryMainFrameURL() const override;
   url::Origin GetLastCommittedPrimaryMainFrameOrigin() const override;
@@ -116,26 +115,17 @@ class OhAutofillClient : public autofill::ContentAutofillClient {
       const autofill::AutofillProfile* original_profile,
       bool is_migration_to_account,
       AddressProfileSavePromptCallback callback) override;
-  void ShowEditAddressProfileDialog(
-      const autofill::AutofillProfile& profile,
-      AddressProfileSavePromptCallback on_user_decision_callback) override;
-  void ShowDeleteAddressProfileDialog(
-      const autofill::AutofillProfile& profile,
-      AddressProfileDeleteDialogCallback delete_dialog_callback) override;
   SuggestionUiSessionId ShowAutofillSuggestions(
       const autofill::AutofillClient::PopupOpenArgs& open_args,
       base::WeakPtr<autofill::AutofillSuggestionDelegate> delegate) override;
   void UpdateAutofillDataListValues(
       base::span<const autofill::SelectOption> datalist) override;
-  void PinAutofillSuggestions() override;
   void HideAutofillSuggestions(
       autofill::SuggestionHidingReason reason) override;
   bool IsAutocompleteEnabled() const override;
-  bool IsPasswordManagerEnabled() override;
-  void DidFillOrPreviewForm(
-      autofill::mojom::ActionPersistence action_persistence,
-      autofill::AutofillTriggerSource trigger_source,
-      bool is_refill) override;
+  bool IsPasswordManagerEnabled() const override;
+  void DidFillForm(autofill::AutofillTriggerSource trigger_source,
+                 bool is_refill) override;
   bool IsContextSecure() const override;
   autofill::FormInteractionsFlowId GetCurrentFormInteractionsFlowId() override;
 

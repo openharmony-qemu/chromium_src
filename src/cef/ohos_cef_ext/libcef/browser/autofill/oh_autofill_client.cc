@@ -116,8 +116,8 @@ OhAutofillClient::GetURLLoaderFactory() {
       ->GetURLLoaderFactoryForBrowserProcess();
 }
 
-PersonalDataManager* OhAutofillClient::GetPersonalDataManager() {
-  return nullptr;
+PersonalDataManager& OhAutofillClient::GetPersonalDataManager() {
+  NOTREACHED();
 }
 
 AutocompleteHistoryManager*
@@ -166,10 +166,6 @@ ukm::UkmRecorder* OhAutofillClient::GetUkmRecorder() {
   return nullptr;
 }
 
-ukm::SourceId OhAutofillClient::GetUkmSourceId() {
-  // UKM recording is not supported for WebViews.
-  return ukm::kInvalidSourceId;
-}
 
 autofill::AddressNormalizer* OhAutofillClient::GetAddressNormalizer() {
   return nullptr;
@@ -210,17 +206,6 @@ void OhAutofillClient::ConfirmSaveAddressProfile(
   NOTIMPLEMENTED();
 }
 
-void OhAutofillClient::ShowEditAddressProfileDialog(
-    const autofill::AutofillProfile& profile,
-    AddressProfileSavePromptCallback on_user_decision_callback) {
-  NOTIMPLEMENTED();
-}
-
-void OhAutofillClient::ShowDeleteAddressProfileDialog(
-    const autofill::AutofillProfile& profile,
-    AddressProfileDeleteDialogCallback delete_dialog_callback) {
-  NOTIMPLEMENTED();
-}
 
 autofill::AutofillClient::SuggestionUiSessionId OhAutofillClient::ShowAutofillSuggestions(
     const autofill::AutofillClient::PopupOpenArgs& open_args,
@@ -270,9 +255,6 @@ void OhAutofillClient::UpdateAutofillDataListValues(
   // APIs.
 }
 
-void OhAutofillClient::PinAutofillSuggestions() {
-  NOTIMPLEMENTED();
-}
 
 void OhAutofillClient::HideAutofillSuggestions(autofill::SuggestionHidingReason reason) {
   delegate_.reset();
@@ -282,12 +264,11 @@ bool OhAutofillClient::IsAutocompleteEnabled() const {
   return GetSaveFormData();
 }
 
-bool OhAutofillClient::IsPasswordManagerEnabled() {
+bool OhAutofillClient::IsPasswordManagerEnabled() const {
   return false;
 }
 
-void OhAutofillClient::DidFillOrPreviewForm(
-    autofill::mojom::ActionPersistence action_persistence,
+void OhAutofillClient::DidFillForm(
     autofill::AutofillTriggerSource trigger_source,
     bool is_refill) {}
 

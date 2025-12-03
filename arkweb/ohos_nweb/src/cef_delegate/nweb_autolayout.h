@@ -53,7 +53,7 @@ struct ParsedCCMConfig {
   std::unordered_map<std::string_view, WhitelistEntry> whitelist;
 };
 
-struct IntRangeLimits {
+struct RangeLimits {
   int min;
   int max;
   bool inclusive_min;

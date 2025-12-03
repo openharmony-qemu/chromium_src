@@ -101,7 +101,6 @@ bool SupervisedUserCanSkipExtensionParentApprovals(const Profile* profile) {
 
 bool AreExtensionsPermissionsEnabled(Profile* profile) {
 #if BUILDFLAG(ENABLE_EXTENSIONS_CORE)
-#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_OHOS)
   return profile->IsChild();
 #else
   return false;

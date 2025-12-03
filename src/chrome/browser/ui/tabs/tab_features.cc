@@ -379,12 +379,10 @@ void TabFeatures::Init(TabInterface& tab, Profile* profile) {
   }
 #endif
 
-#if BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)
   if (base::FeatureList::IsEnabled(net::features::kVerifyQWACs)) {
     qwac_web_contents_observer_ =
         std::make_unique<QwacWebContentsObserver>(tab);
   }
-#endif  // BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)
 
   if (base::FeatureList::IsEnabled(
           security_interstitials::features::kHttpsFirstDialogUi)) {

@@ -451,8 +451,14 @@ bool OHOSAudioOutputStream::InitRender() {
                                         parameters_.sample_rate());
   OH_AudioStreamBuilder_SetChannelCount(audio_stream_builder_,
                                         parameters_.channels());
-  OH_AudioStreamBuilder_SetLatencyMode(audio_stream_builder_,
-                                       AUDIOSTREAM_LATENCY_MODE_NORMAL);
+  if (parameters_.latency_tag() == AudioLatency::Type::kPlayback) {
+    OH_AudioStreamBuilder_SetLatencyMode(audio_stream_builder_,
+                                      AUDIOSTREAM_LATENCY_MODE_NORMAL);
+  } else {
+    LOG(INFO) << "OHOSAudioOutputStream InitRender low latency stream";
+    OH_AudioStreamBuilder_SetLatencyMode(audio_stream_builder_,
+                                        AUDIOSTREAM_LATENCY_MODE_FAST);
+  }
   OH_AudioStreamBuilder_SetFrameSizeInCallback(audio_stream_builder_,
                                                parameters_.frames_per_buffer());
   OH_AudioStreamBuilder_SetEncodingType(audio_stream_builder_,

@@ -39,7 +39,11 @@ using namespace OHOS::NWeb;
 
 namespace OHOS::NWeb {
 
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+namespace cert_mgr_adapter_impl_test {
+#else
 namespace {
+#endif
  
 struct HuksSignatureSpec {
     uint32_t algorithm;
@@ -75,7 +79,81 @@ OHHuksFreeExternalCryptoParamSet huksFreeExternalCryptoParamSet = nullptr;
 OHHuksOpenResource huksOpenResource = nullptr;
 OHHuksCloseResource huksCloseResource = nullptr;
 OHHuksGetUkeyPinAuthState huksGetUkeyPinAuthState = nullptr;
- 
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+OHCertManagerGetUkeyCertificate GetCertManagerGetUkeyCertificate() {
+    return certManagerGetUkeyCertificate;
+}
+
+OHCertManagerFreeUkeyCertificate GetCertManagerFreeUkeyCertificate() {
+    return certManagerFreeUkeyCertificate;
+}
+
+OHHuksInitExternalCryptoParamSet GetHuksInitExternalCryptoParamSet() {
+    return huksInitExternalCryptoParamSet;
+}
+
+OHHuksAddExternalCryptoParams GetHuksAddExternalCryptoParams() {
+    return huksAddExternalCryptoParams;
+}
+
+OHHuksBuildExternalCryptoParamSet GetHuksBuildExternalCryptoParamSet() {
+    return huksBuildExternalCryptoParamSet;
+}
+
+OHHuksFreeExternalCryptoParamSet GetHuksFreeExternalCryptoParamSet() {
+    return huksFreeExternalCryptoParamSet;
+}
+
+OHHuksOpenResource GetHuksOpenResource() {
+    return huksOpenResource;
+}
+
+OHHuksCloseResource GetHuksCloseResource() {
+    return huksCloseResource;
+}
+
+OHHuksGetUkeyPinAuthState GetHuksGetUkeyPinAuthState() {
+    return huksGetUkeyPinAuthState;
+}
+
+void SetCertManagerGetUkeyCertificate(OHCertManagerGetUkeyCertificate func) {
+    certManagerGetUkeyCertificate = func;
+}
+
+void SetCertManagerFreeUkeyCertificate(OHCertManagerFreeUkeyCertificate func) {
+    certManagerFreeUkeyCertificate = func;
+}
+
+void SetHuksInitExternalCryptoParamSet(OHHuksInitExternalCryptoParamSet func) {
+    huksInitExternalCryptoParamSet = func;
+}
+
+void SetHuksAddExternalCryptoParams(OHHuksAddExternalCryptoParams func) {
+    huksAddExternalCryptoParams = func;
+}
+
+void SetHuksBuildExternalCryptoParamSet(OHHuksBuildExternalCryptoParamSet func) {
+    huksBuildExternalCryptoParamSet = func;
+}
+
+void SetHuksFreeExternalCryptoParamSet(OHHuksFreeExternalCryptoParamSet func) {
+    huksFreeExternalCryptoParamSet = func;
+}
+
+void SetHuksOpenResource(OHHuksOpenResource func) {
+    huksOpenResource = func;
+}
+
+void SetHuksCloseResource(OHHuksCloseResource func) {
+    huksCloseResource = func;
+}
+
+void SetHuksGetUkeyPinAuthState(OHHuksGetUkeyPinAuthState func) {
+    huksGetUkeyPinAuthState = func;
+}
+#endif
+
 void InitDlopenFun() {
   static std::once_flag initFlag;
 std::call_once(initFlag, [](){
@@ -218,6 +296,19 @@ bool GetHuksSignatureSpec(uint16_t algorithm, HuksSignatureSpec& result)
     }
 }
 }
+
+#if BUILDFLAG(ARKWEB_UNITTESTS)
+using cert_mgr_adapter_impl_test::InitDlopenFun;
+using cert_mgr_adapter_impl_test::certManagerGetUkeyCertificate;
+using cert_mgr_adapter_impl_test::certManagerFreeUkeyCertificate;
+using cert_mgr_adapter_impl_test::huksOpenResource;
+using cert_mgr_adapter_impl_test::huksFreeExternalCryptoParamSet;
+using cert_mgr_adapter_impl_test::InitExtParamSet;
+using cert_mgr_adapter_impl_test::huksCloseResource;
+using cert_mgr_adapter_impl_test::huksGetUkeyPinAuthState;
+using cert_mgr_adapter_impl_test::HuksSignatureSpec;
+using cert_mgr_adapter_impl_test::InitParamSet;
+#endif
 
 CertManagerAdapterImpl::CertManagerAdapterImpl() {
     InitDlopenFun();

@@ -922,7 +922,7 @@ void InitialWebEngineArgs(
 
   auto args_to_add = GetArgsToAdd(init_args);
 
-  args_to_add.push_back("--user-data-dir=");
+  args_to_add.push_back("--user-data-dir=files/__arkweb");
   args_to_add.push_back("--arkweb-app-data-dir=/data/storage/el2/base");
 
   base::FilePath user_data_dir = base::FilePath();
@@ -950,9 +950,14 @@ void InitialWebEngineArgs(
     web_engine_args.emplace_back("--ohos-cache-dir-exists");
   }
 
-  base::FilePath absolute_user_data_dir = user_data_dir.empty() ?
-                                          app_data_dir.Append("files/__arkweb") :
-                                          app_data_dir.Append(user_data_dir);
+  base::FilePath absolute_user_data_dir = user_data_dir;
+  if (!app_data_dir.IsParent(user_data_dir) &&
+      app_data_dir != user_data_dir) {
+    absolute_user_data_dir = user_data_dir.empty() ?
+                    app_data_dir.Append("files/__arkweb") :
+                    app_data_dir.Append(user_data_dir);
+  }
+
   if (base::PathExists(absolute_user_data_dir)) {
     web_engine_args.emplace_back("--ohos-user-data-dir-exists");
   }

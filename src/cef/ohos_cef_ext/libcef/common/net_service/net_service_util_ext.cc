@@ -32,12 +32,17 @@ bool GetCookieDomain(const GURL& url,
                      const net::ParsedCookie& pc,
                      std::string* result) {
   std::string domain_string;
-  if (pc.HasDomain()) {
-    domain_string = pc.Domain();
+  auto domain_opt = pc.Domain();
+  if (domain_opt.has_value()) {
+    domain_string = std::string(domain_opt.value());
   }
   net::CookieInclusionStatus status;
-  return net::cookie_util::GetCookieDomainWithString(url, domain_string, status,
-                                                     result);
+  auto domain_result = net::cookie_util::GetCookieDomainWithString(url, domain_string, status);
+  if (domain_result.has_value()) {
+    *result = domain_result.value();
+    return true;
+  }
+  return false;
 }
 
 cef_cookie_same_site_t MakeCefCookieSameSite(net::CookieSameSite value) {
@@ -95,8 +100,9 @@ bool MakeCefCookieEXT(const GURL& url,
   }
 
   std::string path_string;
-  if (pc.HasPath()) {
-    path_string = pc.Path();
+  auto path_opt = pc.Path();
+  if (path_opt.has_value()) {
+    path_string = std::string(path_opt.value());
   }
   std::string cookie_path =
       net::cookie_util::CanonPathWithString(url, path_string);
@@ -116,7 +122,8 @@ bool MakeCefCookieEXT(const GURL& url,
   if (cookie.has_expires) {
     cookie.expires = CefBaseTime(cookie_expires);
   }
-  cookie.same_site = MakeCefCookieSameSite(pc.SameSite());
+  auto [same_site_enum, same_site_string] = pc.SameSite();
+  cookie.same_site = MakeCefCookieSameSite(same_site_enum);
   cookie.priority = MakeCefCookiePriority(pc.Priority());
 
   return true;

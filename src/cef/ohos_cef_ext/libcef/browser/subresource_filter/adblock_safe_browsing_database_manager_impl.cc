@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "base/notreached.h"
+#include "base/notimplemented.h"
 #include "services/network/public/cpp/shared_url_loader_factory.h"
 
 namespace safe_browsing {

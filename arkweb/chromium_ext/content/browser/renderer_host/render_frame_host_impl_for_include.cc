@@ -101,6 +101,7 @@ void RenderFrameHostImpl::GetCreateNewWindow(
     const GURL& target_url,
     WindowOpenDisposition disposition,
     bool allow_popup,
+    blink::mojom::WindowFeaturesPtr features,
     GetCreateNewWindowCallback callback) {
   if (delegate_ && delegate_->IsActiveFileChooser()) {
     // Do not allow opening a new window or tab while a file select is active
@@ -116,7 +117,7 @@ void RenderFrameHostImpl::GetCreateNewWindow(
       allow_popup || frame_tree_node_->HasTransientUserActivation();
   GetContentClient()->browser()->CanCreateWindow(
       this, target_url, disposition, effective_transient_activation_state,
-      std::move(callback));
+      features->bounds, std::move(callback));
 }
 #endif  // BUILDFLAG(ARKWEB_MULTI_WINDOW)
 

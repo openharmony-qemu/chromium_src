@@ -1338,7 +1338,8 @@ class CONTENT_EXPORT RenderFrameImpl
 #if BUILDFLAG(ARKWEB_MULTI_WINDOW)
   bool GetNewWindowWebView(const GURL& target_url,
                            blink::WebNavigationPolicy policy,
-                           bool allow_popup);
+                           bool allow_popup,
+                           const blink::WebWindowFeatures& features);
 #endif
 
 #if BUILDFLAG(ARKWEB_ADBLOCK)

@@ -743,7 +743,10 @@ interface FrameHost {
       => (CreateNewWindowStatus status, CreateNewWindowReply? reply);
 
   [EnableIf=arkweb_multi_window, Sync]
-  GetCreateNewWindow(url.mojom.Url target_url, ui.mojom.WindowOpenDisposition disposition, bool allow_popup)
+  GetCreateNewWindow(url.mojom.Url target_url,
+                     ui.mojom.WindowOpenDisposition disposition,
+                     bool allow_popup,
+                     blink.mojom.WindowFeatures window_features)
       => (CreateNewWindowStatus status);
 
   // Asynchronously creates a child frame. A blink.mojom.LocalFrameToken must

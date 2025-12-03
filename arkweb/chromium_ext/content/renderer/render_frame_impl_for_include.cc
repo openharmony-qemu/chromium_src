@@ -46,17 +46,19 @@ gfx::RectF RenderFrameImpl::ElementBoundsInWindow(
 #endif
 
 #if BUILDFLAG(ARKWEB_MULTI_WINDOW)
-bool RenderFrameImpl::GetNewWindowWebView(const GURL& target_url,
-                                          blink::WebNavigationPolicy policy,
-                                          bool allow_popup) {
+bool RenderFrameImpl::GetNewWindowWebView(
+    const GURL& target_url,
+    blink::WebNavigationPolicy policy,
+    bool allow_popup,
+    const blink::WebWindowFeatures& features) {
   mojom::CreateNewWindowStatus status = mojom::CreateNewWindowStatus::kBlocked;
   auto* frame_host = GetFrameHost();
   if (!frame_host) {
     return false;
   }
-  if (!frame_host->GetCreateNewWindow(target_url,
-                                      NavigationPolicyToDisposition(policy),
-                                      allow_popup, &status) ||
+  if (!frame_host->GetCreateNewWindow(
+          target_url, NavigationPolicyToDisposition(policy), allow_popup,
+          ConvertWebWindowFeaturesToMojoWindowFeatures(features), &status) ||
       status != mojom::CreateNewWindowStatus::kSuccess) {
     return false;
   }

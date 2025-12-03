@@ -2628,6 +2628,7 @@ class CONTENT_EXPORT RenderFrameHostImpl
   void GetCreateNewWindow(const GURL& target_url,
                           WindowOpenDisposition disposition,
                           bool allow_popup,
+                          blink::mojom::WindowFeaturesPtr window_features,
                           GetCreateNewWindowCallback callback) override;
 #endif
 #if BUILDFLAG(ARKWEB_PRECOMPILE)

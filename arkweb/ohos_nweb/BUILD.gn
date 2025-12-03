@@ -539,6 +539,13 @@ component("nweb_sources") {
     ]
   }
 
+  if (defined(arkweb_multi_window) && arkweb_multi_window) {
+    sources += [
+      "src/nweb_window_new_event_info_impl.cc",
+      "src/nweb_window_new_event_info_impl.h",
+    ]
+  }
+
   deps = [
     ":cef_nweb",
     ":nweb_hilog",

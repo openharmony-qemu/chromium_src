@@ -6967,7 +6967,7 @@ WebView* RenderFrameImpl::CreateNewWindow(
     params->allow_popup = true;
 
 #if BUILDFLAG(ARKWEB_MULTI_WINDOW)
-  GetNewWindowWebView(request.Url(), policy, params->allow_popup);
+  GetNewWindowWebView(request.Url(), policy, params->allow_popup, features);
 #endif
 
   params->window_container_type = WindowFeaturesToContainerType(features);

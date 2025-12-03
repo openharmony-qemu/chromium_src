@@ -22,7 +22,7 @@
 #include "chrome/browser/extensions/extension_install_prompt.h"
 #include "chrome/browser/extensions/extension_install_prompt_show_params.h"
 #include "chrome/browser/extensions/extension_management.h"
-#include "chrome/browser/extensions/permissions/permissions_helpers.h"
+#include "chrome/browser/extensions/api/permissions/permissions_api_helpers.h"
 #include "chrome/browser/profiles/profile.h"
 #include "chrome/common/extensions/api/permissions.h"
 #include "extensions/browser/extension_prefs.h"
@@ -253,13 +253,16 @@ void PermissionsRequestFunction::OnGetPromptData(
   if (0 < data->permissionCount) {
     data->permissions = (NWebExtensionPermission*)calloc(
         data->permissionCount, sizeof(NWebExtensionPermission));
+    extensions::InstallPromptPermissions install_permissions = prompt_->GetPermissions();
     for (uint32_t i = 0; i < data->permissionCount; i++) {
       std::string permission =
           std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>()
               .to_bytes(prompt_->GetPermission(i));
-      std::string detail =
-          std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>()
-              .to_bytes(prompt_->GetPermissionsDetails(i));
+      std::string detail = "";
+      if (i < install_permissions.details.size()) {
+        detail = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>()
+                     .to_bytes(install_permissions.details[i]);
+      }
       data->permissions[i].detail = strdup(detail.c_str());
       data->permissions[i].permission = strdup(permission.c_str());
     }

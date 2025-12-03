@@ -44,7 +44,7 @@
 #include "components/content_settings/core/browser/cookie_settings.h"
 #include "components/content_settings/core/browser/host_content_settings_map.h"
 #include "components/domain_reliability/domain_reliability_prefs.h"
-#include "components/flags_ui/pref_service_flags_storage.h"
+#include "components/webui/flags/pref_service_flags_storage.h"
 #include "components/keyed_service/content/browser_context_dependency_manager.h"
 #include "components/language/core/browser/language_prefs.h"
 #include "components/language/core/browser/pref_names.h"

@@ -77,7 +77,8 @@
 #include "cef/ohos_cef_ext/libcef/browser/chrome/extensions/arkweb_chrome_extension_util_ext.h"
 #include "chrome/browser/extensions/extension_management.h"
 #include "chrome/browser/extensions/extension_service.h"
-#include "chrome/common/extensions/chrome_manifest_url_handlers.h"
+#include "extensions/common/manifest_url_handlers.h"
+#include "extensions/common/manifest_handlers/devtools_page_handler.h"
 #include "extensions/browser/extension_registry.h"
 #include "extensions/browser/extension_util.h"
 #include "extensions/common/mojom/api_permission_id.mojom-shared.h"
@@ -532,7 +533,7 @@ void CefDevToolsFrontend::HandleMessageFromDevToolsFrontend(
       LogProtocolMessage(ProtocolMessageType::METHOD, *protocol_message);
     }
     agent_host_->DispatchProtocolMessage(
-        this, base::as_bytes(base::make_span(*protocol_message)));
+        this, base::as_bytes(base::span(*protocol_message)));
   } else if (*method == "loadCompleted") {
 #if BUILDFLAG(ARKWEB_ARKWEB_EXTENSIONS)
     int tab_id = cef::GetTabIdForWebContents(inspected_contents_);
@@ -967,7 +968,7 @@ base::Value::Dict CefDevToolsFrontend::BuildExtensionInfo(
   // process. Grant the devtools process the ability to request URLs from the
   // extension.
   content::ChildProcessSecurityPolicy::GetInstance()->GrantRequestOrigin(
-      web_contents()->GetPrimaryMainFrame()->GetProcess()->GetID(),
+      web_contents()->GetPrimaryMainFrame()->GetProcess()->GetID().GetUnsafeValue(),
       url::Origin::Create(extension->url()));
 
   extensions::ExtensionManagement* management =

@@ -25,6 +25,7 @@
 #include "chrome/browser/extensions/api/downloads/downloads_api.h"
 #include "chrome/common/extensions/api/downloads.h"
 #include "components/download/public/common/download_item.h"
+#include "content/public/browser/browser_context.h"
 #include "content/public/browser/web_contents.h"
 #include "download_api_ext_router.h"
 #include "extensions/browser/extension_function_dispatcher.h"

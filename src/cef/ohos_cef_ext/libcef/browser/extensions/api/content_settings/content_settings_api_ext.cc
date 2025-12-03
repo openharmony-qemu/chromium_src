@@ -18,6 +18,7 @@
 #include <map>
 #include <utility>
 
+#include "base/no_destructor.h"
 #include "chrome/browser/extensions/api/content_settings/content_settings_api.h"
 #include "extensions/browser/extension_function.h"
 #include "ohos_nweb/src/capi/browser_service/nweb_extension_content_settings_types.h"
@@ -150,14 +151,16 @@ ContentSetting StringToContentSetting(const std::string &str)
 
 std::string ChromeSettingScopeToString(ChromeSettingScope scope)
 {
-    static const std::map<ChromeSettingScope, std::string> scopeMap = {{ChromeSettingScope::kNone, "None"},
+    static const base::NoDestructor<std::map<ChromeSettingScope, std::string>> scope_map({
+        {ChromeSettingScope::kNone, "None"},
         {ChromeSettingScope::kRegular, "Regular"},
         {ChromeSettingScope::kRegularOnly, "RegularOnly"},
         {ChromeSettingScope::kIncognitoPersistent, "IncognitoPersistent"},
-        {ChromeSettingScope::kIncognitoSessionOnly, "IncognitoSessionOnly"}};
+        {ChromeSettingScope::kIncognitoSessionOnly, "IncognitoSessionOnly"}
+    });
 
-    auto it = scopeMap.find(scope);
-    if (it != scopeMap.end()) {
+    auto it = scope_map->find(scope);
+    if (it != scope_map->end()) {
         return it->second;
     }
     return "Unknown";
@@ -372,7 +375,7 @@ ExtensionFunction::ResponseAction ContentSettingsContentSettingGetFunction::Run(
     LOG(INFO) << "ContentSettingsContentSettingGetFunction run";
 
     ContentSettingsType content_type;
-    EXTENSION_FUNCTION_VALIDATE(RemoveContentType(mutable_args(), &content_type));
+    EXTENSION_FUNCTION_VALIDATE(RemoveContentType(GetMutableArgs(), &content_type));
     std::string extension_id = this->extension_id();
 
     std::optional<Get::Params> params = Get::Params::Create(args());
@@ -501,7 +504,7 @@ ExtensionFunction::ResponseAction ContentSettingsContentSettingSetFunction::Run(
 {
     LOG(INFO) << "ContentSettingsContentSettingSetFunction run";
     ContentSettingsType content_type;
-    EXTENSION_FUNCTION_VALIDATE(RemoveContentType(mutable_args(), &content_type));
+    EXTENSION_FUNCTION_VALIDATE(RemoveContentType(GetMutableArgs(), &content_type));
     std::optional<Set::Params> params = Set::Params::Create(args());
     EXTENSION_FUNCTION_VALIDATE(params);
     if (content_type == ContentSettingsType::DEPRECATED_PPAPI_BROKER) {
@@ -671,7 +674,7 @@ ExtensionFunction::ResponseAction ContentSettingsContentSettingClearFunction::Ru
 {
     LOG(INFO) << "ContentSettingsContentSettingClearFunction run";
     ContentSettingsType content_type;
-    EXTENSION_FUNCTION_VALIDATE(RemoveContentType(mutable_args(), &content_type));
+    EXTENSION_FUNCTION_VALIDATE(RemoveContentType(GetMutableArgs(), &content_type));
 
     std::optional<Clear::Params> params = Clear::Params::Create(args());
     EXTENSION_FUNCTION_VALIDATE(params);

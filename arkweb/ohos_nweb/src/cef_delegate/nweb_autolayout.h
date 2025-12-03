@@ -53,6 +53,13 @@ struct ParsedCCMConfig {
   std::unordered_map<std::string_view, WhitelistEntry> whitelist;
 };
 
+struct IntRangeLimits {
+  int min;
+  int max;
+  bool inclusive_min;
+  bool inclusive_max;
+};
+
 namespace ConfigConstants {
 constexpr int kMinMaskAreaRatioThreshold = 50;
 constexpr int kMaxMaskAreaRatioThreshold = 100;

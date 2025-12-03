@@ -150,13 +150,6 @@ bool NwebAutolayout::Parse(const base::Value& root) {
   return ParseWhitelist(*whitelist_dict);
 }
 
-struct IntRangeLimits {
-  int min;
-  int max;
-  bool inclusive_min;
-  bool inclusive_max;
-};
-
 bool ValidateIntConfig(const base::Value::Dict& root_dict, std::string_view key,
                        const IntRangeLimits& limits, int& output) {
   if (limits.min > limits.max) {

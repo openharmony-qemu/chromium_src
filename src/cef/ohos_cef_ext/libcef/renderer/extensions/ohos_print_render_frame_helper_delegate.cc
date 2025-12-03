@@ -50,7 +50,8 @@ blink::WebElement OhosPrintRenderFrameHelperDelegate::GetPdfElement(
     blink::WebLocalFrame* frame) {
 #if BUILDFLAG(ENABLE_PDF)
   if (frame && frame->Parent() &&
-      IsPdfInternalPluginAllowedOrigin(frame->Parent()->GetSecurityOrigin())) {
+      IsPdfInternalPluginAllowedOrigin(frame->Parent()->GetSecurityOrigin(),
+                                       base::span<const url::Origin>{})) {
     auto plugin_element = frame->GetDocument().QuerySelector("embed");
     DCHECK(!plugin_element.IsNull());
     return plugin_element;

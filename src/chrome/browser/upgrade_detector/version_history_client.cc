@@ -191,6 +191,10 @@ GURL GetVersionReleasesUrl(base::Version version) {
 
 #define CURRENT_PLATFORM "chromeos"
 
+#elif BUILDFLAG(IS_OHOS)
+
+#define CURRENT_PLATFORM "ohos"
+
 #else
 
 #error Unsupported platform

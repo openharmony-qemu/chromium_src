@@ -38,6 +38,7 @@ class COMPONENTS_PREFS_EXPORT MigrationFilter : public PrefFilter {
   OnWriteCallbackPair FilterSerializeData(
       base::Value::Dict& pref_store_contents) override;
   void OnStoreDeletionFromDisk() override;
+  void SetPrefService(PrefService* pref_service) override;
 
  private:
   void MigrationFinished(
@@ -48,6 +49,7 @@ class COMPONENTS_PREFS_EXPORT MigrationFilter : public PrefFilter {
   raw_ptr<JsonPrefStore> store_;
   std::set<std::string> changed_keys_;
   bool migration_finished_{false};
+  raw_ptr<PrefService> pref_service_{nullptr};
 };
 
 #endif // ARKWEB_CHROMIUM_EXT_COMPONENTS_PREFS_MIGRATION_FILTER_H_

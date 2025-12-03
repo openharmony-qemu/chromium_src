@@ -20,6 +20,7 @@
 #include "base/logging.h"
 #include "base/path_service.h"
 #include "components/prefs/json_pref_store.h"
+#include "components/prefs/pref_service.h"
 
 namespace {
 
@@ -135,4 +136,8 @@ void MigrationFilter::MigrationFinished(
   migration_finished_ = true;
   changed_keys_.clear();
   std::move(post_filter_on_load_callback).Run(std::move(pref), should_write);
+}
+
+void MigrationFilter::SetPrefService(PrefService* pref_service) {
+  pref_service_ = pref_service;
 }

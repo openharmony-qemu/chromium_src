@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "base/logging.h"
+#include "url/gurl.h"
 #include "ohos_cef_ext/libcef/browser/extensions/tab_extensions_util.h"
 
 namespace extensions {

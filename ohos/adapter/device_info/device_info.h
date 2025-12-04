@@ -26,6 +26,8 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef OHOS_ADAPTER_DEVICE_INFO_DEVICE_INFO_H_
+#define OHOS_ADAPTER_DEVICE_INFO_DEVICE_INFO_H_
 
 #include "ohos/adapter/export.h"
 
@@ -46,7 +48,8 @@ enum SdkVersion {
   SDK_VERSION_14 = 14,
   SDK_VERSION_15 = 15,
   SDK_VERSION_19 = 19,
-  SDK_VERSION_20 = 20,  
+  SDK_VERSION_20 = 20,
+  SDK_VERSION_22 = 22,
 };
 enum class DeviceType { _2IN1, _TABLET };
 
@@ -66,3 +69,4 @@ class ADAPTER_EXPORT_API DeviceInfo {
   static DeviceType device_type_;
 };
 }  // namespace ohos::adapter::device_info
+#endif  // OHOS_ADAPTER_DEVICE_INFO_DEVICE_INFO_H_

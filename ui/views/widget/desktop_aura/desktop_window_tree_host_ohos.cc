@@ -30,6 +30,7 @@
 #include "ui/views/widget/desktop_aura/desktop_window_tree_host_ohos.h"
 
 #include "base/logging.h"
+#include "ohos/adapter/cursor/cursor.h"
 #include "ohos/adapter/xcomponent/adapter/window_adapter.h"
 #include "ui/aura/window_delegate.h"
 #include "ui/display/screen_ohos.h"
@@ -184,6 +185,54 @@ Widget::MoveLoopResult DesktopWindowTreeHostOhos::RunMoveLoop(
     GetContentWindow()->ReleaseCapture();
   }
   return result;
+}
+
+void DesktopWindowTreeHostOhos::LockMouse(aura::Window* window) {
+  if (window == nullptr || window->GetHost() == nullptr) {
+    LOG(ERROR)
+        << " [OhosCursorLock] " << __FUNCTION__
+        << " null window or invalid host";
+    WindowTreeHost::LockMouse(window);
+    return;
+  }
+  if (!ohos::adapter::Cursor::GetInstance().SupportsCursorLock()) {
+    LOG(ERROR) << "[OhosCursorLock] LockCursor not support";
+    WindowTreeHost::LockMouse(window);
+    return;
+  }
+  auto widget = window->GetHost()->GetAcceleratedWidget();
+  if (!ohos::adapter::Cursor::GetInstance().LockCursor(widget)) {
+    LOG(ERROR) << "[OhosCursorLock] LockCursor failed";
+    return;
+  }
+  LOG(INFO)
+      << " [OhosCursorLock] " << __FUNCTION__
+      << " LockCursor success at window: " << window->GetId();
+  WindowTreeHost::LockMouse(window);
+}
+
+void DesktopWindowTreeHostOhos::UnlockMouse(aura::Window* window) {
+  if (window == nullptr || window->GetHost() == nullptr) {
+    LOG(ERROR)
+        << " [OhosCursorLock] " << __FUNCTION__
+        << " null window or invalid host";
+    WindowTreeHost::UnlockMouse(window);
+    return;
+  }
+  if (!ohos::adapter::Cursor::GetInstance().SupportsCursorLock()) {
+    LOG(ERROR) << "[OhosCursorLock] UnlockCursor not support";
+    WindowTreeHost::UnlockMouse(window);
+    return;
+  }
+  auto widget = window->GetHost()->GetAcceleratedWidget();
+  if (!ohos::adapter::Cursor::GetInstance().UnlockCursor(widget)) {
+    LOG(ERROR) << "[OhosCursorLock] UnlockCursor failed";
+    return;
+  }
+  LOG(INFO)
+      << " [OhosCursorLock] " << __FUNCTION__
+      << " UnlockCursor success at window: " << window->GetId();
+  WindowTreeHost::UnlockMouse(window);
 }
 
 // static

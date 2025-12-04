@@ -12,7 +12,11 @@
 #include "ui/events/keycodes/keycodes_x_export.h"
 #include "ui/gfx/x/connection.h"
 #include "ui/gfx/x/event.h"
+#if !BUILDFLAG(IS_OHOS)
 #include "ui/gfx/x/xinput.h"
+#else
+#include "ui/gfx/x/generated_protos/xinput.h"
+#endif
 
 namespace ui {
 

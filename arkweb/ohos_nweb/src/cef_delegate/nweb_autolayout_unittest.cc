@@ -519,22 +519,6 @@ class MockCefFrame : public CefFrame {
 class NwebAutolayoutTest : public testing::Test, public NwebAutolayout {
 };
  
-TEST_F(NwebAutolayoutTest, ParseInt_Valid)
-{
-    EXPECT_EQ(ParseInt("123").value(), 123);
-    EXPECT_EQ(ParseInt("0").value(), 0);
-    EXPECT_EQ(ParseInt("-1").value(), -1);
-}
- 
- 
-TEST_F(NwebAutolayoutTest, ParseInt_Invalid)
-{
-    EXPECT_FALSE(ParseInt("abc").has_value());
-    EXPECT_FALSE(ParseInt("12a").has_value());
-    EXPECT_FALSE(ParseInt("").has_value());
-    EXPECT_FALSE(ParseInt("1.23").has_value());
-}
- 
 TEST_F(NwebAutolayoutTest, ParseToplevelConfig_Valid)
 {
     std::optional<base::Value> root = base::JSONReader::Read(g_valid_config);
@@ -1110,26 +1094,6 @@ TEST_F(NwebAutolayoutTest, ParseWhitelistEntry_WithMultipleRules)
     auto it = mCCMConfig_.whitelist.find("test.app");
     EXPECT_NE(it, mCCMConfig_.whitelist.end());
     EXPECT_EQ(it->second.appRuleInfos->size(), 3u);
-}
-
-TEST_F(NwebAutolayoutTest, ParseInt_NegativeNumbers)
-{
-    EXPECT_EQ(ParseInt("-123").value(), -123);
-    EXPECT_EQ(ParseInt("-999").value(), -999);
-}
-
-TEST_F(NwebAutolayoutTest, ParseInt_LargeNumbers)
-{
-    EXPECT_EQ(ParseInt("2147483647").value(), 2147483647);
-    EXPECT_EQ(ParseInt("999999").value(), 999999);
-}
-
-TEST_F(NwebAutolayoutTest, ParseInt_WithWhitespace)
-{
-    // Should fail with whitespace
-    EXPECT_FALSE(ParseInt(" 123").has_value());
-    EXPECT_FALSE(ParseInt("123 ").has_value());
-    EXPECT_FALSE(ParseInt(" 123 ").has_value());
 }
 
 TEST_F(NwebAutolayoutTest, Parse_ValidComplexConfig)

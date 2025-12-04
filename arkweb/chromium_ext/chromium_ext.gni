@@ -1360,6 +1360,9 @@ arkweb_components_viz_common_frame_sinks_copy_output_result_deps = [
 arkweb_third_party_blink_renderer_core_blank_screen_detector_resources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/blank_screen_detector.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/blank_screen_detector.h",
+]
+
+arkweb_third_party_blink_renderer_core_first_screen_paint_resources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/first_screen_calculator.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/first_screen_calculator.h",
 ]
@@ -1367,6 +1370,8 @@ arkweb_third_party_blink_renderer_core_blank_screen_detector_resources = [
 arkweb_third_party_blink_core_sources_paint_resources = [
   "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/image_paint_timing_detector_utils.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/image_paint_timing_detector_utils.h",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/paint_timing_detector_utils.cc",
+  "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/paint_timing_detector_utils.h",
 ]
 
 arkweb_content_browser_accessibility_resources = [
@@ -1380,8 +1385,6 @@ arkweb_media_codec_decoder_adapter_impl_unittest_sources = [
 ]
 
 arkweb_third_patry_blink_renderer_core_paint_timing_detector_resources = [
-  "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/paint_timing_detector_utils.cc",
-  "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/paint_timing_detector_utils.h",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/ptd_supplement_for_bl.cc",
   "//arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/ptd_supplement_for_bl.h",
 ]

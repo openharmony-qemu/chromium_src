@@ -65,7 +65,7 @@ class CORE_EXPORT ImageRecordsManagerUtils {
     void SetForBlankless();
     bool IsForBlankless() const;
 #endif
-#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION) || BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
     void AssignImagePaintTimeFromRejectedImages(
         const base::TimeTicks& timestamp,
         unsigned last_queued_frame_index);
@@ -74,7 +74,8 @@ class CORE_EXPORT ImageRecordsManagerUtils {
     void RemoveRecordFromFirstScreenCalculator(
         MediaRecordIdHash record_id_hash);
     void NotifyImagePaintForFirstScreenCalculator(MediaRecordIdHash hash,
-                                                  ImageRecord* record);
+                                                  ImageRecord* record,
+                                                  bool is_video);
     void InsertRejectedImageRecords(MediaRecordIdHash hash,
                                     ImageRecord* record);
     void ClearRejectedImagesQueuedForPaintTime();
@@ -110,7 +111,7 @@ class CORE_EXPORT ImageRecordsManagerUtils {
     Member<ImageRecord> alcp_image_;
     bool is_for_blankless_only_ = false;
 #endif
-#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION) || BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
     ImageRecord* GetRejectedImage(MediaRecordIdHash record_id_hash);
     bool IsRejectedDueToSize(MediaRecordIdHash record_id_hash);
     void QueueToMeasurePaintTimeForRejected(ImageRecord* record,

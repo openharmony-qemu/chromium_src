@@ -145,6 +145,10 @@ if (arkweb_blank_screen_detection) {
   mojom_core_enabled_features += [ "arkweb_blank_screen_detection" ]
 }
 
+if (arkweb_first_screen_paint) {
+  mojom_core_enabled_features += [ "arkweb_first_screen_paint" ]
+}
+
 if (arkweb_fling) {
   mojom_core_enabled_features += [ "arkweb_fling" ]
 }

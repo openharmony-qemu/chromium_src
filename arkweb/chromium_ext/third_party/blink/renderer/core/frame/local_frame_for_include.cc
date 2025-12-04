@@ -122,6 +122,38 @@ std::shared_ptr<BlankScreenDetector> LocalFrame::GetBlankScreenDetector(
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
+void LocalFrame::OnFirstScreenPaint(
+    const WTF::String& url,
+    const base::TimeTicks& navigation_start,
+    const base::TimeTicks& first_screen_paint) {
+  base::Time reference_wall_time = base::Time::Now();
+  base::TimeTicks reference_monotonic_time = base::TimeTicks().Now();
+
+  base::TimeDelta navigation_start_elapsed_time =
+      navigation_start - reference_monotonic_time;
+  base::Time navigation_start_wall_time =
+      reference_wall_time + navigation_start_elapsed_time;
+  double navigation_start_wall_time_double_t =
+      navigation_start_wall_time.InSecondsFSinceUnixEpoch();
+  int64_t navigation_start_time =
+      static_cast<int64_t>(navigation_start_wall_time_double_t *
+                           base::Time::kMicrosecondsPerMillisecond);
+
+  base::TimeDelta first_screen_paint_elapsed_time =
+      first_screen_paint - reference_monotonic_time;
+  base::Time first_screen_paint_wall_time =
+      reference_wall_time + first_screen_paint_elapsed_time;
+  double first_screen_paint_time_t =
+      first_screen_paint_wall_time.InSecondsFSinceUnixEpoch();
+  int64_t first_screen_paint_time = static_cast<int64_t>(
+      first_screen_paint_time_t * base::Time::kMicrosecondsPerMillisecond);
+  GetLocalFrameHostRemote().OnFirstScreenPaint(url,
+                                               navigation_start_time,
+                                               first_screen_paint_time);
+}
+#endif
+
 // LCOV_EXCL_START
 #if BUILDFLAG(ARKWEB_ADBLOCK)
 void LocalFrame::DidSubresourceFiltered() {

@@ -1621,6 +1621,16 @@ void NWebRenderHandler::OnDetectedBlankScreen(
 }
 #endif
 
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
+void NWebRenderHandler::OnFirstScreenPaint(const std::string& url,
+                                           int64_t navigationStartTime,
+                                           int64_t firstScreenPaintTime) {
+  if (auto handler = handler_.lock()) {
+    handler->OnFirstScreenPaint(url, navigationStartTime, firstScreenPaintTime);
+  }
+}
+#endif
+
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
 void NWebRenderHandler::OnAccessibilityEvent(int64_t accessibilityId,
                                              int32_t eventType,

@@ -258,7 +258,7 @@ void ImagePaintTimingDetector::SetFrameIndex(unsigned frame_index) {
 }
 #endif // ARKWEB_BLANK_OPTIMIZE
 
-#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION) || BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
 void ImageRecordsManagerUtils::AssignImagePaintTimeFromRecord(
     ImageRecord* record,
     const base::TimeTicks& timestamp) {
@@ -408,7 +408,8 @@ void ImageRecordsManagerUtils::OnImageLoadedForRejected(
 
 void ImageRecordsManagerUtils::NotifyImagePaintForFirstScreenCalculator(
     MediaRecordIdHash hash,
-    ImageRecord* record) {
+    ImageRecord* record,
+    bool is_video) {
     auto first_screen_calculator =
         image_records_manager_.frame_view_->GetPaintTimingDetector()
             .GetFirstScreenCalculator();
@@ -417,7 +418,8 @@ void ImageRecordsManagerUtils::NotifyImagePaintForFirstScreenCalculator(
             hash, record,
             image_records_manager_.frame_view_->GetPaintTimingDetector()
                 .GetImagePaintTimingDetector()
-                .GetViewportSize());
+                .GetViewportSize(),
+            is_video);
     }
 }
 

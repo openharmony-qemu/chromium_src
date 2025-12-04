@@ -16,24 +16,42 @@
 #include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/first_screen_calculator.h"
 
 #include "arkweb/chromium_ext/third_party/blink/renderer/core/paint/timing/blank_screen_detector.h"
+#include "base/memory/safe_ref.h"
+#include "third_party/blink/renderer/bindings/modules/v8/v8_connection_type.h"
+#include "third_party/blink/renderer/bindings/modules/v8/v8_effective_connection_type.h"
+#include "third_party/blink/renderer/core/frame/navigator.h"
 #include "third_party/blink/renderer/core/loader/document_loader.h"
 #include "third_party/blink/renderer/core/paint/timing/image_paint_timing_detector.h"
 #include "third_party/blink/renderer/core/paint/timing/text_paint_timing_detector.h"
+#include "third_party/blink/renderer/modules/netinfo/network_information.h"
 #include "third_party/ohos_ndk/includes/ohos_adapter/ohos_adapter_helper.h"
 
 namespace blink {
-
-const int32_t DEFAULT_TASK_DELAY_MS = 3000;
+const int32_t TASK_DELAY_MS_OFFLINE = 2000;
+const int32_t TASK_DELAY_MS_4G = 3000;
+const int32_t TASK_DELAY_MS_3G = 4000;
+const int32_t TASK_DELAY_MS_2G = 5000;
+const int32_t TASK_DELAY_MS_SLOW_2G = 6000;
+const float NINETY_PERCENT = 0.9f;
 
 void FirstScreenCalculator::OnFirstScreenInvoked() {
   const base::TimeDelta as_time_delta =
       first_screen_paint_time_ - base::TimeTicks();
-  base::TimeTicks navigation_delta = base::TimeTicks();
+  base::TimeTicks navigation_start_time = base::TimeTicks();
   if (frame_view_) {
     DocumentLoader* loader =
         frame_view_->GetFrame().Loader().GetDocumentLoader();
     if (loader) {
-      navigation_delta = loader->GetTiming().NavigationStart();
+      navigation_start_time = loader->GetTiming().NavigationStart();
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
+      if (navigation_start_time_ != navigation_start_time &&
+          !first_screen_paint_time_.is_null()) {
+        navigation_start_time_ = navigation_start_time;
+        frame_view_->GetFrame().OnFirstScreenPaint(loader->GetUrl().GetString(),
+                                                   navigation_start_time_,
+                                                   first_screen_paint_time_);
+      }
+#endif
     }
   }
 
@@ -41,9 +59,9 @@ void FirstScreenCalculator::OnFirstScreenInvoked() {
           .GetSystemPropertiesInstance()
           .GetBoolParameter("web.debug.dumpfsprect", false)) {
     const base::TimeDelta paint_time_delta =
-        first_screen_paint_time_ - navigation_delta;
+        first_screen_paint_time_ - navigation_start_time;
 
-    if (first_screen_paint_time_ < navigation_delta) {
+    if (first_screen_paint_time_ < navigation_start_time) {
       return;
     }
     std::string fsp_time_str =
@@ -83,29 +101,66 @@ void FirstScreenCalculator::DumpTextRect() {
   }
 }
 
-void FirstScreenCalculator::RestartTimerForFirstScreenDetection(
-    base::TimeDelta delay) {
+void FirstScreenCalculator::RestartTimerForFirstScreenDetection() {
   timer_.Stop();
   if (user_scrolled_) {
     return;
   }
-  timer_.Start(FROM_HERE, delay,
+
+  if (!frame_view_) {
+    return;
+  }
+  auto window = frame_view_->GetFrame().DomWindow();
+  if (!window || !window->navigator()) {
+    return;
+  }
+  int32_t task_delay_ms = TASK_DELAY_MS_OFFLINE;
+#if !defined(COMPONENT_BUILD)
+  NetworkInformation* info = NetworkInformation::connection(
+      *static_cast<NavigatorBase*>(window->navigator()));
+  if (info && info->type() != V8ConnectionType::Enum::kNone) {
+    switch (info->effectiveType().AsEnum()) {
+      case V8EffectiveConnectionType::Enum::kSlow2G:
+        task_delay_ms = TASK_DELAY_MS_SLOW_2G;
+        break;
+      case V8EffectiveConnectionType::Enum::k2G:
+        task_delay_ms = TASK_DELAY_MS_2G;
+        break;
+      case V8EffectiveConnectionType::Enum::k3G:
+        task_delay_ms = TASK_DELAY_MS_3G;
+        break;
+      case V8EffectiveConnectionType::Enum::k4G:
+        task_delay_ms = TASK_DELAY_MS_4G;
+        break;
+      default:
+        task_delay_ms = TASK_DELAY_MS_SLOW_2G;
+        break;
+    }
+  }
+
+#endif
+  timer_.Start(FROM_HERE, base::Milliseconds(task_delay_ms),
                base::BindOnce(&FirstScreenCalculator::OnFirstScreenInvoked,
-                              weak_factory_.GetWeakPtr()));
+                              weak_factory_.GetSafeRef()));
 }
 
 void FirstScreenCalculator::NotifyImagePaint(
     MediaRecordIdHash record_id_hash,
     const ImageRecord* record,
-    std::optional<uint64_t> viewport_size) {
-  if (!record || user_scrolled_) {
+    std::optional<uint64_t> viewport_size,
+    bool is_video) {
+  if (!record || user_scrolled_ || !record->lcp_rect_info_) {
     return;
   }
-
+  gfx::Rect root_rect_info = record->lcp_rect_info_->GetRootRectInfo();
+  if (is_video) {
+    root_rect_info.set_x(root_rect_info.x() / 2);
+    root_rect_info.set_y(root_rect_info.y() / 2);
+  }
   if (image_rects_map_.empty()) {
     image_rects_map_.insert(
-        {record_id_hash,
-         {record->lcp_rect_info_->GetRootRectInfo(), record->paint_time}});
+        {record_id_hash, {root_rect_info, record->paint_time}});
+    RestartTimerForFirstScreenDetection();
     return;
   }
 
@@ -116,31 +171,34 @@ void FirstScreenCalculator::NotifyImagePaint(
       return;
     }
 
-    if (it->second.rect_ == record->lcp_rect_info_->GetRootRectInfo() &&
-        rect_size < *viewport_size) {
+    if (it->second.rect_ == root_rect_info &&
+        rect_size < *viewport_size * NINETY_PERCENT) {
       return;
     }
 
-    if (it->second.rect_.Contains(record->lcp_rect_info_->GetRootRectInfo()) &&
-        rect_size < *viewport_size) {
+    if (it->second.rect_.Contains(root_rect_info) &&
+        rect_size < *viewport_size * NINETY_PERCENT) {
       return;
     }
   }
   image_rects_map_.insert(
-      {record_id_hash,
-       {record->lcp_rect_info_->GetRootRectInfo(), record->paint_time}});
+      {record_id_hash, {root_rect_info, record->paint_time}});
+  RestartTimerForFirstScreenDetection();
 }
 
 void FirstScreenCalculator::NotifyTextPaint(const TextRecord* record,
                                             base::TimeTicks timestamp) {
-  if (!record || user_scrolled_) {
+  if (!record || user_scrolled_ || !record->lcp_rect_info_) {
     return;
   }
 
   if (text_paint_rect_.empty()) {
     text_paint_rect_.emplace_back(PaintRectInfo(
         record->lcp_rect_info_->GetRootRectInfo(), record->paint_time));
-    RestartTimerForFirstScreenDetection(base::Milliseconds(DEFAULT_TASK_DELAY_MS));
+    if (first_screen_paint_time_.is_null() || timestamp > first_screen_paint_time_) {
+      first_screen_paint_time_ = timestamp;
+    }
+    RestartTimerForFirstScreenDetection();
     return;
   }
   for (auto it = text_paint_rect_.begin(); it != text_paint_rect_.end(); ++it) {
@@ -167,12 +225,10 @@ void FirstScreenCalculator::NotifyTextPaint(const TextRecord* record,
       return;
     }
   }
-
-  if (first_screen_paint_time_.is_null() ||
-      first_screen_paint_time_ < timestamp) {
-    first_screen_paint_time_ = timestamp;
+  if (first_screen_paint_time_.is_null() || timestamp > first_screen_paint_time_) {
+      first_screen_paint_time_ = timestamp;
   }
-  RestartTimerForFirstScreenDetection(base::Milliseconds(DEFAULT_TASK_DELAY_MS));
+  RestartTimerForFirstScreenDetection();
 }
 
 void FirstScreenCalculator::AssignImagePaintTime(
@@ -189,11 +245,10 @@ void FirstScreenCalculator::AssignImagePaintTime(
 
   image_rects_map_[record_id_hash] = PaintRectInfo(rect, timestamp);
   if (!user_scrolled_ && !timestamp.is_null()) {
-    if (first_screen_paint_time_.is_null() ||
-        first_screen_paint_time_ < timestamp) {
+    if (first_screen_paint_time_.is_null() || timestamp > first_screen_paint_time_) {
       first_screen_paint_time_ = timestamp;
     }
-    RestartTimerForFirstScreenDetection(base::Milliseconds(DEFAULT_TASK_DELAY_MS));
+    RestartTimerForFirstScreenDetection();
   }
 }
 
@@ -217,12 +272,15 @@ bool FirstScreenCalculator::RemoveImageRecord(
 
 void FirstScreenCalculator::OnUserScroll() {
   user_scrolled_ = true;
+  OnFirstScreenInvoked();
+#if BUILDFLAG(ARKWEB_BLANK_SCREEN_DETECTION)
   if (frame_view_) {
     auto detector = frame_view_->GetFrame().GetBlankScreenDetector();
     if (detector) {
       detector->OnInputOrScroll();
     }
   }
+#endif
 }
 
 bool FirstScreenCalculator::HasUserScrolled() const {

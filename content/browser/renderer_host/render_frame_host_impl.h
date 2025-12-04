@@ -3255,6 +3255,11 @@ class CONTENT_EXPORT RenderFrameHostImpl
       const std::vector<int32_t>& detectionMethods,
       int32_t contentfulNodesCountThreshold);
 #endif
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
+  void OnFirstScreenPaint(const std::string& url,
+                          int64_t navigation_start_time,
+                          int64_t first_screen_paintTime) override;
+#endif
 #if BUILDFLAG(ARKWEB_ERROR_PAGE)
   void CommitFailedNavigation(
     mojom::NavigationClient* navigation_client,

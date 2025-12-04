@@ -304,6 +304,12 @@ class NWebRenderHandler : public ArkWebRenderHandlerExt {
                              int32_t detectedContentfulNodesCount) override;
 #endif
 
+#if BUILDFLAG(ARKWEB_FIRST_SCREEN_PAINT)
+  void OnFirstScreenPaint(const std::string& url,
+                          int64_t navigationStartTime,
+                          int64_t firstScreenPaintTime) override;
+#endif
+
 #if BUILDFLAG(ARKWEB_ACCESSIBILITY)
   void OnAccessibilityEvent(int64_t accessibilityId,
                             int32_t eventType,

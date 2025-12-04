@@ -73,7 +73,7 @@ void DesktopWindowTreeHostOhos::DispatchEvent(ui::Event* event) {
   if (event->IsMouseEvent() || event->IsTouchEvent()) {
     ui::LocatedEvent* located_event = event->AsLocatedEvent();
     if (GetContentWindow() && GetContentWindow()->delegate()) {
-      uint32_t flags = located_event->flags();
+      uint32_t flags = static_cast<uint32_t>(located_event->flags());
       gfx::PointF location = located_event->location_f();
       gfx::PointF location_in_dip =
           GetRootTransform().InverseMapPoint(location).value_or(location);

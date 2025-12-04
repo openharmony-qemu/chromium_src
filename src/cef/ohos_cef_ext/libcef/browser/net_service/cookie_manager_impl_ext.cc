@@ -16,6 +16,7 @@
 #include "cef/ohos_cef_ext/libcef/browser/net_service/net_helpers.h"
 #include "chrome/browser/profiles/profile.h"
 #include "components/cookie_config/cookie_store_util.h"
+#include "net/extras/sqlite/cookie_crypto_delegate.h"
 #include "content/public/browser/browser_context.h"
 #include "content/public/browser/cookie_store_factory.h"
 #include "content/public/browser/storage_partition.h"
@@ -358,11 +359,11 @@ net::CookieStore* CefCookieManagerImplExt::GetCookieStore() {
         cookie_store_backend_thread_.task_runner();
     cookie_config.crypto_delegate = cookie_config::GetCookieCryptoDelegate();
 
+    // Use GetDefaultCookieableSchemes() to get the default schemes
+    auto default_schemes = net::CookieMonster::GetDefaultCookieableSchemes();
     cookie_config.cookieable_schemes.insert(
-        cookie_config.cookieable_schemes.begin(),
-        net::CookieMonster::kDefaultCookieableSchemes,
-        net::CookieMonster::kDefaultCookieableSchemes +
-            net::CookieMonster::kDefaultCookieableSchemesCount);
+        cookie_config.cookieable_schemes.end(),
+        default_schemes.begin(), default_schemes.end());
     if (allow_file_scheme_cookies_) {
       cookie_config.cookieable_schemes.push_back(url::kFileScheme);
     }
@@ -466,7 +467,7 @@ CefCookieManagerImplExt::CefCookieManagerImplExt(bool support_incognito)
   if (cmd_value) {
     OHOS::NWeb::ResSchedClientAdapter::ReportKeyThread(
       OHOS::NWeb::ResSchedStatusAdapter::THREAD_CREATED, base::GetCurrentRealPid(),
-      cookie_store_task_thread_.GetThreadRealId(), OHOS::NWeb::ResSchedRoleAdapter::USER_INTERACT);
+      cookie_store_task_thread_.GetThreadRealId().raw(), OHOS::NWeb::ResSchedRoleAdapter::USER_INTERACT);
   }
 #endif // BUILDFLAG(ARKWEB_PERFORMANCE_SCHEDULING)
 }
@@ -1043,10 +1044,12 @@ void CefCookieManagerImplExt::SaveCookiesOnAsyncThread(
     }
   }
 
+  net::CookieInclusionStatus status;
+  status.AddExclusionReason(
+      net::CookieInclusionStatus::ExclusionReason::EXCLUDE_UNKNOWN_ERROR);
   SetCanonicalCookieCallback(
       progress, net::CanonicalCookie(),
-      net::CookieAccessResult(net::CookieInclusionStatus(
-          net::CookieInclusionStatus::EXCLUDE_UNKNOWN_ERROR)));
+      net::CookieAccessResult(status));
 }
 
 #if BUILDFLAG(ARKWEB_EXT_EXCEPTION_LIST)

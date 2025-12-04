@@ -607,15 +607,13 @@ class ClipboardOHOSInternal {
   bool HandlePasswordVault(
       const std::shared_ptr<OHOS::NWeb::NWebVaultPlainTextCallback>& callback) {
     if (!callback) {
-      LOG(INFO) << "password vault callback is nullptr.";
+      LOG(INFO) << "callback is nullptr.";
       return false;
     }
     auto& pasteboard = OhosAdapterHelper::GetInstance().GetPasteBoard();
-    auto has = pasteboard.HasType(kMiscServicesMimeTypeAutoFillSecure);
-    if (!has) {
+    if (!pasteboard.HasType(kMiscServicesMimeTypeAutoFillSecure)) {
       return false;
     }
-    LOG(INFO) << "ProcessAutoFillOnPaste";
     return callback->ProcessAutoFillOnPaste();
   }
 #endif
@@ -646,8 +644,7 @@ class ClipboardOHOSInternal {
     switch (format) {
       case ClipboardInternalFormat::kText:
         return pasteboard.HasType(kMiscServicesMimeTypeTextHtml) ||
-               pasteboard.HasType(kMiscServicesMimeTypeTextPlain) ||
-               pasteboard.HasType(kMiscServicesMimeTypeAutoFillSecure);
+               pasteboard.HasType(kMiscServicesMimeTypeTextPlain);
       case ClipboardInternalFormat::kHtml:
         return pasteboard.HasType(kMiscServicesMimeTypeTextHtml);
       case ClipboardInternalFormat::kPng:

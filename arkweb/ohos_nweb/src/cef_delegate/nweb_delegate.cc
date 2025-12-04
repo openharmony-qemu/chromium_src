@@ -2043,7 +2043,7 @@ void NWebDelegate::FillAutofillDataV2(std::shared_ptr<NWebRomValue> data) {
 
 void NWebDelegate::FillAutofillDataFromTriggerType(
     std::shared_ptr<NWebRomValue> data, int32_t type) {
-  if (!GetBrowser().get()) {
+  if (!GetBrowser().get() || !GetBrowser()->GetHost()) {
     return;
   }
 

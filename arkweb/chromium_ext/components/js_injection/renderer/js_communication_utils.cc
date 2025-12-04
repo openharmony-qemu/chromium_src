@@ -52,14 +52,19 @@ bool JsCommunicationUtils::MatchUrlRegexRules(blink::WebString& script,
   std::vector<std::unique_ptr<DocumentJavaScriptRegexRules>>& scripts_regex_rules) {
   std::string url_text =
       jsCommunication_->render_frame()->GetWebFrame()->GetDocument().Url().GetString().Utf8();
+
+  LOG(DEBUG) << "JsCommunicationUtils::MatchUrlRegexRules url_text:" << url_text.c_str();
   
   GURL url = url_formatter::FixupURL(url_text, "");
   if (!url.is_valid() || scripts_regex_rules.empty()) {
+    LOG(DEBUG) << "MatchUrlRegexRules: fixupURL failed or scripts_regex_rules is empty.";
     return false;
   }
 
   std::string frame_origin =  net::registry_controlled_domains::GetDomainAndRegistry(
       url, net::registry_controlled_domains::PrivateRegistryFilter::INCLUDE_PRIVATE_REGISTRIES);
+  LOG(DEBUG) << "JsCommunicationUtils::MatchUrlRegexRules secondLevelDomain:" << frame_origin.c_str();
+
   for (const auto& rule : scripts_regex_rules) {
     if (rule->script != script) {
       continue;
@@ -71,11 +76,14 @@ bool JsCommunicationUtils::MatchUrlRegexRules(blink::WebString& script,
       }
 
       if (MatchUrlRegex(url_text, regexRule.rule)) {
+        LOG(DEBUG) << "MatchUrlRegexRule: regexRules match success.";
         return true;
       }
     }
     break;
   }
+
+  LOG(DEBUG) << "JsCommunicationUtils::MatchUrlRegexRules regexRules no match.";
   return false;
 }
 
